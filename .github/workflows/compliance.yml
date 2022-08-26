@@ -17,7 +17,7 @@ jobs:
       env:
         BASE_REF: ${{ github.base_ref }}
       run: |
-        python3 ./scripts/get_maintainer.py path CMakeLists.txt
+        ./scripts/ci/ci_compliance.sh maintainer_check
 
   check_compliance:
     runs-on: ubuntu-20.04
@@ -41,23 +41,13 @@ jobs:
 
     - name: Install python dependencies
       run: |
-        pip3 install setuptools
-        pip3 install wheel
-        pip3 install python-magic junitparser gitlint pylint pykwalify
-        pip3 install west
+        ./scripts/ci/ci_compliance.sh check_compliance python-deps
 
     - name: west setup
       env:
         BASE_REF: ${{ github.base_ref }}
       run: |
-        git config --global user.email "you@example.com"
-        git config --global user.name "Your Name"
-        git remote -v
-        git rebase origin/${BASE_REF}
-        # debug
-        git log  --pretty=oneline | head -n 10
-        west init -l . || true
-        west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
+ 	./scripts/ci/ci_compliance.sh check_compliance west-setup
 
     - name: Run Compliance Tests
       continue-on-error: true
@@ -65,11 +55,7 @@ jobs:
       env:
         BASE_REF: ${{ github.base_ref }}
       run: |
-        export ZEPHYR_BASE=$PWD
-        # debug
-        ls -la
-        git log  --pretty=oneline | head -n 10
-        ./scripts/ci/check_compliance.py -m Devicetree -m Gitlint -m Identity -m Nits -m pylint -m checkpatch -m Kconfig -c origin/${BASE_REF}..
+        ./scripts/ci/ci_compliance.sh check_compliance compliance-tests
 
     - name: upload-results
       uses: actions/upload-artifact@v3
@@ -80,21 +66,4 @@ jobs:
 
     - name: check-warns
       run: |
-        if [[ ! -s "compliance.xml" ]]; then
-          exit 1;
-        fi
-
-        for file in Nits.txt checkpatch.txt Identity.txt Gitlint.txt pylint.txt Devicetree.txt Kconfig.txt; do
-          if [[ -s $file ]]; then
-            errors=$(cat $file)
-            errors="${errors//'%'/'%25'}"
-            errors="${errors//$'\n'/'%0A'}"
-            errors="${errors//$'\r'/'%0D'}"
-            echo "::error file=${file}::$errors"
-            exit=1
-          fi
-        done
-
-        if [ "${exit}" == "1" ]; then
-          exit 1;
-        fi
+        ./scripts/ci/ci_compliance.sh check_compliance check-warns
