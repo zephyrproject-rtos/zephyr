@@ -205,10 +205,9 @@ zephyr_udc0: &usb {
 		#size-cells = <1>;
 
 		/*
-		 * Configure partitions while leaving space for M0 BLE f/w
-		 * Since STM32WBCube release V1.13.2, only _HCIOnly_ f/w are supported.
-		 * These FW are expected to be located not before 0x080DB000
-		 * Current partition is using the first 876K of the flash for M4
+		 * Configure partitions while leaving space for M0 BLE f/w.
+		 * Partition for M0 BLE f/w is defined by SFSA option bytes
+		 * which board production value is 0x080cf000.
 		 */
 
 		boot_partition: partition@0 {
@@ -217,19 +216,19 @@ zephyr_udc0: &usb {
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000c000 DT_SIZE_K(400)>;
+			reg = <0x0000c000 DT_SIZE_K(378)>;
 		};
-		slot1_partition: partition@70000 {
+		slot1_partition: partition@6a800 {
 			label = "image-1";
-			reg = <0x00070000 DT_SIZE_K(400)>;
+			reg = <0x0006a800 DT_SIZE_K(378)>;
 		};
-		scratch_partition: partition@d4000 {
+		scratch_partition: partition@c9000 {
 			label = "image-scratch";
-			reg = <0x000d4000 DT_SIZE_K(16)>;
+			reg = <0x000c9000 DT_SIZE_K(16)>;
 		};
-		storage_partition: partition@d8000 {
+		storage_partition: partition@cd000 {
 			label = "storage";
-			reg = <0x000d8000 DT_SIZE_K(8)>;
+			reg = <0x000cd000 DT_SIZE_K(8)>;
 		};
 
 	};
