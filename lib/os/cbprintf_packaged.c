@@ -14,6 +14,8 @@
 #include <sys/types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(cbprintf_package, CONFIG_CBPRINTF_PACKAGE_LOG_LEVEL);
 
 #if defined(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS) && \
 	!Z_C_GENERIC
@@ -247,9 +249,11 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	unsigned int size;         /* current argument's size */
 	unsigned int align;        /* current argument's required alignment */
 	uint8_t str_ptr_pos[16];   /* string pointer positions */
+	uint8_t str_ptr_arg[16];   /* string pointer argument index */
 	unsigned int s_idx = 0;    /* index into str_ptr_pos[] */
 	unsigned int s_rw_cnt = 0; /* number of rw strings */
 	unsigned int s_ro_cnt = 0; /* number of ro strings */
+	int arg_idx	      = -1; /* Argument index. Preincremented thus starting from -1.*/
 	unsigned int i;
 	const char *s;
 	bool parsing = false;
@@ -468,6 +472,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			if (!parsing) {
 				if (*fmt == '%') {
 					parsing = true;
+					arg_idx++;
 					align = VA_STACK_ALIGN(int);
 					size = sizeof(int);
 				}
@@ -476,6 +481,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			switch (*fmt) {
 			case '%':
 				parsing = false;
+				arg_idx--;
 				continue;
 
 			case '#':
@@ -641,6 +647,7 @@ process_string:
 					 * We will append non-ro strings later.
 					 */
 					str_ptr_pos[s_idx] = s_ptr_idx;
+					str_ptr_arg[s_idx] = arg_idx;
 					if (is_ro) {
 						/* flag read-only string. */
 						str_ptr_pos[s_idx] |= STR_POS_RO_FLAG;
@@ -648,12 +655,18 @@ process_string:
 					} else {
 						s_rw_cnt++;
 					}
-				} else if (is_ro || rws_pos_en) {
+				} else if (is_ro) {
 					/*
 					 * Add only pointer position prefix
 					 * when counting strings.
 					 */
 					len += 1;
+				} else if (rws_pos_en) {
+					/*
+					 * Add only pointer position prefix and
+					 * argument index when counting strings.
+					 */
+					len += 2;
 				} else {
 					/*
 					 * Add the string length, the final '\0'
@@ -766,6 +779,7 @@ process_string:
 
 		if (rws_pos_en) {
 			size = 0;
+			*buf++ = str_ptr_arg[i];
 		} else {
 			/* retrieve the string pointer */
 			s = *(char **)(buf0 + str_ptr_pos[i] * sizeof(int));
@@ -830,7 +844,7 @@ int cbpprintf_external(cbprintf_cb out,
 	rws_nbr   = hdr->hdr.desc.rw_str_cnt;
 
 	/* Locate the string table */
-	s = (char *)(buf + args_size + ros_nbr + rws_nbr);
+	s = (char *)(buf + args_size + ros_nbr + 2 * rws_nbr);
 
 	/*
 	 * Patch in string pointers.
@@ -852,6 +866,45 @@ int cbpprintf_external(cbprintf_cb out,
 	return cbprintf_via_va_list(out, formatter, ctx, hdr->fmt, buf);
 }
 
+/* Function checks if character might be format specifier. Check is relaxed since
+ * compiler ensures that correct format specifier is used so it is enough to check
+ * that character is not one of potential modifier (e.g. number, dot, etc.).
+ */
+static bool is_fmt_spec(char c)
+{
+	return (c >= 64) && (c <= 122);
+}
+
+/* Function checks if nth argument is a pointer (%p). Returns true is yes. Returns
+ * false if not or if string does not have nth argument.
+ */
+bool is_ptr(const char *fmt, int n)
+{
+	char c;
+	bool mod = false;
+	int cnt = 0;
+
+	while ((c = *fmt++) != '\0') {
+		if (mod) {
+			if (cnt == n) {
+				if (c == 'p') {
+					return true;
+				} else if (is_fmt_spec(c)) {
+					return false;
+				}
+			} else if (is_fmt_spec(c)) {
+				cnt++;
+				mod = false;
+			}
+		}
+		if (c == '%') {
+			mod = !mod;
+		}
+	}
+
+	return false;
+}
+
 int cbprintf_package_convert(void *in_packaged,
 			     size_t in_len,
 			     cbprintf_convert_cb cb,
@@ -865,6 +918,7 @@ int cbprintf_package_convert(void *in_packaged,
 	uint8_t *buf = in_packaged;
 	uint32_t *buf32 = in_packaged;
 	unsigned int args_size, ros_nbr, rws_nbr;
+	bool fmt_present = flags & CBPRINTF_PACKAGE_CONVERT_PTR_CHECK ? true : false;
 	bool rw_cpy;
 	bool ro_cpy;
 	struct cbprintf_package_desc *in_desc = in_packaged;
@@ -908,6 +962,7 @@ int cbprintf_package_convert(void *in_packaged,
 	/* Pointer to array with string locations. Array starts with read-only
 	 * string locations.
 	 */
+	const char *fmt = *(const char **)(buf + sizeof(void *));
 	uint8_t *str_pos = &buf[args_size];
 	size_t strl_cnt = 0;
 
@@ -938,28 +993,43 @@ int cbprintf_package_convert(void *in_packaged,
 
 		/* Handle RW strings. */
 		for (int i = 0; i < rws_nbr; i++) {
-			const char *str = *(const char **)&buf32[*str_pos];
+			uint8_t arg_idx = *str_pos++;
+			uint8_t arg_pos = *str_pos++;
+			const char *str = *(const char **)&buf32[arg_pos];
 			bool is_ro = ptr_in_rodata(str);
+			int len;
 
-			if ((is_ro && flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) ||
-			    (!is_ro && flags & CBPRINTF_PACKAGE_CONVERT_RW_STR)) {
-				int len = append_string(cb, NULL, str, 0);
+			if (fmt_present && is_ptr(fmt, arg_idx)) {
+				LOG_WRN("(unsigned) char * used for %%p argument. "
+					"It's recommended to cast it to void * because "
+					"it may cause misbehavior in certain "
+					"configurations. String:\"%s\" argument:%d", fmt, arg_idx);
+				/* Since location is being dropped, decrement
+				 * output length by 2 (argument index + position)
+				 */
+				out_len -= 2;
+				continue;
+			}
+
+			if (is_ro) {
+				if (flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) {
+					goto calculate_string_length;
+				} else {
+					out_len -= drop_ro_str_pos ? 2 : 1;
+				}
+			} else if (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) {
+calculate_string_length:
+				len = append_string(cb, NULL, str, 0);
 
 				/* If possible store calculated string length. */
 				if (strl && strl_cnt < strl_len) {
 					strl[strl_cnt++] = (uint16_t)len;
 				}
-				out_len += len;
-			}
-
-			if (is_ro && drop_ro_str_pos) {
-				/* If read-only string location is dropped decreased
-				 * length.
+				/* string length decremented by 1 because argument
+				 * index is dropped.
 				 */
-				out_len--;
+				out_len += (len - 1);
 			}
-
-			str_pos++;
 		}
 
 		return out_len;
@@ -1002,35 +1072,41 @@ int cbprintf_package_convert(void *in_packaged,
 	 * to determine if strings is read-only.
 	 */
 	for (int i = 0; i < rws_nbr; i++) {
-		const char *str = *(const char **)&buf32[*str_pos];
+		uint8_t arg_idx = *str_pos++;
+		uint8_t arg_pos = *str_pos++;
+		const char *str = *(const char **)&buf32[arg_pos];
 		bool is_ro = ptr_in_rodata(str);
+
+		if (fmt_present && is_ptr(fmt, arg_idx)) {
+			continue;
+		}
 
 		if (is_ro) {
 			if (flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) {
 				__ASSERT_NO_MSG(scpy_cnt < sizeof(cpy_str_pos));
-				cpy_str_pos[scpy_cnt++] = *str_pos;
+				cpy_str_pos[scpy_cnt++] = arg_pos;
 			} else if (flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) {
 				__ASSERT_NO_MSG(keep_cnt < sizeof(keep_str_pos));
-				keep_str_pos[keep_cnt++] = *str_pos;
+				keep_str_pos[keep_cnt++] = arg_pos;
 			} else {
 				/* Drop information about ro_str location. */
 			}
 		} else {
 			if (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) {
 				__ASSERT_NO_MSG(scpy_cnt < sizeof(cpy_str_pos));
-				cpy_str_pos[scpy_cnt++] = *str_pos;
+				cpy_str_pos[scpy_cnt++] = arg_pos;
 			} else {
 				__ASSERT_NO_MSG(keep_cnt < sizeof(keep_str_pos));
-				keep_str_pos[keep_cnt++] = *str_pos;
+				keep_str_pos[keep_cnt++] = arg_idx;
+				keep_str_pos[keep_cnt++] = arg_pos;
 			}
 		}
-		str_pos++;
 	}
 
 	/* Set amount of strings appended to the package. */
 	out_desc.len = in_desc->len;
 	out_desc.str_cnt = in_desc->str_cnt + scpy_cnt;
-	out_desc.rw_str_cnt = (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) ? 0 : keep_cnt;
+	out_desc.rw_str_cnt = (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) ? 0 : (keep_cnt / 2);
 	out_desc.ro_str_cnt = (flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) ? 0 :
 			((flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) ? keep_cnt : 0);
 
@@ -1055,7 +1131,7 @@ int cbprintf_package_convert(void *in_packaged,
 	out_len += rv;
 
 	/* Copy appended strings from source package to destination. */
-	size_t strs_len = in_len - (args_size + ros_nbr + rws_nbr);
+	size_t strs_len = in_len - (args_size + ros_nbr + 2 * rws_nbr);
 
 	rv = cb(str_pos, strs_len, ctx);
 	if (rv < 0) {

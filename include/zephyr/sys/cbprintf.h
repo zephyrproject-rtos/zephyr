@@ -214,6 +214,25 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
 #define CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR BIT(2)
 #define CBPRINTF_PACKAGE_COPY_KEEP_RO_STR CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR __DEPRECATED_MACRO
 
+/** @brief Check format string if %p argument was treated as %s in the package.
+ *
+ * Static packaging is done based only on types of arguments used for a format
+ * string. Without looking into format specifiers present in the string. Because
+ * of that if (unsigned) char pointer is used for %p it will be considered as
+ * a string location and during conversion an attempt to append a string to a
+ * package may be performed. This can lead to misbehavior, in the best case
+ * package will be bigger and in the worst case memory fault or security violation
+ * may occur.
+ *
+ * When this flag is set, format string will be checked to detect cases when
+ * string candidate is a pointer used for %p and string appending from unexpected
+ * location is avoided. Additionally, an log warning is generated to encourage
+ * user to cast such argument to void *. It is recommended because there are
+ * configurations where string is not accessible and inspection cannot be done.
+ * In those cases there are no means to detect such cases.
+ */
+#define CBPRINTF_PACKAGE_CONVERT_PTR_CHECK BIT(3)
+
 /**@} */
 
 /**@defgroup Z_CBVPRINTF_PROCESS_FLAGS cbvprintf processing flags.
