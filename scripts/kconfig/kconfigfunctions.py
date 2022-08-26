@@ -639,6 +639,25 @@ def dt_nodelabel_path(kconf, _, label):
 
     return node.path if node else ""
 
+def dt_node_parent(kconf, _, path):
+    """
+    This function takes a 'path' and looks for an EDT node at that path. If it
+    finds an EDT node, it will look for the parent of that node. If the parent
+    exists, it will return the path to that parent. Otherwise, an empty string
+    will be returned.
+    """
+    if doc_mode or edt is None:
+        return ""
+
+    try:
+        node = edt.get_node(path)
+    except edtlib.EDTError:
+        return ""
+
+    if node is None:
+        return ""
+
+    return node.parent.path if node.parent else ""
 
 def shields_list_contains(kconf, _, shield):
     """
@@ -694,5 +713,6 @@ functions = {
         "dt_node_str_prop_equals": (dt_node_str_prop_equals, 3, 3),
         "dt_nodelabel_has_compat": (dt_nodelabel_has_compat, 2, 2),
         "dt_nodelabel_path": (dt_nodelabel_path, 1, 1),
+        "dt_node_parent": (dt_node_parent, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
 }
