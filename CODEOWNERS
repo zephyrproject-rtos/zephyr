@@ -44,7 +44,7 @@
 /soc/arm/infineon_xmc/                    @parthitce
 /soc/arm/nxp*/                            @mmahadevan108 @dleach02
 /soc/arm/nordic_nrf/                      @anangl
-/soc/arm/nuvoton_npcx/                    @MulinChao @WealianLiao @ChiHuaL
+/soc/arm/nuvoton_npcx/                    @MulinChao @ChiHuaL
 /soc/arm/nuvoton_numicro/                 @ssekar15
 /soc/arm/quicklogic_eos_s3/               @kowalewskijan @kgugala
 /soc/arm/rpi_pico/                        @yonsch
@@ -124,7 +124,7 @@
 /boards/arm/mimxrt*/doc/                  @dleach02 @MeganHansen
 /boards/arm/mps2_an385/                   @fvincenzo
 /boards/arm/msp_exp432p401r_launchxl/     @Mani-Sadhasivam
-/boards/arm/npcx7m6fb_evb/                @MulinChao @WealianLiao @ChiHuaL
+/boards/arm/npcx7m6fb_evb/                @MulinChao @ChiHuaL
 /boards/arm/nrf*/                         @carlescufi @lemrey
 /boards/arm/nucleo*/                      @erwango @ABOSTM @FRASTM
 /boards/arm/nucleo_f401re/                @idlethread
@@ -212,7 +212,7 @@
 /drivers/*/*stm32*                        @erwango @ABOSTM @FRASTM
 /drivers/*/*native_posix*                 @aescolar @daor-oti
 /drivers/*/*lpc11u6x*                     @mbittan @simonguinot
-/drivers/*/*npcx*                         @MulinChao @WealianLiao @ChiHuaL
+/drivers/*/*npcx*                         @MulinChao @ChiHuaL
 /drivers/*/*andes*                        @cwshu @kevinwang821020 @jimmyzhe
 /drivers/*/*neorv32*                      @henrikbrixandersen
 /drivers/adc/                             @anangl
@@ -280,7 +280,7 @@
 /drivers/gpio/                            @mnkp
 /drivers/gpio/*b91*                       @andy-liu-telink
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
-/drivers/gpio/*nct38xx*                   @MulinChao @WealianLiao @ChiHuaL
+/drivers/gpio/*nct38xx*                   @MulinChao @ChiHuaL
 /drivers/gpio/*stm32*                     @erwango
 /drivers/gpio/*eos_s3*                    @wtatarski @kowalewskijan @kgugala
 /drivers/gpio/*rcar*                      @aaillet
@@ -346,7 +346,7 @@
 /drivers/power_domain/                    @ceolin
 /drivers/ps2/                             @franciscomunoz @sjvasanth1
 /drivers/ps2/*xec*                        @franciscomunoz @sjvasanth1
-/drivers/ps2/*npcx*                       @MulinChao @WealianLiao @ChiHuaL
+/drivers/ps2/*npcx*                       @MulinChao @ChiHuaL
 /drivers/pwm/*b91*                        @andy-liu-telink
 /drivers/pwm/*rpi_pico*                   @burumaj
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
@@ -479,7 +479,7 @@
 /dts/arm/ti/cc26?2*                       @bwitherspoon
 /dts/arm/ti/cc3235*                       @vanti
 /dts/arm/nordic/                          @anangl @carlescufi
-/dts/arm/nuvoton/                         @ssekar15 @MulinChao @WealianLiao @ChiHuaL
+/dts/arm/nuvoton/                         @ssekar15 @MulinChao @ChiHuaL
 /dts/arm/nxp/                             @mmahadevan108 @dleach02
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @sjvasanth1
 /dts/arm/rpi_pico/                        @yonsch
@@ -519,7 +519,7 @@
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
 /dts/bindings/wifi/*esp-at.yaml           @mniestroj
 /dts/bindings/*/*gd32*                    @nandojve
-/dts/bindings/*/*npcx*                    @MulinChao @WealianLiao @ChiHuaL
+/dts/bindings/*/*npcx*                    @MulinChao @ChiHuaL
 /dts/bindings/*/*psoc6*                   @nandojve
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @mmahadevan108 @dleach02
