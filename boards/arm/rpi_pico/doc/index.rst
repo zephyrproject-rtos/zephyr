@@ -82,8 +82,25 @@ Programming and Debugging
 Flashing
 ========
 
-Using an SWD adapter
---------------------
+Using SEGGER JLink
+------------------
+
+You can Flash the rpi_pico with a SEGGER JLink debug probe as described in
+:ref:`Building, Flashing and Debugging <west-flashing>`.
+
+Here is an example of building and flashing the :ref:`blinky-sample` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: rpi_pico
+   :goals: build
+
+.. code-block:: bash
+
+  west flash --runner jlink
+
+Using OpenOCD
+-------------
 
 To use PicoProbe, You must configure **udev**.
 
@@ -96,7 +113,7 @@ Create a file in /etc/udev.rules.d with any name, and write the line below.
 This example is valid for the case that the user joins to `plugdev` groups.
 
 The Raspberry Pi Pico has an SWD interface that can be used to program
-and debug the on board RP2040. This interface can be utilized by openocd.
+and debug the on board RP2040. This interface can be utilized by OpenOCD.
 However, to use it with the RP2040, `fork of OpenOCD supporting RP2040`_ is needed.
 
 If you are using Debian based system (including RaspberryPi OS, Ubuntu. and more),
@@ -104,7 +121,7 @@ using `pico_setup.sh`_ script is convenient to set up forked version of OpenOCD.
 
 Depending on the interface used (such as JLink), you might need to
 checkout to a branch that supports this interface, before proceeding.
-Build and install openocd as described in the README.
+Build and install OpenOCD as described in the README.
 
 Here is an example of building and flashing the :ref:`blinky-sample` application.
 
@@ -115,7 +132,7 @@ Here is an example of building and flashing the :ref:`blinky-sample` application
    :gen-args: -DOPENOCD=/usr/local/bin/openocd -DOPENOCD_DEFAULT_PATH=/usr/local/share/openocd/scripts -DRPI_PICO_DEBUG_ADAPTER=picoprobe
 
 Set `/usr/local/bin/openocd` to **OPENOCD** and `/usr/local/share/openocd/scripts` to **OPENOCD_DEFAULT_PATH** will works
-with openocd that install with default configuration.
+with OpenOCD that install with default configuration.
 This configuration also works with an environment that is set up by `pico_setup.sh`_ script.
 
 **RPI_PICO_DEBUG_ADAPTER** specifies what debug adapter is used for debugging.
@@ -128,11 +145,11 @@ Any other SWD debug adapter maybe also work with this configuration.
 So you can omit the option in `west flash` and `west debug` execution,
 you need only the `west build` case.
 
-**RPI_PICO_DEBUG_ADAPTER** is used in an argument to openocd as `"source [find interface/${RPI_PICO_DEBUG_ADAPTER}.cfg]"`.
+**RPI_PICO_DEBUG_ADAPTER** is used in an argument to OpenOCD as `"source [find interface/${RPI_PICO_DEBUG_ADAPTER}.cfg]"`.
 Thus, **RPI_PICO_DEBUG_ADAPTER** needs to assign from the definition file name of debugging adapter.
 
 You can also flash the board with the following
-command that directly call openocd (assuming JLink is used):
+command that directly call OpenOCD (assuming a SEGGER JLink adapter is used):
 
 .. code-block:: console
 
@@ -150,8 +167,20 @@ UF2 file should be drag-and-dropped to the device, which will flash the Pico.
 Debugging
 =========
 
-The SWD interface can also be used to debug the board. To achieve this,
-install openocd as described for flashing the board.
+The SWD interface can also be used to debug the board. To achieve this, you can
+either user SEGGER JLink or OpenOCD.
+
+Using SEGGER JLink
+------------------
+
+Use a SEGGER JLink debug probe and follow the instruction in
+:ref:`Building, Flashing and Debugging<west-debugging>`.
+
+
+Using OpenOCD
+-------------
+
+Install OpenOCD as described for flashing the board.
 
 .. note::
   `fork of OpenOCD supporting RP2040`_ does not provide ZephyrRTOS enhancement.
@@ -169,7 +198,7 @@ Here is an example for debugging the :ref:`blinky-sample` application.
 As with flashing, you can specify the debug adapter by specifying **RPI_PICO_DEBUG_ADAPTER**
 at `west build` time. No needs to specify it at `west debug` time.
 
-You can also debugging with openocd and gdb launching from command-line.
+You can also debugging with OpenOCD and gdb launching from command-line.
 Run the following command:
 
 .. code-block:: console

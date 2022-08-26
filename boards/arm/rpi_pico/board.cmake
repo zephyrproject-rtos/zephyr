@@ -25,4 +25,7 @@ board_runner_args(openocd --cmd-pre-init "source [find target/rp2040.cfg]")
 # But if not so, set 2000 to adapter speed.
 board_runner_args(openocd --cmd-pre-init "set_adapter_speed_if_not_set 2000")
 
+board_runner_args(jlink "--device=RP2040_M0_0")
+
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
