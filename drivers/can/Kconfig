@@ -24,12 +24,30 @@ config CAN_INIT_PRIORITY
 	  CAN driver device initialization priority.
 
 config CAN_SHELL
-	bool "CAN Shell"
+	bool "CAN shell"
 	default y
 	depends on SHELL
 	select POLL
 	help
 	  Enable CAN Shell for testing.
+
+if CAN_SHELL
+
+config CAN_SHELL_TX_QUEUE_SIZE
+	int "CAN shell transmit queue size"
+	default 5
+	range 1 256
+	help
+	  Maximum number of events in the CAN shell transmit queue.
+
+config CAN_SHELL_RX_QUEUE_SIZE
+	int "CAN shell receive queue size"
+	default 5
+	range 1 256
+	help
+	  Maximum number of CAN frames in the CAN shell receive queue.
+
+endif # CAN_SHELL
 
 config CAN_STATS
 	bool "CAN controller device statistics"
