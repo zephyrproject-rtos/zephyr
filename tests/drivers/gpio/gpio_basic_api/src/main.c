@@ -91,14 +91,18 @@ static void board_setup(void)
 #endif
 }
 
-void test_main(void)
+static void *gpio_basic_setup(void)
 {
 	board_setup();
-	ztest_test_suite(gpio_basic_test,
-			 ztest_unit_test(test_gpio_port),
-			 ztest_unit_test(test_gpio_callback_add_remove),
-			 ztest_unit_test(test_gpio_callback_self_remove),
-			 ztest_unit_test(test_gpio_callback_enable_disable),
-			 ztest_unit_test(test_gpio_callback_variants));
-	ztest_run_test_suite(gpio_basic_test);
+
+	return NULL;
 }
+
+/* Test GPIO port configuration */
+ZTEST_SUITE(gpio_port, NULL, gpio_basic_setup, NULL, NULL, NULL);
+
+/* Test GPIO callback management */
+ZTEST_SUITE(gpio_cb_mgnt, NULL, gpio_basic_setup, NULL, NULL, NULL);
+
+/* Test GPIO callbacks */
+ZTEST_SUITE(gpio_cb_vari, NULL, gpio_basic_setup, NULL, NULL, NULL);

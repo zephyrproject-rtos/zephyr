@@ -118,7 +118,7 @@ err_exit:
 }
 
 /* export test cases */
-void test_gpio_callback_variants(void)
+ZTEST(gpio_vari, test_gpio_callback_variants)
 {
 	zassert_equal(test_callback(GPIO_INT_EDGE_FALLING), TC_PASS,
 		      "falling edge failed");
