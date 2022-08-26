@@ -415,7 +415,7 @@ this:
        - <item2>
        ...
        - <itemN>
-     const: <string | int>
+     const: <string | int | array | uint8-array | string-array>
 
 Required properties
 +++++++++++++++++++

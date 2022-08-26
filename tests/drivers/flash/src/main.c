@@ -44,7 +44,7 @@
 #error "Unsupported configuraiton"
 #endif
 
-#define EXPECTED_SIZE	256
+#define EXPECTED_SIZE	512
 #define CANARY		0xff
 
 static const struct device *const flash_dev = TEST_AREA_DEVICE;

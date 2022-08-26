@@ -19,8 +19,4 @@ config NUM_IRQS
 config SPI
 	default y
 
-config USB_KINETIS
-	default y
-	depends on USB_DEVICE_DRIVER
-
 endif # SOC_MKW2xD512

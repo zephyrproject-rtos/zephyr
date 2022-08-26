@@ -46,12 +46,4 @@ config DMA_SAM_XDMAC
 	default y
 	depends on DMA
 
-config I2S_SAM_SSC
-	default y
-	depends on I2S
-
-config USB_DC_SAM_USBHS
-	default y
-	depends on USB_DEVICE_DRIVER
-
 endif # SOC_SERIES_SAMV71

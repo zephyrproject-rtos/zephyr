@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -15,8 +16,7 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			clock-frequency = <120000000>;
-			device_type = "cpu";
+			clock-frequency = <DT_FREQ_M(120)>;
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
 			#address-cells = <1>;
@@ -29,11 +29,9 @@
 			compatible = "mmio-sram";
 		};
 
-		FMC: flash-controller@40022000 {
+		fmc: flash-controller@40022000 {
 			compatible = "gd,gd32-flash-controller";
 			reg = <0x40022000 0x400>;
-			peripheral-id = <6>;
-
 			#address-cells = <1>;
 			#size-cells = <1>;
 

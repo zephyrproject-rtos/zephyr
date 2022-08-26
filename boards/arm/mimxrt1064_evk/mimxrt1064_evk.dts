@@ -203,10 +203,6 @@ arduino_i2c: &lpi2c1 {};
 	};
 };
 
-&flexspi2 {
-	status = "okay";
-};
-
 &w25q32jvwj0 {
 	partitions {
 		compatible = "fixed-partitions";

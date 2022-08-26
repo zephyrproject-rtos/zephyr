@@ -31,9 +31,10 @@
 &flexspi {
 	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(4)>;
-	is25wp032: is25wp032@0 {
+	/* 4 MB internal flash present on chip */
+	w25q32jvwj0: w25q32jvwj0@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(32)>;
+		size = <DT_SIZE_M(4)>;
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";
@@ -51,6 +52,8 @@
 		/delete-node/ gpio@42004000;
 		/delete-node/ gpio@42008000;
 		/delete-node/ gpio@4200c000;
+		/* RT1024 has only one flexSPI controller */
+		/delete-node/ spi@402a4000;
 	};
 };
 

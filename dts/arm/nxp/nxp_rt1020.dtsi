@@ -35,6 +35,8 @@
 		/delete-node/ gpio@42004000;
 		/delete-node/ gpio@42008000;
 		/delete-node/ gpio@4200c000;
+		/* RT1020 has only one flexSPI controller */
+		/delete-node/ spi@402a4000;
 	};
 };
 

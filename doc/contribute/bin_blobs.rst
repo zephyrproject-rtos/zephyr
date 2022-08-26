@@ -222,5 +222,29 @@ the integration of such blob for the foreseeable future.
 Submission and review process
 =============================
 
-This section will be updated once the standard format for describing binary
-blobs is agreed upon.
+For references to binary blobs to be included in the project, they must be
+reviewed and accepted by the Technical Steering Committee (TSC). This process is
+only required for new binary blobs, updates to binary blobs follow the
+:ref:`module update procedure <modules_changes>`.
+
+A request for integration with binary blobs must be made by creating a new
+issue in the Zephyr project issue tracking system on GitHub with details
+about the blobs and the functionality they provide to the project.
+
+Follow the steps below to begin the submission process:
+
+#. Make sure to read through the :ref:`bin-blobs` section in
+   detail, so that you are informed of the criteria used by the TSC in order to
+   approve or reject a request
+#. Use the :github:`New Binary Blobs Issue
+   <new?assignees=&labels=RFC&template=bin-blobs.md&title=>` to open an issue
+#. Fill out all required sections, making sure you provide enough detail for the
+   TSC to assess the merit of the request. Additionally you must also create a Pull
+   Request that demonstrates the integration of the binary blobs and then
+   link to it from the issue
+#. Wait for feedback from the TSC, respond to any additional questions added as
+   GitHub issue comments
+
+If, after consideration by the TSC, the submission of the binary blob(s) is
+approved, the submission process is complete and the binary blob(s) can be
+integrated.

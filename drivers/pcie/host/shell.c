@@ -205,6 +205,11 @@ static int cmd_pcie_ls(const struct shell *sh, size_t argc, char **argv)
 		if (bdf == PCIE_BDF_NONE) {
 			bdf = get_bdf(argv[i]);
 		}
+
+		if (bdf == PCIE_BDF_NONE) {
+			shell_error(sh, "Unknown parameter: %s", argv[i]);
+			return -EINVAL;
+		}
 	}
 
 	/* Show only specified device */
@@ -224,10 +229,11 @@ static int cmd_pcie_ls(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pcie_cmds,
-			       SHELL_CMD(ls, NULL,
-					 "List PCIE devices", cmd_pcie_ls),
-			       SHELL_SUBCMD_SET_END /* Array terminated. */
-		);
-
+	SHELL_CMD_ARG(ls, NULL,
+		      "List PCIE devices\n"
+		      "Usage: ls [bus:device:function] [dump]",
+		      cmd_pcie_ls, 1, 2),
+	SHELL_SUBCMD_SET_END /* Array terminated. */
+);
 
 SHELL_CMD_REGISTER(pcie, &sub_pcie_cmds, "PCI(e) device information", cmd_pcie_ls);

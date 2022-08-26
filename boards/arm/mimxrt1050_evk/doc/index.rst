@@ -122,6 +122,8 @@ features:
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | entropy                             |
 +-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 

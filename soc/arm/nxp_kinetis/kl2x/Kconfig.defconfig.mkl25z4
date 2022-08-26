@@ -11,8 +11,4 @@ config SOC
 config NUM_IRQS
 	default 32
 
-config USB_KINETIS
-	default y
-	depends on USB_DEVICE_DRIVER
-
 endif # SOC_MKL25Z
