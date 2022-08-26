@@ -118,6 +118,10 @@ config CBPRINTF_LIBC_SUBSTS
 	  When used with CBPRINTF_NANO this increases the implementation code
 	  size by a small amount.
 
+module = CBPRINTF_PACKAGE
+module-str = cbprintf_package
+source "subsys/logging/Kconfig.template.log_config"
+
 config CBPRINTF_PACKAGE_LONGDOUBLE
 	bool "Support packaging of long doubles"
 	help
