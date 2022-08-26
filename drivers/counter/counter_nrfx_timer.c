@@ -291,7 +291,7 @@ static int init_timer(const struct device *dev,
 
 	nrf_timer_bit_width_set(reg, config->bit_width);
 	nrf_timer_mode_set(reg, config->mode);
-	nrf_timer_frequency_set(reg, config->freq);
+	nrf_timer_prescaler_set(reg, config->freq);
 
 	nrf_timer_cc_set(reg, TOP_CH, counter_get_max_top_value(dev));
 
