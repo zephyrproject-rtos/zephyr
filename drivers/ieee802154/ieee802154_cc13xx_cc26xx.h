@@ -9,6 +9,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/ieee802154.h>
 
 #include <ti/drivers/rf/RF.h>
 
@@ -21,7 +22,6 @@
 #define IEEE802154_2450MHZ_OQPSK_SYMBOLS_PER_SECOND 62500
 
 /* IEEE 802.15.4-2006 PHY constants (6.4.1) */
-#define IEEE802154_MAX_PHY_PACKET_SIZE 127
 #define IEEE802154_TURNAROUND_TIME 12
 
 /* IEEE 802.15.4-2006 PHY PIB attributes (6.4.2) */
@@ -43,9 +43,6 @@
 #define IEEE802154_MAC_ACK_WAIT_DURATION                                       \
 	(IEEE802154_TURNAROUND_TIME + IEEE802154_PHY_SHR_DURATION +            \
 	 IEEE802154_ACK_FRAME_OCTETS * IEEE802154_PHY_SYMBOLS_PER_OCTET)
-
-/* Reserve two bytes for 16-bit CRC */
-#define IEEE802154_MTU (IEEE802154_MAX_PHY_PACKET_SIZE - 2)
 
 #define CC13XX_CC26XX_RAT_CYCLES_PER_SECOND 4000000
 
