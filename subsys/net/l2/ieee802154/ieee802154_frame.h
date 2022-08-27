@@ -475,10 +475,11 @@ struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(uint8_t *buf, uint8_t **p_
 
 bool ieee802154_validate_frame(uint8_t *buf, uint8_t length, struct ieee802154_mpdu *mpdu);
 
-uint8_t ieee802154_compute_header_and_authtag_size(struct net_if *iface, struct net_linkaddr *dst);
+uint8_t ieee802154_compute_header_and_authtag_size(struct net_if *iface, struct net_linkaddr *dst,
+						   struct net_linkaddr *src);
 
 bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_linkaddr *dst,
-				  struct net_buf *frag, uint8_t hdr_size);
+				  struct net_linkaddr *src, struct net_buf *buf, uint8_t hdr_len);
 
 struct net_pkt *ieee802154_create_mac_cmd_frame(struct net_if *iface, enum ieee802154_cfi type,
 						struct ieee802154_frame_params *params);

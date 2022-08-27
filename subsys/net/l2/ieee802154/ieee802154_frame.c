@@ -436,7 +436,8 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length, struct ieee802154_m
 	return validate_payload_and_mfr(mpdu, buf, p_buf, &length);
 }
 
-uint8_t ieee802154_compute_header_and_authtag_size(struct net_if *iface, struct net_linkaddr *dst)
+uint8_t ieee802154_compute_header_and_authtag_size(struct net_if *iface, struct net_linkaddr *dst,
+						   struct net_linkaddr *src)
 {
 	bool broadcast = !dst->addr;
 	uint8_t hdr_len = sizeof(struct ieee802154_fcf_seq);
@@ -448,7 +449,7 @@ uint8_t ieee802154_compute_header_and_authtag_size(struct net_if *iface, struct 
 	hdr_len += broadcast ? IEEE802154_SHORT_ADDR_LENGTH : dst->len;
 
 	/* Source Address - see data_addr_to_fs_settings() */
-	hdr_len += broadcast ? IEEE802154_EXT_ADDR_LENGTH : dst->len;
+	hdr_len += broadcast ? IEEE802154_EXT_ADDR_LENGTH : (src->addr ? src->len : dst->len);
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	if (broadcast) {
@@ -528,16 +529,16 @@ static inline enum ieee802154_addressing_mode get_dst_addr_mode(struct net_linka
 {
 	if (!dst->addr) {
 		NET_DBG("Broadcast destination");
-
 		*broadcast = true;
-
 		return IEEE802154_ADDR_MODE_SHORT;
 	}
 
-	*broadcast = false;
-
 	if (dst->len == IEEE802154_SHORT_ADDR_LENGTH) {
+		uint16_t short_addr = ntohs(*(uint16_t *)(dst->addr));
+		*broadcast = (short_addr == 0xffff);
 		return IEEE802154_ADDR_MODE_SHORT;
+	} else {
+		*broadcast = false;
 	}
 
 	if (dst->len == IEEE802154_EXT_ADDR_LENGTH) {
@@ -560,13 +561,17 @@ static inline bool data_addr_to_fs_settings(struct net_linkaddr *dst, struct iee
 			params->dst.short_addr = IEEE802154_BROADCAST_ADDRESS;
 			params->dst.len = IEEE802154_SHORT_ADDR_LENGTH;
 			fs->fc.ar = 0U;
+		} else if (dst->len == IEEE802154_SHORT_ADDR_LENGTH) {
+			params->dst.short_addr = ntohs(*(uint16_t *)(dst->addr));
+			params->dst.len = IEEE802154_SHORT_ADDR_LENGTH;
 		} else {
+			__ASSERT_NO_MSG(dst->len == IEEE802154_EXT_ADDR_LENGTH);
 			params->dst.ext_addr = dst->addr;
-			params->dst.len = dst->len;
+			params->dst.len = IEEE802154_EXT_ADDR_LENGTH;
 		}
 	}
 
-	if (fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT && !broadcast) {
+	if (params->short_addr) {
 		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_SHORT;
 	} else {
 		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
@@ -652,9 +657,9 @@ static uint8_t *generate_aux_security_hdr(struct ieee802154_security_ctx *sec_ct
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
 bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_linkaddr *dst,
-				  struct net_buf *buf, uint8_t hdr_len)
+				  struct net_linkaddr *src, struct net_buf *buf, uint8_t hdr_len)
 {
-	struct ieee802154_frame_params params;
+	struct ieee802154_frame_params params = {0};
 	struct ieee802154_fcf_seq *fs;
 	uint8_t *p_buf = buf->data;
 	uint8_t *buf_start = p_buf;
@@ -667,6 +672,9 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 
 	params.dst.pan_id = ctx->pan_id;
 	params.pan_id = ctx->pan_id;
+	if (src->addr && src->len == IEEE802154_SHORT_ADDR_LENGTH) {
+		params.short_addr = ntohs(*(uint16_t *)(src->addr));
+	}
 
 	broadcast = data_addr_to_fs_settings(dst, fs, &params);
 
