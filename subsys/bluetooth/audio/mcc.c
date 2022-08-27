@@ -1807,7 +1807,7 @@ int bt_mcc_read_player_name(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -1836,7 +1836,7 @@ int bt_mcc_read_icon_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -1864,7 +1864,7 @@ int bt_mcc_read_icon_url(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -1891,7 +1891,7 @@ int bt_mcc_read_track_title(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -1918,7 +1918,7 @@ int bt_mcc_read_track_duration(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -1945,7 +1945,7 @@ int bt_mcc_read_track_position(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -1972,7 +1972,7 @@ int bt_mcc_set_track_position(struct bt_conn *conn, int32_t pos)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2005,7 +2005,7 @@ int bt_mcc_read_playback_speed(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2032,7 +2032,7 @@ int bt_mcc_set_playback_speed(struct bt_conn *conn, int8_t speed)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2065,7 +2065,7 @@ int bt_mcc_read_seeking_speed(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2093,7 +2093,7 @@ int bt_mcc_read_segments_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2120,7 +2120,7 @@ int bt_mcc_read_current_track_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2147,7 +2147,7 @@ int bt_mcc_set_current_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2183,7 +2183,7 @@ int bt_mcc_read_next_track_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2210,7 +2210,7 @@ int bt_mcc_set_next_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2246,7 +2246,7 @@ int bt_mcc_read_parent_group_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2273,7 +2273,7 @@ int bt_mcc_read_current_group_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2300,7 +2300,7 @@ int bt_mcc_set_current_group_obj_id(struct bt_conn *conn, uint64_t obj_id)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2337,7 +2337,7 @@ int bt_mcc_read_playing_order(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2364,7 +2364,7 @@ int bt_mcc_set_playing_order(struct bt_conn *conn, uint8_t order)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2397,7 +2397,7 @@ int bt_mcc_read_playing_orders_supported(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2424,7 +2424,7 @@ int bt_mcc_read_media_state(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2452,7 +2452,7 @@ int bt_mcc_send_cmd(struct bt_conn *conn, const struct mpl_cmd *cmd)
 	int err;
 	int length = sizeof(cmd->opcode);
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2490,7 +2490,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2518,7 +2518,7 @@ int bt_mcc_send_search(struct bt_conn *conn, const struct mpl_search *search)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2551,7 +2551,7 @@ int bt_mcc_read_search_results_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2579,7 +2579,7 @@ int bt_mcc_read_content_control_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(!conn || !cur_mcs_inst) {
 		return -EINVAL;
 	}
 
@@ -2957,6 +2957,10 @@ int bt_mcc_otc_read_object_metadata(struct bt_conn *conn)
 {
 	int err;
 
+	CHECKIF(!conn || !cur_mcs_inst) {
+		return -EINVAL;
+	}
+
 	err = bt_ots_client_read_object_metadata(&cur_mcs_inst->otc, conn,
 						 BT_OTS_METADATA_REQ_ALL);
 	if (err) {
@@ -2970,6 +2974,10 @@ int bt_mcc_otc_read_object_metadata(struct bt_conn *conn)
 int bt_mcc_otc_read_icon_object(struct bt_conn *conn)
 {
 	int err;
+
+	CHECKIF(!conn || !cur_mcs_inst) {
+		return -EINVAL;
+	}
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	cur_mcs_inst->otc.cb->obj_data_read = on_icon_content;
@@ -2986,6 +2994,9 @@ int bt_mcc_otc_read_track_segments_object(struct bt_conn *conn)
 {
 	int err;
 
+	CHECKIF(!conn || !cur_mcs_inst) {
+		return -EINVAL;
+	}
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
@@ -3003,6 +3014,9 @@ int bt_mcc_otc_read_current_track_object(struct bt_conn *conn)
 {
 	int err;
 
+	CHECKIF(!conn || !cur_mcs_inst) {
+		return -EINVAL;
+	}
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
@@ -3020,6 +3034,9 @@ int bt_mcc_otc_read_next_track_object(struct bt_conn *conn)
 {
 	int err;
 
+	CHECKIF(!conn || !cur_mcs_inst) {
+		return -EINVAL;
+	}
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
@@ -3037,6 +3054,9 @@ int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn)
 {
 	int err;
 
+	CHECKIF(!conn || !cur_mcs_inst) {
+		return -EINVAL;
+	}
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
@@ -3056,6 +3076,9 @@ int bt_mcc_otc_read_current_group_object(struct bt_conn *conn)
 {
 	int err;
 
+	CHECKIF(!conn || !cur_mcs_inst) {
+		return -EINVAL;
+	}
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
