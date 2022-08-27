@@ -19,19 +19,15 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/toolchain.h>
 
-#define IEEE802154_MIN_LENGTH	     3
-/*
- * See IEEE 802.15.4-2006, section 7.2.1.4 - all further references
- * refer to IEEE 802.15.4-2006 unless otherwise specified.
+/* All specification references in this file refer to IEEE 802.15.4-2006
+ * unless otherwise noted.
  */
-#define IEEE802154_BROADCAST_ADDRESS 0xFFFF
-#define IEEE802154_BROADCAST_PAN_ID  0xFFFF
+
+#define IEEE802154_MIN_LENGTH	     3
 /* ACK packet size is the minimum size, see section 7.2.2.3 */
 #define IEEE802154_ACK_PKT_LENGTH    IEEE802154_MIN_LENGTH
 
 #define IEEE802154_FCF_SEQ_LENGTH     3
-#define IEEE802154_EXT_ADDR_LENGTH    8
-#define IEEE802154_SHORT_ADDR_LENGTH  2
 #define IEEE802154_SIMPLE_ADDR_LENGTH 1
 #define IEEE802154_PAN_ID_LENGTH      2
 
