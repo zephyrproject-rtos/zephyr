@@ -67,6 +67,7 @@ struct net_eth_addr {
 #define NET_ETH_PTYPE_ALL               0x0003 /* from linux/if_ether.h */
 #define NET_ETH_PTYPE_ECAT		0x88a4
 #define NET_ETH_PTYPE_EAPOL		0x888e
+#define NET_ETH_PTYPE_IEEE802154	0x00F6 /* from linux/if_ether.h: IEEE802.15.4 frame */
 
 #if !defined(ETH_P_ALL)
 #define ETH_P_ALL	NET_ETH_PTYPE_ALL
@@ -88,6 +89,9 @@ struct net_eth_addr {
 #endif
 #if !defined(ETH_P_ECAT)
 #define  ETH_P_ECAT	NET_ETH_PTYPE_ECAT
+#endif
+#if !defined(ETH_P_IEEE802154)
+#define  ETH_P_IEEE802154 NET_ETH_PTYPE_IEEE802154
 #endif
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
