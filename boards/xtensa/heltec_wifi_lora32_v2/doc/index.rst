@@ -18,7 +18,7 @@ The features include the following:
   RF shielding, and other protection measures
 - Onboard SH1.25-2 battery interface, integrated lithium battery management system
 - Integrated WiFi, LoRa, Bluetooth three network connections, onboard Wi-Fi, Bluetooth dedicated 2.4GHz
-   metal 3D antenna, reserved IPEX (U.FL) interface for LoRa use
+  metal 3D antenna, reserved IPEX (U.FL) interface for LoRa use
 - Onboard 0.96-inch 128*64 dot matrix OLED display
 - Integrated CP2102 USB to serial port chip
 
@@ -108,11 +108,28 @@ You can debug an application in the usual way. Here is an example for the :ref:`
    :board: heltec_wifi_lora32_v2
    :goals: debug
 
+Utilizing Hardware Features
+***************************
+
+Onboard OLED display
+--------------------
+
+The onboard OLED display is of type ``ssd1306``, has 128*64 pixels and is
+connected via I2C. It can therefore be used by enabling the
+:ref:`ssd1306_128_shield` as shown in the following for the :ref:`lvgl-sample`:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/display/lvgl
+   :board: heltec_wifi_lora32_v2
+   :shield: ssd1306_128x64
+   :goals: flash
+
 References
 **********
 
+- `Heltec WiFi LoRa (v2) Pinout Diagram <https://resource.heltec.cn/download/WiFi_LoRa_32/WIFI_LoRa_32_V2.pdf>`_
+- `Heltec WiFi LoRa (v2) Schematic Diagrams <https://resource.heltec.cn/download/WiFi_LoRa_32/V2>`_
+- `ESP32 Toolchain <https://docs.espressif.com/projects/esp-idf/en/v4.2/esp32/api-guides/tools/idf-tools.html#xtensa-esp32-elf>`_
+- `esptool documentation <https://github.com/espressif/esptool/blob/master/README.md>`_
+
 .. [1] https://heltec.org/project/wifi-lora-32/
-.. _`Heltec WiFi LoRa (v2) Pinout Diagram`: https://resource.heltec.cn/download/WiFi_LoRa_32/WIFI_LoRa_32_V2.pdf
-.. _`Heltec WiFi LoRa (v2) Schematic Diagrams`: https://resource.heltec.cn/download/WiFi_LoRa_32/V2
-.. _`ESP32 Toolchain`: https://docs.espressif.com/projects/esp-idf/en/v4.2/esp32/api-guides/tools/idf-tools.html#xtensa-esp32-elf
-.. _`esptool documentation`: https://github.com/espressif/esptool/blob/master/README.md
