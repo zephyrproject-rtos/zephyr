@@ -233,10 +233,9 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 		context.connecting = false;
 
 		return -ENOEXEC;
-	} else {
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Connection requested\n");
 	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "Connection requested\n");
 
 	return 0;
 }
@@ -281,9 +280,9 @@ static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 		shell_fprintf(sh, SHELL_WARNING, "Scan request failed\n");
 
 		return -ENOEXEC;
-	} else {
-		shell_fprintf(sh, SHELL_NORMAL, "Scan requested\n");
 	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "Scan requested\n");
 
 	return 0;
 }
@@ -328,7 +327,6 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 				wifi_mfp_txt(status.mfp));
 		shell_fprintf(sh, SHELL_NORMAL, "RSSI: %d\n", status.rssi);
 	}
-
 
 	return 0;
 }
@@ -399,9 +397,9 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
 		shell_fprintf(sh, SHELL_WARNING, "AP mode failed\n");
 		return -ENOEXEC;
-	} else {
-		shell_fprintf(sh, SHELL_NORMAL, "AP mode enabled\n");
 	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "AP mode enabled\n");
 
 	return 0;
 }
@@ -415,9 +413,9 @@ static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 		shell_fprintf(sh, SHELL_WARNING, "AP mode disable failed\n");
 
 		return -ENOEXEC;
-	} else {
-		shell_fprintf(sh, SHELL_NORMAL, "AP mode disabled\n");
 	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "AP mode disabled\n");
 
 	return 0;
 }
