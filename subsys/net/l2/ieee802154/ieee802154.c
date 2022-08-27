@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #define BUF_TIMEOUT K_MSEC(50)
 
-NET_BUF_POOL_DEFINE(frame_buf_pool, 1, IEEE802154_MTU, 8, NULL);
+NET_BUF_POOL_DEFINE(tx_frame_buf_pool, 1, IEEE802154_MTU, 8, NULL);
 
 #define PKT_TITLE    "IEEE 802.15.4 packet content:"
 #define TX_PKT_TITLE "> " PKT_TITLE
@@ -240,21 +240,64 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	static struct net_buf *frame_buf;
+	uint8_t ll_hdr_len = 0;
+	bool send_raw = false;
+#ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
+	struct ieee802154_6lo_fragment_ctx f_ctx;
+	int requires_fragmentation = 0;
+#endif
+
 	if (frame_buf == NULL) {
-		frame_buf = net_buf_alloc(&frame_buf_pool, K_FOREVER);
+		frame_buf = net_buf_alloc(&tx_frame_buf_pool, K_FOREVER);
 	}
 
-	struct net_linkaddr *ll_addr_dst = net_pkt_lladdr_dst(pkt);
-	uint8_t ll_hdr_len = ieee802154_compute_header_and_authtag_size(iface, ll_addr_dst);
+#if defined(CONFIG_NET_SOCKETS_PACKET)
+	uint8_t pkt_family = net_pkt_family(pkt);
+
+	if (pkt_family == AF_PACKET) {
+		struct net_context *context = net_pkt_context(pkt);
+
+		if (!context) {
+			return -EINVAL;
+		}
+		switch (net_context_get_type(context)) {
+		case SOCK_RAW:
+			send_raw = true;
+			break;
+#if defined(CONFIG_NET_SOCKETS_PACKET_DGRAM)
+		case SOCK_DGRAM: {
+			struct sockaddr_ll *dst_addr = (struct sockaddr_ll *)&context->remote;
+			struct sockaddr_ll_ptr *src_addr =
+				(struct sockaddr_ll_ptr *)&context->local;
+
+			net_pkt_lladdr_dst(pkt)->addr = dst_addr->sll_addr;
+			net_pkt_lladdr_dst(pkt)->len = dst_addr->sll_halen;
+			net_pkt_lladdr_src(pkt)->addr = src_addr->sll_addr;
+			net_pkt_lladdr_src(pkt)->len = src_addr->sll_halen;
+			break;
+		}
+#endif
+		default:
+			return -EINVAL;
+		}
+	}
+#endif /* CONFIG_NET_SOCKETS_PACKET */
+
+	if (!send_raw) {
+		ll_hdr_len = ieee802154_compute_header_and_authtag_size(
+			iface, net_pkt_lladdr_dst(pkt), net_pkt_lladdr_src(pkt));
 
 #ifdef CONFIG_NET_6LO
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
-	struct ieee802154_6lo_fragment_ctx f_ctx;
-	bool requires_fragmentation = ieee802154_6lo_encode_pkt(iface, pkt, &f_ctx, ll_hdr_len);
+		requires_fragmentation = ieee802154_6lo_encode_pkt(iface, pkt, &f_ctx, ll_hdr_len);
+		if (requires_fragmentation < 0) {
+			return requires_fragmentation;
+		}
 #else
-	ieee802154_6lo_encode_pkt(iface, pkt, NULL, ll_hdr_len);
+		ieee802154_6lo_encode_pkt(iface, pkt, NULL, ll_hdr_len);
 #endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
 #endif /* CONFIG_NET_6LO */
+	}
 
 	net_capture_pkt(iface, pkt);
 
@@ -276,11 +319,18 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 			buf = buf->frags;
 		}
 #else
+
+		if (buf->len > IEEE802154_MTU) {
+			NET_ERR("Wrong packet length: %d", buf->len);
+			return -EINVAL;
+		}
 		net_buf_add_mem(frame_buf, buf->data, buf->len);
 		buf = buf->frags;
 #endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
 
-		if (!ieee802154_create_data_frame(ctx, ll_addr_dst, frame_buf, ll_hdr_len)) {
+		if (!(send_raw || ieee802154_create_data_frame(ctx, net_pkt_lladdr_dst(pkt),
+							       net_pkt_lladdr_src(pkt),
+							       frame_buf, ll_hdr_len))) {
 			return -EINVAL;
 		}
 
