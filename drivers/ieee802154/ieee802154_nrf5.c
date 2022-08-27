@@ -1174,7 +1174,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 #if defined(CONFIG_NET_L2_IEEE802154)
 #define L2 IEEE802154_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(IEEE802154_L2)
-#define MTU 125
+#define MTU IEEE802154_MTU
 #elif defined(CONFIG_NET_L2_OPENTHREAD)
 #define L2 OPENTHREAD_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
