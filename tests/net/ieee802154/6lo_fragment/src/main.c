@@ -438,11 +438,11 @@ static struct net_fragment_data test_data_8 = {
 	.iphc = false
 };
 
-static uint8_t frame_buffer_data[IEEE802154_MTU - 2];
+static uint8_t frame_buffer_data[IEEE802154_MTU];
 
 static struct net_buf frame_buf = {
 	.data = frame_buffer_data,
-	.size = IEEE802154_MTU - 2,
+	.size = IEEE802154_MTU,
 	.frags = NULL,
 	.__buf = frame_buffer_data,
 };

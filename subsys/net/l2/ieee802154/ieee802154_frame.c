@@ -814,8 +814,7 @@ struct net_pkt *ieee802154_create_mac_cmd_frame(struct net_if *iface, enum ieee8
 	/* It would be costly to compute the size when actual frame are never
 	 * bigger than 125 bytes, so let's allocate that size as buffer.
 	 */
-	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_MTU - IEEE802154_MFR_LENGTH, AF_UNSPEC, 0,
-					BUF_TIMEOUT);
+	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_MTU, AF_UNSPEC, 0, BUF_TIMEOUT);
 	if (!pkt) {
 		return NULL;
 	}
