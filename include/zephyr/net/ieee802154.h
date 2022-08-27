@@ -29,6 +29,13 @@ extern "C" {
  */
 
 #define IEEE802154_MAX_ADDR_LENGTH	8
+
+/* See IEEE 802.15.4-2006, sections 5.5.3.2, 6.4.1 and 7.2.1.9 */
+#define IEEE802154_MAX_PHY_PACKET_SIZE	127
+#define IEEE802154_FCS_LENGTH		2
+#define IEEE802154_MTU			(IEEE802154_MAX_PHY_PACKET_SIZE - IEEE802154_FCS_LENGTH)
+/* TODO: Support flexible MTU for IEEE 802.15.4-2015 */
+
 #define IEEE802154_NO_CHANNEL		USHRT_MAX
 
 struct ieee802154_security_ctx {

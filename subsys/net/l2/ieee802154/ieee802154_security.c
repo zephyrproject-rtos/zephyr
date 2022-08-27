@@ -105,7 +105,7 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *f
 	pkt.in_buf = decrypt_payload_len ? frame + auth_payload_len : NULL;
 	pkt.in_len = decrypt_payload_len;
 	pkt.out_buf = frame;
-	pkt.out_buf_max = IEEE802154_MTU - IEEE802154_MFR_LENGTH;
+	pkt.out_buf_max = IEEE802154_MTU;
 
 	apkt.ad = frame;
 	apkt.ad_len = auth_payload_len;
@@ -145,7 +145,7 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *f
 	pkt.in_buf = encrypt_payload_len ? frame + auth_payload_len : NULL;
 	pkt.in_len = encrypt_payload_len;
 	pkt.out_buf = frame;
-	pkt.out_buf_max = IEEE802154_MTU - IEEE802154_MFR_LENGTH;
+	pkt.out_buf_max = IEEE802154_MTU;
 
 	apkt.ad = frame;
 	apkt.ad_len = auth_payload_len;

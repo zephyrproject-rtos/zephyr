@@ -43,7 +43,7 @@ static const struct device *const ieee802154_dev =
 static struct k_fifo tx_queue;
 
 /* IEEE802.15.4 frame + 1 byte len + 1 byte LQI */
-uint8_t tx_buf[IEEE802154_MTU + 1 + 1];
+uint8_t tx_buf[IEEE802154_MAX_PHY_PACKET_SIZE + 1 + 1];
 
 /**
  * Stack for the tx thread.
