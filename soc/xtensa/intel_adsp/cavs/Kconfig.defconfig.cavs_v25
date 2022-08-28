@@ -18,33 +18,9 @@ config SOC_SERIES_INTEL_CAVS_V25
 config MP_NUM_CPUS
 	default 2
 
-config SMP
-	default y
-
-config XTENSA_TIMER
-	default n
-
-config INTEL_ADSP_TIMER
-	default y
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 400000000 if XTENSA_TIMER
 	default 38400000 if INTEL_ADSP_TIMER
-
-config SYS_CLOCK_TICKS_PER_SEC
-	default 50000
-
-config KERNEL_ENTRY
-	default "_MainEntry"
-
-config MULTI_LEVEL_INTERRUPTS
-	default y
-
-config 2ND_LEVEL_INTERRUPTS
-	default y
-
-config DYNAMIC_INTERRUPTS
-	default y
 
 config CAVS_ICTL_0_OFFSET
 	default 6
@@ -73,12 +49,6 @@ config 2ND_LVL_ISR_TBL_OFFSET
 
 config CAVS_ISR_TBL_OFFSET
 	default 2ND_LVL_ISR_TBL_OFFSET
-
-if LOG
-config LOG_BACKEND_ADSP
-	default y
-
-endif # LOG
 
 if KERNEL_VM_SUPPORT
 
