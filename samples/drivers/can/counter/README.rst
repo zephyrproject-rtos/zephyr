@@ -1,7 +1,7 @@
-.. _can-sample:
+.. _can-counter-sample:
 
-Controller Area Network
-#######################
+Controller Area Network (CAN) Counter
+#####################################
 
 Overview
 ********
@@ -9,7 +9,8 @@ Overview
 This sample demonstrates how to use the Controller Area Network (CAN) API.
 Messages with standard and extended identifiers are sent over the bus.
 Messages are received using message-queues and work-queues.
-Reception is indicated by blinking the LED (if present) and output to the console.
+Reception is indicated by blinking the LED (if present) and output of
+received counter values to the console.
 
 Building and Running
 ********************
@@ -29,7 +30,7 @@ Integrated CAN controller
 For the NXP TWR-KE18F board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/can
+   :zephyr-app: samples/drivers/can/counter
    :board: twr_ke18f
    :goals: build flash
 
@@ -40,7 +41,7 @@ For the nrf52dk_nrf52832 board combined with the DFRobot CAN bus V2.0 shield tha
 provides the MCP2515 CAN controller:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/can
+   :zephyr-app: samples/drivers/can/counter
    :board: nrf52dk_nrf52832
    :shield: dfrobot_can_bus_v2_0
    :goals: build flash
