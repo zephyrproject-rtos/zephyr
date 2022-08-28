@@ -28,6 +28,7 @@
 #include "esp_timer.h"
 #include "esp_err.h"
 #include "esp32s2/spiram.h"
+#include "esp_clk_internal.h"
 #include <zephyr/sys/printk.h>
 
 extern void rtc_clk_cpu_freq_set_xtal(void);
@@ -94,6 +95,11 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
 	*wdt_rtc_reg &= ~RTC_CNTL_WDT_EN;
 	*wdt_rtc_protect = 0;
+
+	/* Configures the CPU clock, RTC slow and fast clocks, and performs
+	 * RTC slow clock calibration.
+	 */
+	esp_clk_init();
 
 	esp_timer_early_init();
 
