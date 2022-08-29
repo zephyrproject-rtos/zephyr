@@ -84,8 +84,11 @@ these references:
 Supported Features
 ==================
 
-The mimxrt1064_evk board configuration supports the following hardware
-features:
+NXP considers the MIMXRT1064-EVK as the superset board for the i.MX RT10xx
+family of MCUs.  This board is a focus for NXP's Full Platform Support for
+Zephyr, to better enable the entire RT10xx family.  NXP prioritizes enabling
+this board with new support for Zephyr features.  The mimxrt1064_evk board
+configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
