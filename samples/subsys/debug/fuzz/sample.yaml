@@ -2,7 +2,7 @@ sample:
   description: native_posix-based libfuzzer example
   name: fuzz
 tests:
-  debug.fuzz:
+  sample.debug.fuzz:
     toolchain_allow: llvm
     platform_allow: native_posix_64
     harness: console
