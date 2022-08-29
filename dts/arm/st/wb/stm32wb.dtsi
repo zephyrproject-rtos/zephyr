@@ -429,6 +429,12 @@
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
 		io-channels = <&adc1 17>;
+	};
+
+	stm_vbat: stm32vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <3>;
+		io-channels = <&adc1 18>;
 		status = "disabled";
 	};
 

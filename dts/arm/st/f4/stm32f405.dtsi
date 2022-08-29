@@ -254,6 +254,13 @@
 		};
 	};
 
+	stm_vbat: stm32vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <2>;
+		io-channels = <&adc1 18>;
+		status = "disabled";
+	};
+
 	otghs_fs_phy: otghs_fs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;

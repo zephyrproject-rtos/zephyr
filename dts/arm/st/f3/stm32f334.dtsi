@@ -33,6 +33,13 @@
 			#io-channel-cells = <1>;
 		};
 	};
+
+	stm_vbat: stm32vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <2>;
+		io-channels = <&adc1 17>;
+		status = "okay";
+	};
 };
 
 /delete-node/ &usb;

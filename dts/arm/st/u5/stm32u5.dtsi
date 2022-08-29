@@ -609,6 +609,12 @@
 		ts-cal-vrefanalog = <3000>;
 		ts-cal-resolution = <14>;
 		io-channels = <&adc1 19>;
+	};
+
+	stm_vbat: stm32vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <4>;
+		io-channels = <&adc1 18>;
 		status = "disabled";
 	};
 };
