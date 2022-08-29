@@ -67,6 +67,13 @@ MEMORY
 #endif
 }
 
+
+/* The line below defines location alias for .rtc.data section
+ * As C3 only has RTC fast memory, this is not configurable like
+ * on other targets.
+ */
+REGION_ALIAS("rtc_slow_seg", rtc_iram_seg);
+
 /*  Default entry point:  */
 ENTRY(CONFIG_KERNEL_ENTRY)
 
@@ -461,6 +468,23 @@ SECTIONS
     *rtc_wake_stub*.o(COMMON)
     _rtc_bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(rtc_iram_seg)
+
+  /**
+   * This section located in RTC SLOW Memory area.
+   * It holds data marked with RTC_SLOW_ATTR attribute.
+   * See the file "esp_attr.h" for more information.
+   */
+  .rtc.force_slow :
+  {
+    . = ALIGN(4);
+    _rtc_force_slow_start = ABSOLUTE(.);
+    *(.rtc.force_slow .rtc.force_slow.*)
+    . = ALIGN(4) ;
+    _rtc_force_slow_end = ABSOLUTE(.);
+  } > rtc_slow_seg
+
+  /* Get size of rtc slow data */
+  _rtc_slow_length = (_rtc_force_slow_end - _rtc_data_start);
 
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
