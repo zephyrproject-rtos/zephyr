@@ -9,6 +9,8 @@ zephyr_sources(
   loader.c
   )
 
+zephyr_library_sources_ifdef(CONFIG_PM power.c)
+
 # get code-partition slot0 address
 dt_nodelabel(dts_partition_path NODELABEL "slot0_partition")
 dt_reg_addr(img_0_off PATH ${dts_partition_path})
