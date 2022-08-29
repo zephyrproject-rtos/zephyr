@@ -334,7 +334,7 @@ void ztest_test_fail(void)
 	case TEST_PHASE_AFTER:
 	case TEST_PHASE_TEARDOWN:
 	case TEST_PHASE_FRAMEWORK:
-		PRINT(" ERROR: cannot fail in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot fail in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		longjmp(stack_fail, 1);
 	}
@@ -345,7 +345,8 @@ void ztest_test_pass(void)
 	if (phase == TEST_PHASE_TEST) {
 		longjmp(test_pass, 1);
 	}
-	PRINT(" ERROR: cannot pass in test '%s()', bailing\n", get_friendly_phase_name(phase));
+	PRINT(" ERROR: cannot pass in test phase '%s()', bailing\n",
+	      get_friendly_phase_name(phase));
 	longjmp(stack_fail, 1);
 }
 
@@ -357,7 +358,7 @@ void ztest_test_skip(void)
 	case TEST_PHASE_TEST:
 		longjmp(test_skip, 1);
 	default:
-		PRINT(" ERROR: cannot skip in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot skip in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		longjmp(stack_fail, 1);
 	}
@@ -448,7 +449,7 @@ void ztest_test_fail(void)
 		test_finalize();
 		break;
 	default:
-		PRINT(" ERROR: cannot fail in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot fail in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		break;
@@ -463,7 +464,7 @@ void ztest_test_pass(void)
 		test_finalize();
 		break;
 	default:
-		PRINT(" ERROR: cannot pass in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot pass in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		if (phase == TEST_PHASE_BEFORE) {
@@ -484,7 +485,7 @@ void ztest_test_skip(void)
 		test_finalize();
 		break;
 	default:
-		PRINT(" ERROR: cannot skip in test '%s()', bailing\n",
+		PRINT(" ERROR: cannot skip in test phase '%s()', bailing\n",
 		      get_friendly_phase_name(phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		break;
