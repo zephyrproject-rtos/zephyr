@@ -221,7 +221,7 @@ static int adc_xec_read_async(const struct device *dev,
 }
 #endif /* CONFIG_ADC_ASYNC */
 
-static void xec_adc_get_sample(const struct device *dev)
+static int xec_adc_get_sample(const struct device *dev)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
 	struct adc_xec_data *data = dev->data;
@@ -240,7 +240,6 @@ static void xec_adc_get_sample(const struct device *dev)
 	bit = find_lsb_set(channels);
 	while (bit != 0) {
 		idx = bit - 1;
-
 		*data->buffer = (uint16_t)adc_regs->channel_read_reg[idx];
 		data->buffer++;
 
@@ -250,6 +249,15 @@ static void xec_adc_get_sample(const struct device *dev)
 
 	/* Clear the status register */
 	adc_regs->status_reg = ch_status;
+
+	/* Return error when requested ADC conversion was incomplete
+	 * for some channels.
+	 */
+	if (ch_status != adc_regs->single_reg) {
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static void adc_xec_isr(const struct device *dev)
@@ -257,6 +265,7 @@ static void adc_xec_isr(const struct device *dev)
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
 	struct adc_xec_data *data = dev->data;
 	uint32_t reg;
+	int ret;
 
 	/* Clear START_SINGLE bit and clear SINGLE_DONE_STATUS */
 	reg = adc_regs->control_reg;
@@ -267,9 +276,12 @@ static void adc_xec_isr(const struct device *dev)
 	/* Also clear GIRQ source status bit */
 	MCHP_GIRQ_SRC(MCHP_ADC_GIRQ) = MCHP_ADC_SNG_DONE_GIRQ_VAL;
 
-	xec_adc_get_sample(dev);
-
-	adc_context_on_sampling_done(&data->ctx, dev);
+	ret = xec_adc_get_sample(dev);
+	if (ret) {
+		adc_context_complete(&data->ctx, ret);
+	} else {
+		adc_context_on_sampling_done(&data->ctx, dev);
+	}
 
 	LOG_DBG("ADC ISR triggered.");
 }
