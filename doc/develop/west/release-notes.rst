@@ -3,6 +3,35 @@
 West Release Notes
 ##################
 
+v0.14.0
+*******
+
+Bug fixes:
+
+- West commands that were run with a bad local configuration file dumped stack
+  in a confusing way. This has been fixed and west now prints a sensible error
+  message in this case.
+
+- A bug in the way west looks for the zephyr repository was fixed. The bug
+  itself usually appeared when running an extension command like ``west build``
+  in a new workspace for the first time; this used to fail (just for the first
+  time, not on subsequent command invocations) unless you ran the command in
+  the workspace's top level directory.
+
+- West now prints sensible error messages when the user lacks permission to
+  open the manifest file instead of dumping stack traces.
+
+API changes:
+
+- The ``west.manifest.MalformedConfig`` exception type has been moved to the
+  ``west.configuration`` module
+
+- The ``west.manifest.MalformedConfig`` exception type has been moved to the
+  :ref:`west.configuration <west-apis-configuration>` module
+
+- The ``west.configuration.Configuration`` class now raises ``MalformedConfig``
+  instead of ``RuntimeError`` in some cases
+
 v0.13.1
 *******
 
