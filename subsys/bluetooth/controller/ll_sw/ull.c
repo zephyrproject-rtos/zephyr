@@ -248,6 +248,10 @@
 #define TICKER_USER_ULL_HIGH_VENDOR_OPS 0
 #endif /* TICKER_USER_ULL_HIGH_VENDOR_OPS */
 
+#if !defined(TICKER_USER_ULL_LOW_VENDOR_OPS)
+#define TICKER_USER_ULL_LOW_VENDOR_OPS 0
+#endif /* TICKER_USER_ULL_LOW_VENDOR_OPS */
+
 #if !defined(TICKER_USER_THREAD_VENDOR_OPS)
 #define TICKER_USER_THREAD_VENDOR_OPS 0
 #endif /* TICKER_USER_THREAD_VENDOR_OPS */
@@ -271,7 +275,7 @@
 #define TICKER_USER_THREAD_OPS   (1 + TICKER_USER_THREAD_VENDOR_OPS + 1)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT */
 
-#define TICKER_USER_ULL_LOW_OPS  (1 + 1)
+#define TICKER_USER_ULL_LOW_OPS  (1 + TICKER_USER_ULL_LOW_VENDOR_OPS + 1)
 
 /* NOTE: When ULL_LOW priority is configured to lower than ULL_HIGH, then extra
  *       ULL_HIGH operations queue elements are required to buffer the
