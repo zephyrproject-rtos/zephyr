@@ -19,6 +19,8 @@ elseif(CONFIG_ZTEST_FAIL_TEST_PASS_AFTER)
   list(APPEND SOURCES src/pass_after.cpp)
 elseif(CONFIG_ZTEST_FAIL_TEST_PASS_TEARDOWN)
   list(APPEND SOURCES src/pass_teardown.cpp)
+elseif(CONFIG_ZTEST_FAIL_TEST_UNEXPECTED_ASSUME)
+  list(APPEND SOURCES src/unexpected_assume.cpp)
 endif()
 
 if(BOARD STREQUAL unit_testing)
