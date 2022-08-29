@@ -676,7 +676,10 @@ Documentation:
   files:
     - drivers/espi/
     - include/zephyr/drivers/espi.h
+    - include/zephyr/dt-bindings/espi/
     - samples/drivers/espi/
+    - dts/bindings/espi/
+    - doc/hardware/peripherals/espi.rst
   labels:
     - "area: eSPI"
 
@@ -806,8 +809,11 @@ Documentation:
     - drivers/kscan/
     - include/zephyr/drivers/kscan.h
     - samples/drivers/espi/
+    - samples/drivers/kscan/
     - tests/drivers/kscan/
     - tests/drivers/espi/
+    - dts/bindings/kscan/
+    - doc/hardware/peripherals/kscan.rst
   labels:
     - "area: Kscan"
 
