@@ -745,9 +745,11 @@ Documentation:
     - teburd
   files:
     - drivers/i2c/
+    - include/zephyr/drivers/i2c/
     - dts/bindings/i2c/
     - include/zephyr/drivers/i2c.h
     - tests/drivers/i2c/
+    - doc/hardware/peripherals/i2c.rst
   labels:
     - "area: I2C"
 
