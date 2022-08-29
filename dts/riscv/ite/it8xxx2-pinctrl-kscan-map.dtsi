@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrlkscan {
+	/* KSI[7:0] keyboard scan function */
+	kscan_ksi_0_kbs: kscan_ksi_0_kbs {
+		pinmuxs = <&pinctrlksi 0>;
+		bias-pull-up;
+	};
+	kscan_ksi_1_kbs: kscan_ksi_1_kbs {
+		pinmuxs = <&pinctrlksi 1>;
+		bias-pull-up;
+	};
+	kscan_ksi_2_kbs: kscan_ksi_2_kbs {
+		pinmuxs = <&pinctrlksi 2>;
+		bias-pull-up;
+	};
+	kscan_ksi_3_kbs: kscan_ksi_3_kbs {
+		pinmuxs = <&pinctrlksi 3>;
+		bias-pull-up;
+	};
+	kscan_ksi_4_kbs: kscan_ksi_4_kbs {
+		pinmuxs = <&pinctrlksi 4>;
+		bias-pull-up;
+	};
+	kscan_ksi_5_kbs: kscan_ksi_5_kbs {
+		pinmuxs = <&pinctrlksi 5>;
+		bias-pull-up;
+	};
+	kscan_ksi_6_kbs: kscan_ksi_6_kbs {
+		pinmuxs = <&pinctrlksi 6>;
+		bias-pull-up;
+	};
+	kscan_ksi_7_kbs: kscan_ksi_7_kbs {
+		pinmuxs = <&pinctrlksi 7>;
+		bias-pull-up;
+	};
+
+	/* KSO[15:8] keyboard scan function */
+	kscan_kso_8_kbs: kscan_kso_8_kbs {
+		pinmuxs = <&pinctrlksoh 0>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_9_kbs: kscan_kso_9_kbs {
+		pinmuxs = <&pinctrlksoh 1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_10_kbs: kscan_kso_10_kbs {
+		pinmuxs = <&pinctrlksoh 2>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_11_kbs: kscan_kso_11_kbs {
+		pinmuxs = <&pinctrlksoh 3>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_12_kbs: kscan_kso_12_kbs {
+		pinmuxs = <&pinctrlksoh 4>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_13_kbs: kscan_kso_13_kbs {
+		pinmuxs = <&pinctrlksoh 5>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_14_kbs: kscan_kso_14_kbs {
+		pinmuxs = <&pinctrlksoh 6>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_15_kbs: kscan_kso_15_kbs {
+		pinmuxs = <&pinctrlksoh 7>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+	/* KSO[7:0] keyboard scan function */
+	kscan_kso_0_kbs: kscan_kso_0_kbs {
+		pinmuxs = <&pinctrlksol 0>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_1_kbs: kscan_kso_1_kbs {
+		pinmuxs = <&pinctrlksol 1>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_2_kbs: kscan_kso_2_kbs {
+		pinmuxs = <&pinctrlksol 2>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_3_kbs: kscan_kso_3_kbs {
+		pinmuxs = <&pinctrlksol 3>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_4_kbs: kscan_kso_4_kbs {
+		pinmuxs = <&pinctrlksol 4>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_5_kbs: kscan_kso_5_kbs {
+		pinmuxs = <&pinctrlksol 5>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_6_kbs: kscan_kso_6_kbs {
+		pinmuxs = <&pinctrlksol 6>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+	kscan_kso_7_kbs: kscan_kso_7_kbs {
+		pinmuxs = <&pinctrlksol 7>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+};

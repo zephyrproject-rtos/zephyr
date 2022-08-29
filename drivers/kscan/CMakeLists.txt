@@ -12,4 +12,5 @@ zephyr_library_sources_ifdef(CONFIG_KSCAN_CST816S	kscan_cst816s.c)
 zephyr_library_sources_ifdef(CONFIG_KSCAN_CAP1203	kscan_cap1203.c)
 zephyr_library_sources_ifdef(CONFIG_KSCAN_NPCX		kscan_npcx.c)
 
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_KSCAN_ITE_IT8XXX2 pinctrl_kscan_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE	    kscan_handlers.c)

@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/i2c/it8xxx2-i2c.h>
 #include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl-kscan.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/it8xxx2_pwm.h>
 #include <zephyr/dt-bindings/sensor/it8xxx2_vcmp.h>
@@ -309,6 +310,39 @@
 			};
 		};
 
+		pinctrlkscan: kscan-pin-controller {
+			compatible = "ite,it8xxx2-pinctrl-kscan";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			pinctrlksi: pinctrlkscan@f01d06 {
+				compatible = "ite,it8xxx2-pinctrl-kscan-kbs";
+				reg = <0x00f01d06 1   /* KSIGCTRL */
+				       0x00f01d05 1>; /* KSICTRL */
+				pushpull-od-mask = <IT8XXX2_PINCTRL_KSCAN_NOT_SUPPORT_PP_OD>;
+				pullup-mask = <BIT(2)>;
+				#pinmux-cells = <1>;
+			};
+
+			pinctrlksoh: pinctrlkscan@f01d0a {
+				compatible = "ite,it8xxx2-pinctrl-kscan-kbs";
+				reg = <0x00f01d0a 1   /* KSOHGCTRL */
+				       0x00f01d02 1>; /* KSOCTRL */
+				pushpull-od-mask = <BIT(0)>;
+				pullup-mask = <BIT(2)>;
+				#pinmux-cells = <1>;
+			};
+
+			pinctrlksol: pinctrlkscan@f01d0d {
+				compatible = "ite,it8xxx2-pinctrl-kscan-kbs";
+				reg = <0x00f01d0d 1   /* KSOLGCTRL */
+				       0x00f01d02 1>; /* KSOCTRL */
+				pushpull-od-mask = <BIT(0)>;
+				pullup-mask = <BIT(2)>;
+				#pinmux-cells = <1>;
+			};
+		};
 		sram0: memory@80100000 {
 			compatible = "mmio-sram";
 			reg = <0x80100000 DT_SIZE_K(60)>;

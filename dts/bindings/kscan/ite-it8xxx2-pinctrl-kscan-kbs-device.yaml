@@ -1,0 +1,16 @@
+# Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This file needs to be included by devices that need to specify a set of pin
+  controller.
+
+  The bindings file for each pin controller driver implementation should provide
+  more information on what is the expected pin configuration format.
+
+properties:
+  pinctrl-kscan:
+    type: phandles
+    description: |
+      Kscan pin configuration/s for the keyboard scan function. Content is
+      specific to the selected pin controller driver implementation.

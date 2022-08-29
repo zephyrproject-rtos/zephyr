@@ -1,0 +1,72 @@
+# Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The ITE IT8XXX2 kscan pin controller is a node responsible for controlling
+    keyboard scan pin kbs function. For example, you can use this node to
+    route KSI[7:0] and KSO[15:0] setting the kbs function on the pin.
+
+    The node has the 'pinctrlkscan' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrlkscan {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrlkscan' node, as shown in this example:
+
+      /* You can put this in places like a board-pinctrl.dtsi file in
+       * your board directory, or a devicetree overlay in your application.
+       */
+
+      &pinctrlkscan {
+        /* configuration for KSI[1:0] kbs */
+        kscan_ksi_0_kbs: kscan_ksi_0_kbs {
+                pinmuxs = <&pinctrlksi 0>;
+        };
+        kscan_ksi_1_kbs: kscan_ksi_1_kbs {
+                pinmuxs = <&pinctrlksi 1>;
+        };
+        /* configuration for KSO[1:0] kbs */
+        kscan_kso_0_kbs: kscan_kso_0_kbs {
+                pinmuxs = <&pinctrlksol 0>;
+        };
+        kscan_kso_1_kbs: kscan_kso_1_kbs {
+                pinmuxs = <&pinctrlksol 1>;
+        };
+      };
+
+    The 'kscan_ksi_0_kbs' child node encodes the pin configurations
+    for kbs function of a device.
+
+    To link pin configurations with a device, use a pinctrl-kscan property,
+    like this example you could place in your board's DTS file:
+
+      #include "board-pinctrl.dtsi"
+
+      &kscan0 {
+        pinctrl-kscan = <&kscan_ksi_0_kbs &kscan_kso_0_kbs>;
+      };
+
+compatible: "ite,it8xxx2-pinctrl-kscan"
+
+include: base.yaml
+
+child-binding:
+    description: |
+        This binding gives a base representation of the ITE IT8XXX2 kscan pins configration.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - drive-push-pull
+          - drive-open-drain
+          - bias-pull-up
+
+    properties:
+        pinmuxs:
+          required: true
+          type: phandle-array
+          description: |
+              ITE IT8XXX2 kscan pin's configuration (kscan pinctrl node, pin).
