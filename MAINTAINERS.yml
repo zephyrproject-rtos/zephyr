@@ -781,11 +781,15 @@ Documentation:
     - "area: Interrupt Controller"
 
 "Drivers: IPM":
-  status: maintained
+  status: odd fixes
   collaborators:
     - dcpleung
   files:
     - drivers/ipm/
+    - samples/drivers/ipm/
+    - dts/bindings/ipm/
+    - tests/drivers/ipm/
+    - doc/hardware/peripherals/ipm.rst
   description: >-
     Inter-processor mailboxes
   labels:
