@@ -5,7 +5,7 @@ include_guard(GLOBAL)
 include(extensions)
 include(python)
 include(boards)
-include(generic_toolchain)
+find_package(HostTools)
 find_package(Dtc 1.4.6)
 
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
