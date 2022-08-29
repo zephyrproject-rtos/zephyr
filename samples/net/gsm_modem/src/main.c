@@ -18,6 +18,9 @@
 LOG_MODULE_REGISTER(sample_gsm_ppp, LOG_LEVEL_DBG);
 
 #define GSM_MODEM_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_gsm_ppp)
+#if GSM_MODEM_NODE == DT_INVALID_NODE
+#error "No Zephyr gsm ppp node defined"
+#endif
 #define UART_NODE DT_BUS(GSM_MODEM_NODE)
 
 static const struct device *const gsm_dev = DEVICE_DT_GET(GSM_MODEM_NODE);
