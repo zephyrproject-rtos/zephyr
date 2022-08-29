@@ -149,6 +149,15 @@ config ZTEST_VERBOSE_SUMMARY
 	  This option controls whether suite summary is shown verbosely or
 	  just in one line.
 
+config ZTEST_FAIL_ON_ASSUME
+	bool "Fail the test run when an assumption fails"
+	default y
+	help
+	  When enabled, the test binary will fail at the end if an assumption failed. This means
+	  that while tests will still be marked as skipped on failed zassume calls, the final test
+	  result will be shown as a failure in order to increase visibility. This precludes tests
+	  that skipped with the ZTEST_EXPECT_SKIP annotation.
+
 endif # ZTEST_NEW_API
 
 config TEST_LOGGING_FLUSH_AFTER_TEST
