@@ -691,6 +691,9 @@ Documentation:
     - pfalcon
   files:
     - drivers/ethernet/
+    - include/zephyr/dt-bindings/ethernet/
+    - tests/drivers/build_all/ethernet/
+    - dts/bindings/ethernet/
   labels:
     - "area: Ethernet"
 
