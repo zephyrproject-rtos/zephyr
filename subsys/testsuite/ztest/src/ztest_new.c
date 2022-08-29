@@ -291,6 +291,15 @@ static inline const char *get_friendly_phase_name(enum ztest_phase phase)
 	}
 }
 
+static bool current_test_failed_assumption;
+void ztest_skip_failed_assumption(void)
+{
+	if (IS_ENABLED(CONFIG_ZTEST_FAIL_ON_ASSUME)) {
+		current_test_failed_assumption = true;
+	}
+	ztest_test_skip();
+}
+
 #ifndef KERNEL
 
 /* Static code analysis tool can raise a violation that the standard header
@@ -399,6 +408,9 @@ out:
 
 	ret = get_final_test_result(test, ret);
 	Z_TC_END_RESULT(ret, test->name);
+	if (ret == TC_SKIP && current_test_failed_assumption) {
+		test_status = 1;
+	}
 
 	return ret;
 }
@@ -579,6 +591,9 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 
 	ret = get_final_test_result(test, ret);
 	Z_TC_END_RESULT(ret, test->name);
+	if (ret == TC_SKIP && current_test_failed_assumption) {
+		test_status = 1;
+	}
 
 	return ret;
 }
@@ -661,6 +676,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 #endif
 
 	TC_SUITE_START(suite->name);
+	current_test_failed_assumption = false;
 	test_result = ZTEST_RESULT_PENDING;
 	phase = TEST_PHASE_SETUP;
 #ifndef KERNEL
