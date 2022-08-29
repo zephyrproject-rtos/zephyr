@@ -15,5 +15,6 @@ target_sources(app PRIVATE
     src/nested_irq.c
     )
 
+target_sources_ifdef(CONFIG_ISR_SHARE_IRQ app PRIVATE src/shared_irq.c)
 target_sources_ifdef(CONFIG_DYNAMIC_INTERRUPTS app PRIVATE src/dynamic_isr.c)
 target_sources_ifdef(CONFIG_X86 app PRIVATE src/regular_isr.c)
