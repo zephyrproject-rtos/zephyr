@@ -11,3 +11,4 @@ tests:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
     extra_configs:
       - CONFIG_CMAKE_LINKER_GENERATOR=y
+      - CONFIG_ISR_SHARE_IRQ=y
