@@ -41,15 +41,16 @@ class ExecutionCounter(object):
 
     def summary(self):
         logger.debug("--------------------------------")
-        logger.debug(f"Total Test suites: {self.total}")
-        logger.debug(f"Total Test cases: {self.cases}")
+        logger.debug(f"Total test suites: {self.total}") # actually test instances
+        logger.debug(f"Total test cases: {self.cases}")
+        logger.debug(f"Executed test cases: {self.cases - self.skipped_cases}")
         logger.debug(f"Skipped test cases: {self.skipped_cases}")
-        logger.debug(f"Completed Testsuites: {self.done}")
-        logger.debug(f"Passing Testsuites: {self.passed}")
-        logger.debug(f"Failing Testsuites: {self.failed}")
-        logger.debug(f"Skipped Testsuites: {self.skipped_configs}")
-        logger.debug(f"Skipped Testsuites (runtime): {self.skipped_runtime}")
-        logger.debug(f"Skipped Testsuites (filter): {self.skipped_filter}")
+        logger.debug(f"Completed test suites: {self.done}")
+        logger.debug(f"Passing test suites: {self.passed}")
+        logger.debug(f"Failing test suites: {self.failed}")
+        logger.debug(f"Skipped test suites: {self.skipped_configs}")
+        logger.debug(f"Skipped test suites (runtime): {self.skipped_runtime}")
+        logger.debug(f"Skipped test suites (filter): {self.skipped_filter}")
         logger.debug(f"Errors: {self.error}")
         logger.debug("--------------------------------")
 
@@ -468,6 +469,8 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.add_missing_case_status("blocked", self.instance.reason)
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
+                    logger.debug(f"Determine test cases for test instance: {self.instance.name}")
+                    self.determine_testcases(results)
                     pipeline.put({"op": "gather_metrics", "test": self.instance})
 
         elif op == "gather_metrics":
@@ -514,6 +517,43 @@ class ProjectBuilder(FilterBuilder):
                 self.cleanup_device_testing_artifacts()
             else:
                 self.cleanup_artifacts()
+
+    def determine_testcases(self, results):
+        symbol_file = os.path.join(self.build_dir, "zephyr", "zephyr.symbols")
+        if os.path.isfile(symbol_file):
+            logger.debug(f"zephyr.symbols found: {symbol_file}")
+        else:
+            # No zephyr.symbols file, cannot do symbol-based test case collection
+            logger.debug(f"zephyr.symbols NOT found: {symbol_file}")
+            return
+
+        yaml_testsuite_name = self.instance.testsuite.id
+        logger.debug(f"Determine test cases for test suite: {yaml_testsuite_name}")
+
+        with open(symbol_file, 'r') as fp:
+            symbols = fp.read()
+            logger.debug(f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases.")
+
+            # It is only meant for new ztest fx because only new ztest fx exposes test functions
+            # precisely.
+
+            # The 1st capture group is new ztest suite name.
+            # The 2nd capture group is new ztest unit test name.
+            new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]*)__([^\s]*)")
+            matches = new_ztest_unit_test_regex.findall(symbols)
+            if matches:
+                # this is new ztest fx
+                self.instance.testcases.clear()
+                self.instance.testsuite.testcases.clear()
+                for m in matches:
+                    # new_ztest_suite = m[0] # not used for now
+                    test_func_name = m[1].replace("test_", "")
+                    testcase_id = f"{yaml_testsuite_name}.{test_func_name}"
+                    # When the old regex-based test case collection is fully deprecated,
+                    # this will be the sole place where test cases get added to the test instance.
+                    # Then we can further include the new_ztest_suite info in the testcase_id.
+                    self.instance.add_testcase(name=testcase_id)
+                    self.instance.testsuite.add_testcase(name=testcase_id)
 
     def cleanup_artifacts(self, additional_keep=[]):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
@@ -602,11 +642,13 @@ class ProjectBuilder(FilterBuilder):
         elif instance.status in ["skipped", "filtered"]:
             status = Fore.YELLOW + "SKIPPED" + Fore.RESET
             results.skipped_configs += 1
+            # test cases skipped at the test instance level
             results.skipped_cases += len(instance.testsuite.testcases)
         elif instance.status == "passed":
             status = Fore.GREEN + "PASSED" + Fore.RESET
             results.passed += 1
             for case in instance.testcases:
+                # test cases skipped at the test case level
                 if case.status == 'skipped':
                     results.skipped_cases += 1
         else:
@@ -650,7 +692,7 @@ class ProjectBuilder(FilterBuilder):
                 Fore.RESET,
                 completed_perc,
                 Fore.YELLOW if results.skipped_configs > 0 else Fore.RESET,
-                results.skipped_filter + results.skipped_runtime,
+                results.skipped_configs,
                 Fore.RESET,
                 Fore.RED if results.failed > 0 else Fore.RESET,
                 results.failed,
@@ -778,10 +820,7 @@ class TwisterRunner:
             self.jobs = multiprocessing.cpu_count()
         logger.info("JOBS: %d" % self.jobs)
 
-        self.update_counting()
-
-        logger.info("%d test scenarios (%d configurations) selected, %d configurations discarded due to filters." %
-                    (len(self.suites), len(self.instances), self.results.skipped_configs))
+        self.update_counting_before_pipeline()
 
         while True:
             completed += 1
@@ -817,19 +856,38 @@ class TwisterRunner:
             if retries == 0 or (self.results.failed == self.results.error and not self.options.retry_build_errors):
                 break
 
-    def update_counting(self):
+        self.update_counting_after_pipeline()
+        self.show_brief()
+
+    def update_counting_before_pipeline(self):
+        '''
+        Updating counting before pipeline is necessary because statically filterd
+        test instance never enter the pipeline. While some pipeline output needs
+        the static filter stats. So need to prepare them before pipline starts.
+        '''
         for instance in self.instances.values():
-            self.results.cases += len(instance.testsuite.testcases)
-            if instance.status == 'filtered':
+            if instance.status == 'filtered' and not instance.reason == 'runtime filter':
                 self.results.skipped_filter += 1
                 self.results.skipped_configs += 1
-            elif instance.status == 'passed':
-                self.results.passed += 1
-                self.results.done += 1
-            elif instance.status == 'error':
-                self.results.error += 1
-                self.results.done += 1
+                self.results.skipped_cases += len(instance.testsuite.testcases)
 
+    def update_counting_after_pipeline(self):
+        '''
+        Updating counting after pipeline is necessary because the number of test cases
+        of a test instance will be refined based on zephyr.symbols as it goes through the
+        pipeline. While the testsuite.testcases is obtained by scanning the source file.
+        The instance.testcases is more accurate and can only be obtained after pipeline finishes.
+        '''
+        for instance in self.instances.values():
+            self.results.cases += len(instance.testcases)
+
+    def show_brief(self):
+        logger.info("%d test scenarios (%d test instances) selected, "
+                    "%d configurations skipped (%d by static filter, %d at runtime)." %
+                    (len(self.suites), len(self.instances),
+                    self.results.skipped_configs,
+                    self.results.skipped_filter,
+                    self.results.skipped_configs - self.results.skipped_filter))
 
     def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False, retry_build_errors=False):
         for instance in self.instances.values():
