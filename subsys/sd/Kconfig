@@ -3,17 +3,7 @@
 
 # SD stack configuration options
 
-menuconfig SD_STACK
-	bool "SD Card Support"
-	select SDHC
-	help
-	  Enable SD card support
-
-if SD_STACK
-
-module = SD
-module-str = SD stack
-source "subsys/logging/Kconfig.template.log_config"
+menu "SD"
 
 config SDMMC_STACK
 	bool "SDMMC protocol support"
@@ -25,6 +15,19 @@ config SDIO_STACK
 	bool "SDIO protocol support"
 	help
 	  Enable SDIO protocol support. Required for SD I/O cards to function.
+
+config SD_STACK
+	bool
+	default y if SDMMC_STACK || SDIO_STACK
+	select SDHC
+	help
+	  Enable SD card support.
+
+if SD_STACK
+
+module = SD
+module-str = SD stack
+source "subsys/logging/Kconfig.template.log_config"
 
 config SD_INIT_TIMEOUT
 	int "Timeout while initializing SD card"
@@ -83,3 +86,5 @@ config SD_UHS_PROTOCOL
 	  reduce code size, at the cost of data transfer speeds.
 
 endif # SD_STACK
+
+endmenu
