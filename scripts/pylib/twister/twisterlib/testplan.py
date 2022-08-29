@@ -162,8 +162,8 @@ class TestPlan:
 
             self.load_from_file(last_run, filter_platform=connected_list)
             self.selected_platforms = set(p.platform.name for p in self.instances.values())
-        else:
-            self.apply_filters()
+
+        self.apply_filters()
 
         if self.options.subset:
             s =  self.options.subset
@@ -505,16 +505,6 @@ class TestPlan:
                 if ts.get("run_id"):
                     instance.run_id = ts.get("run_id")
 
-                if self.options.device_testing:
-                    tfilter = 'runnable'
-                else:
-                    tfilter = 'buildable'
-                instance.run = instance.check_runnable(
-                    self.options.enable_slow,
-                    tfilter,
-                    self.options.fixture
-                )
-
                 instance.metrics['handler_time'] = ts.get('execution_time', 0)
                 instance.metrics['ram_size'] = ts.get("ram_size", 0)
                 instance.metrics['rom_size']  = ts.get("rom_size",0)
@@ -526,7 +516,7 @@ class TestPlan:
                     instance.reason = None
                 # test marked as passed (built only) but can run when
                 # --test-only is used. Reset status to capture new results.
-                elif status == 'passed' and instance.run and self.options.test_only:
+                elif status == 'passed' and self.options.test_only:
                     instance.status = None
                     instance.reason = None
                 else:
@@ -566,6 +556,7 @@ class TestPlan:
         force_toolchain = self.options.force_toolchain
         force_platform = self.options.force_platform
         emu_filter = self.options.emulation_only
+        instances_were_inherited = len(self.instances)!=0
 
         logger.debug("platform filter: " + str(platform_filter))
         logger.debug("    arch_filter: " + str(arch_filter))
@@ -631,21 +622,14 @@ class TestPlan:
             instance_list = []
             for plat in platform_scope:
                 instance = TestInstance(ts, plat, self.env.outdir)
-                if runnable:
-                    tfilter = 'runnable'
-                else:
-                    tfilter = 'buildable'
-
-                instance.run = instance.check_runnable(
-                    self.options.enable_slow,
-                    tfilter,
-                    self.options.fixture
-                )
-                if runnable and self.hwm.duts:
-                    for h in self.hwm.duts:
-                        if h.platform == plat.name:
-                            if ts.harness_config.get('fixture') in h.fixtures:
-                                instance.run = True
+                # If instances were inherited (existing testplan used) don't add new nor evaluate filtered instances
+                if instances_were_inherited:
+                    if instance.name not in self.instances:
+                        continue
+                    elif self.instances[instance.name].status == "filtered":
+                        continue
+                    else:
+                        instance.run_id = self.instances[instance.name].run_id
 
                 if not force_platform and plat.name in exclude_platform:
                     instance.add_filter("Platform is excluded on command line.", Filters.CMD_LINE)
@@ -658,8 +642,11 @@ class TestPlan:
                     if not set(ts.modules).issubset(set(self.modules)):
                         instance.add_filter(f"one or more required modules not available: {','.join(ts.modules)}", Filters.TESTSUITE)
 
+                # instance.run tells twister if a test can be build and executed (if true) or only build (if false)
+                instance.run, verdict = instance.check_runnable(self.options.enable_slow, self.options.fixture, self.hwm.duts)
+
                 if runnable and not instance.run:
-                    instance.add_filter("Not runnable on device", Filters.PLATFORM)
+                    instance.add_filter(f"Not runnable on device: {verdict}", Filters.PLATFORM)
 
                 if self.options.integration and ts.integration_platforms and plat.name not in ts.integration_platforms:
                     instance.add_filter("Not part of integration platforms", Filters.TESTSUITE)

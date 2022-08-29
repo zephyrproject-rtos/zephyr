@@ -119,19 +119,39 @@ class TestInstance:
         self.testcases.append(tc)
         return tc
 
-    @staticmethod
-    def testsuite_runnable(testsuite, fixtures):
-        can_run = False
-        # console harness allows us to run the test and capture data.
-        if testsuite.harness in [ 'console', 'ztest', 'pytest', 'test']:
-            can_run = True
-            # if we have a fixture that is also being supplied on the
-            # command-line, then we need to run the test, not just build it.
-            fixture = testsuite.harness_config.get('fixture')
-            if fixture:
-                can_run = (fixture in fixtures)
+    def is_fixture_available(self, fixtures_cli=None, duts_from_hwmap=None):
+        fixture_status = False    # if true: test can be run on a given configuration
+        verdict = "NA"
+        fixture_required = self.testsuite.harness_config.get('fixture')
 
-        return can_run
+        if fixture_required:
+            verdict = f"Fixture {fixture_required} is not available."
+            # There are 2 places were available fixtures can be defined: from CLI and in hw map
+            # Fixtures from CLI applies to all devices
+            if fixture_required in fixtures_cli:
+                fixture_status = True
+                verdict = f"Fixture {fixture_required} is available."
+            # If fixture was not given in CLI but a hw map was provided we check if it is available in the hw map
+            elif duts_from_hwmap:
+                for h in duts_from_hwmap:
+                    if h.platform == self.platform.name:
+                        if fixture_required in h.fixtures:
+                            fixture_status = True
+                            verdict = f"Fixture {fixture_required} is available."
+        else:
+            fixture_status = True
+            verdict = "No fixture required"
+        return fixture_status, verdict
+
+    def is_harness_supported(self):
+        harness_supported = False
+        verdict = f"Harness {self.testsuite.harness} is not supported."
+        # console harness allows us to run the test and capture data.
+        if self.testsuite.harness in [ 'console', 'ztest', 'pytest', 'test']:
+            harness_supported = True
+            verdict = f"Harness {self.testsuite.harness} is supported."
+
+        return harness_supported, verdict
 
     def setup_handler(self, env):
         if self.handler:
@@ -182,45 +202,61 @@ class TestInstance:
         self.handler = handler
 
     # Global testsuite parameters
-    def check_runnable(self, enable_slow=False, filter='buildable', fixtures=[]):
-
+    def check_runnable(self, enable_slow=False, fixtures_cli=None, duts_from_hwmap=None):
+        verdict = "NA"
         # running on simulators is currently not supported on Windows
         if os.name == 'nt' and self.platform.simulation != 'na':
-            return False
+            verdict = "Simulators not supported on Windows"
+            return False, verdict
 
         # we asked for build-only on the command line
         if self.testsuite.build_only:
-            return False
+            verdict = "test is marked as build-only."
+            return False, verdict
 
         # Do not run slow tests:
         skip_slow = self.testsuite.slow and not enable_slow
         if skip_slow:
-            return False
+            verdict = "test is marked as slow."
+            return False, verdict
+
+        harness_supported, verdict = self.is_harness_supported()
+        if not harness_supported:
+            return False, verdict
+
+        fixture_runnable, verdict = self.is_fixture_available(fixtures_cli, duts_from_hwmap)
+        if not fixture_runnable:
+            return False, verdict
 
         target_ready = bool(self.testsuite.type == "unit" or \
-                        self.platform.type == "native" or \
-                        self.platform.simulation in ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp", "xt-sim"] or \
-                        filter == 'runnable')
+                        self.platform.type in ["native", "mcu"] or \
+                        self.platform.simulation in ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp", "xt-sim"])
+
+        if not target_ready:
+            verdict = "target type not supported."
+            return False, verdict
 
         if self.platform.simulation == "nsim":
             if not shutil.which("nsimdrv"):
-                target_ready = False
+                verdict = "nsimdrv not found."
+                return False, verdict
 
         if self.platform.simulation == "mdb-nsim":
             if not shutil.which("mdb"):
-                target_ready = False
+                verdict = "mdb not found."
+                return False, verdict
 
         if self.platform.simulation == "renode":
             if not shutil.which("renode"):
-                target_ready = False
+                verdict = "renode not found."
+                return False, verdict
 
         if self.platform.simulation == "tsim":
             if not shutil.which("tsim-leon3"):
-                target_ready = False
+                verdict = "tsim-leon3 not found."
+                return False, verdict
 
-        testsuite_runnable = self.testsuite_runnable(self.testsuite, fixtures)
-
-        return testsuite_runnable and target_ready
+        return target_ready, verdict
 
     def create_overlay(self, platform, enable_asan=False, enable_ubsan=False, enable_coverage=False, coverage_platform=[]):
         # Create this in a "twister/" subdirectory otherwise this

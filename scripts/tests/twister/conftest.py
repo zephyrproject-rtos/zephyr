@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))
 from twisterlib.testplan import TestPlan
 from twisterlib.testinstance import TestInstance
 from twisterlib.environment import TwisterEnv, parse_arguments
+from twisterlib.hardwaremap import HardwareMap
 
 def new_get_toolchain(*args, **kwargs):
     return 'zephyr'
@@ -40,6 +41,7 @@ def tesenv_obj(test_data, testsuites_dir, tmpdir_factory):
     env.board_roots = [test_data +"board_config/1_level/2_level/"]
     env.test_roots = [testsuites_dir + '/tests', testsuites_dir + '/samples']
     env.outdir = tmpdir_factory.mktemp("sanity_out_demo")
+    env.hwm = HardwareMap(env)
     return env
 
 
