@@ -158,10 +158,15 @@
 		size = <16777216>;
 		spi-max-frequency = <1000000>;
 		jedec-id = [c2 25 35];
-		status = "okay";
+		status = "disabled";
 	};
 };
 
 &i2c0 {
 	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+	cs-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 };
