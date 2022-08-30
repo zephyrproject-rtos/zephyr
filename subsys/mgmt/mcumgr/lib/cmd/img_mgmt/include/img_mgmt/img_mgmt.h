@@ -71,7 +71,7 @@ struct img_mgmt_upload_req {
 	struct zcbor_string img_data;
 	struct zcbor_string data_sha;
 	bool upgrade;			/* Only allow greater version numbers. */
-};
+} __packed;
 
 /** Global state for upload in progress. */
 struct img_mgmt_state {
@@ -84,7 +84,7 @@ struct img_mgmt_state {
 	/** Hash of image data; used for resumption of a partial upload. */
 	uint8_t data_sha_len;
 	uint8_t data_sha[IMG_MGMT_DATA_SHA_LEN];
-};
+} __packed;
 
 /** Describes what to do during processing of an upload request. */
 struct img_mgmt_upload_action {
@@ -102,7 +102,7 @@ struct img_mgmt_upload_action {
 	/** "rsn" string to be sent as explanation for "rc" code */
 	const char *rc_rsn;
 #endif
-};
+} __packed;
 
 /**
  * @brief Registers the image management command handler group.
