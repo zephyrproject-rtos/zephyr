@@ -2065,7 +2065,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 
 			err = bt_gatt_subscribe(conn, sub_params);
-			if (err != 0) {
+			if (err != 0 && err != -EALREADY) {
 				BT_ERR("Failed to subscribe to avail_ctx: %d", err);
 			}
 		} /* else already subscribed */
@@ -2260,7 +2260,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 		sub_params->value = BT_GATT_CCC_NOTIFY;
 
 		err = bt_gatt_subscribe(conn, sub_params);
-		if (err != 0) {
+		if (err != 0 && err != -EALREADY) {
 			BT_ERR("Failed to subscribe to location: %d", err);
 		}
 	}
