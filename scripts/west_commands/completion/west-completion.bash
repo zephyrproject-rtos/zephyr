@@ -590,8 +590,10 @@ __comp_west_completion()
 __comp_west_boards()
 {
 	local boards_args_opts="
-		--format -f --name -n
-		--arch-root --board-root
+		--format -f
+		--name -n
+		--arch-root
+		--board-root
 	"
 
 	case "$prev" in
@@ -629,6 +631,7 @@ __comp_west_build()
 		--board -b
 		--build-dir -d
 		--target -t
+		--test-item -T
 		--pristine -p
 		--build-opt -o
 	"
@@ -665,6 +668,7 @@ __comp_west_build()
 __comp_west_sign()
 {
 	local sign_bool_opts="
+		--quiet -q
 		--force -f
 		--bin --no-bin
 		--hex --no-hex
@@ -674,6 +678,7 @@ __comp_west_sign()
 		--build-dir -d
 		--tool -t
 		--tool-path -p
+		--tool-data -D
 		-B --sbin
 		-H --shex
 	"
@@ -706,9 +711,14 @@ __comp_west_runner_cmd()
 	local runner_bool_opts="
 		--context -H
 		--skip-rebuild
+		--erase
+		--no-erase
 	"
 	local runner_args_opts="
 	--build-dir -d
+	--domain
+	--dev-id -i
+	--dt-flash
 	--cmake-cache -c
 	--runner -r
 	--board-dir
@@ -758,6 +768,65 @@ __comp_west_attach()
 	__comp_west_runner_cmd
 }
 
+__comp_west_spdx()
+{
+	local spdx_bool_opts="
+		--init -i
+		--analyze-includes
+		--include-sdk
+	"
+
+	local spdx_args_opts="
+		--build-dir -d
+		--namespace-prefix -n
+		--spdx-dir -s
+	"
+
+	case "$prev" in
+		--spdx-dir|-s|--build-dir|-d)
+			__set_comp_dirs
+			return
+			;;
+	esac
+
+	case "$cur" in
+		-*)
+			__set_comp $spdx_bool_opts $spdx_args_opts
+			;;
+		*)
+			__set_comp_dirs
+			;;
+	esac
+}
+
+__comp_west_blobs()
+{
+	local blobs_args_opts="
+		--format -f
+	"
+
+	case "$prev" in
+		list|fetch|clean)
+			__set_comp_west_projs
+			return
+			;;
+		*)
+			__set_comp "list fetch clean"
+			return
+			;;
+	esac
+
+	case "$cur" in
+		-*)
+			__set_comp $blobs_args_opts
+			;;
+		*)
+			__set_comp_dirs
+			;;
+	esac
+}
+
+
 __comp_west()
 {
 	local previous_extglob_setting=$(shopt -p extglob)
@@ -774,6 +843,7 @@ __comp_west()
 		status
 		forall
 		config
+		topdir
 		help
 	)
 
@@ -787,6 +857,8 @@ __comp_west()
 		debugserver
 		attach
 		zephyr-export
+		spdx
+		blobs
 	)
 
 	local cmds=(${builtin_cmds[*]} ${zephyr_ext_cmds[*]})
