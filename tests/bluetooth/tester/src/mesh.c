@@ -889,7 +889,7 @@ static void composition_data_get(uint8_t *data, uint16_t len)
 
 	net_buf_simple_init(comp, 0);
 
-	err = bt_mesh_cfg_comp_data_get(cmd->net_idx, cmd->address, cmd->page,
+	err = bt_mesh_cfg_cli_comp_data_get(cmd->net_idx, cmd->address, cmd->page,
 					&page, comp);
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -914,7 +914,8 @@ static void config_krp_get(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_krp_get(cmd->net_idx, cmd->address, cmd->key_net_idx, &status, &phase);
+	err = bt_mesh_cfg_cli_krp_get(cmd->net_idx, cmd->address, cmd->key_net_idx, &status,
+				      &phase);
 
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -942,7 +943,7 @@ static void config_krp_set(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_krp_set(cmd->net_idx, cmd->address, cmd->key_net_idx, cmd->transition,
+	err = bt_mesh_cfg_cli_krp_set(cmd->net_idx, cmd->address, cmd->key_net_idx, cmd->transition,
 				  &status, &phase);
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -968,7 +969,7 @@ static void config_beacon_get(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_beacon_get(cmd->net_idx, cmd->address, &status);
+	err = bt_mesh_cfg_cli_beacon_get(cmd->net_idx, cmd->address, &status);
 	if (err) {
 		LOG_ERR("err %d", err);
 		goto fail;
@@ -990,7 +991,7 @@ static void config_beacon_set(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_beacon_set(cmd->net_idx, cmd->address, cmd->val,
+	err = bt_mesh_cfg_cli_beacon_set(cmd->net_idx, cmd->address, cmd->val,
 				     &status);
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -1012,7 +1013,7 @@ static void config_default_ttl_get(uint8_t *data, uint16_t len)
 	int err;
 
 	LOG_DBG("");
-	err = bt_mesh_cfg_ttl_get(cmd->net_idx, cmd->address, &status);
+	err = bt_mesh_cfg_cli_ttl_get(cmd->net_idx, cmd->address, &status);
 
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -1035,7 +1036,7 @@ static void config_default_ttl_set(uint8_t *data, uint16_t len)
 	int err;
 
 	LOG_DBG("");
-	err = bt_mesh_cfg_ttl_set(cmd->net_idx, cmd->address, cmd->val,
+	err = bt_mesh_cfg_cli_ttl_set(cmd->net_idx, cmd->address, cmd->val,
 				  &status);
 
 	if (err) {
@@ -1059,7 +1060,7 @@ static void config_gatt_proxy_get(uint8_t *data, uint16_t len)
 	int err;
 
 	LOG_DBG("");
-	err = bt_mesh_cfg_gatt_proxy_get(cmd->net_idx, cmd->address, &status);
+	err = bt_mesh_cfg_cli_gatt_proxy_get(cmd->net_idx, cmd->address, &status);
 
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -1082,7 +1083,7 @@ static void config_gatt_proxy_set(uint8_t *data, uint16_t len)
 	int err;
 
 	LOG_DBG("");
-	err = bt_mesh_cfg_gatt_proxy_set(cmd->net_idx, cmd->address, cmd->val,
+	err = bt_mesh_cfg_cli_gatt_proxy_set(cmd->net_idx, cmd->address, cmd->val,
 					 &status);
 
 	if (err) {
@@ -1106,7 +1107,7 @@ static void config_friend_get(uint8_t *data, uint16_t len)
 	int err;
 
 	LOG_DBG("");
-	err = bt_mesh_cfg_friend_get(cmd->net_idx, cmd->address, &status);
+	err = bt_mesh_cfg_cli_friend_get(cmd->net_idx, cmd->address, &status);
 
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -1128,7 +1129,7 @@ static void config_friend_set(uint8_t *data, uint16_t len)
 	int err;
 
 	LOG_DBG("");
-	err = bt_mesh_cfg_friend_set(cmd->net_idx, cmd->address, cmd->val,
+	err = bt_mesh_cfg_cli_friend_set(cmd->net_idx, cmd->address, cmd->val,
 				     &status);
 
 	if (err) {
@@ -1152,7 +1153,7 @@ static void config_relay_get(uint8_t *data, uint16_t len)
 	int err;
 
 	LOG_DBG("");
-	err = bt_mesh_cfg_relay_get(cmd->net_idx, cmd->address, &status,
+	err = bt_mesh_cfg_cli_relay_get(cmd->net_idx, cmd->address, &status,
 				    &transmit);
 
 	if (err) {
@@ -1176,7 +1177,7 @@ static void config_relay_set(uint8_t *data, uint16_t len)
 	int err;
 
 	LOG_DBG("");
-	err = bt_mesh_cfg_relay_set(cmd->net_idx, cmd->address, cmd->new_relay,
+	err = bt_mesh_cfg_cli_relay_set(cmd->net_idx, cmd->address, cmd->new_relay,
 				    cmd->new_transmit, &status, &transmit);
 
 	if (err) {
@@ -1195,12 +1196,12 @@ fail:
 static void config_mod_pub_get(uint8_t *data, uint16_t len)
 {
 	struct mesh_cfg_model_pub_get_cmd *cmd = (void *)data;
-	struct bt_mesh_cfg_mod_pub pub;
+	struct bt_mesh_cfg_cli_mod_pub pub;
 	uint8_t status;
 	int err;
 
 	LOG_DBG("");
-	err = bt_mesh_cfg_mod_pub_get(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_pub_get(cmd->net_idx, cmd->address,
 				      cmd->elem_address, cmd->model_id, &pub,
 				      &status);
 
@@ -1222,7 +1223,7 @@ static void config_mod_pub_set(uint8_t *data, uint16_t len)
 {
 	struct mesh_cfg_model_pub_set_cmd *cmd = (void *)data;
 	uint8_t status;
-	struct bt_mesh_cfg_mod_pub pub;
+	struct bt_mesh_cfg_cli_mod_pub pub;
 	int err;
 
 	LOG_DBG("");
@@ -1235,7 +1236,7 @@ static void config_mod_pub_set(uint8_t *data, uint16_t len)
 	pub.period = cmd->period;
 	pub.transmit = cmd->transmit;
 
-	err = bt_mesh_cfg_mod_pub_set(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_pub_set(cmd->net_idx, cmd->address,
 				      cmd->elem_address, cmd->model_id, &pub,
 				      &status);
 
@@ -1257,7 +1258,7 @@ static void config_mod_pub_va_set(uint8_t *data, uint16_t len)
 {
 	struct mesh_cfg_model_pub_va_set_cmd *cmd = (void *)data;
 	uint8_t status;
-	struct bt_mesh_cfg_mod_pub pub;
+	struct bt_mesh_cfg_cli_mod_pub pub;
 	int err;
 
 	LOG_DBG("");
@@ -1269,7 +1270,7 @@ static void config_mod_pub_va_set(uint8_t *data, uint16_t len)
 	pub.period = cmd->period;
 	pub.transmit = cmd->transmit;
 
-	err = bt_mesh_cfg_mod_pub_set(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_pub_set(cmd->net_idx, cmd->address,
 				      cmd->elem_address, cmd->model_id,
 				      &pub, &status);
 
@@ -1295,7 +1296,7 @@ static void config_mod_sub_add(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_sub_add(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_sub_add(cmd->net_idx, cmd->address,
 				      cmd->elem_address, cmd->sub_addr,
 				      cmd->model_id, &status);
 
@@ -1321,7 +1322,7 @@ static void config_mod_sub_ovw(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_sub_overwrite(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_sub_overwrite(cmd->net_idx, cmd->address,
 					    cmd->elem_address, cmd->sub_addr,
 					    cmd->model_id, &status);
 
@@ -1347,7 +1348,7 @@ static void config_mod_sub_del(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_sub_del(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_sub_del(cmd->net_idx, cmd->address,
 				      cmd->elem_address, cmd->sub_addr,
 				      cmd->model_id, &status);
 
@@ -1373,7 +1374,7 @@ static void config_mod_sub_del_all(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_sub_del_all(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_sub_del_all(cmd->net_idx, cmd->address,
 					  cmd->elem_address, cmd->model_id,
 					  &status);
 
@@ -1401,7 +1402,7 @@ static void config_mod_sub_get(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_sub_get(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_sub_get(cmd->net_idx, cmd->address,
 				      cmd->elem_address, cmd->model_id, &status,
 				      &subs, &sub_cn);
 
@@ -1429,7 +1430,7 @@ static void config_mod_sub_get_vnd(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_sub_get_vnd(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_sub_get_vnd(cmd->net_idx, cmd->address,
 					  cmd->elem_address, cmd->model_id,
 					  cmd->cid, &status, &subs, &sub_cn);
 
@@ -1456,7 +1457,7 @@ static void config_mod_sub_va_add(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_sub_va_add(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_sub_va_add(cmd->net_idx, cmd->address,
 					 cmd->elem_address, cmd->uuid,
 					 cmd->model_id, &virt_addr_rcv,
 					 &status);
@@ -1484,7 +1485,7 @@ static void config_mod_sub_va_del(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_sub_va_del(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_sub_va_del(cmd->net_idx, cmd->address,
 					 cmd->elem_address, cmd->uuid,
 					 cmd->model_id, &virt_addr_rcv,
 					 &status);
@@ -1512,7 +1513,7 @@ static void config_mod_sub_va_ovw(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_sub_va_overwrite(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_sub_va_overwrite(cmd->net_idx, cmd->address,
 					       cmd->elem_address,
 					       cmd->uuid, cmd->model_id,
 					       &virt_addr_rcv, &status);
@@ -1539,7 +1540,7 @@ static void config_netkey_add(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_net_key_add(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_net_key_add(cmd->net_idx, cmd->address,
 				      cmd->net_key_idx, cmd->net_key, &status);
 
 	if (err) {
@@ -1563,7 +1564,7 @@ static void config_netkey_update(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_net_key_update(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_net_key_update(cmd->net_idx, cmd->address,
 					 cmd->net_key_idx, cmd->net_key,
 					 &status);
 
@@ -1590,7 +1591,7 @@ static void config_netkey_get(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_net_key_get(cmd->net_idx, cmd->address, &keys,
+	err = bt_mesh_cfg_cli_net_key_get(cmd->net_idx, cmd->address, &keys,
 				      &key_cnt);
 
 	if (err) {
@@ -1614,7 +1615,7 @@ static void config_netkey_del(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_net_key_del(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_net_key_del(cmd->net_idx, cmd->address,
 				      cmd->net_key_idx, &status);
 
 	if (err) {
@@ -1638,7 +1639,7 @@ static void config_appkey_add(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_app_key_add(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_app_key_add(cmd->net_idx, cmd->address,
 				      cmd->net_key_idx, cmd->app_key_idx,
 				      cmd->app_key, &status);
 
@@ -1663,7 +1664,7 @@ static void config_appkey_update(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_app_key_update(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_app_key_update(cmd->net_idx, cmd->address,
 					 cmd->net_key_idx, cmd->app_key_idx,
 					 cmd->app_key, &status);
 
@@ -1689,7 +1690,7 @@ static void config_appkey_del(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_app_key_del(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_app_key_del(cmd->net_idx, cmd->address,
 				      cmd->net_key_idx, cmd->app_key_idx,
 				      &status);
 
@@ -1716,7 +1717,7 @@ static void config_appkey_get(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_app_key_get(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_app_key_get(cmd->net_idx, cmd->address,
 				      cmd->net_key_idx, &status, &keys,
 				      &key_cnt);
 
@@ -1741,7 +1742,7 @@ static void config_model_app_bind(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_app_bind(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_app_bind(cmd->net_idx, cmd->address,
 				       cmd->elem_address, cmd->app_key_idx,
 				       cmd->mod_id, &status);
 
@@ -1767,7 +1768,7 @@ static void config_model_app_bind_vnd(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_app_bind_vnd(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_app_bind_vnd(cmd->net_idx, cmd->address,
 					   cmd->elem_address, cmd->app_key_idx,
 					   cmd->mod_id, cmd->cid, &status);
 
@@ -1793,7 +1794,7 @@ static void config_model_app_unbind(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_app_unbind(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_app_unbind(cmd->net_idx, cmd->address,
 					 cmd->elem_address, cmd->app_key_idx,
 					 cmd->mod_id, &status);
 
@@ -1821,7 +1822,7 @@ static void config_model_app_get(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_app_get(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_app_get(cmd->net_idx, cmd->address,
 				      cmd->elem_address, cmd->mod_id, &status,
 				      &apps, &app_cnt);
 
@@ -1849,7 +1850,7 @@ static void config_model_app_vnd_get(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_mod_app_get_vnd(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_mod_app_get_vnd(cmd->net_idx, cmd->address,
 					  cmd->elem_address, cmd->mod_id,
 					  cmd->cid, &status, &apps, &app_cnt);
 
@@ -1871,7 +1872,7 @@ static void config_hb_pub_set(uint8_t *data, uint16_t len)
 {
 	struct mesh_cfg_heartbeat_pub_set_cmd *cmd = (void *)data;
 	uint8_t status;
-	struct bt_mesh_cfg_hb_pub pub;
+	struct bt_mesh_cfg_cli_hb_pub pub;
 	int err;
 
 	LOG_DBG("");
@@ -1883,7 +1884,7 @@ static void config_hb_pub_set(uint8_t *data, uint16_t len)
 	pub.ttl = cmd->ttl;
 	pub.feat = cmd->features;
 
-	err = bt_mesh_cfg_hb_pub_set(cmd->net_idx, cmd->address, &pub, &status);
+	err = bt_mesh_cfg_cli_hb_pub_set(cmd->net_idx, cmd->address, &pub, &status);
 
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -1903,12 +1904,12 @@ static void config_hb_pub_get(uint8_t *data, uint16_t len)
 {
 	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
 	uint8_t status;
-	struct bt_mesh_cfg_hb_pub pub;
+	struct bt_mesh_cfg_cli_hb_pub pub;
 	int err;
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_hb_pub_get(cmd->net_idx, cmd->address, &pub, &status);
+	err = bt_mesh_cfg_cli_hb_pub_get(cmd->net_idx, cmd->address, &pub, &status);
 
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -1928,7 +1929,7 @@ static void config_hb_sub_set(uint8_t *data, uint16_t len)
 {
 	struct mesh_cfg_heartbeat_sub_set_cmd *cmd = (void *)data;
 	uint8_t status;
-	struct bt_mesh_cfg_hb_sub sub;
+	struct bt_mesh_cfg_cli_hb_sub sub;
 	int err;
 
 	LOG_DBG("");
@@ -1937,7 +1938,7 @@ static void config_hb_sub_set(uint8_t *data, uint16_t len)
 	sub.dst = cmd->destination;
 	sub.period = cmd->period_log;
 
-	err = bt_mesh_cfg_hb_sub_set(cmd->net_idx, cmd->address, &sub, &status);
+	err = bt_mesh_cfg_cli_hb_sub_set(cmd->net_idx, cmd->address, &sub, &status);
 
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -1957,12 +1958,12 @@ static void config_hb_sub_get(uint8_t *data, uint16_t len)
 {
 	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
 	uint8_t status;
-	struct bt_mesh_cfg_hb_sub sub;
+	struct bt_mesh_cfg_cli_hb_sub sub;
 	int err;
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_hb_sub_get(cmd->net_idx, cmd->address, &sub, &status);
+	err = bt_mesh_cfg_cli_hb_sub_get(cmd->net_idx, cmd->address, &sub, &status);
 
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -1986,7 +1987,7 @@ static void config_net_trans_get(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_net_transmit_get(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_net_transmit_get(cmd->net_idx, cmd->address,
 					   &transmit);
 
 	if (err) {
@@ -2011,7 +2012,7 @@ static void config_net_trans_set(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_net_transmit_set(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_net_transmit_set(cmd->net_idx, cmd->address,
 					   cmd->transmit, &transmit);
 
 	if (err) {
@@ -2038,7 +2039,7 @@ static void config_node_identity_set(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_node_identity_set(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_node_identity_set(cmd->net_idx, cmd->address,
 					    cmd->net_key_idx, cmd->new_identity,
 					    &status, &identity);
 
@@ -2069,7 +2070,7 @@ static void config_node_identity_get(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_node_identity_get(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_node_identity_get(cmd->net_idx, cmd->address,
 					    cmd->net_key_idx, &status,
 					    &identity);
 
@@ -2098,7 +2099,7 @@ static void config_node_reset(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_node_reset(cmd->net_idx, cmd->address, &status);
+	err = bt_mesh_cfg_cli_node_reset(cmd->net_idx, cmd->address, &status);
 
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -2121,7 +2122,7 @@ static void config_lpn_timeout_get(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_cfg_lpn_timeout_get(cmd->net_idx, cmd->address,
+	err = bt_mesh_cfg_cli_lpn_timeout_get(cmd->net_idx, cmd->address,
 					  cmd->unicast_addr, &polltimeout);
 
 	if (err) {

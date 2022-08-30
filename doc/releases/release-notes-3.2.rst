@@ -90,6 +90,9 @@ Deprecated in this release
    valid for specific bindings to specify like :dtcompatible:`gpio-leds` and
    :dtcompatible:`fixed-partitions`.
 
+* Bluetooth mesh Configuration Client API prefixed with ``bt_mesh_cfg_``
+  is deprecated in favor of a new API with prefix ``bt_mesh_cfg_cli_``.
+
 Stable API changes in this release
 ==================================
 
