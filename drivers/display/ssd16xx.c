@@ -81,6 +81,7 @@ struct ssd16xx_config {
 	bool override_gate_line_width;
 	struct ssd16xx_dt_array cntrl1_data;
 	bool data_mode_2;
+	struct ssd16xx_dt_array otp_selection_ctl;
 };
 
 static inline void ssd16xx_busy_wait(const struct device *dev)
@@ -844,6 +845,15 @@ static int ssd16xx_controller_init(const struct device *dev)
 		return err;
 	}
 
+	if (config->otp_selection_ctl.len) {
+		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_OTP_SELECTION_CTRL,
+					 config->otp_selection_ctl.data,
+					 config->otp_selection_ctl.len);
+		if (err < 0) {
+			return err;
+		}
+	}
+
 	if (config->data_mode_2)
 		data->update_cmd |= SSD16XX_CTRL2_TO_INITIAL;
 
@@ -956,6 +966,7 @@ static struct display_driver_api ssd16xx_driver_api = {
 	SSD16XX_MAKE_INST_ARRAY_OPT(n, lut_default);			\
 	SSD16XX_MAKE_INST_ARRAY_OPT(n, softstart);			\
 	SSD16XX_MAKE_INST_ARRAY_OPT(n, cntrl1_data);			\
+	SSD16XX_MAKE_INST_ARRAY_OPT(n, otp_selection_ctl);			\
 	SSD16XX_INITIAL_PROFILE_DEFINE(n);				\
 									\
 	static const struct ssd16xx_config ssd16xx_cfg_##n = {		\
@@ -985,6 +996,7 @@ static struct display_driver_api ssd16xx_driver_api = {
 		.cntrl1_data = SSD16XX_ASSIGN_ARRAY(n, cntrl1_data),	\
 		.data_mode_2 =					\
 			DT_INST_NODE_HAS_PROP(n, data_mode_2),		\
+		.otp_selection_ctl = SSD16XX_ASSIGN_ARRAY(n, otp_selection_ctl),	\
 	};								\
 									\
 	static struct ssd16xx_data ssd16xx_data_##n;			\

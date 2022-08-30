@@ -116,3 +116,8 @@ properties:
       type: boolean
       required: false
       description: send default updates as data2 mode
+
+    otp-selection-ctl:
+      type: uint8-array
+      required: false
+      description: setup SSD16XX_CMD_OTP_SELECTION_CTRL register for setting ping pong update
