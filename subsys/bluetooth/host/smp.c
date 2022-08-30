@@ -3144,7 +3144,8 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		}
 	}
 
-	if ((DISPLAY_FIXED(smp) || smp->method == JUST_WORKS) &&
+	if (!IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) &&
+	    (DISPLAY_FIXED(smp) || smp->method == JUST_WORKS) &&
 	    !atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ) &&
 	    smp_auth_cb && smp_auth_cb->pairing_confirm) {
 		atomic_set_bit(smp->flags, SMP_FLAG_USER);
@@ -3346,7 +3347,8 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		}
 	}
 
-	if ((DISPLAY_FIXED(smp) || smp->method == JUST_WORKS) &&
+	if (!IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) &&
+	    (DISPLAY_FIXED(smp) || smp->method == JUST_WORKS) &&
 	    atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ) &&
 	    smp_auth_cb && smp_auth_cb->pairing_confirm) {
 		atomic_set_bit(smp->flags, SMP_FLAG_USER);
