@@ -95,36 +95,6 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
   SET(CMAKE_FIND_PACKAGE_SORT_ORDER ${CMAKE_FIND_PACKAGE_SORT_ORDER_CURRENT})
 endif()
 
-if(NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
-  if (NOT Zephyr-sdk_CONSIDERED_VERSIONS)
-    set(error_msg "ZEPHYR_TOOLCHAIN_VARIANT not specified and no Zephyr SDK is installed.\n")
-    string(APPEND error_msg "Please set ZEPHYR_TOOLCHAIN_VARIANT to the toolchain to use or install the Zephyr SDK.")
-  else()
-    #  Note: When CMake minimum version becomes >= 3.17, change this loop into:
-    #    foreach(version config IN ZIP_LISTS Zephyr-sdk_CONSIDERED_VERSIONS Zephyr-sdk_CONSIDERED_CONFIGS)
-    set(error_msg "The Zephyr SDK version you are using is not supported, please update your SDK.\n")
-    set(missing_version "You need SDK version ${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION} or newer.")
-    foreach (version ${Zephyr-sdk_CONSIDERED_VERSIONS})
-      if(${version} VERSION_GREATER ${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION})
-        set(missing_version "You need SDK version ${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION} or compatible version.")
-      endif()
-      list(GET Zephyr-sdk_CONSIDERED_CONFIGS 0 zephyr-sdk-candidate)
-      list(REMOVE_AT Zephyr-sdk_CONSIDERED_CONFIGS 0)
-      get_filename_component(zephyr-sdk-path ${zephyr-sdk-candidate}/../.. ABSOLUTE)
-      string(APPEND version_path "  ${version} (${zephyr-sdk-path})")
-    endforeach()
-    string(APPEND error_msg "${missing_version}")
-    string(APPEND error_msg "You have version(s):")
-    string(APPEND error_msg "${version_path}")
-  endif()
-
-  message(FATAL_ERROR "${error_msg}
-The Zephyr SDK can be downloaded from:
-https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION}
-")
-
-endif()
-
 if(DEFINED ZEPHYR_SDK_INSTALL_DIR)
   # Cache the Zephyr SDK install dir.
   set(ZEPHYR_SDK_INSTALL_DIR ${ZEPHYR_SDK_INSTALL_DIR} CACHE PATH "Zephyr SDK install directory")
