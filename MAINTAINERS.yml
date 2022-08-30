@@ -676,7 +676,10 @@ Documentation:
   files:
     - drivers/espi/
     - include/zephyr/drivers/espi.h
+    - include/zephyr/dt-bindings/espi/
     - samples/drivers/espi/
+    - dts/bindings/espi/
+    - doc/hardware/peripherals/espi.rst
   labels:
     - "area: eSPI"
 
@@ -688,6 +691,9 @@ Documentation:
     - pfalcon
   files:
     - drivers/ethernet/
+    - include/zephyr/dt-bindings/ethernet/
+    - tests/drivers/build_all/ethernet/
+    - dts/bindings/ethernet/
   labels:
     - "area: Ethernet"
 
@@ -739,9 +745,11 @@ Documentation:
     - teburd
   files:
     - drivers/i2c/
+    - include/zephyr/drivers/i2c/
     - dts/bindings/i2c/
     - include/zephyr/drivers/i2c.h
     - tests/drivers/i2c/
+    - doc/hardware/peripherals/i2c.rst
   labels:
     - "area: I2C"
 
@@ -781,11 +789,15 @@ Documentation:
     - "area: Interrupt Controller"
 
 "Drivers: IPM":
-  status: maintained
+  status: odd fixes
   collaborators:
     - dcpleung
   files:
     - drivers/ipm/
+    - samples/drivers/ipm/
+    - dts/bindings/ipm/
+    - tests/drivers/ipm/
+    - doc/hardware/peripherals/ipm.rst
   description: >-
     Inter-processor mailboxes
   labels:
@@ -802,8 +814,11 @@ Documentation:
     - drivers/kscan/
     - include/zephyr/drivers/kscan.h
     - samples/drivers/espi/
+    - samples/drivers/kscan/
     - tests/drivers/kscan/
     - tests/drivers/espi/
+    - dts/bindings/kscan/
+    - doc/hardware/peripherals/kscan.rst
   labels:
     - "area: Kscan"
 
