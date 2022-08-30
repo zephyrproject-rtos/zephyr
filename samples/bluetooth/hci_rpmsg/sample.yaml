@@ -9,6 +9,7 @@ tests:
     tags: bluetooth
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet
+      - nrf5340_audio_dk_nrf5340_cpunet
   sample.bluetooth.hci_rpmsg.iso_broadcast.bt_ll_sw_split:
     harness: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_iso_broadcast-bt_ll_sw_split.conf"
@@ -16,6 +17,7 @@ tests:
     tags: bluetooth
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet
+      - nrf5340_audio_dk_nrf5340_cpunet
   sample.bluetooth.hci_rpmsg.iso_receive.bt_ll_sw_split:
     harness: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_iso_receive-bt_ll_sw_split.conf"
@@ -23,3 +25,4 @@ tests:
     tags: bluetooth
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet
+      - nrf5340_audio_dk_nrf5340_cpunet
