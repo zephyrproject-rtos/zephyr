@@ -753,7 +753,7 @@ static int b91_tx(const struct device *dev,
 {
 	ARG_UNUSED(pkt);
 
-	int status;
+	int status = 0;
 	struct b91_data *b91 = dev->data;
 
 	/* check for supported mode */
@@ -765,6 +765,7 @@ static int b91_tx(const struct device *dev,
 	if (data.ack_sending) {
 		if (k_sem_take(&data.tx_wait, K_MSEC(B91_TX_WAIT_TIME_MS)) != 0) {
 			data.ack_sending = false;
+			rf_set_rxmode();
 		}
 	}
 
@@ -781,16 +782,17 @@ static int b91_tx(const struct device *dev,
 	rf_tx_pkt(data.tx_buffer);
 
 	/* wait for tx done */
-	status = k_sem_take(&b91->tx_wait, K_MSEC(B91_TX_WAIT_TIME_MS));
-	if (status != 0) {
+	if (k_sem_take(&data.tx_wait, K_MSEC(B91_TX_WAIT_TIME_MS)) != 0) {
 		rf_set_rxmode();
-		return -EIO;
+		status = -EIO;
 	}
 
 	/* wait for ACK if requested */
-	if (frag->data[B91_FRAME_TYPE_OFFSET] & B91_ACK_REQUEST) {
+	if (!status && frag->data[B91_FRAME_TYPE_OFFSET] & B91_ACK_REQUEST) {
 		b91_handle_ack_en();
-		status = k_sem_take(&b91->ack_wait, K_MSEC(B91_ACK_WAIT_TIME_MS));
+		if (k_sem_take(&b91->ack_wait, K_MSEC(B91_ACK_WAIT_TIME_MS)) != 0) {
+			status = -ENOMSG;
+		}
 		b91_handle_ack_dis();
 	}
 
