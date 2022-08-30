@@ -7,6 +7,7 @@
 #if defined(CONFIG_BT_CAP_INITIATOR)
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/bap.h>
@@ -635,11 +636,9 @@ static void test_cap_initiator_broadcast(void)
 	const uint16_t mock_ccid = 0x1234;
 	const struct bt_codec_data new_metadata[] = {
 		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
-			      (BT_AUDIO_CONTEXT_TYPE_MEDIA & 0xFFU),
-			      ((BT_AUDIO_CONTEXT_TYPE_MEDIA >> 8) & 0xFFU)),
+			      BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
 		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST,
-			      (mock_ccid & 0xFFU),
-			      ((mock_ccid >> 8) & 0xFFU)),
+			      BT_BYTES_LIST_LE16(mock_ccid)),
 	};
 	struct bt_cap_initiator_broadcast_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
