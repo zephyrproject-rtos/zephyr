@@ -31,10 +31,10 @@
 &flexspi {
 	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(4)>;
-	/* 4 MB internal flash present on chip */
+	/* 32 megabit internal flash present on chip */
 	w25q32jvwj0: w25q32jvwj0@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(4)>;
+		size = <DT_SIZE_M(32)>;
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";
