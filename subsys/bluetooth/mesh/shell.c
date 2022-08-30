@@ -434,7 +434,7 @@ static int cmd_reset(const struct shell *shell, size_t argc, char *argv[])
 		int err;
 		bool reset = false;
 
-		err = bt_mesh_cfg_node_reset(net.net_idx, net.dst, &reset);
+		err = bt_mesh_cfg_node_reset(net.net_idx, addr, &reset);
 		if (err) {
 			shell_error(shell, "Unable to send "
 					"Remote Node Reset (err %d)", err);
