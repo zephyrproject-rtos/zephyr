@@ -937,7 +937,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 #define Z_MAYBE_DEVICE_DECLARE_INTERNAL(node_id) \
 	extern const struct device DEVICE_DT_NAME_GET(node_id);
 
-DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
+DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL);
 #endif /* CONFIG_HAS_DTS */
 
 #ifdef __cplusplus
