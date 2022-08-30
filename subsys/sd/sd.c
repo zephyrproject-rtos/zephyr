@@ -13,9 +13,7 @@
 #include <zephyr/sys/__assert.h>
 
 #include "sd_utils.h"
-#include "sdmmc_priv.h"
-#include "sdio_priv.h"
-
+#include "sd_init.h"
 
 LOG_MODULE_REGISTER(sd, CONFIG_SD_LOG_LEVEL);
 
