@@ -12,7 +12,7 @@
 #endif
 #include <zephyr/drivers/interrupt_controller/dw_ace_v1x.h>
 #include <soc.h>
-#include <ace_v1x-regs.h>
+#include <adsp_interrupt.h>
 #include "intc_dw.h"
 
 /* ACE device interrupts are all packed into a single line on Xtensa's
@@ -36,14 +36,14 @@
  * interrupts on the single controller.
  *
  * Finally: note that there is an extra layer of masking on ACE.  The
- * MTL_DINT registers provide separately maskable interrupt delivery
+ * ACE_DINT registers provide separately maskable interrupt delivery
  * for each core, and with some devices for different internal
  * interrupt sources.  Responsibility for these mask bits is left with
  * the driver.
  *
  * Thus, the masking architecture picked here is:
  *
- * + Drivers manage MTL_DINT themselves, as there are device-specific
+ * + Drivers manage ACE_DINT themselves, as there are device-specific
  *   mask indexes that only the driver can interpret.  If
  *   core-asymmetric interrupt routing needs to happen, it happens
  *   here.
@@ -56,7 +56,7 @@
  */
 
 /* ACE also has per-core instantiations of a Synopsys interrupt
- * controller.  These inputs (with the same indices as MTL_INTL_*
+ * controller.  These inputs (with the same indices as ACE_INTL_*
  * above) are downstream of the DINT layer, and must be independently
  * masked/enabled.  The core Zephyr intc_dw driver unfortunately
  * doesn't understand this kind of MP implementation.  Note also that
