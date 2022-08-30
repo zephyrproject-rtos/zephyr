@@ -34,7 +34,7 @@ struct image_version {
 	uint8_t iv_minor;
 	uint16_t iv_revision;
 	uint32_t iv_build_num;
-};
+} __packed;
 
 /** Image header.  All fields are in little endian byte order. */
 struct image_header {
@@ -46,20 +46,20 @@ struct image_header {
 	uint32_t ih_flags;	/* IMAGE_F_[...]. */
 	struct image_version ih_ver;
 	uint32_t _pad3;
-};
+} __packed;
 
 /** Image TLV header.  All fields in little endian. */
 struct image_tlv_info {
 	uint16_t it_magic;
 	uint16_t it_tlv_tot;  /* size of TLV area (including tlv_info header) */
-};
+} __packed;
 
 /** Image trailer TLV format. All fields in little endian. */
 struct image_tlv {
 	uint8_t  it_type;   /* IMAGE_TLV_[...]. */
 	uint8_t  _pad;
 	uint16_t it_len;	/* Data length (not including TLV header). */
-};
+} __packed;
 
 _Static_assert(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
 			   "struct image_header not required size");
