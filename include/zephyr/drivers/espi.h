@@ -225,6 +225,20 @@ enum espi_vwire_signal {
 	ESPI_VWIRE_SIGNAL_SCI,
 	ESPI_VWIRE_SIGNAL_DNX_ACK,
 	ESPI_VWIRE_SIGNAL_SUS_ACK,
+	/*
+	 * Virtual wire GPIOs that can be sent from slave to master for
+	 * platform specific usage.
+	 */
+	ESPI_VWIRE_SIGNAL_SLV_GPIO_0,
+	ESPI_VWIRE_SIGNAL_SLV_GPIO_1,
+	ESPI_VWIRE_SIGNAL_SLV_GPIO_2,
+	ESPI_VWIRE_SIGNAL_SLV_GPIO_3,
+	ESPI_VWIRE_SIGNAL_SLV_GPIO_4,
+	ESPI_VWIRE_SIGNAL_SLV_GPIO_5,
+	ESPI_VWIRE_SIGNAL_SLV_GPIO_6,
+	ESPI_VWIRE_SIGNAL_SLV_GPIO_7,
+	/* Number of Virtual Wires */
+	ESPI_VWIRE_SIGNAL_COUNT
 };
 
 /* eSPI LPC peripherals. */
