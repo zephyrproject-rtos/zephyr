@@ -735,24 +735,6 @@ static uint16_t iso_chan_max_data_len(const struct bt_iso_chan *chan,
 	/* Update the max_data_len to take the max_controller_data_len into account */
 	max_data_len = MIN(max_data_len, max_controller_data_len);
 
-	/* Since this returns the maximum ISO data length size, we have to take
-	 * the header size into account, as that also needs to be inserted into
-	 * the SDU
-	 */
-	if (ts == BT_ISO_TIMESTAMP_NONE) {
-		if (max_data_len > BT_HCI_ISO_DATA_HDR_SIZE) {
-			max_data_len -= BT_HCI_ISO_DATA_HDR_SIZE;
-		} else {
-			max_data_len = 0U;
-		}
-	} else {
-		if (max_data_len > BT_HCI_ISO_TS_DATA_HDR_SIZE) {
-			max_data_len -= BT_HCI_ISO_TS_DATA_HDR_SIZE;
-		} else {
-			max_data_len = 0U;
-		}
-	}
-
 	return max_data_len;
 }
 
