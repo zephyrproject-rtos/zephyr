@@ -5,7 +5,7 @@ tests:
   sample.sensor.stm32_vbat_sensor:
     depends_on: adc
     tags: sensors
-    platform_allow: nucleo_g071rb nucleo_wb55rg
+    filter: dt_compat_enabled("st,stm32-vbat")
     timeout: 10
     harness: console
     harness_config:
