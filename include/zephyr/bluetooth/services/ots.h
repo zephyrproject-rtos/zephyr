@@ -250,6 +250,15 @@ enum {
 	BT_OTS_OACP_FEAT_ABORT      = 9,
 };
 
+/*
+ * @enum bt_ots_oacp_write_op_mode
+ * @brief Mode Parameter for OACP Write Op Code.
+ */
+enum bt_ots_oacp_write_op_mode {
+	BT_OTS_OACP_WRITE_OP_MODE_NONE = 0,
+	BT_OTS_OACP_WRITE_OP_MODE_TRUNCATE = BIT(1),
+};
+
 /** @brief Set @ref BT_OTS_OACP_SET_FEAT_CREATE feature.
  *
  *  @param feat OTS features.
@@ -867,6 +876,18 @@ struct bt_ots_client_cb {
 	void (*obj_metadata_read)(struct bt_ots_client *ots_inst,
 				  struct bt_conn *conn, int err,
 				  uint8_t metadata_read);
+
+	/** @brief Callback function for the data of the write object.
+	 *
+	 *  Called when the data of the selected object is written using
+	 *  bt_ots_client_write_object_data().
+	 *
+	 *  @param ots_inst      Pointer to the OTC instance.
+	 *  @param conn          The connection to the peer device.
+	 *  @param len           Length of the written data.
+	 */
+	void (*obj_data_written)(struct bt_ots_client *ots_inst,
+				 struct bt_conn *conn, size_t len);
 };
 
 /** @brief Register an Object Transfer Service Instance.
@@ -987,6 +1008,26 @@ int bt_ots_client_read_object_metadata(struct bt_ots_client *otc_inst,
  */
 int bt_ots_client_read_object_data(struct bt_ots_client *otc_inst,
 				   struct bt_conn *conn);
+
+/** @brief Write the data of the current selected object.
+ *
+ *  This will trigger an OACP write operation for the current size of the object
+ *  with a specified offset and then expect transferring the content via the L2CAP CoC.
+ *
+ *  The length of the data written to object is returned in the obj_data_written() callback.
+ *
+ *  @param otc_inst     Pointer to the OTC instance.
+ *  @param conn         Pointer to the connection object.
+ *  @param buf          Pointer to the data buffer to be written.
+ *  @param len          Size of data.
+ *  @param offset       Offset to write, usually 0.
+ *  @param mode         Mode Parameter for OACP Write Op Code. See @ref bt_ots_oacp_write_op_mode.
+ *
+ *  @return int         0 if success, ERRNO on failure.
+ */
+int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst, struct bt_conn *conn,
+				    const void *buf, size_t len, off_t offset,
+				    enum bt_ots_oacp_write_op_mode mode);
 
 /** @brief Directory listing object metadata callback
  *
