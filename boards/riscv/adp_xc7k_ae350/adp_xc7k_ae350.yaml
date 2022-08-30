@@ -10,6 +10,7 @@ supported:
   - gpio
   - counter
   - i2c
+  - spi
 testing:
   ignore_tags:
     - bluetooth
