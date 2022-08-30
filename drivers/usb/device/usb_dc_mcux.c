@@ -845,6 +845,7 @@ static int usb_mcux_init(const struct device *dev)
 			USBD_MCUX_THREAD_STACK_SIZE,
 			usb_mcux_thread_main, NULL, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
+	k_thread_name_set(&dev_data.thread, "usb_mcux");
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    usb_isr_handler, 0, 0);
