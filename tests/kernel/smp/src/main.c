@@ -144,6 +144,7 @@ ZTEST(smp, test_smp_coop_threads)
 	}
 
 	k_thread_abort(tid);
+	k_thread_join(tid, K_FOREVER);
 	zassert_true(ok, "SMP test failed");
 }
 
@@ -184,6 +185,7 @@ ZTEST(smp, test_cpu_id_threads)
 	k_sem_take(&cpuid_sema, K_FOREVER);
 
 	k_thread_abort(tid);
+	k_thread_join(tid, K_FOREVER);
 }
 
 static void thread_entry(void *p1, void *p2, void *p3)
@@ -244,6 +246,10 @@ static void abort_threads(int num)
 {
 	for (int i = 0; i < num; i++) {
 		k_thread_abort(tinfo[i].tid);
+	}
+
+	for (int i = 0; i < num; i++) {
+		k_thread_join(tinfo[i].tid, K_FOREVER);
 	}
 }
 
@@ -551,6 +557,7 @@ ZTEST(smp, test_get_cpu)
 	k_busy_wait(DELAY_US);
 
 	k_thread_abort(thread_id);
+	k_thread_join(thread_id, K_FOREVER);
 }
 
 #ifdef CONFIG_TRACE_SCHED_IPI
@@ -1005,8 +1012,10 @@ ZTEST(smp, test_smp_switch_torture)
 	k_sleep(K_MSEC(SLEEP_MS_LONG));
 
 	k_thread_abort(&t2);
+	k_thread_join(&t2, K_FOREVER);
 	for (uintptr_t i = 0; i < THREADS_NUM; i++) {
 		k_thread_abort(&tthread[i]);
+		k_thread_join(&tthread[i], K_FOREVER);
 	}
 }
 
