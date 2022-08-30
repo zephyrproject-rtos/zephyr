@@ -168,6 +168,10 @@
 	status = "okay";
 };
 
+&stm_vbat {
+	status = "okay";
+};
+
 &wwdg {
 	status = "okay";
 };

@@ -280,6 +280,10 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&stm_vbat {
+	status = "okay";
+};
+
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;

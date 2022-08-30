@@ -88,6 +88,10 @@
 	status = "okay";
 };
 
+&stm_vbat {
+	status = "okay";
+};
+
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac_out1_pa4>;

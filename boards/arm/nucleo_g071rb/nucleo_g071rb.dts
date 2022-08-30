@@ -161,6 +161,10 @@
 	status = "okay";
 };
 
+&stm_vbat {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";

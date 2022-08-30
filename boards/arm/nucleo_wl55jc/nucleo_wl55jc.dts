@@ -169,6 +169,10 @@
 	status = "okay";
 };
 
+&stm_vbat {
+	status = "okay";
+};
+
 &aes {
 	status = "okay";
 };

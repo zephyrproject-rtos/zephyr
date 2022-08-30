@@ -155,6 +155,10 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&stm_vbat {
+	status = "okay";
+};
+
 &dma2 {
 	status = "okay";
 };
