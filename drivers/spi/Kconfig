@@ -105,4 +105,6 @@ source "drivers/spi/Kconfig.mchp_mss_qspi"
 
 source "drivers/spi/Kconfig.pl022"
 
+source "drivers/spi/Kconfig.andes_atcspi200"
+
 endif # SPI
