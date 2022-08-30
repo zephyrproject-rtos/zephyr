@@ -73,4 +73,34 @@
 		};
 	};
 
+	pinmux_usdhc: pinmux_usdhc {
+		group0 {
+			pinmux = <SD0_CMD_PIO1_31>,
+				 <USDHC0_USDHC_DATA0_PIO2_0>,
+				 <USDHC0_USDHC_DATA1_PIO2_1>,
+				 <USDHC0_USDHC_DATA2_PIO2_2>,
+				 <USDHC0_USDHC_DATA3_PIO2_3>,
+				 <USDHC0_USDHC_DATA4_PIO2_5>,
+				 <USDHC0_USDHC_DATA5_PIO2_6>,
+				 <USDHC0_USDHC_DATA6_PIO2_7>,
+				 <USDHC0_USDHC_DATA7_PIO2_8>,
+				 <GPIO_PIO29_PIO2_9>;
+			bias-pull-up;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+		group1 {
+			pinmux = <SD0_CLK_PIO1_30>;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+		group2 {
+			pinmux = <GPIO_PIO210_PIO2_10>,
+				 <GPIO_PIO24_PIO2_4>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+	};
 };
