@@ -4,5 +4,5 @@
 
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
-# test tx complete callbacks
-RunTest mesh_adv_tx_cb adv_adv_tx_cb
+# test tx callbacks sequence for multiple advs
+RunTest mesh_adv_tx_cb adv_tx_cb_multi
