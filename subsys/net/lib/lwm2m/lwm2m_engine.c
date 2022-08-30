@@ -82,6 +82,7 @@ static struct lwm2m_obj_path_list observe_paths[LWM2M_ENGINE_MAX_OBSERVER_PATH];
 
 static k_tid_t engine_thread_id;
 static bool suspend_engine_thread;
+static bool active_engine_thread;
 
 struct service_node {
 	sys_snode_t node;
@@ -112,7 +113,7 @@ int lwm2m_sock_nfds(void) { return sock_nfds; }
 
 struct lwm2m_block_context *lwm2m_block1_context(void) { return block1_contexts; }
 
-static void lwm2m_socket_update(struct lwm2m_ctx *ctx);
+static int lwm2m_socket_update(struct lwm2m_ctx *ctx);
 
 /* for debugging: to print IP addresses */
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
@@ -184,7 +185,9 @@ int lwm2m_open_socket(struct lwm2m_ctx *client_ctx)
 			return -errno;
 		}
 
-		lwm2m_socket_update(client_ctx);
+		if (lwm2m_socket_update(client_ctx)) {
+			return lwm2m_socket_add(client_ctx);
+		}
 	}
 
 	return 0;
@@ -530,15 +533,16 @@ int lwm2m_socket_add(struct lwm2m_ctx *ctx)
 	return 0;
 }
 
-static void lwm2m_socket_update(struct lwm2m_ctx *ctx)
+static int lwm2m_socket_update(struct lwm2m_ctx *ctx)
 {
 	for (int i = 0; i < sock_nfds; i++) {
 		if (sock_ctx[i] != ctx) {
 			continue;
 		}
 		sock_fds[i].fd = ctx->sock_fd;
-		return;
+		return 0;
 	}
+	return -1;
 }
 
 void lwm2m_socket_del(struct lwm2m_ctx *ctx)
@@ -665,7 +669,9 @@ static void socket_loop(void)
 			lwm2m_rd_client_pause();
 #endif
 			suspend_engine_thread = false;
+			active_engine_thread = false;
 			k_thread_suspend(engine_thread_id);
+			active_engine_thread = true;
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 			lwm2m_rd_client_resume();
 #endif
@@ -779,7 +785,6 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 	socklen_t addr_len;
 	int flags;
 	int ret;
-	bool allocate_socket = false;
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 	uint8_t tmp;
@@ -806,7 +811,6 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
 	if (client_ctx->sock_fd < 0) {
-		allocate_socket = true;
 		ret = lwm2m_open_socket(client_ctx);
 		if (ret) {
 			return ret;
@@ -889,9 +893,6 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 	}
 
 	LOG_INF("Connected, sock id %d", client_ctx->sock_fd);
-	if (allocate_socket) {
-		return lwm2m_socket_add(client_ctx);
-	}
 	return 0;
 error:
 	lwm2m_engine_stop(client_ctx);
@@ -944,39 +945,32 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 
 int lwm2m_engine_pause(void)
 {
-	char buffer[32];
-	const char *str;
-
-	str = k_thread_state_str(engine_thread_id, buffer, sizeof(buffer));
-	if (suspend_engine_thread || !strcmp(str, "suspended")) {
+	if (suspend_engine_thread || !active_engine_thread) {
 		LOG_WRN("Engine thread already suspended");
 		return 0;
 	}
 
 	suspend_engine_thread = true;
 
-	while (strcmp(str, "suspended")) {
+	while (active_engine_thread) {
 		k_msleep(10);
-		str = k_thread_state_str(engine_thread_id, buffer, sizeof(buffer));
 	}
-	LOG_INF("LWM2M engine thread paused (%s) ", str);
+	LOG_INF("LWM2M engine thread paused");
 	return 0;
 }
 
 int lwm2m_engine_resume(void)
 {
-	char buffer[32];
-	const char *str;
-
-	str = k_thread_state_str(engine_thread_id, buffer, sizeof(buffer));
-	if (strcmp(str, "suspended")) {
-		LOG_WRN("LWM2M engine thread state not ok for resume %s", str);
+	if (suspend_engine_thread || active_engine_thread) {
+		LOG_WRN("LWM2M engine thread state not ok for resume");
 		return -EPERM;
 	}
 
 	k_thread_resume(engine_thread_id);
-	str = k_thread_state_str(engine_thread_id, buffer, sizeof(buffer));
-	LOG_INF("LWM2M engine thread resume (%s)", str);
+	while (!active_engine_thread) {
+		k_msleep(10);
+	}
+	LOG_INF("LWM2M engine thread resume");
 	return 0;
 }
 
@@ -996,6 +990,7 @@ static int lwm2m_engine_init(const struct device *dev)
 			NULL, NULL, NULL, THREAD_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&engine_thread_data, "lwm2m-sock-recv");
 	LOG_DBG("LWM2M engine socket receive thread started");
+	active_engine_thread = true;
 
 	return 0;
 }
