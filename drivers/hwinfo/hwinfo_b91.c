@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
+#include <flash.h>
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
