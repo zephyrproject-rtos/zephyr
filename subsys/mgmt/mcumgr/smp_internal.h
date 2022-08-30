@@ -27,7 +27,7 @@ struct net_buf;
  */
 void smp_rx_req(struct smp_transport *smtp, struct net_buf *nb);
 
-static inline
+__deprecated static inline
 void zephyr_smp_rx_req(struct zephyr_smp_transport *smpt, struct net_buf *nb)
 {
 	smp_rx_req((struct smp_transport *)smpt, nb);
@@ -46,7 +46,7 @@ void zephyr_smp_rx_req(struct zephyr_smp_transport *smpt, struct net_buf *nb)
  */
 void *smp_alloc_rsp(const void *req, void *arg);
 
-static inline
+__deprecated static inline
 void *zephyr_smp_alloc_rsp(const void *req, void *arg)
 {
 	return smp_alloc_rsp(req, arg);
@@ -61,7 +61,7 @@ void *zephyr_smp_alloc_rsp(const void *req, void *arg)
  */
 void smp_free_buf(void *buf, void *arg);
 
-static inline
+__deprecated static inline
 void zephyr_smp_free_buf(void *buf, void *arg)
 {
 	smp_free_buf(buf, arg);
