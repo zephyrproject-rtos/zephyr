@@ -289,6 +289,21 @@ static void clock_init(void)
 	/* Switch CLKOUT to FRO_DIV2 */
 	CLOCK_AttachClk(kFRO_DIV2_to_CLKOUT);
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC
+	/* Make sure USDHC ram buffer has been power up*/
+	POWER_DisablePD(kPDRUNCFG_APD_USDHC0_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_USDHC0_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PD_LPOSC);
+	POWER_ApplyPD();
+
+	/* usdhc depend on 32K clock also */
+	CLOCK_AttachClk(kLPOSC_DIV32_to_32KHZWAKE_CLK);
+	CLOCK_AttachClk(kAUX0_PLL_to_SDIO0_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivSdio0Clk, 1);
+	CLOCK_EnableClock(kCLOCK_Sdio0);
+	RESET_PeripheralReset(kSDIO0_RST_SHIFT_RSTn);
+#endif
+
 	DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
 	/* Set up dividers. */
