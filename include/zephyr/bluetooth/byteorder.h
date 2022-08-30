@@ -13,7 +13,7 @@
 
 /**
  * @brief Byteorder
- * @defgroup bt_buf Byteorder
+ * @defgroup bt_byteorder Byteorder
  * @ingroup bluetooth
  * @{
  */

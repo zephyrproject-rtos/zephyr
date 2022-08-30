@@ -9,6 +9,7 @@
 #include <zephyr/sys/printk.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
@@ -32,10 +33,8 @@ BUILD_ASSERT((CONFIG_BT_PACS_SNK_CONTEXT & MANDATORY_SINK_CONTEXT) == MANDATORY_
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */
 	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
-	(((AVAILABLE_SINK_CONTEXT) >>  0) & 0xFF),
-	(((AVAILABLE_SINK_CONTEXT) >>  8) & 0xFF),
-	(((AVAILABLE_SOURCE_CONTEXT) >>  0) & 0xFF),
-	(((AVAILABLE_SOURCE_CONTEXT) >>  8) & 0xFF),
+	BT_BYTES_LIST_LE16(AVAILABLE_SINK_CONTEXT),
+	BT_BYTES_LIST_LE16(AVAILABLE_SOURCE_CONTEXT),
 	0x00, /* Metadata length */
 };
 
