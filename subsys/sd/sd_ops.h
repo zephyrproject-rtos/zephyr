@@ -45,4 +45,18 @@ static inline int sdmmc_host_uhs(struct sdhc_host_props *props)
 		& (props->host_caps.vol_180_support);
 }
 
+int card_ioctl(struct sd_card *card, uint8_t cmd, void *buf);
+
+int card_read_blocks(struct sd_card *card, uint8_t *rbuf,
+	uint32_t start_block, uint32_t num_blocks);
+
+int card_write_blocks(struct sd_card *card, const uint8_t *wbuf,
+	uint32_t start_block, uint32_t num_blocks);
+
+int card_app_command(struct sd_card *card, int relative_card_address);
+
+int sdmmc_read_status(struct sd_card *card);
+
+int sdmmc_wait_ready(struct sd_card *card);
+
 #endif /* ZEPHYR_SUBSYS_SD_SD_OPS_H_ */

@@ -15,6 +15,7 @@
 #include "sd_utils.h"
 #include "sd_init.h"
 
+
 LOG_MODULE_REGISTER(sd, CONFIG_SD_LOG_LEVEL);
 
 /* Idle all cards on bus. Can be used to clear errors on cards */
@@ -24,11 +25,13 @@ static inline int sd_idle(struct sd_card *card)
 
 	/* Reset card with CMD0 */
 	cmd.opcode = SD_GO_IDLE_STATE;
+	cmd.arg = 0x0;
 	cmd.response_type = (SD_RSP_TYPE_NONE | SD_SPI_RSP_TYPE_R1);
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	return sdhc_request(card->sdhc, &cmd, NULL);
 }
 
+#if defined(CONFIG_SDMMC_STACK) || defined(CONFIG_SDIO_STACK)
 /* Sends CMD8 during SD initialization */
 static int sd_send_interface_condition(struct sd_card *card)
 {
@@ -111,6 +114,7 @@ static int sd_common_init(struct sd_card *card)
 	}
 	return ret;
 }
+#endif
 
 static int sd_init_io(struct sd_card *card)
 {
@@ -164,19 +168,25 @@ static int sd_init_io(struct sd_card *card)
 static int sd_command_init(struct sd_card *card)
 {
 	int ret;
+
 	/*
 	 * We must wait 74 clock cycles, per SD spec, to use card after power
 	 * on. At 400000KHz, this is a  185us delay. Wait 1ms to be safe.
 	 */
 	sd_delay(1);
+
+
+#if defined(CONFIG_SDIO_STACK) || defined(CONFIG_SDMMC_STACK)
 	/*
 	 * Start card initialization and identification
 	 * flow described in section 3.6 of SD specification
+	 * Common to SDIO and SDMMC
 	 */
 	ret = sd_common_init(card);
 	if (ret) {
 		return ret;
 	}
+#endif
 #ifdef CONFIG_SDIO_STACK
 	/* Attempt to initialize SDIO card */
 	if (!sdio_card_init(card)) {
@@ -189,6 +199,16 @@ static int sd_command_init(struct sd_card *card)
 		return 0;
 	}
 #endif /* CONFIG_SDIO_STACK */
+#ifdef CONFIG_MMC_STACK
+	ret = sd_idle(card);
+	if (ret) {
+		LOG_ERR("Card error on CMD0");
+		return ret;
+	}
+	if (!mmc_card_init(card)) {
+		return 0;
+	}
+#endif /* CONFIG_MMC_STACK */
 	/* Unknown card type */
 	return -ENOTSUP;
 }
