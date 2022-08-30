@@ -35,6 +35,17 @@ extern "C" {
 int regulator_count_voltages(const struct device *dev);
 
 /**
+ * @brief Return the number of supported regulator modes
+ * Returns the number of supported regulator modes. Many regulators will only
+ * support one mode. Regulator modes can be set and selected with
+ * regulator_set_mode
+ *
+ * @param dev: Regulator device to count supported regulator modes for
+ * @return number of supported modes
+ */
+int regulator_count_modes(const struct device *dev);
+
+/**
  * @brief Return supported voltage
  * Returns a voltage that can be passed to @ref regulator_set_voltage(), zero
  * if the selector code can't be used, or a negative errno.
@@ -90,6 +101,21 @@ int regulator_set_current_limit(const struct device *dev, int min_uA, int max_uA
  * @return current limit in uA, or errno
  */
 int regulator_get_current_limit(const struct device *dev);
+
+/**
+ * @brief Select mode of regulator
+ * Regulators can support multiple modes in order to permit different voltage
+ * configuration or better power savings. This API will apply a mode for
+ * the regulator, and also configure the remainder of the regulator APIs,
+ * such as those disabling, changing voltage/current targets, or querying
+ * voltage/current targets to target that mode.
+ * @param dev: regulator to switch mode for
+ * @param mode: Mode to select for this regulator. Only modes present
+ * in the regulator-allowed-modes property are permitted.
+ * @return 0 on success, or errno on error
+ */
+int regulator_set_mode(const struct device *dev, uint32_t mode);
+
 
 #ifdef __cplusplus
 }
