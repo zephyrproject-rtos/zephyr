@@ -19,22 +19,6 @@
 
 	soc {
 
-		nvmctrl: nvmctrl@41004000  {
-			compatible = "atmel,sam0-nvmctrl";
-			reg = <0x41004000 0x22>;
-			interrupts = <4 0>;
-			lock-regions = <16>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				reg = <0 0x40000>;
-				write-block-size = <4>;
-			};
-		};
-
 		pm: pm@40000000 {
 			compatible = "atmel,saml2x-pm";
 			reg = <0x40000000 0x400>;

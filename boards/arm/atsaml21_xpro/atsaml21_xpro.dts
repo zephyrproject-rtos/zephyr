@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <atmel/saml21.dtsi>
+#include <atmel/saml21x18.dtsi>
 #include "atsaml21_xpro-pinctrl.dtsi"
 
 / {
