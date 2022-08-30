@@ -491,16 +491,22 @@ void log_output_process(const struct log_output *output,
 {
 	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
 	uint32_t prefix_offset;
+	cbprintf_cb cb;
 
 	if (!raw_string) {
 		prefix_offset = prefix_print(output, flags, 0, timestamp, domain, source, level);
+		cb = out_func;
 	} else {
 		prefix_offset = 0;
+		/* source set to 1 indicates raw string and contrary to printk
+		 * case it should not append anything to the output (printk is
+		 * appending <CR> to the new line character).
+		 */
+		cb = ((uintptr_t)source == 1) ? out_func : cr_out_func;
 	}
 
 	if (package) {
-		int err = cbpprintf(raw_string ? cr_out_func :  out_func,
-				    (void *)output, (void *)package);
+		int err = cbpprintf(cb, (void *)output, (void *)package);
 
 		(void)err;
 		__ASSERT_NO_MSG(err >= 0);
