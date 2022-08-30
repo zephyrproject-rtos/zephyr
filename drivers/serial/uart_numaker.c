@@ -17,6 +17,10 @@ struct uart_numaker_config {
 	UART_T *uart;
 	uint32_t id_rst;
 	uint32_t id_clk;
+    uint32_t irq_n;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	void (*irq_config_func)(const struct device *dev);
+#endif
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
 #endif
@@ -25,6 +29,10 @@ struct uart_numaker_config {
 struct uart_numaker_data {
 	const struct device *clock;
 	struct uart_config ucfg;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_callback_user_data_t user_cb;
+	void *user_data;
+#endif
 };
 
 static int uart_numaker_poll_in(const struct device *dev, unsigned char *c)
@@ -49,7 +57,32 @@ static void uart_numaker_poll_out(const struct device *dev, unsigned char c)
 
 static int uart_numaker_err_check(const struct device *dev)
 {
-	return 0;
+	const struct uart_numaker_config *config = dev->config;
+    UART_T* uart = config->uart;
+	uint32_t flags = uart->FIFOSTS;
+	int err = 0;
+    
+	if (flags & UART_FIFOSTS_RXOVIF_Msk) {
+		err |= UART_ERROR_OVERRUN;
+	}
+
+	if (flags & UART_FIFOSTS_PEF_Msk) {
+		err |= UART_ERROR_PARITY;
+	}
+
+	if (flags & UART_FIFOSTS_FEF_Msk) {
+		err |= UART_ERROR_FRAMING;
+	}
+ 
+	if (flags & UART_FIFOSTS_BIF_Msk) {
+		err |= UART_BREAK;
+	} 
+    
+    if(flags & (UART_FIFOSTS_BIF_Msk | UART_FIFOSTS_FEF_Msk | UART_FIFOSTS_PEF_Msk | UART_FIFOSTS_RXOVIF_Msk))
+    {
+        uart->FIFOSTS = (UART_FIFOSTS_BIF_Msk | UART_FIFOSTS_FEF_Msk | UART_FIFOSTS_PEF_Msk | UART_FIFOSTS_RXOVIF_Msk);
+    }    
+	return err;
 }
 
 static inline int32_t uart_numaker_convert_stopbit(enum uart_config_stop_bits sb)
@@ -176,9 +209,12 @@ static int uart_numaker_init(const struct device *dev)
 	SYS_LockReg();
   
 	SYS_ResetModule(config->id_rst);
-  
+    
 	UART_Open(config->uart, pData->ucfg.baudrate);
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	config->irq_config_func(dev);
+#endif
 	return 0;
 }
 
@@ -189,9 +225,17 @@ static int uart_numaker_fifo_fill(const struct device *dev,
 			      const uint8_t *tx_data,
 			      int size)
 {
-	int i = 0;
+	const struct uart_numaker_config *config = dev->config;
+    UART_T* uart = config->uart;
+	int tx_bytes = 0;
 
-	return i;
+	/* Check TX FIFO not full, then fill */
+	while (((size - tx_bytes) > 0) && (!(uart->FIFOSTS & UART_FIFOSTS_TXFULL_Msk))) {
+		/* Fill one byte into TX FIFO */
+        uart->DAT = tx_data[tx_bytes++];
+	}
+
+	return tx_bytes;
 }
 
 /* API implementation: fifo_read */
@@ -199,71 +243,110 @@ static int uart_numaker_fifo_read(const struct device *dev,
 			      uint8_t *rx_data,
 			      const int size)
 {
-	int rx_count;
+	const struct uart_numaker_config *config = dev->config;
+    UART_T* uart = config->uart;
+	int rx_bytes = 0;
 
-	return rx_count;
+	/* Check RX FIFO not empty, then read */
+	while (((size - rx_bytes) > 0) && (!(uart->FIFOSTS & UART_FIFOSTS_RXEMPTY_Msk))) {
+		/* Read one byte from UART RX FIFO */
+		rx_data[rx_bytes++] = (uint8_t)uart->DAT;
+	}
+
+	return rx_bytes;
 }
 
 /* API implementation: irq_tx_enable */
 static void uart_numaker_irq_tx_enable(const struct device *dev)
 {
+	const struct uart_numaker_config *config = dev->config;
+    UART_T* uart = config->uart;
 
+    UART_EnableInt(uart, UART_INTEN_THREIEN_Msk);
 }
 
 /* API implementation: irq_tx_disable */
 static void uart_numaker_irq_tx_disable(const struct device *dev)
 {
+	const struct uart_numaker_config *config = dev->config;
+    UART_T* uart = config->uart;
 
+    UART_DisableInt(uart, UART_INTEN_THREIEN_Msk);
 }
+
+#define UART_ENABLE_INT(uart, u32eIntSel)    ((uart)->INTEN |= (u32eIntSel))
 
 /* API implementation: irq_tx_ready */
 static int uart_numaker_irq_tx_ready(const struct device *dev)
 {
+	const struct uart_numaker_config *config = dev->config;
+    UART_T* uart = config->uart;
+    
+    return ((!UART_IS_TX_FULL(uart)) && (uart->INTEN & UART_INTEN_THREIEN_Msk));
 
-	return 1;
 }
 
 /* API implementation: irq_tx_complete */
 static int uart_numaker_irq_tx_complete(const struct device *dev)
 {
-
-	return 1;
+	const struct uart_numaker_config *config = dev->config;
+    UART_T* uart = config->uart;
+    
+    return (uart->INTSTS & UART_INTSTS_THREINT_Msk);
 }
 
 /* API implementation: irq_rx_enable */
 static void uart_numaker_irq_rx_enable(const struct device *dev)
 {
+	const struct uart_numaker_config *config = dev->config;
+    UART_T* uart = config->uart;
 
+    UART_EnableInt(uart, UART_INTEN_RDAIEN_Msk);
 }
 
 /* API implementation: irq_rx_disable */
 static void uart_numaker_irq_rx_disable(const struct device *dev)
 {
+	const struct uart_numaker_config *config = dev->config;
+    UART_T* uart = config->uart;
 
+    UART_DisableInt(uart, UART_INTEN_RDAIEN_Msk);
 }
 
 /* API implementation: irq_rx_ready */
 static int uart_numaker_irq_rx_ready(const struct device *dev)
 {
-	return 1;
+	const struct uart_numaker_config *config = dev->config;
+    UART_T* uart = config->uart;
+    
+//    return UART_IS_RX_READY(uart);
+    return ((!UART_GET_RX_EMPTY(uart)) && (uart->INTEN & UART_INTEN_RDAIEN_Msk));
 }
 
 /* API implementation: irq_err_enable */
 static void uart_numaker_irq_err_enable(const struct device *dev)
 {
+	const struct uart_numaker_config *config = dev->config;
+    UART_T* uart = config->uart;
 
+    UART_EnableInt(uart, UART_INTEN_BUFERRIEN_Msk | UART_INTEN_SWBEIEN_Msk);
 }
 
 /* API implementation: irq_err_disable*/
 static void uart_numaker_irq_err_disable(const struct device *dev)
 {
+	const struct uart_numaker_config *config = dev->config;
+    UART_T* uart = config->uart;
 
+    UART_DisableInt(uart, UART_INTEN_BUFERRIEN_Msk | UART_INTEN_SWBEIEN_Msk);
 }
 
 /* API implementation: irq_is_pending */
 static int uart_numaker_irq_is_pending(const struct device *dev)
 {
-
+	const struct uart_numaker_config *config = dev->config;
+    
+    return (uart_numaker_irq_tx_ready(dev) || (uart_numaker_irq_rx_ready(dev)));
 }
 
 /* API implementation: irq_update */
@@ -280,12 +363,23 @@ static void uart_numaker_irq_callback_set(const struct device *dev,
 				      uart_irq_callback_user_data_t cb,
 				      void *cb_data)
 {
+	struct uart_numaker_data *pData = dev->data;
 
+	pData->user_cb = cb;
+	pData->user_data = cb_data;
+}
+
+static void uart_numaker_isr(const struct device *dev)
+{
+	struct uart_numaker_data *pData = dev->data;
+
+	if (pData->user_cb) {
+		pData->user_cb(dev, pData->user_data);
+	}
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
 static const struct uart_driver_api uart_numaker_driver_api = {
 	.poll_in          = uart_numaker_poll_in,
@@ -313,17 +407,7 @@ static const struct uart_driver_api uart_numaker_driver_api = {
 #endif
 };
 
-#else
-static const struct uart_driver_api uart_numaker_driver_api = {
-	.poll_in          = uart_numaker_poll_in,
-	.poll_out         = uart_numaker_poll_out,
-	.err_check        = uart_numaker_err_check,
-#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-	.configure        = uart_numaker_configure,
-	.config_get       = uart_numaker_config_get,
-#endif
-};
-#endif  /* CONFIG_UART_INTERRUPT_DRIVEN */
+
 
 
 #ifdef CONFIG_PINCTRL
@@ -334,28 +418,47 @@ static const struct uart_driver_api uart_numaker_driver_api = {
 #define PINCTRL_INIT(n)
 #endif
 
-#define NUMAKER_INIT(inst)						\
-	PINCTRL_DEFINE(inst)						\
-									\
-static const struct uart_numaker_config uart_numaker_cfg_##inst = {	\
-	.uart = (UART_T *)DT_INST_REG_ADDR(inst),			\
-	.id_rst = DT_INST_PROP(inst, reset),					\
-	.id_clk = DT_INST_PROP(inst, clk_module),					\
-    PINCTRL_INIT(inst)							\
-};									\
-									\
-static struct uart_numaker_data uart_numaker_data_##inst = {		\
-	.ucfg = {							\
-		.baudrate = DT_INST_PROP(inst, current_speed),		\
-	},								\
-};									\
-									\
-DEVICE_DT_INST_DEFINE(inst,						\
-		    &uart_numaker_init,					\
-		    NULL,						\
-		    &uart_numaker_data_##inst,				\
-		    &uart_numaker_cfg_##inst,				\
-		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
-		    &uart_numaker_driver_api);
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#define NUMAKER_UART_IRQ_CONFIG_FUNC(n)					\
+	static void uart_numaker_irq_config_##n(const struct device *dev)	\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_numaker_isr,        \
+			    DEVICE_DT_INST_GET(n), 0);                                          \
+		irq_enable(DT_INST_IRQN(n));                                                    \
+	}
+#define IRQ_FUNC_INIT(n)					\
+	.irq_config_func = uart_numaker_irq_config_##n
+#else
+#define NUMAKER_UART_IRQ_CONFIG_FUNC(n)
+#define IRQ_FUNC_INIT(n)
+#endif
 
-DT_INST_FOREACH_STATUS_OKAY(NUMAKER_INIT)
+
+#define NUMAKER_UART_INIT(inst)						\
+    PINCTRL_DEFINE(inst)						\
+    NUMAKER_UART_IRQ_CONFIG_FUNC(inst)              \
+    								\
+    static const struct uart_numaker_config uart_numaker_cfg_##inst = {	\
+        .uart = (UART_T *)DT_INST_REG_ADDR(inst),			\
+        .id_rst = DT_INST_PROP(inst, reset),					\
+        .id_clk = DT_INST_PROP(inst, clk_module),					\
+        .irq_n = DT_INST_IRQN(inst),					\
+        PINCTRL_INIT(inst)							\
+        IRQ_FUNC_INIT(inst)							\
+    };									\
+                                        \
+    static struct uart_numaker_data uart_numaker_data_##inst = {		\
+        .ucfg = {							\
+            .baudrate = DT_INST_PROP(inst, current_speed),		\
+        },								\
+    };									\
+                                        \
+    DEVICE_DT_INST_DEFINE(inst,						\
+                &uart_numaker_init,					\
+                NULL,						\
+                &uart_numaker_data_##inst,				\
+                &uart_numaker_cfg_##inst,				\
+                PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
+                &uart_numaker_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(NUMAKER_UART_INIT)
