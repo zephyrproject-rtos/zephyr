@@ -111,3 +111,8 @@ properties:
       type: uint8-array
       required: false
       description: setup cntrl1 register for setting source range
+
+    data-mode-2:
+      type: boolean
+      required: false
+      description: send default updates as data2 mode

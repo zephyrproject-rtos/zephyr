@@ -80,6 +80,7 @@ struct ssd16xx_config {
 	uint8_t gate_line_width;
 	bool override_gate_line_width;
 	struct ssd16xx_dt_array cntrl1_data;
+	bool data_mode_2;
 };
 
 static inline void ssd16xx_busy_wait(const struct device *dev)
@@ -843,6 +844,9 @@ static int ssd16xx_controller_init(const struct device *dev)
 		return err;
 	}
 
+	if (config->data_mode_2)
+		data->update_cmd |= SSD16XX_CTRL2_TO_INITIAL;
+
 	return ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RAM, true);
 }
 
@@ -979,6 +983,8 @@ static struct display_driver_api ssd16xx_driver_api = {
 		.override_gate_line_width =				\
 			DT_INST_NODE_HAS_PROP(n, gate_line_width),	\
 		.cntrl1_data = SSD16XX_ASSIGN_ARRAY(n, cntrl1_data),	\
+		.data_mode_2 =					\
+			DT_INST_NODE_HAS_PROP(n, data_mode_2),		\
 	};								\
 									\
 	static struct ssd16xx_data ssd16xx_data_##n;			\
