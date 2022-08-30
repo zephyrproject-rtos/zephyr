@@ -140,7 +140,7 @@ void smp_transport_init(struct smp_transport *smpt,
 			smp_transport_ud_copy_fn ud_copy_func,
 			smp_transport_ud_free_fn ud_free_func);
 
-static inline
+__deprecated static inline
 void zephyr_smp_transport_init(struct zephyr_smp_transport *smpt,
 			       zephyr_smp_transport_out_fn *output_func,
 			       zephyr_smp_transport_get_mtu_fn *get_mtu_func,
