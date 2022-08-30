@@ -50,7 +50,7 @@ void *smp_alloc_rsp(const void *req, void *arg)
 	const struct net_buf_pool *pool;
 	const struct net_buf *req_nb;
 	struct net_buf *rsp_nb;
-	struct smp_transport *zst = arg;
+	struct smp_transport *smpt = arg;
 
 	req_nb = req;
 
@@ -59,8 +59,8 @@ void *smp_alloc_rsp(const void *req, void *arg)
 		return NULL;
 	}
 
-	if (zst->zst_ud_copy) {
-		zst->zst_ud_copy(rsp_nb, req_nb);
+	if (smpt->zst_ud_copy) {
+		smpt->zst_ud_copy(rsp_nb, req_nb);
 	} else {
 		pool = net_buf_pool_get(req_nb->pool_id);
 		memcpy(net_buf_user_data(rsp_nb),
@@ -73,14 +73,14 @@ void *smp_alloc_rsp(const void *req, void *arg)
 
 void smp_free_buf(void *buf, void *arg)
 {
-	struct smp_transport *zst = arg;
+	struct smp_transport *smpt = arg;
 
 	if (!buf) {
 		return;
 	}
 
-	if (zst->zst_ud_free) {
-		zst->zst_ud_free(net_buf_user_data((struct net_buf *)buf));
+	if (smpt->zst_ud_free) {
+		smpt->zst_ud_free(net_buf_user_data((struct net_buf *)buf));
 	}
 
 	mcumgr_buf_free(buf);
@@ -90,8 +90,7 @@ void smp_free_buf(void *buf, void *arg)
  * Processes a single SMP packet and sends the corresponding response(s).
  */
 static int
-smp_process_packet(struct smp_transport *zst,
-			  struct net_buf *nb)
+smp_process_packet(struct smp_transport *smpt, struct net_buf *nb)
 {
 	struct cbor_nb_reader reader;
 	struct cbor_nb_writer writer;
@@ -101,7 +100,7 @@ smp_process_packet(struct smp_transport *zst,
 	streamer = (struct smp_streamer) {
 		.reader = &reader,
 		.writer = &writer,
-		.smpt = zst,
+		.smpt = smpt,
 	};
 
 	rc = smp_process_request_packet(&streamer, nb);
@@ -114,24 +113,24 @@ smp_process_packet(struct smp_transport *zst,
 static void
 smp_handle_reqs(struct k_work *work)
 {
-	struct smp_transport *zst;
+	struct smp_transport *smpt;
 	struct net_buf *nb;
 
-	zst = (void *)work;
+	smpt = (void *)work;
 
-	while ((nb = net_buf_get(&zst->zst_fifo, K_NO_WAIT)) != NULL) {
-		smp_process_packet(zst, nb);
+	while ((nb = net_buf_get(&smpt->zst_fifo, K_NO_WAIT)) != NULL) {
+		smp_process_packet(smpt, nb);
 	}
 }
 
 void
-smp_transport_init(struct smp_transport *zst,
+smp_transport_init(struct smp_transport *smpt,
 		   smp_transport_out_fn output_func,
 		   smp_transport_get_mtu_fn get_mtu_func,
 		   smp_transport_ud_copy_fn ud_copy_func,
 		   smp_transport_ud_free_fn ud_free_func)
 {
-	*zst = (struct smp_transport) {
+	*smpt = (struct smp_transport) {
 		.zst_output = output_func,
 		.zst_get_mtu = get_mtu_func,
 		.zst_ud_copy = ud_copy_func,
@@ -139,11 +138,11 @@ smp_transport_init(struct smp_transport *zst,
 	};
 
 #ifdef CONFIG_MCUMGR_SMP_REASSEMBLY
-	smp_reassembly_init(zst);
+	smp_reassembly_init(smpt);
 #endif
 
-	k_work_init(&zst->zst_work, smp_handle_reqs);
-	k_fifo_init(&zst->zst_fifo);
+	k_work_init(&smpt->zst_work, smp_handle_reqs);
+	k_fifo_init(&smpt->zst_fifo);
 }
 
 /**
@@ -151,15 +150,15 @@ smp_transport_init(struct smp_transport *zst,
  *
  * This function always consumes the supplied net_buf.
  *
- * @param zst                   The transport to use to send the corresponding
+ * @param smpt                  The transport to use to send the corresponding
  *                                  response(s).
  * @param nb                    The request packet to process.
  */
 WEAK void
-smp_rx_req(struct smp_transport *zst, struct net_buf *nb)
+smp_rx_req(struct smp_transport *smpt, struct net_buf *nb)
 {
-	net_buf_put(&zst->zst_fifo, nb);
-	k_work_submit_to_queue(&smp_work_queue, &zst->zst_work);
+	net_buf_put(&smpt->zst_fifo, nb);
+	k_work_submit_to_queue(&smp_work_queue, &smpt->zst_work);
 }
 
 static int smp_init(const struct device *dev)

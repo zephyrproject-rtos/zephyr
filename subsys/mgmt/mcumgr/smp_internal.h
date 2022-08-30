@@ -21,11 +21,11 @@ struct net_buf;
  *
  * This function always consumes the supplied net_buf.
  *
- * @param zst                   The transport to use to send the corresponding
+ * @param smtp                  The transport to use to send the corresponding
  *                                  response(s).
  * @param nb                    The request packet to process.
  */
-void smp_rx_req(struct smp_transport *zst, struct net_buf *nb);
+void smp_rx_req(struct smp_transport *smtp, struct net_buf *nb);
 
 static inline
 void zephyr_smp_rx_req(struct zephyr_smp_transport *smpt, struct net_buf *nb)

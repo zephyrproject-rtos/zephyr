@@ -13,24 +13,24 @@
 #include <smp/smp.h>
 #include "smp_internal.h"
 
-void smp_reassembly_init(struct smp_transport *zst)
+void smp_reassembly_init(struct smp_transport *smpt)
 {
-	zst->__reassembly.current = NULL;
-	zst->__reassembly.expected = 0;
+	smpt->__reassembly.current = NULL;
+	smpt->__reassembly.expected = 0;
 }
 
-int smp_reassembly_expected(const struct smp_transport *zst)
+int smp_reassembly_expected(const struct smp_transport *smpt)
 {
-	if (zst->__reassembly.current == NULL) {
+	if (smpt->__reassembly.current == NULL) {
 		return -EINVAL;
 	}
 
-	return zst->__reassembly.expected;
+	return smpt->__reassembly.expected;
 }
 
-int smp_reassembly_collect(struct smp_transport *zst, const void *buf, uint16_t len)
+int smp_reassembly_collect(struct smp_transport *smpt, const void *buf, uint16_t len)
 {
-	if (zst->__reassembly.current == NULL) {
+	if (smpt->__reassembly.current == NULL) {
 		/*
 		 * Collecting the first fragment: need to allocate buffer for it and prepare
 		 * the reassembly context.
@@ -54,9 +54,9 @@ int smp_reassembly_collect(struct smp_transport *zst, const void *buf, uint16_t 
 				return -EOVERFLOW;
 			}
 
-			zst->__reassembly.current = mcumgr_buf_alloc();
-			if (zst->__reassembly.current != NULL) {
-				zst->__reassembly.expected = expected;
+			smpt->__reassembly.current = mcumgr_buf_alloc();
+			if (smpt->__reassembly.current != NULL) {
+				smpt->__reassembly.expected = expected;
 			} else {
 				return -ENOMEM;
 			}
@@ -67,9 +67,9 @@ int smp_reassembly_collect(struct smp_transport *zst, const void *buf, uint16_t 
 	}
 
 	/* len is expected to be > 0 */
-	if (zst->__reassembly.expected >= len) {
-		net_buf_add_mem(zst->__reassembly.current, buf, len);
-		zst->__reassembly.expected -= len;
+	if (smpt->__reassembly.expected >= len) {
+		net_buf_add_mem(smpt->__reassembly.current, buf, len);
+		smpt->__reassembly.expected -= len;
 	} else {
 		/*
 		 * A fragment is longer than the expected size and will not fit into the buffer.
@@ -77,43 +77,43 @@ int smp_reassembly_collect(struct smp_transport *zst, const void *buf, uint16_t 
 		return -EOVERFLOW;
 	}
 
-	return zst->__reassembly.expected;
+	return smpt->__reassembly.expected;
 }
 
-int smp_reassembly_complete(struct smp_transport *zst, bool force)
+int smp_reassembly_complete(struct smp_transport *smpt, bool force)
 {
-	if (zst->__reassembly.current == NULL) {
+	if (smpt->__reassembly.current == NULL) {
 		return -EINVAL;
 	}
 
-	if (zst->__reassembly.expected == 0 || force) {
-		int expected = zst->__reassembly.expected;
+	if (smpt->__reassembly.expected == 0 || force) {
+		int expected = smpt->__reassembly.expected;
 
-		smp_rx_req(zst, zst->__reassembly.current);
-		zst->__reassembly.expected = 0;
-		zst->__reassembly.current = NULL;
+		smp_rx_req(smpt, smpt->__reassembly.current);
+		smpt->__reassembly.expected = 0;
+		smpt->__reassembly.current = NULL;
 		return expected;
 	}
 	return -ENODATA;
 }
 
-int smp_reassembly_drop(struct smp_transport *zst)
+int smp_reassembly_drop(struct smp_transport *smpt)
 {
-	if (zst->__reassembly.current == NULL) {
+	if (smpt->__reassembly.current == NULL) {
 		return -EINVAL;
 	}
 
-	mcumgr_buf_free(zst->__reassembly.current);
-	zst->__reassembly.expected = 0;
-	zst->__reassembly.current = NULL;
+	mcumgr_buf_free(smpt->__reassembly.current);
+	smpt->__reassembly.expected = 0;
+	smpt->__reassembly.current = NULL;
 
 	return 0;
 }
 
-void *smp_reassembly_get_ud(const struct smp_transport *zst)
+void *smp_reassembly_get_ud(const struct smp_transport *smpt)
 {
-	if (zst->__reassembly.current != NULL) {
-		return net_buf_user_data(zst->__reassembly.current);
+	if (smpt->__reassembly.current != NULL) {
+		return net_buf_user_data(smpt->__reassembly.current);
 	}
 
 	return NULL;
