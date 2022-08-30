@@ -484,7 +484,7 @@ static inline int z_cbprintf_cpy(const void *buf, size_t len, void *ctx)
 		return -ENOSPC;
 	}
 
-	memcpy(&((uint8_t *)desc->buf)[desc->off], (void *)buf, len);
+	memcpy(&((uint8_t *)desc->buf)[desc->off], buf, len);
 	desc->off += len;
 
 	return len;
