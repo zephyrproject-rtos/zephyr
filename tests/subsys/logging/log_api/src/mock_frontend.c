@@ -102,9 +102,15 @@ void log_frontend_msg(const void *source,
 	zassert_equal(desc.level, exp_msg->level, NULL);
 	zassert_equal(desc.domain, exp_msg->domain_id, NULL);
 
-	uint32_t source_id = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
-		log_dynamic_source_id((struct log_source_dynamic_data *)source) :
-		log_const_source_id((const struct log_source_const_data *)source);
+	uint32_t source_id;
+
+	if (desc.level == LOG_LEVEL_NONE) {
+		source_id = (uintptr_t)source;
+	} else {
+		source_id = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
+			log_dynamic_source_id((struct log_source_dynamic_data *)source) :
+			log_const_source_id((const struct log_source_const_data *)source);
+	}
 
 	zassert_equal(source_id, exp_msg->source_id, "got: %d, exp: %d",
 			source_id, exp_msg->source_id);
