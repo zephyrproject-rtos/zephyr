@@ -149,4 +149,43 @@
 			nxp,analog-mode;
 		};
 	};
+
+	pinmux_usdhc: pinmux_usdhc {
+		group0 {
+			pinmux = <SD0_CMD_PIO1_31>,
+				 <USDHC0_USDHC_DATA0_PIO2_0>,
+				 <USDHC0_USDHC_DATA1_PIO2_1>,
+				 <USDHC0_USDHC_DATA2_PIO2_2>,
+				 <USDHC0_USDHC_DATA3_PIO2_3>,
+				 <USDHC0_USDHC_DATA4_PIO2_5>,
+				 <USDHC0_USDHC_DATA5_PIO2_6>,
+				 <USDHC0_USDHC_DATA6_PIO2_7>,
+				 <USDHC0_USDHC_DATA7_PIO2_8>,
+				 <SD0_CARD_DET_N_PIO2_9>;
+			bias-pull-up;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+		group1 {
+			pinmux = <SD0_CLK_PIO1_30>;
+			bias-pull-down;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+		group2 {
+			pinmux = <GPIO_PIO210_PIO2_10>;
+			bias-pull-down;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+		group3 {
+			pinmux = <SD0_DS_PIO2_4>;
+			bias-pull-down;
+			input-enable;
+			slew-rate = "slow";
+			drive-strength = "normal";
+		};
+	};
 };
