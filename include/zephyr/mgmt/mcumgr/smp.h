@@ -84,15 +84,15 @@ typedef void zephyr_smp_transport_ud_free_fn(void *ud);
  */
 struct smp_transport {
 	/* Must be the first member. */
-	struct k_work zst_work;
+	struct k_work work;
 
 	/* FIFO containing incoming requests to be processed. */
-	struct k_fifo zst_fifo;
+	struct k_fifo fifo;
 
-	smp_transport_out_fn zst_output;
-	smp_transport_get_mtu_fn zst_get_mtu;
-	smp_transport_ud_copy_fn zst_ud_copy;
-	smp_transport_ud_free_fn zst_ud_free;
+	smp_transport_out_fn output;
+	smp_transport_get_mtu_fn get_mtu;
+	smp_transport_ud_copy_fn ud_copy;
+	smp_transport_ud_free_fn ud_free;
 
 #ifdef CONFIG_MCUMGR_SMP_REASSEMBLY
 	/* Packet reassembly internal data, API access only */
