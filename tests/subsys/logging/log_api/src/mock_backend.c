@@ -152,7 +152,9 @@ static void process(const struct log_backend *const backend,
 	uint32_t source_id;
 	const void *source = msg->log.hdr.source;
 
-	if (source == NULL) {
+	if (exp->level == LOG_LEVEL_INTERNAL_RAW_STRING) {
+		source_id = (uintptr_t)source;
+	} else if (source == NULL) {
 		source_id = 0;
 	} else {
 		source_id = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
