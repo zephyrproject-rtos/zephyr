@@ -85,7 +85,6 @@ list(APPEND zephyr_cmake_modules "\${pre_dt_board}")
 list(APPEND zephyr_cmake_modules dts)
 list(APPEND zephyr_cmake_modules kconfig)
 list(APPEND zephyr_cmake_modules soc)
-list(APPEND zephyr_cmake_modules target_toolchain)
 
 foreach(component ${SUB_COMPONENTS})
   if(NOT ${component} IN_LIST zephyr_cmake_modules)
