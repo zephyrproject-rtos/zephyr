@@ -1365,9 +1365,7 @@ int lwm2m_rd_client_resume(void)
 	lwm2m_close_socket(client.ctx);
 	client.engine_state = suspended_client_state;
 
-	if (!sm_is_registered() ||
-	    (sm_is_registered() &&
-	     (client.lifetime <= (k_uptime_get() - client.last_update) / 1000))) {
+	if ((client.lifetime <= (k_uptime_get() - client.last_update) / 1000)) {
 		client.engine_state = ENGINE_DO_REGISTRATION;
 	} else {
 		lwm2m_rd_client_connection_resume(client.ctx);
