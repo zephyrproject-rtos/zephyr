@@ -284,7 +284,6 @@
 			interrupt-parent = <&plic0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			num-cs = <1>;
 			clock-frequency = <66000000>;
 			status = "disabled";
 		};
@@ -297,7 +296,6 @@
 			interrupt-parent = <&plic0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			num-cs = <1>;
 			clock-frequency = <66000000>;
 			status = "disabled";
 		};
