@@ -157,6 +157,7 @@ static void counter_tear_down_instance(const struct device *dev)
 static void test_all_instances(counter_test_func_t func,
 				counter_capability_func_t capability_check)
 {
+	zassert_true(ARRAY_SIZE(devices) > 0, "No device found");
 	for (int i = 0; i < ARRAY_SIZE(devices); i++) {
 		counter_setup_instance(devices[i]);
 		if ((capability_check == NULL) ||
