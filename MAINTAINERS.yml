@@ -2107,6 +2107,22 @@ USB:
   labels:
     - "area: USB"
 
+USB-C:
+  status: maintained
+  maintainers:
+    - sambhurst
+  collaborators:
+    - keith-zephyr
+  files:
+    - drivers/usb_c/
+    - dts/bindings/usb-c/
+    - include/zephyr/*/usb_c/
+    - include/zephyr/usb_c/
+    - samples/subsys/usb_c/
+    - subsys/usb/usb_c/
+  labels:
+    - "area: USB-C"
+
 Userspace:
   status: maintained
   maintainers:
