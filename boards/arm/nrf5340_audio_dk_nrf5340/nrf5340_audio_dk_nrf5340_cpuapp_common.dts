@@ -1,0 +1,162 @@
+/*
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "nrf5340_audio_dk_nrf5340_cpuapp_common-pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,bt-hci-rpmsg-ipc = &ipc0;
+	};
+
+	gpio_fwd: nrf-gpio-forwarder {
+		compatible = "nordic,nrf-gpio-forwarder";
+		status = "okay";
+		uart {
+			gpios = <&gpio1 9 0>, <&gpio1 8 0>, <&gpio1 11 0>, <&gpio1 10 0>;
+		};
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2s0 {
+	compatible = "nordic,nrf-i2s";
+	status = "okay";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi4 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>, <&gpio0 17 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi4_default>;
+	pinctrl-1 = <&spi4_sleep>;
+	pinctrl-names = "default", "sleep";
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		label = "SDHC0";
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+
+		spi-max-frequency = <8000000>;
+	};
+	cs47l63: cs47l63@1 {
+		reg = <1>;
+		label = "CS47L63";
+	};
+};
+
+&pwm0 {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+		slot0_ns_partition: partition@50000 {
+			label = "image-0-nonsecure";
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+		};
+		slot1_ns_partition: partition@c0000 {
+			label = "image-1-nonsecure";
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0x000f0000 0xa000>;
+		};
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 0x00006000>;
+		};
+	};
+};
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_image: image@20000000 {
+			/* Zephyr image(s) memory */
+		};
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_ns: image_ns@20040000 {
+			/* Non-Secure image memory */
+		};
+	};
+};
+
+/* Include partition configuration file */
+#include "nrf5340_audio_dk_nrf5340_cpuapp_partition_conf.dts"
+#include "nrf5340_audio_dk_nrf5340_shared.dts"
