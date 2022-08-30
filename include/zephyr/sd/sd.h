@@ -35,6 +35,7 @@ enum card_type {
 	CARD_SDMMC = 0, /*!< SD memory card */
 	CARD_SDIO = 1, /*!< SD I/O card */
 	CARD_COMBO = 2, /*!< SD memory and I/O card */
+	CARD_MMC = 3, /*!< MMC memory card */
 };
 
 

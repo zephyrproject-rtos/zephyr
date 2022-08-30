@@ -318,6 +318,8 @@ zephyr_udc0: &usbhs {
 
 &usdhc0 {
 	status = "okay";
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
 	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
 	mmc {

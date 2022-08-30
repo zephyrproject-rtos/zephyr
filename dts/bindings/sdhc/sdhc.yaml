@@ -55,3 +55,15 @@ properties:
     description: |
       time in ms for SDHC to delay when toggling power to the SD card. This
       delay gives the card time to power up or down fully
+
+  mmc-hs200-1_8v:
+    type: boolean
+    required: false
+    description: |
+      The host controller supports HS200 at 1.8V
+
+  mmc-hs400-1_8v:
+    type: boolean
+    required: false
+    description: |
+      The host controller supports HS400 at 1.8V
