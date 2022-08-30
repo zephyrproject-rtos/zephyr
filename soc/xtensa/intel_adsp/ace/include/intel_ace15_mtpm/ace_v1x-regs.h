@@ -122,54 +122,12 @@ struct mtl_dint {
 #define ACE_IRQ_NUM_SHIFT 8
 #define ACE_IRQ_NUM_MASK 0xFFU
 
-#define MTL_IRQ_FROM_ZEPHYR(_irq) \
+#define ACE_IRQ_FROM_ZEPHYR(_irq) \
 	(((_irq >> ACE_IRQ_NUM_SHIFT) & ACE_IRQ_NUM_MASK) - 1)
 
-#define MTL_IRQ_TO_ZEPHYR(_irq) \
-	((((_irq + 1) & ACE_IRQ_NUM_MASK) << ACE_IRQ_NUM_SHIFT) + ACE_INTC_IRQ)
-
-/* MTL also has per-core instantiations of a Synopsys interrupt
- * controller.  These inputs (with the same indices as MTL_INTL_*
- * above) are downstream of the DINT layer, and must be independently
- * masked/enabled.  The core Zephyr intc_dw driver unfortunately
- * doesn't understand this kind of MP implementation.  Note also that
- * as instantiated (there are only 28 sources), the high 32 bit
- * registers don't exist and aren't named here.  Access via e.g.:
- *
- *     ACE_INTC[core_id].inten |= interrupt_bit;
- */
-struct ace_intc {
-	uint32_t inten;
-	uint32_t unused0;
-	uint32_t intmask;
-	uint32_t unused1;
-	uint32_t intforce;
-	uint32_t unused2;
-	uint32_t rawstatus;
-	uint32_t unused3;
-	uint32_t status;
-	uint32_t unused4;
-	uint32_t maskstatus;
-	uint32_t unused5;
-	uint32_t finalstatus;
-	uint32_t unused6;
-	uint32_t vector;
-	uint32_t unused7[33];
-	uint32_t fiq_inten;
-	uint32_t fiq_intmask;
-	uint32_t fiq_intforce;
-	uint32_t fiq_rawstatus;
-	uint32_t fiq_status;
-	uint32_t fiq_finalstatus;
-	uint32_t plevel;
-	uint32_t unused8;
-	uint32_t dsp_ictl_version_id;
-	uint32_t unused9[199];
-};
-
-#define ACE_INTC ((volatile struct ace_intc *)DT_REG_ADDR(DT_NODELABEL(ace_intc)))
-
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
+#define ACE_IRQ_TO_ZEPHYR(_irq) \
+	((((_irq + 1) & ACE_IRQ_NUM_MASK) << ACE_IRQ_NUM_SHIFT) + ACE_INTC_IRQ)
 
 /* Power control */
 #define PWRCTL_REG 0x71b90
