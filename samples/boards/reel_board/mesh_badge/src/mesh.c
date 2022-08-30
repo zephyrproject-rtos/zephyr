@@ -504,7 +504,7 @@ static int provision_and_configure(void)
 		0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
 		0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
 	};
-	struct bt_mesh_cfg_mod_pub pub = {
+	struct bt_mesh_cfg_cli_mod_pub pub = {
 		.addr = GROUP_ADDR,
 		.app_idx = APP_IDX,
 		.ttl = DEFAULT_TTL,
@@ -538,28 +538,26 @@ static int provision_and_configure(void)
 	printk("Configuring...\n");
 
 	/* Add Application Key */
-	bt_mesh_cfg_app_key_add(NET_IDX, addr, NET_IDX, APP_IDX, app_key, NULL);
+	bt_mesh_cfg_cli_app_key_add(NET_IDX, addr, NET_IDX, APP_IDX, app_key, NULL);
 
 	/* Bind to vendor model */
-	bt_mesh_cfg_mod_app_bind_vnd(NET_IDX, addr, addr, APP_IDX,
-				     MOD_LF, BT_COMP_ID_LF, NULL);
+	bt_mesh_cfg_cli_mod_app_bind_vnd(NET_IDX, addr, addr, APP_IDX, MOD_LF, BT_COMP_ID_LF, NULL);
 
-	bt_mesh_cfg_mod_app_bind(NET_IDX, addr, addr, APP_IDX,
-				 BT_MESH_MODEL_ID_GEN_ONOFF_SRV, NULL);
+	bt_mesh_cfg_cli_mod_app_bind(NET_IDX, addr, addr, APP_IDX, BT_MESH_MODEL_ID_GEN_ONOFF_SRV,
+				     NULL);
 
-	bt_mesh_cfg_mod_app_bind(NET_IDX, addr, addr, APP_IDX,
-				 BT_MESH_MODEL_ID_SENSOR_SRV, NULL);
+	bt_mesh_cfg_cli_mod_app_bind(NET_IDX, addr, addr, APP_IDX, BT_MESH_MODEL_ID_SENSOR_SRV,
+				     NULL);
 
 	/* Bind to Health model */
-	bt_mesh_cfg_mod_app_bind(NET_IDX, addr, addr, APP_IDX,
-				 BT_MESH_MODEL_ID_HEALTH_SRV, NULL);
+	bt_mesh_cfg_cli_mod_app_bind(NET_IDX, addr, addr, APP_IDX, BT_MESH_MODEL_ID_HEALTH_SRV,
+				     NULL);
 
 	/* Add model subscription */
-	bt_mesh_cfg_mod_sub_add_vnd(NET_IDX, addr, addr, GROUP_ADDR,
-				    MOD_LF, BT_COMP_ID_LF, NULL);
+	bt_mesh_cfg_cli_mod_sub_add_vnd(NET_IDX, addr, addr, GROUP_ADDR, MOD_LF, BT_COMP_ID_LF,
+					NULL);
 
-	bt_mesh_cfg_mod_pub_set_vnd(NET_IDX, addr, addr, MOD_LF, BT_COMP_ID_LF,
-				    &pub, NULL);
+	bt_mesh_cfg_cli_mod_pub_set_vnd(NET_IDX, addr, addr, MOD_LF, BT_COMP_ID_LF, &pub, NULL);
 
 	printk("Configuration complete\n");
 
