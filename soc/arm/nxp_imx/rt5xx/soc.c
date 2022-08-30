@@ -147,7 +147,7 @@ static void usb_device_clock_init(void)
 		BOARD_USB_PHY_TXCAL45DM,
 	};
 
-	/* Make sure USDHC ram buffer and usb1 phy has power up */
+	/* Make sure USBHS ram buffer and usb1 phy has power up */
 	POWER_DisablePD(kPDRUNCFG_APD_USBHS_SRAM);
 	POWER_DisablePD(kPDRUNCFG_PPD_USBHS_SRAM);
 	POWER_DisablePD(kPDRUNCFG_LP_HSPAD_FSPI0_VDET);
@@ -289,7 +289,7 @@ static void clock_init(void)
 	/* Switch CLKOUT to FRO_DIV2 */
 	CLOCK_AttachClk(kFRO_DIV2_to_CLKOUT);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay) && CONFIG_IMX_USDHC
 	/* Make sure USDHC ram buffer has been power up*/
 	POWER_DisablePD(kPDRUNCFG_APD_USDHC0_SRAM);
 	POWER_DisablePD(kPDRUNCFG_PPD_USDHC0_SRAM);
