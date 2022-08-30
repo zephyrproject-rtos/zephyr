@@ -58,8 +58,8 @@ void *smp_alloc_rsp(const void *req, void *arg)
 		return NULL;
 	}
 
-	if (smpt->zst_ud_copy) {
-		smpt->zst_ud_copy(rsp_nb, req_nb);
+	if (smpt->ud_copy) {
+		smpt->ud_copy(rsp_nb, req_nb);
 	} else {
 		memcpy(net_buf_user_data(rsp_nb),
 		       net_buf_user_data((void *)req_nb),
@@ -77,8 +77,8 @@ void smp_free_buf(void *buf, void *arg)
 		return;
 	}
 
-	if (smpt->zst_ud_free) {
-		smpt->zst_ud_free(net_buf_user_data((struct net_buf *)buf));
+	if (smpt->ud_free) {
+		smpt->ud_free(net_buf_user_data((struct net_buf *)buf));
 	}
 
 	mcumgr_buf_free(buf);
@@ -116,7 +116,7 @@ smp_handle_reqs(struct k_work *work)
 
 	smpt = (void *)work;
 
-	while ((nb = net_buf_get(&smpt->zst_fifo, K_NO_WAIT)) != NULL) {
+	while ((nb = net_buf_get(&smpt->fifo, K_NO_WAIT)) != NULL) {
 		smp_process_packet(smpt, nb);
 	}
 }
@@ -129,18 +129,18 @@ smp_transport_init(struct smp_transport *smpt,
 		   smp_transport_ud_free_fn ud_free_func)
 {
 	*smpt = (struct smp_transport) {
-		.zst_output = output_func,
-		.zst_get_mtu = get_mtu_func,
-		.zst_ud_copy = ud_copy_func,
-		.zst_ud_free = ud_free_func,
+		.output = output_func,
+		.get_mtu = get_mtu_func,
+		.ud_copy = ud_copy_func,
+		.ud_free = ud_free_func,
 	};
 
 #ifdef CONFIG_MCUMGR_SMP_REASSEMBLY
 	smp_reassembly_init(smpt);
 #endif
 
-	k_work_init(&smpt->zst_work, smp_handle_reqs);
-	k_fifo_init(&smpt->zst_fifo);
+	k_work_init(&smpt->work, smp_handle_reqs);
+	k_fifo_init(&smpt->fifo);
 }
 
 /**
@@ -155,8 +155,8 @@ smp_transport_init(struct smp_transport *smpt,
 WEAK void
 smp_rx_req(struct smp_transport *smpt, struct net_buf *nb)
 {
-	net_buf_put(&smpt->zst_fifo, nb);
-	k_work_submit_to_queue(&smp_work_queue, &smpt->zst_work);
+	net_buf_put(&smpt->fifo, nb);
+	k_work_submit_to_queue(&smp_work_queue, &smpt->work);
 }
 
 static int smp_init(const struct device *dev)
