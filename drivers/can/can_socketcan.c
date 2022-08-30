@@ -159,3 +159,15 @@ static const struct socketcan_config socketcan_cfg = {
 NET_DEVICE_INIT(socket_can, "SOCKET_CAN", socketcan_init, NULL, &socketcan_ctx, &socketcan_cfg,
 		CONFIG_CAN_SOCKETCAN_INIT_PRIORITY, &socketcan_api, CANBUS_RAW_L2,
 		NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
+
+#if CONFIG_RDDRONE_FMUK66_SOCKETCAN_DEVICES == 2
+static struct socketcan_context socketcan_ctx_sec;
+
+static const struct socketcan_config socketcan_cfg_sec = {
+	.can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus_sec))
+};
+
+NET_DEVICE_INIT(socket_can_sec, "SOCKET_CAN_SEC", socketcan_init, NULL, &socketcan_ctx_sec, &socketcan_cfg_sec,
+		CONFIG_CAN_SOCKETCAN_INIT_PRIORITY, &socketcan_api, CANBUS_RAW_L2,
+		NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
+#endif

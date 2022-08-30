@@ -23,6 +23,11 @@ LOG_MODULE_REGISTER(net_socket_can_sample, LOG_LEVEL_DBG);
 static k_tid_t tx_tid;
 static K_THREAD_STACK_DEFINE(tx_stack, STACKSIZE);
 static struct k_thread tx_data;
+#if CONFIG_RDDRONE_FMUK66_SOCKETCAN_DEVICES == 2
+static k_tid_t tx_tid_sec;
+static K_THREAD_STACK_DEFINE(tx_stack_sec, STACKSIZE);
+static struct k_thread tx_data_sec;
+#endif
 
 /* For testing purposes, we create another RX receiver if configured so */
 #if CONFIG_NET_SOCKETS_CAN_RECEIVERS == 2
@@ -172,6 +177,12 @@ static int setup_socket(void)
 	int fd, rx_fd;
 	int ret;
 
+#if CONFIG_RDDRONE_FMUK66_SOCKETCAN_DEVICES == 2
+        struct sockaddr_can can_addr_sec;
+	struct net_if *iface_sec;
+        int fd_sec;
+#endif
+
 	can_copy_zfilter_to_filter(&zfilter, &filter);
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS_RAW));
@@ -180,8 +191,22 @@ static int setup_socket(void)
 		return -ENOENT;
 	}
 
+#if CONFIG_RDDRONE_FMUK66_SOCKETCAN_DEVICES == 2
+	iface_sec = net_if_get_nth_by_type(&NET_L2_GET_NAME(CANBUS_RAW), 1);
+
+	if (!iface_sec) {
+		LOG_ERR("No CANBUS_SEC network interface found!");
+		return -ENOENT;
+	}
+#endif
+
 #ifdef CONFIG_SAMPLE_SOCKETCAN_LOOPBACK_MODE
 	can_set_mode(DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus)), CAN_MODE_LOOPBACK);
+#else
+	can_set_mode(DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus)), CAN_MODE_NORMAL);
+#if CONFIG_RDDRONE_FMUK66_SOCKETCAN_DEVICES == 2
+	can_set_mode(DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus_sec)), CAN_MODE_NORMAL);
+#endif
 #endif
 
 	fd = socket(AF_CAN, SOCK_RAW, CAN_RAW);
@@ -190,16 +215,34 @@ static int setup_socket(void)
 		LOG_ERR("Cannot create %s CAN socket (%d)", "1st", ret);
 		return ret;
 	}
-
-	can_addr.can_ifindex = net_if_get_by_iface(iface);
+        can_addr.can_ifindex = net_if_get_by_iface(iface);
 	can_addr.can_family = PF_CAN;
 
-	ret = bind(fd, (struct sockaddr *)&can_addr, sizeof(can_addr));
+        ret = bind(fd, (struct sockaddr *)&can_addr, sizeof(can_addr));
 	if (ret < 0) {
 		ret = -errno;
 		LOG_ERR("Cannot bind %s CAN socket (%d)", "1st", ret);
 		goto cleanup;
 	}
+
+#if CONFIG_RDDRONE_FMUK66_SOCKETCAN_DEVICES == 2
+	fd_sec = socket(AF_CAN, SOCK_RAW, CAN_RAW);
+	if (fd_sec < 0) {
+		ret = -errno;
+		LOG_ERR("Cannot create %s CAN socket (%d)", "2nd", ret);
+		return ret;
+	}
+
+	can_addr_sec.can_ifindex = net_if_get_by_iface(iface_sec);
+	can_addr_sec.can_family = PF_CAN;
+
+        ret = bind(fd_sec, (struct sockaddr *)&can_addr_sec, sizeof(can_addr_sec));
+	if (ret < 0) {
+		ret = -errno;
+		LOG_ERR("Cannot bind %s CAN socket (%d)", "2nd", ret);
+		goto cleanup;
+	}
+#endif
 
 	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &filter,
 			 sizeof(filter));
@@ -209,7 +252,7 @@ static int setup_socket(void)
 		goto cleanup;
 	}
 
-	/* Delay TX startup so that RX is ready to receive */
+       /* Delay TX startup so that RX is ready to receive */
 	tx_tid = k_thread_create(&tx_data, tx_stack,
 				 K_THREAD_STACK_SIZEOF(tx_stack),
 				 (k_thread_entry_t)tx, INT_TO_POINTER(fd),
@@ -222,6 +265,22 @@ static int setup_socket(void)
 	}
 
 	LOG_DBG("Started socket CAN TX thread");
+
+#if CONFIG_RDDRONE_FMUK66_SOCKETCAN_DEVICES == 2
+        /* Delay TX startup so that RX is ready to receive */
+	tx_tid_sec = k_thread_create(&tx_data_sec, tx_stack_sec,
+				 K_THREAD_STACK_SIZEOF(tx_stack_sec),
+				 (k_thread_entry_t)tx, INT_TO_POINTER(fd_sec),
+				 NULL, NULL, PRIORITY, 0, K_SECONDS(1));
+	if (!tx_tid_sec) {
+		ret = -ENOENT;
+		errno = -ret;
+		LOG_ERR("Cannot create TX_SEC thread!");
+		goto cleanup;
+	}
+
+	LOG_DBG("Started socket CAN TX_SEC thread");
+#endif
 
 	LOG_INF("1st RX fd %d", fd);
 
@@ -258,6 +317,9 @@ cleanup2:
 
 cleanup:
 	(void)close(fd);
+#if CONFIG_RDDRONE_FMUK66_SOCKETCAN_DEVICES == 2
+	(void)close(fd_sec);
+#endif
 	return ret;
 }
 

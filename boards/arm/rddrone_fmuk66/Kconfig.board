@@ -12,3 +12,10 @@ config RDDRONE_FMUK66_INIT_PRIORITY
         depends on BOARD_RDDRONE_FMUK66
 	help
 	  Initialization priority of the rddrone_fmuk66
+
+config RDDRONE_FMUK66_SOCKETCAN_DEVICES
+	int "Socketcan devices"
+	default 1
+	depends on BOARD_RDDRONE_FMUK66
+	help
+	  Specifies the number of socketcan devices on rddrone_fmuk66

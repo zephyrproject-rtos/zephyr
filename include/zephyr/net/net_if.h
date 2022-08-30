@@ -926,6 +926,9 @@ struct net_if *net_if_get_default(void);
  */
 struct net_if *net_if_get_first_by_type(const struct net_l2 *l2);
 
+#if CONFIG_RDDRONE_FMUK66_SOCKETCAN_DEVICES == 2
+struct net_if *net_if_get_nth_by_type(const struct net_l2 *l2, int node_pos);
+#endif
 /**
  * @brief Get the first network interface which is up.
  *

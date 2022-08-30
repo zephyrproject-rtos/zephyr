@@ -615,6 +615,27 @@ struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
 	return NULL;
 }
 
+#if CONFIG_RDDRONE_FMUK66_SOCKETCAN_DEVICES == 2
+struct net_if *net_if_get_nth_by_type(const struct net_l2 *l2, int node_num)
+{
+        int node_counter = 0;
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+		    !l2 && net_if_offload(iface)) {
+			return iface;
+		}
+
+		if (net_if_l2(iface) == l2 &&  node_counter == node_num)
+			return iface;
+
+                node_counter++;
+	}
+
+	return NULL;
+}
+#endif
+
 struct net_if *net_if_get_first_up(void)
 {
 	STRUCT_SECTION_FOREACH(net_if, iface) {

@@ -40,6 +40,7 @@
 		zephyr,shell-uart = &lpuart0;
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,canbus = &flexcan0;
+		zephyr,canbus-sec = &flexcan1;
 	};
 
 	leds {
@@ -70,14 +71,14 @@
 
 	transceiver0: can-phy0 {
 		compatible = "nxp,tja1042", "can-transceiver-gpio";
-		max-bitrate = <5000000>;
+		max-bitrate = <2000000>;
 		standby-gpios = <&gpioc 19 GPIO_ACTIVE_HIGH>;
 		#phy-cells = <0>;
 	};
 
 	transceiver1: can-phy1 {
 		compatible = "nxp,tja1042", "can-transceiver-gpio";
-		max-bitrate = <5000000>;
+		max-bitrate = <2000000>;
 		standby-gpios = <&gpioc 18 GPIO_ACTIVE_HIGH>;
 		#phy-cells = <0>;
 	};
@@ -288,7 +289,7 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&flexcan0_default>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
+	bus-speed = <500000>;
 	phys = <&transceiver0>;
 };
 
@@ -296,7 +297,7 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&flexcan1_default>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
+	bus-speed = <500000>;
 	phys = <&transceiver1>;
 };
 
