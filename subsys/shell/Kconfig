@@ -228,7 +228,6 @@ config SHELL_LOG_BACKEND
 	bool "Shell log backend"
 	depends on LOG && !LOG_MODE_MINIMAL
 	select MPSC_PBUF
-	select LOG_OUTPUT
 	default y if LOG
 	help
 	  When enabled, backend will use the shell for logging.
