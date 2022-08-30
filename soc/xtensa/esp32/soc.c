@@ -8,14 +8,16 @@
 #include "soc.h"
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
-#include <drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <string.h>
-#include <toolchain/gcc.h>
+#include <zephyr/toolchain/gcc.h>
 #include <zephyr/types.h>
+#include <zephyr/linker/linker-defs.h>
+#include <kernel_internal.h>
 
 #include "esp_private/system_internal.h"
 #include "esp32/rom/cache.h"
@@ -25,23 +27,62 @@
 #include "esp_spi_flash.h"
 #include "esp_err.h"
 #include "esp32/spiram.h"
-#include "sys/printk.h"
+#include "esp_app_format.h"
+#include <zephyr/sys/printk.h>
 
 extern void z_cstart(void);
 
+#ifdef CONFIG_ESP32_NETWORK_CORE
+extern const unsigned char esp32_net_fw_array[];
+extern const int esp_32_net_fw_array_size;
+
+void __attribute__((section(".iram1"))) start_esp32_net_cpu(void)
+{
+	esp_image_header_t *header = (esp_image_header_t *)&esp32_net_fw_array[0];
+	esp_image_segment_header_t *segment =
+		(esp_image_segment_header_t *)&esp32_net_fw_array[sizeof(esp_image_header_t)];
+	uint8_t *segment_payload;
+	uint32_t entry_addr = header->entry_addr;
+	uint32_t idx = sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
+
+	for (int i = 0; i < header->segment_count; i++) {
+		segment_payload = (uint8_t *)&esp32_net_fw_array[idx];
+
+		if (segment->load_addr >= SOC_IRAM_LOW && segment->load_addr < SOC_IRAM_HIGH) {
+			/* IRAM segment only accepts 4 byte access, avoid memcpy usage here */
+			volatile uint32_t *src = (volatile uint32_t *)segment_payload;
+			volatile uint32_t *dst =
+				(volatile uint32_t *)segment->load_addr;
+
+			for (int i = 0; i < segment->data_len/4 ; i++) {
+				dst[i] = src[i];
+			}
+		} else if (segment->load_addr >= SOC_DRAM_LOW &&
+			segment->load_addr < SOC_DRAM_HIGH) {
+
+			memcpy((void *)segment->load_addr,
+				(const void *)segment_payload,
+				segment->data_len);
+		}
+
+		idx += segment->data_len;
+		segment = (esp_image_segment_header_t *)&esp32_net_fw_array[idx];
+		idx += sizeof(esp_image_segment_header_t);
+	}
+
+	esp_appcpu_start((void *)entry_addr);
+}
+#endif
 /*
  * This is written in C rather than assembly since, during the port bring up,
  * Zephyr is being booted by the Espressif bootloader.  With it, the C stack
  * is already set up.
  */
-void __attribute__((section(".iram1"))) __start(void)
+void __attribute__((section(".iram1"))) __esp_platform_start(void)
 {
 	volatile uint32_t *wdt_rtc_protect = (uint32_t *)RTC_CNTL_WDTWPROTECT_REG;
 	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
-	volatile uint32_t *app_cpu_config_reg = (uint32_t *)DPORT_APPCPU_CTRL_B_REG;
 	extern uint32_t _init_start;
-	extern uint32_t _bss_start;
-	extern uint32_t _bss_end;
 
 	/* Move the exception vector table to IRAM. */
 	__asm__ __volatile__ (
@@ -49,31 +90,13 @@ void __attribute__((section(".iram1"))) __start(void)
 		:
 		: "r"(&_init_start));
 
-	/* Zero out BSS.  Clobber _bss_start to avoid memset() elision. */
-	(void)memset(&_bss_start, 0,
-		     (&_bss_end - &_bss_start) * sizeof(_bss_start));
+	z_bss_zero();
+
 	__asm__ __volatile__ (
 		""
 		:
-		: "g"(&_bss_start)
+		: "g"(&__bss_start)
 		: "memory");
-
-#if !CONFIG_BOOTLOADER_ESP_IDF
-	/* The watchdog timer is enabled in the 1st stage (ROM) bootloader.
-	 * We're done booting, so disable it.
-	 * If 2nd stage bootloader from IDF is enabled, then that will take
-	 * care of this.
-	 */
-	volatile uint32_t *wdt_timg_protect = (uint32_t *)TIMG_WDTWPROTECT_REG(0);
-	volatile uint32_t *wdt_timg_reg = (uint32_t *)TIMG_WDTCONFIG0_REG(0);
-
-	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
-	*wdt_rtc_reg &= ~RTC_CNTL_WDT_FLASHBOOT_MOD_EN;
-	*wdt_rtc_protect = 0;
-	*wdt_timg_protect = TIMG_WDT_WKEY_VALUE;
-	*wdt_timg_reg &= ~TIMG_WDT_FLASHBOOT_MOD_EN;
-	*wdt_timg_protect = 0;
-#endif
 
 	/* Disable normal interrupts. */
 	__asm__ __volatile__ (
@@ -81,23 +104,28 @@ void __attribute__((section(".iram1"))) __start(void)
 		:
 		: "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
 
-	/* Disable CPU1 while we figure out how to have SMP in Zephyr. */
-	*app_cpu_config_reg &= ~DPORT_APPCPU_CLKGATE_EN;
-
 	/* Initialize the architecture CPU pointer.  Some of the
 	 * initialization code wants a valid _current before
 	 * arch_kernel_init() is invoked.
 	 */
 	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
-#if CONFIG_BOOTLOADER_ESP_IDF
-	/* ESP-IDF 2nd stage bootloader enables RTC WDT to check on startup sequence
+	/* ESP-IDF/MCUboot 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
 	 * Zephyr environment.
 	 */
 	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
 	*wdt_rtc_reg &= ~RTC_CNTL_WDT_EN;
 	*wdt_rtc_protect = 0;
+
+#if CONFIG_ESP32_NETWORK_CORE
+	/* start the esp32 network core before
+	 * start zephyr
+	 */
+	soc_ll_stall_core(1);
+	soc_ll_reset_core(1);
+	DPORT_REG_WRITE(DPORT_APPCPU_CTRL_D_REG, 0);
+	start_esp32_net_cpu();
 #endif
 
 #if CONFIG_ESP_SPIRAM
@@ -123,6 +151,7 @@ void __attribute__((section(".iram1"))) __start(void)
 	spi_flash_guard_set(&g_flash_guard_default_ops);
 #endif
 	esp_intr_initialize();
+
 	/* Start Zephyr */
 	z_cstart();
 
@@ -133,9 +162,9 @@ void __attribute__((section(".iram1"))) __start(void)
 int IRAM_ATTR arch_printk_char_out(int c)
 {
 	if (c == '\n') {
-		esp32_rom_uart_tx_one_char('\r');
+		esp_rom_uart_tx_one_char('\r');
 	}
-	esp32_rom_uart_tx_one_char(c);
+	esp_rom_uart_tx_one_char(c);
 	return 0;
 }
 
@@ -156,9 +185,9 @@ void IRAM_ATTR esp_restart_noos(void)
 	soc_ll_stall_core(other_core_id);
 
 	/* Flush any data left in UART FIFOs */
-	esp32_rom_uart_tx_wait_idle(0);
-	esp32_rom_uart_tx_wait_idle(1);
-	esp32_rom_uart_tx_wait_idle(2);
+	esp_rom_uart_tx_wait_idle(0);
+	esp_rom_uart_tx_wait_idle(1);
+	esp_rom_uart_tx_wait_idle(2);
 
 	/* Disable cache */
 	Cache_Read_Disable(0);

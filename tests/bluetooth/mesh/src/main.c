@@ -6,10 +6,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #include "board.h"
 
@@ -74,7 +74,7 @@ static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
 	}
 
 	has_reg_fault = true;
-	bt_mesh_fault_update(bt_mesh_model_elem(model));
+	bt_mesh_health_srv_fault_update(bt_mesh_model_elem(model));
 
 	return 0;
 }

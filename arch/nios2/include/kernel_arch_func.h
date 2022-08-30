@@ -53,15 +53,15 @@ void z_irq_do_offload(void);
 #if ALT_CPU_ICACHE_SIZE > 0
 void z_nios2_icache_flush_all(void);
 #else
-#define z_nios2_icache_flush_all() do { } while (0)
+#define z_nios2_icache_flush_all() do { } while (false)
 #endif
 
 #if ALT_CPU_DCACHE_SIZE > 0
 void z_nios2_dcache_flush_all(void);
 void z_nios2_dcache_flush_no_writeback(void *start, uint32_t len);
 #else
-#define z_nios2_dcache_flush_all() do { } while (0)
-#define z_nios2_dcache_flush_no_writeback(x, y) do { } while (0)
+#define z_nios2_dcache_flush_all() do { } while (false)
+#define z_nios2_dcache_flush_no_writeback(x, y) do { } while (false)
 #endif
 
 #endif /* _ASMLANGUAGE */

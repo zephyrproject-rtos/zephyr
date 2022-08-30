@@ -1,0 +1,10 @@
+common:
+  depends_on: netif
+  tags: net tcp
+tests:
+  net.tcp.simple:
+    extra_configs:
+      - CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT=1000
+  net.tcp.no_recv_queue:
+    extra_configs:
+      - CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT=0

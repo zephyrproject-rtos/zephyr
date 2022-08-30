@@ -49,7 +49,6 @@
 		cryptocell: crypto@50840000 {
 			compatible = "nordic,nrf-cc310";
 			reg = <0x50840000 0x1000>;
-			label = "CRYPTOCELL";
 			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -57,8 +56,13 @@
 				compatible = "arm,cryptocell-310";
 				reg = <0x50841000 0x1000>;
 				interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>;
-				label = "CRYPTOCELL310";
 			};
+		};
+
+		ctrlap: ctrlap@50006000 {
+			compatible = "nordic,nrf-ctrlapperi";
+			reg = <0x50006000 0x1000>;
+			status = "okay";
 		};
 
 		gpiote: gpiote@5000d000 {
@@ -66,7 +70,6 @@
 			reg = <0x5000d000 0x1000>;
 			interrupts = <13 5>;
 			status = "disabled";
-			label = "GPIOTE_0";
 		};
 
 		spu: spu@50003000 {

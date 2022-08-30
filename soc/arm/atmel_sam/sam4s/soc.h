@@ -15,12 +15,10 @@
 #ifndef _ATMEL_SAM4S_SOC_H_
 #define _ATMEL_SAM4S_SOC_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
 
 #define DONT_USE_CMSIS_INIT
 #define DONT_USE_PREDEFINED_CORE_HANDLERS
@@ -28,6 +26,8 @@
 
 #if defined(CONFIG_SOC_PART_NUMBER_SAM4S16C)
 #include <sam4s16c.h>
+#elif defined(CONFIG_SOC_PART_NUMBER_SAM4SA16C)
+#include <sam4sa16c.h>
 #elif defined(CONFIG_SOC_PART_NUMBER_SAM4S16B)
 #include <sam4s16b.h>
 #elif defined(CONFIG_SOC_PART_NUMBER_SAM4S8C)

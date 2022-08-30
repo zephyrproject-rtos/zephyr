@@ -14,9 +14,9 @@
 #ifndef __GPTP_MESSAGES_H
 #define __GPTP_MESSAGES_H
 
-#include <net/net_pkt.h>
-#include <net/ethernet.h>
-#include <net/gptp.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/gptp.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -4,9 +4,11 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+menu "Bluetooth buffer configuration"
+
 config BT_BUF_ACL_TX_SIZE
 	int "Maximum supported ACL size for outgoing data"
-	range 27 251
+	range 27 65535
 	default 27
 	help
 	  Maximum supported ACL size of data packets sent from the Host to the
@@ -17,7 +19,7 @@ config BT_BUF_ACL_TX_SIZE
 	  Controller.
 	  In a Host-only build the Host will read the maximum ACL size supported
 	  by the Controller and use the smallest value supported by both the
-	  Bost and the Controller.
+	  Host and the Controller.
 	  The Host supports sending of larger L2CAP PDUs than the ACL size and
 	  will fragment L2CAP PDUs into ACL data packets.
 	  The Controller will return this value in the HCI LE Read Buffer
@@ -26,8 +28,6 @@ config BT_BUF_ACL_TX_SIZE
 	  fragmentation before transmitting the packet(s) on air.
 	  If this value is less than the effective Link Layer transmission size
 	  then this will restrict the maximum Link Layer transmission size.
-	  Maximum is set to 251 due to implementation limitations (use of
-	  uint8_t for length field in PDU buffer structure).
 
 config BT_BUF_ACL_TX_COUNT
 	int "Number of outgoing ACL data buffers"
@@ -54,9 +54,9 @@ config BT_BUF_ACL_RX_SIZE
 	default 70 if BT_EATT
 	default 69 if BT_SMP
 	default 27
-	range 70 1300 if BT_EATT
-	range 69 1300 if BT_SMP
-	range 27 1300
+	range 70 65535 if BT_EATT
+	range 69 65535 if BT_SMP
+	range 27 65535
 	help
 	  Maximum support ACL size of data packets sent from the Controller to
 	  the Host. This value does not include the HCI ACL header.
@@ -78,7 +78,7 @@ config BT_BUF_ACL_RX_SIZE
 	  This means the maximum L2CAP PDU MTU is restricted by the maximum ACL
 	  size subtracting the 4 byte header of an L2CAP PDU.
 	  When using L2CAP Connection oriented Channels without segmentation
-	  then the L2CAP SDU MTU is also restricetd by the maximum ACL size
+	  then the L2CAP SDU MTU is also restricted by the maximum ACL size
 	  subtracting the 4 Byte header of an L2CAP PDU plus the 2 byte header
 	  of an L2CAP SDU.
 
@@ -95,7 +95,7 @@ config BT_BUF_ACL_RX_SIZE
 config BT_BUF_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
 	default NET_BUF_RX_COUNT if NET_L2_BT
-	default 3 if BT_RECV_IS_RX_THREAD
+	default 3 if BT_RECV_BLOCKING
 	default 6
 	range 1 64
 	help
@@ -111,7 +111,7 @@ config BT_BUF_ACL_RX_COUNT
 
 config BT_BUF_EVT_RX_SIZE
 	int "Maximum supported HCI Event buffer length"
-	default 255 if (BT_EXT_ADV && !(BT_BUF_EVT_DISCARDABLE_COUNT > 0))
+	default 255 if (BT_EXT_ADV && BT_OBSERVER) || BT_PER_ADV_SYNC || BT_DF_CONNECTION_CTE_RX
 	# LE Read Supported Commands command complete event.
 	default 68
 	range 68 255
@@ -126,7 +126,7 @@ config BT_BUF_EVT_RX_SIZE
 
 config BT_BUF_EVT_RX_COUNT
 	int "Number of HCI Event buffers"
-	default 3 if BT_RECV_IS_RX_THREAD
+	default 3 if BT_RECV_BLOCKING
 	default 20 if (BT_MESH && !(BT_BUF_EVT_DISCARDABLE_COUNT > 0))
 	default 10
 	range 2 255
@@ -138,7 +138,7 @@ config BT_BUF_EVT_DISCARDABLE_SIZE
 	int "Maximum supported discardable HCI Event buffer length"
 	range 43 255
 	# LE Extended Advertising Report event
-	default 255 if BT_BREDR || BT_EXT_ADV
+	default 255 if BT_BREDR
 	# Le Advertising Report event
 	default 43
 	help
@@ -166,6 +166,9 @@ config BT_BUF_CMD_TX_SIZE
 	int "Maximum support HCI Command buffer length"
 	# LE Set Extended Advertising Data command
 	default 255 if (BT_EXT_ADV || BT_BREDR)
+	# LE Set Connection CTE Receive Parameters. Value required to store max allowed number
+	# of antenna ids for platforms other than Nordic.
+	default 83 if (!BT_EXT_ADV && !BT_BREDR && BT_CTLR_DF && BT_CTLR_DF_CONN_CTE_REQ && !SOC_COMPATIBLE_NRF)
 	# LE Generate DHKey v2 command
 	default 65
 	range 65 255
@@ -184,6 +187,8 @@ config BT_BUF_CMD_TX_COUNT
 	range 2 64
 	help
 	  Number of buffers available for outgoing HCI commands from the Host.
+
+endmenu
 
 config BT_HAS_HCI_VS
 	bool
@@ -208,6 +213,20 @@ config BT_HCI_VS_EXT
 	  Enable support for the Zephyr HCI Vendor-Specific Extensions in the
 	  Host and/or Controller. This enables  Write BD_ADDR, Read Build Info,
 	  Read Static Addresses and Read Key Hierarchy Roots vendor commands.
+
+config BT_HCI_VS_EVT
+	bool "Zephyr HCI Vendor-Specific Events"
+	depends on BT_HCI_VS_EXT
+	help
+	  Enable support for the Zephyr HCI Vendor-Specific Events in the
+	  Host and/or Controller.
+
+config BT_HCI_VS_FATAL_ERROR
+	bool "Allow vendor specific HCI event Zephyr Fatal Error"
+	depends on BT_HCI_VS_EXT
+	help
+	  Enable emiting HCI Vendor-Specific events for system and Controller
+	  errors that are unrecoverable.
 
 config BT_HCI_VS_EXT_DETECT
 	bool "Use heuristics to guess HCI vendor extensions support in advance"
@@ -268,7 +287,7 @@ config BT_DEBUG
 config BT_MONITOR
 	bool
 
-choice
+choice BT_DEBUG_TYPE
 	prompt "Bluetooth debug type"
 	default BT_DEBUG_NONE
 
@@ -308,6 +327,8 @@ config BT_DEBUG_MONITOR_RTT
 	depends on USE_SEGGER_RTT
 	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 2
 	select BT_DEBUG
+	select LOG
+	select CONSOLE_HAS_DRIVER
 	select BT_MONITOR
 	help
 	  Use a custom logging protocol over the RTT buffer instead of
@@ -344,18 +365,6 @@ endif # BT_DEBUG_MONITOR_RTT
 endchoice # Bluetooth debug type
 
 if BT_DEBUG
-
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_BT_MON_UART := zephyr,bt-mon-uart
-
-config BT_MONITOR_ON_DEV_NAME
-	string "Device Name of Bluetooth monitor logging UART"
-	depends on BT_DEBUG_MONITOR_UART
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_BT_MON_UART))" if HAS_DTS
-	default "UART_0"
-	help
-	  This option specifies the name of UART device to be used
-	  for the Bluetooth monitor logging.
 
 config BT_DEBUG_HCI_DRIVER
 	bool "Bluetooth HCI driver debug"

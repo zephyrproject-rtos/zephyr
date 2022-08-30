@@ -5,7 +5,6 @@
 
 menuconfig GPIO
 	bool "GPIO Drivers"
-	select HAS_DTS_GPIO
 	help
 	  Include GPIO drivers in system config
 
@@ -16,10 +15,34 @@ module-str = gpio
 source "subsys/logging/Kconfig.template.log_config"
 
 config GPIO_SHELL
-	bool "Enable GPIO Shell"
+	bool "GPIO Shell"
 	depends on SHELL
 	help
 	  Enable GPIO Shell for testing.
+
+config GPIO_INIT_PRIORITY
+	int "GPIO init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  GPIO driver device initialization priority.
+
+config GPIO_GET_DIRECTION
+	bool "Support for querying GPIO direction [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable this option if the application does not maintain its own GPIO
+	  direction state.
+
+	  With this option enabled, the application may query GPIO direction
+	  via gpio_port_get_direction(), gpio_pin_is_input(), and
+	  gpio_pin_is_output().
+
+config GPIO_GET_CONFIG
+	bool "Support for get configuration function [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the support for getting the current configurations
+	  of GPIOs. The driver must implement it to work.
 
 source "drivers/gpio/Kconfig.b91"
 
@@ -28,6 +51,8 @@ source "drivers/gpio/Kconfig.dw"
 source "drivers/gpio/Kconfig.pca95xx"
 
 source "drivers/gpio/Kconfig.mcp23s17"
+
+source "drivers/gpio/Kconfig.mcp23xxx"
 
 source "drivers/gpio/Kconfig.mcux"
 
@@ -69,6 +94,8 @@ source "drivers/gpio/Kconfig.xec"
 
 source "drivers/gpio/Kconfig.stellaris"
 
+source "drivers/gpio/Kconfig.rpi_pico"
+
 source "drivers/gpio/Kconfig.rv32m1"
 
 source "drivers/gpio/Kconfig.lmp90xxx"
@@ -98,5 +125,25 @@ source "drivers/gpio/Kconfig.creg_gpio"
 source "drivers/gpio/Kconfig.stmpe1600"
 
 source "drivers/gpio/Kconfig.pca953x"
+
+source "drivers/gpio/Kconfig.fxl6408"
+
+source "drivers/gpio/Kconfig.andes_atcgpio100"
+
+source "drivers/gpio/Kconfig.neorv32"
+
+source "drivers/gpio/Kconfig.nct38xx"
+
+source "drivers/gpio/Kconfig.test"
+
+source "drivers/gpio/Kconfig.gd32"
+
+source "drivers/gpio/Kconfig.xlnx_ps"
+
+source "drivers/gpio/Kconfig.sn74hc595"
+
+source "drivers/gpio/Kconfig.mchp_mss"
+
+source "drivers/gpio/Kconfig.xmc4xxx"
 
 endif # GPIO

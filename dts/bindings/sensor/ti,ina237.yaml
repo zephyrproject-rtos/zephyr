@@ -1,0 +1,33 @@
+#
+# Copyright 2021 Grinn
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    TI INA237 Bidirectional Current and Power Monitor.
+    The <zephyr/dt-bindings/sensor/ina237.h> file should be included in the
+    DeviceTree and it provides macros that can be used for initializing the
+    configuration registers.
+
+compatible: "ti,ina237"
+
+include: ti,ina23x-common.yaml
+
+properties:
+    adc-config:
+      type: int
+      required: true
+      description: |
+        Value of the ADC configuration register (ADC conversion times,
+        averaging, operating mode and etc).
+
+    alert-config:
+      type: int
+      required: false
+      description: Diag alert register, default matches the power-on reset value
+
+    irq-gpios:
+      type: phandle-array
+      required: false
+      description: IRQ Alert pin

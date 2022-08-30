@@ -11,19 +11,19 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_IIS2ICLX_IIS2ICLX_H_
 #define ZEPHYR_DRIVERS_SENSOR_IIS2ICLX_IIS2ICLX_H_
 
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
 #include <stmemsc.h>
 #include "iis2iclx_reg.h"
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 #define IIS2ICLX_EN_BIT					0x01
@@ -40,10 +40,10 @@ struct iis2iclx_config {
 	stmdev_ctx_t ctx;
 	union {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-		const struct stmemsc_cfg_i2c i2c;
+		const struct i2c_dt_spec i2c;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-		const struct stmemsc_cfg_spi spi;
+		const struct spi_dt_spec spi;
 #endif
 	} stmemsc_cfg;
 	uint8_t odr;

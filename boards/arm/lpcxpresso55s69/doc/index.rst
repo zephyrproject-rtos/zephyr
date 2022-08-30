@@ -12,8 +12,7 @@ architecture. The board includes a high performance onboard debug probe, audio
 subsystem, and accelerometer, with several options for adding off-the-shelf
 add-on boards for networking, sensors, displays, and other interfaces.
 
-.. image:: ./lpcxpresso55s69.jpg
-   :width: 720px
+.. image:: lpcxpresso55s69.jpg
    :align: center
    :alt: LPCXPRESSO55S69
 
@@ -80,6 +79,19 @@ features:
 +-----------+------------+-------------------------------------+
 | HWINFO    | on-chip    | Unique device serial number         |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
+| I2S       | on-chip    | i2s                                 |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| RNG       | on-chip    | entropy;                            |
+|           |            | random                              |
++-----------+------------+-------------------------------------+
+| IAP       | on-chip    | flash programming                   |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================
@@ -138,6 +150,16 @@ functionality of a pin.
 | PIO1_21 | I2C             | I2C SDA                    |
 +---------+-----------------+----------------------------+
 | PIO1_24 | USART           | USART RX                   |
++---------+-----------------+----------------------------+
+| PIO0_20 | I2S             | I2S DATAOUT                |
++---------+-----------------+----------------------------+
+| PIO0_19 | I2S             | I2S TX WS                  |
++---------+-----------------+----------------------------+
+| PIO0_21 | I2S             | I2S TX SCK                 |
++---------+-----------------+----------------------------+
+| PIO1_13 | I2S             | I2S DATAIN                 |
++---------+-----------------+----------------------------+
+| PIO0_15 | SCT0_OUT2       | PWM                        |
 +---------+-----------------+----------------------------+
 
 Memory mappings

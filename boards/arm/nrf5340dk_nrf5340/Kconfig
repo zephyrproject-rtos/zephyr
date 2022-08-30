@@ -3,71 +3,25 @@
 # Copyright (c) 2019 - 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config IPM_NRFX
-	default IPM
-
-config RPMSG_SERVICE_DUAL_IPM_SUPPORT
-	default RPMSG_SERVICE
-
-if RPMSG_SERVICE_DUAL_IPM_SUPPORT
-
-config IPM_MSG_CH_0_ENABLE
-	default y
-
-config IPM_MSG_CH_1_ENABLE
-	default y
-
-config RPMSG_SERVICE_IPM_TX_NAME
-	default "IPM_0" if RPMSG_SERVICE_MODE_MASTER
-	default "IPM_1" if RPMSG_SERVICE_MODE_REMOTE
-
-config RPMSG_SERVICE_IPM_RX_NAME
-	default "IPM_1" if RPMSG_SERVICE_MODE_MASTER
-	default "IPM_0" if RPMSG_SERVICE_MODE_REMOTE
-
-config IPM_MSG_CH_0_TX
-	default RPMSG_SERVICE_MODE_MASTER
-
-config IPM_MSG_CH_0_RX
-	default RPMSG_SERVICE_MODE_REMOTE
-
-config IPM_MSG_CH_1_TX
-	default RPMSG_SERVICE_MODE_REMOTE
-
-config IPM_MSG_CH_1_RX
-	default RPMSG_SERVICE_MODE_MASTER
-
-endif # RPMSG_SERVICE_DUAL_IPM_SUPPORT
-
 if BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
 config BOARD_ENABLE_DCDC_APP
-	bool "Enable Application MCU DCDC converter"
+	bool "Application MCU DCDC converter"
 	select SOC_DCDC_NRF53X_APP
 	default y
 
 config BOARD_ENABLE_DCDC_NET
-	bool "Enable Network MCU DCDC converter"
+	bool "Network MCU DCDC converter"
 	select SOC_DCDC_NRF53X_NET
 	default y
 
 config BOARD_ENABLE_DCDC_HV
-	bool "Enable High Voltage DCDC converter"
+	bool "High Voltage DCDC converter"
 	select SOC_DCDC_NRF53X_HV
 	default y
 
-choice BT_HCI_BUS_TYPE
-	default BT_RPMSG if BT
-endchoice
-
-config HEAP_MEM_POOL_SIZE
-	default 4096 if BT_RPMSG
-
-config BT_HCI_VS
-	default y if BT
-
 config BOARD_ENABLE_CPUNET
-	bool "Enable nRF53 Network MCU"
+	bool "NRF53 Network MCU"
 	help
 	  This option enables releasing the Network 'force off' signal, which
 	  as a consequence will power up the Network MCU during system boot.
@@ -82,7 +36,7 @@ config BOARD_ENABLE_CPUNET
 
 config DOMAIN_CPUNET_BOARD
 	string
-	default "nrf5340dk_nrf5340_cpunet" if BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
+	default "nrf5340dk_nrf5340_cpunet"
 	depends on BOARD_ENABLE_CPUNET
 	help
 	  The board which will be used for CPUNET domain when creating a multi
@@ -92,22 +46,11 @@ config DOMAIN_CPUNET_BOARD
 
 endif #  BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
-if BOARD_NRF5340DK_NRF5340_CPUNET
-
-# BT_CTLR depends on BT. When BT is enabled we should default to also
-# enabling the controller.
-config BT_CTLR
-	default y if BT
-
-config BT_ECC
-	default y if BT
-
 config DOMAIN_CPUAPP_BOARD
 	string
-	default "nrf5340dk_nrf5340_cpuapp" if BOARD_NRF5340DK_NRF5340_CPUNET
+	default "nrf5340dk_nrf5340_cpuapp"
+	depends on BOARD_NRF5340DK_NRF5340_CPUNET
 	help
 	  The board which will be used for CPUAPP domain when creating a multi
 	  image application where one or more images should be located on
 	  another board.
-
-endif # BOARD_NRF5340DK_NRF5340_CPUNET

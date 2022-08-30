@@ -1,0 +1,18 @@
+# Copyright (c) 2022 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 family VBAT node
+
+include: base.yaml
+
+compatible: "st,stm32-vbat"
+
+properties:
+    io-channels:
+      required: true
+      description: ADC channel for Vbat sensor
+
+    ratio:
+      type: int
+      required: true
+      description: fraction of VBat to be connected to the ADC input

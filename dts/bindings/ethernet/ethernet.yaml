@@ -10,8 +10,6 @@ properties:
       type: uint8-array
       required: false
       description: Specifies the MAC address that was assigned to the network device
-    label:
-      required: true
     zephyr,random-mac-address:
       type: boolean
       required: false

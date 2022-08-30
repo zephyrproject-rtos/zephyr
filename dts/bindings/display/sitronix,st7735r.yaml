@@ -5,7 +5,7 @@ description: ST7735R 160x128 display controller
 
 compatible: "sitronix,st7735r"
 
-include: spi-device.yaml
+include: [spi-device.yaml, display-controller.yaml]
 
 properties:
     reset-gpios:
@@ -25,16 +25,6 @@ properties:
         The D/CX pin of ST7735R is active low (transmission command byte).
         If connected directly the MCU pin should be configured
         as active low.
-
-    height:
-      type: int
-      required: true
-      description: Height in pixels of the panel driven by the controller
-
-    width:
-      type: int
-      required: true
-      description: Width in pixels of the panel driven by the controller
 
     x-offset:
       type: int
@@ -124,4 +114,12 @@ properties:
     invctr:
       type: int
       default: 0x07
-      description: Display Inversion Control
+      description: |
+        Display Inversion Control
+        Set dot inversion or line inversion for each normal/idle/partial mode.
+
+    inversion-on:
+      type: boolean
+      description: |
+        Enable Display Inversion
+        Make a drawing with the inverted color of the frame memory.

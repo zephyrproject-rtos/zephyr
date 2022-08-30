@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include "soc.h"
+#include <zephyr/devicetree.h>
+#include <zephyr/init.h>
 
 
 #ifdef CONFIG_UART_NS16550

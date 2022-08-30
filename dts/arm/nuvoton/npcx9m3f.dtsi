@@ -18,10 +18,22 @@
 
 	sram0: memory@200c0000 {
 		compatible = "mmio-sram";
-		reg = <0x200C0000 DT_SIZE_K(62)>;
+		reg = <0x200C0000 DT_SIZE_K(64)>;
 	};
 
 	soc-id {
 		device-id = <0x25>;
+	};
+};
+
+&spi_fiu0 {
+	int_flash: w25q40@0 {
+		compatible ="jedec,spi-nor";
+		/*  4194304 bits = 512K Bytes */
+		size = <0x400000>;
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		status = "okay";
+		jedec-id = [ef 40 13];
 	};
 };

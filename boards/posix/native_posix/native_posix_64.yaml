@@ -2,11 +2,16 @@ identifier: native_posix_64
 name: Native 64-bit POSIX port
 type: native
 arch: posix
+ram: 65536
+flash: 65536
 toolchain:
-  - zephyr
+  - host
   - llvm
 supported:
+  - can
+  - canfd
   - eeprom
   - netif:eth
   - usb_device
   - adc
+  - gpio

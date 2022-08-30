@@ -4,7 +4,9 @@
 
 menuconfig APDS9960
 	bool "APDS9960 Sensor"
-	depends on I2C && HAS_DTS_GPIO
+	default y
+	depends on DT_HAS_AVAGO_APDS9960_ENABLED
+	select I2C
 	help
 	  Enable driver for APDS9960 sensors.
 
@@ -30,7 +32,7 @@ config APDS9960_TRIGGER
 	bool
 
 config APDS9960_ENABLE_ALS
-	bool "Enable Ambient Light Sense"
+	bool "Ambient Light Sense"
 	default y
 	help
 	  Enable Ambient Light Sense (ALS).

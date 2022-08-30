@@ -18,7 +18,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x00010000>;
+			reg = <0x00000000 0x00010000>;
 		};
 		slot0_partition: partition@10000 {
 			label = "image-0";
@@ -34,7 +34,7 @@
 		};
 		slot3_partition: partition@2E000 {
 			label = "image-3";
-			reg = <0x0002E000 0x00000A000>;
+			reg = <0x0002E000 0x0000A000>;
 		};
 	};
 };

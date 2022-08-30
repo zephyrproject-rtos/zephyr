@@ -3,8 +3,6 @@
 
 description: NXP FlexSPI device
 
-compatible: "nxp,imx-flexspi-device"
-
 include: [spi-device.yaml, "jedec,jesd216.yaml"]
 
 properties:

@@ -5,8 +5,10 @@
 
 menuconfig ETH_SAM_GMAC
 	bool "Atmel SAM Ethernet driver"
-	depends on SOC_FAMILY_SAM0 || SOC_FAMILY_SAM
+	default y
+	depends on DT_HAS_ATMEL_SAM_GMAC_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select MDIO
 	help
 	  Enable Atmel SAM MCU Family Ethernet driver.
 
@@ -68,26 +70,12 @@ config ETH_SAM_GMAC_BUF_RX_COUNT
 	  fit at least two Ethernet frames: one being received by the GMAC module
 	  and the other being processed by the higher layer networking stack.
 
-config ETH_SAM_GMAC_MONITOR_PERIOD
-	int "Monitor task execution period"
-	default 1000
-	help
-	  Monitor task execution period in milliseconds. The monitor task is
-	  periodically executed to detect and report any changes in the PHY
-	  link status to the operating system.
-
 config ETH_SAM_GMAC_MAC_I2C_EEPROM
 	bool "Read from an I2C EEPROM"
 	help
 	  Read MAC address from an I2C EEPROM.
 
 if ETH_SAM_GMAC_MAC_I2C_EEPROM
-
-config ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS
-	hex "I2C 7-bit EEPROM chip address"
-	range 0 0xff
-	help
-	  I2C 7-bit address of the EEPROM chip.
 
 config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS
 	hex "I2C EEPROM internal address"
@@ -104,21 +92,7 @@ config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE
 	help
 	  Size (in bytes) of the internal EEPROM address.
 
-config ETH_SAM_GMAC_MAC_I2C_DEV_NAME
-	string "I2C bus driver device name"
-	help
-	  Device name, e.g. I2C_0, of an I2C bus driver device. It is required to
-	  obtain handle to the I2C device object.
-
 endif # ETH_SAM_GMAC_MAC_I2C_EEPROM
-
-config ETH_SAM_GMAC_PHY_ADDR
-	int "GMAC PHY Address"
-	default 0
-	help
-	  GMAC PHY Address as used by IEEE 802.3, Section 2 MII compatible PHY
-	  transceivers. If you have a single PHY on board it is safe to leave it
-	  at 0 which is the broadcast address.
 
 config PTP_CLOCK_SAM_GMAC
 	bool "SAM GMAC PTP clock driver support"

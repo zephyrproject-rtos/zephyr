@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include "sx126x_common.h"
 
@@ -12,7 +12,7 @@
 #include <stm32wlxx_ll_pwr.h>
 #include <stm32wlxx_ll_rcc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(sx126x, CONFIG_LORA_LOG_LEVEL);
 
 void sx126x_reset(struct sx126x_data *dev_data)
@@ -35,6 +35,7 @@ uint32_t sx126x_get_dio1_pin_state(struct sx126x_data *dev_data)
 
 void sx126x_dio1_irq_enable(struct sx126x_data *dev_data)
 {
+	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 	irq_enable(DT_INST_IRQN(0));
 }
 

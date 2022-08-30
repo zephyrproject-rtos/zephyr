@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <stdio.h>
 #include <limits.h>
-#include <sys/__assert.h>
-#include <fs/fs.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/fs/fs.h>
 #include "test_common.h"
 
 #ifndef PATH_MAX

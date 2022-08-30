@@ -15,10 +15,8 @@
 #ifndef __TEST_UART_H__
 #define __TEST_UART_H__
 
-#include <drivers/uart.h>
-#include <ztest.h>
-
-#define UART_DEVICE_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
+#include <zephyr/drivers/uart.h>
+#include <zephyr/ztest.h>
 
 void test_uart_configure(void);
 void test_uart_config_get(void);

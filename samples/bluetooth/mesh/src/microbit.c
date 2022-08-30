@@ -7,9 +7,9 @@
  */
 
 
-#include <bluetooth/mesh.h>
-#include <display/mb_display.h>
-#include <drivers/gpio.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/display/mb_display.h>
+#include <zephyr/drivers/gpio.h>
 #include "board.h"
 
 static uint32_t oob_number;

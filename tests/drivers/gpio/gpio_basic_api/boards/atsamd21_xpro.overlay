@@ -6,7 +6,7 @@
 
 / {
 	resources {
-		compatible = "test,gpio_basic_api";
+		compatible = "test-gpio-basic-api";
 		out-gpios = <&portb 6 0>; /* EXT1.5 */
 		in-gpios = <&portb 7 0>;  /* EXT1.6 */
 	};

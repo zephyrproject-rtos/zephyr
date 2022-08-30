@@ -10,12 +10,13 @@
 
 #define DT_DRV_COMPAT st_lis2mdl
 
-#include <init.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "lis2mdl.h"
 
 /* Based on the data sheet, the maximum turn-on time is ("9.4 ms + 1/ODR") when
@@ -237,7 +238,7 @@ static int lis2mdl_sample_fetch_mag(const struct device *dev)
 			 * cancellation is enabled in the single mode. Then the
 			 * average of the first measurement done above and this
 			 * one would be the final value. This process is not
-			 * needed in continuous mode since it has beed taken
+			 * needed in continuous mode since it has been taken
 			 * care by lis2mdl itself automatically. Please refer
 			 * to the application note for more details.
 			 */
@@ -397,7 +398,7 @@ static int lis2mdl_init(const struct device *dev)
 		rc = lis2mdl_set_rst_sensor_single_set(ctx,
 							PROPERTY_ENABLE);
 		if (rc) {
-			LOG_ERR("Set offset cancelaltion failed");
+			LOG_ERR("Set offset cancellation failed");
 			return rc;
 		}
 	}
@@ -424,14 +425,10 @@ static int lis2mdl_init(const struct device *dev)
 		rc = lis2mdl_operating_mode_set(ctx,
 						LIS2MDL_CONTINUOUS_MODE);
 		if (rc) {
-			LOG_ERR("set continuos mode failed");
+			LOG_ERR("set continuous mode failed");
 			return rc;
 		}
 	}
-
-#ifdef CONFIG_PM_DEVICE
-	lis2mdl->power_state = PM_DEVICE_STATE_ACTIVE;
-#endif
 
 #ifdef CONFIG_LIS2MDL_TRIGGER
 	if (cfg->trig_enabled) {
@@ -446,14 +443,15 @@ static int lis2mdl_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
-		const struct lis2mdl_config *const config,
-		enum pm_device_state new_state)
+static int lis2mdl_pm_action(const struct device *dev,
+			     enum pm_device_action action)
 {
+	const struct lis2mdl_config *config = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
 	int status = 0;
 
-	if (new_state == PM_DEVICE_STATE_ACTIVE) {
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		if (config->single_mode) {
 			status = lis2mdl_operating_mode_set(ctx,
 						LIS2MDL_SINGLE_TRIGGER);
@@ -464,46 +462,17 @@ static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
 		if (status) {
 			LOG_ERR("Power up failed");
 		}
-		lis2mdl->power_state = PM_DEVICE_STATE_ACTIVE;
 		LOG_DBG("State changed to active");
-	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
-				new_state == PM_DEVICE_STATE_SUSPEND ||
-				new_state == PM_DEVICE_STATE_OFF);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
 		status = lis2mdl_operating_mode_set(ctx, LIS2MDL_POWER_DOWN);
 		if (status) {
 			LOG_ERR("Power down failed");
 		}
-		lis2mdl->power_state = new_state;
 		LOG_DBG("State changed to inactive");
-	}
-
-	return status;
-}
-
-static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
-				enum pm_device_state *state)
-{
-	struct lis2mdl_data *lis2mdl = dev->data;
-	const struct lis2mdl_config *const config = dev->config;
-	enum pm_device_state current_state = lis2mdl->power_state;
-	int status = 0;
-	enum pm_device_state new_state;
-
-	switch (ctrl_command) {
-	case PM_DEVICE_STATE_SET:
-		new_state = *state;
-		if (new_state != current_state) {
-			status = lis2mdl_set_power_state(lis2mdl, config,
-							new_state);
-		}
-		break;
-	case PM_DEVICE_STATE_GET:
-		*state = current_state;
 		break;
 	default:
-		LOG_ERR("Got unknown power management control command");
-		status = -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return status;
@@ -520,9 +489,11 @@ static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
  */
 
 #define LIS2MDL_DEVICE_INIT(inst)					\
+	PM_DEVICE_DT_INST_DEFINE(inst, lis2mdl_pm_action);		\
+									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    lis2mdl_init,				\
-			    lis2mdl_pm_control,				\
+			    PM_DEVICE_DT_INST_GET(inst),		\
 			    &lis2mdl_data_##inst,			\
 			    &lis2mdl_config_##inst,			\
 			    POST_KERNEL,				\
@@ -543,7 +514,6 @@ static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
 
 #define LIS2MDL_SPI_OPERATION (SPI_WORD_SET(8) |			\
 				SPI_OP_MODE_MASTER |			\
-				SPI_LINES_SINGLE |			\
 				SPI_MODE_CPOL |				\
 				SPI_MODE_CPHA)				\
 
@@ -557,9 +527,8 @@ static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
 			.handle =					\
 			   (void *)&lis2mdl_config_##inst.stmemsc_cfg,	\
 		},							\
-		.stmemsc_cfg.spi = {					\
-			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
-			.spi_cfg = SPI_CONFIG_DT_INST(inst,		\
+		.stmemsc_cfg = {					\
+			.spi = SPI_DT_SPEC_INST_GET(inst,		\
 					   LIS2MDL_SPI_OPERATION,	\
 					   0),				\
 		},							\
@@ -584,9 +553,8 @@ static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
 			.handle =					\
 			   (void *)&lis2mdl_config_##inst.stmemsc_cfg,	\
 		},							\
-		.stmemsc_cfg.i2c = {					\
-			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
-			.i2c_slv_addr = DT_INST_REG_ADDR(inst),		\
+		.stmemsc_cfg = {					\
+			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
 		.cancel_offset = DT_INST_PROP(inst, cancel_offset),	\
 		.single_mode = DT_INST_PROP(inst, single_mode),		\

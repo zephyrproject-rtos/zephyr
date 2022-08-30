@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "psa/initial_attestation.h"
 #include "psa_attestation.h"
@@ -66,14 +66,18 @@ psa_status_t att_get_iat(uint8_t *ch_buffer, uint32_t ch_sz,
 			token_buf_size,
 			&sys_token_sz);
 		break;
+	default:
+		err = -EINVAL;
+		break;
 	}
-	LOG_INF("att: System IAT size is: %d bytes.", sys_token_sz);
 	if (err) {
 		goto err;
 	}
 
+	LOG_INF("att: System IAT size is: %u bytes.", sys_token_sz);
+
 	/* Request the initial attestation token w/the challenge data. */
-	LOG_INF("att: Requesting IAT with %d byte challenge.", ch_sz);
+	LOG_INF("att: Requesting IAT with %u byte challenge.", ch_sz);
 	err = psa_initial_attest_get_token(
 		ch_buffer,      /* Challenge/nonce input buffer. */
 		ch_sz,          /* Challenge size (32, 48 or 64). */
@@ -81,7 +85,7 @@ psa_status_t att_get_iat(uint8_t *ch_buffer, uint32_t ch_sz,
 		token_buf_size,
 		token_sz        /* Post exec output token size. */
 		);
-	LOG_INF("att: IAT data received: %d bytes.", *token_sz);
+	LOG_INF("att: IAT data received: %u bytes.", *token_sz);
 
 err:
 	/* Log any eventual errors via app_log */
@@ -92,7 +96,7 @@ psa_status_t att_test(void)
 {
 	psa_status_t err = PSA_SUCCESS;
 
-	/* 64-bytee nonce/challenge, encrypted using the default public key;
+	/* 64-byte nonce/challenge, encrypted using the default public key;
 	 *
 	 * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF
 	 * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF

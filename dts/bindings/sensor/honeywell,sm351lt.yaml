@@ -12,7 +12,3 @@ properties:
       type: phandle-array
       required: true
       description: GPIO connected to the sensor
-   label:
-      required: true
-      type: string
-      description: Driver label

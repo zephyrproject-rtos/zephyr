@@ -9,8 +9,7 @@ Overview
 The 96Boards Nitrogen hardware provides support for the Nordic Semiconductor
 nRF52832 ARM Cortex-M4F CPU.
 
-.. figure:: img/96b_nitrogen.png
-     :width: 487px
+.. figure:: img/96b_nitrogen.jpg
      :align: center
      :alt: 96Boards Nitrogen
 
@@ -72,7 +71,7 @@ features:
 | RTT       | on-chip    | console                              |
 +-----------+------------+--------------------------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `Nordic Semiconductor Infocenter`_ for a complete list of nRF52-based
 board hardware features.
 
@@ -229,29 +228,11 @@ which is provided by the micro USB interface to the LPC11U35 chip.
 Using the CMSIS-DAP interface, the board can be flashed via the USB storage
 interface (drag-and-drop) and also via `pyOCD`_.
 
-Installing pyOCD
-================
-
-The latest stable version of `pyOCD`_ can be installed via pip as follows:
-
-.. code-block:: console
-
-   $ pip install --pre -U pyocd
-
-To install the latest development version (master branch), do the following:
-
-.. code-block:: console
-
-   $ pip install --pre -U git+https://github.com/mbedmicro/pyOCD.git#egg=pyOCD
-
-You can then verify that your board is detected by pyOCD by running:
-
-.. code-block:: console
-
-   $ pyocd-flashtool -l
+To use ``pyOCD``, install the :ref:`pyocd-debug-host-tools` and make sure they
+are in your search path.
 
 Common Errors
--------------
+=============
 
 No connected boards
 -------------------

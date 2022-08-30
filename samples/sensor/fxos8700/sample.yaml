@@ -8,7 +8,8 @@ tests:
   sample.sensor.fxos8700.hybrid:
     platform_allow: frdm_k64f hexiwear_k64 warp7_m4 frdm_kw41z
                         rv32m1_vega_ri5cy twr_ke18f lpcxpresso55s16
-                        mimxrt685_evk_cm33 frdm_k22f
+                        mimxrt685_evk_cm33 frdm_k22f mimxrt1024_evk
+                        mimxrt595_evk_cm33
     integration_platforms:
       - frdm_k64f
     extra_configs:
@@ -19,7 +20,7 @@ tests:
       - CONFIG_FXOS8700_MAG_VECM=y
   sample.sensor.fxos8700.accel:
     platform_allow: frdm_kl25z bbc_microbit lpcxpresso55s69_cpu0 reel_board
-                        mimxrt685_evk_cm33
+                        mimxrt685_evk_cm33 mimxrt595_evk_cm33
     integration_platforms:
       - bbc_microbit
     extra_args: CONF_FILE=prj_accel.conf

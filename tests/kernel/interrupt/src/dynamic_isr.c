@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <interrupt_util.h>
-
-#if defined(CONFIG_DYNAMIC_INTERRUPTS)
+#include <zephyr/ztest.h>
+#include <zephyr/interrupt_util.h>
 
 #define ISR_DYN_ARG	0xab249cfd
 
@@ -18,12 +16,11 @@ static void dyn_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	handler_test_result = (uintptr_t)arg;
-	handler_has_run = 1;
+	handler_has_run++;
 }
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE)
 extern struct _isr_table_entry __sw_isr_table _sw_isr_table[];
-extern void z_irq_spurious(const void *unused);
 
 /**
  * @brief Test dynamic ISR installation
@@ -37,7 +34,7 @@ extern void z_irq_spurious(const void *unused);
  *
  * @see arch_irq_connect_dynamic()
  */
-void test_isr_dynamic(void)
+ZTEST(interrupt_feature, test_isr_dynamic)
 {
 	int i;
 	const void *argval;
@@ -70,12 +67,10 @@ void test_isr_dynamic(void)
  */
 #if defined(CONFIG_X86)
 #define IV_IRQS 32	/* start of vectors available for x86 IRQs */
-#define TEST_IRQ_DYN_LINE 16
-#define TRIGGER_IRQ_DYN_LINE (TEST_IRQ_DYN_LINE + IV_IRQS)
+#define TEST_IRQ_DYN_LINE 25
 
 #elif defined(CONFIG_ARCH_POSIX)
 #define TEST_IRQ_DYN_LINE 5
-#define TRIGGER_IRQ_DYN_LINE 5
 #endif
 
 void test_isr_dynamic(void)
@@ -91,8 +86,8 @@ void test_isr_dynamic(void)
 extern void (*x86_irq_funcs[])(const void *);
 extern const void *x86_irq_args[];
 
-	zassert_true(x86_irq_funcs[TEST_IRQ_DYN_LINE] == dyn_isr &&
-		     x86_irq_args[TEST_IRQ_DYN_LINE] == (void *)ISR_DYN_ARG,
+	zassert_true(x86_irq_funcs[vector_num - IV_IRQS] == dyn_isr &&
+		     x86_irq_args[vector_num - IV_IRQS] == (void *)ISR_DYN_ARG,
 		     "dynamic isr did not install successfully");
 #endif
 
@@ -100,29 +95,12 @@ extern const void *x86_irq_args[];
 	zassert_true(vector_num > 0,
 			"irq connect dynamic failed");
 
-	/*
-	 * The reason we need to hard code the the trigger vector here
-	 * is that the x86 only support immediate number for INT
-	 * instruction. So trigger an interrupt of x86 under gcov code
-	 * coverage report enabled, which means GCC optimization will
-	 * be -O0. In this case, an build error happends and shows:
-	 * "error: 'asm' operand 0 probably does not match constraints"
-	 * and "error: impossible constraint in 'asm'"
-	 *
-	 * Although we hard code the trigger vecotr it here, we still
-	 * do a check if the vector match getting from
-	 * arch_irq_connect_dynamic().
-	 */
-	zassert_equal(vector_num, TRIGGER_IRQ_DYN_LINE,
-			"vector %d mismatch we specified to trigger %d",
-			vector_num, TRIGGER_IRQ_DYN_LINE);
-
 	zassert_equal(handler_has_run, 0,
 			"handler has run before interrupt trigger");
 
 	irq_enable(TEST_IRQ_DYN_LINE);
 
-	trigger_irq(TRIGGER_IRQ_DYN_LINE);
+	trigger_irq(vector_num);
 
 	zassert_equal(handler_has_run, 1,
 			"interrupt triggered but handler has not run(%d)",
@@ -133,19 +111,12 @@ extern const void *x86_irq_args[];
 			"parameter(0x%lx) in handler is not correct",
 			handler_test_result);
 
-	irq_disable(TRIGGER_IRQ_DYN_LINE);
+	trigger_irq(vector_num);
 
-	/**TESTPOINT: interrupt cannot be triggered when disable it */
-	zassert_equal(handler_has_run, 1,
-			"interrupt handler should not be triggered again(%d)",
+	/**TESTPOINT: interrupt triggered again */
+	zassert_equal(handler_has_run, 2,
+			"interrupt triggered but handler has not run(%d)",
 			handler_has_run);
+
 }
 #endif /* CONFIG_GEN_SW_ISR_TABLE */
-
-#else
-/* Skip the dynamic interrupt test for the platforms that do not support it */
-void test_isr_dynamic(void)
-{
-	ztest_test_skip();
-}
-#endif /* CONFIG_DYNAMIC_INTERRUPTS */

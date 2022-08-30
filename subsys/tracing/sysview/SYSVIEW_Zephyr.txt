@@ -1,4 +1,4 @@
-# Insipred by the the same configuration file available in the SystemView tool
+# Inspired by the the same configuration file available in the SystemView tool
 
 Option    ReversePriority
 #
@@ -18,7 +18,6 @@ NamedType ErrCodeStream *=%i 0=ESUCCESS -74=ENOSR       -75=ENOSTR      -76=EPRO
 NamedType ErrCodeMsg    *=%i 0=ESUCCESS -11=EAGAIN      -80=ENOMSG
 
 NamedType PowerState *=%i 0=ACTIVE 1=RUNTIME_IDLE 2=SUSPEND_TO_IDLE 3=STANDBY 4=SUSPEND_TO_RAM 5=SUSPEND_TO_DISK 6=SOFT_OFF
-NamedType DevicePowerState *=%i 1=ACTIVE 2=LOW_POWER 3=SUSPEND 4=FORCE_SUSPEND 5=OFF 6=RESUMING 7=SUSPENDING
 
 #
 # Task States
@@ -163,7 +162,9 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 154 k_lifo_alloc_put             lifo=%I, data=%I
 
 
-156 pm_system_suspend            ticks=%u | Returns %PowerState
-157 pm_device_request            dev=%I target_state=%DevicePowerState | Returns %u
-158 pm_device_enable             dev=%I
-159 pm_device_disable            dev=%I
+155 pm_system_suspend            ticks=%u | Returns %Bool
+156 pm_device_runtime_get        dev=%I | Returns %u
+157 pm_device_runtime_put        dev=%I | Returns %u
+158 pm_device_runtime_put_async  dev=%I | Returns %u
+159 pm_device_runtime_enable     dev=%I | Returns %u
+160 pm_device_runtime_disable    dev=%I | Returns %u

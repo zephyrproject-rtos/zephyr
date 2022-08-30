@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <soc.h>
 #include <kernel_arch_func.h>
-#include <device.h>
-#include <drivers/dma.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/dma.h>
 
 #define DMA_BUFF_SIZE		1024
 
@@ -38,7 +38,7 @@ static void dma_user_callback(const struct device *dma_dev, void *arg,
 	}
 }
 
-void test_msgdma(void)
+ZTEST(nios2_msgdma, test_msgdma)
 {
 	const struct device *dma;
 	static uint32_t chan_id;
@@ -98,9 +98,4 @@ void test_msgdma(void)
 
 }
 
-void test_main(void)
-{
-	ztest_test_suite(nios2_msgdma_test,
-			 ztest_unit_test(test_msgdma));
-	ztest_run_test_suite(nios2_msgdma_test);
-}
+ZTEST_SUITE(nios2_msgdma, NULL, NULL, NULL, NULL, NULL);

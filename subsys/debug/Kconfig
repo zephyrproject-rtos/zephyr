@@ -7,7 +7,7 @@
 menu "System Monitoring Options"
 
 menuconfig THREAD_ANALYZER
-	bool "Enable Thread analyzer"
+	bool "Thread analyzer"
 	select INIT_STACKS
 	select THREAD_MONITOR
 	select THREAD_STACK_INFO
@@ -21,7 +21,7 @@ menuconfig THREAD_ANALYZER
 if THREAD_ANALYZER
 module = THREAD_ANALYZER
 module-str = thread analyzer
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "subsys/logging/Kconfig.template.log_config"
 
 choice
 	prompt "Thread analysis print mode"
@@ -38,6 +38,10 @@ config THREAD_ANALYZER_USE_PRINTK
 	  Use kernel printk function to print thread information.
 
 endchoice
+
+config THREAD_ANALYZER_ISR_STACK_USAGE
+	bool "Analyze interrupt stacks usage"
+	default y
 
 config THREAD_ANALYZER_RUN_UNLOCKED
 	bool "Run analysis with interrupts unlocked"
@@ -76,6 +80,7 @@ config THREAD_ANALYZER_AUTO_INTERVAL
 
 config THREAD_ANALYZER_AUTO_STACK_SIZE
 	int "Stack size for the periodic thread analysis thread"
+	default 2048 if THREAD_ANALYZER_USE_LOG && LOG_MODE_IMMEDIATE && NO_OPTIMIZATIONS
 	default 1024
 
 endif # THREAD_ANALYZER_AUTO
@@ -94,6 +99,13 @@ config DEBUG
 	  only disables optimization, more debugging variants can be selected
 	  from here to allow more debugging.
 
+config GPROF
+	bool "Generate profiling information"
+	depends on ARCH_POSIX
+	help
+	  Generate call graph profile data for the application that can be
+	  analyzed with gprof
+
 config ASAN
 	bool "Build with address sanitizer"
 	depends on ARCH_POSIX
@@ -107,6 +119,18 @@ config ASAN
 	  GCC is used due to potential risk of a deadlock in libasan.
 	  This behavior can be changes by adding leak_check_at_exit=1 to the
 	  environment variable ASAN_OPTIONS.
+
+config ASAN_RECOVER
+	bool "Continue after sanitizer errors"
+	depends on ASAN
+	default y
+	help
+	  The default behavior of compiler sanitizers is to exit after
+	  the first error.  Set this to y to enable the code to
+	  continue, which can be useful if a code base has known
+	  unsuppressed errors.  You will also need to set
+	  "halt_on_error=0" in your ASAN_OPTIONS environment variable
+	  at runtime.
 
 config ASAN_NOP_DLCLOSE
 	bool "Override host OS dlclose() with a NOP"
@@ -130,6 +154,18 @@ config UBSAN
 	  architecture, and requires a recent-ish compiler with the
 	  ``-fsanitize=undefined`` command line option.
 
+config MSAN
+	bool "Build with memory sanitizer"
+	depends on ARCH_POSIX
+	help
+	  Builds Zephyr with the LLVM MemorySanitizer enabled.  Works
+	  only on the posix architecture currently, and only with host
+	  compilers recent enough to support the feature (currently
+	  clang on x86_64 only).  It cannot be used in tandem with
+	  CONFIG_ASAN due to clang limitations.  You must choose one
+	  or the other (but can combine it with CONFIG_UBSAN if you
+	  like)
+
 config STACK_USAGE
 	bool "Generate stack usage information"
 	help
@@ -137,7 +173,7 @@ config STACK_USAGE
 	  on a per-function basis.
 
 config STACK_SENTINEL
-	bool "Enable stack sentinel"
+	bool "Stack sentinel"
 	select THREAD_STACK_INFO
 	depends on MULTITHREADING
 	depends on !USERSPACE
@@ -190,7 +226,7 @@ config EARLY_CONSOLE
 	  sent through the console at the earliest stage possible.
 
 config ASSERT
-	bool "Enable __ASSERT() macro"
+	bool "__ASSERT() macro"
 	default y if TEST
 	help
 	  This enables the __ASSERT() macro in the kernel code. If an assertion
@@ -201,11 +237,12 @@ config ASSERT
 	  Disabling this option will cause assertions to compile to nothing,
 	  improving performance and system footprint.
 
+if ASSERT
+
 config ASSERT_LEVEL
 	int "__ASSERT() level"
 	default 2
 	range 0 2
-	depends on ASSERT
 	help
 	  This option specifies the assertion level used by the __ASSERT()
 	  macro. It can be set to one of three possible values:
@@ -215,8 +252,7 @@ config ASSERT_LEVEL
 	  Level 2: on + no warning
 
 config SPIN_VALIDATE
-	bool "Enable spinlock validation"
-	depends on ASSERT
+	bool "Spinlock validation"
 	depends on MULTITHREADING
 	depends on MP_NUM_CPUS <= 4
 	default y if !FLASH || FLASH_SIZE > 32
@@ -224,6 +260,8 @@ config SPIN_VALIDATE
 	  There's a spinlock validation framework available when asserts are
 	  enabled. It adds a relatively hefty overhead (about 3k or so) to
 	  kernel code size, don't use on platforms known to be small.
+
+endif # ASSERT
 
 config FORCE_NO_ASSERT
 	bool "Force-disable no assertions"
@@ -234,7 +272,7 @@ config FORCE_NO_ASSERT
 	  around compiler bugs for specific tests.
 
 config ASSERT_VERBOSE
-	bool "Enable verbose assertions"
+	bool "Verbose assertions"
 	default y
 	help
 	  This option enables printing an assert message with information about
@@ -267,6 +305,15 @@ config ASSERT_NO_MSG_INFO
 	  before disabling file info since the message can be found in the
 	  source using file info.
 
+config ASSERT_TEST
+	bool "Assert test mode"
+	help
+	  This option enables the assert test mode, which allows the assert
+	  post action handler to return (i.e. not abort) when the asserted
+	  condition is false. The tests that validate the assert feature may
+	  select this option to allow the test to proceed by implementing a
+	  custom assert post action hook.
+
 config OVERRIDE_FRAME_POINTER_DEFAULT
 	bool "Override compiler defaults for -fomit-frame-pointer"
 	help
@@ -288,7 +335,7 @@ config OMIT_FRAME_POINTER
 	depends on OVERRIDE_FRAME_POINTER_DEFAULT
 	help
 	  Choose Y for best performance. On some architectures (including x86)
-	  this will favor code size and performance over debugability.
+	  this will favor code size and performance over debuggability.
 
 	  Choose N in you wish to retain the frame pointer. This option may
 	  be useful if your application uses runtime backtracing and does not
@@ -302,7 +349,7 @@ config OMIT_FRAME_POINTER
 # Generic Debugging Options
 #
 config DEBUG_INFO
-	bool "Enable system debugging information"
+	bool "System debugging information"
 	help
 	  This option enables the addition of various information that can be
 	  used by debuggers in debugging the system, or enable additional
@@ -322,12 +369,6 @@ config EXCEPTION_STACK_TRACE
 #
 # Miscellaneous debugging options
 #
-config OPENOCD_SUPPORT
-	bool "OpenOCD support (DEPRECATED)"
-	select DEBUG_THREAD_INFO
-	help
-	  This is deprecated, please use DEBUG_THREAD_INFO instead.
-
 config DEBUG_THREAD_INFO
 	bool "Thread awareness support"
 	depends on !SMP
@@ -343,6 +384,7 @@ endmenu
 config GDBSTUB
 	bool "GDB remote serial protocol support [EXPERIMENTAL]"
 	depends on ARCH_HAS_GDBSTUB
+	select EXPERIMENTAL
 	help
 	  This option enable support the target using GDB, or any other
 	  application that supports GDB protocol.
@@ -356,16 +398,16 @@ config GDBSTUB_SERIAL_BACKEND
 	bool "Use serial backend"
 	depends on SERIAL
 	help
-	  Use serial as backenf for GDB
+	  Use serial as backend for GDB
 
 endchoice
 
-config GDBSTUB_SERIAL_BACKEND_NAME
-	string "Serial Name"
-	depends on GDBSTUB_SERIAL_BACKEND
-	default "UART_0"
+config GDBSTUB_BUF_SZ
+	int "GDB backend send/receive buffer size (in bytes)"
+	default 256
 	help
-	  Use serial as backenf for GDB
-
+	  This specifies the size (in bytes) of the send/receive buffer
+	  for GDB backend. This needs to be big enough to hold one
+	  full GDB packet at a time.
 
 endif

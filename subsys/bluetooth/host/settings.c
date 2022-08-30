@@ -6,11 +6,11 @@
 
 #include <errno.h>
 
-#include <zephyr.h>
-#include <settings/settings.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/settings/settings.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SETTINGS)
 #define LOG_MODULE_NAME bt_settings
@@ -37,7 +37,7 @@ void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 			 addr->type);
 	}
 
-	BT_DBG("Encoded path %s", log_strdup(path));
+	BT_DBG("Encoded path %s", path);
 }
 #else
 void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
@@ -86,7 +86,7 @@ void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 		*path = '\0';
 	}
 
-	BT_DBG("Encoded path %s", log_strdup(path));
+	BT_DBG("Encoded path %s", path);
 }
 #endif
 
@@ -108,7 +108,7 @@ int bt_settings_decode_key(const char *key, bt_addr_le_t *addr)
 		hex2bin(&key[i * 2], 2, &addr->a.val[5 - i], 1);
 	}
 
-	BT_DBG("Decoded %s as %s", log_strdup(key), bt_addr_le_str(addr));
+	BT_DBG("Decoded %s as %s", key, bt_addr_le_str(addr));
 
 	return 0;
 }
@@ -118,6 +118,16 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 {
 	ssize_t len;
 	const char *next;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+		/* The Bluetooth settings loader needs to communicate with the Bluetooth
+		 * controller to setup identities. This will not work before
+		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
+		 * tree to be loaded after @ref bt_enable is completed, so this handler
+		 * will be called again later.
+		 */
+		return 0;
+	}
 
 	if (!name) {
 		BT_ERR("Insufficient number of arguments");
@@ -168,8 +178,24 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		} else {
 			bt_dev.name[len] = '\0';
 
-			BT_DBG("Name set to %s", log_strdup(bt_dev.name));
+			BT_DBG("Name set to %s", bt_dev.name);
 		}
+		return 0;
+	}
+#endif
+
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
+	if (!strncmp(name, "appearance", len)) {
+		if (len_rd != sizeof(bt_dev.appearance)) {
+			BT_ERR("Ignoring settings entry 'bt/appearance'. Wrong length.");
+			return -EINVAL;
+		}
+
+		len = read_cb(cb_arg, &bt_dev.appearance, sizeof(bt_dev.appearance));
+		if (len < 0) {
+			return len;
+		}
+
 		return 0;
 	}
 #endif
@@ -231,7 +257,19 @@ void bt_settings_save_id(void)
 
 static int commit(void)
 {
+	int err;
+
 	BT_DBG("");
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+		/* The Bluetooth settings loader needs to communicate with the Bluetooth
+		 * controller to setup identities. This will not work before
+		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
+		 * tree to be loaded after @ref bt_enable is completed, so this handler
+		 * will be called again later.
+		 */
+		return 0;
+	}
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	if (bt_dev.name[0] == '\0') {
@@ -239,12 +277,14 @@ static int commit(void)
 	}
 #endif
 	if (!bt_dev.id_count) {
-		bt_setup_public_id_addr();
+		err = bt_setup_public_id_addr();
+		if (err) {
+			BT_ERR("Unable to setup an identity address");
+			return err;
+		}
 	}
 
 	if (!bt_dev.id_count) {
-		int err;
-
 		err = bt_setup_random_id_addr();
 		if (err) {
 			BT_ERR("Unable to setup an identity address");

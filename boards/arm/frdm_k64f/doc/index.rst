@@ -19,8 +19,7 @@ K63, and K24 MCUs.
   running an open source bootloader, offers options for serial communication,
   flash programming, and run-control debugging
 
-.. image:: ./frdm_k64f.jpg
-   :width: 720px
+.. image:: frdm_k64f.jpg
    :align: center
    :alt: FRDM-K64F
 
@@ -102,6 +101,11 @@ The frdm_k64f board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+
+| RNGA      | on-chip    | entropy;                            |
+|           |            | random                              |
++-----------+------------+-------------------------------------+
+| FTFE      | on-chip    | flash programming                   |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -134,6 +138,10 @@ The K64F SoC has five pairs of pinmux/gpio controllers.
 | PTB16 | UART0_RX        | UART Console              |
 +-------+-----------------+---------------------------+
 | PTB17 | UART0_TX        | UART Console              |
++-------+-----------------+---------------------------+
+| PTB18 | CAN0_TX         | CAN TX                    |
++-------+-----------------+---------------------------+
+| PTB19 | CAN0_RX         | CAN RX                    |
 +-------+-----------------+---------------------------+
 | PTC8  | PWM             | PWM_3 channel 4           |
 +-------+-----------------+---------------------------+
@@ -206,6 +214,13 @@ USB
 The K64F SoC has a USB OTG (USBOTG) controller that supports both
 device and host functions through its micro USB connector (K64F USB).
 Only USB device function is supported in Zephyr at the moment.
+
+CAN
+===
+
+The FRDM-K64F board does not come with an onboard CAN transceiver. In order to
+use the CAN bus, an external CAN bus transceiver must be connected to ``PTB18``
+(``CAN0_TX``) and ``PTB19`` (``CAN0_RX``).
 
 Programming and Debugging
 *************************

@@ -504,7 +504,6 @@
 		compatible = "nuvoton,npcx-miwu";
 		index = <3>;
 		#miwu-cells = <2>;
-		label="MIWU_NONE";
 		status = "disabled";
 	};
 };

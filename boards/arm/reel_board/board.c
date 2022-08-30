@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <soc.h>
 
 /* Peripheral voltage ON/OFF GPIO */
@@ -23,25 +23,6 @@ static int board_reel_board_init(const struct device *dev)
 		(GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos);
 
 	gpio->OUTSET = BIT(PERIPH_PON_PIN);
-
-	/*
-	 * Enable pull-up on UART RX pin to reduce power consumption.
-	 * If the board is powered by battery and the debugger is
-	 * not connected via USB to the host, the SoC consumes up
-	 * to 2mA more than expected.
-	 * The consumption increases because RX pin is floating
-	 * (High-Impedance state of pin B from Dual-Supply Bus Transceiver).
-	 */
-	gpio = NRF_P0;
-	gpio->PIN_CNF[DT_PROP(DT_INST(0, nordic_nrf_uart), rx_pin)] =
-		(GPIO_PIN_CNF_INPUT_Disconnect << GPIO_PIN_CNF_INPUT_Pos) |
-		(GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos) |
-		(GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);
-	gpio->PIN_CNF[DT_PROP(DT_INST(0, nordic_nrf_uart), tx_pin)] =
-		(GPIO_PIN_CNF_INPUT_Disconnect << GPIO_PIN_CNF_INPUT_Pos) |
-		(GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos) |
-		(GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);
-
 
 	return 0;
 }

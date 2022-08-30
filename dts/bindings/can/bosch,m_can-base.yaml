@@ -1,0 +1,28 @@
+description: Bosch M_CAN CAN-FD controller base
+
+compatible: "bosch,m_can-base"
+
+properties:
+    std-filter-elements:
+      type: int
+      required: true
+
+    ext-filter-elements:
+      type: int
+      required: true
+
+    rx-fifo0-elements:
+      type: int
+      required: true
+
+    rx-fifo1-elements:
+      type: int
+      required: true
+
+    rx-buffer-elements:
+      type: int
+      required: true
+
+    tx-buffer-elements:
+      type: int
+      required: true

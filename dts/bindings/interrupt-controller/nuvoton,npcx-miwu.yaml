@@ -8,9 +8,6 @@ compatible: "nuvoton,npcx-miwu"
 include: [base.yaml]
 
 properties:
-    label:
-        required: true
-
     index:
         type: int
         required: true

@@ -5,7 +5,9 @@ description: Atmel SAM0 family DAC
 
 compatible: "atmel,sam0-dac"
 
-include: dac-controller.yaml
+include:
+    - name: dac-controller.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:
@@ -15,9 +17,6 @@ properties:
       required: true
 
     clock-names:
-      required: true
-
-    label:
       required: true
 
     reference:

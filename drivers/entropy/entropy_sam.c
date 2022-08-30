@@ -6,19 +6,16 @@
 
 #define DT_DRV_COMPAT atmel_sam_trng
 
-#include <device.h>
-#include <drivers/entropy.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/entropy.h>
 #include <errno.h>
-#include <init.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <string.h>
 
 struct trng_sam_dev_cfg {
 	Trng *regs;
 };
-
-#define DEV_CFG(dev) \
-	((const struct trng_sam_dev_cfg *const)(dev)->config)
 
 static inline bool _ready(Trng * const trng)
 {
@@ -76,7 +73,8 @@ static int entropy_sam_get_entropy_internal(const struct device *dev,
 					    uint8_t *buffer,
 					    uint16_t length, uint32_t flags)
 {
-	Trng *const trng = DEV_CFG(dev)->regs;
+	const struct trng_sam_dev_cfg *config = dev->config;
+	Trng *const trng = config->regs;
 
 	while (length > 0) {
 		size_t to_copy;
@@ -113,10 +111,10 @@ static int entropy_sam_get_entropy_isr(const struct device *dev,
 
 
 	if ((flags & ENTROPY_BUSYWAIT) == 0U) {
-
+		const struct trng_sam_dev_cfg *config = dev->config;
 		/* No busy wait; return whatever data is available. */
 
-		Trng * const trng = DEV_CFG(dev)->regs;
+		Trng * const trng = config->regs;
 
 		do {
 			size_t to_copy;
@@ -156,7 +154,8 @@ static int entropy_sam_get_entropy_isr(const struct device *dev,
 
 static int entropy_sam_init(const struct device *dev)
 {
-	Trng *const trng = DEV_CFG(dev)->regs;
+	const struct trng_sam_dev_cfg *config = dev->config;
+	Trng *const trng = config->regs;
 
 #ifdef MCLK
 	/* Enable the MCLK */
@@ -186,5 +185,5 @@ static const struct trng_sam_dev_cfg trng_sam_cfg = {
 DEVICE_DT_INST_DEFINE(0,
 		    entropy_sam_init, NULL,
 		    NULL, &trng_sam_cfg,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
 		    &entropy_sam_api);

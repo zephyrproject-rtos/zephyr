@@ -8,7 +8,7 @@
 
 #define NET_LOG_LEVEL CONFIG_NET_L2_ETHERNET_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <zephyr/types.h>
@@ -16,17 +16,17 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <linker/sections.h>
-#include <random/rand32.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/random/rand32.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
-#include <net/ethernet.h>
-#include <net/buf.h>
-#include <net/net_ip.h>
-#include <net/net_l2.h>
-#include <net/udp.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/udp.h>
 
 #include "ipv6.h"
 #include "udp_internal.h"
@@ -163,17 +163,17 @@ static int eth_tx_offloading_disabled(const struct device *dev,
 		if (net_pkt_family(pkt) == AF_INET6) {
 			struct in6_addr addr;
 
-			net_ipaddr_copy(&addr, &NET_IPV6_HDR(pkt)->src);
-			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
-					&NET_IPV6_HDR(pkt)->dst);
-			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
+			net_ipv6_addr_copy_raw((uint8_t *)&addr, NET_IPV6_HDR(pkt)->src);
+			net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->src,
+					       NET_IPV6_HDR(pkt)->dst);
+			net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->dst, (uint8_t *)&addr);
 		} else {
 			struct in_addr addr;
 
-			net_ipaddr_copy(&addr, &NET_IPV4_HDR(pkt)->src);
-			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
-					&NET_IPV4_HDR(pkt)->dst);
-			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
+			net_ipv4_addr_copy_raw((uint8_t *)&addr, NET_IPV4_HDR(pkt)->src);
+			net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->src,
+					       NET_IPV4_HDR(pkt)->dst);
+			net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->dst, (uint8_t *)&addr);
 		}
 
 		udp_hdr = net_udp_get_hdr(pkt, &hdr);
@@ -392,7 +392,7 @@ static void test_address_setup(void)
 		zassert_not_null(ifaddr, "addr1");
 	}
 
-	/* For testing purposes we need to set the adddresses preferred */
+	/* For testing purposes we need to set the addresses preferred */
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &ll_addr,
@@ -928,20 +928,35 @@ static void test_rx_chksum_offload_enabled_test_v4(void)
 	k_sleep(K_MSEC(10));
 }
 
-void test_main(void)
+static void *net_chksum_offload_tests_setup(void)
 {
-	ztest_test_suite(net_chksum_offload_test,
-			 ztest_unit_test(test_eth_setup),
-			 ztest_unit_test(test_address_setup),
-			 ztest_unit_test(test_tx_chksum_offload_disabled_test_v6),
-			 ztest_unit_test(test_tx_chksum_offload_disabled_test_v4),
-			 ztest_unit_test(test_tx_chksum_offload_enabled_test_v6),
-			 ztest_unit_test(test_tx_chksum_offload_enabled_test_v4),
-			 ztest_unit_test(test_rx_chksum_offload_disabled_test_v6),
-			 ztest_unit_test(test_rx_chksum_offload_disabled_test_v4),
-			 ztest_unit_test(test_rx_chksum_offload_enabled_test_v6),
-			 ztest_unit_test(test_rx_chksum_offload_enabled_test_v4)
-			 );
-
-	ztest_run_test_suite(net_chksum_offload_test);
+	test_eth_setup();
+	test_address_setup();
+	return NULL;
 }
+
+ZTEST(net_chksum_offload, test_chksum_offload_disabled_v4)
+{
+	test_tx_chksum_offload_disabled_test_v4();
+	test_rx_chksum_offload_disabled_test_v4();
+}
+
+ZTEST(net_chksum_offload, test_chksum_offload_enabled_v4)
+{
+	test_tx_chksum_offload_enabled_test_v4();
+	test_rx_chksum_offload_enabled_test_v4();
+}
+
+ZTEST(net_chksum_offload, test_chksum_offload_disabled_v6)
+{
+	test_tx_chksum_offload_disabled_test_v6();
+	test_rx_chksum_offload_disabled_test_v6();
+}
+
+ZTEST(net_chksum_offload, test_chksum_offload_enabled_v6)
+{
+	test_tx_chksum_offload_enabled_test_v6();
+	test_rx_chksum_offload_enabled_test_v6();
+}
+
+ZTEST_SUITE(net_chksum_offload, NULL, net_chksum_offload_tests_setup, NULL, NULL, NULL);

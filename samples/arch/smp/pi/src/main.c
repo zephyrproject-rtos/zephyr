@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
 
 /* Amount of execution threads to create and run */
@@ -12,13 +12,12 @@
 
 /*
  * Amount of digits of Pi to calculate, must be a multiple of 4,
- * as used algorythm spits 4 digits on every iteration.
+ * as used algorithm spits 4 digits on every iteration.
  */
 #define DIGITS_NUM	240
 
 #define LENGTH		((DIGITS_NUM / 4) * 14)
-#define STACK_SIZE	((LENGTH * sizeof(int) + 512) + \
-			 CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE	((LENGTH * sizeof(int) + 1024))
 
 #ifdef CONFIG_SMP
 #define CORES_NUM	CONFIG_MP_NUM_CPUS
@@ -54,8 +53,9 @@ void test_thread(void *arg1, void *arg2, void *arg3)
 	int carry = 0;
 	int i, j;
 
-	for (i = 0; i < LENGTH; i++)
+	for (i = 0; i < LENGTH; i++) {
 		array[i] = ARRAY_INIT;
+	}
 
 	for (i = LENGTH; i > 0; i -= 14) {
 		int sum = 0, value;
@@ -96,8 +96,9 @@ void main(void)
 	}
 
 	/* Wait for all workers to finish their calculations */
-	while (counter)
+	while (counter) {
 		k_sleep(K_MSEC(1));
+	}
 
 	/* Capture final time stamp */
 	stop_time = k_cycle_get_32();
@@ -105,8 +106,9 @@ void main(void)
 	cycles_spent = stop_time - start_time;
 	nanoseconds_spent = (uint32_t)k_cyc_to_ns_floor64(cycles_spent);
 
-	for (i = 0; i < THREADS_NUM; i++)
+	for (i = 0; i < THREADS_NUM; i++) {
 		printk("Pi value calculated by thread #%d: %s\n", i, buffer[i]);
+	}
 
 	printk("All %d threads executed by %d cores in %d msec\n", THREADS_NUM,
 	       CORES_NUM, nanoseconds_spent / 1000 / 1000);

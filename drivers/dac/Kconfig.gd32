@@ -1,0 +1,12 @@
+# DAC configuration options
+
+# Copyright (c) 2021 BrainCo Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_GD32
+	bool "GD32 DAC driver"
+	default y
+	depends on DT_HAS_GD_GD32_DAC_ENABLED
+	help
+	  Enable GigaDevice GD32 DAC driver

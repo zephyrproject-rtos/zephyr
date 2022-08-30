@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
+set_property(TARGET linker PROPERTY devices_start_symbol "__device_start")
 
-find_program(CMAKE_LINKER ${CROSS_COMPILE}lldac PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_LINKER ${CROSS_COMPILE}lldac PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 # the prefix to transfer linker options from compiler
 set_ifndef(LINKERFLAGPREFIX -Wl,)
@@ -9,6 +10,8 @@ set_ifndef(LINKERFLAGPREFIX -Wl,)
 # NOTE: ${linker_script_gen} will be produced at build-time; not at configure-time
 macro(configure_linker_script linker_script_gen linker_pass_define)
   set(extra_dependencies ${ARGN})
+  set(template_script_defines ${linker_pass_define})
+  list(TRANSFORM template_script_defines PREPEND "-D")
 
   # Different generators deal with depfiles differently.
   if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
@@ -27,7 +30,6 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   endif()
 
   zephyr_get_include_directories_for_lang(C current_includes)
-  get_filename_component(base_name ${CMAKE_CURRENT_BINARY_DIR} NAME)
   get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
 # the command to generate linker file from template
@@ -43,13 +45,13 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     -x c
     ${NOSYSDEF_CFLAG}
     -Hnocopyr
-    -MD -MF ${linker_script_gen}.dep -MT ${base_name}/${linker_script_gen}
+    -MD -MF ${linker_script_gen}.dep -MT ${linker_script_gen}
     -D_LINKER
     -D_ASMLANGUAGE
     -imacros ${AUTOCONF_H}
     ${current_includes}
     ${current_defines}
-    ${linker_pass_define}
+    ${template_script_defines}
     ${LINKER_SCRIPT}
     -E
     -o ${linker_script_gen}
@@ -112,13 +114,26 @@ macro(toolchain_ld_baremetal)
   zephyr_ld_options(
     -Hlld
     -Hnosdata
-    -Hnocrt
     -Xtimer0 # to suppress the warning message
     -Hnoxcheck_obj
     -Hnocplus
+    -Hhostlib=
     -Hheap=0
     -Hnoivt
+    -Hnocrt
   )
+
+  # There are two options:
+  # - We have full MWDT libc support and we link MWDT libc - this is default
+  #   behavior and we don't need to do something for that.
+  # - We use minimal libc provided by Zephyr itself. In that case we must not
+  #   link MWDT libc, but we still need to link libmw
+  if(CONFIG_MINIMAL_LIBC)
+    zephyr_ld_options(
+      -Hnolib
+      -Hldopt=-lmw
+    )
+  endif()
 
   # Funny thing is if this is set to =error, some architectures will
   # skip this flag even though the compiler flag check passes
@@ -157,29 +172,29 @@ macro(toolchain_ld_base)
   )
 endmacro()
 
-# generate linker script snippts from configure files
+# generate linker script snippets from configure files
 macro(toolchain_ld_configure_files)
   configure_file(
-       $ENV{ZEPHYR_BASE}/include/arch/common/app_data_alignment.ld
+       $ENV{ZEPHYR_BASE}/include/zephyr/arch/common/app_data_alignment.ld
        ${PROJECT_BINARY_DIR}/include/generated/app_data_alignment.ld)
 
   configure_file(
-       $ENV{ZEPHYR_BASE}/include/linker/app_smem.ld
+       $ENV{ZEPHYR_BASE}/include/zephyr/linker/app_smem.ld
        ${PROJECT_BINARY_DIR}/include/generated/app_smem.ld)
 
   configure_file(
-       $ENV{ZEPHYR_BASE}/include/linker/app_smem_aligned.ld
+       $ENV{ZEPHYR_BASE}/include/zephyr/linker/app_smem_aligned.ld
        ${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.ld)
 
   configure_file(
-       $ENV{ZEPHYR_BASE}/include/linker/app_smem_unaligned.ld
+       $ENV{ZEPHYR_BASE}/include/zephyr/linker/app_smem_unaligned.ld
        ${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.ld)
 endmacro()
 
 # link C++ libraries
 macro(toolchain_ld_cpp)
   zephyr_link_libraries(
-    -Hcppmw -Hcplus
+    -Hcplus
   )
 endmacro()
 
@@ -196,7 +211,7 @@ macro(toolchain_ld_relocation)
     OUTPUT ${MEM_RELOCATION_CODE} ${MEM_RELOCATION_LD}
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_relocate_app.py
+    ${ZEPHYR_BASE}/scripts/build/gen_relocate_app.py
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     -d ${APPLICATION_BINARY_DIR}
     -i \"$<TARGET_PROPERTY:code_data_relocation_target,COMPILE_DEFINITIONS>\"
@@ -208,5 +223,7 @@ macro(toolchain_ld_relocation)
     )
 
   add_library(code_relocation_source_lib  STATIC ${MEM_RELOCATION_CODE})
+  target_include_directories(code_relocation_source_lib PRIVATE
+	${ZEPHYR_BASE}/kernel/include ${ARCH_DIR}/${ARCH}/include)
   target_link_libraries(code_relocation_source_lib zephyr_interface)
 endmacro()

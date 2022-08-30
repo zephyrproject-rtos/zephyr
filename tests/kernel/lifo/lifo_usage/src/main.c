@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "lifo_usage.h"
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIST_LEN 2
 
 struct k_lifo lifo, plifo;
@@ -35,7 +35,7 @@ struct reply_packet {
 struct timeout_order_data {
 	void *link_in_lifo;
 	struct k_lifo *klifo;
-	k_ticks_t timeout;
+	int32_t timeout;
 	int32_t timeout_order;
 	int32_t q_order;
 };
@@ -43,28 +43,28 @@ struct timeout_order_data {
 static struct k_lifo lifo_timeout[2];
 
 struct timeout_order_data timeout_order_data[] = {
-	{0, &lifo_timeout[0], 20, 2, 0},
-	{0, &lifo_timeout[0], 40, 4, 1},
-	{0, &lifo_timeout[0], 0, 0, 2},
-	{0, &lifo_timeout[0], 10, 1, 3},
-	{0, &lifo_timeout[0], 30, 3, 4},
+	{0, &lifo_timeout[0], 200, 2, 0},
+	{0, &lifo_timeout[0], 400, 4, 1},
+	{0, &lifo_timeout[0],   0, 0, 2},
+	{0, &lifo_timeout[0], 100, 1, 3},
+	{0, &lifo_timeout[0], 300, 3, 4},
 };
 
 struct timeout_order_data timeout_order_data_mult_lifo[] = {
-	{0, &lifo_timeout[1], 0, 0, 0},
-	{0, &lifo_timeout[0], 30, 3, 1},
-	{0, &lifo_timeout[0], 50, 5, 2},
-	{0, &lifo_timeout[1], 80, 8, 3},
-	{0, &lifo_timeout[1], 70, 7, 4},
-	{0, &lifo_timeout[0], 10, 1, 5},
-	{0, &lifo_timeout[0], 60, 6, 6},
-	{0, &lifo_timeout[0], 20, 2, 7},
-	{0, &lifo_timeout[1], 40, 4, 8},
+	{0, &lifo_timeout[1],   0, 0, 0},
+	{0, &lifo_timeout[0], 300, 3, 1},
+	{0, &lifo_timeout[0], 500, 5, 2},
+	{0, &lifo_timeout[1], 800, 8, 3},
+	{0, &lifo_timeout[1], 700, 7, 4},
+	{0, &lifo_timeout[0], 100, 1, 5},
+	{0, &lifo_timeout[0], 600, 6, 6},
+	{0, &lifo_timeout[0], 200, 2, 7},
+	{0, &lifo_timeout[1], 400, 4, 8},
 };
 
 #define NUM_SCRATCH_LIFO_PACKETS 20
 #define TIMEOUT_ORDER_NUM_THREADS	ARRAY_SIZE(timeout_order_data_mult_lifo)
-#define TSTACK_SIZE			(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define TSTACK_SIZE			(1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIFO_THREAD_PRIO		-5
 
 struct scratch_lifo_packet scratch_lifo_packets[NUM_SCRATCH_LIFO_PACKETS];
@@ -110,9 +110,7 @@ static bool is_timeout_in_range(uint32_t start_time, uint32_t timeout)
 	uint32_t stop_time, diff;
 
 	stop_time = k_cycle_get_32();
-	diff = (uint32_t)k_cyc_to_ns_floor64(stop_time -
-					start_time) / NSEC_PER_USEC;
-	diff = diff / USEC_PER_MSEC;
+	diff = k_cyc_to_ms_floor32(stop_time - start_time);
 	return timeout <= diff;
 }
 
@@ -208,7 +206,7 @@ static void test_thread_put_timeout(void *p1, void *p2, void *p3)
  * @brief Test last in, first out queue using LIFO
  * @see k_sem_init(), k_lifo_put(), k_lifo_get()
  */
-static void test_lifo_nowait(void)
+ZTEST(lifo_usage, test_lifo_nowait)
 {
 	k_lifo_init(&lifo);
 
@@ -232,7 +230,7 @@ static void test_lifo_nowait(void)
  * @brief Test pending reader in LIFO
  * @see k_lifo_init(), k_lifo_get(), k_lifo_put()
  */
-static void test_lifo_wait(void)
+ZTEST(lifo_usage_1cpu, test_lifo_wait)
 {
 	int *ret;
 
@@ -260,13 +258,13 @@ static void test_lifo_wait(void)
  * @brief Test reading empty LIFO
  * @see k_lifo_get()
  */
-static void test_timeout_empty_lifo(void)
+ZTEST(lifo_usage_1cpu, test_timeout_empty_lifo)
 {
 	void *packet;
 
 	uint32_t start_time, timeout;
 
-	timeout = 10U;
+	timeout = 100U;
 
 	start_time = k_cycle_get_32();
 
@@ -285,7 +283,7 @@ static void test_timeout_empty_lifo(void)
  * @brief Test read and write operation in LIFO with timeout
  * @see k_lifo_put(), k_lifo_get()
  */
-static void test_timeout_non_empty_lifo(void)
+ZTEST(lifo_usage, test_timeout_non_empty_lifo)
 {
 	void *packet, *scratch_packet;
 
@@ -307,7 +305,7 @@ static void test_timeout_non_empty_lifo(void)
  * @brief Test LIFO with timeout
  * @see k_lifo_put(), k_lifo_get()
  */
-static void test_timeout_lifo_thread(void)
+ZTEST(lifo_usage_1cpu, test_timeout_lifo_thread)
 {
 	void *packet, *scratch_packet;
 	static volatile struct reply_packet reply_packet;
@@ -411,7 +409,7 @@ void test_thread_pend_and_timeout(void *p1, void *p2, void *p3)
  * with different timeouts
  * @see k_lifo_get()
  */
-static void test_timeout_threads_pend_on_lifo(void)
+ZTEST(lifo_usage_1cpu, test_timeout_threads_pend_on_lifo)
 {
 	int32_t rv, test_data_size;
 
@@ -459,16 +457,15 @@ static void test_para_init(void)
  */
 
 /** test case main entry */
-void test_main(void)
+void *lifo_usage_setup(void)
 {
 	test_para_init();
 
-	ztest_test_suite(test_lifo_usage,
-			 ztest_unit_test(test_lifo_nowait),
-			 ztest_1cpu_unit_test(test_lifo_wait),
-			 ztest_1cpu_unit_test(test_timeout_empty_lifo),
-			 ztest_unit_test(test_timeout_non_empty_lifo),
-			 ztest_1cpu_unit_test(test_timeout_lifo_thread),
-			 ztest_1cpu_unit_test(test_timeout_threads_pend_on_lifo));
-	ztest_run_test_suite(test_lifo_usage);
+	return NULL;
 }
+
+
+ZTEST_SUITE(lifo_usage_1cpu, NULL, lifo_usage_setup,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
+
+ZTEST_SUITE(lifo_usage, NULL, lifo_usage_setup, NULL, NULL, NULL);

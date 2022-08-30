@@ -8,14 +8,15 @@
  */
 
 #include <stddef.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 
 static struct k_work work_adv_start;
 static uint8_t volatile conn_count;
 static uint8_t id_current;
+static bool volatile is_disconnecting;
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -44,6 +45,10 @@ static void adv_start(struct k_work *work)
 		id = bt_id_create(NULL, NULL);
 		if (id < 0) {
 			printk("Create id failed (%d)\n", id);
+			if (id_current == 0) {
+				id_current = CONFIG_BT_MAX_CONN;
+			}
+			id_current--;
 		} else {
 			printk("New id: %d\n", id);
 		}
@@ -93,7 +98,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	printk("Disconnected %s (reason 0x%02x)\n", addr, reason);
 
-	if (conn_count == CONFIG_BT_MAX_CONN) {
+	if ((conn_count == 1U) && is_disconnecting) {
+		is_disconnecting = false;
 		k_work_submit(&work_adv_start);
 	}
 	conn_count--;
@@ -122,6 +128,33 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval,
 	printk("LE conn param updated: %s int 0x%04x lat %d to %d\n",
 	       addr, interval, latency, timeout);
 }
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+static void le_phy_updated(struct bt_conn *conn,
+			   struct bt_conn_le_phy_info *param)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("LE PHY Updated: %s Tx 0x%x, Rx 0x%x\n", addr, param->tx_phy,
+	       param->rx_phy);
+}
+#endif /* CONFIG_BT_USER_PHY_UPDATE */
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+static void le_data_len_updated(struct bt_conn *conn,
+				struct bt_conn_le_data_len_info *info)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Data length updated: %s max tx %u (%u us) max rx %u (%u us)\n",
+	       addr, info->tx_max_len, info->tx_max_time, info->rx_max_len,
+	       info->rx_max_time);
+}
+#endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */
 
 #if defined(CONFIG_BT_SMP)
 static void security_changed(struct bt_conn *conn, bt_security_t level,
@@ -158,9 +191,18 @@ static struct bt_conn_cb conn_callbacks = {
 	.disconnected = disconnected,
 	.le_param_req = le_param_req,
 	.le_param_updated = le_param_updated,
+
 #if defined(CONFIG_BT_SMP)
 	.security_changed = security_changed,
 #endif /* CONFIG_BT_SMP */
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	.le_phy_updated = le_phy_updated,
+#endif /* CONFIG_BT_USER_PHY_UPDATE */
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+	.le_data_len_updated = le_data_len_updated,
+#endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */
 };
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -180,7 +222,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 }
 #endif /* CONFIG_BT_OBSERVER */
 
-int init_peripheral(void)
+int init_peripheral(uint8_t iterations)
 {
 	size_t id_count;
 	int err;
@@ -215,7 +257,7 @@ int init_peripheral(void)
 
 	/* wait for connection attempts on all identities */
 	do {
-		k_sleep(K_MSEC(100));
+		k_sleep(K_MSEC(10));
 
 		id_count = 0xFF;
 		bt_id_get(NULL, &id_count);
@@ -224,13 +266,54 @@ int init_peripheral(void)
 	/* rotate identities so reconnections are attempted in case of any
 	 * disconnections
 	 */
+	uint8_t prev_count = conn_count;
 	while (1) {
-		k_sleep(K_SECONDS(1));
-
+		/* If maximum connections is reached, wait for disconnections
+		 * initiated by peer central devices.
+		 */
 		if (conn_count == CONFIG_BT_MAX_CONN) {
-			break;
+			if (!iterations) {
+				break;
+			}
+			iterations--;
+			printk("Iterations remaining: %u\n", iterations);
+
+			printk("Wait for disconnections...\n");
+			is_disconnecting = true;
+			while (is_disconnecting) {
+				k_sleep(K_MSEC(10));
+			}
+			printk("All disconnected.\n");
+
+			continue;
 		}
 
+		/* As long as there is connection count changes, identity
+		 * rotation in this loop is not needed.
+		 */
+		if (prev_count != conn_count) {
+			prev_count = conn_count;
+
+			continue;
+		} else {
+			uint16_t wait = 6200U;
+
+			/* Maximum duration without connection count change,
+			 * central waiting before disconnecting all its
+			 * connections plus few seconds of margin.
+			 */
+			while ((prev_count == conn_count) && wait) {
+				wait--;
+
+				k_sleep(K_MSEC(10));
+			}
+
+			if (wait) {
+				continue;
+			}
+		}
+
+		/* Stopping and restarting advertising to use new identity */
 		printk("Stop advertising...\n");
 		err = bt_le_adv_stop();
 		if (err) {

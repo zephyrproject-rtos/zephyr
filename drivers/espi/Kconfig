@@ -12,9 +12,13 @@ if ESPI
 
 source "drivers/espi/Kconfig.xec"
 
+source "drivers/espi/Kconfig.xec_v2"
+
 source "drivers/espi/Kconfig.npcx"
 
 source "drivers/espi/Kconfig.espi_emul"
+
+source "drivers/espi/Kconfig.it8xxx2"
 
 module = ESPI
 module-str = espi
@@ -50,7 +54,7 @@ config ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
 	depends on ESPI_VWIRE_CHANNEL
 	depends on ESPI_SLAVE
 	help
-	  Enable automatic acknowledge from eSPI slave towards eSPI host
+	  Enable automatic acknowledgment from eSPI slave towards eSPI host
 	  whenever it receives suspend or reset warning.
 	  If this is disabled, it means the app wants to be give the opportunity
 	  to prepare for either HOST suspend or reset.
@@ -61,7 +65,7 @@ config ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
 	depends on ESPI_VWIRE_CHANNEL
 	depends on ESPI_SLAVE
 	help
-	  Enable automatic acknowledge of slave basic configuration been
+	  Enable automatic acknowledgment from slave basic configuration been
 	  completed by sending a virtual wire message to the eSPI master.
 	  This depends on SPI boot configuration. It could be either very
 	  early in the flow after the VW channel is configured. Or it could be

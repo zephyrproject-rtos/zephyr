@@ -5,6 +5,8 @@ tests:
   sample.sensor.amg88xx:
     build_only: true
     depends_on: arduino_i2c arduino_gpio
+    platform_exclude: pan1781_evb pan1782_evb
     tags: sensors
+    extra_args: SHIELD=amg88xx_eval_kit
     extra_configs:
       - CONFIG_AMG88XX_TRIGGER_GLOBAL_THREAD=y

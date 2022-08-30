@@ -7,13 +7,13 @@
 #define DT_DRV_COMPAT microchip_xec_pcr
 
 #include <soc.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/mchp_xec_clock_control.h>
-#include <dt-bindings/clock/mchp_xec_pcr.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
+#include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_xec, LOG_LEVEL_ERR);
 
 #define CLK32K_SIL_OSC_DELAY		256
@@ -328,7 +328,7 @@ static int pll_wait_lock(struct pcr_regs *const pcr, uint32_t wait_cnt)
  *     goes off.
  * At chip reset the PLL is held in reset and the +/- 50% ring oscillator is
  * the main clock.
- * If no VBAT reset occurs the VBAT 32 KHz soure register maintains its state.
+ * If no VBAT reset occurs the VBAT 32 KHz source register maintains its state.
  */
 static int soc_clk32_init(const struct device *dev,
 			  enum clk32k_src pll_clk_src,
@@ -647,5 +647,5 @@ DEVICE_DT_INST_DEFINE(0,
 		    NULL,
 		    NULL, &xec_config,
 		    PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
+		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &xec_clock_control_api);

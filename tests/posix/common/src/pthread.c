@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <kernel.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <pthread.h>
 #include <semaphore.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef min
 #define min(a, b) ((a) < (b)) ? (a) : (b)
@@ -17,7 +17,7 @@
 #define N_THR_E 3
 #define N_THR_T 4
 #define BOUNCES 64
-#define STACKS (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKS (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define THREAD_PRIORITY 3
 #define ONE_SECOND 1
 
@@ -97,7 +97,7 @@ void *thread_top_exec(void *p1)
 		 * scheduled and wait on cvar0.
 		 */
 		if (!(id == 0 && i == 0)) {
-			pthread_cond_wait(&cvar0, &lock);
+			zassert_equal(0, pthread_cond_wait(&cvar0, &lock), "");
 		} else {
 			pthread_mutex_unlock(&lock);
 			usleep(USEC_PER_MSEC * 500U);
@@ -229,7 +229,7 @@ void *thread_top_term(void *p1)
 	return NULL;
 }
 
-void test_posix_pthread_execution(void)
+ZTEST(posix_apis, test_posix_pthread_execution)
 {
 	int i, ret, min_prio, max_prio;
 	int dstate, policy;
@@ -403,14 +403,14 @@ void test_posix_pthread_execution(void)
 	printk("Barrier test OK\n");
 }
 
-void test_posix_pthread_error_condition(void)
+ZTEST(posix_apis, test_posix_pthread_error_condition)
 {
 	pthread_attr_t attr;
 	struct sched_param param;
 	void *stackaddr;
 	size_t stacksize;
 	int policy, detach;
-	static pthread_once_t key = 1;
+	static pthread_once_t key;
 
 	/* TESTPOINT: invoke pthread APIs with NULL */
 	zassert_equal(pthread_attr_destroy(NULL), EINVAL,
@@ -428,7 +428,7 @@ void test_posix_pthread_error_condition(void)
 	zassert_equal(pthread_attr_setdetachstate(NULL, 0),
 		      EINVAL, "pthread set detach state with NULL error");
 	zassert_equal(pthread_attr_getdetachstate(NULL, &detach),
-		      EINVAL, "get datach state error");
+		      EINVAL, "get detach state error");
 	zassert_equal(pthread_detach(NULL), ESRCH, "detach with NULL error");
 	zassert_equal(pthread_attr_init(NULL), ENOMEM,
 		      "init with NULL error");
@@ -447,7 +447,7 @@ void test_posix_pthread_error_condition(void)
 
 	attr.initialized = 0U;
 	zassert_equal(pthread_attr_getdetachstate(&attr, &detach),
-		      EINVAL, "get datach state error");
+		      EINVAL, "get detach state error");
 
 	/* Initialise thread attribute to ensure won't be return with init error */
 	zassert_false(pthread_attr_init(&attr),
@@ -465,10 +465,10 @@ void test_posix_pthread_error_condition(void)
 	zassert_equal(pthread_attr_setdetachstate(&attr, 3),
 		      EINVAL, "set detach state error");
 	zassert_false(pthread_attr_getdetachstate(&attr, &detach),
-		      "get datach state error");
+		      "get detach state error");
 }
 
-void test_posix_pthread_termination(void)
+ZTEST(posix_apis, test_posix_pthread_termination)
 {
 	int32_t i, ret;
 	int oldstate, policy;
@@ -531,13 +531,35 @@ void test_posix_pthread_termination(void)
 	zassert_equal(ret, ESRCH, "got attr from terminated thread!");
 }
 
+ZTEST(posix_apis, test_posix_thread_attr_stacksize)
+{
+	size_t act_size;
+	pthread_attr_t attr;
+	const size_t exp_size = 0xB105F00D;
+
+	/* TESTPOINT: specify a custom stack size via pthread_attr_t */
+	zassert_equal(0, pthread_attr_init(&attr), "pthread_attr_init() failed");
+
+	if (PTHREAD_STACK_MIN > 0) {
+		zassert_equal(EINVAL, pthread_attr_setstacksize(&attr, 0),
+			      "pthread_attr_setstacksize() did not fail");
+	}
+
+	zassert_equal(0, pthread_attr_setstacksize(&attr, exp_size),
+		      "pthread_attr_setstacksize() failed");
+	zassert_equal(0, pthread_attr_getstacksize(&attr, &act_size),
+		      "pthread_attr_getstacksize() failed");
+	zassert_equal(exp_size, act_size, "wrong size: act: %zu exp: %zu",
+		exp_size, act_size);
+}
+
 static void *create_thread1(void *p1)
 {
 	/* do nothing */
 	return NULL;
 }
 
-void test_posix_pthread_create_negative(void)
+ZTEST(posix_apis, test_posix_pthread_create_negative)
 {
 	int ret;
 	pthread_t pthread1;
@@ -559,4 +581,21 @@ void test_posix_pthread_create_negative(void)
 	pthread_attr_setstack(&attr1, &stack_1, 0);
 	ret = pthread_create(&pthread1, &attr1, create_thread1, (void *)1);
 	zassert_equal(ret, EINVAL, "create thread with 0 size");
+}
+
+ZTEST(posix_apis, test_pthread_descriptor_leak)
+{
+	void *unused;
+	pthread_t pthread1;
+	pthread_attr_t attr;
+
+	zassert_ok(pthread_attr_init(&attr), NULL);
+	zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS), NULL);
+
+	/* If we are leaking descriptors, then this loop will never complete */
+	for (size_t i = 0; i < CONFIG_MAX_PTHREAD_COUNT * 2; ++i) {
+		zassert_ok(pthread_create(&pthread1, &attr, create_thread1, NULL),
+			   "unable to create thread %zu", i);
+		zassert_ok(pthread_join(pthread1, &unused), "unable to join thread %zu", i);
+	}
 }

@@ -1,0 +1,16 @@
+# Copyright (c) 2021 Abel Sensors
+# SPDX-License-Identifier: Apache-2.0
+
+description: FXL6408 I2C-based GPIO expander
+
+compatible: "fcs,fxl6408"
+
+include: [gpio-controller.yaml, i2c-device.yaml]
+
+properties:
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
+  - pin
+  - flags

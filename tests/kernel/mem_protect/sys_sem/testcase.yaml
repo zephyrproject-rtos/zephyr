@@ -1,7 +1,35 @@
 tests:
   kernel.memory_protection.sys_sem:
+    filter: CONFIG_ARCH_HAS_USERSPACE
     tags: kernel userspace
+    testcases:
+    - sem_take_no_wait
+    - sem_take_timeout_forever
+    - sem_give_limit
+    - simple_sem_from_isr
+    - sem_take_timeout_isr
+    - sem_take_timeout
+    - basic_sem_test
+    - simple_sem_from_task
+    - sem_take_no_wait_fails
+    - sem_multiple_threads_wait
+    - sem_give_take_from_isr
+    - sem_take_multiple
+    - sem_take_timeout_fails
   kernel.memory_protection.sys_sem.nouser:
-    tags: kernel
     extra_configs:
-      - CONFIG_TEST_USERSPACE=n
+    - CONFIG_TEST_USERSPACE=n
+    tags: kernel
+    testcases:
+    - sem_take_no_wait
+    - sem_take_timeout_forever
+    - sem_give_limit
+    - simple_sem_from_isr
+    - sem_take_timeout_isr
+    - sem_take_timeout
+    - simple_sem_from_task
+    - sem_take_no_wait_fails
+    - sem_multiple_threads_wait
+    - sem_give_take_from_isr
+    - sem_take_multiple
+    - sem_take_timeout_fails

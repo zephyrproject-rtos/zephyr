@@ -320,7 +320,7 @@ Networking
 
 * Added new TCP stack implementation. The new TCP stack is still experimental
   and is turned off by default. Users wanting to experiment with it can set
-  :kconfig:`CONFIG_NET_TCP2` Kconfig option.
+  ``CONFIG_NET_TCP2`` Kconfig option.
 * Added support for running MQTT protocol on top of a Websocket connection.
 * Added support for enabling DNS in LWM2M.
 * Added support for resetting network statistics in net-shell.

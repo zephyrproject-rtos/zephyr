@@ -1,11 +1,12 @@
-# Reneas R-Car CAN configuration options
+# Renesas R-Car CAN configuration options
 
 # Copyright (c) 2021 IoT.bzh
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_RCAR
 	bool "Renesas R-Car CAN Driver"
-	depends on SOC_FAMILY_RCAR
+	default y
+	depends on DT_HAS_RENESAS_RCAR_CAN_ENABLED
 	help
 	  Enable Renesas R-Car CAN Driver.
 

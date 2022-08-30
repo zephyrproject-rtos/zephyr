@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015 Intel Corporation.
  * Copyright (c) 2020 Norbit ODM AS
+ * Copyright 2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,23 +9,23 @@
 #define DT_DRV_COMPAT nxp_pca95xx
 
 /**
- * @file Driver for PCA95XX I2C-based GPIO driver.
+ * @file Driver for PCA95XX and PCAL95XX I2C-based GPIO driver.
  */
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 
 #include "gpio_utils.h"
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_pca95xx);
 
 /* Register definitions */
@@ -55,27 +56,16 @@ LOG_MODULE_REGISTER(gpio_pca95xx);
 /* Driver flags */
 #define PCA_HAS_PUD			BIT(0)
 #define PCA_HAS_INTERRUPT		BIT(1)
+#define PCA_HAS_INTERRUPT_MASK_REG	BIT(2)
 
 /** Configuration data */
 struct gpio_pca95xx_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-
-	/** The master I2C device's name */
-	const char * const i2c_master_dev_name;
-
-	/** The slave address of the chip */
-	uint16_t i2c_slave_addr;
-
+	struct i2c_dt_spec bus;
 	uint8_t capabilities;
-
 #ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
-	/* Interrupt pin definition */
-	const char *int_gpio_port;
-
-	gpio_pin_t int_gpio_pin;
-
-	gpio_flags_t int_gpio_flags;
+	struct gpio_dt_spec int_gpio;
 #endif
 };
 
@@ -84,15 +74,13 @@ struct gpio_pca95xx_drv_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
 
-	/** Master I2C device */
-	const struct device *i2c_master;
-
 	struct {
 		uint16_t input;
 		uint16_t output;
 		uint16_t dir;
 		uint16_t pud_en;
 		uint16_t pud_sel;
+		uint16_t int_mask;
 	} reg_cache;
 
 	struct k_sem lock;
@@ -136,18 +124,14 @@ static int read_port_regs(const struct device *dev, uint8_t reg,
 			  uint16_t *cache, uint16_t *buf)
 {
 	const struct gpio_pca95xx_config * const config = dev->config;
-	struct gpio_pca95xx_drv_data * const drv_data =
-		(struct gpio_pca95xx_drv_data * const)dev->data;
-	const struct device *i2c_master = drv_data->i2c_master;
-	uint16_t i2c_addr = config->i2c_slave_addr;
 	uint16_t port_data, value;
 	int ret;
 
-	ret = i2c_burst_read(i2c_master, i2c_addr, reg,
-			     (uint8_t *)&port_data, sizeof(port_data));
+	ret = i2c_burst_read_dt(&config->bus, reg, (uint8_t *)&port_data,
+				sizeof(port_data));
 	if (ret != 0) {
 		LOG_ERR("PCA95XX[0x%X]: error reading register 0x%X (%d)",
-			i2c_addr, reg, ret);
+			config->bus.addr, reg, ret);
 		return ret;
 	}
 
@@ -156,7 +140,7 @@ static int read_port_regs(const struct device *dev, uint8_t reg,
 	*buf = value;
 
 	LOG_DBG("PCA95XX[0x%X]: Read: REG[0x%X] = 0x%X, REG[0x%X] = 0x%X",
-		i2c_addr, reg, (*buf & 0xFF), (reg + 1), (*buf >> 8));
+		config->bus.addr, reg, (*buf & 0xFF), (reg + 1), (*buf >> 8));
 
 	return 0;
 }
@@ -177,26 +161,22 @@ static int write_port_regs(const struct device *dev, uint8_t reg,
 			   uint16_t *cache, uint16_t value)
 {
 	const struct gpio_pca95xx_config * const config = dev->config;
-	struct gpio_pca95xx_drv_data * const drv_data =
-		(struct gpio_pca95xx_drv_data * const)dev->data;
-	const struct device *i2c_master = drv_data->i2c_master;
-	uint16_t i2c_addr = config->i2c_slave_addr;
-	uint16_t port_data;
+	uint8_t buf[3];
 	int ret;
 
 	LOG_DBG("PCA95XX[0x%X]: Write: REG[0x%X] = 0x%X, REG[0x%X] = "
-		"0x%X", i2c_addr, reg, (value & 0xFF),
+		"0x%X", config->bus.addr, reg, (value & 0xFF),
 		(reg + 1), (value >> 8));
 
-	port_data = sys_cpu_to_le16(value);
+	buf[0] = reg;
+	sys_put_le16(value, &buf[1]);
 
-	ret = i2c_burst_write(i2c_master, i2c_addr, reg,
-			      (uint8_t *)&port_data, sizeof(port_data));
+	ret = i2c_write_dt(&config->bus, buf, sizeof(buf));
 	if (ret == 0) {
 		*cache = value;
 	} else {
 		LOG_ERR("PCA95XX[0x%X]: error writing to register 0x%X "
-			"(%d)", i2c_addr, reg, ret);
+			"(%d)", config->bus.addr, reg, ret);
 	}
 
 	return ret;
@@ -249,6 +229,17 @@ static inline int update_pul_en_regs(const struct device *dev, uint16_t value)
 			       &drv_data->reg_cache.pud_en, value);
 }
 
+#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
+static inline int update_int_mask_regs(const struct device *dev, uint16_t value)
+{
+	struct gpio_pca95xx_drv_data * const drv_data =
+		(struct gpio_pca95xx_drv_data * const)dev->data;
+
+	return write_port_regs(dev, REG_INT_MASK_PORT0,
+			       &drv_data->reg_cache.int_mask, value);
+}
+#endif /* CONFIG_GPIO_PCA95XX_INTERRUPT */
+
 /**
  * @brief Setup the pin direction (input or output)
  *
@@ -273,14 +264,13 @@ static int setup_pin_dir(const struct device *dev, uint32_t pin, int flags)
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
 			reg_out &= ~BIT(pin);
 		}
+		ret = update_output_regs(dev, reg_out);
+		if (ret != 0) {
+			return ret;
+		}
 		reg_dir &= ~BIT(pin);
 	} else {
 		reg_dir |= BIT(pin);
-	}
-
-	ret = update_output_regs(dev, reg_out);
-	if (ret != 0) {
-		return ret;
 	}
 
 	ret = update_direction_regs(dev, reg_dir);
@@ -364,7 +354,6 @@ static int gpio_pca95xx_config(const struct device *dev,
 
 #if (CONFIG_GPIO_LOG_LEVEL >= LOG_LEVEL_DEBUG)
 	const struct gpio_pca95xx_config * const config = dev->config;
-	uint16_t i2c_addr = config->i2c_slave_addr;
 #endif
 
 	/* Does not support disconnected pin */
@@ -389,14 +378,14 @@ static int gpio_pca95xx_config(const struct device *dev,
 	ret = setup_pin_dir(dev, pin, flags);
 	if (ret) {
 		LOG_ERR("PCA95XX[0x%X]: error setting pin direction (%d)",
-			i2c_addr, ret);
+			config->bus.addr, ret);
 		goto done;
 	}
 
 	ret = setup_pin_pullupdown(dev, pin, flags);
 	if (ret) {
 		LOG_ERR("PCA95XX[0x%X]: error setting pin pull up/down "
-			"(%d)", i2c_addr, ret);
+			"(%d)", config->bus.addr, ret);
 		goto done;
 	}
 
@@ -568,7 +557,6 @@ static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
 	const struct gpio_pca95xx_config * const config = dev->config;
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->data;
-	const struct device *int_gpio_dev;
 	uint16_t reg;
 	bool enabled, edge, level, active;
 
@@ -586,11 +574,26 @@ static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
 	if ((mode != GPIO_INT_MODE_DISABLED) &&
 	    (BIT(pin) & drv_data->reg_cache.dir) != BIT(pin)) {
 		LOG_ERR("PCA95XX[0x%X]: output pin cannot trigger interrupt",
-			config->i2c_slave_addr);
+			config->bus.addr);
 		return -ENOTSUP;
 	}
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
+
+	/* Check if GPIO port has an interrupt mask register */
+	if (config->capabilities & PCA_HAS_INTERRUPT_MASK_REG) {
+		uint16_t reg_out;
+
+		reg_out = drv_data->reg_cache.int_mask;
+		WRITE_BIT(reg_out, pin, (mode == GPIO_INT_MODE_DISABLED));
+
+		ret = update_int_mask_regs(dev, reg_out);
+		if (ret != 0) {
+			LOG_ERR("PCA95XX[0x%X]: failed to update int mask (%d)",
+				config->bus.addr, ret);
+			goto err;
+		}
+	}
 
 	/* Update interrupt masks */
 	enabled = ((mode & GPIO_INT_MODE_DISABLED) == 0U);
@@ -612,15 +615,14 @@ static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
 
 	/* Enable / disable interrupt as needed */
 	if (active != drv_data->interrupt_active) {
-		int_gpio_dev = device_get_binding(config->int_gpio_port);
-		ret = gpio_pin_interrupt_configure(int_gpio_dev,
-			config->int_gpio_pin, (active ?
-				GPIO_INT_EDGE_TO_ACTIVE :
-				GPIO_INT_MODE_DISABLED));
+		ret = gpio_pin_interrupt_configure_dt(
+			&config->int_gpio, active ?
+				   GPIO_INT_EDGE_TO_ACTIVE :
+				   GPIO_INT_MODE_DISABLED);
 		if (ret != 0) {
 			LOG_ERR("PCA95XX[0x%X]: failed to configure interrupt "
-				"on pin %d (%d)", config->i2c_slave_addr,
-				config->int_gpio_pin, ret);
+				"on pin %d (%d)", config->bus.addr,
+				config->int_gpio.pin, ret);
 			goto err;
 		}
 		drv_data->interrupt_active = active;
@@ -685,21 +687,16 @@ static int gpio_pca95xx_init(const struct device *dev)
 	const struct gpio_pca95xx_config * const config = dev->config;
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->data;
-	const struct device *i2c_master;
 
-	/* Find out the device struct of the I2C master */
-	i2c_master = device_get_binding((char *)config->i2c_master_dev_name);
-	if (!i2c_master) {
-		return -EINVAL;
+	if (!device_is_ready(config->bus.bus)) {
+		return -ENODEV;
 	}
-	drv_data->i2c_master = i2c_master;
 
 	k_sem_init(&drv_data->lock, 1, 1);
 
 #ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
 	/* Check if GPIO port supports interrupts */
 	if ((config->capabilities & PCA_HAS_INTERRUPT) != 0) {
-		const struct device *int_gpio_dev;
 		int ret;
 
 		/* Store self-reference for interrupt handling */
@@ -710,28 +707,25 @@ static int gpio_pca95xx_init(const struct device *dev)
 			    gpio_pca95xx_interrupt_worker);
 
 		/* Configure GPIO interrupt pin */
-		int_gpio_dev = device_get_binding(config->int_gpio_port);
-		if (int_gpio_dev == NULL) {
-			LOG_ERR("PCA95XX[0x%X]: error getting interrupt GPIO"
-				" device (%s)", config->i2c_slave_addr,
-				config->int_gpio_port);
+		if (!device_is_ready(config->int_gpio.port)) {
+			LOG_ERR("PCA95XX[0x%X]: interrupt GPIO not ready",
+				config->bus.addr);
 			return -ENODEV;
 		}
 
-		ret = gpio_pin_configure(int_gpio_dev, config->int_gpio_pin,
-					(config->int_gpio_flags | GPIO_INPUT));
+		ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 		if (ret != 0) {
 			LOG_ERR("PCA95XX[0x%X]: failed to configure interrupt"
-				" pin %d (%d)", config->i2c_slave_addr,
-				config->int_gpio_pin, ret);
+				" pin %d (%d)", config->bus.addr,
+				config->int_gpio.pin, ret);
 			return ret;
 		}
 
 		/* Prepare GPIO callback for interrupt pin */
 		gpio_init_callback(&drv_data->gpio_callback,
 				   gpio_pca95xx_interrupt_callback,
-				   BIT(config->int_gpio_pin));
-		gpio_add_callback(int_gpio_dev, &drv_data->gpio_callback);
+				   BIT(config->int_gpio.pin));
+		gpio_add_callback(config->int_gpio.port, &drv_data->gpio_callback);
 	}
 #endif
 
@@ -743,22 +737,18 @@ static const struct gpio_pca95xx_config gpio_pca95xx_##inst##_cfg = {	\
 	.common = {							\
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),	\
 	},								\
-	.i2c_master_dev_name = DT_INST_BUS_LABEL(inst),	\
-	.i2c_slave_addr = DT_INST_REG_ADDR(inst),	\
+	.bus = I2C_DT_SPEC_INST_GET(inst),				\
 	.capabilities =							\
-		(DT_INST_PROP(inst, has_pud) ?			\
-			PCA_HAS_PUD : 0) |				\
+		(DT_INST_PROP(inst, has_pud) ? PCA_HAS_PUD : 0) |	\
 		IF_ENABLED(CONFIG_GPIO_PCA95XX_INTERRUPT, (		\
 		(DT_INST_NODE_HAS_PROP(inst, interrupt_gpios) ?		\
 			PCA_HAS_INTERRUPT : 0) |			\
+		(DT_INST_PROP(inst, has_interrupt_mask_reg) ?		\
+			PCA_HAS_INTERRUPT_MASK_REG : 0) |		\
 		))							\
 		0,							\
-	IF_ENABLED(CONFIG_GPIO_PCA95XX_INTERRUPT, (			\
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, interrupt_gpios), (	\
-	.int_gpio_port = DT_INST_GPIO_LABEL(inst, interrupt_gpios),	\
-	.int_gpio_pin = DT_INST_GPIO_PIN(inst, interrupt_gpios),	\
-	.int_gpio_flags = DT_INST_GPIO_FLAGS(inst, interrupt_gpios),	\
-	))))								\
+	IF_ENABLED(CONFIG_GPIO_PCA95XX_INTERRUPT,			\
+	(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, interrupt_gpios, {}),)) \
 };									\
 									\
 static struct gpio_pca95xx_drv_data gpio_pca95xx_##inst##_drvdata = {	\

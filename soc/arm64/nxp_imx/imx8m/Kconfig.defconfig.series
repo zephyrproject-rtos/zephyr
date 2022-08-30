@@ -1,0 +1,11 @@
+# Copyright 2020 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IMX8M_A53
+
+config SOC_SERIES
+	default "imx8m"
+
+source "soc/arm64/nxp_imx/imx8m/Kconfig.defconfig.imx8m*"
+
+endif # SOC_SERIES_IMX8M_A53

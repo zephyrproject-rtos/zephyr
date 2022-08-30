@@ -24,7 +24,7 @@ choice RNG_GENERATOR_CHOICE
 
 	  If the entropy support of the platform has sufficient performance
 	  to support random request then select that. Otherwise, select the
-	  XOROSHIRO algorithm
+	  XOSHIRO algorithm
 
 config TIMER_RANDOM_GENERATOR
 	bool "System timer clock based number generator"
@@ -44,14 +44,17 @@ config ENTROPY_DEVICE_RANDOM_GENERATOR
 	  number generator source.
 
 config XOROSHIRO_RANDOM_GENERATOR
-	bool "Use Xoroshiro128+ as PRNG"
+	bool "Use Xoroshiro128+ as PRNG (DEPRECATED)"
+	help
+	  This is deprecated, please use XOSHIRO_RANDOM_GENERATOR instead.
+
+config XOSHIRO_RANDOM_GENERATOR
+	bool "Use Xoshiro128++ as PRNG"
 	depends on ENTROPY_HAS_DRIVER
 	help
-	  Enables the Xoroshiro128+ pseudo-random number generator, that uses
-	  the entropy driver as a seed source.  This is a fast non-cryptographically
-	  secure random number generator.
-
-	  It is so named because it uses 128 bits of state.
+	  Enables the Xoshiro128++ pseudo-random number generator, that uses
+	  the entropy driver as a seed source. This is a fast general-purpose
+	  non-cryptographically secure random number generator.
 
 endchoice # RNG_GENERATOR_CHOICE
 
@@ -74,7 +77,7 @@ choice CSPRNG_GENERATOR_CHOICE
 
 	  If the hardware entropy support of the platform has sufficient
 	  performance to support CSRNG then select that. Otherwise, select
-	  CTR-DRBG CSPRNG as that is a FIPS140-2 recommmended CSPRNG.
+	  CTR-DRBG CSPRNG as that is a FIPS140-2 recommended CSPRNG.
 
 config HARDWARE_DEVICE_CS_GENERATOR
 	bool "Use hardware random driver for CS random numbers"

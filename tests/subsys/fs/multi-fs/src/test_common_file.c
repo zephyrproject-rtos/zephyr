@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <string.h>
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 #include "test_common.h"
 
 int test_file_open(struct fs_file_t *filep, const char *file_path)

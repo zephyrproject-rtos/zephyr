@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/timer/system_timer.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/rcar_clock_control.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
 
 #define DT_DRV_COMPAT renesas_rcar_cmt
 
@@ -20,6 +21,9 @@
 #define CYCLES_PER_SEC         TIMER_CLOCK_FREQUENCY
 #define CYCLES_PER_TICK        (CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_INST(0, renesas_rcar_cmt));
+#endif
 static struct rcar_cpg_clk mod_clk = {
 	.module = DT_INST_CLOCKS_CELL(0, module),
 	.domain = DT_INST_CLOCKS_CELL(0, domain),
@@ -66,21 +70,32 @@ static void cmt_isr(void *arg)
 	sys_clock_announce(1);
 }
 
+uint32_t sys_clock_elapsed(void)
+{
+	/* Always return 0 for tickful operation */
+	return 0;
+}
+
+uint32_t sys_clock_cycle_get_32(void)
+{
+	return sys_read32(TIMER_BASE_ADDR + CMCNT1_OFFSET);
+}
+
 /*
  * Initialize both channels at same frequency,
  * Set the first one to generates interrupt at CYCLES_PER_TICK.
  * The second one is used for cycles count, the match value is set
  * at max uint32_t.
  */
-int sys_clock_driver_init(const struct device *device)
+static int sys_clock_driver_init(const struct device *dev)
 {
 	const struct device *clk;
 	uint32_t reg_val;
 	int i, ret;
 
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 	clk = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
-	if (clk == NULL) {
+	if (!device_is_ready(clk)) {
 		return -ENODEV;
 	}
 
@@ -116,8 +131,9 @@ int sys_clock_driver_init(const struct device *device)
 	sys_write32(0xffffffff, TIMER_BASE_ADDR + CMCOR1_OFFSET);
 
 	/* Reset the counter for first channel, check WRFLG first */
-	while (sys_read32(TIMER_BASE_ADDR + CMCSR0_OFFSET) & CSR_WRITE_FLAG)
+	while (sys_read32(TIMER_BASE_ADDR + CMCSR0_OFFSET) & CSR_WRITE_FLAG) {
 		;
+	}
 	sys_write32(0, TIMER_BASE_ADDR + CMCNT0_OFFSET);
 
 	for (i = 0; i < 1000; i++) {
@@ -140,13 +156,5 @@ int sys_clock_driver_init(const struct device *device)
 	return 0;
 }
 
-uint32_t sys_clock_elapsed(void)
-{
-	/* Always return 0 for tickful operation */
-	return 0;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return sys_read32(TIMER_BASE_ADDR + CMCNT1_OFFSET);
-}
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

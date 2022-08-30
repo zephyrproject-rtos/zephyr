@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define MAX_CMD_CNT (20u)
 #define MAX_CMD_LEN (33u)
 
-/* buffer holding dynamicly created user commands */
+/* buffer holding dynamically created user commands */
 static char dynamic_cmd_buffer[MAX_CMD_CNT][MAX_CMD_LEN];
 /* commands counter */
 static uint8_t dynamic_cmd_cnt;
@@ -84,7 +85,7 @@ static int cmd_dynamic_execute(const struct shell *shell,
 		}
 	}
 
-	shell_error(shell, "%s: uknown parameter: %s", argv[0], argv[1]);
+	shell_error(shell, "%s: unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }

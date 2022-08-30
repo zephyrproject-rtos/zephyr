@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_hci_driver_esp32
 #include "common/log.h"
 
-#include <init.h>
-#include <sys/byteorder.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #include <esp_bt.h>
 
@@ -40,8 +41,6 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 		switch (subevt_type) {
 		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
 			return true;
-		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
-			return true;
 		default:
 			return false;
 		}
@@ -56,6 +55,7 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 	bool discardable = false;
 	struct bt_hci_evt_hdr hdr;
 	struct net_buf *buf;
+	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
 		BT_ERR("Not enough data for event header");
@@ -85,6 +85,15 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 	}
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
+
+	buf_tailroom = net_buf_tailroom(buf);
+	if (buf_tailroom < remaining) {
+		BT_ERR("Not enough space in buffer %zu/%zu",
+		       remaining, buf_tailroom);
+		net_buf_unref(buf);
+		return NULL;
+	}
+
 	net_buf_add_mem(buf, data, remaining);
 
 	return buf;
@@ -94,6 +103,7 @@ static struct net_buf *bt_esp_acl_recv(uint8_t *data, size_t remaining)
 {
 	struct bt_hci_acl_hdr hdr;
 	struct net_buf *buf;
+	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
 		BT_ERR("Not enough data for ACL header");
@@ -118,6 +128,14 @@ static struct net_buf *bt_esp_acl_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
+	buf_tailroom = net_buf_tailroom(buf);
+	if (buf_tailroom < remaining) {
+		BT_ERR("Not enough space in buffer %zu/%zu",
+		       remaining, buf_tailroom);
+		net_buf_unref(buf);
+		return NULL;
+	}
+
 	BT_DBG("len %u", remaining);
 	net_buf_add_mem(buf, data, remaining);
 
@@ -128,6 +146,7 @@ static struct net_buf *bt_esp_iso_recv(uint8_t *data, size_t remaining)
 {
 	struct bt_hci_iso_hdr hdr;
 	struct net_buf *buf;
+	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
 		BT_ERR("Not enough data for ISO header");
@@ -146,8 +165,16 @@ static struct net_buf *bt_esp_iso_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
-	if (remaining != sys_le16_to_cpu(hdr.len)) {
+	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
 		BT_ERR("ISO payload length is not correct");
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	buf_tailroom = net_buf_tailroom(buf);
+	if (buf_tailroom < remaining) {
+		BT_ERR("Not enough space in buffer %zu/%zu",
+		       remaining, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -254,7 +281,7 @@ static int bt_esp32_ble_init(void)
 	int ret;
 	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
-#ifdef CONFIG_BT_BREDR
+#if defined(CONFIG_BT_BREDR) && defined(CONFIG_SOC_ESP32)
 	esp_bt_mode_t mode = ESP_BT_MODE_BTDM;
 #else
 	esp_bt_mode_t mode = ESP_BT_MODE_BLE;

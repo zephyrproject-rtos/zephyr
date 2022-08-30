@@ -26,8 +26,7 @@ Cortex-M33F CPU with ARMv8-M Security Extension and the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 * :abbr:`IDAU (Implementation Defined Attribution Unit)`
 
-.. figure:: img/nrf9160dk_nrf9160.png
-     :width: 711px
+.. figure:: img/nrf9160dk_nrf9160.jpg
      :align: center
      :alt: nRF9160 DK
 
@@ -108,7 +107,7 @@ should be used when building your application (for more information, see
 Remember to also enable routing for this additional hardware in the firmware for
 :ref:`nrf9160dk_nrf52840` (see :ref:`nrf9160dk_board_controller_firmware`).
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `nRF9160 DK website`_ and `Nordic Semiconductor Infocenter`_
 for a complete list of nRF9160 DK board hardware features.
 

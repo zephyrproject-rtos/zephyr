@@ -24,9 +24,9 @@
  * @{
  * @}
  */
-#include <zephyr.h>
-#include <linker/sections.h>
-#include <ztest.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/ztest.h>
 
 #define NUM_MILLISECONDS        50
 #define TEST_TIMEOUT            200
@@ -45,7 +45,7 @@ static struct k_work_q offload_work_q;
 static K_THREAD_STACK_DEFINE(offload_work_q_stack,
 			     OFFLOAD_WORKQUEUE_STACK_SIZE);
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static K_THREAD_STACK_DEFINE(stack1, STACK_SIZE);
 static K_THREAD_STACK_DEFINE(stack2, STACK_SIZE);
@@ -191,7 +191,7 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
  *
  * @ingroup kernel_workqueue_tests
  */
-void test_offload_workqueue(void)
+ZTEST(kernel_offload_wq, test_offload_workqueue)
 {
 	critical_var = 0U;
 	alt_thread_iterations = 0U;
@@ -213,10 +213,5 @@ void test_offload_workqueue(void)
 		     "Timed out waiting for TEST_SEM");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(kernel_offload_wq,
-			 ztest_1cpu_unit_test(test_offload_workqueue)
-			 );
-	ztest_run_test_suite(kernel_offload_wq);
-}
+ZTEST_SUITE(kernel_offload_wq, NULL, NULL, ztest_simple_1cpu_before,
+		 ztest_simple_1cpu_after, NULL);

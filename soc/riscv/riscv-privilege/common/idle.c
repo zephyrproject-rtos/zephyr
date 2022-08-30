@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <irq.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/irq.h>
+#include <zephyr/arch/cpu.h>
 
-#include <tracing/tracing.h>
+#include <zephyr/tracing/tracing.h>
 
 static ALWAYS_INLINE void riscv_idle(unsigned int key)
 {
@@ -22,14 +22,11 @@ static ALWAYS_INLINE void riscv_idle(unsigned int key)
 }
 
 /**
- *
  * @brief Power save idle routine
  *
  * This function will be called by the kernel idle loop or possibly within
  * an implementation of _pm_save_idle in the kernel when the
  * '_pm_save_flag' variable is non-zero.
- *
- * @return N/A
  */
 void arch_cpu_idle(void)
 {
@@ -37,7 +34,6 @@ void arch_cpu_idle(void)
 }
 
 /**
- *
  * @brief Atomically re-enable interrupts and enter low power mode
  *
  * INTERNAL
@@ -50,8 +46,6 @@ void arch_cpu_idle(void)
  *
  * 2) After waking up from the low-power mode, the interrupt lockout state
  *    must be restored as indicated in the 'imask' input parameter.
- *
- * @return N/A
  */
 void arch_cpu_atomic_idle(unsigned int key)
 {

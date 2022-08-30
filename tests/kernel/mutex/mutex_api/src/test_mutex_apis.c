@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define TIMEOUT 500
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define THREAD_HIGH_PRIORITY 1
 #define THREAD_MID_PRIORITY 3
 #define THREAD_LOW_PRIORITY 5
@@ -111,7 +111,7 @@ static void tThread_T1_priority_inheritance(void *p1, void *p2, void *p3)
 	/* record its original priority */
 	int priority_origin = k_thread_priority_get((k_tid_t)p2);
 
-	/* wait for a time period to see if priority inheritance happended */
+	/* wait for a time period to see if priority inheritance happened */
 	k_sleep(K_MSEC(500));
 
 	int priority = k_thread_priority_get((k_tid_t)p2);
@@ -182,13 +182,13 @@ static void tThread_waiter(void *p1, void *p2, void *p3)
 	zassert_true(k_mutex_lock((struct k_mutex *)p1, K_FOREVER) == 0,
 			"Failed to get the test_mutex");
 
-	/* keep the next waiter waitting for a while */
+	/* keep the next waiter waiting for a while */
 	thread_ret = TC_PASS;
 	k_mutex_unlock((struct k_mutex *)p1);
 }
 
 /*test cases*/
-void test_mutex_reent_lock_forever(void)
+ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_forever)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
 	k_mutex_init(&mutex);
@@ -200,7 +200,7 @@ void test_mutex_reent_lock_forever(void)
 	k_thread_abort(&tdata);
 }
 
-void test_mutex_reent_lock_no_wait(void)
+ZTEST_USER(mutex_api, test_mutex_reent_lock_no_wait)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
 	tmutex_test_lock(&mutex, tThread_entry_lock_no_wait);
@@ -209,7 +209,7 @@ void test_mutex_reent_lock_no_wait(void)
 	tmutex_test_lock(&kmutex, tThread_entry_lock_no_wait);
 }
 
-void test_mutex_reent_lock_timeout_fail(void)
+ZTEST_USER(mutex_api, test_mutex_reent_lock_timeout_fail)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
 	tmutex_test_lock_timeout(&mutex, tThread_entry_lock_timeout_fail);
@@ -218,7 +218,7 @@ void test_mutex_reent_lock_timeout_fail(void)
 	tmutex_test_lock_timeout(&kmutex, tThread_entry_lock_no_wait);
 }
 
-void test_mutex_reent_lock_timeout_pass(void)
+ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_timeout_pass)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
 	tmutex_test_lock_timeout(&mutex, tThread_entry_lock_timeout_pass);
@@ -227,7 +227,7 @@ void test_mutex_reent_lock_timeout_pass(void)
 	tmutex_test_lock_timeout(&kmutex, tThread_entry_lock_no_wait);
 }
 
-void test_mutex_lock_unlock(void)
+ZTEST_USER(mutex_api_1cpu, test_mutex_lock_unlock)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
 	tmutex_test_lock_unlock(&mutex);
@@ -243,7 +243,7 @@ void test_mutex_lock_unlock(void)
  * reaches zero.
  * @ingroup kernel_mutex_tests
  */
-void test_mutex_recursive(void)
+ZTEST_USER(mutex_api, test_mutex_recursive)
 {
 	k_mutex_init(&mutex);
 
@@ -258,6 +258,7 @@ void test_mutex_recursive(void)
 	zassert_true(k_mutex_lock(&mutex, K_NO_WAIT) == 0,
 		"Failed to recursively lock mutex");
 
+	thread_ret = TC_FAIL;
 	/* Spawn a waiter thread */
 	k_thread_create(&tdata3, tstack3, STACK_SIZE,
 			(k_thread_entry_t)tThread_waiter, &mutex, NULL, NULL,
@@ -285,16 +286,16 @@ void test_mutex_recursive(void)
 
 /**
  * @brief Test mutex's priority inheritance mechanism
- * @details To verify mutex provide priority inheritance to prevent prority
+ * @details To verify mutex provide priority inheritance to prevent priority
  * inversion, and there are 3 cases need to run.
  * The thread T1 hold the mutex first and cases list as below:
- * - case 1. When prority T2 > T1, priority inheritance happened.
- * - case 2. When prority T1 > T2, priority inheritance won't happened.
- * - case 3. When prority T2 > T3 > T1, priority inheritance happened but T2
+ * - case 1. When priority T2 > T1, priority inheritance happened.
+ * - case 2. When priority T1 > T2, priority inheritance won't happened.
+ * - case 3. When priority T2 > T3 > T1, priority inheritance happened but T2
  *   wait for timeout and T3 got the mutex.
  * @ingroup kernel_mutex_tests
  */
-void test_mutex_priority_inheritance(void)
+ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 {
 	/**TESTPOINT: run test case 1, given priority T1 < T2 */
 	k_mutex_init(&mutex);
@@ -386,21 +387,16 @@ void test_mutex_priority_inheritance(void)
 	k_msleep(TIMEOUT+1000);
 }
 
-/*test case main entry*/
-void test_main(void)
+static void *mutex_api_tests_setup(void)
 {
+#ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(), &tdata, &tstack, &tdata2,
 				&tstack2, &tdata3, &tstack3, &kmutex,
 				&mutex);
-
-	ztest_test_suite(mutex_api,
-		 ztest_1cpu_user_unit_test(test_mutex_lock_unlock),
-		 ztest_1cpu_user_unit_test(test_mutex_reent_lock_forever),
-		 ztest_user_unit_test(test_mutex_reent_lock_no_wait),
-		 ztest_user_unit_test(test_mutex_reent_lock_timeout_fail),
-		 ztest_1cpu_user_unit_test(test_mutex_reent_lock_timeout_pass),
-		 ztest_user_unit_test(test_mutex_recursive),
-		 ztest_user_unit_test(test_mutex_priority_inheritance)
-		 );
-	ztest_run_test_suite(mutex_api);
+#endif
+	return NULL;
 }
+
+ZTEST_SUITE(mutex_api, NULL, mutex_api_tests_setup, NULL, NULL, NULL);
+ZTEST_SUITE(mutex_api_1cpu, NULL, mutex_api_tests_setup,
+			ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

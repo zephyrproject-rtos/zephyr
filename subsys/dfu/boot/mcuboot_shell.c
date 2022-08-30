@@ -5,9 +5,9 @@
  */
 
 #include "bootutil/bootutil_public.h"
-#include <dfu/mcuboot.h>
-#include <init.h>
-#include <shell/shell.h>
+#include <zephyr/dfu/mcuboot.h>
+#include <zephyr/init.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
 
 #include "mcuboot_priv.h"

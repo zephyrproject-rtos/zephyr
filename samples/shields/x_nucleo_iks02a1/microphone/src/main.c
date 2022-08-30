@@ -5,10 +5,10 @@
  */
 
 #include <string.h>
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
-#include <audio/dmic.h>
+#include <zephyr/audio/dmic.h>
 
 /* uncomment if you want PCM output in ascii */
 /*#define PCM_OUTPUT_IN_ASCII		1  */
@@ -49,10 +49,10 @@ void main(void)
 	uint32_t ms;
 	int ret;
 
-	const struct device *mic_dev = device_get_binding(DT_LABEL(DT_INST(0, st_mpxxdtyy)));
+	const struct device *const mic_dev = DEVICE_DT_GET_ONE(st_mpxxdtyy);
 
-	if (!mic_dev) {
-		printk("Could not get pointer to mic device\n");
+	if (!device_is_ready(mic_dev)) {
+		printk("%s: device not ready.\n", mic_dev->name);
 		return;
 	}
 

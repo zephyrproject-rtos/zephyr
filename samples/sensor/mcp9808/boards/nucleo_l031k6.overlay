@@ -10,6 +10,5 @@
 		reg = <0x18>;
 		int-gpios = <&gpiob 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		resolution = <3>;
-		label = "MCP9808";
 	};
 };

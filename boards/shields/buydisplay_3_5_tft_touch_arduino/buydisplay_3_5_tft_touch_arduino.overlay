@@ -4,20 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/ili9xxx.h>
+
+/ {
+	chosen {
+		zephyr,display = &ili9488;
+	};
+};
 
 &arduino_spi {
 	status = "okay";
 	cs-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; /* D9 */
 
-	ili9488@0 {
+	ili9488: ili9488@0 {
 		compatible = "ilitek,ili9488";
-		label = "DISPLAY";
 		spi-max-frequency = <25000000>;
 		reg = <0>;
 		cmd-data-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>; /* D7 */
 		reset-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
 		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
+		width = <320>;
+		height = <480>;
 		rotation = <0>;
 		frmctr1 = [a0 11];
 		pwctrl1 = [17 15];
@@ -31,7 +38,6 @@
 	ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		label = "TOUCH";
 		/* Uncomment if IRQ line is available (requires to solder jumper) */
 		/* int-gpios = <&arduino_header 11 GPIO_ACTIVE_LOW>; */ /* D5 */
 	};

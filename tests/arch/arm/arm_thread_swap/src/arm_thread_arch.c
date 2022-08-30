@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <kernel_structs.h>
+#include <zephyr/ztest.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/kernel_structs.h>
 #include <offsets_short_arch.h>
 #include <ksched.h>
 
@@ -28,6 +28,16 @@
 #ifndef EXC_RETURN_FTYPE
 /* bit [4] allocate stack for floating-point context: 0=done 1=skipped  */
 #define EXC_RETURN_FTYPE           (0x00000010UL)
+#endif
+
+#if defined(CONFIG_ARMV8_1_M_MAINLINE)
+/*
+ * For ARMv8.1-M, the FPSCR[18:16] LTPSIZE field may always read 0b010 if MVE
+ * is not implemented, so mask it when validating the value of the FPSCR.
+ */
+#define FPSCR_MASK		(~FPU_FPDSCR_LTPSIZE_Msk)
+#else
+#define FPSCR_MASK		(0xffffffffU)
 #endif
 
 extern void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
@@ -168,38 +178,38 @@ static void verify_fp_callee_saved(const struct _preempt_float *src,
 		" 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x\n"
 		" expected:  0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x"
 		" 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x\n",
-		src->s16,
-		src->s17,
-		src->s18,
-		src->s19,
-		src->s20,
-		src->s21,
-		src->s22,
-		src->s23,
-		src->s24,
-		src->s25,
-		src->s26,
-		src->s27,
-		src->s28,
-		src->s29,
-		src->s30,
-		src->s31,
-		dst->s16,
-		dst->s17,
-		dst->s18,
-		dst->s19,
-		dst->s20,
-		dst->s21,
-		dst->s22,
-		dst->s23,
-		dst->s24,
-		dst->s25,
-		dst->s26,
-		dst->s27,
-		dst->s28,
-		dst->s29,
-		dst->s30,
-		dst->s31
+		(double)src->s16,
+		(double)src->s17,
+		(double)src->s18,
+		(double)src->s19,
+		(double)src->s20,
+		(double)src->s21,
+		(double)src->s22,
+		(double)src->s23,
+		(double)src->s24,
+		(double)src->s25,
+		(double)src->s26,
+		(double)src->s27,
+		(double)src->s28,
+		(double)src->s29,
+		(double)src->s30,
+		(double)src->s31,
+		(double)dst->s16,
+		(double)dst->s17,
+		(double)dst->s18,
+		(double)dst->s19,
+		(double)dst->s20,
+		(double)dst->s21,
+		(double)dst->s22,
+		(double)dst->s23,
+		(double)dst->s24,
+		(double)dst->s25,
+		(double)dst->s26,
+		(double)dst->s27,
+		(double)dst->s28,
+		(double)dst->s29,
+		(double)dst->s30,
+		(double)dst->s31
 	);
 }
 
@@ -278,7 +288,7 @@ static void alt_thread_entry(void)
 
 
 	/* Verify that the _current_ (alt) thread is initialized with FPSCR cleared. */
-	zassert_true(__get_FPSCR() == 0,
+	zassert_true((__get_FPSCR() & FPSCR_MASK) == 0,
 		"(Alt thread) FPSCR is not cleared at initialization: 0x%x\n", __get_FPSCR());
 
 	zassert_true((p_ztest_thread->arch.mode_exc_return & EXC_RETURN_FTYPE) == 0,
@@ -393,7 +403,7 @@ static void alt_thread_entry(void)
 		"Alternative thread: switch flag not false on thread exit\n");
 }
 
-void test_arm_thread_swap(void)
+ZTEST(arm_thread_swap, test_arm_thread_swap)
 {
 	int test_flag;
 
@@ -461,7 +471,7 @@ void test_arm_thread_swap(void)
 		"CONTROL.FPCA is not cleared at initialization: 0x%x\n",
 		__get_CONTROL());
 	/* Verify that the main test thread is initialized with FPSCR cleared. */
-	zassert_true(__get_FPSCR() == 0,
+	zassert_true((__get_FPSCR() & FPSCR_MASK) == 0,
 		"FPSCR is not cleared at initialization: 0x%x\n", __get_FPSCR());
 
 	/* Clear the thread's floating-point callee-saved registers' container.

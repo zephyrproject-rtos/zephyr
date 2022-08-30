@@ -18,7 +18,7 @@ import re
 from pathlib import Path
 import json
 
-from distutils.version import LooseVersion
+from packaging import version
 
 from colorama import init, Fore
 
@@ -34,7 +34,7 @@ from elftools.dwarf.descriptions import (
 from elftools.dwarf.locationlists import (
     LocationExpr, LocationParser)
 
-if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
+if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 
@@ -687,13 +687,14 @@ def print_any_tree(root, total_size, depth):
 
         cc = cr = ""
         if not row.node.children:
-            cc = Fore.CYAN
-            cr = Fore.RESET
+            if row.node.name != "(hidden)":
+                cc = Fore.CYAN
+                cr = Fore.RESET
         elif row.node.name.endswith(SRC_FILE_EXT):
             cc = Fore.GREEN
             cr = Fore.RESET
 
-        print(f"{row.pre}{cc}{row.node.name}{cr} {s} {Fore.BLUE}{percent:5.2f}%{Fore.RESET}")
+        print(f"{row.pre}{cc}{row.node.name} {s} {cr}{Fore.BLUE}{percent:6.2f}%{Fore.RESET}")
     print('=' * 110)
     print(f'{total_size:>101}')
 

@@ -1,0 +1,35 @@
+# Copyright (c) 2022 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32 OSPI device representation. Enabling a stm32 octospi node in a board
+    description would typically requires this:
+
+        &octospi {
+            pinctrl-0 = <&octospi_clk_pe9 &octospi_ncs_pe10 &octospi_dqs_pe11
+                         &octospi_io0_pe12 &octospi_io1_pe13
+                         &octospi_io2_pe14 &octospi_io3_pe15
+                         &octospi_io4_pe16 &octospi_io5_pe17
+                         &octospi_io6_pe18 &octospi_io7_pe19>;
+
+            status = "okay";
+        };
+
+compatible: "st,stm32-ospi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: ospi
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true

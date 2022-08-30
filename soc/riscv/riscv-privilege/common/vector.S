@@ -5,24 +5,50 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /* exports */
 GTEXT(__start)
 
 /* imports */
 GTEXT(__initialize)
-GTEXT(__irq_wrapper)
+GTEXT(_isr_wrapper)
 
 SECTION_FUNC(vectors, __start)
+#if defined(CONFIG_RISCV_GP)
+	/* Initialize global pointer */
+	.option push
+	.option norelax
+	la gp, __global_pointer$
+	.option pop
+#endif
+
 	.option norvc;
 
+#if defined(CONFIG_RISCV_MTVEC_VECTORED_MODE)
 	/*
 	 * Set mtvec (Machine Trap-Vector Base-Address Register)
-	 * to __irq_wrapper.
+	 * to _irq_vector_table (interrupt vector table). Add 1 to base
+	 * address of _irq_vector_table to indicate that vectored mode
+	 * is used (LSB = 0x1). CPU will mask the LSB out of
+	 * the address so that base address of _irq_vector_table is used.
+	 *
+	 * NOTE: _irq_vector_table is 256-byte aligned. Incorrect alignment
+	 *        of _irq_vector_table breaks this code.
 	 */
-	la t0, __irq_wrapper
+	la t0, _irq_vector_table /* Load address of interrupt vector table */
+	addi t0, t0, 1 /* Enable vectored mode by setting LSB */
+
+/* MTVEC_DIRECT_MODE */
+#else
+	/*
+	 * Set mtvec (Machine Trap-Vector Base-Address Register)
+	 * to _isr_wrapper.
+	 */
+	la t0, _isr_wrapper
+#endif
+
 	csrw mtvec, t0
 
-	/* Jump to __initialize */
-	tail __initialize
+	/* Jump to __reset */
+	tail __reset

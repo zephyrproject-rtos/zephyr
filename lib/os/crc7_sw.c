@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/crc.h>
+#include <zephyr/sys/crc.h>
 
 uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len)
 {

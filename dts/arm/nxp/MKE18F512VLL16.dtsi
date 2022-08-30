@@ -1,9 +1,0 @@
-/*
- * Copyright (c) 2021, Linaro
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
-#include <nxp/nxp_ke18f512vlx16.dtsi>
-
-#include <nxp/kinetis/MKE18F512VLL16-pinctrl.dtsi>

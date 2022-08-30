@@ -13,10 +13,4 @@ config SOC_TOOLCHAIN_NAME
 	string
 	default "sample_controller"
 
-config IRQ_OFFLOAD_INTNUM
-	default 7
-
-config LOG_BACKEND_XTENSA_SIM
-	default LOG
-
 endif

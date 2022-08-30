@@ -7,10 +7,10 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "hal/cpu.h"
 #include "hal/cntr.h"
@@ -89,9 +89,9 @@ static void isr_tx(void *param)
 	radio_status_reset();
 	radio_tmr_status_reset();
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_gpio_pa_lna_disable();
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	/* Exit if radio disabled */
 	if (((tx_req - tx_ack) & 0x01) == 0U) {
@@ -102,8 +102,7 @@ static void isr_tx(void *param)
 
 	/* LE Test Packet Interval */
 	l = radio_tmr_end_get() - radio_tmr_ready_get();
-	i = ((l + 249 + (SCAN_INT_UNIT_US - 1)) / SCAN_INT_UNIT_US) *
-		SCAN_INT_UNIT_US;
+	i = ceiling_fraction((l + 249), SCAN_INT_UNIT_US) * SCAN_INT_UNIT_US;
 	t = radio_tmr_end_get() - l + i;
 	t -= radio_tx_ready_delay_get(test_phy, test_phy_flags);
 
@@ -122,12 +121,12 @@ static void isr_tx(void *param)
 
 	/* TODO: check for probable stale timer capture being set */
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_gpio_pa_setup();
 	radio_gpio_pa_lna_enable(t + radio_tx_ready_delay_get(test_phy,
 							      test_phy_flags) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+				 HAL_RADIO_GPIO_PA_OFFSET);
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 }
 
 static void isr_rx(void *param)
@@ -159,7 +158,7 @@ static void isr_rx(void *param)
 	}
 }
 
-static uint32_t init(uint8_t chan, uint8_t phy, void (*isr)(void *))
+static uint8_t init(uint8_t chan, uint8_t phy, void (*isr)(void *))
 {
 	int err;
 
@@ -199,12 +198,20 @@ static uint32_t init(uint8_t chan, uint8_t phy, void (*isr)(void *))
 	return 0;
 }
 
-uint32_t ll_test_tx(uint8_t chan, uint8_t len, uint8_t type, uint8_t phy)
+uint8_t ll_test_tx(uint8_t chan, uint8_t len, uint8_t type, uint8_t phy,
+		   uint8_t cte_len, uint8_t cte_type, uint8_t switch_pattern_len,
+		   const uint8_t *ant_id, int8_t tx_power)
 {
 	uint32_t start_us;
 	uint8_t *payload;
 	uint8_t *pdu;
-	uint32_t err;
+	uint8_t err;
+
+	ARG_UNUSED(cte_len);
+	ARG_UNUSED(cte_type);
+	ARG_UNUSED(switch_pattern_len);
+	ARG_UNUSED(ant_id);
+	ARG_UNUSED(tx_power);
 
 	if ((type > 0x07) || !phy || (phy > 0x04)) {
 		return 1;
@@ -263,28 +270,36 @@ uint32_t ll_test_tx(uint8_t chan, uint8_t len, uint8_t type, uint8_t phy)
 	radio_tmr_aa_capture();
 	radio_tmr_end_capture();
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_gpio_pa_setup();
 	radio_gpio_pa_lna_enable(start_us +
 				 radio_tx_ready_delay_get(test_phy,
 							  test_phy_flags) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
-#else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+				 HAL_RADIO_GPIO_PA_OFFSET);
+#else /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 	ARG_UNUSED(start_us);
-#endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+#endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	started = true;
 
 	return 0;
 }
 
-uint32_t ll_test_rx(uint8_t chan, uint8_t phy, uint8_t mod_idx)
+uint8_t ll_test_rx(uint8_t chan, uint8_t phy, uint8_t mod_idx, uint8_t expected_cte_len,
+		   uint8_t expected_cte_type, uint8_t slot_duration, uint8_t switch_pattern_len,
+		   const uint8_t *ant_ids)
 {
-	uint32_t err;
+	uint8_t err;
 
 	if (!phy || (phy > 0x03)) {
 		return 1;
 	}
+
+	ARG_UNUSED(expected_cte_len);
+	ARG_UNUSED(expected_cte_type);
+	ARG_UNUSED(slot_duration);
+	ARG_UNUSED(switch_pattern_len);
+	ARG_UNUSED(ant_ids);
 
 	err = init(chan, phy, isr_rx);
 	if (err) {
@@ -295,16 +310,16 @@ uint32_t ll_test_rx(uint8_t chan, uint8_t phy, uint8_t mod_idx)
 	radio_switch_complete_and_rx(test_phy);
 	radio_tmr_start(0, cntr_cnt_get() + CNTR_MIN_DELTA, 0);
 
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_on();
-#endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
+#endif /* !HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 	started = true;
 
 	return 0;
 }
 
-uint32_t ll_test_end(uint16_t *num_rx)
+uint8_t ll_test_end(uint16_t *num_rx)
 {
 	int err;
 	uint8_t ack;
@@ -339,9 +354,9 @@ uint32_t ll_test_end(uint16_t *num_rx)
 	/* Stop coarse timer */
 	cntr_stop();
 
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_off();
-#endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
+#endif /* !HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 	started = false;
 

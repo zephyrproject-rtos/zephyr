@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for Intel ADSP HDA DMA controllers
+
+include: dma-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    dma-channels:
+      required: true
+
+    "#dma-cells":
+      const: 1
+
+    "dma-buf-alignment":
+      required: true

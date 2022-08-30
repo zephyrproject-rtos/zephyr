@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <kernel.h>
-#include <kernel_structs.h>
-#include <app_memory/app_memdomain.h>
-#include <sys/libc-hooks.h>
-#include <sys/util.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/sys/libc-hooks.h>
+#include <zephyr/sys/util.h>
 
 #define NUM_THREADS	3
-#define STACK_SIZE	(512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE	(512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #define STATIC_DATA8	0x7FU
 #define STATIC_DATA32	0xABCDEF00U
@@ -183,32 +183,26 @@ static void start_tls_test(uint32_t thread_options)
 	zassert_true(passed, "Test failed");
 }
 
-#ifdef CONFIG_USERSPACE
-void test_tls(void)
+ZTEST(thread_tls, test_tls)
 {
-	ztest_test_skip();
-}
-void test_tls_userspace(void)
-{
-	/* TLS test in supervisor mode */
-	start_tls_test(K_USER | K_INHERIT_PERMS);
-}
-#else
-void test_tls(void)
-{
+	if (IS_ENABLED(CONFIG_USERSPACE)) {
+		ztest_test_skip();
+	}
+
 	/* TLS test in supervisor mode */
 	start_tls_test(0);
 }
 
-void test_tls_userspace(void)
+ZTEST_USER(thread_tls, test_tls_userspace)
 {
-	ztest_test_skip();
+	/* TLS test in supervisor mode */
+	start_tls_test(K_USER | K_INHERIT_PERMS);
 }
-#endif
 
-void test_main(void)
+void *thread_tls_setup(void)
 {
 #ifdef CONFIG_USERSPACE
+	int ret;
 	unsigned int i;
 
 	struct k_mem_partition *parts[] = {
@@ -220,7 +214,11 @@ void test_main(void)
 	};
 
 	parts[0] = &part_common;
-	k_mem_domain_init(&dom_common, ARRAY_SIZE(parts), parts);
+
+	ret = k_mem_domain_init(&dom_common, ARRAY_SIZE(parts), parts);
+	__ASSERT(ret == 0, "k_mem_domain_init() failed %d", ret);
+	ARG_UNUSED(ret);
+
 	k_mem_domain_add_thread(&dom_common, k_current_get());
 
 	for (i = 0; i < NUM_THREADS; i++) {
@@ -229,9 +227,7 @@ void test_main(void)
 	}
 #endif /* CONFIG_USERSPACE */
 
-	ztest_test_suite(thread_tls,
-			 ztest_unit_test(test_tls),
-			 ztest_user_unit_test(test_tls_userspace));
-	ztest_run_test_suite(thread_tls);
-
+	return NULL;
 }
+
+ZTEST_SUITE(thread_tls, NULL, thread_tls_setup, NULL, NULL, NULL);

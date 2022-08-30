@@ -65,7 +65,7 @@
 			"pop {r0-r3}\n\t" \
 			load_lr "\n\t" \
 			::); \
-	} while (0)
+	} while (false)
 
 /**
  * @brief Macro for "sandwiching" a function call (@p name) in two other calls

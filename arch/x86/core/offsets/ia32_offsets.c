@@ -27,7 +27,7 @@
 #ifndef _X86_OFFSETS_INC_
 #define _X86_OFFSETS_INC_
 
-#include <arch/x86/mmustructs.h>
+#include <zephyr/arch/x86/mmustructs.h>
 
 #if defined(CONFIG_LAZY_FPU_SHARING)
 GEN_OFFSET_SYM(_thread_arch_t, excNestCount);

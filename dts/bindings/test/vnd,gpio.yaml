@@ -11,9 +11,6 @@ properties:
     reg:
       required: true
 
-    label:
-      required: true
-
     "#gpio-cells":
       const: 2
 
@@ -23,3 +20,6 @@ gpio-cells:
 
 foo-cells:
   - foocell
+
+baz-cells:
+  - bazcell

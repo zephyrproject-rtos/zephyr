@@ -50,18 +50,6 @@ lll_adv_sync_data_latest_get(struct lll_adv_sync *lll, void **extra_data,
 	return lll_adv_pdu_latest_get(&lll->data, is_modified);
 #endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 }
-
-static inline struct pdu_adv *
-lll_adv_sync_data_curr_get(struct lll_adv_sync *lll, void **extra_data)
-{
-	uint8_t first = lll->data.first;
-#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
-	if (extra_data) {
-		*extra_data = lll->data.extra_data[first];
-	}
-#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
-	return (void *)lll->data.pdu[first];
-}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -78,3 +66,8 @@ bool lll_adv_connect_ind_check(struct lll_adv *lll, struct pdu_adv *ci,
 			       uint8_t tx_addr, uint8_t *addr,
 			       uint8_t rx_addr, uint8_t *tgt_addr,
 			       uint8_t devmatch_ok, uint8_t *rl_idx);
+
+#if defined(CONFIG_ZTEST)
+uint32_t lll_adv_free_pdu_fifo_count_get(void);
+uint32_t lll_adv_pdu_mem_free_count_get(void);
+#endif /* CONFIG_ZTEST */

@@ -1,0 +1,8 @@
+identifier: xenvm
+name: ARMv8 Xen Virtual Machine
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 16384

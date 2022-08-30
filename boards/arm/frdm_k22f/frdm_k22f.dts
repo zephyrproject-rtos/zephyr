@@ -6,8 +6,9 @@
 
 /dts-v1/;
 
-#include <nxp/MK22FN512VLH12.dtsi>
-#include <dt-bindings/pwm/pwm.h>
+#include <nxp/nxp_k2x.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "frdm_k22f-pinctrl.dtsi"
 
 / {
 	model = "NXP Freedom MK22F board";
@@ -23,6 +24,8 @@
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
 		red-pwm-led = &red_pwm_led;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
 	};
 
 	chosen {
@@ -124,49 +127,45 @@
 };
 arduino_i2c: &i2c0 {
 	status = "okay";
-	pinctrl-0 = <&I2C0_SCL_PTB2 &I2C0_SDA_PTB3>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
 
-	fxos8700@1c {
+	fxos8700: fxos8700@1c {
 		compatible = "nxp,fxos8700";
 		reg = <0x1c>;
-		label = "FXOS8700";
 		int1-gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
 	};
 };
 
-&I2C0_SCL_PTB2 {
-	drive-open-drain;
-};
-
-&I2C0_SDA_PTB3 {
-	drive-open-drain;
-};
 
 arduino_spi: &spi0 {
 	status = "okay";
-	pinctrl-0 = <&SPI0_PCS4_PTC0 &SPI0_SCK_PTD1
-		     &SPI0_SOUT_PTD2 &SPI0_SIN_PTD3>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
 };
 
 &ftm0 {
 	status = "okay";
 	compatible = "nxp,kinetis-ftm-pwm";
 	#pwm-cells = <3>;
-	pinctrl-0 = <&FTM0_CH6_PTA1 &FTM0_CH7_PTA2 &FTM0_CH5_PTD5>;
+	pinctrl-0 = <&ftm0_default>;
+	pinctrl-names = "default";
 };
 
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&UART1_RX_PTE1 &UART1_TX_PTE0>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
 };
 
 &uart2 {
-	pinctrl-0 = <&UART2_RX_PTD2 &UART2_TX_PTD3>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
 };
 
-&usbotg {
+zephyr_udc0: &usbotg {
 	compatible = "nxp,kinetis-usbd";
 	status = "okay";
 	num-bidir-endpoints = <8>;
@@ -193,10 +192,6 @@ arduino_spi: &spi0 {
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/reference/devicetree/index.html#fixed-flash-partitions
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

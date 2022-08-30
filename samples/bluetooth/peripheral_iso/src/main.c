@@ -8,14 +8,15 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/iso.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/settings/settings.h>
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -44,7 +45,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected from %s (reason 0x%02x)\n", addr, reason);
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -125,11 +126,12 @@ static struct bt_iso_chan iso_chan = {
 	.qos = &iso_qos,
 };
 
-static int iso_accept(struct bt_conn *conn, struct bt_iso_chan **chan)
+static int iso_accept(const struct bt_iso_accept_info *info,
+		      struct bt_iso_chan **chan)
 {
-	printk("Incoming conn %p\n", conn);
+	printk("Incoming request from %p\n", (void *)info->acl);
 
-	if (iso_chan.conn) {
+	if (iso_chan.iso) {
 		printk("No channels available\n");
 		return -ENOMEM;
 	}
@@ -140,7 +142,9 @@ static int iso_accept(struct bt_conn *conn, struct bt_iso_chan **chan)
 }
 
 static struct bt_iso_server iso_server = {
+#if defined(CONFIG_BT_SMP)
 	.sec_level = BT_SECURITY_L1,
+#endif /* CONFIG_BT_SMP */
 	.accept = iso_accept,
 };
 
@@ -154,9 +158,11 @@ void main(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
+	}
 
-	bt_conn_cb_register(&conn_callbacks);
+	printk("Bluetooth initialized\n");
 
 	err = bt_iso_server_register(&iso_server);
 	if (err) {

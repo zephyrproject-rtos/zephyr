@@ -14,7 +14,7 @@ tests:
     depends_on: usb_device
     tags: usb
     platform_exclude: native_posix native_posix_64
-    extra_args: "-DOVERLAY_CONFIG=overlay-composite-cdc-msc.conf"
+    extra_args: OVERLAY_CONFIG=overlay-composite-cdc-msc.conf
     harness: console
     harness_config:
       type: one_line

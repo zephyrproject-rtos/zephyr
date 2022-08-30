@@ -5,11 +5,13 @@
  */
 
 #include <stdlib.h>
-#include <drivers/i2s.h>
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <soc.h>
 #include <nrfx_i2s.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2s_nrfx, CONFIG_I2S_LOG_LEVEL);
 
 struct stream_cfg {
@@ -27,17 +29,20 @@ struct i2s_nrfx_drv_data {
 	const uint32_t *last_tx_buffer;
 	enum i2s_state state;
 	enum i2s_dir active_dir;
+	bool stop;       /* stop after the current (TX or RX) block */
+	bool discard_rx; /* discard further RX blocks */
+	volatile bool next_tx_buffer_needed;
 	bool tx_configured : 1;
 	bool rx_configured : 1;
-	bool stop          : 1; /* stop after the current (TX or RX) block */
-	bool discard_rx    : 1; /* discard further RX blocks */
 	bool request_clock : 1;
-	volatile bool next_tx_buffer_needed;
 };
 
 struct i2s_nrfx_drv_cfg {
 	nrfx_i2s_data_handler_t data_handler;
 	nrfx_i2s_config_t nrfx_def_cfg;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pcfg;
+#endif
 	enum clock_source {
 		PCLK32M,
 		PCLK32M_HFXO,
@@ -81,6 +86,7 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 	uint32_t best_diff = UINT32_MAX;
 	uint8_t r, best_r = 0;
 	nrf_i2s_mck_t best_mck_cfg = 0;
+	uint32_t best_mck = 0;
 
 	for (r = 0; r < ARRAY_SIZE(ratios); ++r) {
 		/* Only multiples of the frame width can be used as ratios. */
@@ -110,6 +116,7 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 
 			if (diff < best_diff) {
 				best_mck_cfg = mck_factor * 4096;
+				best_mck = actual_mck;
 				best_r = r;
 				/* Stop if an exact match is found. */
 				if (diff == 0) {
@@ -150,6 +157,7 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 
 				if (diff < best_diff) {
 					best_mck_cfg = dividers[d].divider_enum;
+					best_mck = mck_freq;
 					best_r = r;
 					/* Stop if an exact match is found. */
 					if (diff == 0) {
@@ -173,6 +181,8 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 
 	config->mck_setup = best_mck_cfg;
 	config->ratio = ratios[best_r].ratio_enum;
+	LOG_INF("I2S MCK frequency: %u, actual PCM rate: %u",
+		best_mck, best_mck / ratios[best_r].ratio_val);
 }
 
 static bool get_next_tx_buffer(struct i2s_nrfx_drv_data *drv_data,
@@ -399,11 +409,11 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 
 	if (i2s_cfg->frame_clk_freq == 0) { /* -> reset state */
 		purge_queue(dev, dir);
-		if (dir == I2S_DIR_TX || I2S_DIR_BOTH) {
+		if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
 			drv_data->tx_configured = false;
 			memset(&drv_data->tx, 0, sizeof(drv_data->tx));
 		}
-		if (dir == I2S_DIR_RX || I2S_DIR_BOTH) {
+		if (dir == I2S_DIR_RX || dir == I2S_DIR_BOTH) {
 			drv_data->rx_configured = false;
 			memset(&drv_data->rx, 0, sizeof(drv_data->rx));
 		}
@@ -465,9 +475,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
-	if (i2s_cfg->channels == 2 ||
-	    (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK)
-		== I2S_FMT_DATA_FORMAT_I2S) {
+	if (i2s_cfg->channels == 2) {
 		nrfx_cfg.channels = NRF_I2S_CHANNELS_STEREO;
 	} else if (i2s_cfg->channels == 1) {
 		nrfx_cfg.channels = NRF_I2S_CHANNELS_LEFT;
@@ -870,16 +878,15 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 };
 
 #define I2S(idx) DT_NODELABEL(i2s##idx)
-
-#define I2S_PIN(idx, name)					\
-	COND_CODE_1(DT_NODE_HAS_PROP(I2S(idx), name##_pin),	\
-		    (DT_PROP(I2S(idx), name##_pin)),		\
-		    (NRFX_I2S_PIN_NOT_USED))
-#define I2S_CLK_SRC(idx)  DT_STRING_TOKEN(I2S(idx), clock_source)
+#define I2S_PIN(idx, name) DT_PROP_OR(I2S(idx), name##_pin, \
+				      NRFX_I2S_PIN_NOT_USED)
+#define I2S_CLK_SRC(idx) DT_STRING_TOKEN(I2S(idx), clock_source)
 
 #define I2S_NRFX_DEVICE(idx)						     \
-	static void *tx_msgs[CONFIG_I2S_NRFX_TX_BLOCK_COUNT];		     \
-	static void *rx_msgs[CONFIG_I2S_NRFX_RX_BLOCK_COUNT];		     \
+	NRF_DT_CHECK_PIN_ASSIGNMENTS(I2S(idx), 0, sck_pin, lrck_pin,	     \
+				     mck_pin, sdout_pin, sdin_pin);	     \
+	static void *tx_msgs##idx[CONFIG_I2S_NRFX_TX_BLOCK_COUNT];	     \
+	static void *rx_msgs##idx[CONFIG_I2S_NRFX_RX_BLOCK_COUNT];	     \
 	static struct i2s_nrfx_drv_data i2s_nrfx_data##idx = {		     \
 		.state = I2S_STATE_READY,				     \
 	};								     \
@@ -887,13 +894,20 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 	{								     \
 		IRQ_CONNECT(DT_IRQN(I2S(idx)), DT_IRQ(I2S(idx), priority),   \
 			    nrfx_isr, nrfx_i2s_irq_handler, 0);		     \
-		irq_enable(DT_IRQN(I2S(idx)));				     \
+		IF_ENABLED(CONFIG_PINCTRL, (				     \
+			const struct i2s_nrfx_drv_cfg *drv_cfg = dev->config;\
+			int err = pinctrl_apply_state(drv_cfg->pcfg,	     \
+						      PINCTRL_STATE_DEFAULT);\
+			if (err < 0) {					     \
+				return err;				     \
+			}						     \
+		))							     \
 		k_msgq_init(&i2s_nrfx_data##idx.tx_queue,		     \
-			    (char *)tx_msgs, sizeof(void *),		     \
-			    CONFIG_I2S_NRFX_TX_BLOCK_COUNT);		     \
+			    (char *)tx_msgs##idx, sizeof(void *),	     \
+			    ARRAY_SIZE(tx_msgs##idx));			     \
 		k_msgq_init(&i2s_nrfx_data##idx.rx_queue,		     \
-			    (char *)rx_msgs, sizeof(void *),		     \
-			    CONFIG_I2S_NRFX_RX_BLOCK_COUNT);		     \
+			    (char *)rx_msgs##idx, sizeof(void *),	     \
+			    ARRAY_SIZE(rx_msgs##idx));			     \
 		init_clock_manager(dev);				     \
 		return 0;						     \
 	}								     \
@@ -902,6 +916,7 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 	{								     \
 		data_handler(DEVICE_DT_GET(I2S(idx)), p_released, status);   \
 	}								     \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(I2S(idx))));	     \
 	static const struct i2s_nrfx_drv_cfg i2s_nrfx_cfg##idx = {	     \
 		.data_handler = data_handler##idx,			     \
 		.nrfx_def_cfg = NRFX_I2S_DEFAULT_CONFIG(I2S_PIN(idx, sck),   \
@@ -909,6 +924,10 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 							I2S_PIN(idx, mck),   \
 							I2S_PIN(idx, sdout), \
 							I2S_PIN(idx, sdin)), \
+		IF_ENABLED(CONFIG_PINCTRL,				     \
+			(.nrfx_def_cfg.skip_gpio_cfg = true,		     \
+			 .nrfx_def_cfg.skip_psel_cfg = true,		     \
+			 .pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2S(idx)),))      \
 		.clk_src = I2S_CLK_SRC(idx),				     \
 	};								     \
 	BUILD_ASSERT(I2S_CLK_SRC(idx) != ACLK || NRF_I2S_HAS_CLKCONFIG,	     \

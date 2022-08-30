@@ -6,7 +6,7 @@
 # usable Zephyr installation for building of applications.
 
 # Checking for version 0.0.0 is a way to allow other Zephyr installation to determine if there is a better match.
-# A better match would be an installed Zephyr that has a common index with currect source dir.
+# A better match would be an installed Zephyr that has a common index with current source dir.
 # Version 0.0.0 indicates that we should just return, in order to obtain our path.
 if(0.0.0 STREQUAL PACKAGE_FIND_VERSION)
   return()
@@ -56,7 +56,7 @@ if((DEFINED ZEPHYR_BASE) OR (DEFINED ENV_ZEPHYR_BASE))
     # We are the Zephyr to be used
 
     set(NO_PRINT_VERSION True)
-    include(${ZEPHYR_BASE}/cmake/version.cmake)
+    include(${ZEPHYR_BASE}/cmake/modules/version.cmake)
     # Zephyr uses project version, but CMake package uses PACKAGE_VERSION
     set(PACKAGE_VERSION ${PROJECT_VERSION})
     check_zephyr_version()
@@ -93,7 +93,7 @@ set(ZEPHYR_BASE ${CURRENT_ZEPHYR_DIR})
 # Tell version.cmake to not print as printing version for all Zephyr installations being tested
 # will lead to confusion on which is being used.
 set(NO_PRINT_VERSION True)
-include(${ZEPHYR_BASE}/cmake/version.cmake)
+include(${ZEPHYR_BASE}/cmake/modules/version.cmake)
 # Zephyr uses project version, but CMake package uses PACKAGE_VERSION
 set(PACKAGE_VERSION ${PROJECT_VERSION})
 set(ZEPHYR_BASE)
@@ -126,8 +126,8 @@ if(NOT IS_INCLUDED)
   # This check works the following way.
   # CMake finds packages will look all packages registered in the user package registry.
   # As this code is processed inside registered packages, we simply test if
-  # another package has a comon path with the current sample, and if so, we
-  # will retrun here, and let CMake call into the other registered package for
+  # another package has a common path with the current sample, and if so, we
+  # will return here, and let CMake call into the other registered package for
   # real version checking.
   check_zephyr_package(CHECK_ONLY VERSION_CHECK)
 

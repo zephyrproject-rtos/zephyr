@@ -25,4 +25,9 @@ config HAS_IMX_EPIT
 	help
 	  Set if the EPIT module is present in the SoC.
 
+config HAS_IMX_IOMUXC
+	bool
+	help
+	  Set if the IOMUXC module is present in the SoC.
+
 endif # HAS_IMX_HAL

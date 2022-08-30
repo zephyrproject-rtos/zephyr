@@ -3,10 +3,10 @@
  * Copyright 2018 Broadcom.
  */
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.

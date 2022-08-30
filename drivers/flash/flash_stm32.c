@@ -6,18 +6,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 
 #define DT_DRV_COMPAT st_stm32_flash_controller
 
 #include <string.h>
-#include <drivers/flash.h>
-#include <init.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "flash_stm32.h"
 #include "stm32_hsem.h"
@@ -27,7 +27,8 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
-#define STM32_FLASH_TIMEOUT	(2 * DT_PROP(DT_INST(0, soc_nv_flash), max_erase_time))
+#define STM32_FLASH_TIMEOUT	\
+	(2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
 static const struct flash_parameters flash_stm32_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
@@ -77,29 +78,11 @@ static inline void _flash_stm32_sem_give(const struct device *dev)
 #if !defined(CONFIG_SOC_SERIES_STM32WBX)
 static int flash_stm32_check_status(const struct device *dev)
 {
-	uint32_t const error =
-#if defined(FLASH_FLAG_PGAERR)
-		FLASH_FLAG_PGAERR |
-#endif
-#if defined(FLASH_FLAG_RDERR)
-		FLASH_FLAG_RDERR  |
-#endif
-#if defined(FLASH_FLAG_PGPERR)
-		FLASH_FLAG_PGPERR |
-#endif
-#if defined(FLASH_FLAG_PGSERR)
-		FLASH_FLAG_PGSERR |
-#endif
-#if defined(FLASH_FLAG_OPERR)
-		FLASH_FLAG_OPERR |
-#endif
-#if defined(FLASH_FLAG_PGERR)
-		FLASH_FLAG_PGERR |
-#endif
-		FLASH_FLAG_WRPERR;
 
-	if (FLASH_STM32_REGS(dev)->SR & error) {
-		LOG_DBG("Status: 0x%08x", FLASH_STM32_REGS(dev)->SR & error);
+	if (FLASH_STM32_REGS(dev)->FLASH_STM32_SR & FLASH_STM32_SR_ERRORS) {
+		LOG_DBG("Status: 0x%08lx",
+			FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
+							FLASH_STM32_SR_ERRORS);
 		return -EIO;
 	}
 
@@ -111,16 +94,21 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 {
 	int64_t timeout_time = k_uptime_get() + STM32_FLASH_TIMEOUT;
 	int rc;
+	uint32_t busy_flags;
 
 	rc = flash_stm32_check_status(dev);
 	if (rc < 0) {
 		return -EIO;
 	}
-#if defined(CONFIG_SOC_SERIES_STM32G0X)
-	while ((FLASH_STM32_REGS(dev)->SR & FLASH_SR_BSY1)) {
-#else
-	while ((FLASH_STM32_REGS(dev)->SR & FLASH_SR_BSY)) {
+
+	busy_flags = FLASH_STM32_SR_BUSY;
+
+/* Some Series can't modify FLASH_CR reg while CFGBSY is set. Wait as well */
+#if defined(FLASH_STM32_SR_CFGBSY)
+	busy_flags |= FLASH_STM32_SR_CFGBSY;
 #endif
+
+	while ((FLASH_STM32_REGS(dev)->FLASH_STM32_SR & busy_flags)) {
 		if (k_uptime_get() > timeout_time) {
 			LOG_ERR("Timeout! val: %d", STM32_FLASH_TIMEOUT);
 			return -EIO;
@@ -134,7 +122,8 @@ static void flash_stm32_flush_caches(const struct device *dev,
 				     off_t offset, size_t len)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X)
+	defined(CONFIG_SOC_SERIES_STM32G0X) || defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(offset);
 	ARG_UNUSED(len);
@@ -266,6 +255,16 @@ static int flash_stm32_write_protection(const struct device *dev, bool enable)
 		}
 	}
 
+#if defined(FLASH_SECURITY_NS)
+	if (enable) {
+		regs->NSCR |= FLASH_STM32_NSLOCK;
+	} else {
+		if (regs->NSCR & FLASH_STM32_NSLOCK) {
+			regs->NSKEYR = FLASH_KEY1;
+			regs->NSKEYR = FLASH_KEY2;
+		}
+	}
+#else	/* FLASH_SECURITY_SEC | FLASH_SECURITY_NA */
 #if defined(FLASH_CR_LOCK)
 	if (enable) {
 		regs->CR |= FLASH_CR_LOCK;
@@ -293,6 +292,7 @@ static int flash_stm32_write_protection(const struct device *dev, bool enable)
 		}
 	}
 #endif
+#endif /* FLASH_SECURITY_NS */
 
 	if (enable) {
 		LOG_DBG("Enable write protection");
@@ -337,12 +337,12 @@ static const struct flash_driver_api flash_stm32_api = {
 static int stm32_flash_init(const struct device *dev)
 {
 	int rc;
-	/* Below is applicable to F0, F1, F3, G0, G4, L1, L4 & WB55 series.
+	/* Below is applicable to F0, F1, F3, G0, G4, L1, L4, L5, U5 & WB55 series.
 	 * For F2, F4, F7 & H7 series, this is not applicable.
 	 */
 #if DT_INST_NODE_HAS_PROP(0, clocks)
 	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	/*
 	 * On STM32 F0, F1, F3 & L1 series, flash interface clock source is
@@ -357,6 +357,11 @@ static int stm32_flash_init(const struct device *dev)
 	while (!LL_RCC_HSI_IsReady()) {
 	}
 #endif
+
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	/* enable clock */
 	if (clock_control_on(clk, (clock_control_subsys_t *)&p->pclken) != 0) {
@@ -396,4 +401,4 @@ static int stm32_flash_init(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL,
 		    &flash_data, NULL, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_stm32_api);
+		    CONFIG_FLASH_INIT_PRIORITY, &flash_stm32_api);

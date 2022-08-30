@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "init.h"
+#include <zephyr/init.h>
 #include <stdint.h>
 #include <string.h>
 #include "bs_types.h"

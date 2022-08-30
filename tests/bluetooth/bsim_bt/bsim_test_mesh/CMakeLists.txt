@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 
 if (NOT DEFINED ENV{BSIM_COMPONENTS_PATH})
 	message(FATAL_ERROR "This test requires the BabbleSim simulator. Please set\
@@ -21,6 +21,7 @@ if(CONFIG_SETTINGS)
  target_sources(app PRIVATE
   src/settings_test_backend.c
   src/test_persistence.c
+  src/test_replay_cache.c
  )
 else()
  target_sources(app PRIVATE
@@ -28,6 +29,10 @@ else()
   src/test_friendship.c
   src/test_provision.c
   src/test_beacon.c
+  src/test_scanner.c
+  src/test_heartbeat.c
+  src/test_access.c
+  src/test_iv_index.c
  )
 endif()
 

@@ -1,0 +1,90 @@
+# Copyright (c), 2021 NXP
+# SPDX -License-Identifier: Apache-2.0
+
+description: PMIC controlled regulator
+
+include: regulator.yaml
+
+compatible: "regulator-pmic"
+
+properties:
+    voltage-range:
+        type: array
+        required: true
+        description: |
+           array of voltage values in uV, followed by the register value that
+           must be written to enable the voltage. For example, [3300000, 0x3]
+           denotes a value of 0x3 must be written to the register to set 3.3V
+    num-voltages:
+        type: int
+        required: true
+        description: number of voltages present in the voltage-range array.
+    vsel-reg:
+        type: int
+        required: true
+        description: I2C register to write voltage selection value to
+    vsel-mask:
+        type: int
+        required: true
+        description: |
+          Mask to apply to the voltage range value when written to vsel
+          register
+    enable-reg:
+        type: int
+        required: true
+        description: I2C register to write enable value to
+    enable-mask:
+        type: int
+        required: true
+        description: |
+          Mask to apply to the enable bit (either 1 for enabled,
+          or 0 for disabled) when writing it to the I2C enable register.
+    enable-val:
+        type: int
+        required: true
+        description: |
+          value to apply enable-mask to, and write to enable-reg in order
+          to enable the regulator output.
+    min-uV:
+        type: int
+        required: true
+        description: |
+           Minimum voltage in microvolts that this regulator supports
+    max-uV:
+        type: int
+        required: true
+        description: |
+           Maximum voltage in microvolts that this regulator supports
+    enable-inverted:
+        type: boolean
+        required: false
+        description: |
+          If the enable bit should be zero to turn the regulator on, add this
+          property.
+    current-levels:
+        type: array
+        required: false
+        description: |
+          Array of current limit values in uA, followed by the register value
+          that must be written to enable the current limit. For example,
+          [800000, 0x3] denotes a value of 0x3 must be written to the register
+          to set a current limit of 800mA
+    num-current-levels:
+        type: int
+        required: false
+        default: 0
+        description: |
+          Number of current limit levels this regulator supports. If left as
+          default, regulator current support will be disabled.
+    ilim-reg:
+        type: int
+        required: false
+        description: |
+          Register to write the register value given in current-levels into
+          to set the current limit
+    ilim-mask:
+        type: int
+        required: false
+        description: |
+          Mask to apply to the current-levels value before writing it to the
+          ilim-reg value to set the current limit

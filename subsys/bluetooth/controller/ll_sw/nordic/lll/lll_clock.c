@@ -5,10 +5,10 @@
  */
 
 #include <soc.h>
-#include <device.h>
+#include <zephyr/device.h>
 
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_clock
@@ -62,6 +62,14 @@ int lll_clock_init(void)
 	sys_notify_init_spinwait(&lf_cli.notify);
 
 	return onoff_request(mgr, &lf_cli);
+}
+
+int lll_clock_deinit(void)
+{
+	struct onoff_manager *mgr =
+		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
+
+	return onoff_release(mgr);
 }
 
 int lll_clock_wait(void)

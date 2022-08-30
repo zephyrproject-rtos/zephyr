@@ -1,8 +1,0 @@
-# Copyright (c) 2019 Synopsys, Inc. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-config PINMUX_HSDK
-	bool "ARC HSDK I/O pin mux driver"
-	depends on SOC_ARC_HSDK
-	help
-	  Enable driver for ARC HSDK I/O pin mux.

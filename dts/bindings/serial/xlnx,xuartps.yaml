@@ -1,0 +1,9 @@
+description: Xilinx PS UART
+
+compatible: "xlnx,xuartps"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+    reg:
+      required: true

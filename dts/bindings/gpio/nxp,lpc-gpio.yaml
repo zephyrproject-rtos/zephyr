@@ -1,4 +1,4 @@
-# Copyright (c) 2019, NXP
+# Copyright (c) 2019-22, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: LPC GPIO node
@@ -11,9 +11,6 @@ properties:
     reg:
       required: true
 
-    label:
-      required: true
-
     "#gpio-cells":
       const: 2
 
@@ -24,6 +21,12 @@ properties:
       enum:
         - 0
         - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
 
 gpio-cells:
   - pin

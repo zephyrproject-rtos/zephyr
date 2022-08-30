@@ -6,8 +6,8 @@
 
 #include "analog.h"
 
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include "gpio_utils.h"
 
 
@@ -17,9 +17,6 @@
 /* Get GPIO instance */
 #define GET_GPIO(dev)           ((volatile struct gpio_b91_t *)	\
 				 ((const struct gpio_b91_config *)dev->config)->gpio_base)
-
-/* Get GPIO configuration */
-#define GET_CFG(dev)            ((const struct gpio_b91_config *)dev->config)
 
 /* Get GPIO IRQ number defined in dts */
 #define GET_IRQ_NUM(dev)        (((const struct gpio_b91_config *)dev->config)->irq_num)
@@ -169,7 +166,7 @@ void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin,
 	uint8_t irq_prioriy = GET_IRQ_PRIORITY(dev);
 	volatile struct gpio_b91_t *gpio = GET_GPIO(dev);
 
-	/* Get level and mask bsed on IRQ number */
+	/* Get level and mask based on IRQ number */
 	if (irq_num == IRQ_GPIO) {
 		irq_lvl = FLD_GPIO_IRQ_LVL_GPIO;
 		irq_mask = FLD_GPIO_IRQ_MASK_GPIO;
@@ -298,7 +295,7 @@ static void gpio_b91_config_in_out(volatile struct gpio_b91_t *gpio,
 /* GPIO driver initialization */
 static int gpio_b91_init(const struct device *dev)
 {
-	const struct gpio_b91_config *cfg = GET_CFG(dev);
+	const struct gpio_b91_config *cfg = dev->config;
 
 	cfg->pirq_connect();
 
@@ -324,11 +321,6 @@ static int gpio_b91_pin_configure(const struct device *dev,
 
 	/* Check input parameters: simultaneous in/out mode */
 	if ((flags & GPIO_OUTPUT) && (flags & GPIO_INPUT)) {
-		return -ENOTSUP;
-	}
-
-	/* Strengths not implemented */
-	if ((flags & (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)) != 0) {
 		return -ENOTSUP;
 	}
 
@@ -561,8 +553,8 @@ static void gpio_b91_irq_connect_4(void)
 			      NULL,					    \
 			      &gpio_b91_data_##n,			    \
 			      &gpio_b91_config_##n,			    \
-			      POST_KERNEL,				    \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	    \
+			      PRE_KERNEL_1,				    \
+			      CONFIG_GPIO_INIT_PRIORITY,		    \
 			      &gpio_b91_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_B91_INIT)

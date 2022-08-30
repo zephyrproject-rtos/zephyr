@@ -7,6 +7,11 @@
 #ifndef _NUVOTON_NPCX_SOC_MIWU_H_
 #define _NUVOTON_NPCX_SOC_MIWU_H_
 
+#include <stdint.h>
+
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,8 +1,10 @@
+common:
+  tags: filesystem
+  modules:
+    - fatfs
 tests:
   filesystem.fat.api:
     platform_allow: native_posix
-    tags: filesystem
   filesystem.fat.api.lfn:
     extra_args: CONF_FILE="prj_lfn.conf"
     platform_allow: native_posix
-    tags: filesystem

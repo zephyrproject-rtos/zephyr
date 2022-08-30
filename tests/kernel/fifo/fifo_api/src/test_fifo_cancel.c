@@ -6,7 +6,7 @@
 
 #include "test_fifo.h"
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIST_LEN 2
 /**TESTPOINT: init via K_FIFO_DEFINE*/
 K_FIFO_DEFINE(kfifo_c);
@@ -61,7 +61,7 @@ static void tfifo_thread_thread(struct k_fifo *pfifo)
  * to return from k_fifo_get() with NULL value (as if timeout expired).
  * @see k_fifo_init(),k_fifo_get(), k_fifo_cancel_wait()
  */
-void test_fifo_cancel_wait(void)
+ZTEST(fifo_api_1cpu, test_fifo_cancel_wait)
 {
 	/**TESTPOINT: init via k_fifo_init*/
 	k_fifo_init(&fifo_c);

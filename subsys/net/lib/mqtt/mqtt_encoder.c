@@ -9,7 +9,7 @@
  * @brief Encoding functions needed to create packet to be sent to the broker.
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_mqtt_enc, CONFIG_MQTT_LOG_LEVEL);
 
 #include "mqtt_internal.h"
@@ -49,7 +49,7 @@ static int pack_uint8(uint8_t val, struct buf_ctx *buf)
 		return -ENOMEM;
 	}
 
-	MQTT_TRC(">> val:%02x cur:%p, end:%p", val, buf->cur, buf->end);
+	NET_DBG(">> val:%02x cur:%p, end:%p", val, buf->cur, buf->end);
 
 	/* Pack value. */
 	*(buf->cur++) = val;
@@ -73,7 +73,7 @@ static int pack_uint16(uint16_t val, struct buf_ctx *buf)
 		return -ENOMEM;
 	}
 
-	MQTT_TRC(">> val:%04x cur:%p, end:%p", val, buf->cur, buf->end);
+	NET_DBG(">> val:%04x cur:%p, end:%p", val, buf->cur, buf->end);
 
 	/* Pack value. */
 	*(buf->cur++) = (val >> 8) & 0xFF;
@@ -98,7 +98,7 @@ static int pack_utf8_str(const struct mqtt_utf8 *str, struct buf_ctx *buf)
 		return -ENOMEM;
 	}
 
-	MQTT_TRC(">> str_size:%08x cur:%p, end:%p",
+	NET_DBG(">> str_size:%08x cur:%p, end:%p",
 		 (uint32_t)GET_UT8STR_BUFFER_SIZE(str), buf->cur, buf->end);
 
 	/* Pack length followed by string. */
@@ -139,7 +139,7 @@ static uint8_t packet_length_encode(uint32_t length, struct buf_ctx *buf)
 {
 	uint8_t encoded_bytes = 0U;
 
-	MQTT_TRC(">> length:0x%08x cur:%p, end:%p", length,
+	NET_DBG(">> length:0x%08x cur:%p, end:%p", length,
 		 (buf == NULL) ? 0 : buf->cur, (buf == NULL) ? 0 : buf->end);
 
 	do {
@@ -193,12 +193,12 @@ static uint32_t mqtt_encode_fixed_header(uint8_t message_type, uint8_t *start,
 		return -EMSGSIZE;
 	}
 
-	MQTT_TRC("<< msg type:0x%02x length:0x%08x", message_type, length);
+	NET_DBG("<< msg type:0x%02x length:0x%08x", message_type, length);
 
 	fixed_header_length = packet_length_encode(length, NULL);
 	fixed_header_length += sizeof(uint8_t);
 
-	MQTT_TRC("Fixed header length = %02x", fixed_header_length);
+	NET_DBG("Fixed header length = %02x", fixed_header_length);
 
 	/* Set the pointer at the start of the frame before encoding. */
 	buf->cur = start - fixed_header_length;
@@ -287,7 +287,7 @@ int connect_request_encode(const struct mqtt_client *client,
 	buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
 	start = buf->cur;
 
-	MQTT_HEXDUMP_TRC(mqtt_proto_desc->utf8, mqtt_proto_desc->size,
+	NET_HEXDUMP_DBG(mqtt_proto_desc->utf8, mqtt_proto_desc->size,
 			 "Encoding Protocol Description.");
 
 	err_code = pack_utf8_str(mqtt_proto_desc, buf);
@@ -295,7 +295,7 @@ int connect_request_encode(const struct mqtt_client *client,
 		return err_code;
 	}
 
-	MQTT_TRC("Encoding Protocol Version %02x.", client->protocol_version);
+	NET_DBG("Encoding Protocol Version %02x.", client->protocol_version);
 	err_code = pack_uint8(client->protocol_version, buf);
 	if (err_code != 0) {
 		return err_code;
@@ -311,13 +311,13 @@ int connect_request_encode(const struct mqtt_client *client,
 		return err_code;
 	}
 
-	MQTT_TRC("Encoding Keep Alive Time %04x.", client->keepalive);
+	NET_DBG("Encoding Keep Alive Time %04x.", client->keepalive);
 	err_code = pack_uint16(client->keepalive, buf);
 	if (err_code != 0) {
 		return err_code;
 	}
 
-	MQTT_HEXDUMP_TRC(client->client_id.utf8, client->client_id.size,
+	NET_HEXDUMP_DBG(client->client_id.utf8, client->client_id.size,
 			 "Encoding Client Id.");
 	err_code = pack_utf8_str(&client->client_id, buf);
 	if (err_code != 0) {
@@ -331,7 +331,7 @@ int connect_request_encode(const struct mqtt_client *client,
 		connect_flags |= ((client->will_topic->qos & 0x03) << 3);
 		connect_flags |= client->will_retain << 5;
 
-		MQTT_HEXDUMP_TRC(client->will_topic->topic.utf8,
+		NET_HEXDUMP_DBG(client->will_topic->topic.utf8,
 				 client->will_topic->topic.size,
 				 "Encoding Will Topic.");
 		err_code = pack_utf8_str(&client->will_topic->topic, buf);
@@ -340,7 +340,7 @@ int connect_request_encode(const struct mqtt_client *client,
 		}
 
 		if (client->will_message != NULL) {
-			MQTT_HEXDUMP_TRC(client->will_message->utf8,
+			NET_HEXDUMP_DBG(client->will_message->utf8,
 					 client->will_message->size,
 					 "Encoding Will Message.");
 			err_code = pack_utf8_str(client->will_message, buf);
@@ -348,7 +348,7 @@ int connect_request_encode(const struct mqtt_client *client,
 				return err_code;
 			}
 		} else {
-			MQTT_TRC("Encoding Zero Length Will Message.");
+			NET_DBG("Encoding Zero Length Will Message.");
 			err_code = zero_len_str_encode(buf);
 			if (err_code != 0) {
 				return err_code;
@@ -360,7 +360,7 @@ int connect_request_encode(const struct mqtt_client *client,
 	if (client->user_name != NULL) {
 		connect_flags |= MQTT_CONNECT_FLAG_USERNAME;
 
-		MQTT_HEXDUMP_TRC(client->user_name->utf8,
+		NET_HEXDUMP_DBG(client->user_name->utf8,
 				 client->user_name->size,
 				 "Encoding Username.");
 		err_code = pack_utf8_str(client->user_name, buf);
@@ -373,7 +373,7 @@ int connect_request_encode(const struct mqtt_client *client,
 	if (client->password != NULL) {
 		connect_flags |= MQTT_CONNECT_FLAG_PASSWORD;
 
-		MQTT_HEXDUMP_TRC(client->password->utf8,
+		NET_HEXDUMP_DBG(client->password->utf8,
 				 client->password->size,
 				 "Encoding Password.");
 		err_code = pack_utf8_str(client->password, buf);

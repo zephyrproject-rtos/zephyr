@@ -1,0 +1,98 @@
+# Bluetooth Audio - Published Audio Capabilities configuration options
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "Published Audio Capabilities (PAC) options"
+
+config BT_PAC_SNK
+	bool "Sink PAC Characteristic Support"
+	help
+	  This option enables support for Sink Published Audio Capabilities.
+
+if BT_PAC_SNK
+config BT_PACS_SNK_CONTEXT
+	hex "Supported Sink Contexts"
+	default 0x03ff
+	range 0x0000 0x03ff
+	help
+	  The Supported Sink Contexts exposes the server’s support for
+	  reception of audio data associated with specific Context Types:
+	  0x0001: Unspecified
+	  0x0002: Conversational
+	  0x0004: Media
+	  0x0008: Instructional
+	  0x0010: AttentionSeeking
+	  0x0020: ImmediateAlert
+	  0x0040: ManMachine
+	  0x0080: EmergencyAlert
+	  0x0100: Ringtone
+	  0x0200: TV
+
+config BT_PAC_SNK_LOC
+	bool "Sink PAC Location Support"
+	default y
+	help
+	  This option enables support for Sink PAC Location Characteristic.
+
+config BT_PAC_SNK_LOC_WRITEABLE
+	bool "Sink PAC Location Writable Support"
+	depends on BT_PAC_SNK_LOC
+	help
+	  This option enables support for clients to write to the Sink PAC
+	  Location Characteristic.
+
+endif # BT_PACS_SNK
+
+config BT_PAC_SRC
+	bool "Source PAC Characteristic Support"
+	help
+	  This option enables support for Source Published Audio Capabilities.
+
+if BT_PAC_SRC
+config BT_PACS_SRC_CONTEXT
+	hex "Supported Source Contexts"
+	default 0x03ff
+	range 0x0000 0x03ff
+	help
+	  The Supported Source Contexts exposes the server’s support for
+	  transmission of audio data associated with specific Context Types:
+	  0x0001: Unspecified
+	  0x0002: Conversational
+	  0x0004: Media
+	  0x0008: Instructional
+	  0x0010: AttentionSeeking
+	  0x0020: ImmediateAlert
+	  0x0040: ManMachine
+	  0x0080: EmergencyAlert
+	  0x0100: Ringtone
+	  0x0200: TV
+
+config BT_PAC_SRC_LOC
+	bool "Source PAC Location Support"
+	default y
+	help
+	  This option enables support for Source PAC Location Characteristic.
+
+config BT_PAC_SRC_LOC_WRITEABLE
+	bool "Source PAC Location Writable Support"
+	depends on BT_PAC_SRC_LOC
+	help
+	  This option enables support for clients to write to the Source PAC
+	  Location Characteristic.
+
+endif # BT_PAC_SRC
+
+config BT_PACS
+	def_bool BT_PAC_SNK || BT_PAC_SRC
+
+config BT_DEBUG_PACS
+	bool "Published Audio Capabilities Service debug"
+	depends on BT_PACS
+	help
+	  Use this option to enable Published Audio Capabilities Service debug
+	  logs for the Bluetooth Audio functionality.
+
+endmenu

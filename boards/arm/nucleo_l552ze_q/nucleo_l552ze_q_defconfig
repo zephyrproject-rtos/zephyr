@@ -6,9 +6,6 @@ CONFIG_SOC_STM32L552XX=y
 # enable uart driver
 CONFIG_SERIAL=y
 
-# enable pinmux
-CONFIG_PINMUX=y
-
 # enable GPIO
 CONFIG_GPIO=y
 
@@ -24,3 +21,6 @@ CONFIG_ARM_MPU=y
 
 # Enable HW stack protection
 CONFIG_HW_STACK_PROTECTION=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

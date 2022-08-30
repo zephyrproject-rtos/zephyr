@@ -4,16 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <irq_offload.h>
-#include <debug/stack.h>
+#include <zephyr/ztest.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/debug/stack.h>
 
-#define STACKSIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (256 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static K_THREAD_STACK_DEFINE(dyn_thread_stack, STACKSIZE);
 static K_SEM_DEFINE(start_sem, 0, 1);
 static K_SEM_DEFINE(end_sem, 0, 1);
 static ZTEST_BMEM struct k_thread *dyn_thread;
+static struct k_thread *dynamic_threads[CONFIG_MAX_THREAD_BYTES * 8];
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
@@ -69,7 +70,6 @@ static void create_dynamic_thread(void)
 
 static void permission_test(void)
 {
-	struct k_thread *dyn_thread;
 	k_tid_t tid;
 
 	dyn_thread = k_object_alloc(K_OBJ_THREAD);
@@ -113,16 +113,18 @@ static void permission_test(void)
  * not have permission to one of the semaphore. If permissions are cleared
  * correctly when thread is destroyed, the second should raise kernel oops.
  */
-static void test_dyn_thread_perms(void)
+ZTEST(thread_dynamic, test_dyn_thread_perms)
 {
+	if (!(IS_ENABLED(CONFIG_USERSPACE))) {
+		ztest_test_skip();
+	}
+
 	permission_test();
 
 	TC_PRINT("===== must have access denied on k_sem %p\n", &end_sem);
 }
 
-static struct k_thread *dynamic_threads[CONFIG_MAX_THREAD_BYTES * 8];
-
-static void test_thread_index_management(void)
+ZTEST(thread_dynamic, test_thread_index_management)
 {
 	int i, ctr = 0;
 
@@ -143,9 +145,19 @@ static void test_thread_index_management(void)
 	TC_PRINT("created %d thread objects\n", ctr);
 
 	/* Show that the above NULL return value wasn't because we ran out of
-	 * heap space/
+	 * heap space. For that we need to duplicate how objects are allocated
+	 * in kernel/userspace.c. We pessimize the alignment to the worst
+	 * case to simplify things somewhat.
 	 */
-	void *blob = k_malloc(256);
+	size_t ret = 1024 * 1024;  /* sure-to-fail initial value */
+	void *blob;
+
+	switch (K_OBJ_THREAD) {
+	/** @cond keep_doxygen_away */
+	#include <otype-to-size.h>
+	/** @endcond */
+	}
+	blob = z_dynamic_object_aligned_create(16, ret);
 	zassert_true(blob != NULL, "out of heap memory");
 
 	/* Free one of the threads... */
@@ -178,8 +190,12 @@ static void test_thread_index_management(void)
  * @details This is a simple test to create a user thread
  * dynamically via k_object_alloc() under a kernel thread.
  */
-static void test_kernel_create_dyn_user_thread(void)
+ZTEST(thread_dynamic, test_kernel_create_dyn_user_thread)
 {
+	if (!(IS_ENABLED(CONFIG_USERSPACE))) {
+		ztest_test_skip();
+	}
+
 	create_dynamic_thread();
 }
 
@@ -190,23 +206,19 @@ static void test_kernel_create_dyn_user_thread(void)
  * @details This is a simple test to create a user thread
  * dynamically via k_object_alloc() under a user thread.
  */
-static void test_user_create_dyn_user_thread(void)
+ZTEST_USER(thread_dynamic, test_user_create_dyn_user_thread)
 {
 	create_dynamic_thread();
 }
 
 /* test case main entry */
-void test_main(void)
+void *thread_test_setup(void)
 {
 	k_thread_system_pool_assign(k_current_get());
 
 	prep();
 
-	ztest_test_suite(thread_dynamic,
-			 ztest_unit_test(test_kernel_create_dyn_user_thread),
-			 ztest_user_unit_test(test_user_create_dyn_user_thread),
-			 ztest_unit_test(test_dyn_thread_perms),
-			 ztest_unit_test(test_thread_index_management)
-			 );
-	ztest_run_test_suite(thread_dynamic);
+	return NULL;
 }
+
+ZTEST_SUITE(thread_dynamic, NULL, thread_test_setup, NULL, NULL, NULL);

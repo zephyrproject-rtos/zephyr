@@ -16,6 +16,21 @@ menuconfig WIFI_ESP_AT
 
 if WIFI_ESP_AT
 
+config WIFI_ESP_AT_SCAN_PASSIVE
+	bool "Passive scan"
+	help
+	  Use passive scanning.
+
+config WIFI_ESP_AT_SCAN_MAC_ADDRESS
+	bool "MAC address in scan response"
+	help
+	  Get mac address in scan response.
+
+config WIFI_ESP_AT_SCAN_RESULT_RSSI_ORDERED
+	bool "Scan result ordering based on RSSI"
+	help
+	  Order based on RSSI.
+
 config WIFI_ESP_AT_RX_STACK_SIZE
 	int "Stack size for the Espressif esp wifi driver RX thread"
 	default 1024
@@ -115,7 +130,7 @@ endif
 
 choice WIFI_ESP_AT_VERSION
 	prompt "AT version"
-	default WIFI_ESP_AT_VERSION_2_0
+	default WIFI_ESP_AT_VERSION_2_1
 	help
 	  Select which version of AT command set should be used.
 
@@ -128,6 +143,11 @@ config WIFI_ESP_AT_VERSION_2_0
 	bool "AT version 2.0"
 	help
 	  Use AT command set version 2.0.
+
+config WIFI_ESP_AT_VERSION_2_1
+	bool "AT version 2.1"
+	help
+	  Use AT command set version 2.1.
 
 endchoice
 

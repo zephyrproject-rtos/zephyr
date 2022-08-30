@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <drivers/dac.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/dac.h>
 
 #define ZEPHYR_USER_NODE DT_PATH(zephyr_user)
 
@@ -23,7 +23,7 @@
 #define DAC_RESOLUTION 0
 #endif
 
-static const struct device *dac_dev = DEVICE_DT_GET(DAC_NODE);
+static const struct device *const dac_dev = DEVICE_DT_GET(DAC_NODE);
 
 static const struct dac_channel_cfg dac_ch_cfg = {
 	.channel_id  = DAC_CHANNEL_ID,

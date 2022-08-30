@@ -26,7 +26,6 @@ nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/adafruit_feather_nrf52840.jpg
-     :width: 640px
      :align: center
      :alt: Adafruit Feather nRF52840 Express
 
@@ -81,7 +80,7 @@ following hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Connections and IOs
 ===================

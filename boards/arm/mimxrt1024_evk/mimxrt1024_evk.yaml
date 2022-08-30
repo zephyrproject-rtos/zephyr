@@ -14,3 +14,13 @@ toolchain:
   - xtools
 ram: 32768
 flash: 4096
+supported:
+  - can
+  - dma
+  - hwinfo
+  - netif:eth
+  - watchdog
+  - spi
+  - sdhc
+  - adc
+  - usb_device

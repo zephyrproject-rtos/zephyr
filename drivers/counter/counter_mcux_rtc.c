@@ -7,9 +7,9 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_rtc
 
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 #include <fsl_rtc.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(mcux_rtc, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -271,7 +271,7 @@ static struct mcux_rtc_config mcux_rtc_config_0 = {
 
 DEVICE_DT_INST_DEFINE(0, &mcux_rtc_init, NULL,
 		    &mcux_rtc_data_0, &mcux_rtc_config_0.info,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,
 		    &mcux_rtc_driver_api);
 
 static void mcux_rtc_irq_config_0(const struct device *dev)

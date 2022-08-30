@@ -5,7 +5,7 @@ description: STM32 I2C V1 controller
 
 compatible: "st,stm32-i2c-v1"
 
-include: i2c-controller.yaml
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -15,11 +15,7 @@ properties:
       required: true
 
     pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        GPIO pin configuration for serial signals (SDA, SCL).  We expect
-        that the phandles will reference pinctrl nodes.
+      required: true
 
-        For example the I2C1 would be
-           pinctrl-0 = <&i2c1_sda_pb11 &i2c1_scl_pb10>;
+    pinctrl-names:
+      required: true

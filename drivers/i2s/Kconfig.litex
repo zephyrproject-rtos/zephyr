@@ -6,7 +6,8 @@
 
 menuconfig I2S_LITEX
 	bool "Litex I2S driver"
-	depends on SOC_RISCV32_LITEX_VEXRISCV
+	default y
+	depends on DT_HAS_LITEX_I2S_ENABLED
 	help
 		Enable Litex Inter Sound (I2S) bus driver.
 
@@ -22,10 +23,8 @@ config I2S_LITEX_TX_BLOCK_COUNT
 
 config I2S_LITEX_CHANNELS_CONCATENATED
 	bool "Channels placed without padding in fifo"
-	default n
 
 config I2S_LITEX_DATA_BIG_ENDIAN
 	bool "Received data will be stored as big endian"
-	default n
 
 endif

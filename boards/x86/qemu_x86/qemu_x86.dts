@@ -12,7 +12,7 @@
 #endif
 #define DT_FLASH_SIZE		DT_SIZE_K(4096)
 
-#include <ia32.dtsi>
+#include <intel/ia32.dtsi>
 
 / {
 	model = "QEMU X86 emulator";
@@ -40,13 +40,13 @@
 		zephyr,bt-mon-uart = &uart1;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,flash-controller = &sim_flash;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	soc {
 		eth0: eth@febc0000 {
 			compatible = "intel,e1000";
 			reg = <0xfebc0000 0x100>;
-			label = "eth0";
 			interrupts = <11 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 
@@ -56,7 +56,6 @@
 
 	sim_flash: sim_flash {
 		compatible = "zephyr,sim-flash";
-		label = "FLASH_SIMULATOR";
 
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -74,7 +73,6 @@
 	eeprom1: eeprom1 {
 		status = "okay";
 		compatible = "zephyr,emu-eeprom";
-		label = "EEPROM_1";
 		size = <DT_SIZE_K(4)>;
 		pagesize = <DT_SIZE_K(8)>;
 		partition = <&eepromemu_partition>;
@@ -84,8 +82,11 @@
 	eeprom0: eeprom0 {
 		status = "okay";
 		compatible = "zephyr,sim-eeprom";
-		label = "EEPROM_0";
 		size = <DT_SIZE_K(4)>;
+	};
+
+	ieee802154: ieee802154 {
+		compatible = "zephyr,ieee802154-uart-pipe";
 	};
 
 };

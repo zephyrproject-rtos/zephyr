@@ -1,0 +1,33 @@
+description: Microchip XEC UART
+
+compatible: "microchip,xec-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    ldn:
+      type: int
+      required: true
+      description: logical device number
+
+    girqs:
+      type: array
+      required: true
+      description: UART GIRQ and bit position in EC interrupt aggregator
+
+    pcrs:
+      type: array
+      required: true
+      description: UART Power Clock Reset(PCR) register index and bit position
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true

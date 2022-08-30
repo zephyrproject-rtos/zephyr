@@ -8,15 +8,13 @@
 #ifndef _MCP2515_H_
 #define _MCP2515_H_
 
-#include <drivers/can.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/can.h>
 
 #define MCP2515_RX_CNT                   2
-#define MCP2515_TX_CNT                   3
+/* Reduce the number of Tx buffers to 1 in order to avoid priority inversion. */
+#define MCP2515_TX_CNT                   1
 #define MCP2515_FRAME_LEN               13
-
-#define DEV_CFG(dev) \
-	((const struct mcp2515_config *const)(dev)->config)
-#define DEV_DATA(dev) ((struct mcp2515_data *const)(dev)->data)
 
 struct mcp2515_tx_cb {
 	struct k_sem sem;
@@ -25,15 +23,7 @@ struct mcp2515_tx_cb {
 };
 
 struct mcp2515_data {
-	/* spi device data */
-	const struct device *spi;
-	struct spi_config spi_cfg;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control spi_cs_ctrl;
-#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
-
 	/* interrupt data */
-	const struct device *int_gpio;
 	struct gpio_callback int_gpio_cb;
 	struct k_thread int_thread;
 	k_thread_stack_t *int_thread_stack;
@@ -48,8 +38,9 @@ struct mcp2515_data {
 	uint32_t filter_usage;
 	can_rx_callback_t rx_cb[CONFIG_CAN_MAX_FILTER];
 	void *cb_arg[CONFIG_CAN_MAX_FILTER];
-	struct zcan_filter filter[CONFIG_CAN_MAX_FILTER];
-	can_state_change_isr_t state_change_isr;
+	struct can_filter filter[CONFIG_CAN_MAX_FILTER];
+	can_state_change_callback_t state_change_cb;
+	void *state_change_cb_data;
 
 	/* general data */
 	struct k_mutex mutex;
@@ -59,16 +50,10 @@ struct mcp2515_data {
 
 struct mcp2515_config {
 	/* spi configuration */
-	const char *spi_port;
-	uint8_t spi_cs_pin;
-	uint8_t spi_cs_flags;
-	const char *spi_cs_port;
-	uint32_t spi_freq;
-	uint8_t spi_slave;
+	struct spi_dt_spec bus;
 
 	/* interrupt configuration */
-	uint8_t int_pin;
-	const char *int_port;
+	struct gpio_dt_spec int_gpio;
 	size_t int_thread_stack_size;
 	int int_thread_priority;
 
@@ -80,6 +65,10 @@ struct mcp2515_config {
 	uint32_t bus_speed;
 	uint32_t osc_freq;
 	uint16_t sample_point;
+
+	/* CAN transceiver */
+	const struct device *phy;
+	uint32_t max_bitrate;
 };
 
 /*

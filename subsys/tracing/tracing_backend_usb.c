@@ -4,12 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/util.h>
-#include <sys/atomic.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <usb/usb_device.h>
-#include <usb/usb_common.h>
+/* Disable syscall tracing for all calls from this compilation unit to avoid
+ * undefined symbols as the macros are not expanded recursively
+ */
+#define DISABLE_SYSCALL_TRACING
+
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usb_device.h>
 #include <tracing_core.h>
 #include <tracing_buffer.h>
 #include <tracing_backend.h>
@@ -35,11 +39,11 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_device_desc dev_desc = {
 	 */
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
-		.bDescriptorType = USB_INTERFACE_DESC,
+		.bDescriptorType = USB_DESC_INTERFACE,
 		.bInterfaceNumber = 0,
 		.bAlternateSetting = 0,
 		.bNumEndpoints = 2,
-		.bInterfaceClass = CUSTOM_CLASS,
+		.bInterfaceClass = USB_BCC_VENDOR,
 		.bInterfaceSubClass = 0,
 		.bInterfaceProtocol = 0,
 		.iInterface = 0,
@@ -50,7 +54,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_device_desc dev_desc = {
 	 */
 	.if0_in_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = TRACING_IF_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize = sys_cpu_to_le16(CONFIG_TRACING_USB_MPS),
@@ -62,7 +66,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_device_desc dev_desc = {
 	 */
 	.if0_out_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = TRACING_IF_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize = sys_cpu_to_le16(CONFIG_TRACING_USB_MPS),
@@ -123,8 +127,7 @@ static struct usb_ep_cfg_data ep_cfg[] = {
 	},
 };
 
-USBD_CFG_DATA_DEFINE(primary, tracing_backend_usb)
-	struct usb_cfg_data tracing_backend_usb_config = {
+USBD_DEFINE_CFG_DATA(tracing_backend_usb_config) = {
 	.usb_device_description = NULL,
 	.interface_descriptor = &dev_desc.if0,
 	.cb_usb_status = dev_status_cb,
@@ -147,7 +150,7 @@ static void tracing_backend_usb_output(const struct tracing_backend *backend,
 		transfer_state = USB_TRANSFER_ONGOING;
 
 		/*
-		 * make sure every USB tansfer no need ZLP at all
+		 * make sure every USB transfer no need ZLP at all
 		 * because we are in lowest priority thread content
 		 * there are no deterministic time between real USB
 		 * packet and ZLP

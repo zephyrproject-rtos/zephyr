@@ -6,7 +6,7 @@
 if BUILD_WITH_TFM
 
 config TFM_PARTITION_PROTECTED_STORAGE
-	bool "Enable secure partition 'Protected Storage'"
+	bool "Secure partition 'Protected Storage'"
 	default y
 	help
 	  Setting this option will cause '-DTFM_PARTITION_PROTECTED_STORAGE'
@@ -17,7 +17,7 @@ config TFM_PARTITION_PROTECTED_STORAGE
 	  repository.
 
 config TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
-	bool "Enable secure partition 'Internal Trusted Storage'"
+	bool "Secure partition 'Internal Trusted Storage'"
 	default y
 	help
 	  Setting this option will cause '-DTFM_PARTITION_INTERNAL_TRUSTED_STORAGE'
@@ -28,7 +28,7 @@ config TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
 	  repository.
 
 config TFM_PARTITION_CRYPTO
-	bool "Enable secure partition 'Crypto'"
+	bool "Secure partition 'Crypto'"
 	default y
 	help
 	  Setting this option will cause '-DTFM_PARTITION_CRYPTO'
@@ -39,7 +39,7 @@ config TFM_PARTITION_CRYPTO
 	  repository.
 
 config TFM_PARTITION_INITIAL_ATTESTATION
-	bool "Enable secure partition 'Initial Attestation'"
+	bool "Secure partition 'Initial Attestation'"
 	default y
 	help
 	  Setting this option will cause '-DTFM_PARTITION_INITIAL_ATTESTATION'
@@ -50,7 +50,7 @@ config TFM_PARTITION_INITIAL_ATTESTATION
 	  repository.
 
 config TFM_PARTITION_PLATFORM
-	bool "Enable secure partition 'Platform'"
+	bool "Secure partition 'Platform'"
 	default y
 	help
 	  Setting this option will cause '-DTFM_PARTITION_PLATFORM'
@@ -61,7 +61,7 @@ config TFM_PARTITION_PLATFORM
 	  repository.
 
 config TFM_PARTITION_AUDIT_LOG
-	bool "Enable secure partition 'Audit Log'" if !TFM_IPC
+	bool "Secure partition 'Audit Log'" if !TFM_IPC
 	depends on !TFM_IPC
 	default y
 	help
@@ -73,5 +73,31 @@ config TFM_PARTITION_AUDIT_LOG
 	  repository.
 	  Note: the Audit Log service does not implement the IPC model
 	  interface so it may not be enabled together with IPC option.
+
+config TFM_PARTITION_FIRMWARE_UPDATE
+	bool "Include the secure parition 'Firmware Update'"
+	select TFM_MCUBOOT_DATA_SHARING
+	default n
+	help
+	  Setting this option will cause '-DTFM_PARTITION_FIRMWARE_UPDATE'
+	  to be passed to the TF-M build system. Look at 'config_default.cmake'
+	  in the trusted-firmware-m repository for details regarding this
+	  parameter. Any dependencies between the various TFM_PARTITION_*
+	  options are handled by the build system in the trusted-firmware-m
+	  repository.
+
+
+choice TFM_PARTITION_LOG_LEVEL
+	prompt "TF-M Partition Log Level" if !TFM_LOG_LEVEL_SILENCE
+	default TFM_PARTITION_LOG_LEVEL_INFO
+config TFM_PARTITION_LOG_LEVEL_DEBUG
+	bool "Debug"
+config TFM_PARTITION_LOG_LEVEL_INFO
+	bool "Info"
+config TFM_PARTITION_LOG_LEVEL_ERROR
+	bool "Error"
+config TFM_PARTITION_LOG_LEVEL_SILENCE
+	bool "Off"
+endchoice
 
 endif # BUILD_WITH_TFM

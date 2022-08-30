@@ -85,5 +85,5 @@ following output:
 
 .. code-block:: none
 
-   ***** BOOTING ZEPHYR OS zepyhr-v1.13.XX *****
+   ***** BOOTING ZEPHYR OS zephyr-v1.13.XX *****
    [general] [INF] main: Found LED strip device APA102

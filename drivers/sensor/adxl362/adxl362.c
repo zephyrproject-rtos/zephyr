@@ -8,25 +8,25 @@
 
 #define DT_DRV_COMPAT adi_adxl362
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
 #include <string.h>
-#include <drivers/sensor.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <drivers/spi.h>
-#include <logging/log.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/logging/log.h>
 
 #include "adxl362.h"
 
 LOG_MODULE_REGISTER(ADXL362, CONFIG_SENSOR_LOG_LEVEL);
 
-static struct adxl362_data adxl362_data;
-
-static int adxl362_reg_access(struct adxl362_data *ctx, uint8_t cmd,
+static int adxl362_reg_access(const struct device *dev, uint8_t cmd,
 			      uint8_t reg_addr, void *data, size_t length)
 {
+	const struct adxl362_config *cfg = dev->config;
 	uint8_t access[2] = { cmd, reg_addr };
 	const struct spi_buf buf[2] = {
 		{
@@ -50,25 +50,20 @@ static int adxl362_reg_access(struct adxl362_data *ctx, uint8_t cmd,
 
 		tx.count = 1;
 
-		return spi_transceive(ctx->spi, &ctx->spi_cfg, &tx, &rx);
+		return spi_transceive_dt(&cfg->bus, &tx, &rx);
 	}
 
 	tx.count = 2;
 
-	return spi_write(ctx->spi, &ctx->spi_cfg, &tx);
+	return spi_write_dt(&cfg->bus, &tx);
 }
 
 static inline int adxl362_set_reg(const struct device *dev,
 				  uint16_t register_value,
 				  uint8_t register_address, uint8_t count)
 {
-	struct adxl362_data *adxl362_data = dev->data;
-
-	return adxl362_reg_access(adxl362_data,
-				  ADXL362_WRITE_REG,
-				  register_address,
-				  &register_value,
-				  count);
+	return adxl362_reg_access(dev, ADXL362_WRITE_REG,
+				  register_address, &register_value, count);
 }
 
 int adxl362_reg_write_mask(const struct device *dev, uint8_t register_address,
@@ -76,13 +71,9 @@ int adxl362_reg_write_mask(const struct device *dev, uint8_t register_address,
 {
 	int ret;
 	uint8_t tmp;
-	struct adxl362_data *adxl362_data = dev->data;
 
-	ret = adxl362_reg_access(adxl362_data,
-				 ADXL362_READ_REG,
-				 register_address,
-				 &tmp,
-				 1);
+	ret = adxl362_reg_access(dev, ADXL362_READ_REG,
+				 register_address, &tmp, 1);
 
 	if (ret) {
 		return ret;
@@ -91,22 +82,16 @@ int adxl362_reg_write_mask(const struct device *dev, uint8_t register_address,
 	tmp &= ~mask;
 	tmp |= data;
 
-	return adxl362_reg_access(adxl362_data,
-				  ADXL362_WRITE_REG,
-				  register_address,
-				  &tmp,
-				  1);
+	return adxl362_reg_access(dev, ADXL362_WRITE_REG,
+				  register_address, &tmp, 1);
 }
 
 static inline int adxl362_get_reg(const struct device *dev, uint8_t *read_buf,
 				  uint8_t register_address, uint8_t count)
 {
-	struct adxl362_data *adxl362_data = dev->data;
 
-	return adxl362_reg_access(adxl362_data,
-				  ADXL362_READ_REG,
-				  register_address,
-				  read_buf, count);
+	return adxl362_reg_access(dev, ADXL362_READ_REG,
+				  register_address, read_buf, count);
 }
 
 #if defined(CONFIG_ADXL362_TRIGGER)
@@ -115,23 +100,16 @@ static int adxl362_interrupt_config(const struct device *dev,
 				    uint8_t int2)
 {
 	int ret;
-	struct adxl362_data *adxl362_data = dev->data;
 
-	ret = adxl362_reg_access(adxl362_data,
-				  ADXL362_WRITE_REG,
-				  ADXL362_REG_INTMAP1,
-				  &int1,
-				  1);
+	ret = adxl362_reg_access(dev, ADXL362_WRITE_REG,
+				 ADXL362_REG_INTMAP1, &int1, 1);
 
 	if (ret) {
 		return ret;
 	}
 
-	return ret = adxl362_reg_access(adxl362_data,
-					ADXL362_WRITE_REG,
-					ADXL362_REG_INTMAP2,
-					&int2,
-					1);
+	return ret = adxl362_reg_access(dev, ADXL362_WRITE_REG,
+					ADXL362_REG_INTMAP2, &int2, 1);
 }
 
 int adxl362_get_status(const struct device *dev, uint8_t *status)
@@ -151,24 +129,6 @@ static int adxl362_software_reset(const struct device *dev)
 {
 	return adxl362_set_reg(dev, ADXL362_RESET_KEY,
 			       ADXL362_REG_SOFT_RESET, 1);
-}
-
-static int adxl362_set_power_mode(const struct device *dev, uint8_t mode)
-{
-	uint8_t old_power_ctl;
-	uint8_t new_power_ctl;
-	int ret;
-
-	ret = adxl362_get_reg(dev, &old_power_ctl, ADXL362_REG_POWER_CTL, 1);
-	if (ret) {
-		return ret;
-	}
-
-	new_power_ctl = old_power_ctl & ~ADXL362_POWER_CTL_MEASURE(0x3);
-	new_power_ctl = new_power_ctl |
-		      (mode *
-		       ADXL362_POWER_CTL_MEASURE(ADXL362_MEASURE_ON));
-	return adxl362_set_reg(dev, new_power_ctl, ADXL362_REG_POWER_CTL, 1);
 }
 
 #if defined(CONFIG_ADXL362_ACCEL_ODR_RUNTIME)
@@ -360,6 +320,12 @@ static int adxl362_attr_set(const struct device *dev,
 	case SENSOR_ATTR_UPPER_THRESH:
 	case SENSOR_ATTR_LOWER_THRESH:
 		return adxl362_attr_set_thresh(dev, chan, attr, val);
+	case SENSOR_ATTR_HYSTERESIS:
+	{
+		uint16_t timeout = val->val1;
+
+		return adxl362_set_reg(dev, (timeout & 0x7FF), ADXL362_REG_TIME_INACT_L, 2);
+	}
 	default:
 		/* Do nothing */
 		break;
@@ -393,7 +359,7 @@ static int adxl362_fifo_setup(const struct device *dev, uint8_t mode,
 		return ret;
 	}
 
-	ret = adxl362_set_reg(dev, water_mark_lvl, ADXL362_REG_FIFO_SAMPLES, 2);
+	ret = adxl362_set_reg(dev, water_mark_lvl, ADXL362_REG_FIFO_SAMPLES, 1);
 	if (ret) {
 		return ret;
 	}
@@ -640,6 +606,7 @@ static const struct sensor_driver_api adxl362_api_funcs = {
 
 static int adxl362_chip_init(const struct device *dev)
 {
+	const struct adxl362_config *config = dev->config;
 	int ret;
 
 	/* Configures activity detection.
@@ -717,8 +684,9 @@ static int adxl362_chip_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Places the device into measure mode. */
-	ret = adxl362_set_power_mode(dev, 1);
+	/* Places the device into measure mode, enable wakeup mode and autosleep if desired. */
+	LOG_DBG("setting pwrctl: 0x%02x", config->power_ctl);
+	ret = adxl362_set_reg(dev, config->power_ctl, ADXL362_REG_POWER_CTL, 1);
 	if (ret) {
 		return ret;
 	}
@@ -737,34 +705,13 @@ static int adxl362_chip_init(const struct device *dev)
 static int adxl362_init(const struct device *dev)
 {
 	const struct adxl362_config *config = dev->config;
-	struct adxl362_data *data = dev->data;
 	uint8_t value;
 	int err;
 
-	data->spi = device_get_binding(config->spi_name);
-	if (!data->spi) {
-		LOG_DBG("spi device not found: %s", config->spi_name);
+	if (!spi_is_ready(&config->bus)) {
+		LOG_DBG("spi device not ready: %s", config->bus.bus->name);
 		return -EINVAL;
 	}
-
-	data->spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
-	data->spi_cfg.frequency = config->spi_max_frequency;
-	data->spi_cfg.slave = config->spi_slave;
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	data->adxl362_cs_ctrl.gpio_dev =
-				device_get_binding(config->gpio_cs_port);
-	if (!data->adxl362_cs_ctrl.gpio_dev) {
-		LOG_ERR("Unable to get GPIO SPI CS device");
-		return -ENODEV;
-	}
-
-	data->adxl362_cs_ctrl.gpio_pin = config->cs_gpio;
-	data->adxl362_cs_ctrl.gpio_dt_flags = config->cs_flags;
-	data->adxl362_cs_ctrl.delay = 0U;
-
-	data->spi_cfg.cs = &data->adxl362_cs_ctrl;
-#endif
 
 	err = adxl362_software_reset(dev);
 
@@ -777,7 +724,7 @@ static int adxl362_init(const struct device *dev)
 
 	adxl362_get_reg(dev, &value, ADXL362_REG_PARTID, 1);
 	if (value != ADXL362_PART_ID) {
-		LOG_ERR("Failed: %d\n", value);
+		LOG_ERR("wrong part_id: %d\n", value);
 		return -ENODEV;
 	}
 
@@ -786,38 +733,38 @@ static int adxl362_init(const struct device *dev)
 	}
 
 #if defined(CONFIG_ADXL362_TRIGGER)
-	if (adxl362_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupt!");
-		return -EIO;
-	}
+	if (config->interrupt.port) {
+		if (adxl362_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupt!");
+			return -EIO;
+		}
 
-	if (adxl362_interrupt_config(dev,
-				     config->int1_config,
-				     config->int2_config) < 0) {
-		LOG_ERR("Failed to configure interrupt");
-		return -EIO;
+		if (adxl362_interrupt_config(dev,
+					config->int1_config,
+					config->int2_config) < 0) {
+			LOG_ERR("Failed to configure interrupt");
+			return -EIO;
+		}
 	}
 #endif
 
 	return 0;
 }
 
-static const struct adxl362_config adxl362_config = {
-	.spi_name = DT_INST_BUS_LABEL(0),
-	.spi_slave = DT_INST_REG_ADDR(0),
-	.spi_max_frequency = DT_INST_PROP(0, spi_max_frequency),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.gpio_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.cs_gpio = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-	.cs_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
-#endif
-#if defined(CONFIG_ADXL362_TRIGGER)
-	.gpio_port = DT_INST_GPIO_LABEL(0, int1_gpios),
-	.int_gpio = DT_INST_GPIO_PIN(0, int1_gpios),
-	.int_flags = DT_INST_GPIO_FLAGS(0, int1_gpios),
-#endif
-};
+#define ADXL362_DEFINE(inst)									\
+	static struct adxl362_data adxl362_data_##inst;						\
+												\
+	static const struct adxl362_config adxl362_config_##inst = {				\
+		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),	\
+		.power_ctl = ADXL362_POWER_CTL_MEASURE(ADXL362_MEASURE_ON) |			\
+			(DT_INST_PROP(inst, wakeup_mode) * ADXL362_POWER_CTL_WAKEUP) |		\
+			(DT_INST_PROP(inst, autosleep) * ADXL362_POWER_CTL_AUTOSLEEP),		\
+		IF_ENABLED(CONFIG_ADXL362_TRIGGER,						\
+			   (.interrupt = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, { 0 }),))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, adxl362_init, NULL, &adxl362_data_##inst,			\
+			&adxl362_config_##inst, POST_KERNEL,					\
+			CONFIG_SENSOR_INIT_PRIORITY, &adxl362_api_funcs);			\
 
-DEVICE_DT_INST_DEFINE(0, adxl362_init, NULL,
-		    &adxl362_data, &adxl362_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &adxl362_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(ADXL362_DEFINE)

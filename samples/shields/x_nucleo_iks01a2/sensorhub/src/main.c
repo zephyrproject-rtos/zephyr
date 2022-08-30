@@ -4,24 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 #include <stdio.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
 static int lsm6dsl_trig_cnt;
 
 static void lsm6dsl_trigger_handler(const struct device *dev,
-				     struct sensor_trigger *trig)
+				    const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ALL);
 	lsm6dsl_trig_cnt++;
 }
 #endif
-
-#define LSM6DSL_DEVNAME		DT_LABEL(DT_INST(0, st_lsm6dsl))
 
 void main(void)
 {
@@ -36,10 +34,10 @@ void main(void)
 #endif
 	struct sensor_value accel[3];
 	struct sensor_value gyro[3];
-	const struct device *lsm6dsl = device_get_binding(LSM6DSL_DEVNAME);
+	const struct device *const lsm6dsl = DEVICE_DT_GET_ONE(st_lsm6dsl);
 
-	if (lsm6dsl == NULL) {
-		printf("Could not get LSM6DSL device\n");
+	if (!device_is_ready(lsm6dsl)) {
+		printk("%s: device not ready.\n", lsm6dsl->name);
 		return;
 	}
 

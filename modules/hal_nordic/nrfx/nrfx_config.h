@@ -7,6 +7,7 @@
 #ifndef NRFX_CONFIG_H__
 #define NRFX_CONFIG_H__
 
+#include <zephyr/devicetree.h>
 
 /*
  * These are mappings of Kconfig options enabling nrfx drivers and particular
@@ -95,6 +96,10 @@
 
 #ifdef CONFIG_NRFX_GPIOTE
 #define NRFX_GPIOTE_ENABLED 1
+#endif
+
+#ifdef CONFIG_NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
+#define NRFX_GPIOTE_CONFIG_NUM_OF_EVT_HANDLERS CONFIG_NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
 #endif
 
 #ifdef CONFIG_NRFX_I2S
@@ -224,7 +229,8 @@
 #ifdef CONFIG_NRFX_SPIM4
 #define NRFX_SPIM4_ENABLED 1
 #endif
-#if defined(CONFIG_SPI_3_NRF_RX_DELAY) || defined(CONFIG_SPI_4_NRF_RX_DELAY)
+#if (DT_PROP(DT_NODELABEL(spi3), rx_delay_supported) || \
+	DT_PROP(DT_NODELABEL(spi4), rx_delay_supported))
 #define NRFX_SPIM_EXTENDED_ENABLED 1
 #endif
 

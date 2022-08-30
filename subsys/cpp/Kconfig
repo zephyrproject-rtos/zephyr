@@ -63,16 +63,24 @@ config LIB_CPLUSPLUS
 if LIB_CPLUSPLUS
 
 config EXCEPTIONS
-	bool "Enable C++ exceptions support"
+	bool "C++ exceptions support"
 	depends on !NEWLIB_LIBC_NANO
 	help
 	  This option enables support of C++ exceptions.
 
 config RTTI
-	bool "Enable C++ RTTI support"
+	bool "C++ RTTI support"
 	help
 	  This option enables support of C++ RTTI.
 
 endif # LIB_CPLUSPLUS
+
+config CPP_STATIC_INIT_GNU
+	# As of today only ARC MWDT toolchain doesn't support GNU-compatible
+	# initialization of CPP static objects, new toolchains can be added
+	# here if required.
+	def_bool "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
+	help
+	  GNU-compatible initialization of CPP static objects
 
 endif # CPLUSPLUS

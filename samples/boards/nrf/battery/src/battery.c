@@ -9,18 +9,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <zephyr.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/adc.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 
 #include "battery.h"
 
 LOG_MODULE_REGISTER(BATTERY, CONFIG_ADC_LOG_LEVEL);
 
 #define VBATT DT_PATH(vbatt)
+#define ZEPHYR_USER DT_PATH(zephyr_user)
 
 #ifdef CONFIG_BOARD_THINGY52_NRF52832
 /* This board uses a divider that reduces max voltage to
@@ -38,15 +39,9 @@ struct io_channel_config {
 	uint8_t channel;
 };
 
-struct gpio_channel_config {
-	const char *label;
-	uint8_t pin;
-	uint8_t flags;
-};
-
 struct divider_config {
 	struct io_channel_config io_channel;
-	struct gpio_channel_config power_gpios;
+	struct gpio_dt_spec power_gpios;
 	/* output_ohm is used as a flag value: if it is nonzero then
 	 * the battery is measured through a voltage divider;
 	 * otherwise it is assumed to be directly connected to Vdd.
@@ -60,38 +55,35 @@ static const struct divider_config divider_config = {
 	.io_channel = {
 		DT_IO_CHANNELS_INPUT(VBATT),
 	},
-#if DT_NODE_HAS_PROP(VBATT, power_gpios)
-	.power_gpios = {
-		DT_GPIO_LABEL(VBATT, power_gpios),
-		DT_GPIO_PIN(VBATT, power_gpios),
-		DT_GPIO_FLAGS(VBATT, power_gpios),
-	},
-#endif
+	.power_gpios = GPIO_DT_SPEC_GET_OR(VBATT, power_gpios, {}),
 	.output_ohm = DT_PROP(VBATT, output_ohms),
 	.full_ohm = DT_PROP(VBATT, full_ohms),
 #else /* /vbatt exists */
 	.io_channel = {
-		DT_LABEL(DT_NODELABEL(adc)),
+		DT_IO_CHANNELS_INPUT(ZEPHYR_USER),
 	},
 #endif /* /vbatt exists */
 };
 
 struct divider_data {
 	const struct device *adc;
-	const struct device *gpio;
 	struct adc_channel_cfg adc_cfg;
 	struct adc_sequence adc_seq;
 	int16_t raw;
 };
 static struct divider_data divider_data = {
+#if DT_NODE_HAS_STATUS(VBATT, okay)
 	.adc = DEVICE_DT_GET(DT_IO_CHANNELS_CTLR(VBATT)),
+#else
+	.adc = DEVICE_DT_GET(DT_IO_CHANNELS_CTLR(ZEPHYR_USER)),
+#endif
 };
 
 static int divider_setup(void)
 {
 	const struct divider_config *cfg = &divider_config;
 	const struct io_channel_config *iocp = &cfg->io_channel;
-	const struct gpio_channel_config *gcp = &cfg->power_gpios;
+	const struct gpio_dt_spec *gcp = &cfg->power_gpios;
 	struct divider_data *ddp = &divider_data;
 	struct adc_sequence *asp = &ddp->adc_seq;
 	struct adc_channel_cfg *accp = &ddp->adc_cfg;
@@ -102,17 +94,15 @@ static int divider_setup(void)
 		return -ENOENT;
 	}
 
-	if (gcp->label) {
-		ddp->gpio = device_get_binding(gcp->label);
-		if (ddp->gpio == NULL) {
-			LOG_ERR("Failed to get GPIO %s", gcp->label);
+	if (gcp->port) {
+		if (!device_is_ready(gcp->port)) {
+			LOG_ERR("%s: device not ready", gcp->port->name);
 			return -ENOENT;
 		}
-		rc = gpio_pin_configure(ddp->gpio, gcp->pin,
-					GPIO_OUTPUT_INACTIVE | gcp->flags);
+		rc = gpio_pin_configure_dt(gcp, GPIO_OUTPUT_INACTIVE);
 		if (rc != 0) {
 			LOG_ERR("Failed to control feed %s.%u: %d",
-				gcp->label, gcp->pin, rc);
+				gcp->port->name, gcp->pin, rc);
 			return rc;
 		}
 	}
@@ -168,12 +158,11 @@ int battery_measure_enable(bool enable)
 	int rc = -ENOENT;
 
 	if (battery_ok) {
-		const struct divider_data *ddp = &divider_data;
-		const struct gpio_channel_config *gcp = &divider_config.power_gpios;
+		const struct gpio_dt_spec *gcp = &divider_config.power_gpios;
 
 		rc = 0;
-		if (ddp->gpio) {
-			rc = gpio_pin_set(ddp->gpio, gcp->pin, enable);
+		if (gcp->port) {
+			rc = gpio_pin_set_dt(gcp, enable);
 		}
 	}
 	return rc;

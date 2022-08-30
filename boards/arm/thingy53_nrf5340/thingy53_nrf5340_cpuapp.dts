@@ -21,11 +21,6 @@
 	};
 
 	aliases {
-		usbd0 = &usbd;
+		watchdog0 = &wdt0;
 	};
-};
-
-&usbd {
-	compatible = "nordic,nrf-usbd";
-	status = "okay";
 };

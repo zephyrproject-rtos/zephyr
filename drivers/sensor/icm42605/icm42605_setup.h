@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ICM42605_ICM42605_SETUP_H_
 #define ZEPHYR_DRIVERS_SENSOR_ICM42605_ICM42605_SETUP_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 int icm42605_sensor_init(const struct device *dev);
 int icm42605_turn_on_fifo(const struct device *dev);

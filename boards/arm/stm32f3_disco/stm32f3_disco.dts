@@ -17,7 +17,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,can-primary = &can1;
+		zephyr,canbus = &can1;
 	};
 
 	leds {
@@ -68,6 +68,9 @@
 		led0 = &green_led_6;
 		led1 = &green_led_7;
 		sw0 = &user_button;
+		magn0 = &lsm303dlhc_magn;
+		watchdog0 = &iwdg;
+		accel0 = &lsm303dlhc_accel;
 	};
 };
 
@@ -94,38 +97,47 @@
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pc4 &usart1_rx_pc5>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pc10 &uart4_rx_pc11>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	lsm303dlhc-magn@1e {
+	lsm303dlhc_magn: lsm303dlhc-magn@1e {
 		compatible = "st,lsm303dlhc-magn";
 		reg = <0x1e>;
-		label = "LSM303DLHC-MAGN";
 	};
 
-	lsm303dlhc-accel@19 {
+	lsm303dlhc_accel: lsm303dlhc-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303dlhc-accel";
 		reg = <0x19>;
 		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
 			  <&gpioe 5 GPIO_ACTIVE_HIGH>;
-		label = "LSM303DLHC-ACCEL";
 	};
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pa9 &i2c2_sda_pa10>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -133,17 +145,20 @@
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
 		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
 		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
-&usb {
+zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -153,7 +168,9 @@
 
 &can1 {
 	pinctrl-0 = <&can_rx_pd0 &can_tx_pd1>;
+	pinctrl-names = "default";
 	status = "okay";
+	bus-speed = <125000>;
 };
 
 &flash0 {
@@ -166,7 +183,7 @@
 		/* Set 6Kb of storage at the end of the 256Kb of flash */
 		storage_partition: partition@3e800 {
 			label = "storage";
-			reg = <0x0003e800 0x00001800>;
+			reg = <0x0003e800 DT_SIZE_K(6)>;
 		};
 	};
 };
@@ -176,16 +193,22 @@
 };
 
 &timers1 {
+	st,prescaler = <10000>;
 	status = "okay";
 	pwm1: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
 		pinctrl-0 = <&tim1_ch1_pa8>;
+		pinctrl-names = "default";
 	};
 };
 
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pa0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 
@@ -193,6 +216,7 @@
 	status = "okay";
 	/* dac output pins(pa4,pa5,pa6) might conflict with spi1 pins */
 	pinctrl-0 = <&dac_out1_pa4>;
+	pinctrl-names = "default";
 };
 
 &dma1 {

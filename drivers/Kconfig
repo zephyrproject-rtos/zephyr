@@ -19,6 +19,8 @@ source "drivers/ec_host_cmd_periph/Kconfig"
 
 source "drivers/ethernet/Kconfig"
 
+source "drivers/mdio/Kconfig"
+
 source "drivers/net/Kconfig"
 
 source "drivers/serial/Kconfig"
@@ -37,9 +39,13 @@ source "drivers/interrupt_controller/Kconfig.shared_irq"
 
 source "drivers/spi/Kconfig"
 
+source "drivers/sdhc/Kconfig"
+
 source "drivers/i2c/Kconfig"
 
 source "drivers/i2s/Kconfig"
+
+source "drivers/dai/Kconfig"
 
 source "drivers/pwm/Kconfig"
 
@@ -50,6 +56,8 @@ source "drivers/adc/Kconfig"
 source "drivers/dac/Kconfig"
 
 source "drivers/watchdog/Kconfig"
+
+source "drivers/w1/Kconfig"
 
 source "drivers/clock_control/Kconfig"
 
@@ -116,5 +124,27 @@ source "drivers/disk/Kconfig"
 source "drivers/cache/Kconfig"
 
 source "drivers/syscon/Kconfig"
+
+source "drivers/bbram/Kconfig"
+
+source "drivers/fpga/Kconfig"
+
+source "drivers/pinctrl/Kconfig"
+
+source "drivers/mbox/Kconfig"
+
+source "drivers/mm/Kconfig"
+
+source "drivers/power_domain/Kconfig"
+
+source "drivers/usbc/Kconfig"
+
+source "drivers/reset/Kconfig"
+
+source "drivers/mipi_dsi/Kconfig"
+
+source "drivers/coredump/Kconfig"
+
+source "drivers/xen/Kconfig"
 
 endmenu

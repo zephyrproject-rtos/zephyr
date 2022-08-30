@@ -3,15 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 #include <kernel_arch_data.h>
 #include <kernel_arch_func.h>
-#include <drivers/interrupt_controller/sysapic.h>
-#include <drivers/interrupt_controller/loapic.h>
-#include <irq.h>
-#include <logging/log.h>
+#include <zephyr/drivers/interrupt_controller/sysapic.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
+#include <zephyr/irq.h>
+#include <zephyr/logging/log.h>
 #include <x86_mmu.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -26,8 +26,17 @@ unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
 
 #define NR_IRQ_VECTORS (IV_NR_VECTORS - IV_IRQS)  /* # vectors free for IRQs */
 
-void (*x86_irq_funcs[NR_IRQ_VECTORS])(const void *);
+void (*x86_irq_funcs[NR_IRQ_VECTORS])(const void *arg);
 const void *x86_irq_args[NR_IRQ_VECTORS];
+
+#if defined(CONFIG_INTEL_VTD_ICTL)
+
+#include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/intel_vtd.h>
+
+static const struct device *const vtd = DEVICE_DT_GET_ONE(intel_vt_d);
+
+#endif /* CONFIG_INTEL_VTD_ICTL */
 
 static void irq_spurious(const void *arg)
 {
@@ -83,10 +92,9 @@ int z_x86_allocate_vector(unsigned int priority, int prev_vector)
 void z_x86_irq_connect_on_vector(unsigned int irq,
 				 uint8_t vector,
 				 void (*func)(const void *arg),
-				 const void *arg, uint32_t flags)
+				 const void *arg)
 {
 	_irq_to_interrupt_vector[irq] = vector;
-	z_irq_controller_irq_config(vector, irq, flags);
 	x86_irq_funcs[vector - IV_IRQS] = func;
 	x86_irq_args[vector - IV_IRQS] = arg;
 }
@@ -110,7 +118,19 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 	vector = z_x86_allocate_vector(priority, -1);
 	if (vector >= 0) {
-		z_x86_irq_connect_on_vector(irq, vector, func, arg, flags);
+#if defined(CONFIG_INTEL_VTD_ICTL)
+		if (device_is_ready(vtd)) {
+			int irte = vtd_allocate_entries(vtd, 1);
+
+			__ASSERT(irte >= 0, "IRTE allocation must succeed");
+
+			vtd_set_irte_vector(vtd, irte, vector);
+			vtd_set_irte_irq(vtd, irte, irq);
+		}
+#endif /* CONFIG_INTEL_VTD_ICTL */
+
+		z_irq_controller_irq_config(vector, irq, flags);
+		z_x86_irq_connect_on_vector(irq, vector, func, arg);
 	}
 
 	irq_unlock(key);
@@ -118,7 +138,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 }
 
 #ifdef CONFIG_IRQ_OFFLOAD
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
@@ -156,3 +176,67 @@ void arch_sched_ipi(void)
 	z_loapic_ipi(0, LOAPIC_ICR_IPI_OTHERS, CONFIG_SCHED_IPI_VECTOR);
 }
 #endif
+
+/* The first bit is used to indicate whether the list of reserved interrupts
+ * have been initialized based on content stored in the irq_alloc linker
+ * section in ROM.
+ */
+#define IRQ_LIST_INITIALIZED 0
+
+static ATOMIC_DEFINE(irq_reserved, CONFIG_MAX_IRQ_LINES);
+
+static void irq_init(void)
+{
+	extern uint8_t __irq_alloc_start[];
+	extern uint8_t __irq_alloc_end[];
+	const uint8_t *irq;
+
+	for (irq = __irq_alloc_start; irq < __irq_alloc_end; irq++) {
+		__ASSERT_NO_MSG(*irq < CONFIG_MAX_IRQ_LINES);
+		atomic_set_bit(irq_reserved, *irq);
+	}
+}
+
+unsigned int arch_irq_allocate(void)
+{
+	unsigned int key = irq_lock();
+	int i;
+
+	if (!atomic_test_and_set_bit(irq_reserved, IRQ_LIST_INITIALIZED)) {
+		irq_init();
+	}
+
+	for (i = 0; i < ARRAY_SIZE(irq_reserved); i++) {
+		unsigned int fz, irq;
+
+		while ((fz = find_lsb_set(~atomic_get(&irq_reserved[i])))) {
+			irq = (fz - 1) + (i * sizeof(atomic_val_t) * 8);
+			if (irq >= CONFIG_MAX_IRQ_LINES) {
+				break;
+			}
+
+			if (!atomic_test_and_set_bit(irq_reserved, irq)) {
+				irq_unlock(key);
+				return irq;
+			}
+		}
+	}
+
+	irq_unlock(key);
+
+	return UINT_MAX;
+}
+
+void arch_irq_set_used(unsigned int irq)
+{
+	unsigned int key = irq_lock();
+
+	atomic_set_bit(irq_reserved, irq);
+
+	irq_unlock(key);
+}
+
+bool arch_irq_is_used(unsigned int irq)
+{
+	return atomic_test_bit(irq_reserved, irq);
+}

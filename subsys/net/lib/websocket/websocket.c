@@ -10,25 +10,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <strings.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <sys/fdtable.h>
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/http_client.h>
-#include <net/websocket.h>
+#include <zephyr/sys/fdtable.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#if defined(CONFIG_POSIX_API)
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/sys/socket.h>
+#else
+#include <zephyr/net/socket.h>
+#endif
+#include <zephyr/net/http_client.h>
+#include <zephyr/net/websocket.h>
 
-#include <random/rand32.h>
-#include <sys/byteorder.h>
-#include <sys/base64.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/base64.h>
 #include <mbedtls/sha1.h>
 
 #include "net_private.h"
@@ -46,7 +51,6 @@ static struct websocket_context contexts[CONFIG_WEBSOCKET_MAX_CONTEXTS];
 
 static struct k_sem contexts_lock;
 
-extern const struct socket_op_vtable sock_fd_op_vtable;
 static const struct socket_op_vtable websocket_fd_op_vtable;
 
 #if defined(CONFIG_NET_TEST)
@@ -275,7 +279,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	ctx->sec_accept_key = sec_accept_key;
 	ctx->http_cb = wreq->http_cb;
 
-	mbedtls_sha1_ret((const unsigned char *)&rnd_value, sizeof(rnd_value),
+	mbedtls_sha1((const unsigned char *)&rnd_value, sizeof(rnd_value),
 			 sec_accept_key);
 
 	ret = base64_encode(sec_ws_key + sizeof("Sec-Websocket-Key: ") - 1,
@@ -283,7 +287,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 					sizeof("Sec-Websocket-Key: "),
 			    &olen, sec_accept_key,
 			    /* We are only interested in 16 first bytes so
-			     * substract 4 from the SHA-1 length
+			     * subtract 4 from the SHA-1 length
 			     */
 			    sizeof(sec_accept_key) - 4);
 	if (ret) {
@@ -339,7 +343,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	strncpy(key_accept + key_len, WS_MAGIC, olen);
 
 	/* This SHA-1 value is then checked when we receive the response */
-	mbedtls_sha1_ret(key_accept, olen + key_len, sec_accept_key);
+	mbedtls_sha1(key_accept, olen + key_len, sec_accept_key);
 
 	ret = http_client_req(sock, &req, timeout, ctx);
 	if (ret < 0) {
@@ -435,10 +439,129 @@ static int websocket_close_vmeth(void *obj)
 	return ret;
 }
 
+static inline int websocket_poll_offload(struct zsock_pollfd *fds, int nfds,
+					 int timeout)
+{
+	int fd_backup[CONFIG_NET_SOCKETS_POLL_MAX];
+	const struct fd_op_vtable *vtable;
+	void *ctx;
+	int ret = 0;
+	int i;
+
+	/* Overwrite websocket file descriptors with underlying ones. */
+	for (i = 0; i < nfds; i++) {
+		fd_backup[i] = fds[i].fd;
+
+		ctx = z_get_fd_obj(fds[i].fd,
+				   (const struct fd_op_vtable *)
+						     &websocket_fd_op_vtable,
+				   0);
+		if (ctx == NULL) {
+			continue;
+		}
+
+		fds[i].fd = ((struct websocket_context *)ctx)->real_sock;
+	}
+
+	/* Get offloaded sockets vtable. */
+	ctx = z_get_fd_obj_and_vtable(fds[0].fd,
+				      (const struct fd_op_vtable **)&vtable,
+				      NULL);
+	if (ctx == NULL) {
+		errno = EINVAL;
+		ret = -1;
+		goto exit;
+	}
+
+	ret = z_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_OFFLOAD,
+				   fds, nfds, timeout);
+
+exit:
+	/* Restore original fds. */
+	for (i = 0; i < nfds; i++) {
+		fds[i].fd = fd_backup[i];
+	}
+
+	return ret;
+}
+
 static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
-	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
+	struct websocket_context *ctx = obj;
+
+	switch (request) {
+	case ZFD_IOCTL_POLL_OFFLOAD: {
+		struct zsock_pollfd *fds;
+		int nfds;
+		int timeout;
+
+		fds = va_arg(args, struct zsock_pollfd *);
+		nfds = va_arg(args, int);
+		timeout = va_arg(args, int);
+
+		return websocket_poll_offload(fds, nfds, timeout);
+	}
+
+	default: {
+		const struct fd_op_vtable *vtable;
+		void *core_obj;
+
+		core_obj = z_get_fd_obj_and_vtable(
+				ctx->real_sock,
+				(const struct fd_op_vtable **)&vtable,
+				NULL);
+		if (core_obj == NULL) {
+			errno = EBADF;
+			return -1;
+		}
+
+		/* Pass the call to the core socket implementation. */
+		return vtable->ioctl(core_obj, request, args);
+	}
+	}
+
+	return 0;
 }
+
+#if !defined(CONFIG_NET_TEST)
+static int sendmsg_all(int sock, const struct msghdr *message, int flags)
+{
+	int ret, i;
+	size_t offset = 0;
+	size_t total_len = 0;
+
+	for (i = 0; i < message->msg_iovlen; i++) {
+		total_len += message->msg_iov[i].iov_len;
+	}
+
+	while (offset < total_len) {
+		ret = zsock_sendmsg(sock, message, flags);
+		if (ret < 0) {
+			return -errno;
+		}
+
+		offset += ret;
+		if (offset >= total_len) {
+			break;
+		}
+
+		/* Update msghdr for the next iteration. */
+		for (i = 0; i < message->msg_iovlen; i++) {
+			if (ret < message->msg_iov[i].iov_len) {
+				message->msg_iov[i].iov_len -= ret;
+				message->msg_iov[i].iov_base =
+					(uint8_t *)message->msg_iov[i].iov_base + ret;
+				break;
+			}
+
+			ret -= message->msg_iov[i].iov_len;
+			message->msg_iov[i].iov_len = 0;
+		}
+	}
+
+	return total_len;
+}
+#endif /* !defined(CONFIG_NET_TEST) */
 
 static int websocket_prepare_and_send(struct websocket_context *ctx,
 				      uint8_t *header, size_t header_len,
@@ -475,8 +598,8 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 		tout = K_MSEC(timeout);
 	}
 
-	return sendmsg(ctx->real_sock, &msg,
-		       K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0);
+	return sendmsg_all(ctx->real_sock, &msg,
+			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0);
 #endif /* CONFIG_NET_TEST */
 }
 

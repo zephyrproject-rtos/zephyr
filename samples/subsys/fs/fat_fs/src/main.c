@@ -6,11 +6,11 @@
 
 /* Sample which uses the filesystem API and SDHC driver */
 
-#include <zephyr.h>
-#include <device.h>
-#include <storage/disk_access.h>
-#include <logging/log.h>
-#include <fs/fs.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/storage/disk_access.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/fs/fs.h>
 #include <ff.h>
 
 LOG_MODULE_REGISTER(main);

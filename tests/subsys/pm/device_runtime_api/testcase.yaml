@@ -1,0 +1,3 @@
+tests:
+  pm.device_runtime.api:
+    tags: pm

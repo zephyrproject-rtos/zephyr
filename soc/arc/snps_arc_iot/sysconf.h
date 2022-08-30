@@ -28,7 +28,7 @@ typedef struct sysconf_reg {
 	volatile uint32_t PLLSTAT;	/* PLL status register */
 	volatile uint32_t PLLCON;	/* PLL control register */
 	volatile uint32_t reserved3;	/* 0x30 */
-	volatile uint32_t AHBCLKEN;	/* AHB module clock enbale */
+	volatile uint32_t AHBCLKEN;	/* AHB module clock enable */
 	volatile uint32_t reserved4[2];  /* 0x38, 0x3c */
 	volatile uint32_t I2S_TX_SCLKDIV; /* I2S TX SCLK divisor */
 	volatile uint32_t I2S_RX_SCLKDIV; /* I2S RX SCLK divisor */
@@ -46,7 +46,7 @@ typedef struct sysconf_reg {
 	volatile uint32_t ARDUINO_MUX;	/* arduino IO mux */
 	volatile uint32_t USBPHY_PLL;	/* USBPHY PLL */
 	volatile uint32_t USBCFG;	/* USB configuration */
-	volatile uint32_t TIMER_PAUSE;	/* PWM timer puse */
+	volatile uint32_t TIMER_PAUSE;	/* PWM timer pause */
 	volatile uint32_t GPIO8B_DBCLK_DIV; /* GPIO8B DBCLK divisor */
 	volatile uint32_t RESET_PD_VECTOR; /* reset powerdown vector */
 	volatile uint32_t UART3SCLK_DIV;  /* UART3SCLK_DIV */

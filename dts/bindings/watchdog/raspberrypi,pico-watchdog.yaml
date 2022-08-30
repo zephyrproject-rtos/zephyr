@@ -1,0 +1,16 @@
+# Copyright (c) 2022, Jamie McCrae
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico Watchdog
+
+compatible: "raspberrypi,pico-watchdog"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    clocks:
+      required: true
+      description: Crystal oscillator source clock

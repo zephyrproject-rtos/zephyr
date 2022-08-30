@@ -15,10 +15,8 @@ CPU and the following devices:
 - Cortex-M System Design Kit GPIO
 - Cortex-M System Design Kit UART
 
-.. image:: img/v2m_musca_b1.png
-     :width: 435px
+.. image:: img/v2m_musca_b1.jpg
      :align: center
-     :height: 362px
      :alt: ARM V2M Musca B1
 
 More information about the board can be found at the `V2M Musca B1 Website`_.
@@ -365,10 +363,10 @@ For more information refer to the `Srecord Manual`_.
 
 .. code-block:: bash
 
-   srec_cat $BIN_BOOLOADER -Binary -offset $FLASH_OFFSET $BIN_SNS -Binary -offset $IMAGE_OFFSET -o $HEX_FLASHABLE -Intel
+   srec_cat $BIN_BOOTLOADER -Binary -offset $FLASH_OFFSET $BIN_SNS -Binary -offset $IMAGE_OFFSET -o $HEX_FLASHABLE -Intel
 
    # For a 128K bootloader IMAGE_OFFSET = $FLASH_OFFSET + 0x20000
-   srec_cat $BIN_BOOLOADER -Binary -offset 0xA000000 $BIN_SNS -Binary -offset 0xA020000 -o $HEX_FLASHABLE -Intel
+   srec_cat $BIN_BOOTLOADER -Binary -offset 0xA000000 $BIN_SNS -Binary -offset 0xA020000 -o $HEX_FLASHABLE -Intel
 
 Connect the V2M Musca B1 to your host computer using the USB port. You should
 see a USB connection exposing a Mass Storage (MUSCA_B) and a USB Serial Port.

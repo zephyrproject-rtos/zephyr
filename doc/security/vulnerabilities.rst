@@ -345,7 +345,7 @@ UpdateHub Might Dereference An Uninitialized Pointer
 In updatehub_probe, right after JSON parsing is complete, objects\[1]
 is accessed from the output structure in two different places. If the
 JSON contained less than two elements, this access would reference
-unitialized stack memory. This could result in a crash, denial of
+uninitialized stack memory. This could result in a crash, denial of
 service, or possibly an information leak.
 
 Recommend disabling updatehub until such a time as a fix can be made
@@ -784,6 +784,24 @@ Possible overflow in mempool
 CVE-2021
 ========
 
+CVE-2021-3319
+-------------
+
+DOS: Incorrect 802154 Frame Validation for Omitted Source / Dest Addresses
+
+Improper processing of omitted source and destination addresses in
+ieee802154 frame validation (ieee802154_validate_frame)
+
+This has been fixed in main for v2.5.0
+
+- `CVE-2020-3319 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3319>`_
+
+- `Zephyr project bug tracker GHSA-94jg-2p6q-5364
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-94jg-2p6q-5364>`_
+
+- `PR31908 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/31908>`_
+
 CVE-2021-3320
 -------------------
 Mismatch between validation and handling of 802154 ACK frames, where
@@ -814,12 +832,15 @@ CVE-2021-3323
 
 Integer Underflow in 6LoWPAN IPHC Header Uncompression
 
+This has been fixed in main for v2.5.0
+
 - `CVE-2020-3323 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3323>`_
 
-- `Zephyr project bug tracker ZEPSEC-116
-  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-116>`_
+- `Zephyr project bug tracker GHSA-89j6-qpxf-pfpc
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-89j6-qpxf-pfpc>`_
 
-- This issue has not been fixed.
+- `PR 31971 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/31971>`_
 
 CVE-2021-3430
 -------------
@@ -938,6 +959,36 @@ This has been fixed in main for v2.6.0
 - `PR 33418 fix for 1.14.2
   <https://github.com/zephyrproject-rtos/zephyr/pull/33418>`_
 
+CVE-2021-3436
+-------------
+
+Bluetooth: Possible to overwrite an existing bond during keys
+distribution phase when the identity address of the bond is known
+
+During the distribution of the identity address information we don’t
+check for an existing bond with the same identity address.This means
+that a duplicate entry will be created in RAM while the newest entry
+will overwrite the existing one in persistent storage.
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3436 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3436>`_
+
+- `Zephyr project bug tracker GHSA-j76f-35mc-4h63
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-j76f-35mc-4h63>`_
+
+- `PR 33266 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33266>`_
+
+- `PR 33432 fix for 2.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33432>`_
+
+- `PR 33433 fix for 2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33433>`_
+
+- `PR 33718 fix for 1.14.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33718>`_
+
 CVE-2021-3454
 -------------
 
@@ -989,7 +1040,147 @@ This has been fixed in main for v2.6.0
 - `PR 36105 fix for 2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/36105>`_
 
+CVE-2021-3510
+-------------
+
+Zephyr JSON decoder incorrectly decodes array of array
+
+When using JSON_OBJ_DESCR_ARRAY_ARRAY, the subarray is has the token
+type JSON_TOK_LIST_START, but then assigns to the object part of the
+union. arr_parse then takes the offset of the array-object (which has
+nothing todo with the list) treats it as relative to the parent
+object, and stores the length of the subarray in there.
+
+This has been fixed in main for v2.7.0
+
+- `CVE-2021-3510 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3510>`_
+
+- `Zephyr project bug tracker GHSA-289f-7mw3-2qf4
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-289f-7mw3-2qf4>`_
+
+- `PR 36340 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/36340>`_
+
+- `PR 37816 fix for 2.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/37816>`_
+
 CVE-2021-3581
 -------------
 
-Under embargo until 2021/09/04
+HCI data not properly checked leads to memory overflow in the Bluetooth stack
+
+In the process of setting SCAN_RSP through the HCI command, the Zephyr
+Bluetooth protocol stack did not effectively check the length of the
+incoming HCI data. Causes memory overflow, and then the data in the
+memory is overwritten, and may even cause arbitrary code execution.
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3581 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3581>`_
+
+- `Zephyr project bug tracker GHSA-8q65-5gqf-fmw5
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-8q65-5gqf-fmw5>`_
+
+- `PR 35935 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/35935>`_
+
+- `PR 35984 fix for 2.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/35984>`_
+
+- `PR 35985 fix for 2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/35985>`_
+
+- `PR 35985 fix for 1.14
+  <https://github.com/zephyrproject-rtos/zephyr/pull/35985>`_
+
+CVE-2021-3625
+-------------
+
+Buffer overflow in Zephyr USB DFU DNLOAD
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3625 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3625>`_
+
+- `Zephyr project bug tracker GHSA-c3gr-hgvr-f363
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-c3gr-hgvr-f363>`_
+
+- `PR 36694 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/36694>`_
+
+CVE-2021-3835
+-------------
+
+Buffer overflow in Zephyr USB device class
+
+This has been fixed in main for v3.0.0
+
+- `CVE-2021-3835 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3835>`_
+
+- `Zephyr project bug tracker GHSA-fm6v-8625-99jf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-fm6v-8625-99jf>`_
+
+- `PR 42093 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/42093>`_
+
+- `PR 42167 fix for 2.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/42167>`_
+
+CVE-2021-3861
+-------------
+
+Buffer overflow in the RNDIS USB device class
+
+This has been fixed in main for v3.0.0
+
+- `CVE-2021-3861 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3861>`_
+
+- `Zephyr project bug tracker GHSA-hvfp-w4h8-gxvj
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hvfp-w4h8-gxvj>`_
+
+- `PR 39725 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/39725>`_
+
+CVE-2021-3966
+-------------
+
+Usb bluetooth device ACL read cb buffer overflow
+
+This has been fixed in main for v3.0.0
+
+- `Zephyr project bug tracker GHSA-hfxq-3w6x-fv2m
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hfxq-3w6x-fv2m>`_
+
+- `PR 42093 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/42093>`_
+
+- `PR 42167 fix for v2.7.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/42167>`_
+
+CVE-2022-0553
+-------------
+
+Possible to retrieve unencrypted firmware image
+
+This has been fixed in main for v3.0.0
+
+- `Zephyr project bug tracker GHSA-wrj2-9vj9-rrcp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wrj2-9vj9-rrcp>`_
+
+- `PR 42424 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/42424>`_
+
+CVE-2022-1041
+--------------
+
+Under embargo until 2022/06/19
+
+CVE-2022-1042
+--------------
+
+Under embargo until 2022/06/19
+
+CVE-2022-1841
+--------------
+
+Under embargo until 2022/08/18

@@ -1,36 +1,20 @@
 /*
  * Copyright (c) 2020 Vestas Wind Systems A/S
+ * Copyright 2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT nxp_kinetis_acmp
 
-#include <device.h>
-#include <drivers/sensor.h>
-#include <drivers/sensor/mcux_acmp.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/mcux_acmp.h>
+#include <zephyr/logging/log.h>
 #include <fsl_acmp.h>
+#include <zephyr/drivers/pinctrl.h>
 
 LOG_MODULE_REGISTER(mcux_acmp, CONFIG_SENSOR_LOG_LEVEL);
-
-#if defined(FSL_FEATURE_ACMP_HAS_C1_INPSEL_BIT) && (FSL_FEATURE_ACMP_HAS_C1_INPSEL_BIT == 1U)
-#define MCUX_ACMP_HAS_INPSEL 1
-#else
-#define MCUX_ACMP_HAS_INPSEL 0
-#endif
-
-#if defined(FSL_FEATURE_ACMP_HAS_C1_INNSEL_BIT) && (FSL_FEATURE_ACMP_HAS_C1_INNSEL_BIT == 1U)
-#define MCUX_ACMP_HAS_INNSEL 1
-#else
-#define MCUX_ACMP_HAS_INNSEL 0
-#endif
-
-#if defined(FSL_FEATURE_ACMP_HAS_C0_OFFSET_BIT) && (FSL_FEATURE_ACMP_HAS_C0_OFFSET_BIT == 1U)
-#define MCUX_ACMP_HAS_OFFSET 1
-#else
-#define MCUX_ACMP_HAS_OFFSET 0
-#endif
 
 #define MCUX_ACMP_DAC_LEVELS 256
 #define MCUX_ACMP_INPUT_CHANNELS 8
@@ -58,6 +42,7 @@ BUILD_ASSERT(kACMP_PortInputFromMux == 1);
 struct mcux_acmp_config {
 	CMP_Type *base;
 	acmp_filter_config_t filter;
+	const struct pinctrl_dev_config *pincfg;
 #ifdef CONFIG_MCUX_ACMP_TRIGGER
 	void (*irq_config_func)(const struct device *dev);
 #endif /* CONFIG_MCUX_ACMP_TRIGGER */
@@ -71,6 +56,9 @@ struct mcux_acmp_data {
 	acmp_config_t config;
 	acmp_channel_config_t channels;
 	acmp_dac_config_t dac;
+#if MCUX_ACMP_HAS_DISCRETE_MODE
+	acmp_discrete_mode_config_t discrete_config;
+#endif
 #ifdef CONFIG_MCUX_ACMP_TRIGGER
 	const struct device *dev;
 	sensor_trigger_handler_t rising;
@@ -187,6 +175,72 @@ static int mcux_acmp_attr_set(const struct device *dev,
 			return -EINVAL;
 		}
 		break;
+#if MCUX_ACMP_HAS_DISCRETE_MODE
+	case SENSOR_ATTR_MCUX_ACMP_POSITIVE_DISCRETE_MODE:
+		if (val1 <= 1 && val1 >= 0) {
+			LOG_DBG("pdiscrete = %d", val1);
+			data->discrete_config.enablePositiveChannelDiscreteMode = val1;
+			ACMP_SetDiscreteModeConfig(config->base, &data->discrete_config);
+		} else {
+			return -EINVAL;
+		}
+		break;
+	case SENSOR_ATTR_MCUX_ACMP_NEGATIVE_DISCRETE_MODE:
+		if (val1 <= 1 && val1 >= 0) {
+			LOG_DBG("ndiscrete = %d", val1);
+			data->discrete_config.enableNegativeChannelDiscreteMode = val1;
+			ACMP_SetDiscreteModeConfig(config->base, &data->discrete_config);
+		} else {
+			return -EINVAL;
+		}
+		break;
+	case SENSOR_ATTR_MCUX_ACMP_DISCRETE_CLOCK:
+		if (val1 <= kACMP_DiscreteClockFast && val1 >= kACMP_DiscreteClockSlow) {
+			LOG_DBG("discreteClk = %d", val1);
+			data->discrete_config.clockSource = val1;
+			ACMP_SetDiscreteModeConfig(config->base, &data->discrete_config);
+		} else {
+			return -EINVAL;
+		}
+		break;
+	case SENSOR_ATTR_MCUX_ACMP_DISCRETE_ENABLE_RESISTOR_DIVIDER:
+		if (val1 <= 1 && val1 >= 0) {
+			LOG_DBG("discreteClk = %d", val1);
+			data->discrete_config.enableResistorDivider = val1;
+			ACMP_SetDiscreteModeConfig(config->base, &data->discrete_config);
+		} else {
+			return -EINVAL;
+		}
+		break;
+	case SENSOR_ATTR_MCUX_ACMP_DISCRETE_SAMPLE_TIME:
+		if (val1 <= kACMP_DiscreteSampleTimeAs256T &&
+		    val1 >= kACMP_DiscreteSampleTimeAs1T) {
+			LOG_DBG("discrete sampleTime = %d", val1);
+			data->discrete_config.sampleTime = val1;
+			ACMP_SetDiscreteModeConfig(config->base, &data->discrete_config);
+		} else {
+			return -EINVAL;
+		}
+		break;
+	case SENSOR_ATTR_MCUX_ACMP_DISCRETE_PHASE1_TIME:
+		if (val1 <= kACMP_DiscretePhaseTimeAlt7 && val1 >= kACMP_DiscretePhaseTimeAlt0) {
+			LOG_DBG("discrete phase1Time = %d", val1);
+			data->discrete_config.phase1Time = val1;
+			ACMP_SetDiscreteModeConfig(config->base, &data->discrete_config);
+		} else {
+			return -EINVAL;
+		}
+		break;
+	case SENSOR_ATTR_MCUX_ACMP_DISCRETE_PHASE2_TIME:
+		if (val1 <= kACMP_DiscretePhaseTimeAlt7 && val1 >= kACMP_DiscretePhaseTimeAlt0) {
+			LOG_DBG("discrete phase2Time = %d", val1);
+			data->discrete_config.phase2Time = val1;
+			ACMP_SetDiscreteModeConfig(config->base, &data->discrete_config);
+		} else {
+			return -EINVAL;
+		}
+		break;
+#endif /* MCUX_ACMP_HAS_DISCRETE_MODE */
 	default:
 		return -ENOTSUP;
 	}
@@ -238,6 +292,29 @@ static int mcux_acmp_attr_get(const struct device *dev,
 	case SENSOR_ATTR_MCUX_ACMP_NEGATIVE_MUX_INPUT:
 		val->val1 = data->channels.minusMuxInput;
 		break;
+#if MCUX_ACMP_HAS_DISCRETE_MODE
+	case SENSOR_ATTR_MCUX_ACMP_POSITIVE_DISCRETE_MODE:
+		val->val1 = data->discrete_config.enablePositiveChannelDiscreteMode;
+		break;
+	case SENSOR_ATTR_MCUX_ACMP_NEGATIVE_DISCRETE_MODE:
+		val->val1 = data->discrete_config.enableNegativeChannelDiscreteMode;
+		break;
+	case SENSOR_ATTR_MCUX_ACMP_DISCRETE_CLOCK:
+		val->val1 = data->discrete_config.clockSource;
+		break;
+	case SENSOR_ATTR_MCUX_ACMP_DISCRETE_ENABLE_RESISTOR_DIVIDER:
+		val->val1 = data->discrete_config.enableResistorDivider;
+		break;
+	case SENSOR_ATTR_MCUX_ACMP_DISCRETE_SAMPLE_TIME:
+		val->val1 = data->discrete_config.sampleTime;
+		break;
+	case SENSOR_ATTR_MCUX_ACMP_DISCRETE_PHASE1_TIME:
+		val->val1 = data->discrete_config.phase1Time;
+		break;
+	case SENSOR_ATTR_MCUX_ACMP_DISCRETE_PHASE2_TIME:
+		val->val1 = data->discrete_config.phase2Time;
+		break;
+#endif /* MCUX_ACMP_HAS_DISCRETE_MODE */
 	default:
 		return -ENOTSUP;
 	}
@@ -351,12 +428,23 @@ static int mcux_acmp_init(const struct device *dev)
 {
 	const struct mcux_acmp_config *config = dev->config;
 	struct mcux_acmp_data *data = dev->data;
+	int err;
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
 
 	ACMP_GetDefaultConfig(&data->config);
 	data->config.enableHighSpeed = config->high_speed;
 	data->config.useUnfilteredOutput = config->unfiltered;
 	data->config.enablePinOut = config->output;
 	ACMP_Init(config->base, &data->config);
+
+#if MCUX_ACMP_HAS_DISCRETE_MODE
+	ACMP_GetDefaultDiscreteModeConfig(&data->discrete_config);
+	ACMP_SetDiscreteModeConfig(config->base, &data->discrete_config);
+#endif
 
 	ACMP_EnableWindowMode(config->base, config->window);
 	ACMP_SetFilterConfig(config->base, &config->filter);
@@ -402,6 +490,7 @@ static const struct mcux_acmp_config mcux_acmp_config_##n = {		\
 	.unfiltered = DT_INST_PROP(n, nxp_use_unfiltered_output),	\
 	.output = DT_INST_PROP(n, nxp_enable_output_pin),		\
 	.window = DT_INST_PROP(n, nxp_window_mode),			\
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	config_func_init						\
 }
 
@@ -430,6 +519,8 @@ static const struct mcux_acmp_config mcux_acmp_config_##n = {		\
 	static struct mcux_acmp_data mcux_acmp_data_##n;		\
 									\
 	static const struct mcux_acmp_config mcux_acmp_config_##n;	\
+									\
+	PINCTRL_DT_INST_DEFINE(n);					\
 									\
 	DEVICE_DT_INST_DEFINE(n, &mcux_acmp_init,			\
 			      NULL,					\

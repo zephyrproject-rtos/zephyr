@@ -11,13 +11,13 @@
  * POSIX arch and InfClock SOC
  */
 #include "zephyr/types.h"
-#include "irq.h"
-#include "device.h"
-#include <drivers/timer/system_timer.h>
-#include "sys_clock.h"
+#include <zephyr/irq.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
 #include "timer_model.h"
 #include "soc.h"
-#include <arch/posix/posix_trace.h>
+#include <zephyr/arch/posix/posix_trace.h>
 
 static uint64_t tick_period; /* System tick period in microseconds */
 /* Time (microseconds since boot) of the last timer tick interrupt */
@@ -28,6 +28,11 @@ static uint64_t last_tick_time;
  * (number of microseconds since boot in 32bits)
  */
 uint32_t sys_clock_cycle_get_32(void)
+{
+	return hwm_get_time();
+}
+
+uint64_t sys_clock_cycle_get_64(void)
 {
 	return hwm_get_time();
 }
@@ -53,26 +58,6 @@ static void np_timer_isr(const void *arg)
 void np_timer_isr_test_hook(const void *arg)
 {
 	np_timer_isr(NULL);
-}
-
-/*
- * @brief Initialize system timer driver
- *
- * Enable the hw timer, setting its tick period, and setup its interrupt
- */
-int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	tick_period = 1000000ul / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-
-	last_tick_time = hwm_get_time();
-	hwtimer_enable(tick_period);
-
-	IRQ_CONNECT(TIMER_TICK_IRQ, 1, np_timer_isr, 0, 0);
-	irq_enable(TIMER_TICK_IRQ);
-
-	return 0;
 }
 
 /**
@@ -122,19 +107,36 @@ uint32_t sys_clock_elapsed(void)
 	return (hwm_get_time() - last_tick_time)/tick_period;
 }
 
-
-#if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 /**
- *
  * @brief Stop announcing sys ticks into the kernel
  *
  * Disable the system ticks generation
- *
- * @return N/A
  */
 void sys_clock_disable(void)
 {
 	irq_disable(TIMER_TICK_IRQ);
 	hwtimer_set_silent_ticks(INT64_MAX);
 }
-#endif /* CONFIG_SYSTEM_CLOCK_DISABLE */
+
+/**
+ * @brief Initialize system timer driver
+ *
+ * Enable the hw timer, setting its tick period, and setup its interrupt
+ */
+static int sys_clock_driver_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	tick_period = 1000000ul / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+	last_tick_time = hwm_get_time();
+	hwtimer_enable(tick_period);
+
+	IRQ_CONNECT(TIMER_TICK_IRQ, 1, np_timer_isr, 0, 0);
+	irq_enable(TIMER_TICK_IRQ);
+
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

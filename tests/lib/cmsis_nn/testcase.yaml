@@ -1,0 +1,10 @@
+tests:
+  libraries.cmsis_nn:
+    filter: CONFIG_CPU_CORTEX_M and TOOLCHAIN_HAS_NEWLIB == 1
+    integration_platforms:
+      - frdm_k64f
+      - sam_e70_xplained
+      - mps2_an521
+    tags: cmsis_nn
+    min_flash: 64
+    min_ram: 32

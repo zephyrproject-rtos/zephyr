@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT nxp_lpc_rtc
 
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 #include <fsl_rtc.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(mcux_rtc, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -237,7 +237,7 @@ static const struct counter_driver_api mcux_rtc_driver_api = {
 	static struct mcux_lpc_rtc_data mcux_lpc_rtc_data_##id;		\
 	DEVICE_DT_INST_DEFINE(id, &mcux_lpc_rtc_init, NULL,		\
 				&mcux_lpc_rtc_data_##id, &mcux_lpc_rtc_config_##id.info, \
-				POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+				POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,		\
 				&mcux_rtc_driver_api);					\
 	static void mcux_lpc_rtc_irq_config_##id(const struct device *dev)	\
 	{									\

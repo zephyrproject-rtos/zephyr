@@ -12,7 +12,7 @@
 #ifndef __IEEE802154_UTILS_H__
 #define __IEEE802154_UTILS_H__
 
-#include <net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 static inline
 enum ieee802154_hw_caps ieee802154_get_hw_capabilities(struct net_if *iface)
@@ -234,7 +234,7 @@ static inline void ieee802154_remove_src_short_addr(struct net_if *iface,
 
 		filter.short_addr = short_addr;
 
-		if (radio->filter(net_if_get_device(iface), true,
+		if (radio->filter(net_if_get_device(iface), false,
 				  IEEE802154_FILTER_TYPE_SRC_SHORT_ADDR,
 				  &filter) != 0) {
 			NET_WARN("Could not remove SRC short address filter");

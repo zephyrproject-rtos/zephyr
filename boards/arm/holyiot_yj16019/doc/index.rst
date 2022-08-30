@@ -21,7 +21,6 @@ Semiconductor nRF52832 ARM Cortex-M4 CPU and the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/holyiot_yj16019_front.jpg
-     :width: 375px
      :align: center
      :alt: Holyiot YJ-16019
 
@@ -34,8 +33,8 @@ contains the processor's information and the datasheet.
 Hardware
 ********
 
-The nRF52832 of the Holyiot YJ-16019 is clocked by an external crystal
-with a frequency of 32.768 kHz.
+The nRF52832 of the Holyiot YJ-16019 is clocked by an external crystal with a frequency of 32 MHz
+(Y1). The 32.768 kHz crystal (Y2) shown on the board schematics is not mounted.
 
 Supported Features
 ==================
@@ -67,7 +66,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Connections and IOs
 ===================
@@ -95,8 +94,7 @@ pads on the PCB (see image):
 * SWDIO = SDO
 * SWCLK = SCK
 
-.. figure:: img/holyiot_yj16019_pcb.png
-     :width: 390px
+.. figure:: img/holyiot_yj16019_pcb.jpg
      :align: center
      :alt: Holyiot YJ-16019 PCB
 

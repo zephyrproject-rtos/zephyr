@@ -7,7 +7,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_KSWAP_H_
 
 #include <ksched.h>
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 #include <kernel_arch_func.h>
 
 #ifdef CONFIG_STACK_SENTINEL
@@ -60,7 +60,7 @@ static inline void wait_for_switch(struct k_thread *thread)
  */
 static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 					  struct k_spinlock *lock,
-					  int is_spinlock)
+					  bool is_spinlock)
 {
 	ARG_UNUSED(lock);
 	struct k_thread *new_thread, *old_thread;
@@ -90,6 +90,8 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 	z_check_stack_sentinel();
 
+	old_thread->swap_retval = -EAGAIN;
+
 	/* We always take the scheduler spinlock if we don't already
 	 * have it.  We "release" other spinlocks here.  But we never
 	 * drop the interrupt lock.
@@ -104,11 +106,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	new_thread = z_swap_next_thread();
 
 	if (new_thread != old_thread) {
-#ifdef CONFIG_TIMESLICING
-		z_reset_time_slice();
-#endif
-
-		old_thread->swap_retval = -EAGAIN;
+		z_sched_usage_switch(new_thread);
 
 #ifdef CONFIG_SMP
 		_current_cpu->swap_ok = 0;
@@ -121,6 +119,10 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		z_thread_mark_switched_out();
 		wait_for_switch(new_thread);
 		_current_cpu->current = new_thread;
+
+#ifdef CONFIG_TIMESLICING
+		z_reset_time_slice(new_thread);
+#endif
 
 #ifdef CONFIG_SPIN_VALIDATE
 		z_spin_lock_set_owner(&sched_spinlock);
@@ -159,17 +161,17 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 static inline int z_swap_irqlock(unsigned int key)
 {
-	return do_swap(key, NULL, 0);
+	return do_swap(key, NULL, false);
 }
 
 static inline int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
 {
-	return do_swap(key.key, lock, 1);
+	return do_swap(key.key, lock, true);
 }
 
 static inline void z_swap_unlocked(void)
 {
-	(void) do_swap(arch_irq_lock(), NULL, 1);
+	(void) do_swap(arch_irq_lock(), NULL, true);
 }
 
 #else /* !CONFIG_USE_SWITCH */
@@ -223,6 +225,15 @@ static inline void z_dummy_thread_init(struct k_thread *dummy_thread)
 #endif
 #ifdef CONFIG_USERSPACE
 	dummy_thread->mem_domain_info.mem_domain = &k_mem_domain_default;
+#endif
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+	k_thread_system_pool_assign(dummy_thread);
+#else
+	dummy_thread->resource_pool = NULL;
+#endif
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	dummy_thread->base.slice_ticks = 0;
 #endif
 
 	_current_cpu->current = dummy_thread;

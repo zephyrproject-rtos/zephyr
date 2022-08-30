@@ -6,7 +6,7 @@
  */
 
 #include <mem.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 #include "psoc6-pinctrl.dtsi"
 
@@ -34,18 +34,15 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			label="CYPRESS_FLASH_DRV_NAME";
 
 			flash0: flash@10000000 {
 				compatible = "soc-nv-flash";
-				label = "FLASH_0";
 				reg = <0x10000000 DT_SIZE_K(384)>;
 				write-block-size = <4>;
 			};
 
 			flash1: flash@10060000 {
 				compatible = "soc-nv-flash";
-				label = "FLASH_1";
 				reg = <0x10060000 DT_SIZE_K(640)>;
 				write-block-size = <4>;
 			};
@@ -57,13 +54,15 @@
 	};
 
 	sram1: memory@8023000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x08023000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2: memory@8024000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x08024000 DT_SIZE_K(112)>;
+		zephyr,memory-region = "SRAM2";
 	};
 
 	soc {
@@ -77,7 +76,6 @@
 				compatible = "cypress,psoc6-hsiom";
 				reg = <0x40310000 0x2024>;
 				interrupts = <15 1>, <16 1>;
-				label = "HSIOM";
 				status = "disabled";
 			};
 
@@ -85,7 +83,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320000 0x80>;
 				interrupts = <0 1>;
-				label = "P0";
 				gpio-controller;
 				ngpios = <6>;
 				#gpio-cells = <2>;
@@ -96,7 +93,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320080 0x80>;
 				interrupts = <1 1>;
-				label = "P1";
 				gpio-controller;
 				ngpios = <6>;
 				#gpio-cells = <2>;
@@ -107,7 +103,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320100 0x80>;
 				interrupts = <2 1>;
-				label = "P2";
 				gpio-controller;
 				ngpios = <8>;
 				#gpio-cells = <2>;
@@ -118,7 +113,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320180 0x80>;
 				interrupts = <3 1>;
-				label = "P3";
 				gpio-controller;
 				ngpios = <6>;
 				#gpio-cells = <2>;
@@ -129,7 +123,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320200 0x80>;
 				interrupts = <4 1>;
-				label = "P4";
 				gpio-controller;
 				ngpios = <4>;
 				#gpio-cells = <2>;
@@ -140,7 +133,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320280 0x80>;
 				interrupts = <5 1>;
-				label = "P5";
 				gpio-controller;
 				ngpios = <8>;
 				#gpio-cells = <2>;
@@ -151,7 +143,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320300 0x80>;
 				interrupts = <6 1>;
-				label = "P6";
 				gpio-controller;
 				ngpios = <8>;
 				#gpio-cells = <2>;
@@ -162,7 +153,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320380 0x80>;
 				interrupts = <7 1>;
-				label = "P7";
 				gpio-controller;
 				ngpios = <8>;
 				#gpio-cells = <2>;
@@ -173,7 +163,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320400 0x80>;
 				interrupts = <8 1>;
-				label = "P8";
 				gpio-controller;
 				ngpios = <8>;
 				#gpio-cells = <2>;
@@ -184,7 +173,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320480 0x80>;
 				interrupts = <9 1>;
-				label = "P9";
 				gpio-controller;
 				ngpios = <8>;
 				#gpio-cells = <2>;
@@ -195,7 +183,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320500 0x80>;
 				interrupts = <10 1>;
-				label = "P10";
 				gpio-controller;
 				ngpios = <8>;
 				#gpio-cells = <2>;
@@ -206,7 +193,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320580 0x80>;
 				interrupts = <11 1>;
-				label = "P11";
 				gpio-controller;
 				ngpios = <8>;
 				#gpio-cells = <2>;
@@ -217,7 +203,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320600 0x80>;
 				interrupts = <12 1>;
-				label = "P12";
 				gpio-controller;
 				ngpios = <8>;
 				#gpio-cells = <2>;
@@ -228,7 +213,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320680 0x80>;
 				interrupts = <13 1>;
-				label = "P13";
 				gpio-controller;
 				ngpios = <8>;
 				#gpio-cells = <2>;
@@ -239,7 +223,6 @@
 				compatible = "cypress,psoc6-gpio";
 				reg = <0x40320700 0x80>;
 				interrupts = <14 1>;
-				label = "P14";
 				gpio-controller;
 				ngpios = <2>;
 				#gpio-cells = <2>;
@@ -251,90 +234,81 @@
 		spi0: spi@40610000 {
 			compatible = "cypress,psoc6-spi";
 			reg = <0x40610000 0x10000>;
-			interrupts = <41 7>;
+			interrupts = <41 6>;
 			peripheral-id = <0>;
 			status = "disabled";
-			label = "spi_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 		spi1: spi@40620000 {
 			compatible = "cypress,psoc6-spi";
 			reg = <0x40620000 0x10000>;
-			interrupts = <42 7>;
+			interrupts = <42 6>;
 			peripheral-id = <1>;
 			status = "disabled";
-			label = "spi_1";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 		spi2: spi@40630000 {
 			compatible = "cypress,psoc6-spi";
 			reg = <0x40630000 0x10000>;
-			interrupts = <43 7>;
+			interrupts = <43 6>;
 			peripheral-id = <2>;
 			status = "disabled";
-			label = "spi_2";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 		spi3: spi@40640000 {
 			compatible = "cypress,psoc6-spi";
 			reg = <0x40640000 0x10000>;
-			interrupts = <44 7>;
+			interrupts = <44 6>;
 			peripheral-id = <3>;
 			status = "disabled";
-			label = "spi_3";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 		spi4: spi@40650000 {
 			compatible = "cypress,psoc6-spi";
 			reg = <0x40650000 0x10000>;
-			interrupts = <45 7>;
+			interrupts = <45 6>;
 			peripheral-id = <4>;
 			status = "disabled";
-			label = "spi_4";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 		spi5: spi@40660000 {
 			compatible = "cypress,psoc6-spi";
 			reg = <0x40660000 0x10000>;
-			interrupts = <46 7>;
+			interrupts = <46 6>;
 			peripheral-id = <5>;
 			status = "disabled";
-			label = "spi_5";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 		spi6: spi@40670000 {
 			compatible = "cypress,psoc6-spi";
 			reg = <0x40670000 0x10000>;
-			interrupts = <47 7>;
+			interrupts = <47 6>;
 			peripheral-id = <6>;
 			status = "disabled";
-			label = "spi_6";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 		spi7: spi@40680000 {
 			compatible = "cypress,psoc6-spi";
 			reg = <0x40680000 0x10000>;
-			interrupts = <48 7>;
+			interrupts = <48 6>;
 			peripheral-id = <7>;
 			status = "disabled";
-			label = "spi_7";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 		spi8: spi@40690000 {
 			compatible = "cypress,psoc6-spi";
 			reg = <0x40690000 0x10000>;
-			interrupts = <18 7>;
+			interrupts = <18 6>;
 			peripheral-id = <8>;
 			status = "disabled";
-			label = "spi_8";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -342,74 +316,65 @@
 		uart0: uart@40610000 {
 			compatible = "cypress,psoc6-uart";
 			reg = <0x40610000 0x10000>;
-			interrupts = <41 7>;
+			interrupts = <41 6>;
 			peripheral-id = <0>;
 			status = "disabled";
-			label = "uart_0";
 		};
 		uart1: uart@40620000 {
 			compatible = "cypress,psoc6-uart";
 			reg = <0x40620000 0x10000>;
-			interrupts = <42 7>;
+			interrupts = <42 6>;
 			peripheral-id = <1>;
 			status = "disabled";
-			label = "uart_1";
 		};
 		uart2: uart@40630000 {
 			compatible = "cypress,psoc6-uart";
 			reg = <0x40630000 0x10000>;
-			interrupts = <43 7>;
+			interrupts = <43 6>;
 			peripheral-id = <2>;
 			status = "disabled";
-			label = "uart_2";
 		};
 		uart3: uart@40640000 {
 			compatible = "cypress,psoc6-uart";
 			reg = <0x40640000 0x10000>;
-			interrupts = <44 7>;
+			interrupts = <44 6>;
 			peripheral-id = <3>;
 			status = "disabled";
-			label = "uart_3";
 		};
 		uart4: uart@40650000 {
 			compatible = "cypress,psoc6-uart";
 			reg = <0x40650000 0x10000>;
-			interrupts = <45 7>;
+			interrupts = <45 6>;
 			peripheral-id = <4>;
 			status = "disabled";
-			label = "uart_4";
 		};
 		uart5: uart@40660000 {
 			compatible = "cypress,psoc6-uart";
 			reg = <0x40660000 0x10000>;
-			interrupts = <46 7>;
+			interrupts = <46 6>;
 			peripheral-id = <5>;
 			status = "disabled";
-			label = "uart_5";
 		};
 		uart6: uart@40670000 {
 			compatible = "cypress,psoc6-uart";
 			reg = <0x40670000 0x10000>;
-			interrupts = <47 7>;
+			interrupts = <47 6>;
 			peripheral-id = <6>;
 			status = "disabled";
-			label = "uart_6";
 		};
 		uart7: uart@40680000 {
 			compatible = "cypress,psoc6-uart";
 			reg = <0x40680000 0x10000>;
-			interrupts = <48 7>;
+			interrupts = <48 6>;
 			peripheral-id = <7>;
 			status = "disabled";
-			label = "uart_7";
 		};
 		uart8: uart@40690000 {
 			compatible = "cypress,psoc6-uart";
 			reg = <0x40690000 0x10000>;
-			interrupts = <18 7>;
+			interrupts = <18 6>;
 			peripheral-id = <8>;
 			status = "disabled";
-			label = "uart_8";
 		};
 
 		uid: device_uid@16000600 {

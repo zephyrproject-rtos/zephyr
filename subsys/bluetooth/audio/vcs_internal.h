@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Internal Header for Bluetooth Volumen Control Service (VCS).
+ * @brief Internal Header for Bluetooth Volume Control Service (VCS).
  *
  * Copyright (c) 2020 Bose Corporation
  * Copyright (c) 2020-2021 Nordic Semiconductor ASA
@@ -47,7 +47,9 @@ struct bt_vcs_client {
 	uint16_t control_handle;
 	uint16_t flag_handle;
 	struct bt_gatt_subscribe_params state_sub_params;
+	struct bt_gatt_discover_params state_sub_disc_params;
 	struct bt_gatt_subscribe_params flag_sub_params;
+	struct bt_gatt_discover_params flag_sub_disc_params;
 	bool cp_retried;
 
 	bool busy;

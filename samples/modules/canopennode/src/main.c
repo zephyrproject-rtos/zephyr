@@ -4,49 +4,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <sys/reboot.h>
-#include <settings/settings.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/settings/settings.h>
 #include <canopennode.h>
 
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app);
 
+#define CAN_INTERFACE DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus))
+#define CAN_BITRATE (DT_PROP(DT_CHOSEN(zephyr_canbus), bus_speed) / 1000)
 
-#define CAN_INTERFACE DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL
-#define CAN_BITRATE (DT_PROP(DT_CHOSEN(zephyr_can_primary), bus_speed) / 1000)
-#if !defined(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL)
-#error CANopen CAN interface not set
-#endif
+static struct gpio_dt_spec led_green_gpio = GPIO_DT_SPEC_GET_OR(
+		DT_ALIAS(green_led), gpios, {0});
+static struct gpio_dt_spec led_red_gpio = GPIO_DT_SPEC_GET_OR(
+		DT_ALIAS(red_led), gpios, {0});
 
-#if DT_NODE_HAS_PROP(DT_ALIAS(green_led), gpios)
-#define LED_GREEN_PORT  DT_GPIO_LABEL(DT_ALIAS(green_led), gpios)
-#define LED_GREEN_PIN   DT_GPIO_PIN(DT_ALIAS(green_led), gpios)
-#define LED_GREEN_FLAGS DT_GPIO_FLAGS(DT_ALIAS(green_led), gpios)
-#endif
-
-#if DT_NODE_HAS_PROP(DT_ALIAS(red_led), gpios)
-#define LED_RED_PORT  DT_GPIO_LABEL(DT_ALIAS(red_led), gpios)
-#define LED_RED_PIN   DT_GPIO_PIN(DT_ALIAS(red_led), gpios)
-#define LED_RED_FLAGS DT_GPIO_FLAGS(DT_ALIAS(red_led), gpios)
-#endif
-
-#if DT_NODE_HAS_PROP(DT_ALIAS(sw0), gpios)
-#define BUTTON_PORT  DT_GPIO_LABEL(DT_ALIAS(sw0), gpios)
-#define BUTTON_PIN   DT_GPIO_PIN(DT_ALIAS(sw0), gpios)
-#define BUTTON_FLAGS DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios)
+static struct gpio_dt_spec button_gpio = GPIO_DT_SPEC_GET_OR(
+		DT_ALIAS(sw0), gpios, {0});
 static struct gpio_callback button_callback;
-#endif
 
 struct led_indicator {
 	const struct device *dev;
 	gpio_pin_t pin;
 };
 
-static struct led_indicator led_green;
-static struct led_indicator led_red;
 static uint32_t counter;
 
 /**
@@ -57,14 +41,13 @@ static uint32_t counter;
  */
 static void led_callback(bool value, void *arg)
 {
-	struct led_indicator *led = arg;
-	bool drive = value;
+	struct gpio_dt_spec *led_gpio = arg;
 
-	if (!led || !led->dev) {
+	if (!led_gpio || !led_gpio->port) {
 		return;
 	}
 
-	gpio_pin_set(led->dev, led->pin, drive);
+	gpio_pin_set_dt(led_gpio, value);
 }
 
 /**
@@ -77,28 +60,39 @@ static void led_callback(bool value, void *arg)
  */
 static void config_leds(CO_NMT_t *nmt)
 {
-#ifdef LED_GREEN_PORT
-	led_green.dev = device_get_binding(LED_GREEN_PORT);
-	led_green.pin = LED_GREEN_PIN;
-	if (led_green.dev) {
-		gpio_pin_configure(led_green.dev, LED_GREEN_PIN,
-				   GPIO_OUTPUT_INACTIVE
-				   | LED_GREEN_FLAGS);
+	int err;
+
+	if (!led_green_gpio.port) {
+		LOG_INF("Green LED not available");
+	} else if (!device_is_ready(led_green_gpio.port)) {
+		LOG_ERR("Green LED device not ready");
+		led_green_gpio.port = NULL;
+	} else {
+		err = gpio_pin_configure_dt(&led_green_gpio,
+					    GPIO_OUTPUT_INACTIVE);
+		if (err) {
+			LOG_ERR("failed to configure Green LED gpio: %d", err);
+			led_green_gpio.port = NULL;
+		}
 	}
-#endif /* LED_GREEN_PORT */
-#ifdef LED_RED_PORT
-	led_red.dev = device_get_binding(LED_RED_PORT);
-	led_red.pin = LED_RED_PIN;
-	if (led_red.dev) {
-		gpio_pin_configure(led_red.dev, LED_RED_PIN,
-				   GPIO_OUTPUT_INACTIVE
-				   | LED_RED_FLAGS);
+
+	if (!led_red_gpio.port) {
+		LOG_INF("Red LED not available");
+	} else if (!device_is_ready(led_red_gpio.port)) {
+		LOG_ERR("Red LED device not ready");
+		led_red_gpio.port = NULL;
+	} else {
+		err = gpio_pin_configure_dt(&led_red_gpio,
+					    GPIO_OUTPUT_INACTIVE);
+		if (err) {
+			LOG_ERR("failed to configure Red LED gpio: %d", err);
+			led_green_gpio.port = NULL;
+		}
 	}
-#endif /* LED_RED_PORT */
 
 	canopen_leds_init(nmt,
-			  led_green.dev ? led_callback : NULL, &led_green,
-			  led_red.dev ? led_callback : NULL, &led_red);
+			  led_callback, &led_green_gpio,
+			  led_callback, &led_red_gpio);
 }
 
 /**
@@ -144,14 +138,12 @@ static CO_SDO_abortCode_t odf_2102(CO_ODF_arg_t *odf_arg)
  * @param cb GPIO callback struct.
  * @param pins GPIO pin mask that triggered the interrupt.
  */
-#ifdef BUTTON_PORT
 static void button_isr_callback(const struct device *port,
 				struct gpio_callback *cb,
 				uint32_t pins)
 {
 	counter++;
 }
-#endif
 
 /**
  * @brief Configure button GPIO pin and callback.
@@ -160,36 +152,39 @@ static void button_isr_callback(const struct device *port,
  */
 static void config_button(void)
 {
-#ifdef BUTTON_PORT
-	const struct device *dev;
 	int err;
 
-	dev = device_get_binding(BUTTON_PORT);
-	if (!dev) {
-		LOG_ERR("failed to get button device");
+	if (button_gpio.port == NULL) {
+		LOG_INF("Button not available");
 		return;
 	}
 
-	err = gpio_pin_configure(dev, BUTTON_PIN,
-				 GPIO_INPUT | BUTTON_FLAGS);
+	if (!device_is_ready(button_gpio.port)) {
+		LOG_ERR("Button device not ready");
+		return;
+	}
+
+	err = gpio_pin_configure_dt(&button_gpio, GPIO_INPUT);
+	if (err) {
+		LOG_ERR("failed to configure button gpio: %d", err);
+		return;
+	}
 
 	gpio_init_callback(&button_callback, button_isr_callback,
-			   BIT(BUTTON_PIN));
+			   BIT(button_gpio.pin));
 
-	err = gpio_add_callback(dev, &button_callback);
+	err = gpio_add_callback(button_gpio.port, &button_callback);
 	if (err) {
-		LOG_ERR("failed to add button callback");
+		LOG_ERR("failed to add button callback: %d", err);
 		return;
 	}
 
-	err = gpio_pin_interrupt_configure(dev, BUTTON_PIN,
-					   GPIO_INT_EDGE_TO_ACTIVE);
+	err = gpio_pin_interrupt_configure_dt(&button_gpio,
+					      GPIO_INT_EDGE_TO_ACTIVE);
 	if (err) {
-		LOG_ERR("failed to enable button callback");
+		LOG_ERR("failed to enable button callback: %d", err);
 		return;
 	}
-
-#endif
 }
 
 /**
@@ -210,9 +205,9 @@ void main(void)
 	int ret;
 #endif /* CONFIG_CANOPENNODE_STORAGE */
 
-	can.dev = device_get_binding(CAN_INTERFACE);
-	if (!can.dev) {
-		LOG_ERR("CAN interface not found");
+	can.dev = CAN_INTERFACE;
+	if (!device_is_ready(can.dev)) {
+		LOG_ERR("CAN interface not ready");
 		return;
 	}
 

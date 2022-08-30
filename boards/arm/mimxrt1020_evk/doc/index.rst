@@ -11,8 +11,7 @@ high-performance feature set in low-cost LQFP packages, further simplifying
 board design and layout for customers. The i.MX RT1020 runs on the Arm®
 Cortex®-M7 core at 500 MHz.
 
-.. image:: ./mimxrt1020_evk.jpg
-   :width: 720px
+.. image:: mimxrt1020_evk.jpg
    :align: center
    :alt: MIMXRT1020-EVK
 
@@ -73,7 +72,11 @@ features:
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | QSPI flash                          |
++-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
@@ -85,6 +88,14 @@ features:
 | ENET      | on-chip    | ethernet                            |
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -126,13 +137,13 @@ The MIMXRT1020 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_09 | ENET_RX_DATA01  | Ethernet                  |
 +---------------+-----------------+---------------------------+
-| GPIO_AD_B0_10 | ENET_RX_DATA00  | Ethernet                  |
+| GPIO_AD_B0_10 | ENET_RX_DATA00/LPSPI1_SCK | Ethernet/SPI    |
 +---------------+-----------------+---------------------------+
-| GPIO_AD_B0_11 | ENET_RX_EN      | Ethernet                  |
+| GPIO_AD_B0_11 | ENET_RX_EN/LPSPI1_PCS0 | Ethernet/SPI       |
 +---------------+-----------------+---------------------------+
-| GPIO_AD_B0_12 | ENET_RX_ER      | Ethernet                  |
+| GPIO_AD_B0_12 | ENET_RX_ER/LPSPI1_SDO | Ethernet/SPI        |
 +---------------+-----------------+---------------------------+
-| GPIO_AD_B0_13 | ENET_TX_EN      | Ethernet                  |
+| GPIO_AD_B0_13 | ENET_TX_EN/LPSPI1_SDI | Ethernet/SPI        |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_14 | ENET_TX_DATA00  | Ethernet                  |
 +---------------+-----------------+---------------------------+
@@ -160,12 +171,16 @@ The MIMXRT1020 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B0_06 | USDHC1_CD_B     | SD Card                   |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B1_10 | ADC             | ADC1 Channel 10           |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_11 | ADC             | ADC1 Channel 11           |
++---------------+-----------------+---------------------------+
 
 System Clock
 ============
 
-The MIMXRT1020 SoC is configured to use the 24 MHz external oscillator on the
-board with the on-chip PLL to generate a 500 MHz core clock.
+The MIMXRT1020 SoC is configured to use the 32 KHz low frequency oscillator on
+the board as a source for the GPT timer to generate a system clock.
 
 Serial Port
 ===========

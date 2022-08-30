@@ -7,7 +7,7 @@
 #ifndef _POSIX_SOC_INF_CLOCK_SOC_H
 #define _POSIX_SOC_INF_CLOCK_SOC_H
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include "board_soc.h"
 #include "posix_soc.h"
 
@@ -43,7 +43,7 @@ void posix_soc_clean_up(void);
  * any Zephyr thread are running.
  */
 #define NATIVE_TASK(fn, level, prio)	\
-	static void (*_CONCAT(__native_task_, fn)) __used	\
+	static const void (*_CONCAT(__native_task_, fn)) __used	__noasan \
 	__attribute__((__section__(".native_" #level STRINGIFY(prio) "_task")))\
 	= fn
 

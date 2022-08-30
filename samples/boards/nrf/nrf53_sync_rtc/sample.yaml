@@ -1,0 +1,11 @@
+sample:
+    description: This app shows how RTCs are synchronized
+        on nrf53 cores.
+    name: nRF53 Synchronized RTC sample
+common:
+    harness: remote
+tests:
+    sample.boards.nrf.nrf53_sync_rtc:
+        platform_allow: nrf5340dk_nrf5340_cpuapp
+        integration_platforms:
+          - nrf5340dk_nrf5340_cpuapp

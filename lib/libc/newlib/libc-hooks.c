@@ -4,21 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 #include <errno.h>
 #include <stdio.h>
-#include <sys/__assert.h>
+#include <malloc.h>
+#include <zephyr/sys/__assert.h>
 #include <sys/stat.h>
-#include <linker/linker-defs.h>
-#include <sys/util.h>
-#include <sys/errno_private.h>
-#include <sys/libc-hooks.h>
-#include <syscall_handler.h>
-#include <app_memory/app_memdomain.h>
-#include <init.h>
-#include <sys/sem.h>
-#include <sys/mutex.h>
-#include <sys/mem_manage.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/errno_private.h>
+#include <zephyr/sys/heap_listener.h>
+#include <zephyr/sys/libc-hooks.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/sem.h>
+#include <zephyr/sys/mutex.h>
+#include <zephyr/sys/mem_manage.h>
 #include <sys/time.h>
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
@@ -87,7 +89,7 @@
 	/* End of the malloc arena is the end of physical memory */
 	#if defined(CONFIG_XTENSA)
 		/* TODO: Why is xtensa a special case? */
-		extern void *_heap_sentry;
+		extern char _heap_sentry[];
 		#define MAX_HEAP_SIZE	(POINTER_TO_UINT(&_heap_sentry) - \
 					 HEAP_BASE)
 	#else
@@ -132,7 +134,7 @@ static int malloc_prepare(const struct device *unused)
 	return 0;
 }
 
-SYS_INIT(malloc_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 /* Current offset from HEAP_BASE of unused memory */
 LIBC_BSS static size_t heap_sz;
@@ -178,12 +180,12 @@ int z_impl_zephyr_read_stdin(char *buf, int nbytes)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_z_zephyr_read_stdin(char *buf, int nbytes)
+static inline int z_vrfy_zephyr_read_stdin(char *buf, int nbytes)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, nbytes));
 	return z_impl_zephyr_read_stdin((char *)buf, nbytes);
 }
-#include <syscalls/z_zephyr_read_stdin_mrsh.c>
+#include <syscalls/zephyr_read_stdin_mrsh.c>
 #endif
 
 int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
@@ -201,12 +203,12 @@ int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_z_zephyr_write_stdout(const void *buf, int nbytes)
+static inline int z_vrfy_zephyr_write_stdout(const void *buf, int nbytes)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, nbytes));
 	return z_impl_zephyr_write_stdout((const void *)buf, nbytes);
 }
-#include <syscalls/z_zephyr_write_stdout_mrsh.c>
+#include <syscalls/zephyr_write_stdout_mrsh.c>
 #endif
 
 #ifndef CONFIG_POSIX_API
@@ -214,7 +216,7 @@ int _read(int fd, char *buf, int nbytes)
 {
 	ARG_UNUSED(fd);
 
-	return z_impl_zephyr_read_stdin(buf, nbytes);
+	return zephyr_read_stdin(buf, nbytes);
 }
 __weak FUNC_ALIAS(_read, read, int);
 
@@ -222,7 +224,7 @@ int _write(int fd, const void *buf, int nbytes)
 {
 	ARG_UNUSED(fd);
 
-	return z_impl_zephyr_write_stdout(buf, nbytes);
+	return zephyr_write_stdout(buf, nbytes);
 }
 __weak FUNC_ALIAS(_write, write, int);
 
@@ -290,6 +292,10 @@ void *_sbrk(intptr_t count)
 	if ((heap_sz + count) < MAX_HEAP_SIZE) {
 		heap_sz += count;
 		ret = ptr;
+
+#ifdef CONFIG_NEWLIB_LIBC_HEAP_LISTENER
+		heap_listener_notify_resize(HEAP_ID_LIBC, ptr, (char *)ptr + count);
+#endif
 	} else {
 		ret = (void *)-1;
 	}
@@ -298,17 +304,151 @@ void *_sbrk(intptr_t count)
 }
 __weak FUNC_ALIAS(_sbrk, sbrk, void *);
 
-static LIBC_DATA SYS_MUTEX_DEFINE(heap_mutex);
+#ifdef CONFIG_MULTITHREADING
+/*
+ * Newlib Retargetable Locking Interface Implementation
+ *
+ * When multithreading is enabled, the newlib retargetable locking interface is
+ * defined below to override the default void implementation and provide the
+ * Zephyr-side locks.
+ *
+ * NOTE: `k_mutex` and `k_sem` are used instead of `sys_mutex` and `sys_sem`
+ *	 because the latter do not support dynamic allocation for now.
+ */
 
-void __malloc_lock(struct _reent *reent)
+/* Static locks */
+K_MUTEX_DEFINE(__lock___sinit_recursive_mutex);
+K_MUTEX_DEFINE(__lock___sfp_recursive_mutex);
+K_MUTEX_DEFINE(__lock___atexit_recursive_mutex);
+K_MUTEX_DEFINE(__lock___malloc_recursive_mutex);
+K_MUTEX_DEFINE(__lock___env_recursive_mutex);
+K_SEM_DEFINE(__lock___at_quick_exit_mutex, 1, 1);
+K_SEM_DEFINE(__lock___tz_mutex, 1, 1);
+K_SEM_DEFINE(__lock___dd_hash_mutex, 1, 1);
+K_SEM_DEFINE(__lock___arc4random_mutex, 1, 1);
+
+#ifdef CONFIG_USERSPACE
+/* Grant public access to all static locks after boot */
+static int newlib_locks_prepare(const struct device *unused)
 {
-	sys_mutex_lock(&heap_mutex, K_FOREVER);
+	ARG_UNUSED(unused);
+
+	/* Initialise recursive locks */
+	k_object_access_all_grant(&__lock___sinit_recursive_mutex);
+	k_object_access_all_grant(&__lock___sfp_recursive_mutex);
+	k_object_access_all_grant(&__lock___atexit_recursive_mutex);
+	k_object_access_all_grant(&__lock___malloc_recursive_mutex);
+	k_object_access_all_grant(&__lock___env_recursive_mutex);
+
+	/* Initialise non-recursive locks */
+	k_object_access_all_grant(&__lock___at_quick_exit_mutex);
+	k_object_access_all_grant(&__lock___tz_mutex);
+	k_object_access_all_grant(&__lock___dd_hash_mutex);
+	k_object_access_all_grant(&__lock___arc4random_mutex);
+
+	return 0;
 }
 
-void __malloc_unlock(struct _reent *reent)
+SYS_INIT(newlib_locks_prepare, POST_KERNEL,
+	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif /* CONFIG_USERSPACE */
+
+/* Create a new dynamic non-recursive lock */
+void __retarget_lock_init(_LOCK_T *lock)
 {
-	sys_mutex_unlock(&heap_mutex);
+	__ASSERT_NO_MSG(lock != NULL);
+
+	/* Allocate semaphore object */
+#ifndef CONFIG_USERSPACE
+	*lock = malloc(sizeof(struct k_sem));
+#else
+	*lock = k_object_alloc(K_OBJ_SEM);
+#endif /* !CONFIG_USERSPACE */
+	__ASSERT(*lock != NULL, "non-recursive lock allocation failed");
+
+	k_sem_init((struct k_sem *)*lock, 1, 1);
 }
+
+/* Create a new dynamic recursive lock */
+void __retarget_lock_init_recursive(_LOCK_T *lock)
+{
+	__ASSERT_NO_MSG(lock != NULL);
+
+	/* Allocate mutex object */
+#ifndef CONFIG_USERSPACE
+	*lock = malloc(sizeof(struct k_mutex));
+#else
+	*lock = k_object_alloc(K_OBJ_MUTEX);
+#endif /* !CONFIG_USERSPACE */
+	__ASSERT(*lock != NULL, "recursive lock allocation failed");
+
+	k_mutex_init((struct k_mutex *)*lock);
+}
+
+/* Close dynamic non-recursive lock */
+void __retarget_lock_close(_LOCK_T lock)
+{
+	__ASSERT_NO_MSG(lock != NULL);
+#ifndef CONFIG_USERSPACE
+	free(lock);
+#else
+	k_object_release(lock);
+#endif /* !CONFIG_USERSPACE */
+}
+
+/* Close dynamic recursive lock */
+void __retarget_lock_close_recursive(_LOCK_T lock)
+{
+	__ASSERT_NO_MSG(lock != NULL);
+#ifndef CONFIG_USERSPACE
+	free(lock);
+#else
+	k_object_release(lock);
+#endif /* !CONFIG_USERSPACE */
+}
+
+/* Acquiure non-recursive lock */
+void __retarget_lock_acquire(_LOCK_T lock)
+{
+	__ASSERT_NO_MSG(lock != NULL);
+	k_sem_take((struct k_sem *)lock, K_FOREVER);
+}
+
+/* Acquiure recursive lock */
+void __retarget_lock_acquire_recursive(_LOCK_T lock)
+{
+	__ASSERT_NO_MSG(lock != NULL);
+	k_mutex_lock((struct k_mutex *)lock, K_FOREVER);
+}
+
+/* Try acquiring non-recursive lock */
+int __retarget_lock_try_acquire(_LOCK_T lock)
+{
+	__ASSERT_NO_MSG(lock != NULL);
+	return !k_sem_take((struct k_sem *)lock, K_NO_WAIT);
+}
+
+/* Try acquiring recursive lock */
+int __retarget_lock_try_acquire_recursive(_LOCK_T lock)
+{
+	__ASSERT_NO_MSG(lock != NULL);
+	return !k_mutex_lock((struct k_mutex *)lock, K_NO_WAIT);
+}
+
+/* Release non-recursive lock */
+void __retarget_lock_release(_LOCK_T lock)
+{
+	__ASSERT_NO_MSG(lock != NULL);
+	k_sem_give((struct k_sem *)lock);
+}
+
+/* Release recursive lock */
+void __retarget_lock_release_recursive(_LOCK_T lock)
+{
+	__ASSERT_NO_MSG(lock != NULL);
+	k_mutex_unlock((struct k_mutex *)lock);
+}
+#endif /* CONFIG_MULTITHREADING */
 
 __weak int *__errno(void)
 {
@@ -417,5 +557,12 @@ void *_sbrk_r(struct _reent *r, int count)
 
 int _gettimeofday(struct timeval *__tp, void *__tzp)
 {
+#ifdef CONFIG_POSIX_API
 	return gettimeofday(__tp, __tzp);
+#else
+	/* Non-posix systems should not call gettimeofday() here as it will
+	 * result in a recursive call loop and result in a stack overflow.
+	 */
+	return -1;
+#endif
 }

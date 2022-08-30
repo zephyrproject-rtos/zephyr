@@ -6,15 +6,15 @@
 
 #define DT_DRV_COMPAT adi_adxl362
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
 
 #include "adxl362.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(ADXL362, CONFIG_SENSOR_LOG_LEVEL);
 
 static void adxl362_thread_cb(const struct device *dev)
@@ -29,10 +29,15 @@ static void adxl362_thread_cb(const struct device *dev)
 	}
 
 	k_mutex_lock(&drv_data->trigger_mutex, K_FOREVER);
-	if (drv_data->th_handler != NULL) {
-		if (ADXL362_STATUS_CHECK_INACT(status_buf) ||
-		    ADXL362_STATUS_CHECK_ACTIVITY(status_buf)) {
-			drv_data->th_handler(dev, &drv_data->th_trigger);
+	if (drv_data->inact_handler != NULL) {
+		if (ADXL362_STATUS_CHECK_INACT(status_buf)) {
+			drv_data->inact_handler(dev, &drv_data->inact_trigger);
+		}
+	}
+
+	if (drv_data->act_handler != NULL) {
+		if (ADXL362_STATUS_CHECK_ACTIVITY(status_buf)) {
+			drv_data->act_handler(dev, &drv_data->act_trigger);
 		}
 	}
 
@@ -79,16 +84,29 @@ int adxl362_trigger_set(const struct device *dev,
 			sensor_trigger_handler_t handler)
 {
 	struct adxl362_data *drv_data = dev->data;
+	const struct adxl362_config *config = dev->config;
 	uint8_t int_mask, int_en, status_buf;
 
+	if (!config->interrupt.port) {
+		return -ENOTSUP;
+	}
+
 	switch (trig->type) {
-	case SENSOR_TRIG_THRESHOLD:
+	case SENSOR_TRIG_MOTION:
 		k_mutex_lock(&drv_data->trigger_mutex, K_FOREVER);
-		drv_data->th_handler = handler;
-		drv_data->th_trigger = *trig;
+		drv_data->act_handler = handler;
+		drv_data->act_trigger = *trig;
 		k_mutex_unlock(&drv_data->trigger_mutex);
-		int_mask = ADXL362_INTMAP1_ACT |
-			   ADXL362_INTMAP1_INACT;
+		int_mask = ADXL362_INTMAP1_ACT;
+		/* Clear activity and inactivity interrupts */
+		adxl362_get_status(dev, &status_buf);
+		break;
+	case SENSOR_TRIG_STATIONARY:
+		k_mutex_lock(&drv_data->trigger_mutex, K_FOREVER);
+		drv_data->inact_handler = handler;
+		drv_data->inact_trigger = *trig;
+		k_mutex_unlock(&drv_data->trigger_mutex);
+		int_mask = ADXL362_INTMAP1_INACT;
 		/* Clear activity and inactivity interrupts */
 		adxl362_get_status(dev, &status_buf);
 		break;
@@ -116,35 +134,34 @@ int adxl362_trigger_set(const struct device *dev,
 
 int adxl362_init_interrupt(const struct device *dev)
 {
-	struct adxl362_data *drv_data = dev->data;
 	const struct adxl362_config *cfg = dev->config;
+	struct adxl362_data *drv_data = dev->data;
 	int ret;
 
 	k_mutex_init(&drv_data->trigger_mutex);
 
-	drv_data->gpio = device_get_binding(cfg->gpio_port);
-	if (drv_data->gpio == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-			cfg->gpio_port);
-		return -EINVAL;
+	if (!device_is_ready(cfg->interrupt.port)) {
+		LOG_ERR("GPIO port %s not ready", cfg->interrupt.port->name);
+		return -ENODEV;
 	}
 
 	ret = adxl362_set_interrupt_mode(dev, CONFIG_ADXL362_INTERRUPT_MODE);
-
-	if (ret) {
-		return -EFAULT;
+	if (ret < 0) {
+		return ret;
 	}
 
-	gpio_pin_configure(drv_data->gpio, cfg->int_gpio,
-			   GPIO_INPUT | cfg->int_flags);
+	ret = gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   adxl362_gpio_callback,
-			   BIT(cfg->int_gpio));
+			   BIT(cfg->interrupt.pin));
 
-	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
-		LOG_ERR("Failed to set gpio callback!");
-		return -EIO;
+	ret = gpio_add_callback(cfg->interrupt.port, &drv_data->gpio_cb);
+	if (ret < 0) {
+		return ret;
 	}
 
 	drv_data->dev = dev;
@@ -161,8 +178,11 @@ int adxl362_init_interrupt(const struct device *dev)
 	drv_data->work.handler = adxl362_work_cb;
 #endif
 
-	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_gpio,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
+					      GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }

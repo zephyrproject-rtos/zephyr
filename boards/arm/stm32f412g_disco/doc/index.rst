@@ -40,9 +40,7 @@ some highlights of the STM32F412G-DISCO board:
 - Comprehensive free software including a variety of examples, part of STM32Cube package
 
 .. image:: img/stm32f412g_disco.jpg
-     :width: 700px
      :align: center
-     :height: 522px
      :alt: STM32F412G-DISCO
 
 More information about the board can be found at the `32F412GDISCOVERY website`_.
@@ -94,6 +92,12 @@ The Zephyr stm32f412g_disco board configuration supports the following hardware 
 | PINMUX    | on-chip    | pinmux                              |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| QSPI NOR  | on-chip    | off-chip flash                      |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.

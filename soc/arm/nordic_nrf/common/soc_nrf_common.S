@@ -9,7 +9,8 @@
  * @brief System/hardware module for Nordic Semiconductor nRFxx family processors
  */
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 
 _ASM_FILE_PROLOGUE
 

@@ -12,7 +12,7 @@
 #ifndef _FLOAT_REGS_ARM64_GCC_H
 #define _FLOAT_REGS_ARM64_GCC_H
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include "float_context.h"
 
 /**
@@ -30,7 +30,6 @@
  * _load_all_float_registers() and _store_all_float_registers() agree
  * on the format.
  *
- * @return N/A
  */
 static inline void _load_all_float_registers(struct fp_register_set *regs)
 {
@@ -65,7 +64,6 @@ static inline void _load_all_float_registers(struct fp_register_set *regs)
  * _load_all_float_registers() occurred to load all the floating point
  * registers from a memory buffer.
  *
- * @return N/A
  */
 
 static inline void _store_all_float_registers(struct fp_register_set *regs)
@@ -104,7 +102,6 @@ static inline void _store_all_float_registers(struct fp_register_set *regs)
  * that pends and triggers a co-operative context switch to a low priority
  * thread.
  *
- * @return N/A
  */
 
 static inline void _load_then_store_all_float_registers(

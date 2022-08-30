@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2021 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		green-led = &green_led_6;
+		red-led = &red_led_3;
+	};
+};

@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT nxp_pcal6408a
 
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 #include "gpio_utils.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcal6408a, CONFIG_GPIO_LOG_LEVEL);
 
 enum {
@@ -59,8 +59,7 @@ struct pcal6408a_drv_cfg {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 
-	const struct device *i2c;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 	const struct device *int_gpio_dev;
 	gpio_pin_t int_gpio_pin;
 	gpio_dt_flags_t int_gpio_flags;
@@ -75,36 +74,31 @@ static int pcal6408a_pins_cfg_apply(const struct device *dev,
 	const struct pcal6408a_drv_cfg *drv_cfg = dev->config;
 	int rc;
 
-	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-				PCAL6408A_REG_PULL_UP_DOWN_SELECT,
-				pins_cfg.pull_ups_selected);
+	rc = i2c_reg_write_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_PULL_UP_DOWN_SELECT,
+				   pins_cfg.pull_ups_selected);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to select pull-up/pull-down resistors: %d",
 			dev->name, rc);
 		return -EIO;
 	}
 
-	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-				PCAL6408A_REG_PULL_UP_DOWN_ENABLE,
-				pins_cfg.pulls_enabled);
+	rc = i2c_reg_write_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_PULL_UP_DOWN_ENABLE,
+				   pins_cfg.pulls_enabled);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to enable pull-up/pull-down resistors: %d",
 			dev->name, rc);
 		return -EIO;
 	}
 
-	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-				PCAL6408A_REG_OUTPUT_PORT,
-				pins_cfg.outputs_high);
+	rc = i2c_reg_write_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_OUTPUT_PORT, pins_cfg.outputs_high);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to set outputs: %d",
 			dev->name, rc);
 		return -EIO;
 	}
 
-	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-				PCAL6408A_REG_CONFIGURATION,
-				pins_cfg.configured_as_inputs);
+	rc = i2c_reg_write_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_CONFIGURATION,
+				   pins_cfg.configured_as_inputs);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to configure pins: %d",
 			dev->name, rc);
@@ -124,11 +118,9 @@ static int pcal6408a_pin_configure(const struct device *dev,
 	int rc;
 
 	/* This device does not support open-source outputs, and open-drain
-	 * outputs can be only configured port-wise. It also does not support
-	 * debouncing.
+	 * outputs can be only configured port-wise.
 	 */
-	if ((flags & GPIO_SINGLE_ENDED) != 0 ||
-	    (flags & GPIO_INT_DEBOUNCE) != 0) {
+	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		return -ENOTSUP;
 	}
 
@@ -138,13 +130,6 @@ static int pcal6408a_pin_configure(const struct device *dev,
 	flags_io = (flags & (GPIO_INPUT | GPIO_OUTPUT));
 	if (flags_io == (GPIO_INPUT | GPIO_OUTPUT) ||
 	    flags_io == GPIO_DISCONNECTED) {
-		return -ENOTSUP;
-	}
-
-	/* Drive strength configuration in this device is incompatible with
-	 * the currently available GPIO API flags, hence it is not supported.
-	 */
-	if ((flags & (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)) != 0) {
 		return -ENOTSUP;
 	}
 
@@ -199,9 +184,7 @@ static int pcal6408a_process_input(const struct device *dev,
 	uint8_t int_sources;
 	uint8_t input_port;
 
-	rc = i2c_reg_read_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-			       PCAL6408A_REG_INTERRUPT_STATUS,
-			       &int_sources);
+	rc = i2c_reg_read_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_INTERRUPT_STATUS, &int_sources);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to read interrupt sources: %d",
 			dev->name, rc);
@@ -209,9 +192,7 @@ static int pcal6408a_process_input(const struct device *dev,
 	}
 
 	/* This read also clears the generated interrupt if any. */
-	rc = i2c_reg_read_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-			       PCAL6408A_REG_INPUT_PORT,
-			       &input_port);
+	rc = i2c_reg_read_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_INPUT_PORT, &input_port);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to read input port: %d",
 			dev->name, rc);
@@ -325,8 +306,7 @@ static int pcal6408a_port_set_raw(const struct device *dev,
 	 * No need to limit `out` to only pins configured as outputs,
 	 * as the chip anyway ignores all other bits in the register.
 	 */
-	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-				PCAL6408A_REG_OUTPUT_PORT, output);
+	rc = i2c_reg_write_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_OUTPUT_PORT, output);
 	if (rc == 0) {
 		drv_data->pins_cfg.outputs_high = output;
 	}
@@ -372,18 +352,14 @@ static int pcal6408a_triggers_apply(const struct device *dev,
 	const struct pcal6408a_drv_cfg *drv_cfg = dev->config;
 	int rc;
 
-	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-				PCAL6408A_REG_INPUT_LATCH,
-				~(triggers.masked));
+	rc = i2c_reg_write_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_INPUT_LATCH, ~(triggers.masked));
 	if (rc != 0) {
 		LOG_ERR("%s: failed to configure input latch: %d",
 			dev->name, rc);
 		return -EIO;
 	}
 
-	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-				PCAL6408A_REG_INTERRUPT_MASK,
-				triggers.masked);
+	rc = i2c_reg_write_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_INTERRUPT_MASK, triggers.masked);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to configure interrupt mask: %d",
 			dev->name, rc);
@@ -472,8 +448,8 @@ static int pcal6408a_init(const struct device *dev)
 	};
 	int rc;
 
-	if (!device_is_ready(drv_cfg->i2c)) {
-		LOG_ERR("%s is not ready", drv_cfg->i2c->name);
+	if (!device_is_ready(drv_cfg->i2c.bus)) {
+		LOG_ERR("%s is not ready", drv_cfg->i2c.bus->name);
 		return -ENODEV;
 	}
 
@@ -520,9 +496,8 @@ static int pcal6408a_init(const struct device *dev)
 		};
 
 		for (int i = 0; i < ARRAY_SIZE(reset_state); ++i) {
-			rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-						reset_state[i][0],
-						reset_state[i][1]);
+			rc = i2c_reg_write_byte_dt(&drv_cfg->i2c, reset_state[i][0],
+						   reset_state[i][1]);
 			if (rc != 0) {
 				LOG_ERR("%s: failed to reset register %02x: %d",
 					dev->name, reset_state[i][0], rc);
@@ -540,9 +515,8 @@ static int pcal6408a_init(const struct device *dev)
 	drv_data->pins_cfg = initial_pins_cfg;
 
 	/* Read initial state of the input port register. */
-	rc = i2c_reg_read_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-			       PCAL6408A_REG_INPUT_PORT,
-			       &drv_data->input_port_last);
+	rc = i2c_reg_read_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_INPUT_PORT,
+				  &drv_data->input_port_last);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to initially read input port: %d",
 			dev->name, rc);
@@ -637,8 +611,7 @@ static const struct gpio_driver_api pcal6408a_drv_api = {
 			.port_pin_mask =				   \
 				GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),	   \
 		},							   \
-		.i2c = DEVICE_DT_GET(DT_INST_BUS(idx)),			   \
-		.i2c_addr = DT_INST_REG_ADDR(idx),			   \
+		.i2c = I2C_DT_SPEC_INST_GET(idx),			   \
 		INIT_INT_GPIO_FIELDS(idx)				   \
 		INIT_RESET_GPIO_FIELDS(idx)				   \
 	};								   \

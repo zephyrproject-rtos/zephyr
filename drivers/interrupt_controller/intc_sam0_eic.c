@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT atmel_sam0_eic
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/interrupt_controller/sam0_eic.h>
+#include <zephyr/drivers/interrupt_controller/sam0_eic.h>
 #include "intc_sam0_eic_priv.h"
 
 struct sam0_eic_line_assignment {
@@ -26,9 +26,6 @@ struct sam0_eic_data {
 	struct sam0_eic_port_data ports[PORT_GROUPS];
 	struct sam0_eic_line_assignment lines[EIC_EXTINT_NUM];
 };
-
-#define DEV_DATA(dev) \
-	((struct sam0_eic_data *const)(dev)->data)
 
 static void wait_synchronization(void)
 {
@@ -52,7 +49,7 @@ static inline void set_eic_enable(bool on)
 
 static void sam0_eic_isr(const struct device *dev)
 {
-	struct sam0_eic_data *const dev_data = DEV_DATA(dev);
+	struct sam0_eic_data *const dev_data = dev->data;
 	uint16_t bits = EIC->INTFLAG.reg;
 	uint32_t line_index;
 
@@ -98,7 +95,7 @@ static void sam0_eic_isr(const struct device *dev)
 int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
 		     bool filter, sam0_eic_callback_t cb, void *data)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct sam0_eic_data *dev_data = dev->data;
 	struct sam0_eic_port_data *port_data;
 	struct sam0_eic_line_assignment *line_assignment;
@@ -106,7 +103,7 @@ int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
 	int line_index;
 	int config_index;
 	int config_shift;
-	int key;
+	unsigned int key;
 	uint32_t config;
 
 	line_index = sam0_eic_map_to_line(port, pin);
@@ -188,7 +185,7 @@ err_in_use:
 
 static bool sam0_eic_check_ownership(int port, int pin, int line_index)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct sam0_eic_data *dev_data = dev->data;
 	struct sam0_eic_line_assignment *line_assignment =
 		&dev_data->lines[line_index];
@@ -207,13 +204,13 @@ static bool sam0_eic_check_ownership(int port, int pin, int line_index)
 
 int sam0_eic_release(int port, int pin)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct sam0_eic_data *dev_data = dev->data;
 	uint32_t mask;
 	int line_index;
 	int config_index;
 	int config_shift;
-	int key;
+	unsigned int key;
 
 	line_index = sam0_eic_map_to_line(port, pin);
 	if (line_index < 0) {
@@ -298,7 +295,7 @@ int sam0_eic_disable_interrupt(int port, int pin)
 
 uint32_t sam0_eic_interrupt_pending(int port)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct sam0_eic_data *dev_data = dev->data;
 	struct sam0_eic_line_assignment *line_assignment;
 	uint32_t set = EIC->INTFLAG.reg;
@@ -332,7 +329,7 @@ uint32_t sam0_eic_interrupt_pending(int port)
 			    DT_INST_IRQ_BY_IDX(0, n, priority),		\
 			    sam0_eic_isr, DEVICE_DT_INST_GET(0), 0);	\
 		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		\
-	} while (0)
+	} while (false)
 
 static int sam0_eic_init(const struct device *dev)
 {
@@ -412,5 +409,5 @@ static int sam0_eic_init(const struct device *dev)
 static struct sam0_eic_data eic_data;
 DEVICE_DT_INST_DEFINE(0, sam0_eic_init,
 	      NULL, &eic_data, NULL,
-	      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+	      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 	      NULL);

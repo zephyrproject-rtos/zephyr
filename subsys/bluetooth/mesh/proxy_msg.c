@@ -7,14 +7,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROXY)
 #define LOG_MODULE_NAME bt_mesh_proxy
@@ -25,6 +25,7 @@
 #include "net.h"
 #include "rpl.h"
 #include "transport.h"
+#include "host/ecc.h"
 #include "prov.h"
 #include "beacon.h"
 #include "foundation.h"
@@ -47,90 +48,31 @@
 
 #define PDU_HDR(sar, type) (sar << 6 | (type & BIT_MASK(6)))
 
+static uint8_t __noinit bufs[CONFIG_BT_MAX_CONN * CONFIG_BT_MESH_PROXY_MSG_LEN];
+
+static struct bt_mesh_proxy_role roles[CONFIG_BT_MAX_CONN];
+
+static int conn_count;
+
 static void proxy_sar_timeout(struct k_work *work)
 {
 	struct bt_mesh_proxy_role *role;
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 
 	BT_WARN("Proxy SAR timeout");
 
-	role = CONTAINER_OF(work, struct bt_mesh_proxy_role, sar_timer);
+	role = CONTAINER_OF(dwork, struct bt_mesh_proxy_role, sar_timer);
 	if (role->conn) {
 		bt_conn_disconnect(role->conn,
 				   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	}
 }
 
-#if defined(CONFIG_BT_MESH_PROXY)
-static void proxy_cfg(struct bt_mesh_proxy_role *role)
-{
-	NET_BUF_SIMPLE_DEFINE(buf, BT_MESH_NET_MAX_PDU_LEN);
-	struct bt_mesh_net_rx rx;
-	int err;
-
-	err = bt_mesh_net_decode(&role->buf, BT_MESH_NET_IF_PROXY_CFG,
-				 &rx, &buf);
-	if (err) {
-		BT_ERR("Failed to decode Proxy Configuration (err %d)", err);
-		return;
-	}
-
-	rx.local_match = 1U;
-
-	if (bt_mesh_rpl_check(&rx, NULL)) {
-		BT_WARN("Replay: src 0x%04x dst 0x%04x seq 0x%06x",
-			rx.ctx.addr, rx.ctx.recv_dst, rx.seq);
-		return;
-	}
-
-	/* Remove network headers */
-	net_buf_simple_pull(&buf, BT_MESH_NET_HDR_LEN);
-
-	BT_DBG("%u bytes: %s", buf.len, bt_hex(buf.data, buf.len));
-
-	if (buf.len < 1) {
-		BT_WARN("Too short proxy configuration PDU");
-		return;
-	}
-
-	role->cb.recv(role->conn, &rx, &buf);
-}
-#endif
-
-static void proxy_complete_pdu(struct bt_mesh_proxy_role *role)
-{
-	switch (role->msg_type) {
-#if defined(CONFIG_BT_MESH_PROXY)
-	case BT_MESH_PROXY_NET_PDU:
-		BT_DBG("Mesh Network PDU");
-		bt_mesh_net_recv(&role->buf, 0, BT_MESH_NET_IF_PROXY);
-		break;
-	case BT_MESH_PROXY_BEACON:
-		BT_DBG("Mesh Beacon PDU");
-		bt_mesh_beacon_recv(&role->buf);
-		break;
-	case BT_MESH_PROXY_CONFIG:
-		BT_DBG("Mesh Configuration PDU");
-		proxy_cfg(role);
-		break;
-#endif
-#if defined(CONFIG_BT_MESH_PB_GATT)
-	case BT_MESH_PROXY_PROV:
-		BT_DBG("Mesh Provisioning PDU");
-		bt_mesh_pb_gatt_recv(role->conn, &role->buf);
-		break;
-#endif
-	default:
-		BT_WARN("Unhandled Message Type 0x%02x", role->msg_type);
-		break;
-	}
-
-	net_buf_simple_reset(&role->buf);
-}
-
-ssize_t bt_mesh_proxy_msg_recv(struct bt_mesh_proxy_role *role,
+ssize_t bt_mesh_proxy_msg_recv(struct bt_conn *conn,
 			       const void *buf, uint16_t len)
 {
 	const uint8_t *data = buf;
+	struct bt_mesh_proxy_role *role = &roles[bt_conn_index(conn)];
 
 	switch (PDU_SAR(data)) {
 	case SAR_COMPLETE:
@@ -141,7 +83,8 @@ ssize_t bt_mesh_proxy_msg_recv(struct bt_mesh_proxy_role *role,
 
 		role->msg_type = PDU_TYPE(data);
 		net_buf_simple_add_mem(&role->buf, data + 1, len - 1);
-		proxy_complete_pdu(role);
+		role->cb.recv(role);
+		net_buf_simple_reset(&role->buf);
 		break;
 
 	case SAR_FIRST:
@@ -186,20 +129,21 @@ ssize_t bt_mesh_proxy_msg_recv(struct bt_mesh_proxy_role *role,
 		 */
 		(void)k_work_cancel_delayable(&role->sar_timer);
 		net_buf_simple_add_mem(&role->buf, data + 1, len - 1);
-		proxy_complete_pdu(role);
+		role->cb.recv(role);
+		net_buf_simple_reset(&role->buf);
 		break;
 	}
 
 	return len;
 }
 
-int bt_mesh_proxy_msg_send(struct bt_mesh_proxy_role *role, uint8_t type,
+int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 			   struct net_buf_simple *msg,
 			   bt_gatt_complete_func_t end, void *user_data)
 {
 	int err;
 	uint16_t mtu;
-	struct bt_conn *conn = role->conn;
+	struct bt_mesh_proxy_role *role = &roles[bt_conn_index(conn)];
 
 	BT_DBG("conn %p type 0x%02x len %u: %s", (void *)conn, type, msg->len,
 	       bt_hex(msg->data, msg->len));
@@ -220,7 +164,7 @@ int bt_mesh_proxy_msg_send(struct bt_mesh_proxy_role *role, uint8_t type,
 	net_buf_simple_pull(msg, mtu);
 
 	while (msg->len) {
-		if (msg->len + 1 < mtu) {
+		if (msg->len + 1 <= mtu) {
 			net_buf_simple_push_u8(msg, PDU_HDR(SAR_LAST, type));
 			err = role->cb.send(conn, msg->data, msg->len, end, user_data);
 			if (err) {
@@ -242,7 +186,97 @@ int bt_mesh_proxy_msg_send(struct bt_mesh_proxy_role *role, uint8_t type,
 	return 0;
 }
 
-void bt_mesh_proxy_msg_init(struct bt_mesh_proxy_role *role)
+static void buf_send_end(struct bt_conn *conn, void *user_data)
 {
+	struct net_buf *buf = user_data;
+
+	net_buf_unref(buf);
+}
+
+int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct net_buf *buf)
+{
+	int err;
+
+	NET_BUF_SIMPLE_DEFINE(msg, 1 + BT_MESH_NET_MAX_PDU_LEN);
+
+	/* Proxy PDU sending modifies the original buffer,
+	 * so we need to make a copy.
+	 */
+	net_buf_simple_reserve(&msg, 1);
+	net_buf_simple_add_mem(&msg, buf->data, buf->len);
+
+	err = bt_mesh_proxy_msg_send(conn, BT_MESH_PROXY_NET_PDU,
+				     &msg, buf_send_end, net_buf_ref(buf));
+
+	bt_mesh_adv_send_start(0, err, BT_MESH_ADV(buf));
+	if (err) {
+		BT_ERR("Failed to send proxy message (err %d)", err);
+
+		/* If segment_and_send() fails the buf_send_end() callback will
+		 * not be called, so we need to clear the user data (net_buf,
+		 * which is just opaque data to segment_and send) reference given
+		 * to segment_and_send() here.
+		 */
+		net_buf_unref(buf);
+	}
+
+	return err;
+}
+
+static void proxy_msg_init(struct bt_mesh_proxy_role *role)
+{
+	/* Check if buf has been allocated, in this way, we no longer need
+	 * to repeat the operation.
+	 */
+	if (role->buf.__buf) {
+		net_buf_simple_reset(&role->buf);
+		return;
+	}
+
+	net_buf_simple_init_with_data(&role->buf,
+				      &bufs[bt_conn_index(role->conn) *
+					    CONFIG_BT_MESH_PROXY_MSG_LEN],
+				      CONFIG_BT_MESH_PROXY_MSG_LEN);
+
+	net_buf_simple_reset(&role->buf);
+
 	k_work_init_delayable(&role->sar_timer, proxy_sar_timeout);
+}
+
+struct bt_mesh_proxy_role *bt_mesh_proxy_role_setup(struct bt_conn *conn,
+						    proxy_send_cb_t send,
+						    proxy_recv_cb_t recv)
+{
+	struct bt_mesh_proxy_role *role;
+
+	conn_count++;
+
+	role = &roles[bt_conn_index(conn)];
+
+	role->conn = bt_conn_ref(conn);
+	proxy_msg_init(role);
+
+	role->cb.recv = recv;
+	role->cb.send = send;
+
+	return role;
+}
+
+void bt_mesh_proxy_role_cleanup(struct bt_mesh_proxy_role *role)
+{
+	/* If this fails, the work handler exits early, as
+	 * there's no active connection.
+	 */
+	(void)k_work_cancel_delayable(&role->sar_timer);
+	bt_conn_unref(role->conn);
+	role->conn = NULL;
+
+	conn_count--;
+
+	bt_mesh_adv_gatt_update();
+}
+
+int bt_mesh_proxy_conn_count_get(void)
+{
+	return conn_count;
 }

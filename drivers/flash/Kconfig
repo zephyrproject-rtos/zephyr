@@ -44,7 +44,7 @@ module-str = flash
 source "subsys/logging/Kconfig.template.log_config"
 
 config FLASH_SHELL
-	bool "Enable Flash shell"
+	bool "Flash shell"
 	depends on SHELL && FLASH_PAGE_LAYOUT
 	default y
 	help
@@ -58,7 +58,17 @@ config FLASH_PAGE_LAYOUT
 	help
 	  Enables API for retrieving the layout of flash memory pages.
 
+config FLASH_INIT_PRIORITY
+	int "Flash init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Flash driver device initialization priority. This initialization
+	  priority is used unless the driver implementation has its own
+	  initialization priority
+
 source "drivers/flash/Kconfig.b91"
+
+source "drivers/flash/Kconfig.cc13xx_cc26xx"
 
 source "drivers/flash/Kconfig.at45"
 
@@ -81,6 +91,8 @@ source "drivers/flash/Kconfig.nor"
 source "drivers/flash/Kconfig.stm32"
 
 source "drivers/flash/Kconfig.stm32_qspi"
+
+source "drivers/flash/Kconfig.stm32_ospi"
 
 source "drivers/flash/Kconfig.sam0"
 

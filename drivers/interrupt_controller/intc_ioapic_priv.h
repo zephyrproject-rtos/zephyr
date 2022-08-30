@@ -45,4 +45,13 @@
 
 #define IOAPIC_VEC_MASK 0x000000ff
 
+/* VTD related macros */
+
+#define IOAPIC_VTD_REMAP_FORMAT BIT(16)
+/* We care only about the first 14 bits.
+ * The 15th bits is in the first 32bits of RTE but since
+ * we don't go up to that value, let's ignore it.
+ */
+#define IOAPIC_VTD_INDEX(index) (index << 17)
+
 #endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_IOAPIC_PRIV_H_ */

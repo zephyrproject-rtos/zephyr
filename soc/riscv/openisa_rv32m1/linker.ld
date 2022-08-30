@@ -12,12 +12,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <devicetree.h>
-#include <autoconf.h>
+#include <zephyr/devicetree.h>
 
-#include <linker/sections.h>
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 /*
  * Extra efforts would need to be taken to ensure the IRQ handlers are within
@@ -86,7 +85,7 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 SECTIONS
     {
 
-#include <linker/rel-sections.ld>
+#include <zephyr/linker/rel-sections.ld>
 
     SECTION_PROLOGUE(.plt,,)
 	{
@@ -99,7 +98,7 @@ SECTIONS
 	}
 
     GROUP_START(ROM)
-    _image_rom_start = ROM_BASE;
+    __rom_region_start = ROM_BASE;
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
@@ -110,19 +109,19 @@ SECTIONS
  */
 #include <snippets-rom-start.ld>
 
-	_image_text_start = .;
+	__text_region_start = .;
 
 	*(.text .text.*)
 	*(.gnu.linkonce.t.*)
 	*(.eh_frame)
 	} GROUP_LINK_IN(ROM)
 
-    _image_text_end = .;
+    __text_region_end = .;
 
-    _image_rodata_start = .;
+    __rodata_region_start = .;
 
-#include <linker/common-rom.ld>
-#include <linker/thread-local-storage.ld>
+#include <zephyr/linker/common-rom.ld>
+#include <zephyr/linker/thread-local-storage.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
@@ -140,10 +139,10 @@ SECTIONS
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-#include <linker/cplusplus-rom.ld>
+#include <zephyr/linker/cplusplus-rom.ld>
 
-    _image_rodata_end = .;
-    _image_rom_end = .;
+    __rodata_region_end = .;
+    __rom_region_end = .;
 
 #ifndef CONFIG_BOOTLOADER_MCUBOOT
     /* The vector table goes into core-dependent flash locations. */
@@ -163,7 +162,8 @@ SECTIONS
 	{
 	. = ALIGN(4);
 	_image_ram_start = .;
-	__data_ram_start = .;
+	__data_region_start = .;
+	__data_start = .;
 
 	*(.data)
 	*(.data.*)
@@ -178,13 +178,22 @@ SECTIONS
  */
 #include <snippets-rwdata.ld>
 
+	__data_end = .;
+
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	__data_size = __data_end - __data_start;
+	__data_load_start = LOADADDR(_DATA_SECTION_NAME);
 
-#include <linker/common-ram.ld>
-#include <linker/cplusplus-ram.ld>
+#include <zephyr/linker/common-ram.ld>
+#include <zephyr/linker/cplusplus-ram.ld>
 
-    __data_ram_end = .;
-    __data_rom_start = LOADADDR(_DATA_SECTION_NAME);
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-data-sections.ld>
+
+    __data_region_end = .;
+    __data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
@@ -236,10 +245,10 @@ SECTIONS
 
 #ifdef CONFIG_GEN_ISR_TABLES
 /* Bogus section, post-processed during the build to initialize interrupts. */
-#include <linker/intlist.ld>
+#include <zephyr/linker/intlist.ld>
 #endif
 
-#include <linker/debug-sections.ld>
+#include <zephyr/linker/debug-sections.ld>
 
     SECTION_PROLOGUE(.riscv.attributes, 0,)
 	{

@@ -11,9 +11,10 @@
 #ifndef __BMP388_H
 #define __BMP388_H
 
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
 
 /* registers */
 #define BMP388_REG_CHIPID       0x00
@@ -139,14 +140,13 @@ struct bmp388_io_ops {
 };
 
 struct bmp388_config {
-	const struct device *bus;
 	const struct bmp388_io_ops *ops;
 	union {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-		struct spi_config spi_cfg;
+		struct spi_dt_spec spi;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-		uint16_t bus_addr;
+		struct i2c_dt_spec i2c;
 #endif
 	};
 
@@ -162,10 +162,6 @@ struct bmp388_data {
 	uint8_t osr_pressure;
 	uint8_t osr_temp;
 	struct bmp388_cal_data cal;
-
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state device_power_state;
-#endif
 
 #if defined(CONFIG_BMP388_TRIGGER)
 	struct gpio_callback gpio_cb;
@@ -190,9 +186,6 @@ struct bmp388_data {
 	sensor_trigger_handler_t handler_drdy;
 #endif /* CONFIG_BMP388_TRIGGER */
 };
-
-#define DEV_DATA(dev) ((struct bmp388_data *)dev->data)
-#define DEV_CFG(dev)  ((const struct bmp388_config *)dev->config)
 
 int bmp388_trigger_mode_init(const struct device *dev);
 int bmp388_trigger_set(const struct device *dev,

@@ -25,8 +25,8 @@
 #else
 
 #include <fcntl.h>
-#include <net/socket.h>
-#include <kernel.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/kernel.h>
 
 /* Generic read()/write() are not defined, so use socket-specific recv(). */
 #define READ(fd, buf, sz) recv(fd, buf, sz, 0)

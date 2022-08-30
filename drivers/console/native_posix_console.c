@@ -6,9 +6,9 @@
 
 #include <stdio.h>
 #include <ctype.h>
-#include "init.h"
-#include "kernel.h"
-#include "console/console.h"
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/console/console.h>
 #include "posix_board_if.h"
 #include <string.h>
 #include <sys/time.h>

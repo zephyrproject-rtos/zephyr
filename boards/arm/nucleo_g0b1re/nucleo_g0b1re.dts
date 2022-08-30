@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <st/g0/stm32g0b1Xe.dtsi>
-#include <st/g0/stm32g0b1r(c-e)tx-pinctrl.dtsi>
+#include <st/g0/stm32g0b1r(b-c-e)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
@@ -20,6 +20,21 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+	};
+
+	power-states {
+		stop0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <20>;
+		};
+		stop1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <100>;
+		};
 	};
 
 	leds {
@@ -41,7 +56,12 @@
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
 };
 
 &clk_hsi {
@@ -65,14 +85,22 @@
 	apb1-prescaler = <1>;
 };
 
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pc4 &usart1_rx_pc5>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -86,22 +114,35 @@
 };
 
 &timers3 {
+	st,prescaler = <10000>;
 	status = "okay";
 	pwm3: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
-		pinctrl-0 = <&tim3_ch1_pa6>;
+		pinctrl-0 = <&tim3_ch1_pb4>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers15 {
+	st,prescaler = <10000>;
+	status = "okay";
+	pwm15: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim15_ch1_pb14>;
+		pinctrl-names = "default";
 	};
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pa11 &i2c2_sda_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -109,23 +150,31 @@
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pb0 &spi1_sck_pa5
 		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &spi2 {
-	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
-		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-0 = <&spi2_nss_pd0 &spi2_sck_pd1
+		     &spi2_miso_pd3 &spi2_mosi_pd4>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
 };
 
 &flash0 {
@@ -136,21 +185,31 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x0000C000>;
+			reg = <0x00000000 DT_SIZE_K(48)>;
 			read-only;
 		};
 		slot0_partition: partition@C000 {
 			label = "image-0";
-			reg = <0x0000C000 0x00032000>;
+			reg = <0x0000C000 DT_SIZE_K(200)>;
 		};
 		slot1_partition: partition@3E000 {
 			label = "image-1";
-			reg = <0x0003E000 0x00032000>;
+			reg = <0x0003E000 DT_SIZE_K(200)>;
 		};
 		/* final 64KiB reserved for app storage partition */
 		storage_partition: partition@70000 {
 			label = "storage";
-			reg = <0x00070000 0x00010000>;
+			reg = <0x00070000 DT_SIZE_K(64)>;
 		};
 	};
+};
+
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1>;
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
 };

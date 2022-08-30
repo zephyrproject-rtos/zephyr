@@ -14,7 +14,7 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_interface.h>
 #include <string.h>
 
@@ -25,6 +25,9 @@ extern "C" {
 #endif
 
 /* Early boot functions */
+
+void z_early_memset(void *dst, int c, size_t n);
+void z_early_memcpy(void *dst, const void *src, size_t n);
 
 void z_bss_zero(void);
 #ifdef CONFIG_XIP
@@ -138,10 +141,7 @@ z_thread_return_value_set_with_data(struct k_thread *thread,
 
 #ifdef CONFIG_SMP
 extern void z_smp_init(void);
-
-#if CONFIG_MP_NUM_CPUS > 1 && !defined(CONFIG_SMP_BOOT_DELAY)
 extern void smp_timer_init(void);
-#endif
 #endif
 
 extern void z_early_boot_rand_get(uint8_t *buf, size_t length);
@@ -156,12 +156,15 @@ extern struct k_thread z_main_thread;
 #ifdef CONFIG_MULTITHREADING
 extern struct k_thread z_idle_threads[CONFIG_MP_NUM_CPUS];
 #endif
-K_KERNEL_PINNED_STACK_ARRAY_EXTERN(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
-				   CONFIG_ISR_STACK_SIZE);
+K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+				    CONFIG_ISR_STACK_SIZE);
 
 #ifdef CONFIG_GEN_PRIV_STACKS
 extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 #endif
+
+/* Calculate stack usage. */
+int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_ptr);
 
 #ifdef CONFIG_USERSPACE
 bool z_stack_is_user_capable(k_thread_stack_t *stack);
@@ -191,7 +194,7 @@ struct gdb_ctx;
 /* Should be called by the arch layer. This is the gdbstub main loop
  * and synchronously communicate with gdb on host.
  */
-extern int z_gdb_main_loop(struct gdb_ctx *ctx, bool start);
+extern int z_gdb_main_loop(struct gdb_ctx *ctx);
 #endif
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
@@ -217,6 +220,11 @@ void z_thread_mark_switched_out(void);
  */
 void z_mem_manage_init(void);
 
+/**
+ * @brief Finalize page frame management at the end of boot process.
+ */
+void z_mem_manage_boot_finish(void);
+
 #define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
 					  __key = k_spin_lock(lck);	\
 			!__i.key;					\
@@ -238,8 +246,10 @@ void z_mem_manage_init(void);
  *
  * This function is entered with interrupts disabled. It should re-enable
  * interrupts if it had entered a power state.
+ *
+ * @return True if the system suspended, otherwise return false
  */
-enum pm_state pm_system_suspend(int32_t ticks);
+bool pm_system_suspend(int32_t ticks);
 
 /**
  * Notify exit from kernel idling after PM operations
@@ -257,8 +267,7 @@ enum pm_state pm_system_suspend(int32_t ticks);
  * those cases, the ISR would be invoked immediately after the event wakes up
  * the CPU, before code following the CPU wait, gets a chance to execute. This
  * can be ignored if no operation needs to be done at the wake event
- * notification. Alternatively pm_idle_exit_notification_disable() can
- * be called in pm_system_suspend to disable this notification.
+ * notification.
  */
 void pm_system_resume(void);
 

@@ -78,6 +78,43 @@ def test_interrupts():
     assert str(edt.get_node("/interrupt-map-bitops-test/node@70000000E").interrupts) == \
         f"[<ControllerAndData, controller: <Node /interrupt-map-bitops-test/controller in 'test.dts', binding {filenames[2]}>, data: OrderedDict([('one', 3), ('two', 2)])>]"
 
+def test_ranges():
+    '''Tests for the ranges property'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    assert str(edt.get_node("/reg-ranges/parent").ranges) == \
+        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0x1, parent-bus-cells: 0x2, parent-bus-addr: 0xa0000000b, length-cells 0x1, length 0x1>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x2, parent-bus-cells: 0x2, parent-bus-addr: 0xc0000000d, length-cells 0x1, length 0x2>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x4, parent-bus-cells: 0x2, parent-bus-addr: 0xe0000000f, length-cells 0x1, length 0x1>]"
+
+    assert str(edt.get_node("/reg-nested-ranges/grandparent").ranges) == \
+        "[<Range, child-bus-cells: 0x2, child-bus-addr: 0x0, parent-bus-cells: 0x3, parent-bus-addr: 0x30000000000000000, length-cells 0x2, length 0x200000002>]"
+
+    assert str(edt.get_node("/reg-nested-ranges/grandparent/parent").ranges) == \
+        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0x0, parent-bus-cells: 0x2, parent-bus-addr: 0x200000000, length-cells 0x1, length 0x2>]"
+
+    assert str(edt.get_node("/ranges-zero-cells/node").ranges) == "[]"
+
+    assert str(edt.get_node("/ranges-zero-parent-cells/node").ranges) == \
+        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0xa, parent-bus-cells: 0x0, length-cells 0x0>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x1a, parent-bus-cells: 0x0, length-cells 0x0>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x2a, parent-bus-cells: 0x0, length-cells 0x0>]"
+
+    assert str(edt.get_node("/ranges-one-address-cells/node").ranges) == \
+        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0xa, parent-bus-cells: 0x0, length-cells 0x1, length 0xb>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x1a, parent-bus-cells: 0x0, length-cells 0x1, length 0x1b>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x2a, parent-bus-cells: 0x0, length-cells 0x1, length 0x2b>]"
+
+    assert str(edt.get_node("/ranges-one-address-two-size-cells/node").ranges) == \
+        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0xa, parent-bus-cells: 0x0, length-cells 0x2, length 0xb0000000c>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x1a, parent-bus-cells: 0x0, length-cells 0x2, length 0x1b0000001c>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x2a, parent-bus-cells: 0x0, length-cells 0x2, length 0x2b0000002c>]"
+
+    assert str(edt.get_node("/ranges-two-address-cells/node@1").ranges) == \
+        "[<Range, child-bus-cells: 0x2, child-bus-addr: 0xa0000000b, parent-bus-cells: 0x1, parent-bus-addr: 0xc, length-cells 0x1, length 0xd>, <Range, child-bus-cells: 0x2, child-bus-addr: 0x1a0000001b, parent-bus-cells: 0x1, parent-bus-addr: 0x1c, length-cells 0x1, length 0x1d>, <Range, child-bus-cells: 0x2, child-bus-addr: 0x2a0000002b, parent-bus-cells: 0x1, parent-bus-addr: 0x2c, length-cells 0x1, length 0x2d>]"
+
+    assert str(edt.get_node("/ranges-two-address-two-size-cells/node@1").ranges) == \
+        "[<Range, child-bus-cells: 0x2, child-bus-addr: 0xa0000000b, parent-bus-cells: 0x1, parent-bus-addr: 0xc, length-cells 0x2, length 0xd0000000e>, <Range, child-bus-cells: 0x2, child-bus-addr: 0x1a0000001b, parent-bus-cells: 0x1, parent-bus-addr: 0x1c, length-cells 0x2, length 0x1d0000001e>, <Range, child-bus-cells: 0x2, child-bus-addr: 0x2a0000002b, parent-bus-cells: 0x1, parent-bus-addr: 0x2c, length-cells 0x2, length 0x2d0000001d>]"
+
+    assert str(edt.get_node("/ranges-three-address-cells/node@1").ranges) == \
+        "[<Range, child-bus-cells: 0x3, child-bus-addr: 0xa0000000b0000000c, parent-bus-cells: 0x2, parent-bus-addr: 0xd0000000e, length-cells 0x1, length 0xf>, <Range, child-bus-cells: 0x3, child-bus-addr: 0x1a0000001b0000001c, parent-bus-cells: 0x2, parent-bus-addr: 0x1d0000001e, length-cells 0x1, length 0x1f>, <Range, child-bus-cells: 0x3, child-bus-addr: 0x2a0000002b0000002c, parent-bus-cells: 0x2, parent-bus-addr: 0x2d0000002e, length-cells 0x1, length 0x2f>]"
+
+    assert str(edt.get_node("/ranges-three-address-two-size-cells/node@1").ranges) == \
+        "[<Range, child-bus-cells: 0x3, child-bus-addr: 0xa0000000b0000000c, parent-bus-cells: 0x2, parent-bus-addr: 0xd0000000e, length-cells 0x2, length 0xf00000010>, <Range, child-bus-cells: 0x3, child-bus-addr: 0x1a0000001b0000001c, parent-bus-cells: 0x2, parent-bus-addr: 0x1d0000001e, length-cells 0x2, length 0x1f00000110>, <Range, child-bus-cells: 0x3, child-bus-addr: 0x2a0000002b0000002c, parent-bus-cells: 0x2, parent-bus-addr: 0x2d0000002e, length-cells 0x2, length 0x2f00000210>]"
+
 def test_reg():
     '''Tests for the regs property'''
     with from_here():
@@ -120,6 +157,20 @@ def test_hierarchy():
         "OrderedDict([('child-1', <Node /parent/child-1 in 'test.dts', no binding>), ('child-2', <Node /parent/child-2 in 'test.dts', no binding>)])"
 
     assert edt.get_node("/parent/child-1").children == {}
+
+def test_child_index():
+    '''Test Node.child_index.'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    parent, child_1, child_2 = [edt.get_node(path) for path in
+                                ("/parent",
+                                 "/parent/child-1",
+                                 "/parent/child-2")]
+    assert parent.child_index(child_1) == 0
+    assert parent.child_index(child_2) == 1
+    with pytest.raises(KeyError):
+        parent.child_index(parent)
 
 def test_include():
     '''Test 'include:' and the legacy 'inherits: !include ...' in bindings'''
@@ -357,6 +408,8 @@ def test_nexus():
     assert str(edt.get_node("/gpio-map/source").props["foo-gpios"]) == \
         f"<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding {filename}>, data: OrderedDict([('val', 6)])>, <ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding {filename}>, data: OrderedDict([('val', 5)])>]>"
 
+    assert str(edt.get_node("/gpio-map/source").props["foo-gpios"].val[0].basename) == f"gpio"
+
 def test_prop_defaults():
     '''Test property default values given in bindings'''
     with from_here():
@@ -515,6 +568,22 @@ def test_bad_compatible(tmp_path):
 """,
                  dts_file,
                  r"node '/foo' compatible 'no, whitespace' must match this regular expression: '^[a-zA-Z][a-zA-Z0-9,+\-._]+$'")
+
+def test_wrong_props():
+    '''Test Node.wrong_props (derived from DT and 'properties:' in the binding)'''
+
+    with from_here():
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding("test-wrong-bindings/wrong-specifier-space-type.yaml", None)
+        assert ("'specifier-space' in 'properties: wrong-type-for-specifier-space' has type 'phandle', expected 'phandle-array'"
+            in str(e.value))
+
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding("test-wrong-bindings/wrong-phandle-array-name.yaml", None)
+        value_str = str(e.value)
+        assert value_str.startswith("'wrong-phandle-array-name' in 'properties:'")
+        assert value_str.endswith("but no 'specifier-space' was provided.")
+
 
 def verify_error(dts, dts_file, expected_err):
     # Verifies that parsing a file 'dts_file' with the contents 'dts'

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # Copyright (c) 2019 Linaro Limited
 #
@@ -20,7 +20,7 @@ else()
   message(FATAL_ERROR "${BOARD} was not supported for this sample")
 endif()
 
-message(INFO " ${BOARD} compile as Master in this sample")
+message(STATUS "${BOARD} compile as Master in this sample")
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(openamp)

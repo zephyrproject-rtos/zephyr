@@ -125,3 +125,21 @@ application. To enable debug over RTT the debug configuration file can be used.
    west build samples/bluetooth/hci_uart -- -DOVERLAY_CONFIG='debug.conf'
 
 Then attach RTT as described here: :ref:`Using Segger J-Link <Using Segger J-Link>`
+
+Support for the Direction Finding
+=================================
+
+The sample can be built with the support for the BLE Direction Finding.
+To enable this feature build this sample for specific board variants that provide
+required hardware configuration for the Radio.
+
+.. code-block:: console
+
+   west build samples/bluetooth/hci_uart -b nrf52833dk_nrf52833@df -- -DCONFIG_BT_CTLR_DF=y
+
+You can use following targets:
+
+* ``nrf5340dk_nrf5340_cpunet@df``
+* ``nrf52833dk_nrf52833@df``
+
+Check the :ref:`bluetooth_direction_finding_connectionless_rx` and the :ref:`bluetooth_direction_finding_connectionless_tx` for more details.

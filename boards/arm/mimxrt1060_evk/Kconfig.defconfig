@@ -3,11 +3,12 @@
 # Copyright (c) 2018, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MIMXRT1060_EVK || BOARD_MIMXRT1060_EVK_HYPERFLASH
+if BOARD_MIMXRT1060_EVK || BOARD_MIMXRT1060_EVK_HYPERFLASH || BOARD_MIMXRT1060_EVKB
 
 config BOARD
 	default "mimxrt1060_evk" if BOARD_MIMXRT1060_EVK
 	default "mimxrt1060_evk_hyperflash" if BOARD_MIMXRT1060_EVK_HYPERFLASH
+	default "mimxrt1060_evkb" if BOARD_MIMXRT1060_EVKB
 
 choice CODE_LOCATION
 	default CODE_FLEXSPI
@@ -16,22 +17,24 @@ endchoice
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
 
+if FLASH
+
 config FLASH_MCUX_FLEXSPI_NOR
-	default y if FLASH && BOARD_MIMXRT1060_EVK
+	default y if BOARD_MIMXRT1060_EVK
+	default y if BOARD_MIMXRT1060_EVKB
+	default n if BOARD_MIMXRT1060_EVK_HYPERFLASH
 
-config FLASH_MCUX_FLEXSPI_XIP
-	default y if FLASH && BOARD_MIMXRT1060_EVK
+config FLASH_MCUX_FLEXSPI_HYPERFLASH
+	default y if BOARD_MIMXRT1060_EVK_HYPERFLASH
+	default n if BOARD_MIMXRT1060_EVK
+	default n if BOARD_MIMXRT1060_EVKB
 
-config I2C
-	default y if KSCAN
+endif #FLASH
 
 config KSCAN
 	default y if LVGL
 
 if KSCAN
-
-config KSCAN_FT5336
-	default y
 
 config KSCAN_FT5336_INTERRUPT
 	default y
@@ -43,35 +46,26 @@ if NETWORKING
 config NET_L2_ETHERNET
 	default y
 
+config ETH_MCUX_PHY_RESET
+	default y
+
 endif # NETWORKING
 
 if LVGL
 
-config LVGL_DISPLAY_DEV_NAME
-	default "ELCDIF_1"
-
-config LVGL_POINTER_KSCAN
+config LV_Z_POINTER_KSCAN
 	default y
 
-config LVGL_POINTER_KSCAN_DEV_NAME
-	default "FT5336"
-
-config LVGL_HOR_RES_MAX
-	default 480
-
-config LVGL_VER_RES_MAX
-	default 272
-
-config LVGL_VDB_SIZE
+config LV_Z_VDB_SIZE
 	default 16
 
-config LVGL_DPI
+config LV_Z_DPI
 	default 128
 
-choice LVGL_COLOR_DEPTH
-	default LVGL_COLOR_DEPTH_16
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
 endchoice
 
 endif # LVGL
 
-endif # BOARD_MIMXRT1060_EVK || BOARD_MIMXRT1060_EVK_HYPERFLASH
+endif # BOARD_MIMXRT1060_EVK || BOARD_MIMXRT1060_EVK_HYPERFLASH || BOARD_MIMXRT1060_EVKB

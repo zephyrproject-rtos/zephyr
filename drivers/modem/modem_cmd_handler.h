@@ -13,7 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_CMD_HANDLER_H_
 #define ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_CMD_HANDLER_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #include "modem_context.h"
 
@@ -118,6 +118,9 @@ struct modem_cmd_handler_data {
 	/* locks */
 	struct k_sem sem_tx_lock;
 	struct k_sem sem_parse_lock;
+
+	/* user data */
+	void *user_data;
 };
 
 /**
@@ -164,6 +167,8 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
  *
  * @param  *iface: interface to use
  * @param  *handler: command handler to use
+ * @param  *handler_cmds: commands to attach
+ * @param  handler_cmds_len: size of commands array
  * @param  *buf: NULL terminated send buffer
  * @param  *sem: wait for response semaphore
  * @param  timeout: timeout of command
@@ -182,6 +187,8 @@ int modem_cmd_send_ext(struct modem_iface *iface,
  *
  * @param  *iface: interface to use
  * @param  *handler: command handler to use
+ * @param  *handler_cmds: commands to attach
+ * @param  handler_cmds_len: size of commands array
  * @param  *buf: NULL terminated send buffer
  * @param  *sem: wait for response semaphore
  * @param  timeout: timeout of command
@@ -205,6 +212,8 @@ static inline int modem_cmd_send_nolock(struct modem_iface *iface,
  *
  * @param  *iface: interface to use
  * @param  *handler: command handler to use
+ * @param  *handler_cmds: commands to attach
+ * @param  handler_cmds_len: size of commands array
  * @param  *buf: NULL terminated send buffer
  * @param  *sem: wait for response semaphore
  * @param  timeout: timeout of command
@@ -271,18 +280,23 @@ int modem_cmd_handler_init(struct modem_cmd_handler *handler,
  * @brief  Lock the modem for sending cmds
  *
  * This is semaphore-based rather than mutex based, which means there's no
- * requirements of thread ownership for the user. These functions are useful
+ * requirements of thread ownership for the user. This function is useful
  * when one needs to prevent threads from sending UART data to the modem for an
  * extended period of time (for example during modem reset).
  *
  * @param  *handler: command handler to lock
- * @param  lock: set true to lock, false to unlock
  * @param  timeout: give up after timeout
  *
  * @retval 0 if ok, < 0 if error.
  */
 int modem_cmd_handler_tx_lock(struct modem_cmd_handler *handler,
 			      k_timeout_t timeout);
+
+/**
+ * @brief  Unlock the modem for sending cmds
+ *
+ * @param  *handler: command handler to unlock
+ */
 void modem_cmd_handler_tx_unlock(struct modem_cmd_handler *handler);
 
 

@@ -5,19 +5,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wifi_esp_at_offload, CONFIG_WIFI_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/net_offload.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_offload.h>
 
 #include "esp.h"
 
@@ -38,7 +37,7 @@ static int esp_listen(struct net_context *context, int backlog)
 
 static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 {
-	char connect_msg[sizeof("AT+CIPSTART=0,\"TCP\",\"\",65535,7200") +
+	char connect_msg[sizeof("AT+CIPSTART=000,\"TCP\",\"\",65535,7200") +
 			 NET_IPV4_ADDR_LEN];
 	char addr_str[NET_IPV4_ADDR_LEN];
 	struct sockaddr dst;
@@ -70,7 +69,7 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 
 	LOG_DBG("link %d, ip_proto %s, addr %s", sock->link_id,
 		esp_socket_ip_proto(sock) == IPPROTO_TCP ? "TCP" : "UDP",
-		log_strdup(addr_str));
+		addr_str);
 
 	ret = esp_cmd_send(dev, NULL, 0, connect_msg, ESP_CMD_TIMEOUT);
 	if (ret == 0) {
@@ -431,7 +430,7 @@ static int cmd_ciprecvdata_parse(struct esp_socket *sock,
 	if (endptr == &cmd_buf[len] ||
 	    (*endptr == 0 && match_len >= CIPRECVDATA_CMD_MAX_LEN) ||
 	    *data_len > CIPRECVDATA_MAX_LEN) {
-		LOG_ERR("Invalid cmd: %s", log_strdup(cmd_buf));
+		LOG_ERR("Invalid cmd: %s", cmd_buf);
 		return -EBADMSG;
 	} else if (*endptr == 0) {
 		return -EAGAIN;
@@ -482,7 +481,7 @@ void esp_recvdata_work(struct k_work *work)
 	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket,
 					       recvdata_work);
 	struct esp_data *data = esp_socket_to_dev(sock);
-	char cmd[sizeof("AT+CIPRECVDATA=0,"STRINGIFY(CIPRECVDATA_MAX_LEN))];
+	char cmd[sizeof("AT+CIPRECVDATA=000,"STRINGIFY(CIPRECVDATA_MAX_LEN))];
 	static const struct modem_cmd cmds[] = {
 		MODEM_CMD_DIRECT(_CIPRECVDATA, on_cmd_ciprecvdata),
 	};
@@ -517,7 +516,7 @@ void esp_close_work(struct k_work *work)
 	}
 
 	/* Should we notify that the socket has been closed? */
-	if (old_flags & ESP_SOCK_CONNECTED) {
+	if (old_flags & ESP_SOCK_CLOSE_PENDING) {
 		k_mutex_lock(&sock->lock, K_FOREVER);
 		if (sock->recv_cb) {
 			sock->recv_cb(sock->context, NULL, NULL, NULL, 0,
@@ -536,8 +535,8 @@ static int esp_recv(struct net_context *context,
 	struct esp_socket *sock = context->offload_context;
 	int ret;
 
-	LOG_DBG("link_id %d, timeout %d, cb 0x%x, data 0x%x", sock->link_id,
-		timeout, (int)cb, (int)user_data);
+	LOG_DBG("link_id %d, timeout %d, cb %p, data %p",
+		sock->link_id, timeout, cb, user_data);
 
 	k_mutex_lock(&sock->lock, K_FOREVER);
 	sock->recv_cb = cb;

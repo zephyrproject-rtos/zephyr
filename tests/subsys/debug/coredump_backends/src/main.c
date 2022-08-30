@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <assert.h>
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 
-#include <debug/coredump.h>
+#include <zephyr/debug/coredump.h>
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static struct k_thread dump_thread;
 static K_THREAD_STACK_DEFINE(dump_stack, STACK_SIZE);
@@ -106,12 +106,10 @@ void test_verify_stored_dump(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(coredump_backends,
-			 ztest_unit_test(test_coredump),
-			 ztest_unit_test(test_query_stored_dump),
-			 ztest_unit_test(test_verify_stored_dump));
-	ztest_run_test_suite(coredump_backends);
-
+ZTEST(coredump_backends, test_coredump_backend) {
+	test_coredump();
+	test_query_stored_dump();
+	test_verify_stored_dump();
 }
+
+ZTEST_SUITE(coredump_backends, NULL, NULL, NULL, NULL, NULL);

@@ -1,0 +1,11 @@
+/ {
+	zephyr,user {
+		/* period cell corresponds to initial period */
+		pwms = <&sw_pwm 0 PWM_USEC(1500) PWM_POLARITY_NORMAL>;
+	};
+};
+
+&sw_pwm {
+	status = "okay";
+	channel-gpios = <&edge_connector 0 GPIO_ACTIVE_HIGH>;
+};

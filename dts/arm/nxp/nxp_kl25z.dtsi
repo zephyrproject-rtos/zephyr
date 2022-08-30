@@ -2,10 +2,10 @@
 
 #include <mem.h>
 #include "armv6-m.dtsi"
-#include <dt-bindings/clock/kinetis_sim.h>
-#include <dt-bindings/clock/kinetis_mcg.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/kinetis_sim.h>
+#include <zephyr/dt-bindings/clock/kinetis_mcg.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	chosen {
@@ -28,19 +28,24 @@
 		reg = <0x1FFFF000 DT_SIZE_K(16)>;
 	};
 
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,kinetis-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		ftfa: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfa";
-			label = "FLASH_CTRL";
 			reg = <0x40020000 0x14>;
 			interrupts = <5 0>;
+			status = "disabled";
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				label = "MCUX_FLASH";
 				reg = <0 DT_SIZE_K(128)>;
 				erase-block-size = <1024>;
 				write-block-size = <4>;
@@ -50,7 +55,6 @@
 		mcg: clock-controller@40064000 {
 			compatible = "nxp,kinetis-mcg";
 			reg = <0x40064000 0xd>;
-			label = "MCG";
 			#clock-cells = <1>;
 		};
 
@@ -62,7 +66,6 @@
 			reg = <0x40066000 0x1000>;
 			interrupts = <8 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 6>;
-			label = "I2C_0";
 			status = "disabled";
 		};
 
@@ -74,14 +77,12 @@
 			reg = <0x40067000 0x1000>;
 			interrupts = <9 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 7>;
-			label = "I2C_1";
 			status = "disabled";
 		};
 
 		sim: sim@40047000 {
 			compatible = "nxp,kinetis-sim";
 			reg = <0x40047000 0x1060>;
-			label = "SIM";
 			#clock-cells = <3>;
 
 			core_clk {
@@ -104,7 +105,6 @@
 			reg = <0x4006a000 0xc>;
 			interrupts = <12 0>;
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1034 10>;
-			label = "UART_0";
 
 			status = "disabled";
 		};
@@ -113,7 +113,6 @@
 			compatible = "nxp,kinetis-adc16";
 			reg = <0x4003b000 0x70>;
 			interrupts = <15 0>;
-			label = "ADC_0";
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -153,7 +152,6 @@
 			status = "disabled";
 			reg = <0x400ff000 0x40>;
 			interrupts = <30 2>;
-			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&porta>;
@@ -163,7 +161,6 @@
 			compatible = "nxp,kinetis-gpio";
 			status = "disabled";
 			reg = <0x400ff040 0x40>;
-			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&portb>;
@@ -173,7 +170,6 @@
 			compatible = "nxp,kinetis-gpio";
 			status = "disabled";
 			reg = <0x400ff080 0x40>;
-			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&portc>;
@@ -184,7 +180,6 @@
 			status = "disabled";
 			reg = <0x400ff0c0 0x40>;
 			interrupts = <31 2>;
-			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&portd>;
@@ -194,7 +189,6 @@
 			compatible = "nxp,kinetis-gpio";
 			status = "disabled";
 			reg = <0x400ff100 0x40>;
-			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&porte>;
@@ -207,7 +201,6 @@
 			interrupt-names = "usb_otg";
 			num-bidir-endpoints = <16>;
 			status = "disabled";
-			label = "USBD";
 		};
 	};
 };

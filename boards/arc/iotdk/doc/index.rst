@@ -14,8 +14,7 @@ implementation of the ARC Data Fusion IP Subsystem running at 144 MHz on
 SMIC's 55-nm ultra-low power process, and a rich set of peripherals commonly
 used in IoT designs such as USB, UART, SPI, I2C, PWM, SDIO, and ADCs.
 
-.. image:: ./iotdk.jpg
-   :width: 442px
+.. image:: iotdk.jpg
    :align: center
    :alt: DesignWare(R) ARC(R)IoT Development Kit (synopsys.com)
 
@@ -43,7 +42,7 @@ additional pieces of hardware are required.
   board is to run standalone, the universal switching power adaptor (110-240V
   AC to 5V DC), provided in the package, can be used to power the board.
 
-* :ref:`The Zephyr SDK <zephyr_sdk>`
+* :ref:`The Zephyr SDK <toolchain_zephyr_sdk>`
 
 * Terminal emulator software for use with the USB-UART. Suggestion:
   `Putty Website`_.

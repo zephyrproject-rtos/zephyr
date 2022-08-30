@@ -21,12 +21,17 @@ config SOC_MIMXRT685S_CM33
 	select HAS_MCUX_FLEXSPI
 	select HAS_MCUX_CACHE
 	select HAS_MCUX_LPC_DMA
+	select HAS_MCUX_LPADC
 	select HAS_MCUX_OS_TIMER
 	select HAS_MCUX_LPC_RTC
 	select HAS_MCUX_TRNG
 	select HAS_MCUX_SCTIMER
+	select HAS_MCUX_USDHC1
+	select HAS_MCUX_USDHC2
 	select INIT_SYS_PLL
-
+	select HAS_MCUX_USB_LPCIP3511
+	select USB_DEDICATED_MEMORY if USB_DEVICE_DRIVER
+	select HAS_MCUX_CTIMER
 endchoice
 
 if SOC_SERIES_IMX_RT6XX
@@ -57,6 +62,9 @@ config INIT_SYS_PLL
 config INIT_AUDIO_PLL
 	bool "Initialize Audio PLL"
 
+config USB_DEDICATED_MEMORY
+	bool "Dedicated memory for USB transfer buffer and controller operation buffers"
+
 config XTAL_SYS_CLK_HZ
 	int "External oscillator frequency"
 	help
@@ -70,7 +78,7 @@ config SYSOSC_SETTLING_US
 	  board's defconfig.
 
 menuconfig NXP_IMX_RT6XX_BOOT_HEADER
-	bool "Enable the boot header"
+	bool "Boot header"
 	depends on !BOOTLOADER_MCUBOOT
 	help
 	  Enable data structures required by the boot ROM to boot the
@@ -92,7 +100,7 @@ config FLASH_CONFIG_OFFSET
 	default 0x400
 	help
 	  The flash config offset provides the boot ROM with the on-board
-	  flash type and parameters. The boot ROM requires a fixed flash conifg
+	  flash type and parameters. The boot ROM requires a fixed flash config
 	  offset for FlexSPI device.
 
 config IMAGE_VECTOR_TABLE_OFFSET

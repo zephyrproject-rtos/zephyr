@@ -7,8 +7,8 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <bluetooth/mesh.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/bluetooth/conn.h>
 #include "mesh.h"
 #include "net.h"
 #include "app_keys.h"
@@ -27,7 +27,7 @@
 
 /* Tracking of what storage changes are pending for App Keys. We track this in
  * a separate array here instead of within the respective bt_mesh_app_key
- * struct itselve, since once a key gets deleted its struct becomes invalid
+ * struct itself, since once a key gets deleted its struct becomes invalid
  * and may be reused for other keys.
  */
 struct app_key_update {
@@ -111,9 +111,9 @@ static void store_app_key(uint16_t app_idx)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		BT_ERR("Failed to store AppKey %s value", log_strdup(path));
+		BT_ERR("Failed to store AppKey %s value", path);
 	} else {
-		BT_DBG("Stored AppKey %s value", log_strdup(path));
+		BT_DBG("Stored AppKey %s value", path);
 	}
 }
 
@@ -175,7 +175,7 @@ static void update_app_key_settings(uint16_t app_idx, bool store)
 
 static void app_key_evt(struct app_key *app, enum bt_mesh_key_evt evt)
 {
-	Z_STRUCT_SECTION_FOREACH(bt_mesh_app_key_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_mesh_app_key_cb, cb) {
 		cb->evt_handler(app->app_idx, app->net_idx, evt);
 	}
 }
@@ -249,7 +249,7 @@ uint8_t bt_mesh_app_key_add(uint16_t app_idx, uint16_t net_idx,
 
 	if (app->app_idx == app_idx) {
 		if (app->net_idx != net_idx) {
-			return STATUS_INVALID_BINDING;
+			return STATUS_INVALID_NETKEY;
 		}
 
 		if (memcmp(key, app->keys[0].val, 16)) {
@@ -445,7 +445,7 @@ ssize_t bt_mesh_app_keys_get(uint16_t net_idx, uint16_t app_idxs[], size_t max,
 
 int bt_mesh_keys_resolve(struct bt_mesh_msg_ctx *ctx,
 			 struct bt_mesh_subnet **sub,
-			 const uint8_t *app_key[16], uint8_t *aid)
+			 const uint8_t **app_key, uint8_t *aid)
 {
 	struct app_key *app = NULL;
 
@@ -602,7 +602,9 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 	}
 }
 
-BT_MESH_SUBNET_CB_DEFINE(subnet_evt);
+BT_MESH_SUBNET_CB_DEFINE(app_keys) = {
+	.evt_handler = subnet_evt,
+};
 
 void bt_mesh_app_keys_reset(void)
 {

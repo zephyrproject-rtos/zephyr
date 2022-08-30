@@ -1,0 +1,32 @@
+# Copyright (c) 2021 Intel Corporation
+# Copyright 2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_TFLITE-MICRO_MODULE
+	bool
+
+config TENSORFLOW_LITE_MICRO
+	bool "TensorFlow Lite Micro Support"
+	help
+	  This option enables the TensorFlow Lite Micro library.
+
+if CPU_CORTEX_M
+
+config TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS
+	bool "TensorFlow Lite Micro with optimized CMSIS-NN kernels"
+	depends on TENSORFLOW_LITE_MICRO
+	select CMSIS_NN
+	select CMSIS_NN_ACTIVATION
+	select CMSIS_NN_BASICMATH
+	select CMSIS_NN_CONCATENATION
+	select CMSIS_NN_CONVOLUTION
+	select CMSIS_NN_FULLYCONNECTED
+	select CMSIS_NN_NNSUPPORT
+	select CMSIS_NN_POOLING
+	select CMSIS_NN_RESHAPE
+	select CMSIS_NN_SOFTMAX
+	select CMSIS_NN_SVD
+	help
+	  This option adds support for CMSIS-NN optimized kernels when using TensorFlow Lite Micro.
+
+endif # CPU_CORTEX_M

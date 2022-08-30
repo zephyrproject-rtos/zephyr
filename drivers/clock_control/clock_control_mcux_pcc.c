@@ -11,19 +11,18 @@
 
 #include <errno.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_clock.h>
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_mcux_pcc);
 
 struct mcux_pcc_config {
 	uint32_t base_address;
 };
 
-#define DEV_CFG(dev)  ((struct mcux_pcc_config *)(dev->config))
-#define DEV_BASE(dev) (DEV_CFG(dev)->base_address)
+#define DEV_BASE(dev) (((struct mcux_pcc_config *)(dev->config))->base_address)
 #ifndef MAKE_PCC_REGADDR
 #define MAKE_PCC_REGADDR(base, offset) ((base) + (offset))
 #endif
@@ -79,7 +78,7 @@ static const struct clock_control_driver_api mcux_pcc_api = {
 			    NULL,					\
 			    NULL, &mcux_pcc##inst##_config,		\
 			    PRE_KERNEL_1,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,	\
+			    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,		\
 			    &mcux_pcc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_PCC_INIT)

@@ -9,18 +9,20 @@ from os import path
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
+import os
 import sys
-
 
 class Esp32BinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for espidf.'''
 
     def __init__(self, cfg, device, boot_address, part_table_address,
-                 app_address, baud=921600, flash_size='detect',
+                 app_address, erase=False, baud=921600, flash_size='detect',
                  flash_freq='40m', flash_mode='dio', espidf='espidf',
                  bootloader_bin=None, partition_table_bin=None):
         super().__init__(cfg)
         self.elf = cfg.elf_file
+        self.app_bin = cfg.bin_file
+        self.erase = bool(erase)
         self.device = device
         self.boot_address = boot_address
         self.part_table_address = part_table_address
@@ -39,7 +41,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'})
+        return RunnerCaps(commands={'flash'}, erase=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -53,8 +55,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                             help='partition table load address')
         parser.add_argument('--esp-app-address', default='0x10000',
                             help='application load address')
-        parser.add_argument('--esp-device', default='/dev/ttyUSB0',
-                            help='serial port to flash, default /dev/ttyUSB0')
+        parser.add_argument('--esp-device', default=os.environ.get('ESPTOOL_PORT', None),
+                            help='serial port to flash')
         parser.add_argument('--esp-baud-rate', default='921600',
                             help='serial baud rate, default 921600')
         parser.add_argument('--esp-flash-size', default='detect',
@@ -83,32 +85,37 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         return Esp32BinaryRunner(
             cfg, args.esp_device, boot_address=args.esp_boot_address,
             part_table_address=args.esp_partition_table_address,
-            app_address=args.esp_app_address,baud=args.esp_baud_rate,
-            flash_size=args.esp_flash_size, flash_freq=args.esp_flash_freq,
-            flash_mode=args.esp_flash_mode, espidf=espidf,
-            bootloader_bin=args.esp_flash_bootloader,
+            app_address=args.esp_app_address, erase=args.erase,
+            baud=args.esp_baud_rate, flash_size=args.esp_flash_size,
+            flash_freq=args.esp_flash_freq, flash_mode=args.esp_flash_mode,
+            espidf=espidf, bootloader_bin=args.esp_flash_bootloader,
             partition_table_bin=args.esp_flash_partition_table)
 
     def do_run(self, command, **kwargs):
         self.require(self.espidf)
-        bin_name = path.splitext(self.elf)[0] + path.extsep + 'bin'
-        cmd_flash = [self.espidf, '--chip', 'auto', '--port', self.device,
-                     '--baud', self.baud, '--before', 'default_reset',
-                     '--after', 'hard_reset', 'write_flash', '-u',
-                     '--flash_mode', self.flash_mode,
-                     '--flash_freq', self.flash_freq,
-                     '--flash_size', self.flash_size]
 
-        # Execute Python interpreter if calling a Python script
-        if self.espidf.lower().endswith(".py") and sys.executable:
-            cmd_flash.insert(0, sys.executable)
+        # Add Python interpreter
+        cmd_flash = [sys.executable, self.espidf, '--chip', 'auto']
 
-        if self.bootloader_bin :
+        if self.erase is True:
+            cmd_erase = cmd_flash + ['erase_flash']
+            self.check_call(cmd_erase)
+
+        if self.device is not None:
+            cmd_flash.extend(['--port', self.device])
+        cmd_flash.extend(['--baud', self.baud])
+        cmd_flash.extend(['--before', 'default_reset'])
+        cmd_flash.extend(['--after', 'hard_reset', 'write_flash', '-u'])
+        cmd_flash.extend(['--flash_mode', self.flash_mode])
+        cmd_flash.extend(['--flash_freq', self.flash_freq])
+        cmd_flash.extend(['--flash_size', self.flash_size])
+
+        if self.bootloader_bin:
             cmd_flash.extend([self.boot_address, self.bootloader_bin])
             cmd_flash.extend([self.part_table_address, self.partition_table_bin])
-            cmd_flash.extend([self.app_address, bin_name])
-        else :
-            cmd_flash.extend([self.boot_address, bin_name])
+            cmd_flash.extend([self.app_address, self.app_bin])
+        else:
+            cmd_flash.extend([self.app_address, self.app_bin])
 
         self.logger.info("Flashing esp32 chip on {} ({}bps)".
                          format(self.device, self.baud))

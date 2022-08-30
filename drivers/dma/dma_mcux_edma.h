@@ -9,8 +9,8 @@
 #define DMA_MCUX_EDMA_H_
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/dma.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/dma.h>
 #include <soc.h>
 #include <fsl_common.h>
 

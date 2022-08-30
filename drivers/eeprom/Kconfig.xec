@@ -1,0 +1,11 @@
+# Microchip XEC EEPROM
+
+# Copyright (c) 2022 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_XEC
+	bool "MCHP XEC EEPROM driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_EEPROM_ENABLED
+	help
+	  Enable support for Microchip XEC EEPROM driver.

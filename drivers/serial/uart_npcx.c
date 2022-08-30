@@ -6,29 +6,40 @@
 
 #define DT_DRV_COMPAT nuvoton_npcx_uart
 
-#include <sys/__assert.h>
-#include <drivers/gpio.h>
-#include <drivers/uart.h>
-#include <drivers/clock_control.h>
-#include <kernel.h>
-#include <pm/device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <soc.h>
 #include "soc_miwu.h"
 #include "soc_power.h"
 
-#include <logging/log.h>
-LOG_MODULE_REGISTER(uart_npcx, LOG_LEVEL_ERR);
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(uart_npcx, CONFIG_UART_LOG_LEVEL);
 
 /* Driver config */
 struct uart_npcx_config {
-	struct uart_device_config uconf;
+	struct uart_reg *inst;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_config_func_t irq_config_func;
+#endif
 	/* clock configuration */
 	struct npcx_clk_cfg clk_cfg;
 	/* int-mux configuration */
 	const struct npcx_wui uart_rx_wui;
 	/* pinmux configuration */
-	const uint8_t   alts_size;
-	const struct npcx_alt *alts_list;
+	const struct pinctrl_dev_config *pcfg;
+};
+
+enum uart_pm_policy_state_flag {
+	UART_PM_POLICY_STATE_TX_FLAG,
+	UART_PM_POLICY_STATE_RX_FLAG,
+
+	UART_PM_POLICY_STATE_FLAG_COUNT,
 };
 
 /* Driver data */
@@ -40,27 +51,37 @@ struct uart_npcx_data {
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
 #endif
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state pm_state;
+#ifdef CONFIG_PM
+	ATOMIC_DEFINE(pm_policy_state_flag, UART_PM_POLICY_STATE_FLAG_COUNT);
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+	struct k_work_delayable rx_refresh_timeout_work;
+#endif
 #endif
 };
 
-/* Driver convenience defines */
-#define DRV_CONFIG(dev) \
-	((const struct uart_npcx_config *)(dev)->config)
+#if defined(CONFIG_PM) && defined(CONFIG_UART_INTERRUPT_DRIVEN)
+static void uart_npcx_pm_policy_state_lock_get(struct uart_npcx_data *data,
+					       enum uart_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_set_bit(data->pm_policy_state_flag, flag) == 0) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
 
-#define DRV_DATA(dev) \
-	((struct uart_npcx_data *)(dev)->data)
-
-#define HAL_INSTANCE(dev) \
-	(struct uart_reg *)(DRV_CONFIG(dev)->uconf.base)
+static void uart_npcx_pm_policy_state_lock_put(struct uart_npcx_data *data,
+					    enum uart_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, flag) == 1) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+#endif /* defined(CONFIG_PM) && defined(CONFIG_UART_INTERRUPT_DRIVEN) */
 
 /* UART local functions */
-static int uart_set_npcx_baud_rate(struct uart_reg *const inst, int baud_rate,
-				   int src_clk)
+static int uart_set_npcx_baud_rate(struct uart_reg *const inst, int baud_rate, int src_clk)
 {
 	/* Fix baud rate to 115200 so far */
-	if (baud_rate  == 115200) {
+	if (baud_rate == 115200) {
 		if (src_clk == 15000000) {
 			inst->UPSR = 0x38;
 			inst->UBAUD = 0x01;
@@ -80,7 +101,8 @@ static int uart_set_npcx_baud_rate(struct uart_reg *const inst, int baud_rate,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int uart_npcx_tx_fifo_ready(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 
 	/* True if the Tx FIFO is not completely full */
 	return !(GET_FIELD(inst->UFTSTS, NPCX_UFTSTS_TEMPTY_LVL) == 0);
@@ -88,7 +110,8 @@ static int uart_npcx_tx_fifo_ready(const struct device *dev)
 
 static int uart_npcx_rx_fifo_available(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 
 	/* True if at least one byte is in the Rx FIFO */
 	return IS_BIT_SET(inst->UFRSTS, NPCX_UFRSTS_RFIFO_NEMPTY_STS);
@@ -96,17 +119,19 @@ static int uart_npcx_rx_fifo_available(const struct device *dev)
 
 static void uart_npcx_dis_all_tx_interrupts(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 
 	/* Disable all Tx interrupts */
 	inst->UFTCTL &= ~(BIT(NPCX_UFTCTL_TEMPTY_LVL_EN) |
-				BIT(NPCX_UFTCTL_TEMPTY_EN) |
-				BIT(NPCX_UFTCTL_NXMIPEN));
+			  BIT(NPCX_UFTCTL_TEMPTY_EN) |
+			  BIT(NPCX_UFTCTL_NXMIP_EN));
 }
 
 static void uart_npcx_clear_rx_fifo(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 	uint8_t scratch;
 
 	/* Read all dummy bytes out from Rx FIFO */
@@ -114,26 +139,33 @@ static void uart_npcx_clear_rx_fifo(const struct device *dev)
 		scratch = inst->URBUF;
 }
 
-static int uart_npcx_fifo_fill(const struct device *dev,
-				  const uint8_t *tx_data,
-				  int size)
+static int uart_npcx_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 	uint8_t tx_bytes = 0U;
 
 	/* If Tx FIFO is still ready to send */
 	while ((size - tx_bytes > 0) && uart_npcx_tx_fifo_ready(dev)) {
 		/* Put a character into Tx FIFO */
+#ifdef CONFIG_PM
+		struct uart_npcx_data *data = dev->data;
+
+		uart_npcx_pm_policy_state_lock_get(data, UART_PM_POLICY_STATE_TX_FLAG);
 		inst->UTBUF = tx_data[tx_bytes++];
+		inst->UFTCTL |= BIT(NPCX_UFTCTL_NXMIP_EN);
+#else
+		inst->UTBUF = tx_data[tx_bytes++];
+#endif /* CONFIG_PM */
 	}
 
 	return tx_bytes;
 }
 
-static int uart_npcx_fifo_read(const struct device *dev, uint8_t *rx_data,
-				  const int size)
+static int uart_npcx_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 	unsigned int rx_bytes = 0U;
 
 	/* If least one byte is in the Rx FIFO */
@@ -147,14 +179,16 @@ static int uart_npcx_fifo_read(const struct device *dev, uint8_t *rx_data,
 
 static void uart_npcx_irq_tx_enable(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 
 	inst->UFTCTL |= BIT(NPCX_UFTCTL_TEMPTY_EN);
 }
 
 static void uart_npcx_irq_tx_disable(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 
 	inst->UFTCTL &= ~(BIT(NPCX_UFTCTL_TEMPTY_EN));
 }
@@ -166,7 +200,8 @@ static int uart_npcx_irq_tx_ready(const struct device *dev)
 
 static int uart_npcx_irq_tx_complete(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 
 	/* Tx FIFO is empty or last byte is sending */
 	return IS_BIT_SET(inst->UFTSTS, NPCX_UFTSTS_NXMIP);
@@ -174,14 +209,16 @@ static int uart_npcx_irq_tx_complete(const struct device *dev)
 
 static void uart_npcx_irq_rx_enable(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 
 	inst->UFRCTL |= BIT(NPCX_UFRCTL_RNEMPTY_EN);
 }
 
 static void uart_npcx_irq_rx_disable(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 
 	inst->UFRCTL &= ~(BIT(NPCX_UFRCTL_RNEMPTY_EN));
 }
@@ -193,22 +230,23 @@ static int uart_npcx_irq_rx_ready(const struct device *dev)
 
 static void uart_npcx_irq_err_enable(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 
 	inst->UICTRL |= BIT(NPCX_UICTRL_EEI);
 }
 
 static void uart_npcx_irq_err_disable(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 
 	inst->UICTRL &= ~(BIT(NPCX_UICTRL_EEI));
 }
 
 static int uart_npcx_irq_is_pending(const struct device *dev)
 {
-	return (uart_npcx_irq_tx_ready(dev)
-		|| uart_npcx_irq_rx_ready(dev));
+	return (uart_npcx_irq_tx_ready(dev) || uart_npcx_irq_rx_ready(dev));
 }
 
 static int uart_npcx_irq_update(const struct device *dev)
@@ -218,11 +256,10 @@ static int uart_npcx_irq_update(const struct device *dev)
 	return 1;
 }
 
-static void uart_npcx_irq_callback_set(const struct device *dev,
-					uart_irq_callback_user_data_t cb,
-					void *cb_data)
+static void uart_npcx_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
+				       void *cb_data)
 {
-	struct uart_npcx_data *data = DRV_DATA(dev);
+	struct uart_npcx_data *data = dev->data;
 
 	data->user_cb = cb;
 	data->user_data = cb_data;
@@ -230,17 +267,34 @@ static void uart_npcx_irq_callback_set(const struct device *dev,
 
 static void uart_npcx_isr(const struct device *dev)
 {
-	struct uart_npcx_data *data = DRV_DATA(dev);
+	struct uart_npcx_data *data = dev->data;
 
-	/* Refresh console expired time if got UART Rx event */
-	if (IS_ENABLED(CONFIG_UART_CONSOLE_INPUT_EXPIRED) &&
-		       uart_npcx_irq_rx_ready(dev)) {
-		npcx_power_console_is_in_use_refresh();
+	/*
+	 * Set pm constraint to prevent the system enter suspend state within
+	 * the CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT period.
+	 */
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+	if (uart_npcx_irq_rx_ready(dev)) {
+		k_timeout_t delay = K_MSEC(CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT);
+
+		uart_npcx_pm_policy_state_lock_get(data, UART_PM_POLICY_STATE_RX_FLAG);
+		k_work_reschedule(&data->rx_refresh_timeout_work, delay);
 	}
+#endif
 
 	if (data->user_cb) {
 		data->user_cb(dev, data->user_data);
 	}
+#ifdef CONFIG_PM
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
+
+	if (IS_BIT_SET(inst->UFTCTL, NPCX_UFTCTL_NXMIP_EN) &&
+	    IS_BIT_SET(inst->UFTSTS, NPCX_UFTSTS_NXMIP)) {
+		uart_npcx_pm_policy_state_lock_put(data, UART_PM_POLICY_STATE_TX_FLAG);
+		inst->UFTCTL &= ~BIT(NPCX_UFTCTL_NXMIP_EN);
+	}
+#endif /* CONFIG_PM */
 }
 
 /*
@@ -270,7 +324,8 @@ static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
  */
 static int uart_npcx_poll_in(const struct device *dev, unsigned char *c)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 
 	/* Rx single byte buffer is not full */
 	if (!IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_RBF))
@@ -285,7 +340,8 @@ static int uart_npcx_poll_in(const struct device *dev, unsigned char *c)
  */
 static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 
 	/* Wait while Tx single byte buffer is ready to send */
 	while (!IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_TBE))
@@ -298,7 +354,8 @@ static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
 /* UART api functions */
 static int uart_npcx_err_check(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
 	uint32_t err = 0U;
 	uint8_t stat = inst->USTAT;
 
@@ -314,13 +371,19 @@ static int uart_npcx_err_check(const struct device *dev)
 	return err;
 }
 
-static __unused void uart_npcx_rx_wk_isr(const struct device *dev,
-						struct npcx_wui *wui)
+static __unused void uart_npcx_rx_wk_isr(const struct device *dev, struct npcx_wui *wui)
 {
-	/* Refresh console expired time if got UART Rx wake-up event */
-	if (IS_ENABLED(CONFIG_UART_CONSOLE_INPUT_EXPIRED)) {
-		npcx_power_console_is_in_use_refresh();
-	}
+	/*
+	 * Set pm constraint to prevent the system enter suspend state within
+	 * the CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT period.
+	 */
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+	struct uart_npcx_data *data = dev->data;
+	k_timeout_t delay = K_MSEC(CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT);
+
+	uart_npcx_pm_policy_state_lock_get(data, UART_PM_POLICY_STATE_RX_FLAG);
+	k_work_reschedule(&data->rx_refresh_timeout_work, delay);
+#endif
 
 	/*
 	 * Disable MIWU CR_SIN interrupt to avoid the other redundant interrupts
@@ -328,6 +391,16 @@ static __unused void uart_npcx_rx_wk_isr(const struct device *dev,
 	 */
 	npcx_uart_disable_access_interrupt();
 }
+
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+static void uart_npcx_rx_refresh_timeout(struct k_work *work)
+{
+	struct uart_npcx_data *data =
+		CONTAINER_OF(work, struct uart_npcx_data, rx_refresh_timeout_work);
+
+	uart_npcx_pm_policy_state_lock_put(data, UART_PM_POLICY_STATE_RX_FLAG);
+}
+#endif
 
 /* UART driver registration */
 static const struct uart_driver_api uart_npcx_driver_api = {
@@ -349,21 +422,25 @@ static const struct uart_driver_api uart_npcx_driver_api = {
 	.irq_is_pending = uart_npcx_irq_is_pending,
 	.irq_update = uart_npcx_irq_update,
 	.irq_callback_set = uart_npcx_irq_callback_set,
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 static int uart_npcx_init(const struct device *dev)
 {
-	const struct uart_npcx_config *const config = DRV_CONFIG(dev);
-	struct uart_npcx_data *const data = DRV_DATA(dev);
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_npcx_data *const data = dev->data;
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
+	struct uart_reg *const inst = config->inst;
 	uint32_t uart_rate;
 	int ret;
 
+	if (!device_is_ready(clk_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Turn on device clock first and get source clock freq. */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
-							&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on UART clock fail %d", ret);
 		return ret;
@@ -373,8 +450,8 @@ static int uart_npcx_init(const struct device *dev)
 	 * If apb2's clock is not 15MHz, we need to find the other optimized
 	 * values of UPSR and UBAUD for baud rate 115200.
 	 */
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
-			&config->clk_cfg, &uart_rate);
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)&config->clk_cfg,
+				     &uart_rate);
 	if (ret < 0) {
 		LOG_ERR("Get UART clock rate error %d", ret);
 		return ret;
@@ -383,8 +460,8 @@ static int uart_npcx_init(const struct device *dev)
 	/* Configure baud rate */
 	ret = uart_set_npcx_baud_rate(inst, data->baud_rate, uart_rate);
 	if (ret < 0) {
-		LOG_ERR("Set baud rate %d with unsupported apb clock %d failed",
-			data->baud_rate, uart_rate);
+		LOG_ERR("Set baud rate %d with unsupported apb clock %d failed", data->baud_rate,
+			uart_rate);
 		return ret;
 	}
 
@@ -406,106 +483,46 @@ static int uart_npcx_init(const struct device *dev)
 	uart_npcx_clear_rx_fifo(dev);
 
 	/* Configure UART interrupts */
-	config->uconf.irq_config_func(dev);
+	config->irq_config_func(dev);
 #endif
 
 	if (IS_ENABLED(CONFIG_PM)) {
 		/* Initialize a miwu device input and its callback function */
-		npcx_miwu_init_dev_callback(&data->uart_rx_cb,
-					    &config->uart_rx_wui,
+		npcx_miwu_init_dev_callback(&data->uart_rx_cb, &config->uart_rx_wui,
 					    uart_npcx_rx_wk_isr, dev);
 		npcx_miwu_manage_dev_callback(&data->uart_rx_cb, true);
 		/*
 		 * Configure the UART wake-up event triggered from a falling
 		 * edge on CR_SIN pin. No need for callback function.
 		 */
-		npcx_miwu_interrupt_configure(&config->uart_rx_wui,
-				NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_LOW);
+		npcx_miwu_interrupt_configure(&config->uart_rx_wui, NPCX_MIWU_MODE_EDGE,
+					      NPCX_MIWU_TRIG_LOW);
+
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+		k_work_init_delayable(&data->rx_refresh_timeout_work, uart_npcx_rx_refresh_timeout);
+#endif
 	}
 
 	/* Configure pin-mux for uart device */
-	npcx_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
-
-	return 0;
-}
-
-#ifdef CONFIG_PM_DEVICE
-static inline bool uart_npcx_device_is_transmitting(const struct device *dev)
-{
-	if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
-		/* The transmitted transaction is completed? */
-		return !uart_npcx_irq_tx_complete(dev);
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("UART pinctrl setup failed (%d)", ret);
+		return ret;
 	}
 
-	/* No need for polling mode */
 	return 0;
 }
-
-static inline int uart_npcx_get_power_state(const struct device *dev,
-					    enum pm_device_state *state)
-{
-	const struct uart_npcx_data *const data = DRV_DATA(dev);
-
-	*state = data->pm_state;
-	return 0;
-}
-
-static inline int uart_npcx_set_power_state(const struct device *dev,
-					    enum pm_device_state next_state)
-{
-	struct uart_npcx_data *const data = DRV_DATA(dev);
-
-	/* If next device power state is LOW or SUSPEND power state */
-	if (next_state == PM_DEVICE_STATE_LOW_POWER ||
-	    next_state == PM_DEVICE_STATE_SUSPEND) {
-		/*
-		 * If uart device is busy with transmitting, the driver will
-		 * stay in while loop and wait for the transaction is completed.
-		 */
-		while (uart_npcx_device_is_transmitting(dev)) {
-			continue;
-		}
-	}
-
-	data->pm_state = next_state;
-	return 0;
-}
-
-/* Implements the device power management control functionality */
-static int uart_npcx_pm_control(const struct device *dev, uint32_t ctrl_command,
-				 enum pm_device_state *state)
-{
-	int ret = 0;
-
-	switch (ctrl_command) {
-	case PM_DEVICE_STATE_SET:
-		ret = uart_npcx_set_power_state(dev, *state);
-		break;
-	case PM_DEVICE_STATE_GET:
-		ret = uart_npcx_get_power_state(dev, state);
-		break;
-	default:
-		ret = -EINVAL;
-	}
-
-	return ret;
-}
-#endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define NPCX_UART_IRQ_CONFIG_FUNC_DECL(inst) \
+#define NPCX_UART_IRQ_CONFIG_FUNC_DECL(inst)                                                       \
 	static void uart_npcx_irq_config_##inst(const struct device *dev)
-#define NPCX_UART_IRQ_CONFIG_FUNC_INIT(inst) \
-	.irq_config_func = uart_npcx_irq_config_##inst,
-#define NPCX_UART_IRQ_CONFIG_FUNC(inst)	                                       \
-	static void uart_npcx_irq_config_##inst(const struct device *dev)      \
-	{	                                                               \
-		IRQ_CONNECT(DT_INST_IRQN(inst),		                       \
-			DT_INST_IRQ(inst, priority),                           \
-			uart_npcx_isr,                                         \
-			DEVICE_DT_INST_GET(inst),                              \
-			0);                                                    \
-		irq_enable(DT_INST_IRQN(inst));		                       \
+#define NPCX_UART_IRQ_CONFIG_FUNC_INIT(inst) .irq_config_func = uart_npcx_irq_config_##inst,
+#define NPCX_UART_IRQ_CONFIG_FUNC(inst)                                                            \
+	static void uart_npcx_irq_config_##inst(const struct device *dev)                          \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), uart_npcx_isr,        \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}
 #else
 #define NPCX_UART_IRQ_CONFIG_FUNC_DECL(inst)
@@ -513,44 +530,35 @@ static int uart_npcx_pm_control(const struct device *dev, uint32_t ctrl_command,
 #define NPCX_UART_IRQ_CONFIG_FUNC(inst)
 #endif
 
-#define NPCX_UART_INIT(inst)                                                   \
-	NPCX_UART_IRQ_CONFIG_FUNC_DECL(inst);	                               \
-									       \
-	static const struct npcx_alt uart_alts##inst[] =		       \
-					NPCX_DT_ALT_ITEMS_LIST(inst);	       \
-									       \
-	static const struct uart_npcx_config uart_npcx_cfg_##inst = {	       \
-		.uconf = {                                                     \
-			.base = (uint8_t *)DT_INST_REG_ADDR(inst),             \
-			NPCX_UART_IRQ_CONFIG_FUNC_INIT(inst)                   \
-		},                                                             \
-		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                         \
-		.uart_rx_wui = NPCX_DT_WUI_ITEM_BY_NAME(0, uart_rx),           \
-		.alts_size = ARRAY_SIZE(uart_alts##inst),                      \
-		.alts_list = uart_alts##inst,                                  \
-	};                                                                     \
-									       \
-	static struct uart_npcx_data uart_npcx_data_##inst = {                 \
-		.baud_rate = DT_INST_PROP(inst, current_speed)                 \
-	};                                                                     \
-									       \
-	DEVICE_DT_INST_DEFINE(inst,					       \
-			&uart_npcx_init,                                       \
-			uart_npcx_pm_control,				       \
-			&uart_npcx_data_##inst, &uart_npcx_cfg_##inst,         \
-			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,      \
-			&uart_npcx_driver_api);                                \
-									       \
-NPCX_UART_IRQ_CONFIG_FUNC(inst)
+#define NPCX_UART_INIT(i)                                                                       \
+	NPCX_UART_IRQ_CONFIG_FUNC_DECL(i);                                                      \
+												\
+	PINCTRL_DT_INST_DEFINE(i);                                                              \
+												\
+	static const struct uart_npcx_config uart_npcx_cfg_##i = {                              \
+		.inst = (struct uart_reg *)DT_INST_REG_ADDR(i),                                 \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(i),                                             \
+		.uart_rx_wui = NPCX_DT_WUI_ITEM_BY_NAME(0, uart_rx),                            \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                      \
+		NPCX_UART_IRQ_CONFIG_FUNC_INIT(i)                                               \
+	};                                                                                      \
+												\
+	static struct uart_npcx_data uart_npcx_data_##i = { .baud_rate = DT_INST_PROP(          \
+								       i, current_speed) };     \
+												\
+	DEVICE_DT_INST_DEFINE(i, &uart_npcx_init, NULL, &uart_npcx_data_##i,                    \
+			      &uart_npcx_cfg_##i, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,    \
+			      &uart_npcx_driver_api);                                           \
+												\
+	NPCX_UART_IRQ_CONFIG_FUNC(i)
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_UART_INIT)
 
-#define ENABLE_MIWU_CRIN_IRQ(inst)                                             \
-	npcx_miwu_irq_get_and_clear_pending(&uart_npcx_cfg_##inst.uart_rx_wui);\
-	npcx_miwu_irq_enable(&uart_npcx_cfg_##inst.uart_rx_wui);
+#define ENABLE_MIWU_CRIN_IRQ(i)                                                                 \
+	npcx_miwu_irq_get_and_clear_pending(&uart_npcx_cfg_##i.uart_rx_wui);                    \
+	npcx_miwu_irq_enable(&uart_npcx_cfg_##i.uart_rx_wui);
 
-#define DISABLE_MIWU_CRIN_IRQ(inst)                                            \
-	npcx_miwu_irq_disable(&uart_npcx_cfg_##inst.uart_rx_wui);
+#define DISABLE_MIWU_CRIN_IRQ(i) npcx_miwu_irq_disable(&uart_npcx_cfg_##i.uart_rx_wui);
 
 void npcx_uart_enable_access_interrupt(void)
 {

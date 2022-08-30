@@ -17,7 +17,7 @@ extern "C" {
 
 /* append */
 static inline int buf_append(uint8_t *dst, uint16_t *dst_len, uint16_t dst_size,
-			     uint8_t *src, uint16_t src_len)
+			     const uint8_t *src, uint16_t src_len)
 {
 	if (!dst || !src) {
 		return -EINVAL;
@@ -62,7 +62,7 @@ static inline int buf_read(uint8_t *dst, uint16_t len, uint8_t *src, uint16_t sr
 	}
 
 	if (*offset + len > src_len) {
-		return -ENOMEM;
+		return -ENODATA;
 	}
 
 	if (dst) {

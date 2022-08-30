@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_SUBSYS_BLUETOOTH_MESH_APP_KEYS_H_
 #define ZEPHYR_SUBSYS_BLUETOOTH_MESH_APP_KEYS_H_
 
-#include <bluetooth/mesh.h>
+#include <zephyr/bluetooth/mesh.h>
 #include "subnet.h"
 
 /** @brief Reset the app keys module. */
@@ -41,7 +41,7 @@ int bt_mesh_app_key_set(uint16_t app_idx, uint16_t net_idx,
  */
 int bt_mesh_keys_resolve(struct bt_mesh_msg_ctx *ctx,
 			 struct bt_mesh_subnet **sub,
-			 const uint8_t *app_key[16], uint8_t *aid);
+			 const uint8_t **app_key, uint8_t *aid);
 
 /** @brief Iterate through all matching application keys and call @c cb on each.
  *

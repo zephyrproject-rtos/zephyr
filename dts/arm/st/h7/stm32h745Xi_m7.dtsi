@@ -15,16 +15,20 @@
 	};
 
 	dtcm: memory@20000000 {
-		compatible = "arm,dtcm";
+		compatible = "zephyr,memory-region", "arm,dtcm";
 		reg = <0x20000000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "DTCM";
 	};
 
 	soc {
 		flash-controller@52002000 {
 			flash0: flash@8000000 {
-				label = "FLASH_STM32";
 				reg = <0x08000000 DT_SIZE_K(1024)>;
 			};
+		};
+
+		mailbox@58026400 {
+			interrupts = <125 0>;
 		};
 	};
 };

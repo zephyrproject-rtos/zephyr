@@ -1,0 +1,21 @@
+identifier: stm32h7b3i_dk
+name: ST STM32H7B3I Discovery Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 1376
+flash: 2048
+supported:
+  - arduino_gpio
+  - uart
+  - gpio
+  - i2c
+  - kscan:touch
+  - memc
+  - backup_sram
+  - display
+  - can
+  - canfd

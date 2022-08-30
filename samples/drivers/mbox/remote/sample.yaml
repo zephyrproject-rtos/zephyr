@@ -1,0 +1,9 @@
+sample:
+    name: MBOX IPC sample (remote)
+tests:
+    sample.drivers.mbox_remote:
+        platform_allow: nrf5340dk_nrf5340_cpunet
+        integration_platforms:
+          - nrf5340dk_nrf5340_cpunet
+        tags: mbox
+        harness: remote

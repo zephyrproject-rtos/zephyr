@@ -12,12 +12,12 @@
  * Fault handlers for ARCv2 processors.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <swap_macros.h>
-#include <syscall.h>
-#include <arch/arc/asm-compat/assembler.h>
+#include <zephyr/syscall.h>
+#include <zephyr/arch/arc/asm-compat/assembler.h>
 
 GTEXT(_Fault)
 GTEXT(__reset)
@@ -119,7 +119,7 @@ _exc_return:
 
 	_get_next_switch_handle
 
-	BREQR r0, r2, _exc_return_from_exc
+	BREQR r0, 0, _exc_return_from_exc
 
 	MOVR r2, r0
 

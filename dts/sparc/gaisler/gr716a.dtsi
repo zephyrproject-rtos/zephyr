@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2020 Cobham Gaisler AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "gaisler,leon3";
+			reg = <0>;
+		};
+	};
+
+	dram: ram@30000000 {
+		/* tightly coupled data RAM */
+		reg = <0x30000000 0x00010000>;
+	};
+
+	iram: ram@31000000 {
+		/* tightly coupled instruction RAM */
+		reg = <0x31000000 0x00020000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+		interrupt-parent = <&irqmp>;
+
+		irqmp: irqmp0@80002000 {
+			compatible = "gaisler,irqmp";
+			reg = <0x80002000 0x400>;
+			eirq = <1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+		};
+
+		timer0: gptimer@80003000 {
+			compatible = "gaisler,gptimer";
+			interrupts = <9>;
+			reg = <0x80003000 0x100>;
+		};
+
+		uart0: apbuart@80300000 {
+			compatible = "gaisler,apbuart";
+			interrupts = <24>;
+			reg = <0x80300000 0x100>;
+			status = "disabled";
+		};
+
+		uart1: apbuart@80301000 {
+			compatible = "gaisler,apbuart";
+			interrupts = <25>;
+			reg = <0x80301000 0x100>;
+			status = "disabled";
+		};
+
+		uart2: apbuart@80302000 {
+			compatible = "gaisler,apbuart";
+			interrupts = <3>;
+			reg = <0x80302000 0x100>;
+			status = "disabled";
+		};
+
+		uart3: apbuart@80303000 {
+			compatible = "gaisler,apbuart";
+			interrupts = <5>;
+			reg = <0x80303000 0x100>;
+			status = "disabled";
+		};
+
+		uart4: apbuart@80304000 {
+			compatible = "gaisler,apbuart";
+			interrupts = <6>;
+			reg = <0x80304000 0x100>;
+			status = "disabled";
+		};
+
+		uart5: apbuart@80305000 {
+			compatible = "gaisler,apbuart";
+			interrupts = <7>;
+			reg = <0x80305000 0x100>;
+			status = "disabled";
+		};
+	};
+};

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <sys/reboot.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <ztest.h>
-#include <tc_util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
 
 static volatile int expected_reason = -1;
 
@@ -45,7 +45,8 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 
 	expected_reason = -1;
 }
-void test_arm_hardfault(void)
+
+ZTEST(arm_hardfault_validation, test_arm_hardfault)
 {
 	expected_reason = K_ERR_KERNEL_PANIC;
 

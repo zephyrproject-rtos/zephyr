@@ -1,6 +1,0 @@
-tests:
-  logging.log_core:
-    integration_platforms:
-      - native_posix
-    tags: log_core logging
-    filter: not CONFIG_LOG_IMMEDIATE

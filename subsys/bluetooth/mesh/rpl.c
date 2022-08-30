@@ -5,19 +5,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <sys/atomic.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_RPL)
 #define LOG_MODULE_NAME bt_mesh_rpl
@@ -200,12 +200,13 @@ static struct bt_mesh_rpl *bt_mesh_rpl_alloc(uint16_t src)
 
 void bt_mesh_rpl_reset(void)
 {
-	int i;
+	int shift = 0;
+	int last = 0;
 
 	/* Discard "old old" IV Index entries from RPL and flag
 	 * any other ones (which are valid) as old.
 	 */
-	for (i = 0; i < ARRAY_SIZE(replay_list); i++) {
+	for (int i = 0; i < ARRAY_SIZE(replay_list); i++) {
 		struct bt_mesh_rpl *rpl = &replay_list[i];
 
 		if (rpl->src) {
@@ -215,15 +216,25 @@ void bt_mesh_rpl_reset(void)
 				} else {
 					(void)memset(rpl, 0, sizeof(*rpl));
 				}
+
+				shift++;
 			} else {
 				rpl->old_iv = true;
 
+				if (shift > 0) {
+					replay_list[i - shift] = *rpl;
+				}
+
 				if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-					schedule_rpl_store(rpl, true);
+					schedule_rpl_store(&replay_list[i - shift], true);
 				}
 			}
+
+			last = i;
 		}
 	}
+
+	(void) memset(&replay_list[last - shift + 1], 0, sizeof(struct bt_mesh_rpl) * shift);
 }
 
 static int rpl_set(const char *name, size_t len_rd,
@@ -298,9 +309,9 @@ static void store_rpl(struct bt_mesh_rpl *entry)
 
 	err = settings_save_one(path, &rpl, sizeof(rpl));
 	if (err) {
-		BT_ERR("Failed to store RPL %s value", log_strdup(path));
+		BT_ERR("Failed to store RPL %s value", path);
 	} else {
-		BT_DBG("Stored RPL %s value", log_strdup(path));
+		BT_DBG("Stored RPL %s value", path);
 	}
 }
 

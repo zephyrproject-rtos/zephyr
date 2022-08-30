@@ -1,6 +1,7 @@
 # Copyright (c) 2018, Jan Van Winkel <jan.van_winkel@dxplore.eu>
 # Copyright (c) 2020, Teslabs Engineering S.L.
 # Copyright (c) 2021, Krivorot Oleg <krivorot.oleg@gmail.com>
+# Copyright (c) 2022, Konstantinos Papadopulos <kostas.papadopulos@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: ILI9341 320x240 display controller
@@ -10,6 +11,18 @@ compatible: "ilitek,ili9341"
 include: ilitek,ili9xxx-common.yaml
 
 properties:
+    ifmode:
+      type: uint8-array
+      default: [0x40]
+      description:
+        RGB interface signal control (IFMOD) register value.
+
+    ifctl:
+      type: uint8-array
+      default: [0x01, 0x00, 0x00]
+      description:
+        Interface control (IFCTL) register value.
+
     pwctrla:
       type: uint8-array
       default: [0x39, 0x2c, 0x00, 0x34, 0x02]

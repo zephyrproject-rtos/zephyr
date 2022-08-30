@@ -1,0 +1,19 @@
+identifier: olimex_esp32_evb
+name: Olimex ESP32-EVB
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - can
+  - counter
+  - gpio
+  - hwinfo
+  - i2c
+  - spi
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

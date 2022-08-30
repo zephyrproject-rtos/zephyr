@@ -71,10 +71,6 @@
 	cpu-power-states = <&stop>;
 };
 
-&lptim1 {
-	status = "okay";
-};
-
 &clk_hsi {
 	status = "okay";
 };
@@ -100,12 +96,14 @@ arduino_i2c: &i2c1 {};
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -113,13 +111,13 @@ arduino_i2c: &i2c1 {};
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pa15 &spi1_sck_pb3
 		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
 	status = "okay";
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
 
-	lora: sx1276@0 {
+	lora: lora@0 {
 		compatible = "semtech,sx1276";
 		reg = <0>;
-		label = "sx1276";
 		reset-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
 		dio-gpios = <&gpiob 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
 			<&gpiob 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
@@ -139,11 +137,13 @@ arduino_i2c: &i2c1 {};
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
 		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -160,8 +160,9 @@ arduino_i2c: &i2c1 {};
 	status = "okay";
 };
 
-&usb {
+zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -174,7 +175,7 @@ arduino_i2c: &i2c1 {};
 		/* Set aside 32KiB for data at the end of the 192KiB flash */
 		storage_partition: partition@28000 {
 			label = "storage";
-			reg = <0x00028000 0x00008000>;
+			reg = <0x00028000 DT_SIZE_K(32)>;
 		};
 	};
 };

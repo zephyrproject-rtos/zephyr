@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/ipm.h>
-#include <drivers/console/ipm_console.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/drivers/console/ipm_console.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <stdio.h>
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include "ipm_dummy.h"
 
 #define PRINTK_OUT      1

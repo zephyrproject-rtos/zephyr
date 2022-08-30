@@ -7,12 +7,12 @@
 #define DT_DRV_COMPAT meas_ms5607
 
 #include <string.h>
-#include <drivers/spi.h>
-#include <sys/byteorder.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/byteorder.h>
 #include "ms5607.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(ms5607);
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
@@ -29,7 +29,7 @@ static int ms5607_spi_raw_cmd(const struct ms5607_config *config, uint8_t cmd)
 		.count = 1,
 	};
 
-	return spi_write(config->bus, &config->bus_cfg.spi_cfg, &buf_set);
+	return spi_write_dt(&config->bus_cfg.spi, &buf_set);
 }
 
 static int ms5607_spi_reset(const struct ms5607_config *config)
@@ -79,10 +79,7 @@ static int ms5607_spi_read_prom(const struct ms5607_config *config, uint8_t cmd,
 		.count = 1,
 	};
 
-	err = spi_transceive(config->bus,
-			     &config->bus_cfg.spi_cfg,
-			     &tx_buf_set,
-			     &rx_buf_set);
+	err = spi_transceive_dt(&config->bus_cfg.spi, &tx_buf_set, &rx_buf_set);
 	if (err < 0) {
 		return err;
 	}
@@ -130,10 +127,7 @@ static int ms5607_spi_read_adc(const struct ms5607_config *config, uint32_t *val
 		.count = 1,
 	};
 
-	err = spi_transceive(config->bus,
-			     &config->bus_cfg.spi_cfg,
-			     &tx_buf_set,
-			     &rx_buf_set);
+	err = spi_transceive_dt(&config->bus_cfg.spi, &tx_buf_set, &rx_buf_set);
 	if (err < 0) {
 		return err;
 	}
@@ -145,19 +139,9 @@ static int ms5607_spi_read_adc(const struct ms5607_config *config, uint32_t *val
 
 static int ms5607_spi_check(const struct ms5607_config *config)
 {
-	const struct spi_cs_control *cs = config->bus_cfg.spi_cfg.cs;
-
-	if (!device_is_ready(config->bus)) {
-		LOG_DBG("SPI bus %s not ready", config->bus->name);
+	if (!spi_is_ready(&config->bus_cfg.spi)) {
+		LOG_DBG("SPI bus not ready");
 		return -ENODEV;
-	}
-
-	if (cs) {
-		if (!device_is_ready(cs->gpio_dev)) {
-			LOG_DBG("SPI CS GPIO controller %s not ready", cs->gpio_dev->name);
-			return -ENODEV;
-		}
-		LOG_DBG("SPI GPIO CS configured on %s:%u", cs->gpio_dev->name, cs->gpio_pin);
 	}
 
 	return 0;

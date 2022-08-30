@@ -11,7 +11,6 @@ evaluate the Atmel SAM V71 series microcontrollers. The current version
 allows to use both IC variations ATSAMV71Q21A(B).
 
 .. image:: img/sam_v71_xult.jpg
-     :width: 500px
      :align: center
      :alt: SAM V71 Xplained Ultra
 
@@ -70,6 +69,10 @@ features:
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| CAN-FD    | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
+| HWINFO    | on-chip    | Unique device serial number         |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.

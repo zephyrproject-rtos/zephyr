@@ -4,7 +4,7 @@
 mainmenu "Nordic SYSTEM_OFF demo"
 
 config APP_RETENTION
-	bool "Enable state retention in system off"
+	bool "State retention in system off"
 	depends on SOC_COMPATIBLE_NRF52X
 	help
 	  On some Nordic chips this application supports retaining

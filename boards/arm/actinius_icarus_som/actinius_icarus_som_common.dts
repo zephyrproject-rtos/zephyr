@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2021 Actinius
+ * Copyright (c) 2021-2022 Actinius
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "actinius_icarus_som_common-pinctrl.dtsi"
 
 / {
 	model = "Actinius Icarus SoM";
@@ -12,6 +13,17 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-mcumgr = &uart0;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		accel0 = &lis2dh12_accel;
+	};
+
+	sim_select: sim-select {
+		compatible = "actinius-sim-select";
+		sim-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		sim = "esim";
 	};
 };
 
@@ -31,8 +43,9 @@
 	status = "okay";
 
 	current-speed = <115200>;
-	tx-pin = <9>;
-	rx-pin = <6>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c2 {
@@ -40,15 +53,15 @@
 	status = "okay";
 
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <10>;
-	scl-pin = <11>;
 
-	lis2dh12-accel@19 {
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-1 = <&i2c2_sleep>;
+	pinctrl-names = "default", "sleep";
+	lis2dh12_accel: lis2dh12-accel@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
-		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>,
-			  <&gpio0 29 GPIO_ACTIVE_HIGH>;
-		label = "LIS2DH12-ACCEL";
+		irq-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>,
+			  <&gpio0 28 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -108,8 +121,8 @@
 			/* Secure image memory */
 		};
 
-		sram0_modem: image_modem@20010000 {
-			/* BSD (shared) memory */
+		sram0_modem: image_modem@20016000 {
+			/* Modem (shared) memory */
 		};
 
 		sram0_ns: image_ns@20020000 {

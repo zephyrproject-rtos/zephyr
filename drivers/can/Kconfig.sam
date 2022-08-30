@@ -1,0 +1,9 @@
+# SAM CAN configuration options
+# Copyright (c) 2021 Alexander Wachter
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_SAM
+	bool "Atmel SAM CAN driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_CAN_ENABLED
+	select CAN_MCAN

@@ -7,10 +7,10 @@
  */
 
 
-#include <kernel.h>
-#include <sys/printk.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
 extern void __printk_hook_install(int (*fn)(int));
 extern void __stdout_hook_install(int (*fn)(int));
@@ -35,4 +35,4 @@ static int ram_console_init(const struct device *d)
 	return 0;
 }
 
-SYS_INIT(ram_console_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(ram_console_init, PRE_KERNEL_1, CONFIG_CONSOLE_INIT_PRIORITY);

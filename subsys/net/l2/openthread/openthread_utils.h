@@ -20,8 +20,10 @@ void dump_pkt(const char *str, struct net_pkt *pkt);
 #endif
 
 void add_ipv6_addr_to_zephyr(struct openthread_context *context);
-void add_ipv6_addr_to_ot(struct openthread_context *context);
-void add_ipv6_maddr_to_ot(struct openthread_context *context);
+void add_ipv6_addr_to_ot(struct openthread_context *context,
+			 const struct in6_addr *addr6);
+void add_ipv6_maddr_to_ot(struct openthread_context *context,
+			  const struct in6_addr *addr6);
 void add_ipv6_maddr_to_zephyr(struct openthread_context *context);
 void rm_ipv6_addr_from_zephyr(struct openthread_context *context);
 void rm_ipv6_maddr_from_zephyr(struct openthread_context *context);

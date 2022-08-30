@@ -72,6 +72,7 @@ from copy import deepcopy
 import logging
 import os
 import re
+from typing import Set
 
 import yaml
 try:
@@ -149,7 +150,8 @@ class EDT:
                  default_prop_types=True,
                  support_fixed_partitions_on_any_bus=True,
                  infer_binding_for_paths=None,
-                 err_on_deprecated_properties=False):
+                 vendor_prefixes=None,
+                 werror=False):
         """EDT constructor.
 
         dts:
@@ -178,20 +180,31 @@ class EDT:
           should be inferred from the node content.  (Child nodes are not
           processed.)  Pass none if no nodes should support inferred bindings.
 
-        err_on_deprecated_properties (default: False):
-          If True and 'dts' has any deprecated properties set, raise an error.
+        vendor_prefixes (default: None):
+          A dict mapping vendor prefixes in compatible properties to their
+          descriptions. If given, compatibles in the form "manufacturer,device"
+          for which "manufacturer" is neither a key in the dict nor a specially
+          exempt set of grandfathered-in cases will cause warnings.
 
+        werror (default: False):
+          If True, some edtlib specific warnings become errors. This currently
+          errors out if 'dts' has any deprecated properties set, or an unknown
+          vendor prefix is used.
         """
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
         self._default_prop_types = default_prop_types
         self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
         self._infer_binding_for_paths = set(infer_binding_for_paths or [])
-        self._err_on_deprecated_properties = bool(err_on_deprecated_properties)
+        self._werror = bool(werror)
+        self._vendor_prefixes = vendor_prefixes or {}
 
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
 
-        self._dt = DT(dts)
+        try:
+            self._dt = DT(dts)
+        except DTError as e:
+            raise EDTError(e) from e
         _check_dt(self._dt)
 
         self._init_compat2binding()
@@ -243,8 +256,8 @@ class EDT:
         return f"{self._dt}"
 
     def __repr__(self):
-        return "<EDT for '{}', binding directories '{}'>".format(
-            self.dts_path, self.bindings_dirs)
+        return f"<EDT for '{self.dts_path}', binding directories " \
+            f"'{self.bindings_dirs}'>"
 
     @property
     def scc_order(self):
@@ -409,6 +422,7 @@ class EDT:
             node.bus_node = node._bus_node(self._fixed_partitions_no_bus)
             node._init_binding()
             node._init_regs()
+            node._init_ranges()
 
             self.nodes.append(node)
             self._node2enode[dt_node] = node
@@ -418,8 +432,7 @@ class EDT:
             # they (either always or sometimes) reference other nodes, so we
             # run them separately
             node._init_props(default_prop_types=self._default_prop_types,
-                             err_on_deprecated=
-                             self._err_on_deprecated_properties)
+                             err_on_deprecated=self._werror)
             node._init_interrupts()
             node._init_pinctrls()
 
@@ -476,8 +489,7 @@ class EDT:
                         ', '.join(repr(x) for x in spec.enum))
 
         # Validate the contents of compatible properties.
-        # The regular expression comes from dt-schema.
-        compat_re = r'^[a-zA-Z][a-zA-Z0-9,+\-._]+$'
+        self._checked_compatibles: Set[str] = set()
         for node in self.nodes:
             if 'compatible' not in node.props:
                 continue
@@ -494,10 +506,36 @@ class EDT:
                 # This is also just for future-proofing.
                 assert isinstance(compat, str)
 
-                if not re.match(compat_re, compat):
-                    _err(f"node '{node.path}' compatible '{compat}' "
-                         'must match this regular expression: '
-                         f"'{compat_re}'")
+                self._check_compatible(node, compat)
+        del self._checked_compatibles  # We have no need for this anymore.
+
+    def _check_compatible(self, node, compat):
+        if compat in self._checked_compatibles:
+            return
+
+        # The regular expression comes from dt-schema.
+        compat_re = r'^[a-zA-Z][a-zA-Z0-9,+\-._]+$'
+        if not re.match(compat_re, compat):
+            _err(f"node '{node.path}' compatible '{compat}' "
+                 'must match this regular expression: '
+                 f"'{compat_re}'")
+
+        if ',' in compat and self._vendor_prefixes:
+            vendor = compat.split(',', 1)[0]
+            # As an exception, the root node can have whatever
+            # compatibles it wants. Other nodes get checked.
+            if node.path != '/' and \
+                   vendor not in self._vendor_prefixes and \
+                   vendor not in _VENDOR_PREFIX_ALLOWED:
+                if self._werror:
+                    handler_fn = _err
+                else:
+                    handler_fn = _LOG.warning
+                handler_fn(
+                    f"node '{node.path}' compatible '{compat}' "
+                    f"has unknown vendor prefix '{vendor}'")
+
+        self._checked_compatibles.add(compat)
 
 class Node:
     """
@@ -579,6 +617,10 @@ class Node:
       A list of 'compatible' strings for the node, in the same order that
       they're listed in the .dts file
 
+    ranges:
+      A list if Range objects extracted from the node's ranges property.
+      The list is empty if the node does not have a range property.
+
     regs:
       A list of Register objects for the node's registers
 
@@ -640,7 +682,7 @@ class Node:
         try:
             addr = int(self.name.split("@", 1)[1], 16)
         except ValueError:
-            _err("{!r} has non-hex unit address".format(self))
+            _err(f"{self!r} has non-hex unit address")
 
         return _translate(addr, self._node)
 
@@ -681,6 +723,21 @@ class Node:
         # would need to be kept in mind.
         return OrderedDict((name, self.edt._node2enode[node])
                            for name, node in self._node.nodes.items())
+
+    def child_index(self, node):
+        """Get the index of *node* in self.children.
+        Raises KeyError if the argument is not a child of this node.
+        """
+        if not hasattr(self, '_child2index'):
+            # Defer initialization of this lookup table until this
+            # method is callable to handle parents needing to be
+            # initialized before their chidlren. By the time we
+            # return from __init__, 'self.children' is callable.
+            self._child2index = OrderedDict()
+            for index, child in enumerate(self.children.values()):
+                self._child2index[child] = index
+
+        return self._child2index[node]
 
     @property
     def required_by(self):
@@ -743,8 +800,7 @@ class Node:
         # parent of the flash node.
 
         if not self.parent or not self.parent.parent:
-            _err("flash partition {!r} lacks parent or grandparent node"
-                 .format(self))
+            _err(f"flash partition {self!r} lacks parent or grandparent node")
 
         controller = self.parent.parent
         if controller.matching_compat == "soc-nv-flash":
@@ -759,25 +815,26 @@ class Node:
             return None
 
         if not self.regs:
-            _err("{!r} needs a 'reg' property, to look up the chip select index "
-                 "for SPI".format(self))
+            _err(f"{self!r} needs a 'reg' property, to look up the "
+                 "chip select index for SPI")
 
         parent_cs_lst = self.bus_node.props["cs-gpios"].val
 
         # cs-gpios is indexed by the unit address
         cs_index = self.regs[0].addr
         if cs_index >= len(parent_cs_lst):
-            _err("index from 'regs' in {!r} ({}) is >= number of cs-gpios "
-                 "in {!r} ({})".format(
-                     self, cs_index, self.bus_node, len(parent_cs_lst)))
+            _err(f"index from 'regs' in {self!r} ({cs_index}) "
+                 "is >= number of cs-gpios in "
+                 f"{self.bus_node!r} ({len(parent_cs_lst)})")
 
         return parent_cs_lst[cs_index]
 
     def __repr__(self):
-        return "<Node {} in '{}', {}>".format(
-            self.path, self.edt.dts_path,
-            "binding " + self.binding_path if self.binding_path
-                else "no binding")
+        if self.binding_path:
+            binding = "binding " + self.binding_path
+        else:
+            binding = "no binding"
+        return f"<Node {self.path} in '{self.edt.dts_path}', {binding}>"
 
     def _init_binding(self):
         # Initializes Node.matching_compat, Node._binding, and
@@ -937,7 +994,7 @@ class Node:
                     continue
                 prop_spec = _DEFAULT_PROP_SPECS[name]
                 val = self._prop_val(name, prop_spec.type, False, False, None,
-                                     err_on_deprecated)
+                                     None, err_on_deprecated)
                 self.props[name] = Property(prop_spec, val, self)
 
     def _init_prop(self, prop_spec, err_on_deprecated):
@@ -947,11 +1004,11 @@ class Node:
         name = prop_spec.name
         prop_type = prop_spec.type
         if not prop_type:
-            _err("'{}' in {} lacks 'type'".format(name, self.binding_path))
+            _err(f"'{name}' in {self.binding_path} lacks 'type'")
 
         val = self._prop_val(name, prop_type, prop_spec.deprecated,
                              prop_spec.required, prop_spec.default,
-                             err_on_deprecated)
+                             prop_spec.specifier_space, err_on_deprecated)
 
         if val is None:
             # 'required: false' property that wasn't there, or a property type
@@ -960,17 +1017,16 @@ class Node:
 
         enum = prop_spec.enum
         if enum and val not in enum:
-            _err("value of property '{}' on {} in {} ({!r}) is not in 'enum' "
-                 "list in {} ({!r})"
-                 .format(name, self.path, self.edt.dts_path, val,
-                         self.binding_path, enum))
+            _err(f"value of property '{name}' on {self.path} in "
+                 f"{self.edt.dts_path} ({val!r}) is not in 'enum' list in "
+                 f"{self.binding_path} ({enum!r})")
 
         const = prop_spec.const
         if const is not None and val != const:
-            _err("value of property '{}' on {} in {} ({!r}) is different from "
-                 "the 'const' value specified in {} ({!r})"
-                 .format(name, self.path, self.edt.dts_path, val,
-                         self.binding_path, const))
+            _err(f"value of property '{name}' on {self.path} in "
+                 f"{self.edt.dts_path} ({val!r}) "
+                 "is different from the 'const' value specified in "
+                 f"{self.binding_path} ({const!r})")
 
         # Skip properties that start with '#', like '#size-cells', and mapping
         # properties like 'gpio-map'/'interrupt-map'
@@ -980,7 +1036,7 @@ class Node:
         self.props[name] = Property(prop_spec, val, self)
 
     def _prop_val(self, name, prop_type, deprecated, required, default,
-                  err_on_deprecated):
+                  specifier_space, err_on_deprecated):
         # _init_prop() helper for getting the property's value
         #
         # name:
@@ -999,6 +1055,9 @@ class Node:
         #   Default value to use when the property doesn't exist, or None if
         #   the binding doesn't give a default value
         #
+        # specifier_space:
+        #   Property specifier-space from binding (if prop_type is "phandle-array")
+        #
         # err_on_deprecated:
         #   If True, a deprecated property is an error instead of warning.
 
@@ -1015,15 +1074,14 @@ class Node:
 
         if not prop:
             if required and self.status == "okay":
-                _err("'{}' is marked as required in 'properties:' in {}, but "
-                     "does not appear in {!r}".format(
-                         name, self.binding_path, node))
+                _err(f"'{name}' is marked as required in 'properties:' in "
+                     f"{self.binding_path}, but does not appear in {node!r}")
 
             if default is not None:
                 # YAML doesn't have a native format for byte arrays. We need to
                 # convert those from an array like [0x12, 0x34, ...]. The
                 # format has already been checked in
-                # _check_prop_type_and_default().
+                # _check_prop_by_type().
                 if prop_type == "uint8-array":
                     return bytes(default)
                 return default
@@ -1068,13 +1126,13 @@ class Node:
                      f"with '{name} = < &foo ... &bar 1 ... &baz 2 3 >' "
                      f"(a mix of phandles and numbers), not '{prop}'")
 
-            return self._standard_phandle_val_list(prop)
+            return self._standard_phandle_val_list(prop, specifier_space)
 
         if prop_type == "path":
             return self.edt._node2enode[prop.to_path()]
 
         # prop_type == "compound". Checking that the 'type:'
-        # value is valid is done in _check_prop_type_and_default().
+        # value is valid is done in _check_prop_by_type().
         #
         # 'compound' is a dummy type for properties that don't fit any of the
         # patterns above, so that we can require all entries in 'properties:'
@@ -1095,10 +1153,70 @@ class Node:
                 continue
 
             if prop_name not in self._binding.prop2specs:
-                _err("'{}' appears in {} in {}, but is not declared in "
-                     "'properties:' in {}"
-                     .format(prop_name, self._node.path, self.edt.dts_path,
-                             self.binding_path))
+                _err(f"'{prop_name}' appears in {self._node.path} in "
+                     f"{self.edt.dts_path}, but is not declared in "
+                     f"'properties:' in {self.binding_path}")
+
+    def _init_ranges(self):
+        # Initializes self.ranges
+        node = self._node
+
+        self.ranges = []
+
+        if "ranges" not in node.props:
+            return
+
+        child_address_cells = node.props.get("#address-cells")
+        parent_address_cells = _address_cells(node)
+        if child_address_cells is None:
+            child_address_cells = 2 # Default value per DT spec.
+        else:
+            child_address_cells = child_address_cells.to_num()
+        child_size_cells = node.props.get("#size-cells")
+        if child_size_cells is None:
+            child_size_cells = 1 # Default value per DT spec.
+        else:
+            child_size_cells = child_size_cells.to_num()
+
+        # Number of cells for one translation 3-tuple in 'ranges'
+        entry_cells = child_address_cells + parent_address_cells + child_size_cells
+
+        if entry_cells == 0:
+            if len(node.props["ranges"].value) == 0:
+                return
+            else:
+                _err(f"'ranges' should be empty in {self._node.path} since "
+                     f"<#address-cells> = {child_address_cells}, "
+                     f"<#address-cells for parent> = {parent_address_cells} and "
+                     f"<#size-cells> = {child_size_cells}")
+
+        for raw_range in _slice(node, "ranges", 4*entry_cells,
+                                f"4*(<#address-cells> (= {child_address_cells}) + "
+                                "<#address-cells for parent> "
+                                f"(= {parent_address_cells}) + "
+                                f"<#size-cells> (= {child_size_cells}))"):
+
+            range = Range()
+            range.node = self
+            range.child_bus_cells = child_address_cells
+            if child_address_cells == 0:
+                range.child_bus_addr = None
+            else:
+                range.child_bus_addr = to_num(raw_range[:4*child_address_cells])
+            range.parent_bus_cells = parent_address_cells
+            if parent_address_cells == 0:
+                range.parent_bus_addr = None
+            else:
+                range.parent_bus_addr = to_num(raw_range[(4*child_address_cells):\
+                                            (4*child_address_cells + 4*parent_address_cells)])
+            range.length_cells = child_size_cells
+            if child_size_cells == 0:
+                range.length = None
+            else:
+                range.length = to_num(raw_range[(4*child_address_cells + \
+                                                    4*parent_address_cells):])
+
+            self.ranges.append(range)
 
     def _init_regs(self):
         # Initializes self.regs
@@ -1114,8 +1232,8 @@ class Node:
         size_cells = _size_cells(node)
 
         for raw_reg in _slice(node, "reg", 4*(address_cells + size_cells),
-                              "4*(<#address-cells> (= {}) + <#size-cells> (= {}))"
-                              .format(address_cells, size_cells)):
+                              f"4*(<#address-cells> (= {address_cells}) + "
+                              f"<#size-cells> (= {size_cells}))"):
             reg = Register()
             reg.node = self
             if address_cells == 0:
@@ -1127,9 +1245,9 @@ class Node:
             else:
                 reg.size = to_num(raw_reg[4*address_cells:])
             if size_cells != 0 and reg.size == 0:
-                _err("zero-sized 'reg' in {!r} seems meaningless (maybe you "
-                     "want a size of one or #size-cells = 0 instead)"
-                     .format(self._node))
+                _err(f"zero-sized 'reg' in {self._node!r} seems meaningless "
+                     "(maybe you want a size of one or #size-cells = 0 "
+                     "instead)")
 
             self.regs.append(reg)
 
@@ -1149,8 +1267,8 @@ class Node:
         # Check indices
         for i, prop in enumerate(pinctrl_props):
             if prop.name != "pinctrl-" + str(i):
-                _err("missing 'pinctrl-{}' property on {!r} - indices should "
-                     "be contiguous and start from zero".format(i, node))
+                _err(f"missing 'pinctrl-{i}' property on {node!r} "
+                     "- indices should be contiguous and start from zero")
 
         self.pinctrls = []
         for prop in pinctrl_props:
@@ -1181,41 +1299,59 @@ class Node:
 
         _add_names(node, "interrupt", self.interrupts)
 
-    def _standard_phandle_val_list(self, prop):
+    def _standard_phandle_val_list(self, prop, specifier_space):
         # Parses a property like
         #
-        #     <name>s = <phandle value phandle value ...>
-        #     (e.g., pwms = <&foo 1 2 &bar 3 4>)
+        #     <prop.name> = <phandle cell phandle cell ...>;
         #
-        # , where each phandle points to a node that has a
+        # where each phandle points to a controller node that has a
         #
-        #     #<name>-cells = <size>
+        #     #<specifier_space>-cells = <size>;
         #
         # property that gives the number of cells in the value after the
-        # phandle. These values are given names in *-cells in the binding for
-        # the controller.
+        # controller's phandle in the property.
+        #
+        # E.g. with a property like
+        #
+        #     pwms = <&foo 1 2 &bar 3>;
+        #
+        # If 'specifier_space' is "pwm", then we should have this elsewhere
+        # in the tree:
+        #
+        #     foo: ... {
+        #             #pwm-cells = <2>;
+        #     };
+        #
+        #     bar: ... {
+        #             #pwm-cells = <1>;
+        #     };
+        #
+        # These values can be given names using the <specifier_space>-names:
+        # list in the binding for the phandle nodes.
         #
         # Also parses any
         #
-        #     <name>-names = "...", "...", ...
+        #     <specifier_space>-names = "...", "...", ...
         #
         # Returns a list of Optional[ControllerAndData] instances.
-        # An index is None if the underlying phandle-array element
-        # is unspecified.
+        #
+        # An index is None if the underlying phandle-array element is
+        # unspecified.
 
-        if prop.name.endswith("gpios"):
-            # There's some slight special-casing for *-gpios properties in that
-            # e.g. foo-gpios still maps to #gpio-cells rather than
-            # #foo-gpio-cells
-            basename = "gpio"
-        else:
-            # Strip -s. We've already checked that the property names end in -s
-            # in _check_prop_type_and_default().
-            basename = prop.name[:-1]
+        if not specifier_space:
+            if prop.name.endswith("gpios"):
+                # There's some slight special-casing for *-gpios properties in that
+                # e.g. foo-gpios still maps to #gpio-cells rather than
+                # #foo-gpio-cells
+                specifier_space = "gpio"
+            else:
+                # Strip -s. We've already checked that property names end in -s
+                # if there is no specifier space in _check_prop_by_type().
+                specifier_space = prop.name[:-1]
 
         res = []
 
-        for item in _phandle_val_list(prop, basename):
+        for item in _phandle_val_list(prop, specifier_space):
             if item is None:
                 res.append(None)
                 continue
@@ -1223,17 +1359,18 @@ class Node:
             controller_node, data = item
             mapped_controller, mapped_data = \
                 _map_phandle_array_entry(prop.node, controller_node, data,
-                                         basename)
+                                         specifier_space)
 
             entry = ControllerAndData()
             entry.node = self
             entry.controller = self.edt._node2enode[mapped_controller]
+            entry.basename = specifier_space
             entry.data = self._named_cells(entry.controller, mapped_data,
-                                           basename)
+                                           specifier_space)
 
             res.append(entry)
 
-        _add_names(self._node, basename, res)
+        _add_names(self._node, specifier_space, res)
 
         return res
 
@@ -1243,8 +1380,8 @@ class Node:
         # byte array.
 
         if not controller._binding:
-            _err("{} controller {!r} for {!r} lacks binding"
-                 .format(basename, controller._node, self._node))
+            _err(f"{basename} controller {controller._node!r} "
+                 f"for {self._node!r} lacks binding")
 
         if basename in controller._binding.specifier2cells:
             cell_names = controller._binding.specifier2cells[basename]
@@ -1256,13 +1393,61 @@ class Node:
 
         data_list = to_nums(data)
         if len(data_list) != len(cell_names):
-            _err("unexpected '{}-cells:' length in binding for {!r} - {} "
-                 "instead of {}"
-                 .format(basename, controller._node, len(cell_names),
-                         len(data_list)))
+            _err(f"unexpected '{basename}-cells:' length in binding for "
+                 f"{controller._node!r} - {len(cell_names)} "
+                 f"instead of {len(data_list)}")
 
         return OrderedDict(zip(cell_names, data_list))
 
+
+class Range:
+    """
+    Represents a translation range on a node as described by the 'ranges' property.
+
+    These attributes are available on Range objects:
+
+    node:
+      The Node instance this range is from
+
+    child_bus_cells:
+      Is the number of cells (4-bytes wide words) describing the child bus address.
+
+    child_bus_addr:
+      Is a physical address within the child bus address space, or None if the
+      child address-cells is equal 0.
+
+    parent_bus_cells:
+      Is the number of cells (4-bytes wide words) describing the parent bus address.
+
+    parent_bus_addr:
+      Is a physical address within the parent bus address space, or None if the
+      parent address-cells is equal 0.
+
+    length_cells:
+      Is the number of cells (4-bytes wide words) describing the size of range in
+      the child address space.
+
+    length:
+      Specifies the size of the range in the child address space, or None if the
+      child size-cells is equal 0.
+    """
+    def __repr__(self):
+        fields = []
+
+        if self.child_bus_cells is not None:
+            fields.append("child-bus-cells: " + hex(self.child_bus_cells))
+        if self.child_bus_addr is not None:
+            fields.append("child-bus-addr: " + hex(self.child_bus_addr))
+        if self.parent_bus_cells is not None:
+            fields.append("parent-bus-cells: " + hex(self.parent_bus_cells))
+        if self.parent_bus_addr is not None:
+            fields.append("parent-bus-addr: " + hex(self.parent_bus_addr))
+        if self.length_cells is not None:
+            fields.append("length-cells " + hex(self.length_cells))
+        if self.length is not None:
+            fields.append("length " + hex(self.length))
+
+        return "<Range, {}>".format(", ".join(fields))
 
 class Register:
     """
@@ -1324,6 +1509,9 @@ class ControllerAndData:
       The name of the entry as given in
       'interrupt-names'/'gpio-names'/'pwm-names'/etc., or None if there is no
       *-names property
+
+    basename:
+      Basename for the controller when supporting named cells
     """
     def __repr__(self):
         fields = []
@@ -1331,8 +1519,8 @@ class ControllerAndData:
         if self.name is not None:
             fields.append("name: " + self.name)
 
-        fields.append("controller: {}".format(self.controller))
-        fields.append("data: {}".format(self.data))
+        fields.append(f"controller: {self.controller}")
+        fields.append(f"data: {self.data}")
 
         return "<ControllerAndData, {}>".format(", ".join(fields))
 
@@ -1351,12 +1539,21 @@ class PinCtrl:
       The name of the configuration, as given in pinctrl-names, or None if
       there is no pinctrl-names property
 
+    name_as_token:
+      Like 'name', but with non-alphanumeric characters converted to underscores.
+
     conf_nodes:
       A list of Node instances for the pin configuration nodes, e.g.
       the nodes pointed at by &state_1 and &state_2 in
 
           pinctrl-0 = <&state_1 &state_2>;
     """
+
+    @property
+    def name_as_token(self):
+        "See the class docstring"
+        return str_as_token(self.name) if self.name is not None else None
+
     def __repr__(self):
         fields = []
 
@@ -1448,7 +1645,7 @@ class Property:
     @property
     def val_as_token(self):
         "See the class docstring"
-        return re.sub(_NOT_ALPHANUM_OR_UNDERSCORE, '_', self.val)
+        return str_as_token(self.val)
 
     @property
     def enum_index(self):
@@ -1463,7 +1660,7 @@ class Property:
                   "value: " + repr(self.val)]
 
         if self.enum_index is not None:
-            fields.append("enum index: {}".format(self.enum_index))
+            fields.append(f"enum index: {self.enum_index}")
 
         return "<Property, {}>".format(", ".join(fields))
 
@@ -1771,7 +1968,8 @@ class Binding:
             return
 
         ok_prop_keys = {"description", "type", "required",
-                        "enum", "const", "default", "deprecated"}
+                        "enum", "const", "default", "deprecated",
+                        "specifier-space"}
 
         for prop_name, options in raw["properties"].items():
             for key in options:
@@ -1780,10 +1978,7 @@ class Binding:
                          f"'properties: {prop_name}: ...' in {self.path}, "
                          f"expected one of {', '.join(ok_prop_keys)}")
 
-            _check_prop_type_and_default(
-                prop_name, options.get("type"),
-                options.get("default"),
-                self.path)
+            _check_prop_by_type(prop_name, options, self.path)
 
             for true_false_opt in ["required", "deprecated"]:
                 if true_false_opt in options:
@@ -1805,11 +2000,6 @@ class Binding:
             if "enum" in options and not isinstance(options["enum"], list):
                 _err(f"enum in {self.path} for property '{prop_name}' "
                      "is not a list")
-
-            if "const" in options and not isinstance(options["const"],
-                                                     (int, str)):
-                _err(f"const in {self.path} for property '{prop_name}' "
-                     "is not a scalar")
 
 
 def bindings_from_paths(yaml_paths, ignore_errors=False):
@@ -1883,6 +2073,9 @@ class PropertySpec:
 
     required:
       True if the property is marked required; False otherwise.
+
+    specifier_space:
+      The specifier space for the property as given in the binding, or None.
     """
 
     def __init__(self, name, binding):
@@ -1962,9 +2155,40 @@ class PropertySpec:
         "See the class docstring"
         return self._raw.get("deprecated", False)
 
+    @property
+    def specifier_space(self):
+        "See the class docstring"
+        return self._raw.get("specifier-space")
+
+
 class EDTError(Exception):
     "Exception raised for devicetree- and binding-related errors"
 
+#
+# Public global functions
+#
+
+
+def load_vendor_prefixes_txt(vendor_prefixes):
+    """Load a vendor-prefixes.txt file and return a dict
+    representation mapping a vendor prefix to the vendor name.
+    """
+    vnd2vendor = {}
+    with open(vendor_prefixes, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+
+            if not line or line.startswith('#'):
+                # Comment or empty line.
+                continue
+
+            # Other lines should be in this form:
+            #
+            # <vnd><TAB><vendor>
+            vnd_vendor = line.split('\t', 1)
+            assert len(vnd_vendor) == 2, line
+            vnd2vendor[vnd_vendor[0]] = vnd_vendor[1]
+    return vnd2vendor
 
 #
 # Private global functions
@@ -1990,7 +2214,7 @@ def _binding_paths(bindings_dirs):
     for bindings_dir in bindings_dirs:
         for root, _, filenames in os.walk(bindings_dir):
             for filename in filenames:
-                if filename.endswith(".yaml"):
+                if filename.endswith(".yaml") or filename.endswith(".yml"):
                     binding_paths.append(os.path.join(root, filename))
 
     return binding_paths
@@ -2112,17 +2336,16 @@ def _merge_props(to_dict, from_dict, parent, binding_path, check_required):
         elif prop not in to_dict:
             to_dict[prop] = from_dict[prop]
         elif _bad_overwrite(to_dict, from_dict, prop, check_required):
-            _err("{} (in '{}'): '{}' from included file overwritten "
-                 "('{}' replaced with '{}')".format(
-                     binding_path, parent, prop, from_dict[prop],
-                     to_dict[prop]))
+            _err(f"{binding_path} (in '{parent}'): '{prop}' "
+                 f"from included file overwritten ('{from_dict[prop]}' "
+                 f"replaced with '{to_dict[prop]}')")
         elif prop == "required":
             # Need a separate check here, because this code runs before
             # Binding._check()
             if not (isinstance(from_dict["required"], bool) and
                     isinstance(to_dict["required"], bool)):
-                _err("malformed 'required:' setting for '{}' in 'properties' "
-                     "in {}, expected true/false".format(parent, binding_path))
+                _err(f"malformed 'required:' setting for '{parent}' in "
+                     f"'properties' in {binding_path}, expected true/false")
 
             # 'required: true' takes precedence
             to_dict["required"] = to_dict["required"] or from_dict["required"]
@@ -2162,28 +2385,42 @@ def _binding_include(loader, node):
     _binding_inc_error("unrecognised node type in !include statement")
 
 
-def _check_prop_type_and_default(prop_name, prop_type, default, binding_path):
-    # Binding._check_properties() helper. Checks 'type:' and 'default:' for the
-    # property named 'prop_name'
+def _check_prop_by_type(prop_name, options, binding_path):
+    # Binding._check_properties() helper. Checks 'type:', 'default:',
+    # 'const:' and # 'specifier-space:' for the property named 'prop_name'
+
+    prop_type = options.get("type")
+    default = options.get("default")
+    const = options.get("const")
 
     if prop_type is None:
-        _err("missing 'type:' for '{}' in 'properties' in {}"
-             .format(prop_name, binding_path))
+        _err(f"missing 'type:' for '{prop_name}' in 'properties' in "
+             f"{binding_path}")
 
     ok_types = {"boolean", "int", "array", "uint8-array", "string",
                 "string-array", "phandle", "phandles", "phandle-array",
                 "path", "compound"}
 
     if prop_type not in ok_types:
-        _err("'{}' in 'properties:' in {} has unknown type '{}', expected one "
-             "of {}".format(prop_name, binding_path, prop_type,
-                            ", ".join(ok_types)))
+        _err(f"'{prop_name}' in 'properties:' in {binding_path} "
+             f"has unknown type '{prop_type}', expected one of " +
+             ", ".join(ok_types))
 
-    if prop_type == "phandle-array" and not prop_name.endswith("s"):
-        _err("'{}' in 'properties:' in {} is 'type: phandle-array', but its "
-             "name does not end in -s. This is required since property names "
-             "like '#pwm-cells' and 'pwm-names' get derived from 'pwms', for "
-             "example.".format(prop_name, binding_path))
+    if "specifier-space" in options and prop_type != "phandle-array":
+        _err(f"'specifier-space' in 'properties: {prop_name}' "
+             f"has type '{prop_type}', expected 'phandle-array'")
+
+    if prop_type == "phandle-array":
+        if not prop_name.endswith("s") and not "specifier-space" in options:
+            _err(f"'{prop_name}' in 'properties:' in {binding_path} "
+                 f"has type 'phandle-array' and its name does not end in 's', "
+                 f"but no 'specifier-space' was provided.")
+
+    const_types = {"int", "array", "uint8-array", "string", "string-array"}
+    if const and prop_type not in const_types:
+        _err(f"const in {binding_path} for property '{prop_name}' "
+             f"has type '{prop_type}', expected one of " +
+             ", ".join(const_types))
 
     # Check default
 
@@ -2192,8 +2429,9 @@ def _check_prop_type_and_default(prop_name, prop_type, default, binding_path):
 
     if prop_type in {"boolean", "compound", "phandle", "phandles",
                      "phandle-array", "path"}:
-        _err("'default:' can't be combined with 'type: {}' for '{}' in "
-             "'properties:' in {}".format(prop_type, prop_name, binding_path))
+        _err("'default:' can't be combined with "
+             f"'type: {prop_type}' for '{prop_name}' in "
+             f"'properties:' in {binding_path}")
 
     def ok_default():
         # Returns True if 'default' is an okay default for the property's type
@@ -2219,8 +2457,9 @@ def _check_prop_type_and_default(prop_name, prop_type, default, binding_path):
         return all(isinstance(val, str) for val in default)
 
     if not ok_default():
-        _err("'default: {}' is invalid for '{}' in 'properties:' in {}, which "
-             "has type {}".format(default, prop_name, binding_path, prop_type))
+        _err(f"'default: {default}' is invalid for '{prop_name}' "
+             f"in 'properties:' in {binding_path}, "
+             f"which has type {prop_type}")
 
 
 def _translate(addr, node):
@@ -2253,11 +2492,10 @@ def _translate(addr, node):
     entry_cells = child_address_cells + parent_address_cells + child_size_cells
 
     for raw_range in _slice(node.parent, "ranges", 4*entry_cells,
-                            "4*(<#address-cells> (= {}) + "
-                            "<#address-cells for parent> (= {}) + "
-                            "<#size-cells> (= {}))"
-                            .format(child_address_cells, parent_address_cells,
-                                    child_size_cells)):
+                            f"4*(<#address-cells> (= {child_address_cells}) + "
+                            "<#address-cells for parent> "
+                            f"(= {parent_address_cells}) + "
+                            f"<#size-cells> (= {child_size_cells}))"):
         child_addr = to_num(raw_range[:4*child_address_cells])
         raw_range = raw_range[4*child_address_cells:]
 
@@ -2292,9 +2530,9 @@ def _add_names(node, names_ident, objs):
     if full_names_ident in node.props:
         names = node.props[full_names_ident].to_strings()
         if len(names) != len(objs):
-            _err("{} property in {} in {} has {} strings, expected {} strings"
-                 .format(full_names_ident, node.path, node.dt.filename,
-                         len(names), len(objs)))
+            _err(f"{full_names_ident} property in {node.path} "
+                 f"in {node.dt.filename} has {len(names)} strings, "
+                 f"expected {len(objs)} strings")
 
         for obj, name in zip(objs, names):
             if obj is None:
@@ -2311,13 +2549,15 @@ def _interrupt_parent(node):
     # the parents of 'node'. As of writing, this behavior isn't specified in
     # the DT spec., but seems to match what some .dts files except.
 
+    start_node = node
+
     while node:
         if "interrupt-parent" in node.props:
             return node.props["interrupt-parent"].to_node()
         node = node.parent
 
-    _err("{!r} has an 'interrupts' property, but neither the node nor any "
-         "of its parents has an 'interrupt-parent' property".format(node))
+    _err(f"{start_node!r} has an 'interrupts' property, but neither the node "
+         f"nor any of its parents has an 'interrupt-parent' property")
 
 
 def _interrupts(node):
@@ -2361,8 +2601,8 @@ def _map_interrupt(child, parent, child_spec):
 
         address_cells = node.props.get("#address-cells")
         if not address_cells:
-            _err("missing #address-cells on {!r} (while handling interrupt-map)"
-                 .format(node))
+            _err(f"missing #address-cells on {node!r} "
+                 "(while handling interrupt-map)")
         return address_cells.to_num()
 
     def spec_len_fn(node):
@@ -2384,10 +2624,10 @@ def _map_phandle_array_entry(child, parent, child_spec, basename):
     # _map_interrupt().
 
     def spec_len_fn(node):
-        prop_name = "#{}-cells".format(basename)
+        prop_name = f"#{basename}-cells"
         if prop_name not in node.props:
-            _err("expected '{}' property on {!r} (referenced by {!r})"
-                 .format(prop_name, node, child))
+            _err(f"expected '{prop_name}' property on {node!r} "
+                 f"(referenced by {child!r})")
         return node.props[prop_name].to_num()
 
     # Do not require <prefix>-controller for anything but interrupts for now
@@ -2424,8 +2664,8 @@ def _map(prefix, child, parent, child_spec, spec_len_fn, require_controller):
     map_prop = parent.props.get(prefix + "-map")
     if not map_prop:
         if require_controller and prefix + "-controller" not in parent.props:
-            _err("expected '{}-controller' property on {!r} "
-                 "(referenced by {!r})".format(prefix, parent, child))
+            _err(f"expected '{prefix}-controller' property on {parent!r} "
+                 f"(referenced by {child!r})")
 
         # No mapping
         return (parent, child_spec)
@@ -2435,26 +2675,23 @@ def _map(prefix, child, parent, child_spec, spec_len_fn, require_controller):
     raw = map_prop.value
     while raw:
         if len(raw) < len(child_spec):
-            _err("bad value for {!r}, missing/truncated child data"
-                 .format(map_prop))
+            _err(f"bad value for {map_prop!r}, missing/truncated child data")
         child_spec_entry = raw[:len(child_spec)]
         raw = raw[len(child_spec):]
 
         if len(raw) < 4:
-            _err("bad value for {!r}, missing/truncated phandle"
-                 .format(map_prop))
+            _err(f"bad value for {map_prop!r}, missing/truncated phandle")
         phandle = to_num(raw[:4])
         raw = raw[4:]
 
         # Parent specified in *-map
         map_parent = parent.dt.phandle2node.get(phandle)
         if not map_parent:
-            _err("bad phandle ({}) in {!r}".format(phandle, map_prop))
+            _err(f"bad phandle ({phandle}) in {map_prop!r}")
 
         map_parent_spec_len = 4*spec_len_fn(map_parent)
         if len(raw) < map_parent_spec_len:
-            _err("bad value for {!r}, missing/truncated parent data"
-                 .format(map_prop))
+            _err(f"bad value for {map_prop!r}, missing/truncated parent data")
         parent_spec = raw[:map_parent_spec_len]
         raw = raw[map_parent_spec_len:]
 
@@ -2468,8 +2705,8 @@ def _map(prefix, child, parent, child_spec, spec_len_fn, require_controller):
             return _map(prefix, parent, map_parent, parent_spec, spec_len_fn,
                         require_controller)
 
-    _err("child specifier for {!r} ({}) does not appear in {!r}"
-         .format(child, child_spec, map_prop))
+    _err(f"child specifier for {child!r} ({child_spec}) "
+         f"does not appear in {map_prop!r}")
 
 
 def _mask(prefix, child, parent, child_spec):
@@ -2483,8 +2720,8 @@ def _mask(prefix, child, parent, child_spec):
 
     mask = mask_prop.value
     if len(mask) != len(child_spec):
-        _err("{!r}: expected '{}-mask' in {!r} to be {} bytes, is {} bytes"
-             .format(child, prefix, parent, len(child_spec), len(mask)))
+        _err(f"{child!r}: expected '{prefix}-mask' in {parent!r} "
+             f"to be {len(child_spec)} bytes, is {len(mask)} bytes")
 
     return _and(child_spec, mask)
 
@@ -2505,8 +2742,8 @@ def _pass_thru(prefix, child, parent, child_spec, parent_spec):
 
     pass_thru = pass_thru_prop.value
     if len(pass_thru) != len(child_spec):
-        _err("{!r}: expected '{}-map-pass-thru' in {!r} to be {} bytes, is {} bytes"
-             .format(child, prefix, parent, len(child_spec), len(pass_thru)))
+        _err(f"{child!r}: expected '{prefix}-map-pass-thru' in {parent!r} "
+             f"to be {len(child_spec)} bytes, is {len(pass_thru)} bytes")
 
     res = _or(_and(child_spec, pass_thru),
               _and(parent_spec, _not(pass_thru)))
@@ -2520,14 +2757,14 @@ def _raw_unit_addr(node):
     # #address-cells) as a raw 'bytes'
 
     if 'reg' not in node.props:
-        _err("{!r} lacks 'reg' property (needed for 'interrupt-map' unit "
-             "address lookup)".format(node))
+        _err(f"{node!r} lacks 'reg' property "
+             "(needed for 'interrupt-map' unit address lookup)")
 
     addr_len = 4*_address_cells(node)
 
     if len(node.props['reg'].value) < addr_len:
-        _err("{!r} has too short 'reg' property (while doing 'interrupt-map' "
-             "unit address lookup)".format(node))
+        _err(f"{node!r} has too short 'reg' property "
+             "(while doing 'interrupt-map' unit address lookup)")
 
     return node.props['reg'].value[:addr_len]
 
@@ -2577,7 +2814,7 @@ def _phandle_val_list(prop, n_cells_name):
     # is the node pointed at by <phandle>. If <phandle> does not refer
     # to a node, the entire list element is None.
 
-    full_n_cells_name = "#{}-cells".format(n_cells_name)
+    full_n_cells_name = f"#{n_cells_name}-cells"
 
     res = []
 
@@ -2597,7 +2834,7 @@ def _phandle_val_list(prop, n_cells_name):
             continue
 
         if full_n_cells_name not in node.props:
-            _err("{!r} lacks {}".format(node, full_n_cells_name))
+            _err(f"{node!r} lacks {full_n_cells_name}")
 
         n_cells = node.props[full_n_cells_name].to_num()
         if len(raw) < 4*n_cells:
@@ -2632,7 +2869,7 @@ def _interrupt_cells(node):
     # 'node' has no #interrupt-cells property
 
     if "#interrupt-cells" not in node.props:
-        _err("{!r} lacks #interrupt-cells".format(node))
+        _err(f"{node!r} lacks #interrupt-cells")
     return node.props["#interrupt-cells"].to_num()
 
 
@@ -2644,11 +2881,10 @@ def _slice(node, prop_name, size, size_hint):
 
     raw = node.props[prop_name].value
     if len(raw) % size:
-        _err("'{}' property in {!r} has length {}, which is not evenly "
-             "divisible by {} (= {}). Note that #*-cells "
-             "properties come either from the parent node or from the "
-             "controller (in the case of 'interrupts')."
-             .format(prop_name, node, len(raw), size, size_hint))
+        _err(f"'{prop_name}' property in {node!r} has length {len(raw)}, "
+             f"which is not evenly divisible by {size} (= {size_hint}). "
+             "Note that #*-cells properties come either from the parent node or "
+             "from the controller (in the case of 'interrupts').")
 
     return [raw[i:i + size] for i in range(0, len(raw), size)]
 
@@ -2672,17 +2908,17 @@ def _check_dt(dt):
                 _err(str(e))
 
             if status_val not in ok_status:
-                _err("unknown 'status' value \"{}\" in {} in {}, expected one "
-                     "of {} (see the devicetree specification)"
-                     .format(status_val, node.path, node.dt.filename,
-                             ", ".join(ok_status)))
+                _err(f"unknown 'status' value \"{status_val}\" in {node.path} "
+                     f"in {node.dt.filename}, expected one of " +
+                     ", ".join(ok_status) +
+                     " (see the devicetree specification)")
 
         ranges_prop = node.props.get("ranges")
         if ranges_prop:
             if ranges_prop.type not in (Type.EMPTY, Type.NUMS):
-                _err("expected 'ranges = < ... >;' in {} in {}, not '{}' "
-                     "(see the devicetree specification)"
-                     .format(node.path, node.dt.filename, ranges_prop))
+                _err(f"expected 'ranges = < ... >;' in {node.path} in "
+                     f"{node.dt.filename}, not '{ranges_prop}' "
+                     "(see the devicetree specification)")
 
 
 def _err(msg):
@@ -2693,6 +2929,16 @@ _LOG = logging.getLogger(__name__)
 
 # Regular expression for non-alphanumeric-or-underscore characters.
 _NOT_ALPHANUM_OR_UNDERSCORE = re.compile(r'\W', re.ASCII)
+
+
+def str_as_token(val):
+    """Return a canonical representation of a string as a C token.
+
+    This converts special characters in 'val' to underscores, and
+    returns the result."""
+
+    return re.sub(_NOT_ALPHANUM_OR_UNDERSCORE, '_', val)
+
 
 # Custom PyYAML binding loader class to avoid modifying yaml.Loader directly,
 # which could interfere with YAML loading in clients
@@ -2761,3 +3007,14 @@ _DEFAULT_PROP_SPECS = {
     name: PropertySpec(name, _DEFAULT_PROP_BINDING)
     for name in _DEFAULT_PROP_TYPES
 }
+
+# A set of vendor prefixes which are grandfathered in by Linux,
+# and therefore by us as well.
+_VENDOR_PREFIX_ALLOWED = set([
+    "at25", "bm", "devbus", "dmacap", "dsa",
+    "exynos", "fsia", "fsib", "gpio-fan", "gpio-key", "gpio", "gpmc",
+    "hdmi", "i2c-gpio", "keypad", "m25p", "max8952", "max8997",
+    "max8998", "mpmc", "pinctrl-single", "#pinctrl-single", "PowerPC",
+    "pl022", "pxa-mmc", "rcar_sound", "rotary-encoder", "s5m8767",
+    "sdhci", "simple-audio-card", "st-plgpio", "st-spics", "ts",
+])

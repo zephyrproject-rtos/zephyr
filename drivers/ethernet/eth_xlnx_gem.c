@@ -21,20 +21,20 @@
  *   RX Status and TX Status registers.
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <devicetree.h>
-#include <sys/__assert.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/__assert.h>
 
-#include <net/net_if.h>
-#include <net/ethernet.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 
 #include "eth_xlnx_gem_priv.h"
 
 #define LOG_MODULE_NAME eth_xlnx_gem
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static int  eth_xlnx_gem_dev_init(const struct device *dev);
@@ -90,7 +90,7 @@ DT_INST_FOREACH_STATUS_OKAY(ETH_XLNX_GEM_INITIALIZE)
  */
 static int eth_xlnx_gem_dev_init(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
 	uint32_t reg_val;
 
 	/* Precondition checks using assertions */
@@ -114,11 +114,18 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 		 "%s invalid max./nominal link speed value %u",
 		 dev->name, (uint32_t)dev_conf->max_link_speed);
 
-	/* MDC clock divider validity check */
+	/* MDC clock divider validity check, SoC dependent */
+#if defined(CONFIG_SOC_XILINX_ZYNQMP)
 	__ASSERT(dev_conf->mdc_divider <= MDC_DIVIDER_48,
 		 "%s invalid MDC clock divider value %u, must be in "
 		 "range 0 to %u", dev->name, dev_conf->mdc_divider,
 		 (uint32_t)MDC_DIVIDER_48);
+#elif defined(CONFIG_SOC_FAMILY_XILINX_ZYNQ7000)
+	__ASSERT(dev_conf->mdc_divider <= MDC_DIVIDER_224,
+		 "%s invalid MDC clock divider value %u, must be in "
+		 "range 0 to %u", dev->name, dev_conf->mdc_divider,
+		 (uint32_t)MDC_DIVIDER_224);
+#endif
 
 	/* AMBA AHB configuration options */
 	__ASSERT((dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_32BIT ||
@@ -212,8 +219,8 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 static void eth_xlnx_gem_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 
 	/* Set the initial contents of the current instance's run-time data */
 	dev_data->iface = iface;
@@ -257,8 +264,8 @@ static void eth_xlnx_gem_iface_init(struct net_if *iface)
  */
 static void eth_xlnx_gem_isr(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint32_t reg_val;
 
 	/* Read the interrupt status register */
@@ -337,8 +344,8 @@ static void eth_xlnx_gem_isr(const struct device *dev)
  */
 static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 
 	uint16_t tx_data_length;
 	uint16_t tx_data_remaining;
@@ -512,8 +519,8 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
  */
 static int eth_xlnx_gem_start_device(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint32_t reg_val;
 
 	if (dev_data->started) {
@@ -561,8 +568,8 @@ static int eth_xlnx_gem_start_device(const struct device *dev)
  */
 static int eth_xlnx_gem_stop_device(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint32_t reg_val;
 
 	if (!dev_data->started) {
@@ -606,7 +613,7 @@ static int eth_xlnx_gem_stop_device(const struct device *dev)
 static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
 	const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
 
 	if (dev_conf->max_link_speed == LINK_1GBIT) {
@@ -657,7 +664,9 @@ static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
  */
 static struct net_stats_eth *eth_xlnx_gem_stats(const struct device *dev)
 {
-	return &(DEV_DATA(dev)->stats);
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
+
+	return &data->stats;
 }
 #endif
 
@@ -670,7 +679,7 @@ static struct net_stats_eth *eth_xlnx_gem_stats(const struct device *dev)
  */
 static void eth_xlnx_gem_reset_hw(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
 
 	/*
 	 * Controller reset sequence as described in the Zynq-7000 TRM,
@@ -719,8 +728,8 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev)
 	 * values for the respective GEM's TX clock are calculated here.
 	 */
 
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 
 	uint32_t div0;
 	uint32_t div1;
@@ -759,7 +768,7 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev)
 	}
 
 	/*
-	 * Caclculate the divisors for the target frequency.
+	 * Calculate the divisors for the target frequency.
 	 * The frequency of the PLL to which the divisors shall be applied are
 	 * provided in the respective GEM's device tree data.
 	 */
@@ -775,6 +784,7 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev)
 		}
 	}
 
+#if defined(CONFIG_SOC_XILINX_ZYNQMP)
 	/*
 	 * ZynqMP register crl_apb.GEMx_REF_CTRL:
 	 * RX_CLKACT bit [26]
@@ -808,6 +818,19 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev)
 	if ((tmp & ETH_XLNX_CRL_APB_WPROT_BIT) > 0) {
 		sys_write32(tmp, ETH_XLNX_CRL_APB_WPROT_REGISTER_ADDRESS);
 	}
+# elif defined(CONFIG_SOC_FAMILY_XILINX_ZYNQ7000)
+	clk_ctrl_reg  = sys_read32(dev_conf->clk_ctrl_reg_address);
+	clk_ctrl_reg &= ~((ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR_MASK <<
+			ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR0_SHIFT) |
+			(ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR_MASK <<
+			ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR1_SHIFT));
+	clk_ctrl_reg |= ((div0 & ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR_MASK) <<
+			ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR0_SHIFT) |
+			((div1 & ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR_MASK) <<
+			ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR1_SHIFT);
+
+	sys_write32(clk_ctrl_reg, dev_conf->clk_ctrl_reg_address);
+#endif /* CONFIG_SOC_XILINX_ZYNQMP / CONFIG_SOC_FAMILY_XILINX_ZYNQ7000 */
 
 	LOG_DBG("%s set clock dividers div0/1 %u/%u for target "
 		"frequency %u Hz", dev->name, div0, div1, target);
@@ -824,7 +847,7 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev)
  */
 static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
 	uint32_t reg_val = 0;
 
 	if (dev_conf->ignore_ipg_rxer) {
@@ -944,8 +967,8 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev)
  */
 static void eth_xlnx_gem_set_nwcfg_link_speed(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint32_t reg_val;
 
 	/*
@@ -978,8 +1001,8 @@ static void eth_xlnx_gem_set_nwcfg_link_speed(const struct device *dev)
  */
 static void eth_xlnx_gem_set_mac_address(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint32_t regval_top;
 	uint32_t regval_bot;
 
@@ -1014,7 +1037,7 @@ static void eth_xlnx_gem_set_mac_address(const struct device *dev)
  */
 static void eth_xlnx_gem_set_initial_dmacr(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
 	uint32_t reg_val = 0;
 
 	/*
@@ -1081,7 +1104,7 @@ static void eth_xlnx_gem_set_initial_dmacr(const struct device *dev)
  */
 static void eth_xlnx_gem_init_phy(const struct device *dev)
 {
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	int detect_rc;
 
 	LOG_DBG("%s attempting to initialize associated PHY", dev->name);
@@ -1133,7 +1156,7 @@ static void eth_xlnx_gem_poll_phy(struct k_work *work)
 	struct eth_xlnx_gem_dev_data *dev_data = CONTAINER_OF(dwork,
 		struct eth_xlnx_gem_dev_data, phy_poll_delayed_work);
 	const struct device *dev = net_if_get_device(dev_data->iface);
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
 
 	uint16_t phy_status;
 	uint8_t link_status;
@@ -1228,8 +1251,8 @@ static void eth_xlnx_gem_poll_phy(struct k_work *work)
  */
 static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	struct eth_xlnx_gem_bd *bdptr;
 	uint32_t buf_iter;
 
@@ -1343,8 +1366,8 @@ static void eth_xlnx_gem_rx_pending_work(struct k_work *item)
  */
 static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint32_t reg_addr;
 	uint32_t reg_ctrl;
 	uint32_t reg_val;
@@ -1523,8 +1546,8 @@ static void eth_xlnx_gem_tx_done_work(struct k_work *item)
  */
 static void eth_xlnx_gem_handle_tx_done(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint32_t reg_ctrl;
 	uint32_t reg_val;
 	uint32_t reg_val_txsr;
@@ -1603,5 +1626,3 @@ static void eth_xlnx_gem_handle_tx_done(const struct device *dev)
 	/* Indicate completion to a blocking eth_xlnx_gem_send() call */
 	k_sem_give(&dev_data->tx_done_sem);
 }
-
-/* EOF */

@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 #define ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
-#include <timeout_q.h>
-#include <tracing/tracing.h>
+#include <zephyr/timeout_q.h>
+#include <zephyr/tracing/tracing.h>
 #include <stdbool.h>
 
 BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
@@ -56,7 +56,7 @@ bool z_set_prio(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
 void idle(void *unused1, void *unused2, void *unused3);
 void z_time_slice(int ticks);
-void z_reset_time_slice(void);
+void z_reset_time_slice(struct k_thread *curr);
 void z_sched_abort(struct k_thread *thread);
 void z_sched_ipi(void);
 void z_sched_start(struct k_thread *thread);
@@ -362,5 +362,47 @@ static inline bool z_sched_wake_all(_wait_q_t *wait_q, int swap_retval,
  */
 int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
 		 _wait_q_t *wait_q, k_timeout_t timeout, void **data);
+
+
+/** @brief Halt thread cycle usage accounting.
+ *
+ * Halts the accumulation of thread cycle usage and adds the current
+ * total to the thread's counter.  Called on context switch.
+ *
+ * Note that this function is idempotent.  The core kernel code calls
+ * it at the end of interrupt handlers (because that is where we have
+ * a portable hook) where we are context switching, which will include
+ * any cycles spent in the ISR in the per-thread accounting.  But
+ * architecture code can also call it earlier out of interrupt entry
+ * to improve measurement fidelity.
+ *
+ * This function assumes local interrupts are masked (so that the
+ * current CPU pointer and current thread are safe to modify), but
+ * requires no other synchronizaton.  Architecture layers don't need
+ * to do anything more.
+ */
+void z_sched_usage_stop(void);
+
+void z_sched_usage_start(struct k_thread *thread);
+
+/**
+ * @brief Retrieves CPU cycle usage data for specified core
+ */
+void z_sched_cpu_usage(uint8_t core_id, struct k_thread_runtime_stats *stats);
+
+/**
+ * @brief Retrieves thread cycle usage data for specified thread
+ */
+void z_sched_thread_usage(struct k_thread *thread,
+			  struct k_thread_runtime_stats *stats);
+
+static inline void z_sched_usage_switch(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	z_sched_usage_stop();
+	z_sched_usage_start(thread);
+#endif
+}
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSCHED_H_ */

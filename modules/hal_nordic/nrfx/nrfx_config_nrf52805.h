@@ -38,6 +38,12 @@
 #define NRFX_CLOCK_CONFIG_LF_CAL_ENABLED 0
 #endif
 
+// <q> NRFX_CLOCK_CONFIG_CT_ENABLED  - Enables Calibration Timer Support
+
+#ifndef NRFX_CLOCK_CONFIG_CT_ENABLED
+#define NRFX_CLOCK_CONFIG_CT_ENABLED 0
+#endif
+
 // <q> NRFX_CLOCK_CONFIG_LFXO_TWO_STAGE_ENABLED - Enables two-stage LFXO start procedure
 
 // <i> If set to a non-zero value, LFRC will be started before LFXO and corresponding
@@ -157,9 +163,10 @@
 #ifndef NRFX_GPIOTE_ENABLED
 #define NRFX_GPIOTE_ENABLED 0
 #endif
-// <o> NRFX_GPIOTE_CONFIG_NUM_OF_LOW_POWER_EVENTS - Number of lower power input pins
-#ifndef NRFX_GPIOTE_CONFIG_NUM_OF_LOW_POWER_EVENTS
-#define NRFX_GPIOTE_CONFIG_NUM_OF_LOW_POWER_EVENTS 1
+
+// <o> NRFX_GPIOTE_CONFIG_NUM_OF_EVT_HANDLERS - Number of dedicated handlers
+#ifndef NRFX_GPIOTE_CONFIG_NUM_OF_EVT_HANDLERS
+#define NRFX_GPIOTE_CONFIG_NUM_OF_EVT_HANDLERS 1
 #endif
 
 // <o> NRFX_GPIOTE_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
@@ -976,7 +983,7 @@
 
 // </e>
 
-// <e> NRFX_TIMER_ENABLED - nrfx_timer - TIMER periperal driver
+// <e> NRFX_TIMER_ENABLED - nrfx_timer - TIMER peripheral driver
 //==========================================================
 #ifndef NRFX_TIMER_ENABLED
 #define NRFX_TIMER_ENABLED 0

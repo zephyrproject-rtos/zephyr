@@ -6,15 +6,15 @@
 
 /**
  * @file
- * @brief New thread creation for ARM Cortex-M and Cortex-R
+ * @brief New thread creation for ARM Cortex-A, Cortex-M and Cortex-R
  *
- * Core thread related primitives for the ARM Cortex-M and Cortex-R
- * processor architecture.
+ * Core thread related primitives for the ARM Cortex-A, Cortex-M and
+ * Cortex-R processor architecture.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <wait_q.h>
+#include <zephyr/wait_q.h>
 
 #if (MPU_GUARD_ALIGN_AND_SIZE_FLOAT > MPU_GUARD_ALIGN_AND_SIZE)
 #define FP_GUARD_EXTRA_SIZE	(MPU_GUARD_ALIGN_AND_SIZE_FLOAT - \
@@ -38,7 +38,7 @@
 #endif
 
 #if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_CPU_CORTEX_M)
-extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 #endif
 
 /* An initial context, to be "restored" by z_arm_pendsv(), is put at the other
@@ -111,6 +111,13 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	iframe->xpsr |= T_BIT;
 #endif /* CONFIG_COMPILER_ISA_THUMB2 */
 #endif /* CONFIG_CPU_CORTEX_M */
+
+#if !defined(CONFIG_CPU_CORTEX_M) \
+	&& defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	iframe = (struct __basic_sf *)
+		((uintptr_t)iframe - sizeof(struct __fpu_sf));
+	memset(iframe, 0, sizeof(struct __fpu_sf));
+#endif
 
 	thread->callee_saved.psp = (uint32_t)iframe;
 	thread->arch.basepri = 0;
@@ -266,6 +273,11 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	_current->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 #endif /* CONFIG_MPU_STACK_GUARD */
+
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
+	_current->arch.priv_stack_end =
+		_current->arch.priv_stack_start + CONFIG_PRIVILEGED_STACK_SIZE;
+#endif
 
 	z_arm_userspace_enter(user_entry, p1, p2, p3,
 			     (uint32_t)_current->stack_info.start,
@@ -465,7 +477,11 @@ int arch_float_disable(struct k_thread *thread)
 
 	thread->base.user_options &= ~K_FP_REGS;
 
+#if defined(CONFIG_CPU_CORTEX_M)
 	__set_CONTROL(__get_CONTROL() & (~CONTROL_FPCA_Msk));
+#else
+	__set_FPEXC(0);
+#endif
 
 	/* No need to add an ISB barrier after setting the CONTROL
 	 * register; arch_irq_unlock() already adds one.
@@ -478,7 +494,7 @@ int arch_float_disable(struct k_thread *thread)
 
 int arch_float_enable(struct k_thread *thread, unsigned int options)
 {
-	/* This is not supported in Cortex-M and Cortex-R does not have FPU */
+	/* This is not supported in Cortex-M */
 	return -ENOTSUP;
 }
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
@@ -494,8 +510,16 @@ static void z_arm_prepare_switch_to_main(void)
 	 * Unshared FP Registers mode (In Shared FP Registers mode, FPSCR is
 	 * initialized at thread creation for threads that make use of the FP).
 	 */
+#if defined(CONFIG_ARMV8_1_M_MAINLINE)
+	/*
+	 * For ARMv8.1-M with FPU, the FPSCR[18:16] LTPSIZE field must be set
+	 * to 0b100 for "Tail predication not applied" as it's reset value
+	 */
+	__set_FPSCR(4 << FPU_FPDSCR_LTPSIZE_Pos);
+#else
 	__set_FPSCR(0);
-#if defined(CONFIG_FPU_SHARING)
+#endif
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_FPU_SHARING)
 	/* In Sharing mode clearing FPSCR may set the CONTROL.FPCA flag. */
 	__set_CONTROL(__get_CONTROL() & (~(CONTROL_FPCA_Msk)));
 	__ISB();
@@ -557,7 +581,9 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 
 	"movs r1, #0\n\t"
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
-			|| defined(CONFIG_ARMV7_R)
+	|| defined(CONFIG_ARMV7_R) \
+	|| defined(CONFIG_AARCH32_ARMV8_R) \
+	|| defined(CONFIG_ARMV7_A)
 	"cpsie i\n\t"		/* __enable_irq() */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	"cpsie if\n\t"		/* __enable_irq(); __enable_fault_irq() */

@@ -9,13 +9,13 @@
  *
  */
 
-#include <zephyr.h>
-#include <ztest.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/device.h>
 
-#include <drivers/flash.h>
-#include <shell/shell.h>
-#include <shell/shell_dummy.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_dummy.h>
 
 /* configuration derived from DT */
 #ifdef CONFIG_ARCH_POSIX
@@ -26,7 +26,7 @@
 #define FLASH_SIMULATOR_BASE_OFFSET DT_REG_ADDR(SOC_NV_FLASH_NODE)
 
 /* Test 'flash read' shell command */
-static void test_flash_read(void)
+ZTEST(shell_flash, test_flash_read)
 {
 	/* To keep the test simple, just compare against known data */
 	char *const lines[] = {
@@ -35,7 +35,7 @@ static void test_flash_read(void)
 		"00000020: 61 62 63                                         |abc              |",
 	};
 	const struct shell *shell = shell_backend_dummy_get_ptr();
-	static const struct device *flash_dev;
+	const struct device *const flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 	const char *buf;
 	const int test_base = FLASH_SIMULATOR_BASE_OFFSET;
 	const int test_size = 0x24;  /* 32-alignment required */
@@ -47,10 +47,9 @@ static void test_flash_read(void)
 	for (i = 0; i < test_size; i++) {
 		data[i] = 'A' + i;
 	}
-	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
-	zassert_true(flash_dev != NULL,
-		     "Simulated flash driver was not found!");
+	zassert_true(device_is_ready(flash_dev),
+		     "Simulated flash driver not ready");
 
 	ret = flash_write(flash_dev, test_base, data, test_size);
 	zassert_equal(0, ret, "flash_write() failed: %d", ret);
@@ -69,14 +68,11 @@ static void test_flash_read(void)
 	}
 }
 
-void test_main(void)
+static void *shell_setup(void)
 {
-	/* Let the shell backend intialize. */
+	/* Let the shell backend initialize. */
 	k_usleep(10);
-
-	ztest_test_suite(shell_flash_test_suite,
-			 ztest_unit_test(test_flash_read)
-			);
-
-	ztest_run_test_suite(shell_flash_test_suite);
+	return NULL;
 }
+
+ZTEST_SUITE(shell_flash, NULL, shell_setup, NULL, NULL, NULL);

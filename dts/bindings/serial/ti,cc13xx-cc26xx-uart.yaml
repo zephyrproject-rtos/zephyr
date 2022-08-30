@@ -5,7 +5,7 @@ description: TI SimpleLink CC13xx / CC26xx UART node
 
 compatible: "ti,cc13xx-cc26xx-uart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml, base.yaml]
 
 properties:
     reg:
@@ -13,13 +13,3 @@ properties:
 
     interrupts:
       required: true
-
-    tx-pin:
-      type: array
-      required: true
-      description: TX pin
-
-    rx-pin:
-      type: array
-      required: true
-      description: RX pin

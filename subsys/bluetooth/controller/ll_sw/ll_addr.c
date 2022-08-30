@@ -7,10 +7,10 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/controller.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/controller.h>
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -34,27 +34,6 @@
 static uint8_t pub_addr[BDADDR_SIZE];
 static uint8_t rnd_addr[BDADDR_SIZE];
 
-uint8_t *ll_addr_get(uint8_t addr_type, uint8_t *bdaddr)
-{
-	if (addr_type > 1) {
-		return NULL;
-	}
-
-	if (addr_type) {
-		if (bdaddr) {
-			memcpy(bdaddr, rnd_addr, BDADDR_SIZE);
-		}
-
-		return rnd_addr;
-	}
-
-	if (bdaddr) {
-		memcpy(bdaddr, pub_addr, BDADDR_SIZE);
-	}
-
-	return pub_addr;
-}
-
 uint8_t ll_addr_set(uint8_t addr_type, uint8_t const *const bdaddr)
 {
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
@@ -73,15 +52,48 @@ uint8_t ll_addr_set(uint8_t addr_type, uint8_t const *const bdaddr)
 	}
 
 	if (addr_type) {
-		memcpy(rnd_addr, bdaddr, BDADDR_SIZE);
+		if (bdaddr) {
+			(void)memcpy(rnd_addr, bdaddr, BDADDR_SIZE);
+		} else {
+			(void)memset(rnd_addr, 0, BDADDR_SIZE);
+		}
 	} else {
-		memcpy(pub_addr, bdaddr, BDADDR_SIZE);
+		if (bdaddr) {
+			(void)memcpy(pub_addr, bdaddr, BDADDR_SIZE);
+		} else {
+			(void)memset(pub_addr, 0, BDADDR_SIZE);
+		}
 	}
 
 	return 0;
 }
 
+uint8_t *ll_addr_get(uint8_t addr_type)
+{
+	if (addr_type > BT_ADDR_LE_RANDOM) {
+		return NULL;
+	}
+
+	if (addr_type) {
+		return rnd_addr;
+	}
+
+	return pub_addr;
+}
+
+uint8_t *ll_addr_read(uint8_t addr_type, uint8_t *const bdaddr)
+{
+	uint8_t *addr;
+
+	addr = ll_addr_get(addr_type);
+	if (addr) {
+		memcpy(bdaddr, addr, BDADDR_SIZE);
+	}
+
+	return addr;
+}
+
 void bt_ctlr_set_public_addr(const uint8_t *addr)
 {
-    (void)memcpy(pub_addr, addr, sizeof(pub_addr));
+	(void)memcpy(pub_addr, addr, sizeof(pub_addr));
 }

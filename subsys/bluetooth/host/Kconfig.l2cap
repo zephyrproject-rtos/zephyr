@@ -8,6 +8,7 @@ menu "L2CAP Options"
 config BT_L2CAP_TX_BUF_COUNT
 	int "Number of L2CAP TX buffers"
 	default NET_BUF_TX_COUNT if NET_L2_BT
+	default 10 if BT_MCS
 	default BT_BUF_ACL_TX_COUNT
 	range 2 255
 	help
@@ -31,6 +32,8 @@ config BT_L2CAP_TX_MTU
 	default 253 if BT_BREDR
 	default 69 if BT_MESH_GATT
 	default 65 if BT_SMP
+	default 64 if BT_AUDIO_UNICAST_SERVER || BT_AUDIO_UNICAST_CLIENT || BT_AUDIO_BROADCAST_SINK || BT_BASS || BT_BASS_CLIENT
+	default 49 if BT_HAS || BT_HAS_CLIENT
 	default 23
 	range 65 2000 if BT_SMP
 	range 23 2000

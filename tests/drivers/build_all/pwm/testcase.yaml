@@ -5,74 +5,59 @@ tests:
   drivers.pwm.gecko.build:
     platform_allow: efr32_radio_brd4250b
     tags: pwm_gecko
-    extra_args: "CONFIG_PWM_GECKO=y"
   drivers.pwm.imx.build:
     platform_allow: colibri_imx7d_m4
     tags: pwm_imx
-    extra_args: "CONFIG_PWM_IMX=y"
   drivers.pwm.litex.build:
     platform_allow: litex_vexriscv
     tags: pwm_litex
-    extra_args: "CONFIG_PWM_LITEX=y"
   drivers.pwm.mcux.ftm.build:
     platform_allow: frdm_k22f
     tags: pwm_mcux_ftm
-    extra_args: "CONFIG_PWM_MCUX_FTM=y"
   drivers.pwm.mcux.pwt.build:
     platform_allow: twr_ke18f
     tags: pwm_mcux_pwt
-    extra_args: "CONFIG_PWM_MCUX_PWT=y CONFIG_PWM_CAPTURE=y"
+    extra_configs:
+      - CONFIG_PWM_CAPTURE=y
   drivers.pwm.mcux.ftm.build:
     platform_allow: frdm_kw41z
     tags: pwm_mcux_tpm
-    extra_args: "CONFIG_PWM_MCUX_TPM=y"
   drivers.pwm.mcux.build:
     platform_allow: mimxrt1064_evk
     tags: pwm_mcux
-    extra_args: "CONFIG_PWM_MCUX=y"
   drivers.pwm.mcux.sctimer.build:
     platform_allow: mimxrt685_evk_cm33
     tags: pwm_mcux_sctimer
-    extra_args: "CONFIG_PWM_MCUX_SCTIMER=y"
   drivers.pwm.rv32m1.tpm.build:
     platform_allow: rv32m1_vega_ri5cy
     tags: pwm_rv32m1_tpm
-    extra_args: "CONFIG_PWM_RV32M1_TPM=y"
   drivers.pwm.sifive.build:
     platform_allow: hifive1_revb
     tags: pwm_sifive
-    extra_args: "CONFIG_PWM_SIFIVE=y"
   drivers.pwm.npcx.build:
     platform_allow: npcx7m6fb_evb
     tags: pwm_npcx
-    extra_args: "CONFIG_PWM_NPCX=y"
   drivers.pwm.nrf.sw.build:
     platform_allow: nrf51dk_nrf51422
     tags: pwm_nrf5_sw
-    extra_args: "CONFIG_PWM_NRF5_SW=y"
   drivers.pwm.nrf.build:
     platform_allow: nrf52840dk_nrf52840
     tags: pwm_nrfx
-    extra_args: "CONFIG_PWM_NRFX=y"
   drivers.pwm.sam0.tcc.build:
     platform_allow: atsame54_xpro
     tags: pwm_sam0_tcc
-    extra_args: "CONFIG_PWM_SAM0_TCC=y"
   drivers.pwm.build.sam:
     platform_allow: sam_e70_xplained sam_v71b_xult
     tags: pwm_sam
-    extra_configs:
-      - CONFIG_PWM_SAM=y
   drivers.pwm.stm32.build:
     platform_allow: disco_l475_iot1
     tags: pwm_stm32
-    extra_args: "CONFIG_PWM_STM32=y"
   drivers.pwm.xec.build:
     platform_allow: mec15xxevb_assy6853
     tags: pwm_xec
-    extra_args: "CONFIG_PWM_XEC=y"
   drivers.pwm.build.xlnx:
     platform_allow: arty_a7_arm_designstart_m1
     tags: pwm_xlnx_axi_timer
-    extra_configs:
-      - CONFIG_PWM_XLNX_AXI_TIMER=y
+  drivers.pwm.build.test:
+    platform_allow: qemu_cortex_m3
+    tags: pwm_test

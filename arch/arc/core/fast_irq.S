@@ -13,18 +13,17 @@
  * See isr_wrapper.S for details.
  */
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <offsets_short.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <swap_macros.h>
 
 GTEXT(_firq_enter)
 GTEXT(_firq_exit)
 
 /**
- *
  * @brief Work to be done before handing control to a FIRQ ISR
  *
  * The processor switches to a second register bank so registers from the
@@ -41,8 +40,6 @@ GTEXT(_firq_exit)
  * interrupt. An exception, however, can be taken.
  *
  * Assumption by _isr_demux: r3 is untouched by _firq_enter.
- *
- * @return N/A
  */
 
 SECTION_FUNC(TEXT, _firq_enter)
@@ -131,10 +128,7 @@ firq_nest:
 
 
 /**
- *
  * @brief Work to be done exiting a FIRQ
- *
- * @return N/A
  */
 
 SECTION_FUNC(TEXT, _firq_exit)
@@ -151,14 +145,13 @@ SECTION_FUNC(TEXT, _firq_exit)
 
 	jne _firq_no_switch
 
-	/* sp is struct k_thread **old of z_arc_switch_in_isr
-	 * which is a wrapper of z_get_next_switch_handle.
-	 * r0 contains the 1st thread in ready queue. if
-	 * it equals _current(r2) ,then do swap, or no swap.
+	/* sp is struct k_thread **old of z_arc_switch_in_isr which is a wrapper of
+	 * z_get_next_switch_handle. r0 contains the 1st thread in ready queue. If it isn't NULL,
+	 * then do switch to this thread.
 	 */
 	_get_next_switch_handle
 
-	cmp r0, r2
+	CMPR r0, 0
 	bne _firq_switch
 
 	/* fall to no switch */
@@ -245,9 +238,9 @@ _firq_create_irq_stack_frame:
 	ld r2, [r1, -8]
 #endif
 	/* r2 is old thread */
-	_irq_store_old_thread_callee_regs
-
 	st _CAUSE_FIRQ, [r2, _thread_offset_to_relinquish_cause]
+
+	_irq_store_old_thread_callee_regs
 
 	/* mov new thread (r0) to r2 */
 

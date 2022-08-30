@@ -16,13 +16,13 @@
  * function __stack_chk_fail and global variable __stack_chk_guard.
  */
 
-#include <toolchain.h> /* compiler specific configurations */
+#include <zephyr/toolchain.h> /* compiler specific configurations */
 
-#include <kernel_structs.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <kernel.h>
-#include <app_memory/app_memdomain.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/kernel.h>
+#include <zephyr/app_memory/app_memdomain.h>
 
 /**
  *

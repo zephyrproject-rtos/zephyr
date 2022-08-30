@@ -9,11 +9,11 @@
  * @brief System/hardware module for STM32WB processor
  */
 
-#include <device.h>
-#include <init.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/logging/log.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
@@ -44,6 +44,10 @@ static int stm32wb_init(const struct device *arg)
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 4 MHz from MSI */
 	SystemCoreClock = 4000000;
+
+	/* Set C2 Power Mode to shutdown */
+	/* It will be updated by C2 when required */
+	LL_C2_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN);
 
 	return 0;
 }

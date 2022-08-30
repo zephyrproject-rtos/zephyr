@@ -4,12 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <tc_util.h>
+#include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
 
-#include <sys/byteorder.h>
-#include <usb/usb_device.h>
-#include <usb/usb_common.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usb_device.h>
 #include <os_desc.h>
 
 #define MSOS_STRING_LENGTH	18
@@ -21,7 +20,7 @@ static struct string_desc {
 	uint8_t bPad;
 } __packed msosv1_string_descriptor = {
 	.bLength = MSOS_STRING_LENGTH,
-	.bDescriptorType = USB_STRING_DESC,
+	.bDescriptorType = USB_DESC_STRING,
 	/* Signature MSFT100 */
 	.bString = {
 		'M', 0x00, 'S', 0x00, 'F', 0x00, 'T', 0x00,
@@ -94,7 +93,7 @@ static void test_handle_os_desc(void)
 	uint8_t *data = NULL;
 	int ret;
 
-	setup.wValue = (USB_STRING_DESC & 0xFF) << 8;
+	setup.wValue = (USB_DESC_STRING & 0xFF) << 8;
 	setup.wValue |= USB_OSDESC_STRING_DESC_INDEX;
 
 	ret = usb_handle_os_desc(&setup, &len, &data);
@@ -127,23 +126,17 @@ static void test_handle_os_desc_feature(void)
 		     "Wrong data");
 }
 
-static void test_osdesc_string(void)
+ZTEST(os_desc, test_osdesc_string)
 {
 	test_register_osdesc();
 	test_handle_os_desc();
 }
 
-static void test_osdesc_feature(void)
+ZTEST(os_desc, test_osdesc_feature)
 {
 	test_register_osdesc();
 	test_handle_os_desc_feature();
 }
 
 /* test case main entry */
-void test_main(void)
-{
-	ztest_test_suite(test_osdesc,
-			 ztest_unit_test(test_osdesc_string),
-			 ztest_unit_test(test_osdesc_feature));
-	ztest_run_test_suite(test_osdesc);
-}
+ZTEST_SUITE(os_desc, NULL, NULL, NULL, NULL, NULL);

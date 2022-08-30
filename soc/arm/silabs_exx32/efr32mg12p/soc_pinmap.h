@@ -13,6 +13,7 @@
 #ifndef _SOC_PINMAP_H_
 #define _SOC_PINMAP_H_
 
+#include <zephyr/devicetree.h>
 #include <em_gpio.h>
 
 #define GPIO_NODE DT_INST(0, silabs_gecko_gpio)

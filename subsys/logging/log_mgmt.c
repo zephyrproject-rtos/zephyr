@@ -3,14 +3,24 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <logging/log_core.h>
-#include <logging/log_ctrl.h>
-#include <syscall_handler.h>
+#include <zephyr/logging/log_internal.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/syscall_handler.h>
 
 /* Implementation of functions related to controlling logging sources and backends:
  * - getting/setting source details like name, filtering
  * - controlling backends filtering
  */
+
+/** @brief Get compiled level of the log source.
+ *
+ * @param source_id Source ID.
+ * @return Level.
+ */
+static inline uint8_t log_compiled_level_get(uint32_t source_id)
+{
+	return __log_const_start[source_id].level;
+}
 
 void z_log_runtime_filters_init(void)
 {
@@ -23,10 +33,11 @@ void z_log_runtime_filters_init(void)
 	 * compile-time level. When backends are attached later on in
 	 * log_init(), they'll be initialized to the same value.
 	 */
-	for (int i = 0; i < log_sources_count(); i++) {
-		uint32_t *filters = log_dynamic_filters_get(i);
+	for (int i = 0; i < z_log_sources_count(); i++) {
+		uint32_t *filters = z_log_dynamic_filters_get(i);
 		uint8_t level = log_compiled_level_get(i);
 
+		level = MAX(level, CONFIG_LOG_OVERRIDE_LEVEL);
 		LOG_FILTER_SLOT_SET(filters,
 				    LOG_FILTER_AGGR_SLOT_IDX,
 				    level);
@@ -35,12 +46,33 @@ void z_log_runtime_filters_init(void)
 
 uint32_t log_src_cnt_get(uint32_t domain_id)
 {
-	return log_sources_count();
+	return z_log_sources_count();
+}
+
+/** @brief Get name of the log source.
+ *
+ * @param source_id Source ID.
+ * @return Name.
+ */
+static inline const char *log_name_get(uint32_t source_id)
+{
+	return __log_const_start[source_id].name;
 }
 
 const char *log_source_name_get(uint32_t domain_id, uint32_t src_id)
 {
-	return src_id < log_sources_count() ? log_name_get(src_id) : NULL;
+	return src_id < z_log_sources_count() ? log_name_get(src_id) : NULL;
+}
+
+int log_source_id_get(const char *name)
+{
+	for (int i = 0; i < log_src_cnt_get(CONFIG_LOG_DOMAIN_ID); i++) {
+		if (strcmp(log_source_name_get(CONFIG_LOG_DOMAIN_ID, i),
+			   name) == 0) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 static uint32_t max_filter_get(uint32_t filters)
@@ -64,12 +96,12 @@ uint32_t z_impl_log_filter_set(struct log_backend const *const backend,
 			       uint32_t domain_id, int16_t source_id,
 			       uint32_t level)
 {
-	__ASSERT_NO_MSG(source_id < log_sources_count());
+	__ASSERT_NO_MSG(source_id < (int16_t)z_log_sources_count());
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		uint32_t new_aggr_filter;
 
-		uint32_t *filters = log_dynamic_filters_get(source_id);
+		uint32_t *filters = z_log_dynamic_filters_get(source_id);
 
 		if (backend == NULL) {
 			struct log_backend const *iter_backend;
@@ -89,7 +121,7 @@ uint32_t z_impl_log_filter_set(struct log_backend const *const backend,
 			uint32_t max = log_filter_get(backend, domain_id,
 						      source_id, false);
 
-			level = MIN(level, max);
+			level = MIN(level, MAX(max, CONFIG_LOG_OVERRIDE_LEVEL));
 
 			LOG_FILTER_SLOT_SET(filters,
 					    log_backend_id_get(backend),
@@ -119,7 +151,7 @@ uint32_t z_vrfy_log_filter_set(struct log_backend const *const backend,
 		"Setting per-backend filters from user mode is not supported"));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(domain_id == CONFIG_LOG_DOMAIN_ID,
 		"Invalid log domain_id"));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(src_id < log_sources_count(),
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(src_id < (int16_t)z_log_sources_count(),
 		"Invalid log source id"));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
 		(level <= LOG_LEVEL_DBG),
@@ -134,10 +166,23 @@ static void backend_filter_set(struct log_backend const *const backend,
 			       uint32_t level)
 {
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
-		for (int i = 0; i < log_sources_count(); i++) {
+		for (int i = 0; i < z_log_sources_count(); i++) {
 			log_filter_set(backend, CONFIG_LOG_DOMAIN_ID, i, level);
 		}
 	}
+}
+
+const struct log_backend *log_backend_get_by_name(const char *backend_name)
+{
+	const struct log_backend *ptr = __log_backends_start;
+
+	while (ptr < __log_backends_end) {
+		if (strcmp(backend_name, ptr->name) == 0) {
+			return ptr;
+		}
+		ptr++;
+	}
+	return NULL;
 }
 
 void log_backend_enable(struct log_backend const *const backend,
@@ -165,14 +210,14 @@ void log_backend_disable(struct log_backend const *const backend)
 uint32_t log_filter_get(struct log_backend const *const backend,
 			uint32_t domain_id, int16_t source_id, bool runtime)
 {
-	__ASSERT_NO_MSG(source_id < log_sources_count());
+	__ASSERT_NO_MSG(source_id < (int16_t)z_log_sources_count());
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && runtime) {
 		if (source_id < 0) {
 			return LOG_LEVEL_DBG;
 		}
 
-		uint32_t *filters = log_dynamic_filters_get(source_id);
+		uint32_t *filters = z_log_dynamic_filters_get(source_id);
 
 		return LOG_FILTER_SLOT_GET(filters,
 					   log_backend_id_get(backend));

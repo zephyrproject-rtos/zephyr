@@ -11,9 +11,9 @@
  * @file header for STM32 GPIO
  */
 
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <pinmux/pinmux_stm32.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 /* GPIO buses definitions */
 
@@ -206,6 +206,18 @@
 #define STM32_PINCFG_FLOATING           STM32_PUPDR_NO_PULL
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
+#if defined(CONFIG_GPIO_GET_CONFIG) && !defined(CONFIG_SOC_SERIES_STM32F1X)
+/**
+ * @brief structure of a GPIO pin (stm32 LL values) use to get the configuration
+ */
+struct gpio_stm32_pin {
+	unsigned int type; /* LL_GPIO_OUTPUT_PUSHPULL or LL_GPIO_OUTPUT_OPENDRAIN */
+	unsigned int pupd; /* LL_GPIO_PULL_NO or LL_GPIO_PULL_UP or LL_GPIO_PULL_DOWN */
+	unsigned int mode; /* LL_GPIO_MODE_INPUT or LL_GPIO_MODE_OUTPUT or other */
+	unsigned int out_state; /* 1 (high level) or 0 (low level) */
+};
+#endif /* CONFIG_GPIO_GET_CONFIG */
+
 /**
  * @brief configuration of GPIO device
  */
@@ -229,10 +241,6 @@ struct gpio_stm32_data {
 	const struct device *dev;
 	/* user ISR cb */
 	sys_slist_t cb;
-#ifdef CONFIG_PM_DEVICE
-	/* device power state */
-	enum pm_device_state power_state;
-#endif
 };
 
 /**
@@ -241,16 +249,10 @@ struct gpio_stm32_data {
  * @param dev GPIO port device pointer
  * @param pin IO pin
  * @param conf GPIO mode
- * @param altf Alternate function
- */
-void gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf);
-
-/**
- * @brief Enable / disable GPIO port clock.
+ * @param func Pin function
  *
- * @param dev GPIO port device pointer
- * @param on boolean for on/off clock request
+ * @return 0 on success, negative errno code on failure
  */
-int gpio_stm32_clock_request(const struct device *dev, bool on);
+int gpio_stm32_configure(const struct device *dev, int pin, int conf, int func);
 
 #endif /* ZEPHYR_DRIVERS_GPIO_GPIO_STM32_H_ */

@@ -12,7 +12,7 @@
 #ifndef _ARM_BEETLE_SOC_H_
 #define _ARM_BEETLE_SOC_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
 #include "CMSDK_BEETLE.h"
@@ -95,8 +95,6 @@
 
 #ifndef _ASMLANGUAGE
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
 
 #include "soc_pins.h"
 #include "soc_power.h"

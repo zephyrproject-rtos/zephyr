@@ -26,8 +26,8 @@
 #include "irq_ctrl.h"
 #include "board_soc.h"
 #include "zephyr/types.h"
-#include <arch/posix/posix_trace.h>
-#include <sys/util.h>
+#include <zephyr/arch/posix/posix_trace.h>
+#include <zephyr/sys/util.h>
 #include "cmdline.h"
 #include "soc.h"
 
@@ -174,7 +174,7 @@ void hwtimer_cleanup(void)
 }
 
 /**
- * Enable the HW timer tick interrupts with a period <period> in micoseconds
+ * Enable the HW timer tick interrupts with a period <period> in microseconds
  */
 void hwtimer_enable(uint64_t period)
 {
@@ -373,7 +373,7 @@ void hwtimer_get_pseudohost_rtc_time(uint32_t *nsec, uint64_t *sec)
 	/*
 	 * Note: long double has a 64bits mantissa in x86.
 	 * Therefore to avoid loss of precision after 500 odd years into
-	 * the epoc, we first calculate the offset from the last adjustment
+	 * the epoch, we first calculate the offset from the last adjustment
 	 * time split in us and ns. So we keep the full precision for 500 odd
 	 * years after the last clock ratio adjustment (or native_posix boot,
 	 * whichever is latest).
@@ -401,12 +401,12 @@ void hwtimer_get_pseudohost_rtc_time(uint32_t *nsec, uint64_t *sec)
 	uint32_t rt_ns = tv.tv_nsec % 1000;
 
 	long double drt_us = (long double)rt_us - last_radj_rtime;
-	long double drt_ns = drt_us * 1000.0 + (long double)rt_ns;
-	long double st = drt_ns * clock_ratio +
-			 (long double)(last_radj_stime + rtc_offset) * 1000.0;
+	long double drt_ns = drt_us * 1000.0L + (long double)rt_ns;
+	long double st = drt_ns * (long double)clock_ratio +
+			 (long double)(last_radj_stime + rtc_offset) * 1000.0L;
 
-	*nsec = fmodl(st, 1e9);
-	*sec = st / 1e9;
+	*nsec = fmodl(st, 1e9L);
+	*sec = st / 1e9L;
 }
 
 static struct {

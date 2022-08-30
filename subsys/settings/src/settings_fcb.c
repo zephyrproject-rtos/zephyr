@@ -7,30 +7,54 @@
 
 #include <errno.h>
 #include <stdbool.h>
-#include <fs/fcb.h>
+#include <zephyr/fs/fcb.h>
 #include <string.h>
 
-#include "settings/settings.h"
+#include <zephyr/settings/settings.h>
 #include "settings/settings_fcb.h"
 #include "settings_priv.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
+
+#if DT_HAS_CHOSEN(zephyr_settings_partition)
+#define SETTINGS_PARTITION DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
+#else
+#define SETTINGS_PARTITION FLASH_AREA_ID(storage)
+#endif
 
 #define SETTINGS_FCB_VERS		1
 
 int settings_backend_init(void);
 void settings_mount_fcb_backend(struct settings_fcb *cf);
+static void *settings_fcb_storage_get(struct settings_store *cs);
 
 static int settings_fcb_load(struct settings_store *cs,
 			     const struct settings_load_arg *arg);
 static int settings_fcb_save(struct settings_store *cs, const char *name,
 			     const char *value, size_t val_len);
+static void *settings_fcb_storage_get(struct settings_store *cs);
 
 static const struct settings_store_itf settings_fcb_itf = {
 	.csi_load = settings_fcb_load,
 	.csi_save = settings_fcb_save,
+	.csi_storage_get = settings_fcb_storage_get
 };
+
+/**
+ * @brief Get the flash area id of the storage partition
+ *
+ * The implementation of this function provided is weak to let user defines its own function.
+ * This may prove useful for devices using bank swap, in that case the flash area id changes based
+ * on the bank swap state.
+ * See #47732
+ *
+ * @return Flash area id
+ */
+__weak int settings_fcb_get_flash_area(void)
+{
+	return SETTINGS_PARTITION;
+}
 
 int settings_fcb_src(struct settings_fcb *cf)
 {
@@ -40,7 +64,7 @@ int settings_fcb_src(struct settings_fcb *cf)
 	cf->cf_fcb.f_scratch_cnt = 1;
 
 	while (1) {
-		rc = fcb_init(FLASH_AREA_ID(storage), &cf->cf_fcb);
+		rc = fcb_init(settings_fcb_get_flash_area(), &cf->cf_fcb);
 		if (rc) {
 			return -EINVAL;
 		}
@@ -389,7 +413,7 @@ int settings_backend_init(void)
 	int rc;
 	const struct flash_area *fap;
 
-	rc = flash_area_get_sectors(FLASH_AREA_ID(storage), &cnt,
+	rc = flash_area_get_sectors(settings_fcb_get_flash_area(), &cnt,
 				    settings_fcb_area);
 	if (rc == -ENODEV) {
 		return rc;
@@ -402,7 +426,7 @@ int settings_backend_init(void)
 	rc = settings_fcb_src(&config_init_settings_fcb);
 
 	if (rc != 0) {
-		rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
+		rc = flash_area_open(settings_fcb_get_flash_area(), &fap);
 
 		if (rc == 0) {
 			rc = flash_area_erase(fap, 0, fap->fa_size);
@@ -429,4 +453,11 @@ int settings_backend_init(void)
 	settings_mount_fcb_backend(&config_init_settings_fcb);
 
 	return rc;
+}
+
+static void *settings_fcb_storage_get(struct settings_store *cs)
+{
+	struct settings_fcb *cf = (struct settings_fcb *)cs;
+
+	return &cf->cf_fcb;
 }

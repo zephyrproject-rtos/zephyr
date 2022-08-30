@@ -12,18 +12,22 @@
  * init time. If no routine is installed, a nop routine is called.
  */
 
-#include <kernel.h>
-#include <sys/printk.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
 #include <stdarg.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <syscall_handler.h>
-#include <logging/log.h>
-#include <sys/cbprintf.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/cbprintf.h>
 #include <sys/types.h>
 
-#if defined(CONFIG_PRINTK_SYNC) && \
-	!(defined(CONFIG_LOG_PRINTK) && defined(CONFIG_LOG2))
+/* Option present only when CONFIG_USERSPACE enabled. */
+#ifndef CONFIG_PRINTK_BUFFER_SIZE
+#define CONFIG_PRINTK_BUFFER_SIZE 0
+#endif
+
+#if defined(CONFIG_PRINTK_SYNC)
 static struct k_spinlock lock;
 #endif
 
@@ -47,7 +51,7 @@ __attribute__((weak)) int arch_printk_char_out(int c)
 }
 /* LCOV_EXCL_STOP */
 
-int (*_char_out)(int) = arch_printk_char_out;
+int (*_char_out)(int c) = arch_printk_char_out;
 
 /**
  * @brief Install the character output routine for printk
@@ -55,10 +59,8 @@ int (*_char_out)(int) = arch_printk_char_out;
  * To be called by the platform's console driver at init time. Installs a
  * routine that outputs one ASCII character at a time.
  * @param fn putc routine to install
- *
- * @return N/A
  */
-void __printk_hook_install(int (*fn)(int))
+void __printk_hook_install(int (*fn)(int c))
 {
 	_char_out = fn;
 }
@@ -75,13 +77,11 @@ void *__printk_get_hook(void)
 {
 	return _char_out;
 }
-#endif /* CONFIG_PRINTK */
 
-#if defined(CONFIG_PRINTK) && \
-	!(defined(CONFIG_LOG_PRINTK) && defined(CONFIG_LOG2))
-#ifdef CONFIG_USERSPACE
 struct buf_out_context {
-	int count;
+#ifdef CONFIG_PICOLIBC
+	FILE file;
+#endif
 	unsigned int buf_count;
 	char buf[CONFIG_PRINTK_BUFFER_SIZE];
 };
@@ -96,7 +96,6 @@ static int buf_char_out(int c, void *ctx_p)
 {
 	struct buf_out_context *ctx = ctx_p;
 
-	ctx->count++;
 	ctx->buf[ctx->buf_count++] = c;
 	if (ctx->buf_count == CONFIG_PRINTK_BUFFER_SIZE) {
 		buf_flush(ctx);
@@ -104,59 +103,56 @@ static int buf_char_out(int c, void *ctx_p)
 
 	return c;
 }
-#endif /* CONFIG_USERSPACE */
-
-struct out_context {
-	int count;
-};
 
 static int char_out(int c, void *ctx_p)
 {
-	struct out_context *ctx = ctx_p;
-
-	ctx->count++;
+	(void) ctx_p;
 	return _char_out(c);
 }
 
-#ifdef CONFIG_USERSPACE
 void vprintk(const char *fmt, va_list ap)
 {
+	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		z_log_vprintk(fmt, ap);
+		return;
+	}
+
 	if (k_is_user_context()) {
-		struct buf_out_context ctx = { 0 };
+		struct buf_out_context ctx = {
+#ifdef CONFIG_PICOLIBC
+			.file = FDEV_SETUP_STREAM((int(*)(char, FILE *))buf_char_out,
+						  NULL, NULL, _FDEV_SETUP_WRITE),
+#else
+			0
+#endif
+		};
 
+#ifdef CONFIG_PICOLIBC
+		(void) vfprintf(&ctx.file, fmt, ap);
+#else
 		cbvprintf(buf_char_out, &ctx, fmt, ap);
-
+#endif
 		if (ctx.buf_count) {
 			buf_flush(&ctx);
 		}
 	} else {
-		struct out_context ctx = { 0 };
 #ifdef CONFIG_PRINTK_SYNC
 		k_spinlock_key_t key = k_spin_lock(&lock);
 #endif
 
-		cbvprintf(char_out, &ctx, fmt, ap);
+#ifdef CONFIG_PICOLIBC
+		FILE console = FDEV_SETUP_STREAM((int(*)(char, FILE *))char_out,
+						 NULL, NULL, _FDEV_SETUP_WRITE);
+		(void) vfprintf(&console, fmt, ap);
+#else
+		cbvprintf(char_out, NULL, fmt, ap);
+#endif
 
 #ifdef CONFIG_PRINTK_SYNC
 		k_spin_unlock(&lock, key);
 #endif
 	}
 }
-#else
-void vprintk(const char *fmt, va_list ap)
-{
-	struct out_context ctx = { 0 };
-#ifdef CONFIG_PRINTK_SYNC
-	k_spinlock_key_t key = k_spin_lock(&lock);
-#endif
-
-	cbvprintf(char_out, &ctx, fmt, ap);
-
-#ifdef CONFIG_PRINTK_SYNC
-	k_spin_unlock(&lock, key);
-#endif
-}
-#endif /* CONFIG_USERSPACE */
 
 void z_impl_k_str_out(char *c, size_t n)
 {
@@ -202,8 +198,6 @@ static inline void z_vrfy_k_str_out(char *c, size_t n)
  * otherwise 'ERR' is printed. Full 64-bit values may be printed with %llx.
  *
  * @param fmt formatted string to output
- *
- * @return N/A
  */
 
 void printk(const char *fmt, ...)
@@ -212,16 +206,13 @@ void printk(const char *fmt, ...)
 
 	va_start(ap, fmt);
 
-	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
-		log_printk(fmt, ap);
-	} else {
-		vprintk(fmt, ap);
-	}
+	vprintk(fmt, ap);
+
 	va_end(ap);
 }
-#endif /* defined(CONFIG_PRINTK) && \
-	* !(defined(CONFIG_LOG_PRINTK) && defined(CONFIG_LOG2))
-	*/
+#endif /* defined(CONFIG_PRINTK) */
+
+#ifndef CONFIG_PICOLIBC
 
 struct str_context {
 	char *str;
@@ -269,3 +260,5 @@ int vsnprintk(char *str, size_t size, const char *fmt, va_list ap)
 
 	return ctx.count;
 }
+
+#endif

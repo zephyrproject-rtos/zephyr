@@ -1,0 +1,14 @@
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence Tensilica Xtensa LX6 CPU
+
+compatible: "cdns,tensilica-xtensa-lx6"
+
+include: cpu.yaml
+
+properties:
+    clock-source:
+      type: int
+      description: cpu clock source
+      required: false

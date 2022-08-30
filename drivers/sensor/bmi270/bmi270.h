@@ -7,10 +7,11 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMI270_BMI270_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMI270_BMI270_H_
 
-#include <device.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
 
 #define BMI270_REG_CHIP_ID         0x00
 #define BMI270_REG_ERROR           0x02
@@ -200,16 +201,13 @@
 	((reg_data & ~(bitname##_MSK)) | (data & bitname##_MSK))
 
 struct bmi270_data {
-	const struct device *i2c;
-	uint8_t i2c_addr;
 	int16_t ax, ay, az, gx, gy, gz;
 	uint8_t acc_range, acc_odr, gyr_odr;
 	uint16_t gyr_range;
 };
 
 struct bmi270_dev_config {
-	const char *i2c_master_name;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI270_BMI270_H_ */

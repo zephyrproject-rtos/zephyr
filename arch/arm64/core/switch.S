@@ -11,11 +11,11 @@
  * on ARM64 Cortex-A (AArch64)
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
-#include <syscall.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/syscall.h>
 #include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE
@@ -24,7 +24,9 @@ _ASM_FILE_PROLOGUE
  * Routine to handle context switches
  *
  * This function is directly called either by _isr_wrapper() in case of
- * preemption, or z_arm64_sync_exc() in case of cooperative switching.
+ * preemption, or arch_switch() in case of cooperative switching.
+ *
+ * void z_arm64_context_switch(struct k_thread *new, struct k_thread *old);
  */
 
 GTEXT(z_arm64_context_switch)
@@ -40,9 +42,9 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	stp	x27, x28, [x1, #_thread_offset_to_callee_saved_x27_x28]
 	stp	x29, x4,  [x1, #_thread_offset_to_callee_saved_x29_sp_el0]
 
-	/* Save the current SP_ELx */
+	/* Save the current SP_ELx and return address */
 	mov	x4, sp
-	str	x4, [x1, #_thread_offset_to_callee_saved_sp_elx]
+	stp	x4, lr, [x1, #_thread_offset_to_callee_saved_sp_elx_lr]
 
 	/* save current thread's exception depth */
 	mrs	x4, tpidrro_el0
@@ -55,12 +57,21 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	orr	x4, x4, x2, lsl #TPIDRROEL0_EXC_SHIFT
 	msr	tpidrro_el0, x4
 
-#ifdef CONFIG_SMP
+#ifdef CONFIG_FPU_SHARING
+	/*
+	 * Do this after tpidrro_el0 is updated with the new exception
+	 * depth value, and before old->switch_handle is updated (making
+	 * it available for grab by another CPU) as we still use its stack.
+	 */
+	stp	x0, x1, [sp, #-16]!
+	bl	z_arm64_fpu_thread_context_switch
+	ldp	x0, x1, [sp], #16
+#endif
+
 	/* save old thread into switch handle which is required by
 	 * wait_for_switch
 	 */
 	 str	x1, [x1, #___thread_t_switch_handle_OFFSET]
-#endif
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	/* Grab the TLS pointer */
@@ -83,23 +94,23 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	/* Restore SP_EL0 */
 	msr	sp_el0, x4
 
-	/* Restore SP_EL1 */
-	ldr	x4, [x0, #_thread_offset_to_callee_saved_sp_elx]
+	/* Restore SP_EL1 and return address */
+	ldp	x4, lr, [x0, #_thread_offset_to_callee_saved_sp_elx_lr]
 	mov	sp, x4
 
 #ifdef CONFIG_USERSPACE
-	stp     xzr, x30, [sp, #-16]!
-	bl      z_arm64_swap_ptables
-	ldp     xzr, x30, [sp], #16
+	str     lr, [sp, #-16]!
+	bl      z_arm64_swap_mem_domains
+	ldr     lr, [sp], #16
 #endif
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-	stp	xzr, x30, [sp, #-16]!
+	str	lr, [sp, #-16]!
 	bl	z_thread_mark_switched_in
-	ldp	xzr, x30, [sp], #16
+	ldr	lr, [sp], #16
 #endif
 
-	/* Return to z_arm64_sync_exc() or _isr_wrapper() */
+	/* Return to arch_switch() or _isr_wrapper() */
 	ret
 
 /*
@@ -131,9 +142,6 @@ SECTION_FUNC(TEXT, z_arm64_sync_exc)
 	/* Demux the SVC call */
 	and	x1, x0, #0xff
 
-	cmp	x1, #_SVC_CALL_CONTEXT_SWITCH
-	beq	context_switch
-
 	cmp	x1, #_SVC_CALL_RUNTIME_EXCEPT
 	beq	oops
 
@@ -147,36 +155,37 @@ SECTION_FUNC(TEXT, z_arm64_sync_exc)
 	beq	offload
 	b	inv
 offload:
-	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
-	inc_nest_counter x0, x1
+	/*
+	 * Retrieve provided routine and argument from the stack.
+	 * Routine pointer is in saved x0, argument in saved x1
+	 * so we load them with x1/x0 (reversed).
+	 */
+	ldp	x1, x0, [sp, ___esf_t_x0_x1_OFFSET]
 
-	bl	z_irq_do_offload
+	/* ++_current_cpu->nested to be checked by arch_is_in_isr() */
+	get_cpu	x2
+	ldr	w3, [x2, #___cpu_t_nested_OFFSET]
+	add	w4, w3, #1
+	str	w4, [x2, #___cpu_t_nested_OFFSET]
 
-	/* --(_kernel->nested) */
-	dec_nest_counter x0, x1
-	b	z_arm64_exit_exc
+	/* If not nested: switch to IRQ stack and save current sp on it. */
+	cbnz	w3, 1f
+	ldr	x3, [x2, #___cpu_t_irq_stack_OFFSET]
+	mov	x4, sp
+	mov	sp, x3
+	str	x4, [sp, #-16]!
+1:
+	/* Execute provided routine (argument is in x0 already). */
+	blr	x1
+
+	/* Exit through regular IRQ exit path */
+	b	z_arm64_irq_done
 #endif
 	b	inv
 
 oops:
 	mov	x0, sp
 	b	z_arm64_do_kernel_oops
-
-context_switch:
-	/*
-	 * Retrieve x0 and x1 from the stack:
-	 *
-	 *  - x0 = new_thread->switch_handle = switch_to thread
-	 *  - x1 = &old_thread->switch_handle = current thread
-	 */
-	ldp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
-
-	/* Get old thread from x1 */
-	sub	x1, x1, ___thread_t_switch_handle_OFFSET
-
-	/* Switch thread */
-	bl	z_arm64_context_switch
-	b	z_arm64_exit_exc
 
 inv:
 	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
@@ -185,16 +194,3 @@ inv:
 
 	/* Return here only in case of recoverable error */
 	b	z_arm64_exit_exc
-
-GTEXT(z_arm64_call_svc)
-SECTION_FUNC(TEXT, z_arm64_call_svc)
-	svc	#_SVC_CALL_CONTEXT_SWITCH
-	ret
-
-#ifdef CONFIG_IRQ_OFFLOAD
-GTEXT(z_arm64_offload)
-SECTION_FUNC(TEXT, z_arm64_offload)
-	svc	#_SVC_CALL_IRQ_OFFLOAD
-	ret
-#endif
-

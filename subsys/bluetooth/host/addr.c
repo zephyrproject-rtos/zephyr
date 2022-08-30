@@ -9,10 +9,10 @@
 #include <string.h>
 #include <errno.h>
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/addr.h>
-#include <bluetooth/crypto.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/crypto.h>
 
 static inline int create_random_addr(bt_addr_le_t *addr)
 {

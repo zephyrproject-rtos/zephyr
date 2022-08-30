@@ -5,10 +5,23 @@ description: NXP Kinetis Ethernet
 
 compatible: "nxp,kinetis-ethernet"
 
-include: ["ethernet.yaml", "ethernet,fixed-link.yaml"]
+include: ["ethernet.yaml", "ethernet,fixed-link.yaml", "pinctrl-device.yaml"]
 
 properties:
     reg:
       required: true
     interrupts:
       required: true
+    phy-addr:
+      type: int
+      description: Address of the phy controller
+      required: true
+    reset-gpios:
+      type: phandle-array
+      required: false
+      description: GPIO to reset PHY. Reset signal is assumed active low.
+    int-gpios:
+      type: phandle-array
+      required: false
+      description:
+        interrupt GPIO for PHY. Will be pulled high before reset is asserted.

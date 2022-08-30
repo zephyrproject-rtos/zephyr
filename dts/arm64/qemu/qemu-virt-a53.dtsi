@@ -1,0 +1,95 @@
+/*
+ * Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Derived from DTS extracted with:
+ *
+ *   qemu-system-aarch64 -machine virt -cpu cortex-a53 -nographic
+ *         -machine dumpdtb=virt.dtb
+ *
+ *   dtc -I dtb -O dts virt.dtb
+ */
+
+#include <mem.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <1>;
+		};
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+	};
+
+	uartclk: apb-pclk {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		interrupt-parent = <&gic>;
+
+		gic: interrupt-controller@8000000 {
+			compatible = "arm,gic";
+			reg = <0x00 0x8000000 0x00 0x010000>,
+			      <0x00 0x80a0000 0x00 0xf60000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+
+		uart0: uart@9000000 {
+			compatible = "arm,pl011";
+			reg = <0x00 0x9000000 0x00 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 1 IRQ_TYPE_LEVEL 0>;
+			interrupt-names = "irq_0";
+			clocks = <&uartclk>;
+		};
+
+		flash0: flash@0 {
+			compatible = "cfi-flash";
+			bank-width = <4>;
+			/* As this is pointed to by zephyr,flash we can only handle
+			 * one value in the reg property, so we comment out the
+			 * second flash bank for now
+			 */
+			reg = <0x0 0x0 0x0 DT_SIZE_M(64) /* 0x4000000 DT_SIZE_M(64) */>;
+		};
+	};
+};

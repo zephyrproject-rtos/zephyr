@@ -9,10 +9,10 @@
  * @brief Sample app for Audio class
  */
 
-#include <zephyr.h>
-#include <logging/log.h>
-#include <usb/usb_device.h>
-#include <usb/class/usb_audio.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/usb/class/usb_audio.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -63,10 +63,10 @@ void main(void)
 	int ret;
 
 	LOG_INF("Entered %s", __func__);
-	hs_dev = device_get_binding("HEADSET");
+	hs_dev = DEVICE_DT_GET_ONE(usb_audio_hs);
 
-	if (!hs_dev) {
-		LOG_ERR("Can not get USB Headset Device");
+	if (!device_is_ready(hs_dev)) {
+		LOG_ERR("Device USB Headset is not ready");
 		return;
 	}
 

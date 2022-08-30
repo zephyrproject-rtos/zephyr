@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2021, TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/gd32vf103c(b-8)xx-pinctrl.h>
+
+&pinctrl {
+	usart0_default: usart0_default {
+		group1 {
+			pinmux = <USART0_TX_PA9_NORMP>, <USART0_RX_PA10_NORMP>;
+		};
+	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			pinmux = <TIMER1_CH1_PA1_OUT_NORMP>, <TIMER1_CH2_PA2_OUT_NORMP>;
+		};
+	};
+
+	dac_default: dac_default {
+		group1 {
+			pinmux = <DAC_OUT0_PA4>;
+		};
+	};
+
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <SPI1_MISO_PB14_INP>, <SPI1_SCK_PB13_OUT>,
+				 <SPI1_MOSI_PB15_OUT>, <SPI1_NSS_PB12_OUT>;
+		};
+	};
+};

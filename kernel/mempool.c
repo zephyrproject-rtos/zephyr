@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <sys/math_extras.h>
-#include <sys/util.h>
+#include <zephyr/sys/math_extras.h>
+#include <zephyr/sys/util.h>
 
 static void *z_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t size)
 {
@@ -48,11 +48,11 @@ void k_free(void *ptr)
 		heap_ref = ptr;
 		ptr = --heap_ref;
 
-		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_free, *heap_ref);
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_free, *heap_ref, heap_ref);
 
 		k_heap_free(*heap_ref, ptr);
 
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_free, *heap_ref);
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_free, *heap_ref, heap_ref);
 	}
 }
 

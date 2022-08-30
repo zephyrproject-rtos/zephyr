@@ -6,11 +6,11 @@
  */
 
 
-#include <zephyr.h>
-#include <ztest.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
 
 
-#define STACKSIZE       (2048 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE       (2048 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 ZTEST_BMEM static int count;
 ZTEST_BMEM static int ret = TC_PASS;
@@ -34,7 +34,6 @@ void check_input(const char *name, const char *input);
  *
  * @param name    caller identification string
  *
- * @return N/A
  */
 
 void print_loop(const char *name)
@@ -59,7 +58,6 @@ void print_loop(const char *name)
  * When stack protection feature is not enabled, the system crashes with
  * error like: Trying to execute code outside RAM or ROM.
  *
- * @return N/A
  */
 
 void check_input(const char *name, const char *input)
@@ -78,7 +76,6 @@ void check_input(const char *name, const char *input)
  * feature is enabled.  Hence it will not execute the print_loop function
  * and will not set ret to TC_FAIL.
  *
- * @return N/A
  */
 void alternate_thread(void)
 {
@@ -113,8 +110,7 @@ static struct k_thread alt_thread_data;
  *
  * @ingroup kernel_memprotect_tests
  */
-
-void test_stackprot(void)
+ZTEST_USER(stackprot, test_stackprot)
 {
 	zassert_true(ret == TC_PASS, NULL);
 	print_loop(__func__);
@@ -128,7 +124,7 @@ void test_stackprot(void)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_create_alt_thread(void)
+ZTEST(stackprot, test_create_alt_thread)
 {
 	/* Start thread */
 	k_thread_create(&alt_thread_data, alt_thread_stack_area, STACKSIZE,
@@ -141,10 +137,4 @@ void test_create_alt_thread(void)
 	k_sleep(K_MSEC(100));
 }
 
-void test_main(void)
-{
-	ztest_test_suite(stackprot,
-			 ztest_unit_test(test_create_alt_thread),
-			 ztest_user_unit_test(test_stackprot));
-	ztest_run_test_suite(stackprot);
-}
+ZTEST_SUITE(stackprot, NULL, NULL, NULL, NULL, NULL);

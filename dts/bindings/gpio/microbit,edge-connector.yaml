@@ -20,6 +20,9 @@ description: |
     Only the pins on the front are connected to signals. The back rings are
     connected to the front rings, but the back small strips are unconnected.
 
+    Pin assignments can be found at:
+    https://tech.microbit.org/hardware/edgeconnector/#edge-connector-pins
+
 compatible: "microbit,edge-connector"
 
 include: [gpio-nexus.yaml, base.yaml]

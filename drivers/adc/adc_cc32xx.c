@@ -8,10 +8,10 @@
 
 #include <errno.h>
 
-#include <drivers/adc.h>
-#include <device.h>
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <soc.h>
 
 /* Driverlib includes */
@@ -28,7 +28,7 @@
 #include "adc_context.h"
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_cc32xx);
 
 #define ISR_MASK (ADC_DMA_DONE | ADC_FIFO_OVERFLOW | ADC_FIFO_UNDERFLOW	\
@@ -229,7 +229,7 @@ static int adc_cc32xx_read_async(const struct device *dev,
 static void adc_cc32xx_isr(const struct device *dev, int no)
 {
 	const struct adc_cc32xx_cfg *config = dev->config;
-	struct adc_cc32xx_data *data = (struct adc_cc32xx_data *)dev->data;
+	struct adc_cc32xx_data *data = dev->data;
 	const int chan = s_channel[no];
 	unsigned long mask = MAP_ADCIntStatus(config->base, chan);
 	int cnt = 0;
@@ -294,7 +294,7 @@ static const struct adc_driver_api cc32xx_driver_api = {
 			    adc_cc32xx_isr_ch##chan,		       \
 			    DEVICE_DT_INST_GET(index), 0);	       \
 		irq_enable(DT_INST_IRQ_BY_IDX(index, chan, irq));      \
-	} while (0)
+	} while (false)
 
 #define cc32xx_ADC_INIT(index)							 \
 										 \
@@ -313,7 +313,7 @@ static const struct adc_driver_api cc32xx_driver_api = {
 	DEVICE_DT_INST_DEFINE(index,						 \
 			      &adc_cc32xx_init, NULL, &adc_cc32xx_data_##index,	 \
 			      &adc_cc32xx_cfg_##index, POST_KERNEL,		 \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		 \
+			      CONFIG_ADC_INIT_PRIORITY,				 \
 			      &cc32xx_driver_api);				 \
 										 \
 	static void adc_cc32xx_cfg_func_##index(void)				 \

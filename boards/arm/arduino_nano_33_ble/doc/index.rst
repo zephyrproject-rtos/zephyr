@@ -11,8 +11,7 @@ nRF52840 ARM Cortex-M4F CPU. Arduino sells 2 variants of the board, the
 plain `BLE`_ type and the `BLE Sense`_ type. The "Sense" variant is distinguished by
 the inclusion of more sensors, but otherwise both variants are the same.
 
-.. image:: img/arduino_nano_33_ble_sense.png
-     :width: 500px
+.. image:: img/arduino_nano_33_ble_sense.jpg
      :align: center
      :alt: Arduino Nano 33 BLE (Sense variant)
 
@@ -61,7 +60,7 @@ The package is configured to support the following hardware:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Notably, this includes the PDM (microphone) interface.
 
@@ -71,17 +70,9 @@ Connections and IOs
 The `schematic`_ will tell you everything
 you need to know about the pins.
 
-A convinience header mapping the Arduino pin names to their
-Zephyr pin numbers can be found in :code:`arduino_nano_33_ble_pins.h`,
-if you link against the :code:`arduino_nano_33_ble_pins` CMake library.
-
-For your convience, two Kconfig options are added:
-
-#. :code:`BOARD_ARDUINO_NANO_33_BLE_INIT_SENSORS`: 
-    This configuration option enables the internal I2C sensors.
-#. :code:`BOARD_ARDUINO_NANO_33_BLE_EN_USB_CONSOLE`:
-    This configuration option enables the USB CDC subsystem and
-    the console, so that printk works.
+The I2C pull-ups are enabled by setting pin P1.00 high. This is automatically
+done at system init. The pin is specified in the ``zephyr,user`` Devicetree node
+as ``pull-up-gpios``.
 
 Programming and Debugging
 *************************
@@ -98,6 +89,7 @@ You can get this variant of bossac with one of two ways:
    #. Install the board support package within the IDE
    #. Change your IDE preferences to provide verbose logging
    #. Build and flash a sample application, and read the logs to figure out where Arduino stored bossac.
+   #. In most Linux based systems the path is ``$HOME/.arduino15/packages/arduino/tools/bossac/1.9.1-arduino2/bossac``.
 
 Once you have a path to bossac, you can pass it as an argument to west:
 
@@ -105,13 +97,19 @@ Once you have a path to bossac, you can pass it as an argument to west:
 
    west flash --bossac="<path to the arduino version of bossac>"
 
+For example
+
+.. code-block:: bash
+
+    west flash --bossac=$HOME/.arduino15/packages/arduino/tools/bossac/1.9.1-arduino2/bossac
+
 Flashing
 ========
 
 Attach the board to your computer using the USB cable, and then
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/blinky
+      :zephyr-app: samples/basic/blinky
       :board: arduino_nano_33_ble
       :goals: build
       :compact:

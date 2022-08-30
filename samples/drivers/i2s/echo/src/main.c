@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include "codec.h"
-#include <sys/printk.h>
-#include <drivers/i2s.h>
-#include <drivers/gpio.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/drivers/gpio.h>
 #include <string.h>
-#include <drivers/clock_control/nrf_clock_control.h>
 
 
 #if DT_NODE_EXISTS(DT_NODELABEL(i2s_rxtx))
@@ -32,19 +31,17 @@
 
 #define SW0_NODE        DT_ALIAS(sw0)
 #if DT_NODE_HAS_STATUS(SW0_NODE, okay)
-#define SW0_LABEL       DT_PROP(SW0_NODE, label)
 static struct gpio_dt_spec sw0_spec = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
 #endif
 
 #define SW1_NODE        DT_ALIAS(sw1)
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
-#define SW1_LABEL       DT_PROP(SW1_NODE, label)
 static struct gpio_dt_spec sw1_spec = GPIO_DT_SPEC_GET(SW1_NODE, gpios);
 #endif
 
 #define BLOCK_SIZE  (BYTES_PER_SAMPLE * SAMPLES_PER_BLOCK)
 #define BLOCK_COUNT (INITIAL_BLOCKS + 2)
-static K_MEM_SLAB_DEFINE(mem_slab, BLOCK_SIZE, BLOCK_COUNT, 4);
+K_MEM_SLAB_DEFINE_STATIC(mem_slab, BLOCK_SIZE, BLOCK_COUNT, 4);
 
 static int16_t echo_block[SAMPLES_PER_BLOCK];
 static volatile bool echo_enabled = true;
@@ -98,7 +95,7 @@ static bool init_buttons(void)
 
 	gpio_init_callback(&sw0_cb_data, sw0_handler, BIT(sw0_spec.pin));
 	gpio_add_callback(sw0_spec.port, &sw0_cb_data);
-	printk("Press \"%s\" to toggle the echo effect\n", SW0_LABEL);
+	printk("Press \"%s\" to toggle the echo effect\n", sw0_spec.port->name);
 #endif
 
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
@@ -126,7 +123,7 @@ static bool init_buttons(void)
 
 	gpio_init_callback(&sw1_cb_data, sw1_handler, BIT(sw1_spec.pin));
 	gpio_add_callback(sw1_spec.port, &sw1_cb_data);
-	printk("Press \"%s\" to stop/restart I2S streams\n", SW1_LABEL);
+	printk("Press \"%s\" to stop/restart I2S streams\n", sw1_spec.port->name);
 #endif
 
 	(void)ret;
@@ -249,8 +246,8 @@ static bool trigger_command(const struct device *i2s_dev_rx,
 
 void main(void)
 {
-	const struct device *i2s_dev_rx = DEVICE_DT_GET(I2S_RX_NODE);
-	const struct device *i2s_dev_tx = DEVICE_DT_GET(I2S_TX_NODE);
+	const struct device *const i2s_dev_rx = DEVICE_DT_GET(I2S_RX_NODE);
+	const struct device *const i2s_dev_tx = DEVICE_DT_GET(I2S_TX_NODE);
 	struct i2s_config config;
 
 	printk("I2S echo sample\n");

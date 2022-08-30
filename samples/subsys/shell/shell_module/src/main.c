@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <shell/shell.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/shell/shell.h>
 #include <version.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include <stdlib.h>
-#include <drivers/uart.h>
-#include <usb/usb_device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/usb/usb_device.h>
 #include <ctype.h>
 
 LOG_MODULE_REGISTER(app);
@@ -89,8 +89,20 @@ static int cmd_demo_ping(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_demo_board(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_print(sh, CONFIG_BOARD);
+
+	return 0;
+}
+
 #if defined CONFIG_SHELL_GETOPT
-static int cmd_demo_getopt(const struct shell *shell, size_t argc, char **argv)
+/* Thread save usage */
+static int cmd_demo_getopt_ts(const struct shell *sh, size_t argc,
+			      char **argv)
 {
 	struct getopt_state *state;
 	char *cvalue = NULL;
@@ -98,8 +110,8 @@ static int cmd_demo_getopt(const struct shell *shell, size_t argc, char **argv)
 	int bflag = 0;
 	int c;
 
-	while ((c = shell_getopt(shell, argc, argv, "abhc:")) != -1) {
-		state = shell_getopt_state_get(shell);
+	while ((c = getopt(argc, argv, "abhc:")) != -1) {
+		state = getopt_state_get();
 		switch (c) {
 		case 'a':
 			aflag = 1;
@@ -115,19 +127,19 @@ static int cmd_demo_getopt(const struct shell *shell, size_t argc, char **argv)
 			 * command handler to print help message. It must
 			 * be done explicitly.
 			 */
-			shell_help(shell);
+			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		case '?':
 			if (state->optopt == 'c') {
-				shell_print(shell,
+				shell_print(sh,
 					"Option -%c requires an argument.",
 					state->optopt);
 			} else if (isprint(state->optopt)) {
-				shell_print(shell,
+				shell_print(sh,
 					"Unknown option `-%c'.",
 					state->optopt);
 			} else {
-				shell_print(shell,
+				shell_print(sh,
 					"Unknown option character `\\x%x'.",
 					state->optopt);
 			}
@@ -137,16 +149,65 @@ static int cmd_demo_getopt(const struct shell *shell, size_t argc, char **argv)
 		}
 	}
 
-	shell_print(shell, "aflag = %d, bflag = %d", aflag, bflag);
+	shell_print(sh, "aflag = %d, bflag = %d", aflag, bflag);
+	return 0;
+}
+
+static int cmd_demo_getopt(const struct shell *sh, size_t argc,
+			      char **argv)
+{
+	char *cvalue = NULL;
+	int aflag = 0;
+	int bflag = 0;
+	int c;
+
+	while ((c = getopt(argc, argv, "abhc:")) != -1) {
+		switch (c) {
+		case 'a':
+			aflag = 1;
+			break;
+		case 'b':
+			bflag = 1;
+			break;
+		case 'c':
+			cvalue = optarg;
+			break;
+		case 'h':
+			/* When getopt is active shell is not parsing
+			 * command handler to print help message. It must
+			 * be done explicitly.
+			 */
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		case '?':
+			if (optopt == 'c') {
+				shell_print(sh,
+					"Option -%c requires an argument.",
+					optopt);
+			} else if (isprint(optopt)) {
+				shell_print(sh, "Unknown option `-%c'.",
+					optopt);
+			} else {
+				shell_print(sh,
+					"Unknown option character `\\x%x'.",
+					optopt);
+			}
+			return 1;
+		default:
+			break;
+		}
+	}
+
+	shell_print(sh, "aflag = %d, bflag = %d", aflag, bflag);
 	return 0;
 }
 #endif
 
 static int cmd_demo_params(const struct shell *shell, size_t argc, char **argv)
 {
-	shell_print(shell, "argc = %d", argc);
+	shell_print(shell, "argc = %zd", argc);
 	for (size_t cnt = 0; cnt < argc; cnt++) {
-		shell_print(shell, "  argv[%d] = %s", cnt, argv[cnt]);
+		shell_print(shell, "  argv[%zd] = %s", cnt, argv[cnt]);
 	}
 
 	return 0;
@@ -154,9 +215,9 @@ static int cmd_demo_params(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_demo_hexdump(const struct shell *shell, size_t argc, char **argv)
 {
-	shell_print(shell, "argc = %d", argc);
+	shell_print(shell, "argc = %zd", argc);
 	for (size_t cnt = 0; cnt < argc; cnt++) {
-		shell_print(shell, "argv[%d]", cnt);
+		shell_print(shell, "argv[%zd]", cnt);
 		shell_hexdump(shell, argv[cnt], strlen(argv[cnt]));
 	}
 
@@ -310,9 +371,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_demo,
 	SHELL_CMD(hexdump, NULL, "Hexdump params command.", cmd_demo_hexdump),
 	SHELL_CMD(params, NULL, "Print params command.", cmd_demo_params),
 	SHELL_CMD(ping, NULL, "Ping command.", cmd_demo_ping),
+	SHELL_CMD(board, NULL, "Show board name command.", cmd_demo_board),
 #if defined CONFIG_SHELL_GETOPT
-	SHELL_CMD(getopt, NULL,	"Cammand using getopt, looking for: \"abhc:\".",
-		  cmd_demo_getopt),
+	SHELL_CMD(getopt_thread_safe, NULL,
+		  "Cammand using getopt in thread safe way"
+		  " looking for: \"abhc:\".",
+		  cmd_demo_getopt_ts),
+	SHELL_CMD(getopt, NULL, "Cammand using getopt in non thread safe way"
+		  " looking for: \"abhc:\".\n", cmd_demo_getopt),
 #endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
@@ -328,18 +394,44 @@ SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_START_OBSCURED, login, NULL,
 SHELL_COND_CMD_REGISTER(CONFIG_SHELL_START_OBSCURED, logout, NULL,
 			"Log out.", cmd_logout);
 
+
+/* Create a set of commands. Commands to this set are added using @ref SHELL_SUBCMD_ADD
+ * and @ref SHELL_SUBCMD_COND_ADD.
+ */
+SHELL_SUBCMD_SET_CREATE(sub_section_cmd, (section_cmd));
+
+static int cmd1_handler(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_print(sh, "cmd1 executed");
+
+	return 0;
+}
+
+/* Create a set of subcommands for "section_cmd cm1". */
+SHELL_SUBCMD_SET_CREATE(sub_section_cmd1, (section_cmd, cmd1));
+
+/* Add command to the set. Subcommand set is identify by parent shell command. */
+SHELL_SUBCMD_ADD((section_cmd), cmd1, &sub_section_cmd1, "help for cmd1", cmd1_handler, 1, 0);
+
+SHELL_CMD_REGISTER(section_cmd, &sub_section_cmd,
+		   "Demo command using section for subcommand registration", NULL);
+
 void main(void)
 {
 	if (IS_ENABLED(CONFIG_SHELL_START_OBSCURED)) {
 		login_init();
 	}
 
-#if defined(CONFIG_USB_UART_CONSOLE)
+#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_shell_uart), zephyr_cdc_acm_uart)
 	const struct device *dev;
 	uint32_t dtr = 0;
 
-	dev = device_get_binding(CONFIG_UART_SHELL_ON_DEV_NAME);
-	if (dev == NULL || usb_enable(NULL)) {
+	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
+	if (!device_is_ready(dev) || usb_enable(NULL)) {
 		return;
 	}
 

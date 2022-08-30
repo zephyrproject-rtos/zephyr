@@ -5,21 +5,39 @@
 
 config ADC_MCUX_ADC12
 	bool "MCUX ADC12 driver"
-	depends on HAS_MCUX_ADC12
+	default y
+	depends on DT_HAS_NXP_KINETIS_ADC12_ENABLED
+	select PINCTRL
 	help
 	  Enable the MCUX ADC12 driver.
 
 config ADC_MCUX_ADC16
 	bool "MCUX ADC16 driver"
-	depends on HAS_MCUX_ADC16
+	default y
+	depends on DT_HAS_NXP_KINETIS_ADC16_ENABLED
+	select PINCTRL
 	help
 	  Enable the MCUX ADC16 driver.
 
+config ADC_MCUX_12B1MSPS_SAR
+	bool "MCUX 12B1MSPS SAR ADC driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_12B1MSPS_SAR_ENABLED
+	help
+	  Enable the MCUX 12B1MSPS SAR ADC driver.
+
 config ADC_MCUX_LPADC
 	bool "MCUX LPADC driver"
-	depends on HAS_MCUX_LPADC
+	default y
+	depends on DT_HAS_NXP_LPC_LPADC_ENABLED
 	help
 	  Enable the MCUX LPADC driver.
+
+config ADC_MCUX_ETC
+	bool "MCUX ADC ETC driver"
+	depends on HAS_MCUX_ADC_ETC
+	help
+	  Enable the MCUX ADC ETC driver.
 
 if ADC_MCUX_ADC16
 
@@ -54,18 +72,12 @@ config ADC_MCUX_ADC16_VREF_ALTERNATE
 endchoice
 
 config ADC_MCUX_ADC16_ENABLE_EDMA
-	bool "Enable EDMA for adc driver"
+	bool "EDMA for adc driver"
 	depends on HAS_MCUX_ADC16 && HAS_MCUX_EDMA
 	help
 	  Enable the MCUX ADC16 driver.
 
 if ADC_MCUX_ADC16_ENABLE_EDMA
-
-config ADC_MCUX_ADC16_INIT_PRIORITY
-	int "Init priority"
-	default 70
-	help
-	  Device driver initialization priority.
 
 config ADC_MCUX_ADC16_HW_TRIGGER
 	bool "ADC HW TRIGGER"

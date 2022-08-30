@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest_assert.h>
+#include <zephyr/ztest_assert.h>
 
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 
 #define clear_buf(buf) memset(buf, 0, sizeof(buf))
 

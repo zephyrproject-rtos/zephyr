@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 /* Needed for the DT_INST_* defines below */
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 #define LL_SWI4_IRQn EMVSIM0_IRQn
 #define LL_SWI5_IRQn MUA_IRQn

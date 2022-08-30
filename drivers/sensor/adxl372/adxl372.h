@@ -8,11 +8,11 @@
 #define ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_
 
 #include <zephyr/types.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <drivers/i2c.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
 
 /*
  * ADXL372 registers definition
@@ -279,18 +279,10 @@ struct adxl372_xyz_accel_data {
 };
 
 struct adxl372_data {
-	const struct device *bus;
-#ifdef CONFIG_ADXL372_SPI
-	struct spi_config spi_cfg;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control adxl372_cs_ctrl;
-#endif
-#endif
 	struct adxl372_xyz_accel_data sample;
 	struct adxl372_fifo_config fifo_config;
 
 #ifdef CONFIG_ADXL372_TRIGGER
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t th_handler;
@@ -311,23 +303,13 @@ struct adxl372_data {
 
 struct adxl372_dev_config {
 #ifdef CONFIG_ADXL372_I2C
-	const char *i2c_port;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 #endif
 #ifdef CONFIG_ADXL372_SPI
-	const char *spi_port;
-	uint16_t spi_slave;
-	uint32_t spi_max_frequency;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	const char *gpio_cs_port;
-	gpio_pin_t cs_gpio;
-	gpio_dt_flags_t cs_flags;
-#endif
+	struct spi_dt_spec spi;
 #endif /* CONFIG_ADXL372_SPI */
 #ifdef CONFIG_ADXL372_TRIGGER
-	const char *gpio_port;
-	gpio_pin_t int_gpio;
-	gpio_dt_flags_t int_flags;
+	struct gpio_dt_spec interrupt;
 #endif
 	bool max_peak_detect_mode;
 

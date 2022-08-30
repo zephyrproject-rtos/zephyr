@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/led.h>
-#include <drivers/kscan.h>
-#include <logging/log.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/drivers/kscan.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define LED_NODE DT_INST(0, holtek_ht16k33)
-#define KEY_NODE DT_INST(0, holtek_ht16k33_keyscan)
+#define LED_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(holtek_ht16k33)
+#define KEY_NODE DT_CHILD(LED_NODE, keyscan)
 
 static void keyscan_callback(const struct device *dev, uint32_t row,
 			     uint32_t column, bool pressed)
@@ -22,8 +23,8 @@ static void keyscan_callback(const struct device *dev, uint32_t row,
 
 void main(void)
 {
-	const struct device *led = DEVICE_DT_GET(LED_NODE);
-	const struct device *key = DEVICE_DT_GET(KEY_NODE);
+	const struct device *const led = DEVICE_DT_GET(LED_NODE);
+	const struct device *const key = DEVICE_DT_GET(KEY_NODE);
 	int err;
 	int i;
 

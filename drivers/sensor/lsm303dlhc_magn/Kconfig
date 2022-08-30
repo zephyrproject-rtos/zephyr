@@ -5,7 +5,9 @@
 
 menuconfig LSM303DLHC_MAGN
 	bool "LSM303DLHC Three Axis Magnetometer"
-	depends on I2C
+	default y
+	depends on DT_HAS_ST_LSM303DLHC_MAGN_ENABLED
+	select I2C
 	help
 	  Enable driver for LSM303DLHC I2C-based triaxial magnetometer sensor.
 

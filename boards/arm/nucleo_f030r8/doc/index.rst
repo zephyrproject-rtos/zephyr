@@ -21,8 +21,6 @@ The STM32 Nucleo board comes with the STM32 comprehensive software HAL library t
 with various packaged software examples.
 
 .. image:: img/nucleo_f030r8.jpg
-   :width: 500px
-   :height: 367px
    :align: center
    :alt: Nucleo F030R8
 
@@ -111,10 +109,8 @@ capable except for analog inputs.
 
 Board connectors:
 -----------------
-.. image:: img/nucleo_f030r8_connectors.png
-   :width: 800px
+.. image:: img/nucleo_f030r8_connectors.jpg
    :align: center
-   :height: 619px
    :alt: Nucleo F030R8 connectors
 
 Default Zephyr Peripheral Mapping:
@@ -139,6 +135,8 @@ Applications for the ``nucleo_f030r8`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
+.. _nucleo-f030r8-flashing:
+
 Flashing
 ========
 
@@ -157,6 +155,13 @@ Here is an example for the :ref:`blinky-sample` application.
 
 You will see the LED blinking every second.
 
+If using the C-01 board, select revision '1' that supports the board.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: nucleo_f030r8@1
+   :goals: build flash
+
 Debugging
 =========
 
@@ -168,6 +173,28 @@ You can debug an application in the usual way.  Here is an example for the
    :board: nucleo_f030r8
    :maybe-skip-config:
    :goals: debug
+
+Again you have to use the adapted command for C-01.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: nucleo_f030r8@1
+   :maybe-skip-config:
+   :goals: debug
+
+Board Revisions
+***************
+
+Nucleo F030R8 has some version of board variants.
+`STM32 Nucleo-64 board User Manual`_ mentions to Nucleo board variants.
+
+   | *The board version MB1136 C-01 or MB1136 C-02 is mentioned on the sticker, placed on the bottom side of the PCB.*
+   | *The board marking MB1136 C-01 corresponds to a board, configured as HSE not used.*
+   | *The board marking MB1136 C-02 (or higher) corresponds to a board, configured to use ST-LINK MCO as the clock input.*
+
+Using revision **2** adapted for C-02(or higher) as default when not explicitly selecting revisions.
+If using the C-01 board, select revision **1**.
+Please see :ref:`Flashing <nucleo-f030r8-flashing>` section.
 
 References
 **********

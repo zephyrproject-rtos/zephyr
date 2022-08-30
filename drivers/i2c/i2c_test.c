@@ -9,8 +9,8 @@
  * devices for the "vnd,i2c" devicetree compatible used in test code.
  */
 
-#include <zephyr.h>
-#include <drivers/i2c.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/i2c.h>
 
 #define DT_DRV_COMPAT vnd_i2c
 
@@ -38,9 +38,9 @@ static int vnd_i2c_init(const struct device *dev)
 }
 
 #define VND_I2C_INIT(n)						\
-	DEVICE_DT_INST_DEFINE(n, &vnd_i2c_init, NULL,			\
+	I2C_DEVICE_DT_INST_DEFINE(n, vnd_i2c_init, NULL,			\
 			      NULL, NULL, POST_KERNEL,			\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+			      CONFIG_I2C_INIT_PRIORITY,	\
 			      &vnd_i2c_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_I2C_INIT)

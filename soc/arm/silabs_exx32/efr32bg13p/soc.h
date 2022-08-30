@@ -13,7 +13,7 @@
 #ifndef EFR32BG13P_SOC_H_
 #define EFR32BG13P_SOC_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -22,8 +22,6 @@
 #include "soc_pinmap.h"
 #include "../common/soc_gpio.h"
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
 
 #endif /* !_ASMLANGUAGE */
 

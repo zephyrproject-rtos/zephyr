@@ -4,20 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <updatehub.h>
-#include <net/net_mgmt.h>
-#include <net/net_event.h>
-#include <net/net_conn_mgr.h>
-#include <net/wifi_mgmt.h>
-#include <dfu/mcuboot.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/net_conn_mgr.h>
+#include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/dfu/mcuboot.h>
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
-#include <net/tls_credentials.h>
+#include <zephyr/net/tls_credentials.h>
 #include "c_certificates.h"
 #endif
 
-#include <logging/log.h>
+#if defined(CONFIG_MODEM_GSM_PPP)
+#define GSM_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_gsm_ppp)
+#define UART_NODE DT_BUS(GSM_NODE)
+#endif
+
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
 #define EVENT_MASK (NET_EVENT_L4_CONNECTED | \
@@ -138,11 +143,10 @@ void main(void)
 	}
 
 #elif defined(CONFIG_MODEM_GSM_PPP)
-	const struct device *uart_dev =
-		device_get_binding(CONFIG_MODEM_GSM_UART_NAME);
+	const struct device *const uart_dev = DEVICE_DT_GET(UART_NODE);
 
 	LOG_INF("APN '%s' UART '%s' device %p", CONFIG_MODEM_GSM_APN,
-		CONFIG_MODEM_GSM_UART_NAME, uart_dev);
+		uart_dev->name, uart_dev);
 #endif
 
 	net_mgmt_init_event_callback(&mgmt_cb, event_handler, EVENT_MASK);

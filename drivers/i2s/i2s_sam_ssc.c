@@ -21,17 +21,18 @@
 
 #include <errno.h>
 #include <string.h>
-#include <sys/__assert.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/dma.h>
-#include <drivers/i2s.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 #define LOG_DOMAIN dev_i2s_sam_ssc
 #define LOG_LEVEL CONFIG_I2S_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #if __DCACHE_PRESENT == 1
@@ -67,8 +68,7 @@ struct i2s_sam_dev_cfg {
 	const struct device *dev_dma;
 	Ssc *regs;
 	void (*irq_config)(void);
-	const struct soc_gpio_pin *pin_list;
-	uint8_t pin_list_size;
+	const struct pinctrl_dev_config *pcfg;
 	uint8_t periph_id;
 	uint8_t irq_id;
 };
@@ -97,12 +97,6 @@ struct i2s_sam_dev_data {
 	struct stream rx;
 	struct stream tx;
 };
-
-#define DEV_NAME(dev) ((dev)->name)
-#define DEV_CFG(dev) \
-	((const struct i2s_sam_dev_cfg *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct i2s_sam_dev_data *const)(dev)->data)
 
 #define MODULO_INC(val, max) { val = (++val < max) ? val : 0; }
 
@@ -210,8 +204,8 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
 {
 	const struct device *dev = get_dev_from_dma_channel(channel);
-	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	struct stream *stream = &dev_data->rx;
 	int ret;
@@ -223,9 +217,6 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 	if (stream->state == I2S_STATE_ERROR) {
 		goto rx_disable;
 	}
-
-	/* Assure cache coherency after DMA write operation */
-	DCACHE_INVALIDATE(stream->mem_block, stream->cfg.block_size);
 
 	/* All block data received */
 	ret = queue_put(&stream->mem_block_queue, stream->mem_block,
@@ -251,6 +242,9 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 		goto rx_disable;
 	}
 
+	/* Assure cache coherency before DMA write operation */
+	DCACHE_INVALIDATE(stream->mem_block, stream->cfg.block_size);
+
 	ret = reload_dma(dev_cfg->dev_dma, stream->dma_channel,
 			 (void *)&(ssc->SSC_RHR), stream->mem_block,
 			 stream->cfg.block_size);
@@ -270,8 +264,8 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
 {
 	const struct device *dev = get_dev_from_dma_channel(channel);
-	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	struct stream *stream = &dev_data->tx;
 	size_t mem_block_size;
@@ -534,7 +528,7 @@ static int bit_clock_set(Ssc *const ssc, uint32_t bit_clk_freq)
 static const struct i2s_config *i2s_sam_config_get(const struct device *dev,
 						   enum i2s_dir dir)
 {
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	struct stream *stream;
 
 	if (dir == I2S_DIR_RX) {
@@ -553,8 +547,8 @@ static const struct i2s_config *i2s_sam_config_get(const struct device *dev,
 static int i2s_sam_configure(const struct device *dev, enum i2s_dir dir,
 			     const struct i2s_config *i2s_cfg)
 {
-	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	uint8_t num_words = i2s_cfg->channels;
 	uint8_t word_size_bits = i2s_cfg->word_size;
@@ -788,8 +782,8 @@ static void tx_queue_drop(struct stream *stream)
 static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
 			   enum i2s_trigger_cmd cmd)
 {
-	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	struct stream *stream;
 	unsigned int key;
@@ -878,7 +872,7 @@ static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
 static int i2s_sam_read(const struct device *dev, void **mem_block,
 			size_t *size)
 {
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	int ret;
 
 	if (dev_data->rx.state == I2S_STATE_NOT_READY) {
@@ -906,7 +900,7 @@ static int i2s_sam_read(const struct device *dev, void **mem_block,
 static int i2s_sam_write(const struct device *dev, void *mem_block,
 			 size_t size)
 {
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	int ret;
 
 	if (dev_data->tx.state != I2S_STATE_RUNNING &&
@@ -929,8 +923,8 @@ static int i2s_sam_write(const struct device *dev, void *mem_block,
 
 static void i2s_sam_isr(const struct device *dev)
 {
-	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	uint32_t isr_status;
 
@@ -955,9 +949,10 @@ static void i2s_sam_isr(const struct device *dev)
 
 static int i2s_sam_initialize(const struct device *dev)
 {
-	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
+	int ret;
 
 	/* Configure interrupts */
 	dev_cfg->irq_config();
@@ -973,7 +968,10 @@ static int i2s_sam_initialize(const struct device *dev)
 	}
 
 	/* Connect pins to the peripheral */
-	soc_gpio_list_configure(dev_cfg->pin_list, dev_cfg->pin_list_size);
+	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Enable module's clock */
 	soc_pmc_peripheral_enable(dev_cfg->periph_id);
@@ -984,7 +982,7 @@ static int i2s_sam_initialize(const struct device *dev)
 	/* Enable module's IRQ */
 	irq_enable(dev_cfg->irq_id);
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }
@@ -1010,7 +1008,7 @@ static void i2s0_sam_irq_config(void)
 		    DEVICE_DT_INST_GET(0), 0);
 }
 
-static const struct soc_gpio_pin i2s0_pins[] = ATMEL_SAM_DT_INST_PINS(0);
+PINCTRL_DT_INST_DEFINE(0);
 
 static const struct i2s_sam_dev_cfg i2s0_sam_config = {
 	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(0, tx)),
@@ -1018,8 +1016,7 @@ static const struct i2s_sam_dev_cfg i2s0_sam_config = {
 	.irq_config = i2s0_sam_irq_config,
 	.periph_id = DT_INST_PROP(0, peripheral_id),
 	.irq_id = DT_INST_IRQN(0),
-	.pin_list = i2s0_pins,
-	.pin_list_size = ARRAY_SIZE(i2s0_pins),
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 struct queue_item rx_0_ring_buf[CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT + 1];

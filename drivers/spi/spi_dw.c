@@ -9,7 +9,7 @@
 /* spi_dw.c - Designware SPI driver implementation */
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_dw);
 
 #if (CONFIG_SPI_LOG_LEVEL == 4)
@@ -27,21 +27,21 @@ LOG_MODULE_REGISTER(spi_dw);
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 
-#include <soc.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/pm/device.h>
 
-#include <sys/sys_io.h>
-#include <sys/util.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/interrupt_controller/ioapic.h>
+#include <zephyr/drivers/interrupt_controller/ioapic.h>
 #endif
 
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 
 #include "spi_dw.h"
 #include "spi_context.h"
@@ -81,7 +81,7 @@ out:
 	LOG_DBG("SPI transaction completed %s error",
 		    error ? "with" : "without");
 
-	spi_context_complete(&spi->ctx, error);
+	spi_context_complete(&spi->ctx, dev, error);
 }
 
 static void push_data(const struct device *dev)
@@ -207,6 +207,11 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 		return 0;
 	}
 
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	/* Verify if requested op mode is relevant to this controller */
 	if (config->operation & SPI_OP_MODE_SLAVE) {
 		if (!(info->op_modes & SPI_CTX_RUNTIME_OP_MODE_SLAVE)) {
@@ -220,8 +225,10 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 		}
 	}
 
-	if (config->operation & (SPI_TRANSFER_LSB |
-				 SPI_LINES_DUAL | SPI_LINES_QUAD)) {
+	if ((config->operation & SPI_TRANSFER_LSB) ||
+	    (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	     (config->operation & (SPI_LINES_DUAL |
+				   SPI_LINES_QUAD | SPI_LINES_OCTAL)))) {
 		LOG_ERR("Unsupported configuration");
 		return -EINVAL;
 	}
@@ -257,8 +264,6 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 					       config->frequency), info->regs);
 		write_ser(1 << config->slave, info->regs);
 	}
-
-	spi_context_cs_configure(&spi->ctx);
 
 	if (spi_dw_is_slave(spi)) {
 		LOG_DBG("Installed slave config %p:"
@@ -333,7 +338,8 @@ static int transceive(const struct device *dev,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous,
-		      struct k_poll_signal *signal)
+		      spi_callback_t cb,
+		      void *userdata)
 {
 	const struct spi_dw_config *info = dev->config;
 	struct spi_dw_data *spi = dev->data;
@@ -341,7 +347,7 @@ static int transceive(const struct device *dev,
 	uint32_t reg_data;
 	int ret;
 
-	spi_context_lock(&spi->ctx, asynchronous, signal, config);
+	spi_context_lock(&spi->ctx, asynchronous, cb, userdata, config);
 
 #ifdef CONFIG_PM_DEVICE
 	if (!pm_device_is_busy(dev)) {
@@ -446,7 +452,7 @@ static int spi_dw_transceive(const struct device *dev,
 {
 	LOG_DBG("%p, %p, %p", dev, tx_bufs, rx_bufs);
 
-	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL);
+	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -454,11 +460,12 @@ static int spi_dw_transceive_async(const struct device *dev,
 				   const struct spi_config *config,
 				   const struct spi_buf_set *tx_bufs,
 				   const struct spi_buf_set *rx_bufs,
-				   struct k_poll_signal *async)
+				   spi_callback_t cb,
+				   void *userdata)
 {
-	LOG_DBG("%p, %p, %p, %p", dev, tx_bufs, rx_bufs, async);
+	LOG_DBG("%p, %p, %p, %p, %p", dev, tx_bufs, rx_bufs, cb, userdata);
 
-	return transceive(dev, config, tx_bufs, rx_bufs, true, async);
+	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -517,6 +524,7 @@ static const struct spi_driver_api dw_spi_api = {
 
 int spi_dw_init(const struct device *dev)
 {
+	int err;
 	const struct spi_dw_config *info = dev->config;
 	struct spi_dw_data *spi = dev->data;
 
@@ -527,6 +535,11 @@ int spi_dw_init(const struct device *dev)
 	clear_bit_ssienr(info->regs);
 
 	LOG_DBG("Designware SPI driver initialized on device: %p", dev);
+
+	err = spi_context_cs_configure_all(&spi->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	spi_context_unlock_unconditionally(&spi->ctx);
 
@@ -540,6 +553,7 @@ void spi_config_0_irq(void);
 struct spi_dw_data spi_dw_data_port_0 = {
 	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_0, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_0, ctx),
+	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(0), ctx)
 };
 
 #if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
@@ -603,6 +617,7 @@ void spi_config_1_irq(void);
 struct spi_dw_data spi_dw_data_port_1 = {
 	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_1, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_1, ctx),
+	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(1), ctx)
 };
 
 #if DT_NODE_HAS_PROP(DT_INST_PHANDLE(1, clocks), clock_frequency)
@@ -666,6 +681,7 @@ void spi_config_2_irq(void);
 struct spi_dw_data spi_dw_data_port_2 = {
 	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_2, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_2, ctx),
+	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(2), ctx)
 };
 
 #if DT_NODE_HAS_PROP(DT_INST_PHANDLE(2, clocks), clock_frequency)
@@ -729,6 +745,7 @@ void spi_config_3_irq(void);
 struct spi_dw_data spi_dw_data_port_3 = {
 	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_3, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_3, ctx),
+	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(3), ctx)
 };
 
 #if DT_NODE_HAS_PROP(DT_INST_PHANDLE(3, clocks), clock_frequency)

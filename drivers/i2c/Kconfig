@@ -14,7 +14,7 @@ menuconfig I2C
 if I2C
 
 config I2C_SHELL
-	bool "Enable I2C Shell"
+	bool "I2C Shell"
 	default y
 	depends on SHELL
 	help
@@ -22,12 +22,24 @@ config I2C_SHELL
 
 	  The I2C shell currently support scanning and bus recovery.
 
+config I2C_STATS
+	bool "I2C device Stats"
+	depends on STATS
+	help
+	  Enable I2C Stats.
+
+config I2C_CALLBACK
+	bool "I2C asynchronous callback API"
+	help
+	  API and implementations of i2c_transfer_cb.
+
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
+source "drivers/i2c/Kconfig.b91"
 source "drivers/i2c/Kconfig.cc13xx_cc26xx"
 source "drivers/i2c/Kconfig.dw"
 source "drivers/i2c/Kconfig.esp32"
-source "drivers/i2c/slave/Kconfig"
+source "drivers/i2c/target/Kconfig"
 source "drivers/i2c/Kconfig.gpio"
 source "drivers/i2c/Kconfig.xec"
 source "drivers/i2c/Kconfig.nrfx"
@@ -42,10 +54,12 @@ source "drivers/i2c/Kconfig.lpc11u6x"
 source "drivers/i2c/Kconfig.npcx"
 source "drivers/i2c/Kconfig.test"
 source "drivers/i2c/Kconfig.rcar"
+source "drivers/i2c/Kconfig.tca954x"
+source "drivers/i2c/Kconfig.gd32"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"
-	default 60
+	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  I2C device driver initialization priority.
 
@@ -56,56 +70,74 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config I2C_GECKO
 	bool "Gecko I2C driver"
-	depends on HAS_SILABS_GECKO
+	default y
+	depends on DT_HAS_SILABS_GECKO_I2C_ENABLED
 	select SOC_GECKO_I2C
 	help
 	  Enable the SiLabs Gecko I2C bus driver.
 
 config I2C_SAM_TWIHS
 	bool "Atmel SAM (TWIHS) I2C driver"
-	depends on SOC_FAMILY_SAM
+	default y
+	depends on DT_HAS_ATMEL_SAM_I2C_TWIHS_ENABLED
 	help
 	  Enable Atmel SAM MCU Family (TWIHS) I2C bus driver.
 
 config I2C_SAM_TWIM
 	bool "Atmel SAM (TWIM) I2C driver"
-	depends on SOC_SERIES_SAM4L
+	default y
+	depends on DT_HAS_ATMEL_SAM_I2C_TWIM_ENABLED
 	help
 	  Enable Atmel SAM MCU Family (TWIM) I2C bus driver.
 
 config I2C_SAM_TWI
 	bool "Atmel SAM (TWI) I2C driver"
-	depends on SOC_FAMILY_SAM
+	default y
+	depends on DT_HAS_ATMEL_SAM_I2C_TWI_ENABLED
 	help
 	  Enable Atmel SAM MCU Family (TWI) I2C bus driver.
 
 config I2C_MCUX
 	bool "MCUX I2C driver"
-	depends on HAS_MCUX
+	default y
+	depends on DT_HAS_NXP_KINETIS_I2C_ENABLED
+	select PINCTRL
 	help
 	  Enable the mcux I2C driver.
 
 config I2C_MCUX_FLEXCOMM
 	bool "MCUX FLEXCOMM I2C driver"
-	depends on HAS_MCUX_FLEXCOMM
+	default y
+	depends on DT_HAS_NXP_LPC_I2C_ENABLED
 	help
 	  Enable the mcux flexcomm i2c driver.
 
 config I2C_MCUX_LPI2C
 	bool "MCUX LPI2C driver"
-	depends on HAS_MCUX_LPI2C && CLOCK_CONTROL
+	default y
+	depends on DT_HAS_NXP_IMX_LPI2C_ENABLED
+	depends on CLOCK_CONTROL
 	help
 	  Enable the mcux LPI2C driver.
 
+config I2C_MCUX_LPI2C_BUS_RECOVERY
+	bool "Bus recovery support"
+	depends on I2C_MCUX_LPI2C && PINCTRL
+	select I2C_BITBANG
+	help
+	  Enable LPI2C driver bus recovery support via GPIO bitbanging.
+
 config I2C_IMX
 	bool "i.MX I2C driver"
-	depends on HAS_IMX_I2C
+	default y
+	depends on DT_HAS_FSL_IMX21_I2C_ENABLED
 	help
 	  Enable the i.MX I2C driver.
 
 config I2C_CC32XX
 	bool "CC32XX I2C driver"
-	depends on SOC_SERIES_CC32XX
+	default y
+	depends on DT_HAS_TI_CC32XX_I2C_ENABLED
 	help
 	  Enable the CC32XX I2C driver.
 
@@ -116,13 +148,16 @@ config I2C_BITBANG
 
 config I2C_NIOS2
 	bool "Nios-II I2C driver"
-	depends on HAS_ALTERA_HAL
+	default y
+	depends on DT_HAS_ALTR_NIOS2_I2C_ENABLED
 	help
 	  Enable the Nios-II I2C driver.
 
 config I2C_RV32M1_LPI2C
 	bool "RV32M1 LPI2C driver"
-	depends on HAS_RV32M1_LPI2C && CLOCK_CONTROL
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_LPI2C_ENABLED
+	depends on CLOCK_CONTROL
 	help
 	  Enable the RV32M1 LPI2C driver.
 

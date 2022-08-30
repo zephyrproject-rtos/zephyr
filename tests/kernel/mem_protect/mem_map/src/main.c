@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <sys/mem_manage.h>
-#include <toolchain.h>
+#include <zephyr/ztest.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/toolchain.h>
 #include <mmu.h>
+#include <zephyr/linker/sections.h>
 
 /* 32-bit IA32 page tables have no mechanism to restrict execution */
 #if defined(CONFIG_X86) && !defined(CONFIG_X86_64) && !defined(CONFIG_X86_PAE)
@@ -17,6 +18,7 @@
 #define BASE_FLAGS	(K_MEM_CACHE_WB)
 volatile bool expect_fault;
 
+__pinned_noinit
 static uint8_t __aligned(CONFIG_MMU_PAGE_SIZE)
 			test_page[2 * CONFIG_MMU_PAGE_SIZE];
 
@@ -45,7 +47,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_z_phys_map_rw(void)
+ZTEST(mem_map, test_z_phys_map_rw)
 {
 	uint8_t *mapped_rw, *mapped_ro;
 	uint8_t *buf = test_page + BUF_OFFSET;
@@ -88,14 +90,16 @@ static void transplanted_function(bool *executed)
 {
 	*executed = true;
 }
+#endif
 
 /**
- * Show that mapping with/withour K_MEM_PERM_EXEC works as expected
+ * Show that mapping with/without K_MEM_PERM_EXEC works as expected
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_z_phys_map_exec(void)
+ZTEST(mem_map, test_z_phys_map_exec)
 {
+#ifndef SKIP_EXECUTE_TESTS
 	uint8_t *mapped_exec, *mapped_ro;
 	bool executed = false;
 	void (*func)(bool *executed);
@@ -127,20 +131,17 @@ void test_z_phys_map_exec(void)
 
 	printk("shouldn't get here\n");
 	ztest_test_fail();
-}
 #else
-void test_z_phys_map_exec(void)
-{
 	ztest_test_skip();
-}
 #endif /* SKIP_EXECUTE_TESTS */
+}
 
 /**
  * Show that memory mapping doesn't have unintended side effects
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_z_phys_map_side_effect(void)
+ZTEST(mem_map, test_z_phys_map_side_effect)
 {
 	uint8_t *mapped;
 
@@ -169,7 +170,7 @@ void test_z_phys_map_side_effect(void)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_z_phys_unmap(void)
+ZTEST(mem_map, test_z_phys_unmap)
 {
 	uint8_t *mapped;
 
@@ -197,7 +198,7 @@ void test_z_phys_unmap(void)
  *
  * Does not exercise K_MEM_MAP_* control flags, just default behavior
  */
-void test_k_mem_map_unmap(void)
+ZTEST(mem_map_api, test_k_mem_map_unmap)
 {
 	size_t free_mem, free_mem_after_map, free_mem_after_unmap;
 	char *mapped, *last_mapped;
@@ -260,7 +261,7 @@ void test_k_mem_map_unmap(void)
 /**
  * Test that the "before" guard page is in place for k_mem_map().
  */
-void test_k_mem_map_guard_before(void)
+ZTEST(mem_map_api, test_k_mem_map_guard_before)
 {
 	uint8_t *mapped;
 
@@ -288,7 +289,7 @@ void test_k_mem_map_guard_before(void)
 /**
  * Test that the "after" guard page is in place for k_mem_map().
  */
-void test_k_mem_map_guard_after(void)
+ZTEST(mem_map_api, test_k_mem_map_guard_after)
 {
 	uint8_t *mapped;
 
@@ -313,7 +314,7 @@ void test_k_mem_map_guard_after(void)
 	ztest_test_fail();
 }
 
-void test_k_mem_map_exhaustion(void)
+ZTEST(mem_map_api, test_k_mem_map_exhaustion)
 {
 	/* With demand paging enabled, there is backing store
 	 * which extends available memory. However, we don't
@@ -406,8 +407,84 @@ void test_k_mem_map_exhaustion(void)
 #endif /* !CONFIG_DEMAND_PAGING */
 }
 
+#ifdef CONFIG_USERSPACE
+#define USER_STACKSIZE	(128)
+
+struct k_thread user_thread;
+K_THREAD_STACK_DEFINE(user_stack, USER_STACKSIZE);
+
+K_APPMEM_PARTITION_DEFINE(default_part);
+K_APP_DMEM(default_part) uint8_t *mapped;
+
+static void user_function(void *p1, void *p2, void *p3)
+{
+	mapped[0] = 42;
+}
+#endif /* CONFIG_USERSPACE */
+
+/**
+ * Test that the allocated region will be only accessible to userspace when
+ * K_MEM_PERM_USER is used.
+ */
+ZTEST(mem_map_api, test_k_mem_map_user)
+{
+#ifdef CONFIG_USERSPACE
+	int ret;
+
+	ret = k_mem_domain_add_partition(&k_mem_domain_default, &default_part);
+	if (ret != 0) {
+		printk("Failed to add default memory partition (%d)\n", ret);
+		k_oops();
+	}
+
+	/*
+	 * Map the region using K_MEM_PERM_USER and try to access it from
+	 * userspace
+	 */
+	expect_fault = false;
+
+	z_phys_map(&mapped, z_mem_phys_addr(test_page), sizeof(test_page),
+		   BASE_FLAGS | K_MEM_PERM_RW | K_MEM_PERM_USER);
+
+	printk("mapped a page: %p - %p (with K_MEM_PERM_USER)\n", mapped,
+		mapped + CONFIG_MMU_PAGE_SIZE);
+	printk("trying to access %p from userspace\n", mapped);
+
+	k_thread_create(&user_thread, user_stack, USER_STACKSIZE,
+			user_function, NULL, NULL, NULL,
+			-1, K_USER, K_NO_WAIT);
+	k_thread_join(&user_thread, K_FOREVER);
+
+	/* Unmap the memory */
+	z_phys_unmap(mapped, sizeof(test_page));
+
+	/*
+	 * Map the region without using K_MEM_PERM_USER and try to access it
+	 * from userspace. This should fault and fail.
+	 */
+	expect_fault = true;
+
+	z_phys_map(&mapped, z_mem_phys_addr(test_page), sizeof(test_page),
+		   BASE_FLAGS | K_MEM_PERM_RW);
+
+	printk("mapped a page: %p - %p (without K_MEM_PERM_USER)\n", mapped,
+		mapped + CONFIG_MMU_PAGE_SIZE);
+	printk("trying to access %p from userspace\n", mapped);
+
+	k_thread_create(&user_thread, user_stack, USER_STACKSIZE,
+			user_function, NULL, NULL, NULL,
+			-1, K_USER, K_NO_WAIT);
+	k_thread_join(&user_thread, K_FOREVER);
+
+	printk("shouldn't get here\n");
+	ztest_test_fail();
+#else
+	ztest_test_skip();
+#endif /* CONFIG_USERSPACE */
+}
+
 /* ztest main entry*/
-void test_main(void)
+void *mem_map_env_setup(void)
 {
 #ifdef CONFIG_DEMAND_PAGING
 	/* This test sets up multiple mappings of RAM pages, which is only
@@ -415,15 +492,8 @@ void test_main(void)
 	 */
 	k_mem_pin(test_page, sizeof(test_page));
 #endif
-	ztest_test_suite(test_mem_map,
-			ztest_unit_test(test_z_phys_map_rw),
-			ztest_unit_test(test_z_phys_map_exec),
-			ztest_unit_test(test_z_phys_map_side_effect),
-			ztest_unit_test(test_z_phys_unmap),
-			ztest_unit_test(test_k_mem_map_unmap),
-			ztest_unit_test(test_k_mem_map_guard_before),
-			ztest_unit_test(test_k_mem_map_guard_after),
-			ztest_unit_test(test_k_mem_map_exhaustion)
-			);
-	ztest_run_test_suite(test_mem_map);
+	return NULL;
 }
+
+ZTEST_SUITE(mem_map, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(mem_map_api, NULL, mem_map_env_setup, NULL, NULL, NULL);

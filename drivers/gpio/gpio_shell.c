@@ -1,18 +1,21 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2021 Dennis Ruffer <daruffer@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Use "device list" command for GPIO port names
  */
 
-#include <sys/printk.h>
-#include <shell/shell.h>
-#include <init.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/init.h>
 #include <string.h>
 #include <stdio.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 
@@ -25,13 +28,6 @@ struct args_index {
 	uint8_t value;
 };
 
-struct args_number {
-	uint8_t conf;
-	uint8_t set;
-	uint8_t get;
-	uint8_t listen;
-};
-
 static const struct args_index args_indx = {
 	.port = 1,
 	.index = 2,
@@ -39,32 +35,28 @@ static const struct args_index args_indx = {
 	.value = 3,
 };
 
-static const struct args_number args_no = {
-	.conf = 4,
-	.set = 4,
-	.get = 3,
-	.listen = 7
-};
-
-static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
+static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv)
 {
 	uint8_t index = 0U;
 	int type = GPIO_OUTPUT;
 	const struct device *dev;
 
-	if (argc == args_no.conf &&
-	    isdigit((unsigned char)argv[args_indx.index][0]) &&
+	if (isdigit((unsigned char)argv[args_indx.index][0]) &&
 	    isalpha((unsigned char)argv[args_indx.mode][0])) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
 		if (!strcmp(argv[args_indx.mode], "in")) {
 			type = GPIO_INPUT;
+		} else if (!strcmp(argv[args_indx.mode], "inu")) {
+			type = GPIO_INPUT | GPIO_PULL_UP;
+		} else if (!strcmp(argv[args_indx.mode], "ind")) {
+			type = GPIO_INPUT | GPIO_PULL_DOWN;
 		} else if (!strcmp(argv[args_indx.mode], "out")) {
 			type = GPIO_OUTPUT;
 		} else {
 			return 0;
 		}
 	} else {
-		shell_error(shell, "Wrong parameters for conf");
+		shell_error(sh, "Wrong parameters for conf");
 		return -ENOTSUP;
 	}
 
@@ -72,7 +64,7 @@ static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 
 	if (dev != NULL) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
-		shell_print(shell, "Configuring %s pin %d",
+		shell_print(sh, "Configuring %s pin %d",
 			    argv[args_indx.port], index);
 		gpio_pin_configure(dev, index, type);
 	}
@@ -80,17 +72,17 @@ static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_gpio_get(const struct shell *shell,
+static int cmd_gpio_get(const struct shell *sh,
 			size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint8_t index = 0U;
 	int rc;
 
-	if (argc == args_no.get && isdigit((unsigned char)argv[args_indx.index][0])) {
+	if (isdigit((unsigned char)argv[args_indx.index][0])) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
 	} else {
-		shell_error(shell, "Wrong parameters for get");
+		shell_error(sh, "Wrong parameters for get");
 		return -EINVAL;
 	}
 
@@ -98,13 +90,13 @@ static int cmd_gpio_get(const struct shell *shell,
 
 	if (dev != NULL) {
 		index = (uint8_t)atoi(argv[2]);
-		shell_print(shell, "Reading %s pin %d",
-			     argv[args_indx.port], index);
+		shell_print(sh, "Reading %s pin %d",
+			    argv[args_indx.port], index);
 		rc = gpio_pin_get(dev, index);
 		if (rc >= 0) {
-			shell_print(shell, "Value %d", rc);
+			shell_print(sh, "Value %d", rc);
 		} else {
-			shell_error(shell, "Error %d reading value", rc);
+			shell_error(sh, "Error %d reading value", rc);
 			return -EIO;
 		}
 	}
@@ -112,27 +104,26 @@ static int cmd_gpio_get(const struct shell *shell,
 	return 0;
 }
 
-static int cmd_gpio_set(const struct shell *shell,
+static int cmd_gpio_set(const struct shell *sh,
 			size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint8_t index = 0U;
 	uint8_t value = 0U;
 
-	if (argc == args_no.set &&
-	    isdigit((unsigned char)argv[args_indx.index][0]) &&
+	if (isdigit((unsigned char)argv[args_indx.index][0]) &&
 	    isdigit((unsigned char)argv[args_indx.value][0])) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
 		value = (uint8_t)atoi(argv[args_indx.value]);
 	} else {
-		shell_print(shell, "Wrong parameters for set");
+		shell_print(sh, "Wrong parameters for set");
 		return -EINVAL;
 	}
 	dev = device_get_binding(argv[args_indx.port]);
 
 	if (dev != NULL) {
 		index = (uint8_t)atoi(argv[2]);
-		shell_print(shell, "Writing to %s pin %d",
+		shell_print(sh, "Writing to %s pin %d",
 			    argv[args_indx.port], index);
 		gpio_pin_set(dev, index, value);
 	}
@@ -141,11 +132,53 @@ static int cmd_gpio_set(const struct shell *shell,
 }
 
 
+/* 500 msec = 1/2 sec */
+#define SLEEP_TIME_MS   500
+
+static int cmd_gpio_blink(const struct shell *sh,
+			  size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint8_t index = 0U;
+	uint8_t value = 0U;
+	size_t count = 0;
+	char data;
+
+	if (isdigit((unsigned char)argv[args_indx.index][0])) {
+		index = (uint8_t)atoi(argv[args_indx.index]);
+	} else {
+		shell_error(sh, "Wrong parameters for blink");
+		return -EINVAL;
+	}
+	dev = device_get_binding(argv[args_indx.port]);
+
+	if (dev != NULL) {
+		index = (uint8_t)atoi(argv[2]);
+		shell_fprintf(sh, SHELL_NORMAL, "Blinking port %s index %d.", argv[1], index);
+		shell_fprintf(sh, SHELL_NORMAL, " Hit any key to exit");
+
+		while (true) {
+			(void)sh->iface->api->read(sh->iface, &data, sizeof(data), &count);
+			if (count != 0) {
+				break;
+			}
+			gpio_pin_set(dev, index, value);
+			value = !value;
+			k_msleep(SLEEP_TIME_MS);
+		}
+
+		shell_fprintf(sh, SHELL_NORMAL, "\n");
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
-	SHELL_CMD(conf, NULL, "Configure GPIO", cmd_gpio_conf),
-	SHELL_CMD(get, NULL, "Get GPIO value", cmd_gpio_get),
-	SHELL_CMD(set, NULL, "Set GPIO", cmd_gpio_set),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
-);
+			       SHELL_CMD_ARG(conf, NULL, "Configure GPIO", cmd_gpio_conf, 4, 0),
+			       SHELL_CMD_ARG(get, NULL, "Get GPIO value", cmd_gpio_get, 3, 0),
+			       SHELL_CMD_ARG(set, NULL, "Set GPIO", cmd_gpio_set, 4, 0),
+			       SHELL_CMD_ARG(blink, NULL, "Blink GPIO", cmd_gpio_blink, 3, 0),
+			       SHELL_SUBCMD_SET_END /* Array terminated. */
+			       );
 
 SHELL_CMD_REGISTER(gpio, &sub_gpio, "GPIO commands", NULL);

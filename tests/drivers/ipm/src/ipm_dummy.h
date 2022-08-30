@@ -8,9 +8,9 @@
 
 #ifndef _IPM_DUMMY_H_
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/ipm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/ipm.h>
 
 /* Arbitrary */
 #define DUMMY_IPM_DATA_WORDS    4

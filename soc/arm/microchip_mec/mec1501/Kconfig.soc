@@ -16,9 +16,6 @@ endchoice
 config RTOS_TIMER
 	bool "MEC1501 RTOS timer"
 
-config SOC_POWER_MANAGEMENT
-	bool "MEC1501 Power Management"
-
 config SOC_MEC1501_PROC_CLK_DIV
 	int "PROC_CLK_DIV"
 	default 1
@@ -76,6 +73,11 @@ config SOC_MEC1501_VCI_PINS_AS_GPIOS
 	  By default these pins are not GPIOs, but HW controlled.
 	  Set this if VCI pin block HW logic is not required in the board
 	  design.
+
+config SOC_MEC1501_TEST_CLK_OUT
+	bool "Test clock out pin"
+	help
+	  Enables a test clock out pin
 
 choice
 	prompt "MEC1501 debug interface general configuration"

@@ -10,6 +10,5 @@
 		/* 0x77 - SDO <-> VCC */
 		compatible = "bosch,bme280";
 		reg = <0x76>;
-		label = "ENVIRONMENTAL_SENSOR";
 	};
 };

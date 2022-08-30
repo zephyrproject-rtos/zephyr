@@ -21,3 +21,6 @@ supported:
   - xpro_i2c
   - xpro_serial
   - xpro_spi
+  - can
+  - canfd
+  - hwinfo

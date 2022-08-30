@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 
 /**
  * @brief Collect the values for several channels
@@ -33,8 +33,9 @@ static int get_channels(const struct device *dev, ...)
 		int err;
 
 		chan = va_arg(ptr, int);
-		if (chan == -1)
+		if (chan == -1) {
 			break;
+		}
 		val = va_arg(ptr, struct sensor_value *);
 		err = sensor_channel_get(dev, chan, val);
 		if (err < 0) {
@@ -53,13 +54,12 @@ static int cmd_battery(const struct shell *shell, size_t argc, char **argv)
 	struct sensor_value temp, volt, current, i_desired, charge_remain;
 	struct sensor_value charge, v_desired, v_design, cap, nom_cap;
 	struct sensor_value full, empty;
-	const struct device *dev;
+	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(battery));
 	bool allowed;
 	int err;
 
-	dev = device_get_binding(DT_LABEL(DT_ALIAS(battery)));
-	if (!dev) {
-		shell_error(shell, "Device unknown (%s)", argv[1]);
+	if (!device_is_ready(dev)) {
+		shell_error(shell, "Device not ready (%s)", argv[1]);
 		return -ENODEV;
 	}
 

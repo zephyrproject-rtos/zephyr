@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <drivers/gpio.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
 #include <string.h>
 
-#include <display/mb_display.h>
+#include <zephyr/display/mb_display.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
 
 
 #include "pong.h"
@@ -244,7 +244,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	bt_conn_get_info(conn, &info);
-	initiator = (info.role == BT_CONN_ROLE_MASTER);
+	initiator = (info.role == BT_CONN_ROLE_CENTRAL);
 	remote_ready = false;
 	remote_handle = 0U;
 
@@ -271,7 +271,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -487,8 +487,8 @@ static void ble_timeout(struct k_work *work)
 	case BLE_CONNECTED:
 		discov_param.uuid = &pong_svc_uuid.uuid;
 		discov_param.func = discover_func;
-		discov_param.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
-		discov_param.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
+		discov_param.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+		discov_param.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 		discov_param.type = BT_GATT_DISCOVER_PRIMARY;
 
 		err = bt_gatt_discover(default_conn, &discov_param);
@@ -533,8 +533,6 @@ void ble_init(void)
 	}
 
 	k_work_init_delayable(&ble_work, ble_timeout);
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	local_attr = &pong_svc.attrs[1];
 }

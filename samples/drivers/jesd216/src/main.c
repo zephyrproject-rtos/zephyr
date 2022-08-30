@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/flash.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
 #include <jesd216.h>
 #include <stdio.h>
 #include <inttypes.h>
@@ -274,7 +274,7 @@ static void dump_bytes(const struct jesd216_param_header *php,
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET(FLASH_NODE);
+	const struct device *const dev = DEVICE_DT_GET(FLASH_NODE);
 
 	if (!device_is_ready(dev)) {
 		printf("%s: device not ready\n", dev->name);

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set(EMU_PLATFORM qemu)
+set(SUPPORTED_EMU_PLATFORMS qemu)
 
 set(QEMU_CPU_TYPE_${ARCH} sample_controller)
 

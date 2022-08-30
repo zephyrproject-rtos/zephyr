@@ -6,14 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include <errno.h>
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 
-#include <bluetooth/bluetooth.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #define EXPECTED_ERROR -ENOSYS
 
@@ -42,18 +42,12 @@ static void driver_init(void)
 	bt_hci_driver_register(&drv);
 }
 
-void test_bluetooth_entry(void)
+ZTEST_SUITE(test_bluetooth, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(test_bluetooth, test_bluetooth_entry)
 {
 	driver_init();
 
 	zassert_true((bt_enable(NULL) == EXPECTED_ERROR),
 			"bt_enable failed");
-}
-
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_bluetooth,
-			ztest_unit_test(test_bluetooth_entry));
-	ztest_run_test_suite(test_bluetooth);
 }

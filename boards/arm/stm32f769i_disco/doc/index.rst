@@ -41,9 +41,7 @@ and high-speed connectivity features. Important board features include:
 - Supported by a wide choice of integrated development environments
 
 .. image:: img/stm32f769i_disco.jpg
-     :width: 500px
      :align: center
-     :height: 260px
      :alt: STM32F769I-DISCO
 
 More information about the board can be found at the `32F769I-DISCO website`_.
@@ -118,6 +116,10 @@ The Zephyr stm32f769i_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | QSPI NOR  | on-chip    | flash                               |
 +-----------+------------+-------------------------------------+
+| FMC       | on-chip    | memc (SDRAM)                        |
++-----------+------------+-------------------------------------+
+| TOUCH     | off-chip   | ft5336(FT6202)                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -138,6 +140,7 @@ Default Zephyr Peripheral Mapping:
 - UART_1 TX/RX : PA9/PA10 (ST-Link Virtual Port Com)
 - UART_6 TX/RX : PC6/PC7 (Arduino Serial)
 - I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- I2C4 SCL/SDA : PD12/PB7 (Touchscreen FT6202, PI13 Interrupt Pin)
 - SPI2 SCK/MISO/MOSI : PA12/PB14/PB15 (Arduino SPI)
 - ETH : PA1, PA2, PA7, PC1, PC4, PC5, PG11, PG13, PG14
 - LD1 : PJ13

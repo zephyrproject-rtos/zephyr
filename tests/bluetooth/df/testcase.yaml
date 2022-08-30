@@ -1,6 +1,0 @@
-tests:
-  bluetooth.df:
-    platform_allow: nrf52_bsim
-    integration_platforms:
-      - nrf52_bsim
-    tags: bluetooth

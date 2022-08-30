@@ -1,0 +1,5 @@
+common:
+  depends_on: netif
+tests:
+  net.socket.offload.dispatcher:
+    tags: net socket

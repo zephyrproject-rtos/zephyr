@@ -1,0 +1,39 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2021 Argentum Systems Ltd.
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	zephyr,user {
+		/* EXT-1, pin 3 ADC(+) */
+		io-channels = <&adc 6>;
+	};
+};
+
+&pinctrl {
+	adc_default: adc_default {
+		group1 {
+			pinmux = <PA6B_ADC_AIN6>;
+		};
+	};
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+
+	channel@6 {
+		reg = <6>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <6>;
+	};
+};

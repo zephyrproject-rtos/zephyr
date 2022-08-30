@@ -4,19 +4,23 @@
 
 /*
  * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <zephyr/bluetooth/iso.h>
+
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
 	BT_CONN_DISCONNECT_COMPLETE,
-	BT_CONN_CONNECT_SCAN,
-	BT_CONN_CONNECT_AUTO,
-	BT_CONN_CONNECT_ADV,
-	BT_CONN_CONNECT_DIR_ADV,
-	BT_CONN_CONNECT,
+	BT_CONN_CONNECTING_SCAN,
+	BT_CONN_CONNECTING_AUTO,
+	BT_CONN_CONNECTING_ADV,
+	BT_CONN_CONNECTING_DIR_ADV,
+	BT_CONN_CONNECTING,
 	BT_CONN_CONNECTED,
-	BT_CONN_DISCONNECT,
+	BT_CONN_DISCONNECTING,
 } bt_conn_state_t;
 
 /* bt_conn flags: the flags defined here represent connection parameters */
@@ -28,19 +32,22 @@ enum {
 	BT_CONN_BR_NOBOND,		/* SSP no bond pairing tracker */
 	BT_CONN_BR_PAIRING_INITIATOR,	/* local host starts authentication */
 	BT_CONN_CLEANUP,                /* Disconnected, pending cleanup */
-	BT_CONN_AUTO_PHY_UPDATE,        /* Auto-update PHY */
-	BT_CONN_SLAVE_PARAM_UPDATE,	/* If slave param update timer fired */
-	BT_CONN_SLAVE_PARAM_SET,	/* If slave param were set from app */
-	BT_CONN_SLAVE_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
+	BT_CONN_PERIPHERAL_PARAM_UPDATE,/* If periph param update timer fired */
+	BT_CONN_PERIPHERAL_PARAM_SET,	/* If periph param were set from app */
+	BT_CONN_PERIPHERAL_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
 	BT_CONN_FORCE_PAIR,             /* Pairing even with existing keys. */
+#if defined(CONFIG_BT_GATT_CLIENT)
+	BT_CONN_ATT_MTU_EXCHANGED,	/* If ATT MTU has been exchanged. */
+#endif /* CONFIG_BT_GATT_CLIENT */
 
-	BT_CONN_AUTO_PHY_COMPLETE,      /* Auto-initiated PHY procedure done */
 	BT_CONN_AUTO_FEATURE_EXCH,	/* Auto-initiated LE Feat done */
 	BT_CONN_AUTO_VERSION_INFO,      /* Auto-initiated LE version done */
 
-	/* Auto-initiated Data Length done. Auto-initiated Data Length Update
-	 * is only needed for controllers with BT_QUIRK_NO_AUTO_DLE. */
-	BT_CONN_AUTO_DATA_LEN_COMPLETE,
+	BT_CONN_CTE_RX_ENABLED,          /* CTE receive and sampling is enabled */
+	BT_CONN_CTE_RX_PARAMS_SET,       /* CTE parameters are set */
+	BT_CONN_CTE_TX_PARAMS_SET,       /* CTE transmission parameters are set */
+	BT_CONN_CTE_REQ_ENABLED,         /* CTE request procedure is enabled */
+	BT_CONN_CTE_RSP_ENABLED,         /* CTE response procedure is enabled */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
@@ -99,6 +106,10 @@ struct bt_conn_sco {
 struct bt_conn_iso {
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
+
+	/* Reference to the struct bt_iso_chan */
+	struct bt_iso_chan      *chan;
+
 	union {
 		/* CIG ID */
 		uint8_t			cig_id;
@@ -107,18 +118,28 @@ struct bt_conn_iso {
 	};
 
 	union {
-		/* CIS ID */
+		/* CIS ID within the CIG */
 		uint8_t			cis_id;
 
-		/* BIS ID */
+		/* BIS ID within the BIG*/
 		uint8_t			bis_id;
 	};
 
-	/** If true, this is a ISO for a BIS, else it is a ISO for a CIS */
-	bool is_bis;
+#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
+	/** @brief 16-bit sequence number that shall be incremented per SDU interval
+	 *
+	 *  Stored as 32-bit to handle wrapping: Only once the value has
+	 *  become greater than 0xFFFF will values less than the
+	 *  current are allowed again.
+	 */
+	uint32_t seq_num;
+#endif /* CONFIG_BT_ISO_UNICAST) || CONFIG_BT_ISO_BROADCASTER */
+
+	/** Stored information about the ISO stream */
+	struct bt_iso_info info;
 };
 
-typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data);
+typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data, int err);
 
 struct bt_conn_tx {
 	sys_snode_t node;
@@ -157,6 +178,15 @@ struct bt_conn {
 	uint8_t			encrypt;
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
+	/**
+	 * @brief Bitfield with allowed CTE types.
+	 *
+	 *  Allowed values are defined by @ref bt_df_cte_type, except BT_DF_CTE_TYPE_NONE.
+	 */
+	uint8_t cte_types;
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
+
 	/* Connection error or reason for disconnect */
 	uint8_t			err;
 
@@ -173,13 +203,14 @@ struct bt_conn {
 
 	/* Completed TX for which we need to call the callback */
 	sys_slist_t		tx_complete;
+#if defined(CONFIG_BT_CONN_TX)
 	struct k_work           tx_complete_work;
-
+#endif /* CONFIG_BT_CONN_TX */
 
 	/* Queue for outgoing ACL data */
 	struct k_fifo		tx_queue;
 
-	/* Active L2CAP/ISO channels */
+	/* Active L2CAP channels */
 	sys_slist_t		channels;
 
 	/* Delayed work deferred tasks:
@@ -247,17 +278,10 @@ struct bt_iso_create_param {
 	struct bt_iso_chan	**chans;
 };
 
-/* Bind ISO connections parameters */
-int bt_conn_bind_iso(struct bt_iso_create_param *param);
-
-/* Connect ISO connections */
-int bt_conn_connect_iso(struct bt_conn **conns, uint8_t num_conns);
-
-/* Add a new ISO connection */
-struct bt_conn *bt_conn_add_iso(struct bt_conn *acl);
+int bt_conn_iso_init(void);
 
 /* Cleanup ISO references */
-void bt_iso_cleanup(struct bt_conn *iso_conn);
+void bt_iso_cleanup_acl(struct bt_conn *iso_conn);
 
 /* Add a new BR/EDR connection */
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
@@ -286,10 +310,10 @@ static inline bool bt_conn_is_handle_valid(struct bt_conn *conn)
 {
 	switch (conn->state) {
 	case BT_CONN_CONNECTED:
-	case BT_CONN_DISCONNECT:
+	case BT_CONN_DISCONNECTING:
 	case BT_CONN_DISCONNECT_COMPLETE:
 		return true;
-	case BT_CONN_CONNECT:
+	case BT_CONN_CONNECTING:
 		/* ISO connection handle assigned at connect state */
 		if (IS_ENABLED(CONFIG_BT_ISO) &&
 		    conn->type == BT_CONN_TYPE_ISO) {
@@ -396,7 +420,7 @@ struct net_buf *bt_conn_create_frag_timeout(size_t reserve,
 /* Initialize connection management */
 int bt_conn_init(void);
 
-/* Selects based on connecton type right semaphore for ACL packets */
+/* Selects based on connection type right semaphore for ACL packets */
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn);
 
 /* k_poll related helpers for the TX thread */

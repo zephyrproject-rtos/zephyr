@@ -9,8 +9,8 @@
  */
 
 #include <soc.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 
 #if ID_PERIPH_COUNT > 74
 #error "Unsupported SoC, update soc_pmc.c functions"

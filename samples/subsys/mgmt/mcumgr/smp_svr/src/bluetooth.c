@@ -5,13 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <mgmt/mcumgr/smp_bt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/mgmt/mcumgr/smp_bt.h>
 
 #define LOG_LEVEL LOG_LEVEL_DBG
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smp_bt_sample);
 
 static struct k_work advertise_work;
@@ -53,7 +53,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	k_work_submit(&advertise_work);
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -81,8 +81,6 @@ void start_smp_bluetooth(void)
 		LOG_ERR("Bluetooth init failed (err %d)", rc);
 		return;
 	}
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	/* Initialize the Bluetooth mcumgr transport. */
 	smp_bt_register();

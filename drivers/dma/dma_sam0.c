@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT atmel_sam0_dmac
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_sam0, CONFIG_DMA_LOG_LEVEL);
 
 #define DMA_REGS	((Dmac *)DT_INST_REG_ADDR(0))
@@ -26,14 +26,10 @@ struct dma_sam0_data {
 	struct dma_sam0_channel channels[DMAC_CH_NUM];
 };
 
-#define DEV_DATA(dev) \
-	((struct dma_sam0_data *const)(dev)->data)
-
-
 /* Handles DMA interrupts and dispatches to the individual channel */
 static void dma_sam0_isr(const struct device *dev)
 {
-	struct dma_sam0_data *data = DEV_DATA(dev);
+	struct dma_sam0_data *data = dev->data;
 	struct dma_sam0_channel *chdata;
 	uint16_t pend = DMA_REGS->INTPEND.reg;
 	uint32_t channel;
@@ -65,12 +61,12 @@ static void dma_sam0_isr(const struct device *dev)
 static int dma_sam0_config(const struct device *dev, uint32_t channel,
 			   struct dma_config *config)
 {
-	struct dma_sam0_data *data = DEV_DATA(dev);
+	struct dma_sam0_data *data = dev->data;
 	DmacDescriptor *desc = &data->descriptors[channel];
 	struct dma_block_config *block = config->head_block;
 	struct dma_sam0_channel *channel_control;
 	DMAC_BTCTRL_Type btctrl = { .reg = 0 };
-	int key;
+	unsigned int key;
 
 	if (channel >= DMAC_CH_NUM) {
 		LOG_ERR("Unsupported channel");
@@ -266,7 +262,7 @@ inval:
 
 static int dma_sam0_start(const struct device *dev, uint32_t channel)
 {
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	ARG_UNUSED(dev);
 
@@ -297,7 +293,7 @@ static int dma_sam0_start(const struct device *dev, uint32_t channel)
 
 static int dma_sam0_stop(const struct device *dev, uint32_t channel)
 {
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	ARG_UNUSED(dev);
 
@@ -318,9 +314,9 @@ static int dma_sam0_stop(const struct device *dev, uint32_t channel)
 static int dma_sam0_reload(const struct device *dev, uint32_t channel,
 			   uint32_t src, uint32_t dst, size_t size)
 {
-	struct dma_sam0_data *data = DEV_DATA(dev);
+	struct dma_sam0_data *data = dev->data;
 	DmacDescriptor *desc = &data->descriptors[channel];
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	switch (desc->BTCTRL.bit.BEATSIZE) {
 	case DMAC_BTCTRL_BEATSIZE_BYTE_Val:
@@ -362,7 +358,7 @@ inval:
 static int dma_sam0_get_status(const struct device *dev, uint32_t channel,
 			       struct dma_status *stat)
 {
-	struct dma_sam0_data *data = DEV_DATA(dev);
+	struct dma_sam0_data *data = dev->data;
 	uint32_t act;
 
 	if (channel >= DMAC_CH_NUM || stat == NULL) {
@@ -402,11 +398,11 @@ static int dma_sam0_get_status(const struct device *dev, uint32_t channel,
 			    DT_INST_IRQ_BY_IDX(0, n, priority),		 \
 			    dma_sam0_isr, DEVICE_DT_INST_GET(0), 0);	 \
 		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		 \
-	} while (0)
+	} while (false)
 
 static int dma_sam0_init(const struct device *dev)
 {
-	struct dma_sam0_data *data = DEV_DATA(dev);
+	struct dma_sam0_data *data = dev->data;
 
 	/* Enable clocks. */
 #ifdef MCLK
@@ -458,5 +454,5 @@ static const struct dma_driver_api dma_sam0_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0, &dma_sam0_init, NULL,
-		    &dmac_data, NULL, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dma_sam0_api);
+		    &dmac_data, NULL, PRE_KERNEL_1,
+		    CONFIG_DMA_INIT_PRIORITY, &dma_sam0_api);

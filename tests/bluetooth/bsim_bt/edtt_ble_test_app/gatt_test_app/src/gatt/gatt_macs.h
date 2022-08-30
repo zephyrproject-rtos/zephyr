@@ -20,9 +20,9 @@
 extern "C" {
 #endif
 
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/gatt.h>
 
-/** @def BT_GATT_H_ATTRIBUTE
+/**
  *  @brief Attribute Declaration Macro.
  *
  *  Helper macro to declare an attribute.
@@ -44,7 +44,7 @@ extern "C" {
 	.handle = _handle \
 	}
 
-/** @def BT_GATT_H_CHARACTERISTIC
+/**
  *  @brief Characteristic and Value Declaration Macro.
  *
  *  Helper macro to declare a characteristic attribute along with its attribute
@@ -70,7 +70,7 @@ extern "C" {
 			  _handle), \
 	BT_GATT_H_ATTRIBUTE(_uuid, _perm, _read, _write, _value, _handle + 1)
 
-/** @def BT_GATT_H_PRIMARY_SERVICE
+/**
  *  @brief Primary Service Declaration Macro.
  *
  *  Helper macro to declare a primary service attribute.
@@ -86,7 +86,7 @@ extern "C" {
 				_service, \
 				_handle)
 
-/** @def BT_GATT_H_SECONDARY_SERVICE
+/**
  *  @brief Secondary Service Declaration Macro.
  *
  *  Helper macro to declare a secondary service attribute.
@@ -102,7 +102,7 @@ extern "C" {
 				_service, \
 				_handle)
 
-/** @def BT_GATT_H_INCLUDE_SERVICE
+/**
  *  @brief Include Service Declaration Macro.
  *
  *  Helper macro to declare database internal include service attribute.
@@ -118,7 +118,7 @@ extern "C" {
 				_service_incl, \
 				_handle)
 
-/** @def BT_GATT_H_DESCRIPTOR
+/**
  *  @brief Descriptor Declaration Macro.
  *
  *  Helper macro to declare a descriptor attribute.
@@ -133,7 +133,7 @@ extern "C" {
 #define BT_GATT_H_DESCRIPTOR(_uuid, _perm, _read, _write, _value, _handle) \
 	       BT_GATT_H_ATTRIBUTE(_uuid, _perm, _read, _write, _value, _handle)
 
-/** @def BT_GATT_H_MANAGED
+/**
  *  @brief Managed Client Characteristic Configuration Declaration Macro.
  *
  *  Helper macro to declare a Managed CCC attribute.
@@ -146,7 +146,7 @@ extern "C" {
 		BT_GATT_H_ATTRIBUTE(BT_UUID_GATT_CCC, _perm,\
 		bt_gatt_attr_read_ccc, bt_gatt_attr_write_ccc, _ccc, _handle)
 
-/** @def BT_GATT_H_CCC
+/**
  *  @brief Client Characteristic Configuration Change Declaration Macro.
  *
  *  Helper macro to declare a CCC attribute.
@@ -168,7 +168,7 @@ extern "C" {
  *         } ), \
  *         _handle)
  */
-/** @def BT_GATT_H_CCC
+/**
  *  @brief Client Characteristic Configuration Change Declaration Macro.
  *
  *  Helper macro to declare a CCC attribute.
@@ -182,7 +182,7 @@ extern "C" {
 			BT_GATT_CCC_INITIALIZER(_cfg_changed, NULL, NULL)),\
 			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE, _handle)
 
-/** @def BT_GATT_H_CEP
+/**
  *  @brief Characteristic Extended Properties Declaration Macro.
  *
  *  Helper macro to declare a CEP attribute.
@@ -198,7 +198,7 @@ extern "C" {
 				(void *)_value, \
 				_handle)
 
-/** @def BT_GATT_H_CUD
+/**
  *  @brief Characteristic User Format Descriptor Declaration Macro.
  *
  *  Helper macro to declare a CUD attribute.
@@ -215,7 +215,7 @@ extern "C" {
 				(void *)_value, \
 				_handle)
 
-/** @def BT_GATT_H_CPF
+/**
  *  @brief Characteristic Presentation Format Descriptor Declaration Macro.
  *
  *  Helper macro to declare a CPF attribute.

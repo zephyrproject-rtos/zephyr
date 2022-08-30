@@ -1,0 +1,29 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (C) 2021, Intel Corporation
+ *
+ */
+
+/dts-v1/;
+
+#include <intel/intel_socfpga_agilex.dtsi>
+
+/ {
+	model = "Intel SoC FPGA Agilex";
+	compatible = "intel,socfpga-agilex";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &mem0;
+	};
+
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};

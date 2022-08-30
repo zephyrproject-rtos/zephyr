@@ -7,7 +7,7 @@
 
 / {
 	resources {
-		compatible = "test,gpio_basic_api";
+		compatible = "test-gpio-basic-api";
 
 		/*
 		 * Remove jumpers on JP31 to disconnect pull-up resistor.

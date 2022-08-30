@@ -49,6 +49,16 @@ Glossary of Terms
       specified by the build system can be over-ridden by the application,
       if desired.
 
+   device runtime power management
+      Device Runtime Power Management (PM) refers the capability of devices to
+      save energy independently of the the system power state. Devices will keep
+      reference of their usage and will automatically be suspended or resumed.
+      This feature is enabled via the :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`
+      Kconfig option.
+
+   idle thread
+      A system thread that runs when there are no other threads ready to run.
+
    IDT
       (Interrupt Descriptor Table) a data structure used by the x86
       architecture to implement an interrupt vector table. The IDT is used
@@ -65,8 +75,21 @@ Glossary of Terms
       The set of Zephyr-supplied files that implement the Zephyr kernel,
       including its core services, device drivers, network stack, and so on.
 
+   power domain
+      A power domain is a collection of devices for which power is
+      applied and removed collectively in a single action. Power
+      domains are represented by :c:struct:`device`.
+
+   power gating
+      Power gating reduces power consumption by shutting off areas of an
+      integrated circuit that are not in use.
+
    SoC
       `System on a chip`_
+
+   system power state
+      System power states describe the power consumption of the system as a
+      whole. System power states are are represented by :c:enum:`pm_state`.
 
    west
       A multi-repo meta-tool developed for the Zephyr project. See :ref:`west`.

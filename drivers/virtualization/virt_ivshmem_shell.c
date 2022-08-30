@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
-#include <drivers/virtualization/ivshmem.h>
+#include <zephyr/drivers/virtualization/ivshmem.h>
 
 static const struct device *ivshmem;
 
@@ -49,9 +49,9 @@ static void doorbell_notification_thread(const struct shell *shell)
 static bool get_ivshmem(const struct shell *shell)
 {
 	if (ivshmem == NULL) {
-		ivshmem = device_get_binding(CONFIG_IVSHMEM_DEV_NAME);
-		if (!ivshmem) {
-			shell_error(shell, "IVshmem device cannot be found");
+		ivshmem = DEVICE_DT_GET_ONE(qemu_ivshmem);
+		if (!device_is_ready(ivshmem)) {
+			shell_error(shell, "IVshmem device is not ready");
 		}
 	}
 

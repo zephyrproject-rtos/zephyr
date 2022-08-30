@@ -7,14 +7,14 @@
  */
 
 
-#include <drivers/adc.h>
-#include <drivers/counter.h>
-#include <zephyr.h>
-#include <ztest.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
 
 #if defined(CONFIG_BOARD_FRDM_K64F)
 
-#define ADC_DEVICE_NAME DT_LABEL(DT_INST(0, nxp_kinetis_adc16))
+#define ADC_DEVICE_NODE DT_INST(0, nxp_kinetis_adc16)
 #define ADC_RESOLUTION 12
 #define ADC_GAIN ADC_GAIN_1
 #define ADC_REFERENCE ADC_REF_INTERNAL
@@ -23,7 +23,7 @@
 
 #elif defined(CONFIG_BOARD_FRDM_K82F)
 
-#define ADC_DEVICE_NAME DT_LABEL(DT_INST(0, nxp_kinetis_adc16))
+#define ADC_DEVICE_NODE DT_INST(0, nxp_kinetis_adc16)
 #define ADC_RESOLUTION 12
 #define ADC_GAIN ADC_GAIN_1
 #define ADC_REFERENCE ADC_REF_INTERNAL
@@ -64,51 +64,51 @@ static const struct adc_channel_cfg m_2nd_channel_cfg = {
 
 const struct device *get_adc_device(void)
 {
-	return device_get_binding(ADC_DEVICE_NAME);
+	const struct device *const dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+
+	if (!device_is_ready(dev)) {
+		printk("ADC device is not ready\n");
+		return NULL;
+	}
+
+	return dev;
 }
 
 const struct device *get_count_device(void)
 {
-	char *dev_name = DT_LABEL(DT_NODELABEL(pit0));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
 
-	return device_get_binding(dev_name);
+	if (!device_is_ready(dev)) {
+		printk("count device is not ready\n");
+		return NULL;
+	}
+
+	return dev;
 }
 
 static void init_pit(void)
 {
-	char *dev_name = DT_LABEL(DT_NODELABEL(pit0));
 	int err;
-	const struct device *dev;
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
 	struct counter_top_cfg top_cfg = { .callback = NULL,
 					   .user_data = NULL,
 					   .flags = 0 };
 
-	dev = device_get_binding(dev_name);
-	zassert_not_null(dev, "Unable to get counter device %s", dev_name);
+	zassert_true(device_is_ready(dev), "Counter device is not ready");
 
 	counter_start(dev);
 	top_cfg.ticks = counter_us_to_ticks(dev, HW_TRIGGER_INTERVAL);
 	err = counter_set_top_value(dev, &top_cfg);
 	zassert_equal(0, err, "%s: Counter failed to set top value (err: %d)",
-		      dev_name, err);
-}
-
-static void stop_pit(void)
-{
-	char *dev_name = DT_LABEL(DT_NODELABEL(pit0));
-	const struct device *dev;
-
-	dev = device_get_binding(dev_name);
-	zassert_not_null(dev, "Unable to get counter device %s", dev_name);
-	counter_stop(dev);
+		      dev->name, err);
 }
 
 static const struct device *init_adc(void)
 {
 	int ret;
-	const struct device *adc_dev = device_get_binding(ADC_DEVICE_NAME);
+	const struct device *const adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
-	zassert_not_null(adc_dev, "Cannot get ADC device");
+	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
 
 	ret = adc_channel_setup(adc_dev, &m_1st_channel_cfg);
 	zassert_equal(ret, 0,
@@ -188,7 +188,7 @@ static int test_task_one_channel(void)
 	return TC_PASS;
 }
 
-void test_adc_sample_one_channel(void)
+ZTEST_USER(adc_dma, test_adc_sample_one_channel)
 {
 	zassert_true(test_task_one_channel() == TC_PASS, NULL);
 }
@@ -222,7 +222,7 @@ static int test_task_two_channels(void)
 }
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
 
-void test_adc_sample_two_channels(void)
+ZTEST_USER(adc_dma, test_adc_sample_two_channels)
 {
 #if defined(ADC_2ND_CHANNEL_ID)
 	zassert_true(test_task_two_channels() == TC_PASS, NULL);
@@ -272,7 +272,7 @@ static int test_task_asynchronous_call(void)
 }
 #endif /* defined(CONFIG_ADC_ASYNC) */
 
-void test_adc_asynchronous_call(void)
+ZTEST_USER(adc_dma, test_adc_asynchronous_call)
 {
 #if defined(CONFIG_ADC_ASYNC)
 	zassert_true(test_task_asynchronous_call() == TC_PASS, NULL);
@@ -338,7 +338,7 @@ static int test_task_with_interval(void)
 	return TC_PASS;
 }
 
-void test_adc_sample_with_interval(void)
+ZTEST(adc_dma, test_adc_sample_with_interval)
 {
 	zassert_true(test_task_with_interval() == TC_PASS, NULL);
 }
@@ -424,7 +424,7 @@ static int test_task_repeated_samplings(void)
 	return TC_PASS;
 }
 
-void test_adc_repeated_samplings(void)
+ZTEST(adc_dma, test_adc_repeated_samplings)
 {
 	zassert_true(test_task_repeated_samplings() == TC_PASS, NULL);
 }
@@ -469,7 +469,7 @@ static int test_task_invalid_request(void)
 	return TC_PASS;
 }
 
-void test_adc_invalid_request(void)
+ZTEST_USER(adc_dma, test_adc_invalid_request)
 {
 	zassert_true(test_task_invalid_request() == TC_PASS, NULL);
 }

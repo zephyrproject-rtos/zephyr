@@ -34,7 +34,7 @@ LEDs). The sample can be built and executed for the TWR-KE18F as
 follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/canbus/canopen
+   :zephyr-app: samples/modules/canopennode
    :board: twr_ke18f
    :goals: build flash
    :compact:
@@ -46,14 +46,14 @@ Building and Running for FRDM-K64F
 ==================================
 The :ref:`frdm_k64f` board does not come with an onboard CAN
 transceiver. In order to use the CAN bus on the FRDM-K64F board, an
-external CAN bus tranceiver must be connected to ``PTB18``
+external CAN bus transceiver must be connected to ``PTB18``
 (``CAN0_TX``) and ``PTB19`` (``CAN0_RX``). This board supports CANopen
 LED indicators (red and green LEDs)
 
 The sample can be built and executed for the FRDM-K64F as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/canbus/canopen
+   :zephyr-app: samples/modules/canopennode
    :board: frdm_k64f
    :goals: build flash
    :compact:
@@ -61,12 +61,56 @@ The sample can be built and executed for the FRDM-K64F as follows:
 Pressing the button labelled ``SW3`` will increment the button press
 counter object at index ``0x2102`` in the object dictionary.
 
+Building and Running for STM32F072RB Discovery
+==============================================
+The :ref:`stm32f072b_disco_board` board does not come with an onboard CAN
+transceiver. In order to use the CAN bus on the STM32F072RB Discovery board, an
+external CAN bus transceiver must be connected to ``PB8`` (``CAN_RX``) and
+``PB9`` (``CAN_TX``). This board supports CANopen LED indicators (red and green
+LEDs)
+
+The sample can be built and executed for the STM32F072RB Discovery as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/modules/canopennode
+   :board: stm32f072b_disco
+   :goals: build flash
+   :compact:
+
+Pressing the button labelled ``USER`` will increment the button press counter
+object at index ``0x2102`` in the object dictionary.
+
+Building and Running for STM32F3 Discovery
+==========================================
+The :ref:`stm32f3_disco_board` board does not come with an onboard CAN
+transceiver. In order to use the CAN bus on the STM32F3 Discovery board, an
+external CAN bus transceiver must be connected to ``PD1`` (``CAN_TX``) and
+``PD0`` (``CAN_RX``). This board supports CANopen LED indicators (red and green
+LEDs)
+
+The sample can be built and executed for the STM32F3 Discovery as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/modules/canopennode
+   :board: stm32f3_disco
+   :goals: build flash
+   :compact:
+
+Pressing the button labelled ``USER`` will increment the button press counter
+object at index ``0x2102`` in the object dictionary.
+
+Building and Running for other STM32 boards
+===========================================
+The sample cannot run if the <erase-block-size> of the flash-controller exceeds 0x10000.
+Typically nucleo_h743zi with erase-block-size = <DT_SIZE_K(128)>;
+
+
 Building and Running for boards without storage partition
 =========================================================
 The sample can be built for boards without a flash storage partition by using a different configuration file:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/canbus/canopen
+   :zephyr-app: samples/modules/canopennode
    :board: <your_board_name>
    :conf: "prj_no_storage.conf"
    :goals: build flash
@@ -129,8 +173,9 @@ accomplished using the following Python code:
    import time
 
    ZEPHYR_BASE = os.environ['ZEPHYR_BASE']
-   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'subsys', 'canbus', 'canopen',
-                      'objdict', 'objdict.eds')
+   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'modules', 'canopennode',
+                   'objdict', 'objdict.eds')
+
    NODEID = 10
 
    network = canopen.Network()
@@ -176,8 +221,9 @@ name) can be accomplished using the following Python code:
    import os
 
    ZEPHYR_BASE = os.environ['ZEPHYR_BASE']
-   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'subsys', 'canbus', 'canopen',
-                      'objdict', 'objdict.eds')
+   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'modules', 'canopennode',
+                   'objdict', 'objdict.eds')
+
    NODEID = 10
 
    network = canopen.Network()
@@ -209,8 +255,9 @@ can be accomplished using the following Python code:
    import os
 
    ZEPHYR_BASE = os.environ['ZEPHYR_BASE']
-   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'subsys', 'canbus', 'canopen',
-                      'objdict', 'objdict.eds')
+   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'modules', 'canopennode',
+                   'objdict', 'objdict.eds')
+
    NODEID = 10
 
    network = canopen.Network()
@@ -282,8 +329,9 @@ press counter) can be accomplished using the following Python code:
    import os
 
    ZEPHYR_BASE = os.environ['ZEPHYR_BASE']
-   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'subsys', 'canbus', 'canopen',
-                      'objdict', 'objdict.eds')
+   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'modules', 'canopennode',
+                   'objdict', 'objdict.eds')
+
    NODEID = 10
 
    network = canopen.Network()
@@ -352,7 +400,7 @@ for the FRDM-K64F as follows:
 #. Rebuild the CANopen sample with MCUboot support:
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/subsys/canbus/canopen
+      :zephyr-app: samples/modules/canopennode
       :board: frdm_k64f
       :goals: build
       :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y
@@ -392,20 +440,20 @@ for the FRDM-K64F as follows:
 Modifying the Object Dictionary
 *******************************
 The CANopen object dictionary used in this sample application can be
-found under :zephyr_file:`samples/subsys/canbus/canopen/objdict` in
+found under :zephyr_file:`samples/modules/canopennode/objdict` in
 the Zephyr tree. The object dictionary can be modified using any
 object dictionary editor supporting CANopenNode object dictionary code
 generation.
 
 A popular choice is the EDS editor from the `libedssharp`_
 project. With that, the
-:zephyr_file:`samples/subsys/canbus/canopen/objdict/objdicts.xml`
+:zephyr_file:`samples/modules/canopennode/objdict/objdicts.xml`
 project file can be opened and modified, and new implementation files
-(:zephyr_file:`samples/subsys/canbus/canopen/objdict/CO_OD.h` and
-:zephyr_file:`samples/subsys/canbus/canopen/objdict/CO_OD.c`) can be
+(:zephyr_file:`samples/modules/canopennode/objdict/CO_OD.h` and
+:zephyr_file:`samples/modules/canopennode/objdict/CO_OD.c`) can be
 generated. The EDS editor can also export an updated Electronic Data
 Sheet (EDS) file
-(:zephyr_file:`samples/subsys/canbus/canopen/objdict/objdicts.eds`).
+(:zephyr_file:`samples/modules/canopennode/objdict/objdicts.eds`).
 
 .. _CANopenNode:
    https://github.com/CANopenNode/CANopenNode

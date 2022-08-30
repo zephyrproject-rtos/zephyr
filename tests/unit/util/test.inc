@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <sys/util.h>
+#include <zephyr/ztest.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
 
 /**
@@ -162,28 +162,17 @@ skipped:
 	#undef test_IF_ENABLED_FLAG_B
 }
 
-void test_UTIL_LISTIFY(void)
+void test_LISTIFY(void)
 {
-	int i = 0;
+	int ab0 = 1;
+	int ab1 = 1;
+#define A_PTR(x, name0, name1) &UTIL_CAT(UTIL_CAT(name0, name1), x)
 
-#define INC(x, n, m)		\
-	do {			\
-		i += (x + n + m);\
-	} while (0);
+	int *a[] = { LISTIFY(2, A_PTR, (,), a, b) };
 
-#define DEFINE(x, y) int a##x = x * y;
-#define MARK_UNUSED(x, _) ARG_UNUSED(a##x);
-
-	UTIL_LISTIFY(4, DEFINE, 2)
-	UTIL_LISTIFY(4, MARK_UNUSED, _)
-
-	UTIL_LISTIFY(4, INC, 1, 2)
-
-	zassert_equal(i, 0 + 1 + 2 + 3 + 4 * (1 + 2), NULL);
-	zassert_equal(a0, 0, NULL);
-	zassert_equal(a1, 2, NULL);
-	zassert_equal(a2, 4, NULL);
-	zassert_equal(a3, 6, NULL);
+	zassert_equal(ARRAY_SIZE(a), 2, NULL);
+	zassert_equal(a[0], &ab0, NULL);
+	zassert_equal(a[1], &ab1, NULL);
 }
 
 void test_MACRO_MAP_CAT(void)
@@ -240,6 +229,24 @@ static void test_CLAMP(void)
 
 	zassert_equal(CLAMP(0xffffffffaULL, 0xffffffff0ULL, 0xfffffffffULL),
 		      0xffffffffaULL, "Unexpected clamp result");
+}
+
+static void test_IN_RANGE(void)
+{
+	zassert_true(IN_RANGE(0, 0, 0), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(1, 0, 1), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(1, 0, 2), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(-1, -2, 2), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(-3, -5, -1), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(0, 0, UINT64_MAX), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(UINT64_MAX, 0, UINT64_MAX), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(0, INT64_MIN, INT64_MAX), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(INT64_MIN, INT64_MIN, INT64_MAX), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(INT64_MAX, INT64_MIN, INT64_MAX), "Unexpected IN_RANGE result");
+
+	zassert_false(IN_RANGE(5, 0, 2), "Unexpected IN_RANGE result");
+	zassert_false(IN_RANGE(5, 10, 0), "Unexpected IN_RANGE result");
+	zassert_false(IN_RANGE(-1, 0, 1), "Unexpected IN_RANGE result");
 }
 
 static void test_FOR_EACH(void)
@@ -330,7 +337,7 @@ static void test_FOR_EACH_IDX(void)
 		FOR_EACH_IDX(FOR_EACH_IDX_MACRO_TEST3, (,), 1, 2, 3)
 	};
 
-	zassert_equal(ARRAY_SIZE(a), 3, "Unexpected value:%d", ARRAY_SIZE(a));
+	zassert_equal(ARRAY_SIZE(a), 3, "Unexpected value:%zu", ARRAY_SIZE(a));
 }
 
 static void test_FOR_EACH_IDX_FIXED_ARG(void)
@@ -354,6 +361,21 @@ static void test_IS_EMPTY(void)
 		     "Expected to be empty");
 	zassert_false(IS_EMPTY(test_IS_EMPTY_NOT_EMPTY),
 		      "Expected to be non-empty");
+	zassert_false(IS_EMPTY("string"),
+		      "Expected to be non-empty");
+	zassert_false(IS_EMPTY(&test_IS_EMPTY),
+		      "Expected to be non-empty");
+}
+
+static void test_IS_EQ(void)
+{
+	zassert_true(IS_EQ(0, 0), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(1, 1), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(7, 7), "Unexpected IS_EQ result");
+
+	zassert_false(IS_EQ(0, 1), "Unexpected IS_EQ result");
+	zassert_false(IS_EQ(1, 7), "Unexpected IS_EQ result");
+	zassert_false(IS_EQ(7, 0), "Unexpected IS_EQ result");
 }
 
 static void test_LIST_DROP_EMPTY(void)
@@ -456,16 +478,18 @@ void test_cc(void)
 			 ztest_unit_test(test_UTIL_OR),
 			 ztest_unit_test(test_UTIL_AND),
 			 ztest_unit_test(test_IF_ENABLED),
-			 ztest_unit_test(test_UTIL_LISTIFY),
+			 ztest_unit_test(test_LISTIFY),
 			 ztest_unit_test(test_MACRO_MAP_CAT),
 			 ztest_unit_test(test_z_max_z_min_z_clamp),
 			 ztest_unit_test(test_CLAMP),
+			 ztest_unit_test(test_IN_RANGE),
 			 ztest_unit_test(test_FOR_EACH),
 			 ztest_unit_test(test_FOR_EACH_NONEMPTY_TERM),
 			 ztest_unit_test(test_FOR_EACH_FIXED_ARG),
 			 ztest_unit_test(test_FOR_EACH_IDX),
 			 ztest_unit_test(test_FOR_EACH_IDX_FIXED_ARG),
 			 ztest_unit_test(test_IS_EMPTY),
+			 ztest_unit_test(test_IS_EQ),
 			 ztest_unit_test(test_LIST_DROP_EMPTY),
 			 ztest_unit_test(test_nested_FOR_EACH),
 			 ztest_unit_test(test_GET_ARG_N),

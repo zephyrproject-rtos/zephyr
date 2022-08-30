@@ -4,22 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <display/cfb.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/display/cfb.h>
 #include <stdio.h>
-
-#if defined(CONFIG_SSD16XX)
-#define DISPLAY_DRIVER		"SSD16XX"
-#endif
-
-#if defined(CONFIG_SSD1306)
-#define DISPLAY_DRIVER		"SSD1306"
-#endif
-
-#ifndef DISPLAY_DRIVER
-#define DISPLAY_DRIVER		"DISPLAY"
-#endif
 
 void main(void)
 {
@@ -29,10 +17,9 @@ void main(void)
 	uint8_t font_width;
 	uint8_t font_height;
 
-	dev = device_get_binding(DISPLAY_DRIVER);
-
-	if (dev == NULL) {
-		printf("Device not found\n");
+	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+	if (!device_is_ready(dev)) {
+		printf("Device %s not ready\n", dev->name);
 		return;
 	}
 
@@ -41,7 +28,7 @@ void main(void)
 		return;
 	}
 
-	printf("initialized %s\n", DISPLAY_DRIVER);
+	printf("Initialized %s\n", dev->name);
 
 	if (cfb_framebuffer_init(dev)) {
 		printf("Framebuffer initialization failed!\n");

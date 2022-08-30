@@ -10,3 +10,6 @@ tests:
   net.socket.udp.preempt:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.socket.udp.ipv6_fragment:
+    extra_configs:
+      - CONFIG_NET_IPV6_FRAGMENT=y

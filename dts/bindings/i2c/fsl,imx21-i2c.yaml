@@ -5,7 +5,7 @@ description: i.MX I2C node
 
 compatible: "fsl,imx21-i2c"
 
-include: i2c-controller.yaml
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:

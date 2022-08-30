@@ -6,14 +6,15 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include "mesh_feather.dtsi"
+#include "particle_boron-pinctrl.dtsi"
 
 / {
 	model = "Particle Boron";
 	compatible = "particle,boron", "particle,feather";
 
-	sky13351 {
+	sky13351: sky13351 {
 		compatible = "skyworks,sky13351";
 		vctl1-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		/* on Boron VCTL2 is inverted VCTL1 signal via SN74LVC1G04
@@ -21,14 +22,19 @@
 		 * but is not used in board.c */
 		vctl2-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
 };
 
 &i2c1 { /* power monitoring */
 	compatible = "nordic,nrf-twi";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <24>;
-	scl-pin = <41>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &uart1 { /* u-blox SARA-U2 or SARA-R4 */
@@ -36,15 +42,13 @@
 	current-speed = <115200>;
 	status = "okay";
 
-	tx-pin = <37>;
-	rx-pin = <36>;
-	rts-pin = <39>;
-	cts-pin = <38>;
 	hw-flow-control;
 
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
 	sara_r4 {
-		compatible = "ublox,sara-r4";
-		label = "ublox-sara-r4";
+		compatible = "u-blox,sara-r4";
 		status = "okay";
 
 		mdm-power-gpios = <&gpio0 16 0>;

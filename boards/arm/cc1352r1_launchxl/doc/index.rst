@@ -11,8 +11,7 @@ development kit for the SimpleLink |trade| multi-Standard CC1352R wireless MCU.
 
 See the `TI CC1352R LaunchPad Product Page`_ for details.
 
-.. figure:: img/cc1352r1_launchxl.png
-   :width: 400px
+.. figure:: img/cc1352r1_launchxl.jpg
    :align: center
    :alt: TI CC1352R LaunchPad
 
@@ -42,6 +41,8 @@ features:
 +===========+============+======================+
 | GPIO      | on-chip    | gpio                 |
 +-----------+------------+----------------------+
+| MPU       | on-chip    | arch/arm             |
++-----------+------------+----------------------+
 | NVIC      | on-chip    | arch/arm             |
 +-----------+------------+----------------------+
 | PINMUX    | on-chip    | pinmux               |
@@ -53,7 +54,7 @@ features:
 | SPI       | on-chip    | spi                  |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Connections and IOs
 ===================
@@ -144,7 +145,7 @@ Prerequisites:
 #. Install OpenOCD
 
    You can obtain OpenOCD by following these
-   :ref:`installing the latest Zephyr SDK instructions <zephyr_sdk>`.
+   :ref:`installing the latest Zephyr SDK instructions <toolchain_zephyr_sdk>`.
 
    After the installation, add the directory containing the OpenOCD executable
    to your environment's PATH variable. For example, use this command in Linux:
@@ -196,7 +197,7 @@ Bootloader
 The ROM bootloader on CC13x2 and CC26x2 devices is enabled by default. The
 bootloader will start if there is no valid application image in flash or the
 so-called backdoor is enabled (via option
-:kconfig:`CONFIG_CC13X2_CC26X2_BOOTLOADER_BACKDOOR_ENABLE`) and BTN-1 is held
+:kconfig:option:`CONFIG_CC13X2_CC26X2_BOOTLOADER_BACKDOOR_ENABLE`) and BTN-1 is held
 down during reset. See the bootloader documentation in chapter 10 of the `TI
 CC13x2 / CC26x2 Technical Reference Manual`_ for additional information.
 
@@ -205,7 +206,7 @@ Power Management and UART
 
 System and device power management are supported on this platform, and
 can be enabled via the standard Kconfig options in Zephyr, such as
-:kconfig:`CONFIG_PM`, :kconfig:`CONFIG_PM_DEVICE`.
+:kconfig:option:`CONFIG_PM`, :kconfig:option:`CONFIG_PM_DEVICE`.
 
 When system power management is turned on (CONFIG_PM=y),
 sleep state 2 (standby mode) is allowed, and polling is used to retrieve input
@@ -216,9 +217,9 @@ disable sleep state 2 while polling:
 
 .. code-block:: c
 
-    pm_constraint_set(PM_STATE_STANDBY);
+    pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
     <code that calls uart_poll_in() and expects input at any point in time>
-    pm_constraint_release(PM_STATE_STANDBY);
+    pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 
 
 References

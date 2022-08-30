@@ -44,16 +44,17 @@ void init_datagram_queue(struct phdr_desc_queue *queue, int queue_num)
 		/* Fill packet header with random values */
 		for (int j = 0; j < SIZE_OF_HEADER; j++) {
 			/* leave crc field zeroed */
-			if (j < CRC_BYTE_1 || j > CRC_BYTE_2)
+			if (j < CRC_BYTE_1 || j > CRC_BYTE_2) {
 				descriptors[queue_num][i].ptr[j] = (uint8_t)sys_rand32_get();
-			else
+			} else {
 				descriptors[queue_num][i].ptr[j] = 0;
+			}
 		}
-		/* Compute crc for further comparisson */
+		/* Compute crc for further comparison */
 		uint16_t crc;
 
-		crc = crc16(descriptors[queue_num][i].ptr, SIZE_OF_HEADER,
-					POLYNOMIAL, 0, 0);
+		crc = crc16(POLYNOMIAL, 0x0000,
+			    descriptors[queue_num][i].ptr, SIZE_OF_HEADER);
 
 		/* Save crc value in header[CRC_BYTE_1-CRC_BYTE_2] field */
 		descriptors[queue_num][i].ptr[CRC_BYTE_1] = (uint8_t)(crc >> 8);
@@ -84,7 +85,7 @@ void test_thread(void *arg1, void *arg2, void *arg3)
 		/* Crc field should be zero before crc calculation */
 		qin_ptr->ptr[CRC_BYTE_1] = 0;
 		qin_ptr->ptr[CRC_BYTE_2] = 0;
-		crc = crc16(qin_ptr->ptr, SIZE_OF_HEADER, POLYNOMIAL, 0, 0);
+		crc = crc16(POLYNOMIAL, 0x0000, qin_ptr->ptr, SIZE_OF_HEADER);
 
 		/* Compare computed crc with crc from phdr_desc->crc */
 		if (crc == crc_orig) {
@@ -122,8 +123,9 @@ void queue_thread(void *arg1, void *arg2, void *arg3)
 			K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
 
 	/* Wait until sender queue is not empty */
-	while (sender[queue_num].count != 0)
+	while (sender[queue_num].count != 0) {
 		k_sleep(K_MSEC(1));
+	}
 
 	/* Decrementing queue counter */
 	k_mutex_lock(&fetch_queue_mtx, K_FOREVER);
@@ -159,8 +161,9 @@ void main(void)
 				(void *)&i, K_PRIO_PREEMPT(11), 0, K_NO_WAIT);
 
 	/* Wait until all queues are not processed */
-	while (queues_remain > 0)
+	while (queues_remain > 0) {
 		k_sleep(K_MSEC(1));
+	}
 
 	/* Capture final time stamp */
 	stop_time = k_cycle_get_32();
@@ -180,20 +183,22 @@ void main(void)
 			tmp = tmp->next;
 			count++;
 		}
-		if (receiver[i].count == SIZE_OF_QUEUE && count == SIZE_OF_QUEUE)
+		if (receiver[i].count == SIZE_OF_QUEUE && count == SIZE_OF_QUEUE) {
 			correct++;
+		}
 	}
-	if (correct == QUEUE_NUM)
+	if (correct == QUEUE_NUM) {
 		printk("RESULT: OK\n"
 			"Application ran successfully.\n"
 			"All %d headers were processed in %d msec\n",
 			SIZE_OF_QUEUE*QUEUE_NUM,
 			nanoseconds_spent / 1000 / 1000);
-	else
+	} else {
 		printk("RESULT: FAIL\n"
 			"Application failed.\n"
 			"The amount of packets in receiver queue "
 			"is less than expected.\n");
+	}
 
 	k_sleep(K_MSEC(10));
 }

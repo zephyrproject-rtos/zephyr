@@ -5,7 +5,7 @@
 
 config WDT_ESP32
 	bool "ESP32 Watchdog (WDT) Driver"
-	depends on SOC_ESP32
 	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_WATCHDOG_ENABLED
 	help
 	  Enable WDT driver for ESP32.

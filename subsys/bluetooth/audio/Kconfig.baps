@@ -1,0 +1,259 @@
+# Bluetooth Audio - Basic Audio Profile configuration options
+#
+# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2022 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BT_AUDIO_UNICAST
+	bool
+	depends on BT_CONN
+	select BT_SMP
+	select BT_ISO_UNICAST
+
+config BT_AUDIO_UNICAST_SERVER
+	bool "Bluetooth Unicast Audio Server Support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_PERIPHERAL
+	select BT_AUDIO_UNICAST
+	select BT_ISO_PERIPHERAL
+	select BT_GATT_DYNAMIC_DB
+	select BT_GATT_CACHING
+	select BT_ASCS
+	help
+	  This option enables support for Bluetooth Unicast Audio Server
+	  using Isochronous channels.
+
+config BT_AUDIO_UNICAST_CLIENT
+	bool "Bluetooth Unicast Audio Client Support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_AUDIO_UNICAST
+	select BT_ISO_CENTRAL
+	select BT_CENTRAL
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+	select BT_GATT_AUTO_UPDATE_MTU
+	help
+	  This option enables support for Bluetooth Unicast Audio Client
+	  using Isochronous channels.
+
+config BT_CODEC_MAX_DATA_COUNT
+	int "Codec Capabilities Data Count"
+	default 5
+	range 1 128
+	help
+	  This option defines the maximum number of LTV entries a codec can
+	  store.
+
+config BT_CODEC_MAX_DATA_LEN
+	int "Codec Capabilities Data Length"
+	default 4
+	range 1 128
+	help
+	  This option defines the maximum value length of an LTV entry a codec
+	  can store.
+
+config BT_CODEC_MAX_METADATA_COUNT
+	int "Codec Metadata Count"
+	default 2
+	range 1 128
+	help
+	  This option defines the maximum number of LTV entries a metadata can
+	  store.
+
+config BT_CODEC_MAX_METADATA_LEN
+	int "Codec Metadata Length"
+	default 4
+	range 1 128
+	help
+	  This option defines the maximum value length of an LTV entry a
+	  metadata can store.
+
+if BT_AUDIO_UNICAST_CLIENT
+config BT_AUDIO_UNICAST_CLIENT_GROUP_COUNT
+	int "Basic Audio Unicast Group count"
+	depends on BT_AUDIO_UNICAST
+	default BT_ISO_MAX_CIG
+	range 1 BT_ISO_MAX_CIG
+	help
+	  This option sets the number of connected audio groups to support as
+	  the unicast client.
+
+config BT_AUDIO_UNICAST_CLIENT_GROUP_STREAM_COUNT
+	int "Basic Audio Unicast Group Stream count"
+	depends on BT_AUDIO_UNICAST_CLIENT_GROUP_COUNT > 0
+	default 1
+	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 1 31
+	help
+	  This option sets the maximum number of streams per unicast group
+	  to support.
+
+config BT_AUDIO_UNICAST_CLIENT_PAC_COUNT
+	int "Basic Audio Profile PAC count"
+	default 2
+	range 0 4
+	help
+	  This option enables caching a number of Published Audio Capabilities
+	  (PAC) for Basic Audio Profile on a per connection basis.
+
+config BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT
+	int "Basic Audio Profile ASE Sink count"
+	default 2
+	range 0 2
+	help
+	  This option enables caching a number of Audio Stream Endpoint Sink
+	  instances for Basic Audio Profile on a per connection basis.
+
+config BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT
+	int "Basic Audio Profile ASE Source count"
+	default 1
+	range 0 2
+	help
+	  This option enables caching a number of Audio Stream Endpoint Source
+	  instances for Basic Audio Profile on a per connection basis.
+
+endif # BT_AUDIO_UNICAST_CLIENT
+
+config BT_AUDIO_BROADCAST_SOURCE
+	bool "Bluetooth Broadcast Source Audio Support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_ISO_BROADCASTER
+	help
+	  This option enables support for Bluetooth Broadcast Source Audio using
+	  Isochronous channels.
+if BT_AUDIO_BROADCAST_SOURCE
+
+config BT_AUDIO_BROADCAST_SRC_SUBGROUP_COUNT
+	int # hidden: TODO: Update once the API supports it
+	default 1
+
+config BT_AUDIO_BROADCAST_SRC_COUNT
+	int "Basic Audio Broadcaster source count"
+	default 1
+	range 0 BT_ISO_MAX_BIG
+	help
+	  This option sets the number of broadcast sources to support.
+	  One broadcast source can send multiple streams
+	  (up to BT_AUDIO_BROADCAST_SRC_STREAM_COUNT per broadcast source).
+
+
+config BT_AUDIO_BROADCAST_SRC_STREAM_COUNT
+	int "Basic Audio Broadcast Source Stream count"
+	default 1
+	range 0 BT_ISO_MAX_CHAN
+	help
+	  This option sets the maximum number of streams per broadcast source
+	  to support.
+
+endif # BT_AUDIO_BROADCAST_SOURCE
+
+config BT_AUDIO_BROADCAST_SINK
+	bool "Bluetooth Broadcast Sink Audio Support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_ISO_SYNC_RECEIVER
+	depends on BT_PERIPHERAL
+	depends on BT_PAC_SNK
+	help
+	  This option enables support for Bluetooth Broadcast Sink Audio using
+	  Isochronous channels.
+
+if BT_AUDIO_BROADCAST_SINK
+
+config BT_AUDIO_BROADCAST_SNK_SUBGROUP_COUNT
+	int # hidden: TODO: Update once the API supports it
+	default 1
+
+config BT_AUDIO_BROADCAST_SNK_COUNT
+	int "Basic Audio Broadcaster Sink count"
+	default 1
+	range 0 BT_ISO_MAX_BIG
+	help
+	  This option sets the number of broadcast sinks to support.
+	  One broadcast sink can receive multiple streams
+	  (up to BT_AUDIO_BROADCAST_SNK_STREAM_COUNT per broadcast sink).
+
+config BT_AUDIO_BROADCAST_SNK_STREAM_COUNT
+	int "Basic Audio Broadcast Sink Stream count"
+	depends on BT_AUDIO_BROADCAST_SNK_COUNT > 0
+	default 1
+	range 1 BT_ISO_MAX_CHAN
+	help
+	  This option sets the maximum number of streams per broadcast sink
+	  to support.
+
+endif # BT_AUDIO_BROADCAST_SINK
+
+
+config BT_AUDIO_DEBUG_STREAM
+	bool "Bluetooth Audio Stream debug"
+	depends on BT_AUDIO_STREAM
+	help
+	  Use this option to enable Bluetooth Audio Stream debug logs for the
+	  Bluetooth Audio functionality.
+
+config BT_AUDIO_DEBUG_STREAM_DATA
+	bool "Bluetooth Audio Stream data debug"
+	depends on BT_AUDIO_DEBUG_STREAM
+	help
+	  Use this option to enable Bluetooth Audio Stream data debug logs for
+	  the Bluetooth Audio functionality. This will enable debug logs for all
+	  audio data received and sent.
+
+config BT_AUDIO_DEBUG_CAPABILITIES
+	bool "Bluetooth Audio Capabilities debug"
+	depends on BT_AUDIO_CAPABILITY
+	help
+	  Use this option to enable Bluetooth Audio Capabilities debug logs for
+	  the Bluetooth Audio functionality.
+
+config BT_DEBUG_ASCS
+	bool "Audio Stream Control Service debug"
+	depends on BT_ASCS
+	help
+	  Use this option to enable Audio Stream Control Service debug logs for
+	  the Bluetooth Audio functionality.
+
+config BT_AUDIO_DEBUG_UNICAST_SERVER
+	bool "Bluetooth Audio Unicast Server debug"
+	depends on BT_AUDIO_UNICAST_SERVER
+	help
+	  Use this option to enable Bluetooth Audio Unicast Server debug logs
+	  for the Bluetooth Audio functionality.
+
+config BT_AUDIO_DEBUG_UNICAST_CLIENT
+	bool "Basic Audio Profile debug"
+	depends on BT_AUDIO_UNICAST_CLIENT
+	help
+	  Use this option to enable Basic Audio Profile debug logs for the
+	  Bluetooth Audio functionality.
+
+config BT_AUDIO_DEBUG_BROADCAST_SOURCE
+	bool "Bluetooth Audio Broadcast Source debug"
+	depends on BT_AUDIO_BROADCAST_SOURCE
+	help
+	  Use this option to enable Bluetooth Audio Broadcast Source debug logs
+	  for the Bluetooth Audio functionality.
+
+config BT_AUDIO_DEBUG_BROADCAST_SINK
+	bool "Bluetooth Audio Broadcast Sink debug"
+	depends on BT_AUDIO_BROADCAST_SINK
+	help
+	  Use this option to enable Bluetooth Audio Broadcast Sink debug logs
+	  for the Bluetooth Audio functionality.
+
+
+config BT_AUDIO_STREAM
+	# Virtual/hidden option
+	bool
+	default y if BT_ASCS || BT_AUDIO_UNICAST_CLIENT || \
+			BT_AUDIO_BROADCAST_SOURCE || BT_AUDIO_BROADCAST_SINK
+
+config BT_AUDIO_CAPABILITY
+	# Virtual/hidden option
+	bool
+	default y if BT_PACS
+
+rsource "Kconfig.pacs"
+rsource "Kconfig.ascs"

@@ -9,12 +9,15 @@
 #define DT_DRV_COMPAT openisa_rv32m1_lpspi
 
 #include <errno.h>
-#include <drivers/spi.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_lpspi.h>
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_rv32m1_lpspi);
 
 #include "spi_context.h"
@@ -29,6 +32,9 @@ struct spi_mcux_config {
 	clock_ip_name_t clock_ip_name;
 	uint32_t clock_ip_src;
 	void (*irq_config_func)(const struct device *dev);
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
+#endif
 };
 
 struct spi_mcux_data {
@@ -50,7 +56,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	if ((ctx->tx_len == 0) && (ctx->rx_len == 0)) {
 		/* nothing left to rx or tx, we're done! */
 		spi_context_cs_control(&data->ctx, false);
-		spi_context_complete(&data->ctx, 0);
+		spi_context_complete(&data->ctx, dev, 0);
 		return;
 	}
 
@@ -140,6 +146,11 @@ static int spi_mcux_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	LPSPI_MasterGetDefaultConfig(&master_config);
 
 	if (spi_cfg->slave > CHIP_SELECT_COUNT) {
@@ -175,6 +186,11 @@ static int spi_mcux_configure(const struct device *dev,
 
 	master_config.baudRate = spi_cfg->frequency;
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
@@ -189,7 +205,6 @@ static int spi_mcux_configure(const struct device *dev,
 	LPSPI_SetDummyData(base, 0);
 
 	data->ctx.config = spi_cfg;
-	spi_context_cs_configure(&data->ctx);
 
 	return 0;
 }
@@ -199,12 +214,13 @@ static int transceive(const struct device *dev,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous,
-		      struct k_poll_signal *signal)
+		      spi_callback_t cb,
+		      void *userdata)
 {
 	struct spi_mcux_data *data = dev->data;
 	int ret;
 
-	spi_context_lock(&data->ctx, asynchronous, signal, spi_cfg);
+	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {
@@ -229,7 +245,7 @@ static int spi_mcux_transceive(const struct device *dev,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
 {
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -237,9 +253,10 @@ static int spi_mcux_transceive_async(const struct device *dev,
 				     const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     struct k_poll_signal *async)
+				     spi_callback_t cb,
+				     void *userdata)
 {
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, async);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -255,6 +272,7 @@ static int spi_mcux_release(const struct device *dev,
 
 static int spi_mcux_init(const struct device *dev)
 {
+	int err;
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 
@@ -263,6 +281,18 @@ static int spi_mcux_init(const struct device *dev)
 	config->irq_config_func(dev);
 
 	data->dev = dev;
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
+
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err != 0) {
+		return err;
+	}
+#endif
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -277,7 +307,17 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	.release = spi_mcux_release,
 };
 
+#ifdef CONFIG_PINCTRL
+#define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
+#else
+#define PINCTRL_DEFINE(n)
+#define PINCTRL_INIT(n)
+#endif
+
 #define SPI_RV32M1_INIT(n)						\
+	PINCTRL_DEFINE(n)						\
+									\
 	static void spi_mcux_config_func_##n(const struct device *dev);	\
 									\
 	static const struct spi_mcux_config spi_mcux_config_##n = {	\
@@ -288,18 +328,20 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		.irq_config_func = spi_mcux_config_func_##n,		\
 		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),		\
 		.clock_ip_src  = kCLOCK_IpSrcFircAsync,			\
+		PINCTRL_INIT(n)						\
 	};								\
 									\
 	static struct spi_mcux_data spi_mcux_data_##n = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##n, ctx),		\
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##n, ctx),		\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n, &spi_mcux_init, NULL,			\
 			    &spi_mcux_data_##n,				\
 			    &spi_mcux_config_##n,			\
 			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &spi_mcux_driver_api);			\
 									\
 	static void spi_mcux_config_func_##n(const struct device *dev)	\

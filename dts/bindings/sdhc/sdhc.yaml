@@ -1,0 +1,57 @@
+# Copyright (c) 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for SD host controllers
+
+include: base.yaml
+
+bus: sd
+
+properties:
+  max-current-330:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Max drive current in mA at 3.3V. A value of zero indicates no maximum
+      is specified by the driver.
+
+  max-current-300:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Max drive current in mA at 3.0V. A value of zero indicates no maximum
+      is specified by the driver.
+
+  max-current-180:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Max drive current in mA at 1.8V. A value of zero indicates no maximum
+      is specified by the driver.
+
+  max-bus-freq:
+    type: int
+    required: false
+    default: 400000
+    description: |
+      Maximum bus frequency for SD card. This should be the highest frequency
+      the SDHC is capable of negotiating with cards on the bus.
+
+  min-bus-freq:
+    type: int
+    required: false
+    default: 400000
+    description: |
+      Minimum bus frequency for SD card. This should be the frequency that
+      cards first will select when attached to the SDHC bus
+
+  power-delay-ms:
+    type: int
+    required: false
+    default: 500
+    description: |
+      time in ms for SDHC to delay when toggling power to the SD card. This
+      delay gives the card time to power up or down fully

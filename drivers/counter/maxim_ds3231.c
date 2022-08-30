@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT maxim_ds3231
 
-#include <device.h>
-#include <drivers/rtc/maxim_ds3231.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <kernel.h>
-#include <logging/log.h>
-#include <sys/timeutil.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/rtc/maxim_ds3231.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/timeutil.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(DS3231, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -62,24 +62,15 @@ struct register_map {
 	uint8_t temp_frac256;
 };
 
-struct gpios {
-	const char *ctrl;
-	gpio_pin_t pin;
-	gpio_dt_flags_t flags;
-};
-
 struct ds3231_config {
 	/* Common structure first because generic API expects this here. */
 	struct counter_config_info generic;
-	const char *bus_name;
-	struct gpios isw_gpios;
-	uint16_t addr;
+	struct i2c_dt_spec bus;
+	struct gpio_dt_spec isw_gpios;
 };
 
 struct ds3231_data {
 	const struct device *ds3231;
-	const struct device *i2c;
-	const struct device *isw;
 	struct register_map registers;
 
 	struct k_sem lock;
@@ -159,7 +150,7 @@ static int sc_ctrl(const struct device *dev,
 			offsetof(struct register_map, ctrl),
 			ctrl,
 		};
-		rc = i2c_write(data->i2c, buf, sizeof(buf), cfg->addr);
+		rc = i2c_write_dt(&cfg->bus, buf, sizeof(buf));
 		if (rc >= 0) {
 			rp->ctrl = ctrl;
 			rc = ctrl;
@@ -206,9 +197,8 @@ static inline int rsc_stat(const struct device *dev,
 	uint8_t addr = offsetof(struct register_map, ctrl_stat);
 	int rc;
 
-	rc = i2c_write_read(data->i2c, cfg->addr,
-			    &addr, sizeof(addr),
-			    &rp->ctrl_stat, sizeof(rp->ctrl_stat));
+	rc = i2c_write_read_dt(&cfg->bus, &addr, sizeof(addr), &rp->ctrl_stat,
+			       sizeof(rp->ctrl_stat));
 	if (rc >= 0) {
 		uint8_t stat = rp->ctrl_stat & ~clear;
 
@@ -217,7 +207,7 @@ static inline int rsc_stat(const struct device *dev,
 				addr,
 				stat | (ign & ~(set | clear)),
 			};
-			rc = i2c_write(data->i2c, buf, sizeof(buf), cfg->addr);
+			rc = i2c_write_dt(&cfg->bus, buf, sizeof(buf));
 		}
 		if (rc >= 0) {
 			rc = rp->ctrl_stat;
@@ -258,14 +248,15 @@ static void validate_isw_monitoring(const struct device *dev)
 	if (data->sync_state != SYNCSM_IDLE) {
 		isw_mon_req |= ISW_MON_REQ_Sync;
 	}
-	LOG_DBG("ISW %p : %d ?= %d", data->isw, isw_mon_req, data->isw_mon_req);
-	if ((data->isw != NULL)
+	LOG_DBG("ISW %p : %d ?= %d", cfg->isw_gpios.port, isw_mon_req,
+		data->isw_mon_req);
+	if ((cfg->isw_gpios.port != NULL)
 	    && (isw_mon_req != data->isw_mon_req)) {
 		int rc = 0;
 
 		/* Disable before reconfigure */
-		rc = gpio_pin_interrupt_configure(data->isw, cfg->isw_gpios.pin,
-						  GPIO_INT_DISABLE);
+		rc = gpio_pin_interrupt_configure_dt(&cfg->isw_gpios,
+						     GPIO_INT_DISABLE);
 
 		if ((rc >= 0)
 		    && ((isw_mon_req & ISW_MON_REQ_Sync)
@@ -283,9 +274,8 @@ static void validate_isw_monitoring(const struct device *dev)
 
 		/* Enable if any requests active */
 		if ((rc >= 0) && (isw_mon_req != 0)) {
-			rc = gpio_pin_interrupt_configure(data->isw,
-							  cfg->isw_gpios.pin,
-							  GPIO_INT_EDGE_TO_ACTIVE);
+			rc = gpio_pin_interrupt_configure_dt(
+				&cfg->isw_gpios, GPIO_INT_EDGE_TO_ACTIVE);
 		}
 
 		LOG_INF("ISW reconfigure to %x: %d", isw_mon_req, rc);
@@ -301,11 +291,11 @@ static const uint8_t *decode_time(struct tm *tp,
 	if (with_sec) {
 		uint8_t reg = *rp++;
 
-		tp->tm_sec = 10 * ((reg >> 4) & 0x07) + (reg & 0x0F);
+		tp->tm_sec = bcd2bin(reg & 0x7F);
 	}
 
 	reg = *rp++;
-	tp->tm_min = 10 * ((reg >> 4) & 0x07) + (reg & 0x0F);
+	tp->tm_min = bcd2bin(reg & 0x7F);
 
 	reg = *rp++;
 	tp->tm_hour = (reg & 0x0F);
@@ -353,7 +343,7 @@ static uint8_t decode_alarm(const uint8_t *ap,
 		tm.tm_mday = (*dp & 0x07);
 		tm.tm_wday = tm.tm_mday - 1;
 	} else {
-		tm.tm_mday = 10 * ((*dp >> 4) & 0x3) + (*dp & 0x0F);
+		tm.tm_mday = bcd2bin(*dp & 0x3F);
 	}
 
 	/* Walk backwards to extract the alarm mask flags. */
@@ -396,7 +386,7 @@ static int encode_alarm(uint8_t *ap,
 		if (flags & MAXIM_DS3231_ALARM_FLAGS_IGNSE) {
 			val = REG_ALARM_IGN;
 		} else {
-			val = ((tm.tm_sec / 10) << 4) | (tm.tm_sec % 10);
+			val = bin2bcd(tm.tm_sec);
 		}
 		*ap++ = val;
 	}
@@ -404,14 +394,14 @@ static int encode_alarm(uint8_t *ap,
 	if (flags & MAXIM_DS3231_ALARM_FLAGS_IGNMN) {
 		val = REG_ALARM_IGN;
 	} else {
-		val = ((tm.tm_min / 10) << 4) | (tm.tm_min % 10);
+		val = bin2bcd(tm.tm_min);
 	}
 	*ap++ = val;
 
 	if (flags & MAXIM_DS3231_ALARM_FLAGS_IGNHR) {
 		val = REG_ALARM_IGN;
 	} else {
-		val = ((tm.tm_hour / 10) << 4) | (tm.tm_hour % 10);
+		val = bin2bcd(tm.tm_hour);
 	}
 	*ap++ = val;
 
@@ -420,7 +410,7 @@ static int encode_alarm(uint8_t *ap,
 	} else if (flags & MAXIM_DS3231_ALARM_FLAGS_DOW) {
 		val = REG_DAYDATE_DOW | (tm.tm_wday + 1);
 	} else {
-		val = ((tm.tm_mday / 10) << 4) | (tm.tm_mday % 10);
+		val = bin2bcd(tm.tm_mday);
 	}
 	*ap++ = val;
 
@@ -434,10 +424,10 @@ static uint32_t decode_rtc(struct ds3231_data *data)
 
 	decode_time(&tm, &rp->sec, true);
 	tm.tm_wday = (rp->dow & 0x07) - 1;
-	tm.tm_mday = 10 * ((rp->dom >> 4) & 0x03) + (rp->dom & 0x0F);
+	tm.tm_mday = bcd2bin(rp->dom & 0x3F);
 	tm.tm_mon = 10 * (((0xF0 & ~REG_MONCEN_CENTURY) & rp->moncen) >> 4)
 		    + (rp->moncen & 0x0F) - 1;
-	tm.tm_year = (10 * (rp->year >> 4)) + (rp->year & 0x0F);
+	tm.tm_year = bcd2bin(rp->year);
 	if (REG_MONCEN_CENTURY & rp->moncen) {
 		tm.tm_year += 100;
 	}
@@ -455,9 +445,8 @@ static int update_registers(const struct device *dev)
 	uint8_t addr = 0;
 
 	data->syncclock_base = maxim_ds3231_read_syncclock(dev);
-	rc = i2c_write_read(data->i2c, cfg->addr,
-			    &addr, sizeof(addr),
-			    &data->registers, sizeof(data->registers));
+	rc = i2c_write_read_dt(&cfg->bus, &addr, sizeof(addr), &data->registers,
+			       sizeof(data->registers));
 	syncclock = maxim_ds3231_read_syncclock(dev);
 	if (rc < 0) {
 		return rc;
@@ -493,9 +482,7 @@ int maxim_ds3231_get_alarm(const struct device *dev,
 	/* Update alarm structure */
 	uint8_t *rbp = &data->registers.sec + addr;
 
-	rv = i2c_write_read(data->i2c, cfg->addr,
-			    &addr, sizeof(addr),
-			    rbp, len);
+	rv = i2c_write_read_dt(&cfg->bus, &addr, sizeof(addr), rbp, len);
 
 	if (rv < 0) {
 		LOG_DBG("get_config at %02x failed: %d\n", addr, rv);
@@ -584,7 +571,7 @@ static int set_alarm(const struct device *dev,
 	 */
 	rc = rsc_stat(dev, 0U, (MAXIM_DS3231_ALARM1 << id));
 	if (rc >= 0) {
-		rc = i2c_write(data->i2c, buf, len + 1, cfg->addr);
+		rc = i2c_write_dt(&cfg->bus, buf, len + 1);
 	}
 	if ((rc >= 0)
 	    && (cp->handler != NULL)) {
@@ -754,9 +741,8 @@ static int read_time(const struct device *dev,
 	const struct ds3231_config *cfg = dev->config;
 	uint8_t addr = 0;
 
-	int rc = i2c_write_read(data->i2c, cfg->addr,
-				&addr, sizeof(addr),
-				&data->registers, 7);
+	int rc = i2c_write_read_dt(&cfg->bus, &addr, sizeof(addr),
+				   &data->registers, 7);
 
 	if (rc >= 0) {
 		*time = decode_rtc(data);
@@ -896,33 +882,33 @@ static void sync_finish_write(const struct device *dev)
 	*bp++ = offsetof(struct register_map, sec);
 
 	(void)gmtime_r(&when, &tm);
-	val = ((tm.tm_sec / 10) << 4) | (tm.tm_sec % 10);
+	val = bin2bcd(tm.tm_sec);
 	*bp++ = val;
 
-	val = ((tm.tm_min / 10) << 4) | (tm.tm_min % 10);
+	val = bin2bcd(tm.tm_min);
 	*bp++ = val;
 
-	val = ((tm.tm_hour / 10) << 4) | (tm.tm_hour % 10);
+	val = bin2bcd(tm.tm_hour);
 	*bp++ = val;
 
 	*bp++ = 1 + tm.tm_wday;
 
-	val = ((tm.tm_mday / 10) << 4) | (tm.tm_mday % 10);
+	val = bin2bcd(tm.tm_mday);
 	*bp++ = val;
 
 	tm.tm_mon += 1;
-	val = ((tm.tm_mon / 10) << 4) | (tm.tm_mon % 10);
+	val = bin2bcd(tm.tm_mon);
 	if (tm.tm_year >= 100) {
 		tm.tm_year -= 100;
 		val |= REG_MONCEN_CENTURY;
 	}
 	*bp++ = val;
 
-	val = ((tm.tm_year / 10) << 4) | (tm.tm_year % 10);
+	val = bin2bcd(tm.tm_year);
 	*bp++ = val;
 
 	uint32_t syncclock = maxim_ds3231_read_syncclock(dev);
-	int rc = i2c_write(data->i2c, buf, bp - buf, cfg->addr);
+	int rc = i2c_write_dt(&cfg->bus, buf, bp - buf);
 
 	if (rc >= 0) {
 		data->syncpoint.rtc.tv_sec = when;
@@ -1007,6 +993,7 @@ int z_impl_maxim_ds3231_get_syncpoint(const struct device *dev,
 int maxim_ds3231_synchronize(const struct device *dev,
 			     struct sys_notify *notify)
 {
+	const struct ds3231_config *cfg = dev->config;
 	struct ds3231_data *data = dev->data;
 	int rv = 0;
 
@@ -1015,7 +1002,7 @@ int maxim_ds3231_synchronize(const struct device *dev,
 		goto out;
 	}
 
-	if (data->isw == NULL) {
+	if (cfg->isw_gpios.port == NULL) {
 		rv = -ENOTSUP;
 		goto out;
 	}
@@ -1045,10 +1032,11 @@ out:
 int z_impl_maxim_ds3231_req_syncpoint(const struct device *dev,
 				      struct k_poll_signal *sig)
 {
+	const struct ds3231_config *cfg = dev->config;
 	struct ds3231_data *data = dev->data;
 	int rv = 0;
 
-	if (data->isw == NULL) {
+	if (cfg->isw_gpios.port == NULL) {
 		rv = -ENOTSUP;
 		goto out;
 	}
@@ -1079,6 +1067,7 @@ int maxim_ds3231_set(const struct device *dev,
 		     const struct maxim_ds3231_syncpoint *syncpoint,
 		     struct sys_notify *notify)
 {
+	const struct ds3231_config *cfg = dev->config;
 	struct ds3231_data *data = dev->data;
 	int rv = 0;
 
@@ -1087,7 +1076,7 @@ int maxim_ds3231_set(const struct device *dev,
 		rv = -EINVAL;
 		goto out;
 	}
-	if (data->isw == NULL) {
+	if (cfg->isw_gpios.port == NULL) {
 		rv = -ENOTSUP;
 		goto out;
 	}
@@ -1119,20 +1108,18 @@ static int ds3231_init(const struct device *dev)
 {
 	struct ds3231_data *data = dev->data;
 	const struct ds3231_config *cfg = dev->config;
-	const struct device *i2c = device_get_binding(cfg->bus_name);
 	int rc;
 
 	/* Initialize and take the lock */
 	k_sem_init(&data->lock, 0, 1);
 
 	data->ds3231 = dev;
-	if (i2c == NULL) {
-		LOG_WRN("Failed to get I2C %s", cfg->bus_name);
-		rc = -EINVAL;
+	if (!device_is_ready(cfg->bus.bus)) {
+		LOG_ERR("I2C device not ready");
+		rc = -ENODEV;
 		goto out;
 	}
 
-	data->i2c = i2c;
 	rc = update_registers(dev);
 	if (rc < 0) {
 		LOG_WRN("Failed to fetch registers: %d", rc);
@@ -1154,13 +1141,10 @@ static int ds3231_init(const struct device *dev)
 	 * detected using the extended API.
 	 */
 
-	if (cfg->isw_gpios.ctrl != NULL) {
-		const struct device *gpio = device_get_binding(cfg->isw_gpios.ctrl);
-
-		if (gpio == NULL) {
-			LOG_WRN("Failed to get INTn/SQW GPIO %s",
-				cfg->isw_gpios.ctrl);
-			rc = -EINVAL;
+	if (cfg->isw_gpios.port != NULL) {
+		if (!device_is_ready(cfg->isw_gpios.port)) {
+			LOG_ERR("INTn/SQW GPIO device not ready");
+			rc = -ENODEV;
 			goto out;
 		}
 
@@ -1172,19 +1156,18 @@ static int ds3231_init(const struct device *dev)
 				   isw_gpio_callback,
 				   BIT(cfg->isw_gpios.pin));
 
-		rc = gpio_pin_configure(gpio, cfg->isw_gpios.pin,
-					GPIO_INPUT | cfg->isw_gpios.flags);
+		rc = gpio_pin_configure_dt(&cfg->isw_gpios, GPIO_INPUT);
 		if (rc >= 0) {
-			rc = gpio_pin_interrupt_configure(gpio, cfg->isw_gpios.pin,
-							  GPIO_INT_DISABLE);
+			rc = gpio_pin_interrupt_configure_dt(&cfg->isw_gpios,
+							     GPIO_INT_DISABLE);
 		}
 		if (rc >= 0) {
-			rc = gpio_add_callback(gpio, &data->isw_callback);
-		}
-		if (rc >= 0) {
-			data->isw = gpio;
-		} else {
-			LOG_WRN("Failed to configure ISW callback: %d", rc);
+			rc = gpio_add_callback(cfg->isw_gpios.port,
+					       &data->isw_callback);
+			if (rc < 0) {
+				LOG_ERR("Failed to configure ISW callback: %d",
+					rc);
+			}
 		}
 	}
 
@@ -1299,32 +1282,25 @@ static const struct ds3231_config ds3231_0_config = {
 		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 		.channels = 2,
 	},
-	.bus_name = DT_INST_BUS_LABEL(0),
+	.bus = I2C_DT_SPEC_INST_GET(0),
 	/* Driver does not currently use 32k GPIO. */
-#if DT_INST_NODE_HAS_PROP(0, isw_gpios)
-	.isw_gpios = {
-		DT_INST_GPIO_LABEL(0, isw_gpios),
-		DT_INST_GPIO_PIN(0, isw_gpios),
-		DT_INST_GPIO_FLAGS(0, isw_gpios),
-	},
-#endif
-	.addr = DT_INST_REG_ADDR(0),
+	.isw_gpios = GPIO_DT_SPEC_INST_GET_OR(0, isw_gpios, {}),
 };
 
 static struct ds3231_data ds3231_0_data;
 
-#if CONFIG_COUNTER_MAXIM_DS3231_INIT_PRIORITY <= CONFIG_I2C_INIT_PRIORITY
-#error COUNTER_MAXIM_DS3231_INIT_PRIORITY must be greater than I2C_INIT_PRIORITY
+#if CONFIG_COUNTER_INIT_PRIORITY <= CONFIG_I2C_INIT_PRIORITY
+#error CONFIG_COUNTER_INIT_PRIORITY must be greater than I2C_INIT_PRIORITY
 #endif
 
 DEVICE_DT_INST_DEFINE(0, ds3231_init, NULL, &ds3231_0_data,
 		    &ds3231_0_config,
-		    POST_KERNEL, CONFIG_COUNTER_MAXIM_DS3231_INIT_PRIORITY,
+		    POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,
 		    &ds3231_api);
 
 #ifdef CONFIG_USERSPACE
 
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 
 int z_vrfy_maxim_ds3231_get_syncpoint(const struct device *dev,
 				      struct maxim_ds3231_syncpoint *syncpoint)

@@ -11,7 +11,7 @@
 #include "native_rtc.h"
 #include "hw_models_top.h"
 #include "timer_model.h"
-#include <arch/posix/posix_trace.h>
+#include <zephyr/arch/posix/posix_trace.h>
 
 /**
  * Return the (simulation) time in microseconds
@@ -37,7 +37,7 @@ uint64_t native_rtc_gettime_us(int clock_type)
 }
 
 /**
- * Similar to POSIX clock_getitme()
+ * Similar to POSIX clock_gettime()
  * get the simulation time split in nsec and seconds
  * where clock_type is one of RTC_CLOCK_*
  */

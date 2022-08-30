@@ -8,7 +8,7 @@
 
 #define NET_LOG_LEVEL CONFIG_NET_L2_VIRTUAL_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <zephyr/types.h>
@@ -16,18 +16,18 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <random/rand32.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/random/rand32.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
-#include <net/dummy.h>
-#include <net/buf.h>
-#include <net/net_ip.h>
-#include <net/virtual.h>
-#include <net/virtual_mgmt.h>
-#include <net/ethernet.h>
-#include <net/net_l2.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/virtual.h>
+#include <zephyr/net/virtual_mgmt.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_l2.h>
 
 #include "ipv4.h"
 #include "ipv6.h"
@@ -368,17 +368,17 @@ static void test_virtual_setup(void)
 
 	zassert_equal(ud.virtual_if_count, ARRAY_SIZE(virtual_interfaces),
 		      "Invalid number of virtual interfaces, "
-		      "was %d should be %d",
+		      "was %d should be %zu",
 		      ud.virtual_if_count, ARRAY_SIZE(virtual_interfaces));
 
 	zassert_true(ud.eth_if_count <= ARRAY_SIZE(eth_interfaces),
 		      "Invalid number of eth interfaces, "
-		      "was %d should be %d",
+		      "was %d should be %zu",
 		      ud.eth_if_count, ARRAY_SIZE(eth_interfaces));
 
 	zassert_equal(ud.dummy_if_count, ARRAY_SIZE(dummy_interfaces),
 		      "Invalid number of dummy interfaces, "
-		      "was %d should be %d",
+		      "was %d should be %zu",
 		      ud.dummy_if_count, ARRAY_SIZE(dummy_interfaces));
 }
 
@@ -405,7 +405,7 @@ static void test_address_setup(void)
 		zassert_not_null(ifaddr, "eth addr");
 	}
 
-	/* For testing purposes we need to set the adddresses preferred */
+	/* For testing purposes we need to set the addresses preferred */
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	ifaddr = net_if_ipv4_addr_add(eth, &my_addr, NET_ADDR_MANUAL, 0);
@@ -546,7 +546,7 @@ static bool add_to_arp(struct net_if *iface, struct in_addr *addr)
 #endif
 }
 
-static void test_virtual_attach_and_detach(void)
+ZTEST(net_virtual, test_virtual_1_attach_and_detach)
 {
 	struct net_if *iface = virtual_interfaces[0];
 	int ret;
@@ -578,7 +578,7 @@ static void test_virtual_attach_and_detach(void)
 		      net_if_get_by_iface(iface));
 }
 
-static void test_virtual_set_mtu(void)
+ZTEST(net_virtual, test_virtual_2_set_mtu)
 {
 	struct virtual_interface_req_params params = { 0 };
 	struct net_if *iface = virtual_interfaces[0];
@@ -605,7 +605,7 @@ static void test_virtual_set_mtu(void)
 		      net_if_get_by_iface(iface), params.mtu, ret);
 }
 
-static void test_virtual_get_mtu(void)
+ZTEST(net_virtual, test_virtual_3_get_mtu)
 {
 	struct virtual_interface_req_params params = { 0 };
 	struct net_if *iface = virtual_interfaces[0];
@@ -623,7 +623,7 @@ static void test_virtual_get_mtu(void)
 		      net_if_get_by_iface(iface), params.mtu, MTU);
 }
 
-static void test_virtual_set_peer(void)
+ZTEST(net_virtual, test_virtual_4_set_peer)
 {
 	struct virtual_interface_req_params params = { 0 };
 	struct net_if *iface = virtual_interfaces[0];
@@ -668,7 +668,7 @@ static void test_virtual_set_peer(void)
 		      ret);
 }
 
-static void test_virtual_get_peer(void)
+ZTEST(net_virtual, test_virtual_5_get_peer)
 {
 	struct virtual_interface_req_params params = { 0 };
 	struct net_if *iface = virtual_interfaces[0];
@@ -697,7 +697,7 @@ static void test_virtual_get_peer(void)
 	}
 }
 
-static void test_virtual_verify_name(void)
+ZTEST(net_virtual, test_virtual_6_verify_name)
 {
 #define NAME "foobar"
 #define NAME2 "123456789"
@@ -720,7 +720,7 @@ static void test_virtual_verify_name(void)
 			  "Cannot get name");
 }
 
-static void test_virtual_send_data_to_tunnel(void)
+ZTEST(net_virtual, test_virtual_7_send_data_to_tunnel)
 {
 	struct virtual_interface_req_params params = { 0 };
 	struct net_if *iface = virtual_interfaces[0];
@@ -994,31 +994,21 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 	net_context_put(udp_ctx);
 }
 
-static void test_virtual_recv_data_from_tunnel_ok(void)
+ZTEST(net_virtual, test_virtual_8_recv_data_from_tunnel_ok)
 {
 	test_virtual_recv_data_from_tunnel(2, true);
 }
 
-static void test_virtual_recv_data_from_tunnel_fail(void)
+ZTEST(net_virtual, test_virtual_9_recv_data_from_tunnel_fail)
 {
 	test_virtual_recv_data_from_tunnel(3, false);
 }
 
-void test_main(void)
+static void *setup(void)
 {
-	ztest_test_suite(net_virtual_test,
-			 ztest_unit_test(test_virtual_setup),
-			 ztest_unit_test(test_address_setup),
-			 ztest_unit_test(test_virtual_attach_and_detach),
-			 ztest_unit_test(test_virtual_set_mtu),
-			 ztest_unit_test(test_virtual_get_mtu),
-			 ztest_unit_test(test_virtual_set_peer),
-			 ztest_unit_test(test_virtual_get_peer),
-			 ztest_unit_test(test_virtual_verify_name),
-			 ztest_unit_test(test_virtual_send_data_to_tunnel),
-			 ztest_unit_test(test_virtual_recv_data_from_tunnel_ok),
-			 ztest_unit_test(test_virtual_recv_data_from_tunnel_fail)
-			 );
-
-	ztest_run_test_suite(net_virtual_test);
+	test_virtual_setup();
+	test_address_setup();
+	return NULL;
 }
+
+ZTEST_SUITE(net_virtual, NULL, setup, NULL, NULL, NULL);

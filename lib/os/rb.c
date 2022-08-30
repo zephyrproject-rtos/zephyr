@@ -12,8 +12,8 @@
 #define CHECK(n) /**/
 /* #define CHECK(n) __ASSERT_NO_MSG(n) */
 
-#include <kernel.h>
-#include <sys/rb.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/rb.h>
 #include <stdbool.h>
 
 enum rb_color { RED = 0U, BLACK = 1U };
@@ -199,7 +199,6 @@ static void fix_extra_red(struct rbnode **stack, int stacksz)
 
 		if (parent_side != side) {
 			rotate(stack, stacksz);
-			node = stack[stacksz - 1];
 		}
 
 		/* Rotate the grandparent with parent, swapping colors */
@@ -406,7 +405,7 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 		 * the "data" pointers between the two nodes, but we
 		 * have a few special cases to check.  In principle
 		 * this works by swapping the child pointers between
-		 * the nodes and retargetting the nodes pointing to
+		 * the nodes and retargeting the nodes pointing to
 		 * them from their parents, but: (1) the upper node
 		 * may be the root of the tree and not have a parent,
 		 * and (2) the lower node may be a direct child of the

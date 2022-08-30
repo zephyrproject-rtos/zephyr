@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_
 
-#include <net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 #define NRF5_FCS_LENGTH   (2)
 #define NRF5_PSDU_LENGTH  (125)
@@ -17,7 +17,7 @@
 struct nrf5_802154_rx_frame {
 	void *fifo_reserved; /* 1st word reserved for use by fifo. */
 	uint8_t *psdu; /* Pointer to a received frame. */
-	uint32_t time; /* RX timestamp. */
+	uint64_t time; /* RX timestamp. */
 	uint8_t lqi; /* Last received frame LQI value. */
 	int8_t rssi; /* Last received frame RSSI value. */
 	bool ack_fpb; /* FPB value in ACK sent for the received frame. */
@@ -47,7 +47,7 @@ struct nrf5_802154_data {
 	/* Frame pending bit value in ACK sent for the last received frame. */
 	bool last_frame_ack_fpb;
 
-	/* CCA complete sempahore. Unlocked when CCA is complete. */
+	/* CCA complete semaphore. Unlocked when CCA is complete. */
 	struct k_sem cca_wait;
 
 	/* CCA result. Holds information whether channel is free or not. */

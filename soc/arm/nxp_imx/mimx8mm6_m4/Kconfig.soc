@@ -12,6 +12,8 @@ config SOC_MIMX8MM6
 	select HAS_MCUX
 	select HAS_MCUX_CCM
 	select HAS_MCUX_RDC
+	select HAS_MCUX_IGPIO
+	select HAS_MCUX_IOMUXC
 
 endchoice
 

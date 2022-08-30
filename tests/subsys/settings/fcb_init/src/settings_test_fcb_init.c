@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdio.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
-#include <zephyr.h>
-#include <sys/reboot.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/reboot.h>
 #include <string.h>
 
-#include <settings/settings.h>
-#include <storage/flash_map.h>
-#include <drivers/flash.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/flash.h>
 
 static uint32_t val32;
 
@@ -23,10 +23,13 @@ static uint32_t val32;
 #define ERASED_VAL 0xFF
 #endif
 
-/* leverage that this area has to be embededd flash part */
-#if FLASH_AREA_LABEL_EXISTS(image_0)
-#define FLASH_WRITE_BLOCK_SIZE \
-	DT_PROP(DT_CHOSEN(zephyr_flash), write_block_size)
+#define TEST_FLASH_AREA image_0
+
+/* leverage that this area has to be embedded flash part */
+#if FLASH_AREA_LABEL_EXISTS(TEST_FLASH_AREA)
+#define FLASH_WRITE_BLOCK_SIZE							\
+	DT_PROP(DT_GPARENT(DT_NODE_BY_FIXED_PARTITION_LABEL(TEST_FLASH_AREA)),	\
+		write_block_size)
 static const volatile __attribute__((section(".rodata")))
 __aligned(FLASH_WRITE_BLOCK_SIZE)
 uint8_t prepared_mark[FLASH_WRITE_BLOCK_SIZE] = {ERASED_VAL};
@@ -61,7 +64,7 @@ static struct settings_handler c1_settings = {
 	.h_export = c1_export,
 };
 
-void test_init(void)
+ZTEST(fcb_initialization, test_init)
 {
 	int err;
 	uint32_t prev_int;
@@ -82,7 +85,7 @@ void test_init(void)
 
 void test_prepare_storage(void)
 {
-#if FLASH_AREA_LABEL_EXISTS(image_0)
+#if FLASH_AREA_LABEL_EXISTS(TEST_FLASH_AREA)
 /* This procedure uses mark which is stored inside SoC embedded program
  * flash. It will not work on devices on which read/write to them is not
  * possible.
@@ -100,7 +103,7 @@ void test_prepare_storage(void)
 		err = flash_area_erase(fa, 0, fa->fa_size);
 		zassert_true(err == 0, "Can't erase storage flash area");
 
-		err = flash_area_open(FLASH_AREA_ID(image_0), &fa);
+		err = flash_area_open(FLASH_AREA_ID(TEST_FLASH_AREA), &fa);
 		zassert_true(err == 0, "Can't open storage flash area");
 
 		dev = flash_area_get_device(fa);
@@ -113,11 +116,11 @@ void test_prepare_storage(void)
 	}
 #else
 	TC_PRINT("Storage preparation can't be performed\r\n");
-	TC_PRINT("Erase storage manually before test flashin\r\n");
+	TC_PRINT("Erase storage manually before test flashing\r\n");
 #endif
 }
 
-void test_init_setup(void)
+void *test_init_setup(void)
 {
 	int err;
 
@@ -127,7 +130,7 @@ void test_init_setup(void)
 	zassert_true(err == 0, "subsys init failed");
 
 	err = settings_register(&c1_settings);
-	zassert_true(err == 0, "can't regsister the settings handler");
+	zassert_true(err == 0, "can't register the settings handler");
 
 	err = settings_load();
 	zassert_true(err == 0, "can't load settings");
@@ -139,18 +142,7 @@ void test_init_setup(void)
 		k_sleep(K_MSEC(250));
 		sys_reboot(SYS_REBOOT_COLD);
 	}
+	return NULL;
 }
 
-void test_main(void)
-{
-	/* Bellow call is not used as a test setup intentionally.    */
-	/* It causes device reboota at the first device run after it */
-	/* was flashed. */
-	test_init_setup();
-
-	ztest_test_suite(test_initialization,
-			 ztest_unit_test(test_init)
-			);
-
-	ztest_run_test_suite(test_initialization);
-}
+ZTEST_SUITE(fcb_initialization, NULL, test_init_setup, NULL, NULL, NULL);

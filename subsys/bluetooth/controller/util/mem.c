@@ -104,7 +104,7 @@ void *mem_get(void *mem_pool, uint16_t mem_size, uint16_t index)
 
 uint16_t mem_index_get(void *mem, void *mem_pool, uint16_t mem_size)
 {
-	return ((uint16_t)((uint8_t *)mem - (uint8_t *)mem_pool) / mem_size);
+	return ((uint8_t *)mem - (uint8_t *)mem_pool) / mem_size;
 }
 
 /**

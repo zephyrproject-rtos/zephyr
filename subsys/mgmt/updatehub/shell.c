@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
-#include <drivers/flash.h>
-#include <dfu/mcuboot.h>
-#include <dfu/flash_img.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/dfu/mcuboot.h>
+#include <zephyr/dfu/flash_img.h>
 #include "include/updatehub.h"
 #include "updatehub_firmware.h"
 #include "updatehub_device.h"

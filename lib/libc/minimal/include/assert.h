@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ASSERT_H_
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ASSERT_H_
 
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 
 #ifdef __cplusplus
 extern "C" {

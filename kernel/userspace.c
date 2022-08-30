@@ -5,22 +5,23 @@
  */
 
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <sys/math_extras.h>
-#include <sys/rb.h>
-#include <kernel_structs.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/math_extras.h>
+#include <zephyr/sys/rb.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/sys/sys_io.h>
 #include <ksched.h>
-#include <syscall.h>
-#include <syscall_handler.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/syscall.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <stdbool.h>
-#include <app_memory/app_memdomain.h>
-#include <sys/libc-hooks.h>
-#include <sys/mutex.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/sys/libc-hooks.h>
+#include <zephyr/sys/mutex.h>
 #include <inttypes.h>
+#include <zephyr/linker/linker-defs.h>
 
 #ifdef Z_LIBC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);
@@ -34,7 +35,7 @@ K_APPMEM_PARTITION_DEFINE(z_libc_partition);
 K_APPMEM_PARTITION_DEFINE(k_mbedtls_partition);
 #endif
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* The originally synchronization strategy made heavy use of recursive
@@ -93,7 +94,7 @@ struct perm_ctx {
 };
 
 #ifdef CONFIG_GEN_PRIV_STACKS
-/* See write_gperf_table() in scripts/gen_kobject_list.py. The privilege
+/* See write_gperf_table() in scripts/build/gen_kobject_list.py. The privilege
  * mode stacks are allocated as an array. The base of the array is
  * aligned to Z_PRIVILEGE_STACK_ALIGN, and all members must be as well.
  */
@@ -123,8 +124,8 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
  * the maximum alignment needed for all kernel objects
  * (hence the following DYN_OBJ_DATA_ALIGN).
  */
-#ifdef ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT
-#define DYN_OBJ_DATA_ALIGN_K_THREAD	(ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT)
+#ifdef ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT
+#define DYN_OBJ_DATA_ALIGN_K_THREAD	(ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT)
 #else
 #define DYN_OBJ_DATA_ALIGN_K_THREAD	(sizeof(void *))
 #endif
@@ -186,14 +187,14 @@ static size_t obj_align_get(enum k_objects otype)
 
 	switch (otype) {
 	case K_OBJ_THREAD:
-#ifdef ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT
-		ret = ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT;
+#ifdef ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT
+		ret = ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT;
 #else
-		ret = sizeof(void *);
+		ret = __alignof(struct dyn_obj);
 #endif
 		break;
 	default:
-		ret = sizeof(void *);
+		ret = __alignof(struct dyn_obj);
 		break;
 	}
 
@@ -223,7 +224,7 @@ static struct dyn_obj *dyn_object_find(void *obj)
 	struct dyn_obj *ret;
 
 	/* For any dynamically allocated kernel object, the object
-	 * pointer is just a member of the conatining struct dyn_obj,
+	 * pointer is just a member of the containing struct dyn_obj,
 	 * so just a little arithmetic is necessary to locate the
 	 * corresponding struct rbnode
 	 */
@@ -360,6 +361,9 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	zo = z_dynamic_object_aligned_create(obj_align_get(otype),
 					     obj_size_get(otype));
 	if (zo == NULL) {
+		if (otype == K_OBJ_THREAD) {
+			thread_idx_free(tidx);
+		}
 		return NULL;
 	}
 	zo->type = otype;
@@ -465,12 +469,16 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
-	struct dyn_obj *dyn =
-			CONTAINER_OF(ko, struct dyn_obj, kobj);
-
 	if ((ko->flags & K_OBJ_FLAG_ALLOC) == 0U) {
+		/* skip unref check for static kernel object */
 		goto out;
 	}
+
+	void *vko = ko;
+
+	struct dyn_obj *dyn = CONTAINER_OF(vko, struct dyn_obj, kobj);
+
+	__ASSERT(IS_PTR_ALIGNED(dyn, struct dyn_obj), "unaligned z_object");
 
 	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
 		if (ko->perms[i] != 0U) {
@@ -484,9 +492,11 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 	 * specifically needs to happen depends on the object type.
 	 */
 	switch (ko->type) {
+#ifdef CONFIG_PIPES
 	case K_OBJ_PIPE:
 		k_pipe_cleanup((struct k_pipe *)ko->name);
 		break;
+#endif
 	case K_OBJ_MSGQ:
 		k_msgq_cleanup((struct k_msgq *)ko->name);
 		break;
@@ -665,7 +675,7 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
 
 	/* Initialization state checks. _OBJ_INIT_ANY, we don't care */
 	if (likely(init == _OBJ_INIT_TRUE)) {
-		/* Object MUST be intialized */
+		/* Object MUST be initialized */
 		if (unlikely((ko->flags & K_OBJ_FLAG_INITIALIZED) == 0U)) {
 			return -EINVAL;
 		}
@@ -859,13 +869,44 @@ static int app_shmem_bss_zero(const struct device *unused)
 	region = (struct z_app_region *)&__app_shmem_regions_start;
 
 	for ( ; region < end; region++) {
-		(void)memset(region->bss_start, 0, region->bss_size);
+#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
+		/* When BSS sections are not present at boot, we need to wait for
+		 * paging mechanism to be initialized before we can zero out BSS.
+		 */
+		extern bool z_sys_post_kernel;
+		bool do_clear = z_sys_post_kernel;
+
+		/* During pre-kernel init, z_sys_post_kernel == false, but
+		 * with pinned rodata region, so clear. Otherwise skip.
+		 * In post-kernel init, z_sys_post_kernel == true,
+		 * skip those in pinned rodata region as they have already
+		 * been cleared and possibly already in use. Otherwise clear.
+		 */
+		if (((uint8_t *)region->bss_start >= (uint8_t *)_app_smem_pinned_start) &&
+		    ((uint8_t *)region->bss_start < (uint8_t *)_app_smem_pinned_end)) {
+			do_clear = !do_clear;
+		}
+
+		if (do_clear)
+#endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
+		{
+			(void)memset(region->bss_start, 0, region->bss_size);
+		}
 	}
 
 	return 0;
 }
 
-SYS_INIT(app_shmem_bss_zero, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT_NAMED(app_shmem_bss_zero_pre, app_shmem_bss_zero,
+	       PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
+/* When BSS sections are not present at boot, we need to wait for
+ * paging mechanism to be initialized before we can zero out BSS.
+ */
+SYS_INIT_NAMED(app_shmem_bss_zero_post, app_shmem_bss_zero,
+	       POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
 /*
  * Default handlers if otherwise unimplemented

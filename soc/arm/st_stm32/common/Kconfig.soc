@@ -10,7 +10,7 @@ config STM32_CCM
 	def_bool $(dt_chosen_enabled,$(DT_CHOSEN_Z_CCM))
 
 config STM32_BACKUP_SRAM
-	bool "Enable STM32 Backup SRAM"
+	bool "STM32 Backup SRAM"
 	depends on SOC_SERIES_STM32F2X || SOC_SERIES_STM32F4X || \
 		   SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X
 	help
@@ -21,3 +21,37 @@ config USE_STM32_ASSERT
 	bool "STM32Cube HAL and LL drivers asserts"
 	help
 	  Enable asserts in STM32Cube HAL and LL drivers.
+
+choice POWER_SUPPLY_CHOICE
+	prompt "STM32 power supply configuration"
+	default POWER_SUPPLY_LDO
+	depends on SOC_SERIES_STM32H7X
+
+config POWER_SUPPLY_LDO
+	bool "LDO supply"
+
+config POWER_SUPPLY_DIRECT_SMPS
+	bool "Direct SMPS supply"
+
+config POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO
+	bool "SMPS 1.8V supplies LDO (no external supply)"
+
+config POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO
+	bool "SMPS 2.5V supplies LDO (no external supply)"
+
+config POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO
+	bool "External SMPS 1.8V supply, supplies LDO"
+
+config POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO
+	bool "External SMPS 2.5V supply, supplies LDO"
+
+config POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT
+	bool "External SMPS 1.8V supply and bypass"
+
+config POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT
+	bool "External SMPS 2.5V supply and bypass"
+
+config POWER_SUPPLY_EXTERNAL_SOURCE
+	bool "Bypass"
+
+endchoice

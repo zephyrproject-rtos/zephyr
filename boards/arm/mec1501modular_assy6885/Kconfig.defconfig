@@ -37,20 +37,13 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
 
+if ESPI
+
+config ESPI_PERIPHERAL_UART_SOC_MAPPING
+	default 1
+
+endif # ESPI
+
 endif # RTOS_TIMER
-
-if PS2
-
-config PS2_XEC_0
-	default y
-
-config PS2_XEC_1
-	default y
-
-endif # PS2
-
-config TACH_XEC
-	default y
-	depends on SENSOR
 
 endif # BOARD_MEC1501MODULAR_ASSY6885

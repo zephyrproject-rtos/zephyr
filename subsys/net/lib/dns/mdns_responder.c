@@ -11,20 +11,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
 #include <string.h>
 #include <strings.h>
 #include <errno.h>
 #include <stdlib.h>
 
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
-#include <net/dns_resolve.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/igmp.h>
 
 #include "dns_sd.h"
 #include "dns_pack.h"
@@ -38,10 +39,13 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 
 #if defined(CONFIG_NET_IPV4)
 static struct net_context *ipv4;
+static struct sockaddr_in local_addr4;
 #endif
 #if defined(CONFIG_NET_IPV6)
 static struct net_context *ipv6;
 #endif
+
+static struct net_mgmt_event_callback mgmt_cb;
 
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
@@ -76,6 +80,22 @@ static void create_ipv4_addr(struct sockaddr_in *addr)
 
 	/* Well known IPv4 224.0.0.251 address */
 	addr->sin_addr.s_addr = htonl(0xE00000FB);
+}
+
+static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
+				     uint32_t mgmt_event, struct net_if *iface)
+
+{
+	if (mgmt_event == NET_EVENT_IF_UP) {
+#if defined(CONFIG_NET_IPV4)
+		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr);
+
+		if (ret < 0) {
+			NET_DBG("Cannot add IPv4 multicast address to iface %p",
+				iface);
+		}
+#endif /* defined(CONFIG_NET_IPV4) */
+	}
 }
 
 int setup_dst_addr(struct net_context *ctx, struct net_pkt *pkt,
@@ -252,7 +272,7 @@ static int send_response(struct net_context *ctx,
 		const struct in_addr *addr;
 
 		addr = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
-						   &ip_hdr->ipv4->src);
+						   (struct in_addr *)ip_hdr->ipv4->src);
 
 		ret = create_answer(ctx, query, qtype,
 				      sizeof(struct in_addr), (uint8_t *)addr);
@@ -263,7 +283,7 @@ static int send_response(struct net_context *ctx,
 		const struct in6_addr *addr;
 
 		addr = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						   &ip_hdr->ipv6->src);
+						   (struct in6_addr *)ip_hdr->ipv6->src);
 
 		ret = create_answer(ctx, query, qtype,
 				      sizeof(struct in6_addr), (uint8_t *)addr);
@@ -303,14 +323,36 @@ static void send_sd_response(struct net_context *ctx,
 {
 	int ret;
 	const struct dns_sd_rec *record;
-	struct dns_sd_rec filter;
+	/* filter must be zero-initialized for "wildcard" port */
+	struct dns_sd_rec filter = {0};
 	struct sockaddr dst;
 	socklen_t dst_len;
+	bool service_type_enum = false;
 	const struct in6_addr *addr6 = NULL;
 	const struct in_addr *addr4 = NULL;
+	char instance_buf[DNS_SD_SERVICE_MAX_SIZE + 1];
 	char service_buf[DNS_SD_SERVICE_MAX_SIZE + 1];
 	char proto_buf[DNS_SD_PROTO_SIZE + 1];
 	char domain_buf[DNS_SD_DOMAIN_MAX_SIZE + 1];
+	char *label[4];
+	size_t size[] = {
+		ARRAY_SIZE(instance_buf),
+		ARRAY_SIZE(service_buf),
+		ARRAY_SIZE(proto_buf),
+		ARRAY_SIZE(domain_buf),
+	};
+	size_t n = ARRAY_SIZE(label);
+
+	BUILD_ASSERT(ARRAY_SIZE(label) == ARRAY_SIZE(size), "");
+
+	/*
+	 * work around for bug in compliance scripts which say that the array
+	 * should be static const (incorrect)
+	 */
+	label[0] = instance_buf;
+	label[1] = service_buf;
+	label[2] = proto_buf;
+	label[3] = domain_buf;
 
 	/* This actually is used but the compiler doesn't see that */
 	ARG_UNUSED(record);
@@ -324,21 +366,35 @@ static void send_sd_response(struct net_context *ctx,
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		/* Look up the local IPv4 address */
 		addr4 = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
-					   &ip_hdr->ipv4->src);
+						    (struct in_addr *)ip_hdr->ipv4->src);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		/* Look up the local IPv6 address */
 		addr6 = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-					   &ip_hdr->ipv6->src);
+						    (struct in6_addr *)ip_hdr->ipv6->src);
 	}
 
-	ret = dns_sd_extract_service_proto_domain(dns_msg->msg,
-		dns_msg->msg_size, &filter, service_buf, sizeof(service_buf),
-		proto_buf, sizeof(proto_buf), domain_buf, sizeof(domain_buf));
+	ret = dns_sd_query_extract(dns_msg->msg,
+		dns_msg->msg_size, &filter, label, size, &n);
 	if (ret < 0) {
-		NET_DBG("unable to extract service.proto.domain (%d)", ret);
+		NET_DBG("unable to extract query (%d)", ret);
 		return;
+	}
+
+	if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD_SERVICE_TYPE_ENUMERATION)
+		&& dns_sd_is_service_type_enumeration(&filter)) {
+
+		/*
+		 * RFC 6763, Section 9
+		 *
+		 * A DNS query for PTR records with the name
+		 * "_services._dns-sd._udp.<Domain>" yields a set of PTR records,
+		 * where the rdata of each PTR record is the two-label <Service> name,
+		 * plus the same domain, e.g., "_http._tcp.<Domain>".
+		 */
+		dns_sd_create_wildcard_filter(&filter);
+		service_type_enum = true;
 	}
 
 	DNS_SD_FOREACH(record) {
@@ -350,13 +406,21 @@ static void send_sd_response(struct net_context *ctx,
 				ntohs(*(record->port)));
 
 			/* Construct the response */
-			ret = dns_sd_handle_ptr_query(record,
-				addr4, addr6,
-				result->data, result->size);
-			if (ret < 0) {
-				NET_DBG("dns_sd_handle_ptr_query() failed (%d)",
-					ret);
-				continue;
+			if (service_type_enum) {
+				ret = dns_sd_handle_service_type_enum(record, addr4, addr6,
+					result->data, result->size);
+				if (ret < 0) {
+					NET_DBG("dns_sd_handle_service_type_enum() failed (%d)",
+						ret);
+					continue;
+				}
+			} else {
+				ret = dns_sd_handle_ptr_query(record, addr4, addr6,
+					result->data, result->size);
+				if (ret < 0) {
+					NET_DBG("dns_sd_handle_ptr_query() failed (%d)", ret);
+					continue;
+				}
 			}
 
 			result->len = ret;
@@ -391,7 +455,7 @@ static int dns_read(struct net_context *ctx,
 	data_len = MIN(net_pkt_remaining_data(pkt), DNS_RESOLVER_MAX_BUF_SIZE);
 
 	/* Store the DNS query name into a temporary net_buf, which will be
-	 * enventually used to send a response
+	 * eventually used to send a response
 	 */
 	result = net_buf_alloc(&mdns_msg_pool, BUF_ALLOC_TIMEOUT);
 	if (!result) {
@@ -420,8 +484,8 @@ static int dns_read(struct net_context *ctx,
 	NET_DBG("Received %d %s from %s", queries,
 		queries > 1 ? "queries" : "query",
 		net_pkt_family(pkt) == AF_INET ?
-		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src)) :
-		log_strdup(net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src)));
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src) :
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src));
 
 	do {
 		enum dns_rr_type qtype;
@@ -444,7 +508,7 @@ static int dns_read(struct net_context *ctx,
 
 		NET_DBG("[%d] query %s/%s label %s (%d bytes)", queries,
 			qtype_to_string(qtype), "IN",
-			log_strdup(result->data), ret);
+			result->data, ret);
 
 		/* If the query matches to our hostname, then send reply.
 		 * We skip the first dot, and make sure there is dot after
@@ -454,7 +518,7 @@ static int dns_read(struct net_context *ctx,
 		    (result->len - 1) >= hostname_len &&
 		    &(result->data + 1)[hostname_len] == lquery) {
 			NET_DBG("mDNS query to our hostname %s.local",
-				log_strdup(hostname));
+				hostname);
 			send_response(ctx, pkt, ip_hdr, result, qtype);
 		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD)
 			&& qtype == DNS_RR_TYPE_PTR) {
@@ -521,7 +585,7 @@ static void iface_ipv6_cb(struct net_if *iface, void *user_data)
 	ret = net_ipv6_mld_join(iface, addr);
 	if (ret < 0) {
 		NET_DBG("Cannot join %s IPv6 multicast group (%d)",
-			log_strdup(net_sprint_ipv6_addr(addr)), ret);
+			net_sprint_ipv6_addr(addr), ret);
 	}
 }
 
@@ -537,10 +601,10 @@ static void setup_ipv6_addr(struct sockaddr_in6 *local_addr)
 static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 {
 	struct in_addr *addr = user_data;
-	struct net_if_mcast_addr *ifaddr;
+	int ret;
 
-	ifaddr = net_if_ipv4_maddr_add(iface, addr);
-	if (!ifaddr) {
+	ret = net_ipv4_igmp_join(iface, addr);
+	if (ret < 0) {
 		NET_DBG("Cannot add IPv4 multicast address to iface %p",
 			iface);
 	}
@@ -586,14 +650,12 @@ ipv6_out:
 
 #if defined(CONFIG_NET_IPV4)
 	do {
-		static struct sockaddr_in local_addr;
-
-		setup_ipv4_addr(&local_addr);
+		setup_ipv4_addr(&local_addr4);
 
 		ipv4 = get_ctx(AF_INET);
 
-		ret = bind_ctx(ipv4, (struct sockaddr *)&local_addr,
-			       sizeof(local_addr));
+		ret = bind_ctx(ipv4, (struct sockaddr *)&local_addr4,
+			       sizeof(local_addr4));
 		if (ret < 0) {
 			net_context_put(ipv4);
 			goto ipv4_out;
@@ -620,6 +682,11 @@ ipv4_out:
 static int mdns_responder_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+	net_mgmt_init_event_callback(&mgmt_cb, mdns_iface_event_handler,
+				     NET_EVENT_IF_UP);
+
+	net_mgmt_add_event_callback(&mgmt_cb);
 
 	return init_listener();
 }

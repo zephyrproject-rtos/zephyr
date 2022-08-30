@@ -7,25 +7,25 @@
 
 #define LOG_MODULE_NAME mesh_test
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Max number of messages that can be pending on RX at the same time */
 #define RECV_QUEUE_SIZE 32
 
 const struct bt_mesh_test_cfg *cfg;
-struct bt_mesh_model *test_model;
 
-static K_MEM_SLAB_DEFINE(msg_pool, sizeof(struct bt_mesh_test_msg),
+K_MEM_SLAB_DEFINE_STATIC(msg_pool, sizeof(struct bt_mesh_test_msg),
 			 RECV_QUEUE_SIZE, 4);
 static K_QUEUE_DEFINE(recv);
 struct bt_mesh_test_stats test_stats;
 struct bt_mesh_msg_ctx test_send_ctx;
+static void (*ra_cb)(uint8_t *, size_t);
 
 static int msg_rx(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 		   struct net_buf_simple *buf)
 {
-	size_t len = buf->len + BT_MESH_MODEL_OP_LEN(TEST_MSG_OP);
+	size_t len = buf->len + BT_MESH_MODEL_OP_LEN(TEST_MSG_OP_1);
 	static uint8_t prev_seq;
 	struct bt_mesh_test_msg *msg;
 	uint8_t seq = 0;
@@ -70,23 +70,111 @@ static int msg_rx(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
+static int ra_rx(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+		 struct net_buf_simple *buf)
+{
+	LOG_INF("\tlen: %d bytes", buf->len);
+	LOG_INF("\tsrc: 0x%04x", ctx->addr);
+	LOG_INF("\tdst: 0x%04x", ctx->recv_dst);
+	LOG_INF("\tttl: %u", ctx->recv_ttl);
+	LOG_INF("\trssi: %d", ctx->recv_rssi);
+
+	if (ra_cb) {
+		ra_cb(net_buf_simple_pull_mem(buf, buf->len), buf->len);
+	}
+
+	return 0;
+}
+
 static const struct bt_mesh_model_op model_op[] = {
-	{ TEST_MSG_OP, 0, msg_rx },
+	{ TEST_MSG_OP_1, 0, msg_rx },
+	{ TEST_MSG_OP_2, 0, ra_rx },
+	BT_MESH_MODEL_OP_END
 };
+
+int __weak test_model_pub_update(struct bt_mesh_model *mod)
+{
+	return -1;
+}
+
+int __weak test_model_settings_set(struct bt_mesh_model *model,
+				   const char *name, size_t len_rd,
+				   settings_read_cb read_cb, void *cb_arg)
+{
+	return -1;
+}
+
+void __weak test_model_reset(struct bt_mesh_model *model)
+{
+	/* No-op. */
+}
+
+static const struct bt_mesh_model_cb test_model_cb = {
+	.settings_set = test_model_settings_set,
+	.reset = test_model_reset,
+};
+
 static struct bt_mesh_model_pub pub = {
 	.msg = NET_BUF_SIMPLE(BT_MESH_TX_SDU_MAX),
+	.update = test_model_pub_update,
+};
+
+static const struct bt_mesh_model_op vnd_model_op[] = {
+	BT_MESH_MODEL_OP_END,
+};
+
+int __weak test_vnd_model_pub_update(struct bt_mesh_model *mod)
+{
+	return -1;
+}
+
+int __weak test_vnd_model_settings_set(struct bt_mesh_model *model,
+				       const char *name, size_t len_rd,
+				       settings_read_cb read_cb, void *cb_arg)
+{
+	return -1;
+}
+
+void __weak test_vnd_model_reset(struct bt_mesh_model *model)
+{
+	/* No-op. */
+}
+
+static const struct bt_mesh_model_cb test_vnd_model_cb = {
+	.settings_set = test_vnd_model_settings_set,
+	.reset = test_vnd_model_reset,
+};
+
+static struct bt_mesh_model_pub vnd_pub = {
+	.msg = NET_BUF_SIMPLE(BT_MESH_TX_SDU_MAX),
+	.update = test_vnd_model_pub_update,
 };
 
 static struct bt_mesh_cfg_cli cfg_cli;
 
+static struct bt_mesh_health_srv health_srv;
+static struct bt_mesh_model_pub health_pub = {
+	.msg = NET_BUF_SIMPLE(BT_MESH_TX_SDU_MAX),
+};
+
 static struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
-	BT_MESH_MODEL(TEST_MOD_ID, model_op, &pub, NULL),
+	BT_MESH_MODEL_CB(TEST_MOD_ID, model_op, &pub, NULL, &test_model_cb),
+	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 
+struct bt_mesh_model *test_model = &models[2];
+
+static struct bt_mesh_model vnd_models[] = {
+	BT_MESH_MODEL_VND_CB(TEST_VND_COMPANY_ID, TEST_VND_MOD_ID, vnd_model_op, &vnd_pub,
+			     NULL, &test_vnd_model_cb),
+};
+
+struct bt_mesh_model *test_vnd_model = &vnd_models[0];
+
 static struct bt_mesh_elem elems[] = {
-	BT_MESH_ELEM(0, models, BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(0, models, vnd_models),
 };
 
 const struct bt_mesh_comp comp = {
@@ -98,27 +186,19 @@ const uint8_t test_net_key[16] = { 1, 2, 3 };
 const uint8_t test_app_key[16] = { 4, 5, 6 };
 const uint8_t test_va_uuid[16] = "Mesh Label UUID";
 
-static void bt_enabled(void)
+static void bt_mesh_device_provision_and_configure(void)
 {
-	static struct bt_mesh_prov prov;
 	uint8_t status;
 	int err;
 
-	net_buf_simple_init(pub.msg, 0);
-
-	err = bt_mesh_init(&prov, &comp);
-	if (err) {
-		FAIL("Initializing mesh failed (err %d)", err);
-		return;
-	}
-
 	err = bt_mesh_provision(test_net_key, 0, 0, 0, cfg->addr, cfg->dev_key);
-	if (err) {
+	if (err == -EALREADY) {
+		LOG_INF("Using stored settings");
+		return;
+	} else if (err) {
 		FAIL("Provisioning failed (err %d)", err);
 		return;
 	}
-
-	LOG_INF("Mesh initialized");
 
 	/* Self configure */
 
@@ -145,11 +225,9 @@ static void bt_enabled(void)
 	}
 }
 
-void bt_mesh_test_setup(void)
+void bt_mesh_device_setup(const struct bt_mesh_prov *prov, const struct bt_mesh_comp *comp)
 {
 	int err;
-
-	test_model = &models[2];
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -159,7 +237,29 @@ void bt_mesh_test_setup(void)
 
 	LOG_INF("Bluetooth initialized");
 
-	bt_enabled();
+	err = bt_mesh_init(prov, comp);
+	if (err) {
+		FAIL("Initializing mesh failed (err %d)", err);
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		LOG_INF("Loading stored settings");
+		settings_load();
+	}
+
+	LOG_INF("Mesh initialized");
+}
+
+void bt_mesh_test_setup(void)
+{
+	static struct bt_mesh_prov prov;
+
+	net_buf_simple_init(pub.msg, 0);
+	net_buf_simple_init(vnd_pub.msg, 0);
+
+	bt_mesh_device_setup(&prov, &comp);
+	bt_mesh_device_provision_and_configure();
 }
 
 void bt_mesh_test_timeout(bs_time_t HW_device_time)
@@ -197,14 +297,12 @@ int bt_mesh_test_recv(uint16_t len, uint16_t dst, k_timeout_t timeout)
 	}
 
 	if (len != msg->len) {
-		FAIL("Recv: Invalid message length (%u, expected %u)", msg->len,
-		     len);
+		LOG_ERR("Recv: Invalid message length (%u, expected %u)", msg->len, len);
 		return -EINVAL;
 	}
 
 	if (dst != BT_MESH_ADDR_UNASSIGNED && dst != msg->ctx.recv_dst) {
-		FAIL("Recv: Invalid dst 0x%04x, expected 0x%04x",
-		     msg->ctx.recv_dst, dst);
+		LOG_ERR("Recv: Invalid dst 0x%04x, expected 0x%04x", msg->ctx.recv_dst, dst);
 		return -EINVAL;
 	}
 
@@ -241,10 +339,22 @@ int bt_mesh_test_recv_clear(void)
 	return count;
 }
 
+struct sync_send_ctx {
+	struct k_sem sem;
+	int err;
+};
+
 static void tx_started(uint16_t dur, int err, void *data)
 {
+	struct sync_send_ctx *send_ctx = data;
+
 	if (err) {
-		FAIL("Couldn't start sending (err: %d)", err);
+		LOG_ERR("Couldn't start sending (err: %d)", err);
+
+		send_ctx->err = err;
+		k_sem_give(&send_ctx->sem);
+
+		return;
 	}
 
 	LOG_INF("Sending started");
@@ -252,15 +362,17 @@ static void tx_started(uint16_t dur, int err, void *data)
 
 static void tx_ended(int err, void *data)
 {
-	struct k_sem *sem = data;
+	struct sync_send_ctx *send_ctx = data;
+
+	send_ctx->err = err;
 
 	if (err) {
-		FAIL("Send failed (%d)", err);
+		LOG_ERR("Send failed (%d)", err);
+	} else {
+		LOG_INF("Sending ended");
 	}
 
-	LOG_INF("Sending ended");
-
-	k_sem_give(sem);
+	k_sem_give(&send_ctx->sem);
 }
 
 int bt_mesh_test_send_async(uint16_t addr, size_t len,
@@ -277,15 +389,15 @@ int bt_mesh_test_send_async(uint16_t addr, size_t len,
 	test_send_ctx.send_rel = (flags & FORCE_SEGMENTATION);
 	test_send_ctx.send_ttl = BT_MESH_TTL_DEFAULT;
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, TEST_MSG_OP, BT_MESH_TX_SDU_MAX);
-	bt_mesh_model_msg_init(&buf, TEST_MSG_OP);
+	BT_MESH_MODEL_BUF_DEFINE(buf, TEST_MSG_OP_1, BT_MESH_TX_SDU_MAX);
+	bt_mesh_model_msg_init(&buf, TEST_MSG_OP_1);
 
-	if (len > BT_MESH_MODEL_OP_LEN(TEST_MSG_OP)) {
+	if (len > BT_MESH_MODEL_OP_LEN(TEST_MSG_OP_1)) {
 		net_buf_simple_add_u8(&buf, count);
 	}
 
 	/* Subtract the length of the opcode and the sequence ID */
-	for (int i = 1; i < len - BT_MESH_MODEL_OP_LEN(TEST_MSG_OP); i++) {
+	for (int i = 1; i < len - BT_MESH_MODEL_OP_LEN(TEST_MSG_OP_1); i++) {
 		net_buf_simple_add_u8(&buf, i);
 	}
 
@@ -326,22 +438,55 @@ int bt_mesh_test_send(uint16_t addr, size_t len,
 		.end = tx_ended,
 	};
 	int64_t uptime = k_uptime_get();
-	struct k_sem sem;
+	struct sync_send_ctx send_ctx;
 	int err;
 
-	k_sem_init(&sem, 0, 1);
-	err = bt_mesh_test_send_async(addr, len, flags, &send_cb, &sem);
+	k_sem_init(&send_ctx.sem, 0, 1);
+	err = bt_mesh_test_send_async(addr, len, flags, &send_cb, &send_ctx);
 	if (err) {
 		return err;
 	}
 
-	err = k_sem_take(&sem, timeout);
+	err = k_sem_take(&send_ctx.sem, timeout);
 	if (err) {
 		LOG_ERR("Send timed out");
 		return err;
 	}
 
+	if (send_ctx.err) {
+		return send_ctx.err;
+	}
+
 	LOG_INF("Sending completed (%lld ms)", k_uptime_delta(&uptime));
 
 	return 0;
+}
+
+int bt_mesh_test_send_ra(uint16_t addr, uint8_t *data, size_t len,
+			 const struct bt_mesh_send_cb *send_cb,
+			 void *cb_data)
+{
+	int err;
+
+	test_send_ctx.addr = addr;
+	test_send_ctx.send_rel = 0;
+	test_send_ctx.send_ttl = BT_MESH_TTL_DEFAULT;
+
+	BT_MESH_MODEL_BUF_DEFINE(buf, TEST_MSG_OP_2, BT_MESH_TX_SDU_MAX);
+	bt_mesh_model_msg_init(&buf, TEST_MSG_OP_2);
+
+	net_buf_simple_add_mem(&buf, data, len);
+
+	err = bt_mesh_model_send(test_model, &test_send_ctx, &buf, send_cb, cb_data);
+	if (err) {
+		LOG_ERR("bt_mesh_model_send failed (err: %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+void bt_mesh_test_ra_cb_setup(void (*cb)(uint8_t *, size_t))
+{
+	ra_cb = cb;
 }

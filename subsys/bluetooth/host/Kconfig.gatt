@@ -24,9 +24,19 @@ config BT_ATT_PREPARE_COUNT
 	  Number of buffers available for ATT prepare write, setting
 	  this to 0 disables GATT long/reliable writes.
 
+config BT_ATT_RETRY_ON_SEC_ERR
+	bool "Automatic security elevation and retry on security errors"
+	default y
+	depends on BT_SMP
+	help
+	  If an ATT request fails due to insufficient security, the host will
+	  try to elevate the security level and retry the ATT request.
+
 config BT_EATT
 	bool "Enhanced ATT Bearers support [EXPERIMENTAL]"
 	depends on BT_L2CAP_ECRED
+	select EXPERIMENTAL
+	select BT_GATT_READ_MULT_VAR_LEN
 	help
 	  This option enables support for Enhanced ATT bearers support. When
 	  enabled additional L2CAP channels can be connected as bearers enabling
@@ -42,16 +52,13 @@ config BT_EATT_MAX
 	help
 	  Number of Enhanced ATT bearers available.
 
-config BT_EATT_SEC_LEVEL
-	int "Enhanced ATT bearer security level"
-	default 1
-	range 1 4
+
+config BT_EATT_AUTO_CONNECT
+	bool "Automatically connect EATT bearers when a link is established"
+	default y
 	help
-	  L2CAP server required security level of EATT bearers:
-	  Level 1 (BT_SECURITY_L1) = No encryption or authentication required
-	  Level 2 (BT_SECURITY_L2) = Only encryption required
-	  Level 3 (BT_SECURITY_L3) = Encryption and authentication required
-	  Level 4 (BT_SECURITY_L4) = Secure connection required
+	  The device will try to connect BT_EATT_MAX enhanced ATT bearers when a
+	  connection to a peer is established.
 
 endif # BT_EATT
 
@@ -107,6 +114,24 @@ config BT_GATT_NOTIFY_MULTIPLE
 	  This option enables support for the GATT Notify Multiple
 	  Characteristic Values procedure.
 
+if BT_GATT_NOTIFY_MULTIPLE
+
+config BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS
+	int "Delay for batching multiple notifications in a single PDU."
+	default 1
+	range 0 4000
+	help
+	  Sets the time (in milliseconds) during which consecutive GATT
+	  notifications will be tentatively appended to form a single
+	  ATT_MULTIPLE_HANDLE_VALUE_NTF PDU.
+
+	  If set to 0, batching is disabled. Then, the only way to send
+	  ATT_MULTIPLE_HANDLE_VALUE_NTF PDUs is to use bt_gatt_notify_multiple.
+
+	  See the documentation of bt_gatt_notify() for more details.
+
+endif # BT_GATT_NOTIFY_MULTIPLE
+
 config BT_GATT_ENFORCE_CHANGE_UNAWARE
 	bool "GATT Enforce change-unaware state"
 	depends on BT_GATT_CACHING
@@ -121,6 +146,14 @@ config BT_GATT_ENFORCE_CHANGE_UNAWARE
 
 endif # BT_GATT_CACHING
 
+config BT_GATT_ENFORCE_SUBSCRIPTION
+	bool "GATT Enforce characteristic subscription"
+	default y
+	help
+	  When enabled, this option will make the server block sending
+	  notifications and indications to a device which has not subscribed to
+	  the supplied characteristic.
+
 config BT_GATT_CLIENT
 	bool "GATT client support"
 	help
@@ -133,12 +166,27 @@ config BT_GATT_READ_MULTIPLE
 	  This option enables support for the GATT Read Multiple Characteristic
 	  Values procedure.
 
+config BT_GATT_READ_MULT_VAR_LEN
+	bool "GATT Read Multiple Variable Length Characteristic Values support"
+	default y
+	help
+	  This option enables support for the GATT Read Multiple Variable Length
+	  Characteristic Values procedure. Mandatory if EATT is enabled, optional
+	  otherwise (Core spec v5.3, Vol 3, Part G, Section 4.2, Table 4.1).
+
 config BT_GATT_AUTO_DISCOVER_CCC
 	bool "Support to automatic discover the CCC handles of characteristics"
 	depends on BT_GATT_CLIENT
 	help
 	  This option enables support for GATT to initiate discovery for CCC
 	  handles if the CCC handle is unknown by the application.
+
+config BT_GATT_AUTO_UPDATE_MTU
+	bool "Automatically send ATT MTU exchange request on connect"
+	depends on BT_GATT_CLIENT
+	help
+	  This option if enabled allows automatically sending request for ATT
+	  MTU exchange.
 
 config BT_GAP_AUTO_UPDATE_CONN_PARAMS
 	bool "Automatic Update of Connection Parameters"
@@ -173,8 +221,8 @@ config BT_PERIPHERAL_PREF_MAX_INT
 	help
 	  Range 3200 to 65534 is invalid. 65535 represents no specific value.
 
-config BT_PERIPHERAL_PREF_SLAVE_LATENCY
-	int "Peripheral preferred slave latency in Connection Intervals"
+config BT_PERIPHERAL_PREF_LATENCY
+	int "Peripheral preferred peripheral latency in Connection Intervals"
 	default 0
 	range 0 499
 

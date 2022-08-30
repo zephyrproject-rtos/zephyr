@@ -9,35 +9,41 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <zephyr.h>
-#include <arch/cpu.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <drivers/ipm.h>
+#include <zephyr/device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <openamp/open_amp.h>
-#include <metal/sys.h>
-#include <metal/device.h>
-#include <metal/alloc.h>
+#include <zephyr/ipc/ipc_service.h>
 
-#include <ipc/rpmsg_service.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/hci_vs.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/hci_raw.h>
+#if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
+#include <zephyr/logging/log_ctrl.h>
+#endif /* CONFIG_BT_HCI_VS_FATAL_ERROR */
 
 #define BT_DBG_ENABLED 0
 #define LOG_MODULE_NAME hci_rpmsg
 #include "common/log.h"
 
-static int endpoint_id;
+static struct ipc_ept hci_ept;
 
 static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread tx_thread_data;
 static K_FIFO_DEFINE(tx_queue);
+static K_SEM_DEFINE(ipc_bound_sem, 0, 1);
+#if defined(CONFIG_BT_CTLR_ASSERT_HANDLER) || defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
+/* A flag used to store information if the IPC endpoint has already been bound. The end point can't
+ * be used before that happens.
+ */
+static bool ipc_ept_ready;
+#endif /* CONFIG_BT_CTLR_ASSERT_HANDLER || CONFIG_BT_HCI_VS_FATAL_ERROR */
 
 #define HCI_RPMSG_CMD 0x01
 #define HCI_RPMSG_ACL 0x02
@@ -45,13 +51,16 @@ static K_FIFO_DEFINE(tx_queue);
 #define HCI_RPMSG_EVT 0x04
 #define HCI_RPMSG_ISO 0x05
 
+#define HCI_FATAL_ERR_MSG true
+#define HCI_REGULAR_MSG false
+
 static struct net_buf *hci_rpmsg_cmd_recv(uint8_t *data, size_t remaining)
 {
 	struct bt_hci_cmd_hdr *hdr = (void *)data;
 	struct net_buf *buf;
 
 	if (remaining < sizeof(*hdr)) {
-		LOG_ERR("Not enought data for command header");
+		LOG_ERR("Not enough data for command header");
 		return NULL;
 	}
 
@@ -82,7 +91,7 @@ static struct net_buf *hci_rpmsg_acl_recv(uint8_t *data, size_t remaining)
 	struct net_buf *buf;
 
 	if (remaining < sizeof(*hdr)) {
-		LOG_ERR("Not enought data for ACL header");
+		LOG_ERR("Not enough data for ACL header");
 		return NULL;
 	}
 
@@ -126,7 +135,7 @@ static struct net_buf *hci_rpmsg_iso_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
-	if (remaining != sys_le16_to_cpu(hdr->len)) {
+	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr->len))) {
 		LOG_ERR("ISO payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;
@@ -196,9 +205,11 @@ static void tx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int hci_rpmsg_send(struct net_buf *buf)
+static void hci_rpmsg_send(struct net_buf *buf, bool is_fatal_err)
 {
 	uint8_t pkt_indicator;
+	uint8_t retries = 0;
+	int ret;
 
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
 		buf->len);
@@ -218,37 +229,136 @@ static int hci_rpmsg_send(struct net_buf *buf)
 	default:
 		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
 		net_buf_unref(buf);
-		return -EINVAL;
+		return;
 	}
 	net_buf_push_u8(buf, pkt_indicator);
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
-	rpmsg_service_send(endpoint_id, buf->data, buf->len);
+
+	do {
+		ret = ipc_service_send(&hci_ept, buf->data, buf->len);
+		if (ret < 0) {
+			retries++;
+			if (retries > 10) {
+				/* Default backend (rpmsg_virtio) has a timeout of 150ms. */
+				LOG_WRN("IPC send has been blocked for 1.5 seconds.");
+				retries = 0;
+			}
+
+			/* The function can be called by the application main thread,
+			 * bt_ctlr_assert_handle and k_sys_fatal_error_handler. In case of a call by
+			 * Bluetooth Controller assert handler or system fatal error handler the
+			 * call can be from ISR context, hence there is no thread to yield. Besides
+			 * that both handlers implement a policy to provide error information and
+			 * stop the system in an infinite loop. The goal is to prevent any other
+			 * damage to the system if one of such exeptional situations occur, hence
+			 * call to k_yield is against it.
+			 */
+			if (is_fatal_err) {
+				LOG_ERR("IPC service send error: %d", ret);
+			} else {
+				k_yield();
+			}
+		}
+	} while (ret < 0);
+
+	LOG_INF("Sent message of %d bytes.", ret);
 
 	net_buf_unref(buf);
-
-	return 0;
 }
 
 #if defined(CONFIG_BT_CTLR_ASSERT_HANDLER)
 void bt_ctlr_assert_handle(char *file, uint32_t line)
 {
-	BT_ASSERT_MSG(false, "Controller assert in: %s at %d", file, line);
+#if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
+	/* Disable interrupts, this is unrecoverable */
+	(void)irq_lock();
+
+	/* Generate an error event only when IPC service endpoint is already bound. */
+	if (ipc_ept_ready) {
+		/* Prepare vendor specific HCI debug event */
+		struct net_buf *buf;
+
+		buf = hci_vs_err_assert(file, line);
+		if (buf == NULL) {
+			/* Send the event over rpmsg */
+			hci_rpmsg_send(buf, HCI_FATAL_ERR_MSG);
+		} else {
+			LOG_ERR("Can't create Fatal Error HCI event: %s at %d", __FILE__, __LINE__);
+		}
+	} else {
+		LOG_ERR("IPC endpoint is not redy yet: %s at %d", __FILE__, __LINE__);
+	}
+
+	LOG_ERR("Halting system");
+
+	while (true) {
+	};
+#else
+	LOG_ERR("Controller assert in: %s at %d", file, line);
+#endif /* CONFIG_BT_HCI_VS_FATAL_ERROR */
 }
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
 
-int endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len, uint32_t src,
-		void *priv)
+#if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
+{
+	LOG_PANIC();
+
+	/* Disable interrupts, this is unrecoverable */
+	(void)irq_lock();
+
+	/* Generate an error event only when there is a stack frame and IPC service endpoint is
+	 * already bound.
+	 */
+	if (esf != NULL && ipc_ept_ready) {
+		/* Prepare vendor specific HCI debug event */
+		struct net_buf *buf;
+
+		buf = hci_vs_err_stack_frame(reason, esf);
+		if (buf != NULL) {
+			hci_rpmsg_send(buf, HCI_FATAL_ERR_MSG);
+		} else {
+			LOG_ERR("Can't create Fatal Error HCI event.\n");
+		}
+	}
+
+	LOG_ERR("Halting system");
+
+	while (true) {
+	};
+
+	CODE_UNREACHABLE;
+}
+#endif /* CONFIG_BT_HCI_VS_FATAL_ERROR */
+
+static void hci_ept_bound(void *priv)
+{
+	k_sem_give(&ipc_bound_sem);
+#if defined(CONFIG_BT_CTLR_ASSERT_HANDLER) || defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
+	ipc_ept_ready = true;
+#endif /* CONFIG_BT_CTLR_ASSERT_HANDLER || CONFIG_BT_HCI_VS_FATAL_ERROR */
+}
+
+static void hci_ept_recv(const void *data, size_t len, void *priv)
 {
 	LOG_INF("Received message of %u bytes.", len);
 	hci_rpmsg_rx((uint8_t *) data, len);
-
-	return RPMSG_SUCCESS;
 }
+
+static struct ipc_ept_cfg hci_ept_cfg = {
+	.name = "nrf_bt_hci",
+	.cb = {
+		.bound    = hci_ept_bound,
+		.received = hci_ept_recv,
+	},
+};
 
 void main(void)
 {
 	int err;
+	const struct device *hci_ipc_instance =
+		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_rpmsg_ipc));
 
 	/* incoming events and data from the controller */
 	static K_FIFO_DEFINE(rx_queue);
@@ -266,32 +376,23 @@ void main(void)
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	k_thread_name_set(&tx_thread_data, "HCI rpmsg TX");
 
+	/* Initialize IPC service instance and register endpoint. */
+	err = ipc_service_open_instance(hci_ipc_instance);
+	if (err) {
+		LOG_ERR("IPC service instance initialization failed: %d\n", err);
+	}
+
+	err = ipc_service_register_endpoint(hci_ipc_instance, &hci_ept, &hci_ept_cfg);
+	if (err) {
+		LOG_ERR("Registering endpoint failed with %d", err);
+	}
+
+	k_sem_take(&ipc_bound_sem, K_FOREVER);
+
 	while (1) {
 		struct net_buf *buf;
 
 		buf = net_buf_get(&rx_queue, K_FOREVER);
-		err = hci_rpmsg_send(buf);
-		if (err) {
-			LOG_ERR("Failed to send (err %d)", err);
-		}
+		hci_rpmsg_send(buf, HCI_REGULAR_MSG);
 	}
 }
-
-/* Make sure we register endpoint before RPMsg Service is initialized. */
-int register_endpoint(const struct device *arg)
-{
-	int status;
-
-	status = rpmsg_service_register_endpoint("nrf_bt_hci", endpoint_cb);
-
-	if (status < 0) {
-		LOG_ERR("Registering endpoint failed with %d", status);
-		return status;
-	}
-
-	endpoint_id = status;
-
-	return 0;
-}
-
-SYS_INIT(register_endpoint, POST_KERNEL, CONFIG_RPMSG_SERVICE_EP_REG_PRIORITY);

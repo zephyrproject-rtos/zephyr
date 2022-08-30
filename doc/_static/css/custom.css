@@ -124,64 +124,27 @@ hr,
     border-color: var(--admonition-attention-title-background-color) !important;
     color: var(--admonition-attention-color) !important;
 }
-.rst-content dl:not(.docutils).class dt,
-.rst-content dl:not(.docutils).function dt,
-.rst-content dl:not(.docutils).method dt,
-.rst-content dl:not(.docutils).attribute dt {
-    width: 100% !important;
-}
-.rst-content dl:not(.docutils).class > dt,
-.rst-content dl:not(.docutils).function > dt,
-.rst-content dl:not(.docutils).method > dt,
-.rst-content dl:not(.docutils).attribute > dt {
-    font-size: 100% !important;
-    font-weight: normal !important;
-    margin-bottom: 16px !important;
-    padding: 6px 8px !important;
-}
-.rst-content dl:not(.docutils) tt.descclassname,
-.rst-content dl:not(.docutils) code.descclassname {
-    color: var(--highlight-type2-color) !important;
-    font-weight: normal !important;
-}
-.rst-content dl:not(.docutils) tt.descname,
-.rst-content dl:not(.docutils) code.descname {
-    color: var(--highlight-function-color) !important;
-    font-weight: normal !important;
-}
-.rst-content dl:not(.docutils) .sig-paren,
-.rst-content dl:not(.docutils) .optional {
-    color: var(--highlight-operator-color) !important;
-    font-weight: normal !important;
-    padding: 0 2px !important;
-}
-.rst-content dl:not(.docutils) .optional {
-    font-style: italic !important;
-}
-.rst-content dl:not(.docutils) .sig-param,
-.rst-content dl:not(.docutils).class dt > em,
-.rst-content dl:not(.docutils).function dt > em,
-.rst-content dl:not(.docutils).method dt > em {
-    color: var(--code-literal-color) !important;
+
+.rst-content dt.sig .k {
+    color: var(--highlight-keyword2-color) !important;
     font-style: normal !important;
-    padding: 0 4px !important;
 }
-.rst-content dl:not(.docutils) .sig-param,
-.rst-content dl:not(.docutils).class dt > code,
-.rst-content dl:not(.docutils).function dt > code,
-.rst-content dl:not(.docutils).method dt > code {
-    padding: 0 4px !important;
-}
-.rst-content dl:not(.docutils) .sig-param,
-.rst-content dl:not(.docutils).class dt > .optional ~ em,
-.rst-content dl:not(.docutils).function dt > .optional ~ em,
-.rst-content dl:not(.docutils).method dt > .optional ~ em {
-    color: var(--highlight-number-color) !important;
-    font-style: italic !important;
-}
-.rst-content dl:not(.docutils).class dt > em.property {
+
+.rst-content dt.sig .kt {
     color: var(--highlight-keyword-color) !important;
+    font-style: normal !important;
 }
+
+.rst-content dt.sig .sig-name .n {
+    color: var(--highlight-function-color) !important;
+}
+
+.rst-content dt.sig .k,
+.rst-content dt.sig .kt,
+.rst-content dt.sig .n {
+    font-weight: normal !important;
+}
+
 .rst-content dl:not(.docutils) dt a.headerlink {
     color: var(--link-color) !important;
 }
@@ -527,6 +490,7 @@ a.internal:visited code.literal {
 
 /* Admonition tweaks */
 
+.rst-content .admonition,
 .rst-content .admonition.note,
 .rst-content .admonition.seealso {
     background-color: var(--admonition-note-background-color);
@@ -534,6 +498,7 @@ a.internal:visited code.literal {
     overflow: auto;
 }
 
+.rst-content .admonition .admonition-title,
 .rst-content .admonition.note .admonition-title,
 .rst-content .admonition.seealso .admonition-title {
     background-color: var(--admonition-note-title-background-color);
@@ -878,25 +843,13 @@ kbd, .kbd {
 
 /* Breathe tweaks */
 
-.rst-content dl.group>dt, .rst-content dl.group>dd>p {
-    display:none !important;
-}
-
-.rst-content dl.group {
-    margin: 0 0 1rem 0;
-}
-
-.rst-content dl.group>dd {
-    margin-left: 0 !important;
+.rst-content .section > dl > dd {
+    margin-left: 0;
 }
 
 .rst-content p.breathe-sectiondef-title {
     font-size: 115%;
     color: var(--link-color);
-}
-
-.rst-content div.breathe-sectiondef {
-    padding-left: 0 !important;
 }
 
 .rst-content dl:not(.docutils) dl:not(.rst-other-versions) dt {
@@ -905,21 +858,13 @@ kbd, .kbd {
     border-left: none !important;
 }
 
-.rst-content dl:not(.docutils).c.var .pre {
-  padding-right: 4px;
-}
-
-.rst-content dl:not(.docutils).c.struct .property {
-  padding-right: 4px !important;
-}
-
 /* Misc tweaks */
 
 .rst-columns {
     column-width: 18em;
 }
 
-.figure {
+.rst-content div.figure, .rst-content figure {
     text-align: center;
 }
 
@@ -927,8 +872,16 @@ kbd, .kbd {
     background-color: var(--admonition-danger-background-color);
 }
 
-#dark-mode-toggle {
-    float: right;
+
+dark-mode-toggle::part(fieldset) {
+  padding-inline: 0.75rem;
+  padding-block: 0;
+}
+
+dark-mode-toggle::part(darkLabel),
+dark-mode-toggle::part(lightLabel),
+dark-mode-toggle::part(toggleLabel){
+  font-size: unset;
 }
 
 /* Home page grid display */

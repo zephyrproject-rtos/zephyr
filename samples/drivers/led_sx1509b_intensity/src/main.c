@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/gpio/gpio_sx1509b.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_sx1509b.h>
 
 #define NUMBER_OF_LEDS 3
 #define GREEN_LED DT_GPIO_PIN(DT_NODELABEL(led0), gpios)
@@ -71,11 +71,10 @@ void main(void)
 
 	printk("SX1509B intensity sample\n");
 
-	sx1509b_dev = device_get_binding(DT_PROP(DT_NODELABEL(sx1509b), label));
+	sx1509b_dev = DEVICE_DT_GET(DT_NODELABEL(sx1509b));
 
-	if (sx1509b_dev == NULL) {
-		printk("Error binding SX1509B device\n");
-
+	if (!device_is_ready(sx1509b_dev)) {
+		printk("sx1509b: device not ready.\n");
 		return;
 	}
 

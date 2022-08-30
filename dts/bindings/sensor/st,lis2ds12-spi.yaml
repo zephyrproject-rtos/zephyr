@@ -6,14 +6,4 @@ description: |
 
 compatible: "st,lis2ds12"
 
-include: spi-device.yaml
-
-properties:
-    irq-gpios:
-      type: phandle-array
-      required: false
-      description: DRDY pin
-
-        This pin defaults to active high when produced by the sensor.
-        The property value should ensure the flags properly describe
-        the signal that is presented to the driver.
+include: ["spi-device.yaml", "st,lis2ds12-common.yaml"]

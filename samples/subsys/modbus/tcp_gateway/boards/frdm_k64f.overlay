@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&uart2 {
+&arduino_serial {
 	status = "okay";
 	current-speed = <115200>;
 
 	modbus0 {
 		compatible = "zephyr,modbus-serial";
-		label = "MODBUS0";
 		status = "okay";
 	};
 };

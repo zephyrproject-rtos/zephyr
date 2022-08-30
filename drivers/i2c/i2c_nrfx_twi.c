@@ -5,11 +5,14 @@
  */
 
 
-#include <drivers/i2c.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <soc.h>
 #include <nrfx_twi.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_nrfx_twi, CONFIG_I2C_LOG_LEVEL);
 
 #define I2C_TRANSFER_TIMEOUT_MSEC		K_MSEC(500)
@@ -19,39 +22,32 @@ struct i2c_nrfx_twi_data {
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
 	uint32_t dev_config;
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state pm_state;
-#endif
 };
 
 struct i2c_nrfx_twi_config {
 	nrfx_twi_t twi;
 	nrfx_twi_config_t config;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pcfg;
+#endif
 };
 
-static inline struct i2c_nrfx_twi_data *get_dev_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static inline
-const struct i2c_nrfx_twi_config *get_dev_config(const struct device *dev)
-{
-	return dev->config;
-}
+static int i2c_nrfx_twi_recover_bus(const struct device *dev);
 
 static int i2c_nrfx_twi_transfer(const struct device *dev,
 				 struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr)
 {
+	const struct i2c_nrfx_twi_config *config = dev->config;
+	struct i2c_nrfx_twi_data *data = dev->data;
 	int ret = 0;
 
-	k_sem_take(&(get_dev_data(dev)->transfer_sync), K_FOREVER);
+	k_sem_take(&data->transfer_sync, K_FOREVER);
 
 	/* Dummy take on completion_sync sem to be sure that it is empty */
-	k_sem_take(&(get_dev_data(dev)->completion_sync), K_NO_WAIT);
+	k_sem_take(&data->completion_sync, K_NO_WAIT);
 
-	nrfx_twi_enable(&get_dev_config(dev)->twi);
+	nrfx_twi_enable(&config->twi);
 
 	for (size_t i = 0; i < num_msgs; i++) {
 		if (I2C_MSG_ADDR_10_BITS & msgs[i].flags) {
@@ -97,9 +93,7 @@ static int i2c_nrfx_twi_transfer(const struct device *dev,
 			}
 		}
 
-		res = nrfx_twi_xfer(&get_dev_config(dev)->twi,
-				    &cur_xfer,
-				    xfer_flags);
+		res = nrfx_twi_xfer(&config->twi, &cur_xfer, xfer_flags);
 		if (res != NRFX_SUCCESS) {
 			if (res == NRFX_ERROR_BUSY) {
 				ret = -EBUSY;
@@ -110,7 +104,7 @@ static int i2c_nrfx_twi_transfer(const struct device *dev,
 			}
 		}
 
-		ret = k_sem_take(&(get_dev_data(dev)->completion_sync),
+		ret = k_sem_take(&data->completion_sync,
 				 I2C_TRANSFER_TIMEOUT_MSEC);
 		if (ret != 0) {
 			/* Whatever the frequency, completion_sync should have
@@ -125,19 +119,18 @@ static int i2c_nrfx_twi_transfer(const struct device *dev,
 			 * In many situation, a retry is sufficient.
 			 * However, some time the I2C device get stuck and need
 			 * help to recover.
-			 * Therefore we always call nrfx_twi_bus_recover() to
-			 * make sure everything has been done to restore the
+			 * Therefore we always call i2c_nrfx_twi_recover_bus()
+			 * to make sure everything has been done to restore the
 			 * bus from this error.
 			 */
 			LOG_ERR("Error on I2C line occurred for message %d", i);
-			nrfx_twi_disable(&get_dev_config(dev)->twi);
-			nrfx_twi_bus_recover(get_dev_config(dev)->config.scl,
-					     get_dev_config(dev)->config.sda);
+			nrfx_twi_disable(&config->twi);
+			(void)i2c_nrfx_twi_recover_bus(dev);
 			ret = -EIO;
 			break;
 		}
 
-		res = get_dev_data(dev)->res;
+		res = data->res;
 		if (res != NRFX_SUCCESS) {
 			LOG_ERR("Error 0x%08X occurred for message %d", res, i);
 			ret = -EIO;
@@ -145,8 +138,8 @@ static int i2c_nrfx_twi_transfer(const struct device *dev,
 		}
 	}
 
-	nrfx_twi_disable(&get_dev_config(dev)->twi);
-	k_sem_give(&(get_dev_data(dev)->transfer_sync));
+	nrfx_twi_disable(&config->twi);
+	k_sem_give(&data->transfer_sync);
 
 	return ret;
 }
@@ -176,7 +169,9 @@ static void event_handler(nrfx_twi_evt_t const *p_event, void *p_context)
 static int i2c_nrfx_twi_configure(const struct device *dev,
 				  uint32_t dev_config)
 {
-	nrfx_twi_t const *inst = &(get_dev_config(dev)->twi);
+	const struct i2c_nrfx_twi_config *config = dev->config;
+	struct i2c_nrfx_twi_data *data = dev->data;
+	nrfx_twi_t const *inst = &config->twi;
 
 	if (I2C_ADDR_10_BITS & dev_config) {
 		return -EINVAL;
@@ -193,74 +188,88 @@ static int i2c_nrfx_twi_configure(const struct device *dev,
 		LOG_ERR("unsupported speed");
 		return -EINVAL;
 	}
-	get_dev_data(dev)->dev_config = dev_config;
+	data->dev_config = dev_config;
 
 	return 0;
 }
 
+static int i2c_nrfx_twi_recover_bus(const struct device *dev)
+{
+	const struct i2c_nrfx_twi_config *config = dev->config;
+	uint32_t scl_pin;
+	uint32_t sda_pin;
+	nrfx_err_t err;
+
+#ifdef CONFIG_PINCTRL
+	scl_pin = nrf_twi_scl_pin_get(config->twi.p_twi);
+	sda_pin = nrf_twi_sda_pin_get(config->twi.p_twi);
+#else
+	scl_pin = config->config.scl;
+	sda_pin = config->config.sda;
+#endif
+
+	err = nrfx_twi_bus_recover(scl_pin, sda_pin);
+	return (err == NRFX_SUCCESS ? 0 : -EBUSY);
+}
+
 static const struct i2c_driver_api i2c_nrfx_twi_driver_api = {
-	.configure = i2c_nrfx_twi_configure,
-	.transfer  = i2c_nrfx_twi_transfer,
+	.configure   = i2c_nrfx_twi_configure,
+	.transfer    = i2c_nrfx_twi_transfer,
+	.recover_bus = i2c_nrfx_twi_recover_bus,
 };
 
 static int init_twi(const struct device *dev)
 {
-	struct i2c_nrfx_twi_data *dev_data = get_dev_data(dev);
-	nrfx_err_t result = nrfx_twi_init(&get_dev_config(dev)->twi,
-					  &get_dev_config(dev)->config,
+	const struct i2c_nrfx_twi_config *config = dev->config;
+	struct i2c_nrfx_twi_data *dev_data = dev->data;
+	nrfx_err_t result = nrfx_twi_init(&config->twi, &config->config,
 					  event_handler, dev_data);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
 			    dev->name);
 		return -EBUSY;
 	}
-#ifdef CONFIG_PM_DEVICE
-	get_dev_data(dev)->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif
 
 	return 0;
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int twi_nrfx_pm_control(const struct device *dev,
-				uint32_t ctrl_command,
-				enum pm_device_state *state)
+static int twi_nrfx_pm_action(const struct device *dev,
+			      enum pm_device_action action)
 {
+	const struct i2c_nrfx_twi_config *config = dev->config;
+	struct i2c_nrfx_twi_data *data = dev->data;
 	int ret = 0;
-	enum pm_device_state pm_current_state = get_dev_data(dev)->pm_state;
 
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		enum pm_device_state new_state = *state;
-
-		if (new_state != pm_current_state) {
-			switch (new_state) {
-			case PM_DEVICE_STATE_ACTIVE:
-				init_twi(dev);
-				if (get_dev_data(dev)->dev_config) {
-					i2c_nrfx_twi_configure(
-						dev,
-						get_dev_data(dev)->dev_config);
-				}
-				break;
-
-			case PM_DEVICE_STATE_LOW_POWER:
-			case PM_DEVICE_STATE_SUSPEND:
-			case PM_DEVICE_STATE_OFF:
-				if (pm_current_state == PM_DEVICE_STATE_ACTIVE) {
-					nrfx_twi_uninit(&get_dev_config(dev)->twi);
-				}
-				break;
-
-			default:
-				ret = -ENOTSUP;
-			}
-			if (!ret) {
-				get_dev_data(dev)->pm_state = new_state;
-			}
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+#ifdef CONFIG_PINCTRL
+		ret = pinctrl_apply_state(config->pcfg,
+					  PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
 		}
-	} else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*state = get_dev_data(dev)->pm_state;
+#endif
+		init_twi(dev);
+		if (data->dev_config) {
+			i2c_nrfx_twi_configure(dev, data->dev_config);
+		}
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		nrfx_twi_uninit(&config->twi);
+
+#ifdef CONFIG_PINCTRL
+		ret = pinctrl_apply_state(config->pcfg,
+					  PINCTRL_STATE_SLEEP);
+		if (ret < 0) {
+			return ret;
+		}
+#endif
+		break;
+
+	default:
+		ret = -ENOTSUP;
 	}
 
 	return ret;
@@ -277,14 +286,30 @@ static int twi_nrfx_pm_control(const struct device *dev,
 #define I2C_FREQUENCY(idx)						       \
 	I2C_NRFX_TWI_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
 
+#define I2C_NRFX_TWI_PIN_CFG(idx)			\
+	COND_CODE_1(CONFIG_PINCTRL,			\
+		(.skip_gpio_cfg = true,			\
+		 .skip_psel_cfg = true,),		\
+		(.scl = DT_PROP(I2C(idx), scl_pin),	\
+		 .sda = DT_PROP(I2C(idx), sda_pin),))
+
 #define I2C_NRFX_TWI_DEVICE(idx)					       \
+	NRF_DT_CHECK_PIN_ASSIGNMENTS(I2C(idx), 1, scl_pin, sda_pin);	       \
 	BUILD_ASSERT(I2C_FREQUENCY(idx)	!=				       \
 		     I2C_NRFX_TWI_INVALID_FREQUENCY,			       \
 		     "Wrong I2C " #idx " frequency setting in dts");	       \
-	static int twi_##idx##_init(const struct device *dev)		\
+	static int twi_##idx##_init(const struct device *dev)		       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(I2C(idx)), DT_IRQ(I2C(idx), priority),     \
 			    nrfx_isr, nrfx_twi_##idx##_irq_handler, 0);	       \
+		IF_ENABLED(CONFIG_PINCTRL, (				       \
+			const struct i2c_nrfx_twi_config *config = dev->config;\
+			int err = pinctrl_apply_state(config->pcfg,	       \
+						      PINCTRL_STATE_DEFAULT);  \
+			if (err < 0) {					       \
+				return err;				       \
+			}						       \
+		))							       \
 		return init_twi(dev);					       \
 	}								       \
 	static struct i2c_nrfx_twi_data twi_##idx##_data = {		       \
@@ -293,17 +318,20 @@ static int twi_nrfx_pm_control(const struct device *dev,
 		.completion_sync = Z_SEM_INITIALIZER(                          \
 			twi_##idx##_data.completion_sync, 0, 1)		       \
 	};								       \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(I2C(idx))));	       \
 	static const struct i2c_nrfx_twi_config twi_##idx##z_config = {	       \
 		.twi = NRFX_TWI_INSTANCE(idx),				       \
 		.config = {						       \
-			.scl       = DT_PROP(I2C(idx), scl_pin),	       \
-			.sda       = DT_PROP(I2C(idx), sda_pin),	       \
+			I2C_NRFX_TWI_PIN_CFG(idx)			       \
 			.frequency = I2C_FREQUENCY(idx),		       \
-		}							       \
+		},							       \
+		IF_ENABLED(CONFIG_PINCTRL,				       \
+			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),))	       \
 	};								       \
-	DEVICE_DT_DEFINE(I2C(idx),					       \
+	PM_DEVICE_DT_DEFINE(I2C(idx), twi_nrfx_pm_action);		       \
+	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
 		      twi_##idx##_init,					       \
-		      twi_nrfx_pm_control,				       \
+		      PM_DEVICE_DT_GET(I2C(idx)),			       \
 		      &twi_##idx##_data,				       \
 		      &twi_##idx##z_config,				       \
 		      POST_KERNEL,					       \

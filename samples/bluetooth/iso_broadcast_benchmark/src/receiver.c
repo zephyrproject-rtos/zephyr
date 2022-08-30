@@ -5,18 +5,18 @@
  */
 
 #include <ctype.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/iso.h>
-#include <sys/byteorder.h>
-#include <console/console.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/console/console.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(iso_broadcast_receiver, LOG_LEVEL_DBG);
 
 #define DEVICE_NAME	CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME))
 
-#define BT_INTERVAL_TO_MS(interval) ((interval) * 5 / 4)
 #define PA_RETRY_COUNT 6
 #define ISO_RETRY_COUNT 10
 
@@ -102,7 +102,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	broadcaster_found = true;
 
 	per_sid = info->sid;
-	per_interval_ms = BT_INTERVAL_TO_MS(info->interval);
+	per_interval_ms = BT_CONN_INTERVAL_TO_MS(info->interval);
 	bt_addr_le_copy(&per_addr, info->addr);
 
 	k_sem_give(&sem_per_adv);
@@ -140,13 +140,13 @@ static void biginfo_cb(struct bt_le_per_adv_sync *sync,
 		"bn %u, pto %u, irc %u, max_pdu %u, sdu_interval %u us, "
 		"max_sdu %u, phy %s, %s framing, %sencrypted",
 		biginfo->num_bis, biginfo->sub_evt_count,
-		BT_INTERVAL_TO_MS((float)biginfo->iso_interval),
+		BT_CONN_INTERVAL_TO_MS((float)biginfo->iso_interval),
 		biginfo->burst_number, biginfo->offset, biginfo->rep_count,
 		biginfo->max_pdu, biginfo->sdu_interval, biginfo->max_sdu,
 		phy2str(biginfo->phy), biginfo->framing ? "with" : "without",
 		biginfo->encryption ? "" : "not ");
 
-	iso_interval_ms = BT_INTERVAL_TO_MS(biginfo->iso_interval);
+	iso_interval_ms = BT_CONN_INTERVAL_TO_MS(biginfo->iso_interval);
 	bis_count = MIN(biginfo->num_bis, CONFIG_BT_ISO_MAX_CHAN);
 	biginfo_received = true;
 	k_sem_give(&sem_per_big_info);
@@ -181,7 +181,7 @@ static void iso_recv(struct bt_iso_chan *chan,
 
 	/* NOTE: The packets received may be on different BISes */
 
-	if (info->flags == BT_ISO_FLAGS_VALID) {
+	if (info->flags & BT_ISO_FLAGS_VALID) {
 		stats_current_sync.iso_recv_count++;
 		stats_overall.iso_recv_count++;
 		stats_latest_arr[stats_latest_arr_pos++] = true;
@@ -338,7 +338,7 @@ static int create_big_sync(struct bt_iso_big **big, struct bt_le_per_adv_sync *s
 	uint32_t sem_timeout = per_interval_ms * PA_RETRY_COUNT;
 	uint32_t sync_timeout_ms;
 	static struct bt_iso_chan bis_iso_chan[CONFIG_BT_ISO_MAX_CHAN];
-	static struct bt_iso_chan *bis[CONFIG_BT_ISO_MAX_CHAN];
+	struct bt_iso_chan *bis[CONFIG_BT_ISO_MAX_CHAN];
 	struct bt_iso_big_sync_param big_sync_param = {
 		.bis_channels = bis,
 		.num_bis = 0,
@@ -363,7 +363,8 @@ static int create_big_sync(struct bt_iso_big **big, struct bt_le_per_adv_sync *s
 	sync_timeout_ms = iso_interval_ms * ISO_RETRY_COUNT;
 	big_sync_param.sync_timeout = CLAMP(sync_timeout_ms / 10, 0x000A, 0x4000); /* 10 ms units */
 	big_sync_param.num_bis = bis_count;
-	for (int i = 0; i < big_sync_param.num_bis; i++) {
+	/* BIS indexes start from 0x01, so add one to `i` */
+	for (int i = 1; i <= big_sync_param.num_bis; i++) {
 		big_sync_param.bis_bitfield |= BIT(i);
 	}
 

@@ -26,8 +26,7 @@ CPU and the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/BMD-30-33-35-36-EVAL.png
-	:width: 593px
+.. figure:: img/BMD-30-33-35-36-EVAL.jpg
 	:align: center
 	:alt: BMD-300-EVAL
 
@@ -96,7 +95,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See the `u-blox website`_ for a complete list of
 BMD-300/301/350-EVAL hardware features.
 
@@ -125,8 +124,7 @@ Push buttons
 External Connectors
 -------------------
 
-.. figure:: img/bmd-300-eval_pin_out.png
-	:width: 659px
+.. figure:: img/bmd-300-eval_pin_out.jpg
 	:align: center
 	:alt: BMD-300-EVAL pin-out
 

@@ -8,7 +8,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <sys/cbprintf.h>
+#include <zephyr/sys/cbprintf.h>
 
 struct emitter {
 	char *ptr;
@@ -25,8 +25,8 @@ static int sprintf_out(int c, struct emitter *p)
 	return 0; /* indicate keep going so we get the total count */
 }
 
-int snprintf(char *_MLIBC_RESTRICT str, size_t len,
-	     const char *_MLIBC_RESTRICT format, ...)
+int snprintf(char *ZRESTRICT str, size_t len,
+	     const char *ZRESTRICT format, ...)
 {
 	va_list vargs;
 
@@ -49,7 +49,7 @@ int snprintf(char *_MLIBC_RESTRICT str, size_t len,
 	return r;
 }
 
-int sprintf(char *_MLIBC_RESTRICT str, const char *_MLIBC_RESTRICT format, ...)
+int sprintf(char *ZRESTRICT str, const char *ZRESTRICT format, ...)
 {
 	va_list vargs;
 
@@ -67,8 +67,8 @@ int sprintf(char *_MLIBC_RESTRICT str, const char *_MLIBC_RESTRICT format, ...)
 	return r;
 }
 
-int vsnprintf(char *_MLIBC_RESTRICT str, size_t len,
-	      const char *_MLIBC_RESTRICT format, va_list vargs)
+int vsnprintf(char *ZRESTRICT str, size_t len,
+	      const char *ZRESTRICT format, va_list vargs)
 {
 	struct emitter p;
 	int     r;
@@ -87,7 +87,7 @@ int vsnprintf(char *_MLIBC_RESTRICT str, size_t len,
 	return r;
 }
 
-int vsprintf(char *_MLIBC_RESTRICT str, const char *_MLIBC_RESTRICT format,
+int vsprintf(char *ZRESTRICT str, const char *ZRESTRICT format,
 	     va_list vargs)
 {
 	struct emitter p;

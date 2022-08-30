@@ -10,22 +10,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <kernel_internal.h>
-#include <random/rand32.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/random/rand32.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <shell/shell.h>
-#include <shell/shell_uart.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_uart.h>
 
-#include <net/net_if.h>
-#include <net/dns_resolve.h>
-#include <net/ppp.h>
-#include <net/net_stats.h>
-#include <sys/printk.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/ppp.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/sys/printk.h>
 
 #include "route.h"
 #include "icmpv6.h"
@@ -34,7 +35,7 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
 #if defined(CONFIG_NET_TCP)
 #include "tcp_internal.h"
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 #endif
 
 #include "ipv6.h"
@@ -44,25 +45,25 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #endif
 
 #if defined(CONFIG_NET_L2_ETHERNET)
-#include <net/ethernet.h>
+#include <zephyr/net/ethernet.h>
 #endif
 
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
-#include <net/ethernet_mgmt.h>
+#include <zephyr/net/ethernet_mgmt.h>
 #endif
 
 #if defined(CONFIG_NET_L2_VIRTUAL)
-#include <net/virtual.h>
+#include <zephyr/net/virtual.h>
 #endif
 
 #if defined(CONFIG_NET_L2_VIRTUAL_MGMT)
-#include <net/virtual_mgmt.h>
+#include <zephyr/net/virtual_mgmt.h>
 #endif
 
-#include <net/capture.h>
+#include <zephyr/net/capture.h>
 
 #if defined(CONFIG_NET_GPTP)
-#include <net/gptp.h>
+#include <zephyr/net/gptp.h>
 #include "ethernet/gptp/gptp_messages.h"
 #include "ethernet/gptp/gptp_md.h"
 #include "ethernet/gptp/gptp_state.h"
@@ -71,14 +72,14 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #endif
 
 #if defined(CONFIG_NET_L2_PPP)
-#include <net/ppp.h>
+#include <zephyr/net/ppp.h>
 #include "ppp/ppp_internal.h"
 #endif
 
 #include "net_shell.h"
 #include "net_stats.h"
 
-#include <sys/fdtable.h>
+#include <zephyr/sys/fdtable.h>
 #include "websocket/websocket_internal.h"
 
 #define PR(fmt, ...)						\
@@ -216,16 +217,6 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 		}
 
 		return "IP Offload";
-	}
-#endif
-
-#ifdef CONFIG_NET_L2_CANBUS
-	if (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS)) {
-		if (extra) {
-			*extra = "======";
-		}
-
-		return "CANBUS";
 	}
 #endif
 
@@ -713,6 +704,7 @@ static void route_cb(struct net_route_entry *entry, void *user_data)
 	struct net_if *iface = data->user_data;
 	struct net_route_nexthop *nexthop_route;
 	int count;
+	uint32_t now = k_uptime_get_32();
 
 	if (entry->iface != iface) {
 		return;
@@ -725,6 +717,8 @@ static void route_cb(struct net_route_entry *entry, void *user_data)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&entry->nexthop, nexthop_route, node) {
 		struct net_linkaddr_storage *lladdr;
+		char remaining_str[sizeof("01234567890 sec")];
+		uint32_t remaining;
 
 		if (!nexthop_route->nbr) {
 			continue;
@@ -733,13 +727,24 @@ static void route_cb(struct net_route_entry *entry, void *user_data)
 		PR("\tneighbor : %p\t", nexthop_route->nbr);
 
 		if (nexthop_route->nbr->idx == NET_NBR_LLADDR_UNKNOWN) {
-			PR("addr : <unknown>\n");
+			PR("addr : <unknown>\t");
 		} else {
 			lladdr = net_nbr_get_lladdr(nexthop_route->nbr->idx);
 
-			PR("addr : %s\n", net_sprint_ll_addr(lladdr->addr,
+			PR("addr : %s\t", net_sprint_ll_addr(lladdr->addr,
 							     lladdr->len));
 		}
+
+		if (entry->is_infinite) {
+			snprintk(remaining_str, sizeof(remaining_str) - 1,
+				 "infinite");
+		} else {
+			remaining = net_timeout_remaining(&entry->lifetime, now);
+			snprintk(remaining_str, sizeof(remaining_str) - 1,
+				 "%u sec", remaining);
+		}
+
+		PR("lifetime : %s\n", remaining_str);
 
 		count++;
 	}
@@ -1059,7 +1064,7 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 			   GET_STAT(iface, tc.sent[i].pkts),
 			   GET_STAT(iface, tc.sent[i].bytes));
 		} else {
-			PR("[%d] %s (%d)\t%d\t\t%d\t%lu us%s\n", i,
+			PR("[%d] %s (%d)\t%d\t\t%d\t%u us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
 			   GET_STAT(iface, tc.sent[i].priority),
 			   GET_STAT(iface, tc.sent[i].pkts),
@@ -1118,7 +1123,7 @@ static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
 			   GET_STAT(iface, tc.recv[i].pkts),
 			   GET_STAT(iface, tc.recv[i].bytes));
 		} else {
-			PR("[%d] %s (%d)\t%d\t\t%d\t%lu us%s\n", i,
+			PR("[%d] %s (%d)\t%d\t\t%d\t%u us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
@@ -1167,7 +1172,7 @@ static void print_net_pm_stats(const struct shell *shell, struct net_if *iface)
 	PR("\tAverage time  : %u ms\n",
 	   (uint32_t)(GET_STAT(iface, pm.overall_suspend_time) /
 		   GET_STAT(iface, pm.suspend_count)));
-	PR("\tTotal time    : %llu ms\n",
+	PR("\tTotal time    : %" PRIu64 " ms\n",
 	   GET_STAT(iface, pm.overall_suspend_time));
 	PR("\tHow many times: %u\n",
 	   GET_STAT(iface, pm.suspend_count));
@@ -1432,11 +1437,6 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 			 ntohs(net_sin(&conn->remote_addr)->sin_port));
 	} else
 #endif
-#ifdef CONFIG_NET_L2_CANBUS
-	if (conn->local_addr.sa_family == AF_CAN) {
-		snprintk(addr_local, sizeof(addr_local), "-");
-	} else
-#endif
 	if (conn->local_addr.sa_family == AF_UNSPEC) {
 		snprintk(addr_local, sizeof(addr_local), "AF_UNSPEC");
 	} else {
@@ -1454,21 +1454,21 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 #endif /* CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 #if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
-struct tcp2_detail_info {
+struct tcp_detail_info {
 	int printed_send_queue_header;
 	int printed_details;
 	int count;
 };
 #endif
 
-#if defined(CONFIG_NET_TCP2) && \
+#if defined(CONFIG_NET_TCP) && \
 	(defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE))
 static void tcp_cb(struct tcp *conn, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
 	const struct shell *shell = data->shell;
 	int *count = data->user_data;
-	uint16_t recv_mss = net_tcp_get_recv_mss(conn);
+	uint16_t recv_mss = net_tcp_get_supported_mss(conn);
 
 	PR("%p %p   %5u    %5u %10u %10u %5u   %s\n",
 	   conn, conn->context,
@@ -1485,7 +1485,7 @@ static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
 	const struct shell *shell = data->shell;
-	struct tcp2_detail_info *details = data->user_data;
+	struct tcp_detail_info *details = data->user_data;
 	struct net_pkt *pkt;
 	sys_snode_t *node;
 
@@ -1496,7 +1496,7 @@ static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 			details->printed_details = true;
 		}
 
-		PR("%p   %d    %u\t %u\t  %zd\t  %d\t  %d/%d/%d %s\n",
+		PR("%p   %ld    %u\t %u\t  %zd\t  %d\t  %d/%d/%d %s\n",
 		   conn, atomic_get(&conn->ref_count), conn->recv_win,
 		   conn->send_win, conn->send_data_total, conn->unacked_len,
 		   conn->in_retransmission, conn->in_connect, conn->in_close,
@@ -1524,12 +1524,12 @@ static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 			struct net_buf *frag = pkt->frags;
 
 			if (!details->printed_send_queue_header) {
-				PR("%p[%d/%zd]", pkt,
+				PR("%p[%ld/%zd]", pkt,
 				   atomic_get(&pkt->atomic_ref),
 				   net_pkt_get_len(pkt));
 				details->printed_send_queue_header = true;
 			} else {
-				PR("                %p[%d/%zd]",
+				PR("                %p[%ld/%zd]",
 				   pkt, atomic_get(&pkt->atomic_ref),
 				   net_pkt_get_len(pkt));
 			}
@@ -1554,7 +1554,7 @@ static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 	details->printed_send_queue_header = true;
 }
 #endif /* CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG */
-#endif /* TCP2 */
+#endif /* TCP */
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
@@ -1577,7 +1577,7 @@ static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
 	   k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&reass->timer)),
 	   src, net_sprint_ipv6_addr(&reass->dst));
 
-	for (i = 0; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
+	for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT; i++) {
 		if (reass->pkt[i]) {
 			struct net_buf *frag = reass->pkt[i]->frags;
 
@@ -1630,7 +1630,7 @@ static void allocs_cb(struct net_pkt *pkt,
 
 	if (func_alloc) {
 		if (in_use) {
-			PR("%p/%d\t%5s\t%5s\t%s():%d\n",
+			PR("%p/%ld\t%5s\t%5s\t%s():%d\n",
 			   pkt, atomic_get(&pkt->atomic_ref), str,
 			   net_pkt_slab2str(pkt->slab),
 			   func_alloc, line_alloc);
@@ -2040,18 +2040,18 @@ static int cmd_net_conn(const struct shell *shell, size_t argc, char *argv[])
 	} else {
 #if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
 		/* Print information about pending packets */
-		struct tcp2_detail_info details;
+		struct tcp_detail_info details;
 
 		count = 0;
 
-		if (IS_ENABLED(CONFIG_NET_TCP2)) {
+		if (IS_ENABLED(CONFIG_NET_TCP)) {
 			memset(&details, 0, sizeof(details));
 			user_data.user_data = &details;
 		}
 
 		net_tcp_foreach(tcp_sent_list_cb, &user_data);
 
-		if (IS_ENABLED(CONFIG_NET_TCP2)) {
+		if (IS_ENABLED(CONFIG_NET_TCP)) {
 			if (details.count == 0) {
 				PR("No active connections.\n");
 			}
@@ -3004,9 +3004,9 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	PR("Estimate of the ratio of the frequency with the peer          "
 	   ": %u\n", (uint32_t)port_ds->neighbor_rate_ratio);
 	PR("Asymmetry on the link relative to the grand master time base  "
-	   ": %lld\n", port_ds->delay_asymmetry);
+	   ": %" PRId64 "\n", port_ds->delay_asymmetry);
 	PR("Maximum interval between sync %s                        "
-	   ": %llu\n", "messages",
+	   ": %" PRIu64 "\n", "messages",
 	   port_ds->sync_receipt_timeout_time_itv);
 	PR("Maximum number of Path Delay Requests without a response      "
 	   ": %d\n", port_ds->allowed_lost_responses);
@@ -3041,16 +3041,16 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	   gptp_uscaled_ns_to_timer_ms(
 		   &port_bmca_data->ann_rcpt_timeout_time_interval),
 	   port_ds->announce_receipt_timeout);
-	PR("Time without receiving sync %s %s      : %llu ms (%d)\n",
+	PR("Time without receiving sync %s %s      : %" PRIu64 " ms (%d)\n",
 	   "messages", "before running BMCA",
 	   (port_ds->sync_receipt_timeout_time_itv >> 16) /
 					(NSEC_PER_SEC / MSEC_PER_SEC),
 	   port_ds->sync_receipt_timeout);
-	PR("Sync event %s                 : %llu ms\n",
+	PR("Sync event %s                 : %" PRIu64 " ms\n",
 	   "transmission interval for the port",
 	   USCALED_NS_TO_NS(port_ds->half_sync_itv.low) /
 					(NSEC_PER_USEC * USEC_PER_MSEC));
-	PR("Path Delay Request %s         : %llu ms\n",
+	PR("Path Delay Request %s         : %" PRIu64 " ms\n",
 	   "transmission interval for the port",
 	   USCALED_NS_TO_NS(port_ds->pdelay_req_itv.low) /
 					(NSEC_PER_USEC * USEC_PER_MSEC));
@@ -3068,9 +3068,9 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	PR("\tCurrent state                                    "
 	   ": %s\n", pdelay_req2str(port_state->pdelay_req.state));
 	PR("\tInitial Path Delay Response Peer Timestamp       "
-	   ": %llu\n", port_state->pdelay_req.ini_resp_evt_tstamp);
+	   ": %" PRIu64 "\n", port_state->pdelay_req.ini_resp_evt_tstamp);
 	PR("\tInitial Path Delay Response Ingress Timestamp    "
-	   ": %llu\n", port_state->pdelay_req.ini_resp_ingress_tstamp);
+	   ": %" PRIu64 "\n", port_state->pdelay_req.ini_resp_ingress_tstamp);
 	PR("\tPath Delay Response %s %s            : %u\n",
 	   "messages", "received",
 	   port_state->pdelay_req.rcvd_pdelay_resp);
@@ -3106,7 +3106,7 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	   port_state->sync_rcv.follow_up_timeout_expired ? "yes" : "no");
 	PR("\tTime at which a Sync %s without Follow Up\n"
 	   "\t                             will be discarded   "
-	   ": %llu\n", "Message",
+	   ": %" PRIu64 "\n", "Message",
 	   port_state->sync_rcv.follow_up_receipt_timeout);
 
 	PR("SyncSend state machine variables:\n");
@@ -3134,10 +3134,10 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	PR("\tCurrent state                                    "
 	   ": %s\n", pss_send2str(port_state->pss_send.state));
 	PR("\tFollow Up Correction Field of last recv PSS      "
-	   ": %lld\n",
+	   ": %" PRId64 "\n",
 	   port_state->pss_send.last_follow_up_correction_field);
 	PR("\tUpstream Tx Time of the last recv PortSyncSync   "
-	   ": %llu\n", port_state->pss_send.last_upstream_tx_time);
+	   ": %" PRIu64 "\n", port_state->pss_send.last_upstream_tx_time);
 	PR("\tRate Ratio of the last received PortSyncSync     "
 	   ": %f\n",
 	   port_state->pss_send.last_rate_ratio);
@@ -3632,8 +3632,7 @@ static void context_info(struct net_context *context, void *user_data)
 		}
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
-		PR("%p\t%d\t%d\tEDATA (%s)\n",
-		   pool, pool->buf_count,
+		PR("%p\t%d\t%ld\tEDATA (%s)\n", pool, pool->buf_count,
 		   atomic_get(&pool->avail_count), pool->name);
 #else
 		PR("%p\t%d\tEDATA\n", pool, pool->buf_count);
@@ -3671,13 +3670,11 @@ static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 	PR("%p\t%d\t%u\tTX\n",
 	       tx, tx->num_blocks, k_mem_slab_num_free_get(tx));
 
-	PR("%p\t%d\t%d\tRX DATA (%s)\n",
-	       rx_data, rx_data->buf_count,
-	       atomic_get(&rx_data->avail_count), rx_data->name);
+	PR("%p\t%d\t%ld\tRX DATA (%s)\n	", rx_data, rx_data->buf_count,
+	   atomic_get(&rx_data->avail_count), rx_data->name);
 
-	PR("%p\t%d\t%d\tTX DATA (%s)\n",
-	       tx_data, tx_data->buf_count,
-	       atomic_get(&tx_data->avail_count), tx_data->name);
+	PR("%p\t%d\t%ld\tTX DATA (%s)\n", tx_data, tx_data->buf_count,
+	   atomic_get(&tx_data->avail_count), tx_data->name);
 #else
 	PR("Address\t\tTotal\tName\n");
 
@@ -3806,7 +3803,8 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 	   net_sprint_ll_addr(
 		   net_nbr_get_lladdr(nbr->idx)->addr,
 		   net_nbr_get_lladdr(nbr->idx)->len),
-	   net_nbr_get_lladdr(nbr->idx)->len == 8U ? "" : padding,
+	   nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "" :
+		(net_nbr_get_lladdr(nbr->idx)->len == 8U ? "" : padding),
 	   net_sprint_ipv6_addr(&net_ipv6_nbr_data(nbr)->addr));
 }
 #endif
@@ -4101,6 +4099,7 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 		str = argv[*i];
 	}
 
+	errno = 0;
 	res = strtol(str, &endptr, 10);
 
 	if (errno || (endptr == str)) {
@@ -4240,14 +4239,14 @@ static void net_pkt_buffer_info(const struct shell *shell, struct net_pkt *pkt)
 	struct net_buf *buf = pkt->buffer;
 
 	PR("net_pkt %p buffer chain:\n", pkt);
-	PR("%p[%d]", pkt, atomic_get(&pkt->atomic_ref));
+	PR("%p[%ld]", pkt, atomic_get(&pkt->atomic_ref));
 
 	if (buf) {
 		PR("->");
 	}
 
 	while (buf) {
-		PR("%p[%d/%u (%u/%u)]", buf, atomic_get(&pkt->atomic_ref),
+		PR("%p[%ld/%u (%u/%u)]", buf, atomic_get(&pkt->atomic_ref),
 		   buf->len, net_buf_max_len(buf), buf->size);
 
 		buf = buf->frags;
@@ -4764,7 +4763,7 @@ static void tcp_recv_cb(struct net_context *context, struct net_pkt *pkt,
 			union net_proto_header *proto_hdr,
 			int status, void *user_data)
 {
-	int ret;
+	int ret, len;
 
 	if (pkt == NULL) {
 		if (!tcp_ctx || !net_context_is_used(tcp_ctx)) {
@@ -4784,7 +4783,13 @@ static void tcp_recv_cb(struct net_context *context, struct net_pkt *pkt,
 		return;
 	}
 
-	PR_SHELL(tcp_shell, "%d bytes received\n", net_pkt_get_len(pkt));
+	len = net_pkt_remaining_data(pkt);
+
+	(void)net_context_update_recv_wnd(context, len);
+
+	PR_SHELL(tcp_shell, "%zu bytes received\n", net_pkt_get_len(pkt));
+
+	net_pkt_unref(pkt);
 }
 #endif
 
@@ -5532,7 +5537,7 @@ static int cmd_net_suspend(const struct shell *shell, size_t argc,
 
 		dev = net_if_get_device(iface);
 
-		ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND);
+		ret = pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
 		if (ret != 0) {
 			PR_INFO("Iface could not be suspended: ");
 
@@ -5576,7 +5581,7 @@ static int cmd_net_resume(const struct shell *shell, size_t argc,
 
 		dev = net_if_get_device(iface);
 
-		ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
+		ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
 		if (ret != 0) {
 			PR_INFO("Iface could not be resumed\n");
 		}
@@ -5613,7 +5618,7 @@ static void websocket_context_cb(struct websocket_context *context,
 
 	net_ctx = z_get_fd_obj(context->real_sock, NULL, 0);
 	if (net_ctx == NULL) {
-		PR_ERROR("Invalid fd %d");
+		PR_ERROR("Invalid fd %d", context->real_sock);
 		return;
 	}
 

@@ -7,7 +7,7 @@
 
 #include "esp.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 
 #define RX_NET_PKT_ALLOC_TIMEOUT				\
@@ -169,6 +169,15 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 		return;
 	}
 
+#ifdef CONFIG_NET_SOCKETS
+	/* We need to claim the net_context mutex here so that the ordering of
+	 * net_context and socket mutex claims matches the TX code path. Failure
+	 * to do so can lead to deadlocks.
+	 */
+	if (sock->context->cond.lock) {
+		k_mutex_lock(sock->context->cond.lock, K_FOREVER);
+	}
+#endif /* CONFIG_NET_SOCKETS */
 	k_mutex_lock(&sock->lock, K_FOREVER);
 	if (sock->recv_cb) {
 		sock->recv_cb(sock->context, pkt, NULL, NULL,
@@ -179,12 +188,17 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 		net_pkt_unref(pkt);
 	}
 	k_mutex_unlock(&sock->lock);
+#ifdef CONFIG_NET_SOCKETS
+	if (sock->context->cond.lock) {
+		k_mutex_unlock(sock->context->cond.lock);
+	}
+#endif /* CONFIG_NET_SOCKETS */
 }
 
 void esp_socket_close(struct esp_socket *sock)
 {
 	struct esp_data *dev = esp_socket_to_dev(sock);
-	char cmd_buf[sizeof("AT+CIPCLOSE=0")];
+	char cmd_buf[sizeof("AT+CIPCLOSE=000")];
 	int ret;
 
 	snprintk(cmd_buf, sizeof(cmd_buf), "AT+CIPCLOSE=%d",

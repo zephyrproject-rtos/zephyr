@@ -4,19 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <kernel.h>
-#include <device.h>
-#include <sys/__assert.h>
-#include <crypto/cipher.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/clock_control.h>
-#include <sys/byteorder.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/crypto/crypto.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/byteorder.h>
+#include <soc.h>
 
 #include "crypto_stm32_priv.h"
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(crypto_stm32);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_cryp)
@@ -448,9 +449,14 @@ static int crypto_stm32_query_caps(const struct device *dev)
 
 static int crypto_stm32_init(const struct device *dev)
 {
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
 	const struct crypto_stm32_config *cfg = CRYPTO_STM32_CFG(dev);
+
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	if (clock_control_on(clk, (clock_control_subsys_t *)&cfg->pclken) != 0) {
 		LOG_ERR("clock op failed\n");
@@ -469,9 +475,9 @@ static int crypto_stm32_init(const struct device *dev)
 }
 
 static struct crypto_driver_api crypto_enc_funcs = {
-	.begin_session = crypto_stm32_session_setup,
-	.free_session = crypto_stm32_session_free,
-	.crypto_async_callback_set = NULL,
+	.cipher_begin_session = crypto_stm32_session_setup,
+	.cipher_free_session = crypto_stm32_session_free,
+	.cipher_async_callback_set = NULL,
 	.query_hw_caps = crypto_stm32_query_caps,
 };
 

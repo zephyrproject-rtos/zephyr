@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for CAN transceivers
+
+include: phy-controller.yaml
+
+properties:
+    max-bitrate:
+      type: int
+      required: true
+      description: |
+        The maximum bitrate supported by the CAN transceiver in bits/s.
+
+    "#phy-cells":
+      const: 0

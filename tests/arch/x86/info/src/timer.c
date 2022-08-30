@@ -3,12 +3,13 @@
  * Copyright (c) 2019 Intel Corp.
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/counter.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/counter.h>
 
 #define NR_SAMPLES 10	/* sample timer 10 times */
 
+#if defined(CONFIG_COUNTER_CMOS)
 static uint32_t sync(const struct device *cmos)
 {
 	uint32_t this, last;
@@ -31,11 +32,10 @@ static uint32_t sync(const struct device *cmos)
 
 	return sys_clock_cycle_get_32();
 }
+#endif
 
 void timer(void)
 {
-	const struct device *cmos;
-
 #if defined(CONFIG_APIC_TIMER)
 	printk("TIMER: new local APIC");
 #elif defined(CONFIG_HPET_TIMER)
@@ -47,9 +47,11 @@ void timer(void)
 	printk(", configured frequency = %dHz\n",
 		sys_clock_hw_cycles_per_sec());
 
-	cmos = device_get_binding("CMOS");
-	if (cmos == NULL) {
-		printk("\tCan't get reference CMOS clock device.\n");
+#if defined(CONFIG_COUNTER_CMOS)
+	const struct device *const cmos = DEVICE_DT_GET_ONE(motorola_mc146818);
+
+	if (!device_is_ready(cmos)) {
+		printk("\tCMOS clock device is not ready.\n");
 	} else {
 		uint64_t sum = 0;
 
@@ -68,6 +70,7 @@ void timer(void)
 
 		printk("\taverage = %uHz\n", (unsigned) (sum / NR_SAMPLES));
 	}
+#endif
 
 	printk("\n");
 }

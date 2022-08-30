@@ -117,3 +117,16 @@ class MaxLineLengthExceptions(LineRule):
 
         if len(line) > max_length:
             return [RuleViolation(self.id, self.violation_message.format(len(line), max_length), line)]
+
+class BodyContainsBlockedTags(LineRule):
+    name = "body-contains-blocked-tags"
+    id = "UC7"
+    target = CommitMessageBody
+    tags = ["Change-Id"]
+
+    def validate(self, line, _commit):
+        flags = re.IGNORECASE
+        for tag in self.tags:
+            if re.search(rf"^\s*{tag}:", line, flags=flags):
+                return [RuleViolation(self.id, f"Body contains a blocked tag: {tag}")]
+        return

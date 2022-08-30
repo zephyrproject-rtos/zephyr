@@ -7,12 +7,11 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMA280_BMA280_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMA280_BMA280_H_
 
-#include <device.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
-
-#define BMA280_I2C_ADDRESS		DT_INST_REG_ADDR(0)
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 
 #define BMA280_REG_CHIP_ID		0x00
 #if DT_INST_PROP(0, is_bmc150)
@@ -41,7 +40,7 @@
 #endif
 
 /*
- * BMA280_PMU_FULL_RANGE measured in mili-m/s^2 instead
+ * BMA280_PMU_FULL_RANGE measured in milli-m/s^2 instead
  * of m/s^2 to avoid using struct sensor_value for it
  */
 #define BMA280_REG_PMU_RANGE		0x0F
@@ -114,7 +113,6 @@
 #define BMA280_THREAD_STACKSIZE_UNIT	1024
 
 struct bma280_data {
-	const struct device *i2c;
 	int16_t x_sample;
 	int16_t y_sample;
 	int16_t z_sample;
@@ -122,7 +120,6 @@ struct bma280_data {
 
 #ifdef CONFIG_BMA280_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -140,6 +137,13 @@ struct bma280_data {
 #endif
 
 #endif /* CONFIG_BMA280_TRIGGER */
+};
+
+struct bma280_config {
+	struct i2c_dt_spec i2c;
+#ifdef CONFIG_BMA280_TRIGGER
+	struct gpio_dt_spec int1_gpio;
+#endif
 };
 
 #ifdef CONFIG_BMA280_TRIGGER

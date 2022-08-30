@@ -11,18 +11,18 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_IIS2DLPC_IIS2DLPC_H_
 #define ZEPHYR_DRIVERS_SENSOR_IIS2DLPC_IIS2DLPC_H_
 
-#include <drivers/gpio.h>
-#include <sys/util.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/sensor.h>
 #include <stmemsc.h>
 #include "iis2dlpc_reg.h"
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 /* Return ODR reg value based on data rate set */
@@ -54,17 +54,17 @@
  * @bus_name: Pointer to bus master identifier.
  * @pm: Power mode (lis2dh_powermode).
  * @irq_dev_name: Pointer to GPIO PORT identifier.
- * @irq_pin: GPIO pin number connecter to sensor int pin.
+ * @irq_pin: GPIO pin number connected to sensor int pin.
  * @drdy_int: Sensor drdy int (int1/int2).
  */
 struct iis2dlpc_config {
 	stmdev_ctx_t ctx;
 	union {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-		const struct stmemsc_cfg_i2c i2c;
+		const struct i2c_dt_spec i2c;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-		const struct stmemsc_cfg_spi spi;
+		const struct spi_dt_spec spi;
 #endif
 	} stmemsc_cfg;
 	iis2dlpc_mode_t pm;

@@ -25,4 +25,7 @@ supported:
   - hwinfo
   - i2c
   - i2s
+  - sdhc
   - spi
+  - watchdog
+  - usb_device

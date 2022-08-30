@@ -8,7 +8,7 @@
 #define _TRACE_BACKEND_H
 
 #include <string.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,8 +47,7 @@ struct tracing_backend {
  * @param _api  Tracing backend API.
  */
 #define TRACING_BACKEND_DEFINE(_name, _api)                              \
-	static const Z_STRUCT_SECTION_ITERABLE(tracing_backend, _name) = \
-	{                                                                \
+	static const STRUCT_SECTION_ITERABLE(tracing_backend, _name) = { \
 		.name = STRINGIFY(_name),                                \
 		.api = &_api                                             \
 	}
@@ -70,8 +69,8 @@ static inline void tracing_backend_init(
  * @brief Output tracing packet with tracing backend.
  *
  * @param backend Pointer to tracing_backend instance.
- * @param data    Address of outputing buffer.
- * @param length  Length of outputing buffer.
+ * @param data    Address of outputting buffer.
+ * @param length  Length of outputting buffer.
  */
 static inline void tracing_backend_output(
 		const struct tracing_backend *backend,
@@ -92,7 +91,7 @@ static inline void tracing_backend_output(
  */
 static inline struct tracing_backend *tracing_backend_get(char *name)
 {
-	Z_STRUCT_SECTION_FOREACH(tracing_backend, backend) {
+	STRUCT_SECTION_FOREACH(tracing_backend, backend) {
 		if (strcmp(backend->name, name) == 0) {
 			return backend;
 		}

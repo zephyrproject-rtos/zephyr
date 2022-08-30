@@ -49,7 +49,7 @@ properties:
 
     prediv:
       type: int
-      required: false
+      required: true
       description: |
           Configurable prescaler
           Valid range: 1 - 16

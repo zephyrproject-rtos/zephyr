@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 
 #define SENSOR_GET_HELP \
 	"Get sensor data. Channel names are optional. All channels are read " \
@@ -49,6 +49,7 @@ const char *sensor_channel_name[SENSOR_CHAN_ALL] = {
 	[SENSOR_CHAN_GAS_RES] =		"gas_resistance",
 	[SENSOR_CHAN_VOLTAGE] =		"voltage",
 	[SENSOR_CHAN_CURRENT] =		"current",
+	[SENSOR_CHAN_POWER] =		"power",
 	[SENSOR_CHAN_RESISTANCE] =	"resistance",
 	[SENSOR_CHAN_ROTATION] =	"rotation",
 	[SENSOR_CHAN_POS_DX] =		"pos_dx",

@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "test_mslab.h"
 
 #define THREAD_NUM 3
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 K_MEM_SLAB_DEFINE(mslab1, BLK_SIZE, BLK_NUM, BLK_ALIGN);
 
@@ -48,7 +48,7 @@ void tmslab_alloc_wait_ok(void *p1, void *p2, void *p3)
  * @see k_mem_slab_alloc()
  * @see k_mem_slab_free()
  */
-void test_mslab_alloc_wait_prio(void)
+ZTEST(mslab_concept, test_mslab_alloc_wait_prio)
 {
 	void *block[BLK_NUM];
 	k_tid_t tid[THREAD_NUM];

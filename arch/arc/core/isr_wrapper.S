@@ -14,13 +14,13 @@
  */
 
 #include <offsets_short.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <sw_isr_table.h>
-#include <kernel_structs.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/arch/cpu.h>
 #include <swap_macros.h>
-#include <arch/arc/asm-compat/assembler.h>
+#include <zephyr/arch/arc/asm-compat/assembler.h>
 
 GTEXT(_isr_wrapper)
 GTEXT(_isr_demux)
@@ -249,8 +249,6 @@ rirq_path:
 #if defined(CONFIG_PM)
 	clri r0 /* do not interrupt exiting tickless idle operations */
 	MOVR r1, _kernel
-	/* z_kernel.idle is 32 bit despite of platform bittnes */
-	ld_s r3, [r1, _kernel_offset_to_idle] /* requested idle duration */
 	breq r3, 0, _skip_pm_save_idle_exit
 
 	st 0, [r1, _kernel_offset_to_idle] /* zero idle duration */
@@ -274,7 +272,13 @@ SECTION_FUNC(TEXT, _isr_demux)
 	PUSHR r30
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
 	PUSHR r58
+#ifndef CONFIG_64BIT
 	PUSHR r59
+#endif /* !CONFIG_64BIT */
+#endif
+
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	bl z_sched_usage_stop
 #endif
 
 #ifdef CONFIG_TRACING_ISR
@@ -308,7 +312,9 @@ irq_hint_handled:
 #endif
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
+#ifndef CONFIG_64BIT
 	POPR r59
+#endif /* !CONFIG_64BIT */
 	POPR r58
 #endif
 

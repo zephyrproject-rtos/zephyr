@@ -6,19 +6,19 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <zephyr.h>
-#include <shell/shell.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/hci_vs.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/conn.h>
 
 #include "../host/hci_core.h"
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-int cmd_mesh_adv(const struct shell *shell, size_t argc, char *argv[])
+int cmd_mesh_adv(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_buf *buf;
 	int err;

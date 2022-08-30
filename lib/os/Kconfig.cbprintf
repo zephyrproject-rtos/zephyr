@@ -31,6 +31,7 @@ choice CBPRINTF_INTEGRAL_CONV
 # 01: 0% / 0 B (01 / 00)
 config CBPRINTF_FULL_INTEGRAL
 	bool "Convert the full range of integer values"
+	select PICOLIBC_IO_LONG_LONG if PICOLIBC
 	help
 	  Build cbprintf with buffers sized to support converting the full
 	  range of all integral and pointer values.
@@ -47,7 +48,7 @@ config CBPRINTF_REDUCED_INTEGRAL
 
 	  This will decrease stack space, but affects conversion of any type
 	  with more than 32 bits.  This includes not only intmax_t but any
-	  type that can be converted to an integral represention including
+	  type that can be converted to an integral representation including
 	  size_t and pointers.
 
 	  With CBPRINTF_COMPLETE conversions that may result in value-specific
@@ -61,9 +62,10 @@ endchoice
 
 # 02: 82% / 1530 B (02 / 00)
 config CBPRINTF_FP_SUPPORT
-	bool "Enable floating point formatting in cbprintf"
+	bool "Floating point formatting in cbprintf"
 	default y if FPU
 	depends on CBPRINTF_COMPLETE
+	select PICOLIBC_IO_FLOAT if PICOLIBC
 	help
 	  Build the cbprintf utility function with support for floating
 	  point format specifiers.  Selecting this increases stack size
@@ -71,7 +73,7 @@ config CBPRINTF_FP_SUPPORT
 
 # 04: 13% / 456 B (07 / 03)
 config CBPRINTF_FP_A_SUPPORT
-	bool "Enable floating point %a conversions"
+	bool "Floating point %a conversions"
 	depends on CBPRINTF_FULL_INTEGRAL
 	select CBPRINTF_FP_SUPPORT
 	help
@@ -133,3 +135,21 @@ config CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT
 	  When enabled, CBPRINTF_STATIC_PACKAGE asserts when buffer is not
 	  properly aligned. If macro is widely used then assert may impact
 	  memory footprint.
+
+config CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+	bool
+	help
+	  Enable this option to store the flags used to create the package
+	  into the package itself.
+
+config CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS
+	bool
+	depends on !PICOLIBC
+	select CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+	help
+	  Hidden option to support tagged arguments in cbvprint_package().
+	  If enabled and cbvprint_package() is called with the corresponding
+	  flag, the packaging function no longer looks at the format strings
+	  to determine the types of arguments, but instead, each argument is
+	  tagged with a type by preceding it with another argument as type
+	  (integer).

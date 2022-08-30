@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/adc.h>
-#include <syscall_handler.h>
-#include <kernel.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/kernel.h>
 
 static inline int z_vrfy_adc_channel_setup(const struct device *dev,
 					   const struct adc_channel_cfg *user_channel_cfg)

@@ -27,17 +27,16 @@
  * object attributes array in the phil_obj_abstract.h
  * header file.
  */
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <cmsis_os.h>
-#include <zephyr.h>
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
 #else
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #endif
 
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 
 #include "phil_obj_abstract.h"
 
@@ -72,6 +71,12 @@ osSemaphoreId forks[NUM_PHIL];
 
 #define fork(x) (forks[x])
 
+/*
+ * CMSIS limits the stack size, but qemu_x86_64, qemu_xtensa,
+ * qemu_leon3 and the boards such as up_squared, ehl_crb,
+ * acrn_ehl_crb need 1024 to run this.
+ * For other arch and boards suggested stack size is 512.
+ */
 #define STACK_SIZE CONFIG_CMSIS_THREAD_MAX_STACK_SIZE
 
 #if DEBUG_PRINTF

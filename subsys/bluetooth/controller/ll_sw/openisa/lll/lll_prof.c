@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "hal/ccm.h"
@@ -32,7 +32,7 @@ void lll_prof_latency_capture(void)
 	radio_tmr_sample();
 }
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 static uint32_t timestamp_radio_end;
 
 uint32_t lll_prof_radio_end_backup(void)
@@ -44,7 +44,7 @@ uint32_t lll_prof_radio_end_backup(void)
 
 	return timestamp_radio_end;
 }
-#endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+#endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 void lll_prof_cputime_capture(void)
 {
@@ -65,11 +65,11 @@ void lll_prof_send(void)
 	/* calculate the elapsed time in us since on-air radio packet end
 	 * to ISR entry
 	 */
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	latency = timestamp_latency - timestamp_radio_end;
-#else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+#else /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 	latency = timestamp_latency - radio_tmr_end_get();
-#endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+#endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	/* check changes in min, avg and max of latency */
 	if (latency > latency_max) {

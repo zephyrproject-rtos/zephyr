@@ -7,7 +7,7 @@
 
 #include <stddef.h>
 #include <zephyr/types.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include "memq.h"
 #include "mayfly.h"
 
@@ -192,7 +192,6 @@ void mayfly_run(uint8_t callee_id)
 				 (void **)&m);
 		while (link) {
 			uint8_t state;
-
 #if defined(MAYFLY_UT)
 			_state = 0U;
 #endif /* MAYFLY_UT */

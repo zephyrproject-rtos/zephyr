@@ -4,9 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Forward declaration to avoid unnecessary includes. */
+struct lll_adv_sync;
+
 /* Enables CTE transmission according to provided configuration */
-void lll_df_conf_cte_tx_enable(uint8_t type, uint8_t length,
-			       uint8_t ant_num, uint8_t *ant_ids);
+void lll_df_cte_tx_enable(struct lll_adv_sync *lll_sync, const struct pdu_adv *pdu,
+			  uint32_t *cte_len_us);
 /* Disables CTE transmission */
 void lll_df_conf_cte_tx_disable(void);
 
@@ -53,5 +56,12 @@ static inline uint8_t lll_df_sync_cfg_is_modified(struct lll_df_sync *df_cfg)
 }
 
 /* Enables CTE reception according to provided configuration */
-void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, uint8_t *ant_ids,
-			       uint8_t chan_idx);
+void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, const uint8_t *ant_ids,
+			       uint8_t chan_idx, bool cte_info_in_s1, uint8_t phy);
+
+/* Configure CTE transmission */
+void lll_df_cte_tx_configure(uint8_t cte_type, uint8_t cte_length, uint8_t num_ant_ids,
+			     const uint8_t *ant_ids);
+
+/* Enabled parsing of a PDU for CTEInfo */
+void lll_df_conf_cte_info_parsing_enable(void);

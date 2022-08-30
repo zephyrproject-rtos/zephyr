@@ -1,0 +1,15 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_NXP_OS_TIMER := nxp,os-timer
+
+config MCUX_OS_TIMER
+	bool "MCUX OS Event timer"
+	depends on HAS_MCUX_OS_TIMER
+	default $(dt_compat_enabled,$(DT_COMPAT_NXP_OS_TIMER))
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the NXP OS
+	  event timer and provides the standard "system clock driver" interfaces.

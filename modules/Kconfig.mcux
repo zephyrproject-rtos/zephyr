@@ -10,6 +10,11 @@ config HAS_MCUX
 
 if HAS_MCUX
 
+config HAS_MCUX_12B1MSPS_SAR
+	bool
+	help
+	  Set if the 12B1MSPS SAR ADC module is present in the SoC.
+
 config HAS_MCUX_ADC12
 	bool
 	help
@@ -38,7 +43,7 @@ config HAS_MCUX_CCM
 config HAS_MCUX_CCM_REV2
 	bool
 	help
-	  Set if the revison 2 of clock control module (CCM) module is present in the SoC.
+	  Set if the revision 2 of clock control module (CCM) module is present in the SoC.
 	  This is present in SoC's such as RT1170
 
 config HAS_MCUX_SYSCON
@@ -57,6 +62,11 @@ config HAS_MCUX_ELCDIF
 	help
 	  Set if the enhanced LCD interface (eLCDIF) module is present in the
 	  SoC.
+
+config HAS_MCUX_MIPI_DSI
+	bool
+	help
+	  Set if the MIPI DSI module is present in the SoC.
 
 config HAS_MCUX_ENET
 	bool
@@ -92,19 +102,24 @@ config HAS_MCUX_FTM
 config HAS_MCUX_IAP
 	bool
 	help
-	  Set if the flash memory In Applcation Programming is present in
+	  Set if the flash memory In Application Programming is present in
 	  the LPC55xxx family SoCs.
 
 config HAS_MCUX_IAP_LEGACY
 	bool
 	help
-	  Set if the flash memory In Applcation Programming is present in
+	  Set if the flash memory In Application Programming is present in
 	  the older LPC family SoCs (LPC54xxx, LPC11xxx).
 
 config HAS_MCUX_IGPIO
 	bool
 	help
 	  Set if the iMX GPIO (IGPIO) module is present in the SoC.
+
+config HAS_MCUX_IOMUXC
+	bool
+	help
+	  Set if the iMX I/O mux controller (IOMUXC) is present in the SoC.
 
 config HAS_MCUX_LPI2C
 	bool
@@ -130,6 +145,31 @@ config HAS_MCUX_GPT
 	bool
 	help
 	  Set if the general purpose timer (GPT) module is present in the SoC.
+
+config HAS_MCUX_QTMR
+	bool
+	help
+	  Set if the quad timer (QTMR) module is present in the SoC.
+
+config HAS_MCUX_GPC
+	bool
+	help
+	  Set if the general power controller (GPC) module is present in the SoC.
+
+config HAS_MCUX_PMU
+	bool
+	help
+	  Set if the power management unit (PMU) module is present in the SoC.
+
+config HAS_MCUX_DCDC
+	bool
+	help
+	  Set if the DCDC converter module is present in the SoC.
+
+config HAS_MCUX_SNVS
+	bool
+	help
+	  Set if the SNVS module is present on the SoC.
 
 config HAS_MCUX_RNG
 	bool
@@ -171,6 +211,18 @@ config HAS_MCUX_SIM
 	  Set if the system integration module (SIM) module is present in the
 	  SoC.
 
+config HAS_MCUX_SRC
+	bool
+	help
+	  Set if the system reset controller (SRC) module is present in the
+	  SoC.
+
+config HAS_MCUX_SRC_V2
+	bool
+	help
+	  Set if version 2 of the system reset controller (SRC) module is
+	  present in the SoC.
+
 config HAS_MCUX_TRNG
 	bool
 	help
@@ -181,6 +233,11 @@ config HAS_MCUX_USB_EHCI
 	bool
 	help
 	  Set if the USB controller EHCI module is present in the SoC.
+
+config HAS_MCUX_USB_LPCIP3511
+	bool
+	help
+	  Set if the USB controller LPCIP3511 module is present in the SoC.
 
 config HAS_MCUX_USDHC1
 	bool
@@ -282,5 +339,31 @@ config HAS_MCUX_RCM
 	help
 	  Set if the Reset Control Module (RCM) module is present in
 	  the SoC.
+
+config HAS_MCUX_CTIMER
+	bool
+	help
+	  Set if the CTIMER module is present in the SoC.
+
+config HAS_MCUX_I2S
+	bool
+	help
+	  Set if the I2S/SAI module is present on the Soc
+
+config HAS_MCUX_MCAN
+	bool
+	help
+	  Set if the MCAN module is present on the SoC.
+
+config HAS_MCUX_ADC_ETC
+	bool
+	help
+	  Set if the ADC External Trigger Control module is present
+	  on the SoC.
+
+config HAS_MCUX_XBARA
+	bool
+	help
+	  Set if the XBARA module is present on the SoC.
 
 endif # HAS_MCUX

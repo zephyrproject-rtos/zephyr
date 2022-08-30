@@ -1,0 +1,22 @@
+# Packet filtering config
+# Copyright (c) 2021 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Network Packet Filtering"
+
+config NET_PKT_FILTER
+	bool "Network packet filtering"
+	help
+	  The Network Packet Filtering facility provides the infrastructure
+	  to construct custom rules for accepting and/or denying packet
+	  transmission and reception.
+
+if NET_PKT_FILTER
+module = NET_PKT_FILTER
+module-dep = NET_LOG
+module-str = Log level for packet filtering
+module-help = Enables packet filter output debug messages
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_PKT_FILTER
+
+endmenu

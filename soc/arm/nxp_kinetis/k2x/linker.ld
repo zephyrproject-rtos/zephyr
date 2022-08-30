@@ -11,4 +11,4 @@
  * This is the linker script for both standard images and XIP images.
  */
 
-#include <arch/arm/aarch32/cortex_m/scripts/linker.ld>
+#include <zephyr/arch/arm/aarch32/cortex_m/scripts/linker.ld>

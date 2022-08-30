@@ -35,7 +35,8 @@ class RegNum():
 
 
 class GdbStub_ARM_CortexM(GdbStub):
-    ARCH_DATA_BLK_STRUCT = "<IIIIIIIII"
+    ARCH_DATA_BLK_STRUCT    = "<IIIIIIIII"
+    ARCH_DATA_BLK_STRUCT_V2 = "<IIIIIIIIIIIIIIIII"
 
     GDB_SIGNAL_DEFAULT = 7
 
@@ -50,7 +51,12 @@ class GdbStub_ARM_CortexM(GdbStub):
 
     def parse_arch_data_block(self):
         arch_data_blk = self.logfile.get_arch_data()['data']
-        tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT, arch_data_blk)
+        arch_data_ver = self.logfile.get_arch_data()['hdr_ver']
+
+        if arch_data_ver == 1:
+            tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT, arch_data_blk)
+        elif arch_data_ver == 2:
+            tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_V2, arch_data_blk)
 
         self.registers = dict()
 
@@ -63,6 +69,16 @@ class GdbStub_ARM_CortexM(GdbStub):
         self.registers[RegNum.PC] = tu[6]
         self.registers[RegNum.XPSR] = tu[7]
         self.registers[RegNum.SP] = tu[8]
+
+        if arch_data_ver > 1:
+            self.registers[RegNum.R4]  = tu[9]
+            self.registers[RegNum.R5]  = tu[10]
+            self.registers[RegNum.R6]  = tu[11]
+            self.registers[RegNum.R7]  = tu[12]
+            self.registers[RegNum.R8]  = tu[13]
+            self.registers[RegNum.R9]  = tu[14]
+            self.registers[RegNum.R10] = tu[15]
+            self.registers[RegNum.R11] = tu[16]
 
     def handle_register_group_read_packet(self):
         reg_fmt = "<I"

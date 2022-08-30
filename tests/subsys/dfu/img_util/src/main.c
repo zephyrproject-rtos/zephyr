@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <storage/flash_map.h>
-#include <dfu/flash_img.h>
+#include <zephyr/ztest.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/dfu/flash_img.h>
 
-void test_init_id(void)
+ZTEST(img_util, test_init_id)
 {
 	struct flash_img_context ctx_no_id;
 	struct flash_img_context ctx_id;
@@ -33,7 +33,7 @@ void test_init_id(void)
 		      "Partition ID is not set correctly");
 }
 
-void test_collecting(void)
+ZTEST(img_util, test_collecting)
 {
 	const struct flash_area *fa;
 	struct flash_img_context ctx;
@@ -78,7 +78,7 @@ void test_collecting(void)
 			data[j] = k++;
 		}
 		ret = flash_img_buffered_write(&ctx, data, sizeof(data), false);
-		zassert_true(ret == 0, "image colletion fail: %d\n", ret);
+		zassert_true(ret == 0, "image collection fail: %d\n", ret);
 	}
 
 	zassert(flash_img_buffered_write(&ctx, data, 0, true) == 0, "pass",
@@ -108,7 +108,7 @@ void test_collecting(void)
 #endif
 }
 
-void test_check_flash(void)
+ZTEST(img_util, test_check_flash)
 {
 	/* echo $'0123456789abcdef\nfedcba9876543201' > tst.sha
 	 * hexdump tst.sha
@@ -158,12 +158,4 @@ void test_check_flash(void)
 	flash_area_close(ctx.flash_area);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_util,
-			ztest_unit_test(test_collecting),
-			ztest_unit_test(test_init_id),
-			ztest_unit_test(test_check_flash)
-			);
-	ztest_run_test_suite(test_util);
-}
+ZTEST_SUITE(img_util, NULL, NULL, NULL, NULL, NULL);

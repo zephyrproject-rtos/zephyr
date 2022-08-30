@@ -2,6 +2,12 @@
 
 if("${ARCH}" STREQUAL "x86")
   set_ifndef(QEMU_binary_suffix i386)
+elseif("${ARCH}" STREQUAL "mips")
+  if(CONFIG_BIG_ENDIAN)
+    set_ifndef(QEMU_binary_suffix mips)
+  else()
+    set_ifndef(QEMU_binary_suffix mipsel)
+  endif()
 elseif(DEFINED QEMU_ARCH)
   set_ifndef(QEMU_binary_suffix ${QEMU_ARCH})
 else()
@@ -23,9 +29,22 @@ find_program(
   )
 endif()
 
+# We need to set up uefi-run and OVMF environment
+# for testing UEFI method on qemu platforms
+if(CONFIG_QEMU_UEFI_BOOT)
+  find_program(UEFI NAMES uefi-run REQUIRED)
+  if(DEFINED ENV{OVMF_FD_PATH})
+    set(OVMF_FD_PATH $ENV{OVMF_FD_PATH})
+  else()
+    message(FATAL_ERROR "Couldn't find an valid OVMF_FD_PATH.")
+  endif()
+  list(APPEND UEFI -b ${OVMF_FD_PATH} -q ${QEMU})
+  set(QEMU ${UEFI})
+endif()
+
 set(qemu_targets
-  run
-  debugserver
+  run_qemu
+  debugserver_qemu
   )
 
 set(QEMU_FLAGS -pidfile)
@@ -51,7 +70,7 @@ endif()
 list(APPEND QEMU_FLAGS -serial chardev:con)
 
 # Connect semihosting console to the console chardev if configured.
-if(CONFIG_SEMIHOST_CONSOLE)
+if(CONFIG_SEMIHOST)
   list(APPEND QEMU_FLAGS
     -semihosting-config enable=on,target=auto,chardev=con
     )
@@ -61,9 +80,15 @@ endif()
 list(APPEND QEMU_FLAGS -mon chardev=con,mode=readline)
 
 if(CONFIG_QEMU_ICOUNT)
-  list(APPEND QEMU_FLAGS
+  if(CONFIG_QEMU_ICOUNT_SLEEP)
+    list(APPEND QEMU_FLAGS
+	  -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=on
+	  -rtc clock=vm)
+  else()
+    list(APPEND QEMU_FLAGS
 	  -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=off
 	  -rtc clock=vm)
+  endif()
 endif()
 
 # Add a BT serial device when building for bluetooth, unless the
@@ -242,7 +267,7 @@ elseif(QEMU_NET_STACK)
   endif()
 endif(QEMU_PIPE_STACK)
 
-if(CONFIG_X86_64)
+if(CONFIG_X86_64 AND NOT CONFIG_QEMU_UEFI_BOOT)
   # QEMU doesn't like 64-bit ELF files. Since we don't use any >4GB
   # addresses, converting it to 32-bit is safe enough for emulation.
   add_custom_target(qemu_image_target
@@ -321,13 +346,16 @@ set(env_qemu $ENV{QEMU_EXTRA_FLAGS})
 separate_arguments(env_qemu)
 list(APPEND QEMU_EXTRA_FLAGS ${env_qemu})
 
-list(APPEND MORE_FLAGS_FOR_debugserver -s -S)
+list(APPEND MORE_FLAGS_FOR_debugserver_qemu -s -S)
 
 # Architectures can define QEMU_KERNEL_FILE to use a specific output
 # file to pass to qemu (and a "qemu_kernel_target" target to generate
 # it), or set QEMU_KERNEL_OPTION if they want to replace the "-kernel
 # ..." option entirely.
-if(DEFINED QEMU_KERNEL_FILE)
+if(CONFIG_QEMU_UEFI_BOOT)
+  set(QEMU_UEFI_OPTION  ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.efi)
+  list(APPEND QEMU_UEFI_OPTION --)
+elseif(DEFINED QEMU_KERNEL_FILE)
   set(QEMU_KERNEL_OPTION "-kernel;${QEMU_KERNEL_FILE}")
 elseif(NOT DEFINED QEMU_KERNEL_OPTION)
   set(QEMU_KERNEL_OPTION "-kernel;$<TARGET_FILE:${logical_target_for_zephyr_elf}>")
@@ -341,6 +369,7 @@ foreach(target ${qemu_targets})
     ${PRE_QEMU_COMMANDS_FOR_${target}}
     COMMAND
     ${QEMU}
+    ${QEMU_UEFI_OPTION}
     ${QEMU_FLAGS_${ARCH}}
     ${QEMU_FLAGS}
     ${QEMU_EXTRA_FLAGS}

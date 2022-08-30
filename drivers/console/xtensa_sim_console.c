@@ -4,8 +4,8 @@
  */
 
 #include <xtensa/simcall.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 /**
@@ -51,7 +51,6 @@ extern void __printk_hook_install(int (*fn)(int));
 
 /**
  * @brief Install printk/stdout hook for Xtensa Simulator console output
- * @return N/A
  */
 static void xt_sim_console_hook_install(void)
 {
@@ -70,11 +69,11 @@ static int xt_sim_console_init(const struct device *arg)
 	return 0;
 }
 
-/* UART consloe initializes after the UART device itself */
+/* UART console initializes after the UART device itself */
 SYS_INIT(xt_sim_console_init,
 #if defined(CONFIG_EARLY_CONSOLE)
 	 PRE_KERNEL_1,
 #else
 	 POST_KERNEL,
 #endif
-	 CONFIG_XTENSA_CONSOLE_INIT_PRIORITY);
+	 CONFIG_CONSOLE_INIT_PRIORITY);

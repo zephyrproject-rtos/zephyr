@@ -9,9 +9,9 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys/cbprintf.h>
+#include <zephyr/sys/cbprintf.h>
 #include <sys/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_CBPRINTF_FULL_INTEGRAL
 typedef intmax_t int_value_type;
@@ -55,6 +55,15 @@ static inline int convert_value(uint_value_type num, unsigned int base,
 #define PAD_ZERO	BIT(0)
 #define PAD_TAIL	BIT(1)
 
+/* Skip over the argument tag if needed as it is not being used here. */
+#define SKIP_TAG_IF_NEEDED(ap, tagged_ap) \
+	do { \
+		if (IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS) \
+		    && tagged_ap) { \
+			(void)va_arg(ap, int); \
+		} \
+	} while (0)
+
 /**
  * @brief Printk internals
  *
@@ -64,13 +73,17 @@ static inline int convert_value(uint_value_type num, unsigned int base,
  *
  * @return printed byte count if CONFIG_CBPRINTF_LIBC_SUBSTS is set
  */
-int cbvprintf(cbprintf_cb out, void *ctx, const char *fmt, va_list ap)
+int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fmt,
+		     va_list ap, uint32_t flags)
 {
 	size_t count = 0;
 	char buf[DIGITS_BUFLEN];
 	char *prefix, *data;
 	int min_width, precision, data_len;
 	char padding_mode, length_mod, special;
+
+	const bool tagged_ap = (flags & Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS)
+			       == Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS;
 
 	/* we pre-increment in the loop  afterwards */
 	fmt--;
@@ -135,6 +148,8 @@ start:
 			continue;
 
 		case '*':
+			SKIP_TAG_IF_NEEDED(ap, tagged_ap);
+
 			if (precision >= 0) {
 				precision = va_arg(ap, int);
 			} else {
@@ -173,21 +188,43 @@ start:
 		case 'u': {
 			uint_value_type d;
 
-			if (length_mod == 'z') {
-				d = va_arg(ap, ssize_t);
-			} else if (length_mod == 'l') {
-				d = va_arg(ap, long);
-			} else if (length_mod == 'L') {
-				long long lld = va_arg(ap, long long);
+			SKIP_TAG_IF_NEEDED(ap, tagged_ap);
 
-				if (sizeof(int_value_type) < 8U &&
-				    lld != (int_value_type) lld) {
-					data = "ERR";
-					data_len = 3;
-					precision = 0;
-					break;
+			if (length_mod == 'z') {
+				if (*fmt == 'u') {
+					d = va_arg(ap, size_t);
+				} else {
+					d = va_arg(ap, ssize_t);
 				}
-				d = (uint_value_type) lld;
+			} else if (length_mod == 'l') {
+				if (*fmt == 'u') {
+					d = va_arg(ap, unsigned long);
+				} else {
+					d = va_arg(ap, long);
+				}
+			} else if (length_mod == 'L') {
+				if (*fmt == 'u') {
+					unsigned long long llu =
+						va_arg(ap, unsigned long long);
+
+					if (llu != (uint_value_type) llu) {
+						data = "ERR";
+						data_len = 3;
+						precision = 0;
+						break;
+					}
+					d = (uint_value_type) llu;
+				} else {
+					long long lld = va_arg(ap, long long);
+
+					if (lld != (int_value_type) lld) {
+						data = "ERR";
+						data_len = 3;
+						precision = 0;
+						break;
+					}
+					d = (int_value_type) lld;
+				}
 			} else if (*fmt == 'u') {
 				d = va_arg(ap, unsigned int);
 			} else {
@@ -217,6 +254,8 @@ start:
 		case 'X': {
 			uint_value_type x;
 
+			SKIP_TAG_IF_NEEDED(ap, tagged_ap);
+
 			if (*fmt == 'p') {
 				x = (uintptr_t)va_arg(ap, void *);
 				if (x == (uint_value_type)0) {
@@ -229,7 +268,16 @@ start:
 			} else if (length_mod == 'l') {
 				x = va_arg(ap, unsigned long);
 			} else if (length_mod == 'L') {
-				x = va_arg(ap, unsigned long long);
+				unsigned long long llx =
+					va_arg(ap, unsigned long long);
+
+				if (llx != (uint_value_type) llx) {
+					data = "ERR";
+					data_len = 3;
+					precision = 0;
+					break;
+				}
+				x = (uint_value_type) llx;
 			} else {
 				x = va_arg(ap, unsigned int);
 			}
@@ -244,6 +292,8 @@ start:
 		}
 
 		case 's': {
+			SKIP_TAG_IF_NEEDED(ap, tagged_ap);
+
 			data = va_arg(ap, char *);
 			data_len = strlen(data);
 			if (precision >= 0 && data_len > precision) {
@@ -254,7 +304,11 @@ start:
 		}
 
 		case 'c': {
-			int c = va_arg(ap, int);
+			int c;
+
+			SKIP_TAG_IF_NEEDED(ap, tagged_ap);
+
+			c = va_arg(ap, int);
 
 			buf[0] = c;
 			data = buf;

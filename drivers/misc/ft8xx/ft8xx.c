@@ -6,19 +6,19 @@
 
 #define DT_DRV_COMPAT ftdi_ft800
 
-#include <drivers/misc/ft8xx/ft8xx.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx.h>
 
 #include <stddef.h>
 #include <stdint.h>
 
-#include <device.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
-#include <drivers/misc/ft8xx/ft8xx_copro.h>
-#include <drivers/misc/ft8xx/ft8xx_common.h>
-#include <drivers/misc/ft8xx/ft8xx_dl.h>
-#include <drivers/misc/ft8xx/ft8xx_memory.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_copro.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_common.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_dl.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_memory.h>
 
 #include "ft8xx_drv.h"
 #include "ft8xx_host_commands.h"
@@ -96,7 +96,7 @@ static bool verify_chip(void)
 static int ft8xx_init(const struct device *dev)
 {
 	int ret;
-	struct ft8xx_config *config = (struct ft8xx_config *)dev->config;
+	const struct ft8xx_config *config = dev->config;
 
 	ret = ft8xx_drv_init();
 	if (ret < 0) {
@@ -167,9 +167,8 @@ static int ft8xx_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DEFINE(ft8xx_spi, "ft8xx_spi", ft8xx_init, NULL,
-		&ft8xx_data, &ft8xx_config,
-		APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+DEVICE_DT_INST_DEFINE(0, ft8xx_init, NULL, &ft8xx_data, &ft8xx_config,
+		      APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 int ft8xx_get_touch_tag(void)
 {

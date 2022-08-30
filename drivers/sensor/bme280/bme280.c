@@ -8,14 +8,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "bme280.h"
 
@@ -55,56 +56,34 @@ struct bme280_data {
 	int32_t t_fine;
 
 	uint8_t chip_id;
-
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state pm_state; /* Current power state */
-#endif
 };
 
 struct bme280_config {
-	const struct device *bus;
+	union bme280_bus bus;
 	const struct bme280_bus_io *bus_io;
-	const union bme280_bus_config bus_config;
 };
-
-static inline struct bme280_data *to_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static inline const struct bme280_config *to_config(const struct device *dev)
-{
-	return dev->config;
-}
-
-static inline const struct device *to_bus(const struct device *dev)
-{
-	return to_config(dev)->bus;
-}
-
-static inline const union bme280_bus_config*
-to_bus_config(const struct device *dev)
-{
-	return &to_config(dev)->bus_config;
-}
 
 static inline int bme280_bus_check(const struct device *dev)
 {
-	return to_config(dev)->bus_io->check(to_bus(dev), to_bus_config(dev));
+	const struct bme280_config *cfg = dev->config;
+
+	return cfg->bus_io->check(&cfg->bus);
 }
 
 static inline int bme280_reg_read(const struct device *dev,
 				  uint8_t start, uint8_t *buf, int size)
 {
-	return to_config(dev)->bus_io->read(to_bus(dev), to_bus_config(dev),
-					    start, buf, size);
+	const struct bme280_config *cfg = dev->config;
+
+	return cfg->bus_io->read(&cfg->bus, start, buf, size);
 }
 
 static inline int bme280_reg_write(const struct device *dev, uint8_t reg,
 				   uint8_t val)
 {
-	return to_config(dev)->bus_io->write(to_bus(dev), to_bus_config(dev),
-					     reg, val);
+	const struct bme280_config *cfg = dev->config;
+
+	return cfg->bus_io->write(&cfg->bus, reg, val);
 }
 
 /*
@@ -190,7 +169,7 @@ static int bme280_wait_until_ready(const struct device *dev)
 static int bme280_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
-	struct bme280_data *data = to_data(dev);
+	struct bme280_data *data = dev->data;
 	uint8_t buf[8];
 	int32_t adc_press, adc_temp, adc_humidity;
 	int size = 6;
@@ -199,8 +178,10 @@ static int bme280_sample_fetch(const struct device *dev,
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 #ifdef CONFIG_PM_DEVICE
-	/* Do not allow sample fetching from OFF state */
-	if (data->pm_state == PM_DEVICE_STATE_OFF)
+	enum pm_device_state state;
+	(void)pm_device_state_get(dev, &state);
+	/* Do not allow sample fetching from suspended state */
+	if (state == PM_DEVICE_STATE_SUSPENDED)
 		return -EIO;
 #endif
 
@@ -242,7 +223,7 @@ static int bme280_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct bme280_data *data = to_data(dev);
+	struct bme280_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
@@ -286,7 +267,7 @@ static const struct sensor_driver_api bme280_api_funcs = {
 
 static int bme280_read_compensation(const struct device *dev)
 {
-	struct bme280_data *data = to_data(dev);
+	struct bme280_data *data = dev->data;
 	uint16_t buf[12];
 	uint8_t hbuf[7];
 	int err = 0;
@@ -339,11 +320,8 @@ static int bme280_read_compensation(const struct device *dev)
 
 static int bme280_chip_init(const struct device *dev)
 {
-	struct bme280_data *data = to_data(dev);
+	struct bme280_data *data = dev->data;
 	int err;
-
-	LOG_DBG("initializing \"%s\" on bus \"%s\"",
-		dev->name, to_bus(dev)->name);
 
 	err = bme280_bus_check(dev);
 	if (err < 0) {
@@ -407,54 +385,33 @@ static int bme280_chip_init(const struct device *dev)
 	/* Wait for the sensor to be ready */
 	k_sleep(K_MSEC(1));
 
-#ifdef CONFIG_PM_DEVICE
-	/* Set power state to ACTIVE */
-	data->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif
 	LOG_DBG("\"%s\" OK", dev->name);
 	return 0;
 }
 
 #ifdef CONFIG_PM_DEVICE
-int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
-		   enum pm_device_state *state)
+static int bme280_pm_action(const struct device *dev,
+			    enum pm_device_action action)
 {
-	struct bme280_data *data = to_data(dev);
-
 	int ret = 0;
 
-	/* Set power state */
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		if (*state != data->pm_state) {
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Re-initialize the chip */
+		ret = bme280_chip_init(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Put the chip into sleep mode */
+		ret = bme280_reg_write(dev,
+			BME280_REG_CTRL_MEAS,
+			BME280_CTRL_MEAS_OFF_VAL);
 
-			/* Switching from OFF to any */
-			if (data->pm_state == PM_DEVICE_STATE_OFF) {
-
-				/* Re-initialize the chip */
-				ret = bme280_chip_init(dev);
-			}
-			/* Switching to OFF from any */
-			else if (*state == PM_DEVICE_STATE_OFF) {
-
-				/* Put the chip into sleep mode */
-				ret = bme280_reg_write(dev,
-					BME280_REG_CTRL_MEAS,
-					BME280_CTRL_MEAS_OFF_VAL);
-
-				if (ret < 0)
-					LOG_DBG("CTRL_MEAS write failed: %d",
-						ret);
-			}
-
-			/* Store the new state */
-			if (!ret)
-				data->pm_state = *state;
+		if (ret < 0) {
+			LOG_DBG("CTRL_MEAS write failed: %d", ret);
 		}
-	}
-	/* Get power state */
-	else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*state = data->pm_state;
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
 	return ret;
@@ -462,22 +419,18 @@ int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 #endif /* CONFIG_PM_DEVICE */
 
 /* Initializes a struct bme280_config for an instance on a SPI bus. */
-#define BME280_CONFIG_SPI(inst)						\
-	{								\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
-		.bus_io = &bme280_bus_io_spi,				\
-		.bus_config.spi_cfg =					\
-			SPI_CONFIG_DT_INST(inst,			\
-					   BME280_SPI_OPERATION,	\
-					   0),				\
+#define BME280_CONFIG_SPI(inst)				\
+	{						\
+		.bus.spi = SPI_DT_SPEC_INST_GET(	\
+			inst, BME280_SPI_OPERATION, 0),	\
+		.bus_io = &bme280_bus_io_spi,		\
 	}
 
 /* Initializes a struct bme280_config for an instance on an I2C bus. */
-#define BME280_CONFIG_I2C(inst)						\
-	{								\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
-		.bus_io = &bme280_bus_io_i2c,				\
-		.bus_config.i2c_addr = DT_INST_REG_ADDR(inst),		\
+#define BME280_CONFIG_I2C(inst)			       \
+	{					       \
+		.bus.i2c = I2C_DT_SPEC_INST_GET(inst), \
+		.bus_io = &bme280_bus_io_i2c,	       \
 	}
 
 /*
@@ -490,9 +443,12 @@ int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (BME280_CONFIG_SPI(inst)),			\
 			    (BME280_CONFIG_I2C(inst)));			\
+									\
+	PM_DEVICE_DT_INST_DEFINE(inst, bme280_pm_action);		\
+									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			 bme280_chip_init,				\
-			 bme280_pm_ctrl,				\
+			 PM_DEVICE_DT_INST_GET(inst),			\
 			 &bme280_data_##inst,				\
 			 &bme280_config_##inst,				\
 			 POST_KERNEL,					\

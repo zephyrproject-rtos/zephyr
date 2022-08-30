@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <kernel.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <cmsis_os2.h>
 
-#include <irq_offload.h>
-#include <kernel_structs.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/kernel_structs.h>
 
 #define TIMEOUT_TICKS   (10)
 #define FLAG1           (0x00000020)

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 #include <errno.h>
-#include <init.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include "flash_priv.h"
 
@@ -17,8 +17,10 @@
 #include "fsl_flashiap.h"
 
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_lpc_iap), okay)
-#define DT_DRV_COMPAT nxp_lpc_iap
+#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc11), okay)
+#define DT_DRV_COMPAT nxp_iap_fmc11
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc54), okay)
+#define DT_DRV_COMPAT nxp_iap_fmc54
 #else
 #error No matching compatible for soc_flash_lpc.c
 #endif
@@ -172,4 +174,4 @@ static int flash_lpc_init(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, flash_lpc_init, NULL,
 			&flash_data, NULL, POST_KERNEL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_lpc_api);
+			CONFIG_FLASH_INIT_PRIORITY, &flash_lpc_api);

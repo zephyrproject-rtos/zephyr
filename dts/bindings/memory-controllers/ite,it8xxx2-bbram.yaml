@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Google Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE, IT8XXX2 Battery Backed RAM node
+
+compatible: "ite,it8xxx2-bbram"
+
+include: base.yaml
+
+properties:
+    reg:
+        required: true

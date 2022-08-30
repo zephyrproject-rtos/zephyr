@@ -1,0 +1,138 @@
+# Bluetooth Isochronous Channel configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_ISO
+	bool
+
+# TODO: Split between client (central) and server (peripheral)
+config BT_ISO_UNICAST
+	bool
+	depends on BT_CONN
+	select BT_ISO
+	help
+	  This option enables support for Bluetooth Unicast
+	  Isochronous channels.
+
+config BT_ISO_PERIPHERAL
+	bool "Bluetooth Isochronous Channel Unicast Peripheral Support [EXPERIMENTAL]"
+	depends on !BT_CTLR || BT_CTLR_PERIPHERAL_ISO_SUPPORT
+	select BT_PERIPHERAL
+	select BT_ISO_UNICAST
+	select EXPERIMENTAL
+	help
+	  This option enables support for Bluetooth Unicast
+	  Isochronous channels for the peripheral role.
+
+config BT_ISO_CENTRAL
+	bool "Bluetooth Isochronous Channel Unicast Central Support [EXPERIMENTAL]"
+	depends on !BT_CTLR || BT_CTLR_CENTRAL_ISO_SUPPORT
+	select BT_CENTRAL
+	select BT_ISO_UNICAST
+	select EXPERIMENTAL
+	help
+	  This option enables support for Bluetooth Broadcast
+	  Isochronous channels for the central role.
+
+config BT_ISO_BROADCAST
+	bool
+	select BT_ISO
+	select BT_EXT_ADV
+
+config BT_ISO_BROADCASTER
+	bool "Bluetooth Isochronous Broadcaster Support [EXPERIMENTAL]"
+	depends on !BT_CTLR || BT_CTLR_ADV_ISO_SUPPORT
+	select BT_ISO_BROADCAST
+	select BT_BROADCASTER
+	select BT_PER_ADV
+	select EXPERIMENTAL
+	help
+	  This option enables support for the Bluetooth Isochronous Broadcaster.
+
+config BT_ISO_SYNC_RECEIVER
+	bool "Bluetooth Isochronous Synchronized Receiver Support [EXPERIMENTAL]"
+	depends on !BT_CTLR || BT_CTLR_SYNC_ISO_SUPPORT
+	select BT_ISO_BROADCAST
+	select BT_OBSERVER
+	select BT_PER_ADV_SYNC
+	select EXPERIMENTAL
+	help
+	  This option enables support for the Bluetooth Isochronous
+	  Synchronized Receiver.
+
+if BT_ISO
+
+config BT_ISO_MAX_CHAN
+	int "Maximum number of simultaneous ISO channels"
+	depends on BT_ISO
+	default BT_MAX_CONN if BT_CONN
+	default 1
+	range 1 64
+	help
+	  Maximum number of simultaneous Bluetooth isochronous channels
+	  supported.
+
+config BT_ISO_TX_BUF_COUNT
+	int "Number of Isochronous TX buffers"
+	default 1
+	range 1 255
+	help
+	  Number of buffers available for outgoing Isochronous channel SDUs.
+
+config BT_ISO_TX_FRAG_COUNT
+	int "Number of ISO TX fragment buffers"
+	default 2
+	range 0 255
+	help
+	  Number of buffers available for fragments of TX buffers. Warning:
+	  setting this to 0 means that the application must ensure that
+	  queued TX buffers never need to be fragmented, i.e. that the
+	  controller's buffer size is large enough. If this is not ensured,
+	  and there are no dedicated fragment buffers, a deadlock may occur.
+	  In most cases the default value of 2 is a safe bet.
+
+config BT_ISO_TX_MTU
+	int "Maximum supported MTU for Isochronous TX buffers"
+	default 251
+	range 23 4095
+	help
+	  Maximum MTU for Isochronous channels TX buffers.
+
+config BT_ISO_RX_BUF_COUNT
+	int "Number of Isochronous RX buffers"
+	default 1
+	range 1 255
+	help
+	  Number of buffers available for incoming Isochronous channel SDUs.
+
+config BT_ISO_RX_MTU
+	int "Maximum supported MTU for Isochronous RX buffers"
+	default 251
+	range 23 4095
+	help
+	  Maximum MTU for Isochronous channels RX buffers.
+
+if BT_ISO_UNICAST
+
+config BT_ISO_MAX_CIG
+	int "Maximum number of Connected Isochronous Groups (CIGs) to support"
+	default 1
+	help
+	  Maximum number of CIGs that are supported by the host. A CIG can be
+	  used for either transmitting or receiving.
+
+endif # BT_ISO_UNICAST
+
+if BT_ISO_BROADCAST
+
+config BT_ISO_MAX_BIG
+	int "Maximum number of Broadcast Isochronous Groups (BIGs) to support"
+	default 1
+	help
+	  Maximum number of BIGs that are supported by the host. A BIG can be
+	  used for either transmitting or receiving, but not at the same time.
+
+endif # BT_ISO_BROADCAST
+endif # BT_ISO

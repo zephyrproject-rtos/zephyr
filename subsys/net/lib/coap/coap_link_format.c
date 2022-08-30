@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 #include <stdlib.h>
@@ -14,12 +14,12 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <stdbool.h>
 #include <errno.h>
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <net/coap.h>
-#include <net/coap_link_format.h>
+#include <zephyr/net/coap.h>
+#include <zephyr/net/coap_link_format.h>
 
 static inline bool append_u8(struct coap_packet *cpkt, uint8_t data)
 {
@@ -84,7 +84,6 @@ static bool match_path_uri(const char * const *path,
 
 	p = path;
 	plen = *p ? strlen(*p) : 0;
-	j = 0;
 
 	if (plen == 0) {
 		return false;
@@ -688,7 +687,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 			return r;
 		}
 
-		if ((resource + 1) && (resource + 1)->path) {
+		if ((resource + 1)->path) {
 			r = append_u8(response, (uint8_t) ',');
 			if (!r) {
 				return -ENOMEM;

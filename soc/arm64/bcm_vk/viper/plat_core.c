@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 
 void z_arm64_el3_plat_init(void)
 {
@@ -20,11 +20,6 @@ void z_arm64_el3_plat_init(void)
 		ACTLR_EL3_CPUACTLR_BIT |
 		ACTLR_EL3_CPUECTLR_BIT);
 	write_actlr_el3(reg);
-
-	reg = (ICC_SRE_ELx_DFB_BIT | ICC_SRE_ELx_DIB_BIT |
-	       ICC_SRE_ELx_SRE_BIT | ICC_SRE_EL3_EN_BIT);
-
-	write_sysreg(reg, ICC_SRE_EL3);
 
 	reg = read_sysreg(CORTEX_A72_L2ACTLR_EL1);
 	reg |= CORTEX_A72_L2ACTLR_DISABLE_ACE_SH_OR_CHI_BIT;

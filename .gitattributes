@@ -4,6 +4,10 @@
 .gitignore export-ignore
 .mailmap export-ignore
 
+# Tell git to not diff certain files
+*.svg -diff
+
 # Tell linguist that generated test pattern files should not be included in the
 # language statistics.
-*.pat linguist-generated=true
+*.pat linguist-generated
+*.svg linguist-generated

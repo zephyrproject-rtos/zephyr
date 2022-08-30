@@ -13,7 +13,7 @@
 #include <zephyr/types.h>
 #include <errno.h>
 #include <stddef.h>
-#include <sys/timeutil.h>
+#include <zephyr/sys/timeutil.h>
 
 /** Convert a civil (proleptic Gregorian) date to days relative to
  * 1970-01-01.
@@ -28,8 +28,8 @@
  * @see http://howardhinnant.github.io/date_algorithms.html#days_from_civil
  */
 static int64_t time_days_from_civil(int64_t y,
-				  unsigned int m,
-				  unsigned int d)
+				    unsigned int m,
+				    unsigned int d)
 {
 	y -= m <= 2;
 
@@ -82,7 +82,7 @@ int timeutil_sync_state_update(struct timeutil_sync_state *tsp,
 		if (tsp->base.ref == 0) {
 			tsp->base = *inst;
 			tsp->latest = (struct timeutil_sync_instant){};
-			tsp->skew = 1.0;
+			tsp->skew = 1.0f;
 			rv = 0;
 		} else {
 			tsp->latest = *inst;
@@ -134,15 +134,20 @@ int timeutil_sync_ref_from_local(const struct timeutil_sync_state *tsp,
 	if ((tsp->skew > 0) && (tsp->base.ref > 0) && (refp != NULL)) {
 		const struct timeutil_sync_config *cfg = tsp->cfg;
 		int64_t local_delta = local - tsp->base.local;
-		int64_t ref_delta = (int64_t)(tsp->skew * local_delta) *
-			cfg->ref_Hz / cfg->local_Hz;
+		/* (x * 1.0) != x for large values of x.
+		 * Therefore only apply the multiplication if the skew is not one.
+		 */
+		if (tsp->skew != 1.0f) {
+			local_delta *= (double)tsp->skew;
+		}
+		int64_t ref_delta = local_delta * cfg->ref_Hz / cfg->local_Hz;
 		int64_t ref_abs = (int64_t)tsp->base.ref + ref_delta;
 
 		if (ref_abs < 0) {
 			rv = -ERANGE;
 		} else {
 			*refp = ref_abs;
-			rv = (int)(tsp->skew != 1.0);
+			rv = (int)(tsp->skew != 1.0f);
 		}
 	}
 
@@ -157,13 +162,19 @@ int timeutil_sync_local_from_ref(const struct timeutil_sync_state *tsp,
 	if ((tsp->skew > 0) && (tsp->base.ref > 0) && (localp != NULL)) {
 		const struct timeutil_sync_config *cfg = tsp->cfg;
 		int64_t ref_delta = (int64_t)(ref - tsp->base.ref);
-		double local_delta = (ref_delta * cfg->local_Hz) / cfg->ref_Hz
-			/ tsp->skew;
+		/* (x / 1.0) != x for large values of x.
+		 * Therefore only apply the division if the skew is not one.
+		 */
+		int64_t local_delta = (ref_delta * cfg->local_Hz) / cfg->ref_Hz;
+
+		if (tsp->skew != 1.0f) {
+			local_delta /= (double)tsp->skew;
+		}
 		int64_t local_abs = (int64_t)tsp->base.local
-			+ (int64_t)local_delta;
+				    + (int64_t)local_delta;
 
 		*localp = local_abs;
-		rv = (int)(tsp->skew != 1.0);
+		rv = (int)(tsp->skew != 1.0f);
 	}
 
 	return rv;
@@ -171,7 +182,7 @@ int timeutil_sync_local_from_ref(const struct timeutil_sync_state *tsp,
 
 int32_t timeutil_sync_skew_to_ppb(float skew)
 {
-	int64_t ppb64 = (int64_t)((1.0 - skew) * 1E9);
+	int64_t ppb64 = (int64_t)((1.0 - (double)skew) * 1E9);
 	int32_t ppb32 = (int32_t)ppb64;
 
 	return (ppb64 == ppb32) ? ppb32 : INT32_MIN;

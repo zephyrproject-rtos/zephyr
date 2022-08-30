@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 
 /* This enables allocation debugging but does not print so much output
@@ -23,20 +23,20 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 #define NET_LOG_LEVEL CONFIG_NET_PKT_LOG_LEVEL
 #endif
 
-#include <kernel.h>
-#include <toolchain.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 #include <string.h>
 #include <zephyr/types.h>
 #include <sys/types.h>
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/buf.h>
-#include <net/net_pkt.h>
-#include <net/ethernet.h>
-#include <net/udp.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/udp.h>
 
 #include "net_private.h"
 #include "tcp_internal.h"
@@ -55,11 +55,11 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
  */
 #define MAX_IP_PROTO_LEN 8
 #else
-#if defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_ETHERNET_BRIDGE) || defined(CONFIG_NET_L2_IEEE802154)
 #define MAX_IP_PROTO_LEN 0
 #else
-#error "Either IPv6 or IPv4 needs to be selected."
-#endif /* ETHERNET_BRIDGE */
+#error "Some packet protocol (e.g. IPv6, IPv4, ETH, IEEE 802.15.4) needs to be selected."
+#endif /* ETHERNET_BRIDGE / L2_IEEE802154 */
 #endif /* SOCKETS_CAN */
 #endif /* IPv4 */
 #endif /* IPv6 */
@@ -119,16 +119,16 @@ K_MEM_SLAB_DEFINE(tx_pkts, sizeof(struct net_pkt), CONFIG_NET_PKT_TX_COUNT, 4);
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 
 NET_BUF_POOL_FIXED_DEFINE(rx_bufs, CONFIG_NET_BUF_RX_COUNT,
-			  CONFIG_NET_BUF_DATA_SIZE, NULL);
+			  CONFIG_NET_BUF_DATA_SIZE, 4, NULL);
 NET_BUF_POOL_FIXED_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT,
-			  CONFIG_NET_BUF_DATA_SIZE, NULL);
+			  CONFIG_NET_BUF_DATA_SIZE, 4, NULL);
 
 #else /* !CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
 NET_BUF_POOL_VAR_DEFINE(rx_bufs, CONFIG_NET_BUF_RX_COUNT,
-			CONFIG_NET_BUF_DATA_POOL_SIZE, NULL);
+			CONFIG_NET_BUF_DATA_POOL_SIZE, 4, NULL);
 NET_BUF_POOL_VAR_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT,
-			CONFIG_NET_BUF_DATA_POOL_SIZE, NULL);
+			CONFIG_NET_BUF_DATA_POOL_SIZE, 4, NULL);
 
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
@@ -538,7 +538,7 @@ void net_pkt_unref(struct net_pkt *pkt)
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_DBG("%s [%d] pkt %p ref %d frags %p (%s():%d)",
+	NET_DBG("%s [%d] pkt %p ref %ld frags %p (%s():%d)",
 		slab2str(pkt->slab), k_mem_slab_num_free_get(pkt->slab),
 		pkt, ref - 1, pkt->frags, caller, line);
 #endif
@@ -619,7 +619,7 @@ struct net_pkt *net_pkt_ref(struct net_pkt *pkt)
 	} while (!atomic_cas(&pkt->atomic_ref, ref, ref + 1));
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_DBG("%s [%d] pkt %p ref %d (%s():%d)",
+	NET_DBG("%s [%d] pkt %p ref %ld (%s():%d)",
 		slab2str(pkt->slab), k_mem_slab_num_free_get(pkt->slab),
 		pkt, ref + 1, caller, line);
 #endif
@@ -1774,6 +1774,8 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	net_pkt_set_orig_iface(clone_pkt, net_pkt_orig_iface(pkt));
 	net_pkt_set_captured(clone_pkt, net_pkt_is_captured(pkt));
 	net_pkt_set_l2_bridged(clone_pkt, net_pkt_is_l2_bridged(pkt));
+	net_pkt_set_l2_processed(clone_pkt, net_pkt_is_l2_processed(pkt));
+	net_pkt_set_ll_proto_type(clone_pkt, net_pkt_ll_proto_type(pkt));
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
 		net_pkt_set_ipv4_ttl(clone_pkt, net_pkt_ipv4_ttl(pkt));
@@ -1791,21 +1793,39 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 		net_pkt_set_ipv6_next_hdr(clone_pkt,
 					  net_pkt_ipv6_next_hdr(pkt));
 	}
+
+#if defined(CONFIG_IEEE802154)
+	/* ieee802154_rssi and ieee802154_txpwr form a union, copying one of them is enough */
+	net_pkt_set_ieee802154_rssi(clone_pkt, net_pkt_ieee802154_rssi(pkt));
+	net_pkt_set_ieee802154_lqi(clone_pkt, net_pkt_ieee802154_lqi(pkt));
+	net_pkt_set_ieee802154_arb(clone_pkt, net_pkt_ieee802154_arb(pkt));
+	net_pkt_set_ieee802154_ack_fpb(clone_pkt, net_pkt_ieee802154_ack_fpb(pkt));
+	net_pkt_set_ieee802154_frame_secured(clone_pkt, net_pkt_ieee802154_frame_secured(pkt));
+	net_pkt_set_ieee802154_mac_hdr_rdy(clone_pkt, net_pkt_ieee802154_mac_hdr_rdy(pkt));
+#if defined(CONFIG_IEEE802154_2015)
+	net_pkt_set_ieee802154_fv2015(clone_pkt, net_pkt_ieee802154_fv2015(pkt));
+	net_pkt_set_ieee802154_ack_seb(clone_pkt, net_pkt_ieee802154_ack_seb(pkt));
+	net_pkt_set_ieee802154_ack_fc(clone_pkt, net_pkt_ieee802154_ack_fc(pkt));
+	net_pkt_set_ieee802154_ack_keyid(clone_pkt, net_pkt_ieee802154_ack_keyid(pkt));
+#endif
+#endif
 }
 
-struct net_pkt *net_pkt_clone(struct net_pkt *pkt, k_timeout_t timeout)
+static struct net_pkt *net_pkt_clone_internal(struct net_pkt *pkt,
+					      struct k_mem_slab *slab,
+					      k_timeout_t timeout)
 {
 	size_t cursor_offset = net_pkt_get_current_offset(pkt);
 	struct net_pkt *clone_pkt;
 	struct net_pkt_cursor backup;
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	clone_pkt = pkt_alloc_with_buffer(pkt->slab, net_pkt_iface(pkt),
+	clone_pkt = pkt_alloc_with_buffer(slab, net_pkt_iface(pkt),
 					  net_pkt_get_len(pkt),
 					  AF_UNSPEC, 0, timeout,
 					  __func__, __LINE__);
 #else
-	clone_pkt = pkt_alloc_with_buffer(pkt->slab, net_pkt_iface(pkt),
+	clone_pkt = pkt_alloc_with_buffer(slab, net_pkt_iface(pkt),
 					  net_pkt_get_len(pkt),
 					  AF_UNSPEC, 0, timeout);
 #endif
@@ -1849,6 +1869,16 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, k_timeout_t timeout)
 	return clone_pkt;
 }
 
+struct net_pkt *net_pkt_clone(struct net_pkt *pkt, k_timeout_t timeout)
+{
+	return net_pkt_clone_internal(pkt, pkt->slab, timeout);
+}
+
+struct net_pkt *net_pkt_rx_clone(struct net_pkt *pkt, k_timeout_t timeout)
+{
+	return net_pkt_clone_internal(pkt, &rx_pkts, timeout);
+}
+
 struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt, k_timeout_t timeout)
 {
 	struct net_pkt *clone_pkt;
@@ -1863,10 +1893,7 @@ struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt, k_timeout_t timeout)
 	clone_pkt->buffer = pkt->buffer;
 	buf = pkt->buffer;
 
-	while (buf) {
-		net_pkt_frag_ref(buf);
-		buf = buf->frags;
-	}
+	net_pkt_frag_ref(buf);
 
 	if (pkt->buffer) {
 		/* The link header pointers are only usable if there is

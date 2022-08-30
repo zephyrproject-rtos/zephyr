@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
 
 #include "sht3xd.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(SHT3XD, CONFIG_SENSOR_LOG_LEVEL);
 
 static uint16_t sht3xd_temp_processed_to_raw(const struct sensor_value *val)
@@ -84,14 +84,13 @@ int sht3xd_attr_set(const struct device *dev,
 static inline void setup_alert(const struct device *dev,
 			       bool enable)
 {
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
 	const struct sht3xd_config *cfg =
 		(const struct sht3xd_config *)dev->config;
 	unsigned int flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
 
-	gpio_pin_interrupt_configure(data->alert_gpio, cfg->alert_pin, flags);
+	gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, flags);
 }
 
 static inline void handle_alert(const struct device *dev)
@@ -99,11 +98,11 @@ static inline void handle_alert(const struct device *dev)
 	setup_alert(dev, false);
 
 #if defined(CONFIG_SHT3XD_TRIGGER_OWN_THREAD)
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
+	struct sht3xd_data *data = dev->data;
 
 	k_sem_give(&data->gpio_sem);
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
+	struct sht3xd_data *data = dev->data;
 
 	k_work_submit(&data->work);
 #endif
@@ -113,7 +112,7 @@ int sht3xd_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
+	struct sht3xd_data *data = dev->data;
 	const struct sht3xd_config *cfg =
 		(const struct sht3xd_config *)dev->config;
 
@@ -135,7 +134,7 @@ int sht3xd_trigger_set(const struct device *dev,
 	/* If ALERT is active we probably won't get the rising edge,
 	 * so invoke the callback manually.
 	 */
-	if (gpio_pin_get(data->alert_gpio, cfg->alert_pin)) {
+	if (gpio_pin_get_dt(&cfg->alert_gpio)) {
 		handle_alert(dev);
 	}
 
@@ -153,7 +152,7 @@ static void sht3xd_gpio_callback(const struct device *dev,
 
 static void sht3xd_thread_cb(const struct device *dev)
 {
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
+	struct sht3xd_data *data = dev->data;
 
 	if (data->handler != NULL) {
 		data->handler(dev, &data->trigger);
@@ -186,33 +185,28 @@ int sht3xd_init_interrupt(const struct device *dev)
 {
 	struct sht3xd_data *data = dev->data;
 	const struct sht3xd_config *cfg = dev->config;
-	const struct device *gpio = device_get_binding(cfg->alert_gpio_name);
 	int rc;
 
-	/* setup gpio interrupt */
-	if (gpio == NULL) {
-		LOG_DBG("Failed to get pointer to %s device!",
-			cfg->alert_gpio_name);
-		return -EINVAL;
+	if (!device_is_ready(cfg->alert_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
-	data->alert_gpio = gpio;
 
-	rc = gpio_pin_configure(gpio, cfg->alert_pin,
-				GPIO_INPUT | cfg->alert_flags);
+	rc = gpio_pin_configure_dt(&cfg->alert_gpio, GPIO_INPUT);
 	if (rc != 0) {
-		LOG_DBG("Failed to configure alert pin %u!", cfg->alert_pin);
+		LOG_DBG("Failed to configure alert pin %u!", cfg->alert_gpio.pin);
 		return -EIO;
 	}
 
 	gpio_init_callback(&data->alert_cb, sht3xd_gpio_callback,
-			   BIT(cfg->alert_pin));
-	rc = gpio_add_callback(gpio, &data->alert_cb);
+			   BIT(cfg->alert_gpio.pin));
+	rc = gpio_add_callback(cfg->alert_gpio.port, &data->alert_cb);
 	if (rc < 0) {
 		LOG_DBG("Failed to set gpio callback!");
 		return -EIO;
 	}
 
-	/* set alert thresholds to match reamsurement ranges */
+	/* set alert thresholds to match measurement ranges */
 	data->t_low = 0U;
 	data->rh_low = 0U;
 	data->t_high = 0xFFFF;

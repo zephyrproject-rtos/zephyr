@@ -3,7 +3,7 @@
 
 # Common fields for Nordic nRF family SPI peripherals
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -12,10 +12,29 @@ properties:
     interrupts:
       required: true
 
-    sck-pin:
+    max-frequency:
       type: int
       required: true
       description: |
+        Maximum data rate the SPI peripheral can be driven at, in Hz. This
+        property must be set at SoC level DTS files.
+
+    overrun-character:
+      type: int
+      default: 0xff
+      description: |
+        The overrun character (ORC) is used when all bytes from the TX buffer
+        are sent, but the transfer continues due to RX. Defaults to 0xff
+        (line high), the most common value used in SPI transfers.
+
+    sck-pin:
+      type: int
+      deprecated: true
+      required: false
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled.
+
         The SCK pin to use.
 
         For pins P0.0 through P0.31, use the pin number. For example,
@@ -30,14 +49,22 @@ properties:
 
     mosi-pin:
       type: int
-      required: true
+      deprecated: true
+      required: false
       description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled.
+
         The MOSI pin to use. The pin numbering scheme is the same as
         the sck-pin property's.
 
     miso-pin:
       type: int
-      required: true
+      deprecated: true
+      required: false
       description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled.
+
         The MISO pin to use. The pin numbering scheme is the same as
         the sck-pin property's.

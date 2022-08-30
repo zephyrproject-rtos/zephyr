@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2021, G-Technologies Sdn. Bhd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for uart devices
+ */
+
+test_uart_mhz19b {
+	compatible = "winsen,mhz19b";
+	maximum-range = <10000>;
+	abc-on;
+};
+
+test_uart_pms7003 {
+	compatible = "plantower,pms7003";
+};

@@ -3,15 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <ztest.h>
-#include <posix/time.h>
-#include <posix/sys/time.h>
-#include <posix/unistd.h>
+#include <zephyr/ztest.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/posix/sys/time.h>
+#include <zephyr/posix/unistd.h>
 
 #define SLEEP_SECONDS 1
 #define CLOCK_INVALID -1
 
-void test_posix_clock(void)
+ZTEST(posix_apis, test_posix_clock)
 {
 	int64_t nsecs_elapsed, secs_elapsed;
 	struct timespec ts, te;
@@ -44,35 +44,17 @@ void test_posix_clock(void)
 	printk("POSIX clock APIs test done\n");
 }
 
-void test_posix_realtime(void)
+ZTEST(posix_apis, test_posix_realtime)
 {
-	/* Make sure the realtime and monotonic clocks start out the
-	 * same.  This is not true on posix and where there is a
-	 * realtime clock, so don't keep this code.
-	 */
-
 	int ret;
 	struct timespec rts, mts;
 	struct timeval tv;
-
-	printk("POSIX clock set APIs\n");
-
-	/* Minimal sleep to align us to the next tick interval. This
-	 * helps with a case that 2 consecutive calls to clock_gettime()
-	 * below return different values. Note that the tick alignment
-	 * approach may break, in which case follow the suggestion in the
-	 * comment above.
-	 */
-	k_usleep(1);
 
 	ret = clock_gettime(CLOCK_MONOTONIC, &mts);
 	zassert_equal(ret, 0, "Fail to get monotonic clock");
 
 	ret = clock_gettime(CLOCK_REALTIME, &rts);
 	zassert_equal(ret, 0, "Fail to get realtime clock");
-
-	zassert_equal(rts.tv_sec, mts.tv_sec, "Seconds not equal");
-	zassert_equal(rts.tv_nsec, mts.tv_nsec, "Nanoseconds not equal");
 
 	/* Set a particular time.  In this case, the output of:
 	 * `date +%s -d 2018-01-01T15:45:01Z`
@@ -102,7 +84,7 @@ void test_posix_realtime(void)
 	for (int i = 1; i <= 20; i++) {
 		usleep(USEC_PER_MSEC * 90U);
 		ret = clock_gettime(CLOCK_REALTIME, &rts);
-		zassert_equal(ret, 0, "Fail to read realitime clock");
+		zassert_equal(ret, 0, "Fail to read realtime clock");
 
 		int64_t delta =
 			((int64_t)rts.tv_sec * NSEC_PER_SEC -
@@ -141,6 +123,4 @@ void test_posix_realtime(void)
 			" provide correct result");
 	zassert_true(rts.tv_nsec >= tv.tv_usec * NSEC_PER_USEC,
 			"gettimeofday didn't provide correct result");
-
-	printk("POSIX clock set APIs test done\n");
 }

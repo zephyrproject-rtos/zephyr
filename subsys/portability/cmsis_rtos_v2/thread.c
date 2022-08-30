@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/atomic.h>
-#include <debug/stack.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/debug/stack.h>
 #include "wrapper.h"
 
 static const osThreadAttr_t init_thread_attrs = {
@@ -26,8 +26,8 @@ static const osThreadAttr_t init_thread_attrs = {
 
 static sys_dlist_t thread_list;
 static struct cv2_thread cv2_thread_pool[CONFIG_CMSIS_V2_THREAD_MAX_COUNT];
-static uint32_t thread_num;
-static uint32_t thread_num_dynamic;
+static atomic_t thread_num;
+static atomic_t thread_num_dynamic;
 
 #if CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT != 0
 static K_THREAD_STACK_ARRAY_DEFINE(cv2_thread_stack_pool,		     \

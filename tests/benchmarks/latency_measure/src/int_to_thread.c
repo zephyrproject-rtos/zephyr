@@ -14,10 +14,10 @@
  * handler back to the interrupted thread.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include "utils.h"
 
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 
 static volatile int flag_var;
 
@@ -30,7 +30,6 @@ static timing_t timestamp_end;
  *
  * The interrupt handler gets the second timestamp.
  *
- * @return N/A
  */
 static void latency_test_isr(const void *unused)
 {
@@ -47,7 +46,6 @@ static void latency_test_isr(const void *unused)
  * Function makes all the test preparations: registers the interrupt handler,
  * gets the first timestamp and invokes the software interrupt.
  *
- * @return N/A
  */
 static void make_int(void)
 {

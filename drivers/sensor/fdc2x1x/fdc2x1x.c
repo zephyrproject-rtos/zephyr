@@ -8,13 +8,14 @@
 
 #define DT_DRV_COMPAT ti_fdc2x1x
 
-#include <device.h>
-#include <sys/util.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 #include <math.h>
 
 #include "fdc2x1x.h"
-#include "drivers/sensor/fdc2x1x.h"
+#include <zephyr/drivers/sensor/fdc2x1x.h>
 
 LOG_MODULE_REGISTER(FDC2X1X, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -74,10 +75,7 @@ static int fdc2x1x_bus_access(const struct device *dev, uint8_t reg,
 	const struct fdc2x1x_config *cfg = dev->config;
 
 	if (reg & FDC2X1X_READ) {
-		return i2c_burst_read(cfg->bus,
-				      cfg->i2c_addr,
-				      FDC2X1X_TO_I2C_REG(reg),
-				      data, length);
+		return i2c_burst_read_dt(&cfg->i2c, FDC2X1X_TO_I2C_REG(reg), data, length);
 	} else {
 		if (length != 2) {
 			return -EINVAL;
@@ -88,8 +86,7 @@ static int fdc2x1x_bus_access(const struct device *dev, uint8_t reg,
 		buf[0] = FDC2X1X_TO_I2C_REG(reg);
 		memcpy(buf + 1, data, sizeof(uint16_t));
 
-		return i2c_write(cfg->bus, buf,
-				 sizeof(buf), cfg->i2c_addr);
+		return i2c_write_dt(&cfg->i2c, buf, sizeof(buf));
 	}
 }
 
@@ -255,7 +252,7 @@ static int fdc2x1x_set_offset(const struct device *dev,
 /**
  * Set the Auto-Scan Mode.
  * @param dev - The device structure.
- * @param en - Enable/disable auto-acan mode.
+ * @param en - Enable/disable auto-scan mode.
  * @return 0 in case of success, negative error code otherwise.
  */
 static int fdc2x1x_set_autoscan_mode(const struct device *dev, bool en)
@@ -420,13 +417,6 @@ static int fdc2x1x_reset(const struct device *dev)
 				     FDC2X1X_RESET_DEV_MSK,
 				     FDC2X1X_RESET_DEV_SET(1));
 
-	/* device defaults to sleep mode */
-#ifdef CONFIG_PM_DEVICE
-	struct fdc2x1x_data *data = dev->data;
-
-	data->pm_state = PM_DEVICE_STATE_LOW_POWER;
-#endif
-
 	return ret;
 }
 
@@ -473,7 +463,7 @@ static int fdc2x1x_set_shutdown(const struct device *dev, bool enable)
 	const struct fdc2x1x_config *cfg = dev->config;
 	int ret = 0;
 
-	gpio_pin_set(cfg->sd_gpio, cfg->sd_pin, enable);
+	gpio_pin_set_dt(&cfg->sd_gpio, enable);
 
 	if (!enable) {
 		ret = fdc2x1x_restart(dev);
@@ -488,16 +478,18 @@ static int fdc2x1x_set_shutdown(const struct device *dev, bool enable)
  * @param pm_state - power management state
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_set_pm_state(const struct device *dev,
-				enum pm_device_state pm_state)
+static int fdc2x1x_device_pm_action(const struct device *dev,
+				    enum pm_device_action action)
 {
 	int ret;
-	struct fdc2x1x_data *data = dev->data;
 	const struct fdc2x1x_config *cfg = dev->config;
+	enum pm_device_state curr_state;
 
-	switch (pm_state) {
-	case PM_DEVICE_STATE_ACTIVE:
-		if (data->pm_state == PM_DEVICE_STATE_OFF) {
+	(void)pm_device_state_get(dev, &curr_state);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		if (curr_state == PM_DEVICE_STATE_OFF) {
 			ret = fdc2x1x_set_shutdown(dev, false);
 			if (ret) {
 				return ret;
@@ -508,11 +500,10 @@ static int fdc2x1x_set_pm_state(const struct device *dev,
 		if (ret) {
 			return ret;
 		}
-		data->pm_state = PM_DEVICE_STATE_ACTIVE;
 
 		break;
-	case PM_DEVICE_STATE_LOW_POWER:
-		if (data->pm_state == PM_DEVICE_STATE_OFF) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (curr_state == PM_DEVICE_STATE_OFF) {
 			ret = fdc2x1x_set_shutdown(dev, false);
 			if (ret) {
 				return ret;
@@ -522,47 +513,18 @@ static int fdc2x1x_set_pm_state(const struct device *dev,
 		if (ret) {
 			return ret;
 		}
-		data->pm_state = PM_DEVICE_STATE_LOW_POWER;
 
 		break;
-	case PM_DEVICE_STATE_OFF:
-		if (cfg->sd_gpio->name) {
+	case PM_DEVICE_ACTION_TURN_OFF:
+		if (cfg->sd_gpio->port.name) {
 			ret = fdc2x1x_set_shutdown(dev, true);
-			data->pm_state = PM_DEVICE_STATE_OFF;
 		} else {
 			LOG_ERR("SD pin not defined");
-			ret = -EINVAL;
+			ret = -ENOTSUP;
 		}
 		break;
 	default:
-		return -EINVAL;
-	}
-
-	return ret;
-}
-
-static int fdc2x1x_device_pm_ctrl(const struct device *dev,
-				  uint32_t ctrl_command,
-				  enum pm_device_state *state)
-{
-	struct fdc2x1x_data *data = dev->data;
-	int ret = 0;
-
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		if (*state != data->pm_state) {
-			switch (*state) {
-			case PM_DEVICE_STATE_ACTIVE:
-			case PM_DEVICE_STATE_LOW_POWER:
-			case PM_DEVICE_STATE_OFF:
-				ret = fdc2x1x_set_pm_state(dev, *state);
-				break;
-			default:
-				LOG_ERR("PM state not supported");
-				ret = -EINVAL;
-			}
-		}
-	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
-		*state = data->pm_state;
+		return -ENOTSUP;
 	}
 
 	return ret;
@@ -647,9 +609,10 @@ static int fdc2x1x_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
 #ifdef CONFIG_PM_DEVICE
-	struct fdc2x1x_data *data = dev->data;
+	enum pm_device_state state;
 
-	if (data->pm_state != PM_DEVICE_STATE_ACTIVE) {
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
 		LOG_ERR("Sample fetch failed, device is not in active mode");
 		return -ENXIO;
 	}
@@ -907,7 +870,7 @@ static int fdc2x1x_probe(const struct device *dev)
 	}
 
 	if (man_id != FDC2X1X_MANUFACTURER_ID_VAL) {
-		LOG_ERR("Wrong manufaturer id");
+		LOG_ERR("Wrong manufacturer id");
 		return -ENODEV;
 	}
 
@@ -923,13 +886,12 @@ static int fdc2x1x_init_sd_pin(const struct device *dev)
 {
 	const struct fdc2x1x_config *cfg = dev->config;
 
-	if (!device_is_ready(cfg->sd_gpio)) {
-		LOG_ERR("%s: sd_gpio device not ready", cfg->sd_gpio->name);
+	if (!device_is_ready(cfg->sd_gpio.port)) {
+		LOG_ERR("%s: sd_gpio device not ready", cfg->sd_gpio.port->name);
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(cfg->sd_gpio, cfg->sd_pin,
-			   GPIO_OUTPUT_INACTIVE | cfg->sd_flags);
+	gpio_pin_configure_dt(&cfg->sd_gpio, GPIO_OUTPUT_INACTIVE);
 
 	return 0;
 }
@@ -958,14 +920,14 @@ static int fdc2x1x_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (cfg->sd_gpio->name) {
+	if (cfg->sd_gpio.port->name) {
 		if (fdc2x1x_init_sd_pin(dev) < 0) {
 			return -ENODEV;
 		}
 	}
 
-	if (!device_is_ready(cfg->bus)) {
-		LOG_ERR("%s: fdc2x1x device not ready", dev->name);
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
 		return -ENODEV;
 	}
 
@@ -984,11 +946,6 @@ static int fdc2x1x_init(const struct device *dev)
 	if (fdc2x1x_set_op_mode(dev, FDC2X1X_ACTIVE_MODE) < 0) {
 		return -EIO;
 	}
-#ifdef CONFIG_PM_DEVICE
-	struct fdc2x1x_data *data = dev->data;
-
-	data->pm_state = FDC2X1X_ACTIVE_MODE;
-#endif
 
 #ifdef CONFIG_FDC2X1X_TRIGGER
 	if (fdc2x1x_init_interrupt(dev) < 0) {
@@ -1001,18 +958,14 @@ static int fdc2x1x_init(const struct device *dev)
 }
 
 #define FDC2X1X_SD_PROPS(n)						  \
-	.sd_gpio = DEVICE_DT_GET(DT_GPIO_CTLR(DT_DRV_INST(n), sd_gpios)), \
-	.sd_pin = DT_INST_GPIO_PIN(n, sd_gpios),			  \
-	.sd_flags = DT_INST_GPIO_FLAGS(n, sd_gpios),			  \
+	.sd_gpio = GPIO_DT_SPEC_INST_GET(n, sd_gpios),			  \
 
 #define FDC2X1X_SD(n)				       \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, sd_gpios), \
 		   (FDC2X1X_SD_PROPS(n)))
 
 #define FDC2X1X_INTB_PROPS(n)						      \
-	.intb_gpio = DEVICE_DT_GET(DT_GPIO_CTLR(DT_DRV_INST(n), intb_gpios)), \
-	.intb_pin = DT_INST_GPIO_PIN(n, intb_gpios),			      \
-	.intb_flags = DT_INST_GPIO_FLAGS(n, intb_gpios),		      \
+	.intb_gpio = GPIO_DT_SPEC_INST_GET(n, intb_gpios),		      \
 
 #define FDC2X1X_INTB(n)			   \
 	IF_ENABLED(CONFIG_FDC2X1X_TRIGGER, \
@@ -1045,17 +998,16 @@ static int fdc2x1x_init(const struct device *dev)
 	};								   \
 									   \
 	static const struct fdc2x1x_config fdc2x1x_config_##n = {	   \
-		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),			   \
-		.i2c_addr = DT_INST_REG_ADDR(n),			   \
+		.i2c = I2C_DT_SPEC_INST_GET(n),				   \
 		.fdc2x14 = DT_INST_PROP(n, fdc2x14),			   \
 		.autoscan_en = DT_INST_PROP(n, autoscan),		   \
 		.rr_sequence = DT_INST_PROP(n, rr_sequence),		   \
 		.active_channel = DT_INST_PROP(n, active_channel),	   \
 		.deglitch = DT_INST_PROP(n, deglitch),			   \
 		.sensor_activate_sel =					   \
-			DT_ENUM_IDX(DT_DRV_INST(n), sensor_activate_sel),  \
-		.clk_src = DT_ENUM_IDX(DT_DRV_INST(n), ref_clk_src),	   \
-		.current_drv = DT_ENUM_IDX(DT_DRV_INST(n), current_drive), \
+			DT_INST_ENUM_IDX(n, sensor_activate_sel),	   \
+		.clk_src = DT_INST_ENUM_IDX(n, ref_clk_src),		   \
+		.current_drv = DT_INST_ENUM_IDX(n, current_drive),	   \
 		.output_gain = DT_INST_PROP(n, output_gain),		   \
 		.ch_cfg =       ch_cfg_##n,				   \
 		.num_channels = ARRAY_SIZE(fdc2x1x_sample_buf_##n),	   \
@@ -1064,9 +1016,11 @@ static int fdc2x1x_init(const struct device *dev)
 		FDC2X1X_INTB(n)						   \
 	};								   \
 									   \
+	PM_DEVICE_DT_INST_DEFINE(n, fdc2x1x_device_pm_action);		   \
+									   \
 	DEVICE_DT_INST_DEFINE(n,					   \
 			      fdc2x1x_init,				   \
-			      fdc2x1x_device_pm_ctrl,			   \
+			      PM_DEVICE_DT_INST_GET(n),			   \
 			      &fdc2x1x_data_##n,			   \
 			      &fdc2x1x_config_##n,			   \
 			      POST_KERNEL,				   \

@@ -28,14 +28,12 @@ This development kit has the following features:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/bl654_dvk.jpg
-     :width: 500px
      :align: center
      :alt: BL654 Development Kit
 
      BL654 Development Kit Board
 
 .. figure:: img/455-00001_BoxContents.jpg
-     :width: 500px
      :align: center
      :alt: 455-00001 Box Contents
 
@@ -88,7 +86,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `BL654 website`_
 for a complete list of BL654 Development Kit board hardware features.
 

@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Arm Limited (or its affiliates). All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config XENVM_USE_GIC_V3
+	bool "Xen VM using GICv3"
+	depends on BOARD_XENVM
+	help
+	  Configure Xen VM to use GICv3 instead of default GICv2.

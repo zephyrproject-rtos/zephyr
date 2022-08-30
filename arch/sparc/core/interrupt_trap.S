@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <arch/sparc/sparc.h>
+#include <zephyr/arch/sparc/sparc.h>
 #include "stack_offsets.h"
 
 GTEXT(__sparc_trap_interrupt)
@@ -144,6 +144,11 @@ __sparc_trap_interrupt:
 	nop
 	nop
 	nop
+
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	call	z_sched_usage_stop
+	nop
+#endif
 
 #ifdef CONFIG_TRACING_ISR
 	call	sys_trace_isr_enter

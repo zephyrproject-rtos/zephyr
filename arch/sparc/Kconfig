@@ -44,7 +44,7 @@ config IDLE_STACK_SIZE
 config ISR_STACK_SIZE
 	default 4096
 
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	default 4096 if COVERAGE_GCOV
 	default 2048
 

@@ -33,12 +33,10 @@ started quickly. Here are some highlights of the STM32F3DISCOVERY board:
   acceleration sensor and a 3D digital magnetic sensor;
 
 .. HINT::
-   Recent PCB revisions (E and newer) are shiped with I3G4250D and LSM303AGR.
+   Recent PCB revisions (E and newer) are shipped with I3G4250D and LSM303AGR.
 
 .. image:: img/stm32f3_disco.jpg
-     :width: 350px
      :align: center
-     :height: 531px
      :alt: STM32F3DISCOVERY
 
 More information about the board can be found at the
@@ -109,6 +107,8 @@ features:
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | Direct Memory Access                |
 +-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -134,6 +134,8 @@ Default Zephyr Peripheral Mapping:
 - UART_1_RX : PC5
 - UART_2_TX : PA2
 - UART_2_RX : PA3
+- UART_4_TX : PC10
+- UART_4_RX : PC11
 - I2C1_SCL : PB6
 - I2C1_SDA : PB7
 - I2C2_SCL : PA9
@@ -192,7 +194,7 @@ CAN
 ===
 The STM32F3DISCOVERY does not have an onboard CAN transceiver. In
 order to use the CAN bus on the this board, an external CAN bus
-tranceiver must be connected to ``PD0`` (``CAN1_RX``) and ``PD1``
+transceiver must be connected to ``PD0`` (``CAN1_RX``) and ``PD1``
 (``CAN1_TX``).
 
 Programming and Debugging

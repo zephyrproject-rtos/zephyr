@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2022, Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Xilinx Zynq-7000/ZynqMP MIO/EMIO GPIO controller node.
+
+  This GPIO controller is contained in both the Xilinx Zynq-7000 and
+  ZynqMP (UltraScale) SoCs. It interfaces both I/O pins of the SoC,
+  which can be mapped in the system design tools (MIO pins), or SoC-
+  internal signals between the processor system and the programmable
+  logic part of the SoC (EMIO pins).
+
+  It is organized in banks, where the number of banks and total number
+  of available GPIO pins differs between the two SoC families:
+
+  Zynq-7000 (comp. Zynq-7000 TRM, chap. 14.1.2, p. 381):
+    * Bank 0: MIO  pins [31:00]
+    * Bank 1: MIO  pins [53:32] (total: 54 MIO pins)
+    * Bank 2: EMIO pins [31:00]
+    * Bank 3: EMIO pins [63:32] (total: 64 EMIO pins)
+
+  ZynqMP (UltraScale) (comp. Ultrascale TRM, chap. 27, p. 769):
+    * Bank 0: MIO  pins [25:00]
+    * Bank 1: MIO  pins [51:26]
+    * Bank 2: MIO  pins [77:52] (total: 78 MIO pins, 26 per bank)
+    * Bank 3: EMIO pins [31:00]
+    * Bank 4: EMIO pins [63:32]
+    * Bank 5: EMIO pins [95:64] (total: 96 EMIO pins)
+
+  The controller is interrupt-capable. Certain pins both in the Zynq-
+  7000 and the ZynqMP are reserved or at least limited regarding their
+  direction.
+
+compatible: "xlnx,ps-gpio"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true

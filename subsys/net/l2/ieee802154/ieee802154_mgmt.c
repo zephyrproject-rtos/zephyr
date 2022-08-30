@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154_mgmt, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
-#include <net/net_core.h>
+#include <zephyr/net/net_core.h>
 
 #include <errno.h>
 
-#include <net/net_if.h>
-#include <net/ieee802154_radio.h>
-#include <net/ieee802154_mgmt.h>
-#include <net/ieee802154.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154_mgmt.h>
+#include <zephyr/net/ieee802154.h>
 
 #include "ieee802154_frame.h"
 #include "ieee802154_mgmt_priv.h"
@@ -129,7 +129,7 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 		goto out;
 	}
 
-	/* ToDo: For now, we assume we are on 2.4Ghz
+	/* TODO: For now, we assume we are on 2.4Ghz
 	 * (device will have to export capabilities) */
 	for (channel = 11U; channel <= 26U; channel++) {
 		if (IEEE802154_IS_CHAN_UNSCANNED(scan->channel_set, channel)) {
@@ -208,7 +208,7 @@ enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
 		}
 
 		if (ctx->associated) {
-			/* ToDo: check src address vs coord ones and reject
+			/* TODO: check src address vs coord ones and reject
 			 * if they don't match
 			 */
 			ctx->associated = false;
@@ -261,10 +261,10 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 
 	cmd = ieee802154_get_mac_command(pkt);
 	cmd->assoc_req.ci.dev_type = 0U; /* RFD */
-	cmd->assoc_req.ci.power_src = 0U; /* ToDo: set right power source */
-	cmd->assoc_req.ci.rx_on = 1U; /* ToDo: that will depends on PM */
-	cmd->assoc_req.ci.sec_capability = 0U; /* ToDo: security support */
-	cmd->assoc_req.ci.alloc_addr = 0U; /* ToDo: handle short addr */
+	cmd->assoc_req.ci.power_src = 0U; /* TODO: set right power source */
+	cmd->assoc_req.ci.rx_on = 1U; /* TODO: that will depends on PM */
+	cmd->assoc_req.ci.sec_capability = 0U; /* TODO: security support */
+	cmd->assoc_req.ci.alloc_addr = 0U; /* TODO: handle short addr */
 
 	ctx->associated = false;
 
@@ -276,7 +276,7 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 		goto out;
 	}
 
-	/* ToDo: current timeout is arbitrary */
+	/* TODO: current timeout is arbitrary */
 	k_sem_take(&ctx->req_lock, K_SECONDS(1));
 
 	if (ctx->associated) {

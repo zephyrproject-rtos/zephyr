@@ -6,7 +6,7 @@
 
 / {
 	resources {
-		compatible = "test,gpio_basic_api";
+		compatible = "test-gpio-basic-api";
 		out-gpios = <&sx1509b 0 0>; /* EXT0 */
 		in-gpios = <&sx1509b 1 0>;  /* EXT1 */
 	};
@@ -24,7 +24,6 @@
 	sx1509b: sx1509b@3e {
 		compatible = "semtech,sx1509b";
 		reg = <0x3e>;
-		label = "IOX";
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <16>;

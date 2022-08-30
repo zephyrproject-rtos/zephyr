@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2020 Cobham Gaisler AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "gaisler,leon3";
+			reg = <0>;
+		};
+	};
+
+	ram0: memory@40000000 {
+		compatible = "mmio-sram";
+		reg = <0x40000000 0x40000000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+		interrupt-parent = <&irqmp>;
+
+		irqmp: irqmp0@80000200 {
+			compatible = "gaisler,irqmp";
+			reg = <0x80000200 0x100>;
+			eirq = <0>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+		};
+
+		timer0: gptimer@80000300 {
+			compatible = "gaisler,gptimer";
+			interrupts = <8>;
+			reg = <0x80000300 0x100>;
+		};
+
+		uart0: apbuart@80000100 {
+			compatible = "gaisler,apbuart";
+			interrupts = <2>;
+			reg = <0x80000100 0x100>;
+			status = "disabled";
+		};
+	};
+};

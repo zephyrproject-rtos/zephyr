@@ -6,7 +6,7 @@
 
 #include "test_msgq.h"
 
-K_THREAD_STACK_EXTERN(tstack);
+K_THREAD_STACK_DECLARE(tstack, STACK_SIZE);
 extern struct k_thread tdata;
 extern struct k_msgq msgq;
 static ZTEST_BMEM char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
@@ -55,7 +55,7 @@ static void purge_when_put(struct k_msgq *q)
  * @brief Test purge a message queue
  * @see k_msgq_init(), k_msgq_purge(), k_msgq_put()
  */
-void test_msgq_purge_when_put(void)
+ZTEST(msgq_api_1cpu, test_msgq_purge_when_put)
 {
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
 
@@ -67,7 +67,7 @@ void test_msgq_purge_when_put(void)
  * @brief Test purge a message queue
  * @see k_msgq_init(), k_msgq_purge(), k_msgq_put()
  */
-void test_msgq_user_purge_when_put(void)
+ZTEST_USER(msgq_api, test_msgq_user_purge_when_put)
 {
 	struct k_msgq *q;
 

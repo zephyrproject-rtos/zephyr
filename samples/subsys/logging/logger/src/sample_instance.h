@@ -6,9 +6,9 @@
 #ifndef SAMPLE_INSTANCE_H
 #define SAMPLE_INSTANCE_H
 
-#include <kernel.h>
-#include <logging/log_instance.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log_instance.h>
+#include <zephyr/logging/log.h>
 
 #define SAMPLE_INSTANCE_NAME sample_instance
 

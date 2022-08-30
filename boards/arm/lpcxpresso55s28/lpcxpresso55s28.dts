@@ -17,6 +17,8 @@
 		sw0 = &user_button_1;
 		sw1 = &user_button_2;
 		sw2 = &user_button_3;
+		watchdog0 = &wwdt0;
+		accel0 = &mma8652fc;
 	};
 
 	chosen {
@@ -31,15 +33,15 @@
 		compatible = "gpio-keys";
 		user_button_1: button_0 {
 			label = "User SW1";
-			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
 		};
 		user_button_2: button_1 {
 			label = "User SW2";
-			gpios = <&gpio1 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		user_button_3: button_2 {
 			label = "User SW3";
-			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 	};
 };
@@ -80,6 +82,8 @@
 
 &adc0 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
 };
 
 &dma0 {
@@ -93,4 +97,24 @@
 	 */
 	dma-channels = <20>;
 	status = "okay";
+};
+
+&flash0 {
+	/*
+	 * LPC flash controller requires minimum 512 byte write to flash,
+	 * so MCUBoot is not supported. Just provide storage and code partition.
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(448)>;
+		};
+		storage_partition: partition@70000 {
+			label = "storage";
+			reg = <0x00070000 DT_SIZE_K(64)>;
+		};
+	};
 };

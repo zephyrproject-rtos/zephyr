@@ -5,12 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
-#include <init.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/init.h>
 #include <string.h>
 #include <stdio.h>
-#include <device.h>
-#include <sys/arch_interface.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/arch_interface.h>
 
 extern const struct device __device_PRE_KERNEL_1_start[];
 extern const struct device __device_PRE_KERNEL_2_start[];
@@ -22,7 +23,7 @@ extern const struct device __device_end[];
 extern const struct device __device_SMP_start[];
 #endif
 
-static const struct device *levels[] = {
+static const struct device *const levels[] = {
 	__device_PRE_KERNEL_1_start,
 	__device_PRE_KERNEL_2_start,
 	__device_POST_KERNEL_start,

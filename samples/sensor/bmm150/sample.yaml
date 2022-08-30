@@ -1,8 +1,0 @@
-sample:
-  name: BMM150 Sensor Sample
-tests:
-  sample.sensor.bmm150:
-    harness: sensor
-    tags: sensors
-    depends_on: gpio i2c
-    filter: dt_compat_enabled("bosch,bmm150")

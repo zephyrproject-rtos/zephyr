@@ -23,9 +23,16 @@ config RISCV_HAS_PLIC
 	bool
 	default y
 
+config RISCV_GP
+	bool
+	default y
+
 config NUM_IRQS
 	int
 	default 64
+
+config PINCTRL
+	default y
 
 config XIP
 	bool
@@ -39,8 +46,11 @@ config IDLE_STACK_SIZE
 	int
 	default 1536
 
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	int
 	default 1024
+
+config HAS_FLASH_LOAD_OFFSET
+	default y if BOOTLOADER_MCUBOOT
 
 endif # SOC_SERIES_RISCV_TELINK_B91

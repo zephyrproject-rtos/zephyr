@@ -9,6 +9,13 @@ zephyr_sources(
   soc.c
   )
 
+if(CONFIG_PM)
+  zephyr_library_sources(power.c)
+  if(NOT CONFIG_PM_DEVICE)
+    zephyr_library_sources(device_power.c)
+  endif()
+endif()
+
 if(CONFIG_SOC_HAS_TIMING_FUNCTIONS AND NOT CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
   if(CONFIG_TIMING_FUNCTIONS)
     # Use MEC172x timing calculations only if DWT is not present

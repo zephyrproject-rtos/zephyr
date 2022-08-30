@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <syscall_handler.h>
-#include <toolchain.h>
-#include <sys/mem_manage.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/mem_manage.h>
 
 extern struct k_mem_paging_stats_t paging_stats;
 
@@ -79,7 +79,7 @@ k_mem_paging_backing_store_histogram_bounds[
 unsigned long z_num_pagefaults_get(void)
 {
 	unsigned long ret;
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 	ret = paging_stats.pagefaults.cnt;

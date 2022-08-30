@@ -27,7 +27,5 @@ alt-cells:
     - inv
 
 lvol-cells:
-    - io_port
-    - io_bit
     - ctrl
     - bit

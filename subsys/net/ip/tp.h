@@ -12,8 +12,8 @@ extern "C" {
 #endif
 
 #include <sys/types.h>
-#include <data/json.h>
-#include <net/net_pkt.h>
+#include <zephyr/data/json.h>
+#include <zephyr/net/net_pkt.h>
 #include "connection.h"
 
 #if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)

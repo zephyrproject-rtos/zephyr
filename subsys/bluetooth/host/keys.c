@@ -6,19 +6,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/atomic.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_KEYS)
 #define LOG_MODULE_NAME bt_keys
@@ -302,7 +302,7 @@ void bt_keys_clear(struct bt_keys *keys)
 					       &keys->addr, NULL);
 		}
 
-		BT_DBG("Deleting key %s", log_strdup(key));
+		BT_DBG("Deleting key %s", key);
 		settings_delete(key);
 	}
 
@@ -333,7 +333,7 @@ int bt_keys_store(struct bt_keys *keys)
 	}
 
 	BT_DBG("Stored keys for %s (%s)", bt_addr_le_str(&keys->addr),
-	       log_strdup(key));
+	       key);
 
 	return 0;
 }
@@ -360,7 +360,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		return -EINVAL;
 	}
 
-	BT_DBG("name %s val %s", log_strdup(name),
+	BT_DBG("name %s val %s", name,
 	       (len) ? bt_hex(val, sizeof(val)) : "(null)");
 
 	err = bt_settings_decode_key(name, &addr);
@@ -374,7 +374,14 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	if (!next) {
 		id = BT_ID_DEFAULT;
 	} else {
-		id = strtol(next, NULL, 10);
+		unsigned long next_id = strtoul(next, NULL, 10);
+
+		if (next_id >= CONFIG_BT_ID_MAX) {
+			BT_ERR("Invalid local identity %lu", next_id);
+			return -EINVAL;
+		}
+
+		id = (uint8_t)next_id;
 	}
 
 	if (!len) {
@@ -396,24 +403,21 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		return -ENOMEM;
 	}
 	if (len != BT_KEYS_STORAGE_LEN) {
-		do {
+		if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) &&
+		    len == BT_KEYS_STORAGE_LEN_COMPAT) {
 			/* Load shorter structure for compatibility with old
 			 * records format with no counter.
 			 */
-			if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) &&
-			    len == BT_KEYS_STORAGE_LEN_COMPAT) {
-				BT_WARN("Keys for %s have no aging counter",
-					bt_addr_le_str(&addr));
-				memcpy(keys->storage_start, val, len);
-				continue;
-			}
-
+			BT_WARN("Keys for %s have no aging counter",
+				bt_addr_le_str(&addr));
+			memcpy(keys->storage_start, val, len);
+		} else {
 			BT_ERR("Invalid key length %zd != %zu", len,
 			       BT_KEYS_STORAGE_LEN);
 			bt_keys_clear(keys);
 
 			return -EINVAL;
-		} while (0);
+		}
 	} else {
 		memcpy(keys->storage_start, val, len);
 	}
@@ -490,11 +494,13 @@ void bt_keys_show_sniffer_info(struct bt_keys *keys, void *data)
 		BT_INFO("SC LTK: 0x%s", bt_hex(ltk, keys->enc_size));
 	}
 
-	if (keys->keys & BT_KEYS_SLAVE_LTK) {
-		sys_memcpy_swap(ltk, keys->slave_ltk.val, keys->enc_size);
+#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
+	if (keys->keys & BT_KEYS_PERIPH_LTK) {
+		sys_memcpy_swap(ltk, keys->periph_ltk.val, keys->enc_size);
 		BT_INFO("Legacy LTK: 0x%s (peripheral)",
 			bt_hex(ltk, keys->enc_size));
 	}
+#endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
 
 	if (keys->keys & BT_KEYS_LTK) {
 		sys_memcpy_swap(ltk, keys->ltk.val, keys->enc_size);

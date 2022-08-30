@@ -28,11 +28,14 @@ tests:
         - "The device is put in USB mass storage mode."
   sample.usb.mass_flash_fatfs:
     min_ram: 32
+    modules:
+      - fatfs
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
+    platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp adafruit_feather_nrf52840
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
-        - CONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
+        - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
     tags: msd usb
     harness: console
     harness_config:
@@ -41,6 +44,8 @@ tests:
         - "The device is put in USB mass storage mode."
   sample.usb.mass_sdhc_fatfs:
     min_ram: 32
+    modules:
+      - fatfs
     depends_on: usb_device sdhc
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
@@ -53,12 +58,15 @@ tests:
       regex:
         - "The device is put in USB mass storage mode."
   sample.usb.mass_flash_littlefs:
+    modules:
+      - littlefs
     min_ram: 32
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
+    platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp adafruit_feather_nrf52840
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
-        - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
+        - CONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
     tags: msd usb
     harness: console
     harness_config:

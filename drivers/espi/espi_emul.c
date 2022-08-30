@@ -12,13 +12,13 @@
 #define DT_DRV_COMPAT zephyr_espi_emul_controller
 
 #define LOG_LEVEL CONFIG_ESPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(espi_emul_ctlr);
 
-#include <device.h>
-#include <drivers/emul.h>
-#include <drivers/espi.h>
-#include <drivers/espi_emul.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi_emul.h>
 #include "espi_utils.h"
 
 /** Working data for the controller */
@@ -31,8 +31,7 @@ struct espi_emul_data {
 	sys_slist_t callbacks;
 };
 
-static struct espi_emul *espi_emul_find(const struct device *dev,
-					unsigned int chipsel)
+static struct espi_emul *espi_emul_find(const struct device *dev, unsigned int chipsel)
 {
 	struct espi_emul_data *data = dev->data;
 	sys_snode_t *node;
@@ -60,9 +59,7 @@ static int espi_emul_config(const struct device *dev, struct espi_cfg *cfg)
 	return 0;
 }
 
-
-static int emul_espi_trigger_event(const struct device *dev,
-				   struct espi_event *evt)
+static int emul_espi_trigger_event(const struct device *dev, struct espi_event *evt)
 {
 	struct espi_emul_data *data = dev->data;
 
@@ -70,8 +67,8 @@ static int emul_espi_trigger_event(const struct device *dev,
 	     !(data->cfg.channel_caps & ESPI_CHANNEL_VWIRE)) ||
 	    ((evt->evt_type & ESPI_BUS_EVENT_OOB_RECEIVED) &&
 	     !(data->cfg.channel_caps & ESPI_CHANNEL_OOB)) ||
-	    ((evt->evt_type & ESPI_BUS_PERIPHERAL_NOTIFICATION)
-	     && !(data->cfg.channel_caps & ESPI_CHANNEL_PERIPHERAL))) {
+	    ((evt->evt_type & ESPI_BUS_PERIPHERAL_NOTIFICATION) &&
+	     !(data->cfg.channel_caps & ESPI_CHANNEL_PERIPHERAL))) {
 		return -EIO;
 	}
 
@@ -85,6 +82,52 @@ static bool espi_emul_get_channel_status(const struct device *dev, enum espi_cha
 	struct espi_emul_data *data = dev->data;
 
 	return (data->cfg.channel_caps & ch);
+}
+
+static int espi_emul_read_lpc_request(const struct device *dev, enum lpc_peripheral_opcode op,
+				      uint32_t *data)
+{
+	const struct emul_espi_device_api *api;
+	struct espi_emul *emul;
+	struct espi_emul_data *emul_data = dev->data;
+
+	ARG_UNUSED(data);
+
+	if (!(emul_data->cfg.channel_caps & ESPI_CHANNEL_VWIRE)) {
+		LOG_ERR("bad channel vwire");
+		return -EINVAL;
+	}
+
+	emul = espi_emul_find(dev, EMUL_ESPI_HOST_CHIPSEL);
+	if (!emul) {
+		LOG_ERR("espi_emul not found");
+		return -ENOTSUP;
+	}
+
+	__ASSERT_NO_MSG(emul->api);
+	api = emul->api;
+
+	switch (op) {
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+	case EACPI_GET_SHARED_MEMORY:
+		__ASSERT_NO_MSG(api->get_acpi_shm);
+		*data = (uint32_t)api->get_acpi_shm(emul->target);
+		break;
+#endif
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static int espi_emul_write_lpc_request(const struct device *dev, enum lpc_peripheral_opcode op,
+				       uint32_t *data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(op);
+	ARG_UNUSED(data);
+
+	return -EINVAL;
 }
 
 static int espi_emul_send_vwire(const struct device *dev, enum espi_vwire_signal vw, uint8_t level)
@@ -107,10 +150,11 @@ static int espi_emul_send_vwire(const struct device *dev, enum espi_vwire_signal
 	__ASSERT_NO_MSG(emul->api->set_vw);
 	api = emul->api;
 
-	return api->set_vw(emul, vw, level);
+	return api->set_vw(emul->target, vw, level);
 }
 
-static int espi_emul_receive_vwire(const struct device *dev, enum espi_vwire_signal vw, uint8_t *level)
+static int espi_emul_receive_vwire(const struct device *dev, enum espi_vwire_signal vw,
+				   uint8_t *level)
 {
 	const struct emul_espi_device_api *api;
 	struct espi_emul *emul;
@@ -130,10 +174,11 @@ static int espi_emul_receive_vwire(const struct device *dev, enum espi_vwire_sig
 	__ASSERT_NO_MSG(emul->api->get_vw);
 	api = emul->api;
 
-	return api->get_vw(emul, vw, level);
+	return api->get_vw(emul->target, vw, level);
 }
 
-static int espi_emul_manage_callback(const struct device *dev, struct espi_callback *callback, bool set)
+static int espi_emul_manage_callback(const struct device *dev, struct espi_callback *callback,
+				     bool set)
 {
 	struct espi_emul_data *data = dev->data;
 
@@ -148,17 +193,16 @@ static int espi_emul_manage_callback(const struct device *dev, struct espi_callb
 static int espi_emul_init(const struct device *dev)
 {
 	struct espi_emul_data *data = dev->data;
-	const struct emul_list_for_bus *list = dev->config;
 
 	sys_slist_init(&data->emuls);
 
-	return emul_init_for_bus_from_list(dev, list);
+	return emul_init_for_bus(dev);
 }
 
-int espi_emul_register(const struct device *dev, const char *name,
-		       struct espi_emul *emul)
+int espi_emul_register(const struct device *dev, struct espi_emul *emul)
 {
 	struct espi_emul_data *data = dev->data;
+	const char *name = emul->target->dev->name;
 
 	sys_slist_append(&data->emuls, &emul->node);
 
@@ -172,6 +216,8 @@ static struct emul_espi_driver_api emul_espi_driver_api = {
 	.espi_api = {
 		.config = espi_emul_config,
 		.get_channel_status = espi_emul_get_channel_status,
+		.read_lpc_request = espi_emul_read_lpc_request,
+		.write_lpc_request = espi_emul_write_lpc_request,
 		.send_vwire = espi_emul_send_vwire,
 		.receive_vwire = espi_emul_receive_vwire,
 		.manage_callback = espi_emul_manage_callback
@@ -180,28 +226,20 @@ static struct emul_espi_driver_api emul_espi_driver_api = {
 	.find_emul = espi_emul_find,
 };
 
+#define EMUL_LINK_AND_COMMA(node_id)                                                               \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
+	},
 
-#define EMUL_LINK_AND_COMMA(node_id) {	    \
-		.label = DT_LABEL(node_id), \
-},
-
-#define ESPI_EMUL_INIT(n)					      \
-	static const struct emul_link_for_bus emuls_##n[] = {	      \
-		DT_FOREACH_CHILD(DT_DRV_INST(n), EMUL_LINK_AND_COMMA) \
-	};							      \
-	static struct emul_list_for_bus espi_emul_cfg_##n = {	      \
-		.children = emuls_##n,				      \
-		.num_children = ARRAY_SIZE(emuls_##n),		      \
-	};							      \
-	static struct espi_emul_data espi_emul_data_##n;	      \
-	DEVICE_DT_INST_DEFINE(n,				      \
-			      &espi_emul_init,			      \
-			      NULL,				      \
-			      &espi_emul_data_##n,		      \
-			      &espi_emul_cfg_##n,		      \
-			      POST_KERNEL,			      \
-			      CONFIG_ESPI_INIT_PRIORITY,	      \
-			      &emul_espi_driver_api);
-
+#define ESPI_EMUL_INIT(n)                                                                          \
+	static const struct emul_link_for_bus emuls_##n[] = { DT_FOREACH_CHILD(                    \
+		DT_DRV_INST(n), EMUL_LINK_AND_COMMA) };                                            \
+	static struct emul_list_for_bus espi_emul_cfg_##n = {                                      \
+		.children = emuls_##n,                                                             \
+		.num_children = ARRAY_SIZE(emuls_##n),                                             \
+	};                                                                                         \
+	static struct espi_emul_data espi_emul_data_##n;                                           \
+	DEVICE_DT_INST_DEFINE(n, &espi_emul_init, NULL, &espi_emul_data_##n, &espi_emul_cfg_##n,   \
+			      POST_KERNEL, CONFIG_ESPI_INIT_PRIORITY, &emul_espi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESPI_EMUL_INIT)

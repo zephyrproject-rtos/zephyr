@@ -1,0 +1,14 @@
+# Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Espressif RISC-V CPU
+
+compatible: "espressif,riscv"
+
+include: cpu.yaml
+
+properties:
+    clock-source:
+      type: int
+      description: cpu clock source
+      required: false

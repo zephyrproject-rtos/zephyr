@@ -6,8 +6,13 @@
 if BOARD_NRF52840DONGLE_NRF52840
 
 config BOARD_ENABLE_DCDC
-	bool "Enable DCDC mode"
+	bool "DCDC mode"
 	select SOC_DCDC_NRF52X
+	default y
+
+config BOARD_ENABLE_DCDC_HV
+	bool "High Voltage DCDC converter"
+	select SOC_DCDC_NRF52X_HV
 	default y
 
 config BOARD_HAS_NRF5_BOOTLOADER

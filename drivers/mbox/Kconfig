@@ -1,0 +1,30 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MBOX
+	bool "MBOX drivers"
+	help
+	  Include multi-channel interrupt-based inter-processor mailboxes
+	  drivers in system configuration
+
+if MBOX
+
+config MBOX_INIT_PRIORITY
+	int "MBOX init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  MBOX driver device initialization priority.
+
+config MBOX_NRFX_IPC
+	bool "MBOX NRF IPC driver"
+	depends on HAS_HW_NRF_IPC
+	select NRFX_IPC
+	help
+	  Driver for Nordic nRF messaging unit, based
+	  on nRF IPC peripheral HW.
+
+module = MBOX
+module-str = mbox
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MBOX

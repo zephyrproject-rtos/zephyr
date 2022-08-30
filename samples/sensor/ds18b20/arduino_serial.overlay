@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2022, Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Example configuration of a DS18B20 device on an Arduino serial bus.
+ * Requires external circuit to provide an open-drain interface.
+ */
+
+&arduino_serial {
+	status = "okay";
+
+	w1_0: w1-zephyr-serial-0 {
+		compatible = "zephyr,w1-serial";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		ds18b20 {
+			compatible = "maxim,ds18b20";
+			family-code = <0x28>;
+			resolution = <12>;
+			status = "okay";
+		};
+	};
+};

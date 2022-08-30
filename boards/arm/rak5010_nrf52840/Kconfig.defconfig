@@ -11,16 +11,6 @@ config BOARD
 config MODEM_QUECTEL_BG9X
 	default y
 
-if USB
-
-config USB_NRFX
-	default y
-
-config USB_DEVICE_STACK
-	default y
-
-endif # USB
-
 config BT_CTLR
 	default BT
 

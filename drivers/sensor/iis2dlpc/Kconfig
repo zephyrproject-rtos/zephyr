@@ -5,7 +5,10 @@
 
 menuconfig IIS2DLPC
 	bool "IIS2DLPC I2C/SPI accelerometer sensor driver"
-	depends on I2C || SPI
+	default y
+	depends on DT_HAS_ST_IIS2DLPC_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS2DLPC),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS2DLPC),spi)
 	select HAS_STMEMSC
 	select USE_STDC_IIS2DLPC
 	help

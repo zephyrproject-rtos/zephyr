@@ -28,12 +28,11 @@
  * header file.
  */
 
-#include <zephyr.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <cmsis_os2.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 
 #include "phil_obj_abstract.h"
 

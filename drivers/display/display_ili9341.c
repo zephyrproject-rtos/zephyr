@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020 Teslabs Engineering S.L.
  * Copyright (c) 2021 Krivorot Oleg <krivorot.oleg@gmail.com>
+ * Copyright (c) 2022 Konstantinos Papadopoulos <kostas.papadopulos@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +9,7 @@
 #include "display_ili9341.h"
 #include "display_ili9xxx.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_ili9341, CONFIG_DISPLAY_LOG_LEVEL);
 
 int ili9341_regs_init(const struct device *dev)
@@ -111,6 +112,18 @@ int ili9341_regs_init(const struct device *dev)
 
 	LOG_HEXDUMP_DBG(regs->enable3g, ILI9341_ENABLE3G_LEN, "ENABLE3G");
 	r = ili9xxx_transmit(dev, ILI9341_ENABLE3G, regs->enable3g, ILI9341_ENABLE3G_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(regs->ifmode, ILI9341_IFMODE_LEN, "IFMODE");
+	r = ili9xxx_transmit(dev, ILI9341_IFMODE, regs->ifmode, ILI9341_IFMODE_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(regs->ifctl, ILI9341_IFCTL_LEN, "IFCTL");
+	r = ili9xxx_transmit(dev, ILI9341_IFCTL, regs->ifctl, ILI9341_IFCTL_LEN);
 	if (r < 0) {
 		return r;
 	}

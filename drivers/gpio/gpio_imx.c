@@ -7,11 +7,15 @@
 #define DT_DRV_COMPAT nxp_imx_gpio
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <gpio_imx.h>
+#include <string.h>
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
 
 #include "gpio_utils.h"
 
@@ -19,6 +23,10 @@ struct imx_gpio_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	GPIO_Type *base;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_soc_pinmux *pin_muxes;
+	uint8_t mux_count;
+#endif
 };
 
 struct imx_gpio_data {
@@ -37,12 +45,53 @@ static int imx_gpio_configure(const struct device *port, gpio_pin_t pin,
 	if (((flags & GPIO_INPUT) != 0U) && ((flags & GPIO_OUTPUT) != 0U)) {
 		return -ENOTSUP;
 	}
+#ifdef CONFIG_PINCTRL
+	__ASSERT_NO_MSG(pin < config->mux_count);
 
+	struct pinctrl_soc_pin pin_cfg;
+	/* Set appropriate bits in pin configuration register */
+	volatile uint32_t *gpio_cfg_reg =
+		(volatile uint32_t *)config->pin_muxes[pin].config_register;
+	uint32_t reg = *gpio_cfg_reg;
+
+#ifdef MCUX_IMX_DRIVE_OPEN_DRAIN_SHIFT
+	if ((flags & GPIO_SINGLE_ENDED) != 0) {
+		/* Set ODE bit */
+		reg |= BIT(MCUX_IMX_DRIVE_OPEN_DRAIN_SHIFT);
+	} else {
+		reg &= ~BIT(MCUX_IMX_DRIVE_OPEN_DRAIN_SHIFT);
+	}
+#else
+	if ((flags & GPIO_SINGLE_ENDED) != 0) {
+		return -ENOTSUP;
+	}
+#endif
+	if (((flags & GPIO_PULL_UP) != 0) || ((flags & GPIO_PULL_DOWN) != 0)) {
+		reg |= BIT(MCUX_IMX_PULL_ENABLE_SHIFT);
+		if (((flags & GPIO_PULL_UP) != 0)) {
+			reg |= BIT(MCUX_IMX_BIAS_PULL_UP_SHIFT);
+		} else {
+			reg &= ~BIT(MCUX_IMX_BIAS_PULL_UP_SHIFT);
+		}
+	} else {
+		/* Set pin to highz */
+		reg &= ~BIT(MCUX_IMX_PULL_ENABLE_SHIFT);
+	}
+
+	/* Init pin configuration struct, and use pinctrl api to apply settings */
+	__ASSERT_NO_MSG(pin < config->mux_count);
+	memcpy(&pin_cfg.pinmux, &config->pin_muxes[pin], sizeof(pin_cfg));
+	/* cfg register will be set by pinctrl_configure_pins */
+	pin_cfg.pin_ctrl_flags = reg;
+	pinctrl_configure_pins(&pin_cfg, 1, PINCTRL_REG_NONE);
+
+#else /*CONFIG_PINCTRL */
 	if ((flags & (GPIO_SINGLE_ENDED
 		      | GPIO_PULL_UP
 		      | GPIO_PULL_DOWN)) != 0U) {
 		return -ENOTSUP;
 	}
+#endif
 
 	/* Disable interrupts for pin */
 	GPIO_SetPinIntMode(base, pin, false);
@@ -207,7 +256,23 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 	.manage_callback = imx_gpio_manage_callback,
 };
 
+#ifdef CONFIG_PINCTRL
+/* These macros will declare an array of pinctrl_soc_pinmux types */
+#define PINMUX_INIT(node, prop, idx) MCUX_IMX_PINMUX(DT_PROP_BY_IDX(node, prop, idx)),
+#define IMX_IGPIO_PIN_DECLARE(n)						\
+	const struct pinctrl_soc_pinmux mcux_igpio_pinmux_##n[] = {		\
+		DT_INST_FOREACH_PROP_ELEM(n, pinmux, PINMUX_INIT)	\
+	};
+#define IMX_IGPIO_PIN_INIT(n)							\
+	.pin_muxes = mcux_igpio_pinmux_##n,					\
+	.mux_count = DT_INST_PROP_LEN(n, pinmux),
+#else
+#define IMX_IGPIO_PIN_DECLARE(n)
+#define IMX_IGPIO_PIN_INIT(n)
+#endif /* CONFIG_PINCTRL */
+
 #define GPIO_IMX_INIT(n)						\
+	IMX_IGPIO_PIN_DECLARE(n)					\
 	static int imx_gpio_##n##_init(const struct device *port);	\
 									\
 	static const struct imx_gpio_config imx_gpio_##n##_config = {	\
@@ -216,6 +281,7 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 				GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
 		},							\
 		.base = (GPIO_Type *)DT_INST_REG_ADDR(n),		\
+		IMX_IGPIO_PIN_INIT(n)					\
 	};								\
 									\
 	static struct imx_gpio_data imx_gpio_##n##_data;		\
@@ -225,8 +291,8 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 			    NULL,					\
 			    &imx_gpio_##n##_data,			\
 			    &imx_gpio_##n##_config,			\
-			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+			    PRE_KERNEL_1,				\
+			    CONFIG_GPIO_INIT_PRIORITY,			\
 			    &imx_gpio_driver_api);			\
 									\
 	static int imx_gpio_##n##_init(const struct device *port)	\

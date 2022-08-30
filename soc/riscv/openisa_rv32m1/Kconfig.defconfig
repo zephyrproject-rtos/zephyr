@@ -122,33 +122,7 @@ config RV32M1_INTMUX_CHANNEL_7
 
 endif # MULTI_LEVEL_INTERRUPTS
 
-config PINMUX_RV32M1
-	default y
-
-config GPIO_RV32M1
-	default y
-	depends on GPIO
-
-config UART_RV32M1_LPUART
-	default y
-	depends on SERIAL
-
-config I2C_RV32M1_LPI2C
-	default y
-	depends on I2C
-
-config SPI_RV32M1_LPSPI
-	default y
-	depends on SPI
-
-config PWM_RV32M1_TPM
-	default y
-	depends on PWM
-
 if FLASH
-
-config SOC_FLASH_RV32M1
-	default y
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -157,9 +131,5 @@ config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 endif # FLASH
-
-config ENTROPY_RV32M1_TRNG
-	default y
-	depends on ENTROPY_GENERATOR
 
 endif # SOC_OPENISA_RV32M1_RISCV32

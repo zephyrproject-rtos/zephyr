@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_I2C_I2C_NPCX_CONTROLLER_H_
 #define ZEPHYR_DRIVERS_I2C_I2C_NPCX_CONTROLLER_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +40,17 @@ void npcx_i2c_ctrl_mutex_unlock(const struct device *i2c_dev);
  */
 int npcx_i2c_ctrl_configure(const struct device *i2c_dev, uint32_t dev_config);
 
+/**
+ * @brief Get I2C controller speed.
+ *
+ * @param i2c_dev Pointer to the device structure for i2c controller instance.
+ * @param speed Pointer to store the I2C speed.
+ *
+ * @retval 0 If successful.
+ * @retval -ERANGE Stored I2C frequency out of supported range.
+ * @retval -EIO    Controller is not configured.
+ */
+int npcx_i2c_ctrl_get_speed(const struct device *i2c_dev, uint32_t *speed);
 
 /**
  * @brief Perform data transfer to via npcx i2c controller.

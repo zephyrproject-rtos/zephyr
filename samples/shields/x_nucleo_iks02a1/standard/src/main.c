@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 #include <stdio.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_IIS2DLPC_TRIGGER
 static int iis2dlpc_trig_cnt;
 
 static void iis2dlpc_trigger_handler(const struct device *dev,
-				     struct sensor_trigger *trig)
+				     const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	iis2dlpc_trig_cnt++;
@@ -25,7 +25,7 @@ static void iis2dlpc_trigger_handler(const struct device *dev,
 static int iis2mdc_trig_cnt;
 
 static void iis2mdc_trigger_handler(const struct device *dev,
-				    struct sensor_trigger *trig)
+				    const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ALL);
 	iis2mdc_trig_cnt++;
@@ -37,14 +37,14 @@ static int ism330dhcx_acc_trig_cnt;
 static int ism330dhcx_gyr_trig_cnt;
 
 static void ism330dhcx_acc_trigger_handler(const struct device *dev,
-					   struct sensor_trigger *trig)
+					   const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	ism330dhcx_acc_trig_cnt++;
 }
 
 static void ism330dhcx_gyr_trigger_handler(const struct device *dev,
-					   struct sensor_trigger *trig)
+					   const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_GYRO_XYZ);
 	ism330dhcx_gyr_trig_cnt++;
@@ -167,21 +167,21 @@ void main(void)
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
-	const struct device *iis2dlpc = device_get_binding(DT_LABEL(DT_INST(0, st_iis2dlpc)));
-	const struct device *iis2mdc = device_get_binding(DT_LABEL(DT_INST(0, st_iis2mdc)));
-	const struct device *ism330dhcx = device_get_binding(DT_LABEL(DT_INST(0, st_ism330dhcx)));
+	const struct device *const iis2dlpc = DEVICE_DT_GET_ONE(st_iis2dlpc);
+	const struct device *const iis2mdc = DEVICE_DT_GET_ONE(st_iis2mdc);
+	const struct device *const ism330dhcx = DEVICE_DT_GET_ONE(st_ism330dhcx);
 	int cnt = 1;
 
-	if (iis2dlpc == NULL) {
-		printf("Could not get IIS2DLPC device\n");
+	if (!device_is_ready(iis2dlpc)) {
+		printk("%s: device not ready.\n", iis2dlpc->name);
 		return;
 	}
-	if (iis2mdc == NULL) {
-		printf("Could not get IIS2MDC Magn device\n");
+	if (!device_is_ready(iis2mdc)) {
+		printk("%s: device not ready.\n", iis2mdc->name);
 		return;
 	}
-	if (ism330dhcx == NULL) {
-		printf("Could not get ISM330DHCX IMU device\n");
+	if (!device_is_ready(ism330dhcx)) {
+		printk("%s: device not ready.\n", ism330dhcx->name);
 		return;
 	}
 

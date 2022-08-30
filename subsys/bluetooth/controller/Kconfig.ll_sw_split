@@ -15,7 +15,7 @@ config BT_LLL_VENDOR_NORDIC
 					 !BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
-	select BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
+	select BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
 	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if HAS_HW_NRF_CCM_LFLEN_8BIT || \
 						  BT_CTLR_DATA_LENGTH_CLEAR
 	select BT_CTLR_PRIVACY_SUPPORT if !SOC_SERIES_NRF51X
@@ -31,7 +31,8 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_SYNC_PERIODIC_SUPPORT
 	select BT_CTLR_ADV_ISO_SUPPORT
 	select BT_CTLR_SYNC_ISO_SUPPORT
-	select BT_CTLR_DF_SUPPORT if HAS_HW_NRF_RADIO_BLE_DF
+	select BT_CTLR_DF_SUPPORT if HAS_HW_NRF_RADIO_DFE
+	select BT_CTLR_CTEINLINE_SUPPORT if HAS_HW_NRF_RADIO_DFE
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
@@ -41,6 +42,9 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
 	select BT_CTLR_TIFS_HW_SUPPORT
 	select BT_CTLR_ULL_LLL_PRIO_SUPPORT
+
+	select BT_TICKER_REMAINDER_GET if BT_BROADCASTER && BT_CTLR_ADV_EXT
+	select BT_TICKER_LAZY_GET if BT_CTLR_ADV_PERIODIC
 
 	default y
 	help
@@ -69,6 +73,26 @@ config BT_CTLR_TIFS_HW_SUPPORT
 
 config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 	bool
+
+choice BT_LL_SW_LLCP_IMPL
+	prompt "Bluetooth Low Energy Software Link Layer Control Procedure Implementation"
+	default BT_LL_SW_LLCP
+	help
+	  Select the Bluetooth Low Energy Software Link Layer Control Procedure implementation.
+
+config BT_LL_SW_LLCP_LEGACY
+	bool "Legacy implementation"
+	depends on !BT_CTLR_DF_CONN_CTE_RX && !BT_CTLR_DF_CONN_CTE_TX
+	help
+	  Use the Bluetooth Low Energy Software Link Layer Legacy Control Procedure implementation.
+
+config BT_LL_SW_LLCP
+	bool "State-machine based implementation, replacing the legacy one"
+	help
+	  Use the new Bluetooth Low Energy Software Link Layer Control Procedure implementation.
+
+endchoice
+
 
 config BT_CTLR_RX_PRIO_STACK_SIZE
 	# Controller's Co-Operative high priority Rx thread stack size.
@@ -166,16 +190,43 @@ config BT_CTLR_ADV_SYNC_SET
 	  Maximum supported periodic advertising sets.
 
 config BT_CTLR_ADV_PDU_LINK
-	bool "Enable linking of advertising PDU trains"
-	help
-	  Enables extra space in each advertising PDU to allow linking PDUs. This
-	  is required to enable advertising data trains (i.e. transmission of
-	  AUX_CHAIN_IND).
+	# Enables extra space in each advertising PDU to allow linking PDUs.
+	# This is required to enable advertising data trains (i.e. transmission
+	# of AUX_CHAIN_IND).
+	bool
 
-config BT_CTLR_ADV_SYNC_PDU_BACK2BACK
-	bool "Enable back-to-back transmission of periodic advertising trains"
+config BT_CTLR_ADV_AUX_PDU_LINK
+	# Enable chaining in Extended Advertising
+	bool
+	select BT_CTLR_ADV_PDU_LINK
+
+config BT_CTLR_ADV_AUX_PDU_BACK2BACK
+	bool "Back-to-back transmission of extended advertising trains"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	select BT_CTLR_ADV_AUX_PDU_LINK
+	default y if BT_CTLR_ADV_DATA_LEN_MAX > 191
+	help
+	  Enables transmission of AUX_CHAIN_IND in extended advertising train by
+	  sending each AUX_CHAIN_IND one after another back-to-back.
+
+config BT_CTLR_ADV_AUX_PDU_BACK2BACK_AFS
+	int "AUX Frame Space for back-to-back transmission of extended advertising trains"
+	depends on BT_CTLR_ADV_AUX_PDU_BACK2BACK
+	range 300 1000
+	default 300
+	help
+	  Specific AUX Frame Space to be used for back-to-back transmission of
+	  extended advertising trains. Time specified in microseconds.
+
+config BT_CTLR_ADV_SYNC_PDU_LINK
+	bool
 	depends on BT_CTLR_ADV_PERIODIC
 	select BT_CTLR_ADV_PDU_LINK
+
+config BT_CTLR_ADV_SYNC_PDU_BACK2BACK
+	bool "Back-to-back transmission of periodic advertising trains"
+	depends on BT_CTLR_ADV_PERIODIC
+	select BT_CTLR_ADV_SYNC_PDU_LINK
 	help
 	  Enables transmission of AUX_CHAIN_IND in periodic advertising train by
 	  sending each AUX_CHAIN_IND one after another back-to-back.
@@ -186,11 +237,22 @@ config BT_CTLR_ADV_SYNC_PDU_BACK2BACK
 config BT_CTLR_ADV_SYNC_PDU_BACK2BACK_AFS
 	int "AUX Frame Space for back-to-back transmission of periodic advertising trains"
 	depends on BT_CTLR_ADV_SYNC_PDU_BACK2BACK
-	default 300
 	range 300 1000
+	default 300
 	help
 	  Specific AUX Frame Space to be used for back-to-back transmission of
 	  periodic advertising trains. Time specified in microseconds.
+
+config BT_CTLR_ADV_RESERVE_MAX
+	bool "Use maximum Advertising PDU size time reservation"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	default y
+	help
+	  Use the maximum advertising PDU size time reservation considering the
+	  Advertising Data could be updated from zero to maximum support size.
+	  If maximum time reservation is disabled then time reservation
+	  corresponding to the Advertising Data present at the time of the
+	  start/enable of Advertising is used.
 
 config BT_CTLR_ADV_DATA_BUF_MAX
 	int "Advertising Data Maximum Buffers"
@@ -208,7 +270,7 @@ config BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
 	help
 	  Add additional memory to advertising PDU storage. The memory is a
 	  general purpose storage for data that should be send from ULL to LLL.
-	  The data stored in the memory are in synchoronization with content
+	  The data stored in the memory are in synchronization with content
 	  of PDU memory.
 
 	  For example, the extra data memory is used for storage for parameters
@@ -237,6 +299,13 @@ config BT_CTLR_SCAN_SYNC_ISO_SET
 	default 1
 	help
 	  Maximum supported broadcast isochronous groups (BIGs) sync sets.
+
+config BT_CTLR_ADV_ENABLE_STRICT
+	bool "Enforce Strict Advertising Enable/Disable"
+	depends on BT_BROADCASTER
+	help
+	  Enforce returning HCI Error Command Disallowed on enabling/disabling
+	  already enabled/disabled advertising.
 
 config BT_CTLR_SCAN_ENABLE_STRICT
 	bool "Enforce Strict Scan Enable/Disable"
@@ -294,21 +363,44 @@ config BT_CTLR_XTAL_THRESHOLD
 
 config BT_CTLR_SCHED_ADVANCED
 	bool "Advanced scheduling"
-	depends on (BT_MAX_CONN != 0) && BT_CTLR_SCHED_ADVANCED_SUPPORT
-	default y if !(BT_PERIPHERAL && !BT_CENTRAL)
+	depends on BT_CTLR_SCHED_ADVANCED_SUPPORT && \
+		   (BT_CONN || \
+		    (BT_CTLR_ADV_EXT && (BT_CTLR_ADV_AUX_SET > 1)) || \
+		    BT_CTLR_ADV_ISO)
+	default y if BT_CENTRAL || (BT_BROADCASTER && BT_CTLR_ADV_EXT) || BT_CTLR_ADV_ISO
 	help
-	  Enable non-overlapping placement of observer, initiator and master
+	  Enable non-overlapping placement of observer, initiator and central
 	  roles in timespace. Uses window offset in connection updates and uses
-	  connection parameter request in slave role to negotiate
-	  non-overlapping placement with active master roles to avoid slave
-	  roles drifting into active master roles in the local controller.
+	  connection parameter request in peripheral role to negotiate
+	  non-overlapping placement with active central roles to avoid peripheral
+	  roles drifting into active central roles in the local controller.
 
 	  This feature maximizes the average data transmission amongst active
-	  concurrent master and slave connections while other observer,
-	  initiator, master or slave roles are active in the local controller.
+	  concurrent central and peripheral connections while other observer,
+	  initiator, central or peripheral roles are active in the local controller.
 
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
+
+config BT_CTLR_SCHED_ADVANCED_CENTRAL_CONN_SPACING
+	int "Advanced scheduling central preferred connection spacing"
+	depends on BT_CTLR_SCHED_ADVANCED
+	default 0
+	help
+	  The central preferred connection spacing defines an additional spacing
+	  in microseconds, added to the fixed ~1250 us spacing obtained by enabling
+	  BT_CTLR_SCHED_ADVANCED. Specifying 0 (default) will obtain a spacing of
+	  ~1250 us, whereas specifying 1250 will yield a spacing of ~2500 us.
+	  The spacing is defined as the distance in time between the anchor points
+	  of the established central role connections.
+	  The precision is determined by the resolution of the platform dependent
+	  ticker clock.
+	  When specifying values above 6.25 ms, the spacing may be unobtainable if
+	  the connection interval becomes smaller than the total spacing. In that
+	  case, modulo is applied and a total spacing of 15 ms on a 10 ms connection
+	  interval yields 5 ms spacing.
+	  For multiple connections, it may become impossible to honor the preferred
+	  spacing, in which case overlapping will occur.
 
 config BT_CTLR_LLL_PRIO
 	int "Lower Link Layer (Radio) IRQ priority" if (BT_CTLR_ULL_LLL_PRIO_SUPPORT && !BT_CTLR_ZLI)
@@ -363,14 +455,14 @@ config BT_CTLR_LOW_LAT_ULL_DONE
 	  Done events be processed and dequeued in ULL context.
 
 config BT_CTLR_CONN_META
-	prompt "Enable connection meta data extension"
+	prompt "Connection meta data extension"
 	bool
 	help
 	  Enables vendor specific per-connection meta data as part of the
 	  LLL connection object.
 
 config BT_CTLR_RX_PDU_META
-	prompt "Enable RX pdu meta data"
+	prompt "RX pdu meta data"
 	bool
 
 config BT_CTLR_RADIO_ENABLE_FAST
@@ -404,7 +496,7 @@ config BT_CTLR_SW_SWITCH_SINGLE_TIMER
 	  less left for other uses
 
 config BT_CTLR_PARAM_CHECK
-	bool "Enable HCI Command Parameter checking"
+	bool "HCI Command Parameter checking"
 	default y if BT_HCI_RAW
 	help
 	  Enable code checking HCI Command Parameters. This is not needed in
@@ -417,15 +509,12 @@ config BT_CTLR_FAST_ENC
 	depends on BT_CTLR_LE_ENC
 	default y if BT_HCI_RAW
 	help
-	  Enable connection encryption setup in 3 connection intervals.
+	  Enable connection encryption setup in 4 connection events.
 	  Peripheral will respond to Encryption Request with Encryption Response
-	  in the same connection interval, and also, will respond with Start
-	  Encryption Response PDU in the 3rd connection interval, hence
-	  completing encryption setup in 3 connection intervals. Encrypted data
-	  would be transmitted as fast as in 3rd connection interval from the
-	  connection establishment.
-	  Maximum CPU time in Radio ISR will increase if this feature is
-	  selected.
+	  in the next connection event, and will transmit Start Encryption
+	  Request PDU in the same connection event, hence completing encryption
+	  setup in 4 connection events. Encrypted data would be transmitted as
+	  fast as in 4th connection event from Encryption Request.
 
 config BT_CTLR_LLCP_CONN
 	int "Number of connections with worst-case overlapping procedures"
@@ -437,6 +526,61 @@ config BT_CTLR_LLCP_CONN
 	  more than this number of connections simultaneously may cause
 	  instabilities.
 
+if !BT_LL_SW_LLCP_LEGACY
+config BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	int
+	default 4
+	help
+	  The theoretical maximum number of tx ctrl buffers needed for any connection, is 4.
+	  two for active encryption procedure plus one for rejecting a remote request
+	  and one for a local terminate
+
+config BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM
+	int "Number of tx control buffers to be reserved per connection"
+	default BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	range 0 BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	help
+	  Set the number control buffers that is to be pre allocated per connection
+	  This defines the minimum number of buffers available for any connection
+	  Setting this to non zero will ensure a connection will always have access
+	  to buffer(s) for control procedure TX
+
+config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
+	int "Number of tx control buffers to be available across all connections"
+	default 0
+	range 0 255
+	help
+	  Set the number control buffers that is to be available for tx.
+	  This defines the size of the pool of tx buffers available
+	  for control procedure tx. This pool is shared across all
+	  procedures/connections with allocation through a fifo queue.
+	  Configure between 0 and (4 - BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) * BT_CTLR_LLCP_CONN
+
+config BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM
+	int "Number of local control procedure contexts to be available across all connections"
+	default 4 if (BT_AUTO_PHY_UPDATE=y || BT_AUTO_DATA_LEN_UPDATE=y) && BT_CTLR_LLCP_CONN < 4
+	default 2 if BT_CTLR_LLCP_CONN = 1
+	default BT_CTLR_LLCP_CONN if BT_CTLR_LLCP_CONN > 1
+	range 2 255
+	help
+	  Set the number control procedure contexts that is to be available.
+	  This defines the size of the pool of control procedure contexts available
+	  for handling local initiated control procedures.
+	  This pool is shared across all connections, with allocation through a queue.
+
+config BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM
+	int "Number of remote control procedure contexts to be available across all connections"
+	default BT_CTLR_LLCP_CONN
+	range 1 255
+	help
+	  Set the number control procedure contexts that is to be available.
+	  This defines the size of the pool of control procedure contexts available
+	  for handling remote initiated control procedures.
+	  This pool is shared across all connections, with allocation through a queue.
+
+endif #!BT_LL_SW_LLCP_LEGACY
+
+
 config BT_CTLR_LLID_DATA_START_EMPTY
 	bool "Handle zero length L2CAP start frame"
 	default y if BT_HCI_RAW
@@ -445,6 +589,7 @@ config BT_CTLR_LLID_DATA_START_EMPTY
 
 config BT_CTLR_RX_ENQUEUE_HOLD
 	bool "Procedure Complete after on-air instant"
+	depends on BT_LL_SW_LLCP_LEGACY
 	default y if BT_HCI_RAW
 	help
 	  Hold enqueue of Procedure Complete events with instant until after the
@@ -470,6 +615,7 @@ config BT_CTLR_THROUGHPUT
 
 config BT_CTLR_FORCE_MD_COUNT
 	int "Forced MD bit count" if !BT_CTLR_FORCE_MD_AUTO
+	depends on !BT_CTLR_LOW_LAT_ULL
 	range 0 255
 	default 1 if BT_CTLR_FORCE_MD_AUTO
 	default 0
@@ -483,6 +629,7 @@ config BT_CTLR_FORCE_MD_COUNT
 
 config BT_CTLR_FORCE_MD_AUTO
 	bool "Forced MD bit automatic calculation"
+	depends on !BT_CTLR_LOW_LAT_ULL
 	select BT_CTLR_THROUGHPUT
 	default y if BT_HCI_RAW
 	help
@@ -490,7 +637,7 @@ config BT_CTLR_FORCE_MD_AUTO
 	  data throughput.
 
 config BT_CTLR_CONN_RANDOM_FORCE
-	bool "Enable random forced scheduling for peripheral on missed anchor point"
+	bool "Random forced scheduling for peripheral on missed anchor point"
 	depends on BT_PERIPHERAL
 	default y
 	help
@@ -572,9 +719,15 @@ config BT_TICKER_LOW_LAT
 	  radio RX/TX. Enabling this option disables the ticker priority- and
 	  'must expire' features.
 
+config BT_TICKER_REMAINDER_GET
+	bool "Ticker Next Slot Get with Remainder"
+	help
+	  This option enables ticker interface to iterate through active
+	  ticker nodes, returning tick to expire and remainder from a reference
+	  tick.
+
 config BT_TICKER_LAZY_GET
 	bool "Ticker Next Slot Get with Lazy"
-	default y if BT_CTLR_ADV_PERIODIC
 	help
 	  This option enables ticker interface to iterate through active
 	  ticker nodes, returning tick to expire and lazy count from a reference
@@ -599,6 +752,14 @@ config BT_TICKER_EXT
 	  are invoked by using available '_ext' versions of ticker interface
 	  functions.
 
+config BT_TICKER_EXT_SLOT_WINDOW_YIELD
+	bool "Tickers with slot window always yields"
+	depends on BT_TICKER_EXT
+	default y if BT_CTLR_ADV_ISO
+	help
+	  This options forces tickers with slot window extensions to yield to
+	  normal tickers and be placed at the end of their slot window.
+
 config BT_TICKER_SLOT_AGNOSTIC
 	bool "Slot agnostic ticker mode"
 	help
@@ -616,7 +777,7 @@ config BT_CTLR_JIT_SCHEDULING
 	  the link layer.
 
 config BT_CTLR_USER_EXT
-	prompt "Enable proprietary extensions in Controller"
+	prompt "Proprietary extensions in Controller"
 	bool
 	help
 	  Catch-all for enabling proprietary event types in Controller behavior.
@@ -650,149 +811,13 @@ config BT_RX_USER_PDU_LEN
 	  PDUs are assumed to not go across HCI.
 
 config BT_CTLR_USER_CPR_INTERVAL_MIN
-	bool "Enable proprietary Connection Parameter Request minimum interval"
+	bool "Proprietary Connection Parameter Request minimum interval"
 	depends on BT_CTLR_USER_EXT
 	help
 	  When enabled, controller will accept Connection Parameter Request
 	  intervals down to a proprietary minimum value.
 
 endmenu
-
-comment "BLE Controller hardware configuration"
-
-menuconfig BT_CTLR_GPIO_PA
-	bool "Power Amplifier GPIO interface"
-	depends on !SOC_SERIES_NRF51X
-	help
-	  Enable GPIO interface to a Power Amplifier. This allows hardware
-	  designs using PA to let the Controller toggle their state based on
-	  radio activity.
-
-if BT_CTLR_GPIO_PA
-
-config BT_CTLR_GPIO_PA_PIN
-	int "Power Amplifier GPIO pin number"
-	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
-	range 0 31
-	help
-	  GPIO Pin number connected to a Power Amplifier.
-
-config BT_CTLR_GPIO_PA_POL_INV
-	bool "Inverted polarity for the PA pin"
-	help
-	  Enable inverted polarity (active low) for the PA pin.
-
-config BT_CTLR_GPIO_PA_OFFSET
-	int "Time from PA ON to Tx ready"
-	default 5
-	range 0 15
-	help
-	  Time before Tx ready to turn on PA in micro seconds.
-
-endif # BT_CTLR_GPIO_PA
-
-menuconfig BT_CTLR_GPIO_LNA
-	bool "Low Noise Amplifier GPIO interface"
-	depends on !SOC_SERIES_NRF51X
-	help
-	  Enable GPIO interface to a Low Noise Amplifier. This allows hardware
-	  designs using LNAs to let the Controller toggle their state based on
-	  radio activity.
-
-if BT_CTLR_GPIO_LNA
-
-config BT_CTLR_GPIO_LNA_PIN
-	int "Low Noise Amplifier GPIO pin number"
-	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
-	range 0 31
-	help
-	  GPIO Pin number connected to a Low Noise Amplifier.
-
-config BT_CTLR_GPIO_LNA_POL_INV
-	bool "Inverted polarity for the LNA pin"
-	help
-	  Enable inverted polarity (active low) for the LNA pin.
-
-config BT_CTLR_GPIO_LNA_OFFSET
-	int "Time from LNA ON to Rx ready"
-	default 5
-	range 0 15
-	help
-	  Time before Rx ready to turn on LNA in micro seconds.
-
-endif # BT_CTLR_GPIO_LNA
-
-menuconfig BT_CTLR_FEM_NRF21540
-	bool "nRF21540 GPIO interface"
-	depends on !SOC_SERIES_NRF51X
-	select BT_CTLR_GPIO_PA
-	select BT_CTLR_GPIO_LNA
-	help
-	  Enable PDN and CSN GPIO interface for the nRF21540. This allows
-	  hardware designs using the nRF21540 to let the controller toggle
-	  their state based on radio activity.
-
-if BT_CTLR_FEM_NRF21540
-
-config BT_CTLR_GPIO_PDN_PIN
-	int "FEM PDN pin number"
-	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
-	range 0 31
-	help
-	  GPIO Pin number connected to the PDN pin of the nRF21540 FEM.
-
-config BT_CTLR_GPIO_PDN_POL_INV
-	bool "Inverted polarity for the PDN pin"
-	help
-	  Enable inverted polarity (active low) for the PDN pin.
-
-config BT_CTLR_GPIO_CSN_PIN
-	int "FEM CSN pin number"
-	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
-	range 0 31
-	help
-	  GPIO Pin number connected to the CSN pin of the nRF21540 FEM.
-
-config BT_CTLR_GPIO_CSN_POL_INV
-	bool "Inverted polarity for the CSN pin"
-	default y
-	help
-	  Enable inverted polarity (active low) for the CSN pin.
-
-config BT_CTLR_GPIO_PDN_CSN_OFFSET
-	int "Time from PDN and CSN toggle to PA/LNA pin toggle"
-	range 0 20
-	help
-	  Time from PDN and CSN toggle to PA/LNA pin toggle in micro seconds.
-
-endif # BT_CTLR_FEM_NRF21540
-
-config BT_CTLR_PA_LNA_GPIOTE_CHAN
-	# Hidden "nRF5 GPIO PA/LNA GPIOTE Channel"
-	int
-	depends on SOC_FAMILY_NRF && (BT_CTLR_GPIO_PA || BT_CTLR_GPIO_LNA)
-	default 3 if PWM_NRF5_SW
-	default 0
-	help
-	  Select the nRF5 GPIOTE channel to use for PA/LNA GPIO feature.
-
-config BT_CTLR_PDN_GPIOTE_CHAN
-	# Hidden "nRF5 GPIO FEM PDN GPIOTE Channel"
-	int
-	depends on SOC_FAMILY_NRF && BT_CTLR_FEM_NRF21540
-	default 4 if PWM_NRF5_SW
-	default 1
-	help
-	  Select the nRF5 GPIOTE channel to use for FEM PDN GPIO pin toggle.
-
-config BT_CTLR_CSN_GPIOTE_CHAN
-	# Hidden "nRF5 GPIO FEM CSN GPIOTE Channel"
-	int
-	depends on SOC_FAMILY_NRF && BT_CTLR_FEM_NRF21540
-	default 5 if PWM_NRF5_SW
-	default 2
-	help
-	  Select the nRF5 GPIOTE channel to use for FEM CSN GPIO pin toggle.
 
 comment "BLE Controller debug configuration"
 

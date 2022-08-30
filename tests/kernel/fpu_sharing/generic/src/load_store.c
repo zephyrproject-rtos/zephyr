@@ -35,8 +35,8 @@
  * x87 FPU registers are being saved/restored.
  */
 
-#include <ztest.h>
-#include <debug/gcov.h>
+#include <zephyr/ztest.h>
+#include <zephyr/debug/gcov.h>
 
 #if defined(CONFIG_X86)
 #if defined(__GNUC__)
@@ -44,7 +44,7 @@
 #else
 #include "float_regs_x86_other.h"
 #endif /* __GNUC__ */
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_FP)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_FP) || defined(CONFIG_ARMV7_R_FP)
 #if defined(__GNUC__)
 #include "float_regs_arm_gcc.h"
 #else
@@ -191,7 +191,7 @@ static void load_store_low(void)
 		 * disable floating point operations for the task.
 		 */
 #if (defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING)) || \
-		defined(CONFIG_ARMV7_M_ARMV8_M_FP)
+		defined(CONFIG_ARMV7_M_ARMV8_M_FP) || defined(CONFIG_ARMV7_R_FP)
 		/*
 		 * In x86:
 		 * The subsequent execution of _load_all_float_registers() will
@@ -311,7 +311,7 @@ K_THREAD_DEFINE(load_low, THREAD_STACK_SIZE, load_store_low, NULL, NULL, NULL,
 K_THREAD_DEFINE(load_high, THREAD_STACK_SIZE, load_store_high, NULL, NULL, NULL,
 		THREAD_HIGH_PRIORITY, THREAD_FP_FLAGS, K_TICKS_FOREVER);
 
-void test_load_store(void)
+ZTEST(fpu_sharing_generic, test_load_store)
 {
 	/* Initialise test states */
 	test_exited = false;

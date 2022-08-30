@@ -14,8 +14,7 @@ UART, I2S, ADC, PWM and GPIO. A Vivante GPU is also contained in the ARC
 Development System SoC. This allows developers to build and debug complex
 software on a comprehensive hardware platform
 
-.. image:: ./hsdk.jpg
-   :width: 442px
+.. image:: hsdk.jpg
    :align: center
    :alt: DesignWare(R) ARC(R) HS Development Kit (synopsys.com)
 
@@ -110,8 +109,7 @@ The functionality of the Pmod connectors is programmable and includes GPIO, UART
 The location of the pins on the Pmod connectors is shown in Figure below. Detailed pin descriptions
 depending on the pin multiplexer settings are provided in the subsequent sections.
 
-.. image:: ./pinout_diagram_of_the_pmod.jpg
-   :width: 442px
+.. image:: pinout_diagram_of_the_pmod.jpg
    :align: center
    :alt: Pinout Diagram of the Pmod
 
@@ -211,8 +209,7 @@ Mikrobus
 The ARC HSDK features a set of MikroBUS headers. Figure below shows the relevant function assignments,
 fully compatible with the MikroBUS standard. Table below shows the pin assignment on the I/O Multiplexer.
 
-.. image:: ./mikrobus_header.jpg
-   :width: 442px
+.. image:: mikrobus_header.jpg
    :align: center
    :alt: mikrobus header
 
@@ -246,8 +243,7 @@ the ARC HSDK board is fixed to 3V3. Note that the ICSP header is also not availa
 shields do not require this ICSP header as the SPI master interface on this ICSP header
 is also available on the IO10 to IO13 pins.
 
-.. image:: ./arduino_shield_interface.jpg
-   :width: 442px
+.. image:: arduino_shield_interface.jpg
    :align: center
    :alt: arduino shield interface
 
@@ -366,7 +362,7 @@ additional pieces of hardware are required.
 * A universal switching power adaptor (110-240V
   AC to 12V DC), provided in the package, provides power to the board.
 
-* :ref:`The Zephyr SDK <zephyr_sdk>`
+* :ref:`The Zephyr SDK <toolchain_zephyr_sdk>`
 
 * Terminal emulator software for use with the USB-UART. Suggestion:
   `Putty Website`_.

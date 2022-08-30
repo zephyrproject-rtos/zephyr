@@ -4,9 +4,24 @@
 description: |
     Properties defining the interface for the Nordic QSPI peripheral.
 
+    The reg property describes two register blocks: one for the memory
+    corresponding to the QSPI peripheral registers, and another for
+    the memory mapped XIP area:
+
+        qspi: qspi@2b000 {
+                compatible = "nordic,nrf-qspi";
+                reg = <0x2b000 0x1000>, <0x10000000 0x10000000>;
+                reg-names = "qspi", "qspi_mm";
+                ...
+        };
+
+    Above, the register block with base address 0x2b000 and name
+    "qspi" are the QSPI peripheral registers. The register block with
+    base address 0x10000000 and name "qspi_mm" is the XIP area.
+
 compatible: "nordic,nrf-qspi"
 
-include: flash-controller.yaml
+include: [flash-controller.yaml, pinctrl-device.yaml]
 
 bus: qspi
 
@@ -24,8 +39,12 @@ properties:
 
   sck-pin:
     type: int
-    required: true
+    deprecated: true
+    required: false
     description: |
+      IMPORTANT: This option will only be used if the new pin control driver
+      is not enabled.
+
       The SCK pin to use.
 
       For pins P0.0 through P0.31, use the pin number. For example,
@@ -39,8 +58,11 @@ properties:
           sck-pin = <34>;  /* 32 + 2 */
   io-pins:
     type: array
-    required: true
+    required: false
     description: |
+      IMPORTANT: This option will only be used if the new pin control driver
+      is not enabled.
+
       Pin numbers associated with IO0 through IO3 signals.
 
       Examples:
@@ -54,8 +76,11 @@ properties:
       sck-pin property's.
   csn-pins:
     type: array
-    required: true
+    required: false
     description: |
+      IMPORTANT: This option will only be used if the new pin control driver
+      is not enabled.
+
       Chip select signal pin number. Exactly one pin should be
       given. The pin numbering scheme is the same as the
       sck-pin property's.

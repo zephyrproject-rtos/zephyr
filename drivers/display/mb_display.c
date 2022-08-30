@@ -1,106 +1,54 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2021, Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /*
- * References:
- *
- * https://www.microbit.co.uk/device/screen
- * https://lancaster-university.github.io/microbit-docs/ubit/display/
+ * This tool uses display controller driver API and requires
+ * a suitable LED matrix controller driver.
  */
 
-#include <zephyr.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
 #include <string.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <display/mb_display.h>
+#include <zephyr/display/mb_display.h>
+#include <zephyr/drivers/display.h>
 
 #include "mb_font.h"
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(mb_disp, CONFIG_DISPLAY_LOG_LEVEL);
+
 #define MODE_MASK    BIT_MASK(16)
-
-/* Onboard LED Row 1 */
-#define LED_ROW1_GPIO_PIN   13
-#define LED_ROW1_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Row 2 */
-#define LED_ROW2_GPIO_PIN   14
-#define LED_ROW2_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Row 3 */
-#define LED_ROW3_GPIO_PIN   15
-#define LED_ROW3_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 1 */
-#define LED_COL1_GPIO_PIN   4
-#define LED_COL1_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 2 */
-#define LED_COL2_GPIO_PIN   5
-#define LED_COL2_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 3 */
-#define LED_COL3_GPIO_PIN   6
-#define LED_COL3_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 4 */
-#define LED_COL4_GPIO_PIN   7
-#define LED_COL4_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 5 */
-#define LED_COL5_GPIO_PIN   8
-#define LED_COL5_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 6 */
-#define LED_COL6_GPIO_PIN   9
-#define LED_COL6_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 7 */
-#define LED_COL7_GPIO_PIN   10
-#define LED_COL7_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 8 */
-#define LED_COL8_GPIO_PIN   11
-#define LED_COL8_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 9 */
-#define LED_COL9_GPIO_PIN   12
-#define LED_COL9_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-
-#define DISPLAY_ROWS 3
-#define DISPLAY_COLS 9
 
 #define SCROLL_OFF   0
 #define SCROLL_START 1
-
 #define SCROLL_DEFAULT_DURATION_MS 80
 
+#define MB_DISP_XRES 5
+#define MB_DISP_YRES 5
+
 struct mb_display {
-	const struct device *dev;         /* GPIO device */
+	const struct device *lm_dev;   /* LED matrix display device */
 
-	struct k_timer  timer;       /* Rendering timer */
+	struct k_work_delayable dwork; /* Delayable work item */
 
-	uint8_t            img_count;   /* Image count */
+	uint8_t         img_count;     /* Image count */
 
-	uint8_t            cur_img;     /* Current image or character to show */
+	uint8_t         cur_img;       /* Current image or character to show */
 
-	uint8_t            scroll:3,    /* Scroll shift */
-			first:1,     /* First frame of a scroll sequence */
-			loop:1,      /* Loop to beginning */
-			text:1,      /* We're showing a string (not image) */
-			img_sep:1;   /* One column image separation */
+	uint8_t         scroll:3,      /* Scroll shift */
+			first:1,       /* First frame of a scroll sequence */
+			loop:1,        /* Loop to beginning */
+			text:1,        /* We're showing a string (not image) */
+			img_sep:1,     /* One column image separation */
+			msb:1;         /* MSB represents the first pixel */
 
-	/* The following variables track the currently shown image */
-	uint8_t            cur;         /* Currently rendered row */
-	uint32_t           row[3];      /* Content (columns) for each row */
-	int64_t           expiry;      /* When to stop showing current image */
-	int32_t           duration;    /* Duration for each shown image */
+	int32_t         duration;      /* Duration for each shown image */
 
 	union {
 		const struct mb_image *img; /* Array of images to show */
@@ -111,24 +59,6 @@ struct mb_display {
 	char            str_buf[CONFIG_MICROBIT_DISPLAY_STR_MAX];
 };
 
-struct x_y {
-	uint8_t x:4,
-	     y:4;
-};
-
-/* Where the X,Y coordinates of each row/col are found.
- * The top left corner has the coordinates 0,0.
- */
-static const struct x_y map[DISPLAY_ROWS][DISPLAY_COLS] = {
-	{{0, 0}, {2, 0}, {4, 0}, {4, 3}, {3, 3}, {2, 3}, {1, 3}, {0, 3}, {1, 2} },
-	{{4, 2}, {0, 2}, {2, 2}, {1, 0}, {3, 0}, {3, 4}, {1, 4}, {0, 0}, {0, 0} },
-	{{2, 4}, {4, 4}, {0, 4}, {0, 1}, {1, 1}, {2, 1}, {3, 1}, {4, 1}, {3, 2} },
-};
-
-/* Mask of all the column bits */
-static const uint32_t col_mask = (((~0UL) << LED_COL1_GPIO_PIN) &
-			       ((~0UL) >> (31 - LED_COL9_GPIO_PIN)));
-
 static inline const struct mb_image *get_font(char ch)
 {
 	if (ch < MB_FONT_START || ch > MB_FONT_END) {
@@ -138,64 +68,78 @@ static inline const struct mb_image *get_font(char ch)
 	return &mb_font[ch - MB_FONT_START];
 }
 
-#define GET_PIXEL(img, x, y) ((img)->row[y] & BIT(x))
-
-/* Precalculate all three rows of an image and start the rendering. */
-static void start_image(struct mb_display *disp, const struct mb_image *img)
+static ALWAYS_INLINE uint8_t flip_pixels(uint8_t b)
 {
-	int row, col;
+	b = (b & 0xf0) >> 4 | (b & 0x0f) << 4;
+	b = (b & 0xcc) >> 2 | (b & 0x33) << 2;
+	b = (b & 0xaa) >> 1 | (b & 0x55) << 1;
 
-	for (row = 0; row < DISPLAY_ROWS; row++) {
-		disp->row[row] = 0U;
+	return b;
+}
 
-		for (col = 0; col < DISPLAY_COLS; col++) {
-			if (GET_PIXEL(img, map[row][col].x, map[row][col].y)) {
-				disp->row[row] |= BIT(LED_COL1_GPIO_PIN + col);
-			}
+static int update_content(struct mb_display *disp, const struct mb_image *img)
+{
+	const struct display_buffer_descriptor buf_desc = {
+		.buf_size = sizeof(struct mb_image),
+		.width    = MB_DISP_XRES,
+		.height   = MB_DISP_YRES,
+		.pitch    = 8,
+	};
+	struct mb_image tmp_img;
+	int ret;
+
+	if (disp->msb) {
+		for (int i = 0; i < sizeof(struct mb_image); i++) {
+			tmp_img.row[i] = flip_pixels(img->row[i]);
 		}
 
-		disp->row[row] = ~disp->row[row] & col_mask;
-		disp->row[row] |= BIT(LED_ROW1_GPIO_PIN + row);
-	}
-
-	disp->cur = 0U;
-
-	if (disp->duration == SYS_FOREVER_MS) {
-		disp->expiry = SYS_FOREVER_MS;
+		ret = display_write(disp->lm_dev, 0, 0, &buf_desc, &tmp_img);
 	} else {
-		disp->expiry = k_uptime_get() + disp->duration;
+		ret = display_write(disp->lm_dev, 0, 0, &buf_desc, img);
 	}
 
-	k_timer_start(&disp->timer, K_NO_WAIT, K_MSEC(4));
-}
-
-#define ROW_PIN(n) (LED_ROW1_GPIO_PIN + (n))
-
-static inline void update_pins(struct mb_display *disp, uint32_t val)
-{
-	uint32_t pin, prev = (disp->cur + 2) % 3;
-
-	/* Disable the previous row */
-	gpio_pin_set_raw(disp->dev, ROW_PIN(prev), 0);
-
-	/* Set the column pins to their correct values */
-	for (pin = LED_COL1_GPIO_PIN; pin <= LED_COL9_GPIO_PIN; pin++) {
-		gpio_pin_set_raw(disp->dev, pin, !!(val & BIT(pin)));
+	if (ret < 0) {
+		LOG_ERR("Write to display controller failed");
+		return ret;
 	}
 
-	/* Enable the new row */
-	gpio_pin_set_raw(disp->dev, ROW_PIN(disp->cur), 1);
+	LOG_DBG("Image duration %d", disp->duration);
+	if (disp->duration != SYS_FOREVER_MS) {
+		k_work_reschedule(&disp->dwork, K_MSEC(disp->duration));
+	}
+
+	return ret;
 }
 
-static void reset_display(struct mb_display *disp)
+static int start_image(struct mb_display *disp, const struct mb_image *img)
 {
-	k_timer_stop(&disp->timer);
+	int ret;
+
+	ret = display_blanking_off(disp->lm_dev);
+	if (ret < 0) {
+		LOG_ERR("Set blanking off failed");
+		return ret;
+	}
+
+	return update_content(disp, img);
+}
+
+static int reset_display(struct mb_display *disp)
+{
+	int ret;
 
 	disp->str = NULL;
 	disp->cur_img = 0U;
 	disp->img = NULL;
 	disp->img_count = 0U;
 	disp->scroll = SCROLL_OFF;
+
+	ret = display_blanking_on(disp->lm_dev);
+	if (ret < 0) {
+		LOG_ERR("Set blanking on failed");
+	}
+
+	return ret;
 }
 
 static const struct mb_image *current_img(struct mb_display *disp)
@@ -243,16 +187,15 @@ static inline bool last_frame(struct mb_display *disp)
 
 static inline uint8_t scroll_steps(struct mb_display *disp)
 {
-	return 5 + disp->img_sep;
+	return MB_DISP_XRES + disp->img_sep;
 }
 
-static void update_scroll(struct mb_display *disp)
+static int update_scroll(struct mb_display *disp)
 {
 	if (disp->scroll < scroll_steps(disp)) {
 		struct mb_image img;
-		int i;
 
-		for (i = 0; i < 5; i++) {
+		for (int i = 0; i < MB_DISP_XRES; i++) {
 			const struct mb_image *i1 = current_img(disp);
 			const struct mb_image *i2 = next_img(disp);
 
@@ -262,7 +205,7 @@ static void update_scroll(struct mb_display *disp)
 		}
 
 		disp->scroll++;
-		start_image(disp, &img);
+		return update_content(disp, &img);
 	} else {
 		if (disp->first) {
 			disp->first = 0U;
@@ -272,8 +215,7 @@ static void update_scroll(struct mb_display *disp)
 
 		if (last_frame(disp)) {
 			if (!disp->loop) {
-				reset_display(disp);
-				return;
+				return reset_display(disp);
 			}
 
 			disp->cur_img = 0U;
@@ -281,55 +223,41 @@ static void update_scroll(struct mb_display *disp)
 		}
 
 		disp->scroll = SCROLL_START;
-		start_image(disp, current_img(disp));
+		return update_content(disp, current_img(disp));
 	}
 }
 
-static void update_image(struct mb_display *disp)
+static int update_image(struct mb_display *disp)
 {
 	disp->cur_img++;
 
 	if (last_frame(disp)) {
 		if (!disp->loop) {
-			reset_display(disp);
-			return;
+			return reset_display(disp);
 		}
 
 		disp->cur_img = 0U;
 	}
 
-	start_image(disp, current_img(disp));
+	return update_content(disp, current_img(disp));
 }
 
-static void show_row(struct k_timer *timer)
+static void update_display_work(struct k_work *work)
 {
-	struct mb_display *disp = CONTAINER_OF(timer, struct mb_display, timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct mb_display *disp = CONTAINER_OF(dwork, struct mb_display, dwork);
+	int ret;
 
-	update_pins(disp, disp->row[disp->cur]);
-	disp->cur = (disp->cur + 1) % DISPLAY_ROWS;
-
-	if (disp->cur == 0U && disp->expiry != SYS_FOREVER_MS &&
-	    k_uptime_get() > disp->expiry) {
-		if (disp->scroll) {
-			update_scroll(disp);
-		} else {
-			update_image(disp);
-		}
+	if (disp->scroll) {
+		ret = update_scroll(disp);
+	} else {
+		ret = update_image(disp);
 	}
+
+	__ASSERT(ret == 0, "Failed to update display");
 }
 
-static void clear_display(struct k_timer *timer)
-{
-	struct mb_display *disp = CONTAINER_OF(timer, struct mb_display, timer);
-
-	update_pins(disp, col_mask);
-}
-
-static struct mb_display display = {
-	.timer = Z_TIMER_INITIALIZER(display.timer, show_row, clear_display),
-};
-
-static void start_scroll(struct mb_display *disp, int32_t duration)
+static int start_scroll(struct mb_display *disp, int32_t duration)
 {
 	/* Divide total duration by number of scrolling steps */
 	if (duration) {
@@ -341,24 +269,37 @@ static void start_scroll(struct mb_display *disp, int32_t duration)
 	disp->scroll = SCROLL_START;
 	disp->first = 1U;
 	disp->cur_img = 0U;
-	start_image(disp, get_font(' '));
+	return start_image(disp, get_font(' '));
 }
 
-static void start_single(struct mb_display *disp, int32_t duration)
+static int start_single(struct mb_display *disp, int32_t duration)
 {
 	disp->duration = duration;
 
 	if (disp->text) {
-		start_image(disp, get_font(disp->str[0]));
+		return start_image(disp, get_font(disp->str[0]));
 	} else {
-		start_image(disp, disp->img);
+		return start_image(disp, disp->img);
 	}
+}
+
+void mb_display_stop(struct mb_display *disp)
+{
+	struct k_work_sync sync;
+	int ret;
+
+	k_work_cancel_delayable_sync(&disp->dwork, &sync);
+	LOG_DBG("delayable work stopped %p", disp);
+	ret = reset_display(disp);
+	__ASSERT(ret == 0, "Failed to reset display");
 }
 
 void mb_display_image(struct mb_display *disp, uint32_t mode, int32_t duration,
 		      const struct mb_image *img, uint8_t img_count)
 {
-	reset_display(disp);
+	int ret;
+
+	mb_display_stop(disp);
 
 	__ASSERT(img && img_count > 0, "Invalid parameters");
 
@@ -372,27 +313,25 @@ void mb_display_image(struct mb_display *disp, uint32_t mode, int32_t duration,
 	switch (mode & MODE_MASK) {
 	case MB_DISPLAY_MODE_DEFAULT:
 	case MB_DISPLAY_MODE_SINGLE:
-		start_single(disp, duration);
+		ret = start_single(disp, duration);
+		__ASSERT(ret == 0, "Failed to start single mode");
 		break;
 	case MB_DISPLAY_MODE_SCROLL:
-		start_scroll(disp, duration);
+		ret = start_scroll(disp, duration);
+		__ASSERT(ret == 0, "Failed to start scroll mode");
 		break;
 	default:
 		__ASSERT(0, "Invalid display mode");
 	}
 }
 
-void mb_display_stop(struct mb_display *disp)
-{
-	reset_display(disp);
-}
-
 void mb_display_print(struct mb_display *disp, uint32_t mode,
 		      int32_t duration, const char *fmt, ...)
 {
 	va_list ap;
+	int ret;
 
-	reset_display(disp);
+	mb_display_stop(disp);
 
 	va_start(ap, fmt);
 	vsnprintk(disp->str_buf, sizeof(disp->str_buf), fmt, ap);
@@ -411,43 +350,63 @@ void mb_display_print(struct mb_display *disp, uint32_t mode,
 	switch (mode & MODE_MASK) {
 	case MB_DISPLAY_MODE_DEFAULT:
 	case MB_DISPLAY_MODE_SCROLL:
-		start_scroll(disp, duration);
+		ret = start_scroll(disp, duration);
+		__ASSERT(ret == 0, "Failed to start scroll mode");
 		break;
 	case MB_DISPLAY_MODE_SINGLE:
-		start_single(disp, duration);
+		ret = start_single(disp, duration);
+		__ASSERT(ret == 0, "Failed to start single mode");
 		break;
 	default:
 		__ASSERT(0, "Invalid display mode");
 	}
 }
 
+static int mb_display_init(struct mb_display *disp)
+{
+	struct display_capabilities caps;
+	int ret;
+
+	display_get_capabilities(disp->lm_dev, &caps);
+	if (caps.x_resolution != MB_DISP_XRES ||
+	    caps.y_resolution != MB_DISP_YRES) {
+		LOG_ERR("Not supported display resolution");
+		return -ENOTSUP;
+	}
+
+	if (caps.screen_info & SCREEN_INFO_MONO_MSB_FIRST) {
+		disp->msb = 1U;
+	}
+
+	ret = display_set_brightness(disp->lm_dev, 0xFF);
+	if (ret < 0) {
+		LOG_ERR("Failed to set brightness");
+		return ret;
+	}
+
+	k_work_init_delayable(&disp->dwork, update_display_work);
+
+	return 0;
+}
+
+static struct mb_display display;
+
 struct mb_display *mb_display_get(void)
 {
 	return &display;
 }
 
-static int mb_display_init(const struct device *dev)
+static int mb_display_init_on_boot(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	display.dev = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
+	display.lm_dev = DEVICE_DT_GET_ONE(nordic_nrf_led_matrix);
+	if (!device_is_ready(display.lm_dev)) {
+		LOG_ERR("Display controller device not ready");
+		return -ENODEV;
+	}
 
-	__ASSERT(dev, "No GPIO device found");
-
-	gpio_pin_configure(display.dev, LED_ROW1_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_ROW2_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_ROW3_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL1_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL2_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL3_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL4_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL5_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL6_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL7_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL8_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL9_GPIO_PIN, GPIO_OUTPUT);
-
-	return 0;
+	return mb_display_init(&display);
 }
 
-SYS_INIT(mb_display_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(mb_display_init_on_boot, APPLICATION, CONFIG_DISPLAY_INIT_PRIORITY);

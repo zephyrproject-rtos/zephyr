@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT nxp_imx_gpt
 
-#include <drivers/counter.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_gpt.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(mcux_gpt, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -168,6 +168,11 @@ static int mcux_gpt_init(const struct device *dev)
 	gpt_config_t gptConfig;
 	uint32_t clock_freq;
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
@@ -223,7 +228,7 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 			    &mcux_gpt_data_ ## n,			\
 			    &mcux_gpt_config_ ## n,			\
 			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_COUNTER_INIT_PRIORITY,		\
 			    &mcux_gpt_driver_api);			\
 									\
 	static int mcux_gpt_## n ##_init(const struct device *dev)	\

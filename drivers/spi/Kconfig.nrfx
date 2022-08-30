@@ -19,23 +19,22 @@ config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	  clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1).
 	  Without this override, the SPI Master is only available
 	  without EasyDMA. Note that the 'SPIM' and 'SPIS' drivers
-	  use EasyDMA, while the 'SPI' driver does not. Use this
-	  option ONLY if you are certain that transactions with
-	  RXD.MAXCNT == 1 and TXD.MAXCNT <= 1 will NOT be executed.
-
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_NORDIC_NRF_SPI  := nordic,nrf-spi
-DT_COMPAT_NORDIC_NRF_SPIM := nordic,nrf-spim
-DT_COMPAT_NORDIC_NRF_SPIS := nordic,nrf-spis
+	  use EasyDMA, while the 'SPI' driver does not.
+	  When used in conjunction with nRF SPIM Devicetree property
+	  'anomaly-58-workaround' a workaround can be enabled per SPIM
+	  instance.  If you are certain that transactions with
+	  RXD.MAXCNT == 1 and TXD.MAXCNT <= 1 will NOT be executed
+	  then nRF52832 PPI and GPIOTE resources can be saved by not
+	  enabling 'anomaly-58-workaround' via the Devicetree.
 
 config SPI_0_NRF_SPI
-	def_bool $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPI))
+	def_bool HAS_HW_NRF_SPI0
 	select NRFX_SPI0
 	help
 	  Enable nRF SPI Master without EasyDMA on port 0.
 
 config SPI_0_NRF_SPIM
-	def_bool $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	def_bool HAS_HW_NRF_SPIM0
 	# This driver is not available for nRF52832 because of Product Anomaly 58
 	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
 	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
@@ -45,7 +44,7 @@ config SPI_0_NRF_SPIM
 	  Enable nRF SPI Master with EasyDMA on port 0.
 
 config SPI_0_NRF_SPIS
-	def_bool $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	def_bool  HAS_HW_NRF_SPIS0
 	depends on SPI_SLAVE
 	select NRFX_SPIS0
 	help
@@ -53,23 +52,14 @@ config SPI_0_NRF_SPIS
 	  Due to hardware limitations the implementation supports only simple
 	  buffers (consisting of one part) located in RAM.
 
-config SPI_0_NRF_ORC
-	hex "SPI Port 0 over-read character"
-	depends on SPI_0_NRF_SPI || SPI_0_NRF_SPIM || SPI_0_NRF_SPIS
-	range 0x00 0xff
-	default 0xff
-	help
-	  Over-read character. Character clocked out after an over-read
-	  of the transmit buffer.
-
 config SPI_1_NRF_SPI
-	def_bool $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPI))
+	def_bool  HAS_HW_NRF_SPI1
 	select NRFX_SPI1
 	help
 	  Enable nRF SPI Master without EasyDMA on port 1.
 
 config SPI_1_NRF_SPIM
-	def_bool $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	def_bool HAS_HW_NRF_SPIM1
 	# This driver is not available for nRF52832 because of Product Anomaly 58
 	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
 	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
@@ -79,7 +69,7 @@ config SPI_1_NRF_SPIM
 	  Enable nRF SPI Master with EasyDMA on port 1.
 
 config SPI_1_NRF_SPIS
-	def_bool $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	def_bool HAS_HW_NRF_SPIS1
 	depends on SPI_SLAVE
 	select NRFX_SPIS1
 	help
@@ -87,23 +77,14 @@ config SPI_1_NRF_SPIS
 	  Due to hardware limitations the implementation supports only simple
 	  buffers (consisting of one part) located in RAM.
 
-config SPI_1_NRF_ORC
-	hex "SPI Port 1 over-read character"
-	depends on SPI_1_NRF_SPI || SPI_1_NRF_SPIM || SPI_1_NRF_SPIS
-	range 0x00 0xff
-	default 0xff
-	help
-	  Over-read character. Character clocked out after an over-read
-	  of the transmit buffer.
-
 config SPI_2_NRF_SPI
-	def_bool $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPI))
+	def_bool HAS_HW_NRF_SPI2
 	select NRFX_SPI2
 	help
 	  Enable nRF SPI Master without EasyDMA on port 2.
 
 config SPI_2_NRF_SPIM
-	def_bool $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	def_bool HAS_HW_NRF_SPIM2
 	# This driver is not available for nRF52832 because of Product Anomaly 58
 	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
 	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
@@ -113,7 +94,7 @@ config SPI_2_NRF_SPIM
 	  Enable nRF SPI Master with EasyDMA on port 2.
 
 config SPI_2_NRF_SPIS
-	def_bool $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	def_bool HAS_HW_NRF_SPIS2
 	depends on SPI_SLAVE
 	select NRFX_SPIS2
 	help
@@ -121,23 +102,14 @@ config SPI_2_NRF_SPIS
 	  Due to hardware limitations the implementation supports only simple
 	  buffers (consisting of one part) located in RAM.
 
-config SPI_2_NRF_ORC
-	hex "SPI Port 2 over-read character"
-	depends on SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
-	range 0x00 0xff
-	default 0xff
-	help
-	  Over-read character. Character clocked out after an over-read
-	  of the transmit buffer.
-
 config SPI_3_NRF_SPIM
-	def_bool $(dt_nodelabel_has_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	def_bool HAS_HW_NRF_SPIM3
 	select NRFX_SPIM3
 	help
 	  Enable nRF SPI Master with EasyDMA on port 3.
 
 config SPI_3_NRF_SPIS
-	def_bool $(dt_nodelabel_has_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	def_bool HAS_HW_NRF_SPIS3
 	depends on SPI_SLAVE
 	select NRFX_SPIS3
 	help
@@ -145,49 +117,11 @@ config SPI_3_NRF_SPIS
 	  Due to hardware limitations the implementation supports only simple
 	  buffers (consisting of one part) located in RAM.
 
-config SPI_3_NRF_ORC
-	hex "SPI Port 3 over-read character"
-	depends on SPI_3_NRF_SPIM || SPI_3_NRF_SPIS
-	range 0x00 0xff
-	default 0xff
-	help
-	  Over-read character. Character clocked out after an over-read
-	  of the transmit buffer.
-
-config SPI_3_NRF_RX_DELAY
-	int "SPIM3 MISO sampling delay"
-	depends on SPI_3_NRF_SPIM && (SOC_NRF52833 || SOC_NRF52840)
-	range 0 7
-	default 2
-	help
-	  Number of 64 MHz clock cycles (15.625 ns) delay from the sampling
-	  edge of SCK (leading or trailing, depending on the CPHA setting used)
-	  until the input serial data on MISO is actually sampled.
-
 config SPI_4_NRF_SPIM
-	def_bool $(dt_nodelabel_has_compat,spi4,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	def_bool HAS_HW_NRF_SPIM4
 	select NRFX_SPIM4
 	help
 	  Enable nRF SPI Master with EasyDMA on port 4.
-
-config SPI_4_NRF_ORC
-	hex "SPI Port 4 over-read character"
-	depends on SPI_4_NRF_SPIM
-	range 0x00 0xff
-	default 0xff
-	help
-	  Over-read character. Character clocked out after an over-read
-	  of the transmit buffer.
-
-config SPI_4_NRF_RX_DELAY
-	int "SPIM4 MISO sampling delay"
-	depends on SPI_4_NRF_SPIM && SOC_NRF5340_CPUAPP
-	range 0 7
-	default 2
-	help
-	  Number of 64 MHz clock cycles (15.625 ns) delay from the sampling
-	  edge of SCK (leading or trailing, depending on the CPHA setting used)
-	  until the input serial data on MISO is actually sampled.
 
 config SPI_NRFX_RAM_BUFFER_SIZE
 	int "Size of RAM buffers for SPIM peripherals"

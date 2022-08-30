@@ -1,0 +1,11 @@
+# ADC configuration options
+
+# Copyright (c) 2021 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_GD32
+	bool "GD32 ADC driver"
+	default y
+	depends on DT_HAS_GD_GD32_ADC_ENABLED
+	help
+	  Enable GigaDevice GD32 ADC driver

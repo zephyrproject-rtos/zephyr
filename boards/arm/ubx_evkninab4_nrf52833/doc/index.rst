@@ -26,7 +26,7 @@ and has support for the following features:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/EVK-NINA-B406_Top_web.png
+.. figure:: img/EVK-NINA-B406_Top_web.jpg
 
     EVK NINA-B4
 
@@ -73,7 +73,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `EVK-NINA-B4 product page`_ and `NINA-B40 Data Sheet`_
 for a complete list of EVK NINA-B4 hardware features.
 
@@ -167,20 +167,37 @@ more than one UART for connecting peripheral devices:
 
 1. Add device tree overlay file to the main directory of your application:
 
-   .. code-block:: console
+   .. code-block:: devicetree
 
-      $ cat ubx_evk_ninab4nrf52833.overlay
+      &pinctrl {
+         uart1_default: uart1_default {
+            group1 {
+               psels = <NRF_PSEL(UART_TX, 0, 14)>,
+                       <NRF_PSEL(UART_RX, 0, 16)>;
+            };
+         };
+         /* required if CONFIG_PM_DEVICE=y */
+         uart1_sleep: uart1_sleep {
+            group1 {
+               psels = <NRF_PSEL(UART_TX, 0, 14)>,
+                       <NRF_PSEL(UART_RX, 0, 16)>;
+               low-power-enable;
+            };
+         };
+      };
+
       &uart1 {
         compatible = "nordic,nrf-uarte";
         current-speed = <115200>;
         status = "okay";
-        tx-pin = <14>;
-        rx-pin = <16>;
+        pinctrl-0 = <&uart1_default>;
+        pinctrl-1 = <&uart1_sleep>;
+        pinctrl-names = "default", "sleep";
       };
 
    In the overlay file above, pin P0.16 is used for RX and P0.14 is used for TX
 
-2. Use the UART1 as ``device_get_binding("UART_1")``
+2. Use the UART1 as ``DEVICE_DT_GET(DT_NODELABEL(uart1))``
 
 Overlay file naming
 ===================
@@ -190,22 +207,11 @@ picked up automatically by the device tree compiler.
 
 Selecting the pins
 ==================
-To select the pin numbers for tx-pin and rx-pin:
 
-.. code-block:: console
-
-   tx-pin = <pin_no>
-
-Open the data sheet for the NINA-B4 at `NINA-B40 Data Sheet`_, Section 3 'Pin definition'.
+Pins can be configured in the board pinctrl file. To see the available mappings,
+open the data sheet for the NINA-B4 at `NINA-B40 Data Sheet`_, Section 3 'Pin definition'.
 In the table 7 select the pins marked 'GPIO_xx'.  Note that pins marked as 'Radio sensitive pin'
 can only be used in under-10KHz applications. They are not suitable for 115200 speed of UART.
-
-Translate 'Pin' into number for Device tree by using the following formula::
-
-   pin_no = b\*32 + a
-
-where ``a`` and ``b`` are from the Pin value in the table (Pb.a).
-For example, for P0.1, ``pin_no = 1`` and for P1.0, ``pin_no = 32``.
 
 .. note:
   Pins are defined according to the "nRF52" pin number, not the module pad number.

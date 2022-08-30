@@ -7,35 +7,22 @@ if SOC_FAMILY_ARM
 
 menuconfig CLOCK_CONTROL_BEETLE
 	bool "BEETLE Clock Control"
-	depends on SOC_SERIES_BEETLE
-	default y if SOC_SERIES_BEETLE
+	default y
+	depends on DT_HAS_ARM_BEETLE_SYSCON_ENABLED
 	help
 	  Enable driver for Reset & Clock Control subsystem found
 	  in STM32F4 family of MCUs
 
-config CLOCK_CONTROL_BEETLE_DEVICE_INIT_PRIORITY
-	int "Clock Control Device Priority"
-	default 1
-	depends on CLOCK_CONTROL_BEETLE
-	help
-	  This option controls the priority of clock control
-	  device initialization. Higher priority ensures that the device
-	  is initialized earlier in the startup cycle. If unsure, leave
-	  at default value 1
-
-config ARM_CLOCK_CONTROL_DEV_NAME
-	string "Clock Config Device name"
-	default "CLOCK_CONTROL_0"
-	depends on CLOCK_CONTROL_BEETLE
-	help
-	  Configure Clock Config Device name
+if CLOCK_CONTROL_BEETLE
 
 config CLOCK_CONTROL_BEETLE_ENABLE_PLL
-	bool "Enable PLL on Beetle"
+	bool "PLL on Beetle"
 	depends on SOC_SERIES_BEETLE
 	help
 	  Enable PLL on Beetle.
 
 	  Select n if not sure.
+
+endif # CLOCK_CONTROL_BEETLE
 
 endif # SOC_FAMILY_ARM

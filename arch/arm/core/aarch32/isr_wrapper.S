@@ -7,17 +7,21 @@
 
 /**
  * @file
- * @brief ARM Cortex-M and Cortex-R wrapper for ISRs with parameter
+ * @brief ARM Cortex-A, Cortex-M and Cortex-R wrapper for ISRs with parameter
  *
  * Wrapper installed in vector table for handling dynamic interrupts that accept
  * a parameter.
  */
+/*
+ * Tell armclang that stack alignment are ensured.
+ */
+.eabi_attribute Tag_ABI_align_preserved, 1
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
-#include <sw_isr_table.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sw_isr_table.h>
 
 
 _ASM_FILE_PROLOGUE
@@ -38,13 +42,41 @@ GTEXT(z_arm_int_exit)
  * z_arm_pendsv()) and pends the PendSV exception if so: the latter will
  * perform the context switch itself.
  *
- * @return N/A
  */
 SECTION_FUNC(TEXT, _isr_wrapper)
 
 #if defined(CONFIG_CPU_CORTEX_M)
 	push {r0,lr}		/* r0, lr are now the first items on the stack */
-#elif defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+
+#if defined(CONFIG_USERSPACE)
+	/* See comment below about svc stack usage */
+	cps #MODE_SVC
+	push {r0}
+
+	/* Determine if interrupted thread was in user context */
+	cps #MODE_IRQ
+	mrs r0, spsr
+	and r0, #MODE_MASK
+	cmp r0, #MODE_USR
+	bne isr_system_thread
+
+	ldr r0, =_kernel
+	ldr r0, [r0, #_kernel_offset_to_current]
+
+	/* Save away user stack pointer */
+	cps #MODE_SYS
+	str sp, [r0, #_thread_offset_to_sp_usr] /* sp_usr */
+
+	/* Switch to privileged stack */
+	ldr sp, [r0, #_thread_offset_to_priv_stack_end] /* priv stack end */
+
+isr_system_thread:
+	cps #MODE_SVC
+	pop {r0}
+	cps #MODE_IRQ
+#endif
+
 	/*
 	 * Save away r0-r3, r12 and lr_irq for the previous context to the
 	 * process stack since they are clobbered here.  Also, save away lr
@@ -55,6 +87,31 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	srsdb #MODE_SYS!
 	cps #MODE_SYS
 	push {r0-r3, r12, lr}
+
+#if defined(CONFIG_FPU_SHARING)
+	sub sp, sp, #___fpu_t_SIZEOF
+
+	/*
+	 * Note that this handler was entered with the VFP unit enabled.
+	 * The undefined instruction handler uses this to know that it
+	 * needs to save the current floating context.
+	 */
+	vmrs r0, fpexc
+	str r0, [sp, #___fpu_t_SIZEOF - 4]
+
+	/* Disable VFP */
+	mov r0, #0
+	vmsr fpexc, r0
+
+	/*
+	 * Mark where to store the floating context for the undefined
+	 * instruction handler
+	 */
+	ldr r2, =_kernel
+	ldr r0, [r2, #_kernel_offset_to_fp_ctx]
+	cmp r0, #0
+	streq sp, [r2, #_kernel_offset_to_fp_ctx]
+#endif /* CONFIG_FPU_SHARING */
 
 	/*
 	 * Use SVC mode stack for predictable interrupt behaviour; running ISRs
@@ -131,7 +188,8 @@ _idle_state_cleared:
 		/* clear kernel idle state */
 		strne	r1, [r2, #_kernel_offset_to_idle]
 		blne	z_pm_save_idle_exit
-#elif defined(CONFIG_ARMV7_R)
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
+	|| defined(CONFIG_ARMV7_A)
 	beq _idle_state_cleared
 	movs r1, #0
 	/* clear kernel idle state */
@@ -158,7 +216,7 @@ _idle_state_cleared:
 	sub r0, r0, #16	/* get IRQ number */
 	lsl r0, r0, #3	/* table is 8-byte wide */
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-#elif defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 	/* Get active IRQ number from the interrupt controller */
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	bl arm_gic_get_active
@@ -200,7 +258,7 @@ _idle_state_cleared:
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
 	blx r3		/* call ISR */
 
-#if defined(CONFIG_CPU_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 spurious_continue:
 	/* Signal end-of-interrupt */
 	pop {r0, r1}
@@ -209,7 +267,7 @@ spurious_continue:
 #else
 	bl z_soc_irq_eoi
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
-#endif /* CONFIG_CPU_CORTEX_R */
+#endif /* CONFIG_CPU_AARCH32_CORTEX_R || CONFIG_CPU_AARCH32_CORTEX_A */
 
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_exit
@@ -220,7 +278,8 @@ spurious_continue:
 	mov lr, r3
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	pop {r0, lr}
-#elif defined(CONFIG_ARMV7_R)
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
+	|| defined(CONFIG_ARMV7_A)
 	/*
 	 * r0 and lr_irq were saved on the process stack since a swap could
 	 * happen.  exc_exit will handle getting those values back

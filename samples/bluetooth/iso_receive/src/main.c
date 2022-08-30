@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/gpio.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/iso.h>
-#include <sys/byteorder.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/byteorder.h>
 
 #define TIMEOUT_SYNC_CREATE K_SECONDS(10)
 #define NAME_LEN            30
@@ -19,7 +20,6 @@
 					   BT_GAP_SCAN_FAST_INTERVAL, \
 					   BT_GAP_SCAN_FAST_WINDOW)
 
-#define BT_INTERVAL_TO_MS(interval) ((interval) * 5 / 4)
 #define PA_RETRY_COUNT 6
 
 static bool         per_adv_found;
@@ -39,13 +39,10 @@ static K_SEM_DEFINE(sem_big_sync_lost, 0, 1);
 #define LED0_NODE DT_ALIAS(led0)
 
 #if DT_NODE_HAS_STATUS(LED0_NODE, okay)
+static const struct gpio_dt_spec led_gpio = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 #define HAS_LED     1
-#define LED0        DT_GPIO_LABEL(LED0_NODE, gpios)
-#define PIN         DT_GPIO_PIN(LED0_NODE, gpios)
-#define FLAGS       DT_GPIO_FLAGS(LED0_NODE, gpios)
 #define BLINK_ONOFF K_MSEC(500)
 
-static struct device const     *dev;
 static struct k_work_delayable blink_work;
 static bool                    led_is_on;
 static bool                    blink;
@@ -57,7 +54,7 @@ static void blink_timeout(struct k_work *work)
 	}
 
 	led_is_on = !led_is_on;
-	gpio_pin_set(dev, PIN, (int)led_is_on);
+	gpio_pin_set_dt(&led_gpio, (int)led_is_on);
 
 	k_work_schedule(&blink_work, BLINK_ONOFF);
 }
@@ -112,13 +109,13 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	       (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
 	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
-	       info->interval, BT_INTERVAL_TO_MS(info->interval), info->sid);
+	       info->interval, BT_CONN_INTERVAL_TO_MS(info->interval), info->sid);
 
 	if (!per_adv_found && info->interval) {
 		per_adv_found = true;
 
 		per_sid = info->sid;
-		per_interval_ms = BT_INTERVAL_TO_MS(info->interval);
+		per_interval_ms = BT_CONN_INTERVAL_TO_MS(info->interval);
 		bt_addr_le_copy(&per_addr, info->addr);
 
 		k_sem_give(&sem_per_adv);
@@ -221,8 +218,9 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 	}
 
 	str_len = bin2hex(buf->data, buf->len, data_str, sizeof(data_str));
-	printk("Incoming data channel %p len %u: %s (counter value %u)\n",
-	       chan, buf->len, data_str, count);
+	printk("Incoming data channel %p flags 0x%x seq_num %u ts %u len %u: "
+	       "%s (counter value %u)\n", chan, info->flags, info->seq_num,
+	       info->ts, buf->len, data_str, count);
 }
 
 static void iso_connected(struct bt_iso_chan *chan)
@@ -263,7 +261,7 @@ static struct bt_iso_chan *bis[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
 static struct bt_iso_big_sync_param big_sync_param = {
 	.bis_channels = bis,
 	.num_bis = BIS_ISO_CHAN_COUNT,
-	.bis_bitfield = (BIT(BIS_ISO_CHAN_COUNT) - 1),
+	.bis_bitfield = (BIT_MASK(BIS_ISO_CHAN_COUNT) << 1),
 	.mse = 1,
 	.sync_timeout = 100, /* in 10 ms units */
 };
@@ -280,15 +278,15 @@ void main(void)
 
 #if defined(HAS_LED)
 	printk("Get reference to LED device...");
-	dev = device_get_binding(LED0);
-	if (!dev) {
-		printk("Failed.\n");
+
+	if (!device_is_ready(led_gpio.port)) {
+		printk("LED gpio device not ready.\n");
 		return;
 	}
 	printk("done.\n");
 
 	printk("Configure GPIO pin...");
-	err = gpio_pin_configure(dev, PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
+	err = gpio_pin_configure_dt(&led_gpio, GPIO_OUTPUT_ACTIVE);
 	if (err) {
 		return;
 	}
@@ -327,7 +325,7 @@ void main(void)
 		printk("Start blinking LED...\n");
 		led_is_on = false;
 		blink = true;
-		gpio_pin_set(dev, PIN, (int)led_is_on);
+		gpio_pin_set_dt(&led_gpio, (int)led_is_on);
 		k_work_reschedule(&blink_work, BLINK_ONOFF);
 #endif /* HAS_LED */
 
@@ -432,7 +430,7 @@ big_sync_create:
 
 		/* Keep LED on */
 		led_is_on = true;
-		gpio_pin_set(dev, PIN, (int)led_is_on);
+		gpio_pin_set_dt(&led_gpio, (int)led_is_on);
 #endif /* HAS_LED */
 
 		printk("Waiting for BIG sync lost...\n");

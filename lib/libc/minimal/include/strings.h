@@ -9,6 +9,8 @@
 #ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STRINGS_H_
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STRINGS_H_
 
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

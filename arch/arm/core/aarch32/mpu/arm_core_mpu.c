@@ -4,17 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
-#include <soc.h>
-#include <kernel_structs.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 
 #include "arm_core_mpu_dev.h"
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mpu);
 
 /*
@@ -47,7 +46,7 @@ LOG_MODULE_REGISTER(mpu);
 		_MPU_DYNAMIC_REGIONS_AREA_START)
 
 #if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_MPU_STACK_GUARD)
-extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 #endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) \
@@ -82,8 +81,8 @@ static const struct z_arm_mpu_partition static_regions[] = {
 #if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
 		{
 		/* Special RAM area for program text */
-		.start = (uint32_t)&_ramfunc_ram_start,
-		.size = (uint32_t)&_ramfunc_ram_size,
+		.start = (uint32_t)&__ramfunc_start,
+		.size = (uint32_t)&__ramfunc_size,
 		.attr = K_MEM_PARTITION_P_RX_U_RX,
 		},
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
@@ -156,6 +155,8 @@ void z_arm_configure_static_mpu_regions(void)
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 }
 
+extern void arm_core_mpu_enable(void);
+extern void arm_core_mpu_disable(void);
 /**
  * @brief Use the HW-specific MPU driver to program
  *        the dynamic MPU regions.
@@ -278,7 +279,7 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 
 		__ASSERT((uintptr_t)&z_priv_stacks_ram_start <= guard_start,
 		"Guard start: (0x%lx) below privilege stacks boundary: (%p)",
-		guard_start, &z_priv_stacks_ram_start);
+		guard_start, z_priv_stacks_ram_start);
 	} else
 #endif /* CONFIG_USERSPACE */
 	{
@@ -304,8 +305,14 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 #endif /* CONFIG_MPU_STACK_GUARD */
 
 	/* Configure the dynamic MPU regions */
+#ifdef CONFIG_AARCH32_ARMV8_R
+	arm_core_mpu_disable();
+#endif
 	arm_core_mpu_configure_dynamic_mpu_regions(dynamic_regions,
 						   region_num);
+#ifdef CONFIG_AARCH32_ARMV8_R
+	arm_core_mpu_enable();
+#endif
 }
 
 #if defined(CONFIG_USERSPACE)

@@ -5,7 +5,8 @@
 
 config COUNTER_XEC
 	bool "Microchip XEC series counter driver"
-	depends on SOC_FAMILY_MEC
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_TIMER_ENABLED
 	help
 	  Enable counter driver for Microchip XEC MCU series. Such driver
 	  will expose the basic timer devices present on the MCU.

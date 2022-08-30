@@ -17,7 +17,6 @@ power communication solution. RAK4631 can be comfortably
 programmed with ZephyrRTOS.
 
 .. image:: img/rak4631-front-parts.jpg
-     :width: 500px
      :align: center
      :alt: RAK4631-NRF52840
 
@@ -123,7 +122,7 @@ Flashing
    - Stop bits: 1
 
 #. Connect the RAK4631 board to your host computer using the USB debug port.
-Then build and flash the :ref:`hello_world` application.
+   Then build and flash the :ref:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

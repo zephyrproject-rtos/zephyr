@@ -15,10 +15,11 @@
  * the comparator value set is reached.
  */
 
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
 
 #include <driverlib/interrupt.h>
 #include <driverlib/aon_rtc.h>
@@ -183,24 +184,6 @@ static void startDevice(void)
 	irq_unlock(key);
 }
 
-int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	rtc_last = 0U;
-
-	initDevice();
-	startDevice();
-
-	/* Enable RTC interrupt. */
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		DT_INST_IRQ(0, priority),
-		rtc_isr, 0, 0);
-	irq_enable(DT_INST_IRQN(0));
-
-	return 0;
-}
-
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -240,6 +223,31 @@ uint32_t sys_clock_elapsed(void)
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-	return (AONRTCCurrent64BitValueGet() / RTC_COUNTS_PER_CYCLE)
-		& 0xFFFFFFFF;
+	return (uint32_t)(AONRTCCurrent64BitValueGet() / RTC_COUNTS_PER_CYCLE);
 }
+
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return AONRTCCurrent64BitValueGet() / RTC_COUNTS_PER_CYCLE;
+}
+
+static int sys_clock_driver_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	rtc_last = 0U;
+
+	initDevice();
+	startDevice();
+
+	/* Enable RTC interrupt. */
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		DT_INST_IRQ(0, priority),
+		rtc_isr, 0, 0);
+	irq_enable(DT_INST_IRQN(0));
+
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

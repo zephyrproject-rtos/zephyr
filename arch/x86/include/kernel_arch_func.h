@@ -7,7 +7,7 @@
 #define ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #include <kernel_arch_data.h>
-#include <arch/x86/mmustructs.h>
+#include <zephyr/arch/x86/mmustructs.h>
 
 #ifdef CONFIG_X86_64
 #include <intel64/kernel_arch_func.h>
@@ -106,7 +106,7 @@ int z_x86_allocate_vector(unsigned int priority, int prev_vector);
 void z_x86_irq_connect_on_vector(unsigned int irq,
 				 uint8_t vector,
 				 void (*func)(const void *arg),
-				 const void *arg, uint32_t flags);
+				 const void *arg);
 
 #endif /* !_ASMLANGUAGE */
 

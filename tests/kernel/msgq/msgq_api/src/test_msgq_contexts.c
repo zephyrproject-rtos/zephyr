@@ -250,7 +250,7 @@ static void put_full_entry(void *p1, void *p2, void *p3)
  * @brief Test thread to thread data passing via message queue
  * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
-void test_msgq_thread(void)
+ZTEST(msgq_api_1cpu, test_msgq_thread)
 {
 	int ret;
 
@@ -267,17 +267,24 @@ void test_msgq_thread(void)
  * @brief Test thread to thread data passing via message queue
  * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
-void test_msgq_thread_overflow(void)
+ZTEST(msgq_api, test_msgq_thread_overflow)
 {
 	int ret;
 
 	/**TESTPOINT: init via k_msgq_init*/
-	k_msgq_init(&msgq, tbuffer, MSG_SIZE, 1);
+	k_msgq_init(&msgq, tbuffer, MSG_SIZE, 2);
 	ret = k_sem_init(&end_sema, 0, 1);
+	zassert_equal(ret, 0, NULL);
+
+	ret = k_msgq_put(&msgq, (void *)&data[0], K_FOREVER);
 	zassert_equal(ret, 0, NULL);
 
 	msgq_thread_overflow(&msgq);
 	msgq_thread_overflow(&kmsgq);
+
+	/*verify the write pointer not reset to the buffer start*/
+	zassert_false(msgq.write_ptr == msgq.buffer_start,
+		"Invalid add operation of message queue");
 }
 
 #ifdef CONFIG_USERSPACE
@@ -285,7 +292,7 @@ void test_msgq_thread_overflow(void)
  * @brief Test user thread to kernel thread data passing via message queue
  * @see k_msgq_alloc_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
-void test_msgq_user_thread(void)
+ZTEST_USER(msgq_api, test_msgq_user_thread)
 {
 	struct k_msgq *q;
 	int ret;
@@ -303,7 +310,7 @@ void test_msgq_user_thread(void)
  * @brief Test thread to thread data passing via message queue
  * @see k_msgq_alloc_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
-void test_msgq_user_thread_overflow(void)
+ZTEST_USER(msgq_api, test_msgq_user_thread_overflow)
 {
 	struct k_msgq *q;
 	int ret;
@@ -322,7 +329,7 @@ void test_msgq_user_thread_overflow(void)
  * @brief Test thread to isr data passing via message queue
  * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
-void test_msgq_isr(void)
+ZTEST(msgq_api, test_msgq_isr)
 {
 	static struct k_msgq stack_msgq;
 
@@ -337,7 +344,7 @@ void test_msgq_isr(void)
  * @brief Test pending writer in msgq
  * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
-void test_msgq_pend_thread(void)
+ZTEST(msgq_api_1cpu, test_msgq_pend_thread)
 {
 	int ret;
 
@@ -354,7 +361,7 @@ void test_msgq_pend_thread(void)
  * pool with various parameters
  * @see k_msgq_alloc_init(), k_msgq_cleanup()
  */
-void test_msgq_alloc(void)
+ZTEST(msgq_api, test_msgq_alloc)
 {
 	int ret;
 
@@ -383,7 +390,7 @@ void test_msgq_alloc(void)
  *
  * @see k_msgq_get()
  */
-void test_msgq_empty(void)
+ZTEST(msgq_api_1cpu, test_msgq_empty)
 {
 	int pri = k_thread_priority_get(k_current_get()) - 1;
 	int ret;
@@ -423,7 +430,7 @@ void test_msgq_empty(void)
  *
  * @see k_msgq_put()
  */
-void test_msgq_full(void)
+ZTEST(msgq_api_1cpu, test_msgq_full)
 {
 	int pri = k_thread_priority_get(k_current_get()) - 1;
 	int ret;

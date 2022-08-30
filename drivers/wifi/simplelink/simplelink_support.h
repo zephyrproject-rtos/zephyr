@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_WIFI_SIMPLELINK_SIMPLELINK_SUPPORT_H_
 #define ZEPHYR_DRIVERS_WIFI_SIMPLELINK_SIMPLELINK_SUPPORT_H_
 
-#include <net/wifi_mgmt.h>
+#include <zephyr/net/wifi_mgmt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,6 +44,8 @@ extern void z_simplelink_get_mac(unsigned char *mac);
 extern int z_simplelink_init(simplelink_wifi_cb_t wifi_cb);
 extern int z_simplelink_connect(struct wifi_connect_req_params *params);
 extern int z_simplelink_disconnect(void);
+
+int simplelink_socket_create(int family, int type, int proto);
 
 #ifdef __cplusplus
 }

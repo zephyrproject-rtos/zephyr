@@ -1,40 +1,14 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-struct bt_mesh_sg {
-	const void *data;
-	size_t len;
-};
-
-int bt_mesh_aes_cmac(const uint8_t key[16], struct bt_mesh_sg *sg,
-		     size_t sg_len, uint8_t mac[16]);
-
-static inline int bt_mesh_aes_cmac_one(const uint8_t key[16], const void *m,
-				       size_t len, uint8_t mac[16])
-{
-	struct bt_mesh_sg sg = { m, len };
-
-	return bt_mesh_aes_cmac(key, &sg, 1, mac);
-}
-
-static inline bool bt_mesh_s1(const char *m, uint8_t salt[16])
-{
-	const uint8_t zero[16] = { 0 };
-
-	return bt_mesh_aes_cmac_one(zero, m, strlen(m), salt);
-}
+int bt_mesh_s1(const char *m, uint8_t salt[16]);
 
 int bt_mesh_k1(const uint8_t *ikm, size_t ikm_len, const uint8_t salt[16],
 	       const char *info, uint8_t okm[16]);
-
-#define bt_mesh_k1_str(ikm, ikm_len, salt_str, info, okm) \
-({ \
-	const uint8_t salt[16] = salt_str; \
-	bt_mesh_k1(ikm, ikm_len, salt, info, okm); \
-})
 
 int bt_mesh_k2(const uint8_t n[16], const uint8_t *p, size_t p_len,
 	       uint8_t net_id[1], uint8_t enc_key[16], uint8_t priv_key[16]);
@@ -48,7 +22,9 @@ int bt_mesh_id128(const uint8_t n[16], const char *s, uint8_t out[16]);
 static inline int bt_mesh_id_resolving_key(const uint8_t net_key[16],
 					   uint8_t resolving_key[16])
 {
-	return bt_mesh_k1_str(net_key, 16, "smbt", "smbi", resolving_key);
+	const uint8_t salt[16] = "smbt";
+
+	return bt_mesh_k1(net_key, 16, salt, "smbi", resolving_key);
 }
 
 static inline int bt_mesh_identity_key(const uint8_t net_key[16],
@@ -64,7 +40,7 @@ static inline int bt_mesh_beacon_key(const uint8_t net_key[16],
 }
 
 int bt_mesh_beacon_auth(const uint8_t beacon_key[16], uint8_t flags,
-			const uint8_t net_id[16], uint32_t iv_index,
+			const uint8_t net_id[8], uint32_t iv_index,
 			uint8_t auth[8]);
 
 static inline int bt_mesh_app_id(const uint8_t app_key[16], uint8_t app_id[1])
@@ -101,20 +77,8 @@ static inline int bt_mesh_dev_key(const uint8_t dhkey[32],
 	return bt_mesh_k1(dhkey, 32, prov_salt, "prdk", dev_key);
 }
 
-static inline int bt_mesh_prov_salt(const uint8_t conf_salt[16],
-				    const uint8_t prov_rand[16],
-				    const uint8_t dev_rand[16],
-				    uint8_t prov_salt[16])
-{
-	const uint8_t prov_salt_key[16] = { 0 };
-	struct bt_mesh_sg sg[] = {
-		{ conf_salt, 16 },
-		{ prov_rand, 16 },
-		{ dev_rand, 16 },
-	};
-
-	return bt_mesh_aes_cmac(prov_salt_key, sg, ARRAY_SIZE(sg), prov_salt);
-}
+int bt_mesh_prov_salt(const uint8_t conf_salt[16], const uint8_t prov_rand[16],
+		      const uint8_t dev_rand[16], uint8_t prov_salt[16]);
 
 int bt_mesh_net_obfuscate(uint8_t *pdu, uint32_t iv_index,
 			  const uint8_t privacy_key[16]);
@@ -163,3 +127,5 @@ int bt_mesh_prov_decrypt(const uint8_t key[16], uint8_t nonce[13],
 
 int bt_mesh_prov_encrypt(const uint8_t key[16], uint8_t nonce[13],
 			 const uint8_t data[25], uint8_t out[25 + 8]);
+
+int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key, uint8_t *dhkey);

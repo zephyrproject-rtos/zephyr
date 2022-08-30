@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT invensense_icm42605
 
-#include <drivers/spi.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 
 #include "icm42605.h"
 #include "icm42605_reg.h"
@@ -125,12 +125,13 @@ int icm42605_tap_fetch(const struct device *dev)
 {
 	int result = 0;
 	struct icm42605_data *drv_data = dev->data;
+	const struct icm42605_config *cfg = dev->config;
 
 	if (drv_data->tap_en &&
 	    (drv_data->tap_handler || drv_data->double_tap_handler)) {
-		result = inv_spi_read(REG_INT_STATUS3, drv_data->fifo_data, 1);
+		result = inv_spi_read(&cfg->spi, REG_INT_STATUS3, drv_data->fifo_data, 1);
 		if (drv_data->fifo_data[0] & BIT_INT_STATUS_TAP_DET) {
-			result = inv_spi_read(REG_APEX_DATA4,
+			result = inv_spi_read(&cfg->spi, REG_APEX_DATA4,
 					      drv_data->fifo_data, 1);
 			if (drv_data->fifo_data[0] & APEX_TAP) {
 				if (drv_data->tap_trigger.type ==
@@ -169,14 +170,15 @@ static int icm42605_sample_fetch(const struct device *dev,
 	int result = 0;
 	uint16_t fifo_count = 0;
 	struct icm42605_data *drv_data = dev->data;
+	const struct icm42605_config *cfg = dev->config;
 
 	/* Read INT_STATUS (0x45) and FIFO_COUNTH(0x46), FIFO_COUNTL(0x47) */
-	result = inv_spi_read(REG_INT_STATUS, drv_data->fifo_data, 3);
+	result = inv_spi_read(&cfg->spi, REG_INT_STATUS, drv_data->fifo_data, 3);
 
 	if (drv_data->fifo_data[0] & BIT_INT_STATUS_DRDY) {
 		fifo_count = (drv_data->fifo_data[1] << 8)
 			+ (drv_data->fifo_data[2]);
-		result = inv_spi_read(REG_FIFO_DATA, drv_data->fifo_data,
+		result = inv_spi_read(&cfg->spi, REG_FIFO_DATA, drv_data->fifo_data,
 				      fifo_count);
 
 		/* FIFO Data structure
@@ -390,31 +392,11 @@ static int icm42605_init(const struct device *dev)
 	struct icm42605_data *drv_data = dev->data;
 	const struct icm42605_config *cfg = dev->config;
 
-	drv_data->spi = device_get_binding(cfg->spi_label);
-	if (!drv_data->spi) {
-		LOG_ERR("SPI device not exist");
+	if (!spi_is_ready(&cfg->spi)) {
+		LOG_ERR("SPI bus is not ready");
 		return -ENODEV;
 	}
 
-	drv_data->spi_cs.gpio_dev = device_get_binding(cfg->gpio_label);
-
-	if (!drv_data->spi_cs.gpio_dev) {
-		LOG_ERR("GPIO device not exist");
-		return -ENODEV;
-	}
-
-	drv_data->spi_cs.gpio_pin = cfg->gpio_pin;
-	drv_data->spi_cs.gpio_dt_flags = cfg->gpio_dt_flags;
-	drv_data->spi_cs.delay = 0U;
-
-	drv_data->spi_cfg.frequency = cfg->frequency;
-	drv_data->spi_cfg.slave = cfg->slave;
-	drv_data->spi_cfg.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE |
-			SPI_TRANSFER_MSB);
-	drv_data->spi_cfg.cs = &drv_data->spi_cs;
-
-	icm42605_spi_init(drv_data->spi, &drv_data->spi_cfg);
 	icm42605_data_init(drv_data, cfg);
 	icm42605_sensor_init(dev);
 
@@ -445,20 +427,18 @@ static const struct sensor_driver_api icm42605_driver_api = {
 
 #define ICM42605_DEFINE_CONFIG(index)					\
 	static const struct icm42605_config icm42605_cfg_##index = {	\
-		.spi_label = DT_INST_BUS_LABEL(index),			\
-		.spi_addr = DT_INST_REG_ADDR(index),			\
-		.frequency = DT_INST_PROP(index, spi_max_frequency),	\
-		.slave = DT_INST_REG_ADDR(index),			\
-		.int_label = DT_INST_GPIO_LABEL(index, int_gpios),	\
-		.int_pin =  DT_INST_GPIO_PIN(index, int_gpios),		\
-		.int_flags = DT_INST_GPIO_FLAGS(index, int_gpios),	\
-		.gpio_label = DT_INST_SPI_DEV_CS_GPIOS_LABEL(index),	\
-		.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(index),	\
-		.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(index),	\
+		.spi = SPI_DT_SPEC_INST_GET(index,			\
+					    SPI_OP_MODE_MASTER |	\
+					    SPI_MODE_CPOL |		\
+					    SPI_MODE_CPHA |		\
+					    SPI_WORD_SET(8) |		\
+					    SPI_TRANSFER_MSB,		\
+					    0U),			\
+		.gpio_int = GPIO_DT_SPEC_INST_GET(index, int_gpios),    \
 		.accel_hz = DT_INST_PROP(index, accel_hz),		\
 		.gyro_hz = DT_INST_PROP(index, gyro_hz),		\
-		.accel_fs = DT_ENUM_IDX(DT_DRV_INST(index), accel_fs),	\
-		.gyro_fs = DT_ENUM_IDX(DT_DRV_INST(index), gyro_fs),	\
+		.accel_fs = DT_INST_ENUM_IDX(index, accel_fs),		\
+		.gyro_fs = DT_INST_ENUM_IDX(index, gyro_fs),		\
 	}
 
 #define ICM42605_INIT(index)						\

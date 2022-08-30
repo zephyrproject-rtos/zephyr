@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 
 #define UCEL_PER_CEL 1000000
@@ -80,7 +80,7 @@ static inline int set_window_ucel(const struct device *dev,
 }
 
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *trig)
+			    const struct sensor_trigger *trig)
 {
 	struct sensor_value temp;
 	static size_t cnt;
@@ -106,7 +106,7 @@ static void trigger_handler(const struct device *dev,
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ANY(microchip_mcp9808);
+	const struct device *const dev = DEVICE_DT_GET_ANY(microchip_mcp9808);
 	int rc;
 
 	if (dev == NULL) {

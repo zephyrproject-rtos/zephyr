@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+
 #ifndef _W5500_
 #define _W5500_
 
@@ -73,20 +76,13 @@
 #define W5500_Sn_RX_MEM_START	0x30000
 #define W5500_RX_MEM_SIZE	0x04000
 
+/* Delay for PHY write/read operations (25.6 us) */
+#define W5500_PHY_ACCESS_DELAY		26U
 struct w5500_config {
+	struct spi_dt_spec spi;
+	struct gpio_dt_spec interrupt;
+	struct gpio_dt_spec reset;
 	void (*config_func)(void);
-	const char *gpio_port;
-	uint8_t gpio_pin;
-	gpio_dt_flags_t gpio_flags;
-	const char *reset_port;
-	uint8_t reset_pin;
-	gpio_dt_flags_t reset_flags;
-	const char *spi_port;
-	gpio_pin_t spi_cs_pin;
-	gpio_dt_flags_t spi_cs_dt_flags;
-	const char *spi_cs_port;
-	uint32_t spi_freq;
-	uint8_t spi_slave;
 	uint8_t full_duplex;
 	int32_t timeout;
 };
@@ -98,11 +94,6 @@ struct w5500_runtime {
 			      CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	uint8_t mac_addr[6];
-	const struct device *gpio;
-	const struct device *reset;
-	const struct device *spi;
-	struct spi_cs_control spi_cs;
-	struct spi_config spi_cfg;
 	struct gpio_callback gpio_cb;
 	struct k_sem tx_sem;
 	struct k_sem int_sem;

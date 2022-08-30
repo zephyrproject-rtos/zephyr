@@ -5,7 +5,10 @@
 
 config MCUX_ACMP
 	bool "NXP MCUX Analog Comparator (ACMP)"
+	default y
+	depends on DT_HAS_NXP_KINETIS_ACMP_ENABLED
 	depends on HAS_MCUX_ACMP
+	select PINCTRL
 	help
 	  Enable driver for the NXP MCUX Analog Comparator (ACMP).
 

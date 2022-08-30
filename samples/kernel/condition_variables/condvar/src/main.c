@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <arch/cpu.h>
-#include <sys/arch_interface.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/arch_interface.h>
 
 #define NUM_THREADS 3
 #define TCOUNT 10
@@ -16,9 +16,8 @@ static int count;
 K_MUTEX_DEFINE(count_mutex);
 K_CONDVAR_DEFINE(count_threshold_cv);
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
-K_THREAD_STACK_EXTERN(tstack);
 K_THREAD_STACK_ARRAY_DEFINE(tstacks, NUM_THREADS, STACK_SIZE);
 
 static struct k_thread t[NUM_THREADS];

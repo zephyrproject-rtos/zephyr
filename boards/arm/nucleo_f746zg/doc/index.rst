@@ -45,9 +45,7 @@ Key Features
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
 
 .. image:: img/nucleo_f746zg.jpg
-   :width: 720px
    :align: center
-   :height: 720px
    :alt: Nucleo F746ZG
 
 More information about the board can be found at the `Nucleo F746ZG website`_.
@@ -120,6 +118,8 @@ features:
 +-------------+------------+-------------------------------------+
 | ADC         | on-chip    | ADC Controller                      |
 +-------------+------------+-------------------------------------+
+| DAC         | on-chip    | DAC Controller                      |
++-------------+------------+-------------------------------------+
 | Backup SRAM | on-chip    | Backup SRAM                         |
 +-------------+------------+-------------------------------------+
 
@@ -149,6 +149,8 @@ and a ST morpho connector. Board is configured as follows:
 - I2C : PB8, PB9
 - PWM : PE13
 - SPI : PD14, PA5, PA6, PA7
+- ADC1_IN0 : PA0
+- DAC1_OUT1 : PA4
 
 Note. The Arduino Uno v3 specified SPI device conflicts with the on-board ETH
 device on pin PA7.

@@ -5,10 +5,11 @@
  */
 
 #include <stdint.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "lwm2m_engine.h"
 #include "lwm2m_rw_link_format.h"
+#include "lwm2m_util.h"
 
 LOG_MODULE_REGISTER(net_lwm2m_link_format, CONFIG_LWM2M_LOG_LEVEL);
 
@@ -27,29 +28,20 @@ LOG_MODULE_REGISTER(net_lwm2m_link_format, CONFIG_LWM2M_LOG_LEVEL);
  * missing.
  */
 
-#if defined(CONFIG_LWM2M_RW_JSON_SUPPORT)
-#define RESOURCE_TYPE		";rt=\"oma.lwm2m\""
 
-#define REG_PREFACE		"</>" RESOURCE_TYPE \
+#if defined(CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT)
+#define REG_PREFACE		"</>;ct=" STRINGIFY(LWM2M_FORMAT_APP_SENML_CBOR)
+#elif defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
+#define REG_PREFACE		"</>;ct=" STRINGIFY(LWM2M_FORMAT_APP_SEML_JSON)
+#elif defined(CONFIG_LWM2M_RW_JSON_SUPPORT)
+#define REG_PREFACE		"</>;rt=\"oma.lwm2m\"" \
 				";ct=" STRINGIFY(LWM2M_FORMAT_OMA_JSON)
 #else
 #define REG_PREFACE		""
 #endif
 
-enum link_format_mode {
-	LINK_FORMAT_MODE_DISCOVERY,
-	LINK_FORMAT_MODE_BOOTSTRAP_DISCOVERY,
-	LINK_FORMAT_MODE_REGISTER,
-};
-
-struct link_format_out_formatter_data {
-	uint8_t request_level;
-	uint8_t mode;
-	bool is_first : 1;
-};
-
-static size_t put_begin(struct lwm2m_output_context *out,
-			struct lwm2m_obj_path *path)
+static int put_begin(struct lwm2m_output_context *out,
+		     struct lwm2m_obj_path *path)
 {
 	char init_string[MAX(sizeof(ENABLER_VERSION), sizeof(REG_PREFACE))] = "";
 	struct link_format_out_formatter_data *fd;
@@ -59,7 +51,7 @@ static size_t put_begin(struct lwm2m_output_context *out,
 
 	fd = engine_get_out_user_data(out);
 	if (fd == NULL) {
-		return 0;
+		return -EINVAL;
 	}
 
 	switch (fd->mode) {
@@ -72,8 +64,8 @@ static size_t put_begin(struct lwm2m_output_context *out,
 		break;
 
 	case LINK_FORMAT_MODE_REGISTER:
-		/* Only indicate content type if json is enabled.  */
-		if (!IS_ENABLED(CONFIG_LWM2M_RW_JSON_SUPPORT)) {
+		/* No need to append content type */
+		if (strlen(REG_PREFACE) == 0) {
 			return 0;
 		}
 
@@ -84,7 +76,7 @@ static size_t put_begin(struct lwm2m_output_context *out,
 	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), init_string,
 			 strlen(init_string));
 	if (ret < 0) {
-		return 0;
+		return ret;
 	}
 
 	fd->is_first = false;
@@ -153,54 +145,112 @@ static int put_corelink_dimension(struct lwm2m_output_context *out,
 	return len;
 }
 
+static int put_attribute(struct lwm2m_output_context *out,
+			 struct lwm2m_attr *attr, uint8_t *buf,
+			 uint16_t buflen)
+{
+	int used, ret;
+	const char *name = lwm2m_engine_get_attr_name(attr);
+
+	if (name == NULL) {
+		/* Invalid attribute, ignore. */
+		return 0;
+	}
+
+	if (attr->type <= LWM2M_ATTR_PMAX) {
+		used = snprintk(buf, buflen, ";%s=%d", name, attr->int_val);
+	} else {
+		uint8_t float_buf[32];
+
+		used = lwm2m_ftoa(&attr->float_val, float_buf,
+				  sizeof(float_buf), 4);
+		if (used < 0 || used >= sizeof(float_buf)) {
+			return -ENOMEM;
+		}
+
+		used = snprintk(buf, buflen, ";%s=%s", name, float_buf);
+	}
+
+	if (used < 0 || used >= buflen) {
+		return -ENOMEM;
+	}
+
+	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), buf, used);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return used;
+}
+
+static int put_attributes(struct lwm2m_output_context *out,
+			  struct lwm2m_attr **attrs, uint8_t *buf,
+			  uint16_t buflen)
+{
+	int ret;
+	int len = 0;
+
+	for (int i = 0; i < NR_LWM2M_ATTR; i++) {
+		if (attrs[i] == NULL) {
+			continue;
+		}
+
+		ret = put_attribute(out, attrs[i], buf, buflen);
+		if (ret < 0) {
+			return ret;
+		}
+
+		len += ret;
+	}
+
+	return len;
+}
+
+static void get_attributes(const void *ref, struct lwm2m_attr **attrs)
+{
+	struct lwm2m_attr *attr = NULL;
+
+	while ((attr = lwm2m_engine_get_next_attr(ref, attr)) != NULL) {
+		if (attr->type >= NR_LWM2M_ATTR) {
+			continue;
+		}
+
+		attrs[attr->type] = attr;
+	}
+}
+
 static int put_corelink_attributes(struct lwm2m_output_context *out,
 				   const void *ref, uint8_t *buf,
 				   uint16_t buflen)
 {
-	struct lwm2m_attr *attr = NULL;
-	int used, base, ret;
-	uint8_t digit;
-	int32_t fraction;
-	int len = 0;
+	struct lwm2m_attr *attrs[NR_LWM2M_ATTR] = { 0 };
 
-	while ((attr = lwm2m_engine_get_next_attr(ref, attr)) != NULL) {
-		const char *name = lwm2m_engine_get_attr_name(attr);
+	get_attributes(ref, attrs);
 
-		if (name == NULL) {
-			/* Invalid attribute, ignore. */
-			continue;
-		}
+	return put_attributes(out, attrs, buf, buflen);
+}
 
-		/* Assuming integer will have float_val.val2 set as 0. */
-		used = snprintk(buf, buflen, ";%s=%s%d%s",
-				name,
-				attr->float_val.val1 == 0 &&
-				attr->float_val.val2 < 0 ? "-" : "",
-				attr->float_val.val1,
-				attr->float_val.val2 != 0 ? "." : "");
-		if (used < 0 || used >= buflen) {
-			return -ENOMEM;
-		}
+/* Resource-level attribute request - should propagate attributes from Object
+ * and Object Instance.
+ */
+static int put_corelink_attributes_resource(struct lwm2m_output_context *out,
+					    const struct lwm2m_obj_path *path,
+					    uint8_t *buf, uint16_t buflen)
+{
+	struct lwm2m_attr *attrs[NR_LWM2M_ATTR] = { 0 };
+	struct lwm2m_engine_obj *obj = lwm2m_engine_get_obj(path);
+	struct lwm2m_engine_obj_inst *obj_inst = lwm2m_engine_get_obj_inst(path);
+	struct lwm2m_engine_res *res = lwm2m_engine_get_res(path);
 
-		base = 100000;
-		fraction = attr->float_val.val2 < 0 ?
-			   -attr->float_val.val2 : attr->float_val.val2;
-		while (fraction && used < buflen && base > 0) {
-			digit = fraction / base;
-			buf[used++] = '0' + digit;
-			fraction -= digit * base;
-			base /= 10;
-		}
-
-		len += used;
-
-		ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), buf, used);
-		if (ret < 0) {
-			return ret;
-		}
+	if (obj == NULL || obj_inst == NULL || res == NULL) {
+		return -ENOENT;
 	}
 
-	return len;
+	get_attributes(obj, attrs);
+	get_attributes(obj_inst, attrs);
+	get_attributes(res, attrs);
+
+	return put_attributes(out, attrs, buf, buflen);
 }
 
 static int put_corelink_ssid(struct lwm2m_output_context *out,
@@ -440,7 +490,64 @@ static int put_res_corelink(struct lwm2m_output_context *out,
 
 		len += ret;
 
-		ret = put_corelink_attributes(out, res, obj_buf,
+		if (fd->request_level == LWM2M_PATH_LEVEL_RESOURCE) {
+			ret = put_corelink_attributes_resource(
+					out, path, obj_buf, sizeof(obj_buf));
+			if (ret < 0) {
+				return ret;
+			}
+		} else {
+			ret = put_corelink_attributes(
+					out, res, obj_buf, sizeof(obj_buf));
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
+		len += ret;
+	}
+
+	return len;
+}
+
+static int put_res_inst_corelink(struct lwm2m_output_context *out,
+				 const struct lwm2m_obj_path *path,
+				 struct link_format_out_formatter_data *fd)
+{
+	char obj_buf[CORELINK_BUF_SIZE];
+	int len = 0;
+	int ret;
+
+	if (fd->mode != LINK_FORMAT_MODE_DISCOVERY) {
+		/* Report resources instances only in device management
+		 * discovery.
+		 */
+		return 0;
+	}
+
+	ret = snprintk(obj_buf, sizeof(obj_buf), "</%u/%u/%u/%u>", path->obj_id,
+		       path->obj_inst_id, path->res_id, path->res_inst_id);
+	if (ret < 0 || ret >= sizeof(obj_buf)) {
+		return -ENOMEM;
+	}
+
+	len += ret;
+
+	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), obj_buf, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Report resource instance attrs only when resource was specified. */
+	if (fd->request_level == LWM2M_PATH_LEVEL_RESOURCE) {
+		struct lwm2m_engine_res_inst *res_inst =
+					lwm2m_engine_get_res_inst(path);
+
+		if (res_inst == NULL) {
+			return -EINVAL;
+		}
+
+		ret = put_corelink_attributes(out, res_inst, obj_buf,
 					      sizeof(obj_buf));
 		if (ret < 0) {
 			return ret;
@@ -452,11 +559,11 @@ static int put_res_corelink(struct lwm2m_output_context *out,
 	return len;
 }
 
-static ssize_t put_corelink(struct lwm2m_output_context *out,
-			    const struct lwm2m_obj_path *path)
+static int put_corelink(struct lwm2m_output_context *out,
+			const struct lwm2m_obj_path *path)
 {
 	struct link_format_out_formatter_data *fd;
-	ssize_t len = 0;
+	int len = 0;
 	int ret;
 
 	fd = engine_get_out_user_data(out);
@@ -502,6 +609,19 @@ static ssize_t put_corelink(struct lwm2m_output_context *out,
 
 		len += ret;
 		break;
+
+	case LWM2M_PATH_LEVEL_RESOURCE_INST:
+		if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1)) {
+			ret = put_res_inst_corelink(out, path, fd);
+			if (ret < 0) {
+				return ret;
+			}
+
+			len += ret;
+			break;
+		}
+
+		__fallthrough;
 
 	default:
 		LOG_ERR("Invalid corelink path level: %d", path->level);

@@ -9,8 +9,8 @@
 
 #if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_NATIVE)
 
-#include <sys/slist.h>
-#include <net/ethernet.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/net/ethernet.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,16 +26,16 @@ extern "C" {
 #define NET_ARP_HDR(pkt) ((struct net_arp_hdr *)net_pkt_data(pkt))
 
 struct net_arp_hdr {
-	uint16_t hwtype;		/* HTYPE */
-	uint16_t protocol;		/* PTYPE */
-	uint8_t hwlen;			/* HLEN */
-	uint8_t protolen;		/* PLEN */
+	uint16_t hwtype;			/* HTYPE */
+	uint16_t protocol;			/* PTYPE */
+	uint8_t hwlen;				/* HLEN */
+	uint8_t protolen;			/* PLEN */
 	uint16_t opcode;
-	struct net_eth_addr src_hwaddr;	/* SHA */
-	struct in_addr src_ipaddr;	/* SPA */
-	struct net_eth_addr dst_hwaddr;	/* THA */
-	struct in_addr dst_ipaddr;	/* TPA */
-}  __packed;
+	struct net_eth_addr src_hwaddr;		/* SHA */
+	uint8_t src_ipaddr[NET_IPV4_ADDR_SIZE];	/* SPA */
+	struct net_eth_addr dst_hwaddr;		/* THA */
+	uint8_t dst_ipaddr[NET_IPV4_ADDR_SIZE];	/* TPA */
+} __packed;
 
 #define NET_ARP_HTYPE_ETH 1
 #define NET_ARP_IPV4_PTYPE_SIZE 4

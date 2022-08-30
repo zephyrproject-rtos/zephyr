@@ -25,14 +25,14 @@
 #ifndef _ARM_OFFSETS_INC_
 #define _ARM_OFFSETS_INC_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_data.h>
 #include <kernel_offsets.h>
 
 GEN_OFFSET_SYM(_thread_arch_t, basepri);
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
 
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_ARM_STORE_EXC_RETURN) || defined(CONFIG_USERSPACE)
 GEN_OFFSET_SYM(_thread_arch_t, mode);
 #endif
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)
@@ -40,6 +40,10 @@ GEN_OFFSET_SYM(_thread_arch_t, mode_exc_return);
 #endif
 #if defined(CONFIG_USERSPACE)
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
+GEN_OFFSET_SYM(_thread_arch_t, priv_stack_end);
+GEN_OFFSET_SYM(_thread_arch_t, sp_usr);
+#endif
 #endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
@@ -57,8 +61,10 @@ GEN_OFFSET_SYM(_basic_sf_t, xpsr);
 GEN_ABSOLUTE_SYM(___basic_sf_t_SIZEOF, sizeof(_basic_sf_t));
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-GEN_OFFSET_SYM(_esf_t, s);
-GEN_OFFSET_SYM(_esf_t, fpscr);
+GEN_OFFSET_SYM(_fpu_sf_t, s);
+GEN_OFFSET_SYM(_fpu_sf_t, fpscr);
+
+GEN_ABSOLUTE_SYM(___fpu_t_SIZEOF, sizeof(_fpu_sf_t));
 #endif
 
 GEN_ABSOLUTE_SYM(___esf_t_SIZEOF, sizeof(_esf_t));
@@ -99,5 +105,25 @@ GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread) -
 #else
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread));
 #endif
+
+/*
+ * CPU context for S2RAM
+ */
+#if defined(CONFIG_PM_S2RAM)
+GEN_OFFSET_SYM(_cpu_context_t, msp);
+GEN_OFFSET_SYM(_cpu_context_t, msplim);
+GEN_OFFSET_SYM(_cpu_context_t, psp);
+GEN_OFFSET_SYM(_cpu_context_t, psplim);
+GEN_OFFSET_SYM(_cpu_context_t, apsr);
+GEN_OFFSET_SYM(_cpu_context_t, ipsr);
+GEN_OFFSET_SYM(_cpu_context_t, epsr);
+
+GEN_OFFSET_SYM(_cpu_context_t, primask);
+GEN_OFFSET_SYM(_cpu_context_t, faultmask);
+GEN_OFFSET_SYM(_cpu_context_t, basepri);
+GEN_OFFSET_SYM(_cpu_context_t, control);
+
+GEN_ABSOLUTE_SYM(___cpu_context_t_SIZEOF, sizeof(_cpu_context_t));
+#endif /* CONFIG_PM_S2RAM */
 
 #endif /* _ARM_OFFSETS_INC_ */

@@ -14,10 +14,8 @@ from the `AcSIP Product Data Download`_ site (may need login). The parts are `av
 
 Zephyr applications may use the **acsip_s76s** configuration to use this SiP.
 
-.. figure:: img/acsip_s76s.png
-     :width: 189px
+.. figure:: img/acsip_s76s.jpg
      :align: center
-     :height: 115px
      :alt: AcSIP S76S system on a chip, containing STMicro STM32L073RZ and Semtech SX1276
 
      AcSIP S76S

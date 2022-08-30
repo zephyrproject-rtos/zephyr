@@ -13,7 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_IFACE_UART_H_
 #define ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_IFACE_UART_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +32,13 @@ struct modem_iface_uart_data {
 
 	/* rx semaphore */
 	struct k_sem rx_sem;
+
+#ifdef CONFIG_MODEM_IFACE_UART_ASYNC
+
+	/* tx semaphore */
+	struct k_sem tx_sem;
+
+#endif /* CONFIG_MODEM_IFACE_UART_ASYNC */
 };
 
 /**

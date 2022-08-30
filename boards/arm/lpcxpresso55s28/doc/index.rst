@@ -12,8 +12,7 @@ architecture. The board includes a high-performance onboard debug probe, audio
 subsystem and accelerometer, with several options for adding off-the-shelf
 add-on boards for networking, sensors, displays, and other interfaces.
 
-.. image:: ./LPC55S28-EVK.png
-   :width: 720px
+.. image:: LPC55S28-EVK.jpg
    :align: center
    :alt: LPCXpresso55S28
 
@@ -71,21 +70,20 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | WWDT      | on-chip    | windowed watchdog timer             |
 +-----------+------------+-------------------------------------+
-| TrustZone | on-chip    | Trusted Firmware-M                  |
-+-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
+| RNG       | on-chip    | entropy;                            |
+|           |            | random                              |
++-----------+------------+-------------------------------------+
+| IAP       | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.
 
 The default configuration file
 ``boards/arm/lpcxpresso55s28/lpcxpresso55s28_defconfig``
-
-Currently available targets for this board are:
-
-- *lpcxpresso55s28* secure (S) address space
 
 Connections and IOs
 ===================

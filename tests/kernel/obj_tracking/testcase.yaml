@@ -1,0 +1,4 @@
+tests:
+  kernel.objects.tracking:
+    tags: kernel
+    platform_exclude: qemu_x86_tiny

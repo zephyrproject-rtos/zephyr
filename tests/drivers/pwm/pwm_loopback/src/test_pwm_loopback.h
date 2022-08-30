@@ -7,9 +7,9 @@
 #ifndef __TEST_PWM_LOOPBACK_H__
 #define __TEST_PWM_LOOPBACK_H__
 
-#include <zephyr.h>
-#include <drivers/pwm.h>
-#include <ztest.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/ztest.h>
 
 #define PWM_LOOPBACK_OUT_IDX 0
 #define PWM_LOOPBACK_IN_IDX  1

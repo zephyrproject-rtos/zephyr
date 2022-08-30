@@ -1,0 +1,146 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <skeleton.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu@0 {
+			clock-frequency = <0>;
+			compatible = "microsemi,miv", "riscv";
+			device_type = "cpu";
+			reg = < 0x0 >;
+			riscv,isa = "rv64imac";
+			hlic0: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+
+		cpu@1 {
+			clock-frequency = <0>;
+			compatible = "microsemi,miv", "riscv";
+			device_type = "cpu";
+			reg = < 0x1 >;
+			riscv,isa = "rv64imafdc";
+			hlic1: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		sram0: memory@8000000 {
+			compatible = "mmio-sram";
+			reg = <0x8000000 0x80000>;
+		};
+
+		sram1: memory@80000000 {
+			compatible = "mmio-sram";
+			reg = <0x80000000 0x800000>;
+		};
+
+		clint: clint@2000000 {
+			compatible = "sifive,clint0";
+			interrupts-extended = <&hlic0 3 &hlic0 7
+					       &hlic1 3 &hlic1 7>;
+			interrupt-names = "soft0", "timer0", "soft1", "timer1";
+			reg = <0x2000000 0x10000>;
+		};
+
+		plic: interrupt-controller@c000000 {
+			compatible = "sifive,plic-1.0.0";
+			#interrupt-cells = <2>;
+			#address-cells = <1>;
+			interrupt-controller;
+			interrupts-extended = <&hlic0 11
+						&hlic1 11>;
+			reg = <0x0c000000 0x00002000
+			       0x0c002000 0x001fe000
+			       0x0c200000 0x3e000000>;
+			reg-names = "prio", "irq_en", "reg";
+			riscv,max-priority = <7>;
+			riscv,ndev = <187>;
+		};
+
+		uart0: uart@20000000 {
+			compatible = "ns16550";
+			reg = <0x20000000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <90 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		qspi0: spi@21000000 {
+			compatible = "microchip,mpfs-qspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x21000000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <85 1>;
+			status = "disabled";
+			clock-frequency = <150000000>;
+		};
+
+		gpio0: gpio@20120000 {
+			compatible = "microchip,mpfs-gpio";
+			reg = <0x20120000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <51 1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio1: gpio@20121000 {
+			compatible = "microchip,mpfs-gpio";
+			reg = <0x20121000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <52 1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio2: gpio@20122000 {
+			compatible = "microchip,mpfs-gpio";
+			reg = <0x20122000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <53 1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+	};
+};

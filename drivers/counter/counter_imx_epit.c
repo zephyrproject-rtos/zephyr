@@ -5,8 +5,8 @@
  */
 #define DT_DRV_COMPAT nxp_imx_epit
 
-#include <drivers/counter.h>
-#include <device.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/device.h>
 #include "clock_freq.h"
 #include "epit.h"
 
@@ -160,7 +160,7 @@ DEVICE_DT_INST_DEFINE(idx,						       \
 		    &imx_epit_config_func_##idx,			       \
 		    NULL,						       \
 		    &imx_epit_##idx##_data, &imx_epit_##idx##z_config.info,    \
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
+		    PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,		       \
 		    &imx_epit_driver_api);				       \
 static int imx_epit_config_func_##idx(const struct device *dev)		       \
 {									       \

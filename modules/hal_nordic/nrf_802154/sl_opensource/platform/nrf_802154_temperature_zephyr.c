@@ -7,24 +7,67 @@
 /**
  * @file
  *   This file implements the thermometer abstraction that uses Zephyr sensor
- *   API for the die termomether.
+ *   API for the die thermometer.
  *
  */
 
 #include "platform/nrf_802154_temperature.h"
 
-#include <device.h>
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <logging/log.h>
-#include <stdbool.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+
+/** @brief Default temperature [C] reported if NRF_802154_TEMPERATURE_UPDATE is disabled. */
+#define DEFAULT_TEMPERATURE 20
 
 #define LOG_LEVEL LOG_LEVEL_INFO
 #define LOG_MODULE_NAME nrf_802154_temperature
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-/** @brief Value of the last temperature measurement in degree Celsius. */
-static int8_t temperature;
+static int8_t value = DEFAULT_TEMPERATURE;
+
+
+#if defined(CONFIG_NRF_802154_TEMPERATURE_UPDATE)
+
+static const struct device *const device = DEVICE_DT_GET(DT_NODELABEL(temp));
+static struct k_work_delayable dwork;
+
+static void work_handler(struct k_work *work)
+{
+	struct sensor_value val;
+	int err;
+
+	err = sensor_sample_fetch(device);
+	if (!err) {
+		err = sensor_channel_get(device, SENSOR_CHAN_DIE_TEMP, &val);
+	}
+
+	if (!err && (value != val.val1)) {
+		value = val.val1;
+
+		nrf_802154_temperature_changed();
+	}
+
+	k_work_reschedule(&dwork, K_MSEC(CONFIG_NRF_802154_TEMPERATURE_UPDATE_PERIOD));
+}
+
+static int temperature_update_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	__ASSERT_NO_MSG(device_is_ready(device));
+
+	k_work_init_delayable(&dwork, work_handler);
+	k_work_schedule(&dwork, K_NO_WAIT);
+
+	return 0;
+}
+
+SYS_INIT(temperature_update_init, POST_KERNEL, CONFIG_NRF_802154_TEMPERATURE_UPDATE_INIT_PRIO);
+BUILD_ASSERT(CONFIG_SENSOR_INIT_PRIORITY < CONFIG_NRF_802154_TEMPERATURE_UPDATE_INIT_PRIO,
+	     "CONFIG_SENSOR_INIT_PRIORITY must be lower than CONFIG_NRF_802154_TEMPERATURE_UPDATE_INIT_PRIO");
+#endif /* defined(CONFIG_NRF_802154_TEMPERATURE_UPDATE) */
 
 void nrf_802154_temperature_init(void)
 {
@@ -38,46 +81,5 @@ void nrf_802154_temperature_deinit(void)
 
 int8_t nrf_802154_temperature_get(void)
 {
-	return temperature;
+	return value;
 }
-
-/** @brief Thread handler for temperature update. */
-static void temperature_update_thread(void *p1, void *p2, void *p3)
-{
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
-	static struct sensor_value  temperature_value;
-	static const struct device *temperature_dev;
-
-	temperature_dev = DEVICE_DT_GET(DT_NODELABEL(temp));
-
-	if (!device_is_ready(temperature_dev)) {
-		LOG_ERR("Setup of temperature sensor for nRF 802.15.4 driver failed");
-		__ASSERT_NO_MSG(false);
-	}
-
-	while (true) {
-		sensor_sample_fetch(temperature_dev);
-		sensor_channel_get(temperature_dev, SENSOR_CHAN_DIE_TEMP, &temperature_value);
-
-		if (temperature != temperature_value.val1) {
-			temperature = temperature_value.val1;
-
-			nrf_802154_temperature_changed();
-		}
-
-		k_sleep(K_MSEC(CONFIG_NRF_802154_TEMPERATURE_UPDATE_PERIOD));
-	}
-}
-
-K_THREAD_DEFINE(temperature_update_tid,
-		CONFIG_NRF_802154_TEMPERATURE_UPDATE_STACK_SIZE,
-		temperature_update_thread,
-		NULL,
-		NULL,
-		NULL,
-		CONFIG_NRF_802154_TEMPERATURE_UPDATE_PRIO,
-		0,
-		0);

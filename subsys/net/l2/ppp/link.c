@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
 
-#include <net/ppp.h>
+#include <zephyr/net/ppp.h>
 
 #include "net_private.h"
 
@@ -18,7 +18,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 static void lcp_up(struct ppp_context *ctx)
 {
-	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
+	STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol == PPP_LCP) {
 			continue;
 		}
@@ -33,7 +33,7 @@ static void do_network(struct ppp_context *ctx)
 {
 	ppp_change_phase(ctx, PPP_NETWORK);
 
-	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
+	STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol == PPP_CCP || proto->protocol == PPP_ECP) {
 			if (proto->open) {
 				proto->open(ctx);
@@ -46,7 +46,7 @@ static void do_network(struct ppp_context *ctx)
 	 */
 	/* TODO possible encryption stuff here*/
 
-	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
+	STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol == PPP_CCP || proto->protocol == PPP_ECP ||
 		    proto->protocol >= 0xC000) {
 			continue;
@@ -83,7 +83,7 @@ static void do_auth(struct ppp_context *ctx)
 		return;
 	}
 
-	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
+	STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol == auth_proto) {
 			if (proto->open) {
 				proto->open(ctx);

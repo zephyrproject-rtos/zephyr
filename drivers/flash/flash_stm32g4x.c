@@ -6,14 +6,14 @@
 
 #define LOG_DOMAIN flash_stm32g4
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
-#include <drivers/flash.h>
-#include <init.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <stm32_ll_system.h>
 
@@ -31,7 +31,7 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 			     bool write)
 {
 
-#if defined(FLASH_OPTR_DBANK) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)
+#if defined(FLASH_STM32_DBANK) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)
 	/*
 	 * In case of bank1/2 discontinuity, the range should not
 	 * start before bank2 and end beyond bank1 at the same time.
@@ -51,7 +51,7 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 	if (regs->ACR & FLASH_ACR_DCEN) {
 		regs->ACR &= ~FLASH_ACR_DCEN;
 		/* Datasheet: DCRST: Data cache reset
-		 * This bit can be written only when thes data cache is disabled
+		 * This bit can be written only when the data cache is disabled
 		 */
 		regs->ACR |= FLASH_ACR_DCRST;
 		regs->ACR &= ~FLASH_ACR_DCRST;
@@ -74,9 +74,9 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 {
 	volatile uint32_t *flash = (uint32_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-#if defined(FLASH_OPTR_DBANK)
+#if defined(FLASH_STM32_DBANK)
 	bool dcache_enabled = false;
-#endif /* FLASH_OPTR_DBANK */
+#endif /* FLASH_STM32_DBANK */
 	uint32_t tmp;
 	int rc;
 
@@ -99,7 +99,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 		return -EIO;
 	}
 
-#if defined(FLASH_OPTR_DBANK)
+#if defined(FLASH_STM32_DBANK)
 	/*
 	 * Disable the data cache to avoid the silicon errata ES0430 Rev 7 2.2.2:
 	 * "Data cache might be corrupted during Flash memory read-while-write operation"
@@ -108,7 +108,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 		dcache_enabled = true;
 		regs->ACR &= (~FLASH_ACR_DCEN);
 	}
-#endif /* FLASH_OPTR_DBANK */
+#endif /* FLASH_STM32_DBANK */
 
 	/* Set the PG bit */
 	regs->CR |= FLASH_CR_PG;
@@ -126,14 +126,14 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	/* Clear the PG bit */
 	regs->CR &= (~FLASH_CR_PG);
 
-#if defined(FLASH_OPTR_DBANK)
+#if defined(FLASH_STM32_DBANK)
 	/* Reset/enable the data cache if previously enabled */
 	if (dcache_enabled) {
 		regs->ACR |= FLASH_ACR_DCRST;
 		regs->ACR &= (~FLASH_ACR_DCRST);
 		regs->ACR |= FLASH_ACR_DCEN;
 	}
-#endif /* FLASH_OPTR_DBANK */
+#endif /* FLASH_STM32_DBANK */
 
 	return rc;
 }
@@ -157,7 +157,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 		return rc;
 	}
 
-#if defined(FLASH_OPTR_DBANK)
+#if defined(FLASH_STM32_DBANK)
 	bool bank_swap;
 	/* Check whether bank1/2 are swapped */
 	bank_swap = (LL_SYSCFG_GetFlashBankMode() == LL_SYSCFG_BANKMODE_BANK2);
@@ -207,7 +207,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 
 	flush_cache(regs);
 
-#ifdef FLASH_OPTR_DBANK
+#ifdef FLASH_STM32_DBANK
 	regs->CR &= ~(FLASH_CR_PER | FLASH_CR_BKER);
 #else
 	regs->CR &= ~(FLASH_CR_PER);
@@ -254,7 +254,7 @@ void flash_stm32_page_layout(const struct device *dev,
 {
 	ARG_UNUSED(dev);
 
-#if defined(FLASH_OPTR_DBANK) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)
+#if defined(FLASH_STM32_DBANK) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)
 #define PAGES_PER_BANK  ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
 	static struct flash_pages_layout stm32g4_flash_layout[3];
 
@@ -287,8 +287,8 @@ void flash_stm32_page_layout(const struct device *dev,
 /* Override weak function */
 int  flash_stm32_check_configuration(void)
 {
-#if defined(FLASH_OPTR_DBANK)
-	if (READ_BIT(FLASH->OPTR, FLASH_OPTR_DBANK) == 0U) {
+#if defined(FLASH_STM32_DBANK)
+	if (READ_BIT(FLASH->OPTR, FLASH_STM32_DBANK) == 0U) {
 		/* Single bank not supported when dualbank is possible */
 		LOG_ERR("Single bank configuration not supported");
 		return -ENOTSUP;

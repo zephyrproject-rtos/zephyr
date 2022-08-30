@@ -1,0 +1,25 @@
+description: ACE interrupt controller
+
+compatible: "intel,ace-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+      required: true
+
+  interrupts:
+      required: true
+
+  "#interrupt-cells":
+      const: 3
+
+  num-irqs:
+      type: int
+      required: true
+      description: Number of irq the controller manages
+
+interrupt-cells:
+  - irq
+  - sense
+  - priority

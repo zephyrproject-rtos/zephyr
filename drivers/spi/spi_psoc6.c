@@ -9,11 +9,11 @@
 #define DT_DRV_COMPAT cypress_psoc6_spi
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_psoc6);
 
 #include <errno.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #include <soc.h>
 
 #include "spi_context.h"
@@ -62,7 +62,7 @@ static void spi_psoc6_transfer_next_packet(const struct device *dev)
 		xfer->dataSize = 0U;
 
 		spi_context_cs_control(ctx, false);
-		spi_context_complete(ctx, 0U);
+		spi_context_complete(ctx, dev, 0U);
 		return;
 	}
 
@@ -124,7 +124,7 @@ err:
 	xfer->dataSize = 0U;
 
 	spi_context_cs_control(ctx, false);
-	spi_context_complete(ctx, -ENOMEM);
+	spi_context_complete(ctx, dev, -ENOMEM);
 }
 
 static void spi_psoc6_isr(const struct device *dev)
@@ -216,6 +216,11 @@ static int spi_psoc6_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (word_size > SPI_MAX_DATA_WIDTH) {
 		LOG_ERR("Word size %d is greater than %d",
@@ -253,7 +258,6 @@ static int spi_psoc6_configure(const struct device *dev,
 		data->cfg.oversample = spi_psoc6_get_freqdiv(spi_cfg->frequency);
 
 		data->ctx.config = spi_cfg;
-		spi_context_cs_configure(&data->ctx);
 	} else {
 		/* Slave mode is not implemented yet. */
 		return -ENOTSUP;
@@ -292,13 +296,14 @@ static int spi_psoc6_transceive(const struct device *dev,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs,
 				bool asynchronous,
-				struct k_poll_signal *signal)
+				spi_callback_t cb,
+				void *userdata)
 {
 	const struct spi_psoc6_config *config = dev->config;
 	struct spi_psoc6_data *data = dev->data;
 	int ret;
 
-	spi_context_lock(&data->ctx, asynchronous, signal, spi_cfg);
+	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	LOG_DBG("\n\n");
 
@@ -367,7 +372,9 @@ static int spi_psoc6_release(const struct device *dev,
 
 static int spi_psoc6_init(const struct device *dev)
 {
+	int err;
 	const struct spi_psoc6_config *config = dev->config;
+	struct spi_psoc6_data *data = dev->data;
 
 	soc_gpio_list_configure(config->pins, config->num_pins);
 
@@ -382,6 +389,11 @@ static int spi_psoc6_init(const struct device *dev)
 #ifdef CONFIG_SPI_ASYNC
 	config->irq_config_func(dev);
 #endif
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	return spi_psoc6_release(dev, NULL);
 }
@@ -406,6 +418,7 @@ static const struct spi_driver_api spi_psoc6_driver_api = {
 	static struct spi_psoc6_data spi_psoc6_dev_data_##n = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_psoc6_dev_data_##n, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_psoc6_dev_data_##n, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 	DEVICE_DT_INST_DEFINE(n, &spi_psoc6_init, NULL,			\
 			      &spi_psoc6_dev_data_##n,			\

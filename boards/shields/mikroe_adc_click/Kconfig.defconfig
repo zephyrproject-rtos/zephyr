@@ -8,8 +8,8 @@ if ADC
 config SPI
 	default y
 
-config ADC_MCP320X
-	default y
+config ADC_INIT_PRIORITY
+	default 80
 
 endif # ADC
 

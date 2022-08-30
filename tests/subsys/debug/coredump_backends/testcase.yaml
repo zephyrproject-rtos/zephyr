@@ -2,6 +2,7 @@ tests:
   coredump.backends.logging:
     tags: ignore_faults ignore_qemu_crash
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
+    platform_exclude: acrn_ehl_crb
     harness: console
     harness_config:
       type: multi_line
@@ -14,3 +15,8 @@ tests:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     extra_args: CONF_FILE=prj_flash_partition.conf
     platform_allow: qemu_x86
+  coredump.backends.other:
+    tags: ignore_faults ignore_qemu_crash
+    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
+    extra_args: CONF_FILE=prj_backend_other.conf
+    platform_exclude: acrn_ehl_crb

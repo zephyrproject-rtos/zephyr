@@ -7,10 +7,10 @@
 	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
 	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
 
-#include <net/socket.h>
-#include <posix/pthread.h>
-#include <sys/util.h>
-#include <posix/unistd.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/posix/pthread.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/posix/unistd.h>
 
 #else
 
@@ -48,7 +48,7 @@ static const char *const names[] = {
 	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
 	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024)
 static pthread_attr_t attr[NUM_SOCKETPAIRS];
 K_THREAD_STACK_ARRAY_DEFINE(stack, NUM_SOCKETPAIRS, STACK_SIZE);
 
@@ -110,7 +110,6 @@ int main(int argc, char *argv[])
 	int r;
 	int fd;
 	int idx;
-	int poll_r;
 	size_t i;
 	size_t num_active;
 	char buf[32];
@@ -174,7 +173,7 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		poll_r = poll(fds, num_active, -1);
+		(void)poll(fds, num_active, -1);
 
 		for (size_t i = 0; i < num_active; ++i) {
 

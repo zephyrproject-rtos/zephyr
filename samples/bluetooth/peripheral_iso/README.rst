@@ -15,6 +15,8 @@ Requirements
 
 * BlueZ running on the host, or
 * A board with Bluetooth Low Energy 5.2 support
+* A Bluetooth Controller and board that supports setting
+  CONFIG_BT_CTLR_PERIPHERAL_ISO=y
 
 Building and Running
 ********************

@@ -4,14 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <drivers/i2c.h>
-#include <drivers/dac.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(dac_dacx3608, CONFIG_DAC_LOG_LEVEL);
 
@@ -28,24 +27,20 @@ LOG_MODULE_REGISTER(dac_dacx3608, CONFIG_DAC_LOG_LEVEL);
 #define DACX3608_MAX_CHANNEL    8
 
 struct dacx3608_config {
-	const char *i2c_bus;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec bus;
 	uint8_t resolution;
 };
 
 struct dacx3608_data {
-	const struct device *i2c;
 	uint8_t configured;
 };
 
 static int dacx3608_reg_read(const struct device *dev, uint8_t reg,
 			      uint16_t *val)
 {
-	struct dacx3608_data *data = dev->data;
 	const struct dacx3608_config *cfg = dev->config;
 
-	if (i2c_burst_read(data->i2c, cfg->i2c_addr,
-			   reg, (uint8_t *) val, 2) < 0) {
+	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *) val, 2) < 0) {
 		LOG_ERR("I2C read failed");
 		return -EIO;
 	}
@@ -58,11 +53,10 @@ static int dacx3608_reg_read(const struct device *dev, uint8_t reg,
 static int dacx3608_reg_write(const struct device *dev, uint8_t reg,
 			       uint16_t val)
 {
-	struct dacx3608_data *data = dev->data;
 	const struct dacx3608_config *cfg = dev->config;
 	uint8_t buf[3] = {reg, val >> 8, val & 0xFF};
 
-	return i2c_write(data->i2c, buf, sizeof(buf), cfg->i2c_addr);
+	return i2c_write_dt(&cfg->bus, buf, sizeof(buf));
 }
 
 int dacx3608_reg_update(const struct device *dev, uint8_t reg,
@@ -216,10 +210,9 @@ static int dacx3608_init(const struct device *dev)
 	struct dacx3608_data *data = dev->data;
 	int ret;
 
-	data->i2c = device_get_binding(config->i2c_bus);
-	if (!data->i2c) {
-		LOG_ERR("Could not find I2C device");
-		return -EINVAL;
+	if (!device_is_ready(config->bus.bus)) {
+		LOG_ERR("I2C device not ready");
+		return -ENODEV;
 	}
 
 	ret = dacx3608_soft_reset(dev);
@@ -250,8 +243,7 @@ static const struct dac_driver_api dacx3608_driver_api = {
 #define DACX3608_DEVICE(t, n, res) \
 	static struct dacx3608_data dac##t##_data_##n; \
 	static const struct dacx3608_config dac##t##_config_##n = { \
-		.i2c_bus = DT_BUS_LABEL(INST_DT_DACX3608(n, t)), \
-		.i2c_addr = DT_REG_ADDR(INST_DT_DACX3608(n, t)), \
+		.bus = I2C_DT_SPEC_GET(INST_DT_DACX3608(n, t)), \
 		.resolution = res, \
 	}; \
 	DEVICE_DT_DEFINE(INST_DT_DACX3608(n, t), \
@@ -274,8 +266,8 @@ static const struct dac_driver_api dacx3608_driver_api = {
 #define CALL_WITH_ARG(arg, expr) expr(arg)
 
 #define INST_DT_DACX3608_FOREACH(t, inst_expr) \
-	UTIL_LISTIFY(DT_NUM_INST_STATUS_OKAY(ti_dac##t), \
-		     CALL_WITH_ARG, inst_expr)
+	LISTIFY(DT_NUM_INST_STATUS_OKAY(ti_dac##t), \
+		     CALL_WITH_ARG, (), inst_expr)
 
 INST_DT_DACX3608_FOREACH(43608, DAC43608_DEVICE);
 INST_DT_DACX3608_FOREACH(53608, DAC53608_DEVICE);

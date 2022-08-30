@@ -1,3 +1,3 @@
 sample:
-  description: A sample for running TTCN-3 based sanity check for TCP2
+  description: A sample for running TTCN-3 based sanity check for TCP
   name: tcp

@@ -9,16 +9,16 @@
 
 #include <stdint.h>
 #include "irq_handler.h"
-#include "irq_offload.h"
-#include "kernel_structs.h"
+#include <zephyr/irq_offload.h>
+#include <zephyr/kernel_structs.h>
 #include "kernel_internal.h"
 #include "kswap.h"
 #include "irq_ctrl.h"
 #include "posix_core.h"
 #include "board_soc.h"
-#include "sw_isr_table.h"
+#include <zephyr/sw_isr_table.h>
 #include "soc.h"
-#include <tracing/tracing.h>
+#include <zephyr/tracing/tracing.h>
 
 typedef void (*normal_irq_f_ptr)(const void *);
 typedef int (*direct_irq_f_ptr)(void);
@@ -172,7 +172,6 @@ unsigned int posix_irq_lock(void)
 }
 
 /**
- *
  * @brief Enable all interrupts on the CPU
  *
  * This routine re-enables interrupts on the CPU.  The @a key parameter is a
@@ -180,9 +179,6 @@ unsigned int posix_irq_lock(void)
  * board_irq_lock().
  *
  * This routine can be called from either interrupt, task or fiber level.
- *
- * @return N/A
- *
  */
 void posix_irq_unlock(unsigned int key)
 {
@@ -238,14 +234,12 @@ void posix_isr_declare(unsigned int irq_p, int flags, void isr_p(const void *),
 	irq_vector_table[irq_p].flags = flags;
 }
 
-/*
+/**
  * @internal
  *
  * @brief Set an interrupt's priority
  *
  * Lower values take priority over higher values.
- *
- * @return N/A
  */
 void posix_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {

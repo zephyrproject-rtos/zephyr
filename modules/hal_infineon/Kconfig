@@ -1,0 +1,63 @@
+# Copyright (c) 2022 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_INFINEON_MODULE
+	bool
+
+if SOC_FAMILY_PSOC6
+
+config USE_INFINEON_ADC
+	bool
+	help
+	  Enable Analog-to-Digital Converter (ADC) HAL module driver for Infineon devices
+
+config USE_INFINEON_I2C
+	bool
+	help
+	  Enable Inter-Integrated Circuit Interface (I2C) HAL module driver for Infineon devices
+
+config USE_INFINEON_RTC
+	bool
+	help
+	  Enable Real-Time Clock (RTC) HAL module driver for Infineon devices
+
+config USE_INFINEON_SDIO
+	bool
+	help
+	  Enable Secure Digital Input/Output interface (SDIO) HAL module for Infineon devices
+	  driver
+
+config USE_INFINEON_SPI
+	bool
+	help
+	  Enable Serial Peripheral Interface (SPI) HAL module driver for Infineon devices
+
+
+config USE_INFINEON_TIMER
+	bool
+	help
+	  Enable Timer (Timer/Counter) HAL module driver for Infineon devices
+
+config USE_INFINEON_LPTIMER
+	bool
+	help
+	  Enable Low-Power Timer (LPTimer) HAL module driver for Infineon devices
+
+config USE_INFINEON_TRNG
+	bool
+	help
+	  Enable True Random Number Generator (TRNG) HAL module driver for Infineon devices
+
+config USE_INFINEON_UART
+	bool
+	help
+	  Enable Universal Asynchronous Receiver/Transmitter (UART) HAL module
+	  driver for Infineon devices
+
+config USE_INFINEON_PWM
+	bool
+	help
+	  Enable Pulse Width Modulator (PWM) HAL module
+	  driver for Infineon devices
+
+endif # SOC_FAMILY_PSOC6

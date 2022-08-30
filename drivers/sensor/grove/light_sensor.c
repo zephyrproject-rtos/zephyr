@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT grove_light
+#define DT_DRV_COMPAT seeed_grove_light
 
-#include <drivers/adc.h>
-#include <device.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <math.h>
-#include <drivers/sensor.h>
-#include <zephyr.h>
-#include <logging/log.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(grove_light, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -112,12 +113,16 @@ static int gls_init(const struct device *dev)
 	return 0;
 }
 
-static struct gls_data gls_data;
-static const struct gls_config gls_cfg = {
-	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
-	.adc_channel = DT_INST_IO_CHANNELS_INPUT(0),
-};
+#define GLS_DEFINE(inst)							\
+	static struct gls_data gls_data_##inst;					\
+										\
+	static const struct gls_config gls_cfg_##inst = {			\
+		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),		\
+		.adc_channel = DT_INST_IO_CHANNELS_INPUT(inst),			\
+	};									\
+										\
+	DEVICE_DT_INST_DEFINE(inst, &gls_init, NULL,				\
+			      &gls_data_##inst, &gls_cfg_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &gls_api);		\
 
-DEVICE_DT_INST_DEFINE(0, &gls_init, NULL,
-		&gls_data, &gls_cfg, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		&gls_api);
+DT_INST_FOREACH_STATUS_OKAY(GLS_DEFINE)

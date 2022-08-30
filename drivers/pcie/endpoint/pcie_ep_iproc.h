@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_IPROC_H_
 
 #include <soc.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #include "pcie_ep_iproc_regs.h"
 

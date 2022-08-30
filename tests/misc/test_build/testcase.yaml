@@ -6,6 +6,7 @@ tests:
     tags: debug
     integration_platforms:
       - native_posix
+    filter: CONFIG_CONSOLE_HAS_DRIVER
   bootloader.mcuboot.build:
     tags: mcuboot
     build_only: true

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2021 The Chromium OS Authors
  * Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
  * Copyright (c) 2019 ST Microelectronics
  *
@@ -15,7 +16,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
 			interrupts = <29 0>;
 			status = "disabled";
-			label = "UART_3";
 		};
 
 		usart4: serial@40004c00 {
@@ -24,11 +24,26 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
 			interrupts = <29 0>;
 			status = "disabled";
-			label = "UART_4";
 		};
 
 		dmamux1: dmamux@40020800 {
 			dma-requests= <57>;
+		};
+
+		ucpd1: ucpd@4000a000 {
+			compatible = "st,stm32-ucpd";
+			reg = <0x4000a000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			interrupts = <8 0>;
+			status = "disabled";
+		};
+
+		ucpd2: ucpd@4000a400 {
+			compatible = "st,stm32-ucpd";
+			reg = <0x4000a400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
+			interrupts = <8 0>;
+			status = "disabled";
 		};
 	};
 };

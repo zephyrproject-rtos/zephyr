@@ -6,7 +6,7 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
-ram: 96
+ram: 192
 flash: 1024
 supported:
   - gpio
@@ -21,3 +21,4 @@ supported:
   - arduino_i2c
   - arduino_spi
   - usb_device
+  - nvs

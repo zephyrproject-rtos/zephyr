@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/ec_host_cmd_periph.h>
-#include <mgmt/ec_host_cmd.h>
-#include <devicetree.h>
+#include <zephyr/drivers/ec_host_cmd_periph.h>
+#include <zephyr/mgmt/ec_host_cmd.h>
+#include <zephyr/devicetree.h>
 #include <string.h>
 
 #if !DT_HAS_CHOSEN(zephyr_ec_host_interface)
@@ -55,10 +55,12 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
-	const struct device *ec_host_cmd_dev;
+	const struct device *const ec_host_cmd_dev = DEVICE_DT_GET(DT_HOST_CMD_DEV);
 	struct ec_host_cmd_periph_rx_ctx rx;
 
-	ec_host_cmd_dev = device_get_binding(DT_LABEL(DT_HOST_CMD_DEV));
+	if (!device_is_ready(ec_host_cmd_dev)) {
+		return;
+	}
 
 	ec_host_cmd_periph_init(ec_host_cmd_dev, &rx);
 
@@ -68,7 +70,7 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 		 */
 		k_sem_give(rx.dev_owns);
 
-		/* Wait until and RX messages is received on host interace */
+		/* Wait until and RX messages is received on host interface */
 		if (k_sem_take(rx.handler_owns, K_FOREVER) < 0) {
 			/* This code path should never occur due to the nature of
 			 * k_sem_take with K_FOREVER
@@ -116,7 +118,7 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 
 		const struct ec_host_cmd_handler *found_handler = NULL;
 
-		Z_STRUCT_SECTION_FOREACH(ec_host_cmd_handler, handler)
+		STRUCT_SECTION_FOREACH(ec_host_cmd_handler, handler)
 		{
 			if (handler->id == rx_header->cmd_id) {
 				found_handler = handler;

@@ -4,17 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <drivers/led.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL 4
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#define LED_DEV_NAME DT_LABEL(DT_INST(0, ti_lp5562))
 #define NUM_LEDS 4
 #define BLINK_DELAY_ON 500
 #define BLINK_DELAY_OFF 500
@@ -165,15 +164,17 @@ static int turn_off_all_leds(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev;
+	const struct device *const dev = DEVICE_DT_GET_ANY(ti_lp5562);
 	int i, ret;
 
-	dev = device_get_binding(LED_DEV_NAME);
-	if (dev) {
-		LOG_INF("Found LED device %s", LED_DEV_NAME);
-	} else {
-		LOG_ERR("LED device %s not found", LED_DEV_NAME);
+	if (!dev) {
+		LOG_ERR("No \"ti,lp5562\" device found");
 		return;
+	} else if (!device_is_ready(dev)) {
+		LOG_ERR("LED device %s is not ready", dev->name);
+		return;
+	} else {
+		LOG_INF("Found LED device %s", dev->name);
 	}
 
 	LOG_INF("Testing leds");

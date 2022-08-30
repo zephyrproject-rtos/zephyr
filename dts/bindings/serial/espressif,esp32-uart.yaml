@@ -2,7 +2,7 @@ description: ESP32 UART
 
 compatible: "espressif,esp32-uart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -11,22 +11,8 @@ properties:
     interrupts:
       required: false
 
-    tx-pin:
-      type: int
-      description: TX pin
+    pinctrl-0:
       required: true
 
-    rx-pin:
-      type: int
-      description: RX pin
+    pinctrl-names:
       required: true
-
-    rts-pin:
-      type: int
-      description: RTS pin
-      required: false
-
-    cts-pin:
-      type: int
-      description: CTS pin
-      required: false

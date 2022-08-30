@@ -23,9 +23,9 @@
 
 #ifdef _ASMLANGUAGE
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sys/util.h>
 
 GTEXT(__start)
 GDATA(_vector_table)
@@ -51,7 +51,9 @@ GTEXT(z_arm_pendsv)
 GTEXT(z_arm_exc_spurious)
 
 GTEXT(z_arm_prep_c)
+#if defined(CONFIG_GEN_ISR_TABLES)
 GTEXT(_isr_wrapper)
+#endif /* CONFIG_GEN_ISR_TABLES */
 
 #else /* _ASMLANGUAGE */
 

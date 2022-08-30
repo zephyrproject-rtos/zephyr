@@ -4,29 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SUBSYS_BLUETOOTH_MESH_PROXY_H_
-#define ZEPHYR_SUBSYS_BLUETOOTH_MESH_PROXY_H_
+#if defined(CONFIG_BT_MESH_DEBUG_USE_ID_ADDR)
+#define ADV_OPT_USE_IDENTITY BT_LE_ADV_OPT_USE_IDENTITY
+#else
+#define ADV_OPT_USE_IDENTITY 0
+#endif
 
-#include <bluetooth/gatt.h>
+#define ADV_SLOW_INT                                                           \
+	.interval_min = BT_GAP_ADV_SLOW_INT_MIN,                               \
+	.interval_max = BT_GAP_ADV_SLOW_INT_MAX
 
-#define BT_MESH_PROXY_NET_PDU   0x00
-#define BT_MESH_PROXY_BEACON    0x01
-#define BT_MESH_PROXY_CONFIG    0x02
-#define BT_MESH_PROXY_PROV      0x03
+#define ADV_FAST_INT                                                           \
+	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,                             \
+	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2
 
-int bt_mesh_pb_gatt_send(struct bt_conn *conn, struct net_buf_simple *buf,
-			 bt_gatt_complete_func_t end, void *user_data);
-
-int bt_mesh_proxy_prov_enable(void);
-int bt_mesh_proxy_prov_disable(bool disconnect);
+#define BT_MESH_ID_TYPE_NET  0x00
+#define BT_MESH_ID_TYPE_NODE 0x01
 
 int bt_mesh_proxy_gatt_enable(void);
 int bt_mesh_proxy_gatt_disable(void);
 void bt_mesh_proxy_gatt_disconnect(void);
 
 void bt_mesh_proxy_beacon_send(struct bt_mesh_subnet *sub);
-
-struct net_buf_simple *bt_mesh_proxy_get_buf(void);
 
 int bt_mesh_proxy_adv_start(void);
 
@@ -35,7 +34,3 @@ void bt_mesh_proxy_identity_stop(struct bt_mesh_subnet *sub);
 
 bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst);
 void bt_mesh_proxy_addr_add(struct net_buf_simple *buf, uint16_t addr);
-
-int bt_mesh_proxy_init(void);
-
-#endif /* ZEPHYR_SUBSYS_BLUETOOTH_MESH_PROXY_H_ */

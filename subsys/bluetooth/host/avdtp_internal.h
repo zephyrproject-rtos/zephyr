@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/avdtp.h>
+#include <zephyr/bluetooth/avdtp.h>
 
 /* @brief A2DP ROLE's */
 #define A2DP_SRC_ROLE 0x00

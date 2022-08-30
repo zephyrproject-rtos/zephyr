@@ -1,5 +1,5 @@
 tests:
- arch.x86.syscalls.cpu_scrubs_regs:
+  arch.x86.syscalls.cpu_scrubs_regs:
     arch_allow: x86
     filter: CONFIG_ARCH_HAS_USERSPACE
     tags: kernel security userspace scrub registers

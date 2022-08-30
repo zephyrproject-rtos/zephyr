@@ -10,23 +10,22 @@
  * @brief codes required for AArch64 multicore and Zephyr smp support
  */
 
-#include <cache.h>
-#include <device.h>
-#include <devicetree.h>
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/cache.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <ksched.h>
-#include <soc.h>
-#include <init.h>
-#include <arch/arm64/arm_mmu.h>
-#include <arch/cpu.h>
-#include <drivers/interrupt_controller/gic.h>
-#include <drivers/pm_cpu_ops.h>
-#include <sys/arch_interface.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/arm64/mm.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/drivers/pm_cpu_ops.h>
+#include <zephyr/sys/arch_interface.h>
 #include "boot.h"
 
 #define SGI_SCHED_IPI	0
-#define SGI_PTABLE_IPI	1
+#define SGI_MMCFG_IPI	1
 #define SGI_FPU_IPI	2
 
 struct boot_params {
@@ -50,6 +49,7 @@ volatile struct boot_params __aligned(L1_CACHE_BYTES) arm64_cpu_boot_params = {
 static const uint64_t cpu_node_list[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(cpus), CPU_REG_ID)
 };
+static uint16_t target_list_mask;
 
 extern void z_arm64_mm_init(bool is_primary_core);
 
@@ -84,7 +84,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		return;
 	}
 
-	arm64_cpu_boot_params.sp = Z_THREAD_STACK_BUFFER(stack) + sz;
+	arm64_cpu_boot_params.sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
 	arm64_cpu_boot_params.fn = fn;
 	arm64_cpu_boot_params.arg = arg;
 	arm64_cpu_boot_params.cpu_num = cpu_num;
@@ -108,6 +108,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	while (arm64_cpu_boot_params.fn) {
 		wfe();
 	}
+	/* Set secondary cores bit mask */
+	target_list_mask |= 1 << MPIDR_TO_CORE(cpu_mpid);
 	printk("Secondary CPU core %d (MPID:%#llx) is up\n", cpu_num, cpu_mpid);
 }
 
@@ -130,7 +132,7 @@ void z_arm64_secondary_start(void)
 
 	irq_enable(SGI_SCHED_IPI);
 #ifdef CONFIG_USERSPACE
-	irq_enable(SGI_PTABLE_IPI);
+	irq_enable(SGI_MMCFG_IPI);
 #endif
 #ifdef CONFIG_FPU_SHARING
 	irq_enable(SGI_FPU_IPI);
@@ -163,7 +165,8 @@ static void broadcast_ipi(unsigned int ipi)
 	 * Send SGI to all cores except itself
 	 * Note: Assume only one Cluster now.
 	 */
-	gic_raise_sgi(ipi, mpidr, SGIR_TGT_MASK & ~(1 << MPIDR_TO_CORE(mpidr)));
+	gic_raise_sgi(ipi, mpidr, target_list_mask &
+		      ~(1 << MPIDR_TO_CORE(mpidr)));
 }
 
 void sched_ipi_handler(const void *unused)
@@ -180,7 +183,7 @@ void arch_sched_ipi(void)
 }
 
 #ifdef CONFIG_USERSPACE
-void ptable_ipi_handler(const void *unused)
+void mem_cfg_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -188,12 +191,12 @@ void ptable_ipi_handler(const void *unused)
 	 * Make sure a domain switch by another CPU is effective on this CPU.
 	 * This is a no-op if the page table is already the right one.
 	 */
-	z_arm64_swap_ptables(_current);
+	z_arm64_swap_mem_domains(_current);
 }
 
-void z_arm64_ptable_ipi(void)
+void z_arm64_mem_cfg_ipi(void)
 {
-	broadcast_ipi(SGI_PTABLE_IPI);
+	broadcast_ipi(SGI_MMCFG_IPI);
 }
 #endif
 
@@ -209,15 +212,18 @@ void flush_fpu_ipi_handler(const void *unused)
 
 void z_arm64_flush_fpu_ipi(unsigned int cpu)
 {
-	const uint64_t mpidr = GET_MPIDR();
+	const uint64_t mpidr = cpu_node_list[cpu];
 
-	gic_raise_sgi(SGI_FPU_IPI, mpidr, (1 << cpu));
+	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << MPIDR_TO_CORE(mpidr));
 }
 #endif
 
 static int arm64_smp_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+	/* Seting the primary core bit mask */
+	target_list_mask |= 1 << MPIDR_TO_CORE(GET_MPIDR());
 
 	/*
 	 * SGI0 is use for sched ipi, this might be changed to use Kconfig
@@ -227,8 +233,9 @@ static int arm64_smp_init(const struct device *dev)
 	irq_enable(SGI_SCHED_IPI);
 
 #ifdef CONFIG_USERSPACE
-	IRQ_CONNECT(SGI_PTABLE_IPI, IRQ_DEFAULT_PRIORITY, ptable_ipi_handler, NULL, 0);
-	irq_enable(SGI_PTABLE_IPI);
+	IRQ_CONNECT(SGI_MMCFG_IPI, IRQ_DEFAULT_PRIORITY,
+			mem_cfg_ipi_handler, NULL, 0);
+	irq_enable(SGI_MMCFG_IPI);
 #endif
 #ifdef CONFIG_FPU_SHARING
 	IRQ_CONNECT(SGI_FPU_IPI, IRQ_DEFAULT_PRIORITY, flush_fpu_ipi_handler, NULL, 0);
@@ -237,6 +244,6 @@ static int arm64_smp_init(const struct device *dev)
 
 	return 0;
 }
-SYS_INIT(arm64_smp_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(arm64_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif

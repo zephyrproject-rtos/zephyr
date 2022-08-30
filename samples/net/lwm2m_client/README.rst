@@ -136,7 +136,7 @@ You can now open a web browser to: http://localhost:8888 The Demo Bootstrap
 Server web UI will open, this is where you can configure your device for
 bootstrap.
 
-Configure the lwm2m-client sample in the Demo Bootsrap Server:
+Configure the lwm2m-client sample in the Demo Bootstrap Server:
 
 1. Click on "Add new client bootstrap configuration"
 #. Enter the following data:
@@ -165,7 +165,7 @@ following:
 The sample will start and automatically connect to the Leshan Demo Bootstrap
 Server to obtain the LwM2M Server information. After that, the sample will
 automatically connect to the Leshan Demo Sever, as it was indicated in the
-Bootstrap Server configuraion.
+Bootstrap Server configuration.
 
 It is possible to combine overlay files, to enable DTLS and Bootstrap for
 instance. In that case, the user should make sure to update the port number in
@@ -214,7 +214,7 @@ networking do the following:
    :compact:
 
 Note: If not provisioned (fully erased before flash), device will form
-new OpenThread network and promote himself as leader (Current role: 4).
+new OpenThread network and promote itself to leader (Current role: leader).
 To join into already existing OT network, either enable CONFIG_OPENTHREAD_JOINER=y
 and CONFIG_OPENTHREAD_JOINER_AUTOSTART=y and send join request from other
 already joined device with joiner capabilities, or provision it manually
@@ -230,7 +230,7 @@ from console:
    ot extpanid <extpanid>
    ot thread start
 
-You could get all parameters for existng OT network from your OTBR with
+You could get all parameters for existing OT network from your OTBR with
 the following command:
 
 .. code-block:: console

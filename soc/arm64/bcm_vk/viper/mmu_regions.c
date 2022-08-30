@@ -3,10 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <devicetree.h>
-#include <soc.h>
-#include <sys/util.h>
-#include <arch/arm64/arm_mmu.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/arch/arm64/arm_mmu.h>
 
 
 #define PCIE_OB_HIGHMEM_ADDR	DT_REG_ADDR_BY_NAME(DT_NODELABEL(pcie0_ep), \

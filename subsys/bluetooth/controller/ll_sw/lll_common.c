@@ -6,7 +6,7 @@
 
 #include <errno.h>
 #include <zephyr/types.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #include "util/mem.h"
 #include "util/memq.h"
@@ -80,7 +80,7 @@ void lll_resume(void *param)
 }
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-void lll_done_score(void *param, uint8_t too_late, uint8_t aborted)
+void lll_done_score(void *param, uint8_t result)
 {
 	struct lll_hdr *hdr = param;
 
@@ -88,7 +88,7 @@ void lll_done_score(void *param, uint8_t too_late, uint8_t aborted)
 		return;
 	}
 
-	if (!too_late && !aborted) {
+	if (result == DONE_COMPLETED) {
 		hdr->score  = 0;
 		hdr->latency = 0;
 	} else {

@@ -20,6 +20,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
+		spi-flash0 = &mx25r80;
 	};
 
 	leds {
@@ -73,7 +74,6 @@
 
 	mx25r80: mx25r8035f@0 {
 		compatible = "jedec,spi-nor";
-		label = "MX25R8035F";
 		reg = <0>;
 		spi-max-frequency = <33000000>;
 		size = <0x800000>;

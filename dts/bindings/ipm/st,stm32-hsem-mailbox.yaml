@@ -1,0 +1,15 @@
+# Copyright (c) 2021 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 HSEM MAILBOX
+
+compatible: "st,stm32-hsem-mailbox"
+
+include: base.yaml
+
+properties:
+  clocks:
+    required: true
+
+  interrupts:
+    required: true

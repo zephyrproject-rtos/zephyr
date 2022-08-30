@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(sockets_echo_server)
@@ -22,6 +22,7 @@ target_sources_ifdef(CONFIG_NET_UDP app PRIVATE src/udp.c)
 target_sources_ifdef(CONFIG_NET_TCP app PRIVATE src/tcp.c)
 target_sources_ifdef(CONFIG_NET_VLAN app PRIVATE src/vlan.c)
 target_sources_ifdef(CONFIG_NET_L2_IPIP app PRIVATE src/tunnel.c)
+target_sources_ifdef(CONFIG_USB_DEVICE_STACK app PRIVATE src/usb.c)
 
 include(${ZEPHYR_BASE}/samples/net/common/common.cmake)
 

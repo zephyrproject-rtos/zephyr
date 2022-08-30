@@ -6,10 +6,8 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
-
-#include "sam4s-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	aliases {
@@ -44,10 +42,8 @@
 			compatible = "mmio-sram";
 		};
 
-		/* Only used for HWINFO device ID */
 		eefc: flash-controller@400e0a00 {
 			compatible = "atmel,sam-flash-controller";
-			label = "FLASH_CTRL";
 			reg = <0x400e0a00 0x200>;
 			peripheral-id = <6>;
 
@@ -56,9 +52,9 @@
 
 			flash0: flash@400000 {
 				compatible = "soc-nv-flash";
-				label = "FLASH_0";
 
 				write-block-size = <16>;
+				erase-block-size = <8192>;
 			};
 		};
 
@@ -67,7 +63,6 @@
 			reg = <0x400e1450 0xc>;
 			interrupts = <4 0>;
 			peripheral-id = <4>;
-			label = "WATCHDOG_0";
 			status = "disabled";
 		};
 
@@ -77,11 +72,9 @@
 			reg = <0x40018000 0x128>;
 			interrupts = <19 0>;
 			peripheral-id = <19>;
-			label = "I2C_0";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pinctrl-0 = <&pa4a_twi0_twck0 &pa3a_twi0_twd0>;
 		};
 
 		twi1: i2c@4001c000 {
@@ -90,11 +83,9 @@
 			reg = <0x4001c000 0x128>;
 			interrupts = <20 0>;
 			peripheral-id = <20>;
-			label = "I2C_1";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pinctrl-0 = <&pb5a_twi1_twck1 &pb4a_twi1_twd1>;
 		};
 
 		spi0: spi@40008000 {
@@ -104,9 +95,7 @@
 			reg = <0x40008000 0x4000>;
 			interrupts = <21 0>;
 			peripheral-id = <21>;
-			label = "SPI_0";
 			status = "disabled";
-			pinctrl-0 = <&pa12a_spi_miso &pa13a_spi_mosi &pa14a_spi_spck>;
 		};
 
 		uart0: uart@400e0600 {
@@ -115,8 +104,6 @@
 			interrupts = <8 1>;
 			peripheral-id = <8>;
 			status = "disabled";
-			label = "UART_0";
-			pinctrl-0 = <&pa9a_uart0_urxd0 &pa10a_uart0_utxd0>;
 		};
 
 		uart1: uart@400e0800 {
@@ -125,8 +112,6 @@
 			interrupts = <9 1>;
 			peripheral-id = <9>;
 			status = "disabled";
-			label = "UART_1";
-			pinctrl-0 = <&pb2a_uart1_urxd1 &pb3a_uart1_utxd1>;
 		};
 
 		usart0: usart@40024000 {
@@ -135,7 +120,6 @@
 			interrupts = <14 1>;
 			peripheral-id = <14>;
 			status = "disabled";
-			label = "USART_0";
 		};
 
 		usart1: usart@40028000 {
@@ -144,21 +128,20 @@
 			interrupts = <15 1>;
 			peripheral-id = <15>;
 			status = "disabled";
-			label = "USART_1";
 		};
 
-		pinctrl@400e0e00 {
+		pinctrl: pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x400e0e00 0x400e0e00 0x600>;
+			status = "okay";
 
 			pioa: gpio@400e0e00 {
 				compatible = "atmel,sam-gpio";
 				reg = <0x400e0e00 0x190>;
 				interrupts = <11 1>;
 				peripheral-id = <11>;
-				label = "PORTA";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -169,7 +152,6 @@
 				reg = <0x400e1000 0x190>;
 				interrupts = <12 1>;
 				peripheral-id = <12>;
-				label = "PORTB";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -180,7 +162,6 @@
 				reg = <0x400e1200 0x190>;
 				interrupts = <13 1>;
 				peripheral-id = <13>;
-				label = "PORTC";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -195,8 +176,6 @@
 				      25 0>;
 			peripheral-id = <23 24 25>;
 			status = "disabled";
-			label = "TC0";
-			pinctrl-0 = <>;
 		};
 
 		tc1: tc@40014000 {
@@ -207,8 +186,22 @@
 				      28 0>;
 			peripheral-id = <26 27 28>;
 			status = "disabled";
-			label = "TC1";
-			pinctrl-0 = <>;
+		};
+
+		rstc: rstc@400e1400 {
+			compatible = "atmel,sam-rstc";
+			reg = <0x400e1400 0x10>;
+			peripheral-id = <1>;
+			user-nrst;
+		};
+
+		smc: smc@400e0000 {
+			compatible = "atmel,sam-smc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400e0000 0x200>;
+			peripheral-id = <10>;
+			status = "disabled";
 		};
 	};
 };

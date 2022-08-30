@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_LPC11U6X_H_
 #define ZEPHYR_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_LPC11U6X_H_
 
+#include <zephyr/drivers/pinctrl.h>
+
 #define LPC11U6X_SYS_AHB_CLK_CTRL_I2C0      (1 << 5)
 #define LPC11U6X_SYS_AHB_CLK_CTRL_GPIO      (1 << 6)
 #define LPC11U6X_SYS_AHB_CLK_CTRL_USART0    (1 << 12)
@@ -110,14 +112,14 @@ struct lpc11u6x_syscon_regs {
 	volatile uint32_t sys_tck_cal;          /* System tick calibration */
 	volatile const uint32_t reserved12[6];
 	volatile uint32_t irq_latency;          /* IRQ latency */
-	volatile uint32_t nmi_src;              /* NMI source contorl */
+	volatile uint32_t nmi_src;              /* NMI source control */
 	volatile uint32_t pint_sel[8];          /* GPIO pin interrupt select */
 	volatile uint32_t usb_clk_ctrl;         /* USB clock control */
 	volatile const uint32_t usb_clk_stat;   /* USB clock status */
 	volatile uint32_t reserved13[25];
-	volatile uint32_t starterp0;            /* Sart logic 0 int wake-up */
+	volatile uint32_t starterp0;            /* Start logic 0 int wake-up */
 	volatile const uint32_t reserved14[3];
-	volatile uint32_t starterp1;            /* Sart logic 1 int wake-up */
+	volatile uint32_t starterp1;            /* Start logic 1 int wake-up */
 	volatile const uint32_t reserved15[6];
 	volatile uint32_t pd_sleep_cfg;         /* Deep-sleep power-down
 						 * states
@@ -132,6 +134,7 @@ struct lpc11u6x_syscon_regs {
 
 struct lpc11u6x_syscon_config {
 	struct lpc11u6x_syscon_regs *syscon;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct lpc11u6x_syscon_data {

@@ -1,0 +1,12 @@
+common:
+    timeout: 5
+    platform_allow: b_u585i_iot02a
+tests:
+  drivers.stm32_clock_configuration.dev_u5.spi1_pclk2:
+    extra_args: DTC_OVERLAY_FILE="boards/core_init.overlay;boards/spi1_pclk2.overlay"
+  drivers.stm32_clock_configuration.dev_u5.spi1_hsi_16:
+    extra_args: DTC_OVERLAY_FILE="boards/core_init.overlay;boards/spi1_hsi_16.overlay"
+  drivers.stm32_clock_configuration.dev_u5.spi1_msik:
+    extra_args: DTC_OVERLAY_FILE="boards/core_init.overlay;boards/spi1_msik.overlay"
+  drivers.stm32_clock_configuration.dev_u5.spi1_sysclk:
+    extra_args: DTC_OVERLAY_FILE="boards/core_init.overlay;boards/spi1_sysclk.overlay"

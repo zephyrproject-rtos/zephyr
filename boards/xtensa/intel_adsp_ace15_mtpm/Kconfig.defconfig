@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_INTEL_ADSP_ACE15_MTPM
+
+config BOARD
+	default "intel_adsp_ace15_mtpm"
+
+endif # BOARD_INTEL_ADSP_ACE15_MTPM

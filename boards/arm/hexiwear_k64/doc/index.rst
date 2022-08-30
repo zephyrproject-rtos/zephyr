@@ -22,8 +22,7 @@ capacitive buttons with haptic feedback.
 - Flexibility to let you add the sensors of your choice nearly 200 additional
   sensors through click boards.
 
-.. image:: ./hexiwear_k64.jpg
-   :width: 442px
+.. image:: hexiwear_k64.jpg
    :align: center
    :alt: Hexiwear
 
@@ -89,6 +88,9 @@ The hexiwear_k64 board configuration supports the following hardware features:
 |           |            | fxas21002 trigger;                  |
 |           |            | max30101 polling                    |
 +-----------+------------+-------------------------------------+
+| RNGA      | on-chip    | entropy;                            |
+|           |            | random                              |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -136,6 +138,13 @@ The K64F SoC has five pairs of pinmux/gpio controllers.
 +-------+-----------------+---------------------------+
 | PTE25 | UART4_TX        | UART BT HCI               |
 +-------+-----------------+---------------------------+
+
+.. note::
+
+   To enable battery sensing, you will need to enable the ``en_bat_sens``
+   regulator in Devicetree. Similarly, to enable devices connected to the 1V8
+   or 3V3 power rails (sensors), you will need to enable the ``en_ldo``
+   and ``en_3v3b`` regulators in Devicetree.
 
 System Clock
 ============

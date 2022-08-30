@@ -5,7 +5,9 @@
 
 menuconfig FXAS21002
 	bool "FXAS21002 gyroscope driver"
-	depends on I2C && HAS_DTS_GPIO
+	default y
+	depends on DT_HAS_NXP_FXAS21002_ENABLED
+	select I2C
 	help
 	  Enable driver for the FXAS21002 gyroscope
 

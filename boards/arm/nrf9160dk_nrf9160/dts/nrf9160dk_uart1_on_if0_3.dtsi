@@ -4,10 +4,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&pinctrl {
+	uart1_default_alt: uart1_default_alt {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 18)>,
+				<NRF_PSEL(UART_RX, 0, 17)>,
+				<NRF_PSEL(UART_RTS, 0, 21)>,
+				<NRF_PSEL(UART_CTS, 0, 19)>;
+		};
+	};
+
+	uart1_sleep_alt: uart1_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 18)>,
+				<NRF_PSEL(UART_RX, 0, 17)>,
+				<NRF_PSEL(UART_RTS, 0, 21)>,
+				<NRF_PSEL(UART_CTS, 0, 19)>;
+			low-power-enable;
+		};
+	};
+
+};
+
 &uart1 {
 	status = "okay";
-	tx-pin = <18>; /* <&interface_to_nrf52840 1 0>; */
-	rx-pin = <17>; /* <&interface_to_nrf52840 0 0>; */
-	rts-pin = <21>; /* <&interface_to_nrf52840 3 0>; */
-	cts-pin = <19>; /* <&interface_to_nrf52840 2 0>; */
+	pinctrl-0 = <&uart1_default_alt>;
+	pinctrl-1 = <&uart1_sleep_alt>;
+	pinctrl-names = "default", "sleep";
 };

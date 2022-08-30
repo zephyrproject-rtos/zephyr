@@ -5,7 +5,7 @@ menu "Logging levels filtering"
 
 config LOG_RUNTIME_FILTERING
 	bool "Runtime filtering reconfiguration"
-	depends on !LOG_FRONTEND && !LOG_MINIMAL
+	depends on !LOG_FRONTEND_ONLY && !LOG_MODE_MINIMAL
 	help
 	  Allow runtime configuration of maximal, independent severity
 	  level for instance.

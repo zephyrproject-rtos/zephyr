@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT st_stm32_eeprom
 
-#include <drivers/eeprom.h>
+#include <zephyr/drivers/eeprom.h>
 #include <soc.h>
 
 #define LOG_LEVEL CONFIG_EEPROM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eeprom_stm32);
 
 K_MUTEX_DEFINE(lock);
@@ -124,4 +124,4 @@ static const struct eeprom_stm32_config eeprom_config = {
 
 DEVICE_DT_INST_DEFINE(0, &eeprom_stm32_init, NULL, NULL,
 		    &eeprom_config, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &eeprom_stm32_api);
+		    CONFIG_EEPROM_INIT_PRIORITY, &eeprom_stm32_api);

@@ -13,8 +13,7 @@ The LoRa-E5-HF STM32WLE5JC Module supports multiple LPWAN protocols on the
 All GPIOs of the LoRa-E5 Module are laid out supporting
 various data protocols and interfaces including RS-485 and Grove.
 
-.. image:: img/lora_e5_dev_board.png
-   :width: 700px
+.. image:: img/lora_e5_dev_board.jpg
    :align: center
    :alt: LoRa-E5 Dev board
 
@@ -127,7 +126,7 @@ for pin muxing, input/output, pull-up, etc.
 Available pins:
 ---------------
 
-.. image:: img/lora_e5_dev_board_pinout.png
+.. image:: img/lora_e5_dev_board_pinout.jpg
       :align: center
       :alt: LoRa-E5 Dev Board Pinout
 
@@ -247,7 +246,7 @@ Then build and flash an application. Here is an example for the
 
 Run a serial host program to connect with your board:
 Per default the console on ``usart1`` is available on the USB Type C connector
-via the build-in USB to UART converter.
+via the built-in USB to UART converter.
 
 .. code-block:: console
 

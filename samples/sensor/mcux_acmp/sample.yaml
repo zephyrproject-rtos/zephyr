@@ -2,7 +2,7 @@ sample:
   description: Demonstration of the NXP MCUX ACMP sensor driver
   name: NXP MCUX ACMP sample
 common:
-  platform_allow: twr_ke18f
+  platform_allow: twr_ke18f mimxrt1170_evk_cm7 mimxrt1170_evk_cm4
   integration_platforms:
     - twr_ke18f
   tags: drivers

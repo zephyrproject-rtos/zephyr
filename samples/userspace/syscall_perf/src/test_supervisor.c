@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
-
-#include "main.h"
 
 /*
  * 0xB00 is CSR mcycle
@@ -17,6 +15,7 @@ void supervisor_thread_function(void *p1, void *p2, void *p3)
 {
 	register unsigned long cycle_before, cycle_count;
 	register unsigned long inst_before, inst_count;
+	k_tid_t thread;
 
 	printf("Supervisor thread started\n");
 
@@ -25,7 +24,7 @@ void supervisor_thread_function(void *p1, void *p2, void *p3)
 
 		inst_before = csr_read(0xB02);
 		cycle_before = csr_read(0xB00);
-		k_current_get();
+		thread = k_current_get();
 		cycle_count = csr_read(0xB00);
 		inst_count = csr_read(0xB02);
 
@@ -44,7 +43,7 @@ void supervisor_thread_function(void *p1, void *p2, void *p3)
 		/* Remove CSR accesses to be more accurate */
 		inst_count -= 3;
 
-		printf("Supervisor thread:\t%8lu cycles\t%8lu instructions\n",
-			cycle_count, inst_count);
+		printf("Supervisor thread(%p):\t%8lu cycles\t%8lu instructions\n",
+			thread, cycle_count, inst_count);
 	}
 }

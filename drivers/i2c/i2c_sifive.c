@@ -7,12 +7,13 @@
 #define DT_DRV_COMPAT sifive_i2c0
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_sifive);
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <sys/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <soc.h>
+#include <zephyr/sys/sys_io.h>
 
 #include "i2c-priv.h"
 
@@ -242,7 +243,7 @@ static int i2c_sifive_configure(const struct device *dev, uint32_t dev_config)
 		   I2C_REG(config, REG_PRESCALE_HIGH));
 
 	/* Support I2C Master mode only */
-	if (!(dev_config & I2C_MODE_MASTER)) {
+	if (!(dev_config & I2C_MODE_CONTROLLER)) {
 		LOG_ERR("I2C only supports operation as master");
 		return -ENOTSUP;
 	}
@@ -304,7 +305,7 @@ static int i2c_sifive_init(const struct device *dev)
 	uint32_t dev_config = 0U;
 	int rc = 0;
 
-	dev_config = (I2C_MODE_MASTER | i2c_map_dt_bitrate(config->f_bus));
+	dev_config = (I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->f_bus));
 
 	rc = i2c_sifive_configure(dev, dev_config);
 	if (rc != 0) {
@@ -326,10 +327,10 @@ static struct i2c_driver_api i2c_sifive_api = {
 #define I2C_SIFIVE_INIT(n) \
 	static struct i2c_sifive_cfg i2c_sifive_cfg_##n = { \
 		.base = DT_INST_REG_ADDR(n), \
-		.f_sys = DT_INST_PROP(n, input_frequency), \
+		.f_sys = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY, \
 		.f_bus = DT_INST_PROP(n, clock_frequency), \
 	}; \
-	DEVICE_DT_INST_DEFINE(n, \
+	I2C_DEVICE_DT_INST_DEFINE(n, \
 			    i2c_sifive_init, \
 			    NULL, \
 			    NULL, \

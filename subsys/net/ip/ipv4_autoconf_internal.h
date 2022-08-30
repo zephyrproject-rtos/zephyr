@@ -13,9 +13,9 @@
 #ifndef __IPV4_AUTOCONF_INTERNAL_H
 #define __IPV4_AUTOCONF_INTERNAL_H
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <net/ipv4_autoconf.h>
+#include <zephyr/net/ipv4_autoconf.h>
 
 /* Initial random delay*/
 #define IPV4_AUTOCONF_PROBE_WAIT 1
@@ -48,7 +48,7 @@
 #define IPV4_AUTOCONF_START_DELAY 3
 
 /**
- * @brief Start IPv4 autocofiguration RFC 3927: IPv4 Link Local
+ * @brief Start IPv4 autoconfiguration RFC 3927: IPv4 Link Local
  *
  * @details Start IPv4 IP autoconfiguration
  *

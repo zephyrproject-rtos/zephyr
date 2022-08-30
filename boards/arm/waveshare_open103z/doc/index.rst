@@ -8,7 +8,7 @@ Overview
 
 The Waveshare Open103Z-64 is a development board equipped with STM32F103ZE MCU.
 
-.. image:: img/waveshare_open103z.png
+.. image:: img/waveshare_open103z.jpg
 
 Hardware
 ********
@@ -40,7 +40,7 @@ The Waveshare Open103Z configuration supports the following hardware features:
 +-----------+------------+--------------------------------------+
 | I2C       | on-chip    | i2c                                  |
 +-----------+------------+--------------------------------------+
-| CAN       | on-chip    | can                                  |
+| CAN       | on-chip    | can (disabled by default)            |
 +-----------+------------+--------------------------------------+
 | USB       | on-chip    | usb                                  |
 +-----------+------------+--------------------------------------+

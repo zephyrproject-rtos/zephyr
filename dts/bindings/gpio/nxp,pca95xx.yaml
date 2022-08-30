@@ -8,13 +8,15 @@ compatible: "nxp,pca95xx"
 include: [gpio-controller.yaml, i2c-device.yaml]
 
 properties:
-    label:
-      required: true
-
     has-pud:
       type: boolean
       required: false
       description: Supports pull-up/pull-down
+
+    has-interrupt-mask-reg:
+      type: boolean
+      required: false
+      description: Has Interrupt mask register (PCAL95xx)
 
     interrupt-gpios:
       type: phandle-array

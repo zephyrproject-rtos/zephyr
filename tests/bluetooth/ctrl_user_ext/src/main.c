@@ -8,20 +8,14 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <sys/printk.h>
-#include <ztest.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/ztest.h>
 
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
-void test_ctrl_user_ext(void)
+ZTEST_SUITE(test_bluetooth, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(test_bluetooth, test_ctrl_user_ext)
 {
 	zassert_false(bt_enable(NULL), "Bluetooth ctrl_user_ext failed");
-}
-
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_bluetooth,
-			ztest_unit_test(test_ctrl_user_ext));
-	ztest_run_test_suite(test_bluetooth);
 }

@@ -7,8 +7,8 @@
 #define DT_DRV_COMPAT nxp_lpc_mailbox
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/ipm.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/ipm.h>
 #include <fsl_mailbox.h>
 #include <fsl_clock.h>
 #include <soc.h>

@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
 
-#include <net/ppp.h>
-#include <random/rand32.h>
+#include <zephyr/net/ppp.h>
+#include <zephyr/random/rand32.h>
 
 #include "net_private.h"
 
@@ -94,7 +95,8 @@ static void fsm_send_configure_req(struct ppp_fsm *fsm, bool retransmit)
 
 static void ppp_fsm_timeout(struct k_work *work)
 {
-	struct ppp_fsm *fsm = CONTAINER_OF(work, struct ppp_fsm, timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct ppp_fsm *fsm = CONTAINER_OF(dwork, struct ppp_fsm, timer);
 
 	NET_DBG("[%s/%p] Current state %s (%d)", fsm->name, fsm,
 		ppp_state_str(fsm->state), fsm->state);
@@ -189,7 +191,7 @@ static void terminate(struct ppp_fsm *fsm, enum ppp_state next_state)
 		fsm_down(fsm);
 	}
 
-	fsm->retransmits = MAX_CONFIGURE_REQ;
+	fsm->retransmits = MAX_TERMINATE_REQ;
 	fsm->req_id = ++fsm->id;
 
 	(void)ppp_send_pkt(fsm, NULL, PPP_TERMINATE_REQ, fsm->req_id,
@@ -394,10 +396,13 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	}
 
 	switch (type) {
-	case PPP_CODE_REJ:
+	case PPP_CODE_REJ: {
+		struct ppp_context *ctx = ppp_fsm_ctx(fsm);
+
 		len = net_pkt_get_len(req_pkt);
-		len = MIN(len, PPP_MRU);
+		len = MIN(len, ctx->lcp.my_options.mru);
 		break;
+	}
 
 	case PPP_CONFIGURE_ACK:
 	case PPP_CONFIGURE_NACK:
@@ -495,7 +500,7 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 			goto out_of_mem;
 		}
 
-		data_len = MIN(data_len, PPP_MRU);
+		data_len = MIN(data_len, ctx->lcp.my_options.mru);
 		if (data_len > 0) {
 			if (data_len == sizeof(uint32_t)) {
 				ret = net_pkt_write_be32(pkt,
@@ -857,7 +862,7 @@ static enum net_verdict fsm_recv_terminate_req(struct ppp_fsm *fsm, uint8_t id,
 
 			NET_DBG("[%s/%p] %s (%s)",
 				fsm->name, fsm, "Terminated by peer",
-				log_strdup(fsm->terminate_reason));
+				fsm->terminate_reason);
 		} else {
 			NET_DBG("[%s/%p] Terminated by peer",
 				fsm->name, fsm);
@@ -1020,6 +1025,7 @@ enum net_verdict ppp_fsm_input(struct ppp_fsm *fsm, uint16_t proto,
 	uint8_t code, id;
 	uint16_t length;
 	int ret;
+	struct ppp_context *ctx = ppp_fsm_ctx(fsm);
 
 	ret = net_pkt_read_u8(pkt, &code);
 	if (ret < 0) {
@@ -1042,7 +1048,7 @@ enum net_verdict ppp_fsm_input(struct ppp_fsm *fsm, uint16_t proto,
 		return NET_DROP;
 	}
 
-	if (length > PPP_MRU) {
+	if (length > ctx->lcp.my_options.mru) {
 		NET_DBG("[%s/%p] Too long msg %d", fsm->name, fsm, length);
 		return NET_DROP;
 	}

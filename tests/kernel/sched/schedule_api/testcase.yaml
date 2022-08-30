@@ -12,6 +12,12 @@ tests:
     extra_configs:
       - CONFIG_TIMESLICING=n
     tags: kernel threads sched userspace ignore_faults
+  kernel.scheduler.slice_perthread:
+    filter: not CONFIG_SCHED_MULTIQ
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+      - CONFIG_TIMESLICE_PER_THREAD=y
+    tags: kernel threads sched userspace ignore_faults
   kernel.scheduler.multiq:
     extra_args: CONF_FILE=prj_multiq.conf
     extra_configs:
@@ -22,7 +28,7 @@ tests:
     extra_configs:
       - CONFIG_TIMESLICING=n
     tags: kernel threads sched userspacei ignore_faults
-  kernel.scheduler.dumb_no_timeslicing:
+  kernel.scheduler.dumb_timeslicing:
     extra_args: CONF_FILE=prj_dumb.conf
     extra_configs:
       - CONFIG_TIMESLICING=y
@@ -32,3 +38,10 @@ tests:
     extra_configs:
       - CONFIG_TIMESLICING=n
     tags: kernel threads sched userspace ignore_faults
+  kernel.scheduler.linker_generator:
+    platform_allow: qemu_cortex_m3
+    filter: not CONFIG_SCHED_MULTIQ
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
+    tags: kernel threads sched userspace ignore_faults linker_generator

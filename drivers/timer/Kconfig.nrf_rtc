@@ -1,0 +1,69 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config NRF_RTC_TIMER
+	bool "nRF Real Time Counter (NRF_RTC1) Timer"
+	depends on CLOCK_CONTROL
+	depends on SOC_COMPATIBLE_NRF
+	select TICKLESS_CAPABLE
+	select NRF_HW_RTC1_RESERVED
+	help
+	  This module implements a kernel device driver for the nRF Real Time
+	  Counter NRF_RTC1 and provides the standard "system clock driver"
+	  interfaces.
+
+if NRF_RTC_TIMER
+
+config NRF_RTC_TIMER_USER_CHAN_COUNT
+	int "Additional channels that can be used"
+	default 3 if NRF_802154_RADIO_DRIVER
+	default 0
+	help
+	  Use nrf_rtc_timer.h API. Driver is not managing allocation of channels.
+
+config NRF_RTC_TIMER_LOCK_ZERO_LATENCY_IRQS
+	# hidden option
+	bool
+	depends on ZERO_LATENCY_IRQS
+	default y if !BT_LL_SW_SPLIT
+	help
+	  Enable use of __disable_irq() to disable Zero Latency IRQs to prevent
+	  higher priority contexts (including ZLIs) that might preempt the
+	  handler and call nrf_rtc_timer API from destroying the internal state
+	  in nrf_rtc_timer.
+
+choice
+	prompt "Clock startup policy"
+	default SYSTEM_CLOCK_WAIT_FOR_STABILITY
+
+config SYSTEM_CLOCK_NO_WAIT
+	bool "No wait"
+	help
+	  System clock source is initiated but does not wait for clock readiness.
+	  When this option is picked, system clock may not be ready when code relying
+	  on kernel API is executed. Requested timeouts will be prolonged by the
+	  remaining startup time.
+
+config SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY
+	bool "Wait for availability"
+	help
+	  System clock source initialization waits until clock is available. In some
+	  systems, clock initially runs from less accurate source which has faster
+	  startup time and then seamlessly switches to the target clock source when
+	  it is ready. When this option is picked, system clock is available after
+	  system clock driver initialization but it may be less accurate. Option is
+	  equivalent to waiting for stability if clock source does not have
+	  intermediate state.
+
+config SYSTEM_CLOCK_WAIT_FOR_STABILITY
+	bool "Wait for stability"
+	help
+	  System clock source initialization waits until clock is stable. When this
+	  option is picked, system clock is available and stable after system clock
+	  driver initialization.
+
+endchoice
+
+endif # NRF_RTC_TIMER

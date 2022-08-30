@@ -2,24 +2,4 @@ description: STM32 LPUART
 
 compatible: "st,stm32-lpuart"
 
-include: uart-controller.yaml
-
-properties:
-    reg:
-      required: true
-
-    interrupts:
-      required: true
-
-    clocks:
-      required: true
-
-    pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        GPIO pin configuration for serial signals (RX, TX, RTS, CTS).  We expect
-        that the phandles will reference pinctrl nodes.
-
-        For example the USART1 would be
-           pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+include: st,stm32-uart-base.yaml

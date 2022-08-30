@@ -12,21 +12,27 @@ config ILI9XXX
 
 config ILI9340
 	bool "ILI9340 display driver"
-	depends on SPI
+	default y
+	depends on DT_HAS_ILITEK_ILI9340_ENABLED
+	select SPI
 	select ILI9XXX
 	help
 	  Enable driver for ILI9340 display driver.
 
 config ILI9341
 	bool "ILI9341 display driver"
-	depends on SPI
+	default y
+	depends on DT_HAS_ILITEK_ILI9341_ENABLED
+	select SPI
 	select ILI9XXX
 	help
 	  Enable driver for ILI9341 display driver.
 
 config ILI9488
 	bool "ILI9488 display driver"
-	depends on SPI
+	default y
+	depends on DT_HAS_ILITEK_ILI9488_ENABLED
+	select SPI
 	select ILI9XXX
 	help
 	  Enable driver for ILI9488 display driver.

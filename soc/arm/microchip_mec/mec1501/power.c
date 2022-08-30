@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/sys_io.h>
-#include <sys/__assert.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/pm/pm.h>
 #include <soc.h>
 #include "device_power.h"
 
@@ -69,7 +69,7 @@ static void z_power_soc_deep_sleep(void)
 	soc_deep_sleep_periph_restore();
 
 	/*
-	 * pm_power_state_exit_post_ops() is not being called
+	 * pm_state_exit_post_ops() is not being called
 	 * after exiting deep sleep, so need to unmask exceptions
 	 * and interrupts here.
 	 */
@@ -101,9 +101,11 @@ static void z_power_soc_sleep(void)
  * For deep sleep pm_system_suspend has executed all the driver
  * power management call backs.
  */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-	switch (info.state) {
+	ARG_UNUSED(substate_id);
+
+	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
 		z_power_soc_sleep();
 		break;
@@ -123,9 +125,11 @@ __weak void pm_power_state_set(struct pm_state_info info)
  * an ISR on wake except for faults. We re-enable interrupts by setting PRIMASK
  * to 0.
  */
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	switch (info.state) {
+	ARG_UNUSED(substate_id);
+
+	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
 	case PM_STATE_SUSPEND_TO_RAM:
 		__set_PRIMASK(0);

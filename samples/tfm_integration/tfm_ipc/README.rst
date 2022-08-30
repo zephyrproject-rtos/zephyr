@@ -126,7 +126,7 @@ Build Zephyr with a non-secure configuration:
 
       $ west build -b stm32l562e_dk_ns samples/tfm_integration/tfm_ipc/
 
-The script to initialize the device is avalaible in the ``build/tfm`` folder:
+The script to initialize the device is available in the ``build/tfm`` folder:
 
   - ``regression.sh``: Sets platform option bytes config and erase platform.
 
@@ -135,7 +135,7 @@ Run them in the following order to flash the board:
    .. code-block:: bash
 
       $ ./build/tfm/regression.sh
-      $ west flash --hex-file build/tfm_merged.hex
+      $ west flash
 
  .. note::
       Note that ``arm-none-eabi-gcc`` should be available in the PATH variable and that ``STM32_Programmer_CLI`` is required to run ``regression.sh`` (see https://www.st.com/en/development-tools/stm32cubeprog.html). If you are still having trouble running these scripts, check the Programming and Debugging section of the :ref:`nucleo_l552ze_q_board` or :ref:`stm32l562e_dk_board` documentation.
@@ -189,7 +189,7 @@ the MCUboot bootloader image binary (``bl2.hex``).
 
    .. code-block:: bash
 
-      nrfjprg -f NRF91 --program tfm/bin/bl2.hex --sectorerase
+      nrfjprog -f NRF91 --program tfm/bin/bl2.hex --sectorerase
 
 Finally, flash the concatenated TF-M + Zephyr binary.
 

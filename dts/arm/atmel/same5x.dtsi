@@ -15,8 +15,12 @@
 			interrupt-names = "gmac";
 			num-queues = <1>;
 			local-mac-address = [00 00 00 00 00 00];
-			label = "GMAC";
 			status = "disabled";
+
+			mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				status = "disabled";
+			};
 		};
 	};
 };

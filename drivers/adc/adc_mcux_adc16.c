@@ -7,16 +7,16 @@
 #define DT_DRV_COMPAT nxp_kinetis_adc16
 
 #include <errno.h>
-#include <drivers/adc.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pinctrl.h>
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
-#include <drivers/dma.h>
-#include <fsl_sim.h>
+#include <zephyr/drivers/dma.h>
 #endif
 
 #include <fsl_adc16.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_mcux_adc16);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
@@ -42,6 +42,7 @@ struct mcux_adc16_config {
 	bool channel_mux_b;
 	bool high_speed;	/* ADC enable high speed mode*/
 	bool continuous_convert; /* ADC enable continuous convert*/
+	const struct pinctrl_dev_config *pincfg;
 };
 
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
@@ -67,10 +68,6 @@ struct mcux_adc16_data {
 	uint8_t channel_id;
 };
 
-#define DEV_CFG(dev) ((const struct mcux_adc16_config *const)dev->config)
-#define DEV_DATA(dev) ((struct mcux_adc16_data *)dev->data)
-#define DEV_BASE(dev) ((ADC_Type *)DEV_CFG(dev)->base)
-
 #ifdef CONFIG_ADC_MCUX_ADC16_HW_TRIGGER
 #define SIM_SOPT7_ADCSET(x, shifts, mask)                                      \
 	(((uint32_t)(((uint32_t)(x)) << shifts)) & mask)
@@ -80,8 +77,8 @@ struct mcux_adc16_data {
 static void adc_dma_callback(const struct device *dma_dev, void *callback_arg,
 			     uint32_t channel, int error_code)
 {
-	struct device *dev = (struct device *)callback_arg;
-	struct mcux_adc16_data *data = DEV_DATA(dev);
+	const struct device *dev = (const struct device *)callback_arg;
+	struct mcux_adc16_data *data = dev->data;
 
 	LOG_DBG("DMA done");
 	adc_context_on_sampling_done(&data->ctx, dev);
@@ -326,6 +323,7 @@ static int mcux_adc16_init(const struct device *dev)
 	struct mcux_adc16_data *data = dev->data;
 	ADC_Type *base = config->base;
 	adc16_config_t adc_config;
+	int err;
 
 	LOG_DBG("init adc");
 	ADC16_GetDefaultConfig(&adc_config);
@@ -368,6 +366,11 @@ static int mcux_adc16_init(const struct device *dev)
 		ADC16_EnableHardwareTrigger(base, true);
 	} else {
 		ADC16_EnableHardwareTrigger(base, false);
+	}
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err != 0) {
+		return err;
 	}
 
 	data->dev = dev;
@@ -431,66 +434,23 @@ static const struct adc_driver_api mcux_adc16_driver_api = {
 };
 
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
-#define ACD16_MCUX_INIT(n)					\
-	static const struct mcux_adc16_config mcux_adc16_config_##n = {	\
-		.base = (ADC_Type *)DT_INST_REG_ADDR(n),		\
-		.channel_mux_b = DT_INST_PROP(n, channel_mux_b),	\
-		.clk_source = DT_INST_PROP_OR(n, clk_source, 0),	\
-		.long_sample = DT_INST_PROP_OR(n, long_sample, 0),	\
-		.high_speed = DT_INST_PROP(n, high_speed),		\
-		.periodic_trigger = DT_INST_PROP(n, periodic_trigger),	\
-		.continuous_convert =				\
-			DT_INST_PROP(n, continuous_convert),	\
-		.hw_trigger_src =				\
-			DT_INST_PROP_OR(n, hw_trigger_src, 0),	\
-		.dma_slot = DT_INST_DMAS_CELL_BY_IDX(n, 0, source),	\
-		.trg_offset = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, offset),	\
-		.trg_bits = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, bits),	\
-		.alt_offset = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, offset),	\
-		.alt_bits = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, bits),	\
-	};								\
-									\
-	static struct mcux_adc16_data mcux_adc16_data_##n = {		\
-		ADC_CONTEXT_INIT_TIMER(mcux_adc16_data_##n, ctx),	\
-		ADC_CONTEXT_INIT_LOCK(mcux_adc16_data_##n, ctx),	\
-		ADC_CONTEXT_INIT_SYNC(mcux_adc16_data_##n, ctx),	\
-		.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, adc##n)),	\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, &mcux_adc16_init,	\
-			      NULL,	\
-			      &mcux_adc16_data_##n,	\
-			      &mcux_adc16_config_##n,	\
-			      POST_KERNEL,		\
-			      CONFIG_ADC_MCUX_ADC16_INIT_PRIORITY,	\
-			      &mcux_adc16_driver_api);
+#define ADC16_MCUX_EDMA_INIT(n)					\
+	.hw_trigger_src =					\
+		DT_INST_PROP_OR(n, hw_trigger_src, 0),		\
+	.dma_slot = DT_INST_DMAS_CELL_BY_IDX(n, 0, source),	\
+	.trg_offset = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, offset),	\
+	.trg_bits = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, bits),	\
+	.alt_offset = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, offset),	\
+	.alt_bits = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, bits),
+#define ADC16_MCUX_EDMA_DATA(n)					\
+	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, adc##n))
+#define ADC16_MCUX_IRQ_INIT(n)
+#define ADC16_MCUX_IRQ_DECLARE(n)
 #else
-#define ACD16_MCUX_INIT(n)						\
-	static void mcux_adc16_config_func_##n(const struct device *dev); \
-	static const struct mcux_adc16_config mcux_adc16_config_##n = {	\
-		.base = (ADC_Type *)DT_INST_REG_ADDR(n),		\
-		.irq_config_func = mcux_adc16_config_func_##n,		\
-		.channel_mux_b = DT_INST_PROP(n, channel_mux_b),	\
-		.clk_source = DT_INST_PROP_OR(n, clk_source, 0),	\
-		.long_sample = DT_INST_PROP_OR(n, long_sample, 0),	\
-		.high_speed = DT_INST_PROP(n, high_speed),		\
-		.continuous_convert =				\
-			DT_INST_PROP(n, continuous_convert),	\
-	};							\
-	static struct mcux_adc16_data mcux_adc16_data_##n = {	\
-		ADC_CONTEXT_INIT_TIMER(mcux_adc16_data_##n, ctx),	\
-		ADC_CONTEXT_INIT_LOCK(mcux_adc16_data_##n, ctx),	\
-		ADC_CONTEXT_INIT_SYNC(mcux_adc16_data_##n, ctx),	\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, &mcux_adc16_init,	\
-			      NULL,	\
-			      &mcux_adc16_data_##n,	\
-			      &mcux_adc16_config_##n,	\
-			      POST_KERNEL,		\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-			      &mcux_adc16_driver_api);			\
-									\
+#define ADC16_MCUX_EDMA_INIT(n)
+#define ADC16_MCUX_EDMA_DATA(n)
+#define ADC16_MCUX_IRQ_INIT(n) .irq_config_func = mcux_adc16_config_func_##n,
+#define ADC16_MCUX_IRQ_DECLARE(n)					\
 	static void mcux_adc16_config_func_##n(const struct device *dev) \
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
@@ -499,6 +459,40 @@ static const struct adc_driver_api mcux_adc16_driver_api = {
 									\
 		irq_enable(DT_INST_IRQN(n));				\
 	}
-#endif
+#endif /* CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA */
+
+
+#define ACD16_MCUX_INIT(n)					\
+	ADC16_MCUX_IRQ_DECLARE(n)				\
+	PINCTRL_DT_INST_DEFINE(n);				\
+								\
+	static const struct mcux_adc16_config mcux_adc16_config_##n = {	\
+		.base = (ADC_Type *)DT_INST_REG_ADDR(n),		\
+		ADC16_MCUX_IRQ_INIT(n)					\
+		.channel_mux_b = DT_INST_PROP(n, channel_mux_b),	\
+		.clk_source = DT_INST_PROP_OR(n, clk_source, 0),	\
+		.long_sample = DT_INST_PROP_OR(n, long_sample, 0),	\
+		.high_speed = DT_INST_PROP(n, high_speed),		\
+		.periodic_trigger = DT_INST_PROP(n, periodic_trigger),	\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
+		.continuous_convert =				\
+			DT_INST_PROP(n, continuous_convert),	\
+		ADC16_MCUX_EDMA_INIT(n)				\
+	};								\
+									\
+	static struct mcux_adc16_data mcux_adc16_data_##n = {		\
+		ADC_CONTEXT_INIT_TIMER(mcux_adc16_data_##n, ctx),	\
+		ADC_CONTEXT_INIT_LOCK(mcux_adc16_data_##n, ctx),	\
+		ADC_CONTEXT_INIT_SYNC(mcux_adc16_data_##n, ctx),	\
+		ADC16_MCUX_EDMA_DATA(n)					\
+	};								\
+									\
+	DEVICE_DT_INST_DEFINE(n, &mcux_adc16_init,	\
+			      NULL,	\
+			      &mcux_adc16_data_##n,	\
+			      &mcux_adc16_config_##n,	\
+			      POST_KERNEL,		\
+			      CONFIG_ADC_INIT_PRIORITY,	\
+			      &mcux_adc16_driver_api);	\
 
 DT_INST_FOREACH_STATUS_OKAY(ACD16_MCUX_INIT)

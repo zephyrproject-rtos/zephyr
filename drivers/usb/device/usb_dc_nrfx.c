@@ -16,17 +16,17 @@
 #include <soc.h>
 #include <string.h>
 #include <stdio.h>
-#include <kernel.h>
-#include <drivers/usb/usb_dc.h>
-#include <usb/usb_device.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/usb/usb_dc.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <nrfx_usbd.h>
 #include <nrfx_power.h>
 
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_nrfx);
 
 /* USB device controller access from devicetree */
@@ -796,9 +796,7 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
 
-	if ((REQTYPE_GET_DIR(usbd_setup->bmRequestType)
-	     == REQTYPE_DIR_TO_DEVICE)
-	    && (usbd_setup->wLength)) {
+	if (usb_reqtype_is_to_device(usbd_setup) && usbd_setup->wLength) {
 		ctx->ctrl_read_len = usbd_setup->wLength;
 		/* Allow data chunk on EP0 OUT */
 		nrfx_usbd_setup_data_clear();
@@ -894,6 +892,12 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 			LOG_DBG("ctrl write complete");
 			usbd_evt_put(ev);
 			usbd_work_schedule();
+		}
+		break;
+
+		case NRFX_USBD_EP_ABORTED: {
+			LOG_DBG("Endpoint 0x%02x write aborted",
+				p_event->data.eptransfer.ep);
 		}
 		break;
 
@@ -1127,10 +1131,10 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 		nrfx_usbd_setup_t drv_setup;
 
 		nrfx_usbd_setup_get(&drv_setup);
-		if ((drv_setup.bRequest != REQ_SET_ADDRESS)
-		    || (REQTYPE_GET_TYPE(drv_setup.bmRequestType)
-			!= REQTYPE_TYPE_STANDARD)) {
-			/* SetAddress is habdled by USBD hardware.
+		if ((drv_setup.bRequest != USB_SREQ_SET_ADDRESS)
+		    || (USB_REQTYPE_GET_TYPE(drv_setup.bmRequestType)
+			!= USB_REQTYPE_TYPE_STANDARD)) {
+			/* SetAddress is handled by USBD hardware.
 			 * No software action required.
 			 */
 
@@ -1187,11 +1191,11 @@ static inline void usbd_reinit(void)
 }
 
 /**
- * @brief funciton to generate fake receive request for
+ * @brief function to generate fake receive request for
  * ISO OUT EP.
  *
  * ISO OUT endpoint does not generate irq by itself and reading
- * from ISO OUT ep is sunchronized with SOF frame. For more details
+ * from ISO OUT ep is synchronized with SOF frame. For more details
  * refer to Nordic usbd specification.
  */
 static void usbd_sof_trigger_iso_read(void)
@@ -1698,7 +1702,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	/** If writing to a Control Endpoint there might be a need to transfer
 	 * ZLP. If the Hosts asks for more data that the device may return and
 	 * the last packet is wMaxPacketSize long. The driver must send ZLP.
-	 * For consistance with the Zephyr USB stack sending ZLP must be issued
+	 * For consistence with the Zephyr USB stack sending ZLP must be issued
 	 * from the stack level. Making trans_zlp flag true results in blocking
 	 * the driver from starting setup stage without required ZLP.
 	 */
@@ -1928,7 +1932,8 @@ static int usb_init(const struct device *arg)
 		.dcdcen = IS_ENABLED(CONFIG_SOC_DCDC_NRF52X) ||
 			  IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_APP),
 #if NRFX_POWER_SUPPORTS_DCDCEN_VDDH
-		.dcdcenhv = IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_HV),
+		.dcdcenhv = IS_ENABLED(CONFIG_SOC_DCDC_NRF52X_HV) ||
+			    IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_HV),
 #endif
 	};
 

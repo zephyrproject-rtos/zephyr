@@ -5,7 +5,7 @@ description: NXP SCTimer PWM
 
 compatible: "nxp,sctimer-pwm"
 
-include: [pwm-controller.yaml, base.yaml]
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
 
 properties:
     prescaler:
@@ -24,8 +24,9 @@ properties:
         - 128
 
     "#pwm-cells":
-      const: 2
+      const: 3
 
 pwm-cells:
   - channel
+  - period
   - flags

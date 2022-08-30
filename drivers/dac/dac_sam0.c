@@ -8,7 +8,8 @@
 
 #include <errno.h>
 
-#include <drivers/dac.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 /*
@@ -23,18 +24,17 @@
 
 struct dac_sam0_cfg {
 	Dac *regs;
+	const struct pinctrl_dev_config *pcfg;
 	uint8_t pm_apbc_bit;
 	uint8_t gclk_clkctrl_id;
 	uint8_t refsel;
 };
 
-#define DEV_CFG(dev) ((const struct dac_sam0_cfg *const)(dev)->config)
-
 /* Write to the DAC. */
 static int dac_sam0_write_value(const struct device *dev, uint8_t channel,
 				uint32_t value)
 {
-	const struct dac_sam0_cfg *const cfg = DEV_CFG(dev);
+	const struct dac_sam0_cfg *const cfg = dev->config;
 	Dac *regs = cfg->regs;
 
 	regs->DATA.reg = (uint16_t)value;
@@ -62,12 +62,18 @@ static int dac_sam0_channel_setup(const struct device *dev,
 /* Initialise and enable the DAC. */
 static int dac_sam0_init(const struct device *dev)
 {
-	const struct dac_sam0_cfg *const cfg = DEV_CFG(dev);
+	const struct dac_sam0_cfg *const cfg = dev->config;
 	Dac *regs = cfg->regs;
+	int retval;
 
 	/* Enable the GCLK */
 	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
 			    GCLK_CLKCTRL_CLKEN;
+
+	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
 
 	/* Enable the clock in PM */
 	PM->APBCMASK.reg |= 1 << cfg->pm_apbc_bit;
@@ -95,11 +101,13 @@ static const struct dac_driver_api api_sam0_driver_api = {
 
 #define SAM0_DAC_REFSEL(n)						       \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, reference),		       \
-		    (DT_ENUM_IDX(DT_DRV_INST(n), reference)), (0))
+		    (DT_INST_ENUM_IDX(n, reference)), (0))
 
 #define SAM0_DAC_INIT(n)						       \
+	PINCTRL_DT_INST_DEFINE(n);					       \
 	static const struct dac_sam0_cfg dac_sam0_cfg_##n = {		       \
 		.regs = (Dac *)DT_INST_REG_ADDR(n),			       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		       \
 		.pm_apbc_bit = DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit),	       \
 		.gclk_clkctrl_id =					       \
 			DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),      \
@@ -108,7 +116,7 @@ static const struct dac_driver_api api_sam0_driver_api = {
 									       \
 	DEVICE_DT_INST_DEFINE(n, &dac_sam0_init, NULL, NULL,		       \
 			    &dac_sam0_cfg_##n, POST_KERNEL,		       \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
+			    CONFIG_DAC_INIT_PRIORITY,			       \
 			    &api_sam0_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(SAM0_DAC_INIT);

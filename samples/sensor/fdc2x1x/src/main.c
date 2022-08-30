@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <sys/util.h>
-#include <drivers/sensor.h>
-#include "drivers/sensor/fdc2x1x.h"
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/fdc2x1x.h>
 #include <stdio.h>
 
 #define CH_BUF_INIT(m)          {},
@@ -17,7 +17,7 @@ K_SEM_DEFINE(sem, 0, 1);
 
 #ifdef CONFIG_FDC2X1X_TRIGGER
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *trigger)
+			    const struct sensor_trigger *trigger)
 {
 	switch (trigger->type) {
 	case SENSOR_TRIG_DATA_READY:
@@ -34,21 +34,20 @@ static void trigger_handler(const struct device *dev,
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-static void pm_info(enum pm_device_state state, int status)
+static void pm_info(enum pm_device_action action, int status)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(arg);
-
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		printk("Enter ACTIVE_STATE ");
 		break;
-	case PM_DEVICE_STATE_LOW_POWER:
-		printk("Enter LOW_POWER_STATE ");
+	case PM_DEVICE_ACTION_SUSPEND:
+		printk("Enter SUSPEND_STATE ");
 		break;
-	case PM_DEVICE_STATE_OFF:
+	case PM_DEVICE_ACTION_TURN_OFF:
 		printk("Enter OFF_STATE ");
 		break;
+	default:
+		printk("Unknown power state");
 	}
 
 	if (status) {
@@ -71,7 +70,7 @@ void main(void)
 	enum sensor_channel base;
 	int i;
 
-	const struct device *dev = DEVICE_DT_GET(DEVICE_NODE);
+	const struct device *const dev = DEVICE_DT_GET(DEVICE_NODE);
 
 	if (!device_is_ready(dev)) {
 		printk("Device %s is not ready\n", dev->name);
@@ -92,20 +91,20 @@ void main(void)
 
 #ifdef CONFIG_PM_DEVICE
 	/* Testing the power modes */
-	enum pm_device_state p_state;
+	enum pm_device_action p_action;
 	int ret;
 
-	p_state = PM_DEVICE_STATE_LOW_POWER;
-	ret = pm_device_state_set(dev, p_state);
-	pm_info(p_state, ret);
+	p_action = PM_DEVICE_ACTION_SUSPEND;
+	ret = pm_device_action_run(dev, p_action);
+	pm_info(p_action, ret);
 
-	p_state = PM_DEVICE_STATE_OFF;
-	ret = pm_device_state_set(dev, p_state);
-	pm_info(p_state, ret);
+	p_action = PM_DEVICE_ACTION_TURN_OFF;
+	ret = pm_device_action_run(dev, p_action);
+	pm_info(p_action, ret);
 
-	p_state = PM_DEVICE_STATE_ACTIVE;
-	ret = pm_device_state_set(dev, p_state);
-	pm_info(p_state, ret);
+	p_action = PM_DEVICE_ACTION_RESUME;
+	ret = pm_device_action_run(dev, p_action);
+	pm_info(p_action, ret);
 #endif
 
 	while (1) {
@@ -133,13 +132,13 @@ void main(void)
 
 
 #ifdef CONFIG_PM_DEVICE
-		p_state = PM_DEVICE_STATE_OFF;
-		ret = pm_device_state_set(dev, p_state);
-		pm_info(p_state, ret);
+		p_action = PM_DEVICE_ACTION_TURN_OFF;
+		ret = pm_device_action_run(dev, p_action);
+		pm_info(p_action, ret);
 		k_sleep(K_MSEC(2000));
-		p_state = PM_DEVICE_STATE_ACTIVE;
-		ret = pm_device_state_set(dev, p_state);
-		pm_info(p_state, ret);
+		p_action = PM_DEVICE_ACTION_RESUME;
+		ret = pm_device_action_run(dev, p_action);
+		pm_info(p_action, ret);
 #elif CONFIG_FDC2X1X_TRIGGER_NONE
 		k_sleep(K_MSEC(100));
 #endif

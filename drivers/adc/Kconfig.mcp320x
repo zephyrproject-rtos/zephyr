@@ -5,7 +5,9 @@
 
 config ADC_MCP320X
 	bool "MCP3204/MCP3208 driver"
-	depends on SPI
+	default y
+	depends on DT_HAS_MICROCHIP_MCP3204_ENABLED || DT_HAS_MICROCHIP_MCP3208_ENABLED
+	select SPI
 	help
 	  Enable MCP3204/MCP3208 ADC driver.
 
@@ -13,12 +15,6 @@ config ADC_MCP320X
 	  with SPI interface.
 
 if ADC_MCP320X
-
-config ADC_MCP320X_INIT_PRIORITY
-	int "Init priority"
-	default 80
-	help
-	  MCP320x ADC device driver initialization priority.
 
 config ADC_MCP320X_ACQUISITION_THREAD_STACK_SIZE
 	int "Stack size for the ADC data acquisition thread"

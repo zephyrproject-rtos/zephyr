@@ -4,13 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <kernel_internal.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/sys/multi_heap.h>
 #include "test_mheap.h"
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define OVERFLOW_SIZE    SIZE_MAX
+
+#define NMEMB   8
+#define SIZE    16
+#define BOUNDS  (NMEMB * SIZE)
+
+#define N_MULTI_HEAPS 4
+#define MHEAP_BYTES 128
+
+static struct sys_multi_heap multi_heap;
+static char heap_mem[N_MULTI_HEAPS][MHEAP_BYTES];
+static struct sys_heap mheaps[N_MULTI_HEAPS];
 
 K_SEM_DEFINE(thread_sem, 0, 1);
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
@@ -53,7 +65,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
  *
  * @see k_malloc()
  */
-void test_mheap_malloc_free(void)
+ZTEST(mheap_api, test_mheap_malloc_free)
 {
 	void *block[2 * BLK_NUM_MAX], *block_fail;
 	int nb;
@@ -89,10 +101,6 @@ void test_mheap_malloc_free(void)
 	zassert_is_null(block_fail, NULL);
 }
 
-#define NMEMB   8
-#define SIZE    16
-#define BOUNDS  (NMEMB * SIZE)
-
 /**
  * @brief Test to demonstrate k_calloc() API functionality.
  *
@@ -108,7 +116,7 @@ void test_mheap_malloc_free(void)
  *
  * @see k_calloc()
  */
-void test_mheap_calloc(void)
+ZTEST(mheap_api, test_mheap_calloc)
 {
 	char *mem;
 
@@ -132,7 +140,7 @@ void test_mheap_calloc(void)
 	k_free(mem);
 }
 
-void test_k_aligned_alloc(void)
+ZTEST(mheap_api, test_k_aligned_alloc)
 {
 	void *r;
 
@@ -174,7 +182,7 @@ void test_k_aligned_alloc(void)
  *
  * @see k_thread_system_pool_assign(), z_thread_malloc(), k_free()
  */
-void test_sys_heap_mem_pool_assign(void)
+ZTEST(mheap_api, test_sys_heap_mem_pool_assign)
 {
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		return;
@@ -203,7 +211,7 @@ void test_sys_heap_mem_pool_assign(void)
  *
  * @see z_thread_malloc(), k_free()
  */
-void test_malloc_in_isr(void)
+ZTEST(mheap_api, test_malloc_in_isr)
 {
 	if (!IS_ENABLED(CONFIG_IRQ_OFFLOAD)) {
 		return;
@@ -222,7 +230,7 @@ void test_malloc_in_isr(void)
  *
  * @see z_thread_malloc()
  */
-void test_malloc_in_thread(void)
+ZTEST(mheap_api, test_malloc_in_thread)
 {
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		return;
@@ -235,4 +243,56 @@ void test_malloc_in_thread(void)
 	k_sem_take(&thread_sem, K_FOREVER);
 
 	k_thread_abort(tid);
+}
+
+void *multi_heap_choice(struct sys_multi_heap *mheap, void *cfg,
+			size_t align, size_t size)
+{
+	struct sys_heap *h = &mheaps[(int)(long)cfg];
+
+	return sys_heap_aligned_alloc(h, align, size);
+}
+
+ZTEST(mheap_api, test_multi_heap)
+{
+	char *blocks[N_MULTI_HEAPS];
+
+	sys_multi_heap_init(&multi_heap, multi_heap_choice);
+	for (int i = 0; i < N_MULTI_HEAPS; i++) {
+		sys_heap_init(&mheaps[i], &heap_mem[i][0], MHEAP_BYTES);
+		sys_multi_heap_add_heap(&multi_heap, &mheaps[i], NULL);
+	}
+
+	/* Allocate half the buffer from each heap, make sure it works
+	 * and that the pointer is in the correct memory
+	 */
+	for (int i = 0; i < N_MULTI_HEAPS; i++) {
+		blocks[i] = sys_multi_heap_alloc(&multi_heap, (void *)(long)i,
+						 MHEAP_BYTES / 2);
+
+		zassert_not_null(blocks[i], "allocation failed");
+		zassert_true(blocks[i] >= &heap_mem[i][0] &&
+			     blocks[i] < &heap_mem[i+1][0],
+			     "allocation not in correct heap");
+	}
+
+	/* Make sure all heaps fail to allocate another */
+	for (int i = 0; i < N_MULTI_HEAPS; i++) {
+		void *b = sys_multi_heap_alloc(&multi_heap, (void *)(long)i,
+					       MHEAP_BYTES / 2);
+
+		zassert_is_null(b, "second allocation succeeded?");
+	}
+
+	/* Free all blocks */
+	for (int i = 0; i < N_MULTI_HEAPS; i++) {
+		sys_multi_heap_free(&multi_heap, blocks[i]);
+	}
+
+	/* Allocate again to make sure they're still valid */
+	for (int i = 0; i < N_MULTI_HEAPS; i++) {
+		blocks[i] = sys_multi_heap_alloc(&multi_heap, (void *)(long)i,
+						 MHEAP_BYTES / 2);
+		zassert_not_null(blocks[i], "final re-allocation failed");
+	}
 }

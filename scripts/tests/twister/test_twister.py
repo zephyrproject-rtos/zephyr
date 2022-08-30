@@ -14,7 +14,7 @@ ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 import scl
-from twisterlib import TwisterConfigParser
+from twisterlib.testplan import TwisterConfigParser
 
 def test_yamlload():
     """ Test to check if loading the non-existent files raises the errors """
@@ -24,10 +24,10 @@ def test_yamlload():
 
 
 @pytest.mark.parametrize("filename, schema",
-                         [("testcase_correct_schema.yaml", "testcase-schema.yaml"),
+                         [("testsuite_correct_schema.yaml", "testsuite-schema.yaml"),
                           ("platform_correct_schema.yaml", "platform-schema.yaml")])
 def test_correct_schema(filename, schema, test_data):
-    """ Test to validate the testcase schema"""
+    """ Test to validate the testsuite schema"""
     filename = test_data + filename
     schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/schemas/twister//' + schema)
     data = TwisterConfigParser(filename, schema)
@@ -36,10 +36,10 @@ def test_correct_schema(filename, schema, test_data):
 
 
 @pytest.mark.parametrize("filename, schema",
-                         [("testcase_incorrect_schema.yaml", "testcase-schema.yaml"),
+                         [("testsuite_incorrect_schema.yaml", "testsuite-schema.yaml"),
                           ("platform_incorrect_schema.yaml", "platform-schema.yaml")])
 def test_incorrect_schema(filename, schema, test_data):
-    """ Test to validate the exception is raised for incorrect testcase schema"""
+    """ Test to validate the exception is raised for incorrect testsuite schema"""
     filename = test_data + filename
     schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/schemas/twister//' + schema)
     with pytest.raises(Exception) as exception:

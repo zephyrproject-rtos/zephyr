@@ -14,15 +14,15 @@
  * global variable.)
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <kernel_structs.h>
-#include <sys/__assert.h>
-#include <sys/printk.h>
-#include <irq.h>
-#include <tracing/tracing.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/irq.h>
+#include <zephyr/tracing/tracing.h>
 #include <kswap.h>
-#include <arch/x86/ia32/segmentation.h>
+#include <zephyr/arch/x86/ia32/segmentation.h>
 
 extern void z_SpuriousIntHandler(void *handler);
 extern void z_SpuriousIntNoErrCodeHandler(void *handler);
@@ -193,7 +193,7 @@ extern const struct pseudo_descriptor z_x86_idt;
 
 static void idt_vector_install(int vector, void *irq_handler)
 {
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 	z_init_irq_gate(&z_x86_idt.entries[vector], CODE_SEG,

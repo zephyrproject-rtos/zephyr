@@ -3,11 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
-#include <devicetree.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/clock_control_litex.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_litex.h>
 /* Test defines */
 
 /* Select clock outputs for tests [0-6] */
@@ -101,11 +101,13 @@ int litex_clk_test_single(const struct device *dev)
 
 	printf("Single test\n");
 	ret = clock_control_on(dev, sub_system1);
-	if (ret != 0)
+	if (ret != 0) {
 		return ret;
+	}
 	ret = clock_control_on(dev, sub_system2);
-	if (ret != 0)
+	if (ret != 0) {
 		return ret;
+	}
 
 	litex_clk_test_getters(dev);
 
@@ -143,12 +145,14 @@ int litex_clk_test_freq(const struct device *dev)
 			 *
 			 */
 			ret = clock_control_on(dev, sub_system);
-			if (ret != 0 && ret != -ENOTSUP)
+			if (ret != 0 && ret != -ENOTSUP) {
 				return ret;
+			}
 			setup.clkout_nr = LITEX_CLK_TEST_CLK2;
 			ret = clock_control_on(dev, sub_system);
-			if (ret != 0)
+			if (ret != 0) {
 				return ret;
+			}
 			k_sleep(K_MSEC(LITEX_TEST_FREQUENCY_DELAY_MS));
 		}
 		for (i = LITEX_TEST_FREQUENCY_MAX; i > LITEX_TEST_FREQUENCY_MIN;
@@ -157,12 +161,14 @@ int litex_clk_test_freq(const struct device *dev)
 			setup.rate = i;
 			sub_system = (clock_control_subsys_t *)&setup;
 			ret = clock_control_on(dev, sub_system);
-			if (ret != 0 && ret != -ENOTSUP)
+			if (ret != 0 && ret != -ENOTSUP) {
 				return ret;
+			}
 			setup.clkout_nr = LITEX_CLK_TEST_CLK2;
 			ret = clock_control_on(dev, sub_system);
-			if (ret != 0)
+			if (ret != 0) {
 				return ret;
+			}
 			k_sleep(K_MSEC(LITEX_TEST_FREQUENCY_DELAY_MS));
 		}
 	} while (LITEX_TEST_LOOP);
@@ -191,8 +197,9 @@ int litex_clk_test_phase(const struct device *dev)
 	printf("Phase test\n");
 
 	ret = clock_control_on(dev, sub_system1);
-	if (ret != 0 && ret != -ENOTSUP)
+	if (ret != 0 && ret != -ENOTSUP) {
 		return ret;
+	}
 
 	do {
 		for (i = LITEX_TEST_PHASE_MIN; i <= LITEX_TEST_PHASE_MAX;
@@ -200,8 +207,9 @@ int litex_clk_test_phase(const struct device *dev)
 			setup2.phase = i;
 			sub_system2 = (clock_control_subsys_t *)&setup2;
 			ret = clock_control_on(dev, sub_system2);
-			if (ret != 0)
+			if (ret != 0) {
 				return ret;
+			}
 			k_sleep(K_MSEC(LITEX_TEST_PHASE_DELAY_MS));
 		}
 	} while (LITEX_TEST_LOOP);
@@ -228,11 +236,13 @@ int litex_clk_test_duty(const struct device *dev)
 	clock_control_subsys_t sub_system2 = (clock_control_subsys_t *)&setup2;
 
 	ret = clock_control_on(dev, sub_system1);
-	if (ret != 0 && ret != -ENOTSUP)
+	if (ret != 0 && ret != -ENOTSUP) {
 		return ret;
+	}
 	ret = clock_control_on(dev, sub_system2);
-	if (ret != 0 && ret != -ENOTSUP)
+	if (ret != 0 && ret != -ENOTSUP) {
 		return ret;
+	}
 
 	printf("Duty test\n");
 
@@ -242,13 +252,15 @@ int litex_clk_test_duty(const struct device *dev)
 			setup1.duty = i;
 			sub_system1 = (clock_control_subsys_t *)&setup1;
 			ret = clock_control_on(dev, sub_system1);
-			if (ret != 0)
+			if (ret != 0) {
 				return ret;
+			}
 			setup2.duty = 100 - i;
 			sub_system2 = (clock_control_subsys_t *)&setup2;
 			ret = clock_control_on(dev, sub_system2);
-			if (ret != 0)
+			if (ret != 0) {
 				return ret;
+			}
 			k_sleep(K_MSEC(LITEX_TEST_DUTY_DELAY_MS));
 		}
 		for (i = LITEX_TEST_DUTY_MAX; i > LITEX_TEST_DUTY_MIN;
@@ -256,13 +268,15 @@ int litex_clk_test_duty(const struct device *dev)
 			setup1.duty = i;
 			sub_system1 = (clock_control_subsys_t *)&setup1;
 			ret = clock_control_on(dev, sub_system1);
-			if (ret != 0)
+			if (ret != 0) {
 				return ret;
+			}
 			setup2.duty = 100 - i;
 			sub_system2 = (clock_control_subsys_t *)&setup2;
 			ret = clock_control_on(dev, sub_system2);
-			if (ret != 0)
+			if (ret != 0) {
 				return ret;
+			}
 			k_sleep(K_MSEC(LITEX_TEST_DUTY_DELAY_MS));
 		}
 	} while (LITEX_TEST_LOOP);
@@ -297,14 +311,13 @@ int litex_clk_test(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev;
+	const struct device *const dev = DEVICE_DT_GET(MMCM);
 
 	printf("Clock Control Example! %s\n", CONFIG_ARCH);
 
-	printf("device name: %s\n", MMCM_NAME);
-	dev = device_get_binding(MMCM_NAME);
-	if (!dev) {
-		printf("error: no %s device\n", MMCM_NAME);
+	printf("device name: %s\n", dev->name);
+	if (!device_is_ready(dev)) {
+		printf("error: device %s is not ready\n", dev->name);
 		return;
 	}
 

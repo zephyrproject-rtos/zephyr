@@ -3,8 +3,16 @@
 # Copyright (c) 2016 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+if BOARD_NRF52840DK_NRF52840
+
 config BOARD_ENABLE_DCDC
-	bool "Enable DCDC mode"
+	bool "DCDC mode"
 	select SOC_DCDC_NRF52X
 	default y
-	depends on BOARD_NRF52840DK_NRF52840
+
+config BOARD_ENABLE_DCDC_HV
+	bool "High Voltage DCDC converter"
+	select SOC_DCDC_NRF52X_HV
+	default y
+
+endif # BOARD_NRF52840DK_NRF52840

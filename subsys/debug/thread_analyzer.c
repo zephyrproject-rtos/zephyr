@@ -8,11 +8,12 @@
  *  @brief Thread analyzer implementation
  */
 
-#include <kernel.h>
-#include <debug/thread_analyzer.h>
-#include <debug/stack.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <kernel_internal.h>
+#include <zephyr/debug/thread_analyzer.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <stdio.h>
 
 LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
@@ -24,7 +25,7 @@ LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
 #else
 #define THREAD_ANALYZER_PRINT(...) LOG_INF(__VA_ARGS__)
 #define THREAD_ANALYZER_FMT(str)   str
-#define THREAD_ANALYZER_VSTR(str)  log_strdup(str)
+#define THREAD_ANALYZER_VSTR(str)  str
 #endif
 
 /* @brief Maximum length of the pointer when converted to string
@@ -46,6 +47,20 @@ static void thread_print_cb(struct thread_analyzer_info *info)
 		info->stack_size - info->stack_used, info->stack_used,
 		info->stack_size, pcnt,
 		info->utilization);
+
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	THREAD_ANALYZER_PRINT(
+		THREAD_ANALYZER_FMT("      : Total CPU cycles used: %llu"),
+		info->usage.total_cycles);
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+	THREAD_ANALYZER_PRINT(
+		THREAD_ANALYZER_FMT(
+			"         - Current Frame: %llu; Longest Frame: %llu; Average Frame: %llu"),
+		info->usage.current_cycles, info->usage.peak_cycles,
+		info->usage.average_cycles);
+#endif
+#endif
 #else
 	THREAD_ANALYZER_PRINT(
 		THREAD_ANALYZER_FMT(
@@ -61,7 +76,6 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	struct k_thread *thread = (struct k_thread *)cthread;
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	k_thread_runtime_stats_t rt_stats_all;
-	k_thread_runtime_stats_t rt_stats_thread;
 	int ret;
 #endif
 	size_t size = thread->stack_info.size;
@@ -97,7 +111,7 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	ret = 0;
 
-	if (k_thread_runtime_stats_get(thread, &rt_stats_thread) != 0) {
+	if (k_thread_runtime_stats_get(thread, &info.usage) != 0) {
 		ret++;
 	}
 
@@ -105,11 +119,33 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 		ret++;
 	}
 	if (ret == 0) {
-		info.utilization = (rt_stats_thread.execution_cycles * 100U) /
+		info.utilization = (info.usage.execution_cycles * 100U) /
 			rt_stats_all.execution_cycles;
 	}
 #endif
 	cb(&info);
+}
+
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+			     CONFIG_ISR_STACK_SIZE);
+
+static void isr_stacks(void)
+{
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		const uint8_t *buf = Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
+		size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
+		size_t unused;
+		int err;
+
+		err = z_stack_space_get(buf, size, &unused);
+		if (err == 0) {
+			THREAD_ANALYZER_PRINT(
+				THREAD_ANALYZER_FMT(
+					" %s%-17d: STACK: unused %zu usage %zu / %zu (%zu %%)"),
+					THREAD_ANALYZER_VSTR("ISR"), i, unused,
+					size - unused, size, (100 * (size - unused)) / size);
+		}
+	}
 }
 
 void thread_analyzer_run(thread_analyzer_cb cb)
@@ -118,6 +154,10 @@ void thread_analyzer_run(thread_analyzer_cb cb)
 		k_thread_foreach_unlocked(thread_analyze_cb, cb);
 	} else {
 		k_thread_foreach(thread_analyze_cb, cb);
+	}
+
+	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_ISR_STACK_USAGE)) {
+		isr_stacks();
 	}
 }
 

@@ -10,9 +10,9 @@
  *
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <spinlock.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/spinlock.h>
 #include <kernel_internal.h>
 
 static struct k_spinlock arc_connect_spinlock;

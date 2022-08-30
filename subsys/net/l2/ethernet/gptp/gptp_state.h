@@ -559,7 +559,7 @@ struct gptp_port_bmca_data {
 	bool rcvd_msg;
 
 	/** Indicate if PortAnnounceInformation should copy the newly determined
-	 * master_prioriry and master_steps_removed.
+	 * master_priority and master_steps_removed.
 	 */
 	bool updt_info;
 

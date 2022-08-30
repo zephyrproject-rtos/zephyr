@@ -33,7 +33,7 @@ config SETTINGS_ENCODE_LEN
 	depends on SETTINGS
 	bool
 
-choice
+choice SETTINGS_BACKEND
 	prompt "Storage back-end"
 	default SETTINGS_NVS if NVS
 	default SETTINGS_FCB if FCB
@@ -124,3 +124,12 @@ config SETTINGS_NVS_SECTOR_COUNT
 	depends on SETTINGS && SETTINGS_NVS
 	help
 	  Number of sectors used for the NVS settings area
+
+config SETTINGS_SHELL
+	bool "Settings shell"
+	depends on SETTINGS && SHELL
+	help
+	  Enable shell commands for listing and reading the settings. Note that
+	  reading the settings requires quite a big stack buffer, so the stack
+	  size of the shell thread may need to be increased to accommodate this
+	  feature.

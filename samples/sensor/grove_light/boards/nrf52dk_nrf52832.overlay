@@ -6,8 +6,7 @@
 
 / {
 	ntc {
-		label = "GLS";
-		compatible = "grove,light";
+		compatible = "seeed,grove-light";
 		io-channels = <&arduino_adc 0>;
 	};
 };

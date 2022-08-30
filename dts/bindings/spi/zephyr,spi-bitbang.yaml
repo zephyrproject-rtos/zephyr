@@ -1,0 +1,29 @@
+# Copyright 2021 Marc Reilly, Creative Product Design
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr SPI Bitbang driver
+
+compatible: "zephyr,spi-bitbang"
+
+include: spi-controller.yaml
+
+properties:
+    clk-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        Clock gpio info
+
+    mosi-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        MOSI gpio info. Output pin for Master Out Slave In.
+        If this is not provided then the driver will transmit 0s
+
+    miso-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        MISO gpio info. Input pin for Master In Slave Out.
+        If this is not provided the driver will read 0s

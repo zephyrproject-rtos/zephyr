@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
 
 extern const int _k_neg_eagain;
@@ -42,7 +42,7 @@ int arch_swap(unsigned int key)
 
 	/* clear mask or enable all irqs to take a pendsv */
 	irq_unlock(0);
-#elif defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 	z_arm_cortex_r_svc();
 	irq_unlock(key);
 #endif

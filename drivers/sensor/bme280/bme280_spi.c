@@ -10,35 +10,19 @@
  * Bus-specific functionality for BME280s accessed via SPI.
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "bme280.h"
 
 #if BME280_BUS_SPI
 
 LOG_MODULE_DECLARE(BME280, CONFIG_SENSOR_LOG_LEVEL);
 
-static int bme280_bus_check_spi(const struct device *bus,
-				const union bme280_bus_config *bus_config)
+static int bme280_bus_check_spi(const union bme280_bus *bus)
 {
-	const struct spi_cs_control *cs;
-
-	if (!device_is_ready(bus)) {
-		LOG_DBG("SPI bus %s not ready", bus->name);
-		return -ENODEV;
-	}
-
-	cs = bus_config->spi_cfg.cs;
-	if (cs && !device_is_ready(cs->gpio_dev)) {
-		LOG_DBG("SPI CS GPIO controller %s not ready",
-			cs->gpio_dev->name);
-		return -ENODEV;
-	}
-
-	return 0;
+	return spi_is_ready(&bus->spi) ? 0 : -ENODEV;
 }
 
-static int bme280_reg_read_spi(const struct device *bus,
-			       const union bme280_bus_config *bus_config,
+static int bme280_reg_read_spi(const union bme280_bus *bus,
 			       uint8_t start, uint8_t *buf, int size)
 {
 	uint8_t addr;
@@ -68,7 +52,7 @@ static int bme280_reg_read_spi(const struct device *bus,
 		addr = (start + i) | 0x80;
 		rx_buf[1].buf = &buf[i];
 
-		ret = spi_transceive(bus, &bus_config->spi_cfg, &tx, &rx);
+		ret = spi_transceive_dt(&bus->spi, &tx, &rx);
 		if (ret) {
 			LOG_DBG("spi_transceive FAIL %d\n", ret);
 			return ret;
@@ -78,8 +62,7 @@ static int bme280_reg_read_spi(const struct device *bus,
 	return 0;
 }
 
-static int bme280_reg_write_spi(const struct device *bus,
-				const union bme280_bus_config *bus_config,
+static int bme280_reg_write_spi(const union bme280_bus *bus,
 				uint8_t reg, uint8_t val)
 {
 	uint8_t cmd[] = { reg & 0x7F, val };
@@ -93,7 +76,7 @@ static int bme280_reg_write_spi(const struct device *bus,
 	};
 	int ret;
 
-	ret = spi_write(bus, &bus_config->spi_cfg, &tx);
+	ret = spi_write_dt(&bus->spi, &tx);
 	if (ret) {
 		LOG_DBG("spi_write FAIL %d\n", ret);
 		return ret;
@@ -106,4 +89,4 @@ const struct bme280_bus_io bme280_bus_io_spi = {
 	.read = bme280_reg_read_spi,
 	.write = bme280_reg_write_spi,
 };
-#endif	/* BME280_BUS_SPI */
+#endif /* BME280_BUS_SPI */

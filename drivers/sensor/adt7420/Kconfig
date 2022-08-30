@@ -5,7 +5,9 @@
 
 menuconfig ADT7420
 	bool "ADT7420 Temperature Sensor"
-	depends on I2C && HAS_DTS_GPIO
+	default y
+	depends on DT_HAS_ADI_ADT7420_ENABLED
+	select I2C
 	help
 	  Enable the driver for Analog Devices ADT7420 High-Accuracy
 	  16-bit Digital I2C Temperature Sensors.

@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/sam4sXc-pinctrl.h>
+
+&pinctrl {
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <PA12A_SPI_MISO>,
+				 <PA13A_SPI_MOSI>,
+				 <PA14A_SPI_SPCK>,
+				 <PA31A_SPI_NPCS1>,
+				 <PA30B_SPI_NPCS2>;
+		};
+	};
+
+	twi0_default: twi0_default {
+		group1 {
+			pinmux = <PA4A_TWI0_TWCK>,
+				 <PA3A_TWI0_TWD>;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <PA9A_UART0_RXD>,
+				 <PA10A_UART0_TXD>;
+		};
+	};
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <PB2A_UART1_RXD>,
+				 <PB3A_UART1_TXD>;
+		};
+	};
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <PA21A_USART1_RXD>,
+				 <PA22A_USART1_TXD>;
+		};
+	};
+	smc_default: smc_default {
+		group1 {
+			pinmux = <PC18A_EBI_A0>,
+				 <PC19A_EBI_A1>,
+				 <PC20A_EBI_A2>,
+				 <PC21A_EBI_A3>,
+				 <PC22A_EBI_A4>,
+				 <PC23A_EBI_A5>,
+				 <PC24A_EBI_A6>,
+				 <PC25A_EBI_A7>,
+				 <PC26A_EBI_A8>,
+				 <PC27A_EBI_A9>,
+				 <PC28A_EBI_A10>,
+				 <PC29A_EBI_A11>,
+				 <PC30A_EBI_A12>,
+				 <PC31A_EBI_A13>,
+				 <PA18C_EBI_A14>,
+				 <PA19C_EBI_A15>,
+				 <PA20C_EBI_A16>,
+				 <PA0C_EBI_A17>,
+				 <PA1C_EBI_A18>,
+				 <PC0A_EBI_D0>,
+				 <PC1A_EBI_D1>,
+				 <PC2A_EBI_D2>,
+				 <PC3A_EBI_D3>,
+				 <PC4A_EBI_D4>,
+				 <PC5A_EBI_D5>,
+				 <PC6A_EBI_D6>,
+				 <PC7A_EBI_D7>,
+				 <PC14A_EBI_NCS0>,
+				 <PC15A_EBI_NCS1>,
+				 <PC11A_EBI_NRD>,
+				 <PC8A_EBI_NWE>;
+		};
+	};
+};

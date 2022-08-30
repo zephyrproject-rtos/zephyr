@@ -6,16 +6,16 @@
 
 #define DT_DRV_COMPAT sensirion_sht4x
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <sys/crc.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
 
-#include <drivers/sensor/sht4x.h>
+#include <zephyr/drivers/sensor/sht4x.h>
 #include "sht4x.h"
 
 LOG_MODULE_REGISTER(SHT4X, CONFIG_SENSOR_LOG_LEVEL);
@@ -34,7 +34,7 @@ static int sht4x_write_command(const struct device *dev, uint8_t cmd)
 	const struct sht4x_config *cfg = dev->config;
 	uint8_t tx_buf[1] = { cmd };
 
-	return i2c_write(cfg->bus, tx_buf, sizeof(tx_buf), cfg->i2c_addr);
+	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
 static int sht4x_read_sample(const struct device *dev,
@@ -45,7 +45,7 @@ static int sht4x_read_sample(const struct device *dev,
 	uint8_t rx_buf[6];
 	int rc;
 
-	rc = i2c_read(cfg->bus, rx_buf, sizeof(rx_buf), cfg->i2c_addr);
+	rc = i2c_read_dt(&cfg->bus, rx_buf, sizeof(rx_buf));
 	if (rc < 0) {
 		LOG_ERR("Failed to read data from device.");
 		return rc;
@@ -185,7 +185,7 @@ static int sht4x_init(const struct device *dev)
 	const struct sht4x_config *cfg = dev->config;
 	int rc = 0;
 
-	if (!device_is_ready(cfg->bus)) {
+	if (!device_is_ready(cfg->bus.bus)) {
 		LOG_ERR("Device not ready.");
 		return -ENODEV;
 	}
@@ -212,8 +212,7 @@ static const struct sensor_driver_api sht4x_api = {
 	static struct sht4x_data sht4x_data_##n;		\
 								\
 	static const struct sht4x_config sht4x_config_##n = {	\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),		\
-		.i2c_addr = DT_INST_REG_ADDR(n),		\
+		.bus = I2C_DT_SPEC_INST_GET(n),			\
 		.repeatability = DT_INST_PROP(n, repeatability)	\
 	};							\
 								\

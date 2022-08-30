@@ -3,7 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <device.h>
+#include <zephyr/device.h>
+
+#include <zephyr/pm/device.h>
 
 #ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_
@@ -32,6 +34,10 @@ GEN_ABSOLUTE_SYM(___cpu_t_SIZEOF, sizeof(struct _cpu));
 
 GEN_OFFSET_SYM(_kernel_t, cpus);
 
+#if defined(CONFIG_FPU_SHARING)
+GEN_OFFSET_SYM(_cpu_t, fp_ctx);
+#endif
+
 #if defined(CONFIG_THREAD_MONITOR)
 GEN_OFFSET_SYM(_kernel_t, threads);
 #endif
@@ -40,7 +46,9 @@ GEN_OFFSET_SYM(_kernel_t, threads);
 GEN_OFFSET_SYM(_kernel_t, idle);
 #endif
 
+#ifndef CONFIG_SCHED_CPU_MASK_PIN_ONLY
 GEN_OFFSET_SYM(_kernel_t, ready_q);
+#endif
 
 #ifndef CONFIG_SMP
 GEN_OFFSET_SYM(_ready_q_t, cache);
@@ -94,6 +102,18 @@ GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_SIZEOF, sizeof(const struct device));
 /* member offsets in the device structure. Used in image post-processing */
 GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_HANDLES_OFFSET,
 		 offsetof(struct device, handles));
+
+#ifdef CONFIG_PM_DEVICE
+GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_PM_OFFSET,
+		 offsetof(struct device, pm));
+#endif
+
+/* member offsets in the pm_device structure. Used in image post-processing */
+
+GEN_ABSOLUTE_SYM(_PM_DEVICE_STRUCT_FLAGS_OFFSET,
+		 offsetof(struct pm_device, flags));
+
+GEN_ABSOLUTE_SYM(_PM_DEVICE_FLAG_PD, PM_DEVICE_FLAG_PD);
 
 /* LCOV_EXCL_STOP */
 #endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_ */

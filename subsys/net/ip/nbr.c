@@ -6,12 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_nbr, CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL);
 
 #include <errno.h>
 
-#include <net/net_core.h>
+#include <zephyr/net/net_core.h>
 
 #include "net_private.h"
 
@@ -223,9 +223,9 @@ void net_nbr_print(struct net_nbr_table *table)
 				nbr->idx,
 				nbr->idx == NET_NBR_LLADDR_UNKNOWN ?
 				"<unknown>" :
-				log_strdup(net_sprint_ll_addr(
+				net_sprint_ll_addr(
 				   net_neighbor_lladdr[nbr->idx].lladdr.addr,
-				   net_neighbor_lladdr[nbr->idx].lladdr.len)));
+				   net_neighbor_lladdr[nbr->idx].lladdr.len));
 		}
 	}
 }

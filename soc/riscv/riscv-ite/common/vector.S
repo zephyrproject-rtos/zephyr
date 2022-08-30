@@ -6,23 +6,31 @@
  */
 
 #include "chip_chipregs.h"
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /* exports */
 GTEXT(__start)
 
 /* imports */
 GTEXT(__initialize)
-GTEXT(__irq_wrapper)
+GTEXT(_isr_wrapper)
 
 SECTION_FUNC(vectors, __start)
+#ifdef CONFIG_RISCV_GP
+	.option push
+	.option norelax
+	/* Configure the GP register */
+	la gp, __global_pointer$
+	.option pop
+#endif
+
 	.option norvc;
 
 	/*
 	 * Set mtvec (Machine Trap-Vector Base-Address Register)
-	 * to __irq_wrapper.
+	 * to _isr_wrapper.
 	 */
-	la t0, __irq_wrapper
+	la t0, _isr_wrapper
 	csrw mtvec, t0
 	csrwi mie, 0
 

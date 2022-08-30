@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT xlnx_xps_spi_2_00_a
 
-#include <device.h>
-#include <drivers/spi.h>
-#include <sys/sys_io.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(xlnx_quadspi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
@@ -150,6 +150,11 @@ static int xlnx_quadspi_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	if (spi_cfg->slave >= config->num_ss_bits) {
 		LOG_ERR("unsupported slave %d, num_ss_bits %d",
 			spi_cfg->slave, config->num_ss_bits);
@@ -214,10 +219,6 @@ static int xlnx_quadspi_configure(const struct device *dev,
 
 	ctx->config = spi_cfg;
 
-	if (!IS_ENABLED(CONFIG_SPI_SLAVE) || !spi_context_is_slave(ctx)) {
-		spi_context_cs_configure(ctx);
-	}
-
 	return 0;
 }
 
@@ -242,7 +243,7 @@ static void xlnx_quadspi_start_tx(const struct device *dev)
 			xlnx_quadspi_write32(dev, spicr, SPICR_OFFSET);
 		}
 
-		spi_context_complete(ctx, 0);
+		spi_context_complete(ctx, dev, 0);
 		return;
 	}
 
@@ -300,7 +301,7 @@ static void xlnx_quadspi_start_tx(const struct device *dev)
 		xlnx_quadspi_write32(dev, spicr | SPICR_TX_FIFO_RESET,
 				     SPICR_OFFSET);
 
-		spi_context_complete(ctx, -ENOTSUP);
+		spi_context_complete(ctx, dev, -ENOTSUP);
 	}
 
 	if (!IS_ENABLED(CONFIG_SPI_SLAVE) || !spi_context_is_slave(ctx)) {
@@ -314,14 +315,16 @@ static int xlnx_quadspi_transceive(const struct device *dev,
 				   const struct spi_config *spi_cfg,
 				   const struct spi_buf_set *tx_bufs,
 				   const struct spi_buf_set *rx_bufs,
-				   bool async, struct k_poll_signal *signal)
+				   bool async,
+				   spi_callback_t cb,
+				   void *userdata)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
 	struct xlnx_quadspi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int ret;
 
-	spi_context_lock(ctx, async, signal, spi_cfg);
+	spi_context_lock(ctx, async, cb, userdata, spi_cfg);
 
 	ret = xlnx_quadspi_configure(dev, spi_cfg);
 	if (ret) {
@@ -348,7 +351,7 @@ static int xlnx_quadspi_transceive_blocking(const struct device *dev,
 					    const struct spi_buf_set *rx_bufs)
 {
 	return xlnx_quadspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, false,
-				       NULL);
+				       NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -356,10 +359,11 @@ static int xlnx_quadspi_transceive_async(const struct device *dev,
 					 const struct spi_config *spi_cfg,
 					 const struct spi_buf_set *tx_bufs,
 					 const struct spi_buf_set *rx_bufs,
-					 struct k_poll_signal *signal)
+					 spi_callback_t cb,
+					 void *userdata)
 {
 	return xlnx_quadspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, true,
-				       signal);
+				       cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -436,6 +440,7 @@ static void xlnx_quadspi_isr(const struct device *dev)
 
 static int xlnx_quadspi_init(const struct device *dev)
 {
+	int err;
 	const struct xlnx_quadspi_config *config = dev->config;
 	struct xlnx_quadspi_data *data = dev->data;
 
@@ -447,6 +452,11 @@ static int xlnx_quadspi_init(const struct device *dev)
 	/* Enable DTR Empty interrupt */
 	xlnx_quadspi_write32(dev, IPIXR_DTR_EMPTY, IPIER_OFFSET);
 	xlnx_quadspi_write32(dev, DGIER_GIE, DGIER_OFFSET);
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -475,13 +485,14 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 	static struct xlnx_quadspi_data xlnx_quadspi_data_##n = {	\
 		SPI_CONTEXT_INIT_LOCK(xlnx_quadspi_data_##n, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(xlnx_quadspi_data_##n, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n, &xlnx_quadspi_init,			\
 			    NULL,					\
 			    &xlnx_quadspi_data_##n,			\
 			    &xlnx_quadspi_config_##n, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &xlnx_quadspi_driver_api);			\
 									\
 	static void xlnx_quadspi_config_func_##n(const struct device *dev)	\

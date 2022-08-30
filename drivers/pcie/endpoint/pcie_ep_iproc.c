@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/dma.h>
-#include <drivers/pcie/endpoint/pcie_ep.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/pcie/endpoint/pcie_ep.h>
 
 #define LOG_LEVEL CONFIG_PCIE_EP_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(iproc_pcie);
 
 #include "pcie_ep_iproc.h"
@@ -163,8 +163,9 @@ static int iproc_pcie_register_reset_cb(const struct device *dev,
 {
 	struct iproc_pcie_ep_ctx *ctx = dev->data;
 
-	if (reset < PCIE_PERST || reset >= PCIE_RESET_MAX)
+	if (reset < PCIE_PERST || reset >= PCIE_RESET_MAX) {
 		return -EINVAL;
+	}
 
 	LOG_DBG("Registering the callback for reset %d", reset);
 	ctx->reset_cb[reset] = cb;

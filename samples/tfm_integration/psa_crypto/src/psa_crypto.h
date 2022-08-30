@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include "psa/crypto.h"
 #include "psa/error.h"
@@ -22,6 +22,12 @@ void crp_test_rng(void);
  * @brief Runs a series of PSA Cryptography API test functions.
  */
 void crp_test(void);
+
+/**
+ * @brief Generates device certificate signing request (CSR) using Mbed TLS
+ * X.509 and TF-M crypto service.
+ */
+void crp_generate_csr(void);
 
 #ifdef __cplusplus
 }

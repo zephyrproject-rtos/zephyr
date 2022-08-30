@@ -7,7 +7,7 @@
 
 / {
 	resources {
-		compatible = "test,gpio_basic_api";
+		compatible = "test-gpio-basic-api";
 		out-gpios = <&gpio0 18 0>; /* Pmod3 pin 9  */
 		in-gpios = <&gpio0 19 0>;  /* Pmod3 pin 10 */
 	};

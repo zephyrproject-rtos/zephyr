@@ -8,7 +8,7 @@
 
 #include <soc.h>
 #include <stm32_ll_hsem.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 /** HW semaphore Complement ID list defined in hw_conf.h from STM32WB
@@ -69,6 +69,12 @@
 /** Index of the semaphore used to access the EXTI */
 #define CFG_HW_EXTI_SEMID                                       9U
 
+/** Index of the semaphore for CPU1 mailbox */
+#define CFG_HW_IPM_CPU1_SEMID                                   10U
+
+/** Index of the semaphore for CPU2 mailbox */
+#define CFG_HW_IPM_CPU2_SEMID                                   11U
+
 #elif defined(CONFIG_SOC_SERIES_STM32MP1X)
 /** HW semaphore from STM32MP1
  * EXTI and GPIO are inherited from STM32MP1 Linux.
@@ -94,6 +100,8 @@
 #define CFG_HW_RNG_SEMID                      0U
 #define CFG_HW_GPIO_SEMID                     0U
 #define CFG_HW_EXTI_SEMID                     0U
+#define CFG_HW_IPM_CPU1_SEMID                 0U
+#define CFG_HW_IPM_CPU2_SEMID                 0U
 
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 
@@ -122,6 +130,22 @@ static inline void z_stm32_hsem_lock(uint32_t  hsem, uint32_t retry)
 }
 
 /**
+ * @brief Try to lock Hardware Semaphore
+ */
+static inline int z_stm32_hsem_try_lock(uint32_t hsem)
+{
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE) \
+	|| defined(CONFIG_SOC_SERIES_STM32MP1X)
+
+	if (LL_HSEM_1StepLock(HSEM, hsem)) {
+		return -EAGAIN;
+	}
+#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE || ... */
+
+	return 0;
+}
+
+/**
  * @brief Release Hardware Semaphore
  */
 static inline void z_stm32_hsem_unlock(uint32_t  hsem)
@@ -130,6 +154,22 @@ static inline void z_stm32_hsem_unlock(uint32_t  hsem)
 	|| defined(CONFIG_SOC_SERIES_STM32MP1X)
 	LL_HSEM_ReleaseLock(HSEM, hsem, 0);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE || ... */
+}
+
+/**
+ * @brief Indicates whether Hardware Semaphore is owned by this core
+ */
+static inline bool z_stm32_hsem_is_owned(uint32_t hsem)
+{
+	bool owned = false;
+
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE) \
+	|| defined(CONFIG_SOC_SERIES_STM32MP1X)
+
+	owned = LL_HSEM_GetCoreId(HSEM, hsem) == LL_HSEM_COREID;
+#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE || ... */
+
+	return owned;
 }
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_HSEM_STM32_HSEM_H_ */

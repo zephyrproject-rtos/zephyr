@@ -15,7 +15,7 @@ Requirements
 This sample just requires the ArgonKey board. The board can be powered
 in either one of the following two ways:
 
-- mezzanine mode, plugging the ArgonKey to HiKey board thru its 96Board
+- mezzanine mode, plugging the ArgonKey to HiKey board through its 96Board
   low-speed connector
 - standalone mode, supplying 5V directly on P1 connector
 
@@ -29,10 +29,10 @@ build correctly. Example:
 .. code-block:: c
 
     #ifdef CONFIG_HTS221
-      struct device *hum_dev = device_get_binding("HTS221");
+      struct device *hum_dev = DEVICE_DT_GET_ONE(st_hts221);
 
-      if (!hum_dev) {
-        printk("Could not get pointer to %s sensor\n", "HTS221");
+      if (!device_is_ready(hum_dev)) {
+        printk("%s: device not ready.\n", hum_dev->name);
         return;
       }
     #endif

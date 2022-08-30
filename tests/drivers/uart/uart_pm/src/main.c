@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/uart.h>
-#include <device.h>
-#include <pm/device.h>
-#include <ztest.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/ztest.h>
 
 #if defined(CONFIG_BOARD_NRF52840DK_NRF52840)
 #define LABEL uart0
 #endif
 
-#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(LABEL))
+#define UART_DEVICE_DEV DT_NODELABEL(LABEL)
 #define HAS_RX DT_NODE_HAS_PROP(DT_NODELABEL(LABEL), rx_pin)
 
 static void polling_verify(const struct device *dev, bool is_async, bool active)
@@ -83,11 +83,11 @@ static bool async_verify(const struct device *dev, bool active)
 	zassert_equal(err, 0, "Unexpected err: %d", err);
 
 	if (HAS_RX) {
-		err = uart_rx_enable(dev, rxbuf, sizeof(rxbuf), 1);
+		err = uart_rx_enable(dev, rxbuf, sizeof(rxbuf), 1 * USEC_PER_MSEC);
 		zassert_equal(err, 0, "Unexpected err: %d", err);
 	}
 
-	err = uart_tx(dev, txbuf, sizeof(txbuf), 10);
+	err = uart_tx(dev, txbuf, sizeof(txbuf), 10 * USEC_PER_MSEC);
 	zassert_equal(err, 0, "Unexpected err: %d", err);
 
 	k_busy_wait(10000);
@@ -121,19 +121,33 @@ static void communication_verify(const struct device *dev, bool active)
 	zassert_equal(power_state, exp_state, NULL); \
 } while (0)
 
-static void state_set(const struct device *dev, enum pm_device_state state,
+static void action_run(const struct device *dev, enum pm_device_action action,
 		      int exp_err)
 {
 	int err;
-	enum pm_device_state prev_state;
+	enum pm_device_state prev_state, exp_state;
 
 	err = pm_device_state_get(dev, &prev_state);
 	zassert_equal(err, 0, "Unexpected err: %d", err);
 
-	err = pm_device_state_set(dev, state);
+	err = pm_device_action_run(dev, action);
 	zassert_equal(err, exp_err, "Unexpected err: %d", err);
 
-	enum pm_device_state exp_state = err == 0 ? state : prev_state;
+	if (err == 0) {
+		switch (action) {
+		case PM_DEVICE_ACTION_SUSPEND:
+			exp_state = PM_DEVICE_STATE_SUSPENDED;
+			break;
+		case PM_DEVICE_ACTION_RESUME:
+			exp_state = PM_DEVICE_STATE_ACTIVE;
+			break;
+		default:
+			exp_state = prev_state;
+			break;
+		}
+	} else {
+		exp_state = prev_state;
+	}
 
 	state_verify(dev, exp_state);
 }
@@ -142,22 +156,22 @@ static void test_uart_pm_in_idle(void)
 {
 	const struct device *dev;
 
-	dev = device_get_binding(UART_DEVICE_NAME);
-	zassert_true(dev != NULL, NULL);
+	dev = DEVICE_DT_GET(UART_DEVICE_DEV);
+	zassert_true(device_is_ready(dev), "uart device is not ready");
 
 	state_verify(dev, PM_DEVICE_STATE_ACTIVE);
 	communication_verify(dev, true);
 
-	state_set(dev, PM_DEVICE_STATE_LOW_POWER, 0);
+	action_run(dev, PM_DEVICE_ACTION_SUSPEND, 0);
 	communication_verify(dev, false);
 
-	state_set(dev, PM_DEVICE_STATE_ACTIVE, 0);
+	action_run(dev, PM_DEVICE_ACTION_RESUME, 0);
 	communication_verify(dev, true);
 
-	state_set(dev, PM_DEVICE_STATE_LOW_POWER, 0);
+	action_run(dev, PM_DEVICE_ACTION_SUSPEND, 0);
 	communication_verify(dev, false);
 
-	state_set(dev, PM_DEVICE_STATE_ACTIVE, 0);
+	action_run(dev, PM_DEVICE_ACTION_RESUME, 0);
 	communication_verify(dev, true);
 }
 
@@ -165,27 +179,27 @@ static void test_uart_pm_poll_tx(void)
 {
 	const struct device *dev;
 
-	dev = device_get_binding(UART_DEVICE_NAME);
-	zassert_true(dev != NULL, NULL);
+	dev = DEVICE_DT_GET(UART_DEVICE_DEV);
+	zassert_true(device_is_ready(dev), "uart device is not ready");
 
 	communication_verify(dev, true);
 
 	uart_poll_out(dev, 'a');
-	state_set(dev, PM_DEVICE_STATE_LOW_POWER, 0);
+	action_run(dev, PM_DEVICE_ACTION_SUSPEND, 0);
 
 	communication_verify(dev, false);
 
-	state_set(dev, PM_DEVICE_STATE_ACTIVE, 0);
+	action_run(dev, PM_DEVICE_ACTION_RESUME, 0);
 
 	communication_verify(dev, true);
 
 	/* Now same thing but with callback */
 	uart_poll_out(dev, 'a');
-	state_set(dev, PM_DEVICE_STATE_LOW_POWER, 0);
+	action_run(dev, PM_DEVICE_ACTION_SUSPEND, 0);
 
 	communication_verify(dev, false);
 
-	state_set(dev, PM_DEVICE_STATE_ACTIVE, 0);
+	action_run(dev, PM_DEVICE_ACTION_RESUME, 0);
 
 	communication_verify(dev, true);
 }
@@ -194,7 +208,7 @@ static void timeout(struct k_timer *timer)
 {
 	const struct device *uart = k_timer_user_data_get(timer);
 
-	state_set(uart, PM_DEVICE_STATE_LOW_POWER, 0);
+	action_run(uart, PM_DEVICE_ACTION_SUSPEND, 0);
 }
 
 static K_TIMER_DEFINE(pm_timer, timeout, NULL);
@@ -207,8 +221,8 @@ static void test_uart_pm_poll_tx_interrupted(void)
 	const struct device *dev;
 	char str[] = "test";
 
-	dev = device_get_binding(UART_DEVICE_NAME);
-	zassert_true(dev != NULL, NULL);
+	dev = DEVICE_DT_GET(UART_DEVICE_DEV);
+	zassert_true(device_is_ready(dev), "uart device is not ready");
 
 	k_timer_user_data_set(&pm_timer, (void *)dev);
 
@@ -221,7 +235,7 @@ static void test_uart_pm_poll_tx_interrupted(void)
 
 		k_timer_status_sync(&pm_timer);
 
-		state_set(dev, PM_DEVICE_STATE_ACTIVE, 0);
+		action_run(dev, PM_DEVICE_ACTION_RESUME, 0);
 
 		communication_verify(dev, true);
 	}

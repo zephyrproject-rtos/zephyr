@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ppp_stats, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <errno.h>
-#include <net/net_core.h>
-#include <net/ppp.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/ppp.h>
 
 #include "net_stats.h"
 

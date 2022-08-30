@@ -8,11 +8,12 @@
  */
 
 #include <zephyr/types.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/audio/vcs.h>
-#include <shell/shell.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/audio/vcs.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "bt.h"
 
@@ -159,10 +160,11 @@ static struct bt_vocs_cb vocs_cbs = {
 
 static int cmd_vcs_init(const struct shell *sh, size_t argc, char **argv)
 {
-	int result;
+	int result = 0;
 	struct bt_vcs_register_param vcs_param;
 	char input_desc[CONFIG_BT_VCS_AICS_INSTANCE_COUNT][16];
 	char output_desc[CONFIG_BT_VCS_VOCS_INSTANCE_COUNT][16];
+	static const char assignment_operator[] = "=";
 
 	if (!ctx_shell) {
 		ctx_shell = sh;
@@ -191,6 +193,37 @@ static int cmd_vcs_init(const struct shell *sh, size_t argc, char **argv)
 		vcs_param.aics_param[i].min_gain = -100;
 		vcs_param.aics_param[i].max_gain = 100;
 		vcs_param.aics_param[i].cb = &aics_cbs;
+	}
+
+	/* Default values */
+	vcs_param.step = 1;
+	vcs_param.mute = BT_VCS_STATE_UNMUTED;
+	vcs_param.volume = 100;
+
+	for (int i = 1; i < argc; i++) {
+		const char *operator = strstr(argv[i], assignment_operator);
+		const char *kwarg = operator ? operator + 1 : NULL;
+
+		if (kwarg) {
+			if (!strncmp(argv[i], "step", 4)) {
+				vcs_param.step = shell_strtoul(kwarg, 10, &result);
+			} else if (!strncmp(argv[i], "mute", 4)) {
+				vcs_param.mute = shell_strtobool(kwarg, 10, &result);
+			} else if (!strncmp(argv[i], "volume", 6)) {
+				vcs_param.volume = shell_strtoul(kwarg, 10, &result);
+			} else {
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+		} else {
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+
+		if (result != 0) {
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
 	}
 
 	vcs_param.cb = &vcs_cbs;
@@ -428,9 +461,9 @@ static int cmd_vcs_vocs_offset_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	if (offset > UINT8_MAX || offset < -UINT8_MAX) {
+	if (offset > BT_VOCS_MAX_OFFSET || offset < BT_VOCS_MIN_OFFSET) {
 		shell_error(sh, "Offset shall be %d-%d, was %d",
-			    -UINT8_MAX, UINT8_MAX, offset);
+			    BT_VOCS_MIN_OFFSET, BT_VOCS_MAX_OFFSET, offset);
 		return -ENOEXEC;
 	}
 
@@ -727,8 +760,9 @@ static int cmd_vcs(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(vcs_cmds,
 	SHELL_CMD_ARG(init, NULL,
-		      "Initialize the service and register callbacks",
-		      cmd_vcs_init, 1, 0),
+		      "Initialize the service and register callbacks "
+		      "[step=<uint>] [mute=<bool>] [volume=<uint>]",
+		      cmd_vcs_init, 1, 3),
 	SHELL_CMD_ARG(state_get, NULL,
 		      "Get volume state of the VCS server. Should be done "
 		      "before sending any control messages",

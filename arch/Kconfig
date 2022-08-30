@@ -33,7 +33,7 @@ config ARM
 	# FIXME: current state of the code for all ARM requires this, but
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
-	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_CORTEX_R || CPU_CORTEX_M
+	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
 	help
 	  ARM architecture
 
@@ -46,8 +46,17 @@ config ARM64
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
+	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	help
 	  ARM64 (AArch64) architecture
+
+config MIPS
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C
+	select HAS_DTS
+	help
+	  MIPS architecture
 
 config SPARC
 	bool
@@ -76,6 +85,7 @@ config X86
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_HAS_DEMAND_PAGING
+	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select NEED_LIBC_MEM_PARTITION if USERSPACE && TIMING_FUNCTIONS \
 					  && !BOARD_HAS_TIMING_FUNCTIONS \
 					  && !SOC_HAS_TIMING_FUNCTIONS
@@ -96,7 +106,13 @@ config RISCV
 	bool
 	select ARCH_IS_SET
 	select HAS_DTS
+	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select USE_SWITCH_SUPPORTED
+	select USE_SWITCH
+	select SCHED_IPI_SUPPORTED if SMP
 	imply XIP
 	help
 	  RISCV architecture
@@ -107,6 +123,8 @@ config XTENSA
 	select HAS_DTS
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
+	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select ARCH_HAS_TIMING_FUNCTIONS
 	imply ATOMIC_OPERATIONS_ARCH
 	help
 	  Xtensa architecture
@@ -132,12 +150,10 @@ config ARCH_IS_SET
 
 menu "General Architecture Options"
 
+source "arch/common/Kconfig"
+
 module = ARCH
 module-str = arch
-source "subsys/logging/Kconfig.template.log_config"
-
-module = MPU
-module-str = mpu
 source "subsys/logging/Kconfig.template.log_config"
 
 config BIG_ENDIAN
@@ -364,7 +380,7 @@ config NOCACHE_MEMORY
 menu "Interrupt Configuration"
 
 config DYNAMIC_INTERRUPTS
-	bool "Enable installation of IRQs at runtime"
+	bool "Installation of IRQs at runtime"
 	help
 	  Enable installation of interrupts at runtime, which will move some
 	  interrupt-related data structures to RAM instead of ROM, and
@@ -389,6 +405,35 @@ config GEN_IRQ_VECTOR_TABLE
 	  indexed by IRQ line. In the latter case, the vector table must be
 	  supplied by the application or architecture code.
 
+config ARCH_IRQ_VECTOR_TABLE_ALIGN
+	int "Alignment size of the interrupt vector table"
+	default 4
+	depends on GEN_IRQ_VECTOR_TABLE
+	help
+	  This option controls alignment size of generated
+	  _irq_vector_table.  Some architecture needs an IRQ vector table
+	  to be aligned to architecture specific size.  The default
+	  size is 0 for no alignment.
+
+choice IRQ_VECTOR_TABLE_TYPE
+	prompt "IRQ vector table type"
+	depends on GEN_IRQ_VECTOR_TABLE
+	default IRQ_VECTOR_TABLE_JUMP_BY_CODE if (RISCV && !RISCV_HAS_CLIC)
+	default IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+
+config IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+	bool "Jump by address"
+	help
+	  The IRQ vector table contains the address of the interrupt handler.
+
+config IRQ_VECTOR_TABLE_JUMP_BY_CODE
+	bool "Jump by code"
+	help
+	  The IRQ vector table contains the opcode of a jump instruction to the
+	  interrupt handler address.
+
+endchoice
+
 config GEN_SW_ISR_TABLE
 	bool "Generate a software ISR table"
 	default y
@@ -401,7 +446,7 @@ config GEN_SW_ISR_TABLE
 
 config ARCH_SW_ISR_TABLE_ALIGN
 	int "Alignment size of a software ISR table"
-	default 0
+	default 4
 	depends on GEN_SW_ISR_TABLE
 	help
 	  This option controls alignment size of generated
@@ -422,13 +467,21 @@ config GEN_IRQ_START_VECTOR
 	  left alone.
 
 config IRQ_OFFLOAD
-	bool "Enable IRQ offload"
+	bool "IRQ offload"
 	depends on TEST
 	help
 	  Enable irq_offload() API which allows functions to be synchronously
 	  run in interrupt context. Only useful for test cases that need
 	  to validate the correctness of kernel objects in IRQ context.
 
+config IRQ_OFFLOAD_NESTED
+	bool "irq_offload() supports nested IRQs"
+	depends on IRQ_OFFLOAD
+	help
+	  When set by the arch layer, indicates that irq_offload() may
+	  legally be called in interrupt context to cause a
+	  synchronous nested interrupt on the current CPU.  Not all
+	  hardware is capable.
 
 config EXTRA_EXCEPTION_INFO
 	bool "Collect extra exception info"
@@ -513,12 +566,23 @@ config ARCH_HAS_COHERENCE
 config ARCH_HAS_THREAD_LOCAL_STORAGE
 	bool
 
+config ARCH_HAS_SUSPEND_TO_RAM
+	bool
+	help
+	  When selected, the architecture supports suspend-to-RAM (S2RAM).
+
 #
 # Other architecture related options
 #
 
 config ARCH_HAS_THREAD_ABORT
 	bool
+
+config ARCH_HAS_CODE_DATA_RELOCATION
+	bool
+	help
+	  When selected, the architecture/SoC implements support for
+	  CODE_DATA_RELOCATION in its linker scripts.
 
 #
 # Hidden CPU family configs
@@ -534,7 +598,7 @@ config CPU_HAS_TEE
 config CPU_HAS_DCLS
 	bool
 	help
-	  This option is enabled when the processor hardware is configured in
+	  This option is enabled when the processor hardware has support for
 	  Dual-redundant Core Lock-step (DCLS) topology.
 
 config CPU_HAS_FPU
@@ -575,6 +639,16 @@ config ARCH_HAS_RESERVED_PAGE_FRAMES
 	  memory mappings. The architecture will need to implement
 	  arch_reserved_pages_update().
 
+config CPU_HAS_DCACHE
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has a d-cache.
+
+config CPU_HAS_ICACHE
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has an i-cache.
+
 config ARCH_MAPS_ALL_RAM
 	bool
 	help
@@ -595,169 +669,28 @@ config ARCH_MAPS_ALL_RAM
 	  this mapping at all; non-kernel pages will be considered free (unless marked
 	  as reserved) and Z_PAGE_FRAME_MAPPED will not be set.
 
-menuconfig MMU
-	bool "Enable MMU features"
-	depends on CPU_HAS_MMU
+config DCLS
+	bool "Processor is configured in DCLS mode"
+	depends on CPU_HAS_DCLS
+	default y
 	help
-	  This option is enabled when the CPU's memory management unit is active
-	  and the arch_mem_map() API is available.
-
-if MMU
-config MMU_PAGE_SIZE
-	hex "Size of smallest granularity MMU page"
-	default 0x1000
-	help
-	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
-	  support multiple page sizes, put the smallest one here.
-
-config KERNEL_VM_BASE
-	hex "Virtual address space base address"
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
-	help
-	  Define the base of the kernel's address space.
-
-	  By default, this is the same as the DT_CHOSEN_Z_SRAM physical base SRAM
-	  address from DTS, in which case RAM will be identity-mapped. Some
-	  architectures may require RAM to be mapped in this way; they may have
-	  just one RAM region and doing this makes linking much simpler, as
-	  at least when the kernel boots all virtual RAM addresses are the same
-	  as their physical address (demand paging at runtime may later modify
-	  this for non-pinned page frames).
-
-	  Otherwise, if RAM isn't identity-mapped:
-	  1. It is the architecture's responsibility to transition the
-	  instruction pointer to virtual addresses at early boot before
-	  entering the kernel at z_cstart().
-	  2. The underlying architecture may impose constraints on the bounds of
-	  the kernel's address space, such as not overlapping physical RAM
-	  regions if RAM is not identity-mapped, or the virtual and physical
-	  base addresses being aligned to some common value (which allows
-	  double-linking of paging structures to make the instruction pointer
-	  transition simpler).
-
-	  Zephyr does not implement a split address space and if multiple
-	  page tables are in use, they all have the same virtual-to-physical
-	  mappings (with potentially different permissions).
-
-config KERNEL_VM_OFFSET
-	hex "Kernel offset within address space"
-	default 0
-	help
-	  Offset that the kernel image begins within its address space,
-	  if this is not the same offset from the beginning of RAM.
-
-	  Some care may need to be taken in selecting this value. In certain
-	  build-time cases, or when a physical address cannot be looked up
-	  in page tables, the equation:
-
-	      virt = phys + ((KERNEL_VM_BASE + KERNEL_VM_OFFSET) -
-	                     (SRAM_BASE_ADDRESS + SRAM_OFFSET))
-
-	  Will be used to convert between physical and virtual addresses for
-	  memory that is mapped at boot.
-
-	  This uncommon and is only necessary if the beginning of VM and
-	  physical memory have dissimilar alignment.
-
-config KERNEL_VM_SIZE
-	hex "Size of kernel address space in bytes"
-	default 0x800000
-	help
-	  Size of the kernel's address space. Constraining this helps control
-	  how much total memory can be used for page tables.
-
-	  The difference between KERNEL_VM_BASE and KERNEL_VM_SIZE indicates the
-	  size of the virtual region for runtime memory mappings. This is needed
-	  for mapping driver MMIO regions, as well as special RAM mapping use-cases
-	  such as VSDO pages, memory mapped thread stacks, and anonymous memory
-	  mappings. The kernel itself will be mapped in here as well at boot.
-
-	  Systems with very large amounts of memory (such as 512M or more)
-	  will want to use a 64-bit build of Zephyr, there are no plans to
-	  implement a notion of "high" memory in Zephyr to work around physical
-	  RAM size larger than the defined bounds of the virtual address space.
-
-menuconfig DEMAND_PAGING
-	bool "Enable demand paging [EXPERIMENTAL]"
-	depends on ARCH_HAS_DEMAND_PAGING
-	help
-	  Enable demand paging. Requires architecture support in how the kernel
-	  is linked and the implementation of an eviction algorithm and a
-	  backing store for evicted pages.
-
-if DEMAND_PAGING
-config DEMAND_PAGING_ALLOW_IRQ
-	bool "Allow interrupts during page-ins/outs"
-	help
-	  Allow interrupts to be serviced while pages are being evicted or
-	  retrieved from the backing store. This is much better for system
-	  latency, but any code running in interrupt context that page faults
-	  will cause a kernel panic. Such code must work with exclusively pinned
-	  code and data pages.
-
-	  The scheduler is still disabled during this operation.
-
-	  If this option is disabled, the page fault servicing logic
-	  runs with interrupts disabled for the entire operation. However,
-	  ISRs may also page fault.
-
-config DEMAND_PAGING_STATS
-	bool "Gather Demand Paging Statistics"
-	help
-	  This enables gathering various statistics related to demand paging,
-	  e.g. number of pagefaults. This is useful for tuning eviction
-	  algorithms and optimizing backing store.
-
-	  Should say N in production system as this is not without cost.
-
-config DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
-	bool "Use Timing Functions to Gather Demand Paging Statistics"
-	select TIMING_FUNCTIONS_NEED_AT_BOOT
-	help
-	  Use timing functions to gather various demand paging statistics.
-
-config DEMAND_PAGING_THREAD_STATS
-	bool "Gather per Thread Demand Paging Statistics"
-	depends on DEMAND_PAGING_STATS
-	help
-	  This enables gathering per thread statistics related to demand
-	  paging.
-
-	  Should say N in production system as this is not without cost.
-
-config DEMAND_PAGING_TIMING_HISTOGRAM
-	bool "Gather Demand Paging Execution Timing Histogram"
-	depends on DEMAND_PAGING_STATS
-	help
-	  This gathers the histogram of execution time on page eviction
-	  selection, and backing store page in and page out.
-
-	  Should say N in production system as this is not without cost.
-
-config DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS
-	int "Number of bins (buckets) in Demand Paging Timing Histogrm"
-	depends on DEMAND_PAGING_TIMING_HISTOGRAM
-	default 10
-	help
-	  Defines the number of bins (buckets) in the histogram used for
-	  gathering execution timing information for demand paging.
-
-	  This requires k_mem_paging_eviction_histogram_bounds[] and
-	  k_mem_paging_backing_store_histogram_bounds[] to define
-	  the upper bounds for each bin. See kernel/statistics.c for
-	  information.
-
-endif	# DEMAND_PAGING
-endif   # MMU
+	  This option is enabled when the processor hardware is configured in
+	  Dual-redundant Core Lock-step (DCLS) topology. For the processor that
+	  supports DCLS, but is configured in split-lock mode (by default or
+	  changed at flash time), this option should be disabled.
 
 menuconfig MPU
-	bool "Enable MPU features"
+	bool "MPU features"
 	depends on CPU_HAS_MPU
 	help
 	  This option, when enabled, indicates to the core kernel that an MPU
 	  is enabled.
 
 if MPU
+module = MPU
+module-str = mpu
+source "subsys/logging/Kconfig.template.log_config"
+
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
 	help
@@ -829,10 +762,19 @@ config SRAM_REGION_PERMISSIONS
 	  paging, do not need memory protection, and would rather not use up
 	  RAM for the alignment between regions.
 
+config CODE_DATA_RELOCATION
+	bool "Support code/data section relocation"
+	depends on ARCH_HAS_CODE_DATA_RELOCATION
+	help
+	  Enable support for relocating .text, data and .bss sections from specified
+	  files and placing them in a chosen memory region. Files to relocate and
+	  the target regions should be specified in CMakeLists.txt using
+	  zephyr_code_relocate().
+
 menu "Floating Point Options"
 
 config FPU
-	bool "Enable floating point unit (FPU)"
+	bool "Floating point unit (FPU)"
 	depends on CPU_HAS_FPU
 	help
 	  This option enables the hardware Floating Point Unit (FPU), in order to
@@ -872,15 +814,30 @@ endmenu
 
 menu "Cache Options"
 
+config DCACHE
+	bool "Data cache (d-cache) support"
+	depends on CPU_HAS_DCACHE
+	default y
+	help
+	  This option enables the support for the data cache (d-cache).
+
+config ICACHE
+	bool "Instruction cache (i-cache) support"
+	depends on CPU_HAS_ICACHE
+	default y
+	help
+	  This option enables the support for the instruction cache (i-cache).
+
 config CACHE_MANAGEMENT
-	bool "Enable cache management features"
+	bool "Cache management features"
+	depends on DCACHE || ICACHE
 	help
 	  This links in the cache management functions (for d-cache and i-cache
 	  where possible).
 
 config DCACHE_LINE_SIZE_DETECT
 	bool "Detect d-cache line size at runtime"
-	depends on CACHE_MANAGEMENT
+	depends on CACHE_MANAGEMENT && DCACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the d-cache line size at the expense of taking more memory and
@@ -891,8 +848,8 @@ config DCACHE_LINE_SIZE_DETECT
 	  using the 'd-cache-line-size' property.
 
 config DCACHE_LINE_SIZE
-	int "d-cache line size" if !DCACHE_LINE_SIZE_DETECT
-	depends on CACHE_MANAGEMENT
+	int "d-cache line size"
+	depends on CACHE_MANAGEMENT && DCACHE && !DCACHE_LINE_SIZE_DETECT
 	default 0
 	help
 	  Size in bytes of a CPU d-cache line. If this is set to 0 the value is
@@ -903,7 +860,7 @@ config DCACHE_LINE_SIZE
 
 config ICACHE_LINE_SIZE_DETECT
 	bool "Detect i-cache line size at runtime"
-	depends on CACHE_MANAGEMENT
+	depends on CACHE_MANAGEMENT && ICACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the i-cache line size at the expense of taking more memory and
@@ -914,8 +871,8 @@ config ICACHE_LINE_SIZE_DETECT
 	  using the 'i-cache-line-size' property.
 
 config ICACHE_LINE_SIZE
-	int "i-cache line size" if !ICACHE_LINE_SIZE_DETECT
-	depends on CACHE_MANAGEMENT
+	int "i-cache line size"
+	depends on CACHE_MANAGEMENT && ICACHE && !ICACHE_LINE_SIZE_DETECT
 	default 0
 	help
 	  Size in bytes of a CPU i-cache line. If this is set to 0 the value is
@@ -931,7 +888,7 @@ choice CACHE_TYPE
 config HAS_ARCH_CACHE
 	bool "Integrated cache controller"
 	help
-	  "Integrade on-core cache controller"
+	  "Integrated on-core cache controller"
 
 config HAS_EXTERNAL_CACHE
 	bool "External cache controller"
@@ -967,15 +924,6 @@ config SOC_FAMILY
 	  SoC family name which can be found under soc/<arch>/<family>.
 	  This option holds the directory name used by the build system to locate
 	  the correct linker and header files.
-
-config BOARD
-	string
-	help
-	  This option holds the name of the board and is used to locate the files
-	  related to the board in the source tree (under boards/).
-	  The Board is the first location where we search for a linker.ld file,
-	  if not found we look for the linker file in
-	  soc/<arch>/<family>/<series>
 
 config TOOLCHAIN_HAS_BUILTIN_FFS
 	bool

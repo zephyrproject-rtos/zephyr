@@ -3,8 +3,8 @@
 
 config HAS_CMSIS_CORE
 	bool
-	select HAS_CMSIS_CORE_A if CPU_CORTEX_A
-	select HAS_CMSIS_CORE_R if CPU_CORTEX_R
+	select HAS_CMSIS_CORE_A if CPU_AARCH32_CORTEX_A
+	select HAS_CMSIS_CORE_R if CPU_AARCH32_CORTEX_R
 	select HAS_CMSIS_CORE_M if CPU_CORTEX_M
 
 if HAS_CMSIS_CORE
@@ -26,4 +26,13 @@ menuconfig CMSIS_DSP
 
 if CMSIS_DSP
 source "modules/Kconfig.cmsis_dsp"
+endif
+
+menuconfig CMSIS_NN
+	bool "CMSIS-NN Library Support"
+	depends on CPU_CORTEX_M
+	select CMSIS_DSP
+
+if CMSIS_NN
+source "modules/Kconfig.cmsis_nn"
 endif

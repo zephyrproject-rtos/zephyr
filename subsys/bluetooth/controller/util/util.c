@@ -7,8 +7,8 @@
 #include <string.h>
 
 #include <zephyr/types.h>
-#include <sys/byteorder.h>
-#include <drivers/entropy.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/entropy.h>
 
 #include "util.h"
 #include "util/memq.h"
@@ -27,7 +27,7 @@
  *
  * @return popcnt of 'octets'
  */
-uint8_t util_ones_count_get(uint8_t *octets, uint8_t octets_len)
+uint8_t util_ones_count_get(const uint8_t *octets, uint8_t octets_len)
 {
 	uint8_t one_count = 0U;
 

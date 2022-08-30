@@ -9,11 +9,11 @@ on:
 
 jobs:
   backport:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     name: Backport
     steps:
       - name: Backport
-        uses: zephyrproject-rtos/action-backport@v1.1.1-1
+        uses: zephyrproject-rtos/action-backport@v1.1.1-3
         with:
           github_token: ${{ secrets.ZB_GITHUB_TOKEN }}
           issue_labels: backport

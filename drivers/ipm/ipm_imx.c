@@ -8,10 +8,14 @@
 
 #include <errno.h>
 #include <string.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/ipm.h>
+#include <zephyr/drivers/ipm.h>
+#if IS_ENABLED(CONFIG_IPM_IMX_REV2)
+#include "fsl_mu.h"
+#else
 #include <mu_imx.h>
+#endif
 
 #define MU(config) ((MU_Type *)config->base)
 
@@ -30,6 +34,64 @@ struct imx_mu_data {
 	ipm_callback_t callback;
 	void *user_data;
 };
+
+#if IS_ENABLED(CONFIG_IPM_IMX_REV2)
+/*!
+ * @brief Check RX full status.
+ *
+ * This function checks the specific receive register full status.
+ *
+ * @param base Register base address for the module.
+ * @param index RX register index to check.
+ * @retval true RX register is full.
+ * @retval false RX register is not full.
+ */
+static inline bool MU_IsRxFull(MU_Type *base, uint32_t index)
+{
+	switch (index) {
+	case 0:
+		return (bool)(MU_GetStatusFlags(base) & kMU_Rx0FullFlag);
+	case 1:
+		return (bool)(MU_GetStatusFlags(base) & kMU_Rx1FullFlag);
+	case 2:
+		return (bool)(MU_GetStatusFlags(base) & kMU_Rx2FullFlag);
+	case 3:
+		return (bool)(MU_GetStatusFlags(base) & kMU_Rx3FullFlag);
+	default:
+		/* This shouldn't happen */
+		assert(false);
+		return false;
+	}
+}
+
+/*!
+ * @brief Check TX empty status.
+ *
+ * This function checks the specific transmit register empty status.
+ *
+ * @param base Register base address for the module.
+ * @param index TX register index to check.
+ * @retval true TX register is empty.
+ * @retval false TX register is not empty.
+ */
+static inline bool MU_IsTxEmpty(MU_Type *base, uint32_t index)
+{
+	switch (index) {
+	case 0:
+		return (bool)(MU_GetStatusFlags(base) & kMU_Tx0EmptyFlag);
+	case 1:
+		return (bool)(MU_GetStatusFlags(base) & kMU_Tx1EmptyFlag);
+	case 2:
+		return (bool)(MU_GetStatusFlags(base) & kMU_Tx2EmptyFlag);
+	case 3:
+		return (bool)(MU_GetStatusFlags(base) & kMU_Tx3EmptyFlag);
+	default:
+		/* This shouldn't happen */
+		assert(false);
+		return false;
+	}
+}
+#endif
 
 static void imx_mu_isr(const struct device *dev)
 {
@@ -62,9 +124,14 @@ static void imx_mu_isr(const struct device *dev)
 			}
 			if (all_registers_full) {
 				for (i = 0; i < IMX_IPM_DATA_REGS; i++) {
+#if IS_ENABLED(CONFIG_IPM_IMX_REV2)
+					data32[i] = MU_ReceiveMsg(base,
+						(id * IMX_IPM_DATA_REGS) + i);
+#else
 					MU_ReceiveMsg(base,
 						(id * IMX_IPM_DATA_REGS) + i,
 						&data32[i]);
+#endif
 				}
 
 				if (data->callback) {
@@ -79,9 +146,13 @@ static void imx_mu_isr(const struct device *dev)
 
 	/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F
 	 * Store immediate overlapping exception return operation
-	 * might vector to incorrect interrupt
+	 * might vector to incorrect interrupt. For Cortex-M7, if
+	 * core speed much faster than peripheral register write
+	 * speed, the peripheral interrupt flags may be still set
+	 * after exiting ISR, this results to the same error similar
+	 * with errata 838869.
 	 */
-#if defined __CORTEX_M && (__CORTEX_M == 4U)
+#if (defined __CORTEX_M) && ((__CORTEX_M == 4U) || (__CORTEX_M == 7U))
 	__DSB();
 #endif
 }
@@ -92,7 +163,9 @@ static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t id,
 	const struct imx_mu_config *config = dev->config;
 	MU_Type *base = MU(config);
 	uint32_t data32[IMX_IPM_DATA_REGS];
+#if !IS_ENABLED(CONFIG_IPM_IMX_REV2)
 	mu_status_t status;
+#endif
 	int i;
 
 	if (id > CONFIG_IPM_IMX_MAX_ID_VAL) {
@@ -106,6 +179,27 @@ static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t id,
 	/* Actual message is passing using 32 bits registers */
 	memcpy(data32, data, size);
 
+#if IS_ENABLED(CONFIG_IPM_IMX_REV2)
+	if (wait) {
+		for (i = 0; i < IMX_IPM_DATA_REGS; i++) {
+			MU_SendMsgNonBlocking(base, id * IMX_IPM_DATA_REGS + i,
+								  data32[i]);
+		}
+		while (!MU_IsTxEmpty(base,
+			(id * IMX_IPM_DATA_REGS) + IMX_IPM_DATA_REGS - 1)) {
+		}
+	} else {
+		for (i = 0; i < IMX_IPM_DATA_REGS; i++) {
+			if (MU_IsTxEmpty(base, id * IMX_IPM_DATA_REGS + i)) {
+				MU_SendMsg(base, id * IMX_IPM_DATA_REGS + i,
+						   data32[i]);
+			} else {
+				return -EBUSY;
+			}
+		}
+	}
+
+#else
 	for (i = 0; i < IMX_IPM_DATA_REGS; i++) {
 		status = MU_TrySendMsg(base, id * IMX_IPM_DATA_REGS + i,
 				       data32[i]);
@@ -119,6 +213,7 @@ static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t id,
 			(id * IMX_IPM_DATA_REGS) + IMX_IPM_DATA_REGS - 1)) {
 		}
 	}
+#endif
 
 	return 0;
 }
@@ -151,7 +246,37 @@ static int imx_mu_ipm_set_enabled(const struct device *dev, int enable)
 {
 	const struct imx_mu_config *config = dev->config;
 	MU_Type *base = MU(config);
-
+#if IS_ENABLED(CONFIG_IPM_IMX_REV2)
+#if CONFIG_IPM_IMX_MAX_DATA_SIZE_4
+	if (enable) {
+		MU_EnableInterrupts(base, kMU_Rx0FullInterruptEnable);
+		MU_EnableInterrupts(base, kMU_Rx1FullInterruptEnable);
+		MU_EnableInterrupts(base, kMU_Rx2FullInterruptEnable);
+		MU_EnableInterrupts(base, kMU_Rx3FullInterruptEnable);
+	} else {
+		MU_DisableInterrupts(base, kMU_Rx0FullInterruptEnable);
+		MU_DisableInterrupts(base, kMU_Rx1FullInterruptEnable);
+		MU_DisableInterrupts(base, kMU_Rx2FullInterruptEnable);
+		MU_DisableInterrupts(base, kMU_Rx3FullInterruptEnable);
+	}
+#elif CONFIG_IPM_IMX_MAX_DATA_SIZE_8
+	if (enable) {
+		MU_EnableInterrupts(base, kMU_Rx1FullInterruptEnable);
+		MU_EnableInterrupts(base, kMU_Rx3FullInterruptEnable);
+	} else {
+		MU_DisableInterrupts(base, kMU_Rx1FullInterruptEnable);
+		MU_DisableInterrupts(base, kMU_Rx3FullInterruptEnable);
+	}
+#elif CONFIG_IPM_IMX_MAX_DATA_SIZE_16
+	if (enable) {
+		MU_EnableInterrupts(base, kMU_Rx3FullInterruptEnable);
+	} else {
+		MU_DisableInterrupts(base, kMU_Rx3FullInterruptEnable);
+	}
+#else
+#error "CONFIG_IPM_IMX_MAX_DATA_SIZE_n is not set"
+#endif
+#else
 #if CONFIG_IPM_IMX_MAX_DATA_SIZE_4
 	if (enable) {
 		MU_EnableRxFullInt(base, 0U);
@@ -180,6 +305,7 @@ static int imx_mu_ipm_set_enabled(const struct device *dev, int enable)
 	}
 #else
 #error "CONFIG_IPM_IMX_MAX_DATA_SIZE_n is not set"
+#endif
 #endif
 
 	return 0;

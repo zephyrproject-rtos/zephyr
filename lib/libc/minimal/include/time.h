@@ -9,8 +9,8 @@
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_TIME_H_
 
 #include <stdint.h>
+#include <zephyr/toolchain.h>
 #include <sys/_types.h>
-#include <bits/restrict.h>
 #include <sys/_timespec.h>
 
 /* Minimal time.h to fulfill the requirements of certain libraries
@@ -49,8 +49,8 @@ typedef _SUSECONDS_T_ suseconds_t;
  * require access to time zone information.
  */
 struct tm *gmtime(const time_t *timep);
-struct tm *gmtime_r(const time_t *_MLIBC_RESTRICT timep,
-		    struct tm *_MLIBC_RESTRICT result);
+struct tm *gmtime_r(const time_t *ZRESTRICT timep,
+		    struct tm *ZRESTRICT result);
 
 time_t time(time_t *tloc);
 

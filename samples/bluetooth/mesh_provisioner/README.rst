@@ -7,23 +7,28 @@ Overview
 ********
 
 This sample demonstrates how to use the Bluetooth mesh APIs related to
-provisioning and using the Configuration Database (CDB). It is intended to be
-tested together with a device capable of being provisioned. For
-example, one could use the sample in :zephyr_file:`samples/bluetooth/mesh` or
-:zephyr_file:`tests/bluetooth/mesh_shell`.
+provisioning and using the Configuration Database (CDB). It is intended
+to be tested together with a device capable of being provisioned. For
+example, one could use the sample in
+:zephyr_file:`samples/bluetooth/mesh`
+or :zephyr_file:`tests/bluetooth/mesh_shell`.
 
-The application provisions itself and loads the CDB with an application key.
-It then waits to receive an Unprovisioned Beacon from a device which will
-trigger provisioning using PB-ADV. Once provisioning is done, the node will
-be present in the CDB but not yet marked as configured. The application will
-notice the unconfigured node and start configuring it. If no errors are
-encountered, the node is marked as configured.
+The application provisions itself and loads the CDB with an application
+key, then waits to receive an Unprovisioned Beacon from a device. If the
+board has a push button connected via GPIO and configured using the
+``sw0`` :ref:`devicetree <dt-guide>` alias, the application then waits
+for the user to press the button, which will trigger provisioning using
+PB-ADV. If the board doesn't have the push button, the sample will
+provision detected devices automatically. Once provisioning is done, the
+node will be present in the CDB but not yet marked as configured. The
+application will notice the unconfigured node and start configuring it.
+If no errors are encountered, the node is marked as configured.
 
-The configuration of a node involves adding an application key, getting the
-composition data, and binding all its models to the application key.
+The configuration of a node involves adding an application key, getting
+the composition data, and binding all its models to the application key.
 
-Please note that this sample uses the CDB API which is currently marked as
-EXPERIMENTAL and is likely to change.
+Please note that this sample uses the CDB API which is currently marked
+as EXPERIMENTAL and is likely to change.
 
 Requirements
 ************
@@ -34,11 +39,11 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/bluetooth/mesh_provisioner`
-in the Zephyr tree.
+This sample can be found under
+:zephyr_file:`samples/bluetooth/mesh_provisioner` in the Zephyr tree.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details on how
-to run the sample inside QEMU.
+See :ref:`bluetooth samples section <bluetooth-samples>` for details on
+how to run the sample inside QEMU.
 
 For other boards, build and flash the application as follows:
 

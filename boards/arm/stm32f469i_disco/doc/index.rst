@@ -32,9 +32,7 @@ some highlights of the STM32F469I-DISCO board:
 - Expansion connectors and Arduino UNO V3 connectors
 
 .. image:: img/stm32f469i_disco.jpg
-     :width: 457px
      :align: center
-     :height: 551px
      :alt: STM32F469I-DISCO
 
 More information about the board can be found at the `32F469IDISCOVERY website`_.

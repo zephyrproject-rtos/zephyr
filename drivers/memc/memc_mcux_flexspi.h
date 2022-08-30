@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <sys/types.h>
 #include <fsl_flexspi.h>
+
+void memc_flexspi_wait_bus_idle(const struct device *dev);
 
 bool memc_flexspi_is_running_xip(const struct device *dev);
 

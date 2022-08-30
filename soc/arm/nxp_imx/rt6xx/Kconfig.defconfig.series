@@ -14,18 +14,47 @@ config ROM_START_OFFSET
 config NUM_IRQS
 	default 60
 
-config PM
-	select CODE_DATA_RELOCATION_SRAM
+config ZTEST_NO_YIELD
+	default y if (ZTEST && PM)
 
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/peripheral@50000000/spi@134000,1,K)
-
+#
+# The base address of the external flash comes from the FLEXSPI base
+# address. The size of the flash is defined by what is populated and
+# described in the board devicetree file.
+#
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/peripheral@50000000/spi@134000,1)
+	default $(dt_node_reg_addr_hex,/soc/spi@134000,1)
 
-config ENTROPY_MCUX_TRNG
-	default y if HAS_MCUX_TRNG
+if FLASH_MCUX_FLEXSPI_XIP
+
+# Avoid RWW hazards by defaulting logging to disabled
+choice FLASH_LOG_LEVEL_CHOICE
+	default FLASH_LOG_LEVEL_OFF
+endchoice
+
+choice MEMC_LOG_LEVEL_CHOICE
+	default MEMC_LOG_LEVEL_OFF
+endchoice
+
+endif
+
+#
+# MBEDTLS is larger but much faster than TinyCrypt so choose wisely
+#
+config MBEDTLS
+#config TINYCRYPT
+	default y if CSPRING_ENABLED
 	depends on ENTROPY_GENERATOR
+
+if MBEDTLS
+#
+# MBEDTLS CTR_DRBG code path needs extra stack space for initialization than
+# what the ztest_thread_stack defaults to.
+#
+config TEST_EXTRA_STACK_SIZE
+	int
+	default 1024
+endif # MBEDTLS
 
 source "soc/arm/nxp_imx/rt6xx/Kconfig.defconfig.mimxrt6*"
 

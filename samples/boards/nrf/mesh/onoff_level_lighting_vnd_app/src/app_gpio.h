@@ -9,8 +9,8 @@
 #define _APP_GPIO_H
 
 /* GPIO */
-extern const struct device *button_device[4];
-extern const struct device *led_device[4];
+extern const struct gpio_dt_spec button_device[];
+extern const struct gpio_dt_spec led_device[];
 
 void app_gpio_init(void);
 

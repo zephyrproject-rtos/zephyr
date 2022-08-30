@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+# Properties for the serial 1-Wire master driver:
+# No GPIOs need to be configured here, as this is already done in the serial
+# driver. Typically 2 IOs are needed, but some microcontrollers have
+# the option for a "single-wire Half-duplex" mode, where the TX and RX lines
+# are internally connected, such that only a single IO
+# needs to be allocated for the 1-Wire communication.
+
+description: 1-Wire master over Zephyr uart
+
+compatible: "zephyr,w1-serial"
+
+include: [uart-device.yaml, w1-master.yaml]

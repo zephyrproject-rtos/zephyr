@@ -9,41 +9,41 @@
  *  This code is auto-generated from the Excel Workbook
  *  'GATT_Test_Databases.xlsm' Sheet: 'Large Database 1'
  */
-#include <sys/byteorder.h>
-#include <sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #include "gatt_macs.h"
 
-/** @def BT_UUID_SERVICE_C_2
+/**
  *  @brief UUID for the Service C.2
  */
 #define BT_UUID_SERVICE_C_2             BT_UUID_DECLARE_128( \
 		0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01, \
 		0x00, 0x00, 0x00, 0x00, 0x0c, 0xa0, 0x00, 0x00)
 
-/** @def BT_UUID_VALUE_V10
+/**
  *  @brief UUID for the Value V10 Characteristic
  */
 #define BT_UUID_VALUE_V10               BT_UUID_DECLARE_16(0xb00a)
 
-/** @def BT_UUID_VALUE_V2
+/**
  *  @brief UUID for the Value V2 Characteristic
  */
 #define BT_UUID_VALUE_V2                BT_UUID_DECLARE_16(0xb002)
 
-/** @def BT_UUID_LONG_DES_V2D1
+/**
  *  @brief UUID for the Long descriptor V2D1 Characteristic
  */
 #define BT_UUID_LONG_DES_V2D1           BT_UUID_DECLARE_16(0xb012)
 
-/** @def BT_UUID_LONG_DES_V2D2
+/**
  *  @brief UUID for the Long descriptor V2D2 Characteristic
  */
 #define BT_UUID_LONG_DES_V2D2           BT_UUID_DECLARE_16(0xb013)
 
-/** @def BT_UUID_LONG_DES_V2D3
+/**
  *  @brief UUID for the Long descriptor V2D3 Characteristic
  */
 #define BT_UUID_LONG_DES_V2D3           BT_UUID_DECLARE_16(0xb014)

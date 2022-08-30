@@ -22,9 +22,7 @@ some highlights of the Nucleo G431RB board:
 - Two push-buttons: RESET and USER
 
 .. image:: img/nucleo_g431rb.jpg
-  :width: 426px
   :align: center
-  :height: 256px
   :alt: Nucleo G431RB
 
 More information about the board can be found at the `Nucleo G431RB website`_.

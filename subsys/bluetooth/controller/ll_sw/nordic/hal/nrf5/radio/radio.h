@@ -5,6 +5,53 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Set of macros related with Radio packet configuration flags */
+/* PDU type, 1 bit field*/
+#define RADIO_PKT_CONF_PDU_TYPE_POS (0U)
+#define RADIO_PKT_CONF_PDU_TYPE_MSK BIT(RADIO_PKT_CONF_PDU_TYPE_POS)
+#define RADIO_PKT_CONF_PDU_TYPE_AC (0U)
+#define RADIO_PKT_CONF_PDU_TYPE_DC (1U)
+/* PHY type, three bit field */
+#define RADIO_PKT_CONF_PHY_POS (1U)
+#define RADIO_PKT_CONF_PHY_MSK (BIT_MASK(3U))
+#define RADIO_PKT_CONF_PHY_LEGACY (0U)
+#define RADIO_PKT_CONF_PHY_1M (BIT(0U))
+#define RADIO_PKT_CONF_PHY_2M (BIT(1U))
+#define RADIO_PKT_CONF_PHY_CODED (BIT(2U))
+/* CTE enabled, 1 bit field */
+#define RADIO_PKT_CONF_CTE_POS (4U)
+#define RADIO_PKT_CONF_CTE_MSK BIT(0)
+#define RADIO_PKT_CONF_CTE_DISABLED (0U)
+#define RADIO_PKT_CONF_CTE_ENABLED (1U)
+
+/* Macro to define length of the BLE packet length field in bits */
+#define RADIO_PKT_CONF_LENGTH_8BIT (8U)
+#define RADIO_PKT_CONF_LENGTH_5BIT (5U)
+
+/* Macro to define length of the BLE packet S1 field in bits */
+#define RADIO_PKT_CONF_S1_8BIT (8U)
+
+/* Helper macro to create bitfield with PDU type only*/
+#define RADIO_PKT_CONF_PDU_TYPE(phy) ((uint8_t)((phy) << RADIO_PKT_CONF_PDU_TYPE_POS))
+/* Helper macro to get PDU type from radio packet configuration bitfield */
+#define RADIO_PKT_CONF_PDU_TYPE_GET(flags)                                                         \
+	((uint8_t)(((flags) >> RADIO_PKT_CONF_PDU_TYPE_POS) & RADIO_PKT_CONF_PDU_TYPE_MSK))
+/* Helper macro to create bitfield with PHY type only */
+#define RADIO_PKT_CONF_PHY(phy) ((uint8_t)((phy) << RADIO_PKT_CONF_PHY_POS))
+/* Helper macro to get PHY type from radio packet configuration bitfield */
+#define RADIO_PKT_CONF_PHY_GET(flags)                                                              \
+	((uint8_t)((((flags) >> RADIO_PKT_CONF_PHY_POS)) & RADIO_PKT_CONF_PHY_MSK))
+/* Helper macro to create bitfield with CTE type only */
+#define RADIO_PKT_CONF_CTE(phy) ((uint8_t)((phy) << RADIO_PKT_CONF_CTE_POS))
+/* Helper macro to get CTE enable field value from radio packet configuration bitfield */
+#define RADIO_PKT_CONF_CTE_GET(flags)                                                              \
+	((uint8_t)((((flags) >> RADIO_PKT_CONF_CTE_POS)) & RADIO_PKT_CONF_CTE_MSK))
+/* Helper macro to create a radio packet configure bitfield */
+#define RADIO_PKT_CONF_FLAGS(pdu, phy, cte)                                                        \
+	(RADIO_PKT_CONF_PDU_TYPE((pdu)) | RADIO_PKT_CONF_PHY((phy)) | RADIO_PKT_CONF_CTE((cte)))
+
+enum radio_end_evt_delay_state { END_EVT_DELAY_DISABLED, END_EVT_DELAY_ENABLED };
+
 typedef void (*radio_isr_cb_t) (void *param);
 
 void isr_radio(void);
@@ -12,6 +59,7 @@ void radio_isr_set(radio_isr_cb_t cb, void *param);
 
 void radio_setup(void);
 void radio_reset(void);
+void radio_stop(void);
 void radio_phy_set(uint8_t phy, uint8_t flags);
 void radio_tx_power_set(int8_t power);
 void radio_tx_power_max_set(void);
@@ -48,9 +96,16 @@ void *radio_pkt_decrypt_get(void);
 void radio_switch_complete_and_rx(uint8_t phy_rx);
 void radio_switch_complete_and_tx(uint8_t phy_rx, uint8_t flags_rx, uint8_t phy_tx,
 				  uint8_t flags_tx);
+void radio_switch_complete_with_delay_compensation_and_tx(
+	uint8_t phy_rx, uint8_t flags_rx, uint8_t phy_tx, uint8_t flags_tx,
+	enum radio_end_evt_delay_state end_evt_delay_en);
 void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 				      uint8_t phy_next, uint8_t flags_next);
+void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
+				      uint8_t phy_next, uint8_t flags_next);
 void radio_switch_complete_and_disable(void);
+
+uint8_t radio_phy_flags_rx_get(void);
 
 void radio_rssi_measure(void);
 uint32_t radio_rssi_get(void);
@@ -108,4 +163,9 @@ void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags);
 uint32_t radio_ar_match_get(void);
 void radio_ar_status_reset(void);
 uint32_t radio_ar_has_match(void);
-void radio_ar_resolve(uint8_t *addr);
+uint8_t radio_ar_resolve(const uint8_t *addr);
+
+/* Enables CTE inline configuration to automatically setup sampling and
+ * switching according to CTEInfo in received PDU.
+ */
+void radio_df_cte_inline_set_enabled(bool cte_info_in_s1);

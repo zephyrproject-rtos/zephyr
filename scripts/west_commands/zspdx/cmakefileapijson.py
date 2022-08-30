@@ -102,7 +102,7 @@ def parseConfig(cfg_dict, replyDir):
             cfgdir.build = dir_dict.get("build", "")
             cfgdir.parentIndex = dir_dict.get("parentIndex", -1)
             cfgdir.childIndexes = dir_dict.get("childIndexes", [])
-            cfgdir.projectIndex = dir_dict.get("projecttIndex", -1)
+            cfgdir.projectIndex = dir_dict.get("projectIndex", -1)
             cfgdir.targetIndexes = dir_dict.get("targetIndexes", [])
             minCMakeVer_dict = dir_dict.get("minimumCMakeVersion", {})
             cfgdir.minimumCMakeVersion = minCMakeVer_dict.get("string", "")

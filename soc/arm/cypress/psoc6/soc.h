@@ -15,15 +15,11 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
-
 #include <cy_device_headers.h>
-
 #include "../common/soc_gpio.h"
 #include "../common/cypress_psoc6_dt.h"
 

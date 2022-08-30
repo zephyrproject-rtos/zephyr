@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include "sample_instance.h"
 #include "sample_module.h"
 #include "ext_log_system.h"
 #include "ext_log_system_adapter.h"
-#include <logging/log_ctrl.h>
-#include <app_memory/app_memdomain.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/app_memory/app_memdomain.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
 #ifdef CONFIG_USERSPACE
@@ -30,7 +30,7 @@ static struct k_mem_partition *app_parts[] = {
 #endif /* CONFIG_USERSPACE */
 
 /* size of stack area used by each thread */
-#define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (1024)
 
 extern void sample_module_func(void);
 
@@ -60,26 +60,6 @@ static uint32_t timestamp_freq(void)
 #else
 	return sys_clock_hw_cycles_per_sec();
 #endif
-}
-
-/**
- * @brief Function for finding source ID based on source name.
- *
- * @param name Source name
- *
- * @return Source ID.
- */
-static int16_t log_source_id_get(const char *name)
-{
-
-	for (int16_t i = 0; i < log_src_cnt_get(CONFIG_LOG_DOMAIN_ID); i++) {
-		if (strcmp(log_source_name_get(CONFIG_LOG_DOMAIN_ID, i), name)
-		    == 0) {
-			return i;
-		}
-	}
-
-	return -1;
 }
 
 /**
@@ -176,17 +156,14 @@ static void severity_levels_showcase(void)
 
 /**
  * @brief Function demonstrates how transient strings can be logged.
- *
- * Logger ensures that allocated buffers are freed when log message is
- * processed.
  */
-static void log_strdup_showcase(void)
+static void log_transient_string_showcase(void)
 {
 	char transient_str[] = "transient_string";
 
 	printk("String logging showcase.\n");
 
-	LOG_INF("Logging transient string:%s", log_strdup(transient_str));
+	LOG_INF("Logging transient string:%s", transient_str);
 
 	/* Overwrite transient string to show that the logger has a copy. */
 	transient_str[0] = '\0';
@@ -208,14 +185,15 @@ static void wait_on_log_flushed(void)
  */
 static void performance_showcase(void)
 {
-/* Arbitrary limit when LOG_IMMEDIATE is enabled. */
+/* Arbitrary limit when LOG_MODE_IMMEDIATE is enabled. */
 #define LOG_IMMEDIATE_TEST_MESSAGES_LIMIT 50
+#define MSG_SIZE (sizeof(struct log_msg) + 2 * sizeof(void *) + sizeof(int))
 
 	volatile uint32_t current_timestamp;
 	volatile uint32_t start_timestamp;
-	uint32_t limit = COND_CODE_1(CONFIG_LOG_IMMEDIATE,
+	uint32_t limit = COND_CODE_1(CONFIG_LOG_MODE_IMMEDIATE,
 			     (LOG_IMMEDIATE_TEST_MESSAGES_LIMIT),
-			     (CONFIG_LOG_BUFFER_SIZE / sizeof(struct log_msg)));
+			     (CONFIG_LOG_BUFFER_SIZE / MSG_SIZE));
 	uint32_t per_sec;
 	uint32_t cnt = 0U;
 	uint32_t window = 2U;
@@ -281,6 +259,8 @@ static void log_demo_thread(void *p1, void *p2, void *p3)
 {
 	bool usermode = k_is_user_context();
 
+	(void)log_set_tag("demo_tag");
+
 	k_sleep(K_MSEC(100));
 
 	printk("\n\t---=< RUNNING LOGGER DEMO FROM %s THREAD >=---\n\n",
@@ -307,7 +287,7 @@ static void log_demo_thread(void *p1, void *p2, void *p3)
 
 	wait_on_log_flushed();
 
-	log_strdup_showcase();
+	log_transient_string_showcase();
 
 	severity_levels_showcase();
 
@@ -335,7 +315,11 @@ static void log_demo_supervisor(void *p1, void *p2, void *p3)
 	log_demo_thread(p1, p2, p3);
 
 #ifdef CONFIG_USERSPACE
-	k_mem_domain_init(&app_domain, ARRAY_SIZE(app_parts), app_parts);
+	int ret = k_mem_domain_init(&app_domain, ARRAY_SIZE(app_parts), app_parts);
+
+	__ASSERT(ret == 0, "k_mem_domain_init() failed %d\n", ret);
+	ARG_UNUSED(ret);
+
 	k_mem_domain_add_thread(&app_domain, k_current_get());
 	k_thread_user_mode_enter(log_demo_thread, p1, p2, p3);
 #endif

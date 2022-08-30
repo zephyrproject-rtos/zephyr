@@ -9,19 +9,19 @@
  *  This code is auto-generated from the Excel Workbook
  *  'GATT_Test_Databases.xlsm' Sheet: 'Large Database 2'
  */
-#include <sys/byteorder.h>
-#include <sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #include "gatt_macs.h"
 
-/** @def BT_UUID_SERVICE_E
+/**
  *  @brief UUID for the Service E
  */
 #define BT_UUID_SERVICE_E               BT_UUID_DECLARE_16(0xa00e)
 
-/** @def BT_UUID_VALUE_V13
+/**
  *  @brief UUID for the Value V13 Characteristic
  */
 #define BT_UUID_VALUE_V13               BT_UUID_DECLARE_16(0xb00d)

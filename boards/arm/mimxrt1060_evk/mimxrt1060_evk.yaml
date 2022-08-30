@@ -19,12 +19,15 @@ supported:
   - arduino_serial
   - counter
   - display
+  - dma
   - gpio
   - i2c
   - netif:eth
   - sdhc
+  - spi
   - usb_device
   - kscan:touch
   - dma
   - can
   - watchdog
+  - adc

@@ -1,0 +1,280 @@
+#
+# Schema to validate a YAML file describing a Zephyr test platform
+#
+# We load this with pykwalify
+# (http://pykwalify.readthedocs.io/en/unstable/validation-rules.html),
+# a YAML structure validator, to validate the YAML files that describe
+# Zephyr test platforms
+#
+# The original spec comes from Zephyr's twister script
+#
+type: map
+mapping:
+  "common":
+    type: map
+    required: false
+    mapping:
+      "arch_exclude":
+        type: str
+        required: false
+      "arch_allow":
+        type: str
+        required: false
+      "build_only":
+        type: bool
+        required: false
+      "build_on_all":
+        type: bool
+        required: false
+      "depends_on":
+        type: str
+        required: false
+      "extra_args":
+        type: str
+        required: false
+      "extra_sections":
+        type: str
+        required: false
+      "filter":
+        type: str
+        required: false
+      "integration_platforms":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+      "testcases":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+      "harness":
+        type: str
+        required: false
+      "harness_config":
+        type: map
+        required: false
+        mapping:
+          "type":
+            type: str
+            required: false
+          "fixture":
+            type: str
+            required: false
+          "ordered":
+            type: bool
+            required: false
+          "repeat":
+            type: int
+            required: false
+          "pytest_root":
+            type: str
+            required: false
+          "pytest_args":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "regex":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "record":
+            type: map
+            required: false
+            mapping:
+              "regex":
+                type: str
+                required: false
+      "min_ram":
+        type: int
+        required: false
+      "min_flash":
+        type: int
+        required: false
+      "modules":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+      "platform_exclude":
+        type: str
+        required: false
+      "platform_allow":
+        type: str
+        required: false
+      "platform_type":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+      "tags":
+        type: str
+        required: false
+      "timeout":
+        type: int
+        required: false
+      "toolchain_exclude":
+        type: str
+        required: false
+      "toolchain_allow":
+        type: str
+        required: false
+      "type":
+        type: str
+        enum: ["unit"]
+      "skip":
+        type: bool
+        required: false
+      "slow":
+        type: bool
+        required: false
+  # The sample descriptor, if present
+  "sample":
+    type: map
+    required: false
+    mapping:
+      "name":
+        type: str
+        required: true
+      "description":
+        type: str
+        required: false
+  # The list of testcases -- IDK why this is a sequence of
+  # maps maps, shall just be a sequence of maps
+  # maybe it is just an artifact?
+  "tests":
+    type: map
+    matching-rule: "any"
+    mapping:
+      # The key for the testname is any, so
+      # regex;(([a-zA-Z0-9_]+)) for this to work, note below we
+      # make it required: false
+      regex;(([a-zA-Z0-9_]+)):
+        type: map
+        # has to be not-required, otherwise the parser gets
+        # confused and things it never found it
+        required: false
+        mapping:
+          "arch_exclude":
+            type: str
+            required: false
+          "arch_allow":
+            type: str
+            required: false
+          "testcases":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "build_only":
+            type: bool
+            required: false
+          "build_on_all":
+            type: bool
+            required: false
+          "depends_on":
+            type: str
+            required: false
+          "extra_args":
+            type: str
+            required: false
+          "extra_configs":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "extra_sections":
+            type: str
+            required: false
+          "filter":
+            type: str
+            required: false
+          "integration_platforms":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "harness":
+            type: str
+            required: false
+          "harness_config":
+            type: map
+            required: false
+            mapping:
+              "type":
+                type: str
+                required: false
+              "fixture":
+                type: str
+                required: false
+              "ordered":
+                type: bool
+                required: false
+              "repeat":
+                type: int
+                required: false
+              "pytest_root":
+                type: str
+                required: false
+              "pytest_args":
+                type: seq
+                required: false
+                sequence:
+                  - type: str
+              "regex":
+                type: seq
+                required: false
+                sequence:
+                  - type: str
+              "record":
+                type: map
+                required: false
+                mapping:
+                  "regex":
+                    type: str
+                    required: false
+          "min_ram":
+            type: int
+            required: false
+          "min_flash":
+            type: int
+            required: false
+          "modules":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "platform_exclude":
+            type: str
+            required: false
+          "platform_allow":
+            type: str
+            required: false
+          "platform_type":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "tags":
+            type: str
+            required: false
+          "timeout":
+            type: int
+            required: false
+          "toolchain_exclude":
+            type: str
+            required: false
+          "toolchain_allow":
+            type: str
+            required: false
+          "type":
+            type: str
+            enum: ["unit"]
+          "skip":
+            type: bool
+            required: false
+          "slow":
+            type: bool
+            required: false

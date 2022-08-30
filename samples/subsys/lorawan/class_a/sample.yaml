@@ -4,5 +4,10 @@ sample:
    description: Demonstration of Class-A LoRaWAN functionality
    name: LoRaWAN Class-A
 tests:
-   samples.lorawan.class_a:
-     platform_allow: 96b_wistrio nucleo_wl55jc
+  sample.lorawan.class_a:
+    platform_allow: 96b_wistrio nucleo_wl55jc
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "<inf> lorawan_class_a: Joining network over OTAA"

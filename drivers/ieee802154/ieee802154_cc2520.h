@@ -9,24 +9,23 @@
 #ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC2520_H_
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC2520_H_
 
-#include <linker/sections.h>
-#include <sys/atomic.h>
-#include <drivers/spi.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
 
-enum cc2520_gpio_index {
-	CC2520_GPIO_IDX_VREG_EN	= 0,
-	CC2520_GPIO_IDX_RESET,
-	CC2520_GPIO_IDX_FIFO,
-	CC2520_GPIO_IDX_CCA,
-	CC2520_GPIO_IDX_SFD,
-	CC2520_GPIO_IDX_FIFOP,
+/* Compile time config structure
+ *******************************
+ */
 
-	CC2520_GPIO_IDX_MAX,
-};
-
-struct cc2520_gpio_configuration {
-	const struct device *dev;
-	uint32_t pin;
+struct cc2520_config {
+	struct spi_dt_spec bus;
+	struct gpio_dt_spec vreg_en;
+	struct gpio_dt_spec reset;
+	struct gpio_dt_spec fifo;
+	struct gpio_dt_spec cca;
+	struct gpio_dt_spec sfd;
+	struct gpio_dt_spec fifop;
 };
 
 /* Runtime context structure
@@ -35,11 +34,9 @@ struct cc2520_gpio_configuration {
 struct cc2520_context {
 	struct net_if *iface;
 	/**************************/
-	struct cc2520_gpio_configuration gpios[CC2520_GPIO_IDX_MAX];
+	const struct device *dev;
 	struct gpio_callback sfd_cb;
 	struct gpio_callback fifop_cb;
-	const struct device *spi;
-	struct spi_config spi_cfg;
 	uint8_t mac_addr[8];
 	/************TX************/
 	struct k_sem tx_sync;
@@ -62,49 +59,49 @@ struct cc2520_context {
  ***************************
  */
 
-bool z_cc2520_access(struct cc2520_context *ctx, bool read, uint8_t ins,
-		    uint16_t addr, void *data, size_t length);
+bool z_cc2520_access(const struct device *dev, bool read, uint8_t ins,
+		     uint16_t addr, void *data, size_t length);
 
-#define DEFINE_SREG_READ(__reg_name, __reg_addr)			\
-	static inline uint8_t read_reg_##__reg_name(struct cc2520_context *ctx) \
-	{								\
-		uint8_t val;						\
-									\
-		if (z_cc2520_access(ctx, true, CC2520_INS_MEMRD,		\
-				   __reg_addr, &val, 1)) {		\
-			return val;					\
-		}							\
-									\
-		return 0;						\
+#define DEFINE_SREG_READ(__reg_name, __reg_addr)			      \
+	static inline uint8_t read_reg_##__reg_name(const struct device *dev) \
+	{								      \
+		uint8_t val;						      \
+									      \
+		if (z_cc2520_access(dev, true, CC2520_INS_MEMRD,	      \
+				    __reg_addr, &val, 1)) {		      \
+			return val;					      \
+		}							      \
+									      \
+		return 0;						      \
 	}
 
-#define DEFINE_SREG_WRITE(__reg_name, __reg_addr)			\
-	static inline bool write_reg_##__reg_name(struct cc2520_context *ctx, \
-						  uint8_t val)		\
-	{								\
-		return z_cc2520_access(ctx, false, CC2520_INS_MEMWR,	\
-				      __reg_addr, &val, 1);		\
+#define DEFINE_SREG_WRITE(__reg_name, __reg_addr)			    \
+	static inline bool write_reg_##__reg_name(const struct device *dev, \
+						  uint8_t val)		    \
+	{								    \
+		return z_cc2520_access(dev, false, CC2520_INS_MEMWR,	    \
+				       __reg_addr, &val, 1);		    \
 	}
 
-#define DEFINE_FREG_READ(__reg_name, __reg_addr)			\
-	static inline uint8_t read_reg_##__reg_name(struct cc2520_context *ctx) \
-	{								\
-		uint8_t val;						\
-									\
-		if (z_cc2520_access(ctx, true, CC2520_INS_REGRD,		\
-				   __reg_addr, &val, 1)) {		\
-			return val;					\
-		}							\
-									\
-		return 0;						\
+#define DEFINE_FREG_READ(__reg_name, __reg_addr)			      \
+	static inline uint8_t read_reg_##__reg_name(const struct device *dev) \
+	{								      \
+		uint8_t val;						      \
+									      \
+		if (z_cc2520_access(dev, true, CC2520_INS_REGRD,	      \
+				    __reg_addr, &val, 1)) {		      \
+			return val;					      \
+		}							      \
+									      \
+		return 0;						      \
 	}
 
-#define DEFINE_FREG_WRITE(__reg_name, __reg_addr)			\
-	static inline bool write_reg_##__reg_name(struct cc2520_context *ctx, \
-						  uint8_t val)		\
-	{								\
-		return z_cc2520_access(ctx, false, CC2520_INS_REGWR,	\
-				      __reg_addr, &val, 1);		\
+#define DEFINE_FREG_WRITE(__reg_name, __reg_addr)			    \
+	static inline bool write_reg_##__reg_name(const struct device *dev, \
+						  uint8_t val)		    \
+	{								    \
+		return z_cc2520_access(dev, false, CC2520_INS_REGWR,	    \
+				       __reg_addr, &val, 1);		    \
 	}
 
 DEFINE_FREG_READ(excflag0, CC2520_FREG_EXCFLAG0)
@@ -150,12 +147,12 @@ DEFINE_SREG_WRITE(extclock, CC2520_SREG_EXTCLOCK)
  ************************
  */
 
-#define DEFINE_MEM_WRITE(__mem_name, __addr, __sz)			\
-	static inline bool write_mem_##__mem_name(struct cc2520_context *ctx, \
-						  uint8_t *buf)		\
-	{								\
-		return z_cc2520_access(ctx, false, CC2520_INS_MEMWR,	\
-				      __addr, buf, __sz);		\
+#define DEFINE_MEM_WRITE(__mem_name, __addr, __sz)			    \
+	static inline bool write_mem_##__mem_name(const struct device *dev, \
+						  uint8_t *buf)		    \
+	{								    \
+		return z_cc2520_access(dev, false, CC2520_INS_MEMWR,	    \
+				       __addr, buf, __sz);		    \
 	}
 
 DEFINE_MEM_WRITE(short_addr, CC2520_MEM_SHORT_ADDR, 2)
@@ -167,30 +164,30 @@ DEFINE_MEM_WRITE(ext_addr, CC2520_MEM_EXT_ADDR, 8)
  ******************************
  */
 
-static inline bool cc2520_command_strobe(struct cc2520_context *ctx,
-					  uint8_t instruction)
+static inline bool cc2520_command_strobe(const struct device *dev,
+					 uint8_t instruction)
 {
-	return z_cc2520_access(ctx, false, instruction, 0, NULL, 0);
+	return z_cc2520_access(dev, false, instruction, 0, NULL, 0);
 }
 
-static inline bool cc2520_command_strobe_snop(struct cc2520_context *ctx,
-					       uint8_t instruction)
+static inline bool cc2520_command_strobe_snop(const struct device *dev,
+					      uint8_t instruction)
 {
 	uint8_t snop[1] = { CC2520_INS_SNOP };
 
-	return z_cc2520_access(ctx, false, instruction, 0, snop, 1);
+	return z_cc2520_access(dev, false, instruction, 0, snop, 1);
 }
 
-#define DEFINE_STROBE_INSTRUCTION(__ins_name, __ins)			\
-	static inline bool instruct_##__ins_name(struct cc2520_context *ctx) \
-	{								\
-		return cc2520_command_strobe(ctx, __ins);		\
+#define DEFINE_STROBE_INSTRUCTION(__ins_name, __ins)			   \
+	static inline bool instruct_##__ins_name(const struct device *dev) \
+	{								   \
+		return cc2520_command_strobe(dev, __ins);		   \
 	}
 
-#define DEFINE_STROBE_SNOP_INSTRUCTION(__ins_name, __ins)		\
-	static inline bool instruct_##__ins_name(struct cc2520_context *ctx) \
-	{								\
-		return cc2520_command_strobe_snop(ctx, __ins);		\
+#define DEFINE_STROBE_SNOP_INSTRUCTION(__ins_name, __ins)		   \
+	static inline bool instruct_##__ins_name(const struct device *dev) \
+	{								   \
+		return cc2520_command_strobe_snop(dev, __ins);		   \
 	}
 
 DEFINE_STROBE_INSTRUCTION(srxon, CC2520_INS_SRXON)

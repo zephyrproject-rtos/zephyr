@@ -1,0 +1,49 @@
+# Copyright (c) 2021 Nordic Semiconductor (ASA)
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_ZEPHYR_IPC_OPENAMP_STATIC_VRINGS := zephyr,ipc-openamp-static-vrings
+DT_COMPAT_ZEPHYR_IPC_ICMSG := zephyr,ipc-icmsg
+
+config IPC_SERVICE_REG_BACKEND_PRIORITY
+	int "Initialization priority of modules registering IPC backend"
+	default 46
+	help
+	  The backend must be registered before the endpoint register.
+
+config IPC_SERVICE_BACKEND_RPMSG
+	bool "OpenAMP RPMSG backend with static VRINGs"
+	depends on MBOX
+	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_IPC_OPENAMP_STATIC_VRINGS))
+	select IPC_SERVICE_RPMSG
+	select IPC_SERVICE_STATIC_VRINGS
+	select OPENAMP
+
+config IPC_SERVICE_BACKEND_ICMSG
+	bool "ICMSG backend with SPSC packet buffer"
+	depends on MBOX
+	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_IPC_ICMSG))
+	select SPSC_PBUF
+	select SPSC_PBUF_USE_CACHE
+	help
+	  Chosing this backend results in single endpoint implementation based
+	  on circular packet buffer.
+
+config IPC_SERVICE_RPMSG
+	bool "RPMsg support library"
+	help
+	  "RPMsg library"
+
+config IPC_SERVICE_STATIC_VRINGS
+	bool "Static VRINGs support library"
+	help
+	  "Static VRINGs library"
+
+config IPC_SERVICE_STATIC_VRINGS_ALIGNMENT
+	int "VRINGs alignment"
+	depends on IPC_SERVICE_STATIC_VRINGS
+	default 4
+	help
+	  Static VRINGs alignment
+
+rsource "Kconfig.icmsg"
+rsource "Kconfig.rpmsg"

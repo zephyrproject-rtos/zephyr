@@ -3,15 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_data.h>
 #include <kernel_arch_func.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
-#include <arch/x86/multiboot.h>
+#include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
-#include <drivers/interrupt_controller/loapic.h>
-#include <arch/x86/acpi.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
+#include <zephyr/arch/x86/acpi.h>
 
 /*
  * Map of CPU logical IDs to CPU local APIC IDs. By default,
@@ -90,6 +90,14 @@ struct x86_tss64 tss3 = {
 };
 #endif
 
+
+/* We must put this in a dedicated section, or else it will land into .bss:
+ * in this case, though locore.S initalizes it relevantly, all will be
+ * lost when calling z_bss_zero() in z_x86_cpu_init prior to using it.
+ */
+Z_GENERIC_SECTION(.boot_arg)
+x86_boot_arg_t x86_cpu_boot_arg;
+
 struct x86_cpuboot x86_cpuboot[] = {
 	{
 		.tr = X86_KERNEL_CPU0_TR,
@@ -99,6 +107,7 @@ struct x86_cpuboot x86_cpuboot[] = {
 		.stack_size =
 			Z_KERNEL_STACK_SIZE_ADJUST(CONFIG_ISR_STACK_SIZE),
 		.fn = z_x86_prep_c,
+		.arg = &x86_cpu_boot_arg,
 	},
 #if CONFIG_MP_NUM_CPUS > 1
 	{
@@ -169,9 +178,7 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 	if (cpu_num == 0U) {
 		/* Only need to do these once per boot */
 		z_bss_zero();
-#ifdef CONFIG_XIP
 		z_data_copy();
-#endif
 	}
 
 	z_loapic_enable(cpu_num);

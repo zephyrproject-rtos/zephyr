@@ -12,9 +12,9 @@ config CLOCK_CONTROL_NRF_FORCE_ALT
 
 menuconfig CLOCK_CONTROL_NRF
 	bool "NRF Clock controller support"
-	depends on SOC_COMPATIBLE_NRF
-	select NRFX_CLOCK if !CLOCK_CONTROL_NRF_FORCE_ALT
 	default y
+	depends on DT_HAS_NORDIC_NRF_CLOCK_ENABLED
+	select NRFX_CLOCK if !CLOCK_CONTROL_NRF_FORCE_ALT
 	help
 	  Enable support for the Nordic Semiconductor nRFxx series SoC clock
 	  driver.
@@ -55,15 +55,23 @@ config CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING
 endchoice
 
 config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
-	bool "Enable LF clock calibration"
+	bool "LF clock calibration"
 	depends on !SOC_SERIES_NRF91X && CLOCK_CONTROL_NRF_K32SRC_RC
-	default y
+	default y if !BOARD_ENABLE_CPUNET
 	help
 	  If calibration is disabled when RC is used for low frequency clock then
 	  accuracy of the low frequency clock will degrade. Disable on your own
 	  risk.
 
 if CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
+
+config CLOCK_CONTROL_NRF_DRIVER_CALIBRATION
+	bool
+	depends on !CLOCK_CONTROL_NRF_FORCE_ALT
+	depends on MULTITHREADING
+	default y
+	help
+	  Enabling indicates that calibration is performed by the clock control driver.
 
 config CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON
 	bool "LF clock is always on"
@@ -101,6 +109,8 @@ config CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF
 	  Calibration is triggered if the temperature has changed by at least
 	  this amount since the last calibration.
 
+if CLOCK_CONTROL_NRF_DRIVER_CALIBRATION
+
 config CLOCK_CONTROL_NRF_CALIBRATION_DEBUG
 	bool "Calibration instrumentation"
 	help
@@ -115,6 +125,7 @@ config CLOCK_CONTROL_NRF_USES_TEMP_SENSOR
 	select TEMP_NRF5
 	select SENSOR
 
+endif # CLOCK_CONTROL_NRF_DRIVER_CALIBRATION
 endif # CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 
 choice CLOCK_CONTROL_NRF_ACCURACY_PPM

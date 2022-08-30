@@ -10,9 +10,9 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 
-#include <data/json.h>
+#include <zephyr/data/json.h>
 #include <tp.h>
 
 #define UDP_PORT 4242
@@ -25,13 +25,13 @@ do {									\
 
 /*
  * This application is used together with the TTCN-3 based sanity check
- * to validate the functionality of the experimental TCP (TCP2).
+ * to validate the functionality of the TCP.
  *
  * samples/net/sockets/tcp/README.rst
  *
  * Eventually UDP based test protocol might be terminated in the user space
  * (see udp() below), but at the moment it's just a dummy loop
- * to keep the sample running in order to execute TTCN-3 TCP2 sanity check.
+ * to keep the sample running in order to execute TTCN-3 TCP sanity check.
  */
 void main(void)
 {

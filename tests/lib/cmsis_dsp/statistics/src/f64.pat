@@ -39,7 +39,7 @@ static const uint64_t in_entropy[75] = {
     0x3fc52b5e85486ddc
     };
 
-static const q15_t in_entropy_dim[11] = {
+static const uint16_t in_entropy_dim[11] = {
     0x000A, 0x0003, 0x0008, 0x0009, 0x000C, 0x0003, 0x0008, 0x0009,
     0x000C, 0x0003, 0x0008
     };
@@ -126,7 +126,7 @@ static const uint64_t in_kl2[75] = {
     0x3fc2a7de90998afd
     };
 
-static const q15_t in_kl_dim[11] = {
+static const uint16_t in_kl_dim[11] = {
     0x000A, 0x0003, 0x0008, 0x0009, 0x000C, 0x0003, 0x0008, 0x0009,
     0x000C, 0x0003, 0x0008
     };

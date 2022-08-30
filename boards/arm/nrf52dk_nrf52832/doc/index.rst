@@ -26,7 +26,6 @@ the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/nrf52dk_nrf52832.jpg
-     :width: 442px
      :align: center
      :alt: nRF52 DK
 
@@ -82,7 +81,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `nRF52 DK website`_ and `Nordic Semiconductor Infocenter`_
 for a complete list of nRF52 Development Kit board hardware features.
 

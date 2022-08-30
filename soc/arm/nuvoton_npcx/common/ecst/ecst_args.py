@@ -8,6 +8,7 @@
 
 import sys
 import argparse
+import colorama
 from colorama import Fore
 
 INVALID_INPUT = -1
@@ -45,11 +46,14 @@ FW_CRC_START_OFFSET_DEFAULT = 0x0
 POINTER_OFFSET_DEFAULT = 0x0
 
 # Chips: convert from name to index.
-CHIPS_INFO = {'npcx7m5': {'ram_address': 0x100a8000, 'ram_size': 0x20000},
-              'npcx7m6': {'ram_address': 0x10090000, 'ram_size': 0x40000},
-              'npcx7m7': {'ram_address': 0x10070000, 'ram_size': 0x60000},
-              'npcx9m3': {'ram_address': 0x10080000, 'ram_size': 0x50000},
-              'npcx9m6': {'ram_address': 0x10090000, 'ram_size': 0x40000}}
+CHIPS_INFO = {
+    'npcx7m5': {'ram_address': 0x100a8000, 'ram_size': 0x20000},
+    'npcx7m6': {'ram_address': 0x10090000, 'ram_size': 0x40000},
+    'npcx7m7': {'ram_address': 0x10070000, 'ram_size': 0x60000},
+    'npcx9m3': {'ram_address': 0x10080000, 'ram_size': 0x50000},
+    'npcx9m6': {'ram_address': 0x10090000, 'ram_size': 0x40000},
+    'npcx9m7': {'ram_address': 0x10070000, 'ram_size': 0x60000},
+}
 DEFAULT_CHIP = 'npcx7m6'
 
 # RAM related values
@@ -241,3 +245,5 @@ def exit_with_failure(message):
     print(Fore.RED + message)
 
     sys.exit(EXIT_FAILURE_STATUS)
+
+colorama.init()

@@ -15,21 +15,32 @@
  */
 
 #include <kernel_internal.h>
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 
 __weak void z_arm64_mm_init(bool is_primary_core) { }
 
-extern FUNC_NORETURN void z_cstart(void);
-
 extern void z_arm64_mm_init(bool is_primary_core);
 
-static inline void z_arm64_bss_zero(void)
+/*
+ * These simple memset/memcpy alternatives are necessary as the optimized
+ * ones depend on the MMU to be active (see commit c5b898743a20).
+ */
+void z_early_memset(void *dst, int c, size_t n)
 {
-	uint64_t *p = (uint64_t *)__bss_start;
-	uint64_t *end = (uint64_t *)__bss_end;
+	uint8_t *d = dst;
 
-	while (p < end) {
-		*p++ = 0U;
+	while (n--) {
+		*d++ = c;
+	}
+}
+
+void z_early_memcpy(void *dst, const void *src, size_t n)
+{
+	uint8_t *d = dst;
+	const uint8_t *s = src;
+
+	while (n--) {
+		*d++ = *s++;
 	}
 }
 
@@ -39,17 +50,14 @@ static inline void z_arm64_bss_zero(void)
  *
  * This routine prepares for the execution of and runs C code.
  *
- * @return N/A
  */
 void z_arm64_prep_c(void)
 {
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[0]);
 
-	z_arm64_bss_zero();
-#ifdef CONFIG_XIP
+	z_bss_zero();
 	z_data_copy();
-#endif
 	z_arm64_mm_init(true);
 	z_arm64_interrupt_init();
 	z_cstart();

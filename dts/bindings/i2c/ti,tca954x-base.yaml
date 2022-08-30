@@ -1,0 +1,59 @@
+# Copyright (c) 2020, Innoseis BV
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for TI TCA954X I2C mux family
+
+description: |
+  TCA954x I2C switch
+
+  Each channel is represented by a separate devicetree child node.
+  The channel node can then be used as a standard i2c bus controller
+  like in the following simplified example:
+
+      /* The tca954x node must be a child of an i2c controller */
+      mux: tca9546a@77 {
+          compatible = "ti,tca9546a";
+          reg = <0x77>;
+          status = "okay";
+          #address-cells = <1>;
+          #size-cells = <0>;
+          reset-gpios = <&gpio5 3 GPIO_ACTIVE_LOW>;
+
+          mux_i2c@0 {
+              compatible: "ti,tca9546a-channel"
+              reg = <0>;
+              #address-cells = <1>;
+              #size-cells = <0>;
+
+              temp_sens_0: tmp116@49 {
+                  compatible = "ti,tmp116";
+                  reg = <0x49>;
+              };
+          };
+
+          mux_i2c@1 {
+            compatible: "ti,tca9546a-channel"
+              reg = <1>;
+              #address-cells = <1>;
+              #size-cells = <0>;
+
+              temp_sens_1: tmp116@49 {
+                  compatible = "ti,tmp116";
+                  reg = <0x49>;
+              };
+          };
+      };
+
+include: [i2c-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      GPIO connected to the controller RESET pin. This pin is active-low.
+
+child-binding:
+  description: TCA954x I2C switch channel node
+  include: [i2c-controller.yaml]
+  on-bus: i2c

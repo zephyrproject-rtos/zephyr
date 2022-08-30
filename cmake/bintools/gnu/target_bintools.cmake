@@ -25,7 +25,7 @@
 set_property(TARGET bintools PROPERTY elfconvert_command ${CMAKE_OBJCOPY})
 
 # List of format the tool supports for converting, for example,
-# GNU tools uses objectcopyy, which supports the following: ihex, srec, binary
+# GNU tools uses objectcopy, which supports the following: ihex, srec, binary
 set_property(TARGET bintools PROPERTY elfconvert_formats ihex srec binary)
 
 set_property(TARGET bintools PROPERTY elfconvert_flag "")
@@ -40,6 +40,8 @@ set_property(TARGET bintools PROPERTY elfconvert_flag_outtarget "--output-target
 set_property(TARGET bintools PROPERTY elfconvert_flag_section_remove "--remove-section=")
 set_property(TARGET bintools PROPERTY elfconvert_flag_section_only "--only-section=")
 set_property(TARGET bintools PROPERTY elfconvert_flag_section_rename "--rename-section;")
+
+set_property(TARGET bintools PROPERTY elfconvert_flag_lma_adjust "--change-section-lma;*+")
 
 # Note, placing a ';' at the end results in the following param  to be a list,
 # and hence space separated.
@@ -122,3 +124,10 @@ set_property(TARGET bintools PROPERTY readelf_flag_outfile ">;" )
 #set_property(TARGET bintools PROPERTY readelf_flag_headers -E)
 #set_property(TARGET bintools PROPERTY readelf_flag_infile "")
 #set_property(TARGET bintools PROPERTY readelf_flag_outfile "-O file=" )
+
+
+set_property(TARGET bintools PROPERTY symbols_command ${CMAKE_NM})
+set_property(TARGET bintools PROPERTY symbols_flag "")
+set_property(TARGET bintools PROPERTY symbols_final "")
+set_property(TARGET bintools PROPERTY symbols_infile "")
+set_property(TARGET bintools PROPERTY symbols_outfile ">;" )

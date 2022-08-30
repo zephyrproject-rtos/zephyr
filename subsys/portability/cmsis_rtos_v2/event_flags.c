@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include "wrapper.h"
 
@@ -63,7 +63,7 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 uint32_t osEventFlagsSet(osEventFlagsId_t ef_id, uint32_t flags)
 {
 	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
-	int key;
+	unsigned int key;
 
 	if ((ef_id == NULL) || (flags & osFlagsError)) {
 		return osFlagsErrorParameter;
@@ -84,7 +84,7 @@ uint32_t osEventFlagsSet(osEventFlagsId_t ef_id, uint32_t flags)
 uint32_t osEventFlagsClear(osEventFlagsId_t ef_id, uint32_t flags)
 {
 	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
-	int key;
+	unsigned int key;
 	uint32_t sig;
 
 	if ((ef_id == NULL) || (flags & osFlagsError)) {

@@ -4,12 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/__assert.h>
-#include <sw_isr_table.h>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
-#include <drivers/interrupt_controller/gic.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
 #include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"
+
+#include <string.h>
 
 /* Redistributor base addresses for each core */
 mem_addr_t gic_rdists[CONFIG_MP_NUM_CPUS];
@@ -18,6 +20,22 @@ mem_addr_t gic_rdists[CONFIG_MP_NUM_CPUS];
 #define IGROUPR_VAL	0xFFFFFFFFU
 #else
 #define IGROUPR_VAL	0x0U
+#endif
+
+/*
+ * We allocate memory for PROPBASE to cover 2 ^ lpi_id_bits LPIs to
+ * deal with (one configuration byte per interrupt). PENDBASE has to
+ * be 64kB aligned (one bit per LPI, plus 8192 bits for SPI/PPI/SGI).
+ */
+#define ITS_MAX_LPI_NRBITS	16 /* 64K LPIs */
+
+#define LPI_PROPBASE_SZ(nrbits)	ROUND_UP(BIT(nrbits), KB(64))
+#define LPI_PENDBASE_SZ(nrbits)	ROUND_UP(BIT(nrbits) / 8, KB(64))
+
+#ifdef CONFIG_GIC_V3_ITS
+static uintptr_t lpi_prop_table;
+
+atomic_t nlpi_intid = ATOMIC_INIT(8192);
 #endif
 
 static inline mem_addr_t gic_get_rdist(void)
@@ -42,15 +60,72 @@ static int gic_wait_rwp(uint32_t intid)
 		rwp_mask = BIT(GICD_CTLR_RWP);
 	}
 
-	while (sys_read32(base) & rwp_mask)
+	while (sys_read32(base) & rwp_mask) {
 		;
+	}
 
 	return 0;
 }
 
+#ifdef CONFIG_GIC_V3_ITS
+static void arm_gic_lpi_setup(unsigned int intid, bool enable)
+{
+	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+
+	if (enable) {
+		*cfg |= BIT(0);
+	} else {
+		*cfg &= ~BIT(0);
+	}
+
+	dsb();
+
+	its_rdist_invall();
+}
+
+static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
+{
+	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+
+	*cfg &= 0xfc;
+	*cfg |= prio & 0xfc;
+
+	dsb();
+
+	its_rdist_invall();
+}
+
+static bool arm_gic_lpi_is_enabled(unsigned int intid)
+{
+	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+
+	return (*cfg & BIT(0));
+}
+#endif
+
+#if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
+static inline void arm_gic_write_irouter(uint64_t val, unsigned int intid)
+{
+	mem_addr_t addr = IROUTER(GET_DIST_BASE(intid), intid);
+
+#ifdef CONFIG_ARM
+	sys_write32((uint32_t)val, addr);
+	sys_write32((uint32_t)(val >> 32U), addr + 4);
+#else
+	sys_write64(val, addr);
+#endif
+}
+#endif
+
 void arm_gic_irq_set_priority(unsigned int intid,
 			      unsigned int prio, uint32_t flags)
 {
+#ifdef CONFIG_GIC_V3_ITS
+	if (intid >= 8192) {
+		arm_gic_lpi_set_priority(intid, prio);
+		return;
+	}
+#endif
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 	uint32_t shift;
@@ -80,14 +155,37 @@ void arm_gic_irq_set_priority(unsigned int intid,
 
 void arm_gic_irq_enable(unsigned int intid)
 {
+#ifdef CONFIG_GIC_V3_ITS
+	if (intid >= 8192) {
+		arm_gic_lpi_setup(intid, true);
+		return;
+	}
+#endif
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 
 	sys_write32(mask, ISENABLER(GET_DIST_BASE(intid), idx));
+
+#if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
+	/*
+	 * Affinity routing is enabled for Armv8-A Non-secure state (GICD_CTLR.ARE_NS
+	 * is set to '1') and for GIC single security state (GICD_CTRL.ARE is set to '1'),
+	 * so need to set SPI's affinity, now set it to be the PE on which it is enabled.
+	 */
+	if (GIC_IS_SPI(intid)) {
+		arm_gic_write_irouter(MPIDR_TO_CORE(GET_MPIDR()), intid);
+	}
+#endif
 }
 
 void arm_gic_irq_disable(unsigned int intid)
 {
+#ifdef CONFIG_GIC_V3_ITS
+	if (intid >= 8192) {
+		arm_gic_lpi_setup(intid, false);
+		return;
+	}
+#endif
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 
@@ -98,6 +196,11 @@ void arm_gic_irq_disable(unsigned int intid)
 
 bool arm_gic_irq_is_enabled(unsigned int intid)
 {
+#ifdef CONFIG_GIC_V3_ITS
+	if (intid >= 8192) {
+		return arm_gic_lpi_is_enabled(intid);
+	}
+#endif
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 	uint32_t val;
@@ -147,8 +250,12 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 	/* Extract affinity fields from target */
 	aff1 = MPIDR_AFFLVL(target_aff, 1);
 	aff2 = MPIDR_AFFLVL(target_aff, 2);
+#if defined(CONFIG_ARM)
+	/* There is no Aff3 in AArch32 MPIDR */
+	aff3 = 0;
+#else
 	aff3 = MPIDR_AFFLVL(target_aff, 3);
-
+#endif
 	sgi_val = GICV3_SGIR_VALUE(aff3, aff2, aff1, sgi_id,
 				   SGIR_IRM_TO_AFF, target_list);
 
@@ -165,13 +272,67 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
  */
 static void gicv3_rdist_enable(mem_addr_t rdist)
 {
-	if (!(sys_read32(rdist + GICR_WAKER) & BIT(GICR_WAKER_CA)))
+	if (!(sys_read32(rdist + GICR_WAKER) & BIT(GICR_WAKER_CA))) {
 		return;
+	}
 
 	sys_clear_bit(rdist + GICR_WAKER, GICR_WAKER_PS);
-	while (sys_read32(rdist + GICR_WAKER) & BIT(GICR_WAKER_CA))
+	while (sys_read32(rdist + GICR_WAKER) & BIT(GICR_WAKER_CA)) {
 		;
+	}
 }
+
+#ifdef CONFIG_GIC_V3_ITS
+/*
+ * Setup LPIs Configuration & Pending tables for redistributors
+ * LPI configuration is global, each redistributor has a pending table
+ */
+static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
+{
+	unsigned int lpi_id_bits = MIN(GICD_TYPER_IDBITS(sys_read32(GICD_TYPER)),
+				       ITS_MAX_LPI_NRBITS);
+	uintptr_t lpi_pend_table;
+	uint64_t reg;
+	uint32_t ctlr;
+
+	/* If not, alloc a common prop table for all redistributors */
+	if (!lpi_prop_table) {
+		lpi_prop_table = (uintptr_t)k_aligned_alloc(4 * 1024, LPI_PROPBASE_SZ(lpi_id_bits));
+		memset((void *)lpi_prop_table, 0, LPI_PROPBASE_SZ(lpi_id_bits));
+	}
+
+	lpi_pend_table = (uintptr_t)k_aligned_alloc(64 * 1024, LPI_PENDBASE_SZ(lpi_id_bits));
+	memset((void *)lpi_pend_table, 0, LPI_PENDBASE_SZ(lpi_id_bits));
+
+	ctlr = sys_read32(rdist + GICR_CTLR);
+	ctlr &= ~GICR_CTLR_ENABLE_LPIS;
+	sys_write32(ctlr, rdist + GICR_CTLR);
+
+	/* PROPBASE */
+	reg = (GIC_BASER_SHARE_INNER << GITR_PROPBASER_SHAREABILITY_SHIFT) |
+	      (GIC_BASER_CACHE_RAWAWB << GITR_PROPBASER_INNER_CACHE_SHIFT) |
+	      (lpi_prop_table & (GITR_PROPBASER_ADDR_MASK << GITR_PROPBASER_ADDR_SHIFT)) |
+	      (GIC_BASER_CACHE_INNERLIKE << GITR_PROPBASER_OUTER_CACHE_SHIFT) |
+	      ((lpi_id_bits - 1) & GITR_PROPBASER_ID_BITS_MASK);
+	sys_write64(reg, rdist + GICR_PROPBASER);
+	/* TOFIX: check SHAREABILITY validity */
+
+	/* PENDBASE */
+	reg = (GIC_BASER_SHARE_INNER << GITR_PENDBASER_SHAREABILITY_SHIFT) |
+	      (GIC_BASER_CACHE_RAWAWB << GITR_PENDBASER_INNER_CACHE_SHIFT) |
+	      (lpi_pend_table & (GITR_PENDBASER_ADDR_MASK << GITR_PENDBASER_ADDR_SHIFT)) |
+	      (GIC_BASER_CACHE_INNERLIKE << GITR_PENDBASER_OUTER_CACHE_SHIFT) |
+	      GITR_PENDBASER_PTZ;
+	sys_write64(reg, rdist + GICR_PENDBASER);
+	/* TOFIX: check SHAREABILITY validity */
+
+	ctlr = sys_read32(rdist + GICR_CTLR);
+	ctlr |= GICR_CTLR_ENABLE_LPIS;
+	sys_write32(ctlr, rdist + GICR_CTLR);
+
+	dsb();
+}
+#endif
 
 /*
  * Initialize the cpu interface. This should be called by each core.
@@ -184,19 +345,19 @@ static void gicv3_cpuif_init(void)
 	mem_addr_t base = gic_get_rdist() + GICR_SGI_BASE_OFF;
 
 	/* Disable all sgi ppi */
-	sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG), ICENABLER(base, 0));
+	sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG), ICENABLER(base, 0));
 	/* Any sgi/ppi intid ie. 0-31 will select GICR_CTRL */
 	gic_wait_rwp(0);
 
 	/* Clear pending */
-	sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG), ICPENDR(base, 0));
+	sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG), ICPENDR(base, 0));
 
 	/* Configure all SGIs/PPIs as G1S or G1NS depending on Zephyr
 	 * is run in EL1S or EL1NS respectively.
 	 * All interrupts will be delivered as irq
 	 */
 	sys_write32(IGROUPR_VAL, IGROUPR(base, 0));
-	sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG), IGROUPMODR(base, 0));
+	sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG), IGROUPMODR(base, 0));
 
 	/*
 	 * Configure default priorities for SGI 0:15 and PPI 0:15.
@@ -267,13 +428,13 @@ static void gicv3_dist_init(void)
 	     intid += GIC_NUM_INTR_PER_REG) {
 		idx = intid / GIC_NUM_INTR_PER_REG;
 		/* Disable interrupt */
-		sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG),
+		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG),
 			    ICENABLER(base, idx));
 		/* Clear pending */
-		sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG),
+		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG),
 			    ICPENDR(base, idx));
 		sys_write32(IGROUPR_VAL, IGROUPR(base, idx));
-		sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG),
+		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG),
 			    IGROUPMODR(base, idx));
 
 	}
@@ -323,6 +484,11 @@ static void __arm_gic_init(void)
 	cpu = arch_curr_cpu()->id;
 	gic_rdists[cpu] = GIC_RDIST_BASE + MPIDR_TO_CORE(GET_MPIDR()) * 0x20000;
 
+#ifdef CONFIG_GIC_V3_ITS
+	/* Enable LPIs in Redistributor */
+	gicv3_rdist_setup_lpis(gic_get_rdist());
+#endif
+
 	gicv3_rdist_enable(gic_get_rdist());
 
 	gicv3_cpuif_init();
@@ -338,11 +504,16 @@ int arm_gic_init(const struct device *unused)
 
 	return 0;
 }
-SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);
 
 #ifdef CONFIG_SMP
 void arm_gic_secondary_init(void)
 {
 	__arm_gic_init();
+
+#ifdef CONFIG_GIC_V3_ITS
+	/* Map this CPU Redistributor in all the ITS Collection tables */
+	its_rdist_map();
+#endif
 }
 #endif

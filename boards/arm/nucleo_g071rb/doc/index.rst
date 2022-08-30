@@ -25,8 +25,6 @@ some highlights of the Nucleo G071RB board:
 - Two push-buttons: USER and RESET
 
 .. image:: img/nucleo_g071rb.jpg
-   :width: 500px
-   :height: 367px
    :align: center
    :alt: Nucleo G071RB
 
@@ -112,6 +110,8 @@ The Zephyr nucleo_g071rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | dac                                 |
 +-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -154,27 +154,7 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo G071RB board includes an ST-LINK/V2-1 embedded debug tool interface.
-
-This interface is not yet supported by the openocd version included in the Zephyr SDK.
-
-Instead, support can be enabled on pyocd by adding "pack" support with
-the following pyocd command:
-
-.. code-block:: console
-
-   $ pyocd pack --update
-   $ pyocd pack --install stm32g071rb
-
-Note:
-To manually enable the openocd interface, You can still update, compile and install
-a 'local' openocd from the official openocd repo http://openocd.zylin.com .
-Then run the following openocd command where the '/usr/local/bin/openocd'is your path
-for the freshly installed openocd, given by "$ which openocd" :
-
-.. code-block:: console
-
-   $ west flash --openocd /usr/local/bin/openocd
+Nucleo G071RB board includes an ST-LINK/V3 embedded debug tool interface.
 
 Flashing an application to Nucleo G071RB
 ----------------------------------------

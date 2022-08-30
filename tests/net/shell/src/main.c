@@ -8,33 +8,33 @@
 
 #define NET_LOG_LEVEL CONFIG_NET_UDP_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <linker/sections.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <device.h>
-#include <init.h>
-#include <sys/printk.h>
-#include <net/buf.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_ip.h>
-#include <net/ethernet.h>
-#include <net/dummy.h>
-#include <net/udp.h>
-#include <random/rand32.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/udp.h>
+#include <zephyr/random/rand32.h>
 
 #include "ipv4.h"
 #include "ipv6.h"
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -141,7 +141,7 @@ NET_DEVICE_INIT(net_udp_test, "net_udp_test",
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_udp_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
 
-static void test_setup(void)
+static void *test_setup(void)
 {
 	struct net_if *iface;
 	struct net_if_addr *ifaddr;
@@ -202,9 +202,11 @@ static void test_setup(void)
 		       net_sprint_ipv4_addr(&in4addr_my), iface);
 		zassert_true(0, "exiting");
 	}
+
+	return NULL;
 }
 
-static void test_net_shell(void)
+ZTEST(net_shell_test_suite, test_net_shell)
 {
 	int ret;
 
@@ -217,10 +219,4 @@ static void test_net_shell(void)
 	zassert_equal(ret, 1, "");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_net_shell_usability,
-			 ztest_unit_test(test_setup),
-			 ztest_unit_test(test_net_shell));
-	ztest_run_test_suite(test_net_shell_usability);
-}
+ZTEST_SUITE(net_shell_test_suite, NULL, test_setup, NULL, NULL, NULL);

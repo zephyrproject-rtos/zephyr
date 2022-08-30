@@ -12,6 +12,7 @@ tests:
     filter: CONFIG_UART_CONSOLE
   drivers.console.semihost:
     tags: drivers console
-    arch_allow: arm
-    filter: CONFIG_CPU_CORTEX_M and CONFIG_QEMU_TARGET
+    arch_allow: arm arm64 riscv32 riscv64
+    platform_type:
+      - qemu
     extra_args: CONF_FILE=prj_semihost.conf

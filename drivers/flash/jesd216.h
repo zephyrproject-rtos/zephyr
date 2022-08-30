@@ -8,8 +8,8 @@
 #define ZEPHYR_DRIVERS_FLASH_JESD216_H_
 
 #include <errno.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
 /* Following are structures and constants supporting the JEDEC Serial
@@ -20,6 +20,7 @@
 
 #define JESD216_CMD_READ_SFDP   0x5A
 #define JESD216_CMD_BURST_SFDP  0x5B
+#define JESD216_OCMD_READ_SFDP  0x5AA5
 
 /* Layout of a JESD216 parameter header. */
 struct jesd216_param_header {
@@ -444,11 +445,19 @@ enum jesd216_dw15_qer_type {
 	JESD216_DW15_QER_S2B1v6 = 6,
 };
 
+#define JESD216_DW15_QER_VAL_NONE 0
+#define JESD216_DW15_QER_VAL_S2B1v1 1
+#define JESD216_DW15_QER_VAL_S1B6 2
+#define JESD216_DW15_QER_VAL_S2B7 3
+#define JESD216_DW15_QER_VAL_S2B1v4 4
+#define JESD216_DW15_QER_VAL_S2B1v5 5
+#define JESD216_DW15_QER_VAL_S2B1v6 6
+
 /* Decoded data from JESD216 DW15 */
 struct jesd216_bfp_dw15 {
 	/* If true clear NVECR bit 4 to disable HOLD/RESET */
 	bool hold_reset_disable: 1;
-	/* Encoded jesd216_qer_type */
+	/* Encoded jesd216_dw15_qer_type */
 	unsigned int qer: 3;
 	/* 0-4-4 mode entry method */
 	unsigned int entry_044: 4;

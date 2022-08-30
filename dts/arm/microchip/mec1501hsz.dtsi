@@ -5,8 +5,8 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -37,26 +37,32 @@
 		i2c-smb-4 = &i2c_smb_4;
 	};
 
-	pinmux {
+	pinmux: pinmux {
 		compatible = "microchip,xec-pinmux";
 
 		pinmux_000_036: pinmux-0 {
 			ph-reg = <&gpio_000_036>;
+			port-num = <0>;
 		};
 		pinmux_040_076: pinmux-1 {
 			ph-reg = <&gpio_040_076>;
+			port-num = <1>;
 		};
 		pinmux_100_136: pinmux-2 {
 			ph-reg = <&gpio_100_136>;
+			port-num = <2>;
 		};
 		pinmux_140_176: pinmux-3 {
 			ph-reg = <&gpio_140_176>;
+			port-num = <3>;
 		};
 		pinmux_200_236: pinmux-4 {
 			ph-reg = <&gpio_200_236>;
+			port-num = <4>;
 		};
 		pinmux_240_276: pinmux-5 {
 			ph-reg = <&gpio_240_276>;
+			port-num = <5>;
 		};
 	};
 
@@ -64,26 +70,96 @@
 		pcr: pcr@40080100 {
 			reg = <0x40080100 0x100 0x4000a400 0x100>;
 			reg-names = "pcrr", "vbatr";
-			label = "PCR";
 		};
 		ecia: ecia@4000e000 {
 			reg = <0x4000e000 0x400>;
-			label = "ECIA_0";
 			#address-cells = <1>;
 			#size-cells = <1>;
+		};
+		pinctrl: pin-controller@40081000 {
+			compatible = "microchip,xec-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40081000 0x1000>;
+
+			gpio_000_036: gpio@40081000 {
+				compatible = "microchip,xec-gpio";
+				reg = < 0x40081000 0x80 0x40081300 0x04
+					0x40081380 0x04 0x400813fc 0x04>;
+				interrupts = <3 2>;
+				gpio-controller;
+				port-id = <0>;
+				girq-id = <11>;
+				#gpio-cells=<2>;
+			};
+			gpio_040_076: gpio@40081080 {
+				compatible = "microchip,xec-gpio";
+				reg = < 0x40081080 0x80 0x40081304 0x04
+					0x40081384 0x04 0x400813f8 0x4>;
+				interrupts = <2 2>;
+				gpio-controller;
+				port-id = <1>;
+				girq-id = <10>;
+				#gpio-cells=<2>;
+			};
+			gpio_100_136: gpio@40081100 {
+				compatible = "microchip,xec-gpio";
+				reg = < 0x40081100 0x80 0x40081308 0x04
+					0x40081388 0x04 0x400813f4 0x04>;
+				gpio-controller;
+				interrupts = <1 2>;
+				port-id = <2>;
+				girq-id = <9>;
+				#gpio-cells=<2>;
+			};
+			gpio_140_176: gpio@40081180 {
+				compatible = "microchip,xec-gpio";
+				reg = < 0x40081180 0x80 0x4008130c 0x04
+					0x4008138c 0x04 0x400813f0 0x04>;
+				gpio-controller;
+				interrupts = <0 2>;
+				port-id = <3>;
+				girq-id = <8>;
+				#gpio-cells=<2>;
+			};
+			gpio_200_236: gpio@40081200 {
+				compatible = "microchip,xec-gpio";
+				reg = < 0x40081200 0x80 0x40081310 0x04
+					0x40081390 0x04 0x400813ec 0x04>;
+				gpio-controller;
+				interrupts = <4 2>;
+				port-id = <4>;
+				girq-id = <12>;
+				#gpio-cells=<2>;
+			};
+			gpio_240_276: gpio@40081280 {
+				compatible = "microchip,xec-gpio";
+				reg = < 0x40081280 0x80 0x40081314 0x04
+					0x40081394 0x04 0x400813e8 0x04>;
+				gpio-controller;
+				interrupts = <17 2>;
+				port-id = <5>;
+				girq-id = <26>;
+				#gpio-cells=<2>;
+			};
 		};
 		rtimer: timer@40007400 {
 			compatible = "microchip,xec-rtos-timer";
 			reg = <0x40007400 0x10>;
 			interrupts = <111 0>;
-			label = "RTIMER";
 			girqs = <23 10>;
+		};
+		bbram: bb-ram@4000a800 {
+			compatible = "microchip,xec-bbram";
+			reg = <0x4000a800 0x80>;
+			reg-names = "memory";
 		};
 		wdog: watchdog@40000400 {
 			compatible = "microchip,xec-watchdog";
 			reg = <0x40000400 0x400>;
 			interrupts = <171 0>;
-			label = "WDT_0";
+			girqs = <21 2>;
+			pcrs = <1 9>;
 		};
 		uart0: uart@400f2400 {
 			compatible = "ns16550";
@@ -91,7 +167,6 @@
 			interrupts = <40 0>;
 			clock-frequency = <1843200>;
 			current-speed = <38400>;
-			label = "UART_0";
 			reg-shift = <0>;
 			status = "disabled";
 		};
@@ -101,7 +176,6 @@
 			interrupts = <41 0>;
 			clock-frequency = <1843200>;
 			current-speed = <38400>;
-			label = "UART_1";
 			reg-shift = <0>;
 			status = "disabled";
 		};
@@ -111,57 +185,8 @@
 			interrupts = <44 0>;
 			clock-frequency = <1843200>;
 			current-speed = <38400>;
-			label = "UART_2";
 			reg-shift = <0>;
 			status = "disabled";
-		};
-		gpio_000_036: gpio@40081000 {
-			compatible = "microchip,xec-gpio";
-			reg = <0x40081000 0x80>;
-			interrupts = <3 2>;
-			gpio-controller;
-			label="GPIO000_036";
-			#gpio-cells=<2>;
-		};
-		gpio_040_076: gpio@40081080 {
-			compatible = "microchip,xec-gpio";
-			reg = <0x40081080 0x80>;
-			interrupts = <2 2>;
-			gpio-controller;
-			label="GPIO040_076";
-			#gpio-cells=<2>;
-		};
-		gpio_100_136: gpio@40081100 {
-			compatible = "microchip,xec-gpio";
-			reg = <0x40081100 0x80>;
-			gpio-controller;
-			interrupts = <1 2>;
-			label="GPIO100_136";
-			#gpio-cells=<2>;
-		};
-		gpio_140_176: gpio@40081180 {
-			compatible = "microchip,xec-gpio";
-			reg = <0x40081180 0x80>;
-			gpio-controller;
-			interrupts = <0 2>;
-			label="GPIO140_176";
-			#gpio-cells=<2>;
-		};
-		gpio_200_236: gpio@40081200 {
-			compatible = "microchip,xec-gpio";
-			reg = <0x40081200 0x80>;
-			gpio-controller;
-			interrupts = <4 2>;
-			label="GPIO200_236";
-			#gpio-cells=<2>;
-		};
-		gpio_240_276: gpio@40081280 {
-			compatible = "microchip,xec-gpio";
-			reg = <0x40081280 0x80>;
-			gpio-controller;
-			interrupts = <17 2>;
-			label="GPIO240_276";
-			#gpio-cells=<2>;
 		};
 
 		i2c_smb_0: i2c@40004000 {
@@ -169,7 +194,6 @@
 			reg = <0x40004000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <20 1>;
-			label = "I2C_SMB_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -182,7 +206,6 @@
 			reg = <0x40004400 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <21 1>;
-			label = "I2C_SMB_1";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -195,7 +218,6 @@
 			reg = <0x40004800 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <22 1>;
-			label = "I2C_SMB_2";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -208,7 +230,6 @@
 			reg = <0x40004C00 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <23 1>;
-			label = "I2C_SMB_3";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -221,7 +242,6 @@
 			reg = <0x40005000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <158 1>;
-			label = "I2C_SMB_4";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -233,7 +253,6 @@
 			compatible = "microchip,xec-espi";
 			reg = <0x400f3400 0x400>;
 			interrupts = <11 3>, <15 3>, <7 3>, <16 3>;
-			label = "ESPI_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -243,7 +262,6 @@
 			reg = < 0x40008000 0x400
 				0x40070000 0x400
 				0x40071000 0x400>;
-			label = "ESPI_SAF_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -254,7 +272,6 @@
 			clock-frequency = <48000000>;
 			reg = <0x40000c00 0x20>;
 			interrupts = <136 0>;
-			label = "TIMER_0";
 			max-value = <0xFFFF>;
 			prescaler = <0>;
 			status = "disabled";
@@ -266,7 +283,6 @@
 			clock-frequency = <48000000>;
 			reg = <0x40000c20 0x20>;
 			interrupts = <137 0>;
-			label = "TIMER_1";
 			max-value = <0xFFFF>;
 			prescaler = <0>;
 			status = "disabled";
@@ -284,7 +300,6 @@
 			clock-frequency = <48000000>;
 			reg = <0x40000c80 0x20>;
 			interrupts = <140 0>;
-			label = "TIMER_4";
 			max-value = <0xFFFFFFFF>;
 			prescaler = <0>;
 			girqs = <23 4>;
@@ -296,7 +311,6 @@
 			clock-frequency = <48000000>;
 			reg = <0x40000ca0 0x20>;
 			interrupts = <141 0>;
-			label = "TIMER_5";
 			max-value = <0xFFFFFFFF>;
 			prescaler = <0>;
 			girqs = <23 5>;
@@ -306,100 +320,99 @@
 			compatible = "microchip,xec-ps2";
 			reg = <0x40009000 0x40>;
 			interrupts = <100 1>;
-			label = "PS2_0";
+			girqs = <18 10>;
+			pcrs = <3 5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			girq = <18>;
-			girq-bit = <10>;
 		};
 		ps2_1: ps2@40009040 {
 			compatible = "microchip,xec-ps2";
 			reg = <0x40009040 0x40>;
 			interrupts = <101 1>;
-			label = "PS2_1";
+			girqs = <18 11>;
+			pcrs = <3 6>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			girq = <18>;
-			girq-bit = <11>;
 		};
 		pwm0: pwm@40005800 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005800 0x20>;
-			label = "PWM_0";
+			pcrs = <1 4>;
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm1: pwm@40005810 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005810 0x20>;
-			label = "PWM_1";
+			pcrs = <1 20>;
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm2: pwm@40005820 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005820 0x20>;
-			label = "PWM_2";
+			pcrs = <1 21>;
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm3: pwm@40005830 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005830 0x20>;
-			label = "PWM_3";
+			pcrs = <1 22>;
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm4: pwm@40005840 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005840 0x20>;
-			label = "PWM_4";
+			pcrs = <1 23>;
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm5: pwm@40005850 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005850 0x20>;
-			label = "PWM_5";
+			pcrs = <1 24>;
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm6: pwm@40005860 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005860 0x20>;
-			label = "PWM_6";
+			pcrs = <1 25>;
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm7: pwm@40005870 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005870 0x20>;
-			label = "PWM_7";
+			pcrs = <1 26>;
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm8: pwm@40005880 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005880 0x20>;
-			label = "PWM_8";
+			pcrs = <1 27>;
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		adc0: adc@40007c00 {
 			compatible = "microchip,xec-adc";
 			reg = <0x40007c00 0x90>;
 			interrupts = <78 0>, <79 0>;
-			label = "ADC_0";
 			status = "disabled";
 			#io-channel-cells = <1>;
+			clktime = <32>;
 		};
 		kscan0: kscan@40009c00 {
 			compatible = "microchip,xec-kscan";
 			reg = <0x40009c00 0x18>;
 			interrupts = <135 0>;
-			label = "KSCAN";
+			girqs = <21 25>;
+			pcrs = <3 11>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -408,7 +421,8 @@
 			compatible = "microchip,xec-peci";
 			reg = <0x40006400 0x80>;
 			interrupts = <70 4>;
-			label = "PECI_0";
+			girqs = <17 0>;
+			pcrs = <1 1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -417,7 +431,6 @@
 			reg = <0x40070000 0x400>;
 			interrupts = <91 2>;
 			clock-frequency = <12000000>;
-			label = "SPI_0";
 			rxdma = <11>;
 			txdma = <10>;
 			lines = <1>;
@@ -434,7 +447,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006000 0x10>;
 			interrupts = <71 4>;
-			label = "TACH_0";
+			girqs = <17 1>;
+			pcrs = <1 2>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -443,7 +457,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006010 0x10>;
 			interrupts = <72 4>;
-			label = "TACH_1";
+			girqs = <17 2>;
+			pcrs = <1 11>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -452,7 +467,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006020 0x10>;
 			interrupts = <73 4>;
-			label = "TACH_2";
+			girqs = <17 3>;
+			pcrs = <1 12>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -461,7 +477,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006030 0x10>;
 			interrupts = <159 4>;
-			label = "TACH_3";
+			girqs = <17 4>;
+			pcrs = <1 13>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;

@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2022 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r8a77951.h>
+
+&pfc {
+	can0_data_a_tx_default: can0_data_a_tx_default {
+		pin = <PIN_RD FUNC_CAN0_TX_A>;
+	};
+
+	can0_data_a_rx_default: can0_data_a_rx_default {
+		pin = <PIN_RD_WR FUNC_CAN0_RX_A>;
+	};
+
+	scif1_data_a_tx_default: scif1_data_a_tx_default {
+		pin = <PIN_TX1_A FUNC_TX1_A>;
+	};
+
+	scif1_data_a_rx_default: scif1_data_a_rx_default {
+		pin = <PIN_RX1_A FUNC_RX1_A>;
+	};
+
+	scif2_data_a_tx_default: scif2_data_a_tx_default {
+		pin = <PIN_TX2_A FUNC_TX2_A>;
+	};
+
+	scif2_data_a_rx_default: scif2_data_a_rx_default {
+		pin = <PIN_RX2_A FUNC_RX2_A>;
+	};
+};

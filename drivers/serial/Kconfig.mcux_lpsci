@@ -5,7 +5,9 @@
 
 config UART_MCUX_LPSCI
 	bool "MCUX LPSCI driver"
-	depends on HAS_MCUX_LPSCI && CLOCK_CONTROL
+	default y
+	depends on DT_HAS_NXP_KINETIS_LPSCI_ENABLED
+	depends on CLOCK_CONTROL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help

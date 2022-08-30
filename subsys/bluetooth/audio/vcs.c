@@ -8,18 +8,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/byteorder.h>
-#include <sys/check.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/audio/vcs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/vcs.h>
 
+#include "audio_internal.h"
 #include "vcs_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_VCS)
@@ -152,7 +153,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 			notify = true;
 		}
 		if (vcs_inst.srv.state.mute) {
-			vcs_inst.srv.state.mute = 0;
+			vcs_inst.srv.state.mute = BT_VCS_STATE_UNMUTED;
 			notify = true;
 		}
 		volume_change = true;
@@ -164,7 +165,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 			notify = true;
 		}
 		if (vcs_inst.srv.state.mute) {
-			vcs_inst.srv.state.mute = 0;
+			vcs_inst.srv.state.mute = BT_VCS_STATE_UNMUTED;
 			notify = true;
 		}
 		volume_change = true;
@@ -181,14 +182,14 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 	case BT_VCS_OPCODE_UNMUTE:
 		BT_DBG("Unmute (0x%x)", opcode);
 		if (vcs_inst.srv.state.mute) {
-			vcs_inst.srv.state.mute = 0;
+			vcs_inst.srv.state.mute = BT_VCS_STATE_UNMUTED;
 			notify = true;
 		}
 		break;
 	case BT_VCS_OPCODE_MUTE:
 		BT_DBG("Mute (0x%x)", opcode);
-		if (vcs_inst.srv.state.mute == 0) {
-			vcs_inst.srv.state.mute = 1;
+		if (vcs_inst.srv.state.mute == BT_VCS_STATE_UNMUTED) {
+			vcs_inst.srv.state.mute = BT_VCS_STATE_MUTED;
 			notify = true;
 		}
 		break;
@@ -242,29 +243,27 @@ static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 #define DUMMY_INCLUDE(i, _) BT_GATT_INCLUDE_SERVICE(NULL),
-#define VOCS_INCLUDES(cnt) UTIL_LISTIFY(cnt, DUMMY_INCLUDE)
-#define AICS_INCLUDES(cnt) UTIL_LISTIFY(cnt, DUMMY_INCLUDE)
+#define VOCS_INCLUDES(cnt) LISTIFY(cnt, DUMMY_INCLUDE, ())
+#define AICS_INCLUDES(cnt) LISTIFY(cnt, DUMMY_INCLUDE, ())
 
 #define BT_VCS_SERVICE_DEFINITION \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_VCS), \
 	VOCS_INCLUDES(CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) \
 	AICS_INCLUDES(CONFIG_BT_VCS_AICS_INSTANCE_COUNT) \
-	BT_GATT_CHARACTERISTIC(BT_UUID_VCS_STATE, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_vol_state, NULL, NULL), \
-	BT_GATT_CCC(volume_state_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_VCS_CONTROL, \
-			       BT_GATT_CHRC_WRITE, \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       NULL, write_vcs_control, NULL), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_VCS_FLAGS, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_flags, NULL, NULL), \
-	BT_GATT_CCC(flags_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
+	BT_AUDIO_CHRC(BT_UUID_VCS_STATE, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_vol_state, NULL, NULL), \
+	BT_AUDIO_CCC(volume_state_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_VCS_CONTROL, \
+		      BT_GATT_CHRC_WRITE, \
+		      BT_GATT_PERM_WRITE_ENCRYPT, \
+		      NULL, write_vcs_control, NULL), \
+	BT_AUDIO_CHRC(BT_UUID_VCS_FLAGS, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_flags, NULL, NULL), \
+	BT_AUDIO_CCC(flags_cfg_changed)
 
 static struct bt_gatt_attr vcs_attrs[] = { BT_VCS_SERVICE_DEFINITION };
 static struct bt_gatt_service vcs_svc;
@@ -362,6 +361,21 @@ int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs)
 	static bool registered;
 	int err;
 
+	CHECKIF(param == NULL) {
+		BT_DBG("param is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(param->mute > BT_VCS_STATE_MUTED) {
+		BT_DBG("Invalid mute value: %u", param->mute);
+		return -EINVAL;
+	}
+
+	CHECKIF(param->step == 0) {
+		BT_DBG("Invalid step value: %u", param->step);
+		return -EINVAL;
+	}
+
 	if (registered) {
 		*vcs = &vcs_inst;
 		return -EALREADY;
@@ -386,8 +400,9 @@ int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs)
 	}
 
 
-	vcs_inst.srv.state.volume = 100; /* Default value */
-	vcs_inst.srv.volume_step = 1; /* Default value */
+	vcs_inst.srv.state.volume = param->volume;
+	vcs_inst.srv.state.mute = param->mute;
+	vcs_inst.srv.volume_step = param->step;
 	vcs_inst.srv.service_p = &vcs_svc;
 
 	err = bt_gatt_service_register(&vcs_svc);

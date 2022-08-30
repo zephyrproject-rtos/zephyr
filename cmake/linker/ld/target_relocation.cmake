@@ -9,12 +9,20 @@ macro(toolchain_ld_relocation)
   set(MEM_RELOCATION_SRAM_BSS_LD
        "${PROJECT_BINARY_DIR}/include/generated/linker_sram_bss_relocate.ld")
   set(MEM_RELOCATION_CODE "${PROJECT_BINARY_DIR}/code_relocation.c")
+  if(CONFIG_ARM)
+    set(MEM_REGION_DEFAULT_RAM SRAM)
+  elseif(CONFIG_RISCV)
+    set(MEM_REGION_DEFAULT_RAM RAM)
+  else()
+    # Name must be configured for newly-supported architectures
+    message(SEND_ERROR "Default RAM region name is unknown for target architecture")
+  endif()
 
   add_custom_command(
     OUTPUT ${MEM_RELOCATION_CODE} ${MEM_RELOCATION_LD}
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_relocate_app.py
+    ${ZEPHYR_BASE}/scripts/build/gen_relocate_app.py
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     -d ${APPLICATION_BINARY_DIR}
     -i \"$<TARGET_PROPERTY:code_data_relocation_target,COMPILE_DEFINITIONS>\"
@@ -22,9 +30,12 @@ macro(toolchain_ld_relocation)
     -s ${MEM_RELOCATION_SRAM_DATA_LD}
     -b ${MEM_RELOCATION_SRAM_BSS_LD}
     -c ${MEM_RELOCATION_CODE}
+    --default_ram_region ${MEM_REGION_DEFAULT_RAM}
     DEPENDS app kernel ${ZEPHYR_LIBS_PROPERTY}
     )
 
   add_library(code_relocation_source_lib  STATIC ${MEM_RELOCATION_CODE})
+  target_include_directories(code_relocation_source_lib PRIVATE
+	${ZEPHYR_BASE}/kernel/include ${ARCH_DIR}/${ARCH}/include)
   target_link_libraries(code_relocation_source_lib zephyr_interface)
 endmacro()

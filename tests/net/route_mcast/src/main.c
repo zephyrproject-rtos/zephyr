@@ -6,33 +6,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_ROUTE_LOG_LEVEL);
 
 #include <zephyr/types.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <linker/sections.h>
-#include <random/rand32.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/random/rand32.h>
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 
-#include <net/ethernet.h>
-#include <net/dummy.h>
-#include <net/buf.h>
-#include <net/net_ip.h>
-#include <net/net_if.h>
-#include <net/net_context.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_context.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 #include "icmpv6.h"
 #include "ipv6.h"
-#include <net/udp.h>
+#include <zephyr/net/udp.h>
 #include "udp_internal.h"
 #include "nbr.h"
 #include "route.h"
@@ -214,8 +214,8 @@ static bool check_packet_addresses(struct net_pkt *pkt)
 			&ipv6_hdr->src,
 			sizeof(struct in6_addr)) != 0) ||
 			(memcmp(&active_scenario.mcast,
-					&ipv6_hdr->dst,
-					sizeof(struct in6_addr)) != 0)) {
+				ipv6_hdr->dst,
+				sizeof(struct in6_addr)) != 0)) {
 		return false;
 	}
 
@@ -649,17 +649,15 @@ static void test_route_mcast_scenario3(void)
 }
 
 /*test case main entry*/
-void test_main(void)
+ZTEST(route_mcast_test_suite, test_route_mcast)
 {
-	ztest_test_suite(test_route_mcast,
-			ztest_unit_test(test_route_mcast_init),
-			ztest_unit_test(test_route_mcast_route_add),
-			ztest_unit_test(test_route_mcast_foreach),
-			ztest_unit_test(test_route_mcast_scenario1),
-			ztest_unit_test(test_route_mcast_scenario2),
-			ztest_unit_test(test_route_mcast_scenario3),
-			ztest_unit_test(test_route_mcast_lookup),
-			ztest_unit_test(test_route_mcast_route_del)
-			);
-	ztest_run_test_suite(test_route_mcast);
+	test_route_mcast_init();
+	test_route_mcast_route_add();
+	test_route_mcast_foreach();
+	test_route_mcast_scenario1();
+	test_route_mcast_scenario2();
+	test_route_mcast_scenario3();
+	test_route_mcast_lookup();
+	test_route_mcast_route_del();
 }
+ZTEST_SUITE(route_mcast_test_suite, NULL, NULL, NULL, NULL, NULL);

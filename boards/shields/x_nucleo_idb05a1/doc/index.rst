@@ -21,8 +21,6 @@ but CS and SCK signals are not the standard Arduino SPI_CS and SPI_SCK signals.
 Please refer to "Hardware configuration" section.
 
 .. image:: img/x-nucleo-idb05a1.jpg
-     :width: 400px
-     :height: 350px
      :align: center
      :alt: X-NUCLEO-IDB05A1
 
@@ -38,7 +36,7 @@ This is not a problem if SPI SCK from nucleo board is available on D3,
 otherwise shield configuration can be changed (see below).
 Also shield expects SPI CS to be available on Arduino pin A1 instead of usual
 Arduino UNO R3 SPI CS D10.
-This is not a problem as CS signal is software driven gpio on Arnunio A1
+This is not a problem as CS signal is software driven gpio on Arduino A1
 see cs-gpios in x_nucleo_idb05a1.overlay
 
 Shield configuration could be modified by moving resistors as

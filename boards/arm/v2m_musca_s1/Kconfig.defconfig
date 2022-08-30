@@ -7,25 +7,9 @@ config BOARD
 	default "musca_s1" if TRUSTED_EXECUTION_SECURE || !TRUSTED_EXECUTION_NONSECURE
 	default "musca_s1_ns"
 
-if GPIO
-
-config GPIO_CMSDK_AHB
-	default y
-
-endif
-
 if SERIAL
 
-config UART_PL011
-	default y
-
 config UART_INTERRUPT_DRIVEN
-	default y
-
-config UART_PL011_PORT0
-	default y
-
-config UART_PL011_PORT1
 	default y
 
 endif # SERIAL

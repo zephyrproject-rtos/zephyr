@@ -45,9 +45,7 @@ Key Features
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
 
 .. image:: img/nucleo_f767zi.jpg
-   :width: 720px
    :align: center
-   :height: 720px
    :alt: Nucleo F767ZI
 
 More information about the board can be found at the `Nucleo F767ZI website`_.
@@ -127,7 +125,7 @@ features:
 
 
 (*) nucleo_f767zi with soc cut-A (Device marking A) has some ethernet
-    instability (https://github.com/zephyrproject-rtos/zephyr/issues/26519).
+    instability (:github:`26519`).
     Use of cut-Z is advised.
     see restrictions errata:
     https://www.st.com/content/ccc/resource/technical/document/errata_sheet/group0/23/a6/11/0b/30/24/46/a5/DM00257543/files/DM00257543.pdf/jcr:content/translations/en.DM00257543.pdf

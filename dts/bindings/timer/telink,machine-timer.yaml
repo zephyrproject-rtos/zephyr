@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Telink Machine Timer
+
+  The Telink machine timer provides RISC-V privileged mtime and mtimecmp
+  registers.
+
+compatible: "telink,machine-timer"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true

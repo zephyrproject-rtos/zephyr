@@ -7,13 +7,13 @@
 
 #define DT_DRV_COMPAT zephyr_sim_eeprom
 
-#include <device.h>
-#include <drivers/eeprom.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/eeprom.h>
 
-#include <init.h>
-#include <kernel.h>
-#include <sys/util.h>
-#include <stats/stats.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/stats/stats.h>
 #include <string.h>
 #include <errno.h>
 
@@ -27,16 +27,13 @@
 #endif
 
 #define LOG_LEVEL CONFIG_EEPROM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eeprom_simulator);
 
 struct eeprom_sim_config {
 	size_t size;
 	bool readonly;
 };
-
-#define DEV_NAME(dev) ((dev)->name)
-#define DEV_CONFIG(dev) ((dev)->config)
 
 #define EEPROM(addr) (mock_eeprom + (addr))
 
@@ -52,7 +49,7 @@ static struct k_sem sem_lock;
 #define SYNC_UNLOCK()
 #endif
 
-/* simulator statistcs */
+/* simulator statistics */
 STATS_SECT_START(eeprom_sim_stats)
 STATS_SECT_ENTRY32(bytes_read)		/* total bytes read */
 STATS_SECT_ENTRY32(bytes_written)	/* total bytes written */
@@ -96,7 +93,7 @@ static uint8_t mock_eeprom[DT_INST_PROP(0, size)];
 static int eeprom_range_is_valid(const struct device *dev, off_t offset,
 				 size_t len)
 {
-	const struct eeprom_sim_config *config = DEV_CONFIG(dev);
+	const struct eeprom_sim_config *config = dev->config;
 
 	if ((offset + len) <= config->size) {
 		return 1;
@@ -138,7 +135,7 @@ static int eeprom_sim_write(const struct device *dev, off_t offset,
 			    const void *data,
 			    size_t len)
 {
-	const struct eeprom_sim_config *config = DEV_CONFIG(dev);
+	const struct eeprom_sim_config *config = dev->config;
 
 	if (config->readonly) {
 		LOG_WRN("attempt to write to read-only device");
@@ -196,7 +193,7 @@ end:
 
 static size_t eeprom_sim_size(const struct device *dev)
 {
-	const struct eeprom_sim_config *config = DEV_CONFIG(dev);
+	const struct eeprom_sim_config *config = dev->config;
 
 	return config->size;
 }
@@ -269,7 +266,7 @@ static int eeprom_sim_init(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, &eeprom_sim_init, NULL,
 		    NULL, &eeprom_sim_config_0, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &eeprom_sim_api);
+		    CONFIG_EEPROM_INIT_PRIORITY, &eeprom_sim_api);
 
 #ifdef CONFIG_ARCH_POSIX
 

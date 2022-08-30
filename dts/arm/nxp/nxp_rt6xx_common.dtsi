@@ -6,9 +6,9 @@
 
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
-#include <dt-bindings/clock/mcux_lpc_syscon_clock.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	chosen {
@@ -42,6 +42,12 @@
 		compatible = "mmio-sram";
 		reg = <0x20180000 DT_SIZE_K(3072)>;
 	};
+
+	sram1: memory@40140000 {
+		compatible =  "zephyr,memory-region", "mmio-sram";
+		reg = <0x40140000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM1";
+	};
 };
 
 &systick {
@@ -64,15 +70,21 @@
 
 	clkctl0: clkctl@1000 {
 		compatible = "nxp,lpc-syscon";
-		reg = <0x1000 0x4000>;
-		label = "CLKCTL_0";
+		reg = <0x1000 0x1000>;
 		#clock-cells = <1>;
+	};
+
+	iocon: iocon@4000 {
+		compatible = "nxp,lpc-iocon";
+		reg = <0x4000 0x1000>;
+		pinctrl: pinctrl {
+			compatible = "nxp,rt-iocon-pinctrl";
+		};
 	};
 
 	clkctl1: clkctl@21000 {
 		compatible = "nxp,lpc-syscon";
-		reg = <0x21000 0x4000>;
-		label = "CLKCTL_1";
+		reg = <0x21000 0x1000>;
 		#clock-cells = <1>;
 	};
 
@@ -83,9 +95,8 @@
 
 	gpio0: gpio@0 {
 		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x4000>;
+		reg = <0x100000 0x1000>;
 		interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
-		label = "GPIO_0";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <0>;
@@ -93,21 +104,43 @@
 
 	gpio1: gpio@1 {
 		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x4000>;
+		reg = <0x100000 0x1000>;
 		interrupts = <35 2>,<36 2>,<37 2>,<38 2>;
-		label = "GPIO_1";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <1>;
 	};
 
-	flexspi: spi@134000 {
-		compatible = "nxp,imx-flexspi";
-		reg = <0x134000 0x1000>;
-		interrupts = <42 0>;
-		label = "FLEXSPI";
-		#address-cells = <1>;
-		#size-cells = <0>;
+	gpio2: gpio@2 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x1000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <2>;
+	};
+
+	gpio3: gpio@3 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x1000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <3>;
+	};
+
+	gpio4: gpio@4 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x1000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <4>;
+	};
+
+	gpio7: gpio@7 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x1000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <7>;
 	};
 
 	flexcomm0: flexcomm@106000 {
@@ -115,7 +148,6 @@
 		reg = <0x106000 0x1000>;
 		interrupts = <14 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK>;
-		label = "FLEXCOMM_0";
 		status = "disabled";
 	};
 
@@ -124,7 +156,6 @@
 		reg = <0x107000 0x1000>;
 		interrupts = <15 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM1_CLK>;
-		label = "FLEXCOMM_1";
 		status = "disabled";
 	};
 
@@ -133,7 +164,6 @@
 		reg = <0x108000 0x1000>;
 		interrupts = <16 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM2_CLK>;
-		label = "FLEXCOMM_2";
 		status = "disabled";
 	};
 
@@ -142,7 +172,6 @@
 		reg = <0x109000 0x1000>;
 		interrupts = <17 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM3_CLK>;
-		label = "FLEXCOMM_3";
 		status = "disabled";
 	};
 
@@ -151,7 +180,6 @@
 		reg = <0x122000 0x1000>;
 		interrupts = <18 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM4_CLK>;
-		label = "FLEXCOMM_4";
 		status = "disabled";
 	};
 
@@ -160,7 +188,6 @@
 		reg = <0x123000 0x1000>;
 		interrupts = <19 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM5_CLK>;
-		label = "FLEXCOMM_5";
 		status = "disabled";
 	};
 
@@ -168,7 +195,6 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x124000 0x1000>;
 		interrupts = <43 0>;
-		label = "FLEXCOMM_6";
 		clocks = <&clkctl1 MCUX_FLEXCOMM6_CLK>;
 		status = "disabled";
 	};
@@ -177,8 +203,23 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x125000 0x1000>;
 		interrupts = <44 0>;
-		label = "FLEXCOMM_7";
 		clocks = <&clkctl1 MCUX_FLEXCOMM7_CLK>;
+		status = "disabled";
+	};
+
+	pmic_i2c: i2c@127000 {
+		compatible = "nxp,lpc-i2c";
+		reg = <0x127000 0x1000>;
+		interrupts = <21 0>;
+		clocks = <&clkctl1 MCUX_PMIC_I2C_CLK>;
+		status = "disabled";
+	};
+
+	usbhs: usbhs@144000 {
+		compatible = "nxp,mcux-usbd";
+		reg = <0x144000 0x1000>;
+		interrupts = <50 1>;
+		num-bidir-endpoints = <6>;
 		status = "disabled";
 	};
 
@@ -193,7 +234,6 @@
 		reg = <0x126000 0x1000>;
 		interrupts = <20 0>;
 		clocks = <&clkctl1 MCUX_HS_SPI_CLK>;
-		label = "HS_LSPI";
 		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -203,7 +243,6 @@
 		compatible = "nxp,lpc-dma";
 		reg = <0x104000 0x1000>;
 		interrupts = <1 0>;
-		label = "DMA_0";
 		status = "disabled";
 		#dma-cells = <1>;
 	};
@@ -212,7 +251,6 @@
 		compatible = "nxp,lpc-dma";
 		reg = <0x105000 0x1000>;
 		interrupts = <54 0>;
-		label = "DMA_1";
 		status = "disabled";
 		#dma-cells = <1>;
 	};
@@ -222,7 +260,6 @@
 		reg = <0x113000 0x1000>;
 		interrupts = <41 0>;
 		status = "disabled";
-		label = "OS_TIMER";
 	};
 
 	rtc: rtc@30000 {
@@ -230,15 +267,13 @@
 		reg = <0x30000 0x1000>;
 		interrupts = <32 0>;
 		status = "disabled";
-		label = "RTC_0";
 	};
 
 	trng: random@138000 {
 		compatible = "nxp,kinetis-trng";
-		reg = <0x138000 0x4000>;
+		reg = <0x138000 0x1000>;
 		status = "okay";
 		interrupts = <31 0>;
-		label = "TRNG";
 	};
 
 	sc_timer: pwm@146000 {
@@ -247,9 +282,131 @@
 		interrupts = <12 0>;
 		status = "disabled";
 		prescaler = <8>;
-		label = "SC_TIMER";
-		#pwm-cells = <2>;
+		#pwm-cells = <3>;
 	};
+
+	wwdt0: watchdog@e000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0xe000 0x1000>;
+		interrupts = <0 0>;
+		status = "disabled";
+		clk-divider = <1>;
+	};
+
+	wwdt1: watchdog@2e000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0x2e000 0x1000>;
+		interrupts = <52 0>;
+		status = "disabled";
+		clk-divider = <1>;
+	};
+
+	usdhc0: usdhc@136000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x136000 0x1000>;
+		status = "disabled";
+		interrupts = <45 0>;
+		clocks = <&clkctl1 MCUX_USDHC1_CLK>;
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <208000000>;
+		min-bus-freq = <400000>;
+	};
+
+	usdhc1: usdhc@137000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x137000 0x1000>;
+		status = "disabled";
+		interrupts = <46 0>;
+		clocks = <&clkctl1 MCUX_USDHC2_CLK>;
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <208000000>;
+		min-bus-freq = <400000>;
+	};
+
+	lpadc0: lpadc@13A0000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0x13A000 0x304>;
+		interrupts = <22 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		clk-source = <0>;
+		voltage-ref= <2>;
+		calibration-average = <128>;
+		power-level = <1>;
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
+	};
+
+	ctimer0: ctimer@28000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x28000 0x1000>;
+		interrupts = <10 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER0_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer1: ctimer@29000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x29000 0x1000>;
+		interrupts = <11 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER1_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer2: ctimer@2a000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2a000 0x1000>;
+		interrupts = <39 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER2_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer3: ctimer@2b000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2b000 0x1000>;
+		interrupts = <13 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER3_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer4: ctimer@2c000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2c000 0x1000>;
+		interrupts = <40 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER4_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+};
+
+&flexspi {
+	compatible = "nxp,imx-flexspi";
+	interrupts = <42 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "disabled";
 };
 
 &nvic {

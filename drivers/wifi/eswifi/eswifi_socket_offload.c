@@ -7,23 +7,22 @@
 #include "eswifi_log.h"
 LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 
-#include <net/socket_offload.h>
-#include <net/tls_credentials.h>
+#include <zephyr/net/socket_offload.h>
+#include <zephyr/net/tls_credentials.h>
 
 #include "sockets_internal.h"
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #include "tls_internal.h"
 #endif
 #include "eswifi.h"
-#include <net/net_pkt.h>
+#include <zephyr/net/net_pkt.h>
 
 /* Increment by 1 to make sure we do not store the value of 0, which has
  * a special meaning in the fdtable subsys.
@@ -46,12 +45,11 @@ static void __process_received(struct net_context *context,
 	struct eswifi_off_socket *socket = user_data;
 
 	if (!pkt) {
+		k_fifo_cancel_wait(&socket->fifo);
 		return;
 	}
 
-	eswifi_lock(eswifi);
 	k_fifo_put(&socket->fifo, pkt);
-	eswifi_unlock(eswifi);
 }
 
 static int eswifi_socket_connect(void *obj, const struct sockaddr *addr,
@@ -93,6 +91,29 @@ static int eswifi_socket_connect(void *obj, const struct sockaddr *addr,
 	return ret;
 }
 
+static int eswifi_socket_listen(void *obj, int backlog)
+{
+	struct eswifi_off_socket *socket;
+	int sock = OBJ_TO_SD(obj);
+	int ret;
+
+	eswifi_lock(eswifi);
+	socket = &eswifi->socket[sock];
+
+	ret = __eswifi_listen(eswifi, socket, backlog);
+	eswifi_unlock(eswifi);
+
+	return ret;
+}
+
+void __eswifi_socket_accept_cb(struct net_context *context, struct sockaddr *addr,
+			       unsigned int len, int val, void *data)
+{
+	struct sockaddr *addr_target = data;
+
+	memcpy(addr_target, addr, len);
+}
+
 static int __eswifi_socket_accept(void *obj, struct sockaddr *addr,
 				  socklen_t *addrlen)
 {
@@ -109,9 +130,16 @@ static int __eswifi_socket_accept(void *obj, struct sockaddr *addr,
 	socket = &eswifi->socket[sock];
 
 	ret = __eswifi_accept(eswifi, socket);
+	socket->accept_cb = __eswifi_socket_accept_cb;
+	socket->accept_data = addr;
+	k_sem_reset(&socket->accept_sem);
 	eswifi_unlock(eswifi);
 
-	return ret;
+	*addrlen = sizeof(struct sockaddr_in);
+
+	k_sem_take(&socket->accept_sem, K_FOREVER);
+
+	return 0;
 }
 
 static int eswifi_socket_accept(void *obj, struct sockaddr *addr,
@@ -310,11 +338,27 @@ static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len,
 		goto skip_wait;
 	}
 
-	pkt = k_fifo_get(&socket->fifo, K_NO_WAIT);
-	if (!pkt) {
-		errno = EAGAIN;
-		len = -EAGAIN;
-		goto done;
+	ret = k_work_reschedule_for_queue(&eswifi->work_q, &socket->read_work, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("Rescheduling socket read error");
+		errno = -ret;
+		len = -1;
+	}
+
+	if (flags & ZSOCK_MSG_DONTWAIT) {
+		pkt = k_fifo_get(&socket->fifo, K_NO_WAIT);
+		if (!pkt) {
+			errno = EAGAIN;
+			len = -1;
+			goto done;
+		}
+	} else {
+		eswifi_unlock(eswifi);
+		pkt = k_fifo_get(&socket->fifo, K_FOREVER);
+		if (!pkt) {
+			return 0; /* EOF */
+		}
+		eswifi_lock(eswifi);
 	}
 
 skip_wait:
@@ -406,6 +450,7 @@ static int eswifi_socket_open(int family, int type, int proto)
 	socket = &eswifi->socket[idx];
 	k_fifo_init(&socket->fifo);
 	k_sem_init(&socket->read_sem, 0, 200);
+	k_sem_init(&socket->accept_sem, 1, 1);
 	socket->prev_pkt_rem = NULL;
 	socket->recv_cb = __process_received;
 	socket->recv_data = socket;
@@ -452,13 +497,23 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 
 	eswifi_lock(eswifi);
 	socket = &eswifi->socket[sock];
+
+	ret = k_work_reschedule_for_queue(&eswifi->work_q, &socket->read_work, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("Rescheduling socket read error");
+		errno = -ret;
+		eswifi_unlock(eswifi);
+		return -1;
+	}
+
 	eswifi_unlock(eswifi);
+
 	if (socket->state != ESWIFI_SOCKET_STATE_CONNECTED) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	ret = k_sem_take(&socket->read_sem, K_MSEC(msecs*10));
+	ret = k_sem_take(&socket->read_sem, K_MSEC(msecs));
 	if (ret) {
 		errno = ETIMEDOUT;
 		return -1;
@@ -492,10 +547,27 @@ static int eswifi_socket_bind(void *obj, const struct sockaddr *addr,
 
 static bool eswifi_socket_is_supported(int family, int type, int proto)
 {
+	enum eswifi_transport_type eswifi_socket_type;
+	int err;
+
+	if (family != AF_INET) {
+		return false;
+	}
+
+	if (type != SOCK_DGRAM &&
+	    type != SOCK_STREAM) {
+		return false;
+	}
+
+	err = eswifi_socket_type_from_zephyr(proto, &eswifi_socket_type);
+	if (err) {
+		return false;
+	}
+
 	return true;
 }
 
-static int eswifi_socket_create(int family, int type, int proto)
+int eswifi_socket_create(int family, int type, int proto)
 {
 	int fd = z_reserve_fd();
 	int sock;
@@ -564,6 +636,7 @@ static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
 	},
 	.bind = eswifi_socket_bind,
 	.connect = eswifi_socket_connect,
+	.listen = eswifi_socket_listen,
 	.accept = eswifi_socket_accept,
 	.sendto = eswifi_socket_sendto,
 	.recvfrom = eswifi_socket_recvfrom,
@@ -571,8 +644,8 @@ static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
 };
 
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
-NET_SOCKET_REGISTER(eswifi, AF_UNSPEC, eswifi_socket_is_supported,
-		    eswifi_socket_create);
+NET_SOCKET_OFFLOAD_REGISTER(eswifi, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,
+			    eswifi_socket_is_supported, eswifi_socket_create);
 #endif
 
 static int eswifi_off_getaddrinfo(const char *node, const char *service,

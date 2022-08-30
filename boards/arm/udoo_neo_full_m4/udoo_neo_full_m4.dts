@@ -25,6 +25,7 @@
 #define DT_SRAM_ADDR	84080000 /* DT_ADDR will add leading 0x where needed */
 
 #include <nxp/nxp_imx6sx_m4.dtsi>
+#include "udoo_neo_full_m4-pinctrl.dtsi"
 
 / {
 	model = "UDOO Neo Full board";
@@ -54,6 +55,8 @@
 	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <0>;
+	pinctrl-0 = <&uart5_default>;
+	pinctrl-names = "default";
 };
 
 &gpio4 {

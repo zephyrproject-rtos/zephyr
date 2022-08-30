@@ -7,54 +7,53 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #define  MBEDTLS_PRINT (int(*)(const char *, ...)) printk
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <zephyr.h>
-#include <linker/sections.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
 #include <errno.h>
 
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 
-#if !defined(CONFIG_MBEDTLS_CFG_FILE)
-#include "mbedtls/config.h"
-#else
-#include CONFIG_MBEDTLS_CFG_FILE
-#endif
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+
+#include "mbedtls/build_info.h"
+
 
 #include "mbedtls/entropy.h"
-#include "mbedtls/entropy_poll.h"
 #include "mbedtls/hmac_drbg.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/dhm.h"
 #include "mbedtls/gcm.h"
 #include "mbedtls/ccm.h"
-#include "mbedtls/md2.h"
-#include "mbedtls/md4.h"
+#include "mbedtls/cmac.h"
 #include "mbedtls/md5.h"
 #include "mbedtls/ripemd160.h"
 #include "mbedtls/sha1.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/sha512.h"
-#include "mbedtls/arc4.h"
 #include "mbedtls/des.h"
 #include "mbedtls/aes.h"
 #include "mbedtls/camellia.h"
+#include "mbedtls/aria.h"
+#include "mbedtls/chacha20.h"
+#include "mbedtls/poly1305.h"
+#include "mbedtls/chachapoly.h"
 #include "mbedtls/base64.h"
 #include "mbedtls/bignum.h"
 #include "mbedtls/rsa.h"
 #include "mbedtls/x509.h"
-#include "mbedtls/xtea.h"
 #include "mbedtls/pkcs5.h"
 #include "mbedtls/ecp.h"
 #include "mbedtls/ecjpake.h"
 #include "mbedtls/timing.h"
-#include "mbedtls/cmac.h"
+#include "mbedtls/nist_kw.h"
 
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
@@ -72,7 +71,7 @@
 #include "mbedtls/memory_buffer_alloc.h"
 #endif
 
-static int test_snprintf(size_t n, const char ref_buf[10], int ref_ret)
+static int test_snprintf(size_t n, const char *ref_buf, int ref_ret)
 {
 	int ret;
 	char buf[10] = "xxxxxxxxx";
@@ -289,22 +288,15 @@ void test_mbedtls(void)
 	suites_tested++;
 #endif
 
-#if defined(MBEDTLS_X509_USE_C)
-	if (mbedtls_x509_self_test(v) != 0) {
-		suites_failed++;
-	}
-	suites_tested++;
-#endif
-
-#if defined(MBEDTLS_XTEA_C)
-	if (mbedtls_xtea_self_test(v) != 0) {
-		suites_failed++;
-	}
-	suites_tested++;
-#endif
-
 #if defined(MBEDTLS_CAMELLIA_C)
 	if (mbedtls_camellia_self_test(v) != 0) {
+		suites_failed++;
+	}
+	suites_tested++;
+#endif
+
+#if defined(MBEDTLS_ARIA_C)
+	if (mbedtls_aria_self_test(v) != 0) {
 		suites_failed++;
 	}
 	suites_tested++;

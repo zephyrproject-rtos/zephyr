@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/ring_buffer.h>
+#include <zephyr/sys/ring_buffer.h>
 
 static struct ring_buf tracing_ring_buf;
 static uint8_t tracing_buffer[CONFIG_TRACING_BUFFER_SIZE + 1];

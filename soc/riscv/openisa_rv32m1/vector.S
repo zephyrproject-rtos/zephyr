@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /* Imports */
 GTEXT(__initialize)
-GTEXT(__irq_wrapper)
+GTEXT(_isr_wrapper)
 
 /* Exports */
 GTEXT(__start)
@@ -33,44 +33,44 @@ SECTION_FUNC(vectors, ivt)
 	.option norvc
 
 	/* Interrupts */
-	j __irq_wrapper	/* IRQ 0 */
-	j __irq_wrapper	/* IRQ 1 */
-	j __irq_wrapper	/* IRQ 2 */
-	j __irq_wrapper	/* IRQ 3 */
-	j __irq_wrapper	/* IRQ 4 */
-	j __irq_wrapper	/* IRQ 5 */
-	j __irq_wrapper	/* IRQ 6 */
-	j __irq_wrapper	/* IRQ 7 */
-	j __irq_wrapper	/* IRQ 8 */
-	j __irq_wrapper	/* IRQ 9 */
-	j __irq_wrapper	/* IRQ 10 */
-	j __irq_wrapper	/* IRQ 11 */
-	j __irq_wrapper	/* IRQ 12 */
-	j __irq_wrapper	/* IRQ 13 */
-	j __irq_wrapper	/* IRQ 14 */
-	j __irq_wrapper	/* IRQ 15 */
-	j __irq_wrapper	/* IRQ 16 */
-	j __irq_wrapper	/* IRQ 17 */
-	j __irq_wrapper	/* IRQ 18 */
-	j __irq_wrapper	/* IRQ 19 */
-	j __irq_wrapper	/* IRQ 20 */
-	j __irq_wrapper	/* IRQ 21 */
-	j __irq_wrapper	/* IRQ 22 */
-	j __irq_wrapper	/* IRQ 23 */
-	j __irq_wrapper	/* IRQ 24 */
-	j __irq_wrapper	/* IRQ 25 */
-	j __irq_wrapper	/* IRQ 26 */
-	j __irq_wrapper	/* IRQ 27 */
-	j __irq_wrapper	/* IRQ 28 */
-	j __irq_wrapper	/* IRQ 29 */
-	j __irq_wrapper	/* IRQ 30 */
-	j __irq_wrapper	/* IRQ 31 */
+	j _isr_wrapper	/* IRQ 0 */
+	j _isr_wrapper	/* IRQ 1 */
+	j _isr_wrapper	/* IRQ 2 */
+	j _isr_wrapper	/* IRQ 3 */
+	j _isr_wrapper	/* IRQ 4 */
+	j _isr_wrapper	/* IRQ 5 */
+	j _isr_wrapper	/* IRQ 6 */
+	j _isr_wrapper	/* IRQ 7 */
+	j _isr_wrapper	/* IRQ 8 */
+	j _isr_wrapper	/* IRQ 9 */
+	j _isr_wrapper	/* IRQ 10 */
+	j _isr_wrapper	/* IRQ 11 */
+	j _isr_wrapper	/* IRQ 12 */
+	j _isr_wrapper	/* IRQ 13 */
+	j _isr_wrapper	/* IRQ 14 */
+	j _isr_wrapper	/* IRQ 15 */
+	j _isr_wrapper	/* IRQ 16 */
+	j _isr_wrapper	/* IRQ 17 */
+	j _isr_wrapper	/* IRQ 18 */
+	j _isr_wrapper	/* IRQ 19 */
+	j _isr_wrapper	/* IRQ 20 */
+	j _isr_wrapper	/* IRQ 21 */
+	j _isr_wrapper	/* IRQ 22 */
+	j _isr_wrapper	/* IRQ 23 */
+	j _isr_wrapper	/* IRQ 24 */
+	j _isr_wrapper	/* IRQ 25 */
+	j _isr_wrapper	/* IRQ 26 */
+	j _isr_wrapper	/* IRQ 27 */
+	j _isr_wrapper	/* IRQ 28 */
+	j _isr_wrapper	/* IRQ 29 */
+	j _isr_wrapper	/* IRQ 30 */
+	j _isr_wrapper	/* IRQ 31 */
 
 	/* Exceptions */
 	j __start		/* reset */
-	j __irq_wrapper	/* illegal instruction */
-	j __irq_wrapper	/* ecall */
-	j __irq_wrapper	/* load store eunit error */
+	j _isr_wrapper	/* illegal instruction */
+	j _isr_wrapper	/* ecall */
+	j _isr_wrapper	/* load store eunit error */
 
 SECTION_FUNC(vectors, __start)
 	/* Set mtvec to point at ivt. */

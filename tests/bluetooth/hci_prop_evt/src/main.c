@@ -6,17 +6,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include <errno.h>
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <drivers/bluetooth/hci_driver.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/sys/byteorder.h>
 
 /* HCI Proprietary vendor event */
 const uint8_t hci_prop_evt_prefix[2] = { 0xAB, 0xBA };
@@ -242,12 +242,14 @@ static void bt_recv_job_cb(struct k_work *item)
 {
 	struct bt_recv_job_data *data =
 		CONTAINER_OF(item, struct bt_recv_job_data, work);
+	struct k_sem *sync = job(data->buf)->sync;
 
 	/* Send net buffer to host */
 	bt_recv(data->buf);
+	data->buf = NULL;
 
 	/* Wake up bt_recv_job_submit */
-	k_sem_give(job(data->buf)->sync);
+	k_sem_give(sync);
 }
 
 /* Prepare a job to call bt_recv() to be submitted to the system workqueue. */
@@ -256,15 +258,12 @@ static void bt_recv_job_submit(struct net_buf *buf)
 	struct k_sem sync_sem;
 
 	/* Store the net buffer to be passed to bt_recv */
-	job(buf)->buf = buf;
+	job(buf)->buf = net_buf_ref(buf);
 
 	/* Initialize job work item/semaphore */
 	k_work_init(&job(buf)->work, bt_recv_job_cb);
 	k_sem_init(&sync_sem, 0, 1);
 	job(buf)->sync = &sync_sem;
-
-	/* Make sure the buffer stays around until the command completes */
-	net_buf_ref(buf);
 
 	/* Submit the work item */
 	k_work_submit(&job(buf)->work);
@@ -343,8 +342,10 @@ static void send_prop_report(uint8_t *data, uint8_t data_len)
 	bt_recv_job_submit(buf);
 }
 
+ZTEST_SUITE(test_hci_prop_evt, NULL, NULL, NULL, NULL, NULL);
+
 /* Test. */
-static void test_hci_prop_evt_entry(void)
+ZTEST(test_hci_prop_evt, test_hci_prop_evt_entry)
 {
 	/* Register the test HCI driver */
 	bt_hci_driver_register(&drv);
@@ -377,13 +378,4 @@ static void test_hci_prop_evt_entry(void)
 
 	/* Free the data memory */
 	k_free(prop_cb_data);
-}
-
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_hci_prop_evt,
-			 ztest_unit_test(test_hci_prop_evt_entry));
-
-	ztest_run_test_suite(test_hci_prop_evt);
 }

@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 #define ECIA_BASE_ADDR			DT_REG_ADDR(DT_NODELABEL(ecia))
 
@@ -877,7 +877,7 @@ enum MCHP_GIRQ_INDEX {
 /*
  * GIRQ22 Source, Enable_Set/Clr, Result registers bit positions
  * NOTE: These wake sources allow the peripheral to turn back on clocks
- * long enough to facilite the data transfer. No interrupt to the EC occurs
+ * long enough to facilitate the data transfer. No interrupt to the EC occurs
  * unless the peripheral was configured to generate an EC interrupt for
  * the specific data transfer.
  */
@@ -1077,6 +1077,18 @@ enum MCHP_GIRQ_INDEX {
 #define MCHP_MSVW07_10_GIRQ_MASK	0xffffu
 
 #define MCHP_GIRQ25_NVIC_AGGR		16u
+
+#define MCHP_MSVW00_GIRQ		24
+#define MCHP_MSVW01_GIRQ		24
+#define MCHP_MSVW02_GIRQ		24
+#define MCHP_MSVW03_GIRQ		24
+#define MCHP_MSVW04_GIRQ		24
+#define MCHP_MSVW05_GIRQ		24
+#define MCHP_MSVW06_GIRQ		24
+#define MCHP_MSVW07_GIRQ		25
+#define MCHP_MSVW08_GIRQ		25
+#define MCHP_MSVW09_GIRQ		25
+#define MCHP_MSVW10_GIRQ		25
 
 /* GIRQ26 Source, Enable_Set/Clr, Result registers bit positions */
 #define MCHP_GPIO_0240_GIRQ_POS		0

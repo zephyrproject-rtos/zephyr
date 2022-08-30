@@ -6,22 +6,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_ICMPV6_LOG_LEVEL);
 
 #include <errno.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
-#include <sys/printk.h>
-#include <linker/sections.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/linker/sections.h>
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 #include "icmpv6.h"
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 static int handler_called;
 static int handler_status;
@@ -89,7 +89,7 @@ static struct net_icmpv6_handler test_handler2 = {
 	.handler = handle_test_msg,
 };
 
-void test_icmpv6(void)
+ZTEST(icmpv6_fn, test_icmpv6)
 {
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
 		k_thread_priority_set(k_current_get(),
@@ -166,9 +166,4 @@ void test_icmpv6(void)
 }
 
 /**test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_icmpv6_fn,
-		ztest_unit_test(test_icmpv6));
-	ztest_run_test_suite(test_icmpv6_fn);
-}
+ZTEST_SUITE(icmpv6_fn, NULL, NULL, NULL, NULL, NULL);

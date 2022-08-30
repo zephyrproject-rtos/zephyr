@@ -6,7 +6,7 @@
 
 #include "test_lifo.h"
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIST_LEN 4
 #define LOOPS 32
 
@@ -96,7 +96,7 @@ static void tlifo_read_write(struct k_lifo *plifo)
  *
  * @see k_lifo_init(), k_fifo_put(), k_fifo_get()
  */
-void test_lifo_loop(void)
+ZTEST(lifo_loop, test_lifo_loop)
 {
 	k_lifo_init(&lifo);
 	for (int i = 0; i < LOOPS; i++) {
@@ -108,3 +108,6 @@ void test_lifo_loop(void)
 /**
  * @}
  */
+
+ZTEST_SUITE(lifo_loop, NULL, NULL,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

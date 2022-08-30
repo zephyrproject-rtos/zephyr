@@ -3,4 +3,20 @@
 # Copyright (c) 2020 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+if SOC_FAMILY_INTEL_ADSP
 source "soc/xtensa/intel_adsp/*/Kconfig.defconfig.series"
+
+
+config XTENSA_RPO_CACHE
+	def_bool y
+
+if XTENSA_RPO_CACHE
+config XTENSA_CACHED_REGION
+	default 5
+
+config XTENSA_UNCACHED_REGION
+	default 4
+
+endif # XTENSA_RPO_CACHE
+
+endif # SOC_FAMILY_INTEL_ADSP

@@ -5,38 +5,47 @@
  */
 
 
-#include <drivers/dac.h>
-#include <zephyr.h>
-#include <ztest.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
 
-#if defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
-	defined(CONFIG_BOARD_NUCLEO_L152RE) || \
+#if defined(CONFIG_BOARD_NUCLEO_F091RC) || \
+	defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
 	defined(CONFIG_BOARD_STM32F3_DISCO) || \
 	defined(CONFIG_BOARD_NUCLEO_F429ZI) || \
+	defined(CONFIG_BOARD_NUCLEO_F746ZG) || \
 	defined(CONFIG_BOARD_NUCLEO_F767ZI) || \
-	defined(CONFIG_BOARD_STM32L562E_DK) || \
+	defined(CONFIG_BOARD_NUCLEO_G071RB) || \
+	defined(CONFIG_BOARD_NUCLEO_G474RE) || \
+	defined(CONFIG_BOARD_NUCLEO_H743ZI) || \
+	defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
+	defined(CONFIG_BOARD_NUCLEO_L152RE) || \
+	defined(CONFIG_BOARD_DISCO_L475_IOT1) || \
 	defined(CONFIG_BOARD_NUCLEO_L552ZE_Q) || \
+	defined(CONFIG_BOARD_STM32L562E_DK) || \
+	defined(CONFIG_BOARD_B_U585I_IOT02A) || \
+	defined(CONFIG_BOARD_NUCLEO_WL55JC) || \
 	defined(CONFIG_BOARD_RONOTH_LODEV)
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac1))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac1)
 #define DAC_CHANNEL_ID		1
 #define DAC_RESOLUTION		12
 
 #elif defined(CONFIG_BOARD_TWR_KE18F)
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
 #elif defined(CONFIG_BOARD_FRDM_K64F)
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
 #elif defined(CONFIG_BOARD_FRDM_K22F)
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
@@ -47,7 +56,7 @@
  /* Note external DAC MCP4725 is not populated on BL652_DVK, BL653_DVK and
   * BL654_DVK at factory
   */
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
@@ -62,15 +71,15 @@ static const struct dac_channel_cfg dac_ch_cfg = {
 
 const struct device *get_dac_device(void)
 {
-	return device_get_binding(DAC_DEVICE_NAME);
+	return DEVICE_DT_GET(DAC_DEVICE_NODE);
 }
 
 static const struct device *init_dac(void)
 {
 	int ret;
-	const struct device *dac_dev = device_get_binding(DAC_DEVICE_NAME);
+	const struct device *const dac_dev = DEVICE_DT_GET(DAC_DEVICE_NODE);
 
-	zassert_not_null(dac_dev, "Cannot get DAC device");
+	zassert_true(device_is_ready(dac_dev), "DAC device is not ready");
 
 	ret = dac_channel_setup(dac_dev, &dac_ch_cfg);
 	zassert_equal(ret, 0,

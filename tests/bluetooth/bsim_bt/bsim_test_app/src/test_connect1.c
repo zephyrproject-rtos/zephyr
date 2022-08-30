@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "kernel.h"
+#include <zephyr/kernel.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -14,15 +14,14 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/sys/byteorder.h>
 
 static struct bt_conn *default_conn;
 
@@ -201,7 +200,7 @@ static void update_conn(struct bt_conn *conn, bool bonded)
 	}
 }
 
-static struct bt_conn_auth_cb auth_cb_success = {
+static struct bt_conn_auth_info_cb auth_cb_success = {
 	.pairing_complete = update_conn,
 };
 
@@ -225,7 +224,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 
 	if (encrypt_link) {
 		k_sleep(K_MSEC(500));
-		bt_conn_auth_cb_register(&auth_cb_success);
+		bt_conn_auth_info_cb_register(&auth_cb_success);
 		err = bt_conn_set_security(conn, BT_SECURITY_L2);
 		if (err) {
 			FAIL("bt_conn_set_security failed (err %d)\n", err);
@@ -264,8 +263,8 @@ static void params_updated(struct bt_conn *conn, uint16_t interval,
 	memcpy(&uuid, BT_UUID_HRS, sizeof(uuid));
 	discover_params.uuid = &uuid.uuid;
 	discover_params.func = discover_func;
-	discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
-	discover_params.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
+	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 
 	err = bt_gatt_discover(conn, &discover_params);
@@ -361,7 +360,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 	.le_param_updated = params_updated,
@@ -379,8 +378,6 @@ static void test_con1_main(void)
 	}
 
 	printk("Bluetooth initialized\n");
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
 

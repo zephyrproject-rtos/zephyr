@@ -8,13 +8,13 @@
 #define __SENSOR_MS5607_H__
 
 #include <zephyr/types.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
 #define MS5607_CMD_RESET 0x1E
@@ -88,14 +88,13 @@ extern const struct ms5607_transfer_function ms5607_spi_transfer_function;
 #endif
 
 struct ms5607_config {
-	const struct device *bus;
 	const struct ms5607_transfer_function *tf;
 	union {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-		uint16_t i2c_addr;
+		struct i2c_dt_spec i2c;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-		struct spi_config spi_cfg;
+		struct spi_dt_spec spi;
 #endif
 	} bus_cfg;
 };

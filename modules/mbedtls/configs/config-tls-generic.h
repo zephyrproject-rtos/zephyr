@@ -17,7 +17,12 @@
 #define MBEDTLS_MEMORY_BUFFER_ALLOC_C
 #define MBEDTLS_PLATFORM_EXIT_ALT
 #define MBEDTLS_NO_PLATFORM_ENTROPY
+
+#if defined(CONFIG_MBEDTLS_ZEPHYR_ENTROPY)
+#define MBEDTLS_ENTROPY_HARDWARE_ALT
+#else
 #define MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES
+#endif
 
 #if defined(CONFIG_MBEDTLS_HAVE_ASM)
 #define MBEDTLS_HAVE_ASM
@@ -84,6 +89,10 @@
 
 #if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED)
 #define MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+#endif
+
+#if defined(CONFIG_MBEDTLS_PSK_MAX_LEN)
+#define MBEDTLS_PSK_MAX_LEN	CONFIG_MBEDTLS_PSK_MAX_LEN
 #endif
 
 #if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_ENABLED)
@@ -168,6 +177,24 @@
 #define MBEDTLS_CIPHER_MODE_CTR
 #endif
 
+/* Supported elliptic curve libraries */
+
+#if defined(CONFIG_MBEDTLS_ECDH_C)
+#define MBEDTLS_ECDH_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_ECDSA_C)
+#define MBEDTLS_ECDSA_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_ECJPAKE_C)
+#define MBEDTLS_ECJPAKE_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_ECP_C)
+#define MBEDTLS_ECP_C
+#endif
+
 /* Supported elliptic curves */
 
 #if defined(CONFIG_MBEDTLS_ECP_DP_SECP192R1_ENABLED)
@@ -240,7 +267,9 @@
 #define MBEDTLS_SHA1_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_SHA256_ENABLED)
+#if defined(CONFIG_MBEDTLS_MAC_SHA256_ENABLED) || \
+	defined(CONFIG_MBEDTLS_HASH_SHA256_ENABLED)
+#define MBEDTLS_SHA224_C
 #define MBEDTLS_SHA256_C
 #endif
 
@@ -248,7 +277,13 @@
 #define MBEDTLS_SHA256_SMALLER
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_SHA512_ENABLED)
+#if defined(CONFIG_MBEDTLS_MAC_SHA384_ENABLED) || \
+	defined(CONFIG_MBEDTLS_HASH_SHA384_ENABLED)
+#define MBEDTLS_SHA384_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_MAC_SHA512_ENABLED) || \
+	defined(CONFIG_MBEDTLS_HASH_SHA512_ENABLED)
 #define MBEDTLS_SHA512_C
 #endif
 
@@ -315,14 +350,6 @@
 #define MBEDTLS_DHM_C
 #endif
 
-#if defined(MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED)
-#define MBEDTLS_ECDH_C
-#endif
-
 #if defined(MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED) || \
     defined(MBEDTLS_KEY_EXCHANGE_RSA_ENABLED) || \
     defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED) || \
@@ -352,20 +379,6 @@
     defined(MBEDTLS_X509_CRT_PARSE_C)
 #define MBEDTLS_PEM_PARSE_C
 #define MBEDTLS_BASE64_C
-#endif
-
-#if defined(MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED)
-#define MBEDTLS_ECDSA_C
-#endif
-
-#if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
-#define MBEDTLS_ECJPAKE_C
-#endif
-
-#if defined(MBEDTLS_ECDH_C) || \
-    defined(MBEDTLS_ECDSA_C) || \
-    defined(MBEDTLS_ECJPAKE_C)
-#define MBEDTLS_ECP_C
 #endif
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
@@ -406,13 +419,17 @@
 #define MBEDTLS_PK_C
 #endif
 
-#define MBEDTLS_SSL_MAX_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
+#if defined(CONFIG_MBEDTLS_PKCS5_C)
+#define MBEDTLS_PKCS5_C
+#endif
+
+#define MBEDTLS_SSL_IN_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
+#define MBEDTLS_SSL_OUT_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
 
 /* Enable OpenThread optimizations. */
 #if defined(CONFIG_MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED)
 #define MBEDTLS_MPI_WINDOW_SIZE            1 /**< Maximum windows size used. */
 #define MBEDTLS_MPI_MAX_SIZE              32 /**< Maximum number of bytes for usable MPIs. */
-#define MBEDTLS_ECP_MAX_BITS             256 /**< Maximum bit size of groups */
 #define MBEDTLS_ECP_WINDOW_SIZE            2 /**< Maximum window size used */
 #define MBEDTLS_ECP_FIXED_POINT_OPTIM      0 /**< Enable fixed-point speed-up */
 #define MBEDTLS_ENTROPY_MAX_SOURCES        1 /**< Maximum number of sources supported */
@@ -421,6 +438,20 @@
 #if defined(CONFIG_MBEDTLS_SERVER_NAME_INDICATION) && \
     defined(MBEDTLS_X509_CRT_PARSE_C)
 #define MBEDTLS_SSL_SERVER_NAME_INDICATION
+#endif
+
+#if defined(CONFIG_MBEDTLS_SSL_CACHE_C)
+#define MBEDTLS_SSL_CACHE_C
+#define MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT CONFIG_MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT
+#define MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES CONFIG_MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES
+#endif
+
+#if defined(CONFIG_MBEDTLS_SSL_EXTENDED_MASTER_SECRET)
+#define MBEDTLS_SSL_EXTENDED_MASTER_SECRET
+#endif
+
+#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
+#define MBEDTLS_PSA_CRYPTO_C
 #endif
 
 /* User config file */

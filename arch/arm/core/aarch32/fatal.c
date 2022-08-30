@@ -12,9 +12,9 @@
  * and Cortex-R CPUs.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_data.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 static void esf_dump(const z_arch_esf_t *esf)
@@ -25,15 +25,15 @@ static void esf_dump(const z_arch_esf_t *esf)
 		esf->basic.a4, esf->basic.ip, esf->basic.lr);
 	LOG_ERR(" xpsr:  0x%08x", esf->basic.xpsr);
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	for (int i = 0; i < ARRAY_SIZE(esf->s); i += 4) {
+	for (int i = 0; i < ARRAY_SIZE(esf->fpu.s); i += 4) {
 		LOG_ERR("s[%2d]:  0x%08x  s[%2d]:  0x%08x"
 			"  s[%2d]:  0x%08x  s[%2d]:  0x%08x",
-			i, (uint32_t)esf->s[i],
-			i + 1, (uint32_t)esf->s[i + 1],
-			i + 2, (uint32_t)esf->s[i + 2],
-			i + 3, (uint32_t)esf->s[i + 3]);
+			i, (uint32_t)esf->fpu.s[i],
+			i + 1, (uint32_t)esf->fpu.s[i + 1],
+			i + 2, (uint32_t)esf->fpu.s[i + 2],
+			i + 3, (uint32_t)esf->fpu.s[i + 3]);
 	}
-	LOG_ERR("fpscr:  0x%08x", esf->fpscr);
+	LOG_ERR("fpscr:  0x%08x", esf->fpu.fpscr);
 #endif
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	const struct _callee_saved *callee = esf->extra_info.callee;
@@ -74,12 +74,16 @@ void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
  * - We expect the supplied exception stack frame to always be a valid
  *   frame. That is because, if the ESF cannot be stacked during an SVC,
  *   a processor fault (e.g. stacking error) will be generated, and the
- *   fault handler will executed insted of the SVC.
+ *   fault handler will executed instead of the SVC.
  *
  * @param esf exception frame
+ * @param callee_regs Callee-saved registers (R4-R11)
  */
-void z_do_kernel_oops(const z_arch_esf_t *esf)
+void z_do_kernel_oops(const z_arch_esf_t *esf, _callee_saved_t *callee_regs)
 {
+#if !(defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE))
+	ARG_UNUSED(callee_regs);
+#endif
 	/* Stacked R0 holds the exception reason. */
 	unsigned int reason = esf->basic.r0;
 
@@ -103,14 +107,25 @@ void z_do_kernel_oops(const z_arch_esf_t *esf)
 #if !defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	z_arm_fatal_error(reason, esf);
 #else
+	z_arch_esf_t esf_copy;
+
+	memcpy(&esf_copy, esf, offsetof(z_arch_esf_t, extra_info));
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	/* extra exception info is collected in callee_reg param
+	 * on CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+	 */
+
+	esf_copy.extra_info = (struct __extra_esf_info) {
+		.callee = callee_regs,
+	};
+#else
 	/* extra exception info is not collected for kernel oops
 	 * path today so we make a copy of the ESF and zero out
 	 * that information
 	 */
-	z_arch_esf_t esf_copy;
-
-	memcpy(&esf_copy, esf, offsetof(z_arch_esf_t, extra_info));
 	esf_copy.extra_info = (struct __extra_esf_info) { 0 };
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
 	z_arm_fatal_error(reason, &esf_copy);
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 }

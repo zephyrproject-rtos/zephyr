@@ -12,7 +12,7 @@
 
 #include <string.h>
 #include "lis2dh.h"
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 
@@ -23,15 +23,10 @@ LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #define LIS2DH_SPI_AUTOINC		BIT(6)
 #define LIS2DH_SPI_ADDR_MASK		BIT_MASK(6)
 
-/* LIS2DH supports only SPI mode 0, word size 8 bits, MSB first */
-#define LIS2DH_SPI_CFG			SPI_WORD_SET(8)
-
 static int lis2dh_raw_read(const struct device *dev, uint8_t reg_addr,
 			    uint8_t *value, uint8_t len)
 {
-	struct lis2dh_data *data = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
-	const struct spi_config *spi_cfg = &cfg->bus_cfg.spi_cfg->spi_conf;
 	uint8_t buffer_tx[2] = { reg_addr | LIS2DH_SPI_READ_BIT, 0 };
 	const struct spi_buf tx_buf = {
 			.buf = buffer_tx,
@@ -65,7 +60,7 @@ static int lis2dh_raw_read(const struct device *dev, uint8_t reg_addr,
 		buffer_tx[0] |= LIS2DH_SPI_AUTOINC;
 	}
 
-	if (spi_transceive(data->bus, spi_cfg, &tx, &rx)) {
+	if (spi_transceive_dt(&cfg->bus_cfg.spi, &tx, &rx)) {
 		return -EIO;
 	}
 
@@ -75,9 +70,7 @@ static int lis2dh_raw_read(const struct device *dev, uint8_t reg_addr,
 static int lis2dh_raw_write(const struct device *dev, uint8_t reg_addr,
 			     uint8_t *value, uint8_t len)
 {
-	struct lis2dh_data *data = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
-	const struct spi_config *spi_cfg = &cfg->bus_cfg.spi_cfg->spi_conf;
 	uint8_t buffer_tx[1] = { reg_addr & ~LIS2DH_SPI_READ_BIT };
 	const struct spi_buf tx_buf[2] = {
 		{
@@ -103,7 +96,7 @@ static int lis2dh_raw_write(const struct device *dev, uint8_t reg_addr,
 		buffer_tx[0] |= LIS2DH_SPI_AUTOINC;
 	}
 
-	if (spi_write(data->bus, spi_cfg, &tx)) {
+	if (spi_write_dt(&cfg->bus_cfg.spi, &tx)) {
 		return -EIO;
 	}
 
@@ -159,22 +152,12 @@ int lis2dh_spi_init(const struct device *dev)
 {
 	struct lis2dh_data *data = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
-	const struct lis2dh_spi_cfg *spi_cfg = cfg->bus_cfg.spi_cfg;
 
 	data->hw_tf = &lis2dh_spi_transfer_fn;
 
-	if (spi_cfg->cs_gpios_label != NULL) {
-
-		/* handle SPI CS thru GPIO if it is the case */
-		data->cs_ctrl.gpio_dev =
-			    device_get_binding(spi_cfg->cs_gpios_label);
-		if (!data->cs_ctrl.gpio_dev) {
-			LOG_ERR("Unable to get GPIO SPI CS device");
-			return -ENODEV;
-		}
-
-		LOG_DBG("SPI GPIO CS configured on %s:%u",
-			spi_cfg->cs_gpios_label, data->cs_ctrl.gpio_pin);
+	if (!spi_is_ready(&cfg->bus_cfg.spi)) {
+		LOG_ERR("SPI bus is not ready");
+		return -ENODEV;
 	}
 
 	return 0;

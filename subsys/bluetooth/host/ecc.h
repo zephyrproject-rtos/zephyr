@@ -6,6 +6,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/** Key size used in Bluetooth's ECC domain. */
+#define BT_ECC_KEY_SIZE            32
+/** Length of a Bluetooth ECC public key coordinate. */
+#define BT_PUB_KEY_COORD_LEN       (BT_ECC_KEY_SIZE)
+/** Length of a Bluetooth ECC public key. */
+#define BT_PUB_KEY_LEN             (2 * (BT_PUB_KEY_COORD_LEN))
+/** Length of a Bluetooth ECC private key. */
+#define BT_PRIV_KEY_LEN            (BT_ECC_KEY_SIZE)
+/** Length of a Bluetooth Diffie-Hellman key. */
+#define BT_DH_KEY_LEN              (BT_ECC_KEY_SIZE)
+
 /*  @brief Container for public key callback */
 struct bt_pub_key_cb {
 	/** @brief Callback type for Public Key generation.
@@ -16,7 +27,7 @@ struct bt_pub_key_cb {
 	 *
 	 *  @param key The local public key, or NULL in case of no key.
 	 */
-	void (*func)(const uint8_t key[64]);
+	void (*func)(const uint8_t key[BT_PUB_KEY_LEN]);
 
 	/* Internal */
 	sys_snode_t node;
@@ -63,7 +74,7 @@ const uint8_t *bt_pub_key_get(void);
  *
  *  @param key The DH Key, or NULL in case of failure.
  */
-typedef void (*bt_dh_key_cb_t)(const uint8_t key[32]);
+typedef void (*bt_dh_key_cb_t)(const uint8_t key[BT_DH_KEY_LEN]);
 
 /*  @brief Calculate a DH Key from a remote Public Key.
  *
@@ -74,4 +85,4 @@ typedef void (*bt_dh_key_cb_t)(const uint8_t key[32]);
  *
  *  @return Zero on success or negative error code otherwise
  */
-int bt_dh_key_gen(const uint8_t remote_pk[64], bt_dh_key_cb_t cb);
+int bt_dh_key_gen(const uint8_t remote_pk[BT_PUB_KEY_LEN], bt_dh_key_cb_t cb);

@@ -5,16 +5,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/__assert.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/gatt.h>
-#include <mgmt/mcumgr/buf.h>
-#include <mgmt/mcumgr/smp_bt.h>
-#include <stats/stats.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
+#include <zephyr/mgmt/mcumgr/smp_bt.h>
+#include <zephyr/stats/stats.h>
 #include <stdlib.h>
 #include <string.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
 #include "img_mgmt/img_mgmt.h"

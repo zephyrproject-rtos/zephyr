@@ -10,16 +10,16 @@
 
 #define DT_DRV_COMPAT st_iis2dlpc
 
-#include <init.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <logging/log.h>
-#include <drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/sensor.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #endif
 
 #include "iis2dlpc.h"
@@ -416,9 +416,8 @@ static int iis2dlpc_init(const struct device *dev)
 			.handle =					\
 			   (void *)&iis2dlpc_config_##inst.stmemsc_cfg,	\
 		},							\
-		.stmemsc_cfg.spi = {					\
-			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
-			.spi_cfg = SPI_CONFIG_DT_INST(inst,		\
+		.stmemsc_cfg = {					\
+			.spi = SPI_DT_SPEC_INST_GET(inst,		\
 					   IIS2DLPC_SPI_OPERATION,	\
 					   0),				\
 		},							\
@@ -443,9 +442,8 @@ static int iis2dlpc_init(const struct device *dev)
 			.handle =					\
 			   (void *)&iis2dlpc_config_##inst.stmemsc_cfg,	\
 		},							\
-		.stmemsc_cfg.i2c = {					\
-			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
-			.i2c_slv_addr = DT_INST_REG_ADDR(inst),		\
+		.stmemsc_cfg = {					\
+			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
 		.pm = DT_INST_PROP(inst, power_mode),			\
 		.range = DT_INST_PROP(inst, range),			\

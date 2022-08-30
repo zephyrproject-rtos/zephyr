@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
-#include <drivers/led.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/led.h>
 #include <stdlib.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(led_shell);
 
 #define MAX_CHANNEL_ARGS 8
@@ -142,12 +142,12 @@ static int cmd_set_brightness(const struct shell *shell,
 		return -EINVAL;
 	}
 	if (value > 100) {
-		shell_error(shell, "Invalid LED brightness value %d (max 100)",
+		shell_error(shell, "Invalid LED brightness value %lu (max 100)",
 			    value);
 		return -EINVAL;
 	}
 
-	shell_print(shell, "%s: setting LED %d brightness to %d",
+	shell_print(shell, "%s: setting LED %d brightness to %lu",
 		    dev->name, led, value);
 
 	err = led_set_brightness(dev, led, (uint8_t) value);
@@ -192,7 +192,7 @@ static int cmd_set_color(const struct shell *shell, size_t argc, char **argv)
 		}
 		if (col > 255) {
 			shell_error(shell,
-				    "Invalid LED color value %d (max 255)",
+				    "Invalid LED color value %lu (max 255)",
 				    col);
 			return -EINVAL;
 		}
@@ -234,12 +234,12 @@ static int cmd_set_channel(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 	if (value > 255) {
-		shell_error(shell, "Invalid channel value %d (max 255)",
+		shell_error(shell, "Invalid channel value %lu (max 255)",
 			    value);
 		return -EINVAL;
 	}
 
-	shell_print(shell, "%s: setting channel %d to %d",
+	shell_print(shell, "%s: setting channel %d to %lu",
 		    dev->name, channel, value);
 
 	err = led_set_channel(dev, channel, (uint8_t) value);
@@ -286,7 +286,7 @@ cmd_write_channels(const struct shell *shell, size_t argc, char **argv)
 		}
 		if (val > 255) {
 			shell_error(shell,
-				    "Invalid channel value %d (max 255)", val);
+				    "Invalid channel value %lu (max 255)", val);
 			return -EINVAL;
 		}
 		value[i] = val;

@@ -14,10 +14,10 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <sys/types.h>
-#include <sys/util.h>
-#include <sys/cbprintf.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/cbprintf.h>
 
 /* newlib doesn't declare this function unless __POSIX_VISIBLE >= 200809.  No
  * idea how to make that happen, so lets put it right here.
@@ -25,7 +25,7 @@
 size_t strnlen(const char *s, size_t maxlen);
 
 /* Provide typedefs used for signed and unsigned integral types
- * capable of holding all convertable integral values.
+ * capable of holding all convertible integral values.
  */
 #ifdef CONFIG_CBPRINTF_FULL_INTEGRAL
 typedef intmax_t sint_value_type;
@@ -905,7 +905,7 @@ static char *encode_float(double value,
 	 */
 	if (expo == BIT_MASK(EXPONENT_BITS)) {
 		if (fract == 0) {
-			if (isupper((int)c)) {
+			if (isupper((unsigned char)c)) {
 				*buf++ = 'I';
 				*buf++ = 'N';
 				*buf++ = 'F';
@@ -915,7 +915,7 @@ static char *encode_float(double value,
 				*buf++ = 'f';
 			}
 		} else {
-			if (isupper((int)c)) {
+			if (isupper((unsigned char)c)) {
 				*buf++ = 'N';
 				*buf++ = 'A';
 				*buf++ = 'N';
@@ -997,7 +997,7 @@ static char *encode_float(double value,
 		 * for a and X for A.
 		 */
 		struct conversion aconv = {
-			.specifier = isupper((int)c) ? 'X' : 'x',
+			.specifier = isupper((unsigned char)c) ? 'X' : 'x',
 		};
 		const char *spe = *bpe;
 		char *sp = bps + (spe - bps);
@@ -1013,7 +1013,7 @@ static char *encode_float(double value,
 			*--sp = '0';
 		}
 
-		/* Append the leading sigificant "digits". */
+		/* Append the leading significant "digits". */
 		while ((sp < spe) && (precision > 0)) {
 			*buf++ = *sp++;
 			--precision;
@@ -1084,7 +1084,7 @@ static char *encode_float(double value,
 
 	while (expo < -2) {
 		/*
-		 * Make roon to allow a multiplication by 5 without overflow.
+		 * Make room to allow a multiplication by 5 without overflow.
 		 * We test only the top part for faster code.
 		 */
 		do {
@@ -1335,11 +1335,15 @@ static int outs(cbprintf_cb out,
 	return (int)count;
 }
 
-int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
+int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
+		     va_list ap, uint32_t flags)
 {
 	char buf[CONVERTED_BUFLEN];
 	size_t count = 0;
 	sint_value_type sint;
+
+	const bool tagged_ap = (flags & Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS)
+			       == Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS;
 
 /* Output character, returning EOF if output failed, otherwise
  * updating count.
@@ -1372,6 +1376,14 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		if (*fp != '%') {
 			OUTC(*fp++);
 			continue;
+		}
+
+		if (IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS)
+		    && tagged_ap) {
+			/* Skip over the argument tag as it is not being
+			 * used here.
+			 */
+			(void)va_arg(ap, int);
 		}
 
 		/* Force union into RAM with conversion state to
@@ -1502,7 +1514,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 				break;
 			}
 			if (length_mod == LENGTH_HH) {
-				value->sint = (char)value->sint;
+				value->sint = (signed char)value->sint;
 			} else if (length_mod == LENGTH_H) {
 				value->sint = (short)value->sint;
 			}
@@ -1771,7 +1783,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 					OUTC(*cp++);
 				}
 			} else {
-				while (isdigit((int)*cp)) {
+				while (isdigit((unsigned char)*cp)) {
 					OUTC(*cp++);
 				}
 
@@ -1791,7 +1803,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 						OUTC('0');
 					}
 				}
-				while (isdigit((int)*cp)) {
+				while (isdigit((unsigned char)*cp)) {
 					OUTC(*cp++);
 				}
 			}

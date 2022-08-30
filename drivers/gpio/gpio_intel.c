@@ -20,12 +20,12 @@
  */
 
 #include <errno.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
-#include <sys/sys_io.h>
-#include <sys/__assert.h>
-#include <sys/slist.h>
-#include <sys/speculation.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/speculation.h>
 
 #include "gpio_utils.h"
 
@@ -596,7 +596,7 @@ int gpio_intel_init(const struct device *dev)
 			      NULL,					       \
 			      &gpio_intel_data_##n,			       \
 			      &gpio_intel_cfg_##n,			       \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,	       \
 			      &gpio_intel_api);
 
 /* "sub" devices.  no more than GPIO_INTEL_NR_SUBDEVS of these! */

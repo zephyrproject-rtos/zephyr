@@ -1,6 +1,2 @@
 sample:
   name: Espressif ESP32 WiFi Station
-tests:
-  sample.board.esp32:
-    platform_allow: esp32
-    tags: esp32

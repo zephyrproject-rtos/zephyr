@@ -6,7 +6,7 @@
 
 #include "test_modbus.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbc_test, LOG_LEVEL_INF);
 
 #ifdef CONFIG_MODBUS_CLIENT
@@ -208,19 +208,32 @@ static struct modbus_iface_param client_param = {
 	.serial = {
 		.baud = MB_TEST_BAUDRATE_LOW,
 		.parity = UART_CFG_PARITY_ODD,
+		.stop_bits_client = UART_CFG_STOP_BITS_1,
 	},
 };
+
+/*
+ * This test performed on hardware requires two UART controllers
+ * on the board (with RX/TX lines connected crosswise).
+ * The exact mapping is not required, we assume that both controllers
+ * have similar capabilities and use the instance with index 0
+ * as interface for the client.
+ */
+#if DT_NODE_EXISTS(DT_INST(0, zephyr_modbus_serial))
+static const char rtu_iface_name[] = {DEVICE_DT_NAME(DT_INST(0, zephyr_modbus_serial))};
+#else
+static const char rtu_iface_name[] = "";
+#endif
 
 void test_client_setup_low_none(void)
 {
 	int err;
-	const char iface_name[] = {DT_PROP_OR(DT_INST(0, zephyr_modbus_serial),
-					      label, "")};
 
-	client_iface = modbus_iface_get_by_name(iface_name);
+	client_iface = modbus_iface_get_by_name(rtu_iface_name);
 	client_param.mode = MODBUS_MODE_RTU;
 	client_param.serial.baud = MB_TEST_BAUDRATE_LOW;
 	client_param.serial.parity = UART_CFG_PARITY_NONE;
+	client_param.serial.stop_bits_client = UART_CFG_STOP_BITS_2;
 
 	err = modbus_init_client(client_iface, client_param);
 	zassert_equal(err, 0, "Failed to configure RTU client");
@@ -229,13 +242,12 @@ void test_client_setup_low_none(void)
 void test_client_setup_low_odd(void)
 {
 	int err;
-	const char iface_name[] = {DT_PROP_OR(DT_INST(0, zephyr_modbus_serial),
-					      label, "")};
 
-	client_iface = modbus_iface_get_by_name(iface_name);
+	client_iface = modbus_iface_get_by_name(rtu_iface_name);
 	client_param.mode = MODBUS_MODE_RTU;
 	client_param.serial.baud = MB_TEST_BAUDRATE_LOW;
 	client_param.serial.parity = UART_CFG_PARITY_ODD;
+	client_param.serial.stop_bits_client = UART_CFG_STOP_BITS_1;
 
 	err = modbus_init_client(client_iface, client_param);
 	zassert_equal(err, 0, "Failed to configure RTU client");
@@ -244,13 +256,12 @@ void test_client_setup_low_odd(void)
 void test_client_setup_high_even(void)
 {
 	int err;
-	const char iface_name[] = {DT_PROP_OR(DT_INST(0, zephyr_modbus_serial),
-					      label, "")};
 
-	client_iface = modbus_iface_get_by_name(iface_name);
+	client_iface = modbus_iface_get_by_name(rtu_iface_name);
 	client_param.mode = MODBUS_MODE_RTU;
 	client_param.serial.baud = MB_TEST_BAUDRATE_HIGH;
 	client_param.serial.parity = UART_CFG_PARITY_EVEN;
+	client_param.serial.stop_bits_client = UART_CFG_STOP_BITS_1;
 
 	err = modbus_init_client(client_iface, client_param);
 	zassert_equal(err, 0, "Failed to configure RTU client");
@@ -259,13 +270,12 @@ void test_client_setup_high_even(void)
 void test_client_setup_ascii(void)
 {
 	int err;
-	const char iface_name[] = {DT_PROP_OR(DT_INST(0, zephyr_modbus_serial),
-					      label, "")};
 
-	client_iface = modbus_iface_get_by_name(iface_name);
+	client_iface = modbus_iface_get_by_name(rtu_iface_name);
 	client_param.mode = MODBUS_MODE_ASCII;
 	client_param.serial.baud = MB_TEST_BAUDRATE_HIGH;
 	client_param.serial.parity = UART_CFG_PARITY_EVEN;
+	client_param.serial.stop_bits_client = UART_CFG_STOP_BITS_1;
 
 	err = modbus_init_client(client_iface, client_param);
 

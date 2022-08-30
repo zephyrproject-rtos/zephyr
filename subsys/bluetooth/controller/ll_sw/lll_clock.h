@@ -5,6 +5,7 @@
  */
 
 int lll_clock_init(void);
+int lll_clock_deinit(void);
 int lll_clock_wait(void);
 int lll_hfclock_on(void);
 int lll_hfclock_on_wait(void);

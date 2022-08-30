@@ -6,8 +6,8 @@
 
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	soc {
@@ -26,3 +26,11 @@
 };
 
 #include "nxp_lpc55S6x_common.dtsi"
+
+/*
+ * Explicitly enable IAP after we include the common LPC55S6X dtsi file,
+ * which will set it to disabled.
+ */
+&iap {
+	status = "okay";
+};

@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2022 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Clocks clean up config
+ * Aim is to avoid conflict with specific default board configuration
+ */
+
+&clk_hse {
+	status = "disabled";
+	/delete-property/ hse-bypass;
+	/delete-property/ clock-frequency;
+};
+
+&clk_hsi {
+	status = "disabled";
+};
+
+&clk_lse {
+	status = "disabled";
+};
+
+&clk_lsi {
+	status = "disabled";
+};
+
+&pll {
+	/delete-property/ mul;
+	/delete-property/ div;
+	/delete-property/ prediv;
+	/delete-property/ xtpre;
+	/delete-property/ clocks;
+	status = "disabled";
+};
+
+&rcc {
+	/delete-property/ clocks;
+	/delete-property/ clock-frequency;
+};
+
+
+/* Core set up
+ * Aim of this part is to provide a base working clock config
+ */
+
+&clk_hsi {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	prediv = <2>;
+	mul = <8>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(32)>;
+};
+
+&i2c1 {
+	/delete-property/ clocks;
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00200000>,
+			<&rcc STM32_SRC_HSI I2C1_SEL(2)>;
+	status = "okay";
+};
+
+&adc1 {
+	/* Basic test only. Don't configure domain clock. */
+	status = "okay";
+};

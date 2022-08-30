@@ -12,10 +12,10 @@
  * @}
  */
 
-#include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/ztest.h>
+#include <zephyr/irq_offload.h>
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define NUM_OF_WORK 2
 #define SYNC_SEM_INIT_VAL (0U)
 
@@ -32,8 +32,6 @@ static struct k_thread *main_thread;
  *
  * @param unused of type k_work to make handler function accepted
  * by k_work_init
- *
- * @return N/A
  */
 static void common_work_handler(struct k_work_user *unused)
 {
@@ -178,7 +176,7 @@ static void test_user_work_submit_to_queue_thread(void)
 	}
 }
 
-void test_main(void)
+void *workq_setup(void)
 {
 	main_thread = k_current_get();
 	k_thread_access_grant(main_thread, &sync_sema, &user_workq.thread,
@@ -187,16 +185,21 @@ void test_main(void)
 	k_sem_init(&sync_sema, SYNC_SEM_INIT_VAL, NUM_OF_WORK);
 	k_thread_system_pool_assign(k_current_get());
 
-	ztest_test_suite(workqueue_api,
-			 /* Do not disturb the ordering of these test cases */
-			 ztest_user_unit_test(test_work_user_queue_start_before_submit),
-			 ztest_unit_test(test_user_workq_granted_access_setup),
-			 ztest_user_unit_test(test_user_workq_granted_access),
-			 /* End order-important tests */
-			 ztest_unit_test(test_k_work_user_init),
-			 ztest_1cpu_user_unit_test(test_user_work_submit_to_queue_thread),
-			 ztest_user_unit_test(test_k_work_user_submit_to_queue_fail)
-		);
+	test_user_workq_granted_access_setup();
+	test_k_work_user_init();
 
-	ztest_run_test_suite(workqueue_api);
+	return NULL;
 }
+
+ZTEST_USER(workqueue_api, test_workq_user_mode)
+{
+	/* Do not disturb the ordering of these test cases */
+	test_work_user_queue_start_before_submit();
+	test_user_workq_granted_access();
+
+	/* End order-important tests */
+	test_user_work_submit_to_queue_thread();
+	test_k_work_user_submit_to_queue_fail();
+}
+
+ZTEST_SUITE(workqueue_api, NULL, workq_setup, NULL, NULL, NULL);

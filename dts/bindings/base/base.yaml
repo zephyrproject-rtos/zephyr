@@ -1,5 +1,7 @@
 # Common fields for all devices
 
+include: [pm.yaml]
+
 properties:
     status:
         type: string
@@ -54,6 +56,7 @@ properties:
     label:
         type: string
         required: false
+        deprecated: true
         description: Human readable string describing the device (used as device_get_binding() argument)
 
     clocks:
@@ -95,3 +98,14 @@ properties:
       required: false
       type: string-array
       description: Provided names of IO channel specifiers
+
+    mboxes:
+      required: false
+      type: phandle-array
+      description: mailbox / IPM channels specifiers
+      specifier-space: mbox
+
+    mbox-names:
+      required: false
+      type: string-array
+      description: Provided names of mailbox / IPM channel specifiers

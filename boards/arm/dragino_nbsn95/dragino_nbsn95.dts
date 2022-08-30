@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2021 Next Big Thing AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l0/stm32l072Xz.dtsi>
+#include <st/l0/stm32l072c(b-z)tx-pinctrl.dtsi>
+
+/ {
+	model = "Dragino NBSN95 NB-IoT Sensor Node";
+	compatible = "vendor,dragino";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led {
+			gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	div = <2>;
+	mul = <4>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(32)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};

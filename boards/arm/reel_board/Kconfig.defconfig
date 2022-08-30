@@ -12,52 +12,31 @@ config BOARD
 config I2C
 	default y
 
-if USB
-
-config USB_NRFX
-	default y
-
-config USB_DEVICE_STACK
-	default y
-
-endif # USB
-
 config BT_CTLR
 	default y
 	depends on BT
 
-if DISPLAY
+if FXOS8700
 
-config SSD16XX
-	default y
+choice FXOS8700_MODE
+	default FXOS8700_MODE_ACCEL
+endchoice
 
-config SPI
-	default y
-
-endif # DISPLAY
+endif # FXOS8700
 
 if LVGL
 
-config LVGL_DISPLAY_DEV_NAME
-	default "SSD16XX"
-
-choice LVGL_COLOR_DEPTH
-	default LVGL_COLOR_DEPTH_1
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_1
 endchoice
 
-config LVGL_BITS_PER_PIXEL
+config LV_Z_BITS_PER_PIXEL
 	default 1
 
-config LVGL_HOR_RES_MAX
-	default 250
-
-config LVGL_VER_RES_MAX
-	default 120
-
-config LVGL_DPI
+config LV_Z_DPI
 	default 130
 
-config LVGL_VDB_SIZE
+config LV_Z_VDB_SIZE
 	default 16
 
 endif # LVGL

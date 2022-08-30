@@ -8,7 +8,7 @@
 
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	compatible = "arm,mps2";
@@ -80,13 +80,15 @@
 	 */
 
 	sram1: memory@0 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x0 DT_SIZE_M(4)>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2_3: memory@28000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x28000000 DT_SIZE_M(4)>;
+		zephyr,memory-region = "SRAM2_3";
 	};
 
 	psram: memory@80000000 {

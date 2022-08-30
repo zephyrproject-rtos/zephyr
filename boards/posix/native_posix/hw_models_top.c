@@ -19,10 +19,10 @@
 #include "irq_ctrl.h"
 #include "posix_board_if.h"
 #include "hw_counter.h"
-#include <arch/posix/posix_soc_if.h>
+#include <zephyr/arch/posix/posix_soc_if.h>
 #include "posix_arch_internal.h"
 #include "sdl_events.h"
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 
 static uint64_t simu_time; /* The actual time as known by the HW models */
@@ -114,7 +114,7 @@ static void hwm_sleep_until_next_timer(void)
 
 	if (signaled_end || (simu_time > end_of_time)) {
 		posix_print_trace("\nStopped at %.3Lfs\n",
-				((long double)simu_time)/1.0e6);
+				((long double)simu_time)/1.0e6L);
 		posix_exit(0);
 	}
 }
@@ -138,39 +138,36 @@ void hwm_find_next_timer(void)
 }
 
 /**
- * Entry point for the HW models
- * The HW models execute in an infinite loop until terminated
+ * Execute the next scheduled HW event/timer
  */
-void hwm_main_loop(void)
+void hwm_one_event(void)
 {
-	while (1) {
-		hwm_sleep_until_next_timer();
+	hwm_sleep_until_next_timer();
 
-		switch (next_timer_index) { /* LCOV_EXCL_BR_LINE */
-		case HWTIMER:
-			hwtimer_timer_reached();
-			break;
-		case IRQCNT:
-			hw_irq_ctrl_timer_triggered();
-			break;
-		case HW_COUNTER:
-			hw_counter_triggered();
-			break;
+	switch (next_timer_index) { /* LCOV_EXCL_BR_LINE */
+	case HWTIMER:
+		hwtimer_timer_reached();
+		break;
+	case IRQCNT:
+		hw_irq_ctrl_timer_triggered();
+		break;
+	case HW_COUNTER:
+		hw_counter_triggered();
+		break;
 #ifdef CONFIG_HAS_SDL
-		case SDLEVENTTIMER:
-			sdl_handle_events();
-			break;
+	case SDLEVENTTIMER:
+		sdl_handle_events();
+		break;
 #endif
-		default:
-			/* LCOV_EXCL_START */
-			posix_print_error_and_exit(
-					"next_timer_index corrupted\n");
-			break;
-			/* LCOV_EXCL_STOP */
-		}
-
-		hwm_find_next_timer();
+	default:
+		/* LCOV_EXCL_START */
+		posix_print_error_and_exit(
+					   "next_timer_index corrupted\n");
+		break;
+		/* LCOV_EXCL_STOP */
 	}
+
+	hwm_find_next_timer();
 }
 
 /**

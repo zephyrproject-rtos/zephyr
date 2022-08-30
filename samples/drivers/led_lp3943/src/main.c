@@ -4,32 +4,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <drivers/led.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app);
 
-#define LED_DEV_NAME DT_LABEL(DT_INST(0, ti_lp3943))
 #define NUM_LEDS 16
 
 #define DELAY_TIME K_MSEC(1000)
 
 void main(void)
 {
-	const struct device *led_dev;
+	const struct device *const led_dev = DEVICE_DT_GET_ANY(ti_lp3943);
 	int i, ret;
 
-	led_dev = device_get_binding(LED_DEV_NAME);
-	if (led_dev) {
-		LOG_INF("Found LED device %s", LED_DEV_NAME);
-	} else {
-		LOG_ERR("LED device %s not found", LED_DEV_NAME);
+	if (!led_dev) {
+		LOG_ERR("No device with compatible ti,lp3943 found");
 		return;
+	} else if (!device_is_ready(led_dev)) {
+		LOG_ERR("LED device %s not ready", led_dev->name);
+		return;
+	} else {
+		LOG_INF("Found LED device %s", led_dev->name);
 	}
 
 	/*

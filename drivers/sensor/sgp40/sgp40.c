@@ -6,15 +6,16 @@
 
 #define DT_DRV_COMPAT sensirion_sgp40
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <sys/crc.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
 
-#include <drivers/sensor/sgp40.h>
+#include <zephyr/drivers/sensor/sgp40.h>
 #include "sgp40.h"
 
 LOG_MODULE_REGISTER(SGP40, CONFIG_SENSOR_LOG_LEVEL);
@@ -36,8 +37,7 @@ static int sgp40_write_command(const struct device *dev, uint16_t cmd)
 
 	sys_put_be16(cmd, tx_buf);
 
-	return i2c_write(cfg->bus, tx_buf, sizeof(tx_buf),
-			 cfg->i2c_addr);
+	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
 static int sgp40_start_measurement(const struct device *dev)
@@ -50,8 +50,7 @@ static int sgp40_start_measurement(const struct device *dev)
 	sys_put_be24(sys_get_be24(data->rh_param), &tx_buf[2]);
 	sys_put_be24(sys_get_be24(data->t_param), &tx_buf[5]);
 
-	return i2c_write(cfg->bus, tx_buf, sizeof(tx_buf),
-			 cfg->i2c_addr);
+	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
 static int sgp40_attr_set(const struct device *dev,
@@ -69,22 +68,24 @@ static int sgp40_attr_set(const struct device *dev,
 	switch ((enum sensor_attribute_sgp40)attr) {
 	case SENSOR_ATTR_SGP40_TEMPERATURE:
 	{
-		int16_t t_ticks;
-		int32_t tmp;
+		uint16_t t_ticks;
+		int16_t tmp;
 
-		tmp = CLAMP(val->val1, SGP40_COMP_MIN_T, SGP40_COMP_MAX_T);
-		t_ticks = ((tmp + 45U) * 0xFFFF / 175U) + 0.5;
+		tmp = (int16_t)CLAMP(val->val1, SGP40_COMP_MIN_T, SGP40_COMP_MAX_T);
+		/* adding +87 to avoid most rounding errors through truncation */
+		t_ticks = (uint16_t)((((tmp + 45) * 65535) + 87) / 175);
 		sys_put_be16(t_ticks, data->t_param);
 		data->t_param[2] = sgp40_compute_crc(t_ticks);
 	}
 		break;
 	case SENSOR_ATTR_SGP40_HUMIDITY:
 	{
-		int16_t rh_ticks;
-		int32_t tmp;
+		uint16_t rh_ticks;
+		uint8_t tmp;
 
-		tmp = CLAMP(val->val1, SGP40_COMP_MIN_RH, SGP40_COMP_MAX_RH);
-		rh_ticks = (tmp * 0xFFFF / 100U) + 0.5;
+		tmp = (uint8_t)CLAMP(val->val1, SGP40_COMP_MIN_RH, SGP40_COMP_MAX_RH);
+		/* adding +50 to eliminate rounding errors through truncation */
+		rh_ticks = (uint16_t)(((tmp * 65535U) + 50U) / 100U);
 		sys_put_be16(rh_ticks, data->rh_param);
 		data->rh_param[2] = sgp40_compute_crc(rh_ticks);
 	}
@@ -110,7 +111,7 @@ static int sgp40_selftest(const struct device *dev)
 
 	k_sleep(K_MSEC(SGP40_TEST_WAIT_MS));
 
-	rc = i2c_read(cfg->bus, rx_buf, sizeof(rx_buf), cfg->i2c_addr);
+	rc = i2c_read_dt(&cfg->bus, rx_buf, sizeof(rx_buf));
 	if (rc < 0) {
 		LOG_ERR("Failed to read data sample.");
 		return rc;
@@ -151,7 +152,7 @@ static int sgp40_sample_fetch(const struct device *dev,
 
 	k_sleep(K_MSEC(SGP40_MEASURE_WAIT_MS));
 
-	rc = i2c_read(cfg->bus, rx_buf, sizeof(rx_buf), cfg->i2c_addr);
+	rc = i2c_read_dt(&cfg->bus, rx_buf, sizeof(rx_buf));
 	if (rc < 0) {
 		LOG_ERR("Failed to read data sample.");
 		return rc;
@@ -186,62 +187,24 @@ static int sgp40_channel_get(const struct device *dev,
 
 
 #ifdef CONFIG_PM_DEVICE
-static int sgp40_set_power_state(const struct device *dev,
-				  enum pm_device_state power_state)
+static int sgp40_pm_action(const struct device *dev,
+			   enum pm_device_action action)
 {
-	struct sgp40_data *data = dev->data;
 	uint16_t cmd;
-	int rc;
 
-	if (data->pm_state == power_state) {
-		LOG_DBG("Device already in requested PM_STATE.");
-		return 0;
-	}
-
-	if (power_state == PM_DEVICE_STATE_ACTIVE) {
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		/* activate the hotplate by sending a measure command */
 		cmd = SGP40_CMD_MEASURE_RAW;
-	} else if (power_state == PM_DEVICE_STATE_SUSPEND) {
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
 		cmd = SGP40_CMD_HEATER_OFF;
-	} else {
-		LOG_DBG("Power state not implemented.");
+		break;
+	default:
 		return -ENOTSUP;
 	}
 
-	rc = sgp40_write_command(dev, cmd);
-	if (rc < 0) {
-		LOG_ERR("Failed to set power state.");
-		return rc;
-	}
-
-	data->pm_state = power_state;
-
-	return 0;
-}
-
-static uint32_t sgp40_get_power_state(const struct device *dev,
-		enum pm_device_state *state)
-{
-	struct sgp40_data *data = dev->data;
-
-	*state = data->pm_state;
-
-	return 0;
-}
-
-static int sgp40_pm_ctrl(const struct device *dev,
-	uint32_t ctrl_command,
-	enum pm_device_state *state)
-{
-	int rc = 0;
-
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		rc = sgp40_set_power_state(dev, *state);
-	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
-		rc = sgp40_get_power_state(dev, state);
-	}
-
-	return rc;
+	return sgp40_write_command(dev, cmd);
 }
 #endif /* CONFIG_PM_DEVICE */
 
@@ -250,7 +213,7 @@ static int sgp40_init(const struct device *dev)
 	const struct sgp40_config *cfg = dev->config;
 	struct sensor_value comp_data;
 
-	if (!device_is_ready(cfg->bus)) {
+	if (!device_is_ready(cfg->bus.bus)) {
 		LOG_ERR("Device not ready.");
 		return -ENODEV;
 	}
@@ -262,7 +225,7 @@ static int sgp40_init(const struct device *dev)
 			LOG_ERR("Selftest failed!");
 			return rc;
 		}
-		LOG_DBG("Selftest succeded!");
+		LOG_DBG("Selftest succeeded!");
 	}
 
 	comp_data.val1 = SGP40_COMP_DEFAULT_T;
@@ -289,14 +252,15 @@ static const struct sensor_driver_api sgp40_api = {
 	static struct sgp40_data sgp40_data_##n;		\
 								\
 	static const struct sgp40_config sgp40_config_##n = {	\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),		\
-		.i2c_addr = DT_INST_REG_ADDR(n),		\
+		.bus = I2C_DT_SPEC_INST_GET(n),			\
 		.selftest = DT_INST_PROP(n, enable_selftest),	\
 	};							\
 								\
+	PM_DEVICE_DT_INST_DEFINE(n, sgp40_pm_action);		\
+								\
 	DEVICE_DT_INST_DEFINE(n,				\
 			      sgp40_init,			\
-			      sgp40_pm_ctrl,\
+			      PM_DEVICE_DT_INST_GET(n),	\
 			      &sgp40_data_##n,			\
 			      &sgp40_config_##n,		\
 			      POST_KERNEL,			\

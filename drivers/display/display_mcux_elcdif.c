@@ -1,43 +1,46 @@
 /*
- * Copyright (c) 2019, NXP
+ * Copyright (c) 2019-22, NXP
+ * Copyright (c) 2022, Basalte bv
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT fsl_imx6sx_lcdif
+#define DT_DRV_COMPAT nxp_imx_elcdif
 
-#include <drivers/display.h>
+#include <zephyr/drivers/display.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/gpio.h>
 #include <fsl_elcdif.h>
 
 #ifdef CONFIG_HAS_MCUX_CACHE
 #include <fsl_cache.h>
 #endif
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(display_mcux_elcdif, CONFIG_DISPLAY_LOG_LEVEL);
 
-K_HEAP_DEFINE(mcux_elcdif_pool,
-	      CONFIG_MCUX_ELCDIF_POOL_BLOCK_MAX *
-	      CONFIG_MCUX_ELCDIF_POOL_BLOCK_NUM);
+#ifdef CONFIG_MCUX_ELCDIF_DOUBLE_FRAMEBUFFER
+#define MCUX_ELCDIF_FB_NUM 2
+#else
+#define MCUX_ELCDIF_FB_NUM 1
+#endif
 
 struct mcux_elcdif_config {
 	LCDIF_Type *base;
 	void (*irq_config_func)(const struct device *dev);
 	elcdif_rgb_mode_config_t rgb_mode;
 	enum display_pixel_format pixel_format;
-	uint8_t bits_per_pixel;
-};
-
-struct mcux_mem_block {
-	void *data;
+	size_t pixel_bytes;
+	size_t fb_bytes;
+	const struct pinctrl_dev_config *pincfg;
+	const struct gpio_dt_spec backlight_gpio;
 };
 
 struct mcux_elcdif_data {
-	struct mcux_mem_block fb[2];
+	uint8_t *fb_ptr;
+	uint8_t *fb[MCUX_ELCDIF_FB_NUM];
 	struct k_sem sem;
-	size_t pixel_bytes;
-	size_t fb_bytes;
 	uint8_t write_idx;
 };
 
@@ -47,44 +50,51 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x,
 			     const void *buf)
 {
 	const struct mcux_elcdif_config *config = dev->config;
-	struct mcux_elcdif_data *data = dev->data;
+	struct mcux_elcdif_data *dev_data = dev->data;
 
-	uint8_t write_idx = data->write_idx;
-	uint8_t read_idx = !write_idx;
+	uint8_t write_idx = (dev_data->write_idx + 1) % MCUX_ELCDIF_FB_NUM;
 
 	int h_idx;
 	const uint8_t *src;
 	uint8_t *dst;
 
-	__ASSERT((data->pixel_bytes * desc->pitch * desc->height) <=
+	__ASSERT((config->pixel_bytes * desc->pitch * desc->height) <=
 		 desc->buf_size, "Input buffer too small");
 
 	LOG_DBG("W=%d, H=%d, @%d,%d", desc->width, desc->height, x, y);
 
-	k_sem_take(&data->sem, K_FOREVER);
+#ifdef CONFIG_MCUX_ELCDIF_DOUBLE_FRAMEBUFFER
+	k_sem_take(&dev_data->sem, K_FOREVER);
 
-	memcpy(data->fb[write_idx].data, data->fb[read_idx].data,
-	       data->fb_bytes);
+	memcpy(dev_data->fb[write_idx], dev_data->fb[dev_data->write_idx],
+	       config->fb_bytes);
+#else
+	/* wait for the next frame done */
+	k_sem_reset(&dev_data->sem);
+	k_sem_take(&dev_data->sem, K_FOREVER);
+#endif
 
 	src = buf;
-	dst = data->fb[data->write_idx].data;
-	dst += data->pixel_bytes * (y * config->rgb_mode.panelWidth + x);
+	dst = dev_data->fb[write_idx];
+	dst += config->pixel_bytes * (y * config->rgb_mode.panelWidth + x);
 
 	for (h_idx = 0; h_idx < desc->height; h_idx++) {
-		memcpy(dst, src, data->pixel_bytes * desc->width);
-		src += data->pixel_bytes * desc->pitch;
-		dst += data->pixel_bytes * config->rgb_mode.panelWidth;
+		memcpy(dst, src, config->pixel_bytes * desc->width);
+		src += config->pixel_bytes * desc->pitch;
+		dst += config->pixel_bytes * config->rgb_mode.panelWidth;
 	}
 
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_CleanByRange((uint32_t) data->fb[write_idx].data,
-			    data->fb_bytes);
+	DCACHE_CleanByRange((uint32_t) dev_data->fb[write_idx],
+			    config->fb_bytes);
 #endif
 
+#ifdef CONFIG_MCUX_ELCDIF_DOUBLE_FRAMEBUFFER
 	ELCDIF_SetNextBufferAddr(config->base,
-				 (uint32_t) data->fb[write_idx].data);
+				 (uint32_t) dev_data->fb[write_idx]);
+#endif
 
-	data->write_idx = read_idx;
+	dev_data->write_idx = write_idx;
 
 	return 0;
 }
@@ -100,20 +110,28 @@ static int mcux_elcdif_read(const struct device *dev, const uint16_t x,
 
 static void *mcux_elcdif_get_framebuffer(const struct device *dev)
 {
-	LOG_ERR("Direct framebuffer access not implemented");
+#ifdef CONFIG_MCUX_ELCDIF_DOUBLE_FRAMEBUFFER
+	LOG_ERR("Direct framebuffer access not available");
 	return NULL;
+#else
+	struct mcux_elcdif_data *dev_data = dev->data;
+
+	return dev_data->fb_ptr;
+#endif
 }
 
 static int mcux_elcdif_display_blanking_off(const struct device *dev)
 {
-	LOG_ERR("Display blanking control not implemented");
-	return -ENOTSUP;
+	const struct mcux_elcdif_config *config = dev->config;
+
+	return gpio_pin_set_dt(&config->backlight_gpio, 1);
 }
 
 static int mcux_elcdif_display_blanking_on(const struct device *dev)
 {
-	LOG_ERR("Display blanking control not implemented");
-	return -ENOTSUP;
+	const struct mcux_elcdif_config *config = dev->config;
+
+	return gpio_pin_set_dt(&config->backlight_gpio, 0);
 }
 
 static int mcux_elcdif_set_brightness(const struct device *dev,
@@ -169,40 +187,51 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 static void mcux_elcdif_isr(const struct device *dev)
 {
 	const struct mcux_elcdif_config *config = dev->config;
-	struct mcux_elcdif_data *data = dev->data;
+	struct mcux_elcdif_data *dev_data = dev->data;
 	uint32_t status;
 
 	status = ELCDIF_GetInterruptStatus(config->base);
 	ELCDIF_ClearInterruptStatus(config->base, status);
 
-	k_sem_give(&data->sem);
+	k_sem_give(&dev_data->sem);
 }
 
 static int mcux_elcdif_init(const struct device *dev)
 {
 	const struct mcux_elcdif_config *config = dev->config;
-	struct mcux_elcdif_data *data = dev->data;
-	int i;
+	struct mcux_elcdif_data *dev_data = dev->data;
+	int err;
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+
+	err = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
+	if (err) {
+		return err;
+	}
 
 	elcdif_rgb_mode_config_t rgb_mode = config->rgb_mode;
 
-	data->pixel_bytes = config->bits_per_pixel / 8U;
-	data->fb_bytes = data->pixel_bytes *
-			 rgb_mode.panelWidth * rgb_mode.panelHeight;
-	data->write_idx = 1U;
+	/* Shift the polarity bits to the appropriate location in the register */
+	rgb_mode.polarityFlags = rgb_mode.polarityFlags << LCDIF_VDCTRL0_ENABLE_POL_SHIFT;
 
-	for (i = 0; i < ARRAY_SIZE(data->fb); i++) {
-		data->fb[i].data = k_heap_alloc(&mcux_elcdif_pool,
-						data->fb_bytes, K_NO_WAIT);
-		if (data->fb[i].data == NULL) {
-			LOG_ERR("Could not allocate frame buffer %d", i);
-			return -ENOMEM;
-		}
-		memset(data->fb[i].data, 0, data->fb_bytes);
+	/* Set the Pixel format */
+	if (config->pixel_format == PIXEL_FORMAT_BGR_565) {
+		rgb_mode.pixelFormat = kELCDIF_PixelFormatRGB565;
+	} else if (config->pixel_format == PIXEL_FORMAT_RGB_888) {
+		rgb_mode.pixelFormat = kELCDIF_PixelFormatRGB888;
 	}
-	rgb_mode.bufferAddr = (uint32_t) data->fb[0].data;
 
-	k_sem_init(&data->sem, 1, 1);
+	dev_data->fb[0] = dev_data->fb_ptr;
+#ifdef CONFIG_MCUX_ELCDIF_DOUBLE_FRAMEBUFFER
+	dev_data->fb[1] = dev_data->fb_ptr + config->fb_bytes;
+#endif
+
+	rgb_mode.bufferAddr = (uint32_t) dev_data->fb_ptr;
+
+	k_sem_init(&dev_data->sem, 1, 1);
 
 	config->irq_config_func(dev);
 
@@ -227,47 +256,60 @@ static const struct display_driver_api mcux_elcdif_api = {
 	.set_orientation = mcux_elcdif_set_orientation,
 };
 
-static void mcux_elcdif_config_func_1(const struct device *dev);
+#define MCUX_ELCDIF_PIXEL_BYTES(id)						\
+	COND_CODE_1(DT_INST_ENUM_IDX(id, pixel_format),	(2), (3))
 
-static struct mcux_elcdif_config mcux_elcdif_config_1 = {
-	.base = (LCDIF_Type *) DT_INST_REG_ADDR(0),
-	.irq_config_func = mcux_elcdif_config_func_1,
-#ifdef CONFIG_MCUX_ELCDIF_PANEL_RK043FN02H
-	.rgb_mode = {
-		.panelWidth = 480,
-		.panelHeight = 272,
-		.hsw = 41,
-		.hfp = 4,
-		.hbp = 8,
-		.vsw = 10,
-		.vfp = 4,
-		.vbp = 2,
-		.polarityFlags = kELCDIF_DataEnableActiveHigh |
-				 kELCDIF_VsyncActiveLow |
-				 kELCDIF_HsyncActiveLow |
-				 kELCDIF_DriveDataOnRisingClkEdge,
-		.pixelFormat = kELCDIF_PixelFormatRGB565,
-		.dataBus = kELCDIF_DataBus16Bit,
-	},
-	.pixel_format = PIXEL_FORMAT_BGR_565,
-	.bits_per_pixel = 16,
-#endif
-};
+#define MCUX_ELCDIF_DEVICE_INIT(id)						\
+	PINCTRL_DT_INST_DEFINE(id);						\
+	static void mcux_elcdif_config_func_##id(const struct device *dev);	\
+	static const struct mcux_elcdif_config mcux_elcdif_config_##id = {	\
+		.base = (LCDIF_Type *) DT_INST_REG_ADDR(id),			\
+		.irq_config_func = mcux_elcdif_config_func_##id,		\
+		.rgb_mode = {							\
+			.panelWidth = DT_INST_PROP(id, width),			\
+			.panelHeight = DT_INST_PROP(id, height),		\
+			.hsw = DT_INST_PROP(id, hsync),				\
+			.hfp = DT_INST_PROP(id, hfp),				\
+			.hbp = DT_INST_PROP(id, hbp),				\
+			.vsw = DT_INST_PROP(id, vsync),				\
+			.vfp = DT_INST_PROP(id, vfp),				\
+			.vbp = DT_INST_PROP(id, vbp),				\
+			.polarityFlags = DT_INST_PROP(id, polarity),		\
+			.dataBus = LCDIF_CTRL_LCD_DATABUS_WIDTH(		\
+					DT_INST_ENUM_IDX(id, data_buswidth)),	\
+		},								\
+		.pixel_format = COND_CODE_1(DT_INST_ENUM_IDX(id, pixel_format),	\
+			(PIXEL_FORMAT_BGR_565),					\
+			(PIXEL_FORMAT_RGB_888)),				\
+		.pixel_bytes = MCUX_ELCDIF_PIXEL_BYTES(id),			\
+		.fb_bytes = DT_INST_PROP(id, width) * DT_INST_PROP(id, height)	\
+			* MCUX_ELCDIF_PIXEL_BYTES(id),				\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
+		.backlight_gpio = GPIO_DT_SPEC_INST_GET(id, backlight_gpios),	\
+	};									\
+	static uint8_t __aligned(64) frame_buffer_##id[MCUX_ELCDIF_FB_NUM	\
+			* DT_INST_PROP(id, width)				\
+			* DT_INST_PROP(id, height)				\
+			* MCUX_ELCDIF_PIXEL_BYTES(id)];				\
+	static struct mcux_elcdif_data mcux_elcdif_data_##id = {		\
+		.fb_ptr = frame_buffer_##id,					\
+	};									\
+	DEVICE_DT_INST_DEFINE(id,						\
+			    &mcux_elcdif_init,					\
+			    NULL,						\
+			    &mcux_elcdif_data_##id,				\
+			    &mcux_elcdif_config_##id,				\
+			    POST_KERNEL,					\
+			    CONFIG_DISPLAY_INIT_PRIORITY,			\
+			    &mcux_elcdif_api);					\
+	static void mcux_elcdif_config_func_##id(const struct device *dev)	\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN(id),					\
+			    DT_INST_IRQ(id, priority),				\
+			    mcux_elcdif_isr,					\
+			    DEVICE_DT_INST_GET(id),				\
+			    0);							\
+		irq_enable(DT_INST_IRQN(id));					\
+	}
 
-static struct mcux_elcdif_data mcux_elcdif_data_1;
-
-DEVICE_DT_INST_DEFINE(0,
-		    &mcux_elcdif_init,
-		    NULL,
-		    &mcux_elcdif_data_1, &mcux_elcdif_config_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_elcdif_api);
-
-static void mcux_elcdif_config_func_1(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    mcux_elcdif_isr, DEVICE_DT_INST_GET(0), 0);
-
-	irq_enable(DT_INST_IRQN(0));
-}
+DT_INST_FOREACH_STATUS_OKAY(MCUX_ELCDIF_DEVICE_INIT)

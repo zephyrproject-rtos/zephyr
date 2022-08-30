@@ -24,14 +24,14 @@
  * @}
  */
 
-#include <init.h>
-#include <arch/cpu.h>
-#include <sys_clock.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys_clock.h>
 #include <stdbool.h>
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 
-#define THREAD_STACK		(384 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define THREAD_STACK		(384 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #define TEST_TICKS_TO_SLEEP	(CONFIG_SYS_CLOCK_TICKS_PER_SEC / 2)
 
@@ -91,7 +91,7 @@ SYS_INIT(test_early_sleep_app, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
  *
  * @see k_sleep()
  */
-static void test_early_sleep(void)
+ZTEST(earlysleep, test_early_sleep)
 {
 	TC_PRINT("Testing early sleeping\n");
 
@@ -133,10 +133,5 @@ static void test_early_sleep(void)
 	zassert_false(test_failure, "Lower priority thread not ran!!");
 }
 
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_earlysleep,
-			ztest_1cpu_unit_test(test_early_sleep));
-	ztest_run_test_suite(test_earlysleep);
-}
+ZTEST_SUITE(earlysleep, NULL, NULL,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

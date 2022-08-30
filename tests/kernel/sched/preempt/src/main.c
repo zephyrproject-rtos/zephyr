@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <ztest.h>
-#include <irq_offload.h>
-#include <kernel_structs.h> /* for _THREAD_PENDING */
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/kernel_structs.h> /* for _THREAD_PENDING */
 
 /* Explicit preemption test.  Works by creating a set of threads in
  * each priority class (cooperative, preemptive, metairq) which all go
@@ -48,7 +48,7 @@ const enum { METAIRQ, COOP, PREEMPTIBLE } worker_priorities[] = {
 
 #define NUM_THREADS ARRAY_SIZE(worker_priorities)
 
-#define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 k_tid_t last_thread;
 
@@ -103,9 +103,12 @@ void wakeup_src_thread(int id)
 	 */
 	for (int i = 0; i < NUM_THREADS; i++) {
 		k_tid_t th = &worker_threads[i];
+		char buffer[16];
+		const char *str;
 
-		zassert_equal(strcmp(k_thread_state_str(th), "pending"),
-				0, "worker thread %d not pending?", i);
+		str = k_thread_state_str(th, buffer, sizeof(buffer));
+		zassert_not_null(strstr(str, "pending"),
+				 "worker thread %d not pending?", i);
 	}
 
 	/* Wake the src worker up */
@@ -214,7 +217,7 @@ void validate_wakeup(int src, int target, k_tid_t last_thread)
 			zassert_false(!preempted && target_wins,
 				      "higher priority thread should have preempted");
 
-			/* The scheudler implements a 'first added to
+			/* The scheduler implements a 'first added to
 			 * queue' policy for threads within a single
 			 * priority, so the last thread woken up (the
 			 * target) must never run before the source
@@ -227,7 +230,7 @@ void validate_wakeup(int src, int target, k_tid_t last_thread)
 			 * policy OR the opposite ("run newly woken
 			 * threads first"), and long term we may want
 			 * to revisit this particular check and maybe
-			 * make the poilicy configurable.
+			 * make the policy configurable.
 			 */
 			zassert_false(preempted && tie,
 				      "tied priority should not preempt");
@@ -308,7 +311,7 @@ void worker(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-void test_preempt(void)
+ZTEST(suite_preempt, test_preempt)
 {
 	int priority;
 
@@ -343,11 +346,21 @@ void test_preempt(void)
 	 * test is done
 	 */
 	k_sem_take(&main_sem, K_FOREVER);
+
+	/* unit test clean up */
+
+	/* k_thread_abort() also works here.
+	 * But join should be more graceful.
+	 */
+	k_thread_join(&manager_thread, K_FOREVER);
+
+	/* worker threads have to be aborted.
+	 * It is difficult to make them stop gracefully.
+	 */
+	for (int i = 0; i < NUM_THREADS; i++) {
+		k_thread_abort(&worker_threads[i]);
+	}
+
 }
 
-void test_main(void)
-{
-	ztest_test_suite(suite_preempt,
-			 ztest_unit_test(test_preempt));
-	ztest_run_test_suite(suite_preempt);
-}
+ZTEST_SUITE(suite_preempt, NULL, NULL, NULL, NULL, NULL);

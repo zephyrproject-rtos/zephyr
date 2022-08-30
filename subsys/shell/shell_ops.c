@@ -7,22 +7,35 @@
 #include <ctype.h>
 #include "shell_ops.h"
 
+#define CMD_CURSOR_LEN 8
 void z_shell_op_cursor_vert_move(const struct shell *shell, int32_t delta)
 {
-	if (delta != 0) {
-		z_shell_raw_fprintf(shell->fprintf_ctx, "\033[%d%c",
-				    delta > 0 ? delta : -delta,
-				    delta > 0 ? 'A' : 'B');
+	char dir = delta > 0 ? 'A' : 'B';
+
+	if (delta == 0) {
+		return;
 	}
+
+	if (delta < 0) {
+		delta = -delta;
+	}
+
+	Z_SHELL_VT100_CMD(shell, "\e[%d%c", delta, dir);
 }
 
 void z_shell_op_cursor_horiz_move(const struct shell *shell, int32_t delta)
 {
-	if (delta != 0) {
-		z_shell_raw_fprintf(shell->fprintf_ctx, "\033[%d%c",
-				    delta > 0 ? delta : -delta,
-				    delta > 0 ? 'C' : 'D');
+	char dir = delta > 0 ? 'C' : 'D';
+
+	if (delta == 0) {
+		return;
 	}
+
+	if (delta < 0) {
+		delta = -delta;
+	}
+
+	Z_SHELL_VT100_CMD(shell, "\e[%d%c", delta, dir);
 }
 
 /* Function returns true if command length is equal to multiplicity of terminal
@@ -37,8 +50,10 @@ static inline bool full_line_cmd(const struct shell *shell)
 /* Function returns true if cursor is at beginning of an empty line. */
 bool z_shell_cursor_in_empty_line(const struct shell *shell)
 {
-	return ((shell->ctx->cmd_buff_pos + z_shell_strlen(shell->ctx->prompt))
-			% shell->ctx->vt100_ctx.cons.terminal_wid == 0U);
+	return (((shell->ctx->cmd_buff_pos * shell->ctx->cfg.flags.echo) +
+		 z_shell_strlen(shell->ctx->prompt)) %
+			shell->ctx->vt100_ctx.cons.terminal_wid ==
+		0U);
 }
 
 void z_shell_op_cond_next_line(const struct shell *shell)
@@ -285,8 +300,8 @@ static void char_replace(const struct shell *shell, char data)
 
 void z_shell_op_char_insert(const struct shell *shell, char data)
 {
-	if (shell->ctx->internal.flags.insert_mode &&
-		(shell->ctx->cmd_buff_len != shell->ctx->cmd_buff_pos)) {
+	if (z_flag_insert_mode_get(shell) &&
+	    (shell->ctx->cmd_buff_len != shell->ctx->cmd_buff_pos)) {
 		char_replace(shell, data);
 	} else {
 		data_insert(shell, &data, 1);
@@ -369,7 +384,13 @@ static void shell_pend_on_txdone(const struct shell *shell)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING) &&
 	    (shell->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE)) {
-		k_poll(&shell->ctx->events[SHELL_SIGNAL_TXDONE], 1, K_FOREVER);
+		struct k_poll_event event;
+
+		k_poll_event_init(&event,
+				  K_POLL_TYPE_SIGNAL,
+				  K_POLL_MODE_NOTIFY_ONLY,
+				  &shell->ctx->signals[SHELL_SIGNAL_TXDONE]);
+		k_poll(&event, 1, K_FOREVER);
 		k_poll_signal_reset(&shell->ctx->signals[SHELL_SIGNAL_TXDONE]);
 	} else {
 		/* Blocking wait in case of bare metal. */
@@ -412,22 +433,33 @@ void z_shell_print_stream(const void *user_ctx, const char *data, size_t len)
 static void vt100_bgcolor_set(const struct shell *shell,
 			      enum shell_vt100_color bgcolor)
 {
+	if (!IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
+		return;
+	}
+
+	if (bgcolor >= VT100_COLOR_END) {
+		return;
+	}
+
 	if ((bgcolor == SHELL_NORMAL) ||
 	    (shell->ctx->vt100_ctx.col.bgcol == bgcolor)) {
 		return;
 	}
 
-	/* -1 because default value is first in enum */
-	uint8_t cmd[] = SHELL_VT100_BGCOLOR(bgcolor - 1);
-
 	shell->ctx->vt100_ctx.col.bgcol = bgcolor;
-	z_shell_raw_fprintf(shell->fprintf_ctx, "%s", cmd);
-
+	Z_SHELL_VT100_CMD(shell, "\e[403%dm", bgcolor);
 }
 
 void z_shell_vt100_color_set(const struct shell *shell,
 			     enum shell_vt100_color color)
 {
+	if (!IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
+		return;
+	}
+
+	if (color >= VT100_COLOR_END) {
+		return;
+	}
 
 	if (shell->ctx->vt100_ctx.col.col == color) {
 		return;
@@ -436,20 +468,19 @@ void z_shell_vt100_color_set(const struct shell *shell,
 	shell->ctx->vt100_ctx.col.col = color;
 
 	if (color != SHELL_NORMAL) {
-
-		uint8_t cmd[] = SHELL_VT100_COLOR(color - 1);
-
-		z_shell_raw_fprintf(shell->fprintf_ctx, "%s", cmd);
+		Z_SHELL_VT100_CMD(shell, "\e[1;3%dm", color);
 	} else {
-		static const uint8_t cmd[] = SHELL_VT100_MODESOFF;
-
-		z_shell_raw_fprintf(shell->fprintf_ctx, "%s", cmd);
+		Z_SHELL_VT100_CMD(shell, SHELL_VT100_MODESOFF);
 	}
 }
 
 void z_shell_vt100_colors_restore(const struct shell *shell,
-				       const struct shell_vt100_colors *color)
+				  const struct shell_vt100_colors *color)
 {
+	if (!IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
+		return;
+	}
+
 	z_shell_vt100_color_set(shell, color->col);
 	vt100_bgcolor_set(shell, color->bgcol);
 }
@@ -458,7 +489,7 @@ void z_shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 		      const char *fmt, va_list args)
 {
 	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
-	    shell->ctx->internal.flags.use_colors &&
+	    z_flag_use_colors_get(shell)	  &&
 	    (color != shell->ctx->vt100_ctx.col.col)) {
 		struct shell_vt100_colors col;
 
@@ -473,19 +504,20 @@ void z_shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 	}
 }
 
-void z_shell_fprintf(const struct shell *shell,
-			    enum shell_vt100_color color,
-			    const char *fmt, ...)
+void z_shell_fprintf(const struct shell *sh,
+		     enum shell_vt100_color color,
+		     const char *fmt, ...)
 {
-	__ASSERT_NO_MSG(shell);
-	__ASSERT(!k_is_in_isr(), "Thread context required.");
-	__ASSERT_NO_MSG(shell->ctx);
-	__ASSERT_NO_MSG(shell->fprintf_ctx);
+	__ASSERT_NO_MSG(sh);
+	__ASSERT_NO_MSG(sh->ctx);
+	__ASSERT_NO_MSG(sh->fprintf_ctx);
 	__ASSERT_NO_MSG(fmt);
+	__ASSERT(z_flag_sync_mode_get(sh) || !k_is_in_isr(),
+		 "Thread context required.");
 
 	va_list args;
 
 	va_start(args, fmt);
-	z_shell_vfprintf(shell, color, fmt, args);
+	z_shell_vfprintf(sh, color, fmt, args);
 	va_end(args);
 }

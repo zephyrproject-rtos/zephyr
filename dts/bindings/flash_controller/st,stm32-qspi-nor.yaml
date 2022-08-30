@@ -8,10 +8,12 @@ description: |
 
         mx25r6435f: qspi-nor-flash@0 {
                 compatible = "st,stm32-qspi-nor";
-                label = "MX25R6435F";
                 reg = <0>;
                 qspi-max-frequency = <80000000>;
                 size = <0x4000000>;
+                reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
+                reset-gpios-duration = <1>;
+                spi-bus-width = <4>;
                 status = "okay";
         };
 
@@ -28,8 +30,34 @@ properties:
       type: int
       required: true
       description: Maximum clock frequency of device's QSPI interface in Hz
-    label:
-      required: true
     size:
       required: true
       description: Flash Memory size in bits
+    reset-gpios:
+      type: phandle-array
+      required: false
+      description: RESETn pin
+    reset-gpios-duration:
+      type: int
+      required: false
+      description: The duration (in ms) for the flash memory reset pulse
+    spi-bus-width:
+      type: int
+      required: false
+      description: The width of (Q)SPI bus to which flash memory is connected.
+                   Now only value of 4 (when using SIO[0123]) is supported.
+    writeoc:
+      type: string
+      required: false
+      enum:
+        - "PP_1_1_4"      # Quad data line SPI, PP 1-1-4 (0x32)
+        - "PP_1_4_4"      # Quad data line SPI, PP 1-4-4 (0x38)
+      description: |
+        The value encodes number of I/O lines used for the opcode,
+        address, and data.
+
+        There is no info about quad page program opcodes in the SFDP
+        tables, hence it has been assumed that NOR flash memory
+        supporting 1-4-4 mode also would support fast page programming.
+
+        If absent, then 1-4-4 program page is used in quad mode.

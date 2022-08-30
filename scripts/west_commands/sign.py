@@ -22,7 +22,7 @@ from zcmake import CMakeCache
 from zephyr_ext_common import Forceable, ZEPHYR_SCRIPTS
 
 # This is needed to load edt.pickle files.
-sys.path.append(str(ZEPHYR_SCRIPTS / 'dts' / 'python-devicetree' / 'src'))
+sys.path.insert(0, str(ZEPHYR_SCRIPTS / 'dts' / 'python-devicetree' / 'src'))
 
 SIGN_DESCRIPTION = '''\
 This command automates some of the drudgery of creating signed Zephyr
@@ -390,19 +390,6 @@ class ImgtoolSigner(Signer):
 
 class RimageSigner(Signer):
 
-    @staticmethod
-    def edt_get_rimage_target(board):
-        if 'intel_adsp_cavs15' in board:
-            return 'apl'
-        if 'intel_adsp_cavs18' in board:
-            return 'cnl'
-        if 'intel_adsp_cavs20' in board:
-            return 'icl'
-        if 'intel_adsp_cavs25' in board:
-            return 'tgl'
-
-        log.die('Signing not supported for board ' + board)
-
     def sign(self, command, build_dir, build_conf, formats):
         args = command.args
 
@@ -417,43 +404,77 @@ class RimageSigner(Signer):
                 log.die('rimage not found; either install it',
                         'or provide --tool-path')
 
+        #### -c sof/rimage/config/signing_schema.toml  ####
+
         b = pathlib.Path(build_dir)
         cache = CMakeCache.from_build_dir(build_dir)
 
-        board = cache['CACHED_BOARD']
-        log.inf('Signing for board ' + board)
-        target = self.edt_get_rimage_target(board)
-        conf = target + '.toml'
-        log.inf('Signing for SOC target ' + target + ' using ' + conf)
+        # warning: RIMAGE_TARGET is a duplicate of CONFIG_RIMAGE_SIGNING_SCHEMA
+        target = cache.get('RIMAGE_TARGET')
+        if not target:
+            log.die('rimage target not defined')
+
+        cmake_toml = target + '.toml'
 
         if not args.quiet:
             log.inf('Signing with tool {}'.format(tool_path))
 
-        bootloader = str(b / 'zephyr' / 'bootloader.elf.mod')
-        kernel = str(b / 'zephyr' / 'zephyr.elf.mod')
-        out_bin = str(b / 'zephyr' / 'zephyr.ri')
-        out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
-        out_tmp = str(b / 'zephyr' / 'zephyr.rix')
+        if target in ('imx8', 'imx8m'):
+            kernel = str(b / 'zephyr' / 'zephyr.elf')
+            out_bin = str(b / 'zephyr' / 'zephyr.ri')
+            out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
+            out_tmp = str(b / 'zephyr' / 'zephyr.rix')
+        else:
+            bootloader = str(b / 'zephyr' / 'boot.mod')
+            kernel = str(b / 'zephyr' / 'main.mod')
+            out_bin = str(b / 'zephyr' / 'zephyr.ri')
+            out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
+            out_tmp = str(b / 'zephyr' / 'zephyr.rix')
+
         conf_path_cmd = []
-        if cache.get('RIMAGE_CONFIG_PATH') and not args.tool_data:
-            rimage_conf = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
-            conf_path = str(rimage_conf / conf)
-            conf_path_cmd = ['-c', conf_path]
+
+        if '-c' in args.tool_args:
+            # Precedence to the -- rimage command line
+            conf_path_cmd = []
+            if args.tool_data:
+                log.wrn('--tool-data ' + args.tool_data + ' ignored, overridden by -c')
+            # For logging only
+            conf_path = args.tool_args[args.tool_args.index('-c') + 1]
         elif args.tool_data:
             conf_dir = pathlib.Path(args.tool_data)
-            conf_path = str(conf_dir / conf)
+            conf_path = str(conf_dir / cmake_toml)
+            conf_path_cmd = ['-c', conf_path]
+        elif cache.get('RIMAGE_CONFIG_PATH'):
+            rimage_conf = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
+            conf_path = str(rimage_conf / cmake_toml)
             conf_path_cmd = ['-c', conf_path]
         else:
-            log.die('Configuration not found')
+            log.die('-c configuration not found')
+
+        log.inf('Signing for SOC target ' + target + ' using ' + conf_path)
+
         if '--no-manifest' in args.tool_args:
             no_manifest = True
             args.tool_args.remove('--no-manifest')
         else:
             no_manifest = False
 
-        sign_base = ([tool_path] + args.tool_args +
-                     ['-o', out_bin] +  conf_path_cmd + ['-i', '3', '-e'] +
-                     [bootloader, kernel])
+        if no_manifest:
+            extra_ri_args = ['-i', '3']
+        else:
+            extra_ri_args = ['-i', '3', '-e']
+
+        sign_base = [tool_path]
+
+        # Sub-command arg '-q' takes precedence over west '-v'
+        if not args.quiet and args.verbose:
+            sign_base += ['-v'] * args.verbose
+
+        components = [ ] if (target in ('imx8', 'imx8m')) else [ bootloader ]
+        components += [ kernel ]
+        sign_base += (args.tool_args +
+                     ['-o', out_bin] + conf_path_cmd + extra_ri_args +
+                     components)
 
         if not args.quiet:
             log.inf(quote_sh_list(sign_base))
@@ -463,6 +484,8 @@ class RimageSigner(Signer):
             filenames = [out_bin]
         else:
             filenames = [out_xman, out_bin]
+        if not args.quiet:
+            log.inf('Prefixing ' + out_bin + ' with manifest ' + out_xman)
         with open(out_tmp, 'wb') as outfile:
             for fname in filenames:
                 with open(fname, 'rb') as infile:

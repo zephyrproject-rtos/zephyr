@@ -89,6 +89,13 @@ tests:
     integration_platforms:
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_4_0_dbg:
+    extra_args: CONF_FILE=prj_ctlr_4_0_dbg.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+    integration_platforms:
+      - nrf52dk_nrf52832
+      - nrf51dk_nrf51422
   bluetooth.init.test_ctlr_tiny:
     extra_args: CONF_FILE=prj_ctlr_tiny.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
@@ -97,7 +104,7 @@ tests:
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
   bluetooth.init.test_ctlr_dbg:
-    extra_args: CONF_FILE=prj_ctlr_dbg.conf
+    extra_args: CONF_FILE=prj_ctlr_dbg.conf DTC_OVERLAY_FILE=pa_lna.overlay
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
       nrf51dk_nrf51422
     integration_platforms:
@@ -189,8 +196,29 @@ tests:
     integration_platforms:
       - nrf52840dk_nrf52840
       - nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_per_adv_no_adi:
+    extra_args: CONF_FILE=prj_ctlr_per_adv_no_adi.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+    integration_platforms:
+      - nrf52840dk_nrf52840
+      - nrf51dk_nrf51422
   bluetooth.init.test_ctlr_per_sync:
     extra_args: CONF_FILE=prj_ctlr_per_sync.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+    integration_platforms:
+      - nrf52840dk_nrf52840
+      - nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_per_sync_no_adi:
+    extra_args: CONF_FILE=prj_ctlr_per_sync_no_adi.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+    integration_platforms:
+      - nrf52840dk_nrf52840
+      - nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_per_sync_no_filter:
+    extra_args: CONF_FILE=prj_ctlr_per_sync_no_filter.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
       nrf51dk_nrf51422
     integration_platforms:
@@ -216,3 +244,11 @@ tests:
   bluetooth.init.test_h5_dbg:
     extra_args: CONF_FILE=prj_h5_dbg.conf
     platform_allow: qemu_cortex_m3
+  bluetooth.init.test_llcp:
+    extra_args: CONF_FILE=prj_llcp.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+       rv32m1_vega_ri5cy
+    integration_platforms:
+       - nrf52840dk_nrf52840
+       - nrf52dk_nrf52832
+       - rv32m1_vega_ri5cy

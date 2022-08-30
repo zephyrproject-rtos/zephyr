@@ -5,18 +5,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <stdio.h>
 
 
 #ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
-#define FLASH_TEST_OFFSET FLASH_AREA_OFFSET(image_1_nonsecure)
+#define FLASH_TEST_LABEL image_1_nonsecure
 #else
-#define FLASH_TEST_OFFSET FLASH_AREA_OFFSET(image_1)
+#define FLASH_TEST_LABEL image_1
 #endif
+
+#define FLASH_TEST_OFFSET	FLASH_AREA_OFFSET(FLASH_TEST_LABEL)
+#define FLASH_TEST_DEVICE	FLASH_AREA_DEVICE(FLASH_TEST_LABEL)
 
 #define FLASH_PAGE_SIZE   4096
 #define TEST_DATA_WORD_0  0x1122
@@ -29,7 +33,7 @@
 
 void main(void)
 {
-	const struct device *flash_dev;
+	const struct device *flash_dev = FLASH_TEST_DEVICE;
 	uint32_t buf_array_1[4] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
 				    TEST_DATA_WORD_2, TEST_DATA_WORD_3 };
 	uint32_t buf_array_2[4] = { TEST_DATA_WORD_3, TEST_DATA_WORD_1,
@@ -44,11 +48,8 @@ void main(void)
 	printf("\nNordic nRF5 Flash Testing\n");
 	printf("=========================\n");
 
-	flash_dev =
-		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-
-	if (!flash_dev) {
-		printf("Nordic nRF5 flash driver was not found!\n");
+	if (!device_is_ready(flash_dev)) {
+		printf("Flash device not ready\n");
 		return;
 	}
 
@@ -156,8 +157,8 @@ void main(void)
 
 	if (!rc) {
 		printf("   Offset  0x%08x:\n", FLASH_TEST_OFFSET2);
-		printf("     belongs to the page %u of start offset 0x%08x\n",
-		       info.index, info.start_offset);
+		printf("     belongs to the page %u of start offset 0x%08lx\n",
+		       info.index, (unsigned long) info.start_offset);
 		printf("     and the size of 0x%08x B.\n", info.size);
 	} else {
 		printf("   Error: flash_get_page_info_by_offs returns %d\n",
@@ -167,9 +168,9 @@ void main(void)
 	rc = flash_get_page_info_by_idx(flash_dev, FLASH_TEST_PAGE_IDX, &info);
 
 	if (!rc) {
-		printf("   Page of number %u has start offset 0x%08x\n",
+		printf("   Page of number %u has start offset 0x%08lx\n",
 		       FLASH_TEST_PAGE_IDX,
-		       info.start_offset);
+		       (unsigned long) info.start_offset);
 		printf("     and size of 0x%08x B.\n", info.size);
 		if (info.index == FLASH_TEST_PAGE_IDX) {
 			printf("     Page index resolved properly\n");

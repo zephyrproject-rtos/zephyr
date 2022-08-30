@@ -10,8 +10,8 @@
  * @defgroup lib_dlist_tests Dlist
  */
 
-#include <ztest.h>
-#include <sys/dlist.h>
+#include <zephyr/ztest.h>
+#include <zephyr/sys/dlist.h>
 
 #define NODE_SIZE 5
 
@@ -39,7 +39,7 @@ struct container_node {
  * @see sys_dlist_append()
  */
 
-void test_dlist_container(void)
+ZTEST(dlist_perf, test_dlist_container)
 {
 	int i, count;
 	struct container_node *cnode, *s_cnode;
@@ -101,7 +101,7 @@ void test_dlist_container(void)
  * SYS_DLIST_ITERATE_FROM_NODE()
  */
 
-void test_dlist_for_each(void)
+ZTEST(dlist_perf, test_dlist_for_each)
 {
 	int i, count, val;
 	sys_dnode_t *node, *s_node;
@@ -183,7 +183,7 @@ void test_dlist_for_each(void)
  *
  * @ingroup lib_dlist_tests
  */
-void test_dlist_peak_head_tail(void)
+ZTEST(dlist_perf, test_dlist_peak_head_tail)
 {
 	sys_dlist_t list;
 	sys_dnode_t node[10];
@@ -219,7 +219,7 @@ void test_dlist_peak_head_tail(void)
  *
  * @ingroup lib_dlist_tests
  */
-void test_dlist_insert_and_remove(void)
+ZTEST(dlist_perf, test_dlist_insert_and_remove)
 {
 	sys_dlist_t list;
 	sys_dlist_t node[10];
@@ -254,14 +254,4 @@ void test_dlist_insert_and_remove(void)
 		&node[ARRAY_SIZE(node)/2 - 1]), "dlist can't remove a node in constant time");
 }
 
-/* ztest main entry */
-void test_main(void)
-{
-	ztest_test_suite(test_dlist,
-			ztest_unit_test(test_dlist_container),
-			ztest_unit_test(test_dlist_for_each),
-			ztest_unit_test(test_dlist_peak_head_tail),
-			ztest_unit_test(test_dlist_insert_and_remove)
-			);
-	ztest_run_test_suite(test_dlist);
-}
+ZTEST_SUITE(dlist_perf, NULL, NULL, NULL, NULL, NULL);

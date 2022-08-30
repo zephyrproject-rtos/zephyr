@@ -11,20 +11,20 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_LSM6DSO_LSM6DSO_H_
 #define ZEPHYR_DRIVERS_SENSOR_LSM6DSO_LSM6DSO_H_
 
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/util.h>
 #include <stmemsc.h>
 #include "lsm6dso_reg.h"
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 #define LSM6DSO_EN_BIT					0x01
@@ -40,66 +40,24 @@
 #define SENSOR_DEG2RAD_DOUBLE			(SENSOR_PI_DOUBLE / 180)
 #define SENSOR_G_DOUBLE				(SENSOR_G / 1000000.0)
 
-#if CONFIG_LSM6DSO_ACCEL_FS == 0
-	#define LSM6DSO_ACCEL_FS_RUNTIME 1
-	#define LSM6DSO_DEFAULT_ACCEL_FULLSCALE		0
-	#define LSM6DSO_DEFAULT_ACCEL_SENSITIVITY	GAIN_UNIT_XL
-#elif CONFIG_LSM6DSO_ACCEL_FS == 2
-	#define LSM6DSO_DEFAULT_ACCEL_FULLSCALE		0
-	#define LSM6DSO_DEFAULT_ACCEL_SENSITIVITY	GAIN_UNIT_XL
-#elif CONFIG_LSM6DSO_ACCEL_FS == 4
-	#define LSM6DSO_DEFAULT_ACCEL_FULLSCALE		2
-	#define LSM6DSO_DEFAULT_ACCEL_SENSITIVITY	(2.0 * GAIN_UNIT_XL)
-#elif CONFIG_LSM6DSO_ACCEL_FS == 8
-	#define LSM6DSO_DEFAULT_ACCEL_FULLSCALE		3
-	#define LSM6DSO_DEFAULT_ACCEL_SENSITIVITY	(4.0 * GAIN_UNIT_XL)
-#elif CONFIG_LSM6DSO_ACCEL_FS == 16
-	#define LSM6DSO_DEFAULT_ACCEL_FULLSCALE		1
-	#define LSM6DSO_DEFAULT_ACCEL_SENSITIVITY	(8.0 * GAIN_UNIT_XL)
-#endif
-
-#if (CONFIG_LSM6DSO_ACCEL_ODR == 0)
-#define LSM6DSO_ACCEL_ODR_RUNTIME 1
-#endif
-
-#define GYRO_FULLSCALE_125 4
-
-#if CONFIG_LSM6DSO_GYRO_FS == 0
-	#define LSM6DSO_GYRO_FS_RUNTIME 1
-	#define LSM6DSO_DEFAULT_GYRO_FULLSCALE		4
-	#define LSM6DSO_DEFAULT_GYRO_SENSITIVITY	GAIN_UNIT_G
-#elif CONFIG_LSM6DSO_GYRO_FS == 125
-	#define LSM6DSO_DEFAULT_GYRO_FULLSCALE		4
-	#define LSM6DSO_DEFAULT_GYRO_SENSITIVITY	GAIN_UNIT_G
-#elif CONFIG_LSM6DSO_GYRO_FS == 250
-	#define LSM6DSO_DEFAULT_GYRO_FULLSCALE		0
-	#define LSM6DSO_DEFAULT_GYRO_SENSITIVITY	(2.0 * GAIN_UNIT_G)
-#elif CONFIG_LSM6DSO_GYRO_FS == 500
-	#define LSM6DSO_DEFAULT_GYRO_FULLSCALE		1
-	#define LSM6DSO_DEFAULT_GYRO_SENSITIVITY	(4.0 * GAIN_UNIT_G)
-#elif CONFIG_LSM6DSO_GYRO_FS == 1000
-	#define LSM6DSO_DEFAULT_GYRO_FULLSCALE		2
-	#define LSM6DSO_DEFAULT_GYRO_SENSITIVITY	(8.0 * GAIN_UNIT_G)
-#elif CONFIG_LSM6DSO_GYRO_FS == 2000
-	#define LSM6DSO_DEFAULT_GYRO_FULLSCALE		3
-	#define LSM6DSO_DEFAULT_GYRO_SENSITIVITY	(16.0 * GAIN_UNIT_G)
-#endif
-
-
-#if (CONFIG_LSM6DSO_GYRO_ODR == 0)
-#define LSM6DSO_GYRO_ODR_RUNTIME 1
-#endif
-
 struct lsm6dso_config {
 	stmdev_ctx_t ctx;
 	union {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-		const struct stmemsc_cfg_i2c i2c;
+		const struct i2c_dt_spec i2c;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-		const struct stmemsc_cfg_spi spi;
+		const struct spi_dt_spec spi;
 #endif
 	} stmemsc_cfg;
+	uint8_t accel_pm;
+	uint8_t accel_odr;
+#define ACCEL_RANGE_DOUBLE	BIT(7)
+#define ACCEL_RANGE_MASK	BIT_MASK(6)
+	uint8_t accel_range;
+	uint8_t gyro_pm;
+	uint8_t gyro_odr;
+	uint8_t gyro_range;
 #ifdef CONFIG_LSM6DSO_TRIGGER
 	const struct gpio_dt_spec gpio_drdy;
 	uint8_t int_pin;
@@ -123,7 +81,7 @@ struct lsm6dso_data {
 	int16_t gyro[3];
 	uint32_t gyro_gain;
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
-	int temp_sample;
+	int16_t temp_sample;
 #endif
 #if defined(CONFIG_LSM6DSO_SENSORHUB)
 	uint8_t ext_data[2][6];

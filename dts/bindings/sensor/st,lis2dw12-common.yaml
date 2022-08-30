@@ -48,6 +48,24 @@ properties:
         -  4
         -  2
 
+    bw-filt:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Digital filtering cutoff bandwidth. Default is power-up configuration.
+
+           3 # ODR/20 (HP/LP)
+           2 # ODR/10 (HP/LP)
+           1 # ODR/ 4 (HP/LP)
+           0 # ODR/ 2 (up to ODR = 800 Hz, 400 Hz when ODR = 1600 Hz)
+
+      enum:
+        - 3
+        - 2
+        - 1
+        - 0
+
     power-mode:
       type: int
       required: false
@@ -138,3 +156,42 @@ properties:
         This register represents the time after the first detected tap in which
         there must not be any overthreshold event. Where 0 equals 2*1/ODR
         and 1LSB = 4*1/ODR.
+
+    low-noise:
+      type: boolean
+      required: false
+      description: |
+        Enables the LOW_NOISE flag in the CTRL6 register.
+        This influences the noise density and the current consumption.
+        See the datasheet for more information.
+
+    hp-filter-path:
+      type: boolean
+      required: false
+      description: |
+        Sets the Filtered Data Selection bit in the CTRL6 register.
+        When enabled, the high-pass filter path is selected.
+        When disabled, the low-pass filter path is selected.
+        Note that this influences the OUT_REG / FIFO values,
+        but not the Wakeup function.
+
+    hp-ref-mode:
+      type: boolean
+      required: false
+      description: |
+        Enables the high-pass filter reference mode in the CTRL7 register.
+        When the high-pass filter is configured in reference mode,
+        the output data is calculated as the difference between the input
+        acceleration and the values captured when reference mode was enabled.
+        In this way only the difference is applied without any filtering
+        of the LIS2DW12.
+        Note that this influences both the OUT_REG / FIFO values,
+        as well as the Wakeup function.
+
+    drdy-pulsed:
+      type: boolean
+      required: false
+      description: |
+        Selects the pulsed mode for data-ready interrupt when enabled,
+        and the latched mode when disabled.
+        Sets the corresponding DRDY_PULSED bit in the CTRL7 register.

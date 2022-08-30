@@ -34,7 +34,7 @@
 		/* Reserve 220 kB for the application in slot 0 */
 		slot0_partition: partition@8000 {
 			label = "image-0";
-			reg = <0x0008000 0x00037000>;
+			reg = <0x00008000 0x00037000>;
 		};
 
 		/* Reserve 220 kB for the application in slot 1 */

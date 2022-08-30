@@ -11,9 +11,6 @@ properties:
     interrupts:
       required: true
 
-    label:
-      required: true
-
     "#gpio-cells":
       const: 2
 

@@ -8,13 +8,19 @@
 #include <errno.h>
 #include <string.h>
 
-#include "settings/settings.h"
+#include <zephyr/settings/settings.h>
 #include "settings/settings_nvs.h"
 #include "settings_priv.h"
-#include <storage/flash_map.h>
+#include <zephyr/storage/flash_map.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
+
+#if DT_HAS_CHOSEN(zephyr_settings_partition)
+#define SETTINGS_PARTITION DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
+#else
+#define SETTINGS_PARTITION FLASH_AREA_ID(storage)
+#endif
 
 struct settings_nvs_read_fn_arg {
 	struct nvs_fs *fs;
@@ -25,10 +31,12 @@ static int settings_nvs_load(struct settings_store *cs,
 			     const struct settings_load_arg *arg);
 static int settings_nvs_save(struct settings_store *cs, const char *name,
 			     const char *value, size_t val_len);
+static void *settings_nvs_storage_get(struct settings_store *cs);
 
 static struct settings_store_itf settings_nvs_itf = {
 	.csi_load = settings_nvs_load,
 	.csi_save = settings_nvs_save,
+	.csi_storage_get = settings_nvs_storage_get
 };
 
 static ssize_t settings_nvs_read_fn(void *back_end, void *data, size_t len)
@@ -245,7 +253,12 @@ int settings_nvs_backend_init(struct settings_nvs *cf)
 	int rc;
 	uint16_t last_name_id;
 
-	rc = nvs_init(&cf->cf_nvs, cf->flash_dev_name);
+	cf->cf_nvs.flash_device = cf->flash_dev;
+	if (cf->cf_nvs.flash_device == NULL) {
+		return -ENODEV;
+	}
+
+	rc = nvs_mount(&cf->cf_nvs);
 	if (rc) {
 		return rc;
 	}
@@ -272,12 +285,12 @@ int settings_backend_init(void)
 	struct flash_sector hw_flash_sector;
 	uint32_t sector_cnt = 1;
 
-	rc = flash_area_open(FLASH_AREA_ID(storage), &fa);
+	rc = flash_area_open(SETTINGS_PARTITION, &fa);
 	if (rc) {
 		return rc;
 	}
 
-	rc = flash_area_get_sectors(FLASH_AREA_ID(storage), &sector_cnt,
+	rc = flash_area_get_sectors(SETTINGS_PARTITION, &sector_cnt,
 				    &hw_flash_sector);
 	if (rc == -ENODEV) {
 		return rc;
@@ -304,7 +317,7 @@ int settings_backend_init(void)
 	default_settings_nvs.cf_nvs.sector_size = nvs_sector_size;
 	default_settings_nvs.cf_nvs.sector_count = cnt;
 	default_settings_nvs.cf_nvs.offset = fa->fa_off;
-	default_settings_nvs.flash_dev_name = fa->fa_dev_name;
+	default_settings_nvs.flash_dev = fa->fa_dev;
 
 	rc = settings_nvs_backend_init(&default_settings_nvs);
 	if (rc) {
@@ -320,4 +333,11 @@ int settings_backend_init(void)
 	rc = settings_nvs_dst(&default_settings_nvs);
 
 	return rc;
+}
+
+static void *settings_nvs_storage_get(struct settings_store *cs)
+{
+	struct settings_nvs *cf = (struct settings_nvs *)cs;
+
+	return &cf->cf_nvs;
 }

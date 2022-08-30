@@ -13,8 +13,6 @@
 
 #include <zephyr/types.h>
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
 
 #if defined(CONFIG_SOC_PART_NUMBER_SAMR21E16A)
 #include <samr21e16a.h>
@@ -36,6 +34,7 @@
 
 #endif /* _ASMLANGUAGE */
 
+#include "adc_fixup_sam0.h"
 #include "../common/soc_port.h"
 #include "../common/atmel_sam0_dt.h"
 

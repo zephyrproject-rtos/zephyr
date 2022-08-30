@@ -11,7 +11,6 @@ The Zephyr kernel is supported on the Altera MAX10 Rev C development kit, using
 the Nios II Gen 2 soft CPU.
 
 .. figure:: img/altera_max10.jpg
-   :width: 442px
    :align: center
    :alt: Altera's MAX* 10
 
@@ -33,7 +32,6 @@ importance is SW2:
 * Switch 4 (HSMC_BYPASSN) should be OFF (up)
 
 .. image:: img/Altera_MAX10_switches.jpg
-   :width: 442px
    :align: center
    :alt: Altera's MAX* 10 Switches
 
@@ -122,13 +120,15 @@ minicom with flow control disabled, 115200-8N1 settings.
 JTAG UART
 ---------
 
-You can also have it send its console output to the JTAG UART. Set these in your
-project configuration:
+You can also have it send its console output to the JTAG UART.
+Enable ``jtag_uart`` node in :file:`altera_max10.dts` or overlay file:
 
-.. code-block:: console
+.. code-block:: devicetree
 
-   CONFIG_UART_ALTERA_JTAG=y
-   CONFIG_UART_CONSOLE_ON_DEV_NAME="jtag_uart0"
+   &jtag_uart {
+       status = "okay";
+       current-speed = <115200>;
+   };
 
 To view these messages on your local workstation, run the terminal application
 in the SDK:

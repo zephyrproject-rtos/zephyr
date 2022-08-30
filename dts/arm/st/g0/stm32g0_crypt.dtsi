@@ -16,7 +16,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00010000>;
 			interrupts = <31 0>;
 			status = "disabled";
-			label = "AES";
 		};
 
 		rng: rng@40025000 {
@@ -25,7 +24,6 @@
 			interrupts = <31 1>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
 			status = "disabled";
-			label = "RNG";
 		};
 	};
 };

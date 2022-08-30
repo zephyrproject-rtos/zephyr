@@ -42,13 +42,13 @@
  *  - AES128 CCM mode encryption RFC 3610 test vector #8
  *  - AES128 CCM mode encryption RFC 3610 test vector #9
  *  - AES128 CCM mode encryption No associated data
- * - AES128 CCM mode encryption No payhoad data
+ * - AES128 CCM mode encryption No payload data
  */
 
 #include <tinycrypt/ccm_mode.h>
 #include <tinycrypt/constants.h>
-#include <test_utils.h>
-#include <ztest.h>
+#include <zephyr/test_utils.h>
+#include <zephyr/ztest.h>
 
 #include <string.h>
 

@@ -4,6 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "bl5340_dvk_cpuapp_common-pinctrl.dtsi"
 
 / {
 	chosen {
@@ -12,6 +13,7 @@
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
+		zephyr,display = &ili9340;
 	};
 
 	/* Main LEDs and buttons are on an I2C TCA9538 GPIO port expander */
@@ -64,6 +66,14 @@
 		};
 	};
 
+	gpio_fwd: nrf-gpio-forwarder {
+		compatible = "nordic,nrf-gpio-forwarder";
+		status = "okay";
+		uart {
+			gpios = <&gpio1 8 0>, <&gpio1 10 0>, <&gpio1 7 0>, <&gpio1 9 0>;
+		};
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led1;
@@ -74,6 +84,11 @@
 		sw1 = &button2;
 		sw2 = &button3;
 		sw3 = &button4;
+		mcuboot-button0 = &button1;
+		mcuboot-led0 = &led1;
+		sdhc0 = &sdhc0;
+		watchdog0 = &wdt0;
+		accel0 = &lis3dh;
 	};
 };
 
@@ -96,22 +111,21 @@
 &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <34>;
-	scl-pin = <35>;
 
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 	at24c256@50 {
 		compatible = "atmel,at24";
 		reg = <0x50>;
-		label = "EEPROM";
 		size = <32768>;
 		pagesize = <64>;
 		address-width = <16>;
 		timeout = <10>;
 	};
 
-	lis3dh@18 {
+	lis3dh: lis3dh@18 {
 		compatible = "st,lis2dh";
-		label = "LIS3DH";
 		reg = <0x18>;
 		irq-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>, <&gpio0 24 GPIO_ACTIVE_HIGH>;
 	};
@@ -119,33 +133,28 @@
 	ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		label = "TOUCH";
 		int-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 	};
 
 	bme680@76 {
 		compatible = "bosch,bme680";
 		reg = <0x76>;
-		label = "BME680";
 	};
 
 	dac0: mcp4725@60 {
 		compatible = "microchip,mcp4725";
 		reg = <0x60>;
-		label = "dac0";
 		#io-channel-cells = <1>;
 	};
 
 	extrtc0: mcp7940n@6f {
 		compatible = "microchip,mcp7940n";
 		reg = <0x6f>;
-		label = "mcp7940n";
 	};
 
 	gpio_exp0: tca9538@70 {
 		compatible = "ti,tca9538";
 		reg = <0x70>;
-		label = "tca9538";
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
@@ -157,15 +166,14 @@
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
-	miso-pin = <26>;
-	mosi-pin = <27>;
-	sck-pin = <28>;
 
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
 	enc424j600@0 {
 		compatible = "microchip,enc424j600";
 		reg = <0>;
 		spi-max-frequency = <8000000>;
-		label = "ETHERNET";
 		int-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 	};
 };
@@ -173,17 +181,20 @@
 &spi3 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
-	sck-pin = <46>;
-	miso-pin = <47>;
-	mosi-pin = <45>;
 	cs-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 
-	sdhc@0 {
-		compatible = "zephyr,mmc-spi-slot";
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+	sdhc0: sdhc@0 {
 		reg = <0>;
+		compatible = "zephyr,sdhc-spi-slot";
 		status = "okay";
-		label = "SDHC";
 		spi-max-frequency = <8000000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
 	};
 };
 
@@ -191,33 +202,35 @@
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
-	miso-pin = <10>;
-	mosi-pin = <9>;
-	sck-pin = <8>;
 
-	ili9340@0 {
+	pinctrl-0 = <&spi4_default>;
+	pinctrl-1 = <&spi4_sleep>;
+	pinctrl-names = "default", "sleep";
+	ili9340: ili9340@0 {
 		compatible = "ilitek,ili9340";
 		reg = <0>;
 		spi-max-frequency = <32000000>;
-		label = "DISPLAY";
 		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 		cmd-data-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		rotation = <270>;
+		width = <240>;
+		height = <320>;
 	};
 };
 
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <20>;
-	rx-pin = <22>;
-	rts-pin = <19>;
-	cts-pin = <21>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &pwm0 {
 	status = "okay";
-	ch0-pin = <28>;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &timer0 {
@@ -234,9 +247,9 @@
 
 &qspi {
 	status = "okay";
-	sck-pin = <17>;
-	io-pins = <13>, <14>, <15>, <16>;
-	csn-pins = <18>;
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
@@ -245,7 +258,6 @@
 		/* MX25R64 supports all readoc options */
 		readoc = "read4io";
 		sck-frequency = <8000000>;
-		label = "MX25R64";
 		jedec-id = [c2 28 17];
 		sfdp-bfp = [
 			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
@@ -318,7 +330,7 @@
 		/* 7MB */
 		lfs_partition: partition@100000 {
 			label = "lfs_storage";
-			reg = <0x00100000 0x000700000>;
+			reg = <0x00100000 0x00700000>;
 		};
 	};
 };

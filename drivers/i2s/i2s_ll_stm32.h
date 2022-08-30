@@ -49,11 +49,6 @@
 
 #endif /* CONFIG_I2S_STM32_USE_PLLI2S_ENABLE */
 
-#define DEV_CFG(dev) \
-	(const struct i2s_stm32_cfg * const)((dev)->config)
-#define DEV_DATA(dev) \
-	((struct i2s_stm32_data *const)(dev)->data)
-
 struct queue_item {
 	void *mem_block;
 	size_t size;
@@ -72,8 +67,7 @@ struct i2s_stm32_cfg {
 	SPI_TypeDef *i2s;
 	struct stm32_pclken pclken;
 	uint32_t i2s_clk_sel;
-	const struct soc_gpio_pinctrl *pinctrl_list;
-	size_t pinctrl_list_size;
+	const struct pinctrl_dev_config *pcfg;
 	void (*irq_config)(const struct device *dev);
 };
 

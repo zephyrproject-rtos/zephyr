@@ -1,0 +1,8 @@
+sample:
+  name: X-NUCLEO-53L0A1 time-of-flight distance sensor shield
+tests:
+  sample.shields.x_nucleo_53l0a1:
+    harness: shield
+    tags: shield
+    depends_on: arduino_i2c
+    filter: dt_enabled_alias_with_parent_compat("sw0", "gpio-keys")

@@ -1,12 +1,36 @@
 tests:
   libraries.libc.sprintf:
     extra_args: CONF_FILE=prj.conf
-    filter: not CONFIG_SOC_MCIMX7_M4
-    tags: libc ignore_faults
+    filter: not CONFIG_SOC_MCIMX7_M4 and CONFIG_STDOUT_CONSOLE
     integration_platforms:
-      - native_posix_64
+    - qemu_x86
     platform_exclude: native_posix native_posix_64 nrf52_bsim
+    tags: libc ignore_faults
+    testcases:
+    - sprintf_integer
+    - sprintf_double
+    - sprintf_string
+    - fprintf
+    - vprintf
+    - vsnprintf
+    - fwrite
+    - vfprintf
+    - sprintf_misc
+    - vsprintf
+    - print
+    - put
+    - snprintf
   libraries.libc.sprintf_new:
     extra_args: CONF_FILE=prj_new.conf
-    tags: libc
     platform_exclude: native_posix native_posix_64 nrf52_bsim
+    tags: libc
+    testcases:
+    - EOF
+  libraries.picolibc.sprintf:
+    extra_args: CONF_FILE=prj_picolibc.conf
+    tags: libc ignore_faults picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+  libraries.picolibc.sprintf_new:
+    extra_args: CONF_FILE=prj_picolibc_new.conf
+    tags: libc picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED

@@ -10,114 +10,120 @@
 
 #define DT_DRV_COMPAT st_lis2ds12
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "lis2ds12.h"
 
 LOG_MODULE_REGISTER(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);
 
-static struct lis2ds12_data lis2ds12_data;
-
-static struct lis2ds12_config lis2ds12_config = {
-	.comm_master_dev_name = DT_INST_BUS_LABEL(0),
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	.bus_init = lis2ds12_spi_init,
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	.bus_init = lis2ds12_i2c_init,
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-#ifdef CONFIG_LIS2DS12_TRIGGER
-	.irq_port	= DT_INST_GPIO_LABEL(0, irq_gpios),
-	.irq_pin	= DT_INST_GPIO_PIN(0, irq_gpios),
-	.irq_flags	= DT_INST_GPIO_FLAGS(0, irq_gpios),
-#endif
-};
-
-#if defined(LIS2DS12_ODR_RUNTIME)
-static const uint16_t lis2ds12_hr_odr_map[] = {0, 12, 25, 50, 100, 200, 400, 800};
-
-static int lis2ds12_freq_to_odr_val(uint16_t freq)
+static int lis2ds12_set_odr(const struct device *dev, uint8_t odr)
 {
-	size_t i;
+	const struct lis2ds12_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lis2ds12_odr_t val;
 
-	for (i = 0; i < ARRAY_SIZE(lis2ds12_hr_odr_map); i++) {
-		if (freq == lis2ds12_hr_odr_map[i]) {
-			return i;
-		}
+	/* check if power off */
+	if (odr == 0U) {
+		LOG_DBG("%s: set power-down", dev->name);
+		return lis2ds12_xl_data_rate_set(ctx, LIS2DS12_XL_ODR_OFF);
 	}
 
-	return -EINVAL;
+	/*
+	 * odr >= 1600Hz are available in HF mode only
+	 * 12,5Hz <= odr <= 800Hz are available in LP and HR mode only
+	 * odr == 1Hz is available in LP mode only
+	 */
+	if ((odr >= 9 && cfg->pm != 3) || (odr < 9 && cfg->pm == 3) ||
+	    (odr == 1 && cfg->pm != 1)) {
+		LOG_ERR("%s: bad odr and pm combination", dev->name);
+		return -ENOTSUP;
+	}
+
+	switch (odr) {
+	case 1:
+		val = LIS2DS12_XL_ODR_1Hz_LP;
+		break;
+	case 2:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_12Hz5_LP :
+				       LIS2DS12_XL_ODR_12Hz5_HR;
+		break;
+	case 3:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_25Hz_LP :
+				       LIS2DS12_XL_ODR_25Hz_HR;
+		break;
+	case 4:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_50Hz_LP :
+				       LIS2DS12_XL_ODR_50Hz_HR;
+		break;
+	case 5:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_100Hz_LP :
+				       LIS2DS12_XL_ODR_100Hz_HR;
+		break;
+	case 6:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_200Hz_LP :
+				       LIS2DS12_XL_ODR_200Hz_HR;
+		break;
+	case 7:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_400Hz_LP :
+				       LIS2DS12_XL_ODR_400Hz_HR;
+		break;
+	case 8:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_800Hz_LP :
+				       LIS2DS12_XL_ODR_800Hz_HR;
+		break;
+	case 9:
+		val = LIS2DS12_XL_ODR_1k6Hz_HF;
+		break;
+	case 10:
+		val = LIS2DS12_XL_ODR_3k2Hz_HF;
+		break;
+	case 11:
+		val = LIS2DS12_XL_ODR_6k4Hz_HF;
+		break;
+	default:
+		LOG_ERR("%s: bad odr %d", dev->name, odr);
+		return -ENOTSUP;
+	}
+
+	return lis2ds12_xl_data_rate_set(ctx, val);
 }
 
-static int lis2ds12_accel_odr_set(const struct device *dev, uint16_t freq)
+static int lis2ds12_set_range(const struct device *dev, uint8_t range)
 {
+	int err;
 	struct lis2ds12_data *data = dev->data;
-	int odr;
+	const struct lis2ds12_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
-	odr = lis2ds12_freq_to_odr_val(freq);
-	if (odr < 0) {
-		return odr;
+	switch (range) {
+	default:
+	case 2U:
+		err = lis2ds12_xl_full_scale_set(ctx, LIS2DS12_2g);
+		data->gain = lis2ds12_from_fs2g_to_mg(1);
+		break;
+	case 4U:
+		err = lis2ds12_xl_full_scale_set(ctx, LIS2DS12_4g);
+		data->gain = lis2ds12_from_fs4g_to_mg(1);
+		break;
+	case 8U:
+		err = lis2ds12_xl_full_scale_set(ctx, LIS2DS12_8g);
+		data->gain = lis2ds12_from_fs8g_to_mg(1);
+		break;
+	case 16U:
+		err = lis2ds12_xl_full_scale_set(ctx, LIS2DS12_16g);
+		data->gain = lis2ds12_from_fs16g_to_mg(1);
+		break;
 	}
 
-	if (data->hw_tf->update_reg(data,
-				    LIS2DS12_REG_CTRL1,
-				    LIS2DS12_MASK_CTRL1_ODR,
-				    odr << LIS2DS12_SHIFT_CTRL1_ODR) < 0) {
-		LOG_DBG("failed to set accelerometer sampling rate");
-		return -EIO;
-	}
-
-	return 0;
+	return err;
 }
-#endif
-
-#ifdef LIS2DS12_FS_RUNTIME
-static const uint16_t lis2ds12_accel_fs_map[] = {2, 16, 4, 8};
-static const uint16_t lis2ds12_accel_fs_sens[] = {1, 8, 2, 4};
-
-static int lis2ds12_accel_range_to_fs_val(int32_t range)
-{
-	size_t i;
-
-	for (i = 0; i < ARRAY_SIZE(lis2ds12_accel_fs_map); i++) {
-		if (range == lis2ds12_accel_fs_map[i]) {
-			return i;
-		}
-	}
-
-	return -EINVAL;
-}
-
-static int lis2ds12_accel_range_set(const struct device *dev, int32_t range)
-{
-	int fs;
-	struct lis2ds12_data *data = dev->data;
-
-	fs = lis2ds12_accel_range_to_fs_val(range);
-	if (fs < 0) {
-		return fs;
-	}
-
-	if (data->hw_tf->update_reg(data,
-				    LIS2DS12_REG_CTRL1,
-				    LIS2DS12_MASK_CTRL1_FS,
-				    fs << LIS2DS12_SHIFT_CTRL1_FS) < 0) {
-		LOG_DBG("failed to set accelerometer full-scale");
-		return -EIO;
-	}
-
-	data->gain = (float)(lis2ds12_accel_fs_sens[fs] * GAIN_XL);
-	return 0;
-}
-#endif
 
 static int lis2ds12_accel_config(const struct device *dev,
 				 enum sensor_channel chan,
@@ -125,14 +131,11 @@ static int lis2ds12_accel_config(const struct device *dev,
 				 const struct sensor_value *val)
 {
 	switch (attr) {
-#ifdef LIS2DS12_FS_RUNTIME
 	case SENSOR_ATTR_FULL_SCALE:
-		return lis2ds12_accel_range_set(dev, sensor_ms2_to_g(val));
-#endif
-#ifdef LIS2DS12_ODR_RUNTIME
+		return lis2ds12_set_range(dev, sensor_ms2_to_g(val));
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return lis2ds12_accel_odr_set(dev, val->val1);
-#endif
+		LOG_DBG("%s: set odr to %d Hz", dev->name, val->val1);
+		return lis2ds12_set_odr(dev, LIS2DS12_ODR_TO_REG(val->val1));
 	default:
 		LOG_DBG("Accel attribute not supported.");
 		return -ENOTSUP;
@@ -160,17 +163,19 @@ static int lis2ds12_attr_set(const struct device *dev,
 static int lis2ds12_sample_fetch_accel(const struct device *dev)
 {
 	struct lis2ds12_data *data = dev->data;
-	uint8_t buf[6];
+	const struct lis2ds12_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	int16_t buf[3];
 
-	if (data->hw_tf->read_data(data, LIS2DS12_REG_OUTX_L,
-				   buf, sizeof(buf)) < 0) {
-		LOG_DBG("failed to read sample");
+	/* fetch raw data sample */
+	if (lis2ds12_acceleration_raw_get(ctx, buf) < 0) {
+		LOG_ERR("Failed to fetch raw data sample");
 		return -EIO;
 	}
 
-	data->sample_x = (int16_t)((uint16_t)(buf[0]) | ((uint16_t)(buf[1]) << 8));
-	data->sample_y = (int16_t)((uint16_t)(buf[2]) | ((uint16_t)(buf[3]) << 8));
-	data->sample_z = (int16_t)((uint16_t)(buf[4]) | ((uint16_t)(buf[5]) << 8));
+	data->sample_x = sys_le16_to_cpu(buf[0]);
+	data->sample_y = sys_le16_to_cpu(buf[1]);
+	data->sample_z = sys_le16_to_cpu(buf[2]);
 
 	return 0;
 }
@@ -252,7 +257,7 @@ static int lis2ds12_channel_get(const struct device *dev,
 	return lis2ds12_get_channel(chan, val, data, data->gain);
 }
 
-static const struct sensor_driver_api lis2ds12_api_funcs = {
+static const struct sensor_driver_api lis2ds12_driver_api = {
 	.attr_set = lis2ds12_attr_set,
 #if defined(CONFIG_LIS2DS12_TRIGGER)
 	.trigger_set = lis2ds12_trigger_set,
@@ -263,68 +268,152 @@ static const struct sensor_driver_api lis2ds12_api_funcs = {
 
 static int lis2ds12_init(const struct device *dev)
 {
-	const struct lis2ds12_config * const config = dev->config;
-	struct lis2ds12_data *data = dev->data;
+	const struct lis2ds12_config * const cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t chip_id;
+	int ret;
 
-	data->comm_master = device_get_binding(config->comm_master_dev_name);
-	if (!data->comm_master) {
-		LOG_DBG("master not found: %s",
-			    config->comm_master_dev_name);
+	/* check chip ID */
+	ret = lis2ds12_device_id_get(ctx, &chip_id);
+	if (ret < 0) {
+		LOG_ERR("%s: Not able to read dev id", dev->name);
+		return ret;
+	}
+
+	if (chip_id != LIS2DS12_ID) {
+		LOG_ERR("%s: Invalid chip ID 0x%02x", dev->name, chip_id);
 		return -EINVAL;
 	}
 
-	config->bus_init(dev);
-
-	/* s/w reset the sensor */
-	if (data->hw_tf->write_reg(data,
-				    LIS2DS12_REG_CTRL2,
-				    LIS2DS12_SOFT_RESET) < 0) {
-		LOG_DBG("s/w reset fail");
-		return -EIO;
+	/* reset device */
+	ret = lis2ds12_reset_set(ctx, PROPERTY_ENABLE);
+	if (ret < 0) {
+		return ret;
 	}
 
-	if (data->hw_tf->read_reg(data, LIS2DS12_REG_WHO_AM_I, &chip_id) < 0) {
-		LOG_DBG("failed reading chip id");
-		return -EIO;
-	}
+	k_busy_wait(100);
 
-	if (chip_id != LIS2DS12_VAL_WHO_AM_I) {
-		LOG_DBG("invalid chip id 0x%x", chip_id);
-		return -EIO;
-	}
-
-	LOG_DBG("chip id 0x%x", chip_id);
+	LOG_DBG("%s: chip id 0x%x", dev->name, chip_id);
 
 #ifdef CONFIG_LIS2DS12_TRIGGER
-	if (lis2ds12_trigger_init(dev) < 0) {
-		LOG_ERR("Failed to initialize triggers.");
-		return -EIO;
+	ret = lis2ds12_trigger_init(dev);
+	if (ret < 0) {
+		LOG_ERR("%s: Failed to initialize triggers", dev->name);
+		return ret;
 	}
 #endif
 
-	/* set sensor default odr */
-	if (data->hw_tf->update_reg(data,
-				    LIS2DS12_REG_CTRL1,
-				    LIS2DS12_MASK_CTRL1_ODR,
-				    LIS2DS12_DEFAULT_ODR) < 0) {
-		LOG_DBG("failed setting odr");
-		return -EIO;
+	/* set sensor default pm and odr */
+	LOG_DBG("%s: pm: %d, odr: %d", dev->name, cfg->pm, cfg->odr);
+	ret = lis2ds12_set_odr(dev, (cfg->pm == 0) ? 0 : cfg->odr);
+	if (ret < 0) {
+		LOG_ERR("%s: odr init error (12.5 Hz)", dev->name);
+		return ret;
 	}
 
 	/* set sensor default scale */
-	if (data->hw_tf->update_reg(data,
-				    LIS2DS12_REG_CTRL1,
-				    LIS2DS12_MASK_CTRL1_FS,
-				    LIS2DS12_DEFAULT_FS) < 0) {
-		LOG_DBG("failed setting scale");
-		return -EIO;
+	LOG_DBG("%s: range is %d", dev->name, cfg->range);
+	ret = lis2ds12_set_range(dev, cfg->range);
+	if (ret < 0) {
+		LOG_ERR("%s: range init error %d", dev->name, cfg->range);
+		return ret;
 	}
-	data->gain = LIS2DS12_DEFAULT_GAIN;
 
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, lis2ds12_init, NULL,
-		    &lis2ds12_data, &lis2ds12_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &lis2ds12_api_funcs);
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "LIS2DS12 driver enabled without any devices"
+#endif
+
+/*
+ * Device creation macro, shared by LIS2DS12_DEFINE_SPI() and
+ * LIS2DS12_DEFINE_I2C().
+ */
+
+#define LIS2DS12_DEVICE_INIT(inst)					\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			    lis2ds12_init,				\
+			    NULL,					\
+			    &lis2ds12_data_##inst,			\
+			    &lis2ds12_config_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_SENSOR_INIT_PRIORITY,		\
+			    &lis2ds12_driver_api);
+
+/*
+ * Instantiation macros used when a device is on a SPI bus.
+ */
+
+#ifdef CONFIG_LIS2DS12_TRIGGER
+#define LIS2DS12_CFG_IRQ(inst) \
+	.gpio_int = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),
+#else
+#define LIS2DS12_CFG_IRQ(inst)
+#endif /* CONFIG_LIS2DS12_TRIGGER */
+
+#define LIS2DS12_SPI_OPERATION (SPI_WORD_SET(8) |			\
+				SPI_OP_MODE_MASTER |			\
+				SPI_MODE_CPOL |				\
+				SPI_MODE_CPHA)				\
+
+#define LIS2DS12_CONFIG_SPI(inst)					\
+	{								\
+		.ctx = {						\
+			.read_reg =					\
+			   (stmdev_read_ptr) stmemsc_spi_read,		\
+			.write_reg =					\
+			   (stmdev_write_ptr) stmemsc_spi_write,	\
+			.handle =					\
+			   (void *)&lis2ds12_config_##inst.stmemsc_cfg,	\
+		},							\
+		.stmemsc_cfg = {					\
+			.spi = SPI_DT_SPEC_INST_GET(inst,		\
+					   LIS2DS12_SPI_OPERATION,	\
+					   0),				\
+		},							\
+		.range = DT_INST_PROP(inst, range),			\
+		.pm = DT_INST_PROP(inst, power_mode),			\
+		.odr = DT_INST_PROP(inst, odr),				\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
+			(LIS2DS12_CFG_IRQ(inst)), ())			\
+	}
+
+/*
+ * Instantiation macros used when a device is on an I2C bus.
+ */
+
+#define LIS2DS12_CONFIG_I2C(inst)					\
+	{								\
+		.ctx = {						\
+			.read_reg =					\
+			   (stmdev_read_ptr) stmemsc_i2c_read,		\
+			.write_reg =					\
+			   (stmdev_write_ptr) stmemsc_i2c_write,	\
+			.handle =					\
+			   (void *)&lis2ds12_config_##inst.stmemsc_cfg,	\
+		},							\
+		.stmemsc_cfg = {					\
+			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
+		},							\
+		.range = DT_INST_PROP(inst, range),			\
+		.pm = DT_INST_PROP(inst, power_mode),			\
+		.odr = DT_INST_PROP(inst, odr),				\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
+			(LIS2DS12_CFG_IRQ(inst)), ())			\
+	}
+
+/*
+ * Main instantiation macro. Use of COND_CODE_1() selects the right
+ * bus-specific macro at preprocessor time.
+ */
+
+#define LIS2DS12_DEFINE(inst)						\
+	static struct lis2ds12_data lis2ds12_data_##inst;		\
+	static const struct lis2ds12_config lis2ds12_config_##inst =	\
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
+		    (LIS2DS12_CONFIG_SPI(inst)),			\
+		    (LIS2DS12_CONFIG_I2C(inst)));			\
+	LIS2DS12_DEVICE_INIT(inst)
+
+DT_INST_FOREACH_STATUS_OKAY(LIS2DS12_DEFINE)

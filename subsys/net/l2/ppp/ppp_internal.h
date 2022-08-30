@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <net/ppp.h>
+#include <zephyr/net/ppp.h>
 
 /**
  * FSM flags that control how it operates.
@@ -90,7 +90,7 @@ int ppp_config_info_req(struct ppp_fsm *fsm,
 #define PPP_PROTOCOL_REGISTER(name, proto, init_func, proto_handler,	\
 			      proto_lower_up, proto_lower_down,		\
 			      proto_open, proto_close)			\
-	static const Z_STRUCT_SECTION_ITERABLE(ppp_protocol_handler,	\
+	static const STRUCT_SECTION_ITERABLE(ppp_protocol_handler,	\
 					PPP_PROTO_GET_NAME(name)) = {	\
 		.protocol = proto,					\
 		.init = init_func,					\

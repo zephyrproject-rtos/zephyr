@@ -9,8 +9,7 @@ Overview
 The nRF9160 innblue22 is a cellular IoT sensor development board, which
 is based on the nRF9160 SiP, and features NB-IoT and LTE-M connectivity.
 
-.. figure:: img/nrf9160_innblue22.png
-	 :width: 1024px
+.. figure:: img/nrf9160_innblue22.jpg
 	 :align: center
 	 :alt: nRF9160 innblue22
 
@@ -97,7 +96,7 @@ The process requires the following steps:
 
 1. Build the Secure Zephyr application using ``-DBOARD=nrf9160_innblue22`` and
    ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the the application project configuration file.
-2. Build the Non-Secure Zephyr application using ``-DBOARD=nrf9160_innblue22ns``.
+2. Build the Non-Secure Zephyr application using ``-DBOARD=nrf9160_innblue22_ns``.
 3. Merge the two binaries together.
 
 When building a Secure/Non-Secure application, the Secure application will

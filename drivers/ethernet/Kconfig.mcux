@@ -5,7 +5,8 @@
 
 menuconfig ETH_MCUX
 	bool "MCUX Ethernet driver"
-	depends on HAS_MCUX_ENET
+	default y
+	depends on DT_HAS_NXP_KINETIS_ETHERNET_ENABLED
 	select NOCACHE_MEMORY if HAS_MCUX_CACHE
 	select ARM_MPU if CPU_CORTEX_M7
 	select NET_POWER_MANAGEMENT if PM_DEVICE
@@ -16,14 +17,21 @@ menuconfig ETH_MCUX
 
 if ETH_MCUX
 
+config ETH_MCUX_USE_DTCM_FOR_DMA_BUFFER
+	bool "Use DTCM for hardware DMA buffers"
+	default y
+	help
+	  Place the hardware DMA buffers into DTCM for better networking
+	  performance
+
 config ETH_MCUX_PROMISCUOUS_MODE
-	bool "Enable promiscuous mode"
+	bool "Promiscuous mode"
 	help
 	  Place the Ethernet receiver in promiscuous mode. This may be useful
 	  for debugging and not needed for normal work.
 
 config ETH_MCUX_RMII_EXT_CLK
-	bool "Enable RMII clock from external sources"
+	bool "RMII clock from external sources"
 	help
 	  Setting this option will configure MCUX clock block to feed RMII
 	  reference clock from external source (ENET_1588_CLKIN)
@@ -43,27 +51,33 @@ config ETH_MCUX_PHY_TICK_MS
 	  Set the PHY status polling period.
 
 config ETH_MCUX_PHY_EXTRA_DEBUG
-	bool "Enable additional detailed PHY debug"
+	bool "Additional detailed PHY debug"
 	help
 	  Enable additional PHY related debug information related to
 	  PHY status polling.
 
 config ETH_MCUX_RX_BUFFERS
 	int "Number of MCUX RX buffers"
-	default 1
-	range 1 16
+	default 6
+	range 6 16
 	help
 	  Set the number of RX buffers provided to the MCUX driver.
+
+config ETH_MCUX_PHY_RESET
+	bool "Reset the PHY at boot"
+	help
+	  Reset the ethernet PHY at boot. Requires dts properties int-gpios and
+	  reset-gpios to be present.
 
 config ETH_MCUX_TX_BUFFERS
 	int "Number of MCUX TX buffers"
 	default 1
-	range 1 1
+	range 1 16
 	help
 	  Set the number of TX buffers provided to the MCUX driver.
 
 config ETH_MCUX_HW_ACCELERATION
-	bool "Enable hardware acceleration"
+	bool "Hardware acceleration"
 	help
 	  Enable hardware acceleration for the following:
 	  - IPv4, UDP and TCP checksum (both Rx and Tx)
@@ -71,7 +85,7 @@ config ETH_MCUX_HW_ACCELERATION
 config PTP_CLOCK_MCUX
 	bool "MCUX PTP clock driver support"
 	default y
-	depends on PTP_CLOCK || (NET_PKT_TIMESTAMP && NET_GPTP)
+	depends on PTP_CLOCK || NET_L2_PTP
 	help
 	  Enable MCUX PTP clock support.
 
@@ -79,10 +93,20 @@ if PTP_CLOCK_MCUX
 
 config ETH_MCUX_PTP_CLOCK_SRC_HZ
 	int "Frequency of the clock source for the PTP timer"
-	default 50000000
+	default 50000000 if SOC_SERIES_KINETIS_K6X
+	default 50000000 if SOC_SERIES_IMX_RT10XX
+	default 24000000 if SOC_SERIES_IMX_RT11XX
 	help
 	  Set the frequency in Hz sourced to the PTP timer.
 	  If the value is set properly, the timer will be accurate.
+
+config ETH_MCUX_PTP_CLOCK_INIT_PRIO
+	int
+	default 85
+	help
+	  MCUX PTP Clock initialization priority level. There is
+	  a dependency from the network stack that this device
+	  initializes before network stack (NET_INIT_PRIO).
 
 endif # PTP_CLOCK_MCUX
 

@@ -9,17 +9,16 @@
  * @brief ADC driver for the LMP90xxx AFE.
  */
 
-#include <drivers/adc.h>
-#include <drivers/adc/lmp90xxx.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <kernel.h>
-#include <sys/byteorder.h>
-#include <sys/crc.h>
-#include <zephyr.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/adc/lmp90xxx.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_lmp90xxx);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
@@ -107,8 +106,7 @@ LOG_MODULE_REGISTER(adc_lmp90xxx);
 #define LMP90XXX_HAS_DRDYB(config) (config->drdyb.port != NULL)
 
 struct lmp90xxx_config {
-	const struct device *spi_dev;
-	struct spi_config spi_cfg;
+	struct spi_dt_spec bus;
 	struct gpio_dt_spec drdyb;
 	uint8_t rtd_current;
 	uint8_t resolution;
@@ -224,7 +222,7 @@ static int lmp90xxx_read_reg(const struct device *dev, uint8_t addr,
 	rx.buffers = rx_buf;
 	rx.count = 2;
 
-	err = spi_transceive(config->spi_dev, &config->spi_cfg, &tx, &rx);
+	err = spi_transceive_dt(&config->bus, &tx, &rx);
 	if (!err) {
 		data->ura = ura;
 	} else {
@@ -290,7 +288,7 @@ static int lmp90xxx_write_reg(const struct device *dev, uint8_t addr,
 	tx.buffers = tx_buf;
 	tx.count = i;
 
-	err = spi_write(config->spi_dev, &config->spi_cfg, &tx);
+	err = spi_write_dt(&config->bus, &tx);
 	if (!err) {
 		data->ura = ura;
 	} else {
@@ -942,18 +940,9 @@ static int lmp90xxx_init(const struct device *dev)
 	/* Force INST1 + UAB on first access */
 	data->ura = LMP90XXX_INVALID_URA;
 
-	if (!device_is_ready(config->spi_dev)) {
-		LOG_ERR("SPI master device '%s' not ready",
-			config->spi_dev->name);
-		return -EINVAL;
-	}
-
-	if (config->spi_cfg.cs) {
-		if (!device_is_ready(config->spi_cfg.cs->gpio_dev)) {
-			LOG_ERR("SPI CS GPIO device '%s' not ready",
-				config->spi_cfg.cs->gpio_dev->name);
-			return -EINVAL;
-		}
+	if (!spi_is_ready(&config->bus)) {
+		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		return -ENODEV;
 	}
 
 	err = lmp90xxx_soft_reset(dev);
@@ -1071,10 +1060,8 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 		ADC_CONTEXT_INIT_SYNC(lmp##t##_data_##n, ctx), \
 	}; \
 	static const struct lmp90xxx_config lmp##t##_config_##n = { \
-		.spi_dev = DEVICE_DT_GET(DT_BUS(DT_INST_LMP90XXX(n, t))), \
-		.spi_cfg = SPI_CONFIG_DT(DT_INST_LMP90XXX(n, t), \
-					SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
-					SPI_WORD_SET(8), 0), \
+		.bus = SPI_DT_SPEC_GET(DT_INST_LMP90XXX(n, t), SPI_OP_MODE_MASTER | \
+			SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0), \
 		.drdyb = GPIO_DT_SPEC_GET_OR(DT_INST_LMP90XXX(n, t), drdyb_gpios, {0}), \
 		.rtd_current = LMP90XXX_UAMPS_TO_RTD_CUR_SEL( \
 			DT_PROP_OR(DT_INST_LMP90XXX(n, t), rtd_current, 0)), \
@@ -1085,59 +1072,69 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 			 &lmp90xxx_init, NULL, \
 			 &lmp##t##_data_##n, \
 			 &lmp##t##_config_##n, POST_KERNEL, \
-			 CONFIG_ADC_LMP90XXX_INIT_PRIORITY, \
+			 CONFIG_ADC_INIT_PRIORITY, \
 			 &lmp90xxx_adc_api);
-
-#define LMP90XXX_FOREACH_STATUS_OKAY(compat, fn)		\
-	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),		\
-		    (UTIL_CAT(DT_FOREACH_OKAY_INST_,		\
-			      compat)(fn)),			\
-		    ())
 
 /*
  * LMP90077: 16 bit, 2 diff/4 se (4 channels), 0 currents
  */
 #define LMP90077_INIT(n) LMP90XXX_INIT(90077, n, 16, 4)
-LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90077, LMP90077_INIT)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_lmp90077
+DT_INST_FOREACH_STATUS_OKAY(LMP90077_INIT)
 
 /*
  * LMP90078: 16 bit, 2 diff/4 se (4 channels), 2 currents
  */
 #define LMP90078_INIT(n) LMP90XXX_INIT(90078, n, 16, 4)
-LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90078, LMP90078_INIT)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_lmp90078
+DT_INST_FOREACH_STATUS_OKAY(LMP90078_INIT)
 
 /*
  * LMP90079: 16 bit, 4 diff/7 se (7 channels), 0 currents, has VIN3-5
  */
 #define LMP90079_INIT(n) LMP90XXX_INIT(90079, n, 16, 7)
-LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90079, LMP90079_INIT)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_lmp90079
+DT_INST_FOREACH_STATUS_OKAY(LMP90079_INIT)
 
 /*
  * LMP90080: 16 bit, 4 diff/7 se (7 channels), 2 currents, has VIN3-5
  */
 #define LMP90080_INIT(n) LMP90XXX_INIT(90080, n, 16, 7)
-LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90080, LMP90080_INIT)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_lmp90080
+DT_INST_FOREACH_STATUS_OKAY(LMP90080_INIT)
 
 /*
  * LMP90097: 24 bit, 2 diff/4 se (4 channels), 0 currents
  */
 #define LMP90097_INIT(n) LMP90XXX_INIT(90097, n, 24, 4)
-LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90097, LMP90097_INIT)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_lmp90097
+DT_INST_FOREACH_STATUS_OKAY(LMP90097_INIT)
 
 /*
  * LMP90098: 24 bit, 2 diff/4 se (4 channels), 2 currents
  */
 #define LMP90098_INIT(n) LMP90XXX_INIT(90098, n, 24, 4)
-LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90098, LMP90098_INIT)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_lmp90098
+DT_INST_FOREACH_STATUS_OKAY(LMP90098_INIT)
 
 /*
  * LMP90099: 24 bit, 4 diff/7 se (7 channels), 0 currents, has VIN3-5
  */
 #define LMP90099_INIT(n) LMP90XXX_INIT(90099, n, 24, 7)
-LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90099, LMP90099_INIT)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_lmp90099
+DT_INST_FOREACH_STATUS_OKAY(LMP90099_INIT)
 
 /*
  * LMP90100: 24 bit, 4 diff/7 se (7 channels), 2 currents, has VIN3-5
  */
 #define LMP90100_INIT(n) LMP90XXX_INIT(90100, n, 24, 7)
-LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90100, LMP90100_INIT)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_lmp90100
+DT_INST_FOREACH_STATUS_OKAY(LMP90100_INIT)

@@ -6,13 +6,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/ipm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/ipm.h>
 #include <errno.h>
-#include <device.h>
-#include <init.h>
-#include <sys/printk.h>
-#include <irq_offload.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/irq_offload.h>
 
 #include "ipm_dummy.h"
 
@@ -127,9 +127,5 @@ struct ipm_driver_api ipm_dummy_api = {
 
 int ipm_dummy_init(const struct device *d)
 {
-	struct ipm_dummy_driver_data *driver_data;
-
-	driver_data = d->data;
-
 	return 0;
 }

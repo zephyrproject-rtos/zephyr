@@ -62,13 +62,14 @@ config BT_MESH_PB_ADV_RETRANS_TIMEOUT
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
 	depends on BT_MESH_PROV
-	depends on BT_MESH_PB_ADV
+	depends on BT_MESH_PB_ADV || BT_MESH_PB_GATT_CLIENT
 	help
 	  Enable this option to have support for provisioning remote devices.
 
 config BT_MESH_CDB
 	bool "Mesh Configuration Database [EXPERIMENTAL]"
 	default y if BT_MESH_PROVISIONER
+	select EXPERIMENTAL
 
 if BT_MESH_CDB
 
@@ -107,18 +108,62 @@ config BT_MESH_PROXY
 config BT_MESH_GATT
 	bool
 
+config BT_MESH_PROXY_MSG_LEN
+	int
+	default 66 if BT_MESH_PB_GATT_COMMON
+	default 33 if BT_MESH_GATT_PROXY
+	depends on BT_MESH_GATT
+
+config BT_MESH_GATT_CLIENT
+	bool
+	select BT_MESH_GATT
+
 config BT_MESH_GATT_SERVER
 	bool
 	select BT_MESH_GATT
 	select BT_GATT_DYNAMIC_DB
 
+config BT_MESH_PB_GATT_COMMON
+	bool
+
+config BT_MESH_PB_GATT_CLIENT
+	bool "Provisioner support using GATT (PB-GATT)"
+	select BT_MESH_PROV
+	select BT_GATT_CLIENT
+	select BT_MESH_GATT_CLIENT
+	select BT_MESH_PB_GATT_COMMON
+	select BT_MESH_PROVISIONER
+	depends on BT_CENTRAL
+	help
+	  Enable this option to allow the provisioner provisioning the
+	  device over GATT.
+
 config BT_MESH_PB_GATT
 	bool "Provisioning support using GATT (PB-GATT)"
 	select BT_MESH_GATT_SERVER
 	select BT_MESH_PROV
+	select BT_MESH_PB_GATT_COMMON
 	help
 	  Enable this option to allow the device to be provisioned over
 	  GATT.
+
+config BT_MESH_PB_GATT_USE_DEVICE_NAME
+	bool "Include Bluetooth device name in scan response"
+	depends on BT_MESH_PB_GATT
+	default y
+	help
+	  This option includes GAP device name in scan response when
+	  the PB-GATT is enabled.
+
+config BT_MESH_PROXY_CLIENT
+	bool "Proxy client support"
+	select BT_GATT_CLIENT
+	select BT_MESH_GATT_CLIENT
+	depends on BT_CENTRAL
+	help
+	  This option enables support for the Mesh GATT Proxy Client,
+	  i.e. the ability to act as a proxy between a Mesh GATT Service
+	  and a Mesh network.
 
 config BT_MESH_GATT_PROXY
 	bool "GATT Proxy Service support"
@@ -158,20 +203,22 @@ config BT_MESH_PROXY_USE_DEVICE_NAME
 
 config BT_MESH_PROXY_FILTER_SIZE
 	int "Maximum number of filter entries per Proxy Client"
-	default 3 if BT_MESH_GATT_PROXY
-	default 1
+	default 16
 	range 1 32767
-	depends on BT_MESH_GATT_SERVER
+	depends on BT_MESH_GATT_PROXY
 	help
 	  This option specifies how many Proxy Filter entries the local
-	  node supports.
+	  node supports. This helps in reducing unwanted traffic getting sent to
+	  the proxy client. This value is application specific and should be large
+	  enough so that proxy client can communicate with several devices through
+	  this proxy server node using the default accept list filter type.
 
 endif # BT_CONN
 
 config BT_MESH_ACCESS_LAYER_MSG
-	bool "Enable direct Bluetooth message access layer messages"
+	bool "Direct Bluetooth message access layer messages"
 	help
-	  This option allows the applicaiton to directly access
+	  This option allows the application to directly access
 	  Bluetooth access layer messages without the need to
 	  instantiate Bluetooth mesh models.
 
@@ -242,15 +289,59 @@ config BT_MESH_CRPL
 	  protection list. This option is similar to the network message
 	  cache size, but has a different purpose.
 
+choice BT_MESH_RPL_STORAGE_MODE
+	prompt "Replay protection list storage mode"
+	default BT_MESH_RPL_STORAGE_MODE_SETTINGS
+
+config BT_MESH_RPL_STORAGE_MODE_SETTINGS
+	bool "Persistent storage of RPL in Settings"
+	help
+	  Persistent storage of RPL in Settings. If BT_SETTINGS is not
+	  enabled this choise will provide a non-persistent implementation
+	  variant of the RPL list.
+
+endchoice
+
+if BT_MESH_RPL_STORAGE_MODE_SETTINGS && BT_SETTINGS
+
+config BT_MESH_RPL_STORE_TIMEOUT
+	int "Minimum interval after which unsaved RPL entries are updated in the settings subsystem"
+	range -1 1000000
+	default 5
+	help
+	  This value defines in seconds how soon unsaved RPL entries
+	  gets written to the persistent storage. Setting this value
+	  to a large number may lead to security vulnerabilities if a node
+	  gets powered off before the timer is fired. When flash is used
+	  as the persistent storage setting this value to a low number
+	  may wear out flash sooner or later. However, if the RPL gets
+	  updated infrequently a value as low as 0 (write immediately)
+	  may make sense. Setting this value to -1 will disable this timer.
+	  In this case, a user is responsible to store pending RPL entries
+	  using @ref bt_mesh_rpl_pending_store. In the mean time, when
+	  IV Index is updated, the outdated RPL entries will still be
+	  stored by @ref BT_MESH_STORE_TIMEOUT. Finding the right balance
+	  between this timeout and calling @ref bt_mesh_rpl_pending_store
+	  may reduce a risk of security vulnerability and flash wear out.
+	  Failure to store the RPL and becoming vulnerable after reboot
+	  will cause the device to not perform the replay protection
+	  required by the spec.
+
+endif # BT_MESH_RPL_STORAGE_MODE_SETTINGS && BT_SETTINGS
+
 config BT_MESH_MSG_CACHE_SIZE
 	int "Network message cache size"
-	default 10
+	default 32
 	range 2 65535
 	help
-	  Number of messages that are cached for the network. This helps
-	  prevent unnecessary decryption operations and unnecessary
-	  relays. This option is similar to the replay protection list,
-	  but has a different purpose.
+	  Number of messages that are cached by the node to avoid acting on the
+	  recently seen duplicate messages. This option is similar to
+	  the replay protection list, but has a different purpose. Network message
+	  cache helps prevent unnecessary decryption operations. This also prevents
+	  unnecessary relaying and helps in getting rid of relay loops. Setting
+	  this value to a very low number can cause unnecessary network traffic.
+	  Setting this value to a very large number can impact the processing time
+	  for each received network PDU and increases RAM footprint proportionately.
 
 config BT_MESH_ADV_BUF_COUNT
 	int "Number of advertising buffers"
@@ -286,6 +377,26 @@ config BT_MESH_ADV_EXT
 	  advertising, but isn't supported by all controllers.
 
 endchoice
+
+if BT_MESH_ADV_EXT
+
+config BT_MESH_RELAY_ADV_SETS
+	int "Maximum of simultaneous relay message support"
+	default 0
+	range 0 BT_EXT_ADV_MAX_ADV_SET
+	depends on BT_MESH_RELAY
+	help
+	  Maximum of simultaneous relay message support. Requires controller support
+	  multiple advertising sets.
+
+config BT_MESH_ADV_EXT_GATT_SEPARATE
+	bool "Use a separate extended advertising set for GATT Server Advertising"
+	depends on BT_MESH_GATT_SERVER
+	help
+	  Use a separate extended advertising set for GATT Server Advertising,
+	  otherwise will be used a shared advertising set.
+
+endif # BT_MESH_ADV_EXT
 
 config BT_MESH_ADV_STACK_SIZE
 	int "Mesh advertiser thread stack size"
@@ -344,18 +455,26 @@ config BT_MESH_IVU_DIVIDER
 config BT_MESH_TX_SEG_MSG_COUNT
 	int "Maximum number of simultaneous outgoing segmented messages"
 	default 1
-	range 1 255
+	range 0 255
 	help
 	  Maximum number of simultaneous outgoing multi-segment and/or
 	  reliable messages.
 
+	  Note that: Since Mesh Segmentation/reassembling is a mandatory
+	  feature of specification, set to zero will not allow send any
+	  Mesh Segment message.
+
 config BT_MESH_RX_SEG_MSG_COUNT
 	int "Maximum number of simultaneous incoming segmented messages"
 	default 1
-	range 1 255
+	range 0 255
 	help
 	  Maximum number of simultaneous incoming multi-segment and/or
 	  reliable messages.
+
+	  Note that: Since Mesh Segmentation/reassemblying is a mandatory
+	  feature of specification, set to zero will not allow receive any
+	  Mesh Segment message.
 
 config BT_MESH_SEG_BUFS
 	int "Number of segment buffers available"
@@ -377,7 +496,8 @@ config BT_MESH_SEG_BUFS
 config BT_MESH_RX_SEG_MAX
 	int "Maximum number of segments in incoming messages"
 	default 3
-	range 2 32
+	range 1 32
+	depends on BT_MESH_RX_SEG_MSG_COUNT > 0
 	help
 	  Maximum number of segments supported for incoming messages.
 	  This value should typically be fine-tuned based on what
@@ -396,7 +516,8 @@ config BT_MESH_RX_SEG_MAX
 config BT_MESH_TX_SEG_MAX
 	int "Maximum number of segments in outgoing messages"
 	default 3
-	range 2 32
+	range 1 32
+	depends on BT_MESH_TX_SEG_MSG_COUNT > 0
 	help
 	  Maximum number of segments supported for outgoing messages.
 	  This value should typically be fine-tuned based on what
@@ -612,7 +733,7 @@ config BT_MESH_LPN_INIT_POLL_TIMEOUT
 config BT_MESH_LPN_SCAN_LATENCY
 	int "Latency for enabling scanning"
 	range 0 50
-	default 10
+	default 15
 	help
 	  Latency in milliseconds that it takes to enable scanning. This
 	  is in practice how much time in advance before the Receive Window
@@ -695,16 +816,38 @@ config BT_MESH_CFG_CLI
 	help
 	  Enable support for the configuration client model.
 
+if BT_MESH_CFG_CLI
+
+config BT_MESH_CFG_CLI_TIMEOUT
+	int "Config Client model timeout in milliseconds"
+	default 5000
+	help
+	  This timeout controls how long config client waits for a response
+	  message to arrive. This value can be changed at runtime using
+	  @ref bt_mesh_cfg_cli_timeout_set.
+
+endif # BT_MESH_CFG_CLI
+
 config BT_MESH_HEALTH_CLI
 	bool "Support for Health Client Model"
 	help
 	  Enable support for the health client model.
 
+if BT_MESH_HEALTH_CLI
+
+config BT_MESH_HEALTH_CLI_TIMEOUT
+	int "Health Client model timeout in milliseconds"
+	default 2000
+	help
+	  This timeout controls how long health client waits for a response
+	  message to arrive. This value can be changed at runtime using
+	  @ref bt_mesh_health_cli_timeout_set.
+
+endif # BT_MESH_HEALTH_CLI
+
 config BT_MESH_SHELL
-	bool "Enable Bluetooth mesh shell"
+	bool "Bluetooth mesh shell"
 	select SHELL
-	depends on BT_MESH_CFG_CLI
-	depends on BT_MESH_HEALTH_CLI
 	help
 	  Activate shell module that provides Bluetooth mesh commands to
 	  the console.
@@ -742,30 +885,10 @@ config BT_MESH_SEQ_STORE_RATE
 	  off with a value that's guaranteed to be larger than the last
 	  one used before power off.
 
-config BT_MESH_RPL_STORE_TIMEOUT
-	int "Minimum interval after which unsaved RPL entries are updated in storage"
-	range -1 1000000
-	default 5
-	help
-	  This value defines in seconds how soon unsaved RPL entries
-	  gets written to the persistent storage. Setting this value
-	  to a large number may lead to security vulnerabilities if a node
-	  gets powered off before the timer is fired. When flash is used
-	  as the persistent storage setting this value to a low number
-	  may wear out flash sooner or later. However, if the RPL gets
-	  updated infrequently a value as low as 0 (write immediately)
-	  may make sense. Setting this value to -1 will disable this timer.
-	  In this case, a user is responsible to store pending RPL entries
-	  using @ref bt_mesh_rpl_pending_store. In the mean time, when
-	  IV Index is updated, the outdated RPL entries will still be
-	  stored by @ref BT_MESH_STORE_TIMEOUT. Finding the right balance
-	  between this timeout and calling @ref bt_mesh_rpl_pending_store
-	  may reduce a risk of security vulnerability and flash wear out.
-
 endif # BT_SETTINGS
 
 config BT_MESH_DEBUG
-	bool "Enable debug logs"
+	bool "Debug logs"
 	depends on BT_DEBUG
 	help
 	  Use this option to enable debug logs for the Bluetooth
@@ -828,6 +951,12 @@ config BT_MESH_DEBUG_PROVISIONER
 	help
 	  Use this option to enable Provisioner debug logs for the
 	  Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_PROV_DEVICE
+	bool "Provisioning device debug"
+	help
+	  Use this option to enable Provisioning device debug logs for the
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_ACCESS
 	bool "Access layer debug"

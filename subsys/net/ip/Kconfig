@@ -7,7 +7,7 @@
 menu "IP stack"
 
 config NET_NATIVE
-	bool "Enable native IP stack"
+	bool "Native IP stack"
 	default y
 	help
 	  Enables Zephyr native IP stack. If you disable this, then
@@ -38,7 +38,7 @@ config NET_NATIVE_UDP
 	default y if NET_UDP
 
 config NET_OFFLOAD
-	bool "Offload IP stack [EXPERIMENTAL]"
+	bool "Offload IP stack"
 	help
 	  Enables TCP/IP stack to be offload to a co-processor.
 
@@ -117,14 +117,14 @@ source "subsys/net/ip/Kconfig.ipv6"
 source "subsys/net/ip/Kconfig.ipv4"
 
 config NET_SHELL
-	bool "Enable network shell utilities"
+	bool "Network shell utilities"
 	select SHELL
 	help
 	  Activate shell module that provides network commands like
 	  ping to the console.
 
 config NET_SHELL_DYN_CMD_COMPLETION
-	bool "Enable network shell dynamic command completion"
+	bool "Network shell dynamic command completion"
 	depends on NET_SHELL
 	default y
 	help
@@ -211,6 +211,7 @@ config NET_TC_THREAD_COOPERATIVE
 config NET_TC_THREAD_PREEMPTIVE
 	bool "Use pre-emptive TX/RX threads [EXPERIMENTAL]"
 	depends on PREEMPT_ENABLED
+	select EXPERIMENTAL
 	help
 	  With pre-emptive threads, the thread can be pre-empted.
 
@@ -319,7 +320,7 @@ config NET_MAX_NEXTHOPS
 	  This determines how many entries can be stored in nexthop table.
 
 config NET_ROUTE_MCAST
-	bool "Enable Multicast Routing / Forwarding"
+	bool "Multicast Routing / Forwarding"
 	depends on NET_ROUTE
 	help
 	  Activates multicast routing/forwarding
@@ -333,7 +334,7 @@ config NET_MAX_MCAST_ROUTES
 	  routing table.
 
 config NET_TCP
-	bool "Enable TCP"
+	bool "TCP"
 	help
 	  The value depends on your network needs.
 
@@ -353,19 +354,10 @@ module-help = Enables TCP handler output debug messages
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_TCP
 
-config NET_TCP_BACKLOG_SIZE
-	int "Number of simultaneous incoming TCP connections"
-	depends on NET_TCP
-	default 1
-	range 1 128
-	help
-	  The number of simultaneous TCP connection attempts, i.e. outstanding
-	  TCP connections waiting for initial ACK.
-
 config NET_TCP_TIME_WAIT_DELAY
 	int "How long to wait in TIME_WAIT state (in milliseconds)"
 	depends on NET_TCP
-	default 250
+	default 1500
 	help
 	  To avoid a (low-probability) issue when delayed packets from
 	  previous connection get delivered to next connection reusing
@@ -379,7 +371,7 @@ config NET_TCP_TIME_WAIT_DELAY
 	  DoS attacks). At the same time, the issue of packet misdelivery
 	  is largely alleviated in the modern TCP stacks by using random,
 	  non-repeating port numbers and initial sequence numbers. Due
-	  to this, Zephyr uses much lower value of 250ms by default.
+	  to this, Zephyr uses much lower value of 1500ms by default.
 	  Value of 0 disables TIME_WAIT state completely.
 
 config NET_TCP_ACK_TIMEOUT
@@ -420,9 +412,21 @@ config NET_TCP_RETRY_COUNT
 	  Should a retransmission timeout occur, the receive callback is
 	  called with -ECONNRESET error code and the context is dereferenced.
 
+config NET_TCP_RANDOMIZED_RTO
+	bool "Use a randomized retransmission time"
+	default y
+	depends on NET_TCP
+	help
+	  It can happen that two similar stacks enter a retransmission cycle
+	  due to a packet collision. If the transmission timeout is the same
+	  both stacks will retry at the same moment resulting in another
+	  collision. By introducing a randomized retry timeout, the chance of
+	  a second collision is reduced and it reduces furter the more
+	  retransmissions occur.
+
 config NET_TCP_MAX_SEND_WINDOW_SIZE
 	int "Maximum sending window size to use"
-	depends on NET_TCP2
+	depends on NET_TCP
 	default 0
 	range 0 65535
 	help
@@ -430,16 +434,28 @@ config NET_TCP_MAX_SEND_WINDOW_SIZE
 	  size. The default value 0 lets the TCP stack select the value
 	  according to amount of network buffers configured in the system.
 
+config NET_TCP_MAX_RECV_WINDOW_SIZE
+	int "Maximum receive window size to use"
+	depends on NET_TCP
+	default 0
+	range 0 65535
+	help
+	  This value defines the maximum TCP receive window size. Increasing
+	  this value can improve connection throughput, but requires more
+	  receive buffers available in the system for efficient operation.
+	  The default value 0 lets the TCP stack select the value
+	  according to amount of network buffers configured in the system.
+
 config NET_TCP_RECV_QUEUE_TIMEOUT
 	int "How long to queue received data (in ms)"
-	depends on NET_TCP2
+	depends on NET_TCP
 	default 100
 	range 0 10000
 	help
 	  If we receive out-of-order TCP data, we queue it. This value tells
 	  how long the data is kept before it is discarded if we have not been
 	  able to pass the data to the application. If set to 0, then receive
-	  queing is not enabled. The value is in milliseconds.
+	  queueing is not enabled. The value is in milliseconds.
 	  Note that we only queue data sequentially in current version i.e.,
 	  there should be no holes in the queue. For example, if we receive
 	  SEQs 5,4,3,6 and are waiting SEQ 2, the data in segments 3,4,5,6 is
@@ -466,18 +482,13 @@ config NET_TCP_ISN_RFC6528
 	  RFC 6528 chapter 3. https://tools.ietf.org/html/rfc6528
 	  If this is not set, then sys_rand32_get() is used for ISN value.
 
-config NET_TCP2
-	bool
-	default y
-	depends on NET_TCP
-
 config NET_TEST_PROTOCOL
-	bool "Enable JSON based test protocol (UDP)"
+	bool "JSON based test protocol (UDP)"
 	help
 	  Enable JSON based test protocol (UDP).
 
 config NET_UDP
-	bool "Enable UDP"
+	bool "UDP"
 	default y
 	help
 	  The value depends on your network needs.
@@ -525,7 +536,7 @@ config NET_MAX_CONTEXTS
 	  similar as one could call a network socket in some other systems.
 
 config NET_CONTEXT_NET_PKT_POOL
-	bool "Enable net_buf TX pool / context"
+	bool "Net_buf TX pool / context"
 	default y if NET_TCP && NET_6LO
 	help
 	  If enabled, then it is possible to fine-tune network packet pool
@@ -579,6 +590,20 @@ config NET_CONTEXT_SNDTIMEO
 	  sockets timeout is configured per socket with
 	  setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, ...) function.
 
+config NET_CONTEXT_RCVBUF
+	bool "Add RCVBUF support to net_context"
+	help
+	  If is possible to define the maximum socket receive buffer per socket.
+	  The default value is set by CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE. For
+	  TCP sockets, the rcvbuf will determine the receive window size.
+
+config NET_CONTEXT_SNDBUF
+	bool "Add SNDBUF support to net_context"
+	help
+	  It is possible to define the maximum socket send buffer per socket.
+	  For TCP sockets, the sndbuf will determine the total size of queued
+	  data in the TCP layer.
+
 config NET_TEST
 	bool "Network Testing"
 	help
@@ -601,7 +626,7 @@ config NET_SLIP_TAP
 	  https://github.com/zephyrproject-rtos/net-tools for more details.
 
 config NET_TRICKLE
-	bool "Enable Trickle library"
+	bool "Trickle library"
 	help
 	  Normally this is enabled automatically if needed,
 	  so say 'n' if unsure.
@@ -664,6 +689,7 @@ config NET_BUF_FIXED_DATA_SIZE
 
 config NET_BUF_VARIABLE_DATA_SIZE
 	bool "Variable data size buffer [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  The buffer is dynamically allocated from runtime requested size.
 
@@ -708,6 +734,9 @@ choice
 config NET_DEFAULT_IF_FIRST
 	bool "First available interface"
 
+config NET_DEFAULT_IF_UP
+	bool "First interface which is up"
+
 config NET_DEFAULT_IF_ETHERNET
 	bool "Ethernet"
 	depends on NET_L2_ETHERNET
@@ -728,10 +757,6 @@ config NET_DEFAULT_IF_DUMMY
 	bool "Dummy testing interface"
 	depends on NET_L2_DUMMY
 
-config NET_DEFAULT_IF_CANBUS
-	bool "6LoCAN (IPv6 over CAN) interface"
-	depends on NET_L2_CANBUS
-
 config NET_DEFAULT_IF_CANBUS_RAW
 	bool "Socket CAN interface"
 	depends on NET_L2_CANBUS_RAW
@@ -743,7 +768,7 @@ config NET_DEFAULT_IF_PPP
 endchoice
 
 config NET_PKT_TIMESTAMP
-	bool "Enable network packet timestamp support"
+	bool "Network packet timestamp support"
 	help
 	  Enable network packet timestamp support. This is needed for
 	  example in gPTP which needs to know how long it takes to send
@@ -751,7 +776,7 @@ config NET_PKT_TIMESTAMP
 
 config NET_PKT_TIMESTAMP_THREAD
 	bool "Create TX timestamp thread"
-	default y if NET_GPTP
+	default y if NET_L2_PTP
 	depends on NET_PKT_TIMESTAMP
 	help
 	  Create a TX timestamp thread that will pass the timestamped network
@@ -770,14 +795,14 @@ config NET_PKT_TIMESTAMP_STACK_SIZE
 	  callbacks.
 
 config NET_PKT_TXTIME
-	bool "Enable network packet TX time support"
+	bool "Network packet TX time support"
 	help
 	  Enable network packet TX time support. This is needed for
 	  when the application wants to set the exact time when the network
 	  packet should be sent.
 
 config NET_PKT_RXTIME_STATS
-	bool "Enable network packet RX time statistics"
+	bool "Network packet RX time statistics"
 	select NET_PKT_TIMESTAMP
 	select NET_STATISTICS
 	depends on (NET_UDP || NET_TCP || NET_SOCKETS_PACKET) && NET_NATIVE
@@ -800,7 +825,7 @@ config NET_PKT_RXTIME_STATS_DETAIL
 	  command.
 
 config NET_PKT_TXTIME_STATS
-	bool "Enable network packet TX time statistics"
+	bool "Network packet TX time statistics"
 	select NET_PKT_TIMESTAMP
 	select NET_STATISTICS
 	depends on (NET_UDP || NET_TCP || NET_SOCKETS_PACKET) && NET_NATIVE
@@ -825,7 +850,7 @@ config NET_PKT_TXTIME_STATS_DETAIL
 	  command.
 
 config NET_PROMISCUOUS_MODE
-	bool "Enable promiscuous mode support [EXPERIMENTAL]"
+	bool "Promiscuous mode support"
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	select NET_L2_ETHERNET_MGMT if NET_L2_ETHERNET
@@ -841,6 +866,12 @@ module-str = Log level for promiscuous mode
 module-help = Enables promiscuous mode to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_PROMISCUOUS_MODE
+
+config NET_DISABLE_ICMP_DESTINATION_UNREACHABLE
+	bool "Disable destination unreachable ICMP errors"
+	help
+	  Suppress the generation of ICMP destination unreachable errors
+	  when ports that are not in a listening state receive packets.
 
 source "subsys/net/ip/Kconfig.stack"
 

@@ -13,5 +13,6 @@ module-str = regulator
 source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/regulator/Kconfig.fixed"
+source "drivers/regulator/Kconfig.pmic"
 
 endif # REGULATOR

@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2021, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt1160_cm4.dtsi>
+#include "mimxrt1160_evk.dtsi"
+
+/ {
+	model = "NXP MIMXRT1160-EVK board";
+	compatible = "nxp,mimxrt1166";
+
+	chosen {
+		/*
+		 * Note: when using DMA, the SRAM region must be set to
+		 * a memory region that is not cached by the chip. If the chosen
+		 * sram region is changed and DMA is in use, you will
+		 * encounter issues!
+		 */
+		zephyr,sram = &sram1;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,flash-controller = &is25wp128;
+		zephyr,flash = &is25wp128;
+	};
+
+
+	sdram0: memory@80000000 {
+		/* Winbond W9825G6KH-5I */
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(64)>;
+	};
+
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpi2c1 {
+	status = "okay";
+};
+
+&flexspi {
+	status = "okay";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
+	is25wp128: is25wp128@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <134217728>;
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [9d 70 17];
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			/* Note slot 0 has one additional sector,
+			 * this is intended for use with the swap move algorithm
+			 */
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 0x301000>;
+			};
+			slot1_partition: partition@321000 {
+				label = "image-1";
+				reg = <0x00321000 0x300000>;
+			};
+			scratch_partition: partition@621000 {
+				label = "image-scratch";
+				reg = <0x00621000 DT_SIZE_K(128)>;
+			};
+			storage_partition: partition@641000 {
+				label = "storage";
+				reg = <0x00641000 DT_SIZE_K(1856)>;
+			};
+		};
+	};
+};
+
+/* Enable GPT for use as a hardware timer. This disables Cortex Systick.
+ * to use systick, change this node from "gpt_hw_timer" to "systick"
+ */
+&gpt_hw_timer {
+	status = "okay";
+};
+
+&edma_lpsr0 {
+	status = "okay";
+};

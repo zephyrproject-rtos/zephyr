@@ -3,21 +3,43 @@
 # Copyright (c) 2018 Alexander Wachter
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ST_STM32_CAN := st,stm32-can
-
 config CAN_STM32
 	bool "STM32 CAN Driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_CAN))
+	default y
+	depends on DT_HAS_ST_STM32_CAN_ENABLED
 	select CAN_HAS_RX_TIMESTAMP
 	help
 	  Enable STM32 CAN Driver.
-	  Tested on stm32F0, stm32L4 and stm32F7 series.
+	  Tested on STM32F0, STM32F4, STM32L4 and STM32F7 series.
 
-config CAN_MAX_FILTER
-	int "Maximum number of concurrent active filters"
-	depends on CAN_STM32
-	default 5
-	range 1 56
+config CAN_MAX_STD_ID_FILTER
+	int "Maximum number of std ID filters"
+	default 14
+	range 0 28
 	help
-	  Defines the array size of the callback/msgq pointers.
-	  Must be at least the size of concurrent reads.
+	  Defines the maximum number of filters with standard ID (11-bit)
+	  that can be added by the application.
+
+	  One standard ID filter with mask occupies 1/2 of the 14 available
+	  filter banks.
+
+	  The following equation determines the maximum total number of
+	  filters:
+
+	    CAN_MAX_STD_ID_FILTER + CAN_MAX_EXT_ID_FILTER * 2 <= 28
+
+config CAN_MAX_EXT_ID_FILTER
+	int "Maximum number of ext ID filters"
+	default 7
+	range 0 14
+	help
+	  Defines the maximum number of filters with extended ID (29-bit)
+	  that can be added by the application.
+
+	  One extended ID filter with mask occupies 1 of the 14 available
+	  filter banks.
+
+	  The following equation determines the maximum total number of
+	  filters:
+
+	    CAN_MAX_STD_ID_FILTER + CAN_MAX_EXT_ID_FILTER * 2 <= 28

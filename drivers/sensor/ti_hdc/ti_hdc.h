@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_TI_HDC_TI_HDC_H_
 #define ZEPHYR_DRIVERS_SENSOR_TI_HDC_TI_HDC_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #define TI_HDC_REG_TEMP	0x0
 #define TI_HDC_REG_HUMIDITY	0x1
@@ -21,16 +21,18 @@
 /* For 14bit conversion RH needs 6.5ms and Temp 6.35ms */
 #define HDC_CONVERSION_TIME     13
 
+struct ti_hdc_config {
+	struct i2c_dt_spec i2c;
+	struct gpio_dt_spec drdy;
+};
+
 struct ti_hdc_data {
-	const struct device *i2c;
 	uint16_t t_sample;
 	uint16_t rh_sample;
 
-#if DT_INST_NODE_HAS_PROP(0, drdy_gpios)
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	struct k_sem data_sem;
-#endif  /* DT_INST_NODE_HAS_PROP(0, drdy_gpios) */
+	const struct device *dev;
 };
 
 #endif

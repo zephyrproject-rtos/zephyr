@@ -9,28 +9,28 @@
  *  This code is auto-generated from the Excel Workbook
  *  'GATT_Test_Databases.xlsm' Sheet: 'Large Database 2'
  */
-#include <sys/byteorder.h>
-#include <sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #include "gatt_macs.h"
 
 extern struct bt_gatt_attr service_b_1_2_attrs[];
 
-/** @def BT_UUID_SERVICE_D
+/**
  *  @brief UUID for the Service D
  */
 #define BT_UUID_SERVICE_D               BT_UUID_DECLARE_16(0xa00d)
 
-/** @def BT_UUID_VALUE_V11__128_BIT_UUID
+/**
  *  @brief UUID for the Value V11 (128-bit UUID) Characteristic
  */
 #define BT_UUID_VALUE_V11__128_BIT_UUID BT_UUID_DECLARE_128( \
 		0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01, \
 		0x00, 0x00, 0x00, 0x00, 0x0b, 0xb0, 0x00, 0x00)
 
-/** @def BT_UUID_VALUE_V12
+/**
  *  @brief UUID for the Value V12 Characteristic
  */
 #define BT_UUID_VALUE_V12               BT_UUID_DECLARE_16(0xb00c)

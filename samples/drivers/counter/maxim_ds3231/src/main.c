@@ -6,11 +6,11 @@
 
 #include <stdio.h>
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/counter.h>
-#include <sys/printk.h>
-#include <drivers/rtc/maxim_ds3231.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/rtc/maxim_ds3231.h>
 
 /* Format times as: YYYY-MM-DD HH:MM:SS DOW DOY */
 static const char *format_time(time_t time,
@@ -229,12 +229,10 @@ static void set_aligned_clock(const struct device *ds3231)
 
 void main(void)
 {
-	const struct device *ds3231;
-	const char *const dev_id = DT_LABEL(DT_INST(0, maxim_ds3231));
+	const struct device *const ds3231 = DEVICE_DT_GET_ONE(maxim_ds3231);
 
-	ds3231 = device_get_binding(dev_id);
-	if (!ds3231) {
-		printk("No device %s available\n", dev_id);
+	if (!device_is_ready(ds3231)) {
+		printk("%s: device not ready.\n", ds3231->name);
 		return;
 	}
 

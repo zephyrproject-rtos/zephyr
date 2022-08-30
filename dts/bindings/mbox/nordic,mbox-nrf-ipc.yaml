@@ -1,0 +1,25 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF family IPC (MBOX Interprocessor Communication)
+
+compatible: "nordic,mbox-nrf-ipc"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+    tx-mask:
+      type: int
+      required: true
+      description: TX supported channels mask
+
+    rx-mask:
+      type: int
+      required: true
+      description: RX supported channels mask
+
+    interrupts:
+      required: true
+
+mbox-cells:
+  - channel

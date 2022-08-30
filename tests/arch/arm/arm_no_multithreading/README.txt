@@ -10,7 +10,7 @@ ARM Cortex-M targets. In detail the test verifies that
 - PSPLIM is set to the main stack base (if applicable)
 - FPU state is reset (if applicable)
 - Interrupts are enabled when switching to main()
-- Interrupts may be registerd and serviced
+- Interrupts may be registered and serviced
 - Activating PendSV triggers a Reserved Exception error
 
 ---------------------------------------------------------------------------

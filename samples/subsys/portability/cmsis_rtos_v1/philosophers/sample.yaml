@@ -7,10 +7,6 @@ common:
   tags: cmsis_rtos
   min_ram: 32
   min_flash: 34
-  # qemu_x86_64 and up_squared need bigger stack
-  # but CMSIS limits the stack size, resulting
-  # in stack overflow.
-  platform_exclude: qemu_xtensa qemu_x86_64 qemu_leon3 up_squared
   harness: console
   harness_config:
     type: multi_line
@@ -24,6 +20,6 @@ tests:
   sample.portability.cmsis_rtos_v1.philosopher:
     tags: cmsis_rtos
   sample.portability.cmsis_rtos_v1.philosopher.same_prio:
-    extra_args: "-DSAME_PRIO=1"
+    extra_args: SAME_PRIO=1
   sample.portability.cmsis_rtos_v1.philosopher.semaphores:
-    extra_args: "-DFORKS=SEMAPHORES"
+    extra_args: FORKS=SEMAPHORES

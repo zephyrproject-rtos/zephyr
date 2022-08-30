@@ -28,7 +28,6 @@
 			reg = <0x40024000 0xC14>;
 			interrupts = <59 0>;
 			status = "disabled";
-			label = "ETH_0";
 		};
 	};
 

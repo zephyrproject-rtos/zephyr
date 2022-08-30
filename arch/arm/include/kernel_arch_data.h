@@ -20,23 +20,23 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_DATA_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_DATA_H_
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <aarch32/cortex_m/stack.h>
 #include <aarch32/cortex_m/exc.h>
-#elif defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 #include <aarch32/cortex_a_r/stack.h>
 #include <aarch32/cortex_a_r/exc.h>
 #endif
 
 #ifndef _ASMLANGUAGE
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <sys/dlist.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/atomic.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,6 +44,9 @@ extern "C" {
 
 typedef struct __esf _esf_t;
 typedef struct __basic_sf _basic_sf_t;
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+typedef struct __fpu_sf _fpu_sf_t;
+#endif
 
 #ifdef CONFIG_ARM_MPU
 struct z_arm_mpu_partition {

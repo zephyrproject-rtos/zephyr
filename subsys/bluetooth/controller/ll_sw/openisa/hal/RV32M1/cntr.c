@@ -6,14 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/dlist.h>
+#include <zephyr/sys/dlist.h>
 
 #include "hal/cntr.h"
 
 #define LOG_MODULE_NAME bt_ctlr_cntr
 #include "common/log.h"
 #include "hal/debug.h"
-#include <dt-bindings/interrupt-controller/openisa-intmux.h>
+#include <zephyr/dt-bindings/interrupt-controller/openisa-intmux.h>
 #include "ll_irqs.h"
 
 
@@ -117,8 +117,9 @@ void cntr_cmp_set(uint8_t cmp, uint32_t value)
 	 * the LPTMR is disabled. If the LPTMR is enabled, the CMR must be
 	 * altered only when TCF is set.
 	 */
-	if (value == 0)
+	if (value == 0) {
 		value = 1;
+	}
 
 	LPTMR1->CMR = value;
 	LPTMR1->CSR |= LPTMR_CSR_TEN(1);

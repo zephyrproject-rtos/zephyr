@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_lptmr
 
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 #include <fsl_lptmr.h>
 
 struct mcux_lptmr_config {
@@ -235,7 +235,7 @@ static struct mcux_lptmr_config mcux_lptmr_config_0 = {
 DEVICE_DT_INST_DEFINE(0, &mcux_lptmr_init, NULL,
 		    &mcux_lptmr_data_0,
 		    &mcux_lptmr_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,
 		    &mcux_lptmr_driver_api);
 
 static void mcux_lptmr_irq_config_0(const struct device *dev)

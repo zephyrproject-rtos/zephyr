@@ -1,0 +1,27 @@
+# Copyright (c) 2021 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig GETOPT
+	bool "Getopt library support"
+	help
+	  This option adds support of getopt.
+	  Different shell backends are use their own instance of getopt to
+	  not interfere with each other.
+	  All not shell threads share one global instance of getopt state, hence
+	  apart from shell this library is not thread safe. User can add support
+	  for other threads by extending function getopt_state_get in
+	  getopt_common.c file.
+	  This option enables the following function: getopt.
+
+config GETOPT_LONG
+	bool "Getopt long library support"
+	depends on GETOPT
+	help
+	  This option adds support of the getopt long.
+	  Different shell backends are using their own instance of getopt to
+	  not interfere with each other.
+	  All not shell threads share one global instance of getopt state, hence
+	  apart from shell this library is not thread safe. User can add support
+	  for other threads by extending function getopt_state_get in
+	  getopt_common.c file.

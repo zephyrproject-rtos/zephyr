@@ -4,8 +4,25 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD
-	default "odroid-go"
+	default "odroid_go"
 	depends on BOARD_ODROID_GO
 
-config ENTROPY_ESP32_RNG
-	default y if ENTROPY_GENERATOR
+config DISK_DRIVER_SDMMC
+	default y if DISK_ACCESS
+
+config SPI
+	default y if DISK_DRIVER_SDMMC
+
+if BT
+
+config HEAP_MEM_POOL_SIZE
+	default 16384
+
+config ENTROPY_GENERATOR
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32
+endchoice
+
+endif # BT

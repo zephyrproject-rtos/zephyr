@@ -16,6 +16,7 @@ menuconfig HAWKBIT
 	select JSON_LIBRARY
 	select BOOTLOADER_MCUBOOT
 	select MPU_ALLOW_FLASH_WRITE
+	select IMG_ENABLE_IMAGE_CHECK
 	select IMG_ERASE_PROGRESSIVELY
 	select NET_SOCKETS_POSIX_NAMES
 	help
@@ -33,7 +34,7 @@ config HAWKBIT_POLL_INTERVAL
 	  This time interval is zero and 43200 minutes(30 days).
 
 config HAWKBIT_SHELL
-	bool "Enable Hawkbit shell utilities"
+	bool "Hawkbit shell utilities"
 	depends on SHELL
 	help
 	  Activate shell module that provides Hawkbit commands.
@@ -49,6 +50,35 @@ config HAWKBIT_PORT
 	default "8080"
 	help
 	  Configure the hawkbit port number.
+
+choice HAWKBIT_DDI_SECURITY
+	prompt "Hawkbit DDI API authentication modes"
+	default HAWKBIT_DDI_NO_SECURITY
+
+config HAWKBIT_DDI_NO_SECURITY
+	bool "No authentication security"
+	help
+	  No authentication security for the Hawkbit DDI API.
+
+config HAWKBIT_DDI_TARGET_SECURITY
+	bool "Use target security token authentication"
+	help
+	  Use target security token authentication for the Hawkbit DDI API.
+
+config HAWKBIT_DDI_GATEWAY_SECURITY
+	bool "Use gateway security token authentication"
+	help
+	  Use gateway security token authentication for the Hawkbit DDI API.
+
+endchoice
+
+config HAWKBIT_DDI_SECURITY_TOKEN
+	string "Authentication security token"
+	depends on HAWKBIT_DDI_TARGET_SECURITY || HAWKBIT_DDI_GATEWAY_SECURITY
+	default ""
+	help
+	  Authentication security token for the configured Hawkbit DDI
+	  authentication mode.
 
 module = HAWKBIT
 module-str = Log Level for hawkbit

@@ -13,14 +13,21 @@
 
 #define BT_GATT_PERM_READ_MASK			(BT_GATT_PERM_READ | \
 						BT_GATT_PERM_READ_ENCRYPT | \
-						BT_GATT_PERM_READ_AUTHEN)
+						BT_GATT_PERM_READ_AUTHEN | \
+						BT_GATT_PERM_READ_LESC)
 #define BT_GATT_PERM_WRITE_MASK			(BT_GATT_PERM_WRITE | \
 						BT_GATT_PERM_WRITE_ENCRYPT | \
-						BT_GATT_PERM_WRITE_AUTHEN)
+						BT_GATT_PERM_WRITE_AUTHEN | \
+						BT_GATT_PERM_WRITE_LESC)
 #define BT_GATT_PERM_ENCRYPT_MASK		(BT_GATT_PERM_READ_ENCRYPT | \
 						BT_GATT_PERM_WRITE_ENCRYPT)
 #define BT_GATT_PERM_AUTHEN_MASK		(BT_GATT_PERM_READ_AUTHEN | \
 						BT_GATT_PERM_WRITE_AUTHEN)
+#define BT_GATT_PERM_LESC_MASK			(BT_GATT_PERM_READ_LESC | \
+						BT_GATT_PERM_WRITE_LESC)
+#define BT_GATT_PERM_READ_ENCRYPT_MASK		(BT_GATT_PERM_READ_ENCRYPT | \
+						BT_GATT_PERM_READ_AUTHEN | \
+						BT_GATT_PERM_READ_LESC)
 
 void bt_gatt_init(void);
 void bt_gatt_connected(struct bt_conn *conn);
@@ -56,4 +63,4 @@ struct bt_gatt_attr;
 
 /* Check attribute permission */
 uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			uint8_t mask);
+			uint16_t mask);

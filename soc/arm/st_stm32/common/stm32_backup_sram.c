@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT st_stm32_backup_sram
 
-#include <device.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 #include <stm32_ll_pwr.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(stm32_backup_sram, CONFIG_SOC_LOG_LEVEL);
 
 struct stm32_backup_sram_config {
@@ -25,7 +25,12 @@ static int stm32_backup_sram_init(const struct device *dev)
 	int ret;
 
 	/* enable clock for subsystem */
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	ret = clock_control_on(clk, (clock_control_subsys_t *)&config->pclken);
 	if (ret < 0) {

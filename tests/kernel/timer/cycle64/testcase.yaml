@@ -1,0 +1,22 @@
+# Note: Re: slow vs fast
+#
+# Some platforms such as native_posix, qemu_riscv32, qemu_riscv64
+# complete these tests almost instantaneously because of qemu timer
+# quirks ("time warp") even though the test reports that it completes
+# in e.g. 14 s. We can take advantage of that for fast tests on each PR
+# but we also want to exercise this code path during daily builds or
+# otherwise when users specify "twister --enable-slow".
+#
+# As other platforms are added with varying timer frequencies, increase
+# timeout as necessary.
+tests:
+  kernel.timer.cycle64:
+    tags: kernel timer
+    filter: CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+    platform_exclude: native_posix
+    timeout: 140
+    slow: true
+  kernel.timer.cycle64.fast:
+    tags: kernel timer
+    filter: CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+    platform_allow: native_posix

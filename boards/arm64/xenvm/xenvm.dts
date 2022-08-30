@@ -7,7 +7,7 @@
  *
  * # LIBXL_DEBUG_DUMP_DTB=domu-libxl.dtb xl create zephyr.conf
  *
- * decompilling resulting domu-libxl.dtb and then manually aligning it
+ * decompiling resulting domu-libxl.dtb and then manually aligning it
  * with zephyr requirements.
  */
 
@@ -15,7 +15,7 @@
 
 #include <mem.h>
 #include <arm64/armv8-a.dtsi>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
 	model = "XENVM-4.15";
@@ -25,9 +25,8 @@
 	#size-cells = <0x02>;
 
 	chosen {
-		zephyr,console = &sbsa;
-		zephyr,shell-uart = &sbsa;
 		zephyr,sram = &ram;
+		zephyr,console = &xen_hvc;
 	};
 
 	cpus {
@@ -45,7 +44,6 @@
 	psci {
 		compatible = "arm,psci-1.0", "arm,psci-0.2", "arm,psci";
 		method = "hvc";
-		label = "PSCI";
 	};
 
 	ram: memory@40000000 {
@@ -55,7 +53,6 @@
 
 	gic: interrupt-controller@3001000 {
 		compatible = "arm,gic";
-		label = "GIC";
 		#interrupt-cells = <0x04>;
 		#address-cells = <0x00>;
 		interrupt-controller;
@@ -68,7 +65,6 @@
 			      GIC_PPI 0x0e IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY
 			      GIC_PPI 0x0b IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
-		label = "arch_timer";
 	};
 
 	hypervisor: hypervisor@38000000 {
@@ -78,12 +74,8 @@
 		interrupt-parent = <&gic>;
 	};
 
-	sbsa: sbsa-pl011@22000000 {
-		compatible = "arm,sbsa-uart";
-		reg = <0x00 0x22000000 0x00 0x1000>;
-		interrupts = <GIC_SPI 0x00 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		current-speed = <0x1c200>;
-		label = "UART";
+	xen_hvc: hvc {
+		compatible = "xen,hvc-uart";
+		status = "okay";
 	};
 };

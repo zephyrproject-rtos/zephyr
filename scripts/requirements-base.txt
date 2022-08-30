@@ -4,7 +4,7 @@
 # part of the recommended workflow
 
 # used by various build scripts
-pyelftools>=0.26
+pyelftools>=0.27
 
 # used by dts generation to parse binding YAMLs, also used by
 # twister to parse YAMLs, by west, zephyr_module,...

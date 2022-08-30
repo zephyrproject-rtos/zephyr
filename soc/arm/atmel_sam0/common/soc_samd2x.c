@@ -9,11 +9,11 @@
  * @brief Atmel SAMD MCU series initialization code
  */
 
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 
 static void flash_waitstates_init(void)
@@ -67,7 +67,7 @@ static void osc32k_init(void)
 			      SYSCTRL_OSC32K_STARTUP(0x6u) |
 			      SYSCTRL_OSC32K_EN32K | SYSCTRL_OSC32K_ENABLE;
 
-	/* Wait for the oscillator to stabalise. */
+	/* Wait for the oscillator to stabilise. */
 	while (!SYSCTRL->PCLKSR.bit.OSC32KRDY) {
 	}
 }

@@ -17,6 +17,18 @@
 {% block menu %}
   {% include "zversions.html" %}
   {{ super() }}
+  {% if reference_links %}
+  <div class="toctree-wrapper compound">
+    <p class="caption"><span class="caption-text">Reference</span></p>
+    <ul>
+      {% for title, url in reference_links.items() %}
+      <li class="toctree-l1">
+        <a class="reference internal" href="{{ url }}">{{ title }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
 {% endblock %}
 {% block extrahead %}
   <meta name="color-scheme" content="dark light">

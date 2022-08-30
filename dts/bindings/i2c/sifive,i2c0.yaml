@@ -8,10 +8,5 @@ compatible: "sifive,i2c0"
 include: i2c-controller.yaml
 
 properties:
-    input-frequency:
-      type: int
-      required: false
-      description: Frequency of the peripheral input clock.
-
     reg:
       required: true

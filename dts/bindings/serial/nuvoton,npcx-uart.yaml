@@ -5,7 +5,7 @@ description: Nuvoton, NPCX-UART node
 
 compatible: "nuvoton,npcx-uart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -13,9 +13,9 @@ properties:
     clocks:
         required: true
     pinctrl-0:
-        type: phandles
         required: true
-        description: configurations of pinmux controllers
+    pinctrl-names:
+        required: true
     uart-rx:
         type: phandle
         required: true

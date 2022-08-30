@@ -124,6 +124,110 @@
 	};
 
 	//
+	// 'ranges'
+	//
+
+	ranges-zero-cells {
+		#address-cells = <0>;
+
+		node {
+			#address-cells = <0>;
+			#size-cells = <0>;
+
+			ranges;
+		};
+	};
+
+	ranges-zero-parent-cells {
+		#address-cells = <0>;
+
+		node {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ranges = <0xA>,
+				 <0x1A>,
+				 <0x2A>;
+		};
+	};
+
+	ranges-one-address-cells {
+		#address-cells = <0>;
+
+		node {
+			reg = <1>;
+			#address-cells = <1>;
+
+			ranges = <0xA 0xB>,
+				 <0x1A 0x1B>,
+				 <0x2A 0x2B>;
+		};
+	};
+
+	ranges-one-address-two-size-cells {
+		#address-cells = <0>;
+
+		node {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <2>;
+
+			ranges = <0xA 0xB 0xC>,
+				 <0x1A 0x1B 0x1C>,
+				 <0x2A 0x2B 0x2C>;
+		};
+	};
+
+	ranges-two-address-cells {
+		#address-cells = <1>;
+
+		node@1 {
+			reg = <1 2>;
+
+			ranges = <0xA 0xB 0xC 0xD>,
+				 <0x1A 0x1B 0x1C 0x1D>,
+				 <0x2A 0x2B 0x2C 0x2D>;
+		};
+	};
+
+	ranges-two-address-two-size-cells {
+		#address-cells = <1>;
+
+		node@1 {
+			reg = <1 2>;
+			#size-cells = <2>;
+
+			ranges = <0xA 0xB 0xC 0xD 0xE>,
+				 <0x1A 0x1B 0x1C 0x1D 0x1E>,
+				 <0x2A 0x2B 0x2C 0x2D 0x1D>;
+		};
+	};
+
+	ranges-three-address-cells {
+		node@1 {
+			reg = <0 1 2>;
+			#address-cells = <3>;
+
+			ranges = <0xA 0xB 0xC 0xD 0xE 0xF>,
+				 <0x1A 0x1B 0x1C 0x1D 0x1E 0x1F>,
+				 <0x2A 0x2B 0x2C 0x2D 0x2E 0x2F>;
+		};
+	};
+
+	ranges-three-address-two-size-cells {
+		node@1 {
+			reg = <0 1 2>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			ranges = <0xA 0xB 0xC 0xD 0xE 0xF 0x10>,
+				 <0x1A 0x1B 0x1C 0x1D 0x1E 0x1F 0x110>,
+				 <0x2A 0x2B 0x2C 0x2D 0x2E 0x2F 0x210>;
+		};
+	};
+
+
+	//
 	// 'reg'
 	//
 
@@ -206,7 +310,7 @@
 	};
 
 	//
-	// For testing Node.parent and Node.children
+	// For testing hierarchy.
 	//
 
 	parent {

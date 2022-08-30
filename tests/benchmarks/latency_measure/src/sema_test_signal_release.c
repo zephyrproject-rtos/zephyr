@@ -12,14 +12,14 @@
  * mutex being tested.
  */
 
-#include <zephyr.h>
-#include <timing/timing.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/timing/timing.h>
 #include "utils.h"
 
 /* the number of semaphore give/take cycles */
 #define N_TEST_SEMA 1000
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 /* stack used by the threads */
 static K_THREAD_STACK_DEFINE(thread_one_stack, STACK_SIZE);
 

@@ -5,15 +5,15 @@
  */
 
 #include <errno.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/gpio.h>
-#include <drivers/espi.h>
-#include <drivers/espi_saf.h>
-#include <drivers/spi.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi_saf.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
 /* OOB operations will be attempted regardless of channel enabled or not */
 #include "espi_oob_handler.h"
 LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
@@ -39,21 +39,14 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 #define PWR_SEQ_TIMEOUT    3000u
 
 /* The devicetree node identifier for the board power rails pins. */
-#define BRD_PWR_NODE DT_INST(0, microchip_mec15xx_board_power)
+#define BRD_PWR_NODE DT_NODELABEL(board_power)
 
 #if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
-#define BRD_PWR_PWRGD           DT_GPIO_LABEL(BRD_PWR_NODE, pwrg_gpios)
-#define BRD_PWR_RSMRST          DT_GPIO_LABEL(BRD_PWR_NODE, rsm_gpios)
-#define BRD_PWR_RSMRST_PIN      DT_GPIO_PIN(BRD_PWR_NODE, rsm_gpios)
-#define BRD_PWR_PWRGD_PIN       DT_GPIO_PIN(BRD_PWR_NODE, pwrg_gpios)
-
-static const struct device *pwrgd_dev;
-static const struct device *rsm_dev;
+static const struct gpio_dt_spec pwrgd_gpio = GPIO_DT_SPEC_GET(BRD_PWR_NODE, pwrg_gpios);
+static const struct gpio_dt_spec rsm_gpio = GPIO_DT_SPEC_GET(BRD_PWR_NODE, rsm_gpios);
 #endif
 
-#define ESPI_DEV      DT_LABEL(DT_NODELABEL(espi0))
-
-static const struct device *espi_dev;
+static const struct device *const espi_dev = DEVICE_DT_GET(DT_NODELABEL(espi0));
 static struct espi_callback espi_bus_cb;
 static struct espi_callback vw_rdy_cb;
 static struct espi_callback vw_cb;
@@ -69,10 +62,7 @@ static uint8_t flash_read_buf[MAX_TEST_BUF_SIZE];
 #endif
 
 #ifdef CONFIG_ESPI_SAF
-#define ESPI_SAF_DEV      DT_LABEL(DT_NODELABEL(espi_saf0))
-#define SPI_DEV           DT_LABEL(DT_NODELABEL(spi0))
-
-#define SAF_BASE_ADDR     DT_REG_ADDR(DT_INST(0, microchip_xec_espi_saf))
+#define SAF_BASE_ADDR     DT_REG_ADDR(ESPI_SAF_NODE)
 
 #define SAF_TEST_FREQ_HZ 24000000U
 #define SAF_TEST_BUF_SIZE 4096U
@@ -105,8 +95,10 @@ struct saf_addr_info {
 	uintptr_t saf_struct_addr;
 	uintptr_t saf_exp_addr;
 };
-static const struct device *qspi_dev;
-static const struct device *espi_saf_dev;
+static const struct device *const qspi_dev =
+	DEVICE_DT_GET(DT_NODELABEL(spi0));
+static const struct device *const espi_saf_dev =
+	DEVICE_DT_GET(DT_NODELABEL(espi_saf0));
 static uint8_t safbuf[SAF_TEST_BUF_SIZE] __aligned(4);
 static uint8_t safbuf2[SAF_TEST_BUF_SIZE] __aligned(4);
 
@@ -219,7 +211,7 @@ int spi_saf_init(void)
 
 	spi_cfg.frequency = SAF_TEST_FREQ_HZ;
 	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
-			    | SPI_WORD_SET(8) | SPI_LINES_SINGLE;
+			    | SPI_WORD_SET(8);
 
 	/*
 	 * Use SPI master mode and inform driver the SPI controller hardware
@@ -943,22 +935,20 @@ int espi_init(void)
 }
 
 #if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
-static int wait_for_pin(const struct device *dev, uint8_t pin,
-			uint16_t timeout,
-			int exp_level)
+static int wait_for_pin(const struct gpio_dt_spec *gpio, uint16_t timeout, int exp_level)
 {
 	uint16_t loop_cnt = timeout;
 	int level;
 
 	do {
-		level = gpio_pin_get(dev, pin);
+		level = gpio_pin_get_dt(gpio);
 		if (level < 0) {
-			LOG_ERR("Failed to read %x %d", pin, level);
+			LOG_ERR("Failed to read %x %d", gpio->pin, level);
 			return -EIO;
 		}
 
 		if (exp_level == level) {
-			LOG_DBG("PIN %x = %x", pin, exp_level);
+			LOG_DBG("PIN %x = %x", gpio->pin, exp_level);
 			break;
 		}
 
@@ -967,7 +957,7 @@ static int wait_for_pin(const struct device *dev, uint8_t pin,
 	} while (loop_cnt > 0);
 
 	if (loop_cnt == 0) {
-		LOG_ERR("Timeout for %x %x", pin, level);
+		LOG_ERR("Timeout for %x %x", gpio->pin, level);
 		return -ETIMEDOUT;
 	}
 
@@ -1212,62 +1202,50 @@ int espi_test(void)
 	k_sleep(K_SECONDS(1));
 
 #if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
-	pwrgd_dev = device_get_binding(BRD_PWR_PWRGD);
-	if (!pwrgd_dev) {
-		LOG_WRN("%s not found", BRD_PWR_PWRGD);
-		return -1;
+	if (!device_is_ready(pwrgd_gpio.port)) {
+		LOG_ERR("%s: device not ready.", pwrgd_gpio.port->name);
+		return -ENODEV;
 	}
-
-	rsm_dev = device_get_binding(BRD_PWR_RSMRST);
-	if (!rsm_dev) {
-		LOG_WRN("%s not found", BRD_PWR_RSMRST);
-		return -1;
+	if (!device_is_ready(rsm_gpio.port)) {
+		LOG_ERR("%s: device not ready.", rsm_gpio.port->name);
+		return -ENODEV;
 	}
-
 #endif
-	espi_dev = device_get_binding(ESPI_DEV);
-	if (!espi_dev) {
-		LOG_WRN("Fail to find %s", ESPI_DEV);
-		return -1;
+	if (!device_is_ready(espi_dev)) {
+		LOG_ERR("%s: device not ready.", espi_dev->name);
+		return -ENODEV;
 	}
 
 #ifdef CONFIG_ESPI_SAF
-	qspi_dev = device_get_binding(SPI_DEV);
-	if (!qspi_dev) {
-		LOG_WRN("Fail to find %s", SPI_DEV);
-		return -1;
+	if (!device_is_ready(qspi_dev)) {
+		LOG_ERR("%s: device not ready.", qspi_dev->name);
+		return -ENODEV;
 	}
 
-	espi_saf_dev = device_get_binding(ESPI_SAF_DEV);
-	if (!espi_saf_dev) {
-		LOG_WRN("Fail to find %s", ESPI_SAF_DEV);
-		return -1;
+	if (!device_is_ready(espi_saf_dev)) {
+		LOG_ERR("%s: device not ready.", espi_saf_dev->name);
+		return -ENODEV;
 	}
 #endif
 
 	LOG_INF("Hello eSPI test %s", CONFIG_BOARD);
 
 #if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
-	ret = gpio_pin_configure(pwrgd_dev, BRD_PWR_PWRGD_PIN,
-				 GPIO_INPUT | GPIO_ACTIVE_HIGH);
+	ret = gpio_pin_configure_dt(&pwrgd_gpio, GPIO_INPUT);
 	if (ret) {
-		LOG_ERR("Unable to configure %d:%d",
-			BRD_PWR_PWRGD_PIN, ret);
+		LOG_ERR("Unable to configure %d:%d", pwrgd_gpio.pin, ret);
 		return ret;
 	}
 
-	ret = gpio_pin_configure(rsm_dev, BRD_PWR_RSMRST_PIN,
-				 GPIO_OUTPUT | GPIO_ACTIVE_HIGH);
+	ret = gpio_pin_configure_dt(&rsm_gpio, GPIO_OUTPUT);
 	if (ret) {
-		LOG_ERR("Unable to config %d: %d",
-			BRD_PWR_RSMRST_PIN, ret);
+		LOG_ERR("Unable to config %d: %d", rsm_gpio.pin, ret);
 		return ret;
 	}
 
-	ret = gpio_pin_set(rsm_dev, BRD_PWR_RSMRST_PIN, 0);
+	ret = gpio_pin_set_dt(&rsm_gpio, 0);
 	if (ret) {
-		LOG_ERR("Unable to initialize %d",
-			BRD_PWR_RSMRST_PIN);
+		LOG_ERR("Unable to initialize %d", rsm_gpio.pin);
 		return -1;
 	}
 #endif
@@ -1282,13 +1260,13 @@ int espi_test(void)
 	 */
 	ret = spi_saf_init();
 	if (ret) {
-		LOG_ERR("Unable to configure %d:%s", ret, SPI_DEV);
+		LOG_ERR("Unable to configure %d:%s", ret, qspi_dev->name);
 		return ret;
 	}
 
 	ret = espi_saf_init();
 	if (ret) {
-		LOG_ERR("Unable to configure %d:%s", ret, ESPI_SAF_DEV);
+		LOG_ERR("Unable to configure %d:%s", ret, espi_saf_dev->name);
 		return ret;
 	}
 
@@ -1305,14 +1283,13 @@ int espi_test(void)
 #endif
 
 #if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
-	ret = wait_for_pin(pwrgd_dev, BRD_PWR_PWRGD_PIN,
-			   PWR_SEQ_TIMEOUT, 1);
+	ret = wait_for_pin(&pwrgd_gpio, PWR_SEQ_TIMEOUT, 1);
 	if (ret) {
 		LOG_ERR("RSMRST_PWRGD timeout");
 		return ret;
 	}
 
-	ret = gpio_pin_set(rsm_dev, BRD_PWR_RSMRST_PIN, 1);
+	ret = gpio_pin_set_dt(&rsm_gpio, 1);
 	if (ret) {
 		LOG_ERR("Failed to set rsm err: %d", ret);
 		return ret;
@@ -1325,12 +1302,12 @@ int espi_test(void)
 	}
 
 #ifndef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
-	/* When automatic acknowledge is disabled to perform lenghty operations
+	/* When automatic acknowledge is disabled to perform lengthy operations
 	 * in the eSPI slave, need to explicitly send slave boot
 	 */
 	bool vw_ch_sts;
 
-	/* Simulate lenghty operation during boot */
+	/* Simulate lengthy operation during boot */
 	k_sleep(K_SECONDS(2));
 
 	do {

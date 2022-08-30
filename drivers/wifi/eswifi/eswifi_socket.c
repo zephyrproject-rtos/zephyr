@@ -7,16 +7,31 @@
 #include "eswifi_log.h"
 LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 
 #include "eswifi.h"
-#include <net/net_pkt.h>
+#include <zephyr/net/net_pkt.h>
+
+int eswifi_socket_type_from_zephyr(int proto, enum eswifi_transport_type *type)
+{
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) &&
+	    proto >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) {
+		*type = ESWIFI_TRANSPORT_TCP_SSL;
+	} else if (proto == IPPROTO_TCP) {
+		*type = ESWIFI_TRANSPORT_TCP;
+	} else if (proto == IPPROTO_UDP) {
+		*type = ESWIFI_TRANSPORT_UDP;
+	} else {
+		return -EPFNOSUPPORT;
+	}
+
+	return 0;
+}
 
 static int __stop_socket(struct eswifi_dev *eswifi,
 			 struct eswifi_off_socket *socket)
@@ -91,10 +106,11 @@ static void eswifi_off_read_work(struct k_work *work)
 	int next_timeout_ms = 100;
 	int err, len;
 	char *data;
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 
 	LOG_DBG("");
 
-	socket = CONTAINER_OF(work, struct eswifi_off_socket, read_work);
+	socket = CONTAINER_OF(dwork, struct eswifi_off_socket, read_work);
 	eswifi = eswifi_socket_to_dev(socket);
 
 	eswifi_lock(eswifi);
@@ -210,6 +226,25 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 	return 0;
 }
 
+int __eswifi_listen(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket, int backlog)
+{
+	int err;
+
+	__select_socket(eswifi, socket->index);
+
+	/* Set backlog */
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P8=%d\r", backlog);
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to start set listen backlog");
+		err = -EIO;
+	}
+
+	socket->is_server = true;
+
+	return 0;
+}
+
 int __eswifi_accept(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket)
 {
 	char cmd[] = "P5=1\r";
@@ -273,16 +308,10 @@ int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type,
 		return -ENOMEM;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) &&
-	    proto >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) {
-		socket->type = ESWIFI_TRANSPORT_TCP_SSL;
-	} else if (proto == IPPROTO_TCP) {
-		socket->type = ESWIFI_TRANSPORT_TCP;
-	} else if (proto == IPPROTO_UDP) {
-		socket->type = ESWIFI_TRANSPORT_UDP;
-	} else {
+	err = eswifi_socket_type_from_zephyr(proto, &socket->type);
+	if (err) {
 		LOG_ERR("Only TCP & UDP is supported");
-		return -EPFNOSUPPORT;
+		return err;
 	}
 
 	err = __select_socket(eswifi, socket->index);

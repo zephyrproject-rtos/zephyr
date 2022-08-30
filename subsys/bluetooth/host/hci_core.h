@@ -29,6 +29,7 @@ enum {
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
 	BT_DEV_ENABLE,
+	BT_DEV_DISABLE,
 	BT_DEV_READY,
 	BT_DEV_PRESET_ID,
 	BT_DEV_HAS_PUB_KEY,
@@ -38,11 +39,12 @@ enum {
 	BT_DEV_EXPLICIT_SCAN,
 	BT_DEV_ACTIVE_SCAN,
 	BT_DEV_SCAN_FILTER_DUP,
-	BT_DEV_SCAN_WL,
+	BT_DEV_SCAN_FILTERED,
 	BT_DEV_SCAN_LIMITED,
 	BT_DEV_INITIATING,
 
 	BT_DEV_RPA_VALID,
+	BT_DEV_RPA_TIMEOUT_CHANGED,
 
 	BT_DEV_ID_PENDING,
 	BT_DEV_STORE_ID,
@@ -92,7 +94,9 @@ enum {
 	/* Advertiser set is currently advertising in the controller. */
 	BT_ADV_ENABLED,
 	/* Advertiser should include name in advertising data */
-	BT_ADV_INCLUDE_NAME,
+	BT_ADV_INCLUDE_NAME_AD,
+	/* Advertiser should include name in scan response data */
+	BT_ADV_INCLUDE_NAME_SD,
 	/* Advertiser set is connectable */
 	BT_ADV_CONNECTABLE,
 	/* Advertiser set is scannable */
@@ -113,6 +117,8 @@ enum {
 	BT_PER_ADV_ENABLED,
 	/* Periodic Advertising parameters has been set in the controller. */
 	BT_PER_ADV_PARAMS_SET,
+	/* Periodic Advertising to include AdvDataInfo (ADI) */
+	BT_PER_ADV_INCLUDE_ADI,
 	/* Constant Tone Extension parameters for Periodic Advertising
 	 * has been set in the controller.
 	 */
@@ -121,10 +127,6 @@ enum {
 	 * in the controller.
 	 */
 	BT_PER_ADV_CTE_ENABLED,
-	/* The device name has been forced to appear in the advertising data
-	 * instead of in the scan response data
-	 */
-	BT_ADV_FORCE_NAME_IN_AD,
 
 	BT_ADV_NUM_FLAGS,
 };
@@ -151,24 +153,29 @@ struct bt_le_ext_adv {
 	int8_t                    tx_power;
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
-	struct k_work_delayable	timeout_work;
+	struct k_work_delayable	lim_adv_timeout_work;
 };
 
 enum {
 	/** Periodic Advertising Sync has been created in the host. */
 	BT_PER_ADV_SYNC_CREATED,
 
-	/** Periodic advertising is in sync and can be terminated */
+	/** Periodic Advertising Sync is established and can be terminated */
 	BT_PER_ADV_SYNC_SYNCED,
 
-	/** Periodic advertising is attempting sync sync */
+	/** Periodic Advertising Sync is attempting to create sync */
 	BT_PER_ADV_SYNC_SYNCING,
 
-	/** Periodic advertising is attempting sync sync */
+	/** Periodic Advertising Sync is attempting to create sync using
+	 *  Advertiser List
+	 */
+	BT_PER_ADV_SYNC_SYNCING_USE_LIST,
+
+	/** Periodic Advertising Sync established with reporting disabled */
 	BT_PER_ADV_SYNC_RECV_DISABLED,
 
 	/** Constant Tone Extension for Periodic Advertising has been enabled
-	 * in the controller.
+	 * in the Controller.
 	 */
 	BT_PER_ADV_SYNC_CTE_ENABLED,
 
@@ -195,9 +202,26 @@ struct bt_le_per_adv_sync {
 	uint8_t phy;
 
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
-	/** Accepted CTE type */
-	uint8_t cte_type;
+	/**
+	 * @brief Bitfield with allowed CTE types.
+	 *
+	 *  Allowed values are defined by @ref bt_df_cte_type, except BT_DF_CTE_TYPE_NONE.
+	 */
+	uint8_t cte_types;
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
+
+#if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
+	/** Reassembly buffer for advertising reports */
+	struct net_buf_simple reassembly;
+
+	/** Storage for the reassembly buffer */
+	uint8_t reassembly_data[CONFIG_BT_PER_ADV_SYNC_BUF_SIZE];
+#endif /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
+
+	/** True if the following periodic adv reports up to and
+	 * including the next complete one should be dropped
+	 */
+	bool report_truncated;
 
 	/** Flags */
 	ATOMIC_DEFINE(flags, BT_PER_ADV_SYNC_NUM_FLAGS);
@@ -320,9 +344,9 @@ struct bt_dev {
 	/* Last sent HCI command */
 	struct net_buf		*sent_cmd;
 
-#if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
+#if !defined(CONFIG_BT_RECV_BLOCKING)
 	/* Queue for incoming HCI events & ACL data */
-	struct k_fifo		rx_queue;
+	sys_slist_t rx_queue;
 #endif
 
 	/* Queue for outgoing HCI commands */
@@ -337,18 +361,25 @@ struct bt_dev {
 
 	/* Work used for RPA rotation */
 	struct k_work_delayable rpa_update;
+
+	/* The RPA timeout value. */
+	uint16_t rpa_timeout;
 #endif
 
 	/* Local Name */
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	char			name[CONFIG_BT_DEVICE_NAME_MAX + 1];
 #endif
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
+	/* Appearance Value */
+	uint16_t		appearance;
+#endif
 };
 
 extern struct bt_dev bt_dev;
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 extern const struct bt_conn_auth_cb *bt_auth;
-
+extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
@@ -393,7 +424,7 @@ void bt_id_add(struct bt_keys *keys);
 void bt_id_del(struct bt_keys *keys);
 
 int bt_setup_random_id_addr(void);
-void bt_setup_public_id_addr(void);
+int bt_setup_public_id_addr(void);
 
 void bt_finalize_init(void);
 
@@ -427,6 +458,7 @@ void bt_hci_le_per_adv_report(struct net_buf *buf);
 void bt_hci_le_per_adv_sync_lost(struct net_buf *buf);
 void bt_hci_le_biginfo_adv_report(struct net_buf *buf);
 void bt_hci_le_df_connectionless_iq_report(struct net_buf *buf);
+void bt_hci_le_vs_df_connectionless_iq_report(struct net_buf *buf);
 void bt_hci_le_past_received(struct net_buf *buf);
 
 /* Adv HCI event handlers */
@@ -447,3 +479,7 @@ void bt_hci_read_remote_features_complete(struct net_buf *buf);
 void bt_hci_read_remote_ext_features_complete(struct net_buf *buf);
 void bt_hci_role_change(struct net_buf *buf);
 void bt_hci_synchronous_conn_complete(struct net_buf *buf);
+
+void bt_hci_le_df_connection_iq_report(struct net_buf *buf);
+void bt_hci_le_vs_df_connection_iq_report(struct net_buf *buf);
+void bt_hci_le_df_cte_req_failed(struct net_buf *buf);

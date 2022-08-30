@@ -1,10 +1,26 @@
-name: Compliance
+name: Compliance Checks
 
 on: pull_request
 
 jobs:
-  compliance_job:
-    runs-on: ubuntu-latest
+  maintainer_check:
+    runs-on: ubuntu-20.04
+    name: Check MAINTAINERS file
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+    - name: Run Maintainers Script
+      id: maintainer
+      env:
+        BASE_REF: ${{ github.base_ref }}
+      run: |
+        python3 ./scripts/get_maintainer.py path CMakeLists.txt
+
+  check_compliance:
+    runs-on: ubuntu-20.04
     name: Run compliance checks on patch series (PR)
     steps:
     - name: Update PATH for west
@@ -27,7 +43,7 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install wheel
-        pip3 install python-magic junitparser==1.6.3 gitlint pylint pykwalify
+        pip3 install python-magic junitparser gitlint pylint pykwalify
         pip3 install west
 
     - name: west setup
@@ -41,7 +57,7 @@ jobs:
         # debug
         git log  --pretty=oneline | head -n 10
         west init -l . || true
-        west update
+        west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
 
     - name: Run Compliance Tests
       continue-on-error: true
@@ -53,10 +69,10 @@ jobs:
         # debug
         ls -la
         git log  --pretty=oneline | head -n 10
-        ./scripts/ci/check_compliance.py -m Codeowners -m Devicetree -m Gitlint -m Identity -m Nits -m pylint -m checkpatch -m Kconfig -c origin/${BASE_REF}..
+        ./scripts/ci/check_compliance.py -m Devicetree -m Gitlint -m Identity -m Nits -m pylint -m checkpatch -m Kconfig -c origin/${BASE_REF}..
 
     - name: upload-results
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v3
       continue-on-error: True
       with:
         name: compliance.xml
@@ -68,7 +84,7 @@ jobs:
           exit 1;
         fi
 
-        for file in Nits.txt checkpatch.txt Identity.txt Gitlint.txt pylint.txt Devicetree.txt Kconfig.txt Codeowners.txt; do
+        for file in Nits.txt checkpatch.txt Identity.txt Gitlint.txt pylint.txt Devicetree.txt Kconfig.txt; do
           if [[ -s $file ]]; then
             errors=$(cat $file)
             errors="${errors//'%'/'%25'}"
@@ -79,6 +95,6 @@ jobs:
           fi
         done
 
-        if [ ${exit} == 1 ]; then
+        if [ "${exit}" == "1" ]; then
           exit 1;
         fi

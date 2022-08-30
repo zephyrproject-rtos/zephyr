@@ -6,24 +6,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <device.h>
-#include <init.h>
-#include <linker/sections.h>
-#include <random/rand32.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/random/rand32.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_ip.h>
-#include <net/dummy.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/dummy.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -169,7 +169,7 @@ NET_DEVICE_INIT_INSTANCE(net_addr_test2, "net_addr_test2", iface2,
 			 &net_test_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE,
 			 127);
 
-static void test_ip_addresses(void)
+ZTEST(ip_addr_fn, test_ip_addresses)
 {
 	TEST_BYTE_1(0xde, "DE");
 	TEST_BYTE_1(0x09, "09");
@@ -207,7 +207,7 @@ static void test_ip_addresses(void)
 	TEST_IPV4(127, 0, 0, 1, "127.0.0.1");
 }
 
-static void test_ipv6_addresses(void)
+ZTEST(ip_addr_fn, test_ipv6_addresses)
 {
 	struct in6_addr loopback = IN6ADDR_LOOPBACK_INIT;
 	struct in6_addr any = IN6ADDR_ANY_INIT;
@@ -368,7 +368,7 @@ static void test_ipv6_addresses(void)
 		     "IPv6 removing address failed\n");
 }
 
-static void test_ipv4_addresses(void)
+ZTEST(ip_addr_fn, test_ipv4_addresses)
 {
 	const struct in_addr *out;
 	struct net_if_addr *ifaddr1;
@@ -548,7 +548,7 @@ static void test_ipv4_addresses(void)
 	zassert_true(ret, "IPv4 address 3 is not broadcast address");
 }
 
-static void test_ipv6_mesh_addresses(void)
+ZTEST(ip_addr_fn, test_ipv6_mesh_addresses)
 {
 	struct net_if_addr *ifaddr;
 	const struct in6_addr *out;
@@ -600,16 +600,11 @@ static void test_ipv6_mesh_addresses(void)
 		     "IPv6 removing address failed\n");
 }
 
-void test_main(void)
+void *test_setup(void)
 {
 	default_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
-	ztest_test_suite(test_ip_addr_fn,
-			 ztest_unit_test(test_ip_addresses),
-			 ztest_unit_test(test_ipv6_addresses),
-			 ztest_unit_test(test_ipv4_addresses),
-			 ztest_unit_test(test_ipv6_mesh_addresses)
-		);
-
-	ztest_run_test_suite(test_ip_addr_fn);
+	return NULL;
 }
+
+ZTEST_SUITE(ip_addr_fn, NULL, test_setup, NULL, NULL, NULL);

@@ -6,8 +6,8 @@
 
 /dts-v1/;
 #include <posix/posix.dtsi>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	model = "Native POSIX Board";
@@ -21,6 +21,9 @@
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flashcontroller0;
 		zephyr,ec-host-interface = &hcp;
+		zephyr,display = &sdl_dc;
+		zephyr,canbus = &can_loopback0;
+		zephyr,keyboard-scan = &sdl_kscan;
 	};
 
 	aliases {
@@ -28,6 +31,7 @@
 		i2c-0 = &i2c0;
 		spi-0 = &spi0;
 		led0 = &led0;
+		kscan0 = &sdl_kscan;
 	};
 
 	leds {
@@ -35,6 +39,16 @@
 		led0: led_0 {
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "zephyr,native-posix-cpu";
+			reg = <0>;
 		};
 	};
 
@@ -46,12 +60,9 @@
 		#size-cells = <1>;
 		erase-value = <0xff>;
 
-		label = "flash_ctrl";
-
 		flash0: flash@0 {
 			status = "okay";
 			compatible = "soc-nv-flash";
-			label = "flash";
 			erase-block-size = <4096>;
 			write-block-size = <1>;
 			reg = <0x00000000 DT_SIZE_K(2048)>;
@@ -63,15 +74,15 @@
 
 				boot_partition: partition@0 {
 					label = "mcuboot";
-					reg = <0x000000000 0x0000C000>;
+					reg = <0x00000000 0x0000C000>;
 				};
 				slot0_partition: partition@c000 {
 					label = "image-0";
-					reg = <0x0000C000 0x000069000>;
+					reg = <0x0000C000 0x00069000>;
 				};
 				slot1_partition: partition@75000 {
 					label = "image-1";
-					reg = <0x00075000 0x000069000>;
+					reg = <0x00075000 0x00069000>;
 				};
 				scratch_partition: partition@de000 {
 					label = "image-scratch";
@@ -88,7 +99,6 @@
 	eeprom0: eeprom {
 		status = "okay";
 		compatible = "zephyr,sim-eeprom";
-		label = "EEPROM_0";
 		size = <DT_SIZE_K(32)>;
 	};
 
@@ -99,7 +109,6 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0x100 4>;
-		label = "I2C_0";
 	};
 
 	spi0: spi@200 {
@@ -109,7 +118,6 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0x200 4>;
-		label = "SPI_0";
 	};
 
 	espi0: espi@300 {
@@ -118,13 +126,11 @@
 		reg = <0x300 4>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		label = "ESPI_0";
 	};
 
 	uart0: uart {
 		status = "okay";
 		compatible = "zephyr,native-posix-uart";
-		label = "UART_0";
 		/* Dummy current-speed entry to comply with serial
 		 * DTS binding
 		 */
@@ -134,7 +140,6 @@
 	uart1: uart_1 {
 		status = "okay";
 		compatible = "zephyr,native-posix-uart";
-		label = "UART_1";
 		/* Dummy current-speed entry to comply with serial
 		 * DTS binding
 		 */
@@ -144,25 +149,21 @@
 	rng: rng {
 		status = "okay";
 		compatible = "zephyr,native-posix-rng";
-		label = "ENTROPY_0";
 	};
 
 	counter0: counter {
 		status = "okay";
 		compatible = "zephyr,native-posix-counter";
-		label = "COUNTER_0";
 	};
 
 	hcp: ec-host-cmd-periph {
 		status = "okay";
 		compatible = "zephyr,sim-ec-host-cmd-periph";
-		label = "EC_HOST_CMD_SIM";
 	};
 
 	gpio0: gpio@800 {
 		status = "okay";
 		compatible = "zephyr,gpio-emul";
-		label = "GPIO_0";
 		reg = <0x800 0x4>;
 		rising-edge;
 		falling-edge;
@@ -170,5 +171,27 @@
 		low-level;
 		gpio-controller;
 		#gpio-cells = <2>;
+	};
+
+	zephyr_udc0: udc0 {
+		compatible = "zephyr,native-posix-udc";
+	};
+
+	sdl_dc: sdl_dc {
+		compatible = "zephyr,sdl-dc";
+		height = <240>;
+		width = <320>;
+	};
+
+	sdl_kscan: sdl_kscan {
+		compatible = "zephyr,sdl-kscan";
+	};
+
+	can_loopback0: can_loopback0 {
+		status = "disabled";
+		compatible = "zephyr,can-loopback";
+		sjw = <1>;
+		sample-point = <875>;
+		bus-speed = <125000>;
 	};
 };

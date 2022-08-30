@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2022, Rtone.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/gd32f450z(e-g-i-k)xx-pinctrl.h>
+
+&pinctrl {
+	usart0_default: usart0_default {
+		group1 {
+			pinmux = <USART0_TX_PA9>, <USART0_RX_PA10>;
+		};
+	};
+
+	dac_default: dac_default {
+		group1 {
+			pinmux = <DAC_OUT0_PA4>;
+		};
+	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			pinmux = <TIMER1_CH2_PB10>;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SCL_PB6>, <I2C0_SDA_PB7>;
+			drive-open-drain;
+		};
+	};
+
+	spi5_default: spi5_default {
+		group1 {
+			pinmux = <SPI5_SCK_PG13>, <SPI5_MOSI_PG14>,
+				 <SPI5_MISO_PG12>,
+				 /* Use pinmux to pullup pg10 and pg11. */
+				 <SPI5_IO2_PG10>, <SPI5_IO3_PG11>;
+		};
+	};
+};

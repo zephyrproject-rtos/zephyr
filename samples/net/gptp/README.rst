@@ -25,9 +25,10 @@ Building and Running
 
 A good way to run this sample is to run this gPTP application inside
 native_posix board as described in :ref:`networking_with_native_posix` or with
-embedded device like NXP FRDM-K64F or Atmel SAM-E70 Xplained. Note that gPTP is
-only supported for boards that have an Ethernet port and which has support for
-collecting timestamps for sent and received Ethernet frames.
+embedded device like NXP FRDM-K64F, Nucleo-H743-ZI, Nucleo-H745ZI-Q,
+Nucleo-F767ZI or Atmel SAM-E70 Xplained. Note that gPTP is only supported for
+boards that have an Ethernet port and which has support for collecting
+timestamps for sent and received Ethernet frames.
 
 Follow these steps to build the gPTP sample application:
 
@@ -122,7 +123,7 @@ If Zephyr syncs properly with gptp daemon, then this is printed:
 
 By default gPTP in Zephyr will not print any gPTP debug messages to console.
 One can enable debug prints by setting
-:kconfig:`CONFIG_NET_GPTP_LOG_LEVEL_DBG` in the config file.
+:kconfig:option:`CONFIG_NET_GPTP_LOG_LEVEL_DBG` in the config file.
 
 For native_posix board, use ``linuxptp`` project as that supports
 software timestamping.
@@ -146,7 +147,7 @@ it according to your needs.
 Multiport Setup
 ===============
 
-If you set :kconfig:`CONFIG_NET_GPTP_NUM_PORTS` larger than 1, then gPTP sample
+If you set :kconfig:option:`CONFIG_NET_GPTP_NUM_PORTS` larger than 1, then gPTP sample
 will create multiple TSN ports. This configuration is currently only supported
 in native_posix board.
 

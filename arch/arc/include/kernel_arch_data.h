@@ -20,16 +20,16 @@
 #ifndef ZEPHYR_ARCH_ARC_INCLUDE_KERNEL_ARCH_DATA_H_
 #define ZEPHYR_ARCH_ARC_INCLUDE_KERNEL_ARCH_DATA_H_
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <vector_table.h>
 
 #ifndef _ASMLANGUAGE
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <sys/util.h>
-#include <sys/dlist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/dlist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,7 +144,9 @@ struct _callee_saved_stack {
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
 	uintptr_t r58;
+#ifndef CONFIG_64BIT
 	uintptr_t r59;
+#endif /* !CONFIG_64BIT */
 #endif
 
 #ifdef CONFIG_FPU_SHARING
@@ -159,7 +161,7 @@ struct _callee_saved_stack {
 
 #endif
 	/*
-	 * No need to save r31 (blink), it's either alread pushed as the pc or
+	 * No need to save r31 (blink), it's either already pushed as the pc or
 	 * blink on an irq stack frame.
 	 */
 };

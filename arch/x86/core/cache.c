@@ -11,11 +11,11 @@
  * This module contains functions for manipulation caches.
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <sys/util.h>
-#include <toolchain.h>
-#include <cache.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/cache.h>
 #include <stdbool.h>
 
 /**
@@ -26,8 +26,6 @@
  * both is optimal.
  *
  * The cache line size is specified via the d-cache-line-size DTS property.
- *
- * @return N/A
  */
 static void arch_dcache_flush(void *start_addr, size_t size)
 {

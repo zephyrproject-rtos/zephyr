@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
 #include <CANopen.h>
 #include <CO_Emergency.h>
@@ -13,7 +13,7 @@
 #include <canopennode.h>
 
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(canopen_storage);
 
 /* 's', 'a', 'v', 'e' from LSB to MSB */
@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(canopen_storage);
 /* 'l', 'o', 'a', 'd' from LSB to MSB */
 #define RESTORE_PARAM_MAGIC 0x64616F6CUL
 
-/* Variables for reporing errors through CANopen once the stack is up */
+/* Variables for reporting errors through CANopen once the stack is up */
 static int canopen_storage_rom_error;
 static int canopen_storage_eeprom_error;
 

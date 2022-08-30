@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <fs/littlefs.h>
-#include <storage/flash_map.h>
+#include <zephyr/ztest.h>
+#include <zephyr/fs/littlefs.h>
+#include <zephyr/storage/flash_map.h>
 #include "testfs_lfs.h"
 
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(small);

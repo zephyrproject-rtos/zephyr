@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_DRIVERS_EDAC_IBECC_H_
+#define ZEPHYR_DRIVERS_EDAC_IBECC_H_
+
 /* TODO: Add to include/sys/util.h */
 #define BITFIELD(val, h, l)	(((val) & GENMASK(h, l)) >> l)
 
@@ -18,6 +21,9 @@
 #define PCI_DEVICE_ID_SKU10	0x452e
 #define PCI_DEVICE_ID_SKU11	0x4532
 #define PCI_DEVICE_ID_SKU12	0x4518
+#define PCI_DEVICE_ID_SKU13	0x451a
+#define PCI_DEVICE_ID_SKU14	0x4534
+#define PCI_DEVICE_ID_SKU15	0x4536
 
 /* TODO: Move to correct place NMI registers */
 
@@ -169,3 +175,7 @@ struct ibecc_error {
 	uint64_t address;
 	uint16_t syndrome;
 };
+
+#define PCI_HOST_BRIDGE PCIE_BDF(0, 0, 0)
+
+#endif /* ZEPHYR_DRIVERS_EDAC_IBECC_H_ */

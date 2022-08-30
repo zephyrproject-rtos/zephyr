@@ -5,18 +5,18 @@
  */
 
 #include <stdlib.h>
-#include <zephyr.h>
-#include <init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
 #include <errno.h>
-#include <sys/math_extras.h>
+#include <zephyr/sys/math_extras.h>
 #include <string.h>
-#include <app_memory/app_memdomain.h>
-#include <sys/mutex.h>
-#include <sys/sys_heap.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/sys/mutex.h>
+#include <zephyr/sys/sys_heap.h>
 #include <zephyr/types.h>
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_MINIMAL_LIBC_MALLOC
@@ -26,7 +26,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 #define POOL_SECTION K_APP_DMEM_SECTION(z_malloc_partition)
 #else
-#define POOL_SECTION .data
+#define POOL_SECTION .bss
 #endif /* CONFIG_USERSPACE */
 
 #define HEAP_BYTES CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
@@ -94,7 +94,7 @@ void free(void *ptr)
 	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
 }
 
-SYS_INIT(malloc_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else /* No malloc arena */
 void *malloc(size_t size)
 {

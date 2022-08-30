@@ -2,17 +2,7 @@
 
 include: base.yaml
 
-bus: can
-
 properties:
-    "#address-cells":
-      required: true
-      const: 1
-    "#size-cells":
-      required: true
-      const: 0
-    label:
-      required: true
     bus-speed:
       type: int
       required: true
@@ -40,3 +30,42 @@ properties:
         Sample point in permille.
         This param is required if segments are not given.
         If the sample point is given, the segments are ignored.
+    phys:
+      type: phandle
+      required: false
+      description: |
+        Actively controlled CAN transceiver.
+
+        Example:
+          transceiver0: can-phy0 {
+            compatible = "nxp,tja1040", "can-transceiver-gpio";
+            standby-gpios = <gpioa 0 GPIO_ACTIVE_HIGH>;
+            max-bitrate = <1000000>;
+            #phy-cells = <0>;
+          };
+
+          &can0 {
+            status = "okay";
+
+            phys = <&transceiver0>;
+          };
+
+child-binding:
+    description: |
+      Passive CAN transceiver. The child node must be named "can-transceiver".
+
+      Example:
+        &can0 {
+          status = "okay";
+
+          can-transceiver {
+            max-bitrate = <1000000>;
+          };
+        };
+
+    properties:
+      max-bitrate:
+        type: int
+        required: true
+        description: |
+          The maximum bitrate supported by the CAN transceiver in bits/s.

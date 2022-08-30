@@ -1,4 +1,4 @@
 tests:
-  pm-states-api.dts:
-    tags: power
+  pm.states.api.dts:
+    tags: pm
     platform_allow: native_posix

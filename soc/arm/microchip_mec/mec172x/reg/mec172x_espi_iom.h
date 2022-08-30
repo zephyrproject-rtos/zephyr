@@ -68,8 +68,8 @@
 /*
  * Read-Only ALERT Open Drain select.
  * If EC has indicated it can support open-drain ESPI_ALERT# then
- * the Host can enable open-drain ESPI_ALERT# by sending a configuraiton
- * message. This read-only bit relects the configuration selection.
+ * the Host can enable open-drain ESPI_ALERT# by sending a configuration
+ * message. This read-only bit reflects the configuration selection.
  */
 #define MCHP_ESPI_GBL_CAP1_ALERT_ODS_SEL_POS	7u
 #define MCHP_ESPI_GBL_CAP1_ALERT_SEL_ODS \
@@ -278,7 +278,7 @@
 /* eSPI specification indicates RT field must be 00b */
 #define MCHP_ESPI_LTR_MSG_RT_VAL	0u
 #define MCHP_ESPI_LTR_MSG_REQ_POS	15u
-/* inifinite latency(default) */
+/* infinite latency(default) */
 #define MCHP_ESPI_LTR_MSG_REQ_INF	0u
 /* latency computed from VAL and SC(scale) fields */
 #define MCHP_ESPI_LTR_MSG_REQ_VAL	 BIT(MCHP_ESPI_LTR_MSG_REQ_POS)
@@ -385,7 +385,8 @@
 #define MCHP_ESPI_FC_CTRL_ERS0		0x02u
 #define MCHP_ESPI_FC_CTRL_ERL0		0x03u
 #define MCHP_ESPI_FC_CTRL_FUNC(f)	\
-	((uint32_t)(f) & MCHP_ESPI_FC_CTRL_FUNC_MASK)
+	(SHLU32((uint32_t)(f), MCHP_ESPI_FC_CTRL_FUNC_POS) & \
+	MCHP_ESPI_FC_CTRL_FUNC_MASK)
 
 #define MCHP_ESPI_FC_CTRL_TAG_POS	4u
 #define MCHP_ESPI_FC_CTRL_TAG_MASK0	0x0fu

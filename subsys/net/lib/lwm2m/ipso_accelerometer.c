@@ -12,11 +12,11 @@
 #define LOG_MODULE_NAME net_ipso_accel
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdint.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -42,27 +42,27 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* resource state */
 struct ipso_accel_data {
-	float32_value_t x_value;
-	float32_value_t y_value;
-	float32_value_t z_value;
-	float32_value_t min_range;
-	float32_value_t max_range;
+	double x_value;
+	double y_value;
+	double z_value;
+	double min_range;
+	double max_range;
 };
 
 static struct ipso_accel_data accel_data[MAX_INSTANCE_COUNT];
 
 static struct lwm2m_engine_obj accel;
 static struct lwm2m_engine_obj_field fields[] = {
-	OBJ_FIELD_DATA(X_VALUE_RID, R, FLOAT32),
-	OBJ_FIELD_DATA(Y_VALUE_RID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(Z_VALUE_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(X_VALUE_RID, R, FLOAT),
+	OBJ_FIELD_DATA(Y_VALUE_RID, R_OPT, FLOAT),
+	OBJ_FIELD_DATA(Z_VALUE_RID, R_OPT, FLOAT),
 	OBJ_FIELD_DATA(SENSOR_UNITS_RID, R_OPT, STRING),
-	OBJ_FIELD_DATA(MIN_RANGE_VALUE_RID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(MAX_RANGE_VALUE_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(MIN_RANGE_VALUE_RID, R_OPT, FLOAT),
+	OBJ_FIELD_DATA(MAX_RANGE_VALUE_RID, R_OPT, FLOAT),
 #if defined(CONFIG_LWM2M_IPSO_ACCELEROMETER_VERSION_1_1)
 	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
 	OBJ_FIELD_DATA(TIMESTAMP_RID, R_OPT, TIME),
-	OBJ_FIELD_DATA(FRACTIONAL_TIMESTAMP_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(FRACTIONAL_TIMESTAMP_RID, R_OPT, FLOAT),
 	OBJ_FIELD_DATA(MEASUREMENT_QUALITY_INDICATOR_RID, R_OPT, U8),
 	OBJ_FIELD_DATA(MEASUREMENT_QUALITY_LEVEL_RID, R_OPT, U8),
 #endif

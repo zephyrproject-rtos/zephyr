@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 
-#include <drivers/sensor/sgp40.h>
-#include <drivers/sensor/sht4x.h>
+#include <zephyr/drivers/sensor/sgp40.h>
+#include <zephyr/drivers/sensor/sht4x.h>
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(sensirion_sgp40)
 #error "No sensirion,sgp40 compatible node found in the device tree"
@@ -27,8 +27,8 @@ void main(void)
 	struct sensor_value comp_t;
 	struct sensor_value comp_rh;
 #endif
-	const struct device *sht = DEVICE_DT_GET_ANY(sensirion_sht4x);
-	const struct device *sgp = DEVICE_DT_GET_ANY(sensirion_sgp40);
+	const struct device *const sht = DEVICE_DT_GET_ANY(sensirion_sht4x);
+	const struct device *const sgp = DEVICE_DT_GET_ANY(sensirion_sgp40);
 	struct sensor_value temp, hum, gas;
 
 	if (!device_is_ready(sht)) {

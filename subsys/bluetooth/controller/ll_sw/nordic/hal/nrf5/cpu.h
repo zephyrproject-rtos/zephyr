@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2021 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -9,7 +9,8 @@ static inline void cpu_sleep(void)
 {
 #if defined(CONFIG_CPU_CORTEX_M0) || \
 	defined(CONFIG_CPU_CORTEX_M4) || \
-	defined(CONFIG_CPU_CORTEX_M33)
+	defined(CONFIG_CPU_CORTEX_M33) || \
+	defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
 	__WFE();
 	__SEV();
 	__WFE();

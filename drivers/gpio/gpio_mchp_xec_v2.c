@@ -7,14 +7,15 @@
 #define DT_DRV_COMPAT microchip_xec_gpio_v2
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/mchp-xec-pinctrl.h>
 #include <soc.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #include "gpio_utils.h"
 
-#define XEC_ECIA_REGS ((struct ecia_regs *)(DT_REG_ADDR(DT_NODELABEL(ecia))))
+#define XEC_GPIO_EDGE_DLY_COUNT		4
 
 static const uint32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
 	(MCHP_GPIO_PORT_A_BITMAP),
@@ -268,7 +269,6 @@ static int gpio_xec_pin_interrupt_configure(const struct device *dev,
 		} else {
 			pcr1 |= MCHP_GPIO_CTRL_IDET_LVL_LO;
 		}
-		sys_write32(pcr1, pcr1_addr);
 	} else if (mode == GPIO_INT_MODE_EDGE) {
 		if (trig == GPIO_INT_TRIG_LOW) {
 			pcr1 |= MCHP_GPIO_CTRL_IDET_FEDGE;
@@ -277,11 +277,14 @@ static int gpio_xec_pin_interrupt_configure(const struct device *dev,
 		} else if (trig == GPIO_INT_TRIG_BOTH) {
 			pcr1 |= MCHP_GPIO_CTRL_IDET_BEDGE;
 		}
-		sys_write32(pcr1, pcr1_addr);
-		__DMB(); /* insure write completes */
 	} else {
 		pcr1 |= MCHP_GPIO_CTRL_IDET_DISABLE;
-		sys_write32(pcr1, pcr1_addr);
+	}
+
+	sys_write32(pcr1, pcr1_addr);
+	/* delay for HW to synchronize after it ungates its clock */
+	for (int i = 0; i < XEC_GPIO_EDGE_DLY_COUNT; i++) {
+		sys_read32(pcr1_addr);
 	}
 
 	mchp_soc_ecia_girq_src_clr(config->girq_id, pin);
@@ -366,6 +369,7 @@ static void gpio_gpio_xec_port_isr(const struct device *dev)
 	gpio_fire_callbacks(&data->callbacks, dev, girq_result);
 }
 
+/* GPIO driver official API table */
 static const struct gpio_driver_api gpio_xec_driver_api = {
 	.pin_configure = gpio_xec_configure,
 	.port_get_raw = gpio_xec_port_get_raw,
@@ -378,12 +382,12 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 };
 
 #define XEC_GPIO_PORT_FLAGS(n)						\
-	((DT_IRQ_HAS_CELL(DT_DRV_INST(n), irq)) ? GPIO_INT_ENABLE : 0)
+	((DT_INST_IRQ_HAS_CELL(n, irq)) ? GPIO_INT_ENABLE : 0)
 
 #define XEC_GPIO_PORT(n)						\
 	static int gpio_xec_port_init_##n(const struct device *dev)	\
 	{								\
-		if (!(DT_IRQ_HAS_CELL(DT_DRV_INST(n), irq))) {		\
+		if (!(DT_INST_IRQ_HAS_CELL(n, irq))) {			\
 			return 0;					\
 		}							\
 									\
@@ -418,7 +422,7 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 									\
 	DEVICE_DT_INST_DEFINE(n, gpio_xec_port_init_##n, NULL,		\
 		&gpio_xec_port_data_##n, &xec_gpio_config_##n,		\
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+		PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,			\
 		&gpio_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_GPIO_PORT)

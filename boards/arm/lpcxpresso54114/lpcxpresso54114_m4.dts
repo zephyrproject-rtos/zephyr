@@ -24,6 +24,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	gpio_keys {
@@ -34,13 +35,24 @@
 		};
 		user_button_2: button_1 {
 			label = "User SW2";
-			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 31 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		user_button_3: button_2 {
 			label = "User SW3";
-			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 	};
+};
+
+/*
+ * Default for this board is to allocate SRAM0-1 to M4 CPU but the
+ * application can have an application specific device tree to
+ * allocate the SRAM0-3 differently.
+ *
+ */
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(128)>;
 };
 
 &cpu0 {
@@ -73,4 +85,24 @@
 
 &flexcomm5 {
 	status = "okay";
+};
+
+&flash0 {
+	/*
+	 * LPC flash controller requires minimum 256 byte write to flash,
+	 * so MCUBoot is not supported. Just provide storage and code partition.
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(196)>;
+		};
+		storage_partition: partition@30000 {
+			label = "storage";
+			reg = <0x00030000 DT_SIZE_K(64)>;
+		};
+	};
 };

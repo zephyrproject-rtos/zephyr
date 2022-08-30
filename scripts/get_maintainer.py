@@ -34,9 +34,9 @@ import sys
 from yaml import load, YAMLError
 try:
     # Use the speedier C LibYAML parser if available
-    from yaml import CLoader as Loader
+    from yaml import CSafeLoader as SafeLoader
 except ImportError:
-    from yaml import Loader
+    from yaml import SafeLoader
 
 
 def _main():
@@ -106,7 +106,7 @@ def _parse_args():
         "maintainer",
         metavar="MAINTAINER",
         nargs="?",
-        help="List all areas maintained by maintaier.")
+        help="List all areas maintained by maintainer.")
 
     areas_parser.set_defaults(cmd_fn=Maintainers._areas_cmd)
 
@@ -119,6 +119,31 @@ def _parse_args():
         nargs="?",
         help="Limit to files under PATH")
     orphaned_parser.set_defaults(cmd_fn=Maintainers._orphaned_cmd)
+
+    count_parser = subparsers.add_parser(
+        "count",
+        help="Count areas, unique maintainers, and / or unique collaborators")
+    count_parser.add_argument(
+        "-a",
+        "--count-areas",
+        action="store_true",
+        help="Count the number of areas")
+    count_parser.add_argument(
+        "-c",
+        "--count-collaborators",
+        action="store_true",
+        help="Count the number of unique collaborators")
+    count_parser.add_argument(
+        "-n",
+        "--count-maintainers",
+        action="store_true",
+        help="Count the number of unique maintainers")
+    count_parser.add_argument(
+        "-o",
+        "--count-unmaintained",
+        action="store_true",
+        help="Count the number of unmaintained areas")
+    count_parser.set_defaults(cmd_fn=Maintainers._count_cmd)
 
     args = parser.parse_args()
     if not hasattr(args, "cmd_fn"):
@@ -261,6 +286,36 @@ class Maintainers:
             else:
                 print("{:25}\t{}".format(area.name, ",".join(area.maintainers)))
 
+    def _count_cmd(self, args):
+        # 'count' subcommand implementation
+
+        if not (args.count_areas or args.count_collaborators or args.count_maintainers or args.count_unmaintained):
+            # if no specific count is provided, print them all
+            args.count_areas = True
+            args.count_collaborators = True
+            args.count_maintainers = True
+            args.count_unmaintained = True
+
+        unmaintained = 0
+        collaborators = set()
+        maintainers = set()
+
+        for area in self.areas.values():
+            if area.status == 'maintained':
+                maintainers = maintainers.union(set(area.maintainers))
+            elif area.status == 'odd fixes':
+                unmaintained += 1
+            collaborators = collaborators.union(set(area.collaborators))
+
+        if args.count_areas:
+            print('{:14}\t{}'.format('areas:', len(self.areas)))
+        if args.count_maintainers:
+            print('{:14}\t{}'.format('maintainers:', len(maintainers)))
+        if args.count_collaborators:
+            print('{:14}\t{}'.format('collaborators:', len(collaborators)))
+        if args.count_unmaintained:
+            print('{:14}\t{}'.format('unmaintained:', unmaintained))
+
     def _list_cmd(self, args):
         # 'list' subcommand implementation
 
@@ -402,7 +457,7 @@ def _load_maintainers(path):
 
     with open(path, encoding="utf-8") as f:
         try:
-            yaml = load(f, Loader=Loader)
+            yaml = load(f, Loader=SafeLoader)
         except YAMLError as e:
             raise MaintainersError("{}: YAML error: {}".format(path, e))
 
@@ -426,7 +481,7 @@ def _check_maintainers(maints_path, yaml):
                "files-exclude", "files-regex", "files-regex-exclude",
                "labels", "description"}
 
-    ok_status = {"maintained", "odd fixes", "orphaned", "obsolete"}
+    ok_status = {"maintained", "odd fixes", "unmaintained", "obsolete"}
     ok_status_s = ", ".join('"' + s + '"' for s in ok_status)  # For messages
 
     for area_name, area_dict in yaml.items():

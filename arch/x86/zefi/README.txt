@@ -46,7 +46,7 @@ Linux toolchain.  EFI binaries are relocatable PE-COFF files --
 basically Windows DLLs.  But our compiler only generates code for ELF
 targets.
 
-These environments differ in the way they implemenqt position
+These environments differ in the way they implement position
 independent code.  Non-static global variables and function addresses
 in ELF get found via GOT and PLT tables that are populated at load
 time by a system binary (ld-linux.so).  But there is no ld-linux.so in

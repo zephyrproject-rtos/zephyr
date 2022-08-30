@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "test_helpers.h"
-#include <logging/log_core.h>
-#include <logging/log_ctrl.h>
+#include <zephyr/logging/log_internal.h>
+#include <zephyr/logging/log_ctrl.h>
 
 
 static log_timestamp_t stamp;

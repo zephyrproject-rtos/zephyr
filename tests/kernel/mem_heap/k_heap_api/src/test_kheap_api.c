@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/ztest.h>
+#include <zephyr/irq_offload.h>
 #include "test_kheap.h"
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 struct k_thread tdata;
 
@@ -30,11 +30,35 @@ static void tIsr_kheap_alloc_nowait(void *data)
 
 static void thread_alloc_heap(void *p1, void *p2, void *p3)
 {
+	char *p;
+
 	k_timeout_t timeout = Z_TIMEOUT_MS(200);
 
-	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, timeout);
+	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, K_NO_WAIT);
 
-	zassert_not_null(p, "k_heap_alloc operation failed");
+	zassert_is_null(p, "k_heap_alloc should fail but did not");
+
+	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, timeout);
+
+	zassert_not_null(p, "k_heap_alloc failed to allocate memory");
+
+	k_heap_free(&k_heap_test, p);
+}
+
+static void thread_alloc_heap_null(void *p1, void *p2, void *p3)
+{
+	char *p;
+
+	k_timeout_t timeout = Z_TIMEOUT_MS(200);
+
+	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, K_NO_WAIT);
+
+	zassert_is_null(p, "k_heap_alloc should fail but did not");
+
+	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, timeout);
+
+	zassert_is_null(p, "k_heap_alloc should fail but did not");
+
 	k_heap_free(&k_heap_test, p);
 }
 
@@ -52,7 +76,7 @@ volatile uint32_t heap_guard1;
  * works to allocate that byte at runtime and that it doesn't overflow
  * its memory bounds.
  */
-void test_k_heap_min_size(void)
+ZTEST(k_heap_api, test_k_heap_min_size)
 {
 	const uint32_t guard_bits = 0x5a5a5a5a;
 
@@ -86,7 +110,7 @@ void test_k_heap_min_size(void)
  *
  * @see k_heap_malloc(), k_heap_Free()
  */
-void test_k_heap_alloc(void)
+ZTEST(k_heap_api, test_k_heap_alloc)
 {
 	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
 	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, timeout);
@@ -110,7 +134,7 @@ void test_k_heap_alloc(void)
  *
  * @see k_heap_malloc(), k_heap_Free()
  */
-void test_k_heap_alloc_fail(void)
+ZTEST(k_heap_api, test_k_heap_alloc_fail)
 {
 
 	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
@@ -137,7 +161,7 @@ void test_k_heap_alloc_fail(void)
  *
  * @see k_heap_alloc, k_heap_free()
  */
-void test_k_heap_free(void)
+ZTEST(k_heap_api, test_k_heap_free)
 {
 	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
 	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, timeout);
@@ -160,7 +184,7 @@ void test_k_heap_free(void)
  *
  * @ingroup kernel_heap_tests
  */
-void test_kheap_alloc_in_isr_nowait(void)
+ZTEST(k_heap_api, test_kheap_alloc_in_isr_nowait)
 {
 	irq_offload((irq_offload_routine_t)tIsr_kheap_alloc_nowait, NULL);
 }
@@ -174,19 +198,70 @@ void test_kheap_alloc_in_isr_nowait(void)
  *
  * @ingroup kernel_heap_tests
  */
-void test_k_heap_alloc_pending(void)
+ZTEST(k_heap_api, test_k_heap_alloc_pending)
 {
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-					thread_alloc_heap, NULL, NULL, NULL,
-					K_PRIO_PREEMPT(5), 0, K_NO_WAIT);
-
+	/*
+	 * Allocate first to make sure subsequent allocations
+	 * either fail (K_NO_WAIT) or pend.
+	 */
 	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, K_NO_WAIT);
 
 	zassert_not_null(p, "k_heap_alloc operation failed");
 
-	/* make the child thread run */
-	k_msleep(1);
+	/* Create a thread which will pend on allocation */
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_alloc_heap, NULL, NULL, NULL,
+				      K_PRIO_PREEMPT(5), 0, K_NO_WAIT);
+
+	/* Sleep long enough for child thread to go into pending */
+	k_msleep(5);
+
+	/*
+	 * Free memory so the child thread can finish memory allocation
+	 * without failing.
+	 */
 	k_heap_free(&k_heap_test, p);
 
 	k_thread_join(tid, K_FOREVER);
+}
+
+/**
+ * @brief Validate the k_heap alloc_pending_null support.
+ *
+ * @details In main thread alloc two buffer from the heap, then run the
+ * child thread which alloc a buffer larger than remaining space. The child thread
+ * will wait timeout long until main thread free one of the buffer to heap, space in
+ * the heap is still not enough and then return null after timeout.
+ *
+ * @ingroup kernel_heap_tests
+ */
+ZTEST(k_heap_api, test_k_heap_alloc_pending_null)
+{
+	/*
+	 * Allocate first to make sure subsequent allocations
+	 * either fail (K_NO_WAIT) or pend.
+	 */
+	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, K_NO_WAIT);
+	char *q = (char *)k_heap_alloc(&k_heap_test, 512, K_NO_WAIT);
+
+	zassert_not_null(p, "k_heap_alloc operation failed");
+	zassert_not_null(q, "k_heap_alloc operation failed");
+
+	/* Create a thread which will pend on allocation */
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_alloc_heap_null, NULL, NULL, NULL,
+				      K_PRIO_PREEMPT(5), 0, K_NO_WAIT);
+
+	/* Sleep long enough for child thread to go into pending */
+	k_msleep(5);
+
+	/*
+	 * Free some memory but new thread will still not be able
+	 * to finish memory allocation without error.
+	 */
+	k_heap_free(&k_heap_test, q);
+
+	k_thread_join(tid, K_FOREVER);
+
+	k_heap_free(&k_heap_test, p);
 }

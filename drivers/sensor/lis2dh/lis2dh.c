@@ -7,10 +7,11 @@
 #define DT_DRV_COMPAT st_lis2dh
 
 
-#include <init.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
@@ -45,6 +46,49 @@ static void lis2dh_convert(int16_t raw_val, uint32_t scale,
 	val->val2 = converted_val % 1000000;
 }
 
+static int lis2dh_sample_fetch_temp(const struct device *dev)
+{
+	int ret = -ENOTSUP;
+
+#ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
+	struct lis2dh_data *lis2dh = dev->data;
+	const struct lis2dh_config *cfg = dev->config;
+	uint8_t raw[sizeof(uint16_t)];
+
+	ret = lis2dh->hw_tf->read_data(dev, cfg->temperature.dout_addr, raw,
+				       sizeof(raw));
+
+	if (ret < 0) {
+		LOG_WRN("Failed to fetch raw temperature sample");
+		ret = -EIO;
+	} else {
+		/*
+		 * The result contains a delta value for the
+		 * temperature that must be added to the reference temperature set
+		 * for your board to return an absolute temperature in Celsius.
+		 *
+		 * The data is left aligned.  Fixed point after first 8 bits.
+		 */
+		lis2dh->temperature.val1 = (int32_t)((int8_t)raw[1]);
+		if (cfg->temperature.fractional_bits == 0) {
+			lis2dh->temperature.val2 = 0;
+		} else {
+			lis2dh->temperature.val2 =
+				(raw[0] >> (8 - cfg->temperature.fractional_bits));
+			lis2dh->temperature.val2 = (lis2dh->temperature.val2 * 1000000);
+			lis2dh->temperature.val2 >>= cfg->temperature.fractional_bits;
+			if (lis2dh->temperature.val1 < 0) {
+				lis2dh->temperature.val2 *= -1;
+			}
+		}
+	}
+#else
+	LOG_WRN("Temperature measurement disabled");
+#endif
+
+	return ret;
+}
+
 static int lis2dh_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
@@ -68,9 +112,15 @@ static int lis2dh_channel_get(const struct device *dev,
 		ofs_start = 0;
 		ofs_end = 2;
 		break;
+#ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
+	case SENSOR_CHAN_DIE_TEMP:
+		memcpy(val, &lis2dh->temperature, sizeof(*val));
+		return 0;
+#endif
 	default:
 		return -ENOTSUP;
 	}
+
 	for (i = ofs_start; i <= ofs_end; i++, val++) {
 		lis2dh_convert(lis2dh->sample.xyz[i], lis2dh->scale, val);
 	}
@@ -78,16 +128,12 @@ static int lis2dh_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int lis2dh_sample_fetch(const struct device *dev,
+static int lis2dh_fetch_xyz(const struct device *dev,
 			       enum sensor_channel chan)
 {
 	struct lis2dh_data *lis2dh = dev->data;
+	int status = -ENODATA;
 	size_t i;
-	int status;
-
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
-			chan == SENSOR_CHAN_ACCEL_XYZ);
-
 	/*
 	 * since status and all accel data register addresses are consecutive,
 	 * a burst read can be used to read all the samples
@@ -108,10 +154,33 @@ static int lis2dh_sample_fetch(const struct device *dev,
 	}
 
 	if (lis2dh->sample.status & LIS2DH_STATUS_DRDY_MASK) {
-		return 0;
+		status = 0;
 	}
 
-	return -ENODATA;
+	return status;
+}
+
+static int lis2dh_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
+{
+	int status = -ENODATA;
+
+	if (chan == SENSOR_CHAN_ALL) {
+		status = lis2dh_fetch_xyz(dev, chan);
+#ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
+		if (status == 0) {
+			status = lis2dh_sample_fetch_temp(dev);
+		}
+#endif
+	} else if (chan == SENSOR_CHAN_ACCEL_XYZ) {
+		status = lis2dh_fetch_xyz(dev, chan);
+	} else if (chan == SENSOR_CHAN_DIE_TEMP) {
+		status = lis2dh_sample_fetch_temp(dev);
+	} else {
+		__ASSERT(false, "Invalid sensor channel in fetch");
+	}
+
+	return status;
 }
 
 #ifdef CONFIG_LIS2DH_ODR_RUNTIME
@@ -122,11 +191,6 @@ static const uint16_t lis2dh_odr_map[] = {0, 1, 10, 25, 50, 100, 200, 400, 1620,
 static int lis2dh_freq_to_odr_val(uint16_t freq)
 {
 	size_t i;
-
-	/* An ODR of 0 Hz is not allowed */
-	if (freq == 0U) {
-		return -EINVAL;
-	}
 
 	for (i = 0; i < ARRAY_SIZE(lis2dh_odr_map); i++) {
 		if (freq == lis2dh_odr_map[i]) {
@@ -269,13 +333,10 @@ int lis2dh_init(const struct device *dev)
 	uint8_t id;
 	uint8_t raw[6];
 
-	lis2dh->bus = device_get_binding(cfg->bus_name);
-	if (!lis2dh->bus) {
-		LOG_ERR("master not found: %s", cfg->bus_name);
-		return -EINVAL;
+	status = cfg->bus_init(dev);
+	if (status < 0) {
+		return status;
 	}
-
-	cfg->bus_init(dev);
 
 	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_WAI, &id);
 	if (status < 0) {
@@ -289,14 +350,14 @@ int lis2dh_init(const struct device *dev)
 	}
 
 	/* Fix LSM303AGR_ACCEL device scale values */
-	if (cfg->is_lsm303agr_dev) {
+	if (cfg->hw.is_lsm303agr_dev) {
 		lis2dh_reg_val_to_scale[0] = ACCEL_SCALE(1563);
 		lis2dh_reg_val_to_scale[1] = ACCEL_SCALE(3126);
 		lis2dh_reg_val_to_scale[2] = ACCEL_SCALE(6252);
 		lis2dh_reg_val_to_scale[3] = ACCEL_SCALE(18758);
 	}
 
-	if (cfg->disc_pull_up) {
+	if (cfg->hw.disc_pull_up) {
 		status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL0,
 						   LIS2DH_SDO_PU_DISC_MASK,
 						   LIS2DH_SDO_PU_DISC_MASK);
@@ -324,12 +385,28 @@ int lis2dh_init(const struct device *dev)
 
 	/* set full scale range and store it for later conversion */
 	lis2dh->scale = lis2dh_reg_val_to_scale[LIS2DH_FS_IDX];
+#ifdef CONFIG_LIS2DH_BLOCK_DATA_UPDATE
 	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4,
-					  LIS2DH_FS_BITS | LIS2DH_HR_BIT);
+					  LIS2DH_FS_BITS | LIS2DH_HR_BIT | LIS2DH_CTRL4_BDU_BIT);
+#else
+	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, LIS2DH_FS_BITS | LIS2DH_HR_BIT);
+#endif
+
 	if (status < 0) {
 		LOG_ERR("Failed to set full scale ctrl register.");
 		return status;
 	}
+
+#ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
+	status = lis2dh->hw_tf->update_reg(dev, cfg->temperature.cfg_addr,
+					   cfg->temperature.enable_mask,
+					   cfg->temperature.enable_mask);
+
+	if (status < 0) {
+		LOG_ERR("Failed to enable temperature measurement");
+		return status;
+	}
+#endif
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 	if (cfg->gpio_drdy.port != NULL || cfg->gpio_int.port != NULL) {
@@ -341,15 +418,54 @@ int lis2dh_init(const struct device *dev)
 	}
 #endif
 
-	LOG_INF("bus=%s fs=%d, odr=0x%x lp_en=0x%x scale=%d",
-		    cfg->bus_name, 1 << (LIS2DH_FS_IDX + 1),
-		    LIS2DH_ODR_IDX, (uint8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
+	LOG_INF("fs=%d, odr=0x%x lp_en=0x%x scale=%d", 1 << (LIS2DH_FS_IDX + 1), LIS2DH_ODR_IDX,
+		(uint8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
 
 	/* enable accel measurements and set power mode and data rate */
 	return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
 					LIS2DH_ACCEL_EN_BITS | LIS2DH_LP_EN_BIT |
 					LIS2DH_ODR_BITS);
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int lis2dh_pm_action(const struct device *dev,
+			    enum pm_device_action action)
+{
+	int status;
+	struct lis2dh_data *lis2dh = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Resume previous mode. */
+		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
+						  lis2dh->reg_ctrl1_active_val);
+		if (status < 0) {
+			LOG_ERR("failed to write reg_crtl1");
+			return status;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Store current mode, suspend. */
+		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1,
+						 &lis2dh->reg_ctrl1_active_val);
+		if (status < 0) {
+			LOG_ERR("failed to read reg_crtl1");
+			return status;
+		}
+		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
+						  LIS2DH_SUSPEND);
+		if (status < 0) {
+			LOG_ERR("failed to write reg_crtl1");
+			return status;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #warning "LIS2DH driver enabled without any devices"
@@ -361,9 +477,10 @@ int lis2dh_init(const struct device *dev)
  */
 
 #define LIS2DH_DEVICE_INIT(inst)					\
+	PM_DEVICE_DT_INST_DEFINE(inst, lis2dh_pm_action);		\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    lis2dh_init,				\
-			    NULL,					\
+			    PM_DEVICE_DT_INST_GET(inst),		\
 			    &lis2dh_data_##inst,			\
 			    &lis2dh_config_##inst,			\
 			    POST_KERNEL,				\
@@ -376,47 +493,8 @@ int lis2dh_init(const struct device *dev)
 #define DISC_PULL_UP(inst) \
 	DT_INST_PROP(inst, disconnect_sdo_sa0_pull_up)
 
-/*
- * Instantiation macros used when a device is on a SPI bus.
- */
-
-#define LIS2DH_HAS_CS(inst) DT_INST_SPI_DEV_HAS_CS_GPIOS(inst)
-
-#define LIS2DH_DATA_SPI_CS(inst)					\
-	{ .cs_ctrl = {							\
-		.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),		\
-		.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst),	\
-		},							\
-	}
-
-#define LIS2DH_DATA_SPI(inst)						\
-	COND_CODE_1(LIS2DH_HAS_CS(inst),				\
-		    (LIS2DH_DATA_SPI_CS(inst)),				\
-		    ({}))
-
-#define LIS2DH_SPI_CS_PTR(inst)						\
-	COND_CODE_1(LIS2DH_HAS_CS(inst),				\
-		    (&(lis2dh_data_##inst.cs_ctrl)),			\
-		    (NULL))
-
-#define LIS2DH_SPI_CS_LABEL(inst)					\
-	COND_CODE_1(LIS2DH_HAS_CS(inst),				\
-		    (DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)), (NULL))
-
-#define LIS2DH_SPI_CFG(inst)						\
-	(&(struct lis2dh_spi_cfg) {					\
-		.spi_conf = {						\
-			.frequency =					\
-				DT_INST_PROP(inst, spi_max_frequency),	\
-			.operation = (SPI_WORD_SET(8) |			\
-				      SPI_OP_MODE_MASTER |		\
-				      SPI_MODE_CPOL |			\
-				      SPI_MODE_CPHA),			\
-			.slave = DT_INST_REG_ADDR(inst),		\
-			.cs = LIS2DH_SPI_CS_PTR(inst),			\
-		},							\
-		.cs_gpios_label = LIS2DH_SPI_CS_LABEL(inst),		\
-	})
+#define ANYM_ON_INT1(inst) \
+	DT_INST_PROP(inst, anym_on_int1)
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 #define GPIO_DT_SPEC_INST_GET_BY_IDX_COND(id, prop, idx)		\
@@ -424,28 +502,61 @@ int lis2dh_init(const struct device *dev)
 		    (GPIO_DT_SPEC_INST_GET_BY_IDX(id, prop, idx)),	\
 		    ({.port = NULL, .pin = 0, .dt_flags = 0}))
 
-#define LIS2DH_CFG_INT(inst) \
+#define LIS2DH_CFG_INT(inst)				\
 	.gpio_drdy =							\
-	    GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 0),	\
-	.gpio_int =							\
-	    GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 1),
+	    COND_CODE_1(ANYM_ON_INT1(inst),		\
+		({.port = NULL, .pin = 0, .dt_flags = 0}),                  \
+		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 0))),	\
+	.gpio_int =								\
+	    COND_CODE_1(ANYM_ON_INT1(inst),		\
+		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 0)),	\
+		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 1))),
 #else
 #define LIS2DH_CFG_INT(inst)
 #endif /* CONFIG_LIS2DH_TRIGGER */
 
+#ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
+/* The first 8 bits are the integer portion of the temperature.
+ * The result is left justified.  The remainder of the bits are
+ * the fractional part.
+ *
+ * LIS2DH has 8 total bits.
+ * LIS2DH12/LIS3DH have 10 bits unless they are in lower power mode.
+ * compat(lis2dh) cannot be used here because it is the base part.
+ */
+#define FRACTIONAL_BITS(inst)	\
+	(DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), st_lis2dh12) ||				\
+	 DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), st_lis3dh)) ?				\
+		      (IS_ENABLED(CONFIG_LIS2DH_OPER_MODE_LOW_POWER) ? 0 : 2) : \
+		      0
+
+#define LIS2DH_CFG_TEMPERATURE(inst)	\
+	.temperature = { .cfg_addr = 0x1F,	\
+			 .enable_mask = 0xC0,		\
+			 .dout_addr = 0x0C,			\
+			 .fractional_bits = FRACTIONAL_BITS(inst) },
+#else
+#define LIS2DH_CFG_TEMPERATURE(inst)
+#endif /* CONFIG_LIS2DH_MEASURE_TEMPERATURE */
+
 #define LIS2DH_CONFIG_SPI(inst)						\
 	{								\
-		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = lis2dh_spi_init,				\
-		.bus_cfg = { .spi_cfg = LIS2DH_SPI_CFG(inst)	},	\
-		.is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
-		.disc_pull_up = DISC_PULL_UP(inst),			\
+		.bus_cfg = { .spi = SPI_DT_SPEC_INST_GET(inst,		\
+					SPI_WORD_SET(8) |		\
+					SPI_OP_MODE_MASTER |		\
+					SPI_MODE_CPOL |			\
+					SPI_MODE_CPHA,			\
+					0) },				\
+		.hw = { .is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
+				.disc_pull_up = DISC_PULL_UP(inst),				\
+				.anym_on_int1 = ANYM_ON_INT1(inst), },			\
+		LIS2DH_CFG_TEMPERATURE(inst)				\
 		LIS2DH_CFG_INT(inst)					\
 	}
 
 #define LIS2DH_DEFINE_SPI(inst)						\
-	static struct lis2dh_data lis2dh_data_##inst =			\
-		LIS2DH_DATA_SPI(inst);					\
+	static struct lis2dh_data lis2dh_data_##inst;			\
 	static const struct lis2dh_config lis2dh_config_##inst =	\
 		LIS2DH_CONFIG_SPI(inst);				\
 	LIS2DH_DEVICE_INIT(inst)
@@ -456,11 +567,12 @@ int lis2dh_init(const struct device *dev)
 
 #define LIS2DH_CONFIG_I2C(inst)						\
 	{								\
-		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = lis2dh_i2c_init,				\
-		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
-		.is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
-		.disc_pull_up = DISC_PULL_UP(inst),			\
+		.bus_cfg = { .i2c = I2C_DT_SPEC_INST_GET(inst), },	\
+		.hw = { .is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
+				.disc_pull_up = DISC_PULL_UP(inst),			\
+				.anym_on_int1 = ANYM_ON_INT1(inst), },		\
+		LIS2DH_CFG_TEMPERATURE(inst)				\
 		LIS2DH_CFG_INT(inst)					\
 	}
 

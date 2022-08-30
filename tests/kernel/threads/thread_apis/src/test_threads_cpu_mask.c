@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <ztest.h>
-#include <kernel.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 
 #include "tests_thread_apis.h"
 
@@ -22,7 +22,7 @@ void child_fn(void *a, void *b, void *c)
 	child_has_run = true;
 }
 
-void test_threads_cpu_mask(void)
+ZTEST(threads_lifecycle_1cpu, test_threads_cpu_mask)
 {
 #ifdef CONFIG_SCHED_CPU_MASK
 	k_tid_t thread;
@@ -41,7 +41,17 @@ void test_threads_cpu_mask(void)
 	ret = k_thread_cpu_mask_disable(k_current_get(), 0);
 	zassert_true(ret == -EINVAL, "");
 
+	ret = k_thread_cpu_pin(k_current_get(), 0);
+	zassert_true(ret == -EINVAL, "");
+
 	for (pass = 0; pass < 4; pass++) {
+		if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY) && pass == 1) {
+			/* Pass 1 enables more than one CPU in the
+			 * mask, which is illegal when PIN_ONLY
+			 */
+			continue;
+		}
+
 		child_has_run = false;
 
 		/* Create a thread at a higher priority, don't start
@@ -67,6 +77,9 @@ void test_threads_cpu_mask(void)
 			zassert_true(ret == 0, "");
 		} else {
 			ret = k_thread_cpu_mask_enable(thread, 0);
+			zassert_true(ret == 0, "");
+
+			ret = k_thread_cpu_pin(thread, 0);
 			zassert_true(ret == 0, "");
 		}
 

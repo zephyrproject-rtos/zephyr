@@ -18,6 +18,9 @@ supported:
   - arduino_gpio
   - arduino_serial
   - counter
+  - dma
   - gpio
   - i2c
   - usb_device
+  - spi
+  - adc

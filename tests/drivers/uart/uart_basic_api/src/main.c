@@ -11,6 +11,7 @@
  * @}
  */
 
+#include <zephyr/usb/usb_device.h>
 #include "test_uart.h"
 
 #ifdef CONFIG_SHELL
@@ -57,6 +58,20 @@ void test_uart_pending(void)
 
 void test_main(void)
 {
+#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart)
+	const struct device *dev;
+	uint32_t dtr = 0;
+
+	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	if (!device_is_ready(dev) || usb_enable(NULL)) {
+		return;
+	}
+
+	while (!dtr) {
+		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
+		k_sleep(K_MSEC(100));
+	}
+#endif
 #ifndef CONFIG_SHELL
 	ztest_test_suite(uart_basic_test,
 			 ztest_unit_test(test_uart_configure),

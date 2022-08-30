@@ -270,7 +270,7 @@ where data or assets are communicated between entities of the system.
           being reused if they are intercepted. The token shall not be
           sent until the device has verified the identity of the server.
 
-   d. **Random/Entropy source**. Cryptograph communication requires the
+   d. **Random/Entropy source**. Cryptographic communication requires the
       generation of secure pseudorandom numbers. The device shall use a
       modern, accepted cryptographic random-bit generator to generate
       these random numbers. It shall use either a Non-Deterministic

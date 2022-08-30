@@ -9,19 +9,19 @@
 #include <errno.h>
 #include <stddef.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <init.h>
-#include <drivers/uart.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
-#include <debug/stack.h>
-#include <sys/printk.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/sys/printk.h>
 #include <string.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_driver
@@ -127,7 +127,7 @@ static const uint8_t conf_rsp[] = { 0x04, 0x7b };
 #define SIG_BUF_SIZE (BT_BUF_RESERVE + MAX_SIG_LEN)
 NET_BUF_POOL_DEFINE(h5_pool, SIGNAL_COUNT, SIG_BUF_SIZE, 0, NULL);
 
-static const struct device *h5_dev;
+static const struct device *const h5_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_uart));
 
 static void h5_reset_rx(void)
 {
@@ -335,7 +335,7 @@ static void retx_timeout(struct k_work *work)
 
 		k_fifo_init(&tmp_queue);
 
-		/* Queue to temperary queue */
+		/* Queue to temporary queue */
 		while ((buf = net_buf_get(&h5.tx_queue, K_NO_WAIT))) {
 			net_buf_put(&tmp_queue, buf);
 		}
@@ -415,6 +415,7 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 	uint8_t byte;
 	int ret;
 	static uint8_t hdr[4];
+	size_t buf_tailroom;
 
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
@@ -445,7 +446,7 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 			}
 			break;
 		case HEADER:
-			/* In a case we confuse ending slip delimeter
+			/* In a case we confuse ending slip delimiter
 			 * with starting one.
 			 */
 			if (byte == SLIP_DELIMITER) {
@@ -533,6 +534,14 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 					h5_reset_rx();
 					continue;
 				}
+			}
+
+			buf_tailroom = net_buf_tailroom(h5.rx_buf);
+			if (buf_tailroom < sizeof(byte)) {
+				BT_ERR("Not enough space in buffer %zu/%zu",
+				       sizeof(byte), buf_tailroom);
+				h5_reset_rx();
+				break;
 			}
 
 			net_buf_add_mem(h5.rx_buf, &byte, sizeof(byte));
@@ -769,10 +778,8 @@ static int bt_uart_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	h5_dev = device_get_binding(CONFIG_BT_UART_ON_DEV_NAME);
-
-	if (h5_dev == NULL) {
-		return -EINVAL;
+	if (!device_is_ready(h5_dev)) {
+		return -ENODEV;
 	}
 
 	bt_hci_driver_register(&drv);

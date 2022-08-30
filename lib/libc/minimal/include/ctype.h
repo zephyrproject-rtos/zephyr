@@ -69,6 +69,11 @@ static inline int isalnum(int chr)
 	return (int)(isalpha(chr) || isdigit(chr));
 }
 
+static inline int iscntrl(int c)
+{
+	return (int)((((unsigned int)c) <= 31U) || (((unsigned int)c) == 127U));
+}
+
 #ifdef __cplusplus
 }
 #endif

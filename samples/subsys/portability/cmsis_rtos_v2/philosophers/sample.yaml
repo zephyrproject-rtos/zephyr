@@ -21,6 +21,6 @@ tests:
   sample.portability.cmsis_rtos_v2.philosopher:
     tags: cmsis_rtos
   sample.portability.cmsis_rtos_v2.philosopher.same_prio:
-    extra_args: "-DSAME_PRIO=1"
+    extra_args: SAME_PRIO=1
   sample.portability.cmsis_rtos_v2.philosopher.semaphores:
-    extra_args: "-DFORKS=SEMAPHORES"
+    extra_args: FORKS=SEMAPHORES

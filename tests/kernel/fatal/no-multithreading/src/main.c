@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <ztest.h>
-#include <tc_util.h>
-#include <kernel_structs.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <assert.h>
 
@@ -124,7 +124,7 @@ static const exc_trigger_func_t exc_trigger_func[] = {
  *
  * @ingroup kernel_common_tests
  */
-void test_fatal(void)
+ZTEST(fatal_no_mt, test_fatal)
 {
 #ifdef VIA_TWISTER
 #define EXC_TRIGGER_FUNC_IDX VIA_TWISTER
@@ -137,10 +137,4 @@ void test_fatal(void)
 	TC_END_REPORT(TC_FAIL);
 }
 
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(fatal_no_mt,
-			ztest_unit_test(test_fatal));
-	ztest_run_test_suite(fatal_no_mt);
-}
+ZTEST_SUITE(fatal_no_mt, NULL, NULL, NULL, NULL, NULL);

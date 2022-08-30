@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
-#include <sys/printk.h>
-#include <drivers/sensor/ccs811.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/sensor/ccs811.h>
 #include <stdio.h>
 
 static bool app_fw_2;
@@ -79,7 +79,7 @@ static int do_fetch(const struct device *dev)
 #ifndef CONFIG_CCS811_TRIGGER_NONE
 
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *trig)
+			    const struct sensor_trigger *trig)
 {
 	int rc = do_fetch(dev);
 
@@ -113,12 +113,12 @@ static void do_main(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, ams_ccs811)));
+	const struct device *const dev = DEVICE_DT_GET_ONE(ams_ccs811);
 	struct ccs811_configver_type cfgver;
 	int rc;
 
-	if (!dev) {
-		printk("Failed to get device binding");
+	if (!device_is_ready(dev)) {
+		printk("Device %s is not ready\n", dev->name);
 		return;
 	}
 

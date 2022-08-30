@@ -1,0 +1,38 @@
+# MIMXRT595-EVK board
+
+# Copyright (c) 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT595_EVK
+
+config BOARD
+	default "mimxrt595_evk_cm33"
+
+config FLASH_MCUX_FLEXSPI_MX25UM51345G
+	default y if FLASH
+config FLASH_SIZE
+	default $(dt_node_int_prop_int,/soc/spi@134000/mx25um51345g@0,size,K)
+
+config FLASH_MCUX_FLEXSPI_XIP
+	default y if FLASH
+	depends on MEMC_MCUX_FLEXSPI
+
+choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
+	default FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM
+endchoice
+
+config FXOS8700_DRDY_INT1
+	default y
+	depends on FXOS8700_TRIGGER
+
+if DMA_MCUX_LPC
+
+# Memory from the heap pool is used to allocate DMA descriptors for
+# channels that use multiple blocks for a DMA transfer.
+# Adjust HEAP_MEM_POOL_SIZE in case you need more memory.
+config HEAP_MEM_POOL_SIZE
+	default 4096
+
+endif # DMA_MCUX_LPC
+
+endif # BOARD_MIMXRT595_EVK

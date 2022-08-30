@@ -9,12 +9,12 @@
  * x86-specific tests for MMU features and page tables
  */
 
-#include <zephyr.h>
-#include <ztest.h>
-#include <tc_util.h>
-#include <arch/x86/mmustructs.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/arch/x86/mmustructs.h>
 #include <x86_mmu.h>
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 #include <mmu.h>
 #include "main.h"
 
@@ -74,13 +74,19 @@ static pentry_t get_entry(pentry_t *flags, void *addr)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_ram_perms(void)
+ZTEST(x86_pagetables, test_ram_perms)
 {
 	uint8_t *pos;
 
 	pentry_t entry, flags, expected;
 
-	for (pos = Z_KERNEL_VIRT_START; pos < Z_KERNEL_VIRT_END;
+#ifdef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
+	const uint8_t *mem_range_end = Z_KERNEL_VIRT_END;
+#else
+	const uint8_t *mem_range_end = (uint8_t *)lnkr_pinned_end;
+#endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
+
+	for (pos = Z_KERNEL_VIRT_START; pos < mem_range_end;
 	     pos += CONFIG_MMU_PAGE_SIZE) {
 		if (pos == NULL) {
 			/* We have another test specifically for NULL page */
@@ -91,9 +97,9 @@ void test_ram_perms(void)
 
 		if (!IS_ENABLED(CONFIG_SRAM_REGION_PERMISSIONS)) {
 			expected = MMU_P | MMU_RW;
-		} else if (IN_REGION(_image_text, pos)) {
+		} else if (IN_REGION(__text_region, pos)) {
 			expected = MMU_P | MMU_US;
-		} else if (IN_REGION(_image_rodata, pos)) {
+		} else if (IN_REGION(__rodata_region, pos)) {
 			expected = MMU_P | MMU_US | MMU_XD;
 #ifdef CONFIG_COVERAGE_GCOV
 		} else if (IN_REGION(__gcov_bss, pos)) {
@@ -194,7 +200,7 @@ void test_ram_perms(void)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_null_map(void)
+ZTEST(x86_pagetables, test_null_map)
 {
 	int level;
 	pentry_t entry;
@@ -220,14 +226,7 @@ void z_vrfy_dump_my_ptables(void)
 #include <syscalls/dump_my_ptables_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-/**
- * Dump kernel's page tables to console
- *
- * We don't verify any specific output, but this shouldn't crash
- *
- * @ingroup kernel_memprotect_tests
- */
-void test_dump_ptables(void)
+void dump_pagetables(void)
 {
 #if CONFIG_SRAM_SIZE > (32 << 10)
 	/*
@@ -240,13 +239,21 @@ void test_dump_ptables(void)
 #endif
 }
 
-void test_main(void)
+/**
+ * Dump kernel's page tables to console
+ *
+ * We don't verify any specific output, but this shouldn't crash
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+ZTEST_USER(x86_pagetables, test_dump_ptables_user)
 {
-	ztest_test_suite(x86_pagetables,
-			 ztest_unit_test(test_ram_perms),
-			 ztest_unit_test(test_null_map),
-			 ztest_unit_test(test_dump_ptables),
-			 ztest_user_unit_test(test_dump_ptables)
-			 );
-	ztest_run_test_suite(x86_pagetables);
+	dump_pagetables();
 }
+
+ZTEST(x86_pagetables, test_dump_ptables)
+{
+	dump_pagetables();
+}
+
+ZTEST_SUITE(x86_pagetables, NULL, NULL, NULL, NULL, NULL);

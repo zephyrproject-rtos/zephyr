@@ -7,80 +7,51 @@
 #define DT_DRV_COMPAT espressif_esp32_uart
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
+/* TODO: include w/o prefix */
+#ifdef CONFIG_SOC_ESP32
 #include <esp32/rom/ets_sys.h>
-#include <soc/dport_reg.h>
-
 #include <esp32/rom/gpio.h>
+#include <soc/dport_reg.h>
+#elif defined(CONFIG_SOC_ESP32S2)
+#include <esp32s2/rom/ets_sys.h>
+#include <esp32s2/rom/gpio.h>
+#include <soc/dport_reg.h>
+#elif defined(CONFIG_SOC_ESP32C3)
+#include <esp32c3/rom/ets_sys.h>
+#include <esp32c3/rom/gpio.h>
+#endif
+#include <soc/uart_struct.h>
+#include <hal/uart_ll.h>
+#include <hal/uart_hal.h>
+#include <hal/uart_types.h>
 
-#include <soc/gpio_sig_map.h>
+#include <zephyr/drivers/pinctrl.h>
+
 #include <soc/uart_reg.h>
-
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/uart.h>
-#include <drivers/interrupt_controller/intc_esp32.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/uart.h>
+
+#ifndef CONFIG_SOC_ESP32C3
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#else
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#endif
+#include <zephyr/drivers/clock_control.h>
 #include <errno.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <esp_attr.h>
 
-
-/*
- * ESP32 UARTx register map structure
- */
-struct uart_esp32_regs_t {
-	uint32_t fifo;
-	uint32_t int_raw;
-	uint32_t int_st;
-	uint32_t int_ena;
-	uint32_t int_clr;
-	uint32_t clk_div;
-	uint32_t auto_baud;
-	uint32_t status;
-	uint32_t conf0;
-	uint32_t conf1;
-	uint32_t lowpulse;
-	uint32_t highpulse;
-	uint32_t rxd_cnt;
-	uint32_t flow_conf;
-	uint32_t sleep_conf;
-	uint32_t swfc_conf;
-	uint32_t idle_conf;
-	uint32_t rs485_conf;
-	uint32_t at_cmd_precnt;
-	uint32_t at_cmd_postcnt;
-	uint32_t at_cmd_gaptout;
-	uint32_t at_cmd_char;
-	uint32_t mem_conf;
-	uint32_t mem_tx_status;
-	uint32_t mem_rx_status;
-	uint32_t mem_cnt_status;
-	uint32_t pospulse;
-	uint32_t negpulse;
-	uint32_t reserved_0;
-	uint32_t reserved_1;
-	uint32_t date;
-	uint32_t id;
-};
+#ifdef CONFIG_SOC_ESP32C3
+#define ISR_HANDLER isr_handler_t
+#else
+#define ISR_HANDLER intr_handler_t
+#endif
 
 struct uart_esp32_config {
-
-	struct uart_device_config dev_conf;
 	const struct device *clock_dev;
 
-	const struct {
-		int tx_out;
-		int rx_in;
-		int rts_out;
-		int cts_in;
-	} signals;
-
-	const struct {
-		int tx;
-		int rx;
-		int rts;
-		int cts;
-	} pins;
+	const struct pinctrl_dev_config *pcfg;
 
 	const clock_control_subsys_t clock_subsys;
 
@@ -90,6 +61,7 @@ struct uart_esp32_config {
 /* driver data */
 struct uart_esp32_data {
 	struct uart_config uart_config;
+	uart_hal_context_t hal;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
@@ -97,70 +69,48 @@ struct uart_esp32_data {
 	int irq_line;
 };
 
-#define DEV_CFG(dev) \
-	((const struct uart_esp32_config *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct uart_esp32_data *)(dev)->data)
-#define DEV_BASE(dev) \
-	((volatile struct uart_esp32_regs_t  *)(DEV_CFG(dev))->dev_conf.base)
-
-#define UART_TXFIFO_COUNT(status_reg)  ((status_reg >> 16) & 0xFF)
-#define UART_RXFIFO_COUNT(status_reg)  ((status_reg >> 0) & 0xFF)
-
-#define UART_FIFO_LIMIT                 127U
+#define UART_FIFO_LIMIT                 (UART_LL_FIFO_DEF_LEN)
 #define UART_TX_FIFO_THRESH             0x1
-#define UART_RX_FIFO_THRESH             0x1
+#define UART_RX_FIFO_THRESH             0x16
 
-#define UART_GET_PARITY_ERR(reg)        ((reg >> 2) & 0x1)
-#define UART_GET_FRAME_ERR(reg)         ((reg >> 3) & 0x1)
-
-#define UART_GET_PARITY(conf0_reg)      ((conf0_reg >> 0) & 0x1)
-#define UART_GET_PARITY_EN(conf0_reg)   ((conf0_reg >> 1) & 0x1)
-#define UART_GET_DATA_BITS(conf0_reg)   ((conf0_reg >> 2) & 0x3)
-#define UART_GET_STOP_BITS(conf0_reg)   ((conf0_reg >> 4) & 0x3)
-#define UART_GET_TX_FLOW(conf0_reg)     ((conf0_reg >> 15) & 0x1)
-#define UART_GET_RX_FLOW(conf1_reg)     ((conf1_reg >> 23) & 0x1)
-
-/* FIXME: This should be removed when interrupt support added to ESP32 dts */
-#define INST_0_ESPRESSIF_ESP32_UART_IRQ_0	12
-#define INST_1_ESPRESSIF_ESP32_UART_IRQ_0	17
-#define INST_2_ESPRESSIF_ESP32_UART_IRQ_0	18
-
-/* ESP-IDF Naming is not consistent for UART0 with UART1/2 */
-#define DPORT_UART0_CLK_EN DPORT_UART_CLK_EN
-#define DPORT_UART0_RST DPORT_UART_RST
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-void uart_esp32_isr(void *arg);
+static void uart_esp32_isr(void *arg);
 #endif
 
 static int uart_esp32_poll_in(const struct device *dev, unsigned char *p_char)
 {
+	struct uart_esp32_data *data = dev->data;
+	int inout_rd_len = 1;
 
-	if (UART_RXFIFO_COUNT(DEV_BASE(dev)->status) == 0) {
+	if (uart_hal_get_rxfifo_len(&data->hal) == 0) {
 		return -1;
 	}
 
-	*p_char = DEV_BASE(dev)->fifo;
+	uart_hal_read_rxfifo(&data->hal, p_char, &inout_rd_len);
+
 	return 0;
 }
 
-static IRAM_ATTR void uart_esp32_poll_out(const struct device *dev,
-				unsigned char c)
+static void uart_esp32_poll_out(const struct device *dev, unsigned char c)
 {
+	struct uart_esp32_data *data = dev->data;
+	uint32_t written;
+
 	/* Wait for space in FIFO */
-	while (UART_TXFIFO_COUNT(DEV_BASE(dev)->status) >= UART_FIFO_LIMIT) {
+	while (uart_hal_get_txfifo_len(&data->hal) == 0) {
 		; /* Wait */
 	}
 
 	/* Send a character */
-	DEV_BASE(dev)->fifo = (uint32_t)c;
+	uart_hal_write_txfifo(&data->hal, &c, 1, &written);
 }
 
 static int uart_esp32_err_check(const struct device *dev)
 {
-	uint32_t err = UART_GET_PARITY_ERR(DEV_BASE(dev)->int_st)
-		    | UART_GET_FRAME_ERR(DEV_BASE(dev)->int_st);
+	struct uart_esp32_data *data = dev->data;
+	uint32_t mask = uart_hal_get_intsts_mask(&data->hal);
+	uint32_t err = mask & (UART_INTR_PARITY_ERR | UART_INTR_FRAM_ERR);
 
 	return err;
 }
@@ -169,111 +119,108 @@ static int uart_esp32_err_check(const struct device *dev)
 static int uart_esp32_config_get(const struct device *dev,
 				 struct uart_config *cfg)
 {
-	struct uart_esp32_data *data = DEV_DATA(dev);
+	struct uart_esp32_data *data = dev->data;
+	uart_parity_t parity;
+	uart_stop_bits_t stop_bit;
+	uart_word_length_t data_bit;
+	uart_hw_flowcontrol_t hw_flow;
 
 	cfg->baudrate = data->uart_config.baudrate;
 
-	if (UART_GET_PARITY_EN(DEV_BASE(dev)->conf0)) {
-		cfg->parity = UART_GET_PARITY(DEV_BASE(dev)->conf0);
-	} else {
+	uart_hal_get_parity(&data->hal, &parity);
+	switch (parity) {
+	case UART_PARITY_DISABLE:
 		cfg->parity = UART_CFG_PARITY_NONE;
+		break;
+	case UART_PARITY_EVEN:
+		cfg->parity = UART_CFG_PARITY_EVEN;
+		break;
+	case UART_PARITY_ODD:
+		cfg->parity = UART_CFG_PARITY_ODD;
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
-	cfg->stop_bits = UART_GET_STOP_BITS(DEV_BASE(dev)->conf0);
-	cfg->data_bits = UART_GET_DATA_BITS(DEV_BASE(dev)->conf0);
+	uart_hal_get_stop_bits(&data->hal, &stop_bit);
+	switch (stop_bit) {
+	case UART_STOP_BITS_1:
+		cfg->stop_bits = UART_CFG_STOP_BITS_1;
+		break;
+	case UART_STOP_BITS_1_5:
+		cfg->stop_bits = UART_CFG_STOP_BITS_1_5;
+		break;
+	case UART_STOP_BITS_2:
+		cfg->stop_bits = UART_CFG_STOP_BITS_2;
+		break;
+	default:
+		return -ENOTSUP;
+	}
 
-	if (UART_GET_TX_FLOW(DEV_BASE(dev)->conf0)) {
+	uart_hal_get_data_bit_num(&data->hal, &data_bit);
+	switch (data_bit) {
+	case UART_DATA_5_BITS:
+		cfg->data_bits = UART_CFG_DATA_BITS_5;
+		break;
+	case UART_DATA_6_BITS:
+		cfg->data_bits = UART_CFG_DATA_BITS_6;
+		break;
+	case UART_DATA_7_BITS:
+		cfg->data_bits = UART_CFG_DATA_BITS_7;
+		break;
+	case UART_DATA_8_BITS:
+		cfg->data_bits = UART_CFG_DATA_BITS_8;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	uart_hal_get_hw_flow_ctrl(&data->hal, &hw_flow);
+	switch (hw_flow) {
+	case UART_HW_FLOWCTRL_DISABLE:
+		cfg->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+		break;
+	case UART_HW_FLOWCTRL_CTS_RTS:
 		cfg->flow_ctrl = UART_CFG_FLOW_CTRL_RTS_CTS;
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
-	if (UART_GET_RX_FLOW(DEV_BASE(dev)->conf1)) {
-		cfg->flow_ctrl = UART_CFG_FLOW_CTRL_DTR_DSR;
-	}
 	return 0;
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
-static int uart_esp32_set_baudrate(const struct device *dev, int baudrate)
+static int uart_esp32_configure(const struct device *dev, const struct uart_config *cfg)
 {
-	uint32_t sys_clk_freq = 0;
+	const struct uart_esp32_config *config = dev->config;
+	struct uart_esp32_data *data = dev->data;
+	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
-	if (clock_control_get_rate(DEV_CFG(dev)->clock_dev,
-				   DEV_CFG(dev)->clock_subsys,
-				   &sys_clk_freq)) {
-		return -EINVAL;
+	if (ret < 0) {
+		return ret;
 	}
 
-	uint32_t clk_div = (((sys_clk_freq) << 4) / baudrate);
-
-	while (UART_TXFIFO_COUNT(DEV_BASE(dev)->status)) {
-		; /* Wait */
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
 	}
 
-	if (clk_div < 16) {
-		return -EINVAL;
-	}
+	clock_control_on(config->clock_dev, config->clock_subsys);
 
-	DEV_BASE(dev)->clk_div = ((clk_div >> 4) | (clk_div & 0xf));
-	return 1;
-}
-
-static int uart_esp32_configure_pins(const struct device *dev)
-{
-	const struct uart_esp32_config *const cfg = DEV_CFG(dev);
-
-	esp32_rom_gpio_matrix_out(cfg->pins.tx,
-				  cfg->signals.tx_out,
-				  false,
-				  false);
-
-	esp32_rom_gpio_matrix_in(cfg->pins.rx,
-				 cfg->signals.rx_in,
-				 false);
-
-	if (cfg->pins.cts) {
-		esp32_rom_gpio_matrix_out(cfg->pins.cts,
-					  cfg->signals.cts_in,
-					  false,
-					  false);
-	}
-
-	if (cfg->pins.rts) {
-		esp32_rom_gpio_matrix_in(cfg->pins.rts,
-					 cfg->signals.rts_out,
-					 false);
-	}
-
-	return 0;
-}
-
-static int uart_esp32_configure(const struct device *dev,
-				const struct uart_config *cfg)
-{
-	uint32_t conf0 = UART_TICK_REF_ALWAYS_ON;
-	uint32_t conf1 = (UART_RX_FIFO_THRESH << UART_RXFIFO_FULL_THRHD_S)
-		      | (UART_TX_FIFO_THRESH << UART_TXFIFO_EMPTY_THRHD_S);
-
-	uart_esp32_configure_pins(dev);
-	clock_control_on(DEV_CFG(dev)->clock_dev, DEV_CFG(dev)->clock_subsys);
-
-	/*
-	 * Reset RX Buffer by reading all received bytes
-	 * Hardware Reset functionality can't be used with UART 1/2
-	 */
-	while (UART_RXFIFO_COUNT(DEV_BASE(dev)->status) != 0) {
-		(void) DEV_BASE(dev)->fifo;
-	}
+	uart_hal_set_sclk(&data->hal, UART_SCLK_APB);
+	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
+	uart_hal_set_txfifo_empty_thr(&data->hal, UART_TX_FIFO_THRESH);
+	uart_hal_rxfifo_rst(&data->hal);
 
 	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
-		conf0 &= ~(UART_PARITY_EN);
-		conf0 &= ~(UART_PARITY);
+		uart_hal_set_parity(&data->hal, UART_PARITY_DISABLE);
 		break;
 	case UART_CFG_PARITY_EVEN:
-		conf0 &= ~(UART_PARITY);
+		uart_hal_set_parity(&data->hal, UART_PARITY_EVEN);
 		break;
 	case UART_CFG_PARITY_ODD:
-		conf0 |= UART_PARITY;
+		uart_hal_set_parity(&data->hal, UART_PARITY_ODD);
 		break;
 	default:
 		return -ENOTSUP;
@@ -281,54 +228,69 @@ static int uart_esp32_configure(const struct device *dev,
 
 	switch (cfg->stop_bits) {
 	case UART_CFG_STOP_BITS_1:
+		uart_hal_set_stop_bits(&data->hal, UART_STOP_BITS_1);
+		break;
 	case UART_CFG_STOP_BITS_1_5:
+		uart_hal_set_stop_bits(&data->hal, UART_STOP_BITS_1_5);
+		break;
 	case UART_CFG_STOP_BITS_2:
-		conf0 |= cfg->stop_bits << UART_STOP_BIT_NUM_S;
+		uart_hal_set_stop_bits(&data->hal, UART_STOP_BITS_2);
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	if (cfg->data_bits <= UART_CFG_DATA_BITS_8) {
-		conf0 |= cfg->data_bits << UART_BIT_NUM_S;
-	} else {
+	switch (cfg->data_bits) {
+	case UART_CFG_DATA_BITS_5:
+		uart_hal_set_data_bit_num(&data->hal, UART_DATA_5_BITS);
+		break;
+	case UART_CFG_DATA_BITS_6:
+		uart_hal_set_data_bit_num(&data->hal, UART_DATA_6_BITS);
+		break;
+	case UART_CFG_DATA_BITS_7:
+		uart_hal_set_data_bit_num(&data->hal, UART_DATA_7_BITS);
+		break;
+	case UART_CFG_DATA_BITS_8:
+		uart_hal_set_data_bit_num(&data->hal, UART_DATA_8_BITS);
+		break;
+	default:
 		return -ENOTSUP;
 	}
 
 	switch (cfg->flow_ctrl) {
 	case UART_CFG_FLOW_CTRL_NONE:
-		conf0 &= ~(UART_TX_FLOW_EN);
-		conf1 &= ~(UART_RX_FLOW_EN);
+		uart_hal_set_hw_flow_ctrl(&data->hal, UART_HW_FLOWCTRL_DISABLE, 0);
 		break;
 	case UART_CFG_FLOW_CTRL_RTS_CTS:
-		conf0 |= UART_TX_FLOW_EN;
-		conf1 |= UART_RX_FLOW_EN;
+		uart_hal_set_hw_flow_ctrl(&data->hal, UART_HW_FLOWCTRL_CTS_RTS, 10);
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	if (uart_esp32_set_baudrate(dev, cfg->baudrate)) {
-		DEV_DATA(dev)->uart_config.baudrate = cfg->baudrate;
-	} else {
-		return -ENOTSUP;
-	}
+	uart_hal_set_baudrate(&data->hal, cfg->baudrate);
 
-	DEV_BASE(dev)->conf0 = conf0;
-	DEV_BASE(dev)->conf1 = conf1;
+	uart_hal_set_rx_timeout(&data->hal, 0x16);
 
 	return 0;
 }
 
 static int uart_esp32_init(const struct device *dev)
 {
-	uart_esp32_configure(dev, &DEV_DATA(dev)->uart_config);
+	struct uart_esp32_data *data = dev->data;
+	int ret = uart_esp32_configure(dev, &data->uart_config);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	DEV_DATA(dev)->irq_line =
-		esp_intr_alloc(DEV_CFG(dev)->irq_source, 0, uart_esp32_isr, (void *)dev, NULL);
+	const struct uart_esp32_config *config = dev->config;
+
+	data->irq_line =
+		esp_intr_alloc(config->irq_source,
+			0,
+			(ISR_HANDLER)uart_esp32_isr,
+			(void *)dev,
+			NULL);
 #endif
-	return 0;
+	return ret;
 }
 
 
@@ -337,78 +299,102 @@ static int uart_esp32_init(const struct device *dev)
 static int uart_esp32_fifo_fill(const struct device *dev,
 				const uint8_t *tx_data, int len)
 {
-	uint8_t num_tx = 0U;
+	struct uart_esp32_data *data = dev->data;
+	uint32_t written = 0;
 
-	while ((len - num_tx > 0) &&
-	       UART_TXFIFO_COUNT(DEV_BASE(dev)->status) < UART_FIFO_LIMIT) {
-		DEV_BASE(dev)->fifo = (uint32_t)tx_data[num_tx++];
+	if (len < 0) {
+		return 0;
 	}
 
-	return num_tx;
+	uart_hal_write_txfifo(&data->hal, tx_data, len, &written);
+	return written;
 }
 
 static int uart_esp32_fifo_read(const struct device *dev,
 				uint8_t *rx_data, const int len)
 {
-	uint8_t num_rx = 0U;
+	struct uart_esp32_data *data = dev->data;
+	const int num_rx = uart_hal_get_rxfifo_len(&data->hal);
+	int read = MIN(len, num_rx);
 
-	while ((len - num_rx > 0) &&
-	       (UART_RXFIFO_COUNT(DEV_BASE(dev)->status) != 0)) {
-		rx_data[num_rx++] = DEV_BASE(dev)->fifo;
+	if (!read) {
+		return 0;
 	}
 
-	return num_rx;
+	uart_hal_read_rxfifo(&data->hal, rx_data, &read);
+	return read;
 }
 
 static void uart_esp32_irq_tx_enable(const struct device *dev)
 {
-	DEV_BASE(dev)->int_clr |= UART_TXFIFO_EMPTY_INT_ENA;
-	DEV_BASE(dev)->int_ena |= UART_TXFIFO_EMPTY_INT_ENA;
+	struct uart_esp32_data *data = dev->data;
+
+	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_TXFIFO_EMPTY);
+	uart_hal_ena_intr_mask(&data->hal, UART_INTR_TXFIFO_EMPTY);
 }
 
 static void uart_esp32_irq_tx_disable(const struct device *dev)
 {
-	DEV_BASE(dev)->int_ena &= ~(UART_TXFIFO_EMPTY_INT_ENA);
+	struct uart_esp32_data *data = dev->data;
+
+	uart_hal_disable_intr_mask(&data->hal, UART_INTR_TXFIFO_EMPTY);
 }
 
 static int uart_esp32_irq_tx_ready(const struct device *dev)
 {
-	return (UART_TXFIFO_COUNT(DEV_BASE(dev)->status) < UART_FIFO_LIMIT);
+	struct uart_esp32_data *data = dev->data;
+
+	return (uart_hal_get_txfifo_len(&data->hal) > 0 &&
+			uart_hal_get_intr_ena_status(&data->hal) & UART_INTR_TXFIFO_EMPTY);
 }
 
 static void uart_esp32_irq_rx_enable(const struct device *dev)
 {
-	DEV_BASE(dev)->int_clr |= UART_RXFIFO_FULL_INT_ENA;
-	DEV_BASE(dev)->int_ena |= UART_RXFIFO_FULL_INT_ENA;
+	struct uart_esp32_data *data = dev->data;
+
+	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_FULL);
+	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
+	uart_hal_ena_intr_mask(&data->hal, UART_INTR_RXFIFO_FULL);
+	uart_hal_ena_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
 }
 
 static void uart_esp32_irq_rx_disable(const struct device *dev)
 {
-	DEV_BASE(dev)->int_ena &= ~(UART_RXFIFO_FULL_INT_ENA);
+	struct uart_esp32_data *data = dev->data;
+
+	uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_FULL);
+	uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
 }
 
 static int uart_esp32_irq_tx_complete(const struct device *dev)
 {
-	/* check if TX FIFO is empty */
-	return (UART_TXFIFO_COUNT(DEV_BASE(dev)->status) == 0 ? 1 : 0);
+	struct uart_esp32_data *data = dev->data;
+
+	return uart_hal_is_tx_idle(&data->hal);
 }
 
 static int uart_esp32_irq_rx_ready(const struct device *dev)
 {
-	return (UART_RXFIFO_COUNT(DEV_BASE(dev)->status) > 0);
+	struct uart_esp32_data *data = dev->data;
+
+	return (uart_hal_get_rxfifo_len(&data->hal) > 0);
 }
 
 static void uart_esp32_irq_err_enable(const struct device *dev)
 {
+	struct uart_esp32_data *data = dev->data;
+
 	/* enable framing, parity */
-	DEV_BASE(dev)->int_ena |= UART_FRM_ERR_INT_ENA
-				  | UART_PARITY_ERR_INT_ENA;
+	uart_hal_ena_intr_mask(&data->hal, UART_INTR_FRAM_ERR);
+	uart_hal_ena_intr_mask(&data->hal, UART_INTR_PARITY_ERR);
 }
 
 static void uart_esp32_irq_err_disable(const struct device *dev)
 {
-	DEV_BASE(dev)->int_ena &= ~(UART_FRM_ERR_INT_ENA);
-	DEV_BASE(dev)->int_ena &= ~(UART_PARITY_ERR_INT_ENA);
+	struct uart_esp32_data *data = dev->data;
+
+	uart_hal_disable_intr_mask(&data->hal, UART_INTR_FRAM_ERR);
+	uart_hal_disable_intr_mask(&data->hal, UART_INTR_PARITY_ERR);
 }
 
 static int uart_esp32_irq_is_pending(const struct device *dev)
@@ -418,8 +404,11 @@ static int uart_esp32_irq_is_pending(const struct device *dev)
 
 static int uart_esp32_irq_update(const struct device *dev)
 {
-	DEV_BASE(dev)->int_clr |= UART_RXFIFO_FULL_INT_ENA;
-	DEV_BASE(dev)->int_clr |= UART_TXFIFO_EMPTY_INT_ENA;
+	struct uart_esp32_data *data = dev->data;
+
+	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_FULL);
+	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
+	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_TXFIFO_EMPTY);
 
 	return 1;
 }
@@ -428,14 +417,22 @@ static void uart_esp32_irq_callback_set(const struct device *dev,
 					uart_irq_callback_user_data_t cb,
 					void *cb_data)
 {
-	DEV_DATA(dev)->irq_cb = cb;
-	DEV_DATA(dev)->irq_cb_data = cb_data;
+	struct uart_esp32_data *data = dev->data;
+
+	data->irq_cb = cb;
+	data->irq_cb_data = cb_data;
 }
 
-void uart_esp32_isr(void *arg)
+static void uart_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
-	struct uart_esp32_data *data = DEV_DATA(dev);
+	struct uart_esp32_data *data = dev->data;
+	uint32_t uart_intr_status = uart_hal_get_intsts_mask(&data->hal);
+
+	if (uart_intr_status == 0) {
+		return;
+	}
+	uart_hal_clr_intsts_mask(&data->hal, uart_intr_status);
 
 	/* Verify if the callback has been registered */
 	if (data->irq_cb) {
@@ -472,64 +469,39 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 };
 
 #define ESP32_UART_INIT(idx)						       \
+										\
+PINCTRL_DT_INST_DEFINE(idx);							\
+										\
 static const DRAM_ATTR struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
-	.dev_conf = {							       \
-		.base =							       \
-		    (uint8_t *)DT_REG_ADDR(DT_NODELABEL(uart##idx)), \
-	},								       \
-											   \
-	.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(uart##idx))),		       \
-											   \
-	.signals = {							       \
-		.tx_out = U##idx##TXD_OUT_IDX,				       \
-		.rx_in = U##idx##RXD_IN_IDX,				       \
-		.rts_out = U##idx##RTS_OUT_IDX,				       \
-		.cts_in = U##idx##CTS_IN_IDX,				       \
-	},								       \
-									       \
-	.pins = {							       \
-		.tx = DT_PROP(DT_NODELABEL(uart##idx), tx_pin),	       \
-		.rx = DT_PROP(DT_NODELABEL(uart##idx), rx_pin),	       \
-		IF_ENABLED(						       \
-			DT_PROP(DT_NODELABEL(uart##idx), hw_flow_control),  \
-			(.rts = DT_PROP(DT_NODELABEL(uart##idx), rts_pin),  \
-			.cts = DT_PROP(DT_NODELABEL(uart##idx), cts_pin),   \
-			))						       \
-	},								       \
-											   \
-	.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_NODELABEL(uart##idx), offset), \
-	.irq_source = DT_IRQN(DT_NODELABEL(uart##idx))			       \
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),		       \
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),				\
+	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
+	.irq_source = DT_INST_IRQN(idx)			       \
 };									       \
 									       \
 static struct uart_esp32_data uart_esp32_data_##idx = {			       \
 	.uart_config = {						       \
-		.baudrate = DT_PROP(DT_NODELABEL(uart##idx), current_speed),\
+		.baudrate = DT_INST_PROP(idx, current_speed),\
 		.parity = UART_CFG_PARITY_NONE,				       \
 		.stop_bits = UART_CFG_STOP_BITS_1,			       \
 		.data_bits = UART_CFG_DATA_BITS_8,			       \
-		.flow_ctrl = IS_ENABLED(				       \
-			DT_PROP(DT_NODELABEL(uart##idx), hw_flow_control)) ?\
-			UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE   \
-	}								       \
+		.flow_ctrl =	\
+			COND_CODE_1(DT_NODE_HAS_PROP(idx, hw_flow_control),	\
+		    (UART_CFG_FLOW_CTRL_RTS_CTS), (UART_CFG_FLOW_CTRL_NONE))	\
+	},								       \
+	.hal = {							       \
+		.dev =							       \
+		    (uart_dev_t *)DT_INST_REG_ADDR(idx), \
+	},								       \
 };									       \
 									       \
-DEVICE_DT_DEFINE(DT_NODELABEL(uart##idx),				       \
+DEVICE_DT_INST_DEFINE(idx,				       \
 		    &uart_esp32_init,					       \
 		    NULL,				       \
 		    &uart_esp32_data_##idx,				       \
 		    &uart_esp32_cfg_port_##idx,				       \
 		    PRE_KERNEL_1,					       \
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			       \
+		    CONFIG_SERIAL_INIT_PRIORITY,			       \
 		    &uart_esp32_api);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
-ESP32_UART_INIT(0);
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
-ESP32_UART_INIT(1);
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
-ESP32_UART_INIT(2);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(ESP32_UART_INIT);

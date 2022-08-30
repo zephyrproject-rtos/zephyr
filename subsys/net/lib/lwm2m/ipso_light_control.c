@@ -14,11 +14,11 @@
 #define LOG_MODULE_NAME net_ipso_light_control
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdint.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -45,8 +45,8 @@ static bool on_off_value[MAX_INSTANCE_COUNT];
 static uint8_t dimmer_value[MAX_INSTANCE_COUNT];
 static int32_t on_time_value[MAX_INSTANCE_COUNT];
 static uint32_t on_time_offset[MAX_INSTANCE_COUNT];
-static float32_value_t cumulative_active_value[MAX_INSTANCE_COUNT];
-static float32_value_t power_factor_value[MAX_INSTANCE_COUNT];
+static double cumulative_active_value[MAX_INSTANCE_COUNT];
+static double power_factor_value[MAX_INSTANCE_COUNT];
 static char colour[MAX_INSTANCE_COUNT][LIGHT_STRING_LONG];
 static char units[MAX_INSTANCE_COUNT][LIGHT_STRING_SHORT];
 
@@ -55,8 +55,8 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(ON_OFF_RID, RW, BOOL),
 	OBJ_FIELD_DATA(DIMMER_RID, RW_OPT, U8),
 	OBJ_FIELD_DATA(ON_TIME_RID, RW_OPT, S32),
-	OBJ_FIELD_DATA(CUMULATIVE_ACTIVE_POWER_RID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(POWER_FACTOR_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(CUMULATIVE_ACTIVE_POWER_RID, R_OPT, FLOAT),
+	OBJ_FIELD_DATA(POWER_FACTOR_RID, R_OPT, FLOAT),
 	OBJ_FIELD_DATA(COLOUR_RID, RW_OPT, STRING),
 	OBJ_FIELD_DATA(SENSOR_UNITS_RID, R_OPT, STRING),
 	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
@@ -148,10 +148,8 @@ static struct lwm2m_engine_obj_inst *light_control_create(uint16_t obj_inst_id)
 	dimmer_value[avail] = 0U;
 	on_time_value[avail] = 0;
 	on_time_offset[avail] = 0U;
-	cumulative_active_value[avail].val1 = 0;
-	cumulative_active_value[avail].val2 = 0;
-	power_factor_value[avail].val1 = 0;
-	power_factor_value[avail].val2 = 0;
+	cumulative_active_value[avail] = 0;
+	power_factor_value[avail] = 0;
 	colour[avail][0] = '\0';
 	units[avail][0] = '\0';
 

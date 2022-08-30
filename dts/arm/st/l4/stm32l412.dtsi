@@ -19,7 +19,6 @@
 			phys = <&usb_fs_phy>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
 			status = "disabled";
-			label = "USB";
 		};
 
 		spi2: spi@40003800 {
@@ -30,13 +29,20 @@
 			interrupts = <36 5>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			status = "disabled";
-			label = "SPI_2";
+		};
+
+		die_temp: dietemp {
+			ts-cal2-temp = <130>;
+		};
+
+		adc1: adc@50040000 {
+			has-temp-channel;
+			has-vref-channel;
 		};
 	};
 
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
-		label = "USB_FS_PHY";
 	};
 };

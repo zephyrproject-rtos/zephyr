@@ -15,8 +15,8 @@
  * rebooting might trigger the exact same problem over and over.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 
 _ASM_FILE_PROLOGUE
 

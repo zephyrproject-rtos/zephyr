@@ -4,14 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/led.h>
 
 &i2c0 {
 	/* TI LP5030 LED controller connected to I2C0. */
 	lp5030@30 {
 		compatible = "ti,lp5030", "ti,lp503x";
 		reg = <0x30>;
-		label = "LP5030";
 
 		led_0 {
 			label = "LED LP5030 0";

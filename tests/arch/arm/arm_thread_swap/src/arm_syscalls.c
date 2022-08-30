@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <kernel_structs.h>
+#include <zephyr/ztest.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/kernel_structs.h>
 #include <offsets_short_arch.h>
 #include <ksched.h>
 
@@ -28,7 +28,7 @@
 static struct k_thread user_thread;
 static K_THREAD_STACK_DEFINE(user_thread_stack, 1024);
 
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 #include "test_syscalls.h"
 
 void z_impl_test_arm_user_syscall(void)
@@ -114,6 +114,7 @@ void arm_isr_handler(const void *args)
 		zassert_true(__get_MSPLIM() == (uint32_t)z_interrupt_stacks,
 		"MSPLIM not guarding the interrupt stack\n");
 #endif
+		NVIC_DisableIRQ((uint32_t)args);
 	}
 }
 
@@ -150,7 +151,7 @@ static void user_thread_entry(uint32_t irq_line)
 #endif
 }
 
-void test_arm_syscalls(void)
+ZTEST(arm_thread_swap, test_arm_syscalls)
 {
 	int i = 0;
 
@@ -163,7 +164,6 @@ void test_arm_syscalls(void)
 	 * - PSPLIM register guards the default stack
 	 * - MSPLIM register guards the interrupt stack
 	 */
-
 	zassert_true((_current->arch.mode & CONTROL_nPRIV_Msk) == 0,
 	"mode variable not set to PRIV mode for supervisor thread\n");
 
@@ -213,7 +213,7 @@ void test_arm_syscalls(void)
 
 	arch_irq_connect_dynamic(i, 0 /* highest priority */,
 		arm_isr_handler,
-		NULL,
+		(uint32_t *)i,
 		0);
 
 	NVIC_ClearPendingIRQ(i);
@@ -279,7 +279,7 @@ static inline void z_vrfy_test_arm_cpu_write_reg(void)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_syscall_cpu_scrubs_regs(void)
+ZTEST_USER(arm_thread_swap, test_syscall_cpu_scrubs_regs)
 {
 	uint32_t arm_reg_val[4];
 
@@ -297,12 +297,12 @@ void test_syscall_cpu_scrubs_regs(void)
 	}
 }
 #else
-void test_syscall_cpu_scrubs_regs(void)
+ZTEST_USER(arm_thread_swap, test_syscall_cpu_scrubs_regs)
 {
 	ztest_test_skip();
 }
 
-void test_arm_syscalls(void)
+ZTEST(arm_thread_swap, test_arm_syscalls)
 {
 	ztest_test_skip();
 }

@@ -9,13 +9,13 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#include "settings/settings.h"
+#include <zephyr/settings/settings.h>
 #include "settings_priv.h"
 #include <zephyr/types.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 #if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
@@ -40,7 +40,7 @@ int settings_register(struct settings_handler *handler)
 {
 	int rc = 0;
 
-	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+	STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
 		if (strcmp(handler->name, ch->name) == 0) {
 			return -EEXIST;
 		}
@@ -145,7 +145,7 @@ struct settings_handler_static *settings_parse_and_lookup(const char *name,
 		*next = NULL;
 	}
 
-	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+	STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
 		if (!settings_name_steq(name, ch->name, &tmpnext)) {
 			continue;
 		}
@@ -218,12 +218,12 @@ int settings_call_set_handler(const char *name,
 
 		if (rc != 0) {
 			LOG_ERR("set-value failure. key: %s error(%d)",
-				log_strdup(name), rc);
+				name, rc);
 			/* Ignoring the error */
 			rc = 0;
 		} else {
 			LOG_DBG("set-value OK. key: %s",
-				log_strdup(name));
+				name);
 		}
 	}
 	return rc;
@@ -241,7 +241,7 @@ int settings_commit_subtree(const char *subtree)
 
 	rc = 0;
 
-	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+	STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
 		if (subtree && !settings_name_steq(ch->name, subtree, NULL)) {
 			continue;
 		}

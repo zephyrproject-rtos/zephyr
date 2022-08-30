@@ -12,43 +12,29 @@
 #define ZEPHYR_DRIVERS_SENSOR_IIS3DHHC_IIS3DHHC_H_
 
 #include <stdint.h>
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include "iis3dhhc_reg.h"
 
 struct iis3dhhc_config {
-	char *master_dev_name;
 	int (*bus_init)(const struct device *dev);
 #ifdef CONFIG_IIS3DHHC_TRIGGER
-	const char *int_port;
-	uint8_t int_pin;
-	uint8_t int_flags;
+	struct gpio_dt_spec int_gpio;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_config spi_conf;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	const char *gpio_cs_port;
-	uint8_t cs_gpio;
-#endif
+	struct spi_dt_spec spi;
 #endif
 };
 
 struct iis3dhhc_data {
-	const struct device *bus;
 	int16_t acc[3];
 
 	stmdev_ctx_t *ctx;
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	stmdev_ctx_t ctx_spi;
-#endif
-
 #ifdef CONFIG_IIS3DHHC_TRIGGER
-	const struct device *gpio;
-	uint32_t pin;
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t handler_drdy;
@@ -63,9 +49,6 @@ struct iis3dhhc_data {
 #endif
 
 #endif /* CONFIG_IIS3DHHC_TRIGGER */
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control cs_ctrl;
-#endif
 };
 
 int iis3dhhc_spi_init(const struct device *dev);

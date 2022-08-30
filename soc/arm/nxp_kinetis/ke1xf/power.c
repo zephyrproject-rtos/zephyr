@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <logging/log.h>
-#include <pm/pm.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/pm/pm.h>
 #include <soc.h>
 
 LOG_MODULE_DECLARE(power, CONFIG_PM_LOG_LEVEL);
@@ -25,15 +25,15 @@ __ramfunc static void wait_for_flash_prefetch_and_idle(void)
 }
 #endif /* CONFIG_XIP */
 
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-	switch (info.state) {
+	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
 		k_cpu_idle();
 		break;
 	case PM_STATE_SUSPEND_TO_IDLE:
 		/* Set partial stop mode and enable deep sleep */
-		SMC->STOPCTRL = SMC_STOPCTRL_PSTOPO(info.substate_id);
+		SMC->STOPCTRL = SMC_STOPCTRL_PSTOPO(substate_id);
 		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 #ifdef CONFIG_XIP
 		wait_for_flash_prefetch_and_idle();
@@ -46,16 +46,16 @@ __weak void pm_power_state_set(struct pm_state_info info)
 		}
 		break;
 	default:
-		LOG_WRN("Unsupported power state %u", info.state);
+		LOG_WRN("Unsupported power state %u", state);
 		break;
 	}
 }
 
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	ARG_UNUSED(info);
+	ARG_UNUSED(substate_id);
 
-	if (info.state == PM_STATE_SUSPEND_TO_IDLE) {
+	if (state == PM_STATE_SUSPEND_TO_IDLE) {
 		/* Disable deep sleep upon exit */
 		SCB->SCR &= ~(SCB_SCR_SLEEPDEEP_Msk);
 	}

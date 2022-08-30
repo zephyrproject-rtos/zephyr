@@ -14,9 +14,7 @@ battery, and communicates with a standard smartphone through its Bluetooth inter
 providing data coming from the sensors.
 
 .. image:: img/sensortile_box.jpg
-     :width: 784px
      :align: center
-     :height: 643px
      :alt: SensorTile.box
 
 More information about the board can be found at the `SensorTile.box website`_.
@@ -44,7 +42,7 @@ SensorTile.box provides the following hardware components:
   - 1 x USB OTG FS (SoC) with micro-B connector
     (USB device role only)
 
-- Internal Busses
+- Internal Buses
 
   - 3 x SPI bus
   - 3 x I2C bus
@@ -104,7 +102,7 @@ SensorTile.box System Clock could be driven by internal or external
 oscillator, as well as main PLL clock. By default, the System clock is
 driven by the PLL clock at 80MHz, driven by the 16MHz external oscillator.
 The system clock can be boosted to 120MHz.
-The internal AHB/APB1/APB2 AMBA busses are all clocked at 80MHz.
+The internal AHB/APB1/APB2 AMBA buses are all clocked at 80MHz.
 
 Serial Port
 ===========

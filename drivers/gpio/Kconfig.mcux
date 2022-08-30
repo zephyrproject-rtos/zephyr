@@ -6,6 +6,7 @@
 
 config GPIO_MCUX
 	bool "MCUX GPIO driver"
-	select HAS_DTS_GPIO
+	default y
+	depends on DT_HAS_NXP_KINETIS_GPIO_ENABLED
 	help
 	  Enable the MCUX pinmux driver.

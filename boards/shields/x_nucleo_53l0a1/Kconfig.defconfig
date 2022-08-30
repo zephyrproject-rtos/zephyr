@@ -1,0 +1,18 @@
+# Copyright (c) 2021 Titouan Christophe
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_X_NUCLEO_53L0A1
+
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config SENSOR
+	default y
+
+config VL53L0X_RECONFIGURE_ADDRESS
+	default y
+
+endif # SHIELD_X_NUCLEO_53L0A1

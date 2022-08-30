@@ -7,7 +7,7 @@ Overview
 ********
 
 The es-WIFI (embedded Serial-to-WiFi) modules are devices developed by Inventek
-Systems.  It integrates WIFI and optionaly Bluetooth Low Energy.  The es-WIFI
+Systems.  It integrates WIFI and optionally Bluetooth Low Energy.  The es-WIFI
 devices can run Cypress WICED or Inventek's IWIN (Inventek Systems Wireless
 Interoperability Network) AT commands set.  The current es-WIFI driver is able
 to use one of two serial interfaces: SPI or UART.
@@ -32,8 +32,7 @@ Otherwise, J17 2-3 will select USB-5V. More information can be found at
 .. note::
 	The Inventek's EVBs signals are 3.3V only.
 
-.. image:: ./ismart4343c-evb.jpg
-   :width: 350px
+.. image:: ismart4343c-evb.jpg
    :align: center
    :alt: ISMART4343C-EVB
 
@@ -48,13 +47,12 @@ The signals from D3 up to D7 are not connected by default on the Inventek's
 shield.  These signals marked as optional can help on development. The current
 driver do not handle that signals and are simple suggestions and can be left
 as is.  Some arduino boards don't have NRST pin connected to a GPIO pin.  The
-recomendation is bend the NRST pin and make a wire to D6.  WAKE-UP signal is
+recommendation is bend the NRST pin and make a wire to D6.  WAKE-UP signal is
 available at header J26 pin 1 and shield configuration uses D7 to control that
 signal, user need do a wire connecting these two terminals.  On the below
 image is possible see suggested wiring connections.
 
-.. image:: ./ismart4343c-evb-wiring.jpg
-   :width: 800px
+.. image:: ismart4343c-evb-wiring.jpg
    :align: center
    :alt: ISMART4343C-EVB Wiring
 

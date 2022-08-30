@@ -15,7 +15,7 @@ if SHELL
 module = SHELL
 module-str = Shell
 source "subsys/logging/Kconfig.template.log_config"
-source "subsys/shell/Kconfig.backends"
+source "subsys/shell/backends/Kconfig.backends"
 
 config SHELL_MINIMAL
 	bool "Default config to reduce flash and memory requirements"
@@ -84,12 +84,12 @@ config SHELL_DEFAULT_TERMINAL_HEIGHT
 config SHELL_ARGC_MAX
 	int "Maximum arguments in shell command"
 	range 3 255
-	default 12
+	default 20
 	help
 	  Maximum number of arguments that can build a command.
 
 config SHELL_TAB
-	bool "Enable the Tab button support in shell"
+	bool "The Tab button support in shell"
 	default y if !SHELL_MINIMAL
 	help
 	  Enable using the Tab button in the shell. The button
@@ -97,7 +97,7 @@ config SHELL_TAB
 	  This feature has high impact on flash usage.
 
 config SHELL_TAB_AUTOCOMPLETION
-	bool "Enable commands autocompletion with the Tab button"
+	bool "Commands autocompletion with the Tab button"
 	depends on SHELL_TAB
 	default y if !SHELL_MINIMAL
 	help
@@ -105,46 +105,48 @@ config SHELL_TAB_AUTOCOMPLETION
 	  key. This function can be deactivated to save some flash.
 
 config SHELL_WILDCARD
-	bool "Enable wildcard support in shell"
+	bool "Wildcard support in shell"
 	select FNMATCH
 	default y if !SHELL_MINIMAL
 	help
 	  Enables using wildcards: * and ? in the shell.
 
 config SHELL_ECHO_STATUS
-	bool "Enable echo on shell"
+	bool "Echo on shell"
 	default y
 	help
 	  If enabled shell prints back every input byte.
 
 config SHELL_START_OBSCURED
 	bool "Display asterisk when echoing"
-	default n
 	help
 	  If enabled, don't echo actual character, but echo * instead.
 	  This is used for login prompts.
 
 config SHELL_VT100_COMMANDS
-	bool "Enable VT100 commands in shell"
+	bool "VT100 commands in shell"
 	default y
 	help
 	  Enables VT100 commands in shell (e.g. cursor position, clear screen etc.).
 
 config SHELL_VT100_COLORS
-	bool "Enable colors in shell"
+	bool "Colors in shell"
 	depends on SHELL_VT100_COMMANDS
 	default y if !SHELL_MINIMAL
 	help
 	  If enabled VT100 colors are used in shell (e.g. print errors in red).
 
 config SHELL_GETOPT
-	bool "Enable getopt support"
+	bool "Threadsafe getopt support in shell"
 	select GETOPT
 	help
-	  Enables getopt support in the shell.
+	  This config creates a separate getopt_state for the shell instance.
+	  It ensures that using getopt with shell is thread safe.
+	  When more threads are using getopt please call getopt_state_get to
+	  get getopt state of the shell thread.
 
 config SHELL_METAKEYS
-	bool "Enable metakeys"
+	bool "Metakeys"
 	default y if !SHELL_MINIMAL
 	help
 	  Enables shell meta keys: Ctrl+a, Ctrl+b, Ctrl+c, Ctrl+d, Ctrl+e,
@@ -152,7 +154,7 @@ config SHELL_METAKEYS
 	  Meta keys will not be active when shell echo is set to off.
 
 config SHELL_HELP
-	bool "Enable help message"
+	bool "Help message"
 	default y if !SHELL_MINIMAL
 	help
 	  Enables shell functions for printing formatted help message.
@@ -168,12 +170,12 @@ config SHELL_HELP_OPT_PARSE
 	  for a command.
 
 config SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
-	bool "Enable printing help on wrong argument count"
+	bool "Printing help on wrong argument count"
 	depends on SHELL_HELP
 	default y if !SHELL_MINIMAL
 
 config SHELL_HISTORY
-	bool "Enable history in shell"
+	bool "History in shell"
 	default y if !SHELL_MINIMAL
 	select RING_BUFFER
 	help
@@ -189,17 +191,17 @@ config SHELL_HISTORY_BUFFER
 	  Number of bytes dedicated for storing executed commands.
 
 config SHELL_STATS
-	bool "Enable shell statistics"
+	bool "Shell statistics"
 	default y if !SHELL_MINIMAL
 
 config SHELL_CMDS
-	bool "Enable built-in commands"
+	bool "Built-in commands"
 	default y if !SHELL_MINIMAL
 	help
 	  Enable built-in commands like 'clear', 'history', etc.
 
 config SHELL_CMDS_RESIZE
-	bool "Enable resize command"
+	bool "Resize command"
 	depends on SHELL_CMDS
 	depends on SHELL_VT100_COMMANDS
 	default y if !SHELL_MINIMAL
@@ -210,7 +212,7 @@ config SHELL_CMDS_RESIZE
 	  The resize command can be turned off to save code memory (~0,5k).
 
 config SHELL_CMDS_SELECT
-	bool "Enable select command"
+	bool "Select command"
 	depends on SHELL_CMDS
 	help
 	  This option enables select command. It can be used to set new root
@@ -223,8 +225,10 @@ config SHELL_CMD_ROOT
 	  and when exiting to main command tree with alt+r.
 
 config SHELL_LOG_BACKEND
-	bool "Enable shell log backend"
-	depends on LOG && !LOG_MINIMAL
+	bool "Shell log backend"
+	depends on LOG && !LOG_MODE_MINIMAL
+	select MPSC_PBUF
+	select LOG_OUTPUT
 	default y if LOG
 	help
 	  When enabled, backend will use the shell for logging.

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 
 
 #define DUMMY_DRIVER_NAME	"dummy_driver"
@@ -35,9 +35,8 @@ int dummy_init(const struct device *dev)
 /**
  * @cond INTERNAL_HIDDEN
  */
-DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, &dummy_init,
-		NULL, NULL, NULL, POST_KERNEL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);
+DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, dummy_init, NULL, NULL, NULL,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);
 
 /**
  * @endcond

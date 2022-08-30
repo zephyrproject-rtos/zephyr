@@ -11,9 +11,10 @@
  */
 
 #include <time.h>
+#include <zephyr/sys/libc-hooks.h>
 
 /* A signed type with the representation of time_t without its
- * impliciations.
+ * implications.
  */
 typedef time_t bigint_type;
 
@@ -32,7 +33,7 @@ typedef time_t bigint_type;
  * @see http://howardhinnant.github.io/date_algorithms.html#civil_from_days
  */
 static void time_civil_from_days(bigint_type z,
-				 struct tm *_MLIBC_RESTRICT tp)
+				 struct tm *ZRESTRICT tp)
 {
 	tp->tm_wday = (z >= -4) ? ((z + 4) % 7) : ((z + 5) % 7 + 6);
 	z += 719468;
@@ -77,8 +78,8 @@ static void time_civil_from_days(bigint_type z,
  * due to time zone, leap seconds, or a different epoch must be
  * applied to @p time before invoking this function.
  */
-struct tm *gmtime_r(const time_t *_MLIBC_RESTRICT timep,
-		    struct tm *_MLIBC_RESTRICT result)
+struct tm *gmtime_r(const time_t *ZRESTRICT timep,
+		    struct tm *ZRESTRICT result)
 {
 	time_t z = *timep;
 	bigint_type days = (z >= 0 ? z : z - 86399) / 86400;
@@ -96,9 +97,11 @@ struct tm *gmtime_r(const time_t *_MLIBC_RESTRICT timep,
 	return result;
 }
 
+#ifdef CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS
+static Z_LIBC_DATA struct tm gmtime_result;
+
 struct tm *gmtime(const time_t *timep)
 {
-	static struct tm shared;
-
-	return gmtime_r(timep, &shared);
+	return gmtime_r(timep, &gmtime_result);
 }
+#endif /* CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS */

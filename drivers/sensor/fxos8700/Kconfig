@@ -5,7 +5,9 @@
 
 menuconfig FXOS8700
 	bool "FXOS8700 accelerometer/magnetometer driver"
-	depends on I2C && HAS_DTS_GPIO
+	default y
+	depends on DT_HAS_NXP_FXOS8700_ENABLED
+	select I2C
 	help
 	  Enable driver for the FXOS8700 accelerometer/magnetometer.
 	  The driver also supports MMA8451Q, MMA8652FC and MMA8653FC
@@ -14,9 +16,9 @@ menuconfig FXOS8700
 
 if FXOS8700
 
-choice
+choice FXOS8700_MODE
 	prompt "Mode"
-	default FXOS8700_MODE_ACCEL
+	default FXOS8700_MODE_HYBRID
 
 config FXOS8700_MODE_ACCEL
 	bool "Accelerometer-only mode"
@@ -30,7 +32,7 @@ config FXOS8700_MODE_HYBRID
 endchoice
 
 config FXOS8700_TEMP
-	bool "Enable temperature"
+	bool "Temperature"
 	depends on FXOS8700_MODE_MAGN || FXOS8700_MODE_HYBRID
 	help
 	  Enable the temperature sensor. Note that the temperature sensor is

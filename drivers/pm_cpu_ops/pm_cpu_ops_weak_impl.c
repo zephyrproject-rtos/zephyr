@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 int __weak pm_cpu_on(unsigned long cpuid, uintptr_t entry_point)
 {

@@ -5,10 +5,10 @@
  *
  * Not Recently Used (NRU) eviction algorithm for demand paging
  */
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <mmu.h>
 #include <kernel_arch_interface.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 /* The accessed and dirty states of each page frame are used to create
  * a hierarchy with a numerical value. When evicting a page, try to evict
@@ -26,7 +26,7 @@ static void nru_periodic_update(struct k_timer *timer)
 {
 	uintptr_t phys;
 	struct z_page_frame *pf;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	Z_PAGE_FRAME_FOREACH(phys, pf) {
 		if (!z_page_frame_is_evictable(pf)) {
@@ -45,6 +45,7 @@ struct z_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
 	unsigned int last_prec = 4U;
 	struct z_page_frame *last_pf = NULL, *pf;
 	bool accessed;
+	bool last_dirty = false;
 	bool dirty = false;
 	uintptr_t flags, phys;
 
@@ -71,18 +72,20 @@ struct z_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
 		if (prec == 0) {
 			/* If we find a not accessed, clean page we're done */
 			last_pf = pf;
+			last_dirty = dirty;
 			break;
 		}
 
 		if (prec < last_prec) {
 			last_prec = prec;
 			last_pf = pf;
+			last_dirty = dirty;
 		}
 	}
 	/* Shouldn't ever happen unless every page is pinned */
 	__ASSERT(last_pf != NULL, "no page to evict");
 
-	*dirty_ptr = dirty;
+	*dirty_ptr = last_dirty;
 
 	return last_pf;
 }

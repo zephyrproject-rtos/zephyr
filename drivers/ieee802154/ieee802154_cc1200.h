@@ -9,11 +9,16 @@
 #ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC1200_H_
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC1200_H_
 
-#include <linker/sections.h>
-#include <sys/atomic.h>
-#include <drivers/spi.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
 
-#include <drivers/ieee802154/cc1200.h>
+#include <zephyr/drivers/ieee802154/cc1200.h>
+
+/* Compile time config structure
+ *******************************
+ */
 
 /* Note for EMK & EM adapter booster pack users:
  * SPI pins are easy, RESET as well, but when it comes to GPIO:
@@ -23,15 +28,9 @@
  * GPIO2 -> GPIOB
  * GPIO3 -> GPIO3
  */
-
-enum cc1200_gpio_index {
-	CC1200_GPIO_IDX_GPIO0,
-	CC1200_GPIO_IDX_MAX,
-};
-
-struct cc1200_gpio_configuration {
-	const struct device *dev;
-	uint32_t pin;
+struct cc1200_config {
+	struct spi_dt_spec bus;
+	struct gpio_dt_spec interrupt;
 };
 
 /* Runtime context structure
@@ -41,10 +40,7 @@ struct cc1200_gpio_configuration {
 struct cc1200_context {
 	struct net_if *iface;
 	/**************************/
-	struct cc1200_gpio_configuration gpios[CC1200_GPIO_IDX_MAX];
 	struct gpio_callback rx_tx_cb;
-	const struct device *spi;
-	struct spi_config spi_cfg;
 	uint8_t mac_addr[8];
 	/************RF************/
 	const struct cc1200_rf_registers_set *rf_settings;
@@ -66,44 +62,44 @@ struct cc1200_context {
  ***************************
  */
 
-bool z_cc1200_access_reg(struct cc1200_context *ctx, bool read, uint8_t addr,
-			void *data, size_t length, bool extended, bool burst);
+bool z_cc1200_access_reg(const struct device *dev, bool read, uint8_t addr,
+			 void *data, size_t length, bool extended, bool burst);
 
-static inline uint8_t cc1200_read_single_reg(struct cc1200_context *ctx,
-					   uint8_t addr, bool extended)
+static inline uint8_t cc1200_read_single_reg(const struct device *dev,
+					     uint8_t addr, bool extended)
 {
 	uint8_t val;
 
-	if (z_cc1200_access_reg(ctx, true, addr, &val, 1, extended, false)) {
+	if (z_cc1200_access_reg(dev, true, addr, &val, 1, extended, false)) {
 		return val;
 	}
 
 	return 0;
 }
 
-static inline bool cc1200_write_single_reg(struct cc1200_context *ctx,
-					    uint8_t addr, uint8_t val, bool extended)
+static inline bool cc1200_write_single_reg(const struct device *dev,
+					   uint8_t addr, uint8_t val, bool extended)
 {
-	return z_cc1200_access_reg(ctx, false, addr, &val, 1, extended, false);
+	return z_cc1200_access_reg(dev, false, addr, &val, 1, extended, false);
 }
 
-static inline bool cc1200_instruct(struct cc1200_context *ctx, uint8_t addr)
+static inline bool cc1200_instruct(const struct device *dev, uint8_t addr)
 {
-	return z_cc1200_access_reg(ctx, false, addr, NULL, 0, false, false);
+	return z_cc1200_access_reg(dev, false, addr, NULL, 0, false, false);
 }
 
-#define DEFINE_REG_READ(__reg_name, __reg_addr, __ext)			\
-	static inline uint8_t read_reg_##__reg_name(struct cc1200_context *ctx) \
-	{								\
-		return cc1200_read_single_reg(ctx, __reg_addr, __ext);	\
+#define DEFINE_REG_READ(__reg_name, __reg_addr, __ext)			      \
+	static inline uint8_t read_reg_##__reg_name(const struct device *dev) \
+	{								      \
+		return cc1200_read_single_reg(dev, __reg_addr, __ext);	      \
 	}
 
-#define DEFINE_REG_WRITE(__reg_name, __reg_addr, __ext)			\
-	static inline bool write_reg_##__reg_name(struct cc1200_context *ctx, \
-						  uint8_t val)		\
-	{								\
-		return cc1200_write_single_reg(ctx, __reg_addr,	\
-						val, __ext);		\
+#define DEFINE_REG_WRITE(__reg_name, __reg_addr, __ext)			    \
+	static inline bool write_reg_##__reg_name(const struct device *dev, \
+						  uint8_t val)		    \
+	{								    \
+		return cc1200_write_single_reg(dev, __reg_addr,		    \
+					       val, __ext);		    \
 	}
 
 DEFINE_REG_WRITE(iocfg3, CC1200_REG_IOCFG3, false)
@@ -123,10 +119,10 @@ DEFINE_REG_READ(num_rxbytes, CC1200_REG_NUM_RXBYTES, true)
  ******************************
  */
 
-#define DEFINE_STROBE_INSTRUCTION(__ins_name, __ins_addr)		\
-	static inline bool instruct_##__ins_name(struct cc1200_context *ctx) \
-	{								\
-		return cc1200_instruct(ctx, __ins_addr);		\
+#define DEFINE_STROBE_INSTRUCTION(__ins_name, __ins_addr)		   \
+	static inline bool instruct_##__ins_name(const struct device *dev) \
+	{								   \
+		return cc1200_instruct(dev, __ins_addr);		   \
 	}
 
 DEFINE_STROBE_INSTRUCTION(sres, CC1200_INS_SRES)

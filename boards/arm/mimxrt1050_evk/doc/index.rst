@@ -20,8 +20,7 @@ interface, SPDIF, and I2S audio interface.
 The following document refers to the discontinued MIMXRT1050-EVK board. For the
 MIMXRT1050-EVKB board, refer to `Board Revisions`_ section.
 
-.. image:: ./mimxrt1050_evk.jpg
-   :width: 720px
+.. image:: mimxrt1050_evk.jpg
    :align: center
    :alt: MIMXRT1050-EVK
 
@@ -116,6 +115,14 @@ features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -131,9 +138,9 @@ The MIMXRT1050 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | Name          | Function        | Usage                     |
 +===============+=================+===========================+
-| GPIO_AD_B0_00 | LPSPI3_SCK      | SPI                       |
+| GPIO_AD_B0_00 | LPSPI1_SCK      | SPI                       |
 +---------------+-----------------+---------------------------+
-| GPIO_AD_B0_01 | LPSPI3_SDO      | SPI                       |
+| GPIO_AD_B0_01 | LPSPI1_SDO      | SPI                       |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_02 | LPSPI3_SDI/LCD_RST| SPI/LCD Display         |
 +---------------+-----------------+---------------------------+
@@ -158,6 +165,8 @@ The MIMXRT1050 SoC has five pairs of pinmux/gpio controllers.
 | GPIO_AD_B1_06 | LPUART3_TX      | UART BT HCI               |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_07 | LPUART3_RX      | UART BT HCI               |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_11 | ADC             | ADC1 channel 0            |
 +---------------+-----------------+---------------------------+
 | WAKEUP        | GPIO            | SW0                       |
 +---------------+-----------------+---------------------------+
@@ -231,24 +240,32 @@ The MIMXRT1050 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_10 | ENET_INT        | Ethernet                  |
 +---------------+-----------------+---------------------------+
-| GPIO_SD_B0_00 | USDHC1_CMD      | SD Card                   |
+| GPIO_SD_B0_00 | USDHC1_CMD/LPSPI1_SCK | SD Card/SPI         |
 +---------------+-----------------+---------------------------+
-| GPIO_SD_B0_01 | USDHC1_CLK      | SD Card                   |
+| GPIO_SD_B0_01 | USDHC1_CLK/LPSPI1_PCS0 | SD Card/SPI        |
 +---------------+-----------------+---------------------------+
-| GPIO_SD_B0_02 | USDHC1_DATA0    | SD Card                   |
+| GPIO_SD_B0_02 | USDHC1_DATA0/LPSPI1_SDO | SD Card/SPI       |
 +---------------+-----------------+---------------------------+
-| GPIO_SD_B0_03 | USDHC1_DATA1    | SD Card                   |
+| GPIO_SD_B0_03 | USDHC1_DATA1/LPSPI1_SDI | SD Card/SPI       |
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B0_04 | USDHC1_DATA2    | SD Card                   |
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B0_05 | USDHC1_DATA3    | SD Card                   |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B1_02 | 1588_EVENT2_OUT | 1588                      |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_03 | 1588_EVENT2_IN  | 1588                      |
++---------------+-----------------+---------------------------+
+
+.. note::
+        In order to use the SPI peripheral on this board, resistors R278,
+        R279, R280, and R281 must be populated with zero ohm resistors
 
 System Clock
 ============
 
-The MIMXRT1050 SoC is configured to use the 24 MHz external oscillator on the
-board with the on-chip PLL to generate a 600 MHz core clock.
+The MIMXRT1050 SoC is configured to use the 32 KHz low frequency oscillator on
+the board as a source for the GPT timer to generate a system clock.
 
 Serial Port
 ===========
@@ -289,6 +306,10 @@ Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
 the `OpenSDA J-Link MIMXRT1050-EVK-Hyperflash Firmware`_. Check that jumpers
 J32 and J33 are **on** (they are on by default when boards ship from the
 factory) to ensure SWD signals are connected to the OpenSDA microcontroller.
+
+Follow the instructions in `Enable QSPI flash support in SEGGER JLink`_
+in order to support your EVK if you have modified it to boot from QSPI NOR
+flash as specified by NXP AN12108.
 
 Option 2: :ref:`jlink-external-debug-probe`
 -------------------------------------------
@@ -359,7 +380,7 @@ Troubleshooting
 
 If the debug probe fails to connect with the following error, it's possible
 that the boot header in HyperFlash is invalid or corrupted. The boot header is
-configured by :kconfig:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
+configured by :kconfig:option:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
 
 .. code-block:: console
 
@@ -422,3 +443,6 @@ Current Zephyr build supports the new MIMXRT1050-EVKB
 
 .. _NXP i.MXRT1050 A0 to A1 Migration Guide:
    https://www.nxp.com/docs/en/nxp/application-notes/AN12146.pdf
+
+.. _Enable QSPI flash support in SEGGER JLink:
+   https://wiki.segger.com/i.MXRT1050#QSPI_flash

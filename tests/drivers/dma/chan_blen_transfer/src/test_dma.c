@@ -16,11 +16,9 @@
  *   -# Data is transferred correctly from src to dest
  */
 
-#include <zephyr.h>
-#include <drivers/dma.h>
-#include <ztest.h>
-
-#define DMA_DEVICE_NAME CONFIG_DMA_TRANSFER_DRV_NAME
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/ztest.h>
 
 #define RX_BUFF_SIZE (48)
 
@@ -49,9 +47,10 @@ static int test_task(uint32_t chan_id, uint32_t blen)
 {
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_block_cfg = { 0 };
-	const struct device *dma = device_get_binding(DMA_DEVICE_NAME);
-	if (!dma) {
-		TC_PRINT("Cannot get dma controller\n");
+	const struct device *const dma = DEVICE_DT_GET(DT_NODELABEL(test_dma));
+
+	if (!device_is_ready(dma)) {
+		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
 	}
 
@@ -93,28 +92,29 @@ static int test_task(uint32_t chan_id, uint32_t blen)
 	}
 	k_sleep(K_MSEC(2000));
 	TC_PRINT("%s\n", rx_data);
-	if (strcmp(tx_data, rx_data) != 0)
+	if (strcmp(tx_data, rx_data) != 0) {
 		return TC_FAIL;
+	}
 	return TC_PASS;
 }
 
 /* export test cases */
-void test_dma_m2m_chan0_burst8(void)
+ZTEST(dma_m2m, test_dma_m2m_chan0_burst8)
 {
 	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 8) == TC_PASS), NULL);
 }
 
-void test_dma_m2m_chan1_burst8(void)
+ZTEST(dma_m2m, test_dma_m2m_chan1_burst8)
 {
 	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 8) == TC_PASS), NULL);
 }
 
-void test_dma_m2m_chan0_burst16(void)
+ZTEST(dma_m2m, test_dma_m2m_chan0_burst16)
 {
 	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 16) == TC_PASS), NULL);
 }
 
-void test_dma_m2m_chan1_burst16(void)
+ZTEST(dma_m2m, test_dma_m2m_chan1_burst16)
 {
 	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 16) == TC_PASS), NULL);
 }

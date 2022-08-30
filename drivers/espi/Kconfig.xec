@@ -5,9 +5,9 @@
 
 config ESPI_XEC
 	bool "XEC Microchip ESPI driver"
-	depends on SOC_FAMILY_MEC
+	depends on SOC_SERIES_MEC1501X
 	help
-	  Enable the Microchip XEC ESPI driver.
+	  Enable the Microchip XEC ESPI driver for MEC15xx family.
 
 if ESPI_XEC
 
@@ -31,7 +31,8 @@ config ESPI_PERIPHERAL_UART
 
 config ESPI_PERIPHERAL_UART_SOC_MAPPING
 	int "SoC port exposed as logical eSPI UART"
-	default 2
+	default 2 if SOC_SERIES_MEC1501X
+	default 1 if SOC_SERIES_MEC172X
 	depends on ESPI_PERIPHERAL_UART
 	help
 	  This tells the driver to which SoC UART to direct the UART traffic
@@ -57,7 +58,6 @@ config ESPI_FLASH_BUFFER_SIZE
 config ESPI_SAF
 	bool "XEC Microchip ESPI SAF driver"
 	depends on ESPI_FLASH_CHANNEL
-	default n
 	help
 	  Enable Slave Attached Flash eSPI driver. SAF depends upon ESPI XEC driver
 	  and flash channel.

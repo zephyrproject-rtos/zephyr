@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_internal.h>
 #include <string.h>
 
 typedef int (*log_backend_cmd_t)(const struct shell *shell,
@@ -92,7 +93,7 @@ static int log_status(const struct shell *shell,
 		      const struct log_backend *backend,
 		      size_t argc, char **argv)
 {
-	uint32_t modules_cnt = log_sources_count();
+	uint32_t modules_cnt = z_log_sources_count();
 	uint32_t dynamic_lvl;
 	uint32_t compiled_lvl;
 
@@ -140,7 +141,7 @@ static int cmd_log_backend_status(const struct shell *shell,
 
 static int module_id_get(const char *name)
 {
-	uint32_t modules_cnt = log_sources_count();
+	uint32_t modules_cnt = z_log_sources_count();
 	const char *tmp_name;
 	uint32_t i;
 
@@ -161,7 +162,7 @@ static void filters_set(const struct shell *shell,
 	int i;
 	int id;
 	bool all = argc ? false : true;
-	int cnt = all ? log_sources_count() : argc;
+	int cnt = all ? z_log_sources_count() : argc;
 
 	if (!backend->cb->active) {
 		shell_warn(shell, "Backend not active.");
@@ -361,44 +362,30 @@ static int cmd_log_backends_list(const struct shell *shell,
 	return 0;
 }
 
-static int cmd_log_strdup_utilization(const struct shell *shell,
-				      size_t argc, char **argv)
+static int cmd_log_mem(const struct shell *sh, size_t argc, char **argv)
 {
+	uint32_t size;
+	uint32_t used;
+	uint32_t max;
+	int err;
 
-	/* Defines needed when string duplication is disabled (LOG_IMMEDIATE is
-	 * on). In that case, this function is not compiled in.
-	 */
-	#ifndef CONFIG_LOG_STRDUP_BUF_COUNT
-	#define CONFIG_LOG_STRDUP_BUF_COUNT 0
-	#endif
-
-	#ifndef CONFIG_LOG_STRDUP_MAX_STRING
-	#define CONFIG_LOG_STRDUP_MAX_STRING 0
-	#endif
-
-	uint32_t buf_cnt = log_get_strdup_pool_utilization();
-	uint32_t buf_size = log_get_strdup_longest_string();
-	uint32_t percent = CONFIG_LOG_STRDUP_BUF_COUNT ?
-			buf_cnt * 100U / CONFIG_LOG_STRDUP_BUF_COUNT : 0U;
-
-	shell_print(shell,
-		"Maximal utilization of the buffer pool: %d / %d (%d %%).",
-		buf_cnt, CONFIG_LOG_STRDUP_BUF_COUNT, percent);
-	if (buf_cnt == CONFIG_LOG_STRDUP_BUF_COUNT) {
-		shell_warn(shell, "Buffer count too small.");
+	err = log_mem_get_usage(&size, &used);
+	if (err < 0) {
+		shell_error(sh, "Failed to get usage (mode does not support it?)");
 	}
 
-	shell_print(shell,
-		"Longest duplicated string: %d, buffer capacity: %d.",
-		buf_size, CONFIG_LOG_STRDUP_MAX_STRING);
-	if (buf_size > CONFIG_LOG_STRDUP_MAX_STRING) {
-		shell_warn(shell, "Buffer size too small.");
-
+	shell_print(sh, "Log message buffer utilization report:");
+	shell_print(sh, "\tCapacity: %u bytes", size);
+	shell_print(sh, "\tCurrently in use: %u bytes", used);
+	err = log_mem_get_max_usage(&max);
+	if (err < 0) {
+		shell_print(sh, "Enable CONFIG_LOG_MEM_UTILIZATION to get maximum usage");
 	}
+
+	shell_print(sh, "\tMaximum usage: %u bytes", max);
 
 	return 0;
 }
-
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_backend,
 	SHELL_CMD_ARG(disable, &dsub_module_name,
@@ -432,31 +419,25 @@ static void backend_name_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_backend_name_dynamic, backend_name_get);
 
-
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_stat,
-	SHELL_CMD(backend, &dsub_backend_name_dynamic,
-			"Logger backends commands.", NULL),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_log_stat,
+	SHELL_CMD(backend, &dsub_backend_name_dynamic, "Logger backends commands.", NULL),
 	SHELL_COND_CMD_ARG(CONFIG_SHELL_LOG_BACKEND, disable, &dsub_module_name,
-		"'log disable <module_0> .. <module_n>' disables logs in specified "
-		"modules (all if no modules specified).",
-		cmd_log_self_disable, 1, 255),
+			   "'log disable <module_0> .. <module_n>' disables logs in specified "
+			   "modules (all if no modules specified).",
+			   cmd_log_self_disable, 1, 255),
 	SHELL_COND_CMD_ARG(CONFIG_SHELL_LOG_BACKEND, enable, &dsub_severity_lvl,
-		"'log enable <level> <module_0> ...  <module_n>' enables logs up to"
-		" given level in specified modules (all if no modules specified).",
-		cmd_log_self_enable, 2, 255),
-	SHELL_COND_CMD(CONFIG_SHELL_LOG_BACKEND, go, NULL, "Resume logging",
-			cmd_log_self_go),
-	SHELL_COND_CMD(CONFIG_SHELL_LOG_BACKEND, halt, NULL, "Halt logging",
-			cmd_log_self_halt),
-	SHELL_CMD_ARG(list_backends, NULL, "Lists logger backends.",
-		      cmd_log_backends_list, 1, 0),
+			   "'log enable <level> <module_0> ...  <module_n>' enables logs up to"
+			   " given level in specified modules (all if no modules specified).",
+			   cmd_log_self_enable, 2, 255),
+	SHELL_COND_CMD(CONFIG_SHELL_LOG_BACKEND, go, NULL, "Resume logging", cmd_log_self_go),
+	SHELL_COND_CMD(CONFIG_SHELL_LOG_BACKEND, halt, NULL, "Halt logging", cmd_log_self_halt),
+	SHELL_CMD_ARG(list_backends, NULL, "Lists logger backends.", cmd_log_backends_list, 1, 0),
 	SHELL_COND_CMD(CONFIG_SHELL_LOG_BACKEND, status, NULL, "Logger status",
-			cmd_log_self_status),
-	SHELL_COND_CMD_ARG(CONFIG_LOG_STRDUP_POOL_PROFILING, strdup_utilization,
-			NULL, "Get utilization of string duplicates pool",
-			cmd_log_strdup_utilization, 1, 0),
-	SHELL_SUBCMD_SET_END
-);
+		       cmd_log_self_status),
+	SHELL_COND_CMD(CONFIG_LOG_MODE_DEFERRED, mem, NULL, "Logger memory usage",
+		       cmd_log_mem),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(log, &sub_log_stat, "Commands for controlling logger",
 		   NULL);

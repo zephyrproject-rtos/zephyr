@@ -8,7 +8,6 @@
 	isl29035@44 {
 		compatible = "isil,isl29035";
 		reg = <0x44>;
-		label = "ISL29035";
 		int-gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 	};
 };

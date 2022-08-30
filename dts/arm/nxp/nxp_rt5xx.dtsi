@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2022, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	soc {
+		sram: sram@30018000 {
+			ranges = <0x20180000 0x30180000 0x300000>;
+		};
+
+		peripheral: peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
+		};
+
+		flexspi: spi@134000 {
+			reg = <0x50134000 0x1000>, <0x18000000 DT_SIZE_M(64)>;
+		};
+	};
+};
+
+#include "nxp_rt5xx_common.dtsi"

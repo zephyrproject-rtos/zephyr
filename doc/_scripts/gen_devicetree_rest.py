@@ -22,10 +22,6 @@ from devicetree import edtlib
 
 import gen_helpers
 
-# A line of '-' characters in vendor-prefixes.txt that separates
-# the data from comments about it.
-VENDOR_PREFIXES_SEPARATOR = '-' * 50
-
 ZEPHYR_BASE = Path(__file__).parents[2]
 
 GENERIC_OR_VENDOR_INDEPENDENT = 'Generic or vendor-independent'
@@ -77,19 +73,7 @@ class VndLookup:
         vnd2vendor = {
             None: GENERIC_OR_VENDOR_INDEPENDENT,
         }
-        found_separator = False     # have we found the '-----' separator?
-        with open(vendor_prefixes, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if line and found_separator:
-                    # Every line after the separator should be in this form:
-                    #
-                    # <vnd><TAB><vendor>
-                    vnd_vendor = line.split('\t', 1)
-                    assert len(vnd_vendor) == 2, line
-                    vnd2vendor[vnd_vendor[0]] = vnd_vendor[1]
-                elif line.startswith(VENDOR_PREFIXES_SEPARATOR):
-                    found_separator = True
+        vnd2vendor.update(edtlib.load_vendor_prefixes_txt(vendor_prefixes))
 
         logger.info('found %d vendor prefixes in %s', len(vnd2vendor) - 1,
                     vendor_prefixes)
@@ -182,7 +166,8 @@ def main():
     bindings = load_bindings(args.dts_roots)
     base_binding = load_base_binding()
     vnd_lookup = VndLookup(args.vendor_prefixes, bindings)
-    dump_content(bindings, base_binding, vnd_lookup, args.out_dir)
+    dump_content(bindings, base_binding, vnd_lookup, args.out_dir,
+                 args.turbo_mode)
 
 def parse_args():
     # Parse command line arguments from sys.argv.
@@ -195,6 +180,8 @@ def parse_args():
     parser.add_argument('--dts-root', dest='dts_roots', action='append',
                         help='''additional DTS root directory as it would
                         be set in DTS_ROOTS''')
+    parser.add_argument('--turbo-mode', action='store_true',
+                        help='Enable turbo mode (dummy references)')
     parser.add_argument('out_dir', help='output files are generated here')
 
     return parser.parse_args()
@@ -217,6 +204,8 @@ def load_bindings(dts_roots):
 
     binding_files = []
     for dts_root in dts_roots:
+        binding_files.extend(glob.glob(f'{dts_root}/dts/bindings/**/*.yml',
+                                       recursive=True))
         binding_files.extend(glob.glob(f'{dts_root}/dts/bindings/**/*.yaml',
                                        recursive=True))
 
@@ -242,12 +231,14 @@ def load_base_binding():
     # nodes from node-specific properties.
 
     base_yaml = ZEPHYR_BASE / 'dts' / 'bindings' / 'base' / 'base.yaml'
+    base_includes = {"pm.yaml": os.fspath(ZEPHYR_BASE / 'dts' / 'bindings' / 'base'/ 'pm.yaml')}
+
     if not base_yaml.is_file():
         sys.exit(f'Expected to find base.yaml at {base_yaml}')
-    return edtlib.Binding(os.fspath(base_yaml), {}, require_compatible=False,
+    return edtlib.Binding(os.fspath(base_yaml), base_includes, require_compatible=False,
                           require_description=False)
 
-def dump_content(bindings, base_binding, vnd_lookup, out_dir):
+def dump_content(bindings, base_binding, vnd_lookup, out_dir, turbo_mode):
     # Dump the generated .rst files for a vnd2bindings dict.
     # Files are only written if they are changed. Existing .rst
     # files which would not be written by the 'vnd2bindings'
@@ -256,8 +247,11 @@ def dump_content(bindings, base_binding, vnd_lookup, out_dir):
     out_dir = Path(out_dir)
 
     setup_bindings_dir(bindings, out_dir)
-    write_bindings_rst(vnd_lookup, out_dir)
-    write_orphans(bindings, base_binding, vnd_lookup, out_dir)
+    if turbo_mode:
+        write_dummy_index(bindings, out_dir)
+    else:
+        write_bindings_rst(vnd_lookup, out_dir)
+        write_orphans(bindings, base_binding, vnd_lookup, out_dir)
 
 def setup_bindings_dir(bindings, out_dir):
     # Make a set of all the Path objects we will be creating for
@@ -279,6 +273,29 @@ def setup_bindings_dir(bindings, out_dir):
             if path not in paths:
                 logger.info('removing unexpected file %s', path)
                 path.unlink()
+
+
+def write_dummy_index(bindings, out_dir):
+    # Write out_dir / bindings.rst, with dummy anchors
+
+    # header
+    content = '\n'.join((
+        '.. _devicetree_binding_index:',
+        '.. _dt_vendor_zephyr:',
+        '',
+        'Dummy bindings index',
+        '####################',
+        '',
+    ))
+
+    # build compatibles set and dump it
+    compatibles = {binding.compatible for binding in bindings}
+    content += '\n'.join((
+        f'.. dtcompatible:: {compatible}' for compatible in compatibles
+    ))
+
+    write_if_updated(out_dir / 'bindings.rst', content)
+
 
 def write_bindings_rst(vnd_lookup, out_dir):
     # Write out_dir / bindings.rst, the top level index of bindings.
@@ -380,7 +397,7 @@ def write_orphans(bindings, base_binding, vnd_lookup, out_dir):
     # Next, write the per-binding pages. These contain the
     # per-compatible targets for compatibles not in 'dup_compats'.
     # We'll finish up by writing per-compatible "disambiguation" pages
-    # for copmatibles in 'dup_compats'.
+    # for compatibles in 'dup_compats'.
 
     # Names of properties in base.yaml.
     base_names = set(base_binding.prop2specs.keys())
@@ -662,7 +679,7 @@ def print_property_table(prop_specs, string_io, deprecated=False):
 
 def setup_compatibles_dir(compatibles, compatibles_dir):
     # Make a set of all the Path objects we will be creating for
-    # out_dir / copmatibles / {compatible_path}.rst. Delete all the ones that
+    # out_dir / compatibles / {compatible_path}.rst. Delete all the ones that
     # shouldn't be there. Make sure the compatibles output directory
     # exists.
 
@@ -779,9 +796,9 @@ def binding_filename(binding):
     if idx == -1:
         raise ValueError(f'binding path has no {dts_bindings}: {binding.path}')
 
-    # Cut past dts/bindings, strip off the .yaml, and replace with
-    # .rst.
-    return as_posix[idx + len(dts_bindings):-4] + 'rst'
+    # Cut past dts/bindings, strip off the extension (.yaml or .yml), and
+    # replace with .rst.
+    return os.path.splitext(as_posix[idx + len(dts_bindings):])[0] + '.rst'
 
 def binding_ref_target(binding):
     # Return the sphinx ':ref:' target name for a binding.

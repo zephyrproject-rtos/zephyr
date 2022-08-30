@@ -6,10 +6,10 @@
 
 #include "rpmsg_backend.h"
 
-#include <zephyr.h>
-#include <drivers/ipm.h>
-#include <device.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
 
 #include <openamp/open_amp.h>
 #include <metal/device.h>
@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_RPMSG_SERVICE_LOG_LEVEL);
 
 #if MASTER
 #define VIRTQUEUE_ID 0
-#define RPMSG_ROLE RPMSG_MASTER
+#define RPMSG_ROLE RPMSG_HOST
 #else
 #define VIRTQUEUE_ID 1
 #define RPMSG_ROLE RPMSG_REMOTE
@@ -41,12 +41,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_RPMSG_SERVICE_LOG_LEVEL);
 #define VRING_SIZE		    16
 
 #define IPM_WORK_QUEUE_STACK_SIZE CONFIG_RPMSG_SERVICE_WORK_QUEUE_STACK_SIZE
-
-#if IS_ENABLED(CONFIG_COOP_ENABLED)
-#define IPM_WORK_QUEUE_PRIORITY -1
-#else
-#define IPM_WORK_QUEUE_PRIORITY 0
-#endif
+#define IPM_WORK_QUEUE_PRIORITY   K_HIGHEST_APPLICATION_THREAD_PRIO
 
 K_THREAD_STACK_DEFINE(ipm_stack_area, IPM_WORK_QUEUE_STACK_SIZE);
 
@@ -55,10 +50,13 @@ struct k_work_q ipm_work_q;
 /* End of configuration defines */
 
 #if defined(CONFIG_RPMSG_SERVICE_DUAL_IPM_SUPPORT)
-static const struct device *ipm_tx_handle;
-static const struct device *ipm_rx_handle;
+static const struct device *const ipm_tx_handle =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc_tx));
+static const struct device *const ipm_rx_handle =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc_rx));
 #elif defined(CONFIG_RPMSG_SERVICE_SINGLE_IPM_SUPPORT)
-static const struct device *ipm_handle;
+static const struct device *const ipm_handle =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
 #endif
 
 static metal_phys_addr_t shm_physmap[] = { SHM_START_ADDR };
@@ -215,25 +213,27 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 
 	/* IPM setup */
 #if defined(CONFIG_RPMSG_SERVICE_DUAL_IPM_SUPPORT)
-	ipm_tx_handle = device_get_binding(CONFIG_RPMSG_SERVICE_IPM_TX_NAME);
-	ipm_rx_handle = device_get_binding(CONFIG_RPMSG_SERVICE_IPM_RX_NAME);
-
-	if (!ipm_tx_handle) {
-		LOG_ERR("Could not get TX IPM device handle");
+	if (!device_is_ready(ipm_tx_handle)) {
+		LOG_ERR("IPM TX device is not ready");
 		return -ENODEV;
 	}
 
-	if (!ipm_rx_handle) {
-		LOG_ERR("Could not get RX IPM device handle");
+	if (!device_is_ready(ipm_rx_handle)) {
+		LOG_ERR("IPM RX device is not ready");
 		return -ENODEV;
 	}
 
 	ipm_register_callback(ipm_rx_handle, ipm_callback, NULL);
-#elif defined(CONFIG_RPMSG_SERVICE_SINGLE_IPM_SUPPORT)
-	ipm_handle = device_get_binding(CONFIG_RPMSG_SERVICE_IPM_NAME);
 
-	if (ipm_handle == NULL) {
-		LOG_ERR("Could not get IPM device handle");
+	err = ipm_set_enabled(ipm_rx_handle, 1);
+	if (err != 0) {
+		LOG_ERR("Could not enable IPM interrupts and callbacks for RX");
+		return err;
+	}
+
+#elif defined(CONFIG_RPMSG_SERVICE_SINGLE_IPM_SUPPORT)
+	if (!device_is_ready(ipm_handle)) {
+		LOG_ERR("IPM device is not ready");
 		return -ENODEV;
 	}
 

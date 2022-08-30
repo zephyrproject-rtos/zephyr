@@ -12,14 +12,14 @@
 
 #define LOG_MODULE_NAME modem_shell
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <string.h>
-#include <device.h>
-#include <shell/shell.h>
-#include <drivers/console/uart_mux.h>
+#include <zephyr/device.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/console/uart_mux.h>
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 struct modem_shell_user_data {
 	const struct shell *shell;
@@ -88,7 +88,7 @@ static int cmd_modem_list(const struct shell *shell, size_t argc,
 			       mdm_ctx->data_lac,
 			       mdm_ctx->data_cellid,
 #endif
-			       mdm_ctx->data_rssi);
+			       mdm_ctx->data_rssi ? *mdm_ctx->data_rssi : 0);
 		}
 	}
 
@@ -223,7 +223,7 @@ static int cmd_modem_info(const struct shell *shell, size_t argc, char *argv[])
 		      mdm_ctx->data_model,
 		      mdm_ctx->data_revision,
 		      mdm_ctx->data_imei,
-		      mdm_ctx->data_rssi);
+		      mdm_ctx->data_rssi ? *mdm_ctx->data_rssi : 0);
 
 	shell_fprintf(shell, SHELL_NORMAL,
 		      "GSM 07.10 muxing : %s\n",

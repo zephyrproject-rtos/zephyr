@@ -9,11 +9,12 @@ Overview
 This is a sample app which drives an RGB LED using PWM.
 
 There are three single-color component LEDs in an RGB LED. Each component LED
-is driven by a PWM port where the pulse width is changed from zero to a fusion
-flicker threshold (the minimum flicker rate where the LED is perceived as being
-steady), causing each component LED to step from dark to max brightness. Three
-**for** loops (one for each component LED) generate a gradual range of color
-changes from the RGB LED, and the sample repeats forever.
+is driven by a PWM port where the pulse width is changed from zero to the period
+indicated in Devicetree. Such period should be fast enough to be above the
+flicker fusion threshold (the minimum flicker rate where the LED is perceived as
+being steady). The sample causes each LED component to step from dark to max
+brightness. Three **for** loops (one for each component LED) generate a gradual
+range of color changes from the RGB LED, and the sample repeats forever.
 
 Requirements
 ************

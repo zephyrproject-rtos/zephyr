@@ -3,11 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/pm/pm.h>
 #include <em_emu.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /*
@@ -18,9 +18,11 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
  */
 
 /* Invoke Low Power/System Off specific Tasks */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-	LOG_DBG("SoC entering power state %d", info.state);
+	ARG_UNUSED(substate_id);
+
+	LOG_DBG("SoC entering power state %d", state);
 
 	/* FIXME: When this function is entered the Kernel has disabled
 	 * interrupts using BASEPRI register. This is incorrect as it prevents
@@ -34,7 +36,7 @@ __weak void pm_power_state_set(struct pm_state_info info)
 	/* Set BASEPRI to 0 */
 	irq_unlock(0);
 
-	switch (info.state) {
+	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
 		EMU_EnterEM1();
 		break;
@@ -45,18 +47,19 @@ __weak void pm_power_state_set(struct pm_state_info info)
 		EMU_EnterEM3(true);
 		break;
 	default:
-		LOG_DBG("Unsupported power state %u", info.state);
+		LOG_DBG("Unsupported power state %u", state);
 		break;
 	}
 
-	LOG_DBG("SoC leaving power state %d", info.state);
+	LOG_DBG("SoC leaving power state %d", state);
 
 	/* Clear PRIMASK */
 	__enable_irq();
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	ARG_UNUSED(info);
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
 }

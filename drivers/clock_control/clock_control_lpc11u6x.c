@@ -6,19 +6,12 @@
 
 #define DT_DRV_COMPAT nxp_lpc11u6x_syscon
 
-#include <devicetree.h>
-#include <device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/device.h>
 
-#include <drivers/clock_control/lpc11u6x_clock_control.h>
-#include <drivers/pinmux.h>
+#include <zephyr/drivers/clock_control/lpc11u6x_clock_control.h>
 
 #include "clock_control_lpc11u6x.h"
-
-#define DEV_CFG(dev)  ((const struct lpc11u6x_syscon_config *) \
-		      ((dev)->config))
-
-#define DEV_DATA(dev) ((struct lpc11u6x_syscon_data *) \
-		      ((dev)->data))
 
 static void syscon_power_up(struct lpc11u6x_syscon_regs *syscon,
 			    uint32_t bit, bool enable)
@@ -80,43 +73,6 @@ static void syscon_ahb_clock_enable(struct lpc11u6x_syscon_regs *syscon,
 	}
 }
 
-#if defined(CONFIG_CLOCK_CONTROL_LPC11U6X_PLL_SRC_SYSOSC) \
-	&& DT_INST_NODE_HAS_PROP(0, pinmuxs)
-/**
- * @brief: configure system oscillator pins.
- *
- * This system oscillator pins and their configurations are retrieved from the
- * "pinmuxs" property of the DT clock controller node.
- */
-static void pinmux_enable_sysosc(void)
-{
-	const struct device *pinmux_dev;
-	uint32_t pin, func;
-
-	pinmux_dev = device_get_binding(
-		DT_LABEL(DT_INST_PHANDLE_BY_NAME(0, pinmuxs, xtalin)));
-	if (!pinmux_dev) {
-		return;
-	}
-	pin = DT_INST_PHA_BY_NAME(0, pinmuxs, xtalin, pin);
-	func = DT_INST_PHA_BY_NAME(0, pinmuxs, xtalin, function);
-
-	pinmux_pin_set(pinmux_dev, pin, func);
-
-	pinmux_dev = device_get_binding(
-		DT_LABEL(DT_INST_PHANDLE_BY_NAME(0, pinmuxs, xtalout)));
-	if (!pinmux_dev) {
-		return;
-	}
-	pin = DT_INST_PHA_BY_NAME(0, pinmuxs, xtalout, pin);
-	func = DT_INST_PHA_BY_NAME(0, pinmuxs, xtalout, function);
-
-	pinmux_pin_set(pinmux_dev, pin, func);
-}
-#else
-#define pinmux_enable_sysosc() do { } while (0)
-#endif
-
 static void syscon_peripheral_reset(struct lpc11u6x_syscon_regs *syscon,
 				    uint32_t mask, bool reset)
 {
@@ -151,8 +107,8 @@ static void syscon_frg_deinit(struct lpc11u6x_syscon_regs *syscon)
 static int lpc11u6x_clock_control_on(const struct device *dev,
 				     clock_control_subsys_t sub_system)
 {
-	const struct lpc11u6x_syscon_config *cfg = DEV_CFG(dev);
-	struct lpc11u6x_syscon_data *data = DEV_DATA(dev);
+	const struct lpc11u6x_syscon_config *cfg = dev->config;
+	struct lpc11u6x_syscon_data *data = dev->data;
 	uint32_t clk_mask = 0, reset_mask = 0;
 	int ret = 0, init_frg = 0;
 
@@ -223,8 +179,8 @@ static int lpc11u6x_clock_control_on(const struct device *dev,
 static int lpc11u6x_clock_control_off(const struct device *dev,
 				      clock_control_subsys_t sub_system)
 {
-	const struct lpc11u6x_syscon_config *cfg = DEV_CFG(dev);
-	struct lpc11u6x_syscon_data *data = DEV_DATA(dev);
+	const struct lpc11u6x_syscon_config *cfg = dev->config;
+	struct lpc11u6x_syscon_data *data = dev->data;
 	uint32_t clk_mask = 0, reset_mask = 0;
 	int ret = 0, deinit_frg = 0;
 
@@ -319,8 +275,8 @@ static int lpc11u6x_clock_control_get_rate(const struct device *dev,
 
 static int lpc11u6x_syscon_init(const struct device *dev)
 {
-	const struct lpc11u6x_syscon_config *cfg = DEV_CFG(dev);
-	struct lpc11u6x_syscon_data *data = DEV_DATA(dev);
+	const struct lpc11u6x_syscon_config *cfg = dev->config;
+	struct lpc11u6x_syscon_data *data = dev->data;
 	uint32_t val;
 
 	k_mutex_init(&data->mutex);
@@ -353,7 +309,7 @@ static int lpc11u6x_syscon_init(const struct device *dev)
 	/* Configure PLL input */
 	syscon_set_pll_src(cfg->syscon, LPC11U6X_SYS_PLL_CLK_SEL_SYSOSC);
 
-	pinmux_enable_sysosc();
+	pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 
 #elif defined(CONFIG_CLOCK_CONTROL_LPC11U6X_PLL_SRC_IRC)
 	syscon_power_up(cfg->syscon, LPC11U6X_PDRUNCFG_IRC_PD, true);
@@ -387,8 +343,12 @@ static const struct clock_control_driver_api lpc11u6x_clock_control_api = {
 	.get_rate = lpc11u6x_clock_control_get_rate,
 };
 
+
+PINCTRL_DT_INST_DEFINE(0);
+
 static const struct lpc11u6x_syscon_config syscon_config = {
 	.syscon = (struct lpc11u6x_syscon_regs *) DT_INST_REG_ADDR(0),
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 static struct lpc11u6x_syscon_data syscon_data;
@@ -397,5 +357,5 @@ DEVICE_DT_INST_DEFINE(0,
 		    &lpc11u6x_syscon_init,
 		    NULL,
 		    &syscon_data, &syscon_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
+		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &lpc11u6x_clock_control_api);

@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_rt1015.dtsi>
+#include "mimxrt1015_evk-pinctrl.dtsi"
 
 / {
 	model = "NXP MIMXRT1015-EVK board";
@@ -15,7 +16,6 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
-		usbd0 = &usb1;
 	};
 
 	chosen {
@@ -71,14 +71,17 @@
 	};
 };
 
-arduino_serial: &lpuart4 {};
+arduino_serial: &lpuart4 {
+	pinctrl-0 = <&pinmux_lpuart4>;
+	pinctrl-1 = <&pinmux_lpuart4_sleep>;
+	pinctrl-names = "default", "sleep";
+};
 
 &flexspi {
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(16)>;
 	at25sf128a: at25sf128a@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <134217728>;
-		label = "AT25SF128A";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";
@@ -88,13 +91,49 @@ arduino_serial: &lpuart4 {};
 
 &lpi2c1 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
 };
 
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
-&usb1 {
+&lpspi1 {
+	status = "okay";
+	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
+	dmas = <&edma0 0 13>, <&edma0 1 14>;
+	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_adc1>;
+	pinctrl-names = "default";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&sai1 {
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+};
+
+/* Enable GPT for use as a hardware timer. This disables Cortex Systick.
+ * to use systick, change this node from "gpt_hw_timer" to "systick"
+ */
+&gpt_hw_timer {
 	status = "okay";
 };

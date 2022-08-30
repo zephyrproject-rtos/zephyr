@@ -12,33 +12,8 @@ config PINMUX_MCUX_LPC
 	default y
 	depends on PINMUX
 
-config GPIO_MCUX_LPC
-	default y
-	depends on GPIO
-
-config UART_MCUX_FLEXCOMM
-	default y if HAS_MCUX_FLEXCOMM
-	depends on SERIAL
-
-config I2C_MCUX_FLEXCOMM
-	default y if HAS_MCUX_FLEXCOMM
-	depends on I2C
-
-config SPI_MCUX_FLEXCOMM
-	default y if HAS_MCUX_FLEXCOMM
-	depends on SPI
-
 config I2S_MCUX_FLEXCOMM
-	default y if HAS_MCUX_FLEXCOMM
-	depends on I2S
-
-config DMA_MCUX_LPC
-	default y
-	depends on DMA
-
-config CLOCK_CONTROL_MCUX_SYSCON
-	default y if HAS_MCUX_SYSCON
-	depends on CLOCK_CONTROL
+	select INIT_AUDIO_PLL
 
 if MCUX_OS_TIMER
 
@@ -54,12 +29,8 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 endif # CORTEX_M_SYSTICK
 
-config COUNTER_MCUX_LPC_RTC
-	default y
-	depends on COUNTER
-
-config PWM_MCUX_SCTIMER
-	default y
-	depends on PWM
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_LPCIP3511
+endchoice
 
 endif # SOC_MIMXRT685S_CM33

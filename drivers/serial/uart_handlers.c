@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/uart.h>
-#include <syscall_handler.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/syscall_handler.h>
 
 #define UART_SIMPLE(op_) \
 	static inline int z_vrfy_uart_##op_(const struct device *dev) \
@@ -33,6 +33,15 @@ static inline int z_vrfy_uart_poll_in(const struct device *dev,
 }
 #include <syscalls/uart_poll_in_mrsh.c>
 
+static inline int z_vrfy_uart_poll_in_u16(const struct device *dev,
+					  uint16_t *p_u16)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, poll_in));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(p_u16, sizeof(uint16_t)));
+	return z_impl_uart_poll_in_u16(dev, p_u16);
+}
+#include <syscalls/uart_poll_in_u16_mrsh.c>
+
 static inline void z_vrfy_uart_poll_out(const struct device *dev,
 					unsigned char out_char)
 {
@@ -40,6 +49,14 @@ static inline void z_vrfy_uart_poll_out(const struct device *dev,
 	z_impl_uart_poll_out((const struct device *)dev, out_char);
 }
 #include <syscalls/uart_poll_out_mrsh.c>
+
+static inline void z_vrfy_uart_poll_out_u16(const struct device *dev,
+					    uint16_t out_u16)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, poll_out));
+	z_impl_uart_poll_out_u16((const struct device *)dev, out_u16);
+}
+#include <syscalls/uart_poll_out_u16_mrsh.c>
 
 static inline int z_vrfy_uart_config_get(const struct device *dev,
 					 struct uart_config *cfg)
@@ -77,6 +94,18 @@ static inline int z_vrfy_uart_tx(const struct device *dev, const uint8_t *buf,
 }
 #include <syscalls/uart_tx_mrsh.c>
 
+#ifdef CONFIG_UART_WIDE_DATA
+static inline int z_vrfy_uart_tx_u16(const struct device *dev,
+				     const uint16_t *buf,
+				     size_t len, int32_t timeout)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, tx));
+	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(buf, len, sizeof(uint16_t)));
+	return z_impl_uart_tx_u16(dev, buf, len, timeout);
+}
+#include <syscalls/uart_tx_u16_mrsh.c>
+#endif
+
 UART_SIMPLE(tx_abort);
 #include <syscalls/uart_tx_abort_mrsh.c>
 
@@ -89,6 +118,18 @@ static inline int z_vrfy_uart_rx_enable(const struct device *dev,
 	return z_impl_uart_rx_enable(dev, buf, len, timeout);
 }
 #include <syscalls/uart_rx_enable_mrsh.c>
+
+#ifdef CONFIG_UART_WIDE_DATA
+static inline int z_vrfy_uart_rx_enable_u16(const struct device *dev,
+					    uint16_t *buf,
+					    size_t len, int32_t timeout)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, rx_enable));
+	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_WRITE(buf, len, sizeof(uint16_t)));
+	return z_impl_uart_rx_enable_u16(dev, buf, len, timeout);
+}
+#include <syscalls/uart_rx_enable_u16_mrsh.c>
+#endif
 
 UART_SIMPLE(rx_disable);
 #include <syscalls/uart_rx_disable_mrsh.c>

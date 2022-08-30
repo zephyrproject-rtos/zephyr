@@ -30,9 +30,7 @@ Here are some highlights of the STM32F411E-DISCO board:
 - Extension header for LQFP100 I/Os for a quick connection to the prototyping board and an easy probing
 
 .. image:: img/stm32f411e_disco.jpg
-     :width: 533px
      :align: center
-     :height: 500px
      :alt: STM32F411E-DISCO
 
 More information about the board can be found at the `32F411EDISCOVERY website`_.
@@ -150,7 +148,7 @@ Here is an example for the :ref:`blinky-sample` application.
    :board: stm32f411e_disco
    :goals: build flash
 
-Incase you are using PCB revision B, you have to use an
+In case you are using PCB revision B, you have to use an
 adapted board definition as the default PCB rev here is D:
 
 .. zephyr-app-commands::

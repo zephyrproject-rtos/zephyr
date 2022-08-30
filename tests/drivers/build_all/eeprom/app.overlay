@@ -20,7 +20,6 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
-			label = "TEST_GPIO_1";
 			status = "okay";
 		};
 
@@ -29,13 +28,11 @@
 			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			label = "TEST_I2C_CTLR";
 			status = "okay";
 			clock-frequency = <100000>;
 
 			test_i2c_at24: at24@0 {
 				compatible = "atmel,at24";
-				label = "AT24";
 				reg = <0x0>;
 				size = <32768>;
 				pagesize = <64>;
@@ -51,7 +48,6 @@
 			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
-			label = "TEST_SPI_CTLR";
 			status = "okay";
 			clock-frequency = <2000000>;
 
@@ -60,7 +56,6 @@
 
 			test_spi_at25: at25@0 {
 				compatible = "atmel,at25";
-				label = "AT25";
 				reg = <0x0>;
 				spi-max-frequency = <0>;
 				size = <32768>;

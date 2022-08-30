@@ -4,8 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config DMA_MCUX_EDMA
-	bool "Enable MCUX DMA driver"
-	depends on HAS_MCUX_EDMA
+	bool "MCUX DMA driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_EDMA_ENABLED
 	imply NOCACHE_MEMORY if HAS_MCUX_CACHE
 	help
 	  DMA driver for MCUX series SoCs.
@@ -25,5 +26,11 @@ config DMA_MCUX_TEST_SLOT_START
 	default 60 if SOC_SERIES_KINETIS_KE1XF
 	help
 	  test slot start num
+
+config DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS
+	bool "Use DTCM for DMA descriptors"
+	help
+	  When this option is activated, the descriptors for DMA transfer are
+	  located in the DTCM (Data Tightly Coupled Memory).
 
 endif # DMA_MCUX_EDMA

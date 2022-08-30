@@ -6,8 +6,7 @@
 
 / {
 	ntc {
-		label = "GTS";
-		compatible = "grove,temperature";
+		compatible = "seeed,grove-temperature";
 		io-channels = <&arduino_adc 0>;
 	};
 };

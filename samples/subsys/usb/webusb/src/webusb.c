@@ -13,18 +13,22 @@
  */
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(webusb);
 
-#include <sys/byteorder.h>
-#include <usb/usb_device.h>
-#include <usb/usb_common.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 
 #include "webusb.h"
 
 /* Max packet size for Bulk endpoints */
+#if IS_ENABLED(CONFIG_USB_DC_HAS_HS_SUPPORT)
+#define WEBUSB_BULK_EP_MPS		512
+#else
 #define WEBUSB_BULK_EP_MPS		64
+#endif
+
 /* Number of interfaces */
 #define WEBUSB_NUM_ITF			0x01
 /* Number of Endpoints in the custom interface */
@@ -35,12 +39,12 @@ LOG_MODULE_REGISTER(webusb);
 
 static struct webusb_req_handlers *req_handlers;
 
-uint8_t rx_buf[64];
+uint8_t rx_buf[WEBUSB_BULK_EP_MPS];
 
 #define INITIALIZER_IF(num_ep, iface_class)				\
 	{								\
 		.bLength = sizeof(struct usb_if_descriptor),		\
-		.bDescriptorType = USB_INTERFACE_DESC,			\
+		.bDescriptorType = USB_DESC_INTERFACE,			\
 		.bInterfaceNumber = 0,					\
 		.bAlternateSetting = 0,					\
 		.bNumEndpoints = num_ep,				\
@@ -53,7 +57,7 @@ uint8_t rx_buf[64];
 #define INITIALIZER_IF_EP(addr, attr, mps, interval)			\
 	{								\
 		.bLength = sizeof(struct usb_ep_descriptor),		\
-		.bDescriptorType = USB_ENDPOINT_DESC,			\
+		.bDescriptorType = USB_DESC_ENDPOINT,			\
 		.bEndpointAddress = addr,				\
 		.bmAttributes = attr,					\
 		.wMaxPacketSize = sys_cpu_to_le16(mps),			\
@@ -65,7 +69,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct {
 	struct usb_ep_descriptor if0_in_ep;
 	struct usb_ep_descriptor if0_out_ep;
 } __packed webusb_desc = {
-	.if0 = INITIALIZER_IF(WEBUSB_NUM_EP, CUSTOM_CLASS),
+	.if0 = INITIALIZER_IF(WEBUSB_NUM_EP, USB_BCC_VENDOR),
 	.if0_in_ep = INITIALIZER_IF_EP(AUTO_EP_IN, USB_DC_EP_BULK,
 				       WEBUSB_BULK_EP_MPS, 0),
 	.if0_out_ep = INITIALIZER_IF_EP(AUTO_EP_OUT, USB_DC_EP_BULK,
@@ -123,8 +127,6 @@ int webusb_vendor_handle_req(struct usb_setup_packet *pSetup,
  * for handling the device requests.
  *
  * @param [in] handlers Pointer to WebUSB request handlers structure
- *
- * @return N/A
  */
 void webusb_register_request_handlers(struct webusb_req_handlers *handlers)
 {
@@ -157,8 +159,6 @@ done:
  * @brief Callback used to know the USB connection status
  *
  * @param status USB device status code.
- *
- * @return  N/A.
  */
 static void webusb_dev_status_cb(struct usb_cfg_data *cfg,
 				 enum usb_dc_status_code status,
@@ -211,7 +211,7 @@ static struct usb_ep_cfg_data webusb_ep_data[] = {
 	}
 };
 
-USBD_CFG_DATA_DEFINE(primary, webusb) struct usb_cfg_data webusb_config = {
+USBD_DEFINE_CFG_DATA(webusb_config) = {
 	.usb_device_description = NULL,
 	.interface_descriptor = &webusb_desc.if0,
 	.cb_usb_status = webusb_dev_status_cb,

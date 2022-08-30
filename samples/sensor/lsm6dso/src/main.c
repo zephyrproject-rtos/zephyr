@@ -5,18 +5,9 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
-
-#define LSM6DSO DT_INST(0, st_lsm6dso)
-
-#if DT_NODE_HAS_STATUS(LSM6DSO, okay)
-#define LSM6DSO_LABEL DT_LABEL(LSM6DSO)
-#else
-#error Your devicetree has no enabled nodes with compatible "st,lsm6dso"
-#define LSM6DSO_LABEL "<none>"
-#endif
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 
 static inline float out_ev(struct sensor_value *val)
 {
@@ -45,7 +36,7 @@ static void fetch_and_display(const struct device *dev)
 	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Y, &y);
 	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Z, &z);
 
-	printf("gyro x:%f dps y:%f dps z:%f dps\n",
+	printf("gyro x:%f rad/s y:%f rad/s z:%f rad/s\n",
 			out_ev(&x), out_ev(&y), out_ev(&z));
 
 	printf("trig_cnt:%d\n\n", trig_cnt);
@@ -79,7 +70,7 @@ static int set_sampling_freq(const struct device *dev)
 
 #ifdef CONFIG_LSM6DSO_TRIGGER
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *trig)
+			    const struct sensor_trigger *trig)
 {
 	fetch_and_display(dev);
 }
@@ -103,8 +94,9 @@ static void test_trigger_mode(const struct device *dev)
 #else
 static void test_polling_mode(const struct device *dev)
 {
-	if (set_sampling_freq(dev) != 0)
+	if (set_sampling_freq(dev) != 0) {
 		return;
+	}
 
 	while (1) {
 		fetch_and_display(dev);
@@ -115,10 +107,10 @@ static void test_polling_mode(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev = device_get_binding(LSM6DSO_LABEL);
+	const struct device *const dev = DEVICE_DT_GET_ONE(st_lsm6dso);
 
-	if (dev == NULL) {
-		printf("No device \"%s\" found.\n", LSM6DSO_LABEL);
+	if (!device_is_ready(dev)) {
+		printk("%s: device not ready.\n", dev->name);
 		return;
 	}
 

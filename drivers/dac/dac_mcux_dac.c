@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_dac
 
-#include <zephyr.h>
-#include <drivers/dac.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/logging/log.h>
 
 #include <fsl_dac.h>
 
@@ -108,7 +108,7 @@ static const struct dac_driver_api mcux_dac_driver_api = {
 	DEVICE_DT_INST_DEFINE(n, mcux_dac_init, NULL,			\
 			&mcux_dac_data_##n,				\
 			&mcux_dac_config_##n,				\
-			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,\
+			POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,		\
 			&mcux_dac_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_DAC_INIT)

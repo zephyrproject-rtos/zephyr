@@ -5,7 +5,8 @@
  */
 #include <xtensa-asm2-s.h>
 #include <offsets.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
+#include <zsr.h>
 
 /*
  * xtensa_spill_reg_windows
@@ -140,51 +141,17 @@ _high_restore_done:
  * RFI levels do the same thing and differ only in the special
  * registers used to hold PC/PS, but Qemu has been observed to behave
  * strangely when RFI doesn't "return" to a INTLEVEL strictly lower
- * than it started from.  So pick level 6 (the highest that works on
- * Qemu, hardware doesn't care so it doesn't matter).  In theory we
- * should test to be able to support hardware with less than 6 levels,
- * though...
+ * than it started from.  So we leverage the zsr.h framework to pick
+ * the highest level available for our specific platform.
  */
-
-/*
- * XCC doesn't like _CONCAT() so we need to spell out
- * every single one.
- */
-#if XCHAL_NUM_INTLEVELS == 1
-# define RCTX_EPC_REG		EPC1
-# define RCTX_EPS_REG		EPS1
-#elif XCHAL_NUM_INTLEVELS == 2
-# define RCTX_EPC_REG		EPC2
-# define RCTX_EPS_REG		EPS2
-#elif XCHAL_NUM_INTLEVELS == 3
-# define RCTX_EPC_REG		EPC3
-# define RCTX_EPS_REG		EPS3
-#elif XCHAL_NUM_INTLEVELS == 4
-# define RCTX_EPC_REG		EPC4
-# define RCTX_EPS_REG		EPS4
-#elif XCHAL_NUM_INTLEVELS == 5
-# define RCTX_EPC_REG		EPC5
-# define RCTX_EPS_REG		EPS5
-#elif XCHAL_NUM_INTLEVELS == 6
-# define RCTX_EPC_REG		EPC6
-# define RCTX_EPS_REG		EPS6
-#elif XCHAL_NUM_INTLEVELS == 7
-# define RCTX_EPC_REG		EPC7
-# define RCTX_EPS_REG		EPS7
-#else
-/* Catch all */
-# define RCTX_EPC_REG		_CONCAT(EPC, XCHAL_NUM_INTLEVELS)
-# define RCTX_EPS_REG		_CONCAT(EPS, XCHAL_NUM_INTLEVELS)
-#endif
-
 .global _restore_context
 _restore_context:
 	call0 xtensa_restore_high_regs
 
 	l32i a0, a1, BSA_PC_OFF
-	wsr a0, RCTX_EPC_REG
+	wsr a0, ZSR_EPC
 	l32i a0, a1, BSA_PS_OFF
-	wsr a0, RCTX_EPS_REG
+	wsr a0, ZSR_EPS
 
 	l32i a0, a1, BSA_SAR_OFF
 	wsr a0, SAR
@@ -211,12 +178,28 @@ _restore_context:
 	l32i a3, a1, BSA_A3_OFF
 	addi a1, a1, BASE_SAVE_AREA_SIZE
 
-	rfi XCHAL_NUM_INTLEVELS
+	rfi ZSR_RFI_LEVEL
+
+/*
+ * void xtensa_arch_except(int reason_p);
+ *
+ * Implements hardware exception for Xtensa ARCH_EXCEPT to save
+ * interrupted stack frame and reason_p for use in exception handler
+ * and coredump
+ */
+.global xtensa_arch_except
+.global xtensa_arch_except_epc
+.align 4
+xtensa_arch_except:
+	entry a1, 16
+xtensa_arch_except_epc:
+	ill
+	retw
 
 /*
  * void xtensa_switch(void *new, void **old_return);
  *
- * Context switches into the prevoiusly-saved "new" handle, placing
+ * Context switches into the previously-saved "new" handle, placing
  * the saved "old" handle into the address provided by old_return.
  */
 .global xtensa_switch
@@ -247,15 +230,17 @@ xtensa_switch:
 	call0 xtensa_save_high_regs
 
 #ifdef CONFIG_KERNEL_COHERENCE
-	/* Flush the stack.  The top of stack was stored for us in
-	 * EXCSAVE3 (FIXME: shouldn't be hardcoded!) by arch_cohere_stacks().
+	/* Flush the stack.  The top of stack was stored for us by
+	 * arch_cohere_stacks().  It can be NULL for a dummy thread.
 	 */
-	rsr.EXCSAVE3 a0
+	rsr a0, ZSR_FLUSH
+	beqz a0, noflush
 	mov a3, a1
 flushloop:
 	dhwb a3, 0
 	addi a3, a3, XCHAL_DCACHE_LINESIZE
 	blt a3, a0, flushloop
+noflush:
 #endif
 
 	/* Restore the A3 argument we spilled earlier (via the base
@@ -286,7 +271,7 @@ _switch_restore_pc:
  */
 .align 4
 _handle_excint:
-	EXCINT_HANDLER CONFIG_XTENSA_KERNEL_CPU_PTR_SR, ___cpu_t_nested_OFFSET, ___cpu_t_irq_stack_OFFSET
+	EXCINT_HANDLER ZSR_CPU, ___cpu_t_nested_OFFSET, ___cpu_t_irq_stack_OFFSET
 
 /* Define the actual vectors for the hardware-defined levels with
  * DEF_EXCINT.  These load a C handler address and jump to our handler
@@ -296,27 +281,43 @@ _handle_excint:
 DEF_EXCINT 1, _handle_excint, xtensa_excint1_c
 
 #if XCHAL_NMILEVEL >= 2
+#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 2))
 DEF_EXCINT 2, _handle_excint, xtensa_int2_c
+#endif
 #endif
 
 #if XCHAL_NMILEVEL >= 3
+#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 3))
 DEF_EXCINT 3, _handle_excint, xtensa_int3_c
+#endif
 #endif
 
 #if XCHAL_NMILEVEL >= 4
+#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 4))
 DEF_EXCINT 4, _handle_excint, xtensa_int4_c
+#endif
 #endif
 
 #if XCHAL_NMILEVEL >= 5
+#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 5))
 DEF_EXCINT 5, _handle_excint, xtensa_int5_c
+#endif
 #endif
 
 #if XCHAL_NMILEVEL >= 6
+#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 6))
 DEF_EXCINT 6, _handle_excint, xtensa_int6_c
+#endif
 #endif
 
 #if XCHAL_NMILEVEL >= 7
+#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 7))
 DEF_EXCINT 7, _handle_excint, xtensa_int7_c
+#endif
+#endif
+
+#if defined(CONFIG_GDBSTUB)
+DEF_EXCINT XCHAL_DEBUGLEVEL, _handle_excint, xtensa_debugint_c
 #endif
 
 /* The user exception vector is defined here, as we need to handle
@@ -328,18 +329,18 @@ DEF_EXCINT 7, _handle_excint, xtensa_int7_c
  * to save these five cycles during other exceptions and L1
  * interrupts.  Maybe revisit at some point, with better benchmarking.
  * Note that _xt_alloca_exc is Xtensa-authored code which expects A0
- * to have been saved to EXCSAVE1, which is an unfortunate ABI given
- * that Zephyr code otherwise does not use the EXCSAVE registers.
+ * to have been saved to EXCSAVE1, we've modified it to use the zsr.h
+ * API to get assigned a scratch register.
  */
 .pushsection .UserExceptionVector.text, "ax"
 .global _Level1RealVector
 _Level1RealVector:
-	wsr.excsave1 a0
+	wsr a0, ZSR_ALLOCA
 	rsr.exccause a0
 	bnei a0, EXCCAUSE_ALLOCA, _not_alloca
 	j _xt_alloca_exc
 _not_alloca:
-	rsr.excsave1 a0
+	rsr a0, ZSR_ALLOCA
 	j _Level1Vector
 .popsection
 

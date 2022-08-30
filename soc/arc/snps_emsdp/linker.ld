@@ -8,8 +8,7 @@
  * @brief Linker script for the Synopsys ARC IoT Development Kit
  */
 
-#include <devicetree.h>
-#include <autoconf.h>
+#include <zephyr/devicetree.h>
 
 /*
  * SRAM base address and size
@@ -39,4 +38,4 @@
 #define DCCM_SIZE		DT_REG_SIZE(DT_INST(0, arc_dccm))
 #endif
 
-#include <arch/arc/v2/linker.ld>
+#include <zephyr/arch/arc/v2/linker.ld>

@@ -13,11 +13,38 @@ config ITE_IT8XXX2_INTC
 	select FLASH_HAS_DRIVER_ENABLED
 	select HAS_FLASH_LOAD_OFFSET
 
+config RISCV_GP
+	default y
+
+config ITE_IT8XXX2_TIMER
+	default y
+
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768
 
 config SYS_CLOCK_TICKS_PER_SEC
-	default 32768
+	default 4096
+
+config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
+	default y
+	depends on UART_NS16550
+
+config RISCV_HAS_CPU_IDLE
+	default y
+
+config FLASH_INIT_PRIORITY
+	default 0
+
+config IT8XXX2_PLL_SEQUENCE_PRIORITY
+	int
+	default 1
+	depends on SOC_IT8XXX2_PLL_FLASH_48M
+
+config PINCTRL
+	default y
 
 if ITE_IT8XXX2_INTC
 config NUM_IRQS
@@ -35,6 +62,11 @@ config GEN_IRQ_START_VECTOR
 config GEN_SW_ISR_TABLE
 	default y
 
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
 endif # ITE_IT8XXX2_INTC
+
+source "soc/riscv/riscv-ite/it8xxx2/Kconfig.defconfig.it81*"
 
 endif # SOC_SERIES_RISCV32_IT8XXX2

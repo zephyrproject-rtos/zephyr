@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config KERNEL_SHELL
-	bool "Enable kernel shell"
+	bool "Kernel shell"
 	default y if !SHELL_MINIMAL
 	imply INIT_STACKS
 	imply THREAD_MONITOR
@@ -27,20 +27,20 @@ config KERNEL_SHELL_REBOOT_DELAY
 	  device.
 
 config DEVICE_SHELL
-	bool "Enable device shell"
+	bool "Device shell"
 	default y if !SHELL_MINIMAL
 	help
 	  This shell provides access to basic device data.
 
 config DATE_SHELL
-	bool "Enable date shell"
+	bool "Date shell"
 	depends on POSIX_CLOCK
 	default y if !SHELL_MINIMAL
 	help
 	  This shell provides access to date and time based on Unix time.
 
 config DEVMEM_SHELL
-	bool "Enable devmem shell"
+	bool "Devmem shell"
 	default y if !SHELL_MINIMAL
 	help
 	  This shell command provides read/write access to physical memory.

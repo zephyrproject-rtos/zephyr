@@ -32,14 +32,12 @@ Available BL652 DVK part numbers:
 * DVK-BL652-SC
 
 .. figure:: img/bl652_dvk.jpg
-     :width: 500px
      :align: center
      :alt: BL652 DVK
 
      BL652 DVK Board
 
 .. figure:: img/BL652-SA_DVK_BoxContents.jpg
-     :width: 500px
      :align: center
      :alt: BL652-SA DVK Box Contents
 
@@ -89,7 +87,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `BL652 Module Website`_.
 
 Connections and IOs

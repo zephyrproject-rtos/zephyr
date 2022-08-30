@@ -12,8 +12,8 @@
  */
 
 #include <soc.h>
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 
 _ASM_FILE_PROLOGUE
 
@@ -33,7 +33,6 @@ GTEXT(z_arm_watchdog_init)
  *
  * This routine will disable the watchdog timer.
  *
- * @return N/A
  */
 
 SECTION_FUNC(TEXT,z_arm_watchdog_init)

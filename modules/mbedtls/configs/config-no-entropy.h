@@ -48,7 +48,7 @@
  */
 /*
  * Minimal configuration of features that do not require an entropy source
- * Distinguishing reatures:
+ * Distinguishing features:
  * - no entropy module
  * - no TLS protocol implementation available due to absence of an entropy
  *   source
@@ -101,7 +101,9 @@
 #define MBEDTLS_PK_WRITE_C
 #define MBEDTLS_PLATFORM_C
 #define MBEDTLS_RSA_C
+#define MBEDTLS_SHA224_C
 #define MBEDTLS_SHA256_C
+#define MBEDTLS_SHA384_C
 #define MBEDTLS_SHA512_C
 #define MBEDTLS_VERSION_C
 #define MBEDTLS_X509_USE_C

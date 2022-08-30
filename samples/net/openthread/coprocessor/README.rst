@@ -32,6 +32,15 @@ Build the OpenThread NCP sample application like this:
    :goals: build
    :compact:
 
+Build the OpenThread NCP sample application which uses CDC ACM UART device:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/openthread/coprocessor
+   :board: nrf52840dk_nrf52840
+   :goals: build flash
+   :gen-args: -DDTC_OVERLAY_FILE=usb.overlay -DOVERLAY_CONFIG=overlay-usb-nrf-br.conf
+   :compact:
+
 Example building for the nrf52840dk_nrf52840 for RCP:
 
 .. zephyr-app-commands::

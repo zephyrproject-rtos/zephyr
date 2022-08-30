@@ -1,0 +1,13 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel SSP SHIM controller
+
+compatible: "intel,ssp-sspbase"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true

@@ -1,0 +1,23 @@
+# LoRaWAN Non Volatile Memory configuration options
+
+# Copyright (c) 2022 Intellinium <giuliano.franchetto@intellinium.com>
+# SPDX-License-Identifier: Apache-2.0
+
+choice LORAWAN_NVM
+	bool "LoRaWAN NVM backend"
+	default LORAWAN_NVM_SETTINGS if SETTINGS
+	default LORAWAN_NVM_NONE
+
+config LORAWAN_NVM_NONE
+	bool "No NVM backend for LoRaWAN"
+	help
+	  If this configuration is used, it is the responsibility of the
+	  application to store and restore the DevNonce value each time
+	  a OTAA join request is sent. This value should be used in the
+	  join configuration directly.
+
+config LORAWAN_NVM_SETTINGS
+	bool "Settings based NVM"
+	depends on SETTINGS
+
+endchoice

@@ -11,9 +11,6 @@ properties:
     reg:
       required: true
 
-    label:
-      required: true
-
     group-index:
       type: int
       description: Group number for this GPIO entry

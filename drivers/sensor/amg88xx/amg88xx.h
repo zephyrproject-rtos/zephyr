@@ -7,9 +7,9 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_AMG88XX_AMG88XX_H_
 #define ZEPHYR_DRIVERS_SENSOR_AMG88XX_AMG88XX_H_
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
 
 #define AMG88XX_PCLT		0x00 /* Setting Power control register */
 #define AMG88XX_RST		0x01 /* Reset register */
@@ -17,7 +17,7 @@
 #define AMG88XX_INTC		0x03 /* Setting interrupt control register */
 #define AMG88XX_STAT		0x04 /* Status register */
 #define AMG88XX_SCLR		0x05 /* Status clear register */
-#define AMG88XX_AVE		0x07 /* Setting verage register */
+#define AMG88XX_AVE		0x07 /* Setting average register */
 #define AMG88XX_INTHL		0x08 /* Interrupt level upper limit [7:0] */
 #define AMG88XX_INTHH		0x09 /* Interrupt level upper limit [11:8] */
 #define AMG88XX_INTLL		0x0a /* Interrupt level lower limit [7:0] */
@@ -38,7 +38,7 @@
 #define AMG88XX_OUTPUT_BASE	0x80 /* Base address for the output values */
 
 #define AMG88XX_PCLT_NORMAL_MODE	0x00
-#define AMG88XX_PCLT_SLEEEP_MODE	0x10
+#define AMG88XX_PCLT_SLEEP_MODE		0x10
 #define AMG88XX_PCLT_STAND_BY_60S_MODE	0x20
 #define AMG88XX_PCLT_STAND_BY_10S_MODE	0x21
 
@@ -67,23 +67,17 @@
 #define AMG88XX_WAIT_INITIAL_RESET_US	2000
 
 struct amg88xx_config {
-	char *i2c_name;
+	const struct i2c_dt_spec i2c;
 #ifdef CONFIG_AMG88XX_TRIGGER
-	char *gpio_name;
-	uint8_t gpio_pin;
-	gpio_dt_flags_t gpio_flags;
+	const struct gpio_dt_spec int_gpio;
 #endif
-	uint8_t i2c_address;
 };
 
 struct amg88xx_data {
-	const struct device *i2c;
 	int16_t sample[64];
 
 #ifdef CONFIG_AMG88XX_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
-	uint8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t drdy_handler;

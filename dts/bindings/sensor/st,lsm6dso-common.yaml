@@ -5,7 +5,8 @@ properties:
     irq-gpios:
       type: phandle-array
       required: false
-      description: DRDY pin
+      description: |
+        DRDY pin
 
         This pin defaults to active high when produced by the sensor.
         The property value should ensure the flags properly describe
@@ -18,9 +19,98 @@ properties:
       enum:
         - 1 # drdy is generated from INT1
         - 2 # drdy is generated from INT2
-      description: Select DRDY pin number (1 or 2).
+      description: |
+        Select DRDY pin number (1 or 2).
 
         This number represents which of the two interrupt pins
         (INT1 or INT2) the drdy line is attached to. This property is not
         mandatory and if not present it defaults to 1 which is the
         configuration at power-up.
+
+    accel-pm:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the accelerometer power mode.
+        Default is power-up configuration.
+      enum:
+        - 0 # High Performance mode (default)
+        - 1 # Low/Normal Power mode
+        - 2 # Ultra Low Power mode
+
+    accel-range:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Range in g. Default is power-up configuration.
+      enum:
+        - 0 # 2g  (0.061 mg/LSB) (LSM6DSO32 will be double these values)
+        - 1 # 16g (0.488 mg/LSB)
+        - 2 # 4g  (0.122 mg/LSB)
+        - 3 # 8g  (0.244 mg/LSB)
+
+    accel-odr:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the default accelerometer output data rate expressed in samples per second (Hz).
+        Default is power-up configuration.
+      enum:
+        - 0  # Power-Down
+        - 1  # 12.5Hz
+        - 2  # 26Hz
+        - 3  # 52Hz
+        - 4  # 104Hz
+        - 5  # 208Hz
+        - 6  # 417Hz
+        - 7  # 833Hz
+        - 8  # 1667Hz
+        - 9  # 3333Hz
+        - 10 # 6667Hz
+
+    gyro-pm:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the gyrometer power mode.
+        Default is power-up configuration.
+      enum:
+        - 0 # High Performance mode (default)
+        - 1 # Low/Normal Power mode
+
+    gyro-range:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Range in dps. Default is power-up configuration.
+      enum:
+        - 0 # 250 dps  (8.75 mdps/LSB)
+        - 1 # 125 dps  (4.375 mdps/LSB)
+        - 2 # 500 dps  (17.50 mdps/LSB)
+        - 4 # 1000 dps (35 mdps/LSB)
+        - 6 # 2000 dps (70 mdps/LSB)
+
+    gyro-odr:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the default gyro output data rate expressed in samples per second (Hz).
+        Default is power-up configuration.
+      enum:
+        - 0  # Power-Down
+        - 1  # 12.5Hz
+        - 2  # 26Hz
+        - 3  # 52Hz
+        - 4  # 104Hz
+        - 5  # 208Hz
+        - 6  # 417Hz
+        - 7  # 833Hz
+        - 8  # 1667Hz
+        - 9  # 3333Hz
+        - 10 # 6667Hz

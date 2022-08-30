@@ -155,7 +155,7 @@ void test_mount(void)
 	ret = fs_mount(&test_fs_mnt_no_op);
 	zassert_not_equal(ret, 0, "Mount to a fs without op interface");
 
-	/* mount an file system has no unmmount functionality */
+	/* mount an file system has no unmount functionality */
 	null_fs.mount = temp_fs.mount;
 	ret = fs_mount(&test_fs_mnt_no_op);
 	zassert_equal(ret, 0, "fs has no unmount functionality can be mounted");
@@ -190,7 +190,7 @@ void test_unmount(void)
 
 	TC_PRINT("unmount a file system has no unmount functionality\n");
 	ret = fs_unmount(&test_fs_mnt_no_op);
-	zassert_not_equal(ret, 0, "Unmount a fs has no unmount fuctionality");
+	zassert_not_equal(ret, 0, "Unmount a fs has no unmount functionality");
 	/* TEST_FS_2 is registered in test_mount(), unregister it here */
 	fs_unregister(TEST_FS_2, &null_fs);
 }
@@ -219,12 +219,12 @@ void test_file_statvfs(void)
 	ret = fs_statvfs("/SDCARD:", &stat);
 	zassert_not_equal(ret, 0, "Get volume info by no-exist path");
 
-	/* It's ok if there is no stat interface */
+	/* System with no statvfs interface */
 	ret = fs_statvfs(NOOP_MNTP, &stat);
-	zassert_equal(ret, 0, "fs has no statvfs functionality");
+	zassert_equal(ret, -ENOTSUP, "fs has no statvfs functionality");
 
 	ret = fs_statvfs(TEST_FS_MNTP, &stat);
-	zassert_equal(ret, 0, "Error getting voluem stats");
+	zassert_equal(ret, 0, "Error getting volume stats");
 	TC_PRINT("\n");
 	TC_PRINT("Optimal transfer block size   = %lu\n", stat.f_bsize);
 	TC_PRINT("Allocation unit size          = %lu\n", stat.f_frsize);
@@ -256,7 +256,7 @@ void test_mkdir(void)
 	zassert_not_equal(ret, 0, "Create dir in no fs mounted dir");
 
 	ret = fs_mkdir(TEST_FS_MNTP);
-	zassert_not_equal(ret, 0, "Shoult not create root dir");
+	zassert_not_equal(ret, 0, "Should not create root dir");
 
 	ret = fs_mkdir(NOOP_MNTP"/testdir");
 	zassert_not_equal(ret, 0, "Filesystem has no mkdir interface");
@@ -502,7 +502,7 @@ void test_file_open(void)
 
 	TC_PRINT("\nReopen the same file");
 	ret = fs_open(&filep, TEST_FILE, FS_O_READ);
-	zassert_not_equal(ret, 0, "Reopen an opend file");
+	zassert_not_equal(ret, 0, "Reopen an opened file");
 
 	TC_PRINT("Opened file %s\n", TEST_FILE);
 }

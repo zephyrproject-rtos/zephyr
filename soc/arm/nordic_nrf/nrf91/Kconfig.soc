@@ -6,55 +6,6 @@
 config SOC_NRF9160
 	depends on SOC_SERIES_NRF91X
 	bool
-	select HAS_HW_NRF_CC310
-	select HAS_HW_NRF_CLOCK
-	select HAS_HW_NRF_DPPIC
-	select HAS_HW_NRF_EGU0
-	select HAS_HW_NRF_EGU1
-	select HAS_HW_NRF_EGU2
-	select HAS_HW_NRF_EGU3
-	select HAS_HW_NRF_EGU4
-	select HAS_HW_NRF_EGU5
-	select HAS_HW_NRF_GPIO0
-	select HAS_HW_NRF_GPIOTE
-	select HAS_HW_NRF_I2S
-	select HAS_HW_NRF_IPC
-	select HAS_HW_NRF_KMU
-	select HAS_HW_NRF_NVMC_PE
-	select HAS_HW_NRF_PDM
-	select HAS_HW_NRF_POWER
-	select HAS_HW_NRF_PWM0
-	select HAS_HW_NRF_PWM1
-	select HAS_HW_NRF_PWM2
-	select HAS_HW_NRF_PWM3
-	select HAS_HW_NRF_RTC0
-	select HAS_HW_NRF_RTC1
-	select HAS_HW_NRF_SAADC
-	select HAS_HW_NRF_SPIM0
-	select HAS_HW_NRF_SPIM1
-	select HAS_HW_NRF_SPIM2
-	select HAS_HW_NRF_SPIM3
-	select HAS_HW_NRF_SPIS0
-	select HAS_HW_NRF_SPIS1
-	select HAS_HW_NRF_SPIS2
-	select HAS_HW_NRF_SPIS3
-	select HAS_HW_NRF_SPU
-	select HAS_HW_NRF_TIMER0
-	select HAS_HW_NRF_TIMER1
-	select HAS_HW_NRF_TIMER2
-	select HAS_HW_NRF_TWIM0
-	select HAS_HW_NRF_TWIM1
-	select HAS_HW_NRF_TWIM2
-	select HAS_HW_NRF_TWIM3
-	select HAS_HW_NRF_TWIS0
-	select HAS_HW_NRF_TWIS1
-	select HAS_HW_NRF_TWIS2
-	select HAS_HW_NRF_TWIS3
-	select HAS_HW_NRF_UARTE0
-	select HAS_HW_NRF_UARTE1
-	select HAS_HW_NRF_UARTE2
-	select HAS_HW_NRF_UARTE3
-	select HAS_HW_NRF_WDT
 
 choice
 	prompt "nRF91x MCU Selection"
@@ -67,6 +18,6 @@ config SOC_NRF9160_SICA
 endchoice
 
 config NRF_ENABLE_ICACHE
-	bool "Enable the instruction cache (I-Cache)"
+	bool "Instruction cache (I-Cache)"
 	depends on SOC_NRF9160
 	default y

@@ -1,0 +1,9 @@
+# Copyright (c) 2022, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Motorola MC146818 compatible Real Timer Clock
+
+compatible: "motorola,mc146818"
+
+include: base.yaml

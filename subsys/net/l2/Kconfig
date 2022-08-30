@@ -4,14 +4,14 @@
 menu "Link layer options"
 
 config NET_L2_DUMMY
-	bool "Enable dummy l2 layer"
+	bool "Dummy l2 layer"
 	default y if !NET_L2_ETHERNET && NET_TEST
 	help
 	  Add a dummy L2 layer driver. This is usually only needed when
 	  simulating a network interface when running network stack inside QEMU.
 
 config NET_L2_BT
-	bool "Enable Bluetooth support"
+	bool "Bluetooth support"
 	depends on NET_IPV6
 	depends on BT
 	depends on BT_PERIPHERAL
@@ -40,10 +40,10 @@ config NET_L2_BT_SEC_LEVEL
 	range 1 4
 	help
 	  Security level of Bluetooth Link:
-	  Level 1 (BT_SECURITY_LOW) = No encryption or authentication required
-	  Level 2 (BT_SECURITY_MEDIUM) = Only encryption required
-	  Level 3 (BT_SECURITY_HIGH) = Encryption and authentication required
-	  Level 4 (BT_SECURITY_FIPS) = Secure connection required
+	  Level 1 (BT_SECURITY_L1) = No encryption or authentication required
+	  Level 2 (BT_SECURITY_L2) = Only encryption required
+	  Level 3 (BT_SECURITY_L3) = Encryption and authentication required
+	  Level 4 (BT_SECURITY_L4) = LE Secure Connection required
 
 module = NET_L2_BT
 module-dep = NET_LOG
@@ -53,13 +53,13 @@ source "subsys/net/Kconfig.template.log_config.net"
 endif
 
 config NET_L2_BT_MGMT
-	bool "Enable Bluetooth Network Management support"
+	bool "Bluetooth Network Management support"
 	depends on NET_L2_BT
 	select NET_MGMT
 	select NET_MGMT_EVENT
 
 config NET_L2_BT_SHELL
-	bool "Enable Bluetooth shell module"
+	bool "Bluetooth shell module"
 	select SHELL
 	select NET_L2_BT_MGMT
 	help
@@ -72,14 +72,32 @@ source "subsys/net/l2/ethernet/Kconfig"
 
 source "subsys/net/l2/ppp/Kconfig"
 
+config NET_L2_PHY_IEEE802154
+	bool
+	help
+	  A common config for all IEEE 802.15.4 based L2 implementations.
+
 source "subsys/net/l2/ieee802154/Kconfig"
 
 source "subsys/net/l2/openthread/Kconfig"
 
+config NET_L2_CUSTOM_IEEE802154
+	bool "Custom IEEE802154 L2"
+	select NET_L2_PHY_IEEE802154
+	help
+	  Enable custom IEEE802154 based L2. Zephyr does not provide
+	  implementation for this L2 - users can implement their own L2 using
+	  this symbol, on top of the IEEE802154 radio driver.
+
+config NET_L2_CUSTOM_IEEE802154_MTU
+	int "MTU for the custom IEEE802154 L2"
+	depends on NET_L2_CUSTOM_IEEE802154
+	default 127
+
 source "subsys/net/l2/canbus/Kconfig"
 
 config NET_L2_WIFI_MGMT
-	bool "Enable Wi-Fi Management support"
+	bool "Wi-Fi Management support"
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	select NET_MGMT_EVENT_INFO
@@ -95,10 +113,17 @@ source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_L2_WIFI_MGMT
 
 config NET_L2_WIFI_SHELL
-	bool "Enable Wi-Fi shell module"
+	bool "Wi-Fi shell module"
 	select NET_L2_WIFI_MGMT
 	help
 	  This can be used for controlling Wi-Fi through the console via
 	  exposing a shell module named "wifi".
+
+config NET_L2_PTP
+	bool "PTP L2 support"
+	select NET_PKT_TIMESTAMP
+	select PTP_CLOCK
+	help
+	  Add support for PTP L2 capabilities. Required by gPTP.
 
 endmenu

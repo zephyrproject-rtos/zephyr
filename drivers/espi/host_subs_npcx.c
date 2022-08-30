@@ -113,17 +113,18 @@
  */
 
 #include <assert.h>
-#include <drivers/espi.h>
-#include <drivers/gpio.h>
-#include <drivers/clock_control.h>
-#include <kernel.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include "espi_utils.h"
 #include "soc_host.h"
 #include "soc_espi.h"
 #include "soc_miwu.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(host_sub_npcx, LOG_LEVEL_ERR);
 
 struct host_sub_npcx_config {
@@ -223,7 +224,7 @@ static inline uint8_t host_shd_mem_wnd_size_sl(uint32_t size)
 
 /* Host KBC sub-device local functions */
 #if defined(CONFIG_ESPI_PERIPHERAL_8042_KBC)
-static void host_kbc_ibf_isr(void *arg)
+static void host_kbc_ibf_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	struct kbc_reg *const inst_kbc = host_sub_cfg.inst_kbc;
@@ -249,7 +250,7 @@ static void host_kbc_ibf_isr(void *arg)
 							evt);
 }
 
-static void host_kbc_obe_isr(void *arg)
+static void host_kbc_obe_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	struct kbc_reg *const inst_kbc = host_sub_cfg.inst_kbc;
@@ -438,7 +439,7 @@ static void host_shared_mem_region_init(void)
 #if defined(CONFIG_ESPI_PERIPHERAL_HOST_IO) || \
 				defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)
 /* Host pm (host io) sub-module isr function for all channels such as ACPI. */
-static void host_pmch_ibf_isr(void *arg)
+static void host_pmch_ibf_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	struct pmch_reg *const inst_acpi = host_sub_cfg.inst_pm_acpi;
@@ -471,7 +472,7 @@ static void host_pmch_ibf_isr(void *arg)
 
 /* Host port80 sub-device local functions */
 #if defined(CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80)
-static void host_port80_isr(void *arg)
+static void host_port80_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	struct shm_reg *const inst_shm = host_sub_cfg.inst_shm;
@@ -570,16 +571,19 @@ static void host_cus_opcode_disable_interrupts(void)
 
 #if defined(CONFIG_ESPI_PERIPHERAL_UART)
 /* host uart pinmux configuration */
-static const struct npcx_alt host_uart_alts[] =
-			NPCX_DT_IO_ALT_ITEMS_LIST(nuvoton_npcx_host_uart, 0);
+PINCTRL_DT_DEFINE(DT_INST(0, nuvoton_npcx_host_uart));
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nuvoton_npcx_host_uart) == 1,
+	"only one 'nuvoton_npcx_host_uart' compatible node may be present");
+const struct pinctrl_dev_config *huart_cfg =
+			PINCTRL_DT_DEV_CONFIG_GET(DT_INST(0, nuvoton_npcx_host_uart));
 /* Host UART sub-device local functions */
 void host_uart_init(void)
 {
 	struct c2h_reg *const inst_c2h = host_sub_cfg.inst_c2h;
 
 	/* Configure pin-mux for serial port device */
-	npcx_pinctrl_mux_configure(host_uart_alts, ARRAY_SIZE(host_uart_alts),
-									1);
+	pinctrl_apply_state(huart_cfg, PINCTRL_STATE_DEFAULT);
+
 	/* Make sure unlock host access of serial port */
 	inst_c2h->LKSIOHA &= ~BIT(NPCX_LKSIOHA_LKSPHA);
 	/* Clear 'Host lock violation occurred' bit of serial port initially */
@@ -627,7 +631,7 @@ void host_c2h_write_io_cfg_reg(uint8_t reg_index, uint8_t reg_data)
 	struct c2h_reg *const inst_c2h = host_sub_cfg.inst_c2h;
 
 	/* Disable interrupts */
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	/* Lock host access EC configuration registers (0x4E/0x4F) */
 	inst_c2h->LKSIOHA |= BIT(NPCX_LKSIOHA_LKCFG);
@@ -671,7 +675,7 @@ uint8_t host_c2h_read_io_cfg_reg(uint8_t reg_index)
 	uint8_t data_val;
 
 	/* Disable interrupts */
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	/* Lock host access EC configuration registers (0x4E/0x4F) */
 	inst_c2h->LKSIOHA |= BIT(NPCX_LKSIOHA_LKCFG);
@@ -805,10 +809,11 @@ int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
 			!IS_BIT_SET(inst_kbc->HICTRL, NPCX_HICTRL_OBFMIE)) {
 			return -ENOTSUP;
 		}
-		if (data)
+		if (data) {
 			LOG_INF("%s: op 0x%x data %x", __func__, op, *data);
-		else
+		} else {
 			LOG_INF("%s: op 0x%x only", __func__, op);
+		}
 
 		switch (op) {
 		case E8042_WRITE_KB_CHAR:
@@ -1004,10 +1009,15 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 	for (i = 0; i < host_sub_cfg.clks_size; i++) {
 		int ret;
 
+		if (!device_is_ready(clk_dev)) {
+			return -ENODEV;
+		}
+
 		ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
 				&host_sub_cfg.clks_list[i]);
-		if (ret < 0)
+		if (ret < 0) {
 			return ret;
+		}
 	}
 
 	/* Configure EC legacy configuration IO base address to 0x4E. */

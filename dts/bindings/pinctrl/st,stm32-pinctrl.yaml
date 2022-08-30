@@ -21,10 +21,30 @@ include:
           - bias-pull-up
           - drive-push-pull
           - drive-open-drain
+          - output-low
+          - output-high
 
 properties:
     reg:
       required: true
+
+    remap-pa11:
+      type: boolean
+      required: false
+      description: Remaps the PA11 pin to operate as PA9 pin.
+        Use of this property is restricted to STM32G0 SoCs.
+
+    remap-pa12:
+      type: boolean
+      required: false
+      description: Remaps the PA12 pin to operate as PA10 pin.
+        Use of this property is restricted to STM32G0 SoCs.
+
+    remap-pa11-pa12:
+      type: boolean
+      required: false
+      description: Remaps the PA11/PA12 pin to operate as PA9/PA10 pin.
+        Use of this property is restricted to STM32F070x SoCs.
 
 child-binding:
     description: |
@@ -48,9 +68,15 @@ child-binding:
             * ...
             * 15 : Alternate Function 15
             * 16 : Analog
+            * 17 : GPIO
+            In case selected pin function is GPIO, pin is statically configured as
+            a plain input/output GPIO. Default configuration is input. Output value
+            can be configured by adding 'ouptut-low' or 'output-high' properties
+            to the pin configuration.
+
             To simplify the usage, macro is available to generate "pinmux" field.
             This macro is available here:
-              -include/dt-bindings/pinctrl/stm32-pinctrl-common.h
+              -include/zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h
             Some examples of macro usage:
                GPIO A9 set as alernate function 2
             ... {
@@ -59,6 +85,11 @@ child-binding:
                GPIO A9 set as analog
             ... {
                      pinmux = <STM32_PINMUX('A', 9, ANALOG)>;
+            };
+               GPIO A9 set as GPIO output high
+            ... {
+                     pinmux = <STM32_PINMUX('A', 9, GPIO)>;
+                     output-high;
             };
 
         slew-rate:

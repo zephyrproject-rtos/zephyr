@@ -41,7 +41,6 @@ nRF5340 SoC provides support for the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/nrf5340dk.jpg
-     :width: 711px
      :align: center
      :alt: nRF5340 DK
 
@@ -132,7 +131,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `Nordic Semiconductor Infocenter`_
 for a complete list of nRF5340 DK board hardware features.
 

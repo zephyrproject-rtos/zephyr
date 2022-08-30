@@ -12,11 +12,11 @@
  * Common fault handler for ARM Cortex-M processors.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <inttypes.h>
-#include <exc_handle.h>
-#include <logging/log.h>
+#include <zephyr/exc_handle.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
@@ -98,6 +98,16 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  */
 #define ADDITIONAL_STATE_CONTEXT_WORDS 10
 
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+/* helpers to access memory/bus/usage faults */
+#define SCB_CFSR_MEMFAULTSTR \
+	((SCB->CFSR & SCB_CFSR_MEMFAULTSR_Msk) >> SCB_CFSR_MEMFAULTSR_Pos)
+#define SCB_CFSR_BUSFAULTSTR \
+	((SCB->CFSR & SCB_CFSR_BUSFAULTSR_Msk) >> SCB_CFSR_BUSFAULTSR_Pos)
+#define SCB_CFSR_USGFAULTSTR \
+	((SCB->CFSR & SCB_CFSR_USGFAULTSR_Msk) >> SCB_CFSR_USGFAULTSR_Pos)
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
 /**
  *
  * Dump information regarding fault (FAULT_DUMP == 1)
@@ -136,8 +146,8 @@ static void fault_show(const z_arch_esf_t *esf, int fault)
 	PR_EXC("Fault! EXC #%d", fault);
 
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	PR_EXC("MMFSR: 0x%x, BFSR: 0x%x, UFSR: 0x%x",
-	       SCB_MMFSR, SCB_BFSR, SCB_UFSR);
+	PR_EXC("MMFSR: 0x%x, BFSR: 0x%x, UFSR: 0x%x", SCB_CFSR_MEMFAULTSR,
+	       SCB_CFSR_BUSFAULTSR, SCB_CFSR_USGFAULTSR);
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	PR_EXC("SFSR: 0x%x", SAU->SFSR);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
@@ -338,6 +348,17 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 #endif /* CONFIG_MPU_STACK_GUARD || CONFIG_USERSPACE */
 	}
 
+	/* When we were handling this fault, we may have triggered a fp
+	 * lazy stacking Memory Manage fault. At the time of writing, this
+	 * can happen when printing.  If that's true, we should clear the
+	 * pending flag in addition to the clearing the reason for the fault
+	 */
+#if defined(CONFIG_ARMV7_M_ARMV8_M_FP)
+	if ((SCB->CFSR & SCB_CFSR_MLSPERR_Msk) != 0) {
+		SCB->SHCSR &= ~SCB_SHCSR_MEMFAULTPENDED_Msk;
+	}
+#endif /* CONFIG_ARMV7_M_ARMV8_M_FP */
+
 	/* clear MMFSR sticky bits */
 	SCB->CFSR |= SCB_CFSR_MEMFAULTSR_Msk;
 
@@ -353,7 +374,8 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
  *
  * See z_arm_fault_dump() for example.
  *
- * @return N/A
+ * @return error code to identify the fatal error reason.
+ *
  */
 static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 {
@@ -565,7 +587,6 @@ static uint32_t usage_fault(const z_arch_esf_t *esf)
  *
  * See z_arm_fault_dump() for example.
  *
- * @return N/A
  */
 static void secure_fault(const z_arch_esf_t *esf)
 {
@@ -604,7 +625,6 @@ static void secure_fault(const z_arch_esf_t *esf)
  *
  * See z_arm_fault_dump() for example.
  *
- * @return N/A
  */
 static void debug_monitor(z_arch_esf_t *esf, bool *recoverable)
 {
@@ -641,7 +661,31 @@ static inline bool z_arm_is_synchronous_svc(z_arch_esf_t *esf)
 	 */
 #define _SVC_OPCODE 0xDF00
 
+	/* We are about to de-reference the program counter at the
+	 * time of fault to determine if it was a SVC
+	 * instruction. However, we don't know if the pc itself is
+	 * valid -- we could have faulted due to trying to execute a
+	 * corrupted function pointer.
+	 *
+	 * We will temporarily ignore BusFault's so a bad program
+	 * counter does not trigger ARM lockup condition.
+	 */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && !defined(CONFIG_ARMV8_M_BASELINE)
+	/* Note: ARMv6-M does not support CCR.BFHFNMIGN so this access
+	 * could generate a fault if the pc was invalid.
+	 */
 	uint16_t fault_insn = *(ret_addr - 1);
+#else
+	SCB->CCR |= SCB_CCR_BFHFNMIGN_Msk;
+	__DSB();
+	__ISB();
+
+	uint16_t fault_insn = *(ret_addr - 1);
+
+	SCB->CCR &= ~SCB_CCR_BFHFNMIGN_Msk;
+	__DSB();
+	__ISB();
+#endif /* ARMV6_M_ARMV8_M_BASELINE && !ARMV8_M_BASELINE */
 
 	if (((fault_insn & 0xff00) == _SVC_OPCODE) &&
 		((fault_insn & 0x00ff) == _SVC_CALL_RUNTIME_EXCEPT)) {
@@ -693,11 +737,11 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 		if (z_arm_is_synchronous_svc(esf)) {
 			PR_EXC("ARCH_EXCEPT with reason %x\n", esf->basic.r0);
 			reason = esf->basic.r0;
-		} else if (SCB_MMFSR != 0) {
+		} else if ((SCB->CFSR & SCB_CFSR_MEMFAULTSR_Msk) != 0) {
 			reason = mem_manage_fault(esf, 1, recoverable);
-		} else if (SCB_BFSR != 0) {
+		} else if ((SCB->CFSR & SCB_CFSR_BUSFAULTSR_Msk) != 0) {
 			reason = bus_fault(esf, 1, recoverable);
-		} else if (SCB_UFSR != 0) {
+		} else if ((SCB->CFSR & SCB_CFSR_USGFAULTSR_Msk) != 0) {
 			reason = usage_fault(esf);
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 		} else if (SAU->SFSR != 0) {
@@ -725,7 +769,6 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
  *
  * See z_arm_fault_dump() for example.
  *
- * @return N/A
  */
 static void reserved_exception(const z_arch_esf_t *esf, int fault)
 {
@@ -849,7 +892,7 @@ static inline z_arch_esf_t *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_ret
 	bool *nested_exc)
 {
 	bool alternative_state_exc = false;
-	z_arch_esf_t *ptr_esf;
+	z_arch_esf_t *ptr_esf = NULL;
 
 	*nested_exc = false;
 
@@ -1057,7 +1100,6 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
  *
  * Turns on the desired hardware faults.
  *
- * @return N/A
  */
 void z_arm_fault_init(void)
 {
@@ -1085,4 +1127,7 @@ void z_arm_fault_init(void)
 	 */
 	SCB->CCR |= SCB_CCR_STKOFHFNMIGN_Msk;
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
+#ifdef CONFIG_TRAP_UNALIGNED_ACCESS
+	SCB->CCR |= SCB_CCR_UNALIGN_TRP_Msk;
+#endif /* CONFIG_TRAP_UNALIGNED_ACCESS */
 }

@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(tagoio_http_post, CONFIG_TAGOIO_HTTP_POST_LOG_LEVEL);
 
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/socketutils.h>
-#include <net/dns_resolve.h>
-#include <net/tls_credentials.h>
-#include <net/http_client.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/socketutils.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/tls_credentials.h>
+#include <zephyr/net/http_client.h>
 
 #include "sockets.h"
 
@@ -67,9 +67,9 @@ int tagoio_connect(struct tagoio_context *ctx)
 
 	LOG_DBG("%s address: %s",
 		(addr->ai_family == AF_INET ? "IPv4" : "IPv6"),
-		log_strdup(net_addr_ntop(addr->ai_family,
-					 &net_sin(addr->ai_addr)->sin_addr,
-					 hr_addr, sizeof(hr_addr))));
+		net_addr_ntop(addr->ai_family,
+			      &net_sin(addr->ai_addr)->sin_addr,
+			      hr_addr, sizeof(hr_addr)));
 
 	ctx->sock = socket(hints.ai_family,
 			   hints.ai_socktype,

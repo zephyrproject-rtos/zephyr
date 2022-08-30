@@ -5,19 +5,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <sys/atomic.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_KEYS)
 #define LOG_MODULE_NAME bt_mesh_net_keys
@@ -36,11 +36,12 @@
 #include "beacon.h"
 #include "rpl.h"
 #include "settings.h"
+#include "host/ecc.h"
 #include "prov.h"
 
 /* Tracking of what storage changes are pending for Net Keys. We track this in
  * a separate array here instead of within the respective bt_mesh_subnet
- * struct itselve, since once a key gets deleted its struct becomes invalid
+ * struct itself, since once a key gets deleted its struct becomes invalid
  * and may be reused for other keys.
  */
 struct net_key_update {
@@ -66,7 +67,7 @@ static struct bt_mesh_subnet subnets[CONFIG_BT_MESH_SUBNET_COUNT] = {
 
 static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 {
-	Z_STRUCT_SECTION_FOREACH(bt_mesh_subnet_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_mesh_subnet_cb, cb) {
 		cb->evt_handler(sub, evt);
 	}
 }
@@ -537,7 +538,7 @@ uint8_t bt_mesh_subnet_node_id_set(uint16_t net_idx,
 		bt_mesh_proxy_identity_stop(sub);
 	}
 
-	bt_mesh_adv_update();
+	bt_mesh_adv_gatt_update();
 
 	return STATUS_SUCCESS;
 }
@@ -637,8 +638,7 @@ int bt_mesh_subnet_set(uint16_t net_idx, uint8_t kr_phase,
 	return 0;
 }
 
-struct bt_mesh_subnet *bt_mesh_subnet_find(int (*cb)(struct bt_mesh_subnet *sub,
-						     void *cb_data),
+struct bt_mesh_subnet *bt_mesh_subnet_find(bool (*cb)(struct bt_mesh_subnet *sub, void *cb_data),
 					   void *cb_data)
 {
 	for (int i = 0; i < ARRAY_SIZE(subnets); i++) {

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #include <string.h>
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 
 static inline int z_vrfy_i2c_configure(const struct device *dev,
 				       uint32_t dev_config)
@@ -15,6 +15,16 @@ static inline int z_vrfy_i2c_configure(const struct device *dev,
 	return z_impl_i2c_configure((const struct device *)dev, dev_config);
 }
 #include <syscalls/i2c_configure_mrsh.c>
+
+static inline int z_vrfy_i2c_get_config(const struct device *dev,
+					uint32_t *dev_config)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_I2C(dev, get_config));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dev_config, sizeof(uint32_t)));
+
+	return z_impl_i2c_get_config(dev, dev_config);
+}
+#include <syscalls/i2c_get_config_mrsh.c>
 
 static uint32_t copy_msgs_and_transfer(const struct device *dev,
 				       const struct i2c_msg *msgs,
@@ -61,19 +71,19 @@ static inline int z_vrfy_i2c_transfer(const struct device *dev,
 }
 #include <syscalls/i2c_transfer_mrsh.c>
 
-static inline int z_vrfy_i2c_slave_driver_register(const struct device *dev)
+static inline int z_vrfy_i2c_target_driver_register(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
-	return z_impl_i2c_slave_driver_register(dev);
+	return z_impl_i2c_target_driver_register(dev);
 }
-#include <syscalls/i2c_slave_driver_register_mrsh.c>
+#include <syscalls/i2c_target_driver_register_mrsh.c>
 
-static inline int z_vrfy_i2c_slave_driver_unregister(const struct device *dev)
+static inline int z_vrfy_i2c_target_driver_unregister(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
-	return z_vrfy_i2c_slave_driver_unregister(dev);
+	return z_impl_i2c_target_driver_unregister(dev);
 }
-#include <syscalls/i2c_slave_driver_unregister_mrsh.c>
+#include <syscalls/i2c_target_driver_unregister_mrsh.c>
 
 static inline int z_vrfy_i2c_recover_bus(const struct device *dev)
 {

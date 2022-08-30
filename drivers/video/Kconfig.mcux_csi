@@ -5,4 +5,6 @@
 
 config VIDEO_MCUX_CSI
 	bool "NXP MCUX CMOS Sensor Interface (CSI) driver"
+	default y
 	depends on HAS_MCUX_CSI
+	depends on DT_HAS_NXP_IMX_CSI_ENABLED

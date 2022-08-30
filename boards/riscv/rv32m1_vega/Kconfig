@@ -1,0 +1,12 @@
+# OpenISA VEGAboard board configuration
+
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_INIT_PRIORITY
+	int "Board initialization priority"
+	default 45
+	depends on BOARD_RV32M1_VEGA && BT_CTLR_DEBUG_PINS
+	help
+	  Board initialization priority. The board initialization must take
+	  place after the GPIO driver is initialized.

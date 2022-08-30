@@ -10,18 +10,10 @@ This board allows to run Zephyr as Xen guest on any ARMv8 board that supports
 ARM Virtualization Extensions. This is example configuration, as almost any VM
 configuration is unique in many aspects.
 
-.. figure:: xen_project_logo.png
-   :align: center
-   :alt: XenVM
-
-   Xen virtual Guest (Credit: Xen Project)
-
 It provides minimal set of devices:
 
 * ARM Generic timer
-* GICv2
-* SBSA (subset of PL011) UART controller
-
+* GICv2/GICv3
 
 Hardware
 ********
@@ -35,12 +27,16 @@ The following hardware features are supported:
 +==============+=============+======================+
 | GIC          | virtualized | interrupt controller |
 +--------------+-------------+----------------------+
-| SBSA UART    | emulated    | serial port          |
-+--------------+-------------+----------------------+
 | ARM TIMER    | virtualized | system clock         |
 +--------------+-------------+----------------------+
 
 The kernel currently does not support other hardware features on this platform.
+
+The default configuration using GICv2 can be found in the defconfig file:
+    ``boards/arm64/xenvm/xenvm_defconfig``
+
+The default configuration using GICv3 can be found in the defconfig file:
+    ``boards/arm64/xenvm/xenvm_gicv3_defconfig``
 
 Devices
 ========
@@ -57,19 +53,14 @@ boot log:
 
   (XEN) [    0.147541] Generic Timer IRQ: phys=30 hyp=26 virt=27 Freq: 8320 KHz
 
-Serial Port
------------
-
-This board configuration uses a single serial communication channel using SBSA
-UART. This is a minimal UART implementation provided by Xen. Xen PV Console is
-not supported at this moment.
-
 Interrupt Controller
 --------------------
 
-By default, GICv2 is selected. If your hardware is based on GICv3, you can
-configure Zephyr to use it, by amending device tree and Kconfig
-option in "xenvm" SoC as well as guest configuration file.
+Depending on the version of the GIC on your hardware, you may choose one of the
+following board configurations:
+
+- ``xenvm_defconfig`` selects GICv2
+- ``xenvm_gicv3_defconfig`` selects GICv3
 
 CPU Core type
 -------------
@@ -88,13 +79,16 @@ configuration would not boot on your hardware. In this case you need to update
 configuration by altering device tree and Kconfig options. This will be covered
 in detail in next section.
 
-No Xen-specific features are supported at the moment. This includes:
+Most of Xen-specific features are not supported at the moment. This includes:
+* XenBus (under development)
+* Xen PV drivers
 
+Now only following features are supported:
 * Xen Enlighten memory page
-* XenBus
 * Xen event channels
-* Xen grant tables
-* Xen PV drivers (including PV console)
+* Xen PV console (2 versions: regular ring buffer based for DomU and consoleio for Dom0)
+* Xen early console_io interface (mainly for debug purposes - requires debug version of Xen)
+* Xen grant tables (granting access for own grants and map/unmap foreign grants)
 
 Building and Running
 ********************
@@ -102,10 +96,17 @@ Building and Running
 Use this configuration to run basic Zephyr applications and kernel tests as Xen
 guest, for example, with the :ref:`synchronization_sample`:
 
+- if your hardware is based on GICv2:
 
 .. code-block::
 
    $ west build -b xenvm samples/synchronization
+
+- if your hardware is based on GICv3:
+
+.. code-block::
+
+   $ west build -b xenvm_gicv3 samples/synchronization
 
 This will build an image with the synchronization sample app. Next, you need to
 create guest configuration file :code:`zephyr.conf`. There is example:
@@ -118,7 +119,9 @@ create guest configuration file :code:`zephyr.conf`. There is example:
    memory=16
    gic_version="v2"
    on_crash="preserve"
-   vuart="sbsa_uart"
+
+When using ``xenvm_gicv3`` configuration, you need to remove the ``gic_version``
+parameter or set it to ``"v3"``.
 
 You need to upload both :code:`zephyr.bin` and :code:`zephyr.conf` to your Dom0
 and then you can run Zephyr by issuing
@@ -127,11 +130,17 @@ and then you can run Zephyr by issuing
 
    $ xl create zephyr.conf
 
-Next you need to attach to SBSA virtual console:
+Next you need to attach to PV console:
 
 .. code-block::
 
-   $ xl console -t vuart zephyr
+   $ xl console zephyr
+
+Also this can be performed via single command:
+
+.. code-block::
+
+   $ xl create -c zephyr.conf
 
 You will see Zephyr output:
 

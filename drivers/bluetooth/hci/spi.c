@@ -8,14 +8,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
-#include <init.h>
-#include <drivers/spi.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/hci.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_driver
@@ -47,15 +47,6 @@
 #define CMD_OGF			1
 #define CMD_OCF			2
 
-#define GPIO_IRQ_PIN		DT_INST_GPIO_PIN(0, irq_gpios)
-#define GPIO_IRQ_FLAGS		DT_INST_GPIO_FLAGS(0, irq_gpios)
-#define GPIO_RESET_PIN		DT_INST_GPIO_PIN(0, reset_gpios)
-#define GPIO_RESET_FLAGS	DT_INST_GPIO_FLAGS(0, reset_gpios)
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-#define GPIO_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
-#define GPIO_CS_FLAGS		DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0)
-#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
-
 /* Max SPI buffer length for transceive operations.
  *
  * Buffer size needs to be at least the size of the larger RX/TX buffer
@@ -68,8 +59,8 @@
 static uint8_t rxmsg[SPI_MAX_MSG_LEN];
 static uint8_t txmsg[SPI_MAX_MSG_LEN];
 
-static const struct device *irq_dev;
-static const struct device *rst_dev;
+static const struct gpio_dt_spec irq_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios);
+static const struct gpio_dt_spec rst_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios);
 
 static struct gpio_callback	gpio_cb;
 
@@ -81,7 +72,7 @@ static K_KERNEL_STACK_DEFINE(spi_rx_stack, 512);
 static struct k_thread spi_rx_thread_data;
 
 #if defined(CONFIG_BT_DEBUG_HCI_DRIVER)
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 static inline void spi_dump_message(const uint8_t *pre, uint8_t *buf,
 				    uint8_t size)
 {
@@ -105,7 +96,6 @@ void spi_dump_message(const uint8_t *pre, uint8_t *buf, uint8_t size) {}
 #endif
 
 #if defined(CONFIG_BT_SPI_BLUENRG)
-static const struct device *cs_dev;
 /* Define a limit when reading IRQ high */
 /* It can be required to be increased for */
 /* some particular cases. */
@@ -126,15 +116,18 @@ struct bluenrg_aci_cmd_ll_param {
 static int bt_spi_send_aci_config_data_controller_mode(void);
 #endif /* CONFIG_BT_BLUENRG_ACI */
 
-static const struct device *spi_dev;
+#if defined(CONFIG_BT_SPI_BLUENRG)
+/* In case of BlueNRG-MS, it is necessary to prevent SPI driver to release CS,
+ * and instead, let current driver manage CS release. see kick_cs()/release_cs()
+ * So, add SPI_HOLD_ON_CS to operation field.
+ */
+static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
+	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_HOLD_ON_CS, 0);
+#else
+static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
+	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0);
+#endif
 
-static struct spi_config spi_conf = {
-	.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) |
-		      SPI_LINES_SINGLE),
-	.slave     = 0,
-	.cs        = NULL,
-};
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
 static const struct spi_buf_set spi_tx = {
@@ -153,7 +146,7 @@ static inline int bt_spi_transceive(void *tx, uint32_t tx_len,
 	spi_tx_buf.len = (size_t)tx_len;
 	spi_rx_buf.buf = rx;
 	spi_rx_buf.len = (size_t)rx_len;
-	return spi_transceive(spi_dev, &spi_conf, &spi_tx, &spi_rx);
+	return spi_transceive_dt(&bus, &spi_tx, &spi_rx);
 }
 
 static inline uint16_t bt_spi_get_cmd(uint8_t *txmsg)
@@ -200,37 +193,26 @@ static void bt_spi_handle_vendor_evt(uint8_t *rxmsg)
  */
 static int configure_cs(void)
 {
-	cs_dev = device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	if (!cs_dev) {
-		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-		return -EIO;
-	}
-
 	/* Configure pin as output and set to active */
-	gpio_pin_configure(cs_dev, GPIO_CS_PIN,
-			   GPIO_OUTPUT_ACTIVE | GPIO_CS_FLAGS);
-
-
-	return 0;
+	return gpio_pin_configure_dt(&bus.config.cs->gpio, GPIO_OUTPUT_ACTIVE);
 }
 
 static void kick_cs(void)
 {
-	gpio_pin_set(cs_dev, GPIO_CS_PIN, 1);
-	gpio_pin_set(cs_dev, GPIO_CS_PIN, 0);
+	gpio_pin_set_dt(&bus.config.cs->gpio, 0);
+	gpio_pin_set_dt(&bus.config.cs->gpio, 1);
 }
 
 static void release_cs(void)
 {
-	gpio_pin_set(cs_dev, GPIO_CS_PIN, 1);
+	gpio_pin_set_dt(&bus.config.cs->gpio, 0);
 }
 
 static bool irq_pin_high(void)
 {
 	int pin_state;
 
-	pin_state = gpio_pin_get(irq_dev, GPIO_IRQ_PIN);
+	pin_state = gpio_pin_get_dt(&irq_gpio);
 
 	BT_DBG("IRQ Pin: %d", pin_state);
 
@@ -254,26 +236,7 @@ static bool exit_irq_high_loop(void)
 
 #else
 
-static int configure_cs(void)
-{
-#ifdef GPIO_CS_PIN
-	static struct spi_cs_control spi_conf_cs;
-
-	spi_conf_cs.gpio_pin = GPIO_CS_PIN;
-	spi_conf_cs.gpio_dt_flags = GPIO_CS_FLAGS;
-	spi_conf_cs.gpio_dev = device_get_binding(
-		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	if (!spi_conf_cs.gpio_dev) {
-		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-		return -EIO;
-	}
-
-	spi_conf.cs = &spi_conf_cs;
-#endif /* GPIO_CS_PIN */
-
-	return 0;
-}
+#define configure_cs(...) 0
 #define kick_cs(...)
 #define release_cs(...)
 #define irq_pin_high(...) 0
@@ -315,6 +278,7 @@ static void bt_spi_rx_thread(void)
 	struct bt_hci_acl_hdr acl_hdr;
 	uint8_t size = 0U;
 	int ret;
+	int len;
 
 	(void)memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
 
@@ -322,8 +286,7 @@ static void bt_spi_rx_thread(void)
 		k_sem_take(&sem_request, K_FOREVER);
 		/* Disable IRQ pin callback to avoid spurious IRQs */
 
-		gpio_pin_interrupt_configure(irq_dev, GPIO_IRQ_PIN,
-					     GPIO_INT_DISABLE);
+		gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
 		k_sem_take(&sem_busy, K_FOREVER);
 
 		BT_DBG("");
@@ -347,8 +310,8 @@ static void bt_spi_rx_thread(void)
 			}
 
 			release_cs();
-			gpio_pin_interrupt_configure(irq_dev, GPIO_IRQ_PIN,
-						     GPIO_INT_EDGE_TO_ACTIVE);
+			gpio_pin_interrupt_configure_dt(
+				&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 			k_sem_give(&sem_busy);
 
@@ -370,8 +333,7 @@ static void bt_spi_rx_thread(void)
 					continue;
 				default:
 					if (rxmsg[1] == BT_HCI_EVT_LE_META_EVENT &&
-					    (rxmsg[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
-					     rxmsg[3] == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
+					    (rxmsg[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
 						discardable = true;
 						timeout = K_NO_WAIT;
 					}
@@ -384,15 +346,24 @@ static void bt_spi_rx_thread(void)
 					}
 				}
 
-				net_buf_add_mem(buf, &rxmsg[1],
-						rxmsg[EVT_HEADER_SIZE] + 2);
+				len = sizeof(struct bt_hci_evt_hdr) + rxmsg[EVT_HEADER_SIZE];
+				if (len > net_buf_tailroom(buf)) {
+					BT_ERR("Event too long: %d", len);
+					net_buf_unref(buf);
+					continue;
+				}
+				net_buf_add_mem(buf, &rxmsg[1], len);
 				break;
 			case HCI_ACL:
 				buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 				memcpy(&acl_hdr, &rxmsg[1], sizeof(acl_hdr));
-				net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
-				net_buf_add_mem(buf, &rxmsg[5],
-						sys_le16_to_cpu(acl_hdr.len));
+				len = sizeof(acl_hdr) + sys_le16_to_cpu(acl_hdr.len);
+				if (len > net_buf_tailroom(buf)) {
+					BT_ERR("ACL too long: %d", len);
+					net_buf_unref(buf);
+					continue;
+				}
+				net_buf_add_mem(buf, &rxmsg[1], len);
 				break;
 			default:
 				BT_ERR("Unknown BT buf type %d", rxmsg[0]);
@@ -423,7 +394,7 @@ static int bt_spi_send(struct net_buf *buf)
 
 	/* Allow time for the read thread to handle interrupt */
 	while (true) {
-		pending = gpio_pin_get(irq_dev, GPIO_IRQ_PIN);
+		pending = gpio_pin_get_dt(&irq_gpio);
 		if (pending <= 0) {
 			break;
 		}
@@ -458,9 +429,6 @@ static int bt_spi_send(struct net_buf *buf)
 	} while ((rxmsg[STATUS_HEADER_READY] != READY_NOW ||
 		  (rxmsg[1] | rxmsg[2] | rxmsg[3] | rxmsg[4]) == 0U) && !ret);
 
-
-	k_sem_give(&sem_busy);
-
 	if (!ret) {
 		/* Transmit the message */
 		do {
@@ -470,6 +438,8 @@ static int bt_spi_send(struct net_buf *buf)
 	}
 
 	release_cs();
+
+	k_sem_give(&sem_busy);
 
 	if (ret) {
 		BT_ERR("Error %d", ret);
@@ -499,21 +469,18 @@ out:
 static int bt_spi_open(void)
 {
 	/* Configure RST pin and hold BLE in Reset */
-	gpio_pin_configure(rst_dev, GPIO_RESET_PIN,
-			   GPIO_OUTPUT_ACTIVE | GPIO_RESET_FLAGS);
+	gpio_pin_configure_dt(&rst_gpio, GPIO_OUTPUT_ACTIVE);
 
 	/* Configure IRQ pin and the IRQ call-back/handler */
-	gpio_pin_configure(irq_dev, GPIO_IRQ_PIN,
-			   GPIO_INPUT | GPIO_IRQ_FLAGS);
+	gpio_pin_configure_dt(&irq_gpio, GPIO_INPUT);
 
-	gpio_init_callback(&gpio_cb, bt_spi_isr, BIT(GPIO_IRQ_PIN));
+	gpio_init_callback(&gpio_cb, bt_spi_isr, BIT(irq_gpio.pin));
 
-	if (gpio_add_callback(irq_dev, &gpio_cb)) {
+	if (gpio_add_callback(irq_gpio.port, &gpio_cb)) {
 		return -EINVAL;
 	}
 
-	gpio_pin_interrupt_configure(irq_dev, GPIO_IRQ_PIN,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* Start RX thread */
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
@@ -523,7 +490,8 @@ static int bt_spi_open(void)
 			0, K_NO_WAIT);
 
 	/* Take BLE out of reset */
-	gpio_pin_set(rst_dev, GPIO_RESET_PIN, 0);
+	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
+	gpio_pin_set_dt(&rst_gpio, 0);
 
 	/* Device will let us know when it's ready */
 	k_sem_take(&sem_initialised, K_FOREVER);
@@ -532,7 +500,7 @@ static int bt_spi_open(void)
 }
 
 static const struct bt_hci_driver drv = {
-	.name		= DT_INST_LABEL(0),
+	.name		= DEVICE_DT_NAME(DT_DRV_INST(0)),
 	.bus		= BT_HCI_DRIVER_BUS_SPI,
 #if defined(CONFIG_BT_BLUENRG_ACI)
 	.quirks		= BT_QUIRK_NO_RESET,
@@ -545,31 +513,23 @@ static int bt_spi_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	spi_dev = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!spi_dev) {
-		BT_ERR("Failed to initialize SPI driver: %s",
-		       DT_INST_BUS_LABEL(0));
-		return -EIO;
+	if (!spi_is_ready(&bus)) {
+		BT_ERR("SPI device not ready");
+		return -ENODEV;
 	}
 
 	if (configure_cs()) {
 		return -EIO;
 	}
 
-	irq_dev = device_get_binding(
-		DT_INST_GPIO_LABEL(0, irq_gpios));
-	if (!irq_dev) {
-		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_GPIO_LABEL(0, irq_gpios));
-		return -EIO;
+	if (!device_is_ready(irq_gpio.port)) {
+		BT_ERR("IRQ GPIO device not ready");
+		return -ENODEV;
 	}
 
-	rst_dev = device_get_binding(
-		DT_INST_GPIO_LABEL(0, reset_gpios));
-	if (!rst_dev) {
-		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_GPIO_LABEL(0, reset_gpios));
-		return -EIO;
+	if (!device_is_ready(rst_gpio.port)) {
+		BT_ERR("Reset GPIO device not ready");
+		return -ENODEV;
 	}
 
 	bt_hci_driver_register(&drv);

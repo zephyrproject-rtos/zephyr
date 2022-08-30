@@ -12,8 +12,8 @@ config BOARD
 # To let the nRF5 bootloader load an application, the application
 # must be linked after Nordic MBR, that is factory-programmed on the board.
 
-# Nordic nRF5 booatloader exists outside of the partitions specified in the
-# DTS file, so we manually override FLASH_LOAD_OFFEST to link the application
+# Nordic nRF5 bootloader exists outside of the partitions specified in the
+# DTS file, so we manually override FLASH_LOAD_OFFSET to link the application
 # correctly, after Nordic MBR.
 
 # When building MCUBoot, MCUBoot itself will select USE_DT_CODE_PARTITION
@@ -24,22 +24,13 @@ config FLASH_LOAD_OFFSET
 	default 0x1000
 	depends on BOARD_HAS_NRF5_BOOTLOADER && !USE_DT_CODE_PARTITION
 
-if USB
-
-config USB_NRFX
-	default y
-
-config USB_DEVICE_STACK
-	default y
+if USB_DEVICE_STACK
 
 # Enable UART driver, needed for CDC ACM
 config SERIAL
-	default USB_CDC_ACM
+	default y
 
-config UART_INTERRUPT_DRIVEN
-	default USB_CDC_ACM
-
-endif # USB
+endif # USB_DEVICE_STACK
 
 config BT_CTLR
 	default BT

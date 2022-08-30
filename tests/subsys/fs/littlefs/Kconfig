@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2020 Nordic Semicondutor ASA
+# Copyright (c) 2020 Nordic Semiconductor ASA
 
 mainmenu "littlefs core functionality test"
 

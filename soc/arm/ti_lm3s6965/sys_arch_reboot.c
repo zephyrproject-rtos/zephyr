@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <sys/util.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 /**
  *
@@ -15,7 +15,6 @@
  *
  * This routine resets the processor.
  *
- * @return N/A
  */
 
 void sys_arch_reboot(int type)

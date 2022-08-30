@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154_test, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
-#include <ztest.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
 
-#include <net/net_core.h>
+#include <zephyr/net/net_core.h>
 #include "net_private.h"
 
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
 
 #include <ieee802154_frame.h>
 #include <ipv6.h>
@@ -203,7 +203,7 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t)
 static bool test_ack_reply(struct ieee802154_pkt_test *t)
 {
 	static uint8_t data_pkt[] = {
-		0x61, 0xdc, 0x16, 0xcd, 0xab, 0x26, 0x11, 0x32, 0x00, 0x00, 0x4b,
+		0x61, 0xdc, 0x16, 0xcd, 0xab, 0xc2, 0xa3, 0x9e, 0x00, 0x00, 0x4b,
 		0x12, 0x00, 0x26, 0x18, 0x32, 0x00, 0x00, 0x4b, 0x12, 0x00, 0x7b,
 		0x00, 0x3a, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x20, 0x01, 0x0d, 0xb8,
@@ -227,8 +227,8 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 
 	net_pkt_frag_add(pkt, frag);
 
-	if (net_recv_data(iface, pkt) == NET_DROP) {
-		NET_ERR("Packet dropped");
+	if (net_recv_data(iface, pkt) < 0) {
+		NET_ERR("Recv data failed");
 		return false;
 	}
 
@@ -292,17 +292,19 @@ static bool initialize_test_environment(void)
 	return true;
 }
 
-static void test_init(void)
+static void *test_init(void)
 {
 	bool ret;
 
 	ret = initialize_test_environment();
 
 	zassert_true(ret, "Test initialization");
+
+	return NULL;
 }
 
 
-static void test_parsing_ns_pkt(void)
+ZTEST(ieee802154_l2, test_parsing_ns_pkt)
 {
 	bool ret;
 
@@ -311,7 +313,7 @@ static void test_parsing_ns_pkt(void)
 	zassert_true(ret, "NS parsed");
 }
 
-static void test_sending_ns_pkt(void)
+ZTEST(ieee802154_l2, test_sending_ns_pkt)
 {
 	bool ret;
 
@@ -320,7 +322,7 @@ static void test_sending_ns_pkt(void)
 	zassert_true(ret, "NS sent");
 }
 
-static void test_parsing_ack_pkt(void)
+ZTEST(ieee802154_l2, test_parsing_ack_pkt)
 {
 	bool ret;
 
@@ -329,7 +331,7 @@ static void test_parsing_ack_pkt(void)
 	zassert_true(ret, "ACK parsed");
 }
 
-static void test_replying_ack_pkt(void)
+ZTEST(ieee802154_l2, test_replying_ack_pkt)
 {
 	bool ret;
 
@@ -338,7 +340,7 @@ static void test_replying_ack_pkt(void)
 	zassert_true(ret, "ACK replied");
 }
 
-static void test_parsing_beacon_pkt(void)
+ZTEST(ieee802154_l2, test_parsing_beacon_pkt)
 {
 	bool ret;
 
@@ -347,7 +349,7 @@ static void test_parsing_beacon_pkt(void)
 	zassert_true(ret, "Beacon parsed");
 }
 
-static void test_parsing_sec_data_pkt(void)
+ZTEST(ieee802154_l2, test_parsing_sec_data_pkt)
 {
 	bool ret;
 
@@ -356,17 +358,4 @@ static void test_parsing_sec_data_pkt(void)
 	zassert_true(ret, "Secured data frame parsed");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(ieee802154_l2,
-			 ztest_unit_test(test_init),
-			 ztest_unit_test(test_parsing_ns_pkt),
-			 ztest_unit_test(test_sending_ns_pkt),
-			 ztest_unit_test(test_parsing_ack_pkt),
-			 ztest_unit_test(test_replying_ack_pkt),
-			 ztest_unit_test(test_parsing_beacon_pkt),
-			 ztest_unit_test(test_parsing_sec_data_pkt)
-		);
-
-	ztest_run_test_suite(ieee802154_l2);
-}
+ZTEST_SUITE(ieee802154_l2, NULL, test_init, NULL, NULL, NULL);

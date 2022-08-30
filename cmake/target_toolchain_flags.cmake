@@ -1,4 +1,4 @@
-# Uniquely identify the toolchain wrt. it's capabilities.
+# Uniquely identify the toolchain wrt. its capabilities.
 #
 # What we are looking for, is a signature definition that is defined
 # like this:
@@ -24,15 +24,14 @@ set(TOOLCHAIN_SIGNATURE ${CMAKE_C_COMPILER_MD5_SUM})
 string(MD5 COMPILER_SIGNATURE ${CMAKE_C_COMPILER}_${CMAKE_C_COMPILER_ID}_${CMAKE_C_COMPILER_VERSION})
 set(TOOLCHAIN_SIGNATURE ${TOOLCHAIN_SIGNATURE}_${COMPILER_SIGNATURE})
 
-# Custom targets for compiler and linker flags.
-add_custom_target(asm)
-add_custom_target(compiler)
-add_custom_target(compiler-cpp)
-add_custom_target(linker)
+# Load the compile features file which will provide compile features lists for
+# various C / CXX language dialects that can then be exported based on current
+# Zephyr Kconfig settings or the CSTD global property.
+include(${CMAKE_CURRENT_LIST_DIR}/compiler/compiler_features.cmake)
 
-# Loading of templates are strictly not needed as they does not set any
+# Loading of templates are strictly not needed as they do not set any
 # properties.
-# They purely provides an overview as well as a starting point for supporting
+# They purely provide an overview as well as a starting point for supporting
 # a new toolchain.
 include(${CMAKE_CURRENT_LIST_DIR}/compiler/compiler_flags_template.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/linker/linker_flags_template.cmake)

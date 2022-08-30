@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
 
-#include <net/ppp.h>
+#include <zephyr/net/ppp.h>
 
 #include "net_private.h"
 
@@ -55,7 +55,7 @@ void ppp_network_done(struct ppp_context *ctx, int proto)
 
 void ppp_network_all_down(struct ppp_context *ctx)
 {
-	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
+	STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol != PPP_LCP && proto->lower_down) {
 			proto->lower_down(ctx);
 		}

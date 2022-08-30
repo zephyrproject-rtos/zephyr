@@ -1,0 +1,9 @@
+# MIMX8MP EVK board
+
+# Copyright (c) 2021, Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIMX8MP_EVK
+	bool "NXP i.MX8M Plus EVK"
+	depends on SOC_SERIES_IMX8ML_M7
+	select SOC_PART_NUMBER_MIMX8ML8DVNLZ

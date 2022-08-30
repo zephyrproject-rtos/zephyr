@@ -5,6 +5,8 @@
 
 config TEMP_KINETIS
 	bool "NXP Kinetis Temperature Sensor"
+	default y
+	depends on DT_HAS_NXP_KINETIS_TEMPERATURE_ENABLED
 	depends on (ADC && SOC_FAMILY_KINETIS)
 	help
 	  Enable driver for NXP Kinetis temperature sensor.
@@ -29,7 +31,7 @@ config TEMP_KINETIS_OVERSAMPLING
 	  more stable readings.
 
 config TEMP_KINETIS_FILTER
-	bool "Enable digital filtering of ADC readings"
+	bool "Digital filtering of ADC readings"
 	help
 	  Enable weighted average digital filtering of the ADC
 	  readings as per NXP AN3031.

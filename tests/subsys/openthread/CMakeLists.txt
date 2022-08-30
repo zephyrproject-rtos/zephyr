@@ -1,13 +1,13 @@
 # Boilerplate code, which pulls in the Zephyr build system.
-cmake_minimum_required(VERSION 3.13.1)
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+cmake_minimum_required(VERSION 3.20.0)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(openthread_tests)
 
 zephyr_library_include_directories(
 	${ZEPHYR_BASE}/../modules/lib/openthread/include/
 	${ZEPHYR_BASE}/../modules/lib/openthread/src/posix/platform/
-	${ZEPHYR_BASE}/subsys/net/lib/openthread/platform/
+	${ZEPHYR_BASE}/modules/openthread/platform/
 	${ZEPHYR_BASE}/../modules/lib/openthread/examples/platforms/
 	)
 

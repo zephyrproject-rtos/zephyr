@@ -1,0 +1,1735 @@
+Zephyr HCI Extensions
+*********************
+
+
+Introduction
+============
+
+This document describes a set of vendor specific HCI commands and events for
+Zephyr based Bluetooth Classic and Low Energy controllers.
+
+
+Zephyr Vendor Configuration Parameters
+======================================
+
+
+Zephyr Vendor Supported Commands
+================================
+
+The Supported Commands configuration parameter lists which vendor commands the
+local Controller supports. It is implied that if a command is listed as
+supported, the feature underlying that command is also supported.
+
+The Supported Commands is a 64 octet bit field. If a bit is set to 1, then this
+command is supported.
+
+	+-------+------+--------------------------------------------+
+	| Octet | Bit  | Command Supported                          |
+	+-------+------+--------------------------------------------+
+	| 0     | 0    | Read Version Information                   |
+	|       | 1    | Read Supported Commands                    |
+	|       | 2    | Read Supported Features                    |
+	|       | 3    | Set Event Mask                             |
+	|       | 4    | Reset                                      |
+	|       | 5    | Write BD_ADDR                              |
+	|       | 6    | Set Trace Enable                           |
+	|       | 7    | Read Build Information                     |
+	+-------+------+--------------------------------------------+
+	| 1     | 0    | Read Static Addresses                      |
+	|       | 1    | Read Key Hierarchy Roots                   |
+	|       | 2    | Read Chip Temperature                      |
+	|       | 3    | Read Host Stack Commands                   |
+	|       | 4    | Set Scan Request Reports                   |
+	|       | 5    | Write Tx Power Level (per Role/Connection) |
+	|       | 6    | Read Tx Power Level (per Role/Connection)  |
+	|       | 7    | Read USB Supported Transport Modes         |
+	+-------+------+--------------------------------------------+
+	| 2     | 0    | Set USB Transport Mode                     |
+	+-------+------+--------------------------------------------+
+
+Only Read_Version_Information and Read_Supported_Commands commands are
+mandatory.
+
+
+Zephyr Vendor Supported Features
+================================
+
+The Supported Features configuration parameter lists vendor specific features
+that either extend commands or don't have a vendor command. Most features are
+indicated by the support its respective vendor command. The Supported Features
+are represented as an 8 octet bit mask. For each feature a single bit is
+specified which shall be set to 1 if the feature is supported and set to 0
+otherwise.
+
+	+-------+------+--------------------------------------------+
+	| Octet | Bit  | Feature Supported                          |
+	+-------+------+--------------------------------------------+
+	| 0     | 0    | Vendor Diagnostic Channel                  |
+	|       | 1    | Reserved                                   |
+	|       | 2    | Reserved                                   |
+	|       | 3    | Reserved                                   |
+	|       | 4    | Reserved                                   |
+	|       | 5    | Reserved                                   |
+	|       | 6    | Reserved                                   |
+	|       | 7    | Reserved                                   |
+	+-------+------+--------------------------------------------+
+
+
+Zephyr Vendor Event Mask
+========================
+
+The Event Mask configuration parameter lists the events that are indicated by
+the controller. By default no vendor events are reported.
+
+	+-------+------+--------------------------------------------+
+	| Octet | Bit  | Event                                      |
+	+-------+------+--------------------------------------------+
+	| 0     | 0    | Reserved                                   |
+	|       | 1    | Fatal Error                                |
+	|       | 2    | Trace Information Event                    |
+	|       | 3    | Scan Request Received Event                |
+	|       | 4    | Connectionless IQ Report Event             |
+	|       | 5    | Connection IQ Report Event                 |
+	|       | 6    | Reserved                                   |
+	|       | 7    | Reserved                                   |
+	+-------+------+--------------------------------------------+
+
+The support for Fatal_Error event is mandatory. The default event mask after
+bootup and vendor specific Reset command includes the Fatal_Error event.
+
+
+Zephyr Hardware Platforms
+=========================
+
+Hardware platforms are assigned numbers to allow identification of the hardware
+manufacturer.
+
+	Hardware_Platform:                             Size: 2 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x0001             | Intel Corporation                    |
+	| 0x0002             | Nordic Semiconductor                 |
+	| 0x0003             | NXP Semiconductors                   |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+The Hardware_Platform name is independent from the Manufacture Name provided
+by HCI version information. This information identifies the actual chip while
+the standard HCI version information identifies the unique implementation of
+a Bluetooth Controller.
+
+
+Zephyr Hardware Variants
+========================
+
+Hardware variants are platform specific. They are specified to allow detailed
+identification of the hardware running Zephyr.
+
+	Hardware_Variant (Nordic):                     Size: 2 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x0001             | nRF51x                               |
+	| 0x0002             | nRF52x                               |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+The Hardware_Variant value assignment depends on the Hardware_Platform value.
+Each hardware platform has its own variant namespace.
+
+
+Zephyr Trace Information Format
+===============================
+
+The trace information used the Trace Information event and in the Diagnostic
+Channel are following the same packet format.
+
+0              8             16             24
++--------------+--------------+--------------+--------------+
+| Type         | Connection_Handle           | Parameters
++--------------+--------------+--------------+--------------+
+
+
+Zephyr Vendor Commands
+======================
+
+Vendor specific HCI commands use the OGF 0x3F. All defined OCF are listed
+below. Undefined OCF are reserved for future use.
+
+
+Zephyr Read Version Information Command
+=======================================
+
+This command reads the values for the vendor version information for the local
+Controller.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Read_Version_Information | 0x001 |                    | Status,            |
+|                          |       |                    | Hardware_Platform, |
+|                          |       |                    | Hardware_Variant,  |
+|                          |       |                    | Firmware_Variant,  |
+|                          |       |                    | Firmware_Version,  |
+|                          |       |                    | Firmware_Revision, |
+|                          |       |                    | Firmware_Build     |
++--------------------------+-------+--------------------+--------------------+
+
+The Hardware_Platform information defines the hardware manufacturer
+information. The Hardware_Variant is manufacturer specific and defines the
+hardware platform from that manufacturer.
+
+The Firmware_Variant defines the type of firmware. It is possible to provide
+HCI firmware with limited functionality for example for bootloader operation.
+The Firmware_Version and Firmware_Revision define version information of the
+Firmware_Variant that is currently active. The Firmware_Build defines an
+additional counter for incremental builds.
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Hardware_Platform:                             Size: 2 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXX             | Assigned hardware manufacturer       |
+	+--------------------+--------------------------------------+
+
+	Hardware_Variant:                              Size: 2 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXX             | Assigned platform specific value     |
+	+--------------------+--------------------------------------+
+
+	Firmware_Variant:                               Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Standard Bluetooth controller        |
+	| 0x01               | Vendor specific controller           |
+	| 0x02               | Firmware loader                      |
+	| 0x03               | Rescue image                         |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Firmware_Version:                               Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXX               | Implementation specific              |
+	+--------------------+--------------------------------------+
+
+	Firmware_Revision:                             Size: 2 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXX             | Implementation specific              |
+	+--------------------+--------------------------------------+
+
+	Firmware_Build:                                Size: 4 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXXXXXX         | Implementation specific              |
+	+--------------------+--------------------------------------+
+
+When the Read_Version_Information command has completed, a Command Complete
+event shall be generated.
+
+
+Zephyr Read Supported Commands Command
+======================================
+
+This command reads the list of vendor commands supported for the local
+Controller.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Read_Supported_Commands  | 0x002 |                    | Status,            |
+|                          |       |                    | Supported_Commands |
++--------------------------+-------+--------------------+--------------------+
+
+This command shall return the Supported_Commands configuration parameter. It is
+implied that if a command is listed as supported, the feature underlying that
+command is also supported.
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Supported_Commands:                           Size: 64 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | Bit mask for each vendor command     |
+	|                    |                                      |
+	|                    | If a bit is 1, the Controller        |
+	|                    | supports the corresponding command   |
+	|                    | and the features required for the    |
+	|                    | command, unsupported or undefined    |
+	|                    | commands shall be set to 0           |
+	+--------------------+--------------------------------------+
+
+When the Read_Supported_Commands command has completed, a Command Complete
+event shall be generated.
+
+
+Zephyr Read Supported Features Command
+======================================
+
+This command reads the list of vendor features supported by the local Controller.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Read_Supported_Features  | 0x003 |                    | Status,            |
+|                          |       |                    | Supported_Features |
++--------------------------+-------+--------------------+--------------------+
+
+This command shall return the Supported_Features configuration parameter. The
+features list is only used for features not covered by supported commands.
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Supported_Features:                            Size: 8 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXXXXXXXXXXXXXX | Bit Mask List of vendor features     |
+	+--------------------+--------------------------------------+
+
+When the Read_Supported_Features command has completed, a Command Complete
+event shall be generated.
+
+
+Zephyr Set Event Mask Command
+=============================
+
+This command is used to control which vendor events are generated by the HCI
+for the Host.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Set_Event_Mask           | 0x004 | Event_Mask         | Status             |
++--------------------------+-------+--------------------+--------------------+
+
+If the bit in the Event_Mask is set to a one, then the event associated with
+that bit will be enabled. The Host has to deal with each event that is
+generated by a Controller. The event mask allows the Host to control which
+events will interrupt it.
+
+The vendor specific Reset command shall reset this event mask back to its
+default value, but the standard HCI Reset command shall not reset this command
+back to its default value.
+
+	Event_Mask:                                    Size: 8 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x0000000000000003 | Default enabled vendor events        |
+	| 0xXXXXXXXXXXXXXXXX | Bit Mask List of vendor events       |
+	+--------------------+--------------------------------------+
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+When the Set_Event_Mask command has completed, a Command Complete event shall
+be generated.
+
+
+Zephyr Reset Command
+====================
+
+This command resets the vendor portion of the local Controller.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Reset                    | 0x005 | Reset_Type         | Status             |
++--------------------------+-------+--------------------+--------------------+
+
+The Host shall not send additional HCI commands before the Command Complete
+event related to the Reset command has been received.
+
+The Soft reset and Hard reset both include all actions taken by the standard
+HCI Reset command. While the standard HCI Reset command does not reset any
+vendor specific settings, this command will reset everything back to defaults.
+
+The Hard reset will cause a full reboot of the hardware.
+
+	Reset_Type:                                     Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Soft reset                           |
+	| 0x01               | Hard reset                           |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+When the Reset command has completed, a Command Complete event shall be
+generated.
+
+
+Zephyr Write BD_ADDR Command
+============================
+
+This command writes the BD_ADDR (Bluetooth public device address) value
+to the volatile memory. It is kept over Reset and can be read out by
+Read_BD_ADDR command.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Write_BD_ADDR            | 0x006 | BD_ADDR            | Status             |
++--------------------------+-------+--------------------+--------------------+
+
+To activate this address the standard HCI Reset command is required to be
+executed. Until then the current BD_ADDR is still active and reported by
+Read_BD_ADDR. The vendor specific Reset command will reset the BD_ADDR to its
+non-volatile default if available. Otherwise the BD_ADDR shall be reset to the
+invalid / non-existent 00:00:00:00:00:00 address value.
+
+	BD_ADDR:                                       Size: 6 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXXXXXXXXXX     | BD_ADDR of the Device                |
+	+--------------------+--------------------------------------+
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+When the Write_BD_ADDR command has completed, a Command Complete event shall
+be generated.
+
+
+Zephyr Set Trace Enable Command
+===============================
+
+This command is used to enable or disable the tracing functionality.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Set_Trace_Enable         | 0x007 | Enable,            | Status             |
+|                          |       | Type               |                    |
++--------------------------+-------+--------------------+--------------------+
+
+When enabled the Controller will send link layer and link manager tracing
+information to the Host.
+
+When Enable is set to 0x00 then Type shall be set to 0x00 as well. The
+diagnostic channel type shall only supported when the feature bit is also set.
+
+The support for trace information reporting via HCI events is mandatory to
+support when the Set_Trace_Enable command is supported.
+
+	Enable:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Tracing disabled                     |
+	| 0x01               | Tracing enabled                      |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Type:                                           Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Use HCI events                       |
+	| 0x01               | Use Vendor Diagnostic Channel        |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+When the Set_Trace_Enable command has completed, a Command Complete event shall
+be generated.
+
+
+Zephyr Read Build Information Command
+=====================================
+
+This commands reads the controller firmware build information string.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Read_Build_Information   | 0x008 |                    | Status,            |
+|                          |       |                    | Build_Info         |
++--------------------------+-------+--------------------+--------------------+
+
+This command shall return the build information encoded as an UTF-8 string.
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Build_Info:                                    Size: variable
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | UTF-8 encoded build information      |
+	+--------------------+--------------------------------------+
+
+When the Read_Build_Information command has completed, a Command Complete
+event shall be generated.
+
+
+Zephyr Read Static Addresses Command
+====================================
+
+This commands reads the controller specific static addresses.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Read_Static_Addresses    | 0x009 |                    | Status,            |
+|                          |       |                    | Num_Addresses,     |
+|                          |       |                    | Static_Address[i], |
+|                          |       |                    | Identity_Root[i]   |
++--------------------------+-------+--------------------+--------------------+
+
+This command shall return the static addresses programmed by the vendor at
+manufacturing time.
+
+Each returned static address shall confirm to the Static Device Address
+definition. The two most significant bits of the address shall be equal to 1.
+At least one bit of the random part of the address shall be 0. At least one bit
+of the random part of the address shall be 1.
+
+The Identity_Root parameter may be all zeros to indicate no identity root key
+being available for a given static address. The identity root key returned from
+Read_Key_Hierarchy_Roots command shall not be returned from this command.
+
+Note: If no public address is provided and a static address is available, then
+it is recommended to return an identity root key (if available) from this
+command. In case a public address is provided, then it is recommended to use
+the Read_Key_Hierarchy_Roots command to return the identity root key (if only
+one is available).
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Num_Addresses:                                  Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXX               | Number of static device addresses    |
+	+--------------------+--------------------------------------+
+
+	Static_Address[i]:                             Size: 6 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXXXXXXXXXX     | Static device address                |
+	+--------------------+--------------------------------------+
+
+	Identity_Root[i]:                             Size: 16 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | Identity root key (IR) for static    |
+	|                    | device address                       |
+	|                    |                                      |
+	|                    | All zero parameter value indicates   |
+	|                    | missing identity root key.           |
+	+--------------------+--------------------------------------+
+
+When the Read_Static_Addresses command has completed, a Command Complete event
+shall be generated.
+
+
+Zephyr Read Key Hierarchy Roots Command
+=======================================
+
+This commands reads the controller specific identify and encryption root keys.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Read_Key_Hierarchy_Roots | 0x00A |                    | Status,            |
+|                          |       |                    | Identity_Root,     |
+|                          |       |                    | Encryption_Root    |
++--------------------------+-------+--------------------+--------------------+
+
+This command shall return the identity root key and encryption root key
+programmed by the vendor at manufacturing time. If a key is set to all zeros,
+then the associated key is not available and it should not be used in the key
+hierarchy.
+
+The identity root key and encryption root key may be used for the controllers
+public device address or a static random address generated by the host. It
+shall not be used for static addresses returned by Read_Static_Addresses
+command that have its dedicated identity root key assigned.
+
+Note: For addresses returned by Read_Static_Addresses with an all zeros
+identity root key, the returned Identity_Root value may be used. It is however
+important that it only gets assigned to a single address (either public or
+static random).
+
+Note: The Encryption_Root parameter is only useful for Legacy Pairing. In case
+of Secure Connections it can not be used. The parameter is provided here for
+completeness, but it is encouraged that Controller implementations set this
+value to all zeros.
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Identity_Root:                                Size: 16 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | Identity root key (IR)               |
+	+--------------------+--------------------------------------+
+
+	Encryption_Root:                              Size: 16 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | Encryption root key (ER)             |
+	+--------------------+--------------------------------------+
+
+When the Read_Key_Hierarchy_Roots command has completed, a Command Complete
+event shall be generated.
+
+
+Zephyr Read Chip Temperature Command
+====================================
+
+This commands reads the controller chip temperature.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Read_Chip_Temperature    | 0x00B |                    | Status,            |
+|                          |       |                    | Temperature        |
++--------------------------+-------+--------------------+--------------------+
+
+This command shall return the current chip temperature in degrees Celsius.
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Temperature:                                    Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | The measured temperature converted   |
+	|                    | to degrees Celsius (signed integer)  |
+	|                    | Range: -128 ≤ N ≤ 127                |
+	+--------------------+--------------------------------------+
+
+When the Read_Chip_Temperature command has completed, a Command Complete event
+shall be generated.
+
+
+Zephyr Read Host Stack Commands Command
+=======================================
+
+This command reads the list of host stack operation system defined vendor
+commands supported for the local Controller.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Read_Host_Stack_Commands | 0x00C |                    | Status,            |
+|                          |       |                    | Num_Commands,      |
+|                          |       |                    | Vendor_ID[i],      |
+|                          |       |                    | Opcode_Base[i]     |
++--------------------------+-------+--------------------+--------------------+
+
+This command shall return the list of host stack operation defined vendor
+commands. They are defined based on a vendor identifier and a base opcode.
+
+With this command it is possible to incorporate external defined HCI commands
+designed for host stack operation that extend the standard and vendor specific
+Controller commands. See Android [1][2] and Microsoft [3] defined extensions.
+
+The Opcode_Base parameter points to an opcode that will identify the external
+command set. Ideally all external commands are multiplexed through that single
+opcode and also define a flexible interface for external events.
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Num_Commands:                                   Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXX               | Total number of commands             |
+	+--------------------+--------------------------------------+
+
+	Vendor_ID[i]:                                  Size: 2 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x0001             | Android specific HCI commands        |
+	| 0x0002             | Microsoft specific HCI commands      |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Opcode_Base[i]:                                Size: 2 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXX             | Base opcode of command               |
+	+--------------------+--------------------------------------+
+
+When the Read_Host_Stack_Commands command has completed, a Command Complete
+event shall be generated.
+
+
+Zephyr Set Scan Request Reports Command
+=======================================
+
+This commands configures the report of Scan_Request_Received events.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Set_Scan_Request_Reports | 0x00D | Enable             | Status             |
++--------------------------+-------+--------------------+--------------------+
+
+The Enable parameter indicates with the Controller shall send the
+Scan_Request_Received event upon receipt of a scan request PDU that is in an
+response to an advertisement from the specified advertising set that contains
+its device address and is from a scanner that is allowed by the advertising
+filter policy.
+
+Note: In case Extended Advertising configuration is used for setting up
+advertising sets, this shall not generate any vendor events.
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Enable:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Scan request reporting disabled      |
+	| 0x01               | Scan request reporting enabled       |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+When the Set_Scan_Request_Reports command has completed, a Command Complete
+event shall be generated.
+
+
+Zephyr Write Tx Power Level (per Role/Connection) Command
+=========================================================
+
+This command dynamically modifies BLE Tx power level given a handle and a
+handle type (advertiser, scanner, connection).
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Write_Tx_Power_Level     | 0x00E | Handle_Type,       | Status,            |
+|                          |       | Handle,            | Handle_Type,       |
+|                          |       | Tx_Power_Level     | Handle,            |
+|                          |       |                    | Selected_Tx_Power  |
++--------------------------+-------+--------------------+--------------------+
+
+The Tx power of the BLE radio interface is modified for any low-level link by
+the controller with a high degree of flexibility. The BLE link whose power is
+set is identified based on a handle type (advertiser, scanner, connection) and
+handle pair.
+
+The role/state defining input parameter is the Handle_Type, whereas its
+corresponding handle is provided by the Handle input parameter. Note that
+for Advertisements, the Handle input parameter is ignored in the case that
+Advertising Extensions are not configured, whereas Advertising Sets are to be
+identified by their corresponding Handle in case Advertising Extensions are
+enabled.
+
+The desired transmitter power level for the selected link instance is inputted
+as Tx_Power_Level. The power setup and control can be performed dynamically
+without the need of restarting the advertiser and scanner role/states. In case
+of connections, the Tx power changes take effect only if the connections are
+in a connected state.
+
+The inputs Handle_Type and Handle are passed through as outputs to aid the
+asynchronous service of the command as well. In addition, the command returns
+also with the Selected_Tx_Power by the controller which addresses and corrects
+the possible mismatches between the desired Tx_Power_Level and the achievable
+Tx powers given each individual controller capabilities.
+
+	Handle_Type:                                    Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Handle of type Advertiser (Adv)      |
+	| 0x01               | Handle of type Scanner (Scan)        |
+	| 0x02               | Handle of type Connection (Conn)     |
+	| 0x03-0xFF          | Reserved (HCI command error)         |
+	+--------------------+--------------------------------------+
+
+	Handle:                                        Size: 2 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | Handle of the selected Handle_Type   |
+	|                    | that identifies the instance to set  |
+	|                    | the power of. See below for a        |
+	|                    | description corresponding to each    |
+	|                    | Handle_Type                          |
+	|                    |                                      |
+	|                    | Handle_Type_Adv:                     |
+	| 0x0000 - 0xFFFF    |     Legacy Advertisement Handle      |
+	|                    |     (Handle value is ignored)        |
+	| 0x0000 - 0x00EF    |     Advertisement Extensions (AE)    |
+	|                    |     enabled Advertisement set        |
+	|                    |     Handle                           |
+	|                    |                                      |
+	|                    | Handle_Type_Scan:                    |
+	| 0x0000 - 0xFFFF    |     Scanner Handle (Handle value is  |
+	|                    |     ignored)                         |
+	|                    |                                      |
+	|                    | Handle_Type_Conn:                    |
+	| 0x0000 - 0x0EFF    |     Connection Handle                |
+	+--------------------+--------------------------------------+
+
+	Tx_Power_Level:                                 Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| -127 <= N <= 126   | The desired Tx_Power_Level in signed |
+	|                    | 1 octet integer format to be set to  |
+	|                    | the Handle_Type and Handle pair. The |
+	|                    | controller  shall choose a power     |
+	|                    | level lower than or equal to the one |
+	|                    | specified by the host unless the host|
+	|                    | desired power is lower than the      |
+	|                    | minimum supported Tx power of the    |
+	|                    | controller, in which case the        |
+	|                    | controller shall use its minimum Tx  |
+	|                    | power.                               |
+	|                    | Units: dBm                           |
+	|                    |                                      |
+	| 127                | No preference for the Tx_Power_Level,|
+	|                    | the controller shall revert to using |
+	|                    | its default setting for Tx power.    |
+	+--------------------+--------------------------------------+
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Selected_Tx_Power:                              Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| -127 <= N <= 126   | The controller selected Tx power to  |
+	|                    | set for the given Handle_Type and    |
+	|                    | and pair formatted as a 1 octet      |
+	|                    | signed integer. The controller shall |
+	|                    | not modify this transmit power unless|
+	|                    | it is directed to do so by the Host. |
+	|                    | Units: dBm                           |
+	+--------------------+--------------------------------------+
+
+When the Write_Tx_Power_Level command has completed, a Command Complete
+event shall be generated.
+
+
+Zephyr Read Tx Power Level (per Role/Connection) Command
+========================================================
+
+This command reads the BLE Tx power level. In contrast to the standardized HCI
+command, i.e. Read_Transmit_Power_Level, which returns the transmitted power
+level only for a specified connection handle, this command operates for both
+connected and unconnected states. It gets the BLE Tx power level for any given
+handle type (advertiser, scanner, connection) and handle.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Read_Tx_Power_Level      | 0x00F | Handle_Type,       | Status,            |
+|                          |       | Handle             | Handle_Type,       |
+|                          |       |                    | Handle,            |
+|                          |       |                    | Tx_Power_Level     |
++--------------------------+-------+--------------------+--------------------+
+
+The Tx power of the BLE radio interface used for a low-level link identified
+by a pair of Handle_Type and Handle is retrieved from the controller.
+
+The role/state defining input parameter is the Handle_Type, whereas its
+corresponding handle is provided by the Handle input parameter. Note that
+for Advertisements, the Handle input parameter is ignored in the case that
+Advertising Extensions are not configured, whereas Advertising Sets are to be
+identified by their corresponding Handle in case Advertising Extensions are
+enabled.
+
+The command returns with an operational Status, and the replicated Handle_Type
+and Handle input parameters supplemented by the current Tx_Power_Level in use
+by the controller for the requested Handle_Type and Handle.
+
+	Handle_Type:                                    Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Handle of type Advertiser (Adv)      |
+	| 0x01               | Handle of type Scanner (Scan)        |
+	| 0x02               | Handle of type Connection (Conn)     |
+	| 0x03-0xFF          | Reserved (HCI command error)         |
+	+--------------------+--------------------------------------+
+
+	Handle:                                        Size: 2 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | Handle of the selected Handle_Type   |
+	|                    | that identifies the instance to read |
+	|                    | the power of. See below for a        |
+	|                    | description corresponding to each    |
+	|                    | Handle_Type                          |
+	|                    |                                      |
+	|                    | Handle_Type_Adv:                     |
+	| 0x0000 - 0xFFFF    |     Legacy Advertisement Handle      |
+	|                    |     (Handle value is ignored)        |
+	| 0x0000 - 0x00EF    |     Advertisement Extensions (AE)    |
+	|                    |     enabled Advertisement set        |
+	|                    |     Handle                           |
+	|                    |                                      |
+	|                    | Handle_Type_Scan:                    |
+	| 0x0000 - 0xFFFF    |     Scanner Handle (Handle value is  |
+	|                    |     ignored)                         |
+	|                    |                                      |
+	|                    |                                      |
+	|                    | Handle_Type_Conn:                    |
+	| 0x0000 - 0x0EFF    |     Connection Handle                |
+	+--------------------+--------------------------------------+
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Tx_Power_Level:                                 Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| -127 <= N <= 126   | The current Tx_Power_Level formatted |
+	|                    | as a 1 octet signed integer at which |
+	|                    | the controller is operating the      |
+	|                    | low-level link identified by the     |
+	|                    | Handle_Type and Handle pair.         |
+	|                    | Units: dBm                           |
+	+--------------------+--------------------------------------+
+
+When the Read_Tx_Power_Level command has completed, a Command Complete
+event shall be generated.
+
+Zephyr Read Supported USB Transport Modes Command
+=================================================
+
+This command read the supported USB transport modes.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Read_USB_Transport_Modes | 0x010 |                    | Status             |
+|                          |       |                    | Num_Supported_Modes|
+|                          |       |                    | Supported_Mode[i]  |
++--------------------------+-------+--------------------+--------------------+
+
+	Supported_Mode:                                 Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | USB standard (H:2) transport mode.   |
+	|                    | Standard mode which use dedicated    |
+	|                    | endpoints for commands, events and   |
+	|                    | data.                                |
+	| 0x01               | Serial (H:4) transport mode.         |
+	|                    | Serialize all traffic into bulk      |
+	|                    | endpoints.                           |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+When the Read_USB_Transport_Mode command has completed, a Command Complete
+event shall be generated.
+
+Zephyr Set USB Transport Mode Command
+=====================================
+
+This command set the host transport mode and reset the controller states like
+an HCI Reset command.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Set_USB_Transport_Mode   | 0x011 | Mode               | Status             |
++--------------------------+-------+--------------------+--------------------+
+
+When the Set_USB_Transport_Mode command has completed, a Command Complete
+event shall be generated.
+
+Zephyr Vendor Events
+====================
+
+The Vendor Event is used to encapsulate all vendor specific events. The event
+code of all vendor events shall be 0xFF. The subevent code is the first octet
+of the event parameters. The subevent code shall be set to one of the valid
+subevent codes from a vendor specific event. All other subevent parameters are
+defined in the vendor specific events.
+
+
+Zephyr Fatal Error
+==================
+
+This event reports a fatal non-recoverable error from the local Controller.
+The event may represent Hard Fault, Bluetooth Controller assert or some other
+non-recoverable error. The content of the event depends on a type of error it
+represents.
+
++-------------------------------+------------+-------------------------------+
+| Event                         | Event Code | Event Parameters              |
++-------------------------------+------------+-------------------------------+
+| Fatal_Error                   | 0xFF       | Subevent_Code,                |
+|                               |            | Error_Data_Type,              |
+|                               |            | Error_Data                    |
++-------------------------------+------------+-------------------------------+
+
+The Error_Data_Type provides an information about what is the Error_Data size
+and content.
+
+	Error_Data_Type:                                Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x01               | Stack frame                          |
+	| 0x02               | Controller assert data               |
+	| 0x03               | Trace data                           |
+	+--------------------+--------------------------------------+
+
+	Error_Data:                                    Size: variable
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | Content and size of the parameter    |
+	|                    | depends on the Error_Data_Type       |
+	+--------------------+--------------------------------------+
+
+Zephyr Fatal Error event with Stack Frame data represents a Hard Fault error.
+The event is tightly related with an architecture of a CPU the Controller is
+running on.
+
+	+------------------------+--------------------+
+	| Error Data Type        | Parameters         |
+	+------------------------+--------------------+
+	| Stack_Frame            | Error_Reason,      |
+	|                        | Cpu_Type,          |
+	|                        | Cpu_Data           |
+	+------------------------+--------------------+
+
+The Cpu_Type provides information about architecture the event was
+generated for. Cpu_Data size and content depends on Cpu_Type. This kind of a
+Zephyr Fatal Error event may be generated by k_sys_fatal_error_handler.
+
+	Error_Reason:                                  Size: 4 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXXXXXX         | The reason for the fatal error       |
+	+--------------------+--------------------------------------+
+
+	Cpu Type:                                       Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x01               | Cortex-M                             |
+	+--------------------+--------------------------------------+
+
+	Cpu Data:                                      Size: variable
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | CPU architecture dependent data that |
+	|                    | represent a stack frame              |
+	+--------------------+--------------------------------------+
+
+	CPU Data Cortex-M:
+	+--------------------+----------+---------------------------------+
+	| Parameters         | Size     | Description                     |
+	+--------------------+----------+---------------------------------+
+	| a1                 | 4 octets | General purpose register        |
+	| a2                 | 4 octets | General purpose register        |
+	| a3                 | 4 octets | General purpose register        |
+	| a4                 | 4 octets | General purpose register        |
+	| ip                 | 4 octets | Instruction pointer register    |
+	| lr                 | 4 octets | Link register                   |
+	| xpsr               | 4 octets | Program status register         |
+	+--------------------+--------------------------------------------+
+
+Zephyr Fatal Error event with Controller Assert data can be generated by the
+bt_ctlr_assert_handle.
+
+	+------------------------+--------------------+
+	| Error Data Type        | Parameters         |
+	+------------------------+--------------------+
+	| Controller_Assert_Data | File_Name          |
+	|                        | Line_Number        |
+	+------------------------+--------------------+
+
+	File Name:                                     Size: variable
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | Null terminated string with file     |
+	|                    | name where an assert happened        |
+	+--------------------+--------------------------------------+
+
+	Line Number:                                   Size: 4 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXXXXXX         | Line number where assert happened    |
+	+--------------------+--------------------------------------+
+
+Other kinds of a non-recoverable system errors can be represented by Zephyr
+Fatal Error with Trace data.
+
+	+------------------------+--------------------+
+	| Error Data Type        | Parameters         |
+	+------------------------+--------------------+
+	| Trace_Data             | Program_Counter    |
+	|                        | Error_Info         |
+	+------------------------+--------------------+
+
+	Program_Counter:                               Size: 8 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXXXXXXXXXXXXXX | Program counter where the error      |
+	|                    | occurred                             |
+	+--------------------+--------------------------------------+
+
+	Error_Info:                                    Size: variable
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | UTF-8 encoded error information      |
+	+--------------------+--------------------------------------+
+
+The event is reported by default unless masked away by Set_Event_Mask command.
+
+
+Zephyr Trace Information Event
+==============================
+
+This event reports the link manager and link layer trace information.
+
++-------------------------------+------------+-------------------------------+
+| Event                         | Event Code | Event Parameters              |
++-------------------------------+------------+-------------------------------+
+| Trace_Information             | 0xFF       | Subevent_Code,                |
+|                               |            | Trace_Type,                   |
+|                               |            | Trace_Data                    |
++-------------------------------+------------+-------------------------------+
+
+The trace type provides information about the link manager protocol or link
+layer control protocol direction information. The trace data is the specific to
+the trace type and represents the protocol specific data.
+
+	Subevent_Code:                                  Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x03               | Subevent code for Trace Information  |
+	|                    | event                                |
+	+--------------------+--------------------------------------+
+
+	Trace_Type:                                     Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x01               | LMP TX                               |
+	| 0x02               | LMP RX                               |
+	| 0x03               | LLCP TX                              |
+	| 0x04               | LLCP RX                              |
+	| 0x05               | LE CONN_IND                          |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Trace_Data:                                    Size: variable
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | Trace packet data                    |
+	+--------------------+--------------------------------------+
+
+The event is only reported when unmasked by Set_Event_Mask command.
+
+
+Zephyr Scan Request Received Event
+==================================
+
+This event indicates that a SCAN_REQ PDU has been received by an advertiser.
+
++-------------------------------+------------+-------------------------------+
+| Event                         | Event Code | Event Parameters              |
++-------------------------------+------------+-------------------------------+
+| Scan_Request_Received         | 0xFF       | Subevent_Code,                |
+|                               |            | Address_Type,                 |
+|                               |            | Address,                      |
+|                               |            | RSSI                          |
++-------------------------------+------------+-------------------------------+
+
+The request contains a device address from a scanner that is allowed by the
+advertising filter policy.
+
+Note: In case Extended Advertising configuration is used for setting up
+advertising sets, this event shall not be generated.
+
+	Subevent_Code:                                  Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x04               | Subevent code for Scan Request       |
+	|                    | Received event                       |
+	+--------------------+--------------------------------------+
+
+	Address_Type:                                   Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Public Device Address                |
+	| 0x01               | Random Device Address                |
+	| 0x02               | Public Identity Address              |
+	| 0x03               | Random (static) Identity Address     |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Address:                                       Size: 6 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXXXXXXXXXX     | Public Device Address, Random Device |
+	|                    | Address, Public Identity Address or  |
+	|                    | Random (static) Identity Address of  |
+	|                    | the advertising device.              |
+	+--------------------+--------------------------------------+
+
+	RSSI:                                           Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| N                  | Size: 1 Octet (signed integer)       |
+	|                    | Range: -127 <= N <= +20              |
+	|                    | Units: dBm                           |
+	+--------------------+--------------------------------------+
+	| 127                | RSSI is not available                |
+	+--------------------+--------------------------------------+
+	| 21 to 126          | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+The event is only reported when unmasked by Set_Event_Mask command.
+
+
+Zephyr LE Connectionless IQ Report Event
+========================================
+
+This event indicates that periodic advertising PDU including Constant Tone
+Extension was received and sampled.
+
++-------------------------------+------------+-------------------------------+
+| Event                         | Event Code | Event Parameters              |
++-------------------------------+------------+-------------------------------+
+| LE_Connectionless_IQ_Report   | 0xFF       | Subevent_Code,                |
+|                               |            | Sync_Handle,                  |
+|                               |            | Channel_Index,                |
+|                               |            | RSSI,                         |
+|                               |            | RSSI_Antenna_ID,              |
+|                               |            | CTE_Type,                     |
+|                               |            | Slot_Durations,               |
+|                               |            | Packet_Status,                |
+|                               |            | Periodic_Event_Counter,       |
+|                               |            | Sample_Count,                 |
+|                               |            | I_Sample[i],                  |
+|                               |            | Q_Sample[i]                   |
++-------------------------------+------------+-------------------------------+
+
+ The event provides collected IQ samples that are stored as 16 bit signed
+ integers. It is an extension to LE Connectionless IQ Report Event provided
+ by Bluetooth Core 5.3 Vol 4, Part E section 7.7.65.21. The BT Core defined
+ counterpart provides IQ samples that are 8 bit signed integers.
+
+	Subevent_Code:                                  Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x05               | Subevent code for LE Connectionless  |
+	|                    | IQ Report event                      |
+	+--------------------+--------------------------------------+
+
+	Sync_Handle:              Size: 2 octets (12 bits meaningful)
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXX             | Sync_Handle identifying the periodic |
+	|                    | advertising train.                   |
+	|                    | Range: 0x0000 to 0x0EFF              |
+	+--------------------+--------------------------------------+
+	| 0x0FFF             | Receiver Test.                       |
+	+--------------------+--------------------------------------+
+
+	Channel_Index:                                  Size: 1 octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00 to 0x27       | The index of the channel on which the|
+	|                    | packet was received. Note: 0x25 to   |
+	|                    | 0x27 can be used only for packets    |
+	|                    | generated during test modes.         |
+	+--------------------+--------------------------------------+
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	RSSI:                                          Size: 2 octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXX             | RSSI of the packet                   |
+	|                    | Range: -1270 to +200                 |
+	|                    | Units: 0.1 dBm                       |
+	+--------------------+--------------------------------------+
+
+
+	RSSI_Antenna_ID:                                Size: 1 octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXX               | Antenna ID                           |
+	+--------------------+--------------------------------------+
+
+	CTE_Type:                                       Size: 1 octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | AoA Constant Tone Extension          |
+	+--------------------+--------------------------------------+
+	| 0x01               | AoD Constant Tone Extension with     |
+	|                    | 1 us slots                           |
+	+--------------------+--------------------------------------+
+	| 0x02               | AoD Constant Tone Extension with     |
+	|                    | 2 us slots                           |
+	+--------------------+--------------------------------------+
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+
+	Slot_Durations:                                 Size: 1 octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x01               | Switching and sampling slots are     |
+	|                    | 1 µs each                            |
+	+--------------------+--------------------------------------+
+	| 0x02               | Switching and sampling slots are     |
+	|                    | 2 µs each                            |
+	+--------------------+--------------------------------------+
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Packet_Status:                                  Size: 1 octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Packet_Status                        |
+	+--------------------+--------------------------------------+
+	| 0x01               | CRC was incorrect and the Length and |
+	|                    | CTETime fields of the packet were    |
+	|                    | used to determine sampling points    |
+	+--------------------+--------------------------------------+
+	| 0x02               | CRC was incorrect but the Controller |
+	|                    | has determined the position and      |
+	|                    | length of the Constant Tone Extension|
+	|                    | in some other way                    |
+	+--------------------+--------------------------------------+
+	| 0xFF               | Insufficient resources to sample     |
+	|                    | (Channel_Index, CTE_Type, and        |
+	|                    | Slot_Durations invalid).             |
+	+--------------------+--------------------------------------+
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Periodic_Event_Counter:                        Size: 2 octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXX             | The value of paEventCounter (see     |
+	|                    | [Vol 6] Part B, Section 4.4.2.1) for |
+	|                    | the reported AUX_SYNC_IND PDU        |
+	+--------------------+--------------------------------------+
+
+	Sample_Count:                                   Size: 1 octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | No samples provided (only permitted  |
+	|                    | if Packet_Status is 0xFF).           |
+	+--------------------+--------------------------------------+
+	| 0x09 to 0x52       | Total number of sample pairs (there  |
+	|                    | shall be the same number of I samples|
+	|                    | and Q samples).                      |
+	|                    | Note: This number is dependent on the|
+	|                    | switch and sample slot durations used|
+	+--------------------+--------------------------------------+
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	I_Sample[i]:                    Size: Sample_count x 2 octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x8000             | No valid sample available or sample  |
+	|                    | is saturated                         |
+	+--------------------+--------------------------------------+
+	| All other values   | I sample for the reported packet     |
+	|                    | (signed integer).                    |
+	|                    | The list in the order of the sampling|
+	|                    | points within the packet.            |
+	+--------------------+--------------------------------------+
+
+	Q_Sample[i]:                    Size: Sample_count x 2 octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x8000             | No valid sample available or sample  |
+	|                    | is saturated                         |
+	+--------------------+--------------------------------------+
+	| All other values   | Q sample for the reported packet     |
+	|                    | (signed integer).                    |
+	|                    | The list in the order of the sampling|
+	|                    | points within the packet.            |
+	+--------------------+--------------------------------------+
+
+Zephyr LE Connection IQ Report Event
+====================================
+
+This event indicates that there was received and sampled a PDU including
+Constant Tone Extension associated with a given connection.
+
++-------------------------------+------------+-------------------------------+
+| Event                         | Event Code | Event Parameters              |
++-------------------------------+------------+-------------------------------+
+| LE_Connection_IQ_Report       | 0xFF       | Subevent_Code,                |
+|                               |            | Connection_Handle,            |
+|                               |            | RF_PHY,                       |
+|                               |            | Data_Channel_Index,           |
+|                               |            | RSSI,                         |
+|                               |            | RSSI_Antenna_ID,              |
+|                               |            | CTE_Type,                     |
+|                               |            | Slot_Durations,               |
+|                               |            | Packet_Status,                |
+|                               |            | Connection_Event_Counter,     |
+|                               |            | Sample_Count,                 |
+|                               |            | I_Sample[i],                  |
+|                               |            | Q_Sample[i]                   |
++-------------------------------+------------+-------------------------------+
+
+ The event provides collected IQ samples that are stored as 16 bit signed
+ integers. It is an extension to LE Connection IQ Report Event provided
+ by Bluetooth Core 5.3 Vol 4, Part E section 7.7.65.22. The BT Core defined
+ counterpart provides IQ samples that are 8 bit signed integers.
+
+	Subevent_Code:                                  Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x06               | Subevent code for LE Connection IQ   |
+	|                    | Report event                         |
+	+--------------------+--------------------------------------+
+
+	Connection_Handle:        Size: 2 octets (12 bits meaningful)
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXX             | Connection_Handle identifying the    |
+	|                    | connection.                          |
+	|                    | Range: 0x0000 to 0x0EFF              |
+	+--------------------+--------------------------------------+
+
+	RF_PHY:                                         Size: 1 octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x01               | The receiver PHY for the connection  |
+	|                    | is LE 1M                             |
+	+--------------------+--------------------------------------+
+	| 0x02               | The receiver PHY for the connection  |
+	|                    | is LE 2M                             |
+	+--------------------+--------------------------------------+
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Data_Channel_Index:                             Size: 1 octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00 to 0x24       | The index of the data channel on     |
+	|                    | which the Data Physical Channel PDU  |
+	|                    | was received.                        |
+	+--------------------+--------------------------------------+
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	RSSI:                                          Size: 2 octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXX             | RSSI of the packet                   |
+	|                    | Range: -1270 to +200                 |
+	|                    | Units: 0.1 dBm                       |
+	+--------------------+--------------------------------------+
+
+	RSSI_Antenna_ID:                                Size: 1 octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXX               | Antenna ID                           |
+	+--------------------+--------------------------------------+
+
+	CTE_Type:                                       Size: 1 octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | AoA Constant Tone Extension          |
+	+--------------------+--------------------------------------+
+	| 0x01               | AoD Constant Tone Extension with     |
+	|                    | 1 us slots                           |
+	+--------------------+--------------------------------------+
+	| 0x02               | AoD Constant Tone Extension with     |
+	|                    | 2 us slots                           |
+	+--------------------+--------------------------------------+
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Slot_Durations:                                 Size: 1 octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x01               | Switching and sampling slots are     |
+	|                    | 1 µs each                            |
+	+--------------------+--------------------------------------+
+	| 0x02               | Switching and sampling slots are     |
+	|                    | 2 µs each                            |
+	+--------------------+--------------------------------------+
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Packet_Status:                                  Size: 1 octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Packet_Status                        |
+	+--------------------+--------------------------------------+
+	| 0x01               | CRC was incorrect and the Length and |
+	|                    | CTETime fields of the packet were    |
+	|                    | used to determine sampling points    |
+	+--------------------+--------------------------------------+
+	| 0x02               | CRC was incorrect but the Controller |
+	|                    | has determined the position and      |
+	|                    | length of the Constant Tone Extension|
+	|                    | in some other way                    |
+	+--------------------+--------------------------------------+
+	| 0xFF               | Insufficient resources to sample     |
+	|                    | (Channel_Index, CTE_Type, and        |
+	|                    | Slot_Durations invalid).             |
+	+--------------------+--------------------------------------+
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Connection_Event_Counter:                      Size: 2 octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXXXX             | The value of connEventCounter (see   |
+	|                    | [Vol 6] Part B, Section 4.5.1) for   |
+	|                    | the reported PDU                     |
+	+--------------------+--------------------------------------+
+
+	Sample_Count:                                   Size: 1 octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | No samples provided (only permitted  |
+	|                    | if Packet_Status is 0xFF).           |
+	+--------------------+--------------------------------------+
+	| 0x09 to 0x52       | Total number of sample pairs (there  |
+	|                    | shall be the same number of I samples|
+	|                    | and Q samples).                      |
+	|                    | Note: This number is dependent on the|
+	|                    | switch and sample slot durations used|
+	+--------------------+--------------------------------------+
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	I_Sample[i]:                    Size: Sample_count x 2 octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x8000             | No valid sample available or sample  |
+	|                    | is saturated                         |
+	+--------------------+--------------------------------------+
+	| All other values   | I sample for the reported packet     |
+	|                    | (signed integer).                    |
+	|                    | The list in the order of the sampling|
+	|                    | points within the packet.            |
+	+--------------------+--------------------------------------+
+
+	Q_Sample[i]:                    Size: Sample_count x 2 octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x8000             | No valid sample available or sample  |
+	|                    | is saturated                         |
+	+--------------------+--------------------------------------+
+	| All other values   | Q sample for the reported packet     |
+	|                    | (signed integer).                    |
+	|                    | The list in the order of the sampling|
+	|                    | points within the packet.            |
+	+--------------------+--------------------------------------+
+
+ Zephyr Vendor Diagnostic Channel
+================================
+
+The vendor diagnostic channel allows for an independent side channel to provide
+extra information from the local Controller to the Host.
+
+0              8             16             24
++--------------+--------------+--------------+--------------+
+| Channel Code | Parameter    | Channel Parameters
+|              | Total Length |
++--------------+--------------+--------------+--------------+
+
+The diagnostic channel provides multiplexing of diagnostic information based on
+a channel code. The channel parameters content depends on the channel code.
+
+	Channel_Code:                                   Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Trace Information                    |
+	| TBD                | Debug information                    |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+	Parameter_Total_Length:                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0xXX               | Length of all of the parameters      |
+	|                    | contained in this packet, measured   |
+	|                    | in octets                            |
+	+--------------------+--------------------------------------+
+
+For UART transport (H:4) the type 0xFF shall be used. For USB transport (H:2)
+an extra USB endpoint shall be used.
+
+
+References
+==========
+
+[1] https://source.android.com/devices/Android-5.0-Bluetooth-HCI-Reqs.pdf
+[2] https://source.android.com/devices/Android-6.0-Bluetooth-HCI-Reqs.pdf
+[3] https://msdn.microsoft.com/en-us/library/windows/hardware/dn917903.aspx

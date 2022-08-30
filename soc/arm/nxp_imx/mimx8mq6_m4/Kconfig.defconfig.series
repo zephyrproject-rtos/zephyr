@@ -1,0 +1,18 @@
+# i.MX8MQ M4 SoC series defconfig
+
+# Copyright (c) 2021, Kwon Tae-young <tykwon@m2i.co.kr>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IMX8MQ_M4
+
+config SOC_SERIES
+	default "mimx8mq6_m4"
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	default 127
+
+source "soc/arm/nxp_imx/mimx8mq6_m4/Kconfig.defconfig.mimx8mq6_m4"
+
+endif # SOC_SERIES_IMX8MQ_M4

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <ztest.h>
-#include <drivers/i2s.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/drivers/i2s.h>
 #include "i2s_api_test.h"
 
 static ZTEST_DMEM const struct device *dev_i2s_rx;
@@ -123,7 +123,7 @@ void test_i2s_state_ready_neg(void)
 	zassert_equal(ret, -EIO, NULL);
 
 	/* Configure TX stream changing its state to READY */
-	ret = configure_stream(dev_i2s_rx, I2S_DIR_TX);
+	ret = configure_stream(dev_i2s_tx, I2S_DIR_TX);
 	zassert_equal(ret, TC_PASS, NULL);
 
 	/* Send TX stream triggers */

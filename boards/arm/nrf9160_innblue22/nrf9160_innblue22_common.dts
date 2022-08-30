@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "nrf9160_innblue22_common-pinctrl.dtsi"
 
 / {
 	model = "innblue v22 Dev Kit";
@@ -44,6 +45,14 @@
 		};
 	};
 
+	en_5v0_boost: enable-5v0-boost {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		regulator-name = "en_5v0_boost";
+		enable-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <10000>;
+		regulator-boot-on;
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &red_led;
@@ -53,6 +62,8 @@
 		sw0  = &button0;
 		rgb-pwm  = &pwm0;
 		mode-pwm = &pwm1;
+		watchdog0 = &wdt0;
+		accel0 = &lis2dh12_accel;
 	};
 };
 
@@ -67,36 +78,39 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <29>;
-	rx-pin = <30>;
 
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <14>;
-	rx-pin = <15>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &uart2 {
 	current-speed = <115200>;
-	tx-pin = <18>;
-	rx-pin = <19>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-1 = <&uart2_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 
 &i2c2 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <25>;
-	scl-pin = <26>;
 
 	clock-frequency = <I2C_BITRATE_FAST>;
 
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-1 = <&i2c2_sleep>;
+	pinctrl-names = "default", "sleep";
 	bq27421@55 {
 		compatible = "ti,bq274xx";
-		label = "BQ274XX";
 		reg = <0x55>;
 		design-voltage = <3700>;
 		design-capacity = <1800>;
@@ -104,55 +118,46 @@
 		terminate-voltage = <3000>;
 	};
 
-	lis2dh12-accel@19 {
+	lis2dh12_accel: lis2dh12-accel@19 {
 		compatible = "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>, <&gpio0 1 GPIO_ACTIVE_HIGH>;
-		label = "LIS2DH12-ACCEL";
 	};
 
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
 		drdy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
-		label = "HTS221";
 	};
 
 	lps22hb-press@5c {
 		compatible = "st,lps22hb-press";
 		reg = <0x5c>;
-		label = "LPS22HB";
 	};
 
 	ccs811: ccs811@5a {
 		compatible = "ams,ccs811";
 		reg = <0x5a>;
-		label = "CCS811";
 	};
 
 	bme680@76 {
 		compatible = "bosch,bme680";
-		label = "BME680";
 		reg = <0x76>;
 	};
 };
 
 &pwm0 {
 	status = "okay";
-	ch0-pin = <5>;
-	ch1-pin = <6>;
-	ch2-pin = <7>;
-	ch0-inverted;
-	ch1-inverted;
-	ch2-inverted;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &pwm1 {
 	status = "okay";
-	ch0-pin = <4>;
-	ch0-inverted;
-	ch1-pin = <9>;
-	ch1-inverted;
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &timer0 {

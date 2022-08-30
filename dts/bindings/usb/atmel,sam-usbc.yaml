@@ -1,0 +1,24 @@
+# Copyright (c) 2018 Aurelien Jarno
+# Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Atmel SAM Family USB (USBC) in device mode
+
+compatible: "atmel,sam-usbc"
+
+include:
+    - name: usb-ep.yaml
+    - name: pinctrl-device.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    peripheral-id:
+      type: int
+      required: true
+      description: peripheral ID

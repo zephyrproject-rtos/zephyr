@@ -29,8 +29,10 @@
 #include <soc.h>
 #include "hw_models_top.h"
 #include <stdlib.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/time_units.h>
 #include "cmdline.h"
+#include "irq_ctrl.h"
 
 void posix_exit(int exit_code)
 {
@@ -49,10 +51,11 @@ void posix_exit(int exit_code)
 }
 
 /**
- * This is the actual main for the Linux process,
- * the Zephyr application main is renamed something else thru a define.
+ * Run all early native_posix initialization steps, including command
+ * line parsing and CPU start, until we are ready to let the HW models
+ * run via hwm_one_event()
  */
-int main(int argc, char *argv[])
+void posix_init(int argc, char *argv[])
 {
 	run_native_tasks(_NATIVE_PRE_BOOT_1_LEVEL);
 
@@ -67,9 +70,77 @@ int main(int argc, char *argv[])
 	posix_boot_cpu();
 
 	run_native_tasks(_NATIVE_FIRST_SLEEP_LEVEL);
+}
 
-	hwm_main_loop();
+/**
+ * Execute the simulator for at least the specified timeout, then
+ * return.  Note that this does not affect event timing, so the "next
+ * event" may be significantly after the request if the hardware has
+ * not been configured to e.g. send an interrupt when expected.
+ */
+void posix_exec_for(uint64_t us)
+{
+	uint64_t start = hwm_get_time();
+
+	do {
+		hwm_one_event();
+	} while (hwm_get_time() < (start + us));
+}
+
+#ifndef CONFIG_ARCH_POSIX_LIBFUZZER
+
+/**
+ * This is the actual host process main routine.  The Zephyr
+ * application's main() is renamed via preprocessor trickery to avoid
+ * collisions.
+ *
+ * Not used when building fuzz cases, as libfuzzer has its own main()
+ * and calls the "OS" through a per-case fuzz test entry point.
+ */
+int main(int argc, char *argv[])
+{
+	posix_init(argc, argv);
+	while (true) {
+		hwm_one_event();
+	}
 
 	/* This line should be unreachable */
 	return 1; /* LCOV_EXCL_LINE */
 }
+
+#else /* CONFIG_ARCH_POSIX_LIBFUZZER */
+
+/**
+ * Entry point for fuzzing (when enabled). Works by placing the data
+ * into two known symbols, triggering an app-visible interrupt, and
+ * then letting the OS run for a fixed amount of time (intended to be
+ * "long enough" to handle the event and reach a quiescent state
+ * again)
+ */
+uint8_t *posix_fuzz_buf, posix_fuzz_sz;
+
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t sz)
+{
+	static bool posix_initialized;
+
+	if (!posix_initialized) {
+		posix_init(0, NULL);
+		posix_initialized = true;
+	}
+
+	/* Provide the fuzz data to Zephyr as an interrupt, with
+	 * "DMA-like" data placed into posix_fuzz_buf/sz
+	 */
+	posix_fuzz_buf = (void *)data;
+	posix_fuzz_sz = sz;
+	hw_irq_ctrl_set_irq(CONFIG_ARCH_POSIX_FUZZ_IRQ);
+
+	/* Give the OS time to process whatever happened in that
+	 * interrupt and reach an idle state.
+	 */
+	posix_exec_for(k_ticks_to_us_ceil64(CONFIG_ARCH_POSIX_FUZZ_TICKS));
+
+	return 0;
+}
+
+#endif

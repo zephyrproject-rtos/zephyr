@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -22,7 +22,7 @@ void handler(union sigval val)
 	       ++exp_count);
 }
 
-void test_posix_timer(void)
+ZTEST(posix_apis, test_posix_timer)
 {
 	int ret;
 	struct sigevent sig = { 0 };

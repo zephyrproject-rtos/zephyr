@@ -7,11 +7,12 @@
 #include "test_queue.h"
 
 #define TIMEOUT K_MSEC(100)
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIST_LEN 2
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
+K_SEM_DEFINE(sem, 0, 1);
 
 /*test cases*/
 /**
@@ -19,7 +20,7 @@ static struct k_thread tdata;
  * @ingroup kernel_queue_tests
  * @see k_queue_get()
  */
-void test_queue_get_fail(void)
+ZTEST(queue_api_1cpu, test_queue_get_fail)
 {
 	static struct k_queue queue;
 
@@ -32,14 +33,18 @@ void test_queue_get_fail(void)
 /* The sub-thread entry */
 static void tThread_entry(void *p1, void *p2, void *p3)
 {
+	k_sem_give(&sem);
+
 	/* wait the queue for data */
-	k_queue_get((struct k_queue *)p1, K_FOREVER);
+	qdata_t *p = k_queue_get((struct k_queue *)p1, K_FOREVER);
+
+	zassert_equal(p, p2, "Failed to append a unnormal list");
 }
 
 /**
  * @brief Test k_queue_append_list() failure scenario
  *
- * @details Accroding to the API k_queue_append_list to
+ * @details According to the API k_queue_append_list to
  * design some error condition to verify error branch of
  * the API.
  *	1. Verify that the list's head is empty.
@@ -51,11 +56,11 @@ static void tThread_entry(void *p1, void *p2, void *p3)
  *
  * @see k_queue_append_list()
  */
-void test_queue_append_list_error(void)
+ZTEST(queue_api, test_queue_append_list_error)
 {
-	qdata_t data_l[2];
+	static qdata_t data_l[2];
 	static struct k_queue queue;
-	qdata_t *head = NULL, *tail = &data_l[1];
+	static qdata_t *head = NULL, *tail = &data_l[1];
 
 	k_queue_init(&queue);
 	memset(data_l, 0, sizeof(data_l));
@@ -72,16 +77,19 @@ void test_queue_append_list_error(void)
 			"failed to CHECKIF tail == NULL");
 	/* Initializing the queue for re-using below */
 	k_queue_init(&queue);
-	k_thread_create(&tdata, tstack, STACK_SIZE, tThread_entry, &queue,
-			NULL, NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
-	/* Delay for thread initializing */
-	k_sleep(K_MSEC(500));
-	/* Append list into the queue for sub-thread */
+
+	/* Append unnormal list(just one node)into the queue for sub-thread */
 	head = &data_l[0];
-	tail = &data_l[1];
-	head->snode.next = (sys_snode_t *)tail;
-	tail->snode.next = NULL;
-	k_queue_append_list(&queue, (uint32_t *)head, (uint32_t *)tail);
+	head->snode.next = NULL;
+
+	k_thread_create(&tdata, tstack, STACK_SIZE, tThread_entry, &queue,
+			head, NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+	/* Delay for thread initializing */
+	k_sem_take(&sem, K_FOREVER);
+
+	k_queue_append_list(&queue, (uint32_t *)head, (uint32_t *)head);
+
+	k_thread_join(&tdata, K_FOREVER);
 }
 
 /**
@@ -94,7 +102,7 @@ void test_queue_append_list_error(void)
  *
  * @see k_queue_merge_slist()
  */
-void test_queue_merge_list_error(void)
+ZTEST(queue_api, test_queue_merge_list_error)
 {
 	qdata_t data_sl[2];
 	static struct k_queue queue;
@@ -126,7 +134,7 @@ void test_queue_merge_list_error(void)
  *
  * @see k_queue_init()
  */
-void test_queue_init_null(void)
+ZTEST_USER(queue_api, test_queue_init_null)
 {
 	ztest_set_fault_valid(true);
 	k_queue_init(NULL);
@@ -142,7 +150,7 @@ void test_queue_init_null(void)
  *
  * @see k_queue_alloc_append()
  */
-void test_queue_alloc_append_null(void)
+ZTEST_USER(queue_api, test_queue_alloc_append_null)
 {
 	qdata_t data;
 
@@ -161,7 +169,7 @@ void test_queue_alloc_append_null(void)
  *
  * @see k_queue_alloc_prepend()
  */
-void test_queue_alloc_prepend_null(void)
+ZTEST_USER(queue_api, test_queue_alloc_prepend_null)
 {
 	qdata_t data;
 
@@ -180,7 +188,7 @@ void test_queue_alloc_prepend_null(void)
  *
  * @see k_queue_get()
  */
-void test_queue_get_null(void)
+ZTEST_USER(queue_api, test_queue_get_null)
 {
 	ztest_set_fault_valid(true);
 	k_queue_get(NULL, K_FOREVER);
@@ -196,7 +204,7 @@ void test_queue_get_null(void)
  *
  * @see k_queue_is_empty()
  */
-void test_queue_is_empty_null(void)
+ZTEST_USER(queue_api, test_queue_is_empty_null)
 {
 	ztest_set_fault_valid(true);
 	k_queue_is_empty(NULL);
@@ -212,7 +220,7 @@ void test_queue_is_empty_null(void)
  *
  * @see k_queue_peek_head()
  */
-void test_queue_peek_head_null(void)
+ZTEST_USER(queue_api, test_queue_peek_head_null)
 {
 	ztest_set_fault_valid(true);
 	k_queue_peek_head(NULL);
@@ -228,7 +236,7 @@ void test_queue_peek_head_null(void)
  *
  * @see k_queue_peek_tail()
  */
-void test_queue_peek_tail_null(void)
+ZTEST_USER(queue_api, test_queue_peek_tail_null)
 {
 	ztest_set_fault_valid(true);
 	k_queue_peek_tail(NULL);
@@ -244,7 +252,7 @@ void test_queue_peek_tail_null(void)
  *
  * @see k_queue_merge_slist()
  */
-void test_queue_cancel_wait_error(void)
+ZTEST_USER(queue_api, test_queue_cancel_wait_error)
 {
 	struct k_queue *q;
 

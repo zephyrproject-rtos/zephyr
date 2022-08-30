@@ -22,6 +22,10 @@ for Arduino connectors, for example:
 - :ref:`buydisplay_2_8_tft_touch_arduino` and :ref:`nrf52840dk_nrf52840`
 - :ref:`ssd1306_128_shield` and :ref:`frdm_k64f`
 
+or a board with an integrated display:
+
+- :ref:`esp_wrover_kit`
+
 or a simulated display environment in a native Posix application:
 
 - :ref:`native_posix`
@@ -40,16 +44,10 @@ or
 Building and Running
 ********************
 
-.. note::
-   When deferred logging is enabled you will likely need to increase
-   :kconfig:`CONFIG_LOG_STRDUP_BUF_COUNT` and/or
-   :kconfig:`CONFIG_LOG_STRDUP_MAX_STRING` to make sure no messages are lost or
-   truncated.
-
 Example building for :ref:`nrf52840dk_nrf52840`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/display/lvgl
+   :zephyr-app: samples/subsys/display/lvgl
    :board: nrf52840dk_nrf52840
    :shield: adafruit_2_8_tft_touch_v2
    :goals: build flash
@@ -57,9 +55,12 @@ Example building for :ref:`nrf52840dk_nrf52840`:
 Example building for :ref:`native_posix`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/display/lvgl
+   :zephyr-app: samples/subsys/display/lvgl
    :board: native_posix
-   :goals: build flash
+   :goals: build run
+
+Alternatively, if building from a 64-bit host machine, the previous target
+board argument may also be replaced by ``native_posix_64``.
 
 References
 **********

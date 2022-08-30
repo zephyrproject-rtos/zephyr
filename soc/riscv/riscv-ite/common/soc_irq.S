@@ -8,10 +8,10 @@
  * common interrupt management code for riscv SOCs supporting the riscv
  * privileged architecture specification
  */
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <offsets.h>
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <soc.h>
 
 /* exports */
@@ -20,17 +20,11 @@ GTEXT(__soc_handle_irq)
 /*
  * SOC-specific function to handle pending IRQ number generating the interrupt.
  * Exception number is given as parameter via register a0.
+ * Jump to get_irq() function directly and return to caller by its
+ * ret instruction.
  */
 SECTION_FUNC(exception.other, __soc_handle_irq)
-	/* store ra */
-	addi sp, sp, -4
-	sw ra, 0(sp)
-	/* get interrupt number and clear interrupt status of soc */
-	call get_irq
-	/* restore ra */
-	lw ra, 0(sp)
-	addi sp, sp, 4
-	ret
+	j get_irq
 
 /*
  * __soc_is_irq is defined as .weak to allow re-implementation by
@@ -45,16 +39,7 @@ WTEXT(__soc_is_irq)
  *
  */
 SECTION_FUNC(exception.other, __soc_is_irq)
-	/* Read mcause and check if interrupt bit is set */
-	csrr t0, mcause
-	li t1, SOC_MCAUSE_IRQ_MASK
-	and t0, t0, t1
-
-	/* If interrupt bit is not set, return with 0 */
-	addi a0, x0, 0
-	beqz t0, not_interrupt
-	addi a0, a0, 1
-
-not_interrupt:
-	/* return */
-	jalr x0, ra
+	/* Read mcause and check if interrupt bit (bit 31) is set */
+	csrr a0, mcause
+	srli a0, a0, 31
+	ret

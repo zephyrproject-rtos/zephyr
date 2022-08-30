@@ -10,10 +10,10 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
-#include "settings/settings.h"
-#include <storage/flash_map.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/storage/flash_map.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +52,11 @@ void test_config_fill_area(
 	char test_value[SETTINGS_TEST_FCB_VAL_STR_CNT][SETTINGS_MAX_VAL_LEN],
 		int iteration);
 
+void *settings_config_setup(void);
+void settings_config_teardown(void *fixture);
+void test_config_insert2(void);
+void test_config_insert3(void);
+int settings_unregister(struct settings_handler *handler);
 #ifdef __cplusplus
 }
 #endif

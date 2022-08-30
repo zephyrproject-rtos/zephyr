@@ -9,7 +9,7 @@
 #define DT_DRV_COMPAT xlnx_xuartps
 
 /**
- * @brief Xilnx Zynq Family Serial Driver
+ * @brief Xilinx Zynq Family Serial Driver
  *
  * This is the driver for the Xilinx Zynq family cadence serial device.
  *
@@ -22,16 +22,20 @@
  */
 
 #include <errno.h>
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/types.h>
 #include <soc.h>
 
-#include <init.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <drivers/uart.h>
-#include <sys/sys_io.h>
+#include <zephyr/init.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/sys_io.h>
+
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
 
 /* For all register offsets and bits / bit masks:
  * Comp. Xilinx Zynq-7000 Technical Reference Manual (ug585), chap. B.33
@@ -133,12 +137,20 @@
 
 /** Device configuration structure */
 struct uart_xlnx_ps_dev_config {
-	struct uart_device_config uconf;
+	DEVICE_MMIO_ROM;
+	uint32_t sys_clk_freq;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_config_func_t irq_config_func;
+#endif
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
+#endif
 	uint32_t baud_rate;
 };
 
 /** Device data structure */
 struct uart_xlnx_ps_dev_data_t {
+	DEVICE_MMIO_RAM;
 	uint32_t parity;
 	uint32_t stopbits;
 	uint32_t databits;
@@ -149,12 +161,6 @@ struct uart_xlnx_ps_dev_data_t {
 	void *user_data;
 #endif
 };
-
-#define DEV_CFG(dev) \
-	((const struct uart_xlnx_ps_dev_config * const) \
-	 (dev)->config)
-#define DEV_DATA(dev) \
-	((struct uart_xlnx_ps_dev_data_t *)(dev)->data)
 
 static const struct uart_driver_api uart_xlnx_ps_driver_api;
 
@@ -172,15 +178,14 @@ static const struct uart_driver_api uart_xlnx_ps_driver_api;
  *
  * @param reg_base Base address of the respective UART's register space.
  */
-static void xlnx_ps_disable_uart(uint32_t reg_base)
+static void xlnx_ps_disable_uart(uintptr_t reg_base)
 {
-	uint32_t regval;
+	uint32_t reg_val = sys_read32(reg_base + XUARTPS_CR_OFFSET);
 
-	regval = sys_read32(reg_base + XUARTPS_CR_OFFSET);
-	regval &= (~XUARTPS_CR_EN_DIS_MASK);
+	reg_val &= (~XUARTPS_CR_EN_DIS_MASK);
 	/* Set control register bits [5]: TX_DIS and [3]: RX_DIS */
-	regval |= XUARTPS_CR_TX_DIS | XUARTPS_CR_RX_DIS;
-	sys_write32(regval, reg_base + XUARTPS_CR_OFFSET);
+	reg_val |= XUARTPS_CR_TX_DIS | XUARTPS_CR_RX_DIS;
+	sys_write32(reg_val, reg_base + XUARTPS_CR_OFFSET);
 }
 
 /**
@@ -197,15 +202,14 @@ static void xlnx_ps_disable_uart(uint32_t reg_base)
  *
  * @param reg_base Base address of the respective UART's register space.
  */
-static void xlnx_ps_enable_uart(uint32_t reg_base)
+static void xlnx_ps_enable_uart(uintptr_t reg_base)
 {
-	uint32_t regval;
+	uint32_t reg_val = sys_read32(reg_base + XUARTPS_CR_OFFSET);
 
-	regval = sys_read32(reg_base + XUARTPS_CR_OFFSET);
-	regval &= (~XUARTPS_CR_EN_DIS_MASK);
+	reg_val &= (~XUARTPS_CR_EN_DIS_MASK);
 	/* Set control register bits [4]: TX_EN and [2]: RX_EN */
-	regval |= XUARTPS_CR_TX_EN | XUARTPS_CR_RX_EN;
-	sys_write32(regval, reg_base + XUARTPS_CR_OFFSET);
+	reg_val |= XUARTPS_CR_TX_EN | XUARTPS_CR_RX_EN;
+	sys_write32(reg_val, reg_base + XUARTPS_CR_OFFSET);
 }
 
 /**
@@ -224,14 +228,11 @@ static void xlnx_ps_enable_uart(uint32_t reg_base)
  */
 static void set_baudrate(const struct device *dev, uint32_t baud_rate)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
+	uint32_t baud = dev_cfg->baud_rate;
+	uint32_t clk_freq = dev_cfg->sys_clk_freq;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t divisor, generator;
-	uint32_t baud;
-	uint32_t clk_freq;
-	uint32_t reg_base;
-
-	baud = dev_cfg->baud_rate;
-	clk_freq = dev_cfg->uconf.sys_clk_freq;
 
 	/* Calculate divisor and baud rate generator value */
 	if ((baud != 0) && (clk_freq != 0)) {
@@ -265,8 +266,6 @@ static void set_baudrate(const struct device *dev, uint32_t baud_rate)
 		 * the receiver/transmitter is disabled, the baud rate can
 		 * be changed safely at this time.
 		 */
-
-		reg_base = dev_cfg->uconf.regs;
 		sys_write32(divisor, reg_base + XUARTPS_BAUDDIV_OFFSET);
 		sys_write32(generator, reg_base + XUARTPS_BAUDGEN_OFFSET);
 	}
@@ -283,14 +282,24 @@ static void set_baudrate(const struct device *dev, uint32_t baud_rate)
  */
 static int uart_xlnx_ps_init(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_val;
-	uint32_t reg_base;
+#ifdef CONFIG_PINCTRL
+	int err;
+#endif
 
-	reg_base = dev_cfg->uconf.regs;
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
 	/* Disable RX/TX before changing any configuration data */
 	xlnx_ps_disable_uart(reg_base);
+
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(dev_cfg->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
+#endif
 
 	/* Set initial character length / start/stop bit / parity configuration */
 	reg_val = sys_read32(reg_base + XUARTPS_MR_OFFSET);
@@ -302,9 +311,6 @@ static int uart_xlnx_ps_init(const struct device *dev)
 
 	/* Set RX FIFO trigger at 1 data bytes. */
 	sys_write32(0x01U, reg_base + XUARTPS_RXWM_OFFSET);
-
-	/* Set RX timeout to 1, which will be 4 character time */
-	sys_write32(0x1U, reg_base + XUARTPS_RXTOUT_OFFSET);
 
 	/* Disable all interrupts, polling mode is default */
 	sys_write32(XUARTPS_IXR_MASK, reg_base + XUARTPS_IDR_OFFSET);
@@ -318,7 +324,7 @@ static int uart_xlnx_ps_init(const struct device *dev)
 	sys_write32(XUARTPS_IXR_MASK, reg_base + XUARTPS_ISR_OFFSET);
 
 	/* Attach to & unmask the corresponding interrupt vector */
-	dev_cfg->uconf.irq_config_func(dev);
+	dev_cfg->irq_config_func(dev);
 
 #endif
 
@@ -337,15 +343,11 @@ static int uart_xlnx_ps_init(const struct device *dev)
  */
 static int uart_xlnx_ps_poll_in(const struct device *dev, unsigned char *c)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	uint32_t reg_val;
-	uint32_t reg_base;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+	uint32_t reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 
-	reg_base = dev_cfg->uconf.regs;
-	reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 	if ((reg_val & XUARTPS_SR_RXEMPTY) == 0) {
-		*c = (unsigned char)sys_read32(reg_base +
-						XUARTPS_FIFO_OFFSET);
+		*c = (unsigned char)sys_read32(reg_base + XUARTPS_FIFO_OFFSET);
 		return 0;
 	} else {
 		return -1;
@@ -368,11 +370,9 @@ static int uart_xlnx_ps_poll_in(const struct device *dev, unsigned char *c)
  */
 static void uart_xlnx_ps_poll_out(const struct device *dev, unsigned char c)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t reg_val;
-	uint32_t reg_base;
 
-	reg_base = dev_cfg->uconf.regs;
 	/* wait for transmitter to ready to accept a character */
 	do {
 		reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
@@ -600,9 +600,9 @@ static int uart_xlnx_ps_configure(const struct device *dev,
 				  const struct uart_config *cfg)
 {
 	struct uart_xlnx_ps_dev_config *dev_cfg =
-	(struct uart_xlnx_ps_dev_config *)DEV_CFG(dev);
+	(struct uart_xlnx_ps_dev_config *)dev->config;
 
-	uint32_t reg_base    = dev_cfg->uconf.regs;
+	uintptr_t reg_base   = DEVICE_MMIO_GET(dev);
 	uint32_t mode_reg    = 0;
 	uint32_t modemcr_reg = 0;
 
@@ -806,7 +806,8 @@ static inline enum uart_config_flow_control uart_xlnx_ps_ll2cfg_hwctrl(
 static int uart_xlnx_ps_config_get(const struct device *dev,
 				   struct uart_config *cfg)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
 	/*
 	 * Read the Mode & Modem control registers - they contain
@@ -814,8 +815,6 @@ static int uart_xlnx_ps_config_get(const struct device *dev,
 	 * Register) and the current flow control setting (Modem
 	 * Control register).
 	 */
-
-	uint32_t reg_base    = dev_cfg->uconf.regs;
 	uint32_t mode_reg    = sys_read32(reg_base + XUARTPS_MR_OFFSET);
 	uint32_t modemcr_reg = sys_read32(reg_base + XUARTPS_MODEMCR_OFFSET);
 
@@ -844,21 +843,18 @@ static int uart_xlnx_ps_fifo_fill(const struct device *dev,
 				  const uint8_t *tx_data,
 				  int size)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	uint32_t reg_val;
-	uint32_t reg_base;
-	int onum = 0;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+	uint32_t data_iter = 0;
 
-	reg_base = dev_cfg->uconf.regs;
-	reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
-	while (onum < size && (reg_val & XUARTPS_SR_TXFULL) == 0) {
-		sys_write32((uint32_t)(tx_data[onum] & 0xFF),
-				reg_base + XUARTPS_FIFO_OFFSET);
-		onum++;
-		reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
+	sys_write32(XUARTPS_IXR_TXEMPTY, reg_base + XUARTPS_IDR_OFFSET);
+	while (size--) {
+		while ((sys_read32(reg_base + XUARTPS_SR_OFFSET) & XUARTPS_SR_TXFULL) != 0) {
+		}
+		sys_write32((uint32_t)tx_data[data_iter++], reg_base + XUARTPS_FIFO_OFFSET);
 	}
+	sys_write32(XUARTPS_IXR_TXEMPTY, reg_base + XUARTPS_IER_OFFSET);
 
-	return onum;
+	return data_iter;
 }
 
 /**
@@ -873,13 +869,9 @@ static int uart_xlnx_ps_fifo_fill(const struct device *dev,
 static int uart_xlnx_ps_fifo_read(const struct device *dev, uint8_t *rx_data,
 				  const int size)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	uint32_t reg_val;
-	uint32_t reg_base;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+	uint32_t reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 	int inum = 0;
-
-	reg_base = dev_cfg->uconf.regs;
-	reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 
 	while (inum < size && (reg_val & XUARTPS_SR_RXEMPTY) == 0) {
 		rx_data[inum] = (uint8_t)sys_read32(reg_base
@@ -895,15 +887,11 @@ static int uart_xlnx_ps_fifo_read(const struct device *dev, uint8_t *rx_data,
  * @brief Enable TX interrupt in IER
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_xlnx_ps_irq_tx_enable(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	uint32_t reg_base;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
-	reg_base = dev_cfg->uconf.regs;
 	sys_write32(
 		(XUARTPS_IXR_TTRIG | XUARTPS_IXR_TXEMPTY),
 		reg_base + XUARTPS_IER_OFFSET);
@@ -913,15 +901,11 @@ static void uart_xlnx_ps_irq_tx_enable(const struct device *dev)
  * @brief Disable TX interrupt in IER
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_xlnx_ps_irq_tx_disable(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	uint32_t reg_base;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
-	reg_base = dev_cfg->uconf.regs;
 	sys_write32(
 		(XUARTPS_IXR_TTRIG | XUARTPS_IXR_TXEMPTY),
 		reg_base + XUARTPS_IDR_OFFSET);
@@ -936,18 +920,12 @@ static void uart_xlnx_ps_irq_tx_disable(const struct device *dev)
  */
 static int uart_xlnx_ps_irq_tx_ready(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	uint32_t reg_base;
-	uint32_t reg_val;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+	uint32_t reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 
-	reg_base = dev_cfg->uconf.regs;
-	reg_val = sys_read32(reg_base + XUARTPS_ISR_OFFSET);
-	if ((reg_val & (XUARTPS_IXR_TTRIG | XUARTPS_IXR_TXEMPTY)) == 0) {
+	if ((reg_val & (XUARTPS_SR_TTRIG | XUARTPS_SR_TXEMPTY)) == 0) {
 		return 0;
 	} else {
-		sys_write32(
-			(XUARTPS_IXR_TTRIG | XUARTPS_IXR_TXEMPTY),
-			reg_base + XUARTPS_ISR_OFFSET);
 		return 1;
 	}
 }
@@ -961,12 +939,9 @@ static int uart_xlnx_ps_irq_tx_ready(const struct device *dev)
  */
 static int uart_xlnx_ps_irq_tx_complete(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	uint32_t reg_base;
-	uint32_t reg_val;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+	uint32_t reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 
-	reg_base = dev_cfg->uconf.regs;
-	reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 	if ((reg_val & XUARTPS_SR_TXEMPTY) == 0) {
 		return 0;
 	} else {
@@ -978,15 +953,11 @@ static int uart_xlnx_ps_irq_tx_complete(const struct device *dev)
  * @brief Enable RX interrupt in IER
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_xlnx_ps_irq_rx_enable(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	uint32_t reg_base;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
-	reg_base = dev_cfg->uconf.regs;
 	sys_write32(XUARTPS_IXR_RTRIG, reg_base + XUARTPS_IER_OFFSET);
 }
 
@@ -994,15 +965,11 @@ static void uart_xlnx_ps_irq_rx_enable(const struct device *dev)
  * @brief Disable RX interrupt in IER
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_xlnx_ps_irq_rx_disable(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	uint32_t reg_base;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
-	reg_base = dev_cfg->uconf.regs;
 	sys_write32(XUARTPS_IXR_RTRIG, reg_base + XUARTPS_IDR_OFFSET);
 }
 
@@ -1015,12 +982,9 @@ static void uart_xlnx_ps_irq_rx_disable(const struct device *dev)
  */
 static int uart_xlnx_ps_irq_rx_ready(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	uint32_t reg_base;
-	uint32_t reg_val;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+	uint32_t reg_val = sys_read32(reg_base + XUARTPS_ISR_OFFSET);
 
-	reg_base = dev_cfg->uconf.regs;
-	reg_val = sys_read32(reg_base + XUARTPS_ISR_OFFSET);
 	if ((reg_val & XUARTPS_IXR_RTRIG) == 0) {
 		return 0;
 	} else {
@@ -1033,15 +997,11 @@ static int uart_xlnx_ps_irq_rx_ready(const struct device *dev)
  * @brief Enable error interrupt in IER
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_xlnx_ps_irq_err_enable(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	uint32_t reg_base;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
-	reg_base = dev_cfg->uconf.regs;
 	sys_write32(
 		  XUARTPS_IXR_TOVR    /* [12] Transmitter FIFO Overflow */
 		| XUARTPS_IXR_TOUT    /* [8]  Receiver Timerout */
@@ -1060,10 +1020,8 @@ static void uart_xlnx_ps_irq_err_enable(const struct device *dev)
  */
 static void uart_xlnx_ps_irq_err_disable(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	uint32_t reg_base;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
-	reg_base = dev_cfg->uconf.regs;
 	sys_write32(
 		  XUARTPS_IXR_TOVR    /* [12] Transmitter FIFO Overflow */
 		| XUARTPS_IXR_TOUT    /* [8]  Receiver Timerout */
@@ -1082,14 +1040,9 @@ static void uart_xlnx_ps_irq_err_disable(const struct device *dev)
  */
 static int uart_xlnx_ps_irq_is_pending(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	uint32_t reg_base;
-	uint32_t reg_imr;
-	uint32_t reg_isr;
-
-	reg_base = dev_cfg->uconf.regs;
-	reg_imr = sys_read32(reg_base + XUARTPS_IMR_OFFSET);
-	reg_isr = sys_read32(reg_base + XUARTPS_ISR_OFFSET);
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+	uint32_t reg_imr = sys_read32(reg_base + XUARTPS_IMR_OFFSET);
+	uint32_t reg_isr = sys_read32(reg_base + XUARTPS_ISR_OFFSET);
 
 	if ((reg_imr & reg_isr) != 0) {
 		return 1;
@@ -1107,7 +1060,7 @@ static int uart_xlnx_ps_irq_is_pending(const struct device *dev)
  */
 static int uart_xlnx_ps_irq_update(const struct device *dev)
 {
-	(void)dev;
+	ARG_UNUSED(dev);
 	return 1;
 }
 
@@ -1116,14 +1069,12 @@ static int uart_xlnx_ps_irq_update(const struct device *dev)
  *
  * @param dev UART device struct
  * @param cb Callback function pointer.
- *
- * @return N/A
  */
 static void uart_xlnx_ps_irq_callback_set(const struct device *dev,
 					    uart_irq_callback_user_data_t cb,
 					    void *cb_data)
 {
-	struct uart_xlnx_ps_dev_data_t *dev_data = DEV_DATA(dev);
+	struct uart_xlnx_ps_dev_data_t *dev_data = dev->data;
 
 	dev_data->user_cb = cb;
 	dev_data->user_data = cb_data;
@@ -1135,12 +1086,10 @@ static void uart_xlnx_ps_irq_callback_set(const struct device *dev,
  * This simply calls the callback function, if one exists.
  *
  * @param arg Argument to ISR.
- *
- * @return N/A
  */
 static void uart_xlnx_ps_isr(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_data_t *data = DEV_DATA(dev);
+	const struct uart_xlnx_ps_dev_data_t *data = dev->data;
 
 	if (data->user_cb) {
 		data->user_cb(dev, data->user_data);
@@ -1198,14 +1147,21 @@ static void uart_xlnx_ps_irq_config_##port(const struct device *dev) \
 #define UART_XLNX_PS_DEV_DATA(port) \
 static struct uart_xlnx_ps_dev_data_t uart_xlnx_ps_dev_data_##port
 
+#if CONFIG_PINCTRL
+#define UART_XLNX_PS_PINCTRL_DEFINE(port) PINCTRL_DT_INST_DEFINE(port);
+#define UART_XLNX_PS_PINCTRL_INIT(port) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(port),
+#else
+#define UART_XLNX_PS_PINCTRL_DEFINE(port)
+#define UART_XLNX_PS_PINCTRL_INIT(port)
+#endif /* CONFIG_PINCTRL */
+
 #define UART_XLNX_PS_DEV_CFG(port) \
 static struct uart_xlnx_ps_dev_config uart_xlnx_ps_dev_cfg_##port = { \
-	.uconf = { \
-		.regs = DT_INST_REG_ADDR(port), \
-		.sys_clk_freq = DT_INST_PROP(port, clock_frequency), \
-		UART_XLNX_PS_IRQ_CONF_FUNC_SET(port) \
-	}, \
+	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(port)), \
+	.sys_clk_freq = DT_INST_PROP(port, clock_frequency), \
 	.baud_rate = DT_INST_PROP(port, current_speed), \
+	UART_XLNX_PS_IRQ_CONF_FUNC_SET(port) \
+	UART_XLNX_PS_PINCTRL_INIT(port) \
 }
 
 #define UART_XLNX_PS_INIT(port) \
@@ -1214,10 +1170,11 @@ DEVICE_DT_INST_DEFINE(port, \
 	NULL, \
 	&uart_xlnx_ps_dev_data_##port, \
 	&uart_xlnx_ps_dev_cfg_##port, \
-	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+	PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 	&uart_xlnx_ps_driver_api)
 
 #define UART_XLNX_INSTANTIATE(inst)		\
+	UART_XLNX_PS_PINCTRL_DEFINE(inst)	\
 	UART_XLNX_PS_IRQ_CONF_FUNC(inst);	\
 	UART_XLNX_PS_DEV_DATA(inst);		\
 	UART_XLNX_PS_DEV_CFG(inst);		\

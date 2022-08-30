@@ -6,16 +6,16 @@
 
 #include <fcntl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <string.h>
-#include <net/socket.h>
-#include <sys/util.h>
-#include <posix/unistd.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/posix/unistd.h>
 
-#include <ztest_assert.h>
+#include <zephyr/ztest_assert.h>
 
 #undef read
 #define read(fd, buf, len) zsock_recv(fd, buf, len, 0)
@@ -37,7 +37,7 @@ void test_socketpair_expected_failures(void)
 	}
 	zassert_equal(res, -1, "socketpair with fail with bad address family");
 	zassert_equal(errno, EAFNOSUPPORT,
-				  "errno should be EAFNOSUPPORT with bad adddress family");
+				  "errno should be EAFNOSUPPORT with bad address family");
 
 	res = socketpair(AF_UNIX, 42, 0, sv);
 	if (res != -1) {

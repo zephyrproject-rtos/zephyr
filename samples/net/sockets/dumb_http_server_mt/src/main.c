@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(net_dumb_http_srv_mt_sample);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/tls_credentials.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/tls_credentials.h>
 
-#include <net/net_mgmt.h>
-#include <net/net_event.h>
-#include <net/net_conn_mgr.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/net_conn_mgr.h>
 
 #define MY_PORT 8080
 
@@ -205,7 +205,6 @@ static void client_conn_handler(void *ptr1, void *ptr2, void *ptr3)
 		if (received == 0) {
 			/* Connection closed */
 			LOG_DBG("[%d] Connection closed by peer", client);
-			ret = 0;
 			break;
 		} else if (received < 0) {
 			/* Socket error */
@@ -321,7 +320,7 @@ static int process_tcp(int *sock, int *accepted)
 
 		LOG_DBG("[%d] Connection #%d from %s",
 			client, ++counter,
-			log_strdup(addr_str));
+			addr_str);
 	}
 
 	return 0;

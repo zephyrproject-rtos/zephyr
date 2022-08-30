@@ -16,8 +16,6 @@ The X-NUCLEO-IKS02A1 interfaces with the STM32 microcontroller via the I2C pin,
 and it is possible to change the default I2C port.
 
 .. image:: img/x-nucleo-iks02a1.jpg
-     :width: 426px
-     :height: 395px
      :align: center
      :alt: X-NUCLEO-IKS02A1
 
@@ -69,7 +67,7 @@ Mode 2: SensorHub Mode
 ======================
 
 In SensorHub mode ISM330DHCX and IIS2DLPC are connected to I2C2 and are accessible from the main board mcu.
-Instead, the IIS2MDC device is connected only to ISM330DHCX sensor thru its SCx/SDX (I2Cx) pins.
+Instead, the IIS2MDC device is connected only to ISM330DHCX sensor through its SCx/SDX (I2Cx) pins.
 
 The jumper configuration to activate this mode is:
 

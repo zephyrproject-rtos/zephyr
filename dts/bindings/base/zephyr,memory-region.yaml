@@ -1,0 +1,32 @@
+# Copyright (c) 2021, CSIRO
+# SPDX-License-Identifier: Apache-2.0
+
+description: Compatible for devices resulting in linker memory regions
+
+compatible: "zephyr,memory-region"
+
+include: base.yaml
+
+properties:
+  zephyr,memory-region:
+    type: string
+    required: true
+    description: |
+      Signify that this node should result in a dedicated linker script
+      memory region in the final executable. The region address and size
+      is taken from the <reg> property, while the name is the value of
+      this property.
+
+  zephyr,memory-region-mpu:
+    type: string
+    required: false
+    enum:
+      - "RAM"
+      - "RAM_NOCACHE"
+      - "FLASH"
+      - "PPB"
+      - "IO"
+    description: |
+      Signify that this node should result in a dedicated MPU region. The
+      region address and size are taken from the <reg> property, while the MPU
+      attribute is the value of this property.

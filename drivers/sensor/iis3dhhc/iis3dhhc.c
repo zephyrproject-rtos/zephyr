@@ -10,12 +10,12 @@
 
 #define DT_DRV_COMPAT st_iis3dhhc
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "iis3dhhc.h"
 
@@ -193,12 +193,10 @@ static int iis3dhhc_init_chip(const struct device *dev)
 static int iis3dhhc_init(const struct device *dev)
 {
 	const struct iis3dhhc_config * const config = dev->config;
-	struct iis3dhhc_data *data = dev->data;
 
-	data->bus = device_get_binding(config->master_dev_name);
-	if (!data->bus) {
-		LOG_DBG("bus master not found: %s", config->master_dev_name);
-		return -EINVAL;
+	if (!spi_is_ready(&config->spi)) {
+		LOG_ERR("SPI bus is not ready");
+		return -ENODEV;
 	}
 
 	config->bus_init(dev);
@@ -209,50 +207,38 @@ static int iis3dhhc_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_IIS3DHHC_TRIGGER
-	if (iis3dhhc_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupt.");
-		return -EIO;
+	if (config->int_gpio.port) {
+		if (iis3dhhc_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupt.");
+			return -EIO;
+		}
 	}
 #endif
 
 	return 0;
 }
 
-static struct iis3dhhc_data iis3dhhc_data;
+#define IIS3DHHC_DEFINE(inst)									\
+	static struct iis3dhhc_data iis3dhhc_data_##inst;					\
+												\
+	static const struct iis3dhhc_config iis3dhhc_config_##inst = {				\
+		IF_ENABLED(CONFIG_IIS3DHHC_TRIGGER,						\
+			   (COND_CODE_1(CONFIG_IIS3DHHC_DRDY_INT1,				\
+					(.int_gpio = GPIO_DT_SPEC_INST_GET_BY_IDX(inst,		\
+										  irq_gpios,	\
+										  0),),		\
+					(.int_gpio = GPIO_DT_SPEC_INST_GET_BY_IDX(inst,		\
+										  irq_gpios,	\
+										  1),))))	\
+												\
+		.bus_init = iis3dhhc_spi_init,							\
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |				\
+					    SPI_MODE_CPOL | SPI_MODE_CPHA |			\
+					    SPI_WORD_SET(8), 0U),				\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, iis3dhhc_init, NULL,					\
+			      &iis3dhhc_data_##inst, &iis3dhhc_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &iis3dhhc_api_funcs);		\
 
-static const struct iis3dhhc_config iis3dhhc_config = {
-	.master_dev_name = DT_INST_BUS_LABEL(0),
-#ifdef CONFIG_IIS3DHHC_TRIGGER
-#ifdef CONFIG_IIS3DHHC_DRDY_INT1
-	.int_port	= DT_INST_GPIO_LABEL_BY_IDX(0, irq_gpios, 0),
-	.int_pin	= DT_INST_GPIO_PIN_BY_IDX(0, irq_gpios, 0),
-	.int_flags	= DT_INST_GPIO_FLAGS_BY_IDX(0, irq_gpios, 0),
-#else
-	.int_port	= DT_INST_GPIO_LABEL_BY_IDX(0, irq_gpios, 1),
-	.int_pin	= DT_INST_GPIO_PIN_BY_IDX(0, irq_gpios, 1),
-	.int_flags	= DT_INST_GPIO_FLAGS_BY_IDX(0, irq_gpios, 1),
-#endif /* CONFIG_IIS3DHHC_DRDY_INT1 */
-#endif /* CONFIG_IIS3DHHC_TRIGGER */
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	.bus_init = iis3dhhc_spi_init,
-	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			       SPI_MODE_CPHA | SPI_WORD_SET(8) |
-			       SPI_LINES_SINGLE),
-	.spi_conf.slave     = DT_INST_REG_ADDR(0),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-
-	.spi_conf.cs        =  &iis3dhhc_data.cs_ctrl,
-#else
-	.spi_conf.cs        = NULL,
-#endif
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-};
-
-DEVICE_DT_INST_DEFINE(0, iis3dhhc_init, NULL,
-		    &iis3dhhc_data, &iis3dhhc_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &iis3dhhc_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(IIS3DHHC_DEFINE)

@@ -31,10 +31,10 @@ To test this sample, you need a separate device/CPU that acts as Bluetooth
 HCI RPMsg peer.
 This sample is compatible with the HCI RPMsg driver provided by
 Zephyr's Bluetooth :ref:`bt_hci_drivers` core. See the
-:kconfig:`CONFIG_BT_RPMSG` configuration option for more information.
+:kconfig:option:`CONFIG_BT_RPMSG` configuration option for more information.
 
 You might need to adjust the Kconfig configuration of this sample to make it
-compatible with the peer application. For example, :kconfig:`CONFIG_BT_MAX_CONN`
+compatible with the peer application. For example, :kconfig:option:`CONFIG_BT_MAX_CONN`
 must be equal to the maximum number of connections supported by the peer application.
 
 Refer to :ref:`bluetooth-samples` for general information about Bluetooth samples.

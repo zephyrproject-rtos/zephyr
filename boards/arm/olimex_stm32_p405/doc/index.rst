@@ -9,10 +9,8 @@ Overview
 The OLIMEX-STM32-P405 board is based on the STMicroelectronics STM32F405RG ARM
 Cortex-M4 CPU.
 
-.. figure:: img/olimex_stm32_p405.png
-     :width: 540px
+.. figure:: img/olimex_stm32_p405.jpg
      :align: center
-     :height: 454px
      :alt: OLIMEX-STM32-P405
 
      OLIMEX-STM32-P405
@@ -44,15 +42,13 @@ hardware features:
 | GPIO      | on-chip    | gpio                 |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Pin Mapping
 ===========
 
-.. figure:: img/olimex-stm32-p405-front.png
-     :width: 739px
+.. figure:: img/olimex-stm32-p405-front.jpg
      :align: center
-     :height: 530px
      :alt: OLIMEX-STM32-P405 connectors
 
      OLIMEX-STM32-P405 connectors

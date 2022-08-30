@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2022 Arm Limited (or its affiliates). All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "xenvm.dts"
+
+&gic {
+	reg = <0x00 0x3001000 0x00 0x10000 0x00 0x3020000 0x00 0x1000000>;
+};

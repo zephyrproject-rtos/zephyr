@@ -26,7 +26,7 @@ class CoredumpElfFile():
     Class to parse ELF file for memory content in various sections.
     There are read-only sections (e.g. text and rodata) where
     the memory content does not need to be dumped via coredump
-    and can be retrived from the ELF file.
+    and can be retrieved from the ELF file.
     """
 
     def __init__(self, elffile):

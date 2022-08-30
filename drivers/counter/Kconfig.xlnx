@@ -5,5 +5,7 @@
 
 config COUNTER_XLNX_AXI_TIMER
 	bool "Xilinx AXI Timer driver"
+	default y
+	depends on DT_HAS_XLNX_XPS_TIMER_1_00_A_ENABLED
 	help
 	  Enable counter support for the Xilinx AXI Timer v2.0 IP.

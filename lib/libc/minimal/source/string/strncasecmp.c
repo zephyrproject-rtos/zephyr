@@ -17,7 +17,7 @@ strncasecmp(const char *s1, const char *s2, size_t n)
 
 		c = *s1++;
 		lower1 = tolower(c);
-		lower2 = tolower(*s2++);
+		lower2 = tolower((unsigned char)*s2++);
 
 		if (lower1 != lower2) {
 			return (lower1 > lower2) - (lower1 < lower2);

@@ -1,0 +1,8 @@
+# EBYTE-TBB board configuration
+
+# Copyright (c) 2021 Michal Morsisko
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EBYTE_E73_TBB_NRF52832
+	bool "EBYTE E73-TBB NRF52832"
+	depends on SOC_NRF52832_QFAA

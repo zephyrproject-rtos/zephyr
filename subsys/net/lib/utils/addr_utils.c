@@ -6,7 +6,7 @@
 
 #ifdef CONFIG_NET_SOCKETS
 
-#include <net/socketutils.h>
+#include <zephyr/net/socketutils.h>
 
 const char *net_addr_str_find_port(const char *addr_str)
 {

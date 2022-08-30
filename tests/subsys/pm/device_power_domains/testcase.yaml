@@ -1,0 +1,4 @@
+tests:
+  pm.power_domain.device:
+    tags: pm
+    platform_allow: qemu_cortex_m3

@@ -9,8 +9,9 @@
 
 / {
 	ccm0: memory@10000000 {
-		compatible = "st,stm32-ccm";
+		compatible = "zephyr,memory-region", "st,stm32-ccm";
 		reg = <0x10000000 DT_SIZE_K(8)>;
+		zephyr,memory-region = "CCM";
 	};
 
 	sram0: memory@20000000 {
@@ -29,8 +30,11 @@
 			reg = <0x40009800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
 			status = "disabled";
-			label = "DAC_2";
 			#io-channel-cells = <1>;
 		};
 	};
 };
+
+/delete-node/ &spi2;
+
+/delete-node/ &spi3;

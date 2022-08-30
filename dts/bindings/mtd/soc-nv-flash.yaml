@@ -5,9 +5,6 @@ compatible: "soc-nv-flash"
 include: base.yaml
 
 properties:
-    label:
-      required: false
-
     erase-block-size:
      type: int
      description: address alignment required by flash erase operations
@@ -16,9 +13,4 @@ properties:
     write-block-size:
      type: int
      description: address alignment required by flash write operations
-     required: false
-
-    max-erase-time:
-     type: int
-     description: max erase time(millisecond) of a flash sector or page or half-page
      required: false

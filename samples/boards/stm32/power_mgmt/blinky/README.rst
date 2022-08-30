@@ -17,7 +17,7 @@ Requirements
 
 The board should support enabling PM. For a STM32 based target, it means that
 it should support a clock source alternative to Cortex Systick that can be used
-in core sleep states, as LPTIM (:ref:`dtbinding_st_stm32_lptim`).
+in core sleep states, as LPTIM (:dtcompatible:`st,stm32-lptim`).
 
 Building and Running
 ********************
@@ -35,6 +35,6 @@ After flashing, the LED starts to blink.
 PM configurations
 *****************
 
-By default, :kconfig:`CONFIG_PM_DEVICE` and :kconfig:`CONFIG_PM_DEVICE_RUNTIME` are
+By default, :kconfig:option:`CONFIG_PM_DEVICE` and :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` are
 enabled, but user can also deactivate one or the other to see each configuration
 in play.

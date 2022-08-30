@@ -64,15 +64,15 @@
 #include <tinycrypt/ecc_dh.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
-#include <test_utils.h>
+#include <zephyr/test_utils.h>
 #include "test_ecc_utils.h"
-#include <sys/util.h>
-#include <random/rand32.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/random/rand32.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /* Maximum size of message to be signed. */
 #define BUF_SIZE 256

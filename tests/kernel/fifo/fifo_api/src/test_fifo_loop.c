@@ -6,7 +6,7 @@
 
 #include "test_fifo.h"
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIST_LEN 4
 #define LOOPS 32
 
@@ -96,7 +96,7 @@ static void tfifo_read_write(struct k_fifo *pfifo)
  *
  * @see k_fifo_init(), k_fifo_put(), k_fifo_get()
  */
-void test_fifo_loop(void)
+ZTEST(fifo_api_1cpu, test_fifo_loop)
 {
 	k_fifo_init(&fifo);
 	for (int i = 0; i < LOOPS; i++) {

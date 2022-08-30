@@ -5,7 +5,8 @@
 
 config SOC_FLASH_ITE_IT8XXX2
 	bool "ITE IT8XXX2 flash driver"
-	depends on SOC_FAMILY_RISCV_ITE
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_FLASH_CONTROLLER_ENABLED
 	select SOC_FLASH_RAMCODE_SECTION
 	help
 	  The flash driver includes support for read, write and
@@ -14,6 +15,7 @@ config SOC_FLASH_ITE_IT8XXX2
 
 config SOC_FLASH_RAMCODE_SECTION
 	bool
+	depends on SOC_FLASH_ITE_IT8XXX2
 	help
 	  Enable this config to map the __ram_code section
 	  operations of flash(flash_it8xxx2_erase,

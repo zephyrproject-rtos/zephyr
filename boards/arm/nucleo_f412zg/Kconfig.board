@@ -5,4 +5,4 @@
 
 config BOARD_NUCLEO_F412ZG
 	bool "NUCLEO-144 F412ZG Development Board"
-	depends on SOC_STM32F412ZG
+	depends on SOC_STM32F412ZX

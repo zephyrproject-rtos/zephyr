@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <arch/posix/posix_trace.h>
+#include <zephyr/arch/posix/posix_trace.h>
 #include "posix_board_if.h"
 #include "zephyr/types.h"
 #include "cmdline_common.h"
@@ -213,7 +213,7 @@ void cmd_args_set_defaults(struct args_struct_t args_struct[])
 			*(int64_t *)args_struct[count].dest = INT64_MAX;
 			break;
 		case 'd':
-			*(double *)args_struct[count].dest = NAN;
+			*(double *)args_struct[count].dest = (double)NAN;
 			break;
 		default:
 			posix_print_error_and_exit(CMD_TYPE_ERROR,

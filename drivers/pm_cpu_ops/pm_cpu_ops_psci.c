@@ -7,17 +7,16 @@
 #define DT_DRV_COMPAT arm_psci_0_2
 
 #define LOG_LEVEL CONFIG_PM_CPU_OPS_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(psci);
 
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 
-#include <soc.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <drivers/pm_cpu_ops.h>
+#include <zephyr/drivers/pm_cpu_ops.h>
 #include "pm_cpu_ops_psci.h"
 
 static struct psci psci_data;
@@ -43,8 +42,9 @@ int pm_cpu_off(void)
 {
 	int ret;
 
-	if (psci_data.conduit == SMCCC_CONDUIT_NONE)
+	if (psci_data.conduit == SMCCC_CONDUIT_NONE) {
 		return -EINVAL;
+	}
 
 	ret = psci_data.invoke_psci_fn(PSCI_0_2_FN_CPU_OFF, 0, 0, 0);
 
@@ -56,8 +56,9 @@ int pm_cpu_on(unsigned long cpuid,
 {
 	int ret;
 
-	if (psci_data.conduit == SMCCC_CONDUIT_NONE)
+	if (psci_data.conduit == SMCCC_CONDUIT_NONE) {
 		return -EINVAL;
+	}
 
 	ret = psci_data.invoke_psci_fn(PSCI_FN_NATIVE(0_2, CPU_ON), cpuid,
 				       (unsigned long) entry_point, 0);

@@ -7,7 +7,7 @@ config HAS_SEGGER_RTT
 	  Indicates that the platform supports SEGGER J-Link RTT.
 
 config USE_SEGGER_RTT
-	bool "Enable SEGGER RTT libraries."
+	bool "SEGGER RTT libraries."
 	depends on HAS_SEGGER_RTT
 	help
 	  Enable Segger J-Link RTT libraries for platforms that support it.
@@ -17,7 +17,7 @@ config USE_SEGGER_RTT
 if USE_SEGGER_RTT
 
 config SEGGER_RTT_CUSTOM_LOCKING
-	bool "Enable custom locking"
+	bool "Custom locking"
 	help
 	  Enable custom locking using a mutex.
 

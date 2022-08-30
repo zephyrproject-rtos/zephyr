@@ -15,6 +15,5 @@
 	bme280@77 {
 		compatible = "bosch,bme280";
 		reg = <0x77>;
-		label = "BME280_I2C";
 	};
 };

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if defined(CONFIG_ARCH_POSIX)
 #define ALIGN_MS_BOUNDARY		       \
@@ -35,7 +35,7 @@ K_TIMER_DEFINE(ktimer, duration_expire, stop_expire);
 static ZTEST_BMEM struct timer_data tdata;
 
 #define DURATION 100
-#define LESS_DURATION 80
+#define LESS_DURATION 70
 
 /**
  * @addtogroup kernel_common_tests
@@ -47,7 +47,7 @@ static ZTEST_BMEM struct timer_data tdata;
  *
  * @see k_uptime_get(), k_uptime_get_32(), k_uptime_delta()
  */
-void test_clock_uptime(void)
+ZTEST_USER(clock, test_clock_uptime)
 {
 	uint64_t t64, t32;
 	int64_t d64 = 0;
@@ -83,10 +83,10 @@ void test_clock_uptime(void)
 }
 
 /**
- * @brief Test clock cycle functionality
+ * @brief Test 32-bit clock cycle functionality
  *
  * @details
- * Test Objectve:
+ * Test Objective:
  * - The kernel architecture provide a 32bit monotonically increasing
  *   cycle counter
  * - This routine tests the k_cycle_get_32() and k_uptime_get_32()
@@ -109,9 +109,9 @@ void test_clock_uptime(void)
  * - Success if cycles increase monotonically, failure otherwise.
  *
  * Test Procedure:
- * -# At mili-second boundary, get cycles repeatedly by k_cycle_get_32()
+ * -# At milli-second boundary, get cycles repeatedly by k_cycle_get_32()
  *  till cycles increased
- * -# At mili-second boundary, get cycles repeatedly by k_uptime_get_32()
+ * -# At milli-second boundary, get cycles repeatedly by k_uptime_get_32()
  *  till cycles increased
  * -# Cross check cycles gotten by k_cycle_get_32() and k_uptime_get_32(),
  *  the delta cycle should be greater than 1 milli-second.
@@ -122,7 +122,7 @@ void test_clock_uptime(void)
  * @see k_cycle_get_32(), k_uptime_get_32()
  */
 
-void test_clock_cycle(void)
+ZTEST(clock, test_clock_cycle_32)
 {
 	uint32_t c32, c0, c1, t32;
 
@@ -160,6 +160,39 @@ void test_clock_cycle(void)
 	}
 }
 
+/**
+ * @brief Test 64-bit clock cycle functionality
+ */
+ZTEST(clock, test_clock_cycle_64)
+{
+	uint32_t d32;
+	uint64_t d64;
+	uint32_t t32[2];
+	uint64_t t64[2];
+
+	if (!IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
+		ztest_test_skip();
+	}
+
+	t64[0] = k_cycle_get_64();
+	t32[0] = k_cycle_get_32();
+
+	k_msleep(1);
+
+	t32[1] = k_cycle_get_32();
+	t64[1] = k_cycle_get_64();
+
+	d32 = MIN(t32[1] - t32[0], t32[0] - t32[1]);
+	d64 = MIN(t64[1] - t64[0], t64[1] - t64[0]);
+
+	zassert_true(d64 >= d32,
+		"k_cycle_get() (64-bit): d64: %" PRIu64 " < d32: %u", d64, d32);
+
+	zassert_true(d64 < (d32 << 1),
+		"k_cycle_get() (64-bit): d64: %" PRIu64 " >= 2 * d32: %u",
+		d64, (d32 << 1));
+}
+
 /*
  *help function
  */
@@ -191,7 +224,7 @@ static void init_data_count(void)
  *
  */
 
-void test_ms_time_duration(void)
+ZTEST(clock, test_ms_time_duration)
 {
 	init_data_count();
 	k_timer_start(&ktimer, K_MSEC(DURATION), K_NO_WAIT);
@@ -213,7 +246,7 @@ void test_ms_time_duration(void)
 	zassert_true(tdata.stop_count == 0,
 		     "stop %u not 0", tdata.stop_count);
 
-	/** cleanup environemtn */
+	/** cleanup environment */
 	k_timer_stop(&ktimer);
 }
 /**

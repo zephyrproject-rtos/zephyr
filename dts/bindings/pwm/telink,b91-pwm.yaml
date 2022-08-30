@@ -1,0 +1,67 @@
+# Copyright (c) 2021, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+
+description: Telink B91 PWM
+
+include: [pwm-controller.yaml, base.yaml]
+
+compatible: "telink,b91-pwm"
+
+properties:
+
+    pinctrl-0:
+      type: phandles
+      required: true
+
+    clock-frequency:
+      type: int
+      required: true
+      description: Default PWM Peripheral Clock frequency in Hz (is used if 32K Clock is disabled)
+
+    clk32k-ch0-enable:
+      type: boolean
+      required: false
+      description: Enable 32K Source Clock for PWM Channel 0
+
+    clk32k-ch1-enable:
+      type: boolean
+      required: false
+      description: Enable 32K Source Clock for PWM Channel 1
+
+    clk32k-ch2-enable:
+      type: boolean
+      required: false
+      description: Enable 32K Source Clock for PWM Channel 2
+
+    clk32k-ch3-enable:
+      type: boolean
+      required: false
+      description: Enable 32K Source Clock for PWM Channel 3
+
+    clk32k-ch4-enable:
+      type: boolean
+      required: false
+      description: Enable 32K Source Clock for PWM Channel 4
+
+    clk32k-ch5-enable:
+      type: boolean
+      required: false
+      description: Enable 32K Source Clock for PWM Channel 5
+
+    channels:
+      type: int
+      const: 6
+      required: true
+      description: Number of channels this PWM has
+
+    reg:
+      required: true
+
+    "#pwm-cells":
+      const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

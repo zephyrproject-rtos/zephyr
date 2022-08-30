@@ -5,3 +5,29 @@
  */
 
 #include <renesas/gen3/rcar_gen3_cr7.dtsi>
+#include <zephyr/dt-bindings/clock/r8a7795_cpg_mssr.h>
+
+/ {
+	soc {
+		cpg: clock-controller@e6150000 {
+			compatible = "renesas,r8a7795-cpg-mssr";
+			reg = <0xe6150000 0x1000>;
+			#clock-cells = <2>;
+		};
+
+		can0: can@e6c30000 {
+			clocks = <&cpg CPG_MOD 916>,
+			<&cpg CPG_CORE R8A7795_CLK_CANFD>;
+		};
+
+		scif1: serial@e6e68000 {
+			clocks = <&cpg CPG_MOD 206>,
+			<&cpg CPG_CORE R8A7795_CLK_S3D4>;
+		};
+
+		scif2: serial@e6e88000 {
+			clocks = <&cpg CPG_MOD 310>,
+			<&cpg CPG_CORE R8A7795_CLK_S3D4>;
+		};
+	};
+};

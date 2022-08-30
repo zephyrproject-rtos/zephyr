@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_virtual_mgmt, CONFIG_NET_L2_VIRTUAL_LOG_LEVEL);
 
 #include <errno.h>
 
-#include <net/net_core.h>
-#include <net/net_if.h>
-#include <net/virtual_mgmt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/virtual_mgmt.h>
 
 static int virtual_interface_set_config(uint32_t mgmt_request,
 					struct net_if *iface,

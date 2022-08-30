@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <ztest.h>
-#include <arch/cpu.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/arch/cpu.h>
 
-#include <tc_util.h>
-#include <sys/bitarray.h>
-#include <sys/util.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_BIG_ENDIAN
 #define BIT_INDEX(bit)  ((3 - ((bit >> 3) & 0x3)) + 4*(bit >> 5))
@@ -77,7 +77,7 @@ void validate_bitarray_define(sys_bitarray_t *ba, size_t num_bits)
  *
  * @see SYS_BITARRAY_DEFINE()
  */
-void test_bitarray_declare(void)
+ZTEST(bitarray, test_bitarray_declare)
 {
 	SYS_BITARRAY_DEFINE(ba_1_bit, 1);
 	SYS_BITARRAY_DEFINE(ba_32_bit, 32);
@@ -87,7 +87,7 @@ void test_bitarray_declare(void)
 	SYS_BITARRAY_DEFINE(ba_128_bit, 128);
 	SYS_BITARRAY_DEFINE(ba_129_bit, 129);
 
-	/* Test SYS_BITFIELD_DECLARE by asserting that a sufficent number of uint32_t
+	/* Test SYS_BITFIELD_DECLARE by asserting that a sufficient number of uint32_t
 	 * in the declared array are set as free to represent the number of bits
 	 */
 
@@ -124,7 +124,7 @@ bool bitarray_bundles_is_zero(sys_bitarray_t *ba)
  * @see sys_bitarray_test_and_set_bit()
  * @see sys_bitarray_test_and_clear_bit()
  */
-void test_bitarray_set_clear(void)
+ZTEST(bitarray, test_bitarray_set_clear)
 {
 	int ret;
 	int bit_val;
@@ -381,7 +381,7 @@ void alloc_and_free_loop(int divisor)
 	for (bit = 0U; bit < ba.num_bits; ++bit) {
 		cur_popcnt = get_bitarray_popcnt(&ba);
 		zassert_equal(cur_popcnt, expected_popcnt,
-			      "bit count expeceted %u, got %u (at bit %u)",
+			      "bit count expected %u, got %u (at bit %u)",
 			      expected_popcnt, cur_popcnt, bit);
 
 		/* Allocate half of remaining bits */
@@ -405,7 +405,7 @@ void alloc_and_free_loop(int divisor)
 
 		cur_popcnt = get_bitarray_popcnt(&ba);
 		zassert_equal(cur_popcnt, expected_popcnt,
-			      "bit count expeceted %u, got %u (at bit %u)",
+			      "bit count expected %u, got %u (at bit %u)",
 			      expected_popcnt, cur_popcnt, bit);
 
 		/* Free all but the first bit of allocated region */
@@ -459,14 +459,14 @@ void alloc_and_free_interval(void)
 				      ret, cnt);
 
 			zassert_equal(offset, expected_offset,
-				      "offset expeceted %u, got %u (cnt %u)",
+				      "offset expected %u, got %u (cnt %u)",
 				      expected_offset, offset, cnt);
 
 			expected_popcnt += 4;
 
 			cur_popcnt = get_bitarray_popcnt(&ba);
 			zassert_equal(cur_popcnt, expected_popcnt,
-				      "bit count expeceted %u, got %u (cnt %u)",
+				      "bit count expected %u, got %u (cnt %u)",
 				      expected_popcnt, cur_popcnt, cnt);
 
 
@@ -481,7 +481,7 @@ void alloc_and_free_interval(void)
  * @see sys_bitarray_alloc()
  * @see sys_bitarray_free()
  */
-void test_bitarray_alloc_free(void)
+ZTEST(bitarray, test_bitarray_alloc_free)
 {
 	int i;
 
@@ -502,7 +502,7 @@ void test_bitarray_alloc_free(void)
 	alloc_and_free_interval();
 }
 
-void test_bitarray_region_set_clear(void)
+ZTEST(bitarray, test_bitarray_region_set_clear)
 {
 	int ret;
 
@@ -613,6 +613,57 @@ void test_bitarray_region_set_clear(void)
 	zassert_equal(ret, -EINVAL, "sys_bitarray_clear_region() should fail but not");
 	zassert_true(cmp_u32_arrays(ba.bundles, ba_expected, ba.num_bundles),
 		     "sys_bitarray_clear_region() failed bits comparison");
+}
+
+/**
+ * @brief Test find MSB and LSB operations
+ *
+ * @details Verify the functions that find out the most significant
+ * bit and least significant bit work as expected.
+ *
+ * @see find_msb_set(), find_lsb_set()
+ */
+ZTEST(bitarray, test_ffs)
+{
+	uint32_t value;
+	unsigned int bit;
+
+	/* boundary test, input is min */
+	value = 0x0;
+	zassert_equal(find_msb_set(value), 0, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 0, "LSB is not matched");
+
+	/* boundary test, input is min + 1 */
+	value = 0x00000001;
+	zassert_equal(find_msb_set(value), 1, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 1, "LSB is not matched");
+
+	/* average value test */
+	value = 0x80000000;
+	zassert_equal(find_msb_set(value), 32, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 32, "LSB is not matched");
+
+	/* mediate value test */
+	value = 0x000FF000;
+	zassert_equal(find_msb_set(value), 20, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 13, "LSB is not matched");
+
+	/* boundary test, input is max */
+	value = 0xffffffff;
+	zassert_equal(find_msb_set(value), 32, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 1, "LSB is not matched");
+
+	/* boundary test, input is max - 1 */
+	value = 0xfffffffe;
+	zassert_equal(find_msb_set(value), 32, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 2, "LSB is not matched");
+
+	/* equivalent class testing, each bit means a class */
+	for (bit = 0; bit < 32 ; bit++) {
+		value = 1UL << bit;
+		zassert_equal(find_msb_set(value), bit + 1, "MSB is not matched");
+		zassert_equal(find_lsb_set(value), bit + 1, "LSB is not matched");
+	}
 }
 
 /**

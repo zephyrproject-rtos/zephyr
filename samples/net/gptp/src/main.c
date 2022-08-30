@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_gptp_sample, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 
-#include <net/net_core.h>
-#include <net/net_l2.h>
-#include <net/net_if.h>
-#include <net/ethernet.h>
-#include <net/gptp.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/gptp.h>
 
 extern void init_testing(void);
 
@@ -137,8 +137,7 @@ static void gptp_phase_dis_cb(uint8_t *gm_identity,
 		memcpy(id, gm_identity, sizeof(id));
 
 		LOG_DBG("GM %s last phase %d.%" PRId64 "",
-			log_strdup(gptp_sprint_clock_id(gm_identity, output,
-							sizeof(output))),
+			gptp_sprint_clock_id(gm_identity, output, sizeof(output)),
 			last_gm_ph_change->high,
 			last_gm_ph_change->low);
 	}

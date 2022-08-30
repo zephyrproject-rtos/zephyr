@@ -11,72 +11,92 @@
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
-#include <drivers/clock_control.h>
-#include <sys/util.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
-#include "stm32_hsem.h"
 
-#if STM32_SYSCLK_SRC_PLL
+#if defined(STM32_PLL_ENABLED)
 
-/* Macros to fill up division factors values */
-#define z_pllm(v) LL_RCC_PLLM_DIV_ ## v
-#define pllm(v) z_pllm(v)
-
-#define z_pllr(v) LL_RCC_PLLR_DIV_ ## v
-#define pllr(v) z_pllr(v)
+#if defined(LL_RCC_MSIRANGESEL_RUN)
+#define CALC_RUN_MSI_FREQ(range) __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN, \
+							range << RCC_CR_MSIRANGE_Pos);
+#else
+#define CALC_RUN_MSI_FREQ(range) __LL_RCC_CALC_MSI_FREQ(range << RCC_CR_MSIRANGE_Pos);
+#endif
 
 /**
- * @brief fill in pll configuration structure
+ * @brief Return PLL source
  */
-void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
+__unused
+static uint32_t get_pll_source(void)
 {
-	pllinit->PLLM = pllm(STM32_PLL_M_DIVISOR);
-	pllinit->PLLN = STM32_PLL_N_MULTIPLIER;
-	pllinit->PLLR = pllr(STM32_PLL_R_DIVISOR);
+	/* Configure PLL source */
+	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		return LL_RCC_PLLSOURCE_HSI;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		return LL_RCC_PLLSOURCE_HSE;
+	} else if (IS_ENABLED(STM32_PLL_SRC_MSI)) {
+		return LL_RCC_PLLSOURCE_MSI;
+	}
+
+	__ASSERT(0, "Invalid source");
+	return 0;
+}
+
+/**
+ * @brief get the pll source frequency
+ */
+__unused
+uint32_t get_pllsrc_frequency(void)
+{
+	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		return STM32_HSI_FREQ;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		return STM32_HSE_FREQ;
+#if defined(STM32_MSI_ENABLED)
+	} else if (IS_ENABLED(STM32_PLL_SRC_MSI)) {
+		return CALC_RUN_MSI_FREQ(STM32_MSI_RANGE);
+#endif
+	}
+
+	__ASSERT(0, "Invalid source");
+	return 0;
+}
+
+/**
+ * @brief Set up pll configuration
+ */
+void config_pll_sysclock(void)
+{
 #ifdef PWR_CR5_R1MODE
 	/* set power boost mode for sys clock greater than 80MHz */
 	if (sys_clock_hw_cycles_per_sec() >= MHZ(80)) {
 		LL_PWR_EnableRange1BoostMode();
 	}
 #endif /* PWR_CR5_R1MODE */
+
+	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(),
+				    pllm(STM32_PLL_M_DIVISOR),
+				    STM32_PLL_N_MULTIPLIER,
+				    pllr(STM32_PLL_R_DIVISOR));
+
+	LL_RCC_PLL_EnableDomain_SYS();
 }
-#endif /* STM32_SYSCLK_SRC_PLL */
+
+#endif /* defined(STM32_PLL_ENABLED) */
 
 /**
  * @brief Activate default clocks
  */
 void config_enable_default_clocks(void)
 {
-#if STM32_LSE_CLOCK
-	/* LSE belongs to the back-up domain, enable access.*/
-
-#if defined(CONFIG_SOC_SERIES_STM32WBX)
-	/* HW semaphore Clock enable */
-	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_HSEM);
-#endif
-	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
 #ifdef LL_APB1_GRP1_PERIPH_PWR
 	/* Enable the power interface clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 #endif
-
-	/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
-	LL_PWR_EnableBkUpAccess();
-	while (!LL_PWR_IsEnabledBkUpAccess()) {
-		/* Wait for Backup domain access */
-	}
-
-	/* Enable LSE Oscillator (32.768 kHz) */
-	LL_RCC_LSE_Enable();
-	while (!LL_RCC_LSE_IsReady()) {
-		/* Wait for LSE ready */
-	}
-
-	LL_PWR_DisableBkUpAccess();
-
-	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-
+#if defined(CONFIG_SOC_SERIES_STM32WBX)
+	/* HW semaphore Clock enable */
+	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_HSEM);
 #endif
 }

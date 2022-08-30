@@ -1,11 +1,12 @@
 # Copyright (c) 2019 Mohamed ElShahawi (ExtremeGTX@hotmail.com)
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 description: ESP32 I2C
 
 compatible: "espressif,esp32-i2c"
 
-include: i2c-controller.yaml
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -14,12 +15,34 @@ properties:
     interrupts:
       required: false
 
-    sda-pin:
-      type: int
-      description: SDA pin
+    pinctrl-0:
       required: true
 
-    scl-pin:
-      type: int
-      description: SCL pin
+    pinctrl-names:
       required: true
+
+    scl-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        GPIO to which the I2C SCL signal is routed. This is only required
+        if the target SoC does not have support in hardware for clearing
+        the I2C bus in case of a communication failure
+
+    sda-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        GPIO to which the I2C SDA signal is routed. This is only required
+        if the target SoC does not have support in hardware for clearing
+        the I2C bus in case of a communication failure
+
+    tx-lsb:
+      type: boolean
+      required: false
+      description: Set I2C TX data as LSB
+
+    rx-lsb:
+      type: boolean
+      required: false
+      description: Set I2C RX data as LSB

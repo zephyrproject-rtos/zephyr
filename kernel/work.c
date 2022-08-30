@@ -10,13 +10,13 @@
  * Second generation work queue implementation
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
-#include <wait_q.h>
-#include <spinlock.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/spinlock.h>
 #include <errno.h>
 #include <ksched.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 static inline void flag_clear(uint32_t *flagp,
 			      uint32_t bit)
@@ -104,7 +104,7 @@ static inline void init_work_cancel(struct z_work_canceller *canceler,
  *
  * Reschedules.
  *
- * @param work the work structre that has completed cancellation
+ * @param work the work structure that has completed cancellation
  */
 static void finalize_cancel_locked(struct k_work *work)
 {
@@ -355,26 +355,45 @@ static int submit_to_queue_locked(struct k_work *work,
 	return ret;
 }
 
-int k_work_submit_to_queue(struct k_work_q *queue,
-			    struct k_work *work)
+/* Submit work to a queue but do not yield the current thread.
+ *
+ * Intended for internal use.
+ *
+ * See also submit_to_queue_locked().
+ *
+ * @param queuep pointer to a queue reference.
+ * @param work the work structure to be submitted
+ *
+ * @retval see submit_to_queue_locked()
+ */
+int z_work_submit_to_queue(struct k_work_q *queue,
+		  struct k_work *work)
 {
 	__ASSERT_NO_MSG(work != NULL);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, submit_to_queue, queue, work);
-
 	int ret = submit_to_queue_locked(work, &queue);
 
 	k_spin_unlock(&lock, key);
 
-	/* If we changed the queue contents (as indicated by a positive ret)
-	 * the queue thread may now be ready, but we missed the reschedule
-	 * point because the lock was held.  If this is being invoked by a
-	 * preemptible thread then yield.
+	return ret;
+}
+
+int k_work_submit_to_queue(struct k_work_q *queue,
+			    struct k_work *work)
+{
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, submit_to_queue, queue, work);
+
+	int ret = z_work_submit_to_queue(queue, work);
+
+	/* submit_to_queue_locked() won't reschedule on its own
+	 * (really it should, otherwise this process will result in
+	 * spurious calls to z_swap() due to the race), so do it here
+	 * if the queue state changed.
 	 */
-	if ((ret > 0) && (k_is_preempt_thread() != 0)) {
-		k_yield();
+	if (ret > 0) {
+		z_reschedule_unlocked();
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work, submit_to_queue, queue, work, ret);
@@ -586,6 +605,7 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		struct k_work *work = NULL;
 		k_work_handler_t handler = NULL;
 		k_spinlock_key_t key = k_spin_lock(&lock);
+		bool yield;
 
 		/* Check for and prepare any new work. */
 		node = sys_slist_get(&queue->pending);
@@ -597,6 +617,19 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 			work = CONTAINER_OF(node, struct k_work, node);
 			flag_set(&work->flags, K_WORK_RUNNING_BIT);
 			flag_clear(&work->flags, K_WORK_QUEUED_BIT);
+
+			/* Static code analysis tool can raise a false-positive violation
+			 * in the line below that 'work' is checked for null after being
+			 * dereferenced.
+			 *
+			 * The work is figured out by CONTAINER_OF, as a container
+			 * of type struct k_work that contains the node.
+			 * The only way for it to be NULL is if node would be a member
+			 * of struct k_work object that has been placed at address NULL,
+			 * which should never happen, even line 'if (work != NULL)'
+			 * ensures that.
+			 * This means that if node is not NULL, then work will not be NULL.
+			 */
 			handler = work->handler;
 		} else if (flag_test_and_clear(&queue->flags,
 					       K_WORK_QUEUE_DRAIN_BIT)) {
@@ -631,36 +664,43 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 
 		k_spin_unlock(&lock, key);
 
-		if (work != NULL) {
-			bool yield;
+		__ASSERT_NO_MSG(handler != NULL);
+		handler(work);
 
-			__ASSERT_NO_MSG(handler != NULL);
-			handler(work);
+		/* Mark the work item as no longer running and deal
+		 * with any cancellation issued while it was running.
+		 * Clear the BUSY flag and optionally yield to prevent
+		 * starving other threads.
+		 */
+		key = k_spin_lock(&lock);
 
-			/* Mark the work item as no longer running and deal
-			 * with any cancellation issued while it was running.
-			 * Clear the BUSY flag and optionally yield to prevent
-			 * starving other threads.
-			 */
-			key = k_spin_lock(&lock);
+		flag_clear(&work->flags, K_WORK_RUNNING_BIT);
+		if (flag_test(&work->flags, K_WORK_CANCELING_BIT)) {
+			finalize_cancel_locked(work);
+		}
 
-			flag_clear(&work->flags, K_WORK_RUNNING_BIT);
-			if (flag_test(&work->flags, K_WORK_CANCELING_BIT)) {
-				finalize_cancel_locked(work);
-			}
+		flag_clear(&queue->flags, K_WORK_QUEUE_BUSY_BIT);
+		yield = !flag_test(&queue->flags, K_WORK_QUEUE_NO_YIELD_BIT);
+		k_spin_unlock(&lock, key);
 
-			flag_clear(&queue->flags, K_WORK_QUEUE_BUSY_BIT);
-			yield = !flag_test(&queue->flags, K_WORK_QUEUE_NO_YIELD_BIT);
-			k_spin_unlock(&lock, key);
-
-			/* Optionally yield to prevent the work queue from
-			 * starving other threads.
-			 */
-			if (yield) {
-				k_yield();
-			}
+		/* Optionally yield to prevent the work queue from
+		 * starving other threads.
+		 */
+		if (yield) {
+			k_yield();
 		}
 	}
+}
+
+void k_work_queue_init(struct k_work_q *queue)
+{
+	__ASSERT_NO_MSG(queue != NULL);
+
+	*queue = (struct k_work_q) {
+		.flags = 0,
+	};
+
+	SYS_PORT_TRACING_OBJ_INIT(k_work_queue, queue);
 }
 
 void k_work_queue_start(struct k_work_q *queue,
@@ -805,7 +845,7 @@ void k_work_init_delayable(struct k_work_delayable *dwork,
 
 static inline int work_delayable_busy_get_locked(const struct k_work_delayable *dwork)
 {
-	return atomic_get(&dwork->work.flags) & K_WORK_MASK;
+	return flags_get(&dwork->work.flags) & K_WORK_MASK;
 }
 
 int k_work_delayable_busy_get(const struct k_work_delayable *dwork)

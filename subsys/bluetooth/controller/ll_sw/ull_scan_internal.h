@@ -40,6 +40,9 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan);
 /* Disable scanning/initiating role */
 uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan);
 
+/* Helper function to handle scan done events */
+void ull_scan_done(struct node_rx_event_done *done);
+
 /* Helper function to dequeue scan timeout event */
 void ull_scan_term_dequeue(uint8_t handle);
 
@@ -55,10 +58,14 @@ struct ll_scan_set *ull_scan_is_valid_get(struct ll_scan_set *scan);
 /* Return ll_scan_set context if enabled */
 struct ll_scan_set *ull_scan_is_enabled_get(uint8_t handle);
 
-/* Return ll_scan_set contesst if disabled */
+/* Return ll_scan_set context if disabled */
 struct ll_scan_set *ull_scan_is_disabled_get(uint8_t handle);
 
 /* Return flags if enabled */
+#define ULL_SCAN_IS_PASSIVE   BIT(0)
+#define ULL_SCAN_IS_ACTIVE    BIT(1)
+#define ULL_SCAN_IS_INITIATOR BIT(2)
+#define ULL_SCAN_IS_SYNC      BIT(3)
 uint32_t ull_scan_is_enabled(uint8_t handle);
 
 /* Return filter policy used */
@@ -70,8 +77,17 @@ int ull_scan_aux_reset(void);
 /* Helper to setup scanning on auxiliary channel */
 void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx);
 
-/* Helper function to handle scan done events */
-void ull_scan_done(struct node_rx_event_done *done);
-
 /* Helper to clean up auxiliary channel scanning */
 void ull_scan_aux_done(struct node_rx_event_done *done);
+
+/* Return the scan aux set instance given the handle */
+struct ll_scan_aux_set *ull_scan_aux_set_get(uint8_t handle);
+
+/* Helper function to check and return if a valid aux scan context */
+struct ll_scan_aux_set *ull_scan_aux_is_valid_get(struct ll_scan_aux_set *aux);
+
+/* Helper function to flush and release incomplete auxiliary PDU chaining */
+void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx);
+
+/* Helper function to stop auxiliary scan context */
+int ull_scan_aux_stop(struct ll_scan_aux_set *aux);

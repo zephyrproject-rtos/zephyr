@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <cmsis_os.h>
 
 #define NSEC_PER_MSEC		(NSEC_PER_USEC * USEC_PER_MSEC)
@@ -157,7 +157,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 
 	/* Clear signal flags as the thread is ready now */
 	key = irq_lock();
-	thread_def->signal_results &= ~(signals);
+	thread_def->signal_results &= signals ? ~(signals) : 0;
 	irq_unlock(key);
 
 	return evt;

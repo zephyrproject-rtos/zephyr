@@ -3,14 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <logging/log.h>
-#include <sys/p4wq.h>
-#include <wait_q.h>
-#include <kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/p4wq.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <init.h>
+#include <zephyr/init.h>
 
-LOG_MODULE_REGISTER(p4wq);
+LOG_MODULE_REGISTER(p4wq, CONFIG_LOG_DEFAULT_LEVEL);
 
 struct device;
 
@@ -143,7 +143,7 @@ static int static_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	Z_STRUCT_SECTION_FOREACH(k_p4wq_initparam, pp) {
+	STRUCT_SECTION_FOREACH(k_p4wq_initparam, pp) {
 		for (int i = 0; i < pp->num; i++) {
 			uintptr_t ssz = K_THREAD_STACK_LEN(pp->stack_size);
 			struct k_p4wq *q = pp->flags & K_P4WQ_QUEUE_PER_THREAD ?

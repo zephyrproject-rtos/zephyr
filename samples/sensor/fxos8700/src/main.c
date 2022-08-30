@@ -5,15 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 
 K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
 
 #if !defined(CONFIG_FXOS8700_TRIGGER_NONE)
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *trigger)
+			    const struct sensor_trigger *trigger)
 {
 	ARG_UNUSED(trigger);
 
@@ -32,10 +32,10 @@ static void trigger_handler(const struct device *dev,
 void main(void)
 {
 	struct sensor_value accel[3];
-	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, nxp_fxos8700)));
+	const struct device *const dev = DEVICE_DT_GET_ONE(nxp_fxos8700);
 
-	if (dev == NULL) {
-		printf("Could not get fxos8700 device\n");
+	if (!device_is_ready(dev)) {
+		printf("Device %s is not ready\n", dev->name);
 		return;
 	}
 

@@ -8,31 +8,38 @@
 #include "soc.h"
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
+#include <kernel_internal.h>
 #include <string.h>
-#include <toolchain/gcc.h>
+#include <zephyr/toolchain/gcc.h>
 #include <zephyr/types.h>
 
 #include "esp_private/system_internal.h"
 #include "esp32s2/rom/cache.h"
 #include "soc/gpio_periph.h"
+#include "esp_spi_flash.h"
 #include "hal/cpu_ll.h"
 #include "esp_err.h"
-#include "sys/printk.h"
+#include "esp32s2/spiram.h"
+#include <zephyr/sys/printk.h>
 
-extern void z_cstart(void);
-extern void z_bss_zero(void);
 extern void rtc_clk_cpu_freq_set_xtal(void);
+
+#if CONFIG_ESP_SPIRAM
+extern int _ext_ram_bss_start;
+extern int _ext_ram_bss_end;
+#endif
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
  * Zephyr is being booted by the Espressif bootloader.  With it, the C stack
  * is already set up.
  */
-void __attribute__((section(".iram1"))) __start(void)
+void __attribute__((section(".iram1"))) __esp_platform_start(void)
 {
 	volatile uint32_t *wdt_rtc_protect = (uint32_t *)RTC_CNTL_WDTWPROTECT_REG;
 	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
@@ -51,48 +58,18 @@ void __attribute__((section(".iram1"))) __start(void)
 	 * Configure the mode of instruction cache :
 	 * cache size, cache associated ways, cache line size.
 	 */
-	cache_size_t cache_size;
-	cache_ways_t cache_ways;
-	cache_line_size_t cache_line_size;
+	esp_config_instruction_cache_mode();
 
-#if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
-	esp_rom_Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_INVALID,
-			CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
-	cache_size = CACHE_SIZE_8KB;
-#else
-	esp_rom_Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_ICACHE_HIGH,
-			CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
-	cache_size = CACHE_SIZE_16KB;
-#endif
-
-	cache_ways = CACHE_4WAYS_ASSOC;
-
-#if CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_16B
-	cache_line_size = CACHE_LINE_SIZE_16B;
-#else
-	cache_line_size = CACHE_LINE_SIZE_32B;
-#endif
-
-	esp_rom_Cache_Suspend_ICache();
-	esp_rom_Cache_Set_ICache_Mode(cache_size, cache_ways, cache_line_size);
-	esp_rom_Cache_Invalidate_ICache_All();
-	esp_rom_Cache_Resume_ICache(0);
-
-#if !CONFIG_BOOTLOADER_ESP_IDF
-	/* The watchdog timer is enabled in the 1st stage (ROM) bootloader.
-	 * We're done booting, so disable it.
-	 * If 2nd stage bootloader from IDF is enabled, then that will take
-	 * care of this.
+	/*
+	 * If we need use SPIRAM, we should use data cache, or if we want to
+	 * access rodata, we also should use data cache.
+	 * Configure the mode of data : cache size, cache associated ways, cache
+	 * line size.
+	 * Enable data cache, so if we don't use SPIRAM, it just works.
 	 */
-	volatile uint32_t *wdt_timg_protect = (uint32_t *)TIMG_WDTWPROTECT_REG(0);
-	volatile uint32_t *wdt_timg_reg = (uint32_t *)TIMG_WDTCONFIG0_REG(0);
-
-	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
-	*wdt_rtc_reg &= ~RTC_CNTL_WDT_FLASHBOOT_MOD_EN;
-	*wdt_rtc_protect = 0;
-	*wdt_timg_protect = TIMG_WDT_WKEY_VALUE;
-	*wdt_timg_reg &= ~TIMG_WDT_FLASHBOOT_MOD_EN;
-	*wdt_timg_protect = 0;
+#if CONFIG_ESP_SPIRAM
+	esp_config_data_cache_mode();
+	esp_rom_Cache_Enable_DCache(0);
 #endif
 
 	/* Disable normal interrupts. */
@@ -107,7 +84,6 @@ void __attribute__((section(".iram1"))) __start(void)
 	 */
 	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
-#if CONFIG_BOOTLOADER_ESP_IDF
 	/* ESP-IDF 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
 	 * Zephyr environment.
@@ -115,8 +91,36 @@ void __attribute__((section(".iram1"))) __start(void)
 	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
 	*wdt_rtc_reg &= ~RTC_CNTL_WDT_EN;
 	*wdt_rtc_protect = 0;
-#endif
 
+#if CONFIG_ESP_SPIRAM
+
+	memset(&_ext_ram_bss_start,
+		0,
+		(&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
+
+	esp_err_t err = esp_spiram_init();
+
+	if (err != ESP_OK) {
+		printk("Failed to Initialize SPIRAM, aborting.\n");
+		abort();
+	}
+	esp_spiram_init_cache();
+	if (esp_spiram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
+		printk("SPIRAM size is less than configured size, aborting.\n");
+		abort();
+	}
+
+#endif /* CONFIG_ESP_SPIRAM */
+
+/* Scheduler is not started at this point. Hence, guard functions
+ * must be initialized after esp_spiram_init_cache which internally
+ * uses guard functions. Setting guard functions before SPIRAM
+ * cache initialization will result in a crash.
+ */
+#if CONFIG_SOC_FLASH_ESP32 || CONFIG_ESP_SPIRAM
+	spi_flash_guard_set(&g_flash_guard_default_ops);
+#endif
+	esp_intr_initialize();
 	/* Start Zephyr */
 	z_cstart();
 

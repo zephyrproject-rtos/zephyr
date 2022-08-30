@@ -89,6 +89,9 @@ class ZephyrAppCommandsDirective(Directive):
       if set, the generated output is a single code block with no
       additional comment lines
 
+    \:west-args:
+      if set, additional arguments to the west invocation (ignored for CMake)
+
     '''
     has_content = False
     required_arguments = 0
@@ -109,7 +112,8 @@ class ZephyrAppCommandsDirective(Directive):
         'build-dir': directives.unchanged,
         'goals': directives.unchanged_required,
         'maybe-skip-config': directives.flag,
-        'compact': directives.flag
+        'compact': directives.flag,
+        'west-args': directives.unchanged,
     }
 
     TOOLS = ['cmake', 'west', 'all']
@@ -138,6 +142,7 @@ class ZephyrAppCommandsDirective(Directive):
         goals = self.options.get('goals').split()
         skip_config = 'maybe-skip-config' in self.options
         compact = 'compact' in self.options
+        west_args = self.options.get('west-args', None)
 
         if tool not in self.TOOLS:
             raise self.error('Unknown tool {}; choose from: {}'.format(
@@ -188,7 +193,8 @@ class ZephyrAppCommandsDirective(Directive):
             'goals': goals,
             'compact': compact,
             'skip_config': skip_config,
-            'generator': generator
+            'generator': generator,
+            'west_args': west_args
             }
 
         if 'west' in tools:
@@ -237,11 +243,13 @@ class ZephyrAppCommandsDirective(Directive):
         cd_into = kwargs['cd_into']
         build_dir = kwargs['build_dir']
         compact = kwargs['compact']
+        west_args = kwargs['west_args']
         kwargs['board'] = None
         # west always defaults to ninja
         gen_arg = ' -G\'Unix Makefiles\'' if generator == 'make' else ''
         cmake_args = gen_arg + self._cmake_args(**kwargs)
         cmake_args = ' --{}'.format(cmake_args) if cmake_args != '' else ''
+        west_args = ' {}'.format(west_args) if west_args else ''
         # ignore zephyr_app since west needs to run within
         # the installation. Instead rely on relative path.
         src = ' {}'.format(app) if app and not cd_into else ''
@@ -263,8 +271,8 @@ class ZephyrAppCommandsDirective(Directive):
         # defaulting to west.
         #
         # For now, this keeps the resulting commands working.
-        content.append('west build -b {}{}{}{}'.
-                       format(board, dst, src, cmake_args))
+        content.append('west build -b {}{}{}{}{}'.
+                       format(board, west_args, dst, src, cmake_args))
 
         # If we're signing, we want to do that next, so that flashing
         # etc. commands can use the signed file which must be created
@@ -378,8 +386,8 @@ class ZephyrAppCommandsDirective(Directive):
             tool_build_dir = ''
         else:
             source_dir = ' {}'.format(app) if app else ' .'
-            cmake_build_dir = ' -B {}'.format(build_dir)
-            tool_build_dir = ' -C {}'.format(build_dir)
+            cmake_build_dir = ' -B{}'.format(build_dir)
+            tool_build_dir = ' -C{}'.format(build_dir)
 
         # Now generate the actual cmake and make/ninja commands
         gen_arg = ' -GNinja' if generator == 'ninja' else ''

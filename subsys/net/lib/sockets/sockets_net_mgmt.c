@@ -7,16 +7,16 @@
 #include <stdbool.h>
 #include <fcntl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_mgmt, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <kernel.h>
-#include <sys/util.h>
-#include <net/socket.h>
-#include <syscall_handler.h>
-#include <sys/fdtable.h>
-#include <net/socket_net_mgmt.h>
-#include <net/ethernet_mgmt.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/fdtable.h>
+#include <zephyr/net/socket_net_mgmt.h>
+#include <zephyr/net/ethernet_mgmt.h>
 
 #include "sockets_internal.h"
 #include "net_private.h"
@@ -390,5 +390,5 @@ static bool net_mgmt_is_supported(int family, int type, int proto)
 	return true;
 }
 
-NET_SOCKET_REGISTER(af_net_mgmt, AF_NET_MGMT, net_mgmt_is_supported,
-		    znet_mgmt_socket);
+NET_SOCKET_REGISTER(af_net_mgmt, NET_SOCKET_DEFAULT_PRIO, AF_NET_MGMT,
+		    net_mgmt_is_supported, znet_mgmt_socket);

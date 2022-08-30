@@ -11,7 +11,7 @@ This application blinks a LED using the :ref:`PWM API <pwm_api>`. See
 :ref:`blinky-sample` for a GPIO-based sample.
 
 The LED starts blinking at a 1 Hz frequency. The frequency doubles every 4
-seconds until it reaches 64 Hz. The frequency will then be halved every 4
+seconds until it reaches 128 Hz. The frequency will then be halved every 4
 seconds until it returns to 1 Hz, completing a single blinking cycle. This
 faster-then-slower blinking cycle then repeats forever.
 
@@ -27,13 +27,6 @@ The board must have an LED connected to a PWM output channel. The PWM
 controlling this LED must be configured using the ``pwm_led0`` :ref:`devicetree
 <dt-guide>` alias, usually in the :ref:`BOARD.dts file
 <devicetree-in-out-files>`.
-
-You will see this error if you try to build this sample for an unsupported
-board:
-
-.. code-block:: none
-
-   Unsupported board: pwm_led0 devicetree alias is not defined
 
 Wiring
 ******
@@ -58,6 +51,14 @@ In these other cases, however, manual wiring is necessary:
      - connect PWM2 (PA0) to an LED
    * - :ref:`nucleo_f103rb_board`
      - connect PWM1 (PA8) to an LED
+   * - :ref:`nucleo_wb55rg_board`
+     - connect PWM1 (PA8) to an LED
+   * - :ref:`esp32`
+     - connect GPIO2 to an LED
+   * - :ref:`esp32s2_saola`
+     - connect GPIO2 to an LED
+   * - :ref:`esp32c3_devkitm`
+     - connect GPIO2 to an LED
 
 Building and Running
 ********************

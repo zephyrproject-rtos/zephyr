@@ -11,18 +11,18 @@
  */
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 
 #include "gpio_utils.h"
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(stmpe1600);
 
 /* Register definitions */
@@ -49,11 +49,8 @@ struct stmpe1600_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 
-	/** Master I2C device */
-	const struct device *i2c_bus;
-
-	/** The slave address of the chip */
-	uint16_t i2c_slave_addr;
+	/** Master I2C DT specification */
+	struct i2c_dt_spec i2c;
 };
 
 /** Runtime driver data */
@@ -71,18 +68,20 @@ struct stmpe1600_drvdata {
 
 static int write_reg16(const struct stmpe1600_config * const config, uint8_t reg, uint16_t value)
 {
-	uint16_t transfer_data = sys_cpu_to_le16(value);
+	uint8_t buf[3];
 	int ret;
 
 	LOG_DBG("STMPE1600[0x%02X]: write REG[0x%02X..0x%02X] = %04x",
-		config->i2c_slave_addr, reg, reg + 1, value);
+		config->i2c.addr, reg, reg + 1, value);
 
-	ret = i2c_burst_write(config->i2c_bus, config->i2c_slave_addr, reg,
-			      (uint8_t *)&transfer_data, sizeof(transfer_data));
+	buf[0] = reg;
+	sys_put_le16(value, &buf[1]);
+
+	ret = i2c_write_dt(&config->i2c, buf, sizeof(buf));
 
 	if (ret != 0) {
 		LOG_ERR("STMPE1600[0x%02X]: write error REG[0x%02X..0x%02X]: %d",
-			config->i2c_slave_addr, reg, reg + 1, ret);
+			config->i2c.addr, reg, reg + 1, ret);
 	}
 	return ret;
 }
@@ -93,18 +92,18 @@ static int read_reg16(const struct stmpe1600_config * const config, uint8_t reg,
 	int ret;
 
 	LOG_DBG("STMPE1600[0x%02X]: read REG[0x%02X..0x%02X]",
-		  config->i2c_slave_addr, reg, reg + 1);
+		  config->i2c.addr, reg, reg + 1);
 
-	ret = i2c_burst_read(config->i2c_bus, config->i2c_slave_addr, reg,
-			     (uint8_t *) &transfer_data, sizeof(transfer_data));
+	ret = i2c_burst_read_dt(&config->i2c, reg, (uint8_t *)&transfer_data,
+				sizeof(transfer_data));
 
 	if (ret != 0) {
 		LOG_ERR("STMPE1600[0x%02X]: read error REG[0x%02X..0x%02X]: %d",
-			config->i2c_slave_addr, reg, reg + 1, ret);
+			config->i2c.addr, reg, reg + 1, ret);
 	} else {
 		*value = sys_le16_to_cpu(transfer_data);
 		LOG_DBG("STMPE1600[0x%02X]: read REG[0x%02X..0x%02X] => %04x",
-			config->i2c_slave_addr, reg, reg + 1, *value);
+			config->i2c.addr, reg, reg + 1, *value);
 	}
 	return ret;
 }
@@ -171,7 +170,7 @@ static int stmpe1600_configure(const struct device *dev,
 	ret = set_pin_dir(dev, pin, flags);
 	if (ret != 0) {
 		LOG_ERR("STMPE1600[0x%X]: error setting pin direction (%d)",
-			config->i2c_slave_addr, ret);
+			config->i2c.addr, ret);
 	}
 
 	k_sem_give(&drvdata->lock);
@@ -202,7 +201,7 @@ static int stmpe1600_port_get_raw(const struct device *dev, uint32_t *value)
 static int stmpe1600_port_set_masked_raw(const struct device *dev,
 					 uint32_t mask, uint32_t value)
 {
-	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const)dev->data;
+	struct stmpe1600_drvdata *const drvdata = dev->data;
 	uint16_t GPSR;
 	int ret;
 
@@ -233,7 +232,7 @@ static int stmpe1600_port_clear_bits_raw(const struct device *dev, uint32_t mask
 
 static int stmpe1600_port_toggle_bits(const struct device *dev, uint32_t mask)
 {
-	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const)dev->data;
+	struct stmpe1600_drvdata *const drvdata = dev->data;
 	uint16_t GPSR;
 	int ret;
 
@@ -265,30 +264,30 @@ static int stmpe1600_init(const struct device *dev)
 	uint16_t chip_id;
 	int ret;
 
-	LOG_DBG("STMPE1600[0x%02X] init", config->i2c_slave_addr);
+	LOG_DBG("STMPE1600[0x%02X] init", config->i2c.addr);
 
 	k_sem_init(&drvdata->lock, 1, 1);
 
 	ret = read_reg16(dev->config, REG_CHIP_ID_LSB, &chip_id);
 	if (ret != 0) {
-		LOG_ERR("STMPE1600[0x%02X]: Unable to read Chip ID", config->i2c_slave_addr);
+		LOG_ERR("STMPE1600[0x%02X]: Unable to read Chip ID", config->i2c.addr);
 		return ret;
 	}
 
 	if (chip_id != 0x1600) {
-		LOG_ERR("STMPE1600[0x%02X]: Invalid Chip ID", config->i2c_slave_addr);
+		LOG_ERR("STMPE1600[0x%02X]: Invalid Chip ID", config->i2c.addr);
 		return -EINVAL;
 	}
 
 	ret = read_reg16(dev->config, REG_GPSR_LSB, &drvdata->GPSR);
 	if (ret != 0) {
-		LOG_ERR("STMPE1600[0x%02X]: Unable to read GPSR", config->i2c_slave_addr);
+		LOG_ERR("STMPE1600[0x%02X]: Unable to read GPSR", config->i2c.addr);
 		return ret;
 	}
 
 	ret = read_reg16(dev->config, REG_GPDR_LSB, &drvdata->GPDR);
 	if (ret != 0) {
-		LOG_ERR("STMPE1600[0x%02X]: Unable to read GPDR", config->i2c_slave_addr);
+		LOG_ERR("STMPE1600[0x%02X]: Unable to read GPDR", config->i2c.addr);
 	}
 
 	return ret;
@@ -307,8 +306,7 @@ static const struct gpio_driver_api stmpe1600_drv_api = {
 #define STMPE1600_INIT(inst)					     \
 	static struct stmpe1600_config stmpe1600_##inst##_config = { \
 		.common = { .port_pin_mask = 0xffff },		     \
-		.i2c_bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	     \
-		.i2c_slave_addr = DT_INST_REG_ADDR(inst),	     \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),		     \
 	};							     \
 								     \
 	static struct stmpe1600_drvdata stmpe1600_##inst##_drvdata;  \

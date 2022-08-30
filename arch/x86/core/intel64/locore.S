@@ -3,15 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <arch/x86/multiboot.h>
-#include <sys/util.h>
-#include <arch/x86/msr.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/arch/x86/multiboot.h>
+#include <zephyr/arch/x86/efi.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/arch/x86/msr.h>
 #include <kernel_arch_data.h>
 #include <offsets_short.h>
-#include <drivers/interrupt_controller/loapic.h>
-#include <arch/cpu.h>
-#include <sys/mem_manage.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/mem_manage.h>
 
 /*
  * Definitions/macros for enabling paging
@@ -190,9 +191,14 @@ __start32:
 	 * has left a pointer to it in EBX.
 	 */
 
-	movl $x86_cpuboot, %ebp		/* BSP is always logical CPU id 0 */
-	movl %ebx, __x86_cpuboot_t_arg_OFFSET(%ebp)	/* multiboot info */
+	movl $x86_cpu_boot_arg, %ebp
 
+	/* Inserting boot type */
+	movl $MULTIBOOT_BOOT_TYPE, __x86_boot_arg_t_boot_type_OFFSET(%ebp)
+	/* and multiboot info */
+	movl %ebx, __x86_boot_arg_t_arg_OFFSET(%ebp)
+
+	movl $x86_cpuboot, %ebp         /* BSP is always logical CPU id 0 */
 
 go64:	/* Install page tables and transition to long mode */
 	install_pagetables_32
@@ -284,8 +290,14 @@ __start64:
 	outb %al, $0x21
 	outb %al, $0xA1
 
-	/* Far call into the Zephyr code segment */
-	movq $x86_cpuboot, %rbp
+	movq $x86_cpu_boot_arg, %rbp
+	/* Inserting boot type */
+	movq $EFI_BOOT_TYPE, __x86_boot_arg_t_boot_type_OFFSET(%rbp)
+	/* and EFI boot arg (if any) */
+	movq %rbx, __x86_boot_arg_t_arg_OFFSET(%rbp)
+
+	movq $x86_cpuboot, %rbp		/* BSP is always logical CPU id 0 */
+
 	mov jmpdesc, %rax
 	jmp *%rax
 jmpdesc:
@@ -778,6 +790,11 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 #endif
 
 irq_dispatch:
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	pushq %rcx
+	call z_sched_usage_stop
+	popq %rcx
+#endif
 	movq x86_irq_funcs(,%rcx,8), %rax
 	movq x86_irq_args(,%rcx,8), %rdi
 	call *%rax

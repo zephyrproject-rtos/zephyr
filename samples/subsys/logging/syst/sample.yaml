@@ -1,11 +1,127 @@
 sample:
   name: syst sample
+common:
+  tags: logging mipi-sys-t
+  modules:
+    - mipi-sys-t
+  arch_exclude: mips nios2 posix sparc
 tests:
-  sample.logger.syst:
-    platform_allow: mps2_an385 sam_e70_xplained
-    tags: logging
+  sample.logger.syst.deferred:
+    toolchain_exclude: xcc
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
+      - sam_e70_xplained
+      - qemu_cortex_a53
+    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "SYS-T RAW DATA: "
+        - "SYST Sample Execution Completed"
+  sample.logger.syst.immediate:
+    toolchain_exclude: xcc
+    extra_args: OVERLAY_CONFIG=overlay_immediate.conf
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
+      - sam_e70_xplained
+      - qemu_cortex_a53
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "SYS-T RAW DATA: "
+        - "SYST Sample Execution Completed"
+  sample.logger.syst.catalog.deferred:
+    toolchain_exclude: xcc
+    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
+      - qemu_x86_64
+      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
       regex:
         - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
+  sample.logger.syst.catalog.immediate:
+    toolchain_exclude: xcc
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
+      - qemu_x86_64
+      - qemu_cortex_a53
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
+  sample.logger.syst.deferred_cpp:
+    toolchain_exclude: xcc
+    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
+      - qemu_x86_64
+      - sam_e70_xplained
+      - qemu_cortex_a53
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_CPLUSPLUS=y
+  sample.logger.syst.immediate_cpp:
+    toolchain_exclude: xcc
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
+      - qemu_x86_64
+      - sam_e70_xplained
+      - qemu_cortex_a53
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_CPLUSPLUS=y
+  sample.logger.syst.catalog.deferred_cpp:
+    toolchain_exclude: xcc
+    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
+      - qemu_x86_64
+      - qemu_cortex_a53
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
+      - CONFIG_CPLUSPLUS=y
+  sample.logger.syst.catalog.immediate_cpp:
+    toolchain_exclude: xcc
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
+      - qemu_x86_64
+      - qemu_cortex_a53
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
+      - CONFIG_CPLUSPLUS=y

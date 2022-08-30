@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/spi.h>
-#include <drivers/dac.h>
-#include <logging/log.h>
-#include <dt-bindings/dac/dacx0508.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/dt-bindings/dac/dacx0508.h>
 
 LOG_MODULE_REGISTER(dac_dacx0508, CONFIG_DAC_LOG_LEVEL);
 
@@ -31,27 +31,20 @@ LOG_MODULE_REGISTER(dac_dacx0508, CONFIG_DAC_LOG_LEVEL);
 #define DACX0508_MAX_CHANNEL    8
 
 struct dacx0508_config {
-	const char *spi_dev_name;
-	const char *spi_cs_dev_name;
-	gpio_pin_t spi_cs_pin;
-	gpio_dt_flags_t spi_cs_dt_flags;
-	struct spi_config spi_cfg;
+	struct spi_dt_spec bus;
 	uint8_t resolution;
 	uint8_t reference;
 	uint8_t gain[8];
 };
 
 struct dacx0508_data {
-	const struct device *spi_dev;
-	struct spi_cs_control spi_cs;
-	struct spi_config spi_cfg;
 	uint8_t configured;
 };
 
 static int dacx0508_reg_read(const struct device *dev, uint8_t addr,
 			     uint8_t *data)
 {
-	struct dacx0508_data *dev_data = dev->data;
+	const struct dacx0508_config *config = dev->config;
 	const struct spi_buf buf[2] = {
 		{
 			.buf = &addr,
@@ -80,12 +73,12 @@ static int dacx0508_reg_read(const struct device *dev, uint8_t addr,
 
 	tmp = addr |= DACX0508_READ_CMD;
 
-	ret = spi_write(dev_data->spi_dev, &dev_data->spi_cfg, &tx);
+	ret = spi_write_dt(&config->bus, &tx);
 	if (ret) {
 		return ret;
 	}
 
-	ret = spi_read(dev_data->spi_dev, &dev_data->spi_cfg, &rx);
+	ret = spi_read_dt(&config->bus, &rx);
 	if (ret) {
 		return ret;
 	}
@@ -100,7 +93,7 @@ static int dacx0508_reg_read(const struct device *dev, uint8_t addr,
 static int dacx0508_reg_write(const struct device *dev, uint8_t addr,
 			      	uint8_t *data)
 {
-	struct dacx0508_data *dev_data = dev->data;
+	const struct dacx0508_config *config = dev->config;
 	const struct spi_buf buf[2] = {
 		{
 			.buf = &addr,
@@ -121,7 +114,7 @@ static int dacx0508_reg_write(const struct device *dev, uint8_t addr,
 		return -EWOULDBLOCK;
 	}
 
-	return spi_write(dev_data->spi_dev, &dev_data->spi_cfg, &tx);
+	return spi_write_dt(&config->bus, &tx);
 }
 
 int dacx0508_reg_update(const struct device *dev, uint8_t addr,
@@ -337,25 +330,9 @@ static int dacx0508_init(const struct device *dev)
 	struct dacx0508_data *data = dev->data;
 	int ret;
 
-	data->spi_dev = device_get_binding(config->spi_dev_name);
-	if (!data->spi_dev) {
-		LOG_ERR("Cannot get pointer to %s device",
-			config->spi_dev_name);
-		return -EINVAL;
-	}
-
-	if (config->spi_cs_dev_name) {
-		data->spi_cs.gpio_dev =
-				device_get_binding(config->spi_cs_dev_name);
-		if (!data->spi_cs.gpio_dev) {
-			LOG_ERR("Cannot get pointer to %s device",
-				config->spi_cs_dev_name);
-			return -EINVAL;
-		}
-		data->spi_cs.gpio_pin = config->spi_cs_pin;
-		data->spi_cs.gpio_dt_flags = config->spi_cs_dt_flags;
-		data->spi_cfg = config->spi_cfg;
-		data->spi_cfg.cs = &data->spi_cs;
+	if (!spi_is_ready(&config->bus)) {
+		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		return -ENODEV;
 	}
 
 	ret = dacx0508_soft_reset(dev);
@@ -389,29 +366,9 @@ static const struct dac_driver_api dacx0508_driver_api = {
 #define DACX0508_DEVICE(t, n, res) \
 	static struct dacx0508_data dac##t##_data_##n; \
 	static const struct dacx0508_config dac##t##_config_##n = { \
-		.spi_dev_name = DT_BUS_LABEL(INST_DT_DACX0508(n, t)), \
-		.spi_cs_dev_name = \
-			UTIL_AND( \
-			DT_SPI_DEV_HAS_CS_GPIOS(INST_DT_DACX0508(n, t)), \
-			DT_SPI_DEV_CS_GPIOS_LABEL(INST_DT_DACX0508(n, t)) \
-			), \
-		.spi_cs_pin = \
-			UTIL_AND( \
-			DT_SPI_DEV_HAS_CS_GPIOS(INST_DT_DACX0508(n, t)), \
-			DT_SPI_DEV_CS_GPIOS_PIN(INST_DT_DACX0508(n, t)) \
-			), \
-		.spi_cs_dt_flags = UTIL_AND( \
-			DT_SPI_DEV_HAS_CS_GPIOS(INST_DT_DACX0508(n, t)), \
-			DT_SPI_DEV_CS_GPIOS_FLAGS(INST_DT_DACX0508(n, t)) \
-			), \
-		.spi_cfg = { \
-			.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
-				     SPI_WORD_SET(8) | SPI_MODE_CPHA), \
-			.frequency = DT_PROP(INST_DT_DACX0508(n, t), \
-					     spi_max_frequency), \
-			.slave = DT_REG_ADDR(INST_DT_DACX0508(n, t)), \
-			.cs = &dac##t##_data_##n.spi_cs, \
-		}, \
+		.bus = SPI_DT_SPEC_GET(INST_DT_DACX0508(n, t), \
+			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
+			SPI_WORD_SET(8) | SPI_MODE_CPHA, 0), \
 		.resolution = res, \
 		.reference = DT_PROP(INST_DT_DACX0508(n, t), \
 					     voltage_reference), \
@@ -449,8 +406,8 @@ static const struct dac_driver_api dacx0508_driver_api = {
 #define CALL_WITH_ARG(arg, expr) expr(arg)
 
 #define INST_DT_DACX0508_FOREACH(t, inst_expr) \
-	UTIL_LISTIFY(DT_NUM_INST_STATUS_OKAY(ti_dac##t), \
-		     CALL_WITH_ARG, inst_expr)
+	LISTIFY(DT_NUM_INST_STATUS_OKAY(ti_dac##t), \
+		     CALL_WITH_ARG, (), inst_expr)
 
 INST_DT_DACX0508_FOREACH(60508, DAC60508_DEVICE);
 INST_DT_DACX0508_FOREACH(70508, DAC70508_DEVICE);

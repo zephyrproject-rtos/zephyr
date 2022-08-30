@@ -45,7 +45,7 @@
 
 #include <tinycrypt/aes.h>
 #include <tinycrypt/constants.h>
-#include <test_utils.h>
+#include <zephyr/test_utils.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -53,8 +53,8 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <sys/printk.h>
-#include <ztest.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/ztest.h>
 
 #define NUM_OF_NIST_KEYS 16
 #define NUM_OF_FIXED_KEYS 128

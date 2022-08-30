@@ -6,9 +6,9 @@
 
 #include <stdio.h>
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 
 /**
  * @file Sample app using the MAX6675 cold-junction-compensated K-thermocouple
@@ -19,12 +19,11 @@
 
 void main(void)
 {
-	const struct device *dev;
+	const struct device *const dev = DEVICE_DT_GET_ONE(maxim_max6675);
 	struct sensor_value val;
 
-	dev = device_get_binding(DT_LABEL(DT_INST(0, maxim_max6675)));
-	if (dev == NULL) {
-		printf("Could not obtain MAX6675 device\n");
+	if (!device_is_ready(dev)) {
+		printk("sensor: device not ready.\n");
 		return;
 	}
 

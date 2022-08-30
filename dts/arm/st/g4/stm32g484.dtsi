@@ -4,23 +4,5 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/g4/stm32g4.dtsi>
+#include <st/g4/stm32g474.dtsi>
 
-/ {
-	soc {
-		dma1: dma@40020000 {
-			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0 96 0>;
-			dma-requests = <8>;
-		};
-
-		dma2: dma@40020400 {
-			interrupts = <56 0 57 0 58 0 59 0 60 0 97 0 98 0 99 0>;
-			dma-requests = <8>;
-			dma-offset = <8>;
-		};
-
-		dmamux1: dmamux@40020800 {
-			dma-channels = <16>;
-		};
-	};
-};

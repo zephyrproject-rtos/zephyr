@@ -13,6 +13,8 @@ config TFM_BOARD
 	default "nordic_nrf/nrf5340dk_nrf5340_cpuapp" if BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_CPU0
 	default "arm/mps2/an521" if BOARD_MPS2_AN521_CPU0_NS
+	default "arm/mps3/an547" if BOARD_MPS3_AN547
+	default "stm/b_u585i_iot02a" if BOARD_B_U585I_IOT02A
 	default "stm/nucleo_l552ze_q" if BOARD_NUCLEO_L552ZE_Q
 	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
 	default "arm/musca_b1/sse_200" if BOARD_MUSCA_B1
@@ -52,7 +54,7 @@ if BUILD_WITH_TFM
 config TFM_KEY_FILE_S
 	string "Path to private key used to sign secure firmware images."
 	depends on BUILD_WITH_TFM
-	default "${ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m/bl2/ext/mcuboot/root-RSA-3072.pem"
+	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-RSA-3072.pem"
 	help
 	  The path and filename for the .pem file containing the private key
 	  that should be used by the BL2 bootloader when signing secure
@@ -61,7 +63,7 @@ config TFM_KEY_FILE_S
 config TFM_KEY_FILE_NS
 	string "Path to private key used to sign non-secure firmware images."
 	depends on BUILD_WITH_TFM
-	default "${ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m/bl2/ext/mcuboot/root-RSA-3072_1.pem"
+	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-RSA-3072_1.pem"
 	help
 	  The path and filename for the .pem file containing the private key
 	  that should be used by the BL2 bootloader when signing non-secure
@@ -138,13 +140,97 @@ config TFM_ISOLATION_LEVEL
 	  As isolation levels 2 and 3 require PSA_API (TFM_IPC) support,
 	  force level 1 when TFM_IPC is not enabled.
 
+config TFM_ITS_NUM_ASSETS_OVERRIDE
+	bool "Override maximum number of Internal Trusted Storage assets"
+	help
+	  Override the platform's default maximum number of assets to be stored in
+	  Internal Trusted Storage (ITS) with TFM_ITS_NUM_ASSETS.
+
+config TFM_ITS_NUM_ASSETS
+	int "Maximum number of Internal Trusted Storage assets"
+	depends on TFM_ITS_NUM_ASSETS_OVERRIDE
+	default 0
+	help
+	  Maximum number of assets to be stored in Internal Trusted Storage (ITS).
+
+config TFM_ITS_MAX_ASSET_SIZE_OVERRIDE
+	bool "Override maximum Internal Trusted Storage asset size"
+	help
+	  Override the platform's default maximum size of a single asset to be
+	  stored in Internal Trusted Storage (ITS) with TFM_ITS_MAX_ASSET_SIZE.
+
+config TFM_ITS_MAX_ASSET_SIZE
+	int "Maximum Internal Trusted Storage asset size"
+	depends on TFM_ITS_MAX_ASSET_SIZE_OVERRIDE
+	default 0
+	help
+	  Maximum size (in bytes) of a single asset to be stored in Internal Trusted
+	  Storage (ITS).
+
+config TFM_PARTITION_PLATFORM_CUSTOM_REBOOT
+	bool "Use custom reboot handler"
+	depends on TFM_PARTITION_PLATFORM
+	help
+	  Do not include the default zephyr implementation of calling the TF-M
+	  platform reset service.
+	  Instead the application will have to override the weak ARM
+	  implementation of sys_arch_reset().
+
+config TFM_BL2_NOT_SUPPORTED
+	bool
+	help
+	  Hidden option to mark the BL2, the MCUBoot included in TF-M, as not supported.
+	  Platforms that don't use BL2 should select this option.
+
+config TFM_IMAGE_VERSION_S
+	string "Version of the Secure Image"
+	default "0.0.0+0"
+	help
+	  MCUBoot may be configured to prevent rollback prevention based on image
+	  versions of both the secure firmware and non-secure firmware. This sets
+	  the secure firmware's version for rollback prevention.
+
+config TFM_IMAGE_VERSION_NS
+	string "Version of the Non-Secure Image"
+	default "0.0.0+0"
+	help
+	  MCUBoot may be configured to prevent rollback prevention based on image
+	  versions of both the secure firmware and non-secure firmware. This sets
+	  the non-secure firmware's version for rollback prevention.
+
 config TFM_BL2
 	bool "Add MCUboot to TFM"
+	depends on !TFM_BL2_NOT_SUPPORTED
 	default y
 	help
 	  TFM is designed to run with MCUboot in a certain configuration.
 	  This config adds MCUboot to the build - built via TFM's build system.
 
+config TFM_BUILD_NS
+	bool "Build the TF-M Non-Secure application and libraries"
+	help
+	  Instruct the TF-M build system to build the TF-M Non-Secure
+	  application and libraries.
+
+	  This option is intended for testing purposes only, since this is the
+	  easiest way to build the TF-M regression tests application and test
+	  support libraries in the zephyr build system.
+
+config TFM_USE_NS_APP
+	bool "Use the TF-M Non-Secure application"
+	depends on TFM_BUILD_NS
+	help
+	  The TF-M build system can produce multiple executable files.
+	  The main one is the TF-M secure firmware. Optionally the TF-M
+	  non-secure application can be built.
+	  Usually the TF-M non-secure application is not used since the
+	  zephyr application is the non-secure application.
+	  With this option enabled this is reversed and the TF-M non-secure
+	  application is used instead of the Zephyr non-secure application.
+
+	  This option is intended for testing purposes only, since this is the
+	  easiest way to integrate and run the TF-M regression tests in the
+	  zephyr build system.
 if TFM_BL2
 
 config TFM_MCUBOOT_IMAGE_NUMBER
@@ -177,10 +263,16 @@ config TFM_MCUBOOT_PATH_LOCAL
 config TFM_MCUBOOT_PATH_DOWNLOAD
 	bool "TF-M to automatically download MCUboot during build"
 	help
-	  TF-M bulds with BL2 will let the TF-M build to automatically
+	  TF-M builds with BL2 will let the TF-M build to automatically
 	  fetch and check-out the MCUboot version to use in the build.
 
 endchoice
+
+config TFM_MCUBOOT_DATA_SHARING
+	bool "Share app-specific data between TF-M and MCUBoot"
+	help
+	  Add sharing of application specific data using the same
+	  shared data area as for the measured boot.
 
 endif # TFM_BL2
 
@@ -198,12 +290,15 @@ config TFM_REGRESSION_S
 	help
 	  When enabled, this option signifies that the TF-M build includes
 	  the Secure domain regression tests.
+	  The regression tests will be included in the TF-M secure firmware.
 
 config TFM_REGRESSION_NS
-	bool "Use the TF-M Non-Secure Regression test application"
+	bool "TF-M Non-Secure Regression tests"
 	help
-	  When this is enabled, the Zephyr application as a whole will be
-	  replaced with the TF-M Non-Secure Regression test application.
+	  When enabled, this option signifies that the TF-M build includes
+	  the Non-Secure domain regression tests.
+	  The regression tests will be included in the TF-M non-secure
+	  application.
 
 choice TFM_PSA_TEST
 	prompt "Enable a PSA test suite"
@@ -259,10 +354,35 @@ endif # !TFM_BL2
 config TFM_FLASH_MERGED_BINARY
 	bool
 	help
-		This option instructs west flash to program the
-		combined (merged) binary consisting of the TF-M
-		Secure firmware image, optionally, the BL2 image
-		(if building with TFM_BL2 is enabled), and the
-		Non-Secure application firmware.
+	  This option instructs west flash to program the combined (merged)
+	  binary consisting of the TF-M Secure firmware image, optionally, the
+	  BL2 image (if building with TFM_BL2 is enabled), and the Non-Secure
+	  application firmware.
+
+config TFM_LOG_LEVEL_SILENCE
+	bool "TF-M Disable secure logging"
+	help
+	  Set the log level to silence for all TF-M modules (SPM, partition, etc.).
+	  On some platforms this will release the UART from
+	  the secure domain and reduce the uart driver's flash usage.
+
+choice TFM_SPM_LOG_LEVEL
+	prompt "TF-M SPM Log Level" if !TFM_LOG_LEVEL_SILENCE
+	default TFM_SPM_LOG_LEVEL_INFO
+config TFM_SPM_LOG_LEVEL_DEBUG
+	bool "Debug"
+config TFM_SPM_LOG_LEVEL_INFO
+	bool "Info"
+config TFM_SPM_LOG_LEVEL_ERROR
+	bool "Error"
+config TFM_SPM_LOG_LEVEL_SILENCE
+	bool "Off"
+endchoice
+
+config TFM_EXCEPTION_INFO_DUMP
+	bool "TF-M exception info dump"
+	help
+	  On fatal errors in the secure firmware, capture info about the exception.
+	  Print the info if the SPM log level is sufficient.
 
 endif # BUILD_WITH_TFM

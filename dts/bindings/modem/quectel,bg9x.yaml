@@ -8,9 +8,6 @@ compatible: "quectel,bg9x"
 include: uart-device.yaml
 
 properties:
-    label:
-      required: true
-
     mdm-power-gpios:
       type: phandle-array
       required: true

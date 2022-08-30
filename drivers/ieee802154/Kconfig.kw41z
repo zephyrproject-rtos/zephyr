@@ -5,17 +5,11 @@
 
 menuconfig IEEE802154_KW41Z
 	bool "NXP KW41Z Driver support"
-	depends on NETWORKING
+	default y
+	depends on DT_HAS_NXP_KW41Z_IEEE802154_ENABLED
 	select REQUIRES_FULL_LIBC
 
 if IEEE802154_KW41Z
-
-config IEEE802154_KW41Z_DRV_NAME
-	string "NXP KW41Z Driver's name"
-	default "KW41Z"
-	help
-	  This option sets the driver name. Do not change it unless
-	  you know what you are doing.
 
 config IEEE802154_KW41Z_INIT_PRIO
 	int "KW41Z initialization priority"
@@ -25,7 +19,7 @@ config IEEE802154_KW41Z_INIT_PRIO
 	  you know what you are doing. It has to start before the net stack.
 
 config KW41_DBG_TRACE
-	bool "Enabled simplified debug tracing of events"
+	bool "Simplified debug tracing of events"
 	help
 	  The value depends on your debugging needs. This generates an encoded
 	  trace of events without going to debug logging to avoid timing impact

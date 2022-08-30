@@ -5,7 +5,7 @@ description: NXP FlexCAN controller
 
 compatible: "nxp,kinetis-flexcan"
 
-include: can-controller.yaml
+include: ["can-controller.yaml", "pinctrl-device.yaml"]
 
 properties:
     reg:

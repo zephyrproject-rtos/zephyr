@@ -14,25 +14,41 @@ config CPU_CORTEX_M
 	select ARCH_HAS_TRUSTED_EXECUTION if ARM_TRUSTZONE_M
 	select ARCH_HAS_STACK_PROTECTION if (ARM_MPU && !ARMV6_M_ARMV8_M_BASELINE) || CPU_CORTEX_M_HAS_SPLIM
 	select ARCH_HAS_USERSPACE if ARM_MPU
-	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MPU && CPU_HAS_ARM_MPU && CPU_CORTEX_M7
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MPU && CPU_HAS_ARM_MPU && CPU_HAS_DCACHE
 	select ARCH_HAS_RAMFUNC_SUPPORT
 	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	select SWAP_NONATOMIC
 	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	select ARCH_HAS_TIMING_FUNCTIONS if CPU_CORTEX_M_HAS_DWT
 	select ARCH_SUPPORTS_ARCH_HW_INIT
+	select ARCH_HAS_SUSPEND_TO_RAM
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	imply XIP
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
 
-config CPU_CORTEX_R
+config CPU_AARCH32_CORTEX_R
 	bool
 	select CPU_CORTEX
 	select HAS_CMSIS_CORE
+	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_HAS_USERSPACE if ARM_MPU
 	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	help
 	  This option signifies the use of a CPU of the Cortex-R family.
+
+config CPU_AARCH32_CORTEX_A
+	bool
+	select CPU_CORTEX
+	select CPU_HAS_MMU
+	select HAS_CMSIS_CORE
+	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	help
+	  This option signifies the use of a CPU of the Cortex-A family.
 
 config ISA_THUMB2
 	bool
@@ -130,7 +146,7 @@ config RUNTIME_NMI
 	  needed, enable this option and attach it via _NmiHandlerSet().
 
 config PLATFORM_SPECIFIC_INIT
-	bool "Enable platform (SOC) specific startup hook"
+	bool "Platform (SOC) specific startup hook"
 	help
 	  The platform specific initialization code (z_arm_platform_init) is
 	  executed at the beginning of the startup code (__start).
@@ -228,7 +244,7 @@ config ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
 
 config ARM_STORE_EXC_RETURN
 	bool
-	default y if FPU_SHARING || ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	default y if CPU_CORTEX_M && (FPU_SHARING || ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
 	help
 	  Store the EXC_RETURN value when switching threads.
 	  This is needed when switching between threads that differ in either
@@ -241,14 +257,16 @@ choice
 
 config FP_HARDABI
 	bool "Floating point Hard ABI"
-	depends on !BUILD_WITH_TFM
+	# TF-M build system does not build the NS app and libraries correctly with Hard ABI.
+	# This limitation should be removed in the next TF-M synchronization.
+	depends on !TFM_BUILD_NS
+	depends on !(BUILD_WITH_TFM && !TFM_IPC)
 	help
 	  This option selects the Floating point ABI in which hardware floating
 	  point instructions are generated and uses FPU-specific calling
 	  conventions.
-	  Note: the option is disabled for Zephyr builds with TF-M, as TF-M
-	  does not currently support building with Hard ABI, hence linking
-	  Zephyr with TF-M libraries would not be possible.
+
+	  Note: When building with TF-M enabled only the IPC mode is supported.
 
 config FP_SOFTABI
 	bool "Floating point Soft ABI"
@@ -258,7 +276,39 @@ config FP_SOFTABI
 
 endchoice
 
+config FP16
+	bool "Half-precision floating point support"
+	default y
+	help
+	  This option enables the half-precision (16-bit) floating point support
+	  via the `__fp16` (both IEEE and ARM alternative formats) and the
+	  `_Float16` (IEEE format only) types.
+
+choice
+	prompt "FP16 format"
+	default FP16_IEEE
+	depends on FP16
+
+config FP16_IEEE
+	bool "FP16 IEEE format"
+	help
+	  This option selects the IEEE 754-2008 format for FP16.  This format can
+	  represent normalized values in the range of 2^(-14) to 65504.  There are
+	  11 bits of significand precision, approximately 3 decimal digits.
+
+config FP16_ALT
+	bool "FP16 ARM alternative format"
+	help
+	  This option selects the ARM alternative format for FP16.  This
+	  representation is similar to the IEEE 754-2008 format, but does not
+	  support infinites or NaNs. Instead, the range of exponents is extended,
+	  so that this format can represent normalized values in the range of
+	  2^(-14) to 131008.
+
+endchoice
+
 rsource "cortex_m/Kconfig"
 rsource "cortex_a_r/Kconfig"
 
 rsource "mpu/Kconfig"
+rsource "mmu/Kconfig"

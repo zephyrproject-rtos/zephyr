@@ -16,7 +16,7 @@ import textwrap
 import traceback
 
 from west import log
-from build_helpers import find_build_dir, is_zephyr_build, \
+from build_helpers import find_build_dir, is_zephyr_build, load_domains, \
     FIND_BUILD_DIR_DESCRIPTION
 from west.commands import CommandError
 from west.configuration import config
@@ -26,7 +26,7 @@ from zephyr_ext_common import ZEPHYR_SCRIPTS
 
 # Runners depend on edtlib. Make sure the copy in the tree is
 # available to them before trying to import any.
-sys.path.append(str(ZEPHYR_SCRIPTS / 'dts' / 'python-devicetree' / 'src'))
+sys.path.insert(0, str(ZEPHYR_SCRIPTS / 'dts' / 'python-devicetree' / 'src'))
 
 from runners import get_runner_cls, ZephyrBinaryRunner, MissingProgram
 from runners.core import RunnerConfig
@@ -104,6 +104,8 @@ def add_parser_common(command, parser_adder=None, parser=None):
                        help='override default runner from --build-dir')
     group.add_argument('--skip-rebuild', action='store_true',
                        help='do not refresh cmake dependencies first')
+    group.add_argument('--domain', action='append',
+                       help='execute runner only for given domain')
 
     group = parser.add_argument_group(
         'runner configuration',
@@ -140,12 +142,12 @@ def add_parser_common(command, parser_adder=None, parser=None):
     group.add_argument('--gdb', help='path to GDB')
     group.add_argument('--openocd', help='path to openocd')
     group.add_argument(
-        '--openocd-search', metavar='DIR',
+        '--openocd-search', metavar='DIR', action='append',
         help='path to add to openocd search path, if applicable')
 
     return parser
 
-def do_run_common(command, user_args, user_runner_args):
+def do_run_common(command, user_args, user_runner_args, domains=None):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
 
@@ -153,12 +155,34 @@ def do_run_common(command, user_args, user_runner_args):
         dump_context(command, user_args, user_runner_args)
         return
 
-    command_name = command.name
     build_dir = get_build_dir(user_args)
-    cache = load_cmake_cache(build_dir, user_args)
-    board = cache['CACHED_BOARD']
     if not user_args.skip_rebuild:
         rebuild(command, build_dir, user_args)
+
+    if domains is None:
+        if user_args.domain is None:
+            # No domains are passed down and no domains specified by the user.
+            # So default domain will be used.
+            domains = [load_domains(build_dir).get_default_domain()]
+        else:
+            # No domains are passed down, but user has specified domains to use.
+            # Get the user specified domains.
+            domains = load_domains(build_dir).get_domains(user_args.domain)
+
+    if len(domains) > 1 and len(user_runner_args) > 1:
+        log.wrn("Specifying runner options for multiple domains is experimental.\n"
+                "If problems are experienced, please specify a single domain "
+                "using '--domain <domain>'")
+
+    for d in domains:
+        do_run_common_image(command, user_args, user_runner_args, d.build_dir)
+
+def do_run_common_image(command, user_args, user_runner_args, build_dir=None):
+    command_name = command.name
+    if build_dir is None:
+        build_dir = get_build_dir(user_args)
+    cache = load_cmake_cache(build_dir, user_args)
+    board = cache['CACHED_BOARD']
 
     # Load runners.yaml.
     yaml_path = runners_yaml_path(build_dir, board)
@@ -173,7 +197,9 @@ def do_run_common(command, user_args, user_runner_args):
     # Set up runner logging to delegate to west.log commands.
     logger = logging.getLogger('runners')
     logger.setLevel(LOG_LEVEL)
-    logger.addHandler(WestLogHandler())
+    if not logger.hasHandlers():
+        # Only add a runners log handler if none has been added already.
+        logger.addHandler(WestLogHandler())
 
     # If the user passed -- to force the parent argument parser to stop
     # parsing, it will show up here, and needs to be filtered out.
@@ -356,8 +382,8 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
 
         return None
 
-    def config(attr):
-        return getattr(args, attr, None) or yaml_config.get(attr)
+    def config(attr, default=None):
+        return getattr(args, attr, None) or yaml_config.get(attr, default)
 
     return RunnerConfig(build_dir,
                         yaml_config['board_dir'],
@@ -366,7 +392,7 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
                         output_file('bin'),
                         config('gdb'),
                         config('openocd'),
-                        config('openocd_search'))
+                        config('openocd_search', []))
 
 def dump_traceback():
     # Save the current exception to a file and return its path.

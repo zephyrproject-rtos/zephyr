@@ -8,14 +8,14 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <shared_irq.h>
-#include <init.h>
-#include <sys/sys_io.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/shared_irq.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/sys_io.h>
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/interrupt_controller/ioapic.h>
+#include <zephyr/drivers/interrupt_controller/ioapic.h>
 #endif
 
 typedef void (*shared_irq_config_irq_t)(void);

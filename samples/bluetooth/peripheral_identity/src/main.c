@@ -6,9 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-int init_peripheral(void);
+#include <stdint.h>
+
+int init_peripheral(uint8_t iterations);
 
 void main(void)
 {
-	(void)init_peripheral();
+	(void)init_peripheral(CONFIG_SAMPLE_CONN_ITERATIONS);
 }

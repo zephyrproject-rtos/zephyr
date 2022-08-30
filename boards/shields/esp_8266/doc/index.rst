@@ -15,8 +15,7 @@ to existing devices.
 The simplest module that uses ESP-8266 is ESP-01. This is a generic shield
 configuration that allows any ESP-8266 module variation including ESP-12E/F.
 
-.. image:: ./esp-01.jpeg
-   :width: 634px
+.. image:: esp-01.jpg
    :align: center
    :alt: ESP-01
 
@@ -69,8 +68,7 @@ with 1MB flash using Boot Mode and with Flash size 8Mbit: 512KB + 512KB. The
 ESP8266 AT Bin 1.7.x available requires the following partition configuration
 to works:
 
-.. image:: ./esp_at_173.png
-   :width: 678px
+.. image:: esp_at_173.jpg
    :align: center
    :alt: ESP8266 AT Bin V1.7.3
 

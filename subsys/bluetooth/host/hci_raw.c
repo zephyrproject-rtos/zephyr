@@ -7,13 +7,14 @@
  */
 
 #include <errno.h>
-#include <sys/atomic.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <drivers/bluetooth/hci_driver.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/hci_raw.h>
-#include <bluetooth/l2cap.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/iso.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_hci_raw
@@ -37,16 +38,15 @@ static uint8_t raw_mode = BT_HCI_RAW_MODE_H4;
 static uint8_t raw_mode;
 #endif
 
-#define BT_BUF_RX_COUNT MAX(CONFIG_BT_BUF_EVT_RX_COUNT, CONFIG_BT_BUF_ACL_RX_COUNT)
 NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT,
-			  BT_BUF_RX_SIZE, NULL);
+			  BT_BUF_RX_SIZE, 8, NULL);
 NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_BUF_CMD_TX_COUNT,
-			  BT_BUF_CMD_SIZE(CONFIG_BT_BUF_CMD_TX_SIZE), NULL);
+			  BT_BUF_CMD_SIZE(CONFIG_BT_BUF_CMD_TX_SIZE), 8, NULL);
 NET_BUF_POOL_FIXED_DEFINE(hci_acl_pool, CONFIG_BT_BUF_ACL_TX_COUNT,
-			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE), NULL);
+			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE), 8, NULL);
 #if defined(CONFIG_BT_ISO)
 NET_BUF_POOL_FIXED_DEFINE(hci_iso_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  CONFIG_BT_ISO_TX_MTU, NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 #endif /* CONFIG_BT_ISO */
 
 struct bt_dev_raw bt_dev;
@@ -159,6 +159,11 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 	bt_buf_set_type(buf, type);
 
 	if (data && size) {
+		if (net_buf_tailroom(buf) < size) {
+			net_buf_unref(buf);
+			return NULL;
+		}
+
 		net_buf_add_mem(buf, data, size);
 	}
 
@@ -297,6 +302,10 @@ int bt_send(struct net_buf *buf)
 {
 	BT_DBG("buf %p len %u", buf, buf->len);
 
+	if (buf->len == 0) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
 	if (IS_ENABLED(CONFIG_BT_HCI_RAW_CMD_EXT) &&
@@ -361,10 +370,6 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 	if (!bt_dev.drv) {
 		BT_ERR("No HCI driver registered");
 		return -ENODEV;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
-		bt_hci_ecc_init();
 	}
 
 	err = drv->open();

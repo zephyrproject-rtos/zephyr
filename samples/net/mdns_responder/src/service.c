@@ -5,15 +5,15 @@
  */
 
 #include <errno.h>
-#include <net/dns_sd.h>
-#include <net/socket.h>
-#include <posix/netinet/in.h>
+#include <zephyr/net/dns_sd.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/posix/netinet/in.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mdns_echo_service, LOG_LEVEL_DBG);
 
 /* A default port of 0 causes bind(2) to request an ephemeral port */
@@ -99,7 +99,7 @@ void service(void)
 
 	inet_ntop(server_addr.sa_family, addrp, addrstr, sizeof(addrstr));
 	NET_DBG("bound to [%s]:%u",
-		log_strdup(addrstr), ntohs(*portp));
+		addrstr, ntohs(*portp));
 
 	r = listen(server_fd, 1);
 	if (r == -1) {
@@ -120,7 +120,7 @@ void service(void)
 
 		inet_ntop(server_addr.sa_family, addrp, addrstr, sizeof(addrstr));
 		NET_DBG("accepted connection from [%s]:%u",
-			log_strdup(addrstr), ntohs(*portp));
+			addrstr, ntohs(*portp));
 
 		/* send a banner */
 		r = welcome(client_fd);

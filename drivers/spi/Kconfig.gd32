@@ -1,0 +1,19 @@
+# Copyright (c) 2021 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_GD32
+	bool "Gigadevice GD32 SPI driver"
+	default y
+	depends on DT_HAS_GD_GD32_SPI_ENABLED
+	help
+	  Enables Gigadevice GD32 SPI driver.
+
+if SPI_GD32
+
+config SPI_GD32_INTERRUPT
+	bool "GD32 MCU SPI Interrupt Support"
+	default y if SPI_ASYNC
+	help
+	  Enable the interrupt driven mode for SPI instances
+
+endif # SPI_GD32

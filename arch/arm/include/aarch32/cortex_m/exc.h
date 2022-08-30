@@ -14,7 +14,7 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_M_EXC_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_M_EXC_H_
 
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 
 #ifdef _ASMLANGUAGE
 
@@ -22,9 +22,9 @@
 
 #else
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <arch/arm/aarch32/exc.h>
-#include <irq_offload.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/exc.h>
+#include <zephyr/irq_offload.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,8 +93,6 @@ static ALWAYS_INLINE bool z_arm_preempted_thread_in_user_mode(const z_arch_esf_t
  * Set PendSV priority to lowest possible.
  *
  * Enable fault exceptions.
- *
- * @return N/A
  */
 static ALWAYS_INLINE void z_arm_exc_setup(void)
 {
@@ -167,8 +165,6 @@ static ALWAYS_INLINE void z_arm_exc_setup(void)
  * @brief Clear Fault exceptions
  *
  * Clear out exceptions for Mem, Bus, Usage and Hard Faults
- *
- * @return N/A
  */
 static ALWAYS_INLINE void z_arm_clear_faults(void)
 {

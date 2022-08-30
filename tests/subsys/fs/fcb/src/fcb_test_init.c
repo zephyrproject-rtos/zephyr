@@ -7,7 +7,7 @@
 
 #include "fcb_test.h"
 
-void test_fcb_init(void)
+ZTEST(fcb_test_without_set, test_fcb_init)
 {
 	int rc;
 	struct fcb *fcb;

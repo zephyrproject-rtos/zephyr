@@ -5,7 +5,7 @@
  */
 
 #include "starfive_jh7100_clk.dtsi"
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	#address-cells = <2>;
@@ -40,8 +40,9 @@
 			status = "okay";
 			tlb-split;
 			cpu0intctrl: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
@@ -68,8 +69,9 @@
 			status = "okay";
 			tlb-split;
 			cpu1intctrl: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
@@ -114,18 +116,16 @@
 		};
 
 		clint: clint@2000000 {
-			#interrupt-cells = <1>;
-			interrupt-controller;
-			compatible = "riscv,clint0";
+			compatible = "starfive,jh7100-clint", "sifive,clint0";
 			interrupts-extended = <&cpu0intctrl 3 &cpu0intctrl 7
-					       &cpu1intctrl 3 &cpu1intctrl 7 >;
+					       &cpu1intctrl 3 &cpu1intctrl 7>;
 			reg = <0x0 0x2000000 0x0 0x10000>;
-			reg-names = "control";
 		};
 
 		plic: plic@c000000 {
-			#interrupt-cells = <2>;
 			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&cpu0intctrl 11 &cpu0intctrl 9
 					       &cpu1intctrl 11 &cpu1intctrl 9 >;
@@ -141,7 +141,6 @@
 			compatible = "ns16550", "snps,dw-apb-uart";
 			interrupt-parent = <&plic>;
 			interrupts = <73 1>;
-			label = "UART_3";
 			reg = <0x0 0x12440000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&uartclk>, <&apb2clk>;
@@ -155,7 +154,6 @@
 			compatible = "ns16550", "snps,dw-apb-uart";
 			interrupt-parent = <&plic>;
 			interrupts = <72 1>;
-			label = "UART_2";
 			reg = <0x0 0x12430000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&uartclk>, <&apb2clk>;
@@ -169,7 +167,6 @@
 			compatible = "ns16550", "snps,dw-apb-uart";
 			interrupt-parent = <&plic>;
 			interrupts = <93 1>;
-			label = "UART_1";
 			reg = <0x0 0x11880000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&hs_uartclk>, <&apb1clk>;
@@ -183,7 +180,6 @@
 			compatible = "ns16550", "snps,dw-apb-uart";
 			interrupt-parent = <&plic>;
 			interrupts = <92 1>;
-			label = "UART_0";
 			reg = <0x0 0x11870000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&hs_uartclk>, <&apb1clk>;

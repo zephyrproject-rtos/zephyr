@@ -5,18 +5,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "bmi160.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(BMI160, CONFIG_SENSOR_LOG_LEVEL);
 
 static void bmi160_handle_anymotion(const struct device *dev)
 {
-	struct bmi160_data *data = to_data(dev);
+	struct bmi160_data *data = dev->data;
 	struct sensor_trigger anym_trigger = {
 		.type = SENSOR_TRIG_DELTA,
 		.chan = SENSOR_CHAN_ACCEL_XYZ,
@@ -29,7 +29,7 @@ static void bmi160_handle_anymotion(const struct device *dev)
 
 static void bmi160_handle_drdy(const struct device *dev, uint8_t status)
 {
-	struct bmi160_data *data = to_data(dev);
+	struct bmi160_data *data = dev->data;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
@@ -121,7 +121,7 @@ static int bmi160_trigger_drdy_set(const struct device *dev,
 				   enum sensor_channel chan,
 				   sensor_trigger_handler_t handler)
 {
-	struct bmi160_data *data = to_data(dev);
+	struct bmi160_data *data = dev->data;
 	uint8_t drdy_en = 0U;
 
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
@@ -156,7 +156,7 @@ static int bmi160_trigger_drdy_set(const struct device *dev,
 static int bmi160_trigger_anym_set(const struct device *dev,
 				   sensor_trigger_handler_t handler)
 {
-	struct bmi160_data *data = to_data(dev);
+	struct bmi160_data *data = dev->data;
 	uint8_t anym_en = 0U;
 
 	data->handler_anymotion = handler;
@@ -265,12 +265,12 @@ int bmi160_trigger_set(const struct device *dev,
 
 int bmi160_trigger_mode_init(const struct device *dev)
 {
-	struct bmi160_data *data = to_data(dev);
-	const struct bmi160_cfg *cfg = to_config(dev);
+	struct bmi160_data *data = dev->data;
+	const struct bmi160_cfg *cfg = dev->config;
+	int ret;
 
-	data->gpio = device_get_binding((char *)cfg->gpio_port);
-	if (!data->gpio) {
-		LOG_DBG("Gpio controller %s not found.", cfg->gpio_port);
+	if (!device_is_ready(cfg->interrupt.port)) {
+		LOG_DBG("GPIO port %s not ready", cfg->interrupt.port->name);
 		return -EINVAL;
 	}
 
@@ -284,7 +284,7 @@ int bmi160_trigger_mode_init(const struct device *dev)
 			(k_thread_entry_t)bmi160_thread_main,
 			data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BMI160_THREAD_PRIORITY),
-			 0, K_NO_WAIT);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = bmi160_work_handler;
 #endif
@@ -295,16 +295,25 @@ int bmi160_trigger_mode_init(const struct device *dev)
 		return -EIO;
 	}
 
-	gpio_pin_configure(data->gpio, cfg->int_pin,
-			   GPIO_INPUT | cfg->int_flags);
+	ret = gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	gpio_init_callback(&data->gpio_cb,
 			   bmi160_gpio_callback,
-			   BIT(cfg->int_pin));
+			   BIT(cfg->interrupt.pin));
 
-	gpio_add_callback(data->gpio, &data->gpio_cb);
-	gpio_pin_interrupt_configure(data->gpio, cfg->int_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_add_callback(cfg->interrupt.port, &data->gpio_cb);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
+					      GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return bmi160_byte_write(dev, BMI160_REG_INT_OUT_CTRL,
 				 BMI160_INT1_OUT_EN | BMI160_INT1_EDGE_CTRL);

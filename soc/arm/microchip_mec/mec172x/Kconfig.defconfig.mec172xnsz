@@ -8,15 +8,19 @@ if SOC_MEC172X_NSZ
 config SOC
 	default "mec172xnsz"
 
-config UART_NS16550
-	default y
-	depends on SERIAL
-
 config GPIO
 	default y
 
-config GPIO_XEC_V2
+config PINMUX_XEC
 	default y
-	depends on GPIO
+	depends on PINMUX
+
+config ESPI_XEC_V2
+	default y
+	depends on ESPI
+
+config EEPROM_XEC
+	default y
+	depends on EEPROM
 
 endif # SOC_MEC172X_NSZ

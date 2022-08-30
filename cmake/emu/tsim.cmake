@@ -2,7 +2,7 @@
 
 set(TSIM_FLAGS -e run -e exit)
 
-add_custom_target(run
+add_custom_target(run_tsim
   COMMAND
   ${TSIM}
   ${TSIM_SYS}

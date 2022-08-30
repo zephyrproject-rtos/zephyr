@@ -71,7 +71,6 @@ void mailbox_put(uint32_t size, int count, uint32_t *time);
  *
  * @brief Mailbox transfer speed test
  *
- * @return N/A
  */
 void mailbox_test(void)
 {
@@ -125,7 +124,6 @@ void mailbox_test(void)
  * @param count   Number of data chunks.
  * @param time    The total time.
  *
- * @return N/A
  */
 void mailbox_put(uint32_t size, int count, uint32_t *time)
 {

@@ -8,11 +8,6 @@ if BOARD_NUCLEO_WB55RG
 config BOARD
 	default "nucleo_wb55rg"
 
-choice STM32_LPTIM_CLOCK
-	default STM32_LPTIM_CLOCK_LSE
-	depends on STM32_LPTIM_TIMER
-endchoice
-
 choice BT_HCI_BUS_TYPE
 	default BT_STM32_IPM
 	depends on BT

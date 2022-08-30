@@ -10,18 +10,75 @@
 # Set Zephyr base to environment setting.
 # It will be empty if not set in environment.
 
+# Internal Zephyr CMake package message macro.
+#
+# This macro is only intended to be used within the Zephyr CMake package.
+# The function `find_package()` supports an optional QUIET argument, and to
+# honor that argument, the package_message() macro will not print messages when
+# said flag has been given.
+#
+# Arguments to zephyr_package_message() are identical to regular CMake message()
+# function.
+macro(zephyr_package_message)
+  if(NOT Zephyr_FIND_QUIETLY)
+    message(${ARGN})
+  endif()
+endmacro()
+
 macro(include_boilerplate location)
+  set(Zephyr_DIR ${ZEPHYR_BASE}/share/zephyr-package/cmake CACHE PATH
+      "The directory containing a CMake configuration file for Zephyr." FORCE
+  )
+  list(PREPEND CMAKE_MODULE_PATH ${ZEPHYR_BASE}/cmake/modules)
   if(ZEPHYR_UNITTEST)
+    zephyr_package_message(DEPRECATION "The ZephyrUnittest CMake package has been deprecated.\n"
+                           "ZephyrUnittest has been replaced with Zephyr CMake module 'unittest' \n"
+                           "and can be loaded as: 'find_package(Zephyr COMPONENTS unittest)'"
+    )
     set(ZephyrUnittest_FOUND True)
-    set(BOILERPLATE_FILE ${ZEPHYR_BASE}/subsys/testsuite/unittest.cmake)
+    set(Zephyr_FIND_COMPONENTS unittest)
   else()
     set(Zephyr_FOUND True)
-    set(BOILERPLATE_FILE ${ZEPHYR_BASE}/cmake/app/boilerplate.cmake)
   endif()
 
+  if(NOT DEFINED APPLICATION_SOURCE_DIR)
+    set(APPLICATION_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH
+        "Application Source Directory"
+    )
+  endif()
+
+  if(NOT DEFINED APPLICATION_BINARY_DIR)
+    set(APPLICATION_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH
+        "Application Binary Directory"
+    )
+  endif()
+
+  set(__build_dir ${APPLICATION_BINARY_DIR}/zephyr)
+  set(PROJECT_BINARY_DIR ${__build_dir})
+
   if(NOT NO_BOILERPLATE)
-    message("Including boilerplate (${location}): ${BOILERPLATE_FILE}")
-    include(${BOILERPLATE_FILE} NO_POLICY_SCOPE)
+    list(LENGTH Zephyr_FIND_COMPONENTS components_length)
+    # The module messages are intentionally higher than STATUS to avoid the -- prefix
+    # and make them more visible to users. This does result in them being output
+    # to stderr, but that is an implementation detail of cmake.
+    if(components_length EQUAL 0)
+      zephyr_package_message(NOTICE "Loading Zephyr default modules (${location}).")
+      include(zephyr_default NO_POLICY_SCOPE)
+    else()
+      string(JOIN " " msg_components ${Zephyr_FIND_COMPONENTS})
+      zephyr_package_message(NOTICE "Loading Zephyr module(s) (${location}): ${msg_components}")
+      foreach(component ${Zephyr_FIND_COMPONENTS})
+        if(${component} MATCHES "^\([^:]*\):\(.*\)$")
+          string(REPLACE "," ";" SUB_COMPONENTS ${CMAKE_MATCH_2})
+          set(component ${CMAKE_MATCH_1})
+        endif()
+        include(${component})
+      endforeach()
+    endif()
+  else()
+    zephyr_package_message(DEPRECATION "The NO_BOILERPLATE setting has been deprecated.\n"
+                           "Please use: 'find_package(Zephyr COMPONENTS <components>)'"
+    )
   endif()
 endmacro()
 
@@ -77,8 +134,8 @@ if(NOT IS_INCLUDED)
     # This check works the following way.
     # CMake finds packages will look all packages registered in the user package registry.
     # As this code is processed inside registered packages, we simply test if another package has a
-    # comon path with the current sample.
-    # and if so, we will retrun here, and let CMake call into the other registered package for real
+    # common path with the current sample.
+    # and if so, we will return here, and let CMake call into the other registered package for real
     # version checking.
     check_zephyr_package(CURRENT_WORKSPACE_DIR ${CURRENT_WORKSPACE_DIR})
 

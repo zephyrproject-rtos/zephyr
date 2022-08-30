@@ -9,10 +9,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <sys/__assert.h>
-#include <device.h>
-#include <toolchain.h>
-#include <drivers/gpio.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/device.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/drivers/gpio.h>
 
 #include <hal/nrf_gpio.h>
 #include <nrf_802154_sl_coex.h>
@@ -56,13 +56,15 @@ void nrf_802154_gpiote_init(void)
 					GPIO_PULL_DOWN;
 
 #if DT_NODE_EXISTS(DT_NODELABEL(gpio1))
-		dev = device_get_binding(use_port_1 ?
-					 DT_LABEL(DT_NODELABEL(gpio1)) :
-					 DT_LABEL(DT_NODELABEL(gpio0)));
+		if (use_port_1) {
+			dev = DEVICE_DT_GET(DT_NODELABEL(gpio1));
+		} else {
+			dev = DEVICE_DT_GET(DT_NODELABEL(gpio0));
+		}
 #else
-		dev = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
+		dev = DEVICE_DT_GET(DT_NODELABEL(gpio0));
 #endif
-		__ASSERT_NO_MSG(dev != NULL);
+		__ASSERT_NO_MSG(device_is_ready(dev));
 
 		gpio_pin_configure(dev, pin_number, GPIO_INPUT | pull_up_down);
 

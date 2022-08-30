@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <storage/flash_map.h>
-#include <dfu/mcuboot.h>
-#include <drivers/flash.h>
+#include <zephyr/ztest.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/dfu/mcuboot.h>
+#include <zephyr/drivers/flash.h>
 
 #define BOOT_MAGIC_VAL_W0 0xf395c277
 #define BOOT_MAGIC_VAL_W1 0x7fefd260
@@ -61,7 +61,7 @@ static void _test_request_upgrade_n(uint8_t fa_id, int img_index, int confirmed)
 	}
 }
 
-void test_request_upgrade_multi(void)
+ZTEST(mcuboot_multi, test_request_upgrade_multi)
 {
 	_test_request_upgrade_n(FLASH_AREA_ID(image_1), 0, 0);
 	_test_request_upgrade_n(FLASH_AREA_ID(image_3), 1, 1);
@@ -115,16 +115,10 @@ static void _test_write_confirm_n(uint8_t fa_id, int img_index)
 	zassert_equal(1, readout[0] & 0xff, "confirmation error");
 }
 
-void test_write_confirm_multi(void)
+ZTEST(mcuboot_multi, test_write_confirm_multi)
 {
 	_test_write_confirm_n(FLASH_AREA_ID(image_0), 0);
 	_test_write_confirm_n(FLASH_AREA_ID(image_2), 1);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_mcuboot_interface,
-			 ztest_unit_test(test_request_upgrade_multi),
-			 ztest_unit_test(test_write_confirm_multi));
-	ztest_run_test_suite(test_mcuboot_interface);
-}
+ZTEST_SUITE(mcuboot_multi, NULL, NULL, NULL, NULL, NULL);

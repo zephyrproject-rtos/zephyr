@@ -1,0 +1,16 @@
+#  ADC CMP NPCX driver configuration options
+
+# Copyright (c) 2022 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if ADC_NPCX
+
+config ADC_CMP_NPCX
+	bool "Nuvoton NPCX ADC threshold detection interruption"
+	default y
+	depends on DT_HAS_NUVOTON_ADC_CMP_ENABLED
+	help
+	  This option enables threshold interruption using sensor
+	  trigger API.
+
+endif # ADC_NPCX

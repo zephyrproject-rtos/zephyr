@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <kernel.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <cmsis_os2.h>
 
 #define STACKSZ         CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE

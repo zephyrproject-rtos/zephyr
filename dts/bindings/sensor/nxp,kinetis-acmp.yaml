@@ -5,13 +5,10 @@ description: NXP Kinetis Analog Comparator (ACMP)
 
 compatible: "nxp,kinetis-acmp"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
     interrupts:
-      required: true
-
-    label:
       required: true
 
     reg:

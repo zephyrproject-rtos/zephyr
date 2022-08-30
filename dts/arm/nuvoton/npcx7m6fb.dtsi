@@ -21,7 +21,25 @@
 		reg = <0x200C0000 DT_SIZE_K(62)>;
 	};
 
+	/* RAM space used by Booter */
+	bootloader_ram: memory@200cf800 {
+		compatible = "mmio-sram";
+		reg = <0x200CF800 DT_SIZE_K(2)>;
+	};
+
 	soc-id {
 		device-id = <0x21>;
+	};
+};
+
+&spi_fiu0 {
+	int_flash: w25q80@0 {
+		compatible ="jedec,spi-nor";
+		/* 8388608 bits = 1 Mbytes */
+		size = <0x800000>;
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		status = "okay";
+		jedec-id = [ef 40 14];
 	};
 };

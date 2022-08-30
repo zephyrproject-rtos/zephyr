@@ -1,5 +1,5 @@
 tests:
-  drivers.i2c:
+  drivers.i2c.api:
     depends_on: i2c
     tags: drivers i2c
     harness: sensor

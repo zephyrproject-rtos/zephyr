@@ -1,33 +1,30 @@
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2016-2021 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT st_hts221
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+
 #include "hts221.h"
 
-#if HTS221_TRIGGER_ENABLED
 LOG_MODULE_DECLARE(HTS221, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline void setup_drdy(const struct device *dev,
 			      bool enable)
 {
-	struct hts221_data *data = dev->data;
 	const struct hts221_config *cfg = dev->config;
 	unsigned int flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
 
-	gpio_pin_interrupt_configure(data->drdy_dev, cfg->drdy_pin, flags);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy, flags);
 }
 
 static inline void handle_drdy(const struct device *dev)
@@ -79,7 +76,7 @@ int hts221_trigger_set(const struct device *dev,
 	/* If DRDY is active we probably won't get the rising edge, so
 	 * invoke the callback manually.
 	 */
-	if (gpio_pin_get(data->drdy_dev, cfg->drdy_pin) > 0) {
+	if (gpio_pin_get_dt(&cfg->gpio_drdy) > 0) {
 		handle_drdy(dev);
 	}
 
@@ -121,33 +118,44 @@ int hts221_init_interrupt(const struct device *dev)
 {
 	struct hts221_data *data = dev->data;
 	const struct hts221_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	int status;
+
+	if (cfg->gpio_drdy.port == NULL) {
+		LOG_DBG("gpio_drdy not defined in DT");
+		return 0;
+	}
+
+	if (!device_is_ready(cfg->gpio_drdy.port)) {
+		LOG_ERR("device %s is not ready", cfg->gpio_drdy.port->name);
+		return -ENODEV;
+	}
 
 	data->dev = dev;
 
 	/* setup data ready gpio interrupt */
-	data->drdy_dev = device_get_binding(cfg->drdy_controller);
-	if (data->drdy_dev == NULL) {
-		LOG_ERR("Cannot get pointer to %s device.",
-			cfg->drdy_controller);
-		return -EINVAL;
+	status = gpio_pin_configure_dt(&cfg->gpio_drdy, GPIO_INPUT);
+	if (status < 0) {
+		LOG_ERR("Could not configure %s.%02u",
+			cfg->gpio_drdy.port->name, cfg->gpio_drdy.pin);
+		return status;
 	}
 
-	gpio_pin_configure(data->drdy_dev, cfg->drdy_pin,
-			   GPIO_INPUT | cfg->drdy_flags);
+	gpio_init_callback(&data->drdy_cb,
+			   hts221_drdy_callback,
+			   BIT(cfg->gpio_drdy.pin));
 
-	gpio_init_callback(&data->drdy_cb, hts221_drdy_callback,
-			   BIT(cfg->drdy_pin));
-
-	if (gpio_add_callback(data->drdy_dev, &data->drdy_cb) < 0) {
+	status = gpio_add_callback(cfg->gpio_drdy.port, &data->drdy_cb);
+	if (status < 0) {
 		LOG_ERR("Could not set gpio callback.");
-		return -EIO;
+		return status;
 	}
 
 	/* enable data-ready interrupt */
-	if (i2c_reg_write_byte(data->i2c, cfg->i2c_addr,
-			       HTS221_REG_CTRL3, HTS221_DRDY_EN) < 0) {
+	status = hts221_drdy_on_int_set(ctx, 1);
+	if (status < 0) {
 		LOG_ERR("Could not enable data-ready interrupt.");
-		return -EIO;
+		return status;
 	}
 
 #if defined(CONFIG_HTS221_TRIGGER_OWN_THREAD)
@@ -166,4 +174,3 @@ int hts221_init_interrupt(const struct device *dev)
 
 	return 0;
 }
-#endif /* HTS221_TRIGGER_ENABLED */

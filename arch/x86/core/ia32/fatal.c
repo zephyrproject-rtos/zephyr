@@ -9,17 +9,17 @@
  * @brief Kernel fatal error handler
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <drivers/interrupt_controller/sysapic.h>
-#include <arch/x86/ia32/segmentation.h>
-#include <arch/syscall.h>
+#include <zephyr/drivers/interrupt_controller/sysapic.h>
+#include <zephyr/arch/x86/ia32/segmentation.h>
+#include <zephyr/arch/syscall.h>
 #include <ia32/exception.h>
 #include <inttypes.h>
-#include <exc_handle.h>
-#include <logging/log.h>
+#include <zephyr/exc_handle.h>
+#include <zephyr/logging/log.h>
 #include <x86_mmu.h>
-#include <sys/mem_manage.h>
+#include <zephyr/sys/mem_manage.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 

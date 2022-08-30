@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /*
@@ -53,7 +53,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  *
  * HOW TO USE
  *
- * When invesetigating a crashed program, the first things to look
+ * When investigating a crashed program, the first things to look
  * at is typically the tt, pc and sp (o6). You can lookup the pc
  * in the assembly list file or use addr2line. In the listing, the
  * register values in the table above can be used. The linker map
@@ -68,7 +68,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  * g7 is the TLS pointer if enabled. A SAVE instruction decreases
  * the current window pointer (psr bits 4..0) which results in %o
  * registers becoming %i registers and a new set of %l registers
- * appear. RESTORE does the oppposite.
+ * appear. RESTORE does the opposite.
  */
 
 
@@ -85,7 +85,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  *
  * When printing the registers, we get the "local" and "in"
  * registers from the ABI stack save area, while the "out" and
- * "global" registares are taken from the exception stack frame
+ * "global" registers are taken from the exception stack frame
  * generated in the fault trap entry.
  */
 struct savearea {

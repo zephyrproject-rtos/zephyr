@@ -7,7 +7,7 @@
 #ifndef SRC_MOCK_BACKEND_H__
 #define SRC_MOCK_BACKEND_H__
 
-#include <logging/log_backend.h>
+#include <zephyr/logging/log_backend.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +34,11 @@ struct mock_log_backend {
 	int msg_proc_idx;
 	int exp_drop_cnt;
 	int drop_cnt;
+
+#if defined(CONFIG_LOG_MODE_DEFERRED) && \
+	defined(CONFIG_LOG_PROCESS_THREAD)
+	bool evt_notified;
+#endif
 };
 
 void mock_log_backend_reset(const struct log_backend *backend);

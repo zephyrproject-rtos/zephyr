@@ -9,13 +9,13 @@
  * @brief Test log message
  */
 
-#include <sys/mpsc_pbuf.h>
+#include <zephyr/sys/mpsc_pbuf.h>
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <stdbool.h>
-#include <zephyr.h>
-#include <ztest.h>
-#include <random/rand32.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/random/rand32.h>
 
 #define PUT_EXT_LEN \
 	((sizeof(union mpsc_pbuf_generic) + sizeof(void *)) / sizeof(uint32_t))
@@ -44,7 +44,7 @@ union test_item {
 	union mpsc_pbuf_generic item;
 };
 
-static uint32_t get_wlen(union mpsc_pbuf_generic *item)
+static uint32_t get_wlen(const union mpsc_pbuf_generic *item)
 {
 	union test_item *t_item = (union test_item *)item;
 
@@ -55,7 +55,7 @@ static uint32_t drop_cnt;
 static uintptr_t exp_dropped_data[10];
 static uint32_t exp_dropped_len[10];
 
-static void drop(struct mpsc_pbuf_buffer *buffer, union mpsc_pbuf_generic *item)
+static void drop(const struct mpsc_pbuf_buffer *buffer, const union mpsc_pbuf_generic *item)
 {
 	struct test_data_var *packet = (struct test_data_var *)item;
 
@@ -128,7 +128,7 @@ void item_put_no_overwrite(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_item_put_no_overwrite(void)
+ZTEST(log_buffer, test_item_put_no_overwrite)
 {
 	item_put_no_overwrite(true);
 	item_put_no_overwrite(false);
@@ -154,7 +154,7 @@ void item_put_overwrite(bool pow2)
 			"Unexpected number of dropped messages: %d", drop_cnt);
 }
 
-void test_item_put_overwrite(void)
+ZTEST(log_buffer, test_item_put_overwrite)
 {
 	item_put_overwrite(true);
 	item_put_overwrite(false);
@@ -199,7 +199,7 @@ void item_put_saturate(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_item_put_saturate(void)
+ZTEST(log_buffer, test_item_put_saturate)
 {
 	item_put_saturate(true);
 	item_put_saturate(false);
@@ -240,7 +240,7 @@ void benchmark_item_put(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_benchmark_item_put(void)
+ZTEST(log_buffer, test_benchmark_item_put)
 {
 	benchmark_item_put(true);
 	benchmark_item_put(false);
@@ -278,7 +278,7 @@ void item_put_ext_no_overwrite(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_item_put_ext_no_overwrite(void)
+ZTEST(log_buffer, test_item_put_ext_no_overwrite)
 {
 	item_put_ext_no_overwrite(true);
 	item_put_ext_no_overwrite(false);
@@ -316,7 +316,7 @@ void item_put_word_ext_overwrite(bool pow2)
 			"Unexpected number of dropped messages: %d", drop_cnt);
 }
 
-void test_item_put_word_ext_overwrite(void)
+ZTEST(log_buffer, test_item_put_word_ext_overwrite)
 {
 	item_put_word_ext_overwrite(true);
 	item_put_word_ext_overwrite(false);
@@ -366,7 +366,7 @@ void item_put_ext_saturate(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_item_put_ext_saturate(void)
+ZTEST(log_buffer, test_item_put_ext_saturate)
 {
 	item_put_ext_saturate(true);
 	item_put_ext_saturate(false);
@@ -413,7 +413,7 @@ void benchmark_item_put_ext(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_benchmark_item_put_ext(void)
+ZTEST(log_buffer, test_benchmark_item_put_ext)
 {
 	benchmark_item_put_ext(true);
 	benchmark_item_put_ext(false);
@@ -464,7 +464,7 @@ void benchmark_item_put_data(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_benchmark_item_put_data(void)
+ZTEST(log_buffer, test_benchmark_item_put_data)
 {
 	benchmark_item_put_data(true);
 	benchmark_item_put_data(false);
@@ -492,9 +492,12 @@ void item_put_data_overwrite(bool pow2)
 	exp_dropped_len[1] = w;
 
 	for (uintptr_t i = 0; i < repeat; i++) {
+		void *vitem;
 		item.data = (void *)i;
 		item.hdr.data = i;
-		mpsc_pbuf_put_data(&buffer, (uint32_t *)&item, len);
+		vitem = (uint32_t *)&item;
+		zassert_true(IS_PTR_ALIGNED(vitem, uint32_t), "unaligned ptr");
+		mpsc_pbuf_put_data(&buffer, (uint32_t *)vitem, len);
 	}
 
 	uint32_t exp_drop_cnt = (sizeof(void *) == sizeof(uint32_t)) ?
@@ -504,7 +507,7 @@ void item_put_data_overwrite(bool pow2)
 			"Unexpected number of dropped messages: %d", drop_cnt);
 }
 
-void test_put_data_overwrite(void)
+ZTEST(log_buffer, test_put_data_overwrite)
 {
 	item_put_data_overwrite(true);
 	item_put_data_overwrite(false);
@@ -542,7 +545,7 @@ void item_alloc_commit(bool pow2)
 	}
 }
 
-void test_item_alloc_commit(void)
+ZTEST(log_buffer, test_item_alloc_commit)
 {
 	item_alloc_commit(true);
 	item_alloc_commit(false);
@@ -575,7 +578,7 @@ void item_max_alloc(bool overwrite)
 	zassert_true(packet == NULL, NULL);
 }
 
-void test_item_max_alloc(void)
+ZTEST(log_buffer, test_item_max_alloc)
 {
 	item_max_alloc(true);
 	item_max_alloc(false);
@@ -645,7 +648,7 @@ void item_alloc_commit_saturate(bool pow2)
 	zassert_true(packet, NULL);
 }
 
-void test_item_alloc_commit_saturate(void)
+ZTEST(log_buffer, test_item_alloc_commit_saturate)
 {
 	item_alloc_commit_saturate(true);
 	item_alloc_commit_saturate(false);
@@ -701,7 +704,7 @@ void item_alloc_preemption(bool pow2)
 	zassert_equal(p, NULL, NULL);
 }
 
-void test_item_alloc_preemption(void)
+ZTEST(log_buffer, test_item_alloc_preemption)
 {
 	item_alloc_preemption(true);
 	item_alloc_preemption(false);
@@ -765,7 +768,7 @@ void overwrite(bool pow2)
 	zassert_equal(p, NULL, NULL);
 }
 
-void test_overwrite(void)
+ZTEST(log_buffer, test_overwrite)
 {
 	overwrite(true);
 	overwrite(false);
@@ -818,7 +821,7 @@ void overwrite_while_claimed(bool pow2)
 	zassert_equal(p0, NULL, NULL);
 }
 
-void test_overwrite_while_claimed(void)
+ZTEST(log_buffer, test_overwrite_while_claimed)
 {
 	overwrite_while_claimed(true);
 	overwrite_while_claimed(false);
@@ -875,7 +878,7 @@ void overwrite_while_claimed2(bool pow2)
 	zassert_equal(p0, NULL, NULL);
 }
 
-void test_overwrite_while_claimed2(void)
+ZTEST(log_buffer, test_overwrite_while_claimed2)
 {
 		overwrite_while_claimed2(true);
 		overwrite_while_claimed2(false);
@@ -891,8 +894,8 @@ static void validate_packet(struct test_data_var *packet)
 	current_rd_idx++;
 }
 
-static void consistent_drop(struct mpsc_pbuf_buffer *buffer,
-			    union mpsc_pbuf_generic *item)
+static void consistent_drop(const struct mpsc_pbuf_buffer *buffer,
+			    const union mpsc_pbuf_generic *item)
 {
 	validate_packet((struct test_data_var *)item);
 }
@@ -902,7 +905,7 @@ uint32_t rand_get(uint32_t min, uint32_t max)
 	return min + (sys_rand32_get() % max);
 }
 
-void test_overwrite_consistency(void)
+ZTEST(log_buffer, test_overwrite_consistency)
 {
 	struct mpsc_pbuf_buffer buffer;
 	static struct mpsc_pbuf_buffer_config cfg = {
@@ -978,6 +981,7 @@ void t_entry(void *p0, void *p1, void *p2)
 	struct mpsc_pbuf_buffer *buffer = p0;
 	uintptr_t wait_ms = (uintptr_t)p1;
 	struct test_data_ext *t;
+	void *vt;
 
 	t = (struct test_data_ext *)mpsc_pbuf_alloc(buffer,
 						    sizeof(*t) / sizeof(uint32_t),
@@ -990,7 +994,9 @@ void t_entry(void *p0, void *p1, void *p2)
 	t->hdr.len = PUT_EXT_LEN;
 	t->data = k_current_get();
 
-	mpsc_pbuf_commit(buffer, (union mpsc_pbuf_generic *)t);
+	vt = t;
+	zassert_true(IS_PTR_ALIGNED(vt, union mpsc_pbuf_generic), "unaligned ptr");
+	mpsc_pbuf_commit(buffer, (union mpsc_pbuf_generic *)vt);
 	while (1) {
 		k_sleep(K_MSEC(10));
 	}
@@ -1020,13 +1026,14 @@ void start_threads(struct mpsc_pbuf_buffer *buffer)
 }
 
 /* Test creates two threads which pends on the buffer until there is a space
- * available. When engough buffers is released threads are waken up and they
+ * available. When enough buffers is released threads are woken up and they
  * allocate packets.
  */
-void test_pending_alloc(void)
+ZTEST(log_buffer, test_pending_alloc)
 {
 	int prio = k_thread_priority_get(k_current_get());
 	struct mpsc_pbuf_buffer buffer;
+	void *vt;
 
 	k_thread_priority_set(k_current_get(), 3);
 
@@ -1052,36 +1059,137 @@ void test_pending_alloc(void)
 
 		zassert_true(t, NULL);
 		zassert_equal(t->data, tids[ARRAY_SIZE(tids) - 1 - i], NULL);
-		mpsc_pbuf_free(&buffer, (union mpsc_pbuf_generic *)t);
+		vt = t;
+		zassert_true(IS_PTR_ALIGNED(vt, union mpsc_pbuf_generic), "unaligned ptr");
+		mpsc_pbuf_free(&buffer, (union mpsc_pbuf_generic *)vt);
 	}
 
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, "No more packets.");
 	k_thread_priority_set(k_current_get(), prio);
 }
 
-/*test case main entry*/
-void test_main(void)
+static void check_usage(struct mpsc_pbuf_buffer *buffer,
+			uint32_t now, int exp_err, uint32_t max, uint32_t line)
 {
-	ztest_test_suite(test_log_buffer,
-		ztest_unit_test(test_benchmark_item_put),
-		ztest_unit_test(test_item_put_saturate),
-		ztest_unit_test(test_item_put_no_overwrite),
-		ztest_unit_test(test_item_put_overwrite),
-		ztest_unit_test(test_item_put_ext_no_overwrite),
-		ztest_unit_test(test_item_put_word_ext_overwrite),
-		ztest_unit_test(test_item_put_ext_saturate),
-		ztest_unit_test(test_put_data_overwrite),
-		ztest_unit_test(test_benchmark_item_put_ext),
-		ztest_unit_test(test_benchmark_item_put_data),
-		ztest_unit_test(test_item_alloc_commit),
-		ztest_unit_test(test_item_max_alloc),
-		ztest_unit_test(test_item_alloc_commit_saturate),
-		ztest_unit_test(test_item_alloc_preemption),
-		ztest_unit_test(test_overwrite),
-		ztest_unit_test(test_overwrite_while_claimed),
-		ztest_unit_test(test_overwrite_while_claimed2),
-		ztest_unit_test(test_overwrite_consistency),
-		ztest_unit_test(test_pending_alloc)
-		);
-	ztest_run_test_suite(test_log_buffer);
+	uint32_t size;
+	uint32_t usage;
+	int err;
+
+	mpsc_pbuf_get_utilization(buffer, &size, &usage);
+	zassert_equal(size / sizeof(int), buffer->size - 1, "%d: got:%d, exp:%d",
+			line, size / sizeof(int), buffer->size - 1);
+	zassert_equal(usage, now, "%d: got:%d, exp:%d", line, usage, now);
+
+	err = mpsc_pbuf_get_max_utilization(buffer, &usage);
+	zassert_equal(err, exp_err, NULL);
+	if (err == 0) {
+		zassert_equal(usage, max, "%d: got:%d, exp:%d", line, usage, max);
+	}
 }
+
+#define CHECK_USAGE(buffer, now, max) \
+	check_usage(buffer, (now) * sizeof(int), 0, (max) * sizeof(int), __LINE__)
+
+static void ignore_drop(const struct mpsc_pbuf_buffer *buffer,
+			const union mpsc_pbuf_generic *item)
+{
+	ARG_UNUSED(buffer);
+	ARG_UNUSED(item);
+}
+
+ZTEST(log_buffer, test_utilization)
+{
+	struct mpsc_pbuf_buffer buffer;
+	struct mpsc_pbuf_buffer_config config = {
+		.buf = buf32,
+		.size = ARRAY_SIZE(buf32),
+		.notify_drop = ignore_drop,
+		.get_wlen = get_wlen,
+		.flags = 0 /* Utilization not supported. */
+	};
+
+	mpsc_pbuf_init(&buffer, &config);
+
+	check_usage(&buffer, 0, -ENOTSUP, 0, __LINE__);
+
+	/* Initialize with max utilization support. */
+	config.flags = MPSC_PBUF_MAX_UTILIZATION;
+	mpsc_pbuf_init(&buffer, &config);
+
+	CHECK_USAGE(&buffer, 0, 0);
+
+	union test_item test_1word = {.data = {.valid = 1, .len = 1 }};
+	union test_item test_ext_item = {
+		.data = {
+			.valid = 1,
+			.len = PUT_EXT_LEN
+		}
+	};
+	union test_item *t;
+
+	mpsc_pbuf_put_word(&buffer, test_1word.item);
+
+	CHECK_USAGE(&buffer, 1, 1);
+
+	mpsc_pbuf_put_word_ext(&buffer, test_ext_item.item, NULL);
+
+	CHECK_USAGE(&buffer, 1 + PUT_EXT_LEN, 1 + PUT_EXT_LEN);
+
+	t = (union test_item *)mpsc_pbuf_claim(&buffer);
+
+	zassert_true(t != NULL, NULL);
+	CHECK_USAGE(&buffer, 1 + PUT_EXT_LEN, 1 + PUT_EXT_LEN);
+	mpsc_pbuf_free(&buffer, &t->item);
+
+	t = (union test_item *)mpsc_pbuf_claim(&buffer);
+	zassert_true(t != NULL, NULL);
+
+	CHECK_USAGE(&buffer, PUT_EXT_LEN, 1 + PUT_EXT_LEN);
+
+	mpsc_pbuf_free(&buffer, &t->item);
+
+	CHECK_USAGE(&buffer, 0, 1 + PUT_EXT_LEN);
+
+	union test_item test_ext_item2 = {
+		.data_ext = {
+			.hdr = {
+				.valid = 1,
+				.len = PUT_EXT_LEN
+			},
+			.data = NULL
+		}
+	};
+
+	mpsc_pbuf_put_data(&buffer, (uint32_t *)&test_ext_item2, PUT_EXT_LEN);
+
+	CHECK_USAGE(&buffer, PUT_EXT_LEN, 1 + PUT_EXT_LEN);
+
+	t = (union test_item *)mpsc_pbuf_claim(&buffer);
+	zassert_true(t != NULL, NULL);
+	mpsc_pbuf_free(&buffer, &t->item);
+
+	CHECK_USAGE(&buffer, 0, 1 + PUT_EXT_LEN);
+
+	memset(&buffer, 0, sizeof(buffer));
+	/* Initialize to reset indexes. */
+	mpsc_pbuf_init(&buffer, &config);
+
+	struct test_data_var *packet;
+	uint32_t len = 5;
+	uint32_t i;
+
+	for (i = 0; i < (buffer.size - 1) / len; i++) {
+		packet = (struct test_data_var *)mpsc_pbuf_alloc(&buffer, len, K_NO_WAIT);
+		packet->hdr.len = len;
+
+		mpsc_pbuf_commit(&buffer, (union mpsc_pbuf_generic *)packet);
+		CHECK_USAGE(&buffer, len * (i + 1), len * (i + 1));
+	}
+
+	packet = (struct test_data_var *)mpsc_pbuf_alloc(&buffer, len, K_NO_WAIT);
+
+	zassert_true(packet == NULL, NULL);
+}
+
+/*test case main entry*/
+ZTEST_SUITE(log_buffer, NULL, NULL, NULL, NULL, NULL);

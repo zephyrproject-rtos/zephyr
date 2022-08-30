@@ -15,10 +15,12 @@
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
+		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
 		watchdog1 = &wdog1;
+		spi-flash0 = &mx25r80;
 	};
 
 	chosen {
@@ -53,6 +55,14 @@
 			label = "User Push Button 1";
 		};
 	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		status = "okay";
+		pwm_led0: pwm_led0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
 };
 
 &cpu0 {
@@ -82,7 +92,6 @@
 
 	mx25r80: mx25r8035f@0 {
 		compatible = "jedec,spi-nor";
-		label = "MX25R8035F";
 		reg = <0>;
 		spi-max-frequency = <80000000>;
 		size = <0x800000>;
@@ -113,11 +122,11 @@
 	/* This set selects for CCS811_I2C supporting CCS811 */
 	location-sda = <GECKO_LOCATION(6) GECKO_PORT_B GECKO_PIN(6)>;
 	location-scl = <GECKO_LOCATION(6) GECKO_PORT_B GECKO_PIN(7)>;
+	status = "okay";
 
 	ccs811: ccs811@5a {
 		compatible = "ams,ccs811";
 		reg = <0x5a>;
-		label = "CCS811";
 		supply-gpios = <&gpiof 14 GPIO_ACTIVE_HIGH>;
 		irq-gpios = <&gpiof 13 GPIO_ACTIVE_LOW>;
 		wake-gpios = <&gpiof 15 GPIO_ACTIVE_LOW>;
@@ -139,6 +148,16 @@
 &rtcc0 {
 	prescaler = <1>;
 	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+
+	pwm0: pwm {
+		status = "okay";
+		pin-location = <GECKO_LOCATION(17) GECKO_PORT_D GECKO_PIN(9)>;
+		prescaler = <1024>;
+	};
 };
 
 &gpio {

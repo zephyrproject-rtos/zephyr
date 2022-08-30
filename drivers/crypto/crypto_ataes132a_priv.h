@@ -8,9 +8,9 @@
 #ifndef ZEPHYR_DRIVERS_CRYPTO_CRYPTO_ATAES132A_PRIV_H_
 #define ZEPHYR_DRIVERS_CRYPTO_CRYPTO_ATAES132A_PRIV_H_
 
-#include <drivers/i2c.h>
-#include <kernel.h>
-#include <sys/util.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 
 /* Configuration Read Only Registers */
 #define ATAES_SERIALNUM_REG	0xF000
@@ -24,7 +24,7 @@
 #define ATAES_MANUFACTID_REG	0xF02B
 #define ATAES_PERMCONFIG_REG	0xF02D
 
-/* Configuarion Pre-Lock Writable Registers */
+/* Configuration Pre-Lock Writable Registers */
 #define ATAES_I2CADDR_REG	0xF040
 #define ATAES_CHIPCONFIG_REG	0xF042
 #define ATAES_FREESPACE_ADDR	0xF180
@@ -136,11 +136,10 @@ void ataes132a_atmel_crc(uint8_t *input, uint8_t length,
 	*(uint16_t *)output = crc << 8 | crc >> 8;
 }
 
-static inline int burst_write_i2c(const struct device *dev, uint16_t dev_addr,
+static inline int burst_write_i2c(const struct i2c_dt_spec *spec,
 				  uint16_t start_addr, uint8_t *buf,
 				  uint8_t num_bytes)
 {
-	const struct i2c_driver_api *api = dev->api;
 	uint8_t addr_buffer[2];
 	struct i2c_msg msg[2];
 
@@ -154,15 +153,14 @@ static inline int burst_write_i2c(const struct device *dev, uint16_t dev_addr,
 	msg[1].len = num_bytes;
 	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
-	return api->transfer(dev, msg, 2, dev_addr);
+	return i2c_transfer_dt(spec, msg, 2);
 }
 
 
-static inline int burst_read_i2c(const struct device *dev, uint16_t dev_addr,
+static inline int burst_read_i2c(const struct i2c_dt_spec *spec,
 				 uint16_t start_addr, uint8_t *buf,
 				 uint8_t num_bytes)
 {
-	const struct i2c_driver_api *api = dev->api;
 	uint8_t addr_buffer[2];
 	struct i2c_msg msg[2];
 
@@ -176,25 +174,23 @@ static inline int burst_read_i2c(const struct device *dev, uint16_t dev_addr,
 	msg[1].len = num_bytes;
 	msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
 
-	return api->transfer(dev, msg, 2, dev_addr);
+	return i2c_transfer_dt(spec, msg, 2);
 }
 
-static inline int read_reg_i2c(const struct device *dev, uint16_t dev_addr,
+static inline int read_reg_i2c(const struct i2c_dt_spec *spec,
 			       uint16_t reg_addr, uint8_t *value)
 {
-	return burst_read_i2c(dev, dev_addr, reg_addr, value, 1);
+	return burst_read_i2c(spec, reg_addr, value, 1);
 }
 
-static inline int write_reg_i2c(const struct device *dev, uint16_t dev_addr,
+static inline int write_reg_i2c(const struct i2c_dt_spec *spec,
 				uint16_t reg_addr, uint8_t value)
 {
-	return burst_write_i2c(dev, dev_addr, reg_addr, &value, 1);
+	return burst_write_i2c(spec, reg_addr, &value, 1);
 }
 
 struct ataes132a_device_config {
-	const char *i2c_port;
-	uint16_t i2c_addr;
-	uint8_t i2c_speed;
+	struct i2c_dt_spec i2c;
 };
 
 struct ataes132a_device_data {

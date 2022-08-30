@@ -1,0 +1,9 @@
+sample:
+  description: A dynamic pin control sample for nRF board/s.
+  name: dynamic_pinctrl
+tests:
+  sample.boards.nrf.dynamic_pinctrl:
+    build_only: true
+    platform_allow: nrf52840dk_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840

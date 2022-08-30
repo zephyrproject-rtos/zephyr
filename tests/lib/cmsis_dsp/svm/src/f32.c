@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -42,7 +42,7 @@
 	const float32_t gamma = \
 		params[svec_count + (vec_dims * svec_count) + 2]
 
-static void test_arm_svm_linear_predict_f32(void)
+ZTEST(svm_f32, test_arm_svm_linear_predict_f32)
 {
 	DECLARE_COMMON_VARS(in_linear_dims, in_linear_param);
 
@@ -81,7 +81,7 @@ static void test_arm_svm_linear_predict_f32(void)
 	free(output_buf);
 }
 
-static void test_arm_svm_polynomial_predict_f32(void)
+ZTEST(svm_f32, test_arm_svm_polynomial_predict_f32)
 {
 	DECLARE_COMMON_VARS(in_polynomial_dims, in_polynomial_param);
 	DECLARE_POLY_VARS();
@@ -123,7 +123,7 @@ static void test_arm_svm_polynomial_predict_f32(void)
 	free(output_buf);
 }
 
-static void test_arm_svm_rbf_predict_f32(void)
+ZTEST(svm_f32, test_arm_svm_rbf_predict_f32)
 {
 	DECLARE_COMMON_VARS(in_rbf_dims, in_rbf_param);
 	DECLARE_RBF_VARS();
@@ -164,7 +164,7 @@ static void test_arm_svm_rbf_predict_f32(void)
 	free(output_buf);
 }
 
-static void test_arm_svm_sigmoid_predict_f32(void)
+ZTEST(svm_f32, test_arm_svm_sigmoid_predict_f32)
 {
 	DECLARE_COMMON_VARS(in_sigmoid_dims, in_sigmoid_param);
 	DECLARE_SIGMOID_VARS();
@@ -205,21 +205,19 @@ static void test_arm_svm_sigmoid_predict_f32(void)
 	free(output_buf);
 }
 
-static void test_arm_svm_oneclass_predict_f32(void)
+ZTEST(svm_f32, test_arm_svm_oneclass_predict_f32)
 {
 	DECLARE_COMMON_VARS(in_oneclass_dims, in_oneclass_param);
-	DECLARE_RBF_VARS();
 
-	arm_svm_rbf_instance_f32 inst;
+	arm_svm_linear_instance_f32 inst;
 	size_t index;
 	const size_t length = ARRAY_SIZE(ref_oneclass);
 	const float32_t *input = (const float32_t *)in_oneclass_val;
 	int32_t *output, *output_buf;
 
 	/* Initialise instance */
-	arm_svm_rbf_init_f32(
-		&inst, svec_count, vec_dims,
-		intercept, dual_coeff, svec, classes, gamma);
+	arm_svm_linear_init_f32(&inst, svec_count, vec_dims,
+		intercept, dual_coeff, svec, classes);
 
 	/* Allocate output buffer */
 	output_buf = malloc(length * sizeof(int32_t));
@@ -230,7 +228,7 @@ static void test_arm_svm_oneclass_predict_f32(void)
 	/* Enumerate samples */
 	for (index = 0; index < sample_count; index++) {
 		/* Run test function */
-		arm_svm_rbf_predict_f32(&inst, input, output);
+		arm_svm_linear_predict_f32(&inst, input, output);
 
 		/* Increment pointers */
 		input += vec_dims;
@@ -246,15 +244,4 @@ static void test_arm_svm_oneclass_predict_f32(void)
 	free(output_buf);
 }
 
-void test_svm_f32(void)
-{
-	ztest_test_suite(svm_f32,
-		ztest_unit_test(test_arm_svm_linear_predict_f32),
-		ztest_unit_test(test_arm_svm_polynomial_predict_f32),
-		ztest_unit_test(test_arm_svm_rbf_predict_f32),
-		ztest_unit_test(test_arm_svm_sigmoid_predict_f32),
-		ztest_unit_test(test_arm_svm_oneclass_predict_f32)
-		);
-
-	ztest_run_test_suite(svm_f32);
-}
+ZTEST_SUITE(svm_f32, NULL, NULL, NULL, NULL, NULL);

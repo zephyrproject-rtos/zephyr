@@ -1,7 +1,18 @@
 # Copyright 2021 Nordic Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-process_ids=""; exit_code=0
+process_ids=(); exit_code=0
+
+trap ctrl_c INT
+
+function ctrl_c() {
+  echo "Aborted by CTRL-C"
+  conf=${conf:-prj_conf}
+
+  for process_id in ${process_ids[@]}; do
+    kill -15 $process_id
+  done
+}
 
 function Execute(){
   if [ ! -f $1 ]; then
@@ -9,7 +20,7 @@ function Execute(){
  compile it?)\e[39m"
     exit 1
   fi
-  timeout 20 $@ & process_ids="$process_ids $!"
+  timeout 300 $@ & process_ids+=( $! )
 }
 
 function Skip(){
@@ -29,7 +40,24 @@ function RunTest(){
   cd ${BSIM_OUT_PATH}/bin
 
   idx=0
-  for testid in ${@:2} ; do
+
+  s_id=$1
+  shift 1
+
+  testids=()
+  for testid in $@ ; do
+    if [ "$testid" == "--" ]; then
+      shift 1
+      break
+    fi
+
+    testids+=( $testid )
+    shift 1
+  done
+
+  test_options=$@
+
+  for testid in ${testids[@]} ; do
     if Skip $testid; then
       echo "Skipping $testid (device #$idx)"
       let idx=idx+1
@@ -40,18 +68,18 @@ function RunTest(){
     conf=${conf:-prj_conf}
     Execute \
       ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_mesh_${conf} \
-      -v=${verbosity_level} -s=$1 -d=$idx -RealEncryption=1 \
-      -testid=$testid
+      -v=${verbosity_level} -s=$s_id -d=$idx -RealEncryption=1 \
+      -testid=$testid ${test_options}
     let idx=idx+1
   done
 
-  count=$(expr $# - 1 + $extra_devs)
+  count=$(expr $idx + $extra_devs)
 
   echo "Starting phy with $count devices"
 
-  Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=$1 -D=$count
+  Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=$s_id -D=$count
 
-  for process_id in $process_ids; do
+  for process_id in ${process_ids[@]}; do
     wait $process_id || let "exit_code=$?"
   done
 

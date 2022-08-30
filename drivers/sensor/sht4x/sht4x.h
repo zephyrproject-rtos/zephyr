@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_SHT4X_SHT4X_H_
 #define ZEPHYR_DRIVERS_SENSOR_SHT4X_SHT4X_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #define SHT4X_CMD_READ_SERIAL	0x89
 #define SHT4X_CMD_RESET		0x94
@@ -25,8 +25,7 @@
 #define SHT4X_CRC_INIT		0xFF
 
 struct sht4x_config {
-	const struct device *bus;
-	uint8_t i2c_addr;
+	struct i2c_dt_spec bus;
 	uint8_t repeatability;
 };
 

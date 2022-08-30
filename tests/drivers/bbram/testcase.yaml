@@ -1,0 +1,15 @@
+# Copyright 2021 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags: drivers bbram
+  build_only: true
+  harness: ztest
+  platform_exclude: native_posix
+tests:
+  drivers.bbram.it8xxx2:
+    extra_args: CONF_FILE="it8xxx2.conf"
+    filter: dt_compat_enabled("ite,it8xxx2-bbram")
+  drivers.bbram.npcx:
+    extra_args: CONF_FILE="npcx.conf"
+    filter: dt_compat_enabled("nuvoton,npcx-bbram")

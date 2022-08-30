@@ -7,17 +7,12 @@
 #define DT_DRV_COMPAT intel_cavs_idc
 
 #include <stdint.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/ipm.h>
-#include <arch/common/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/arch/common/sys_io.h>
 
 #include <soc.h>
-#include <soc/shim.h>
-#ifndef CONFIG_SOC_INTEL_S1000
-#include <adsp/io.h>
-#endif
-
 #include "ipm_cavs_idc.h"
 
 #ifdef CONFIG_SCHED_IPI_SUPPORTED

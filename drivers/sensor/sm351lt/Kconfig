@@ -1,10 +1,12 @@
-# SM351LT Magnetoresitive Sensor configuration options
+# SM351LT Magnetoresistive Sensor configuration options
 
 # Copyright (c) 2020, Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SM351LT
 	bool "SM351LT Magnetoresistive Sensor"
+	default y
+	depends on DT_HAS_HONEYWELL_SM351LT_ENABLED
 	depends on (GPIO)
 	help
 	  Enable GPIO-based driver for SM351LT magnetoresistive

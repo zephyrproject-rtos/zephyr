@@ -5,7 +5,10 @@
 
 menuconfig LPS22HH
 	bool "LPS22HH pressure and temperature"
-	depends on I2C || SPI
+	default y
+	depends on DT_HAS_ST_LPS22HH_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HH),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HH),spi)
 	select HAS_STMEMSC
 	select USE_STDC_LPS22HH
 	help
@@ -51,25 +54,5 @@ config LPS22HH_THREAD_STACK_SIZE
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
-
-menu "Attributes"
-
-config LPS22HH_SAMPLING_RATE
-	int "Output data rate"
-	range 0 7
-	default 0
-	help
-	  Sensor output data rate expressed in samples per second.
-	  Data rates supported by the chip are:
-	  0: ODR selected at runtime
-	  1: 1Hz
-	  2: 10Hz
-	  3: 25Hz
-	  4: 50Hz
-	  5: 75Hz
-	  6: 100Hz
-	  7: 200Hz
-
-endmenu
 
 endif # LPS22HH

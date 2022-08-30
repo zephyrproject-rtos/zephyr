@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/zephyr.h>
 
 /*
  * precision timing tests in an emulation environment are not reliable.
@@ -62,10 +62,10 @@
 #define UPPER_BOUND_MS	(((3 + MAXIMUM_SHORTEST_TICKS) * 1000 * LOOPS)	\
 			 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-void test_usleep(void)
+ZTEST_USER(sleep, test_usleep)
 {
 	int retries = 0;
-	int64_t elapsed_ms;
+	int64_t elapsed_ms = 0;
 
 	while (retries < RETRIES) {
 		int64_t start_ms;

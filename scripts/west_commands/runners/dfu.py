@@ -18,12 +18,14 @@ DfuSeConfig = namedtuple('DfuSeConfig', ['address', 'options'])
 class DfuUtilBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for dfu-util.'''
 
-    def __init__(self, cfg, pid, alt, img, exe='dfu-util',
+    def __init__(self, cfg, dev_id, alt, img, exe='dfu-util',
                  dfuse_config=None):
+
         super().__init__(cfg)
+        self.dev_id = dev_id # Used only for error checking in do_run
         self.alt = alt
         self.img = img
-        self.cmd = [exe, '-d,{}'.format(pid)]
+        self.cmd = [exe, '-d,{}'.format(dev_id)]
         try:
             self.list_pattern = ', alt={},'.format(int(self.alt))
         except ValueError:
@@ -42,17 +44,20 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, flash_addr=True)
+        return RunnerCaps(commands={'flash'}, dev_id=True, flash_addr=True)
+
+    @classmethod
+    def dev_id_help(cls) -> str:
+        return 'USB VID:PID of the connected device.'
 
     @classmethod
     def do_add_parser(cls, parser):
-        # Required:
-        parser.add_argument("--pid", required=True,
-                            help="USB VID:PID of the board")
         parser.add_argument("--alt", required=True,
                             help="interface alternate setting number or name")
 
         # Optional:
+        parser.add_argument("--pid", dest='dev_id',
+                            help=cls.dev_id_help())
         parser.add_argument("--img",
                             help="binary to flash, default is --bin-file")
         parser.add_argument("--dfuse", default=False, action='store_true',
@@ -86,7 +91,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         else:
             dcfg = None
 
-        ret = DfuUtilBinaryRunner(cfg, args.pid, args.alt, args.img,
+        ret = DfuUtilBinaryRunner(cfg, args.dev_id, args.alt, args.img,
                                   exe=args.dfu_util, dfuse_config=dcfg)
         ret.ensure_device()
         return ret
@@ -105,6 +110,9 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         return self.list_pattern in output
 
     def do_run(self, command, **kwargs):
+        if not self.dev_id:
+            raise RuntimeError('Please specify a USB VID:PID with the '
+                               '-i/--dev-id or --pid command-line switch.')
         self.require(self.cmd[0])
         self.ensure_output('bin')
 

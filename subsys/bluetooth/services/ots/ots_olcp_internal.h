@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020 - 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@ extern "C" {
 
 #include <sys/types.h>
 #include <zephyr/types.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/gatt.h>
 
 /* The types of OLCP procedures. */
 enum bt_gatt_ots_olcp_proc_type {
@@ -37,6 +37,30 @@ enum bt_gatt_ots_olcp_proc_type {
 	BT_GATT_OTS_OLCP_PROC_RESP          = 0x70,
 };
 
+/** @brief The types of OLCP sort orders. */
+enum bt_ots_olcp_sort_order {
+	/** Order the list by object name, ascending */
+	BT_OTS_SORT_BY_NAME_ASCEND     = 0x01,
+	/** Order the list by object type, ascending*/
+	BT_OTS_SORT_BY_TYPE_ASCEND     = 0x02,
+	/** Order the list by object current size, ascending*/
+	BT_OTS_SORT_BY_SIZE_ASCEND     = 0x03,
+	/** Order the list by object first-created timestamp, ascending*/
+	BT_OTS_SORT_BY_FC_ASCEND       = 0x04,
+	/** Order the list by object last-modified timestamp, ascending */
+	BT_OTS_SORT_BY_LM_ASCEND       = 0x05,
+	/** Order the list by object name, descending */
+	BT_OTS_SORT_BY_NAME_DESCEND    = 0x11,
+	/** Order the list by object type, descending*/
+	BT_OTS_SORT_BY_TYPE_DESCEND    = 0x12,
+	/** Order the list by object current size, descending*/
+	BT_OTS_SORT_BY_SIZE_DESCEND    = 0x13,
+	/** Order the list by object first-created timestamp, descending*/
+	BT_OTS_SORT_BY_FC_DESCEND      = 0x14,
+	/** Order the list by object last-modified timestamp, descending */
+	BT_OTS_SORT_BY_LM_DESCEND      = 0x15,
+};
+
 /* Definition of a OLCP procedure. */
 struct bt_gatt_ots_olcp_proc {
 	enum bt_gatt_ots_olcp_proc_type type;
@@ -46,6 +70,9 @@ struct bt_gatt_ots_olcp_proc {
 		} goto_params;
 	};
 };
+
+/* Size of Object List Control Point goto procedure */
+#define BT_GATT_OTS_OLCP_GOTO_PARAMS_SIZE 6
 
 /* The return codes obtained from doing OLCP procedures. */
 enum bt_gatt_ots_olcp_res_code {

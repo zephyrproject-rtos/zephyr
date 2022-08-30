@@ -5,18 +5,18 @@
  */
 
 #include <zephyr/types.h>
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/clock_control_litex.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_litex.h>
 #include "clock_control_litex.h"
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
-#include <sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/sys/util.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 LOG_MODULE_REGISTER(CLK_CTRL_LITEX, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -25,14 +25,14 @@ static struct litex_clk_clkout *clkouts;/* clkout array for whole driver */
 
 /* All DRP regs addresses and sizes */
 static struct litex_drp_reg drp[] = {
-	{DRP_ADDR_RESET,  DRP_SIZE_RESET},
-	{DRP_ADDR_LOCKED, DRP_SIZE_LOCKED},
-	{DRP_ADDR_READ,   DRP_SIZE_READ},
-	{DRP_ADDR_WRITE,  DRP_SIZE_WRITE},
-	{DRP_ADDR_DRDY,   DRP_SIZE_DRDY},
-	{DRP_ADDR_ADR,    DRP_SIZE_ADR},
-	{DRP_ADDR_DAT_W,  DRP_SIZE_DAT_W},
-	{DRP_ADDR_DAT_R,  DRP_SIZE_DAT_R},
+	{DRP_ADDR_RESET,  1},
+	{DRP_ADDR_LOCKED, 1},
+	{DRP_ADDR_READ,   1},
+	{DRP_ADDR_WRITE,  1},
+	{DRP_ADDR_DRDY,   1},
+	{DRP_ADDR_ADR,    1},
+	{DRP_ADDR_DAT_W,  2},
+	{DRP_ADDR_DAT_R,  2},
 };
 
 struct litex_clk_regs_addr litex_clk_regs_addr_init(void)
@@ -219,12 +219,12 @@ static inline uint64_t litex_clk_lookup_lock(uint32_t glob_mul)
 
 static inline void litex_clk_set_reg(uint32_t reg, uint32_t val)
 {
-	litex_write((uint32_t *)drp[reg].addr, drp[reg].size, val);
+	litex_write(drp[reg].addr, drp[reg].size, val);
 }
 
 static inline uint32_t litex_clk_get_reg(uint32_t reg)
 {
-	return litex_read((uint32_t *)drp[reg].addr, drp[reg].size);
+	return litex_read(drp[reg].addr, drp[reg].size);
 }
 
 static inline void litex_clk_assert_reg(uint32_t reg)
@@ -1788,4 +1788,4 @@ static const struct litex_clk_device ldev_init = {
 
 DEVICE_DT_DEFINE(DT_NODELABEL(clock0), &litex_clk_init, NULL,
 		    NULL, &ldev_init, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &litex_clk_api);
+		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &litex_clk_api);

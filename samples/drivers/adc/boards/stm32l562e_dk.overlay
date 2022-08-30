@@ -4,9 +4,24 @@
  * Copyright (c) 2021 STMicroelectronics
  */
 
+#include <zephyr/dt-bindings/adc/adc.h>
+
 / {
 	zephyr,user {
 		/* adjust channel number according to pinmux in board.dts */
 		io-channels = <&adc1 13>;
+	};
+};
+
+&adc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@d {
+		reg = <13>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
 	};
 };

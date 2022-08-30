@@ -10,12 +10,12 @@
 
 #define DT_DRV_COMPAT st_iis2mdc
 
-#include <init.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "iis2mdc.h"
 
 struct iis2mdc_data iis2mdc_data;
@@ -252,11 +252,6 @@ static int iis2mdc_init(const struct device *dev)
 
 	iis2mdc->dev = dev;
 
-	if (!device_is_ready(cfg->bus)) {
-		LOG_ERR("Cannot get pointer to bus device");
-		return -ENODEV;
-	}
-
 	if (cfg->bus_init(dev) < 0) {
 		return -EINVAL;
 	}
@@ -306,7 +301,7 @@ static int iis2mdc_init(const struct device *dev)
 
 	/* Set device in continuous mode */
 	if (iis2mdc_operating_mode_set(iis2mdc->ctx, IIS2MDC_CONTINUOUS_MODE)) {
-		LOG_DBG("set continuos mode failed\n");
+		LOG_DBG("set continuous mode failed\n");
 		return -EIO;
 	}
 
@@ -352,18 +347,13 @@ static int iis2mdc_init(const struct device *dev)
 
 #define IIS2MDC_SPI_OP  (SPI_WORD_SET(8) |				\
 			 SPI_OP_MODE_MASTER |				\
-			 SPI_LINES_SINGLE |				\
 			 SPI_MODE_CPOL |				\
 			 SPI_MODE_CPHA)					\
 
 #define IIS2MDC_CONFIG_SPI(inst)					\
 	{								\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
+		.spi = SPI_DT_SPEC_INST_GET(inst, IIS2MDC_SPI_OP, 0),	\
 		.bus_init = iis2mdc_spi_init,				\
-		.bus_cfg.spi_cfg =					\
-			SPI_CONFIG_DT_INST(inst,			\
-					   IIS2MDC_SPI_OP,		\
-					   0),				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2MDC_CFG_IRQ(inst)), ())			\
 	}
@@ -374,9 +364,8 @@ static int iis2mdc_init(const struct device *dev)
 
 #define IIS2MDC_CONFIG_I2C(inst)					\
 	{								\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),			\
 		.bus_init = iis2mdc_i2c_init,				\
-		.bus_cfg.i2c_slv_addr = DT_INST_REG_ADDR(inst),		\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2MDC_CFG_IRQ(inst)), ())			\
 	}

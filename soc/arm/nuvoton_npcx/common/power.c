@@ -27,7 +27,7 @@
  * LFCLK - Low-Frequency Clock. Its frequency is fixed to 32kHz.
  * HFCLK - High-Frequency (PLL) Clock. Its frequency is configured to OFMCLK.
  *
- * Based on the follwoing criteria:
+ * Based on the following criteria:
  *
  * - A delay of 'Instant' wake-up from 'Deep Sleep' is 20 us.
  * - A delay of 'Standard' wake-up from 'Deep Sleep' is 3.43 ms.
@@ -45,16 +45,18 @@
  * INCLUDE FILES: soc_clock.h
  */
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr.h>
-#include <drivers/espi.h>
-#include <pm/pm.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/pm/pm.h>
 #include <soc.h>
 
+#include "soc_gpio.h"
 #include "soc_host.h"
 #include "soc_power.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* The steps that npcx ec enters sleep/deep mode and leaves it. */
@@ -84,26 +86,56 @@ enum {
 	NPCX_STANDARD_WAKE_UP,
 };
 
-#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
-static int64_t expired_timeout = CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT;
-static int64_t console_expired_time = CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT;
+#define NODE_LEAKAGE_IO DT_INST(0, nuvoton_npcx_leakage_io)
+#if DT_NODE_HAS_PROP(NODE_LEAKAGE_IO, leak_gpios)
+struct npcx_leak_gpio {
+	const struct device *gpio;
+	gpio_pin_t pin;
+};
 
-/* Platform specific power control functions */
-bool npcx_power_console_is_in_use(void)
+#define NPCX_POWER_LEAKAGE_IO_INIT(node_id, prop, idx)	{		\
+	.gpio = DEVICE_DT_GET(DT_GPIO_CTLR_BY_IDX(node_id, prop, idx)),	\
+	.pin = DT_GPIO_PIN_BY_IDX(node_id, prop, idx),			\
+},
+
+/*
+ * Get io array which have leakage current from 'leak-gpios' property of
+ * 'power_leakage_io' DT node. User can overwrite this prop. at board DT file to
+ * save power consumption when ec enter deep sleep.
+ *
+ * &power_leakage_io {
+ *       leak-gpios = <&gpio0 0 0
+ *                    &gpiob 1 0>;
+ * };
+ */
+static struct npcx_leak_gpio leak_gpios[] = {
+	DT_FOREACH_PROP_ELEM(NODE_LEAKAGE_IO, leak_gpios, NPCX_POWER_LEAKAGE_IO_INIT)
+};
+
+static void npcx_power_suspend_leak_io_pads(void)
 {
-	return (k_uptime_get() < console_expired_time);
+	for (int i = 0; i < ARRAY_SIZE(leak_gpios); i++) {
+		npcx_gpio_disable_io_pads(leak_gpios[i].gpio, leak_gpios[i].pin);
+	}
 }
 
-void npcx_power_console_is_in_use_refresh(void)
+static void npcx_power_restore_leak_io_pads(void)
 {
-	console_expired_time = k_uptime_get() + expired_timeout;
+	for (int i = 0; i < ARRAY_SIZE(leak_gpios); i++) {
+		npcx_gpio_enable_io_pads(leak_gpios[i].gpio, leak_gpios[i].pin);
+	}
+}
+#else
+void npcx_power_suspend_leak_io_pads(void)
+{
+	/* do nothing */
 }
 
-void npcx_power_set_console_in_use_timeout(int64_t timeout)
+void npcx_power_restore_leak_io_pads(void)
 {
-	expired_timeout = timeout;
+	/* do nothing */
 }
-#endif
+#endif /* DT_NODE_HAS_PROP(NODE_LEAKAGE_IO, leak_gpios) */
 
 static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 {
@@ -120,10 +152,11 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 	npcx_clock_control_turn_on_system_sleep(slp_mode == NPCX_DEEP_SLEEP,
 					wk_mode == NPCX_INSTANT_WAKE_UP);
 
-	/* A bypass in npcx7 series to prevent leakage in low-voltage pads */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		npcx_lvol_suspend_io_pads();
-	}
+	/*
+	 * Disable the connection between io pads that have leakage current and
+	 * input buffer to save power consumption.
+	 */
+	npcx_power_suspend_leak_io_pads();
 
 	/* Turn on eSPI/LPC host access wake-up interrupt. */
 	if (IS_ENABLED(CONFIG_ESPI_NPCX)) {
@@ -145,7 +178,7 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 	NPCX_ENTER_SYSTEM_SLEEP();
 
 	/*
-	 * Compensate system timer by the elasped time of low-freq timer during
+	 * Compensate system timer by the elapsed time of low-freq timer during
 	 * system sleep mode.
 	 */
 	npcx_clock_compensate_system_timer();
@@ -155,51 +188,52 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 		npcx_host_disable_access_interrupt();
 	}
 
-	/* A bypass in npcx7 series to prevent leakage in low-voltage pads */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		npcx_lvol_restore_io_pads();
-	}
+	/*
+	 * Restore the connection between io pads that have leakage current and
+	 * input buffer.
+	 */
+	npcx_power_restore_leak_io_pads();
 
 	/* Turn off system sleep mode. */
 	npcx_clock_control_turn_off_system_sleep();
 }
 
 /* Invoke when enter "Suspend/Low Power" mode. */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
-		LOG_DBG("Unsupported power state %u", info.state);
+	if (state != PM_STATE_SUSPEND_TO_IDLE) {
+		LOG_DBG("Unsupported power state %u", state);
 	} else {
-		switch (info.substate_id) {
+		switch (substate_id) {
 		case 0:	/* Sub-state 0: Deep sleep with instant wake-up */
 			npcx_power_enter_system_sleep(NPCX_DEEP_SLEEP,
 							NPCX_INSTANT_WAKE_UP);
-			if (IS_ENABLED(CONFIG_SOC_POWER_MANAGEMENT_TRACE)) {
+			if (IS_ENABLED(CONFIG_NPCX_PM_TRACE)) {
 				cnt_sleep0++;
 			}
 			break;
 		case 1:	/* Sub-state 1: Deep sleep with standard wake-up */
 			npcx_power_enter_system_sleep(NPCX_DEEP_SLEEP,
 							NPCX_STANDARD_WAKE_UP);
-			if (IS_ENABLED(CONFIG_SOC_POWER_MANAGEMENT_TRACE)) {
+			if (IS_ENABLED(CONFIG_NPCX_PM_TRACE)) {
 				cnt_sleep1++;
 			}
 			break;
 		default:
 			LOG_DBG("Unsupported power substate-id %u",
-				info.substate_id);
+				substate_id);
 			break;
 		}
 	}
 }
 
 /* Handle soc specific activity after exiting "Suspend/Low Power" mode. */
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
-		LOG_DBG("Unsupported power state %u", info.state);
+	if (state != PM_STATE_SUSPEND_TO_IDLE) {
+		LOG_DBG("Unsupported power state %u", state);
 	} else {
-		switch (info.substate_id) {
+		switch (substate_id) {
 		case 0:	/* Sub-state 0: Deep sleep with instant wake-up */
 			/* Restore interrupts */
 			__enable_irq();
@@ -210,12 +244,12 @@ __weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 			break;
 		default:
 			LOG_DBG("Unsupported power substate-id %u",
-				info.substate_id);
+				substate_id);
 			break;
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_SOC_POWER_MANAGEMENT_TRACE)) {
+	if (IS_ENABLED(CONFIG_NPCX_PM_TRACE)) {
 		LOG_DBG("sleep: %d, deep sleep: %d", cnt_sleep0, cnt_sleep1);
 		LOG_INF("total ticks in sleep: %lld",
 			npcx_clock_get_sleep_ticks());

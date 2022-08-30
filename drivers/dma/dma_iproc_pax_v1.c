@@ -6,31 +6,23 @@
 
 #define DT_DRV_COMPAT brcm_iproc_pax_dma_v1
 
-#include <arch/cpu.h>
-#include <cache.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/cache.h>
 #include <errno.h>
-#include <init.h>
-#include <kernel.h>
-#include <linker/sections.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/linker/sections.h>
 #include <soc.h>
 #include <string.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <drivers/dma.h>
-#include <drivers/pcie/endpoint/pcie_ep.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/pcie/endpoint/pcie_ep.h>
 #include "dma_iproc_pax_v1.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_iproc_pax);
-
-#define PAX_DMA_DEV_NAME(dev) ((dev)->name)
-
-#define PAX_DMA_DEV_CFG(dev) \
-	((struct dma_iproc_pax_cfg *)(dev)->config)
-
-#define PAX_DMA_DEV_DATA(dev) \
-	((struct dma_iproc_pax_data *)(dev)->data)
 
 /* Driver runtime data for PAX DMA and RM */
 static struct dma_iproc_pax_data pax_dma_data;
@@ -68,7 +60,7 @@ static inline void rm_write_header_desc(void *desc, uint32_t toggle,
 	struct rm_header *r = (struct rm_header *)desc;
 
 	r->opq = opq;
-	/* DMA descriptor count init vlaue */
+	/* DMA descriptor count init value */
 	r->bdcount = bdcount;
 	r->prot = 0x0;
 	/* No packet extension, start and end set to '1' */
@@ -429,19 +421,13 @@ err:
 static int poll_on_write_sync(const struct device *dev,
 			      struct dma_iproc_pax_ring_data *ring)
 {
-	struct dma_iproc_pax_cfg *cfg = PAX_DMA_DEV_CFG(dev);
-	const struct device *pcidev;
+	const struct dma_iproc_pax_cfg *cfg = dev->config;
 	struct dma_iproc_pax_write_sync_data sync_rd, *recv, *sent;
 	uint64_t pci_addr;
 	uint32_t *pci32, *axi32;
 	uint32_t zero_init = 0, timeout = PAX_DMA_MAX_SYNC_WAIT;
 	int ret;
 
-	pcidev = device_get_binding(cfg->pcie_dev_name);
-	if (!pcidev) {
-		LOG_ERR("Cannot get pcie device\n");
-		return -EINVAL;
-	}
 	recv = &sync_rd;
 	sent = &(ring->curr.sync_data);
 	/* form host pci sync address */
@@ -451,13 +437,13 @@ static int poll_on_write_sync(const struct device *dev,
 	axi32 = (uint32_t *)&sync_rd;
 
 	do {
-		ret = pcie_ep_xfer_data_memcpy(pcidev, pci_addr,
+		ret = pcie_ep_xfer_data_memcpy(cfg->pcie_dev, pci_addr,
 					       (uintptr_t *)axi32, 4,
 					       PCIE_OB_LOWMEM, HOST_TO_DEVICE);
 
 		if (memcmp((void *)recv, (void *)sent, 4) == 0) {
 			/* clear the sync word */
-			ret = pcie_ep_xfer_data_memcpy(pcidev, pci_addr,
+			ret = pcie_ep_xfer_data_memcpy(cfg->pcie_dev, pci_addr,
 						       (uintptr_t *)&zero_init,
 						       4, PCIE_OB_LOWMEM,
 						       DEVICE_TO_HOST);
@@ -479,7 +465,7 @@ static int poll_on_write_sync(const struct device *dev,
 static int process_cmpl_event(const struct device *dev,
 			      enum ring_idx idx, uint32_t pl_len)
 {
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 	uint32_t wr_offs, rd_offs, ret = 0;
 	struct dma_iproc_pax_ring_data *ring = &(pd->ring[idx]);
 	struct cmpl_pkt *c;
@@ -538,7 +524,7 @@ static int process_cmpl_event(const struct device *dev,
 static int peek_ring_cmpl(const struct device *dev,
 			  enum ring_idx idx, uint32_t pl_len)
 {
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 	uint32_t wr_offs, rd_offs, timeout = PAX_DMA_MAX_POLL_WAIT;
 	struct dma_iproc_pax_ring_data *ring = &(pd->ring[idx]);
 
@@ -565,11 +551,10 @@ static int peek_ring_cmpl(const struct device *dev,
 	return process_cmpl_event(dev, idx, pl_len);
 }
 #else
-static void rm_isr(void *arg)
+static void rm_isr(const struct device *dev)
 {
 	uint32_t status, err_stat, idx;
-	const struct device *dev = arg;
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 
 	/* read and clear interrupt status */
 	status = sys_read32(RM_COMM_REG(pd, RM_COMM_MSI_INTR_INTERRUPT_STATUS));
@@ -599,10 +584,15 @@ static void rm_isr(void *arg)
 
 static int dma_iproc_pax_init(const struct device *dev)
 {
-	struct dma_iproc_pax_cfg *cfg = PAX_DMA_DEV_CFG(dev);
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	const struct dma_iproc_pax_cfg *cfg = dev->config;
+	struct dma_iproc_pax_data *pd = dev->data;
 	int r;
 	uintptr_t mem_aligned;
+
+	if (!device_is_ready(cfg->pcie_dev)) {
+		LOG_ERR("PCIe device not ready");
+		return -ENODEV;
+	}
 
 	pd->dma_base = cfg->dma_base;
 	pd->rm_comm_base = cfg->rm_comm_base;
@@ -685,10 +675,9 @@ static int dma_iproc_pax_init(const struct device *dev)
 		    0);
 	irq_enable(DT_INST_IRQN(0));
 #else
-	LOG_INF("%s PAX DMA rings in poll mode!\n", PAX_DMA_DEV_NAME(dev));
+	LOG_INF("%s PAX DMA rings in poll mode!\n", dev->name);
 #endif
-	LOG_INF("%s RM setup %d rings\n", PAX_DMA_DEV_NAME(dev),
-		pd->used_rings);
+	LOG_INF("%s RM setup %d rings\n", dev->name, pd->used_rings);
 
 	return 0;
 }
@@ -713,7 +702,7 @@ static void set_pkt_count(const struct device *dev,
 			  enum ring_idx idx,
 			  uint32_t pl_len)
 {
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 	uint32_t val;
 
 	/* program packet count for interrupt assertion */
@@ -729,7 +718,7 @@ static int wait_for_pkt_completion(const struct device *dev,
 				   enum ring_idx idx,
 				   uint32_t pl_len)
 {
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 	struct dma_iproc_pax_ring_data *ring;
 
 	ring = &(pd->ring[idx]);
@@ -749,8 +738,8 @@ static int dma_iproc_pax_do_xfer(const struct device *dev,
 				 struct dma_iproc_pax_payload *pl,
 				 uint32_t pl_len)
 {
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
-	struct dma_iproc_pax_cfg *cfg = PAX_DMA_DEV_CFG(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
+	const struct dma_iproc_pax_cfg *cfg = dev->config;
 	int ret = 0, cnt;
 	struct dma_iproc_pax_ring_data *ring;
 	void *hdr;
@@ -835,8 +824,9 @@ static int dma_iproc_pax_do_xfer(const struct device *dev,
 	set_ring_active(pd, idx, true);
 
 	ret = wait_for_pkt_completion(dev, idx, pl_len + 1);
-	if (ret)
+	if (ret) {
 		goto err_ret;
+	}
 
 	ret = poll_on_write_sync(dev, ring);
 	k_mutex_lock(&ring->lock, K_FOREVER);
@@ -854,7 +844,7 @@ err_ret:
 static int dma_iproc_pax_configure(const struct device *dev, uint32_t channel,
 				   struct dma_config *cfg)
 {
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 	struct dma_iproc_pax_ring_data *ring;
 	uint32_t xfer_sz;
 	int ret = 0;
@@ -953,7 +943,7 @@ static int dma_iproc_pax_transfer_start(const struct device *dev,
 					uint32_t channel)
 {
 	int ret = 0;
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 	struct dma_iproc_pax_ring_data *ring;
 
 	if (channel >= PAX_DMA_RINGS_MAX) {
@@ -986,7 +976,7 @@ static const struct dma_iproc_pax_cfg pax_dma_cfg = {
 	.use_rings = DT_INST_PROP(0, dma_channels),
 	.bd_memory_base = (void *)DT_INST_PROP_BY_IDX(0, bd_memory, 0),
 	.scr_addr_loc = DT_INST_PROP(0, scr_addr_loc),
-	.pcie_dev_name = DT_INST_PROP_BY_PHANDLE(0, pcie_ep, label),
+	.pcie_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, pcie_ep)),
 };
 
 DEVICE_DT_INST_DEFINE(0,
@@ -995,5 +985,5 @@ DEVICE_DT_INST_DEFINE(0,
 		    &pax_dma_data,
 		    &pax_dma_cfg,
 		    POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    CONFIG_DMA_INIT_PRIORITY,
 		    &pax_dma_driver_api);

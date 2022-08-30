@@ -11,7 +11,7 @@
  * @}
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "dummy_sensor.h"
 
 K_SEM_DEFINE(sem, 0, 1);
@@ -103,7 +103,7 @@ static struct trigger_sequence trigger_elements[] = {
  *
  * @see sensor_sample_fetch(), sensor_channel_get()
  */
-void test_sensor_get_channels(void)
+ZTEST(sensor_api, test_sensor_get_channels)
 {
 	const struct device *dev;
 	struct sensor_value data;
@@ -141,7 +141,7 @@ void test_sensor_get_channels(void)
 }
 
 static void trigger_handler(const struct device *dev,
-				struct sensor_trigger *trigger)
+			    const struct sensor_trigger *trigger)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(trigger);
@@ -189,7 +189,7 @@ static void trigger_handler(const struct device *dev,
  *
  * @see sensor_attr_set(), sensor_trigger_set()
  */
-void test_sensor_handle_triggers(void)
+ZTEST(sensor_api, test_sensor_handle_triggers)
 {
 	const struct device *dev;
 	const struct device *dev_no_trig;
@@ -236,9 +236,9 @@ void test_sensor_handle_triggers(void)
 
 		/* check the result of the trigger channel */
 		zassert_equal(data.val1, trigger_elements[i].data.val1,
-				"retrived data is not match.");
+				"retrieved data is not match.");
 		zassert_equal(data.val2, trigger_elements[i].data.val2,
-				"retrived data is not match.");
+				"retrieved data is not match.");
 
 		/* set attributes for no trig dev */
 		zassert_equal(sensor_attr_set(dev_no_trig,
@@ -263,13 +263,13 @@ void test_sensor_handle_triggers(void)
 }
 
 /**
- * @brief Test unit coversion of sensor module
+ * @brief Test unit conversion of sensor module
  * @details Verify helper function to convert acceleration from
  * Gs to m/s^2 and from m/s^2 to Gs.  Verify helper function
  * to convert radians to degrees and degrees to radians.  Verify
  * helper function for converting struct sensor_value to double.
  */
-void test_sensor_unit_conversion(void)
+ZTEST(sensor_api, test_sensor_unit_conversion)
 {
 	struct sensor_value data;
 
@@ -311,13 +311,4 @@ void test_sensor_unit_conversion(void)
 #endif
 }
 
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_sensor_api,
-			 ztest_1cpu_unit_test(test_sensor_get_channels),
-			 ztest_1cpu_unit_test(test_sensor_handle_triggers),
-			 ztest_1cpu_unit_test(test_sensor_unit_conversion));
-
-	ztest_run_test_suite(test_sensor_api);
-}
+ZTEST_SUITE(sensor_api, NULL, NULL, ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

@@ -11,28 +11,28 @@
 #ifndef __MAG_LIS2MDL_H
 #define __MAG_LIS2MDL_H
 
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/util.h>
 #include <stmemsc.h>
 #include "lis2mdl_reg.h"
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 struct lis2mdl_config {
 	stmdev_ctx_t ctx;
 	union {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-		const struct stmemsc_cfg_i2c i2c;
+		const struct i2c_dt_spec i2c;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-		const struct stmemsc_cfg_spi spi;
+		const struct spi_dt_spec spi;
 #endif
 	} stmemsc_cfg;
 	bool cancel_offset;
@@ -50,11 +50,6 @@ struct lis2mdl_data {
 	const struct device *dev;
 	int16_t mag[3];
 	int16_t temp_sample;
-
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state power_state;
-#endif
-
 	struct k_sem fetch_sem;
 
 #ifdef CONFIG_LIS2MDL_TRIGGER

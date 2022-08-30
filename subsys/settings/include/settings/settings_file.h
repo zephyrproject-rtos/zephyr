@@ -8,7 +8,7 @@
 #ifndef __SETTINGS_FILE_H_
 #define __SETTINGS_FILE_H_
 
-#include "settings/settings.h"
+#include <zephyr/settings/settings.h>
 
 #ifdef __cplusplus
 extern "C" {

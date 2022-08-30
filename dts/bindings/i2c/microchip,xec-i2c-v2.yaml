@@ -1,0 +1,33 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip I2C/SMB V2 controller
+
+compatible: "microchip,xec-i2c-v2"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+    reg:
+      required: true
+
+    port_sel:
+      type: int
+      description: soc block mapping to pin
+      required: true
+
+    girqs:
+      type: array
+      required: true
+      description: array of GIRQ numbers [8:26] and bit positions [0:31]
+
+    pcrs:
+      type: array
+      required: true
+      description: PCR sleep register index and bit position
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true

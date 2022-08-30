@@ -6,7 +6,8 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt.dtsi>
+#include <nxp/nxp_rt1050.dtsi>
+#include "mm_swiftio-pinctrl.dtsi"
 
 / {
 	model = "MM MM-SWIFTIO board";
@@ -16,6 +17,7 @@
 		led0 = &green_led;
 		led1 = &red_led;
 		led2 = &blue_led;
+		sdhc0 = &usdhc1;
 	};
 
 	chosen {
@@ -57,7 +59,6 @@
 	is25wp064: is25wp064@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <67108864>;
-		label = "IS25WP064";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";
@@ -68,6 +69,9 @@
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &lpuart2 {
@@ -92,15 +96,18 @@
 
 &lpi2c1 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
 };
 
 &lpi2c3 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c3>;
+	pinctrl-names = "default";
 
-	ov7725@21 {
+	ov7725: ov7725@21 {
 		compatible = "ovti,ov7725";
 		reg = <0x21>;
-		label = "OV7725";
 		status = "okay";
 
 		reset-gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
@@ -171,15 +178,30 @@
 	status = "okay";
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 	no-1-8-v;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
 };
 
 &csi {
 	status = "okay";
-	sensor-label = "OV7725";
+	sensor = <&ov7725>;
+	pinctrl-0 = <&pinmux_csi>;
+	pinctrl-names = "default";
 
 	port {
 		csi_ep_in: endpoint {
 			remote-endpoint = <&ov7725_ep_out>;
 		};
 	};
+};
+
+&edma0 {
+	status = "okay";
 };

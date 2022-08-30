@@ -1,6 +1,7 @@
 tests:
   crypto.tinycrypt.hmac_prng:
     tags: tinycrypt crypto sha256 hmac prng
-    platform_exclude: mec15xxevb_assy6853 mec1501modular_assy6885
+    platform_exclude: mec15xxevb_assy6853 mec1501modular_assy6885 m2gl025_miv
     integration_platforms:
       - native_posix
+    toolchain_exclude: xcc

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <init.h>
-#include <ztest.h>
-#include <sys/printk.h>
-#include <pm/device_runtime.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/ztest.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/linker/sections.h>
 #include "abstract_driver.h"
 
 
@@ -19,11 +19,6 @@
 
 #define MY_DRIVER_A     "my_driver_A"
 #define MY_DRIVER_B     "my_driver_B"
-
-extern void test_mmio_multiple(void);
-extern void test_mmio_toplevel(void);
-extern void test_mmio_single(void);
-extern void test_mmio_device_map(void);
 
 /**
  * @brief Test cases to verify device objects
@@ -53,7 +48,7 @@ extern void test_mmio_device_map(void);
  *
  * @see device_get_binding(), DEVICE_DEFINE()
  */
-void test_dummy_device(void)
+ZTEST(device, test_dummy_device)
 {
 	const struct device *dev;
 
@@ -79,7 +74,7 @@ void test_dummy_device(void)
  *
  * @see device_get_binding(), DEVICE_DEFINE()
  */
-static void test_dynamic_name(void)
+ZTEST_USER(device, test_dynamic_name)
 {
 	const struct device *mux;
 	char name[sizeof(DUMMY_PORT_2)];
@@ -97,7 +92,7 @@ static void test_dynamic_name(void)
  *
  * @see device_get_binding(), DEVICE_DEFINE()
  */
-static void test_bogus_dynamic_name(void)
+ZTEST_USER(device, test_bogus_dynamic_name)
 {
 	const struct device *mux;
 	char name[64];
@@ -114,7 +109,7 @@ static void test_bogus_dynamic_name(void)
  *
  * @see device_get_binding(), DEVICE_DEFINE()
  */
-static void test_null_dynamic_name(void)
+ZTEST_USER(device, test_null_dynamic_name)
 {
 	/* Supplying a NULL dynamic name may trigger a SecureFault and
 	 * lead to system crash in TrustZone enabled Non-Secure builds.
@@ -130,28 +125,35 @@ static void test_null_dynamic_name(void)
 #endif
 }
 
+__pinned_bss
 static struct init_record {
 	bool pre_kernel;
 	bool is_in_isr;
 	bool is_pre_kernel;
+	bool could_yield;
 } init_records[4];
 
+__pinned_data
 static struct init_record *rp = init_records;
 
+__pinned_func
 static int add_init_record(bool pre_kernel)
 {
 	rp->pre_kernel = pre_kernel;
 	rp->is_pre_kernel = k_is_pre_kernel();
 	rp->is_in_isr = k_is_in_isr();
+	rp->could_yield = k_can_yield();
 	++rp;
 	return 0;
 }
 
+__pinned_func
 static int pre1_fn(const struct device *dev)
 {
 	return add_init_record(true);
 }
 
+__pinned_func
 static int pre2_fn(const struct device *dev)
 {
 	return add_init_record(true);
@@ -188,7 +190,7 @@ SYS_INIT(null_driver_init, POST_KERNEL, 0);
  *
  * @see k_is_pre_kernel()
  */
-void test_pre_kernel_detection(void)
+ZTEST(device, test_pre_kernel_detection)
 {
 	struct init_record *rpe = rp;
 
@@ -200,6 +202,8 @@ void test_pre_kernel_detection(void)
 			      "rec %zu isr", rp - init_records);
 		zassert_equal(rp->is_pre_kernel, true,
 			      "rec %zu pre-kernel", rp - init_records);
+		zassert_equal(rp->could_yield, false,
+			      "rec %zu could-yield", rp - init_records);
 		++rp;
 	}
 	zassert_equal(rp - init_records, 2U,
@@ -210,20 +214,21 @@ void test_pre_kernel_detection(void)
 			      "rec %zu isr", rp - init_records);
 		zassert_equal(rp->is_pre_kernel, false,
 			      "rec %zu post-kernel", rp - init_records);
+		zassert_equal(rp->could_yield, true,
+			      "rec %zu could-yield", rp - init_records);
 		++rp;
 	}
 }
 
-#ifdef CONFIG_PM_DEVICE
 /**
- * @brief Test system device list query API with PM enabled.
+ * @brief Test system device list query API.
  *
  * It queries the list of devices in the system, used to suspend or
  * resume the devices in PM applications.
  *
  * @see z_device_get_all_static()
  */
-static void test_build_suspend_device_list(void)
+ZTEST(device, test_device_list)
 {
 	struct device const *devices;
 	size_t devcount = z_device_get_all_static(&devices);
@@ -231,133 +236,25 @@ static void test_build_suspend_device_list(void)
 	zassert_false((devcount == 0), NULL);
 }
 
-/**
- * @brief Test APIs to enable and disable automatic runtime power management
- *
- * @details Test the API enable and disable, cause we do not implement our PM
- * API here, it will use the default function to handle power status. So when
- * we try to get power state by pm_device_state_get(), it will default
- * return power state zero. And we check it.
- *
- * @ingroup kernel_device_tests
- */
-static void test_enable_and_disable_automatic_runtime_pm(void)
+static int sys_init_counter;
+
+static int init_fn(const struct device *dev)
 {
-	const struct device *dev;
-	int ret;
-	enum pm_device_state device_power_state;
-
-	dev = device_get_binding(DUMMY_PORT_2);
-	zassert_false((dev == NULL), NULL);
-
-	/* check its status at first */
-	/* for cases that cannot run runtime PM, we skip it now */
-	ret = pm_device_state_get(dev, &device_power_state);
-	if (ret == -ENOSYS) {
-		TC_PRINT("Power management not supported on device");
-		ztest_test_skip();
-		return;
-	}
-
-	zassert_true((ret == 0),
-		"Unable to get active state to device");
-
-	/* enable automatic runtime PM and check its status */
-	pm_device_enable(dev);
-	zassert_not_null((dev->pm), "No device pm");
-	zassert_true((dev->pm->enable), "Pm is not enable");
-
-	/* disable automatic runtime PM and check its status */
-	pm_device_disable(dev);
-	zassert_false((dev->pm->enable), "Pm shall not be enable");
+	sys_init_counter++;
+	return 0;
 }
 
-/**
- * @brief Test device binding for existing device with PM enabled.
- *
- * Validates device binding for an existing device object with Power management
- * enabled. It also checks if the device is in the middle of a transaction,
- * sets/clears busy status and validates status again.
- *
- * @see device_get_binding(), pm_device_busy_set(), pm_device_busy_clear(),
- * pm_device_is_busy(), pm_device_is_any_busy(),
- * pm_device_state_set()
- */
-void test_dummy_device_pm(void)
+SYS_INIT(init_fn, APPLICATION, 0);
+SYS_INIT_NAMED(init1, init_fn, APPLICATION, 1);
+SYS_INIT_NAMED(init2, init_fn, APPLICATION, 2);
+SYS_INIT_NAMED(init3, init_fn, APPLICATION, 2);
+
+ZTEST(device, test_sys_init_multiple)
 {
-	const struct device *dev;
-	int busy, ret;
-	enum pm_device_state device_power_state = PM_DEVICE_STATE_SUSPEND;
-
-	dev = device_get_binding(DUMMY_PORT_2);
-	zassert_false((dev == NULL), NULL);
-
-	busy = pm_device_is_any_busy();
-	zassert_true((busy == 0), NULL);
-
-	/* Set device state to BUSY*/
-	pm_device_busy_set(dev);
-
-	busy = pm_device_is_any_busy();
-	zassert_false((busy == 0), NULL);
-
-	busy = pm_device_is_busy(dev);
-	zassert_false((busy == 0), NULL);
-
-	/* Clear device BUSY state*/
-	pm_device_busy_clear(dev);
-
-	busy = pm_device_is_busy(dev);
-	zassert_true((busy == 0), NULL);
-
-	test_build_suspend_device_list();
-
-	/* Set device state to PM_DEVICE_STATE_ACTIVE */
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
-	if (ret == -ENOSYS) {
-		TC_PRINT("Power management not supported on device");
-		ztest_test_skip();
-		return;
-	}
-
-	zassert_true((ret == 0),
-			"Unable to set active state to device");
-
-	ret = pm_device_state_get(dev, &device_power_state);
-	zassert_true((ret == 0),
-			"Unable to get active state to device");
-	zassert_true((device_power_state == PM_DEVICE_STATE_ACTIVE),
-			"Error power status");
-
-	/* Set device state to PM_DEVICE_STATE_FORCE_SUSPEND */
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_FORCE_SUSPEND);
-
-	zassert_true((ret == 0), "Unable to force suspend device");
-
-	ret = pm_device_state_get(dev, &device_power_state);
-	zassert_true((ret == 0),
-			"Unable to get suspend state to device");
-	zassert_true((device_power_state == PM_DEVICE_STATE_ACTIVE),
-			"Error power status");
-}
-#else
-static void test_enable_and_disable_automatic_runtime_pm(void)
-{
-	ztest_test_skip();
+	zassert_equal(sys_init_counter, 4, "");
 }
 
-static void test_build_suspend_device_list(void)
-{
-	ztest_test_skip();
-}
-
-void test_dummy_device_pm(void)
-{
-	ztest_test_skip();
-}
-#endif
-
-/* this is for storing sequence during initializtion */
+/* this is for storing sequence during initialization */
 extern int init_level_sequence[4];
 extern int init_priority_sequence[4];
 extern unsigned int seq_level_cnt;
@@ -373,7 +270,7 @@ extern unsigned int seq_priority_cnt;
  *
  * @ingroup kernel_device_tests
  */
-void test_device_init_level(void)
+ZTEST(device, test_device_init_level)
 {
 	bool seq_correct = true;
 
@@ -381,8 +278,9 @@ void test_device_init_level(void)
 	 * correct, and it should be 1, 2, 3, 4
 	 */
 	for (int i = 0; i < 4; i++) {
-		if (init_level_sequence[i] != (i+1))
+		if (init_level_sequence[i] != (i + 1)) {
 			seq_correct = false;
+		}
 	}
 
 	zassert_true((seq_correct == true),
@@ -399,7 +297,7 @@ void test_device_init_level(void)
  *
  * @ingroup kernel_device_tests
  */
-void test_device_init_priority(void)
+ZTEST(device, test_device_init_priority)
 {
 	bool sequence_correct = true;
 
@@ -407,8 +305,9 @@ void test_device_init_priority(void)
 	 * and it should be 1, 2, 3, 4
 	 */
 	for (int i = 0; i < 4; i++) {
-		if (init_priority_sequence[i] != (i+1))
+		if (init_priority_sequence[i] != (i + 1)) {
 			sequence_correct = false;
+		}
 	}
 
 	zassert_true((sequence_correct == true),
@@ -431,7 +330,7 @@ void test_device_init_priority(void)
  *
  * @ingroup kernel_device_tests
  */
-void test_abstraction_driver_common(void)
+ZTEST(device, test_abstraction_driver_common)
 {
 	const struct device *dev;
 	int ret;
@@ -465,23 +364,4 @@ void test_abstraction_driver_common(void)
  * @}
  */
 
-void test_main(void)
-{
-	ztest_test_suite(device,
-			 ztest_unit_test(test_dummy_device_pm),
-			 ztest_unit_test(test_build_suspend_device_list),
-			 ztest_unit_test(test_dummy_device),
-			 ztest_unit_test(test_enable_and_disable_automatic_runtime_pm),
-			 ztest_unit_test(test_pre_kernel_detection),
-			 ztest_user_unit_test(test_bogus_dynamic_name),
-			 ztest_user_unit_test(test_null_dynamic_name),
-			 ztest_user_unit_test(test_dynamic_name),
-			 ztest_unit_test(test_device_init_level),
-			 ztest_unit_test(test_device_init_priority),
-			 ztest_unit_test(test_abstraction_driver_common),
-			 ztest_unit_test(test_mmio_single),
-			 ztest_unit_test(test_mmio_multiple),
-			 ztest_unit_test(test_mmio_toplevel),
-			 ztest_unit_test(test_mmio_device_map));
-	ztest_run_test_suite(device);
-}
+ZTEST_SUITE(device, NULL, NULL, NULL, NULL, NULL);

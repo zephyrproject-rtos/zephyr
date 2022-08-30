@@ -14,14 +14,10 @@ config NET_BUF
 if NET_BUF
 
 config NET_BUF_USER_DATA_SIZE
-	int "Size of user_data available in every network buffer"
-	default 8 if ((BT || NET_TCP2) && 64BIT) || BT_ISO
-	default 4
-	range 4 65535 if BT || NET_TCP2
-	range 0 65535
+	int "Size of user_data available in every network buffer (DEPRECATED)"
+	default 0
 	help
-	  Amount of memory reserved in each network buffer for user data. In
-	  most cases this can be left as the default value.
+	  User data size is now set on a per-pool basis at declaration point
 
 config NET_BUF_LOG
 	bool "Network buffer logging"
@@ -77,7 +73,6 @@ if NETWORKING
 # which supports PM properly.
 config NET_POWER_MANAGEMENT
 	bool
-	default n
 	depends on PM_DEVICE
 
 source "subsys/net/Kconfig.hostname"
@@ -85,6 +80,8 @@ source "subsys/net/Kconfig.hostname"
 source "subsys/net/l2/Kconfig"
 
 source "subsys/net/ip/Kconfig"
+
+source "subsys/net/pkt_filter/Kconfig"
 
 source "subsys/net/lib/Kconfig"
 

@@ -6,12 +6,11 @@
 
 #define DT_DRV_COMPAT litex_eth0
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <init.h>
-#include <irq.h>
-#include <device.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/init.h>
+#include <zephyr/irq.h>
+#include <zephyr/device.h>
 #include <zephyr/types.h>
 
 #define IRQ_MASK		DT_REG_ADDR_BY_NAME(DT_INST(0, vexriscv_intc0), irq_mask)
@@ -125,8 +124,7 @@ static int vexriscv_litex_irq_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	__asm__ volatile ("csrrs x0, mie, %0"
-			:: "r"((1 << RISCV_MACHINE_TIMER_IRQ)
-				| (1 << RISCV_MACHINE_EXT_IRQ)));
+			:: "r"(1 << RISCV_MACHINE_EXT_IRQ));
 	vexriscv_litex_irq_setie(1);
 	IRQ_CONNECT(RISCV_MACHINE_EXT_IRQ, 0, vexriscv_litex_irq_handler,
 			NULL, 0);
@@ -135,4 +133,4 @@ static int vexriscv_litex_irq_init(const struct device *dev)
 }
 
 SYS_INIT(vexriscv_litex_irq_init, PRE_KERNEL_2,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+		CONFIG_INTC_INIT_PRIORITY);

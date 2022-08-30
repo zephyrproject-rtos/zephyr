@@ -9,11 +9,12 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_adc12
 
-#include <drivers/adc.h>
+#include <zephyr/drivers/adc.h>
 #include <fsl_adc12.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_mcux_adc12);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
@@ -26,6 +27,7 @@ struct mcux_adc12_config {
 	adc12_reference_voltage_source_t ref_src;
 	uint32_t sample_clk_count;
 	void (*irq_config_func)(const struct device *dev);
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct mcux_adc12_data {
@@ -216,6 +218,7 @@ static int mcux_adc12_init(const struct device *dev)
 	struct mcux_adc12_data *data = dev->data;
 	ADC_Type *base = config->base;
 	adc12_config_t adc_config;
+	int err;
 
 	ADC12_GetDefaultConfig(&adc_config);
 
@@ -232,6 +235,11 @@ static int mcux_adc12_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 	data->dev = dev;
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
@@ -261,6 +269,8 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 #define ACD12_MCUX_INIT(n)						\
 	static void mcux_adc12_config_func_##n(const struct device *dev); \
 									\
+	PINCTRL_DT_INST_DEFINE(n);					\
+									\
 	ASSERT_WITHIN_RANGE(DT_INST_PROP(n, clk_source), 0, 3,		\
 			    "Invalid clock source");			\
 	ASSERT_ADC12_CLK_DIV_VALID(DT_INST_PROP(n, clk_divider),	\
@@ -275,6 +285,7 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 		.ref_src = ADC12_REF_SRC(n),				\
 		.sample_clk_count = DT_INST_PROP(n, sample_time),	\
 		.irq_config_func = mcux_adc12_config_func_##n,		\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\
 	static struct mcux_adc12_data mcux_adc12_data_##n = {		\
@@ -286,7 +297,7 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 	DEVICE_DT_INST_DEFINE(n, &mcux_adc12_init,			\
 			    NULL, &mcux_adc12_data_##n,			\
 			    &mcux_adc12_config_##n, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_ADC_INIT_PRIORITY,			\
 			    &mcux_adc12_driver_api);			\
 									\
 	static void mcux_adc12_config_func_##n(const struct device *dev) \

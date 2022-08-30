@@ -8,8 +8,9 @@
 #define DT_DRV_COMPAT nxp_kinetis_gpio
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/nxp-kinetis-gpio.h>
 #include <soc.h>
 #include <fsl_common.h>
 #include <fsl_port.h>
@@ -95,6 +96,22 @@ static int gpio_mcux_configure(const struct device *dev,
 		 */
 		pcr |= PORT_PCR_PE_MASK;
 	}
+
+#if defined(FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH) && FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH
+	/* Determine the drive strength */
+	switch (flags & KINETIS_GPIO_DS_MASK) {
+	case KINETIS_GPIO_DS_DFLT:
+		/* Default is low drive strength */
+		mask |= PORT_PCR_DSE_MASK;
+		break;
+	case KINETIS_GPIO_DS_ALT:
+		/* Alternate is high drive strength */
+		pcr |= PORT_PCR_DSE_MASK;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+#endif /* defined(FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH) && FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH */
 
 	/* Accessing by pin, we only need to write one PCR register. */
 	port_base->PCR[pin] = (port_base->PCR[pin] & ~mask) | pcr;
@@ -244,6 +261,26 @@ static void gpio_mcux_port_isr(const struct device *dev)
 	gpio_fire_callbacks(&data->callbacks, dev, int_status);
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_mcux_port_get_direction(const struct device *dev, gpio_port_pins_t map,
+					gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	const struct gpio_mcux_config *config = dev->config;
+	GPIO_Type *gpio_base = config->gpio_base;
+
+	map &= config->common.port_pin_mask;
+
+	if (inputs != NULL) {
+		*inputs = map & (~gpio_base->PDDR);
+	}
+
+	if (outputs != NULL) {
+		*outputs = map & gpio_base->PDDR;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 
 static const struct gpio_driver_api gpio_mcux_driver_api = {
 	.pin_configure = gpio_mcux_configure,
@@ -254,6 +291,9 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 	.port_toggle_bits = gpio_mcux_port_toggle_bits,
 	.pin_interrupt_configure = gpio_mcux_pin_interrupt_configure,
 	.manage_callback = gpio_mcux_manage_callback,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_mcux_port_get_direction,
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
 #define GPIO_MCUX_IRQ_INIT(n)						\
@@ -264,7 +304,7 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 			    DEVICE_DT_INST_GET(n), 0);			\
 									\
 		irq_enable(DT_INST_IRQN(n));				\
-	} while (0)
+	} while (false)
 
 #define GPIO_PORT_BASE_ADDR(n) DT_REG_ADDR(DT_INST_PHANDLE(n, nxp_kinetis_port))
 
@@ -288,7 +328,7 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 			    &gpio_mcux_port## n ##_data,		\
 			    &gpio_mcux_port## n##_config,		\
 			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+			    CONFIG_GPIO_INIT_PRIORITY,			\
 			    &gpio_mcux_driver_api);			\
 									\
 	static int gpio_mcux_port## n ##_init(const struct device *dev)	\

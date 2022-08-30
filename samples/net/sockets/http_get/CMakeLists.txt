@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(http_get)
@@ -14,6 +14,6 @@ set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 
 generate_inc_file_for_target(
     app
-    src/globalsign_r2.der
-    ${gen_dir}/globalsign_r2.der.inc
+    src/globalsign_r1.der
+    ${gen_dir}/globalsign_r1.der.inc
     )

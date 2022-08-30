@@ -7,20 +7,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_echo_server_sample, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
-#include <linker/sections.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
 #include <errno.h>
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
-#include <net/net_core.h>
-#include <net/tls_credentials.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/tls_credentials.h>
 
-#include <net/net_mgmt.h>
-#include <net/net_event.h>
-#include <net/net_conn_mgr.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/net_conn_mgr.h>
 
 #include "common.h"
 #include "certificate.h"
@@ -131,7 +131,10 @@ static void init_app(void)
 		&app_partition
 	};
 
-	k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
+	int ret = k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
+
+	__ASSERT(ret == 0, "k_mem_domain_init() failed %d", ret);
+	ARG_UNUSED(ret);
 #endif
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) || \
@@ -198,6 +201,8 @@ static void init_app(void)
 
 	init_vlan();
 	init_tunnel();
+
+	init_usb();
 }
 
 static int cmd_sample_quit(const struct shell *shell,

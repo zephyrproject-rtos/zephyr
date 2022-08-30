@@ -6,9 +6,10 @@
 
 #define DT_DRV_COMPAT openisa_rv32m1_lptmr
 
-#include <zephyr.h>
-#include <sys/util.h>
-#include <drivers/timer/system_timer.h>
+#include <zephyr/device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/timer/system_timer.h>
 #include <soc.h>
 
 /*
@@ -23,6 +24,9 @@
 
 #define CYCLES_PER_SEC  sys_clock_hw_cycles_per_sec()
 #define CYCLES_PER_TICK (CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_ALIAS(system_lptmr));
+#endif
 
 /*
  * As a simplifying assumption, we only support a clock ticking at the
@@ -53,7 +57,20 @@ static void lptmr_irq_handler(const struct device *unused)
 	sys_clock_announce(1);                     /* Poke the scheduler. */
 }
 
-int sys_clock_driver_init(const struct device *unused)
+uint32_t sys_clock_cycle_get_32(void)
+{
+	return cycle_count + SYSTEM_TIMER_INSTANCE->CNR;
+}
+
+/*
+ * Since we're not tickless, this is identically zero.
+ */
+uint32_t sys_clock_elapsed(void)
+{
+	return 0;
+}
+
+static int sys_clock_driver_init(const struct device *unused)
 {
 	uint32_t csr, psr, sircdiv; /* LPTMR registers */
 
@@ -131,15 +148,5 @@ int sys_clock_driver_init(const struct device *unused)
 	return 0;
 }
 
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return cycle_count + SYSTEM_TIMER_INSTANCE->CNR;
-}
-
-/*
- * Since we're not tickless, this is identically zero.
- */
-uint32_t sys_clock_elapsed(void)
-{
-	return 0;
-}
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

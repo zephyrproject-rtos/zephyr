@@ -5,7 +5,3 @@ compatible: "holtek,ht16k33-keyscan"
 include: base.yaml
 
 on-bus: ht16k33
-
-properties:
-    label:
-      required: true

@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "rak5010_nrf52840-pinctrl.dtsi"
 
 / {
 	model = "RAKWireless RAK5010 Wistrio Board with a Nordic NRF52840 SoC";
@@ -33,6 +34,8 @@
 	/* Declaration of aliases */
 	aliases {
 		led0 = &led0;
+		watchdog0 = &wdt0;
+		accel0 = &lis3dh;
 	};
 };
 
@@ -56,15 +59,13 @@
 	compatible = "nordic,nrf-uart";
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <6>;
-	rx-pin = <8>;
-	rts-pin = <7>;
-	cts-pin = <11>;
 
 	/* QUECTEL BG9X */
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 	quectel_bg9x: quectel_bg9x {
 		compatible = "quectel,bg9x";
-		label = "quectel,bg9x";
 		mdm-power-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 		mdm-reset-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
 		mdm-dtr-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
@@ -74,30 +75,29 @@
 };
 
 &uart1 {
-	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <33>;
-	rx-pin = <34>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c1 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <14>;
-	scl-pin = <13>;
 
 	/* TI OPT3001 light sensor */
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 	opt3001@44 {
 		compatible = "ti,opt3001";
-		label = "OPT3001";
 		reg = <0x44>;
 	};
 
 	/* ST Microelectronics LIS3DH motion sensor */
-	lis3dh@19 {
-		compatible = "st,lis3dh";
-		label = "LIS3DH";
+	lis3dh: lis3dh@19 {
+		compatible = "st,lis3dh", "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 15 0>;
 	};
@@ -106,22 +106,20 @@
 	lps22hb-press@5c {
 		compatible = "st,lps22hb-press";
 		reg = <0x5c>;
-		label = "LPS22HB";
 	};
 };
 
 &qspi {
 	status = "okay";
-	sck-pin = <43>;
-	io-pins = <47>, <46>, <45>, <44>;
-	csn-pins = <42>;
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
 	is25wp064a: is25wp064a@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
 		writeoc = "pp4io";
 		readoc = "read4io";
 		sck-frequency = <16000000>;
-		label = "IS25WP064A";
 		jedec-id = [9d 70 17];
 		size = <67108864>;
 		has-dpd;
@@ -139,7 +137,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
+			reg = <0x00000000 0x0000C000>;
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
@@ -170,7 +168,7 @@
 	};
 };
 
-&usbd {
+zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
 };

@@ -21,27 +21,16 @@ config NET_L2_ETHERNET
 	default y if !NET_LOOPBACK && !NET_TEST
 
 config ETH_NATIVE_POSIX
-	default y if NET_L2_ETHERNET
+	default y if NET_L2_ETHERNET && ETH_DRIVER
 
 endif # NETWORKING
-
-config FAKE_ENTROPY_NATIVE_POSIX
-	default y
-	depends on ENTROPY_GENERATOR
 
 choice BT_HCI_BUS_TYPE
 	default BT_USERCHAN
 	depends on BT_HCI
 endchoice
 
-config UART_NATIVE_POSIX
-	default y
-	depends on SERIAL
-
 if LOG
-
-config LOG_BACKEND_NATIVE_POSIX
-	default y if !SERIAL
 
 # For native_posix we can log synchronously without any problem
 # Doing so will be nicer for debugging
@@ -61,24 +50,23 @@ config UART_CONSOLE
 
 endif # CONSOLE
 
-config SDL_DISPLAY
-	default y
-	depends on DISPLAY
-
-config KSCAN_SDL
-	default y
-	depends on KSCAN
-
 config FLASH_SIMULATOR
 	default y
 	depends on FLASH
 
 config USB_NATIVE_POSIX
 	default y
-	depends on USB
+	depends on USB_DEVICE_DRIVER
 
 config EEPROM_SIMULATOR
 	default y
 	depends on EEPROM
+
+if I2C
+
+config EMUL
+	default y
+
+endif # I2C
 
 endif # BOARD_NATIVE_POSIX

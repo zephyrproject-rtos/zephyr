@@ -64,15 +64,15 @@
  *	--------------------
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <sys/printk.h>
-#include <drivers/gpio.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/gpio.h>
 #include <string.h>
 
 
 #if defined(CONFIG_SOC_PART_NUMBER_SAM3X8E)
-#define GPIO_DRV_NAME DT_LABEL(DT_NODELABEL(pioc))
+#define GPIO_NODE DT_NODELABEL(pioc)
 #else
 #error "Unsupported GPIO driver"
 #endif
@@ -312,7 +312,7 @@ void pi_lcd_home(const struct device *gpio_dev)
 	k_sleep(K_MSEC(2));			/* wait for 2ms */
 }
 
-/** Set curson position */
+/** Set cursor position */
 void pi_lcd_set_cursor(const struct device *gpio_dev, uint8_t col,
 		       uint8_t row)
 {
@@ -527,11 +527,10 @@ void pi_lcd_init(const struct device *gpio_dev, uint8_t cols, uint8_t rows,
 
 void main(void)
 {
-	const struct device *gpio_dev;
+	const struct device *const gpio_dev = DEVICE_DT_GET(GPIO_NODE);
 
-	gpio_dev = device_get_binding(GPIO_DRV_NAME);
-	if (!gpio_dev) {
-		printk("Cannot find %s!\n", GPIO_DRV_NAME);
+	if (!device_is_ready(gpio_dev)) {
+		printk("Device %s not ready!\n", gpio_dev->name);
 		return;
 	}
 

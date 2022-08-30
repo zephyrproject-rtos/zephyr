@@ -6,7 +6,7 @@
 if !X86_64
 
 config NESTED_INTERRUPTS
-	bool "Enable nested interrupts"
+	bool "Nested interrupts"
 	default y
 	help
 	  This option enables support for nested interrupts.

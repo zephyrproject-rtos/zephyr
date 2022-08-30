@@ -8,5 +8,6 @@
  * The file shall be used if Direction Finding support is added to OpenISA lower link layer.
  */
 
-/* Forward declaration of the type to avoid build errors in ULL code. */
+/* Forward declarations of types to avoid build errors in ULL code. */
 struct lll_df_sync;
+struct lll_df_conn_rx_cfg;

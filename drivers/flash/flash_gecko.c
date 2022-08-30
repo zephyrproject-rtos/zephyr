@@ -10,14 +10,14 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <em_msc.h>
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 #include <soc.h>
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_gecko);
 
 struct flash_gecko_data {
@@ -29,10 +29,6 @@ static const struct flash_parameters flash_gecko_parameters = {
 	.write_block_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
 	.erase_value = 0xff,
 };
-
-#define DEV_NAME(dev) ((dev)->name)
-#define DEV_DATA(dev) \
-	((struct flash_gecko_data *const)(dev)->data)
 
 static bool write_range_is_valid(off_t offset, uint32_t size);
 static bool read_range_is_valid(off_t offset, uint32_t size);
@@ -59,7 +55,7 @@ static int flash_gecko_read(const struct device *dev, off_t offset,
 static int flash_gecko_write(const struct device *dev, off_t offset,
 			     const void *data, size_t size)
 {
-	struct flash_gecko_data *const dev_data = DEV_DATA(dev);
+	struct flash_gecko_data *const dev_data = dev->data;
 	MSC_Status_TypeDef msc_ret;
 	void *address;
 	int ret = 0;
@@ -90,7 +86,7 @@ static int flash_gecko_write(const struct device *dev, off_t offset,
 static int flash_gecko_erase(const struct device *dev, off_t offset,
 			     size_t size)
 {
-	struct flash_gecko_data *const dev_data = DEV_DATA(dev);
+	struct flash_gecko_data *const dev_data = dev->data;
 	int ret;
 
 	if (!read_range_is_valid(offset, size)) {
@@ -197,7 +193,7 @@ flash_gecko_get_parameters(const struct device *dev)
 
 static int flash_gecko_init(const struct device *dev)
 {
-	struct flash_gecko_data *const dev_data = DEV_DATA(dev);
+	struct flash_gecko_data *const dev_data = dev->data;
 
 	k_sem_init(&dev_data->mutex, 1, 1);
 
@@ -206,7 +202,7 @@ static int flash_gecko_init(const struct device *dev)
 	/* Lock the MSC module. */
 	MSC->LOCK = 0;
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }
@@ -225,4 +221,4 @@ static struct flash_gecko_data flash_gecko_0_data;
 
 DEVICE_DT_INST_DEFINE(0, flash_gecko_init, NULL,
 		    &flash_gecko_0_data, NULL, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_gecko_driver_api);
+		    CONFIG_FLASH_INIT_PRIORITY, &flash_gecko_driver_api);

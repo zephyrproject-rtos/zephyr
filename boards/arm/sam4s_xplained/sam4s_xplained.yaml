@@ -8,9 +8,11 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - memc
   - spi
   - watchdog
   - xplained_gpio
   - xplained_i2c
   - xplained_serial
   - xplained_spi
+  - hwinfo

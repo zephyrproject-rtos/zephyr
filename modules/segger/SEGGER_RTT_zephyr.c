@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/irq.h>
+#include <zephyr/init.h>
 #include "SEGGER_RTT.h"
 
 /*
@@ -29,5 +30,31 @@ static int rtt_init(const struct device *unused)
 
 	return 0;
 }
+
+#ifdef CONFIG_MULTITHREADING
+
+void zephyr_rtt_mutex_lock(void)
+{
+	k_mutex_lock(&rtt_term_mutex, K_FOREVER);
+}
+
+void zephyr_rtt_mutex_unlock(void)
+{
+	k_mutex_unlock(&rtt_term_mutex);
+}
+
+#endif /* CONFIG_MULTITHREADING */
+
+unsigned int zephyr_rtt_irq_lock(void)
+{
+	return irq_lock();
+}
+
+void zephyr_rtt_irq_unlock(unsigned int key)
+{
+	irq_unlock(key);
+}
+
+
 
 SYS_INIT(rtt_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);

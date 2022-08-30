@@ -3,13 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <ztest.h>
-#include <drivers/entropy.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/ztest.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <hal/nrf_clock.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 
 #define TEST_TIME_MS 10000
@@ -20,11 +20,14 @@ static bool test_end;
 
 #include <hal/nrf_gpio.h>
 
+static const struct device *const entropy = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 static struct onoff_manager *hf_mgr;
 static uint32_t iteration;
 
 static void setup(void)
 {
+	zassert_true(device_is_ready(entropy), NULL);
+
 	hf_mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 	zassert_true(hf_mgr, NULL);
 
@@ -99,10 +102,7 @@ static void check_hf_status(const struct device *dev, bool exp_on,
  */
 static void test_onoff_interrupted(void)
 {
-	const struct device *clock_dev =
-		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
-	const struct device *entropy =
-		device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
+	const struct device *const clock_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 	struct onoff_client cli;
 	uint64_t start_time = k_uptime_get();
 	uint64_t elapsed;
@@ -110,6 +110,8 @@ static void test_onoff_interrupted(void)
 	int err;
 	uint8_t rand;
 	int backoff;
+
+	zassert_true(device_is_ready(clock_dev), "Device is not ready");
 
 	k_timer_start(&timer1, K_MSEC(1), K_NO_WAIT);
 
@@ -194,16 +196,15 @@ K_TIMER_DEFINE(timer2, onoff_timeout_handler, NULL);
  */
 static void test_bt_interrupted(void)
 {
-	const struct device *clock_dev =
-		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
-	const struct device *entropy =
-		device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
+	const struct device *const clock_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 	uint64_t start_time = k_uptime_get();
 	uint64_t elapsed;
 	uint64_t checkpoint = 1000;
 	int err;
 	uint8_t rand;
 	int backoff;
+
+	zassert_true(device_is_ready(clock_dev), "Device is not ready");
 
 	k_timer_start(&timer2, K_MSEC(1), K_NO_WAIT);
 

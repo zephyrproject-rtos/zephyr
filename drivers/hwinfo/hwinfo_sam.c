@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/hwinfo.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/hwinfo.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <string.h>
 
@@ -66,7 +66,7 @@ static int hwinfo_sam_init(const struct device *arg)
 {
 	Efc *efc = (Efc *)DT_REG_ADDR(DT_INST(0, atmel_sam_flash_controller));
 	uint32_t fmr;
-	int key;
+	unsigned int key;
 
 	/* Disable interrupts. */
 	key = irq_lock();

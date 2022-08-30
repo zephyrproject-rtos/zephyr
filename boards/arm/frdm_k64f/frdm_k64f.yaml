@@ -2,6 +2,8 @@ identifier: frdm_k64f
 name: NXP FRDM-K64F
 type: mcu
 arch: arm
+ram: 256
+flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
@@ -15,6 +17,7 @@ supported:
   - can
   - counter
   - dac
+  - dma
   - gpio
   - i2c
   - netif:eth

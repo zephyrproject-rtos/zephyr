@@ -4,30 +4,38 @@
 # Copyright (c) 2019 Song Qiang <songqiang1304521@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ST_STM32_DMA_V1 := st,stm32-dma-v1
-DT_COMPAT_ST_STM32_DMA_V2 := st,stm32-dma-v2
-DT_COMPAT_ST_STM32_DMA_V2BIS := st,stm32-dma-v2bis
-DT_COMPAT_ST_STM32_DMAMUX := st,stm32-dmamux
-
 config DMA_STM32
-	bool "Enable STM32 DMA driver"
+	bool "STM32 DMA driver"
 	select USE_STM32_LL_DMA
-	depends on SOC_FAMILY_STM32
+	default y
+	depends on DT_HAS_ST_STM32_DMA_V1_ENABLED \
+		|| DT_HAS_ST_STM32_DMA_V2_ENABLED \
+		|| DT_HAS_ST_STM32_DMA_V2BIS_ENABLED
 	help
-	  DMA driver for STM32 series SoCs.
+	  Driver for STM32 DMA V1, V2 and V2bis types.
+
+config DMA_STM32U5
+	bool "STM32U5 serie DMA driver"
+	select USE_STM32_LL_DMA
+	default y
+	depends on DT_HAS_ST_STM32U5_DMA_ENABLED
+	help
+	  Enable DMA support mainly for stm32U5 family.
+	  It differs from the DMA driver due to the GPDMA peripheral.
 
 if DMA_STM32
 
 config DMA_STM32_V1
 	bool
-	default y if $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_DMA_V1))
+	default y
+	depends on DT_HAS_ST_STM32_DMA_V1_ENABLED
 	help
 	  Enable DMA V1 support.
 
 config DMA_STM32_V2
 	bool
-	default y if $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_DMA_V2)) \
-			|| $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_DMA_V2BIS))
+	default y
+	depends on DT_HAS_ST_STM32_DMA_V2_ENABLED || DT_HAS_ST_STM32_DMA_V2BIS_ENABLED
 	help
 	  Enable DMA V2 or DMA V2bis support. With the versions V2 of DMA, the
 	  peripheral request must be specified in the dma slot of the dma cell
@@ -36,7 +44,8 @@ config DMA_STM32_V2
 
 config DMAMUX_STM32
 	bool
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_DMAMUX))
+	default y
+	depends on DT_HAS_ST_STM32_DMAMUX_ENABLED
 	help
 	  Enable DMAMUX support.
 

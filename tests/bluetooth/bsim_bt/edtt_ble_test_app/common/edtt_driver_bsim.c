@@ -13,7 +13,7 @@
 #include <errno.h>
 
 #include "edtt_driver.h"
-#include "kernel.h"
+#include <zephyr/kernel.h>
 #include "soc.h"
 
 #include "bs_tracing.h"
@@ -179,7 +179,7 @@ static void edptd_create_fifo_if(void)
 
 	if (pb_com_path == NULL) {
 		bs_trace_error_line("Not connected to Phy."
-				    "EDTT IF cannot be brough up\n");
+				    "EDTT IF cannot be brought up\n");
 	}
 
 	/* At this point we have connected to the Phy so the COM folder does
@@ -198,7 +198,7 @@ static void edptd_create_fifo_if(void)
 
 	if ((pb_create_fifo_if_not_there(fifo_path[TO_DEVICE]) != 0)
 		|| (pb_create_fifo_if_not_there(fifo_path[TO_BRIDGE]) != 0)) {
-		bs_trace_error_line("Couldnt create FIFOs for EDTT IF\n");
+		bs_trace_error_line("Couldn't create FIFOs for EDTT IF\n");
 	}
 
 	/* we block here until the bridge opens its end */

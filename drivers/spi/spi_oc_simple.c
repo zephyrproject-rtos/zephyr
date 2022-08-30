@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT opencores_spi_simple
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_oc_simple);
 
-#include <sys/sys_io.h>
-#include <drivers/spi.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/drivers/spi.h>
 
 #include "spi_context.h"
 #include "spi_oc_simple.h"
@@ -42,14 +42,21 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 		return 0;
 	}
 
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	/* Simple SPI only supports master mode */
 	if (spi_context_is_slave(&spi->ctx)) {
 		LOG_ERR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
-	if (config->operation & (SPI_MODE_LOOP | SPI_TRANSFER_LSB |
-				 SPI_LINES_DUAL | SPI_LINES_QUAD)) {
+	if ((config->operation & (SPI_MODE_LOOP | SPI_TRANSFER_LSB)) ||
+	    (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	     (config->operation &
+	      (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)))) {
 		LOG_ERR("Unsupported configuration");
 		return -EINVAL;
 	}
@@ -64,11 +71,12 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 	}
 
 	/* Set clock divider */
-	for (i = 0; i < 12; i++)
+	for (i = 0; i < 12; i++) {
 		if ((config->frequency << (i + 1)) >
 		    CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
 			break;
 		}
+	}
 
 	sys_write8((DIVIDERS[i] >> 4) & 0x3, SPI_OC_SIMPLE_SPER(info));
 	spcr |= (DIVIDERS[i] & 0x3);
@@ -77,10 +85,6 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 	sys_write8(spcr | SPI_OC_SIMPLE_SPCR_SPE, SPI_OC_SIMPLE_SPCR(info));
 
 	spi->ctx.config = config;
-
-	if (config->cs) {
-		spi_context_cs_configure(&spi->ctx);
-	}
 
 	return 0;
 }
@@ -100,7 +104,7 @@ int spi_oc_simple_transceive(const struct device *dev,
 	int rc;
 
 	/* Lock the SPI Context */
-	spi_context_lock(ctx, false, NULL, config);
+	spi_context_lock(ctx, false, NULL, NULL, config);
 
 	spi_oc_simple_configure(info, spi, config);
 
@@ -149,7 +153,7 @@ int spi_oc_simple_transceive(const struct device *dev,
 		sys_write8(0 << config->slave, SPI_OC_SIMPLE_SPSS(info));
 	}
 
-	spi_context_complete(ctx, 0);
+	spi_context_complete(ctx, dev, 0);
 	rc = spi_context_wait_for_completion(ctx);
 
 	spi_context_release(ctx, rc);
@@ -185,10 +189,17 @@ static struct spi_driver_api spi_oc_simple_api = {
 
 int spi_oc_simple_init(const struct device *dev)
 {
+	int err;
 	const struct spi_oc_simple_cfg *info = dev->config;
+	struct spi_oc_simple_data *data = dev->data;
 
 	/* Clear chip selects */
 	sys_write8(0, SPI_OC_SIMPLE_SPSS(info));
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	/* Make sure the context is unlocked */
 	spi_context_unlock_unconditionally(&SPI_OC_SIMPLE_DATA(dev)->ctx);
@@ -212,6 +223,7 @@ int spi_oc_simple_init(const struct device *dev)
 	static struct spi_oc_simple_data spi_oc_simple_data_##inst = {	\
 		SPI_CONTEXT_INIT_LOCK(spi_oc_simple_data_##inst, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_##inst, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx) \
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\

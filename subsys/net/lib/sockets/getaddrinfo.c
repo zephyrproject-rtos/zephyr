@@ -11,14 +11,14 @@
 #include <ctype.h>
 
 /* Zephyr headers */
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <kernel.h>
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/socket_offload.h>
-#include <syscall_handler.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/socket_offload.h>
+#include <zephyr/syscall_handler.h>
 
 #if defined(CONFIG_DNS_RESOLVER) || \
 	defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
@@ -51,6 +51,7 @@ struct getaddrinfo_state {
 	int status;
 	uint16_t idx;
 	uint16_t port;
+	uint16_t dns_id;
 	struct zsock_addrinfo *ai_arr;
 };
 
@@ -112,7 +113,7 @@ static int exec_query(const char *host, int family,
 		qtype = DNS_QUERY_TYPE_AAAA;
 	}
 
-	return dns_get_addr_info(host, qtype, NULL,
+	return dns_get_addr_info(host, qtype, &ai_state->dns_id,
 				 dns_resolve_cb, ai_state,
 				 CONFIG_NET_SOCKETS_DNS_TIMEOUT);
 }
@@ -198,6 +199,7 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	ai_state.idx = 0U;
 	ai_state.port = htons(port);
 	ai_state.ai_arr = res;
+	ai_state.dns_id = 0;
 	k_sem_init(&ai_state.sem, 0, K_SEM_MAX_LIMIT);
 
 	/* If the family is AF_UNSPEC, then we query IPv4 address first */
@@ -213,6 +215,7 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 				     K_MSEC(CONFIG_NET_SOCKETS_DNS_TIMEOUT +
 					    100));
 		if (ret == -EAGAIN) {
+			(void)dns_cancel_addr_info(ai_state.dns_id);
 			return DNS_EAI_AGAIN;
 		}
 
@@ -241,6 +244,7 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 				&ai_state.sem,
 				K_MSEC(CONFIG_NET_SOCKETS_DNS_TIMEOUT + 100));
 			if (ret == -EAGAIN) {
+				(void)dns_cancel_addr_info(ai_state.dns_id);
 				return DNS_EAI_AGAIN;
 			}
 

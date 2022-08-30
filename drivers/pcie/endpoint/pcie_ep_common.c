@@ -5,9 +5,9 @@
  *
  */
 
-#include <drivers/pcie/endpoint/pcie_ep.h>
+#include <zephyr/drivers/pcie/endpoint/pcie_ep.h>
 #include <string.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 /*
  * During DEVICE_TO_HOST data transfer, in order to make sure that all
@@ -126,11 +126,11 @@ int pcie_ep_xfer_data_memcpy(const struct device *dev, uint64_t pcie_addr,
 	 * So, even though translation window size is good enough for
 	 * size of Host buffer, we may not be able to map entire Host buffer
 	 * to given outbound window in one time, and we may need to map
-	 * ramaining size and complete remaining data transfer
+	 * remaining size and complete remaining data transfer
 	 */
 
 	pcie_ep_unmap_addr(dev, mapped_addr); /* unmap previous Host buffer */
-	xfer_size = mapped_size; /* save already tranferred data size */
+	xfer_size = mapped_size; /* save already transferred data size */
 
 	unmapped_size = size - mapped_size;
 	mapped_size = pcie_ep_map_addr(dev, pcie_addr + xfer_size,
@@ -221,9 +221,9 @@ int pcie_ep_xfer_data_dma(const struct device *dev, uint64_t pcie_addr,
 		return 0;
 	}
 
-	/* map ramaining size and complete remaining data transfer */
+	/* map remaining size and complete remaining data transfer */
 
-	xfer_size = mapped_size; /* save already tranferred data size */
+	xfer_size = mapped_size; /* save already transferred data size */
 
 	unmapped_size = size - mapped_size;
 	mapped_size = pcie_ep_map_addr(dev, pcie_addr + xfer_size,

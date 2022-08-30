@@ -23,4 +23,12 @@ config MCG_FRDIV
 config MCG_FCRDIV
 	default 0
 
+if FXOS8700
+
+choice FXOS8700_MODE
+	default FXOS8700_MODE_ACCEL
+endchoice
+
+endif # FXOS8700
+
 endif # BOARD_FRDM_KL25Z

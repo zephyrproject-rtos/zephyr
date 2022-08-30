@@ -17,11 +17,10 @@
  *   -# Data is transferred correctly from src to dest
  */
 
-#include <zephyr.h>
-#include <drivers/dma.h>
-#include <ztest.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/ztest.h>
 
-#define DMA_DEVICE_NAME CONFIG_DMA_LINK_TRANSFER_DRV_NAME
 #define TEST_DMA_CHANNEL_0 (0)
 #define TEST_DMA_CHANNEL_1 (1)
 #define RX_BUFF_SIZE (48)
@@ -54,10 +53,10 @@ static int test_task(int minor, int major)
 {
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_block_cfg = { 0 };
-	const struct device *dma = device_get_binding(DMA_DEVICE_NAME);
+	const struct device *const dma = DEVICE_DT_GET(DT_NODELABEL(dma0));
 
-	if (!dma) {
-		TC_PRINT("Cannot get dma controller\n");
+	if (!device_is_ready(dma)) {
+		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
 	}
 
@@ -121,34 +120,36 @@ static int test_task(int minor, int major)
 	TC_PRINT("%s\n", rx_data2);
 	if (minor == 0 && major == 1) {
 		/* major link only trigger lined channel minor loop once */
-		if (strncmp(tx_data, rx_data2,
-				dma_cfg.source_burst_length) != 0)
+		if (strncmp(tx_data, rx_data2, dma_cfg.source_burst_length) != 0) {
 			return TC_FAIL;
+		}
 	} else if (minor == 1 && major == 0) {
 		/* minor link trigger linked channel except the last one*/
 		if (strncmp(tx_data, rx_data2,
-				dma_block_cfg.block_size - dma_cfg.source_burst_length) != 0)
+			    dma_block_cfg.block_size - dma_cfg.source_burst_length) != 0) {
 			return TC_FAIL;
+		}
 	} else if (minor == 1 && major == 1) {
-		if (strcmp(tx_data, rx_data2) != 0)
+		if (strcmp(tx_data, rx_data2) != 0) {
 			return TC_FAIL;
+		}
 	}
 
 	return TC_PASS;
 }
 
 /* export test cases */
-void test_dma_m2m_chan0_1_major_link(void)
+ZTEST(dma_m2m_link, test_dma_m2m_chan0_1_major_link)
 {
 	zassert_true((test_task(0, 1) == TC_PASS), NULL);
 }
 
-void test_dma_m2m_chan0_1_minor_link(void)
+ZTEST(dma_m2m_link, test_dma_m2m_chan0_1_minor_link)
 {
 	zassert_true((test_task(1, 0) == TC_PASS), NULL);
 }
 
-void test_dma_m2m_chan0_1_minor_major_link(void)
+ZTEST(dma_m2m_link, test_dma_m2m_chan0_1_minor_major_link)
 {
 	zassert_true((test_task(1, 1) == TC_PASS), NULL);
 }

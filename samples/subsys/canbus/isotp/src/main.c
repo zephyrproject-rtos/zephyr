@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <canbus/isotp.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/canbus/isotp.h>
 
 
 #define RX_THREAD_STACK_SIZE 512
@@ -122,7 +122,7 @@ void rx_0_5_thread(void *arg1, void *arg2, void *arg3)
 		received_len = isotp_recv(&recv_ctx_0_5, rx_buffer,
 					  sizeof(rx_buffer)-1U, K_MSEC(2000));
 		if (received_len < 0) {
-			printk("Receiving erreor [%d]\n", received_len);
+			printk("Receiving error [%d]\n", received_len);
 			continue;
 		}
 
@@ -148,9 +148,9 @@ void main(void)
 	static struct isotp_send_ctx send_ctx_0_5;
 	int ret = 0;
 
-	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
-	if (!can_dev) {
-		printk("CAN: Device driver not found.\n");
+	can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	if (!device_is_ready(can_dev)) {
+		printk("CAN: Device driver not ready.\n");
 		return;
 	}
 

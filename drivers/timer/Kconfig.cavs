@@ -1,0 +1,27 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+# Keep this option as an alias to INTEL_ADSP_TIMER because
+# SoF is still referencing this symbol. The reason is the
+# symbiotic relationship between these two projects, that from
+# Zephyr's perspective is the framework and also the application.
+# Once it gets merged, we have to update SoF to use INTEL_ADSP_TIMER
+# option and remove it.
+config CAVS_TIMER
+	bool
+	help
+	  Temporary alias to INTEL_ADSP_TIMER
+
+config INTEL_ADSP_TIMER
+	bool "Intel Audio DSP timer"
+	select CAVS_TIMER
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  The DSP wall clock timer is a timer driven directly by
+	  external oscillator and is external to the CPU core(s).
+	  It is not as fast as the internal core clock, but provides
+	  a common and synchronized counter for all CPU cores (which
+	  is useful for SMP).

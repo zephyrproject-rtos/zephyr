@@ -1,0 +1,17 @@
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for MIPI-DSI hosts
+
+include: base.yaml
+
+bus: mipi-dsi
+
+properties:
+    "#address-cells":
+      required: true
+      const: 1
+
+    "#size-cells":
+      required: true
+      const: 0

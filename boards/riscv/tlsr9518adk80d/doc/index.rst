@@ -1,4 +1,4 @@
-.. _tlst9518adk80d:
+.. _tlsr9518adk80d:
 
 Telink TLSR9518ADK80D
 #####################
@@ -13,7 +13,6 @@ rate, Enhanced data rate, LE, Indoor positioning and BLE Mesh),
 Zigbee 3.0, Homekit, 6LoWPAN, Thread and 2.4 Ghz proprietary.
 
 .. figure:: img/tlsr9518adk80d.jpg
-     :width: 400px
      :align: center
      :alt: TLSR9518ADK80D
 
@@ -28,7 +27,6 @@ stereo audio codec, 14 bit AUX ADC, analog and digital Microphone input, PWM, fl
 and other peripheral blocks required for advanced IoT, hearable, and wearable devices.
 
 .. figure:: img/tlsr9518_block_diagram.jpg
-     :width: 400px
      :align: center
      :alt: TLSR9518ADK80D_SOC
 
@@ -57,30 +55,27 @@ The Zephyr TLSR9518ADK80D board configuration supports the following hardware fe
 | RISC-V Machine | on-chip    | timer                        |
 | Timer (32 KHz) |            |                              |
 +----------------+------------+------------------------------+
-| PINMUX         | on-chip    | pinmux                       |
+| PINCTRL        | on-chip    | pinctrl                      |
 +----------------+------------+------------------------------+
 | GPIO           | on-chip    | gpio                         |
 +----------------+------------+------------------------------+
 | UART           | on-chip    | serial                       |
 +----------------+------------+------------------------------+
+| PWM            | on-chip    | pwm                          |
++----------------+------------+------------------------------+
+| TRNG           | on-chip    | entropy                      |
++----------------+------------+------------------------------+
 | FLASH (MSPI)   | on-chip    | flash                        |
 +----------------+------------+------------------------------+
-
-The following example projects are supported:
-
-- samples/hello_world
-- samples/synchronization
-- samples/philosophers
-- samples/basic/threads
-- samples/basic/blinky
-- samples/basic/button
-- samples/subsys/nvs
-- samples/subsys/console/echo
-- samples/subsys/console/getchar
-- samples/subsys/console/getline
-- samples/subsys/shell/shell_module
-- samples/subsys/cpp/cpp_synchronization
-- samples/drivers/flash_shell
+| RADIO          | on-chip    | Bluetooth,                   |
+|                |            | ieee802154, OpenThread       |
++----------------+------------+------------------------------+
+| SPI (Master)   | on-chip    | spi                          |
++----------------+------------+------------------------------+
+| I2C (Master)   | on-chip    | i2c                          |
++----------------+------------+------------------------------+
+| ADC            | on-chip    | adc                          |
++----------------+------------+------------------------------+
 
 .. note::
    To support "button" example project PC3-KEY3 (J20-19, J20-20) jumper needs to be removed and KEY3 (J20-19) should be connected to VDD3_DCDC (J51-13) externally.
@@ -93,8 +88,10 @@ Limitations
 -----------
 
 - Maximum 3 GPIO pins could be configured to generate interrupts simultaneously. All pins must be related to different ports and use different IRQ numbers.
-- DMA mode is not supported by Serial Port.
+- DMA mode is not supported by I2C, SPI and Serial Port.
 - UART hardware flow control is not implemented.
+- SPI Slave mode is not implemented.
+- I2C Slave mode is not implemented.
 
 Default configuration and IOs
 =============================
@@ -132,14 +129,17 @@ currently enabled (PORT_B for LEDs control and PORT_C for buttons) in the board 
 Peripheral's pins on the SoC are mapped to the following GPIO pins in the
 ``boards/riscv/tlsr9518adk80d/tlsr9518adk80d.dts`` file:
 
-- UART0 RX: PB2, TX: PB3
-- UART1 RX: PC6, TX: PC7
+- UART0 TX: PB2, RX: PB3
+- UART1 TX: PC6, RX: PC7
+- PWM Channel 0: PB4
+- PSPI CS0: PC4, CLK: PC5, MISO: PC6, MOSI: PC7
+- HSPI CS0: PA1, CLK: PA2, MISO: PA3, MOSI: PA4
+- I2C SCL: PE1, SDA: PE3
 
 Serial Port
 -----------
 
-The TLSR9518A SoC has 2 UARTs. The Zephyr console output is assigned
-to UART0 in the ``boards/riscv/tlsr9518adk80d/tlsr9518adk80d_defconfig`` file.
+The TLSR9518A SoC has 2 UARTs. The Zephyr console output is assigned to UART0.
 The default settings are 115200 8N1.
 
 Programming and debugging
@@ -148,8 +148,13 @@ Programming and debugging
 Building
 ========
 
-You can build applications in the usual way. Here is an example for
-the "hello_world" application.
+.. important::
+
+   These instructions assume you've set up a development environment as
+   described in the `Zephyr Getting Started Guide`_.
+
+To build applications using the default RISC-V toolchain from Zephyr SDK, just run the west build command.
+Here is an example for the "hello_world" application.
 
 .. code-block:: console
 
@@ -157,6 +162,8 @@ the "hello_world" application.
    west build -b tlsr9518adk80d samples/hello_world
 
 To use `Telink RISC-V Linux Toolchain`_, ``ZEPHYR_TOOLCHAIN_VARIANT`` and ``CROSS_COMPILE`` variables need to be set.
+In addition ``CONFIG_FPU=y`` must be selected in ``boards/riscv/tlsr9518adk80d/tlsr9518adk80d_defconfig`` file since this
+toolchain is compatible only with the float point unit usage.
 
 .. code-block:: console
 
@@ -188,16 +195,64 @@ serial port:
 Flashing
 ========
 
-In order to flash the TLSR9518ADK80D board check the following resources:
+To flash the TLSR9518ADK80D board see the sources below:
 
 - `Burning and Debugging Tools for all Series`_
 - `Burning and Debugging Tools for TLSR9 Series`_
 - `Burning and Debugging Tools for TLSR9 Series in Linux`_
 
+It is also possible to use the west flash command, but additional steps are required to set it up:
+
+- Download `Telink RISC-V Linux Toolchain`_. The toolchain contains tools for the board flashing as well.
+- Since the ICEman tool is created for the 32-bit OS version it is necessary to install additional packages in case of the 64-bit OS version.
+
+.. code-block:: console
+
+   sudo dpkg --add-architecture i386
+   sudo apt-get update
+   sudo apt-get install -y libc6:i386 libncurses5:i386 libstdc++6:i386
+
+-  Run the "ICEman.sh" script.
+
+.. code-block:: console
+
+   # From the root of the {path to the Telink RISC-V Linux Toolchain}/ice repository
+   sudo ./ICEman.sh
+
+- Now you should be able to run the west flash command with the toolchain path specified (TELINK_TOOLCHAIN_PATH).
+
+.. code-block:: console
+
+   west flash --telink-tools-path=$TELINK_TOOLCHAIN_PATH
+
+- You can also run the west flash command without toolchain path specification if add SPI_burn and ICEman to PATH.
+
+.. code-block:: console
+
+    export PATH=$TELINK_TOOLCHAIN_PATH/flash/bin:"$PATH"
+    export PATH=$TELINK_TOOLCHAIN_PATH/ice:"$PATH"
+
 Debugging
 =========
 
-Supporting UART debug and OpenOCD+GDB.
+This port supports UART debug and OpenOCD+GDB. The `west debug` command also supported. You may run
+it in a simple way, like:
+
+.. code-block:: console
+
+   west debug
+
+Or with additional arguments, like:
+
+.. code-block:: console
+
+   west debug --gdb-port=<port_number> --gdb-ex=<additional_ex_arguments>
+
+Example:
+
+.. code-block:: console
+
+   west debug --gdb-port=1111 --gdb-ex="-ex monitor reset halt -ex b main -ex continue"
 
 References
 **********
@@ -210,3 +265,4 @@ References
 .. _Burning and Debugging Tools for all Series: http://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-all-Series/
 .. _Burning and Debugging Tools for TLSR9 Series: http://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-TLSR9-Series/
 .. _Burning and Debugging Tools for TLSR9 Series in Linux: http://wiki.telink-semi.cn/wiki/IDE-and-Tools/BDT_for_TLSR9_Series_in_Linux/
+.. _Zephyr Getting Started Guide: https://docs.zephyrproject.org/latest/getting_started/index.html

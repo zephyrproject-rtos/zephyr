@@ -14,9 +14,6 @@ config SPI_STM32_INTERRUPT
 
 if NETWORKING
 
-config USB
-	default y
-
 config USB_DEVICE_STACK
 	default y
 

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <soc.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/devicetree.h>
 
 #if defined(CONFIG_SOC_NSIM_SEM)
 #define NORMAL_FIRMWARE_ENTRY 0x40000
@@ -45,8 +45,8 @@ void main(void)
 	int32_t i = 0;
 
 	/* allocate timer 0 and timer1 to normal mode */
-	z_arc_v2_irq_uinit_secure_set(IRQ_TIMER0, 0);
-	z_arc_v2_irq_uinit_secure_set(IRQ_TIMER1, 0);
+	z_arc_v2_irq_uinit_secure_set(DT_IRQN(DT_NODELABEL(timer0)), 0);
+	z_arc_v2_irq_uinit_secure_set(DT_IRQN(DT_NODELABEL(timer1)), 0);
 
 	/* disable the secure interrupts for debug purpose*/
 	/* _arc_v2_irq_unit_int_disable(IRQ_S_TIMER0); */

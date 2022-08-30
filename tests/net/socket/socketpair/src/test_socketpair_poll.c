@@ -7,14 +7,14 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <net/socket.h>
-#include <posix/unistd.h>
-#include <sys/util.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/sys/util.h>
 
-#include <ztest_assert.h>
+#include <zephyr/ztest_assert.h>
 
 #include "test_socketpair_thread.h"
 

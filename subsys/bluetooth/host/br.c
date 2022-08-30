@@ -5,12 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/buf.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_br
@@ -89,7 +89,7 @@ static int accept_conn(const bt_addr_t *bdaddr)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, bdaddr);
-	cp->role = BT_HCI_ROLE_SLAVE;
+	cp->role = BT_HCI_ROLE_PERIPHERAL;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_CONN_REQ, buf, NULL);
 	if (err) {
@@ -117,8 +117,8 @@ static void bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 		return;
 	}
 
-	sco_conn->role = BT_HCI_ROLE_SLAVE;
-	bt_conn_set_state(sco_conn, BT_CONN_CONNECT);
+	sco_conn->role = BT_HCI_ROLE_PERIPHERAL;
+	bt_conn_set_state(sco_conn, BT_CONN_CONNECTING);
 	bt_conn_unref(sco_conn);
 }
 
@@ -142,8 +142,8 @@ void bt_hci_conn_req(struct net_buf *buf)
 	}
 
 	accept_conn(&evt->bdaddr);
-	conn->role = BT_HCI_ROLE_SLAVE;
-	bt_conn_set_state(conn, BT_CONN_CONNECT);
+	conn->role = BT_HCI_ROLE_PERIPHERAL;
+	bt_conn_set_state(conn, BT_CONN_CONNECTING);
 	bt_conn_unref(conn);
 }
 
@@ -321,7 +321,7 @@ static int request_name(const bt_addr_t *addr, uint8_t pscan, uint16_t offset)
 
 	bt_addr_copy(&cp->bdaddr, addr);
 	cp->pscan_rep_mode = pscan;
-	cp->reserved = 0x00; /* reserver, should be set to 0x00 */
+	cp->reserved = 0x00; /* reserved, should be set to 0x00 */
 	cp->clock_offset = offset;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_REMOTE_NAME_REQUEST, buf, NULL);
@@ -697,9 +697,9 @@ void bt_hci_role_change(struct net_buf *buf)
 	}
 
 	if (evt->role) {
-		conn->role = BT_CONN_ROLE_SLAVE;
+		conn->role = BT_CONN_ROLE_PERIPHERAL;
 	} else {
-		conn->role = BT_CONN_ROLE_MASTER;
+		conn->role = BT_CONN_ROLE_CENTRAL;
 	}
 
 	bt_conn_unref(conn);

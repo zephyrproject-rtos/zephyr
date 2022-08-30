@@ -207,6 +207,11 @@ class RunnerCaps:
     - commands: set of supported commands; default is {'flash',
       'debug', 'debugserver', 'attach'}.
 
+    - dev_id: whether the runner supports device identifiers, in the form of an
+      -i, --dev-id option. This is useful when the user has multiple debuggers
+      connected to a single computer, in order to select which one will be used
+      with the command provided.
+
     - flash_addr: whether the runner supports flashing to an
       arbitrary address. Default is False. If true, the runner
       must honor the --dt-flash option.
@@ -220,21 +225,31 @@ class RunnerCaps:
       needed by SoCs which have flash-like areas that can't be sector
       erased by the underlying tool before flashing; UICR on nRF SoCs
       is one example.)
+
+    - tool_opt: whether the runner supports a --tool-opt (-O) option, which
+      can be given multiple times and is passed on to the underlying tool
+      that the runner wraps.
     '''
 
     def __init__(self,
                  commands: Set[str] = {'flash', 'debug',
                                        'debugserver', 'attach'},
+                 dev_id: bool = False,
                  flash_addr: bool = False,
-                 erase: bool = False):
+                 erase: bool = False,
+                 tool_opt: bool = False):
         self.commands = commands
+        self.dev_id = dev_id
         self.flash_addr = bool(flash_addr)
         self.erase = bool(erase)
+        self.tool_opt = bool(tool_opt)
 
     def __str__(self):
         return (f'RunnerCaps(commands={self.commands}, '
+                f'dev_id={self.dev_id}, '
                 f'flash_addr={self.flash_addr}, '
-                f'erase={self.erase}'
+                f'erase={self.erase}, '
+                f'tool_opt={self.tool_opt}'
                 ')')
 
 
@@ -260,7 +275,7 @@ class RunnerConfig(NamedTuple):
     bin_file: Optional[str]     # zephyr.bin path, or None
     gdb: Optional[str] = None   # path to a usable gdb
     openocd: Optional[str] = None  # path to a usable openocd
-    openocd_search: Optional[str] = None  # add this to openocd search path
+    openocd_search: List[str] = []  # add these paths to the openocd search path
 
 
 _YN_CHOICES = ['Y', 'y', 'N', 'n', 'yes', 'no', 'YES', 'NO']
@@ -280,6 +295,17 @@ class _ToggleAction(argparse.Action):
     def __call__(self, parser, args, ignored, option):
         setattr(args, self.dest, not option.startswith('--no-'))
 
+class DeprecatedAction(argparse.Action):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        _logger.warning(f'Argument {self.option_strings[0]} is deprecated, '
+                        f'use {self._replacement} instead.')
+        setattr(namespace, self.dest, values)
+
+def depr_action(*args, replacement=None, **kwargs):
+    action = DeprecatedAction(*args, **kwargs)
+    setattr(action, '_replacement', replacement)
+    return action
 
 class ZephyrBinaryRunner(abc.ABC):
     '''Abstract superclass for binary runners (flashers, debuggers).
@@ -423,6 +449,13 @@ class ZephyrBinaryRunner(abc.ABC):
         # using them to mean something else.
         caps = cls.capabilities()
 
+        if caps.dev_id:
+            parser.add_argument('-i', '--dev-id',
+                                dest='dev_id',
+                                help=cls.dev_id_help())
+        else:
+            parser.add_argument('-i', '--dev-id', help=argparse.SUPPRESS)
+
         if caps.flash_addr:
             parser.add_argument('--dt-flash', default='n', choices=_YN_CHOICES,
                                 action=_DTFlashAction,
@@ -436,6 +469,11 @@ class ZephyrBinaryRunner(abc.ABC):
                             action=_ToggleAction,
                             help=("mass erase flash before loading, or don't"
                                   if caps.erase else argparse.SUPPRESS))
+
+        parser.add_argument('-O', '--tool-opt', dest='tool_opt',
+                            default=[], action='append',
+                            help=(cls.tool_opt_help() if caps.tool_opt
+                                  else argparse.SUPPRESS))
 
         # Runner-specific options.
         cls.do_add_parser(parser)
@@ -454,10 +492,14 @@ class ZephyrBinaryRunner(abc.ABC):
         - ``args``: arguments parsed from execution environment, as
           specified by ``add_parser()``.'''
         caps = cls.capabilities()
+        if args.dev_id and not caps.dev_id:
+            _missing_cap(cls, '--dev-id')
         if args.dt_flash and not caps.flash_addr:
             _missing_cap(cls, '--dt-flash')
         if args.erase and not caps.erase:
             _missing_cap(cls, '--erase')
+        if args.tool_opt and not caps.tool_opt:
+            _missing_cap(cls, '--tool-opt')
 
         ret = cls.do_create(cfg, args)
         if args.erase:
@@ -524,11 +566,25 @@ class ZephyrBinaryRunner(abc.ABC):
     @property
     def thread_info_enabled(self) -> bool:
         '''Returns True if self.build_conf has
-        CONFIG_DEBUG_THREAD_INFO enabled. This supports the
-        CONFIG_OPENOCD_SUPPORT fallback as well for now.
+        CONFIG_DEBUG_THREAD_INFO enabled.
         '''
-        return (self.build_conf.getboolean('CONFIG_DEBUG_THREAD_INFO') or
-                self.build_conf.getboolean('CONFIG_OPENOCD_SUPPORT'))
+        return self.build_conf.getboolean('CONFIG_DEBUG_THREAD_INFO')
+
+    @classmethod
+    def dev_id_help(cls) -> str:
+        ''' Get the ArgParse help text for the --dev-id option.'''
+        return '''Device identifier. Use it to select
+                  which debugger, device, node or instance to
+                  target when multiple ones are available or
+                  connected.'''
+
+    @classmethod
+    def tool_opt_help(cls) -> str:
+        ''' Get the ArgParse help text for the --tool-opt option.'''
+        return '''Option to pass on to the underlying tool used
+                  by this runner. This can be given multiple times;
+                  the resulting arguments will be given to the tool
+                  in the order they appear on the command line.'''
 
     @staticmethod
     def require(program: str) -> str:
@@ -617,7 +673,7 @@ class ZephyrBinaryRunner(abc.ABC):
             return b''
         return subprocess.check_output(cmd, **kwargs)
 
-    def popen_ignore_int(self, cmd: List[str]) -> subprocess.Popen:
+    def popen_ignore_int(self, cmd: List[str], **kwargs) -> subprocess.Popen:
         '''Spawn a child command, ensuring it ignores SIGINT.
 
         The returned subprocess.Popen object must be manually terminated.'''
@@ -637,7 +693,7 @@ class ZephyrBinaryRunner(abc.ABC):
         if _DRY_RUN:
             return _DebugDummyPopen()  # type: ignore
 
-        return subprocess.Popen(cmd, creationflags=cflags, preexec_fn=preexec)
+        return subprocess.Popen(cmd, creationflags=cflags, preexec_fn=preexec, **kwargs)
 
     def ensure_output(self, output_type: str) -> None:
         '''Ensure self.cfg has a particular output artifact.

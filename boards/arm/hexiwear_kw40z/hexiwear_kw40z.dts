@@ -2,7 +2,8 @@
 
 /dts-v1/;
 
-#include <nxp/MKW40Z160VHT4.dtsi>
+#include <nxp/nxp_kw40z.dtsi>
+#include "hexiwear_kw40z-pinctrl.dtsi"
 
 / {
 	model = "Hexiwear KW40 board";
@@ -21,13 +22,15 @@
 
 &adc0 {
 	status = "okay";
-	pinctrl-0 = <&ADC0_SE1_PTB1>;
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
 };
 
 &lpuart0 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&UART0_RX_PTC6 &UART0_TX_PTC7>;
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
 };
 
 &gpioa {

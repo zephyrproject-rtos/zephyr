@@ -2,7 +2,7 @@ description: ESP32 SPI
 
 compatible: "espressif,esp32-spi"
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -11,24 +11,10 @@ properties:
     interrupts:
       required: false
 
-    miso-pin:
-      type: int
-      description: MISO pin
+    pinctrl-0:
       required: true
 
-    mosi-pin:
-      type: int
-      description: MOSI pin
-      required: true
-
-    sclk-pin:
-      type: int
-      description: SPI generated clock pin
-      required: true
-
-    csel-pin:
-      type: int
-      description: chip select pin
+    pinctrl-names:
       required: true
 
     half-duplex:
@@ -69,3 +55,14 @@ properties:
       type: boolean
       required: false
       description: Make CS positive during a transaction instead of negative
+
+    use-iomux:
+      type: boolean
+      required: false
+      description: |
+        Some pins are allowed to bypass the GPIO Matrix and use the IO_MUX
+        routing mechanism instead, this avoids extra routing latency and makes
+        possible the use of operating frequencies higher than 20 MHz.
+
+        Refer to SoC's Technical Reference Manual to check which pins are
+        allowed to use this routing path.

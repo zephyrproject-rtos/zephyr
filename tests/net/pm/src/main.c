@@ -6,38 +6,41 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <linker/sections.h>
-#include <ztest.h>
-#include <random/rand32.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/ztest.h>
+#include <zephyr/random/rand32.h>
 
-#include <net/ethernet.h>
-#include <net/dummy.h>
-#include <net/net_if.h>
-#include <net/socket.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/socket.h>
 
 struct fake_dev_context {
 	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_if *iface;
 };
 
-static int fake_dev_pm_control(const struct device *dev, uint32_t command,
-			       enum pm_device_state *state)
+static int fake_dev_pm_action(const struct device *dev,
+			      enum pm_device_action action)
 {
 	struct fake_dev_context *ctx = dev->data;
-	int ret = 0;
+	int ret;
 
-	if (command == PM_DEVICE_STATE_SET) {
-		if (*state == PM_DEVICE_STATE_SUSPEND) {
-			ret = net_if_suspend(ctx->iface);
-			if (ret == -EBUSY) {
-				goto out;
-			}
-		} else if (*state == PM_DEVICE_STATE_ACTIVE) {
-			ret = net_if_resume(ctx->iface);
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = net_if_suspend(ctx->iface);
+		if (ret == -EBUSY) {
+			goto out;
 		}
-	} else {
-		return -EINVAL;
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		ret = net_if_resume(ctx->iface);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
 	}
 
 out:
@@ -97,13 +100,15 @@ static struct dummy_api fake_dev_if_api = {
 #define _ETH_L2_LAYER    DUMMY_L2
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
+PM_DEVICE_DEFINE(fake_dev, fake_dev_pm_action);
+
 NET_DEVICE_INIT(fake_dev, "fake_dev",
-		fake_dev_init, fake_dev_pm_control,
+		fake_dev_init, PM_DEVICE_GET(fake_dev),
 		&fake_dev_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&fake_dev_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
 
-void test_setup(void)
+void *test_setup(void)
 {
 	struct net_if *iface;
 	struct in_addr in4addr_my = { { { 192, 168, 0, 2 } } };
@@ -115,9 +120,10 @@ void test_setup(void)
 
 	ifaddr = net_if_ipv4_addr_add(iface, &in4addr_my, NET_ADDR_MANUAL, 0);
 	zassert_not_null(ifaddr, "Could not add iface address");
+	return NULL;
 }
 
-void test_pm(void)
+ZTEST(test_net_pm_test_suite, test_pm)
 {
 	struct net_if *iface =
 		net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
@@ -146,13 +152,13 @@ void test_pm(void)
 	 */
 	k_yield();
 
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND);
+	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
 	zassert_true(ret == 0, "Could not set state");
 
 	zassert_true(net_if_is_suspended(iface), "net iface is not suspended");
 
 	/* Let's try to suspend it again, it should fail relevantly */
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND);
+	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
 	zassert_true(ret == -EALREADY, "Could change state");
 
 	zassert_true(net_if_is_suspended(iface), "net iface is not suspended");
@@ -162,12 +168,12 @@ void test_pm(void)
 		     (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
 	zassert_true(ret < 0, "Could send data");
 
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
+	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
 	zassert_true(ret == 0, "Could not set state");
 
 	zassert_false(net_if_is_suspended(iface), "net iface is suspended");
 
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
+	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
 	zassert_true(ret == -EALREADY, "Could change state");
 
 	/* Let's send some data, it should go through */
@@ -178,10 +184,4 @@ void test_pm(void)
 	close(sock);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_net_pm,
-			 ztest_unit_test(test_setup),
-			 ztest_unit_test(test_pm));
-	ztest_run_test_suite(test_net_pm);
-}
+ZTEST_SUITE(test_net_pm_test_suite, NULL, test_setup, NULL, NULL, NULL);

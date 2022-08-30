@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/mesh.h>
-#include <drivers/gpio.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/drivers/gpio.h>
 #include "board.h"
 
 /* Locate led0 as alias or label by that name */
@@ -37,7 +37,7 @@
 #define LED0_PIN DT_PHA(LED0, gpios, pin)
 #define LED0_FLAGS DT_PHA(LED0, gpios, flags)
 
-static const struct device *led_dev = DEVICE_DT_GET(LED0_DEV);
+static const struct device *const led_dev = DEVICE_DT_GET(LED0_DEV);
 #endif /* LED0 */
 
 #if DT_NODE_EXISTS(BUTTON0)
@@ -45,7 +45,7 @@ static const struct device *led_dev = DEVICE_DT_GET(LED0_DEV);
 #define BUTTON0_PIN DT_PHA(BUTTON0, gpios, pin)
 #define BUTTON0_FLAGS DT_PHA(BUTTON0, gpios, flags)
 
-static const struct device *button_dev = DEVICE_DT_GET(BUTTON0_DEV);
+static const struct device *const button_dev = DEVICE_DT_GET(BUTTON0_DEV);
 static struct k_work *button_work;
 
 static void button_cb(const struct device *port, struct gpio_callback *cb,

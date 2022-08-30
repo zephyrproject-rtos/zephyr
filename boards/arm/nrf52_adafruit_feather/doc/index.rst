@@ -18,8 +18,7 @@ the following devices:
 * RADIO (Bluetooth Low Energy)
 * Segger RTT (RTT Console)
 
-.. figure:: img/nrf52_adafruit_feather.png
-     :width: 442px
+.. figure:: img/nrf52_adafruit_feather.jpg
      :align: center
      :alt: nRF52 Adafruit Feather Board
 
@@ -67,7 +66,7 @@ hardware features:
 | RTT       | on-chip    | console              |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Connections and IOs
 ===================

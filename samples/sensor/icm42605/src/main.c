@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 
 static const char *now_str(void)
@@ -73,7 +73,7 @@ static struct sensor_trigger tap_trigger;
 static struct sensor_trigger double_tap_trigger;
 
 static void handle_icm42605_drdy(const struct device *dev,
-				 struct sensor_trigger *trig)
+				 const struct sensor_trigger *trig)
 {
 	int rc = process_icm42605(dev);
 
@@ -85,24 +85,23 @@ static void handle_icm42605_drdy(const struct device *dev,
 }
 
 static void handle_icm42605_tap(const struct device *dev,
-				 struct sensor_trigger *trig)
+				const struct sensor_trigger *trig)
 {
 	printf("Tap Detected!\n");
 }
 
 static void handle_icm42605_double_tap(const struct device *dev,
-				 struct sensor_trigger *trig)
+				       const struct sensor_trigger *trig)
 {
 	printf("Double Tap detected!\n");
 }
 
 void main(void)
 {
-	const char *const label = DT_LABEL(DT_INST(0, invensense_icm42605));
-	const struct device *icm42605 = device_get_binding(label);
+	const struct device *const icm42605 = DEVICE_DT_GET_ONE(invensense_icm42605);
 
-	if (!icm42605) {
-		printf("Failed to find sensor %s\n", label);
+	if (!device_is_ready(icm42605)) {
+		printk("sensor: device not ready.\n");
 		return;
 	}
 

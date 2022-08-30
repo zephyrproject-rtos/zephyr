@@ -1,0 +1,63 @@
+# Memory Protection Unit (MPU) configuration options
+
+#Copyright (c) 2017 Linaro Limited.
+#Copyright (c) 2021 Arm Limited (or its affiliates). All rights reserved.
+
+# SPDX-License-Identifier: Apache-2.0
+
+if CPU_HAS_MPU
+
+config ARM_MPU
+	bool "ARM MPU Support"
+	select THREAD_STACK_INFO
+	select MPU
+	select SRAM_REGION_PERMISSIONS
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	default y
+	help
+	  MPU implements Memory Protection Unit.
+
+	  Notes:
+	  The ARMv8-R MPU architecture requires a power-of-two alignment
+	  of MPU region base address and size(64 bytes aligned).
+
+	  The ARMv8-R MPU requires the active MPU regions be non-overlapping.
+	  As a result of this, the ARMv8-R MPU needs to fully partition the
+	  memory map when programming dynamic memory regions (e.g. PRIV stack
+	  guard, user thread stack, and application memory domains), if the
+	  system requires PRIV access policy different from the access policy
+	  of the ARMv8-R background memory map. The application developer may
+	  enforce full PRIV (kernel) memory partition by enabling the
+	  CONFIG_MPU_GAP_FILLING option.
+	  By not enforcing full partition, MPU may leave part of kernel
+	  SRAM area covered only by the default ARMv8-R memory map. This
+	  is fine for User Mode, since the background ARM map does not
+	  allow nPRIV access at all. However, since the background map
+	  policy allows instruction fetches by privileged code, forcing
+	  this Kconfig option off prevents the system from directly
+	  triggering MemManage exceptions upon accidental attempts to
+	  execute code from SRAM in XIP builds.
+	  Since this does not compromise User Mode, we make the skipping
+	  of full partitioning the default behavior for the ARMv8-R MPU
+	  driver.
+
+config ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
+	int
+	default 64 if ARM_MPU
+	default 4
+	help
+	  Minimum size (and alignment) of an ARM MPU region. Use this
+	  symbol to guarantee minimum size and alignment of MPU regions.
+	  A minimum 4-byte alignment is enforced in ARM builds without
+	  support for Memory Protection.
+
+if ARM_MPU
+
+config MPU_ALLOW_FLASH_WRITE
+	bool "Add MPU access to write to flash"
+	help
+	  Enable this to allow MPU RWX access to flash memory
+
+endif # ARM_MPU
+
+endif # CPU_HAS_MPU

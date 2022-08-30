@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2020,2022 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <intel/intel_cavs25_tgph.dtsi>
+
+/ {
+	model = "intel_adsp_cavs25_tgph";
+	compatible = "intel";
+
+	aliases {
+		dma0 = &lpgpdma0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};

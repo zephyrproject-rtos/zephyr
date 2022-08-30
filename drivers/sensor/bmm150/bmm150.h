@@ -11,16 +11,16 @@
 
 
 #include <zephyr/types.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #include <stdint.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <drivers/sensor.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/gpio.h>
 
 #define BMM150_REG_CHIP_ID         0x40
 #define BMM150_CHIP_ID_VAL         0x32
@@ -82,8 +82,6 @@
 #define BMM150_MASK_DRDY_LATCHING          BIT(1)
 #define BMM150_MASK_DRDY_INT3_POLARITY     BIT(0)
 
-#define BMM150_I2C_ADDR                    DT_INST_REG_ADDR(0)
-
 #if defined(CONFIG_BMM150_SAMPLING_REP_XY) || \
 	defined(CONFIG_BMM150_SAMPLING_REP_Z)
 	#define BMM150_SET_ATTR_REP
@@ -96,8 +94,7 @@
 
 
 struct bmm150_config {
-	char *i2c_master_dev_name;
-	uint16_t i2c_slave_addr;
+	struct i2c_dt_spec i2c;
 };
 
 struct bmm150_trim_regs {
@@ -118,7 +115,6 @@ struct bmm150_trim_regs {
 } __packed;
 
 struct bmm150_data {
-	const struct device *i2c;
 	struct k_sem sem;
 	struct bmm150_trim_regs tregs;
 	int rep_xy, rep_z, odr, max_odr;

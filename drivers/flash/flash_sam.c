@@ -10,15 +10,15 @@
 #define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 #define FLASH_ERASE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 
-#include <device.h>
-#include <drivers/flash.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <string.h>
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_sam0);
 
 /*
@@ -37,6 +37,9 @@ LOG_MODULE_REGISTER(flash_sam0);
  * of 200ms for a 8KiB block.
  */
 #define SAM_FLASH_TIMEOUT_MS 220
+#if defined(IFLASH0_PAGE_SIZE)
+#define IFLASH_PAGE_SIZE IFLASH0_PAGE_SIZE
+#endif
 
 struct flash_sam_dev_cfg {
 	Efc *regs;
@@ -51,22 +54,20 @@ static const struct flash_parameters flash_sam_parameters = {
 	.erase_value = 0xff,
 };
 
-#define DEV_CFG(dev) \
-	((const struct flash_sam_dev_cfg *const)(dev)->config)
-
-#define DEV_DATA(dev) \
-	((struct flash_sam_dev_data *const)(dev)->data)
-
 static int flash_sam_write_protection(const struct device *dev, bool enable);
 
 static inline void flash_sam_sem_take(const struct device *dev)
 {
-	k_sem_take(&DEV_DATA(dev)->sem, K_FOREVER);
+	struct flash_sam_dev_data *data = dev->data;
+
+	k_sem_take(&data->sem, K_FOREVER);
 }
 
 static inline void flash_sam_sem_give(const struct device *dev)
 {
-	k_sem_give(&DEV_DATA(dev)->sem);
+	struct flash_sam_dev_data *data = dev->data;
+
+	k_sem_give(&data->sem);
 }
 
 /* Check that the offset is within the flash */
@@ -96,7 +97,9 @@ static off_t flash_sam_get_page(off_t offset)
  */
 static int flash_sam_wait_ready(const struct device *dev)
 {
-	Efc *const efc = DEV_CFG(dev)->regs;
+	const struct flash_sam_dev_cfg *config = dev->config;
+
+	Efc * const efc = config->regs;
 
 	uint64_t timeout_time = k_uptime_get() + SAM_FLASH_TIMEOUT_MS;
 	uint32_t fsr;
@@ -135,7 +138,9 @@ static int flash_sam_wait_ready(const struct device *dev)
 static int flash_sam_write_page(const struct device *dev, off_t offset,
 				const void *data, size_t len)
 {
-	Efc *const efc = DEV_CFG(dev)->regs;
+	const struct flash_sam_dev_cfg *config = dev->config;
+
+	Efc * const efc = config->regs;
 	const uint32_t *src = data;
 	uint32_t *dst = (uint32_t *)((uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset);
 
@@ -144,8 +149,9 @@ static int flash_sam_write_page(const struct device *dev, off_t offset,
 	/* We need to copy the data using 32-bit accesses */
 	for (; len > 0; len -= sizeof(*src)) {
 		*dst++ = *src++;
+		/* Assure data are written to the latch buffer consecutively */
+		__DSB();
 	}
-	__DSB();
 
 	/* Trigger the flash write */
 	efc->EEFC_FCR = EEFC_FCR_FKEY_PASSWD |
@@ -241,7 +247,9 @@ static int flash_sam_read(const struct device *dev, off_t offset, void *data,
 /* Erase a single 8KiB block */
 static int flash_sam_erase_block(const struct device *dev, off_t offset)
 {
-	Efc *const efc = DEV_CFG(dev)->regs;
+	const struct flash_sam_dev_cfg *config = dev->config;
+
+	Efc * const efc = config->regs;
 
 	LOG_DBG("offset = 0x%lx", (long)offset);
 
@@ -305,7 +313,9 @@ static int flash_sam_erase(const struct device *dev, off_t offset, size_t len)
 	 * Invalidate the cache addresses corresponding to the erased blocks,
 	 * so that they really appear as erased.
 	 */
+#ifdef __DCACHE_PRESENT
 	SCB_InvalidateDCache_by_Addr((void *)(CONFIG_FLASH_BASE_ADDRESS + offset), len);
+#endif
 
 	return rc;
 }
@@ -313,7 +323,10 @@ static int flash_sam_erase(const struct device *dev, off_t offset, size_t len)
 /* Enable or disable the write protection */
 static int flash_sam_write_protection(const struct device *dev, bool enable)
 {
-	Efc *const efc = DEV_CFG(dev)->regs;
+#if defined(EFC_6450)
+	const struct flash_sam_dev_cfg *config = dev->config;
+	Efc *const efc = config->regs;
+#endif
 	int rc = 0;
 
 	if (enable) {
@@ -321,9 +334,11 @@ static int flash_sam_write_protection(const struct device *dev, bool enable)
 		if (rc < 0) {
 			goto done;
 		}
+#if defined(EFC_6450)
 		efc->EEFC_WPMR = EEFC_WPMR_WPKEY_PASSWD | EEFC_WPMR_WPEN;
 	} else {
 		efc->EEFC_WPMR = EEFC_WPMR_WPKEY_PASSWD;
+#endif
 	}
 
 done:
@@ -359,7 +374,7 @@ flash_sam_get_parameters(const struct device *dev)
 
 static int flash_sam_init(const struct device *dev)
 {
-	struct flash_sam_dev_data *const data = DEV_DATA(dev);
+	struct flash_sam_dev_data *const data = dev->data;
 
 	k_sem_init(&data->sem, 1, 1);
 
@@ -384,5 +399,5 @@ static struct flash_sam_dev_data flash_sam_data;
 
 DEVICE_DT_INST_DEFINE(0, flash_sam_init, NULL,
 		    &flash_sam_data, &flash_sam_cfg,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
 		    &flash_sam_api);

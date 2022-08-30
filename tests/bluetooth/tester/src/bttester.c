@@ -6,18 +6,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/types.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <toolchain.h>
-#include <bluetooth/bluetooth.h>
-#include <sys/byteorder.h>
-#include <drivers/console/uart_pipe.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/uart_pipe.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -273,10 +273,10 @@ static void uart_send(uint8_t *data, size_t len)
 	uart_pipe_send(data, len);
 }
 #else /* !CONFIG_UART_PIPE */
-#define UART_DEV	"UART_0"
 static uint8_t *recv_buf;
 static size_t recv_off;
-static const struct device *dev;
+static const struct device *const dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 static void timer_expiry_cb(struct k_timer *timer)
 {
@@ -293,8 +293,7 @@ K_TIMER_DEFINE(timer, timer_expiry_cb, NULL);
 /* Uart Poll */
 static void uart_init(uint8_t *data)
 {
-	dev = device_get_binding(UART_DEV);
-	__ASSERT_NO_MSG((void *)dev);
+	__ASSERT_NO_MSG(device_is_ready(dev));
 
 	recv_buf = data;
 

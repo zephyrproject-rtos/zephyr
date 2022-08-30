@@ -6,7 +6,8 @@ common:
 tests:
   crypto.mbedtls:
     arch_exclude: riscv64
+    platform_exclude: m2gl025_miv
   crypto.mbedtls.riscv64:
     arch_allow: riscv64
     extra_configs:
-      - CONFIG_ZTEST_STACKSIZE=8192
+      - CONFIG_ZTEST_STACK_SIZE=8192

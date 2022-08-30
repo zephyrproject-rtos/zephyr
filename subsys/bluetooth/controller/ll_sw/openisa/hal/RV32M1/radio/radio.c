@@ -7,12 +7,12 @@
  */
 
 #include <string.h>
-#include <sys/printk.h>
-#include <sys/dlist.h>
-#include <sys/byteorder.h>
-#include <bluetooth/addr.h>
-#include <toolchain.h>
-#include <irq.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/irq.h>
 #include <errno.h>
 
 #include "util/mem.h"
@@ -138,12 +138,14 @@ static struct {
 	uint8_t empty_pdu_rxed;
 } ctx_ccm;
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 #define RPA_NO_IRK_MATCH 0xFF	/* No IRK match in AR table */
 
 static struct {
 	uint8_t ar_enable;
 	uint32_t irk_idx;
 } radio_ar_ctx = {0U, RPA_NO_IRK_MATCH};
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 static void tmp_cb(void *param)
 {
@@ -515,7 +517,7 @@ void radio_setup(void)
 	 */
 	GENFSK->PB_PARTITION = GENFSK_PB_PARTITION_PB_PARTITION(PB_RX);
 
-	/* Get warmpup times. They are used in TIFS calculations */
+	/* Get warmup times. They are used in TIFS calculations */
 	rx_wu = (XCVR_TSM->END_OF_SEQ & XCVR_TSM_END_OF_SEQ_END_OF_RX_WU_MASK)
 				>> XCVR_TSM_END_OF_SEQ_END_OF_RX_WU_SHIFT;
 	tx_wu = (XCVR_TSM->END_OF_SEQ & XCVR_TSM_END_OF_SEQ_END_OF_TX_WU_MASK)
@@ -740,7 +742,7 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	GENFSK->H1_CFG |= GENFSK_H1_CFG_H1_MASK(0) |
 			  GENFSK_H1_CFG_H1_MATCH(0);
 
-	/* set Rx watermak to AA + PDU header */
+	/* set Rx watermark to AA + PDU header */
 	GENFSK->RX_WATERMARK = GENFSK_RX_WATERMARK_RX_WATERMARK(RX_WTMRK);
 }
 
@@ -899,8 +901,9 @@ void radio_crc_configure(uint32_t polynomial, uint32_t iv)
 
 uint32_t radio_crc_is_valid(void)
 {
-	if (force_bad_crc)
+	if (force_bad_crc) {
 		return 0;
+	}
 
 	uint32_t radio_crc = (GENFSK->XCVR_STS & GENFSK_XCVR_STS_CRC_VALID_MASK) >>
 						GENFSK_XCVR_STS_CRC_VALID_SHIFT;
@@ -1285,7 +1288,8 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 	ctx_ccm.rx_pkt_out = (struct pdu_data *)pkt;
 	ctx_ccm.nonce.counter = ccm->counter;	/* LSO to MSO, counter is LE */
 	/* The directionBit set to 1 for Data Physical Chan PDUs sent by
-	 * the master and set to 0 for Data Physical Chan PDUs sent by the slave
+	 * the central and set to 0 for Data Physical Chan PDUs sent by the
+	 * peripheral
 	 */
 	ctx_ccm.nonce.bytes[4] |= ccm->direction << 7;
 	memcpy(&ctx_ccm.nonce.bytes[5], ccm->iv, 8); /* LSO to MSO */
@@ -1383,7 +1387,8 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	memcpy(key_local, ccm->key, sizeof(key_local));
 	ctx_ccm.nonce.counter = ccm->counter;	/* LSO to MSO, counter is LE */
 	/* The directionBit set to 1 for Data Physical Chan PDUs sent by
-	 * the master and set to 0 for Data Physical Chan PDUs sent by the slave
+	 * the central and set to 0 for Data Physical Chan PDUs sent by the
+	 * peripheral
 	 */
 	ctx_ccm.nonce.bytes[4] |= ccm->direction << 7;
 	memcpy(&ctx_ccm.nonce.bytes[5], ccm->iv, 8); /* LSO to MSO */
@@ -1464,6 +1469,7 @@ uint32_t radio_ccm_is_available(void)
 	return ctx_ccm.empty_pdu_rxed;
 }
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 void radio_ar_configure(uint32_t nirk, void *irk)
 {
 	status_t status;
@@ -1514,6 +1520,7 @@ uint32_t radio_ar_has_match(void)
 {
 	return (radio_ar_ctx.irk_idx != RPA_NO_IRK_MATCH);
 }
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 uint32_t radio_sleep(void)
 {

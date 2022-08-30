@@ -10,12 +10,11 @@
  * Linker script for the Xtensa platform.
  */
 
-#include <autoconf.h>
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
-#include <devicetree.h>
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 #define RAMABLE_REGION sram0_seg :sram0_phdr
 #define ROMABLE_REGION srom1_seg :srom1_phdr
@@ -176,7 +175,7 @@ PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_wb_trapnull);
 SECTIONS
 {
 
-#include <linker/rel-sections.ld>
+#include <zephyr/linker/rel-sections.ld>
 
   .dram1.rodata : ALIGN(4)
   {
@@ -402,7 +401,7 @@ SECTIONS
 
   .ResetVector.text : ALIGN(4)
   {
-    _image_rom_start = ABSOLUTE(.);
+    __rom_region_start = ABSOLUTE(.);
     _ResetVector_text_start = ABSOLUTE(.);
     KEEP (*(.ResetVector.text))
     _ResetVector_text_end = ABSOLUTE(.);
@@ -422,7 +421,7 @@ SECTIONS
     *(.srom.literal .srom.text)
     _srom_text_end = ABSOLUTE(.);
     _memmap_seg_srom1_end = ALIGN(0x8);
-    _image_rom_end = ABSOLUTE(.);
+    __rom_region_end = ABSOLUTE(.);
   } >srom1_seg :srom1_phdr
 
   .sram.rodata : ALIGN(4)
@@ -433,7 +432,7 @@ SECTIONS
     _sram_rodata_end = ABSOLUTE(.);
   } >sram0_seg :sram0_phdr
 
-#include <linker/common-rom.ld>
+#include <zephyr/linker/common-rom.ld>
 
   .rodata : ALIGN(4)
   {
@@ -442,6 +441,11 @@ SECTIONS
     *(.rodata.*)
     *(.gnu.linkonce.r.*)
     *(.rodata1)
+
+    . = ALIGN(4);
+    #include <snippets-rodata.ld>
+    . = ALIGN(4);
+
     __XT_EXCEPTION_TABLE__ = ABSOLUTE(.);
     KEEP (*(.xt_except_table))
     KEEP (*(.gcc_except_table .gcc_except_table.*))
@@ -484,7 +488,7 @@ SECTIONS
     _sram_text_end = ABSOLUTE(.);
   } >sram0_seg :sram0_phdr
 
-  _image_text_start =  ALIGN(4);
+  __text_region_start =  ALIGN(4);
   .text : ALIGN(4)
   {
     _stext = .;
@@ -499,7 +503,7 @@ SECTIONS
     _text_end = ABSOLUTE(.);
     _etext = .;
   } >sram0_seg :sram0_phdr
-  _image_text_end = .;
+  __text_region_end = .;
 
   .sram.data : ALIGN(4)
   {
@@ -513,6 +517,8 @@ SECTIONS
     *(.noinit)
     *(.noinit.*)
   } >sram0_seg :sram0_phdr
+
+#include <snippets-sections.ld>
 
   .data : ALIGN(4)
   {
@@ -529,15 +535,24 @@ SECTIONS
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     KEEP(*(.jcr))
+
+    . = ALIGN(4);
+    #include <snippets-rwdata.ld>
+    . = ALIGN(4);
+
     _data_end = ABSOLUTE(.);
   } >sram0_seg :sram0_phdr
 
-#include <linker/common-ram.ld>
+#include <snippets-data-sections.ld>
+
+#include <zephyr/linker/common-ram.ld>
 
   .tm_clone_table :
   {
     *(.tm_clone_table)
   } >sram0_seg :sram0_phdr
+
+#include <snippets-ram-sections.ld>
 
   .bss (NOLOAD) : ALIGN(8)
   {
@@ -609,6 +624,6 @@ SECTIONS
     KEEP (*(.debug.xt.callgraph .debug.xt.callgraph.* .gnu.linkonce.xt.callgraph.*))
   }
 #ifdef CONFIG_GEN_ISR_TABLES
-#include <linker/intlist.ld>
+#include <zephyr/linker/intlist.ld>
 #endif
 }

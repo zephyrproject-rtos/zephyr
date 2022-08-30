@@ -7,7 +7,7 @@
  * @file Extra definitions provided by the board to soc.h
  *
  * Background:
- * The POSIC ARCH/SOC/board layering is different than in normal archs
+ * The POSIX ARCH/SOC/board layering is different than in normal archs
  * The "SOC" does not provide almost any of the typical SOC functionality
  * but that is left for the "board" to define it
  * Device code may rely on the soc.h defining some things (like the interrupts
@@ -19,15 +19,14 @@
 #ifndef _POSIX_NRF52_BOARD_SOC_H
 #define _POSIX_NRF52_BOARD_SOC_H
 
-#include <toolchain.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h>
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <zephyr/types.h>
 #include <stddef.h>
-#include "irq.h"
-#include "irq_sources.h"
+#include <zephyr/irq.h>
 #include <nrfx.h>
 #include "cmsis.h"
 

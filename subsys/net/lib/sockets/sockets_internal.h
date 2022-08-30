@@ -7,13 +7,16 @@
 #ifndef _SOCKETS_INTERNAL_H_
 #define _SOCKETS_INTERNAL_H_
 
-#include <sys/fdtable.h>
+#include <zephyr/sys/fdtable.h>
 
 #define SOCK_EOF 1
 #define SOCK_NONBLOCK 2
+#define SOCK_ERROR 4
 
 int zsock_close_ctx(struct net_context *ctx);
 int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout);
+
+int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout);
 
 static inline void sock_set_flag(struct net_context *ctx, uintptr_t mask,
 				 uintptr_t flag)
@@ -31,8 +34,7 @@ static inline uintptr_t sock_get_flag(struct net_context *ctx, uintptr_t mask)
 
 void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick);
 
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && \
-    !defined(CONFIG_NET_SOCKETS_OFFLOAD_TLS)
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 bool net_socket_is_tls(void *obj);
 #else
 static inline bool net_socket_is_tls(void *obj)
@@ -46,9 +48,12 @@ static inline bool net_socket_is_tls(void *obj)
 #define sock_is_eof(ctx) sock_get_flag(ctx, SOCK_EOF)
 #define sock_set_eof(ctx) sock_set_flag(ctx, SOCK_EOF, SOCK_EOF)
 #define sock_is_nonblock(ctx) sock_get_flag(ctx, SOCK_NONBLOCK)
+#define sock_is_error(ctx) sock_get_flag(ctx, SOCK_ERROR)
+#define sock_set_error(ctx) sock_set_flag(ctx, SOCK_ERROR, SOCK_ERROR)
 
 struct socket_op_vtable {
 	struct fd_op_vtable fd_vtable;
+	int (*shutdown)(void *obj, int how);
 	int (*bind)(void *obj, const struct sockaddr *addr, socklen_t addrlen);
 	int (*connect)(void *obj, const struct sockaddr *addr,
 		       socklen_t addrlen);
@@ -63,8 +68,12 @@ struct socket_op_vtable {
 	int (*setsockopt)(void *obj, int level, int optname,
 			  const void *optval, socklen_t optlen);
 	ssize_t (*sendmsg)(void *obj, const struct msghdr *msg, int flags);
+	int (*getpeername)(void *obj, struct sockaddr *addr,
+			   socklen_t *addrlen);
 	int (*getsockname)(void *obj, struct sockaddr *addr,
 			   socklen_t *addrlen);
 };
+
+size_t msghdr_non_empty_iov_count(const struct msghdr *msg);
 
 #endif /* _SOCKETS_INTERNAL_H_ */

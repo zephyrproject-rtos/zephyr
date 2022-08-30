@@ -17,6 +17,16 @@
 	dmas = <&dmamux1 0 11 0x20440
 		&dmamux1 8 10 0x20480>;
 	dma-names = "tx", "rx";
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
 };
 
 &dma1 {
@@ -29,12 +39,4 @@
 
 &dmamux1 {
 	status = "okay";
-};
-
-&rcc {
-	/*
-	 * Reduce bus clock speed to be able to reach
-	 * SPI_LOOPBACK_SLOW_FREQ = 500000 with max prescaler 256
-	 */
-	apb2-prescaler = <2>;
 };

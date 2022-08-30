@@ -6,18 +6,6 @@
 
 # Setting shared by different subsystems
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CONSOLE := zephyr,console
-
-config UART_CONSOLE_ON_DEV_NAME
-	string "Device Name of UART Device for UART Console"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_CONSOLE))" if HAS_DTS
-	default "UART_0"
-	depends on (UART_CONSOLE || CONSOLE_SUBSYS)
-	help
-	  This option specifies the name of UART device to be used for
-	  UART console.
-
 menuconfig CONSOLE
 	bool "Console drivers"
 
@@ -37,30 +25,27 @@ config CONSOLE_HAS_DRIVER
 	  that some kind of console exists.
 
 config CONSOLE_HANDLER
-	bool "Enable console input handler"
+	bool "Console input handler"
 	depends on UART_CONSOLE && SERIAL_SUPPORT_INTERRUPT
 	select UART_INTERRUPT_DRIVEN
 	help
 	  This option enables console input handler allowing to write simple
 	  interaction between serial console and the OS.
 
+config CONSOLE_INIT_PRIORITY
+	int "Console init priority"
+	default 95 if UART_MUX
+	default 60 if UART_CONSOLE || XTENSA_SIM_CONSOLE
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Console driver device initialization priority.
+
 config UART_CONSOLE
 	bool "Use UART for console"
 	depends on SERIAL && SERIAL_HAS_DRIVER
 	select CONSOLE_HAS_DRIVER
 	help
-	  Enable this option to use one UART for console. Make sure
-	  CONFIG_UART_CONSOLE_ON_DEV_NAME is also set correctly.
-
-config UART_CONSOLE_INIT_PRIORITY
-	int "Init priority"
-	default 95 if USB_UART_CONSOLE
-	default 60
-	depends on UART_CONSOLE
-	help
-	  Device driver initialization priority.
-	  Console has to be initialized after the UART driver
-	  it uses.
+	  Enable this option to use one UART for console.
 
 config UART_CONSOLE_DEBUG_SERVER_HOOKS
 	bool "Debug server hooks in debug console"
@@ -73,7 +58,7 @@ config UART_CONSOLE_DEBUG_SERVER_HOOKS
 	  code handle them if they are of no special significance to it.
 
 config UART_CONSOLE_MCUMGR
-	bool "Enable UART console mcumgr passthrough"
+	bool "UART console mcumgr passthrough"
 	depends on UART_CONSOLE
 	help
 	  Enables the UART console to receive mcumgr frames for image upgrade
@@ -82,7 +67,7 @@ config UART_CONSOLE_MCUMGR
 	  (e.g., the shell).  If unset, incoming mcumgr frames are dropped.
 
 config UART_CONSOLE_INPUT_EXPIRED
-	bool "Enable support for UART console input expired mechanism"
+	bool "Support for UART console input expired mechanism"
 	default y
 	depends on UART_CONSOLE && PM
 	help
@@ -102,14 +87,14 @@ config UART_CONSOLE_INPUT_EXPIRED_TIMEOUT
 	  Fixed amount of time which unit is milliseconds to keep the UART
 	  console in use flag true.
 
-config USB_UART_CONSOLE
-	bool "Use USB port for console outputs"
-	select UART_CONSOLE
-	select USB_CDC_ACM
+config JAILHOUSE_DEBUG_CONSOLE
+	bool "Use JAILHOUSE_DEBUG console"
+	select CONSOLE_HAS_DRIVER
+	depends on ARM64
 	help
-	  Enable this option to use the USB CDC ACM class for console.
-	  As for the console driver, this option only changes the initialization
-	  level.
+	  Emit console messages to a jailhouse hypervisor debug console.
+	  Useful in board bring-up if there aren't any working serial
+	  drivers.
 
 config RAM_CONSOLE
 	bool "Use RAM console"
@@ -194,17 +179,6 @@ config IPM_CONSOLE
 	help
 	  Enable console over Inter-processor Mailbox.
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_IPM_CONSOLE := zephyr,console
-
-config IPM_CONSOLE_ON_DEV_NAME
-	string "IPM device name used by console"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_IPM_CONSOLE))" if HAS_DTS
-	default "IPM_0"
-	depends on IPM_CONSOLE
-	help
-	  IPM device name used by IPM console driver.
-
 config IPM_CONSOLE_LINE_BUF_LEN
 	int "IPM console line buffer length"
 	default 128
@@ -213,29 +187,8 @@ config IPM_CONSOLE_LINE_BUF_LEN
 	  IPM console line buffer length specify amount of the buffer
 	  where characters are stored before sending the whole line.
 
-config UART_PIPE
-	bool "Enable pipe UART driver"
-	select UART_INTERRUPT_DRIVEN
-	help
-	  Enable pipe UART driver. This driver allows application to communicate
-	  over UART with custom defined protocol. Driver doesn't inspect received
-	  data (as contrary to console UART driver) and all aspects of received
-	  protocol data are handled by application provided callback.
-
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_UART_PIPE := zephyr,uart-pipe
-
-config UART_PIPE_ON_DEV_NAME
-	string "Device Name of UART Device for pipe UART"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_UART_PIPE))" if HAS_DTS
-	default "UART_0"
-	depends on UART_PIPE
-	help
-	  This option specifies the name of UART device to be used
-	  for pipe UART.
-
 config UART_MCUMGR
-	bool "Enable mcumgr UART driver"
+	bool "Mcumgr UART driver"
 	select UART_INTERRUPT_DRIVEN
 	help
 	  Enable the mcumgr UART driver. This driver allows the application to
@@ -245,17 +198,6 @@ config UART_MCUMGR
 	  data are handled by an application provided callback.
 
 if UART_MCUMGR
-
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_UART_MCUMGR := zephyr,uart-mcumgr
-
-config UART_MCUMGR_ON_DEV_NAME
-	string "Device Name of UART Device for mcumgr UART"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_UART_MCUMGR))" if HAS_DTS
-	default "UART_0"
-	help
-	  This option specifies the name of UART device to be used
-	  for mcumgr UART.
 
 config UART_MCUMGR_RX_BUF_SIZE
 	int "Size of receive buffer for mcumgr fragments received over UART, in bytes"
@@ -314,16 +256,9 @@ config NATIVE_POSIX_STDOUT_CONSOLE
 	help
 	  Zephyr's printk messages will be directed to the host terminal stdout.
 
-config XTENSA_CONSOLE_INIT_PRIORITY
-	int "Init priority"
-	default 60
-	depends on XTENSA_SIM_CONSOLE
-	help
-	  Device driver initialization priority.
-
 config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
 	int "Init priority"
-	default 60
+	default 99
 	depends on NATIVE_POSIX_CONSOLE
 	help
 	  Device driver initialization priority.
@@ -331,16 +266,10 @@ config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
 config SEMIHOST_CONSOLE
 	bool "Use semihosting for console"
 	select CONSOLE_HAS_DRIVER
-	depends on CPU_CORTEX_M || ARM64
+	depends on SEMIHOST
 	help
 	  Enable this option to use semihosting for console.
-	  Semihosting is a mechanism that enables code running on an ARM target
-	  to communicate and use the Input/Output facilities on a host computer
-	  that is running a debugger.
-	  Additional information can be found in:
-	  https://developer.arm.com/docs/dui0471/k/what-is-semihosting/what-is-semihosting
-	  This option is compatible with hardware and with QEMU, through the
-	  (automatic) use of the -semihosting-config switch when invoking it.
+	  See SEMIHOST for a more complete description of semihosting.
 
 module = UART_CONSOLE
 module-str = UART console
@@ -349,22 +278,16 @@ source "subsys/logging/Kconfig.template.log_config"
 source "drivers/console/Kconfig.gsm_mux"
 
 config UART_MUX
-	bool "Enable UART muxing (GSM 07.10) support [EXPERIMENTAL]"
+	bool "UART muxing (GSM 07.10) support [EXPERIMENTAL]"
 	depends on SERIAL_SUPPORT_INTERRUPT && GSM_MUX
 	select UART_INTERRUPT_DRIVEN
+	select EXPERIMENTAL
 	help
 	  Enable this option to create UART muxer that run over a physical
 	  UART. The GSM 07.10 muxing protocol is used to separate the data
 	  between these muxed UARTs.
 
 if UART_MUX
-
-config UART_MUX_INIT_PRIORITY
-	int "Init priority"
-	default 95
-	help
-	  Device driver initialization priority. UART mux has to be
-	  initialized after the UART driver it uses.
 
 config UART_MUX_DEVICE_NAME
 	string "UART mux device name template"
@@ -429,5 +352,10 @@ config UART_MUX_VERBOSE_DEBUG
 	  As there might be lot of debug output printed, only enable
 	  this if really needed.
 
+config EFI_CONSOLE
+	bool "Use EFI console for console output"
+	select CONSOLE_HAS_DRIVER
+	help
+	  Enable this option to use EFI console output.
 
 endif # CONSOLE

@@ -5,11 +5,22 @@
  */
 
 #define DT_DRV_COMPAT telink_b91_flash_controller
-#define FLASH_SIZE DT_REG_SIZE(DT_INST(0, soc_nv_flash))
+#define FLASH_SIZE   DT_REG_SIZE(DT_INST(0, soc_nv_flash))
+#define FLASH_ORIGIN DT_REG_ADDR(DT_INST(0, soc_nv_flash))
 
 #include "flash.h"
-#include <device.h>
-#include <drivers/flash.h>
+#include <string.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
+
+
+/* driver definitions */
+#define BLOCK_64K_SIZE         (0x10000u)
+#define BLOCK_64K_PAGES        (BLOCK_64K_SIZE / PAGE_SIZE)
+#define BLOCK_32K_SIZE         (0x8000u)
+#define BLOCK_32K_PAGES        (BLOCK_32K_SIZE / PAGE_SIZE)
+#define SECTOR_SIZE            (0x1000u)
+#define SECTOR_PAGES           (SECTOR_SIZE / PAGE_SIZE)
 
 
 /* driver data structure */
@@ -66,7 +77,7 @@ static int flash_b91_erase(const struct device *dev, off_t offset, size_t len)
 		return -EINVAL;
 	}
 
-	/* Erase can be done only by pages */
+	/* erase can be done only by pages */
 	if (((offset % PAGE_SIZE) != 0) || ((len % PAGE_SIZE) != 0)) {
 		return -EINVAL;
 	}
@@ -76,10 +87,29 @@ static int flash_b91_erase(const struct device *dev, off_t offset, size_t len)
 		return -EACCES;
 	}
 
-	/* erase flash page by page */
-	for (int i = 0; i < page_nums; i++) {
-		flash_erase_page(offset);
-		offset += PAGE_SIZE;
+	while (page_nums) {
+		/* check for 64K erase possibility, then check for 32K and so on.. */
+		if ((page_nums >= BLOCK_64K_PAGES) && ((offset % BLOCK_64K_SIZE) == 0)) {
+			/* erase 64K block */
+			flash_erase_64kblock(offset);
+			page_nums -= BLOCK_64K_PAGES;
+			offset += BLOCK_64K_SIZE;
+		} else if ((page_nums >= BLOCK_32K_PAGES) && ((offset % BLOCK_32K_SIZE) == 0)) {
+			/* erase 32K block */
+			flash_erase_32kblock(offset);
+			page_nums -= BLOCK_32K_PAGES;
+			offset += BLOCK_32K_SIZE;
+		} else if ((page_nums >= SECTOR_PAGES) && ((offset % SECTOR_SIZE) == 0)) {
+			/* erase sector */
+			flash_erase_sector(offset);
+			page_nums -= SECTOR_PAGES;
+			offset += SECTOR_SIZE;
+		} else {
+			/* erase page */
+			flash_erase_page(offset);
+			page_nums--;
+			offset += PAGE_SIZE;
+		}
 	}
 
 	/* release semaphore */
@@ -92,6 +122,7 @@ static int flash_b91_erase(const struct device *dev, off_t offset, size_t len)
 static int flash_b91_write(const struct device *dev, off_t offset,
 			   const void *data, size_t len)
 {
+	void *buf = NULL;
 	struct flash_b91_data *dev_data = dev->data;
 
 	/* return SUCCESS if len equals 0 (required by tests/drivers/flash) */
@@ -109,8 +140,30 @@ static int flash_b91_write(const struct device *dev, off_t offset,
 		return -EACCES;
 	}
 
+	/* need to store data in intermediate RAM buffer in case from flash to flash write */
+	if (((uint32_t)data >= FLASH_ORIGIN) &&
+		((uint32_t)data < (FLASH_ORIGIN + FLASH_SIZE))) {
+
+		buf = k_malloc(len);
+		if (buf == NULL) {
+			k_sem_give(&dev_data->write_lock);
+			return -ENOMEM;
+		}
+
+		/* copy Flash data to RAM */
+		memcpy(buf, data, len);
+
+		/* substitute data with allocated buffer */
+		data = buf;
+	}
+
 	/* write flash */
 	flash_write_page(offset, len, (unsigned char *)data);
+
+	/* if ram memory is allocated for flash writing it should be free */
+	if (buf != NULL) {
+		k_free(buf);
+	}
 
 	/* release semaphore */
 	k_sem_give(&dev_data->write_lock);
@@ -180,4 +233,4 @@ static const struct flash_driver_api flash_b91_api = {
 /* Driver registration */
 DEVICE_DT_INST_DEFINE(0, flash_b91_init,
 		      NULL, &flash_data, NULL, POST_KERNEL,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_b91_api);
+		      CONFIG_FLASH_INIT_PRIORITY, &flash_b91_api);

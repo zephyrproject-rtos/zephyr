@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM Cortex-M and Cortex-R interrupt management
+ * @brief ARM Cortex-A, Cortex-M and Cortex-R interrupt management
  *
  *
  * Interrupt management: enabling/disabling and dynamic ISR
@@ -14,20 +14,21 @@
  * connecting ISRs at runtime.
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#elif defined(CONFIG_CPU_CORTEX_A) || defined(CONFIG_CPU_CORTEX_R)
-#include <drivers/interrupt_controller/gic.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_A) \
+	|| defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#include <zephyr/drivers/interrupt_controller/gic.h>
 #endif
-#include <sys/__assert.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <sw_isr_table.h>
-#include <irq.h>
-#include <tracing/tracing.h>
-#include <pm/pm.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/irq.h>
+#include <zephyr/tracing/tracing.h>
+#include <zephyr/pm/pm.h>
 
 extern void z_arm_reserved(void);
 
@@ -59,8 +60,6 @@ int arch_irq_is_enabled(unsigned int irq)
  * The priority is verified if ASSERT_ON is enabled. The maximum number
  * of priority levels is a little complex, as there are some hardware
  * priority levels which are reserved.
- *
- * @return N/A
  */
 void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
@@ -75,7 +74,11 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	 * via flags
 	 */
 	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) && (flags & IRQ_ZERO_LATENCY)) {
-		prio = _EXC_ZERO_LATENCY_IRQS_PRIO;
+		if (ZERO_LATENCY_LEVELS == 1) {
+			prio = _EXC_ZERO_LATENCY_IRQS_PRIO;
+		} else {
+			/* Use caller supplied prio level as-is */
+		}
 	} else {
 		prio += _IRQ_PRIO_OFFSET;
 	}
@@ -92,7 +95,8 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
 
-#elif defined(CONFIG_CPU_CORTEX_A) || defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_A) \
+	|| defined(CONFIG_CPU_AARCH32_CORTEX_R)
 /*
  * For Cortex-A and Cortex-R cores, the default interrupt controller is the ARM
  * Generic Interrupt Controller (GIC) and therefore the architecture interrupt
@@ -129,8 +133,6 @@ int arch_irq_is_enabled(unsigned int irq)
  * of priority levels is a little complex, as there are some hardware
  * priority levels which are reserved: three for various types of exceptions,
  * and possibly one additional to support zero latency interrupts.
- *
- * @return N/A
  */
 void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
@@ -149,7 +151,6 @@ void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
  * Installed in all _sw_isr_table slots at boot time. Throws an error if
  * called.
  *
- * @return N/A
  */
 void z_irq_spurious(const void *unused)
 {
@@ -162,10 +163,12 @@ void z_irq_spurious(const void *unused)
 void _arch_isr_direct_pm(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
-	|| defined(CONFIG_ARMV7_R)
+	|| defined(CONFIG_ARMV7_R) \
+	|| defined(CONFIG_AARCH32_ARMV8_R) \
+	|| defined(CONFIG_ARMV7_A)
 	unsigned int key;
 
-	/* irq_lock() does what we wan for this CPU */
+	/* irq_lock() does what we want for this CPU */
 	key = irq_lock();
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* Lock all interrupts. irq_lock() will on this CPU only disable those
@@ -178,14 +181,14 @@ void _arch_isr_direct_pm(void)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 	if (_kernel.idle) {
-		int32_t idle_val = _kernel.idle;
-
 		_kernel.idle = 0;
-		z_pm_save_idle_exit(idle_val);
+		z_pm_save_idle_exit();
 	}
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
-	|| defined(CONFIG_ARMV7_R)
+	|| defined(CONFIG_ARMV7_R) \
+	|| defined(CONFIG_AARCH32_ARMV8_R) \
+	|| defined(CONFIG_ARMV7_A)
 	irq_unlock(key);
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile("cpsie i" : : : "memory");
@@ -268,7 +271,6 @@ int irq_target_state_is_secure(unsigned int irq)
  * - Bits corresponding to un-implemented interrupts are RES0, so writes
  *   will be ignored.
  *
- * @return N/A
 */
 void irq_target_state_set_all_non_secure(void)
 {
@@ -291,6 +293,7 @@ void irq_target_state_set_all_non_secure(void)
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
+#ifdef CONFIG_GEN_ISR_TABLES
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(const void *parameter),
 			     const void *parameter, uint32_t flags)
@@ -299,6 +302,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	z_arm_irq_priority_set(irq, priority, flags);
 	return irq;
 }
+#endif /* CONFIG_GEN_ISR_TABLES */
 
 #ifdef CONFIG_DYNAMIC_DIRECT_INTERRUPTS
 static inline void z_arm_irq_dynamic_direct_isr_dispatch(void)

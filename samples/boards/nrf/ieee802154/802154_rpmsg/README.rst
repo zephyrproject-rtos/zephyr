@@ -29,7 +29,7 @@ programming information.
 To test this sample, you need a separate device/CPU that acts as 802.15.4
 serialization RPMsg peer.
 This sample is compatible with the Nordic 802.15.4 serialization. See the
-:kconfig:`CONFIG_NRF_802154_SER_HOST` configuration option for more information.
+:kconfig:option:`CONFIG_NRF_802154_SER_HOST` configuration option for more information.
 
 The sample is configured to be energy efficient by disabling:
  * Serial Console (in :file:`prj.conf`)

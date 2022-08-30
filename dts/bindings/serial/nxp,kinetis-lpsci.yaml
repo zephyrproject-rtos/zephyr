@@ -2,7 +2,7 @@ description: Kinetis LPSCI UART
 
 compatible: "nxp,kinetis-lpsci"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:

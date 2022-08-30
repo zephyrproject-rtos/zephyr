@@ -6,8 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
 
 #ifndef _ENC424J600_
 #define _ENC424J600_
@@ -273,15 +274,8 @@
 #define ENC424J600_PHY_READY_DELAY		260U
 
 struct enc424j600_config {
-	const char *gpio_port;
-	uint8_t gpio_pin;
-	gpio_dt_flags_t gpio_flags;
-	const char *spi_port;
-	gpio_pin_t spi_cs_pin;
-	gpio_dt_flags_t spi_cs_dt_flags;
-	const char *spi_cs_port;
-	uint32_t spi_freq;
-	uint8_t spi_slave;
+	struct spi_dt_spec spi;
+	struct gpio_dt_spec interrupt;
 	uint8_t full_duplex;
 	int32_t timeout;
 };
@@ -295,10 +289,6 @@ struct enc424j600_runtime {
 
 	struct k_thread thread;
 	uint8_t mac_address[6];
-	const struct device *gpio;
-	const struct device *spi;
-	struct spi_cs_control spi_cs;
-	struct spi_config spi_cfg;
 	struct gpio_callback gpio_cb;
 	struct k_sem tx_rx_sem;
 	struct k_sem int_sem;

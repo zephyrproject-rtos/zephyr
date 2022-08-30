@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include "codec.h"
-#include <sys/printk.h>
-#include <drivers/i2c.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/i2c.h>
 
 #if DT_ON_BUS(WM8731_NODE, i2c)
 
@@ -16,7 +16,7 @@
 
 bool init_wm8731_i2c(void)
 {
-	const struct device *i2c_dev = DEVICE_DT_GET(WM8731_I2C_NODE);
+	const struct device *const i2c_dev = DEVICE_DT_GET(WM8731_I2C_NODE);
 
 	/* Initialization data for WM8731 registers. */
 	static const uint8_t init[][2] = {

@@ -11,29 +11,40 @@ infrastructure to measure the voltage of the device power supply.  Two
 power supply configurations are supported:
 
 * If the board devicetree has a ``/vbatt`` node with compatible
-  ``voltage-divider`` then the voltage is measured using that divider.
-* Otherwise the power source is assumed to be directly connected to the
-  digital voltage signal, and the internal source for ``Vdd`` is
-  selected.
+  ``voltage-divider`` then the voltage is measured using that divider. An
+  example of a devicetree node describing a voltage divider for battery
+  monitoring is:
 
-An example of a devicetree node describing a voltage divider for battery
-monitoring is:
+   .. code-block:: devicetree
 
-.. code-block:: none
+      / {
+         vbatt {
+            compatible = "voltage-divider";
+            io-channels = <&adc 4>;
+            output-ohms = <180000>;
+            full-ohms = <(1500000 + 180000)>;
+            power-gpios = <&sx1509b 4 0>;
+         };
+      };
 
-   / {
-   	vbatt {
-   		compatible = "voltage-divider";
-   		io-channels = <&adc 4>;
-   		output-ohms = <180000>;
-   		full-ohms = <(1500000 + 180000)>;
-   		power-gpios = <&sx1509b 4 0>;
-   	};
-   };
+* If the board does not have a voltage divider and so no ``/vbatt`` node
+  present, the ADC configuration (device and channel) needs to be provided via
+  the ``zephyr,user`` node. In this case the power source is assumed to be
+  directly connected to the digital voltage signal, and the internal source for
+  ``Vdd`` is selected. An example of a Devicetree configuration for this case is
+  shown below:
+
+   .. code-block :: devicetree
+
+      / {
+         zephyr,user {
+            io-channels = <&adc 4>;
+         };
+      };
 
 Note that in many cases where there is no voltage divider the digital
 voltage will be fed from a regulator that provides a fixed voltage
-regardless of source voltage, rather than by the source directly.  In
+regardless of source voltage, rather than by the source directly. In
 configuration involving a regulator the measured voltage will be
 constant.
 
@@ -62,7 +73,7 @@ The code can be found in :zephyr_file:`samples/boards/nrf/battery`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf/battery
-   :board: nrf52_pca20020
+   :board: thingy52_nrf52832
    :goals: build flash
    :compact:
 

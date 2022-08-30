@@ -6,7 +6,7 @@
 
 #include "settings_test.h"
 #include "settings/settings_fcb.h"
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #define NAME_DELETABLE "4/deletable"
 
@@ -29,14 +29,22 @@ struct deletable_s {
 uint32_t val4v2;
 
 int c4_handle_export(int (*cb)(const char *name, const void *value, size_t val_len));
+int c4_handle_set(const char *name, size_t len, settings_read_cb read_cb,
+		  void *cb_arg);
 
 struct settings_handler c4_test_handler = {
 	.name = "4",
 	.h_get = NULL,
-	.h_set = NULL,
+	.h_set = c4_handle_set,
 	.h_commit = NULL,
 	.h_export = c4_handle_export
 };
+
+int c4_handle_set(const char *name, size_t len, settings_read_cb read_cb,
+		  void *cb_arg)
+{
+	return 0;
+}
 
 int c4_handle_export(int (*cb)(const char *name, const void *value, size_t val_len))
 {
@@ -78,7 +86,7 @@ static int check_compressed_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 	return 0;
 }
 
-void test_config_compress_deleted(void)
+ZTEST(settings_config_fcb, test_config_compress_deleted)
 {
 	int rc;
 	struct settings_fcb cf;
@@ -93,6 +101,7 @@ void test_config_compress_deleted(void)
 
 	rc = settings_fcb_src(&cf);
 	zassert_true(rc == 0, "can't register FCB as configuration source");
+	settings_mount_fcb_backend(&cf);
 
 	rc = settings_fcb_dst(&cf);
 	zassert_true(rc == 0,
@@ -118,7 +127,7 @@ void test_config_compress_deleted(void)
 
 		if (cf.cf_fcb.f_active.fe_sector == &fcb_small_sectors[1]) {
 			/*
-			 * The commpresion should happened while the active
+			 * The compression should happened while the active
 			 * sector was changing.
 			 */
 			break;
@@ -127,4 +136,5 @@ void test_config_compress_deleted(void)
 
 	rc = fcb_walk(&cf.cf_fcb, &fcb_small_sectors[1], check_compressed_cb,
 		      NULL);
+	settings_unregister(&c4_test_handler);
 }

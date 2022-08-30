@@ -8,20 +8,12 @@ Overview
 
 This sample demonstrates how to use the ADC driver API.
 
-Depending on the MCU type, it reads the ADC samples of one or two ADC channels
-and prints the readings to the console. If supported by the driver, the raw
-readings are converted to millivolts.
+Depending on the target board, it reads ADC samples from one or more channels
+and prints the readings on the console. If voltage of the used reference can
+be obtained, the raw readings are converted to millivolts.
 
 The pins of the ADC channels are board-specific. Please refer to the board
 or MCU datasheet for further details.
-
-.. note::
-
-   This sample does not work on Nordic platforms where there is a distinction
-   between channel and analog input that requires additional configuration. See
-   :zephyr_file:`samples/boards/nrf/battery` for an example of using the ADC
-   infrastructure on Nordic hardware.
-
 
 Building and Running
 ********************
@@ -32,7 +24,14 @@ sure that the ADC is enabled (``status = "okay";``).
 In addition to that, this sample requires an ADC channel specified in the
 ``io-channels`` property of the ``zephyr,user`` node. This is usually done with
 a devicetree overlay. The example overlay in the ``boards`` subdirectory for
-the :ref:`nucleo_l073rz_board` can be easily adjusted for other boards.
+the ``nucleo_l073rz`` board can be easily adjusted for other boards.
+
+Configuration of channels (settings like gain, reference, or acquisition time)
+also needs to be specified in devicetree, in ADC controller child nodes. Also
+the ADC resolution and oversampling setting (if used) need to be specified
+there. See :zephyr_file:`boards/nrf52840dk_nrf52840.overlay
+<samples/drivers/adc/boards/nrf52840dk_nrf52840.overlay>` for an example of
+such setup.
 
 Building and Running for ST Nucleo L073RZ
 =========================================
@@ -56,6 +55,7 @@ You should get a similar output as below, repeated every second:
 
 .. code-block:: console
 
-   ADC reading(s): 42 (raw)
+   ADC reading:
+   - ADC_0, channel 7: 36 = 65mV
 
 .. note:: If the ADC is not supported, the output will be an error message.

@@ -5,13 +5,13 @@
  */
 
 #include <errno.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <debug/coredump.h>
+#include <zephyr/debug/coredump.h>
 #include "coredump_internal.h"
 
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
 LOG_MODULE_REGISTER(coredump, CONFIG_KERNEL_LOG_LEVEL);
 
 /* Length of buffer of printable size */
@@ -30,9 +30,11 @@ static void coredump_logging_backend_start(void)
 	/* Reset error */
 	error = 0;
 
-	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
-		LOG_PANIC();
+	while (LOG_PROCESS()) {
+		;
 	}
+
+	LOG_PANIC();
 	LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_BEGIN_STR);
 }
 
@@ -74,7 +76,7 @@ static void coredump_logging_backend_buffer_output(uint8_t *buf, size_t buflen)
 
 		if ((log_ptr >= LOG_BUF_SZ) || (remaining == 0)) {
 			log_buf[log_ptr] = '\0';
-			LOG_ERR(COREDUMP_PREFIX_STR "%s", log_strdup(log_buf));
+			LOG_ERR(COREDUMP_PREFIX_STR "%s", log_buf);
 			log_ptr = 0;
 		}
 	}
@@ -116,7 +118,7 @@ static int coredump_logging_backend_cmd(enum coredump_cmd_id cmd_id,
 }
 
 
-struct z_coredump_backend_api z_coredump_backend_logging = {
+struct coredump_backend_api coredump_backend_logging = {
 	.start = coredump_logging_backend_start,
 	.end = coredump_logging_backend_end,
 	.buffer_output = coredump_logging_backend_buffer_output,
@@ -126,7 +128,7 @@ struct z_coredump_backend_api z_coredump_backend_logging = {
 
 
 #ifdef CONFIG_DEBUG_COREDUMP_SHELL
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 static int cmd_coredump_error_get(const struct shell *shell,
 				  size_t argc, char **argv)

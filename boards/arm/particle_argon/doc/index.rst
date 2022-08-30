@@ -29,8 +29,7 @@ Hardware
 On the front of the board are RGB-LED, LED and LIPO circuitry.
 The RGB-LED is controlled by the nRF52840 via GPIO pins.
 
-.. figure:: img/particle_argon.png
-     :width: 150px
+.. figure:: img/particle_argon.jpg
      :align: center
      :alt: Particle Argon
 
@@ -71,7 +70,7 @@ hardware features:
 | RADIO     | on-chip    | Bluetooth            |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Connections and IOs
 ===================

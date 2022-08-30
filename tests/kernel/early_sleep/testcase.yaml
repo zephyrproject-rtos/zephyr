@@ -1,3 +1,8 @@
 tests:
   kernel.common.sleep:
     tags: kernel sleep
+  kernel.common.sleep.linker_generator:
+    platform_allow: qemu_cortex_m3
+    tags: kernel sleep linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

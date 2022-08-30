@@ -10,15 +10,14 @@ The NuMaker PFM M487 is an Internet of Things (IoT) application focused platform
 specially developed by Nuvoton. The PFM-M487 is based on the NuMicro® M487
 Ethernet series MCU with ARM® -Cortex®-M4F core.
 
-.. image:: ./pfm_m487.jpeg
-   :width: 720px
+.. image:: pfm_m487.jpg
    :align: center
    :alt: PFM-M487
 
 Features:
 =========
 - 32-bit Arm Cortex®-M4 M487JIDAE MCU
-- Core clock upto 192 MHz
+- Core clock up to 192 MHz
 - 512 KB embedded Dual Bank Flash and 160 KB SRAM
 - Audio codec (NAU88L25) with Microphone In and Headphone Out
 - Ethernet (IP101GR) for network application

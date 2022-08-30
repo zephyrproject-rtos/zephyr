@@ -8,7 +8,7 @@
 #ifndef BOARDS_POSIX_NRF52_BSIM_BOARD_IRQ_H
 #define BOARDS_POSIX_NRF52_BSIM_BOARD_IRQ_H
 
-#include "sw_isr_table.h"
+#include <zephyr/sw_isr_table.h>
 #include "zephyr/types.h"
 
 #ifdef __cplusplus
@@ -70,14 +70,14 @@ void posix_irq_priority_set(unsigned int irq, unsigned int prio,
 	} \
 	static inline int name##_body(void)
 
-#define ARCH_ISR_DIRECT_HEADER()   do { } while (0)
-#define ARCH_ISR_DIRECT_FOOTER(a)  do { } while (0)
+#define ARCH_ISR_DIRECT_HEADER()   do { } while (false)
+#define ARCH_ISR_DIRECT_FOOTER(a)  do { } while (false)
 
 #ifdef CONFIG_PM
 extern void posix_irq_check_idle_exit(void);
 #define ARCH_ISR_DIRECT_PM() posix_irq_check_idle_exit()
 #else
-#define ARCH_ISR_DIRECT_PM() do { } while (0)
+#define ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
 
 #ifdef __cplusplus

@@ -6,7 +6,7 @@
 
 / {
 	resources {
-		compatible = "test,gpio_basic_api";
+		compatible = "test-gpio-basic-api";
 		out-gpios = <&gpioc 6 0>; /* Port C 6 */
 		in-gpios = <&gpioc 7 0>;  /* Port C 7 */
 	};

@@ -1,0 +1,26 @@
+common:
+    timeout: 5
+    platform_allow: b_u585i_iot02a
+tests:
+  drivers.stm32_clock_configuration.u5.sysclksrc_pll_msis_160:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_msis_160.overlay"
+  drivers.stm32_clock_configuration.u5.pll_msis_ahb_2_40:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_msis_ahb_2_40.overlay"
+  drivers.stm32_clock_configuration.u5.sysclksrc_pll_hsi_160:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hsi_160.overlay"
+  drivers.stm32_clock_configuration.u5.sysclksrc_pll_hsi_40:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hsi_40.overlay"
+  drivers.stm32_clock_configuration.u5.sysclksrc_msis_48:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/msis_48.overlay"
+  drivers.stm32_clock_configuration.u5.sysclksrc_msis_24:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/msis_24.overlay"
+  drivers.stm32_clock_configuration.u5.sysclksrc_hsi_16:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_16.overlay"
+  drivers.stm32_clock_configuration.u5.sysclksrc_hse_16:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse_16.overlay"
+    # Build only as HSE not implemened on available boards
+    build_only: true
+  drivers.stm32_clock_configuration.u5.sysclksrc_pll_hse_160:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse_160.overlay"
+    # Build only as HSE not implemened on available boards
+    build_only: true

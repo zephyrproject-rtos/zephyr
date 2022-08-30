@@ -12,13 +12,14 @@
 
 #define DT_DRV_COMPAT microchip_xec_ecia
 
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <device.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <sys/__assert.h>
-#include <drivers/clock_control/mchp_xec_clock_control.h>
-#include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
+#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 
 /* defined at the SoC layer */
 #define MCHP_FIRST_GIRQ			MCHP_FIRST_GIRQ_NOS
@@ -75,7 +76,7 @@ struct xec_girq_src_data {
 	((struct xec_girq_src_data *const)(girq_dev)->data)
 
 /*
- * Enable/disable specified GIRQ's aggregated output. Aggrated output is the
+ * Enable/disable specified GIRQ's aggregated output. Aggregated output is the
  * bit-wise or of all the GIRQ's result bits.
  */
 void mchp_xec_ecia_girq_aggr_en(uint8_t girq_num, uint8_t enable)
@@ -186,6 +187,58 @@ void mchp_xec_ecia_nvic_clr_pend(uint32_t nvic_num)
 	NVIC_ClearPendingIRQ(nvic_num);
 }
 
+/* API taking input encoded with MCHP_XEC_ECIA(g, gb, na, nd) macro */
+
+void mchp_xec_ecia_info_girq_aggr_en(int ecia_info, uint8_t enable)
+{
+	uint8_t girq_num = MCHP_XEC_ECIA_GIRQ(ecia_info);
+
+	mchp_xec_ecia_girq_aggr_en(girq_num, enable);
+}
+
+void mchp_xec_ecia_info_girq_src_clr(int ecia_info)
+{
+	uint8_t girq_num = MCHP_XEC_ECIA_GIRQ(ecia_info);
+	uint8_t bitpos = MCHP_XEC_ECIA_GIRQ_POS(ecia_info);
+
+	mchp_xec_ecia_girq_src_clr(girq_num, bitpos);
+}
+
+void mchp_xec_ecia_info_girq_src_en(int ecia_info)
+{
+	uint8_t girq_num = MCHP_XEC_ECIA_GIRQ(ecia_info);
+	uint8_t bitpos = MCHP_XEC_ECIA_GIRQ_POS(ecia_info);
+
+	mchp_xec_ecia_girq_src_en(girq_num, bitpos);
+}
+
+void mchp_xec_ecia_info_girq_src_dis(int ecia_info)
+{
+	uint8_t girq_num = MCHP_XEC_ECIA_GIRQ(ecia_info);
+	uint8_t bitpos = MCHP_XEC_ECIA_GIRQ_POS(ecia_info);
+
+	mchp_xec_ecia_girq_src_dis(girq_num, bitpos);
+}
+
+uint32_t mchp_xec_ecia_info_girq_result(int ecia_info)
+{
+	uint8_t girq_num = MCHP_XEC_ECIA_GIRQ(ecia_info);
+
+	return mchp_xec_ecia_girq_result(girq_num);
+}
+
+/*
+ * Clear NVIC pending status given GIRQ source information encoded by macro
+ * MCHP_XEC_ECIA. For aggregated only sources the encoding sets direct NVIC
+ * number equal to aggregated NVIC number.
+ */
+void mchp_xec_ecia_info_nvic_clr_pend(int ecia_info)
+{
+	uint8_t nvic_num = MCHP_XEC_ECIA_NVIC_DIRECT(ecia_info);
+
+	mchp_xec_ecia_nvic_clr_pend(nvic_num);
+}
+
 /**
  * @brief enable GIRQn interrupt for specific source
  *
@@ -208,6 +261,20 @@ int mchp_xec_ecia_enable(int girq, int src)
 }
 
 /**
+ * @brief enable EXTI interrupt for specific line specified by parameter
+ * encoded with MCHP_XEC_ECIA macro.
+ *
+ * @param ecia_info is GIRQ connection encoded with MCHP_XEC_ECIA
+ */
+int mchp_xec_ecia_info_enable(int ecia_info)
+{
+	uint8_t girq = (uint8_t)MCHP_XEC_ECIA_GIRQ(ecia_info);
+	uint8_t src = (uint8_t)MCHP_XEC_ECIA_GIRQ_POS(ecia_info);
+
+	return mchp_xec_ecia_enable(girq, src);
+}
+
+/**
  * @brief disable EXTI interrupt for specific line
  *
  * @param girq is the GIRQ number (8 - 26)
@@ -226,6 +293,20 @@ int mchp_xec_ecia_disable(int girq, int src)
 	regs->GIRQ[girq - MCHP_FIRST_GIRQ].EN_CLR = BIT(src);
 
 	return 0;
+}
+
+/**
+ * @brief disable EXTI interrupt for specific line specified by parameter
+ * encoded with MCHP_XEC_ECIA macro.
+ *
+ * @param ecia_info is GIRQ connection encoded with MCHP_XEC_ECIA
+ */
+int mchp_xec_ecia_info_disable(int ecia_info)
+{
+	uint8_t girq = (uint8_t)MCHP_XEC_ECIA_GIRQ(ecia_info);
+	uint8_t src = (uint8_t)MCHP_XEC_ECIA_GIRQ_POS(ecia_info);
+
+	return mchp_xec_ecia_disable(girq, src);
 }
 
 /* forward reference */
@@ -280,6 +361,22 @@ int mchp_xec_ecia_set_callback(int girq_num, int src,
 }
 
 /**
+ * @brief set GIRQn interrupt source callback
+ *
+ * @param ecia_info is GIRQ connection encoded with MCHP_XEC_ECIA
+ * @param cb user callback
+ * @param data user data
+ */
+int mchp_xec_ecia_info_set_callback(int ecia_info, mchp_xec_ecia_callback_t cb,
+				    void *data)
+{
+	const struct device *dev = get_girq_dev(MCHP_XEC_ECIA_GIRQ(ecia_info));
+	uint8_t src = MCHP_XEC_ECIA_GIRQ_POS(ecia_info);
+
+	return mchp_xec_ecia_set_callback_by_dev(dev, src, cb, data);
+}
+
+/**
  * @brief unset GIRQn interrupt source callback by device handle
  *
  * @param dev_girq is the GIRQn device handle
@@ -320,6 +417,20 @@ int mchp_ecia_unset_callback(int girq_num, int src)
 
 	return mchp_ecia_unset_callback_by_dev(dev, src);
 }
+
+/**
+ * @brief unset GIRQn interrupt source callback
+ *
+ * @param ecia_info is GIRQ connection encoded with MCHP_XEC_ECIA
+ */
+int mchp_ecia_info_unset_callback(int ecia_info)
+{
+	const struct device *dev = get_girq_dev(MCHP_XEC_ECIA_GIRQ(ecia_info));
+	uint8_t src = MCHP_XEC_ECIA_GIRQ_POS(ecia_info);
+
+	return mchp_ecia_unset_callback_by_dev(dev, src);
+}
+
 
 /*
  * Create a build time flag to know if any aggregated GIRQ has been enabled.
@@ -404,6 +515,10 @@ static int xec_ecia_init(const struct device *dev)
 	uint32_t n = 0, nr = 0;
 	int ret;
 
+	if (!device_is_ready(clk_dev)) {
+		return -ENODEV;
+	}
+
 	ret = clock_control_on(clk_dev,
 			       (clock_control_subsys_t *)&cfg->clk_ctrl);
 	if (ret < 0) {
@@ -457,7 +572,7 @@ static int xec_ecia_init(const struct device *dev)
 									\
 	DEVICE_DT_DEFINE(n, xec_girq_init_##n,				\
 		 NULL, &xec_data_girq_##n, &xec_config_girq_##n,	\
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,		\
 		 NULL);							\
 									\
 	static int xec_girq_init_##n(const struct device *dev)		\
@@ -495,7 +610,7 @@ static const struct xec_ecia_config xec_config_ecia = {
 
 DEVICE_DT_DEFINE(DT_NODELABEL(ecia), xec_ecia_init,
 		 NULL, NULL, &xec_config_ecia,
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		 NULL);
 
 /* look up GIRQ node handle from ECIA configuration */

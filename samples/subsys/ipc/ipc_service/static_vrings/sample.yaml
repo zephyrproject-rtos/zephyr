@@ -1,0 +1,9 @@
+sample:
+    name: IPC Service example integration (OpenAMP static_vrings backend)
+tests:
+    sample.ipc.static_vrings:
+        platform_allow: nrf5340dk_nrf5340_cpuapp
+        integration_platforms:
+          - nrf5340dk_nrf5340_cpuapp
+        tags: ipc
+        harness: remote

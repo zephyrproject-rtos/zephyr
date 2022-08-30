@@ -3,4 +3,8 @@ name: ESP32-C3
 type: mcu
 arch: riscv
 toolchain:
-  - espressif
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

@@ -5,7 +5,7 @@ description: NXP Kinetis ADC12
 
 compatible: "nxp,kinetis-adc12"
 
-include: adc-controller.yaml
+include: [adc-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:

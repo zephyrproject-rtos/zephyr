@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <irq_offload.h>
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#include <zephyr/ztest.h>
+#include <zephyr/irq_offload.h>
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define STACK_LEN 4
 #define HIGH_T1			0xaaa
 #define HIGH_T2			0xbbb
@@ -113,7 +113,7 @@ static void tstack_thread_isr(struct k_stack *pstack)
  *
  * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
  */
-void test_stack_thread2thread(void)
+ZTEST(stack_contexts, test_stack_thread2thread)
 {
 	/**TESTPOINT: test k_stack_init stack*/
 	k_stack_init(&stack, data, STACK_LEN);
@@ -128,7 +128,7 @@ void test_stack_thread2thread(void)
  * @brief Verifies data passing between user threads via stack
  * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
  */
-void test_stack_user_thread2thread(void)
+ZTEST_USER(stack_contexts, test_stack_user_thread2thread)
 {
 	struct k_stack *stack = k_object_alloc(K_OBJ_STACK);
 
@@ -144,7 +144,7 @@ void test_stack_user_thread2thread(void)
  * @brief Verifies data passing between thread and ISR via stack
  * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
  */
-void test_stack_thread2isr(void)
+ZTEST(stack_contexts, test_stack_thread2isr)
 {
 	/**TESTPOINT: test k_stack_init stack*/
 	k_stack_init(&stack, data, STACK_LEN);
@@ -158,7 +158,7 @@ void test_stack_thread2isr(void)
  * @see k_stack_alloc_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop(),
  * k_stack_cleanup()
  */
-void test_stack_alloc_thread2thread(void)
+ZTEST(stack_contexts, test_stack_alloc_thread2thread)
 {
 	int ret;
 
@@ -183,7 +183,7 @@ void test_stack_alloc_thread2thread(void)
 	/** Requested buffer allocation from the test pool.*/
 	ret = k_stack_alloc_init(&kstack_test_alloc, (STACK_SIZE/2)+1);
 	zassert_true(ret == -ENOMEM,
-			"resource pool is smaller then requested buffer");
+			"requested buffer is smaller than resource pool");
 }
 
 static void low_prio_wait_for_stack(void *p1, void *p2, void *p3)
@@ -230,8 +230,10 @@ static void high_prio_t2_wait_for_stack(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_stack_tests
  */
-void test_stack_multithread_competition(void)
+ZTEST(stack_contexts, test_stack_multithread_competition)
 {
+	k_stack_init(&stack, data, STACK_LEN);
+
 	int old_prio = k_thread_priority_get(k_current_get());
 	int prio = 10;
 	stack_data_t test_data[3];
@@ -277,6 +279,24 @@ void test_stack_multithread_competition(void)
 
 	/* Revert priority of the main thread */
 	k_thread_priority_set(k_current_get(), old_prio);
+}
+
+/**
+ * @brief Test case of requesting a buffer larger than resource pool.
+ *
+ * @details Try to request a buffer larger than resource pool for stack,
+ * then see if returns an expected value.
+ *
+ * @ingroup kernel_stack_tests
+ */
+ZTEST(stack_contexts, test_stack_alloc_null)
+{
+	int ret;
+
+	/* Requested buffer allocation from the test pool. */
+	ret = k_stack_alloc_init(&kstack_test_alloc, (STACK_SIZE/2)+1);
+	zassert_true(ret == -ENOMEM,
+			"requested buffer is smaller than resource pool");
 }
 
 /**

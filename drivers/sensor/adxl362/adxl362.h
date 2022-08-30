@@ -8,9 +8,9 @@
 #define ZEPHYR_DRIVERS_SENSOR_ADXL362_ADXL362_H_
 
 #include <zephyr/types.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
 
 #define ADXL362_SLAVE_ID    1
 
@@ -171,29 +171,16 @@
 #define ADXL362_TEMP_BIAS_LSB 350
 
 struct adxl362_config {
-	char *spi_name;
-	uint32_t spi_max_frequency;
-	uint16_t spi_slave;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	const char *gpio_cs_port;
-	gpio_pin_t cs_gpio;
-	gpio_dt_flags_t cs_flags;
-#endif
+	struct spi_dt_spec bus;
 #if defined(CONFIG_ADXL362_TRIGGER)
-	const char *gpio_port;
-	gpio_pin_t int_gpio;
-	gpio_dt_flags_t int_flags;
+	struct gpio_dt_spec interrupt;
 	uint8_t int1_config;
 	uint8_t int2_config;
 #endif
+	uint8_t power_ctl;
 };
 
 struct adxl362_data {
-	const struct device *spi;
-	struct spi_config spi_cfg;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control adxl362_cs_ctrl;
-#endif
 	union {
 		int16_t acc_xyz[3];
 		struct {
@@ -207,12 +194,13 @@ struct adxl362_data {
 
 #if defined(CONFIG_ADXL362_TRIGGER)
 	const struct device *dev;
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	struct k_mutex trigger_mutex;
 
-	sensor_trigger_handler_t th_handler;
-	struct sensor_trigger th_trigger;
+	sensor_trigger_handler_t inact_handler;
+	struct sensor_trigger inact_trigger;
+	sensor_trigger_handler_t act_handler;
+	struct sensor_trigger act_trigger;
 	sensor_trigger_handler_t drdy_handler;
 	struct sensor_trigger drdy_trigger;
 

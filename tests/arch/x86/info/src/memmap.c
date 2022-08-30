@@ -3,8 +3,8 @@
  * Copyright (c) 2019 Intel Corp.
  */
 
-#include <zephyr.h>
-#include <arch/x86/memmap.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/arch/x86/memmap.h>
 
 void memmap(void)
 {

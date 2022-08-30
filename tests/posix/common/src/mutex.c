@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <errno.h>
 #include <pthread.h>
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static K_THREAD_STACK_DEFINE(stack, STACK_SIZE);
 
@@ -34,7 +34,7 @@ void *normal_mutex_entry(void *p1)
 	zassert_false(rc, "try lock failed");
 	TC_PRINT("mutex lock is taken\n");
 	zassert_false(pthread_mutex_unlock(&mutex1),
-		      "mutex unlock is falied");
+		      "mutex unlock is failed");
 	return NULL;
 }
 
@@ -43,7 +43,7 @@ void *recursive_mutex_entry(void *p1)
 	zassert_false(pthread_mutex_lock(&mutex2), "mutex is not taken");
 	zassert_false(pthread_mutex_lock(&mutex2),
 		      "mutex is not taken 2nd time");
-	TC_PRINT("recrusive mutex lock is taken\n");
+	TC_PRINT("recursive mutex lock is taken\n");
 	zassert_false(pthread_mutex_unlock(&mutex2),
 		      "mutex is not unlocked");
 	zassert_false(pthread_mutex_unlock(&mutex2),
@@ -58,7 +58,7 @@ void *recursive_mutex_entry(void *p1)
  *	    and pthread_mutex_lock are tested with mutex type being
  *	    normal.
  */
-void test_posix_normal_mutex(void)
+ZTEST(posix_apis, test_posix_normal_mutex)
 {
 	pthread_t thread_1;
 	pthread_attr_t attr;
@@ -117,7 +117,7 @@ void test_posix_normal_mutex(void)
  *	    twice and unlocked for the same number of time.
  *
  */
-void test_posix_recursive_mutex(void)
+ZTEST(posix_apis, test_posix_recursive_mutex)
 {
 	pthread_t thread_2;
 	pthread_attr_t attr2;

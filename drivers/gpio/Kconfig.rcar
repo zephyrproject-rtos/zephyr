@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config GPIO_RCAR
-	bool "Renesas RCAR GPIO"
-	depends on SOC_SERIES_RCAR_GEN3
+	bool "Renesas R-Car GPIO"
+	default y
+	depends on DT_HAS_RENESAS_RCAR_GPIO_ENABLED
 	help
 	  Enable Renesas RCAR GPIO driver.

@@ -7,12 +7,12 @@
 #include <arm/armv7-m.dtsi>
 
 /* Macros for device tree declarations of npcx soc family */
-#include <dt-bindings/clock/npcx_clock.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/pinctrl/npcx-pinctrl.h>
-#include <dt-bindings/pwm/pwm.h>
-#include <dt-bindings/sensor/npcx_tach.h>
+#include <zephyr/dt-bindings/clock/npcx_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pinctrl/npcx-pinctrl.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/sensor/npcx_tach.h>
 #include <freq.h>
 
 / {
@@ -41,34 +41,33 @@
 		 * no_ks000-17 - PIN21.20.17.16.15.14.13.12.11.10.07.06.05.04.
 		 *                  82.83.03.B1
 		 */
-		pinctrl-0 = <>;
+		pinmux = <>;
 	};
 
-	def-lvol-io-list {
-		compatible = "nuvoton,npcx-lvolctrl-def";
-		/* Put low-voltage io pads into "lvol-io-pads" property if the
-		 * detection level of them is 1.8V, For example, if the bus
-		 * voltage of i2c1_0 port is 1.8V, this property should be:
-		 * lvol-io-pads = <&lvol_io90 &lvol_io87>;
-		 */
-		lvol-io-pads = <>;
+	/** Dummy pinctrl node. It will be initialized with defaults based on the SoC series.
+	 *  Then, the user can override the pin control options at the board level.
+	 */
+	pinctrl: pinctrl {
+		compatible = "nuvoton,npcx-pinctrl";
+		status = "okay";
 	};
 
-	vsby-psl-in-list {
-		compatible = "nuvoton,npcx-pslctrl-def";
-		/* Put Power Switch Logic (PSL) input pads which detect the
-		 * wake-up events and turn on core power supply (VCC1) from
-		 * standby power state (ultra-low-power mode) into "psl-in-pads"
-		 * property. For example, if PSL input 1 that is plan to detect
-		 * a 'falling edge' event, this property should be:
-		 *   psl-in-pads = <&psl_in1>;
-		 * And the flag property in psl_in1 should change to
-		 *   flag = <NPCX_PSL_FALLING_EDGE>;
-		 */
-		psl-in-pads = <>;
+	/* Dummy node of IOs that have leakage current. The user can override
+	 * 'leak-gpios' prop. at board DT file to save more power consumption.
+	 */
+	power_leakage_io: power-leakage-io {
+		compatible = "nuvoton,npcx-leakage-io";
+		status = "okay";
 	};
 
 	soc {
+		bbram: bb-ram@400af000 {
+			compatible = "nuvoton,npcx-bbram";
+			reg = <0x400af000 0x80
+			       0x400af100 0x1>;
+			reg-names = "memory", "status";
+		};
+
 		pcc: clock-controller@4000d000 {
 			compatible = "nuvoton,npcx-pcc";
 			/* Cells for bus type, clock control reg and bit */
@@ -78,7 +77,6 @@
 			reg = <0x4000d000 0x2000
 			       0x400b5000 0x2000>;
 			reg-names = "pmc", "cdcg";
-			label = "PMC_CDCG";
 		};
 
 		scfg: scfg@400c3000 {
@@ -89,8 +87,19 @@
 			       0x400a5000 0x2000>;
 			reg-names = "scfg", "glue";
 			#alt-cells = <3>;
-			#lvol-cells = <4>;
-			label = "SCFG";
+			#lvol-cells = <2>;
+		};
+
+		mdc: mdc@4000c000 {
+			compatible = "syscon";
+			reg = <0x4000c000 0xa>;
+			reg-io-width = <1>;
+		};
+
+		mdc_header: mdc@4000c00a {
+			compatible = "syscon";
+			reg = <0x4000c00a 0x4>;
+			reg-io-width = <2>;
 		};
 
 		miwu0: miwu@400bb000 {
@@ -98,7 +107,6 @@
 			reg = <0x400bb000 0x2000>;
 			index = <0>;
 			#miwu-cells = <2>;
-			label="MIWU_0";
 		};
 
 		miwu1: miwu@400bd000 {
@@ -106,7 +114,6 @@
 			reg = <0x400bd000 0x2000>;
 			index = <1>;
 			#miwu-cells = <2>;
-			label="MIWU_1";
 		};
 
 		miwu2: miwu@400bf000 {
@@ -114,7 +121,6 @@
 			reg = <0x400bf000 0x2000>;
 			index = <2>;
 			#miwu-cells = <2>;
-			label="MIWU_2";
 		};
 
 		gpio0: gpio@40081000 {
@@ -123,7 +129,6 @@
 			gpio-controller;
 			index = <0x0>;
 			#gpio-cells=<2>;
-			label="GPIO_0";
 		};
 
 		gpio1: gpio@40083000 {
@@ -132,7 +137,6 @@
 			gpio-controller;
 			index = <0x1>;
 			#gpio-cells=<2>;
-			label="GPIO_1";
 		};
 
 		gpio2: gpio@40085000 {
@@ -141,7 +145,6 @@
 			gpio-controller;
 			index = <0x2>;
 			#gpio-cells=<2>;
-			label="GPIO_2";
 		};
 
 		gpio3: gpio@40087000 {
@@ -150,7 +153,6 @@
 			gpio-controller;
 			index = <0x3>;
 			#gpio-cells=<2>;
-			label="GPIO_3";
 		};
 
 		gpio4: gpio@40089000 {
@@ -159,7 +161,6 @@
 			gpio-controller;
 			index = <0x4>;
 			#gpio-cells=<2>;
-			label="GPIO_4";
 		};
 
 		gpio5: gpio@4008b000 {
@@ -168,7 +169,6 @@
 			gpio-controller;
 			index = <0x5>;
 			#gpio-cells=<2>;
-			label="GPIO_5";
 		};
 
 		gpio6: gpio@4008d000 {
@@ -177,7 +177,6 @@
 			gpio-controller;
 			index = <0x6>;
 			#gpio-cells=<2>;
-			label="GPIO_6";
 		};
 
 		gpio7: gpio@4008f000 {
@@ -186,7 +185,6 @@
 			gpio-controller;
 			index = <0x7>;
 			#gpio-cells=<2>;
-			label="GPIO_7";
 		};
 
 		gpio8: gpio@40091000 {
@@ -195,7 +193,6 @@
 			gpio-controller;
 			index = <0x8>;
 			#gpio-cells=<2>;
-			label="GPIO_8";
 		};
 
 		gpio9: gpio@40093000 {
@@ -204,7 +201,6 @@
 			gpio-controller;
 			index = <0x9>;
 			#gpio-cells=<2>;
-			label="GPIO_9";
 		};
 
 		gpioa: gpio@40095000 {
@@ -213,7 +209,6 @@
 			gpio-controller;
 			index = <0xA>;
 			#gpio-cells=<2>;
-			label="GPIO_A";
 		};
 
 		gpiob: gpio@40097000 {
@@ -222,7 +217,6 @@
 			gpio-controller;
 			index = <0xB>;
 			#gpio-cells=<2>;
-			label="GPIO_B";
 		};
 
 		gpioc: gpio@40099000 {
@@ -231,7 +225,6 @@
 			gpio-controller;
 			index = <0xC>;
 			#gpio-cells=<2>;
-			label="GPIO_C";
 		};
 
 		gpiod: gpio@4009b000 {
@@ -240,7 +233,6 @@
 			gpio-controller;
 			index = <0xD>;
 			#gpio-cells=<2>;
-			label="GPIO_D";
 		};
 
 		gpioe: gpio@4009d000 {
@@ -249,7 +241,6 @@
 			gpio-controller;
 			index = <0xE>;
 			#gpio-cells=<2>;
-			label="GPIO_E";
 		};
 
 		gpiof: gpio@4009f000 {
@@ -258,87 +249,78 @@
 			gpio-controller;
 			index = <0xF>;
 			#gpio-cells=<2>;
-			label="GPIO_F";
 		};
 
 		pwm0: pwm@40080000 {
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40080000 0x2000>;
+			pwm-channel = <0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 0>;
-			pinctrl-0 = <&alt4_pwm0_sl>; /* PINC3 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
-			label = "PWM_0";
 		};
 
 		pwm1: pwm@40082000 {
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40082000 0x2000>;
+			pwm-channel = <1>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 1>;
-			pinctrl-0 = <&alt4_pwm1_sl>; /* PINC2 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
-			label = "PWM_1";
 		};
 
 		pwm2: pwm@40084000 {
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40084000 0x2000>;
+			pwm-channel = <2>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 2>;
-			pinctrl-0 = <&alt4_pwm2_sl>; /* PINC4 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
-			label = "PWM_2";
 		};
 
 		pwm3: pwm@40086000 {
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40086000 0x2000>;
+			pwm-channel = <3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 3>;
-			pinctrl-0 = <&alt4_pwm3_sl>; /* PIN80 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
-			label = "PWM_3";
 		};
 
 		pwm4: pwm@40088000 {
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40088000 0x2000>;
+			pwm-channel = <4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 4>;
-			pinctrl-0 = <&alt4_pwm4_sl>; /* PINB6 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
-			label = "PWM_4";
 		};
 
 		pwm5: pwm@4008a000 {
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x4008a000 0x2000>;
+			pwm-channel = <5>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 5>;
-			pinctrl-0 = <&alt4_pwm5_sl>; /* PINB7 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
-			label = "PWM_5";
 		};
 
 		pwm6: pwm@4008c000 {
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x4008c000 0x2000>;
+			pwm-channel = <6>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 6>;
-			pinctrl-0 = <&alt4_pwm6_sl>; /* PINC0 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
-			label = "PWM_6";
 		};
 
 		pwm7: pwm@4008e000 {
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x4008e000 0x2000>;
+			pwm-channel = <7>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 7>;
-			pinctrl-0 = <&alt4_pwm7_sl>; /* PIN60 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
-			label = "PWM_7";
 		};
 
 		adc0: adc@400d1000 {
@@ -348,14 +330,12 @@
 			interrupts = <10 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 4>;
 			status = "disabled";
-			label = "ADC_0";
 		};
 
 		twd0: watchdog@400d8000 {
 			compatible = "nuvoton,npcx-watchdog";
 			reg = <0x400d8000 0x2000>;
 			t0-out = <&wui_t0out>;
-			label = "TWD_0";
 		};
 
 		espi0: espi@4000a000 {
@@ -365,11 +345,8 @@
 
 			/* clocks for eSPI modules */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL6 7>;
-			/* PIN46.47.51.52.53.54.55.57 */
-			pinctrl-0 = <&alt1_no_lpc_espi>;
 			/* WUI maps for eSPI signals */
 			espi-rst-wui = <&wui_espi_rst>;
-			label = "ESPI_0";
 
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -407,7 +384,6 @@
 				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
 				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
 				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 7>;
-			label = "HOST_SUBS";
 		};
 
 		/* I2c Controllers - Do not use them as i2c node directly */
@@ -416,7 +392,7 @@
 			reg = <0x40009000 0x1000>;
 			interrupts = <13 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 0>;
-			label = "I2CCTRL_0";
+			status = "disabled";
 		};
 
 		i2c_ctrl1: i2c@4000b000 {
@@ -424,7 +400,7 @@
 			reg = <0x4000b000 0x1000>;
 			interrupts = <14 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 1>;
-			label = "I2CCTRL_1";
+			status = "disabled";
 		};
 
 		i2c_ctrl2: i2c@400c0000 {
@@ -432,7 +408,7 @@
 			reg = <0x400c0000 0x1000>;
 			interrupts = <36 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 2>;
-			label = "I2CCTRL_2";
+			status = "disabled";
 		};
 
 		i2c_ctrl3: i2c@400c2000 {
@@ -440,7 +416,7 @@
 			reg = <0x400c2000 0x1000>;
 			interrupts = <37 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 3>;
-			label = "I2CCTRL_3";
+			status = "disabled";
 		};
 
 		i2c_ctrl4: i2c@40008000 {
@@ -448,7 +424,7 @@
 			reg = <0x40008000 0x1000>;
 			interrupts = <19 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 4>;
-			label = "I2CCTRL_4";
+			status = "disabled";
 		};
 
 		i2c_ctrl5: i2c@40017000 {
@@ -456,7 +432,7 @@
 			reg = <0x40017000 0x1000>;
 			interrupts = <20 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 0>;
-			label = "I2CCTRL_5";
+			status = "disabled";
 		};
 
 		i2c_ctrl6: i2c@40018000 {
@@ -464,7 +440,7 @@
 			reg = <0x40018000 0x1000>;
 			interrupts = <16 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 1>;
-			label = "I2CCTRL_6";
+			status = "disabled";
 		};
 
 		i2c_ctrl7: i2c@40019000 {
@@ -472,14 +448,13 @@
 			reg = <0x40019000 0x1000>;
 			interrupts = <8 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 2>;
-			label = "I2CCTRL_7";
+			status = "disabled";
 		};
 
 		tach1: tach@400e1000 {
 			compatible = "nuvoton,npcx-tach";
 			reg = <0x400e1000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL1 5>;
-			label = "TACH_1";
 			status = "disabled";
 		};
 
@@ -487,7 +462,6 @@
 			compatible = "nuvoton,npcx-tach";
 			reg = <0x400e3000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL1 6>;
-			label = "TACH_2";
 			status = "disabled";
 		};
 
@@ -496,40 +470,50 @@
 			reg = <0x400b1000 0x1000>;
 			interrupts = <21 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_FREERUN NPCX_PWDWN_CTL1 3>;
-			label = "PS2_CTRL_0";
 
 			/* PS2 Channels - Please use them as PS2 node */
 			ps2_channel0: io_ps2_channel0 {
 				compatible = "nuvoton,npcx-ps2-channel";
 				channel = <0x00>;
-				pinctrl-0 = <&alt3_ps2_0_sl>; /* PIN67.70 */
-				label = "PS2_CHANNEL_0";
 				status = "disabled";
 			};
 
 			ps2_channel1: io_ps2_channel1 {
 				compatible = "nuvoton,npcx-ps2-channel";
 				channel = <0x01>;
-				pinctrl-0 = <&alt3_ps2_1_sl>; /* PIN62.63 */
-				label = "PS2_CHANNEL_1";
 				status = "disabled";
 			};
 
 			ps2_channel2: io_ps2_channel2 {
 				compatible = "nuvoton,npcx-ps2-channel";
 				channel = <0x02>;
-				pinctrl-0 = <&alt3_ps2_2_sl>; /* PIN37.34 */
-				label = "PS2_CHANNEL_2";
 				status = "disabled";
 			};
 
 			ps2_channel3: io_ps2_channel3 {
 				compatible = "nuvoton,npcx-ps2-channel";
 				channel = <0x03>;
-				pinctrl-0 = <&altc_ps2_3_sl2>; /* PINA6.A7 */
-				label = "PS2_CHANNEL_3";
 				status = "disabled";
 			};
+		};
+
+		/* Dedicated SPI interface to access SPI flashes */
+		spi_fiu0: spi@40020000 {
+			compatible = "nuvoton,npcx-spi-fiu";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40020000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL1 2>;
+		};
+
+		peci0: peci@400d4000 {
+			compatible = "nuvoton,npcx-peci";
+			reg = <0x400d4000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <4 4>;
+			clocks = <&pcc NPCX_CLOCK_BUS_FMCLK NPCX_PWDWN_CTL4 5>;
+			status = "disabled";
 		};
 	};
 
@@ -540,20 +524,7 @@
 		 */
 		host_uart: io_host_uart {
 			compatible = "nuvoton,npcx-host-uart";
-			/* Host serial port pinmux PIN75 86 36 33 42 C7 B3 B2 */
-			pinctrl-0 = <&altb_rxd_sl &altb_txd_sl
-						&altb_rts_sl &altb_cts_sl
-						&altb_ri_sl &altb_dtr_bout_sl
-						&altb_dcd_sl &altb_dsr_sl>;
-			label = "HOST_UART_IO";
 			status = "disabled";
-		};
-
-		psl_out: psl-out {
-			compatible = "nuvoton,npcx-psl-out";
-			controller = <&gpio8>;
-			pin = <5>;
-			label = "PSL_OUT";
 		};
 
 		i2c0_0: io_i2c_ctrl0_port0 {
@@ -562,8 +533,6 @@
 			#size-cells = <0>;
 			port = <0x00>;
 			controller = <&i2c_ctrl0>;
-			pinctrl-0 = <&alt2_i2c0_0_sl>; /* PINB5.B4 */
-			label = "I2C_0_PORT_0";
 			status = "disabled";
 		};
 
@@ -573,8 +542,6 @@
 			#size-cells = <0>;
 			port = <0x10>;
 			controller = <&i2c_ctrl1>;
-			pinctrl-0 = <&alt2_i2c1_0_sl>; /* PIN90.87 */
-			label = "I2C_1_PORT_0";
 			status = "disabled";
 		};
 
@@ -584,8 +551,6 @@
 			#size-cells = <0>;
 			port = <0x20>;
 			controller = <&i2c_ctrl2>;
-			pinctrl-0 = <&alt2_i2c2_0_sl>; /* PIN92.91 */
-			label = "I2C_2_PORT_0";
 			status = "disabled";
 		};
 
@@ -595,8 +560,6 @@
 			#size-cells = <0>;
 			port = <0x30>;
 			controller = <&i2c_ctrl3>;
-			pinctrl-0 = <&alt2_i2c3_0_sl>; /* PIND1.D0 */
-			label = "I2C_3_PORT_0";
 			status = "disabled";
 		};
 
@@ -606,8 +569,6 @@
 			#size-cells = <0>;
 			port = <0x41>;
 			controller = <&i2c_ctrl4>;
-			pinctrl-0 = <&alt6_i2c4_1_sl>; /* PINF3.F2 */
-			label = "I2C_4_PORT_1";
 			status = "disabled";
 		};
 
@@ -617,8 +578,6 @@
 			#size-cells = <0>;
 			port = <0x50>;
 			controller = <&i2c_ctrl5>;
-			pinctrl-0 = <&alt2_i2c5_0_sl>; /* PIN33.36 */
-			label = "I2C_5_PORT_0";
 			status = "disabled";
 		};
 
@@ -628,8 +587,6 @@
 			#size-cells = <0>;
 			port = <0x51>;
 			controller = <&i2c_ctrl5>;
-			pinctrl-0 = <&alt6_i2c5_1_sl>; /* PINF5.F4 */
-			label = "I2C_5_PORT_1";
 			status = "disabled";
 		};
 
@@ -639,8 +596,6 @@
 			#size-cells = <0>;
 			port = <0x60>;
 			controller = <&i2c_ctrl6>;
-			pinctrl-0 = <&alt2_i2c6_0_sl>; /* PINC2.C1 */
-			label = "I2C_6_PORT_0";
 			status = "disabled";
 		};
 
@@ -650,8 +605,6 @@
 			#size-cells = <0>;
 			port = <0x61>;
 			controller = <&i2c_ctrl6>;
-			pinctrl-0 = <&alt6_i2c6_1_sl>; /* PINE4.E3 */
-			label = "I2C_6_PORT_1";
 			status = "disabled";
 		};
 
@@ -661,8 +614,11 @@
 			#size-cells = <0>;
 			port = <0x70>;
 			controller = <&i2c_ctrl7>;
-			pinctrl-0 = <&alt2_i2c7_0_sl>; /* PINB3.B2 */
-			label = "I2C_7_PORT_0";
+			status = "disabled";
+		};
+
+		power_ctrl_psl: power-ctrl-psl {
+			compatible = "nuvoton,npcx-power-psl";
 			status = "disabled";
 		};
 	};
@@ -670,6 +626,10 @@
 	soc-id {
 		compatible = "nuvoton,npcx-soc-id";
 		family-id = <0x20>;
+	};
+
+	booter-variant {
+		compatible = "nuvoton,npcx-booter-variant";
 	};
 };
 

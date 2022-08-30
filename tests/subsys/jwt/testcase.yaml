@@ -6,5 +6,6 @@ tests:
     min_flash: 72
     timeout: 120
     tags: jwt
+    filter: CONFIG_ENTROPY_HAS_DRIVER
     integration_platforms:
-      - native_posix
+      - frdm_k64f

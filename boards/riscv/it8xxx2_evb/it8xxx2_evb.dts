@@ -5,16 +5,17 @@
 
 /dts-v1/;
 
-#include <it8xxx2.dtsi>
-#include <it8xxx2-alts-map.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <ite/it8xxx2.dtsi>
+#include <ite/it8xxx2-pinctrl-map.dtsi>
 
 / {
 	model = "IT8XXX2 EV-Board";
 	compatible = "riscv,it8xxx2-evb";
 
 	aliases {
-		pwm-led0 = &led0;
-		pwm-led1 = &led1;
+		i2c-0 = &i2c0;
+		peci-0 = &peci0;
 	};
 
 	chosen {
@@ -25,47 +26,78 @@
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flashctrl;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,keyboard-scan = &kscan0;
 	};
 
-	pwmleds {
-		compatible = "pwm-leds";
-		/* NOTE: &pwm number needs same with channel number */
+	aliases {
+		led0 = &led0;
+		kscan0 = &kscan0;
+		watchdog0 = &twd0;
+		pwm-0 = &pwm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
 		led0: led_0 {
-			pwms = <&pwm7 PWM_CHANNEL_7 PWM_POLARITY_INVERTED>;
-			label = "LED0_GREEN";
-		};
-		led1: led_1 {
-			pwms = <&pwm0 PWM_CHANNEL_0 PWM_POLARITY_NORMAL>;
-			label = "LED1_BLUE";
+			gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
 		};
 	};
 };
 &adc0 {
 	status = "okay";
+	pinctrl-0 = <&adc0_ch3_gpi3_default>;
+	pinctrl-names = "default";
+};
+/* voltage comparator for test */
+&vcmp0 {
+	status = "okay";
+	scan-period = <IT8XXX2_VCMP_SCAN_PERIOD_600US>;
+	comparison = <IT8XXX2_VCMP_GREATER>;
+	threshold-mv = <2000>;
+	io-channels = <&adc0 3>;
 };
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_clk_gpb3_default
+		     &i2c0_data_gpb4_default>;
+	pinctrl-names = "default";
 };
 &i2c1 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_clk_gpc1_default
+		     &i2c1_data_gpc2_default>;
+	pinctrl-names = "default";
 };
 &i2c2 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c2_clk_gpf6_default
+		     &i2c2_data_gpf7_default>;
+	pinctrl-names = "default";
 };
 &i2c3 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c3_clk_gph1_default
+		     &i2c3_data_gph2_default>;
+	pinctrl-names = "default";
 };
 &i2c4 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c4_clk_gpe0_default
+		     &i2c4_data_gpe7_default>;
+	pinctrl-names = "default";
 };
 &i2c5 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c5_clk_gpa4_default
+		     &i2c5_data_gpa5_default>;
+	pinctrl-names = "default";
 };
 &uart1 {
 	status = "okay";
@@ -77,6 +109,19 @@
 	current-speed = <460800>;
 	clock-frequency = <1804800>;
 };
+&ite_uart1_wrapper {
+	status = "okay";
+	pinctrl-0 = <&uart1_rx_gpb0_default
+		     &uart1_tx_gpb1_default>;
+	pinctrl-names = "default";
+};
+&ite_uart2_wrapper {
+	status = "okay";
+	pinctrl-0 = <&uart2_rx_gph1_default
+		     &uart2_tx_gph2_default>;
+	pinctrl-names = "default";
+};
+/* pwm for test */
 &pwm0 {
 	status = "okay";
 	prescaler-cx = <PWM_PRESCALER_C6>;
@@ -85,11 +130,35 @@
 	 * then we should set frequency <=324Hz.
 	 */
 	pwm-output-frequency = <324>;
+	pinctrl-0 = <&pwm0_gpa0_default>;
+	pinctrl-names = "default";
 };
+/* pwm for fan */
 &pwm7 {
 	status = "okay";
 	prescaler-cx = <PWM_PRESCALER_C4>;
 	pwm-output-frequency = <30000>;
+	pinctrl-0 = <&pwm7_gpa7_default>;
+	pinctrl-names = "default";
+};
+/* fan tachometer sensor */
+&tach0 {
+	status = "okay";
+	channel = <IT8XXX2_TACH_CHANNEL_A>;
+	pulses-per-round = <2>;
+	pinctrl-0 = <&tach0a_gpd6_default>;
+	pinctrl-names = "default";
+};
+&kscan0 {
+	status = "okay";
+	pinctrl-0 = <&kso16_gpc3_default
+		     &kso17_gpc5_default>;
+	pinctrl-names = "default";
+};
+&peci0 {
+	status = "okay";
+	pinctrl-0 = <&peci_gpf6_default>;
+	pinctrl-names = "default";
 };
 &flash0 {
 	partitions {

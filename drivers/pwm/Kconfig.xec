@@ -5,6 +5,7 @@
 
 config PWM_XEC
 	bool "Microchip XEC PWM"
-	depends on SOC_FAMILY_MEC
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_PWM_ENABLED
 	help
 	  Enable driver to utilize PWM on the Microchip XEC IP block.

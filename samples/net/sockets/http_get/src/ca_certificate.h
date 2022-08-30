@@ -13,12 +13,12 @@
  * certificate in PEM format, you can enable support for it in Kconfig.
  */
 
-/* GlobalSign Root CA - R2 for https://google.com */
+/* GlobalSign Root CA - R1 for https://google.com */
 #if defined(CONFIG_TLS_CREDENTIAL_FILENAMES)
-static const unsigned char ca_certificate[] = "globalsign_r2.der";
+static const unsigned char ca_certificate[] = "globalsign_r1.der";
 #else
 static const unsigned char ca_certificate[] = {
-#include "globalsign_r2.der.inc"
+#include "globalsign_r1.der.inc"
 };
 #endif
 

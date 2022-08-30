@@ -9,13 +9,17 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define TEST_TIMEOUT K_SECONDS(1)
+
+#define USER_DATA_HEAP	4
+#define USER_DATA_FIXED	0
+#define USER_DATA_VAR	63
 
 struct bt_data {
 	void *hci_sync;
@@ -63,9 +67,9 @@ static void buf_destroy(struct net_buf *buf);
 static void fixed_destroy(struct net_buf *buf);
 static void var_destroy(struct net_buf *buf);
 
-NET_BUF_POOL_HEAP_DEFINE(bufs_pool, 10, buf_destroy);
-NET_BUF_POOL_FIXED_DEFINE(fixed_pool, 10, 128, fixed_destroy);
-NET_BUF_POOL_VAR_DEFINE(var_pool, 10, 1024, var_destroy);
+NET_BUF_POOL_HEAP_DEFINE(bufs_pool, 10, USER_DATA_HEAP, buf_destroy);
+NET_BUF_POOL_FIXED_DEFINE(fixed_pool, 10, 128, USER_DATA_FIXED, fixed_destroy);
+NET_BUF_POOL_VAR_DEFINE(var_pool, 10, 1024, USER_DATA_VAR, var_destroy);
 
 static void buf_destroy(struct net_buf *buf)
 {
@@ -98,7 +102,7 @@ static const char example_data[] = "0123456789"
 				   "abcdefghijklmnopqrstuvxyz"
 				   "!#¤%&/()=?";
 
-static void test_net_buf_1(void)
+ZTEST(net_buf_tests, test_net_buf_1)
 {
 	struct net_buf *bufs[bufs_pool.buf_count];
 	struct net_buf *buf;
@@ -118,7 +122,7 @@ static void test_net_buf_1(void)
 		      "Incorrect destroy callback count");
 }
 
-static void test_net_buf_2(void)
+ZTEST(net_buf_tests, test_net_buf_2)
 {
 	struct net_buf *frag, *head;
 	static struct k_fifo fifo;
@@ -165,7 +169,7 @@ static void test_3_thread(void *arg1, void *arg2, void *arg3)
 
 static K_THREAD_STACK_DEFINE(test_3_thread_stack, 1024);
 
-static void test_net_buf_3(void)
+ZTEST(net_buf_tests, test_net_buf_3)
 {
 	static struct k_thread test_3_thread_data;
 	struct net_buf *frag, *head;
@@ -200,7 +204,7 @@ static void test_net_buf_3(void)
 		     "Timeout while waiting for semaphore");
 }
 
-static void test_net_buf_4(void)
+ZTEST(net_buf_tests, test_net_buf_4)
 {
 	struct net_buf *frags[bufs_pool.buf_count - 1];
 	struct net_buf *buf, *frag;
@@ -310,7 +314,7 @@ static void test_net_buf_4(void)
 		      "Incorrect frag destroy callback count");
 }
 
-static void test_net_buf_big_buf(void)
+ZTEST(net_buf_tests, test_net_buf_big_buf)
 {
 	struct net_buf *big_frags[bufs_pool.buf_count];
 	struct net_buf *buf, *frag;
@@ -348,7 +352,7 @@ static void test_net_buf_big_buf(void)
 	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
 }
 
-static void test_net_buf_multi_frags(void)
+ZTEST(net_buf_tests, test_net_buf_multi_frags)
 {
 	struct net_buf *frags[bufs_pool.buf_count];
 	struct net_buf *buf;
@@ -401,7 +405,7 @@ static void test_net_buf_multi_frags(void)
 		      "Incorrect frag destroy callback count");
 }
 
-static void test_net_buf_clone(void)
+ZTEST(net_buf_tests, test_net_buf_clone)
 {
 	struct net_buf *buf, *clone;
 
@@ -420,7 +424,7 @@ static void test_net_buf_clone(void)
 	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
 }
 
-static void test_net_buf_fixed_pool(void)
+ZTEST(net_buf_tests, test_net_buf_fixed_pool)
 {
 	struct net_buf *buf;
 
@@ -434,7 +438,7 @@ static void test_net_buf_fixed_pool(void)
 	zassert_equal(destroy_called, 1, "Incorrect destroy callback count");
 }
 
-static void test_net_buf_var_pool(void)
+ZTEST(net_buf_tests, test_net_buf_var_pool)
 {
 	struct net_buf *buf1, *buf2, *buf3;
 
@@ -457,7 +461,7 @@ static void test_net_buf_var_pool(void)
 	zassert_equal(destroy_called, 3, "Incorrect destroy callback count");
 }
 
-static void test_net_buf_byte_order(void)
+ZTEST(net_buf_tests, test_net_buf_byte_order)
 {
 	struct net_buf *buf;
 	uint8_t le16[2] = { 0x02, 0x01 };
@@ -680,20 +684,42 @@ static void test_net_buf_byte_order(void)
 	net_buf_unref(buf);
 }
 
-void test_main(void)
+ZTEST(net_buf_tests, test_net_buf_user_data)
 {
-	ztest_test_suite(test_net_buf,
-			 ztest_unit_test(test_net_buf_1),
-			 ztest_unit_test(test_net_buf_2),
-			 ztest_unit_test(test_net_buf_3),
-			 ztest_unit_test(test_net_buf_4),
-			 ztest_unit_test(test_net_buf_big_buf),
-			 ztest_unit_test(test_net_buf_multi_frags),
-			 ztest_unit_test(test_net_buf_clone),
-			 ztest_unit_test(test_net_buf_fixed_pool),
-			 ztest_unit_test(test_net_buf_var_pool),
-			 ztest_unit_test(test_net_buf_byte_order)
-			 );
+	struct net_buf *buf;
 
-	ztest_run_test_suite(test_net_buf);
+	/* Fixed Pool */
+	buf = net_buf_alloc(&fixed_pool, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	zassert_equal(USER_DATA_FIXED, fixed_pool.user_data_size,
+		"Bad user_data_size");
+	zassert_equal(USER_DATA_FIXED, buf->user_data_size,
+		"Bad user_data_size");
+
+	net_buf_unref(buf);
+
+	/* Heap Pool */
+	buf = net_buf_alloc_len(&bufs_pool, 20, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	zassert_equal(USER_DATA_HEAP, bufs_pool.user_data_size,
+		"Bad user_data_size");
+	zassert_equal(USER_DATA_HEAP, buf->user_data_size,
+		"Bad user_data_size");
+
+	net_buf_unref(buf);
+
+	/* Var Pool */
+	buf = net_buf_alloc_len(&var_pool, 20, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	zassert_equal(USER_DATA_VAR, var_pool.user_data_size,
+		"Bad user_data_size");
+	zassert_equal(USER_DATA_VAR, buf->user_data_size,
+		"Bad user_data_size");
+
+	net_buf_unref(buf);
 }
+
+ZTEST_SUITE(net_buf_tests, NULL, NULL, NULL, NULL, NULL);

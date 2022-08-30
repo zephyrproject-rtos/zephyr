@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "bt510-pinctrl.dtsi"
 
 / {
 	model = "Laird Sentrius BT510 Sensor";
@@ -20,6 +21,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -36,8 +38,8 @@
 
 	buttons {
 		compatible = "gpio-keys";
-		button1: button_1 {
-			gpios = <&gpio1 10 GPIO_PULL_UP>;
+		button0: button_0 {
+			gpios = <&gpio1 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1 (SW1)";
 		};
 	};
@@ -45,15 +47,15 @@
 	ids {
 		compatible = "gpio-keys";
 		id0: id_0 {
-			gpios = <&gpio1 2 GPIO_PULL_UP>;
+			gpios = <&gpio1 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "ID 0";
 		};
 		id1: id_1 {
-			gpios = <&gpio1 1 GPIO_PULL_UP>;
+			gpios = <&gpio1 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "ID 1";
 		};
 		id2: id_2 {
-			gpios = <&gpio0 25 GPIO_PULL_UP>;
+			gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "ID 2";
 		};
 	};
@@ -61,7 +63,7 @@
 	tm {
 		compatible = "gpio-keys";
 		tm0: tm_0 {
-			gpios = <&gpio0 3 GPIO_PULL_UP>;
+			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Test mode (TM)";
 		};
 	};
@@ -71,7 +73,6 @@
 		mag0: mag_0 {
 			compatible = "honeywell,sm351lt";
 			gpios = <&gpio1 14 0>;
-			label = "SM351LT_0";
 		};
 	};
 
@@ -79,7 +80,11 @@
 	aliases {
 		led0 = &led1a;
 		led1 = &led1b;
-		sw0 = &button1;
+		sw0 = &button0;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led1a;
+		watchdog0 = &wdt0;
+		accel0 = &lis2dh12;
 	};
 };
 
@@ -100,39 +105,40 @@
 };
 
 &uart0 {
-	compatible = "nordic,nrf-uart";
+	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <6>;
-	rx-pin = <8>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
-	compatible = "nordic,nrf-twi";
+	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <26>;
-	scl-pin = <27>;
 
-	lis2dh12@18 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+	lis2dh12: lis2dh12@18 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x18>;
 		irq-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>,
 				<&gpio1 12 GPIO_ACTIVE_HIGH>;
-		label = "LIS2DH12";
+		disconnect-sdo-sa0-pull-up;
 	};
 
 	si7055@40 {
 		compatible = "silabs,si7055";
 		reg = <0x40>;
-		label = "SI7055";
 	};
 };
 
+&ieee802154 {
+	status = "okay";
+};
+
 &flash0 {
-	/*
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -141,17 +147,17 @@
 		/* 96K */
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x00018000>;
+			reg = <0x00000000 0x00018000>;
 		};
 		/* 396K */
 		slot0_partition: partition@18000 {
 			label = "image-0";
-			reg = <0x00018000 0x000063000>;
+			reg = <0x00018000 0x00063000>;
 		};
 		/* 396K */
 		slot1_partition: partition@7b000 {
 			label = "image-1";
-			reg = <0x0007b000 0x000063000>;
+			reg = <0x0007b000 0x00063000>;
 		};
 		/* 8K */
 		scratch_partition: partition@de000 {

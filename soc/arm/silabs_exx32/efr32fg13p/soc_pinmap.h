@@ -13,6 +13,7 @@
 #ifndef _SILABS_EFR32FG13P_SOC_PINMAP_H_
 #define _SILABS_EFR32FG13P_SOC_PINMAP_H_
 
+#include <zephyr/devicetree.h>
 #include <soc.h>
 #include <em_gpio.h>
 

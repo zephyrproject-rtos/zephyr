@@ -8,18 +8,18 @@
  * ARM64 Cortex-A power management
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 
 _ASM_FILE_PROLOGUE
 
 GTEXT(arch_cpu_idle)
 SECTION_FUNC(TEXT, arch_cpu_idle)
 #ifdef CONFIG_TRACING
-	stp	xzr, x30, [sp, #-16]!
+	str	lr, [sp, #-16]!
 	bl	sys_trace_idle
-	ldp	xzr, x30, [sp], #16
+	ldr	lr, [sp], #16
 #endif
 	dsb	sy
 	wfi
@@ -29,9 +29,9 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 GTEXT(arch_cpu_atomic_idle)
 SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 #ifdef CONFIG_TRACING
-	stp	x0, x30, [sp, #-16]!
+	stp	x0, lr, [sp, #-16]!
 	bl	sys_trace_idle
-	ldp	x0, x30, [sp], #16
+	ldp	x0, lr, [sp], #16
 #endif
 	msr	daifset, #(DAIFSET_IRQ_BIT)
 	isb

@@ -43,6 +43,8 @@
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
+		accel0 = &lsm6dsl;
 	};
 };
 
@@ -69,67 +71,68 @@
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &uart4 {
 	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pa1>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
 	lis3mdl-magn@1e {
 		compatible = "st,lis3mdl-magn";
 		reg = <0x1e>;
-		label = "LIS3MDL";
 	};
 
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
-		label = "HTS221";
 	};
 
 	lps22hb-press@5d {
 		compatible = "st,lps22hb-press";
 		reg = <0x5d>;
-		label = "LPS22HB";
 	};
 
-	lsm6dsl@6a {
+	lsm6dsl: lsm6dsl@6a {
 		compatible = "st,lsm6dsl";
 		reg = <0x6a>;
 		irq-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
-		label = "LSM6DSL";
 	};
 
 	vl53l0x@29 {
 		compatible = "st,vl53l0x";
 		reg = <0x29>;
-		label = "VL53L0X";
 		xshut-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 	};
 };
 
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
 	cs-gpios = <&gpioa 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
 &spi3 {
 	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	cs-gpios = <&gpiod 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
@@ -141,7 +144,6 @@
 		reset-gpios = <&gpioa 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		irq-gpios = <&gpioe 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		spi-max-frequency = <2000000>;
-		label = "SPBTLE-RF";
 	};
 
 	wifi0: ism43362@1 {
@@ -152,7 +154,6 @@
 		boot0-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
 		wakeup-gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
 		data-gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
-		label = "ESWIFI0";
 	};
 };
 
@@ -165,7 +166,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00010000>;
+			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
 
@@ -176,20 +177,20 @@
 
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00020000 0x0006C000>;
+			reg = <0x00020000 DT_SIZE_K(432)>;
 		};
 		slot1_partition: partition@8c000 {
 			label = "image-1";
-			reg = <0x0008C000 0x0006C000>;
+			reg = <0x0008C000 DT_SIZE_K(432)>;
 		};
 		scratch_partition: partition@f8000 {
 			label = "image-scratch";
-			reg = <0x000F8000 0x00004000>;
+			reg = <0x000F8000 DT_SIZE_K(16)>;
 		};
 
 		storage_partition: partition@fc000 {
 			label = "storage";
-			reg = <0x000fc000 0x00004000>;
+			reg = <0x000fc000 DT_SIZE_K(16)>;
 		};
 	};
 };
@@ -200,6 +201,7 @@
 	pwm2: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa15>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -207,13 +209,10 @@
 	status = "okay";
 };
 
-&lptim1 {
-	status = "okay";
-};
-
-&usbotg_fs {
+zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12
 		     &usb_otg_fs_id_pa10>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

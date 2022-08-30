@@ -1,0 +1,8 @@
+# Copyright (c) 2021, Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+description: Si7210 hall effect magnetic position and temperature sensor
+
+compatible: "silabs,si7210"
+
+include: i2c-device.yaml

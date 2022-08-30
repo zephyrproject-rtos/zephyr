@@ -9,49 +9,49 @@
  *  This code is auto-generated from the Excel Workbook
  *  'GATT_Test_Databases.xlsm' Sheet: 'Large Database 1'
  */
-#include <sys/byteorder.h>
-#include <sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #include "gatt_macs.h"
 
-/** @def BT_UUID_SERVICE_F
+/**
  *  @brief UUID for the Service F
  */
 #define BT_UUID_SERVICE_F               BT_UUID_DECLARE_16(0xa00f)
 
-/** @def BT_UUID_VALUE_V14
+/**
  *  @brief UUID for the Value V14 Characteristic
  */
 #define BT_UUID_VALUE_V14               BT_UUID_DECLARE_16(0xb00e)
 
-/** @def BT_UUID_VALUE_V15
+/**
  *  @brief UUID for the Value V15 Characteristic
  */
 #define BT_UUID_VALUE_V15               BT_UUID_DECLARE_16(0xb00f)
 
-/** @def BT_UUID_VALUE_V6
+/**
  *  @brief UUID for the Value V6 Characteristic
  */
 #define BT_UUID_VALUE_V6                BT_UUID_DECLARE_16(0xb006)
 
-/** @def BT_UUID_VALUE_V7
+/**
  *  @brief UUID for the Value V7 Characteristic
  */
 #define BT_UUID_VALUE_V7                BT_UUID_DECLARE_16(0xb007)
 
-/** @def BT_UUID_VALUE_V16
+/**
  *  @brief UUID for the Value V16 Characteristic
  */
 #define BT_UUID_VALUE_V16               BT_UUID_DECLARE_16(0xb010)
 
-/** @def BT_UUID_AGG_FORMAT
+/**
  *  @brief UUID for the Aggregate Format Characteristic
  */
 #define BT_UUID_AGG_FORMAT              BT_UUID_DECLARE_16(0x2905)
 
-/** @def BT_UUID_VALUE_V17
+/**
  *  @brief UUID for the Value V17 Characteristic
  */
 #define BT_UUID_VALUE_V17               BT_UUID_DECLARE_16(0xb011)

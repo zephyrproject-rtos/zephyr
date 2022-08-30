@@ -8,16 +8,20 @@
 
 #include <stddef.h>
 
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
 #include "time_machine.h"
 #include "bstests.h"
 
-int init_central(void);
-int init_peripheral(void);
+#define ITERATIONS 10
+
+int init_central(uint8_t iterations);
+int init_peripheral(uint8_t iterations);
 
 #define FAIL(...)					\
 	do {						\
@@ -37,10 +41,15 @@ static void test_central_main(void)
 {
 	int err;
 
-	err = init_central();
+	err = init_central(ITERATIONS);
 	if (err) {
 		goto exit;
 	}
+
+	/* Wait a little so that peripheral side completes the last
+	 * connection establishment.
+	 */
+	k_sleep(K_SECONDS(1));
 
 	PASS("Central tests passed\n");
 	bs_trace_silent_exit(0);
@@ -56,7 +65,7 @@ static void test_peripheral_main(void)
 {
 	int err;
 
-	err = init_peripheral();
+	err = init_peripheral(ITERATIONS);
 	if (err) {
 		goto exit;
 	}
@@ -72,7 +81,7 @@ exit:
 
 static void test_multiple_init(void)
 {
-	bst_ticker_set_next_tick_absolute(20e6);
+	bst_ticker_set_next_tick_absolute(4500e6);
 	bst_result = In_progress;
 }
 

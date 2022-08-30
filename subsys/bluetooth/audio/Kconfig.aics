@@ -6,12 +6,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BT_AUDIO
-
 ##################### Audio Input Control Service #####################
 
 config BT_AICS_MAX_INSTANCE_COUNT
-	int "Audio Input Control Service max instance count"
+	int "Audio Input Control Service max instance count [EXPERIMENTAL]"
 	default 0
 	range 0 15
 	help
@@ -21,6 +19,7 @@ config BT_AICS_MAX_INSTANCE_COUNT
 config BT_AICS
 	bool # hidden
 	default y if BT_AICS_MAX_INSTANCE_COUNT > 0
+	select EXPERIMENTAL
 	help
 	  This hidden option enables support for Audio Input Control Service.
 
@@ -36,7 +35,6 @@ config BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
 
 config BT_DEBUG_AICS
 	bool "Audio Input Control Service debug"
-	depends on BT_AUDIO_DEBUG
 	help
 	  Use this option to enable Audio Input Control Service debug logs for
 	  the Bluetooth Audio functionality.
@@ -46,7 +44,7 @@ endif # BT_AICS
 ##################### Audio Input Control Service Client #####################
 
 config BT_AICS_CLIENT_MAX_INSTANCE_COUNT
-	int "Audio Input Control Service client max instance count"
+	int "Audio Input Control Service client max instance count [EXPERIMENTAL]"
 	default 0
 	range 0 15
 	help
@@ -56,6 +54,7 @@ config BT_AICS_CLIENT_MAX_INSTANCE_COUNT
 config BT_AICS_CLIENT
 	bool # hidden
 	default y if BT_AICS_CLIENT_MAX_INSTANCE_COUNT > 0
+	select EXPERIMENTAL
 	help
 	  This hidden option enables support for Audio Input Control Service.
 
@@ -66,11 +65,8 @@ if BT_AICS_CLIENT
 
 config BT_DEBUG_AICS_CLIENT
 	bool "Audio Input Control Service client debug"
-	depends on BT_AUDIO_DEBUG
 	help
 	  Use this option to enable Audio Input Control Service client debug
 	  logs for the Bluetooth Audio functionality.
 
 endif # BT_AICS_CLIENT
-
-endif # BT_AUDIO

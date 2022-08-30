@@ -5,7 +5,7 @@ description: ST STM32 family DAC
 
 compatible: "st,stm32-dac"
 
-include: dac-controller.yaml
+include: [dac-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -14,17 +14,14 @@ properties:
     clocks:
       required: true
 
-    pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        GPIO pin configuration for DAC output. The phandles are
-        expected to reference pinctrl nodes, e.g.
-
-           pinctrl-0 = <&dac_out1_pa4 &dac_out2_pa5>;
-
     "#io-channel-cells":
       const: 1
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
 
 io-channel-cells:
     - output

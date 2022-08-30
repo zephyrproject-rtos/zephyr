@@ -14,11 +14,11 @@
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 #include <string.h>
-#include <crypto/cipher.h>
+#include <zephyr/crypto/crypto.h>
 #include "crypto_tc_shim_priv.h"
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tinycrypt);
 
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_TINYCRYPT_SHIM_MAX_SESSION
@@ -315,9 +315,9 @@ static int tc_shim_init(const struct device *dev)
 }
 
 static struct crypto_driver_api crypto_enc_funcs = {
-	.begin_session = tc_session_setup,
-	.free_session = tc_session_free,
-	.crypto_async_callback_set = NULL,
+	.cipher_begin_session = tc_session_setup,
+	.cipher_free_session = tc_session_free,
+	.cipher_async_callback_set = NULL,
 	.query_hw_caps = tc_query_caps,
 };
 

@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_TRANS)
 #define LOG_MODULE_NAME bt_mesh_transport
@@ -92,10 +92,11 @@ struct va_val {
 
 static struct seg_tx {
 	struct bt_mesh_subnet *sub;
-	void                  *seg[CONFIG_BT_MESH_TX_SEG_MAX];
+	void                  *seg[BT_MESH_TX_SEG_MAX];
 	uint64_t              seq_auth;
 	uint16_t              src;
 	uint16_t              dst;
+	uint16_t              ack_src;
 	uint16_t              len;
 	uint8_t               hdr;
 	uint8_t               xmit;
@@ -104,13 +105,12 @@ static struct seg_tx {
 	uint8_t               nack_count;    /* Number of unacked segs */
 	uint8_t               attempts;      /* Remaining tx attempts */
 	uint8_t               ttl;           /* Transmitted TTL value */
-	uint8_t               seg_pending;   /* Number of segments pending */
 	uint8_t               blocked:1,     /* Blocked by ongoing tx */
 			      ctl:1,         /* Control packet */
 			      aszmic:1,      /* MIC size */
 			      started:1,     /* Start cb called */
-			      sending:1,     /* Sending is in progress */
-			      friend_cred:1; /* Using Friend credentials */
+			      friend_cred:1, /* Using Friend credentials */
+			      seg_send_started:1; /* Used to check if seg_send_start cb is called */
 	const struct bt_mesh_send_cb *cb;
 	void                  *cb_data;
 	struct k_work_delayable retransmit;    /* Retransmit timer */
@@ -118,7 +118,7 @@ static struct seg_tx {
 
 static struct seg_rx {
 	struct bt_mesh_subnet   *sub;
-	void                    *seg[CONFIG_BT_MESH_RX_SEG_MAX];
+	void                    *seg[BT_MESH_RX_SEG_MAX];
 	uint64_t                    seq_auth;
 	uint16_t                    src;
 	uint16_t                    dst;
@@ -144,7 +144,8 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 {
 	struct net_buf *buf;
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, tx->xmit, BUF_TIMEOUT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+				 tx->xmit, BUF_TIMEOUT);
 	if (!buf) {
 		BT_ERR("Out of network buffers");
 		return -ENOBUFS;
@@ -262,6 +263,7 @@ static void seg_tx_reset(struct seg_tx *tx)
 	tx->sub = NULL;
 	tx->src = BT_MESH_ADDR_UNASSIGNED;
 	tx->dst = BT_MESH_ADDR_UNASSIGNED;
+	tx->ack_src = BT_MESH_ADDR_UNASSIGNED;
 	tx->blocked = false;
 
 	for (i = 0; i <= tx->seg_n && tx->nack_count; i++) {
@@ -273,6 +275,7 @@ static void seg_tx_reset(struct seg_tx *tx)
 	}
 
 	tx->nack_count = 0;
+	tx->seg_send_started = 0;
 
 	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_IVU_PENDING)) {
 		BT_DBG("Proceeding with pending IV Update");
@@ -303,10 +306,6 @@ static void schedule_retransmit(struct seg_tx *tx)
 		return;
 	}
 
-	if (--tx->seg_pending || tx->sending) {
-		return;
-	}
-
 	BT_DBG("");
 
 	/* If we haven't gone through all the segments for this attempt yet,
@@ -314,9 +313,7 @@ static void schedule_retransmit(struct seg_tx *tx)
 	 * called this from inside bt_mesh_net_send), we should continue the
 	 * retransmit immediately, as we just freed up a tx buffer.
 	 */
-	k_work_reschedule(&tx->retransmit,
-			  tx->seg_o ? K_NO_WAIT :
-			  K_MSEC(SEG_RETRANSMIT_TIMEOUT(tx)));
+	k_work_reschedule(&tx->retransmit, K_NO_WAIT);
 }
 
 static void seg_send_start(uint16_t duration, int err, void *user_data)
@@ -327,6 +324,8 @@ static void seg_send_start(uint16_t duration, int err, void *user_data)
 		tx->cb->start(duration, err, tx->cb_data);
 		tx->started = 1U;
 	}
+
+	tx->seg_send_started = 1U;
 
 	/* If there's an error in transmitting the 'sent' callback will never
 	 * be called. Make sure that we kick the retransmit timer also in this
@@ -340,6 +339,10 @@ static void seg_send_start(uint16_t duration, int err, void *user_data)
 static void seg_sent(int err, void *user_data)
 {
 	struct seg_tx *tx = user_data;
+
+	if (!tx->seg_send_started) {
+		return;
+	}
 
 	schedule_retransmit(tx);
 }
@@ -402,18 +405,18 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 	BT_DBG("SeqZero: 0x%04x Attempts: %u",
 	       (uint16_t)(tx->seq_auth & TRANS_SEQ_ZERO_MASK), tx->attempts);
 
-	tx->sending = 1U;
-
-	for (; tx->seg_o <= tx->seg_n; tx->seg_o++) {
+	while (tx->seg_o <= tx->seg_n) {
 		struct net_buf *seg;
 		int err;
 
 		if (!tx->seg[tx->seg_o]) {
+			/* Move on to the next segment */
+			tx->seg_o++;
 			continue;
 		}
 
-		seg = bt_mesh_adv_create(BT_MESH_ADV_DATA, tx->xmit,
-					 BUF_TIMEOUT);
+		seg = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+					 tx->xmit, BUF_TIMEOUT);
 		if (!seg) {
 			BT_DBG("Allocating segment failed");
 			goto end;
@@ -422,33 +425,36 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 		net_buf_reserve(seg, BT_MESH_NET_HDR_LEN);
 		seg_tx_buf_build(tx, tx->seg_o, &seg->b);
 
-		tx->seg_pending++;
-
 		BT_DBG("Sending %u/%u", tx->seg_o, tx->seg_n);
 
 		err = bt_mesh_net_send(&net_tx, seg, &seg_sent_cb, tx);
 		if (err) {
 			BT_DBG("Sending segment failed");
-			tx->seg_pending--;
 			goto end;
 		}
+
+		/* Move on to the next segment */
+		tx->seg_o++;
+
+		return;
 	}
 
 	tx->seg_o = 0U;
 	tx->attempts--;
 
 end:
-	if (!tx->seg_pending) {
-		k_work_reschedule(&tx->retransmit,
-				  K_MSEC(SEG_RETRANSMIT_TIMEOUT(tx)));
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
+	    bt_mesh_lpn_established()) {
+		bt_mesh_lpn_poll();
 	}
 
-	tx->sending = 0U;
+	k_work_reschedule(&tx->retransmit, K_MSEC(SEG_RETRANSMIT_TIMEOUT(tx)));
 }
 
 static void seg_retransmit(struct k_work *work)
 {
-	struct seg_tx *tx = CONTAINER_OF(work, struct seg_tx, retransmit);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct seg_tx *tx = CONTAINER_OF(dwork, struct seg_tx, retransmit);
 
 	seg_tx_send_unacked(tx);
 }
@@ -499,12 +505,12 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	tx->cb = cb;
 	tx->cb_data = cb_data;
 	tx->attempts = SEG_RETRANSMIT_ATTEMPTS;
-	tx->seg_pending = 0;
 	tx->xmit = net_tx->xmit;
 	tx->aszmic = net_tx->aszmic;
 	tx->friend_cred = net_tx->friend_cred;
 	tx->blocked = blocked;
 	tx->started = 0;
+	tx->seg_send_started = 0;
 	tx->ctl = !!ctl_op;
 	tx->ttl = net_tx->ctx->send_ttl;
 
@@ -591,11 +597,6 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	}
 
 	seg_tx_send_unacked(tx);
-
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
-	    bt_mesh_lpn_established()) {
-		bt_mesh_lpn_poll();
-	}
 
 	return 0;
 }
@@ -796,8 +797,8 @@ static struct seg_tx *seg_tx_lookup(uint16_t seq_zero, uint8_t obo, uint16_t add
 		 * acknowledgement, assume it's a Friend that's
 		 * responding and therefore accept the message.
 		 */
-		if (obo && tx->nack_count == tx->seg_n + 1) {
-			tx->dst = addr;
+		if (obo && (tx->nack_count == tx->seg_n + 1 || tx->ack_src == addr)) {
+			tx->ack_src = addr;
 			return tx;
 		}
 	}
@@ -870,9 +871,13 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
 	if (tx->nack_count) {
 		/* According to the Bluetooth Mesh Profile specification,
 		 * section 3.5.3.3, we should reset the retransmit timer and
-		 * retransmit immediately when receiving a valid ack message:
+		 * retransmit immediately when receiving a valid ack message.
+		 * Don't reset the retransmit timer if we didn't finish sending
+		 * segments.
 		 */
-		k_work_reschedule(&tx->retransmit, K_NO_WAIT);
+		if (tx->seg_o == 0) {
+			k_work_reschedule(&tx->retransmit, K_NO_WAIT);
+		}
 	} else {
 		BT_DBG("SDU TX complete");
 		seg_tx_complete(tx, 0);
@@ -1128,7 +1133,8 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 
 static void seg_ack(struct k_work *work)
 {
-	struct seg_rx *rx = CONTAINER_OF(work, struct seg_rx, ack);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct seg_rx *rx = CONTAINER_OF(dwork, struct seg_rx, ack);
 	int32_t timeout;
 
 	if (!rx->in_use || rx->block == BLOCK_COMPLETE(rx->seg_n)) {
@@ -1163,7 +1169,7 @@ static void seg_ack(struct k_work *work)
 
 static inline bool sdu_len_is_ok(bool ctl, uint8_t seg_n)
 {
-	return (seg_n < CONFIG_BT_MESH_RX_SEG_MAX);
+	return (seg_n < BT_MESH_RX_SEG_MAX);
 }
 
 static struct seg_rx *seg_rx_find(struct bt_mesh_net_rx *net_rx,
@@ -1417,7 +1423,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 	/* Look for free slot for a new RX session */
 	rx = seg_rx_alloc(net_rx, hdr, seq_auth, seg_n);
 	if (!rx) {
-		/* Warn but don't cancel since the existing slots willl
+		/* Warn but don't cancel since the existing slots will
 		 * eventually be freed up and we'll be able to process
 		 * this one.
 		 */
@@ -1852,11 +1858,11 @@ void bt_mesh_va_pending_store(void)
 		if (err) {
 			BT_ERR("Failed to %s %s value (err %d)",
 			       IS_VA_DEL(lab) ? "delete" : "store",
-			       log_strdup(path), err);
+			       path, err);
 		} else {
 			BT_DBG("%s %s value",
 			       IS_VA_DEL(lab) ? "Deleted" : "Stored",
-			       log_strdup(path));
+			       path);
 		}
 	}
 }

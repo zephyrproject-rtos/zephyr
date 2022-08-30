@@ -7,14 +7,14 @@
 #ifndef __TEST_SCHED_H__
 #define __TEST_SCHED_H__
 
-#include <zephyr.h>
-#include <ztest.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
 
 #define MAX_NUM_THREAD 10
-#define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
-K_THREAD_STACK_EXTERN(tstack);
-K_THREAD_STACK_ARRAY_EXTERN(tstacks, MAX_NUM_THREAD, STACK_SIZE);
+K_THREAD_STACK_DECLARE(tstack, STACK_SIZE);
+K_THREAD_STACK_ARRAY_DECLARE(tstacks, MAX_NUM_THREAD, STACK_SIZE);
 extern struct k_thread user_thread;
 extern struct k_sem user_sem;
 
@@ -54,5 +54,6 @@ void test_k_thread_priority_set_init_null(void);
 void test_k_thread_priority_set_overmax(void);
 void test_k_thread_priority_set_upgrade(void);
 void test_k_wakeup_init_null(void);
+void test_slice_perthread(void);
 
 #endif /* __TEST_SCHED_H__ */

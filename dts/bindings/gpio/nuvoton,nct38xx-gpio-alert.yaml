@@ -1,0 +1,28 @@
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Nuvoton NCT38XX series I2C-based GPIO expander alert handler
+
+    Example:
+      nct3807_alert_1 {
+        compatible = "nuvoton,nct38xx-gpio-alert";
+        irq-gpios = <&gpiod 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+        nct38xx-dev = <&nct3808_0_P1 &nct3808_0_P2>;
+      };
+
+compatible: "nuvoton,nct38xx-gpio-alert"
+
+include: [base.yaml]
+
+properties:
+    irq-gpios:
+      type: phandle-array
+      required: true
+      description: Interrupt GPIO pin
+
+    nct38xx-dev:
+      type: phandles
+      required: true
+      description: |
+        NCT38XX devices which alert are handled by this alert handler.

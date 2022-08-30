@@ -8,15 +8,15 @@
  * @file Board config file
  */
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #include "soc.h"
 
 #ifdef CONFIG_UART_STELLARIS
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 
 #define RCGC1 (*((volatile uint32_t *)0x400FE104))
 

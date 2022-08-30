@@ -1,0 +1,12 @@
+common:
+  depends_on: i2c
+  tags: drivers i2c
+  harness: ztest
+  harness_config:
+    fixture: i2c_bus_short
+
+tests:
+  drivers.i2c.target_api.dual_role:
+    platform_allow: nucleo_f091rc stm32f072b_disco nucleo_g071rb rpi_pico
+    extra_configs:
+      - CONFIG_APP_DUAL_ROLE_I2C=y

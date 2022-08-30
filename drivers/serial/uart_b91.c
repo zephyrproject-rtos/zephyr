@@ -7,10 +7,9 @@
 #include "analog.h"
 #include "clock.h"
 
-#include <device.h>
-#include <drivers/uart.h>
-#include <drivers/pinmux.h>
-#include <dt-bindings/pinctrl/b91-pinctrl.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/pinctrl.h>
 
 
 /* Driver dts compatibility: telink,b91_uart */
@@ -20,14 +19,11 @@
 #define GET_UART(dev)      ((volatile struct uart_b91_t *) \
 			    ((const struct uart_b91_config *)dev->config)->uart_addr)
 
-/* Get UART configuration */
-#define GET_CFG(dev)       ((const struct uart_b91_config *)dev->config)
-
-/* Get instance data */
-#define DEV_DATA(dev)      ((struct uart_b91_data *const)dev->data)
-
 /* UART TX buffer count max value */
 #define UART_TX_BUF_CNT    ((uint8_t)8u)
+
+/* UART TX/RX data registers size */
+#define UART_DATA_SIZE     ((uint8_t)4u)
 
 /* Parity type */
 #define UART_PARITY_NONE   ((uint8_t)0u)
@@ -39,10 +35,13 @@
 #define UART_STOP_BIT_1P5  BIT(4)
 #define UART_STOP_BIT_2    BIT(5)
 
+/* TX RX reset bits */
+#define UART_RX_RESET_BIT BIT(6)
+#define UART_TX_RESET_BIT BIT(7)
 
 /* B91 UART registers structure */
 struct uart_b91_t {
-	uint8_t data_buf[4];
+	uint8_t data_buf[UART_DATA_SIZE];
 	uint16_t clk_div;
 	uint8_t ctrl0;
 	uint8_t ctrl1;
@@ -68,8 +67,7 @@ struct uart_b91_data {
 
 /* B91 UART config structure */
 struct uart_b91_config {
-	const uint32_t *pinctrl_list;
-	size_t pinctrl_list_size;
+	const struct pinctrl_dev_config *pcfg;
 	uint32_t uart_addr;
 	uint32_t baud_rate;
 	void (*pirq_connect)(void);
@@ -233,7 +231,7 @@ static void uart_b91_irq_handler(const struct device *dev)
 #ifndef CONFIG_UART_INTERRUPT_DRIVEN
 	ARG_UNUSED(dev);
 #else
-	struct uart_b91_data *data = DEV_DATA(dev);
+	struct uart_b91_data *data = dev->data;
 
 	if (data->callback != NULL) {
 		data->callback(dev, data->cb_data);
@@ -245,6 +243,7 @@ static void uart_b91_irq_handler(const struct device *dev)
 static int uart_b91_configure(const struct device *dev,
 			      const struct uart_config *cfg)
 {
+	struct uart_b91_data *data = dev->data;
 	uint16_t divider;
 	uint8_t bwpc;
 	uint8_t parity;
@@ -284,7 +283,7 @@ static int uart_b91_configure(const struct device *dev,
 	uart_b91_init(uart, divider, bwpc, parity, stop_bits);
 
 	/* save configuration */
-	DEV_DATA(dev)->cfg = *cfg;
+	data->cfg = *cfg;
 
 	return 0;
 }
@@ -293,7 +292,9 @@ static int uart_b91_configure(const struct device *dev,
 static int uart_b91_config_get(const struct device *dev,
 			       struct uart_config *cfg)
 {
-	*cfg = DEV_DATA(dev)->cfg;
+	struct uart_b91_data *data = dev->data;
+
+	*cfg = data->cfg;
 
 	return 0;
 }
@@ -301,20 +302,22 @@ static int uart_b91_config_get(const struct device *dev,
 /* API implementation: driver initialization */
 static int uart_b91_driver_init(const struct device *dev)
 {
+	int status = 0;
 	uint16_t divider = 0u;
 	uint8_t bwpc = 0u;
-	const struct device *pinmux;
 	volatile struct uart_b91_t *uart = GET_UART(dev);
-	const struct uart_b91_config *cfg = GET_CFG(dev);
+	const struct uart_b91_config *cfg = dev->config;
+	struct uart_b91_data *data = dev->data;
 
-	pinmux = DEVICE_DT_GET(DT_NODELABEL(pinmux));
-	if (!device_is_ready(pinmux)) {
-		return -ENODEV;
-	}
+	/* Reset Tx, Rx status before usage */
+	uart->status |= UART_RX_RESET_BIT | UART_TX_RESET_BIT;
+	data->rx_byte_index = 0;
+	data->tx_byte_index = 0;
 
-	for (int i = 0; i < cfg->pinctrl_list_size; i++) {
-		pinmux_pin_set(pinmux, B91_PINMUX_GET_PIN(cfg->pinctrl_list[i]),
-			       B91_PINMUX_GET_FUNC(cfg->pinctrl_list[i]));
+	/* configure pins */
+	status = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		return status;
 	}
 
 	uart_b91_cal_div_and_bwpc(cfg->baud_rate, sys_clk.pclk * 1000 * 1000, &divider, &bwpc);
@@ -331,7 +334,7 @@ static int uart_b91_driver_init(const struct device *dev)
 static void uart_b91_poll_out(const struct device *dev, uint8_t c)
 {
 	volatile struct uart_b91_t *uart = GET_UART(dev);
-	struct uart_b91_data *data = DEV_DATA(dev);
+	struct uart_b91_data *data = dev->data;
 
 	while (uart_b91_get_tx_bufcnt(uart) >= UART_TX_BUF_CNT) {
 	};
@@ -344,7 +347,7 @@ static void uart_b91_poll_out(const struct device *dev, uint8_t c)
 static int uart_b91_poll_in(const struct device *dev, unsigned char *c)
 {
 	volatile struct uart_b91_t *uart = GET_UART(dev);
-	struct uart_b91_data *data = DEV_DATA(dev);
+	struct uart_b91_data *data = dev->data;
 
 	if (uart_b91_get_rx_bufcnt(uart) == 0) {
 		return -1;
@@ -372,8 +375,17 @@ static int uart_b91_fifo_fill(const struct device *dev,
 			      int size)
 {
 	int i = 0;
+	volatile struct uart_b91_t *uart = GET_UART(dev);
+
+	if (size > UART_DATA_SIZE) {
+		size = UART_DATA_SIZE;
+	}
 
 	for (i = 0; i < size; i++) {
+		if (uart_b91_get_rx_bufcnt(uart) != 0) {
+			break;
+		}
+
 		uart_b91_poll_out(dev, tx_data[i]);
 	}
 
@@ -422,7 +434,8 @@ static int uart_b91_irq_tx_ready(const struct device *dev)
 {
 	volatile struct uart_b91_t *uart = GET_UART(dev);
 
-	return (uart_b91_get_tx_bufcnt(uart) < UART_TX_BUF_CNT) ? 1 : 0;
+	return ((uart_b91_get_tx_bufcnt(uart) < UART_TX_BUF_CNT) &&
+		((uart->ctrl0 & UART_TX_IRQ_MASK) != 0)) ? 1 : 0;
 }
 
 /* API implementation: irq_tx_complete */
@@ -497,7 +510,7 @@ static void uart_b91_irq_callback_set(const struct device *dev,
 				      uart_irq_callback_user_data_t cb,
 				      void *cb_data)
 {
-	struct uart_b91_data *data = DEV_DATA(dev);
+	struct uart_b91_data *data = dev->data;
 
 	data->callback = cb;
 	data->cb_data = cb_data;
@@ -534,15 +547,13 @@ static const struct uart_driver_api uart_b91_driver_api = {
 										    \
 	static void uart_b91_irq_connect_##n(void);				    \
 										    \
-	static const uint32_t uart_pins_##n[] =					    \
-		B91_PINMUX_DT_INST_GET_ARRAY(n, 0);				    \
+	PINCTRL_DT_INST_DEFINE(n);						    \
 										    \
 	static const struct uart_b91_config uart_b91_cfg_##n =			    \
 	{									    \
 		.uart_addr = DT_INST_REG_ADDR(n),				    \
 		.baud_rate = DT_INST_PROP(n, current_speed),			    \
-		.pinctrl_list_size = ARRAY_SIZE(uart_pins_##n),			    \
-		.pinctrl_list = uart_pins_##n,					    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			    \
 		.pirq_connect = uart_b91_irq_connect_##n			    \
 	};									    \
 										    \
@@ -553,7 +564,7 @@ static const struct uart_driver_api uart_b91_driver_api = {
 			      &uart_b91_data_##n,				    \
 			      &uart_b91_cfg_##n,				    \
 			      PRE_KERNEL_1,					    \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		    \
+			      CONFIG_SERIAL_INIT_PRIORITY,			    \
 			      (void *)&uart_b91_driver_api);			    \
 										    \
 	static void uart_b91_irq_connect_##n(void)				    \

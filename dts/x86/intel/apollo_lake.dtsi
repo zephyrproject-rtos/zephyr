@@ -1,0 +1,658 @@
+/*
+ * Copyright (c) 2017-2019 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+#include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pcie/pcie.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "intel,apollo_lake";
+			d-cache-line-size = <64>;
+			reg = <0>;
+		};
+
+	};
+
+	dram0: memory@0 {
+		device_type = "memory";
+		reg = <0x0 DT_DRAM_SIZE>;
+	};
+
+	intc: ioapic@fec00000  {
+		compatible = "intel,ioapic";
+		reg = <0xfec00000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <3>;
+	};
+
+	pcie0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "intel,pcie";
+		ranges;
+
+		uart0: uart@c000 {
+			compatible = "ns16550";
+
+			reg = <PCIE_BDF(0,0x18,0) PCIE_ID(0x8086,0x5abc)>;
+			reg-shift = <2>;
+
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			status = "okay";
+			current-speed = <115200>;
+		};
+
+		uart1: uart@c100 {
+			compatible = "ns16550";
+
+			reg = <PCIE_BDF(0,0x18,1) PCIE_ID(0x8086,0x5abe)>;
+			reg-shift = <2>;
+
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+			current-speed = <115200>;
+		};
+
+		uart2: uart@c200 {
+			compatible = "ns16550";
+
+			reg = <PCIE_BDF(0,0x18,2) PCIE_ID(0x8086,0x5ac0)>;
+			reg-shift = <2>;
+
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+			current-speed = <115200>;
+		};
+
+		uart3: uart@c300 {
+			compatible = "ns16550";
+
+			reg = <PCIE_BDF(0,0x18,3) PCIE_ID(0x8086,0x5aee)>;
+			reg-shift = <2>;
+
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+			current-speed = <115200>;
+		};
+
+		i2c0: i2c@b000 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x16,0) PCIE_ID(0x8086,0x5aac)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
+		i2c1: i2c@b100 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x16,1) PCIE_ID(0x8086,0x5aae)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
+		i2c2: i2c@b200 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x16,2) PCIE_ID(0x8086,0x5ab0)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
+		i2c3: i2c@b300 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x16,3) PCIE_ID(0x8086,0x5ab2)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
+		i2c4: i2c@b800 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x17,0) PCIE_ID(0x8086,0x5ab4)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
+		i2c5: i2c@b900 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x17,1) PCIE_ID(0x8086,0x5ab6)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
+		i2c6: i2c@ba00 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x17,2) PCIE_ID(0x8086,0x5ab8)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
+		i2c7: i2c@bb00 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x17,3) PCIE_ID(0x8086,0x5aba)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		vtd: vtd@fed65000 {
+			compatible = "intel,vt-d";
+
+			reg = <0xfed65000 0x1000>;
+
+			status = "okay";
+		};
+
+		gpio_n_000_031: gpio@d0c50000 {
+			compatible = "intel,gpio";
+			reg = <0xd0c50000 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <32>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+		gpio_n_032_063: gpio@d0c50001 {
+			compatible = "intel,gpio";
+			reg = <0xd0c50001 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <32>;
+			pin-offset = <32>;
+
+			status = "okay";
+		};
+
+		gpio_n_064_077: gpio@d0c50002 {
+			compatible = "intel,gpio";
+			reg = <0xd0c50002 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <14>;
+			pin-offset = <64>;
+
+			status = "okay";
+		};
+
+		gpio_nw_000_031: gpio@d0c40000 {
+			compatible = "intel,gpio";
+			reg = <0xd0c40000 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <32>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+		gpio_nw_032_063: gpio@d0c40001 {
+			compatible = "intel,gpio";
+			reg = <0xd0c40001 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <32>;
+			pin-offset = <32>;
+
+			status = "okay";
+		};
+
+		gpio_nw_064_076: gpio@d0c40002 {
+			compatible = "intel,gpio";
+			reg = <0xd0c40002 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <13>;
+			pin-offset = <64>;
+
+			status = "okay";
+		};
+
+		gpio_w_000_031: gpio@d0c70000 {
+			compatible = "intel,gpio";
+			reg = <0xd0c70000 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <32>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+		gpio_w_032_046: gpio@d0c70001 {
+			compatible = "intel,gpio";
+			reg = <0xd0c70001 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <15>;
+			pin-offset = <32>;
+
+			status = "okay";
+		};
+
+		gpio_sw_000_031: gpio@d0c00000 {
+			compatible = "intel,gpio";
+			reg = <0xd0c00000 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <32>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+
+		gpio_sw_032_042: gpio@d0c00001 {
+			compatible = "intel,gpio";
+			reg = <0xd0c00001 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <11>;
+			pin-offset = <32>;
+
+			status = "okay";
+		};
+
+		hpet: hpet@fed00000 {
+			compatible = "intel,hpet";
+			reg = <0xfed00000 0x400>;
+			interrupts = <2 IRQ_TYPE_FIXED_EDGE_RISING 4>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
+		counter: counter@70 {
+			compatible = "motorola,mc146818";
+			reg = <0x70 0x0D 0x71 0x0D>;
+
+			status = "okay";
+		};
+	};
+
+	gpio_n: gpio-north {
+		/* n north 78 */
+		compatible = "intel,apollo-lake-gpio";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =
+			<0 0 &gpio_n_000_031 0 0>,
+			<1 0 &gpio_n_000_031 1 0>,
+			<2 0 &gpio_n_000_031 2 0>,
+			<3 0 &gpio_n_000_031 3 0>,
+			<4 0 &gpio_n_000_031 4 0>,
+			<5 0 &gpio_n_000_031 5 0>,
+			<6 0 &gpio_n_000_031 6 0>,
+			<7 0 &gpio_n_000_031 7 0>,
+			<8 0 &gpio_n_000_031 8 0>,
+			<9 0 &gpio_n_000_031 9 0>,
+			<10 0 &gpio_n_000_031 10 0>,
+			<11 0 &gpio_n_000_031 11 0>,
+			<12 0 &gpio_n_000_031 12 0>,
+			<13 0 &gpio_n_000_031 13 0>,
+			<14 0 &gpio_n_000_031 14 0>,
+			<15 0 &gpio_n_000_031 15 0>,
+			<16 0 &gpio_n_000_031 16 0>,
+			<17 0 &gpio_n_000_031 17 0>,
+			<18 0 &gpio_n_000_031 18 0>,
+			<19 0 &gpio_n_000_031 19 0>,
+			<20 0 &gpio_n_000_031 20 0>,
+			<21 0 &gpio_n_000_031 21 0>,
+			<22 0 &gpio_n_000_031 22 0>,
+			<23 0 &gpio_n_000_031 23 0>,
+			<24 0 &gpio_n_000_031 24 0>,
+			<25 0 &gpio_n_000_031 25 0>,
+			<26 0 &gpio_n_000_031 26 0>,
+			<27 0 &gpio_n_000_031 27 0>,
+			<28 0 &gpio_n_000_031 28 0>,
+			<29 0 &gpio_n_000_031 29 0>,
+			<30 0 &gpio_n_000_031 30 0>,
+			<31 0 &gpio_n_000_031 31 0>,
+			<32 0 &gpio_n_032_063 0 0>,
+			<33 0 &gpio_n_032_063 1 0>,
+			<34 0 &gpio_n_032_063 2 0>,
+			<35 0 &gpio_n_032_063 3 0>,
+			<36 0 &gpio_n_032_063 4 0>,
+			<37 0 &gpio_n_032_063 5 0>,
+			<38 0 &gpio_n_032_063 6 0>,
+			<39 0 &gpio_n_032_063 7 0>,
+			<40 0 &gpio_n_032_063 8 0>,
+			<41 0 &gpio_n_032_063 9 0>,
+			<42 0 &gpio_n_032_063 10 0>,
+			<43 0 &gpio_n_032_063 11 0>,
+			<44 0 &gpio_n_032_063 12 0>,
+			<45 0 &gpio_n_032_063 13 0>,
+			<46 0 &gpio_n_032_063 14 0>,
+			<47 0 &gpio_n_032_063 15 0>,
+			<48 0 &gpio_n_032_063 16 0>,
+			<49 0 &gpio_n_032_063 17 0>,
+			<50 0 &gpio_n_032_063 18 0>,
+			<51 0 &gpio_n_032_063 19 0>,
+			<52 0 &gpio_n_032_063 20 0>,
+			<53 0 &gpio_n_032_063 21 0>,
+			<54 0 &gpio_n_032_063 22 0>,
+			<55 0 &gpio_n_032_063 23 0>,
+			<56 0 &gpio_n_032_063 24 0>,
+			<57 0 &gpio_n_032_063 25 0>,
+			<58 0 &gpio_n_032_063 26 0>,
+			<59 0 &gpio_n_032_063 27 0>,
+			<60 0 &gpio_n_032_063 28 0>,
+			<61 0 &gpio_n_032_063 29 0>,
+			<62 0 &gpio_n_032_063 30 0>,
+			<63 0 &gpio_n_032_063 31 0>,
+			<64 0 &gpio_n_064_077 0 0>,
+			<65 0 &gpio_n_064_077 1 0>,
+			<66 0 &gpio_n_064_077 2 0>,
+			<67 0 &gpio_n_064_077 3 0>,
+			<68 0 &gpio_n_064_077 4 0>,
+			<69 0 &gpio_n_064_077 5 0>,
+			<70 0 &gpio_n_064_077 6 0>,
+			<71 0 &gpio_n_064_077 7 0>,
+			<72 0 &gpio_n_064_077 8 0>,
+			<73 0 &gpio_n_064_077 9 0>,
+			<74 0 &gpio_n_064_077 10 0>,
+			<75 0 &gpio_n_064_077 11 0>,
+			<76 0 &gpio_n_064_077 12 0>,
+			<77 0 &gpio_n_064_077 13 0>;
+	};
+
+	gpio_nw: gpio-northwest {
+		/* nw northwest 77 */
+		compatible = "intel,apollo-lake-gpio";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =
+			<0 0 &gpio_nw_000_031 0 0>,
+			<1 0 &gpio_nw_000_031 1 0>,
+			<2 0 &gpio_nw_000_031 2 0>,
+			<3 0 &gpio_nw_000_031 3 0>,
+			<4 0 &gpio_nw_000_031 4 0>,
+			<5 0 &gpio_nw_000_031 5 0>,
+			<6 0 &gpio_nw_000_031 6 0>,
+			<7 0 &gpio_nw_000_031 7 0>,
+			<8 0 &gpio_nw_000_031 8 0>,
+			<9 0 &gpio_nw_000_031 9 0>,
+			<10 0 &gpio_nw_000_031 10 0>,
+			<11 0 &gpio_nw_000_031 11 0>,
+			<12 0 &gpio_nw_000_031 12 0>,
+			<13 0 &gpio_nw_000_031 13 0>,
+			<14 0 &gpio_nw_000_031 14 0>,
+			<15 0 &gpio_nw_000_031 15 0>,
+			<16 0 &gpio_nw_000_031 16 0>,
+			<17 0 &gpio_nw_000_031 17 0>,
+			<18 0 &gpio_nw_000_031 18 0>,
+			<19 0 &gpio_nw_000_031 19 0>,
+			<20 0 &gpio_nw_000_031 20 0>,
+			<21 0 &gpio_nw_000_031 21 0>,
+			<22 0 &gpio_nw_000_031 22 0>,
+			<23 0 &gpio_nw_000_031 23 0>,
+			<24 0 &gpio_nw_000_031 24 0>,
+			<25 0 &gpio_nw_000_031 25 0>,
+			<26 0 &gpio_nw_000_031 26 0>,
+			<27 0 &gpio_nw_000_031 27 0>,
+			<28 0 &gpio_nw_000_031 28 0>,
+			<29 0 &gpio_nw_000_031 29 0>,
+			<30 0 &gpio_nw_000_031 30 0>,
+			<31 0 &gpio_nw_000_031 31 0>,
+			<32 0 &gpio_nw_032_063 0 0>,
+			<33 0 &gpio_nw_032_063 1 0>,
+			<34 0 &gpio_nw_032_063 2 0>,
+			<35 0 &gpio_nw_032_063 3 0>,
+			<36 0 &gpio_nw_032_063 4 0>,
+			<37 0 &gpio_nw_032_063 5 0>,
+			<38 0 &gpio_nw_032_063 6 0>,
+			<39 0 &gpio_nw_032_063 7 0>,
+			<40 0 &gpio_nw_032_063 8 0>,
+			<41 0 &gpio_nw_032_063 9 0>,
+			<42 0 &gpio_nw_032_063 10 0>,
+			<43 0 &gpio_nw_032_063 11 0>,
+			<44 0 &gpio_nw_032_063 12 0>,
+			<45 0 &gpio_nw_032_063 13 0>,
+			<46 0 &gpio_nw_032_063 14 0>,
+			<47 0 &gpio_nw_032_063 15 0>,
+			<48 0 &gpio_nw_032_063 16 0>,
+			<49 0 &gpio_nw_032_063 17 0>,
+			<50 0 &gpio_nw_032_063 18 0>,
+			<51 0 &gpio_nw_032_063 19 0>,
+			<52 0 &gpio_nw_032_063 20 0>,
+			<53 0 &gpio_nw_032_063 21 0>,
+			<54 0 &gpio_nw_032_063 22 0>,
+			<55 0 &gpio_nw_032_063 23 0>,
+			<56 0 &gpio_nw_032_063 24 0>,
+			<57 0 &gpio_nw_032_063 25 0>,
+			<58 0 &gpio_nw_032_063 26 0>,
+			<59 0 &gpio_nw_032_063 27 0>,
+			<60 0 &gpio_nw_032_063 28 0>,
+			<61 0 &gpio_nw_032_063 29 0>,
+			<62 0 &gpio_nw_032_063 30 0>,
+			<63 0 &gpio_nw_032_063 31 0>,
+			<64 0 &gpio_nw_064_076 0 0>,
+			<65 0 &gpio_nw_064_076 1 0>,
+			<66 0 &gpio_nw_064_076 2 0>,
+			<67 0 &gpio_nw_064_076 3 0>,
+			<68 0 &gpio_nw_064_076 4 0>,
+			<69 0 &gpio_nw_064_076 5 0>,
+			<70 0 &gpio_nw_064_076 6 0>,
+			<71 0 &gpio_nw_064_076 7 0>,
+			<72 0 &gpio_nw_064_076 8 0>,
+			<73 0 &gpio_nw_064_076 9 0>,
+			<74 0 &gpio_nw_064_076 10 0>,
+			<75 0 &gpio_nw_064_076 11 0>,
+			<76 0 &gpio_nw_064_076 12 0>;
+	};
+
+	gpio_w: gpio-west {
+		/* w west 47 */
+		compatible = "intel,apollo-lake-gpio";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =
+			<0 0 &gpio_w_000_031 0 0>,
+			<1 0 &gpio_w_000_031 1 0>,
+			<2 0 &gpio_w_000_031 2 0>,
+			<3 0 &gpio_w_000_031 3 0>,
+			<4 0 &gpio_w_000_031 4 0>,
+			<5 0 &gpio_w_000_031 5 0>,
+			<6 0 &gpio_w_000_031 6 0>,
+			<7 0 &gpio_w_000_031 7 0>,
+			<8 0 &gpio_w_000_031 8 0>,
+			<9 0 &gpio_w_000_031 9 0>,
+			<10 0 &gpio_w_000_031 10 0>,
+			<11 0 &gpio_w_000_031 11 0>,
+			<12 0 &gpio_w_000_031 12 0>,
+			<13 0 &gpio_w_000_031 13 0>,
+			<14 0 &gpio_w_000_031 14 0>,
+			<15 0 &gpio_w_000_031 15 0>,
+			<16 0 &gpio_w_000_031 16 0>,
+			<17 0 &gpio_w_000_031 17 0>,
+			<18 0 &gpio_w_000_031 18 0>,
+			<19 0 &gpio_w_000_031 19 0>,
+			<20 0 &gpio_w_000_031 20 0>,
+			<21 0 &gpio_w_000_031 21 0>,
+			<22 0 &gpio_w_000_031 22 0>,
+			<23 0 &gpio_w_000_031 23 0>,
+			<24 0 &gpio_w_000_031 24 0>,
+			<25 0 &gpio_w_000_031 25 0>,
+			<26 0 &gpio_w_000_031 26 0>,
+			<27 0 &gpio_w_000_031 27 0>,
+			<28 0 &gpio_w_000_031 28 0>,
+			<29 0 &gpio_w_000_031 29 0>,
+			<30 0 &gpio_w_000_031 30 0>,
+			<31 0 &gpio_w_000_031 31 0>,
+			<32 0 &gpio_w_032_046 0 0>,
+			<33 0 &gpio_w_032_046 1 0>,
+			<34 0 &gpio_w_032_046 2 0>,
+			<35 0 &gpio_w_032_046 3 0>,
+			<36 0 &gpio_w_032_046 4 0>,
+			<37 0 &gpio_w_032_046 5 0>,
+			<38 0 &gpio_w_032_046 6 0>,
+			<39 0 &gpio_w_032_046 7 0>,
+			<40 0 &gpio_w_032_046 8 0>,
+			<41 0 &gpio_w_032_046 9 0>,
+			<42 0 &gpio_w_032_046 10 0>,
+			<43 0 &gpio_w_032_046 11 0>,
+			<44 0 &gpio_w_032_046 12 0>,
+			<45 0 &gpio_w_032_046 13 0>,
+			<46 0 &gpio_w_032_046 14 0>;
+	};
+
+	gpio_sw: gpio-southwest {
+		/* sw southwest 42 */
+		compatible = "intel,apollo-lake-gpio";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =
+			<0 0 &gpio_sw_000_031 0 0>,
+			<1 0 &gpio_sw_000_031 1 0>,
+			<2 0 &gpio_sw_000_031 2 0>,
+			<3 0 &gpio_sw_000_031 3 0>,
+			<4 0 &gpio_sw_000_031 4 0>,
+			<5 0 &gpio_sw_000_031 5 0>,
+			<6 0 &gpio_sw_000_031 6 0>,
+			<7 0 &gpio_sw_000_031 7 0>,
+			<8 0 &gpio_sw_000_031 8 0>,
+			<9 0 &gpio_sw_000_031 9 0>,
+			<10 0 &gpio_sw_000_031 10 0>,
+			<11 0 &gpio_sw_000_031 11 0>,
+			<12 0 &gpio_sw_000_031 12 0>,
+			<13 0 &gpio_sw_000_031 13 0>,
+			<14 0 &gpio_sw_000_031 14 0>,
+			<15 0 &gpio_sw_000_031 15 0>,
+			<16 0 &gpio_sw_000_031 16 0>,
+			<17 0 &gpio_sw_000_031 17 0>,
+			<18 0 &gpio_sw_000_031 18 0>,
+			<19 0 &gpio_sw_000_031 19 0>,
+			<20 0 &gpio_sw_000_031 20 0>,
+			<21 0 &gpio_sw_000_031 21 0>,
+			<22 0 &gpio_sw_000_031 22 0>,
+			<23 0 &gpio_sw_000_031 23 0>,
+			<24 0 &gpio_sw_000_031 24 0>,
+			<25 0 &gpio_sw_000_031 25 0>,
+			<26 0 &gpio_sw_000_031 26 0>,
+			<27 0 &gpio_sw_000_031 27 0>,
+			<28 0 &gpio_sw_000_031 28 0>,
+			<29 0 &gpio_sw_000_031 29 0>,
+			<30 0 &gpio_sw_000_031 30 0>,
+			<31 0 &gpio_sw_000_031 31 0>,
+			<32 0 &gpio_sw_032_042 0 0>,
+			<33 0 &gpio_sw_032_042 1 0>,
+			<34 0 &gpio_sw_032_042 2 0>,
+			<35 0 &gpio_sw_032_042 3 0>,
+			<36 0 &gpio_sw_032_042 4 0>,
+			<37 0 &gpio_sw_032_042 5 0>,
+			<38 0 &gpio_sw_032_042 6 0>,
+			<39 0 &gpio_sw_032_042 7 0>,
+			<40 0 &gpio_sw_032_042 8 0>,
+			<41 0 &gpio_sw_032_042 9 0>,
+			<42 0 &gpio_sw_032_042 10 0>;
+	};
+};

@@ -1,0 +1,61 @@
+# i.MX RT5XX series configuration options
+
+# Copyright (c) 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IMX_RT5XX
+
+config SOC_SERIES
+	default "rt5xx"
+
+config ROM_START_OFFSET
+	default 0x1200 if NXP_IMX_RT5XX_BOOT_HEADER
+
+config NUM_IRQS
+	default 74
+
+config ZTEST_NO_YIELD
+	default y if (PM && ZTEST)
+
+#
+# The base address of the external flash comes from the FLEXSPI base
+# address. The size of the flash is defined by what is populated and
+# described in the board devicetree file.
+#
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/spi@134000,1)
+
+if FLASH_MCUX_FLEXSPI_XIP
+
+# Avoid RWW hazards by defaulting logging to disabled
+choice FLASH_LOG_LEVEL_CHOICE
+	default FLASH_LOG_LEVEL_OFF
+endchoice
+
+choice MEMC_LOG_LEVEL_CHOICE
+	default MEMC_LOG_LEVEL_OFF
+endchoice
+
+endif
+
+#
+# MBEDTLS is larger but much faster than TinyCrypt so choose wisely
+#
+config MBEDTLS
+#config TINYCRYPT
+	default y if CSPRING_ENABLED
+	depends on ENTROPY_GENERATOR
+
+if MBEDTLS
+#
+# MBEDTLS CTR_DRBG code path needs extra stack space for initialization than
+# what the ztest_thread_stack defaults to.
+#
+config TEST_EXTRA_STACK_SIZE
+	int
+	default 1024
+endif # MBEDTLS
+
+source "soc/arm/nxp_imx/rt5xx/Kconfig.defconfig.mimxrt5*"
+
+endif # SOC_SERIES_MIMXRT6XX

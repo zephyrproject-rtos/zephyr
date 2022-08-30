@@ -11,24 +11,27 @@
  * @brief Thread context switching for ARM Cortex-M and Cortex-R
  *
  * This module implements the routines necessary for thread context switching
- * on ARM Cortex-M and Cortex-R CPUs.
+ * on ARM Cortex-A, Cortex-M and Cortex-R CPUs.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
-#include <syscall.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/syscall.h>
+#include <zephyr/kernel.h>
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/aarch32/cortex_m/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cpu.h>
 #endif
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_svc)
 GTEXT(z_arm_pendsv)
 GTEXT(z_do_kernel_oops)
+#if defined(CONFIG_USERSPACE)
 GTEXT(z_arm_do_syscall)
+#endif
 
 GDATA(_kernel)
 
@@ -118,11 +121,51 @@ out_fp_endif:
      * regardless of whether the thread has an active FP context.
      */
 #endif /* CONFIG_FPU_SHARING */
-#elif defined(CONFIG_ARMV7_R)
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
+	|| defined(CONFIG_ARMV7_A)
     /* Store rest of process context */
     cps #MODE_SYS
     stm r0, {r4-r11, sp}
     cps #MODE_SVC
+
+#if defined(CONFIG_FPU_SHARING)
+    ldrb r0, [r2, #_thread_offset_to_user_options]
+    tst r0, #K_FP_REGS /* _current->base.user_options & K_FP_REGS */
+    beq out_fp_inactive
+
+    mov ip, #FPEXC_EN
+    vmsr fpexc, ip
+
+    /*
+     * If the float context pointer is not null, then the VFP has not been
+     * used since this thread has used it.  Consequently, the caller-saved
+     * float registers have not been saved away, so write them to the
+     * exception stack frame.
+     */
+    ldr r0, [r1, #_kernel_offset_to_fp_ctx]
+    cmp r0, #0
+    beq out_store_thread_context
+
+    vstmia r0!, {s0-s15}
+    vmrs r3, fpscr
+    stm r0, {r3, ip}
+
+out_store_thread_context:
+    /* Store s16-s31 to thread context */
+    add r0, r2, #_thread_offset_to_preempt_float
+    vstmia r0, {s16-s31}
+
+    mov ip, #0
+    vmsr fpexc, ip
+
+out_fp_inactive:
+    /*
+     * The floating context has now been saved to the exception stack
+     * frame, so zero out the global pointer to note this.
+     */
+    mov r0, #0
+    str r0, [r1, #_kernel_offset_to_fp_ctx]
+#endif /* CONFIG_FPU_SHARING */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -134,7 +177,8 @@ out_fp_endif:
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI_MAX, r0
     isb /* Make the effect of disabling interrupts be realized immediately */
-#elif defined(CONFIG_ARMV7_R)
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
+	|| defined(CONFIG_ARMV7_A)
     /*
      * Interrupts are still disabled from arch_swap so empty clause
      * here to avoid the preprocessor error below
@@ -182,7 +226,7 @@ out_fp_endif:
     adds r4, r2, r4
     ldr r0, [r4]
 
-#if defined(CONFIG_CPU_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
     /* Store TLS pointer in the "Process ID" register.
      * This register is used as a base pointer to all
      * thread variables with offsets added by toolchain.
@@ -342,7 +386,8 @@ in_fp_endif:
     /* load callee-saved + psp from thread */
     add r0, r2, #_thread_offset_to_callee_saved
     ldmia r0, {v1-v8, ip}
-#elif defined(CONFIG_ARMV7_R)
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
+	|| defined(CONFIG_ARMV7_A)
 _thread_irq_disabled:
     /* load _kernel into r1 and current k_thread into r2 */
     ldr r1, =_kernel
@@ -356,6 +401,33 @@ _thread_irq_disabled:
     cps #MODE_SYS
     ldm r0, {r4-r11, sp}
     cps #MODE_SVC
+
+#if defined(CONFIG_FPU_SHARING)
+    ldrb r0, [r2, #_thread_offset_to_user_options]
+    tst r0, #K_FP_REGS /* _current->base.user_options & K_FP_REGS */
+    beq in_fp_inactive
+
+    mov r3, #FPEXC_EN
+    vmsr fpexc, r3
+
+    /* Restore s16-s31 from thread context */
+    add r0, r2, #_thread_offset_to_preempt_float
+    vldmia r0, {s16-s31}
+
+    mov r3, #0
+    vmsr fpexc, r3
+
+in_fp_inactive:
+#endif /* CONFIG_FPU_SHARING */
+
+#if defined (CONFIG_ARM_MPU)
+    /* r2 contains k_thread */
+    mov r0, r2
+    /* Re-program dynamic memory map */
+    push {r2, lr}
+    bl z_arm_configure_dynamic_mpu_regions
+    pop {r2, lr}
+#endif
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -402,7 +474,6 @@ _thread_irq_disabled:
  * - Kernel run-time exceptions
  * - System Calls (User mode)
  *
- * @return N/A
  */
 SECTION_FUNC(TEXT, z_arm_svc)
   /* Use EXC_RETURN state to find out if stack frame is on the
@@ -485,8 +556,29 @@ _stack_frame_endif:
 
 _oops:
     push {r0, lr}
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    /* Build _callee_saved_t. To match the struct
+     * definition we push the psp & then r11-r4
+     */
+    mrs r1, PSP
+    push {r1, r2}
+    push {r4-r11}
+    mov  r1, sp /* pointer to _callee_saved_t */
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
     bl z_do_kernel_oops
     /* return from SVC exception is done here */
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    /* We do not need to restore any register state here
+     * because we did not use any callee-saved registers
+     * in this routine. Therefore, we can just reset
+     * the MSP to its value prior to entering the function
+     */
+    add sp, #40
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
     pop {r0, pc}
 
 #if defined(CONFIG_USERSPACE)
@@ -592,7 +684,14 @@ valid_syscall_id:
     bx lr
 #endif /* CONFIG_USERSPACE */
 
-#elif defined(CONFIG_ARMV7_R)
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
+	|| defined(CONFIG_ARMV7_A)
+
+#if defined(CONFIG_FPU_SHARING)
+#define FPU_SF_SIZE ___fpu_t_SIZEOF
+#else
+#define FPU_SF_SIZE 0
+#endif
 
 /**
  *
@@ -603,9 +702,31 @@ valid_syscall_id:
  * - IRQ offloading
  * - Kernel run-time exceptions
  *
- * @return N/A
  */
 SECTION_FUNC(TEXT, z_arm_svc)
+#if defined(CONFIG_USERSPACE)
+    /* Determine if incoming thread was in user context */
+    push {r0}
+    mrs r0, spsr
+    and r0, #MODE_MASK
+    cmp r0, #MODE_USR
+    bne svc_system_thread
+
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+
+    /* Save away user stack pointer */
+    cps #MODE_SYS
+    str sp, [r0, #_thread_offset_to_sp_usr] /* sp_usr */
+
+    /* Switch to privileged stack */
+    ldr sp, [r0, #_thread_offset_to_priv_stack_end] /* priv stack end */
+    cps #MODE_SVC
+
+svc_system_thread:
+    pop {r0}
+#endif
+
     /*
      * Switch to system mode to store r0-r3 to the process stack pointer.
      * Save r12 and the lr as we could be swapping in another process and
@@ -614,6 +735,34 @@ SECTION_FUNC(TEXT, z_arm_svc)
     srsdb #MODE_SYS!
     cps #MODE_SYS
     push {r0-r3, r12, lr}
+
+#if defined(CONFIG_FPU_SHARING)
+    sub sp, sp, #___fpu_t_SIZEOF
+
+    /*
+     * Note that this handler was entered with the VFP unit enabled.
+     * The undefined instruction handler uses this to know that it
+     * needs to save the current floating context.
+     */
+    vmrs r0, fpexc
+    str r0, [sp, #___fpu_t_SIZEOF - 4]
+
+    /* Disable VFP */
+    mov r0, #0
+    vmsr fpexc, r0
+
+    /*
+     * Mark where to store the floating context for the undefined
+     * instruction handler
+     */
+    ldr r2, =_kernel
+    ldr r0, [r2, #_kernel_offset_to_fp_ctx]
+    cmp r0, #0
+    streq sp, [r2, #_kernel_offset_to_fp_ctx]
+#endif /* CONFIG_FPU_SHARING */
+
+    mov ip, sp
+
     cps #MODE_SVC
 
     /*
@@ -642,17 +791,22 @@ SECTION_FUNC(TEXT, z_arm_svc)
     beq demux
 
     ldr r1, [lr, #-2]
-    bic r1, #0xff00
+    and r1, #0xff
 
    /*
     * grab service call number:
     * 0: context switch
     * 1: irq_offload (if configured)
     * 2: kernel panic or oops (software generated fatal exception)
-    * Planned implementation of system calls for memory protection will
-    * expand this case.
+    * 3: system calls for memory protection
     */
 demux:
+
+#if defined(CONFIG_USERSPACE)
+    cmp r1, #_SVC_CALL_SYSTEM_CALL
+    beq _do_syscall
+#endif
+
     cmp r1, #_SVC_CALL_CONTEXT_SWITCH
     beq _context_switch
 
@@ -673,11 +827,89 @@ _context_switch:
     b z_arm_int_exit
 
 _oops:
-    push {r0, lr}
-    blx z_do_kernel_oops
-    pop {r0, lr}
-    cpsie i
-    movs pc, lr
+    /*
+     * Pass the exception frame to z_do_kernel_oops.  r0 contains the
+     * exception reason.
+     */
+    cps #MODE_SYS
+    mov r0, sp
+    cps #MODE_SVC
+    bl z_do_kernel_oops
+    b z_arm_int_exit
+
+#if defined(CONFIG_USERSPACE)
+    /*
+     * System call will setup a jump to the _do_arm_syscall function
+     * running in system mode when returning from the exception.
+     *
+     * There is some trickery involved here because we have to preserve
+     * the original PC value so that we can return back to the caller of
+     * the SVC.
+     *
+     * On SVC exception, the USER/SYSTEM stack looks like the following:
+     * { possible FPU space } - r0 - r1 - r2 - r3 - r12 - LR - PC - SPSR
+     *
+     * Registers look like:
+     * r0 - arg1
+     * r1 - arg2
+     * r2 - arg3
+     * r3 - arg4
+     * r4 - arg5
+     * r5 - arg6
+     * r6 - call_id
+     * r8 - saved link register
+     */
+_do_syscall:
+    /* grab address of LR from stack frame */
+    ldr r8, [ip, #(FPU_SF_SIZE + ___basic_sf_t_pc_OFFSET)]
+
+    /* Make the exception return to system state */
+    ldr r1, [ip, #(FPU_SF_SIZE + ___basic_sf_t_xpsr_OFFSET)]
+
+    /* If leaving thumb mode, set the return address to thumb mode */
+    tst r1, #T_BIT
+    orrne r8, #1
+
+    bic r1, #(MODE_MASK | T_BIT)
+    orr r1, r1, #MODE_SYS
+    str r1, [ip, #(FPU_SF_SIZE + ___basic_sf_t_xpsr_OFFSET)]
+
+    /*
+     * Store the address of z_arm_do_syscall for the exit so the exception
+     * return goes there in system state.
+     */
+    ldr r1, =z_arm_do_syscall
+    str r1, [ip, #(FPU_SF_SIZE + ___basic_sf_t_pc_OFFSET)]
+
+    /* validate syscall limit, only set priv mode if valid */
+    ldr ip, =K_SYSCALL_LIMIT
+    cmp r6, ip
+    blo valid_syscall_id
+
+    /* bad syscall id.  Set arg0 to bad id and set call_id to SYSCALL_BAD */
+    cps #MODE_SYS
+    str r6, [sp]
+    cps #MODE_SVC
+    ldr r6, =K_SYSCALL_BAD
+
+valid_syscall_id:
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+    ldr r1, [r0, #_thread_offset_to_mode]
+    bic r1, #1
+    /* Store (privileged) mode in thread's mode state variable */
+    str r1, [r0, #_thread_offset_to_mode]
+    dsb
+
+    /* ISB is not strictly necessary here (stack pointer is not being
+     * touched), but it's recommended to avoid executing pre-fetched
+     * instructions with the previous privilege.
+     */
+    isb
+
+    /* Return to _arm_do_syscall in system state. */
+    b z_arm_int_exit
+#endif
 
 GTEXT(z_arm_cortex_r_svc)
 SECTION_FUNC(TEXT, z_arm_cortex_r_svc)

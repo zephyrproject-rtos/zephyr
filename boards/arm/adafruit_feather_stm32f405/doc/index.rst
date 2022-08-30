@@ -13,7 +13,6 @@ with a lithium ion battery charger, native USB C connector, 2MB of
 external flash memory, and SD card socket.
 
 .. image:: img/adafruit_feather_stm32f405.jpg
-     :width: 640px
      :align: center
      :alt: Adafruit Feather STM32F405 Express
 
@@ -56,7 +55,7 @@ following hardware features:
 | USB       | on-chip    | USB device           |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Connections and IOs
 ===================
@@ -101,8 +100,7 @@ of the built in DFU-Util bootloader is possible by following the
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`blinky-sample` sample
-application:
+#. Build the Zephyr kernel and the :ref:`blinky-sample` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/blinky
@@ -110,8 +108,8 @@ application:
       :goals: build
       :compact:
 
-#. On the Adafruit Feather STM32F405, connect the 3.3V pin to the B0
-boot pin with a jumper wire.
+#. On the Adafruit Feather STM32F405, connect the 3.3V pin to the B0 boot pin
+   with a jumper wire.
 
 #. Flash the image:
 

@@ -9,7 +9,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+
+/*
+ * The unpacked structs below are used inside __packed structures that reflect
+ * what goes on the wire. While alignment is not a problem for those, since all
+ * their members are bytes or byte arrays, the size is. They must not be padded
+ * by the compiler, otherwise the on-wire packet will not map the packed
+ * structure correctly.
+ */
+BUILD_ASSERT(sizeof(bt_addr_t) == BT_ADDR_SIZE);
+BUILD_ASSERT(sizeof(bt_addr_le_t) == BT_ADDR_LE_SIZE);
 
 #if defined(CONFIG_BT_HCI_HOST)
 /* The Bluetooth subsystem requires the Tx thread to execute at higher priority
@@ -43,7 +54,7 @@ BUILD_ASSERT(CONFIG_BT_DRIVER_RX_HIGH_PRIO < CONFIG_BT_HCI_TX_PRIO);
 #if !defined(CONFIG_TEST) && !defined(CONFIG_ARCH_POSIX) && \
     defined(CONFIG_BT_LL_SW_SPLIT) &&                       \
     defined(INCOMPATIBLE_IMMEDIATE_LOG_BACKEND)
-BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_IMMEDIATE), "Immediate logging "
+BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE), "Immediate logging "
 	     "on selected backend(s) not "
 	     "supported with the software Link Layer");
 #endif

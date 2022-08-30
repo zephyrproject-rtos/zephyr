@@ -7,7 +7,8 @@
 /dts-v1/;
 
 #include <nxp/nxp_lpc11u68.dtsi>
-#include <dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
+
+#include "lpcxpresso11u68-pinctrl.dtsi"
 
 / {
 	model = "NXP LPCXPRESSO11U68 board";
@@ -15,7 +16,7 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,console = &uart4;
+		zephyr,console = &uart0;
 	};
 
 	/* These aliases are provided for compatibility with samples. */
@@ -88,23 +89,23 @@
 };
 
 &uart0 {
-	pinmuxs = <&pinmux1 26 IOCON_FUNC2>, <&pinmux1 27 IOCON_FUNC2>;
-	pinmux-names = "RXD", "TXD";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 arduino_serial: &uart4 {
-	pinmuxs = <&pinmux2 11 IOCON_FUNC1>, <&pinmux2 12 IOCON_FUNC1>;
-	pinmux-names = "RXD", "TXD";
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 arduino_i2c: &i2c0 {
-	pinmuxs = <&pinmux0 4 IOCON_FUNC1>,
-	<&pinmux0 5 IOCON_FUNC1>;
-	pinmux-names = "SCL", "SDA";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_fast>;
+	pinctrl-names = "default", "fast-plus";
 	status = "okay";
 };
 
@@ -122,4 +123,9 @@ arduino_i2c: &i2c0 {
 
 &gpio2 {
 	status = "okay";
+};
+
+&syscon {
+	pinctrl-0 = <&syscon_default>;
+	pinctrl-names = "default";
 };

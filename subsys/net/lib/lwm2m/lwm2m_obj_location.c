@@ -7,11 +7,11 @@
 #define LOG_MODULE_NAME net_lwm2m_obj_location
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdint.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -37,22 +37,22 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define RESOURCE_INSTANCE_COUNT	(LOCATION_MAX_ID)
 
 /* resource state */
-static float32_value_t latitude;
-static float32_value_t longitude;
-static float32_value_t altitude;
-static float32_value_t radius;
-static float32_value_t speed;
+static double latitude;
+static double longitude;
+static double altitude;
+static double radius;
+static double speed;
 static int32_t timestamp;
 
 static struct lwm2m_engine_obj location;
 static struct lwm2m_engine_obj_field fields[] = {
-	OBJ_FIELD_DATA(LOCATION_LATITUDE_ID, R, FLOAT32),
-	OBJ_FIELD_DATA(LOCATION_LONGITUDE_ID, R, FLOAT32),
-	OBJ_FIELD_DATA(LOCATION_ALTITUDE_ID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(LOCATION_RADIUS_ID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(LOCATION_LATITUDE_ID, R, FLOAT),
+	OBJ_FIELD_DATA(LOCATION_LONGITUDE_ID, R, FLOAT),
+	OBJ_FIELD_DATA(LOCATION_ALTITUDE_ID, R_OPT, FLOAT),
+	OBJ_FIELD_DATA(LOCATION_RADIUS_ID, R_OPT, FLOAT),
 	OBJ_FIELD_DATA(LOCATION_VELOCITY_ID, R_OPT, OPAQUE),
 	OBJ_FIELD_DATA(LOCATION_TIMESTAMP_ID, R, TIME),
-	OBJ_FIELD_DATA(LOCATION_SPEED_ID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(LOCATION_SPEED_ID, R_OPT, FLOAT),
 };
 
 static struct lwm2m_engine_obj_inst inst;

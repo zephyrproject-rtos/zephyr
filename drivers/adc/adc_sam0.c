@@ -7,9 +7,10 @@
 #define DT_DRV_COMPAT atmel_sam0_adc
 
 #include <soc.h>
-#include <drivers/adc.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pinctrl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_sam0, CONFIG_ADC_LOG_LEVEL);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
@@ -43,6 +44,7 @@ struct adc_sam0_data {
 
 struct adc_sam0_cfg {
 	Adc *regs;
+	const struct pinctrl_dev_config *pcfg;
 
 #ifdef MCLK
 	uint32_t mclk_mask;
@@ -58,26 +60,16 @@ struct adc_sam0_cfg {
 	void (*config_func)(const struct device *dev);
 };
 
-#define DEV_CFG(dev) \
-	((const struct adc_sam0_cfg *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct adc_sam0_data *)(dev)->data)
-
 static void wait_synchronization(Adc *const adc)
 {
-#if defined(ADC_SYNCBUSY_MASK)
-	while ((adc->SYNCBUSY.reg & ADC_SYNCBUSY_MASK) != 0) {
+	while ((ADC_SYNC(adc) & ADC_SYNC_MASK) != 0) {
 	}
-#else
-	while ((adc->STATUS.reg & ADC_STATUS_SYNCBUSY) != 0) {
-	}
-#endif
 }
 
 static int adc_sam0_acquisition_to_clocks(const struct device *dev,
 					  uint16_t acquisition_time)
 {
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
+	const struct adc_sam0_cfg *const cfg = dev->config;
 	uint64_t scaled_acq;
 
 	switch (ADC_ACQ_TIME_UNIT(acquisition_time)) {
@@ -122,10 +114,10 @@ static int adc_sam0_acquisition_to_clocks(const struct device *dev,
 static int adc_sam0_channel_setup(const struct device *dev,
 				  const struct adc_channel_cfg *channel_cfg)
 {
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
+	const struct adc_sam0_cfg *const cfg = dev->config;
 	Adc *const adc = cfg->regs;
 	int retval;
-	uint8_t SAMPCTRL = 0;
+	uint8_t sampctrl = 0;
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
 		retval = adc_sam0_acquisition_to_clocks(dev,
@@ -135,91 +127,88 @@ static int adc_sam0_channel_setup(const struct device *dev,
 			return retval;
 		}
 
-		SAMPCTRL |= ADC_SAMPCTRL_SAMPLEN(retval);
+		sampctrl |= ADC_SAMPCTRL_SAMPLEN(retval);
 	}
 
-	adc->SAMPCTRL.reg = SAMPCTRL;
+	adc->SAMPCTRL.reg = sampctrl;
 	wait_synchronization(adc);
 
-
-	uint8_t REFCTRL;
+	uint8_t refctrl;
 
 	switch (channel_cfg->reference) {
 	case ADC_REF_INTERNAL:
-#ifdef ADC_REFCTRL_REFSEL_INTREF
-		REFCTRL = ADC_REFCTRL_REFSEL_INTREF | ADC_REFCTRL_REFCOMP;
-		/* Enable the internal reference, defaulting to 1V */
-		SUPC->VREF.bit.VREFOE = 1;
-#else
-		REFCTRL = ADC_REFCTRL_REFSEL_INT1V | ADC_REFCTRL_REFCOMP;
+		refctrl = ADC_REFCTRL_REFSEL_INTERNAL | ADC_REFCTRL_REFCOMP;
 		/* Enable the internal bandgap reference */
-		SYSCTRL->VREF.bit.BGOUTEN = 1;
-#endif
+		ADC_BGEN = 1;
 		break;
-	case ADC_REF_VDD_1_2:
-#ifdef ADC_REFCTRL_REFSEL_INTVCC0
-		REFCTRL = ADC_REFCTRL_REFSEL_INTVCC0 | ADC_REFCTRL_REFCOMP;
-#else
-		REFCTRL = ADC_REFCTRL_REFSEL_INTVCC1 | ADC_REFCTRL_REFCOMP;
-#endif
-		break;
-#ifdef ADC_REFCTRL_REFSEL_INTVCC1
+#ifdef ADC_REFCTRL_REFSEL_VDD_1
 	case ADC_REF_VDD_1:
-		REFCTRL = ADC_REFCTRL_REFSEL_INTVCC1 | ADC_REFCTRL_REFCOMP;
+		refctrl = ADC_REFCTRL_REFSEL_VDD_1 | ADC_REFCTRL_REFCOMP;
 		break;
 #endif
+	case ADC_REF_VDD_1_2:
+		refctrl = ADC_REFCTRL_REFSEL_VDD_1_2 | ADC_REFCTRL_REFCOMP;
+		break;
 	case ADC_REF_EXTERNAL0:
-		REFCTRL = ADC_REFCTRL_REFSEL_AREFA;
+		refctrl = ADC_REFCTRL_REFSEL_AREFA;
 		break;
 	case ADC_REF_EXTERNAL1:
-		REFCTRL = ADC_REFCTRL_REFSEL_AREFB;
+		refctrl = ADC_REFCTRL_REFSEL_AREFB;
 		break;
 	default:
 		LOG_ERR("Selected reference is not valid");
 		return -EINVAL;
 	}
-	if (adc->REFCTRL.reg != REFCTRL) {
-		adc->REFCTRL.reg = REFCTRL;
+	if (adc->REFCTRL.reg != refctrl) {
+#ifdef ADC_SAM0_REFERENCE_ENABLE_PROTECTED
+		adc->CTRLA.bit.ENABLE = 0;
 		wait_synchronization(adc);
+#endif
+		adc->REFCTRL.reg = refctrl;
+		wait_synchronization(adc);
+#ifdef ADC_SAM0_REFERENCE_ENABLE_PROTECTED
+		adc->CTRLA.bit.ENABLE = 1;
+		wait_synchronization(adc);
+#endif
 #ifdef ADC_SAM0_REFERENCE_GLITCH
-		struct adc_sam0_data *data = DEV_DATA(dev);
+		struct adc_sam0_data *data = dev->data;
 
 		data->reference_changed = 1;
 #endif
 	}
 
 
-	uint32_t INPUTCTRL = 0;
+	uint32_t inputctrl = 0;
 
 	switch (channel_cfg->gain) {
 	case ADC_GAIN_1:
 #ifdef ADC_INPUTCTRL_GAIN_1X
-		INPUTCTRL = ADC_INPUTCTRL_GAIN_1X;
+		inputctrl = ADC_INPUTCTRL_GAIN_1X;
 #endif
 		break;
 #ifdef ADC_INPUTCTRL_GAIN_DIV2
 	case ADC_GAIN_1_2:
-		INPUTCTRL = ADC_INPUTCTRL_GAIN_DIV2;
+		inputctrl = ADC_INPUTCTRL_GAIN_DIV2;
 		break;
 #endif
 #ifdef ADC_INPUTCTRL_GAIN_2X
 	case ADC_GAIN_2:
-		INPUTCTRL = ADC_INPUTCTRL_GAIN_2X;
+		inputctrl = ADC_INPUTCTRL_GAIN_2X;
 		break;
 #endif
 #ifdef ADC_INPUTCTRL_GAIN_4X
 	case ADC_GAIN_4:
-		INPUTCTRL = ADC_INPUTCTRL_GAIN_4X;
+		inputctrl = ADC_INPUTCTRL_GAIN_4X;
 		break;
 #endif
 #ifdef ADC_INPUTCTRL_GAIN_8X
 	case ADC_GAIN_8:
-		INPUTCTRL = ADC_INPUTCTRL_GAIN_8X;
+		inputctrl = ADC_INPUTCTRL_GAIN_8X;
 		break;
 #endif
 #ifdef ADC_INPUTCTRL_GAIN_16X
 	case ADC_GAIN_16:
-		INPUTCTRL = ADC_INPUTCTRL_GAIN_16X;
+		inputctrl = ADC_INPUTCTRL_GAIN_16X;
 		break;
 #endif
 	default:
@@ -227,51 +216,40 @@ static int adc_sam0_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	INPUTCTRL |= ADC_INPUTCTRL_MUXPOS(channel_cfg->input_positive);
+	inputctrl |= ADC_INPUTCTRL_MUXPOS(channel_cfg->input_positive);
 	if (channel_cfg->differential) {
-		INPUTCTRL |= ADC_INPUTCTRL_MUXNEG(channel_cfg->input_negative);
+		inputctrl |= ADC_INPUTCTRL_MUXNEG(channel_cfg->input_negative);
 
-#ifdef ADC_INPUTCTRL_DIFFMODE
-		INPUTCTRL |= ADC_INPUTCTRL_DIFFMODE;
-#else
-		adc->CTRLB.bit.DIFFMODE = 1;
-		wait_synchronization(adc);
-#endif
+		ADC_DIFF(adc) |= ADC_DIFF_MASK;
 	} else {
-		INPUTCTRL |= ADC_INPUTCTRL_MUXNEG_GND;
+		inputctrl |= ADC_INPUTCTRL_MUXNEG_GND;
 
-#ifndef ADC_INPUTCTRL_DIFFMODE
-		adc->CTRLB.bit.DIFFMODE = 0;
-		wait_synchronization(adc);
-#endif
+		ADC_DIFF(adc) &= ~ADC_DIFF_MASK;
 	}
+	wait_synchronization(adc);
 
-	adc->INPUTCTRL.reg = INPUTCTRL;
+	adc->INPUTCTRL.reg = inputctrl;
 	wait_synchronization(adc);
 
 	/* Enable references if they're selected */
 	switch (channel_cfg->input_positive) {
 #ifdef ADC_INPUTCTRL_MUXPOS_TEMP_Val
 	case ADC_INPUTCTRL_MUXPOS_TEMP_Val:
-		SYSCTRL->VREF.bit.TSEN = 1;
+		ADC_TSEN = 1;
 		break;
 #endif
 #ifdef ADC_INPUTCTRL_MUXPOS_PTAT_Val
 	case ADC_INPUTCTRL_MUXPOS_PTAT_Val:
-		SUPC->VREF.bit.TSEN = 1;
+		ADC_TSEN = 1;
 		break;
 #endif
 #ifdef ADC_INPUTCTRL_MUXPOS_CTAT_Val
 	case ADC_INPUTCTRL_MUXPOS_CTAT_Val:
-		SUPC->VREF.bit.TSEN = 1;
+		ADC_TSEN = 1;
 		break;
 #endif
 	case ADC_INPUTCTRL_MUXPOS_BANDGAP_Val:
-#ifdef ADC_REFCTRL_REFSEL_INTREF
-		SUPC->VREF.bit.VREFOE = 1;
-#else
-		SYSCTRL->VREF.bit.BGOUTEN = 1;
-#endif
+		ADC_BGEN = 1;
 		break;
 	default:
 		break;
@@ -283,7 +261,7 @@ static int adc_sam0_channel_setup(const struct device *dev,
 
 static void adc_sam0_start_conversion(const struct device *dev)
 {
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
+	const struct adc_sam0_cfg *const cfg = dev->config;
 	Adc *const adc = cfg->regs;
 
 	LOG_DBG("Starting conversion");
@@ -336,8 +314,8 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
-	struct adc_sam0_data *data = DEV_DATA(dev);
+	const struct adc_sam0_cfg *const cfg = dev->config;
+	struct adc_sam0_data *data = dev->data;
 	Adc *const adc = cfg->regs;
 	int error;
 
@@ -366,7 +344,7 @@ static int start_read(const struct device *dev,
 			return -EINVAL;
 		}
 
-		adc->CTRLB.bit.RESSEL = ADC_CTRLB_RESSEL_8BIT_Val;
+		ADC_RESSEL(adc) = ADC_RESSEL_8BIT;
 		break;
 	case 10:
 		if (sequence->oversampling) {
@@ -374,15 +352,14 @@ static int start_read(const struct device *dev,
 			return -EINVAL;
 		}
 
-		adc->CTRLB.bit.RESSEL = ADC_CTRLB_RESSEL_10BIT_Val;
+		ADC_RESSEL(adc) = ADC_RESSEL_10BIT;
 		break;
 	case 12:
 		if (sequence->oversampling) {
-			adc->CTRLB.bit.RESSEL = ADC_CTRLB_RESSEL_16BIT_Val;
+			ADC_RESSEL(adc) = ADC_RESSEL_16BIT;
 		} else {
-			adc->CTRLB.bit.RESSEL = ADC_CTRLB_RESSEL_12BIT_Val;
+			ADC_RESSEL(adc) = ADC_RESSEL_12BIT;
 		}
-
 		break;
 	default:
 		LOG_ERR("ADC resolution value %d is not valid",
@@ -392,7 +369,15 @@ static int start_read(const struct device *dev,
 
 	wait_synchronization(adc);
 
-	if (sequence->channels != 1U) {
+	if ((sequence->channels == 0)
+		|| ((sequence->channels & (sequence->channels - 1)) != 0)) {
+		/* The caller is expected to identify a single input channel, which will
+		 * typically be the positive input, though no check is made for this...
+		 *
+		 * While ensuring that the channels bitfield matches the positive input
+		 * might be sensible, this will likely break users before this revision
+		 * was put in place.
+		 */
 		LOG_ERR("Channel scanning is not supported");
 		return -ENOTSUP;
 	}
@@ -419,7 +404,7 @@ static int start_read(const struct device *dev,
 static int adc_sam0_read(const struct device *dev,
 			 const struct adc_sequence *sequence)
 {
-	struct adc_sam0_data *data = DEV_DATA(dev);
+	struct adc_sam0_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, false, NULL);
@@ -431,8 +416,8 @@ static int adc_sam0_read(const struct device *dev,
 
 static void adc_sam0_isr(const struct device *dev)
 {
-	struct adc_sam0_data *data = DEV_DATA(dev);
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
+	struct adc_sam0_data *data = dev->data;
+	const struct adc_sam0_cfg *const cfg = dev->config;
 	Adc *const adc = cfg->regs;
 	uint16_t result;
 
@@ -456,9 +441,10 @@ static void adc_sam0_isr(const struct device *dev)
 
 static int adc_sam0_init(const struct device *dev)
 {
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
-	struct adc_sam0_data *data = DEV_DATA(dev);
+	const struct adc_sam0_cfg *const cfg = dev->config;
+	struct adc_sam0_data *data = dev->data;
 	Adc *const adc = cfg->regs;
+	int retval;
 
 #ifdef MCLK
 	GCLK->PCHCTRL[cfg->gclk_id].reg = cfg->gclk_mask | GCLK_PCHCTRL_CHEN;
@@ -470,11 +456,12 @@ static int adc_sam0_init(const struct device *dev)
 	GCLK->CLKCTRL.reg = cfg->gclk | GCLK_CLKCTRL_CLKEN;
 #endif
 
-#ifdef ADC_CTRLA_PRESCALER_Pos
-	adc->CTRLA.reg = cfg->prescaler;
-#else
-	adc->CTRLB.reg = cfg->prescaler;
-#endif
+	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
+
+	ADC_PRESCALER(adc) = cfg->prescaler;
 	wait_synchronization(adc);
 
 	adc->INTENCLR.reg = ADC_INTENCLR_MASK;
@@ -502,7 +489,7 @@ static int adc_sam0_read_async(const struct device *dev,
 			       const struct adc_sequence *sequence,
 			       struct k_poll_signal *async)
 {
-	struct adc_sam0_data *data = DEV_DATA(dev);
+	struct adc_sam0_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, true, async);
@@ -529,47 +516,29 @@ static const struct adc_driver_api adc_sam0_api = {
 	.gclk_mask = UTIL_CAT(GCLK_PCHCTRL_GEN_GCLK,			\
 			      DT_INST_PROP(n, gclk)),			\
 	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),	\
-	.prescaler = UTIL_CAT(ADC_CTRLA_PRESCALER_DIV,			\
-			      DT_INST_PROP(n, prescaler)),
-
-#define ADC_SAM0_BIASCOMP_SHIFT(n)					\
-	(ADC0_FUSES_BIASCOMP_Pos + DT_INST_PROP(n, calib_offset))
-#define ADC_SAM0_BIASCOMP(n)						\
-	(((*(uint32_t *)NVMCTRL_SW0) >> ADC_SAM0_BIASCOMP_SHIFT(n)) & 0x7)
-
-#define ADC_SAM0_BIASR2R_SHIFT(n)					\
-	(ADC0_FUSES_BIASR2R_Pos + DT_INST_PROP(n, calib_offset))
-#define ADC_SAM0_BIASR2R(n)						\
-	(((*(uint32_t *)NVMCTRL_SW0) >> ADC_SAM0_BIASR2R_SHIFT(n)) & 0x7)
-
-#define ADC_SAM0_BIASREFBUF_SHIFT(n)					\
-	(ADC0_FUSES_BIASREFBUF_Pos + DT_INST_PROP(n, calib_offset))
-#define ADC_SAM0_BIASREFBUF(n)						\
-	(((*(uint32_t *)NVMCTRL_SW0) >> ADC_SAM0_BIASREFBUF_SHIFT(n)) & 0x7)
+	.prescaler = UTIL_CAT(ADC_CTRLx_PRESCALER_DIV,			\
+			      UTIL_CAT(DT_INST_PROP(n, prescaler), _Val)),
 
 #define ADC_SAM0_CONFIGURE(n)						\
 do {									\
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);		\
+	const struct adc_sam0_cfg *const cfg = dev->config;		\
 	Adc * const adc = cfg->regs;					\
-	uint32_t comp = ADC_SAM0_BIASCOMP(n);				\
-	uint32_t r2r = ADC_SAM0_BIASR2R(n);				\
-	uint32_t rbuf = ADC_SAM0_BIASREFBUF(n);				\
-	adc->CALIB.reg = ADC_CALIB_BIASCOMP(comp) |			\
-			 ADC_CALIB_BIASR2R(r2r) |			\
-			 ADC_CALIB_BIASREFBUF(rbuf);			\
-} while (0)
+	adc->CALIB.reg = ADC_SAM0_BIASCOMP(n)				\
+			 | ADC_SAM0_BIASR2R(n)				\
+			 | ADC_SAM0_BIASREFBUF(n);			\
+} while (false)
 
 #else
 
 #define ADC_SAM0_CLOCK_CONTROL(n)					\
 	.gclk = UTIL_CAT(GCLK_CLKCTRL_GEN_GCLK,	DT_INST_PROP(n, gclk)) |\
 			 GCLK_CLKCTRL_ID_ADC,				\
-	.prescaler = UTIL_CAT(ADC_CTRLB_PRESCALER_DIV,			\
-			      DT_INST_PROP(n, prescaler)),		\
+	.prescaler = UTIL_CAT(ADC_CTRLx_PRESCALER_DIV,			\
+			      UTIL_CAT(DT_INST_PROP(n, prescaler), _Val)),
 
 #define ADC_SAM0_CONFIGURE(n)						\
 do {									\
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);		\
+	const struct adc_sam0_cfg *const cfg = dev->config;		\
 	Adc * const adc = cfg->regs;					\
 	/* Linearity is split across two words */			\
 	uint32_t lin = ((*(uint32_t *)ADC_FUSES_LINEARITY_0_ADDR) &		\
@@ -582,11 +551,12 @@ do {									\
 		      ADC_FUSES_BIASCAL_Msk) >> ADC_FUSES_BIASCAL_Pos;	\
 	adc->CALIB.reg = ADC_CALIB_BIAS_CAL(bias) |			\
 			 ADC_CALIB_LINEARITY_CAL(lin);			\
-} while (0)
+} while (false)
 
 #endif
 
 #define ADC_SAM0_DEVICE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static void adc_sam0_config_##n(const struct device *dev);	\
 	static const struct adc_sam0_cfg adc_sam_cfg_##n = {		\
 		.regs = (Adc *)DT_INST_REG_ADDR(n),			\
@@ -596,6 +566,7 @@ do {									\
 					  _FREQ_HZ) /			\
 			DT_INST_PROP(n, prescaler),			\
 		.config_func = &adc_sam0_config_##n,			\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 	static struct adc_sam0_data adc_sam_data_##n = {		\
 		ADC_CONTEXT_INIT_TIMER(adc_sam_data_##n, ctx),		\
@@ -605,15 +576,15 @@ do {									\
 	DEVICE_DT_INST_DEFINE(n, adc_sam0_init, NULL,			\
 			    &adc_sam_data_##n,				\
 			    &adc_sam_cfg_##n, POST_KERNEL,		\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_ADC_INIT_PRIORITY,			\
 			    &adc_sam0_api);				\
 	static void adc_sam0_config_##n(const struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    DT_INST_IRQ(n, priority),			\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, resrdy, irq),	\
+			    DT_INST_IRQ_BY_NAME(n, resrdy, priority),	\
 			    adc_sam0_isr,				\
 			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
+		irq_enable(DT_INST_IRQ_BY_NAME(n, resrdy, irq));	\
 		ADC_SAM0_CONFIGURE(n);					\
 	}
 

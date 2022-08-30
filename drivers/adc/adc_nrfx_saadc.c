@@ -7,12 +7,28 @@
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 #include <hal/nrf_saadc.h>
+#include <zephyr/dt-bindings/adc/nrf-adc.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_nrfx_saadc);
 
 #define DT_DRV_COMPAT nordic_nrf_saadc
+
+BUILD_ASSERT((NRF_SAADC_AIN0 == NRF_SAADC_INPUT_AIN0) &&
+	     (NRF_SAADC_AIN1 == NRF_SAADC_INPUT_AIN1) &&
+	     (NRF_SAADC_AIN2 == NRF_SAADC_INPUT_AIN2) &&
+	     (NRF_SAADC_AIN3 == NRF_SAADC_INPUT_AIN3) &&
+	     (NRF_SAADC_AIN4 == NRF_SAADC_INPUT_AIN4) &&
+	     (NRF_SAADC_AIN5 == NRF_SAADC_INPUT_AIN5) &&
+	     (NRF_SAADC_AIN6 == NRF_SAADC_INPUT_AIN6) &&
+	     (NRF_SAADC_AIN7 == NRF_SAADC_INPUT_AIN7) &&
+	     (NRF_SAADC_AIN7 == NRF_SAADC_INPUT_AIN7) &&
+#if defined(SAADC_CH_PSELP_PSELP_VDDHDIV5)
+	     (NRF_SAADC_VDDHDIV5 == NRF_SAADC_INPUT_VDDHDIV5) &&
+#endif
+	     (NRF_SAADC_VDD == NRF_SAADC_INPUT_VDD),
+	     "Definitions from nrf-adc.h do not match those from nrf_saadc.h");
 
 struct driver_data {
 	struct adc_context ctx;
@@ -433,7 +449,7 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 			    NULL,					\
 			    NULL,					\
 			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_ADC_INIT_PRIORITY,			\
 			    &adc_nrfx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SAADC_INIT)

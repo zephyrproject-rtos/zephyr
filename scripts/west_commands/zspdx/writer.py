@@ -54,14 +54,17 @@ SPDXID: {pkg.cfg.spdxID}
 PackageDownloadLocation: NOASSERTION
 PackageLicenseConcluded: {pkg.concludedLicense}
 """)
-    for licFromFiles in pkg.licenseInfoFromFiles:
-        f.write(f"PackageLicenseInfoFromFiles: {licFromFiles}\n")
     f.write(f"""PackageLicenseDeclared: {pkg.cfg.declaredLicense}
 PackageCopyrightText: {pkg.cfg.copyrightText}
 """)
 
     # flag whether files analyzed / any files present
     if len(pkg.files) > 0:
+        if len(pkg.licenseInfoFromFiles) > 0:
+            for licFromFiles in pkg.licenseInfoFromFiles:
+                f.write(f"PackageLicenseInfoFromFiles: {licFromFiles}\n")
+        else:
+            f.write(f"PackageLicenseInfoFromFiles: NOASSERTION\n")
         f.write(f"FilesAnalyzed: true\nPackageVerificationCode: {pkg.verificationCode}\n\n")
     else:
         f.write(f"FilesAnalyzed: false\nPackageComment: Utility target; no files\n\n")
@@ -125,7 +128,7 @@ Created: {datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
 
     # write other license info, if any
     if len(doc.customLicenseIDs) > 0:
-        for lic in list(doc.customLicenseIDs).sort():
+        for lic in sorted(list(doc.customLicenseIDs)):
             writeOtherLicenseSPDX(f, lic)
 
 # Open SPDX document file for writing, write the document, and calculate

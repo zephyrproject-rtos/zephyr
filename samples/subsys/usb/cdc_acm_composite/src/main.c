@@ -14,13 +14,13 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <zephyr.h>
-#include <sys/ring_buffer.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/ring_buffer.h>
 
-#include <usb/usb_device.h>
-#include <logging/log.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cdc_acm_composite, LOG_LEVEL_INF);
 
 #define RING_BUF_SIZE	(64 * 2)
@@ -28,38 +28,47 @@ LOG_MODULE_REGISTER(cdc_acm_composite, LOG_LEVEL_INF);
 uint8_t buffer0[RING_BUF_SIZE];
 uint8_t buffer1[RING_BUF_SIZE];
 
-static struct serial_data {
-	const struct device *peer;
-	struct serial_data *peer_data;
-	struct ring_buf ringbuf;
-} peers[2];
+struct serial_peer {
+	const struct device *dev;
+	struct serial_peer *data;
+	struct ring_buf rb;
+};
+
+#define DEFINE_SERIAL_PEER(node_id) { .dev = DEVICE_DT_GET(node_id), },
+static struct serial_peer peers[] = {
+	DT_FOREACH_STATUS_OKAY(zephyr_cdc_acm_uart, DEFINE_SERIAL_PEER)
+};
+
+BUILD_ASSERT(ARRAY_SIZE(peers) >= 2, "Not enough CDC ACM instances");
 
 static void interrupt_handler(const struct device *dev, void *user_data)
 {
-	struct serial_data *dev_data = user_data;
+	struct serial_peer *peer = user_data;
 
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
-		const struct device *peer = dev_data->peer;
-
-		LOG_DBG("dev %p dev_data %p", dev, dev_data);
+		LOG_DBG("dev %p peer %p", dev, peer);
 
 		if (uart_irq_rx_ready(dev)) {
 			uint8_t buf[64];
-			size_t read, wrote;
-			struct ring_buf *ringbuf =
-					&dev_data->peer_data->ringbuf;
+			int read;
+			size_t wrote;
+			struct ring_buf *rb = &peer->data->rb;
 
 			read = uart_fifo_read(dev, buf, sizeof(buf));
-			if (read) {
-				wrote = ring_buf_put(ringbuf, buf, read);
-				if (wrote < read) {
-					LOG_ERR("Drop %zu bytes", read - wrote);
-				}
+			if (read < 0) {
+				LOG_ERR("Failed to read UART FIFO");
+				read = 0;
+			};
 
-				uart_irq_tx_enable(dev_data->peer);
+			wrote = ring_buf_put(rb, buf, read);
+			if (wrote < read) {
+				LOG_ERR("Drop %zu bytes", read - wrote);
+			}
 
-				LOG_DBG("dev %p -> dev %p send %zu bytes",
-					dev, peer, wrote);
+			LOG_DBG("dev %p -> dev %p send %zu bytes",
+				dev, peer->dev, wrote);
+			if (wrote) {
+				uart_irq_tx_enable(peer->dev);
 			}
 		}
 
@@ -67,8 +76,7 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 			uint8_t buf[64];
 			size_t wrote, len;
 
-			len = ring_buf_get(&dev_data->ringbuf, buf,
-					   sizeof(buf));
+			len = ring_buf_get(&peer->rb, buf, sizeof(buf));
 			if (!len) {
 				LOG_DBG("dev %p TX buffer empty", dev);
 				uart_irq_tx_disable(dev);
@@ -109,23 +117,15 @@ static void uart_line_set(const struct device *dev)
 
 void main(void)
 {
+	uint32_t dtr = 0U;
 	int ret;
 
-	struct serial_data *dev_data0 = &peers[0];
-	struct serial_data *dev_data1 = &peers[1];
-	const struct device *dev0, *dev1;
-	uint32_t dtr = 0U;
-
-	dev0 = device_get_binding("CDC_ACM_0");
-	if (!dev0) {
-		LOG_DBG("CDC_ACM_0 device not found");
-		return;
-	}
-
-	dev1 = device_get_binding("CDC_ACM_1");
-	if (!dev1) {
-		LOG_DBG("CDC_ACM_1 device not found");
-		return;
+	for (int idx = 0; idx < ARRAY_SIZE(peers); idx++) {
+		if (!device_is_ready(peers[idx].dev)) {
+			LOG_ERR("CDC ACM device %s is not ready",
+				peers[idx].dev->name);
+			return;
+		}
 	}
 
 	ret = usb_enable(NULL);
@@ -137,7 +137,7 @@ void main(void)
 	LOG_INF("Wait for DTR");
 
 	while (1) {
-		uart_line_ctrl_get(dev0, UART_LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(peers[0].dev, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}
@@ -146,7 +146,7 @@ void main(void)
 	}
 
 	while (1) {
-		uart_line_ctrl_get(dev1, UART_LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(peers[1].dev, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}
@@ -156,21 +156,19 @@ void main(void)
 
 	LOG_INF("DTR set, start test");
 
-	uart_line_set(dev0);
-	uart_line_set(dev1);
+	uart_line_set(peers[0].dev);
+	uart_line_set(peers[1].dev);
 
-	dev_data0->peer = dev1;
-	dev_data0->peer_data = dev_data1;
-	ring_buf_init(&dev_data0->ringbuf, sizeof(buffer0), buffer0);
+	peers[0].data = &peers[1];
+	peers[1].data = &peers[0];
 
-	dev_data1->peer = dev0;
-	dev_data1->peer_data = dev_data0;
-	ring_buf_init(&dev_data1->ringbuf, sizeof(buffer1), buffer1);
+	ring_buf_init(&peers[0].rb, sizeof(buffer0), buffer0);
+	ring_buf_init(&peers[1].rb, sizeof(buffer1), buffer1);
 
-	uart_irq_callback_user_data_set(dev0, interrupt_handler, dev_data0);
-	uart_irq_callback_user_data_set(dev1, interrupt_handler, dev_data1);
+	uart_irq_callback_user_data_set(peers[1].dev, interrupt_handler, &peers[0]);
+	uart_irq_callback_user_data_set(peers[0].dev, interrupt_handler, &peers[1]);
 
 	/* Enable rx interrupts */
-	uart_irq_rx_enable(dev0);
-	uart_irq_rx_enable(dev1);
+	uart_irq_rx_enable(peers[0].dev);
+	uart_irq_rx_enable(peers[1].dev);
 }

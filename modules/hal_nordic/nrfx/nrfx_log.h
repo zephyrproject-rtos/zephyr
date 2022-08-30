@@ -7,7 +7,7 @@
 #ifndef NRFX_LOG_H__
 #define NRFX_LOG_H__
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #ifdef __cplusplus
 extern "C" {

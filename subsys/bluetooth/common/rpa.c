@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
@@ -19,7 +19,7 @@
 #define LOG_MODULE_NAME bt_rpa
 #include "common/log.h"
 
-#include <bluetooth/crypto.h>
+#include <zephyr/bluetooth/crypto.h>
 
 #if defined(CONFIG_BT_CTLR) && defined(CONFIG_BT_HOST_CRYPTO)
 #include "../controller/util/util.h"

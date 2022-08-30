@@ -1,5 +1,5 @@
 // Copyright (c) 2020 Intel Corporation
-// SPDX-License-Identifer: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 // In patch mode, patch all device instance to const (if not already).
 
@@ -99,7 +99,7 @@ parameter list[nb_params] params;
   }
 )
 
-// Insert function implentations and inlines
+// Insert function implementations and inlines
 @script:python
   depends on report
 @

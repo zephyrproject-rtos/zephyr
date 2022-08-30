@@ -7,9 +7,9 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_FDC2X1X_FDC2X1X_H_
 #define ZEPHYR_DRIVERS_SENSOR_FDC2X1X_FDC2X1X_H_
 
-#include <drivers/sensor.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 
 #define PI              (3.14159265)
 
@@ -149,10 +149,6 @@ enum fdc2x1x_op_mode {
 struct fdc2x1x_data {
 	bool fdc221x;
 
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state pm_state;
-#endif
-
 #ifdef CONFIG_FDC2X1X_TRIGGER
 	struct gpio_callback gpio_cb;
 	uint16_t int_config;
@@ -185,17 +181,11 @@ struct fdc2x1x_chx_config {
 };
 
 struct fdc2x1x_config {
-	const struct device *bus;
-	uint8_t i2c_addr;
-
-	const struct device *sd_gpio;
-	gpio_pin_t sd_pin;
-	gpio_dt_flags_t sd_flags;
+	struct i2c_dt_spec i2c;
+	struct gpio_dt_spec sd_gpio;
 
 #ifdef CONFIG_FDC2X1X_TRIGGER
-	const struct device *intb_gpio;
-	gpio_pin_t intb_pin;
-	gpio_dt_flags_t intb_flags;
+	struct gpio_dt_spec intb_gpio;
 #endif
 
 	bool fdc2x14;

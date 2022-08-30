@@ -1,0 +1,19 @@
+tests:
+  logging.log_syst.mipi_syst:
+    tags: log_syst logging
+    arch_exclude: mips nios2 posix sparc
+    filter: not CONFIG_64BIT
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
+      - sam_e70_xplained
+    extra_configs:
+      - CONFIG_LOG_MIPI_SYST_ENABLE=y
+      - CONFIG_LOG_BACKEND_MOCK_OUTPUT_SYST=y
+  logging.log_syst.text:
+    tags: log_syst logging
+    arch_exclude: mips nios2 posix sparc
+    filter: not CONFIG_64BIT
+    extra_configs:
+      - CONFIG_LOG_MIPI_SYST_ENABLE=n
+      - CONFIG_LOG_BACKEND_MOCK_OUTPUT_SYST=n

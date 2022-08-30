@@ -18,13 +18,13 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <sys/byteorder.h>
-#include <usb/usb_device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usb_device.h>
 #include "usb_dw_registers.h"
 #include <soc.h>
-
+#include <zephyr/devicetree.h>
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_dw);
 
 /* Number of SETUP back-to-back packets */
@@ -695,7 +695,7 @@ static void usb_dw_isr_handler(const void *unused)
 
 		if (int_status & USB_DW_GINTSTS_OEP_INT) {
 			/* No OUT interrupt expected in FIFO mode,
-			 * just clear interruot
+			 * just clear interrupt
 			 */
 			usb_dw_int_oep_handler();
 		}
@@ -719,7 +719,12 @@ int usb_dc_attach(void)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    usb_dw_isr_handler, 0,
+#ifdef CONFIG_GIC_V1
+		    DT_INST_IRQ(0, type));
+#else
 		    DT_INST_IRQ(0, sense));
+#endif
+
 	irq_enable(DT_INST_IRQN(0));
 
 	usb_dw_ctrl.attached = 1U;

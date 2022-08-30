@@ -7,8 +7,6 @@ include: i2c-device.yaml
 bus: ht16k33
 
 properties:
-    label:
-      required: true
     irq-gpios:
       type: phandle-array
       required: false

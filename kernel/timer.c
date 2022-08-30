@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <ksched.h>
-#include <wait_q.h>
-#include <syscall_handler.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/syscall_handler.h>
 #include <stdbool.h>
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 
 static struct k_spinlock lock;
 
@@ -19,13 +19,12 @@ static struct k_spinlock lock;
  * @brief Handle expiration of a kernel timer object.
  *
  * @param t  Timeout used by the timer.
- *
- * @return N/A
  */
 void z_timer_expiration_handler(struct _timeout *t)
 {
 	struct k_timer *timer = CONTAINER_OF(t, struct k_timer, timeout);
 	struct k_thread *thread;
+	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	/*
 	 * if the timer is periodic, start it again; don't add _TICK_ALIGN
@@ -33,8 +32,25 @@ void z_timer_expiration_handler(struct _timeout *t)
 	 */
 	if (!K_TIMEOUT_EQ(timer->period, K_NO_WAIT) &&
 	    !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
+		k_timeout_t next = timer->period;
+
+#ifdef CONFIG_TIMEOUT_64BIT
+		/* Exploit the fact that uptime during a kernel
+		 * timeout handler reflects the time of the scheduled
+		 * event and not real time to get some inexpensive
+		 * protection against late interrupts.  If we're
+		 * delayed for any reason, we still end up calculating
+		 * the next expiration as a regular stride from where
+		 * we "should" have run.  Requires absolute timeouts.
+		 * (Note offset by one: we're nominally at the
+		 * beginning of a tick, so need to defeat the "round
+		 * down" behavior on timeout addition).
+		 */
+		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1
+					   + timer->period.ticks);
+#endif
 		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-			     timer->period);
+			      next);
 	}
 
 	/* update timer's status */
@@ -42,30 +58,29 @@ void z_timer_expiration_handler(struct _timeout *t)
 
 	/* invoke timer expiry function */
 	if (timer->expiry_fn != NULL) {
+		/* Unlock for user handler. */
+		k_spin_unlock(&lock, key);
 		timer->expiry_fn(timer);
+		key = k_spin_lock(&lock);
 	}
 
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_spin_unlock(&lock, key);
 		return;
 	}
 
 	thread = z_waitq_head(&timer->wait_q);
 
 	if (thread == NULL) {
+		k_spin_unlock(&lock, key);
 		return;
 	}
 
-	/*
-	 * Interrupts _DO NOT_ have to be locked in this specific
-	 * instance of thread unpending because a) this is the only
-	 * place a thread can be taken off this pend queue, and b) the
-	 * only place a thread can be put on the pend queue is at
-	 * thread level, which of course cannot interrupt the current
-	 * context.
-	 */
 	z_unpend_thread_no_timeout(thread);
 
 	arch_thread_return_value_set(thread, 0);
+
+	k_spin_unlock(&lock, key);
 
 	z_ready_thread(thread);
 }
@@ -146,7 +161,7 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
 
-	int inactive = z_abort_timeout(&timer->timeout) != 0;
+	bool inactive = (z_abort_timeout(&timer->timeout) != 0);
 
 	if (inactive) {
 		return;

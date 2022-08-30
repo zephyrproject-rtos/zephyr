@@ -13,7 +13,6 @@
 	w25q64jvxgim: w25q64jvxgim@0 {
 		compatible = "winbond,w25q64jvxgim", "jedec,spi-nor";
 		size = < 8388607 >;
-		label = "W25Q64JVXGIM";
 		reg = < 0 >;
 		spi-max-frequency = < 133000000 >;
 		status = "okay";
@@ -27,4 +26,14 @@
 
 &usdhc1 {
 	status = "okay";
+	no-1-8-v;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
 };

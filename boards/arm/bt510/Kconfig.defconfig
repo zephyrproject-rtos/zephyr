@@ -8,11 +8,10 @@ if BOARD_BT510
 config BOARD
 	default "bt510"
 
-config IEEE802154_NRF5
-	default y
-	depends on IEEE802154
-
 config BT_CTLR
 	default BT
+
+config I2C
+	default SENSOR
 
 endif # BOARD_BT510

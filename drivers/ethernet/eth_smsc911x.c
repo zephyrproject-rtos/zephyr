@@ -12,26 +12,26 @@
 #define LOG_MODULE_NAME eth_smsc911x
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <soc.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <init.h>
-#include <kernel.h>
-#include <sys/__assert.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/sys_io.h>
-#include <net/ethernet.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/net/ethernet.h>
 #include "ethernet/eth_stats.h"
 
 #ifdef CONFIG_SHARED_IRQ
-#include <shared_irq.h>
+#include <zephyr/shared_irq.h>
 #endif
 
 #include "eth_smsc911x_priv.h"

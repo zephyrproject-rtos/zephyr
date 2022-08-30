@@ -9,27 +9,36 @@ config ARCH
 	default "riscv64" if 64BIT
 	default "riscv32"
 
-config COMPRESSED_ISA
-	bool
-	default y if 64BIT
-
 config FLOAT_HARD
-	bool "Enable hard-float calling convention"
+	bool "Hard-float calling convention"
 	default y
 	depends on FPU
 	help
 	  This option enables the hard-float calling convention.
 
-menu "RISCV Processor Options"
-
-config CORE_E31
-	bool "Use E31 core"
-	select RISCV_PMP
-	select ARCH_HAS_USERSPACE
-	select ARCH_HAS_STACK_PROTECTION if PMP_STACK_GUARD
+config RISCV_GP
+	bool "RISC-V global pointer relative addressing"
 	default n
 	help
-	  This option signifies the use of a core of the E31 family.
+	  Use global pointer relative addressing for small globals declared
+	  anywhere in the executable. It can benefit performance and reduce
+	  the code size.
+
+	  Note: To support this feature, RISC-V SoC needs to initialize
+	  global pointer at program start or earlier than any instruction
+	  using GP relative addressing.
+
+config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+	bool "Do not use mret outside a trap handler context"
+	depends on !RISCV_PMP
+	help
+	  Use mret instruction only when in a trap handler.
+	  This is for RISC-V implementations that require every mret to be
+	  balanced with an ecall. This is not required by the RISC-V spec
+	  and most people should say n here to minimize context switching
+	  overhead.
+
+menu "RISCV Processor Options"
 
 config INCLUDE_RESET_VECTOR
 	bool "Include Reset vector"
@@ -38,7 +47,7 @@ config INCLUDE_RESET_VECTOR
 	  prepares for running C code.
 
 config RISCV_SOC_CONTEXT_SAVE
-	bool "Enable SOC-based context saving in IRQ handlers"
+	bool "SOC-based context saving in IRQ handlers"
 	select RISCV_SOC_OFFSETS
 	help
 	  Enable low-level SOC-specific context management, for SOCs
@@ -73,7 +82,7 @@ config RISCV_SOC_CONTEXT_SAVE
 	  pointer address is in a0, and ra contains the return address.
 
 config RISCV_SOC_OFFSETS
-	bool "Enable SOC-based offsets"
+	bool "SOC-based offsets"
 	help
 	  Enabling this option requires that the SoC provide a soc_offsets.h
 	  header which defines the following macros:
@@ -85,16 +94,17 @@ config RISCV_SOC_OFFSETS
 	    See gen_offset.h for more details.
 
 config RISCV_SOC_INTERRUPT_INIT
-	bool "Enable SOC-based interrupt initialization"
+	bool "SOC-based interrupt initialization"
 	help
 	  Enable SOC-based interrupt initialization
 	  (call soc_interrupt_init, within _IntLibInit when enabled)
 
-config RISCV_SOC_INIT_GP_VALUE
-	bool "Enable SOC-based global pointer register initialization"
+config RISCV_SOC_MCAUSE_EXCEPTION_MASK
+	hex
+	default 0x7FFFFFFFFFFFFFFF if 64BIT
+	default 0x7FFFFFFF
 	help
-	  Enable SOC-based pointer register initialization
-	  (call __soc_get_gp_initial_value when initializing a thread)
+	  Specify the bits to use for exception code in mcause register.
 
 config RISCV_GENERIC_TOOLCHAIN
 	bool "Compile using generic riscv32 toolchain"
@@ -118,36 +128,84 @@ config GEN_IRQ_VECTOR_TABLE
 config NUM_IRQS
 	int
 
-menuconfig RISCV_PMP
+config RISCV_PMP
 	bool "RISC-V PMP Support"
-	default n
 	select THREAD_STACK_INFO
 	select CPU_HAS_MPU
+	select ARCH_HAS_USERSPACE
+	select ARCH_HAS_STACK_PROTECTION
 	select MPU
 	select SRAM_REGION_PERMISSIONS
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
-	select PMP_POWER_OF_TWO_ALIGNMENT if USERSPACE
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE
+	select THREAD_LOCAL_STORAGE if USERSPACE
 	help
 	  MCU implements Physical Memory Protection.
-	  Memory protection against read-only area writing
-	  is natively supported on real HW.
 
 if RISCV_PMP
-source "arch/riscv/core/pmp/Kconfig"
+
+config PMP_SLOTS
+	int "Number of PMP slots"
+	default 8
+	help
+	  This is the number of PMP entries implemented by the hardware.
+	  Typical values are 8 or 16.
+
+config PMP_POWER_OF_TWO_ALIGNMENT
+	bool "Enforce power-of-two alignment on PMP memory areas"
+	depends on USERSPACE
+	default y if TEST_USERSPACE
+	default y if (PMP_SLOTS = 8)
+	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	select GEN_PRIV_STACKS
+	help
+	  This option reduces the PMP slot usage but increases
+	  memory consumption. Useful when enabling userspace mode with
+	  many memory domains and/or few PMP slots available.
+
 endif #RISCV_PMP
+
+config PMP_STACK_GUARD
+	def_bool y
+	depends on HW_STACK_PROTECTION
+
+config PMP_STACK_GUARD_MIN_SIZE
+	int "Stack Guard area size"
+	depends on PMP_STACK_GUARD
+	default 1024 if 64BIT
+	default 512
+	help
+	  The Hardware Stack Protection implements a guard area at the bottom
+	  of the stack using the PMP to catch stack overflows by marking that
+	  guard area not accessible.
+
+	  This is the size of the guard area. This should be large enough to
+	  catch any sudden jump in stack pointer decrement, plus some
+	  wiggle room to accommodate the eventual overflow exception
+	  stack usage.
 
 endmenu
 
 config MAIN_STACK_SIZE
 	default 4096 if 64BIT
+	default 2048 if PMP_STACK_GUARD
 
-config TEST_EXTRA_STACKSIZE
-	default 1024 if 64BIT
+config TEST_EXTRA_STACK_SIZE
+	default 1024
 
 config CMSIS_THREAD_MAX_STACK_SIZE
 	default 1024 if 64BIT
 
 config CMSIS_V2_THREAD_MAX_STACK_SIZE
 	default 1024 if 64BIT
+
+config ARCH_IRQ_VECTOR_TABLE_ALIGN
+	default 256
+
+config GEN_IRQ_VECTOR_TABLE
+	select RISCV_MTVEC_VECTORED_MODE if SOC_FAMILY_RISCV_PRIVILEGE
+
+rsource "Kconfig.isa"
+rsource "Kconfig.core"
 
 endmenu

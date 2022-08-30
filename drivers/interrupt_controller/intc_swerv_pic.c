@@ -10,10 +10,10 @@
  * @brief SweRV EH1 PIC driver
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <init.h>
-#include <sw_isr_table.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/init.h>
+#include <zephyr/sw_isr_table.h>
 
 #define SWERV_PIC_MAX_NUM	CONFIG_NUM_IRQS
 #define SWERV_PIC_MAX_ID	(SWERV_PIC_MAX_NUM + RISCV_MAX_GENERIC_IRQ)
@@ -135,8 +135,9 @@ static void swerv_pic_irq_handler(const void *arg)
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
 	ite = (struct _isr_table_entry *)&_sw_isr_table[irq];
-	if (ite->isr)
+	if (ite->isr) {
 		ite->isr(ite->arg);
+	}
 
 	swerv_pic_write(SWERV_PIC_meigwclr(irq), 0);
 }
@@ -235,4 +236,4 @@ int arch_irq_is_enabled(unsigned int irq)
 	return !!(mie & (1 << irq));
 }
 
-SYS_INIT(swerv_pic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(swerv_pic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);

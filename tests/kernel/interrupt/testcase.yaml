@@ -1,18 +1,15 @@
 tests:
   arch.interrupt:
     # nios2 excluded, see #22956
-    arch_exclude: nios2 x86
+    arch_exclude: nios2
+    # FIXME: qemu_cortex_a53 is excluded, see #49491
+    platform_exclude: qemu_cortex_a53 qemu_cortex_a53_smp
     tags: kernel interrupt
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
 
-  arch.interrupt.x86_64:
-    arch_allow: x86
-    tags: kernel interrupt
-    filter: CONFIG_X86_64
-
-  arch.interrupt.x86:
-    arch_allow: x86
-    tags: kernel interrupt
-    filter: not CONFIG_X86_64
+  arch.interrupt.linker_generator:
+    platform_allow: qemu_cortex_m3
+    tags: kernel interrupt linker_generator
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
     extra_configs:
-    - CONFIG_COMPILER_OPT="-mgeneral-regs-only"
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

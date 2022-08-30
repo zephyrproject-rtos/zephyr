@@ -46,7 +46,6 @@ description: |
          ...
          dma-requests = <7>;
          status = "disabled";
-         label = "DMA_1";
         };
 
   For the client part, example for stm32f103 on DMA1 instance

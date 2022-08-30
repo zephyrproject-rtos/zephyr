@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <sys/mpsc_pbuf.h>
+#include <zephyr/sys/mpsc_pbuf.h>
 
 #define MPSC_PBUF_DEBUG 0
 
@@ -35,6 +35,7 @@ void mpsc_pbuf_init(struct mpsc_pbuf_buffer *buffer,
 	buffer->notify_drop = cfg->notify_drop;
 	buffer->buf = cfg->buf;
 	buffer->size = cfg->size;
+	buffer->max_usage = 0;
 	buffer->flags = cfg->flags;
 
 	if (is_power_of_two(buffer->size)) {
@@ -43,6 +44,7 @@ void mpsc_pbuf_init(struct mpsc_pbuf_buffer *buffer,
 
 	err = k_sem_init(&buffer->sem, 0, 1);
 	__ASSERT_NO_MSG(err == 0);
+	ARG_UNUSED(err);
 }
 
 static inline bool free_space(struct mpsc_pbuf_buffer *buffer, uint32_t *res)
@@ -74,6 +76,26 @@ static inline bool available(struct mpsc_pbuf_buffer *buffer, uint32_t *res)
 	return true;
 }
 
+static inline uint32_t get_usage(struct mpsc_pbuf_buffer *buffer)
+{
+	uint32_t f;
+
+	if (free_space(buffer, &f)) {
+		f += (buffer->rd_idx - 1);
+	}
+
+	return buffer->size - 1 - f;
+}
+
+static inline void max_utilization_update(struct mpsc_pbuf_buffer *buffer)
+{
+	if (!(buffer->flags & MPSC_PBUF_MAX_UTILIZATION)) {
+		return;
+	}
+
+	buffer->max_usage = MAX(buffer->max_usage, get_usage(buffer));
+}
+
 static inline bool is_valid(union mpsc_pbuf_generic *item)
 {
 	return item->hdr.valid;
@@ -94,18 +116,6 @@ static inline uint32_t idx_inc(struct mpsc_pbuf_buffer *buffer,
 	}
 
 	return (i >= buffer->size) ? i - buffer->size : i;
-}
-
-static inline uint32_t idx_dec(struct mpsc_pbuf_buffer *buffer,
-				uint32_t idx, uint32_t val)
-{
-	uint32_t i = idx - val;
-
-	if (buffer->flags & MPSC_PBUF_SIZE_POW2) {
-		return idx & (buffer->size - 1);
-	}
-
-	return (i >= buffer->size) ? i + buffer->size : i;
 }
 
 static inline uint32_t get_skip(union mpsc_pbuf_generic *item)
@@ -185,7 +195,7 @@ static union mpsc_pbuf_generic *drop_item_locked(struct mpsc_pbuf_buffer *buffer
 }
 
 void mpsc_pbuf_put_word(struct mpsc_pbuf_buffer *buffer,
-			union mpsc_pbuf_generic item)
+			const union mpsc_pbuf_generic item)
 {
 	bool cont;
 	uint32_t free_wlen;
@@ -202,6 +212,7 @@ void mpsc_pbuf_put_word(struct mpsc_pbuf_buffer *buffer,
 			buffer->tmp_wr_idx = idx_inc(buffer,
 						     buffer->tmp_wr_idx, 1);
 			buffer->wr_idx = idx_inc(buffer, buffer->wr_idx, 1);
+			max_utilization_update(buffer);
 		} else {
 			bool user_drop = buffer->flags & MPSC_PBUF_MODE_OVERWRITE;
 
@@ -214,7 +225,9 @@ void mpsc_pbuf_put_word(struct mpsc_pbuf_buffer *buffer,
 
 		if (cont && valid_drop) {
 			/* Notify about item being dropped. */
-			buffer->notify_drop(buffer, dropped_item);
+			if (buffer->notify_drop) {
+				buffer->notify_drop(buffer, dropped_item);
+			}
 		}
 	} while (cont);
 
@@ -276,7 +289,9 @@ union mpsc_pbuf_generic *mpsc_pbuf_alloc(struct mpsc_pbuf_buffer *buffer,
 
 		if (cont && dropped_item && valid_drop) {
 			/* Notify about item being dropped. */
-			buffer->notify_drop(buffer, dropped_item);
+			if (buffer->notify_drop) {
+				buffer->notify_drop(buffer, dropped_item);
+			}
 			dropped_item = NULL;
 		}
 	} while (cont);
@@ -300,12 +315,14 @@ void mpsc_pbuf_commit(struct mpsc_pbuf_buffer *buffer,
 
 	item->hdr.valid = 1;
 	buffer->wr_idx = idx_inc(buffer, buffer->wr_idx, wlen);
+	max_utilization_update(buffer);
 	k_spin_unlock(&buffer->lock, key);
 	MPSC_PBUF_DBG(buffer, "committed %p ", item);
 }
 
 void mpsc_pbuf_put_word_ext(struct mpsc_pbuf_buffer *buffer,
-			union mpsc_pbuf_generic item, void *data)
+			    const union mpsc_pbuf_generic item,
+			    const void *data)
 {
 	static const size_t l =
 		(sizeof(item) + sizeof(data)) / sizeof(uint32_t);
@@ -327,10 +344,11 @@ void mpsc_pbuf_put_word_ext(struct mpsc_pbuf_buffer *buffer,
 			void **p =
 				(void **)&buffer->buf[buffer->tmp_wr_idx + 1];
 
-			*p = data;
+			*p = (void *)data;
 			buffer->tmp_wr_idx =
 				idx_inc(buffer, buffer->tmp_wr_idx, l);
 			buffer->wr_idx = idx_inc(buffer, buffer->wr_idx, l);
+			max_utilization_update(buffer);
 		} else if (wrap) {
 			add_skip_item(buffer, free_wlen);
 			cont = true;
@@ -346,13 +364,15 @@ void mpsc_pbuf_put_word_ext(struct mpsc_pbuf_buffer *buffer,
 
 		if (cont && dropped_item && valid_drop) {
 			/* Notify about item being dropped. */
-			buffer->notify_drop(buffer, dropped_item);
+			if (buffer->notify_drop) {
+				buffer->notify_drop(buffer, dropped_item);
+			}
 			dropped_item = NULL;
 		}
 	} while (cont);
 }
 
-void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer, uint32_t *data,
+void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer, const uint32_t *data,
 			size_t wlen)
 {
 	bool cont;
@@ -374,6 +394,7 @@ void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer, uint32_t *data,
 			buffer->tmp_wr_idx =
 				idx_inc(buffer, buffer->tmp_wr_idx, wlen);
 			buffer->wr_idx = idx_inc(buffer, buffer->wr_idx, wlen);
+			max_utilization_update(buffer);
 		} else if (wrap) {
 			add_skip_item(buffer, free_wlen);
 			cont = true;
@@ -389,13 +410,15 @@ void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer, uint32_t *data,
 
 		if (cont && dropped_item && valid_drop) {
 			/* Notify about item being dropped. */
-			buffer->notify_drop(buffer, dropped_item);
+			if (buffer->notify_drop) {
+				buffer->notify_drop(buffer, dropped_item);
+			}
 			dropped_item = NULL;
 		}
 	} while (cont);
 }
 
-union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
+const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
 {
 	union mpsc_pbuf_generic *item;
 	bool cont;
@@ -403,11 +426,10 @@ union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
 	do {
 		uint32_t a;
 		k_spinlock_key_t key;
-		bool wrap;
 
 		cont = false;
 		key = k_spin_lock(&buffer->lock);
-		wrap = available(buffer, &a);
+		(void)available(buffer, &a);
 		item = (union mpsc_pbuf_generic *)
 			&buffer->buf[buffer->tmp_rd_idx];
 
@@ -443,18 +465,19 @@ union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
 }
 
 void mpsc_pbuf_free(struct mpsc_pbuf_buffer *buffer,
-		     union mpsc_pbuf_generic *item)
+		     const union mpsc_pbuf_generic *item)
 {
 	uint32_t wlen = buffer->get_wlen(item);
 	k_spinlock_key_t key = k_spin_lock(&buffer->lock);
+	union mpsc_pbuf_generic *witem = (union mpsc_pbuf_generic *)item;
 
-	item->hdr.valid = 0;
+	witem->hdr.valid = 0;
 	if (!(buffer->flags & MPSC_PBUF_MODE_OVERWRITE) ||
 		 ((uint32_t *)item == &buffer->buf[buffer->rd_idx])) {
-		item->hdr.busy = 0;
+		witem->hdr.busy = 0;
 		buffer->rd_idx = idx_inc(buffer, buffer->rd_idx, wlen);
 	} else {
-		item->skip.len = wlen;
+		witem->skip.len = wlen;
 	}
 	MPSC_PBUF_DBG(buffer, "freed: %p ", item);
 
@@ -469,4 +492,23 @@ bool mpsc_pbuf_is_pending(struct mpsc_pbuf_buffer *buffer)
 	(void)available(buffer, &a);
 
 	return a ? true : false;
+}
+
+void mpsc_pbuf_get_utilization(struct mpsc_pbuf_buffer *buffer,
+			       uint32_t *size, uint32_t *now)
+{
+	/* One byte is left for full/empty distinction. */
+	*size = (buffer->size - 1) * sizeof(int);
+	*now = get_usage(buffer) * sizeof(int);
+}
+
+int mpsc_pbuf_get_max_utilization(struct mpsc_pbuf_buffer *buffer, uint32_t *max)
+{
+
+	if (!(buffer->flags & MPSC_PBUF_MAX_UTILIZATION)) {
+		return -ENOTSUP;
+	}
+
+	*max = buffer->max_usage * sizeof(int);
+	return 0;
 }

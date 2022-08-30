@@ -7,14 +7,14 @@
 #include <fcntl.h>
 
 /* Zephyr headers */
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_spair, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <kernel.h>
-#include <net/socket.h>
-#include <syscall_handler.h>
-#include <sys/__assert.h>
-#include <sys/fdtable.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/fdtable.h>
 
 #include "sockets_internal.h"
 
@@ -37,7 +37,7 @@ enum {
  * The implementation strives for compatibility with socketpair(2).
  *
  * Resources contained within this structure are said to be 'local', while
- * reources contained within the other half of the socketpair (or other
+ * resources contained within the other half of the socketpair (or other
  * endpoint) are said to be 'remote'.
  *
  * Theory of operation:
@@ -156,7 +156,7 @@ static inline void swap32(uint32_t *a, uint32_t *b)
  *
  * If no threads are blocking on A, then the signals have no effect.
  *
- * The memeory associated with the local endpoint is cleared and freed.
+ * The memory associated with the local endpoint is cleared and freed.
  */
 static void spair_delete(struct spair *spair)
 {
@@ -373,7 +373,7 @@ out:
  *    @ref spair.pipe. Thus, allowing more data to be written.
  *
  * 2) @ref SPAIR_SIG_CANCEL - the @em remote socketpair endpoint was closed
- *    Receipt of this result is analagous to SIGPIPE from POSIX
+ *    Receipt of this result is analogous to SIGPIPE from POSIX
  *    ("Write on a pipe with no one to read it."). In this case, the function
  *    will return -1 and set @ref errno to @ref EPIPE.
  *
@@ -387,7 +387,6 @@ out:
 static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 {
 	int res;
-	int key;
 	size_t avail;
 	bool is_nonblock;
 	size_t bytes_written;
@@ -403,10 +402,8 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 		goto out;
 	}
 
-	key = irq_lock();
-	is_nonblock = sock_is_nonblock(spair);
 	res = k_sem_take(&spair->sem, K_NO_WAIT);
-	irq_unlock(key);
+	is_nonblock = sock_is_nonblock(spair);
 	if (res < 0) {
 		if (is_nonblock) {
 			errno = EAGAIN;
@@ -595,7 +592,6 @@ out:
 static ssize_t spair_read(void *obj, void *buffer, size_t count)
 {
 	int res;
-	int key;
 	bool is_connected;
 	size_t avail;
 	bool is_nonblock;
@@ -610,10 +606,8 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 		goto out;
 	}
 
-	key = irq_lock();
-	is_nonblock = sock_is_nonblock(spair);
 	res = k_sem_take(&spair->sem, K_NO_WAIT);
-	irq_unlock(key);
+	is_nonblock = sock_is_nonblock(spair);
 	if (res < 0) {
 		if (is_nonblock) {
 			errno = EAGAIN;

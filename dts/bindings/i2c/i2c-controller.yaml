@@ -18,5 +18,3 @@ properties:
       type: int
       required: false
       description: Initial clock frequency in Hz
-    label:
-      required: true

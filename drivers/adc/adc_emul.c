@@ -12,13 +12,12 @@
 
 #define DT_DRV_COMPAT zephyr_adc_emul
 
-#include <drivers/adc.h>
-#include <drivers/adc/adc_emul.h>
-#include <kernel.h>
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/adc/adc_emul.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(adc_emul, CONFIG_ADC_LOG_LEVEL);
 
@@ -37,7 +36,7 @@ enum adc_emul_input_source {
 /**
  * @brief Channel of emulated ADC config
  *
- * This structure contains configuration of one channel of emualted ADC.
+ * This structure contains configuration of one channel of emulated ADC.
  */
 struct adc_emul_chan_cfg {
 	/** Pointer to function used to obtain input mV */
@@ -94,7 +93,7 @@ struct adc_emul_data {
 	struct adc_emul_chan_cfg *chan_cfg;
 	/** Structure used for acquisition thread */
 	struct k_thread thread;
-	/** Semaphore used to control acquisiton thread */
+	/** Semaphore used to control acquisition thread */
 	struct k_sem sem;
 	/** Mutex used to control access to channels config and ref voltages */
 	struct k_mutex cfg_mtx;
@@ -574,7 +573,7 @@ static int adc_emul_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(_num, adc_emul_init, NULL,		\
 			      &adc_emul_data_##_num,			\
 			      &adc_emul_config_##_num, POST_KERNEL,	\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+			      CONFIG_ADC_INIT_PRIORITY,			\
 			      &adc_emul_api_##_num)
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_EMUL_INIT);

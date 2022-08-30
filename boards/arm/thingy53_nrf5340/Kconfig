@@ -3,13 +3,6 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config THINGY53_MISO_WORKAROUND
-	bool "MISO workaround"
-	default SPI
-	help
-	  Workaround SPI bus MISO issues. The workaround sets dedicated pin
-	  high in order to avoid voltage drops on the SPI MISO line.
-
 config THINGY53_INIT_PRIORITY
 	int "Init priority"
 	default 79
@@ -19,58 +12,28 @@ config THINGY53_INIT_PRIORITY
 config IPM_NRFX
 	default IPM
 
-config RPMSG_SERVICE_DUAL_IPM_SUPPORT
-	default RPMSG_SERVICE
+config MBOX_NRFX_IPC
+	default MBOX
 
-if RPMSG_SERVICE_DUAL_IPM_SUPPORT
-
-config IPM_MSG_CH_0_ENABLE
-	default y
-
-config IPM_MSG_CH_1_ENABLE
-	default y
-
-config RPMSG_SERVICE_IPM_TX_NAME
-	default "IPM_0" if RPMSG_SERVICE_MODE_MASTER
-	default "IPM_1" if RPMSG_SERVICE_MODE_REMOTE
-
-config RPMSG_SERVICE_IPM_RX_NAME
-	default "IPM_1" if RPMSG_SERVICE_MODE_MASTER
-	default "IPM_0" if RPMSG_SERVICE_MODE_REMOTE
-
-config IPM_MSG_CH_0_TX
-	default RPMSG_SERVICE_MODE_MASTER
-
-config IPM_MSG_CH_0_RX
-	default RPMSG_SERVICE_MODE_REMOTE
-
-config IPM_MSG_CH_1_TX
-	default RPMSG_SERVICE_MODE_REMOTE
-
-config IPM_MSG_CH_1_RX
-	default RPMSG_SERVICE_MODE_MASTER
-
-endif # RPMSG_SERVICE_DUAL_IPM_SUPPORT
-
-if BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPPNS
+if BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
 
 config BOARD_ENABLE_DCDC_APP
-	bool "Enable Application MCU DCDC converter"
+	bool "Application MCU DCDC converter"
 	select SOC_DCDC_NRF53X_APP
 	default y
 
 config BOARD_ENABLE_DCDC_NET
-	bool "Enable Network MCU DCDC converter"
+	bool "Network MCU DCDC converter"
 	select SOC_DCDC_NRF53X_NET
 	default y
 
 config BOARD_ENABLE_DCDC_HV
-	bool "Enable High Voltage DCDC converter"
+	bool "High Voltage DCDC converter"
 	select SOC_DCDC_NRF53X_HV
 	default y
 
 config BOARD_ENABLE_CPUNET
-	bool "Enable nRF53 Network MCU"
+	bool "NRF53 Network MCU"
 	help
 	  This option enables releasing the Network 'force off' signal, which
 	  as a consequence will power up the Network MCU during system boot.
@@ -93,7 +56,7 @@ config DOMAIN_CPUNET_BOARD
 	  another board. For example hci_rpmsg on the nRF5340_cpunet for
 	  Bluetooth applications.
 
-endif # BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPPNS
+endif # BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
 
 if BOARD_THINGY53_NRF5340_CPUNET
 

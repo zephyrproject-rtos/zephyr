@@ -11,30 +11,10 @@ menuconfig IPC_SERVICE
 
 if IPC_SERVICE
 
-choice IPC_SERVICE_BACKEND
-	prompt "IPC Service backend"
-
-config IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
-	bool "RPMsg multiple instance backend"
-	select RPMSG_MULTI_INSTANCE
-
-endchoice
-
-if IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
-
-rsource "backends/Kconfig.rpmsg_mi"
-
-endif # IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
-
-
-config IPC_SERVICE_BACKEND_REG_PRIORITY
-	int "Initialization priority of modules registering IPC backend"
-	default 46
-	help
-	  The backend must be registered before the endpoint register.
+rsource "backends/Kconfig"
 
 module = IPC_SERVICE
 module-str = IPC service and backend
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "subsys/logging/Kconfig.template.log_config"
 
 endif # IPC_SERVICE

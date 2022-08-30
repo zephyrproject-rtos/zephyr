@@ -1,0 +1,55 @@
+# Copyright (c) 2022 Jimmy Ou <yanagiis@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Maxim MAX7219 LED display driver
+
+compatible: "maxim,max7219"
+
+include: spi-device.yaml
+
+properties:
+    scan-limit:
+      type: int
+      required: false
+      default: 7
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+      description: |
+        Number of scanned digits for MAX7219.
+        Display digit 0 only when scan-limit is 0, digits 0 & 1 when
+        scan-limit is 1, and so on.
+    intensity:
+      type: int
+      required: false
+      default: 0
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+      description: Intensity for MAX7219.
+    num-cascading:
+      type: int
+      required: false
+      default: 1
+      description: Number of cascading MAX7219.

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/ztest.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE) && \
 	defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
@@ -15,7 +15,7 @@ extern irq_target_state_t irq_target_state_set(unsigned int irq,
 	irq_target_state_t target_state);
 extern int irq_target_state_is_secure(unsigned int irq);
 
-void test_arm_irq_target_state(void)
+ZTEST(arm_irq_advanced_features, test_arm_irq_target_state)
 {
 	/* Determine an NVIC IRQ line that is implemented
 	 * but not currently in use.
@@ -77,9 +77,19 @@ void test_arm_irq_target_state(void)
 		"Target state not set to Secure\n");
 	zassert_equal(irq_target_state_is_secure(i), 0,
 		"Target state not set to Non-Secure\n");
+
+	result_state =
+		irq_target_state_set(i, IRQ_TARGET_STATE_SECURE);
+
+	zassert_equal(result_state, IRQ_TARGET_STATE_SECURE,
+		"Target state not set to Secure\n");
+
+	zassert_equal(irq_target_state_is_secure(i), 1,
+		"Target state not set to Secure\n");
+
 }
 #else
-void test_arm_irq_target_state(void)
+ZTEST(arm_irq_advanced_features, test_arm_irq_target_state)
 {
 	TC_PRINT("Skipped (TrustZone-M-enabled Cortex-M Mainline only)\n");
 }

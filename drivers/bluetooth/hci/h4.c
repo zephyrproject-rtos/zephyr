@@ -9,18 +9,18 @@
 #include <errno.h>
 #include <stddef.h>
 
-#include <zephyr.h>
-#include <arch/cpu.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/arch/cpu.h>
 
-#include <init.h>
-#include <drivers/uart.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 #include <string.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_driver
@@ -69,7 +69,7 @@ static struct {
 	.fifo = Z_FIFO_INITIALIZER(tx.fifo),
 };
 
-static const struct device *h4_dev;
+static const struct device *const h4_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_uart));
 
 static inline void h4_get_type(void)
 {
@@ -102,14 +102,26 @@ static inline void h4_get_type(void)
 	}
 }
 
+static void h4_read_hdr(void)
+{
+	int bytes_read = rx.hdr_len - rx.remaining;
+	int ret;
+
+	ret = uart_fifo_read(h4_dev, rx.hdr + bytes_read, rx.remaining);
+	if (unlikely(ret < 0)) {
+		BT_ERR("Unable to read from UART (ret %d)", ret);
+	} else {
+		rx.remaining -= ret;
+	}
+}
+
 static inline void get_acl_hdr(void)
 {
-	struct bt_hci_acl_hdr *hdr = &rx.acl;
-	int to_read = sizeof(*hdr) - rx.remaining;
+	h4_read_hdr();
 
-	rx.remaining -= uart_fifo_read(h4_dev, (uint8_t *)hdr + to_read,
-				       rx.remaining);
 	if (!rx.remaining) {
+		struct bt_hci_acl_hdr *hdr = &rx.acl;
+
 		rx.remaining = sys_le16_to_cpu(hdr->len);
 		BT_DBG("Got ACL header. Payload %u bytes", rx.remaining);
 		rx.have_hdr = true;
@@ -118,13 +130,12 @@ static inline void get_acl_hdr(void)
 
 static inline void get_iso_hdr(void)
 {
-	struct bt_hci_iso_hdr *hdr = &rx.iso;
-	unsigned int to_read = sizeof(*hdr) - rx.remaining;
+	h4_read_hdr();
 
-	rx.remaining -= uart_fifo_read(h4_dev, (uint8_t *)hdr + to_read,
-				       rx.remaining);
 	if (!rx.remaining) {
-		rx.remaining = sys_le16_to_cpu(hdr->len);
+		struct bt_hci_iso_hdr *hdr = &rx.iso;
+
+		rx.remaining = bt_iso_hdr_len(sys_le16_to_cpu(hdr->len));
 		BT_DBG("Got ISO header. Payload %u bytes", rx.remaining);
 		rx.have_hdr = true;
 	}
@@ -133,10 +144,9 @@ static inline void get_iso_hdr(void)
 static inline void get_evt_hdr(void)
 {
 	struct bt_hci_evt_hdr *hdr = &rx.evt;
-	int to_read = rx.hdr_len - rx.remaining;
 
-	rx.remaining -= uart_fifo_read(h4_dev, (uint8_t *)hdr + to_read,
-				       rx.remaining);
+	h4_read_hdr();
+
 	if (rx.hdr_len == sizeof(*hdr) && rx.remaining < sizeof(*hdr)) {
 		switch (rx.evt.evt) {
 		case BT_HCI_EVT_LE_META_EVENT:
@@ -154,8 +164,7 @@ static inline void get_evt_hdr(void)
 
 	if (!rx.remaining) {
 		if (rx.evt.evt == BT_HCI_EVT_LE_META_EVENT &&
-		    (rx.hdr[sizeof(*hdr)] == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
-		     rx.hdr[sizeof(*hdr)] == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
+		    (rx.hdr[sizeof(*hdr)] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
 			BT_DBG("Marking adv report as discardable");
 			rx.discardable = true;
 		}
@@ -253,8 +262,15 @@ static void rx_thread(void *p1, void *p2, void *p3)
 static size_t h4_discard(const struct device *uart, size_t len)
 {
 	uint8_t buf[33];
+	int err;
 
-	return uart_fifo_read(uart, buf, MIN(len, sizeof(buf)));
+	err = uart_fifo_read(uart, buf, MIN(len, sizeof(buf)));
+	if (unlikely(err < 0)) {
+		BT_ERR("Unable to read from UART (err %d)", err);
+		return 0;
+	}
+
+	return err;
 }
 
 static inline void read_payload(void)
@@ -264,6 +280,8 @@ static inline void read_payload(void)
 	int read;
 
 	if (!rx.buf) {
+		size_t buf_tailroom;
+
 		rx.buf = get_rx(K_NO_WAIT);
 		if (!rx.buf) {
 			if (rx.discardable) {
@@ -280,8 +298,10 @@ static inline void read_payload(void)
 
 		BT_DBG("Allocated rx.buf %p", rx.buf);
 
-		if (rx.remaining > net_buf_tailroom(rx.buf)) {
-			BT_ERR("Not enough space in buffer");
+		buf_tailroom = net_buf_tailroom(rx.buf);
+		if (buf_tailroom < rx.remaining) {
+			BT_ERR("Not enough space in buffer %u/%zu",
+			       rx.remaining, buf_tailroom);
 			rx.discard = rx.remaining;
 			reset_rx();
 			return;
@@ -291,6 +311,11 @@ static inline void read_payload(void)
 	}
 
 	read = uart_fifo_read(h4_dev, net_buf_tail(rx.buf), rx.remaining);
+	if (unlikely(read < 0)) {
+		BT_ERR("Failed to read UART (err %d)", read);
+		return;
+	}
+
 	net_buf_add(rx.buf, read);
 	rx.remaining -= read;
 
@@ -315,7 +340,8 @@ static inline void read_payload(void)
 
 	reset_rx();
 
-	if (evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) {
+	if (IS_ENABLED(CONFIG_BT_RECV_BLOCKING) &&
+	    (evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO)) {
 		BT_DBG("Calling bt_recv_prio(%p)", buf);
 		bt_recv_prio(buf);
 	}
@@ -401,7 +427,11 @@ static inline void process_tx(void)
 	}
 
 	bytes = uart_fifo_fill(h4_dev, tx.buf->data, tx.buf->len);
-	net_buf_pull(tx.buf, bytes);
+	if (unlikely(bytes < 0)) {
+		BT_ERR("Unable to write to UART (err %d)", bytes);
+	} else {
+		net_buf_pull(tx.buf, bytes);
+	}
 
 	if (tx.buf->len) {
 		return;
@@ -499,20 +529,37 @@ static int h4_open(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_HCI_SETUP)
+static int h4_setup(void)
+{
+	/* Extern bt_h4_vnd_setup function.
+	 * This function executes vendor-specific commands sequence to
+	 * initialize BT Controller before BT Host executes Reset sequence.
+	 * bt_h4_vnd_setup function must be implemented in vendor-specific HCI
+	 * extansion module if CONFIG_BT_HCI_SETUP is enabled.
+	 */
+	extern int bt_h4_vnd_setup(const struct device *dev);
+
+	return bt_h4_vnd_setup(h4_dev);
+}
+#endif
+
 static const struct bt_hci_driver drv = {
 	.name		= "H:4",
 	.bus		= BT_HCI_DRIVER_BUS_UART,
 	.open		= h4_open,
 	.send		= h4_send,
+#if defined(CONFIG_BT_HCI_SETUP)
+	.setup		= h4_setup
+#endif
 };
 
 static int bt_uart_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	h4_dev = device_get_binding(CONFIG_BT_UART_ON_DEV_NAME);
-	if (!h4_dev) {
-		return -EINVAL;
+	if (!device_is_ready(h4_dev)) {
+		return -ENODEV;
 	}
 
 	bt_hci_driver_register(&drv);

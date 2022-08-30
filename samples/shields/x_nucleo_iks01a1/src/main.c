@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 #include <stdio.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
 static int lis3mdl_trig_cnt;
 
 static void lis3mdl_trigger_handler(const struct device *dev,
-				    struct sensor_trigger *trig)
+				    const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, trig->chan);
 	lis3mdl_trig_cnt++;
@@ -25,29 +25,29 @@ void main(void)
 {
 	struct sensor_value temp, hum, press;
 	struct sensor_value magn_xyz[3], accel_xyz[3];
-	const struct device *hts221 = device_get_binding(DT_LABEL(DT_INST(0, st_hts221)));
-	const struct device *lis3mdl = device_get_binding(DT_LABEL(DT_INST(0, st_lis3mdl_magn)));
-	const struct device *lsm6ds0 = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6ds0)));
-	const struct device *lps25hb = device_get_binding(DT_LABEL(DT_INST(0, st_lps25hb_press)));
+	const struct device *const hts221 = DEVICE_DT_GET_ONE(st_hts221);
+	const struct device *const lis3mdl = DEVICE_DT_GET_ONE(st_lis3mdl_magn);
+	const struct device *const lsm6ds0 = DEVICE_DT_GET_ONE(st_lsm6ds0);
+	const struct device *const lps25hb = DEVICE_DT_GET_ONE(st_lps25hb_press);
 #if defined(CONFIG_LIS3MDL_TRIGGER)
 	struct sensor_trigger trig;
 	int cnt = 1;
 #endif
 
-	if (hts221 == NULL) {
-		printf("Could not get HTS221 device\n");
+	if (!device_is_ready(hts221)) {
+		printk("%s: device not ready.\n", hts221->name);
 		return;
 	}
-	if (lis3mdl == NULL) {
-		printf("Could not get LIS3MDL device\n");
+	if (!device_is_ready(lis3mdl)) {
+		printk("%s: device not ready.\n", lis3mdl->name);
 		return;
 	}
-	if (lsm6ds0 == NULL) {
-		printf("Could not get LSM6DS0 device\n");
+	if (!device_is_ready(lsm6ds0)) {
+		printk("%s: device not ready.\n", lsm6ds0->name);
 		return;
 	}
-	if (lps25hb == NULL) {
-		printf("Could not get LPS25HB device\n");
+	if (!device_is_ready(lps25hb)) {
+		printk("%s: device not ready.\n", lps25hb->name);
 		return;
 	}
 

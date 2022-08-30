@@ -6,14 +6,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <logging/log.h>
-#include <shell/shell.h>
-#include <drivers/flash.h>
-#include <device.h>
-#include <soc.h>
-#include <stdlib.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/device.h>
 
 LOG_MODULE_REGISTER(app);
 
@@ -25,13 +24,6 @@ LOG_MODULE_REGISTER(app);
 	shell_fprintf(shell, SHELL_INFO, fmt, ##__VA_ARGS__)
 #define PR_WARNING(shell, fmt, ...)				\
 	shell_fprintf(shell, SHELL_WARNING, fmt, ##__VA_ARGS__)
-/*
- * When DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL is available, we use it here.
- * Otherwise the device can be set at runtime with the set_device command.
- */
-#ifndef DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
-#define DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL ""
-#endif
 
 /* Command usage info. */
 #define WRITE_BLOCK_SIZE_HELP \
@@ -92,7 +84,8 @@ LOG_MODULE_REGISTER(app);
 #error Please increase CONFIG_SHELL_ARGC_MAX parameter.
 #endif
 
-static const struct device *flash_device;
+static const struct device *flash_device =
+	DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_flash_controller));
 
 static int check_flash_device(const struct shell *shell)
 {
@@ -351,7 +344,7 @@ static int cmd_write_block_size(const struct shell *shell, size_t argc,
 	int err = check_flash_device(shell);
 
 	if (!err) {
-		PR_SHELL(shell, "%d\n",
+		PR_SHELL(shell, "%zu\n",
 			 flash_get_write_block_size(flash_device));
 	}
 
@@ -535,7 +528,7 @@ static bool page_layout_cb(const struct flash_pages_info *info, void *datav)
 	sz = info->size;
 	PR_SHELL(data->shell,
 		 "\tPage %u: start 0x%08x, length 0x%lx (%lu, %lu KB)\n",
-		 info->index, info->start_offset, sz, sz, sz / KB(1));
+		 info->index, (uint32_t)info->start_offset, sz, sz, sz / KB(1));
 	return true;
 }
 
@@ -653,8 +646,8 @@ static int cmd_page_erase(const struct shell *shell, size_t argc, char **argv)
 		}
 		PR_SHELL(shell, "Erasing page %u (start offset 0x%x,"
 				" size 0x%x)\n",
-		       info.index, info.start_offset, info.size);
-		ret = do_erase(shell, info.start_offset, info.size);
+		       info.index, (uint32_t)info.start_offset, (uint32_t)info.size);
+		ret = do_erase(shell, info.start_offset, (uint32_t)info.size);
 		if (ret) {
 			return ret;
 		}
@@ -690,7 +683,7 @@ static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
 	for (i = 0; i < argc; i++) {
 		if (parse_u8(argv[i], &buf[i])) {
 			PR_ERROR(shell, "Argument %d (%s) is not a byte.\n",
-				 i + 2, argv[i]);
+				 (int)i + 2, argv[i]);
 			ret = -EINVAL;
 			goto bail;
 		}
@@ -734,14 +727,12 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 
 void main(void)
 {
-	flash_device =
-		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	if (flash_device) {
-		printk("Found flash controller %s.\n",
-			DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
+	if (device_is_ready(flash_device)) {
+		printk("Found flash controller %s.\n", flash_device->name);
 		printk("Flash I/O commands can be run.\n");
 	} else {
-		printk("**No flash controller found!**\n");
+		flash_device = NULL;
+		printk("**Flash controller not ready or not found!**\n");
 		printk("Run set_device <name> to specify one "
 		       "before using other commands.\n");
 	}

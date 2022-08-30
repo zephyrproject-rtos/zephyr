@@ -2,7 +2,7 @@
  * Common functions and helpers for BSIM audio tests
  *
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2020-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #ifndef ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_
 #define ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_
 
-#include "kernel.h"
+#include <zephyr/kernel.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -20,21 +20,23 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr.h>
+#include <zephyr/sys_clock.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
 
-#define WAIT_TIME (30 * 1e6) /*seconds*/
+#define WAIT_SECONDS 30                         /* seconds */
+#define WAIT_TIME (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
 
-#define WAIT_FOR(cond) while (!(cond)) { k_sleep(K_MSEC(1)); }
+#define WAIT_FOR_COND(cond) while (!(cond)) { k_sleep(K_MSEC(1)); }
 
 #define CREATE_FLAG(flag) static atomic_t flag = (atomic_t)false
 #define SET_FLAG(flag) (void)atomic_set(&flag, (atomic_t)true)
 #define UNSET_FLAG(flag) (void)atomic_set(&flag, (atomic_t)false)
+#define TEST_FLAG(flag) (atomic_get(&flag) == (atomic_t)true)
 #define WAIT_FOR_FLAG(flag) \
 	while (!(bool)atomic_get(&flag)) { \
 		(void)k_sleep(K_MSEC(1)); \
@@ -49,11 +51,12 @@
 #define PASS(...) \
 	do { \
 		bst_result = Passed; \
-		bs_trace_info_time(1, __VA_ARGS__); \
+		bs_trace_info_time(1, "PASSED: " __VA_ARGS__); \
 	} while (0)
 
 #define AD_SIZE 1
 extern const struct bt_data ad[AD_SIZE];
+extern struct bt_conn *default_conn;
 
 void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		  struct net_buf_simple *ad);

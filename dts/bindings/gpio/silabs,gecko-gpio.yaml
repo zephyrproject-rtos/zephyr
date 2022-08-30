@@ -11,9 +11,6 @@ properties:
     interrupts:
       required: true
 
-    label:
-      required: true
-
     location-swo:
       type: int
       required: false

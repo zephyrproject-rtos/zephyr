@@ -10,14 +10,14 @@
 
 #define DT_DRV_COMPAT st_iis2iclx
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "iis2iclx.h"
 
@@ -666,9 +666,8 @@ static int iis2iclx_init(const struct device *dev)
 			.handle =					\
 			   (void *)&iis2iclx_config_##inst.stmemsc_cfg,	\
 		},							\
-		.stmemsc_cfg.spi = {					\
-			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
-			.spi_cfg = SPI_CONFIG_DT_INST(inst,		\
+		.stmemsc_cfg = {					\
+			.spi = SPI_DT_SPEC_INST_GET(inst,		\
 					   IIS2ICLX_SPI_OPERATION,	\
 					   0),				\
 		},							\
@@ -692,9 +691,8 @@ static int iis2iclx_init(const struct device *dev)
 			.handle =					\
 			   (void *)&iis2iclx_config_##inst.stmemsc_cfg,	\
 		},							\
-		.stmemsc_cfg.i2c = {					\
-			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
-			.i2c_slv_addr = DT_INST_REG_ADDR(inst),		\
+		.stmemsc_cfg = {					\
+			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
 		.odr = DT_INST_PROP(inst, odr),				\
 		.range = DT_INST_PROP(inst, range),			\

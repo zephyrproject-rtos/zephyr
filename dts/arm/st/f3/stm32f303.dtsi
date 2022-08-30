@@ -23,7 +23,6 @@
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
-			label= "I2C_2";
 		};
 
 		spi2: spi@40003800 {
@@ -34,7 +33,16 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <36 5>;
 			status = "disabled";
-			label = "SPI_2";
+		};
+
+		spi3: spi@40003c00 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
+			interrupts = <51 5>;
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@48000000 {
@@ -45,7 +53,6 @@
 				#gpio-cells = <2>;
 				reg = <0x48001000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00200000>;
-				label = "GPIOE";
 			};
 		};
 
@@ -55,14 +62,12 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
 			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
+			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_1";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
-				label = "PWM_1";
 				#pwm-cells = <3>;
 			};
 		};
@@ -73,14 +78,12 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000004>;
 			interrupts = <30 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_4";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
-				label = "PWM_4";
 				#pwm-cells = <3>;
 			};
 		};
@@ -91,14 +94,12 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
 			interrupts = <43 0>, <44 0>, <45 0>, <46 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
+			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_8";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
-				label = "PWM_8";
 				#pwm-cells = <3>;
 			};
 		};
@@ -109,14 +110,12 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
 			interrupts = <77 0>, <78 0>, <79 0>, <80 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
+			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_20";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
-				label = "PWM_20";
 				#pwm-cells = <3>;
 			};
 		};
@@ -127,8 +126,10 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x10000000>;
 			interrupts = <18 0>;
 			status = "disabled";
-			label = "ADC_1";
+			vref-mv = <3300>;
 			#io-channel-cells = <1>;
+			has-temp-channel;
+			has-vref-channel;
 		};
 	};
 };

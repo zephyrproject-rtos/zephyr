@@ -5,13 +5,15 @@
 
 menuconfig SHT3XD
 	bool "SHT3xD Temperature and Humidity Sensor"
-	depends on I2C
+	default y
+	depends on DT_HAS_SENSIRION_SHT3XD_ENABLED
+	select I2C
 	help
 	  Enable driver for SHT3xD temperature and humidity sensors.
 
 if SHT3XD
 
-choice
+choice SHT3XD_TRIGGER_MODE
 	prompt "Trigger mode"
 	default SHT3XD_TRIGGER_NONE
 	help
@@ -49,7 +51,7 @@ config SHT3XD_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-choice
+choice SHT3XD_REPEATABILITY
 	prompt "Measurement repeatability"
 	default SHT3XD_REPEATABILITY_HIGH
 	help
@@ -67,7 +69,7 @@ config SHT3XD_REPEATABILITY_HIGH
 
 endchoice
 
-choice
+choice SHT3XD_MEASUREMENT_MODE
 	prompt "Measurement mode"
 	default SHT3XD_PERIODIC_MODE
 
@@ -79,7 +81,7 @@ config SHT3XD_PERIODIC_MODE
 
 endchoice
 
-choice
+choice SHT3XD_MPS
 	prompt "Measurements per second"
 	default SHT3XD_MPS_1
 	depends on SHT3XD_PERIODIC_MODE

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include "shell_utils.h"
 #include "shell_help.h"
 #include "shell_ops.h"
@@ -11,6 +11,7 @@
 
 #define SHELL_MSG_CMD_NOT_SUPPORTED	"Command not supported.\n"
 #define SHELL_HELP_CLEAR		"Clear screen."
+#define SHELL_HELP_BACKENDS		"List active shell backends.\n"
 #define SHELL_HELP_BACKSPACE_MODE	"Toggle backspace key mode.\n"	      \
 	"Some terminals are not sending separate escape code for "	      \
 	"backspace and delete button. This command forces shell to interpret" \
@@ -192,7 +193,6 @@ static int terminal_size_get(const struct shell *shell)
 	return ret_val;
 }
 
-#ifdef CONFIG_SHELL_VT100_COMMANDS
 static int cmd_clear(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
@@ -202,7 +202,21 @@ static int cmd_clear(const struct shell *shell, size_t argc, char **argv)
 
 	return 0;
 }
-#endif
+
+static int cmd_backends(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	uint16_t cnt = 0;
+
+	shell_print(sh, "Active shell backends:");
+	STRUCT_SECTION_FOREACH(shell, obj) {
+		shell_print(sh, "  %2d. :%s", cnt++, obj->ctx->prompt);
+	}
+
+	return 0;
+}
 
 static int cmd_bacskpace_mode_backspace(const struct shell *shell, size_t argc,
 					char **argv)
@@ -226,7 +240,6 @@ static int cmd_bacskpace_mode_delete(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-#ifdef CONFIG_SHELL_VT100_COMMANDS
 static int cmd_colors_off(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -246,7 +259,6 @@ static int cmd_colors_on(const struct shell *shell, size_t argc, char **argv)
 
 	return 0;
 }
-#endif
 
 static int cmd_echo_off(const struct shell *shell, size_t argc, char **argv)
 {
@@ -296,7 +308,7 @@ static int cmd_history(const struct shell *shell, size_t argc, char **argv)
 
 		if (len) {
 			shell_print(shell, "[%3d] %s",
-				    i++, shell->ctx->temp_buff);
+				    (int)i++, shell->ctx->temp_buff);
 
 		} else {
 			break;
@@ -314,7 +326,7 @@ static int cmd_shell_stats_show(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(shell, "Lost logs: %u", shell->stats->log_lost_cnt);
+	shell_print(shell, "Lost logs: %lu", shell->stats->log_lost_cnt);
 
 	return 0;
 }
@@ -395,13 +407,13 @@ static int cmd_select(const struct shell *shell, size_t argc, char **argv)
 	return -EINVAL;
 }
 
-#ifdef CONFIG_SHELL_VT100_COMMANDS
 SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_colors,
-	SHELL_CMD_ARG(off, NULL, SHELL_HELP_COLORS_OFF, cmd_colors_off, 1, 0),
-	SHELL_CMD_ARG(on, NULL, SHELL_HELP_COLORS_ON, cmd_colors_on, 1, 0),
+	SHELL_COND_CMD_ARG(CONFIG_SHELL_VT100_COMMANDS, off, NULL,
+			   SHELL_HELP_COLORS_OFF, cmd_colors_off, 1, 0),
+	SHELL_COND_CMD_ARG(CONFIG_SHELL_VT100_COMMANDS, on, NULL,
+			   SHELL_HELP_COLORS_ON, cmd_colors_on, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
-#endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_echo,
 	SHELL_CMD_ARG(off, NULL, SHELL_HELP_ECHO_OFF, cmd_echo_off, 1, 0),
@@ -426,6 +438,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_backspace_mode,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_shell,
+	SHELL_CMD_ARG(backends, NULL, SHELL_HELP_BACKENDS, cmd_backends, 1, 0),
 	SHELL_CMD(backspace_mode, &m_sub_backspace_mode,
 			SHELL_HELP_BACKSPACE_MODE, NULL),
 	SHELL_COND_CMD(CONFIG_SHELL_VT100_COMMANDS, colors, &m_sub_colors,

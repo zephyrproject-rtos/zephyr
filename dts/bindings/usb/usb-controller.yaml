@@ -5,6 +5,8 @@
 
 include: base.yaml
 
+bus: usb
+
 properties:
     maximum-speed:
       type: string
@@ -19,9 +21,6 @@ properties:
          - "full-speed"
          - "high-speed"
          - "super-speed"
-
-    label:
-      required: true
 
     vbus-gpios:
       type: phandle-array

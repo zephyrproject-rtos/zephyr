@@ -41,3 +41,11 @@ properties:
 
       This causes the FS_MOUNT_FLAG_NO_FORMAT option to be set in the
       mount descriptor generated for the file system.
+
+  disk-access:
+    type: boolean
+    description: |
+      Use disk-access for accessing storage media.
+
+      This causes the FS_MOUNT_FLAG_USE_DISK_ACCESS option to be set in
+      the mount descriptor generated for the file system.

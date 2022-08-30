@@ -1,0 +1,18 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32MP1 Reset and Clock controller node.
+  On STM32MP1 platforms, clock control configuration is performed on A9 side.
+  As a consequence, the only property to be set in devicetree node is the
+  clock-frequency (mlhclk_ck).
+
+compatible: "st,stm32mp1-rcc"
+
+include:
+  - name: st,stm32-rcc.yaml
+    property-blocklist:
+      - ahb-prescaler
+      - apb1-prescaler
+      - apb2-prescaler
+      - undershoot-prevention

@@ -11,4 +11,11 @@ config BOARD
 config BT_CTLR
 	default BT
 
+if DAC
+
+config I2C
+	default y
+
+endif # DAC
+
 endif # BOARD_BL652_DVK

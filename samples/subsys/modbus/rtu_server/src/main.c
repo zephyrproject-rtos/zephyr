@@ -1,15 +1,17 @@
 /*
  * Copyright (c) 2020 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/util.h>
-#include <drivers/gpio.h>
-#include <modbus/modbus.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/modbus/modbus.h>
+#include <zephyr/usb/usb_device.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbs_sample, LOG_LEVEL_INF);
 
 static uint16_t holding_reg[8];
@@ -107,10 +109,11 @@ const static struct modbus_iface_param server_param = {
 	},
 };
 
+#define MODBUS_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_modbus_serial)
+
 static int init_modbus_server(void)
 {
-	const uint32_t mb_rtu_br = 19200;
-	const char iface_name[] = {DT_PROP(DT_INST(0, zephyr_modbus_serial), label)};
+	const char iface_name[] = {DEVICE_DT_NAME(MODBUS_NODE)};
 	int iface;
 
 	iface = modbus_iface_get_by_name(iface_name);
@@ -139,6 +142,22 @@ void main(void)
 			return;
 		}
 	}
+
+#if DT_NODE_HAS_COMPAT(DT_PARENT(MODBUS_NODE), zephyr_cdc_acm_uart)
+	const struct device *const dev = DEVICE_DT_GET(DT_PARENT(MODBUS_NODE));
+	uint32_t dtr = 0;
+
+	if (!device_is_ready(dev) || usb_enable(NULL)) {
+		return;
+	}
+
+	while (!dtr) {
+		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
+		k_sleep(K_MSEC(100));
+	}
+
+	LOG_INF("Client connected to server on %s", dev->name);
+#endif
 
 	if (init_modbus_server()) {
 		LOG_ERR("Modbus RTU server initialization failed");

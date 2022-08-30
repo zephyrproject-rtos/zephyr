@@ -5,7 +5,9 @@
 
 menuconfig DPS310
 	bool "DPS310 sensor"
-	depends on I2C
+	default y
+	depends on DT_HAS_INFINEON_DPS310_ENABLED
+	select I2C
 	help
 	  Enable driver for DPS310 I2C-based temperature and pressure sensor.
 

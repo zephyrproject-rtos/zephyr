@@ -3,7 +3,7 @@
 
 config EEPROM_LPC11U6X
 	bool "LPC11U6x EEPROM driver"
-	depends on SOC_SERIES_LPC11U6X
 	default y
+	depends on DT_HAS_NXP_LPC11U6X_EEPROM_ENABLED
 	help
 	  Enable support for the on-chip EEPROM found on NXP LPC11U6x MCUs.

@@ -4,14 +4,35 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig PCIE
-	bool "Enable new PCI/PCIe Root Complex support"
+	bool "New PCI/PCIe Root Complex support"
 	help
 	  This option enables support for new PCI(e) drivers.
 
 if PCIE
 
+module = PCIE
+module-str = pcie
+source "subsys/logging/Kconfig.template.log_config"
+
+config PCIE_CONTROLLER
+	bool "PCIe Controller management"
+	help
+	  Add support for PCIe Controller management when not handled by a
+	  system firmware like on x86 platforms.
+
+if PCIE_CONTROLLER
+
+config PCIE_ECAM
+	bool "Support for PCIe ECAM Controllers"
+	help
+	  Add support for Enhanced Configuration Address Mapping configured
+	  PCIe Controllers allowing all outgoing I/O and MEM TLPs to be mapped
+	  from memory space into any 256 MB region of the PCIe configuration space.
+
+endif # PCIE_CONTROLLER
+
 config PCIE_MSI
-	bool "Enable support for PCI(e) MSI"
+	bool "Support for PCI(e) MSI"
 	help
 	  Use Message-Signaled Interrupts where possible. With this option
 	  enabled, PCI(e) devices which support MSI will be configured (at
@@ -21,7 +42,7 @@ config PCIE_MSI
 if PCIE_MSI
 
 config PCIE_MSI_MULTI_VECTOR
-	bool "Enable MSI multi-vector support"
+	bool "MSI multi-vector support"
 	help
 	  MSI can support up to 32 different messages. This will enable the
 	  support of such capability so each message can get a vector
@@ -31,7 +52,7 @@ config PCIE_MSI_MULTI_VECTOR
 	  peripheral require this.
 
 config PCIE_MSI_X
-	bool "Enable MSI-X support"
+	bool "MSI-X support"
 	help
 	  If one or more device support MSI-X, you'll need to enable this.
 	  If a device exposes support for both MSI-X and MSI, MSI-X will be
@@ -40,8 +61,14 @@ config PCIE_MSI_X
 
 endif # PCIE_MSI
 
+config PCIE_PTM
+	bool "Support for PCI(e) Precision Time Management (PTM)"
+	help
+	  This will enable support both PTM root and PTM requester features.
+	  Up to the PCIe device driver to enable its PTM requester capability.
+
 config PCIE_SHELL
-	bool "Enable PCIe/new PCI Shell"
+	bool "PCIe/new PCI Shell"
 	default y
 	depends on SHELL
 	help

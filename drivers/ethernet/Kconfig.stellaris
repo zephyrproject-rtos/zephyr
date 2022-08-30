@@ -4,7 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_STELLARIS
-	bool "Enable TI Stellaris MCU family ethernet driver."
+	bool "TI Stellaris MCU family ethernet driver."
+	default y
+	depends on DT_HAS_TI_STELLARIS_ETHERNET_ENABLED
 	help
 	  Stellaris on-board Ethernet Controller
 

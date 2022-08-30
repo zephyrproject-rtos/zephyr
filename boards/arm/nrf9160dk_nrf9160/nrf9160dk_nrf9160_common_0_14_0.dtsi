@@ -24,8 +24,6 @@
 &i2c2 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <30>;
-	scl-pin = <31>;
 
 	pcal6408a: pcal6408a@20 {
 		compatible = "nxp,pcal6408a";
@@ -40,14 +38,11 @@
 };
 
 &spi3 {
-	status = "okay";
-	sck-pin = <13>;
-	mosi-pin = <11>;
-	miso-pin = <12>;
-	cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
-	mx25r64: mx25r6435f@0 {
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>, /* D10 */
+		   <&gpio0 25 GPIO_ACTIVE_LOW>;
+	mx25r64: mx25r6435f@1 {
 		compatible = "jedec,spi-nor";
-		reg = <0>;
+		reg = <1>;
 		spi-max-frequency = <8000000>;
 		label = "MX25R64";
 		jedec-id = [c2 28 17];

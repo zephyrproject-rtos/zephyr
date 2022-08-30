@@ -4,7 +4,9 @@
 
 config MAX17055
 	bool "MAX17055 Fuel Gauge"
-	depends on I2C
+	default y
+	depends on DT_HAS_MAXIM_MAX17055_ENABLED
+	select I2C
 	help
 	  Enable I2C-based driver for MAX17055 Fuel Gauge. This driver supports
 	  reading various sensor settings including charge level percentage,
