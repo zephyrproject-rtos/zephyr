@@ -1001,13 +1001,15 @@ static inline int32_t ack_timeout(struct seg_rx *rx)
 	/* The acknowledgment timer shall be set to a minimum of
 	 * 150 + 50 * TTL milliseconds.
 	 */
-	to = 150 + (ttl * 50U);
+	to = CONFIG_BT_MESH_SEG_ACK_BASE_TIMEOUT +
+	     (ttl * (int32_t)CONFIG_BT_MESH_SEG_ACK_PER_HOP_TIMEOUT);
 
-	/* 100 ms for every not yet received segment */
-	to += ((rx->seg_n + 1) - popcount(rx->block)) * 100U;
+	/* Add timeout for evenry not yet received segment. */
+	to += ((rx->seg_n + 1) - popcount(rx->block)) *
+		(int32_t)CONFIG_BT_MESH_SEG_ACK_PER_SEGMENT_TIMEOUT;
 
 	/* Make sure we don't send more frequently than the duration for
-	 * each packet (default is 300ms).
+	 * each packet (default is 400ms).
 	 */
 	return MAX(to, 400);
 }
