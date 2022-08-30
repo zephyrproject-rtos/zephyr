@@ -434,7 +434,7 @@ static int cmd_reset(const struct shell *shell, size_t argc, char *argv[])
 		int err;
 		bool reset = false;
 
-		err = bt_mesh_cfg_node_reset(net.net_idx, net.dst, &reset);
+		err = bt_mesh_cfg_cli_node_reset(net.net_idx, net.dst, &reset);
 		if (err) {
 			shell_error(shell, "Unable to send "
 					"Remote Node Reset (err %d)", err);
@@ -559,7 +559,7 @@ static int cmd_get_comp(const struct shell *shell, size_t argc, char *argv[])
 		}
 	}
 
-	err = bt_mesh_cfg_comp_data_get(net.net_idx, net.dst, page, &page,
+	err = bt_mesh_cfg_cli_comp_data_get(net.net_idx, net.dst, page, &page,
 					&buf);
 	if (err) {
 		shell_error(shell, "Getting composition failed (err %d)", err);
@@ -770,7 +770,7 @@ static int cmd_beacon(const struct shell *shell, size_t argc, char *argv[])
 	int err = 0;
 
 	if (argc < 2) {
-		err = bt_mesh_cfg_beacon_get(net.net_idx, net.dst, &status);
+		err = bt_mesh_cfg_cli_beacon_get(net.net_idx, net.dst, &status);
 	} else {
 		uint8_t val = shell_strtobool(argv[1], 0, &err);
 
@@ -779,7 +779,7 @@ static int cmd_beacon(const struct shell *shell, size_t argc, char *argv[])
 			return err;
 		}
 
-		err = bt_mesh_cfg_beacon_set(net.net_idx, net.dst, val, &status);
+		err = bt_mesh_cfg_cli_beacon_set(net.net_idx, net.dst, val, &status);
 	}
 
 	if (err) {
@@ -921,7 +921,7 @@ static int cmd_ttl(const struct shell *shell, size_t argc, char *argv[])
 	int err = 0;
 
 	if (argc < 2) {
-		err = bt_mesh_cfg_ttl_get(net.net_idx, net.dst, &ttl);
+		err = bt_mesh_cfg_cli_ttl_get(net.net_idx, net.dst, &ttl);
 	} else {
 		uint8_t val = shell_strtoul(argv[1], 0, &err);
 
@@ -930,7 +930,7 @@ static int cmd_ttl(const struct shell *shell, size_t argc, char *argv[])
 			return err;
 		}
 
-		err = bt_mesh_cfg_ttl_set(net.net_idx, net.dst, val, &ttl);
+		err = bt_mesh_cfg_cli_ttl_set(net.net_idx, net.dst, val, &ttl);
 	}
 
 	if (err) {
@@ -950,7 +950,7 @@ static int cmd_friend(const struct shell *shell, size_t argc, char *argv[])
 	int err = 0;
 
 	if (argc < 2) {
-		err = bt_mesh_cfg_friend_get(net.net_idx, net.dst, &frnd);
+		err = bt_mesh_cfg_cli_friend_get(net.net_idx, net.dst, &frnd);
 	} else {
 		uint8_t val = shell_strtobool(argv[1], 0, &err);
 
@@ -959,7 +959,7 @@ static int cmd_friend(const struct shell *shell, size_t argc, char *argv[])
 			return err;
 		}
 
-		err = bt_mesh_cfg_friend_set(net.net_idx, net.dst, val, &frnd);
+		err = bt_mesh_cfg_cli_friend_set(net.net_idx, net.dst, val, &frnd);
 	}
 
 	if (err) {
@@ -979,7 +979,7 @@ static int cmd_gatt_proxy(const struct shell *shell, size_t argc, char *argv[])
 	int err = 0;
 
 	if (argc < 2) {
-		err = bt_mesh_cfg_gatt_proxy_get(net.net_idx, net.dst, &proxy);
+		err = bt_mesh_cfg_cli_gatt_proxy_get(net.net_idx, net.dst, &proxy);
 	} else {
 		uint8_t val = shell_strtobool(argv[1], 0, &err);
 
@@ -988,7 +988,7 @@ static int cmd_gatt_proxy(const struct shell *shell, size_t argc, char *argv[])
 			return err;
 		}
 
-		err = bt_mesh_cfg_gatt_proxy_set(net.net_idx, net.dst, val,
+		err = bt_mesh_cfg_cli_gatt_proxy_set(net.net_idx, net.dst, val,
 						 &proxy);
 	}
 
@@ -1016,7 +1016,7 @@ static int cmd_polltimeout_get(const struct shell *sh,
 		return err;
 	}
 
-	err = bt_mesh_cfg_lpn_timeout_get(net.net_idx,
+	err = bt_mesh_cfg_cli_lpn_timeout_get(net.net_idx,
 					  net.dst, lpn_address,
 					  &poll_timeout);
 	if (err) {
@@ -1037,7 +1037,7 @@ static int cmd_net_transmit(const struct shell *shell,
 	int err = 0;
 
 	if (argc < 2) {
-		err = bt_mesh_cfg_net_transmit_get(net.net_idx,
+		err = bt_mesh_cfg_cli_net_transmit_get(net.net_idx,
 				net.dst, &transmit);
 	} else {
 		if (argc != 3) {
@@ -1057,7 +1057,7 @@ static int cmd_net_transmit(const struct shell *shell,
 
 		new_transmit = BT_MESH_TRANSMIT(count, interval);
 
-		err = bt_mesh_cfg_net_transmit_set(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_net_transmit_set(net.net_idx, net.dst,
 				new_transmit, &transmit);
 	}
 
@@ -1080,7 +1080,7 @@ static int cmd_relay(const struct shell *shell, size_t argc, char *argv[])
 	int err = 0;
 
 	if (argc < 2) {
-		err = bt_mesh_cfg_relay_get(net.net_idx, net.dst, &relay,
+		err = bt_mesh_cfg_cli_relay_get(net.net_idx, net.dst, &relay,
 					    &transmit);
 	} else {
 		uint8_t count, interval, new_transmit;
@@ -1109,7 +1109,7 @@ static int cmd_relay(const struct shell *shell, size_t argc, char *argv[])
 			return err;
 		}
 
-		err = bt_mesh_cfg_relay_set(net.net_idx, net.dst, val,
+		err = bt_mesh_cfg_cli_relay_set(net.net_idx, net.dst, val,
 					    new_transmit, &relay, &transmit);
 	}
 
@@ -1176,7 +1176,7 @@ static int cmd_net_key_add(const struct shell *shell, size_t argc, char *argv[])
 		}
 	}
 
-	err = bt_mesh_cfg_net_key_add(net.net_idx, net.dst, key_net_idx,
+	err = bt_mesh_cfg_cli_net_key_add(net.net_idx, net.dst, key_net_idx,
 				      key_val, &status);
 	if (err) {
 		shell_print(shell, "Unable to send NetKey Add (err %d)", err);
@@ -1219,7 +1219,7 @@ static int cmd_net_key_update(const struct shell *sh, size_t argc, char *argv[])
 		memcpy(key_val, default_key, sizeof(key_val));
 	}
 
-	err = bt_mesh_cfg_net_key_update(net.net_idx, net.dst, key_net_idx,
+	err = bt_mesh_cfg_cli_net_key_update(net.net_idx, net.dst, key_net_idx,
 					 key_val, &status);
 	if (err) {
 		shell_print(sh, "Unable to send NetKey Update (err %d)", err);
@@ -1245,7 +1245,7 @@ static int cmd_net_key_get(const struct shell *shell, size_t argc, char *argv[])
 
 	cnt = ARRAY_SIZE(keys);
 
-	err = bt_mesh_cfg_net_key_get(net.net_idx, net.dst, keys, &cnt);
+	err = bt_mesh_cfg_cli_net_key_get(net.net_idx, net.dst, keys, &cnt);
 	if (err) {
 		shell_print(shell, "Unable to send NetKeyGet (err %d)", err);
 		return 0;
@@ -1271,7 +1271,7 @@ static int cmd_net_key_del(const struct shell *shell, size_t argc, char *argv[])
 		return err;
 	}
 
-	err = bt_mesh_cfg_net_key_del(net.net_idx, net.dst, key_net_idx,
+	err = bt_mesh_cfg_cli_net_key_del(net.net_idx, net.dst, key_net_idx,
 				      &status);
 	if (err) {
 		shell_print(shell, "Unable to send NetKeyDel (err %d)", err);
@@ -1341,7 +1341,7 @@ static int cmd_app_key_add(const struct shell *shell, size_t argc, char *argv[])
 		}
 	}
 
-	err = bt_mesh_cfg_app_key_add(net.net_idx, net.dst, key_net_idx,
+	err = bt_mesh_cfg_cli_app_key_add(net.net_idx, net.dst, key_net_idx,
 				      key_app_idx, key_val, &status);
 	if (err) {
 		shell_error(shell, "Unable to send App Key Add (err %d)", err);
@@ -1384,7 +1384,7 @@ static int cmd_app_key_upd(const struct shell *sh, size_t argc, char *argv[])
 		memcpy(key_val, default_key, sizeof(key_val));
 	}
 
-	err = bt_mesh_cfg_app_key_update(net.net_idx, net.dst, key_net_idx,
+	err = bt_mesh_cfg_cli_app_key_update(net.net_idx, net.dst, key_net_idx,
 					 key_app_idx, key_val, &status);
 	if (err) {
 		shell_error(sh, "Unable to send App Key Update (err %d)", err);
@@ -1419,7 +1419,7 @@ static int cmd_app_key_get(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 
-	err = bt_mesh_cfg_app_key_get(net.net_idx, net.dst, net_idx, &status,
+	err = bt_mesh_cfg_cli_app_key_get(net.net_idx, net.dst, net_idx, &status,
 				      keys, &cnt);
 	if (err) {
 		shell_print(shell, "Unable to send AppKeyGet (err %d)", err);
@@ -1455,7 +1455,7 @@ static int cmd_node_id(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc < 2) {
-		err = bt_mesh_cfg_node_identity_get(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_node_identity_get(net.net_idx, net.dst,
 						    net_idx, &status,
 						    &identify);
 		if (err) {
@@ -1470,7 +1470,7 @@ static int cmd_node_id(const struct shell *sh, size_t argc, char *argv[])
 			return err;
 		}
 
-		err = bt_mesh_cfg_node_identity_set(net.net_idx, net.dst, net_idx, new_identify,
+		err = bt_mesh_cfg_cli_node_identity_set(net.net_idx, net.dst, net_idx, new_identify,
 						    &status, &identify);
 		if (err) {
 			shell_print(sh, "Unable to send Node Identify Set (err %d)", err);
@@ -1503,7 +1503,7 @@ static int cmd_app_key_del(const struct shell *shell, size_t argc, char *argv[])
 		return err;
 	}
 
-	err = bt_mesh_cfg_app_key_del(net.net_idx, net.dst, key_net_idx,
+	err = bt_mesh_cfg_cli_app_key_del(net.net_idx, net.dst, key_net_idx,
 				      key_app_idx, &status);
 	if (err) {
 		shell_error(shell, "Unable to send App Key del(err %d)", err);
@@ -1543,11 +1543,11 @@ static int cmd_mod_app_bind(const struct shell *shell, size_t argc,
 			return err;
 		}
 
-		err = bt_mesh_cfg_mod_app_bind_vnd(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_app_bind_vnd(net.net_idx, net.dst,
 						   elem_addr, mod_app_idx,
 						   mod_id, cid, &status);
 	} else {
-		err = bt_mesh_cfg_mod_app_bind(net.net_idx, net.dst, elem_addr,
+		err = bt_mesh_cfg_cli_mod_app_bind(net.net_idx, net.dst, elem_addr,
 					       mod_app_idx, mod_id, &status);
 	}
 
@@ -1590,11 +1590,11 @@ static int cmd_mod_app_unbind(const struct shell *shell, size_t argc,
 			return err;
 		}
 
-		err = bt_mesh_cfg_mod_app_unbind_vnd(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_app_unbind_vnd(net.net_idx, net.dst,
 						   elem_addr, mod_app_idx,
 						   mod_id, cid, &status);
 	} else {
-		err = bt_mesh_cfg_mod_app_unbind(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_app_unbind(net.net_idx, net.dst,
 				elem_addr, mod_app_idx, mod_id, &status);
 	}
 
@@ -1639,11 +1639,11 @@ static int cmd_mod_app_get(const struct shell *shell, size_t argc,
 			return err;
 		}
 
-		err = bt_mesh_cfg_mod_app_get_vnd(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_app_get_vnd(net.net_idx, net.dst,
 						  elem_addr, mod_id, cid,
 						  &status, apps, &cnt);
 	} else {
-		err = bt_mesh_cfg_mod_app_get(net.net_idx, net.dst, elem_addr,
+		err = bt_mesh_cfg_cli_mod_app_get(net.net_idx, net.dst, elem_addr,
 					      mod_id, &status, apps, &cnt);
 	}
 
@@ -1695,11 +1695,11 @@ static int cmd_mod_sub_add(const struct shell *shell, size_t argc, char *argv[])
 			return err;
 		}
 
-		err = bt_mesh_cfg_mod_sub_add_vnd(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_sub_add_vnd(net.net_idx, net.dst,
 						  elem_addr, sub_addr, mod_id,
 						  cid, &status);
 	} else {
-		err = bt_mesh_cfg_mod_sub_add(net.net_idx, net.dst, elem_addr,
+		err = bt_mesh_cfg_cli_mod_sub_add(net.net_idx, net.dst, elem_addr,
 					      sub_addr, mod_id, &status);
 	}
 
@@ -1740,11 +1740,11 @@ static int cmd_mod_sub_del(const struct shell *shell, size_t argc, char *argv[])
 			return err;
 		}
 
-		err = bt_mesh_cfg_mod_sub_del_vnd(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_sub_del_vnd(net.net_idx, net.dst,
 						  elem_addr, sub_addr, mod_id,
 						  cid, &status);
 	} else {
-		err = bt_mesh_cfg_mod_sub_del(net.net_idx, net.dst, elem_addr,
+		err = bt_mesh_cfg_cli_mod_sub_del(net.net_idx, net.dst, elem_addr,
 					      sub_addr, mod_id, &status);
 	}
 
@@ -1791,11 +1791,11 @@ static int cmd_mod_sub_add_va(const struct shell *shell, size_t argc,
 			return err;
 		}
 
-		err = bt_mesh_cfg_mod_sub_va_add_vnd(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_sub_va_add_vnd(net.net_idx, net.dst,
 						     elem_addr, label, mod_id,
 						     cid, &sub_addr, &status);
 	} else {
-		err = bt_mesh_cfg_mod_sub_va_add(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_sub_va_add(net.net_idx, net.dst,
 						 elem_addr, label, mod_id,
 						 &sub_addr, &status);
 	}
@@ -1844,11 +1844,11 @@ static int cmd_mod_sub_del_va(const struct shell *shell, size_t argc,
 			return err;
 		}
 
-		err = bt_mesh_cfg_mod_sub_va_del_vnd(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_sub_va_del_vnd(net.net_idx, net.dst,
 						     elem_addr, label, mod_id,
 						     cid, &sub_addr, &status);
 	} else {
-		err = bt_mesh_cfg_mod_sub_va_del(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_sub_va_del(net.net_idx, net.dst,
 						 elem_addr, label, mod_id,
 						 &sub_addr, &status);
 	}
@@ -1891,11 +1891,11 @@ static int cmd_mod_sub_ow(const struct shell *sh, size_t argc, char *argv[])
 			return err;
 		}
 
-		err = bt_mesh_cfg_mod_sub_overwrite_vnd(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_sub_overwrite_vnd(net.net_idx, net.dst,
 							elem_addr, sub_addr, mod_id,
 							cid, &status);
 	} else {
-		err = bt_mesh_cfg_mod_sub_overwrite(net.net_idx, net.dst, elem_addr,
+		err = bt_mesh_cfg_cli_mod_sub_overwrite(net.net_idx, net.dst, elem_addr,
 						    sub_addr, mod_id, &status);
 	}
 
@@ -1942,11 +1942,11 @@ static int cmd_mod_sub_ow_va(const struct shell *sh, size_t argc,
 			return err;
 		}
 
-		err = bt_mesh_cfg_mod_sub_va_overwrite_vnd(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_sub_va_overwrite_vnd(net.net_idx, net.dst,
 							   elem_addr, label, mod_id,
 							   cid, &sub_addr, &status);
 	} else {
-		err = bt_mesh_cfg_mod_sub_va_overwrite(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_sub_va_overwrite(net.net_idx, net.dst,
 						       elem_addr, label, mod_id,
 						       &sub_addr, &status);
 	}
@@ -1988,11 +1988,11 @@ static int cmd_mod_sub_del_all(const struct shell *sh, size_t argc, char *argv[]
 			return err;
 		}
 
-		err = bt_mesh_cfg_mod_sub_del_all_vnd(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_sub_del_all_vnd(net.net_idx, net.dst,
 						      elem_addr, mod_id,
 						      cid, &status);
 	} else {
-		err = bt_mesh_cfg_mod_sub_del_all(net.net_idx, net.dst, elem_addr,
+		err = bt_mesh_cfg_cli_mod_sub_del_all(net.net_idx, net.dst, elem_addr,
 						  mod_id, &status);
 	}
 
@@ -2037,11 +2037,11 @@ static int cmd_mod_sub_get(const struct shell *shell, size_t argc,
 			return err;
 		}
 
-		err = bt_mesh_cfg_mod_sub_get_vnd(net.net_idx, net.dst,
+		err = bt_mesh_cfg_cli_mod_sub_get_vnd(net.net_idx, net.dst,
 						  elem_addr, mod_id, cid,
 						  &status, subs, &cnt);
 	} else {
-		err = bt_mesh_cfg_mod_sub_get(net.net_idx, net.dst, elem_addr,
+		err = bt_mesh_cfg_cli_mod_sub_get(net.net_idx, net.dst, elem_addr,
 					      mod_id, &status, subs, &cnt);
 	}
 
@@ -2086,7 +2086,7 @@ static int cmd_krp(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc < 3) {
-		err = bt_mesh_cfg_krp_get(net.net_idx, net.dst, key_net_idx,
+		err = bt_mesh_cfg_cli_krp_get(net.net_idx, net.dst, key_net_idx,
 					  &status, &phase);
 	} else {
 		uint16_t trans = shell_strtoul(argv[2], 0, &err);
@@ -2096,7 +2096,7 @@ static int cmd_krp(const struct shell *sh, size_t argc, char *argv[])
 			return err;
 		}
 
-		err = bt_mesh_cfg_krp_set(net.net_idx, net.dst, key_net_idx,
+		err = bt_mesh_cfg_cli_krp_set(net.net_idx, net.dst, key_net_idx,
 					  trans, &status, &phase);
 	}
 
@@ -2115,15 +2115,15 @@ static int cmd_krp(const struct shell *sh, size_t argc, char *argv[])
 static int mod_pub_get(const struct shell *shell, uint16_t addr, uint16_t mod_id,
 		       uint16_t cid)
 {
-	struct bt_mesh_cfg_mod_pub pub;
+	struct bt_mesh_cfg_cli_mod_pub pub;
 	uint8_t status;
 	int err;
 
 	if (cid == CID_NVAL) {
-		err = bt_mesh_cfg_mod_pub_get(net.net_idx, net.dst, addr,
+		err = bt_mesh_cfg_cli_mod_pub_get(net.net_idx, net.dst, addr,
 					      mod_id, &pub, &status);
 	} else {
-		err = bt_mesh_cfg_mod_pub_get_vnd(net.net_idx, net.dst, addr,
+		err = bt_mesh_cfg_cli_mod_pub_get_vnd(net.net_idx, net.dst, addr,
 						  mod_id, cid, &pub, &status);
 	}
 
@@ -2157,7 +2157,7 @@ static int mod_pub_get(const struct shell *shell, uint16_t addr, uint16_t mod_id
 static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va,
 		       uint16_t mod_id, uint16_t cid, char *argv[])
 {
-	struct bt_mesh_cfg_mod_pub pub;
+	struct bt_mesh_cfg_cli_mod_pub pub;
 	uint8_t status, count;
 	uint16_t interval;
 	uint8_t uuid[16];
@@ -2198,10 +2198,10 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va,
 	pub.transmit = BT_MESH_PUB_TRANSMIT(count, interval);
 
 	if (cid == CID_NVAL) {
-		err = bt_mesh_cfg_mod_pub_set(net.net_idx, net.dst, addr,
+		err = bt_mesh_cfg_cli_mod_pub_set(net.net_idx, net.dst, addr,
 					      mod_id, &pub, &status);
 	} else {
-		err = bt_mesh_cfg_mod_pub_set_vnd(net.net_idx, net.dst, addr,
+		err = bt_mesh_cfg_cli_mod_pub_set_vnd(net.net_idx, net.dst, addr,
 						  mod_id, cid, &pub, &status);
 	}
 
@@ -2279,7 +2279,7 @@ static int cmd_mod_pub_va(const struct shell *sh, size_t argc, char *argv[])
 }
 
 static void hb_sub_print(const struct shell *shell,
-			 struct bt_mesh_cfg_hb_sub *sub)
+			 struct bt_mesh_cfg_cli_hb_sub *sub)
 {
 	shell_print(shell, "Heartbeat Subscription:\n"
 		    "\tSource:      0x%04x\n"
@@ -2294,11 +2294,11 @@ static void hb_sub_print(const struct shell *shell,
 
 static int hb_sub_get(const struct shell *shell, size_t argc, char *argv[])
 {
-	struct bt_mesh_cfg_hb_sub sub;
+	struct bt_mesh_cfg_cli_hb_sub sub;
 	uint8_t status;
 	int err;
 
-	err = bt_mesh_cfg_hb_sub_get(net.net_idx, net.dst, &sub, &status);
+	err = bt_mesh_cfg_cli_hb_sub_get(net.net_idx, net.dst, &sub, &status);
 	if (err) {
 		shell_error(shell, "Heartbeat Subscription Get failed (err %d)",
 			    err);
@@ -2317,7 +2317,7 @@ static int hb_sub_get(const struct shell *shell, size_t argc, char *argv[])
 
 static int hb_sub_set(const struct shell *shell, size_t argc, char *argv[])
 {
-	struct bt_mesh_cfg_hb_sub sub;
+	struct bt_mesh_cfg_cli_hb_sub sub;
 	uint8_t status;
 	int err = 0;
 
@@ -2329,7 +2329,7 @@ static int hb_sub_set(const struct shell *shell, size_t argc, char *argv[])
 		return err;
 	}
 
-	err = bt_mesh_cfg_hb_sub_set(net.net_idx, net.dst, &sub, &status);
+	err = bt_mesh_cfg_cli_hb_sub_set(net.net_idx, net.dst, &sub, &status);
 	if (err) {
 		shell_error(shell, "Heartbeat Subscription Set failed (err %d)",
 			    err);
@@ -2361,11 +2361,11 @@ static int cmd_hb_sub(const struct shell *shell, size_t argc, char *argv[])
 
 static int hb_pub_get(const struct shell *shell, size_t argc, char *argv[])
 {
-	struct bt_mesh_cfg_hb_pub pub;
+	struct bt_mesh_cfg_cli_hb_pub pub;
 	uint8_t status;
 	int err;
 
-	err = bt_mesh_cfg_hb_pub_get(net.net_idx, net.dst, &pub, &status);
+	err = bt_mesh_cfg_cli_hb_pub_get(net.net_idx, net.dst, &pub, &status);
 	if (err) {
 		shell_error(shell, "Heartbeat Publication Get failed (err %d)",
 			    err);
@@ -2389,7 +2389,7 @@ static int hb_pub_get(const struct shell *shell, size_t argc, char *argv[])
 
 static int hb_pub_set(const struct shell *shell, size_t argc, char *argv[])
 {
-	struct bt_mesh_cfg_hb_pub pub;
+	struct bt_mesh_cfg_cli_hb_pub pub;
 	uint8_t status;
 	int err = 0;
 
@@ -2404,7 +2404,7 @@ static int hb_pub_set(const struct shell *shell, size_t argc, char *argv[])
 		return err;
 	}
 
-	err = bt_mesh_cfg_hb_pub_set(net.net_idx, net.dst, &pub, &status);
+	err = bt_mesh_cfg_cli_hb_pub_set(net.net_idx, net.dst, &pub, &status);
 	if (err) {
 		shell_error(shell, "Heartbeat Publication Set failed (err %d)",
 			    err);
