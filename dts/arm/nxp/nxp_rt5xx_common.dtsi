@@ -361,7 +361,7 @@
 		clk-divider = <1>;
 	};
 
-	usdhc1: usdhc@136000 {
+	usdhc0: usdhc@136000 {
 		compatible = "nxp,imx-usdhc";
 		reg = <0x136000 0x1000>;
 		status = "disabled";
@@ -371,9 +371,11 @@
 		max-current-180 = <1020>;
 		max-bus-freq = <208000000>;
 		min-bus-freq = <400000>;
+		mmc-hs200-1_8v;
+		mmc-hs400-1_8v;
 	};
 
-	usdhc2: usdhc@137000 {
+	usdhc1: usdhc@137000 {
 		compatible = "nxp,imx-usdhc";
 		reg = <0x137000 0x1000>;
 		status = "disabled";
