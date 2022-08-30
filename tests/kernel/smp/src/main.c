@@ -541,16 +541,17 @@ static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
  *
  * @see arch_curr_cpu()
  */
+static int _cpu_id;
 ZTEST(smp, test_get_cpu)
 {
 	k_tid_t thread_id;
 
 	/* get current cpu number */
-	int cpu_id = arch_curr_cpu()->id;
+	_cpu_id = arch_curr_cpu()->id;
 
 	thread_id = k_thread_create(&t2, t2_stack, T2_STACK_SIZE,
 				      (k_thread_entry_t)thread_get_cpu_entry,
-				      &cpu_id, NULL, NULL,
+				      &_cpu_id, NULL, NULL,
 				      K_PRIO_COOP(2),
 				      K_INHERIT_PERMS, K_NO_WAIT);
 
