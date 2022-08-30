@@ -15,4 +15,6 @@ int sdio_card_init(struct sd_card *card);
 
 int sdmmc_card_init(struct sd_card *card);
 
+int mmc_card_init(struct sd_card *card);
+
 #endif /* ZEPHYR_SUBSYS_SD_INIT_PRIV_H_ */
