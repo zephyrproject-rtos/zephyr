@@ -59,6 +59,16 @@ struct regulator_config {
 };
 
 /**
+ * Reads a register from the PMIC
+ * Returns 0 on success, or errno on error
+ */
+static int regulator_read_register(const struct regulator_config *conf,
+	uint8_t reg, uint8_t *out)
+{
+	return i2c_reg_read_byte_dt(&conf->i2c, reg, out);
+}
+
+/**
  * Modifies a register within the PMIC
  * Returns 0 on success, or errno on error
  */
@@ -68,7 +78,7 @@ static int regulator_modify_register(const struct regulator_config *conf,
 	uint8_t reg_current;
 	int rc;
 
-	rc = i2c_reg_read_byte_dt(&conf->i2c, reg, &reg_current);
+	rc = regulator_read_register(conf, reg, &reg_current);
 	if (rc) {
 		return rc;
 	}
@@ -162,7 +172,7 @@ int regulator_get_voltage(const struct device *dev)
 	int rc, i = 0;
 	uint8_t raw_reg;
 
-	rc = i2c_reg_read_byte_dt(&config->i2c, config->vsel_reg, &raw_reg);
+	rc = regulator_read_register(config, config->vsel_reg, &raw_reg);
 	if (rc) {
 		return rc;
 	}
@@ -221,7 +231,7 @@ int regulator_get_current_limit(const struct device *dev)
 	if (config->num_current_levels == 0) {
 		return -ENOTSUP;
 	}
-	rc = i2c_reg_read_byte_dt(&config->i2c, config->ilim_reg, &raw_reg);
+	rc = regulator_read_register(config, config->ilim_reg, &raw_reg);
 	if (rc) {
 		return rc;
 	}
