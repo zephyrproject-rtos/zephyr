@@ -1,6 +1,31 @@
 # SPDX-License-Identifier: Apache-2.0
 
-include_guard(GLOBAL)
+# FindTargetTools module for locating a set of tools to use on the host but
+# targeting a remote target for Zephyr development.
+#
+# This module will lookup following target tools for Zephyr development:
+# +---------------------------------------------------------------+
+# | Tool               | Required |  Notes:                       |
+# +---------------------------------------------------------------+
+# | Target C-compiler  | Yes      |                               |
+# | Target Assembler   | Yes      |                               |
+# | Target linker      | Yes      |                               |
+# +---------------------------------------------------------------+
+#
+# The module defines the following variables:
+#
+# 'CMAKE_C_COMPILER'
+# Path to target C compiler.
+# Set to 'CMAKE_C_COMPILER-NOTFOUND' if no C compiler was found.
+#
+# 'TargetTools_FOUND', 'TARGETTOOLS_FOUND'
+# True if all required host tools were found.
+
+find_package(HostTools)
+
+if(TargetTools_FOUND)
+  return()
+endif()
 
 # Prevent CMake from testing the toolchain
 set(CMAKE_C_COMPILER_FORCED   1)
@@ -64,3 +89,6 @@ include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}/target.cmake OPTIONAL)
 include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/target.cmake OPTIONAL)
 include(${ZEPHYR_BASE}/cmake/bintools/bintools_template.cmake)
 include(${TOOLCHAIN_ROOT}/cmake/bintools/${BINTOOLS}/target.cmake OPTIONAL)
+
+set(TargetTools_FOUND TRUE)
+set(TARGETTOOLS_FOUND TRUE)
