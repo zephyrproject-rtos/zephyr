@@ -18,6 +18,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/regulator/consumer.h>
+#include <zephyr/dt-bindings/regulator/pmic_i2c.h>
 #include <zephyr/drivers/i2c.h>
 #include <errno.h>
 #include <zephyr/logging/log.h>
@@ -38,11 +39,13 @@ struct regulator_data {
 	struct onoff_sync_service srv;
 	const struct voltage_range *voltages;
 	const struct current_range *current_levels;
+	uint8_t reg_offset;
 };
 
 struct regulator_config {
 	int num_voltages;
 	int num_current_levels;
+	int num_modes;
 	uint8_t vsel_reg;
 	uint8_t vsel_mask;
 	uint32_t max_uV;
@@ -54,38 +57,56 @@ struct regulator_config {
 	uint8_t ilim_reg;
 	uint8_t ilim_mask;
 	struct i2c_dt_spec i2c;
+	uint16_t initial_mode;
 	uint32_t *voltage_array;
 	uint32_t *current_array;
+	uint16_t *allowed_modes;
+	uint8_t modesel_offset;
+	uint8_t modesel_reg;
+	uint8_t modesel_mask;
 };
 
 /**
  * Reads a register from the PMIC
  * Returns 0 on success, or errno on error
  */
-static int regulator_read_register(const struct regulator_config *conf,
+static int regulator_read_register(const struct device *dev,
 	uint8_t reg, uint8_t *out)
 {
-	return i2c_reg_read_byte_dt(&conf->i2c, reg, out);
+	const struct regulator_config *conf = dev->config;
+	struct regulator_data *data = dev->data;
+	int ret;
+
+	/* Apply mode offset to register */
+	reg += data->reg_offset;
+	ret = i2c_reg_read_byte_dt(&conf->i2c, reg, out);
+	LOG_DBG("READ 0x%x: 0x%x", reg, *out);
+	return ret;
 }
 
 /**
  * Modifies a register within the PMIC
  * Returns 0 on success, or errno on error
  */
-static int regulator_modify_register(const struct regulator_config *conf,
+static int regulator_modify_register(const struct device *dev,
 		uint8_t reg, uint8_t reg_mask, uint8_t reg_val)
 {
+	const struct regulator_config *conf = dev->config;
+	struct regulator_data *data = dev->data;
 	uint8_t reg_current;
 	int rc;
 
-	rc = regulator_read_register(conf, reg, &reg_current);
+	rc = regulator_read_register(dev, reg, &reg_current);
 	if (rc) {
 		return rc;
 	}
+
+	/* Apply mode offset to register */
+	reg += data->reg_offset;
 	reg_current &= ~reg_mask;
-	reg_current |= reg_val;
-	LOG_DBG("Writing 0x%02X to reg 0x%02X at I2C addr 0x%02X", reg_current, reg,
-		conf->i2c.addr);
+	reg_current |= (reg_val & reg_mask);
+	LOG_DBG("WRITE 0x%02X to 0x%02X at I2C addr 0x%02X", reg_current,
+		reg, conf->i2c.addr);
 	return i2c_reg_write_byte_dt(&conf->i2c, reg, reg_current);
 }
 
@@ -99,6 +120,17 @@ int regulator_count_voltages(const struct device *dev)
 	const struct regulator_config *config = dev->config;
 
 	return config->num_voltages;
+}
+
+/**
+ * Part of the extended regulator consumer API
+ * Counts the number of modes supported by a regulator
+ */
+int regulator_count_modes(const struct device *dev)
+{
+	const struct regulator_config *config = dev->config;
+
+	return config->num_modes;
 }
 
 /**
@@ -157,7 +189,7 @@ int regulator_set_voltage(const struct device *dev, int min_uV, int max_uV)
 	}
 	LOG_DBG("Setting regulator %s to %duV", dev->name,
 			data->voltages[i].uV);
-	return regulator_modify_register(config, config->vsel_reg,
+	return regulator_modify_register(dev, config->vsel_reg,
 			config->vsel_mask, data->voltages[i].reg_val);
 }
 
@@ -172,7 +204,7 @@ int regulator_get_voltage(const struct device *dev)
 	int rc, i = 0;
 	uint8_t raw_reg;
 
-	rc = regulator_read_register(config, config->vsel_reg, &raw_reg);
+	rc = regulator_read_register(dev, config->vsel_reg, &raw_reg);
 	if (rc) {
 		return rc;
 	}
@@ -213,7 +245,7 @@ int regulator_set_current_limit(const struct device *dev, int min_uA, int max_uA
 		return -EINVAL;
 	}
 	/* Set the current limit */
-	return regulator_modify_register(config, config->ilim_reg,
+	return regulator_modify_register(dev, config->ilim_reg,
 		config->ilim_mask, data->current_levels[i].reg_val);
 }
 
@@ -231,7 +263,7 @@ int regulator_get_current_limit(const struct device *dev)
 	if (config->num_current_levels == 0) {
 		return -ENOTSUP;
 	}
-	rc = regulator_read_register(config, config->ilim_reg, &raw_reg);
+	rc = regulator_read_register(dev, config->ilim_reg, &raw_reg);
 	if (rc) {
 		return rc;
 	}
@@ -246,6 +278,61 @@ int regulator_get_current_limit(const struct device *dev)
 	return data->current_levels[i].uA;
 }
 
+/*
+ * Part of the extended regulator consumer API
+ * switches the regulator to a given mode. This API will apply a mode for
+ * the regulator, and also configure the remainder of the regulator APIs,
+ * such as those disabling, changing voltage/current targets, or querying
+ * voltage/current targets to target that mode.
+ */
+int regulator_set_mode(const struct device *dev, uint32_t mode)
+{
+	const struct regulator_config *config = dev->config;
+	struct regulator_data *data = dev->data;
+	int rc;
+	uint8_t i, sel_off;
+
+	if (config->num_modes == 0) {
+		return -ENOTSUP;
+	}
+
+	/* Search for mode ID in allowed modes. */
+	for (i = 0 ; i < config->num_modes; i++) {
+		if (config->allowed_modes[i] == mode) {
+			break;
+		}
+	}
+	if (i == config->num_modes) {
+		/* Mode was not found */
+		return -EINVAL;
+	}
+	sel_off = ((mode & PMIC_MODE_OFFSET_MASK) >> PMIC_MODE_OFFSET_SHIFT);
+	/* Configure mode */
+	if (mode & PMIC_MODE_FLAG_MODESEL_MULTI_REG) {
+		/* Select mode with offset calculation */
+		/* Set reg_offset here so it takes effect for the write
+		 * to modesel_reg
+		 */
+		data->reg_offset = sel_off;
+		rc = regulator_modify_register(dev, config->modesel_reg,
+			mode & PMIC_MODE_SELECTOR_MASK, config->modesel_mask);
+	} else {
+		/* Select mode without offset to modesel_reg */
+		/* Clear register offset */
+		data->reg_offset = 0;
+		rc = regulator_modify_register(dev, config->modesel_reg,
+			mode & PMIC_MODE_SELECTOR_MASK, config->modesel_mask);
+		if (rc) {
+			return rc;
+		}
+		/* Since we did not use a register offset when selecting the
+		 * mode, but we now are targeting a specific mode's bank
+		 * of registers, we must still set the register offset here
+		 */
+		data->reg_offset = sel_off;
+	}
+	return rc;
+}
 
 static int enable_regulator(const struct device *dev, struct onoff_client *cli)
 {
@@ -262,7 +349,7 @@ static int enable_regulator(const struct device *dev, struct onoff_client *cli)
 		return onoff_sync_finalize(&data->srv, key, cli, rc, true);
 	}
 	en_val = config->enable_inverted ? 0 : config->enable_val;
-	rc = regulator_modify_register(config, config->enable_reg,
+	rc = regulator_modify_register(dev, config->enable_reg,
 			config->enable_mask, en_val);
 	if (rc) {
 		return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
@@ -285,7 +372,7 @@ static int disable_regulator(const struct device *dev)
 		return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
 	}
 	dis_val = config->enable_inverted ? config->enable_val : 0;
-	rc = regulator_modify_register(config, config->enable_reg,
+	rc = regulator_modify_register(dev, config->enable_reg,
 			config->enable_mask, dis_val);
 	if (rc) {
 		/* Error writing configs */
@@ -309,6 +396,9 @@ static int pmic_reg_init(const struct device *dev)
 	if (!device_is_ready(config->i2c.bus)) {
 		return -ENODEV;
 	}
+	if (config->initial_mode) {
+		return regulator_set_mode(dev, config->initial_mode);
+	}
 	return 0;
 }
 
@@ -331,7 +421,11 @@ static const struct regulator_driver_api api = {
 		DT_PROP_OR(node, current_levels, {});						\
 	static uint32_t pmic_reg_##ord##_vol_range[] =						\
 		DT_PROP(node, voltage_range);							\
-	static struct regulator_data pmic_reg_##ord##_data;					\
+	static uint16_t pmic_reg_##ord##_allowed_modes[] =					\
+		DT_PROP_OR(DT_PARENT(node), regulator_allowed_modes, {});			\
+	static struct regulator_data pmic_reg_##ord##_data = {					\
+		.reg_offset = 0,								\
+	};											\
 	static struct regulator_config pmic_reg_##ord##_cfg = {					\
 		.vsel_mask = DT_PROP(node, vsel_mask),						\
 		.vsel_reg = DT_PROP(node, vsel_reg),						\
@@ -345,9 +439,15 @@ static const struct regulator_driver_api api = {
 		.ilim_reg = DT_PROP_OR(node, ilim_reg, 0),					\
 		.ilim_mask = DT_PROP_OR(node, ilim_mask, 0),					\
 		.enable_inverted = DT_PROP(node, enable_inverted),				\
+		.num_modes = ARRAY_SIZE(pmic_reg_##ord##_allowed_modes),			\
+		.initial_mode = DT_PROP_OR(DT_PARENT(node), regulator_initial_mode, 0),		\
 		.i2c = I2C_DT_SPEC_GET(DT_PARENT(node)),					\
 		.voltage_array = pmic_reg_##ord##_vol_range,					\
 		.current_array = pmic_reg_##ord##_cur_limits,					\
+		.allowed_modes = pmic_reg_##ord##_allowed_modes,				\
+		.modesel_offset = DT_PROP_OR(DT_PARENT(node), modesel_offset, 0),		\
+		.modesel_reg = DT_PROP_OR(DT_PARENT(node), modesel_reg, 0),			\
+		.modesel_mask = DT_PROP_OR(DT_PARENT(node), modesel_mask, 0),			\
 	};											\
 	DEVICE_DT_DEFINE(node, pmic_reg_init, NULL,						\
 			      &pmic_reg_##ord##_data,						\
