@@ -64,10 +64,13 @@ struct app_key_val {
 	uint8_t  val[2][16];
 } __packed;
 
-/* IV Index & IV Update information for persistent storage. */
+/* Network information for persistent storage. */
 struct net_val {
-	uint32_t iv_index;
-	bool  iv_update;
+	struct __packed {
+		uint32_t index;
+		bool     update;
+	} iv;
+	uint16_t lowest_avail_addr;
 } __packed;
 
 static struct node_update cdb_node_updates[CONFIG_BT_MESH_CDB_NODE_COUNT];
@@ -142,7 +145,8 @@ static int addr_is_free(uint16_t addr_start, uint8_t num_elem, uint16_t *next)
  */
 static uint16_t find_lowest_free_addr(uint8_t num_elem)
 {
-	uint16_t addr = 1, next;
+	uint16_t addr = bt_mesh_cdb.lowest_avail_addr;
+	uint16_t next;
 	int err, i;
 
 	/*
@@ -178,15 +182,23 @@ static int cdb_net_set(const char *name, size_t len_rd,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &net, sizeof(net));
 	if (err) {
-		BT_ERR("Failed to set \'cdb_net\'");
-		return err;
+		/* Try to recover previous version of the network settings without address. */
+		err = bt_mesh_settings_set(read_cb, cb_arg, &net, sizeof(net.iv));
+		if (err) {
+			BT_ERR("Failed to set \'cdb_net\'");
+			return err;
+		}
+
+		net.lowest_avail_addr = 1;
 	}
 
-	bt_mesh_cdb.iv_index = net.iv_index;
+	bt_mesh_cdb.iv_index = net.iv.index;
 
-	if (net.iv_update) {
+	if (net.iv.update) {
 		atomic_set_bit(bt_mesh_cdb.flags, BT_MESH_CDB_IVU_IN_PROGRESS);
 	}
+
+	bt_mesh_cdb.lowest_avail_addr = net.lowest_avail_addr;
 
 	atomic_set_bit(bt_mesh_cdb.flags, BT_MESH_CDB_VALID);
 
@@ -693,6 +705,7 @@ int bt_mesh_cdb_create(const uint8_t key[16])
 
 	memcpy(sub->keys[0].net_key, key, 16);
 	bt_mesh_cdb.iv_index = 0;
+	bt_mesh_cdb.lowest_avail_addr = 1;
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		update_cdb_net_settings();
@@ -735,6 +748,11 @@ void bt_mesh_cdb_clear(void)
 void bt_mesh_cdb_iv_update(uint32_t iv_index, bool iv_update)
 {
 	BT_DBG("Updating IV index to %d\n", iv_index);
+
+	/* Reset the last deleted addr when IV Index is updated or recovered. */
+	if (!iv_update || iv_index > bt_mesh_cdb.iv_index + 1) {
+		bt_mesh_cdb.lowest_avail_addr = 1;
+	}
 
 	bt_mesh_cdb.iv_index = iv_index;
 
@@ -827,6 +845,8 @@ struct bt_mesh_cdb_node *bt_mesh_cdb_node_alloc(const uint8_t uuid[16], uint16_t
 		if (addr == BT_MESH_ADDR_UNASSIGNED) {
 			return NULL;
 		}
+	} else if (addr < bt_mesh_cdb.lowest_avail_addr) {
+		return NULL;
 	} else if (addr_is_free(addr, num_elem, NULL) < 0) {
 		BT_DBG("Address range 0x%04x-0x%04x is not free", addr,
 		       addr + num_elem - 1);
@@ -855,6 +875,14 @@ void bt_mesh_cdb_node_del(struct bt_mesh_cdb_node *node, bool store)
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
 		update_cdb_node_settings(node, false);
+	}
+
+	if (store && node->addr + node->num_elem > bt_mesh_cdb.lowest_avail_addr) {
+		bt_mesh_cdb.lowest_avail_addr = node->addr + node->num_elem;
+
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			update_cdb_net_settings();
+		}
 	}
 
 	node->addr = BT_MESH_ADDR_UNASSIGNED;
@@ -976,9 +1004,10 @@ static void store_cdb_pending_net(void)
 
 	BT_DBG("");
 
-	net.iv_index = bt_mesh_cdb.iv_index;
-	net.iv_update = atomic_test_bit(bt_mesh_cdb.flags,
+	net.iv.index = bt_mesh_cdb.iv_index;
+	net.iv.update = atomic_test_bit(bt_mesh_cdb.flags,
 					BT_MESH_CDB_IVU_IN_PROGRESS);
+	net.lowest_avail_addr = bt_mesh_cdb.lowest_avail_addr;
 
 	err = settings_save_one("bt/mesh/cdb/Net", &net, sizeof(net));
 	if (err) {
