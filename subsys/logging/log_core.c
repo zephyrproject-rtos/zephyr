@@ -412,6 +412,11 @@ static bool msg_filter_check(struct log_backend const *backend,
 	domain_id = log_msg_get_domain(&msg->log);
 	source_id = source ? log_dynamic_source_id(source) : -1;
 
+	/* Accept all non-logging messages. */
+	if (level == LOG_LEVEL_NONE) {
+		return true;
+	}
+
 	backend_level = log_filter_get(backend, domain_id,
 				       source_id, true);
 
