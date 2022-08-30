@@ -128,13 +128,13 @@ struct zephyr_smp_transport {
 /**
  * @brief Initializes a Zephyr SMP transport object.
  *
- * @param zst                   The transport to construct.
+ * @param smpt                  The transport to construct.
  * @param output_func           The transport's send function.
  * @param get_mtu_func          The transport's get-MTU function.
  * @param ud_copy_func          The transport buffer user_data copy function.
  * @param ud_free_func          The transport buffer user_data free function.
  */
-void smp_transport_init(struct smp_transport *zst,
+void smp_transport_init(struct smp_transport *smpt,
 			smp_transport_out_fn output_func,
 			smp_transport_get_mtu_fn get_mtu_func,
 			smp_transport_ud_copy_fn ud_copy_func,
