@@ -2047,11 +2047,6 @@ int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache);
  *
  *  @param stream   Stream object.
  *  @param buf      Buffer containing data to be sent.
- *                  The maximum size is the SDU that was
- *                  configured, minus the header size. The header size is either
- *                  @ref BT_HCI_ISO_DATA_HDR_SIZE or
- *                  @ref BT_HCI_ISO_TS_DATA_HDR_SIZE depending on @p ts
- *                  (the latter is used if @p ts is not BT_ISO_TIMESTAMP_NONE).
  *  @param seq_num  Packet Sequence number. This value shall be incremented for
  *                  each call to this function and at least once per SDU
  *                  interval for a specific channel.
