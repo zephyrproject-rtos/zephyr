@@ -11,10 +11,7 @@
 
 #include <cavs-idc.h>
 #include <adsp_shim.h>
-
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-#include <ace_v1x-regs.h>
-#endif
+#include <adsp_interrupt.h>
 
 /**
  * @file
@@ -28,7 +25,7 @@
 #define COMPARATOR_IDX  0 /* 0 or 1 */
 
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
-#define TIMER_IRQ ACE_IRQ_TO_ZEPHYR(MTL_INTL_TTS)
+#define TIMER_IRQ ACE_IRQ_TO_ZEPHYR(ACE_INTL_TTS)
 #else
 #define TIMER_IRQ DSP_WCT_IRQ(COMPARATOR_IDX)
 #endif
@@ -190,7 +187,7 @@ static void irq_init(void)
 	 * Drivers need to do that part.
 	 */
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
-	MTL_DINT[cpu].ie[MTL_INTL_TTS] |= BIT(COMPARATOR_IDX + 1);
+	ACE_DINT[cpu].ie[ACE_INTL_TTS] |= BIT(COMPARATOR_IDX + 1);
 	*WCTCS |= ADSP_SHIM_DSPWCTCS_TTIE(COMPARATOR_IDX);
 #else
 	CAVS_INTCTRL[cpu].l2.clear = CAVS_L2_DWCT0;
