@@ -60,6 +60,10 @@
 
 };
 
+&gpiob {
+	status = "okay";
+};
+
 &gpioh {
 	status = "okay";
 };
