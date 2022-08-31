@@ -1545,6 +1545,102 @@ uint16_t bt_mesh_comp_p0_elem_mod(struct bt_mesh_comp_p0_elem *elem, int idx);
  */
 struct bt_mesh_mod_id_vnd bt_mesh_comp_p0_elem_mod_vnd(struct bt_mesh_comp_p0_elem *elem, int idx);
 
+struct bt_mesh_comp_p1_elem {
+	/** The number of SIG models in this element */
+	size_t nsig;
+	/** The number of vendor models in this element */
+	size_t nvnd;
+	/** Buffer containig SIG and Vendor Model Items */
+	struct net_buf_simple *_buf;
+};
+
+/** Composition data page 1 model item representation */
+struct bt_mesh_comp_p1_model_item {
+	/** Corresponding_Group_ID field indicator */
+	bool cor_present;
+	/** Determines the format of Extended Model Item */
+	bool format;
+	/** Number of items in Extended Model Items*/
+	uint8_t ext_item_cnt : 6;
+	/** Buffer containing Extended Model Items.
+	 *  If cor_present is set to 1 it starts with
+	 *  Corresponding_Group_ID
+	 */
+	uint8_t cor_id;
+	struct net_buf_simple *_buf;
+};
+
+/** Extended Model Item in short representation */
+struct bt_mesh_comp_p1_item_short {
+	/** Element address modifier */
+	uint8_t elem_offset : 3;
+	/** Model Index */
+	uint8_t mod_item_idx : 5;
+};
+
+/** Extended Model Item in long representation */
+struct bt_mesh_comp_p1_item_long {
+	/** Element address modifier */
+	uint8_t elem_offset;
+	/** Model Index */
+	uint8_t mod_item_idx;
+};
+
+/** Extended Model Item */
+struct bt_mesh_comp_p1_ext_item {
+	enum { SHORT, LONG } type;
+
+	union {
+		/** Item in short representation */
+		struct bt_mesh_comp_p1_item_short short_item;
+		/** Item in long representation */
+		struct bt_mesh_comp_p1_item_long long_item;
+	};
+};
+
+/** @brief Pull a Composition Data Page 1 Element from a composition data page 1
+ *         instance.
+ *
+ *  Each call to this function will pull out a new element from the composition
+ *  data page, until all elements have been pulled.
+ *
+ *  @param buf Composition data page 1 buffer
+ *  @param elem Element to fill.
+ *
+ *  @return A pointer to @c elem on success, or NULL if no more elements could
+ *          be pulled.
+ */
+struct bt_mesh_comp_p1_elem *bt_mesh_comp_p1_elem_pull(
+	struct net_buf_simple *buf, struct bt_mesh_comp_p1_elem *elem);
+
+/** @brief Pull a Composition Data Page 1 Model Item from a Composition Data
+ * Page 1 Element
+ *
+ *  Each call to this function will pull out a new item from the Composition Data
+ *  Page 1 Element, until all items have been pulled.
+ *
+ *  @param elem Composition data page 1 Element
+ *  @param item Model Item to fill.
+ *
+ *  @return A pointer to @c item on success, or NULL if no more elements could
+ *          be pulled.
+ */
+struct bt_mesh_comp_p1_model_item *bt_mesh_comp_p1_item_pull(
+	struct bt_mesh_comp_p1_elem *elem, struct bt_mesh_comp_p1_model_item *item);
+
+/** @brief Pull Extended Model Item contained in Model Item
+ *
+ *  Each call to this function will pull out a new element
+ *  from the Extended Model Item, until all elements have been pulled.
+ *
+ *  @param item Model Item to pull Extended Model Items from
+ *  @param ext_item Extended Model Item to fill
+ *
+ *  @return A pointer to @c ext_item on success, or NULL if item could not be pulled
+ */
+struct bt_mesh_comp_p1_ext_item *bt_mesh_comp_p1_pull_ext_item(
+	struct bt_mesh_comp_p1_model_item *item, struct bt_mesh_comp_p1_ext_item *ext_item);
+
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op bt_mesh_cfg_cli_op[];
 extern const struct bt_mesh_model_cb bt_mesh_cfg_cli_cb;

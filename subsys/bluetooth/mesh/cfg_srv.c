@@ -61,17 +61,25 @@ static int dev_comp_data_get(struct bt_mesh_model *model,
 	page = net_buf_simple_pull_u8(buf);
 
 	if (page >= 128U && atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY)) {
-		LOG_DBG("Composition data page 128");
 		page = 128U;
+	} else if (page >= 1U && IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
+		page = 1U;
 	} else if (page != 0U) {
 		LOG_DBG("Composition page %u not available", page);
 		page = 0U;
 	}
+	LOG_DBG("Preparing Composition data page %d", page);
 
 	bt_mesh_model_msg_init(&sdu, OP_DEV_COMP_DATA_STATUS);
 
 	net_buf_simple_add_u8(&sdu, page);
-	if (atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY) == (page == 0U)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1) && page == 1) {
+		err = bt_mesh_comp_data_get_page_1(&sdu);
+		if (err < 0) {
+			LOG_ERR("Unable to get composition page 1");
+			return err;
+		}
+	} else if (atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY) == (page == 0U)) {
 		sdu.size -= BT_MESH_MIC_SHORT;
 		err = bt_mesh_comp_read(&sdu);
 		if (err) {
