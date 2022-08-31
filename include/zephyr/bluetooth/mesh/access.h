@@ -857,6 +857,29 @@ int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
 int bt_mesh_model_extend(struct bt_mesh_model *extending_mod,
 			 struct bt_mesh_model *base_mod);
 
+/** @brief Let a model correspond to another.
+ *
+ *  Mesh models may correspond to each other, which means that if one is present,
+ *  other must be present too. A Mesh model may correspond to any number of models,
+ *  in any element. All models connected together via correspondence form single
+ *  Correspondence Group, which has it's unique Correspondence ID. Information about
+ *  Correspondence is used to construct Composition Data Page 1.
+ *
+ *  This function must be called on already initialized base_mod. Because this function
+ *  is designed to be called in corresponding_mod initializer, this means that base_mod
+ *  shall be initialized before corresponding_mod is.
+ *
+ *  @param corresponding_mod  Mesh model that is corresponding to the base model.
+ *  @param base_mod           The model being corresponded to.
+ *
+ *  @retval 0 Successfully saved correspondence to the base_mod model.
+ *  @retval -ENOMEM   There is no more space to save this relation.
+ *  @retval -ENOTSUP  Composition Data Page 1 is not supported.
+ */
+
+int bt_mesh_model_correspond(struct bt_mesh_model *corresponding_mod,
+			     struct bt_mesh_model *base_mod);
+
 /** @brief Check if model is extended by another model.
  *
  *  @param model The model to check.
