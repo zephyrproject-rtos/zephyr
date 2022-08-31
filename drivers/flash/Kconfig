@@ -108,4 +108,6 @@ source "drivers/flash/Kconfig.smartbond"
 
 source "drivers/flash/Kconfig.cadence_qspi_nor"
 
+source "drivers/flash/Kconfig.gd32"
+
 endif # FLASH
