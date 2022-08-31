@@ -119,6 +119,11 @@ int main(void)
 		return -ENODEV;
 	}
 
+	if (!device_is_ready(uart_dev)) {
+		LOG_ERR("UART node is not ready!")
+		return -ENODEV;
+	}
+
 	/* Optional register modem power callbacks */
 	gsm_ppp_register_modem_power_callback(gsm_dev, modem_on_cb, modem_off_cb, NULL);
 
