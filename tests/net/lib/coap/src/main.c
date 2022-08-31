@@ -272,6 +272,38 @@ ZTEST(coap, test_parse_simple_pdu)
 		      "There shouldn't be any ETAG option in the packet");
 }
 
+ZTEST(coap, test_parse_malformed_pkt)
+{
+	uint8_t opt[] = { 0x55, 0xA5, 0x12 };
+
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	r = coap_packet_parse(&cpkt, NULL, sizeof(opt), NULL, 0);
+	zassert_equal(r, -EINVAL, "Should've failed to parse a packet");
+
+	r = coap_packet_parse(&cpkt, data, 0, NULL, 0);
+	zassert_equal(r, -EINVAL, "Should've failed to parse a packet");
+
+	memcpy(data, opt, sizeof(opt));
+	r = coap_packet_parse(&cpkt, data, sizeof(opt), NULL, 0);
+	zassert_equal(r, -EINVAL, "Should've failed to parse a packet");
+}
+
+ZTEST(coap, test_parse_malformed_coap_hdr)
+{
+	uint8_t opt[] = { 0x55, 0x24, 0x49, 0x55, 0xff, 0x66, 0x77, 0x99};
+
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, opt, sizeof(opt));
+	r = coap_packet_parse(&cpkt, data, sizeof(opt), NULL, 0);
+	zassert_equal(r, -EBADMSG, "Should've failed to parse a packet");
+}
+
 ZTEST(coap, test_parse_malformed_opt)
 {
 	uint8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
@@ -283,7 +315,7 @@ ZTEST(coap, test_parse_malformed_opt)
 	memcpy(data, opt, sizeof(opt));
 
 	r = coap_packet_parse(&cpkt, data, sizeof(opt), NULL, 0);
-	zassert_not_equal(r, 0, "Should've failed to parse a packet");
+	zassert_equal(r, -EILSEQ, "Should've failed to parse a packet");
 }
 
 ZTEST(coap, test_parse_malformed_opt_len)
@@ -297,7 +329,7 @@ ZTEST(coap, test_parse_malformed_opt_len)
 	memcpy(data, opt, sizeof(opt));
 
 	r = coap_packet_parse(&cpkt, data, sizeof(opt), NULL, 0);
-	zassert_not_equal(r, 0, "Should've failed to parse a packet");
+	zassert_equal(r, -EILSEQ, "Should've failed to parse a packet");
 }
 
 ZTEST(coap, test_parse_malformed_opt_ext)
@@ -311,7 +343,7 @@ ZTEST(coap, test_parse_malformed_opt_ext)
 	memcpy(data, opt, sizeof(opt));
 
 	r = coap_packet_parse(&cpkt, data, sizeof(opt), NULL, 0);
-	zassert_not_equal(r, 0, "Should've failed to parse a packet");
+	zassert_equal(r, -EILSEQ, "Should've failed to parse a packet");
 }
 
 ZTEST(coap, test_parse_malformed_opt_len_ext)
@@ -325,7 +357,7 @@ ZTEST(coap, test_parse_malformed_opt_len_ext)
 	memcpy(data, opt, sizeof(opt));
 
 	r = coap_packet_parse(&cpkt, data, sizeof(opt), NULL, 0);
-	zassert_not_equal(r, 0, "Should've failed to parse a packet");
+	zassert_equal(r, -EILSEQ, "Should've failed to parse a packet");
 }
 
 /* 1 option, No payload (with payload marker) */
