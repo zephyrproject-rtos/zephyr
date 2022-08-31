@@ -23,7 +23,7 @@
 					  CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT))
 
 static struct bt_cap_stream unicast_client_streams[CAP_UNICAST_CLIENT_STREAM_COUNT];
-static struct bt_audio_unicast_group *unicast_group;
+static struct bt_audio_unicast_group *default_unicast_group;
 
 static void cap_discover_cb(struct bt_conn *conn, int err,
 			    const struct bt_csis_client_csis_inst *csis_inst)
@@ -58,10 +58,31 @@ static void unicast_update_complete_cb(int err, struct bt_conn *conn)
 	}
 }
 
+static void unicast_stop_complete_cb(struct bt_audio_unicast_group *unicast_group,
+				     int err, struct bt_conn *conn)
+{
+	if (default_unicast_group != unicast_group) {
+		/* ignore */
+		return;
+	}
+
+	if (err != 0) {
+		shell_error(ctx_shell,
+			    "Unicast stop failed for group %p and conn %p (%d)",
+			    unicast_group, conn, err);
+	} else {
+		shell_print(ctx_shell,
+			    "Unicast stopped for group %p completed",
+			    default_unicast_group);
+		default_unicast_group = NULL;
+	}
+}
+
 static struct bt_cap_initiator_cb cbs = {
 	.discovery_complete = cap_discover_cb,
 	.unicast_start_complete = cap_unicast_start_complete_cb,
-	.unicast_update_complete = unicast_update_complete_cb
+	.unicast_update_complete = unicast_update_complete_cb,
+	.unicast_stop_complete = unicast_stop_complete_cb,
 };
 
 static int cmd_cap_initiator_discover(const struct shell *sh, size_t argc,
@@ -229,7 +250,8 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 
 	shell_print(sh, "Setting %zu streams", param.count);
 
-	err = bt_cap_initiator_unicast_audio_start(&param, &unicast_group);
+	err = bt_cap_initiator_unicast_audio_start(&param,
+						   &default_unicast_group);
 	if (err != 0) {
 		shell_print(sh, "Failed to start unicast audio: %d", err);
 	}
@@ -320,6 +342,27 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 	return err;
 }
 
+static int cmd_cap_initiator_unicast_stop(const struct shell *sh, size_t argc,
+					  char *argv[])
+{
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	} else if (default_unicast_group == NULL) {
+		shell_error(sh, "No unicast group starteds");
+		return -ENOEXEC;
+	}
+
+	err = bt_cap_initiator_unicast_audio_stop(default_unicast_group);
+	if (err != 0) {
+		shell_print(sh, "Failed to update unicast audio: %d", err);
+	}
+
+	return err;
+}
+
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
 
 static int cmd_cap_initiator(const struct shell *sh, size_t argc, char **argv)
@@ -350,6 +393,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cap_initiator_cmds,
 		      "Unicast Update <all | stream [stream [stream...]]>",
 		      cmd_cap_initiator_unicast_update, 2,
 		      CAP_UNICAST_CLIENT_STREAM_COUNT),
+	SHELL_CMD_ARG(unicast-stop, NULL,
+		      "Unicast stop all streams",
+		      cmd_cap_initiator_unicast_stop, 1, 0),
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
 	SHELL_SUBCMD_SET_END
 );
