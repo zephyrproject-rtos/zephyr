@@ -61,17 +61,7 @@ find_program(BOSSAC bossac)
 # in the mcuboot repository if that's present in some cases)
 find_program(IMGTOOL imgtool)
 
-# Keep XCC_USE_CLANG behaviour for a while.
-if ("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc"
-    AND "$ENV{XCC_USE_CLANG}" STREQUAL "1")
-  set(ZEPHYR_TOOLCHAIN_VARIANT xcc-clang)
-  message(STATUS "XCC_USE_CLANG is deprecated. Please set ZEPHYR_TOOLCHAIN_VARIANT to 'xcc-clang'")
-endif()
-
-if(NOT ZEPHYR_TOOLCHAIN_VARIANT AND
-   (CROSS_COMPILE OR (DEFINED ENV{CROSS_COMPILE})))
-    set(ZEPHYR_TOOLCHAIN_VARIANT cross-compile)
-endif()
+find_package(Deprecated COMPONENTS XCC_USE_CLANG CROSS_COMPILE)
 
 find_package(Zephyr-sdk 0.15)
 
