@@ -1,3 +1,4 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 CONFIG_SOC_SERIES_NRF53X=y
@@ -8,33 +9,30 @@ CONFIG_BOARD_ENABLE_DCDC_APP=y
 CONFIG_BOARD_ENABLE_DCDC_NET=y
 CONFIG_BOARD_ENABLE_CPUNET=y
 
-# Enable MPU
 CONFIG_ARM_MPU=y
 
-# Enable hardware stack protection
 CONFIG_HW_STACK_PROTECTION=y
 
-# Enable TrustZone-M
 CONFIG_ARM_TRUSTZONE_M=y
 
-# Enable PINCTRL
 CONFIG_PINCTRL=y
-
-# Enable GPIO
 CONFIG_GPIO=y
 CONFIG_NFCT_PINS_AS_GPIOS=y
 
-# I2S
-CONFIG_I2S=n # Zephyr I2S driver not used, we are using custom shim
+CONFIG_BT=y
+
+# Custom solution used instead of Zephyr I2S driver
+CONFIG_I2S=n
 CONFIG_NRFX_I2S=y
+
+CONFIG_I2C=y
+CONFIG_SPI=y
+CONFIG_ADC=y
 
 # Enable NRFX_CLOCK for ACLK control
 CONFIG_NRFX_CLOCK=y
 
-CONFIG_I2C=y
-
-# NOTE: Since we are not using minimal libc, error codes from
-#       minimal libc are not used
+# Minimal libc is not used. Note that this will impact error codes
 CONFIG_NEWLIB_LIBC=y
 
 # Audio codec LC3 related defines
@@ -48,14 +46,7 @@ CONFIG_FPU_SHARING=y
 CONFIG_DISK_DRIVERS=y
 CONFIG_DISK_DRIVER_SDMMC=y
 
-# Enable SPI interface
-CONFIG_SPI=y
-
-# Enable ADC for board version readback
-CONFIG_ADC=y
-
-# Allocate buffer on RAM for transferring chunck of data
-# from Flash to SPI
+# Allocate RAM buffer for transferring chunck of data from Flash to SPI
 CONFIG_SPI_NRFX_RAM_BUFFER_SIZE=8
 
 # Config the file system
@@ -66,12 +57,4 @@ CONFIG_FS_FATFS_LFN=y
 CONFIG_FS_FATFS_LFN_MODE_STACK=y
 # exFAT enabled to support longer file names and higher transfer speed
 CONFIG_FS_FATFS_EXFAT=y
-
-# Set the maximum file name length to 255
 CONFIG_FS_FATFS_MAX_LFN=255
-
-# Bluetooth Low Energy
-CONFIG_BT=y
-
-# Add drivers for Cirrus Logic HW Codec
-CONFIG_HW_CODEC_CIRRUS_LOGIC=y

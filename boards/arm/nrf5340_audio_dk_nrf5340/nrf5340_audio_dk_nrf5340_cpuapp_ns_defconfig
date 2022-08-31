@@ -1,3 +1,4 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 CONFIG_SOC_SERIES_NRF53X=y
