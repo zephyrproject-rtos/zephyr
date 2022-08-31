@@ -247,6 +247,12 @@ Devicetree
 Libraries / Subsystems
 **********************
 
+* Management
+
+  * MCUMGR race condition when using the task status function whereby if a
+    thread state changed it could give a falsely short process list has been
+    fixed.
+
 HALs
 ****
 
