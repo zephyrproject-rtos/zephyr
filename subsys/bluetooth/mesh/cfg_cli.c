@@ -33,6 +33,12 @@ LOG_MODULE_REGISTER(bt_mesh_cfg_cli);
 /* 2 byte dummy opcode for getting compile time buffer sizes. */
 #define DUMMY_2_BYTE_OP	BT_MESH_MODEL_OP_2(0xff, 0xff)
 
+#define COR_PRESENT(hdr) ((hdr) & BIT(0))
+#define FMT(hdr) ((hdr) & BIT(1))
+#define EXT_ITEM_CNT(hdr) ((hdr) >> 2)
+#define OFFSET(item) (item & (uint8_t)BIT_MASK(5))
+#define IDX(item) (item >> 3)
+
 struct comp_data {
 	uint8_t *page;
 	struct net_buf_simple *comp;
@@ -949,7 +955,7 @@ done:
 }
 
 const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
-	{ OP_DEV_COMP_DATA_STATUS,   BT_MESH_LEN_MIN(15),     comp_data_status },
+	{ OP_DEV_COMP_DATA_STATUS,   BT_MESH_LEN_MIN(5),     comp_data_status },
 	{ OP_BEACON_STATUS,          BT_MESH_LEN_EXACT(1),    beacon_status },
 	{ OP_DEFAULT_TTL_STATUS,     BT_MESH_LEN_EXACT(1),    ttl_status },
 	{ OP_FRIEND_STATUS,          BT_MESH_LEN_EXACT(1),    friend_status },
@@ -2204,4 +2210,131 @@ struct bt_mesh_mod_id_vnd bt_mesh_comp_p0_elem_mod_vnd(struct bt_mesh_comp_p0_el
 	};
 
 	return mod;
+}
+
+struct bt_mesh_comp_p1_elem *bt_mesh_comp_p1_elem_pull(struct net_buf_simple *buf,
+						       struct bt_mesh_comp_p1_elem *elem)
+{
+	if (buf->len < 6) {
+		LOG_ERR("No more elements to pull or missing data");
+		return NULL;
+	}
+	size_t elem_size = 0;
+	uint8_t header, ext_item_cnt;
+	bool fmt, cor_present;
+	int i;
+
+	elem->nsig = net_buf_simple_pull_u8(buf);
+	elem->nvnd = net_buf_simple_pull_u8(buf);
+	for (i = 0; i < elem->nsig + elem->nvnd; i++) {
+		header = buf->data[elem_size];
+		cor_present = COR_PRESENT(header);
+		fmt = FMT(header);
+		ext_item_cnt = EXT_ITEM_CNT(header);
+
+		LOG_DBG("header %d, cor_present %d, fmt %d, ext_item_cnt %d",
+			header, cor_present, fmt, ext_item_cnt);
+		/* Size of element equals 1 octet (header) + optional 1 octet
+		 * (Correspondence ID, if applies) + size of Extended Model Items
+		 * (each 1 or 2 octet long, depending on format)
+		 */
+		elem_size += (1 + cor_present) + (fmt + 1) * ext_item_cnt;
+	}
+
+	net_buf_simple_init_with_data(elem->_buf,
+				      net_buf_simple_pull_mem(buf, elem_size),
+				      elem_size);
+	return elem;
+}
+
+struct bt_mesh_comp_p1_model_item *bt_mesh_comp_p1_item_pull(
+	struct bt_mesh_comp_p1_elem *elem, struct bt_mesh_comp_p1_model_item *item)
+{
+	if (elem->_buf->len < 1) {
+		LOG_ERR("Empty buffer");
+		return NULL;
+	}
+	LOG_DBG("N_SIG %d, N_VND %d, buf len=%d:0x%s",
+		elem->nsig, elem->nvnd, elem->_buf->len,
+		bt_hex(elem->_buf->data, elem->_buf->len));
+
+	size_t item_size;
+	uint8_t header;
+
+	header = net_buf_simple_pull_u8(elem->_buf);
+	item->cor_present = COR_PRESENT(header);
+	item->format = FMT(header);
+	item->ext_item_cnt = EXT_ITEM_CNT(header);
+	item_size = item->ext_item_cnt * (item->format + 1);
+	if (item->cor_present) {
+		item->cor_id = net_buf_simple_pull_u8(elem->_buf);
+	}
+
+	net_buf_simple_init_with_data(item->_buf,
+				      net_buf_simple_pull_mem(elem->_buf, item_size),
+				      item_size);
+	return item;
+}
+
+
+static struct bt_mesh_comp_p1_item_short *comp_p1_pull_item_short(
+	struct bt_mesh_comp_p1_model_item *item, struct bt_mesh_comp_p1_item_short *ext_item)
+{
+	if (item->_buf->len < 1) {
+		LOG_ERR("Empty buffer");
+		return NULL;
+	}
+
+	LOG_DBG("Correspondence ID %s, format %s, extended items count=%d",
+		item->cor_present ? "present" : "not present",
+		item->format ? "long" : "short",
+		item->ext_item_cnt);
+	if (item->format == 1 || item->_buf->len != 1) {
+		return NULL;
+	}
+	uint8_t item_data = net_buf_simple_pull_u8(item->_buf);
+
+	ext_item->elem_offset = OFFSET(item_data);
+	ext_item->mod_item_idx = IDX(item_data);
+	return ext_item;
+}
+
+static struct bt_mesh_comp_p1_item_long *comp_p1_pull_item_long(
+	struct bt_mesh_comp_p1_model_item *item, struct bt_mesh_comp_p1_item_long *ext_item)
+{
+	if (item->_buf->len < 2) {
+		LOG_ERR("Missing data, buf len=%d", item->_buf->len);
+		return NULL;
+	}
+
+	LOG_DBG("Correspondence ID %s, format %s, extended items count=%d",
+		item->cor_present ? "present" : "not present",
+		item->format ? "long" : "short",
+		item->ext_item_cnt);
+	if (item->format == 0 || item->_buf->len != 2) {
+		return NULL;
+	}
+
+	ext_item->elem_offset = net_buf_simple_pull_u8(item->_buf);
+	ext_item->mod_item_idx = net_buf_simple_pull_u8(item->_buf);
+
+	return ext_item;
+}
+
+struct bt_mesh_comp_p1_ext_item *bt_mesh_comp_p1_pull_ext_item(
+	struct bt_mesh_comp_p1_model_item *item, struct bt_mesh_comp_p1_ext_item *ext_item)
+{
+	if (item->_buf->len < 1) {
+		LOG_ERR("Empty buffer");
+		return NULL;
+	} else if (item->_buf->len < 2) {
+		LOG_DBG("Item in short format");
+		ext_item->type = SHORT;
+		comp_p1_pull_item_short(item, &ext_item->short_item);
+	} else {
+		LOG_DBG("Item in long format");
+		ext_item->type = LONG;
+		comp_p1_pull_item_long(item, &ext_item->long_item);
+	}
+	return ext_item;
 }
