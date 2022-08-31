@@ -214,6 +214,7 @@ struct cap_unicast_proc {
 	int err;
 	struct bt_conn *failed_conn;
 	struct bt_cap_stream *streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	struct bt_bap_unicast_group *unicast_group;
 };
 
 struct cap_unicast_client {
@@ -699,6 +700,8 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 		return -EINVAL;
 	}
 
+	active_proc.unicast_group = unicast_group;
+
 	return cap_initiator_unicast_audio_configure(param);
 }
 
@@ -1084,9 +1087,136 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 	cap_initiator_unicast_audio_update_complete();
 }
 
+static void cap_initiator_unicast_audio_stop_complete(void)
+{
+	struct bt_bap_unicast_group *unicast_group;
+	struct bt_conn *failed_conn;
+	int err;
+
+	unicast_group = active_proc.unicast_group;
+	failed_conn = active_proc.failed_conn;
+	err = active_proc.err;
+
+	(void)memset(&active_proc, 0, sizeof(active_proc));
+
+	if (cap_cb != NULL && cap_cb->unicast_stop_complete != NULL) {
+		cap_cb->unicast_stop_complete(unicast_group, err, failed_conn);
+	}
+}
+
+static bool can_release(const struct bt_bap_stream *bap_stream)
+{
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	if (bap_stream->conn == NULL) {
+		return false;
+	}
+
+	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
+	if (err != 0) {
+		LOG_DBG("Failed to get endpoint info %p: %d", bap_stream, err);
+
+		return false;
+	}
+
+	return ep_info.state != BT_BAP_EP_STATE_IDLE;
+}
+
 int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 {
-	return -ENOSYS;
+	struct bt_bap_stream *bap_stream;
+	size_t stream_cnt;
+
+	if (atomic_test_bit(active_proc.flags, CAP_UNICAST_PROC_STATE_ACTIVE)) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
+	}
+
+	CHECKIF(unicast_group == NULL) {
+		LOG_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	stream_cnt = 0U;
+	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, bap_stream, _node) {
+		if (can_release(bap_stream)) {
+			stream_cnt++;
+		}
+	}
+
+	if (stream_cnt == 0U) {
+		LOG_DBG("All streams are already stopped");
+
+		return -EALREADY;
+	}
+
+	atomic_set_bit(active_proc.flags, CAP_UNICAST_PROC_STATE_ACTIVE);
+	active_proc.stream_cnt = stream_cnt;
+	active_proc.unicast_group = unicast_group;
+
+	/** TODO: If this is a CSIP set, then the order of the procedures may
+	 * not match the order in the parameters, and the CSIP ordered access
+	 * procedure should be used.
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, bap_stream, _node) {
+		struct bt_cap_stream *cap_stream =
+			CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
+		int err;
+
+		if (!can_release(bap_stream)) {
+			continue;
+		}
+
+		active_proc.streams[active_proc.stream_initiated_cnt] = cap_stream;
+
+		err = bt_bap_stream_release(bap_stream);
+		if (err != 0) {
+			LOG_DBG("Failed to stop bap_stream %p: %d", bap_stream, err);
+
+			active_proc.err = err;
+			active_proc.failed_conn = bap_stream->conn;
+
+			if (active_proc.stream_initiated_cnt > 0U) {
+				atomic_set_bit(active_proc.flags, CAP_UNICAST_PROC_STATE_ABORTED);
+			} else {
+				(void)memset(&active_proc, 0, sizeof(active_proc));
+			}
+
+			return err;
+		}
+
+		active_proc.stream_initiated_cnt++;
+	}
+
+	return 0;
+}
+
+void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
+{
+	if (!cap_stream_in_active_proc(cap_stream)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	active_proc.stream_done_cnt++;
+
+	LOG_DBG("Stream %p released (%zu/%zu streams done)", cap_stream,
+		active_proc.stream_done_cnt, active_proc.stream_cnt);
+
+	if (active_proc.stream_done_cnt < active_proc.stream_cnt) {
+		/* Not yet finished, wait for all */
+		return;
+	} else if (atomic_test_bit(active_proc.flags, CAP_UNICAST_PROC_STATE_ABORTED)) {
+		if (active_proc.stream_done_cnt == active_proc.stream_initiated_cnt) {
+			cap_initiator_unicast_audio_stop_complete();
+		}
+
+		return;
+	}
+
+	cap_initiator_unicast_audio_stop_complete();
 }
 
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */

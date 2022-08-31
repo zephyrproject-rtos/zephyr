@@ -98,6 +98,12 @@ struct bt_cap_initiator_cb {
 	/**
 	 * @brief Callback for bt_cap_initiator_unicast_audio_stop().
 	 *
+	 * If @p err is 0, then @p unicast_group has been deleted and can no
+	 * longer be used.
+	 *
+	 * If @p err is not 0 and @p conn is NULL, then the deletion of the
+	 * @p unicast_group failed with @p err as the error.
+	 *
 	 * @param unicast_group  The unicast group pointer supplied to
 	 *                       bt_cap_initiator_unicast_audio_stop().
 	 * @param err            0 if success, else BT_GATT_ERR() with a
