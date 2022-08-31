@@ -59,6 +59,7 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
     set(ZEPHYR_CURRENT_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT})
     find_package(Zephyr-sdk ${Zephyr-sdk_FIND_VERSION}
                  REQUIRED QUIET CONFIG HINTS ${ZEPHYR_SDK_INSTALL_DIR}
+                 COMPONENTS HostTools
     )
     if(DEFINED ZEPHYR_CURRENT_TOOLCHAIN_VARIANT)
       set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_CURRENT_TOOLCHAIN_VARIANT})
@@ -71,7 +72,9 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
                  $ENV{HOME}
                  $ENV{HOME}/.local
                  $ENV{HOME}/.local/opt
-                 $ENV{HOME}/bin)
+                 $ENV{HOME}/bin
+                 COMPONENTS HostTools
+    )
   endif()
 
   SET(CMAKE_FIND_PACKAGE_SORT_DIRECTION ${CMAKE_FIND_PACKAGE_SORT_DIRECTION_CURRENT})
@@ -83,7 +86,8 @@ if(DEFINED ZEPHYR_SDK_INSTALL_DIR)
   set(ZEPHYR_SDK_INSTALL_DIR ${ZEPHYR_SDK_INSTALL_DIR} CACHE PATH "Zephyr SDK install directory")
 endif()
 
-if(Zephyr-sdk_FOUND)
+if(Zephyr-sdk_FOUND AND Zephyr-sdk_VERSION VERSION_LESS_EQUAL 0.15.0)
+  # Older Zephyr SDKs doesn't support COMPONENT HostTools so must manually be loaded.
   include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/host-tools.cmake)
 
   message(STATUS "Found host-tools: zephyr ${SDK_VERSION} (${ZEPHYR_SDK_INSTALL_DIR})")
