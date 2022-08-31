@@ -167,7 +167,7 @@ static void spi_sifive_xfer(const struct device *dev, const bool hw_cs_control)
 		sys_write32(SF_CSMODE_OFF, SPI_REG(dev, REG_CSMODE));
 	}
 
-	spi_context_complete(ctx, 0);
+	spi_context_complete(ctx, dev, 0);
 }
 
 /* API Functions */
@@ -207,7 +207,7 @@ static int spi_sifive_transceive(const struct device *dev,
 	bool hw_cs_control = false;
 
 	/* Lock the SPI Context */
-	spi_context_lock(&SPI_DATA(dev)->ctx, false, NULL, config);
+	spi_context_lock(&SPI_DATA(dev)->ctx, false, NULL, NULL, config);
 
 	/* Configure the SPI bus */
 	SPI_DATA(dev)->ctx.config = config;
