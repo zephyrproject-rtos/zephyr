@@ -1024,12 +1024,12 @@ static void uart_stm32_isr(const struct device *dev)
 
 		LOG_DBG("idle interrupt occurred");
 
-		/* Start the RX timer */
-		async_timer_start(&data->dma_rx.timeout_work,
-							data->dma_rx.timeout);
-
 		if (data->dma_rx.timeout == 0) {
 			uart_stm32_dma_rx_flush(dev);
+		} else {
+			/* Start the RX timer not null */
+			async_timer_start(&data->dma_rx.timeout_work,
+								data->dma_rx.timeout);
 		}
 	} else if (LL_USART_IsEnabledIT_TC(config->usart) &&
 			LL_USART_IsActiveFlag_TC(config->usart)) {
