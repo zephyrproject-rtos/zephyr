@@ -56,9 +56,6 @@ config BT_HCI_VS
 config BT_WAIT_NOP
 	default BT && $(dt_nodelabel_enabled,nrf52840_reset)
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_NXP_PCAL6408A := nxp,pcal6408a
-
 config I2C
 	default $(dt_compat_on_bus,$(DT_COMPAT_NXP_PCAL6408A),i2c)
 
