@@ -352,6 +352,8 @@ ZTEST(gpio_api_1pin_port, test_gpio_port_set_bits_clear_bits_raw)
 	}
 	zassert_equal(ret, 0, "Failed to configure the pin");
 
+	port_clear_bits_raw_and_verify(port, 0xFFFFFFFF, 0);
+
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		port_set_bits_raw_and_verify(port, test_vector[i][0], i);
 		val_expected |= test_vector[i][0] & (BIT(TEST_PIN));
