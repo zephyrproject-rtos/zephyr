@@ -3,11 +3,10 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_DAI_INTEL_SSP := intel,ssp-dai
-
 config DAI_INTEL_SSP
 	bool "Intel I2S (SSP) Bus Driver for Dai interface"
-	default $(dt_compat_enabled,$(DT_COMPAT_DAI_INTEL_SSP))
+	default y
+	depends on DT_HAS_INTEL_SSP_DAI_ENABLED
 	select DMA
 	depends on PM_DEVICE_RUNTIME
 	help
