@@ -12,7 +12,6 @@
 #include <fsl_dcdc.h>
 #include <fsl_pmu.h>
 #include <fsl_gpc.h>
-#include <fsl_lpuart.h>
 #include <fsl_clock.h>
 #include <zephyr/logging/log.h>
 
