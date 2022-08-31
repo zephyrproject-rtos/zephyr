@@ -389,7 +389,12 @@ def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
             project_path = PurePath(project.posixpath).as_posix()
             revision, dirty = git_revision(project_path)
             workspace_dirty |= dirty
-            if project.sha(MANIFEST_REV_BRANCH) != revision:
+            try:
+                manifest_rev_sha = project.sha(MANIFEST_REV_BRANCH)
+            except:
+                # no manifest-rev branch found, so we are definetly off
+                manifest_rev_sha = None
+            if manifest_rev_sha != revision:
                 revision += '-off'
                 workspace_off = True
             meta_project = {'path': project_path,
