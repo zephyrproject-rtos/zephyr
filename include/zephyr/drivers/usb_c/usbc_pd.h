@@ -5,7 +5,7 @@
 
 /**
  * @file
- * @brief USBC Power Delivery API used for USBC drivers
+ * @brief USB-C Power Delivery API used for USB-C drivers
  *
  * The information in this file was taken from the USB PD
  * Specification Revision 3.0, Version 2.0

@@ -3,4 +3,4 @@
 # Copyright 2022 The Chromium OS Authors
 # SPDX-License-Identifier: Apache-2.0
 
-source "drivers/usbc/tcpc/Kconfig"
+source "drivers/usb_c/tcpc/Kconfig"

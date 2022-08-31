@@ -8,7 +8,7 @@
 #define ZEPHYR_DRIVERS_USBC_DEVICE_UCPD_STM32_PRIV_H_
 
 #include <zephyr/sys/util.h>
-#include <zephyr/drivers/usbc/usbc_tcpc.h>
+#include <zephyr/drivers/usb_c/usbc_tcpc.h>
 #include <stm32_ll_ucpd.h>
 
 /**

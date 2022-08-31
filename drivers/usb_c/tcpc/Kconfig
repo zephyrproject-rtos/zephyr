@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig USBC_TCPC_DRIVER
-	bool "USBC TCPC drivers"
+	bool "USB-C TCPC drivers"
 	help
-	  Enable USBC TypeC Port Controller (TCPC) drivers
+	  Enable USB TypeC Port Controller (TCPC) drivers
 
 if USBC_TCPC_DRIVER
 
@@ -14,12 +14,12 @@ config USBC_INIT_PRIORITY
 	int "USBC driver init priority"
 	default 80
 	help
-	  USBC device driver initialization priority.
+	  USB-C device driver initialization priority.
 	  Do not mess with it unless you know what you are doing.
 	  Note that the priority needs to be lower than the USBC stack
 	  so that it can start before the USBC sub-system.
 
-source "drivers/usbc/tcpc/Kconfig.tcpc_stm32"
+source "drivers/usb_c/tcpc/Kconfig.tcpc_stm32"
 
 module = USBC
 module-str = usbc

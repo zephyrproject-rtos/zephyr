@@ -5,7 +5,7 @@
 
 /**
  * @file
- * @brief USBC Type-C Cable and Connector API used for USBC drivers
+ * @brief USB Type-C Cable and Connector API used for USB-C drivers
  *
  * The information in this file was taken from the USB Type-C
  * Cable and Connector Specification Release 2.1
