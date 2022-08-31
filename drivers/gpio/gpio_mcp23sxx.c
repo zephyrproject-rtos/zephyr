@@ -34,6 +34,7 @@ static int mcp23sxx_read_port_regs(const struct device *dev, uint8_t reg, uint16
 
 	uint8_t addr = MCP23SXX_ADDR | MCP23SXX_READBIT;
 	uint8_t buffer_tx[4] = { addr, reg, 0, 0 };
+	uint8_t buffer_rx[4] = { 0 };
 
 	const struct spi_buf tx_buf = {
 		.buf = buffer_tx,
@@ -43,10 +44,13 @@ static int mcp23sxx_read_port_regs(const struct device *dev, uint8_t reg, uint16
 		.buffers = &tx_buf,
 		.count = 1,
 	};
-	const struct spi_buf rx_buf[1] = { { .buf = NULL, .len = nread + 2 } };
+	const struct spi_buf rx_buf = {
+		.buf = buffer_rx,
+		.len = 2 + nread,
+	};
 	const struct spi_buf_set rx = {
-		.buffers = rx_buf,
-		.count = ARRAY_SIZE(rx_buf),
+		.buffers = &rx_buf,
+		.count = 1,
 	};
 
 	ret = spi_transceive_dt(&config->bus.spi, &tx, &rx);
@@ -54,6 +58,8 @@ static int mcp23sxx_read_port_regs(const struct device *dev, uint8_t reg, uint16
 		LOG_ERR("spi_transceive FAIL %d\n", ret);
 		return ret;
 	}
+
+	port_data = ((uint16_t)buffer_rx[3] << 8 | buffer_rx[2]);
 
 	*buf = sys_le16_to_cpu(port_data);
 
