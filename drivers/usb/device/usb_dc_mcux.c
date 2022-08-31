@@ -29,7 +29,6 @@
 LOG_MODULE_REGISTER(usb_dc_mcux);
 
 static void usb_isr_handler(void);
-static void usb_mcux_thread_main(void *arg1, void *arg2, void *arg3);
 
 /* the setup transfer state */
 #define SETUP_DATA_STAGE_DONE	(0)
@@ -139,16 +138,6 @@ int usb_dc_attach(void)
 		return -EIO;
 	}
 
-	/* Create the usb callback handler thread */
-	k_thread_create(&dev_data.thread, dev_data.thread_stack,
-				USBD_MCUX_THREAD_STACK_SIZE,
-				usb_mcux_thread_main, NULL, NULL, NULL,
-				K_PRIO_COOP(2), 0, K_NO_WAIT);
-
-	/* Connect and enable USB interrupt */
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    usb_isr_handler, 0, 0);
-	irq_enable(DT_INST_IRQN(0));
 	dev_data.attached = true;
 	status = dev_data.interface->deviceControl(dev_data.controllerHandle,
 						   kUSB_DeviceControlRun, NULL);
@@ -847,3 +836,21 @@ static void usb_isr_handler(void)
 	USB_DeviceLpcIp3511IsrFunction(&dev_data);
 #endif
 }
+
+static int usb_mcux_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	k_thread_create(&dev_data.thread, dev_data.thread_stack,
+			USBD_MCUX_THREAD_STACK_SIZE,
+			usb_mcux_thread_main, NULL, NULL, NULL,
+			K_PRIO_COOP(2), 0, K_NO_WAIT);
+
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
+		    usb_isr_handler, 0, 0);
+	irq_enable(DT_INST_IRQN(0));
+
+	return 0;
+}
+
+SYS_INIT(usb_mcux_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
