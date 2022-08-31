@@ -3,11 +3,10 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_INTEL_ALH_DAI := intel,alh-dai
-
 config DAI_INTEL_ALH
 	bool "Intel ALH driver for Dai interface"
-	default $(dt_compat_enabled,$(DT_COMPAT_INTEL_ALH_DAI))
+	default y
+	depends on DT_HAS_INTEL_ALH_DAI_ENABLED
 	select DMA
 	help
 	  Select this to enable Intel ALH driver.
