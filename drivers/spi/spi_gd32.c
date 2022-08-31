@@ -212,13 +212,14 @@ static int spi_gd32_transceive_impl(const struct device *dev,
 				    const struct spi_config *config,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs,
-				    struct k_poll_signal *poll_sig)
+				    spi_callback_t cb,
+				    void *userdata)
 {
 	struct spi_gd32_data *data = dev->data;
 	const struct spi_gd32_config *cfg = dev->config;
 	int ret;
 
-	spi_context_lock(&data->ctx, !!poll_sig, poll_sig, config);
+	spi_context_lock(&data->ctx, (cb != NULL), cb, userdata, config);
 
 	ret = spi_gd32_configure(dev, config);
 	if (ret < 0) {
@@ -244,7 +245,7 @@ static int spi_gd32_transceive_impl(const struct device *dev,
 	} while (spi_gd32_transfer_ongoing(data));
 
 #ifdef CONFIG_SPI_ASYNC
-	spi_context_complete(&data->ctx, ret);
+	spi_context_complete(&data->ctx, dev, ret);
 #endif
 #endif
 
@@ -268,7 +269,7 @@ static int spi_gd32_transceive(const struct device *dev,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
 {
-	return spi_gd32_transceive_impl(dev, config, tx_bufs, rx_bufs, NULL);
+	return spi_gd32_transceive_impl(dev, config, tx_bufs, rx_bufs, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -276,9 +277,10 @@ static int spi_gd32_transceive_async(const struct device *dev,
 				     const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     struct k_poll_signal *async)
+				     spi_callback_t cb,
+				     void *userdata)
 {
-	return spi_gd32_transceive_impl(dev, config, tx_bufs, rx_bufs, async);
+	return spi_gd32_transceive_impl(dev, config, tx_bufs, rx_bufs, cb, userdata);
 }
 #endif
 
@@ -291,7 +293,7 @@ static void spi_gd32_complete(const struct device *dev, int status)
 
 	SPI_CTL1(cfg->reg) &= ~(SPI_CTL1_RBNEIE | SPI_CTL1_TBEIE | SPI_CTL1_ERRIE);
 
-	spi_context_complete(&data->ctx, status);
+	spi_context_complete(&data->ctx, dev, status);
 }
 
 static void spi_gd32_isr(struct device *dev)
