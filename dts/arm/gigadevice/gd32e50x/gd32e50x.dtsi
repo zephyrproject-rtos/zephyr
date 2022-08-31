@@ -57,7 +57,17 @@
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "gd,gd32-nv-flash-v1", "soc-nv-flash";
+				write-block-size = <2>;
+				/* GD32E50x DataSheet not defined the maximum page erase time
+				 * for flash memory.
+				 * From other GD32 DataSheets, we can find 1KB page normally have a
+				 * 300ms max time.
+				 * Assume GD32E50x use the worst implementation, set the max erase
+				 * time to 8 times of 1KB page.
+				 */
+				max-erase-time-ms = <2400>;
+				page-size = <DT_SIZE_K(8)>;
 			};
 		};
 
