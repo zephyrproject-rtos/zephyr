@@ -467,6 +467,12 @@ static int ztress_cpu_clock_to_sys_clock_check(const struct device *unused)
 	 */
 	cpu_sys_clock_ok = t <= 12;
 
+	/* Read first random number. There are some generators which do not support
+	 * reading first random number from an interrupt context (initialization
+	 * is performed at the first read).
+	 */
+	(void)sys_rand32_get();
+
 	return 0;
 }
 
