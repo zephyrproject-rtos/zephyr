@@ -105,21 +105,25 @@ int intel_adsp_hda_dma_link_in_config(const struct device *dev,
 {
 	const struct intel_adsp_hda_dma_cfg *const cfg = dev->config;
 	struct dma_block_config *blk_cfg;
+	uint32_t size = 0;
 	uint8_t *buf;
 	int res;
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
-	__ASSERT(dma_cfg->block_count == 1,
-		 "HDA does not support scatter gather or chained "
-		 "block transfers.");
 	__ASSERT(dma_cfg->channel_direction == cfg->direction,
 		 "Unexpected channel direction, HDA link in supports "
 		 "PERIPHERAL_TO_MEMORY");
 
 	blk_cfg = dma_cfg->head_block;
 	buf = (uint8_t *)(uintptr_t)(blk_cfg->dest_address);
+
+	for (int i = 0; i < dma_cfg->block_count; i++) {
+		size += blk_cfg->block_size;
+		blk_cfg = blk_cfg->next_block;
+	}
+
 	res = intel_adsp_hda_set_buffer(cfg->base, cfg->regblock_size, channel, buf,
-				  blk_cfg->block_size);
+				  size);
 
 	if (res == 0 && dma_cfg->dest_data_size <= 3) {
 		/* set the sample container set bit to 16bits */
@@ -136,13 +140,11 @@ int intel_adsp_hda_dma_link_out_config(const struct device *dev,
 {
 	const struct intel_adsp_hda_dma_cfg *const cfg = dev->config;
 	struct dma_block_config *blk_cfg;
+	uint32_t size = 0;
 	uint8_t *buf;
 	int res;
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
-	__ASSERT(dma_cfg->block_count == 1,
-		 "HDA does not support scatter gather or chained "
-		 "block transfers.");
 	__ASSERT(dma_cfg->channel_direction == cfg->direction,
 		 "Unexpected channel direction, HDA link out supports "
 		 "MEMORY_TO_PERIPHERAL");
@@ -150,8 +152,13 @@ int intel_adsp_hda_dma_link_out_config(const struct device *dev,
 	blk_cfg = dma_cfg->head_block;
 	buf = (uint8_t *)(uintptr_t)(blk_cfg->source_address);
 
+	for (int i = 0; i < dma_cfg->block_count; i++) {
+		size += blk_cfg->block_size;
+		blk_cfg = blk_cfg->next_block;
+	}
+
 	res = intel_adsp_hda_set_buffer(cfg->base, cfg->regblock_size, channel, buf,
-				  blk_cfg->block_size);
+				  size);
 
 	if (res == 0 && dma_cfg->source_data_size <= 3) {
 		/* set the sample container set bit to 16bits */
