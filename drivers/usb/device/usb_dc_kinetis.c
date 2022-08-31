@@ -1045,6 +1045,7 @@ static int usb_kinetis_init(const struct device *dev)
 			USBD_THREAD_STACK_SIZE,
 			usb_kinetis_thread_main, NULL, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
+	k_thread_name_set(&dev_data.thread, "usb_kinetis");
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    usb_kinetis_isr_handler, 0, 0);
