@@ -26,6 +26,49 @@ Removed APIs in this release
 Deprecated in this release
 ==========================
 
+* MCUmgr subsystem, specifically the SMP transport API, is dropping `zephyr_`
+  prefix, deprecating prefixed functions and callback type definitions with the
+  prefix and replacing them with with prefix-less variants.
+  The :c:struct:`zephyr_smp_transport` type, representing transport object,
+  is now replaced with :c:struct:`smp_transport`, and the later one is used,
+  instead of the former one, by all prefix-less functions.
+
+  Deprecated functions and their replacements:
+
+  .. table::
+     :align: center
+
+     +-------------------------------------+---------------------------------------+
+     | Deprecated                          | Drop in replacement                   |
+     +=====================================+=======================================+
+     | :c:func:`zephyr_smp_transport_init` | :c:func:`smp_transport_init`          |
+     +-------------------------------------+---------------------------------------+
+     | :c:func:`zephyr_smp_rx_req`         | :c:func:`smp_rx_req`                  |
+     +-------------------------------------+---------------------------------------+
+     | :c:func:`zephyr_smp_alloc_rsp`      | :c:func:`smp_alloc_rsp`               |
+     +-------------------------------------+---------------------------------------+
+     | :c:func:`zephyr_smp_free_buf`       | :c:func:`smp_free_buf`                |
+     +-------------------------------------+---------------------------------------+
+
+  Deprecated callback types and their replacements:
+
+  .. table::
+     :align: center
+
+     +---------------------------------------------+---------------------------------------+
+     | Deprecated                                  | Drop in replacement                   |
+     +=============================================+=======================================+
+     | :c:func:`zephyr_smp_transport_out_fn`       | :c:func:`smp_transport_out_fn`        |
+     +---------------------------------------------+---------------------------------------+
+     | :c:func:`zephyr_smp_transport_get_mtu_fn`   | :c:func:`smp_transport_get_mtu_fn`    |
+     +---------------------------------------------+---------------------------------------+
+     | :c:func:`zephyr_smp_transport_ud_copy_fn`   | :c:func:`smp_transport_ud_copy_fn`    |
+     +---------------------------------------------+---------------------------------------+
+     | :c:func:`zephyr_smp_transport_ud_free_fn`   | :c:func:`smp_transport_ud_free_fn`    |
+     +---------------------------------------------+---------------------------------------+
+
+  NOTE: Only functions are marked as ``__deprecated``, type definitions are not.
+
 Stable API changes in this release
 ==================================
 
