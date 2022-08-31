@@ -212,6 +212,7 @@ struct cap_unicast_procedure {
 	int err;
 	struct bt_conn *failed_conn;
 	struct bt_cap_stream *streams[CONFIG_BT_AUDIO_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	struct bt_audio_unicast_group *unicast_group;
 };
 
 struct cap_unicast_client {
@@ -718,6 +719,7 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 		return err;
 	}
 
+	active_procedure.unicast_group = *unicast_group;
 	err = cap_initiator_unicast_audio_configure(param);
 	if (err != 0) {
 		int del_err;
@@ -1106,9 +1108,121 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 	cap_initiator_unicast_audio_update_complete();
 }
 
+static void cap_initiator_unicast_audio_stop_complete(void)
+{
+	struct bt_audio_unicast_group *unicast_group;
+	struct bt_conn *failed_conn;
+	int err;
+
+	unicast_group = active_procedure.unicast_group;
+	failed_conn = active_procedure.failed_conn;
+	err = active_procedure.err;
+
+	(void)memset(&active_procedure, 0, sizeof(active_procedure));
+
+	if (err == 0) {
+		err = bt_audio_unicast_group_delete(unicast_group);
+		if (err != 0) {
+			BT_DBG("Failed to delete unicast group %p: %d",
+			       unicast_group, err);
+		}
+	}
+
+	if (cap_cb != NULL && cap_cb->unicast_stop_complete != NULL) {
+		cap_cb->unicast_stop_complete(unicast_group, err, failed_conn);
+	}
+}
+
 int bt_cap_initiator_unicast_audio_stop(struct bt_audio_unicast_group *unicast_group)
 {
-	return -ENOSYS;
+	struct bt_audio_stream *bap_stream;
+	size_t stream_cnt;
+
+	if (atomic_test_bit(active_procedure.flags,
+			    CAP_UNICAST_PROCEDURE_STATE_ACTIVE)) {
+		BT_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
+	}
+
+	CHECKIF(unicast_group == NULL) {
+		BT_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	stream_cnt = 0U;
+	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, bap_stream, _node) {
+		stream_cnt++;
+	}
+
+	atomic_set_bit(active_procedure.flags,
+		       CAP_UNICAST_PROCEDURE_STATE_ACTIVE);
+	active_procedure.stream_cnt = stream_cnt;
+	active_procedure.unicast_group = unicast_group;
+
+	/** TODO: If this is a CSIP set, then the order of the procedures may
+	 * not match the order in the parameters, and the CSIP ordered access
+	 * procedure should be used.
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, bap_stream, _node) {
+		struct bt_cap_stream *cap_stream = CONTAINER_OF(bap_stream,
+								struct bt_cap_stream,
+								bap_stream);
+		int err;
+
+		active_procedure.streams[active_procedure.stream_initiated] = cap_stream;
+
+		err = bt_audio_stream_release(bap_stream, false);
+		if (err != 0) {
+			BT_DBG("Failed to stop bap_stream %p: %d",
+			       bap_stream, err);
+
+			active_procedure.err = err;
+			active_procedure.failed_conn = bap_stream->conn;
+
+			if (active_procedure.stream_initiated > 0U) {
+				atomic_set_bit(active_procedure.flags,
+					       CAP_UNICAST_PROCEDURE_STATE_ABORTED);
+			} else {
+				(void)memset(&active_procedure, 0,
+					     sizeof(active_procedure));
+			}
+
+			return err;
+		}
+
+		active_procedure.stream_initiated++;
+	}
+
+	return 0;
+}
+
+void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
+{
+	if (!cap_stream_in_active_procedure(cap_stream)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	active_procedure.stream_done++;
+
+	BT_DBG("Stream %p released (%zu/%zu streams done)",
+	       cap_stream, active_procedure.stream_done,
+	       active_procedure.stream_cnt);
+
+	if (active_procedure.stream_done < active_procedure.stream_cnt) {
+		/* Not yet finished, wait for all */
+		return;
+	} else if (atomic_test_bit(active_procedure.flags,
+				   CAP_UNICAST_PROCEDURE_STATE_ABORTED)) {
+		if (active_procedure.stream_done == active_procedure.stream_initiated) {
+			cap_initiator_unicast_audio_stop_complete();
+		}
+
+		return;
+	}
+
+	cap_initiator_unicast_audio_stop_complete();
 }
 
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */

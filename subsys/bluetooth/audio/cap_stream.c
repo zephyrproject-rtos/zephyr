@@ -8,6 +8,11 @@
 
 #include "cap_internal.h"
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CAP_INITIATOR) || \
+		       IS_ENABLED(CONFIG_BT_DEBUG_CAP_ACCEPTOR)
+#define LOG_MODULE_NAME bt_cap_stream
+#include "common/log.h"
+
 #if defined(CONFIG_BT_AUDIO_UNICAST)
 static void cap_stream_configured_cb(struct bt_audio_stream *bap_stream,
 				     const struct bt_codec_qos_pref *pref)
@@ -16,6 +21,8 @@ static void cap_stream_configured_cb(struct bt_audio_stream *bap_stream,
 							struct bt_cap_stream,
 							bap_stream);
 	struct bt_audio_stream_ops *ops = cap_stream->ops;
+
+	BT_DBG("%p", cap_stream);
 
 	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
 		bt_cap_initiator_codec_configured(cap_stream);
@@ -33,6 +40,8 @@ static void cap_stream_qos_set_cb(struct bt_audio_stream *bap_stream)
 							bap_stream);
 	struct bt_audio_stream_ops *ops = cap_stream->ops;
 
+	BT_DBG("%p", cap_stream);
+
 	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
 		bt_cap_initiator_qos_configured(cap_stream);
 	}
@@ -48,6 +57,8 @@ static void cap_stream_enabled_cb(struct bt_audio_stream *bap_stream)
 							struct bt_cap_stream,
 							bap_stream);
 	struct bt_audio_stream_ops *ops = cap_stream->ops;
+
+	BT_DBG("%p", cap_stream);
 
 	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
 		bt_cap_initiator_enabled(cap_stream);
@@ -65,6 +76,8 @@ static void cap_stream_metadata_updated_cb(struct bt_audio_stream *bap_stream)
 							bap_stream);
 	struct bt_audio_stream_ops *ops = cap_stream->ops;
 
+	BT_DBG("%p", cap_stream);
+
 	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
 		bt_cap_initiator_metadata_updated(cap_stream);
 	}
@@ -81,6 +94,8 @@ static void cap_stream_disabled_cb(struct bt_audio_stream *bap_stream)
 							bap_stream);
 	struct bt_audio_stream_ops *ops = cap_stream->ops;
 
+	BT_DBG("%p", cap_stream);
+
 	if (ops != NULL && ops->disabled != NULL) {
 		ops->disabled(bap_stream);
 	}
@@ -92,6 +107,12 @@ static void cap_stream_released_cb(struct bt_audio_stream *bap_stream)
 							struct bt_cap_stream,
 							bap_stream);
 	struct bt_audio_stream_ops *ops = cap_stream->ops;
+
+	BT_DBG("%p", cap_stream);
+
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+		bt_cap_initiator_released(cap_stream);
+	}
 
 	if (ops != NULL && ops->released != NULL) {
 		ops->released(bap_stream);
@@ -106,6 +127,8 @@ static void cap_stream_started_cb(struct bt_audio_stream *bap_stream)
 							struct bt_cap_stream,
 							bap_stream);
 	struct bt_audio_stream_ops *ops = cap_stream->ops;
+
+	BT_DBG("%p", cap_stream);
 
 	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
 		bt_cap_initiator_started(cap_stream);
@@ -122,6 +145,8 @@ static void cap_stream_stopped_cb(struct bt_audio_stream *bap_stream)
 							struct bt_cap_stream,
 							bap_stream);
 	struct bt_audio_stream_ops *ops = cap_stream->ops;
+
+	BT_DBG("%p", cap_stream);
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(bap_stream);
