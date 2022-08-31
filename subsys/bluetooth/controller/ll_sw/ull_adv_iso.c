@@ -268,6 +268,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 	/* Based on packing requested, sequential or interleaved */
 	if (packing) {
+		/* Interleaved Packing */
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval;
 		lll_adv_iso->ptc = ptc_calc(lll_adv_iso, latency_pdu,
 					    latency_packing, ctrl_spacing);
@@ -275,6 +276,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		lll_adv_iso->sub_interval = lll_adv_iso->bis_spacing *
 					    lll_adv_iso->nse;
 	} else {
+		/* Sequential Packing */
 		lll_adv_iso->ptc = ptc_calc(lll_adv_iso, latency_pdu,
 					    latency_packing, ctrl_spacing);
 		lll_adv_iso->nse += lll_adv_iso->ptc;
