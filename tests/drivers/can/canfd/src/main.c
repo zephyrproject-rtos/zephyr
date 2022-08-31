@@ -392,6 +392,9 @@ void *canfd_setup(void)
 	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK | CAN_MODE_FD);
 	zassert_equal(err, 0, "failed to set CAN-FD loopback mode (err %d)", err);
 
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+
 	return NULL;
 }
 

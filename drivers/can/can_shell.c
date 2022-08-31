@@ -193,6 +193,8 @@ static const char *can_shell_state_to_string(enum can_state state)
 		return "error-passive";
 	case CAN_STATE_BUS_OFF:
 		return "bus-off";
+	case CAN_STATE_STOPPED:
+		return "stopped";
 	default:
 		return "unknown";
 	}

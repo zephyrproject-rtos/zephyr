@@ -287,24 +287,6 @@ const int mcp2515_set_mode_int(const struct device *dev, uint8_t mcp2515_mode)
 	return 0;
 }
 
-static int mcp2515_get_mode(const struct device *dev, uint8_t *mode)
-{
-	uint8_t canstat;
-
-	if (mode == NULL) {
-		return -EINVAL;
-	}
-
-	if (mcp2515_cmd_read_reg(dev, MCP2515_ADDR_CANSTAT, &canstat, 1)) {
-		return -EIO;
-	}
-
-	*mode = (canstat & MCP2515_CANSTAT_MODE_MASK)
-		>> MCP2515_CANSTAT_MODE_POS;
-
-	return 0;
-}
-
 static int mcp2515_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
@@ -339,9 +321,12 @@ static int mcp2515_set_timing(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (dev_data->started) {
+		return -EBUSY;
+	}
+
 	/* CNF3, CNF2, CNF1, CANINTE */
 	uint8_t config_buf[4];
-	uint8_t mode;
 
 	/* CNF1; SJW<7:6> | BRP<5:0> */
 	__ASSERT(timing->prescaler > 0, "Prescaler should be bigger than zero");
@@ -395,18 +380,6 @@ static int mcp2515_set_timing(const struct device *dev,
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
-	ret = mcp2515_get_mode(dev, &mode);
-	if (ret < 0) {
-		LOG_ERR("Failed to read device mode [%d]", ret);
-		goto done;
-	}
-
-	ret = mcp2515_set_mode_int(dev, MCP2515_MODE_CONFIGURATION);
-	if (ret < 0) {
-		LOG_ERR("Failed to enter configuration mode [%d]", ret);
-		goto done;
-	}
-
 	ret = mcp2515_cmd_write_reg(dev, MCP2515_ADDR_CNF3, config_buf,
 				    sizeof(config_buf));
 	if (ret < 0) {
@@ -428,13 +401,6 @@ static int mcp2515_set_timing(const struct device *dev,
 		goto done;
 	}
 
-	/* Restore previous mode */
-	ret = mcp2515_set_mode_int(dev, mode);
-	if (ret < 0) {
-		LOG_ERR("Failed to restore mode [%d]", ret);
-		goto done;
-	}
-
 done:
 	k_mutex_unlock(&dev_data->mutex);
 	return ret;
@@ -449,41 +415,27 @@ static int mcp2515_get_capabilities(const struct device *dev, can_mode_t *cap)
 	return 0;
 }
 
-static int mcp2515_set_mode(const struct device *dev, can_mode_t mode)
+static int mcp2515_start(const struct device *dev)
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
 	struct mcp2515_data *dev_data = dev->data;
-	uint8_t mcp2515_mode;
 	int ret;
 
-	switch (mode) {
-	case CAN_MODE_NORMAL:
-		mcp2515_mode = MCP2515_MODE_NORMAL;
-		break;
-	case CAN_MODE_LISTENONLY:
-		mcp2515_mode = MCP2515_MODE_SILENT;
-		break;
-	case CAN_MODE_LOOPBACK:
-		mcp2515_mode = MCP2515_MODE_LOOPBACK;
-		break;
-	default:
-		LOG_ERR("Unsupported CAN Mode %u", mode);
-		return -ENOTSUP;
+	if (dev_data->started) {
+		return -EALREADY;
 	}
-
-	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
 	if (dev_cfg->phy != NULL) {
 		ret = can_transceiver_enable(dev_cfg->phy);
 		if (ret != 0) {
-			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
-			goto done;
+			LOG_ERR("Failed to enable CAN transceiver [%d]", ret);
+			return ret;
 		}
 	}
 
-	k_usleep(MCP2515_OSC_STARTUP_US);
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
-	ret = mcp2515_set_mode_int(dev, mcp2515_mode);
+	ret = mcp2515_set_mode_int(dev, dev_data->mcp2515_mode);
 	if (ret < 0) {
 		LOG_ERR("Failed to set the mode [%d]", ret);
 
@@ -491,11 +443,73 @@ static int mcp2515_set_mode(const struct device *dev, can_mode_t mode)
 			/* Attempt to disable the CAN transceiver in case of error */
 			(void)can_transceiver_disable(dev_cfg->phy);
 		}
+	} else {
+		dev_data->started = true;
 	}
 
-done:
 	k_mutex_unlock(&dev_data->mutex);
+
 	return ret;
+}
+
+static int mcp2515_stop(const struct device *dev)
+{
+	const struct mcp2515_config *dev_cfg = dev->config;
+	struct mcp2515_data *dev_data = dev->data;
+	int ret;
+
+	if (!dev_data->started) {
+		return -EALREADY;
+	}
+
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
+
+	ret = mcp2515_set_mode_int(dev, MCP2515_MODE_CONFIGURATION);
+	if (ret < 0) {
+		LOG_ERR("Failed to enter configuration mode [%d]", ret);
+		k_mutex_unlock(&dev_data->mutex);
+		return ret;
+	}
+
+	dev_data->started = false;
+
+	k_mutex_unlock(&dev_data->mutex);
+
+	if (dev_cfg->phy != NULL) {
+		ret = can_transceiver_disable(dev_cfg->phy);
+		if (ret != 0) {
+			LOG_ERR("Failed to disable CAN transceiver [%d]", ret);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static int mcp2515_set_mode(const struct device *dev, can_mode_t mode)
+{
+	struct mcp2515_data *dev_data = dev->data;
+
+	if (dev_data->started) {
+		return -EBUSY;
+	}
+
+	switch (mode) {
+	case CAN_MODE_NORMAL:
+		dev_data->mcp2515_mode = MCP2515_MODE_NORMAL;
+		break;
+	case CAN_MODE_LISTENONLY:
+		dev_data->mcp2515_mode = MCP2515_MODE_SILENT;
+		break;
+	case CAN_MODE_LOOPBACK:
+		dev_data->mcp2515_mode = MCP2515_MODE_LOOPBACK;
+		break;
+	default:
+		LOG_ERR("Unsupported CAN Mode %u", mode);
+		return -ENOTSUP;
+	}
+
+	return 0;
 }
 
 static int mcp2515_send(const struct device *dev,
@@ -514,6 +528,10 @@ static int mcp2515_send(const struct device *dev,
 		LOG_ERR("DLC of %d exceeds maximum (%d)",
 			frame->dlc, CAN_MAX_DLC);
 		return -EINVAL;
+	}
+
+	if (!dev_data->started) {
+		return -ENETDOWN;
 	}
 
 	if (k_sem_take(&dev_data->tx_sem, timeout) != 0) {
@@ -681,6 +699,7 @@ static void mcp2515_tx_done(const struct device *dev, uint8_t tx_idx)
 static int mcp2515_get_state(const struct device *dev, enum can_state *state,
 			     struct can_bus_err_cnt *err_cnt)
 {
+	struct mcp2515_data *dev_data = dev->data;
 	uint8_t eflg;
 	uint8_t err_cnt_buf[2];
 	int ret;
@@ -692,7 +711,9 @@ static int mcp2515_get_state(const struct device *dev, enum can_state *state,
 	}
 
 	if (state != NULL) {
-		if (eflg & MCP2515_EFLG_TXBO) {
+		if (!dev_data->started) {
+			*state = CAN_STATE_STOPPED;
+		} else if (eflg & MCP2515_EFLG_TXBO) {
 			*state = CAN_STATE_BUS_OFF;
 		} else if ((eflg & MCP2515_EFLG_RXEP) || (eflg & MCP2515_EFLG_TXEP)) {
 			*state = CAN_STATE_ERROR_PASSIVE;
@@ -742,8 +763,13 @@ static void mcp2515_handle_errors(const struct device *dev)
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 static int mcp2515_recover(const struct device *dev, k_timeout_t timeout)
 {
-	ARG_UNUSED(dev);
+	struct mcp2515_data *dev_data = dev->data;
+
 	ARG_UNUSED(timeout);
+
+	if (!dev_data->started) {
+		return -ENETDOWN;
+	}
 
 	return -ENOTSUP;
 }
@@ -838,6 +864,8 @@ static void mcp2515_int_gpio_callback(const struct device *dev,
 static const struct can_driver_api can_api_funcs = {
 	.get_capabilities = mcp2515_get_capabilities,
 	.set_timing = mcp2515_set_timing,
+	.start = mcp2515_start,
+	.stop = mcp2515_stop,
 	.set_mode = mcp2515_set_mode,
 	.send = mcp2515_send,
 	.add_rx_filter = mcp2515_add_rx_filter,
@@ -956,6 +984,8 @@ static int mcp2515_init(const struct device *dev)
 			LOG_WRN("Bitrate error: %d", ret);
 		}
 	}
+
+	k_usleep(MCP2515_OSC_STARTUP_US);
 
 	ret = can_set_timing(dev, &timing);
 	if (ret) {

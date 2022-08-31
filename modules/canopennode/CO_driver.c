@@ -157,11 +157,25 @@ static void canopen_tx_retry(struct k_work *item)
 
 void CO_CANsetConfigurationMode(void *CANdriverState)
 {
-	/* No operation */
+	struct canopen_context *ctx = (struct canopen_context *)CANdriverState;
+	int err;
+
+	err = can_stop(ctx->dev);
+	if (err != 0 && err != -EALREADY) {
+		LOG_ERR("failed to stop CAN interface (err %d)", err);
+	}
 }
 
 void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule)
 {
+	int err;
+
+	err = can_start(CANmodule->dev);
+	if (err != 0 && err != -EALREADY) {
+		LOG_ERR("failed to start CAN interface (err %d)", err);
+		return;
+	}
+
 	CANmodule->CANnormal = true;
 }
 
@@ -250,8 +264,8 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule)
 
 	canopen_detach_all_rx_filters(CANmodule);
 
-	err = can_set_mode(CANmodule->dev, CAN_MODE_LISTENONLY);
-	if (err) {
+	err = can_stop(CANmodule->dev);
+	if (err != 0 && err != -EALREADY) {
 		LOG_ERR("failed to disable CAN interface (err %d)", err);
 	}
 }
