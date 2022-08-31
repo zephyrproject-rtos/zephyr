@@ -747,6 +747,7 @@ static int usb_rpi_init(const struct device *dev)
 			USBD_THREAD_STACK_SIZE,
 			udc_rpi_thread_main, NULL, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
+	k_thread_name_set(&thread, "usb_rpi");
 
 	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI, udc_rpi_isr, 0, 0);
 	irq_enable(USB_IRQ);
