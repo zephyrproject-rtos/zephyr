@@ -1,10 +1,7 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_WOLFSON_WM8731 := wolfson,wm8731
+source "Kconfig.zephyr"
 
 config I2C
 	default $(dt_compat_on_bus,$(DT_COMPAT_WOLFSON_WM8731),i2c)
-
-source "Kconfig.zephyr"
