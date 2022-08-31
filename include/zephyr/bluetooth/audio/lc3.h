@@ -257,18 +257,19 @@ enum bt_codec_config_type {
  */
  #define BT_CODEC_LC3_DATA(_freq, _duration, _chan_count, _len_min, _len_max, _max_frames_per_sdu) \
 { \
-	 BT_CODEC_DATA(BT_CODEC_LC3_FREQ, \
-		       ((_freq) & 0xFFU), \
-		       (((_freq) >> 8) & 0xFFU)), \
-	 BT_CODEC_DATA(BT_CODEC_LC3_DURATION, _duration), \
-	 BT_CODEC_DATA(BT_CODEC_LC3_CHAN_COUNT, _chan_count), \
-	 BT_CODEC_DATA(BT_CODEC_LC3_FRAME_LEN, \
-		       ((_len_min) & 0xFFU), \
-		       (((_len_min) >> 8) & 0xFFU), \
-		       ((_len_max) & 0xFFU), \
-		       (((_len_max) >> 8) & 0xFFU)) \
-	 COND_CODE_1(_max_frames_per_sdu, (), \
-		     (, BT_CODEC_DATA(BT_CODEC_LC3_FRAME_COUNT, _max_frames_per_sdu))) \
+	BT_CODEC_DATA(BT_CODEC_LC3_FREQ, \
+		      ((_freq) & 0xFFU), \
+		      (((_freq) >> 8) & 0xFFU)), \
+	BT_CODEC_DATA(BT_CODEC_LC3_DURATION, _duration), \
+	BT_CODEC_DATA(BT_CODEC_LC3_CHAN_COUNT, _chan_count), \
+	BT_CODEC_DATA(BT_CODEC_LC3_FRAME_LEN, \
+		      ((_len_min) & 0xFFU), \
+		      (((_len_min) >> 8) & 0xFFU), \
+		      ((_len_max) & 0xFFU), \
+		      (((_len_max) >> 8) & 0xFFU)) \
+	COND_CODE_1(_max_frames_per_sdu, (), \
+		    (, BT_CODEC_DATA(BT_CODEC_LC3_FRAME_COUNT, \
+				     _max_frames_per_sdu))) \
 }
 
 /**
@@ -304,18 +305,19 @@ enum bt_codec_config_type {
  */
 #define BT_CODEC_LC3_CONFIG_DATA(_freq, _duration, _loc, _len, _frame_blocks_per_sdu) \
 { \
-	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ, _freq), \
-	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_DURATION, _duration), \
-	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_CHAN_ALLOC, \
-		       ((_loc) & 0xFFU), \
-		       (((_loc) >> 8) & 0xFFU), \
-		       (((_loc) >> 16) & 0xFFU), \
-		       (((_loc) >> 24) & 0xFFU)), \
-	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FRAME_LEN, \
-		       ((_len) & 0xFFU), \
-		       (((_len) >> 8) & 0xFFU)) \
-	 COND_CODE_1(_frame_blocks_per_sdu, (), \
-		     (, BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FRAME_BLKS_PER_SDU, _frames_per_sdu))) \
+	BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ, _freq), \
+	BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_DURATION, _duration), \
+	BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_CHAN_ALLOC, \
+		      ((_loc) & 0xFFU), \
+		      (((_loc) >> 8) & 0xFFU), \
+		      (((_loc) >> 16) & 0xFFU), \
+		      (((_loc) >> 24) & 0xFFU)), \
+	BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FRAME_LEN, \
+		      ((_len) & 0xFFU), \
+		      (((_len) >> 8) & 0xFFU)) \
+	COND_CODE_1(_frame_blocks_per_sdu, (), \
+		    (, BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FRAME_BLKS_PER_SDU, \
+				     _frames_per_sdu))) \
 }
 
 /**
