@@ -62,10 +62,38 @@ static void unicast_update_complete_cb(int err, struct bt_conn *conn)
 	}
 }
 
+static void unicast_stop_complete_cb(struct bt_bap_unicast_group *unicast_group, int err,
+				     struct bt_conn *conn)
+{
+	if (default_unicast_group != unicast_group) {
+		/* ignore */
+		return;
+	}
+
+	if (err != 0) {
+		shell_error(ctx_shell,
+			    "Unicast stop failed for group %p and conn %p (%d)",
+			    unicast_group, conn, err);
+	} else {
+		shell_print(ctx_shell,
+			    "Unicast stopped for group %p completed",
+			    default_unicast_group);
+
+		err = bt_bap_unicast_group_delete(unicast_group);
+		if (err != 0) {
+			shell_error(ctx_shell, "Failed to delete unicast group %p: %d",
+				    unicast_group, err);
+		} else {
+			default_unicast_group = NULL;
+		}
+	}
+}
+
 static struct bt_cap_initiator_cb cbs = {
 	.unicast_discovery_complete = cap_discover_cb,
 	.unicast_start_complete = cap_unicast_start_complete_cb,
-	.unicast_update_complete = unicast_update_complete_cb
+	.unicast_update_complete = unicast_update_complete_cb,
+	.unicast_stop_complete = unicast_stop_complete_cb,
 };
 
 static int cmd_cap_initiator_discover(const struct shell *sh, size_t argc,
@@ -447,6 +475,27 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 	return err;
 }
 
+static int cmd_cap_initiator_unicast_stop(const struct shell *sh, size_t argc,
+					  char *argv[])
+{
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	} else if (default_unicast_group == NULL) {
+		shell_error(sh, "No unicast group starteds");
+		return -ENOEXEC;
+	}
+
+	err = bt_cap_initiator_unicast_audio_stop(default_unicast_group);
+	if (err != 0) {
+		shell_print(sh, "Failed to update unicast audio: %d", err);
+	}
+
+	return err;
+}
+
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 static int cmd_cap_initiator(const struct shell *sh, size_t argc, char **argv)
@@ -475,6 +524,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cap_initiator_cmds,
 	SHELL_CMD_ARG(unicast-update, NULL, "Unicast Update <all | stream [stream [stream...]]>",
 		      cmd_cap_initiator_unicast_update, 2,
 		      CAP_UNICAST_CLIENT_STREAM_COUNT),
+	SHELL_CMD_ARG(unicast-stop, NULL, "Unicast stop all streams",
+		      cmd_cap_initiator_unicast_stop, 1, 0),
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 	SHELL_SUBCMD_SET_END
 );
