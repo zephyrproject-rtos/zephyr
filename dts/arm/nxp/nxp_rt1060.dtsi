@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_rt.dtsi>
+#include <nxp/nxp_rt10xx.dtsi>
 
 /* i.MX rt1060 has two continuous on-chip RAM, one is part of the
  * FlexRAM mapped at 0x20280000 (vs 0x20280000 on rt1050) and is
