@@ -11,7 +11,7 @@
 
 #ifndef CONFIG_ASSERT
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pma_init, LOG_LEVEL);
 #endif
 
