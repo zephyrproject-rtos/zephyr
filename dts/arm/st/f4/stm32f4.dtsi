@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2019 Centaur Analytics, Inc
+ * Copyright (c) 2022 Valerio Setti <vsetti@baylibre.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
 
 / {
@@ -281,6 +283,12 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				status = "disabled";
+				st,input-filter-level = <NO_FILTER>;
+			};
 		};
 
 		timers2: timers@40000000 {
@@ -301,6 +309,12 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				status = "disabled";
+				st,input-filter-level = <NO_FILTER>;
 			};
 		};
 
@@ -323,6 +337,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				status = "disabled";
+				st,input-filter-level = <NO_FILTER>;
+			};
 		};
 
 		timers4: timers@40000800 {
@@ -344,6 +364,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				status = "disabled";
+				st,input-filter-level = <NO_FILTER>;
+			};
 		};
 
 		timers5: timers@40000c00 {
@@ -364,6 +390,12 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				status = "disabled";
+				st,input-filter-level = <NO_FILTER>;
 			};
 		};
 
