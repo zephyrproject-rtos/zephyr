@@ -345,7 +345,7 @@ static int spi_psoc6_transceive_sync(const struct device *dev,
 				     const struct spi_buf_set *rx_bufs)
 {
 	return spi_psoc6_transceive(dev, spi_cfg, tx_bufs,
-				    rx_bufs, false, NULL);
+				    rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -353,10 +353,11 @@ static int spi_psoc6_transceive_async(const struct device *dev,
 				      const struct spi_config *spi_cfg,
 				      const struct spi_buf_set *tx_bufs,
 				      const struct spi_buf_set *rx_bufs,
-				      struct k_poll_signal *async)
+				      spi_callback_t cb,
+				      void *userdata)
 {
 	return spi_psoc6_transceive(dev, spi_cfg, tx_bufs,
-				    rx_bufs, true, async);
+				    rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
