@@ -48,6 +48,18 @@
 		#clock-cells = <0>;
 	};
 
+	xtal: clock-xtal {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
+	rtc_xtal: clock-rtc-xtal {
+		compatible = "fixed-clock";
+		clock-frequency = <32768>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		flexram: flexram@400b0000 {
 			compatible = "nxp,imx-flexram";
@@ -232,6 +244,8 @@
 		ccm: ccm@400fc000 {
 			compatible = "nxp,imx-ccm";
 			reg = <0x400fc000 0x4000>;
+			clocks = <&xtal>, <&rtc_xtal>;
+			clock-names = "xtal", "rtc-xtal";
 
 			#clock-cells = <3>;
 		};
