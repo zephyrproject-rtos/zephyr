@@ -1,14 +1,13 @@
 # Copyright (c) 2016 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ZEPHYR_CDC_ACM_UART := zephyr,cdc-acm-uart
-
 menu "USB CDC ACM Class support"
 
 config USB_CDC_ACM
 	bool "USB CDC ACM Class support"
+	default y
 	depends on SERIAL
-	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_CDC_ACM_UART))
+	depends on DT_HAS_ZEPHYR_CDC_ACM_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select RING_BUFFER
