@@ -181,7 +181,7 @@ void sys_trace_k_sem_take_enter(struct k_sem *sem, k_timeout_t timeout)
 {
 	ctf_top_semaphore_take_enter(
 		(uint32_t)(uintptr_t)sem,
-		k_ticks_to_ms_floor32((uint32_t)timeout.ticks)
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
 		);
 }
 
@@ -190,7 +190,7 @@ void sys_trace_k_sem_take_blocking(struct k_sem *sem, k_timeout_t timeout)
 {
 	ctf_top_semaphore_take_blocking(
 		(uint32_t)(uintptr_t)sem,
-		k_ticks_to_ms_floor32((uint32_t)timeout.ticks)
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
 		);
 }
 
@@ -198,7 +198,7 @@ void sys_trace_k_sem_take_exit(struct k_sem *sem, k_timeout_t timeout, int ret)
 {
 	ctf_top_semaphore_take_exit(
 		(uint32_t)(uintptr_t)sem,
-		k_ticks_to_ms_floor32((uint32_t)timeout.ticks),
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks),
 		(uint32_t)ret
 		);
 }
@@ -237,7 +237,7 @@ void sys_trace_k_mutex_lock_enter(struct k_mutex *mutex, k_timeout_t timeout)
 {
 	ctf_top_mutex_lock_enter(
 		(uint32_t)(uintptr_t)mutex,
-		k_ticks_to_ms_floor32((uint32_t)timeout.ticks)
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
 		);
 }
 
@@ -245,7 +245,7 @@ void sys_trace_k_mutex_lock_blocking(struct k_mutex *mutex, k_timeout_t timeout)
 {
 	ctf_top_mutex_lock_blocking(
 		(uint32_t)(uintptr_t)mutex,
-		k_ticks_to_ms_floor32((uint32_t)timeout.ticks)
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
 		);
 }
 
@@ -253,7 +253,7 @@ void sys_trace_k_mutex_lock_exit(struct k_mutex *mutex, k_timeout_t timeout, int
 {
 	ctf_top_mutex_lock_exit(
 		(uint32_t)(uintptr_t)mutex,
-		k_ticks_to_ms_floor32((uint32_t)timeout.ticks),
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks),
 		(int32_t)ret
 		);
 }
