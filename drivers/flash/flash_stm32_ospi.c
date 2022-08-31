@@ -257,7 +257,7 @@ static int ospi_read_sfdp(const struct device *dev, off_t addr, uint8_t *data,
 	/* simulate the SDFP */
 	ARG_UNUSED(addr); /* addr is 0 */
 
-	for (uint8_t i_ind = 0; i_ind < ARRAY_SIZE(dev_cfg->sfdp_bfp); i_ind++) {
+	for (uint8_t i_ind = 0; i_ind < MIN(size, ARRAY_SIZE(dev_cfg->sfdp_bfp)); i_ind++) {
 		*(data + i_ind) = dev_cfg->sfdp_bfp[i_ind];
 	}
 #else /* sfdp_bfp */
