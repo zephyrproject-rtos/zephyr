@@ -850,7 +850,10 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	/* Find the slot after Periodic Advertisings events */
 	err = ull_sched_adv_aux_sync_free_slot_get(TICKER_USER_ID_THREAD,
 						   ticks_slot, &ticks_anchor);
-	if (err) {
+	if (!err) {
+		ticks_anchor += HAL_TICKER_US_TO_TICKS(
+			EVENT_TICKER_RES_MARGIN_US);
+	} else {
 		ticks_anchor = ticker_ticks_now_get();
 	}
 
