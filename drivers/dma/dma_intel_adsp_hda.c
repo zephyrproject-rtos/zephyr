@@ -226,10 +226,15 @@ bool intel_adsp_hda_dma_chan_filter(const struct device *dev, int channel, void 
 int intel_adsp_hda_dma_start(const struct device *dev, uint32_t channel)
 {
 	const struct intel_adsp_hda_dma_cfg *const cfg = dev->config;
+	uint32_t size;
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
 	intel_adsp_hda_enable(cfg->base, cfg->regblock_size, channel);
+	if (cfg->direction == MEMORY_TO_PERIPHERAL) {
+		size = intel_adsp_hda_get_buffer_size(cfg->base, cfg->regblock_size, channel);
+		intel_adsp_hda_link_commit(cfg->base, cfg->regblock_size, channel, size);
+	}
 
 	return 0;
 }
