@@ -32,7 +32,6 @@ LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
  */
 
 static atomic_t cal_process_in_progress;
-static int16_t prev_temperature; /* Previous temperature measurement. */
 static uint8_t calib_skip_cnt; /* Counting down skipped calibrations. */
 static volatile int total_cnt; /* Total number of calibrations. */
 static volatile int total_skips_cnt; /* Total number of skipped calibrations. */
@@ -62,6 +61,7 @@ static const struct device *const temp_sensor =
 
 static void measure_temperature(struct k_work *work);
 static K_WORK_DEFINE(temp_measure_work, measure_temperature);
+static int16_t prev_temperature; /* Previous temperature measurement. */
 #endif /* USE_TEMP_SENSOR */
 
 static void timeout_handler(struct k_timer *timer);
