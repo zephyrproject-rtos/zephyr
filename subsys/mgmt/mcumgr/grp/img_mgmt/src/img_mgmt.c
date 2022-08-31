@@ -34,6 +34,9 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
+
 struct img_mgmt_state g_img_mgmt_state;
 
 #ifdef CONFIG_IMG_MGMT_VERBOSE_ERR
@@ -380,6 +383,11 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 	bool last = false;
 	bool reset = false;
 
+#ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
+	zcbor_state_t *zse = ctxt->writer->zs;
+	bool data_match = false;
+#endif
+
 	struct zcbor_map_decode_key_val image_upload_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_DECODER("image", zcbor_uint32_decode, &req.image),
 		ZCBOR_MAP_DECODE_KEY_DECODER("data", zcbor_bstr_decode, &req.img_data),
@@ -486,8 +494,9 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 			 * to image size so client knows upload has finished.
 			 */
 			g_img_mgmt_state.off = g_img_mgmt_state.size;
-			img_mgmt_dfu_pending();
 			reset = true;
+			last = true;
+			data_match = true;
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
@@ -542,14 +551,29 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 
 		if (g_img_mgmt_state.off == g_img_mgmt_state.size) {
 			/* Done */
-#if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-			(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_PENDING, NULL, 0);
-#endif
-
 			reset = true;
 
-#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
-			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
+#ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
+			static struct flash_img_context ctx;
+
+			if (flash_img_init_id(&ctx, g_img_mgmt_state.area_id) == 0) {
+				struct flash_img_check fic = {
+					.match = g_img_mgmt_state.data_sha,
+					.clen = g_img_mgmt_state.size,
+				};
+
+				if (flash_img_check(&ctx, &fic, g_img_mgmt_state.area_id) == 0) {
+					data_match = true;
+				} else {
+					LOG_ERR("Uploaded image sha256 hash verification failed");
+				}
+			} else {
+				LOG_ERR("Uploaded image sha256 could not be checked");
+			}
+#endif
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
+			(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_PENDING, NULL, 0);
 #endif
 		}
 	}
@@ -567,10 +591,20 @@ end:
 		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED, NULL, 0);
 #endif
 
+		img_mgmt_reset_upload();
+
 		return rc;
 	}
 
 	rc = img_mgmt_upload_good_rsp(ctxt);
+
+#ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
+	if (last && rc == MGMT_ERR_EOK) {
+		/* Append status to last packet */
+		ok = zcbor_tstr_put_lit(zse, "match")	&&
+		     zcbor_bool_put(zse, data_match);
+	}
+#endif
 
 	if (reset) {
 		/* Reset the upload state struct back to default */
