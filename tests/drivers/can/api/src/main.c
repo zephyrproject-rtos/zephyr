@@ -1020,6 +1020,9 @@ ZTEST_USER(can_api, test_send_invalid_dlc)
 	zassert_equal(err, -EINVAL, "sent a frame with an invalid DLC");
 }
 
+/**
+ * @brief Test CAN controller bus recovery.
+ */
 ZTEST_USER(can_api, test_recover)
 {
 	int err;
@@ -1033,6 +1036,9 @@ ZTEST_USER(can_api, test_recover)
 	zassert_equal(err, 0, "failed to recover (err %d)", err);
 }
 
+/**
+ * @brief Test retrieving the state of the CAN controller.
+ */
 ZTEST_USER(can_api, test_get_state)
 {
 	struct can_bus_err_cnt err_cnt;
@@ -1052,6 +1058,9 @@ ZTEST_USER(can_api, test_get_state)
 	zassert_equal(err, 0, "failed to get CAN state + error counters (err %d)", err);
 }
 
+/**
+ * @brief Test that CAN RX filters are preserved through CAN controller mode changes.
+ */
 ZTEST_USER(can_api, test_filters_preserved_through_mode_change)
 {
 	struct can_frame frame;
@@ -1080,6 +1089,9 @@ ZTEST_USER(can_api, test_filters_preserved_through_mode_change)
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
+/**
+ * @brief Test that CAN RX filters are preserved through CAN controller bitrate changes.
+ */
 ZTEST_USER(can_api, test_filters_preserved_through_bitrate_change)
 {
 	struct can_frame frame;
