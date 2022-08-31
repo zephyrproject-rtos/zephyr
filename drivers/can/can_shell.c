@@ -226,6 +226,48 @@ static void can_shell_print_capabilities(const struct shell *sh, can_mode_t cap)
 	}
 }
 
+static int cmd_can_start(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = device_get_binding(argv[1]);
+	int err;
+
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "device %s not ready", argv[1]);
+		return -ENODEV;
+	}
+
+	shell_print(sh, "starting %s", argv[1]);
+
+	err = can_start(dev);
+	if (err != 0) {
+		shell_error(sh, "failed to start CAN controller (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_can_stop(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = device_get_binding(argv[1]);
+	int err;
+
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "device %s not ready", argv[1]);
+		return -ENODEV;
+	}
+
+	shell_print(sh, "stopping %s", argv[1]);
+
+	err = can_stop(dev);
+	if (err != 0) {
+		shell_error(sh, "failed to stop CAN controller (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = device_get_binding(argv[1]);
@@ -810,6 +852,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_filter_cmds,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_cmds,
+	SHELL_CMD_ARG(start, &dsub_can_device_name,
+		"Start CAN controller\n"
+		"Usage: can start <device>",
+		cmd_can_start, 2, 0),
+	SHELL_CMD_ARG(stop, &dsub_can_device_name,
+		"Stop CAN controller\n"
+		"Usage: can stop <device>",
+		cmd_can_stop, 2, 0),
 	SHELL_CMD_ARG(show, &dsub_can_device_name,
 		"Show CAN controller information\n"
 		"Usage: can show <device>",
