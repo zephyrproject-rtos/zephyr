@@ -178,10 +178,6 @@ static int setup_socket(void)
 		return -ENOENT;
 	}
 
-#ifdef CONFIG_SAMPLE_SOCKETCAN_LOOPBACK_MODE
-	can_set_mode(DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus)), CAN_MODE_LOOPBACK);
-#endif
-
 	fd = socket(AF_CAN, SOCK_RAW, CAN_RAW);
 	if (fd < 0) {
 		ret = -errno;
@@ -261,7 +257,23 @@ cleanup:
 
 void main(void)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	int ret;
 	int fd;
+
+#ifdef CONFIG_SAMPLE_SOCKETCAN_LOOPBACK_MODE
+	ret = can_set_mode(dev, CAN_MODE_LOOPBACK);
+	if (ret != 0) {
+		LOG_ERR("Cannot set CAN loopback mode (%d)", ret);
+		return;
+	}
+#endif
+
+	ret = can_start(dev);
+	if (ret != 0) {
+		LOG_ERR("Cannot start CAN controller (%d)", ret);
+		return;
+	}
 
 	/* Let the device start before doing anything */
 	k_sleep(K_SECONDS(2));
