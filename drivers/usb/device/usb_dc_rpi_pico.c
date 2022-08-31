@@ -66,7 +66,6 @@ struct cb_msg {
 };
 
 K_MSGQ_DEFINE(usb_dc_msgq, sizeof(struct cb_msg), 10, 4);
-static void udc_rpi_thread_main(void *arg1, void *unused1, void *unused2);
 
 static struct udc_rpi_ep_state *udc_rpi_get_ep_state(uint8_t ep)
 {
@@ -298,14 +297,6 @@ static int udc_rpi_init(void)
 	for (int i = 0; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
 		udc_rpi_init_endpoint(i);
 	}
-
-	k_thread_create(&thread, thread_stack,
-			USBD_THREAD_STACK_SIZE,
-			udc_rpi_thread_main, NULL, NULL, NULL,
-			K_PRIO_COOP(2), 0, K_NO_WAIT);
-
-	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI, udc_rpi_isr, 0, 0);
-	irq_enable(USB_IRQ);
 
 	/* Present full speed device by enabling pull up on DP */
 	hw_set_alias(usb_hw)->sie_ctrl = USB_SIE_CTRL_PULLUP_EN_BITS;
@@ -747,3 +738,20 @@ static void udc_rpi_thread_main(void *arg1, void *unused1, void *unused2)
 		}
 	}
 }
+
+static int usb_rpi_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	k_thread_create(&thread, thread_stack,
+			USBD_THREAD_STACK_SIZE,
+			udc_rpi_thread_main, NULL, NULL, NULL,
+			K_PRIO_COOP(2), 0, K_NO_WAIT);
+
+	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI, udc_rpi_isr, 0, 0);
+	irq_enable(USB_IRQ);
+
+	return 0;
+}
+
+SYS_INIT(usb_rpi_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
