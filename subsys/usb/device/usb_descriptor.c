@@ -347,13 +347,14 @@ static void usb_fix_ascii_sn_string_descriptor(struct usb_sn_descriptor *sn)
 
 	default_sn_len = strlen(CONFIG_USB_DEVICE_SN);
 
-	if (runtime_sn_len != default_sn_len) {
-		LOG_ERR("the new SN descriptor doesn't have the same "
-			"length as CONFIG_USB_DEVICE_SN");
+	if (runtime_sn_len >= default_sn_len) {
+		LOG_ERR("the new SN descriptor length is longer than "
+			"CONFIG_USB_DEVICE_SN");
 		return;
 	}
 
 	memcpy(sn->bString, runtime_sn, runtime_sn_len);
+        sn->bLength = (runtime_sn_len + 1) * 2;
 }
 
 /*
@@ -375,8 +376,10 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 	uint8_t numof_ifaces = 0U;
 	uint8_t str_descr_idx = 0U;
 	uint32_t requested_ep = BIT(16) | BIT(0);
+        int orig_bLength = 0;
 
 	while (head->bLength != 0U) {
+                orig_bLength = 0;
 		switch (head->bDescriptorType) {
 		case USB_DESC_CONFIGURATION:
 			cfg_descr = (struct usb_cfg_descriptor *)head;
@@ -434,6 +437,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			if (str_descr_idx == USB_DESC_SERIAL_NUMBER_IDX) {
 				struct usb_sn_descriptor *sn =
 					(struct usb_sn_descriptor *)head;
+                                orig_bLength = sn->bLength;
 				usb_fix_ascii_sn_string_descriptor(sn);
 			}
 			/*
@@ -463,7 +467,10 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 		}
 
 		/* Move to next descriptor */
-		head = (struct usb_desc_header *)((uint8_t *)head + head->bLength);
+                if (orig_bLength)
+                    head = (struct usb_desc_header *)((uint8_t *)head + orig_bLength);
+                else
+                    head = (struct usb_desc_header *)((uint8_t *)head + head->bLength);
 	}
 
 	if ((head + 1) != __usb_descriptor_end) {
