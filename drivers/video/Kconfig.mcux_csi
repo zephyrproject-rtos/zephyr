@@ -3,9 +3,8 @@
 # Copyright (c) 2019, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_NXP_IMX_CSI := nxp,imx-csi
-
 config VIDEO_MCUX_CSI
 	bool "NXP MCUX CMOS Sensor Interface (CSI) driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_NXP_IMX_CSI))
+	default y
 	depends on HAS_MCUX_CSI
+	depends on DT_HAS_NXP_IMX_CSI_ENABLED

@@ -11,6 +11,7 @@
 		led0 = &green_led;
 		sw0 = &user_button;
 		magn0 = &fxos8700;
+		accel0 = &fxos8700;
 		sdhc0 = &usdhc1;
 	};
 
@@ -69,7 +70,6 @@
 	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";
 		reg = <0x1f>;
-		label = "FXOS8700";
 
 		/* Two zero ohm resistors (R256 and R270) isolate sensor
 		 * interrupt gpios from the soc and are unpopulated by default.

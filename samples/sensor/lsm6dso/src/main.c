@@ -36,7 +36,7 @@ static void fetch_and_display(const struct device *dev)
 	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Y, &y);
 	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Z, &z);
 
-	printf("gyro x:%f dps y:%f dps z:%f dps\n",
+	printf("gyro x:%f rad/s y:%f rad/s z:%f rad/s\n",
 			out_ev(&x), out_ev(&y), out_ev(&z));
 
 	printf("trig_cnt:%d\n\n", trig_cnt);
@@ -107,7 +107,7 @@ static void test_polling_mode(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ONE(st_lsm6dso);
+	const struct device *const dev = DEVICE_DT_GET_ONE(st_lsm6dso);
 
 	if (!device_is_ready(dev)) {
 		printk("%s: device not ready.\n", dev->name);

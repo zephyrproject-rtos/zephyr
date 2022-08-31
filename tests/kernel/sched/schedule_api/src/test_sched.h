@@ -8,7 +8,7 @@
 #define __TEST_SCHED_H__
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define MAX_NUM_THREAD 10
 #define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACK_SIZE)

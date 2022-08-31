@@ -17,8 +17,4 @@ config CPU_HAS_ARM_MPU
 config NUM_IRQS
 	default 7
 
-config UART_XLNX_UARTLITE
-	depends on SERIAL
-	default y
-
 endif # BOARD_SCOBC_MODULE1

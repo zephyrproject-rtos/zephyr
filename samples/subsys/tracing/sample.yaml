@@ -7,31 +7,33 @@ common:
         - "thread_a: Hello World from (.*)!"
         - "thread_b: Hello World from (.*)!"
 tests:
-  tracing.user:
+  sample.tracing.user:
     extra_args: CONF_FILE="prj_user.conf"
-  tracing.format.sysview:
+  sample.tracing.format.sysview:
     platform_allow: nrf52840dk_nrf52840 mimxrt1050_evk mimxrt1064_evk
     extra_args: CONF_FILE="prj_sysview.conf"
-  tracing.osawareness.openocd:
+  sample.tracing.osawareness.openocd:
     arch_exclude: posix xtensa
     platform_exclude: qemu_x86_64
-  tracing.transport.uart:
+  sample.tracing.transport.uart:
     platform_allow: qemu_x86 qemu_x86_64
     extra_args: CONF_FILE="prj_uart.conf"
-  tracing.transport.usb:
+    filter: dt_chosen_enabled("zephyr,tracing-uart")
+  sample.tracing.transport.usb:
     platform_allow: sam_e70_xplained
     depends_on: usb_device
     extra_args: CONF_FILE="prj_usb.conf"
-  tracing.transport.ctf:
+  sample.tracing.transport.uart.ctf:
     platform_allow: qemu_x86 qemu_x86_64
     extra_args: CONF_FILE="prj_uart_ctf.conf"
-  tracing.transport.ctf:
+    filter: dt_chosen_enabled("zephyr,tracing-uart")
+  sample.tracing.transport.usb.ctf:
     platform_allow: sam_e70_xplained
     depends_on: usb_device
     extra_args: CONF_FILE="prj_usb_ctf.conf"
-  tracing.transport.native_posix:
+  sample.tracing.transport.native_posix:
     platform_allow: native_posix
     extra_args: CONF_FILE="prj_native_posix.conf"
-  tracing.transport.posix.ctf:
+  sample.tracing.transport.native_posix.ctf:
     platform_allow: native_posix
     extra_args: CONF_FILE="prj_native_posix_ctf.conf"

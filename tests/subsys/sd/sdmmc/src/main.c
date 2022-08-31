@@ -8,13 +8,13 @@
 #include <zephyr/sd/sdmmc.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/disk.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 
 #define SECTOR_COUNT 32
 #define SECTOR_SIZE 512 /* subsystem should set all cards to 512 byte blocks */
 #define BUF_SIZE SECTOR_SIZE * SECTOR_COUNT
-static const struct device *sdhc_dev = DEVICE_DT_GET(DT_ALIAS(sdhc0));
+static const struct device *const sdhc_dev = DEVICE_DT_GET(DT_ALIAS(sdhc0));
 static struct sd_card card;
 static uint8_t buf[BUF_SIZE] __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT);
 static uint8_t check_buf[BUF_SIZE] __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT);
@@ -24,8 +24,11 @@ static uint32_t sector_count;
 #define SDMMC_UNALIGN_OFFSET 1
 
 
-/* Verify that SD stack can initialize an SD card */
-ZTEST(sd_stack, test_init)
+/*
+ * Verify that SD stack can initialize an SD card
+ * This test must run first, to ensure the card is initialized.
+ */
+ZTEST(sd_stack, test_0_init)
 {
 	int ret;
 

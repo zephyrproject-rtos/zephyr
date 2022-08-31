@@ -6,7 +6,7 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/rtc/maxim_ds3231.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
@@ -24,7 +24,7 @@ void *exp_user_data = (void *)199;
 struct counter_alarm_cfg alarm_cfg;
 struct counter_alarm_cfg alarm_cfg2;
 
-static const struct device *devices[] = {
+static const struct device *const devices[] = {
 	DEVICE_DT_GET(DT_NODELABEL(ds3231)),
 };
 typedef void (*counter_test_func_t)(const struct device *dev);

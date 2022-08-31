@@ -155,7 +155,7 @@ static inline void log_backend_init(const struct log_backend *const backend)
 static inline int log_backend_is_ready(const struct log_backend *const backend)
 {
 	__ASSERT_NO_MSG(backend != NULL);
-	if (backend->api->is_ready) {
+	if (backend->api->is_ready != NULL) {
 		return backend->api->is_ready(backend);
 	}
 

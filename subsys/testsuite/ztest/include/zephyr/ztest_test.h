@@ -9,9 +9,9 @@
 #define ZEPHYR_TESTSUITE_INCLUDE_ZTEST_TEST_H_
 
 #ifdef CONFIG_ZTEST_NEW_API
-#include <ztest_test_new.h>
+#include <zephyr/ztest_test_new.h>
 #else
-#include <ztest_test_deprecated.h>
+#include <zephyr/ztest_test_deprecated.h>
 #endif /* !CONFIG_ZTEST_NEW_API */
 
 #ifdef __cplusplus

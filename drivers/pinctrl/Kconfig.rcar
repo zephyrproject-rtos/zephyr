@@ -3,7 +3,7 @@
 
 config PINCTRL_RCAR_PFC
 	bool "Pin controller driver for Renesas RCar SoC"
-	depends on SOC_FAMILY_RCAR
 	default y
+	depends on DT_HAS_RENESAS_RCAR_PFC_ENABLED
 	help
 	  Enable pin controller driver for Renesas RCar SoC

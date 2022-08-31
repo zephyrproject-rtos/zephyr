@@ -603,5 +603,4 @@ no_fp:	/* make sure this is reflected in the restored mstatus */
 	addi sp, sp, __z_arch_esf_t_SIZEOF
 #endif
 
-	/* Call SOC_ERET to exit ISR */
-	SOC_ERET
+	mret

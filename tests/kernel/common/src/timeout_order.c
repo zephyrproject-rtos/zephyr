@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define NUM_TIMEOUTS 3
 

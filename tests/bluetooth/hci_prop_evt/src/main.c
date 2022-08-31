@@ -9,8 +9,8 @@
 #include <zephyr/zephyr.h>
 
 #include <errno.h>
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>

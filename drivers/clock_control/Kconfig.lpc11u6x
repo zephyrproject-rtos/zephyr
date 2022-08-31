@@ -5,7 +5,8 @@
 
 menuconfig CLOCK_CONTROL_LPC11U6X
 	bool "LPC11U6X Reset and clock control"
-	depends on SOC_SERIES_LPC11U6X
+	default y
+	depends on DT_HAS_NXP_LPC11U6X_SYSCON_ENABLED
 	help
 	  Enable driver for reset and clock control used in
 	  LPC11U6X MCUs

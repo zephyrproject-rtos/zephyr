@@ -4,14 +4,14 @@
  */
 
 #include <zephyr/drivers/pinctrl.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /* pin configuration for test device */
 #define TEST_DEVICE DT_NODELABEL(test_device)
 PINCTRL_DT_DEV_CONFIG_DECLARE(TEST_DEVICE);
 static const struct pinctrl_dev_config *pcfg = PINCTRL_DT_DEV_CONFIG_GET(TEST_DEVICE);
 
-static void test_dt_extract(void)
+ZTEST(pinctrl_gd32, test_dt_extract)
 {
 	const struct pinctrl_state *scfg;
 	pinctrl_soc_pin_t pin;
@@ -134,9 +134,4 @@ static void test_dt_extract(void)
 	zassert_equal(GD32_OSPEED_GET(pin), GD32_OSPEED_MAX, NULL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(pinctrl_gd32,
-			 ztest_unit_test(test_dt_extract));
-	ztest_run_test_suite(pinctrl_gd32);
-}
+ZTEST_SUITE(pinctrl_gd32, NULL, NULL, NULL, NULL, NULL);

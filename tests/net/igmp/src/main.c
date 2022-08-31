@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <errno.h>
 #include <zephyr/linker/sections.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
@@ -200,7 +200,7 @@ static void setup_mgmt_events(void)
 	}
 }
 
-static void test_igmp_setup(void)
+static void *igmp_setup(void)
 {
 	struct net_if_addr *ifaddr;
 
@@ -213,9 +213,26 @@ static void test_igmp_setup(void)
 	ifaddr = net_if_ipv4_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
 
 	zassert_not_null(ifaddr, "Cannot add IPv4 address");
+
+	return NULL;
 }
 
-static void test_join_group(void)
+static void igmp_teardown(void *dummy)
+{
+	ARG_UNUSED(dummy);
+
+	int i;
+
+	for (i = 0; mgmt_events[i].event; i++) {
+		net_mgmt_del_event_callback(&mgmt_events[i].cb);
+	}
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+
+	net_if_ipv4_addr_rm(iface, &my_addr);
+}
+
+static void join_group(void)
 {
 	int ret;
 
@@ -232,7 +249,7 @@ static void test_join_group(void)
 	k_msleep(THREAD_SLEEP);
 }
 
-static void test_leave_group(void)
+static void leave_group(void)
 {
 	int ret;
 
@@ -248,13 +265,13 @@ static void test_leave_group(void)
 	}
 }
 
-static void test_catch_join_group(void)
+static void catch_join_group(void)
 {
 	is_group_joined = false;
 
 	ignore_already = false;
 
-	test_join_group();
+	join_group();
 
 	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting join event");
@@ -267,11 +284,11 @@ static void test_catch_join_group(void)
 	is_group_joined = false;
 }
 
-static void test_catch_leave_group(void)
+static void catch_leave_group(void)
 {
 	is_group_joined = false;
 
-	test_leave_group();
+	leave_group();
 
 	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting leave event");
@@ -284,13 +301,13 @@ static void test_catch_leave_group(void)
 	is_group_left = false;
 }
 
-static void test_verify_join_group(void)
+static void verify_join_group(void)
 {
 	is_join_msg_ok = false;
 
 	ignore_already = false;
 
-	test_join_group();
+	join_group();
 
 	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting join event");
@@ -303,11 +320,11 @@ static void test_verify_join_group(void)
 	is_join_msg_ok = false;
 }
 
-static void test_verify_leave_group(void)
+static void verify_leave_group(void)
 {
 	is_leave_msg_ok = false;
 
-	test_leave_group();
+	leave_group();
 
 	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting leave event");
@@ -320,17 +337,22 @@ static void test_verify_leave_group(void)
 	is_leave_msg_ok = false;
 }
 
-void test_main(void)
+ZTEST(net_igmp, test_igmp_catch_join)
 {
-	ztest_test_suite(net_igmp_test,
-			 ztest_unit_test(test_igmp_setup),
-			 ztest_unit_test(test_join_group),
-			 ztest_unit_test(test_leave_group),
-			 ztest_unit_test(test_catch_join_group),
-			 ztest_unit_test(test_catch_leave_group),
-			 ztest_unit_test(test_verify_join_group),
-			 ztest_unit_test(test_verify_leave_group)
-			 );
-
-	ztest_run_test_suite(net_igmp_test);
+	join_group();
+	leave_group();
 }
+
+ZTEST(net_igmp, test_igmp_catch_catch_join)
+{
+	catch_join_group();
+	catch_leave_group();
+}
+
+ZTEST(net_igmp, test_igmp_verify_catch_join)
+{
+	verify_join_group();
+	verify_leave_group();
+}
+
+ZTEST_SUITE(net_igmp, NULL, igmp_setup, NULL, NULL, igmp_teardown);

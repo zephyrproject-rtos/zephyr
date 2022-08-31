@@ -103,6 +103,7 @@
 		sw0 = &user_button;
 		eeprom-0 = &eeprom;
 		lora0 = &lora;
+		watchdog0 = &iwdg;
 	};
 };
 

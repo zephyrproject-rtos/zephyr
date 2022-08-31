@@ -54,9 +54,11 @@
 					     CONFIG_BT_CTLR_ADV_DATA_LEN_MAX), \
 					    PDU_AC_EXT_PAYLOAD_SIZE_MAX), \
 					PDU_AC_LEG_PAYLOAD_SIZE_MAX)
-#else
+#define PDU_AC_EXT_AD_DATA_LEN_MAX  (PDU_AC_PAYLOAD_SIZE_MAX - \
+				     PDU_AC_EXT_PAYLOAD_OVERHEAD)
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 #define PDU_AC_PAYLOAD_SIZE_MAX     PDU_AC_LEG_PAYLOAD_SIZE_MAX
-#endif
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 /* Link Layer header size of Adv PDU. Assumes pdu_adv is packed */
 #define PDU_AC_LL_HEADER_SIZE  (offsetof(struct pdu_adv, payload))
@@ -111,7 +113,7 @@
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + EVENT_CLOCK_JITTER_US)
 /* Controller defined back to back transmit MAFS for extended advertising */
-#define EVENT_B2B_MAFS_US       (CONFIG_BT_CTLR_ADV_PDU_BACK2BACK_AFS)
+#define EVENT_B2B_MAFS_US       (CONFIG_BT_CTLR_ADV_AUX_PDU_BACK2BACK_AFS)
 /* Controller defined back to back transmit MAFS for periodic advertising */
 #define EVENT_SYNC_B2B_MAFS_US  (CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK_AFS)
 /* Minimum Subevent Space timings */

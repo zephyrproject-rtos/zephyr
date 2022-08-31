@@ -5,7 +5,9 @@
 
 config CAN_MCP2515
 	bool "MCP2515 CAN Driver"
-	depends on SPI
+	default y
+	depends on DT_HAS_MICROCHIP_MCP2515_ENABLED
+	select SPI
 	help
 	  Enable MCP2515 CAN Driver
 

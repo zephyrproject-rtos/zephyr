@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "spinlock.h"
-#include <rtio/rtio_executor_concurrent.h>
-#include <rtio/rtio.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/rtio/rtio_executor_concurrent.h>
+#include <zephyr/rtio/rtio.h>
 #include <zephyr/kernel.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(rtio_executor_concurrent, CONFIG_RTIO_LOG_LEVEL);
 
 #define CONEX_TASK_COMPLETE BIT(0)

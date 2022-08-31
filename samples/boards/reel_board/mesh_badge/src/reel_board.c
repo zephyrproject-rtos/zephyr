@@ -49,7 +49,7 @@ struct font_info {
 
 #define STAT_COUNT 128
 
-static const struct device *epd_dev;
+static const struct device *const epd_dev = DEVICE_DT_GET_ONE(solomon_ssd16xxfb);
 static bool pressed;
 static uint8_t screen_id = SCREEN_MAIN;
 static struct k_work_delayable epd_work;
@@ -562,7 +562,7 @@ static int configure_leds(void)
 
 static int erase_storage(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+	const struct device *dev = FLASH_AREA_DEVICE(storage);
 
 	if (!device_is_ready(dev)) {
 		printk("Flash device not ready\n");
@@ -580,7 +580,6 @@ void board_refresh_display(void)
 
 int board_init(void)
 {
-	epd_dev = DEVICE_DT_GET_ONE(solomon_ssd16xxfb);
 	if (!device_is_ready(epd_dev)) {
 		printk("%s: device not ready.\n", epd_dev->name);
 		return -ENODEV;

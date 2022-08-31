@@ -10,7 +10,7 @@
 #include <soc.h>
 #include <ace_v1x-regs.h>
 #include <ace-ipc-regs.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 
 #define CORE_POWER_CHECK_NUM 32
 #define CORE_POWER_CHECK_DELAY 256
@@ -51,6 +51,11 @@ void soc_start_core(int cpu_num)
 		uint32_t *rom_jump_vector = (uint32_t *) ROM_JUMP_ADDR;
 		*rom_jump_vector = (uint32_t) z_soc_mp_asm_entry;
 		z_xtensa_cache_flush(rom_jump_vector, sizeof(*rom_jump_vector));
+		ACE_PWRCTL->wpdsphpxpg |= BIT(cpu_num);
+
+		while ((ACE_PWRSTS->dsphpxpgs & BIT(cpu_num)) == 0) {
+			k_busy_wait(CORE_POWER_CHECK_DELAY);
+		}
 
 		/* Tell the ACE ROM that it should use secondary core flow */
 		DFDSPBRCP.bootctl[cpu_num].battr |= DFDSPBRCP_BATTR_LPSCTL_BATTR_SLAVE_CORE;
@@ -76,6 +81,11 @@ void soc_mp_startup(uint32_t cpu)
 	/* Prevent idle from powering us off */
 	DFDSPBRCP.bootctl[cpu].bctl |=
 		DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
+	/* checking if WDT was stopped during D3 transition */
+	if (DFDSPBRCP.bootctl[cpu].wdtcs & DFDSPBRCP_WDT_RESUME) {
+		DFDSPBRCP.bootctl[cpu].wdtcs = DFDSPBRCP_WDT_RESUME;
+		/* TODO: delete this IF when FW starts using imr restore vector */
+	}
 }
 
 void arch_sched_ipi(void)

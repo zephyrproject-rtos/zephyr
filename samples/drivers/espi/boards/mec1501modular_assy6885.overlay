@@ -5,7 +5,7 @@
  */
 
 / {
-	resources {
+	board_power: resources {
 		compatible = "microchip,mec15xx-board-power";
 		/* MCHP_GPIO_012 */
 		pwrg-gpios = <&gpio_000_036 10 GPIO_ACTIVE_HIGH>;

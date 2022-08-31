@@ -342,7 +342,7 @@ static int stm32_flash_init(const struct device *dev)
 	 */
 #if DT_INST_NODE_HAS_PROP(0, clocks)
 	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	/*
 	 * On STM32 F0, F1, F3 & L1 series, flash interface clock source is
@@ -357,6 +357,11 @@ static int stm32_flash_init(const struct device *dev)
 	while (!LL_RCC_HSI_IsReady()) {
 	}
 #endif
+
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	/* enable clock */
 	if (clock_control_on(clk, (clock_control_subsys_t *)&p->pclken) != 0) {

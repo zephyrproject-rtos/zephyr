@@ -33,11 +33,8 @@ struct gpio_fxl6408_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 
-	/** Master I2C device */
-	const struct device *i2c_master;
-
-	/** The slave address of the chip */
-	uint16_t i2c_slave_addr;
+	/** Controller I2C DT specification */
+	struct i2c_dt_spec i2c;
 };
 
 /** Runtime driver data */
@@ -69,12 +66,10 @@ struct gpio_fxl6408_drv_data {
 static int read_port_regs(const struct device *dev, uint8_t reg, uint8_t *cache)
 {
 	const struct gpio_fxl6408_config *const config = dev->config;
-	const struct device *i2c_master = config->i2c_master;
-	uint16_t i2c_addr = config->i2c_slave_addr;
 	uint8_t port_data;
 	int ret;
 
-	ret = i2c_reg_read_byte(i2c_master, i2c_addr, reg, &port_data);
+	ret = i2c_reg_read_byte_dt(&config->i2c, reg, &port_data);
 	if (ret != 0) {
 		LOG_ERR("Error reading register 0x%X (%d)", reg, ret);
 		return ret;
@@ -101,12 +96,10 @@ static int write_port_regs(const struct device *dev, uint8_t reg,
 			   uint8_t *cache, uint8_t value)
 {
 	const struct gpio_fxl6408_config *const config = dev->config;
-	const struct device *i2c_master = config->i2c_master;
 	int ret = 0;
 
 	if (*cache != value) {
-		ret = i2c_reg_write_byte(i2c_master, config->i2c_slave_addr,
-			reg, value);
+		ret = i2c_reg_write_byte_dt(&config->i2c, reg, value);
 		if (ret != 0) {
 			LOG_ERR("error writing to register 0x%X (%d)",
 				reg, ret);
@@ -398,8 +391,8 @@ int gpio_fxl6408_init(const struct device *dev)
 		(struct gpio_fxl6408_drv_data *const)dev->data;
 	const struct gpio_fxl6408_config *const config = dev->config;
 
-	if (!device_is_ready(config->i2c_master)) {
-		LOG_ERR("%s is not ready", config->i2c_master->name);
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("%s is not ready", config->i2c.bus->name);
 		return -ENODEV;
 	}
 
@@ -423,8 +416,7 @@ static const struct gpio_driver_api gpio_fxl_driver = {
 		.common = {                                                    \
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),\
 		},                                                             \
-		.i2c_slave_addr = DT_INST_REG_ADDR(inst),                      \
-		.i2c_master = DEVICE_DT_GET(DT_INST_BUS(inst))                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst)                              \
 	};                                                                     \
 \
 	static struct gpio_fxl6408_drv_data gpio_fxl6408_##inst##_drvdata = {  \

@@ -5,7 +5,10 @@
 
 menuconfig LPS22HH
 	bool "LPS22HH pressure and temperature"
-	depends on I2C || SPI
+	default y
+	depends on DT_HAS_ST_LPS22HH_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HH),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HH),spi)
 	select HAS_STMEMSC
 	select USE_STDC_LPS22HH
 	help

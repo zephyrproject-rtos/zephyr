@@ -24,7 +24,7 @@
 K_THREAD_STACK_DEFINE(rx_thread_stack, RX_THREAD_STACK_SIZE);
 K_THREAD_STACK_DEFINE(poll_state_stack, STATE_POLL_THREAD_STACK_SIZE);
 
-const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {0});
 
 struct k_thread rx_thread_data;
@@ -60,35 +60,35 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
-	const struct zcan_filter filter = {
+	const struct can_filter filter = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = COUNTER_MSG_ID,
 		.rtr_mask = 1,
 		.id_mask = CAN_EXT_ID_MASK
 	};
-	struct zcan_frame msg;
+	struct can_frame frame;
 	int filter_id;
 
 	filter_id = can_add_rx_filter_msgq(can_dev, &counter_msgq, &filter);
 	printk("Counter filter id: %d\n", filter_id);
 
 	while (1) {
-		k_msgq_get(&counter_msgq, &msg, K_FOREVER);
+		k_msgq_get(&counter_msgq, &frame, K_FOREVER);
 
-		if (msg.dlc != 2U) {
-			printk("Wrong data length: %u\n", msg.dlc);
+		if (frame.dlc != 2U) {
+			printk("Wrong data length: %u\n", frame.dlc);
 			continue;
 		}
 
 		printk("Counter received: %u\n",
-		       sys_be16_to_cpu(UNALIGNED_GET((uint16_t *)&msg.data)));
+		       sys_be16_to_cpu(UNALIGNED_GET((uint16_t *)&frame.data)));
 	}
 }
 
 void change_led_work_handler(struct k_work *work)
 {
-	struct zcan_frame frame;
+	struct can_frame frame;
 	int ret;
 
 	while (k_msgq_get(&change_led_msgq, &frame, K_NO_WAIT) == 0) {
@@ -109,13 +109,13 @@ void change_led_work_handler(struct k_work *work)
 char *state_to_str(enum can_state state)
 {
 	switch (state) {
-	case CAN_ERROR_ACTIVE:
+	case CAN_STATE_ERROR_ACTIVE:
 		return "error-active";
-	case CAN_ERROR_WARNING:
+	case CAN_STATE_ERROR_WARNING:
 		return "error-warning";
-	case CAN_ERROR_PASSIVE:
+	case CAN_STATE_ERROR_PASSIVE:
 		return "error-passive";
-	case CAN_BUS_OFF:
+	case CAN_STATE_BUS_OFF:
 		return "bus-off";
 	default:
 		return "unknown";
@@ -126,7 +126,7 @@ void poll_state_thread(void *unused1, void *unused2, void *unused3)
 {
 	struct can_bus_err_cnt err_cnt = {0, 0};
 	struct can_bus_err_cnt err_cnt_prev = {0, 0};
-	enum can_state state_prev = CAN_ERROR_ACTIVE;
+	enum can_state state_prev = CAN_STATE_ERROR_ACTIVE;
 	enum can_state state;
 	int err;
 
@@ -165,7 +165,7 @@ void state_change_work_handler(struct k_work *work)
 		current_err_cnt.rx_err_cnt, current_err_cnt.tx_err_cnt);
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	if (current_state == CAN_BUS_OFF) {
+	if (current_state == CAN_STATE_BUS_OFF) {
 		printk("Recover from bus-off\n");
 
 		if (can_recover(can_dev, K_MSEC(100)) != 0) {
@@ -189,20 +189,20 @@ void state_change_callback(const struct device *dev, enum can_state state,
 
 void main(void)
 {
-	const struct zcan_filter change_led_filter = {
+	const struct can_filter change_led_filter = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = LED_MSG_ID,
 		.rtr_mask = 1,
 		.id_mask = CAN_STD_ID_MASK
 	};
-	struct zcan_frame change_led_frame = {
+	struct can_frame change_led_frame = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = LED_MSG_ID,
 		.dlc = 1
 	};
-	struct zcan_frame counter_frame = {
+	struct can_frame counter_frame = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = COUNTER_MSG_ID,

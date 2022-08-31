@@ -69,19 +69,25 @@
 		reg = <0x20010000 DT_SIZE_K(64)>;
 	};
 
-	sram2: memory@20018000 {
+	sram2: memory@20020000 {
 		compatible = "mmio-sram";
 		reg = <0x20020000 DT_SIZE_K(64)>;
 	};
 
-	sram3: memory@20020000 {
+	sram3: memory@20030000 {
 		compatible = "mmio-sram";
 		reg = <0x20030000 DT_SIZE_K(64)>;
 	};
 
-	sram4: memory@40100000 {
+	sram4: memory@20040000 {
 		compatible = "mmio-sram";
 		reg = <0x20040000  DT_SIZE_K(16)>;
+	};
+
+	usb_sram: memory@40100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x40100000  DT_SIZE_K(16)>;
+		zephyr,memory-region = "USB_SRAM";
 	};
 };
 
@@ -92,19 +98,17 @@
 	syscon: syscon@0 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x1000>;
-		label = "SYSCON";
 		#clock-cells = <1>;
 	};
 
 	iap: flash-controller@34000 {
-		compatible = "nxp,lpc-iap";
-		label = "FLASH_IAP";
+		compatible = "nxp,iap-fmc55";
 		reg = <0x34000 0x1000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
-			label = "MCUX_FLASH";
 			reg = <0x0 DT_SIZE_K(630)>;
 			erase-block-size = <512>;
 			write-block-size = <512>;
@@ -150,7 +154,6 @@
 		compatible = "nxp,lpc-gpio";
 		reg = <0x8c000 0x2488>;
 		interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
-		label = "GPIO_0";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <0>;
@@ -160,7 +163,6 @@
 		compatible = "nxp,lpc-gpio";
 		reg = <0x8c000 0x2488>;
 		interrupts = <32 2>,<33 2>,<34 2>,<35 2>;
-		label = "GPIO_1";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <1>;
@@ -170,7 +172,6 @@
 		compatible = "nxp,lpc-dma";
 		reg = <0x82000 0x1000>;
 		interrupts = <1 0>;
-		label = "DMA_0";
 		status = "disabled";
 		#dma-cells = <1>;
 	};
@@ -179,7 +180,6 @@
 		compatible = "nxp,lpc-dma";
 		reg = <0xa7000 0x1000>;
 		interrupts = <58 0>;
-		label = "DMA_1";
 		status = "disabled";
 		#dma-cells = <1>;
 	};
@@ -188,7 +188,6 @@
 		compatible = "nxp,lpc-mailbox";
 		reg = <0x8b000 0xEC>;
 		interrupts = <31 0>;
-		label = "MAILBOX_0";
 		status = "disabled";
 	};
 
@@ -197,7 +196,6 @@
 		reg = <0x86000 0x1000>;
 		interrupts = <14 0>;
 		clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
-		label = "FLEXCOMM_0";
 		status = "disabled";
 	};
 
@@ -206,7 +204,6 @@
 		reg = <0x87000 0x1000>;
 		interrupts = <15 0>;
 		clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
-		label = "FLEXCOMM_1";
 		status = "disabled";
 	};
 
@@ -215,7 +212,6 @@
 		reg = <0x88000 0x1000>;
 		interrupts = <16 0>;
 		clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
-		label = "FLEXCOMM_2";
 		status = "disabled";
 	};
 
@@ -224,7 +220,6 @@
 		reg = <0x89000 0x1000>;
 		interrupts = <17 0>;
 		clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
-		label = "FLEXCOMM_3";
 		status = "disabled";
 	};
 
@@ -233,7 +228,6 @@
 		reg = <0x8a000 0x1000>;
 		interrupts = <18 0>;
 		clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
-		label = "FLEXCOMM_4";
 		status = "disabled";
 	};
 
@@ -242,7 +236,6 @@
 		reg = <0x96000 0x1000>;
 		interrupts = <19 0>;
 		clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
-		label = "FLEXCOMM_5";
 		status = "disabled";
 	};
 
@@ -251,7 +244,6 @@
 		reg = <0x97000 0x1000>;
 		interrupts = <20 0>;
 		clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
-		label = "FLEXCOMM_6";
 		status = "disabled";
 	};
 
@@ -260,7 +252,6 @@
 		reg = <0x98000 0x1000>;
 		interrupts = <21 0>;
 		clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
-		label = "FLEXCOMM_7";
 		status = "disabled";
 	};
 
@@ -275,7 +266,6 @@
 		reg = <0x9f000 0x1000>;
 		interrupts = <59 0>;
 		clocks = <&syscon MCUX_HS_SPI_CLK>;
-		label = "HS_LSPI";
 		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -285,7 +275,6 @@
 		compatible = "nxp,lpc-rng";
 		reg = <0x3a000 0x1000>;
 		status = "okay";
-		label = "RNG";
 	};
 
 	wwdt0: watchdog@c000 {
@@ -294,7 +283,6 @@
 		interrupts = <0 0>;
 		status = "disabled";
 		clk-divider = <1>;
-		label = "WWDT_0";
 	};
 
 	adc0: adc@A0000 {
@@ -307,7 +295,6 @@
 		voltage-ref= <2>;
 		calibration-average = <128>;
 		power-level = <1>;
-		label = "ADC_0";
 		offset-value-a = <10>;
 		offset-value-b = <10>;
 		#io-channel-cells = <1>;
@@ -319,7 +306,6 @@
 		interrupts = <47 1>;
 		num-bidir-endpoints = <5>;
 		status = "disabled";
-		label = "USBHS_0";
 	};
 
 	ctimer0: ctimer@8000 {
@@ -332,7 +318,6 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
-		label = "CTIMER_0";
 	};
 
 	ctimer1: ctimer@9000 {
@@ -345,7 +330,6 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
-		label = "CTIMER_1";
 	};
 
 	ctimer2: ctimer@28000 {
@@ -358,7 +342,6 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
-		label = "CTIMER_2";
 	};
 
 	ctimer3: ctimer@29000 {
@@ -371,7 +354,6 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
-		label = "CTIMER_3";
 	};
 
 	ctimer4: ctimer@2A000 {
@@ -384,7 +366,6 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
-		label = "CTIMER_4";
 	};
 
 	sc_timer: pwm@85000 {
@@ -393,7 +374,6 @@
 		interrupts = <12 0>;
 		status = "disabled";
 		prescaler = <2>;
-		label = "SC_TIMER";
 		#pwm-cells = <3>;
 	};
 };

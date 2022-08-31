@@ -8,8 +8,8 @@
 #define LOG_MODULE_NAME bt_hci_driver_b91
 #include "common/log.h"
 
-#include <sys/byteorder.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #include <b91_bt.h>
 

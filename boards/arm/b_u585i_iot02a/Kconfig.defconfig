@@ -12,11 +12,6 @@ config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
 
-choice STM32_LPTIM_CLOCK
-	default STM32_LPTIM_CLOCK_LSE
-	depends on STM32_LPTIM_TIMER
-endchoice
-
 # Get flash configuration for NS image from dts flash partition
 config USE_DT_CODE_PARTITION
 	default y if TRUSTED_EXECUTION_NONSECURE

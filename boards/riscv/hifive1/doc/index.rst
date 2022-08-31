@@ -12,7 +12,6 @@ More information can be found on
 `SiFive's website <https://www.sifive.com/boards/hifive1>`_.
 
 .. image:: img/hifive1.jpg
-   :width: 650px
    :align: center
    :alt: SiFive HiFive1 board
 

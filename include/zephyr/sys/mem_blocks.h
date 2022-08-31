@@ -112,8 +112,6 @@ struct sys_multi_mem_blocks {
 };
 
 /**
- * @def _SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF
- *
  * @brief Create a memory block object with a providing backing buffer.
  *
  * @param name     Name of the memory block object.
@@ -133,8 +131,6 @@ struct sys_multi_mem_blocks {
 	}
 
 /**
- * @def _SYS_MEM_BLOCKS_DEFINE
- *
  * @brief Create a memory block object with a new backing buffer.
  *
  * @param name     Name of the memory block object.
@@ -156,8 +152,6 @@ struct sys_multi_mem_blocks {
  */
 
 /**
- * @def SYS_MEM_BLOCKS_DEFINE
- *
  * @brief Create a memory block object with a new backing buffer.
  *
  * @param name      Name of the memory block object.
@@ -169,8 +163,6 @@ struct sys_multi_mem_blocks {
 	_SYS_MEM_BLOCKS_DEFINE(name, blk_sz, num_blks, buf_align,)
 
 /**
- * @def SYS_MEM_BLOCKS_DEFINE_STATIC
- *
  * @brief Create a static memory block object with a new backing buffer.
  *
  * @param name      Name of the memory block object.
@@ -183,8 +175,6 @@ struct sys_multi_mem_blocks {
 
 
 /**
- * @def SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF
- *
  * @brief Create a memory block object with a providing backing buffer.
  *
  * @param name     Name of the memory block object.
@@ -196,8 +186,6 @@ struct sys_multi_mem_blocks {
 	_SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(name, blk_sz, num_blks, buf,)
 
 /**
- * @def SYS_MEM_BLOCKS_DEFINE_STATIC_WITH_EXT_BUF
- *
  * @brief Create a static memory block object with a providing backing buffer.
  *
  * @param name     Name of the memory block object.

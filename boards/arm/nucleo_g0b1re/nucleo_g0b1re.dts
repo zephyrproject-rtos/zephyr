@@ -56,7 +56,12 @@
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
 };
 
 &clk_hsi {
@@ -162,6 +167,10 @@ zephyr_udc0: &usb {
 	status = "okay";
 };
 
+&die_temp {
+	status = "okay";
+};
+
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
@@ -200,5 +209,7 @@ zephyr_udc0: &usb {
 };
 
 &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };

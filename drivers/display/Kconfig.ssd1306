@@ -5,7 +5,10 @@
 
 menuconfig SSD1306
 	bool "SSD1306 display driver"
-	depends on I2C || SPI
+	default y
+	depends on DT_HAS_SOLOMON_SSD1306FB_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1306FB),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1306FB),spi)
 	help
 	  Enable driver for SSD1306 display driver.
 

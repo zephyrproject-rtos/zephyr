@@ -119,7 +119,7 @@ _exc_return:
 
 	_get_next_switch_handle
 
-	BREQR r0, r2, _exc_return_from_exc
+	BREQR r0, 0, _exc_return_from_exc
 
 	MOVR r2, r0
 

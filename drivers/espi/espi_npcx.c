@@ -860,6 +860,11 @@ static int espi_npcx_init(const struct device *dev)
 		npcx_host_interface_sel(NPCX_HIF_TYPE_ESPI_SHI);
 	}
 
+	if (!device_is_ready(clk_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Turn on eSPI device clock first */
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
 							&config->clk_cfg);

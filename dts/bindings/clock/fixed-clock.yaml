@@ -8,11 +8,6 @@ compatible: "fixed-clock"
 include: clock-controller.yaml
 
 properties:
-    label:
-      type: string
-      required: false
-      description: Human readable string describing the device (used as device_get_binding() argument)
-
     clock-frequency:
       type: int
       description: output clock frequency (Hz)

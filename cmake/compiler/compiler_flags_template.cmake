@@ -65,6 +65,9 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b)
 
+# Flag for disabling strict aliasing rule in C and C++
+set_compiler_property(PROPERTY no_strict_aliasing)
+
 # Flag for disabling exceptions in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions)
 
@@ -98,11 +101,6 @@ set_compiler_property(PROPERTY no_common)
 # Flags for imacros. The specific header must be appended by user.
 set_compiler_property(PROPERTY imacros)
 
-# Compiler flags for sanitizing.
-set_compiler_property(PROPERTY sanitize_address)
-
-set_compiler_property(PROPERTY sanitize_undefined)
-
 # Compiler flag for turning off thread-safe initialization of local statics
 set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics)
 
@@ -111,3 +109,6 @@ set_property(TARGET asm PROPERTY required)
 
 # Compiler flag for disabling pointer arithmetic warnings
 set_compiler_property(PROPERTY warning_no_pointer_arithmetic)
+
+# Compiler flags for disabling position independent code / executable
+set_compiler_property(PROPERTY no_position_independent)

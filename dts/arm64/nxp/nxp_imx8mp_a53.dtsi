@@ -63,13 +63,11 @@
 		ana_pll: ana_pll@30360000 {
 			compatible = "nxp,imx-ana";
 			reg = <0x30360000 DT_SIZE_K(64)>;
-			label = "ANA_PLL";
 		};
 
 		ccm: ccm@30380000 {
 			compatible = "nxp,imx-ccm";
 			reg = <0x30380000 DT_SIZE_K(64)>;
-			label = "CCM";
 			#clock-cells = <3>;
 		};
 
@@ -79,7 +77,6 @@
 			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL 0>;
 			interrupt-names = "irq_0";
 			interrupt-parent = <&gic>;
-			label = "UART_2";
 			status = "disabled";
 		};
 
@@ -89,7 +86,6 @@
 			interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL 0>;
 			interrupt-names = "irq_0";
 			interrupt-parent = <&gic>;
-			label = "UART_4";
 			status = "disabled";
 		};
 

@@ -11,9 +11,6 @@ compatible: "swir,hl7800"
 include: uart-device.yaml
 
 properties:
-    label:
-      required: true
-
     mdm-wake-gpios:
         type: phandle-array
         required: true

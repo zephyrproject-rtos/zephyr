@@ -16,7 +16,6 @@
 
 	ls0xx: ls0xx@0 {
 		compatible = "sharp,ls0xx";
-		label = "LS0XX";
 		spi-max-frequency = <2000000>;
 		reg = <0>;
 		width = <128>;

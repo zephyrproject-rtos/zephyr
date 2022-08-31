@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2020 ITE Corporation. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1342,6 +1342,45 @@ struct peci_it8xxx2_regs {
 
 /**
  *
+ * (37xxh, 38xxh) USBPD Controller
+ *
+ */
+#ifndef __ASSEMBLER__
+struct usbpd_it8xxx2_regs {
+	/* 0x000~0x003: Reserved1 */
+	volatile uint8_t Reserved1[4];
+	/* 0x004: CC General Configuration */
+	volatile uint8_t CCGCR;
+	/* 0x005: CC Channel Setting */
+	volatile uint8_t CCCSR;
+	/* 0x006: CC Pad Setting */
+	volatile uint8_t CCPSR;
+};
+#endif /* !__ASSEMBLER__ */
+
+/* USBPD controller register fields */
+/* 0x004: CC General Configuration */
+#define IT8XXX2_USBPD_DISABLE_CC			BIT(7)
+#define IT8XXX2_USBPD_DISABLE_CC_VOL_DETECTOR		BIT(6)
+#define IT8XXX2_USBPD_CC_SELECT_RP_RESERVED		(BIT(3) | BIT(2) | BIT(1))
+#define IT8XXX2_USBPD_CC_SELECT_RP_DEF			(BIT(3) | BIT(2))
+#define IT8XXX2_USBPD_CC_SELECT_RP_1A5			BIT(3)
+#define IT8XXX2_USBPD_CC_SELECT_RP_3A0			BIT(2)
+#define IT8XXX2_USBPD_CC1_CC2_SELECTION			BIT(0)
+/* 0x005: CC Channel Setting */
+#define IT8XXX2_USBPD_CC2_DISCONNECT			BIT(7)
+#define IT8XXX2_USBPD_CC2_DISCONNECT_5_1K_TO_GND	BIT(6)
+#define IT8XXX2_USBPD_CC1_DISCONNECT			BIT(3)
+#define IT8XXX2_USBPD_CC1_DISCONNECT_5_1K_TO_GND	BIT(2)
+#define IT8XXX2_USBPD_CC1_CC2_RP_RD_SELECT		(BIT(1) | BIT(5))
+/* 0x006: CC Pad Setting */
+#define IT8XXX2_USBPD_DISCONNECT_5_1K_CC2_DB		BIT(6)
+#define IT8XXX2_USBPD_DISCONNECT_POWER_CC2		BIT(5)
+#define IT8XXX2_USBPD_DISCONNECT_5_1K_CC1_DB		BIT(2)
+#define IT8XXX2_USBPD_DISCONNECT_POWER_CC1		BIT(1)
+
+/**
+ *
  * (3Cxxh) Crypto Engine
  *
  */
@@ -1663,7 +1702,13 @@ enum chip_pll_mode {
 #define IT8XXX2_SMB_4P7A4P0H        ECREG(IT8XXX2_SMB_BASE + 0x07)
 #define IT8XXX2_SMB_SLVISELR        ECREG(IT8XXX2_SMB_BASE + 0x08)
 #define IT8XXX2_SMB_SCLKTS(ch)      ECREG(IT8XXX2_SMB_BASE + 0x09 + ch)
+#define IT8XXX2_SMB_MSTFCTRL1       ECREG(IT8XXX2_SMB_BASE + 0x0D)
+#define IT8XXX2_SMB_MSTFSTS1        ECREG(IT8XXX2_SMB_BASE + 0x0E)
+#define IT8XXX2_SMB_MSTFCTRL2       ECREG(IT8XXX2_SMB_BASE + 0x0F)
+#define IT8XXX2_SMB_MSTFSTS2        ECREG(IT8XXX2_SMB_BASE + 0x10)
 #define IT8XXX2_SMB_CHSEF           ECREG(IT8XXX2_SMB_BASE + 0x11)
+#define IT8XXX2_SMB_I2CW2RF         ECREG(IT8XXX2_SMB_BASE + 0x12)
+#define IT8XXX2_SMB_IWRFISTA        ECREG(IT8XXX2_SMB_BASE + 0x13)
 #define IT8XXX2_SMB_CHSAB           ECREG(IT8XXX2_SMB_BASE + 0x20)
 #define IT8XXX2_SMB_CHSCD           ECREG(IT8XXX2_SMB_BASE + 0x21)
 #define IT8XXX2_SMB_SFFCTL          ECREG(IT8XXX2_SMB_BASE + 0x55)
@@ -1720,6 +1765,26 @@ enum chip_pll_mode {
 #define IT8XXX2_SMB_SMCLKS_400K       3
 #define IT8XXX2_SMB_SMCLKS_100K       2
 #define IT8XXX2_SMB_SMCLKS_50K        1
+
+/* 0x0E: SMBus FIFO Status 1 */
+#define IT8XXX2_SMB_FIFO1_EMPTY       BIT(7)
+#define IT8XXX2_SMB_FIFO1_FULL        BIT(6)
+/* 0x0D: SMBus FIFO Control 1 */
+/* 0x0F: SMBus FIFO Control 2 */
+#define IT8XXX2_SMB_BLKDS             BIT(4)
+#define IT8XXX2_SMB_FFEN              BIT(3)
+#define IT8XXX2_SMB_FFCHSEL2_C        BIT(0)
+/* 0x10: SMBus FIFO Status 2 */
+#define IT8XXX2_SMB_FIFO2_EMPTY       BIT(7)
+#define IT8XXX2_SMB_FIFO2_FULL        BIT(6)
+/* 0x12: I2C Wr To Rd FIFO */
+#define IT8XXX2_SMB_MAIF              BIT(7)
+#define IT8XXX2_SMB_MBCIF             BIT(6)
+#define IT8XXX2_SMB_MCIFI             BIT(2)
+#define IT8XXX2_SMB_MAIFI             BIT(0)
+/* 0x13: I2C Wr To Rd FIFO Interrupt Status */
+#define IT8XXX2_SMB_MCIFID            BIT(2)
+#define IT8XXX2_SMB_MAIFID            BIT(0)
 /* 0x41 0x81 0xC1: Host Control */
 #define IT8XXX2_SMB_SRT               BIT(6)
 #define IT8XXX2_SMB_LABY              BIT(5)

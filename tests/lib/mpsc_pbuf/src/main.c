@@ -11,10 +11,10 @@
 
 #include <zephyr/sys/mpsc_pbuf.h>
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <stdbool.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/random/rand32.h>
 
 #define PUT_EXT_LEN \

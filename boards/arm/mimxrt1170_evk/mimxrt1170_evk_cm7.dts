@@ -15,6 +15,7 @@
 
 	aliases {
 		mipi-dsi = &mipi_dsi;
+		watchdog0 = &wdog1;
 	};
 
 	chosen {
@@ -28,6 +29,7 @@
 		zephyr,flash = &is25wp128;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &lcdif;
+		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	sdram0: memory@80000000 {
@@ -38,7 +40,6 @@
 
 	en_mipi_display: enable-mipi-display {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "en_mipi_display";
 		regulator-name = "en_mipi_display";
 		enable-gpios = <&gpio11 16 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -75,7 +76,6 @@
 		status = "okay";
 		compatible = "raydium,rm68200";
 		reg = <0x0>;
-		label = "RM68200";
 		reset-gpios = <&gpio9 1 GPIO_ACTIVE_HIGH>;
 		data-lanes = <2>;
 		width = <720>;
@@ -102,8 +102,17 @@
 	status = "okay";
 };
 
-&lpi2c1 {
+&lpi2c5 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c5>;
+	pinctrl-names = "default";
+
+	touch_controller: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio9 0  GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &flexspi {
@@ -115,7 +124,6 @@
 	is25wp128: is25wp128@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <134217728>;
-		label = "IS25WP128";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";

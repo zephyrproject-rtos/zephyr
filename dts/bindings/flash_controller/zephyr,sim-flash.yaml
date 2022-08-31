@@ -7,9 +7,6 @@ compatible: "zephyr,sim-flash"
 include: base.yaml
 
 properties:
-    label:
-      required: true
-
     erase-value:
       type: int
       description: Value of erased flash cell

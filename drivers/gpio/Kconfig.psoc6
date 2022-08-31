@@ -1,12 +1,9 @@
 # Copyright (c) 2020 ATL Electronics
 # SPDX-License-Identifier: Apache-2.0
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_CYPRESS_PSOC6_GPIO := cypress,psoc6-gpio
-
 config GPIO_PSOC6
 	bool "Cypress PSoC-6 GPIO driver"
-	default y if $(dt_compat_enabled,$(DT_COMPAT_CYPRESS_PSOC6_GPIO))
-	depends on SOC_FAMILY_PSOC6
+	default y
+	depends on DT_HAS_CYPRESS_PSOC6_GPIO_ENABLED
 	help
 	  Enable support for the Cypress PSoC-6 GPIO controllers.

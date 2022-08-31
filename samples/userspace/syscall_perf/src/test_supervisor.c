@@ -7,8 +7,6 @@
 #include <zephyr/zephyr.h>
 #include <stdio.h>
 
-#include "main.h"
-
 /*
  * 0xB00 is CSR mcycle
  * 0xB02 is CSR minstret

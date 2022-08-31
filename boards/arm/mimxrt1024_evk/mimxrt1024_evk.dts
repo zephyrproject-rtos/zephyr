@@ -18,12 +18,13 @@
 		sw0 = &user_button;
 		watchdog0 = &wdog0;
 		magn0 = &fxos8700;
+		accel0 = &fxos8700;
 		sdhc0 = &usdhc1;
 	};
 
 	chosen {
-		zephyr,flash-controller = &is25wp032;
-		zephyr,flash = &is25wp032;
+		zephyr,flash-controller = &w25q32jvwj0;
+		zephyr,flash = &w25q32jvwj0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sdram0;
 		zephyr,itcm = &itcm;
@@ -56,7 +57,7 @@
 	};
 };
 
-&is25wp032 {
+&w25q32jvwj0 {
 	status = "okay";
 	partitions {
 		compatible = "fixed-partitions";
@@ -70,12 +71,17 @@
 
 		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x00010000 DT_SIZE_K(1984)>;
+			reg = <0x00010000 DT_SIZE_K(1920)>;
 		};
 
 		slot1_partition: partition@200000 {
 			label = "image-1";
-			reg = <0x00200000 DT_SIZE_K(1984)>;
+			reg = <0x001F0000 DT_SIZE_K(1920)>;
+		};
+
+		storage_partition: partition@3d0000 {
+			label = "storage";
+			reg = <0x003D0000 DT_SIZE_K(128)>;
 		};
 
 		scratch_partition: partition@3f0000 {
@@ -137,7 +143,6 @@
 	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";
 		reg = <0x1f>;
-		label = "FXOS8700";
 	};
 };
 

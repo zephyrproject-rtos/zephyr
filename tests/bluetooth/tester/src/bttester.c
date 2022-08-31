@@ -273,10 +273,10 @@ static void uart_send(uint8_t *data, size_t len)
 	uart_pipe_send(data, len);
 }
 #else /* !CONFIG_UART_PIPE */
-#define UART_DEV	"UART_0"
 static uint8_t *recv_buf;
 static size_t recv_off;
-static const struct device *dev;
+static const struct device *const dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 static void timer_expiry_cb(struct k_timer *timer)
 {
@@ -293,8 +293,7 @@ K_TIMER_DEFINE(timer, timer_expiry_cb, NULL);
 /* Uart Poll */
 static void uart_init(uint8_t *data)
 {
-	dev = device_get_binding(UART_DEV);
-	__ASSERT_NO_MSG((void *)dev);
+	__ASSERT_NO_MSG(device_is_ready(dev));
 
 	recv_buf = data;
 

@@ -15,10 +15,8 @@ CPU and the following devices:
 - Cortex-M System Design Kit GPIO
 - Cortex-M System Design Kit UART
 
-.. image:: img/v2m_musca_s1.png
-     :width: 440px
+.. image:: img/v2m_musca_s1.jpg
      :align: center
-     :height: 386px
      :alt: ARM V2M Musca-S1
 
 More information about the board can be found at the `V2M Musca-S1 Website`_.
@@ -344,10 +342,8 @@ For more information refer to the `Srecord Manual`_.
    # For a 128K bootloader IMAGE_OFFSET = $FLASH_OFFSET + 0x20000
    srec_cat $BIN_BOOTLOADER -Binary -offset 0xA000000 $BIN_APP -Binary -offset 0xA020000 -o zephyr.hex -Intel
 
-.. image:: img/v2m_musca_s1_powered.png
-     :width: 600px
+.. image:: img/v2m_musca_s1_powered.jpg
      :align: center
-     :height: 404px
      :alt: The Musca-S1 with the USB connected and powered-on
 
 To upload the application, connect the V2M Musca-S1 to your host computer using

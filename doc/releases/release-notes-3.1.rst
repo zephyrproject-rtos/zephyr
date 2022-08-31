@@ -25,6 +25,9 @@ Changes in this release
 * LoRaWAN: The message type parameter in :c:func:`lorawan_send` was changed
   from ``uint8_t`` to ``enum lorawan_message_type``. If ``0`` was passed for
   unconfirmed message, this has to be changed to ``LORAWAN_MSG_UNCONFIRMED``.
+* Bluetooth: Applications where :kconfig:option:`CONFIG_BT_EATT` is enabled
+  must set the :c:member:`chan_opt` field on the GATT parameter structs.
+  To keep the old behavior use :c:enumerator:`BT_ATT_CHAN_OPT_NONE`.
 
 * Disk Subsystem: SPI mode SD cards now use the SD subsystem to communicate
   with SD cards. See :ref:`the disk access api <disk_access_api>` for an
@@ -140,6 +143,26 @@ Deprecated in this release
 * Utilities
 
   * :c:macro:`UTIL_LISTIFY` has been deprecated. Use :c:macro:`LISTIFY` instead.
+
+* Mesh
+
+  * The following functions related to the Bluetooth Mesh Health Client model:
+
+    * :c:func:`bt_mesh_health_fault_get()` replace with :c:func:`bt_mesh_health_cli_fault_get()`
+    * :c:func:`bt_mesh_health_fault_clear()` replace with :c:func:`bt_mesh_health_cli_fault_clear()`
+    * :c:func:`bt_mesh_health_fault_clear_unack()` replace with :c:func:`bt_mesh_health_cli_fault_clear_unack()`
+    * :c:func:`bt_mesh_health_fault_test()` replace with :c:func:`bt_mesh_health_cli_fault_test()`
+    * :c:func:`bt_mesh_health_fault_test_unack()` replace with :c:func:`bt_mesh_health_cli_fault_test_unack()`
+    * :c:func:`bt_mesh_health_period_get()` replace with :c:func:`bt_mesh_health_cli_period_get()`
+    * :c:func:`bt_mesh_health_period_set()` replace with :c:func:`bt_mesh_health_cli_period_set()`
+    * :c:func:`bt_mesh_health_period_set_unack()` replace with :c:func:`bt_mesh_health_cli_period_set_unack()`
+    * :c:func:`bt_mesh_health_attention_get()` replace with :c:func:`bt_mesh_health_cli_attention_get()`
+    * :c:func:`bt_mesh_health_attention_set()` replace with :c:func:`bt_mesh_health_cli_attention_set()`
+    * :c:func:`bt_mesh_health_attention_set_unack()` replace with :c:func:`bt_mesh_health_cli_attention_set_unack()`
+
+  * The following function related to the Bluetooth Mesh Health Server model:
+
+    * :c:func:`bt_mesh_fault_update()` replace with :c:func:`bt_mesh_health_srv_fault_update()`
 
 Stable API changes in this release
 ==================================

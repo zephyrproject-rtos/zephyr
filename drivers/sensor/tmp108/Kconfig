@@ -5,7 +5,9 @@
 
 menuconfig TMP108
 	bool "TMP108 Temperature Sensor"
-	depends on I2C
+	default y
+	depends on DT_HAS_TI_TMP108_ENABLED
+	select I2C
 	help
 	  Enable driver for the TMP108 temperature sensor.
 

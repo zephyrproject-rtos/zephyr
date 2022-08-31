@@ -11,12 +11,10 @@ description: |
           #size-cells = <0>;
           compatible = "nuvoton,nct38xx-gpio";
           reg = <0x70>;
-          label = "NCT3807_0";
 
           gpio@0 {
             compatible = "nuvoton,nct38xx-gpio-port";
             reg = <0x0>;
-            label = "NCT3807_0_GPIO0";
             gpio-controller;
             #gpio-cells = <2>;
             ngpios = <8>;
@@ -27,7 +25,6 @@ description: |
           gpio@1 {
             compatible = "nuvoton,nct38xx-gpio-port";
             reg = <0x1>;
-            label = "NCT3807_0_GPIO1";
             gpio-controller;
             #gpio-cells = <2>;
             ngpios = <8>;
@@ -40,12 +37,10 @@ description: |
           #size-cells = <0>;
           compatible = "nuvoton,nct38xx-gpio";
           reg = <0x71>;
-          label = "NCT3808_0_P1";
 
           gpio@0 {
             compatible = "nuvoton,nct38xx-gpio-port";
             reg = <0x0>;
-            label = "NCT3808_0_P1_GPIO0";
             gpio-controller;
             #gpio-cells = <2>;
             ngpios = <8>;
@@ -59,12 +54,10 @@ description: |
           #size-cells = <0>;
           compatible = "nuvoton,nct38xx-gpio";
           reg = <0x75>;
-          label = "NCT3808_0_P2";
 
           gpio@0 {
             compatible = "nuvoton,nct38xx-gpio-port";
             reg = <0x0>;
-            label = "NCT3808_0_P2_GPIO0";
             gpio-controller;
             #gpio-cells = <2>;
             ngpios = <8>;
@@ -77,7 +70,3 @@ description: |
 compatible: "nuvoton,nct38xx-gpio"
 
 include: [i2c-device.yaml]
-
-properties:
-    label:
-      required: true

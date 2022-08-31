@@ -51,7 +51,7 @@ void print_buffer(void *ptr, size_t l)
 void main(void)
 {
 	int ret;
-	const struct device *dev = DEVICE_DT_GET_ONE(panasonic_amg88xx);
+	const struct device *const dev = DEVICE_DT_GET_ONE(panasonic_amg88xx);
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");

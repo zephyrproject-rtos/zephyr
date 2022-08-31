@@ -13,7 +13,6 @@ rate, Enhanced data rate, LE, Indoor positioning and BLE Mesh),
 Zigbee 3.0, Homekit, 6LoWPAN, Thread and 2.4 Ghz proprietary.
 
 .. figure:: img/tlsr9518adk80d.jpg
-     :width: 400px
      :align: center
      :alt: TLSR9518ADK80D
 
@@ -28,7 +27,6 @@ stereo audio codec, 14 bit AUX ADC, analog and digital Microphone input, PWM, fl
 and other peripheral blocks required for advanced IoT, hearable, and wearable devices.
 
 .. figure:: img/tlsr9518_block_diagram.jpg
-     :width: 400px
      :align: center
      :alt: TLSR9518ADK80D_SOC
 
@@ -78,48 +76,6 @@ The Zephyr TLSR9518ADK80D board configuration supports the following hardware fe
 +----------------+------------+------------------------------+
 | ADC            | on-chip    | adc                          |
 +----------------+------------+------------------------------+
-
-The following example projects are supported:
-
-- samples/hello_world
-- samples/synchronization
-- samples/philosophers
-- samples/basic/threads
-- samples/basic/blinky
-- samples/basic/blinky_pwm
-- samples/basic/fade_led
-- samples/basic/button
-- samples/subsys/nvs
-- samples/subsys/console/echo
-- samples/subsys/console/getchar
-- samples/subsys/console/getline
-- samples/subsys/shell/shell_module
-- samples/subsys/cpp/cpp_synchronization
-- samples/drivers/flash_shell
-- samples/net/sockets/echo_client (OpenThread and IEEE802154)
-- samples/net/sockets/echo_server (OpenThread and IEEE802154)
-- samples/net/openthread/coprocessor
-- samples/bluetooth/beacon
-- samples/bluetooth/broadcaster
-- samples/bluetooth/central
-- samples/bluetooth/central_hr
-- samples/bluetooth/central_ht
-- samples/bluetooth/central_multilink
-- samples/bluetooth/eddystone
-- samples/bluetooth/observer
-- samples/bluetooth/peripheral
-- samples/bluetooth/peripheral_csc
-- samples/bluetooth/peripheral_dis
-- samples/bluetooth/peripheral_esp
-- samples/bluetooth/peripheral_hids
-- samples/bluetooth/peripheral_hr
-- samples/bluetooth/peripheral_ht
-- samples/bluetooth/peripheral_identity
-- samples/bluetooth/peripheral_ots
-- samples/bluetooth/peripheral_sc_only
-- samples/bluetooth/scan_adv
-- samples/subsys/mgmt/mcumgr/smp_svr/
-- samples/drivers/adc
 
 .. note::
    To support "button" example project PC3-KEY3 (J20-19, J20-20) jumper needs to be removed and KEY3 (J20-19) should be connected to VDD3_DCDC (J51-13) externally.
@@ -279,7 +235,24 @@ It is also possible to use the west flash command, but additional steps are requ
 Debugging
 =========
 
-Supporting UART debug and OpenOCD+GDB.
+This port supports UART debug and OpenOCD+GDB. The `west debug` command also supported. You may run
+it in a simple way, like:
+
+.. code-block:: console
+
+   west debug
+
+Or with additional arguments, like:
+
+.. code-block:: console
+
+   west debug --gdb-port=<port_number> --gdb-ex=<additional_ex_arguments>
+
+Example:
+
+.. code-block:: console
+
+   west debug --gdb-port=1111 --gdb-ex="-ex monitor reset halt -ex b main -ex continue"
 
 References
 **********

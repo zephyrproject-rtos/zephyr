@@ -12,6 +12,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -109,6 +110,7 @@ struct bt_otc_internal_instance_t {
 	uint8_t metadata_read;
 	int metadata_err;
 	uint32_t rcvd_size;
+	uint32_t sent_size;
 };
 
 /* The profile clients that uses the OTS are responsible for discovery and
@@ -120,11 +122,14 @@ static struct bt_otc_internal_instance_t *cur_inst;
 
 static int oacp_read(struct bt_conn *conn,
 		     struct bt_otc_internal_instance_t *inst);
+static int oacp_write(struct bt_conn *conn, struct bt_otc_internal_instance_t *inst,
+		      const void *buf, uint32_t len, uint32_t offset,
+		      enum bt_ots_oacp_write_op_mode mode);
 static void read_next_metadata(struct bt_conn *conn,
 			       struct bt_otc_internal_instance_t *inst);
 static int read_attr(struct bt_conn *conn,
-		    struct bt_otc_internal_instance_t *inst,
-		    uint16_t handle, bt_gatt_read_func_t cb);
+		     struct bt_otc_internal_instance_t *inst,
+		     uint16_t handle, bt_gatt_read_func_t cb);
 
 /* L2CAP callbacks */
 static void tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
@@ -132,6 +137,35 @@ static void tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 {
 	/* Not doing any writes yet */
 	BT_ERR("Unexpected call, context: %p, conn: %p", l2cap_ctx, (void *)conn);
+}
+
+static void write_obj_tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
+			      struct bt_conn *conn)
+{
+	int err;
+	size_t written;
+
+	if (cur_inst == NULL) {
+		BT_ERR("OTS instance invalid\n");
+		return;
+	}
+
+	written = cur_inst->sent_size;
+	BT_DBG("ctx: %p, conn: %p, written: %d",
+	       l2cap_ctx, (void *)conn, written);
+
+	err = bt_gatt_ots_l2cap_disconnect(l2cap_ctx);
+	if (err < 0) {
+		BT_WARN("Disconnecting L2CAP returned error %d", err);
+	}
+
+	if ((cur_inst->otc_inst != NULL) && (cur_inst->otc_inst->cb != NULL)) {
+		if (cur_inst->otc_inst->cb->obj_data_written) {
+			cur_inst->otc_inst->cb->obj_data_written(0, conn, written);
+		}
+	}
+
+	cur_inst = NULL;
 }
 
 static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
@@ -192,7 +226,7 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 }
 
 static void chan_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
-		   struct bt_conn *conn)
+			struct bt_conn *conn)
 {
 	BT_DBG("L2CAP closed, context: %p, conn: %p", l2cap_ctx, (void *)conn);
 }
@@ -508,6 +542,7 @@ static void write_olcp_cb(struct bt_conn *conn, uint8_t err,
 		BT_ERR("Instance not found");
 		return;
 	}
+
 	inst->busy = false;
 }
 
@@ -1008,8 +1043,8 @@ static uint8_t read_obj_modified_cb(struct bt_conn *conn, uint8_t err,
 }
 
 static int read_attr(struct bt_conn *conn,
-		    struct bt_otc_internal_instance_t *inst,
-		    uint16_t handle, bt_gatt_read_func_t cb)
+		     struct bt_otc_internal_instance_t *inst,
+		     uint16_t handle, bt_gatt_read_func_t cb)
 {
 	if (!handle) {
 		BT_DBG("Handle not set");
@@ -1096,6 +1131,30 @@ static void write_oacp_cp_cb(struct bt_conn *conn, uint8_t err,
 	inst->busy = false;
 }
 
+static void write_oacp_cp_write_req_cb(struct bt_conn *conn, uint8_t err,
+				       struct bt_gatt_write_params *params)
+{
+	struct bt_otc_internal_instance_t *inst =
+		lookup_inst_by_handle(params->handle);
+	uint32_t len;
+
+	BT_DBG("Write Object request %s (0x%02X)", err ? "failed" : "successful", err);
+	if (!inst) {
+		BT_ERR("Instance not found");
+		return;
+	}
+
+	len = inst->l2cap_ctx.tx.len;
+	inst->l2cap_ctx.tx.len = 0;
+	err = bt_gatt_ots_l2cap_send(&inst->l2cap_ctx, inst->l2cap_ctx.tx.data, len);
+	if (err) {
+		BT_WARN("L2CAP CoC error: %d while trying to execute OACP "
+			"Read procedure", err);
+	}
+
+	inst->busy = false;
+}
+
 static int oacp_read(struct bt_conn *conn,
 		     struct bt_otc_internal_instance_t *inst)
 {
@@ -1157,6 +1216,64 @@ static int oacp_read(struct bt_conn *conn,
 	return err;
 }
 
+static int oacp_write(struct bt_conn *conn, struct bt_otc_internal_instance_t *inst,
+		      const void *buf, uint32_t len, uint32_t offset,
+		      enum bt_ots_oacp_write_op_mode mode)
+{
+	int err;
+	struct bt_gatt_ots_l2cap *l2cap;
+
+	if (!inst->otc_inst->oacp_handle) {
+		BT_DBG("Handle not set");
+		return -EINVAL;
+	} else if (inst->busy) {
+		return -EBUSY;
+	} else if (cur_inst) {
+		return -EBUSY;
+	}
+
+	err = bt_gatt_ots_l2cap_connect(conn, &l2cap);
+	if (err) {
+		BT_DBG("Could not connect l2cap: %d", err);
+		return err;
+	}
+
+	l2cap->tx_done = write_obj_tx_done;
+	l2cap->rx_done = rx_done;
+	l2cap->closed  = chan_closed;
+	l2cap->tx.data = (uint8_t *)buf;
+	l2cap->tx.len = len;
+	net_buf_simple_reset(&otc_tx_buf);
+
+	/* OP Code */
+	net_buf_simple_add_u8(&otc_tx_buf, BT_GATT_OTS_OACP_PROC_WRITE);
+
+	/* Offset */
+	net_buf_simple_add_le32(&otc_tx_buf, offset);
+
+	/* Len */
+	net_buf_simple_add_le32(&otc_tx_buf, len);
+
+	/* Mode, truncate or not */
+	net_buf_simple_add_u8(&otc_tx_buf, mode);
+
+	inst->otc_inst->write_params.offset = 0;
+	inst->otc_inst->write_params.data = otc_tx_buf.data;
+	inst->otc_inst->write_params.length = otc_tx_buf.len;
+	inst->otc_inst->write_params.handle = inst->otc_inst->oacp_handle;
+	inst->otc_inst->write_params.func = write_oacp_cp_write_req_cb;
+	inst->sent_size = len;
+	err = bt_gatt_write(conn, &inst->otc_inst->write_params);
+
+	if (!err) {
+		inst->busy = true;
+		cur_inst = inst;
+	}
+
+	inst->rcvd_size = 0;
+
+	return err;
+}
 int bt_ots_client_read_object_data(struct bt_ots_client *otc_inst,
 				   struct bt_conn *conn)
 {
@@ -1183,6 +1300,57 @@ int bt_ots_client_read_object_data(struct bt_ots_client *otc_inst,
 	}
 
 	return oacp_read(conn, inst);
+}
+
+int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
+				    struct bt_conn *conn, const void *buf, size_t len,
+				    off_t offset, enum bt_ots_oacp_write_op_mode mode)
+{
+	struct bt_otc_internal_instance_t *inst;
+
+	CHECKIF(!conn) {
+		BT_WARN("Invalid Connection");
+		return -ENOTCONN;
+	}
+
+	CHECKIF(!otc_inst) {
+		BT_ERR("Invalid OTC instance");
+		return -EINVAL;
+	}
+
+	CHECKIF((mode != BT_OTS_OACP_WRITE_OP_MODE_NONE) &&
+		(mode != BT_OTS_OACP_WRITE_OP_MODE_TRUNCATE)) {
+		BT_ERR("Invalid write object mode parameter %d", mode);
+		return -EINVAL;
+	}
+
+	/* OTS_v10.pdf Table 3.9: Object Action Control Point Procedure Requirements
+	 *	Offset and Length field are UINT32 Length
+	 */
+	CHECKIF(len > UINT32_MAX) {
+		BT_ERR("length exceed UINT32");
+		return -EINVAL;
+	}
+
+	CHECKIF((offset > UINT32_MAX) || (offset < 0)) {
+		BT_ERR("offset exceeds UINT32");
+		return -EINVAL;
+	}
+
+	inst = lookup_inst_by_handle(otc_inst->start_handle);
+
+	if (!inst) {
+		BT_ERR("Invalid OTC instance");
+		return -EINVAL;
+	}
+
+	if ((len > (otc_inst->cur_object.size.alloc - otc_inst->cur_object.size.cur)) ||
+		len == 0) {
+		BT_ERR("Invalid write len: %zu", len);
+		return -EINVAL;
+	}
+
+	return oacp_write(conn, inst, buf, (uint32_t)len, (uint32_t)offset, mode);
 }
 
 static void read_next_metadata(struct bt_conn *conn,

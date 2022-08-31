@@ -75,17 +75,18 @@ that mutex.
     how high the kernel can raise a thread's priority due to priority
     inheritance. The default value of 0 permits unlimited elevation.
 
-When two or more threads wait on a mutex held by a lower priority thread, the
-kernel adjusts the owning thread's priority each time a thread begins waiting
-(or gives up waiting). When the mutex is eventually unlocked, the unlocking
-thread's priority correctly reverts to its original non-elevated priority.
+The owning thread's base priority is saved in the mutex when it obtains the
+lock. Each time a higher priority thread waits on a mutex, the kernel adjusts
+the owning thread's priority. When the owning thread releases the lock (or if
+the high priority waiting thread times out), the kernel restores the thread's
+base priority from the value saved in the mutex.
 
-The kernel does *not* fully support priority inheritance when a thread holds
-two or more mutexes simultaneously. This situation can result in the thread's
-priority not reverting to its original non-elevated priority when all mutexes
-have been released. It is recommended that a thread lock only a single mutex
-at a time when multiple mutexes are shared between threads of different
-priorities.
+This works well for priority inheritance as long as only one locked mutex is
+involved. However, if multiple mutexes are involved, sub-optimal behavior will
+be observed if the mutexes are not unlocked in the reverse order to which the
+owning thread's priority was previously raised. Consequently it is recommended
+that a thread lock only a single mutex at a time when multiple mutexes are
+shared between threads of different priorities.
 
 Implementation
 **************

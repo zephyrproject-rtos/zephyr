@@ -11,7 +11,6 @@ evaluate the Atmel SAM V71 series microcontrollers. The current version
 allows to use both IC variations ATSAMV71Q21A(B).
 
 .. image:: img/sam_v71_xult.jpg
-     :width: 500px
      :align: center
      :alt: SAM V71 Xplained Ultra
 

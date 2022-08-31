@@ -7,14 +7,13 @@
 
 / {
 	chosen {
-		zephyr,display = &gd7965;
+		zephyr,display = &uc8176;
 	};
 };
 
 &arduino_spi {
-	gd7965: gd7965@0 {
-		compatible = "gooddisplay,gd7965","gooddisplay,gdew042t2";
-    		label = "GD7965";
+	uc8176: uc8176@0 {
+		compatible = "gooddisplay,gdew042t2", "ultrachip,uc8176";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <400>;

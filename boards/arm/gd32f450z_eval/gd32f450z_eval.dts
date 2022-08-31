@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <gigadevice/gd32f4xx/gd32f450ik.dtsi>
+#include <gigadevice/gd32f4xx/gd32f450xk.dtsi>
 #include "gd32f450z_eval-pinctrl.dtsi"
 
 / {
@@ -66,6 +66,7 @@
 		sw0 = &user_key;
 		pwm-led0 = &pwm_led;
 		eeprom-0 = &eeprom0;
+		spi-flash0 = &nor_flash;
 	};
 };
 
@@ -121,7 +122,6 @@
 		compatible = "atmel,at24";
 		reg = <0x50>;
 		status = "okay";
-		label = "EEPROM_AT24C02";
 		size = <256>;
 		pagesize = <8>;
 		address-width = <8>;
@@ -138,7 +138,6 @@
 	nor_flash: gd25q16@0 {
 		compatible ="jedec,spi-nor";
 		size = <0x1000000>;
-		label = "GD25Q16";
 		reg = <0>;
 		spi-max-frequency = <4000000>;
 		status = "okay";

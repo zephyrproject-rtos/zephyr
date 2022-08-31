@@ -6,7 +6,9 @@
 
 menuconfig LSM6DS0
 	bool "LSM6DS0 I2C accelerometer and gyroscope Chip"
-	depends on I2C
+	default y
+	depends on DT_HAS_ST_LSM6DS0_ENABLED
+	select I2C
 	help
 	  Enable driver for LSM6DS0 I2C-based accelerometer and gyroscope
 	  sensor.

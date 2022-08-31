@@ -11,9 +11,6 @@ config BOARD
 config GPIO_AS_PINRESET
 	default n
 
-config UART_NRFX
-	default n
-
 config BT_CTLR
 	default BT
 

@@ -5,7 +5,9 @@
 
 menuconfig STTS751
 	bool "STTS751 temperature sensor"
-	depends on I2C
+	default y
+	depends on DT_HAS_ST_STTS751_ENABLED
+	select I2C
 	select HAS_STMEMSC
 	select USE_STDC_STTS751
 	help

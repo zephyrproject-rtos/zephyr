@@ -105,7 +105,7 @@ or
 
 .. code-block:: console
 
-   west flash --remote-host 192.168.x.x
+   west flash --remote-host 192.168.x.x --pty
 
 Then you can see the log message immediately:
 
@@ -125,8 +125,8 @@ a path to the same key file used above.
 .. code-block:: console
 
     ./scripts/twister --device-testing -p intel_adsp_cavs15 \
-      --device-serial-pty $ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstool_client.py,cavs15,-l \
-      --west-flash "--remote-host=cavs15,--pty"
+      --device-serial-pty $ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstool_client.py,myboard.local,-l \
+      --west-flash "--remote-host=myboard.local"
 
 And if you install the SOF software stack in rather than the default path,
 you also can specify the location of the rimage tool, signing key and the
@@ -135,8 +135,8 @@ toml config, for example:
 .. code-block:: console
 
     ./scripts/twister --device-testing -p intel_adsp_cavs15 \
-      --device-serial-pty $ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstool_client.py,cavs15,-l \
-      --west-flash "--remote-host=cavs15,--pty\
+      --device-serial-pty $ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstool_client.py,myboard.local,-l \
+      --west-flash "--remote-host=myboard.local,\
       --rimage-tool=/path/to/rimage_tool,\
       --key=/path/to/otc_private_key.pem,\
       --config-dir=/path/to/config_dir"

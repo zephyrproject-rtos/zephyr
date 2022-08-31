@@ -28,8 +28,6 @@
 #define SOC_MCAUSE_IRQ_MASK (1 << 31)
 /* Exception code Mask */
 #define SOC_MCAUSE_EXP_MASK 0x7FFFFFFF
-/* SOC-Specific EXIT ISR command */
-#define SOC_ERET mret
 
 #ifndef _ASMLANGUAGE
 

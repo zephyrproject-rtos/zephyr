@@ -8,7 +8,6 @@ description: |
 
         mx25lm51245: ospi-nor-flash@0 {
                 compatible = "st,stm32-ospi-nor";
-                label = "MX25LM512";
                 reg = <0>;
                 data-mode = <OSPI_OPI_MODE>; /* access on 8 data lines */
                 data-rate = <OSPI_DTR_TRANSFER>; /* access in DTR */
@@ -30,8 +29,6 @@ properties:
       type: int
       required: true
       description: Maximum clock frequency of device's OSPI interface in Hz
-    label:
-      required: true
     size:
       required: true
       description: Flash Memory size in bits

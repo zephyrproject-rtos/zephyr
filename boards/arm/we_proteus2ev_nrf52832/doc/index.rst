@@ -26,7 +26,6 @@ the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/we_proteus2ev_nrf52832.jpg
-     :width: 642px
      :align: center
      :alt: Proteus-II EV
 

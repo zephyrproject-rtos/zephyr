@@ -1,11 +1,9 @@
 # Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ATMEL_SAM0_PINCTRL := atmel,sam0-pinctrl
-
 config PINCTRL_SAM0
 	bool "Atmel SAM0 pin controller driver"
-	depends on SOC_FAMILY_SAM0
-	default $(dt_compat_enabled,$(DT_COMPAT_ATMEL_SAM0_PINCTRL))
+	default y
+	depends on DT_HAS_ATMEL_SAM0_PINCTRL_ENABLED
 	help
 	  Atmel pin controller driver is used on SAM0 SoC series

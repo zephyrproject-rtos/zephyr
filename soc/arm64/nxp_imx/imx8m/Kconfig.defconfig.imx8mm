@@ -23,11 +23,4 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 8000000
 
-if CLOCK_CONTROL
-
-config CLOCK_CONTROL_MCUX_CCM
-	default y if HAS_MCUX_CCM
-
-endif # CLOCK_CONTROL
-
 endif

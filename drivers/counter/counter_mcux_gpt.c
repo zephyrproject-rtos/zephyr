@@ -168,6 +168,11 @@ static int mcux_gpt_init(const struct device *dev)
 	gpt_config_t gptConfig;
 	uint32_t clock_freq;
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;

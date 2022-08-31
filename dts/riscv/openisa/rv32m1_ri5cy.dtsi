@@ -28,12 +28,10 @@
 		 */
 
 		ri5cy_code_partition: partition@0 {
-			label = "ri5cy-code";
 			reg = <0x00000000 0x000fff00>;
 		};
 
 		ri5cy_vector_partition: partition@fff00 {
-			label = "ri5cy-vector";
 			reg = <0x000fff00 0x100>;
 		};
 	};

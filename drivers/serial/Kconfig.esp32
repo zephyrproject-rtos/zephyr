@@ -1,26 +1,22 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-DT_COMPAT_ESP32_UART := espressif,esp32-uart
-
 config UART_ESP32
 	bool "ESP32 UART driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ESP32_UART))
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select GPIO_ESP32
-	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
 	help
 	  Enable the ESP32 UART.
 
-DT_COMPAT_ESP32_USB_SERIAL := espressif,esp32-usb-serial
-
 config SERIAL_ESP32_USB
 	bool "ESP32 built-in USB serial driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ESP32_USB_SERIAL))
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_USB_SERIAL_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	depends on SOC_ESP32C3
 	help
 	  Enable the built-in USB serial interface present in some Espressif
 	  MCUs like the ESP32-C3.

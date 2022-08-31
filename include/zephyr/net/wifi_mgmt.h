@@ -14,6 +14,7 @@
 
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/wifi.h>
+#include <zephyr/net/ethernet.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,8 +89,10 @@ struct wifi_scan_result {
 	uint8_t ssid[WIFI_SSID_MAX_LEN];
 	uint8_t ssid_length;
 
+	uint8_t band;
 	uint8_t channel;
 	enum wifi_security_type security;
+	enum wifi_mfp_options mfp;
 	int8_t rssi;
 
 	uint8_t mac[WIFI_MAC_ADDR_LEN];
@@ -103,8 +106,13 @@ struct wifi_connect_req_params {
 	uint8_t *psk;
 	uint8_t psk_length; /* Min 8 - Max 64 */
 
+	uint8_t *sae_password; /* Optional with fallback to psk */
+	uint8_t sae_password_length; /* No length restrictions */
+
+	uint8_t band;
 	uint8_t channel;
 	enum wifi_security_type security;
+	enum wifi_mfp_options mfp;
 };
 
 struct wifi_status {
@@ -123,7 +131,11 @@ struct net_wifi_mgmt_offload {
 	 * net_if_api structure. So we make current structure pointer
 	 * that can be casted to a net_if_api structure pointer.
 	 */
-	struct net_if_api iface_api;
+#ifdef CONFIG_WIFI_USE_NATIVE_NETWORKING
+	struct ethernet_api wifi_iface;
+#else
+	struct net_if_api wifi_iface;
+#endif
 
 	/* cb parameter is the cb that should be called for each
 	 * result by the driver. The wifi mgmt part will take care of
@@ -141,14 +153,10 @@ struct net_wifi_mgmt_offload {
 /* Make sure that the network interface API is properly setup inside
  * Wifi mgmt offload API struct (it is the first one).
  */
-BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, iface_api) == 0);
-
-#ifdef CONFIG_WIFI_OFFLOAD
+BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, wifi_iface) == 0);
 
 void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status);
 void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status);
-
-#endif /* CONFIG_WIFI_OFFLOAD */
 
 #ifdef __cplusplus
 }

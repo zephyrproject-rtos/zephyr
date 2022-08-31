@@ -8,7 +8,7 @@
 #define __TEST_FS_H__
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_sys.h>
 

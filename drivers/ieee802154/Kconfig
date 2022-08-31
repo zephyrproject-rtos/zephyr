@@ -8,6 +8,7 @@
 #
 menuconfig IEEE802154
 	bool "IEEE 802.15.4 drivers options"
+	depends on NETWORKING
 	default y if NET_L2_PHY_IEEE802154
 
 if IEEE802154
@@ -25,6 +26,7 @@ config IEEE802154_NET_IF_NO_AUTO_START
 	  This option can be useful when using OpenThread or Zigbee. If you
 	  have any doubt about this option leave it as default value.
 
+if !NET_L2_PHY_IEEE802154
 config IEEE802154_RAW_MODE
 	bool "IEEE 802.15.4 driver without the MAC stack"
 	select NET_RAW_MODE
@@ -33,6 +35,7 @@ config IEEE802154_RAW_MODE
 	  i.e. without a MAC stack (the net L2 layer for 802.15.4 will not
 	  be built). Used only for very specific cases, such as wpan_serial
 	  and wpanusb samples.
+endif # !NET_L2_PHY_IEEE802154
 
 config IEEE802154_RDEV
 	bool
@@ -75,62 +78,7 @@ source "drivers/ieee802154/Kconfig.rf2xx"
 
 source "drivers/ieee802154/Kconfig.dw1000"
 
-menuconfig IEEE802154_UPIPE
-	bool "UART PIPE fake radio driver support for QEMU"
-	depends on (BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3) && NETWORKING
-	select UART_PIPE
-
-if IEEE802154_UPIPE
-
-config IEEE802154_UPIPE_DRV_NAME
-	string "UART PIPE Driver name"
-	default "IEEE802154_UPIPE"
-
-config IEEE802154_UPIPE_HW_FILTER
-	bool "Hw Filtering"
-	default y
-	help
-	  This option assure the driver will process just frames addressed to him.
-
-config IEEE802154_UPIPE_RANDOM_MAC
-	bool "Random MAC address"
-	default y
-	help
-	  Generate a random MAC address dynamically.
-
-if ! IEEE802154_UPIPE_RANDOM_MAC
-
-config IEEE802154_UPIPE_MAC4
-	hex "MAC Address Byte 4"
-	default 0
-	range 0 0xff
-	help
-	  This is the byte 4 of the MAC address.
-
-config IEEE802154_UPIPE_MAC5
-	hex "MAC Address Byte 5"
-	default 0
-	range 0 0xff
-	help
-	  This is the byte 5 of the MAC address.
-
-config IEEE802154_UPIPE_MAC6
-	hex "MAC Address Byte 6"
-	default 0
-	range 0 0xff
-	help
-	  This is the byte 6 of the MAC address.
-
-config IEEE802154_UPIPE_MAC7
-	hex "MAC Address Byte 7"
-	default 0
-	range 0 0xff
-	help
-	  This is the byte 7 of the MAC address.
-
-endif # IEEE802154_UPIPE_RANDOM_MAC
-
-endif # IEEE802154_UPIPE
+source "drivers/ieee802154/Kconfig.uart_pipe"
 
 config IEEE802154_2015
 	bool "Support for IEEE 802.15.4-2015 frames"

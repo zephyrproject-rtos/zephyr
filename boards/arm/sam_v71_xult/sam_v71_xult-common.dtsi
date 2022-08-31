@@ -18,6 +18,7 @@
 		pwm-0 = &pwm0;
 		sw0 = &sw0_user_button;
 		sw1 = &sw1_user_button;
+		watchdog0 = &wdt;
 	};
 
 	chosen {
@@ -173,6 +174,11 @@
 
 	pinctrl-0 = <&twihs0_default>;
 	pinctrl-names = "default";
+
+	eeprom: eeprom@5f {
+		compatible = "atmel,24mac402";
+		reg = <0x5f>;
+	};
 };
 
 &twihs2 {
@@ -222,6 +228,8 @@ zephyr_udc0: &usbhs {
 
 	pinctrl-0 = <&gmac_rmii>;
 	pinctrl-names = "default";
+
+	mac-eeprom = <&eeprom>;
 
 	phy: phy {
 		compatible = "ethernet-phy";
@@ -303,7 +311,6 @@ zephyr_udc0: &usbhs {
 
 &ssc {
 	status = "okay";
-	label = "I2S_0";
 
 	pinctrl-0 = <&ssc_default>;
 	pinctrl-names = "default";

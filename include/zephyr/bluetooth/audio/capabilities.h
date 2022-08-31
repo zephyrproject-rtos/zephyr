@@ -26,7 +26,7 @@ enum bt_audio_capability_framing {
 	BT_AUDIO_CAPABILITY_UNFRAMED_NOT_SUPPORTED = 0x01,
 };
 
-/** @def BT_AUDIO_CAPABILITY_PREF
+/**
  *  @brief Helper to declare elements of @ref bt_audio_capability_pref
  *
  *  @param _framing Framing Support
@@ -238,7 +238,9 @@ struct bt_audio_capability {
 	/** Capability operations reference */
 	struct bt_audio_capability_ops *ops;
 #endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
-	sys_snode_t node;
+
+	/* Internally used list node */
+	sys_snode_t _node;
 };
 
 /** @brief Register Audio Capability.

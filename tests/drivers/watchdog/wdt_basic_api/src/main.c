@@ -13,6 +13,6 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 ZTEST_SUITE(wdt_basic_test_suite, NULL, NULL, NULL, NULL, NULL);

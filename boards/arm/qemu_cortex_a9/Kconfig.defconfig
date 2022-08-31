@@ -70,13 +70,6 @@ if QEMU_ICOUNT
 
 endif # QEMU_ICOUNT
 
-if SERIAL
-
-	config UART_XLNX_PS
-	default y
-
-endif # SERIAL
-
 if SHELL
 
 	config SHELL_STACK_SIZE

@@ -186,9 +186,14 @@ static int mcux_lpuart_err_check(const struct device *dev)
 		err |= UART_ERROR_FRAMING;
 	}
 
+	if (flags & kLPUART_NoiseErrorFlag) {
+		err |= UART_ERROR_PARITY;
+	}
+
 	LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag |
 					      kLPUART_ParityErrorFlag |
-					      kLPUART_FramingErrorFlag);
+					      kLPUART_FramingErrorFlag |
+						  kLPUART_NoiseErrorFlag);
 
 	return err;
 }
@@ -239,6 +244,9 @@ static void mcux_lpuart_irq_tx_enable(const struct device *dev)
 	key = irq_lock();
 	data->tx_poll_stream_on = false;
 	data->tx_int_stream_on = true;
+	/* Transmission complete interrupt no longer required */
+	LPUART_DisableInterrupts(config->base,
+		kLPUART_TransmissionCompleteInterruptEnable);
 	/* Do not allow system to sleep while UART tx is ongoing */
 	mcux_lpuart_pm_policy_state_lock_get(dev);
 #endif
@@ -779,7 +787,8 @@ static int mcux_lpuart_rx_enable(const struct device *dev, uint8_t *buf, const s
 	/* Clear these status flags as they can prevent the UART device from receiving data */
 	LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag |
 					      kLPUART_ParityErrorFlag |
-					      kLPUART_FramingErrorFlag);
+					      kLPUART_FramingErrorFlag |
+						  kLPUART_NoiseErrorFlag);
 	LPUART_EnableRx(lpuart, true);
 	irq_unlock(key);
 	return ret;
@@ -847,6 +856,8 @@ static void mcux_lpuart_isr(const struct device *dev)
 			data->tx_poll_stream_on = false;
 			mcux_lpuart_pm_policy_state_lock_put(dev);
 		}
+		assert(LPUART_ClearStatusFlags(config->base,
+			kLPUART_TransmissionCompleteFlag) == 0U);
 	}
 #endif /* CONFIG_PM */
 
@@ -871,6 +882,10 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 	const struct mcux_lpuart_config *config = dev->config;
 	struct mcux_lpuart_data *data = dev->data;
 	uint32_t clock_freq;
+
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
@@ -1083,7 +1098,7 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 			    mcux_lpuart_isr, DEVICE_DT_INST_GET(n), 0);	\
 									\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		\
-	} while (0)
+	} while (false)
 #define MCUX_LPUART_IRQ_INIT(n) .irq_config_func = mcux_lpuart_config_func_##n,
 #define MCUX_LPUART_IRQ_DEFINE(n)						\
 	static void mcux_lpuart_config_func_##n(const struct device *dev)	\

@@ -14,10 +14,28 @@
 		#address-cells = <1>;
 		#size-cells= <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0>;
+		};
+
+		cpu1: cpu@1 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x1>;
+		};
+
+		cpu2: cpu@2 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x2>;
+		};
+
+		cpu3: cpu@3 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x3>;
 		};
 	};
 
@@ -27,7 +45,6 @@
 		      <0xfffc2000 0x2000>;
 		interrupt-controller;
 		#interrupt-cells = <4>;
-		label = "gic";
 		status = "okay";
 	};
 
@@ -47,20 +64,17 @@
 	sysmgr: sysmgr@ffd12000 {
 		compatible = "syscon";
 		reg = <0xffd12000 0x1000>;
-		label = "sysmgr";
 	};
 
 	clock: clock@ffd10000 {
 		compatible = "intel,agilex-clock";
 		reg = <0xffd10000 0x1000>;
 		#clock-cells = <1>;
-		label = "clock";
 	};
 
 	mem0: memory@10000000 {
 		device_type = "memory";
 		reg = <0x10000000 0x40000>;
-		label = "mem_0";
 	};
 
 	uart0: uart@ffc02000 {
@@ -72,7 +86,6 @@
 			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_UART>;
-		label = "uart_0";
 		status = "disabled";
 	};
 };

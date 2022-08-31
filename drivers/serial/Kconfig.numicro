@@ -7,9 +7,10 @@
 
 config UART_NUMICRO
 	bool "NUVOTON MCU serial driver"
+	default y
+	depends on DT_HAS_NUVOTON_NUMICRO_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select HAS_NUMICRO_UART
-	depends on SOC_FAMILY_NUMICRO
 	help
 	  This option enables the UART driver for Nuvoton Numicro
 	  family of processors.

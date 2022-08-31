@@ -1,0 +1,17 @@
+# Copyright (c) 2020, Linaro limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: Altera NIOS2 QSPI Flash controller supporting the JEDEC CFI interface
+
+compatible: "altr,nios2-qspi-nor"
+
+include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
+
+on-bus: qspi
+
+properties:
+    reg:
+      required: true
+    size:
+      required: true
+      description: Flash Memory size in bits

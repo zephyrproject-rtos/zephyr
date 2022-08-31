@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -132,8 +132,10 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
  */
 #define zassert(cond, default_msg, msg, ...)                                                       \
 	do {                                                                                       \
-		bool _ret = z_zassert(cond, msg ? ("(" default_msg ")") : (default_msg), __FILE__, \
-				      __LINE__, __func__, msg ? msg : "", ##__VA_ARGS__);          \
+		bool _msg = (msg != NULL);                                                         \
+		bool _ret = z_zassert(cond, _msg ? ("(" default_msg ")") : (default_msg), __FILE__,\
+				      __LINE__, __func__, _msg ? msg : "", ##__VA_ARGS__);         \
+		(void)_msg;                                                                        \
 		if (!_ret) {                                                                       \
 			/* If kernel but without multithreading return. */                         \
 			COND_CODE_1(KERNEL, (COND_CODE_1(CONFIG_MULTITHREADING, (), (return;))),   \
@@ -141,10 +143,30 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
 		}                                                                                  \
 	} while (0)
 
+/**
+ * @brief Skip the test, if @a cond is false
+ *
+ * You probably don't need to call this macro directly. You should
+ * instead use zassume_{condition} macros below.
+ *
+ * Note that when CONFIG_MULTITHREADING=n macro returns from the function. It's then expected that
+ * in that case ztest assumes will be used only in the context of the test function.
+ *
+ * NOTE: zassume should not be used to replace zassert, the goal of zassume is to skip tests that
+ * would otherwise fail due to a zassert on some other dependent behavior that is *not* under test,
+ * thus reducing what could be tens to hundreds of assertion failures to investigate down to a few
+ * failures only.
+ *
+ * @param cond Condition to check
+ * @param msg Optional, can be NULL. Message to print if @a cond is false.
+ * @param default_msg Message to print if @a cond is false
+ */
 #define zassume(cond, default_msg, msg, ...)                                                       \
 	do {                                                                                       \
-		bool _ret = z_zassume(cond, msg ? ("(" default_msg ")") : (default_msg), __FILE__, \
-				      __LINE__, __func__, msg ? msg : "", ##__VA_ARGS__);          \
+		bool _msg = (msg != NULL);                                                         \
+		bool _ret = z_zassume(cond, _msg ? ("(" default_msg ")") : (default_msg), __FILE__,\
+				      __LINE__, __func__, _msg ? msg : "", ##__VA_ARGS__);         \
+		(void)_msg;                                                                        \
 		if (!_ret) {                                                                       \
 			/* If kernel but without multithreading return. */                         \
 			COND_CODE_1(KERNEL, (COND_CODE_1(CONFIG_MULTITHREADING, (), (return;))),   \

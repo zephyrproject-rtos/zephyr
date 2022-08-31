@@ -60,7 +60,7 @@
  * interrupt would remain active.
  */
 struct cavs_ipc {
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+#ifdef CONFIG_SOC_INTEL_CAVS_V15
 	uint32_t tdr;
 	uint32_t tdd;
 	uint32_t idr;

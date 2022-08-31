@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2022 Caspar Friedrich <c.s.w.friedrich@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_serial {
+	w1_0: w1 {
+		compatible = "zephyr,w1-serial";
+	};
+};
+
+#include "w1_devices.dtsi"

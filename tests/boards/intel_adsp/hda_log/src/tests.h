@@ -8,9 +8,7 @@
 #include <cavstool.h>
 #include <stdint.h>
 #include <zephyr/device.h>
-#include <ztest.h>
-
-void test_hda_logger(void);
+#include <zephyr/ztest.h>
 
 static inline void hda_ipc_msg(const struct device *dev, uint32_t data,
 			       uint32_t ext, k_timeout_t timeout)

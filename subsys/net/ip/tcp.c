@@ -28,18 +28,23 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 
 #define ACK_TIMEOUT_MS CONFIG_NET_TCP_ACK_TIMEOUT
 #define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
-/* Allow for (tcp_retries + 1) transmissions */
-#define FIN_TIMEOUT_MS (tcp_rto * (tcp_retries + 1))
-#define FIN_TIMEOUT K_MSEC(FIN_TIMEOUT_MS)
+#define FIN_TIMEOUT K_MSEC(tcp_fin_timeout_ms)
 #define ACK_DELAY K_MSEC(100)
+#define ZWP_MAX_DELAY_MS 120000
 
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
+static int tcp_fin_timeout_ms;
 static int tcp_window =
 #if (CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE != 0)
 	CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE;
 #else
 	(CONFIG_NET_BUF_RX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3;
+#endif
+#ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
+#define TCP_RTO_MS (conn->rto)
+#else
+#define TCP_RTO_MS (tcp_rto)
 #endif
 
 static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
@@ -349,6 +354,28 @@ out:
 	tcp_pkt_unref(pkt);
 }
 
+static void tcp_derive_rto(struct tcp *conn)
+{
+#ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
+	/* Compute a randomized rto 1 and 1.5 times tcp_rto */
+	uint32_t gain;
+	uint8_t gain8;
+	uint32_t rto;
+
+	/* Getting random is computational expensive, so only use 8 bits */
+	sys_rand_get(&gain8, sizeof(uint8_t));
+
+	gain = (uint32_t)gain8;
+	gain += 1 << 9;
+
+	rto = (uint32_t)tcp_rto;
+	rto = (gain * rto) >> 9;
+	conn->rto = (uint16_t)rto;
+#else
+	ARG_UNUSED(conn);
+#endif
+}
+
 static void tcp_send_queue_flush(struct tcp *conn)
 {
 	struct net_pkt *pkt;
@@ -514,7 +541,7 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 
 	if (conn->in_retransmission) {
 		k_work_reschedule_for_queue(&tcp_work_q, &conn->send_timer,
-					    K_MSEC(tcp_rto));
+					    K_MSEC(TCP_RTO_MS));
 	} else if (local && !sys_slist_is_empty(&conn->send_queue)) {
 		k_work_reschedule_for_queue(&tcp_work_q, &conn->send_timer,
 					    K_NO_WAIT);
@@ -563,7 +590,7 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 	} else {
 		conn->send_retries = tcp_retries;
 		k_work_reschedule_for_queue(&tcp_work_q, &conn->send_timer,
-					    K_MSEC(tcp_rto));
+					    K_MSEC(TCP_RTO_MS));
 	}
 }
 
@@ -1179,7 +1206,7 @@ static int tcp_send_queued_data(struct tcp *conn)
 	if (subscribe) {
 		conn->send_data_retries = 0;
 		k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer,
-					    K_MSEC(tcp_rto));
+					    K_MSEC(TCP_RTO_MS));
 	}
  out:
 	return ret;
@@ -1208,6 +1235,7 @@ static void tcp_resend_data(struct k_work *work)
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, send_data_timer);
 	bool conn_unref = false;
 	int ret;
+	int exp_tcp_rto;
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
@@ -1228,7 +1256,7 @@ static void tcp_resend_data(struct k_work *work)
 		if (conn->in_close && conn->send_data_total == 0) {
 			NET_DBG("TCP connection in active close, "
 				"not disposing yet (waiting %dms)",
-				FIN_TIMEOUT_MS);
+				tcp_fin_timeout_ms);
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->fin_timer,
 						    FIN_TIMEOUT);
@@ -1251,8 +1279,17 @@ static void tcp_resend_data(struct k_work *work)
 		NET_ERR("TCP failed to allocate buffer in retransmission");
 	}
 
+	exp_tcp_rto = TCP_RTO_MS;
+	/* The last retransmit does not need to wait that long */
+	if (conn->send_data_retries < tcp_retries) {
+		/* Every retransmit, the retransmission timeout increases by a factor 1.5 */
+		for (int i = 0; i < conn->send_data_retries; i++) {
+			exp_tcp_rto += exp_tcp_rto >> 1;
+		}
+	}
+
 	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer,
-				    K_MSEC(tcp_rto));
+				    K_MSEC(exp_tcp_rto));
 
  out:
 	k_mutex_unlock(&conn->lock);
@@ -1291,7 +1328,7 @@ static void tcp_fin_timeout(struct k_work *work)
 		return;
 	}
 
-	NET_DBG("Did not receive %s in %dms", "FIN", FIN_TIMEOUT_MS);
+	NET_DBG("Did not receive %s in %dms", "FIN", tcp_fin_timeout_ms);
 	NET_DBG("conn: %p %s", conn, tcp_conn_state(conn, NULL));
 
 	/* Extra unref from net_tcp_put() */
@@ -1307,9 +1344,23 @@ static void tcp_send_zwp(struct k_work *work)
 
 	(void)tcp_out_ext(conn, ACK, NULL, conn->seq - 1);
 
+	tcp_derive_rto(conn);
+
 	if (conn->send_win == 0) {
+		uint64_t timeout;
+
+		/* Make sure the retry counter does not overflow. */
+		if (conn->zwp_retries < UINT8_MAX) {
+			conn->zwp_retries++;
+		}
+
+		timeout = TCP_RTO_MS << conn->zwp_retries;
+		if (timeout == 0 || timeout > ZWP_MAX_DELAY_MS) {
+			timeout = ZWP_MAX_DELAY_MS;
+		}
+
 		(void)k_work_reschedule_for_queue(
-			&tcp_work_q, &conn->persist_timer, K_MSEC(tcp_rto));
+			&tcp_work_q, &conn->persist_timer, K_MSEC(timeout));
 	}
 
 	k_mutex_unlock(&conn->lock);
@@ -1633,6 +1684,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 
 	conn = context->tcp;
 	conn->iface = pkt->iface;
+	tcp_derive_rto(conn);
 
 	net_context_set_family(conn->context, net_pkt_family(pkt));
 
@@ -1923,6 +1975,21 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		goto next_state;
 	}
 
+	if (th && (conn->state != TCP_LISTEN) && (conn->state != TCP_SYN_SENT) &&
+	    tcp_validate_seq(conn, th) && FL(&fl, &, SYN)) {
+		/* According to RFC 793, ch 3.9 Event Processing, receiving SYN
+		 * once the connection has been established is an error
+		 * condition, reset should be sent and connection closed.
+		 */
+		NET_DBG("conn: %p, SYN received in %s state, dropping connection",
+			conn, tcp_state_to_str(conn->state, false));
+		net_stats_update_tcp_seg_drop(conn->iface);
+		tcp_out(conn, RST);
+		conn_state(conn, TCP_CLOSED);
+		close_status = -ECONNRESET;
+		goto next_state;
+	}
+
 	if (th) {
 		size_t max_win;
 
@@ -1954,8 +2021,12 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		}
 
 		if (conn->send_win == 0) {
-			(void)k_work_reschedule_for_queue(
-				&tcp_work_q, &conn->persist_timer, K_MSEC(tcp_rto));
+			if (!k_work_delayable_is_pending(&conn->persist_timer)) {
+				conn->zwp_retries = 0;
+				(void)k_work_reschedule_for_queue(
+					&tcp_work_q, &conn->persist_timer,
+					K_MSEC(TCP_RTO_MS));
+			}
 		} else {
 			(void)k_work_cancel_delayable(&conn->persist_timer);
 		}
@@ -2127,6 +2198,7 @@ next_state:
 			k_work_cancel_delayable(&conn->send_data_timer);
 			if (conn->data_mode == TCP_DATA_MODE_RESEND) {
 				conn->unacked_len = 0;
+				tcp_derive_rto(conn);
 			}
 			conn->data_mode = TCP_DATA_MODE_SEND;
 
@@ -2314,12 +2386,12 @@ int net_tcp_put(struct net_context *context)
 			 */
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->send_data_timer,
-						    K_MSEC(tcp_rto));
+						    K_MSEC(TCP_RTO_MS));
 		} else {
 			int ret;
 
 			NET_DBG("TCP connection in active close, not "
-				"disposing yet (waiting %dms)", FIN_TIMEOUT_MS);
+				"disposing yet (waiting %dms)", tcp_fin_timeout_ms);
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->fin_timer,
 						    FIN_TIMEOUT);
@@ -2531,6 +2603,7 @@ int net_tcp_connect(struct net_context *context,
 
 	conn = context->tcp;
 	conn->iface = net_context_get_iface(context);
+	tcp_derive_rto(conn);
 
 	switch (net_context_get_family(context)) {
 		const struct in_addr *ip4;
@@ -3151,6 +3224,8 @@ struct k_sem *net_tcp_tx_sem_get(struct net_context *context)
 
 void net_tcp_init(void)
 {
+	int i;
+	int rto;
 #if defined(CONFIG_NET_TEST_PROTOCOL)
 	/* Register inputs for TTCN-3 based TCP sanity check */
 	test_cb_register(AF_INET,  IPPROTO_TCP, 4242, 4242, tcp_input);
@@ -3172,6 +3247,21 @@ void net_tcp_init(void)
 	k_work_queue_start(&tcp_work_q, work_q_stack,
 			   K_KERNEL_STACK_SIZEOF(work_q_stack), THREAD_PRIORITY,
 			   NULL);
+
+	/* Compute the largest possible retransmission timeout */
+	tcp_fin_timeout_ms = 0;
+	rto = tcp_rto;
+	for (i = 0; i < tcp_retries; i++) {
+		tcp_fin_timeout_ms += rto;
+		rto += rto >> 1;
+	}
+	/* At the last timeout cicle */
+	tcp_fin_timeout_ms += tcp_rto;
+
+	/* When CONFIG_NET_TCP_RANDOMIZED_RTO is active in can be worse case 1.5 times larger */
+	if (IS_ENABLED(CONFIG_NET_TCP_RANDOMIZED_RTO)) {
+		tcp_fin_timeout_ms += tcp_fin_timeout_ms >> 1;
+	}
 
 	k_thread_name_set(&tcp_work_q.thread, "tcp_work");
 	NET_DBG("Workq started. Thread ID: %p", &tcp_work_q.thread);

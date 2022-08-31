@@ -274,7 +274,7 @@ static void dump_bytes(const struct jesd216_param_header *php,
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET(FLASH_NODE);
+	const struct device *const dev = DEVICE_DT_GET(FLASH_NODE);
 
 	if (!device_is_ready(dev)) {
 		printf("%s: device not ready\n", dev->name);

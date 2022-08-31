@@ -62,7 +62,7 @@ static void spi_psoc6_transfer_next_packet(const struct device *dev)
 		xfer->dataSize = 0U;
 
 		spi_context_cs_control(ctx, false);
-		spi_context_complete(ctx, 0U);
+		spi_context_complete(ctx, dev, 0U);
 		return;
 	}
 
@@ -124,7 +124,7 @@ err:
 	xfer->dataSize = 0U;
 
 	spi_context_cs_control(ctx, false);
-	spi_context_complete(ctx, -ENOMEM);
+	spi_context_complete(ctx, dev, -ENOMEM);
 }
 
 static void spi_psoc6_isr(const struct device *dev)
@@ -296,13 +296,14 @@ static int spi_psoc6_transceive(const struct device *dev,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs,
 				bool asynchronous,
-				struct k_poll_signal *signal)
+				spi_callback_t cb,
+				void *userdata)
 {
 	const struct spi_psoc6_config *config = dev->config;
 	struct spi_psoc6_data *data = dev->data;
 	int ret;
 
-	spi_context_lock(&data->ctx, asynchronous, signal, spi_cfg);
+	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	LOG_DBG("\n\n");
 

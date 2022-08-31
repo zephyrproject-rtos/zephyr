@@ -188,7 +188,7 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 
 static int usb_dc_stm32_clock_enable(void)
 {
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	struct stm32_pclken pclken = {
 		.bus = USB_CLOCK_BUS,
 		.enr = USB_CLOCK_BITS,
@@ -315,6 +315,11 @@ static int usb_dc_stm32_clock_enable(void)
 		return -EIO;
 	}
 #endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE / RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
+
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken) != 0) {
 		LOG_ERR("Unable to enable USB clock");
@@ -450,6 +455,16 @@ static int usb_dc_stm32_init(void)
 	status = HAL_PCD_Init(&usb_dc_stm32_state.pcd);
 	if (status != HAL_OK) {
 		LOG_ERR("PCD_Init failed, %d", (int)status);
+		return -EIO;
+	}
+
+	/* On a soft reset force USB to reset first and switch it off
+	 * so the USB connection can get re-initialized
+	 */
+	LOG_DBG("HAL_PCD_Stop");
+	status = HAL_PCD_Stop(&usb_dc_stm32_state.pcd);
+	if (status != HAL_OK) {
+		LOG_ERR("PCD_Stop failed, %d", (int)status);
 		return -EIO;
 	}
 

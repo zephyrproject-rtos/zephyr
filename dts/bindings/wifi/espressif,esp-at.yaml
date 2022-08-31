@@ -8,9 +8,6 @@ compatible: "espressif,esp-at"
 include: uart-device.yaml
 
 properties:
-    label:
-      required: true
-
     power-gpios:
       type: phandle-array
       required: false

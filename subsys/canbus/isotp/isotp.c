@@ -118,7 +118,7 @@ static inline uint32_t receive_get_sf_length(struct net_buf *buf)
 
 static void receive_send_fc(struct isotp_recv_ctx *ctx, uint8_t fs)
 {
-	struct zcan_frame frame = {
+	struct can_frame frame = {
 		.id_type = ctx->tx_addr.id_type,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->tx_addr.ext_id
@@ -375,7 +375,7 @@ static void receive_work_handler(struct k_work *item)
 	receive_state_machine(ctx);
 }
 
-static void process_ff_sf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
+static void process_ff_sf(struct isotp_recv_ctx *ctx, struct can_frame *frame)
 {
 	int index = 0;
 	uint8_t payload_len;
@@ -464,7 +464,7 @@ static inline void receive_add_mem(struct isotp_recv_ctx *ctx, uint8_t *data,
 	net_buf_add_mem(ctx->act_frag, data + tailroom, len - tailroom);
 }
 
-static void process_cf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
+static void process_cf(struct isotp_recv_ctx *ctx, struct can_frame *frame)
 {
 	uint32_t *ud_rem_len = (uint32_t *)net_buf_user_data(ctx->buf);
 	int index = 0;
@@ -527,7 +527,7 @@ static void process_cf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 	}
 }
 
-static void receive_can_rx(const struct device *dev, struct zcan_frame *frame, void *arg)
+static void receive_can_rx(const struct device *dev, struct can_frame *frame, void *arg)
 {
 	struct isotp_recv_ctx *ctx = (struct isotp_recv_ctx *)arg;
 
@@ -570,7 +570,7 @@ static inline int attach_ff_filter(struct isotp_recv_ctx *ctx)
 		mask = CAN_EXT_ID_MASK;
 	}
 
-	struct zcan_filter filter = {
+	struct can_filter filter = {
 		.id_type = ctx->rx_addr.id_type,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->rx_addr.ext_id,
@@ -761,7 +761,7 @@ static void send_timeout_handler(struct _timeout *to)
 }
 
 static void send_process_fc(struct isotp_send_ctx *ctx,
-			    struct zcan_frame *frame)
+			    struct can_frame *frame)
 {
 	uint8_t *data = frame->data;
 
@@ -822,7 +822,7 @@ static void send_process_fc(struct isotp_send_ctx *ctx,
 	}
 }
 
-static void send_can_rx_cb(const struct device *dev, struct zcan_frame *frame, void *arg)
+static void send_can_rx_cb(const struct device *dev, struct can_frame *frame, void *arg)
 {
 	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
 
@@ -865,7 +865,7 @@ static void pull_data_ctx(struct isotp_send_ctx *ctx, size_t len)
 
 static inline int send_sf(struct isotp_send_ctx *ctx)
 {
-	struct zcan_frame frame = {
+	struct can_frame frame = {
 		.id_type = ctx->tx_addr.id_type,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->tx_addr.ext_id
@@ -903,7 +903,7 @@ static inline int send_sf(struct isotp_send_ctx *ctx)
 
 static inline int send_ff(struct isotp_send_ctx *ctx)
 {
-	struct zcan_frame frame = {
+	struct can_frame frame = {
 		.id_type = ctx->tx_addr.id_type,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->tx_addr.ext_id,
@@ -945,7 +945,7 @@ static inline int send_ff(struct isotp_send_ctx *ctx)
 
 static inline int send_cf(struct isotp_send_ctx *ctx)
 {
-	struct zcan_frame frame = {
+	struct can_frame frame = {
 		.id_type = ctx->tx_addr.id_type,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->tx_addr.ext_id,
@@ -1128,7 +1128,7 @@ static void send_work_handler(struct k_work *item)
 
 static inline int attach_fc_filter(struct isotp_send_ctx *ctx)
 {
-	struct zcan_filter filter = {
+	struct can_filter filter = {
 		.id_type = ctx->rx_addr.id_type,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->rx_addr.ext_id,

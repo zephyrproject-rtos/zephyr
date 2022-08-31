@@ -3,8 +3,6 @@
 # Copyright (c) 2016 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_RPI_PICO_USBD := raspberrypi,pico-usbd
-
 menuconfig USB_DEVICE_DRIVER
 	bool "USB device controller drivers"
 	help
@@ -24,6 +22,8 @@ config USB_DEVICE_REMOTE_WAKEUP
 
 config USB_DW
 	bool "Designware USB Device Controller Driver"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_USB_ENABLED
 	help
 	  Designware USB Device Controller Driver.
 
@@ -35,14 +35,17 @@ config USB_DW_USB_2_0
 
 config USB_DC_RPI_PICO
 	bool "USB device controller driver for Raspberry Pi Pico devices"
-	default $(dt_compat_enabled,$(DT_COMPAT_RPI_PICO_USBD))
-	depends on SOC_SERIES_RP2XXX
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_USBD_ENABLED
 	help
 	  Enable USB support on the RP2 family of processors.
 
 config USB_DC_STM32
 	bool "USB device controller driver for STM32 devices"
-	depends on SOC_FAMILY_STM32
+	default y
+	depends on DT_HAS_ST_STM32_OTGFS_ENABLED \
+		|| DT_HAS_ST_STM32_OTGHS_ENABLED \
+		|| DT_HAS_ST_STM32_USB_ENABLED
 	select USE_STM32_LL_USB
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
@@ -53,16 +56,14 @@ config USB_DC_STM32
 config USB_DC_SAM0
 	bool "SAM0 series USB Device Controller driver"
 	default y
-	depends on SOC_FAMILY_SAM0
+	depends on DT_HAS_ATMEL_SAM0_USB_ENABLED
 	help
 	  SAM0 family USB device controller Driver.
 
-DT_COMPAT_SAM_USBC := atmel,sam-usbc
-
 config USB_DC_SAM_USBC
 	bool "SAM4L USBC Device Controller driver"
-	depends on SOC_SERIES_SAM4L
-	default $(dt_compat_enabled,$(DT_COMPAT_SAM_USBC))
+	default y
+	depends on DT_HAS_ATMEL_SAM_USBC_ENABLED
 	help
 	  SAM4L family USBC device controller Driver.
 
@@ -71,8 +72,8 @@ DT_SAM_USBHS_SPEED := $(dt_node_str_prop_equals,$(DT_SAM_USBHS),maximum-speed,hi
 
 config USB_DC_SAM_USBHS
 	bool "SAM series USB HS Device Controller driver"
-	depends on SOC_SERIES_SAME70 || \
-		   SOC_SERIES_SAMV71
+	default y
+	depends on DT_HAS_ATMEL_SAM_USBHS_ENABLED
 	imply USB_DC_HAS_HS_SUPPORT if "$(DT_SAM_USBHS_SPEED)"
 	help
 	  SAM family USB HS device controller Driver.
@@ -80,7 +81,7 @@ config USB_DC_SAM_USBHS
 config USB_NRFX
 	bool "Nordic Semiconductor USB Device Controller Driver"
 	default y
-	depends on HAS_HW_NRF_USBD
+	depends on DT_HAS_NORDIC_NRF_USBD_ENABLED
 	select NRFX_USBD
 	select NRFX_POWER
 	imply USB_DEVICE_REMOTE_WAKEUP
@@ -116,11 +117,15 @@ config USB_NRFX_ATTACHED_EVENT_DELAY
 
 config USB_KINETIS
 	bool "Kinetis USB Device Controller Driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_USBD_ENABLED
 	help
 	  Kinetis USB Device Controller Driver.
 
 config USB_MCUX
 	bool "NXP MCUX USB Device Controller Driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_USBD_ENABLED
 	help
 	  NXP MCUX USB Device Controller Driver for MXRT and LPC SoC's.
 

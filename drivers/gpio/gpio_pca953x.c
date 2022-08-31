@@ -64,10 +64,9 @@ struct pca953x_drv_data {
 struct pca953x_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-	const struct device *i2c_dev;
+	struct i2c_dt_spec i2c;
 	const struct gpio_dt_spec gpio_int;
 	bool interrupt_enabled;
-	uint8_t i2c_addr;
 };
 
 /**
@@ -86,8 +85,7 @@ static int update_input(const struct device *dev)
 	uint8_t input_states;
 	int rc = 0;
 
-	rc = i2c_reg_read_byte(cfg->i2c_dev, cfg->i2c_addr,
-				PCA953X_INPUT_PORT, &input_states);
+	rc = i2c_reg_read_byte_dt(&cfg->i2c, PCA953X_INPUT_PORT, &input_states);
 
 	if (rc == 0) {
 		drv_data->pin_state.input = input_states;
@@ -228,14 +226,12 @@ static int gpio_pca953x_config(const struct device *dev, gpio_pin_t pin,
 
 	/* Set output values */
 	if (data_first) {
-		rc = i2c_reg_write_byte(cfg->i2c_dev, cfg->i2c_addr,
-					PCA953X_OUTPUT_PORT, pins->output);
+		rc = i2c_reg_write_byte_dt(&cfg->i2c, PCA953X_OUTPUT_PORT, pins->output);
 	}
 
 	if (rc == 0) {
 		/* Set pin directions */
-		rc = i2c_reg_write_byte(cfg->i2c_dev, cfg->i2c_addr,
-					PCA953X_CONFIGURATION, pins->dir);
+		rc = i2c_reg_write_byte_dt(&cfg->i2c, PCA953X_CONFIGURATION, pins->dir);
 	}
 
 	if (rc == 0) {
@@ -264,8 +260,7 @@ static int gpio_pca953x_port_read(const struct device *dev,
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
 	/* Read Input Register */
-	rc = i2c_reg_read_byte(cfg->i2c_dev, cfg->i2c_addr,
-				PCA953X_INPUT_PORT, &input_pin_data);
+	rc = i2c_reg_read_byte_dt(&cfg->i2c, PCA953X_INPUT_PORT, &input_pin_data);
 
 	LOG_DBG("read %x got %d", input_pin_data, rc);
 
@@ -300,8 +295,7 @@ static int gpio_pca953x_port_write(const struct device *dev,
 	orig_out = *outp;
 	out = ((orig_out & ~mask) | (value & mask)) ^ toggle;
 
-	rc = i2c_reg_write_byte(cfg->i2c_dev, cfg->i2c_addr,
-				PCA953X_OUTPUT_PORT, out);
+	rc = i2c_reg_write_byte_dt(&cfg->i2c, PCA953X_OUTPUT_PORT, out);
 
 	if (rc == 0) {
 		*outp = out;
@@ -404,8 +398,8 @@ static int gpio_pca953x_init(const struct device *dev)
 	struct pca953x_drv_data *drv_data = dev->data;
 	int rc = 0;
 
-	if (!device_is_ready(cfg->i2c_dev)) {
-		LOG_ERR("I2C device not found");
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("I2C bus device not found");
 		goto out;
 	}
 
@@ -468,13 +462,12 @@ static const struct gpio_driver_api api_table = {
 
 #define GPIO_PCA953X_INIT(n)							\
 	static const struct pca953x_config pca953x_cfg_##n = {			\
-		.i2c_dev = DEVICE_DT_GET(DT_INST_BUS(n)),			\
+		.i2c = I2C_DT_SPEC_INST_GET(n),					\
 		.common = {							\
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
 		},								\
 		.interrupt_enabled = DT_INST_NODE_HAS_PROP(n, nint_gpios),	\
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(n, nint_gpios, {0}),	\
-		.i2c_addr = DT_INST_REG_ADDR(n),				\
 	};									\
 										\
 	static struct pca953x_drv_data pca953x_drvdata_##n = {			\

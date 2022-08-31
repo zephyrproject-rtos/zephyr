@@ -52,15 +52,6 @@ config SPI_0_NRF_SPIS
 	  Due to hardware limitations the implementation supports only simple
 	  buffers (consisting of one part) located in RAM.
 
-config SPI_0_NRF_ORC
-	hex "SPI Port 0 over-read character"
-	depends on SPI_0_NRF_SPI || SPI_0_NRF_SPIM || SPI_0_NRF_SPIS
-	range 0x00 0xff
-	default 0xff
-	help
-	  Over-read character. Character clocked out after an over-read
-	  of the transmit buffer.
-
 config SPI_1_NRF_SPI
 	def_bool  HAS_HW_NRF_SPI1
 	select NRFX_SPI1
@@ -85,15 +76,6 @@ config SPI_1_NRF_SPIS
 	  Enable nRF SPI Slave with EasyDMA on port 1.
 	  Due to hardware limitations the implementation supports only simple
 	  buffers (consisting of one part) located in RAM.
-
-config SPI_1_NRF_ORC
-	hex "SPI Port 1 over-read character"
-	depends on SPI_1_NRF_SPI || SPI_1_NRF_SPIM || SPI_1_NRF_SPIS
-	range 0x00 0xff
-	default 0xff
-	help
-	  Over-read character. Character clocked out after an over-read
-	  of the transmit buffer.
 
 config SPI_2_NRF_SPI
 	def_bool HAS_HW_NRF_SPI2
@@ -120,15 +102,6 @@ config SPI_2_NRF_SPIS
 	  Due to hardware limitations the implementation supports only simple
 	  buffers (consisting of one part) located in RAM.
 
-config SPI_2_NRF_ORC
-	hex "SPI Port 2 over-read character"
-	depends on SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
-	range 0x00 0xff
-	default 0xff
-	help
-	  Over-read character. Character clocked out after an over-read
-	  of the transmit buffer.
-
 config SPI_3_NRF_SPIM
 	def_bool HAS_HW_NRF_SPIM3
 	select NRFX_SPIM3
@@ -144,49 +117,11 @@ config SPI_3_NRF_SPIS
 	  Due to hardware limitations the implementation supports only simple
 	  buffers (consisting of one part) located in RAM.
 
-config SPI_3_NRF_ORC
-	hex "SPI Port 3 over-read character"
-	depends on SPI_3_NRF_SPIM || SPI_3_NRF_SPIS
-	range 0x00 0xff
-	default 0xff
-	help
-	  Over-read character. Character clocked out after an over-read
-	  of the transmit buffer.
-
-config SPI_3_NRF_RX_DELAY
-	int "SPIM3 MISO sampling delay"
-	depends on SPI_3_NRF_SPIM && (SOC_NRF52833 || SOC_NRF52840)
-	range 0 7
-	default 2
-	help
-	  Number of 64 MHz clock cycles (15.625 ns) delay from the sampling
-	  edge of SCK (leading or trailing, depending on the CPHA setting used)
-	  until the input serial data on MISO is actually sampled.
-
 config SPI_4_NRF_SPIM
 	def_bool HAS_HW_NRF_SPIM4
 	select NRFX_SPIM4
 	help
 	  Enable nRF SPI Master with EasyDMA on port 4.
-
-config SPI_4_NRF_ORC
-	hex "SPI Port 4 over-read character"
-	depends on SPI_4_NRF_SPIM
-	range 0x00 0xff
-	default 0xff
-	help
-	  Over-read character. Character clocked out after an over-read
-	  of the transmit buffer.
-
-config SPI_4_NRF_RX_DELAY
-	int "SPIM4 MISO sampling delay"
-	depends on SPI_4_NRF_SPIM && SOC_NRF5340_CPUAPP
-	range 0 7
-	default 2
-	help
-	  Number of 64 MHz clock cycles (15.625 ns) delay from the sampling
-	  edge of SCK (leading or trailing, depending on the CPHA setting used)
-	  until the input serial data on MISO is actually sampled.
 
 config SPI_NRFX_RAM_BUFFER_SIZE
 	int "Size of RAM buffers for SPIM peripherals"

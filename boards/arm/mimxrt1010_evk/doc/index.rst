@@ -11,8 +11,7 @@ series by providing the lowest-cost LQFP package option, combined with the
 high performance and ease-of-use known throughout the entire i.MX RT series.
 This device is fully supported by NXP’s MCUXpresso Software and Tools.
 
-.. image:: ./mimxrt1010_evk.jpg
-   :width: 720px
+.. image:: mimxrt1010_evk.jpg
    :align: center
    :alt: MIMXRT1010-EVK
 
@@ -79,6 +78,8 @@ features:
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

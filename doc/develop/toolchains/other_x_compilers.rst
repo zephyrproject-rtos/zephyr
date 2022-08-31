@@ -4,7 +4,7 @@ Other Cross Compilers
 ######################
 
 This toolchain variant is borrowed from the Linux kernel build system's
-mechanism of using a :envvar:`CROSS_COMPILE` environment variable to set up a
+mechanism of using a ``CROSS_COMPILE`` environment variable to set up a
 GNU-based cross toolchain.
 
 Examples of such "other cross compilers" are cross toolchains that your Linux
@@ -32,13 +32,13 @@ Follow these steps to use one of these toolchains.
 #. :ref:`Set these environment variables <env_vars>`:
 
    - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``cross-compile``.
-   - Set :envvar:`CROSS_COMPILE` to the common path prefix which your
+   - Set ``CROSS_COMPILE`` to the common path prefix which your
      toolchain's binaries have, e.g. the path to the directory containing the
      compiler binaries plus the target triplet and trailing dash.
 
 #. To check that you have set these variables correctly in your current
    environment, follow these example shell sessions (the
-   :envvar:`CROSS_COMPILE` value may be different on your system):
+   ``CROSS_COMPILE`` value may be different on your system):
 
    .. code-block:: console
 

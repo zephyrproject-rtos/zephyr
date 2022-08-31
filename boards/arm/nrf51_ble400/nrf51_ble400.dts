@@ -30,6 +30,7 @@
 		led4 = &led4;
 		sw0 = &button0;
 		sw1 = &button1;
+		watchdog0 = &wdt0;
 	};
 
 	leds {

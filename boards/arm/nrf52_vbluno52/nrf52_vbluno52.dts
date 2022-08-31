@@ -25,6 +25,7 @@
 	aliases {
 		led0 = &led0;
 		sw0 = &button0;
+		watchdog0 = &wdt0;
 	};
 
 	leds {

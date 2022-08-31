@@ -81,9 +81,6 @@ compatible: "espressif,esp32-mcpwm"
 include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
 
 properties:
-  label:
-    required: true
-
   prescale:
     type: int
     required: true

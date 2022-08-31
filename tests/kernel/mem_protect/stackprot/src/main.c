@@ -7,7 +7,7 @@
 
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 
 #define STACKSIZE       (2048 + CONFIG_TEST_EXTRA_STACK_SIZE)

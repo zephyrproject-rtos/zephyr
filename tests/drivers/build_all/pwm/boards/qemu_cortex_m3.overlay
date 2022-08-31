@@ -10,7 +10,6 @@
 		compatible = "vnd,pwm";
 		#pwm-cells = <3>;
 		reg = <0x11112222 0x1000>;
-		label = "TEST_PWM_CTLR";
 		status = "okay";
 	};
 };

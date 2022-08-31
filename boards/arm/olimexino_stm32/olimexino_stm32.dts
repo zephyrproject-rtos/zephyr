@@ -52,6 +52,7 @@
 		led1 = &yellow_led_2;
 		sw0 = &user_button;
 		sdhc0 = &sdhc0;
+		watchdog0 = &iwdg;
 	};
 };
 

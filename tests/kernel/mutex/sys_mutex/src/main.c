@@ -45,9 +45,9 @@
  *             : main thread (@ priority 10) sleeps
  */
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/sys/mutex.h>
 
 #define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -67,7 +67,32 @@ static SYS_MUTEX_DEFINE(no_access_mutex);
 #endif
 static ZTEST_BMEM SYS_MUTEX_DEFINE(not_my_mutex);
 static ZTEST_BMEM SYS_MUTEX_DEFINE(bad_count_mutex);
-extern void test_mutex_multithread_competition(void);
+
+#ifdef CONFIG_USERSPACE
+#define ZTEST_USER_OR_NOT ZTEST_USER
+#else
+#define ZTEST_USER_OR_NOT ZTEST
+#endif
+
+#ifdef CONFIG_USERSPACE
+#define PARTICIPANT_THREAD_OPTIONS (K_USER | K_INHERIT_PERMS)
+#else
+#define PARTICIPANT_THREAD_OPTIONS (0)
+#endif
+
+#define DEFINE_PARTICIPANT_THREAD(id)                               \
+		K_THREAD_STACK_DEFINE(thread_##id##_stack_area, STACKSIZE); \
+		struct k_thread thread_##id##_thread_data;                  \
+		k_tid_t thread_##id##_tid;
+
+#define CREATE_PARTICIPANT_THREAD(id, pri)                                     \
+		k_thread_create(&thread_##id##_thread_data, thread_##id##_stack_area,  \
+			K_THREAD_STACK_SIZEOF(thread_##id##_stack_area),                   \
+			(k_thread_entry_t)thread_##id,                                     \
+			NULL, NULL, NULL,                                                  \
+			pri, PARTICIPANT_THREAD_OPTIONS, K_FOREVER);
+#define START_PARTICIPANT_THREAD(id) k_thread_start(&(thread_##id##_thread_data));
+#define JOIN_PARTICIPANT_THREAD(id) k_thread_join(&(thread_##id##_thread_data), K_FOREVER);
 
 /**
  *
@@ -230,6 +255,45 @@ K_THREAD_STACK_DEFINE(thread_12_stack_area, STACKSIZE);
 struct k_thread thread_12_thread_data;
 extern void thread_12(void);
 
+
+
+DEFINE_PARTICIPANT_THREAD(05);
+DEFINE_PARTICIPANT_THREAD(06);
+DEFINE_PARTICIPANT_THREAD(07);
+DEFINE_PARTICIPANT_THREAD(08);
+DEFINE_PARTICIPANT_THREAD(09);
+DEFINE_PARTICIPANT_THREAD(11);
+
+void create_participant_threads(void)
+{
+	CREATE_PARTICIPANT_THREAD(05, 5);
+	CREATE_PARTICIPANT_THREAD(06, 6);
+	CREATE_PARTICIPANT_THREAD(07, 7);
+	CREATE_PARTICIPANT_THREAD(08, 8);
+	CREATE_PARTICIPANT_THREAD(09, 9);
+	CREATE_PARTICIPANT_THREAD(11, 11);
+}
+
+void start_participant_threads(void)
+{
+	START_PARTICIPANT_THREAD(05);
+	START_PARTICIPANT_THREAD(06);
+	START_PARTICIPANT_THREAD(07);
+	START_PARTICIPANT_THREAD(08);
+	START_PARTICIPANT_THREAD(09);
+	START_PARTICIPANT_THREAD(11);
+}
+
+void join_participant_threads(void)
+{
+	JOIN_PARTICIPANT_THREAD(05);
+	JOIN_PARTICIPANT_THREAD(06);
+	JOIN_PARTICIPANT_THREAD(07);
+	JOIN_PARTICIPANT_THREAD(08);
+	JOIN_PARTICIPANT_THREAD(09);
+	JOIN_PARTICIPANT_THREAD(11);
+}
+
 /**
  *
  * @brief Main thread to test thread_mutex_xxx interfaces
@@ -239,8 +303,10 @@ extern void thread_12(void);
  *
  */
 
-void test_mutex(void)
+ZTEST_USER_OR_NOT(mutex_complex, test_mutex)
 {
+	create_participant_threads();
+	start_participant_threads();
 	/*
 	 * Main thread(test_main) priority was 10 but ztest thread runs at
 	 * priority -1. To run the test smoothly make both main and ztest
@@ -255,12 +321,6 @@ void test_mutex(void)
 	struct sys_mutex *givemutex[3] = { &mutex_3, &mutex_2, &mutex_1 };
 	int priority[4] = { 9, 8, 7, 5 };
 	int droppri[3] = { 8, 8, 9 };
-#ifdef CONFIG_USERSPACE
-	int thread_flags = K_USER | K_INHERIT_PERMS;
-#else
-	int thread_flags = 0;
-#endif
-
 
 	TC_START("Test kernel Mutex API");
 
@@ -338,7 +398,7 @@ void test_mutex(void)
 	/* Start thread */
 	k_thread_create(&thread_12_thread_data, thread_12_stack_area, STACKSIZE,
 			(k_thread_entry_t)thread_12, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(12), thread_flags, K_NO_WAIT);
+			K_PRIO_PREEMPT(12), PARTICIPANT_THREAD_OPTIONS, K_NO_WAIT);
 	k_sleep(K_MSEC(1));     /* Give thread_12 a chance to block on the mutex */
 
 	sys_mutex_unlock(&private_mutex);
@@ -351,11 +411,17 @@ void test_mutex(void)
 	zassert_equal(rv, 0, "Failed to re-obtain lock on private mutex");
 
 	sys_mutex_unlock(&private_mutex);
-
+	join_participant_threads();
 	TC_PRINT("Recursive locking tests successful\n");
 }
 
-void test_supervisor_access(void)
+/* We deliberately disable userspace, even on platforms that
+ * support it, so that the alternate implementation of sys_mutex
+ * (which is just a very thin wrapper to k_mutex) is exercised.
+ * This requires us to not attempt to start the tests in user
+ * mode, as this will otherwise fail an assertion in the thread code.
+ */
+ZTEST(mutex_complex, test_supervisor_access)
 {
 	int rv;
 
@@ -377,7 +443,7 @@ void test_supervisor_access(void)
 	zassert_true(rv == -EINVAL, "mutex wasn't locked");
 }
 
-void test_user_access(void)
+ZTEST_USER_OR_NOT(mutex_complex, test_user_access)
 {
 #ifdef CONFIG_USERSPACE
 	int rv;
@@ -391,60 +457,30 @@ void test_user_access(void)
 #endif /* CONFIG_USERSPACE */
 }
 
-K_THREAD_DEFINE(THREAD_05, STACKSIZE, thread_05, NULL, NULL, NULL,
-		5, K_USER, 0);
-
-K_THREAD_DEFINE(THREAD_06, STACKSIZE, thread_06, NULL, NULL, NULL,
-		6, K_USER, 0);
-
-K_THREAD_DEFINE(THREAD_07, STACKSIZE, thread_07, NULL, NULL, NULL,
-		7, K_USER, 0);
-
-K_THREAD_DEFINE(THREAD_08, STACKSIZE, thread_08, NULL, NULL, NULL,
-		8, K_USER, 0);
-
-K_THREAD_DEFINE(THREAD_09, STACKSIZE, thread_09, NULL, NULL, NULL,
-		9, K_USER, 0);
-
-K_THREAD_DEFINE(THREAD_11, STACKSIZE, thread_11, NULL, NULL, NULL,
-		11, K_USER, 0);
-
 /*test case main entry*/
-void test_main(void)
+static void *sys_mutex_tests_setup(void)
 {
 	int rv;
 
+/* We are on the main thread (supervisor thread).
+ * Grant necessary permissions to the main thread.
+ * The ztest thread (user thread) will inherit them.
+ */
 #ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(),
-			      &thread_12_thread_data, &thread_12_stack_area);
+				&thread_05_thread_data, &thread_05_stack_area,
+				&thread_06_thread_data, &thread_06_stack_area,
+				&thread_07_thread_data, &thread_07_stack_area,
+				&thread_08_thread_data, &thread_08_stack_area,
+				&thread_09_thread_data, &thread_09_stack_area,
+				&thread_11_thread_data, &thread_11_stack_area,
+				&thread_12_thread_data, &thread_12_stack_area);
 #endif
 	rv = sys_mutex_lock(&not_my_mutex, K_NO_WAIT);
 	if (rv != 0) {
 		TC_ERROR("Failed to take mutex %p\n", &not_my_mutex);
 	}
-
-	/* We deliberately disable userspace, even on platforms that
-	 * support it, so that the alternate implementation of sys_mutex
-	 * (which is just a very thin wrapper to k_mutex) is exercised.
-	 * This requires us to not attempt to start the tests in user
-	 * mode, as this will otherwise fail an assertion in the thread code.
-	 */
-#ifdef CONFIG_USERSPACE
-	ztest_test_suite(mutex_complex,
-			 ztest_user_unit_test(test_mutex),
-			 ztest_user_unit_test(test_user_access),
-			 ztest_unit_test(test_supervisor_access));
-
-	ztest_run_test_suite(mutex_complex);
-#else
-	ztest_test_suite(mutex_complex,
-			 ztest_unit_test(test_mutex),
-			 ztest_unit_test(test_user_access),
-			 ztest_unit_test(test_supervisor_access),
-			 ztest_unit_test(test_mutex_multithread_competition));
-
-	ztest_run_test_suite(mutex_complex);
-#endif
-
-
+	return NULL;
 }
+
+ZTEST_SUITE(mutex_complex, NULL, sys_mutex_tests_setup, NULL, NULL, NULL);

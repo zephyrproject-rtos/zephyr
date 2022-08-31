@@ -23,6 +23,7 @@
 		sw2 = &user_button_2;
 		sw3 = &user_button_3;
 		magn0 = &fxos8700;
+		accel0 = &fxos8700;
 	};
 
 	chosen {
@@ -139,7 +140,6 @@
 	fxos8700: fxos8700@1c {
 		compatible = "nxp,fxos8700";
 		reg = <0x1c>;
-		label = "FXOS8700";
 		int1-gpios = <&gpioc 18 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpioc 19 GPIO_ACTIVE_LOW>;
 	};

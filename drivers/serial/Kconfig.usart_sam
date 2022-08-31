@@ -5,7 +5,8 @@
 
 config USART_SAM
 	bool "Atmel SAM MCU family USART driver"
-	depends on SOC_FAMILY_SAM
+	default y
+	depends on DT_HAS_ATMEL_SAM_USART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help

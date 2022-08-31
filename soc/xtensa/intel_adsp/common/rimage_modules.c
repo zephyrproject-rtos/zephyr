@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <manifest.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 #include <zephyr/toolchain.h>
 
 /* These two modules defined here aren't runtime data used by Zephyr or

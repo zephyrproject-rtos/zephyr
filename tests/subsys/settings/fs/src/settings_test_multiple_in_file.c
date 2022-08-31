@@ -13,7 +13,7 @@
 #define CF_MFG_TEST2 "\x0d\x00myfoo/mybar=\x01"\
 		     "\x0d\x00myfoo/mybar=\x0f"
 
-void test_config_multiple_in_file(void)
+ZTEST(settings_config_fs, test_config_multiple_in_file)
 {
 	int rc;
 	struct settings_file cf_mfg;

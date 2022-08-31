@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_BENCHMARK_CMSIS_DSP_COMMON_BENCHMARK_COMMON_H_
 #define ZEPHYR_BENCHMARK_CMSIS_DSP_COMMON_BENCHMARK_COMMON_H_
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/zephyr.h>
 
 #if defined(CONFIG_CPU_CORTEX_M_HAS_DWT)

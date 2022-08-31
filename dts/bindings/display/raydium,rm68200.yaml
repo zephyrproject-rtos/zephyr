@@ -11,9 +11,6 @@ compatible: "raydium,rm68200"
 include: [mipi-dsi-device.yaml, display-controller.yaml]
 
 properties:
-    label:
-      required: true
-
     reset-gpios:
       type: phandle-array
       required: false

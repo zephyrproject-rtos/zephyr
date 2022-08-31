@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <zephyr/device.h>
 #include <zephyr/fs/fs.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/fs/littlefs.h>
 #include "test_fs_shell.h"
 

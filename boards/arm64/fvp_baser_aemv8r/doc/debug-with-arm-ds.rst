@@ -9,8 +9,8 @@ Install Arm DS
 Please refer to the official Arm Development Studio Page [1]_ for details. Here
 ``Version: 2020.b Build: 2020110909`` is used in the following example.
 
-.. image:: images/version-info.png
-   :scale: 70%
+.. image:: images/version-info.jpg
+   :align: center
    :alt: Arm DS Version
 
 Download Arm FVP BaseR AEMv8-R
@@ -24,14 +24,14 @@ Use DS perspective
 
 From menu choose ``Window -> Perspective -> Open Perspective -> Other...``:
 
-.. image:: images/perspective-choose-other.png
-   :scale: 70%
+.. image:: images/perspective-choose-other.jpg
+   :align: center
    :alt: Arm DS Perspective choose Other...
 
 In the opened window, choose ``Development Studio (default)``:
 
-.. image:: images/perspective-choose-ds.png
-   :scale: 70%
+.. image:: images/perspective-choose-ds.jpg
+   :align: center
    :alt: Arm DS Perspective choose DS
 
 Create a new configuration database
@@ -39,20 +39,20 @@ Create a new configuration database
 
 Create a new configuration database by selecting ``File -> New -> Other... -> Configuration Database``:
 
-.. image:: images/create-new-configuration-database.png
-   :scale: 70%
+.. image:: images/create-new-configuration-database.jpg
+   :align: center
    :alt: Arm DS create new configuration database
 
 Choose a name for the database. Here ``Zephyr`` is used:
 
-.. image:: images/create-new-configuration-database_database-name.png
-   :scale: 70%
+.. image:: images/create-new-configuration-database_database-name.jpg
+   :align: center
    :alt: Arm DS create new configuration database: choose database name
 
 Click ``Finish`` and the new configuration database can be seen in ``Project Explorer``:
 
-.. image:: images/create-new-configuration-database_shown-in-project-explorer.png
-   :scale: 70%
+.. image:: images/create-new-configuration-database_shown-in-project-explorer.jpg
+   :align: center
    :alt: Arm DS create new configuration database: shown in project explorer
 
 Create a new model configuration
@@ -60,8 +60,8 @@ Create a new model configuration
 
 Right click ``Zephyr`` in ``Project Explorer``, choose ``New -> Model Configuration``:
 
-.. image:: images/create-new-model-configuration.png
-   :scale: 70%
+.. image:: images/create-new-model-configuration.jpg
+   :align: center
    :alt: Arm DS create new model configuration
 
 In the opened window:
@@ -70,15 +70,15 @@ In the opened window:
 2. Choose ``Launch and connect to specific model``, then ``Next >``.
 3. Set ``Model Path`` to ``$FVP_D/FVP_BaseR_AEMv8R``, then ``Finish``.
 
-.. image:: images/create-new-model-configuration_model-path.png
-   :scale: 70%
+.. image:: images/create-new-model-configuration_model-path.jpg
+   :align: center
    :alt: Arm DS create new model configuration: set model path
 
 Then in ``FVP_BaseR_AEMv8R`` tab, change ``ARMAEMv8-R_`` to ``V8R64-Generic``,
 click ``Save`` and then click ``Import``:
 
-.. image:: images/create-new-model-configuration_model-use-V8R64-Generic.png
-   :scale: 70%
+.. image:: images/create-new-model-configuration_model-use-V8R64-Generic.jpg
+   :align: center
    :alt: Arm DS create new model configuration: import
 
 Create a new launch configuration
@@ -86,8 +86,8 @@ Create a new launch configuration
 
 From ``Project Explorer``, right click ``FVP_BaseR_AEMv8R`` and select ``Debug as -> Debug configurations...``:
 
-.. image:: images/create-new-launch-configuration_context-menu.png
-   :scale: 70%
+.. image:: images/create-new-launch-configuration_context-menu.jpg
+   :align: center
    :alt: Arm DS create new launch configuration: context menu
 
 Select ``Generic Arm C/C++ Application`` and click ``New launch configuration`` button.
@@ -104,16 +104,16 @@ A new configuration named ``New_configuration`` will be created.
      to see all command line options. Run ``FVP_BaseR_AEMv8R --list-params`` to see all supported parameters.
      The file ``zephyr.elf`` specified by ``-a`` is the binary built from Zephyr.
 
-.. image:: images/create-new-launch-configuration_connection.png
-   :scale: 70%
+.. image:: images/create-new-launch-configuration_connection.jpg
+   :align: center
    :alt: Arm DS create new launch configuration: connection
 
 2. In ``Files`` tab:
 
    In ``Files`` box, set ``Load symbols from file`` to full path of ``zephyr.elf`` that you built.
 
-.. image:: images/create-new-launch-configuration_files.png
-   :scale: 70%
+.. image:: images/create-new-launch-configuration_files.jpg
+   :align: center
    :alt: Arm DS create new launch configuration: files
 
 3. In ``Debugger`` tab:
@@ -126,16 +126,16 @@ A new configuration named ``New_configuration`` will be created.
 
    - In ``Paths`` box, set ``Source search directory`` to the path to Zephyr source code.
 
-.. image:: images/create-new-launch-configuration_debugger.png
-   :scale: 70%
+.. image:: images/create-new-launch-configuration_debugger.jpg
+   :align: center
    :alt: Arm DS create new launch configuration: debugger
 
 After all these changes are made, click ``Apply``, then click ``Debug``. DS will
 launch ``FVP_BaseR_AEMv8R`` and connect to it. You can see a new session is
 connected in ``Debug Control`` window.
 
-.. image:: images/DS-debug-working.png
-   :scale: 70%
+.. image:: images/DS-debug-working.jpg
+   :align: center
    :alt: Arm DS working
 
 References

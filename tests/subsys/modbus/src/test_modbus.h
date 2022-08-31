@@ -8,7 +8,7 @@
 #define __TEST_MODBUS_H__
 
 #include <zephyr/drivers/uart.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/modbus/modbus.h>
 
 #define MB_TEST_BAUDRATE_LOW	9600

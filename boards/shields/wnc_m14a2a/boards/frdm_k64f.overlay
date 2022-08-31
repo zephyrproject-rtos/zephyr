@@ -16,7 +16,6 @@
 	wnc_m14a2a: wncm14a2a {
 		status = "okay";
 		compatible = "wnc,m14a2a";
-		label = "wnc-m14a2a";
 		mdm-boot-mode-sel-gpios = <&arduino_header 7 GPIO_ACTIVE_HIGH>;   /* D1 */
 		mdm-power-gpios = <&arduino_header 8 GPIO_ACTIVE_LOW>;	          /* D2 */
 		mdm-keep-awake-gpios = <&arduino_header 12 GPIO_ACTIVE_HIGH>;	  /* D6 */

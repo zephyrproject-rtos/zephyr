@@ -31,7 +31,7 @@
 
 #if defined(CONFIG_SOC_FLASH_MCUX) || defined(CONFIG_SOC_FLASH_LPC) || \
 	defined(CONFIG_SOC_FLASH_STM32)
-static const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+static const struct device *const flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 #endif
 
 static int cmd_read(const struct shell *shell, size_t argc, char *argv[])

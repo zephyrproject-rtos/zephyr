@@ -23,6 +23,7 @@
 
 	aliases {
 		led0 = &led0;
+		watchdog0 = &wdt0;
 	};
 
 	leds {

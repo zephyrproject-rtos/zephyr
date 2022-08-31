@@ -20,7 +20,6 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
-			label = "TEST_GPIO_1";
 			status = "okay";
 		};
 
@@ -29,28 +28,24 @@
 			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			label = "TEST_I2C_CTLR";
 			status = "okay";
 			clock-frequency = <100000>;
 
 			test_i2c_dac43608: dac43608@1 {
 				compatible = "ti,dac43608";
 				reg = <0x1>;
-				label = "DAC43608";
 				#io-channel-cells = <1>;
 			};
 
 			test_i2c_dac53608: dac53608@2 {
 				compatible = "ti,dac53608";
 				reg = <0x2>;
-				label = "DAC53608";
 				#io-channel-cells = <1>;
 			};
 
 			test_i2c_mcp4725: mcp4725@60 {
 				compatible = "microchip,mcp4725";
 				reg = <0x60>;
-				label = "MCP4725";
 				#io-channel-cells = <1>;
 			};
 		};
@@ -60,7 +55,6 @@
 			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
-			label = "TEST_SPI_CTLR";
 			status = "okay";
 			clock-frequency = <2000000>;
 
@@ -71,7 +65,6 @@
 
 			test_spi_dac60508: dac60508@0 {
 				compatible = "ti,dac60508";
-				label = "DAC60508";
 				reg = <0x0>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
@@ -88,7 +81,6 @@
 
 			test_spi_dac70508: dac70508@1 {
 				compatible = "ti,dac70508";
-				label = "DAC70508";
 				reg = <0x1>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
@@ -105,7 +97,6 @@
 
 			test_spi_dac80508: dac80508@2 {
 				compatible = "ti,dac80508";
-				label = "DAC80508";
 				reg = <0x2>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;

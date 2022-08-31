@@ -8,7 +8,7 @@
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if defined(CONFIG_SHIELD_MIKROE_ADC_CLICK)
 #define ADC_DEVICE_NODE		DT_INST(0, microchip_mcp3204)
@@ -400,7 +400,7 @@ static const struct adc_channel_cfg m_2nd_channel_cfg = {
 
 const struct device *get_adc_device(void)
 {
-	const struct device *dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+	const struct device *const dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
 	if (!device_is_ready(dev)) {
 		printk("ADC device is not ready\n");
@@ -413,7 +413,7 @@ const struct device *get_adc_device(void)
 static const struct device *init_adc(void)
 {
 	int i, ret;
-	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+	const struct device *const adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
 	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
 
@@ -481,7 +481,7 @@ static int test_task_one_channel(void)
 	return TC_PASS;
 }
 
-void test_adc_sample_one_channel(void)
+ZTEST_USER(adc_basic, test_adc_sample_one_channel)
 {
 	zassert_true(test_task_one_channel() == TC_PASS, NULL);
 }
@@ -516,7 +516,7 @@ static int test_task_two_channels(void)
 }
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
 
-void test_adc_sample_two_channels(void)
+ZTEST_USER(adc_basic, test_adc_sample_two_channels)
 {
 #if defined(ADC_2ND_CHANNEL_ID)
 	zassert_true(test_task_two_channels() == TC_PASS, NULL);
@@ -568,7 +568,7 @@ static int test_task_asynchronous_call(void)
 }
 #endif /* defined(CONFIG_ADC_ASYNC) */
 
-void test_adc_asynchronous_call(void)
+ZTEST_USER(adc_basic, test_adc_asynchronous_call)
 {
 #if defined(CONFIG_ADC_ASYNC)
 	zassert_true(test_task_asynchronous_call() == TC_PASS, NULL);
@@ -631,7 +631,7 @@ static int test_task_with_interval(void)
 	return TC_PASS;
 }
 
-void test_adc_sample_with_interval(void)
+ZTEST(adc_basic, test_adc_sample_with_interval)
 {
 	zassert_true(test_task_with_interval() == TC_PASS, NULL);
 }
@@ -716,7 +716,7 @@ static int test_task_repeated_samplings(void)
 	return TC_PASS;
 }
 
-void test_adc_repeated_samplings(void)
+ZTEST(adc_basic, test_adc_repeated_samplings)
 {
 	zassert_true(test_task_repeated_samplings() == TC_PASS, NULL);
 }
@@ -761,7 +761,7 @@ static int test_task_invalid_request(void)
 	return TC_PASS;
 }
 
-void test_adc_invalid_request(void)
+ZTEST_USER(adc_basic, test_adc_invalid_request)
 {
 	zassert_true(test_task_invalid_request() == TC_PASS, NULL);
 }

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if defined(CONFIG_ARCH_POSIX)
 #define ALIGN_MS_BOUNDARY		       \
@@ -35,7 +35,7 @@ K_TIMER_DEFINE(ktimer, duration_expire, stop_expire);
 static ZTEST_BMEM struct timer_data tdata;
 
 #define DURATION 100
-#define LESS_DURATION 80
+#define LESS_DURATION 70
 
 /**
  * @addtogroup kernel_common_tests

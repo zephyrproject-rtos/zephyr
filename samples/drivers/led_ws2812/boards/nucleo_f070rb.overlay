@@ -14,7 +14,6 @@
 
 	led_strip: b1414@0 {
 		compatible = "everlight,b1414", "worldsemi,ws2812-spi";
-		label = "B1414";
 
 		/* SPI */
 		reg = <0>; /* ignored, but necessary for SPI bindings */

@@ -11,7 +11,7 @@
 
 void main(void)
 {
-	const struct device *ina = DEVICE_DT_GET_ONE(ti_ina219);
+	const struct device *const ina = DEVICE_DT_GET_ONE(ti_ina219);
 	struct sensor_value v_bus, power, current;
 	int rc;
 

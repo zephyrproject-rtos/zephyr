@@ -62,4 +62,6 @@ source "drivers/clock_control/Kconfig.xec"
 
 source "drivers/clock_control/Kconfig.cavs"
 
+source "drivers/clock_control/Kconfig.aspeed"
+
 endif # CLOCK_CONTROL

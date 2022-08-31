@@ -4,6 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 ZTEST_SUITE(arm_runtime_nmi_fn, NULL, NULL, NULL, NULL, NULL);

@@ -5,7 +5,8 @@
 
 config COUNTER_MCUX_SNVS
 	bool "IMX SNVS RTC driver"
-	depends on HAS_MCUX_SNVS
+	default y
+	depends on DT_HAS_NXP_IMX_SNVS_RTC_ENABLED
 	help
 	  Enable support for the IMX SNVS High/Low Power clock.
 

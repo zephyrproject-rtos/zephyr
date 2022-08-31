@@ -17,6 +17,9 @@ if STM32_LPTIM_TIMER
 
 choice STM32_LPTIM_CLOCK
 	prompt "LPTIM clock value configuration"
+	help
+	  This option is deprecated and configuration of LPTIM domain clock
+	  using devicetree should be preferred.
 
 config STM32_LPTIM_CLOCK_LSI
 	bool "LSI"

@@ -9,6 +9,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/policy.h>
 #include <errno.h>
 #include <soc.h>
 #include <soc_dt.h>
@@ -730,8 +731,14 @@ static int enhanced_i2c_cmd_queue_trans(const struct device *dev)
 	/* One shot on device 1. */
 	IT8XXX2_I2C_MODE_SEL(base) = 0;
 	IT8XXX2_I2C_CTR2(base) = 1;
-	/* Start */
+	/*
+	 * The EC processor(CPU) cannot be in the k_cpu_idle() and power
+	 * policy during the transactions with the CQ mode(DMA mode).
+	 * Otherwise, the EC processor would be clock gated.
+	 */
 	chip_block_idle();
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	/* Start */
 	IT8XXX2_I2C_CTR(base) = E_START_CQ;
 
 	return 1;
@@ -765,6 +772,8 @@ static int i2c_enhance_cq_transfer(const struct device *dev,
 			config->port, data->addr_16bit, I2C_RC_TIMEOUT);
 	}
 
+	/* Permit to enter power policy and idle mode. */
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	chip_permit_idle();
 
 	return data->err;
@@ -774,6 +783,14 @@ static bool cq_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
 {
 	struct i2c_enhance_data *data = dev->data;
 
+	/*
+	 * If the transaction of write or read is divided into two
+	 * transfers(not two messages), the command queue mode does
+	 * not support.
+	 */
+	if (data->i2ccs != I2C_CH_NORMAL) {
+		return false;
+	}
 	/*
 	 * When there is only one message, use the command queue transfer
 	 * directly.

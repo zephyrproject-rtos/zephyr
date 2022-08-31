@@ -17,16 +17,16 @@
  *
  ****************************************************************************
  */
-#include <arch/arm64/hypercall.h>
-#include <xen/generic.h>
-#include <xen/gnttab.h>
-#include <xen/public/grant_table.h>
-#include <xen/public/memory.h>
-#include <xen/public/xen.h>
+#include <zephyr/arch/arm64/hypercall.h>
+#include <zephyr/xen/generic.h>
+#include <zephyr/xen/gnttab.h>
+#include <zephyr/xen/public/grant_table.h>
+#include <zephyr/xen/public/memory.h>
+#include <zephyr/xen/public/xen.h>
 
-#include <init.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(xen_gnttab);
 

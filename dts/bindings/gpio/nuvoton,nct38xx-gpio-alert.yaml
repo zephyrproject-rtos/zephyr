@@ -9,7 +9,6 @@ description: |
         compatible = "nuvoton,nct38xx-gpio-alert";
         irq-gpios = <&gpiod 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
         nct38xx-dev = <&nct3808_0_P1 &nct3808_0_P2>;
-        label = "NCT3808_ALERT_0";
       };
 
 compatible: "nuvoton,nct38xx-gpio-alert"
@@ -17,9 +16,6 @@ compatible: "nuvoton,nct38xx-gpio-alert"
 include: [base.yaml]
 
 properties:
-    label:
-      required: true
-
     irq-gpios:
       type: phandle-array
       required: true

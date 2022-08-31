@@ -52,6 +52,7 @@
 		led1 = &led0_green;
 		led2 = &led0_blue;
 		pwm-led0 = &pwm_led0;
+		watchdog0 = &wdt0;
 	};
 };
 

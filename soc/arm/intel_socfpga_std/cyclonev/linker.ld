@@ -5,4 +5,4 @@
  * Adding support for Cyclone V SoC FPGA, using arm32 linker
  */
 
-#include <arch/arm/aarch32/cortex_a_r/scripts/linker.ld>
+#include <zephyr/arch/arm/aarch32/cortex_a_r/scripts/linker.ld>

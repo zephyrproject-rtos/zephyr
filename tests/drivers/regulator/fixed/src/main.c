@@ -6,7 +6,7 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/regulator.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define REGULATOR_NODE DT_PATH(regulator)
 #define CHECK_NODE DT_PATH(resources)
@@ -23,7 +23,7 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(CHECK_NODE, test_regulator_fixed, okay));
 static const struct gpio_dt_spec reg_gpio = GPIO_DT_SPEC_GET(REGULATOR_NODE, enable_gpios);
 static const struct gpio_dt_spec check_gpio = GPIO_DT_SPEC_GET(CHECK_NODE, check_gpios);
 
-static const struct device *reg_dev = DEVICE_DT_GET(REGULATOR_NODE);
+static const struct device *const reg_dev = DEVICE_DT_GET(REGULATOR_NODE);
 
 static enum {
 	PC_UNCHECKED,
@@ -178,7 +178,7 @@ static void test_preconditions(void)
 		      pc_errstr[precheck]);
 }
 
-static void test_basic(void)
+ZTEST(regulator, test_basic)
 {
 	zassert_equal(precheck, PC_OK,
 		      "precheck failed: %s",
@@ -274,7 +274,7 @@ static void test_basic(void)
 		      "bad 2x on 2x off state: %d", rs);
 }
 
-void test_main(void)
+void *regulator_setup(void)
 {
 	const char * const compats[] = DT_PROP(REGULATOR_NODE, compatible);
 
@@ -285,8 +285,8 @@ void test_main(void)
 	TC_PRINT("startup-delay: %u us\n", STARTUP_DELAY_US);
 	TC_PRINT("off-on-delay: %u us\n", OFF_ON_DELAY_US);
 
-	ztest_test_suite(regulator_test,
-			 ztest_unit_test(test_preconditions),
-			 ztest_unit_test(test_basic));
-	ztest_run_test_suite(regulator_test);
+	test_preconditions();
+	return NULL;
 }
+
+ZTEST_SUITE(regulator, NULL, regulator_setup, NULL, NULL, NULL);

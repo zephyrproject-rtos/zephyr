@@ -5,7 +5,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/syscall_handler.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 ZTEST_BMEM char user_stack[256];
 

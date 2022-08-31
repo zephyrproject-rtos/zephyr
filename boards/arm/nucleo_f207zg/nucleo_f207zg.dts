@@ -72,6 +72,7 @@
 		blue-pwm-led = &blue_pwm_led;
 		red-pwm-led = &red_pwm_led;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -147,6 +148,10 @@ zephyr_udc0: &usbotg_fs {
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 

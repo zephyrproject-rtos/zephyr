@@ -14,7 +14,6 @@ supported:
   - gpio
   - usb_device
   - ble
-  - ieee802154
   - feather_serial
   - feather_i2c
   - feather_spi

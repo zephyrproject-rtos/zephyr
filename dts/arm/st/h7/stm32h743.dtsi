@@ -12,7 +12,6 @@
 		flash-controller@52002000 {
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
-				label = "FLASH_STM32";
 				write-block-size = <32>;
 				erase-block-size = <DT_SIZE_K(128)>;
 				/* maximum erase time for a 128K sector */
@@ -35,7 +34,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x08000000>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
-			label= "OTG_FS";
 		};
 
 		ltdc: display-controller@50001000 {
@@ -45,7 +43,6 @@
 			interrupt-names = "ltdc", "ltdc_er";
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
 			status = "disabled";
-			label = "LTDC";
 		};
 	};
 
@@ -92,6 +89,5 @@
 	otghs_fs_phy: otghs_fs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
-		label = "OTGHS_FS_PHY";
 	};
 };

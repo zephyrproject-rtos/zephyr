@@ -67,23 +67,17 @@ unlock:
 	return ret;
 }
 
-int r8a7795_cpg_mssr_start_stop(const struct device *dev,
-				clock_control_subsys_t sys, bool enable)
+int r8a7795_cpg_mssr_start_stop(const struct device *dev, clock_control_subsys_t sys, bool enable)
 {
 	const struct r8a7795_cpg_mssr_config *config = dev->config;
 	struct rcar_cpg_clk *clk = (struct rcar_cpg_clk *)sys;
-	uint32_t reg = clk->module / 100;
-	uint32_t bit = clk->module % 100;
 	int ret = -EINVAL;
 
-	__ASSERT((bit < 32) && reg < ARRAY_SIZE(mstpcr),
-		 "Invalid module number for cpg clock: %d", clk->module);
-
 	if (clk->domain == CPG_MOD) {
-		ret = rcar_cpg_mstp_clock_endisable(config->base_address, bit, reg, enable);
+		ret = rcar_cpg_mstp_clock_endisable(config->base_address, clk->module, enable);
 	} else if (clk->domain == CPG_CORE) {
-		ret = r8a7795_cpg_core_clock_endisable(config->base_address, clk->module,
-						       clk->rate, enable);
+		ret = r8a7795_cpg_core_clock_endisable(config->base_address, clk->module, clk->rate,
+						       enable);
 	}
 
 	return ret;

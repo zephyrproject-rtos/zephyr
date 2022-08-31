@@ -27,6 +27,14 @@
 #define ESP32_CLK_XTAL_40M             2U
 #define ESP32_CLK_XTAL_AUTO            3U
 
+/* Supported RTC fast clock frequencies */
+#define ESP32_RTC_FAST_CLK_FREQ_8M     8500000U
+
+/* Supported RTC slow clock frequencies */
+#define ESP32_RTC_SLOW_CLK_FREQ_150K   150000U
+#define ESP32_RTC_SLOW_CLK_FREQ_32K    32000U
+#define ESP32_RTC_SLOW_CLK_FREQ_8MD256 (ESP32_RTC_FAST_CLK_FREQ_8M / 256)
+
 /* Modules IDs
  * These IDs are actually offsets in CLK and RST Control registers.
  * These IDs shouldn't be changed unless there is a Hardware change

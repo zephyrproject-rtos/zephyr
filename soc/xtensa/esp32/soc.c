@@ -27,8 +27,52 @@
 #include "esp_spi_flash.h"
 #include "esp_err.h"
 #include "esp32/spiram.h"
+#include "esp_app_format.h"
 #include <zephyr/sys/printk.h>
 
+extern void z_cstart(void);
+
+#ifdef CONFIG_ESP32_NETWORK_CORE
+extern const unsigned char esp32_net_fw_array[];
+extern const int esp_32_net_fw_array_size;
+
+void __attribute__((section(".iram1"))) start_esp32_net_cpu(void)
+{
+	esp_image_header_t *header = (esp_image_header_t *)&esp32_net_fw_array[0];
+	esp_image_segment_header_t *segment =
+		(esp_image_segment_header_t *)&esp32_net_fw_array[sizeof(esp_image_header_t)];
+	uint8_t *segment_payload;
+	uint32_t entry_addr = header->entry_addr;
+	uint32_t idx = sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
+
+	for (int i = 0; i < header->segment_count; i++) {
+		segment_payload = (uint8_t *)&esp32_net_fw_array[idx];
+
+		if (segment->load_addr >= SOC_IRAM_LOW && segment->load_addr < SOC_IRAM_HIGH) {
+			/* IRAM segment only accepts 4 byte access, avoid memcpy usage here */
+			volatile uint32_t *src = (volatile uint32_t *)segment_payload;
+			volatile uint32_t *dst =
+				(volatile uint32_t *)segment->load_addr;
+
+			for (int i = 0; i < segment->data_len/4 ; i++) {
+				dst[i] = src[i];
+			}
+		} else if (segment->load_addr >= SOC_DRAM_LOW &&
+			segment->load_addr < SOC_DRAM_HIGH) {
+
+			memcpy((void *)segment->load_addr,
+				(const void *)segment_payload,
+				segment->data_len);
+		}
+
+		idx += segment->data_len;
+		segment = (esp_image_segment_header_t *)&esp32_net_fw_array[idx];
+		idx += sizeof(esp_image_segment_header_t);
+	}
+
+	esp_appcpu_start((void *)entry_addr);
+}
+#endif
 /*
  * This is written in C rather than assembly since, during the port bring up,
  * Zephyr is being booted by the Espressif bootloader.  With it, the C stack
@@ -38,7 +82,6 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 {
 	volatile uint32_t *wdt_rtc_protect = (uint32_t *)RTC_CNTL_WDTWPROTECT_REG;
 	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
-	volatile uint32_t *app_cpu_config_reg = (uint32_t *)DPORT_APPCPU_CTRL_B_REG;
 	extern uint32_t _init_start;
 
 	/* Move the exception vector table to IRAM. */
@@ -75,6 +118,16 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	*wdt_rtc_reg &= ~RTC_CNTL_WDT_EN;
 	*wdt_rtc_protect = 0;
 
+#if CONFIG_ESP32_NETWORK_CORE
+	/* start the esp32 network core before
+	 * start zephyr
+	 */
+	soc_ll_stall_core(1);
+	soc_ll_reset_core(1);
+	DPORT_REG_WRITE(DPORT_APPCPU_CTRL_D_REG, 0);
+	start_esp32_net_cpu();
+#endif
+
 #if CONFIG_ESP_SPIRAM
 	esp_err_t err = esp_spiram_init();
 
@@ -98,6 +151,7 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	spi_flash_guard_set(&g_flash_guard_default_ops);
 #endif
 	esp_intr_initialize();
+
 	/* Start Zephyr */
 	z_cstart();
 

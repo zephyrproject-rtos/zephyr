@@ -14,7 +14,6 @@
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 
 #ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
-#define __intc_ram_code __attribute__((section(".__ram_code")))
 
 struct pll_config_t {
 	uint8_t pll_freq;
@@ -87,7 +86,7 @@ uint32_t chip_get_pll_freq(void)
 	return pllfreq;
 }
 
-void __intc_ram_code chip_pll_ctrl(enum chip_pll_mode mode)
+void __soc_ram_code chip_pll_ctrl(enum chip_pll_mode mode)
 {
 	volatile uint8_t _pll_ctrl __unused;
 
@@ -100,7 +99,7 @@ void __intc_ram_code chip_pll_ctrl(enum chip_pll_mode mode)
 	_pll_ctrl = IT8XXX2_ECPM_PLLCTRL;
 }
 
-void __intc_ram_code chip_run_pll_sequence(const struct pll_config_t *pll)
+void __soc_ram_code chip_run_pll_sequence(const struct pll_config_t *pll)
 {
 	/* Enable HW timer to wakeup chip from the sleep mode */
 	timer_5ms_one_shot();
@@ -303,6 +302,47 @@ static int ite_it8xxx2_init(const struct device *arg)
 	IT8XXX2_GPIO_GRC1 |= BIT(2);
 
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) */
+
+#if (SOC_USBPD_ITE_PHY_PORT_COUNT > 0)
+	int port;
+
+	/*
+	 * To prevent cc pins leakage, we disable board not active ITE
+	 * TCPC port cc modules, then cc pins can be used as gpio if needed.
+	 */
+	for (port = SOC_USBPD_ITE_ACTIVE_PORT_COUNT;
+	     port < SOC_USBPD_ITE_PHY_PORT_COUNT; port++) {
+		struct usbpd_it8xxx2_regs *base;
+
+		if (port == 0) {
+			base = (struct usbpd_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(usbpd0));
+		} else if (port == 1) {
+			base = (struct usbpd_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(usbpd1));
+		} else {
+			/* Currently all ITE embedded pd chip support max two ports */
+			break;
+		}
+
+		/* Power down all CC, and disable CC voltage detector */
+		base->CCGCR |= (IT8XXX2_USBPD_DISABLE_CC |
+				IT8XXX2_USBPD_DISABLE_CC_VOL_DETECTOR);
+		/*
+		 * Disconnect CC analog module (ex.UP/RD/DET/TX/RX), and
+		 * disconnect CC 5.1K to GND
+		 */
+		base->CCCSR |= (IT8XXX2_USBPD_CC2_DISCONNECT |
+				IT8XXX2_USBPD_CC2_DISCONNECT_5_1K_TO_GND |
+				IT8XXX2_USBPD_CC1_DISCONNECT |
+				IT8XXX2_USBPD_CC1_DISCONNECT_5_1K_TO_GND);
+		/* Disconnect CC 5V tolerant */
+		base->CCPSR |= (IT8XXX2_USBPD_DISCONNECT_POWER_CC2 |
+				IT8XXX2_USBPD_DISCONNECT_POWER_CC1);
+		/* Dis-connect 5.1K dead battery resistor to CC */
+		base->CCPSR |= (IT8XXX2_USBPD_DISCONNECT_5_1K_CC2_DB |
+				IT8XXX2_USBPD_DISCONNECT_5_1K_CC1_DB);
+	}
+#endif /* (SOC_USBPD_ITE_PHY_PORT_COUNT > 0) */
+
 	return 0;
 }
 SYS_INIT(ite_it8xxx2_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

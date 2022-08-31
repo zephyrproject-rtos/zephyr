@@ -12,7 +12,7 @@
 
 #include "subsys/bluetooth/host/at.h"
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 static struct at_client at;
 static char buffer[140];

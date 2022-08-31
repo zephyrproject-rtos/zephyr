@@ -9,6 +9,9 @@ choice
 	config SOC_GD32F405
 		bool "gd32f405"
 
+	config SOC_GD32F407
+		bool "gd32f407"
+
 	config SOC_GD32F450
 		bool "gd32f450"
 

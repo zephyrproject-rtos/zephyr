@@ -19,6 +19,7 @@ config TEST_EXTRA_STACK_SIZE
 	default 2048 if COVERAGE_GCOV
 	default 768 if XTENSA
 	default 0
+	depends on TEST
 	help
 	  Additional stack for tests on some platform where default is not
 	  enough.
@@ -87,11 +88,6 @@ config TEST_LOGGING_DEFAULTS
 	  logging configuration, or no logging at all, disable this
 	  in the project-level defconfig.
 
-config TEST_LOGGING_FLUSH_AFTER_TEST
-	bool "When enabled logs are flushed after each test case"
-	default y
-	depends on MULTITHREADING
-
 config TEST_ENABLE_USERSPACE
 	bool
 	depends on TEST_USERSPACE
@@ -143,7 +139,10 @@ config TEST_ARM_CORTEX_M
 	help
 	  ARM Cortex-M configuration required when testing.
 
-	  Currently, this option is only utilized, to force routing
+	  This option is used to select stack sizes and enable features for
+	  testing.
+
+	  This option is also used to force routing
 	  BusFault, HardFault, and NMI exceptions to Secure State,
 	  when building a Secure ARMv8-M firmware. This will allow
 	  the testing suite to utilize these exceptions, in tests.

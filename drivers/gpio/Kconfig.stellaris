@@ -5,6 +5,7 @@
 
 config GPIO_STELLARIS
 	bool "TI Stellaris GPIO Driver"
-	depends on SOC_TI_LM3S6965
+	default y
+	depends on DT_HAS_TI_STELLARIS_GPIO_ENABLED
 	help
 	  Enable support for the Stellaris GPIO controllers.

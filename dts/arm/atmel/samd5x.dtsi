@@ -102,7 +102,6 @@
 
 		nvmctrl: nvmctrl@41004000  {
 			compatible = "atmel,sam0-nvmctrl";
-			label = "FLASH_CTRL";
 			reg = <0x41004000 0x22>;
 			interrupts = <29 0>, <30 0>;
 			lock-regions = <32>;
@@ -112,7 +111,6 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				label = "FLASH_0";
 				write-block-size = <8>;
 			};
 		};
@@ -121,7 +119,6 @@
 			compatible = "atmel,sam0-dmac";
 			reg = <0x4100A000 0x50>;
 			interrupts = <31 0>, <32 0>, <33 0>, <34 0>, <35 0>;
-			label = "DMA_0";
 			#dma-cells = <2>;
 		};
 
@@ -132,7 +129,6 @@
 				     <16 0>, <17 0>, <18 0>, <19 0>,
 				     <20 0>, <21 0>, <22 0>, <23 0>,
 				     <24 0>, <25 0>, <26 0>, <27 0>;
-			label = "EIC";
 		};
 
 		pinmux_a: pinmux@41008000 {
@@ -159,7 +155,6 @@
 			compatible = "atmel,sam0-watchdog";
 			reg = <0x40002000 13>;
 			interrupts = <10 0>;
-			label = "WATCHDOG_0";
 		};
 
 		sercom0: sercom@40003000 {
@@ -167,7 +162,6 @@
 			reg = <0x40003000 0x40>;
 			interrupts = <46 0>, <47 0>, <48 0>, <49 0>;
 			status = "disabled";
-			label = "SERCOM0";
 			clocks = <&gclk 7>, <&mclk 0x14 12>;
 			clock-names = "GCLK", "MCLK";
 		};
@@ -177,7 +171,6 @@
 			reg = <0x40003400 0x40>;
 			interrupts = <50 0>, <51 0>, <52 0>, <53 0>;
 			status = "disabled";
-			label = "SERCOM1";
 			clocks = <&gclk 8>, <&mclk 0x14 13>;
 			clock-names = "GCLK", "MCLK";
 		};
@@ -187,7 +180,6 @@
 			reg = <0x41012000 0x40>;
 			interrupts = <54 0>, <55 0>, <56 0>, <57 0>;
 			status = "disabled";
-			label = "SERCOM2";
 			clocks = <&gclk 23>, <&mclk 0x18 9>;
 			clock-names = "GCLK", "MCLK";
 		};
@@ -197,7 +189,6 @@
 			reg = <0x41014000 0x40>;
 			interrupts = <58 0>, <59 0>, <60 0>, <61 0>;
 			status = "disabled";
-			label = "SERCOM3";
 			clocks = <&gclk 24>, <&mclk 0x18 10>;
 			clock-names = "GCLK", "MCLK";
 		};
@@ -207,7 +198,6 @@
 			reg = <0x43000000 0x40>;
 			interrupts = <62 0>, <63 0>, <64 0>, <65 0>;
 			status = "disabled";
-			label = "SERCOM4";
 			clocks = <&gclk 34>, <&mclk 0x20 0>;
 			clock-names = "GCLK", "MCLK";
 		};
@@ -217,7 +207,6 @@
 			reg = <0x43000400 0x40>;
 			interrupts = <66 0>, <67 0>, <68 0>, <69 0>;
 			status = "disabled";
-			label = "SERCOM5";
 			clocks = <&gclk 35>, <&mclk 0x20 1>;
 			clock-names = "GCLK", "MCLK";
 		};
@@ -227,7 +216,6 @@
 			reg = <0x43000800 0x40>;
 			interrupts = <70 0>, <71 0>, <72 0>, <73 0>;
 			status = "disabled";
-			label = "SERCOM6";
 			clocks = <&gclk 36>, <&mclk 0x20 2>;
 			clock-names = "GCLK", "MCLK";
 		};
@@ -237,7 +225,6 @@
 			reg = <0x43000C00 0x40>;
 			interrupts = <74 0>, <75 0>, <76 0>, <77 0>;
 			status = "disabled";
-			label = "SERCOM7";
 			clocks = <&gclk 37>, <&mclk 0x20 3>;
 			clock-names = "GCLK", "MCLK";
 		};
@@ -251,7 +238,6 @@
 			porta: gpio@41008000 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x41008000 0x80>;
-				label = "PORTA";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -260,7 +246,6 @@
 			portb: gpio@41008080 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x41008080 0x80>;
-				label = "PORTB";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -269,7 +254,6 @@
 			portc: gpio@41008100 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x41008100 0x80>;
-				label = "PORTC";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -278,7 +262,6 @@
 			portd: gpio@41008180 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x41008180 0x80>;
-				label = "PORTD";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -291,7 +274,6 @@
 			reg = <0x41000000 0x1000>;
 			interrupts = <80 0>, <81 0>, <82 0>, <83 0>;
 			num-bidir-endpoints = <8>;
-			label = "USB0";
 		};
 
 		trng: random@42002800 {
@@ -299,7 +281,6 @@
 			reg = <0x42002800 0x1e>;
 			peripheral-id = <0>;
 			interrupts = <131 0>;
-			label = "ENTROPY_0";
 		};
 
 		rtc: rtc@40002400 {
@@ -308,7 +289,6 @@
 			interrupts = <11 0>;
 			clock-generator = <0>;
 			status = "disabled";
-			label = "RTC";
 		};
 
 		adc0: adc@43001c00 {
@@ -316,7 +296,6 @@
 			reg = <0x43001C00 0x4A>;
 			interrupts = <118 0>, <119 0>;
 			interrupt-names = "overrun", "resrdy";
-			label = "ADC_0";
 
 			/*
 			 * 16 MHz max, source clock must not exceed 100 MHz.
@@ -337,7 +316,6 @@
 			reg = <0x43002000 0x4A>;
 			interrupts = <120 0>, <121 0>;
 			interrupt-names = "overrun", "resrdy";
-			label = "ADC_1";
 
 			/*
 			 * 16 MHz max, source clock must not exceed 100 MHz.
@@ -357,7 +335,6 @@
 			compatible = "atmel,sam0-tc32";
 			reg = <0x40003800 0x34>;
 			interrupts = <107 0>;
-			label = "TIMER_0";
 			clocks = <&gclk 9>, <&mclk 0x14 14>;
 			clock-names = "GCLK", "MCLK";
 		};
@@ -366,7 +343,6 @@
 			compatible = "atmel,sam0-tc32";
 			reg = <0x4101A000 0x34>;
 			interrupts = <109 0>;
-			label = "TIMER_2";
 			clocks = <&gclk 26>, <&mclk 0x18 13>;
 			clock-names = "GCLK", "MCLK";
 		};
@@ -375,7 +351,6 @@
 			compatible = "atmel,sam0-tc32";
 			reg = <0x42001400 0x34>;
 			interrupts = <111 0>;
-			label = "TIMER_4";
 			clocks = <&gclk 30>, <&mclk 0x1c 5>;
 			clock-names = "GCLK", "MCLK";
 		};
@@ -384,7 +359,6 @@
 			compatible = "atmel,sam0-tc32";
 			reg = <0x43001400 0x34>;
 			interrupts = <113 0>;
-			label = "TIMER_6";
 			clocks = <&gclk 39>, <&mclk 0x20 5>;
 			clock-names = "GCLK", "MCLK";
 		};
@@ -394,7 +368,6 @@
 			reg = <0x41016000 0x2000>;
 			interrupts = <85 0>, <86 0>, <87 0>, <88 0>, <89 0>,
 				     <90 0>, <91 0>;
-			label = "TCC_0";
 			clocks = <&gclk 25>, <&mclk 0x18 11>;
 			clock-names = "GCLK", "MCLK";
 			channels = <6>;
@@ -405,7 +378,6 @@
 			compatible = "atmel,sam0-tcc";
 			reg = <0x41018000 0x2000>;
 			interrupts = <92 0>, <93 0>, <94 0>, <95 0>, <96 0>;
-			label = "TCC_1";
 			clocks = <&gclk 25>, <&mclk 0x18 12>;
 			clock-names = "GCLK", "MCLK";
 			channels = <4>;
@@ -416,7 +388,6 @@
 			compatible = "atmel,sam0-tcc";
 			reg = <0x42000c00 0x400>;
 			interrupts = <97 0>, <98 0>, <99 0>, <100 0>;
-			label = "TCC_2";
 			clocks = <&gclk 29>, <&mclk 0x1c 3>;
 			clock-names = "GCLK", "MCLK";
 			channels = <3>;
@@ -427,7 +398,6 @@
 			compatible = "atmel,sam0-tcc";
 			reg = <0x42001000 0x400>;
 			interrupts = <101 0>, <102 0>, <103 0>;
-			label = "TCC_3";
 			clocks = <&gclk 29>, <&mclk 0x1c 4>;
 			clock-names = "GCLK", "MCLK";
 			channels = <2>;
@@ -438,7 +408,6 @@
 			compatible = "atmel,sam0-tcc";
 			reg = <0x43001000 0x400>;
 			interrupts = <104 0>, <105 0>, <106 0>;
-			label = "TCC_4";
 			clocks = <&gclk 38>, <&mclk 0x20 4>;
 			clock-names = "GCLK", "MCLK";
 			channels = <2>;

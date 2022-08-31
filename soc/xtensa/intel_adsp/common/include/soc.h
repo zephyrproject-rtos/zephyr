@@ -42,14 +42,9 @@
 
 #define CAVS_ICTL_INT_CPU_OFFSET(x)		(0x40 * x)
 
-#define IOAPIC_EDGE				0
-#define IOAPIC_HIGH				0
-
 #define SSP_MN_DIV_SIZE				(8)
 #define SSP_MN_DIV_BASE(x)			\
 	(0x00078D00 + ((x) * SSP_MN_DIV_SIZE))
-
-#define PDM_BASE				DMIC_BASE
 
 /* DSP Wall Clock Timers (0 and 1) */
 #define DSP_WCT_IRQ(x) \
@@ -59,20 +54,7 @@
 #define DSP_WCT_CS_TT(x)			BIT(4 + x)
 
 
-extern char _text_start[];
-extern char _text_end[];
-extern char _imr_start[];
-extern char _imr_end[];
-extern char _end[];
-extern char _heap_sentry[];
-extern char _cached_start[];
-extern char _cached_end[];
-
 extern void soc_trace_init(void);
-extern void z_soc_irq_init(void);
-extern void z_soc_irq_enable(uint32_t irq);
-extern void z_soc_irq_disable(uint32_t irq);
-extern int z_soc_irq_is_enabled(unsigned int irq);
 
 extern void z_soc_mp_asm_entry(void);
 extern void soc_mp_startup(uint32_t cpu);
@@ -110,19 +92,7 @@ extern bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
  */
 int soc_adsp_halt_cpu(int id);
 
-static inline bool intel_adsp_ptr_executable(const void *p)
-{
-	return (p >= (void *)_text_start && p <= (void *)_text_end) ||
-		(p >= (void *)_imr_start && p <= (void *)_imr_end);
-}
 
-static inline bool intel_adsp_ptr_is_sane(uint32_t sp)
-{
-	return ((char *)sp >= _end && (char *)sp <= _heap_sentry) ||
-		((char *)sp >= _cached_start && (char *)sp <= _cached_end) ||
-		(sp >= (CONFIG_IMR_MANIFEST_ADDR - CONFIG_ISR_STACK_SIZE)
-		 && sp <= CONFIG_IMR_MANIFEST_ADDR);
-}
 
 static ALWAYS_INLINE void z_idelay(int n)
 {

@@ -31,6 +31,9 @@
 #include <zephyr/bluetooth/rfcomm.h>
 #include <zephyr/bluetooth/sdp.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/audio/csis.h>
 
 #include <zephyr/shell/shell.h>
 
@@ -69,9 +72,19 @@ static struct bt_conn_auth_info_cb auth_info_cb;
  */
 #define HCI_CMD_MAX_PARAM 65
 
+enum {
+	SHELL_ADV_OPT_CONNECTABLE,
+	SHELL_ADV_OPT_DISCOVERABLE,
+	SHELL_ADV_OPT_EXT_ADV,
+
+	SHELL_ADV_OPT_NUM,
+};
+
+static ATOMIC_DEFINE(adv_opt, SHELL_ADV_OPT_NUM);
 #if defined(CONFIG_BT_EXT_ADV)
 uint8_t selected_adv;
 struct bt_le_ext_adv *adv_sets[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
+static ATOMIC_DEFINE(adv_set_opt, SHELL_ADV_OPT_NUM)[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 #endif /* CONFIG_BT_EXT_ADV */
 
 #if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_USER_PHY_UPDATE)
@@ -660,7 +673,7 @@ static void bt_ready(int err)
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
-	bool no_ready_cb = false;
+	bool sync = false;
 
 	ctx_shell = sh;
 
@@ -670,23 +683,22 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		if (!strcmp(arg, "no-settings-load")) {
 			no_settings_load = true;
 		} else if (!strcmp(arg, "sync")) {
-			no_ready_cb = true;
+			sync = true;
 		} else {
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		}
 	}
 
-	if (no_ready_cb) {
+	if (sync) {
+		err = bt_enable(NULL);
+		bt_ready(err);
+	} else {
 		err = bt_enable(bt_ready);
 		if (err) {
 			shell_error(sh, "Bluetooth init failed (err %d)",
 				    err);
 		}
-
-	} else {
-		err = bt_enable(NULL);
-		bt_ready(err);
 	}
 
 	return err;
@@ -1148,14 +1160,85 @@ static int cmd_scan_filter_clear_addr(const struct shell *sh, size_t argc,
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_BROADCASTER)
-static const struct bt_data ad_discov[] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-};
+static void ad_mode_parse(const struct shell *sh, size_t argc, char *argv[], bool *discov)
+{
+	for (size_t argn = 0; argn < argc; argn++) {
+		const char *arg = argv[argn];
+
+		if (!strcmp(arg, "discov")) {
+			*discov = true;
+			break;
+		} else if (!strcmp(arg, "non_discov")) {
+			*discov = false;
+			break;
+		}
+	}
+}
+
+static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
+		       const atomic_t *adv_opt)
+{
+	const bool discoverable = atomic_test_bit(adv_opt, SHELL_ADV_OPT_DISCOVERABLE);
+	const bool adv_ext = atomic_test_bit(adv_opt, SHELL_ADV_OPT_EXT_ADV);
+	static uint8_t ad_flags;
+	size_t ad_len = 0;
+
+	/* Set BR/EDR Not Supported if LE-only device */
+	ad_flags = IS_ENABLED(CONFIG_BT_BREDR) ? 0 : BT_LE_AD_NO_BREDR;
+
+	if (discoverable) {
+		/* A privacy-enabled Set Member should advertise RSI values only when in
+		 * the GAP Limited Discoverable mode.
+		 */
+		if (IS_ENABLED(CONFIG_BT_PRIVACY) && IS_ENABLED(CONFIG_BT_CSIS) && csis != NULL) {
+			ad_flags |= BT_LE_AD_LIMITED;
+		} else {
+			ad_flags |= BT_LE_AD_GENERAL;
+		}
+	}
+
+	if (ad_flags != 0) {
+		__ASSERT(data_array_size > ad_len, "No space for AD_FLAGS");
+		data_array[ad_len].type = BT_DATA_FLAGS;
+		data_array[ad_len].data_len = sizeof(ad_flags);
+		data_array[ad_len].data = &ad_flags;
+		ad_len++;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CSIS)) {
+		ssize_t csis_ad_len;
+
+		csis_ad_len = csis_ad_data_add(&data_array[ad_len],
+					       data_array_size - ad_len, discoverable);
+		if (csis_ad_len < 0) {
+			shell_error(ctx_shell, "Failed to add CSIS data (err %d)", csis_ad_len);
+			return ad_len;
+		}
+
+		ad_len += csis_ad_len;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUDIO) && IS_ENABLED(CONFIG_BT_EXT_ADV) && adv_ext) {
+		const bool connectable = atomic_test_bit(adv_opt, SHELL_ADV_OPT_CONNECTABLE);
+		size_t audio_ad_len;
+
+		audio_ad_len = audio_ad_data_add(&data_array[ad_len], data_array_size - ad_len,
+						 discoverable, connectable);
+		if (audio_ad_len < 0) {
+			return audio_ad_len;
+		}
+
+		ad_len += audio_ad_len;
+	}
+
+	return ad_len;
+}
 
 static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_le_adv_param param = {};
-	const struct bt_data *ad;
+	struct bt_data ad[2];
+	bool discoverable = true;
 	size_t ad_len;
 	int err;
 
@@ -1185,17 +1268,23 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 		goto fail;
 	}
 
-	ad = ad_discov;
-	ad_len = ARRAY_SIZE(ad_discov);
+	ad_mode_parse(sh, argc - 2, &argv[2], &discoverable);
+
+	atomic_clear(adv_opt);
+	atomic_set_bit_to(adv_opt, SHELL_ADV_OPT_CONNECTABLE,
+			  (param.options & BT_LE_ADV_OPT_CONNECTABLE) > 0);
+	atomic_set_bit_to(adv_opt, SHELL_ADV_OPT_DISCOVERABLE, discoverable);
+
+	ad_len = ad_init(ad, ARRAY_SIZE(ad), adv_opt);
+	if (ad_len < 0) {
+		return -ENOEXEC;
+	}
 
 	for (size_t argn = 2; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
-		if (!strcmp(arg, "discov")) {
-			/* Default */
-		} else if (!strcmp(arg, "non_discov")) {
-			ad = NULL;
-			ad_len = 0;
+		if (!strcmp(arg, "discov") || !strcmp(arg, "non_discov")) {
+			/* Skip */
 		} else if (!strcmp(arg, "fal")) {
 			param.options |= BT_LE_ADV_OPT_FILTER_SCAN_REQ;
 			param.options |= BT_LE_ADV_OPT_FILTER_CONN;
@@ -1223,7 +1312,7 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	err = bt_le_adv_start(&param, ad, ad_len, NULL, 0);
+	err = bt_le_adv_start(&param, ad_len > 0 ? ad : NULL, ad_len, NULL, 0);
 	if (err < 0) {
 		shell_error(sh, "Failed to start advertising (err %d)",
 			    err);
@@ -1400,6 +1489,12 @@ static int cmd_adv_create(const struct shell *sh, size_t argc, char *argv[])
 	adv_index = bt_le_ext_adv_get_index(adv);
 	adv_sets[adv_index] = adv;
 
+	atomic_clear(adv_set_opt[adv_index]);
+	atomic_set_bit_to(adv_set_opt[adv_index], SHELL_ADV_OPT_CONNECTABLE,
+			  (param.options & BT_LE_ADV_OPT_CONNECTABLE) > 0);
+	atomic_set_bit_to(adv_set_opt[adv_index], SHELL_ADV_OPT_EXT_ADV,
+			  (param.options & BT_LE_ADV_OPT_EXT_ADV) > 0);
+
 	shell_print(sh, "Created adv id: %d, adv: %p", adv_index, adv);
 
 	return 0;
@@ -1427,15 +1522,15 @@ static int cmd_adv_param(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 {
-	uint8_t discov_data = (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR);
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
 	static uint8_t hex_data[1650];
 	struct bt_data *data;
 	struct bt_data ad[8];
 	struct bt_data sd[8];
 	size_t hex_data_len;
-	size_t ad_len = 0;
+	size_t ad_len;
 	size_t sd_len = 0;
+	bool discoverable = false;
 	size_t *data_len;
 	int err;
 
@@ -1446,6 +1541,15 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	hex_data_len = 0;
 	data = ad;
 	data_len = &ad_len;
+
+	ad_mode_parse(sh, argc - 1, &argv[1], &discoverable);
+
+	atomic_set_bit_to(adv_set_opt[selected_adv], SHELL_ADV_OPT_DISCOVERABLE, discoverable);
+
+	ad_len = ad_init(ad, ARRAY_SIZE(ad), adv_set_opt[selected_adv]);
+	if (ad_len < 0) {
+		return -ENOEXEC;
+	}
 
 	for (size_t argn = 1; argn < argc; argn++) {
 		const char *arg = argv[argn];
@@ -1460,17 +1564,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		if (!strcmp(arg, "discov")) {
-			data[*data_len].type = BT_DATA_FLAGS;
-			data[*data_len].data_len = sizeof(discov_data);
-			data[*data_len].data = &discov_data;
-			(*data_len)++;
-		} else if (!strcmp(arg, "name")) {
-			const char *name = bt_get_name();
-
-			data[*data_len].type = BT_DATA_NAME_COMPLETE;
-			data[*data_len].data_len = strlen(name);
-			data[*data_len].data = name;
-			(*data_len)++;
+			/* Skip */
 		} else if (!strcmp(arg, "scan-response")) {
 			if (data == sd) {
 				shell_print(sh, "Failed to set advertising data: "
@@ -2053,12 +2147,12 @@ static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[])
 
 			return SHELL_CMD_HELP_PRINTED;
 		}
-	}
-
-	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
-	if (err) {
-		shell_error(sh, "Invalid peer address (err %d)", err);
-		return err;
+	} else {
+		err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+		if (err) {
+			shell_error(sh, "Invalid peer address (err %d)", err);
+			return err;
+		}
 	}
 
 #if defined(CONFIG_BT_EXT_ADV)
@@ -2924,7 +3018,7 @@ enum bt_security_err pairing_accept(
 
 void bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 {
-	char addr[BT_ADDR_STR_LEN];
+	char addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(peer, addr, sizeof(addr));
 	shell_print(ctx_shell, "Bond deleted for %s, id %u", addr, id);
@@ -3367,7 +3461,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(adv-create, NULL, EXT_ADV_PARAM, cmd_adv_create, 2, 11),
 	SHELL_CMD_ARG(adv-param, NULL, EXT_ADV_PARAM, cmd_adv_param, 2, 11),
 	SHELL_CMD_ARG(adv-data, NULL, "<data> [scan-response <data>] "
-				      "<type: discov, name, hex>", cmd_adv_data,
+				      "<type: discov, hex>", cmd_adv_data,
 		      1, 16),
 	SHELL_CMD_ARG(adv-start, NULL,
 		"[timeout <timeout>] [num-events <num events>]",

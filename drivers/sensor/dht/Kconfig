@@ -5,6 +5,8 @@
 
 config DHT
 	bool "DHT Temperature and Humidity Sensor"
+	default y
+	depends on DT_HAS_AOSONG_DHT_ENABLED
 	depends on GPIO
 	help
 	  Enable driver for the DHT temperature and humidity sensor family.

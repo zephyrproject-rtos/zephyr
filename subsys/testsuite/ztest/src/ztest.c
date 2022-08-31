@@ -273,6 +273,7 @@ static int run_test(struct unit_test *test)
 	int skip = 0;
 
 	TC_START(test->name);
+	get_start_time_cyc();
 
 	if (setjmp(test_fail)) {
 		ret = TC_FAIL;
@@ -292,6 +293,7 @@ static int run_test(struct unit_test *test)
 	run_test_functions(test);
 out:
 	ret |= cleanup_test(test);
+	get_test_duration_ms();
 
 	if (skip) {
 		Z_TC_END_RESULT(TC_SKIP, test->name);
@@ -365,6 +367,7 @@ static int run_test(struct unit_test *test)
 	int ret = TC_PASS;
 
 	TC_START(test->name);
+	get_start_time_cyc();
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		k_thread_create(&ztest_thread, ztest_thread_stack,
@@ -405,6 +408,7 @@ static int run_test(struct unit_test *test)
 	if (!test_result || !FAIL_FAST) {
 		ret |= cleanup_test(test);
 	}
+	get_test_duration_ms();
 
 	if (test_result == -2) {
 		Z_TC_END_RESULT(TC_SKIP, test->name);

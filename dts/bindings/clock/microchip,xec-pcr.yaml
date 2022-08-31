@@ -14,9 +14,6 @@ properties:
     interrupts:
       required: true
 
-    label:
-      required: true
-
     core-clock-div:
       type: int
       required: true

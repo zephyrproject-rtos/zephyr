@@ -41,6 +41,14 @@ endif()
 zephyr_compile_definitions(
   XIP_EXTERNAL_FLASH
 )
+
+if(CONFIG_ENTROPY_MCUX_CAAM)
+  zephyr_compile_definitions(
+    CACHE_MODE_WRITE_THROUGH
+  )
+endif()
+
+
 zephyr_linker_sources(
   RWDATA nocache.ld)
 

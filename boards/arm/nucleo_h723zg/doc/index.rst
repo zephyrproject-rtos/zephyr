@@ -43,9 +43,7 @@ Key Features
 - USB OTG full speed or device only
 
 .. image:: img/nucleo_h723zg.jpg
-   :width: 720px
    :align: center
-   :height: 560px
    :alt: Nucleo H723ZG
 
 More information about the board can be found at the `Nucleo H723ZG website`_.

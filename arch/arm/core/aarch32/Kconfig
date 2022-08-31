@@ -14,7 +14,7 @@ config CPU_CORTEX_M
 	select ARCH_HAS_TRUSTED_EXECUTION if ARM_TRUSTZONE_M
 	select ARCH_HAS_STACK_PROTECTION if (ARM_MPU && !ARMV6_M_ARMV8_M_BASELINE) || CPU_CORTEX_M_HAS_SPLIM
 	select ARCH_HAS_USERSPACE if ARM_MPU
-	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MPU && CPU_HAS_ARM_MPU && CPU_CORTEX_M_HAS_CACHE
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MPU && CPU_HAS_ARM_MPU && CPU_HAS_DCACHE
 	select ARCH_HAS_RAMFUNC_SUPPORT
 	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	select SWAP_NONATOMIC
@@ -22,6 +22,7 @@ config CPU_CORTEX_M
 	select ARCH_HAS_TIMING_FUNCTIONS if CPU_CORTEX_M_HAS_DWT
 	select ARCH_SUPPORTS_ARCH_HW_INIT
 	select ARCH_HAS_SUSPEND_TO_RAM
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	imply XIP
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
@@ -34,6 +35,7 @@ config CPU_AARCH32_CORTEX_R
 	select HAS_FLASH_LOAD_OFFSET
 	select ARCH_HAS_USERSPACE if ARM_MPU
 	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	help
 	  This option signifies the use of a CPU of the Cortex-R family.
 
@@ -255,14 +257,16 @@ choice
 
 config FP_HARDABI
 	bool "Floating point Hard ABI"
-	depends on !BUILD_WITH_TFM
+	# TF-M build system does not build the NS app and libraries correctly with Hard ABI.
+	# This limitation should be removed in the next TF-M synchronization.
+	depends on !TFM_BUILD_NS
+	depends on !(BUILD_WITH_TFM && !TFM_IPC)
 	help
 	  This option selects the Floating point ABI in which hardware floating
 	  point instructions are generated and uses FPU-specific calling
 	  conventions.
-	  Note: the option is disabled for Zephyr builds with TF-M, as TF-M
-	  does not currently support building with Hard ABI, hence linking
-	  Zephyr with TF-M libraries would not be possible.
+
+	  Note: When building with TF-M enabled only the IPC mode is supported.
 
 config FP_SOFTABI
 	bool "Floating point Soft ABI"

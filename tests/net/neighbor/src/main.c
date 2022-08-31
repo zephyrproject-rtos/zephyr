@@ -9,7 +9,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL);
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>

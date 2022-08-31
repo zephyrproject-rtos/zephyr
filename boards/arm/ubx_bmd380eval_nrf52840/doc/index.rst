@@ -27,8 +27,7 @@ the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/BMD-34-38-EVAL.png
-     :width: 600px
+.. figure:: img/BMD-34-38-EVAL.jpg
      :align: center
      :alt: BMD-340-EVAL
 
@@ -128,8 +127,7 @@ Push buttons
 External Connectors
 -------------------
 
-.. figure:: img/bmd-340-eval_pin_out.png
-     :width: 800px
+.. figure:: img/bmd-340-eval_pin_out.jpg
      :align: center
      :alt: BMD-340-EVAL pin-out
 

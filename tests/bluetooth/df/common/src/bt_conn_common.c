@@ -6,7 +6,7 @@
 
 #include <zephyr/zephyr.h>
 #include <stddef.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <util/util.h>
 #include <util/memq.h>

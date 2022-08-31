@@ -741,6 +741,11 @@ static int adc_npcx_init(const struct device *dev)
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int prescaler = 0, ret;
 
+	if (!device_is_ready(clk_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Save ADC device in data */
 	data->adc_dev = dev;
 

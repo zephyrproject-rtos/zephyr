@@ -68,10 +68,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             frequency_args = ['-f', frequency]
         self.frequency_args = frequency_args
 
-        tool_opt_args = []
-        if tool_opt is not None:
-            tool_opt_args = [tool_opt]
-        self.tool_opt_args = tool_opt_args
+        self.tool_opt_args = tool_opt or []
 
         self.flash_extra = flash_opts if flash_opts else []
 
@@ -82,7 +79,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
-                          dev_id=True, flash_addr=True, erase=True)
+                          dev_id=True, flash_addr=True, erase=True,
+                          tool_opt=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
@@ -115,9 +113,11 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                             action=partial(depr_action,
                                            replacement='-i/--dev-id'),
                             help='Deprecated: use -i/--dev-id instead')
-        parser.add_argument('--tool-opt',
-                            help='''Additional options for pyocd Commander,
-                            e.g. \'--script=user.py\' ''')
+
+    @classmethod
+    def tool_opt_help(cls) -> str:
+        return """Additional options for pyocd commander,
+        e.g. '--script=user.py'"""
 
     @classmethod
     def do_create(cls, cfg, args):

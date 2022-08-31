@@ -24,7 +24,7 @@ char data[MAX_DATA_LEN] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'};
 
 void main(void)
 {
-	const struct device *lora_dev = DEVICE_DT_GET(DEFAULT_RADIO_NODE);
+	const struct device *const lora_dev = DEVICE_DT_GET(DEFAULT_RADIO_NODE);
 	struct lora_modem_config config;
 	int ret;
 
@@ -38,6 +38,8 @@ void main(void)
 	config.datarate = SF_10;
 	config.preamble_len = 8;
 	config.coding_rate = CR_4_5;
+	config.iq_inverted = false;
+	config.public_network = false;
 	config.tx_power = 4;
 	config.tx = true;
 

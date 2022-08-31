@@ -5,7 +5,7 @@ config SOC_SERIES_INTEL_ACE1X
 	bool "Intel ACE 1.x"
 	select SOC_FAMILY_INTEL_ADSP
 	select XTENSA
-	select XTENSA_HAL if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
+	select XTENSA_HAL if (("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc") && ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc-clang"))
 	select ATOMIC_OPERATIONS_BUILTIN if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
 	select ARCH_HAS_COHERENCE
 	select SCHED_IPI_SUPPORTED

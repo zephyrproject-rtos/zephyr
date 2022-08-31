@@ -70,9 +70,9 @@ static int ipm_console_init(const struct device *dev)
 
 	LOG_DBG("IPM console initialization");
 
-	ipm_dev = device_get_binding(CONFIG_IPM_CONSOLE_ON_DEV_NAME);
-	if (!ipm_dev) {
-		LOG_ERR("Cannot get %s", CONFIG_IPM_CONSOLE_ON_DEV_NAME);
+	ipm_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	if (!device_is_ready(ipm_dev)) {
+		LOG_ERR("%s is not ready", ipm_dev->name);
 		return -ENODEV;
 	}
 

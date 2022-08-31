@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #include <string.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/linker/sections.h>
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #include "tcp_private.h"
 #include "net_stats.h"
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define MY_PORT 4242
 #define PEER_PORT 4242
@@ -952,7 +952,7 @@ static void test_client_syn_resend(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
 				  sizeof(struct sockaddr_in),
 				  NULL,
-				  K_MSEC(300), NULL);
+				  K_MSEC(300 + 50), NULL);
 
 	zassert_true(ret < 0, "Connect on no response from peer");
 

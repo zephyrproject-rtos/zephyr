@@ -849,6 +849,7 @@ int net_route_mcast_forward_packet(struct net_pkt *pkt,
 		if (net_send_data(pkt_cpy) >= 0) {
 			++ret;
 		} else {
+			net_pkt_unref(pkt_cpy);
 			--err;
 		}
 	}

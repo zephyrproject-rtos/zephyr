@@ -8,7 +8,7 @@
 
 #include <hal/usb_serial_jtag_ll.h>
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
@@ -75,11 +75,13 @@ static int serial_esp32_usb_init(const struct device *dev)
 	const struct serial_esp32_usb_config *config = dev->config;
 	struct serial_esp32_usb_data *data = dev->data;
 
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
 	int ret = clock_control_on(config->clock_dev, config->clock_subsys);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	const struct serial_esp32_usb_config *config = dev->config;
-
 	data->irq_line = esp_intr_alloc(config->irq_source, 0, (isr_handler_t)serial_esp32_usb_isr,
 					(void *)dev, NULL);
 #endif

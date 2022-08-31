@@ -5,7 +5,7 @@
  */
 
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/sys/byteorder.h>
 

@@ -136,6 +136,92 @@ static int zpacket_bind_ctx(struct net_context *ctx,
 	return 0;
 }
 
+static void zpacket_set_eth_pkttype(struct net_if *iface,
+				    struct sockaddr_ll *addr,
+				    struct net_linkaddr *lladdr)
+{
+	if (net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr)) {
+		addr->sll_pkttype = PACKET_BROADCAST;
+	} else if (net_eth_is_addr_multicast(
+			   (struct net_eth_addr *)lladdr->addr)) {
+		addr->sll_pkttype = PACKET_MULTICAST;
+	} else if (!net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr)) {
+		addr->sll_pkttype = PACKET_HOST;
+	} else {
+		addr->sll_pkttype = PACKET_OTHERHOST;
+	}
+}
+
+static void zpacket_set_source_addr(struct net_context *ctx,
+				    struct net_pkt *pkt,
+				    struct sockaddr *src_addr,
+				    socklen_t *addrlen)
+{
+	struct sockaddr_ll addr = {0};
+	struct net_if *iface = net_context_get_iface(ctx);
+
+	if (iface == NULL) {
+		return;
+	}
+
+	addr.sll_family = AF_PACKET;
+	addr.sll_ifindex = net_if_get_by_iface(iface);
+
+	if (net_pkt_is_l2_processed(pkt)) {
+		/* L2 has already processed the packet - can copy information
+		 * directly from the net_pkt structure
+		 */
+		addr.sll_halen = pkt->lladdr_src.len;
+		memcpy(addr.sll_addr, pkt->lladdr_src.addr,
+		       MIN(sizeof(addr.sll_addr), pkt->lladdr_src.len));
+
+		addr.sll_protocol = net_pkt_ll_proto_type(pkt);
+
+		if (net_if_get_link_addr(iface)->type == NET_LINK_ETHERNET) {
+			addr.sll_hatype = ARPHRD_ETHER;
+			zpacket_set_eth_pkttype(iface, &addr,
+						net_pkt_lladdr_dst(pkt));
+		}
+	} else if (net_if_get_link_addr(iface)->type == NET_LINK_ETHERNET) {
+		/* Need to extract information from the L2 header. Only
+		 * Ethernet L2 supported currently.
+		 */
+		struct net_eth_hdr *hdr;
+		struct net_linkaddr dst_addr;
+		struct net_pkt_cursor cur;
+
+		net_pkt_cursor_backup(pkt, &cur);
+		net_pkt_cursor_init(pkt);
+
+		hdr = NET_ETH_HDR(pkt);
+		if (hdr == NULL ||
+		    pkt->buffer->len < sizeof(struct net_eth_hdr)) {
+			net_pkt_cursor_restore(pkt, &cur);
+			return;
+		}
+
+		addr.sll_halen = sizeof(struct net_eth_addr);
+		memcpy(addr.sll_addr, hdr->src.addr,
+		       sizeof(struct net_eth_addr));
+
+		addr.sll_protocol = ntohs(hdr->type);
+		addr.sll_hatype = ARPHRD_ETHER;
+
+		dst_addr.addr = hdr->dst.addr;
+		dst_addr.len = sizeof(struct net_eth_addr);
+		dst_addr.type = NET_LINK_ETHERNET;
+
+		zpacket_set_eth_pkttype(iface, &addr, &dst_addr);
+		net_pkt_cursor_restore(pkt, &cur);
+	}
+
+	/* Copy the result sockaddr_ll structure into provided buffer. If the
+	 * buffer is smaller than the structure size, it will be truncated.
+	 */
+	memcpy(src_addr, &addr, MIN(sizeof(struct sockaddr_ll), *addrlen));
+	*addrlen = sizeof(struct sockaddr_ll);
+}
+
 ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			   int flags, const struct sockaddr *dest_addr,
 			   socklen_t addrlen)
@@ -243,6 +329,9 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 		return -1;
 	}
 
+	if (src_addr && addrlen) {
+		zpacket_set_source_addr(ctx, pkt, src_addr, addrlen);
+	}
 
 	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) &&
 	    !(flags & ZSOCK_MSG_PEEK)) {

@@ -6,7 +6,7 @@
 
 #include <zephyr/drivers/ec_host_cmd_periph/ec_host_cmd_simulator.h>
 #include <zephyr/mgmt/ec_host_cmd.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /* Variables used to record what is "sent" to host for verification. */
 K_SEM_DEFINE(send_called, 0, 1);

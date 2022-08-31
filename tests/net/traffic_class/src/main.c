@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/linker/sections.h>
 #include <zephyr/random/rand32.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
@@ -85,7 +85,11 @@ static struct sockaddr_in6 dst_addr6 = {
 
 static struct {
 	struct net_context *ctx;
-} net_ctxs[NET_TC_COUNT];
+} net_ctxs_tx[NET_TC_COUNT];
+
+static struct {
+	struct net_context *ctx;
+} net_ctxs_rx[NET_TC_COUNT];
 
 static bool test_started;
 static bool test_failed;
@@ -403,55 +407,69 @@ static void test_traffic_class_general_setup(void)
 	priority_setup();
 }
 
-static void traffic_class_setup(enum net_priority *tc2prio, int count)
+static void test_traffic_class_setup_tx(void)
 {
 	uint8_t priority;
 	int i, ret;
 
-	for (i = 0; i < count; i++) {
-		setup_net_context(&net_ctxs[i].ctx);
+	for (i = 0; i < NET_TC_TX_COUNT; i++) {
 
-		priority = tc2prio[i];
+		setup_net_context(&net_ctxs_tx[i].ctx);
 
-		ret = net_context_set_option(net_ctxs[i].ctx,
+		priority = tx_tc2prio[i];
+
+		ret = net_context_set_option(net_ctxs_tx[i].ctx,
 					     NET_OPT_PRIORITY,
 					     &priority, sizeof(priority));
 		zassert_equal(ret, 0,
 			      "Cannot set priority %d to ctx %p (%d)\n",
-			      priority, net_ctxs[i].ctx, ret);
+			      priority, net_ctxs_tx[i].ctx, ret);
 	}
-}
 
-static void test_traffic_class_setup_tx(void)
-{
-	traffic_class_setup(tx_tc2prio, NET_TC_TX_COUNT);
 }
 
 static void test_traffic_class_setup_rx(void)
 {
-	traffic_class_setup(rx_tc2prio, NET_TC_RX_COUNT);
-}
+	uint8_t priority;
+	int i, ret;
 
-static void traffic_class_cleanup(int count)
-{
-	int i;
+	for (i = 0; i < NET_TC_RX_COUNT; i++) {
 
-	for (i = 0; i < count; i++) {
-		if (net_ctxs[i].ctx) {
-			net_context_unref(net_ctxs[i].ctx);
-			net_ctxs[i].ctx = NULL;
-		}
+		setup_net_context(&net_ctxs_rx[i].ctx);
+
+		priority = rx_tc2prio[i];
+
+		ret = net_context_set_option(net_ctxs_rx[i].ctx,
+					     NET_OPT_PRIORITY,
+					     &priority, sizeof(priority));
+		zassert_equal(ret, 0,
+			      "Cannot set priority %d to ctx %p (%d)\n",
+			      priority, net_ctxs_rx[i].ctx, ret);
 	}
 }
 
 static void test_traffic_class_cleanup_tx(void)
 {
-	traffic_class_cleanup(NET_TC_TX_COUNT);
+	int i;
+
+	for (i = 0; i < NET_TC_TX_COUNT; i++) {
+		if (net_ctxs_tx[i].ctx) {
+			net_context_unref(net_ctxs_tx[i].ctx);
+			net_ctxs_tx[i].ctx = NULL;
+		}
+	}
 }
 
 static void test_traffic_class_cleanup_rx(void)
 {
-	traffic_class_cleanup(NET_TC_RX_COUNT);
+	int i;
+
+	for (i = 0; i < NET_TC_RX_COUNT; i++) {
+		if (net_ctxs_rx[i].ctx) {
+			net_context_unref(net_ctxs_rx[i].ctx);
+			net_ctxs_rx[i].ctx = NULL;
+		}
+	}
 }
 
 static void traffic_class_send_packets_with_prio(enum net_priority prio,
@@ -477,7 +495,7 @@ static void traffic_class_send_packets_with_prio(enum net_priority prio,
 
 	send_priorities[net_tx_priority2tc(prio)][pkt_count - 1] = prio + 1;
 
-	ret = net_context_sendto(net_ctxs[tc].ctx, data, len,
+	ret = net_context_sendto(net_ctxs_tx[tc].ctx, data, len,
 				 (struct sockaddr *)&dst_addr6,
 				 sizeof(struct sockaddr_in6),
 				 NULL, K_NO_WAIT, NULL);
@@ -724,7 +742,7 @@ static void test_traffic_class_setup_recv(void)
 	recv_cb_called = false;
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
-		ret = net_context_recv(net_ctxs[i].ctx, recv_cb,
+		ret = net_context_recv(net_ctxs_rx[i].ctx, recv_cb,
 				       K_NO_WAIT, NULL);
 		zassert_equal(ret, 0,
 			      "[%d] Context recv UDP setup failed (%d)\n",
@@ -741,6 +759,7 @@ static void traffic_class_recv_packets_with_prio(enum net_priority prio,
 	uint8_t data[128];
 	int len, ret;
 	int tc = net_rx_priority2tc(prio);
+
 	const struct in6_addr *src_addr;
 	struct net_if_addr *ifaddr;
 	struct net_if *iface = NULL;
@@ -769,7 +788,7 @@ static void traffic_class_recv_packets_with_prio(enum net_priority prio,
 	/* We cannot use net_recv_data() here as the packet does not have
 	 * UDP header.
 	 */
-	ret = net_context_sendto(net_ctxs[tc].ctx, data, len,
+	ret = net_context_sendto(net_ctxs_rx[tc].ctx, data, len,
 				 (struct sockaddr *)&dst_addr6,
 				 sizeof(struct sockaddr_in6),
 				 NULL, K_NO_WAIT, NULL);
@@ -968,46 +987,86 @@ static void test_traffic_class_recv_data_mix_all_2(void)
 	zassert_false(test_failed, "Traffic class verification failed.");
 }
 
-void test_main(void)
+ZTEST(net_traffic_class, test_bk)
 {
-	ztest_test_suite(net_traffic_class_test,
-			 ztest_unit_test(test_traffic_class_general_setup),
-			 ztest_unit_test(test_traffic_class_setup_tx),
-			 /* Send only same priority packets and verify that
-			  * all are sent with proper traffic class.
-			  */
-			 ztest_unit_test(test_traffic_class_send_data_prio_bk),
-			 ztest_unit_test(test_traffic_class_send_data_prio_be),
-			 ztest_unit_test(test_traffic_class_send_data_prio_ee),
-			 ztest_unit_test(test_traffic_class_send_data_prio_ca),
-			 ztest_unit_test(test_traffic_class_send_data_prio_vi),
-			 ztest_unit_test(test_traffic_class_send_data_prio_vo),
-			 ztest_unit_test(test_traffic_class_send_data_prio_ic),
-			 ztest_unit_test(test_traffic_class_send_data_prio_nc),
-			 /* Then mix traffic classes and verify that higher
-			  * class packets are sent first.
-			  */
-			 ztest_unit_test(test_traffic_class_send_data_mix),
-			 ztest_unit_test(test_traffic_class_send_data_mix_all_1),
-			 ztest_unit_test(test_traffic_class_send_data_mix_all_2),
-			 ztest_unit_test(test_traffic_class_cleanup_tx),
-
-			 /* Same tests for received packets */
-			 ztest_unit_test(test_traffic_class_setup_rx),
-			 ztest_unit_test(test_traffic_class_setup_recv),
-			 ztest_unit_test(test_traffic_class_recv_data_prio_bk),
-			 ztest_unit_test(test_traffic_class_recv_data_prio_be),
-			 ztest_unit_test(test_traffic_class_recv_data_prio_ee),
-			 ztest_unit_test(test_traffic_class_recv_data_prio_ca),
-			 ztest_unit_test(test_traffic_class_recv_data_prio_vi),
-			 ztest_unit_test(test_traffic_class_recv_data_prio_vo),
-			 ztest_unit_test(test_traffic_class_recv_data_prio_ic),
-			 ztest_unit_test(test_traffic_class_recv_data_prio_nc),
-			 ztest_unit_test(test_traffic_class_recv_data_mix),
-			 ztest_unit_test(test_traffic_class_recv_data_mix_all_1),
-			 ztest_unit_test(test_traffic_class_recv_data_mix_all_2),
-			 ztest_unit_test(test_traffic_class_cleanup_rx)
-			 );
-
-	ztest_run_test_suite(net_traffic_class_test);
+	test_traffic_class_send_data_prio_bk();
+	test_traffic_class_recv_data_prio_bk();
 }
+
+ZTEST(net_traffic_class, test_be)
+{
+	test_traffic_class_send_data_prio_be();
+	test_traffic_class_recv_data_prio_be();
+}
+
+ZTEST(net_traffic_class, test_ee)
+{
+	test_traffic_class_send_data_prio_ee();
+	test_traffic_class_recv_data_prio_ee();
+}
+
+ZTEST(net_traffic_class, test_ca)
+{
+	test_traffic_class_send_data_prio_ca();
+	test_traffic_class_recv_data_prio_ca();
+}
+
+ZTEST(net_traffic_class, test_vi)
+{
+	test_traffic_class_send_data_prio_vi();
+	test_traffic_class_recv_data_prio_vi();
+}
+
+ZTEST(net_traffic_class, test_vo)
+{
+	test_traffic_class_send_data_prio_vo();
+	test_traffic_class_recv_data_prio_vo();
+}
+
+ZTEST(net_traffic_class, test_ic)
+{
+	test_traffic_class_send_data_prio_ic();
+	test_traffic_class_recv_data_prio_ic();
+}
+
+ZTEST(net_traffic_class, test_nc)
+{
+	test_traffic_class_send_data_prio_nc();
+	test_traffic_class_recv_data_prio_nc();
+}
+
+ZTEST(net_traffic_class, test_mix)
+{
+	test_traffic_class_send_data_mix();
+	test_traffic_class_recv_data_mix();
+}
+
+ZTEST(net_traffic_class, test_mix_all_1)
+{
+	test_traffic_class_send_data_mix_all_1();
+	test_traffic_class_recv_data_mix_all_1();
+}
+
+ZTEST(net_traffic_class, test_mix_all_2)
+{
+	test_traffic_class_send_data_mix_all_2();
+	test_traffic_class_recv_data_mix_all_2();
+}
+
+static void run_before(void *dummy)
+{
+	ARG_UNUSED(dummy);
+	test_traffic_class_general_setup();
+	test_traffic_class_setup_tx();
+	test_traffic_class_setup_rx();
+	test_traffic_class_setup_recv();
+}
+
+static void run_after(void *dummy)
+{
+	ARG_UNUSED(dummy);
+	test_traffic_class_cleanup_tx();
+	test_traffic_class_cleanup_rx();
+}
+
+ZTEST_SUITE(net_traffic_class, NULL, NULL, run_before, run_after, NULL);

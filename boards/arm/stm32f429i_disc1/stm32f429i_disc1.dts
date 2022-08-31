@@ -118,7 +118,6 @@
 	cs-gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
 	ili9341: ili9341@0 {
 		compatible = "ilitek,ili9341";
-		label = "ILI9341";
 		spi-max-frequency = <5625000>;
 		reg = <0>;
 		cmd-data-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;

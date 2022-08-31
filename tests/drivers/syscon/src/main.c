@@ -5,16 +5,16 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/syscon.h>
-#include <ztest.h>
-#include <linker/devicetree_regions.h>
+#include <zephyr/ztest.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 #define RES_SECT LINKER_DT_NODE_REGION_NAME(DT_NODELABEL(res))
 
 uint8_t var_in_res0[DT_REG_SIZE(DT_NODELABEL(syscon))] __attribute((__section__(RES_SECT)));
 
-static void test_size(void)
+ZTEST(syscon, test_size)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	const size_t expected_size = DT_REG_SIZE(DT_NODELABEL(syscon));
 	size_t size;
 
@@ -24,18 +24,18 @@ static void test_size(void)
 		      expected_size);
 }
 
-static void test_out_of_bounds(void)
+ZTEST(syscon, test_out_of_bounds)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uint32_t val;
 
 	zassert_equal(syscon_read_reg(dev, DT_REG_SIZE(DT_NODELABEL(syscon)), &val), -EINVAL, NULL);
 	zassert_equal(syscon_write_reg(dev, DT_REG_SIZE(DT_NODELABEL(syscon)), val), -EINVAL, NULL);
 }
 
-static void test_read(void)
+ZTEST(syscon, test_read)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uintptr_t base_addr;
 	uint32_t val;
 
@@ -47,9 +47,9 @@ static void test_read(void)
 	}
 }
 
-static void test_write(void)
+ZTEST(syscon, test_write)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uintptr_t base_addr;
 
 	zassert_ok(syscon_get_base(dev, &base_addr), NULL);
@@ -59,12 +59,4 @@ static void test_write(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(syscon,
-			 ztest_unit_test(test_size),
-			 ztest_unit_test(test_out_of_bounds),
-			 ztest_unit_test(test_read),
-			 ztest_unit_test(test_write));
-	ztest_run_test_suite(syscon);
-}
+ZTEST_SUITE(syscon, NULL, NULL, NULL, NULL, NULL);

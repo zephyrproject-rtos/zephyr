@@ -6,7 +6,7 @@
 
 #define CONFIG_CBPRINTF_LIBC_SUBSTS 1
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <float.h>
 #include <limits.h>
 #include <math.h>
@@ -28,72 +28,12 @@
  */
 #define USE_LIBC 0
 #define USE_PACKAGED 0
-#define CONFIG_CBPRINTF_COMPLETE 1
-#define CONFIG_CBPRINTF_FULL_INTEGRAL 1
-#define CONFIG_CBPRINTF_FP_SUPPORT 1
-#define CONFIG_CBPRINTF_FP_A_SUPPORT 1
-#define CONFIG_CBPRINTF_N_SPECIFIER 1
-#define CONFIG_CBPRINTF_LIBC_SUBSTS 1
-
-/* compensate for selects */
-#if (CONFIG_CBPRINTF_FP_A_SUPPORT - 0)
-#undef CONFIG_CBPRINTF_REDUCED_INTEGRAL
-#undef CONFIG_CBPRINTF_FULL_INTEGRAL
-#undef CONFIG_CBPRINTF_FP_SUPPORT
-#define CONFIG_CBPRINTF_FULL_INTEGRAL 1
-#define CONFIG_CBPRINTF_FP_SUPPORT 1
-#endif
-
-#if !(CONFIG_CBPRINTF_FP_SUPPORT - 0)
-#undef CONFIG_CBPRINTF_FP_SUPPORT
-#endif
-
-/* Convert choice selections to one defined flag */
-#if !(CONFIG_CBPRINTF_COMPLETE - 0)
-#ifdef CONFIG_CBPRINTF_FP_SUPPORT
-#error Inconsistent configuration
-#endif
-#undef CONFIG_CBPRINTF_COMPLETE
-#define CONFIG_CBPRINTF_NANO 1
-#endif
-#if !(CONFIG_CBPRINTF_FULL_INTEGRAL - 0)
-#undef CONFIG_CBPRINTF_FULL_INTEGRAL
-#define CONFIG_CBPRINTF_REDUCED_INTEGRAL 1
-#endif
 
 #else /* VIA_TWISTER */
-#if (VIA_TWISTER & 0x01) != 0
-#define CONFIG_CBPRINTF_FULL_INTEGRAL 1
-#else
-#define CONFIG_CBPRINTF_REDUCED_INTEGRAL 1
-#endif
-#if (VIA_TWISTER & 0x02) != 0
-#define CONFIG_CBPRINTF_FP_SUPPORT 1
-#endif
-#if (VIA_TWISTER & 0x04) != 0
-#define CONFIG_CBPRINTF_FP_A_SUPPORT 1
-#endif
-#if (VIA_TWISTER & 0x08) != 0
-#define CONFIG_CBPRINTF_N_SPECIFIER 1
-#endif
-#if (VIA_TWISTER & 0x40) != 0
-#define CONFIG_CBPRINTF_FP_ALWAYS_A 1
-#endif
-#if (VIA_TWISTER & 0x80) != 0
-#define CONFIG_CBPRINTF_NANO 1
-#else /* 0x80 */
-#define CONFIG_CBPRINTF_COMPLETE 1
-#endif /* 0x80 */
-#if (VIA_TWISTER & 0x100) != 0
-#define CONFIG_CBPRINTF_LIBC_SUBSTS 1
-#endif
 #if (VIA_TWISTER & 0x200) != 0
 #define USE_PACKAGED 1
 #else
 #define USE_PACKAGED 0
-#endif
-#if (VIA_TWISTER & 0x400) != 0
-#define CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE 1
 #endif
 #if (VIA_TWISTER & 0x800) != 0
 #define AVOID_C_GENERIC 1
@@ -417,7 +357,7 @@ static inline bool prf_check(const char *expected,
 	zassert_true(prf_check(expected, rv, __FILE__, __LINE__), \
 		     NULL)
 
-static void test_pct(void)
+ZTEST(prf, test_pct)
 {
 	int rc;
 
@@ -426,7 +366,7 @@ static void test_pct(void)
 	PRF_CHECK("/%/a/", rc);
 }
 
-static void test_c(void)
+ZTEST(prf, test_c)
 {
 	int rc;
 
@@ -462,7 +402,7 @@ static void test_c(void)
 	}
 }
 
-static void test_s(void)
+ZTEST(prf, test_s)
 {
 	const char *s = "123";
 	static wchar_t ws[] = L"abc";
@@ -490,7 +430,7 @@ static void test_s(void)
 	}
 }
 
-static void test_v_c(void)
+ZTEST(prf, test_v_c)
 {
 	int rc;
 
@@ -504,7 +444,7 @@ static void test_v_c(void)
 	}
 }
 
-static void test_d_length(void)
+ZTEST(prf, test_d_length)
 {
 	int min = -1234567890;
 	int max = 1876543210;
@@ -587,7 +527,7 @@ static void test_d_length(void)
 	zassert_equal(strncmp("/%Ld/", buf, rc), 0, NULL);
 }
 
-static void test_d_flags(void)
+ZTEST(prf, test_d_flags)
 {
 	int sv = 123;
 	int rc;
@@ -633,7 +573,7 @@ static void test_d_flags(void)
 			      buf, rc), 0, NULL);
 }
 
-static void test_x_length(void)
+ZTEST(prf, test_x_length)
 {
 	unsigned int min = 0x4c3c2c1c;
 	unsigned int max = 0x4d3d2d1d;
@@ -698,7 +638,7 @@ static void test_x_length(void)
 	}
 }
 
-static void test_x_flags(void)
+ZTEST(prf, test_x_flags)
 {
 	unsigned int sv = 0x123;
 	int rc;
@@ -726,7 +666,7 @@ static void test_x_flags(void)
 	zassert_equal(strncmp("/123/123/", buf, rc), 0, NULL);
 }
 
-static void test_o(void)
+ZTEST(prf, test_o)
 {
 	unsigned int v = 01234567;
 	int rc;
@@ -742,7 +682,7 @@ static void test_o(void)
 	PRF_CHECK("01234567", rc);
 }
 
-static void test_fp_value(void)
+ZTEST(prf, test_fp_value)
 {
 	if (!IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
 		TC_PRINT("skipping unsupported feature\n");
@@ -935,7 +875,7 @@ static void test_fp_value(void)
 	PRF_CHECK("8.98846567431158e+307", rc);
 }
 
-static void test_fp_length(void)
+ZTEST(prf, test_fp_length)
 {
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
 		TC_PRINT("skipped test for nano\n");
@@ -976,7 +916,7 @@ static void test_fp_length(void)
 	zassert_equal(strncmp("/%hf/", buf, rc), 0, NULL);
 }
 
-static void test_fp_flags(void)
+ZTEST(prf, test_fp_flags)
 {
 	if (!IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
 		TC_PRINT("skipping unsupported feature\n");
@@ -1009,7 +949,7 @@ static void test_fp_flags(void)
 	zassert_equal(strncmp(&buf[119], "00003872", 8), 0, NULL);
 }
 
-static void test_star_width(void)
+ZTEST(prf, test_star_width)
 {
 	int rc;
 
@@ -1020,7 +960,7 @@ static void test_star_width(void)
 	PRF_CHECK("/  a/a  /", rc);
 }
 
-static void test_star_precision(void)
+ZTEST(prf, test_star_precision)
 {
 	int rc;
 
@@ -1049,7 +989,7 @@ static void test_star_precision(void)
 	}
 }
 
-static void test_n(void)
+ZTEST(prf, test_n)
 {
 	if (!IS_ENABLED(CONFIG_CBPRINTF_N_SPECIFIER)) {
 		TC_PRINT("skipping unsupported feature\n");
@@ -1100,7 +1040,7 @@ static void test_n(void)
 #define EXPECTED_1ARG(_t) (IS_ENABLED(CONFIG_CBPRINTF_NANO) \
 			   ? 1U : (sizeof(_t) / sizeof(int)))
 
-static void test_p(void)
+ZTEST(prf, test_p)
 {
 	if (ENABLED_USE_LIBC) {
 		TC_PRINT("skipping on libc\n");
@@ -1157,7 +1097,7 @@ static int out_e42(int c,
 	return -42;
 }
 
-static void test_libc_substs(void)
+ZTEST(prf, test_libc_substs)
 {
 	if (!IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
 		TC_PRINT("not enabled\n");
@@ -1197,7 +1137,7 @@ static void test_libc_substs(void)
 	}
 }
 
-static void test_cbprintf_package(void)
+ZTEST(prf, test_cbprintf_package)
 {
 	if (!ENABLED_USE_PACKAGED) {
 		TC_PRINT("disabled\n");
@@ -1232,7 +1172,7 @@ static void test_cbprintf_package(void)
  * Note that only static packaging is tested here because ro string detection
  * does not work on host testing.
  */
-static void test_cbprintf_package_rw_string_indexes(void)
+ZTEST(prf, test_cbprintf_package_rw_string_indexes)
 {
 	if (!ENABLED_USE_PACKAGED) {
 		TC_PRINT("disabled\n");
@@ -1300,7 +1240,7 @@ static int fsc_package_cb(int c, void *ctx)
 }
 
 /* Test for validating conversion to fully self-contained package. */
-static void test_cbprintf_fsc_package(void)
+ZTEST(prf, test_cbprintf_fsc_package)
 {
 	if (!ENABLED_USE_PACKAGED) {
 		TC_PRINT("disabled\n");
@@ -1371,7 +1311,7 @@ static void test_cbprintf_fsc_package(void)
 	zassert_equal(strcmp(out_str, exp_str0), 0, NULL);
 }
 
-static void test_cbpprintf(void)
+ZTEST(prf, test_cbpprintf)
 {
 	if (!ENABLED_USE_PACKAGED) {
 		TC_PRINT("disabled\n");
@@ -1389,12 +1329,11 @@ static void test_cbpprintf(void)
 	zassert_equal(rc, -EINVAL, NULL);
 }
 
-static void test_nop(void)
+ZTEST(prf, test_nop)
 {
 }
 
-/*test case main entry*/
-void test_main(void)
+static void *cbprintf_setup(void)
 {
 	if (sizeof(int) == 4) {
 		pfx_str += 8U;
@@ -1448,29 +1387,7 @@ void test_main(void)
 	printf("package alignment offset = %zu\n", PKG_ALIGN_OFFSET);
 #endif
 
-	ztest_test_suite(test_prf,
-			 ztest_unit_test(test_pct),
-			 ztest_unit_test(test_v_c),
-			 ztest_unit_test(test_c),
-			 ztest_unit_test(test_s),
-			 ztest_unit_test(test_d_length),
-			 ztest_unit_test(test_d_flags),
-			 ztest_unit_test(test_x_length),
-			 ztest_unit_test(test_x_flags),
-			 ztest_unit_test(test_o),
-			 ztest_unit_test(test_fp_value),
-			 ztest_unit_test(test_fp_length),
-			 ztest_unit_test(test_fp_flags),
-			 ztest_unit_test(test_star_width),
-			 ztest_unit_test(test_star_precision),
-			 ztest_unit_test(test_n),
-			 ztest_unit_test(test_p),
-			 ztest_unit_test(test_libc_substs),
-			 ztest_unit_test(test_cbprintf_package),
-			 ztest_unit_test(test_cbpprintf),
-			 ztest_unit_test(test_cbprintf_package_rw_string_indexes),
-			 ztest_unit_test(test_cbprintf_fsc_package),
-			 ztest_unit_test(test_nop)
-			 );
-	ztest_run_test_suite(test_prf);
+	return NULL;
 }
+
+ZTEST_SUITE(prf, NULL, cbprintf_setup, NULL, NULL, NULL);

@@ -12,7 +12,7 @@ if COUNTER
 
 config COUNTER_INIT_PRIORITY
 	int "Counter init priority"
-	default KERNEL_INIT_PRIORITY_DEVICE
+	default 60
 	help
 	  Counter driver device initialization priority.
 
@@ -62,10 +62,14 @@ source "drivers/counter/Kconfig.mcux_pit"
 
 source "drivers/counter/Kconfig.xlnx"
 
-source "drivers/counter/Kconfig.esp32"
+source "drivers/counter/Kconfig.esp32_tmr"
+
+source "drivers/counter/Kconfig.esp32_rtc"
 
 source "drivers/counter/Kconfig.mcp7940n"
 
 source "drivers/counter/Kconfig.mcux_ctimer"
+
+source "drivers/counter/Kconfig.andes_atcpit100"
 
 endif # COUNTER

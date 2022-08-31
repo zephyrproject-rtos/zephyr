@@ -30,7 +30,7 @@ static struct coredump_backend_api
 #endif
 
 #if defined(CONFIG_COREDUMP_DEVICE)
-#include <drivers/coredump.h>
+#include <zephyr/drivers/coredump.h>
 #define DT_DRV_COMPAT zephyr_coredump
 #endif
 

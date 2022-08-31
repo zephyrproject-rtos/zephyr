@@ -108,7 +108,7 @@ static void port_set_clr_bits(const struct device *port,
  * - Verify that gpio_port_toggle_bits function changes pin state from active to
  *   inactive and vice versa.
  */
-void test_gpio_port_toggle(void)
+ZTEST(gpio_api_1pin_port, test_gpio_port_toggle)
 {
 	const struct device *port;
 	gpio_port_value_t val_expected;
@@ -142,7 +142,7 @@ void test_gpio_port_toggle(void)
 	}
 }
 
-void test_gpio_port_set_masked_get_raw(void)
+ZTEST(gpio_api_1pin_port, test_gpio_port_set_masked_get_raw)
 {
 	const struct device *port;
 	int ret;
@@ -182,7 +182,7 @@ void test_gpio_port_set_masked_get_raw(void)
 	}
 }
 
-void test_gpio_port_set_masked_get(void)
+ZTEST(gpio_api_1pin_port, test_gpio_port_set_masked_get)
 {
 	const struct device *port;
 	int ret;
@@ -222,7 +222,7 @@ void test_gpio_port_set_masked_get(void)
 	}
 }
 
-void test_gpio_port_set_masked_get_active_high(void)
+ZTEST(gpio_api_1pin_port, test_gpio_port_set_masked_get_active_high)
 {
 	const struct device *port;
 	int ret;
@@ -273,7 +273,7 @@ void test_gpio_port_set_masked_get_active_high(void)
 	}
 }
 
-void test_gpio_port_set_masked_get_active_low(void)
+ZTEST(gpio_api_1pin_port, test_gpio_port_set_masked_get_active_low)
 {
 	const struct device *port;
 	int ret;
@@ -324,7 +324,7 @@ void test_gpio_port_set_masked_get_active_low(void)
 	}
 }
 
-void test_gpio_port_set_bits_clear_bits_raw(void)
+ZTEST(gpio_api_1pin_port, test_gpio_port_set_bits_clear_bits_raw)
 {
 	const struct device *port;
 	gpio_port_value_t val_expected = 0;
@@ -363,7 +363,7 @@ void test_gpio_port_set_bits_clear_bits_raw(void)
 	}
 }
 
-void test_gpio_port_set_bits_clear_bits(void)
+ZTEST(gpio_api_1pin_port, test_gpio_port_set_bits_clear_bits)
 {
 	const struct device *port;
 	gpio_port_value_t val_expected = 0;
@@ -402,7 +402,7 @@ void test_gpio_port_set_bits_clear_bits(void)
 	}
 }
 
-void test_gpio_port_set_clr_bits_raw(void)
+ZTEST(gpio_api_1pin_port, test_gpio_port_set_clr_bits_raw)
 {
 	const struct device *port;
 	gpio_port_value_t val_expected = 0;
@@ -440,7 +440,7 @@ void test_gpio_port_set_clr_bits_raw(void)
 	}
 }
 
-void test_gpio_port_set_clr_bits(void)
+ZTEST(gpio_api_1pin_port, test_gpio_port_set_clr_bits)
 {
 	const struct device *port;
 	gpio_port_value_t val_expected = 0;
@@ -476,3 +476,5 @@ void test_gpio_port_set_clr_bits(void)
 		port_get_and_verify(port, BIT(TEST_PIN), val_expected, i);
 	}
 }
+
+ZTEST_SUITE(gpio_api_1pin_port, NULL, NULL, NULL, NULL, NULL);

@@ -12,7 +12,6 @@
 		ratio = <3>;
 		io-channels = <&adc1 18>;
 		status = "okay";
-		label = "VBAT";
 	};
 };
 

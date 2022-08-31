@@ -137,6 +137,11 @@ static int pwm_mcux_init(const struct device *dev)
 	status_t status;
 	int i, err;
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		return err;

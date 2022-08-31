@@ -148,9 +148,10 @@ void arm_core_mpu_enable(void)
 
 	val = __get_SCTLR();
 	val |= SCTLR_MPU_ENABLE;
+	__set_SCTLR(val);
+
 	/* Make sure that all the registers are set before proceeding */
 	__DSB();
-	__set_SCTLR(val);
 	__ISB();
 }
 
@@ -161,11 +162,15 @@ void arm_core_mpu_disable(void)
 {
 	uint32_t val;
 
-	val = __get_SCTLR();
-	val &= ~SCTLR_MPU_ENABLE;
 	/* Force any outstanding transfers to complete before disabling MPU */
 	__DSB();
+
+	val = __get_SCTLR();
+	val &= ~SCTLR_MPU_ENABLE;
 	__set_SCTLR(val);
+
+	/* Make sure that all the registers are set before proceeding */
+	__DSB();
 	__ISB();
 }
 #else
@@ -264,7 +269,7 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
  * @brief configure fixed (static) MPU regions.
  */
 void arm_core_mpu_configure_static_mpu_regions(const struct z_arm_mpu_partition
-	static_regions[], const uint8_t regions_num,
+	*static_regions, const uint8_t regions_num,
 	const uint32_t background_area_start, const uint32_t background_area_end)
 {
 	if (mpu_configure_static_mpu_regions(static_regions, regions_num,
@@ -296,7 +301,7 @@ void arm_core_mpu_mark_areas_for_dynamic_regions(
  * @brief configure dynamic MPU regions.
  */
 void arm_core_mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
-	dynamic_regions[], uint8_t regions_num)
+	*dynamic_regions, uint8_t regions_num)
 {
 	if (mpu_configure_dynamic_mpu_regions(dynamic_regions, regions_num)
 		== -EINVAL) {

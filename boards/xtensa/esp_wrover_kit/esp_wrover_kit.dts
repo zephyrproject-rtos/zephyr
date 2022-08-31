@@ -24,6 +24,7 @@
 		blue-pwm-led = &pwm_led_blue;
 		uart-0 = &uart0;
 		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {
@@ -96,8 +97,8 @@
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	sda-pin = <21>;
-	scl-pin = <22>;
+	sda-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
@@ -119,7 +120,6 @@
 
 	ili9341: ili9341@0 {
 		compatible = "ilitek,ili9341";
-		label = "DISPLAY";
 		spi-max-frequency = <25000000>;
 		reg = <0>;
 		cmd-data-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;

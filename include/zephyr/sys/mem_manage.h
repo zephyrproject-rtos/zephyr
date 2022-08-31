@@ -251,8 +251,6 @@ void z_phys_unmap(uint8_t *virt, size_t size);
  */
 
 /**
- * @def K_MEM_MAP_UNINIT
- *
  * @brief The mapped region is not guaranteed to be zeroed.
  *
  * This may improve performance. The associated page frames may contain
@@ -264,8 +262,6 @@ void z_phys_unmap(uint8_t *virt, size_t size);
 #define K_MEM_MAP_UNINIT	BIT(16)
 
 /**
- * @def K_MEM_MAP_LOCK
- *
  * Region will be pinned in memory and never paged
  *
  * Such memory is guaranteed to never produce a page fault due to page-outs
@@ -273,25 +269,6 @@ void z_phys_unmap(uint8_t *virt, size_t size);
  * will be pre-fetched as necessary and pinned.
  */
 #define K_MEM_MAP_LOCK		BIT(17)
-
-/**
- * @def K_MEM_MAP_GUARD
- *
- * A un-mapped virtual guard page will be placed in memory immediately preceding
- * the mapped region. This page will still be noted as being used by the
- * virtual memory manager. The total size of the allocation will be the
- * requested size plus the size of this guard page. The returned address
- * pointer will not include the guard page immediately below it. The typical
- * use-case is downward-growing thread stacks.
- *
- * Zephyr treats page faults on this guard page as a fatal K_ERR_STACK_CHK_FAIL
- * if it determines it immediately precedes a stack buffer, this is
- * implemented in the architecture layer.
- *
- * DEPRECATED: k_mem_map() will always allocate guard pages, so this bit
- * no longer has any effect.
- */
-#define K_MEM_MAP_GUARD		__DEPRECATED_MACRO BIT(18)
 
 /**
  * Return the amount of free memory available

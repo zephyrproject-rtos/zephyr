@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "kernel.h"
-#include "ztest_assert.h"
+#include <zephyr/kernel.h>
+#include <zephyr/ztest_assert.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
@@ -16,7 +16,7 @@
 #include <zephyr/net/ethernet.h>
 #include <zephyr/random/rand32.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 static uint8_t mac_addr[sizeof(struct net_eth_addr)];
 static struct net_if *eth_if;

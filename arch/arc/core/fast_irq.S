@@ -145,14 +145,13 @@ SECTION_FUNC(TEXT, _firq_exit)
 
 	jne _firq_no_switch
 
-	/* sp is struct k_thread **old of z_arc_switch_in_isr
-	 * which is a wrapper of z_get_next_switch_handle.
-	 * r0 contains the 1st thread in ready queue. if
-	 * it equals _current(r2) ,then do swap, or no swap.
+	/* sp is struct k_thread **old of z_arc_switch_in_isr which is a wrapper of
+	 * z_get_next_switch_handle. r0 contains the 1st thread in ready queue. If it isn't NULL,
+	 * then do switch to this thread.
 	 */
 	_get_next_switch_handle
 
-	cmp r0, r2
+	CMPR r0, 0
 	bne _firq_switch
 
 	/* fall to no switch */
@@ -239,9 +238,9 @@ _firq_create_irq_stack_frame:
 	ld r2, [r1, -8]
 #endif
 	/* r2 is old thread */
-	_irq_store_old_thread_callee_regs
-
 	st _CAUSE_FIRQ, [r2, _thread_offset_to_relinquish_cause]
+
+	_irq_store_old_thread_callee_regs
 
 	/* mov new thread (r0) to r2 */
 

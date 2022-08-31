@@ -1,12 +1,14 @@
 # Copyright (c) 2015 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-module = GROVE_LCD_RGB
-module-str = grove_lcd_rgb
-source "subsys/logging/Kconfig.template.log_config"
-
 config GROVE_LCD_RGB
 	bool "Seeed Grove LCD RGB Backlight"
 	help
 	  Setting this value will enable driver support for the Groove-LCD RGB
 	  Backlight.
+
+if GROVE_LCD_RGB
+module = GROVE_LCD_RGB
+module-str = grove_lcd_rgb
+source "subsys/logging/Kconfig.template.log_config"
+endif

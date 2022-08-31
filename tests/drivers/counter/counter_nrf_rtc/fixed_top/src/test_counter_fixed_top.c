@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/counter.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <hal/nrf_rtc.h>
@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(test);
 
 static volatile uint32_t top_cnt;
 
-static const struct device *devices[] = {
+static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_RTC0
 	/* Nordic RTC0 may be reserved for Bluetooth */
 	DEVICE_DT_GET(DT_NODELABEL(rtc0)),

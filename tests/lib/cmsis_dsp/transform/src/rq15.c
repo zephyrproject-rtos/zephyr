@@ -21,7 +21,7 @@
  *       test_arm_rifft_q15_step_4096
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <arm_math.h>

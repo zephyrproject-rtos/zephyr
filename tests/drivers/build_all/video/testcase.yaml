@@ -8,5 +8,3 @@ tests:
     depends_on: gpio i2c
   drivers.video.mcux_csi.build:
     platform_allow: mimxrt1064_evk
-    extra_configs:
-      - CONFIG_VIDEO_MCUX_CSI=y

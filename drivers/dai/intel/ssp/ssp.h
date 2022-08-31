@@ -40,7 +40,7 @@
 #define DAI_INTEL_SSP_PLATFORM_DEFAULT_DELAY	12
 #define DAI_INTEL_SSP_DEFAULT_TRY_TIMES		8
 
-#if CONFIG_SOC_SERIES_INTEL_CAVS_V15
+#if CONFIG_SOC_INTEL_CAVS_V15
 /** \brief Number of 'base' SSP ports available */
 #define DAI_INTEL_SSP_NUM_BASE			4
 /** \brief Number of 'extended' SSP ports available */

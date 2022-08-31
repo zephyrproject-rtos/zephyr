@@ -8,8 +8,4 @@ if BOARD_ZYBO
 config BOARD
 	default "zybo"
 
-config UART_XLNX_PS
-	default y
-	depends on SERIAL
-
 endif # BOARD_ZYBO

@@ -22,6 +22,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -126,6 +127,7 @@
 		sw1 = &button1;
 		sw2 = &button2;
 		sw3 = &button3;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -224,7 +226,6 @@ arduino_i2c: &i2c0 {
 		/* MX25R64 supports all readoc options */
 		readoc = "read4io";
 		sck-frequency = <8000000>;
-		label = "MX25R64";
 		jedec-id = [c2 28 17];
 		sfdp-bfp = [
 			e5 20 f1 ff  ff ff ff 03
@@ -249,6 +250,10 @@ arduino_spi: &spi3 {
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 &flash0 {

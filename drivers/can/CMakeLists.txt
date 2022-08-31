@@ -14,6 +14,9 @@ zephyr_library_sources_ifdef(CONFIG_CAN_STM32FD      can_stm32fd.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_STM32H7      can_stm32h7.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_RCAR         can_rcar.c)
 
+zephyr_library_sources_ifdef(CONFIG_CAN_SJA1000      can_sja1000.c)
+zephyr_library_sources_ifdef(CONFIG_CAN_ESP32_TWAI   can_esp32_twai.c)
+
 zephyr_library_sources_ifdef(CONFIG_USERSPACE        can_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_SHELL        can_shell.c)
 

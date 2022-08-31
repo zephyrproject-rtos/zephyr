@@ -8,10 +8,6 @@ if BOARD_BT610
 config BOARD
 	default "bt610"
 
-config IEEE802154_NRF5
-	default y
-	depends on IEEE802154
-
 config BT_CTLR
 	default BT
 

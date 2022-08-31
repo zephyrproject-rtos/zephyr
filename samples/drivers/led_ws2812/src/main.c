@@ -33,7 +33,7 @@ static const struct led_rgb colors[] = {
 
 struct led_rgb pixels[STRIP_NUM_PIXELS];
 
-static const struct device *strip = DEVICE_DT_GET(STRIP_NODE);
+static const struct device *const strip = DEVICE_DT_GET(STRIP_NODE);
 
 void main(void)
 {

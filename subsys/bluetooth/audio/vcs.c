@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/vcs.h>
 
+#include "audio_internal.h"
 #include "vcs_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_VCS)
@@ -249,22 +250,20 @@ static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_VCS), \
 	VOCS_INCLUDES(CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) \
 	AICS_INCLUDES(CONFIG_BT_VCS_AICS_INSTANCE_COUNT) \
-	BT_GATT_CHARACTERISTIC(BT_UUID_VCS_STATE, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_vol_state, NULL, NULL), \
-	BT_GATT_CCC(volume_state_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_VCS_CONTROL, \
-			       BT_GATT_CHRC_WRITE, \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       NULL, write_vcs_control, NULL), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_VCS_FLAGS, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_flags, NULL, NULL), \
-	BT_GATT_CCC(flags_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
+	BT_AUDIO_CHRC(BT_UUID_VCS_STATE, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_vol_state, NULL, NULL), \
+	BT_AUDIO_CCC(volume_state_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_VCS_CONTROL, \
+		      BT_GATT_CHRC_WRITE, \
+		      BT_GATT_PERM_WRITE_ENCRYPT, \
+		      NULL, write_vcs_control, NULL), \
+	BT_AUDIO_CHRC(BT_UUID_VCS_FLAGS, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_flags, NULL, NULL), \
+	BT_AUDIO_CCC(flags_cfg_changed)
 
 static struct bt_gatt_attr vcs_attrs[] = { BT_VCS_SERVICE_DEFINITION };
 static struct bt_gatt_service vcs_svc;

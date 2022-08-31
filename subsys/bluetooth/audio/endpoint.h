@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/types.h>
+
 #include "ascs_internal.h"
 #include "stream.h"
 
@@ -40,8 +42,6 @@ struct bt_audio_iso {
 
 struct bt_audio_ep {
 	uint8_t  dir;
-	uint16_t handle;
-	uint16_t cp_handle;
 	uint8_t  cig_id;
 	uint8_t  cis_id;
 	struct bt_ascs_ase_status status;
@@ -52,6 +52,17 @@ struct bt_audio_ep {
 	struct bt_audio_iso *iso;
 	struct bt_gatt_subscribe_params subscribe;
 	struct bt_gatt_discover_params discover;
+
+	/* TODO: Consider client/server container split */
+	union {
+		struct {
+			uint16_t handle;
+			uint16_t cp_handle;
+		} client;
+		struct {
+			const struct bt_gatt_attr *attr;
+		} server;
+	};
 
 	/* TODO: Create a union to reduce memory usage */
 	struct bt_audio_unicast_group *unicast_group;
@@ -81,7 +92,7 @@ struct bt_audio_broadcast_source {
 	struct bt_iso_chan *bis[BROADCAST_STREAM_CNT];
 	struct bt_codec_qos *qos;
 	/* The streams used to create the broadcast source */
-	struct bt_audio_stream **streams;
+	sys_slist_t streams;
 };
 
 struct bt_audio_broadcast_sink {
@@ -99,7 +110,7 @@ struct bt_audio_broadcast_sink {
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_SNK_STREAM_CNT];
 	/* The streams used to create the broadcast sink */
-	struct bt_audio_stream **streams;
+	sys_slist_t streams;
 };
 
 static inline const char *bt_audio_ep_state_str(uint8_t state)

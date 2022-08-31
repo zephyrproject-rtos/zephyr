@@ -211,10 +211,10 @@ struct adc_channel_cfg {
  * @return Static initializer for an adc_channel_cfg structure.
  */
 #define ADC_CHANNEL_CFG_DT(node_id) { \
-	.channel_id       = DT_REG_ADDR(node_id), \
 	.gain             = DT_STRING_TOKEN(node_id, zephyr_gain), \
 	.reference        = DT_STRING_TOKEN(node_id, zephyr_reference), \
 	.acquisition_time = DT_PROP(node_id, zephyr_acquisition_time), \
+	.channel_id       = DT_REG_ADDR(node_id), \
 IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
 	(COND_CODE_1(DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
 		(.differential   = true, \
@@ -281,9 +281,15 @@ struct adc_dt_spec {
 #define ADC_DT_SPEC_STRUCT(ctlr, input) { \
 		.dev = DEVICE_DT_GET(ctlr), \
 		.channel_id = input, \
-		ADC_CHANNEL_CFG_FROM_DT_NODE( \
-			DT_CHILD(ctlr, UTIL_CAT(channel_, input))) \
+		ADC_CHANNEL_CFG_FROM_DT_NODE(\
+			ADC_CHANNEL_DT_NODE(ctlr, input)) \
 	}
+
+#define ADC_CHANNEL_DT_NODE(ctlr, input) \
+	DT_FOREACH_CHILD_VARGS(ctlr, ADC_FOREACH_INPUT, input)
+
+#define ADC_FOREACH_INPUT(node, input) \
+	IF_ENABLED(IS_EQ(DT_REG_ADDR(node), input), (node))
 
 #define ADC_CHANNEL_CFG_FROM_DT_NODE(node_id) \
 	IF_ENABLED(DT_NODE_EXISTS(node_id), \

@@ -7,6 +7,5 @@
 	pca9633@62 {
 		compatible = "nxp,pca9633";
 		reg = <0x62>;
-		label = "PCA9633";
 	};
 };

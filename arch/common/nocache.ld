@@ -18,6 +18,9 @@ SECTION_DATA_PROLOGUE(_NOCACHE_SECTION_NAME,(NOLOAD),)
 	_nocache_ram_start = .;
 	*(.nocache)
 	*(".nocache.*")
+
+#include <snippets-nocache-section.ld>
+
 #if defined(CONFIG_MMU)
 	MMU_ALIGN;
 #else

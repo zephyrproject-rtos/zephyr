@@ -70,7 +70,7 @@ void main(void)
 	enum sensor_channel base;
 	int i;
 
-	const struct device *dev = DEVICE_DT_GET(DEVICE_NODE);
+	const struct device *const dev = DEVICE_DT_GET(DEVICE_NODE);
 
 	if (!device_is_ready(dev)) {
 		printk("Device %s is not ready\n", dev->name);

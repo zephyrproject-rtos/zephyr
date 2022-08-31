@@ -5,7 +5,9 @@
 
 menuconfig ENS210
 	bool "ENS210 Digital Temperature and Humidity sensor"
-	depends on I2C
+	default y
+	depends on DT_HAS_AMS_ENS210_ENABLED
+	select I2C
 	help
 	  Enable driver for ENS210 Digital Temperature and Humidity sensor.
 if ENS210

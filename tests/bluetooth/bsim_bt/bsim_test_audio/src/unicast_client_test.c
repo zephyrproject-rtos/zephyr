@@ -95,6 +95,25 @@ static struct bt_audio_stream_ops stream_ops = {
 	.released = stream_released,
 };
 
+static void unicast_client_location_cb(struct bt_conn *conn,
+				       enum bt_audio_dir dir,
+				       enum bt_audio_location loc)
+{
+	printk("dir %u loc %X\n", dir, loc);
+}
+
+static void available_contexts_cb(struct bt_conn *conn,
+				  enum bt_audio_context snk_ctx,
+				  enum bt_audio_context src_ctx)
+{
+	printk("snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
+}
+
+const struct bt_audio_unicast_client_cb unicast_client_cbs = {
+	.location = unicast_client_location_cb,
+	.available_contexts = available_contexts_cb,
+};
+
 static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
 {
 	printk("Sink #%u: ep %p\n", index, ep);
@@ -207,6 +226,12 @@ static void init(void)
 	}
 
 	bt_gatt_cb_register(&gatt_callbacks);
+
+	err = bt_audio_unicast_client_register_cb(&unicast_client_cbs);
+	if (err != 0) {
+		FAIL("Failed to register client callbacks: %d", err);
+		return;
+	}
 }
 
 static void scan_and_connect(void)

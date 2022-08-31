@@ -8,7 +8,8 @@
 
 config ADC_STM32
 	bool "STM32 ADC driver"
-	depends on SOC_FAMILY_STM32
+	default y
+	depends on DT_HAS_ST_STM32_ADC_ENABLED
 	help
 	  Enable the driver implementation for the stm32xx ADC
 

@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ESP32_NET
+
+config SOC
+	default "esp32_net"
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "espressif_esp32"
+
+config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
+	default n
+
+endif

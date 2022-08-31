@@ -63,6 +63,12 @@
 		#size-cells = <1>;
 		ranges;
 
+		mtimer: timer@ffffff90 {
+			compatible = "neorv32-machine-timer";
+			reg = <0xffffff90 0x10>;
+			interrupts = <7>;
+		};
+
 		uart0: serial@ffffffa0 {
 			compatible = "neorv32-uart";
 			status = "disabled";
@@ -70,7 +76,6 @@
 			interrupts = <2>, <3>;
 			interrupt-names = "RX", "TX";
 			syscon = <&sysinfo>;
-			label = "UART_0";
 		};
 
 		trng: rng@ffffffb8 {
@@ -78,7 +83,6 @@
 			status = "disabled";
 			reg = <0xffffffb8 4>;
 			syscon = <&sysinfo>;
-			label = "TRNG";
 		};
 
 		gpio: gpio {
@@ -102,7 +106,6 @@
 				gpio-controller;
 				ngpios = <32>;
 				syscon = <&sysinfo>;
-				label = "GPIO_LO";
 				#gpio-cells = <2>;
 			};
 
@@ -114,7 +117,6 @@
 				gpio-controller;
 				ngpios = <32>;
 				syscon = <&sysinfo>;
-				label = "GPIO_HI";
 				#gpio-cells = <2>;
 			};
 		};
@@ -126,14 +128,12 @@
 			interrupts = <4>, <5>;
 			interrupt-names = "RX", "TX";
 			syscon = <&sysinfo>;
-			label = "UART_1";
 		};
 
 		sysinfo: syscon@ffffffe0 {
 			compatible = "neorv-sysinfo", "syscon";
 			status = "okay";
 			reg = <0xffffffe0 32>;
-			label = "SYSINFO";
 		};
 	};
 };

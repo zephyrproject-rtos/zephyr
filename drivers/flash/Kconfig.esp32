@@ -4,9 +4,9 @@
 config SOC_FLASH_ESP32
 	bool "Espressif ESP32 flash driver"
 	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_FLASH_CONTROLLER_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
-	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
 	help
 	  Enable ESP32 internal flash driver.
 

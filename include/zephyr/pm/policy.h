@@ -33,6 +33,13 @@ extern "C" {
  */
 typedef void (*pm_policy_latency_changed_cb_t)(int32_t latency);
 
+/** @brief Latency change subscription. */
+struct pm_policy_latency_subscription {
+	sys_snode_t node;
+	/** Notification callback. */
+	pm_policy_latency_changed_cb_t cb;
+};
+
 /** @brief Latency request. */
 struct pm_policy_latency_request {
 	sys_snode_t node;
@@ -135,11 +142,21 @@ void pm_policy_latency_request_update(struct pm_policy_latency_request *req,
 void pm_policy_latency_request_remove(struct pm_policy_latency_request *req);
 
 /**
- * @brief Set the callback to be called when maximum latency changes.
+ * @brief Subscribe to maximum latency changes.
  *
+ * @param req Subscription request.
  * @param cb Callback function (NULL to disable).
  */
-void pm_policy_latency_changed(pm_policy_latency_changed_cb_t cb);
+void pm_policy_latency_changed_subscribe(struct pm_policy_latency_subscription *req,
+					 pm_policy_latency_changed_cb_t cb);
+
+/**
+ * @brief Unsubscribe to maximum latency changes.
+ *
+ * @param req Subscription request.
+ */
+void pm_policy_latency_changed_unsubscribe(struct pm_policy_latency_subscription *req);
+
 #else
 static inline void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 {

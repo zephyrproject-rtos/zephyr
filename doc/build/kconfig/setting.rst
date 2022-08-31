@@ -45,7 +45,7 @@ between *visible* and *invisible* symbols.
   direct control over their value. They instead get their value from defaults
   or from other symbols.
 
-  Here's an example or an invisible symbol:
+  Here's an example of an invisible symbol:
 
   .. code-block:: none
 

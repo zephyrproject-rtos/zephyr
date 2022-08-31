@@ -12,7 +12,7 @@
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_ALIAS(magn0));
+	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(magn0));
 	struct sensor_value value_x, value_y, value_z;
 	int ret;
 

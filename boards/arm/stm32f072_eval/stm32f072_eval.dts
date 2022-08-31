@@ -73,6 +73,7 @@
 		led2 = &red_led_3;
 		led3 = &blue_led_4;
 		sw0 = &joy_sel;
+		watchdog0 = &iwdg;
 	};
 };
 

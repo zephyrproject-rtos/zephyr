@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_pkt_sock_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_mgmt.h>
 
 #define STACK_SIZE 1024
 #if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
@@ -34,6 +35,8 @@ struct packet_data {
 };
 
 static struct packet_data packet;
+static bool finish;
+static K_SEM_DEFINE(iface_up, 0, 1);
 
 static void recv_packet(void);
 static void send_packet(void);
@@ -113,17 +116,25 @@ static int recv_packet_socket(struct packet_data *packet)
 	LOG_INF("Waiting for packets ...");
 
 	do {
+		if (finish) {
+			ret = -1;
+			break;
+		}
+
 		received = recv(packet->recv_sock, packet->recv_buffer,
 				sizeof(packet->recv_buffer), 0);
 
 		if (received < 0) {
+			if (errno == EAGAIN) {
+				continue;
+			}
+
 			LOG_ERR("RAW : recv error %d", errno);
 			ret = -errno;
 			break;
 		}
 
 		LOG_DBG("Received %d bytes", received);
-
 	} while (true);
 
 	return ret;
@@ -132,8 +143,19 @@ static int recv_packet_socket(struct packet_data *packet)
 static void recv_packet(void)
 {
 	int ret;
+	struct timeval timeo_optval = {
+		.tv_sec = 1,
+		.tv_usec = 0,
+	};
 
 	ret = start_socket(&packet.recv_sock);
+	if (ret < 0) {
+		quit();
+		return;
+	}
+
+	ret = setsockopt(packet.recv_sock, SOL_SOCKET, SO_RCVTIMEO,
+			 &timeo_optval, sizeof(timeo_optval));
 	if (ret < 0) {
 		quit();
 		return;
@@ -173,6 +195,11 @@ static int send_packet_socket(struct packet_data *packet)
 	}
 
 	do {
+		if (finish) {
+			ret = -1;
+			break;
+		}
+
 		/* Sending dummy data */
 		ret = sendto(packet->send_sock, lorem_ipsum, send, 0,
 			     (const struct sockaddr *)&dst,
@@ -223,9 +250,38 @@ static void send_packet(void)
 	}
 }
 
+static void iface_up_handler(struct net_mgmt_event_callback *cb,
+			     uint32_t mgmt_event, struct net_if *iface)
+{
+	if (mgmt_event == NET_EVENT_IF_UP) {
+		k_sem_give(&iface_up);
+	}
+}
+
+static void wait_for_interface(void)
+{
+	struct net_if *iface = net_if_get_default();
+	struct net_mgmt_event_callback iface_up_cb;
+
+	if (net_if_is_up(iface)) {
+		return;
+	}
+
+	net_mgmt_init_event_callback(&iface_up_cb, iface_up_handler,
+				     NET_EVENT_IF_UP);
+	net_mgmt_add_event_callback(&iface_up_cb);
+
+	/* Wait for the interface to come up. */
+	k_sem_take(&iface_up, K_FOREVER);
+
+	net_mgmt_del_event_callback(&iface_up_cb);
+}
+
 void main(void)
 {
 	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
+
+	wait_for_interface();
 
 	LOG_INF("Packet socket sample is running");
 
@@ -236,14 +292,16 @@ void main(void)
 
 	LOG_INF("Stopping...");
 
-	k_thread_abort(receiver_thread_id);
-	k_thread_abort(sender_thread_id);
+	finish = true;
 
-	if (packet.recv_sock > 0) {
+	k_thread_join(receiver_thread_id, K_FOREVER);
+	k_thread_join(sender_thread_id, K_FOREVER);
+
+	if (packet.recv_sock >= 0) {
 		(void)close(packet.recv_sock);
 	}
 
-	if (packet.send_sock > 0) {
+	if (packet.send_sock >= 0) {
 		(void)close(packet.send_sock);
 	}
 }

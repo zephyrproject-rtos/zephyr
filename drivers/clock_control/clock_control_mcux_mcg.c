@@ -37,9 +37,11 @@ static int mcux_mcg_get_rate(const struct device *dev,
 	clock_name_t clock_name;
 
 	switch ((uint32_t) sub_system) {
+#ifdef kCLOCK_McgFixedFreqClk
 	case KINETIS_MCG_FIXED_FREQ_CLK:
 		clock_name = kCLOCK_McgFixedFreqClk;
 		break;
+#endif
 	case KINETIS_MCG_OUT_CLK:
 		*rate = CLOCK_GetOutClkFreq();
 		return 0;

@@ -27,13 +27,12 @@ extern "C" {
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
 
-/** @def BT_ISO_CHAN_SEND_RESERVE
+/**
  *  @brief Headroom needed for outgoing ISO SDUs
  */
 #define BT_ISO_CHAN_SEND_RESERVE BT_BUF_ISO_SIZE(0)
 
-/** @def BT_ISO_SDU_BUF_SIZE
- *
+/**
  *  @brief Helper to calculate needed buffer size for ISO SDUs.
  *         Useful for creating buffer pools.
  *
@@ -618,7 +617,26 @@ int bt_iso_cig_terminate(struct bt_iso_cig *cig);
  *  @param param Pointer to a connect parameter array with the ISO and ACL pointers.
  *  @param count Number of connect parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 Successfully started the connecting procedure.
+ *
+ *  @retval -EINVAL Invalid parameters were supplied.
+ *
+ *  @retval -EBUSY Some ISO channels are already being connected.
+ *          It is not possible to have multiple outstanding connection requests.
+ *          May also be returned if @kconfig{CONFIG_BT_SMP} is enabled and a
+ *          pairing procedure is already in progress.
+ *
+ *  @retval -ENOBUFS Not buffers available to send request to controller or if
+ *          @kconfig{CONFIG_BT_SMP} is enabled and no more keys could be stored.
+ *
+ *  @retval -ENOMEM If @kconfig{CONFIG_BT_SMP} is enabled and no more keys
+ *          could be stored.
+ *
+ *  @retval -EIO Controller rejected the request or if @kconfig{CONFIG_BT_SMP}
+ *          is enabled and pairing has timed out.
+ *
+ *  @retval -ENOTCONN If @kconfig{CONFIG_BT_SMP} is enabled the ACL is not
+ *          connected.
  */
 int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count);
 
@@ -647,6 +665,11 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
  *
  *  @param chan     Channel object.
  *  @param buf      Buffer containing data to be sent.
+ *                  The maximum size is the @ref bt_iso_chan_io_qos.sdu that was
+ *                  configured, minus the header size. The header size is either
+ *                  @ref BT_HCI_ISO_DATA_HDR_SIZE or
+ *                  @ref BT_HCI_ISO_TS_DATA_HDR_SIZE depending on @p ts
+ *                  (the latter is used if @p ts is not BT_ISO_TIMESTAMP_NONE).
  *  @param seq_num  Packet Sequence number. This value shall be incremented for
  *                  each call to this function and at least once per SDU
  *                  interval for a specific channel.

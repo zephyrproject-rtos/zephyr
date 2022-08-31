@@ -59,7 +59,8 @@ const pll_setup_t pll0Setup = {
 static ALWAYS_INLINE void clock_init(void)
 {
 #if defined(CONFIG_SOC_LPC55S06) || defined(CONFIG_SOC_LPC55S16) || \
-	defined(CONFIG_SOC_LPC55S28) || defined(CONFIG_SOC_LPC55S69_CPU0)
+	defined(CONFIG_SOC_LPC55S28) || defined(CONFIG_SOC_LPC55S36) || \
+	defined(CONFIG_SOC_LPC55S69_CPU0)
     /*!< Set up the clock sources */
     /*!< Configure FRO192M */
 	/*!< Ensure FRO is on  */
@@ -106,10 +107,18 @@ static ALWAYS_INLINE void clock_init(void)
     CLOCK_EnableClock(kCLOCK_Iocon);
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_usart, okay)
+#if defined(CONFIG_SOC_LPC55S36)
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 0U, true);
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 1U, false);
+#endif
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM2);
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay)
+#if defined(CONFIG_SOC_LPC55S36)
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 0U, true);
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 1U, false);
+#endif
 	/* attach 12 MHz clock to FLEXCOMM4 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
 
@@ -164,12 +173,20 @@ static ALWAYS_INLINE void clock_init(void)
 DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay))
+#if defined(CONFIG_SOC_LPC55S36)
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom6Clk, 0U, true);
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom6Clk, 1U, false);
+#endif
 	/* attach PLL0 clock to FLEXCOMM6 */
 	CLOCK_AttachClk(kPLL0_DIV_to_FLEXCOMM6);
 #endif
 
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2s, okay))
-	/* attach PLL0 clock to FLEXCOMM6 */
+#if defined(CONFIG_SOC_LPC55S36)
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom7Clk, 0U, true);
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom7Clk, 1U, false);
+#endif
+	/* attach PLL0 clock to FLEXCOMM7 */
 	CLOCK_AttachClk(kPLL0_DIV_to_FLEXCOMM7);
 #endif
 

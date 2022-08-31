@@ -28,9 +28,7 @@ Here are some highlights of the BLACK_F407VE board:
 - Mini-AB connector
 
 .. image:: img/black_f407ve.jpg
-     :width: 500px
      :align: center
-     :height: 500px
      :alt: BLACK_F407VE
 
 See also board descriptions at `STM32-base website`_,
@@ -131,22 +129,16 @@ Pin Mapping
 BLACK_F407VE has 5 GPIO controllers. These controllers are responsible for pin
 muxing, input/output, pull-up, etc.
 
-.. image:: img/stm32f407vet6_left02.png
-     :width: 200px
+.. image:: img/stm32f407vet6_left02.jpg
      :align: center
-     :height: 200px
      :alt: left pins
 
-.. image:: img/stm32f407vet6_right01.png
-     :width: 200px
+.. image:: img/stm32f407vet6_right01.jpg
      :align: center
-     :height: 200px
      :alt: right pins
 
-.. image:: img/stm32f407vet6_st-link02.png
-     :width: 200px
+.. image:: img/stm32f407vet6_st-link02.jpg
      :align: center
-     :height: 200px
      :alt: bottom and top pins
 
 Default Zephyr Peripheral Mapping:

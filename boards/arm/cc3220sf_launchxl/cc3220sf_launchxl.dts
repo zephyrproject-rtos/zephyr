@@ -18,6 +18,7 @@
 		/* sw0/1 alias defined for compatibility with samples */
 		sw0 = &sw2;
 		sw1 = &sw3;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {
@@ -70,4 +71,8 @@
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&wdt0 {
+	status = "okay";
 };

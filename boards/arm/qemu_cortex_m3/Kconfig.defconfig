@@ -8,10 +8,6 @@ config BUILD_OUTPUT_BIN
 config BOARD
 	default "qemu_cortex_m3"
 
-config GPIO_STELLARIS
-	default y
-	depends on GPIO
-
 # DWT is not properly emulated in QEMU
 choice NULL_POINTER_EXCEPTION_DETECTION
 	bool

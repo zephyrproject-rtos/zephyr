@@ -14,7 +14,6 @@
 
 	max7219: max7219@0 {
 		compatible = "maxim,max7219";
-		label = "MAX7219";
 		reg = <0>;
 		spi-max-frequency = <1000000>;
 		num-cascading = <1>;

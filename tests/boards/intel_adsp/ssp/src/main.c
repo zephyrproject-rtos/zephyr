@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/zephyr.h>
 
 #include <zephyr/toolchain.h>
@@ -43,16 +43,17 @@ struct sof_dai_ssp_params {
 	uint32_t bclk_delay;
 } __packed;
 
-static const struct device *dev_dai_ssp;
-static const struct device *dev_dma_dw;
+static const struct device *const dev_dai_ssp =
+	DEVICE_DT_GET(DT_NODELABEL(ssp0));
+static const struct device *const dev_dma_dw =
+	DEVICE_DT_GET(DT_NODELABEL(lpgpdma0));
+
 static struct dai_config config;
 static struct sof_dai_ssp_params ssp_config;
 
 #define BUF_SIZE 48
 #define XFER_SIZE BUF_SIZE * 4
 #define XFERS 2
-#define DMA_DEVICE_NAME "DMA_0"
-#define SSP_DEVICE_NAME "SSP_0"
 
 K_SEM_DEFINE(xfer_sem, 0, 1);
 
@@ -254,7 +255,7 @@ static int check_transmission(void)
 	return TC_PASS;
 }
 
-void test_adsp_ssp_transfer(void)
+ZTEST(adsp_ssp, test_adsp_ssp_transfer)
 {
 	const struct dai_properties *props;
 	static int chan_id_rx;
@@ -343,7 +344,7 @@ void test_adsp_ssp_transfer(void)
 	check_transmission();
 }
 
-void test_adsp_ssp_config_set(void)
+ZTEST(adsp_ssp, test_adsp_ssp_config_set)
 {
 	int ret;
 
@@ -385,7 +386,7 @@ void test_adsp_ssp_config_set(void)
 	zassert_equal(ret, TC_PASS, NULL);
 }
 
-void test_adsp_ssp_probe(void)
+static void test_adsp_ssp_probe(void)
 {
 	int ret;
 
@@ -394,24 +395,16 @@ void test_adsp_ssp_probe(void)
 	zassert_equal(ret, TC_PASS, NULL);
 }
 
-void test_main(void)
+static void *adsp_ssp_setup(void)
 {
-	dev_dai_ssp = device_get_binding(SSP_DEVICE_NAME);
+	k_object_access_grant(dev_dai_ssp, k_current_get());
 
-	if (dev_dai_ssp != NULL) {
-		k_object_access_grant(dev_dai_ssp, k_current_get());
-	}
+	zassert_true(device_is_ready(dev_dai_ssp), "device SSP_0 is not ready");
+	zassert_true(device_is_ready(dev_dma_dw), "device DMA 0 is not ready");
 
-	zassert_not_null(dev_dai_ssp, "device SSP_0 not found");
+	test_adsp_ssp_probe();
 
-	dev_dma_dw = device_get_binding(DMA_DEVICE_NAME);
-
-	zassert_not_null(dev_dma_dw, "device DMA_0 not found");
-
-	ztest_test_suite(adsp_ssp,
-			 ztest_unit_test(test_adsp_ssp_probe),
-			 ztest_unit_test(test_adsp_ssp_config_set),
-			 ztest_unit_test(test_adsp_ssp_transfer));
-
-	ztest_run_test_suite(adsp_ssp);
+	return NULL;
 }
+
+ZTEST_SUITE(adsp_ssp, NULL, adsp_ssp_setup, NULL, NULL, NULL);

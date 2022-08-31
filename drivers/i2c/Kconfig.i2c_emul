@@ -3,6 +3,8 @@
 
 config I2C_EMUL
 	bool "I2C emulator"
+	default y
+	depends on DT_HAS_ZEPHYR_I2C_EMUL_CONTROLLER_ENABLED
 	help
 	  Enable the I2C emulator driver. This is a fake driver in that it
 	  does not talk to real hardware. Instead it talks to emulation

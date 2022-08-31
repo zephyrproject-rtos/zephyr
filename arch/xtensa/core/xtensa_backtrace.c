@@ -10,7 +10,7 @@
 #if defined(CONFIG_SOC_ESP32)
 #include "soc/soc_memory_layout.h"
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
-#include "soc.h"
+#include "debug_helpers.h"
 #endif
 static int mask, cause;
 

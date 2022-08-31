@@ -5,6 +5,8 @@
 
 config DS18B20
 	bool "DS18B20 Temperature Sensor"
+	default y
+	depends on DT_HAS_MAXIM_DS18B20_ENABLED
 	depends on W1_NET
 	help
 	  Enable driver for DS18B20 1-Wire temperature sensors.

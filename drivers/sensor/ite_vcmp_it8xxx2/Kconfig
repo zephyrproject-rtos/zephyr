@@ -3,12 +3,11 @@
 # Copyright (c) 2022 ITE Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ITE_IT8XXX2_VCMP  := ite,it8xxx2-vcmp
-
 config VCMP_IT8XXX2
 	bool "ITE it8xxx2 Voltage Comparator"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_VCMP_ENABLED
 	depends on SOC_IT8XXX2 && ADC_ITE_IT8XXX2
-	default $(dt_compat_enabled,$(DT_COMPAT_ITE_IT8XXX2_VCMP))
 	help
 	  This option enables the ITE it8xxx2 voltage comparator,
 	  it8xxx2 supports six 10-bit resolution voltage comparator

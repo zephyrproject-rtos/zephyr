@@ -239,14 +239,13 @@ SECTION_FUNC(TEXT, _rirq_exit)
 
 	jne _rirq_no_switch
 
-	/* sp is struct k_thread **old of z_arc_switch_in_isr
-	 * which is a wrapper of z_get_next_switch_handle.
-	 * r0 contains the 1st thread in ready queue. if
-	 * it equals _current(r2) ,then do swap, or no swap.
+	/* sp is struct k_thread **old of z_arc_switch_in_isr which is a wrapper of
+	 * z_get_next_switch_handle. r0 contains the 1st thread in ready queue. If it isn't NULL,
+	 * then do switch to this thread.
 	 */
 	_get_next_switch_handle
 
-	CMPR r0, r2
+	CMPR r0, 0
 	beq _rirq_no_switch
 
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
@@ -255,11 +254,12 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	push_s r3
 #endif
 
-	/* r2 is old thread */
-	_irq_store_old_thread_callee_regs
+	/* r2 is old thread
+	 * _thread_arch.relinquish_cause is 32 bit despite of platform bittnes
+	 */
+	_st32_huge_offset _CAUSE_RIRQ, r2, _thread_offset_to_relinquish_cause, r1
 
-	/* _thread_arch.relinquish_cause is 32 bit despite of platform bittnes */
-	_st32_huge_offset _CAUSE_RIRQ, r2, _thread_offset_to_relinquish_cause, r2
+	_irq_store_old_thread_callee_regs
 
 	/* mov new thread (r0) to r2 */
 	MOVR r2, r0

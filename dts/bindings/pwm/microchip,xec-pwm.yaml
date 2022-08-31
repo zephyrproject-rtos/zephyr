@@ -11,9 +11,6 @@ properties:
     reg:
       required: true
 
-    label:
-      required: true
-
     pcrs:
       type: array
       required: true
@@ -21,10 +18,6 @@ properties:
 
     "#pwm-cells":
       const: 2
-
-pcr-cells:
-    - regidx
-    - bitpos
 
 pwm-cells:
     - channel

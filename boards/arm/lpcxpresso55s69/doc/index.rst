@@ -12,8 +12,7 @@ architecture. The board includes a high performance onboard debug probe, audio
 subsystem, and accelerometer, with several options for adding off-the-shelf
 add-on boards for networking, sensors, displays, and other interfaces.
 
-.. image:: ./lpcxpresso55s69.jpg
-   :width: 720px
+.. image:: lpcxpresso55s69.jpg
    :align: center
    :alt: LPCXPRESSO55S69
 
@@ -87,6 +86,11 @@ features:
 | I2S       | on-chip    | i2s                                 |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| RNG       | on-chip    | entropy;                            |
+|           |            | random                              |
++-----------+------------+-------------------------------------+
+| IAP       | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 Targets available

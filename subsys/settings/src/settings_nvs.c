@@ -31,10 +31,12 @@ static int settings_nvs_load(struct settings_store *cs,
 			     const struct settings_load_arg *arg);
 static int settings_nvs_save(struct settings_store *cs, const char *name,
 			     const char *value, size_t val_len);
+static void *settings_nvs_storage_get(struct settings_store *cs);
 
 static struct settings_store_itf settings_nvs_itf = {
 	.csi_load = settings_nvs_load,
 	.csi_save = settings_nvs_save,
+	.csi_storage_get = settings_nvs_storage_get
 };
 
 static ssize_t settings_nvs_read_fn(void *back_end, void *data, size_t len)
@@ -251,7 +253,7 @@ int settings_nvs_backend_init(struct settings_nvs *cf)
 	int rc;
 	uint16_t last_name_id;
 
-	cf->cf_nvs.flash_device = device_get_binding(cf->flash_dev_name);
+	cf->cf_nvs.flash_device = cf->flash_dev;
 	if (cf->cf_nvs.flash_device == NULL) {
 		return -ENODEV;
 	}
@@ -315,7 +317,7 @@ int settings_backend_init(void)
 	default_settings_nvs.cf_nvs.sector_size = nvs_sector_size;
 	default_settings_nvs.cf_nvs.sector_count = cnt;
 	default_settings_nvs.cf_nvs.offset = fa->fa_off;
-	default_settings_nvs.flash_dev_name = fa->fa_dev->name;
+	default_settings_nvs.flash_dev = fa->fa_dev;
 
 	rc = settings_nvs_backend_init(&default_settings_nvs);
 	if (rc) {
@@ -331,4 +333,11 @@ int settings_backend_init(void)
 	rc = settings_nvs_dst(&default_settings_nvs);
 
 	return rc;
+}
+
+static void *settings_nvs_storage_get(struct settings_store *cs)
+{
+	struct settings_nvs *cf = (struct settings_nvs *)cs;
+
+	return &cf->cf_nvs;
 }

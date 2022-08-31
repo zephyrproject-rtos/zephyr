@@ -9,7 +9,7 @@
 #include <zephyr/sys/arch_interface.h>
 
 #define NUM_THREADS 20
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define STACK_SIZE (1024)
 
 K_THREAD_STACK_ARRAY_DEFINE(tstacks, NUM_THREADS, STACK_SIZE);
 

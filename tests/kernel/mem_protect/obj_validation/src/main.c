@@ -6,7 +6,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/syscall_handler.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <kernel_internal.h>
 
 #define SEM_ARRAY_SIZE	16

@@ -170,7 +170,7 @@ static void friend_clear_sent(int err, void *user_data)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
-	/* Scanning will enable if lpn state still enabled  */
+	bt_mesh_scan_enable();
 
 	lpn->req_attempts++;
 
@@ -234,6 +234,10 @@ static void clear_friendship(bool force, bool disable)
 	/* The timer handler returns without any actions if this fails. */
 	(void)k_work_cancel_delayable(&lpn->timer);
 
+	if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT) || disable) {
+		bt_mesh_scan_disable();
+	}
+
 	if (lpn->clear_success) {
 		lpn->old_friend = BT_MESH_ADDR_UNASSIGNED;
 	} else {
@@ -273,6 +277,11 @@ static void clear_friendship(bool force, bool disable)
 
 	if (!disable) {
 		lpn_set_state(BT_MESH_LPN_ENABLED);
+
+		if (!IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
+			bt_mesh_scan_enable();
+		}
+
 		k_work_reschedule(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
 	}
 }
@@ -861,7 +870,7 @@ static void lpn_timeout(struct k_work *work)
 		BT_ERR("No response from Friend after %u retries",
 		       lpn->req_attempts);
 		lpn->req_attempts = 0U;
-		clear_friendship(false, false);
+		clear_friendship(true, false);
 		break;
 	case BT_MESH_LPN_RECV_DELAY:
 		k_work_reschedule(&lpn->timer,

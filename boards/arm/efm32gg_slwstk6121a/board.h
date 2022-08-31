@@ -10,7 +10,7 @@
 #define __INC_BOARD_H
 
 /* Ethernet specific pins */
-#define ETH_REF_CLK_GPIO_NAME           "GPIO_A"
+#define ETH_REF_CLK_GPIO_NODE           DT_NODELABEL(gpioa)
 #define ETH_REF_CLK_GPIO_PIN            DT_PROP_BY_IDX(DT_INST(0, silabs_gecko_ethernet), location_rmii_refclk, 2)
 /* The driver ties CMU_CLK2 to the refclk, and pin A3 is CMU_CLK2 #1 */
 #define ETH_REF_CLK_LOCATION            1

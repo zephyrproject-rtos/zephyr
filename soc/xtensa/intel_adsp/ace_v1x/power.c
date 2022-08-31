@@ -11,6 +11,14 @@
 #define SRAM_ALIAS_BASE         0xA0000000
 #define SRAM_ALIAS_MASK         0xF0000000
 
+__imr void power_init(void)
+{
+	/* Disable idle power gating */
+	DFDSPBRCP.bootctl[0].bctl |= DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
+}
+
+#ifdef CONFIG_PM
+
 #define uncache_to_cache(address) \
 				((__typeof__(address))(((uint32_t)(address) &  \
 				~SRAM_ALIAS_MASK) | SRAM_ALIAS_BASE))
@@ -37,6 +45,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	if (state == PM_STATE_SOFT_OFF) {
 		uint32_t cpu = arch_proc_id();
 
+		DFDSPBRCP.bootctl[cpu].wdtcs = DFDSPBRCP_WDT_RESTART_COMMAND;
 		DFDSPBRCP.bootctl[cpu].bctl &= ~DFDSPBRCP_BCTL_WAITIPCG;
 		soc_cpus_active[cpu] = false;
 		z_xtensa_cache_flush_inv_all();
@@ -62,6 +71,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	if (state == PM_STATE_SOFT_OFF) {
 		uint32_t cpu = arch_proc_id();
 
+		DFDSPBRCP.bootctl[cpu].wdtcs = DFDSPBRCP_WDT_RESUME;
 		/* TODO: move clock gating prevent to imr restore vector when it will be ready. */
 		DFDSPBRCP.bootctl[cpu].bctl |= DFDSPBRCP_BCTL_WAITIPCG;
 		soc_cpus_active[cpu] = true;
@@ -70,3 +80,5 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		__ASSERT(false, "invalid argument - unsupported power state");
 	}
 }
+
+#endif

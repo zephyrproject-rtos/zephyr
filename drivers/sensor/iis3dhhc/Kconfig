@@ -5,7 +5,9 @@
 
 menuconfig IIS3DHHC
 	bool "IIS3DHHC accelerometer sensor"
-	depends on SPI
+	default y
+	depends on DT_HAS_ST_IIS3DHHC_ENABLED
+	select SPI
 	select HAS_STMEMSC
 	select USE_STDC_IIS3DHHC
 	help

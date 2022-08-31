@@ -22,7 +22,6 @@
 	soc {
 		flash-controller@52002000 {
 			flash1: flash@8100000 {
-				label = "FLASH_STM32";
 				reg = <0x08100000 DT_SIZE_K(1024)>;
 			};
 		};

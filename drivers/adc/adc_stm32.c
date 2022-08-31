@@ -93,14 +93,16 @@ static const uint32_t table_resolution[] = {
 #if defined(CONFIG_SOC_SERIES_STM32F1X) || \
 	defined(STM32F3X_ADC_V2_5)
 	RES(12),
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	RES(8),
+	RES(10),
+	RES(12),
+	RES(14),
 #elif !defined(CONFIG_SOC_SERIES_STM32H7X)
 	RES(6),
 	RES(8),
 	RES(10),
 	RES(12),
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
-	RES(14),
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
 #else
 	RES(8),
 	RES(10),
@@ -513,6 +515,75 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 	return 0;
 }
 
+/*
+ * Enable internal channel source
+ */
+static void adc_stm32_set_common_path(const struct device *dev, uint32_t PathInternal)
+{
+	const struct adc_stm32_cfg *config =
+		(const struct adc_stm32_cfg *)dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	(void) adc; /* Avoid 'unused variable' warning for some families */
+
+	/* Do not remove existing paths */
+	PathInternal |= LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc), PathInternal);
+}
+
+static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_id)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+
+#ifdef CONFIG_SOC_SERIES_STM32G4X
+	if (config->has_temp_channel) {
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
+		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC1) == channel_id)
+		    && (config->base == ADC1)) {
+			adc_stm32_disable(adc);
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+			k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
+		}
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc5), okay)
+		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC5) == channel_id)
+		   && (config->base == ADC5)) {
+			adc_stm32_disable(adc);
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+			k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
+		}
+#endif
+	}
+#else
+	if (config->has_temp_channel &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id) {
+		adc_stm32_disable(adc);
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+#ifdef LL_ADC_DELAY_TEMPSENSOR_STAB_US
+		k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
+#endif
+	}
+#endif /* CONFIG_SOC_SERIES_STM32G4X */
+
+	if (config->has_vref_channel &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VREFINT) == channel_id) {
+		adc_stm32_disable(adc);
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
+#ifdef LL_ADC_DELAY_VREFINT_STAB_US
+		k_usleep(LL_ADC_DELAY_VREFINT_STAB_US);
+#endif
+	}
+#if defined(LL_ADC_CHANNEL_VBAT)
+	/* Enable the bridge divider only when needed for ADC conversion. */
+	if (config->has_vbat_channel &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id) {
+		adc_stm32_disable(adc);
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
+	}
+
+#endif /* LL_ADC_CHANNEL_VBAT */
+}
+
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
@@ -528,6 +599,19 @@ static int start_read(const struct device *dev,
 	case 12:
 		resolution = table_resolution[0];
 		break;
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	case 8:
+		resolution = table_resolution[0];
+		break;
+	case 10:
+		resolution = table_resolution[1];
+		break;
+	case 12:
+		resolution = table_resolution[2];
+		break;
+	case 14:
+		resolution = table_resolution[3];
+		break;
 #elif !defined(CONFIG_SOC_SERIES_STM32H7X)
 	case 6:
 		resolution = table_resolution[0];
@@ -541,11 +625,6 @@ static int start_read(const struct device *dev,
 	case 12:
 		resolution = table_resolution[3];
 		break;
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
-	case 14:
-		resolution = table_resolution[4];
-		break;
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
 #else
 	case 8:
 		resolution = table_resolution[0];
@@ -576,6 +655,8 @@ static int start_read(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	adc_stm32_setup_channels(dev, index);
+
 	data->buffer = sequence->buffer;
 
 	uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(index);
@@ -585,17 +666,50 @@ static int start_read(const struct device *dev,
 	 * This register controls the analog switch integrated in the IO level.
 	 */
 	LL_ADC_SetChannelPreSelection(adc, channel);
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	/*
+	 * Each channel in the sequence must be previously enabled in PCSEL.
+	 * This register controls the analog switch integrated in the IO level.
+	 * Only for ADC1 instance (ADC4 has no Channel preselection capability).
+	 */
+	if (adc == ADC1) {
+		LL_ADC_SetChannelPreselection(adc, channel);
+	}
 #endif
-
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	/*
+	 * Each channel in the sequence must be previously enabled in PCSEL.
+	 * This register controls the analog switch integrated in the IO level.
+	 */
+	LL_ADC_SetChannelPreselection(adc, channel);
+#endif
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	LL_ADC_REG_SetSequencerChannels(adc, channel);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX)
+#elif defined(CONFIG_SOC_SERIES_STM32WLX)
 	/* STM32G0 in "not fully configurable" sequencer mode */
 	LL_ADC_REG_SetSequencerChannels(adc, channel);
+	LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_CONFIGURABLE);
 	while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
 	}
+	LL_ADC_ClearFlag_CCRDY(adc);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	/* STM32G0 in "not fully configurable" sequencer mode */
+	LL_ADC_REG_SetSequencerChannels(adc, channel);
+	LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_FIXED);
+	while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
+	}
+	LL_ADC_ClearFlag_CCRDY(adc);
+#if defined(CONFIG_SOC_SERIES_STM32WLX)
+	/* Init the the ADC group for REGULAR conversion*/
+	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
+	LL_ADC_REG_SetSequencerLength(adc, LL_ADC_REG_SEQ_SCAN_DISABLE);
+	LL_ADC_REG_SetSequencerDiscont(adc, LL_ADC_REG_SEQ_DISCONT_DISABLE);
+	LL_ADC_REG_SetContinuousMode(adc, LL_ADC_REG_CONV_SINGLE);
+	LL_ADC_REG_SetOverrun(adc, LL_ADC_REG_OVR_DATA_OVERWRITTEN);
+	LL_ADC_REG_SetSequencerRanks(adc, LL_ADC_REG_RANK_1, channel);
+#endif /* CONFIG_SOC_SERIES_STM32WLX */
+
 #else
 	LL_ADC_REG_SetSequencerRanks(adc, table_rank[0], channel);
 	LL_ADC_REG_SetSequencerLength(adc, table_seq_len[0]);
@@ -814,21 +928,6 @@ static int adc_stm32_check_acq_time(uint16_t acq_time)
 	return -EINVAL;
 }
 
-/*
- * Enable internal channel source
- */
-static void adc_stm32_set_common_path(const struct device *dev, uint32_t PathInternal)
-{
-	const struct adc_stm32_cfg *config =
-		(const struct adc_stm32_cfg *)dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
-	(void) adc; /* Avoid 'unused variable' warning for some families */
-
-	/* Do not remove existing paths */
-	PathInternal |= LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc), PathInternal);
-}
-
 static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 				  uint8_t acq_time_index)
 {
@@ -851,45 +950,6 @@ static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 		__LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
 		table_samp_time[acq_time_index]);
 #endif
-}
-
-static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_id)
-{
-	const struct adc_stm32_cfg *config = dev->config;
-#ifdef CONFIG_SOC_SERIES_STM32G4X
-	if (config->has_temp_channel) {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
-		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC1) == channel_id)
-		    && (config->base == ADC1)) {
-			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-		}
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc5), okay)
-		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC5) == channel_id)
-		   && (config->base == ADC5)) {
-			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-		}
-#endif
-	}
-#else
-	if (config->has_temp_channel &&
-		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id) {
-		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-	}
-#endif /* CONFIG_SOC_SERIES_STM32G4X */
-
-	if (config->has_vref_channel &&
-		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VREFINT) == channel_id) {
-		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
-	}
-#if defined(LL_ADC_CHANNEL_VBAT)
-	/* Enable the bridge divider only when needed for ADC conversion. */
-	if (config->has_vbat_channel &&
-		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id) {
-		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
-	}
-
-#endif /* LL_ADC_CHANNEL_VBAT */
 }
 
 static int adc_stm32_channel_setup(const struct device *dev,
@@ -940,8 +1000,6 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	adc_stm32_setup_channels(dev, channel_cfg->channel_id);
-
 	adc_stm32_setup_speed(dev, channel_cfg->channel_id,
 				  acq_time_index);
 
@@ -954,11 +1012,16 @@ static int adc_stm32_init(const struct device *dev)
 {
 	struct adc_stm32_data *data = dev->data;
 	const struct adc_stm32_cfg *config = dev->config;
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
 	int err;
 
 	LOG_DBG("Initializing....");
+
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	data->dev = dev;
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
@@ -1066,13 +1129,6 @@ static int adc_stm32_init(const struct device *dev)
 	if (LL_ADC_IsActiveFlag_ADRDY(adc)) {
 		LL_ADC_ClearFlag_ADRDY(adc);
 	}
-
-	/*
-	 * These STM32 series has one internal voltage reference source
-	 * to be enabled.
-	 */
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
-				       LL_ADC_PATH_INTERNAL_VREFINT);
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
@@ -1172,7 +1228,8 @@ bool adc_stm32_is_irq_active(ADC_TypeDef *adc)
 }
 
 #define HANDLE_IRQS(index)							\
-	static const struct device *dev_##index = DEVICE_DT_INST_GET(index);	\
+	static const struct device *const dev_##index =				\
+		DEVICE_DT_INST_GET(index);					\
 	const struct adc_stm32_cfg *cfg_##index = dev_##index->config;		\
 	ADC_TypeDef *adc_##index = (ADC_TypeDef *)(cfg_##index->base);		\
 										\

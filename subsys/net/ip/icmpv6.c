@@ -79,7 +79,10 @@ int net_icmpv6_finalize(struct net_pkt *pkt)
 		return -ENOBUFS;
 	}
 
-	icmp_hdr->chksum = net_calc_chksum_icmpv6(pkt);
+	icmp_hdr->chksum = 0U;
+	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt))) {
+		icmp_hdr->chksum = net_calc_chksum_icmpv6(pkt);
+	}
 
 	return net_pkt_set_data(pkt, &icmp_access);
 }
@@ -409,9 +412,12 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	if (net_calc_chksum_icmpv6(pkt) != 0U) {
-		NET_DBG("DROP: invalid checksum");
-		goto drop;
+
+	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt))) {
+		if (net_calc_chksum_icmpv6(pkt) != 0U) {
+			NET_DBG("DROP: invalid checksum");
+			goto drop;
+		}
 	}
 
 	net_pkt_acknowledge_data(pkt, &icmp_access);

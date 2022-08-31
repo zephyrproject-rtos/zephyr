@@ -4,7 +4,7 @@
  */
 
 #include <zephyr/drivers/counter.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 
 /*
@@ -23,7 +23,7 @@
 
 void test_seconds_rate(void)
 {
-	const struct device *dev = DEVICE_DT_GET(CTR_DEV);
+	const struct device *const dev = DEVICE_DT_GET(CTR_DEV);
 	uint32_t start, elapsed;
 	int err;
 

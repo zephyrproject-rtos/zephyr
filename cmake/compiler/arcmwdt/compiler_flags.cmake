@@ -132,6 +132,9 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "")
 
+# Flag for disabling strict aliasing rule in C and C++
+set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
+
 # Disable exceptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")
 
@@ -159,11 +162,6 @@ set_compiler_property(PROPERTY coverage "")
 # mwdt compiler flags for imacros. The specific header must be appended by user.
 set_compiler_property(PROPERTY imacros -imacros)
 
-#no support of -fsanitize=address and -lasan
-set_compiler_property(PROPERTY sanitize_address "")
-
-set_compiler_property(PROPERTY sanitize_undefined "")
-
 # Security canaries.
 #no support of -mstack-protector-guard=global"
 set_compiler_property(PROPERTY security_canaries -fstack-protector-all)
@@ -176,6 +174,12 @@ set_property(TARGET compiler-cpp PROPERTY required "-Hcplus" "-Hoff=Stackcheck_a
 
 # Compiler flag for turning off thread-safe initialization of local statics
 set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe-statics")
+
+#Compiler flags for disabling position independent code / executable
+set_compiler_property(PROPERTY no_position_independent
+                      -fno-pic
+                      -fno-pie
+)
 
 #################################
 # This section covers asm flags #

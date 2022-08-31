@@ -10,7 +10,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include "test_fs_shell.h"
 #include <zephyr/shell/shell.h>

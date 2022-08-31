@@ -5,13 +5,13 @@
  */
 
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <stdbool.h>
-#include <zephyr.h>
-#include <ztest.h>
-#include <logging/log_backend.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
 
 #define LOG_MODULE_NAME test
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -54,6 +54,11 @@ static void backend_process(const struct log_backend *const backend,
 	context->cnt++;
 }
 
+static void panic(const struct log_backend *const backend)
+{
+	ARG_UNUSED(backend);
+}
+
 static void expire_cb(struct k_timer *timer)
 {
 	void *ctx = k_timer_user_data_get(timer);
@@ -81,7 +86,8 @@ static int backend_is_ready(const struct log_backend *const backend)
 static const struct log_backend_api backend_api = {
 	.process = backend_process,
 	.init = backend_init,
-	.is_ready = backend_is_ready
+	.is_ready = backend_is_ready,
+	.panic = panic
 };
 
 static struct backend_context context1 = {
@@ -103,7 +109,7 @@ LOG_BACKEND_DEFINE(backend2, backend_api, true, &context2);
  * ready it will not receive this message. Second message is created when
  * both backends are initialized so both receives the message.
  */
-void test_log_backends_initialization(void)
+ZTEST(log_backend_init, test_log_backends_initialization)
 {
 	if (log_backend_count_get() != 2) {
 		/* Other backends should not be enabled. */
@@ -140,10 +146,4 @@ void test_log_backends_initialization(void)
 	zassert_equal(context2.cnt, 1, NULL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_log_backend_init,
-			 ztest_unit_test(test_log_backends_initialization)
-			 );
-	ztest_run_test_suite(test_log_backend_init);
-}
+ZTEST_SUITE(log_backend_init, NULL, NULL, NULL, NULL, NULL);

@@ -30,6 +30,10 @@
 		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(64)>;
 	};
+
+	aliases {
+		watchdog0 = &wdog1;
+	};
 };
 
 &lpuart1 {
@@ -63,7 +67,6 @@
 	is25wp128: is25wp128@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <134217728>;
-		label = "IS25WP128";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";

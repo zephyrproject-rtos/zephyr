@@ -14,7 +14,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_shell, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define I2C_DEVICE_PREFIX "I2C_"
 #define MAX_BYTES_FOR_REGISTER_INDEX	4
 #define ARGV_DEV	1
 #define ARGV_ADDR	2
@@ -277,7 +276,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, I2C_DEVICE_PREFIX);
+	const struct device *dev = shell_device_lookup(idx, NULL);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
@@ -294,7 +293,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
 					     cmd_i2c_recover, 2, 0),
 			       SHELL_CMD_ARG(read, &dsub_device_name,
 					     "Read bytes from an I2C device",
-					     cmd_i2c_read, 4, MAX_I2C_BYTES),
+					     cmd_i2c_read, 4, 1),
 			       SHELL_CMD_ARG(read_byte, &dsub_device_name,
 					     "Read a byte from an I2C device",
 					     cmd_i2c_read_byte, 4, 1),

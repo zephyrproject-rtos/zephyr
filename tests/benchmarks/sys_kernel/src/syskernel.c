@@ -7,7 +7,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 
 #include "syskernel.h"
 

@@ -27,11 +27,11 @@ void main(void)
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
-	const struct device *hts221 = DEVICE_DT_GET_ONE(st_hts221);
-	const struct device *lps22hb = DEVICE_DT_GET_ONE(st_lps22hb_press);
-	const struct device *lsm6dsl = DEVICE_DT_GET_ONE(st_lsm6dsl);
-	const struct device *lsm303agr_a = DEVICE_DT_GET_ONE(st_lis2dh);
-	const struct device *lsm303agr_m = DEVICE_DT_GET_ONE(st_lis2mdl);
+	const struct device *const hts221 = DEVICE_DT_GET_ONE(st_hts221);
+	const struct device *const lps22hb = DEVICE_DT_GET_ONE(st_lps22hb_press);
+	const struct device *const lsm6dsl = DEVICE_DT_GET_ONE(st_lsm6dsl);
+	const struct device *const lsm303agr_a = DEVICE_DT_GET_ONE(st_lis2dh);
+	const struct device *const lsm303agr_m = DEVICE_DT_GET_ONE(st_lis2mdl);
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	int cnt = 1;
 #endif

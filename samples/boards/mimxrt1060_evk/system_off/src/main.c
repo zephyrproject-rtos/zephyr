@@ -5,12 +5,12 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/counter.h>
-#include <pm/pm.h>
-#include <pm/policy.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
 
 #define BUSY_WAIT_S 2U
 #define SLEEP_S 2U
@@ -29,7 +29,7 @@
 #define SNVS_LP_RTC_ALARM_ID 1
 
 static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, { 0 });
-static const struct device *snvs_rtc_dev = DEVICE_DT_GET(SNVS_RTC_NODE);
+static const struct device *const snvs_rtc_dev = DEVICE_DT_GET(SNVS_RTC_NODE);
 
 void main(void)
 {

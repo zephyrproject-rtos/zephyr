@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ieee802154_radio.h>
 

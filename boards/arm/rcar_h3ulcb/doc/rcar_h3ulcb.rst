@@ -12,9 +12,7 @@ Overview
 It is possible to order 2 different types of H3 Starter Kit Boards, one with Ethernet connection onboard and one with Ethernet connection on ComExpress.
 
 .. figure:: img/rcar_h3ulcb_starter_kit.jpg
-   :width: 460px
    :align: center
-   :height: 288px
    :alt: R-Car starter kit
 
 .. note:: The H3ULCB board can be plugged on a Renesas Kingfisher Infotainment daughter board through COM Express connector in order to physically access more I/O. CAUTION: In this case, power supply is managed by the daughter board.
@@ -27,9 +25,7 @@ Hardware
 Hardware capabilities for the H3ULCB for can be found on the `eLinux H3SK page`_ of the board.
 
 .. figure:: img/rcar_h3ulcb_features.jpg
-   :width: 286px
    :align: center
-   :height: 280px
    :alt: R-Car starter kit features
 
 .. note:: Zephyr will be booted on the CR7 processor provided for RTOS purpose.

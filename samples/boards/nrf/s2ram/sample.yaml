@@ -5,3 +5,4 @@ common:
 tests:
   sample.boards.nrf.s2ram:
     platform_allow: nrf5340dk_nrf5340_cpuapp
+    harness: remote

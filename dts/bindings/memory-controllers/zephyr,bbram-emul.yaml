@@ -12,6 +12,3 @@ properties:
         type: int
         required: true
         description: Size of the BBRAM region in bytes.
-
-    label:
-        required: true

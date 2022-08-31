@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <ztress.h>
-#include <ztest_test.h>
+#include <zephyr/ztress.h>
+#include <zephyr/ztest_test.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/random/rand32.h>
 #include <string.h>
@@ -83,15 +83,16 @@ static void progress_timeout(struct k_timer *timer)
 	struct ztress_context_data *thread_data = k_timer_user_data_get(timer);
 	uint32_t progress = 100;
 	uint32_t cnt = context_cnt;
+	uint32_t thread_data_start_index = 0;
 
 	if (tmr_data != NULL) {
-		cnt--;
-		if (tmr_data->exec_cnt != 0 && exec_cnt[cnt] != 0) {
-			progress = (100 * exec_cnt[cnt]) / tmr_data->exec_cnt;
+		thread_data_start_index = 1;
+		if (tmr_data->exec_cnt != 0 && exec_cnt[0] != 0) {
+			progress = (100 * exec_cnt[0]) / tmr_data->exec_cnt;
 		}
 	}
 
-	for (uint32_t i = 0; i < cnt; i++) {
+	for (uint32_t i = thread_data_start_index; i < cnt; i++) {
 		if (thread_data[i].exec_cnt == 0 && thread_data[i].preempt_cnt == 0) {
 			continue;
 		}
@@ -289,10 +290,6 @@ static void ztress_init(struct ztress_context_data *thread_data)
 	memset(&rt, 0, sizeof(rt));
 	k_thread_foreach(thread_cb, NULL);
 	k_msleep(10);
-
-	if (idle_tid == NULL) {
-		printk("Failed to identify idle thread. CPU load will not be tracked\n");
-	}
 
 	k_timer_start(&ctrl_timer, K_MSEC(100), K_MSEC(100));
 	k_timer_user_data_set(&progress_timer, thread_data);

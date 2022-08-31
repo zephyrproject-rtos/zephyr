@@ -1,0 +1,52 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  testing.fail.unit.assert_after:
+    type: unit
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSERT_AFTER=y
+  testing.fail.unit.assert_teardown:
+    type: unit
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSERT_TEARDOWN=y
+  testing.fail.unit.assume_after:
+    type: unit
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSUME_AFTER=y
+  testing.fail.unit.assume_teardown:
+    type: unit
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSUME_TEARDOWN=y
+  testing.fail.unit.pass_after:
+    type: unit
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_PASS_AFTER=y
+  testing.fail.unit.pass_teardown:
+    type: unit
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_PASS_TEARDOWN=y
+  testing.fail.zephyr.assert_after:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSERT_AFTER=y
+  testing.fail.zephyr.assert_teardown:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSERT_TEARDOWN=y
+  testing.fail.zephyr.assume_after:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSUME_AFTER=y
+  testing.fail.zephyr.assume_teardown:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSUME_TEARDOWN=y
+  testing.fail.zephyr.pass_after:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_PASS_AFTER=y
+  testing.fail.zephyr.pass_teardown:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_PASS_TEARDOWN=y

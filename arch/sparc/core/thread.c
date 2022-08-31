@@ -20,11 +20,6 @@ void z_thread_entry_wrapper(k_thread_entry_t thread,
  */
 struct init_stack_frame {
 	uint32_t window_save_area[16];
-	k_thread_entry_t entry_point;
-	void *arg1;
-	void *arg2;
-	void *arg3;
-	uint32_t pad[8];
 };
 
 #if defined(CONFIG_FPU_SHARING)
@@ -42,12 +37,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* Initial stack frame data, stored at base of the stack */
 	iframe = Z_STACK_PTR_TO_FRAME(struct init_stack_frame, stack_ptr);
 
-	iframe->entry_point = entry;
-	iframe->arg1 = p1;
-	iframe->arg2 = p2;
-	iframe->arg3 = p3;
-
-	/* Put values for debugging purposes */
+	thread->callee_saved.i0 = (uint32_t) entry;
+	thread->callee_saved.i1 = (uint32_t) p1;
+	thread->callee_saved.i2 = (uint32_t) p2;
+	thread->callee_saved.i3 = (uint32_t) p3;
 	thread->callee_saved.i6 = 0;                    /* frame pointer */
 	thread->callee_saved.o6 = (uint32_t) iframe;    /* stack pointer */
 	thread->callee_saved.o7 = (uint32_t) z_thread_entry_wrapper - 8;

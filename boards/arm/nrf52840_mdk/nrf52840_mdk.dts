@@ -21,6 +21,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -78,6 +79,8 @@
 		green-pwm-led = &pwm_led0_green;
 		red-pwm-led = &pwm_led1_red;
 		blue-pwm-led = &pwm_led2_blue;
+		watchdog0 = &wdt0;
+		spi-flash0 = &mx25r64;
 	};
 };
 
@@ -140,7 +143,6 @@
 		writeoc = "pp4io";
 		readoc = "read4io";
 		sck-frequency = <8000000>;
-		label = "MX25R64";
 		jedec-id = [c2 28 17];
 		sfdp-bfp = [
 			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
@@ -153,6 +155,10 @@
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <35000>;
 	};
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 &flash0 {

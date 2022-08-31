@@ -4,10 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/pinctrl.h>
-#include <ztest.h>
-
 #include "test_device.h"
+
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/fff.h>
+#include <zephyr/ztest.h>
+
+DEFINE_FFF_GLOBALS;
+
+FAKE_VALUE_FUNC(int, pinctrl_configure_pins, const pinctrl_soc_pin_t *, uint8_t, uintptr_t);
 
 /* test device 0 */
 #define TEST_DEVICE0 DT_NODELABEL(test_device0)
@@ -29,7 +34,7 @@ static struct pinctrl_dev_config *pcfg1 = PINCTRL_DT_DEV_CONFIG_GET(TEST_DEVICE1
  * set of macros used to define and initialize pin control config from
  * Devicetree works as expected.
  */
-static void test_config_dev0(void)
+ZTEST(pinctrl_api, test_config_dev0)
 {
 	const struct pinctrl_state *scfg;
 
@@ -53,7 +58,7 @@ static void test_config_dev0(void)
  *
  * @see test_config_dev0()
  */
-static void test_config_dev1(void)
+ZTEST(pinctrl_api, test_config_dev1)
 {
 	const struct pinctrl_state *scfg;
 
@@ -86,7 +91,7 @@ static void test_config_dev1(void)
 /**
  * @brief Test that pinctrl_lookup_state() works as expected
  */
-static void test_lookup_state(void)
+ZTEST(pinctrl_api, test_lookup_state)
 {
 	int ret;
 	const struct pinctrl_state *scfg;
@@ -102,21 +107,17 @@ static void test_lookup_state(void)
 /**
  * @brief Test that pinctrl_apply_state() works as expected.
  */
-static void test_apply_state(void)
+ZTEST(pinctrl_api, test_apply_state)
 {
-	int ret;
-
-	ztest_expect_data(pinctrl_configure_pins, pins, pcfg0->states[0].pins);
-	ztest_expect_value(pinctrl_configure_pins, pin_cnt,
-			   pcfg0->states[0].pin_cnt);
+	zassert_ok(pinctrl_apply_state(pcfg0, PINCTRL_STATE_DEFAULT), NULL);
+	zassert_equal(1, pinctrl_configure_pins_fake.call_count, NULL);
+	zassert_equal(pcfg0->states[0].pins, pinctrl_configure_pins_fake.arg0_val, NULL);
+	zassert_equal(pcfg0->states[0].pin_cnt, pinctrl_configure_pins_fake.arg1_val, NULL);
 #ifdef CONFIG_PINCTRL_STORE_REG
-	ztest_expect_value(pinctrl_configure_pins, reg, 0);
+	zassert_equal(0, pinctrl_configure_pins_fake.arg2_val, NULL);
 #else
-	ztest_expect_value(pinctrl_configure_pins, reg, PINCTRL_REG_NONE);
+	zassert_equal(PINCTRL_REG_NONE, pinctrl_configure_pins_fake.arg2_val, NULL);
 #endif
-
-	ret = pinctrl_apply_state(pcfg0, PINCTRL_STATE_DEFAULT);
-	zassert_equal(ret, 0, NULL);
 }
 
 /** Test device 0 alternative pins for default state */
@@ -139,13 +140,12 @@ static const struct pinctrl_state test_device0_alt_invalid[] = {
 /**
  * @brief This test checks if pinctrl_update_states() works as expected.
  */
-static void test_update_states(void)
+ZTEST(pinctrl_api, test_update_states)
 {
 	int ret;
 	const struct pinctrl_state *scfg;
 
-	ret = pinctrl_update_states(pcfg0, test_device0_alt,
-				    ARRAY_SIZE(test_device0_alt));
+	ret = pinctrl_update_states(pcfg0, test_device0_alt, ARRAY_SIZE(test_device0_alt));
 	zassert_equal(ret, 0, NULL);
 
 	scfg = &pcfg0->states[0];
@@ -159,13 +159,11 @@ static void test_update_states(void)
 	zassert_equal(ret, -EINVAL, NULL);
 }
 
-void test_main(void)
+static void pinctrl_api_before(void *f)
 {
-	ztest_test_suite(pinctrl_api,
-			 ztest_unit_test(test_config_dev0),
-			 ztest_unit_test(test_config_dev1),
-			 ztest_unit_test(test_lookup_state),
-			 ztest_unit_test(test_apply_state),
-			 ztest_unit_test(test_update_states));
-	ztest_run_test_suite(pinctrl_api);
+	ARG_UNUSED(f);
+	RESET_FAKE(pinctrl_configure_pins);
+	FFF_RESET_HISTORY();
 }
+
+ZTEST_SUITE(pinctrl_api, NULL, NULL, pinctrl_api_before, NULL, NULL);

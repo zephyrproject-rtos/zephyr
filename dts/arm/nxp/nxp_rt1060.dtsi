@@ -26,7 +26,6 @@
 			interrupts = <152 0>;
 			interrupt-names = "COMMON";
 			status = "disabled";
-			label = "ETH_1";
 			ptp {
 				compatible = "nxp,kinetis-ptp";
 				status = "disabled";

@@ -107,6 +107,7 @@ config RISCV
 	select ARCH_IS_SET
 	select HAS_DTS
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select USE_SWITCH_SUPPORTED
@@ -149,14 +150,10 @@ config ARCH_IS_SET
 
 menu "General Architecture Options"
 
-source "$(ARCH_DIR)/common/Kconfig"
+source "arch/common/Kconfig"
 
 module = ARCH
 module-str = arch
-source "subsys/logging/Kconfig.template.log_config"
-
-module = MPU
-module-str = mpu
 source "subsys/logging/Kconfig.template.log_config"
 
 config BIG_ENDIAN
@@ -581,6 +578,12 @@ config ARCH_HAS_SUSPEND_TO_RAM
 config ARCH_HAS_THREAD_ABORT
 	bool
 
+config ARCH_HAS_CODE_DATA_RELOCATION
+	bool
+	help
+	  When selected, the architecture/SoC implements support for
+	  CODE_DATA_RELOCATION in its linker scripts.
+
 #
 # Hidden CPU family configs
 #
@@ -595,7 +598,7 @@ config CPU_HAS_TEE
 config CPU_HAS_DCLS
 	bool
 	help
-	  This option is enabled when the processor hardware is configured in
+	  This option is enabled when the processor hardware has support for
 	  Dual-redundant Core Lock-step (DCLS) topology.
 
 config CPU_HAS_FPU
@@ -636,6 +639,16 @@ config ARCH_HAS_RESERVED_PAGE_FRAMES
 	  memory mappings. The architecture will need to implement
 	  arch_reserved_pages_update().
 
+config CPU_HAS_DCACHE
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has a d-cache.
+
+config CPU_HAS_ICACHE
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has an i-cache.
+
 config ARCH_MAPS_ALL_RAM
 	bool
 	help
@@ -656,6 +669,16 @@ config ARCH_MAPS_ALL_RAM
 	  this mapping at all; non-kernel pages will be considered free (unless marked
 	  as reserved) and Z_PAGE_FRAME_MAPPED will not be set.
 
+config DCLS
+	bool "Processor is configured in DCLS mode"
+	depends on CPU_HAS_DCLS
+	default y
+	help
+	  This option is enabled when the processor hardware is configured in
+	  Dual-redundant Core Lock-step (DCLS) topology. For the processor that
+	  supports DCLS, but is configured in split-lock mode (by default or
+	  changed at flash time), this option should be disabled.
+
 menuconfig MPU
 	bool "MPU features"
 	depends on CPU_HAS_MPU
@@ -664,6 +687,10 @@ menuconfig MPU
 	  is enabled.
 
 if MPU
+module = MPU
+module-str = mpu
+source "subsys/logging/Kconfig.template.log_config"
+
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
 	help
@@ -735,6 +762,15 @@ config SRAM_REGION_PERMISSIONS
 	  paging, do not need memory protection, and would rather not use up
 	  RAM for the alignment between regions.
 
+config CODE_DATA_RELOCATION
+	bool "Support code/data section relocation"
+	depends on ARCH_HAS_CODE_DATA_RELOCATION
+	help
+	  Enable support for relocating .text, data and .bss sections from specified
+	  files and placing them in a chosen memory region. Files to relocate and
+	  the target regions should be specified in CMakeLists.txt using
+	  zephyr_code_relocate().
+
 menu "Floating Point Options"
 
 config FPU
@@ -779,20 +815,29 @@ endmenu
 menu "Cache Options"
 
 config DCACHE
-	bool "Data cache support"
+	bool "Data cache (d-cache) support"
+	depends on CPU_HAS_DCACHE
 	default y
 	help
-	  This option enables data cache (d-cache).
+	  This option enables the support for the data cache (d-cache).
+
+config ICACHE
+	bool "Instruction cache (i-cache) support"
+	depends on CPU_HAS_ICACHE
+	default y
+	help
+	  This option enables the support for the instruction cache (i-cache).
 
 config CACHE_MANAGEMENT
 	bool "Cache management features"
+	depends on DCACHE || ICACHE
 	help
 	  This links in the cache management functions (for d-cache and i-cache
 	  where possible).
 
 config DCACHE_LINE_SIZE_DETECT
 	bool "Detect d-cache line size at runtime"
-	depends on CACHE_MANAGEMENT
+	depends on CACHE_MANAGEMENT && DCACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the d-cache line size at the expense of taking more memory and
@@ -803,8 +848,8 @@ config DCACHE_LINE_SIZE_DETECT
 	  using the 'd-cache-line-size' property.
 
 config DCACHE_LINE_SIZE
-	int "d-cache line size" if !DCACHE_LINE_SIZE_DETECT
-	depends on CACHE_MANAGEMENT
+	int "d-cache line size"
+	depends on CACHE_MANAGEMENT && DCACHE && !DCACHE_LINE_SIZE_DETECT
 	default 0
 	help
 	  Size in bytes of a CPU d-cache line. If this is set to 0 the value is
@@ -815,7 +860,7 @@ config DCACHE_LINE_SIZE
 
 config ICACHE_LINE_SIZE_DETECT
 	bool "Detect i-cache line size at runtime"
-	depends on CACHE_MANAGEMENT
+	depends on CACHE_MANAGEMENT && ICACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the i-cache line size at the expense of taking more memory and
@@ -826,8 +871,8 @@ config ICACHE_LINE_SIZE_DETECT
 	  using the 'i-cache-line-size' property.
 
 config ICACHE_LINE_SIZE
-	int "i-cache line size" if !ICACHE_LINE_SIZE_DETECT
-	depends on CACHE_MANAGEMENT
+	int "i-cache line size"
+	depends on CACHE_MANAGEMENT && ICACHE && !ICACHE_LINE_SIZE_DETECT
 	default 0
 	help
 	  Size in bytes of a CPU i-cache line. If this is set to 0 the value is

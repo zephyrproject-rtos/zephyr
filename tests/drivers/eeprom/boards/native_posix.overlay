@@ -12,7 +12,6 @@
 	i2c_eeprom: eeprom@57 {
 		compatible = "atmel,at24";
 		reg = <0x57>;
-		label = "eeprom";
 		size = <256>;
 		pagesize = <8>;
 		address-width = <8>;

@@ -3,6 +3,7 @@
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_DMA_SAM_XDMAC	dma_sam_xdmac.c)
+zephyr_library_sources_ifdef(CONFIG_DMA_STM32U5	dma_stm32u5.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_STM32		dma_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_STM32_V1	dma_stm32_v1.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_STM32_V2	dma_stm32_v2.c)
@@ -22,3 +23,4 @@ zephyr_library_sources_ifdef(CONFIG_DMA_INTEL_ADSP_HDA_HOST_OUT dma_intel_adsp_h
 zephyr_library_sources_ifdef(CONFIG_DMA_INTEL_ADSP_HDA_LINK_IN dma_intel_adsp_hda_link_in.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_INTEL_ADSP_HDA_LINK_OUT dma_intel_adsp_hda_link_out.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_INTEL_ADSP_GPDMA	dma_intel_adsp_gpdma.c dma_dw_common.c)
+zephyr_library_sources_ifdef(CONFIG_DMA_GD32		dma_gd32.c)

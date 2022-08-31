@@ -654,8 +654,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	aux->ull.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
-				       PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
-						     lll_aux->phy) +
+				       PDU_AC_MAX_US(0U, lll_aux->phy) +
 				       EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(aux->ull.ticks_active_to_start,
@@ -844,6 +843,19 @@ struct ll_scan_aux_set *ull_scan_aux_is_valid_get(struct ll_scan_aux_set *aux)
 	}
 
 	return aux;
+}
+
+struct lll_scan_aux *ull_scan_aux_lll_is_valid_get(struct lll_scan_aux *lll)
+{
+	struct ll_scan_aux_set *aux;
+
+	aux = HDR_LLL2ULL(lll);
+	aux = ull_scan_aux_is_valid_get(aux);
+	if (aux) {
+		return &aux->lll;
+	}
+
+	return NULL;
 }
 
 void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)

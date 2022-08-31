@@ -18,6 +18,7 @@
 		led0 = &yellow_led_1;
 		sw0 = &user_button;
 		wdog = &wdt;
+		watchdog0 = &wdt;
 	};
 
 	chosen {

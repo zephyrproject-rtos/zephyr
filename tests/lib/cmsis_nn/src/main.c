@@ -10,7 +10,7 @@
  * validate the integration of CMSIS-NN and Zephyr
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/zephyr.h>
 #include <stdlib.h>
 
@@ -274,7 +274,7 @@ ZTEST(cmsis_nn, test_depthwise_convolve)
 	cmsis_nn_per_channel_quant_params quant_params;
 	cmsis_nn_dims input_dims;
 	cmsis_nn_dims filter_dims;
-	cmsis_nn_dims bias_dims;
+	cmsis_nn_dims bias_dims = { 0 };
 	cmsis_nn_dims output_dims;
 
 	const q31_t *bias_data = stride2pad1_biases;

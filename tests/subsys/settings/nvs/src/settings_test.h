@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/settings/settings.h>
 
@@ -40,6 +40,8 @@ void ctest_clear_call_state(void);
 int ctest_get_call_state(void);
 
 void config_wipe_srcs(void);
+void *settings_config_setup(void);
+void settings_config_teardown(void *fixture);
 
 #ifdef __cplusplus
 }

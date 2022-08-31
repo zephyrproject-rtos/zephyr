@@ -47,7 +47,6 @@
 			compatible = "gaisler,apbuart";
 			interrupts = <2>;
 			reg = <0x80000100 0x100>;
-			label = "UART_0";
 			status = "disabled";
 		};
 	};

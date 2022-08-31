@@ -12,11 +12,11 @@
 typedef void (*irq_config_func_t)(const struct device *port);
 
 /* This symbol takes the value 1 if one of the device instances */
-/* is configured in dts with an optional clock */
-#if STM32_DT_INST_DEV_OPT_CLOCK_SUPPORT
-#define STM32_SPI_OPT_CLOCK_SUPPORT 1
+/* is configured in dts with a domain clock */
+#if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
+#define STM32_SPI_DOMAIN_CLOCK_SUPPORT 1
 #else
-#define STM32_SPI_OPT_CLOCK_SUPPORT 0
+#define STM32_SPI_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
 struct spi_stm32_config {

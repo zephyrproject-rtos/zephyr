@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
 #include "test_sched.h"
 
@@ -65,7 +65,7 @@ static void tcoop_ctx(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-void test_sched_is_preempt_thread(void)
+ZTEST(threads_scheduling, test_sched_is_preempt_thread)
 {
 	k_sem_init(&end_sema, 0, 1);
 

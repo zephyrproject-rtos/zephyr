@@ -26,3 +26,11 @@
 };
 
 #include "nxp_lpc55S6x_common.dtsi"
+
+/*
+ * Explicitly enable IAP after we include the common LPC55S6X dtsi file,
+ * which will set it to disabled.
+ */
+&iap {
+	status = "okay";
+};

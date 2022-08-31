@@ -13,7 +13,7 @@
  *
  */
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/irq_offload.h>
 

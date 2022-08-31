@@ -12,7 +12,7 @@
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
-
+#define CAL_RES 12
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp)
 #define DT_DRV_COMPAT st_stm32_temp
 #define HAS_CALIBRATION 0
@@ -39,6 +39,7 @@ struct stm32_temp_config {
 	int cal1_temp;
 	int cal2_temp;
 	int cal_vrefanalog;
+	int ts_cal_shift;
 #else
 	int avgslope;
 	int v25_mv;
@@ -88,9 +89,9 @@ static int stm32_temp_channel_get(const struct device *dev, enum sensor_channel 
 
 #if HAS_CALIBRATION
 	temp = ((float)data->raw * adc_ref_internal(data->adc)) / cfg->cal_vrefanalog;
-	temp -= *cfg->cal1_addr;
+	temp -= (*cfg->cal1_addr >> cfg->ts_cal_shift);
 	temp *= (cfg->cal2_temp - cfg->cal1_temp);
-	temp /= (*cfg->cal2_addr - *cfg->cal1_addr);
+	temp /= ((*cfg->cal2_addr - *cfg->cal1_addr) >> cfg->ts_cal_shift);
 	temp += cfg->cal1_temp;
 #else
 	/* Sensor value in millivolts */
@@ -135,6 +136,7 @@ static int stm32_temp_init(const struct device *dev)
 	return 0;
 }
 
+
 #define STM32_TEMP_DEFINE(inst)									\
 	static struct stm32_temp_data stm32_temp_dev_data_##inst = {				\
 		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),				\
@@ -153,6 +155,7 @@ static int stm32_temp_init(const struct device *dev)
 			     .cal2_addr = (uint16_t *)DT_INST_PROP(inst, ts_cal2_addr),		\
 			     .cal1_temp = DT_INST_PROP(inst, ts_cal1_temp),			\
 			     .cal2_temp = DT_INST_PROP(inst, ts_cal2_temp),			\
+			     .ts_cal_shift = (DT_INST_PROP(inst, ts_cal_resolution) - CAL_RES),	\
 			     .cal_vrefanalog = DT_INST_PROP(inst, ts_cal_vrefanalog),),		\
 			    (.avgslope = DT_INST_PROP(inst, avgslope),				\
 			     .v25_mv = DT_INST_PROP(inst, v25),					\

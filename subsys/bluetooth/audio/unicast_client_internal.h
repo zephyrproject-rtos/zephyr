@@ -7,7 +7,7 @@
  */
 
 int bt_unicast_client_config(struct bt_audio_stream *stream,
-		  struct bt_codec *codec);
+			     const struct bt_codec *codec);
 
 int bt_unicast_client_enable(struct bt_audio_stream *stream,
 			     struct bt_codec_data *meta,

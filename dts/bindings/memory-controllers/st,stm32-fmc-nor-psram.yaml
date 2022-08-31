@@ -40,7 +40,6 @@ description: |
     sram {
       status = "okay";
       compatible = "st,stm32-fmc-nor-psram";
-      label = "STM32_FMC_NOR_PSRAM";
 
       #address-cells = <1>;
       #size-cells = <0>;
@@ -73,9 +72,6 @@ compatible: "st,stm32-fmc-nor-psram"
 include: base.yaml
 
 properties:
-  label:
-    required: true
-
   "#address-cells":
     required: true
     const: 1

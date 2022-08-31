@@ -619,11 +619,13 @@ static void can_mcan_get_message(const struct device *dev,
 {
 	struct can_mcan_data *data = dev->data;
 	uint32_t get_idx, filt_idx;
-	struct zcan_frame frame;
+	struct can_frame frame;
 	can_rx_callback_t cb;
 	int data_length;
 	void *cb_arg;
 	struct can_mcan_rx_fifo_hdr hdr;
+	bool rtr_filter_mask;
+	bool rtr_filter;
 
 	while ((*fifo_status_reg & CAN_MCAN_RXF0S_F0FL)) {
 		get_idx = (*fifo_status_reg & CAN_MCAN_RXF0S_F0GI) >>
@@ -653,11 +655,17 @@ static void can_mcan_get_message(const struct device *dev,
 
 		filt_idx = hdr.fidx;
 
-		/* Check if RTR must match */
-		if ((hdr.xtd && data->ext_filt_rtr_mask & (1U << filt_idx) &&
-		     ((data->ext_filt_rtr >> filt_idx) & 1U) != frame.rtr) ||
-		    (data->std_filt_rtr_mask &  (1U << filt_idx) &&
-		     ((data->std_filt_rtr >> filt_idx) & 1U) != frame.rtr)) {
+		if (hdr.xtd != 0) {
+			rtr_filter_mask = (data->ext_filt_rtr_mask & BIT(filt_idx)) != 0;
+			rtr_filter = (data->ext_filt_rtr & BIT(filt_idx)) != 0;
+		} else {
+			rtr_filter_mask = (data->std_filt_rtr_mask & BIT(filt_idx)) != 0;
+			rtr_filter = (data->std_filt_rtr & BIT(filt_idx)) != 0;
+		}
+
+		if (rtr_filter_mask && (rtr_filter != frame.rtr)) {
+			/* RTR bit does not match filter RTR mask and bit, drop frame */
+			*fifo_ack_reg = get_idx;
 			continue;
 		}
 
@@ -740,13 +748,13 @@ int can_mcan_get_state(const struct device *dev, enum can_state *state,
 
 	if (state != NULL) {
 		if (can->psr & CAN_MCAN_PSR_BO) {
-			*state = CAN_BUS_OFF;
+			*state = CAN_STATE_BUS_OFF;
 		} else if (can->psr & CAN_MCAN_PSR_EP) {
-			*state = CAN_ERROR_PASSIVE;
+			*state = CAN_STATE_ERROR_PASSIVE;
 		} else if (can->psr & CAN_MCAN_PSR_EW) {
-			*state = CAN_ERROR_WARNING;
+			*state = CAN_STATE_ERROR_WARNING;
 		} else {
-			*state = CAN_ERROR_ACTIVE;
+			*state = CAN_STATE_ERROR_ACTIVE;
 		}
 	}
 
@@ -773,7 +781,7 @@ int can_mcan_recover(const struct device *dev, k_timeout_t timeout)
 
 
 int can_mcan_send(const struct device *dev,
-		  const struct zcan_frame *frame,
+		  const struct can_frame *frame,
 		  k_timeout_t timeout,
 		  can_tx_callback_t callback, void *user_data)
 {
@@ -817,7 +825,7 @@ int can_mcan_send(const struct device *dev,
 	}
 
 	if (can->psr & CAN_MCAN_PSR_BO) {
-		return -ENETDOWN;
+		return -ENETUNREACH;
 	}
 
 	ret = k_sem_take(&data->tx_sem, timeout);
@@ -894,7 +902,7 @@ int can_mcan_get_max_filters(const struct device *dev, enum can_ide id_type)
  */
 int can_mcan_add_rx_filter_std(const struct device *dev,
 			       can_rx_callback_t callback, void *user_data,
-			       const struct zcan_filter *filter)
+			       const struct can_filter *filter)
 {
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
@@ -958,7 +966,7 @@ static int can_mcan_get_free_ext(volatile struct can_mcan_ext_filter *filters)
 
 static int can_mcan_add_rx_filter_ext(const struct device *dev,
 				      can_rx_callback_t callback, void *user_data,
-				      const struct zcan_filter *filter)
+				      const struct can_filter *filter)
 {
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
@@ -1011,7 +1019,7 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev,
 
 int can_mcan_add_rx_filter(const struct device *dev,
 			   can_rx_callback_t callback, void *user_data,
-			   const struct zcan_filter *filter)
+			   const struct can_filter *filter)
 {
 	int filter_id;
 

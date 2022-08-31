@@ -14,6 +14,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &code_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -75,7 +76,6 @@
 
 	vdd_env: vdd-env {
 		compatible = "regulator-fixed";
-		label = "vdd_env";
 		regulator-name = "vdd_env";
 		enable-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -103,6 +103,7 @@
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
 		spi = &spi2;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -208,5 +209,9 @@ arduino_spi: &spi2 {
 
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};
+
+&ieee802154 {
 	status = "okay";
 };

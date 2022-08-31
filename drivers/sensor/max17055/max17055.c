@@ -12,6 +12,7 @@
 LOG_MODULE_REGISTER(max17055, CONFIG_SENSOR_LOG_LEVEL);
 
 #include "max17055.h"
+#include <zephyr/drivers/sensor/max17055.h>
 
 #define DT_DRV_COMPAT maxim_max17055
 
@@ -150,6 +151,11 @@ static int max17055_channel_get(const struct device *dev,
 		valp->val1 = tmp / 1000000;
 		valp->val2 = tmp % 1000000;
 		break;
+	case SENSOR_CHAN_MAX17055_VFOCV:
+		tmp = priv->ocv * 1250 / 16;
+		valp->val1 = tmp / 1000000;
+		valp->val2 = tmp % 1000000;
+		break;
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT: {
 		int current_ma;
 
@@ -174,12 +180,12 @@ static int max17055_channel_get(const struct device *dev,
 		set_millis(valp, tmp);
 		break;
 	case SENSOR_CHAN_GAUGE_TIME_TO_EMPTY:
-		/* Get time in ms */
 		if (priv->time_to_empty == 0xffff) {
 			valp->val1 = 0;
 			valp->val2 = 0;
 		} else {
-			tmp = priv->time_to_empty * 5625;
+			/* Get time in milli-minutes */
+			tmp = priv->time_to_empty * 5625 / 60;
 			set_millis(valp, tmp);
 		}
 		break;
@@ -188,8 +194,8 @@ static int max17055_channel_get(const struct device *dev,
 			valp->val1 = 0;
 			valp->val2 = 0;
 		} else {
-			/* Get time in ms */
-			tmp = priv->time_to_full * 5625;
+			/* Get time in milli-minutes */
+			tmp = priv->time_to_full * 5625 / 60;
 			set_millis(valp, tmp);
 		}
 		break;
@@ -228,6 +234,7 @@ static int max17055_sample_fetch(const struct device *dev,
 		int16_t *dest;
 	} regs[] = {
 		{ VCELL, &priv->voltage },
+		{ VFOCV, &priv->ocv },
 		{ AVG_CURRENT, &priv->avg_current },
 		{ REP_SOC, &priv->state_of_charge },
 		{ INT_TEMP, &priv->internal_temp },

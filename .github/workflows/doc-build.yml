@@ -26,7 +26,7 @@ on:
 
 env:
   # NOTE: west docstrings will be extracted from the version listed here
-  WEST_VERSION: 0.13.0a1
+  WEST_VERSION: 0.14.0
   # The latest CMake available directly with apt is 3.18, but we need >=3.20
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
@@ -35,8 +35,8 @@ env:
 jobs:
   doc-build-html:
     name: "Documentation Build (HTML)"
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    runs-on: ubuntu-20.04
+    timeout-minutes: 45
     concurrency:
       group: doc-build-html-${{ github.ref }}
       cancel-in-progress: true
@@ -91,7 +91,7 @@ jobs:
         tar cfJ html-output.tar.xz --directory=doc/_build html
 
     - name: upload-build
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v3
       with:
         name: html-output
         path: html-output.tar.xz
@@ -115,9 +115,9 @@ jobs:
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container: texlive/texlive:latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     concurrency:
       group: doc-build-pdf-${{ github.ref }}
       cancel-in-progress: true
@@ -159,7 +159,7 @@ jobs:
         DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -j auto" LATEXMKOPTS="-quiet -halt-on-error" make -C doc pdf
 
     - name: upload-build
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v3
       with:
         name: pdf-output
         path: doc/_build/latex/zephyr.pdf

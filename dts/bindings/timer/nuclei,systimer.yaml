@@ -1,0 +1,49 @@
+# Copyright (c) 2021 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuclei System Timer
+
+  The Nuclei system timer provides RISC-V privileged mtime and mtimecmp
+  registers.
+
+compatible: "nuclei,systimer"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    clk-divider:
+      type: int
+      required: false
+      description: |
+        clk-divider specifies the division ratio to the CPU frequency that
+        clock used by the system timer.
+        This property supports the case that the system timer and CPU use
+        different clock sources.
+        This configuration is used sometimes for such as low power consumption.
+
+        For example, the CPU clock frequency is 108MHz, and the system timer
+        uses 27MHz, which is the CPU clock divided by 4.
+        In this case, the CPU clock frequency is defined in the CPU node
+        as follows
+
+           clock-frequency = <108000000>;
+
+        This property takes exponent of the power of 2.
+        The relationship with the frequency division ratio is as
+        following equation.
+
+           division_ratio = 2^n
+           n = log_2(division_ratio)
+
+        Setting clk-divider to 2 specifies the system timer uses the clock
+        that CPU clock frequency divided by (2^2=)4, or 27MHz.
+
+        Devision ratio constants can be found in the
+        dt-bindings/timer/nuclei-systimer.h header file.

@@ -259,8 +259,6 @@ int tach_npcx_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	if (tach_npcx_is_underflow(dev)) {
 		/* Clear pending flags */
 		tach_npcx_clear_underflow_flag(dev);
-
-		LOG_INF("%s is underflow!", dev->name);
 		data->capture = 0;
 
 		return 0;
@@ -315,6 +313,11 @@ static int tach_npcx_init(const struct device *dev)
 	struct tach_npcx_data *const data = dev->data;
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int ret;
+
+	if (!device_is_ready(clk_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	/* Turn on device clock first and get source clock freq. */
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)

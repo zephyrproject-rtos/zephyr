@@ -4,10 +4,3 @@ tests:
     depends_on: dma
     tags: drivers dma
     platform_allow: frdm_k64f mimxrt1060_evk mimxrt1064_evk mimxrt1160_evk_cm7 mimxrt1170_evk_cm7
-  drivers.dma.chan_link_transfer.interactive:
-    depends_on: dma
-    extra_args: CONF_FILE=prj_shell.conf
-    min_ram: 16
-    tags: drivers dma
-    harness: keyboard
-    platform_allow: frdm_k64f mimxrt1060_evk mimxrt1064_evk mimxrt1160_evk_cm7 mimxrt1170_evk_cm7

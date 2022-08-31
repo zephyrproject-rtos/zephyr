@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define STACK_SIZE	(1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define PIPE_LEN	(4 * 16)

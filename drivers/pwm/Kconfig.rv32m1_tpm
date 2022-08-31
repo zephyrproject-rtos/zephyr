@@ -5,6 +5,8 @@
 
 config PWM_RV32M1_TPM
 	bool "RV32M1 TPM PWM driver"
-	depends on HAS_RV32M1_TPM && CLOCK_CONTROL
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_TPM_ENABLED
+	depends on CLOCK_CONTROL
 	help
 	  Enable the RV32M1 TPM PWM driver.

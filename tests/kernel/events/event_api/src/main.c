@@ -22,7 +22,7 @@
  * @}
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 ZTEST_SUITE(events_api, NULL, NULL,
 		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

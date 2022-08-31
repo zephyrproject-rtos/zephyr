@@ -11,7 +11,7 @@
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ONE(maxim_max17262);
+	const struct device *const dev = DEVICE_DT_GET_ONE(maxim_max17262);
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");

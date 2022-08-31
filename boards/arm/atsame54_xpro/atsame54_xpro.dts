@@ -80,7 +80,6 @@
 	compatible = "atmel,sam0-spi";
 	dipo = <3>;
 	dopo = <0>;
-	label = "SPI_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
 
@@ -92,7 +91,6 @@
 	status = "okay";
 	compatible = "atmel,sam0-i2c";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	label = "I2C_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
 

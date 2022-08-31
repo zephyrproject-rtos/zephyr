@@ -147,6 +147,11 @@ static int rv32m1_tpm_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	if (clock_control_on(config->clock_dev, config->clock_subsys)) {
 		LOG_ERR("Could not turn on clock");
 		return -EINVAL;

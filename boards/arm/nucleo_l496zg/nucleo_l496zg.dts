@@ -58,6 +58,7 @@
 		led2 = &red_led_3;
 		pwm-led0 = &red_pwm_led;
 		sw0 = &user_button;
+		watchdog0 = &wwdg;
 	};
 };
 

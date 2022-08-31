@@ -17,7 +17,6 @@ if CLOCK_CONTROL_STM32_CUBE
 
 DT_STM32_HSE_CLOCK := $(dt_nodelabel_path,clk_hse)
 DT_STM32_HSE_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_HSE_CLOCK),clock-frequency)
-DT_COMPAT_ST_MUX_CLOCK := st,stm32-clock-mux
 
 config CLOCK_STM32_HSE_CLOCK
 	int "HSE clock value"
@@ -36,7 +35,8 @@ config CLOCK_STM32_HSE_CLOCK
 
 config CLOCK_STM32_MUX
 	bool "STM32 clock mux driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_MUX_CLOCK))
+	default y
+	depends on DT_HAS_ST_STM32_CLOCK_MUX_ENABLED
 	help
 	  Enable driver for STM32 clock mux which don't match an
 	  existing clock hardware block but allows to select a clock

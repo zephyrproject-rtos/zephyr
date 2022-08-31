@@ -36,6 +36,14 @@ struct i2c_mcux_data {
 	struct k_sem lock;
 	struct k_sem device_sync_sem;
 	status_t callback_status;
+#ifdef CONFIG_I2C_CALLBACK
+	uint16_t addr;
+	uint32_t msg;
+	struct i2c_msg *msgs;
+	uint32_t num_msgs;
+	i2c_callback_t cb;
+	void *userdata;
+#endif /* CONFIG_I2C_CALLBACK */
 };
 
 static int i2c_mcux_configure(const struct device *dev,
@@ -77,16 +85,42 @@ static int i2c_mcux_configure(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_I2C_CALLBACK
+
+static void i2c_mcux_async_done(const struct device *dev, struct i2c_mcux_data *data, int result);
+static void i2c_mcux_async_iter(const struct device *dev);
+
+#endif
+
 static void i2c_mcux_master_transfer_callback(I2C_Type *base,
 					      i2c_master_handle_t *handle,
-					      status_t status, void *userData)
+					      status_t status, void *userdata)
 {
-	struct i2c_mcux_data *data = userData;
 
 	ARG_UNUSED(handle);
 	ARG_UNUSED(base);
 
+	struct device *dev = userdata;
+	struct i2c_mcux_data *data = dev->data;
+
+	#ifdef CONFIG_I2C_CALLBACK
+	if (data->cb != NULL) {
+		/* Async transfer */
+		if (status != kStatus_Success) {
+			I2C_MasterTransferAbort(base, &data->handle);
+			i2c_mcux_async_done(dev, data, -EIO);
+		} else if (data->msg == data->num_msgs - 1) {
+			i2c_mcux_async_done(dev, data, 0);
+		} else {
+			data->msg++;
+			i2c_mcux_async_iter(dev);
+		}
+		return;
+	}
+	#endif /* CONFIG_I2C_CALLBACK */
+
 	data->callback_status = status;
+
 	k_sem_give(&data->device_sync_sem);
 }
 
@@ -174,6 +208,95 @@ static int i2c_mcux_transfer(const struct device *dev, struct i2c_msg *msgs,
 	return ret;
 }
 
+#ifdef CONFIG_I2C_CALLBACK
+
+static void i2c_mcux_async_done(const struct device *dev, struct i2c_mcux_data *data, int result)
+{
+
+	i2c_callback_t cb = data->cb;
+	void *userdata = data->userdata;
+
+	data->msg = 0;
+	data->msgs = NULL;
+	data->num_msgs = 0;
+	data->cb = NULL;
+	data->userdata = NULL;
+	data->addr = 0;
+
+	k_sem_give(&data->lock);
+
+	/* Callback may wish to start another transfer */
+	cb(dev, result, userdata);
+}
+
+/* Start a transfer asynchronously */
+static void i2c_mcux_async_iter(const struct device *dev)
+{
+	I2C_Type *base = DEV_BASE(dev);
+	struct i2c_mcux_data *data = dev->data;
+	i2c_master_transfer_t transfer;
+	status_t status;
+	struct i2c_msg *msg = &data->msgs[data->msg];
+
+	if (I2C_MSG_ADDR_10_BITS & msg->flags) {
+		i2c_mcux_async_done(dev, data, -ENOTSUP);
+		return;
+	}
+
+	/* Initialize the transfer descriptor */
+	transfer.flags = i2c_mcux_convert_flags(msg->flags);
+	transfer.slaveAddress = data->addr;
+	transfer.direction = (msg->flags & I2C_MSG_READ) ? kI2C_Read : kI2C_Write;
+	transfer.subaddress = 0;
+	transfer.subaddressSize = 0;
+	transfer.data = msg->buf;
+	transfer.dataSize = msg->len;
+
+	/* Prevent the controller to send a start condition between
+	 * messages, except if explicitly requested.
+	 */
+	if (data->msg != 0 && !(msg->flags & I2C_MSG_RESTART)) {
+		transfer.flags |= kI2C_TransferNoStartFlag;
+	}
+
+	/* Start the transfer */
+	status = I2C_MasterTransferNonBlocking(base, &data->handle, &transfer);
+
+	/* Return an error if the transfer didn't start successfully
+	 * e.g., if the bus was busy
+	 */
+	if (status != kStatus_Success) {
+		I2C_MasterTransferAbort(base, &data->handle);
+		i2c_mcux_async_done(dev, data, -EIO);
+	}
+}
+
+static int i2c_mcux_transfer_cb(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+				   uint16_t addr, i2c_callback_t cb, void *userdata)
+{
+	struct i2c_mcux_data *data = dev->data;
+
+	int res = k_sem_take(&data->lock, K_NO_WAIT);
+
+	if (res != 0) {
+		return -EWOULDBLOCK;
+	}
+
+	data->msg = 0;
+	data->msgs = msgs;
+	data->num_msgs = num_msgs;
+	data->addr = addr;
+	data->cb = cb;
+	data->userdata = userdata;
+	data->addr = addr;
+
+	i2c_mcux_async_iter(dev);
+
+	return 0;
+}
+
+#endif /* CONFIG_I2C_CALLBACK */
+
 static void i2c_mcux_isr(const struct device *dev)
 {
 	I2C_Type *base = DEV_BASE(dev);
@@ -198,7 +321,7 @@ static int i2c_mcux_init(const struct device *dev)
 	I2C_MasterGetDefaultConfig(&master_config);
 	I2C_MasterInit(base, &master_config, clock_freq);
 	I2C_MasterTransferCreateHandle(base, &data->handle,
-				       i2c_mcux_master_transfer_callback, data);
+				       i2c_mcux_master_transfer_callback, (void *)dev);
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
@@ -220,6 +343,9 @@ static int i2c_mcux_init(const struct device *dev)
 static const struct i2c_driver_api i2c_mcux_driver_api = {
 	.configure = i2c_mcux_configure,
 	.transfer = i2c_mcux_transfer,
+#ifdef CONFIG_I2C_CALLBACK
+	.transfer_cb = i2c_mcux_transfer_cb,
+#endif
 };
 
 #define I2C_DEVICE_INIT_MCUX(n)			\

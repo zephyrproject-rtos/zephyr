@@ -359,3 +359,8 @@ static inline const char *bt_ascs_reason_str(uint8_t reason)
 
 	return "Unknown";
 }
+
+void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state);
+int ascs_ep_set_metadata(struct bt_audio_ep *ep,
+			 struct net_buf_simple *buf, uint8_t len,
+			 struct bt_codec *codec);

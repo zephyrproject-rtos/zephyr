@@ -32,6 +32,7 @@ struct ll_adv_set {
 	uint8_t  rnd_addr[BDADDR_SIZE];
 	uint8_t  sid:4;
 	uint8_t  is_created:1;
+	uint8_t  is_ad_data_cmplt:1;
 #if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
 	uint8_t  hci_handle;
 #endif
@@ -90,6 +91,8 @@ struct ll_adv_sync_set {
 	uint8_t is_enabled:1;
 	uint8_t is_started:1;
 	uint8_t is_data_cmplt:1;
+
+	uint32_t aux_remainder;
 };
 
 struct ll_adv_iso_set {

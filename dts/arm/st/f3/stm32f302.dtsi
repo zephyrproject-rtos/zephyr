@@ -23,7 +23,6 @@
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
-			label= "I2C_2";
 		};
 
 		i2c3: i2c@40007800 {
@@ -36,7 +35,6 @@
 			interrupts = <72 0>, <73 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
-			label= "I2C_3";
 		};
 
 		spi2: spi@40003800 {
@@ -47,7 +45,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <36 5>;
 			status = "disabled";
-			label = "SPI_2";
 		};
 
 		spi3: spi@40003c00 {
@@ -58,7 +55,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
 			interrupts = <51 5>;
 			status = "disabled";
-			label = "SPI_3";
 		};
 
 		timers1: timers@40012c00 {
@@ -69,12 +65,10 @@
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_1";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_1";
 				#pwm-cells = <3>;
 			};
 		};
@@ -85,7 +79,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x10000000>;
 			interrupts = <18 0>;
 			status = "disabled";
-			label = "ADC_1";
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;

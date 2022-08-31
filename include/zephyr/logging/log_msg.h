@@ -223,7 +223,7 @@ do { \
 	struct log_msg *_msg; \
 	Z_LOG_MSG2_ON_STACK_ALLOC(_msg, Z_LOG_MSG2_LEN(_plen, 0)); \
 	Z_LOG_ARM64_VLA_PROTECT(); \
-	if (_plen) { \
+	if (_plen != 0) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, \
 					_plen, Z_LOG_MSG2_ALIGN_OFFSET, flags, \
 					__VA_ARGS__);\
@@ -234,7 +234,7 @@ do { \
 	LOG_MSG2_DBG("creating message on stack: package len: %d, data len: %d\n", \
 			_plen, (int)(_dlen)); \
 	z_log_msg_static_create((void *)_source, _desc, _msg->data, _data); \
-} while (0)
+} while (false)
 
 #ifdef CONFIG_LOG_SPEED
 #define Z_LOG_MSG2_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, _level, ...) do { \
@@ -255,7 +255,7 @@ do { \
 					__VA_ARGS__); \
 	} \
 	z_log_msg_finalize(_msg, (void *)_source, _desc, NULL); \
-} while (0)
+} while (false)
 #else
 /* Alternative empty macro created to speed up compilation when LOG_SPEED is
  * disabled (default).
@@ -395,7 +395,7 @@ do {\
 				   CBPRINTF_PACKAGE_ARGS_ARE_TAGGED : 0), \
 				  Z_LOG_FMT_RUNTIME_ARGS(_fmt, ##__VA_ARGS__));\
 	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
-} while (0)
+} while (false)
 #else /* CONFIG_LOG_ALWAYS_RUNTIME */
 #define Z_LOG_MSG2_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
@@ -416,7 +416,7 @@ do { \
 		_mode = Z_LOG_MSG2_MODE_FROM_STACK; \
 	} \
 	(void)_mode; \
-} while (0)
+} while (false)
 
 #if defined(__cplusplus)
 #define Z_AUTO_TYPE auto
@@ -447,7 +447,7 @@ do { \
 	Z_LOG_MSG2_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			   _level, _data, _dlen, \
 			   FOR_EACH_IDX(Z_LOG_LOCAL_ARG_NAME, (,), __VA_ARGS__)); \
-} while (0)
+} while (false)
 #endif /* CONFIG_LOG_ALWAYS_RUNTIME ||
 	* (!LOG && (!TOOLCHAIN_HAS_PRAGMA_DIAG || !TOOLCHAIN_HAS_C_AUTO_TYPE))
 	*/

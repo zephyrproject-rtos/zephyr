@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/mipi_dsi.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /**
  * @addtogroup t_mipi_dsi_driver
@@ -14,7 +14,7 @@
  * @}
  */
 
-static const struct device *mipi_dev = DEVICE_DT_GET(DT_ALIAS(mipi_dsi));
+static const struct device *const mipi_dev = DEVICE_DT_GET(DT_ALIAS(mipi_dsi));
 
 /**
  * Test the MIPI generic APIs to test read and write API functionality

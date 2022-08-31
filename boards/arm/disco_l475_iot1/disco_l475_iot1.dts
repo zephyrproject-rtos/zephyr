@@ -42,12 +42,44 @@
 		};
 	};
 
+	power-states {
+		stop0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <500>;
+		};
+		stop1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <700>;
+		};
+		stop2: state2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <3>;
+			min-residency-us = <1000>;
+		};
+	};
+
 	aliases {
 		led0 = &green_led_2;
 		led1 = &green_led_1;
 		sw0 = &user_button;
 		eswifi0 = &wifi0;
+		watchdog0 = &iwdg;
+		spi-flash0 = &mx25r6435f;
+		accel0 = &lsm6dsl;
 	};
+};
+
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1 &stop2>;
+};
+
+&clk_lse {
+	status = "okay";
 };
 
 &clk_hsi {
@@ -102,32 +134,27 @@
 	lis3mdl-magn@1e {
 		compatible = "st,lis3mdl-magn";
 		reg = <0x1e>;
-		label = "LIS3MDL";
 	};
 
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
-		label = "HTS221";
 	};
 
 	lps22hb-press@5d {
 		compatible = "st,lps22hb-press";
 		reg = <0x5d>;
-		label = "LPS22HB";
 	};
 
-	lsm6dsl@6a {
+	lsm6dsl: lsm6dsl@6a {
 		compatible = "st,lsm6dsl";
 		reg = <0x6a>;
 		irq-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
-		label = "LSM6DSL";
 	};
 
 	vl53l0x@29 {
 		compatible = "st,vl53l0x";
 		reg = <0x29>;
-		label = "VL53L0X";
 		xshut-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 	};
 };
@@ -163,7 +190,6 @@
 		reset-gpios = <&gpioa 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		irq-gpios = <&gpioe 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		spi-max-frequency = <2000000>;
-		label = "SPBTLE-RF";
 	};
 
 	wifi0: ism43362@1 {
@@ -174,7 +200,6 @@
 		boot0-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
 		wakeup-gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
 		data-gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
-		label = "ESWIFI0";
 	};
 };
 
@@ -218,6 +243,8 @@
 };
 
 &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
 
@@ -248,6 +275,10 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&die_temp {
+	status = "okay";
+};
+
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
@@ -270,7 +301,6 @@ zephyr_udc0: &usbotg_fs {
 
 	mx25r6435f: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		label = "MX25R6435F";
 		reg = <0>;
 		qspi-max-frequency = <50000000>;
 		/* 64 Megabits = 8 Megabytes */

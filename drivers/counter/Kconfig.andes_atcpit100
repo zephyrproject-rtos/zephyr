@@ -1,0 +1,12 @@
+# Kconfig Andes ATCPIT100 configuration option
+#
+# Copyright (c) 2022 Andes Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_ANDES_ATCPIT100
+	bool "Andes ATCPIT100 PIT driver"
+	default y
+	depends on DT_HAS_ANDESTECH_ATCPIT100_ENABLED
+	help
+	  Enable driver for the Andes ATCPIT100 PIT controller.

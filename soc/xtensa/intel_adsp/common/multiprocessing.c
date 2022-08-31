@@ -21,8 +21,8 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 #include <cavs-idc.h>
 #include <soc.h>
 #include <zephyr/arch/xtensa/cache.h>
-#include <cavs-shim.h>
-#include <cavs-mem.h>
+#include <adsp_shim.h>
+#include <adsp_memory.h>
 #include <cpu_init.h>
 
 struct cpustart_rec {
@@ -108,7 +108,7 @@ __imr void z_mp_entry(void)
 	 * isn't using yet.  Manual inspection of generated code says
 	 * we're safe, but really we need a better solution here.
 	 */
-	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
 		z_xtensa_cache_flush_inv_all();
 	}
 

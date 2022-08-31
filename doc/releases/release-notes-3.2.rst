@@ -19,10 +19,26 @@ API Changes
 Changes in this release
 =======================
 
+* Zephyr now requires Python 3.8 or higher
+
 * Changed :c:struct:`spi_cs_control` to remove anonymous struct.
   This causes possible breakage for static initialization of the
   struct.  Updated :c:macro:`SPI_CS_CONTROL_PTR_DT` to reflect
   this change.
+
+* The :kconfig:option:`CONFIG_LEGACY_INCLUDE_PATH` option has been disabled by
+  default, all upstream code and modules have been converted to use
+  ``<zephyr/...>`` header paths. The option is still available to facilitate
+  the migration of external applications, but will be removed with the 3.4
+  release.  The :zephyr_file:`scripts/utils/migrate_includes.py` script is
+  provided to automate the migration.
+
+* :zephyr_file:`include/zephyr/zephyr.h` no longer defines ``__ZEPHYR__``.
+  This definition can be used by third-party code to compile code conditional
+  to Zephyr. The definition is already injected by the Zephyr build system.
+  Therefore, any third-party code integrated using the Zephyr build system will
+  require no changes. External build systems will need to inject the definition
+  by themselves, if they did not already.
 
 Removed APIs in this release
 ============================
@@ -60,8 +76,19 @@ Deprecated in this release
   :c:macro:`DT_GPIO_LABEL_BY_IDX`, and :c:macro:`DT_INST_GPIO_LABEL_BY_IDX`,
   are deprecated in favor of utilizing :c:macro:`DT_GPIO_CTLR` and variants.
 
+* :c:macro:`DT_LABEL`, and :c:macro:`DT_INST_LABEL`, are deprecated
+  in favor of utilizing :c:macro:`DT_PROP` and variants.
+
 * :c:macro:`DT_BUS_LABEL`, and :c:macro:`DT_INST_BUS_LABEL`, are deprecated
   in favor of utilizing :c:macro:`DT_BUS` and variants.
+
+* STM32 LPTIM domain clock should now be configured using devicetree.
+  Related Kconfig :kconfig:option:`CONFIG_STM32_LPTIM_CLOCK` option is now
+  deprecated.
+
+* 'label' property from devicetree as a base property.  The property is still
+   valid for specific bindings to specify like :dtcompatible:`gpio-leds` and
+   :dtcompatible:`fixed-partitions`.
 
 Stable API changes in this release
 ==================================
@@ -95,6 +122,17 @@ Bluetooth
 * Direction Finding
 
 * Host
+
+  * Added a new callback :c:func:`rpa_expired` in the struct :c:struct:`bt_le_ext_adv_cb`
+    to enable synchronization of the advertising payload updates with the Resolvable Private
+    Address (RPA) rotations when the :kconfig:option:`CONFIG_BT_PRIVACY` is enabled.
+  * Added a new :c:func:`bt_le_set_rpa_timeout()` API call to dynamically change the
+    the Resolvable Private Address (RPA) timeout when the :kconfig:option:`CONFIG_BT_RPA_TIMEOUT_DYNAMIC`
+    is enabled.
+  * Added :c:func:`bt_conn_auth_cb_overlay` to overlay authentication callbacks for a Bluetooth LE connection.
+  * Removed ``CONFIG_BT_HCI_ECC_STACK_SIZE``.
+    The Bluetooth long workqueue (:kconfig:option:`CONFIG_BT_LONG_WQ`) is used for processing ECC commands instead of the dedicated thread.
+  * :c:func:`bt_conn_get_security` and `bt_conn_enc_key_size` now take a ``const struct bt_conn*`` argument.
 
 * Mesh
 
@@ -157,6 +195,10 @@ Drivers and Sensors
 
 * I2S
 
+* IEEE 802.15.4
+
+  * All IEEE 802.15.4 drivers have been converted to Devicetree-based drivers.
+
 * Interrupt Controller
 
 * MBOX
@@ -183,6 +225,9 @@ Drivers and Sensors
 
 Networking
 **********
+
+* ``CONFIG_NET_CONFIG_IEEE802154_DEV_NAME`` has been removed in favor of
+  using a Devicetree choice given by ``zephyr,ieee802154``.
 
 USB
 ***

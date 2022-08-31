@@ -4,21 +4,18 @@
 # Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ESPRESSIF_ESP32_LEDC := espressif,esp32-ledc
-DT_COMPAT_ESPRESSIF_ESP32_MCPWM := espressif,esp32-mcpwm
-
 config PWM_LED_ESP32
 	bool "ESP32 PWM LED driver"
-	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
-	default $(dt_compat_enabled,$(DT_COMPAT_ESPRESSIF_ESP32_LEDC))
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_LEDC_ENABLED
 	help
 	  This option enables the PWM LED driver for ESP32 family of
 	  processors.
 
 config MCPWM_ESP32
 	bool "ESP32 MCPWM driver"
-	depends on SOC_ESP32
-	default $(dt_compat_enabled,$(DT_COMPAT_ESPRESSIF_ESP32_MCPWM))
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_MCPWM_ENABLED
 	help
 	  This option enables the MCPWM driver for ESP32 family of
 	  processors.

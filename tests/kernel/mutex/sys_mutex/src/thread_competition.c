@@ -3,13 +3,16 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#ifndef CONFIG_USERSPACE
+
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/sys/mutex.h>
 
-#define HIGH_T1	 0xaaa
-#define HIGH_T2	 0xbbb
-#define LOW_PRO	 0xccc
+#define HIGH_T1	 0
+#define HIGH_T2	 1
+#define LOW_PRO	 2
 
 #define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
@@ -25,7 +28,7 @@ static uint32_t flag[3];
 /* The order of threads getting mutex is judged by index
  * self addition.
  */
-static uint32_t index;
+static uint32_t order;
 
 static void low_prio_wait_for_mutex(void *p1, void *p2, void *p3)
 {
@@ -33,9 +36,9 @@ static void low_prio_wait_for_mutex(void *p1, void *p2, void *p3)
 
 	sys_mutex_lock(pmutex, K_FOREVER);
 
-	flag[index] = LOW_PRO;
+	flag[2] = order;
 
-	index++;
+	order++;
 	/* Keep mutex for a while */
 	k_sleep(K_MSEC(10));
 
@@ -48,9 +51,9 @@ static void high_prio_t1_wait_for_mutex(void *p1, void *p2, void *p3)
 
 	sys_mutex_lock(pmutex, K_FOREVER);
 
-	flag[index] = HIGH_T1;
+	flag[0] = order;
 
-	index++;
+	order++;
 	/* Keep mutex for a while */
 	k_sleep(K_MSEC(10));
 
@@ -63,9 +66,9 @@ static void high_prio_t2_wait_for_mutex(void *p1, void *p2, void *p3)
 
 	sys_mutex_lock(pmutex, K_FOREVER);
 
-	flag[index] = HIGH_T2;
+	flag[1] = order;
 
-	index++;
+	order++;
 	/* Keep mutex for a while */
 	k_sleep(K_MSEC(10));
 
@@ -86,10 +89,12 @@ static void high_prio_t2_wait_for_mutex(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_mutex_tests
  */
-void test_mutex_multithread_competition(void)
+ZTEST(mutex_complex, test_mutex_multithread_competition)
 {
 	int old_prio = k_thread_priority_get(k_current_get());
 	int prio = 10;
+	flag[0] = flag[1] = flag[2] = 0;
+	order = 0;
 
 	sys_mutex_lock(&mutex, K_NO_WAIT);
 
@@ -136,3 +141,5 @@ void test_mutex_multithread_competition(void)
 	/* Revert priority of the main thread */
 	k_thread_priority_set(k_current_get(), old_prio);
 }
+
+#endif /** not CONFIG_USERSPACE */

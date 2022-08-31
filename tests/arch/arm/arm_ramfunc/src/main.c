@@ -8,6 +8,6 @@
   #error test can only run on Cortex-M MCUs
 #endif
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 ZTEST_SUITE(arm_ramfunc, NULL, NULL, NULL, NULL, NULL);

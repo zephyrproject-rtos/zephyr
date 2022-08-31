@@ -5,7 +5,8 @@
 
 config WDT_NPCX
 	bool "Nuvoton NPCX embedded controller (EC) Watchdog Timer driver"
-	depends on SOC_FAMILY_NPCX
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_WATCHDOG_ENABLED
 	help
 	  This option enables the Watchdog Timer driver for NPCX family of
 	  processors.

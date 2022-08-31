@@ -69,6 +69,8 @@
 		led1 = &green_led_7;
 		sw0 = &user_button;
 		magn0 = &lsm303dlhc_magn;
+		watchdog0 = &iwdg;
+		accel0 = &lsm303dlhc_accel;
 	};
 };
 
@@ -123,15 +125,13 @@
 	lsm303dlhc_magn: lsm303dlhc-magn@1e {
 		compatible = "st,lsm303dlhc-magn";
 		reg = <0x1e>;
-		label = "LSM303DLHC-MAGN";
 	};
 
-	lsm303dlhc-accel@19 {
+	lsm303dlhc_accel: lsm303dlhc-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303dlhc-accel";
 		reg = <0x19>;
 		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
 			  <&gpioe 5 GPIO_ACTIVE_HIGH>;
-		label = "LSM303DLHC-ACCEL";
 	};
 };
 
@@ -205,6 +205,10 @@ zephyr_udc0: &usb {
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pa0>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 

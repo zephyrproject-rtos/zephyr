@@ -2,9 +2,8 @@
 # Copyright (c) 2021 Alexander Wachter
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ATMEL_SAM_CAN := atmel,sam-can
-
 config CAN_SAM
 	bool "Atmel SAM CAN driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ATMEL_SAM_CAN))
+	default y
+	depends on DT_HAS_ATMEL_SAM_CAN_ENABLED
 	select CAN_MCAN

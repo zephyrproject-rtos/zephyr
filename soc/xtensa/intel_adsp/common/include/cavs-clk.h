@@ -47,9 +47,13 @@ struct cavs_clock_info *cavs_clocks_get(void);
 
 #define CAVS_CLOCK_FREQ(name)   DT_PROP(DT_NODELABEL(clkctl), cavs_clkctl_clk_##name)
 
+#if DT_PROP(DT_NODELABEL(clkctl), wovcro_supported)
+#define CAVS_CLOCK_HAS_WOVCRO
+#endif
+
 #define CAVS_CLOCK_FREQ_LPRO  CAVS_CLOCK_FREQ(lpro)
 #define CAVS_CLOCK_FREQ_HPRO  CAVS_CLOCK_FREQ(hpro)
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+#ifdef CAVS_CLOCK_HAS_WOVCRO
 #define CAVS_CLOCK_FREQ_WOVCRO  CAVS_CLOCK_FREQ(wovcro)
 #endif
 

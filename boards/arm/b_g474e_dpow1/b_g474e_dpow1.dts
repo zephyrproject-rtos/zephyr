@@ -73,6 +73,7 @@
 		sw2 = &joystick_down;
 		sw3 = &joystick_right;
 		sw4 = &joystick_up;
+		watchdog0 = &iwdg;
 	};
 };
 

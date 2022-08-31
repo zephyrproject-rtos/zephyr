@@ -15,7 +15,6 @@ description: |
           compatible = "ti,tca9546a";
           reg = <0x77>;
           status = "okay";
-          label = "i2c_mux";
           #address-cells = <1>;
           #size-cells = <0>;
           reset-gpios = <&gpio5 3 GPIO_ACTIVE_LOW>;

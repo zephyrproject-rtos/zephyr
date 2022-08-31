@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define STACKSIZE 1024
 
@@ -52,7 +52,7 @@ static void usr_fp_thread_entry_2(void)
 	}
 }
 
-void test_k_float_disable_common(void)
+ZTEST(k_float_disable, test_k_float_disable_common)
 {
 	ret = TC_PASS;
 
@@ -103,7 +103,7 @@ void test_k_float_disable_common(void)
 #endif
 }
 
-void test_k_float_disable_syscall(void)
+ZTEST(k_float_disable, test_k_float_disable_syscall)
 {
 	ret = TC_PASS;
 
@@ -154,7 +154,7 @@ void test_k_float_disable_syscall(void)
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #else
-#include <interrupt_util.h>
+#include <zephyr/interrupt_util.h>
 #endif
 
 struct k_thread sup_fp_thread;
@@ -239,7 +239,7 @@ static void sup_fp_thread_entry(void)
 	}
 }
 
-void test_k_float_disable_irq(void)
+ZTEST(k_float_disable, test_k_float_disable_irq)
 {
 	ret = TC_PASS;
 
@@ -263,9 +263,11 @@ void test_k_float_disable_irq(void)
 	zassert_true(ok, "");
 }
 #else
-void test_k_float_disable_irq(void)
+ZTEST(k_float_disable, test_k_float_disable_irq)
 {
 	TC_PRINT("This is not an ARM system with DYNAMIC_INTERRUPTS.\n");
 	ztest_test_skip();
 }
 #endif /* CONFIG_ARM && CONFIG_DYNAMIC_INTERRUPTS */
+
+ZTEST_SUITE(k_float_disable, NULL, NULL, NULL, NULL, NULL);

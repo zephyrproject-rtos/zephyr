@@ -1,11 +1,10 @@
 # Copyright (c) 2021 Kent Hall
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ST_STM32_COUNTER := st,stm32-counter
-
 config COUNTER_TIMER_STM32
 	bool "STM32 counter driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_COUNTER))
+	default y
+	depends on DT_HAS_ST_STM32_COUNTER_ENABLED
 	select USE_STM32_LL_TIM
 	help
 	  Enable the counter driver for STM32 family of processors.

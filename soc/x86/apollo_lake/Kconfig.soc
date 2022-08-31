@@ -5,7 +5,6 @@ config SOC_APOLLO_LAKE
 	bool "Intel Apollo Lake Soc"
 	select X86
 	select CPU_APOLLO_LAKE
-	select HAS_I2C_DW if I2C
 	select PCIE
 	select PCIE_MSI
 	select DYNAMIC_INTERRUPTS

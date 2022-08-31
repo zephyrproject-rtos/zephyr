@@ -7,7 +7,7 @@
 
 #include "settings_test.h"
 
-void test_config_getset_int64(void)
+ZTEST(settings_config, test_config_getset_int64)
 {
 	char name[80];
 	char tmp[64];

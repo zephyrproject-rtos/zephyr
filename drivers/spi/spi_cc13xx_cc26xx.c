@@ -140,7 +140,7 @@ static int spi_cc13xx_cc26xx_transceive(const struct device *dev,
 	uint32_t txd, rxd;
 	int err;
 
-	spi_context_lock(ctx, false, NULL, config);
+	spi_context_lock(ctx, false, NULL, NULL, config);
 	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 
 	err = spi_cc13xx_cc26xx_configure(dev, config);
@@ -248,7 +248,7 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 		} else {						  \
 			Power_setDependency(PowerCC26XX_PERIPH_SSI1);	  \
 		}							  \
-	} while (0)
+	} while (false)
 #else
 #define SPI_CC13XX_CC26XX_POWER_SPI(n)					  \
 	do {								  \
@@ -281,7 +281,7 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 			PRCM_DOMAIN_POWER_ON) {				  \
 			continue;					  \
 		}							  \
-	} while (0)
+	} while (false)
 #endif
 
 #define SPI_CC13XX_CC26XX_DEVICE_INIT(n)				    \

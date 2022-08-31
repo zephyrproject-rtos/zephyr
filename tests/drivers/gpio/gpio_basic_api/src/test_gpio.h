@@ -10,7 +10,7 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if DT_NODE_HAS_STATUS(DT_INST(0, test_gpio_basic_api), okay)
 

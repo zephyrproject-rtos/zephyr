@@ -26,17 +26,6 @@ choice
 		  Configure this device to operate as a CP (Control Panel)
 endchoice
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_OSDP_UART := zephyr,osdp-uart
-
-config OSDP_UART_DEV_NAME
-	string "Device name of UART device for OSDP"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_OSDP_UART))" if HAS_DTS
-	default "UART_2"
-	help
-	  This option specifies the name of UART device to be used for
-	  OSDP
-
 config OSDP_UART_BAUD_RATE
 	int "OSDP UART baud rate"
 	default 115200

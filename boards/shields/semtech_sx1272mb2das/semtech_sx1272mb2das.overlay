@@ -18,7 +18,6 @@
 	lora: lora@0 {
 		compatible = "semtech,sx1272";
 		reg = <0x0>;
-		label = "sx1272";
 		spi-max-frequency = <3000000>;
 
 		reset-gpios = <&arduino_header 0 GPIO_ACTIVE_HIGH>;   /* A0 */

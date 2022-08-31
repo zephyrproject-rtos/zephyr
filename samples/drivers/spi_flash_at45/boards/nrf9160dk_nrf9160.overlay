@@ -34,7 +34,6 @@
 		compatible = "atmel,at45";
 		reg = <0>;
 		spi-max-frequency = <15000000>;
-		label = "DATAFLASH_0";
 		jedec-id = [1f 24 00];
 		size = <4194304>;
 		sector-size = <65536>;
@@ -49,7 +48,6 @@
 		compatible = "atmel,at45";
 		reg = <1>;
 		spi-max-frequency = <15000000>;
-		label = "DATAFLASH_1";
 		jedec-id = [1f 27 01];
 		size = <33554432>;
 		sector-size = <65536>;

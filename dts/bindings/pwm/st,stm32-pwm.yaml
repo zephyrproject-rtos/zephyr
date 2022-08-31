@@ -5,24 +5,11 @@ compatible: "st,stm32-pwm"
 include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
 
 properties:
-    label:
-      required: true
-
     pinctrl-0:
       required: true
 
     pinctrl-names:
       required: true
-
-    st,prescaler:
-      type: int
-      required: false
-      deprecated: true
-      description: |
-        Clock prescaler at the input of the timer
-        Note: This property is obsolete and was replaced by "st,prescaler"
-        binding of parent timer node. It is kept temporarily for compatibility
-        reasons.
 
     "#pwm-cells":
       const: 3

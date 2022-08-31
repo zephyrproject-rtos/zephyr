@@ -9,9 +9,9 @@
  * This file contains the main testing module that invokes all the tests.
  */
 
-#include <timestamp.h>
+#include <zephyr/timestamp.h>
 #include "utils.h"
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 

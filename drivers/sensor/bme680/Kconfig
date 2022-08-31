@@ -7,7 +7,10 @@
 
 menuconfig BME680
 	bool "BME680 sensor"
-	depends on I2C || SPI
+	default y
+	depends on DT_HAS_BOSCH_BME680_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME680),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME680),spi)
 	help
 	  Enable driver for BME680 I2C- or SPI- based temperature, pressure, humidity and gas sensor.
 

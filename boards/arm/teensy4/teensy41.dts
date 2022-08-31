@@ -13,7 +13,6 @@
 	w25q64jvxgim: w25q64jvxgim@0 {
 		compatible = "winbond,w25q64jvxgim", "jedec,spi-nor";
 		size = < 8388607 >;
-		label = "W25Q64JVXGIM";
 		reg = < 0 >;
 		spi-max-frequency = < 133000000 >;
 		status = "okay";

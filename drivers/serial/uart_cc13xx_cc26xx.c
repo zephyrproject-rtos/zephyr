@@ -510,7 +510,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		Power_registerNotify(&data->postNotify,			\
 			PowerCC26XX_AWAKE_STANDBY,			\
 			postNotifyFxn, (uintptr_t)dev);			\
-	} while (0)
+	} while (false)
 #else
 #define UART_CC13XX_CC26XX_POWER_UART(n)				\
 	do {								\
@@ -541,7 +541,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 			PRCM_DOMAIN_POWER_ON) {				     \
 			continue;					     \
 		}							     \
-	} while (0)
+	} while (false)
 #endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -560,7 +560,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		irq_enable(DT_INST_IRQN(n));				\
 		/* Causes an initial TX ready INT when TX INT enabled */\
 		UARTCharPutNonBlocking(config->reg, '\0');		\
-	} while (0)
+	} while (false)
 
 #define UART_CC13XX_CC26XX_INT_FIELDS					\
 	.callback = NULL,						\
@@ -579,11 +579,6 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		&uart_cc13xx_cc26xx_data_##n, &uart_cc13xx_cc26xx_config_##n,\
 		PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		     \
 		&uart_cc13xx_cc26xx_driver_api)
-
-#ifdef CONFIG_PM_DEVICE
-#define UART_CC13XX_CC26XX_DEVICE_INIT(n)				\
-	UART_CC13XX_CC26XX_DEVICE_DEFINE(n)
-#endif
 
 #define UART_CC13XX_CC26XX_INIT_FUNC(n)					    \
 	static int uart_cc13xx_cc26xx_init_##n(const struct device *dev)	    \

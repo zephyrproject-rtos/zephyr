@@ -16,7 +16,7 @@ import subprocess
 import threading
 import select
 import re
-from twisterlib.enviornment import ZEPHYR_BASE
+from twisterlib.environment import ZEPHYR_BASE
 
 try:
     import serial
@@ -172,7 +172,7 @@ class BinaryHandler(Handler):
             os.unlink(self.pid_fn)
             self.pid_fn = None  # clear so we don't try to kill the binary twice
             try:
-                os.kill(pid, signal.SIGTERM)
+                os.kill(pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
 
@@ -286,7 +286,7 @@ class BinaryHandler(Handler):
         # FIXME: This is needed when killing the simulator, the console is
         # garbled and needs to be reset. Did not find a better way to do that.
         if sys.stdout.isatty():
-            subprocess.call(["stty", "sane"])
+            subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
         if harness.is_pytest:
             harness.pytest_run(self.log)
@@ -482,8 +482,6 @@ class DeviceHandler(Handler):
                         command.append("--tool-opt=-SelectEmuBySN  %s" % (board_id))
                     elif runner == "stm32cubeprogrammer":
                         command.append("--tool-opt=sn=%s" % (board_id))
-                    elif runner == "intel_adsp":
-                        command.append("--pty")
 
                     # Receive parameters from runner_params field.
                     if hardware.runner_params:
@@ -544,6 +542,7 @@ class DeviceHandler(Handler):
 
         d_log = "{}/device.log".format(self.instance.build_dir)
         logger.debug('Flash command: %s', command)
+        flash_error = False
         try:
             stdout = stderr = None
             with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
@@ -555,6 +554,7 @@ class DeviceHandler(Handler):
                     if proc.returncode != 0:
                         self.instance.status = "error"
                         self.instance.reason = "Device issue (Flash error?)"
+                        flash_error = True
                         with open(d_log, "w") as dlog_fp:
                             dlog_fp.write(stderr.decode())
                         os.write(write_pipe, b'x')  # halt the thread
@@ -564,17 +564,30 @@ class DeviceHandler(Handler):
                     (stdout, stderr) = proc.communicate()
                     self.instance.status = "error"
                     self.instance.reason = "Device issue (Timeout)"
+                    flash_error = True
 
             with open(d_log, "w") as dlog_fp:
                 dlog_fp.write(stderr.decode())
 
         except subprocess.CalledProcessError:
             os.write(write_pipe, b'x')  # halt the thread
+            self.instance.status = "error"
+            self.instance.reason = "Device issue (Flash error)"
+            flash_error = True
 
         if post_flash_script:
             self.run_custom_script(post_flash_script, 30)
 
-        t.join(self.timeout)
+        if not flash_error:
+            t.join(self.timeout)
+        else:
+            # When the flash error is due exceptions,
+            # twister tell the monitor serial thread
+            # to close the serial. But it is necessary
+            # for this thread being run first and close
+            # have the change to close the serial.
+            t.join(0.1)
+
         if t.is_alive():
             logger.debug("Timed out while monitoring serial output on {}".format(self.instance.platform.name))
 
@@ -599,14 +612,15 @@ class DeviceHandler(Handler):
             self.instance.status = harness.state
             if harness.state == "failed":
                 self.instance.reason = "Failed"
-        else:
+        elif not flash_error:
             self.instance.status = "error"
             self.instance.reason = "No Console Output(Timeout)"
 
         if self.instance.status == "error":
             self.instance.add_missing_case_status("blocked", self.instance.reason)
 
-        self._final_handle_actions(harness, handler_time)
+        if not flash_error:
+            self._final_handle_actions(harness, handler_time)
 
         if post_script:
             self.run_custom_script(post_script, 30)
@@ -825,7 +839,7 @@ class QEMUHandler(Handler):
         logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
         self.thread.start()
         if sys.stdout.isatty():
-            subprocess.call(["stty", "sane"])
+            subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
         logger.debug("Running %s (%s)" % (self.name, self.type_str))
         command = [self.generator_cmd]

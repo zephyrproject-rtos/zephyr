@@ -50,13 +50,13 @@ Current supported displays
 | Good Display | HINK-E0213      | SSD1673 /    | waveshare_epaper_gdeh0213b1  |
 | GDEH0213B1   |                 | ssd16xx      |                              |
 +--------------+-----------------+--------------+------------------------------+
-| Good Display | HINK-E0213A22   | IL3897 /     | waveshare_epaper_gdeh0213b72 |
+| Good Display | HINK-E0213A22   | SSD1675A /   | waveshare_epaper_gdeh0213b72 |
 | GDEH0213B72  |                 | ssd16xx      |                              |
 +--------------+-----------------+--------------+------------------------------+
-| Good Display | E029A01         | IL3820 /     | waveshare_epaper_gdeh029a1   |
+| Good Display | E029A01         | SSD1608 /    | waveshare_epaper_gdeh029a1   |
 | GDEH029A1    |                 | ssd16xx      |                              |
 +--------------+-----------------+--------------+------------------------------+
-| Good Display | WFT0583CZ61     | GD7965 /     | waveshare_epaper_gdew075t7   |
+| Good Display | WFT0583CZ61     | UC8179 /     | waveshare_epaper_gdew075t7   |
 | GDEW075T7    |                 | gd7965       |                              |
 +--------------+-----------------+--------------+------------------------------+
 | Good Display | HINK-E0154A07   | SSD1681 /    | waveshare_epaper_gdeh0154a07 |

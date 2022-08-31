@@ -322,7 +322,7 @@ void z_log_vprintk(const char *fmt, va_list ap);
 /**
  * @brief Create module-specific state and register the module with Logger.
  *
- * This macro normally must be used after including <logging/log.h> to
+ * This macro normally must be used after including <zephyr/logging/log.h> to
  * complete the initialization of the module.
  *
  * Module registration can be skipped in two cases:

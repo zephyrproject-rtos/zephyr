@@ -11,11 +11,22 @@ properties:
     reg:
       required: true
 
-    label:
-      required: true
-
     clocks:
       required: true
+
+    nist-config:
+      type: int
+      required: false
+      description: |
+           This property is used to configure the RNG_CR for the NIST certification
+           The validation conditions are following the refMan
+           to certify NIST SP800-90B. RNG clock source must be 48MHz.
+           This config is valid with some STM32 families
+           and when Conditioning Soft Reset (RNG_CR_CONDRST bit) exists.
+           The value is directly mapped from the RNG configuration (A) table.
+           The Health Register (health-test-config property) must correspond
+           to this table configuration.
+           On the stm32U5, the ARDIS bit7 is also written.
 
     health-test-magic:
       type: int

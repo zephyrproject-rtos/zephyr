@@ -73,6 +73,10 @@
 	status = "okay";
 };
 
+&die_temp {
+	status = "okay";
+};
+
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pg7 &lpuart1_rx_pg8>;
 	pinctrl-names = "default";

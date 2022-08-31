@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "common.h"
 
 #define num_registered_suites (_ztest_suite_node_list_end - _ztest_suite_node_list_start)

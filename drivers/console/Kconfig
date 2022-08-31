@@ -179,17 +179,6 @@ config IPM_CONSOLE
 	help
 	  Enable console over Inter-processor Mailbox.
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_IPM_CONSOLE := zephyr,console
-
-config IPM_CONSOLE_ON_DEV_NAME
-	string "IPM device name used by console"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_IPM_CONSOLE))" if HAS_DTS
-	default "IPM_0"
-	depends on IPM_CONSOLE
-	help
-	  IPM device name used by IPM console driver.
-
 config IPM_CONSOLE_LINE_BUF_LEN
 	int "IPM console line buffer length"
 	default 128

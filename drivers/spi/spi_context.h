@@ -35,7 +35,8 @@ struct spi_context {
 	int sync_status;
 
 #ifdef CONFIG_SPI_ASYNC
-	struct k_poll_signal *signal;
+	spi_callback_t callback;
+	void *callback_data;
 	bool asynchronous;
 #endif /* CONFIG_SPI_ASYNC */
 	const struct spi_buf *current_tx;
@@ -86,7 +87,8 @@ static inline bool spi_context_is_slave(struct spi_context *ctx)
 
 static inline void spi_context_lock(struct spi_context *ctx,
 				    bool asynchronous,
-				    struct k_poll_signal *signal,
+				    spi_callback_t callback,
+				    void *callback_data,
 				    const struct spi_config *spi_cfg)
 {
 	if ((spi_cfg->operation & SPI_LOCK_ON) &&
@@ -100,7 +102,8 @@ static inline void spi_context_lock(struct spi_context *ctx,
 
 #ifdef CONFIG_SPI_ASYNC
 	ctx->asynchronous = asynchronous;
-	ctx->signal = signal;
+	ctx->callback = callback;
+	ctx->callback_data = callback_data;
 #endif /* CONFIG_SPI_ASYNC */
 }
 
@@ -171,14 +174,16 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 	return status;
 }
 
-static inline void spi_context_complete(struct spi_context *ctx, int status)
+static inline void spi_context_complete(struct spi_context *ctx,
+					const struct device *dev,
+					int status)
 {
 #ifdef CONFIG_SPI_ASYNC
 	if (!ctx->asynchronous) {
 		ctx->sync_status = status;
 		k_sem_give(&ctx->sync);
 	} else {
-		if (ctx->signal) {
+		if (ctx->callback) {
 #ifdef CONFIG_SPI_SLAVE
 			if (spi_context_is_slave(ctx) && !status) {
 				/* Let's update the status so it tells
@@ -187,7 +192,7 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 				status = ctx->recv_frames;
 			}
 #endif /* CONFIG_SPI_SLAVE */
-			k_poll_signal_raise(ctx->signal, status);
+			ctx->callback(dev, status, ctx->callback_data);
 		}
 
 		if (!(ctx->config->operation & SPI_LOCK_ON)) {

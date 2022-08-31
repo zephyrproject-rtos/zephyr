@@ -120,7 +120,7 @@ void test_8bit_xfer(const struct device *dev, struct spi_cs_control *cs)
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET(SPIBB_NODE);
+	const struct device *const dev = DEVICE_DT_GET(SPIBB_NODE);
 
 	if (!device_is_ready(dev)) {
 		printk("%s: device not ready.\n", dev->name);

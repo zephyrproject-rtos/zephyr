@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/drivers/pm_cpu_ops/psci.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 

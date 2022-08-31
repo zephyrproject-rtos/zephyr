@@ -4,10 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <ztress.h>
+#include <zephyr/ztest.h>
+#include <zephyr/ztress.h>
 #include <zephyr/sys/spsc_pbuf.h>
 #include <zephyr/random/rand32.h>
+
+#define HDR_LEN sizeof(uint32_t)
+#define TLEN(len) ROUND_UP(HDR_LEN + len, sizeof(uint32_t))
+#define STRESS_TIMEOUT_MS ((CONFIG_SYS_CLOCK_TICKS_PER_SEC < 10000) ? 1000 : 15000)
 
 /* The buffer size itself would be 199 bytes.
  * 212 - sizeof(struct spsc_pbuf) - 1 = 199.
@@ -21,7 +25,7 @@ static bool use_cache(uint32_t flags)
 
 static void test_spsc_pbuf_flags(uint32_t flags)
 {
-	static uint8_t memory_area[216] __aligned(MAX(CONFIG_SPSC_PBUF_CACHE_LINE, 4));
+	static uint8_t memory_area[216] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	static uint8_t rbuf[198];
 	static uint8_t message[20] = {'a'};
 	struct spsc_pbuf *ib;
@@ -175,7 +179,7 @@ static void packet_consume(struct spsc_pbuf *pb,
 
 ZTEST(test_spsc_pbuf, test_0cpy)
 {
-	static uint8_t buffer[64] __aligned(MAX(CONFIG_SPSC_PBUF_CACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 	uint32_t capacity = spsc_pbuf_capacity(pb);
 	uint16_t len1;
@@ -191,7 +195,7 @@ ZTEST(test_spsc_pbuf, test_0cpy)
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 
 	/* Remaining space. */
-	len2 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint32_t);
+	len2 = capacity - TLEN(len1) - HDR_LEN;
 	/* Request exceeding capacity*/
 	PACKET_WRITE(pb, len2 + 1, 0, 1, len2);
 
@@ -207,7 +211,7 @@ ZTEST(test_spsc_pbuf, test_0cpy)
 
 ZTEST(test_spsc_pbuf, test_0cpy_smaller)
 {
-	static uint8_t buffer[64] __aligned(MAX(CONFIG_SPSC_PBUF_CACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 	uint32_t capacity = spsc_pbuf_capacity(pb);
 	uint16_t len1;
@@ -227,7 +231,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_smaller)
 
 ZTEST(test_spsc_pbuf, test_0cpy_discard)
 {
-	static uint8_t buffer[96] __aligned(MAX(CONFIG_SPSC_PBUF_CACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 	uint32_t capacity = spsc_pbuf_capacity(pb);
 	int len1, len2;
@@ -235,7 +239,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_discard)
 	len1 = 14;
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 
-	len2 = capacity - len1 - sizeof(uint32_t) - 10;
+	len2 = capacity - TLEN(len1) - 10;
 	PACKET_WRITE(pb, len2, len2, 1, len2);
 
 	/* Consume first packet */
@@ -257,7 +261,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_discard)
 
 ZTEST(test_spsc_pbuf, test_0cpy_corner1)
 {
-	static uint8_t buffer[64] __aligned(MAX(CONFIG_SPSC_PBUF_CACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb;
 	uint32_t capacity;
 	char *buf;
@@ -276,7 +280,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_corner1)
 	len2 = capacity;
 	len2 = spsc_pbuf_alloc(pb, len2, &buf);
 
-	uint16_t exp_len2 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint32_t);
+	uint16_t exp_len2 = capacity - TLEN(len1) - HDR_LEN;
 
 	zassert_equal(len2, exp_len2, "got %d, exp: %d", len2, exp_len2);
 
@@ -293,7 +297,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_corner1)
 
 ZTEST(test_spsc_pbuf, test_0cpy_corner2)
 {
-	static uint8_t buffer[64] __aligned(MAX(CONFIG_SPSC_PBUF_CACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb;
 	uint32_t capacity;
 	uint16_t len1;
@@ -302,12 +306,12 @@ ZTEST(test_spsc_pbuf, test_0cpy_corner2)
 	pb = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 	capacity = spsc_pbuf_capacity(pb);
 
-	/* Commit 5 byte packet. */
-	len1 = 10;
+	/* Commit 16 byte packet. */
+	len1 = 16;
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 
 	/* Attempt to allocate packet that will leave 5 bytes at the end. */
-	len2 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint16_t) - 5;
+	len2 = capacity - TLEN(len1) - HDR_LEN - 5;
 	PACKET_WRITE(pb, len2, len2, 1, len2);
 
 	/* Free first packet. */
@@ -326,14 +330,14 @@ ZTEST(test_spsc_pbuf, test_0cpy_corner2)
 	/* Get longest available. As now there is only one packet at the beginning
 	 * that should be remaining space decremented by length fields.
 	 */
-	uint16_t exp_len = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint32_t);
+	uint16_t exp_len = capacity - TLEN(len1) - HDR_LEN;
 
 	PACKET_WRITE(pb, capacity, 0, 2, exp_len);
 }
 
 ZTEST(test_spsc_pbuf, test_largest_alloc)
 {
-	static uint8_t buffer[96] __aligned(MAX(CONFIG_SPSC_PBUF_CACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb;
 	uint32_t capacity;
 	uint16_t len1;
@@ -346,10 +350,10 @@ ZTEST(test_spsc_pbuf, test_largest_alloc)
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 	PACKET_CONSUME(pb, len1, 0);
 
-	len2 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint32_t) - 10;
+	len2 = capacity - TLEN(len1) - TLEN(10);
 	PACKET_WRITE(pb, len2, len2, 1, len2);
 
-	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN, 0, 1, 8);
+	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN, 0, 1, 12);
 
 	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN - 1, 0, 1, 12);
 
@@ -360,7 +364,7 @@ ZTEST(test_spsc_pbuf, test_largest_alloc)
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 	PACKET_CONSUME(pb, len1, 0);
 
-	len2 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint16_t) - 8;
+	len2 = capacity - TLEN(len1) - TLEN(12);
 	PACKET_WRITE(pb, len2, len2, 1, len2);
 
 	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN - 1, 0, 1, 12);
@@ -368,7 +372,7 @@ ZTEST(test_spsc_pbuf, test_largest_alloc)
 
 ZTEST(test_spsc_pbuf, test_utilization)
 {
-	static uint8_t buffer[64] __aligned(MAX(CONFIG_SPSC_PBUF_CACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb;
 	uint32_t capacity;
 	uint16_t len1, len2, len3;
@@ -389,21 +393,20 @@ ZTEST(test_spsc_pbuf, test_utilization)
 
 	PACKET_CONSUME(pb, len1, 0);
 	u = spsc_pbuf_get_utilization(pb);
-	zassert_equal(u, ROUND_UP(len1, sizeof(uint32_t)) + sizeof(uint32_t), NULL);
+	zassert_equal(u, TLEN(len1), NULL);
 
 	len2 = 11;
 	PACKET_WRITE(pb, len2, len2, 1, len2);
 	PACKET_CONSUME(pb, len2, 1);
 	u = spsc_pbuf_get_utilization(pb);
-	zassert_equal(u, ROUND_UP(len2, sizeof(uint32_t)) + sizeof(uint32_t), NULL);
+	zassert_equal(u, TLEN(len2), NULL);
 
-	len3 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - ROUND_UP(len2, sizeof(uint32_t))
-		- 3 * sizeof(uint32_t) + sizeof(uint32_t);
+	len3 = capacity - TLEN(len1) - TLEN(len2);
 	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN, len3, 2, len3);
 	PACKET_CONSUME(pb, len3, 2);
 
 	u = spsc_pbuf_get_utilization(pb);
-	int exp_u = ROUND_UP(len3, sizeof(uint32_t)) + sizeof(uint32_t);
+	int exp_u = TLEN(len3);
 
 	zassert_equal(u, exp_u, NULL);
 }
@@ -413,6 +416,7 @@ struct stress_data {
 	uint32_t capacity;
 	uint32_t write_cnt;
 	uint32_t read_cnt;
+	uint32_t wr_err;
 };
 
 bool stress_read(void *user_data, uint32_t cnt, bool last, int prio)
@@ -420,19 +424,21 @@ bool stress_read(void *user_data, uint32_t cnt, bool last, int prio)
 	struct stress_data *ctx = (struct stress_data *)user_data;
 	char buf[128];
 	int len;
+	int rpt = (sys_rand32_get() & 3) + 1;
 
-	len = spsc_pbuf_read(ctx->pbuf, buf, (uint16_t)sizeof(buf));
+	for (int i = 0; i < rpt; i++) {
+		len = spsc_pbuf_read(ctx->pbuf, buf, (uint16_t)sizeof(buf));
+		if (len == 0) {
+			return true;
+		}
 
-	if (len == 0) {
-		return true;
+		if (len < 0) {
+			zassert_true(false, "Unexpected error: %d, cnt:%d", len, ctx->read_cnt);
+		}
+
+		check_buffer(buf, len, ctx->read_cnt);
+		ctx->read_cnt++;
 	}
-
-	if (len < 0) {
-		zassert_true(false, "Unexpected error: %d, cnt:%d", len, ctx->read_cnt);
-	}
-
-	check_buffer(buf, len, ctx->read_cnt);
-	ctx->read_cnt++;
 
 	return true;
 }
@@ -442,36 +448,41 @@ bool stress_write(void *user_data, uint32_t cnt, bool last, int prio)
 	struct stress_data *ctx = (struct stress_data *)user_data;
 	char buf[128];
 	uint16_t len = 1 + (sys_rand32_get() % (ctx->capacity / 4));
+	int rpt = (sys_rand32_get() & 1) + 1;
 
 	zassert_true(len < sizeof(buf), "len:%d %d", len, ctx->capacity);
 
-	memset(buf, (uint8_t)ctx->write_cnt, len);
-	if (spsc_pbuf_write(ctx->pbuf, buf, len) == 0) {
-		ctx->write_cnt++;
+	for (int i = 0; i < rpt; i++) {
+		memset(buf, (uint8_t)ctx->write_cnt, len);
+		if (spsc_pbuf_write(ctx->pbuf, buf, len) == len) {
+			ctx->write_cnt++;
+		} else {
+			ctx->wr_err++;
+		}
 	}
 
 	return true;
 }
 
-
-
 ZTEST(test_spsc_pbuf, test_stress)
 {
-	static uint8_t buffer[128] __aligned(MAX(CONFIG_SPSC_PBUF_CACHE_LINE, 4));
-	static struct stress_data ctx;
+	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
+	static struct stress_data ctx = {};
 	uint32_t repeat = 0;
 
-	ctx.write_cnt = 0;
-	ctx.read_cnt = 0;
 	ctx.pbuf = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 	ctx.capacity = spsc_pbuf_capacity(ctx.pbuf);
 
-	ztress_set_timeout(K_MSEC(5000));
-	ZTRESS_EXECUTE(ZTRESS_THREAD(stress_read, &ctx, repeat, 0, Z_TIMEOUT_TICKS(4)),
-		       ZTRESS_THREAD(stress_write, &ctx, repeat, 1000, Z_TIMEOUT_TICKS(4)));
+	ztress_set_timeout(K_MSEC(STRESS_TIMEOUT_MS));
+	TC_PRINT("Reading from an interrupt, writing from a thread\n");
+	ZTRESS_EXECUTE(ZTRESS_TIMER(stress_read, &ctx, repeat, Z_TIMEOUT_TICKS(4)),
+		       ZTRESS_THREAD(stress_write, &ctx, repeat, 2000, Z_TIMEOUT_TICKS(4)));
+	TC_PRINT("Writes:%d failures: %d\n", ctx.write_cnt, ctx.wr_err);
 
-	ZTRESS_EXECUTE(ZTRESS_THREAD(stress_write, &ctx, repeat, 0, Z_TIMEOUT_TICKS(4)),
+	TC_PRINT("Writing from an interrupt, reading from a thread\n");
+	ZTRESS_EXECUTE(ZTRESS_TIMER(stress_write, &ctx, repeat, Z_TIMEOUT_TICKS(4)),
 		       ZTRESS_THREAD(stress_read, &ctx, repeat, 1000, Z_TIMEOUT_TICKS(4)));
+	TC_PRINT("Writes:%d failures: %d\n", ctx.write_cnt, ctx.wr_err);
 }
 
 bool stress_claim_free(void *user_data, uint32_t cnt, bool last, int prio)
@@ -479,18 +490,21 @@ bool stress_claim_free(void *user_data, uint32_t cnt, bool last, int prio)
 	struct stress_data *ctx = (struct stress_data *)user_data;
 	char *buf;
 	uint16_t len;
+	int rpt = sys_rand32_get() % 0x3;
 
-	len = spsc_pbuf_claim(ctx->pbuf, &buf);
+	for (int i = 0; i < rpt; i++) {
+		len = spsc_pbuf_claim(ctx->pbuf, &buf);
 
-	if (len == 0) {
-		return true;
+		if (len == 0) {
+			return true;
+		}
+
+		check_buffer(buf, len, ctx->read_cnt);
+
+		spsc_pbuf_free(ctx->pbuf, len);
+
+		ctx->read_cnt++;
 	}
-
-	check_buffer(buf, len, ctx->read_cnt);
-
-	spsc_pbuf_free(ctx->pbuf, len);
-
-	ctx->read_cnt++;
 
 	return true;
 }
@@ -498,27 +512,31 @@ bool stress_claim_free(void *user_data, uint32_t cnt, bool last, int prio)
 bool stress_alloc_commit(void *user_data, uint32_t cnt, bool last, int prio)
 {
 	struct stress_data *ctx = (struct stress_data *)user_data;
-	uint16_t len = 1 + (sys_rand32_get() % (ctx->capacity / 4));
+	uint32_t rnd = sys_rand32_get();
+	uint16_t len = 1 + (rnd % (ctx->capacity / 4));
+	int rpt = rnd % 0x3;
 	char *buf;
 	int err;
 
-	err = spsc_pbuf_alloc(ctx->pbuf, len, &buf);
-	zassert_true(err >= 0, NULL);
-	if (err != len) {
-		return true;
+	for (int i = 0; i < rpt; i++) {
+		err = spsc_pbuf_alloc(ctx->pbuf, len, &buf);
+		zassert_true(err >= 0, NULL);
+		if (err != len) {
+			return true;
+		}
+
+		memset(buf, (uint8_t)ctx->write_cnt, len);
+
+		spsc_pbuf_commit(ctx->pbuf, len);
+		ctx->write_cnt++;
 	}
-
-	memset(buf, (uint8_t)ctx->write_cnt, len);
-
-	spsc_pbuf_commit(ctx->pbuf, len);
-	ctx->write_cnt++;
 
 	return true;
 }
 
 ZTEST(test_spsc_pbuf, test_stress_0cpy)
 {
-	static uint8_t buffer[128] __aligned(MAX(CONFIG_SPSC_PBUF_CACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	static struct stress_data ctx;
 	uint32_t repeat = 0;
 
@@ -527,7 +545,7 @@ ZTEST(test_spsc_pbuf, test_stress_0cpy)
 	ctx.pbuf = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 	ctx.capacity = spsc_pbuf_capacity(ctx.pbuf);
 
-	ztress_set_timeout(K_MSEC(5000));
+	ztress_set_timeout(K_MSEC(STRESS_TIMEOUT_MS));
 	ZTRESS_EXECUTE(ZTRESS_THREAD(stress_claim_free, &ctx, repeat, 0, Z_TIMEOUT_TICKS(4)),
 		       ZTRESS_THREAD(stress_alloc_commit, &ctx, repeat, 1000, Z_TIMEOUT_TICKS(4)));
 

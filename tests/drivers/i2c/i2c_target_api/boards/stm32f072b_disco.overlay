@@ -4,7 +4,6 @@
 	eeprom0: eeprom@54 {
 		compatible = "atmel,at24";
 		reg = <0x54>;
-		label = "EEPROM_0";
 		size = <1024>;
 		pagesize = <16>;
 		address-width = <8>;
@@ -17,7 +16,6 @@
 	eeprom1: eeprom@56 {
 		compatible = "atmel,at24";
 		reg = <0x56>;
-		label = "EEPROM_1";
 		size = <1024>;
 		pagesize = <16>;
 		address-width = <8>;

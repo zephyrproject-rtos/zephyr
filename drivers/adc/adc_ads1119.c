@@ -4,14 +4,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/adc.h>
-#include <logging/log.h>
-#include <drivers/i2c.h>
-#include <zephyr.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER 1
 #include "adc_context.h"

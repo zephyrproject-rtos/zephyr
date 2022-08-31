@@ -113,7 +113,7 @@ static void do_main(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ONE(ams_ccs811);
+	const struct device *const dev = DEVICE_DT_GET_ONE(ams_ccs811);
 	struct ccs811_configver_type cfgver;
 	int rc;
 

@@ -47,8 +47,8 @@
 
 #include <tinycrypt/ccm_mode.h>
 #include <tinycrypt/constants.h>
-#include <test_utils.h>
-#include <ztest.h>
+#include <zephyr/test_utils.h>
+#include <zephyr/ztest.h>
 
 #include <string.h>
 

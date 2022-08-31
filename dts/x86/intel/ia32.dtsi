@@ -42,7 +42,6 @@
 		uart0: uart@3f8 {
 			compatible = "ns16550";
 			reg = <0x000003f8 0x100>;
-			label = "UART_0";
 			clock-frequency = <1843200>;
 			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
@@ -53,7 +52,6 @@
 		uart1: uart@2f8 {
 			compatible = "ns16550";
 			reg = <0x000002f8 0x100>;
-			label = "UART_1";
 			clock-frequency = <1843200>;
 			interrupts = <3 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
@@ -62,7 +60,6 @@
 		};
 
 		hpet: hpet@fed00000 {
-			label = "HPET";
 			compatible = "intel,hpet";
 			reg = <0xfed00000 0x400>;
 			interrupts = <2 IRQ_TYPE_FIXED_EDGE_RISING 4>;
@@ -72,7 +69,6 @@
 		};
 
 		counter: counter@70 {
-			label = "CMOS";
 			compatible = "motorola,mc146818";
 			reg = <0x70 0x0D 0x71 0x0D>;
 

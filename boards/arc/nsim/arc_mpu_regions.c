@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/devicetree.h>
-#include <soc.h>
 #include <zephyr/arch/arc/v2/mpu/arc_mpu.h>
 #include <zephyr/linker/linker-defs.h>
 

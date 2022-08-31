@@ -174,52 +174,66 @@ struct bt_hci_cmd_hdr {
 #define BT_LE_FEAT_TEST(feat, n)                (feat[(n) >> 3] & \
 						 BIT((n) & 7))
 
-#define BT_FEAT_LE_ENCR(feat)                   BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_ENC)
-#define BT_FEAT_LE_CONN_PARAM_REQ_PROC(feat)    BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_CONN_PARAM_REQ)
-#define BT_FEAT_LE_PER_INIT_FEAT_XCHG(feat)     BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_PER_INIT_FEAT_XCHG)
-#define BT_FEAT_LE_DLE(feat)                    BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_DLE)
-#define BT_FEAT_LE_PHY_2M(feat)                 BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_PHY_2M)
-#define BT_FEAT_LE_PHY_CODED(feat)              BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_PHY_CODED)
-#define BT_FEAT_LE_PRIVACY(feat)                BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_PRIVACY)
-#define BT_FEAT_LE_EXT_ADV(feat)                BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_EXT_ADV)
-#define BT_FEAT_LE_EXT_PER_ADV(feat)            BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_PER_ADV)
-#define BT_FEAT_LE_CONNECTION_CTE_REQ(feat)     BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_CONN_CTE_REQ)
-#define BT_FEAT_LE_CONNECTION_CTE_RESP(feat)    BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_CONN_CTE_RESP)
-#define BT_FEAT_LE_CONNECTIONLESS_CTE_TX(feat)  BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_CONNECTIONLESS_CTE_TX)
-#define BT_FEAT_LE_CONNECTIONLESS_CTE_RX(feat)  BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_CONNECTIONLESS_CTE_RX)
-#define BT_FEAT_LE_ANT_SWITCH_TX_AOD(feat)      BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_ANT_SWITCH_TX_AOD)
-#define BT_FEAT_LE_ANT_SWITCH_RX_AOA(feat)      BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_ANT_SWITCH_RX_AOA)
-#define BT_FEAT_LE_RX_CTE(feat)                 BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_RX_CTE)
-#define BT_FEAT_LE_PAST_SEND(feat)              BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_PAST_SEND)
-#define BT_FEAT_LE_PAST_RECV(feat)              BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_PAST_RECV)
-#define BT_FEAT_LE_CIS_CENTRAL(feat)            BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_CIS_CENTRAL)
-#define BT_FEAT_LE_CIS_PERIPHERAL(feat)         BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_CIS_PERIPHERAL)
-#define BT_FEAT_LE_ISO_BROADCASTER(feat)        BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_ISO_BROADCASTER)
-#define BT_FEAT_LE_SYNC_RECEIVER(feat)          BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_SYNC_RECEIVER)
-#define BT_FEAT_LE_ISO_CHANNELS(feat)           BT_LE_FEAT_TEST(feat, \
-						BT_LE_FEAT_BIT_ISO_CHANNELS)
+#define BT_FEAT_LE_ENCR(feat)                     BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_ENC)
+#define BT_FEAT_LE_CONN_PARAM_REQ_PROC(feat)      BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_CONN_PARAM_REQ)
+#define BT_FEAT_LE_PER_INIT_FEAT_XCHG(feat)       BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_PER_INIT_FEAT_XCHG)
+#define BT_FEAT_LE_DLE(feat)                      BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_DLE)
+#define BT_FEAT_LE_PHY_2M(feat)                   BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_PHY_2M)
+#define BT_FEAT_LE_PHY_CODED(feat)                BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_PHY_CODED)
+#define BT_FEAT_LE_PRIVACY(feat)                  BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_PRIVACY)
+#define BT_FEAT_LE_EXT_ADV(feat)                  BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_EXT_ADV)
+#define BT_FEAT_LE_EXT_PER_ADV(feat)              BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_PER_ADV)
+#define BT_FEAT_LE_CONNECTION_CTE_REQ(feat)       BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_CONN_CTE_REQ)
+#define BT_FEAT_LE_CONNECTION_CTE_RESP(feat)      BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_CONN_CTE_RESP)
+#define BT_FEAT_LE_CONNECTIONLESS_CTE_TX(feat)    BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_CONNECTIONLESS_CTE_TX)
+#define BT_FEAT_LE_CONNECTIONLESS_CTE_RX(feat)    BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_CONNECTIONLESS_CTE_RX)
+#define BT_FEAT_LE_ANT_SWITCH_TX_AOD(feat)        BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_ANT_SWITCH_TX_AOD)
+#define BT_FEAT_LE_ANT_SWITCH_RX_AOA(feat)        BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_ANT_SWITCH_RX_AOA)
+#define BT_FEAT_LE_RX_CTE(feat)                   BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_RX_CTE)
+#define BT_FEAT_LE_PAST_SEND(feat)                BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_PAST_SEND)
+#define BT_FEAT_LE_PAST_RECV(feat)                BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_PAST_RECV)
+#define BT_FEAT_LE_CIS_CENTRAL(feat)              BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_CIS_CENTRAL)
+#define BT_FEAT_LE_CIS_PERIPHERAL(feat)           BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_CIS_PERIPHERAL)
+#define BT_FEAT_LE_ISO_BROADCASTER(feat)          BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_ISO_BROADCASTER)
+#define BT_FEAT_LE_SYNC_RECEIVER(feat)            BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_SYNC_RECEIVER)
+#define BT_FEAT_LE_ISO_CHANNELS(feat)             BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_ISO_CHANNELS)
+#define BT_FEAT_LE_PWR_CTRL_REQ(feat)             BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_PWR_CTRL_REQ)
+#define BT_FEAT_LE_PWR_CHG_IND(feat)              BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_PWR_CHG_IND)
+#define BT_FEAT_LE_PATH_LOSS_MONITOR(feat)        BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_PATH_LOSS_MONITOR)
+#define BT_FEAT_LE_PER_ADV_ADI_SUPP(feat)         BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_PER_ADV_ADI_SUPP)
+#define BT_FEAT_LE_CONN_SUBRATING(feat)           BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_CONN_SUBRATING)
+#define BT_FEAT_LE_CONN_SUBRATING_HOST_SUPP(feat) BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_CONN_SUBRATING_HOST_SUPP)
+#define BT_FEAT_LE_CHANNEL_CLASSIFICATION(feat)   BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_CHANNEL_CLASSIFICATION)
 
 #define BT_FEAT_LE_CIS(feat)            (BT_FEAT_LE_CIS_CENTRAL(feat) | \
 					BT_FEAT_LE_CIS_PERIPHERAL(feat))

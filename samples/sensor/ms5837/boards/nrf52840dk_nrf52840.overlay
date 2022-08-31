@@ -10,6 +10,5 @@
     ms5837@76 {
         compatible = "meas,ms5837";
         reg = <0x76>;
-        label = "MS5837";
     };
 };

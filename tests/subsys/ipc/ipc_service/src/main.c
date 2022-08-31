@@ -4,7 +4,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/ipc/ipc_service.h>
 
 static void received_cb(const void *data, size_t len, void *priv)

@@ -29,7 +29,7 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_NODELABEL(counter0)
 #elif defined(CONFIG_COUNTER_XLNX_AXI_TIMER)
 #define TIMER DT_INST(0, xlnx_xps_timer_1_00_a)
-#elif defined(CONFIG_COUNTER_ESP32)
+#elif defined(CONFIG_COUNTER_TMR_ESP32)
 #define TIMER DT_NODELABEL(timer0)
 #elif defined(CONFIG_COUNTER_MCUX_CTIMER)
 #define TIMER DT_NODELABEL(ctimer0)
@@ -74,7 +74,7 @@ static void test_counter_interrupt_fn(const struct device *counter_dev,
 
 void main(void)
 {
-	const struct device *counter_dev = DEVICE_DT_GET(TIMER);
+	const struct device *const counter_dev = DEVICE_DT_GET(TIMER);
 	int err;
 
 	printk("Counter alarm sample\n\n");

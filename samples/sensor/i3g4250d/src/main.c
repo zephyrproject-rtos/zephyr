@@ -52,7 +52,7 @@ static void fetch_and_display(const struct device *sensor)
 void main(void)
 {
 	const double sampling_frequency = 1000.0 / SAMPLING_INTERVAL_MS;
-	const struct device *sensor = DEVICE_DT_GET_ONE(st_i3g4250d);
+	const struct device *const sensor = DEVICE_DT_GET_ONE(st_i3g4250d);
 
 	if (!device_is_ready(sensor)) {
 		printf("Sensor %s is not ready\n", sensor->name);

@@ -55,6 +55,7 @@
 		sw1 = &button2;
 		mcuboot-button0 = &button1;
 		mcuboot-led0 = &led1;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -90,7 +91,6 @@
 		/* MCP4725 not populated at factory */
 		compatible = "microchip,mcp4725";
 		reg = <0x60>;
-		label = "MCP4725";
 		#io-channel-cells = <1>;
 		status = "disabled";
 	};

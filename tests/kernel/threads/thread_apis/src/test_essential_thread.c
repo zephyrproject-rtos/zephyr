@@ -3,12 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 
 struct k_thread kthread_thread;
+struct k_thread kthread_thread1;
 
 #define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 K_THREAD_STACK_DEFINE(kthread_stack, STACKSIZE);
@@ -40,7 +41,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
  *
  * @see #K_ESSENTIAL(x)
  */
-void test_essential_thread_operation(void)
+ZTEST(threads_lifecycle, test_essential_thread_operation)
 {
 	k_tid_t tid = k_thread_create(&kthread_thread, kthread_stack,
 				      STACKSIZE, (k_thread_entry_t)thread_entry, NULL,
@@ -87,11 +88,9 @@ static void abort_thread_entry(void *p1, void *p2, void *p3)
  * @see #K_ESSENTIAL(x)
  */
 
-void test_essential_thread_abort(void)
+ZTEST(threads_lifecycle, test_essential_thread_abort)
 {
-	fatal_error_signaled = false;
-
-	k_tid_t tid = k_thread_create(&kthread_thread, kthread_stack, STACKSIZE,
+	k_tid_t tid = k_thread_create(&kthread_thread1, kthread_stack, STACKSIZE,
 				      (k_thread_entry_t)abort_thread_entry,
 				      NULL, NULL, NULL, K_PRIO_PREEMPT(0), 0,
 				      K_NO_WAIT);

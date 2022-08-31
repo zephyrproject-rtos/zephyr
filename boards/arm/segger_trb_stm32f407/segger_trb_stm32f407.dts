@@ -21,6 +21,7 @@
 		led0 = &led_0_green;
 		led1 = &led_1_green;
 		led2 = &led_2_green;
+		watchdog0 = &iwdg;
 	};
 
 	leds {

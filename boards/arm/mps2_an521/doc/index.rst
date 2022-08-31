@@ -15,10 +15,8 @@ CPU and the following devices:
 - Cortex-M System Design Kit GPIO
 - Cortex-M System Design Kit UART
 
-.. image:: img/mps2_an521.png
-     :width: 666px
+.. image:: img/mps2_an521.jpg
      :align: center
-     :height: 546px
      :alt: ARM MPS2+ AN521
 
 In addition to enabling actual hardware usage, this board configuration can

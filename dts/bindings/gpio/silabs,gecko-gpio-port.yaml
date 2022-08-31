@@ -8,9 +8,6 @@ properties:
     reg:
       required: true
 
-    label:
-      required: true
-
     peripheral-id:
       type: int
       required: true

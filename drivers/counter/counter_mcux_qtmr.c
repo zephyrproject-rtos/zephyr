@@ -98,13 +98,14 @@ static void mcux_qtmr_isr(const struct device *timers[])
 	}
 }
 
-#define ADD_TIMER(node_id, n) timers_##n[DT_PROP(node_id, channel)] = DEVICE_DT_GET(node_id);
+#define INIT_TIMER(node_id) [DT_PROP(node_id, channel)] = DEVICE_DT_GET(node_id),
 
 #define QTMR_DEVICE_INIT_MCUX(n)							\
-	static const struct device *timers_##n[4];					\
+	static const struct device *const timers_##n[4] = {				\
+		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), INIT_TIMER)		\
+	};										\
 	static int init_irq_##n(const struct device *dev)				\
 	{										\
-		DT_FOREACH_CHILD_STATUS_OKAY_VARGS(DT_DRV_INST(n), ADD_TIMER, n)	\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_qtmr_isr,	\
 				timers_##n, 0);						\
 		irq_enable(DT_INST_IRQN(n));						\
@@ -267,6 +268,11 @@ static int mcux_qtmr_init(const struct device *dev)
 		data->freq = config->info.freq;
 	} else {
 		/* bus clock with divider */
+		if (!device_is_ready(config->clock_dev)) {
+			LOG_ERR("clock control device not ready");
+			return -ENODEV;
+		}
+
 		if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 					&data->freq)) {
 			return -EINVAL;

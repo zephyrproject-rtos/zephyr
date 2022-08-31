@@ -5,7 +5,7 @@
  */
 
 #include "mock_backend.h"
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/logging/log_ctrl.h>
 
 struct mock_log_frontend {

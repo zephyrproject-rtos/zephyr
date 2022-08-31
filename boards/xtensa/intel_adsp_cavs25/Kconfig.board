@@ -5,8 +5,8 @@
 
 config  BOARD_INTEL_ADSP_CAVS25
 	bool "Intel ADSP CAVS 2.5"
-	depends on SOC_SERIES_INTEL_CAVS_V25
+	depends on SOC_SERIES_INTEL_ADSP_CAVS
 
 config  BOARD_INTEL_ADSP_CAVS25_TGPH
 	bool "Intel ADSP CAVS 2.5 for Tiger Lake H PCH"
-	depends on SOC_SERIES_INTEL_CAVS_V25
+	depends on SOC_SERIES_INTEL_ADSP_CAVS

@@ -14,6 +14,7 @@
 
 	aliases {
 		gpio-0 = &gpio0;
+		counter-0 = &pit0;
 		led0 = &seg7_led1_g;
 		led1 = &seg7_led2_g;
 		sw0 = &user_button1;
@@ -130,6 +131,10 @@
 	};
 };
 
+&syscon {
+	status = "okay";
+};
+
 &uart1 {
 	status = "okay";
 	clock-frequency = <19660800>;
@@ -140,11 +145,14 @@
 	status = "okay";
 };
 
+&pit0 {
+	status = "okay";
+};
+
 &spi0 {
 	status = "okay";
 	flash0: flash@0 {
 		compatible = "jedec,spi-nor";
-		label = "JEDEC SPI-NOR";
 		reg = <0>;
 		size = <16777216>;
 		spi-max-frequency = <1000000>;

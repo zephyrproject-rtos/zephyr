@@ -745,7 +745,7 @@ static void health_generate_faults(uint8_t *data, uint16_t len)
 	net_buf_simple_add_mem(&buf, reg_faults, reg_faults_count);
 	rp->reg_faults_count = reg_faults_count;
 
-	bt_mesh_fault_update(&elements[0]);
+	bt_mesh_health_srv_fault_update(&elements[0]);
 
 	tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_GENERATE_FAULTS,
 		    CONTROLLER_INDEX, buf.data, buf.len);
@@ -758,7 +758,7 @@ static void health_clear_faults(uint8_t *data, uint16_t len)
 	(void)memset(cur_faults, 0, sizeof(cur_faults));
 	(void)memset(reg_faults, 0, sizeof(reg_faults));
 
-	bt_mesh_fault_update(&elements[0]);
+	bt_mesh_health_srv_fault_update(&elements[0]);
 
 	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_CLEAR_FAULTS,
 		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
@@ -2142,6 +2142,11 @@ fail:
 static void health_fault_get(uint8_t *data, uint16_t len)
 {
 	struct mesh_health_fault_get_cmd *cmd = (void *)data;
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net.net_idx,
+		.addr = cmd->address,
+		.app_idx = cmd->app_idx,
+	};
 	uint8_t test_id;
 	size_t fault_count = 16;
 	uint8_t faults[fault_count];
@@ -2149,8 +2154,8 @@ static void health_fault_get(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
-	err = bt_mesh_health_fault_get(cmd->address, cmd->app_idx, cmd->cid,
-				       &test_id, faults, &fault_count);
+	err = bt_mesh_health_cli_fault_get(&health_cli, &ctx, cmd->cid, &test_id, faults,
+					   &fault_count);
 
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -2165,6 +2170,11 @@ fail:
 static void health_fault_clear(uint8_t *data, uint16_t len)
 {
 	struct mesh_health_fault_clear_cmd *cmd = (void *)data;
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net.net_idx,
+		.addr = cmd->address,
+		.app_idx = cmd->app_idx,
+	};
 	uint8_t test_id;
 	size_t fault_count = 16;
 	uint8_t faults[fault_count];
@@ -2173,11 +2183,10 @@ static void health_fault_clear(uint8_t *data, uint16_t len)
 	LOG_DBG("");
 
 	if (cmd->ack) {
-		err = bt_mesh_health_fault_clear(cmd->address, cmd->app_idx,
-						 cmd->cid, &test_id, faults,
-						 &fault_count);
+		err = bt_mesh_health_cli_fault_clear(&health_cli, &ctx, cmd->cid, &test_id, faults,
+						     &fault_count);
 	} else {
-		err = bt_mesh_health_fault_clear_unack(cmd->address, cmd->app_idx, cmd->cid);
+		err = bt_mesh_health_cli_fault_clear_unack(&health_cli, &ctx, cmd->cid);
 	}
 
 	if (err) {
@@ -2200,7 +2209,12 @@ fail:
 static void health_fault_test(uint8_t *data, uint16_t len)
 {
 	struct mesh_health_fault_test_cmd *cmd = (void *)data;
-	struct net_buf_simple *buf = NET_BUF_SIMPLE(6);
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(19);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net.net_idx,
+		.addr = cmd->address,
+		.app_idx = cmd->app_idx,
+	};
 	size_t fault_count = 16;
 	uint8_t faults[fault_count];
 	uint8_t test_id;
@@ -2213,12 +2227,10 @@ static void health_fault_test(uint8_t *data, uint16_t len)
 	cid = cmd->cid;
 
 	if (cmd->ack) {
-		err = bt_mesh_health_fault_test(cmd->address, cmd->app_idx,
-						cid, test_id, faults,
-						&fault_count);
+		err = bt_mesh_health_cli_fault_test(&health_cli, &ctx, cid, test_id, faults,
+						    &fault_count);
 	} else {
-		err = bt_mesh_health_fault_test_unack(cmd->address, cmd->app_idx,
-						cid, test_id);
+		err = bt_mesh_health_cli_fault_test_unack(&health_cli, &ctx, cid, test_id);
 	}
 
 	if (err) {
@@ -2246,12 +2258,17 @@ fail:
 static void health_period_get(uint8_t *data, uint16_t len)
 {
 	struct mesh_health_period_get_cmd *cmd = (void *)data;
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net.net_idx,
+		.addr = cmd->address,
+		.app_idx = cmd->app_idx,
+	};
 	uint8_t divisor;
 	int err;
 
 	LOG_DBG("");
 
-	err = bt_mesh_health_period_get(cmd->address, cmd->app_idx, &divisor);
+	err = bt_mesh_health_cli_period_get(&health_cli, &ctx, &divisor);
 
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -2267,16 +2284,21 @@ fail:
 static void health_period_set(uint8_t *data, uint16_t len)
 {
 	struct mesh_health_period_set_cmd *cmd = (void *)data;
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net.net_idx,
+		.addr = cmd->address,
+		.app_idx = cmd->app_idx,
+	};
 	uint8_t updated_divisor;
 	int err;
 
 	LOG_DBG("");
 
 	if (cmd->ack) {
-		err = bt_mesh_health_period_set(cmd->address, cmd->app_idx,
-						cmd->divisor, &updated_divisor);
+		err = bt_mesh_health_cli_period_set(&health_cli, &ctx, cmd->divisor,
+						    &updated_divisor);
 	} else {
-		err = bt_mesh_health_period_set_unack(cmd->address, cmd->app_idx, cmd->divisor);
+		err = bt_mesh_health_cli_period_set_unack(&health_cli, &ctx, cmd->divisor);
 	}
 
 	if (err) {
@@ -2300,13 +2322,17 @@ fail:
 static void health_attention_get(uint8_t *data, uint16_t len)
 {
 	struct mesh_health_attention_get_cmd *cmd = (void *)data;
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net.net_idx,
+		.addr = cmd->address,
+		.app_idx = cmd->app_idx,
+	};
 	uint8_t attention;
 	int err;
 
 	LOG_DBG("");
 
-	err = bt_mesh_health_attention_get(cmd->address, cmd->app_idx,
-					   &attention);
+	err = bt_mesh_health_cli_attention_get(&health_cli, &ctx, &attention);
 
 	if (err) {
 		LOG_ERR("err %d", err);
@@ -2322,18 +2348,21 @@ fail:
 static void health_attention_set(uint8_t *data, uint16_t len)
 {
 	struct mesh_health_attention_set_cmd *cmd = (void *)data;
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net.net_idx,
+		.addr = cmd->address,
+		.app_idx = cmd->app_idx,
+	};
 	uint8_t updated_attention;
 	int err;
 
 	LOG_DBG("");
 
 	if (cmd->ack) {
-		err = bt_mesh_health_attention_set(cmd->address, cmd->app_idx,
-						   cmd->attention,
-						   &updated_attention);
+		err = bt_mesh_health_cli_attention_set(&health_cli, &ctx, cmd->attention,
+						       &updated_attention);
 	} else {
-		err = bt_mesh_health_attention_set_unack(cmd->address, cmd->app_idx,
-							 cmd->attention);
+		err = bt_mesh_health_cli_attention_set_unack(&health_cli, &ctx, cmd->attention);
 	}
 
 	if (err) {

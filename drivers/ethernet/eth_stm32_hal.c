@@ -86,8 +86,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __eth_stm32_desc;
 static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
-static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __eth_stm32_buf;
-static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __eth_stm32_buf;
+static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_STM32_RX_BUF_SIZE] __eth_stm32_buf;
+static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_STM32_TX_BUF_SIZE] __eth_stm32_buf;
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 static ETH_TxPacketConfig tx_config;
@@ -194,7 +194,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
 
 	total_len = net_pkt_get_len(pkt);
-	if (total_len > ETH_TX_BUF_SIZE) {
+	if (total_len > ETH_STM32_TX_BUF_SIZE) {
 		LOG_ERR("PKT too big");
 		res = -EIO;
 		goto error;
@@ -786,6 +786,11 @@ static int eth_initialize(const struct device *dev)
 
 	dev_data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
+	if (!device_is_ready(dev_data->clock)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* enable clock */
 	ret = clock_control_on(dev_data->clock,
 		(clock_control_subsys_t *)&cfg->pclken);
@@ -820,7 +825,7 @@ static int eth_initialize(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	heth->Init.TxDesc = dma_tx_desc_tab;
 	heth->Init.RxDesc = dma_rx_desc_tab;
-	heth->Init.RxBuffLen = ETH_RX_BUF_SIZE;
+	heth->Init.RxBuffLen = ETH_STM32_RX_BUF_SIZE;
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 	hal_ret = HAL_ETH_Init(heth);
@@ -1296,7 +1301,7 @@ static const struct ptp_clock_driver_api api = {
 
 static int ptp_stm32_init(const struct device *port)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(mac));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(mac));
 	struct eth_stm32_hal_dev_data *eth_dev_data = dev->data;
 	const struct eth_stm32_hal_dev_cfg *eth_cfg = dev->config;
 	struct ptp_context *ptp_context = port->data;

@@ -1,7 +1,18 @@
 # Copyright 2021 Nordic Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-process_ids=""; exit_code=0
+process_ids=(); exit_code=0
+
+trap ctrl_c INT
+
+function ctrl_c() {
+  echo "Aborted by CTRL-C"
+  conf=${conf:-prj_conf}
+
+  for process_id in ${process_ids[@]}; do
+    kill -15 $process_id
+  done
+}
 
 function Execute(){
   if [ ! -f $1 ]; then
@@ -9,7 +20,7 @@ function Execute(){
  compile it?)\e[39m"
     exit 1
   fi
-  timeout 300 $@ & process_ids="$process_ids $!"
+  timeout 300 $@ & process_ids+=( $! )
 }
 
 function Skip(){
@@ -68,7 +79,7 @@ function RunTest(){
 
   Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=$s_id -D=$count
 
-  for process_id in $process_ids; do
+  for process_id in ${process_ids[@]}; do
     wait $process_id || let "exit_code=$?"
   done
 

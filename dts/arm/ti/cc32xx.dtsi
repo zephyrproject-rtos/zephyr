@@ -62,7 +62,6 @@
 			interrupts = <EXP_UARTA0 3>;
 			clocks = <&sysclk>;
 			status = "disabled";
-			label = "UART_0";
 		};
 
 		uart1: uart@4000d000 {
@@ -71,7 +70,6 @@
 			interrupts = <EXP_UARTA1 3>;
 			clocks = <&sysclk>;
 			status = "disabled";
-			label = "UART_1";
 		};
 
 		i2c0: i2c@40020000 {
@@ -83,14 +81,12 @@
 			reg = <0x40020000 0xfc8>;
 			interrupts = <EXP_I2CA0 3>;
 			status = "disabled";
-			label= "I2C_0";
 		};
 
 		gpioa0: gpio@40004000 {
 			compatible = "ti,cc32xx-gpio";
 			reg = <0x40004000 0x1000>;
 			interrupts = <0 1>;
-			label = "GPIO_A0";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
@@ -99,7 +95,6 @@
 			compatible = "ti,cc32xx-gpio";
 			reg = <0x40005000 0x1000>;
 			interrupts = <1 1>;
-			label = "GPIO_A1";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
@@ -108,7 +103,6 @@
 			compatible = "ti,cc32xx-gpio";
 			reg = <0x40006000 0x1000>;
 			interrupts = <2 1>;
-			label = "GPIO_A2";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
@@ -117,7 +111,6 @@
 			compatible = "ti,cc32xx-gpio";
 			reg = <0x40007000 0x1000>;
 			interrupts = <3 1>;
-			label = "GPIO_A3";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
@@ -127,7 +120,6 @@
 			reg = <0x4402E800 0x100>;
 			interrupts = <EXP_ADCCH0 3>, <EXP_ADCCH1 3>, <EXP_ADCCH2 3>, <EXP_ADCCH3 3>;
 			status = "disabled";
-			label = "ADC_0";
 			#io-channel-cells = <1>;
 		};
 
@@ -135,7 +127,6 @@
 			compatible = "ti,cc32xx-watchdog";
 			reg = <0x40000000 0x1000>;
 			interrupts = <EXP_WDT 0>;
-			label = "WDT_0";
 			status = "disabled";
 		};
 	};

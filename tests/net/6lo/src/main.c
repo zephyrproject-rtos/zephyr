@@ -10,7 +10,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_6LO_LOG_LEVEL);
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/linker/sections.h>
 
 #include <zephyr/types.h>
@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_6LO_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/dummy.h>
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 
 #include "6lo.h"
 #include "icmpv6.h"

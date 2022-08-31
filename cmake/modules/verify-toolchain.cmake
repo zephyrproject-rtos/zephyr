@@ -17,8 +17,8 @@
 
 include_guard(GLOBAL)
 
-# This is the minimum required Zephyr-SDK version which supports CMake package
-set(TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION 0.13.1)
+# This is the minimum required Zephyr SDK version.
+set(TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION 0.15)
 
 # Set internal variables if set in environment.
 if(NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
@@ -76,7 +76,7 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
     # To support Zephyr SDK tools (DTC, and other tools) with 3rd party toolchains
     # then we keep track of current toolchain variant.
     set(ZEPHYR_CURRENT_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT})
-    find_package(Zephyr-sdk ${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION} REQUIRED QUIET HINTS $ENV{ZEPHYR_SDK_INSTALL_DIR})
+    find_package(Zephyr-sdk ${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION} REQUIRED QUIET HINTS ${ZEPHYR_SDK_INSTALL_DIR})
     if(DEFINED ZEPHYR_CURRENT_TOOLCHAIN_VARIANT)
       set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_CURRENT_TOOLCHAIN_VARIANT})
     endif()
@@ -120,7 +120,7 @@ if(NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
 
   message(FATAL_ERROR "${error_msg}
 The Zephyr SDK can be downloaded from:
-https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION}/zephyr-sdk-${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION}-setup.run
+https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION}
 ")
 
 endif()

@@ -20,8 +20,7 @@ west flash
 
 Building for boards without UART interrupt support:
 ```bash
-west build -b quick_feather -- -DOVERLAY_CONFIG=prj_poll.conf  samples/subsys/shell/devmem_load
-west flash
+west build -b native_posix -- -DOVERLAY_CONFIG=prj_poll.conf  samples/subsys/shell/devmem_load
 ```
 ## Running
 After connecting to the UART console you should see the following output:

@@ -22,6 +22,10 @@
 		 * but is not used in board.c */
 		vctl2-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
 };
 
 &i2c1 { /* power monitoring */
@@ -45,7 +49,6 @@
 	pinctrl-names = "default", "sleep";
 	sara_r4 {
 		compatible = "u-blox,sara-r4";
-		label = "ublox-sara-r4";
 		status = "okay";
 
 		mdm-power-gpios = <&gpio0 16 0>;

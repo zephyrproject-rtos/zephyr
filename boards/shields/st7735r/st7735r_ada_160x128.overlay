@@ -16,7 +16,6 @@
 
 	st7735r: st7735r@0 {
 		compatible = "sitronix,st7735r";
-		label = "ST7735R";
 		spi-max-frequency = <20000000>;
 		reg = <0>;
 		cmd-data-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */

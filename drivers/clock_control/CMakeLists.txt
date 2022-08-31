@@ -54,3 +54,5 @@ if(CONFIG_CLOCK_CONTROL_RCAR_CPG_MSSR)
   zephyr_library_sources(clock_control_renesas_cpg_mssr.c)
   zephyr_library_sources_ifdef(CONFIG_SOC_R8A77951 clock_control_r8a7795_cpg_mssr.c)
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AST10X0 clock_control_ast10x0.c)

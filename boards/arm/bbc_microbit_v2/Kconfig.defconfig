@@ -11,7 +11,4 @@ config BOARD
 config BT_CTLR
 	default BT
 
-config I2C
-	default y if SENSOR
-
 endif # BOARD_BBC_MICROBIT_V2

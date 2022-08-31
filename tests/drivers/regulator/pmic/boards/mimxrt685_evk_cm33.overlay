@@ -10,3 +10,5 @@
 		io-channels = <&lpadc0 0>;
 	};
 };
+
+test_regulator: &pca9420_ldo2 { };

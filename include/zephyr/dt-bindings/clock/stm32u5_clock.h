@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U5_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U5_CLOCK_H_
 
-/** Peripheral clock sources */
+/** Domain clocks */
 
 /* RM0468, Table 56 Kernel clock distribution summary */
 
@@ -14,13 +14,12 @@
 #define STM32_SRC_PLL1_P	0x001
 #define STM32_SRC_PLL1_Q	0x002
 #define STM32_SRC_PLL1_R	0x003
-/** PLL2/3 not yet supported */
-/* #define STM32_SRC_PLL2_P	0x004 */
-/* #define STM32_SRC_PLL2_Q	0x005 */
-/* #define STM32_SRC_PLL2_R	0x006 */
-/* #define STM32_SRC_PLL3_P	0x007 */
-/* #define STM32_SRC_PLL3_Q	0x008 */
-/* #define STM32_SRC_PLL3_R	0x009 */
+#define STM32_SRC_PLL2_P	0x004
+#define STM32_SRC_PLL2_Q	0x005
+#define STM32_SRC_PLL2_R	0x006
+#define STM32_SRC_PLL3_P	0x007
+#define STM32_SRC_PLL3_Q	0x008
+#define STM32_SRC_PLL3_R	0x009
 /** Fixed clocks  */
 #define STM32_SRC_HSE		0x00A
 #define STM32_SRC_LSE		0x00B
@@ -81,7 +80,7 @@
 #define CCIPR2_REG		0xE4
 #define CCIPR3_REG		0xE8
 
-/** @brief Device clk sources selection helpers */
+/** @brief Device domain clocks selection helpers */
 /** CCIPR1 devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR1_REG)
 #define USART2_SEL(val)		STM32_CLOCK(val, 3, 2, CCIPR1_REG)

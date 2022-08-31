@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(task_wdt);
  * This dummy channel is used to continue feeding the hardware watchdog if the
  * task watchdog timeouts are too long for regular updates
  */
-#define TASK_WDT_BACKGROUND_CHANNEL (-1)
+#define TASK_WDT_BACKGROUND_CHANNEL UINTPTR_MAX
 
 /*
  * Task watchdog channel data
@@ -52,8 +52,8 @@ static bool hw_wdt_started;
 
 static void schedule_next_timeout(int64_t current_ticks)
 {
-	int next_channel_id;	/* channel which will time out next */
-	int64_t next_timeout;   /* timeout in absolute ticks of this channel */
+	uintptr_t next_channel_id;	/* channel which will time out next */
+	int64_t next_timeout;		/* timeout in absolute ticks of this channel */
 
 #ifdef CONFIG_TASK_WDT_HW_FALLBACK
 	next_channel_id = TASK_WDT_BACKGROUND_CHANNEL;
@@ -100,7 +100,7 @@ static void schedule_next_timeout(int64_t current_ticks)
  */
 static void task_wdt_trigger(struct k_timer *timer_id)
 {
-	int channel_id = (int)k_timer_user_data_get(timer_id);
+	uintptr_t channel_id = (uintptr_t)k_timer_user_data_get(timer_id);
 	bool bg_channel = IS_ENABLED(CONFIG_TASK_WDT_HW_FALLBACK) &&
 			  (channel_id == TASK_WDT_BACKGROUND_CHANNEL);
 

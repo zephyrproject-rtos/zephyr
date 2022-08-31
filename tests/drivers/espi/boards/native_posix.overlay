@@ -9,6 +9,5 @@
 		status = "okay";
 		compatible = "zephyr,espi-emul-espi-host";
 		reg = <0x0>;
-		label = "ESPI_HOST";
 	};
 };

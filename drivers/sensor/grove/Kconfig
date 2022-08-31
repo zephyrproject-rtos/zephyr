@@ -5,6 +5,8 @@
 
 config GROVE_SENSORS
 	bool "Seeed Grove sensors support"
+	default y
+	depends on DT_HAS_SEEED_GROVE_LIGHT_ENABLED || DT_HAS_SEEED_GROVE_TEMPERATURE_ENABLED
 	help
 	  Enable Seeed Grove sensors support.
 
@@ -12,6 +14,8 @@ if GROVE_SENSORS
 
 config GROVE_LIGHT_SENSOR
 	bool "The Seeed Grove Light Sensor"
+	default y
+	depends on DT_HAS_SEEED_GROVE_LIGHT_ENABLED
 	depends on ADC && !MINIMAL_LIBC
 	help
 	  Setting this value will enable driver support for the Grove Light
@@ -19,6 +23,8 @@ config GROVE_LIGHT_SENSOR
 
 config GROVE_TEMPERATURE_SENSOR
 	bool "The Seeed Grove Temperature Sensor"
+	default y
+	depends on DT_HAS_SEEED_GROVE_TEMPERATURE_ENABLED
 	depends on ADC && !MINIMAL_LIBC
 	help
 	  Setting this value will enable driver support for the Grove

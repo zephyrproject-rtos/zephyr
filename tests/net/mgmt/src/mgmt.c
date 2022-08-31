@@ -8,7 +8,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 
 #include <zephyr/zephyr.h>
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <errno.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_pkt.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define THREAD_SLEEP 50 /* ms */
 #define TEST_INFO_STRING "mgmt event info"

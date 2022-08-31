@@ -35,6 +35,7 @@
 	aliases {
 		led0 = &red_led_1;
 		led1 = &red_led_2;
+		watchdog0 = &iwdg;
 	};
 };
 

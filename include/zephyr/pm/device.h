@@ -190,7 +190,7 @@ struct pm_device {
  *
  * @param dev_name Device name.
  */
-#define Z_PM_DEVICE_NAME(dev_name) _CONCAT(__pm_device__, dev_name)
+#define Z_PM_DEVICE_NAME(dev_name) _CONCAT(__pm_device_, dev_name)
 
 /**
  * @brief Define device PM slot.
@@ -205,7 +205,7 @@ struct pm_device {
  */
 #define Z_PM_DEVICE_DEFINE_SLOT(dev_name)				\
 	static const Z_DECL_ALIGN(struct device *)			\
-	_CONCAT(Z_PM_DEVICE_NAME(dev_name), _slot) __used		\
+	_CONCAT(__pm_slot_, dev_name) __used				\
 	__attribute__((__section__(".z_pm_device_slots")))
 
 #ifdef CONFIG_PM_DEVICE
@@ -319,18 +319,6 @@ struct pm_device {
 const char *pm_device_state_str(enum pm_device_state state);
 
 /**
- * @brief Obtain the power state of a device.
- *
- * @param dev Device instance.
- * @param state Pointer where device power state will be stored.
- *
- * @retval 0 If successful.
- * @retval -ENOSYS If device does not implement power management.
- */
-int pm_device_state_get(const struct device *dev,
-			enum pm_device_state *state);
-
-/**
  * @brief Run a pm action on a device.
  *
  * This function calls the device PM control callback so that the device does
@@ -365,6 +353,18 @@ void pm_device_children_action_run(const struct device *dev,
 		pm_device_action_failed_cb_t failure_cb);
 
 #if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
+/**
+ * @brief Obtain the power state of a device.
+ *
+ * @param dev Device instance.
+ * @param state Pointer where device power state will be stored.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If device does not implement power management.
+ */
+int pm_device_state_get(const struct device *dev,
+			enum pm_device_state *state);
+
 /**
  * @brief Initialize a device state to #PM_DEVICE_STATE_SUSPENDED.
  *
@@ -566,6 +566,16 @@ int pm_device_power_domain_remove(const struct device *dev,
  */
 bool pm_device_is_powered(const struct device *dev);
 #else
+static inline int pm_device_state_get(const struct device *dev,
+				      enum pm_device_state *state)
+{
+	ARG_UNUSED(dev);
+
+	*state = PM_DEVICE_STATE_ACTIVE;
+
+	return 0;
+}
+
 static inline void pm_device_init_suspended(const struct device *dev)
 {
 	ARG_UNUSED(dev);

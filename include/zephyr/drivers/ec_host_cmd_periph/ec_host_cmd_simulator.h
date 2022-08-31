@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_DRIVERS_EC_HOST_CMD_SIMULATOR_H_
+#define ZEPHYR_INCLUDE_DRIVERS_EC_HOST_CMD_SIMULATOR_H_
+
 /**
  * @file
  * @brief Header for commands to interact with the simulator outside of normal
@@ -38,3 +41,5 @@ void ec_host_cmd_periph_sim_install_send_cb(ec_host_cmd_periph_api_send cb);
  * @retval -EBUSY if the host command framework is busy with another request.
  */
 int ec_host_cmd_periph_sim_data_received(const uint8_t *buffer, size_t len);
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_EC_HOST_CMD_SIMULATOR_H_ */

@@ -59,6 +59,7 @@
 		sw1 = &user_button_2;
 		sw2 = &user_button_3;
 		lora0 = &lora;
+		watchdog0 = &iwdg;
 	};
 
 	power-states {
@@ -88,6 +89,8 @@
 };
 
 &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };
 
@@ -155,6 +158,10 @@
 &adc1 {
 	pinctrl-0 = <&adc_in5_pb1>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 

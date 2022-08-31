@@ -152,11 +152,16 @@ static int stm32_hsem_mailbox_init(const struct device *dev)
 {
 	struct stm32_hsem_mailbox_data *data = dev->data;
 	const struct stm32_hsem_mailbox_config *cfg = dev->config;
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	/* Config transfer semaphore */
 	switch (CONFIG_IPM_STM32_HSEM_CPU) {
 	case HSEM_CPU1:
+		if (!device_is_ready(clk)) {
+			LOG_ERR("clock control device not ready");
+			return -ENODEV;
+		}
+
 		/* Enable clock */
 		if (clock_control_on(clk, (clock_control_subsys_t *)&cfg->pclken) != 0) {
 			LOG_WRN("Failed to enable clock");

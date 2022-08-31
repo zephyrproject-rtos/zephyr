@@ -18,6 +18,5 @@
 		compatible = "zephyr,counter-watchdog";
 		status = "okay";
 		counter = <&timer0>;
-		label = "WDT_COUNTER";
 	};
 };

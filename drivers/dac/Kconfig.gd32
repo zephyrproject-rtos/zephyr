@@ -4,12 +4,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_GD_GD32_DAC := gd,gd32-dac
-
 config DAC_GD32
 	bool "GD32 DAC driver"
-	depends on (SOC_FAMILY_GD32 || SOC_SERIES_GD32VF103)
-	default $(dt_compat_enabled,$(DT_COMPAT_GD_GD32_DAC))
+	default y
+	depends on DT_HAS_GD_GD32_DAC_ENABLED
 	help
 	  Enable GigaDevice GD32 DAC driver

@@ -155,10 +155,9 @@ arduino_i2c: &flexcomm4 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	mma8652fc@1d {
+	mma8652fc: mma8652fc@1d {
 		compatible = "nxp,fxos8700","nxp,mma8652fc";
 		reg = <0x1d>;
-		label = "MMA8652FC";
 		int1-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
 	};
 };

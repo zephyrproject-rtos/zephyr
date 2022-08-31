@@ -64,7 +64,7 @@ static const struct mpsc_pbuf_buffer_config config = {
 	.get_wlen = get_wlen,
 	.flags = 0
 };
-static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+static const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 static struct mpsc_pbuf_buffer buf;
 static atomic_t active_cnt; /* Counts number of buffered messages. */
@@ -263,7 +263,7 @@ void log_frontend_msg(const void *source,
 	uint16_t strl[4];
 	struct log_msg_desc outdesc = desc;
 	int plen = cbprintf_package_copy(package, desc.package_len, NULL, 0,
-					 CBPRINTF_PACKAGE_COPY_RW_STR,
+					 CBPRINTF_PACKAGE_CONVERT_RW_STR,
 					 strl, ARRAY_SIZE(strl));
 	size_t dlen = desc.data_len;
 	bool dev_ready = device_is_ready(dev);
@@ -293,7 +293,7 @@ void log_frontend_msg(const void *source,
 
 	plen = cbprintf_package_copy(package, desc.package_len,
 				     pkt->data, plen,
-				     CBPRINTF_PACKAGE_COPY_RW_STR,
+				     CBPRINTF_PACKAGE_CONVERT_RW_STR,
 				     strl, ARRAY_SIZE(strl));
 	if (plen < 0) {
 		/* error */

@@ -563,7 +563,7 @@ struct net_if *net_if_get_default(void)
 {
 	struct net_if *iface = NULL;
 
-	if (_net_if_list_start == _net_if_list_end) {
+	if (&_net_if_list_start[0] == &_net_if_list_end[0]) {
 		return NULL;
 	}
 
@@ -2775,6 +2775,10 @@ uint32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6)
 
 static void iface_ipv6_start(struct net_if *iface)
 {
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_NET_IPV6_DAD)) {
 		net_if_start_dad(iface);
 	} else {

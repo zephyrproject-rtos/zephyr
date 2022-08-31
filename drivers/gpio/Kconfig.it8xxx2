@@ -3,5 +3,7 @@
 
 config GPIO_ITE_IT8XXX2
 	bool "ITE IT8XXX2 GPIO driver"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_GPIO_ENABLED
 	help
 	  Enable driver for the ite GPIO controller.

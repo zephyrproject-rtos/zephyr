@@ -47,10 +47,12 @@
 
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/espi.h>
 #include <zephyr/pm/pm.h>
 #include <soc.h>
 
+#include "soc_gpio.h"
 #include "soc_host.h"
 #include "soc_power.h"
 
@@ -84,6 +86,57 @@ enum {
 	NPCX_STANDARD_WAKE_UP,
 };
 
+#define NODE_LEAKAGE_IO DT_INST(0, nuvoton_npcx_leakage_io)
+#if DT_NODE_HAS_PROP(NODE_LEAKAGE_IO, leak_gpios)
+struct npcx_leak_gpio {
+	const struct device *gpio;
+	gpio_pin_t pin;
+};
+
+#define NPCX_POWER_LEAKAGE_IO_INIT(node_id, prop, idx)	{		\
+	.gpio = DEVICE_DT_GET(DT_GPIO_CTLR_BY_IDX(node_id, prop, idx)),	\
+	.pin = DT_GPIO_PIN_BY_IDX(node_id, prop, idx),			\
+},
+
+/*
+ * Get io array which have leakage current from 'leak-gpios' property of
+ * 'power_leakage_io' DT node. User can overwrite this prop. at board DT file to
+ * save power consumption when ec enter deep sleep.
+ *
+ * &power_leakage_io {
+ *       leak-gpios = <&gpio0 0 0
+ *                    &gpiob 1 0>;
+ * };
+ */
+static struct npcx_leak_gpio leak_gpios[] = {
+	DT_FOREACH_PROP_ELEM(NODE_LEAKAGE_IO, leak_gpios, NPCX_POWER_LEAKAGE_IO_INIT)
+};
+
+static void npcx_power_suspend_leak_io_pads(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(leak_gpios); i++) {
+		npcx_gpio_disable_io_pads(leak_gpios[i].gpio, leak_gpios[i].pin);
+	}
+}
+
+static void npcx_power_restore_leak_io_pads(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(leak_gpios); i++) {
+		npcx_gpio_enable_io_pads(leak_gpios[i].gpio, leak_gpios[i].pin);
+	}
+}
+#else
+void npcx_power_suspend_leak_io_pads(void)
+{
+	/* do nothing */
+}
+
+void npcx_power_restore_leak_io_pads(void)
+{
+	/* do nothing */
+}
+#endif /* DT_NODE_HAS_PROP(NODE_LEAKAGE_IO, leak_gpios) */
+
 static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 {
 	/* Disable interrupts */
@@ -99,10 +152,11 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 	npcx_clock_control_turn_on_system_sleep(slp_mode == NPCX_DEEP_SLEEP,
 					wk_mode == NPCX_INSTANT_WAKE_UP);
 
-	/* A bypass in npcx7 series to prevent leakage in low-voltage pads */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		npcx_lvol_suspend_io_pads();
-	}
+	/*
+	 * Disable the connection between io pads that have leakage current and
+	 * input buffer to save power consumption.
+	 */
+	npcx_power_suspend_leak_io_pads();
 
 	/* Turn on eSPI/LPC host access wake-up interrupt. */
 	if (IS_ENABLED(CONFIG_ESPI_NPCX)) {
@@ -134,10 +188,11 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 		npcx_host_disable_access_interrupt();
 	}
 
-	/* A bypass in npcx7 series to prevent leakage in low-voltage pads */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		npcx_lvol_restore_io_pads();
-	}
+	/*
+	 * Restore the connection between io pads that have leakage current and
+	 * input buffer.
+	 */
+	npcx_power_restore_leak_io_pads();
 
 	/* Turn off system sleep mode. */
 	npcx_clock_control_turn_off_system_sleep();

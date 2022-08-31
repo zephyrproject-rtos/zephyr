@@ -412,6 +412,18 @@ config NET_TCP_RETRY_COUNT
 	  Should a retransmission timeout occur, the receive callback is
 	  called with -ECONNRESET error code and the context is dereferenced.
 
+config NET_TCP_RANDOMIZED_RTO
+	bool "Use a randomized retransmission time"
+	default y
+	depends on NET_TCP
+	help
+	  It can happen that two similar stacks enter a retransmission cycle
+	  due to a packet collision. If the transmission timeout is the same
+	  both stacks will retry at the same moment resulting in another
+	  collision. By introducing a randomized retry timeout, the chance of
+	  a second collision is reduced and it reduces furter the more
+	  retransmissions occur.
+
 config NET_TCP_MAX_SEND_WINDOW_SIZE
 	int "Maximum sending window size to use"
 	depends on NET_TCP

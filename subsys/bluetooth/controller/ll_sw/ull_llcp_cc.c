@@ -6,10 +6,10 @@
 
 #include <zephyr/types.h>
 
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
-#include <sys/slist.h>
-#include <sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 
 #include "hal/ecb.h"
 #include "hal/ccm.h"
@@ -51,6 +51,7 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+#if defined(CONFIG_BT_PERIPHERAL)
 static uint16_t cc_event_counter(struct ll_conn *conn)
 {
 	struct lll_conn *lll;
@@ -67,7 +68,6 @@ static uint16_t cc_event_counter(struct ll_conn *conn)
 	return event_counter;
 }
 
-#if defined(CONFIG_BT_PERIPHERAL)
 /* LLCP Remote Procedure FSM states */
 enum {
 	/* Establish Procedure */
@@ -291,7 +291,7 @@ static uint8_t rp_cc_check_phy(struct ll_conn *conn, struct proc_ctx *ctx,
 		/* Unsupported phy selected */
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
-#endif
+#endif /* CONFIG_BT_CTLR_PHY */
 
 	return BT_HCI_ERR_SUCCESS;
 }

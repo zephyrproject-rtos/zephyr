@@ -8,6 +8,5 @@
 	tmp112@4a {
 		compatible = "ti,tmp112";
 		reg = <0x4a>;
-		label = "TMP112";
 	};
 };

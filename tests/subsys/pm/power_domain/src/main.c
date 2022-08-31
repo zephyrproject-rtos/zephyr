@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
@@ -14,7 +14,10 @@
 #define TEST_DEVA DT_NODELABEL(test_dev_a)
 #define TEST_DEVB DT_NODELABEL(test_dev_b)
 
-static const struct device *domain, *deva, *devb, *devc;
+static const struct device *const domain = DEVICE_DT_GET(TEST_DOMAIN);
+static const struct device *const deva = DEVICE_DT_GET(TEST_DEVA);
+static const struct device *const devb = DEVICE_DT_GET(TEST_DEVB);
+static const struct device *devc;
 static int testing_domain_on_notitication;
 static int testing_domain_off_notitication;
 
@@ -120,14 +123,11 @@ DEVICE_DEFINE(devc, "devc", dev_init, PM_DEVICE_GET(devc),
  * - get + put multiple devices under a domain
  * - notification when domain state changes
  */
-static void test_power_domain_device_runtime(void)
+ZTEST(power_domain_1cpu, test_power_domain_device_runtime)
 {
 	int ret;
 	enum pm_device_state state;
 
-	domain = DEVICE_DT_GET(TEST_DOMAIN);
-	deva = DEVICE_DT_GET(TEST_DEVA);
-	devb = DEVICE_DT_GET(TEST_DEVB);
 	devc = DEVICE_GET(devc);
 
 	pm_device_init_suspended(domain);
@@ -230,10 +230,5 @@ static void test_power_domain_device_runtime(void)
 	zassert_equal(ret, 0, NULL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(power_domain_test,
-			 ztest_1cpu_unit_test(test_power_domain_device_runtime));
-
-	ztest_run_test_suite(power_domain_test);
-}
+ZTEST_SUITE(power_domain_1cpu, NULL, NULL, ztest_simple_1cpu_before,
+			ztest_simple_1cpu_after, NULL);

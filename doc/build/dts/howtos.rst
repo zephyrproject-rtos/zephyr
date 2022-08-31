@@ -32,7 +32,7 @@ For example, using the :ref:`qemu_cortex_m3` board to build :ref:`hello_world`:
 
    # --cmake-only here just forces CMake to run, skipping the
    # build process to save time.
-   west build -b qemu_cortex_m3 -s samples/hello_world --cmake-only
+   west build -b qemu_cortex_m3 samples/hello_world --cmake-only
 
 You can change ``qemu_cortex_m3`` to match your board.
 
@@ -42,11 +42,11 @@ CMake prints the input and output file locations like this:
 
    -- Found BOARD.dts: .../zephyr/boards/arm/qemu_cortex_m3/qemu_cortex_m3.dts
    -- Generated zephyr.dts: .../zephyr/build/zephyr/zephyr.dts
-   -- Generated devicetree_unfixed.h: .../zephyr/build/zephyr/include/generated/devicetree_unfixed.h
+   -- Generated devicetree_generated.h: .../zephyr/build/zephyr/include/generated/devicetree_generated.h
 
 The :file:`zephyr.dts` file is the final devicetree in DTS format.
 
-The :file:`devicetree_unfixed.h` file is the corresponding generated header.
+The :file:`devicetree_generated.h` file is the corresponding generated header.
 
 See :ref:`devicetree-in-out-files` for details about these files.
 
@@ -104,7 +104,7 @@ device is to use :c:func:`DEVICE_DT_GET`:
 
 .. code-block:: c
 
-   const struct device *uart_dev = DEVICE_DT_GET(MY_SERIAL);
+   const struct device *const uart_dev = DEVICE_DT_GET(MY_SERIAL);
 
    if (!device_is_ready(uart_dev)) {
            /* Not ready, do not use */
@@ -122,20 +122,17 @@ that the device is ready to be used before passing it to any API functions.
 
 In some situations the device cannot be known at build-time, e.g., if it depends
 on user input like in a shell application. In this case you can get the
-``struct device`` by combining :c:func:`DT_LABEL` with
-:c:func:`device_get_binding`:
+``struct device`` by combining :c:func:`device_get_binding` with the device
+name:
 
 .. code-block:: c
 
-   const struct device *uart_dev = device_get_binding(DT_LABEL(MY_SERIAL));
+   const char *dev_name = /* TODO: insert device name from user */;
+   const struct device *uart_dev = device_get_binding(dev_name);
 
 You can then use ``uart_dev`` with :ref:`uart_api` API functions like
 :c:func:`uart_configure`. Similar code will work for other device types; just
 make sure you use the correct API for the device.
-
-There's no need to override the ``label`` property to something else: just make
-a node identifier and pass it to ``DT_LABEL`` to get the right string to pass
-to ``device_get_binding()``.
 
 If you're having trouble, see :ref:`dt-trouble`. The first thing to check is
 that the node has ``status = "okay"``, like this:
@@ -145,7 +142,7 @@ that the node has ``status = "okay"``, like this:
    #define MY_SERIAL DT_NODELABEL(my_serial)
 
    #if DT_NODE_HAS_STATUS(MY_SERIAL, okay)
-   const struct device *uart_dev = DEVICE_DT_GET(MY_SERIAL);
+   const struct device *const uart_dev = DEVICE_DT_GET(MY_SERIAL);
    #else
    #error "Node is disabled"
    #endif

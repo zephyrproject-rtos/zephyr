@@ -5,6 +5,8 @@
 
 menuconfig SM351LT
 	bool "SM351LT Magnetoresistive Sensor"
+	default y
+	depends on DT_HAS_HONEYWELL_SM351LT_ENABLED
 	depends on (GPIO)
 	help
 	  Enable GPIO-based driver for SM351LT magnetoresistive

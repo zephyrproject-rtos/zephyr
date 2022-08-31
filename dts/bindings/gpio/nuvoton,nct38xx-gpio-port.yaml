@@ -8,9 +8,6 @@ compatible: "nuvoton,nct38xx-gpio-port"
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    label:
-      required: true
-
     reg:
       required: true
 

@@ -92,6 +92,7 @@
 		sw2 = &joy_down;
 		sw3 = &joy_right;
 		sw4 = &joy_up;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -136,7 +137,6 @@
 	vbus_meas: ina230@40 {
 		status = "okay";
 		compatible = "ti,ina230";
-		label = "VBUS";
 		reg = <0x40>;
 		config = <INA230_CONFIG(
 			INA230_OPER_MODE_BUS_VOLTAGE_CONT,

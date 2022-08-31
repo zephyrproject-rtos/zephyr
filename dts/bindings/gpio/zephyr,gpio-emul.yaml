@@ -11,9 +11,6 @@ properties:
     reg:
       required: true
 
-    label:
-      required: true
-
     rising-edge:
       description: Enables support for rising edge interrupt detection
       type: boolean

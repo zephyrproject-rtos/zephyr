@@ -29,7 +29,6 @@
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
-			label = "LTDC";
 			status = "disabled";
 		};
 	};

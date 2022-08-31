@@ -10,7 +10,6 @@
 	adt7420@48 {
 		compatible = "adi,adt7420";
 		reg = <0x48>;
-		label = "ADT7420";
 		int-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 	};
 };

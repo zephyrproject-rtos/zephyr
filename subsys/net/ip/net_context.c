@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_offload.h>
 #include <zephyr/net/ethernet.h>
-#include <zephyr/net/socket_can.h>
+#include <zephyr/net/socketcan.h>
 
 #include "connection.h"
 #include "net_private.h"
@@ -370,7 +370,8 @@ int net_context_unref(struct net_context *context)
 
 	if (context->conn_handler) {
 		if (IS_ENABLED(CONFIG_NET_TCP) || IS_ENABLED(CONFIG_NET_UDP) ||
-		    IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
+		    IS_ENABLED(CONFIG_NET_SOCKETS_CAN) ||
+		    IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
 			net_conn_unregister(context->conn_handler);
 		}
 

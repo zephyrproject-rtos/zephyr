@@ -3,11 +3,11 @@
 # Copyright (c) 2019 Alexander Wachter
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ZEPHYR_CAN_LOOPBACK := zephyr,can-loopback
-
 config CAN_LOOPBACK
 	bool "Emulated CAN loopback driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_CAN_LOOPBACK))
+	default y
+	depends on DT_HAS_ZEPHYR_CAN_LOOPBACK_ENABLED
+	select CAN_HAS_CANFD
 	help
 	  This is an emulated driver that can only loopback messages.
 

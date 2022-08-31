@@ -55,7 +55,7 @@ static int unicast_server_config_cb(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, _node) {
 		/* Skip if capabilities don't match */
 		if (codec->id != cap->codec->id) {
 			continue;
@@ -109,7 +109,7 @@ static int unicast_server_reconfig_cb(struct bt_audio_stream *stream,
 		return -EINVAL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, _node) {
 		int err;
 
 		if (codec->id != cap->codec->id) {
@@ -260,7 +260,7 @@ static int publish_capability_cb(struct bt_conn *conn, uint8_t dir,
 	}
 
 	i = 0;
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, _node) {
 		if (i != index) {
 			i++;
 			continue;
@@ -399,7 +399,7 @@ int bt_audio_capability_register(struct bt_audio_capability *cap)
 	}
 #endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_ASCS */
 
-	sys_slist_append(lst, &cap->node);
+	sys_slist_append(lst, &cap->_node);
 
 #if defined(CONFIG_BT_PACS)
 	bt_pacs_add_capability(cap->dir);
@@ -424,7 +424,7 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap)
 
 	BT_DBG("cap %p dir 0x%02x", cap, cap->dir);
 
-	if (!sys_slist_find_and_remove(lst, &cap->node)) {
+	if (!sys_slist_find_and_remove(lst, &cap->_node)) {
 		return -ENOENT;
 	}
 
@@ -490,35 +490,31 @@ int bt_audio_capability_set_location(enum bt_audio_dir dir,
 static int set_available_contexts(enum bt_audio_dir dir,
 				  enum bt_audio_context contexts)
 {
-	enum bt_audio_context supported;
-
 	IF_ENABLED(CONFIG_BT_PAC_SNK, (
-		supported = CONFIG_BT_PACS_SNK_CONTEXT;
-
-		if (contexts & ~supported) {
-			return -ENOTSUP;
-		}
-
 		if (dir == BT_AUDIO_DIR_SINK) {
+			const enum bt_audio_context supported = CONFIG_BT_PACS_SNK_CONTEXT;
+
+			if (contexts & ~supported) {
+				return -ENOTSUP;
+			}
+
 			sink_available_contexts = contexts;
 			return 0;
 		}
 	));
 
 	IF_ENABLED(CONFIG_BT_PAC_SRC, (
-		supported = CONFIG_BT_PACS_SRC_CONTEXT;
-
-		if (contexts & ~supported) {
-			return -ENOTSUP;
-		}
-
 		if (dir == BT_AUDIO_DIR_SOURCE) {
+			const enum bt_audio_context supported = CONFIG_BT_PACS_SRC_CONTEXT;
+
+			if (contexts & ~supported) {
+				return -ENOTSUP;
+			}
+
 			source_available_contexts = contexts;
 			return 0;
 		}
 	));
-
-	ARG_UNUSED(supported);
 
 	BT_ERR("Invalid endpoint dir: %u", dir);
 

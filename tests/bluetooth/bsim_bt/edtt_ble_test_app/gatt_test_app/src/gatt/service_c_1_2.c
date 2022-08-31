@@ -18,28 +18,28 @@
 
 extern struct bt_gatt_attr service_d_2_attrs[];
 
-/** @def BT_UUID_SERVICE_C_1
+/**
  *  @brief UUID for the Service C.1
  */
 #define BT_UUID_SERVICE_C_1             BT_UUID_DECLARE_128( \
 		0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01, \
 		0x00, 0x00, 0x00, 0x00, 0x0c, 0xa0, 0x00, 0x00)
 
-/** @def BT_UUID_VALUE_V9__128_BIT_UUID
+/**
  *  @brief UUID for the Value V9 (128-bit UUID) Characteristic
  */
 #define BT_UUID_VALUE_V9__128_BIT_UUID  BT_UUID_DECLARE_128( \
 		0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01, \
 		0x00, 0x00, 0x00, 0x00, 0x09, 0xb0, 0x00, 0x00)
 
-/** @def BT_UUID_DES_V9D2__128_BIT_UUID
+/**
  *  @brief UUID for the Descriptor V9D2 (128-bit UUID) Characteristic
  */
 #define BT_UUID_DES_V9D2__128_BIT_UUID  BT_UUID_DECLARE_128( \
 		0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01, \
 		0x00, 0x00, 0x00, 0x00, 0xd2, 0xd9, 0x00, 0x00)
 
-/** @def BT_UUID_DES_V9D3__128_BIT_UUID
+/**
  *  @brief UUID for the Descriptor V9D3 (128-bit UUID) Characteristic
  */
 #define BT_UUID_DES_V9D3__128_BIT_UUID  BT_UUID_DECLARE_128( \

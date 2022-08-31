@@ -10,12 +10,6 @@ This board allows to run Zephyr as Xen guest on any ARMv8 board that supports
 ARM Virtualization Extensions. This is example configuration, as almost any VM
 configuration is unique in many aspects.
 
-.. figure:: xen_project_logo.png
-   :align: center
-   :alt: XenVM
-
-   Xen virtual Guest (Credit: Xen Project)
-
 It provides minimal set of devices:
 
 * ARM Generic timer

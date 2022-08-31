@@ -57,7 +57,6 @@
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/drivers/peci.h>
 /* drivers/pinctrl.h requires SoC specific header */
-#include <zephyr/drivers/pinmux.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/drivers/ps2.h>
 #include <zephyr/drivers/ptp_clock.h>
@@ -75,7 +74,7 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/watchdog.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 class foo_class {
 public:

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/zephyr.h>
 
 #include <zephyr/toolchain.h>
@@ -14,7 +14,7 @@
 #include <zephyr/drivers/mm/system_mm.h>
 
 #include <soc.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 
 #define N_PAGES 3
 #define PAGE_SZ CONFIG_MM_DRV_PAGE_SIZE
@@ -29,7 +29,7 @@ struct pagemem {
  */
 uint8_t __aligned(PAGE_SZ) buf[2 * N_PAGES * PAGE_SZ];
 
-void test_adsp_mem_map_region(void)
+ZTEST(adsp_mem, test_adsp_mem_map_region)
 {
 	int ret;
 	uintptr_t pa[N_PAGES];
@@ -155,7 +155,7 @@ void test_adsp_mem_map_region(void)
 	}
 }
 
-void test_adsp_mem_map_array(void)
+ZTEST(adsp_mem, test_adsp_mem_map_array)
 {
 	int ret;
 	uintptr_t pa[N_PAGES];
@@ -281,11 +281,4 @@ void test_adsp_mem_map_array(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(adsp_mem,
-			 ztest_unit_test(test_adsp_mem_map_region),
-			 ztest_unit_test(test_adsp_mem_map_array));
-
-	ztest_run_test_suite(adsp_mem);
-}
+ZTEST_SUITE(adsp_mem, NULL, NULL, NULL, NULL, NULL);

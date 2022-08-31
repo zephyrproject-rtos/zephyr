@@ -26,6 +26,10 @@
 		output-ohms = <2100000>;
 		full-ohms = <(2100000 + 806000)>;
 	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
 };
 
 &uart1 { /* ESP32 */

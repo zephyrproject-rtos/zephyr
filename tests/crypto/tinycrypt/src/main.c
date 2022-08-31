@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 extern void test_ccm_vector_1(void);
 extern void test_ccm_vector_2(void);

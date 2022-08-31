@@ -49,7 +49,6 @@
 			interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&cpg CPG_MOD 907>;
 			status = "disabled";
-			label = "gpio5";
 		};
 
 		gpio6: gpio@e6055400 {
@@ -61,7 +60,6 @@
 			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&cpg CPG_MOD 906>;
 			status = "disabled";
-			label = "gpio6";
 		};
 
 		pfc: pin-controller@e6060000 {
@@ -80,7 +78,6 @@
 			reg = <0xe60f0500 0x1004>;
 			clocks = <&cpg CPG_MOD 303>;
 			status = "disabled";
-			label = "cmt0";
 		};
 
 		can0: can@e6c30000 {
@@ -92,7 +89,6 @@
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
-			label = "can0";
 		};
 
 		i2c2: i2c@e6510000 {
@@ -106,7 +102,6 @@
 					IRQ_DEFAULT_PRIORITY>;
 			clocks = <&cpg CPG_MOD 929>;
 			status = "disabled";
-			label = "i2c2";
 		};
 
 		i2c4: i2c@e66d8000 {
@@ -120,7 +115,6 @@
 					IRQ_DEFAULT_PRIORITY>;
 			clocks = <&cpg CPG_MOD 927>;
 			status = "disabled";
-			label = "i2c4";
 		};
 
 		scif1: serial@e6e68000 {
@@ -131,7 +125,6 @@
 					IRQ_DEFAULT_PRIORITY>;
 			current-speed = <115200>;
 			status = "disabled";
-			label = "scif1";
 		};
 
 		scif2: serial@e6e88000 {
@@ -142,7 +135,6 @@
 					IRQ_DEFAULT_PRIORITY>;
 			current-speed = <115200>;
 			status = "disabled";
-			label = "scif2";
 		};
 	};
 };

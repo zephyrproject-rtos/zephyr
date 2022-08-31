@@ -1066,6 +1066,10 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	}
 #endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+	ull_cp_tx_ntf(conn);
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+
 	pdu_rx = (void *)(*rx)->pdu;
 
 	switch (pdu_rx->ll_id) {
@@ -1455,6 +1459,10 @@ void ull_conn_done(struct node_rx_event_done *done)
 		ll_rx_sched();
 	}
 #endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+	ull_cp_tx_ntf(conn);
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Check authenticated payload expiry or MIC failure */
@@ -8181,6 +8189,11 @@ void ull_dle_init(struct ll_conn *conn, uint8_t phy)
 	conn->lll.dle.remote.max_rx_time = max_time_min;
 #endif /* CONFIG_BT_CTLR_PHY */
 
+	/*
+	 * ref. Bluetooth Core Specification version 5.3, Vol. 6,
+	 * Part B, section 4.5.10 we can call ull_dle_update_eff
+	 * for initialisation
+	 */
 	ull_dle_update_eff(conn);
 
 	/* Check whether the controller should perform a data length update after

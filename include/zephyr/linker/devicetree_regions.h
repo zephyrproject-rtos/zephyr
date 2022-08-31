@@ -7,6 +7,9 @@
  * Generate memory regions from devicetree nodes.
  */
 
+#ifndef ZEPHYR_INCLUDE_LINKER_DEVICETREE_REGIONS_H_
+#define ZEPHYR_INCLUDE_LINKER_DEVICETREE_REGIONS_H_
+
 /**
  * @brief Get the linker memory-region name in a token form
  *
@@ -286,3 +289,5 @@
  *
  */
 #define LINKER_DT_REGION_MPU(mpu_fn) _CHECK_APPLY_FN(_DT_COMPATIBLE, _EXPAND_MPU_FN, mpu_fn)
+
+#endif /* ZEPHYR_INCLUDE_LINKER_DEVICETREE_REGIONS_H_ */

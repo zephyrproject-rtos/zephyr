@@ -19,6 +19,10 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
 };
 
 &gpiote {
@@ -58,7 +62,6 @@ arduino_serial: &uart1 {
 	pinctrl-names = "default", "sleep";
 	quectel_bg9x {
 		compatible = "quectel,bg9x";
-		label      = "quectel-bg9x";
 		status     = "okay";
 
 		mdm-power-gpios = <&gpio1 5  0>;

@@ -3,6 +3,7 @@
 
 config I2C_SIFIVE
 	bool "Sifive I2C driver"
-	depends on SOC_SERIES_RISCV_SIFIVE_FREEDOM
+	default y
+	depends on DT_HAS_SIFIVE_I2C0_ENABLED
 	help
 	  Enable I2C support on SiFive Freedom

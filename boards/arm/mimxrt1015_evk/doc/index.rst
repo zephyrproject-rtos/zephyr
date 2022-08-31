@@ -11,8 +11,7 @@ high-performance feature set in low-cost LQFP packages, further simplifying
 board design and layout for customers. The i.MX RT1015 runs on the Arm®
 Cortex®-M7 core at 500 MHz.
 
-.. image:: ./mimxrt1015_evk.jpg
-   :width: 720px
+.. image:: mimxrt1015_evk.jpg
    :align: center
    :alt: MIMXRT1015-EVK
 
@@ -79,6 +78,8 @@ features:
 | ADC       | on-chip    | ADC                                 |
 +-----------+------------+-------------------------------------+
 | GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

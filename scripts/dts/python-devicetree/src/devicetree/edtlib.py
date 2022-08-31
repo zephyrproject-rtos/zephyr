@@ -1081,7 +1081,7 @@ class Node:
                 # YAML doesn't have a native format for byte arrays. We need to
                 # convert those from an array like [0x12, 0x34, ...]. The
                 # format has already been checked in
-                # _check_prop_type_and_default().
+                # _check_prop_by_type().
                 if prop_type == "uint8-array":
                     return bytes(default)
                 return default
@@ -1132,7 +1132,7 @@ class Node:
             return self.edt._node2enode[prop.to_path()]
 
         # prop_type == "compound". Checking that the 'type:'
-        # value is valid is done in _check_prop_type_and_default().
+        # value is valid is done in _check_prop_by_type().
         #
         # 'compound' is a dummy type for properties that don't fit any of the
         # patterns above, so that we can require all entries in 'properties:'
@@ -1346,7 +1346,7 @@ class Node:
                 specifier_space = "gpio"
             else:
                 # Strip -s. We've already checked that property names end in -s
-                # if there is no specifier space in _check_prop_type_and_default().
+                # if there is no specifier space in _check_prop_by_type().
                 specifier_space = prop.name[:-1]
 
         res = []
@@ -1552,7 +1552,7 @@ class PinCtrl:
     @property
     def name_as_token(self):
         "See the class docstring"
-        return _val_as_token(self.name) if self.name is not None else None
+        return str_as_token(self.name) if self.name is not None else None
 
     def __repr__(self):
         fields = []
@@ -1645,7 +1645,7 @@ class Property:
     @property
     def val_as_token(self):
         "See the class docstring"
-        return _val_as_token(self.val)
+        return str_as_token(self.val)
 
     @property
     def enum_index(self):
@@ -1978,8 +1978,7 @@ class Binding:
                          f"'properties: {prop_name}: ...' in {self.path}, "
                          f"expected one of {', '.join(ok_prop_keys)}")
 
-            _check_prop_type_and_default(
-                prop_name, options, self.path)
+            _check_prop_by_type(prop_name, options, self.path)
 
             for true_false_opt in ["required", "deprecated"]:
                 if true_false_opt in options:
@@ -2001,11 +2000,6 @@ class Binding:
             if "enum" in options and not isinstance(options["enum"], list):
                 _err(f"enum in {self.path} for property '{prop_name}' "
                      "is not a list")
-
-            if "const" in options and not isinstance(options["const"],
-                                                     (int, str)):
-                _err(f"const in {self.path} for property '{prop_name}' "
-                     "is not a scalar")
 
 
 def bindings_from_paths(yaml_paths, ignore_errors=False):
@@ -2391,12 +2385,13 @@ def _binding_include(loader, node):
     _binding_inc_error("unrecognised node type in !include statement")
 
 
-def _check_prop_type_and_default(prop_name, options, binding_path):
-    # Binding._check_properties() helper. Checks 'type:', 'default:' and
-    # 'specifier-space:' for the property named 'prop_name'
+def _check_prop_by_type(prop_name, options, binding_path):
+    # Binding._check_properties() helper. Checks 'type:', 'default:',
+    # 'const:' and # 'specifier-space:' for the property named 'prop_name'
 
     prop_type = options.get("type")
     default = options.get("default")
+    const = options.get("const")
 
     if prop_type is None:
         _err(f"missing 'type:' for '{prop_name}' in 'properties' in "
@@ -2420,6 +2415,13 @@ def _check_prop_type_and_default(prop_name, options, binding_path):
             _err(f"'{prop_name}' in 'properties:' in {binding_path} "
                  f"has type 'phandle-array' and its name does not end in 's', "
                  f"but no 'specifier-space' was provided.")
+
+    const_types = {"int", "array", "uint8-array", "string", "string-array"}
+    if const and prop_type not in const_types:
+        _err(f"const in {binding_path} for property '{prop_name}' "
+             f"has type '{prop_type}', expected one of " +
+             ", ".join(const_types))
+
     # Check default
 
     if default is None:
@@ -2547,12 +2549,14 @@ def _interrupt_parent(node):
     # the parents of 'node'. As of writing, this behavior isn't specified in
     # the DT spec., but seems to match what some .dts files except.
 
+    start_node = node
+
     while node:
         if "interrupt-parent" in node.props:
             return node.props["interrupt-parent"].to_node()
         node = node.parent
 
-    _err(f"{node!r} has an 'interrupts' property, but neither the node "
+    _err(f"{start_node!r} has an 'interrupts' property, but neither the node "
          f"nor any of its parents has an 'interrupt-parent' property")
 
 
@@ -2927,7 +2931,12 @@ _LOG = logging.getLogger(__name__)
 _NOT_ALPHANUM_OR_UNDERSCORE = re.compile(r'\W', re.ASCII)
 
 
-def _val_as_token(val):
+def str_as_token(val):
+    """Return a canonical representation of a string as a C token.
+
+    This converts special characters in 'val' to underscores, and
+    returns the result."""
+
     return re.sub(_NOT_ALPHANUM_OR_UNDERSCORE, '_', val)
 
 

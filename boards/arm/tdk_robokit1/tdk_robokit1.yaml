@@ -1,0 +1,20 @@
+identifier: tdk_robokit1
+name: TDK RoboKit1
+type: mcu
+arch: arm
+ram: 384
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - i2c
+  - gpio
+  - spi
+  - watchdog
+  - usb_device
+  - pwm
+  - can
+  - canfd
+  - hwinfo

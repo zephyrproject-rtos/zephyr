@@ -68,7 +68,7 @@ static uint32_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
 	return 0;
 }
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 
 #include "lc3.h"
 #include "math.h"
@@ -322,7 +322,7 @@ static void audio_timer_timeout(struct k_work *work)
 	k_work_schedule(&audio_send_work, K_MSEC(1000));
 
 	len_to_send++;
-	if (len_to_send > ARRAY_SIZE(buf_data)) {
+	if (len_to_send > codec_configuration.qos.sdu) {
 		len_to_send = 1;
 	}
 }
@@ -717,6 +717,25 @@ static struct bt_gatt_cb gatt_callbacks = {
 	.att_mtu_updated = att_mtu_updated,
 };
 
+static void unicast_client_location_cb(struct bt_conn *conn,
+				      enum bt_audio_dir dir,
+				      enum bt_audio_location loc)
+{
+	printk("dir %u loc %X\n", dir, loc);
+}
+
+static void available_contexts_cb(struct bt_conn *conn,
+				  enum bt_audio_context snk_ctx,
+				  enum bt_audio_context src_ctx)
+{
+	printk("snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
+}
+
+const struct bt_audio_unicast_client_cb unicast_client_cbs = {
+	.location = unicast_client_location_cb,
+	.available_contexts = available_contexts_cb,
+};
+
 static int init(void)
 {
 	int err;
@@ -733,7 +752,7 @@ static int init(void)
 
 	bt_gatt_cb_register(&gatt_callbacks);
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 	k_work_init_delayable(&audio_send_work, lc3_audio_timer_timeout);
 #else
 	k_work_init_delayable(&audio_send_work, audio_timer_timeout);
@@ -942,7 +961,7 @@ static int set_stream_qos(void)
 
 static int enable_streams(void)
 {
-	if (IS_ENABLED(CONFIG_LIBLC3CODEC)) {
+	if (IS_ENABLED(CONFIG_LIBLC3)) {
 		init_lc3();
 	}
 
@@ -1015,6 +1034,12 @@ void main(void)
 		return;
 	}
 	printk("Initialized\n");
+
+	err = bt_audio_unicast_client_register_cb(&unicast_client_cbs);
+	if (err != 0) {
+		printk("Failed to register client callbacks: %d", err);
+		return;
+	}
 
 	while (true) {
 		reset_data();

@@ -1,9 +1,0 @@
-tests:
-  testing.ztest.mock:
-    arch_exclude: arm
-    tags: test_framework
-    integration_platforms:
-      - native_posix
-  testing.ztest.unit:
-    tags: test_framework
-    type: unit

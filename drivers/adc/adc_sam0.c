@@ -160,8 +160,16 @@ static int adc_sam0_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 	if (adc->REFCTRL.reg != refctrl) {
+#ifdef ADC_SAM0_REFERENCE_ENABLE_PROTECTED
+		adc->CTRLA.bit.ENABLE = 0;
+		wait_synchronization(adc);
+#endif
 		adc->REFCTRL.reg = refctrl;
 		wait_synchronization(adc);
+#ifdef ADC_SAM0_REFERENCE_ENABLE_PROTECTED
+		adc->CTRLA.bit.ENABLE = 1;
+		wait_synchronization(adc);
+#endif
 #ifdef ADC_SAM0_REFERENCE_GLITCH
 		struct adc_sam0_data *data = dev->data;
 
@@ -518,7 +526,7 @@ do {									\
 	adc->CALIB.reg = ADC_SAM0_BIASCOMP(n)				\
 			 | ADC_SAM0_BIASR2R(n)				\
 			 | ADC_SAM0_BIASREFBUF(n);			\
-} while (0)
+} while (false)
 
 #else
 
@@ -543,7 +551,7 @@ do {									\
 		      ADC_FUSES_BIASCAL_Msk) >> ADC_FUSES_BIASCAL_Pos;	\
 	adc->CALIB.reg = ADC_CALIB_BIAS_CAL(bias) |			\
 			 ADC_CALIB_LINEARITY_CAL(lin);			\
-} while (0)
+} while (false)
 
 #endif
 

@@ -45,9 +45,7 @@ Key Features
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
 
 .. image:: img/nucleo_f756zg.jpg
-   :width: 720px
    :align: center
-   :height: 720px
    :alt: Nucleo F756ZG
 
 More information about the board can be found at the `Nucleo F756ZG website`_.

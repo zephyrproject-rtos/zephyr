@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT silabs_gecko_semailbox
 
- #include <drivers/entropy.h>
+ #include <zephyr/drivers/entropy.h>
  #include <soc.h>
  #include "em_cmu.h"
  #include "sl_se_manager.h"

@@ -16,12 +16,12 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ICMPV6_LOG_LEVEL);
 #include <zephyr/sys/printk.h>
 #include <zephyr/linker/sections.h>
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 
 #include <zephyr/net/buf.h>
 
 #include "icmpv6.h"
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 static int handler_called;
 static int handler_status;

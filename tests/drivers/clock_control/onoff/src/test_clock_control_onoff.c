@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
@@ -17,7 +17,7 @@ static struct onoff_manager *get_mgr(void)
 
 static bool clock_is_off(void)
 {
-	const struct device *clk = DEVICE_DT_GET_ONE(nordic_nrf_clock);
+	const struct device *const clk = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 
 	zassert_true(device_is_ready(clk), "Device is not ready");
 

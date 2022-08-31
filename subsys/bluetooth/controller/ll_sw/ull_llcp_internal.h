@@ -449,6 +449,7 @@ void llcp_lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 void llcp_lp_pu_init_proc(struct proc_ctx *ctx);
 void llcp_lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 void llcp_lp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+void llcp_lp_pu_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 /*
@@ -473,6 +474,7 @@ void llcp_rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 void llcp_rp_pu_init_proc(struct proc_ctx *ctx);
 void llcp_rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 void llcp_rp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+void llcp_rp_pu_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 /*
@@ -499,6 +501,7 @@ bool llcp_lr_ispaused(struct ll_conn *conn);
 void llcp_lr_pause(struct ll_conn *conn);
 void llcp_lr_resume(struct ll_conn *conn);
 void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+void llcp_lr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_lr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_lr_init(struct ll_conn *conn);
@@ -520,6 +523,7 @@ bool llcp_rr_ispaused(struct ll_conn *conn);
 void llcp_rr_pause(struct ll_conn *conn);
 void llcp_rr_resume(struct ll_conn *conn);
 void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+void llcp_rr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_rr_init(struct ll_conn *conn);
 void llcp_rr_prepare(struct ll_conn *conn, struct node_rx_pdu *rx);

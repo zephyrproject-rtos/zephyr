@@ -96,7 +96,7 @@ static void thread_handler(void *p1, void *p2, void *p3)
  * Yield the main thread which is cooperative. Check
  * if all the threads gets executed.
  */
-void test_yield_cooperative(void)
+ZTEST(threads_scheduling, test_yield_cooperative)
 {
 
 	/* set current thread to a cooperative priority */
@@ -123,7 +123,7 @@ void test_yield_cooperative(void)
  *
  * @ingroup kernel_sched_tests
  */
-void test_sleep_cooperative(void)
+ZTEST(threads_scheduling, test_sleep_cooperative)
 {
 	/* set current thread to a cooperative priority */
 	init_prio = -1;
@@ -140,7 +140,7 @@ void test_sleep_cooperative(void)
 	teardown_threads();
 }
 
-void test_busy_wait_cooperative(void)
+ZTEST(threads_scheduling, test_busy_wait_cooperative)
 {
 	/* set current thread to a cooperative priority */
 	init_prio = -1;
@@ -169,7 +169,7 @@ void test_busy_wait_cooperative(void)
  *
  * @ingroup kernel_sched_tests
  */
-void test_sleep_wakeup_preemptible(void)
+ZTEST(threads_scheduling, test_sleep_wakeup_preemptible)
 {
 	/* set current thread to a preemptible priority */
 	init_prio = 0;
@@ -204,7 +204,7 @@ static void coop_thread(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-void test_pending_thread_wakeup(void)
+ZTEST(threads_scheduling, test_pending_thread_wakeup)
 {
 	/* Make current thread preemptible */
 	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(1));
@@ -239,7 +239,7 @@ void test_pending_thread_wakeup(void)
  *
  * @ingroup kernel_sched_tests
  */
-void test_time_slicing_preemptible(void)
+ZTEST(threads_scheduling, test_time_slicing_preemptible)
 {
 #ifdef CONFIG_TIMESLICING
 	/* set current thread to a preemptible priority */
@@ -278,7 +278,7 @@ void test_time_slicing_preemptible(void)
  *
  * @ingroup kernel_sched_tests
  */
-void test_time_slicing_disable_preemptible(void)
+ZTEST(threads_scheduling, test_time_slicing_disable_preemptible)
 {
 #ifdef CONFIG_TIMESLICING
 	/* set current thread to a preemptible priority */
@@ -310,7 +310,7 @@ void test_time_slicing_disable_preemptible(void)
  *
  * @ingroup kernel_sched_tests
  */
-void test_lock_preemptible(void)
+ZTEST(threads_scheduling, test_lock_preemptible)
 {
 	/* set current thread to a preemptible priority */
 	init_prio = 0;
@@ -345,7 +345,7 @@ void test_lock_preemptible(void)
  *
  * @ingroup kernel_sched_tests
  */
-void test_unlock_preemptible(void)
+ZTEST(threads_scheduling, test_unlock_preemptible)
 {
 	/* set current thread to a preemptible priority */
 	init_prio = 0;
@@ -382,7 +382,7 @@ void test_unlock_preemptible(void)
  *
  * @ingroup kernel_sched_tests
  */
-void test_unlock_nested_sched_lock(void)
+ZTEST(threads_scheduling, test_unlock_nested_sched_lock)
 {
 	/* set current thread to a preemptible priority */
 	init_prio = 0;
@@ -431,7 +431,7 @@ void test_unlock_nested_sched_lock(void)
  *
  * @ingroup kernel_sched_tests
  */
-void test_wakeup_expired_timer_thread(void)
+ZTEST(threads_scheduling, test_wakeup_expired_timer_thread)
 {
 	k_tid_t tid = k_thread_create(&tthread[0], tstack, STACK_SIZE,
 					thread_handler, NULL, NULL, NULL,

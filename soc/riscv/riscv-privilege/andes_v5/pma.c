@@ -9,6 +9,12 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/linker/linker-defs.h>
 
+#ifndef CONFIG_ASSERT
+#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(pma_init, LOG_LEVEL);
+#endif
+
 /* Programmable PMA mechanism is supported */
 #define MMSC_CFG_PPMA		(1 << 30)
 
@@ -54,9 +60,9 @@
 
 /* Wrappers of inline assembly */
 #define read_csr(var, csr) \
-	__asm__ volatile ("csrr %0, %1" : "=r" (var) : "i" (csr))
+	({ __asm__ volatile ("csrr %0, %1" : "=r" (var) : "i" (csr)); })
 #define write_csr(csr, val) \
-	__asm__ volatile ("csrw %0, %1" :: "i" (csr), "r" (val))
+	({ __asm__ volatile ("csrw %0, %1" :: "i" (csr), "r" (val)); })
 
 struct pma_region_attr {
 	/* Attributes belonging to pmacfg{i} */
@@ -191,7 +197,11 @@ static int pma_region_is_valid(const struct pma_region *region)
 		&&
 		((region->start & (region->size - 1)) == 0U);
 
-	return region_is_valid;
+	if (!region_is_valid) {
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 #ifdef CONFIG_NOCACHE_MEMORY
@@ -203,12 +213,14 @@ static void configure_nocache_region(void)
 		.attr = {PMACFG_MTYPE_MEMORY_NOCACHE_BUFFERABLE},
 	};
 
-	if (pma_region_is_valid(&nocache_region) == -EINVAL) {
-		__ASSERT(0, "Configuring PMA region of nocache region failed\n");
-	}
+	if (nocache_region.size != 0) {
+		if (pma_region_is_valid(&nocache_region) == -EINVAL) {
+			__ASSERT(0, "Configuring PMA region of nocache region failed\n");
+		}
 
-	/* Initialize nocache region at PMA region 0 */
-	region_init(0, &nocache_region);
+		/* Initialize nocache region at PMA region 0 */
+		region_init(0, &nocache_region);
+	}
 }
 #endif /* CONFIG_NOCACHE_MEMORY */
 
@@ -237,7 +249,10 @@ static int pma_init(const struct device *arg)
 
 		__ASSERT(0, "CPU doesn't support PMA. "
 			    "Please disable CONFIG_SOC_ANDES_V5_PMA\n");
-		return -1;
+#ifndef CONFIG_ASSERT
+		LOG_ERR("CPU doesn't support PMA. Please disable CONFIG_SOC_ANDES_V5_PMA");
+#endif
+		return -ENODEV;
 	}
 
 	pma_init_per_core();

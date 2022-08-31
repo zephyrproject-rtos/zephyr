@@ -14,10 +14,13 @@
 
 
 #ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
-#define FLASH_TEST_OFFSET FLASH_AREA_OFFSET(image_1_nonsecure)
+#define FLASH_TEST_LABEL image_1_nonsecure
 #else
-#define FLASH_TEST_OFFSET FLASH_AREA_OFFSET(image_1)
+#define FLASH_TEST_LABEL image_1
 #endif
+
+#define FLASH_TEST_OFFSET	FLASH_AREA_OFFSET(FLASH_TEST_LABEL)
+#define FLASH_TEST_DEVICE	FLASH_AREA_DEVICE(FLASH_TEST_LABEL)
 
 #define FLASH_PAGE_SIZE   4096
 #define TEST_DATA_WORD_0  0x1122
@@ -30,7 +33,7 @@
 
 void main(void)
 {
-	const struct device *flash_dev;
+	const struct device *flash_dev = FLASH_TEST_DEVICE;
 	uint32_t buf_array_1[4] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
 				    TEST_DATA_WORD_2, TEST_DATA_WORD_3 };
 	uint32_t buf_array_2[4] = { TEST_DATA_WORD_3, TEST_DATA_WORD_1,
@@ -45,7 +48,6 @@ void main(void)
 	printf("\nNordic nRF5 Flash Testing\n");
 	printf("=========================\n");
 
-	flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 	if (!device_is_ready(flash_dev)) {
 		printf("Flash device not ready\n");
 		return;

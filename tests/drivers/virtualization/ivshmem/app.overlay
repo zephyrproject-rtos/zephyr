@@ -7,7 +7,6 @@
 
 / {
 	pcie0 {
-		label = "PCIE_0";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "intel,pcie";
@@ -17,7 +16,6 @@
 			compatible = "qemu,ivshmem";
 
 			reg = <PCIE_BDF_NONE PCIE_ID(0x1af4,0x1110)>;
-			label = "IVSHMEM";
 			status = "okay";
 		};
 	};

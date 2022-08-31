@@ -20,7 +20,6 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
-			label = "TEST_GPIO_1";
 			status = "okay";
 		};
 
@@ -29,26 +28,22 @@
 			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			label = "TEST_I2C_CTLR";
 			status = "okay";
 			clock-frequency = <100000>;
 
 			test_i2c_mt9m114: mt9m114@0 {
 				compatible = "aptina,mt9m114";
-				label = "MT9M114";
 				reg = <0>;
 			};
 
 			test_i2c_ov2640: ov2640@1 {
 				compatible = "ovti,ov2640";
-				label = "OV2640";
 				reg = <0x1>;
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
 			test_i2c_ov7725: ov7725@2 {
 				compatible = "ovti,ov7725";
-				label = "OV7725";
 				reg = <0x2>;
 				reset-gpios = <&test_gpio 0 0>;
 			};

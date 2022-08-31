@@ -20,7 +20,6 @@ board DT file or with a board overlay in the samples/sensor/stm32_temp_sensor/bo
 
     stm32_vbat: stm32vbat {
         compatible = "st,stm32-vbat";
-        label = "VBAT";
         io-channels = <&adc1 14>;
         ratio = <3>;
         status = "okay";

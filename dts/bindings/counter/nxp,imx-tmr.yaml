@@ -9,9 +9,6 @@ compatible: "nxp,imx-tmr"
 include: base.yaml
 
 properties:
-  label:
-    required: true
-
   channel:
     type: int
     required: true

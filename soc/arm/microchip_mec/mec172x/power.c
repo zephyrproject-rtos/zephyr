@@ -5,13 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/sys_io.h>
-#include <sys/__assert.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/pm/pm.h>
 #include <soc.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #ifndef CONFIG_PM_DEVICE
 #include "device_power.h"
 #endif

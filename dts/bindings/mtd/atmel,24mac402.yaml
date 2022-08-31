@@ -1,0 +1,8 @@
+# Copyright (c) 2022, Kumar Gala <galak@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel AT24 (or compatible) I2C EEPROM
+
+compatible: "atmel,at24mac402"
+
+include: [i2c-device.yaml]

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #ifdef CONFIG_ZTEST_RULE_1CPU
 static void one_cpu_rule_before_each(const struct ztest_unit_test *test, void *data)

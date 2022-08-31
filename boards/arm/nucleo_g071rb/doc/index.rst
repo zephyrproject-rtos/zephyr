@@ -25,8 +25,6 @@ some highlights of the Nucleo G071RB board:
 - Two push-buttons: USER and RESET
 
 .. image:: img/nucleo_g071rb.jpg
-   :width: 500px
-   :height: 367px
    :align: center
    :alt: Nucleo G071RB
 
@@ -111,6 +109,8 @@ The Zephyr nucleo_g071rb board configuration supports the following hardware fea
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | dac                                 |
++-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.

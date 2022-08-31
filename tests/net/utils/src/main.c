@@ -10,7 +10,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_UTILS_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
-#include <ztest_assert.h>
+#include <zephyr/ztest_assert.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
@@ -24,8 +24,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_UTILS_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/linker/sections.h>
 
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"

@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/devicetree.h>
 
 #include <gd32_adc.h>
@@ -17,7 +18,7 @@
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_gd32, CONFIG_ADC_LOG_LEVEL);
 
 /**
@@ -101,6 +102,7 @@ struct adc_gd32_config {
 #ifdef CONFIG_SOC_SERIES_GD32F3X0
 	uint32_t rcu_clock_source;
 #endif
+	struct reset_dt_spec reset;
 	uint8_t channels;
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t irq_num;
@@ -348,6 +350,8 @@ static int adc_gd32_init(const struct device *dev)
 
 	rcu_periph_clock_enable(cfg->rcu_periph_clock);
 
+	(void)reset_line_toggle_dt(&cfg->reset);
+
 #if defined(CONFIG_SOC_SERIES_GD32F403) || \
 	defined(CONFIG_SOC_SERIES_GD32VF103) || \
 	defined(CONFIG_SOC_SERIES_GD32F3X0)
@@ -372,7 +376,7 @@ static int adc_gd32_init(const struct device *dev)
 }
 
 #define HANDLE_SHARED_IRQ(n, active_irq)							\
-	static const struct device *dev_##n = DEVICE_DT_INST_GET(n);				\
+	static const struct device *const dev_##n = DEVICE_DT_INST_GET(n);			\
 	const struct adc_gd32_config *cfg_##n = dev_##n->config;				\
 												\
 	if ((cfg_##n->irq_num == active_irq) &&							\
@@ -446,6 +450,7 @@ static void adc_gd32_global_irq_cfg(void)
 	const static struct adc_gd32_config adc_gd32_config_##n = {				\
 		.reg = DT_INST_REG_ADDR(n),							\
 		.rcu_periph_clock = DT_INST_PROP(n, rcu_periph_clock),				\
+		.reset = RESET_DT_SPEC_INST_GET(n),						\
 		.channels = DT_INST_PROP(n, channels),						\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\
 		.irq_num = DT_INST_IRQN(n),							\
