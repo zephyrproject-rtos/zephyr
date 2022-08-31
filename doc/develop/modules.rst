@@ -58,6 +58,8 @@ Module Repositories
      Existing module repositories that do not conform to the above convention
      do not need to be renamed to comply with the above convention.
 
+* Module repositories names should be explicitly set in the :file:`zephyr/module.yml` file.
+
 * Modules should use "zephyr" as the default name for the repository main
   branch. Branches for specific purposes, for example, a module branch for
   an LTS Zephyr version, shall have names starting with the 'zephyr\_' prefix.
@@ -71,6 +73,10 @@ Module Repositories
      branch mirroring the master branch of the external repository. It
      is not recommended as this may generate confusion around the module's
      main branch, which should be 'zephyr'.
+
+* Modules should expose all provided header files with an include pathname
+  beginning with the module-name.  (E.g., mcuboot should expose its
+  ``bootutil/bootutil.h`` as "mcuboot/bootutil/bootutil.h".)
 
 .. _modules_synchronization:
 
@@ -428,7 +434,9 @@ Module name
 Each Zephyr module is given a name by which it can be referred to in the build
 system.
 
-The name may be specified in the :file:`zephyr/module.yml` file:
+The name should be specified in the :file:`zephyr/module.yml` file. This will
+ensure the module name is not changeable through user-defined directory names
+or ``west`` manifest files:
 
 .. code-block:: yaml
 
