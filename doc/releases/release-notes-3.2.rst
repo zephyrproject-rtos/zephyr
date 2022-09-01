@@ -258,6 +258,9 @@ Libraries / Subsystems
     variable instead, see :ref:`mcumgr_smp_group_9` for updated
     information. Legacy bahaviour can be restored by enabling
     :kconfig:option:`CONFIG_MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE`
+  * MCUMGR img_mgmt erase command now accepts an optional slot number
+    to select which image will be erased, using the ``slot`` input
+    (will default to slot 1 if not provided).
 
 HALs
 ****
