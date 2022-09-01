@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+tests:
+  os.mgmt.echo:
+    platform_allow: qemu_cortex_m0 qemu_cortex_m3 nrf52840dk_nrf52840 nrf52dk_nrf52832 native_posix native_posix_64
+    tags: os_mgmt_echo
