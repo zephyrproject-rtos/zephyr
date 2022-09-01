@@ -437,7 +437,7 @@ static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 	ep = stream->ep;
 	if (ep->status.state == BT_AUDIO_EP_STATE_RELEASING) {
-		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_IDLE);
 	} else {
 		int err;
 
@@ -589,11 +589,16 @@ static void ascs_cp_rsp_success(uint8_t id, uint8_t op)
 	ascs_cp_rsp_add(id, op, BT_ASCS_RSP_SUCCESS, BT_ASCS_REASON_NONE);
 }
 
-static void ase_release(struct bt_ascs_ase *ase, bool cache)
+static void ase_release(struct bt_ascs_ase *ase)
 {
 	int err;
 
 	BT_DBG("ase %p", ase);
+
+	if (ase->ep.status.state == BT_AUDIO_EP_STATE_RELEASING) {
+		/* already releasing */
+		return;
+	}
 
 	if (unicast_server_cb != NULL && unicast_server_cb->release != NULL) {
 		err = unicast_server_cb->release(ase->ep.stream);
@@ -607,11 +612,7 @@ static void ase_release(struct bt_ascs_ase *ase, bool cache)
 		return;
 	}
 
-	if (cache) {
-		ascs_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
-	} else {
-		ascs_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_RELEASING);
-	}
+	ascs_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_RELEASING);
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_RELEASE_OP);
 }
@@ -631,11 +632,8 @@ static void ascs_clear(struct bt_ascs *ascs)
 			continue;
 		}
 
-		if (ase->ep.status.state != BT_AUDIO_EP_STATE_RELEASING) {
-			ase_release(ase, false);
-		}
-
-		ascs_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_IDLE);
+		/* ase_process will handle the final state transition into idle state */
+		ase_release(ase);
 	}
 }
 
@@ -689,29 +687,6 @@ static void ase_disable(struct bt_ascs_ase *ase)
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_DISABLE_OP);
 }
 
-static void ascs_detach(struct bt_ascs *ascs)
-{
-	int i;
-
-	BT_DBG("ascs %p conn %p", ascs, ascs->conn);
-
-	/* Update address in case it has changed */
-	ascs->id = ascs->conn->id;
-	bt_addr_le_copy(&ascs->peer, &ascs->conn->le.dst);
-
-	/* TODO: Store the ASES in the settings? */
-
-	for (i = 0; i < ASE_COUNT; i++) {
-		struct bt_ascs_ase *ase = &ascs->ases[i];
-
-		if (ase->ep.status.state != BT_AUDIO_EP_STATE_IDLE &&
-		    ase->ep.status.state != BT_AUDIO_EP_STATE_RELEASING) {
-			/* Cache if disconnected with codec configured */
-			ase_release(ase, true);
-		}
-	}
-}
-
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	int i;
@@ -726,11 +701,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		}
 
 		/* Release existing ASEs if not bonded */
-		if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
-			ascs_clear(ascs);
-		} else {
-			ascs_detach(ascs);
-		}
+		ascs_clear(ascs);
 
 		bt_conn_unref(ascs->conn);
 		ascs->conn = NULL;
@@ -898,7 +869,10 @@ static void ase_process(struct k_work *work)
 
 	ascs_ep_get_status(&ase->ep, &ase_buf);
 
-	bt_gatt_notify(ase->ascs->conn, ase->ep.server.attr, ase_buf.data, ase_buf.len);
+	if (ase->ascs->conn != NULL) {
+		bt_gatt_notify(ase->ascs->conn, ase->ep.server.attr,
+			       ase_buf.data, ase_buf.len);
+	}
 
 	if (ase->ep.status.state == BT_AUDIO_EP_STATE_RELEASING) {
 		__ASSERT(ase->ep.stream, "stream is NULL");
@@ -2231,7 +2205,7 @@ static ssize_t ascs_release(struct bt_ascs *ascs, struct net_buf_simple *buf)
 			continue;
 		}
 
-		ase_release(ase, false);
+		ase_release(ase);
 	}
 
 	return buf->size;

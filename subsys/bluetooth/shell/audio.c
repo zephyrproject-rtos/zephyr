@@ -767,7 +767,7 @@ static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	err = bt_audio_stream_release(default_stream, false);
+	err = bt_audio_stream_release(default_stream);
 	if (err) {
 		shell_error(sh, "Unable to release Channel");
 		return -ENOEXEC;

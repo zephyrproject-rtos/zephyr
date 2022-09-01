@@ -2032,11 +2032,10 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream);
  *  bt_audio_broadcast_source_delete().
  *
  *  @param stream Stream object
- *  @param cache True to cache the codec configuration or false to forget it
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache);
+int bt_audio_stream_release(struct bt_audio_stream *stream);
 
 /** @brief Send data to Audio stream
  *
