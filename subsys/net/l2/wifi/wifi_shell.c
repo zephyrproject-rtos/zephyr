@@ -431,18 +431,19 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(connect, NULL,
+		  "Connect to a Wi-Fi AP"
 		  "\"<SSID>\"\n<channel number (optional), "
 		  "0 means all>\n"
-		  "<PSK (optional: valid only for secured SSIDs)>"
-		  "<Security type (optional: valid only for secured SSIDs)>"
-		  "0:None, 1:PSK, 2:PSK-256, 3:SAE"
+		  "<PSK (optional: valid only for secure SSIDs)>\n"
+		  "<Security type (optional: valid only for secure SSIDs)>\n"
+		  "0:None, 1:PSK, 2:PSK-256, 3:SAE\n"
 		  "<MFP (optional): 0:Disable, 1:Optional, 2:Required",
 		  cmd_wifi_connect),
-	SHELL_CMD(disconnect, NULL, "Disconnect from Wi-Fi AP",
+	SHELL_CMD(disconnect, NULL, "Disconnect from the Wi-Fi AP",
 		  cmd_wifi_disconnect),
-	SHELL_CMD(scan, NULL, "Scan Wi-Fi AP", cmd_wifi_scan),
-	SHELL_CMD(status, NULL, "Status of Wi-Fi interface", cmd_wifi_status),
-	SHELL_CMD(statistics, NULL, "Wi-Fi statistics", cmd_wifi_stats),
+	SHELL_CMD(scan, NULL, "Scan for Wi-Fi APs", cmd_wifi_scan),
+	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),
+	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),
 	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands", NULL),
 	SHELL_SUBCMD_SET_END
 );
