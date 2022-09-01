@@ -9,16 +9,16 @@
 #include <zephyr/toolchain.h>
 
 #include <string.h>
-#include <zcbor_common.h>
-#include <zcbor_decode.h>
-#include <zcbor_encode.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
-#include <mgmt/mgmt.h>
-#include "zcbor_bulk/zcbor_bulk_priv.h"
 #include "img_mgmt/img_mgmt.h"
+#include <zephyr/mgmt/mcumgr/buf.h>
 #include "img_mgmt/image.h"
 #include "img_mgmt_priv.h"
 #include "img_mgmt/img_mgmt_impl.h"
+#include <mgmt/mgmt.h>
+#include <zcbor_common.h>
+#include <zcbor_decode.h>
+#include <zcbor_encode.h>
+#include "zcbor_bulk/zcbor_bulk_priv.h"
 
 /* The value here sets how many "characteristics" that describe image is
  * encoded into a map per each image (like bootable flags, and so on).
