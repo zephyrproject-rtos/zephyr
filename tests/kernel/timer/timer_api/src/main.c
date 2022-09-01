@@ -804,7 +804,7 @@ ZTEST_USER(timer_api, test_sleep_abs)
 	 */
 	k_ticks_t late = end - (start + sleep_ticks);
 
-	zassert_true(late >= 0 && late < k_us_to_ticks_ceil32(250),
+	zassert_true(late >= 0 && late <= MAX(2, k_us_to_ticks_ceil32(250)),
 		     "expected wakeup at %lld, got %lld (late %lld)",
 		     start + sleep_ticks, end, late);
 }
