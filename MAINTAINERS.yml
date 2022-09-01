@@ -2244,8 +2244,7 @@ West:
 "West project: hal_nuvoton":
   status: maintained
   maintainers:
-    - MulinChao
-    - ChiHuaL
+    - ssekar15
   files:
     - modules/Kconfig.nuvoton
   labels:
