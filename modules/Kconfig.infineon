@@ -15,4 +15,8 @@ config HAS_XMCLIB_UART
 	help
 	  Enable XMCLIB Universal asynchronous receiver transmitter (UART)
 
+config HAS_XMCLIB_FLASH
+	bool
+	help
+	  Enable XMCLIB Flash
 endif # HAS_XMCLIB
