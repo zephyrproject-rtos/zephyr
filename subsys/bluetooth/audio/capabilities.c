@@ -402,7 +402,7 @@ int bt_audio_capability_register(struct bt_audio_capability *cap)
 	sys_slist_append(lst, &cap->_node);
 
 #if defined(CONFIG_BT_PACS)
-	bt_pacs_add_capability(cap->dir);
+	bt_pacs_capabilities_changed(cap->dir);
 #endif /* CONFIG_BT_PACS */
 
 	return 0;
@@ -445,7 +445,7 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap)
 #endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_ASCS */
 
 #if defined(CONFIG_BT_PACS)
-	bt_pacs_remove_capability(cap->dir);
+	bt_pacs_capabilities_changed(cap->dir);
 #endif /* CONFIG_BT_PACS */
 
 	return 0;
