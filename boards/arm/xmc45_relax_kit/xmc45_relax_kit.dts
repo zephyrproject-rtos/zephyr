@@ -36,6 +36,30 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &usic1ch1;
 		zephyr,shell-uart = &usic1ch1;
+		zephyr,flash-controller = &flash_controller;
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+&flash_controller {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		storage_partition: partition@80000 {
+			label = "storage";
+			reg = <0x80000 0x80000>;
+		};
 	};
 };
 

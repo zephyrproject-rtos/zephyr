@@ -110,4 +110,6 @@ source "drivers/flash/Kconfig.cadence_qspi_nor"
 
 source "drivers/flash/Kconfig.gd32"
 
+source "drivers/flash/Kconfig.xmc4xxx"
+
 endif # FLASH
