@@ -18,6 +18,7 @@
 #include <zephyr/logging/log_frontend.h>
 #include <zephyr/syscall_handler.h>
 #include <zephyr/logging/log_output_dict.h>
+#include <zephyr/logging/log_output_custom.h>
 #include <zephyr/linker/utils.h>
 
 LOG_MODULE_REGISTER(log);
@@ -65,7 +66,9 @@ static const log_format_func_t format_table[] = {
 	[LOG_OUTPUT_SYST] = IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) ?
 						log_output_msg_syst_process : NULL,
 	[LOG_OUTPUT_DICT] = IS_ENABLED(CONFIG_LOG_DICTIONARY_SUPPORT) ?
-						log_dict_output_msg_process : NULL
+						log_dict_output_msg_process : NULL,
+	[LOG_OUTPUT_CUSTOM] = IS_ENABLED(CONFIG_LOG_CUSTOM_FORMAT_SUPPORT) ?
+						log_custom_output_msg_process : NULL,
 };
 
 log_format_func_t log_format_func_t_get(uint32_t log_type)

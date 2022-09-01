@@ -19,3 +19,10 @@ tests:
       - qemu_x86
       - sam_e70_xplained
       - qemu_cortex_a53
+  logging.log_switch_format.custom_output:
+    extra_args: OVERLAY_CONFIG=overlay_custom_output.conf
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
+      - sam_e70_xplained
+      - qemu_cortex_a53
