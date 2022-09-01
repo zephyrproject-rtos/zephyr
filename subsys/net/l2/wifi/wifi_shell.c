@@ -68,11 +68,11 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 
 	if (scan_result == 1U) {
 		print(context.sh, SHELL_NORMAL,
-		      "\n%-4s | %-32s %-5s | %-4s | %-4s | %-5s    | %s\n",
-		      "Num", "SSID", "(len)", "Chan", "RSSI", "Sec", "MAC");
+		      "\n%-4s | %-32s %-5s | %-4s | %-4s | %-15s | %s\n",
+		      "Num", "SSID", "(len)", "Chan", "RSSI", "Security", "MAC");
 	}
 
-	print(context.sh, SHELL_NORMAL, "%-4d | %-32s %-5u | %-4u | %-4d | %-5s | %s\n",
+	print(context.sh, SHELL_NORMAL, "%-4d | %-32s %-5u | %-4u | %-4d | %-15s | %s\n",
 	      scan_result, entry->ssid, entry->ssid_length, entry->channel, entry->rssi,
 	      wifi_security_txt(entry->security),
 	      ((entry->mac_length) ?
