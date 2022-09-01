@@ -20,6 +20,7 @@
 #include <zephyr/mgmt/mcumgr/buf.h>
 
 #include <zephyr/mgmt/mcumgr/smp.h>
+#include <mgmt/mgmt.h>
 #include "smp_internal.h"
 #include "smp_reassembly.h"
 
@@ -48,6 +49,11 @@ LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
 					CONFIG_BT_PERIPHERAL_PREF_TIMEOUT),  \
 				(NULL))
 
+/* Minimum number of bytes that must be able to be sent with a notification to a target device
+ * before giving up
+ */
+#define SMP_BT_MINIMUM_MTU_SEND_FAILURE 20
+
 #ifdef CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL
 /* Verification of SMP Connection Parameters configuration that is not possible in the Kconfig. */
 BUILD_ASSERT((CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_TIMEOUT * 4U) >
@@ -73,6 +79,8 @@ struct conn_param_data {
 static struct zephyr_smp_transport smp_bt_transport;
 static struct conn_param_data conn_data[CONFIG_BT_MAX_CONN];
 
+K_SEM_DEFINE(smp_notify_sem, 0, 1);
+
 /* SMP service.
  * {8D53DC1D-1DB7-4CD3-868B-8A527460AA84}
  */
@@ -84,6 +92,12 @@ static struct bt_uuid_128 smp_bt_svc_uuid = BT_UUID_INIT_128(
  */
 static struct bt_uuid_128 smp_bt_chr_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xda2e7828, 0xfbce, 0x4e01, 0xae9e, 0x261174997c48));
+
+/* SMP Bluetooth notification sent callback */
+static void smp_notify_finished(struct bt_conn *conn, void *user_data)
+{
+	k_sem_give(&smp_notify_sem);
+}
 
 /* Helper function that allocates conn_param_data for a conn. */
 static struct conn_param_data *conn_param_data_alloc(struct bt_conn *conn)
@@ -364,14 +378,68 @@ static int smp_bt_ud_copy(struct net_buf *dst, const struct net_buf *src)
 static int smp_bt_tx_pkt(struct zephyr_smp_transport *zst, struct net_buf *nb)
 {
 	struct bt_conn *conn;
-	int rc;
+	int rc = MGMT_ERR_EOK;
+	uint16_t off = 0;
+	uint16_t mtu_size;
+	struct bt_gatt_notify_params notify_param = {
+		.attr = smp_bt_attrs + 2,
+		.func = smp_notify_finished,
+		.data = nb->data,
+	};
+	bool sent = false;
 
 	conn = smp_bt_conn_from_pkt(nb);
 	if (conn == NULL) {
-		rc = -1;
+		rc = MGMT_ERR_ENOENT;
 	} else {
-		rc = smp_bt_notify(conn, nb->data, nb->len);
-		bt_conn_unref(conn);
+		/* Send data in chunks of the MTU size */
+		mtu_size = smp_bt_get_mtu(nb);
+
+		k_sem_reset(&smp_notify_sem);
+
+		while (off < nb->len) {
+			if ((off + mtu_size) > nb->len) {
+				/* Final packet, limit size */
+				mtu_size = nb->len - off;
+			}
+
+			notify_param.len = mtu_size;
+
+			rc = bt_gatt_notify_cb(conn, &notify_param);
+			k_sem_take(&smp_notify_sem, K_FOREVER);
+
+			if (rc == -ENOMEM) {
+				if (sent == false) {
+					/* Failed to send a packet thus far, try reducing the MTU
+					 * size as perhaps the buffer size is limited to a value
+					 * which is less than the MTU or there is a configuration
+					 * error in the project
+					 */
+					if (mtu_size < SMP_BT_MINIMUM_MTU_SEND_FAILURE) {
+						/* If unable to send a 20 byte message, something
+						 * is amiss and so no point in continuing
+						 */
+						rc = MGMT_ERR_ENOMEM;
+						break;
+					}
+
+					mtu_size /= 2;
+				}
+
+				/* No buffers available, wait until the next loop for them to
+				 * become available
+				 */
+				rc = MGMT_ERR_EOK;
+				k_yield();
+			} else if (rc == 0) {
+				off += mtu_size;
+				notify_param.data = &nb->data[off];
+				sent = true;
+			} else {
+				rc = MGMT_ERR_EUNKNOWN;
+				break;
+			}
+		}
 	}
 
 	smp_bt_ud_free(net_buf_user_data(nb));
