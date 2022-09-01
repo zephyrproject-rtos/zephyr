@@ -15,15 +15,6 @@ module = MCUMGR
 module-str = mcumgr
 source "subsys/logging/Kconfig.template.log_config"
 
-
-config APP_LINK_WITH_MCUMGR
-	bool "Link 'app' with MCUMGR"
-	default y
-	help
-	  Add MCUMGR header files to the 'app' include path. It may be
-	  disabled if the include paths for MCUMGR are causing aliasing
-	  issues for 'app'.
-
 rsource "lib/Kconfig"
 
 config MGMT_MAX_MAIN_MAP_ENTRIES
