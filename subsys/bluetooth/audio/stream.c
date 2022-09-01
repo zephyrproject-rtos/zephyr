@@ -1185,13 +1185,13 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
+int bt_audio_stream_release(struct bt_audio_stream *stream)
 {
 	uint8_t state;
 	uint8_t role;
 	int err;
 
-	BT_DBG("stream %p cache %s", stream, cache ? "true" : "false");
+	BT_DBG("stream %p", stream);
 
 	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
 		BT_DBG("Invalid stream");
@@ -1222,7 +1222,7 @@ int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
 		err = bt_unicast_client_release(stream);
 	} else if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER) &&
 		   role == BT_HCI_ROLE_PERIPHERAL) {
-		err = bt_unicast_server_release(stream, cache);
+		err = bt_unicast_server_release(stream);
 	} else {
 		err = -EOPNOTSUPP;
 	}
