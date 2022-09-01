@@ -15,6 +15,17 @@ module = MCUMGR
 module-str = mcumgr
 source "subsys/logging/Kconfig.template.log_config"
 
+config MCUMGR_SMP_WORKQUEUE_STACK_SIZE
+	int "MCUMGR SMP workqueue stack size"
+	default 2048
+	help
+	  Stack size of the MCUMGR SMP work queue.
+
+config MCUMGR_SMP_WORKQUEUE_THREAD_PRIO
+	int "MCUMGR SMP workqueue thread priority"
+	default 3
+	help
+	  Scheduling priority of the MCUMGR SMP work queue.
 
 config APP_LINK_WITH_MCUMGR
 	bool "Link 'app' with MCUMGR"
