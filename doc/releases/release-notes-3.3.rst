@@ -406,6 +406,9 @@ Libraries / Subsystems
     Private headers for above areas can be accessed, when required, using paths:
     ``mgmt/mcumgr/mgmt/<mcumgr_subarea>/``.
 
+ * MCUMgr :kconfig:option:`CONFIG_APP_LINK_WITH_MCUMGR` has been removed as
+   it has not been doing anything.
+
 * LwM2M
 
   * The ``lwm2m_senml_cbor_*`` files have been regenerated using zcbor 0.6.0.
