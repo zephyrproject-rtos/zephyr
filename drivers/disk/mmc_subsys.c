@@ -54,7 +54,6 @@ static int disk_mmc_access_init(struct disk_info *disk)
 static int disk_mmc_access_status(struct disk_info *disk)
 {
 	const struct device *dev = disk->dev;
-	const struct mmc_config *cfg = dev->config;
 	struct mmc_data *data = dev->data;
 
 	if (data->status == SD_OK) {

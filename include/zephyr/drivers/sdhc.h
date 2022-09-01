@@ -163,6 +163,7 @@ struct sdhc_host_caps {
 	unsigned int sd_base_clk: 8;
 	unsigned int max_blk_len: 2;
 	unsigned int bus_8_bit_support: 1;
+	unsigned int bus_4_bit_support: 1;
 	unsigned int adma_2_support: 1;
 	unsigned int _rsvd_20: 1;
 	unsigned int high_spd_support: 1;
