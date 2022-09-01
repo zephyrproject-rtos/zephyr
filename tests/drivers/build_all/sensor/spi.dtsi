@@ -337,3 +337,14 @@ test_spi_icm426888: icm42688@28 {
 	gyro-hz = <32000>;
 	gyro-fs = <2000>;
 };
+
+test_spi_max31865: max31865@0 {
+	compatible = "maxim,max31865";
+	reg = <0x0>;
+	spi-max-frequency = <125000>;
+	resistance-at-zero = <100>;
+	resistance-reference = <430>;
+	low-threshold = <6579>;
+	high-threshold = <32767>;
+	filter-50hz;
+};
