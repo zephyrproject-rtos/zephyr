@@ -328,7 +328,7 @@ static int esp32_wifi_connect(const struct device *dev,
 	wifi_config.sta.pmf_cfg.required = false;
 
 	ret = esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
-	ret |= esp_wifi_set_mode(WIFI_MODE_STA);
+	ret |= esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
 	ret |= esp_wifi_connect();
 
 	if (ret != ESP_OK) {
@@ -353,7 +353,7 @@ static int esp32_wifi_scan(const struct device *dev, scan_result_cb_t cb)
 
 	wifi_scan_config_t scan_config = { 0 };
 
-	ret = esp_wifi_set_mode(WIFI_MODE_STA);
+	ret = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
 	ret |= esp_wifi_scan_start(&scan_config, false);
 
 	if (ret != ESP_OK) {
@@ -388,7 +388,7 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 	}
 
 	/* Start Wi-Fi in AP mode with configuration built above */
-	ret = esp_wifi_set_mode(WIFI_MODE_AP);
+	ret = esp_wifi_set_mode(ESP32_WIFI_MODE_AP);
 	ret |= esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
 	ret = esp_wifi_start();
 	if (ret != ESP_OK) {
@@ -403,7 +403,7 @@ static int esp32_wifi_ap_disable(const struct device *dev)
 {
 	struct esp32_wifi_data *data = dev->data;
 
-	esp_err_t ret = esp_wifi_set_mode(WIFI_MODE_NULL);
+	esp_err_t ret = esp_wifi_set_mode(ESP32_WIFI_MODE_NULL);
 
 	ret |= esp_wifi_start();
 	if (ret != ESP_OK) {
@@ -464,7 +464,7 @@ static int esp32_wifi_dev_init(const struct device *dev)
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
 	esp_err_t ret = esp_wifi_init(&config);
 
-	ret |= esp_wifi_set_mode(WIFI_MODE_STA);
+	ret |= esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
 	ret |= esp_wifi_start();
 
 	if (ret != ESP_OK) {
