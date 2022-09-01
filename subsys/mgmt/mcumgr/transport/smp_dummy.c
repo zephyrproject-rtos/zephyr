@@ -25,7 +25,7 @@
 #include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include <mgmt/mcumgr/smp_dummy.h>
-#include "smp_internal.h"
+#include "../smp_internal.h"
 
 struct device;
 static struct mcumgr_serial_rx_ctxt smp_dummy_rx_ctxt;

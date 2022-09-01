@@ -21,8 +21,8 @@
 
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include <mgmt/mgmt.h>
-#include "smp_internal.h"
-#include "smp_reassembly.h"
+#include "../smp_internal.h"
+#include "../smp_reassembly.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
