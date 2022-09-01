@@ -11,5 +11,5 @@ tests:
       ordered: true
       regex:
         - "accel x:[-.0-9]* ms/2 y:[-.0-9]* ms/2 z:[-.0-9]* ms/2"
-        - "gyro x:[-.0-9]* dps y:[-.0-9]* dps z:[-.0-9]* dps"
+        - "gyro x:[-.0-9]* rad/s y:[-.0-9]* rad/s z:[-.0-9]* rad/s"
         - "trig_cnt:[0-9]*"
