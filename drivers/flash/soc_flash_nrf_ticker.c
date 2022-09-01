@@ -35,20 +35,37 @@ struct ticker_sync_context {
 
 static struct ticker_sync_context _ticker_sync_context;
 
-
 /* semaphore for synchronization of flash operations */
 static struct k_sem sem_sync;
 
-static inline int _ticker_stop(uint8_t inst_idx, uint8_t u_id, uint8_t tic_id)
+static void ticker_stop_work_cb(uint32_t status, void *param)
 {
-	int ret = ticker_stop(inst_idx, u_id, tic_id, NULL, NULL);
+	__ASSERT((status == TICKER_STATUS_SUCCESS ||
+		  status == TICKER_STATUS_FAILURE),
+		 "Failed to stop work ticker, ticker job busy.\n");
 
-	if (ret != TICKER_STATUS_SUCCESS &&
-	    ret != TICKER_STATUS_BUSY) {
-		__ASSERT(0, "Failed to stop ticker.\n");
-	}
+	/* notify thread that data is available */
+	k_sem_give(&sem_sync);
+}
 
-	return ret;
+static void ticker_stop_prepare_cb(uint32_t status, void *param)
+{
+	uint8_t instance_index;
+	uint8_t ticker_id;
+	uint32_t ret;
+
+	__ASSERT(status == TICKER_STATUS_SUCCESS,
+		 "Failed to stop prepare ticker.\n");
+
+	/* Get the ticker instance and ticker id for flash operations */
+	ll_timeslice_ticker_id_get(&instance_index, &ticker_id);
+
+	/* Stop the work ticker, from ULL_LOW context */
+	ret = ticker_stop(instance_index, 2U, (ticker_id + 1U),
+			  ticker_stop_work_cb, NULL);
+	__ASSERT((ret == TICKER_STATUS_SUCCESS ||
+		  ret == TICKER_STATUS_BUSY),
+		 "Failed to request the work ticker to stop.\n");
 }
 
 static void time_slot_callback_work(uint32_t ticks_at_expire,
@@ -58,8 +75,6 @@ static void time_slot_callback_work(uint32_t ticks_at_expire,
 				    void *context)
 {
 	struct flash_op_desc *op_desc;
-	uint8_t instance_index;
-	uint8_t ticker_id;
 	int rc;
 
 	__ASSERT(ll_radio_state_is_idle(),
@@ -68,15 +83,21 @@ static void time_slot_callback_work(uint32_t ticks_at_expire,
 	op_desc = context;
 	rc = op_desc->handler(op_desc->context);
 	if (rc != FLASH_OP_ONGOING) {
+		uint8_t instance_index;
+		uint8_t ticker_id;
+		uint32_t ret;
+
+		/* Get the ticker instance and ticker id for flash operations */
 		ll_timeslice_ticker_id_get(&instance_index, &ticker_id);
 
-		/* Stop the time slot ticker */
-		_ticker_stop(instance_index, 0, ticker_id);
+		/* Stop the prepare ticker, from ULL_HIGH context */
+		ret = ticker_stop(instance_index, 0U, ticker_id,
+				  ticker_stop_prepare_cb, NULL);
+		__ASSERT((ret == TICKER_STATUS_SUCCESS ||
+			  ret == TICKER_STATUS_BUSY),
+			 "Failed to stop ticker.\n");
 
 		_ticker_sync_context.result = (rc == FLASH_OP_DONE) ? 0 : rc;
-
-		/* notify thread that data is available */
-		k_sem_give(&sem_sync);
 	}
 }
 
@@ -85,15 +106,16 @@ static void time_slot_delay(uint32_t ticks_at_expire, uint32_t ticks_delay,
 {
 	uint8_t instance_index;
 	uint8_t ticker_id;
-	int err;
+	uint32_t ret;
 
+	/* Get the ticker instance and ticker id for flash operations */
 	ll_timeslice_ticker_id_get(&instance_index, &ticker_id);
 
-	/* start a secondary one-shot ticker after ticks_delay,
+	/* Start a secondary one-shot ticker after ticks_delay,
 	 * this will let any radio role to gracefully abort and release the
 	 * Radio h/w.
 	 */
-	err = ticker_start(instance_index, /* Radio instance ticker */
+	ret = ticker_start(instance_index, /* Radio instance ticker */
 			   1, /* user id for link layer ULL_HIGH */
 			      /* (MAYFLY_CALL_ID_WORKER) */
 			   (ticker_id + 1), /* ticker_id */
@@ -109,14 +131,16 @@ static void time_slot_delay(uint32_t ticks_at_expire, uint32_t ticks_delay,
 			   NULL, /* no op callback */
 			   NULL);
 
-	if (err != TICKER_STATUS_SUCCESS && err != TICKER_STATUS_BUSY) {
+	if (ret != TICKER_STATUS_SUCCESS && ret != TICKER_STATUS_BUSY) {
+		/* Failed to enqueue the ticker start operation request */
 		_ticker_sync_context.result = 0;
 
-		/* abort flash timeslots */
-		_ticker_stop(instance_index, 0, ticker_id);
-
-		/* notify thread that data is available */
-		k_sem_give(&sem_sync);
+		/* Abort flash prepare ticker, from ULL_HIGH context */
+		ret = ticker_stop(instance_index, 0U, ticker_id,
+				  ticker_stop_prepare_cb, NULL);
+		__ASSERT((ret == TICKER_STATUS_SUCCESS ||
+			  ret == TICKER_STATUS_BUSY),
+			 "Failed to stop ticker.\n");
 	}
 }
 
@@ -159,7 +183,6 @@ int nrf_flash_sync_init(void)
 
 void nrf_flash_sync_set_context(uint32_t duration)
 {
-
 	/* FLASH_SYNC_SWITCHING_TIME is delay which is always added by
 	 * the slot calling mechanism
 	 */
@@ -171,12 +194,14 @@ int nrf_flash_sync_exe(struct flash_op_desc *op_desc)
 {
 	uint8_t instance_index;
 	uint8_t ticker_id;
+	uint32_t ret;
 	int result;
-	uint32_t err;
 
+	/* Get the ticker instance and ticker id for flash operations */
 	ll_timeslice_ticker_id_get(&instance_index, &ticker_id);
 
-	err = ticker_start(instance_index,
+	/* Start periodic flash operation prepare time slots */
+	ret = ticker_start(instance_index,
 			   3, /* user id for thread mode */
 			      /* (MAYFLY_CALL_ID_PROGRAM) */
 			   ticker_id, /* flash ticker id */
@@ -194,11 +219,15 @@ int nrf_flash_sync_exe(struct flash_op_desc *op_desc)
 			   NULL, /* no op callback */
 			   NULL);
 
-	if (err != TICKER_STATUS_SUCCESS && err != TICKER_STATUS_BUSY) {
+	if (ret != TICKER_STATUS_SUCCESS && ret != TICKER_STATUS_BUSY) {
+		/* Failed to enqueue the ticker start operation request */
 		result = -ECANCELED;
 	} else if (k_sem_take(&sem_sync, K_MSEC(FLASH_TIMEOUT_MS)) != 0) {
-		/* Stop any scheduled jobs */
-		_ticker_stop(instance_index, 3, ticker_id);
+		/* Stop any scheduled jobs, from thread context */
+		ret = ticker_stop(instance_index, 3U, ticker_id, NULL, NULL);
+		__ASSERT((ret == TICKER_STATUS_SUCCESS ||
+			  ret == TICKER_STATUS_BUSY),
+			 "Failed to stop ticker.\n");
 
 		/* wait for operation's complete overrun*/
 		result = -ETIMEDOUT;
