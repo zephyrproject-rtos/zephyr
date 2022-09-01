@@ -259,6 +259,9 @@ Libraries / Subsystems
     information. Legacy bahaviour can be restored by enabling
     :kconfig:option:`CONFIG_MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE`
 
+  * MCUMgr :kconfig:option:`CONFIG_APP_LINK_WITH_MCUMGR` has been removed as
+    it has not been doing anything.
+
 HALs
 ****
 
