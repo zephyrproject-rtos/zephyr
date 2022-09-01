@@ -70,6 +70,8 @@ struct usdhc_config {
 	uint32_t power_delay_ms;
 	uint32_t min_bus_freq;
 	uint32_t max_bus_freq;
+	bool mmc_hs200_1_8v;
+	bool mmc_hs400_1_8v;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
 #endif
@@ -84,7 +86,7 @@ struct usdhc_data {
 	usdhc_handle_t transfer_handle;
 	struct sdhc_io host_io;
 	struct k_mutex access_mutex;
-	uint8_t usdhc_rx_dummy[64] __aligned(32);
+	uint8_t usdhc_rx_dummy[128] __aligned(32);
 #ifdef CONFIG_IMX_USDHC_DMA_SUPPORT
 	uint32_t *usdhc_dma_descriptor; /* ADMA descriptor table (noncachable) */
 	uint32_t dma_descriptor_len; /* DMA descriptor table length in words */
@@ -197,6 +199,10 @@ static void imx_usdhc_init_host_props(const struct device *dev)
 	props->host_caps.ddr50_support = (bool)(caps.flags & kUSDHC_SupportDDR50Flag);
 	props->host_caps.sdr104_support = (bool)(caps.flags & kUSDHC_SupportSDR104Flag);
 	props->host_caps.sdr50_support = (bool)(caps.flags & kUSDHC_SupportSDR50Flag);
+	props->host_caps.bus_8_bit_support = (bool)(caps.flags & kUSDHC_Support8BitFlag);
+	props->host_caps.bus_4_bit_support = (bool)(caps.flags & kUSDHC_Support4BitFlag);
+	props->host_caps.hs200_support = (bool)(cfg->mmc_hs200_1_8v);
+	props->host_caps.hs400_support = (bool)(cfg->mmc_hs400_1_8v);
 }
 
 /*
@@ -271,6 +277,7 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 		if (ios->clock != 0) {
 			/* Enable the clock output */
 			bus_clk = USDHC_SetSdClock(cfg->base, src_clk_hz, ios->clock);
+			LOG_DBG("BUS CLOCK: %d", bus_clk);
 			if (bus_clk == 0) {
 				return -ENOTSUP;
 			}
@@ -501,11 +508,21 @@ static int imx_usdhc_execute_tuning(const struct device *dev)
 	int ret;
 	bool retry_tuning = true;
 
-	cmd.index = SD_SEND_TUNING_BLOCK;
+	if ((dev_data->host_io.timing == SDHC_TIMING_HS200) ||
+		       (dev_data->host_io.timing == SDHC_TIMING_HS400)) {
+		/*Currently only reaches here when MMC */
+		cmd.index = MMC_SEND_TUNING_BLOCK;
+	} else {
+		cmd.index = SD_SEND_TUNING_BLOCK;
+	}
 	cmd.argument = 0;
 	cmd.responseType = SD_RSP_TYPE_R1;
 
-	data.blockSize = sizeof(dev_data->usdhc_rx_dummy);
+	if (dev_data->host_io.bus_width == SDHC_BUS_WIDTH8BIT) {
+		data.blockSize = sizeof(dev_data->usdhc_rx_dummy);
+	} else {
+		data.blockSize = sizeof(dev_data->usdhc_rx_dummy) / 2;
+	}
 	data.blockCount = 1;
 	data.rxData = (uint32_t *)dev_data->usdhc_rx_dummy;
 	data.dataType = kUSDHC_TransferDataTuning;
@@ -518,6 +535,7 @@ static int imx_usdhc_execute_tuning(const struct device *dev)
 	/* Disable standard tuning */
 	USDHC_EnableStandardTuning(cfg->base, IMX_USDHC_STANDARD_TUNING_START,
 		IMX_USDHC_TUNING_STEP, false);
+	USDHC_ForceClockOn(cfg->base, true);
 	/*
 	 * Tuning fail found on some SOCs is caused by the different of delay
 	 * cell, so we need to increase the tuning counter to cover the
@@ -562,6 +580,7 @@ static int imx_usdhc_execute_tuning(const struct device *dev)
 	if (USDHC_CheckStdTuningResult(cfg->base) == 0) {
 		return -EIO;
 	}
+	USDHC_ForceClockOn(cfg->base, false);
 
 	/* Enable auto tuning */
 	USDHC_EnableAutoTuning(cfg->base, true);
@@ -631,6 +650,8 @@ static int imx_usdhc_request(const struct device *dev, struct sdhc_command *cmd,
 			}
 			host_data.rxData = data->data;
 			break;
+		case MMC_CHECK_BUS_TEST:
+		case MMC_SEND_EXT_CSD:
 		case SD_APP_SEND_SCR:
 		case SD_SWITCH:
 		case SD_APP_SEND_NUM_WRITTEN_BLK:
@@ -689,7 +710,9 @@ static int imx_usdhc_request(const struct device *dev, struct sdhc_command *cmd,
 		if (ret == -EAGAIN) {
 			/* Retry, card made a tuning request */
 			if (dev_data->host_io.timing == SDHC_TIMING_SDR50 ||
-				dev_data->host_io.timing == SDHC_TIMING_SDR104) {
+				dev_data->host_io.timing == SDHC_TIMING_SDR104 ||
+				dev_data->host_io.timing == SDHC_TIMING_HS200 ||
+				dev_data->host_io.timing == SDHC_TIMING_HS400) {
 				/* Retune card */
 				LOG_DBG("Card made tuning request, retune");
 				ret = imx_usdhc_execute_tuning(dev);
@@ -897,6 +920,8 @@ static const struct sdhc_driver_api usdhc_api = {
 		.min_bus_freq = DT_INST_PROP(n, min_bus_freq),			\
 		.max_bus_freq = DT_INST_PROP(n, max_bus_freq),			\
 		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),		\
+		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),		\
+		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),              \
 		.irq_config_func = usdhc_##n##_irq_config_func,			\
 		IMX_USDHC_PINCTRL_INIT(n)					\
 	};									\
