@@ -91,7 +91,7 @@ static void time_slot_callback_work(uint32_t ticks_at_expire,
 		ll_timeslice_ticker_id_get(&instance_index, &ticker_id);
 
 		/* Stop the prepare ticker, from ULL_HIGH context */
-		ret = ticker_stop(instance_index, 0U, ticker_id,
+		ret = ticker_stop(instance_index, 1U, ticker_id,
 				  ticker_stop_prepare_cb, NULL);
 		__ASSERT((ret == TICKER_STATUS_SUCCESS ||
 			  ret == TICKER_STATUS_BUSY),
@@ -136,7 +136,7 @@ static void time_slot_delay(uint32_t ticks_at_expire, uint32_t ticks_delay,
 		_ticker_sync_context.result = 0;
 
 		/* Abort flash prepare ticker, from ULL_HIGH context */
-		ret = ticker_stop(instance_index, 0U, ticker_id,
+		ret = ticker_stop(instance_index, 1U, ticker_id,
 				  ticker_stop_prepare_cb, NULL);
 		__ASSERT((ret == TICKER_STATUS_SUCCESS ||
 			  ret == TICKER_STATUS_BUSY),
