@@ -109,7 +109,7 @@ endmenu
 
 menu "Transports and Transport Related Configuration Options"
 
-rsource "lib/transport/Kconfig"
+rsource "transport/Kconfig"
 
 endmenu
 
