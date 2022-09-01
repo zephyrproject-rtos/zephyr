@@ -4,10 +4,7 @@ type: mcu
 arch: riscv32
 toolchain:
   - cross-compile
-  # FIXME: This platform is broken due to the incorrect linker script and
-  #        cannot be compiled using the current version of the Zephyr SDK. For
-  #        more details, refer to the GitHub issue #49036.
-  # - zephyr
+  - zephyr
 ram: 128
 flash: 1024
 supported:
