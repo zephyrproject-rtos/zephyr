@@ -6,10 +6,10 @@ LL/CON/PER/BV-33-C
 LL/CON/PER/BV-34-C
 LL/CON/PER/BV-40-C
 LL/CON/PER/BV-42-C
-LL/CON/PER/BV-77-C
-LL/CON/PER/BV-78-C
-LL/CON/PER/BV-80-C
-LL/CON/PER/BV-81-C
+#LL/CON/PER/BV-77-C # Needs testcase implementation update
+#LL/CON/PER/BV-78-C # Needs testcase implementation update
+#LL/CON/PER/BV-80-C # Needs testcase implementation update
+#LL/CON/PER/BV-81-C # Needs testcase implementation update
 LL/DDI/ADV/BV-01-C
 LL/DDI/ADV/BV-02-C
 LL/DDI/ADV/BV-03-C
