@@ -76,8 +76,6 @@ static inline void trigger_irq(int irq)
 
 static inline void trigger_irq(int irq)
 {
-	printk("Triggering irq : %d\n", irq);
-
 	/* Ensure that the specified IRQ number is a valid SGI interrupt ID */
 	zassert_true(irq <= 15, "%u is not a valid SGI interrupt ID", irq);
 
