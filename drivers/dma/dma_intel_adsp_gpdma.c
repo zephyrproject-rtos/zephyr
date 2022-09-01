@@ -47,13 +47,13 @@ struct intel_adsp_gpdma_cfg {
 };
 
 static void intel_adsp_gpdma_llp_config(const struct device *dev,
-					uint32_t channel, uint32_t addr)
+					uint32_t channel, uint32_t dma_slot)
 {
 #ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_HAS_LLP
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
 
 	dw_write(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel),
-		 GPDMA_CHLLPC_DHRS(addr));
+		 GPDMA_CHLLPC_DHRS(dma_slot));
 #endif
 }
 
@@ -107,21 +107,13 @@ static int intel_adsp_gpdma_config(const struct device *dev, uint32_t channel,
 		return res;
 	}
 
-	struct dma_block_config *block_cfg = cfg->head_block;
-
 	/* Assume all scatter/gathers are for the same device? */
 	switch (cfg->channel_direction) {
 	case MEMORY_TO_PERIPHERAL:
-		LOG_DBG("%s: dma %s configuring llp for destination %x",
-			__func__, dev->name, block_cfg->dest_address);
-		intel_adsp_gpdma_llp_config(dev, channel,
-					    block_cfg->dest_address);
-		break;
 	case PERIPHERAL_TO_MEMORY:
-		LOG_DBG("%s: dma %s configuring llp for source %x",
-			__func__, dev->name, block_cfg->source_address);
-		intel_adsp_gpdma_llp_config(dev, channel,
-					    block_cfg->source_address);
+		LOG_DBG("%s: dma %s configuring llp for %x",
+			__func__, dev->name, cfg->dma_slot);
+		intel_adsp_gpdma_llp_config(dev, channel, cfg->dma_slot);
 		break;
 	default:
 		break;
