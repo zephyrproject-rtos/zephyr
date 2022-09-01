@@ -846,7 +846,7 @@ static int eth_initialize(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	heth->Instance->MACTSCR |= ETH_MACTSCR_TSENALL;
 #else
-	heth->Instance->PTPTSCR |= ETH_PTPTSSR_TSSARFE;
+	heth->Instance->PTPTSCR |= ETH_PTPTSCR_TSSARFE;
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
@@ -1395,7 +1395,7 @@ static int ptp_stm32_init(const struct device *port)
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	heth->Instance->MACTSCR |= ETH_MACTSCR_TSCTRLSSR;
 #else
-	heth->Instance->PTPTSCR |= ETH_PTPTSSR_TSSSR;
+	heth->Instance->PTPTSCR |= ETH_PTPTSCR_TSSSR;
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 	/* Initialize timestamp */
