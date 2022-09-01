@@ -28,14 +28,6 @@ config MCUMGR_SMP_WORKQUEUE_THREAD_PRIO
 	help
 	  Scheduling priority of the MCUMGR SMP work queue.
 
-config APP_LINK_WITH_MCUMGR
-	bool "Link 'app' with MCUMGR"
-	default y
-	help
-	  Add MCUMGR header files to the 'app' include path. It may be
-	  disabled if the include paths for MCUMGR are causing aliasing
-	  issues for 'app'.
-
 rsource "mgmt/Kconfig"
 
 config MGMT_MAX_MAIN_MAP_ENTRIES
