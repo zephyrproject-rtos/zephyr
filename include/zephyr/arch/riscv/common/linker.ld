@@ -110,12 +110,6 @@ SECTIONS
     GROUP_START(ROMABLE_REGION)
     __rom_region_start = ROM_BASE;
 
-    SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
-    {
-		. = ALIGN(4);
-		KEEP(*(.vectors.*))
-    } GROUP_LINK_IN(ROMABLE_REGION)
-
     SECTION_PROLOGUE(rom_start,,)
     {
 		. = ALIGN(16);
@@ -124,6 +118,13 @@ SECTIONS
  */
 #include <snippets-rom-start.ld>
     } GROUP_LINK_IN(ROMABLE_REGION)
+
+    SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
+    {
+		. = ALIGN(4);
+		KEEP(*(.vectors.*))
+    } GROUP_LINK_IN(ROMABLE_REGION)
+
 
 #ifdef CONFIG_CODE_DATA_RELOCATION
 #include <linker_relocate.ld>

@@ -1142,7 +1142,6 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    ROM_START     Inside the first output section of the image. This option is
 #                  currently only available on ARM Cortex-M, ARM Cortex-R,
 #                  x86, ARC, openisa_rv32m1, and RISC-V.
-#                  Note: On RISC-V the rom_start section will be after vector section.
 #    RAM_SECTIONS  Inside the RAMABLE_REGION GROUP, not initialized.
 #    DATA_SECTIONS Inside the RAMABLE_REGION GROUP, initialized.
 #    RAMFUNC_SECTION Inside the RAMFUNC RAMABLE_REGION GROUP, not initialized.
