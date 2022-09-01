@@ -50,7 +50,6 @@ struct bt_pacs_context {
 	uint16_t  src;
 } __packed;
 
-void bt_pacs_add_capability(enum bt_audio_dir dir);
-void bt_pacs_remove_capability(enum bt_audio_dir dir);
+void bt_pacs_capabilities_changed(enum bt_audio_dir dir);
 int bt_pacs_available_contexts_changed(void);
 bool bt_pacs_context_available(enum bt_audio_dir dir, uint16_t context);

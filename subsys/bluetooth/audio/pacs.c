@@ -222,6 +222,8 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
+static void pac_notify_loc(struct k_work *work);
+
 static int get_pac_loc(struct bt_conn *conn, enum bt_audio_dir dir,
 		       enum bt_audio_location *location)
 {
@@ -244,8 +246,10 @@ static int get_pac_loc(struct bt_conn *conn, enum bt_audio_dir dir,
 }
 #endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
 
+static void pac_notify(struct k_work *work);
+
 #if defined(CONFIG_BT_PAC_SNK)
-static struct k_work_delayable snks_work;
+static K_WORK_DELAYABLE_DEFINE(snks_work, pac_notify);
 
 static ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
@@ -262,7 +266,7 @@ static void snk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 }
 
 #if defined(CONFIG_BT_PAC_SNK_LOC)
-static struct k_work_delayable snks_loc_work;
+static K_WORK_DELAYABLE_DEFINE(snks_loc_work, pac_notify_loc);
 
 static ssize_t snk_loc_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
@@ -341,7 +345,7 @@ static void snk_loc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SRC)
-static struct k_work_delayable srcs_work;
+static K_WORK_DELAYABLE_DEFINE(srcs_work, pac_notify);
 
 static ssize_t src_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
@@ -358,7 +362,7 @@ static void src_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 }
 
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-static struct k_work_delayable srcs_loc_work;
+static K_WORK_DELAYABLE_DEFINE(srcs_loc_work, pac_notify_loc);
 
 static ssize_t src_loc_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
@@ -588,24 +592,7 @@ static void pac_notify(struct k_work *work)
 	}
 }
 
-void bt_pacs_add_capability(enum bt_audio_dir dir)
-{
-	struct k_work_delayable *work;
-
-	work = bt_pacs_get_work(dir);
-	if (!work) {
-		return;
-	}
-
-	/* Initialize handler if it hasn't been initialized */
-	if (!work->work.handler) {
-		k_work_init_delayable(work, pac_notify);
-	}
-
-	k_work_reschedule(work, PAC_NOTIFY_TIMEOUT);
-}
-
-void bt_pacs_remove_capability(enum bt_audio_dir dir)
+void bt_pacs_capabilities_changed(enum bt_audio_dir dir)
 {
 	struct k_work_delayable *work;
 
@@ -626,11 +613,6 @@ int bt_audio_pacs_location_changed(enum bt_audio_dir dir)
 	work = bt_pacs_get_loc_work(dir);
 	if (!work) {
 		return -EINVAL;
-	}
-
-	/* Initialize handler if it hasn't been initialized */
-	if (!work->work.handler) {
-		k_work_init_delayable(work, pac_notify_loc);
 	}
 
 	k_work_reschedule(work, PAC_NOTIFY_TIMEOUT);
