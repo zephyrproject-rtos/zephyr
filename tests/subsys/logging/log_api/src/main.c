@@ -68,7 +68,7 @@ static void flush_log(void)
 {
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
 		while (log_data_pending()) {
-			k_msleep(100);
+			k_msleep(10);
 		}
 		k_msleep(100);
 	} else {
@@ -83,7 +83,9 @@ static void log_setup(bool backend2_enable)
 	zassert_false(in_panic, "Logger in panic state.");
 
 	log_core_init();
-	log_init();
+	if (!IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		log_init();
+	}
 
 	zassert_equal(0, log_set_timestamp_func(timestamp_get, 0),
 		      "Expects successful timestamp function setting.");
