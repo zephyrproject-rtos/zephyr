@@ -24,8 +24,8 @@
 #include <bluetooth/hci.h>
 #include <drivers/bluetooth/hci_driver.h>
 
-//#define DEBUG_HCI_TX
-//#define DEBUG_HCI_RX
+/* #define DEBUG_HCI_TX */
+/* #define DEBUG_HCI_RX */
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bluenrg2
@@ -473,7 +473,7 @@ static inline void get_evt_hdr(void)
 	int to_read = rx.hdr_len - rx.remaining;
 
 	rx.remaining -= ring_buf_get(&bluenrg_uart_rb,
-								(uint8_t*) hdr + to_read,
+								(uint8_t *) hdr + to_read,
 								rx.remaining);
 	if (rx.hdr_len == sizeof(*hdr) && rx.remaining < sizeof(*hdr)) {
 		switch (rx.evt.evt) {
@@ -561,7 +561,7 @@ static inline void read_payload(void)
 			return;
 		}
 
-		net_buf_add_mem(rx.buf, rx.hdr, rx.hdr_len);	//copy_hdr(rx.buf);
+		net_buf_add_mem(rx.buf, rx.hdr, rx.hdr_len);
 	}
 
 	read = ring_buf_get(&bluenrg_uart_rb, net_buf_tail(rx.buf), rx.remaining);
@@ -583,7 +583,6 @@ static inline void read_payload(void)
 	if (rx.type == HCI_EVT) {
 		/* Process vendor events at the driver level */
 		if (rx.evt.evt == BT_HCI_EVT_VENDOR) {
-			// use zephyr CONFIG_BT_USE_VS_EVENT feature
 			bluenrg_handle_vendor_evt(buf->data);
 			/* we need to reset_rx  */
 			reset_rx();
@@ -658,7 +657,7 @@ static inline void read_header(void)
 			reset_rx();
 		} else {
 			LOG_DBG("||||| have_hdr %i", rx.have_hdr);
-			net_buf_add_mem(rx.buf, rx.hdr, rx.hdr_len);	//	copy_hdr(rx.buf);
+			net_buf_add_mem(rx.buf, rx.hdr, rx.hdr_len);
 		}
 	}
 }
