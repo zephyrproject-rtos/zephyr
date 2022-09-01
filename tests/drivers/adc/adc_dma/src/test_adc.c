@@ -7,6 +7,7 @@
  */
 
 
+#include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/kernel.h>
@@ -37,8 +38,9 @@
 #define SAMPLE_INTERVAL_US (10000U)
 
 #define BUFFER_SIZE 24
-static ZTEST_BMEM int16_t m_sample_buffer[BUFFER_SIZE];
-static ZTEST_BMEM int16_t m_sample_buffer2[2][BUFFER_SIZE];
+#define ALIGNMENT DMA_BUF_ALIGNMENT(DT_NODELABEL(test_dma))
+static ZTEST_BMEM __aligned(ALIGNMENT) int16_t m_sample_buffer[BUFFER_SIZE];
+static ZTEST_BMEM __aligned(ALIGNMENT) int16_t m_sample_buffer2[2][BUFFER_SIZE];
 static int current_buf_inx;
 
 static const struct adc_channel_cfg m_1st_channel_cfg = {
