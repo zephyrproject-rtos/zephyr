@@ -1903,7 +1903,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 				/* Put new data before the pending data */
 				net_buf_frag_add(pkt->buffer,
 						 conn->queue_recv_data->buffer);
-				NET_DBG("Adding at before queue, end_offset %i, pending_len %i",
+				NET_DBG("Adding at before queue, end_offset %i, pending_len %zu",
 					end_offset, pending_len);
 				conn->queue_recv_data->buffer = pkt->buffer;
 				inserted = true;
@@ -1934,7 +1934,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 					}
 
 					/* Put new data after pending data */
-					NET_DBG("Adding at end of queue, start %i, end %i, len %i",
+					NET_DBG("Adding at end of queue, start %i, end %i, len %zu",
 						start_offset, end_offset, len);
 					net_buf_frag_add(conn->queue_recv_data->buffer,
 							 pkt->buffer);
