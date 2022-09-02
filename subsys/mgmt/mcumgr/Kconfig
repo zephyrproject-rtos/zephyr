@@ -24,7 +24,7 @@ config APP_LINK_WITH_MCUMGR
 	  disabled if the include paths for MCUMGR are causing aliasing
 	  issues for 'app'.
 
-rsource "lib/Kconfig"
+rsource "lib/mgmt/Kconfig"
 
 config MGMT_MAX_MAIN_MAP_ENTRIES
 	int "Number of predicted maximum entries to main response map"
