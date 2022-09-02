@@ -25,9 +25,6 @@ int bt_unicast_client_stop(struct bt_audio_stream *stream);
 
 int bt_unicast_client_release(struct bt_audio_stream *stream);
 
-
-void bt_unicast_client_ep_set_state(struct bt_audio_ep *ep, uint8_t state);
-
 struct net_buf_simple *bt_unicast_client_ep_create_pdu(uint8_t op);
 
 int bt_unicast_client_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,

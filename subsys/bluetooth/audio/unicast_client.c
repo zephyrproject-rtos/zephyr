@@ -206,8 +206,6 @@ static void unicast_client_ep_iso_disconnected(struct bt_iso_chan *chan,
 	} else {
 		BT_WARN("No callback for stopped set");
 	}
-
-	bt_unicast_client_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 }
 
 static struct bt_iso_chan_ops unicast_client_iso_ops = {
@@ -1064,33 +1062,6 @@ fail:
 	codec->meta_count = 0;
 	(void)memset(codec->meta, 0, sizeof(codec->meta));
 	return err;
-}
-
-void bt_unicast_client_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
-{
-	uint8_t old_state;
-
-	if (!ep) {
-		return;
-	}
-
-	BT_DBG("ep %p id 0x%02x %s -> %s", ep, ep->status.id,
-	       bt_audio_ep_state_str(ep->status.state),
-	       bt_audio_ep_state_str(state));
-
-	old_state = ep->status.state;
-	ep->status.state = state;
-
-	if (!ep->stream || old_state == state) {
-		return;
-	}
-
-	if (state == BT_AUDIO_EP_STATE_CODEC_CONFIGURED) {
-		bt_unicast_client_ep_unbind_audio_iso(ep);
-	} else if (state == BT_AUDIO_EP_STATE_IDLE) {
-		bt_unicast_client_ep_unbind_audio_iso(ep);
-		bt_audio_stream_detach(ep->stream);
-	}
 }
 
 static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
