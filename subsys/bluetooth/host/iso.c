@@ -250,7 +250,9 @@ static void bt_iso_chan_add(struct bt_conn *iso, struct bt_iso_chan *chan)
 static int bt_iso_setup_data_path(struct bt_iso_chan *chan)
 {
 	int err;
-	struct bt_iso_chan_path default_hci_path = { .pid = BT_ISO_DATA_PATH_HCI };
+	struct bt_iso_chan_path default_hci_path = { .pid = BT_ISO_DATA_PATH_HCI,
+						     .format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+						     .cc_len = 0x00 };
 	struct bt_iso_chan_path *out_path = NULL;
 	struct bt_iso_chan_path *in_path = NULL;
 	struct bt_iso_chan_io_qos *tx_qos;
