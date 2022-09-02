@@ -126,6 +126,7 @@ static const struct dai_properties *dai_alh_get_properties(const struct device *
 		ALH_TXDA_OFFSET : ALH_RXDA_OFFSET;
 
 	prop->fifo_address = dai_base(dp) + offset + ALH_STREAM_OFFSET * stream_id;
+	prop->fifo_depth = ALH_GPDMA_BURST_LENGTH;
 	prop->dma_hs_id = alh_handshake_map[stream_id];
 	prop->stream_id = alh->params.stream_id;
 
