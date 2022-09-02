@@ -580,6 +580,7 @@ const struct dai_properties *dai_dmic_get_properties(const struct device *dev,
 	struct dai_properties *prop = (struct dai_properties *)dev->config;
 
 	prop->fifo_address = dmic->fifo.offset;
+	prop->fifo_depth = dmic->fifo.depth;
 	prop->dma_hs_id = dmic->fifo.handshake;
 	prop->reg_init_delay = 0;
 
