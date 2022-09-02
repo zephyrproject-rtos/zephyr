@@ -21,6 +21,13 @@ config TELINK_B91_HWDSP
 	select RISCV_SOC_CONTEXT_SAVE
 	depends on SOC_SERIES_RISCV_TELINK_B91
 
+config TELINK_B91_MBEDTLS_HW_ACCELERATION
+	bool "Use Telink B91 platform mbedtls HW acceleration"
+	depends on SOC_SERIES_RISCV_TELINK_B91 && MBEDTLS
+	default y
+	help
+		This option enables Telink B91 hardware accelerated mbedtls version.
+
 config TELINK_B91_PFT_ARCH
 	bool "Support performance throttling"
 	default y
