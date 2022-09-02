@@ -328,6 +328,127 @@ static isoal_status_t isoal_rx_allocate_sdu(struct isoal_sink *sink,
 	return err;
 }
 
+/**
+ * @brief  Depending of whether the configuration is enabled, this will either
+ *         buffer and collate information for the SDU across all fragments
+ *         before emitting the batch of fragments, or immediately release the
+ *         fragment.
+ * @param  sink       Point to the sink context structure
+ * @param  end_of_sdu Indicates if this is the end fragment of an SDU or forced
+ *                    release on an error
+ * @return            Status of operation
+ */
+static isoal_status_t isoal_rx_buffered_emit_sdu(struct isoal_sink *sink, bool end_of_sdu)
+{
+	struct isoal_emitted_sdu_frag sdu_frag;
+	struct isoal_emitted_sdu sdu_status;
+	struct isoal_sink_session *session;
+	struct isoal_sdu_production *sp;
+	struct isoal_sdu_produced *sdu;
+	bool emit_sdu_current;
+	isoal_status_t err;
+
+	err = ISOAL_STATUS_OK;
+	session = &sink->session;
+	sp = &sink->sdu_production;
+	sdu = &sp->sdu;
+
+	/* Initialize current SDU fragment buffer */
+	sdu_frag.sdu_state = sp->sdu_state;
+	sdu_frag.sdu_frag_size = sp->sdu_written;
+	sdu_frag.sdu = *sdu;
+
+	sdu_status.total_sdu_size = sdu_frag.sdu_frag_size;
+	sdu_status.collated_status = sdu_frag.sdu.status;
+	emit_sdu_current = true;
+
+#if defined(ISOAL_CONFIG_BUFFER_RX_SDUS_ENABLE)
+	uint16_t next_write_indx;
+	bool sdu_list_empty;
+	bool emit_sdu_list;
+	bool sdu_list_max;
+	bool sdu_list_err;
+
+	next_write_indx = sp->sdu_list.next_write_indx;
+	sdu_list_max = (next_write_indx >= CONFIG_BT_CTLR_ISO_RX_SDU_BUFFERS);
+	sdu_list_empty = (next_write_indx == 0);
+
+	/* There is an error in the sequence of SDUs if the current SDU fragment
+	 * is not an end fragment and either the list at capacity or the current
+	 * fragment is not a continuation (i.e. it is a start of a new SDU).
+	 */
+	sdu_list_err = !end_of_sdu &&
+		(sdu_list_max ||
+		(!sdu_list_empty && sdu_frag.sdu_state != BT_ISO_CONT));
+
+	/* Release the current fragment if it is the end of the SDU or if it is
+	 * not the starting fragment of a multi-fragment SDU.
+	 */
+	emit_sdu_current = end_of_sdu || (sdu_list_empty && sdu_frag.sdu_state != BT_ISO_START);
+
+	/* Flush the buffered SDUs if this is an end fragment either on account
+	 * of reaching the end of the SDU or on account of an error or if
+	 * there is an error in the sequence of buffered fragments.
+	 */
+	emit_sdu_list = emit_sdu_current || sdu_list_err;
+
+	/* Total size is cleared if the current fragment is not being emitted
+	 * or if there is an error in the sequence of fragments.
+	 */
+	if (!emit_sdu_current || sdu_list_err) {
+		sdu_status.total_sdu_size = 0;
+		sdu_status.collated_status = (sdu_list_err ? ISOAL_SDU_STATUS_LOST_DATA :
+						ISOAL_SDU_STATUS_VALID);
+	}
+
+	if (emit_sdu_list && next_write_indx > 0) {
+		if (!sdu_list_err) {
+			/* Collated information is not reliable if there is an
+			 * error in the sequence of the fragments.
+			 */
+			for (int i = 0; i < next_write_indx; i++) {
+				sdu_status.total_sdu_size +=
+					sp->sdu_list.list[i].sdu_frag_size;
+				if (sp->sdu_list.list[i].sdu.status == ISOAL_SDU_STATUS_LOST_DATA ||
+					sdu_status.collated_status == ISOAL_SDU_STATUS_LOST_DATA) {
+					sdu_status.collated_status = ISOAL_SDU_STATUS_LOST_DATA;
+				} else {
+					sdu_status.collated_status |=
+						sp->sdu_list.list[i].sdu.status;
+				}
+			}
+		}
+
+		for (int i = 0; i < next_write_indx; i++) {
+			err |= session->sdu_emit(sink, &sp->sdu_list.list[i],
+						&sdu_status);
+		}
+
+		next_write_indx = sp->sdu_list.next_write_indx  = 0;
+	}
+#endif /* ISOAL_CONFIG_BUFFER_RX_SDUS_ENABLE */
+
+	if (emit_sdu_current) {
+		if (sdu_frag.sdu_state == BT_ISO_SINGLE) {
+			sdu_status.total_sdu_size = sdu_frag.sdu_frag_size;
+			sdu_status.collated_status = sdu_frag.sdu.status;
+		}
+
+		err |= session->sdu_emit(sink, &sdu_frag, &sdu_status);
+
+#if defined(ISOAL_CONFIG_BUFFER_RX_SDUS_ENABLE)
+	} else if (next_write_indx < CONFIG_BT_CTLR_ISO_RX_SDU_BUFFERS) {
+		sp->sdu_list.list[next_write_indx++] = sdu_frag;
+		sp->sdu_list.next_write_indx = next_write_indx;
+#endif /* ISOAL_CONFIG_BUFFER_RX_SDUS_ENABLE */
+	} else {
+		/* Unreachable */
+		LL_ASSERT(0);
+	}
+
+	return err;
+}
+
 static isoal_status_t isoal_rx_try_emit_sdu(struct isoal_sink *sink, bool end_of_sdu)
 {
 	struct isoal_sdu_production *sp;
@@ -369,9 +490,8 @@ static isoal_status_t isoal_rx_try_emit_sdu(struct isoal_sink *sink, bool end_of
 			break;
 		}
 		sdu->status = sp->sdu_status;
-		struct isoal_sink_session *session = &sink->session;
 
-		err = session->sdu_emit(sink, sdu);
+		err = isoal_rx_buffered_emit_sdu(sink, end_of_sdu);
 		sp->sdu_allocated = false;
 
 		/* update next state */

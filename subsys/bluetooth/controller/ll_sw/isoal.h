@@ -8,6 +8,11 @@
 #include <zephyr/types.h>
 #include <zephyr/toolchain.h>
 
+#if defined(CONFIG_BT_CTLR_ISO_RX_SDU_BUFFERS) && (CONFIG_BT_CTLR_ISO_RX_SDU_BUFFERS > 0)
+#define ISOAL_CONFIG_BUFFER_RX_SDUS_ENABLE
+#endif /* CONFIG_BT_CTLR_ISO_RX_SDU_BUFFERS > 0 */
+
+
 /** Function return error codes */
 typedef uint8_t isoal_status_t;
 #define ISOAL_STATUS_OK                   ((isoal_status_t) 0x00) /* No error */
@@ -120,6 +125,35 @@ struct isoal_sdu_produced {
 	void                    *ctx;
 };
 
+/** @brief Produced ISO SDU fragment and status information to be emitted */
+struct isoal_emitted_sdu_frag {
+	/** Produced SDU to be emitted */
+	struct isoal_sdu_produced sdu;
+	/** SDU fragment Packet Boundary flags */
+	uint8_t                   sdu_state;
+	/** Size of the SDU fragment */
+	isoal_sdu_len_t           sdu_frag_size;
+};
+
+/** @brief Produced ISO SDU and required status information to be emitted */
+struct isoal_emitted_sdu {
+	/** Size of the SDU across all fragments */
+	isoal_sdu_len_t           total_sdu_size;
+	/** Status of contents, if valid or SDU was lost.
+	 * This maps directly to the HCI ISO Data packet Packet_Status_Flag.
+	 * BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
+	 * 5.4.5 HCI ISO Data packets : Table 5.2 :
+	 * Packet_Status_Flag (in packets sent by the Controller)
+	 */
+	isoal_sdu_status_t        collated_status;
+};
+
+#if defined(ISOAL_CONFIG_BUFFER_RX_SDUS_ENABLE)
+struct isoal_emit_sdu_queue {
+	struct isoal_emitted_sdu_frag list[CONFIG_BT_CTLR_ISO_RX_SDU_BUFFERS];
+	uint16_t next_write_indx;
+};
+#endif /* ISOAL_CONFIG_BUFFER_RX_SDUS_ENABLE */
 
 /** @brief Produced ISO PDU encapsulation */
 struct isoal_pdu_produced {
@@ -194,9 +228,11 @@ typedef isoal_status_t (*isoal_sink_sdu_alloc_cb)(
  */
 typedef isoal_status_t (*isoal_sink_sdu_emit_cb)(
 	/*!< [in]  Sink context */
-	const struct isoal_sink         *sink_ctx,
-	/*!< [in]  Filled valid SDU to be pushed */
-	const struct isoal_sdu_produced *valid_sdu
+	const struct isoal_sink             *sink_ctx,
+	/*!< [in]  Emitted SDU fragment and status information */
+	const struct isoal_emitted_sdu_frag *sdu_frag,
+	/*!< [in]  Emitted SDU status information */
+	const struct isoal_emitted_sdu      *sdu
 );
 
 /**
@@ -232,6 +268,10 @@ struct isoal_sink_session {
 };
 
 struct isoal_sdu_production {
+#if defined(ISOAL_CONFIG_BUFFER_RX_SDUS_ENABLE)
+	/* Buffered SDUs */
+	struct isoal_emit_sdu_queue sdu_list;
+#endif
 	/* Permit atomic enable/disable of SDU production */
 	volatile isoal_production_mode_t  mode;
 	/* We are constructing an SDU from {<1 or =1 or >1} PDUs */
@@ -406,8 +446,9 @@ isoal_status_t isoal_rx_pdu_recombine(isoal_sink_handle_t sink_hdl,
 isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
 				  const struct isoal_pdu_rx  *valid_pdu,
 				  struct isoal_sdu_buffer    *sdu_buffer);
-isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
-				 const struct isoal_sdu_produced *valid_sdu);
+isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
+				 const struct isoal_emitted_sdu_frag *sdu_frag,
+				 const struct isoal_emitted_sdu      *sdu);
 isoal_status_t sink_sdu_write_hci(void *dbuf,
 				  const uint8_t *pdu_payload,
 				  const size_t consume_len);
