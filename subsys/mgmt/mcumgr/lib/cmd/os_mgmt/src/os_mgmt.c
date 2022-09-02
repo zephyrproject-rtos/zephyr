@@ -262,6 +262,7 @@ static int os_mgmt_taskstat_read(struct mgmt_ctxt *ctxt)
 }
 #endif /* CONFIG_OS_MGMT_TASKSTAT */
 
+#ifdef CONFIG_REBOOT
 /**
  * Command handler: os reset
  */
@@ -283,6 +284,7 @@ os_mgmt_reset(struct mgmt_ctxt *ctxt)
 
 	return os_mgmt_impl_reset(CONFIG_OS_MGMT_RESET_MS);
 }
+#endif
 
 #if CONFIG_OS_MGMT_MCUMGR_PARAMS
 static int
@@ -311,9 +313,11 @@ static const struct mgmt_handler os_mgmt_group_handlers[] = {
 		os_mgmt_taskstat_read, NULL
 	},
 #endif
+#ifdef CONFIG_REBOOT
 	[OS_MGMT_ID_RESET] = {
 		NULL, os_mgmt_reset
 	},
+#endif
 #if CONFIG_OS_MGMT_MCUMGR_PARAMS
 	[OS_MGMT_ID_MCUMGR_PARAMS] = {
 		os_mgmt_mcumgr_params, NULL
