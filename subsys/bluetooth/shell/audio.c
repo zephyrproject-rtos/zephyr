@@ -1239,14 +1239,21 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 static int cmd_start_broadcast(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
+	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
 	int err;
+
+	if (adv == NULL) {
+		shell_info(sh, "Extended advertising set is NULL");
+		return -ENOEXEC;
+	}
 
 	if (default_source == NULL) {
 		shell_info(sh, "Broadcast source not created");
 		return -ENOEXEC;
 	}
 
-	err = bt_audio_broadcast_source_start(default_source);
+	err = bt_audio_broadcast_source_start(default_source,
+					      adv_sets[selected_adv]);
 	if (err != 0) {
 		shell_error(sh, "Unable to start broadcast source: %d", err);
 		return err;
