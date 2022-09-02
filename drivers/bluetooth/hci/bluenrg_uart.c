@@ -24,9 +24,6 @@
 #include <bluetooth/hci.h>
 #include <drivers/bluetooth/hci_driver.h>
 
-/* #define DEBUG_HCI_TX */
-/* #define DEBUG_HCI_RX */
-
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bluenrg2
 #include "common/log.h"
@@ -444,9 +441,6 @@ static inline void get_acl_hdr(void)
 						rx.remaining);
 	if (!rx.remaining) {
 		rx.remaining = sys_le16_to_cpu(hdr->len);
-#ifdef DEBUG_HCI_RX
-		BT_DBG("ACL header. Payload %u bytes", rx.remaining);
-#endif
 		rx.have_hdr = true;
 	}
 }
@@ -460,9 +454,6 @@ static inline void get_iso_hdr(void)
 				       rx.remaining);
 	if (!rx.remaining) {
 		rx.remaining = sys_le16_to_cpu(hdr->len);
-#ifdef DEBUG_HCI_RX
-		BT_DBG("ISO header. Payload %u bytes", rx.remaining);
-#endif
 		rx.have_hdr = true;
 	}
 }
@@ -575,16 +566,10 @@ static inline void read_payload(void)
 	buf = rx.buf;
 	rx.buf = NULL;
 
-	/*
-		BT_DBG("Event: %X", rx.evt.evt);
-		BT_DBG("Payload (len %u): %s", buf->len, bt_hex(buf->data, buf->len));
-	*/
-
 	if (rx.type == HCI_EVT) {
 		/* Process vendor events at the driver level */
 		if (rx.evt.evt == BT_HCI_EVT_VENDOR) {
 			bluenrg_handle_vendor_evt(buf->data);
-			/* we need to reset_rx  */
 			reset_rx();
 			return;
 		}
@@ -592,7 +577,6 @@ static inline void read_payload(void)
 		if (rx.evt.evt == BT_HCI_EVT_LE_META_EVENT &&
 		    (rx.hdr[2] == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
 		     rx.hdr[2] == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
-			LOG_DBG("Advertising report!\n");
 			rx.discardable = true;
 		}
 
@@ -606,23 +590,12 @@ static inline void read_payload(void)
 
 	reset_rx();
 
-	if (evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) {
-#ifdef DEBUG_HCI_RX
-		BT_DBG("evt_prio T:%i L:%i", bt_buf_get_type(buf), buf->len);
-		BT_DBG("D[%s]", bt_hex(buf->data, buf->len));
-#endif
-#ifdef DEBUG_HCI_RX
-		LOG_DBG("bt_recv_prio(%p) 0x%x [%i] %s",
-						buf, bt_buf_get_type(buf),
-						buf->len, bt_hex(buf->data, buf->len));
-#endif
+	if (IS_ENABLED(CONFIG_BT_RECV_BLOCKING) &&
+		(evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO)) {
 		bt_recv_prio(buf);
 	}
+
 	if (evt_flags & BT_HCI_EVT_FLAG_RECV) {
-#ifdef DEBUG_HCI_RX
-		BT_DBG("evt T:%i L:%i", bt_buf_get_type(buf), buf->len);
-		BT_DBG("D[%s]", bt_hex(buf->data, buf->len));
-#endif
 		net_buf_put(&rx.fifo, buf);
 	}
 }
@@ -714,8 +687,6 @@ static void uart_rx_thread(void)
 {
 	struct net_buf *buf;
 
-	BT_DBG("HCI start receiving");
-
 	while (1) {
 		uart_irq_rx_enable(uart_dev);
 		/* TODO: fifo reading needs some performance improvements */
@@ -726,11 +697,6 @@ static void uart_rx_thread(void)
 		} while (!buf);
 
 		do {
-#ifdef DEBUG_HCI_RX
-			LOG_DBG("bt_recv(%p) 0x%x [%i] %s",
-						buf, bt_buf_get_type(buf),
-						buf->len, bt_hex(buf->data, buf->len));
-#endif
 			bt_recv(buf);
 
 			/* Give other threads a chance to run if the ISR
@@ -763,14 +729,9 @@ static int bluenrg_uart_send(struct net_buf *buf)
 		k_sem_give(&sem_busy);
 		return -EINVAL;
 	}
-#ifdef DEBUG_HCI_TX
-	BT_DBG("send(%i/%lx.%lx): %s",	bt_buf_get_type(buf),
-									BT_OGF(get_cmd(buf->data)), BT_OCF(get_cmd(buf->data)),
-									bt_hex(buf->data, buf->len));
-#endif
 
 	/* Transmit the message */
-	for (int c=0; c < buf->len; c++) {
+	for (int c = 0; c < buf->len; c++) {
 		uart_poll_out(uart_dev, buf->data[c]);
 	}
 	k_sem_give(&sem_busy);
@@ -825,13 +786,10 @@ static int bluenrg_uart_open(void)
 	/* Power-up sequence, from the datasheet */
 	k_msleep(2);
 
-	BT_DBG("");
 	/* Device will let us know when it's ready */
 	k_sem_take(&sem_initialised, K_FOREVER);
 
-	LOG_DBG("HCI ready");
-
-	BT_DBG("BlueNRG open");
+	BT_DBG("BlueNRG start");
 
 	return ret;
 }
@@ -849,8 +807,7 @@ static const struct bt_hci_driver drv = {
 #if defined(CONFIG_BT_HCI_VS_EVT_USER)
 static bool vendor_event_cb(struct net_buf_simple *buf)
 {
-	BT_DBG("VS event: %s", bt_hex(buf->data, buf->len));
-	printk("VS event: %s\n", bt_hex(buf->data, buf->len));
+	BT_WARN("VS event: %s", bt_hex(buf->data, buf->len));
 
 	return true;
 }

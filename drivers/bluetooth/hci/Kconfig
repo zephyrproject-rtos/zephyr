@@ -80,7 +80,7 @@ config BT_BLUENRG_UART
 	bool "BlueNRG UART"
 	select UART_INTERRUPT_DRIVEN
 	select BT_UART
-	select BT_RECV_IS_RX_THREAD
+	select BT_RECV_BLOCKING
 	select RING_BUFFER
 	depends on SERIAL
 	help
