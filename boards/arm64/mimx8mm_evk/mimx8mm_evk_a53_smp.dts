@@ -6,12 +6,12 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_imx8mm_a53.dtsi>
-#include "imx8mm_evk-pinctrl.dtsi"
+#include <nxp/nxp_mimx8mm_a53.dtsi>
+#include "mimx8mm_evk-pinctrl.dtsi"
 
 / {
 	model = "NXP i.MX8MM A53";
-	compatible = "fsl,imx8mm";
+	compatible = "fsl,mimx8mm";
 
 	chosen {
 		zephyr,console = &uart4;

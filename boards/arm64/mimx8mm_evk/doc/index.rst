@@ -1,13 +1,13 @@
-.. _imx8mp_evk:
+.. _imx8mm_evk:
 
-NXP i.MX8MP EVK (Cortex-A53)
-#################################
+NXP i.MX8MM EVK (Cortex-A53)
+############################
 
 Overview
 ********
 
-i.MX8M Plus LPDDR4 EVK board is based on NXP i.MX8M Plus applications
-processor, composed of a quad Cortex®-A53 cluster and a single Cortex®-M7 core.
+i.MX8M Mini LPDDR4 EVK board is based on NXP i.MX8M Mini applications
+processor, composed of a quad Cortex®-A53 cluster and a single Cortex®-M4 core.
 Zephyr OS is ported to run on the Cortex®-A53 core.
 
 - Board features:
@@ -78,17 +78,18 @@ Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
 plug the SD card into the board. Power it up and stop the u-boot execution at
 prompt.
 
-Use U-Boot to load and kick non-smp zephyr.bin:
+Use U-Boot to load and kick zephyr.bin:
 
 .. code-block:: console
 
-    mw 303d0518 f 1; fatload mmc 1:1 0xc0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; go 0xc0000000
+    mw 303d0518 f 1; fatload mmc 1:1 0x93c00000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; go 0x93c00000
 
 Or kick SMP zephyr.bin:
 
 .. code-block:: console
 
-    mw 303d0518 f 1; fatload mmc 1:1 0xc0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; cpu release 2 0xc0000000
+    mw 303d0518 f 1; fatload mmc 1:1 0x93c00000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; cpu release 2 0x93c00000
+
 
 Use this configuration to run basic Zephyr applications and kernel tests,
 for example, with the :ref:`synchronization_sample`:
@@ -96,35 +97,35 @@ for example, with the :ref:`synchronization_sample`:
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: imx8mp_evk_a53
+   :board: mimx8mm_evk_a53
    :goals: run
 
 This will build an image with the synchronization sample app, boot it and
-display the following console output:
+display the following ram console output:
 
 .. code-block:: console
 
     *** Booting Zephyr OS build zephyr-v3.1.0-3575-g44dd713bd883  ***
-    thread_a: Hello World from cpu 0 on imx8mp_evk_a53!
-    thread_b: Hello World from cpu 0 on imx8mp_evk_a53!
-    thread_a: Hello World from cpu 0 on imx8mp_evk_a53!
-    thread_b: Hello World from cpu 0 on imx8mp_evk_a53!
-    thread_a: Hello World from cpu 0 on imx8mp_evk_a53!
+    thread_a: Hello World from cpu 0 on mimx8mm_evk_a53!
+    thread_b: Hello World from cpu 0 on mimx8mm_evk_a53!
+    thread_a: Hello World from cpu 0 on mimx8mm_evk_a53!
+    thread_b: Hello World from cpu 0 on mimx8mm_evk_a53!
+    thread_a: Hello World from cpu 0 on mimx8mm_evk_a53!
 
 Use Jailhouse hypervisor, after root cell linux is up:
 
 .. code-block:: console
 
-    #jailhouse enable imx8mp.cell
-    #jailhouse cell create imx8mp-zephyr.cell
-    #jailhouse cell load 1 zephyr.bin -a 0xc0000000
+    #jailhouse enable imx8mm.cell
+    #jailhouse cell create imx8mm-zephyr.cell
+    #jailhouse cell load 1 zephyr.bin -a 0x93c00000
     #jailhouse cell start 1
 
 References
 ==========
 
 .. _NXP website:
-   https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/evaluation-kit-for-the-i-mx-8m-plus-applications-processor:8MPLUSLPD4-EVK
+   https://www.nxp.com/design/development-boards/i.mx-evaluation-and-development-boards/evaluation-kit-for-thebr-i.mx-8m-mini-applications-processor:8MMINILPD4-EVK
 
 .. _i.MX 8M Applications Processor Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/IMX8MPRM.pdf
+   https://www.nxp.com/webapp/Download?colCode=IMX8MMRM

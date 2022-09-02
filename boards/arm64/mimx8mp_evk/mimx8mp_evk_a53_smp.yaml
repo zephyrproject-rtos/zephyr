@@ -1,4 +1,4 @@
-identifier: imx8mp_evk_a53_smp
+identifier: mimx8mp_evk_a53_smp
 name: NXP i.MX8M Plus EVK A53 with SMP kernel
 type: mcu
 arch: arm64
