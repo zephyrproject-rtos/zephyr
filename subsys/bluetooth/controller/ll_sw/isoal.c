@@ -46,7 +46,6 @@ struct
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 } isoal_global;
 
-
 /**
  * @brief Internal reset
  * Zero-init entire ISO-AL state
@@ -110,6 +109,7 @@ static isoal_status_t isoal_sink_allocate(isoal_sink_handle_t *hdl)
 static void isoal_sink_deallocate(isoal_sink_handle_t hdl)
 {
 	isoal_global.sink_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
+	memset(&isoal_global.sink_state[hdl], 0, sizeof(struct isoal_sink));
 }
 
 /**
@@ -122,8 +122,8 @@ static void isoal_sink_deallocate(isoal_sink_handle_t hdl)
  * @param flush_timeout[in]     Flush timeout
  * @param sdu_interval[in]      SDU interval
  * @param iso_interval[in]      ISO interval
- * @param stream_sync_delay[in] CIS sync delay
- * @param group_sync_delay[in]  CIG sync delay
+ * @param stream_sync_delay[in] CIS / BIS sync delay
+ * @param group_sync_delay[in]  CIG / BIG sync delay
  * @param sdu_alloc[in]         Callback of SDU allocator
  * @param sdu_emit[in]          Callback of SDU emitter
  * @param sdu_write[in]         Callback of SDU byte writer
@@ -987,6 +987,24 @@ static isoal_status_t isoal_source_allocate(isoal_source_handle_t *hdl)
 static void isoal_source_deallocate(isoal_source_handle_t hdl)
 {
 	isoal_global.source_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
+	memset(&isoal_global.source_state[hdl], 0, sizeof(struct isoal_source));
+}
+
+/**
+ * @brief      Check if a provided handle is valid
+ * @param[in]  hdl Input handle for validation
+ * @return         Handle valid / not valid
+ */
+static isoal_status_t isoal_check_source_hdl_valid(isoal_source_handle_t hdl)
+{
+	if (hdl < CONFIG_BT_CTLR_ISOAL_SOURCES &&
+		isoal_global.source_allocated[hdl] == ISOAL_ALLOC_STATE_TAKEN) {
+		return ISOAL_STATUS_OK;
+	}
+
+	BT_ERR("Invalid source handle (0x%02x)", hdl);
+
+	return ISOAL_STATUS_ERR_UNSPECIFIED;
 }
 
 /**
@@ -1000,8 +1018,8 @@ static void isoal_source_deallocate(isoal_source_handle_t hdl)
  * @param max_octets[in]        Maximum PDU size (Max_PDU_C_To_P / Max_PDU_P_To_C)
  * @param sdu_interval[in]      SDU interval
  * @param iso_interval[in]      ISO interval
- * @param stream_sync_delay[in] CIS sync delay
- * @param group_sync_delay[in]  CIG sync delay
+ * @param stream_sync_delay[in] CIS / BIS sync delay
+ * @param group_sync_delay[in]  CIG / BIG sync delay
  * @param pdu_alloc[in]         Callback of PDU allocator
  * @param pdu_write[in]         Callback of PDU byte writer
  * @param pdu_emit[in]          Callback of PDU emitter
@@ -1293,6 +1311,10 @@ static isoal_status_t isoal_tx_unframed_produce(struct isoal_source *source,
 
 	if (tx_sdu->sdu_state == BT_ISO_START ||
 		tx_sdu->sdu_state == BT_ISO_SINGLE) {
+		/* Initialize to info provided in SDU */
+		uint32_t actual_grp_ref_point = tx_sdu->grp_ref_point;
+		uint64_t actual_event = tx_sdu->target_event;
+
 		/* Start of a new SDU */
 
 		/* Update sequence number for received SDU
@@ -1319,6 +1341,31 @@ static isoal_status_t isoal_tx_unframed_produce(struct isoal_source *source,
 		 */
 		pp->payload_number = MAX(pp->payload_number,
 			(tx_sdu->target_event * session->burst_number));
+
+		/* Get actual event for this payload number */
+		actual_event = pp->payload_number / session->burst_number;
+
+		/* Get group reference point for this PDU based on the actual
+		 * event being set. This might introduce some errors as the
+		 * group refernce point for future events could drift. However
+		 * as the time offset calculation requires an absolute value,
+		 * this seems to be the best candidate.
+		 */
+		if (actual_event > tx_sdu->target_event) {
+			actual_grp_ref_point = tx_sdu->grp_ref_point +
+				((actual_event - tx_sdu->target_event) * session->iso_interval *
+					ISO_INT_UNIT_US);
+		}
+
+		/* Store timing info for TX Sync command */
+		session->tx_time_stamp = actual_grp_ref_point;
+		/* BT Core V5.3 : Vol 4 HCI : Part E HCI Functional Spec:
+		 * 7.8.96 LE Read ISO TX Sync Command:
+		 * When the Connection_Handle identifies a CIS or BIS that is
+		 * transmitting unframed PDUs the value of Time_Offset returned
+		 * shall be zero
+		 * Relies on initialization value being 0.
+		 */
 
 		/* Reset PDU fragmentation count for this SDU */
 		pp->pdu_cnt = 0;
@@ -1564,7 +1611,7 @@ static isoal_status_t isoal_tx_framed_produce(struct isoal_source *source,
 		/* Start of a new SDU */
 
 		/* Initialize to info provided in SDU */
-		uint32_t actual_cig_ref_point = tx_sdu->cig_ref_point;
+		uint32_t actual_grp_ref_point = tx_sdu->grp_ref_point;
 		uint64_t actual_event = tx_sdu->target_event;
 
 		/* Update sequence number for received SDU
@@ -1598,38 +1645,43 @@ static isoal_status_t isoal_tx_framed_produce(struct isoal_source *source,
 		/* Get actual event for this payload number */
 		actual_event = pp->payload_number / session->burst_number;
 
-		/* Get cig reference point for this PDU based on the actual
-		 * event being set. This might introduce some errors as the cig
-		 * refernce point for future events could drift. However as the
-		 * time offset calculation requires an absolute value, this
-		 * seems to be the best candidate.
+		/* Get group reference point for this PDU based on the actual
+		 * event being set. This might introduce some errors as the
+		 * group refernce point for future events could drift. However
+		 * as the time offset calculation requires an absolute value,
+		 * this seems to be the best candidate.
 		 */
 		if (actual_event > tx_sdu->target_event) {
-			actual_cig_ref_point = tx_sdu->cig_ref_point +
+			actual_grp_ref_point = tx_sdu->grp_ref_point +
 				((actual_event - tx_sdu->target_event) * session->iso_interval *
 					ISO_INT_UNIT_US);
 		}
 
-		/* Check if time stamp on packet is later than the CIG reference
-		 * point and adjust targets. This could happen if the SDU has
-		 * been time-stampped at the controller when received via HCI.
+		/* Check if time stamp on packet is later than the group
+		 * reference point and adjust targets. This could happen if the
+		 * SDU has been time-stampped at the controller when received
+		 * via HCI.
 		 *
 		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
 		 * 3.1 Time_Offset in framed PDUs :
 		 * The Time_Offset shall be a positive value.
 		 */
-		if (actual_cig_ref_point <= tx_sdu->time_stamp) {
+		if (actual_grp_ref_point <= tx_sdu->time_stamp) {
 			/* Advance target to next event */
 			actual_event++;
-			actual_cig_ref_point += session->iso_interval * ISO_INT_UNIT_US;
+			actual_grp_ref_point += session->iso_interval * ISO_INT_UNIT_US;
 
 			/* Set payload number */
 			pp->payload_number = actual_event * session->burst_number;
 		}
 
 		/* Calculate the time offset */
-		LL_ASSERT(actual_cig_ref_point > tx_sdu->time_stamp);
-		time_offset = actual_cig_ref_point - tx_sdu->time_stamp;
+		LL_ASSERT(actual_grp_ref_point > tx_sdu->time_stamp);
+		time_offset = actual_grp_ref_point - tx_sdu->time_stamp;
+
+		/* Store timing info for TX Sync command */
+		session->tx_time_stamp = actual_grp_ref_point;
+		session->tx_time_offset = time_offset;
 
 		/* Reset PDU fragmentation count for this SDU */
 		pp->pdu_cnt = 0;
@@ -1793,4 +1845,41 @@ void isoal_tx_pdu_release(isoal_source_handle_t source_hdl,
 					    ISOAL_STATUS_OK);
 	}
 }
+
+/**
+ * @brief  Get information required for HCI_LE_Read_ISO_TX_Sync
+ * @param  source_hdl Source handle linked to handle provided in HCI message
+ * @param  seq        Packet Sequence number of last SDU
+ * @param  timestamp  CIG / BIG reference point of last SDU
+ * @param  offset     Time-offset (Framed) / 0 (Unframed) of last SDU
+ * @return            Operation status
+ */
+isoal_status_t isoal_tx_get_sync_info(isoal_source_handle_t source_hdl,
+				      uint16_t *seq,
+				      uint32_t *timestamp,
+				      uint32_t *offset)
+{
+	struct isoal_source_session *session;
+
+	if (isoal_check_source_hdl_valid(source_hdl) == ISOAL_STATUS_OK) {
+
+		session = &isoal_global.source_state[source_hdl].session;
+
+		/* BT Core V5.3 : Vol 4 HCI : Part E HCI Functional Spec:
+		 * 7.8.96 LE Read ISO TX Sync Command:
+		 * If the Host issues this command before an SDU had been transmitted by
+		 * the Controller, then Controller shall return the error code Command
+		 * Disallowed.
+		 */
+		if (session->seqn > 0) {
+			*seq = session->seqn;
+			*timestamp = session->tx_time_stamp;
+			*offset = session->tx_time_offset;
+			return ISOAL_STATUS_OK;
+		}
+	}
+
+	return ISOAL_STATUS_ERR_UNSPECIFIED;
+}
+
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */

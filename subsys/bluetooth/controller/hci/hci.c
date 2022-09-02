@@ -5676,7 +5676,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		sdu_frag_tx.target_event = cis->lll.event_count +
 			(cis->lll.tx.flush_timeout > 1 ? 0 : 1);
 
-		sdu_frag_tx.cig_ref_point = cig->cig_ref_point;
+		sdu_frag_tx.grp_ref_point = cig->cig_ref_point;
 
 		/* Get controller's input data path for CIS */
 		dp_in = hdr->datapath_in;
