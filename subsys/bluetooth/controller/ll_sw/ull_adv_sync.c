@@ -163,10 +163,45 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 	}
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
-	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, 0, 0, NULL);
-	if (err) {
-		return err;
-	}
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
+	/* Duplicate chain PDUs */
+	do {
+		struct pdu_adv *pdu_chain;
+
+#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
+		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
+						 0U, 0U, NULL);
+		if (err) {
+			return err;
+		}
+
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
+		pdu_prev = lll_adv_pdu_linked_next_get(pdu_prev);
+		pdu_chain = lll_adv_pdu_linked_next_get(pdu);
+
+		/* Allocate new chain PDU if required */
+		if (pdu_prev) {
+			/* Prior PDU chain allocation valid */
+			if (pdu_chain) {
+				pdu = pdu_chain;
+
+				continue;
+			}
+
+			/* Get a new chain PDU */
+			pdu_chain = lll_adv_pdu_alloc_pdu_adv();
+			if (!pdu_chain) {
+				return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+			}
+
+			/* Link the chain PDU to parent PDU */
+			lll_adv_pdu_linked_append(pdu_chain, pdu);
+
+			/* continue back to update the new PDU */
+			pdu = pdu_chain;
+		}
+	} while (pdu_prev);
+#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
 
 	lll_adv_sync_data_enqueue(lll_sync, ter_idx);
 
@@ -751,7 +786,10 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
+		/* Update ADI while duplicating chain PDUs */
 		do {
+			struct pdu_adv *pdu_chain;
+
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
 			err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev,
 							 pdu, hdr_add_fields,
@@ -763,9 +801,29 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
 			pdu_prev = lll_adv_pdu_linked_next_get(pdu_prev);
-			pdu = lll_adv_pdu_linked_next_get(pdu);
+			pdu_chain = lll_adv_pdu_linked_next_get(pdu);
 
-			LL_ASSERT((pdu_prev && pdu) || (!pdu_prev && !pdu));
+			/* Allocate new chain PDU if required */
+			if (pdu_prev) {
+				/* Prior PDU chain allocation valid */
+				if (pdu_chain) {
+					pdu = pdu_chain;
+
+					continue;
+				}
+
+				/* Get a new chain PDU */
+				pdu_chain = lll_adv_pdu_alloc_pdu_adv();
+				if (!pdu_chain) {
+					return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+				}
+
+				/* Link the chain PDU to parent PDU */
+				lll_adv_pdu_linked_append(pdu_chain, pdu);
+
+				/* continue back to update the new PDU */
+				pdu = pdu_chain;
+			}
 		} while (pdu_prev);
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
 	}
