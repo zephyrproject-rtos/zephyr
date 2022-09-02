@@ -361,25 +361,17 @@ static int ospi_read_jedec_id(const struct device *dev,  uint8_t *id)
 }
 #endif /* CONFIG_FLASH_JESD216_API */
 
+#if !DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), sfdp_bfp)
 /*
- * Read Serial Flash Discovery Parameter :
+ * Read Serial Flash Discovery Parameter from the octoFlash at init :
  * perform a read access over SPI bus for SDFP (DataMode is already set)
- * or get it from the sdfp table (in the DTS)
  */
-static int ospi_read_sfdp(const struct device *dev, off_t addr, uint8_t *data,
-			  size_t size)
+static int stm32_ospi_read_sfdp(const struct device *dev, off_t addr,
+				void *data,
+				size_t size)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
 	struct flash_stm32_ospi_data *dev_data = dev->data;
-
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), sfdp_bfp)
-	/* simulate the SDFP */
-	ARG_UNUSED(addr); /* addr is 0 */
-
-	for (uint8_t i_ind = 0; i_ind < MIN(size, ARRAY_SIZE(dev_cfg->sfdp_bfp)); i_ind++) {
-		*(data + i_ind) = dev_cfg->sfdp_bfp[i_ind];
-	}
-#else /* sfdp_bfp */
 
 	OSPI_RegularCmdTypeDef cmd = ospi_prepare_cmd(dev_cfg->data_mode,
 						      dev_cfg->data_rate);
@@ -406,16 +398,51 @@ static int ospi_read_sfdp(const struct device *dev, off_t addr, uint8_t *data,
 		return -EIO;
 	}
 
-	hal_ret = HAL_OSPI_Receive(&dev_data->hospi, data, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
+	hal_ret = HAL_OSPI_Receive(&dev_data->hospi, (uint8_t *)data,
+				   HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to read data", hal_ret);
 		return -EIO;
 	}
 
-#endif /* sfdp_bfp */
 	dev_data->cmd_status = 0;
 
 	return 0;
+}
+#endif /* ! sfdp_bfp */
+
+/*
+ * Read Serial Flash Discovery Parameter :
+ * perform a read access over SPI bus for SDFP (DataMode is already set)
+ * or get it from the sdfp table (in the DTS)
+ */
+static int ospi_read_sfdp(const struct device *dev, off_t addr, void *data,
+			  size_t size)
+{
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), sfdp_bfp)
+	/* There is a sfdp-bfp property in the deviceTree : do not read the flash */
+	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+
+	LOG_INF("Read SFDP from DTS property");
+	/* If DTS has the sdfp table property, check its length */
+	if (size > DT_INST_PROP_LEN(0, sfdp_bfp)) {
+		LOG_ERR("SDFP bdfp length is wrong (%d)", DT_INST_PROP_LEN(0, sfdp_bfp));
+		return -EIO;
+	}
+	/* The dev_cfg->sfdp_bfp if filled from the DTS property */
+	memcpy(data, dev_cfg->sfdp_bfp + addr, size);
+
+	return 0;
+#else
+	LOG_INF("Read SFDP from octoFlash");
+	/* Get the SFDP from the octoFlash (no sfdp-bfp table in the DeviceTree) */
+	if (stm32_ospi_read_sfdp(dev, addr, data, size) == 0) {
+		/* If valid, then ignore any table from the DTS */
+		return 0;
+	}
+	LOG_INF("Error reading SFDP from octoFlash and none in the DTS");
+	return -EINVAL;
+#endif /* sfdp_bfp */
 }
 
 static bool ospi_address_is_valid(const struct device *dev, off_t addr,
@@ -1321,6 +1348,7 @@ static const struct flash_driver_api flash_stm32_ospi_driver_api = {
 	.page_layout = flash_stm32_ospi_pages_layout,
 #endif
 #if defined(CONFIG_FLASH_JESD216_API)
+	.sfdp_read = ospi_read_sfdp,
 	.read_jedec_id = ospi_read_jedec_id,
 #endif /* CONFIG_FLASH_JESD216_API */
 };
@@ -2083,6 +2111,7 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 	},
 	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
 	.write_opcode = DT_WRITEOC_PROP_OR(0, SPI_NOR_WRITEOC_NONE),
+	.page_size = SPI_NOR_PAGE_SIZE, /* by default, to be updated by sfdp */
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), jedec_id)
 	.jedec_id = DT_INST_PROP(0, jedec_id),
 #endif /* jedec_id */
