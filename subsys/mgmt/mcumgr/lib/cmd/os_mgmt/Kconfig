@@ -9,9 +9,11 @@ menuconfig MCUMGR_CMD_OS_MGMT
 	  Enables mcumgr handlers for OS management
 
 if MCUMGR_CMD_OS_MGMT
+
 config OS_MGMT_RESET_MS
 	int "Delay before executing reset command (ms)"
 	default 250
+	depends on REBOOT
 	help
 	  When a reset command is received, the system waits this many milliseconds
 	  before performing the reset.  This delay allows time for the mcumgr
@@ -19,6 +21,7 @@ config OS_MGMT_RESET_MS
 
 config OS_MGMT_RESET_HOOK
 	bool "Reset hook"
+	depends on REBOOT
 	help
 	  Allows applications to control and get notifications of when a reset
 	  command has been issued via an mcumgr command. With this option
