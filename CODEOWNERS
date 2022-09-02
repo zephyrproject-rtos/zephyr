@@ -64,7 +64,7 @@
 /soc/arm64/bcm_vk/                        @abhishek-brcm
 /soc/arm64/nxp_layerscape/                @JiafeiPan
 /soc/arm64/xenvm/                         @lorc @firscity
-/soc/arm64/nxp_imx/                       @MrVan
+/soc/arm64/nxp_imx/                       @MrVan @JiafeiPan
 /soc/arm64/arm/                           @povergoing
 /soc/arm64/arm/fvp_aemv8a/                @carlocaione
 /soc/arm64/intel_socfpga/*                @siclim
@@ -182,8 +182,9 @@
 /boards/sparc/                            @julius-barendt
 /boards/arm64/qemu_cortex_a53/            @carlocaione
 /boards/arm64/bcm958402m2_a72/            @abhishek-brcm
-/boards/arm64/imx8mm_evk/                 @MrVan
-/boards/arm64/imx8mp_evk/                 @MrVan
+/boards/arm64/mimx8mm_evk/                @MrVan @JiafeiPan
+/boards/arm64/mimx8mp_evk/                @MrVan @JiafeiPan
+/boards/arm64/mimx8mn_evk/                @JiafeiPan
 /boards/arm64/nxp_ls1046ardb/             @JiafeiPan
 /boards/arm64/xenvm/                      @lorc @firscity
 /boards/arm64/fvp_baser_aemv8r/           @povergoing
