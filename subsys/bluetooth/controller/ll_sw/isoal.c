@@ -164,6 +164,7 @@ isoal_status_t isoal_sink_create(
 
 	session->handle = handle;
 	session->framed = framed;
+	session->sdu_interval = sdu_interval;
 
 	/* Todo: Next section computing various constants, should potentially be a
 	 * function in itself as a number of the dependencies could be changed while
@@ -653,6 +654,29 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	return err;
 }
 
+/* Check a given segment for errors */
+static isoal_sdu_status_t isoal_check_seg_header(struct pdu_iso_sdu_sh *seg_hdr,
+						   uint8_t pdu_size_remaining)
+{
+	if (!seg_hdr) {
+		/* Segment header is null */
+		return ISOAL_SDU_STATUS_ERRORS;
+	}
+
+	if (pdu_size_remaining >= PDU_ISO_SEG_HDR_SIZE &&
+		pdu_size_remaining >= PDU_ISO_SEG_HDR_SIZE + seg_hdr->length) {
+
+		/* Valid if there is sufficient data for the segment header and
+		 * there is sufficient data for the required length of the
+		 * segment
+		 */
+		return ISOAL_SDU_STATUS_VALID;
+	}
+
+	/* Data is missing from the PDU */
+	return ISOAL_SDU_STATUS_LOST_DATA;
+}
+
 /**
  * @brief Consume a framed PDU: Copy contents into SDU(s) and emit to a sink
  * @details Destination sink may have an already partially built SDU
@@ -680,6 +704,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 	bool pdu_padding;
 	bool pdu_err;
 	bool seq_err;
+	bool seg_err;
 
 	sp = &sink->sdu_production;
 	session = &sink->session;
@@ -698,52 +723,13 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 	}
 
 	end_of_pdu = ((uint8_t *) pdu_meta->pdu->payload) + pdu_meta->pdu->length - 1;
-	seg_hdr = (struct pdu_iso_sdu_sh *) pdu_meta->pdu->payload;
+	seg_hdr = (pdu_err || seq_err || pdu_padding) ? NULL :
+			(struct pdu_iso_sdu_sh *) pdu_meta->pdu->payload;
 
-	if (pdu_err || seq_err) {
-		/* When one or more ISO Data PDUs are not received, the receiving device may
-		 * discard all SDUs affected by the missing PDUs. Any partially received SDU
-		 * may also be discarded.
-		 */
-		next_state = ISOAL_ERR_SPOOL;
-
-		/* This maps directly to the HCI ISO Data packet Packet_Status_Flag by way of the
-		 * sdu_status in the SDU emitted.
-		 * BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
-		 * 5.4.5 HCI ISO Data packets : Table 5.2 :
-		 * Packet_Status_Flag (in packets sent by the Controller)
-		 *   0b00  Valid data. The complete SDU was received correctly.
-		 *   0b01  Possibly invalid data. The contents of the ISO_SDU_Fragment may contain
-		 *         errors or part of the SDU may be missing. This is reported as "data with
-		 *         possible errors".
-		 *   0b10  Part(s) of the SDU were not received correctly. This is reported as
-		 *         "lost data".
-		 */
-		if (seq_err) {
-			sp->sdu_status |= ISOAL_SDU_STATUS_LOST_DATA;
-		} else if (pdu_err) {
-			sp->sdu_status |= meta->status;
-		}
-
-		if (sp->fsm == ISOAL_START) {
-			/* Sequence number shall be incremented even if an error
-			 * occurs at the beginning.
-			 */
-			session->seqn++;
-		}
-
-		/* Flush current SDU with error if any */
-		err |= isoal_rx_append_to_sdu(sink, pdu_meta, 0, 0, true, false);
-
-		/* Skip searching this PDU */
-		seg_hdr = NULL;
-
-		/* Update next state */
-		sink->sdu_production.fsm = next_state;
-	}
-
-	if (pdu_padding) {
-		/* Skip searching this PDU */
+	seg_err = false;
+	if (seg_hdr && isoal_check_seg_header(seg_hdr, pdu_meta->pdu->length) ==
+								ISOAL_SDU_STATUS_LOST_DATA) {
+		seg_err = true;
 		seg_hdr = NULL;
 	}
 
@@ -878,7 +864,65 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 
 		if (((uint8_t *) seg_hdr) > end_of_pdu) {
 			seg_hdr = NULL;
+		} else if (isoal_check_seg_header(seg_hdr,
+				(uint8_t)(end_of_pdu + 1 - ((uint8_t *) seg_hdr))) ==
+								ISOAL_SDU_STATUS_LOST_DATA) {
+			seg_err = true;
+			seg_hdr = NULL;
 		}
+	}
+
+	if (pdu_err || seq_err || seg_err) {
+		/* When one or more ISO Data PDUs are not received, the receiving device may
+		 * discard all SDUs affected by the missing PDUs. Any partially received SDU
+		 * may also be discarded.
+		 */
+		next_state = ISOAL_ERR_SPOOL;
+
+		/* This maps directly to the HCI ISO Data packet Packet_Status_Flag by way of the
+		 * sdu_status in the SDU emitted.
+		 * BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
+		 * 5.4.5 HCI ISO Data packets : Table 5.2 :
+		 * Packet_Status_Flag (in packets sent by the Controller)
+		 *   0b00  Valid data. The complete SDU was received correctly.
+		 *   0b01  Possibly invalid data. The contents of the ISO_SDU_Fragment may contain
+		 *         errors or part of the SDU may be missing. This is reported as "data with
+		 *         possible errors".
+		 *   0b10  Part(s) of the SDU were not received correctly. This is reported as
+		 *         "lost data".
+		 */
+		if (seq_err || seg_err) {
+			sp->sdu_status |= ISOAL_SDU_STATUS_LOST_DATA;
+		} else if (pdu_err) {
+			sp->sdu_status |= meta->status;
+		}
+
+		if (sp->fsm == ISOAL_START) {
+			/* Sequence number should be incremented if an error
+			 * occurs at the beginning.
+			 */
+			session->seqn++;
+
+			if (sdu->timestamp == 0) {
+				/* Last timestamp is not valid so set an
+				 * approximate timestamp
+				 */
+				anchorpoint = meta->timestamp;
+				latency = session->latency_framed;
+				timestamp = anchorpoint + latency;
+
+				sdu->timestamp = timestamp;
+			} else {
+				/* Advance the timestamp by an SDU interval */
+				sdu->timestamp += session->sdu_interval;
+			}
+		}
+
+		/* Flush current SDU with error if any */
+		err |= isoal_rx_append_to_sdu(sink, pdu_meta, 0, 0, true, false);
+
+		/* Update next state */
+		sink->sdu_production.fsm = next_state;
 	}
 
 	sp->prev_pdu_id = meta->payload_number;
