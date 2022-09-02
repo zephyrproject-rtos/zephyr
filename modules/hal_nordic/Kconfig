@@ -206,5 +206,3 @@ endif
 endmenu # NRF_802154_SER_HOST || NRF_802154_SER_RADIO
 
 endmenu # HAS_NORDIC_DRIVERS
-
-rsource "nrfx/Kconfig"

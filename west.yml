@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: krch
+      url-base: https://github.com/nordic-krch
 
   #
   # Please add items below based on alphabetical order
@@ -83,8 +85,15 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 249199ec5a5c31d170659921048764e96d05cc0e
-      path: modules/hal/nordic
+      remote: krch
+      revision: nrfx_module
+      path: modules/hal/nordic/drivers
+      groups:
+        - hal
+    - name: nrfx-1
+      remote: krch
+      revision: zephyr
+      path: modules/hal/nordic/nrfx
       groups:
         - hal
     - name: hal_nuvoton

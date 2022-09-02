@@ -95,7 +95,7 @@ set(SER_HOST      ${CONFIG_NRF_802154_SER_HOST})
 set(SL_OPENSOURCE ${CONFIG_NRF_802154_SL_OPENSOURCE})
 
 if(CONFIG_NRF_802154_SOURCE_HAL_NORDIC)
-  add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/drivers/nrf_802154 nrf_802154)
+  add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/nrf_802154 nrf_802154)
 
   target_link_libraries(nrf-802154-driver-interface INTERFACE zephyr-802154-interface)
   target_link_libraries(nrf-802154-serialization-interface INTERFACE zephyr-802154-interface)
