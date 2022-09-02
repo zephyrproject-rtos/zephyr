@@ -8,6 +8,8 @@
 #include "tests.h"
 
 #define RUN_ON_STACKSZ 2048
+#define HAR_STACKSZ    1024
+#define HAR_PRIORITY   7
 
 /* Utility for spin-polled loops.  Avoids spamming shared resources
  * like SRAM or MMIO registers
@@ -27,6 +29,9 @@ static void run_on_cpu_threadfn(void *a, void *b, void *c)
 	fn(arg);
 	*done_flag = true;
 }
+
+static struct k_thread thread_har;
+static K_THREAD_STACK_DEFINE(tstack_har, HAR_STACKSZ);
 
 static struct k_thread run_on_threads[CONFIG_MP_NUM_CPUS];
 static K_THREAD_STACK_ARRAY_DEFINE(run_on_stacks, CONFIG_MP_NUM_CPUS, RUN_ON_STACKSZ);
@@ -150,6 +155,7 @@ static void halt_and_restart(int cpu)
 	printk("halt/restart core %d...\n", cpu);
 	static bool alive_flag;
 	uint32_t all_cpus = BIT(CONFIG_MP_NUM_CPUS) - 1;
+	int ret;
 
 	/* On older hardware we need to get the host to turn the core
 	 * off.  Construct an ADSPCS with only this core disabled
@@ -159,7 +165,8 @@ static void halt_and_restart(int cpu)
 				     (all_cpus & ~BIT(cpu)) << 16);
 	}
 
-	soc_adsp_halt_cpu(cpu);
+	ret = soc_adsp_halt_cpu(cpu);
+	zassert_ok(ret, "Couldn't halt CPU");
 
 	alive_flag = false;
 	run_on_cpu(cpu, alive_fn, &alive_flag, false);
@@ -187,28 +194,30 @@ static void halt_and_restart(int cpu)
 	k_thread_abort(&run_on_threads[cpu]);
 }
 
+void halt_and_restart_thread(void *p1, void *p2, void *p3)
+{
+	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
+		halt_and_restart(i);
+	}
+}
+
 ZTEST(intel_adsp_boot, test_2nd_cpu_halt)
 {
-	/* Obviously this only works on CPU0.  This sequence is a
-	 * little whiteboxey: officially the cpu_mask API isn't
-	 * supposed to be used on a running thread, but by setting it
-	 * with interrupts masked we're guaranteed not to accidentally
-	 * disable ourselves, and the minimum-time sleep will
-	 * guarantee we re-enter the scheduler (and thus have our mask
-	 * honored) before running further.
-	 */
-	uint32_t key = arch_irq_lock();
-
-	k_thread_cpu_mask_clear(k_current_get());
-	k_thread_cpu_mask_enable(k_current_get(), 1);
-	arch_irq_unlock(key);
-	k_sleep(K_TICKS(0));
+	int ret;
 
 	if (IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
 		ztest_test_skip();
 	}
 
-	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
-		halt_and_restart(i);
-	}
+	/* Obviously this only works on CPU0. So, we create a thread pinned
+	 * to CPU0 to effectively run the test.
+	 */
+	k_thread_create(&thread_har, tstack_har, HAR_STACKSZ,
+			halt_and_restart_thread, NULL, NULL, NULL,
+			HAR_PRIORITY, 0, K_FOREVER);
+	ret = k_thread_cpu_pin(&thread_har, 0);
+	zassert_ok(ret, "Couldn't pin thread to CPU 0, test can't be run");
+	k_thread_start(&thread_har);
+
+	k_thread_join(&thread_har, K_FOREVER);
 }
