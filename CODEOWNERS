@@ -696,6 +696,7 @@
 /samples/subsys/mgmt/updatehub/           @nandojve @otavio
 /samples/subsys/mgmt/osdp/                @sidcha
 /samples/subsys/usb/                      @jfischer-no
+/samples/subsys/usb_c/                    @sambhurst
 /samples/subsys/pm/                       @nashif @ceolin
 /samples/tfm_integration/                 @microbuilder
 /samples/userspace/                       @dcpleung @nashif
@@ -798,6 +799,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/testsuite/ztest/*/ztress*         @nordic-krch
 /subsys/timing/                           @nashif @dcpleung
 /subsys/usb/                              @jfischer-no
+/subsys/usb/usb_c/                        @sambhurst
 /tests/                                   @nashif
 /tests/arch/arm/                          @ioannisg @stephanosio
 /tests/benchmarks/cmsis_dsp/              @stephanosio
