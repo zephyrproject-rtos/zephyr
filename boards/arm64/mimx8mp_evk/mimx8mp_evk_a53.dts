@@ -6,12 +6,12 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_imx8mp_a53.dtsi>
-#include "imx8mp_evk-pinctrl.dtsi"
+#include <nxp/nxp_mimx8mp_a53.dtsi>
+#include "mimx8mp_evk-pinctrl.dtsi"
 
 / {
 	model = "NXP i.MX8MP A53";
-	compatible = "fsl,imx8mp";
+	compatible = "fsl,mimx8mp";
 
 	chosen {
 		zephyr,console = &uart4;
@@ -26,22 +26,20 @@
 		cpu@1 {
 			status = "disabled";
 		};
-	};
-
-	psci {
-		compatible = "arm,psci-0.2";
-		method = "smc";
+		cpu@2 {
+			status = "disabled";
+		};
 	};
 
 	sram0: memory@c0000000 {
 		reg = <0xc0000000 DT_SIZE_M(1)>;
 	};
-
 };
 
 &uart4 {
+	status = "okay";
 	current-speed = <115200>;
+	clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
 	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
-	status = "okay";
 };

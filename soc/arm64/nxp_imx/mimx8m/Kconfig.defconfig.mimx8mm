@@ -1,7 +1,7 @@
 # Copyright 2020-2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_IMX8MM_A53
+if SOC_MIMX8MM_A53
 
 config SOC
 	default "mimx8mm6"
