@@ -96,10 +96,10 @@ struct bt_audio_broadcast_source {
 	uint32_t pd; /** QoS Presentation Delay */
 	uint32_t broadcast_id; /* 24 bit */
 
-	struct bt_le_ext_adv *adv;
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_STREAM_CNT];
 	struct bt_codec_qos *qos;
+	struct bt_codec *codec;
 	/* The streams used to create the broadcast source */
 	sys_slist_t streams;
 };

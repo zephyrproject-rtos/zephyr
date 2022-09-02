@@ -2192,10 +2192,13 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
  *  be streamed.
  *
  *  @param source      Pointer to the broadcast source
+ *  @param adv         Pointer to an extended advertising set with periodic
+ *                     advertising configured.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source);
+int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source,
+				    struct bt_le_ext_adv *adv);
 
 /** @brief Stop audio broadcast source.
  *
@@ -2220,6 +2223,41 @@ int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source);
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source);
+
+/**
+ * @brief Get the broadcast ID of a broadcast source
+ *
+ * This will return the 3-octet broadcast ID that should be advertised in the
+ * extended advertising data with @ref BT_UUID_BROADCAST_AUDIO_VAL as
+ * @ref BT_DATA_SVC_DATA16.
+ *
+ * See table 3.14 in the Basic Audio Profile v1.0.1 for the structure.
+ *
+ * @param[in]  source        Pointer to the broadcast source.
+ * @param[out] broadcast_id  Pointer to the 3-octet broadcast ID.
+ *
+ * @return int		0 if on success, errno on error.
+ */
+int bt_audio_broadcast_source_get_id(const struct bt_audio_broadcast_source *source,
+				     uint32_t *const broadcast_id);
+
+/**
+ * @brief Get the Broadcast Audio Stream Endpoint of a broadcast source
+ *
+ * This will encode the BASE of a broadcast source into a buffer, that can be
+ * used for advertisement. The encoded BASE will thus be encoded as
+ * little-endian. The BASE shall be put into the periodic advertising data
+ * (see bt_le_per_adv_set_data()).
+ *
+ * See table 3.15 in the Basic Audio Profile v1.0.1 for the structure.
+ *
+ * @param source        Pointer to the broadcast source.
+ * @param base_buf      Pointer to a buffer where the BASE will be inserted.
+ *
+ * @return int		0 if on success, errno on error.
+ */
+int bt_audio_broadcast_source_get_base(const struct bt_audio_broadcast_source *source,
+				       struct net_buf_simple *base_buf);
 
 /** @brief Register Broadcast sink callbacks
  * *
