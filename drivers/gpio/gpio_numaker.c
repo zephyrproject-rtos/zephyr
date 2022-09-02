@@ -175,6 +175,8 @@ static int gpio_numaker_pin_interrupt_configure(const struct device *dev,
     
 	if (mode == GPIO_INT_MODE_DISABLED) {
         GPIO_DisableInt(gpio_base, pin);
+        /* Clear the port int status */
+        gpio_base->INTSRC &= BIT(pin);
 	} else {
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
