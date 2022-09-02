@@ -2952,6 +2952,7 @@ int bt_l2cap_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt_co
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 	struct l2cap_tx_meta_data *data;
+	void *old_user_data = l2cap_tx_meta_data(buf);
 	int err;
 
 	if (!buf) {
@@ -3003,7 +3004,11 @@ int bt_l2cap_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt_co
 			net_buf_put(&le_chan->tx_queue, buf);
 			return l2cap_tx_meta_data(buf)->sent;
 		}
+
 		BT_ERR("failed to send message %d", err);
+
+		l2cap_tx_meta_data(buf) = old_user_data;
+		free_tx_meta_data(data);
 	}
 
 	return err;

@@ -72,7 +72,6 @@ from copy import deepcopy
 import logging
 import os
 import re
-from typing import Set
 
 import yaml
 try:
@@ -106,6 +105,10 @@ class EDT:
 
     compat2okay:
       Like compat2nodes, but just for nodes with status 'okay'.
+
+    compat2vendor:
+      A collections.defaultdict that maps each 'compatible' string that appears
+      on some Node to a vendor name parsed from vendor_prefixes.
 
     label2node:
       A collections.OrderedDict that maps a node label to the node with
@@ -451,6 +454,7 @@ class EDT:
         self.dep_ord2node = OrderedDict()
         self.compat2nodes = defaultdict(list)
         self.compat2okay = defaultdict(list)
+        self.compat2vendor = defaultdict(str)
 
         for node in self.nodes:
             for label in node.labels:
@@ -461,6 +465,34 @@ class EDT:
 
                 if node.status == "okay":
                     self.compat2okay[compat].append(node)
+
+                if compat in self.compat2vendor:
+                    continue
+
+                # The regular expression comes from dt-schema.
+                compat_re = r'^[a-zA-Z][a-zA-Z0-9,+\-._]+$'
+                if not re.match(compat_re, compat):
+                    _err(f"node '{node.path}' compatible '{compat}' "
+                         'must match this regular expression: '
+                         f"'{compat_re}'")
+
+                if ',' in compat and self._vendor_prefixes:
+                    vendor = compat.split(',', 1)[0]
+                    if vendor in self._vendor_prefixes:
+                        self.compat2vendor[compat] = self._vendor_prefixes[vendor]
+
+                    # As an exception, the root node can have whatever
+                    # compatibles it wants. Other nodes get checked.
+                    elif node.path != '/' and \
+                       vendor not in _VENDOR_PREFIX_ALLOWED:
+                        if self._werror:
+                            handler_fn = _err
+                        else:
+                            handler_fn = _LOG.warning
+                        handler_fn(
+                            f"node '{node.path}' compatible '{compat}' "
+                            f"has unknown vendor prefix '{vendor}'")
+
 
         for nodeset in self.scc_order:
             node = nodeset[0]
@@ -489,7 +521,6 @@ class EDT:
                         ', '.join(repr(x) for x in spec.enum))
 
         # Validate the contents of compatible properties.
-        self._checked_compatibles: Set[str] = set()
         for node in self.nodes:
             if 'compatible' not in node.props:
                 continue
@@ -506,36 +537,6 @@ class EDT:
                 # This is also just for future-proofing.
                 assert isinstance(compat, str)
 
-                self._check_compatible(node, compat)
-        del self._checked_compatibles  # We have no need for this anymore.
-
-    def _check_compatible(self, node, compat):
-        if compat in self._checked_compatibles:
-            return
-
-        # The regular expression comes from dt-schema.
-        compat_re = r'^[a-zA-Z][a-zA-Z0-9,+\-._]+$'
-        if not re.match(compat_re, compat):
-            _err(f"node '{node.path}' compatible '{compat}' "
-                 'must match this regular expression: '
-                 f"'{compat_re}'")
-
-        if ',' in compat and self._vendor_prefixes:
-            vendor = compat.split(',', 1)[0]
-            # As an exception, the root node can have whatever
-            # compatibles it wants. Other nodes get checked.
-            if node.path != '/' and \
-                   vendor not in self._vendor_prefixes and \
-                   vendor not in _VENDOR_PREFIX_ALLOWED:
-                if self._werror:
-                    handler_fn = _err
-                else:
-                    handler_fn = _LOG.warning
-                handler_fn(
-                    f"node '{node.path}' compatible '{compat}' "
-                    f"has unknown vendor prefix '{vendor}'")
-
-        self._checked_compatibles.add(compat)
 
 class Node:
     """

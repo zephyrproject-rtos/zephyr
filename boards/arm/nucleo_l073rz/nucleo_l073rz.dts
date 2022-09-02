@@ -37,6 +37,14 @@
 		};
 	};
 
+	power-states {
+		stop: state {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <100>;
+		};
+	};
+
 	pwmleds: pwmleds {
 		compatible = "pwm-leds";
 		/* NOTE: disabled by default, PWM2 conflicts with SPI1 */
@@ -55,9 +63,17 @@
 	};
 };
 
+&cpu0 {
+	cpu-power-states = <&stop>;
+};
+
 &clk_hse {
 	hse-bypass;
 	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+	status = "okay";
+};
+
+&clk_lsi {
 	status = "okay";
 };
 
@@ -74,6 +90,11 @@
 	ahb-prescaler = <1>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <1>;
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		<&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 };
 
 &usart1 {

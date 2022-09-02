@@ -28,6 +28,7 @@
 #define LPTIM (LPTIM_TypeDef *) DT_INST_REG_ADDR(0)
 
 #if DT_INST_NUM_CLOCKS(0) == 1
+#warning Kconfig for LPTIM source clock (LSI/LSE) is deprecated, use device tree.
 static const struct stm32_pclken lptim_clk[] = {
 	STM32_CLOCK_INFO(0, DT_DRV_INST(0)),
 	/* Use Kconfig to configure source clocks fields */
@@ -282,6 +283,8 @@ uint32_t sys_clock_cycle_get_32(void)
 
 static int sys_clock_driver_init(const struct device *dev)
 {
+	int err;
+
 	ARG_UNUSED(dev);
 
 	if (!device_is_ready(clk_ctrl)) {
@@ -289,7 +292,10 @@ static int sys_clock_driver_init(const struct device *dev)
 	}
 
 	/* Enable LPTIM bus clock */
-	clock_control_on(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[0]);
+	err = clock_control_on(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[0]);
+	if (err < 0) {
+		return -EIO;
+	}
 
 #if defined(LL_APB1_GRP1_PERIPH_LPTIM1)
 	LL_APB1_GRP1_ReleaseReset(LL_APB1_GRP1_PERIPH_LPTIM1);
@@ -297,13 +303,42 @@ static int sys_clock_driver_init(const struct device *dev)
 	LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN);
 #endif
 
+	/* For tick accuracy, a specific tick to freq ratio is expected */
+	/* This check assumes LSI@32KHz or LSE@32768Hz */
+	if (((lptim_clk[1].bus == STM32_SRC_LSI) &&
+	      (CONFIG_SYS_CLOCK_TICKS_PER_SEC == 4000)) ||
+	    ((lptim_clk[1].bus == STM32_SRC_LSE) &&
+	      (CONFIG_SYS_CLOCK_TICKS_PER_SEC == 4096))) {
+		return -ENOTSUP;
+	}
+
 	/* Enable LPTIM clock source */
-	clock_control_configure(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[1],
-				NULL);
+	err = clock_control_configure(clk_ctrl,
+				      (clock_control_subsys_t *) &lptim_clk[1],
+				      NULL);
+	if (err < 0) {
+		return -EIO;
+	}
 
 	/* Get LPTIM clock freq */
-	clock_control_get_rate(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[1],
+	err = clock_control_get_rate(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[1],
 			       &lptim_clock_freq);
+
+	if (err < 0) {
+		return -EIO;
+	}
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+	/* Driver only supports freqs up to 32768Hz. On L0, LSI freq is 37KHz,
+	 * which will overflow the LPTIM counter.
+	 * Previous LPTIM configuration using device tree was doing forcing this
+	 * with a Kconfig default. Impact is that time is 1.13 faster than reality.
+	 * Following lines reproduce this behavior in order not to change behavior.
+	 * This issue will be fixed by implementation LPTIM prescaler support.
+	 */
+	if (lptim_clk[1].bus == STM32_SRC_LSI) {
+		lptim_clock_freq = KHZ(32);
+	}
+#endif
 
 	/* Set LPTIM time base based on clck source freq
 	 * Time base = (2s * freq) - 1

@@ -131,6 +131,17 @@ foreach(optional_include_dir
   endif()
 endforeach()
 
+# Don't inherit compiler flags from the environment
+foreach(var AFLAGS CFLAGS CXXFLAGS CPPFLAGS LDFLAGS)
+  if(DEFINED ENV{${var}})
+    message(WARNING "The environment variable '${var}' was set to $ENV{${var}}, "
+                    "but Zephyr ignores flags from the environment. Use 'cmake "
+                    "-DEXTRA_${var}=$ENV{${var}}' instead."
+    )
+    unset(ENV{${var}})
+  endif()
+endforeach()
+
 zephyr_compile_definitions(
   KERNEL
   __ZEPHYR__=1

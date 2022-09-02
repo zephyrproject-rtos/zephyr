@@ -295,8 +295,8 @@ int32_t mdm_hl7800_send_at_cmd(const uint8_t *data);
  *
  * @param rsrp Reference Signals Received Power (dBm)
  *             Range = -140 dBm to -44 dBm
- * @param sinr Signal to Interference plus Noise Ratio (dBm)
- *             Range = -128 dBm to 40dBm
+ * @param sinr Signal to Interference plus Noise Ratio (dB)
+ *             Range = -128 dB to 40 dB
  */
 void mdm_hl7800_get_signal_quality(int *rsrp, int *sinr);
 

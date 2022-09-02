@@ -167,7 +167,7 @@ uint32_t var_text_test(uint32_t r, const uint8_t *in, const uint8_t *out,
 /*
  * All NIST tests with fixed key and variable text.
  */
-void test_aes_fixed_key_variable_text(void)
+ZTEST(tinycrypt, test_aes_fixed_key_variable_text)
 {
 	uint32_t result = TC_PASS;
 	const uint8_t key[NUM_OF_NIST_KEYS] = {
@@ -1113,7 +1113,7 @@ uint32_t var_key_test(uint32_t r, const uint8_t *in, const uint8_t *out)
 /*
  * All NIST tests with variable key and fixed text.
  */
-void test_aes_variable_key_fixed_text(void)
+ZTEST(tinycrypt, test_aes_variable_key_fixed_text)
 {
 	uint32_t result = TC_PASS;
 	const struct kat_table kat_tbl[NUM_OF_FIXED_KEYS] = {

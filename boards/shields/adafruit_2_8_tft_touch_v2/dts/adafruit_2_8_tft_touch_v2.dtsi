@@ -9,6 +9,7 @@
 / {
 	chosen {
 		zephyr,display = &ili9340;
+		zephyr,keyboard-scan = &touch_controller;
 	};
 };
 

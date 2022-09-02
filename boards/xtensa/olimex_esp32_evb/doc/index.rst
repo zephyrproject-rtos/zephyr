@@ -94,12 +94,12 @@ System requirements
 Prerequisites
 -------------
 
-Espressif HAL requires binary blobs in order work. The west extension below performs the required
-syncronization to clone, checkout and pull the submodules:
+Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
+below to retrieve those files.
 
 .. code-block:: console
 
-   west espressif update
+   west blobs fetch hal_espressif
 
 .. note::
 

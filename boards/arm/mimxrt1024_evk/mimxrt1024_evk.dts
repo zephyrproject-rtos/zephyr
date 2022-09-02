@@ -74,7 +74,7 @@
 			reg = <0x00010000 DT_SIZE_K(1920)>;
 		};
 
-		slot1_partition: partition@200000 {
+		slot1_partition: partition@1f0000 {
 			label = "image-1";
 			reg = <0x001F0000 DT_SIZE_K(1920)>;
 		};
