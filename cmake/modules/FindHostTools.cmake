@@ -48,6 +48,10 @@ if(HostTools_FOUND)
   return()
 endif()
 
+find_package(Deprecated COMPONENTS XCC_USE_CLANG CROSS_COMPILE)
+
+find_package(Zephyr-sdk 0.15)
+
 # gperf is an optional dependency
 find_program(GPERF gperf)
 
@@ -60,10 +64,6 @@ find_program(BOSSAC bossac)
 # imgtool is an optional dependency (the build may also fall back to scripts/imgtool.py
 # in the mcuboot repository if that's present in some cases)
 find_program(IMGTOOL imgtool)
-
-find_package(Deprecated COMPONENTS XCC_USE_CLANG CROSS_COMPILE)
-
-find_package(Zephyr-sdk 0.15)
 
 # Pick host system's toolchain if we are targeting posix
 if("${ARCH}" STREQUAL "posix")
