@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/gd32.h>
 #include <zephyr/drivers/pinctrl.h>
 
 #include <gd32_gpio.h>
-#include <gd32_rcu.h>
 
 /** AFIO DT node */
 #define AFIO_NODE DT_NODELABEL(afio)
@@ -26,10 +27,10 @@
 	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),		       \
 		   (DT_REG_ADDR(DT_NODELABEL(nodelabel)),), ())
 
-/** Utility macro that expands to the GPIO RCU if it exists */
-#define GD32_PORT_RCU_OR_NONE(nodelabel)				       \
+/** Utility macro that expands to the GPIO clock id if it exists */
+#define GD32_PORT_CLOCK_ID_OR_NONE(nodelabel)				       \
 	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),		       \
-		   (DT_PROP(DT_NODELABEL(nodelabel), rcu_periph_clock),), ())
+		   (DT_CLOCKS_CELL(DT_NODELABEL(nodelabel), id),), ())
 
 /** GD32 port addresses */
 static const uint32_t gd32_port_addrs[] = {
@@ -42,15 +43,15 @@ static const uint32_t gd32_port_addrs[] = {
 	GD32_PORT_ADDR_OR_NONE(gpiog)
 };
 
-/** GD32 port RCUs */
-static const uint32_t gd32_port_rcus[] = {
-	GD32_PORT_RCU_OR_NONE(gpioa)
-	GD32_PORT_RCU_OR_NONE(gpiob)
-	GD32_PORT_RCU_OR_NONE(gpioc)
-	GD32_PORT_RCU_OR_NONE(gpiod)
-	GD32_PORT_RCU_OR_NONE(gpioe)
-	GD32_PORT_RCU_OR_NONE(gpiof)
-	GD32_PORT_RCU_OR_NONE(gpiog)
+/** GD32 port clock identifiers */
+static const uint16_t gd32_port_clkids[] = {
+	GD32_PORT_CLOCK_ID_OR_NONE(gpioa)
+	GD32_PORT_CLOCK_ID_OR_NONE(gpiob)
+	GD32_PORT_CLOCK_ID_OR_NONE(gpioc)
+	GD32_PORT_CLOCK_ID_OR_NONE(gpiod)
+	GD32_PORT_CLOCK_ID_OR_NONE(gpioe)
+	GD32_PORT_CLOCK_ID_OR_NONE(gpiof)
+	GD32_PORT_CLOCK_ID_OR_NONE(gpiog)
 };
 
 /**
@@ -63,9 +64,12 @@ static const uint32_t gd32_port_rcus[] = {
  */
 static int afio_init(const struct device *dev)
 {
+	uint16_t clkid = DT_CLOCKS_CELL(AFIO_NODE, id);
+
 	ARG_UNUSED(dev);
 
-	rcu_periph_clock_enable(DT_PROP(AFIO_NODE, rcu_periph_clock));
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
+			       (clock_control_subsys_t *)&clkid);
 
 #ifdef AFIO_CPSCTL
 	if (DT_PROP(AFIO_NODE, enable_cps)) {
@@ -114,13 +118,14 @@ static inline uint8_t configure_spd(uint32_t port, uint32_t pin_bit,
 static void configure_pin(pinctrl_soc_pin_t pin)
 {
 	uint8_t port_idx, mode, pin_num;
-	uint32_t rcu, port, pin_bit, reg_val;
+	uint32_t port, pin_bit, reg_val;
 	volatile uint32_t *reg;
+	uint16_t clkid;
 
 	port_idx = GD32_PORT_GET(pin);
 	__ASSERT_NO_MSG(port_idx < ARRAY_SIZE(gd32_port_addrs));
 
-	rcu = gd32_port_rcus[port_idx];
+	clkid = gd32_port_clkids[port_idx];
 	port = gd32_port_addrs[port_idx];
 	pin_num = GD32_PIN_GET(pin);
 	pin_bit = BIT(pin_num);
@@ -133,7 +138,8 @@ static void configure_pin(pinctrl_soc_pin_t pin)
 		pin_num -= 8U;
 	}
 
-	rcu_periph_clock_enable(rcu);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
+			       (clock_control_subsys_t *)&clkid);
 
 	reg_val = *reg;
 	reg_val &= ~GPIO_MODE_MASK(pin_num);

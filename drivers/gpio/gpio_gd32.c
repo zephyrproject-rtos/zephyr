@@ -7,11 +7,12 @@
 #define DT_DRV_COMPAT gd_gd32_gpio
 
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/gd32.h>
 #include <zephyr/drivers/interrupt_controller/gd32_exti.h>
 #include <zephyr/drivers/reset.h>
 
 #include <gd32_gpio.h>
-#include <gd32_rcu.h>
 
 #include "gpio_utils.h"
 
@@ -44,7 +45,8 @@
 struct gpio_gd32_config {
 	struct gpio_driver_config common;
 	uint32_t reg;
-	uint32_t rcu_periph_clock;
+	uint16_t clkid;
+	uint16_t clkid_exti;
 	struct reset_dt_spec reset;
 };
 
@@ -346,17 +348,12 @@ static int gpio_gd32_init(const struct device *port)
 {
 	const struct gpio_gd32_config *config = port->config;
 
-	rcu_periph_clock_enable(config->rcu_periph_clock);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
+			       (clock_control_subsys_t *)&config->clkid);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
+			       (clock_control_subsys_t *)&config->clkid_exti);
 
 	(void)reset_line_toggle_dt(&config->reset);
-
-#ifdef CONFIG_GD32_HAS_AF_PINMUX
-	/* enable access to SYSCFG_EXTISSn registers */
-	rcu_periph_clock_enable(DT_PROP(SYSCFG_NODE, rcu_periph_clock));
-#else
-	/* enable access to AFIO_EXTISSn registers */
-	rcu_periph_clock_enable(DT_PROP(AFIO_NODE, rcu_periph_clock));
-#endif /* CONFIG_GD32_HAS_AF_PINMUX */
 
 	return 0;
 }
@@ -367,7 +364,10 @@ static int gpio_gd32_init(const struct device *port)
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),   \
 		},							       \
 		.reg = DT_INST_REG_ADDR(n),				       \
-		.rcu_periph_clock = DT_INST_PROP(n, rcu_periph_clock),	       \
+		.clkid = DT_INST_CLOCKS_CELL(n, id),			       \
+		COND_CODE_1(DT_NODE_HAS_STATUS(SYSCFG_NODE, okay),	       \
+			    (.clkid_exti = DT_CLOCKS_CELL(SYSCFG_NODE, id),),  \
+			    (.clkid_exti = DT_CLOCKS_CELL(AFIO_NODE, id),))    \
 		.reset = RESET_DT_SPEC_INST_GET(n),			       \
 	};								       \
 									       \
