@@ -92,7 +92,7 @@
 			compatible = "gd,gd32-dma";
 			reg = <0x40020000 0x400>;
 			interrupts = <9 0>, <10 0>, <11 0>, <48 0>;
-			rcu-periph-clock = <0x500>;
+			clocks = <&cctl GD32_CLOCK_DMA>;
 			dma-channels = <7>;
 			#dma-cells = <1>;
 			status = "disabled";
