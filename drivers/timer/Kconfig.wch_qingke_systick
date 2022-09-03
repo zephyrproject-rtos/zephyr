@@ -1,0 +1,11 @@
+# Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config WCH_QINGKE_SYSTICK
+	bool "WCH QingKe core systick"
+	depends on SOC_SERIES_CH32V30X
+	default y
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  The option enables the driver for the WCH QingKe Core's systick timer
