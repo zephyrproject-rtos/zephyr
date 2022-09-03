@@ -136,6 +136,9 @@ struct b91_data {
 	int16_t current_dbm;
 	volatile bool ack_sending;
 	struct b91_src_match_table *src_match_table;
+#ifdef CONFIG_PM_DEVICE
+	atomic_t current_pm_lock;
+#endif /* CONFIG_PM_DEVICE */
 };
 
 #endif

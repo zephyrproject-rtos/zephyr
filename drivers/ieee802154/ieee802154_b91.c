@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #include "ieee802154_b91.h"
 
@@ -204,7 +205,13 @@ static bool b91_is_data_request(const uint8_t *buf, uint8_t size,
 static void b91_disable_pm(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE
-	pm_device_busy_set(dev);
+	struct b91_data *b91 = dev->data;
+
+	if (atomic_test_and_set_bit(&b91->current_pm_lock, 0) == 0) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+#else
+	ARG_UNUSED(dev);
 #endif /* CONFIG_PM_DEVICE */
 }
 
@@ -212,7 +219,13 @@ static void b91_disable_pm(const struct device *dev)
 static void b91_enable_pm(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE
-	pm_device_busy_clear(dev);
+	struct b91_data *b91 = dev->data;
+
+	if (atomic_test_and_clear_bit(&b91->current_pm_lock, 0) == 1) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+#else
+	ARG_UNUSED(dev);
 #endif /* CONFIG_PM_DEVICE */
 }
 
@@ -891,19 +904,16 @@ static struct ieee802154_radio_api b91_radio_api = {
 static int ieee802154_b91_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	ARG_UNUSED(dev);
-	extern volatile bool telink_b91_pm_suspend_entered;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (telink_b91_pm_suspend_entered) {
-			/* restart radio */
-			rf_mode_init();
-			rf_set_zigbee_250K_mode();
-			rf_set_chn(B91_LOGIC_CHANNEL_TO_PHYSICAL(data.current_channel));
-			rf_set_power_level(b91_tx_pwr_lt[data.current_dbm - B91_TX_POWER_MIN]);
-			rf_set_txmode();
-			rf_set_rxmode();
-		}
+		/* restart radio */
+		rf_mode_init();
+		rf_set_zigbee_250K_mode();
+		rf_set_chn(B91_LOGIC_CHANNEL_TO_PHYSICAL(data.current_channel));
+		rf_set_power_level(b91_tx_pwr_lt[data.current_dbm - B91_TX_POWER_MIN]);
+		rf_set_txmode();
+		rf_set_rxmode();
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:

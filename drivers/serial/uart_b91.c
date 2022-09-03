@@ -539,16 +539,13 @@ static int uart_b91_pm_action(const struct device *dev, enum pm_device_action ac
 {
 	volatile struct uart_b91_t *uart = GET_UART(dev);
 	struct uart_b91_data *data = dev->data;
-	extern volatile bool telink_b91_pm_suspend_entered;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (telink_b91_pm_suspend_entered) {
-			/* reset TX/RX byte index */
-			data->tx_byte_index = 0;
-			data->rx_byte_index = 0;
-			uart->status |= UART_RX_RESET_BIT | UART_TX_RESET_BIT;
-		}
+		/* reset TX/RX byte index */
+		data->tx_byte_index = 0;
+		data->rx_byte_index = 0;
+		uart->status |= UART_RX_RESET_BIT | UART_TX_RESET_BIT;
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
