@@ -7,6 +7,9 @@
 #define DT_DRV_COMPAT gd_gd32_i2c
 
 #include <errno.h>
+
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/gd32.h>
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -14,7 +17,6 @@
 #include <zephyr/drivers/i2c.h>
 
 #include <gd32_i2c.h>
-#include <gd32_rcu.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_gd32, CONFIG_I2C_LOG_LEVEL);
@@ -33,7 +35,7 @@ LOG_MODULE_REGISTER(i2c_gd32, CONFIG_I2C_LOG_LEVEL);
 struct i2c_gd32_config {
 	uint32_t reg;
 	uint32_t bitrate;
-	uint32_t rcu_periph_clock;
+	uint16_t clkid;
 	struct reset_dt_spec reset;
 	const struct pinctrl_dev_config *pcfg;
 	void (*irq_cfg_func)(void);
@@ -500,8 +502,9 @@ static int i2c_gd32_configure(const struct device *dev,
 	/* Disable I2C device */
 	I2C_CTL0(cfg->reg) &= ~I2C_CTL0_I2CEN;
 
-	/* GD32 i2c interface always connect to APB1. */
-	pclk1 = rcu_clock_freq_get(CK_APB1);
+	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER,
+				     (clock_control_subsys_t *)&cfg->clkid,
+				     &pclk1);
 
 	/* i2c clock frequency, us */
 	freq = pclk1 / 1000000U;
@@ -663,7 +666,8 @@ static int i2c_gd32_init(const struct device *dev)
 	/* Sync semaphore to sync i2c state between isr and transfer api. */
 	k_sem_init(&data->sync_sem, 0, K_SEM_MAX_LIMIT);
 
-	rcu_periph_clock_enable(cfg->rcu_periph_clock);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
+			       (clock_control_subsys_t *)&cfg->clkid);
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 
@@ -698,7 +702,7 @@ static int i2c_gd32_init(const struct device *dev)
 	const static struct i2c_gd32_config i2c_gd32_cfg_##inst = {		\
 		.reg = DT_INST_REG_ADDR(inst),					\
 		.bitrate = DT_INST_PROP(inst, clock_frequency),			\
-		.rcu_periph_clock = DT_INST_PROP(inst, rcu_periph_clock),	\
+		.clkid = DT_INST_CLOCKS_CELL(inst, id),				\
 		.reset = RESET_DT_SPEC_INST_GET(inst),				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
 		.irq_cfg_func = i2c_gd32_irq_cfg_func_##inst,			\
