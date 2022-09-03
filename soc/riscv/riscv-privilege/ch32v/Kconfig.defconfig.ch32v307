@@ -1,0 +1,18 @@
+# Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_CH32V307
+
+config SOC
+	default "ch32v307"
+
+config PINCTRL
+	default y
+
+config RESET
+	default y
+
+config CLOCK_CONTROL
+	default y
+
+endif # SOC_CH32V307
