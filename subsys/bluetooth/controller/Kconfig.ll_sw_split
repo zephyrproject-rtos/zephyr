@@ -189,6 +189,22 @@ config BT_CTLR_ADV_SYNC_SET
 	help
 	  Maximum supported periodic advertising sets.
 
+config BT_CTLR_ADV_DATA_CHAIN
+	bool "Advertising Data chaining [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable support for Advertising Data chaining in Extended and
+	  Periodic Advertising. This will allow to have Advertising Data Length
+	  upto 1650 bytes.
+
+	  This is experimental and work in progress, does not implement
+	  recombining the AD Data and could return BT_HCI_ERR_PACKET_TOO_LONG
+	  when a chain PDU needs its AD data overflow into a new chain PDU.
+	  I.e. AD data in the last PDU could overflow due to the need to add
+	  Aux Pointer field, and if this overflow bytes plus the next AD data
+	  fragment length could be over 255 bytes needing additional chain PDU.
+	  This is not implemented.
+
 config BT_CTLR_ADV_PDU_LINK
 	# Enables extra space in each advertising PDU to allow linking PDUs.
 	# This is required to enable advertising data trains (i.e. transmission
