@@ -475,7 +475,7 @@
 			reg = <0x40020000 0x400>;
 			interrupts = <11 0>, <12 0>, <13 0>, <14 0>,
 				     <15 0>, <16 0>, <17 0>;
-			rcu-periph-clock = <0x500>;
+			clocks = <&cctl GD32_CLOCK_DMA0>;
 			dma-channels = <7>;
 			#dma-cells = <1>;
 			status = "disabled";
@@ -486,7 +486,7 @@
 			reg = <0x40020400 0x400>;
 			interrupts = <56 0>, <57 0>, <58 0>, <59 0>,
 				     <60 0>;
-			rcu-periph-clock = <0x501>;
+			clocks = <&cctl GD32_CLOCK_DMA1>;
 			dma-channels = <5>;
 			#dma-cells = <1>;
 			status = "disabled";

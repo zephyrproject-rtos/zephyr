@@ -18,9 +18,7 @@ properties:
   dma-channels:
     required: true
 
-  rcu-periph-clock:
-    type: int
-    description: Peripheral RCU(Reset Clock Unit) Clock ID
+  clocks:
     required: true
 
   "#dma-cells":
