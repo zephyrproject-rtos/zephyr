@@ -435,7 +435,7 @@ static void adc_gd32_global_irq_cfg(void)
 
 #ifdef CONFIG_SOC_SERIES_GD32F3X0
 #define ADC_CLOCK_SOURCE(n)									\
-	.rcu_clock_source = DT_INST_PROP(n, rcu_periph_clock)
+	.rcu_clock_source = DT_INST_PROP(n, rcu_clock_source)
 #else
 #define ADC_CLOCK_SOURCE(n)
 #endif
