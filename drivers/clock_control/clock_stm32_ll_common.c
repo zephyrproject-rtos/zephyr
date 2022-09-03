@@ -463,6 +463,27 @@ static void set_up_plls(void)
 	}
 	LL_RCC_PLL_Disable();
 
+#endif
+
+#if defined(STM32_PLL2_ENABLED)
+	/*
+	 * Disable PLL2 after switching to HSI for SysClk
+	 * and disabling PLL, but before enabling PLL again,
+	 * since PLL source can be PLL2.
+	 */
+	LL_RCC_PLL2_Disable();
+
+	config_pll2();
+
+	/* Enable PLL2 */
+	LL_RCC_PLL2_Enable();
+	while (LL_RCC_PLL2_IsReady() != 1U) {
+	/* Wait for PLL2 ready */
+	}
+#endif /* STM32_PLL2_ENABLED */
+
+#if defined(STM32_PLL_ENABLED)
+
 #ifdef CONFIG_SOC_SERIES_STM32F7X
 	/* Assuming we stay on Power Scale default value: Power Scale 1 */
 	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
