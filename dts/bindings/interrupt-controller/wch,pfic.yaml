@@ -1,0 +1,19 @@
+# Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH PFIC interrupt controller
+
+compatible: "wch,pfic"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+      required: true
+
+  "#interrupt-cells":
+      const: 2
+
+interrupt-cells:
+  - irq
+  - priority

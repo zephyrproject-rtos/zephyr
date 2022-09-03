@@ -1,0 +1,9 @@
+# Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config WCH_PFIC
+	bool "Enhanced Core Local Interrupt Controller (ECLIC)"
+	default y
+	depends on DT_HAS_WCH_PFIC_ENABLED
+	help
+	  Interrupt controller for Nuclei SoC core.
