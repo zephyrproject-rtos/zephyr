@@ -25,9 +25,7 @@ properties:
     resets:
       required: true
 
-    rcu-periph-clock:
-      type: int
-      description: Reset Control Unit Peripheral Clock ID
+    clocks:
       required: true
 
     rcu-clock-source:
