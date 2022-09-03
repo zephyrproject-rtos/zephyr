@@ -11,4 +11,7 @@ config PINCTRL
 config RESET
 	default y
 
+config CLOCK_CONTROL
+	default y
+
 endif # SOC_FAMILY_GD32

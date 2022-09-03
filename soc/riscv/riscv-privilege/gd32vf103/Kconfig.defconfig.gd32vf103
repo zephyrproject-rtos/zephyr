@@ -46,4 +46,7 @@ config PINCTRL
 config RESET
 	default y
 
+config CLOCK_CONTROL
+	default y
+
 endif # GD32VF103
