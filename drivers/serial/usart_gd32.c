@@ -6,12 +6,14 @@
 #define DT_DRV_COMPAT gd_gd32_usart
 
 #include <errno.h>
+
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/gd32.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/uart.h>
 
 #include <gd32_usart.h>
-#include <gd32_rcu.h>
 
 /* Unify GD32 HAL USART status register name to USART_STAT */
 #ifndef USART_STAT
@@ -20,7 +22,7 @@
 
 struct gd32_usart_config {
 	uint32_t reg;
-	uint32_t rcu_periph_clock;
+	uint16_t clkid;
 	struct reset_dt_spec reset;
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t parity;
@@ -82,7 +84,8 @@ static int usart_gd32_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	rcu_periph_clock_enable(cfg->rcu_periph_clock);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
+			       (clock_control_subsys_t *)&cfg->clkid);
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 
@@ -321,7 +324,7 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 	};									\
 	static const struct gd32_usart_config usart_gd32_config_##n = {		\
 		.reg = DT_INST_REG_ADDR(n),					\
-		.rcu_periph_clock = DT_INST_PROP(n, rcu_periph_clock),		\
+		.clkid = DT_INST_CLOCKS_CELL(n, id),				\
 		.reset = RESET_DT_SPEC_INST_GET(n),				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),	\
