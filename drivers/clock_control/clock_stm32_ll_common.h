@@ -62,6 +62,9 @@ void config_pll_sysclock(void);
 uint32_t get_pllout_frequency(void);
 uint32_t get_pllsrc_frequency(void);
 #endif
+#if defined(STM32_PLL2_ENABLED)
+void config_pll2(void);
+#endif
 void config_enable_default_clocks(void);
 
 /* function exported to the soc power.c */
