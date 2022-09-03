@@ -8,6 +8,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/adc/gd32f3x0.h>
+#include <zephyr/dt-bindings/clock/gd32f3x0-clocks.h>
 #include <zephyr/dt-bindings/reset/gd32f3x0.h>
 
 / {
@@ -31,6 +32,12 @@
 			compatible = "gd,gd32-rcu";
 			reg = <0x40021000 0x400>;
 			status = "okay";
+
+			cctl: clock-controller {
+				compatible = "gd,gd32-cctl";
+				#clock-cells = <1>;
+				status = "okay";
+			};
 
 			rctl: reset-controller {
 				compatible = "gd,gd32-rctl";
