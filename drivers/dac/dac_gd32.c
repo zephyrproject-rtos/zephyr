@@ -7,12 +7,14 @@
 #define DT_DRV_COMPAT gd_gd32_dac
 
 #include <errno.h>
+
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/gd32.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/dac.h>
 
 #include <gd32_dac.h>
-#include <gd32_rcu.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dac_gd32, CONFIG_DAC_LOG_LEVEL);
@@ -29,7 +31,7 @@ LOG_MODULE_REGISTER(dac_gd32, CONFIG_DAC_LOG_LEVEL);
 
 struct dac_gd32_config {
 	uint32_t reg;
-	uint32_t rcu_periph_clock;
+	uint16_t clkid;
 	struct reset_dt_spec reset;
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t num_channels;
@@ -149,7 +151,8 @@ static int dac_gd32_init(const struct device *dev)
 		return ret;
 	}
 
-	rcu_periph_clock_enable(cfg->rcu_periph_clock);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
+			       (clock_control_subsys_t *)&cfg->clkid);
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 
@@ -162,7 +165,7 @@ static struct dac_gd32_data dac_gd32_data_0;
 
 static const struct dac_gd32_config dac_gd32_cfg_0 = {
 	.reg = DT_INST_REG_ADDR(0),
-	.rcu_periph_clock = DT_INST_PROP(0, rcu_periph_clock),
+	.clkid = DT_INST_CLOCKS_CELL(0, id),
 	.reset = RESET_DT_SPEC_INST_GET(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.num_channels = DT_INST_PROP(0, num_channels),
