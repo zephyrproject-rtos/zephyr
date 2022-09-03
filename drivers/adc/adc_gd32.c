@@ -7,6 +7,9 @@
 #define DT_DRV_COMPAT gd_gd32_adc
 
 #include <errno.h>
+
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/gd32.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/reset.h>
@@ -98,10 +101,10 @@ static const uint32_t table_samp_time[] = {
 
 struct adc_gd32_config {
 	uint32_t reg;
-	uint32_t rcu_periph_clock;
 #ifdef CONFIG_SOC_SERIES_GD32F3X0
 	uint32_t rcu_clock_source;
 #endif
+	uint16_t clkid;
 	struct reset_dt_spec reset;
 	uint8_t channels;
 	const struct pinctrl_dev_config *pcfg;
@@ -348,7 +351,8 @@ static int adc_gd32_init(const struct device *dev)
 	rcu_adc_clock_config(cfg->rcu_clock_source);
 #endif
 
-	rcu_periph_clock_enable(cfg->rcu_periph_clock);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
+			       (clock_control_subsys_t *)&cfg->clkid);
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 
@@ -449,7 +453,7 @@ static void adc_gd32_global_irq_cfg(void)
 	};											\
 	const static struct adc_gd32_config adc_gd32_config_##n = {				\
 		.reg = DT_INST_REG_ADDR(n),							\
-		.rcu_periph_clock = DT_INST_PROP(n, rcu_periph_clock),				\
+		.clkid = DT_INST_CLOCKS_CELL(n, id),						\
 		.reset = RESET_DT_SPEC_INST_GET(n),						\
 		.channels = DT_INST_PROP(n, channels),						\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\

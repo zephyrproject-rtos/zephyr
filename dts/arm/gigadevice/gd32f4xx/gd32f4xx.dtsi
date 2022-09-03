@@ -224,7 +224,7 @@
 			compatible = "gd,gd32-adc";
 			reg = <0x40012000 0x100>;
 			interrupts = <18 0>;
-			rcu-periph-clock = <0x1108>;
+			clocks = <&cctl GD32_CLOCK_ADC0>;
 			resets = <&rctl GD32_RESET_ADC0>;
 			channels = <16>;
 			status = "disabled";
@@ -235,7 +235,7 @@
 			compatible = "gd,gd32-adc";
 			reg = <0x40012100 0x100>;
 			interrupts = <18 0>;
-			rcu-periph-clock = <0x1109>;
+			clocks = <&cctl GD32_CLOCK_ADC1>;
 			resets = <&rctl GD32_RESET_ADC1>;
 			channels = <16>;
 			status = "disabled";
@@ -246,7 +246,7 @@
 			compatible = "gd,gd32-adc";
 			reg = <0x40012200 0x100>;
 			interrupts = <18 0>;
-			rcu-periph-clock = <0x110A>;
+			clocks = <&cctl GD32_CLOCK_ADC2>;
 			resets = <&rctl GD32_RESET_ADC2>;
 			channels = <16>;
 			status = "disabled";
