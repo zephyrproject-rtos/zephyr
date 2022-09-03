@@ -8,12 +8,13 @@
 
 #include <errno.h>
 
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/gd32.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/sys/util_macro.h>
 
-#include <gd32_rcu.h>
 #include <gd32_timer.h>
 
 #include <zephyr/logging/log.h>
@@ -38,8 +39,8 @@ struct pwm_gd32_config {
 	bool is_advanced;
 	/** Prescaler. */
 	uint16_t prescaler;
-	/** RCU peripheral clock. */
-	uint32_t rcu_periph_clock;
+	/** Clock id. */
+	uint16_t clkid;
 	/** Reset. */
 	struct reset_dt_spec reset;
 	/** pinctrl configurations. */
@@ -55,86 +56,6 @@ struct pwm_gd32_config {
 
 /** Obtain RCU register offset from RCU clock value */
 #define RCU_CLOCK_OFFSET(rcu_clock) ((rcu_clock) >> 6U)
-
-/**
- * Obtain the timer clock.
- *
- * @param dev Device instance.
- *
- * @return Timer clock (Hz).
- */
-static uint32_t pwm_gd32_get_tim_clk(const struct device *dev)
-{
-	const struct pwm_gd32_config *config = dev->config;
-	uint32_t apb_psc, apb_clk;
-
-	/* obtain APB prescaler value */
-	if (RCU_CLOCK_OFFSET(config->rcu_periph_clock) == APB1EN_REG_OFFSET) {
-		apb_psc = RCU_CFG0 & RCU_CFG0_APB1PSC;
-	} else {
-		apb_psc = RCU_CFG0 & RCU_CFG0_APB2PSC;
-	}
-
-	switch (apb_psc) {
-	case RCU_APB1_CKAHB_DIV2:
-		apb_psc = 2U;
-		break;
-	case RCU_APB1_CKAHB_DIV4:
-		apb_psc = 4U;
-		break;
-	case RCU_APB1_CKAHB_DIV8:
-		apb_psc = 8U;
-		break;
-	case RCU_APB1_CKAHB_DIV16:
-		apb_psc = 16U;
-		break;
-	default:
-		apb_psc = 1U;
-		break;
-	}
-
-	apb_clk = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / apb_psc;
-
-#ifdef RCU_CFG1_TIMERSEL
-	/*
-	 * The TIMERSEL bit in RCU_CFG1 controls the clock frequency of all the
-	 * timers connected to the APB1 and APB2 domains.
-	 *
-	 * Up to a certain threshold value of APB{1,2} prescaler, timer clock
-	 * equals to CK_AHB. This threshold value depends on TIMERSEL setting
-	 * (2 if TIMERSEL=0, 4 if TIMERSEL=1). Above threshold, timer clock is
-	 * set to a multiple of the APB domain clock CK_APB{1,2} (2 if
-	 * TIMERSEL=0, 4 if TIMERSEL=1).
-	 */
-
-	/* TIMERSEL = 0 */
-	if ((RCU_CFG1 & RCU_CFG1_TIMERSEL) == 0U) {
-		if (apb_psc <= 2U) {
-			return CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
-		}
-
-		return apb_clk * 2U;
-	}
-
-	/* TIMERSEL = 1 */
-	if (apb_psc <= 4U) {
-		return CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
-	}
-
-	return apb_clk * 4U;
-#else
-	/*
-	 * If the APB prescaler equals 1, the timer clock frequencies are set to
-	 * the same frequency as that of the APB domain. Otherwise, they are set
-	 * to twice the frequency of the APB domain.
-	 */
-	if (apb_psc == 1U) {
-		return apb_clk;
-	}
-
-	return apb_clk * 2U;
-#endif /* RCU_CFG1_TIMERSEL */
-}
 
 static int pwm_gd32_set_cycles(const struct device *dev, uint32_t channel,
 			      uint32_t period_cycles, uint32_t pulse_cycles,
@@ -233,7 +154,8 @@ static int pwm_gd32_init(const struct device *dev)
 	struct pwm_gd32_data *data = dev->data;
 	int ret;
 
-	rcu_periph_clock_enable(config->rcu_periph_clock);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
+			       (clock_control_subsys_t *)&config->clkid);
 
 	(void)reset_line_toggle_dt(&config->reset);
 
@@ -244,7 +166,9 @@ static int pwm_gd32_init(const struct device *dev)
 	}
 
 	/* cache timer clock value */
-	data->tim_clk = pwm_gd32_get_tim_clk(dev);
+	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER,
+				     (clock_control_subsys_t *)&config->clkid,
+				     &data->tim_clk);
 
 	/* basic timer operation: edge aligned, up counting, shadowed CAR */
 	TIMER_CTL0(config->reg) = TIMER_CKDIV_DIV1 | TIMER_COUNTER_EDGE |
@@ -269,8 +193,7 @@ static int pwm_gd32_init(const struct device *dev)
 									       \
 	static const struct pwm_gd32_config pwm_gd32_config_##i = {	       \
 		.reg = DT_REG_ADDR(DT_INST_PARENT(i)),			       \
-		.rcu_periph_clock = DT_PROP(DT_INST_PARENT(i),		       \
-					    rcu_periph_clock),		       \
+		.clkid = DT_CLOCKS_CELL(DT_INST_PARENT(i), id),		       \
 		.reset = RESET_DT_SPEC_GET(DT_INST_PARENT(i)),		       \
 		.prescaler = DT_PROP(DT_INST_PARENT(i), prescaler),	       \
 		.channels = DT_PROP(DT_INST_PARENT(i), channels),	       \

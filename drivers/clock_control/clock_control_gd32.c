@@ -37,6 +37,35 @@ struct clock_control_gd32_config {
 	uint32_t base;
 };
 
+#if DT_COMPAT_GET_ANY_STATUS_OKAY(gd_gd32_timer)
+/* timer identifiers */
+#define TIMER_ID_OR_NONE(nodelabel)                                            \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(nodelabel), okay),         \
+		    (GD32_CLOCK_ID_BIT(                                        \
+			     DT_CLOCKS_CELL(DT_NODELABEL(nodelabel), id)),),   \
+		    ())
+
+static const uint8_t timer_ids[] = {
+	TIMER_ID_OR_NONE(timer0)  /* */
+	TIMER_ID_OR_NONE(timer1)  /* */
+	TIMER_ID_OR_NONE(timer2)  /* */
+	TIMER_ID_OR_NONE(timer3)  /* */
+	TIMER_ID_OR_NONE(timer4)  /* */
+	TIMER_ID_OR_NONE(timer5)  /* */
+	TIMER_ID_OR_NONE(timer6)  /* */
+	TIMER_ID_OR_NONE(timer7)  /* */
+	TIMER_ID_OR_NONE(timer8)  /* */
+	TIMER_ID_OR_NONE(timer9)  /* */
+	TIMER_ID_OR_NONE(timer10) /* */
+	TIMER_ID_OR_NONE(timer11) /* */
+	TIMER_ID_OR_NONE(timer12) /* */
+	TIMER_ID_OR_NONE(timer13) /* */
+	TIMER_ID_OR_NONE(timer14) /* */
+	TIMER_ID_OR_NONE(timer15) /* */
+	TIMER_ID_OR_NONE(timer16) /* */
+};
+#endif /* DT_COMPAT_GET_ANY_STATUS_OKAY(gd_gd32_timer) */
+
 static int clock_control_gd32_on(const struct device *dev,
 				 clock_control_subsys_t sys)
 {
@@ -97,6 +126,56 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 	default:
 		return -ENOTSUP;
 	}
+
+#if DT_COMPAT_GET_ANY_STATUS_OKAY(gd_gd32_timer)
+	/* handle timer clocks */
+	for (size_t i = 0U; i < ARRAY_SIZE(timer_ids); i++) {
+		if (GD32_CLOCK_ID_BIT(id) != timer_ids[i]) {
+			continue;
+		}
+
+#if defined(CONFIG_SOC_SERIES_GD32F4XX)
+		uint32_t cfg1 = sys_read32(config->base + RCU_CFG1_OFFSET);
+
+		/*
+		 * The TIMERSEL bit in RCU_CFG1 controls the clock frequency of
+		 * all the timers connected to the APB1 and APB2 domains.
+		 *
+		 * Up to a certain threshold value of APB{1,2} prescaler, timer
+		 * clock equals to CK_AHB. This threshold value depends on
+		 * TIMERSEL setting (2 if TIMERSEL=0, 4 if TIMERSEL=1). Above
+		 * threshold, timer clock is set to a multiple of the APB
+		 * domain clock CK_APB{1,2} (2 if TIMERSEL=0, 4 if TIMERSEL=1).
+		 */
+
+		/* TIMERSEL = 0 */
+		if ((cfg1 & RCU_CFG1_TIMERSEL_MSK) == 0U) {
+			if (psc <= 2U) {
+				*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+			} else {
+				*rate *= 2U;
+			}
+		/* TIMERSEL = 1 */
+		} else {
+			if (psc <= 4U) {
+				*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+			} else {
+				*rate *= 4U;
+			}
+		}
+#else
+		/*
+		 * If the APB prescaler equals 1, the timer clock frequencies
+		 * are set to the same frequency as that of the APB domain.
+		 * Otherwise, they are set to twice the frequency of the APB
+		 * domain.
+		 */
+		if (psc != 1U) {
+			*rate *= 2U;
+		}
+#endif /* CONFIG_SOC_SERIES_GD32F4XX */
+	}
+#endif /* DT_COMPAT_GET_ANY_STATUS_OKAY(gd_gd32_timer) */
 
 	return 0;
 }

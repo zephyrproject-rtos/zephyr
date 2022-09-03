@@ -11,6 +11,9 @@ properties:
   reg:
     required: true
 
+  clocks:
+    required: true
+
   resets:
     required: true
 
@@ -33,8 +36,3 @@ properties:
     description: |
       Indicates if timer has advanced features. Such features include break
       inputs, dead-time insertion, etc.
-
-  rcu-periph-clock:
-    type: int
-    description: Reset Control Unit Peripheral Clock ID
-    required: true
