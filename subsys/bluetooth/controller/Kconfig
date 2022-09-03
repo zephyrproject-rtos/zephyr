@@ -536,7 +536,7 @@ config BT_CTLR_ADV_INTERVAL_MAX
 config BT_CTLR_ADV_DATA_LEN_MAX
 	int "Maximum Advertising Data Length"
 	depends on BT_BROADCASTER
-	range 31 191 if BT_LL_SW_SPLIT
+	range 31 191 if BT_LL_SW_SPLIT && !BT_CTLR_ADV_DATA_CHAIN
 	range 31 1650
 	help
 	  Maximum Extended Advertising Data Length.
