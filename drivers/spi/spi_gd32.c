@@ -8,11 +8,12 @@
 
 #include <errno.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/gd32.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/spi.h>
 
-#include <gd32_rcu.h>
 #include <gd32_spi.h>
 
 #include <zephyr/logging/log.h>
@@ -35,13 +36,9 @@ LOG_MODULE_REGISTER(spi_gd32);
 #else
 #error Unknown GD32 soc series
 #endif
-
-/* Obtain RCU register offset from RCU clock value */
-#define RCU_CLOCK_OFFSET(rcu_clock) ((rcu_clock) >> 6U)
-
 struct spi_gd32_config {
 	uint32_t reg;
-	uint32_t rcu_periph_clock;
+	uint16_t clkid;
 	struct reset_dt_spec reset;
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_SPI_GD32_INTERRUPT
@@ -71,19 +68,6 @@ static bool spi_gd32_transfer_ongoing(struct spi_gd32_data *data)
 {
 	return spi_context_tx_on(&data->ctx) ||
 	       spi_context_rx_on(&data->ctx);
-}
-
-static uint32_t spi_gd32_bus_freq_get(uint32_t rcu_periph_clock)
-{
-	uint32_t rcu_bus;
-
-	if (RCU_CLOCK_OFFSET(rcu_periph_clock) == RCU_APB1EN_OFFSET) {
-		rcu_bus = CK_APB1;
-	} else {
-		rcu_bus = CK_APB2;
-	}
-
-	return rcu_clock_freq_get(rcu_bus);
 }
 
 static int spi_gd32_configure(const struct device *dev,
@@ -140,7 +124,9 @@ static int spi_gd32_configure(const struct device *dev,
 		SPI_CTL0(cfg->reg) |= SPI_CTL0_CKPH;
 	}
 
-	bus_freq = spi_gd32_bus_freq_get(cfg->rcu_periph_clock);
+	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER,
+				     (clock_control_subsys_t *)&cfg->clkid,
+				     &bus_freq);
 
 	for (uint8_t i = 0U; i <= GD32_SPI_PSC_MAX; i++) {
 		bus_freq = bus_freq >> 1U;
@@ -341,7 +327,8 @@ int spi_gd32_init(const struct device *dev)
 	const struct spi_gd32_config *cfg = dev->config;
 	int ret;
 
-	rcu_periph_clock_enable(cfg->rcu_periph_clock);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
+			       (clock_control_subsys_t *)&cfg->clkid);
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 
@@ -383,7 +370,7 @@ int spi_gd32_init(const struct device *dev)
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx) };      \
 	static struct spi_gd32_config spi_gd32_config_##idx = {		       \
 		.reg = DT_INST_REG_ADDR(idx),				       \
-		.rcu_periph_clock = DT_INST_PROP(idx, rcu_periph_clock),       \
+		.clkid = DT_INST_CLOCKS_CELL(idx, id),			       \
 		.reset = RESET_DT_SPEC_INST_GET(idx),			       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),		       \
 		IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT,			       \

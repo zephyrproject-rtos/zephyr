@@ -163,7 +163,7 @@
 			compatible = "gd,gd32-spi";
 			reg = <0x40013000 0x400>;
 			interrupts = <54 0>;
-			rcu-periph-clock = <0x60c>;
+			clocks = <&cctl GD32_CLOCK_SPI0>;
 			resets = <&rctl GD32_RESET_SPI0>;
 			status = "disabled";
 			#address-cells = <1>;
@@ -174,7 +174,7 @@
 			compatible = "gd,gd32-spi";
 			reg = <0x40003800 0x400>;
 			interrupts = <55 0>;
-			rcu-periph-clock = <0x70e>;
+			clocks = <&cctl GD32_CLOCK_SPI1>;
 			resets = <&rctl GD32_RESET_SPI1>;
 			status = "disabled";
 			#address-cells = <1>;
