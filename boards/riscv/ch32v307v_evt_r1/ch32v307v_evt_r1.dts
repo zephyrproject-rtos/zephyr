@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <wch/ch32v307x.dtsi>
+#include "ch32v307v_evt_r1-pinctrl.dtsi"
+
+/ {
+	model = "WCH CH32V307V_EVT_R1";
+	compatible = "wch,ch32v307v_evt_r1";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/*
+		 * LED1 and LED2 exists on J3 connector.
+		 * But the pin not connecting to any GPIO pins,
+		 * you need to connect LED1 pin to any GPIO pin.
+		 * This configuration is assuming that LED1 is
+		 * connected to PB13, which corresponding to
+		 * the Arduino's LED pin.
+		 */
+		led1: led1 {
+			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+	};
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};
+
+&gpiob {
+	status = "okay";
+};

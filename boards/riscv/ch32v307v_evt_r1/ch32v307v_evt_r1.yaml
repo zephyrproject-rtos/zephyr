@@ -1,0 +1,9 @@
+identifier: ch32v307v_evt_r1
+name: ch32v307v_evt_r1
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+  - xtools
+flash: 256
+ram: 64

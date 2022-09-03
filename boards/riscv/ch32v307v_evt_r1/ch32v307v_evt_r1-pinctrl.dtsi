@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2022 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/ch32v30xxx-pinctrl.h>
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <USART1_TX_PA9_NORMP>, <USART1_RX_PA10_NORMP>;
+		};
+	};
+};
