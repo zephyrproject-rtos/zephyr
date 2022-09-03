@@ -140,7 +140,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <31 0>, <32 0>;
 			interrupt-names = "event", "error";
-			rcu-periph-clock = <0x715>;
+			clocks = <&cctl GD32_CLOCK_I2C0>;
 			resets = <&rctl GD32_RESET_I2C0>;
 			status = "disabled";
 		};
@@ -153,7 +153,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "event", "error";
-			rcu-periph-clock = <0x716>;
+			clocks = <&cctl GD32_CLOCK_I2C1>;
 			resets = <&rctl GD32_RESET_I2C1>;
 			status = "disabled";
 		};
@@ -166,7 +166,7 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <82 0>, <83 0>;
 			interrupt-names = "event", "error";
-			rcu-periph-clock = <0x718>;
+			clocks = <&cctl GD32_CLOCK_I2C2>;
 			resets = <&rctl GD32_RESET_I2C2>;
 			status = "disabled";
 		};
