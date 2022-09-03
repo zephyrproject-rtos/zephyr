@@ -62,7 +62,7 @@
 			compatible = "gd,gd32-usart";
 			reg = <0x40013800 0x400>;
 			interrupts = <27 0>;
-			rcu-periph-clock = <0x060e>;
+			clocks = <&cctl GD32_CLOCK_USART0>;
 			resets = <&rctl GD32_RESET_USART0>;
 			status = "disabled";
 		};
@@ -71,7 +71,7 @@
 			compatible = "gd,gd32-usart";
 			reg = <0x40004400 0x400>;
 			interrupts = <28 0>;
-			rcu-periph-clock = <0x0711>;
+			clocks = <&cctl GD32_CLOCK_USART1>;
 			resets = <&rctl GD32_RESET_USART1>;
 			status = "disabled";
 		};
