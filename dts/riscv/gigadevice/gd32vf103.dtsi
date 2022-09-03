@@ -184,7 +184,7 @@
 		afio: afio@40010000 {
 			compatible = "gd,gd32-afio";
 			reg = <0x40010000 0x400>;
-			rcu-periph-clock = <0x600>;
+			clocks = <&cctl GD32_CLOCK_AFIO>;
 			status = "okay";
 		};
 
@@ -214,7 +214,7 @@
 				reg = <0x40010800 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				rcu-periph-clock = <0x602>;
+				clocks = <&cctl GD32_CLOCK_GPIOA>;
 				resets = <&rctl GD32_RESET_GPIOA>;
 				status = "disabled";
 			};
@@ -224,7 +224,7 @@
 				reg = <0x40010c00 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				rcu-periph-clock = <0x603>;
+				clocks = <&cctl GD32_CLOCK_GPIOB>;
 				resets = <&rctl GD32_RESET_GPIOB>;
 				status = "disabled";
 			};
@@ -234,7 +234,7 @@
 				reg = <0x40011000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				rcu-periph-clock = <0x604>;
+				clocks = <&cctl GD32_CLOCK_GPIOC>;
 				resets = <&rctl GD32_RESET_GPIOC>;
 				status = "disabled";
 			};
@@ -244,7 +244,7 @@
 				reg = <0x40011400 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				rcu-periph-clock = <0x605>;
+				clocks = <&cctl GD32_CLOCK_GPIOD>;
 				resets = <&rctl GD32_RESET_GPIOD>;
 				status = "disabled";
 			};
@@ -254,7 +254,7 @@
 				reg = <0x40011800 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				rcu-periph-clock = <0x606>;
+				clocks = <&cctl GD32_CLOCK_GPIOE>;
 				resets = <&rctl GD32_RESET_GPIOE>;
 				status = "disabled";
 			};
