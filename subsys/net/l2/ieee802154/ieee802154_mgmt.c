@@ -367,9 +367,11 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 	}
 
 	cmd = ieee802154_get_mac_command(pkt);
+	cmd->assoc_req.ci.reserved_1 = 0U; /* Reserved */
 	cmd->assoc_req.ci.dev_type = 0U; /* RFD */
 	cmd->assoc_req.ci.power_src = 0U; /* TODO: set right power source */
 	cmd->assoc_req.ci.rx_on = 1U; /* TODO: that will depends on PM */
+	cmd->assoc_req.ci.reserved_2 = 0U; /* Reserved */
 	cmd->assoc_req.ci.sec_capability = 0U; /* TODO: security support */
 	cmd->assoc_req.ci.alloc_addr = 0U; /* TODO: handle short addr */
 
