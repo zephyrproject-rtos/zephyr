@@ -83,8 +83,7 @@ struct bt_keys {
  * @param func Callback function to be called when a matched record is found.
  * @param data User data to be passed to the callback function.
  */
-void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys, void *data),
-		     void *data);
+void bt_keys_foreach_type(int type, void (*func)(struct bt_keys *keys, void *data), void *data);
 
 /**
  * @brief Get the key slot reference for an ID and address pair.
