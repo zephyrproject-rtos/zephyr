@@ -283,7 +283,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		return false;
 	case IEEE802154_CFI_ASSOCIATION_REQUEST:
 		len += IEEE802154_CMD_ASSOC_REQ_LENGTH;
-		src = IEEE802154_EXT_ADDR_LENGTH;
+		src = IEEE802154_ADDR_MODE_EXTENDED;
 		src_pan_brdcst_chk = true;
 		dst = IEEE802154_ADDR_MODE_SHORT | IEEE802154_ADDR_MODE_EXTENDED;
 
@@ -299,8 +299,8 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 	case IEEE802154_CFI_PAN_ID_CONLICT_NOTIFICATION:
 		ar = 1U;
 		comp = 1U;
-		src = IEEE802154_EXT_ADDR_LENGTH;
-		dst = IEEE802154_EXT_ADDR_LENGTH;
+		src = IEEE802154_ADDR_MODE_EXTENDED;
+		dst = IEEE802154_ADDR_MODE_EXTENDED;
 
 		break;
 	case IEEE802154_CFI_DATA_REQUEST:
@@ -317,7 +317,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		break;
 	case IEEE802154_CFI_ORPHAN_NOTIFICATION:
 		comp = 1U;
-		src = IEEE802154_EXT_ADDR_LENGTH;
+		src = IEEE802154_ADDR_MODE_EXTENDED;
 		dst = IEEE802154_ADDR_MODE_SHORT;
 
 		break;
@@ -329,7 +329,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		break;
 	case IEEE802154_CFI_COORDINATOR_REALIGNEMENT:
 		len += IEEE802154_CMD_COORD_REALIGN_LENGTH;
-		src = IEEE802154_EXT_ADDR_LENGTH;
+		src = IEEE802154_ADDR_MODE_EXTENDED;
 
 		if (mpdu->mhr.fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
 			dst = IEEE802154_ADDR_MODE_SHORT;
