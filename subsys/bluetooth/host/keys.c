@@ -169,8 +169,7 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 	}
 }
 
-void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys, void *data),
-		     void *data)
+void bt_keys_foreach_type(int type, void (*func)(struct bt_keys *keys, void *data), void *data)
 {
 	int i;
 
@@ -470,9 +469,9 @@ static int keys_commit(void)
 	 * the keys were already removed.
 	 */
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) && IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		bt_keys_foreach(BT_KEYS_ALL, id_add, NULL);
+		bt_keys_foreach_type(BT_KEYS_ALL, id_add, NULL);
 	} else {
-		bt_keys_foreach(BT_KEYS_IRK, id_add, NULL);
+		bt_keys_foreach_type(BT_KEYS_IRK, id_add, NULL);
 	}
 
 	return 0;

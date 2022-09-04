@@ -781,9 +781,9 @@ void bt_id_pending_keys_update(void)
 	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    IS_ENABLED(CONFIG_BT_PRIVACY)) {
-			bt_keys_foreach(BT_KEYS_ALL, pending_id_update, NULL);
+			bt_keys_foreach_type(BT_KEYS_ALL, pending_id_update, NULL);
 		} else {
-			bt_keys_foreach(BT_KEYS_IRK, pending_id_update, NULL);
+			bt_keys_foreach_type(BT_KEYS_IRK, pending_id_update, NULL);
 		}
 	}
 }
@@ -994,9 +994,9 @@ void bt_id_del(struct bt_keys *keys)
 		keys->state &= ~BT_KEYS_ID_ADDED;
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    IS_ENABLED(CONFIG_BT_PRIVACY)) {
-			bt_keys_foreach(BT_KEYS_ALL, keys_add_id, NULL);
+			bt_keys_foreach_type(BT_KEYS_ALL, keys_add_id, NULL);
 		} else {
-			bt_keys_foreach(BT_KEYS_IRK, keys_add_id, NULL);
+			bt_keys_foreach_type(BT_KEYS_IRK, keys_add_id, NULL);
 		}
 		goto done;
 	}
