@@ -353,12 +353,6 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 	params.dst.pan_id = req->pan_id;
 	params.pan_id = req->pan_id;
 
-	/* Set channel first */
-	if (ieee802154_set_channel(iface, req->channel)) {
-		ret = -EIO;
-		goto out;
-	}
-
 	pkt = ieee802154_create_mac_cmd_frame(
 		iface, IEEE802154_CFI_ASSOCIATION_REQUEST, &params);
 	if (!pkt) {
