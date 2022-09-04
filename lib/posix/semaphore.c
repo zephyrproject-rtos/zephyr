@@ -5,7 +5,10 @@
  */
 
 #include <errno.h>
+#include <signal.h>
 #include <zephyr/posix/pthread.h>
+
+#include "ts_to_ms.h"
 
 /**
  * @brief Destroy semaphore.

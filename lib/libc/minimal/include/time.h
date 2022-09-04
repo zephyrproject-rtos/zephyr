@@ -54,6 +54,37 @@ struct tm *gmtime_r(const time_t *ZRESTRICT timep,
 
 time_t time(time_t *tloc);
 
+#ifdef CONFIG_POSIX_CLOCK
+typedef enum {
+	CLOCK_REALTIME = 1,
+#if defined(_POSIX_MONOTONIC_CLOCK)
+	CLOCK_MONOTONIC = 4,
+#endif
+} clockid_t;
+
+
+#if defined(_POSIX_TIMERS)
+#define TIMER_ABSTIME 4
+typedef unsigned long timer_t;
+
+struct itimerspec {
+	struct timespec it_interval;
+	struct timespec it_value;
+};
+
+int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timerid);
+int timer_delete(timer_t timerid);
+int timer_gettime(timer_t timerid, struct itimerspec *its);
+int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
+	struct itimerspec *ovalue);
+#endif
+
+int clock_gettime(clockid_t clockid, struct timespec *res);
+int clock_settime(clockid_t clockid, const struct timespec *tp);
+
+int nanosleep(const struct timespec *req, struct timespec *rem);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

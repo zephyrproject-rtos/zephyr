@@ -9,7 +9,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/wait_q.h>
-#include <zephyr/posix/time.h>
+#include <time.h>
 #include <zephyr/posix/unistd.h>
 #include "posix_types.h"
 #include "posix_sched.h"

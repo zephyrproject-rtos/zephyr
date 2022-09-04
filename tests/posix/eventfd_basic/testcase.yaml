@@ -24,8 +24,10 @@ tests:
     filter: CONFIG_PICOLIBC_SUPPORTED
     extra_configs:
       - CONFIG_PICOLIBC=y
+      - CONFIG_POSIX_API=n
   portability.posix.eventfd_basic.picolibc.posix_api:
     tags: picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED
     extra_configs:
       - CONFIG_PICOLIBC=y
+      - CONFIG_POSIX_API=y

@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <zephyr/wait_q.h>
-#include <zephyr/posix/time.h>
+#include <time.h>
 
 #ifdef CONFIG_POSIX_CLOCK
 int64_t timespec_to_timeoutms(const struct timespec *abstime)

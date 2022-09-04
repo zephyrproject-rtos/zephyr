@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <string.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/posix/time.h>
+#include <time.h>
 #include <zephyr/posix/mqueue.h>
 
 typedef struct mqueue_object {

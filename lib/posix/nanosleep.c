@@ -9,7 +9,7 @@
 #include <limits.h>
 #include <errno.h>
 /* required for struct timespec */
-#include <zephyr/posix/time.h>
+#include <time.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys_clock.h>
 

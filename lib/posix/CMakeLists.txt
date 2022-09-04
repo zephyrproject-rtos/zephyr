@@ -3,8 +3,12 @@
 
 zephyr_interface_library_named(posix_subsys)
 
-if(CONFIG_POSIX_API)
+if(CONFIG_POSIX_API OR CONFIG_PTHREAD_IPC OR CONFIG_POSIX_CLOCK
+    OR CONFIG_POSIX_MQUEUE OR CONFIG_POSIX_FS OR CONFIG_EVENTFD
+    OR CONFIG_GETOPT OR CONFIG_NET_SOCKETS_POSIX_NAMES)
   target_include_directories(posix_subsys INTERFACE ${ZEPHYR_BASE}/include/zephyr/posix)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:-include ${ZEPHYR_BASE}/include/zephyr/posix/newlibish.h>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:-include ${ZEPHYR_BASE}/include/zephyr/posix/newlibish.h>)
 endif()
 
 zephyr_library()

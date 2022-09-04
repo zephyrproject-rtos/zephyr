@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <errno.h>
-#include <zephyr/posix/time.h>
+#include <time.h>
 #include <stdint.h>
 #include <zephyr/sys_clock.h>
 

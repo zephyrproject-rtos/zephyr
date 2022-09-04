@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/posix/signal.h>
 #include <time.h>
 #include <unistd.h>
 

@@ -5,7 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <errno.h>
-#include <zephyr/posix/time.h>
+#include <time.h>
 #include <zephyr/posix/posix_types.h>
 
 #define INITIALIZED 1
