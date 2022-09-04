@@ -381,6 +381,8 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 
 	ieee802154_mac_cmd_finalize(pkt, IEEE802154_CFI_ASSOCIATION_REQUEST);
 
+	ieee802154_filter_pan_id(iface, req->pan_id);
+
 	if (net_if_send_data(iface, pkt)) {
 		net_pkt_unref(pkt);
 		ret = -EIO;
@@ -432,6 +434,10 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 	}
 
 out:
+	if (ret < 0) {
+		ieee802154_filter_pan_id(iface, 0);
+	}
+
 	k_sem_give(&ctx->ctx_lock);
 	return ret;
 }
