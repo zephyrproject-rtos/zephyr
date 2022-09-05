@@ -20,7 +20,7 @@ void expect_single_call_net_buf_alloc(struct net_buf_pool *pool, k_timeout_t *ti
  *  Validate expected behaviour when net_buf_alloc() isn't called
  *
  *  Expected behaviour:
- *   - net_buf_alloc() not to called at all
+ *   - net_buf_alloc() isn't called at all
  */
 void expect_not_called_net_buf_alloc(void);
 
@@ -38,7 +38,7 @@ void expect_single_call_net_buf_reserve(struct net_buf *buf);
  *  Validate expected behaviour when net_buf_reserve() isn't called
  *
  *  Expected behaviour:
- *   - net_buf_reserve() not to called at all
+ *   - net_buf_reserve() isn't called at all
  */
 void expect_not_called_net_buf_reserve(void);
 
@@ -54,6 +54,6 @@ void expect_single_call_net_buf_ref(struct net_buf *buf);
  *  Validate expected behaviour when net_buf_ref() isn't called
  *
  *  Expected behaviour:
- *   - net_buf_ref() not to called at all
+ *   - net_buf_ref() isn't called at all
  */
 void expect_not_called_net_buf_ref(void);
