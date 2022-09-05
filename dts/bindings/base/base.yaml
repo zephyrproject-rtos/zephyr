@@ -109,3 +109,22 @@ properties:
       required: false
       type: string-array
       description: Provided names of mailbox / IPM channel specifiers
+
+    zephyr,memory-region:
+      type: string
+      required: false
+      description: |
+        Signify that this node should result in a dedicated build script memory
+        region in the final executable when supported by the build script. The
+        region address and size is taken from the <reg> property, while the name
+        is the value of this property.
+
+    zephyr,memory-region-mmu:
+      type: string-array
+      required: false
+      description: |
+        Signify that this node should result in a dedicated MMU region. The
+        region address and size are taken from the <reg> property, the name
+        is taken from <zephyr,memory-region>, while the MMU attribute is the
+        value of this string array property, each attribute string will be a
+        valid C token.

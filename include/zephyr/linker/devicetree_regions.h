@@ -2,6 +2,8 @@
  * Copyright (c) 2021, Commonwealth Scientific and Industrial Research
  * Organisation (CSIRO) ABN 41 687 119 230.
  *
+ * Copyright 2022 NXP
+ *
  * SPDX-License-Identifier: Apache-2.0
  *
  * Generate memory regions from devicetree nodes.
@@ -168,24 +170,64 @@
 	       _DT_ATTR(DT_STRING_TOKEN(node_id, zephyr_memory_region_mpu))),
 
 /**
+ * Or-ed DT valid C token by index
+ */
+#define ORED_ELEM(node_id, prop, idx)						\
+		| DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)
+
+/**
+ * Call the user-provided MMU_FN() macro passing the expected arguments
+ * Properity is ored for each string token: 0 | STR_TOKEN_0 | STR_TOKEN_1 | ..
+ */
+#define _EXPAND_MMU_FN(node_id, MMU_FN, ...)					\
+	MMU_FN(LINKER_DT_NODE_REGION_NAME(node_id),				\
+	       DT_REG_ADDR(node_id),						\
+	       DT_REG_SIZE(node_id),						\
+	       0 DT_FOREACH_PROP_ELEM(node_id, zephyr_memory_region_mmu, ORED_ELEM)),
+
+/**
  * Check that the node_id has both properties:
  *  - zephyr,memory-region-mpu
  *  - zephyr,memory-region
  *
  * and call the EXPAND_MPU_FN() macro
  */
-#define _CHECK_ATTR_FN(node_id, EXPAND_MPU_FN, ...)					\
+#define _CHECK_MPU_ATTR_FN(node_id, EXPAND_MPU_FN, ...)					\
 	COND_CODE_1(UTIL_AND(DT_NODE_HAS_PROP(node_id, zephyr_memory_region_mpu),	\
 			     DT_NODE_HAS_PROP(node_id, zephyr_memory_region)),		\
 		   (EXPAND_MPU_FN(node_id, __VA_ARGS__)),				\
 		   ())
 
 /**
- * Call _CHECK_ATTR_FN() for each enabled node passing EXPAND_MPU_FN() as
+ * Call _CHECK_MPU_ATTR_FN() for each enabled node passing EXPAND_MPU_FN() as
  * explicit argument and the user-provided MPU_FN() macro in __VA_ARGS__
  */
-#define _CHECK_APPLY_FN(compat, EXPAND_MPU_FN, ...)					\
-	DT_FOREACH_STATUS_OKAY_VARGS(compat, _CHECK_ATTR_FN, EXPAND_MPU_FN, __VA_ARGS__)
+#define _CHECK_APPLY_MPU_FN(compat, EXPAND_MPU_FN, ...)					\
+	DT_FOREACH_STATUS_OKAY_VARGS(compat, _CHECK_MPU_ATTR_FN, EXPAND_MPU_FN, __VA_ARGS__)
+
+/**
+ * Check that the node_id has both properties:
+ *  - zephyr,memory-region-mmu
+ *  - zephyr,memory-region
+ *  - reg
+ *
+ * and call the EXPAND_MMU_FN() macro
+ */
+#define _CHECK_MMU_ATTR_FN(node_id, EXPAND_MMU_FN, ...)						\
+	COND_CODE_1(COND_CODE_1(UTIL_AND(DT_NODE_HAS_PROP(node_id, zephyr_memory_region_mmu),	\
+				DT_NODE_HAS_PROP(node_id, zephyr_memory_region)),		\
+				(DT_NODE_HAS_PROP(node_id, reg)),				\
+				(0)),								\
+		   (EXPAND_MMU_FN(node_id, __VA_ARGS__)),					\
+		   ())
+
+/**
+ * Call _CHECK_MMU_ATTR_FN() for each enabled node passing EXPAND_MMU_FN() as
+ * explicit argument and the user-provided MMU_FN() macro in __VA_ARGS__
+ */
+#define _CHECK_APPLY_MMU_FN(EXPAND_MMU_FN, ...)					\
+	DT_FOREACH_STATUS_OKAY_NODE_VARGS(_CHECK_MMU_ATTR_FN, EXPAND_MMU_FN, __VA_ARGS__)
+
 
 /** @endcond */
 
@@ -247,6 +289,7 @@
  *
  * Example devicetree fragment:
  *
+ * @code{.dts}
  *     / {
  *             soc {
  *                     sram1: memory@2000000 {
@@ -255,6 +298,7 @@
  *                     };
  *             };
  *     };
+ * @endcode
  *
  * For detailed information about MPU region attribute define configuration refer
  * to the specific architecture MPU header.
@@ -288,6 +332,82 @@
  * @endcode
  *
  */
-#define LINKER_DT_REGION_MPU(mpu_fn) _CHECK_APPLY_FN(_DT_COMPATIBLE, _EXPAND_MPU_FN, mpu_fn)
+#define LINKER_DT_REGION_MPU(mpu_fn) _CHECK_APPLY_MPU_FN(_DT_COMPATIBLE, _EXPAND_MPU_FN, mpu_fn)
+
+/**
+ * @brief Generate MMU regions from the device tree nodes with both
+ *        'zephyr,memory-region' and 'zephyr,memory-region-mmu' attributes.
+ *
+ * Helper macro to apply an MMU_FN macro to all the memory regions declared
+ * using the 'zephyr,memory-region-mmu' property and the 'zephyr,memory-region'
+ * compatible.
+ *
+ * @p MMU_FN must take the form:
+ *
+ * @code{.c}
+ *   #define MMU_FN(name, base, size, attr) ...
+ * @endcode
+ *
+ * The 'name', 'base' and 'size' parameters are taken from the DT node.
+ *
+ * The 'zephyr,memory-region-mmu' string array property is passed as an extended token
+ * to the MMU_FN macro using the 'attr' parameter, mmu property is defined
+ * in architecture MMU header, for example: include/zephyr/arch/arm64/arm_mmu.h
+ *
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     / {
+ *             soc {
+ *                     ccm: ccm@30380000 {
+ *                         compatible = "nxp,imx-ccm";
+ *                         reg = <0x30380000 DT_SIZE_K(64)>;
+ *                         zephyr,memory-region = "CCM";
+ *                         zephyr,memory-region-mmu = "MT_DEVICE_nGnRnE", "MT_P_RW_U_NA", "MT_NS";
+ *                     };
+ *             };
+ *     };
+ * @endcode
+ *
+ * For detailed information about MMU region attribute define configuration refer
+ * to the specific architecture MMU header.
+ * For example: include/zephyr/arch/arm64/arm_mmu.h.
+ *
+ * The 'attr' parameter of the MMU_FN function will be the or-ed value for all valid
+ * C token of properity of "zephyr,memory-region-mmu", these C token is defined
+ * in architecture MMU header, for example: include/zephyr/arch/arm64/arm_mmu.h
+ *
+ * Example:
+ *
+ * @code{.c}
+ *
+ *   #define MMU_FN(p_name, p_base, p_size, p_attr) \
+ *       {                                          \
+ *           .name = p_name,                        \
+ *           .base = p_base,                        \
+ *           .size = p_size,                        \
+ *           .attr = p_attr,                        \
+ *       }
+ *
+ *   static const struct arm_mmu_region mmu_regions[] = {
+ *       ...
+ *       BUILD_DT_REGION_MMU(MMU_FN)
+ *       ...
+ *   };
+ * @endcode
+ *
+ * With this dts example, the code generated will be:
+ *   static const struct arm_mmu_region mmu_regions[] = {
+ *       ...
+ *       { .name = "CCM",
+ *         .base = 0x30380000,
+ *         .size = DT_SIZE_K(64),
+ *         .attr = MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS, },
+ *       ...
+ *   };
+ *
+ */
+#define BUILD_DT_REGION_MMU(mmu_fn) _CHECK_APPLY_MMU_FN(_EXPAND_MMU_FN, mmu_fn)
 
 #endif /* ZEPHYR_INCLUDE_LINKER_DEVICETREE_REGIONS_H_ */
