@@ -73,13 +73,13 @@ static void mtrace_init(void)
 	ADSP_DW->descs[0].type = MTRACE_LOGGING_SLOT_TYPE(MTRACE_CORE);
 }
 
-static void mtrace_out(int8_t *str, size_t len, size_t *space_left)
+static size_t mtrace_out(int8_t *str, size_t len, size_t *space_left)
 {
 	struct adsp_debug_slot *slot = (struct adsp_debug_slot *)(ADSP_DW->slots[0]);
 	uint8_t *data = slot->data;
 	uint32_t r = slot->host_ptr;
 	uint32_t w = slot->dsp_ptr;
-	size_t avail, left;
+	size_t avail, out;
 
 	if (w > r) {
 		avail = MTRACE_LOG_BUF_SIZE - w + r - 1;
@@ -90,22 +90,23 @@ static void mtrace_out(int8_t *str, size_t len, size_t *space_left)
 	}
 
 	if (len == 0) {
+		out = 0;
 		goto out;
 	}
 
 	/* data that does not fit is dropped */
-	left = MIN(avail, len);
+	out = MIN(avail, len);
 
-	if (w + left >= MTRACE_LOG_BUF_SIZE) {
+	if (w + out >= MTRACE_LOG_BUF_SIZE) {
 		size_t tail = MTRACE_LOG_BUF_SIZE - w;
+		size_t head = out - tail;
 
 		memcpy(data + w, str, tail);
-		left -= tail;
-		memcpy(data, str + tail, left);
-		w = left;
+		memcpy(data, str + tail, head);
+		w = head;
 	} else {
-		memcpy(data + w, str, left);
-		w += left;
+		memcpy(data + w, str, out);
+		w += out;
 	}
 
 	slot->dsp_ptr = w;
@@ -114,16 +115,20 @@ out:
 	if (space_left) {
 		*space_left = avail > len ? avail - len : 0;
 	}
+
+	return out;
 }
 
 static int char_out(uint8_t *data, size_t length, void *ctx)
 {
 	size_t space_left = 0;
+	size_t out;
+
 	/*
-	 * we handle the data even if mtrace is active. this
-	 * ensures we can capture early boot messages.
+	 * we handle the data even if mtrace notifier is not
+	 * active. this ensures we can capture early boot messages.
 	 */
-	mtrace_out(data, length, &space_left);
+	out = mtrace_out(data, length, &space_left);
 
 	if (mtrace_active && mtrace_hook) {
 
@@ -131,7 +136,7 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 		if (unlikely(mtrace_panic_mode))
 			space_left = 0;
 
-		mtrace_hook(length, space_left);
+		mtrace_hook(out, space_left);
 	}
 
 	return length;
