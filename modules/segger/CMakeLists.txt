@@ -1,6 +1,6 @@
 if(CONFIG_USE_SEGGER_RTT)
 
-  zephyr_library()
+  zephyr_library_named(segger)
   set(SEGGER_DIR ${ZEPHYR_CURRENT_MODULE_DIR})
   zephyr_include_directories_ifdef(CONFIG_USE_SEGGER_RTT
     ${SEGGER_DIR}/SEGGER

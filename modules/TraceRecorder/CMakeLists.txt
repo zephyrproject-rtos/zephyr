@@ -6,7 +6,7 @@ if(CONFIG_PERCEPIO_TRACERECORDER)
 
   set(TRACERECORDER_DIR ${ZEPHYR_CURRENT_MODULE_DIR})
 
-  zephyr_library()
+  zephyr_library_named(trace_recorder)
   zephyr_library_sources_ifdef(
     CONFIG_PERCEPIO_TRACERECORDER
     ${TRACERECORDER_DIR}/kernelports/Zephyr/trcKernelPort.c

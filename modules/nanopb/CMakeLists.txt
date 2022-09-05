@@ -15,7 +15,7 @@ if(CONFIG_NANOPB)
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${NANOPB_DIR}/extra)
   find_package(Nanopb REQUIRED)
 
-  zephyr_library()
+  zephyr_library_named(nanopb)
 
   zephyr_include_directories(${NANOPB_DIR})
 

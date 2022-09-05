@@ -5,7 +5,7 @@ if(CONFIG_LZ4)
 
   set(LZ4_DIR ${ZEPHYR_CURRENT_MODULE_DIR})
 
-  zephyr_library()
+  zephyr_library_named(lz4)
 
   zephyr_include_directories(${LZ4_DIR}/lib)
 

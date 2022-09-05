@@ -3,7 +3,7 @@ if(CONFIG_ZCBOR)
     ${ZEPHYR_ZCBOR_MODULE_DIR}/include
   )
 
-  zephyr_library()
+  zephyr_library_named(zcbor)
   zephyr_library_sources(
     ${ZEPHYR_ZCBOR_MODULE_DIR}/src/zcbor_common.c
     ${ZEPHYR_ZCBOR_MODULE_DIR}/src/zcbor_decode.c

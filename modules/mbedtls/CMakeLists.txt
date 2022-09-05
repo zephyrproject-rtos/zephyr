@@ -17,7 +17,7 @@ if(CONFIG_MBEDTLS_BUILTIN)
     include
   )
 
-  zephyr_library()
+  zephyr_library_named(mbedtls)
 
   file(GLOB
     mbedtls_sources # This is an output parameter

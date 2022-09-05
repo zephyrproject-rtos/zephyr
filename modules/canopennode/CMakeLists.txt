@@ -4,7 +4,7 @@ if(CONFIG_CANOPENNODE)
 
   set(CANOPENNODE_DIR ${ZEPHYR_CURRENT_MODULE_DIR})
 
-  zephyr_library()
+  zephyr_library_named(canopennode)
 
   zephyr_include_directories(
     ${CANOPENNODE_DIR}

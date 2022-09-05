@@ -3,7 +3,7 @@
 include(ExternalProject)
 
 if(CONFIG_HAS_RPI_PICO)
-  zephyr_library()
+  zephyr_library_named(hal_rpi_pico)
 
   set(rp2_common_dir ${ZEPHYR_HAL_RPI_PICO_MODULE_DIR}/src/rp2_common)
   set(rp2040_dir ${ZEPHYR_HAL_RPI_PICO_MODULE_DIR}/src/rp2040)

@@ -6,7 +6,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
 
   set(TENSORFLOW_LITE_MICRO_DIR ${ZEPHYR_CURRENT_MODULE_DIR})
 
-  zephyr_library()
+  zephyr_library_named(tflite-micro)
 
   zephyr_include_directories(
     ${TENSORFLOW_LITE_MICRO_DIR}/.

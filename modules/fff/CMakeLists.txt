@@ -7,7 +7,7 @@ if(CONFIG_FFF_TEST)
   # Add the FFF C test suites as ztest suites
   message("CONFIG_FFF_TEST_TYPE_C=${CONFIG_FFF_TEST_TYPE_C}")
   message("CONFIG_FFF_TEST_TYPE_GLOBAL_C=${CONFIG_FFF_TEST_TYPE_GLOBAL_C}")
-  zephyr_library()
+  zephyr_library_named(fff)
   zephyr_include_directories(
       include
       "${ZEPHYR_CURRENT_MODULE_DIR}"
