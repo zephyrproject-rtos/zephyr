@@ -11,7 +11,7 @@
  */
 
 .macro __int_arithmetic func opcode
-.section .text
+.section .text.it8xxx2.arithmetic
 .align 2
 .globl \func
 .type \func, @function
