@@ -538,3 +538,10 @@ void bt_keys_show_sniffer_info(struct bt_keys *keys, void *data)
 	}
 }
 #endif /* defined(CONFIG_BT_LOG_SNIFFER_INFO) */
+
+#ifdef ZTEST_UNITTEST
+struct bt_keys *bt_keys_get_key_pool(void)
+{
+	return key_pool;
+}
+#endif /* ZTEST_UNITTEST */
