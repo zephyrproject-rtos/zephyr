@@ -175,18 +175,9 @@ def find_sections(filename, full_list_of_sections):
         sections = [x for x in full_lib.iter_sections()]
 
         for section in sections:
-
-            if ".text." in section.name:
-                full_list_of_sections["text"].append(section.name)
-
-            if ".rodata." in section.name:
-                full_list_of_sections["rodata"].append(section.name)
-
-            if ".data." in section.name:
-                full_list_of_sections["data"].append(section.name)
-
-            if ".bss." in section.name:
-                full_list_of_sections["bss"].append(section.name)
+            for target_name in {"text", "rodata", "data", "bss"}:
+                if section.name.startswith(f".{target_name}."):
+                    full_list_of_sections[target_name].append(section.name)
 
             # Common variables will be placed in the .bss section
             # only after linking in the final executable. This "if" finds
