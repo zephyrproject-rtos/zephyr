@@ -125,10 +125,10 @@ static int out_func(int c, void *ctx)
 
 static int cr_out_func(int c, void *ctx)
 {
-	out_func(c, ctx);
 	if (c == '\n') {
 		out_func((int)'\r', ctx);
 	}
+	out_func(c, ctx);
 
 	return 0;
 }
