@@ -45,7 +45,14 @@ static int rand_get(uint8_t *dst, size_t outlen, bool csrand)
 	__ASSERT(device_is_ready(entropy_dev), "Entropy device %s not ready",
 		 entropy_dev->name);
 
-	ret = entropy_get_entropy(entropy_dev, dst, outlen);
+	if (k_is_in_isr()) {
+		ret = entropy_get_entropy_isr(entropy_dev, dst, outlen);
+		if (ret == -ENOTSUP) {
+			ret = entropy_get_entropy(entropy_dev, dst, outlen);
+		}
+	} else {
+		ret = entropy_get_entropy(entropy_dev, dst, outlen);
+	}
 
 	if (unlikely(ret < 0)) {
 		/* Don't try to fill the buffer in case of
