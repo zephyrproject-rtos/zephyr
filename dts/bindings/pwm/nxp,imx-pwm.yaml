@@ -16,6 +16,16 @@ properties:
     interrupts:
       required: true
 
+    run-in-wait:
+      type: boolean
+      description: |
+        Enable for PWM to keep running in WAIT mode.
+
+    run-in-debug:
+      type: boolean
+      description: |
+        Enable for PWM to keep running in debug mode.
+
     "#pwm-cells":
       const: 2
 
