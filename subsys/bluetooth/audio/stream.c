@@ -95,7 +95,48 @@ struct bt_iso_chan *bt_audio_stream_iso_chan_get(struct bt_audio_stream *stream)
 	return NULL;
 }
 
+void bt_audio_stream_cb_register(struct bt_audio_stream *stream,
+				 struct bt_audio_stream_ops *ops)
+{
+	stream->ops = ops;
+}
+
 #if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
+{
+	if (qos->interval < BT_ISO_SDU_INTERVAL_MIN ||
+	    qos->interval > BT_ISO_SDU_INTERVAL_MAX) {
+		BT_DBG("Interval not within allowed range: %u (%u-%u)",
+		       qos->interval, BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX);
+		return false;
+	}
+
+	if (qos->framing > BT_CODEC_QOS_FRAMED) {
+		BT_DBG("Invalid Framing 0x%02x", qos->framing);
+		return false;
+	}
+
+	if (qos->phy != BT_CODEC_QOS_1M &&
+	    qos->phy != BT_CODEC_QOS_2M &&
+	    qos->phy != BT_CODEC_QOS_CODED) {
+		BT_DBG("Invalid PHY 0x%02x", qos->phy);
+		return false;
+	}
+
+	if (qos->sdu > BT_ISO_MAX_SDU) {
+		BT_DBG("Invalid SDU %u", qos->sdu);
+		return false;
+	}
+
+	if (qos->latency < BT_ISO_LATENCY_MIN ||
+	    qos->latency > BT_ISO_LATENCY_MAX) {
+		BT_DBG("Invalid Latency %u", qos->latency);
+		return false;
+	}
+
+	return true;
+}
+
 int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
 			 uint16_t seq_num, uint32_t ts)
 {
@@ -201,41 +242,6 @@ done:
 }
 #endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
 
-bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
-{
-	if (qos->interval < BT_ISO_SDU_INTERVAL_MIN ||
-	    qos->interval > BT_ISO_SDU_INTERVAL_MAX) {
-		BT_DBG("Interval not within allowed range: %u (%u-%u)",
-		       qos->interval, BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX);
-		return false;
-	}
-
-	if (qos->framing > BT_CODEC_QOS_FRAMED) {
-		BT_DBG("Invalid Framing 0x%02x", qos->framing);
-		return false;
-	}
-
-	if (qos->phy != BT_CODEC_QOS_1M &&
-	    qos->phy != BT_CODEC_QOS_2M &&
-	    qos->phy != BT_CODEC_QOS_CODED) {
-		BT_DBG("Invalid PHY 0x%02x", qos->phy);
-		return false;
-	}
-
-	if (qos->sdu > BT_ISO_MAX_SDU) {
-		BT_DBG("Invalid SDU %u", qos->sdu);
-		return false;
-	}
-
-	if (qos->latency < BT_ISO_LATENCY_MIN ||
-	    qos->latency > BT_ISO_LATENCY_MAX) {
-		BT_DBG("Invalid Latency %u", qos->latency);
-		return false;
-	}
-
-	return true;
-}
-
 static bool bt_audio_stream_is_broadcast(const struct bt_audio_stream *stream)
 {
 	return (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SOURCE) &&
@@ -319,12 +325,6 @@ void bt_audio_stream_reset(struct bt_audio_stream *stream)
 	}
 
 	bt_audio_stream_detach(stream);
-}
-
-void bt_audio_stream_cb_register(struct bt_audio_stream *stream,
-				 struct bt_audio_stream_ops *ops)
-{
-	stream->ops = ops;
 }
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
