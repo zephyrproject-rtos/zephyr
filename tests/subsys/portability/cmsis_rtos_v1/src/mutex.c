@@ -46,7 +46,7 @@ void test_max_mutex(void)
 	}
 }
 
-void test_mutex(void)
+ZTEST(cmsis_mutex, test_mutex)
 {
 	osMutexId mutex_id = 0;
 	osStatus status;
@@ -122,7 +122,7 @@ void tThread_entry_lock_timeout(void const *arg)
 
 osThreadDef(tThread_entry_lock_timeout, osPriorityNormal, 1, 0);
 
-void test_mutex_lock_timeout(void)
+ZTEST(cmsis_mutex, test_mutex_lock_timeout)
 {
 	osThreadId id;
 	osMutexId mutex_id;
@@ -146,3 +146,4 @@ void test_mutex_lock_timeout(void)
 
 	osMutexDelete(mutex_id);
 }
+ZTEST_SUITE(cmsis_mutex, NULL, NULL, NULL, NULL, NULL);

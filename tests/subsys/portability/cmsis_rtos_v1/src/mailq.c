@@ -166,7 +166,7 @@ void mail_recv(void)
 
 osThreadDef(send_thread, osPriorityNormal, 1, 0);
 
-void test_mailq(void)
+ZTEST(cmsis_mailq, test_mailq)
 {
 	osThreadId tid;
 
@@ -178,3 +178,4 @@ void test_mailq(void)
 
 	mail_recv();
 }
+ZTEST_SUITE(cmsis_mailq, NULL, NULL, NULL, NULL, NULL);
