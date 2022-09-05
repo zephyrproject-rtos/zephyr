@@ -41,15 +41,11 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	const struct pwm_mcux_config *config = dev->config;
 	struct pwm_mcux_data *data = dev->data;
 	uint8_t duty_cycle;
+	pwm_level_select_t level;
 
 	if (channel >= CHANNEL_COUNT) {
 		LOG_ERR("Invalid channel");
 		return -EINVAL;
-	}
-
-	if (flags) {
-		/* PWM polarity not supported (yet?) */
-		return -ENOTSUP;
 	}
 
 	if (period_cycles == 0) {
@@ -67,8 +63,15 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 
 	duty_cycle = 100 * pulse_cycles / period_cycles;
 
+	if (flags & PWM_POLARITY_INVERTED) {
+		level = kPWM_LowTrue;
+	} else {
+		level = kPWM_HighTrue;
+	}
+
 	/* FIXME: Force re-setup even for duty-cycle update */
-	if (period_cycles != data->period_cycles[channel]) {
+	if (period_cycles != data->period_cycles[channel]
+	    || level != data->channel[channel].level) {
 		uint32_t clock_freq;
 		uint32_t pwm_freq;
 		status_t status;
@@ -92,6 +95,7 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		PWM_StopTimer(config->base, 1U << config->index);
 
 		data->channel[channel].dutyCyclePercent = duty_cycle;
+		data->channel[channel].level = level;
 
 		status = PWM_SetupPwm(config->base, config->index,
 				      &data->channel[0], CHANNEL_COUNT,
