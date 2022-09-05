@@ -1,5 +1,6 @@
 /*
  * Copyright Runtime.io 2018. All rights reserved.
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +17,6 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
-#include <zephyr/mgmt/mcumgr/smp_bt.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
 
 #include <zephyr/mgmt/mcumgr/smp.h>

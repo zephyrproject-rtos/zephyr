@@ -6,10 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/reboot.h>
-#include <zephyr/debug/object_tracing.h>
-#include <zephyr/kernel_structs.h>
-#include <os_mgmt/os_mgmt.h>
-#include <os_mgmt/os_mgmt_impl.h>
 
 static void zephyr_os_mgmt_reset_cb(struct k_timer *timer);
 static void zephyr_os_mgmt_reset_work_handler(struct k_work *work);

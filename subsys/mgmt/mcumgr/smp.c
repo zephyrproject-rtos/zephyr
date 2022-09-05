@@ -1,6 +1,6 @@
 /*
  * Copyright Runtime.io 2018. All rights reserved.
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,10 +9,11 @@
 #include <zephyr/device.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
-#include "mgmt/mgmt.h"
-#include "smp/smp.h"
 #include <zephyr/mgmt/mcumgr/smp.h>
+#include "smp/smp.h"
+#ifdef CONFIG_MCUMGR_SMP_REASSEMBLY
 #include "smp_reassembly.h"
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);

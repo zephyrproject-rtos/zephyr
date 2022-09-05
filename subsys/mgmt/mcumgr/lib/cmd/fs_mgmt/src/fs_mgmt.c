@@ -5,29 +5,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <assert.h>
-#include <zephyr/kernel.h>
 #include <limits.h>
-#include <string.h>
 #include <zephyr/sys/util.h>
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
 #include "zcbor_bulk/zcbor_bulk_priv.h"
 #include <zephyr/mgmt/mcumgr/buf.h>
-#include <zephyr/fs/fs.h>
 #include "mgmt/mgmt.h"
 #include "fs_mgmt/fs_mgmt.h"
 #include "fs_mgmt/fs_mgmt_impl.h"
 #include "fs_mgmt/fs_mgmt_config.h"
-#include "fs_mgmt/hash_checksum_mgmt.h"
 
+#if defined(CONFIG_FS_MGMT_CHECKSUM_HASH)
+#include "fs_mgmt/hash_checksum_mgmt.h"
 #if defined(CONFIG_FS_MGMT_CHECKSUM_IEEE_CRC32)
 #include "fs_mgmt/hash_checksum_crc32.h"
 #endif
-
 #if defined(CONFIG_FS_MGMT_HASH_SHA256)
 #include "fs_mgmt/hash_checksum_sha256.h"
+#endif
 #endif
 
 

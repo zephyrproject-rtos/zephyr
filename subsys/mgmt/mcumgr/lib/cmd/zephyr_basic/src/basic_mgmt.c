@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/init.h>
 #include <mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/zephyr_groups.h>
 #include <zephyr/storage/flash_map.h>

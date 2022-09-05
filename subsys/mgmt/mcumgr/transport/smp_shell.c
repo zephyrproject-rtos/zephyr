@@ -1,5 +1,6 @@
 /*
  * Copyright Runtime.io 2018. All rights reserved.
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,18 +9,12 @@
  * @brief Shell transport for the mcumgr SMP protocol.
  */
 
-#include <string.h>
-#include <zephyr/kernel.h>
-#include <zephyr/init.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
-#include "mgmt/mgmt.h"
 #include <zephyr/mgmt/mcumgr/serial.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include <zephyr/mgmt/mcumgr/smp_shell.h>
 #include <zephyr/drivers/uart.h>
-#include "syscalls/uart.h"
-#include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_uart.h>
 #include "../smp_internal.h"
 

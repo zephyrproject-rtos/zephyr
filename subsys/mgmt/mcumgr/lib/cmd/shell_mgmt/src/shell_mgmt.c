@@ -1,12 +1,11 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/util.h>
-#include <string.h>
-#include <stdio.h>
+#include <zephyr/shell/shell_dummy.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
 #include <zcbor_common.h>
@@ -14,7 +13,6 @@
 #include <zcbor_decode.h>
 #include "shell_mgmt/shell_mgmt.h"
 #include "shell_mgmt/shell_mgmt_config.h"
-#include <zephyr/shell/shell_dummy.h>
 
 static int
 shell_exec(const char *line)

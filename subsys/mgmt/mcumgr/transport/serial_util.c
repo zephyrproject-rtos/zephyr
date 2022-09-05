@@ -1,14 +1,12 @@
 /*
  * Copyright Runtime.io 2018. All rights reserved.
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/sys/__assert.h>
 #include <string.h>
-#include <stdbool.h>
-#include <errno.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net/buf.h>

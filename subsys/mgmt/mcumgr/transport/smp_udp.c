@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Prevas A/S
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +10,6 @@
  * @brief UDP transport for the mcumgr SMP protocol.
  */
 
-#include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #if defined(CONFIG_POSIX_API)
 #include <zephyr/posix/unistd.h>
@@ -17,9 +17,7 @@
 #else
 #include <zephyr/net/socket.h>
 #endif
-#include <errno.h>
 #include <mgmt/mgmt.h>
-#include <zephyr/mgmt/mcumgr/smp_udp.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include "../smp_internal.h"

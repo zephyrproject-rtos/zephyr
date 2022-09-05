@@ -1,5 +1,6 @@
 /*
  * Copyright Runtime.io 2018. All rights reserved.
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,13 +9,12 @@
  * @brief UART transport for the mcumgr SMP protocol.
  */
 
-#include <string.h>
-#include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/net/buf.h>
+#include <mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/drivers/console/uart_mcumgr.h>
-#include "mgmt/mgmt.h"
 #include <zephyr/mgmt/mcumgr/serial.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include "../smp_internal.h"

@@ -1,16 +1,15 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/util.h>
 #include <string.h>
-#include <stdio.h>
 
+#include <mgmt/mgmt.h>
 #include <zephyr/stats/stats.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
-#include <mgmt/mgmt.h>
 #include <stat_mgmt/stat_mgmt_config.h>
 #include <stat_mgmt/stat_mgmt.h>
 #include <zcbor_common.h>

@@ -1,24 +1,23 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2022 Nordic Semiconductor ASA
  * Copyright (c) 2022 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/util.h>
-#include <assert.h>
 #include <string.h>
-#include <zephyr/kernel.h>
 #include <stdio.h>
+#ifdef CONFIG_OS_MGMT_TASKSTAT
 #include <zephyr/debug/object_tracing.h>
 #include <zephyr/kernel_structs.h>
+#endif
+#include "mgmt/mgmt.h"
+#include <zephyr/mgmt/mcumgr/buf.h>
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 
-#include "mgmt/mgmt.h"
 #include "os_mgmt/os_mgmt.h"
 #include "os_mgmt/os_mgmt_impl.h"
 
