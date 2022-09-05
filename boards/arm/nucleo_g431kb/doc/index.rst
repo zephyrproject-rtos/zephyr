@@ -1,6 +1,6 @@
 .. _nucleo_g431rb_board:
 
-ST Nucleo G431RB
+ST Nucleo G431KB
 ################
 
 Overview
@@ -137,7 +137,7 @@ Default Zephyr Peripheral Mapping:
 .. rst-class:: rst-columns
 
 - USART_1_TX : PA9
-- UART_1_RX : PA10
+- USART_1_RX : PA10
 - USART_2_TX : PA2
 - USART_2_RX : PA3
 - I2C_1_SCL : PA13
