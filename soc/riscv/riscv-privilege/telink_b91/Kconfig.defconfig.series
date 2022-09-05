@@ -29,7 +29,11 @@ config RISCV_GP
 
 config NUM_IRQS
 	int
-	default 64
+	default 76
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	int
+	default 12
 
 config PINCTRL
 	default y
