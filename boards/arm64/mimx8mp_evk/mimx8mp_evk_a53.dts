@@ -37,6 +37,8 @@
 };
 
 &uart4 {
+	zephyr,memory-region = "UART4";
+	zephyr,memory-region-mmu = "MT_DEVICE_nGnRnE", "MT_P_RW_U_NA", "MT_NS";
 	status = "okay";
 	current-speed = <115200>;
 	clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
