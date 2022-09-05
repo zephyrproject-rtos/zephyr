@@ -38,6 +38,9 @@ tests:
       - CONFIG_TEST_HW_STACK_PROTECTION=n
     tags: kernel interrupt isr_table
   arch.interrupt.gen_isr_table.riscv_direct:
+    # FIXME: Direct ISR (IRQ vector table) test is disabled due to broken
+    #        vectors table placement (see GitHub issue #49903).
+    arch_exclude: riscv32 riscv64
     platform_exclude: m2gl025_miv
     filter: CONFIG_RISCV and CONFIG_SOC_FAMILY_RISCV_PRIVILEGE
     tags: kernel interrupt isr_table
