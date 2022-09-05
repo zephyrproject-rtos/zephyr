@@ -97,6 +97,8 @@ static inline void gpiob_b91_irq_en_set(const struct device *dev, gpio_pin_t pin
 
 	volatile struct gpio_b91_t *gpio = GET_GPIO(dev);
 
+	irq -= CONFIG_2ND_LVL_ISR_TBL_OFFSET;
+
 	if (irq == IRQ_GPIO) {
 		BM_SET(gpio->irq_en, BIT(pin));
 	} else if (irq == IRQ_GPIO2_RISC0) {
@@ -114,6 +116,8 @@ static inline void gpiob_b91_irq_en_clr(const struct device *dev, gpio_pin_t pin
 	uint8_t irq = GET_IRQ_NUM(dev);
 	volatile struct gpio_b91_t *gpio = GET_GPIO(dev);
 
+	irq -= CONFIG_2ND_LVL_ISR_TBL_OFFSET;
+
 	if (irq == IRQ_GPIO) {
 		BM_CLR(gpio->irq_en, BIT(pin));
 	} else if (irq == IRQ_GPIO2_RISC0) {
@@ -130,6 +134,8 @@ static inline uint8_t gpio_b91_irq_en_get(const struct device *dev)
 	uint8_t irq = GET_IRQ_NUM(dev);
 	volatile struct gpio_b91_t *gpio = GET_GPIO(dev);
 
+	irq -= CONFIG_2ND_LVL_ISR_TBL_OFFSET;
+
 	if (irq == IRQ_GPIO) {
 		status = gpio->irq_en;
 	} else if (irq == IRQ_GPIO2_RISC0) {
@@ -145,6 +151,8 @@ static inline uint8_t gpio_b91_irq_en_get(const struct device *dev)
 static inline void gpio_b91_irq_status_clr(uint8_t irq)
 {
 	gpio_irq_status_e status = 0;
+
+	irq -= CONFIG_2ND_LVL_ISR_TBL_OFFSET;
 
 	if (irq == IRQ_GPIO) {
 		status = FLD_GPIO_IRQ_CLR;
@@ -166,6 +174,8 @@ void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin,
 	uint8_t irq_num = GET_IRQ_NUM(dev);
 	uint8_t irq_prioriy = GET_IRQ_PRIORITY(dev);
 	volatile struct gpio_b91_t *gpio = GET_GPIO(dev);
+
+	irq_num -= CONFIG_2ND_LVL_ISR_TBL_OFFSET;
 
 	/* Get level and mask based on IRQ number */
 	if (irq_num == IRQ_GPIO) {

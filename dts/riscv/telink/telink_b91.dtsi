@@ -82,7 +82,7 @@
 			compatible = "telink,b91-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
-			interrupts = <25 1>, <26 1>, <27 1>;
+			interrupts = <37 1>, <38 1>, <39 1>;
 			reg = <0x80140300 0x08>;
 			status = "disabled";
 			#gpio-cells = <2>;
@@ -92,7 +92,7 @@
 			compatible = "telink,b91-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
-			interrupts = <25 1>, <26 1>, <27 1>;
+			interrupts = <37 1>, <38 1>, <39 1>;
 			reg = <0x80140308 0x08>;
 			status = "disabled";
 			#gpio-cells = <2>;
@@ -102,7 +102,7 @@
 			compatible = "telink,b91-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
-			interrupts = <25 1>, <26 1>, <27 1>;
+			interrupts = <37 1>, <38 1>, <39 1>;
 			reg = <0x80140310 0x08>;
 			status = "disabled";
 			#gpio-cells = <2>;
@@ -112,7 +112,7 @@
 			compatible = "telink,b91-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
-			interrupts = <25 1>, <26 1>, <27 1>;
+			interrupts = <37 1>, <38 1>, <39 1>;
 			reg = <0x80140318 0x08>;
 			status = "disabled";
 			#gpio-cells = <2>;
@@ -122,7 +122,7 @@
 			compatible = "telink,b91-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
-			interrupts = <25 1>, <26 1>, <27 1>;
+			interrupts = <37 1>, <38 1>, <39 1>;
 			reg = <0x80140320 0x08>;
 			status = "disabled";
 			#gpio-cells = <2>;
@@ -144,7 +144,7 @@
 		uart0: serial@80140080 {
 			compatible = "telink,b91-uart";
 			reg = <0x80140080 0x40>;
-			interrupts = <19 1>;
+			interrupts = <31 1>;
 			interrupt-parent = <&plic0>;
 			status = "disabled";
 		};
@@ -152,7 +152,7 @@
 		uart1: serial@801400C0 {
 			compatible = "telink,b91-uart";
 			reg = <0x801400C0 0x40>;
-			interrupts = <18 1>;
+			interrupts = <30 1>;
 			interrupt-parent = <&plic0>;
 			status = "disabled";
 		};
@@ -162,7 +162,7 @@
 			label = "IEEE802154_b91";
 			reg = <0x80140800 0x800>;
 			interrupt-parent = <&plic0>;
-			interrupts = <15 2>;
+			interrupts = <27 2>;
 			status = "disabled";
 		};
 
