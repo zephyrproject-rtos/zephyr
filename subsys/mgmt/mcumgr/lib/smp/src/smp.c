@@ -16,6 +16,7 @@
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include "smp/smp.h"
+#include "../../../smp_internal.h"
 
 /**
  * Converts a request opcode to its corresponding response opcode.
