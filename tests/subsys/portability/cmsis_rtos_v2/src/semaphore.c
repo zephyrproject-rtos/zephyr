@@ -65,7 +65,7 @@ const osSemaphoreAttr_t sema_attr = {
 	0U
 };
 
-void test_semaphore(void)
+ZTEST(cmsis_semaphore, test_semaphore)
 {
 	osThreadId_t id;
 	osStatus_t status;
@@ -114,3 +114,4 @@ void test_semaphore(void)
 	status = osSemaphoreDelete(semaphore_id);
 	zassert_true(status == osOK, "semaphore delete failure");
 }
+ZTEST_SUITE(cmsis_semaphore, NULL, NULL, NULL, NULL, NULL);
