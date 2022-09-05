@@ -270,10 +270,6 @@ static int cmd_i2c_read(const struct shell *shell_ctx, size_t argc, char **argv)
 	return ret;
 }
 
-static void device_name_get(size_t idx, struct shell_static_entry *entry);
-
-SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
-
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	const struct device *dev = shell_device_lookup(idx, NULL);
@@ -283,6 +279,8 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->help = NULL;
 	entry->subcmd = NULL;
 }
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
 			       SHELL_CMD_ARG(scan, &dsub_device_name,
