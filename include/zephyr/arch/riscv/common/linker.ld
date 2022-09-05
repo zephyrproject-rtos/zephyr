@@ -27,7 +27,6 @@
 #endif
 #define RAMABLE_REGION              RAM
 
-#define _VECTOR_SECTION_NAME        vector
 #define _EXCEPTION_SECTION_NAME     exceptions
 #define _RESET_SECTION_NAME         reset
 
@@ -118,13 +117,6 @@ SECTIONS
  */
 #include <snippets-rom-start.ld>
     } GROUP_LINK_IN(ROMABLE_REGION)
-
-    SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
-    {
-		. = ALIGN(4);
-		KEEP(*(.vectors.*))
-    } GROUP_LINK_IN(ROMABLE_REGION)
-
 
 #ifdef CONFIG_CODE_DATA_RELOCATION
 #include <linker_relocate.ld>
