@@ -742,7 +742,12 @@ static isoal_status_t ll_iso_test_sdu_emit(const struct isoal_sink             *
 			break;
 		}
 
-		if (framed) {
+		/* In framed mode, we may start incrementing the SDU counter when rx_sdu_counter
+		 * becomes non zero (initial state), or in case of zero-based counting, if zero
+		 * is actually the first valid SDU counter received.
+		 */
+		if (framed && (cis->hdr.test_mode.rx_sdu_counter ||
+			       (sdu_frag->sdu.status == ISOAL_SDU_STATUS_VALID))) {
 			cis->hdr.test_mode.rx_sdu_counter++;
 		}
 
