@@ -26,6 +26,8 @@ struct pwm_mcux_config {
 	clock_control_subsys_t clock_subsys;
 	pwm_clock_prescale_t prescale;
 	pwm_mode_t mode;
+	bool run_wait;
+	bool run_debug;
 	const struct pinctrl_dev_config *pincfg;
 };
 
@@ -155,6 +157,8 @@ static int pwm_mcux_init(const struct device *dev)
 	pwm_config.prescale = config->prescale;
 	pwm_config.reloadLogic = kPWM_ReloadPwmFullCycle;
 	pwm_config.clockSource = kPWM_BusClock;
+	pwm_config.enableDebugMode = config->run_debug;
+	pwm_config.enableWait = config->run_wait;
 
 	status = PWM_Init(config->base, config->index, &pwm_config);
 	if (status != kStatus_Success) {
@@ -191,6 +195,8 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 		.prescale = kPWM_Prescale_Divide_128,			  \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.run_wait = DT_INST_PROP(n, run_in_wait),		  \
+		.run_debug = DT_INST_PROP(n, run_in_debug),		  \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		  \
 	};								  \
 									  \
