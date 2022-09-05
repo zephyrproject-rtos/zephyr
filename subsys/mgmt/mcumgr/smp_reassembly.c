@@ -11,6 +11,7 @@
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include <mgmt/mgmt.h>
 #include <smp/smp.h>
+#include "smp_internal.h"
 
 void zephyr_smp_reassembly_init(struct zephyr_smp_transport *zst)
 {

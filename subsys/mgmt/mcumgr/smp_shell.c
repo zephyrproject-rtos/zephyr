@@ -21,6 +21,7 @@
 #include "syscalls/uart.h"
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_uart.h>
+#include "smp_internal.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smp_shell);

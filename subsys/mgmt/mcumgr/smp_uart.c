@@ -17,6 +17,7 @@
 #include "mgmt/mgmt.h"
 #include <zephyr/mgmt/mcumgr/serial.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
+#include "smp_internal.h"
 
 struct device;
 
