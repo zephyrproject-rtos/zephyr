@@ -7,6 +7,7 @@ menuconfig MCUMGR_GRP_ZEPHYR_BASIC
 	  Enables mcumgr to processing of Zephyr specific groups.
 
 if MCUMGR_GRP_ZEPHYR_BASIC
+
 config MCUMGR_GRP_BASIC_CMD_STORAGE_ERASE
 	bool "Storage erase command"
 	help
