@@ -126,13 +126,18 @@ config BT_AUDIO_BROADCAST_SOURCE
 if BT_AUDIO_BROADCAST_SOURCE
 
 config BT_AUDIO_BROADCAST_SRC_SUBGROUP_COUNT
-	int # hidden: TODO: Update once the API supports it
+	int "Basic Audio Broadcast Source subgroup count"
 	default 1
+	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 1 31
+	help
+	  This option sets the maximum number of subgroups per broadcast source
+	  to support.
 
 config BT_AUDIO_BROADCAST_SRC_COUNT
 	int "Basic Audio Broadcaster source count"
 	default 1
-	range 0 BT_ISO_MAX_BIG
+	range 1 BT_ISO_MAX_BIG
 	help
 	  This option sets the number of broadcast sources to support.
 	  One broadcast source can send multiple streams
@@ -142,7 +147,8 @@ config BT_AUDIO_BROADCAST_SRC_COUNT
 config BT_AUDIO_BROADCAST_SRC_STREAM_COUNT
 	int "Basic Audio Broadcast Source Stream count"
 	default 1
-	range 0 BT_ISO_MAX_CHAN
+	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 1 31
 	help
 	  This option sets the maximum number of streams per broadcast source
 	  to support.
@@ -164,7 +170,8 @@ if BT_AUDIO_BROADCAST_SINK
 config BT_AUDIO_BROADCAST_SNK_SUBGROUP_COUNT
 	int "Basic Audio Profile Broadcast Sink subgroup count"
 	default 1
-	range 1 BT_ISO_MAX_CHAN
+	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 1 31
 	help
 	  This option sets the maximum number of subgroups per broadcast sink
 	  to support.
