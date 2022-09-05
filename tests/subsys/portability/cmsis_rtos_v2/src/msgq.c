@@ -152,7 +152,7 @@ static const osMessageQueueAttr_t init_mem_attrs = {
 	.mq_size = sizeof(struct sample_data) * Q_LEN,
 };
 
-void test_messageq(void)
+ZTEST(cmsis_msgq, test_messageq)
 {
 	osStatus_t status;
 	struct sample_data sample;
@@ -193,3 +193,4 @@ void test_messageq(void)
 	status = osMessageQueueDelete(message_id);
 	zassert_true(status == osOK, "osMessageQueueDelete failure");
 }
+ZTEST_SUITE(cmsis_msgq, NULL, NULL, NULL, NULL, NULL);

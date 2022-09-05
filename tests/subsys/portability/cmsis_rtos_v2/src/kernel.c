@@ -57,7 +57,7 @@ void lock_unlock_check(const void *arg)
 	}
 }
 
-void test_kernel_apis(void)
+ZTEST(cmsis_kernel, test_kernel_apis)
 {
 	versionInfo version = {
 		.os_info = {
@@ -97,7 +97,7 @@ void delay_until(const void *param)
 	status_val = osDelayUntil(tick);
 }
 
-void test_delay(void)
+ZTEST(cmsis_kernel, test_delay)
 {
 	delay_until(NULL);
 	zassert_true(tick <= osKernelGetTickCount(), NULL);
@@ -106,3 +106,4 @@ void test_delay(void)
 	irq_offload(delay_until, NULL);
 	zassert_equal(status_val, osErrorISR, NULL);
 }
+ZTEST_SUITE(cmsis_kernel, NULL, NULL, NULL, NULL, NULL);
