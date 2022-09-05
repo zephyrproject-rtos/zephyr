@@ -2,7 +2,7 @@
 
 if(CONFIG_ARM_MPU AND NOT CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS)
 
-  zephyr_library()
+  zephyr_library_named(soc_cortex_m)
 
   zephyr_library_sources_ifdef(CONFIG_CPU_HAS_ARM_MPU
     arm_mpu_regions.c
