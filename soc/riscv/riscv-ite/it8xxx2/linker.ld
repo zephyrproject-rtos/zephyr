@@ -147,6 +147,7 @@ SECTIONS
 		__ilm_flash_start = .;
 		/* Specially-tagged functions in SoC sources */
 		KEEP(*(.__ram_code))
+		*(.__ram_code.*)
 		__ilm_flash_end = .;
 		/* ILM mapping is always a multiple of 4k size; ensure following
 		 * sections won't incorrectly redirect to RAM. */
