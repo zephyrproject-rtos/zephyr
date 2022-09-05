@@ -301,6 +301,8 @@ class BinaryHandler(Handler):
             if harness.state == "failed":
                 if not harness.console_state:
                     self.instance.reason = "Console Failed"
+                    if harness.next_req_regex is not None:
+                        self.instance.reason += ", missing regex: " + str(harness.next_req_regex)
                 else:
                     self.instance.reason = "Failed"
         else:

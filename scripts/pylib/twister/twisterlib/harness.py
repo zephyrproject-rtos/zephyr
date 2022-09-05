@@ -111,27 +111,40 @@ class Harness:
             self.capture_coverage = False
 
 class Console(Harness):
+    def __init__(self):
+        super().__init__()
+        self.next_req_regex = None
 
     def configure(self, instance):
         super(Console, self).configure(instance)
         if self.console:
             if self.type == "one_line":
                 self.pattern = re.compile(self.regex[0])
+                self.next_req_regex = self.regex[0]
             elif self.type == "multi_line":
                 self.patterns = []
                 for r in self.regex:
                     self.patterns.append(re.compile(r))
 
+                if self.ordered is False:
+                    self.next_req_regex = self.regex
+                else:
+                    self.next_req_regex = self.regex[0]
+
     def handle(self, line):
         if self.type == "one_line":
             if self.pattern.search(line):
                 self.state = "passed"
+                self.next_req_regex = None
         elif self.type == "multi_line" and self.ordered:
             if (self.next_pattern < len(self.patterns) and
                 self.patterns[self.next_pattern].search(line)):
                 self.next_pattern += 1
                 if self.next_pattern >= len(self.patterns):
                     self.state = "passed"
+                    self.next_req_regex = None
+                else:
+                    self.next_req_regex = self.regex[self.next_pattern]
         elif self.type == "multi_line" and not self.ordered:
             for i, pattern in enumerate(self.patterns):
                 r = self.regex[i]
@@ -139,6 +152,10 @@ class Console(Harness):
                     self.matches[r] = line
             if len(self.matches) == len(self.regex):
                 self.state = "passed"
+                self.next_req_regex = None
+            else:
+                miss_regex = [reg for reg in self.regex if reg not in self.matches]
+                self.next_req_regex = miss_regex
         else:
             logger.error("Unknown harness_config type")
 
