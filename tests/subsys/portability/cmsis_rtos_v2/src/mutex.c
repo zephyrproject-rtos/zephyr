@@ -49,7 +49,7 @@ void test_max_mutex(void)
 	}
 }
 
-void test_mutex(void)
+ZTEST(cmsis_mutex, test_mutex)
 {
 	osMutexId_t mutex_id = 0;
 	osThreadId_t id;
@@ -153,7 +153,7 @@ static osThreadAttr_t thread_attr = {
 	.reserved = 0
 };
 
-void test_mutex_lock_timeout(void)
+ZTEST(cmsis_mutex, test_mutex_lock_timeout)
 {
 	osThreadId_t id;
 	osMutexId_t mutex_id;
@@ -177,3 +177,4 @@ void test_mutex_lock_timeout(void)
 
 	osMutexDelete(mutex_id);
 }
+ZTEST_SUITE(cmsis_mutex, NULL, NULL, NULL, NULL, NULL);
