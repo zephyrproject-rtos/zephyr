@@ -19,6 +19,7 @@
 		led0 = &seg7_led1_g;
 		led1 = &seg7_led2_g;
 		sw0 = &user_button1;
+		eeprom-0 = &eeprom;
 	};
 
 	chosen {
@@ -164,6 +165,15 @@
 
 &i2c0 {
 	status = "okay";
+	eeprom: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		status = "okay";
+		size = <16384>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <5>;
+	};
 };
 
 &spi1 {
