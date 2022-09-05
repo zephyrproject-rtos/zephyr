@@ -94,8 +94,6 @@ menu "Command Handlers"
 
 rsource "lib/cmd/Kconfig"
 
-rsource "zephyr_grp/Kconfig"
-
 endmenu
 
 menu "Transports and Transport Related Configuration Options"
