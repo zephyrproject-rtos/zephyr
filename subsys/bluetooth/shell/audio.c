@@ -1192,7 +1192,10 @@ static int cmd_select_broadcast_source(const struct shell *sh, size_t argc,
 static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 				char *argv[])
 {
-	struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_source_streams)];
+	struct bt_audio_broadcast_source_stream_param
+		stream_params[ARRAY_SIZE(broadcast_source_streams)];
+	struct bt_audio_broadcast_source_subgroup_param subgroup_param;
+	struct bt_audio_broadcast_source_create_param create_param;
 	struct named_lc3_preset *named_preset;
 	int err;
 
@@ -1212,15 +1215,18 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		}
 	}
 
-	(void)memset(streams, 0, sizeof(streams));
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
-		streams[i] = &broadcast_source_streams[i];
+	(void)memset(stream_params, 0, sizeof(stream_params));
+	for (size_t i = 0; i < ARRAY_SIZE(stream_params); i++) {
+		stream_params[i].stream = &broadcast_source_streams[i];
 	}
+	subgroup_param.stream_count = ARRAY_SIZE(stream_params);
+	subgroup_param.stream_params = stream_params;
+	subgroup_param.codec = &named_preset->preset.codec;
+	create_param.subgroup_count = 1U;
+	create_param.subgroup_params = &subgroup_param;
+	create_param.qos = &named_preset->preset.qos;
 
-	err = bt_audio_broadcast_source_create(streams, ARRAY_SIZE(streams),
-					       &named_preset->preset.codec,
-					       &named_preset->preset.qos,
-					       &default_source);
+	err = bt_audio_broadcast_source_create(&create_param, &default_source);
 	if (err != 0) {
 		shell_error(sh, "Unable to create broadcast source: %d", err);
 		return err;
@@ -1230,7 +1236,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		    named_preset->name);
 
 	if (default_stream == NULL) {
-		default_stream = streams[0];
+		default_stream = &broadcast_source_streams[0];
 	}
 
 	return 0;

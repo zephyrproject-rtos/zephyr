@@ -85,9 +85,44 @@ static struct bt_audio_stream_ops stream_ops = {
 	.sent = stream_sent_cb
 };
 
+static int setup_broadcast_source(struct bt_audio_broadcast_source **source)
+{
+	struct bt_audio_broadcast_source_stream_param
+		stream_params[CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT];
+	struct bt_audio_broadcast_source_subgroup_param subgroup_param;
+	struct bt_audio_broadcast_source_create_param create_param;
+	int err;
+
+	(void)memset(streams, 0, sizeof(streams));
+
+	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
+		stream_params[i].stream = &streams[i];
+		bt_audio_stream_cb_register(stream_params[i].stream,
+					    &stream_ops);
+	}
+
+	subgroup_param.stream_count = ARRAY_SIZE(stream_params);
+	subgroup_param.stream_params = stream_params;
+	subgroup_param.codec = &preset_16_2_1.codec;
+
+	create_param.subgroup_count = 1U;
+	create_param.subgroup_params = &subgroup_param;
+	create_param.qos = &preset_16_2_1.qos;
+
+	printk("Creating broadcast source with %zu streams\n",
+	       ARRAY_SIZE(stream_params));
+
+	err = bt_audio_broadcast_source_create(&create_param, source);
+	if (err != 0) {
+		printk("Unable to create broadcast source: %d\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
 void main(void)
 {
-	struct bt_audio_stream *streams_p[ARRAY_SIZE(streams)];
 	struct bt_le_ext_adv *adv;
 	int err;
 
@@ -97,11 +132,6 @@ void main(void)
 		return;
 	}
 	printk("Bluetooth initialized\n");
-
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		streams[i].ops = &stream_ops;
-		streams_p[i] = &streams[i];
-	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(mock_data); i++) {
 		/* Initialize mock data */
@@ -134,13 +164,9 @@ void main(void)
 		}
 
 		printk("Creating broadcast source\n");
-		err = bt_audio_broadcast_source_create(streams_p,
-						       ARRAY_SIZE(streams_p),
-						       &preset_16_2_1.codec,
-						       &preset_16_2_1.qos,
-						       &broadcast_source);
+		err = setup_broadcast_source(&broadcast_source);
 		if (err != 0) {
-			printk("Unable to create broadcast source: %d\n", err);
+			printk("Unable to setup broadcast source: %d\n", err);
 			return;
 		}
 
