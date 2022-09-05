@@ -578,4 +578,11 @@ static void can_shell_before(void *fixture)
 	memset(&frame_capture, 0, sizeof(frame_capture));
 }
 
-ZTEST_SUITE(can_shell, NULL, NULL, can_shell_before, NULL, NULL);
+static void *can_shell_setup(void)
+{
+	/* Let the shell backend initialize. */
+	k_msleep(20);
+	return NULL;
+}
+
+ZTEST_SUITE(can_shell, NULL, can_shell_setup, can_shell_before, NULL, NULL);
