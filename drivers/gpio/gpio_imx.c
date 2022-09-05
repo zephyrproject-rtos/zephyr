@@ -69,6 +69,9 @@ static int imx_gpio_configure(const struct device *port, gpio_pin_t pin,
 #endif
 	if (((flags & GPIO_PULL_UP) != 0) || ((flags & GPIO_PULL_DOWN) != 0)) {
 		reg |= BIT(MCUX_IMX_PULL_ENABLE_SHIFT);
+#ifdef CONFIG_SOC_MCIMX6X_M4
+		reg |= BIT(MCUX_IMX_BIAS_BUS_HOLD_SHIFT);
+#endif
 		if (((flags & GPIO_PULL_UP) != 0)) {
 			reg |= BIT(MCUX_IMX_BIAS_PULL_UP_SHIFT);
 		} else {
@@ -77,6 +80,9 @@ static int imx_gpio_configure(const struct device *port, gpio_pin_t pin,
 	} else {
 		/* Set pin to highz */
 		reg &= ~BIT(MCUX_IMX_PULL_ENABLE_SHIFT);
+#ifdef CONFIG_SOC_MCIMX6X_M4
+		reg &= ~BIT(MCUX_IMX_BIAS_BUS_HOLD_SHIFT);
+#endif
 	}
 
 	/* Init pin configuration struct, and use pinctrl api to apply settings */
