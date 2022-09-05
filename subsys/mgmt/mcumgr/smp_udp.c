@@ -22,6 +22,7 @@
 #include <zephyr/mgmt/mcumgr/smp_udp.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
+#include "smp_internal.h"
 
 #define LOG_LEVEL CONFIG_MCUMGR_LOG_LEVEL
 #include <zephyr/logging/log.h>
