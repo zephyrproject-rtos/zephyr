@@ -97,7 +97,7 @@ osThreadDef(thread1, osPriorityHigh, 1, STACKSZ);
 osThreadDef(thread2, osPriorityHigh, 1, STACKSZ);
 osThreadDef(thread3, osPriorityNormal, 1, STACKSZ);
 
-void test_thread_prio(void)
+ZTEST(thread_apis, test_thread_prio)
 {
 	osStatus status;
 	osThreadId id3;
@@ -128,7 +128,7 @@ void test_thread_prio(void)
 	thread3_state = 0;
 }
 
-void test_thread_apis(void)
+ZTEST(thread_apis, test_thread_apis)
 {
 	osThreadId id1;
 	osThreadId id2;
@@ -143,3 +143,4 @@ void test_thread_apis(void)
 		osDelay(100);
 	} while (thread_yield_check != 2);
 }
+ZTEST_SUITE(thread_apis, NULL, NULL, NULL, NULL, NULL);

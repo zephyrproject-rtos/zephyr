@@ -107,7 +107,7 @@ void message_recv(void)
 
 osThreadDef(send_msg_thread, osPriorityNormal, 1, 0);
 
-void test_messageq(void)
+ZTEST(cmsis_msgq, test_messageq)
 {
 	osThreadId tid;
 
@@ -119,3 +119,4 @@ void test_messageq(void)
 
 	message_recv();
 }
+ZTEST_SUITE(cmsis_msgq, NULL, NULL, NULL, NULL, NULL);
