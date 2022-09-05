@@ -238,6 +238,14 @@ config SHELL_LOG_BACKEND
 	  using the shell backend's LOG_LEVEL option
 	  (e.g. CONFIG_SHELL_TELNET_INIT_LOG_LEVEL_NONE=y).
 
+config SHELL_LOG_FORMAT_TIMESTAMP
+	bool "Format timestamp"
+	default y
+	depends on SHELL_LOG_BACKEND
+	help
+	  Enable timestamp formatting.
+
+
 source "subsys/shell/modules/Kconfig"
 
 endif # SHELL
