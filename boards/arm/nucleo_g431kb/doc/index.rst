@@ -1,4 +1,4 @@
-.. _nucleo_g431rb_board:
+.. _nucleo_g431kb_board:
 
 ST Nucleo G431KB
 ################
