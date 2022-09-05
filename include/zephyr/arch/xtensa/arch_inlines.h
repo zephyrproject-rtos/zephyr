@@ -13,25 +13,33 @@
 #include <zephyr/kernel_structs.h>
 #include <zsr.h>
 
+#ifndef RSR
 #define RSR(sr) \
 	({uint32_t v; \
 	 __asm__ volatile ("rsr." sr " %0" : "=a"(v)); \
 	 v; })
+#endif
 
+#ifndef WSR
 #define WSR(sr, v) \
 	do { \
 		__asm__ volatile ("wsr." sr " %0" : : "r"(v)); \
 	} while (false)
+#endif
 
+#ifndef RUR
 #define RUR(ur) \
 	({uint32_t v; \
 	 __asm__ volatile ("rur." ur " %0" : "=a"(v)); \
 	 v; })
+#endif
 
+#ifndef WUR
 #define WUR(ur, v) \
 	do { \
 		__asm__ volatile ("wur." ur " %0" : : "r"(v)); \
 	} while (false)
+#endif
 
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
