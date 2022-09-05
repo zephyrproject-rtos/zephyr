@@ -1,0 +1,14 @@
+sample:
+  name: Exceptions (C++)
+tests:
+  sample.cpp.synchronization:
+    tags: cpp
+    toolchain_exclude: issm xcc
+    arch_exclude: posix
+    integration_platforms:
+      - qemu_x86
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Exception caught: foobar"
