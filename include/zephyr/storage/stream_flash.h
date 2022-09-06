@@ -17,6 +17,7 @@
  * @brief Abstraction over stream writes to flash
  *
  * @defgroup stream_flash Stream to flash interface
+ * @ingroup storage_apis
  * @{
  */
 
