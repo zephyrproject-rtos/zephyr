@@ -2509,6 +2509,53 @@
 
 /**
  * @brief Invokes @p fn for each element in the value of property @p prop with
+ *        separator.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n: node {
+ *             my-gpios = <&gpioa 0 GPIO_ACTICE_HIGH>,
+ *                        <&gpiob 1 GPIO_ACTIVE_HIGH>;
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     struct gpio_dt_spec specs[] = {
+ *             DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(n), my_gpios,
+ *                                      GPIO_DT_SPEC_BY_IDX, (,))
+ *     };
+ * @endcode
+ *
+ * This expands as a first step to:
+ *
+ * @code{.c}
+ *     struct gpio_dt_spec specs[] = {
+ *     struct gpio_dt_spec specs[] = {
+ *             GPIO_DT_SPEC_BY_IDX(DT_NODELABEL(n), my_gpios, 0),
+ *             GPIO_DT_SPEC_BY_IDX(DT_NODELABEL(n), my_gpios, 1)
+ *     };
+ * @endcode
+ *
+ * The "prop" argument must refer to a property with type string,
+ * array, uint8-array, string-array, phandles, or phandle-array. It is
+ * an error to use this macro with properties of other types.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param fn macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ *
+ * @see DT_FOREACH_PROP_ELEM
+ */
+#define DT_FOREACH_PROP_ELEM_SEP(node_id, prop, fn, sep) \
+	DT_CAT4(node_id, _P_, prop, _FOREACH_PROP_ELEM_SEP)(fn, sep)
+
+/**
+ * @brief Invokes @p fn for each element in the value of property @p prop with
  * multiple arguments.
  *
  * The macro @p fn must take multiple parameters:
@@ -2526,6 +2573,23 @@
  */
 #define DT_FOREACH_PROP_ELEM_VARGS(node_id, prop, fn, ...)		\
 	DT_CAT4(node_id, _P_, prop, _FOREACH_PROP_ELEM_VARGS)(fn, __VA_ARGS__)
+
+/**
+ * @brief Invokes @p fn for each element in the value of property @p prop with
+ * multiple arguments and a separator.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param fn macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... variable number of arguments to pass to fn
+ *
+ * @see DT_FOREACH_PROP_ELEM_VARGS
+ */
+#define DT_FOREACH_PROP_ELEM_SEP_VARGS(node_id, prop, fn, sep, ...)	\
+	DT_CAT4(node_id, _P_, prop, _FOREACH_PROP_ELEM_SEP_VARGS)(	\
+		fn, sep, __VA_ARGS__)
 
 /**
  * @brief Invokes @p fn for each status `okay` node of a compatible.
@@ -3594,6 +3658,21 @@
 
 /**
  * @brief Invokes @p fn for each element of property @p prop for
+ *        a `DT_DRV_COMPAT` instance with a separator.
+ *
+ * Equivalent to DT_FOREACH_PROP_ELEM_SEP(DT_DRV_INST(inst), prop, fn, sep).
+ *
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param fn macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ */
+#define DT_INST_FOREACH_PROP_ELEM_SEP(inst, prop, fn, sep) \
+	DT_FOREACH_PROP_ELEM_SEP(DT_DRV_INST(inst), prop, fn, sep)
+
+/**
+ * @brief Invokes @p fn for each element of property @p prop for
  *        a `DT_DRV_COMPAT` instance with multiple arguments.
  *
  * Equivalent to
@@ -3610,7 +3689,28 @@
 	DT_FOREACH_PROP_ELEM_VARGS(DT_DRV_INST(inst), prop, fn, __VA_ARGS__)
 
 /**
- * @brief Does a `DT_DRV_COMPAT` instance have a property?
+ * @brief Invokes @p fn for each element of property @p prop for
+ *        a `DT_DRV_COMPAT` instance with multiple arguments and a sepatator.
+ *
+ * Equivalent to
+ *      DT_FOREACH_PROP_ELEM_SEP_VARGS(DT_DRV_INST(inst), prop, fn, sep,
+ *                                     __VA_ARGS__)
+ *
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param fn macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... variable number of arguments to pass to fn
+ *
+ * @see DT_INST_FOREACH_PROP_ELEM
+ */
+#define DT_INST_FOREACH_PROP_ELEM_SEP_VARGS(inst, prop, fn, sep, ...)		\
+	DT_FOREACH_PROP_ELEM_SEP_VARGS(DT_DRV_INST(inst), prop, fn, sep,	\
+				       __VA_ARGS__)
+
+/**
+ * @brief Does a DT_DRV_COMPAT instance have a property?
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
  * @return 1 if the instance has the property, 0 otherwise.
