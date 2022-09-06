@@ -1,0 +1,40 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+# I2C Shell
+
+description: |
+  When this node is present, "i2c-shell" defines the list of I2C controllers
+  visisble to the "i2c" shell command.
+
+  Example usage:
+    i2c-shell {
+      compatible = "i2c-shell";
+      i2c-controllers = <&i2c0_0
+                         &i2c1_0
+                         &i2c2_0
+                         &i2c4_1
+                         &i2c5_0
+                         &i2c7_0>;
+      i2c-controller-names = "I2C_POWER",
+                             "I2C_USB_C0_PD",
+                             "I2C_USB_C1_PD",
+                             "I2C_RTC",
+                             "I2C_EEPROM",
+                             "I2C_SENSOR";
+    };
+
+compatible: "i2c-shell"
+
+include: base.yaml
+
+properties:
+    i2c-controllers:
+      type: phandles
+      required: true
+      description: I2C controllers enabled for shell access
+
+    i2c-controller-names:
+      type: string-array
+      required: true
+      description: Friendly name for each I2C controller

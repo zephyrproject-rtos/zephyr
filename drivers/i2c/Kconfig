@@ -23,6 +23,14 @@ config I2C_SHELL
 	  The I2C shell supports scanning, bus recovery, I2C read and write
 	  operations.
 
+config I2C_SHELL_CONTROLLER_LIST
+	bool "I2C Shell Controller List"
+	default y
+	depends on DT_HAS_I2C_SHELL_ENABLED
+	help
+	  Enable the I2C shell only for the I2C controllers identified by the
+	  "i2c-shell" compatible node.
+
 config I2C_STATS
 	bool "I2C device Stats"
 	depends on STATS

@@ -22,6 +22,32 @@ LOG_MODULE_REGISTER(i2c_shell, CONFIG_LOG_DEFAULT_LEVEL);
 /* Maximum bytes we can write or read at once */
 #define MAX_I2C_BYTES 16
 
+#if CONFIG_I2C_SHELL_CONTROLLER_LIST
+#define DT_DRV_COMPAT  i2c_shell
+#define I2C_SHELL_INST DT_DRV_INST(0)
+
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
+	     "only one 'i2c-shell' compatible node may be present");
+
+BUILD_ASSERT(DT_PROP_LEN(I2C_SHELL_INST, i2c_controllers) ==
+	DT_PROP_LEN(I2C_SHELL_INST, i2c_controller_names),
+	"The i2c-controllers and i2c-controller-names property lengths must match");
+
+struct i2c_controller {
+	const struct device *dev;
+	const char *name;
+};
+
+#define I2C_CTRL_DEV_AND_NAME_COMMA(node_id, prop, idx)                                            \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx)),                       \
+		.name = DT_PROP_BY_IDX(node_id, i2c_controller_names, idx),                        \
+	},
+
+static const struct i2c_controller i2c_shell_controllers[] = {
+	DT_FOREACH_PROP_ELEM(I2C_SHELL_INST, i2c_controllers, I2C_CTRL_DEV_AND_NAME_COMMA)};
+#endif
+
 static int get_bytes_count_for_hex(char *arg)
 {
 	int length = (strlen(arg) + 1) / 2;
@@ -31,6 +57,24 @@ static int get_bytes_count_for_hex(char *arg)
 	}
 
 	return MIN(MAX_BYTES_FOR_REGISTER_INDEX, length);
+}
+
+const struct device *i2c_shell_get_binding(const char *name)
+{
+#if CONFIG_I2C_SHELL_CONTROLLER_LIST
+	for (int i = 0; i < ARRAY_SIZE(i2c_shell_controllers); i++) {
+		if (strcmp(name, i2c_shell_controllers[i].name) == 0) {
+			if (device_is_ready(i2c_shell_controllers[i].dev)) {
+				return i2c_shell_controllers[i].dev;
+			}
+			break;
+		}
+	}
+
+	return NULL;
+#else
+	return device_get_binding(name);
+#endif
 }
 
 /*
@@ -52,7 +96,7 @@ static int cmd_i2c_scan(const struct shell *shell_ctx, size_t argc, char **argv)
 	const struct device *dev;
 	uint8_t cnt = 0, first = 0x04, last = 0x77;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = i2c_shell_get_binding(argv[ARGV_DEV]);
 
 	if (!dev) {
 		shell_error(shell_ctx, "I2C: Device driver %s not found.", argv[ARGV_DEV]);
@@ -96,7 +140,7 @@ static int cmd_i2c_recover(const struct shell *shell_ctx, size_t argc, char **ar
 	const struct device *dev;
 	int err;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = i2c_shell_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(shell_ctx, "I2C: Device driver %s not found.", argv[1]);
 		return -ENODEV;
@@ -126,7 +170,7 @@ static int i2c_write_from_buffer(const struct shell *shell_ctx, char *s_dev_name
 	int ret;
 	int i;
 
-	dev = device_get_binding(s_dev_name);
+	dev = i2c_shell_get_binding(s_dev_name);
 	if (!dev) {
 		shell_error(shell_ctx, "I2C: Device driver %s not found.", s_dev_name);
 		return -ENODEV;
@@ -182,7 +226,7 @@ static int i2c_read_to_buffer(const struct shell *shell_ctx, char *s_dev_name, c
 	int dev_addr;
 	int ret;
 
-	dev = device_get_binding(s_dev_name);
+	dev = i2c_shell_get_binding(s_dev_name);
 	if (!dev) {
 		shell_error(shell_ctx, "I2C: Device driver %s not found.", s_dev_name);
 		return -ENODEV;
@@ -245,6 +289,20 @@ static int cmd_i2c_read(const struct shell *shell_ctx, size_t argc, char **argv)
 	return ret;
 }
 
+#if CONFIG_I2C_SHELL_CONTROLLER_LIST
+static void device_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+
+	if (idx < ARRAY_SIZE(i2c_shell_controllers) &&
+	    device_is_ready(i2c_shell_controllers[idx].dev)) {
+		entry->syntax = i2c_shell_controllers[idx].name;
+	}
+}
+#else
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	const struct device *dev = shell_device_lookup(idx, NULL);
@@ -254,6 +312,7 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->help = NULL;
 	entry->subcmd = NULL;
 }
+#endif
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
