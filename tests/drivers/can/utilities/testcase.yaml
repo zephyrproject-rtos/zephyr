@@ -4,3 +4,4 @@ tests:
       - native_posix
       - native_posix_64
     tags: drivers can
+    depends_on: can
