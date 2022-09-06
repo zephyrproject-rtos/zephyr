@@ -47,7 +47,7 @@ struct thread_iterator_info {
 /**
  * Command handler: os echo
  */
-#if CONFIG_OS_MGMT_ECHO
+#ifdef CONFIG_OS_MGMT_ECHO
 static int
 os_mgmt_echo(struct mgmt_ctxt *ctxt)
 {
@@ -85,9 +85,9 @@ os_mgmt_echo(struct mgmt_ctxt *ctxt)
 }
 #endif
 
-#if CONFIG_OS_MGMT_TASKSTAT
+#ifdef CONFIG_OS_MGMT_TASKSTAT
 
-#if defined(CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME)
+#ifdef CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME
 static inline bool
 os_mgmt_taskstat_encode_thread_name(zcbor_state_t *zse, int idx,
 				    const struct k_thread *thread)
@@ -286,7 +286,7 @@ os_mgmt_reset(struct mgmt_ctxt *ctxt)
 }
 #endif
 
-#if CONFIG_OS_MGMT_MCUMGR_PARAMS
+#ifdef CONFIG_OS_MGMT_MCUMGR_PARAMS
 static int
 os_mgmt_mcumgr_params(struct mgmt_ctxt *ctxt)
 {
@@ -303,12 +303,12 @@ os_mgmt_mcumgr_params(struct mgmt_ctxt *ctxt)
 #endif
 
 static const struct mgmt_handler os_mgmt_group_handlers[] = {
-#if CONFIG_OS_MGMT_ECHO
+#ifdef CONFIG_OS_MGMT_ECHO
 	[OS_MGMT_ID_ECHO] = {
 		os_mgmt_echo, os_mgmt_echo
 	},
 #endif
-#if CONFIG_OS_MGMT_TASKSTAT
+#ifdef CONFIG_OS_MGMT_TASKSTAT
 	[OS_MGMT_ID_TASKSTAT] = {
 		os_mgmt_taskstat_read, NULL
 	},
@@ -318,7 +318,7 @@ static const struct mgmt_handler os_mgmt_group_handlers[] = {
 		NULL, os_mgmt_reset
 	},
 #endif
-#if CONFIG_OS_MGMT_MCUMGR_PARAMS
+#ifdef CONFIG_OS_MGMT_MCUMGR_PARAMS
 	[OS_MGMT_ID_MCUMGR_PARAMS] = {
 		os_mgmt_mcumgr_params, NULL
 	},
