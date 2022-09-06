@@ -18,13 +18,13 @@
 #include <zephyr/bluetooth/mesh/shell.h>
 
 /* Private includes for raw Network & Transport layer access */
-#include "mesh.h"
-#include "net.h"
-#include "rpl.h"
-#include "transport.h"
-#include "foundation.h"
-#include "settings.h"
-#include "access.h"
+#include "mesh/mesh.h"
+#include "mesh/net.h"
+#include "mesh/rpl.h"
+#include "mesh/transport.h"
+#include "mesh/foundation.h"
+#include "mesh/settings.h"
+#include "mesh/access.h"
 
 #define CID_NVAL   0xffff
 
