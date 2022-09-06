@@ -153,6 +153,13 @@ static void thread_entry_wait(void *p1, void *p2, void *p3)
 	k_sem_give(&wait_sema);
 }
 
+/**
+ * @brief LIFOs
+ * @defgroup kernel_lifo_tests LIFOs
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
 
 /**
  * @addtogroup kernel_lifo_tests
