@@ -28,7 +28,6 @@
 #endif
 #define RAMABLE_REGION              RAM
 
-#define _VECTOR_SECTION_NAME        vector
 #define _EXCEPTION_SECTION_NAME     exceptions
 #define _RESET_SECTION_NAME         reset
 
@@ -116,18 +115,10 @@ SECTIONS
     GROUP_START(ROMABLE_REGION)
     __rom_region_start = ROM_BASE;
 
-    SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
-    {
-		/* In XIP mode, the .init section must be at the start of ROM */
-		. = ALIGN(4);
-		KEEP(*(.init.*))
-		. = ALIGN(4);
-		KEEP(*(.vectors.*))
-    } GROUP_LINK_IN(ROMABLE_REGION)
-
     SECTION_PROLOGUE(rom_start,,)
     {
 		. = ALIGN(16);
+		KEEP(*(.init.*))
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...).
  */
