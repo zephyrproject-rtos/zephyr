@@ -23,9 +23,10 @@ static char dynamic_cmd_buffer[][MAX_CMD_SYNTAX_LEN] = {
 
 static void test_shell_execute_cmd(const char *cmd, int result)
 {
+	const struct shell *sh = shell_backend_dummy_get_ptr();
 	int ret;
 
-	ret = shell_execute_cmd(NULL, cmd);
+	ret = shell_execute_cmd(sh, cmd);
 
 	TC_PRINT("shell_execute_cmd(%s): %d\n", cmd, ret);
 
@@ -490,8 +491,11 @@ ZTEST(shell, test_section_cmd)
 
 static void *shell_setup(void)
 {
-	/* Let the shell backend initialize. */
-	k_msleep(20);
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+
+	/* Wait for the initialization of the shell dummy backend. */
+	WAIT_FOR(shell_ready(sh), 20000, k_msleep(1));
+
 	return NULL;
 }
 
