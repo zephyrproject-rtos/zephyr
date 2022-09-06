@@ -27,6 +27,8 @@ osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc.defconfig"
 osource "soc/$(ARCH)/*/Kconfig.defconfig"
 # This loads the toolchain defconfigs
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
+# This loads the testsuite defconfig
+source "subsys/testsuite/Kconfig.defconfig"
 
 # This should be early since the autogen Kconfig.dts symbols may get
 # used by modules
