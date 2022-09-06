@@ -1400,6 +1400,15 @@ ZTEST(devicetree_api, test_foreach_prop_elem)
 	zassert_equal(array[1], 4000, "");
 	zassert_equal(array[2], 6000, "");
 
+	int array_sep[] = {
+		DT_FOREACH_PROP_ELEM_SEP(TEST_ARRAYS, a, DT_PROP_BY_IDX, (,))
+	};
+
+	zassert_equal(ARRAY_SIZE(array_sep), 3, "");
+	zassert_equal(array_sep[0], 1000, "");
+	zassert_equal(array_sep[1], 2000, "");
+	zassert_equal(array_sep[2], 3000, "");
+
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_array_holder
 
@@ -1411,6 +1420,15 @@ ZTEST(devicetree_api, test_foreach_prop_elem)
 	zassert_equal(inst_array[0], array[0], "");
 	zassert_equal(inst_array[1], array[1], "");
 	zassert_equal(inst_array[2], array[2], "");
+
+	int inst_array_sep[] = {
+		DT_INST_FOREACH_PROP_ELEM_SEP(0, a, DT_PROP_BY_IDX, (,))
+	};
+
+	zassert_equal(ARRAY_SIZE(inst_array_sep), ARRAY_SIZE(array_sep), "");
+	zassert_equal(inst_array_sep[0], array_sep[0], "");
+	zassert_equal(inst_array_sep[1], array_sep[1], "");
+	zassert_equal(inst_array_sep[2], array_sep[2], "");
 #undef TIMES_TWO
 }
 
@@ -1428,6 +1446,19 @@ ZTEST(devicetree_api, test_foreach_prop_elem_varg)
 	zassert_equal(array[1], 4003, "");
 	zassert_equal(array[2], 6003, "");
 
+#define PROP_PLUS_ARG(node_id, prop, idx, arg) \
+	(DT_PROP_BY_IDX(node_id, prop, idx) + arg)
+
+	int array_sep[] = {
+		DT_FOREACH_PROP_ELEM_SEP_VARGS(TEST_ARRAYS, a, PROP_PLUS_ARG,
+					       (,), 3)
+	};
+
+	zassert_equal(ARRAY_SIZE(array_sep), 3, "");
+	zassert_equal(array_sep[0], 1003, "");
+	zassert_equal(array_sep[1], 2003, "");
+	zassert_equal(array_sep[2], 3003, "");
+
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_array_holder
 
@@ -1439,6 +1470,16 @@ ZTEST(devicetree_api, test_foreach_prop_elem_varg)
 	zassert_equal(inst_array[0], array[0], "");
 	zassert_equal(inst_array[1], array[1], "");
 	zassert_equal(inst_array[2], array[2], "");
+
+	int inst_array_sep[] = {
+		DT_INST_FOREACH_PROP_ELEM_SEP_VARGS(0, a, PROP_PLUS_ARG, (,),
+						    3)
+	};
+
+	zassert_equal(ARRAY_SIZE(inst_array_sep), ARRAY_SIZE(array_sep), "");
+	zassert_equal(inst_array_sep[0], array_sep[0], "");
+	zassert_equal(inst_array_sep[1], array_sep[1], "");
+	zassert_equal(inst_array_sep[2], array_sep[2], "");
 #undef TIMES_TWO
 }
 
