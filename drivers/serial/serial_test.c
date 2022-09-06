@@ -9,8 +9,8 @@
  * devices for the "vnd,serial" devicetree compatible used in test code.
  */
 
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/kernel.h>
 
 #define DT_DRV_COMPAT vnd_serial
 
@@ -29,19 +29,16 @@ static int serial_vnd_err_check(const struct device *dev)
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-static int serial_vnd_configure(const struct device *dev,
-				const struct uart_config *cfg)
+static int serial_vnd_configure(const struct device *dev, const struct uart_config *cfg)
 {
 	return -ENOTSUP;
 }
 
-static int serial_vnd_config_get(const struct device *dev,
-				 struct uart_config *cfg)
+static int serial_vnd_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	return -ENOTSUP;
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
-
 
 static const struct uart_driver_api serial_vnd_api = {
 	.poll_in = serial_vnd_poll_in,
@@ -58,10 +55,8 @@ static int serial_vnd_init(const struct device *dev)
 	return 0;
 }
 
-#define VND_SERIAL_INIT(n)						\
-	DEVICE_DT_INST_DEFINE(n, &serial_vnd_init, NULL,		\
-			      NULL, NULL, POST_KERNEL,			\
-			      CONFIG_SERIAL_INIT_PRIORITY,		\
-			      &serial_vnd_api);
+#define VND_SERIAL_INIT(n)                                                                         \
+	DEVICE_DT_INST_DEFINE(n, &serial_vnd_init, NULL, NULL, NULL, POST_KERNEL,                  \
+			      CONFIG_SERIAL_INIT_PRIORITY, &serial_vnd_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_SERIAL_INIT)
