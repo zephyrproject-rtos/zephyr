@@ -18,6 +18,7 @@ extern "C" {
 /**
  * @brief IPC service static VRINGs API
  * @defgroup ipc_service_static_vrings_api IPC service static VRINGs API
+ * @ingroup ipc
  * @{
  */
 
