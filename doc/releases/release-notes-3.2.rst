@@ -278,6 +278,10 @@ Libraries / Subsystems
   * MCUMGR taskstat runtime field support has been added, if
     :kconfig:option:`CONFIG_OS_MGMT_TASKSTAT` is enabled, which will report the
     number of CPU cycles have been spent executing the thread.
+  * MCUMgr transport API drops ``zst`` parameter, of :c:struct:`zephyr_smp_transport`
+    type, from :c:func:`zephyr_smp_transport_out_fn` type callback as it has
+    not been used, and the ``nb`` parameter, of :c:struct:`net_buf` type,
+    can carry additional transport information when needed.
 
 HALs
 ****
