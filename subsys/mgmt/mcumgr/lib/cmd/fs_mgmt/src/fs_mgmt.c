@@ -424,11 +424,15 @@ fs_mgmt_file_hash_checksum(struct mgmt_ctxt *ctxt)
 				tmp_val = (uint64_t)(*(uint16_t *)output);
 			} else if (group->output_size == sizeof(uint32_t)) {
 				tmp_val = (uint64_t)(*(uint32_t *)output);
+#if FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE >= 8
 			} else if (group->output_size == sizeof(uint64_t)) {
 				tmp_val = (*(uint64_t *)output);
+#endif
 			} else {
-				LOG_ERR("Unable to handle numerical checksum size %u",
-					group->output_size);
+				LOG_ERR("Unable to handle numerical checksum size %u, "
+					"max allowed %u", group->output_size,
+					MAX(sizeof(uint64_t),
+					    FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE));
 
 				return MGMT_ERR_EUNKNOWN;
 			}
