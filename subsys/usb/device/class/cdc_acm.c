@@ -1009,7 +1009,7 @@ static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 	dev_data->tx_ready = false;
 
 	if (!ring_buf_put(dev_data->tx_ringbuf, &c, 1)) {
-		LOG_INF("Ring buffer full, drain buffer");
+		LOG_DBG("Ring buffer full, drain buffer");
 		if (!ring_buf_get(dev_data->tx_ringbuf, NULL, 1) ||
 		    !ring_buf_put(dev_data->tx_ringbuf, &c, 1)) {
 			LOG_ERR("Failed to drain buffer");
