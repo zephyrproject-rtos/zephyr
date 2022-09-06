@@ -862,6 +862,9 @@ def write_global_macros(edt):
     out_dt_define("FOREACH_OKAY_HELPER(fn)",
                   " ".join(f"fn(DT_{node.z_path_id})" for node in edt.nodes
                            if node.status == "okay"))
+    out_dt_define("FOREACH_OKAY_VARGS_HELPER(fn, ...)",
+                  " ".join(f"fn(DT_{node.z_path_id}, __VA_ARGS__)" for node in edt.nodes
+                           if node.status == "okay"))
 
     n_okay_macros = {}
     for_each_macros = {}
