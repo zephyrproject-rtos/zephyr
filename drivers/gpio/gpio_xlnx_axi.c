@@ -249,10 +249,9 @@ static const struct gpio_driver_api gpio_xlnx_axi_driver_api = {
 
 #define GPIO_XLNX_AXI_GPIO2_HAS_COMPAT_STATUS_OKAY(n)			\
 	UTIL_AND(							\
-		DT_NODE_HAS_COMPAT(DT_CHILD(DT_DRV_INST(n), gpio2),	\
+		DT_NODE_HAS_COMPAT(DT_INST_CHILD(n, gpio2),		\
 				   xlnx_xps_gpio_1_00_a_gpio2),		\
-		DT_NODE_HAS_STATUS(DT_CHILD(DT_DRV_INST(n), gpio2),	\
-				   okay)				\
+		DT_NODE_HAS_STATUS(DT_INST_CHILD(n, gpio2), okay)	\
 		)
 
 #define GPIO_XLNX_AXI_GPIO2_COND_INIT(n)				\
@@ -281,7 +280,7 @@ static const struct gpio_driver_api gpio_xlnx_axi_driver_api = {
 		.all_outputs = DT_INST_PROP_OR(n, xlnx_all_outputs2, 0),\
 	};								\
 									\
-	DEVICE_DT_DEFINE(DT_CHILD(DT_DRV_INST(n), gpio2),		\
+	DEVICE_DT_DEFINE(DT_INST_CHILD(n, gpio2),			\
 			&gpio_xlnx_axi_init,				\
 			NULL,						\
 			&gpio_xlnx_axi_##n##_2_data,			\

@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 #include <zephyr/drivers/ptp_clock.h>
 
-#define PTP_INST_NODEID(n) DT_CHILD(DT_DRV_INST(n), ptp)
+#define PTP_INST_NODEID(n) DT_INST_CHILD(n, ptp)
 #endif
 
 #if defined(CONFIG_ETH_E1000_VERBOSE_DEBUG)
