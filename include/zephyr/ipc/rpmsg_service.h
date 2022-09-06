@@ -16,6 +16,7 @@ extern "C" {
 /**
  * @brief RPMsg service API
  * @defgroup rpmsg_service_api RPMsg service APIs
+ * @ingroup ipc
  * @{
  */
 

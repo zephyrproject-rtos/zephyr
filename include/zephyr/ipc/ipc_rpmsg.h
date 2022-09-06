@@ -18,6 +18,7 @@ extern "C" {
 /**
  * @brief IPC service RPMsg API
  * @defgroup ipc_service_rpmsg_api IPC service RPMsg API
+ * @ingroup ipc
  * @{
  */
 

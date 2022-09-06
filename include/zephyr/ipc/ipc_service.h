@@ -15,8 +15,15 @@ extern "C" {
 #endif
 
 /**
+ * @brief IPC
+ * @defgroup ipc IPC
+ * @{
+ * @}
+ */
+/**
  * @brief IPC Service API
  * @defgroup ipc_service_api IPC service APIs
+ * @ingroup ipc
  * @{
  *
  * Some terminology:
