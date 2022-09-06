@@ -46,11 +46,6 @@ manifest:
       path: modules/fs/fatfs
       groups:
         - fs
-    - name: fff
-      revision: 6ce5ba26486e93d5b7696a3e23f0585932c14b16
-      path: modules/lib/fff
-      groups:
-        - ci
     - name: hal_altera
       revision: 0d225ddd314379b32355a00fb669eacf911e750d
       path: modules/hal/altera
@@ -263,9 +258,6 @@ manifest:
     - name: zscilib
       path: modules/lib/zscilib
       revision: ca070ddabdaf67175a2da901d0bd62e8899371c5
-
-  group-filter:
-    - -ci
 
   self:
     path: zephyr
