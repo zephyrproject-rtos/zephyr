@@ -7,6 +7,10 @@
 #include <zephyr/drivers/uart.h>
 #include <string.h>
 #include "NuMicro.h"
+#ifdef CONFIG_CLOCK_CONTROL_NUMAKER_SCC
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_numaker.h>
+#endif
 #ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
 #endif
@@ -16,7 +20,12 @@
 struct uart_numaker_config {
 	UART_T *uart;
 	uint32_t id_rst;
-	uint32_t id_clk;
+	uint32_t clk_modidx;
+    uint32_t clk_src;
+    uint32_t clk_div;
+#ifdef CONFIG_CLOCK_CONTROL_NUMAKER_SCC
+    const struct device *clk_dev;
+#endif
     uint32_t irq_n;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
@@ -184,29 +193,49 @@ static int uart_numaker_init(const struct device *dev)
 {
 	const struct uart_numaker_config *config = dev->config;
 	struct uart_numaker_data *pData = dev->data;
-    int err;
+    int err = 0;
 
 	SYS_UnlockReg();
 
-	/* Enable UART module clock */
-	CLK_EnableModuleClock(config->id_clk);
+#ifdef CONFIG_CLOCK_CONTROL_NUMAKER_SCC
+    struct numaker_scc_subsys scc_subsys;
 
-  /* Select UART0 module clock source as HIRC and UART0 module clock divider as 1 */
-  CLK_SetModuleClock(config->id_clk, CLK_CLKSEL1_UART0SEL_HIRC, CLK_CLKDIV0_UART0(1));
-               
+    memset(&scc_subsys, 0x00, sizeof(scc_subsys));
+    scc_subsys.subsys_id        = NUMAKER_SCC_SUBSYS_ID_PCC;
+    scc_subsys.pcc.clk_modidx   = config->clk_modidx;
+    scc_subsys.pcc.clk_src      = config->clk_src;
+    scc_subsys.pcc.clk_div      = config->clk_div;
+
+    /* Equivalent to CLK_EnableModuleClock() */
+    err = clock_control_on(config->clk_dev, (clock_control_subsys_t) &scc_subsys);
+    if (err != 0) {
+        goto move_exit;
+    }
+    /* Equivalent to CLK_SetModuleClock() */
+    err = clock_control_configure(config->clk_dev, (clock_control_subsys_t) &scc_subsys, NULL);
+    if (err != 0) {
+        goto move_exit;
+    }
+#else
+    /* Enable UART module clock */
+    CLK_EnableModuleClock(config->clk_modidx);
+
+    /* Select UART module clock source/divider */
+    CLK_SetModuleClock(config->clk_modidx, config->clk_src, config->clk_div);
+#endif
+
 	/* Set pinctrl for UART0 RXD and TXD */
     /* Set multi-function pins for UART0 RXD and TXD */
 #ifdef CONFIG_PINCTRL
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (err != 0) {
-		return err;
-	}
+    if (err != 0) {
+        goto move_exit;
+    }
 #else
+    /* For M46x EVB debug port */
     SET_UART0_RXD_PB12();
     SET_UART0_TXD_PB13();    
 #endif 
-
-	SYS_LockReg();
   
 	SYS_ResetModule(config->id_rst);
     
@@ -215,7 +244,10 @@ static int uart_numaker_init(const struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
 #endif
-	return 0;
+
+move_exit:
+	SYS_LockReg();
+	return err;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -410,6 +442,12 @@ static const struct uart_driver_api uart_numaker_driver_api = {
 
 
 
+#ifdef CONFIG_CLOCK_CONTROL_NUMAKER_SCC
+#define CLOCK_CTRL_INIT(n) .clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(n))),
+#else
+#define CLOCK_CTRL_INIT(n)
+#endif
+
 #ifdef CONFIG_PINCTRL
 #define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
 #define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
@@ -441,7 +479,10 @@ static const struct uart_driver_api uart_numaker_driver_api = {
     static const struct uart_numaker_config uart_numaker_cfg_##inst = {	\
         .uart = (UART_T *)DT_INST_REG_ADDR(inst),			\
         .id_rst = DT_INST_PROP(inst, reset),					\
-        .id_clk = DT_INST_PROP(inst, clk_module),					\
+        .clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),    \
+        .clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),          \
+        .clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),    \
+        CLOCK_CTRL_INIT(inst)					                \
         .irq_n = DT_INST_IRQN(inst),					\
         PINCTRL_INIT(inst)							\
         IRQ_FUNC_INIT(inst)							\

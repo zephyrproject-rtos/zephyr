@@ -67,7 +67,7 @@
 			reg = <0x40070000 0x1000>;
 			interrupts = <36 0>;
             reset = <UART0_RST>;
-            clk_module = <UART0_MODULE>;
+            clocks = <&pcc UART0_MODULE CLK_CLKSEL1_UART0SEL_HIRC CLK_CLKDIV0_UART0(1)>;
 			status = "disabled";
 			label = "UART_0";
 		};
@@ -77,7 +77,7 @@
 			reg = <0x40071000 0x1000>;
 			interrupts = <37 0>;
             reset = <UART1_RST>;
-            clk_module = <UART1_MODULE>;
+            clocks = <&pcc UART1_MODULE CLK_CLKSEL1_UART1SEL_HIRC CLK_CLKDIV0_UART1(1)>;
 			status = "disabled";
 			label = "UART_1";
 		};
@@ -87,7 +87,7 @@
 			reg = <0x40072000 0x1000>;
 			interrupts = <48 0>;
             reset = <UART2_RST>;
-            clk_module = <UART2_MODULE>;
+            clocks = <&pcc UART2_MODULE CLK_CLKSEL3_UART2SEL_HIRC CLK_CLKDIV4_UART2(1)>;
 			status = "disabled";
 			label = "UART_2";
 		};
@@ -97,7 +97,7 @@
 			reg = <0x40073000 0x1000>;
 			interrupts = <49 0>;
             reset = <UART3_RST>;
-            clk_module = <UART3_MODULE>;
+            clocks = <&pcc UART3_MODULE CLK_CLKSEL3_UART3SEL_HIRC CLK_CLKDIV4_UART3(1)>;
 			status = "disabled";
 			label = "UART_3";
 		};
@@ -107,7 +107,7 @@
 			reg = <0x40074000 0x1000>;
 			interrupts = <74 0>;
             reset = <UART4_RST>;
-            clk_module = <UART4_MODULE>;
+            clocks = <&pcc UART4_MODULE CLK_CLKSEL3_UART4SEL_HIRC CLK_CLKDIV4_UART4(1)>;
 			status = "disabled";
 			label = "UART_4";
 		};
@@ -117,7 +117,7 @@
 			reg = <0x40075000 0x1000>;
 			interrupts = <75 0>;
             reset = <UART5_RST>;
-            clk_module = <UART5_MODULE>;
+            clocks = <&pcc UART5_MODULE CLK_CLKSEL3_UART5SEL_HIRC CLK_CLKDIV4_UART5(1)>;
 			status = "disabled";
 			label = "UART_5";
 		};
@@ -127,7 +127,7 @@
 			reg = <0x40076000 0x1000>;
 			interrupts = <102 0>;
             reset = <UART6_RST>;
-            clk_module = <UART6_MODULE>;
+            clocks = <&pcc UART6_MODULE CLK_CLKSEL3_UART6SEL_HIRC CLK_CLKDIV4_UART6(1)>;
 			status = "disabled";
 			label = "UART_6";
 		};
@@ -137,7 +137,7 @@
 			reg = <0x40077000 0x1000>;
 			interrupts = <103 0>;
             reset = <UART7_RST>;
-            clk_module = <UART7_MODULE>;
+            clocks = <&pcc UART7_MODULE CLK_CLKSEL3_UART7SEL_HIRC CLK_CLKDIV4_UART7(1)>;
 			status = "disabled";
 			label = "UART_7";
 		};
@@ -147,7 +147,7 @@
 			reg = <0x40078000 0x1000>;
 			interrupts = <99 0>;
             reset = <UART8_RST>;
-            clk_module = <UART8_MODULE>;
+            clocks = <&pcc UART8_MODULE CLK_CLKSEL2_UART8SEL_HIRC CLK_CLKDIV5_UART8(1)>;
 			status = "disabled";
 			label = "UART_8";
 		};
@@ -157,7 +157,7 @@
 			reg = <0x40079000 0x1000>;
 			interrupts = <100 0>;
             reset = <UART9_RST>;
-            clk_module = <UART9_MODULE>;
+            clocks = <&pcc UART9_MODULE CLK_CLKSEL2_UART9SEL_HIRC CLK_CLKDIV5_UART9(1)>;
 			status = "disabled";
 			label = "UART_9";
 		};        

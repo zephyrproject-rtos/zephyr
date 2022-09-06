@@ -18,9 +18,8 @@ properties:
       required: true
       type: int
 
-    clk_module:
+    clocks:
       required: true
-      type: int
-      
+
     pinctrl-0:
       required: true
