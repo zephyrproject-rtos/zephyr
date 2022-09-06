@@ -9,6 +9,6 @@ config BOARD
 	default "nucleo_wl55jc"
 
 config SYS_CLOCK_TICKS_PER_SEC
-	default 4096 if STM32_LPTIM_TIMER
+	default 4000 if STM32_LPTIM_TIMER
 
 endif # BOARD_NUCLEO_WL55JC
