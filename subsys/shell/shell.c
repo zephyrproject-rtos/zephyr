@@ -1525,6 +1525,8 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 void shell_hexdump_line(const struct shell *shell, unsigned int offset,
 			const uint8_t *data, size_t len)
 {
+	__ASSERT_NO_MSG(shell);
+
 	int i;
 
 	shell_fprintf(shell, SHELL_NORMAL, "%08X: ", offset);
@@ -1564,6 +1566,8 @@ void shell_hexdump_line(const struct shell *shell, unsigned int offset,
 
 void shell_hexdump(const struct shell *shell, const uint8_t *data, size_t len)
 {
+	__ASSERT_NO_MSG(shell);
+
 	const uint8_t *p = data;
 	size_t line_len;
 
@@ -1681,6 +1685,8 @@ int shell_mode_delete_set(const struct shell *shell, bool val)
 
 void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 {
+	__ASSERT_NO_MSG(sh);
+
 	sh->ctx->bypass = bypass;
 }
 
