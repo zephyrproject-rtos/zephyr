@@ -25,6 +25,18 @@ extern "C" {
 		BT_MESH_HEALTH_PUB_DEFINE(_name,                               \
 					  BT_MESH_SHELL_CUR_FAULTS_MAX);
 
+/** Target context for the mesh shell */
+struct bt_mesh_shell_target {
+	/* Local address of the device */
+	uint16_t local;
+	/* Current destination address */
+	uint16_t dst;
+	/* Current net index */
+	uint16_t net_idx;
+	/* Current app index */
+	uint16_t app_idx;
+};
+
 /** @brief External reference to health server */
 extern struct bt_mesh_health_srv bt_mesh_shell_health_srv;
 
@@ -33,6 +45,9 @@ extern struct bt_mesh_health_cli bt_mesh_shell_health_cli;
 
 /** @brief External reference to provisioning handler. */
 extern struct bt_mesh_prov bt_mesh_shell_prov;
+
+/** @brief External reference to shell target context. */
+extern struct bt_mesh_shell_target bt_mesh_shell_target_ctx;
 
 #ifdef __cplusplus
 }
