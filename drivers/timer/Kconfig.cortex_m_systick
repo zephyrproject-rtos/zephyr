@@ -3,18 +3,14 @@
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ARM_V6M_SYSTICK := arm,armv6m-systick
-DT_COMPAT_ARM_V7M_SYSTICK := arm,armv7m-systick
-DT_COMPAT_ARM_V8M_SYSTICK := arm,armv8m-systick
-DT_COMPAT_ARM_V8_1M_SYSTICK := arm,armv8.1m-systick
-
 config CORTEX_M_SYSTICK
 	bool "Cortex-M SYSTICK timer"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
-	default $(dt_compat_enabled,$(DT_COMPAT_ARM_V6M_SYSTICK)) || \
-		$(dt_compat_enabled,$(DT_COMPAT_ARM_V7M_SYSTICK)) || \
-		$(dt_compat_enabled,$(DT_COMPAT_ARM_V8M_SYSTICK)) || \
-		$(dt_compat_enabled,$(DT_COMPAT_ARM_V8_1M_SYSTICK))
+	default y
+	depends on DT_HAS_ARM_ARMV6M_SYSTICK_ENABLED || \
+		   DT_HAS_ARM_ARMV7M_SYSTICK_ENABLED || \
+		   DT_HAS_ARM_ARMV8M_SYSTICK_ENABLED || \
+		   DT_HAS_ARM_ARMV8_1M_SYSTICK_ENABLED
 	select TICKLESS_CAPABLE
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	select CORTEX_M_SYSTICK_INSTALL_ISR
