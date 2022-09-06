@@ -313,7 +313,6 @@ fs_mgmt_file_hash_checksum(struct mgmt_ctxt *ctxt)
 {
 	char path[CONFIG_FS_MGMT_PATH_SIZE + 1];
 	char type_arr[HASH_CHECKSUM_TYPE_SIZE + 1] = FS_MGMT_CHECKSUM_HASH_DEFAULT;
-	char output[FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE];
 	uint64_t len = ULLONG_MAX;
 	uint64_t off = 0;
 	size_t file_len;
@@ -326,6 +325,15 @@ fs_mgmt_file_hash_checksum(struct mgmt_ctxt *ctxt)
 	size_t decoded;
 	struct fs_file_t file;
 	const struct hash_checksum_mgmt_group *group = NULL;
+	union output {
+		char str[FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE];
+		uint8_t u8;
+		uint16_t u16;
+		uint32_t u32;
+#if FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE >= 8
+		uint64_t u64;
+#endif
+	} output __aligned(MIN(sizeof(uint64_t), sizeof(union output)));
 
 	struct zcbor_map_decode_key_val fs_hash_checksum_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_VAL(type, zcbor_tstr_decode, &type),
@@ -390,7 +398,7 @@ fs_mgmt_file_hash_checksum(struct mgmt_ctxt *ctxt)
 
 	/* Calculate hash/checksum using function */
 	file_len = 0;
-	rc = group->function(&file, output, &file_len, len);
+	rc = group->function(&file, (void *)&output, &file_len, len);
 
 	fs_close(&file);
 
@@ -413,20 +421,20 @@ fs_mgmt_file_hash_checksum(struct mgmt_ctxt *ctxt)
 
 		if (group->byte_string == true) {
 			/* Output is a byte string */
-			ok &= zcbor_bstr_encode_ptr(zse, output, group->output_size);
+			ok &= zcbor_bstr_encode_ptr(zse, output.str, group->output_size);
 		} else {
 			/* Output is a number */
 			uint64_t tmp_val = 0;
 
 			if (group->output_size == sizeof(uint8_t)) {
-				tmp_val = (uint64_t)(*(uint8_t *)output);
+				tmp_val = (uint64_t)output.u8;
 			} else if (group->output_size == sizeof(uint16_t)) {
-				tmp_val = (uint64_t)(*(uint16_t *)output);
+				tmp_val = (uint64_t)output.u16;
 			} else if (group->output_size == sizeof(uint32_t)) {
-				tmp_val = (uint64_t)(*(uint32_t *)output);
+				tmp_val = (uint64_t)output.u32;
 #if FS_MGMT_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE >= 8
 			} else if (group->output_size == sizeof(uint64_t)) {
-				tmp_val = (*(uint64_t *)output);
+				tmp_val = (uint64_t)output.u64;
 #endif
 			} else {
 				LOG_ERR("Unable to handle numerical checksum size %u, "
