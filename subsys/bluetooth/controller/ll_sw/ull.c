@@ -435,6 +435,20 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 			  (RX_CNT + BT_CTLR_MAX_CONNECTABLE + \
 			   BT_CTLR_ADV_SET + BT_CTLR_SCAN_SYNC_SET))
 
+/* Macros for encoding number of completed packets.
+ *
+ * If the pointer is numerically below 0x100, the pointer is treated as either
+ * data or control PDU.
+ *
+ * NOTE: For any architecture which would map RAM below address 0x100, this will
+ * not work.
+ */
+#define IS_NODE_TX_PTR(_p) ((uint32_t)(_p) & ~0xFFUL)
+#define IS_NODE_TX_DATA(_p) ((uint32_t)(_p) == 0x01UL)
+#define IS_NODE_TX_CTRL(_p) ((uint32_t)(_p) == 0x02UL)
+#define NODE_TX_DATA_SET(_p) ((_p) = (void *)0x01UL)
+#define NODE_TX_CTRL_SET(_p) ((_p) = (void *)0x012UL)
+
 /* Macros for encoding number of ISO SDU fragments in the enqueued TX node
  * pointer. This is needed to ensure only a single release of the node and link
  * in tx_cmplt_get, even when called several times. At all times, the number of
@@ -446,8 +460,7 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
  * NOTE: For any architecture which would map RAM below address 0x100, this will
  * not work.
  */
-#define IS_NODE_TX_PTR(_p) ((uint32_t)(_p) & ~0x000000FF)
-#define NODE_TX_FRAGMENTS_GET(_p) ((uint32_t)(_p) & 0xFF)
+#define NODE_TX_FRAGMENTS_GET(_p) ((uint32_t)(_p) & 0xFFUL)
 #define NODE_TX_FRAGMENTS_SET(_p, _cmplt) ((_p) = (void *)(uint32_t)(_cmplt))
 
 static struct {
@@ -2568,24 +2581,28 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 			 *
 			 *       A hack is used here that depends on the fact
 			 *       that memory addresses have a value greater than
-			 *       0x03, to determined if a node Tx has been
+			 *       0xFF, to determined if a node Tx has been
 			 *       released in a prior iteration of this function.
 			 */
 			tx_node = tx->node;
 			p = (void *)tx_node->pdu;
-			if (!tx_node || (tx_node == (void *)0x01) ||
-			    (((uint32_t)tx_node & ~0x03) &&
+			if (!tx_node ||
+			    (IS_NODE_TX_PTR(tx_node) &&
 			     (p->ll_id == PDU_DATA_LLID_DATA_START ||
-			      p->ll_id == PDU_DATA_LLID_DATA_CONTINUE))) {
+			      p->ll_id == PDU_DATA_LLID_DATA_CONTINUE)) ||
+			    (!IS_NODE_TX_PTR(tx_node) &&
+			     IS_NODE_TX_DATA(tx_node))) {
 				/* data packet, hence count num cmplt */
-				tx->node = (void *)0x01;
+				NODE_TX_DATA_SET(tx->node);
 				cmplt++;
 			} else {
-				/* ctrl packet or flushed, hence dont count num cmplt */
-				tx->node = (void *)0x02;
+				/* ctrl packet or flushed, hence dont count num
+				 * cmplt
+				 */
+				NODE_TX_CTRL_SET(tx->node);
 			}
 
-			if (((uint32_t)tx_node & ~0x03)) {
+			if (IS_NODE_TX_PTR(tx_node)) {
 				ll_tx_mem_release(tx_node);
 			}
 #endif /* CONFIG_BT_CONN */
