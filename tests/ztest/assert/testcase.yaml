@@ -1,0 +1,37 @@
+tests:
+  testing.ztest.assert:
+    platform_allow: native_posix
+
+common:
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: false
+    regex:
+      # Assertions
+      - "Assertion failed at [\\S]+:[\\d]+: [\\S]+_between_inclusive: [\\w]+ not between [\\d]+ and [\\d]+ inclusive"
+      - "Assertion failed at [\\S]+:[\\d]+: [\\S]+_equal: [\\w]+ not equal to [\\w]+"
+      - "Assertion failed at [\\S]+:[\\d]+: [\\S]+_equal_ptr+: [\\w]+ equal to [\\w]+"
+      - "Assertion failed at [\\S]+:[\\d]+: [\\S]+_false: [\\w]+ is true"
+      - "Assertion failed at [\\S]+:[\\d]+: [\\S]+_is_null: [\\w]+ is not NULL"
+      - "Assertion failed at [\\S]+:[\\d]+: [\\S]+_mem_equal: [\\w]+ not equal to [\\w]+"
+      - "Assertion failed at [\\S]+:[\\d]+: [\\S]+_not_equal: [\\w]+ equal to [\\w]+"
+      - "Assertion failed at [\\S]+:[\\d]+: [\\S]+_not_null: [\\w]+ is NULL"
+      - "Assertion failed at [\\S]+:[\\d]+: [\\S]+_ok: [\\w]+ is non-zero"
+      - "Assertion failed at [\\S]+:[\\d]+: [\\S]+_true: [\\w]+ is false"
+      - "Assertion failed at [\\S]+:[\\d]+: [\\S]+_unreachable: Reached unreachable code"
+      - "Assertion failed at [\\S]+:[\\d]+: [\\S]+_within: [\\w]+ not within [\\d]+ \\+/- [\\d]+"
+      # Assumptions
+      - "Assumption failed at [\\S]+:[\\d]+: [\\S]+_between_inclusive: [\\w]+ not between [\\d]+ and [\\d]+ inclusive"
+      - "Assumption failed at [\\S]+:[\\d]+: [\\S]+_equal: [\\w]+ not equal to [\\w]+"
+      - "Assumption failed at [\\S]+:[\\d]+: [\\S]+_equal_ptr+: [\\w]+ equal to [\\w]+"
+      - "Assumption failed at [\\S]+:[\\d]+: [\\S]+_false: [\\w]+ is true"
+      - "Assumption failed at [\\S]+:[\\d]+: [\\S]+_is_null: [\\w]+ is not NULL"
+      - "Assumption failed at [\\S]+:[\\d]+: [\\S]+_mem_equal: [\\w]+ not equal to [\\w]+"
+      - "Assumption failed at [\\S]+:[\\d]+: [\\S]+_not_equal: [\\w]+ equal to [\\w]+"
+      - "Assumption failed at [\\S]+:[\\d]+: [\\S]+_not_null: [\\w]+ is NULL"
+      - "Assumption failed at [\\S]+:[\\d]+: [\\S]+_ok: [\\w]+ is non-zero"
+      - "Assumption failed at [\\S]+:[\\d]+: [\\S]+_true: [\\w]+ is false"
+      - "Assumption failed at [\\S]+:[\\d]+: [\\S]+_within: [\\w]+ not within [\\d]+ \\+/- [\\d]+"
+      # Suite result
+      - "SUITE PASS"
