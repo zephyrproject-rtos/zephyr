@@ -1690,6 +1690,13 @@ void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 	sh->ctx->bypass = bypass;
 }
 
+bool shell_ready(const struct shell *sh)
+{
+	__ASSERT_NO_MSG(sh);
+
+	return state_get(sh) ==	SHELL_STATE_ACTIVE;
+}
+
 static int cmd_help(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);

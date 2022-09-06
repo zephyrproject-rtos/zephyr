@@ -1153,6 +1153,15 @@ int shell_set_root_cmd(const char *cmd);
  */
 void shell_set_bypass(const struct shell *shell, shell_bypass_cb_t bypass);
 
+/** @brief Get shell readiness to execute commands.
+ *
+ * @param[in] sh	Pointer to the shell instance.
+ *
+ * @retval true		Shell backend is ready to execute commands.
+ * @retval false	Shell backend is not initialized or not started.
+ */
+bool shell_ready(const struct shell *sh);
+
 /**
  * @brief Allow application to control text insert mode.
  * Value is modified atomically and the previous value is returned.
