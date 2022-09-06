@@ -5,6 +5,8 @@
 
 config HPET_TIMER
 	bool "HPET timer"
+	default y
+	depends on DT_HAS_INTEL_HPET_ENABLED
 	select IOAPIC if X86
 	select LOAPIC if X86
 	imply TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
