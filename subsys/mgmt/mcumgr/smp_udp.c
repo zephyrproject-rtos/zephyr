@@ -38,22 +38,22 @@ struct config {
 };
 
 struct configs {
-#if CONFIG_MCUMGR_SMP_UDP_IPV4
+#ifdef CONFIG_MCUMGR_SMP_UDP_IPV4
 	struct config ipv4;
 #endif
-#if CONFIG_MCUMGR_SMP_UDP_IPV6
+#ifdef CONFIG_MCUMGR_SMP_UDP_IPV6
 	struct config ipv6;
 #endif
 };
 
 static struct configs configs = {
-#if CONFIG_MCUMGR_SMP_UDP_IPV4
+#ifdef CONFIG_MCUMGR_SMP_UDP_IPV4
 	.ipv4 = {
 		.proto = "IPv4",
 		.sock  = -1,
 	},
 #endif
-#if CONFIG_MCUMGR_SMP_UDP_IPV6
+#ifdef CONFIG_MCUMGR_SMP_UDP_IPV6
 	.ipv6 = {
 		.proto = "IPv6",
 		.sock  = -1,
@@ -61,7 +61,7 @@ static struct configs configs = {
 #endif
 };
 
-#if CONFIG_MCUMGR_SMP_UDP_IPV4
+#ifdef CONFIG_MCUMGR_SMP_UDP_IPV4
 static int smp_udp4_tx(struct zephyr_smp_transport *zst, struct net_buf *nb)
 {
 	ARG_UNUSED(zst);
@@ -75,7 +75,7 @@ static int smp_udp4_tx(struct zephyr_smp_transport *zst, struct net_buf *nb)
 }
 #endif
 
-#if CONFIG_MCUMGR_SMP_UDP_IPV6
+#ifdef CONFIG_MCUMGR_SMP_UDP_IPV6
 static int smp_udp6_tx(struct zephyr_smp_transport *zst, struct net_buf *nb)
 {
 	ARG_UNUSED(zst);
@@ -149,13 +149,13 @@ static int smp_udp_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#if CONFIG_MCUMGR_SMP_UDP_IPV4
+#ifdef CONFIG_MCUMGR_SMP_UDP_IPV4
 	zephyr_smp_transport_init(&configs.ipv4.smp_transport,
 				  smp_udp4_tx, smp_udp_get_mtu,
 				  smp_udp_ud_copy, NULL);
 #endif
 
-#if CONFIG_MCUMGR_SMP_UDP_IPV6
+#ifdef CONFIG_MCUMGR_SMP_UDP_IPV6
 	zephyr_smp_transport_init(&configs.ipv6.smp_transport,
 				  smp_udp6_tx, smp_udp_get_mtu,
 				  smp_udp_ud_copy, NULL);
@@ -206,7 +206,7 @@ int smp_udp_open(void)
 {
 	struct config *conf;
 
-#if CONFIG_MCUMGR_SMP_UDP_IPV4
+#ifdef CONFIG_MCUMGR_SMP_UDP_IPV4
 	struct sockaddr_in addr4;
 
 	memset(&addr4, 0, sizeof(addr4));
@@ -224,7 +224,7 @@ int smp_udp_open(void)
 	create_thread(conf, "smp_udp4");
 #endif
 
-#if CONFIG_MCUMGR_SMP_UDP_IPV6
+#ifdef CONFIG_MCUMGR_SMP_UDP_IPV6
 	struct sockaddr_in6 addr6;
 
 	memset(&addr6, 0, sizeof(addr6));
@@ -247,7 +247,7 @@ int smp_udp_open(void)
 
 int smp_udp_close(void)
 {
-#if CONFIG_MCUMGR_SMP_UDP_IPV4
+#ifdef CONFIG_MCUMGR_SMP_UDP_IPV4
 	if (configs.ipv4.sock >= 0) {
 		k_thread_abort(&(configs.ipv4.thread));
 		close(configs.ipv4.sock);
@@ -255,7 +255,7 @@ int smp_udp_close(void)
 	}
 #endif
 
-#if CONFIG_MCUMGR_SMP_UDP_IPV6
+#ifdef CONFIG_MCUMGR_SMP_UDP_IPV6
 	if (configs.ipv6.sock >= 0) {
 		k_thread_abort(&(configs.ipv6.thread));
 		close(configs.ipv6.sock);
