@@ -6,7 +6,7 @@
 config LITEX_TIMER
 	bool "LiteX Timer"
 	default y
-	depends on SOC_RISCV32_LITEX_VEXRISCV
+	depends on DT_HAS_LITEX_TIMER0_ENABLED
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
 	  This module implements a kernel device driver for LiteX Timer.
