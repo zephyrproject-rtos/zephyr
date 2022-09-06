@@ -78,19 +78,19 @@ struct lpsram_header {
 
 static ALWAYS_INLINE void _core_basic_init(void)
 {
-	WSR("MEMCTL", MEMCTL_DEFAULT_VALUE);
-	WSR("PREFCTL", ADSP_L1_CACHE_PREFCTL_VALUE);
+	XTENSA_WSR("MEMCTL", MEMCTL_DEFAULT_VALUE);
+	XTENSA_WSR("PREFCTL", ADSP_L1_CACHE_PREFCTL_VALUE);
 	ARCH_XTENSA_SET_RPO_TLB();
-	WSR("ATOMCTL", 0x15);
+	XTENSA_WSR("ATOMCTL", 0x15);
 	__asm__ volatile("rsync");
 }
 
 static ALWAYS_INLINE void _save_core_context(uint32_t core_id)
 {
-	core_desc[core_id].vecbase = RSR("VECBASE");
-	core_desc[core_id].excsave2 = RSR("EXCSAVE2");
-	core_desc[core_id].excsave3 = RSR("EXCSAVE3");
-	core_desc[core_id].thread_ptr = RUR("THREADPTR");
+	core_desc[core_id].vecbase = XTENSA_RSR("VECBASE");
+	core_desc[core_id].excsave2 = XTENSA_RSR("EXCSAVE2");
+	core_desc[core_id].excsave3 = XTENSA_RSR("EXCSAVE3");
+	core_desc[core_id].thread_ptr = XTENSA_RUR("THREADPTR");
 	__asm__ volatile("mov %0, a0" : "=r"(core_desc[core_id].a0));
 	__asm__ volatile("mov %0, a1" : "=r"(core_desc[core_id].a1));
 }
@@ -99,10 +99,10 @@ static ALWAYS_INLINE void _restore_core_context(void)
 {
 	uint32_t core_id = arch_proc_id();
 
-	WSR("VECBASE", core_desc[core_id].vecbase);
-	WSR("EXCSAVE2", core_desc[core_id].excsave2);
-	WSR("EXCSAVE3", core_desc[core_id].excsave3);
-	WUR("THREADPTR", core_desc[core_id].thread_ptr);
+	XTENSA_WSR("VECBASE", core_desc[core_id].vecbase);
+	XTENSA_WSR("EXCSAVE2", core_desc[core_id].excsave2);
+	XTENSA_WSR("EXCSAVE3", core_desc[core_id].excsave3);
+	XTENSA_WUR("THREADPTR", core_desc[core_id].thread_ptr);
 	__asm__ volatile("mov a0, %0" :: "r"(core_desc[core_id].a0));
 	__asm__ volatile("mov a1, %0" :: "r"(core_desc[core_id].a1));
 	__asm__ volatile("rsync");
@@ -166,7 +166,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			k_cpu_idle();
 		}
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
-		core_desc[cpu].intenable = RSR("INTENABLE");
+		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
 		z_xt_ints_off(0xffffffff);
 		DFDSPBRCP.bootctl[cpu].bctl &= ~DFDSPBRCP_BCTL_WAITIPPG;
 		DFDSPBRCP.bootctl[cpu].bctl &= ~DFDSPBRCP_BCTL_WAITIPCG;
