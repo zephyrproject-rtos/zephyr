@@ -2712,6 +2712,18 @@
 #define DT_DRV_INST(inst) DT_INST(inst, DT_DRV_COMPAT)
 
 /**
+ * @brief Get a node identifier for a child node of DT_DRV_INST(inst)
+ *
+ * @param inst instance number
+ * @param child lowercase-and-underscores child node name
+ * @return node identifier for the node with the name referred to by 'child'
+ *
+ * @see DT_CHILD
+ */
+#define DT_INST_CHILD(inst, child) \
+	DT_CHILD(DT_DRV_INST(inst), child)
+
+/**
  * @brief Call "fn" on all child nodes of DT_DRV_INST(inst).
  *
  * The macro "fn" should take one argument, which is the node
