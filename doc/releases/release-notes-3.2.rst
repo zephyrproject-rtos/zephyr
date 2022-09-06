@@ -154,6 +154,31 @@ Deprecated in this release
   Its removal is scheduled for the 3.4 release. Refer to :ref:`pinctrl-guide`
   for more details on pin control.
 
+* Flash Map API macros :c:macro:`FLASH_MAP_`, which have been using DTS node label
+  property to reference partitions, have been deprecated and replaced with
+  :c:macro:`FIXED_PARTITION_` whch use DTS node label instead.
+  Replacement list:
+
+  .. table::
+     :align: center
+
+     +-----------------------------------+------------------------------------+
+     | Deprecated, takes label property  | Replacement, takes DTS node label  |
+     +===================================+====================================+
+     | :c:macro:`FLASH_AREA_ID`          | :c:macro:`FIXED_PARTITION_ID`      |
+     +-----------------------------------+------------------------------------+
+     | :c:macro:`FLASH_AREA_OFFSET`      | :c:macro:`FIXED_PARTITION_OFFSET`  |
+     +-----------------------------------+------------------------------------+
+     | :c:macro:`FLASH_AREA_SIZE`        | :c:macro:`FIXED_PARTITION_SIZE`    |
+     +-----------------------------------+------------------------------------+
+     | :c:macro:`FLASH_AREA_LABEL_EXISTS`| :c:macro:`FIXED_PARTITION_EXISTS`  |
+     +-----------------------------------+------------------------------------+
+     | :c:macro:`FLASH_AREA_DEVICE`      | :c:macro:`FIXED_PARTITION_DEVICE`  |
+     +-----------------------------------+------------------------------------+
+
+  :c:macro:`FLASH_AREA_LABEL_STR` is deprecated with no replacement as its sole
+  purpose was to obtain the DTS node property label.
+
 Stable API changes in this release
 ==================================
 
@@ -1516,6 +1541,12 @@ Libraries / Subsystems
     ``--test suite_name:*`` or ``--test suite_name::test_name`` command line arguments.
 
 * Tracing
+
+* Storage
+
+  * Flash Map API deprecates usage of :c:macro:`FLASH_AREA_` macros and replaces
+    them with :c:macro:`FIXED_PARTITION_` macros. This follows removal of ``label``
+    property from DTS nodes.
 
 HALs
 ****
