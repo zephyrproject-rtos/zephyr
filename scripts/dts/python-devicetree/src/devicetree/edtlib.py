@@ -2950,18 +2950,6 @@ class _BindingLoader(Loader):
 # Add legacy '!include foo.yaml' handling
 _BindingLoader.add_constructor("!include", _binding_include)
 
-# Use OrderedDict instead of plain dict for YAML mappings, to preserve
-# insertion order on Python 3.5 and earlier (plain dicts only preserve
-# insertion order on Python 3.6+). This makes testing easier and avoids
-# surprises.
-#
-# Adapted from
-# https://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts.
-# Hopefully this API stays stable.
-_BindingLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-    lambda loader, node: OrderedDict(loader.construct_pairs(node)))
-
 #
 # "Default" binding for properties which are defined by the spec.
 #
