@@ -13,22 +13,22 @@
 #include <zephyr/kernel_structs.h>
 #include <zsr.h>
 
-#define RSR(sr) \
+#define XTENSA_RSR(sr) \
 	({uint32_t v; \
 	 __asm__ volatile ("rsr." sr " %0" : "=a"(v)); \
 	 v; })
 
-#define WSR(sr, v) \
+#define XTENSA_WSR(sr, v) \
 	do { \
 		__asm__ volatile ("wsr." sr " %0" : : "r"(v)); \
 	} while (false)
 
-#define RUR(ur) \
+#define XTENSA_RUR(ur) \
 	({uint32_t v; \
 	 __asm__ volatile ("rur." ur " %0" : "=a"(v)); \
 	 v; })
 
-#define WUR(ur, v) \
+#define XTENSA_WUR(ur, v) \
 	do { \
 		__asm__ volatile ("wur." ur " %0" : : "r"(v)); \
 	} while (false)
@@ -37,7 +37,7 @@ static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
 	_cpu_t *cpu;
 
-	cpu = (_cpu_t *)RSR(ZSR_CPU_STR);
+	cpu = (_cpu_t *)XTENSA_RSR(ZSR_CPU_STR);
 
 	return cpu;
 }
