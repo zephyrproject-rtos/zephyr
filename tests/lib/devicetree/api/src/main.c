@@ -1657,6 +1657,22 @@ ZTEST(devicetree_api, test_parent)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_child_bindings
+ZTEST(devicetree_api, test_children)
+{
+	zassert_equal(DT_PROP(DT_CHILD(DT_NODELABEL(test_children), child_a),
+			      val), 0, "");
+	zassert_equal(DT_PROP(DT_CHILD(DT_NODELABEL(test_children), child_b),
+			      val), 1, "");
+	zassert_equal(DT_PROP(DT_CHILD(DT_NODELABEL(test_children), child_c),
+			      val), 2, "");
+
+	zassert_equal(DT_PROP(DT_INST_CHILD(0, child_a), val), 0, "");
+	zassert_equal(DT_PROP(DT_INST_CHILD(0, child_b), val), 1, "");
+	zassert_equal(DT_PROP(DT_INST_CHILD(0, child_c), val), 2, "");
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_child_bindings
 ZTEST(devicetree_api, test_child_nodes_list)
 {
 	#define TEST_FUNC(child) { DT_PROP(child, val) }
