@@ -101,9 +101,15 @@ static const char *phy2str(uint8_t phy)
 #endif
 
 #if defined(CONFIG_BT_CENTRAL)
+static int cmd_scan_off(const struct shell *sh);
+static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[]);
+static int cmd_scan_filter_clear_name(const struct shell *sh, size_t argc,
+				      char *argv[]);
+
 static struct bt_auto_connect {
 	bt_addr_le_t addr;
 	bool addr_set;
+	bool connect_name;
 } auto_connect;
 #endif
 
@@ -206,12 +212,33 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 #if defined(CONFIG_BT_CENTRAL)
 	auto_connect.addr_set = true;
 	bt_addr_le_copy(&auto_connect.addr, info->addr);
-#endif
+
+	/* Use the above auto_connect.addr address to automatically connect */
+	if (auto_connect.connect_name) {
+		auto_connect.connect_name = false;
+
+		cmd_scan_off(ctx_shell);
+
+		/* "name" is what would be in argv[0] normally */
+		cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){ "name" });
+
+		/* "connect" is what would be in argv[0] normally */
+		cmd_connect_le(ctx_shell, 1, (char *[]){ "connect" });
+	}
+#endif /* CONFIG_BT_CENTRAL */
 }
 
 static void scan_timeout(void)
 {
 	shell_print(ctx_shell, "Scan timeout");
+
+#if defined(CONFIG_BT_CENTRAL)
+	if (auto_connect.connect_name) {
+		auto_connect.connect_name = false;
+		/* "name" is what would be in argv[0] normally */
+		cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){ "name" });
+	}
+#endif /* CONFIG_BT_CENTRAL */
 }
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -2217,6 +2244,43 @@ static int cmd_auto_conn(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 #endif /* !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
+
+static int cmd_connect_le_name(const struct shell *sh, size_t argc, char *argv[])
+{
+	const uint16_t timeout_seconds = 10;
+	const struct bt_le_scan_param param = {
+		.type       = BT_LE_SCAN_TYPE_ACTIVE,
+		.options    = BT_LE_SCAN_OPT_NONE,
+		.interval   = BT_GAP_SCAN_FAST_INTERVAL,
+		.window     = BT_GAP_SCAN_FAST_WINDOW,
+		.timeout    = timeout_seconds * 100, /* 10ms units */
+	};
+	int err;
+
+	/* Set the name filter which we will use in the scan callback to
+	 * automatically connect to the first device that passes the filter
+	 */
+	err = cmd_scan_filter_set_name(sh, argc, argv);
+	if (err) {
+		shell_error(sh,
+			    "Bluetooth set scan filter name to %s failed (err %d)",
+			    argv[1], err);
+		return err;
+	}
+
+	err = bt_le_scan_start(&param, NULL);
+	if (err) {
+		shell_error(sh, "Bluetooth scan failed (err %d)", err);
+		return err;
+	}
+
+	shell_print(sh, "Bluetooth active scan enabled");
+
+	/* Set boolean to tell the scan callback to connect to this name */
+	auto_connect.connect_name = true;
+
+	return 0;
+}
 #endif /* CONFIG_BT_CENTRAL */
 
 static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
@@ -3506,6 +3570,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
 	SHELL_CMD_ARG(auto-conn, NULL, HELP_ADDR_LE, cmd_auto_conn, 3, 0),
 #endif /* !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
+	SHELL_CMD_ARG(connect-name, NULL, "<name filter>",
+		      cmd_connect_le_name, 2, 0),
 #endif /* CONFIG_BT_CENTRAL */
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 2),
 	SHELL_CMD_ARG(select, NULL, HELP_ADDR_LE, cmd_select, 3, 0),
