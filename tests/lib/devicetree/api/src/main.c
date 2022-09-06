@@ -1258,10 +1258,12 @@ ZTEST(devicetree_api, test_foreach)
 #define IS_ALIASES(node_id) + DT_SAME_NODE(DT_PATH(aliases), node_id)
 #define IS_DISABLED_GPIO(node_id) + DT_SAME_NODE(DT_NODELABEL(disabled_gpio), \
 						node_id)
+#define IS_ALIASES_VARGS(node_id, ...)  + DT_SAME_NODE(DT_PATH(aliases), node_id)
 	zassert_equal(1, DT_FOREACH_NODE(IS_ALIASES), "");
 	zassert_equal(1, DT_FOREACH_NODE(IS_DISABLED_GPIO), "");
 	zassert_equal(1, DT_FOREACH_STATUS_OKAY_NODE(IS_ALIASES), "");
 	zassert_equal(0, DT_FOREACH_STATUS_OKAY_NODE(IS_DISABLED_GPIO), "");
+	zassert_equal(1, DT_FOREACH_STATUS_OKAY_NODE_VARGS(IS_ALIASES_VARGS, 1), "");
 
 #undef IS_ALIASES
 #undef IS_DISABLED_GPIO
