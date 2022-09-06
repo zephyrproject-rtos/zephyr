@@ -175,6 +175,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004000 0x40>;
+            clocks = <&pcc GPA_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <16 2>;
 			label = "GPIOA";
@@ -185,6 +186,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004040 0x40>;
+            clocks = <&pcc GPB_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <17 2>;
 			label = "GPIOB";
@@ -195,6 +197,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004080 0x40>;
+            clocks = <&pcc GPC_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <18 2>;
 			label = "GPIOC";
@@ -205,6 +208,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x400040C0 0x40>;
+            clocks = <&pcc GPD_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <19 2>;
 			label = "GPIOD";
@@ -215,6 +219,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004100 0x40>;
+            clocks = <&pcc GPE_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <20 2>;
 			label = "GPIOE";
@@ -225,6 +230,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004140 0x40>;
+            clocks = <&pcc GPF_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <21 2>;
 			label = "GPIOF";
@@ -235,6 +241,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004180 0x40>;
+            clocks = <&pcc GPG_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <72 2>;
 			label = "GPIOG";
@@ -245,6 +252,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x400041C0 0x40>;
+            clocks = <&pcc GPH_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <88 2>;
 			label = "GPIOH";
@@ -255,6 +263,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004200 0x40>;
+            clocks = <&pcc GPI_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <110 2>;
 			label = "GPIOI";
@@ -265,6 +274,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x40004240 0x40>;
+            clocks = <&pcc GPJ_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <61 2>;
 			label = "GPIOJ";

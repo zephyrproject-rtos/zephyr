@@ -11,6 +11,10 @@
 #include <zephyr/drivers/gpio.h>
 #include <soc.h>
 
+#ifdef CONFIG_CLOCK_CONTROL_NUMAKER_SCC
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_numaker.h>
+#endif
 #include "gpio_utils.h"
 #include "NuMicro.h"
 
@@ -27,6 +31,10 @@ struct gpio_numaker_config {
 	uint32_t reg;
     uint32_t gpa_base;
     uint32_t size;
+    uint32_t clk_modidx;
+#ifdef CONFIG_CLOCK_CONTROL_NUMAKER_SCC
+    const struct device *clk_dev;
+#endif
 };
 
 struct gpio_numaker_data {
@@ -43,7 +51,8 @@ static int gpio_numaker_configure(const struct device *dev,
     GPIO_T *gpio_base = (GPIO_T*)config->reg;
     uint32_t pinMfpMask = (0x1f << NU_MFP_POS(pin));
     uint32_t pinMask = BIT(pin);  // mask for pin index --> (0x01 << pin)
-  
+    int err = 0;
+
     ARG_UNUSED(data);
     
 	/* Check for an invalid pin number */
@@ -51,15 +60,27 @@ static int gpio_numaker_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-#if 1 // Temporary before CLK control ready
-    /* Enable all GPIO clock */
-    CLK->AHBCLK0 |= CLK_AHBCLK0_GPACKEN_Msk | CLK_AHBCLK0_GPBCKEN_Msk | CLK_AHBCLK0_GPCCKEN_Msk | CLK_AHBCLK0_GPDCKEN_Msk |
-                    CLK_AHBCLK0_GPECKEN_Msk | CLK_AHBCLK0_GPFCKEN_Msk | CLK_AHBCLK0_GPGCKEN_Msk | CLK_AHBCLK0_GPHCKEN_Msk;
-    CLK->AHBCLK1 |= CLK_AHBCLK1_GPICKEN_Msk | CLK_AHBCLK1_GPJCKEN_Msk;
-#endif
-    
-	/* Configure GPIO direction */
+	SYS_UnlockReg();
 
+    /* Enable GPIO clock */
+#ifdef CONFIG_CLOCK_CONTROL_NUMAKER_SCC
+    struct numaker_scc_subsys scc_subsys;
+
+    memset(&scc_subsys, 0x00, sizeof(scc_subsys));
+    scc_subsys.subsys_id        = NUMAKER_SCC_SUBSYS_ID_PCC;
+    scc_subsys.pcc.clk_modidx   = config->clk_modidx;
+
+    /* Equivalent to CLK_EnableModuleClock() */
+    err = clock_control_on(config->clk_dev, (clock_control_subsys_t) &scc_subsys);
+    if (err != 0) {
+        goto move_exit;
+    }
+#else
+    /* Enable GPIO module clock */
+    CLK_EnableModuleClock(config->clk_modidx);
+#endif
+
+	/* Configure GPIO direction */
 	switch (flags & GPIO_DIR_MASK) {
 	case GPIO_INPUT:
         GPIO_SetMode(gpio_base, pinMask, GPIO_MODE_INPUT);
@@ -71,7 +92,8 @@ static int gpio_numaker_configure(const struct device *dev,
         GPIO_SetMode(gpio_base, pinMask, GPIO_MODE_QUASI);
 		break;
 	default:
-		return -ENOTSUP;
+        err = -ENOTSUP;
+        goto move_exit;
 	}
 
     if (flags & GPIO_LINE_OPEN_DRAIN) {
@@ -83,6 +105,7 @@ static int gpio_numaker_configure(const struct device *dev,
     uint32_t *GPx_MFPx = ((uint32_t *) &SYS->GPA_MFP0) + port_index * 4 + (pin / 4);
     // E.g.: SYS->GPA_MFP0  = (SYS->GPA_MFP0 & (~SYS_GPA_MFP0_PA0MFP_Msk) ) | SYS_GPA_MFP0_PA0MFP_SC0_CD  ;
     *GPx_MFPx  = (*GPx_MFPx & (~pinMfpMask)) | 0x00;
+
 
     /* Set pull control as pull-up, pull-down or pull-disable */
      if ((flags & GPIO_PULL_UP) != 0) {
@@ -100,7 +123,9 @@ static int gpio_numaker_configure(const struct device *dev,
         gpio_base->DOUT &= ~pinMask;
     }
 
-    return 0;
+move_exit:
+	SYS_LockReg();
+    return err;
 }
 
 static int gpio_numaker_port_get_raw(const struct device *dev, uint32_t *value)
@@ -234,6 +259,12 @@ static void gpio_numaker_isr(const struct device *dev)
 	gpio_fire_callbacks(&data->callbacks, dev, int_status);
 }
 
+#ifdef CONFIG_CLOCK_CONTROL_NUMAKER_SCC
+#define CLOCK_CTRL_INIT(n) .clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(n))),
+#else
+#define CLOCK_CTRL_INIT(n)
+#endif
+
 #define GPIO_NUMAKER_IRQ_INIT(n)						\
 	do {								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
@@ -253,6 +284,8 @@ static void gpio_numaker_isr(const struct device *dev)
 		.reg = DT_INST_REG_ADDR(n),				       \
         .gpa_base = DT_REG_ADDR(DT_NODELABEL(gpioa)),    \
         .size = DT_REG_SIZE(DT_NODELABEL(gpioa)),         \
+        .clk_modidx = DT_INST_CLOCKS_CELL(n, clock_module_index),  \
+        CLOCK_CTRL_INIT(n)                                         \
 	};								       \
 									       \
 	static struct gpio_numaker_data gpio_numaker_data##n;			       \
