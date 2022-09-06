@@ -65,7 +65,7 @@ static int curr_cpu(void)
 }
 
 /**
- * @brief Tests for SMP
+ * @brief SMP
  * @defgroup kernel_smp_tests SMP Tests
  * @ingroup all_tests
  * @{
@@ -73,15 +73,15 @@ static int curr_cpu(void)
  */
 
 /**
- * @defgroup kernel_smp_integration_tests SMP Tests
- * @ingroup all_tests
+ * @defgroup kernel_smp_integration_tests SMP Integration Tests
+ * @ingroup kernel_smp_tests
  * @{
  * @}
  */
 
 /**
- * @defgroup kernel_smp_module_tests SMP Tests
- * @ingroup all_tests
+ * @defgroup kernel_smp_module_tests SMP Module Tests
+ * @ingroup kernel_smp_tests
  * @{
  * @}
  */
