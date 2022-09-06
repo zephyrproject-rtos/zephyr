@@ -580,8 +580,12 @@ static void can_shell_before(void *fixture)
 
 static void *can_shell_setup(void)
 {
-	/* Let the shell backend initialize. */
-	k_msleep(20);
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+
+	/* Wait for the initialization of the shell dummy backend. */
+	WAIT_FOR(shell_ready(sh), 20000, k_msleep(1));
+	zassert_true(shell_ready(sh), "timed out waiting for dummy shell backend");
+
 	return NULL;
 }
 
