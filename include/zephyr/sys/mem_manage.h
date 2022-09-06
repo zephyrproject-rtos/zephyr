@@ -13,6 +13,13 @@
 #include <zephyr/arch/arm64/arm_mem.h>
 #endif
 
+/**
+ * @brief Memory Management
+ * @defgroup memory_management Memory Management
+ * @{
+ * @}
+ */
+
 /*
  * Caching mode definitions. These are mutually exclusive.
  */
@@ -357,6 +364,7 @@ size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
 
 /**
  * @defgroup demand_paging Demand Paging
+ * @ingroup memory_management
  */
 /**
  * @defgroup mem-demand-paging Demand Paging APIs
