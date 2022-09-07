@@ -7,3 +7,4 @@ tests:
     tags: disk sdhc
     integration_platforms:
       - mimxrt1064_evk
+      - mimxrt595_evk_cm33
