@@ -3685,14 +3685,16 @@
  * @}
  */
 
-/** @internal pay no attention to the man behind the curtain! */
+/** @cond INTERNAL_HIDDEN */
+
 #define DT_PATH_INTERNAL(...) \
 	UTIL_CAT(DT_ROOT, MACRO_MAP_CAT(DT_S_PREFIX, __VA_ARGS__))
-/** @internal helper for DT_PATH(): prepends _S_ to a node name */
+
+/** @brief Internal helper for DT_PATH(): prepends _S_ to a node name */
 #define DT_S_PREFIX(name) _S_##name
 
 /**
- * @internal concatenation helper, 2 arguments
+ * @brief Concatenation helper, 2 arguments
  *
  * This and the following macros are used to paste things together
  * with "##" *after* forcing expansion on each argument.
@@ -3706,29 +3708,31 @@
  * easier to read.
  */
 #define DT_CAT(a1, a2) a1 ## a2
-/** @internal concatenation helper, 3 arguments */
+/** @brief Concatenation helper, 3 arguments */
 #define DT_CAT3(a1, a2, a3) a1 ## a2 ## a3
-/** @internal concatenation helper, 4 arguments */
+/** @brief Concatenation helper, 4 arguments */
 #define DT_CAT4(a1, a2, a3, a4) a1 ## a2 ## a3 ## a4
-/** @internal concatenation helper, 5 arguments */
+/** @brief Internal concatenation helper, 5 arguments */
 #define DT_CAT5(a1, a2, a3, a4, a5) a1 ## a2 ## a3 ## a4 ## a5
-/** @internal concatenation helper, 6 arguments */
+/** @brief Concatenation helper, 6 arguments */
 #define DT_CAT6(a1, a2, a3, a4, a5, a6) a1 ## a2 ## a3 ## a4 ## a5 ## a6
 /*
  * If you need to define a bigger DT_CATN(), do so here. Don't leave
  * any "holes" of undefined macros, please.
  */
 
-/** @internal helper for node identifier macros to expand args */
+/** @brief Helper for node identifier macros to expand args */
 #define DT_DASH(...) MACRO_MAP_CAT(DT_DASH_PREFIX, __VA_ARGS__)
-/** @internal helper for DT_DASH(): prepends _ to a name */
+/** @brief Helper for DT_DASH(): prepends _ to a name */
 #define DT_DASH_PREFIX(name) _##name
-/** @internal helper for DT_NODE_HAS_STATUS */
+/** @brief Helper for DT_NODE_HAS_STATUS */
 #define DT_NODE_HAS_STATUS_INTERNAL(node_id, status) \
 	IS_ENABLED(DT_CAT(node_id, _STATUS_ ## status))
-/** @internal helper for test cases and DT_ANY_INST_ON_BUS_STATUS_OKAY() */
+/** @brief Helper for test cases and DT_ANY_INST_ON_BUS_STATUS_OKAY() */
 #define DT_COMPAT_ON_BUS_INTERNAL(compat, bus) \
 	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
+
+/** @endcond */
 
 /* have these last so they have access to all previously defined macros */
 #include <zephyr/devicetree/io-channels.h>
