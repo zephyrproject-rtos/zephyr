@@ -111,17 +111,80 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
+ * @brief Whether @p ptr is an element of @p array
+ *
+ * This macro can be seen as a slightly stricter version of @ref PART_OF_ARRAY
+ * in that it also ensures that @p ptr is aligned to an array-element boundary
+ * of @p array.
+ *
+ * In C, passing a pointer as @p array causes a compile error.
+ *
+ * @param array the array in question
+ * @param ptr the pointer to check
+ *
+ * @return 1 if @p ptr is part of @p array, 0 otherwise
+ */
+#define IS_ARRAY_ELEMENT(array, ptr)                                                               \
+	((ptr) && POINTER_TO_UINT(array) <= POINTER_TO_UINT(ptr) &&                          \
+	 POINTER_TO_UINT(ptr) < POINTER_TO_UINT(&(array)[ARRAY_SIZE(array)]) &&                    \
+	 (POINTER_TO_UINT(ptr) - POINTER_TO_UINT(array)) % sizeof((array)[0]) == 0)
+
+/**
+ * @brief Index of @p ptr within @p array
+ *
+ * With `CONFIG_ASSERT=y`, this macro will trigger a runtime assertion
+ * when @p ptr does not fall into the range of @p array or when @p ptr
+ * is not aligned to an array-element boundary of @p array.
+ *
+ * In C, passing a pointer as @p array causes a compile error.
+ *
+ * @param array the array in question
+ * @param ptr pointer to an element of @p array
+ *
+ * @return the array index of @p ptr within @p array, on success
+ */
+#define ARRAY_INDEX(array, ptr)                                                                    \
+	({                                                                                         \
+		__ASSERT_NO_MSG(IS_ARRAY_ELEMENT(array, ptr));                                     \
+		(__typeof__((array)[0]) *)(ptr) - (array);                                         \
+	})
+
+/**
  * @brief Check if a pointer @p ptr lies within @p array.
  *
  * In C but not C++, this causes a compile error if @p array is not an array
  * (e.g. if @p ptr and @p array are mixed up).
  *
- * @param ptr a pointer
  * @param array an array
+ * @param ptr a pointer
  * @return 1 if @p ptr is part of @p array, 0 otherwise
  */
-#define PART_OF_ARRAY(array, ptr) \
-	((ptr) && ((ptr) >= &array[0] && (ptr) < &array[ARRAY_SIZE(array)]))
+#define PART_OF_ARRAY(array, ptr)                                                                  \
+	((ptr) && POINTER_TO_UINT(array) <= POINTER_TO_UINT(ptr) &&                                \
+	 POINTER_TO_UINT(ptr) < POINTER_TO_UINT(&(array)[ARRAY_SIZE(array)]))
+
+/**
+ * @brief Array-index of @p ptr within @p array, rounded down
+ *
+ * This macro behaves much like @ref ARRAY_INDEX with the notable
+ * difference that it accepts any @p ptr in the range of @p array rather than
+ * exclusively a @p ptr aligned to an array-element boundary of @p array.
+ *
+ * With `CONFIG_ASSERT=y`, this macro will trigger a runtime assertion
+ * when @p ptr does not fall into the range of @p array.
+ *
+ * In C, passing a pointer as @p array causes a compile error.
+ *
+ * @param array the array in question
+ * @param ptr pointer to an element of @p array
+ *
+ * @return the array index of @p ptr within @p array, on success
+ */
+#define ARRAY_INDEX_FLOOR(array, ptr)                                                              \
+	({                                                                                         \
+		__ASSERT_NO_MSG(PART_OF_ARRAY(array, ptr));                                        \
+		(POINTER_TO_UINT(ptr) - POINTER_TO_UINT(array)) / sizeof((array)[0]);              \
+	})
 
 /**
  * @brief Get a pointer to a structure containing the element
