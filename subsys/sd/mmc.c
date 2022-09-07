@@ -5,11 +5,11 @@
  */
 
 #include <zephyr/drivers/sdhc.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sd/mmc.h>
 #include <zephyr/sd/sd.h>
 #include <zephyr/sd/sd_spec.h>
-#include <zephyr/zephyr.h>
 
 #include "sd_ops.h"
 #include "sd_utils.h"
@@ -23,6 +23,9 @@
  * [7:3]   : Set to 0
  * [2:0]   : Cmd Set
  */
+#define MMC_SWITCH_8_BIT_DDR_BUS_ARG                                                               \
+	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (183U << 16)) +    \
+		(0x0000FF00 & (6U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
 #define MMC_SWITCH_8_BIT_BUS_ARG                                                                   \
 	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (183U << 16)) +    \
 		(0x0000FF00 & (2U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
@@ -32,8 +35,17 @@
 #define MMC_SWITCH_HS_TIMING_ARG                                                                   \
 	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (185U << 16)) +    \
 		(0x0000FF00 & (1U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
-#define MMC_RCA_ARG (CONFIG_MMC_RCA << 16U)
+#define MMC_SWITCH_HS400_TIMING_ARG                                                                \
+	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (185U << 16)) +    \
+		(0x0000FF00 & (3U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
+#define MMC_SWITCH_HS200_TIMING_ARG                                                                \
+	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (185U << 16)) +    \
+		(0x0000FF00 & (2U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
+#define MMC_RCA_ARG	(CONFIG_MMC_RCA << 16U)
 #define MMC_REL_ADR_ARG (card->relative_addr << 16U)
+#define MMC_SWITCH_PWR_CLASS_ARG                                                                   \
+	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (187U << 16)) +    \
+		(0x0000FF00 & (0U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
 
 LOG_MODULE_DECLARE(sd, CONFIG_SD_LOG_LEVEL);
 
@@ -181,7 +193,7 @@ int mmc_card_init(struct sd_card *card)
 static int mmc_send_op_cond(struct sd_card *card, int ocr)
 {
 	struct sdhc_command cmd = {0};
-	int ret;
+	int ret = 0;
 	int retries;
 
 	cmd.opcode = MMC_SEND_OP_COND;
@@ -269,7 +281,7 @@ static int mmc_read_csd(struct sd_card *card, struct sd_csd *card_csd)
 	struct sdhc_command cmd = {0};
 
 	cmd.opcode = SD_SEND_CSD;
-	cmd.arg = (MMC_REL_ADR_ARG);
+	cmd.arg = MMC_REL_ADR_ARG;
 	cmd.response_type = SD_RSP_TYPE_R2;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 
@@ -390,7 +402,7 @@ static int mmc_set_bus_width(struct sd_card *card)
 
 static int mmc_set_hs_timing(struct sd_card *card)
 {
-	int ret;
+	int ret = 0;
 	struct sdhc_command cmd = {0};
 
 	/* Change Card Timing Mode */
@@ -414,15 +426,42 @@ static int mmc_set_hs_timing(struct sd_card *card)
 		return ret;
 	}
 
-	return 0;
+	return ret;
+}
+
+static int mmc_set_power_class_HS200(struct sd_card *card, struct mmc_ext_csd *ext)
+{
+	int ret = 0;
+	struct sdhc_command cmd = {0};
+
+	cmd.opcode = SD_SWITCH;
+	cmd.arg = ((MMC_SWITCH_PWR_CLASS_ARG) | (ext->pwr_class_200MHZ_VCCQ195 << 8));
+	cmd.response_type = SD_RSP_TYPE_R1b;
+	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	sdmmc_wait_ready(card);
+	return ret;
 }
 
 static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *ext)
 {
-	int ret;
+	int ret = 0;
+	struct sdhc_command cmd = {0};
 
-	if (ext->device_type.MMC_HS_52_DV) {
-		return mmc_set_HS_timing(card);
+	/* Timing depends on EXT_CSD register information */
+	if ((ext->device_type.MMC_HS200_SDR_1200MV || ext->device_type.MMC_HS200_SDR_1800MV) &&
+	    (card->host_props.host_caps.hs200_support) &&
+	    (card->bus_io.signal_voltage == SD_VOL_1_8_V) &&
+	    (card->bus_io.bus_width >= SDHC_BUS_WIDTH4BIT)) {
+		ret = mmc_set_hs_timing(card);
+		if (ret) {
+			return ret;
+		}
+		cmd.arg = MMC_SWITCH_HS200_TIMING_ARG;
+		card->bus_io.clock = MMC_CLOCK_HS200;
+		card->bus_io.timing = SDHC_TIMING_HS200;
+	} else if (ext->device_type.MMC_HS_52_DV) {
+		return mmc_set_hs_timing(card);
 	} else if (ext->device_type.MMC_HS_26_DV) {
 		/* Nothing to do, card is already configured for this */
 		return 0;
@@ -430,6 +469,88 @@ static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *ext)
 		return -ENOTSUP;
 	}
 
+	/* Set card timing mode */
+	cmd.opcode = SD_SWITCH;
+	cmd.response_type = SD_RSP_TYPE_R1b;
+	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	if (ret) {
+		LOG_DBG("Error setting bus timing: %d", ret);
+		return ret;
+	}
+	ret = sdmmc_wait_ready(card);
+	if (ret) {
+		return ret;
+	}
+	card->card_speed = ((cmd.arg & 0xFF << 8) >> 8);
+
+	/* Set power class to match timing mode */
+	if (card->card_speed == MMC_HS200_TIMING) {
+		ret = mmc_set_power_class_HS200(card, ext);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	/* Set SDHC bus io parameters */
+	ret = sdhc_set_io(card->sdhc, &card->bus_io);
+	if (ret) {
+		return ret;
+	}
+
+	/* Execute Tuning for HS200 */
+	if (card->card_speed == MMC_HS200_TIMING) {
+		ret = sdhc_execute_tuning(card->sdhc);
+		if (ret) {
+			LOG_ERR("MMC Tuning failed: %d", ret);
+			return ret;
+		}
+	}
+
+	/* Switch to HS400 if applicable */
+	if ((ext->device_type.MMC_HS400_DDR_1200MV || ext->device_type.MMC_HS400_DDR_1800MV) &&
+	    (card->host_props.host_caps.hs400_support) &&
+	    (card->bus_io.bus_width == SDHC_BUS_WIDTH8BIT)) {
+		/* Switch back to regular HS timing */
+		ret = mmc_set_hs_timing(card);
+		if (ret) {
+			LOG_ERR("Switching MMC back to HS from HS200 during HS400 init failed.");
+			return ret;
+		}
+		/* Set bus width to DDR 8 bit */
+		cmd.opcode = SD_SWITCH;
+		cmd.arg = MMC_SWITCH_8_BIT_DDR_BUS_ARG;
+		cmd.response_type = SD_RSP_TYPE_R1b;
+		cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+		ret = sdhc_request(card->sdhc, &cmd, NULL);
+		sdmmc_wait_ready(card);
+		if (ret) {
+			LOG_ERR("Setting DDR data bus width failed during HS400 init: %d", ret);
+			return ret;
+		}
+		/* Set card timing mode to HS400 */
+		cmd.opcode = SD_SWITCH;
+		cmd.arg = MMC_SWITCH_HS400_TIMING_ARG;
+		cmd.response_type = SD_RSP_TYPE_R1b;
+		cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+		ret = sdhc_request(card->sdhc, &cmd, NULL);
+		if (ret) {
+			LOG_DBG("Error setting card to HS400 bus timing: %d", ret);
+			return ret;
+		}
+		ret = sdmmc_wait_ready(card);
+		if (ret) {
+			return ret;
+		}
+		/* Set SDHC bus io parameters */
+		card->bus_io.clock = MMC_CLOCK_HS400;
+		card->bus_io.timing = SDHC_TIMING_HS400;
+		ret = sdhc_set_io(card->sdhc, &card->bus_io);
+		if (ret) {
+			return ret;
+		}
+		card->card_speed = ((cmd.arg & 0xFF << 8) >> 8);
+	}
 	return ret;
 }
 
@@ -481,4 +602,5 @@ static inline void mmc_decode_ext_csd(struct mmc_ext_csd *ext, uint8_t *raw)
 	ext->rev = raw[192U];
 	ext->power_class = (raw[187] & 0x0F);
 	ext->mmc_driver_strengths = raw[197U];
+	ext->pwr_class_200MHZ_VCCQ195 = raw[237U];
 }
