@@ -7,7 +7,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/disk.h>
 #include <zephyr/sd/mmc.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #define SECTOR_COUNT 32

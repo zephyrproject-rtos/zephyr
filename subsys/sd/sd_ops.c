@@ -10,7 +10,7 @@
 #include <zephyr/sd/sd.h>
 #include <zephyr/sd/sd_spec.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include "sd_utils.h"
 

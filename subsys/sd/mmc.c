@@ -9,7 +9,7 @@
 #include <zephyr/sd/mmc.h>
 #include <zephyr/sd/sd.h>
 #include <zephyr/sd/sd_spec.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include "sd_ops.h"
 #include "sd_utils.h"
