@@ -141,22 +141,6 @@
 
 	pinctrl-0 = < &i2c00_scl_gpio004 &i2c00_sda_gpio003 >;
 	pinctrl-names = "default";
-
-	pca9555@26 {
-		compatible = "nxp,pca95xx";
-
-		/* Depends on JP53 for device address.
-		 * Pin 1-2 = A0, pin 3-4 = A1, pin 5-6 = A2.
-		 * Address is: 0100<A2><A1><A0>b.
-		 *
-		 * Default has pin 1-2 on JP53 connected,
-		 * resulting in device address 0x26.
-		 */
-		reg = <0x26>;
-
-		gpio-controller;
-		#gpio-cells = <2>;
-	};
 };
 
 &i2c00_scl_gpio004 {
@@ -174,6 +158,22 @@
 	port_sel = <1>;
 	pinctrl-0 = <&i2c01_scl_gpio131 &i2c01_sda_gpio130>;
 	pinctrl-names = "default";
+
+	pca9555@26 {
+		compatible = "nxp,pca95xx";
+
+		/* Depends on JP53 for device address.
+		 * Pin 1-2 = A0, pin 3-4 = A1, pin 5-6 = A2.
+		 * Address is: 0100<A2><A1><A0>b.
+		 *
+		 * Default has pin 1-2 on JP53 connected,
+		 * resulting in device address 0x26.
+		 */
+		reg = <0x26>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
 };
 
 &i2c01_scl_gpio131 {
