@@ -41,7 +41,8 @@
 		stop: state {
 			compatible = "zephyr,power-state";
 			power-state-name = "suspend-to-idle";
-			min-residency-us = <100>;
+			min-residency-us = <2000>;
+			exit-latency-us = <750>;
 		};
 	};
 
@@ -95,6 +96,7 @@
 &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
 		<&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
 };
 
 &usart1 {
