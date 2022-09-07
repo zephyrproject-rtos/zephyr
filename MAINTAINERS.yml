@@ -591,6 +591,7 @@ Documentation:
     - dts/bindings/crypto/
     - include/zephyr/crypto/
     - samples/drivers/crypto/
+    - tests/crypto/
   labels:
     - "area: Crypto / RNG"
 
