@@ -62,7 +62,9 @@ if("CROSS_COMPILE" IN_LIST Deprecated_FIND_COMPONENTS)
   if(NOT ZEPHYR_TOOLCHAIN_VARIANT AND
      (CROSS_COMPILE OR (DEFINED ENV{CROSS_COMPILE})))
       set(ZEPHYR_TOOLCHAIN_VARIANT cross-compile CACHE STRING "Zephyr toolchain variant" FORCE)
-      message(DEPRECATION  "CROSS_COMPILE is deprecated. Please set ZEPHYR_TOOLCHAIN_VARIANT to 'cross-compile'")
+      message(DEPRECATION  "Setting CROSS_COMPILE without setting ZEPHYR_TOOLCHAIN_VARIANT is deprecated."
+                           "Please set ZEPHYR_TOOLCHAIN_VARIANT to 'cross-compile'"
+      )
   endif()
 endif()
 
