@@ -327,7 +327,6 @@ void adsp_hda_log_init(adsp_hda_log_hook_t fn, uint32_t channel)
 #include <cavstool.h>
 
 #define CHANNEL 6
-#define HOST_BUF_SIZE 8192
 #define IPC_TIMEOUT K_MSEC(1500)
 
 static inline void hda_ipc_msg(const struct device *dev, uint32_t data,
@@ -365,11 +364,9 @@ int adsp_hda_log_cavstool_init(const struct device *dev)
 
 	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_RESET, CHANNEL, IPC_TIMEOUT);
 	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_CONFIG,
-		    CHANNEL | (HOST_BUF_SIZE << 8), IPC_TIMEOUT);
+		    CHANNEL | (CONFIG_LOG_BACKEND_ADSP_HDA_SIZE << 8), IPC_TIMEOUT);
 	adsp_hda_log_init(adsp_hda_log_cavstool_hook, CHANNEL);
 	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_START, CHANNEL, IPC_TIMEOUT);
-	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_PRINT,
-		    ((HOST_BUF_SIZE*2) << 8) | CHANNEL, IPC_TIMEOUT);
 
 	return 0;
 }
