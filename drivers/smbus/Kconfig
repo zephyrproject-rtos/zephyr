@@ -1,0 +1,30 @@
+# SMBus configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SMBUS
+	bool "SMBus Drivers"
+	help
+	  Enable SMBus Driver Configuration
+
+if SMBUS
+
+config SMBUS_STATS
+	bool "SMBus device Stats"
+	depends on STATS
+	help
+	  Enable SMBus Stats.
+
+config SMBUS_INIT_PRIORITY
+	int "Init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  SMBus device driver initialization priority.
+
+
+module = SMBUS
+module-str = smbus
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SMBUS
