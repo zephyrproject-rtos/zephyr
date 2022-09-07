@@ -25,3 +25,27 @@ properties:
         Indicates that the device driver should use interrupt 1
         for any movement. This is for boards that only have one
         interrupt line connected from the sensor to the processor.
+
+    anym-no-latch:
+      type: boolean
+      description: |
+        Disable the latching of interrupts for any movement.
+
+    anym-mode:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Select the interrupt mode for any movement.
+
+        0 = OR combination of interrupt events
+        1 = 6D movement recognition
+        2 = AND combination of interrupt events
+        3 = 6D position recognition
+
+        The default of 0 is the power-on-reset value.
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
