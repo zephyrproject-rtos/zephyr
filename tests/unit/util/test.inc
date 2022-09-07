@@ -467,3 +467,62 @@ void run_mixing_GET_ARG_and_FOR_EACH(void)
 	zassert_equal(a[3], 4);
 	zassert_equal(a[4], 5);
 }
+
+void run_IS_ARRAY_ELEMENT(void)
+{
+	size_t i;
+	size_t array[3];
+	uint8_t *const alias = (uint8_t *)array;
+
+	zassert_false(IS_ARRAY_ELEMENT(array, &array[-1]));
+	zassert_false(IS_ARRAY_ELEMENT(array, &array[ARRAY_SIZE(array)]));
+	zassert_false(IS_ARRAY_ELEMENT(array, &alias[1]));
+
+	for (i = 0; i < ARRAY_SIZE(array); ++i) {
+		zassert_true(IS_ARRAY_ELEMENT(array, &array[i]));
+	}
+}
+
+void run_ARRAY_INDEX(void)
+{
+	size_t i;
+	size_t array[] = {0, 1, 2, 3};
+
+	for (i = 0; i < ARRAY_SIZE(array); ++i) {
+		zassert_equal(array[ARRAY_INDEX(array, &array[i])], i);
+	}
+
+	/* ARRAY_INDEX(array, &alias[1]) asserts with CONFIG_ASSERT=y */
+}
+
+void run_PART_OF_ARRAY(void)
+{
+	size_t i;
+	size_t array[3];
+	uint8_t *const alias = (uint8_t *)array;
+
+	ARG_UNUSED(i);
+	ARG_UNUSED(alias);
+
+	zassert_false(PART_OF_ARRAY(array, &array[-1]));
+	zassert_false(PART_OF_ARRAY(array, &array[ARRAY_SIZE(array)]));
+
+	for (i = 0; i < ARRAY_SIZE(array); ++i) {
+		zassert_true(PART_OF_ARRAY(array, &array[i]));
+	}
+
+	zassert_true(PART_OF_ARRAY(array, &alias[1]));
+}
+
+void run_ARRAY_INDEX_FLOOR(void)
+{
+	size_t i;
+	size_t array[] = {0, 1, 2, 3};
+	uint8_t *const alias = (uint8_t *)array;
+
+	for (i = 0; i < ARRAY_SIZE(array); ++i) {
+		zassert_equal(array[ARRAY_INDEX_FLOOR(array, &array[i])], i);
+	}
+
+	zassert_equal(array[ARRAY_INDEX_FLOOR(array, &alias[1])], 0);
+}
