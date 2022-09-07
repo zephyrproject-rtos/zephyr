@@ -19,10 +19,11 @@ config IMX_USDHC_DAT3_PWR_TOGGLE
 	  Toggle power to SD card to clear DAT3 pull when pulling line low
 
 config IMX_USDHC_DMA_SUPPORT
-	bool
-	depends on ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	bool "DMA support for USDHC"
 	default y
-	select NOCACHE_MEMORY
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	help
+	  Enable DMA support for USDHC
 
 if IMX_USDHC_DMA_SUPPORT
 
