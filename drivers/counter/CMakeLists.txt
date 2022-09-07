@@ -36,3 +36,4 @@ zephyr_library_sources_ifdef(CONFIG_ACE_V1X_RTC_COUNTER         counter_ace_v1x_
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NXP_S32_SYS_TIMER   counter_nxp_s32_sys_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_TIMER_GD32		counter_gd32_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_SNPS_DW             counter_dw_timer.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_SHELL               counter_timer_shell.c)
