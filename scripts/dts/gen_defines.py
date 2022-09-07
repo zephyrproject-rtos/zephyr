@@ -519,6 +519,11 @@ def write_compatibles(node):
             out_dt_define(f"{node.z_path_id}_COMPAT_VENDOR_IDX_{i}",
                           quote_str(node.edt.compat2vendor[compat]))
 
+        if node.edt.compat2model[compat]:
+            out_dt_define(f"{node.z_path_id}_COMPAT_MODEL_IDX_{i}_EXISTS", 1)
+            out_dt_define(f"{node.z_path_id}_COMPAT_MODEL_IDX_{i}",
+                          quote_str(node.edt.compat2model[compat]))
+
 def write_children(node):
     # Writes helper macros for dealing with node's children.
 

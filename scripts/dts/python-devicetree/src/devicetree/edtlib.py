@@ -110,6 +110,10 @@ class EDT:
       A collections.defaultdict that maps each 'compatible' string that appears
       on some Node to a vendor name parsed from vendor_prefixes.
 
+    compat2model:
+      A collections.defaultdict that maps each 'compatible' string that appears
+      on some Node to a model name parsed from that compatible.
+
     label2node:
       A collections.OrderedDict that maps a node label to the node with
       that label.
@@ -455,6 +459,7 @@ class EDT:
         self.compat2nodes = defaultdict(list)
         self.compat2okay = defaultdict(list)
         self.compat2vendor = defaultdict(str)
+        self.compat2model = defaultdict(str)
 
         for node in self.nodes:
             for label in node.labels:
@@ -477,9 +482,10 @@ class EDT:
                          f"'{compat_re}'")
 
                 if ',' in compat and self._vendor_prefixes:
-                    vendor = compat.split(',', 1)[0]
+                    vendor, model = compat.split(',', 1)
                     if vendor in self._vendor_prefixes:
                         self.compat2vendor[compat] = self._vendor_prefixes[vendor]
+                        self.compat2model[compat] = model
 
                     # As an exception, the root node can have whatever
                     # compatibles it wants. Other nodes get checked.
