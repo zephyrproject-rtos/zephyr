@@ -555,6 +555,9 @@ def get_defined_syms(kconf):
 UNDEF_KCONFIG_WHITELIST = {
     "ALSO_MISSING",
     "APP_LINK_WITH_",
+    "APP_LOG_LEVEL", # Application log level is not detected correctly as the
+                     # option is defined using a template, so it can't be
+                     # grepped
     "ARMCLANG_STD_LIBC",  # The ARMCLANG_STD_LIBC is defined in the toolchain
                           # Kconfig which is sourced based on Zephyr toolchain
 			  # variant and therefore not visible to compliance.
