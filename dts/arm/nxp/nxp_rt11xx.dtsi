@@ -703,6 +703,25 @@
 			};
 		};
 
+		/*
+		 * enet1g peripheral to use with kinetis-ethernet (eth_mcux) driver
+		 * just like the enet peripheral (i.e. only 10/100Mbit for now)
+		 */
+		enet1g: ethernet@40420000 {
+			compatible = "nxp,kinetis-ethernet";
+			reg = <0x40420000 0x628>;
+			interrupts = <141 0>;
+			interrupt-names = "COMMON";
+			status = "disabled";
+			phy-addr = <1>;
+			ptp1g: ptp {
+				compatible = "nxp,kinetis-ptp";
+				status = "disabled";
+				interrupts = <142 0>;
+				interrupt-names = "IEEE1588_TMR";
+			};
+		};
+
 		caam: caam@40440000 {
 			compatible = "nxp,imx-caam";
 			reg = <0x40440000 0x81000>;
