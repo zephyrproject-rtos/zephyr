@@ -57,6 +57,8 @@ node-macro =/ %s"DT_N" path-id %s"_PARTITION_ID" DIGIT
 node-macro =/ %s"DT_N" path-id %s"_COMPAT_MATCHES_" dt-name
 node-macro =/ %s"DT_N" path-id %s"_COMPAT_VENDOR_IDX_" DIGIT "_EXISTS"
 node-macro =/ %s"DT_N" path-id %s"_COMPAT_VENDOR_IDX_" DIGIT
+node-macro =/ %s"DT_N" path-id %s"_COMPAT_MODEL_IDX_" DIGIT "_EXISTS"
+node-macro =/ %s"DT_N" path-id %s"_COMPAT_MODEL_IDX_" DIGIT
 ; Every non-root node gets one of these macros, which expands to the node
 ; identifier for that node's parent in the devicetree.
 node-macro =/ %s"DT_N" path-id %s"_PARENT"
