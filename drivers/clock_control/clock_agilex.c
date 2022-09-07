@@ -28,6 +28,9 @@ static int clk_get_rate(const struct device *dev,
 	case INTEL_SOCFPGA_CLOCK_MMC:
 		*rate = get_mmc_clk();
 		break;
+	case INTEL_SOCFPGA_CLOCK_TIMER:
+		*rate = get_timer_clk();
+		break;
 	default:
 		return -ENOTSUP;
 	}

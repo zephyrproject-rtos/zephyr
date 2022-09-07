@@ -142,3 +142,14 @@ uint32_t get_mmc_clk(void)
 
 	return mmc_clk;
 }
+
+/* Calculate clock frequency to be used for Timer driver */
+uint32_t get_timer_clk(void)
+{
+	uint32_t l3_clk, l4_sys_clk;
+
+	l3_clk = get_l3_clk();
+	l4_sys_clk = l3_clk / 4;
+
+	return l4_sys_clk;
+}
