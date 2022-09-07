@@ -1,0 +1,18 @@
+identifier: efr32bg_sltb010a
+name: EFR32BG-SLTB010A
+type: mcu
+arch: arm
+ram: 32
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - gpio
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
