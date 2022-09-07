@@ -55,6 +55,9 @@
 #define UART_DEFAULT_IRQ_POS	    2u
 #define UART_DEFAULT_IRQ	    BIT(UART_DEFAULT_IRQ_POS)
 
+/* VM index 0x50 for OCB */
+#define ESPI_OCB_VW_INDEX		0x50u
+
 LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 struct espi_isr {
@@ -133,6 +136,7 @@ enum mchp_smvw_regs {
  *  46h   | SMVW05 | generic      | generic      | generic   | generic     |
  *  47h   | MSVW07 | res          | res          | res       | HOST_C10    |
  *  4Ah   | MSVW08 | res          | res          | DNX_WARN  | res         |
+ *  50h   | SMVW06 | ESPI_OCB_3   | ESPI_OCB_2   | ESPI_OCB_1| ESPI_OCB_0  |
  */
 
 static const struct xec_signal vw_tbl[] = {
@@ -201,6 +205,15 @@ static const struct xec_signal vw_tbl[] = {
 	/* MSVW08 */
 	[ESPI_VWIRE_SIGNAL_DNX_WARN]      = {MCHP_MSVW08, ESPI_VWIRE_SRC_ID1,
 					     ESPI_MASTER_TO_SLAVE},
+	/* SMVW06 */
+	[ESPI_VWIRE_SIGNAL_OCB_0]       = {MCHP_SMVW06, ESPI_VWIRE_SRC_ID0,
+					     ESPI_SLAVE_TO_MASTER},
+	[ESPI_VWIRE_SIGNAL_OCB_1]       = {MCHP_SMVW06, ESPI_VWIRE_SRC_ID1,
+					     ESPI_SLAVE_TO_MASTER},
+	[ESPI_VWIRE_SIGNAL_OCB_2]       = {MCHP_SMVW06, ESPI_VWIRE_SRC_ID2,
+					     ESPI_SLAVE_TO_MASTER},
+	[ESPI_VWIRE_SIGNAL_OCB_3]       = {MCHP_SMVW06, ESPI_VWIRE_SRC_ID3,
+					     ESPI_SLAVE_TO_MASTER},
 };
 
 /* Buffer size are expressed in bytes */
@@ -801,6 +814,29 @@ static void espi_bus_init(const struct device *dev)
 		MCHP_ESPI_VW_EN_GIRQ_VAL | MCHP_ESPI_PC_GIRQ_VAL;
 }
 
+void espi_config_vw_ocb(void)
+{
+	ESPI_SMVW_REG *reg = &(ESPI_S2M_VW_REGS->SMVW06);
+
+	/* Keep index bits [7:0] in initial 0h value (disabled state) */
+	mec_espi_smvw_index_set(reg, 0);
+	/* Set 01b (eSPI_RESET# domain) into bits [9:8] which frees the
+	 * register from all except chip level resets and set initial state
+	 * of VW wires as 1111b in bits [15:12].
+	 */
+	mec_espi_msvw_stom_set(reg, VW_RST_SRC_ESPI_RESET, 0x1);
+	/* Set 4 SMVW SRC bits in bit positions [0], [8], [16] and [24] to
+	 * initial value '1'.
+	 */
+	mec_espi_smvw_set_all_bitmap(reg, 0xF);
+	/* Set 00b (eSPI_RESET# domain) into bits [9:8] while preserving
+	 * the values in bits [15:12].
+	 */
+	mec_espi_msvw_stom_set(reg, VW_RST_SRC_ESPI_RESET, 0x0);
+	/* Set INDEX field with OCB VW index */
+	mec_espi_smvw_index_set(reg, ESPI_OCB_VW_INDEX);
+}
+
 static void espi_rst_isr(const struct device *dev)
 {
 	uint8_t rst_sts;
@@ -1163,6 +1199,12 @@ static void vw_host_rst_warn_isr(const struct device *dev)
 static void vw_sus_warn_isr(const struct device *dev)
 {
 	notify_host_warning(dev, ESPI_VWIRE_SIGNAL_SUS_WARN);
+	/* Configure spare VW register SMVW06 to VW index 50h. As per
+	 * per microchip recommendation, spare VW register should be
+	 * configured between SLAVE_BOOT_LOAD_DONE = 1 VW event and
+	 * point where SUS_ACK=1 VW is sent to SOC.
+	 */
+	espi_config_vw_ocb();
 }
 
 static void vw_oob_rst_isr(const struct device *dev)
