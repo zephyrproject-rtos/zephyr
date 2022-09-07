@@ -374,6 +374,7 @@
 /drivers/sensor/lps*/                     @avisconti
 /drivers/sensor/lsm*/                     @avisconti
 /drivers/sensor/mpr/                      @sven-hm
+/drivers/sensor/qdec_stm32/               @valeriosetti
 /drivers/sensor/st*/                      @avisconti
 /drivers/serial/*b91*                     @andy-liu-telink
 /drivers/serial/uart_altera_jtag.c        @nashif
