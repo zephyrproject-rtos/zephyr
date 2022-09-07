@@ -26,7 +26,7 @@ static void test_shell_exec(const char *line, int result)
 	zassert_true(ret == result, line);
 }
 
-void test_fs_help(void)
+ZTEST(multi_fs_help, test_fs_help)
 {
 #ifdef CONFIG_FILE_SYSTEM_SHELL
 	test_shell_exec("help", 0);
@@ -46,3 +46,4 @@ void test_fs_littlefs_mount(void)
 {
 	test_shell_exec("fs mount littlefs /littlefs", 0);
 }
+ZTEST_SUITE(multi_fs_help, NULL, NULL, NULL, NULL, NULL);
