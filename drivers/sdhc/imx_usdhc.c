@@ -848,11 +848,17 @@ static const struct sdhc_driver_api usdhc_api = {
 #define IMX_USDHC_PINCTRL_INIT(n)
 #endif
 
+#ifdef CONFIG_NOCACHE_MEMORY
+#define IMX_USDHC_NOCACHE_TAG __attribute__((__section__(".nocache")));
+#else
+#define IMX_USDHC_NOCACHE_TAG
+#endif
+
 #ifdef CONFIG_IMX_USDHC_DMA_SUPPORT
 #define IMX_USDHC_DMA_BUFFER_DEFINE(n)						\
 	static uint32_t	__aligned(32)						\
 		usdhc_##n##_dma_descriptor[CONFIG_IMX_USDHC_DMA_BUFFER_SIZE / 4]\
-		__attribute__((__section__(".nocache")));
+		IMX_USDHC_NOCACHE_TAG;
 #define IMX_USDHC_DMA_BUFFER_INIT(n)						\
 	.usdhc_dma_descriptor = usdhc_##n##_dma_descriptor,			\
 	.dma_descriptor_len = CONFIG_IMX_USDHC_DMA_BUFFER_SIZE / 4,
