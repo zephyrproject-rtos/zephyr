@@ -10,6 +10,13 @@ menuconfig SMBUS
 
 if SMBUS
 
+config SMBUS_SHELL
+	bool "SMBus Shell"
+	default y
+	depends on SHELL
+	help
+	  Enable SMBus Shell.
+
 config SMBUS_STATS
 	bool "SMBus device Stats"
 	depends on STATS
