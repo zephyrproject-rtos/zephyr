@@ -434,7 +434,7 @@ fail:
 }
 
 /* Initial setup for the tests */
-static void test_presetup(void)
+static void *presetup(void)
 {
 	struct net_if_addr *ifaddr;
 
@@ -454,6 +454,7 @@ static void test_presetup(void)
 	}
 
 	k_work_init_delayable(&test_server, test_server_timeout);
+	return NULL;
 }
 
 static void handle_client_test(sa_family_t af, struct tcphdr *th)
@@ -521,7 +522,7 @@ fail:
  *   send ACK.
  *   any failures cause test case to fail.
  */
-static void test_client_ipv4(void)
+ZTEST(net_tcp, test_client_ipv4)
 {
 	struct net_context *ctx;
 	uint8_t data = 0x41; /* "A" */
@@ -583,7 +584,7 @@ static void test_client_ipv4(void)
  *   send ACK.
  *   any failures cause test case to fail.
  */
-static void test_client_ipv6(void)
+ZTEST(net_tcp, test_client_ipv6)
 {
 	struct net_context *ctx;
 	uint8_t data = 0x41; /* "A" */
@@ -740,7 +741,7 @@ static void test_tcp_accept_cb(struct net_context *ctx,
  *   expect ACK.
  *   any failures cause test case to fail.
  */
-static void test_server_ipv4(void)
+ZTEST(net_tcp, test_server_ipv4)
 {
 	struct net_context *ctx;
 	int ret;
@@ -803,7 +804,7 @@ static void test_server_ipv4(void)
  *   expect ACK.
  *   any failures cause test case to fail.
  */
-static void test_server_with_options_ipv4(void)
+ZTEST(net_tcp, test_server_with_options_ipv4)
 {
 	struct net_context *ctx;
 	int ret;
@@ -866,7 +867,7 @@ static void test_server_with_options_ipv4(void)
  *   expect ACK.
  *   any failures cause test case to fail.
  */
-static void test_server_ipv6(void)
+ZTEST(net_tcp, test_server_ipv6)
 {
 	struct net_context *ctx;
 	int ret;
@@ -935,7 +936,7 @@ static void handle_syn_resend(void)
  *   send SYN again,
  *   any failures cause test case to fail.
  */
-static void test_client_syn_resend(void)
+ZTEST(net_tcp, test_client_syn_resend)
 {
 	struct net_context *ctx;
 	int ret;
@@ -1036,7 +1037,7 @@ fail:
  *   send ACK,
  *   any failures cause test case to fail.
  */
-static void test_client_fin_wait_2_ipv4(void)
+ZTEST(net_tcp, test_client_fin_wait_2_ipv4)
 {
 	struct net_context *ctx;
 	uint8_t data = 0x41; /* "A" */
@@ -1157,7 +1158,7 @@ fail:
  *   expect ACK,
  *   any failures cause test case to fail.
  */
-static void test_client_closing_ipv6(void)
+ZTEST(net_tcp, test_client_closing_ipv6)
 {
 	struct net_context *ctx;
 	uint8_t data = 0x41; /* "A" */
@@ -1311,7 +1312,7 @@ static void check_rst_succeed(struct net_context *ctx,
 	net_tcp_put(ctx);
 }
 
-static void test_client_invalid_rst(void)
+ZTEST(net_tcp, test_client_invalid_rst)
 {
 	struct net_context *ctx;
 	struct tcp *conn;
@@ -1430,7 +1431,7 @@ static void checklist_based_out_of_order_test(struct out_of_order_check_struct *
 	}
 }
 
-static void test_server_recv_out_of_order_data(void)
+ZTEST(net_tcp, test_server_recv_out_of_order_data)
 {
 	/* Only run the tests if queueing is enabled */
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT == 0) {
@@ -1465,7 +1466,7 @@ struct out_of_order_check_struct reorder_timeout_list[] = {
  * test_server_recv_out_of_order_data(), so this test must be run after that
  * test.
  */
-static void test_server_timeout_out_of_order_data(void)
+ZTEST(net_tcp, test_server_timeout_out_of_order_data)
 {
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT == 0) {
 		return;
@@ -1480,23 +1481,4 @@ static void test_server_timeout_out_of_order_data(void)
 	net_tcp_put(ooo_ctx);
 }
 
-/** Test case main entry */
-void test_main(void)
-{
-	ztest_test_suite(test_tcp_fn,
-			 ztest_unit_test(test_presetup),
-			 ztest_unit_test(test_client_ipv4),
-			 ztest_unit_test(test_client_ipv6),
-			 ztest_unit_test(test_server_ipv4),
-			 ztest_unit_test(test_server_with_options_ipv4),
-			 ztest_unit_test(test_server_ipv6),
-			 ztest_unit_test(test_client_syn_resend),
-			 ztest_unit_test(test_client_fin_wait_2_ipv4),
-			 ztest_unit_test(test_client_closing_ipv6),
-			 ztest_unit_test(test_client_invalid_rst),
-			 ztest_unit_test(test_server_recv_out_of_order_data),
-			 ztest_unit_test(test_server_timeout_out_of_order_data)
-			 );
-
-	ztest_run_test_suite(test_tcp_fn);
-}
+ZTEST_SUITE(net_tcp, NULL, presetup, NULL, NULL, NULL);
