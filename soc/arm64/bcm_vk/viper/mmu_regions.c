@@ -6,6 +6,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/arch/arm64/arm_mmu.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 
 #define PCIE_OB_HIGHMEM_ADDR	DT_REG_ADDR_BY_NAME(DT_NODELABEL(pcie0_ep), \
@@ -26,6 +27,8 @@ static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("DRAM0_S0",
 			      0x60000000, MB(512),
 			      MT_NORMAL | MT_P_RW_U_NA | MT_SECURE),
+
+	BUILD_DT_REGION_MMU(MMU_REGION_FLAT_ENTRY)
 };
 
 const struct arm_mmu_config mmu_config = {

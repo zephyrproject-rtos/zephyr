@@ -6,6 +6,7 @@
  */
 #include <zephyr/arch/arm64/arm_mmu.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/sys/util.h>
 
 static const struct arm_mmu_region mmu_regions[] = {
@@ -19,6 +20,8 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_ADDR_BY_IDX(DT_INST(0, arm_gic), 1),
 			      DT_REG_SIZE_BY_IDX(DT_INST(0, arm_gic), 1),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE),
+
+	BUILD_DT_REGION_MMU(MMU_REGION_FLAT_ENTRY)
 };
 
 const struct arm_mmu_config mmu_config = {
