@@ -626,25 +626,6 @@ config INIT_ENET_PLL
 	  MIMXRT1021 - see commit 17f4d6bec7 ("soc: nxp_imx: fix ENET_PLL selection
 	  for MIMXRT1021").
 
-config HAS_ARM_DIV
-	bool "Has the divider for ARM"
-	default y
-
-config ARM_DIV
-	int "ARM clock divider"
-	range 0 7
-	default 0
-
-config AHB_DIV
-	int "AHB clock divider"
-	range 0 7
-	default 0
-
-config IPG_DIV
-	int "IPG clock divider"
-	range 0 3
-	default 0
-
 config DCDC_VALUE
 	hex "DCDC value for VDD_SOC"
 	default 0x13

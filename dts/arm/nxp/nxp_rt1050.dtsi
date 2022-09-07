@@ -5,6 +5,16 @@
  */
 #include <nxp/nxp_rt10xx.dtsi>
 
+&ccm {
+	arm-podf {
+		clock-div = <2>;
+	};
+
+	ipg-podf {
+		clock-div = <4>;
+	};
+};
+
 / {
 	soc {
 		/* GPIOS 6-9 are not preset on RT1050 */
