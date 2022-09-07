@@ -1225,6 +1225,16 @@ void llcp_rp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 	rp_cu_execute_fsm(conn, ctx, RP_CU_EVT_RUN, param);
 }
 
+bool llcp_rp_cu_awaiting_instant(struct proc_ctx *ctx)
+{
+	return (ctx->state == RP_CU_STATE_WAIT_INSTANT);
+}
+
+bool llcp_lp_cu_awaiting_instant(struct proc_ctx *ctx)
+{
+	return (ctx->state == LP_CU_STATE_WAIT_INSTANT);
+}
+
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 void llcp_rp_conn_param_req_reply(struct ll_conn *conn, struct proc_ctx *ctx)
 {

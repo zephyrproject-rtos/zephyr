@@ -204,6 +204,10 @@ void llcp_lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 	lp_chmu_execute_fsm(conn, ctx, LP_CHMU_EVT_RUN, param);
 }
 
+bool llcp_lp_chmu_awaiting_instant(struct proc_ctx *ctx)
+{
+	return (ctx->state == LP_CHMU_STATE_WAIT_INSTANT);
+}
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -319,5 +323,10 @@ void llcp_rp_chmu_init_proc(struct proc_ctx *ctx)
 void llcp_rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	rp_chmu_execute_fsm(conn, ctx, RP_CHMU_EVT_RUN, param);
+}
+
+bool llcp_rp_chmu_awaiting_instant(struct proc_ctx *ctx)
+{
+	return (ctx->state == RP_CHMU_STATE_WAIT_INSTANT);
 }
 #endif /* CONFIG_BT_PERIPHERAL */
