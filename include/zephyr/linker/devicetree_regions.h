@@ -326,13 +326,13 @@
  *
  *   static const struct arm_mpu_region mpu_regions[] = {
  *       ...
- *       LINKER_DT_REGION_MPU(MPU_FN)
+ *       BUILD_DT_REGION_MPU(MPU_FN)
  *       ...
  *   };
  * @endcode
  *
  */
-#define LINKER_DT_REGION_MPU(mpu_fn) _CHECK_APPLY_MPU_FN(_DT_COMPATIBLE, _EXPAND_MPU_FN, mpu_fn)
+#define BUILD_DT_REGION_MPU(mpu_fn) _CHECK_APPLY_MPU_FN(_DT_COMPATIBLE, _EXPAND_MPU_FN, mpu_fn)
 
 /**
  * @brief Generate MMU regions from the device tree nodes with both
