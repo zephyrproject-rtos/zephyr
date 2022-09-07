@@ -56,7 +56,7 @@ static const struct device *const clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_N
  * - with prescaler of 1, the max timeout (lptim_time_base) is 2seconds
  */
 
-static uint32_t lptim_clock_freq;
+static uint32_t lptim_clock_freq = 32000;
 static int32_t lptim_time_base;
 
 
