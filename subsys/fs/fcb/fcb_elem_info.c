@@ -38,7 +38,8 @@ fcb_elem_crc8(struct fcb *fcb, struct fcb_entry *loc, uint8_t *c8p)
 	if (cnt < 0) {
 		return cnt;
 	}
-	loc->fe_data_off = loc->fe_elem_off + fcb_len_in_flash(fcb, cnt);
+	loc->fe_data_off = loc->fe_elem_off + fcb_len_in_flash(fcb, cnt) +
+        fcb_len_in_flash(fcb, META_INFO_LEN);
 	loc->fe_data_len = len;
 
 	crc8 = CRC8_CCITT_INITIAL_VALUE;

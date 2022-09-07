@@ -62,6 +62,7 @@ fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *append_loc)
 	struct flash_sector *sector;
 	struct fcb_entry *active;
 	int cnt;
+    int meta_info_len;
 	int rc;
 	uint8_t tmp_str[8];
 
@@ -69,6 +70,7 @@ fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *append_loc)
 	if (cnt < 0) {
 		return cnt;
 	}
+    meta_info_len = fcb_len_in_flash(fcb, META_INFO_LEN);
 	cnt = fcb_len_in_flash(fcb, cnt);
 	len = fcb_len_in_flash(fcb, len) + fcb_len_in_flash(fcb, FCB_CRC_SZ);
 
@@ -79,10 +81,10 @@ fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *append_loc)
 		return -EINVAL;
 	}
 	active = &fcb->f_active;
-	if (active->fe_elem_off + len + cnt > active->fe_sector->fs_size) {
+    if (active->fe_elem_off + len + meta_info_len + cnt > active->fe_sector->fs_size) {
 		sector = fcb_new_sector(fcb, fcb->f_scratch_cnt);
 		if (!sector || (sector->fs_size <
-			sizeof(struct fcb_disk_area) + len + cnt)) {
+            sizeof(struct fcb_disk_area) + len + meta_info_len + cnt)) {
 			rc = -ENOSPC;
 			goto err;
 		}
@@ -102,7 +104,7 @@ fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *append_loc)
 	}
 	append_loc->fe_sector = active->fe_sector;
 	append_loc->fe_elem_off = active->fe_elem_off;
-	append_loc->fe_data_off = active->fe_elem_off + cnt;
+    append_loc->fe_data_off = active->fe_elem_off + cnt + meta_info_len;
 
 	active->fe_elem_off = append_loc->fe_data_off + len;
 

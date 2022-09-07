@@ -119,3 +119,35 @@ fcb_getnext(struct fcb *fcb, struct fcb_entry *loc)
 
 	return rc;
 }
+
+int
+fcb_getmeta_off(struct fcb *fcb, struct fcb_entry *loc)
+{
+#if 0
+    int rc = 0;
+
+	if (loc->fe_sector == NULL) {
+		/*
+		 * Find the first one we have in flash.
+		 */
+		loc->fe_sector = fcb->f_oldest;
+	}
+	if (loc->fe_elem_off == 0U) {
+		/*
+		 * If offset is zero, we serve the first entry from the sector.
+		 */
+		loc->fe_elem_off = sizeof(struct fcb_disk_area);
+        rc = fcb_elem_info(fcb, loc);
+        if (rc != 0) {
+            return rc;
+        }
+    }
+#endif
+	return (loc->fe_sector->fs_off + loc->fe_data_off - fcb_len_in_flash(fcb, META_INFO_LEN));
+}
+
+int
+fcb_getmeta_len(struct fcb *fcb, struct fcb_entry *loc)
+{
+	return fcb_len_in_flash(fcb, META_INFO_LEN);
+}

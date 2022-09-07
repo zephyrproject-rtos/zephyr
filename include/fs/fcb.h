@@ -36,6 +36,8 @@ extern "C" {
 
 #define FCB_MAX_LEN	(CHAR_MAX | CHAR_MAX << 7) /**< Max length of element */
 
+#define META_INFO_LEN    (4U)
+
 /**
  * @brief FCB entry info structure. This data structure describes the element
  * location in the flash.
@@ -332,6 +334,9 @@ int fcb_flash_read(const struct fcb *fcb, const struct flash_sector *sector,
 int fcb_flash_write(const struct fcb *fcb, const struct flash_sector *sector,
 		    off_t off, const void *src, size_t len);
 
+int fcb_getmeta_off(struct fcb *fcb, struct fcb_entry *loc);
+
+int fcb_getmeta_len(struct fcb *fcb, struct fcb_entry *loc);
 /**
  * @}
  */
