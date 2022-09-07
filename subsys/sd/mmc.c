@@ -75,7 +75,7 @@ static inline int mmc_set_max_freq(struct sd_card *card, struct sd_csd *card_csd
 static int mmc_set_bus_width(struct sd_card *card);
 
 /* Sets card to the fastest timing mode (using CMD6) and SDHC to max frequency */
-static int mmc_set_timing(struct sd_card *card);
+static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *card_ext_csd);
 
 /*
  * Initialize MMC card for use with subsystem
@@ -170,7 +170,7 @@ int mmc_card_init(struct sd_card *card)
 	}
 
 	/* Set timing to fastest supported */
-	ret = mmc_set_timing(card);
+	ret = mmc_set_timing(card, &card_ext_csd);
 	if (ret) {
 		return ret;
 	}
@@ -351,35 +351,6 @@ static inline int mmc_set_max_freq(struct sd_card *card, struct sd_csd *card_csd
 	return 0;
 }
 
-static int mmc_set_timing(struct sd_card *card)
-{
-	int ret;
-	struct sdhc_command cmd = {0};
-
-	/* Change Card Timing Mode */
-	cmd.opcode = SD_SWITCH;
-	cmd.arg = MMC_SWITCH_HS_TIMING_ARG;
-	cmd.response_type = SD_RSP_TYPE_R1b;
-	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
-	ret = sdhc_request(card->sdhc, &cmd, NULL);
-	if (ret) {
-		LOG_DBG("Error setting bus timing: %d", ret);
-		return ret;
-	}
-	sdmmc_wait_ready(card);
-
-	/* Max frequency in HS mode is 52 MHz */
-	card->bus_io.clock = 52000000;
-	card->bus_io.timing = SDHC_TIMING_HS;
-	/* Change SDHC bus timing */
-	ret = sdhc_set_io(card->sdhc, &card->bus_io);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
-}
-
 static int mmc_set_bus_width(struct sd_card *card)
 {
 	int ret;
@@ -392,7 +363,7 @@ static int mmc_set_bus_width(struct sd_card *card)
 		cmd.arg = MMC_SWITCH_4_BIT_BUS_ARG;
 		card->bus_io.bus_width = SDHC_BUS_WIDTH4BIT;
 	} else {
-		/* If only 1 bit bus is supoprted, nothing to be done */
+		/* If only 1 bit bus is supported, nothing to be done */
 		return 0;
 	}
 
@@ -414,7 +385,52 @@ static int mmc_set_bus_width(struct sd_card *card)
 		return ret;
 	}
 
+	return ret;
+}
+
+static int mmc_set_hs_timing(struct sd_card *card)
+{
+	int ret;
+	struct sdhc_command cmd = {0};
+
+	/* Change Card Timing Mode */
+	cmd.opcode = SD_SWITCH;
+	cmd.arg = MMC_SWITCH_HS_TIMING_ARG;
+	cmd.response_type = SD_RSP_TYPE_R1b;
+	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	if (ret) {
+		LOG_DBG("Error setting bus timing: %d", ret);
+		return ret;
+	}
+	sdmmc_wait_ready(card);
+
+	/* Max frequency in HS mode is 52 MHz */
+	card->bus_io.clock = MMC_CLOCK_52MHZ;
+	card->bus_io.timing = SDHC_TIMING_HS;
+	/* Change SDHC bus timing */
+	ret = sdhc_set_io(card->sdhc, &card->bus_io);
+	if (ret) {
+		return ret;
+	}
+
 	return 0;
+}
+
+static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *ext)
+{
+	int ret;
+
+	if (ext->device_type.MMC_HS_52_DV) {
+		return mmc_set_HS_timing(card);
+	} else if (ext->device_type.MMC_HS_26_DV) {
+		/* Nothing to do, card is already configured for this */
+		return 0;
+	} else {
+		return -ENOTSUP;
+	}
+
+	return ret;
 }
 
 static int mmc_read_ext_csd(struct sd_card *card, struct mmc_ext_csd *card_ext_csd)
@@ -454,6 +470,15 @@ static inline void mmc_decode_ext_csd(struct mmc_ext_csd *ext, uint8_t *raw)
 		(raw[215U] << 24U) + (raw[214U] << 16U) + (raw[213U] << 8U) + (raw[212U] << 0U);
 	ext->bus_width = raw[183U];
 	ext->hs_timing = raw[185U];
+	ext->device_type.MMC_HS400_DDR_1200MV = ((1 << 7U) & raw[196U]);
+	ext->device_type.MMC_HS400_DDR_1800MV = ((1 << 6U) & raw[196U]);
+	ext->device_type.MMC_HS200_SDR_1200MV = ((1 << 5U) & raw[196U]);
+	ext->device_type.MMC_HS200_SDR_1800MV = ((1 << 4U) & raw[196U]);
+	ext->device_type.MMC_HS_DDR_1200MV = ((1 << 3U) & raw[196U]);
+	ext->device_type.MMC_HS_DDR_1800MV = ((1 << 2U) & raw[196U]);
+	ext->device_type.MMC_HS_52_DV = ((1 << 1U) & raw[196U]);
+	ext->device_type.MMC_HS_26_DV = ((1 << 0U) & raw[196U]);
 	ext->rev = raw[192U];
 	ext->power_class = (raw[187] & 0x0F);
+	ext->mmc_driver_strengths = raw[197U];
 }
