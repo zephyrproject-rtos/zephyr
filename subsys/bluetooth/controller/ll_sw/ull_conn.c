@@ -8064,12 +8064,25 @@ uint16_t ull_conn_event_counter(struct ll_conn *conn)
 	struct lll_conn *lll;
 	uint16_t event_counter;
 
-	uint16_t lazy = conn->llcp.prep.lazy;
-
 	lll = &conn->lll;
 
-	/* Calculate current event counter */
-	event_counter = lll->event_counter + lll->latency_prepare + lazy;
+	/* Calculate current event counter. If refcount is non-zero, we have called
+	 * prepare and the LLL implementation has calculated and incremented the event
+	 * counter (RX path). In this case we need to subtract one from the current
+	 * event counter.
+	 * Otherwise we are in the TX path, and we calculate the current event counter
+	 * similar to LLL by taking the expected event counter value plus accumulated
+	 * latency.
+	 */
+	if (ull_ref_get(&conn->ull)) {
+		/* We are in post-prepare (RX path). Event counter is already
+		 * calculated and incremented by 1 for next event.
+		 */
+		event_counter = lll->event_counter - 1;
+	} else {
+		event_counter = lll->event_counter + lll->latency_prepare +
+				conn->llcp.prep.lazy;
+	}
 
 	return event_counter;
 }

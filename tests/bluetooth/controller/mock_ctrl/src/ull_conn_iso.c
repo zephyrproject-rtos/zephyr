@@ -54,6 +54,11 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get(uint16_t handle)
 	return &cis;
 }
 
+struct ll_conn_iso_stream *ll_iso_stream_connected_get(uint16_t handle)
+{
+	return &cis;
+}
+
 struct ll_conn_iso_group *ll_conn_iso_group_get_by_id(uint8_t id)
 {
 	return &cig;
