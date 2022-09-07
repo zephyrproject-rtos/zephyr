@@ -1,0 +1,9 @@
+# Synopsys DesignWare Timer configuration option
+
+# Copyright (c) 2022, Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_SNPS_DW
+	bool "Synopsys DesignWare Timer Driver"
+	help
+	  Enable Timer driver for Intel SoC FPGA.
