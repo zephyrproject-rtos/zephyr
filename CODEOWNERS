@@ -119,6 +119,7 @@
 /boards/arm/legend/                       @mbittan @simonguinot
 /boards/arm/lpcxpresso*/                  @mmahadevan108 @dleach02
 /boards/arm/lpcxpresso*/doc/              @dleach02 @MeganHansen
+/boards/arm/mg100/                        @rerickson1
 /boards/arm/mimx8mm_evk/                  @Mani-Sadhasivam
 /boards/arm/mimxrt*/                      @mmahadevan108 @dleach02
 /boards/arm/mimxrt*/doc/                  @dleach02 @MeganHansen
