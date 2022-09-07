@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2022 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	/* qemu_cortex_a9 board isn't configured with an I2C node */
+ 	i2c0: i2c@100 {
+		status = "okay";
+		compatible = "zephyr,i2c-emul-controller";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x100 4>;
+	};
+ 	i2c1: i2c@200 {
+		status = "okay";
+		compatible = "zephyr,i2c-emul-controller";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x200 4>;
+	};
+
+	/*
+	 * This node enables CONFIG_I2C_SHELL_CONTROLLER_LIST.  Only map in
+	 * one I2C controller to verify the shell command doesn't allow
+	 * scanning of the second controller.
+	 */
+	i2c-shell {
+		compatible = "i2c-shell";
+		i2c-controllers = <&i2c0>;
+		i2c-controller-names = "I2C_BUS_PRIMARY";
+	};
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	i2c0_eeprom: eeprom@57 {
+		compatible = "atmel,at24";
+		reg = <0x57>;
+		size = <256>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	i2c1_eeprom: eeprom@55 {
+		compatible = "atmel,at24";
+		reg = <0x55>;
+		size = <256>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+};

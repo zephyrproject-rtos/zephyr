@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2022 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* Default native_posix board only contains 1 I2C bus */
+ 	i2c1: i2c@200 {
+		status = "okay";
+		compatible = "zephyr,i2c-emul-controller";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x200 4>;
+	};
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	i2c0_eeprom: eeprom@57 {
+		compatible = "atmel,at24";
+		reg = <0x57>;
+		size = <256>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	i2c1_eeprom: eeprom@55 {
+		compatible = "atmel,at24";
+		reg = <0x55>;
+		size = <256>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+};

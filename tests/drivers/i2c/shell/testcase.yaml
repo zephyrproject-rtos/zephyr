@@ -1,0 +1,4 @@
+tests:
+  drivers.i2c.shell:
+    platform_allow: native_posix qemu_cortex_a9
+    tags: drivers i2c shell
