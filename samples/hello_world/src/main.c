@@ -5,8 +5,9 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/device.h>
 
 void main(void)
 {
-	printk("Hello World! %s\n", CONFIG_BOARD);
+	printk("Hello World! %p\n", DEVICE_DT_GET(DT_INVALID_NODE));
 }
