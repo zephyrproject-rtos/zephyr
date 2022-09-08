@@ -392,14 +392,17 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 		uint8_t handle = node_rx->hdr.handle;
 		struct ll_iso_stream_hdr *hdr = NULL;
+		struct ll_conn_iso_stream *cis = NULL;
+		struct ll_iso_datapath *dp = NULL;
 
 		if (IS_CIS_HANDLE(handle)) {
-			struct ll_conn_iso_stream *cis =
-				ll_conn_iso_stream_get(handle);
+			cis = ll_conn_iso_stream_get(handle);
 			hdr = &cis->hdr;
 		}
 
-		struct ll_iso_datapath *dp = hdr->datapath_out;
+		if (cis && !cis->teardown) {
+			dp = hdr->datapath_out;
+		}
 
 		if (dp && dp->path_id == BT_HCI_DATAPATH_ID_HCI) {
 			/* If HCI datapath pass to ISO AL here */
