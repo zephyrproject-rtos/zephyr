@@ -44,6 +44,54 @@ static struct  b91_data data = {
 #endif /* CONFIG_OPENTHREAD_FTD */
 };
 
+/*
+ * Check if received buffer contains destination PANID
+ * buffer should be valid and contains at lest 2 bytes
+ */
+static bool b91_is_dest_panid_present(const uint8_t fcb[2])
+{
+	bool result = true;
+	const uint8_t frame_ver_t = fcb[1] & B91_FRAME_VER_MASK;
+	const uint8_t dst_addr_t = fcb[1] & B91_DEST_ADDR_TYPE_MASK;
+	const uint8_t src_addr_t = fcb[1] & B91_SRC_ADDR_TYPE_MASK;
+	const uint8_t panid_compr_t = fcb[0] & B91_PANID_COMPRESSION_MASK;
+
+	if (frame_ver_t == B91_FRAME_VER_2015) {
+		if ((dst_addr_t == B91_DEST_ADDR_TYPE_NA &&
+				src_addr_t == B91_SRC_ADDR_TYPE_NA &&
+				panid_compr_t == B91_PANID_COMPRESSION_OFF) ||
+			(dst_addr_t == B91_DEST_ADDR_TYPE_IEEE &&
+				src_addr_t == B91_SRC_ADDR_TYPE_NA &&
+				panid_compr_t == B91_PANID_COMPRESSION_ON) ||
+			(dst_addr_t == B91_DEST_ADDR_TYPE_SHORT &&
+				src_addr_t == B91_SRC_ADDR_TYPE_NA &&
+				panid_compr_t == B91_PANID_COMPRESSION_ON) ||
+			(dst_addr_t == B91_DEST_ADDR_TYPE_NA &&
+				src_addr_t == B91_SRC_ADDR_TYPE_IEEE &&
+				panid_compr_t == B91_PANID_COMPRESSION_OFF) ||
+			(dst_addr_t == B91_DEST_ADDR_TYPE_NA &&
+				src_addr_t == B91_SRC_ADDR_TYPE_SHORT &&
+				panid_compr_t == B91_PANID_COMPRESSION_OFF) ||
+			(dst_addr_t == B91_DEST_ADDR_TYPE_NA &&
+				src_addr_t == B91_SRC_ADDR_TYPE_IEEE &&
+				panid_compr_t == B91_PANID_COMPRESSION_ON) ||
+			(dst_addr_t == B91_DEST_ADDR_TYPE_NA &&
+				src_addr_t == B91_SRC_ADDR_TYPE_SHORT &&
+				panid_compr_t == B91_PANID_COMPRESSION_ON) ||
+			(dst_addr_t == B91_DEST_ADDR_TYPE_IEEE &&
+				src_addr_t == B91_SRC_ADDR_TYPE_IEEE &&
+				panid_compr_t == B91_PANID_COMPRESSION_ON)) {
+			result = false;
+		}
+	} else {
+		if (dst_addr_t == B91_DEST_ADDR_TYPE_NA) {
+			result = false;
+		}
+	}
+
+	return result;
+}
+
 #ifdef CONFIG_OPENTHREAD_FTD
 
 /* clean radio search match table */
@@ -117,83 +165,109 @@ static void b91_src_match_table_remove_group(struct b91_src_match_table *table, 
 	}
 }
 
-/* Check if received buffer contains data request */
+/*
+ * Check if received buffer contains data request
+ * buffer should be valid
+ */
 static bool b91_is_data_request(const uint8_t *buf, uint8_t size,
 	uint8_t *sn, const uint8_t **addr, bool *ext)
 {
 	bool result = false;
 
 	do {
-		uint8_t pos = 0;
-
-		if (!buf || size < 3) { /* FCB[2], SN[1] */
+		size_t pos = 0;
+		/* at frame control */
+		if (size < B91_PAN_ID_OFFSET) { /* FCB[2], SN[1] */
 			break;
 		}
-
 		*sn = buf[B91_DSN_OFFSET];
-		pos += 3; /* FCB[2], SN[1] */
-
+		pos += B91_PAN_ID_OFFSET; /* FCB[2], SN[1] */
 		if ((buf[0] & B91_FRAME_TYPE_MASK) != B91_FRAME_TYPE_CMD) {
 			break;
 		}
-
+		/* at destination PANID */
+		if (pos + B91_PAN_ID_SIZE > size) {
+			break;
+		}
+		if (b91_is_dest_panid_present(buf)) {
+			pos += B91_PAN_ID_SIZE; /* PANID[2] */
+		}
+		/* at destination address */
 		if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_NA) {
-			/* no destination data */
+			/* no destination address */
 		} else if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_SHORT) {
-			pos += 4; /* PANID[2], ADDR[2] */
+			pos += B91_SHORT_ADDRESS_SIZE; /* ADDR[2] */
 		} else if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_IEEE) {
-			pos += 10; /* PANID[2], ADDR[8] */
+			pos += B91_IEEE_ADDRESS_SIZE; /* ADDR[8] */
 		} else {
 			break;
 		}
-
+		/* at source PAN ID */
+		if ((buf[1] & B91_SRC_ADDR_TYPE_MASK) != B91_SRC_ADDR_TYPE_NA &&
+			(buf[0] & B91_PANID_COMPRESSION_MASK) == B91_PANID_COMPRESSION_OFF) {
+			if ((buf[1] & B91_FRAME_VER_MASK) != B91_FRAME_VER_2015 ||
+				(buf[1] & B91_DEST_ADDR_TYPE_MASK) != B91_DEST_ADDR_TYPE_IEEE ||
+				(buf[1] & B91_SRC_ADDR_TYPE_MASK) != B91_SRC_ADDR_TYPE_IEEE) {
+				pos += B91_PAN_ID_SIZE; /* PANID[2] */
+			}
+		}
+		/* at source address */
 		if ((buf[1] & B91_SRC_ADDR_TYPE_MASK) == B91_SRC_ADDR_TYPE_NA) {
-			/* no source data */
+			/* no source address */
 			*addr = NULL;
 		} else if ((buf[1] & B91_SRC_ADDR_TYPE_MASK) == B91_SRC_ADDR_TYPE_SHORT) {
-			if ((buf[0] & B91_PANID_COMPRESSION_MASK) == B91_PANID_COMPRESSION_OFF) {
-				pos += 2; /* PANID[2] */
-			}
 			*addr = &buf[pos];
 			*ext = false;
-			pos += 2; /* ADDR[2] */
+			pos += B91_SHORT_ADDRESS_SIZE; /* ADDR[2] */
 		} else if ((buf[1] & B91_SRC_ADDR_TYPE_MASK) == B91_SRC_ADDR_TYPE_IEEE) {
-			if ((buf[0] & B91_PANID_COMPRESSION_MASK) == B91_PANID_COMPRESSION_OFF) {
-				pos += 2; /* PANID[2] */
-			}
 			*addr = &buf[pos];
 			*ext = true;
-			pos += 8; /* ADDR[8] */
+			pos += B91_IEEE_ADDRESS_SIZE; /* ADDR[8] */
 		} else {
 			break;
 		}
-
 		if (pos >= size) {
 			break;
 		}
-
+		/* at security header */
 		if ((buf[0] & B91_SECURITY_EABLE_MASK) == B91_SECURITY_EABLE_ON) {
-			if ((buf[pos] & B91_KEY_ID_MODE_MASK) == B91_KEY_ID_MODE_0) {
-				pos += 5; /* SC[1], FC[4] */
-			} else if ((buf[pos] & B91_KEY_ID_MODE_MASK) == B91_KEY_ID_MODE_1) {
-				pos += 6; /* SC[1], FC[4], KEYID[1] */
-			} else if ((buf[pos] & B91_KEY_ID_MODE_MASK) == B91_KEY_ID_MODE_2) {
-				pos += 10; /* SC[1], FC[4], KEY[4], KEYID[1] */
-			} else if ((buf[pos] & B91_KEY_ID_MODE_MASK) == B91_KEY_ID_MODE_3) {
-				pos += 14; /* SC[1], FC[4], KEY[8], KEYID[1] */
-			}
+			const uint8_t key_mode_t = buf[pos] & B91_KEY_ID_MODE_MASK;
 
-			if (pos >= size) {
-				break;
+			if (key_mode_t == B91_KEY_ID_MODE_0) {
+				pos += B91_KEY_ID_MODE_0_LEN; /* SC[1], FC[4] */
+			} else if (key_mode_t == B91_KEY_ID_MODE_1) {
+				pos += B91_KEY_ID_MODE_1_LEN; /* SC[1], FC[4], KEYID[1] */
+			} else if (key_mode_t == B91_KEY_ID_MODE_2) {
+				pos += B91_KEY_ID_MODE_2_LEN; /* SC[1], FC[4], KEY[4], KEYID[1] */
+			} else if (key_mode_t == B91_KEY_ID_MODE_3) {
+				pos += B91_KEY_ID_MODE_3_LEN; /* SC[1], FC[4], KEY[8], KEYID[1] */
 			}
 		}
+		/* at IE header */
+		bool ie_error = false;
 
+		if ((buf[1] & B91_IE_PRESENT_MASK) == B91_IE_PRESENT_ON) {
+			ie_error = true;
+			while (pos + 1 < size) {
+				uint8_t ie_type =
+					((buf[pos + 1] & B91_IE_TYPE_H_MASK) << B91_IE_TYPE_H_OFS) |
+					((buf[pos] & B91_IE_TYPE_L_MASK) >> B91_IE_TYPE_L_OFS);
+				/* at IE header begin, probably not last */
+				pos += B91_IE_HEADER_SIZE + (buf[pos] & B91_IE_LEN_MASK);
+				if (ie_type == B91_IE_TYPE_TERMINATE) {
+					ie_error = false;
+					break;
+				}
+			}
+		}
+		if (ie_error || pos >= size) {
+			break;
+		}
+		/* at payload */
 		if (buf[pos] != B91_CMD_ID_DATA_REQ) {
 			break;
 		}
-
 		result = true;
-
 	} while (0);
 
 	return result;
@@ -260,43 +334,56 @@ static int b91_set_ieee_addr(const uint8_t *ieee_addr)
 }
 
 /* Filter PAN ID, short address and IEEE address */
-static bool b91_run_filter(uint8_t *rx_buffer)
+static bool b91_run_filter(const uint8_t *buf, uint8_t size)
 {
-	/* Check destination PAN Id */
-	if (memcmp(&rx_buffer[B91_PAN_ID_OFFSET], data.filter_pan_id,
-		   B91_PAN_ID_SIZE) != 0 &&
-	    memcmp(&rx_buffer[B91_PAN_ID_OFFSET], B91_BROADCAST_ADDRESS,
-		   B91_PAN_ID_SIZE) != 0) {
-		return false;
-	}
+	bool result = false;
 
-	/* Check destination address */
-	switch (rx_buffer[B91_DEST_ADDR_TYPE_OFFSET] & B91_DEST_ADDR_TYPE_MASK) {
-	case B91_DEST_ADDR_TYPE_SHORT:
-		/* First check if the destination is broadcast */
-		/* If not broadcast, check if length and address matches */
-		if (memcmp(&rx_buffer[B91_DEST_ADDR_OFFSET], B91_BROADCAST_ADDRESS,
-			   B91_SHORT_ADDRESS_SIZE) != 0 &&
-		    memcmp(&rx_buffer[B91_DEST_ADDR_OFFSET], data.filter_short_addr,
-			   B91_SHORT_ADDRESS_SIZE) != 0) {
-			return false;
+	do {
+		size_t pos = 0;
+		/* at frame control */
+		if (buf == NULL || size < B91_PAN_ID_OFFSET) { /* FCB[2], SN[1] */
+			break;
 		}
-		break;
-
-	case B91_DEST_ADDR_TYPE_IEEE:
-		/* If not broadcast, check if length and address matches */
-		if ((net_if_get_link_addr(data.iface)->len != B91_IEEE_ADDRESS_SIZE) ||
-		    memcmp(&rx_buffer[B91_DEST_ADDR_OFFSET], data.filter_ieee_addr,
-			   B91_IEEE_ADDRESS_SIZE) != 0) {
-			return false;
+		pos += B91_PAN_ID_OFFSET; /* FCB[2], SN[1] */
+		/* at destination PANID */
+		if (pos + 2 > size) {
+			break;
 		}
-		break;
+		if (b91_is_dest_panid_present(buf)) {
+			if (memcmp(&buf[pos], data.filter_pan_id, B91_PAN_ID_SIZE) != 0 &&
+				memcmp(&buf[pos], B91_BROADCAST_ADDRESS, B91_PAN_ID_SIZE) != 0) {
+				break;
+			}
+			pos += B91_PAN_ID_SIZE; /* PANID[2] */
+		}
+		/* at destination address */
+		if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_NA) {
+			/* no destination address */
+		} else if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_SHORT) {
+			if (pos + B91_SHORT_ADDRESS_SIZE > size) {
+				break;
+			}
+			if (memcmp(&buf[pos], B91_BROADCAST_ADDRESS, B91_SHORT_ADDRESS_SIZE) != 0 &&
+				memcmp(&buf[pos], data.filter_short_addr,
+					B91_SHORT_ADDRESS_SIZE) != 0) {
+				break;
+			}
+		} else if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_IEEE) {
+			if (pos + B91_IEEE_ADDRESS_SIZE > size) {
+				break;
+			}
+			if ((net_if_get_link_addr(data.iface)->len != B91_IEEE_ADDRESS_SIZE) ||
+				memcmp(&buf[pos], data.filter_ieee_addr,
+					B91_IEEE_ADDRESS_SIZE) != 0) {
+				break;
+			}
+		} else {
+			break;
+		}
+		result = true;
+	} while (0);
 
-	default:
-		return false;
-	}
-
-	return true;
+	return result;
 }
 
 /* Get MAC address */
@@ -492,7 +579,7 @@ static void b91_rf_rx_isr(void)
 		}
 
 		/* run filter (check PAN ID and destination address) */
-		if (b91_run_filter(payload) == false) {
+		if (b91_run_filter(payload, length) == false) {
 			LOG_DBG("Packet received is not addressed to me");
 			goto exit;
 		}
