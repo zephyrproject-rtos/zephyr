@@ -159,6 +159,13 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 				      presc_val,
 #endif
 				      baud_rate);
+		/* Check BRR is greater than or equal to 0x300 */
+		__ASSERT(LL_LPUART_ReadReg(config->usart, BRR) >= 0x300U,
+			 "BaudRateReg >= 0x300");
+
+		/* Check BRR is lower than or equal to 0xFFFFF */
+		__ASSERT(LL_LPUART_ReadReg(config->usart, BRR) < 0x000FFFFFU,
+			 "BaudRateReg < 0xFFFF");
 	} else {
 #endif /* HAS_LPUART_1 */
 #ifdef USART_CR1_OVER8
@@ -174,6 +181,9 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 				     LL_USART_OVERSAMPLING_16,
 #endif
 				     baud_rate);
+		/* Check BRR is greater than or equal to 16d */
+		__ASSERT(LL_USART_ReadReg(config->usart, BRR) > 16,
+			 "BaudRateReg >= 16");
 
 #if HAS_LPUART_1
 	}
