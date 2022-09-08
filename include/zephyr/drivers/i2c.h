@@ -1294,6 +1294,7 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
  *
  * It looks something like this (with name "testing"):
  *
+ * @code
  * D: I2C msg: testing, addr=56
  * D:    W len=01:
  * D: contents:
@@ -1302,6 +1303,7 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
  * D: contents:
  * D: 00 01 02 03 04 05 06 07 |........
  * D: 08 09 0a 0b 0c 0d       |......
+ * @endcode
  *
  * @param name Name of this dump, displayed at the top.
  * @param msgs Array of messages to dump.
