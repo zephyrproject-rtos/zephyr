@@ -1129,7 +1129,7 @@ static int cmd_cdb_node_add(const struct shell *sh, size_t argc,
 		bt_mesh_cdb_node_store(node);
 	}
 
-	shell_print(sh, "Added node 0x%04x", addr);
+	shell_print(sh, "Added node 0x%04x", node->addr);
 
 	return 0;
 }
