@@ -182,10 +182,6 @@ zephyr_udc0: &usb0 {
 	pinctrl-names = "default";
 };
 
-&rtc {
-	status = "okay";
-};
-
 ext1_spi: &sercom5 {
 };
 
