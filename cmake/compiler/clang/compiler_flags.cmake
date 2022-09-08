@@ -29,6 +29,7 @@ check_set_compiler_property(PROPERTY warning_base
                             -Wno-main
                             -Wno-unused-but-set-variable
                             -Wno-typedef-redefinition
+                            -Wno-deprecated-non-prototype
 )
 
 check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)
