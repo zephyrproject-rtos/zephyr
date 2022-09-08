@@ -7,6 +7,8 @@
 #include <zephyr/pm/pm.h>
 #include <cpu_init.h>
 
+#include <xtensa/corebits.h>
+
 #include <ace_v1x-regs.h>
 
 #define LPSRAM_MAGIC_VALUE      0x13579BDF
