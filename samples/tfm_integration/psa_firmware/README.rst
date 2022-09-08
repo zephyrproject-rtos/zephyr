@@ -22,7 +22,7 @@ TF-M supports three types of firmware upgrade mechanisms:
 
 This example uses the overwrite firmware upgrade mechanism, in particular, it showcases
 upgrading the non-secure image which can be built from any other sample in the
-``zephyr/samples/tfm_integration`` directory.
+``zephyr/samples`` directory.
 
 The sample prints test info to the console either as a single-thread or
 multi-thread application.
@@ -54,20 +54,24 @@ Build:
 1. Build the ``tfm_ipc`` sample with the non-secure board configuration, which will
 generate the firmware image we'll use in ``psa_firmware`` during the update:
 
-.. code-block:: bash
-
-   cd $ZEPHYR_BASE
-   west build -p -b mps3_an547_ns samples/tfm_integration/tfm_ipc/ \
-   -d build/mps3_an547_ns/tfm_integration/tfm_ipc
+.. zephyr-app-commands::
+   :zephyr-app: samples/tfm_integration/tfm_ipc
+   :host-os: unix
+   :board: mps3_an547_ns
+   :goals: build
+   :build-dir: build/tfm_ipc
+   :compact:
 
 2. Build psa_firmware
 
-.. code-block:: bash
-
-   cd $ZEPHYR_BASE
-   west build -p -b mps3_an547_ns samples/tfm_integration/psa_firmware \
-   -d build/mps3_an547_ns/tfm_integration/psa_firmware \
-   -- -DCONFIG_APP_FIRMWARE_UPDATE_IMAGE=\"full/path/to/zephyr/build/mps3_an547_ns/tfm_integration/tfm_ipc/zephyr/zephyr.hex\"
+.. zephyr-app-commands::
+   :zephyr-app: samples/tfm_integration/psa_firmware
+   :host-os: unix
+   :board: mps3_an547_ns
+   :goals: build
+   :build-dir: build/psa_firmware
+   :gen-args: -DCONFIG_APP_FIRMWARE_UPDATE_IMAGE=\"full/path/to/zephyr/build/tfm_ipc/zephyr/zephyr.hex\"
+   :compact:
 
 Note:
 This sample includes a pre-built firmware image (``hello-an547.hex``) in the ``boards``
@@ -102,11 +106,14 @@ Run in real target:
 Run in QEMU:
 ============
 
-.. code-block:: bash
-
-   qemu-system-arm -M mps3-an547 -device loader,file=path/to/zephyr/build/mps3_an547_ns/tfm_integration/psa_firmware/tfm_merged.hex -serial stdio  -d cpu_reset,unimp,guest_errors
-
-or you can manually pass the ``-t run`` extra argument before `--` to the `west build` command to automatically build and run in QEMU.
+.. zephyr-app-commands::
+   :zephyr-app: samples/tfm_integration/psa_firmware
+   :host-os: unix
+   :board: mps3_an547_ns
+   :goals: run
+   :build-dir: build/psa_firmware
+   :gen-args: -DCONFIG_APP_FIRMWARE_UPDATE_IMAGE=\"full/path/to/zephyr/build/tfm_ipc/zephyr/zephyr.hex\"
+   :compact:
 
 On LPCxpresso55S69:
 ===================
@@ -114,20 +121,24 @@ On LPCxpresso55S69:
 1. Build the ``tfm_ipc`` sample with the non-secure board configuration, which will
 generate the firmware image we'll use in ``psa_firmware`` during the update:
 
-.. code-block:: bash
-
-   cd $ZEPHYR_BASE
-   west build -p -b lpcxpresso55s69_ns samples/tfm_integration/tfm_ipc/ \
-   -d build/lpcxpresso55s69_ns/tfm_integration/tfm_ipc
+.. zephyr-app-commands::
+   :zephyr-app: samples/tfm_integration/tfm_ipc
+   :host-os: unix
+   :board: lpcxpresso55s69_ns
+   :goals: build
+   :build-dir: build/tfm_ipc
+   :compact:
 
 2. Build psa_firmware:
 
-.. code-block:: bash
-
-   cd $ZEPHYR_BASE
-   west build -p -b lpcxpresso55s69_ns samples/tfm_integration/psa_firmware \
-   -d build/lpcxpresso55s69_ns/tfm_integration/psa_firmware \
-   -- -DCONFIG_APP_FIRMWARE_UPDATE_IMAGE=\"full/path/to/zephyr/build/lpcxpresso55s69_ns/tfm_integration/tfm_ipc/zephyr/zephyr.hex\"
+.. zephyr-app-commands::
+   :zephyr-app: samples/tfm_integration/psa_firmware
+   :host-os: unix
+   :board: lpcxpresso55s69_ns
+   :goals: build
+   :build-dir: build/psa_firmware
+   :gen-args: -DCONFIG_APP_FIRMWARE_UPDATE_IMAGE=\"full/path/to/zephyr/build/tfm_ipc/zephyr/zephyr.hex\"
+   :compact:
 
 Make sure your board is set up with :ref:`lpclink2-jlink-onboard-debug-probe`,
 since this isn't the debug interface boards ship with from the factory;
