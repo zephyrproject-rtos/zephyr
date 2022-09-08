@@ -74,4 +74,6 @@ struct lll_conn_iso_group {
 
 int lll_conn_iso_init(void);
 int lll_conn_iso_reset(void);
+void lll_conn_iso_done(struct lll_conn_iso_group *cig, uint32_t trx_performed,
+		       uint16_t prog_to_anchor_us, uint8_t mic_state);
 void lll_conn_iso_flush(uint16_t handle, struct lll_conn_iso_stream *lll);

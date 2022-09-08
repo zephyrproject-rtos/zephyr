@@ -49,12 +49,21 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-static bool cc_check_cis_established_lll(struct proc_ctx *ctx)
+static bool cc_check_cis_established_or_timeout_lll(struct proc_ctx *ctx)
 {
 	const struct ll_conn_iso_stream *cis =
 		ll_conn_iso_stream_get(ctx->data.cis_create.cis_handle);
 
-	return cis->established;
+	if (cis->established) {
+		return true;
+	}
+
+	if (!cis->event_expire) {
+		ctx->data.cis_create.error = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+		return true;
+	}
+
+	return false;
 }
 
 static void cc_ntf_established(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -493,8 +502,11 @@ static void rp_cc_state_wait_cis_established(struct ll_conn *conn, struct proc_c
 	switch (evt) {
 	case RP_CC_EVT_RUN:
 		/* Check for CIS state */
-		if (cc_check_cis_established_lll(ctx)) {
-			/* CIS was established, so let's got ahead and complete procedure */
+		if (cc_check_cis_established_or_timeout_lll(ctx)) {
+			/* CIS was established or establishement timed out,
+			 * In either case complete procedure and generate
+			 * notification
+			 */
 			rp_cc_complete(conn, ctx, evt, param);
 		}
 		break;
@@ -843,7 +855,7 @@ static void lp_cc_st_wait_established(struct ll_conn *conn, struct proc_ctx *ctx
 {
 	switch (evt) {
 	case LP_CC_EVT_RUN:
-		if (cc_check_cis_established_lll(ctx)) {
+		if (cc_check_cis_established_or_timeout_lll(ctx)) {
 			/* CIS was established, so let's got ahead and complete procedure */
 			lp_cc_complete(conn, ctx, evt, param);
 		}
