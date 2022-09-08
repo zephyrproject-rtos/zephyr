@@ -197,7 +197,7 @@ static void receive_timeout_handler(struct _timeout *to)
 	switch (ctx->state) {
 	case ISOTP_RX_STATE_WAIT_CF:
 		LOG_ERR("Timeout while waiting for CF");
-		receive_report_error(ctx, ISOTP_N_TIMEOUT_CR);
+		receive_report_error(ctx, ISOTP_N_TIMEOUT_CF);
 		break;
 
 	case ISOTP_RX_STATE_TRY_ALLOC:

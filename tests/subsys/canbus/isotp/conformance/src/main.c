@@ -774,7 +774,7 @@ static void test_receive_timeouts(void)
 	zassert_equal(ret, DATA_SIZE_FF,
 		      "Expected FF data length but got %d", ret);
 	ret = isotp_recv(&recv_ctx, data_buf, sizeof(data_buf), K_FOREVER);
-	zassert_equal(ret, ISOTP_N_TIMEOUT_CR,
+	zassert_equal(ret, ISOTP_N_TIMEOUT_CF,
 		      "Expected timeout but got %d", ret);
 
 	time_diff = k_uptime_get_32() - start_time;

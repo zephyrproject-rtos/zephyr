@@ -54,8 +54,8 @@
 /** Reception of next FC has timed out */
 #define ISOTP_N_TIMEOUT_BS     -2
 
-/** Cr has timed out */
-#define ISOTP_N_TIMEOUT_CR     -3
+/** Consecutive Frame has timed out */
+#define ISOTP_N_TIMEOUT_CF     -3
 
 /** Unexpected sequence number */
 #define ISOTP_N_WRONG_SN       -4
