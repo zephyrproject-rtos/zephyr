@@ -50,23 +50,12 @@ This should be done at two different level:
 * Pinmux: Connector pins should be correctly configured to match shield pins
 
 * Devicetree: A board :ref:`devicetree <dt-guide>` file,
-  :file:`BOARD.dts` should define a node alias for each connector interface.
+  :file:`BOARD.dts` should define an alternate nodelabel for each connector interface.
   For example, for Arduino I2C:
 
 .. code-block:: devicetree
 
-        #define arduino_i2c i2c1
-
-        aliases {
-                arduino,i2c = &i2c1;
-        };
-
-Note: With support of dtc v1.4.2, above will be replaced with the recently
-introduced overriding node element:
-
-.. code-block:: devicetree
-
-        arduino_i2c:i2c1{};
+        arduino_i2c: &i2c1 {};
 
 Board specific shield configuration
 -----------------------------------
