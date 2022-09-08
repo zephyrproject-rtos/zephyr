@@ -22,7 +22,6 @@ jobs:
         platform: ["native_posix", "qemu_x86", "unit_testing"]
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.0
-      CLANG_ROOT_DIR: /usr/lib/llvm-12
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -55,7 +54,6 @@ jobs:
       - name: Check Environment
         run: |
           cmake --version
-          ${CLANG_ROOT_DIR}/bin/clang --version
           gcc --version
           ls -la
       - name: Prepare ccache keys
