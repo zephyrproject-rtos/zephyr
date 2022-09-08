@@ -331,7 +331,7 @@ uint8_t ll_sync_create_cancel(void **rx)
 	sync->is_stop = 1U;
 	cpu_dmb();
 
-	if (sync->timeout_reload != 0) {
+	if (sync->timeout_reload != 0U) {
 		uint16_t sync_handle = ull_sync_handle_get(sync);
 
 		LL_ASSERT(sync_handle <= UINT8_MAX);
