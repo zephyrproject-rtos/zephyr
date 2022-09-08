@@ -28,7 +28,6 @@ jobs:
       fail-fast: false
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.0
-      CLANG_ROOT_DIR: /usr/lib/llvm-12
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
     steps:
       - name: Apply container owner mismatch workaround
