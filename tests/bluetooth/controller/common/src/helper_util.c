@@ -269,6 +269,8 @@ void test_setup(struct ll_conn *conn)
 
 	ll_reset();
 	conn->lll.event_counter = 0;
+	conn->lll.interval = 6;
+	conn->supervision_timeout = 600;
 	event_active[0] = 0;
 
 	memset(emul_conn_pool, 0x00, sizeof(emul_conn_pool));

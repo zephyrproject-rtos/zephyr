@@ -38,7 +38,7 @@ struct ll_conn {
 	struct lll_conn lll;
 
 	uint16_t connect_expire;
-	uint16_t supervision_reload;
+	uint16_t supervision_timeout;
 	uint16_t supervision_expire;
 	uint16_t procedure_reload;
 	uint16_t procedure_expire;
@@ -537,7 +537,7 @@ struct ll_conn {
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 	uint16_t connect_expire;
-	uint16_t supervision_reload;
+	uint16_t supervision_timeout;
 	uint16_t supervision_expire;
 	uint32_t connect_accept_to;
 
