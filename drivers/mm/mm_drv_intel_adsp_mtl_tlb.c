@@ -144,7 +144,7 @@ static uint32_t get_hpsram_bank_idx(uintptr_t pa)
  */
 static uint16_t flags_to_tlb_perms(uint32_t flags)
 {
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
+#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
 	uint16_t perms = 0;
 
 	if ((flags & SYS_MM_MEM_PERM_RW) == SYS_MM_MEM_PERM_RW) {
@@ -161,7 +161,7 @@ static uint16_t flags_to_tlb_perms(uint32_t flags)
 #endif
 }
 
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
+#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
 /**
  * Convert TLB entry permission bits to the SYS_MM_MEM_PERM_* flags.
  *
@@ -186,7 +186,7 @@ static uint16_t tlb_perms_to_flags(uint16_t perms)
 
 static int sys_mm_drv_hpsram_pwr(uint32_t bank_idx, bool enable, bool non_blocking)
 {
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
+#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
 	if (bank_idx > mtl_hpsram_get_bank_count()) {
 		return -1;
 	}
@@ -467,7 +467,7 @@ int sys_mm_drv_page_flag_get(void *virt, uint32_t *flags)
 	ARG_UNUSED(virt);
 	int ret = 0;
 
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
+#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
 	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
 	uint16_t ent;
 

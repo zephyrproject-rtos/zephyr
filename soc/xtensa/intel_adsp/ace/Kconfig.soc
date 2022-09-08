@@ -6,6 +6,6 @@ choice
 
 	config SOC_INTEL_ACE15_MTPM
 		bool "ACE 1.5 Meteor PCH M"
-		depends on SOC_SERIES_INTEL_ACE1X
+		depends on SOC_SERIES_INTEL_ACE
 
 endchoice

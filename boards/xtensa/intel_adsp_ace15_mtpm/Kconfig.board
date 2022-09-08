@@ -5,4 +5,4 @@
 
 config  BOARD_INTEL_ADSP_ACE15_MTPM
 	bool "Intel ADSP ACE 1.5 Meteor PCH M"
-	depends on SOC_SERIES_INTEL_ACE1X
+	depends on SOC_SERIES_INTEL_ACE
