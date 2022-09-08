@@ -839,7 +839,7 @@ isr_rx_next_subevent:
 		hcto -= (EVENT_CLOCK_JITTER_US << 1);
 
 		start_us = hcto;
-		radio_tmr_start_us(0, start_us);
+		radio_tmr_start_us(0U, start_us);
 
 		/* Add 4 us + 4 us, as radio was setup to listen 4 us early */
 		hcto += (EVENT_CLOCK_JITTER_US << 2);
