@@ -21,7 +21,7 @@ jobs:
   twister-build-prep:
     runs-on: zephyr-runner-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.2
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.3
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
@@ -117,7 +117,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.2
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.3
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
