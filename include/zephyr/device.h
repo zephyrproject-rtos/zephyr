@@ -280,7 +280,10 @@ typedef int16_t device_handle_t;
  * @param node_id A devicetree node identifier
  * @return A pointer to the device object created for that node
  */
-#define DEVICE_DT_GET(node_id) (&DEVICE_DT_NAME_GET(node_id))
+#define DEVICE_DT_GET(node_id)						\
+({ struct device *ret = COND_CODE_1(DT_NODE_EXISTS(node_id), (&DEVICE_DT_NAME_GET(node_id)), (NULL)); \
+   BUILD_ASSERT(DT_NODE_EXISTS(node_id), "Invalid devicetree node identifier: " STRINGIFY(node_id)); \
+   ret; })
 
 /**
  * @brief Get a <tt>const struct device*</tt> for an instance of a
