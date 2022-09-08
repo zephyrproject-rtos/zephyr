@@ -611,7 +611,7 @@
  * @param prop lowercase-and-underscores property name
  * @return a representation of the property's value
  */
-#define DT_PROP(node_id, prop) DT_CAT(node_id, _P_##prop)
+#define DT_PROP(node_id, prop) DT_CAT3(node_id, _P_, prop)
 
 /**
  * @brief Get a property's logical length
@@ -641,7 +641,7 @@
  * @param prop a lowercase-and-underscores property with a logical length
  * @return the property's length
  */
-#define DT_PROP_LEN(node_id, prop) DT_PROP(node_id, prop##_LEN)
+#define DT_PROP_LEN(node_id, prop) DT_CAT4(node_id, _P_, prop, _LEN)
 
 /**
  * @brief Like DT_PROP_LEN(), but with a fallback to @p default_value
@@ -741,7 +741,8 @@
  * @param idx the index to get
  * @return a representation of the idx-th element of the property
  */
-#define DT_PROP_BY_IDX(node_id, prop, idx) DT_PROP(node_id, prop##_IDX_##idx)
+#define DT_PROP_BY_IDX(node_id, prop, idx) \
+	DT_CAT5(node_id, _P_, prop, _IDX_, idx)
 
 /**
  * @brief Like DT_PROP(), but with a fallback to @p default_value
@@ -811,7 +812,7 @@
  * @param prop lowercase-and-underscores property name
  * @return zero-based index of the property's value in its enum: list
  */
-#define DT_ENUM_IDX(node_id, prop) DT_PROP(node_id, prop##_ENUM_IDX)
+#define DT_ENUM_IDX(node_id, prop) DT_CAT4(node_id, _P_, prop, _ENUM_IDX)
 
 /**
  * @brief Like DT_ENUM_IDX(), but with a fallback to a default enum index
@@ -1235,7 +1236,7 @@
  * @return the cell's value
  */
 #define DT_PHA_BY_IDX(node_id, pha, idx, cell) \
-	DT_PROP(node_id, pha##_IDX_##idx##_VAL_##cell)
+	DT_CAT7(node_id, _P_, pha, _IDX_, idx, _VAL_, cell)
 
 /**
  * @brief Like DT_PHA_BY_IDX(), but with a fallback to @p default_value.
@@ -1330,7 +1331,7 @@
  * @return the cell's value
  */
 #define DT_PHA_BY_NAME(node_id, pha, name, cell) \
-	DT_PROP(node_id, pha##_NAME_##name##_VAL_##cell)
+	DT_CAT7(node_id, _P_, pha, _NAME_, name, _VAL_, cell)
 
 /**
  * @brief Like DT_PHA_BY_NAME(), but with a fallback to @p default_value
@@ -1404,7 +1405,7 @@
  * @return a node identifier for the node with that phandle
  */
 #define DT_PHANDLE_BY_NAME(node_id, pha, name) \
-	DT_PROP(node_id, pha##_NAME_##name##_PH)
+	DT_CAT6(node_id, _P_, pha, _NAME_, name, _PH)
 
 /**
  * @brief Get a node identifier for a phandle in a property.
@@ -1904,7 +1905,7 @@
  * @return string literal of the idx-th vendor
  */
 #define DT_NODE_VENDOR_BY_IDX(node_id, idx) \
-	DT_CAT(node_id, _COMPAT_VENDOR_IDX_##idx)
+	DT_CAT3(node_id, _COMPAT_VENDOR_IDX_, idx)
 
 /**
  * @brief Does a node's compatible property have a vendor at an index?
@@ -1981,7 +1982,7 @@
  *         0 otherwise.
  */
 #define DT_REG_HAS_IDX(node_id, idx) \
-	IS_ENABLED(DT_CAT(node_id, _REG_IDX_##idx##_EXISTS))
+	IS_ENABLED(DT_CAT4(node_id, _REG_IDX_, idx, _EXISTS))
 
 /**
  * @brief Get the base address of the register block at index @p idx
@@ -1990,7 +1991,7 @@
  * @return address of the idx-th register block
  */
 #define DT_REG_ADDR_BY_IDX(node_id, idx) \
-	DT_CAT(node_id, _REG_IDX_##idx##_VAL_ADDRESS)
+	DT_CAT4(node_id, _REG_IDX_, idx, _VAL_ADDRESS)
 
 /**
  * @brief Get the size of the register block at index @p idx
@@ -2004,7 +2005,7 @@
  * @return size of the idx-th register block
  */
 #define DT_REG_SIZE_BY_IDX(node_id, idx) \
-	DT_CAT(node_id, _REG_IDX_##idx##_VAL_SIZE)
+	DT_CAT4(node_id, _REG_IDX_, idx, _VAL_SIZE)
 
 /**
  * @brief Get a node's (only) register block address
@@ -2031,7 +2032,7 @@
  * @return address of the register block specified by name
  */
 #define DT_REG_ADDR_BY_NAME(node_id, name) \
-	DT_CAT(node_id, _REG_NAME_##name##_VAL_ADDRESS)
+	DT_CAT4(node_id, _REG_NAME_, name, _VAL_ADDRESS)
 
 /**
  * @brief Get a register block's size by name
@@ -2040,7 +2041,7 @@
  * @return size of the register block specified by name
  */
 #define DT_REG_SIZE_BY_NAME(node_id, name) \
-	DT_CAT(node_id, _REG_NAME_##name##_VAL_SIZE)
+	DT_CAT4(node_id, _REG_NAME_, name, _VAL_SIZE)
 
 /**
  * @}
@@ -2073,7 +2074,7 @@
  *         0 otherwise.
  */
 #define DT_IRQ_HAS_IDX(node_id, idx) \
-	IS_ENABLED(DT_CAT(node_id, _IRQ_IDX_##idx##_EXISTS))
+	IS_ENABLED(DT_CAT4(node_id, _IRQ_IDX_, idx, _EXISTS))
 
 /**
  * @brief Does an interrupts property have a named cell specifier at an index?
@@ -2086,7 +2087,7 @@
  *         0 otherwise.
  */
 #define DT_IRQ_HAS_CELL_AT_IDX(node_id, idx, cell) \
-	IS_ENABLED(DT_CAT(node_id, _IRQ_IDX_##idx##_VAL_##cell##_EXISTS))
+	IS_ENABLED(DT_CAT6(node_id, _IRQ_IDX_, idx, _VAL_, cell, _EXISTS))
 
 /**
  * @brief Equivalent to DT_IRQ_HAS_CELL_AT_IDX(node_id, 0, cell)
@@ -2107,7 +2108,7 @@
  *         0 otherwise.
  */
 #define DT_IRQ_HAS_NAME(node_id, name) \
-	IS_ENABLED(DT_CAT(node_id, _IRQ_NAME_##name##_VAL_irq_EXISTS))
+	IS_ENABLED(DT_CAT4(node_id, _IRQ_NAME_, name, _VAL_irq_EXISTS))
 
 /**
  * @brief Get a value within an interrupt specifier at an index
@@ -2145,7 +2146,7 @@
  * @return the named value at the specifier given by the index
  */
 #define DT_IRQ_BY_IDX(node_id, idx, cell)   \
-	DT_CAT(node_id, _IRQ_IDX_##idx##_VAL_##cell)
+	DT_CAT5(node_id, _IRQ_IDX_, idx, _VAL_, cell)
 
 /**
  * @brief Get a value within an interrupt specifier by name
@@ -2163,7 +2164,7 @@
  * @return the named value at the specifier given by the index
  */
 #define DT_IRQ_BY_NAME(node_id, name, cell) \
-	DT_CAT(node_id, _IRQ_NAME_##name##_VAL_##cell)
+	DT_CAT5(node_id, _IRQ_NAME_, name, _VAL_, cell)
 
 /**
  * @brief Get an interrupt specifier's value
@@ -2212,7 +2213,7 @@
  * @return 1 if the chosen property exists and refers to a node,
  *         0 otherwise
  */
-#define DT_HAS_CHOSEN(prop) IS_ENABLED(DT_CHOSEN_##prop##_EXISTS)
+#define DT_HAS_CHOSEN(prop) IS_ENABLED(DT_CAT3(DT_CHOSEN_, prop, _EXISTS))
 
 /**
  * @}
@@ -2744,7 +2745,7 @@
  *         0 otherwise.
  */
 #define DT_NODE_HAS_COMPAT(node_id, compat) \
-	IS_ENABLED(DT_CAT(node_id, _COMPAT_MATCHES_##compat))
+	IS_ENABLED(DT_CAT3(node_id, _COMPAT_MATCHES_, compat))
 
 /**
  * @brief Does a devicetree node have a compatible and status?
@@ -2777,7 +2778,7 @@
  * @return 1 if the node has the property, 0 otherwise.
  */
 #define DT_NODE_HAS_PROP(node_id, prop) \
-	IS_ENABLED(DT_CAT(node_id, _P_##prop##_EXISTS))
+	IS_ENABLED(DT_CAT4(node_id, _P_, prop, _EXISTS))
 
 
 /**
@@ -2797,8 +2798,8 @@
  *         0 otherwise.
  */
 #define DT_PHA_HAS_CELL_AT_IDX(node_id, pha, idx, cell)             \
-	IS_ENABLED(DT_PROP(node_id,                                 \
-			   pha##_IDX_##idx##_VAL_##cell##_EXISTS))
+	IS_ENABLED(DT_CAT8(node_id, _P_, pha,			    \
+			   _IDX_, idx, _VAL_, cell, _EXISTS))
 
 /**
  * @brief Equivalent to DT_PHA_HAS_CELL_AT_IDX(node_id, pha, 0, cell)
@@ -2893,7 +2894,7 @@
  * @return 1 if the node is on a bus of the given type,
  *         0 otherwise
  */
-#define DT_ON_BUS(node_id, bus) IS_ENABLED(DT_CAT(node_id, _BUS_##bus))
+#define DT_ON_BUS(node_id, bus) IS_ENABLED(DT_CAT3(node_id, _BUS_, bus))
 
 /**
  * @}
@@ -3689,8 +3690,11 @@
 
 #define DT_PATH_INTERNAL(...) \
 	UTIL_CAT(DT_ROOT, MACRO_MAP_CAT(DT_S_PREFIX, __VA_ARGS__))
-
-/** @brief Internal helper for DT_PATH(): prepends _S_ to a node name */
+/** @brief DT_PATH_INTERNAL() helper: prepends _S_ to a node name
+ * We don't want to expand 'name' recursively before expansion
+ * in this case. The MACRO_MAP_CAT above is giving us the exact
+ * tokens it wants prefixed with _S_.
+ */
 #define DT_S_PREFIX(name) _S_##name
 
 /**
@@ -3716,6 +3720,12 @@
 #define DT_CAT5(a1, a2, a3, a4, a5) a1 ## a2 ## a3 ## a4 ## a5
 /** @brief Concatenation helper, 6 arguments */
 #define DT_CAT6(a1, a2, a3, a4, a5, a6) a1 ## a2 ## a3 ## a4 ## a5 ## a6
+/** @brief concatenation helper, 7 arguments */
+#define DT_CAT7(a1, a2, a3, a4, a5, a6, a7) \
+	a1 ## a2 ## a3 ## a4 ## a5 ## a6 ## a7
+/** @brief concatenation helper, 8 arguments */
+#define DT_CAT8(a1, a2, a3, a4, a5, a6, a7, a8) \
+	a1 ## a2 ## a3 ## a4 ## a5 ## a6 ## a7 ## a8
 /*
  * If you need to define a bigger DT_CATN(), do so here. Don't leave
  * any "holes" of undefined macros, please.
@@ -3727,7 +3737,7 @@
 #define DT_DASH_PREFIX(name) _##name
 /** @brief Helper for DT_NODE_HAS_STATUS */
 #define DT_NODE_HAS_STATUS_INTERNAL(node_id, status) \
-	IS_ENABLED(DT_CAT(node_id, _STATUS_ ## status))
+	IS_ENABLED(DT_CAT3(node_id, _STATUS_, status))
 /** @brief Helper for test cases and DT_ANY_INST_ON_BUS_STATUS_OKAY() */
 #define DT_COMPAT_ON_BUS_INTERNAL(compat, bus) \
 	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
