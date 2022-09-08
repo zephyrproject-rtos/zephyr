@@ -138,4 +138,6 @@ void main(void)
 	}
 
 	bt_conn_auth_cb_register(&auth_cb_display);
+
+	hog_button_loop();
 }
