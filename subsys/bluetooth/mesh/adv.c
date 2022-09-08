@@ -32,8 +32,6 @@
 #define MESH_SCAN_INTERVAL    BT_MESH_ADV_SCAN_UNIT(BT_MESH_SCAN_INTERVAL_MS)
 #define MESH_SCAN_WINDOW      BT_MESH_ADV_SCAN_UNIT(BT_MESH_SCAN_WINDOW_MS)
 
-typedef struct bt_mesh_adv *(*bt_mesh_adv_alloc_t)(int id);
-
 const uint8_t bt_mesh_adv_type[BT_MESH_ADV_TYPES] = {
 	[BT_MESH_ADV_PROV]   = BT_DATA_MESH_PROV,
 	[BT_MESH_ADV_DATA]   = BT_DATA_MESH_MESSAGE,
@@ -57,15 +55,18 @@ NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BT_MESH_ADV_BUF_COUNT,
 		    BT_MESH_ADV_DATA_SIZE, BT_MESH_ADV_USER_DATA_SIZE,
 		    adv_buf_destroy);
 
-static struct bt_mesh_adv adv_pool[CONFIG_BT_MESH_ADV_BUF_COUNT];
+static struct bt_mesh_adv adv_local_pool[CONFIG_BT_MESH_ADV_BUF_COUNT];
 
-static struct bt_mesh_adv *adv_alloc(int id)
-{
-	return &adv_pool[id];
-}
+#if defined(CONFIG_BT_MESH_RELAY)
+NET_BUF_POOL_DEFINE(relay_buf_pool, CONFIG_BT_MESH_RELAY_BUF_COUNT,
+		    BT_MESH_ADV_DATA_SIZE, BT_MESH_ADV_USER_DATA_SIZE,
+		    adv_buf_destroy);
 
-static struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
-						    bt_mesh_adv_alloc_t get_id,
+static struct bt_mesh_adv adv_relay_pool[CONFIG_BT_MESH_RELAY_BUF_COUNT];
+#endif
+
+static struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *buf_pool,
+						    struct bt_mesh_adv *adv_pool,
 						    enum bt_mesh_adv_type type,
 						    enum bt_mesh_adv_tag tag,
 						    uint8_t xmit, k_timeout_t timeout)
@@ -78,12 +79,12 @@ static struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 		return NULL;
 	}
 
-	buf = net_buf_alloc(pool, timeout);
+	buf = net_buf_alloc(buf_pool, timeout);
 	if (!buf) {
 		return NULL;
 	}
 
-	adv = get_id(net_buf_id(buf));
+	adv = &adv_pool[net_buf_id(buf)];
 	BT_MESH_ADV(buf) = adv;
 
 	(void)memset(adv, 0, sizeof(*adv));
@@ -99,7 +100,15 @@ struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type,
 				   enum bt_mesh_adv_tag tag,
 				   uint8_t xmit, k_timeout_t timeout)
 {
-	return bt_mesh_adv_create_from_pool(&adv_buf_pool, adv_alloc, type,
+#if defined(CONFIG_BT_MESH_RELAY)
+	if (tag & BT_MESH_RELAY_ADV) {
+		return bt_mesh_adv_create_from_pool(&relay_buf_pool,
+						    adv_relay_pool, type,
+						    tag, xmit, timeout);
+	}
+#endif
+
+	return bt_mesh_adv_create_from_pool(&adv_buf_pool, adv_local_pool, type,
 					    tag, xmit, timeout);
 }
 
