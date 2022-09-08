@@ -152,8 +152,7 @@ static bool cu_have_params_changed(struct ll_conn *conn, uint16_t interval, uint
 	struct lll_conn *lll = &conn->lll;
 
 	if ((interval != lll->interval) || (latency != lll->latency) ||
-	    (RADIO_CONN_EVENTS(timeout * 10000U, lll->interval * CONN_INT_UNIT_US) !=
-	     conn->supervision_reload)) {
+	    (timeout != conn->supervision_timeout)) {
 		return true;
 	}
 	return false;
@@ -301,8 +300,7 @@ static void lp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	} else {
 		pdu->interval = conn->lll.interval;
 		pdu->latency = conn->lll.latency;
-		pdu->timeout = conn->supervision_reload *
-			conn->lll.interval * 125U / 1000;
+		pdu->timeout = conn->supervision_timeout;
 	}
 
 	/* Enqueue notification towards LL */
@@ -759,8 +757,7 @@ static void rp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	} else {
 		pdu->interval = conn->lll.interval;
 		pdu->latency = conn->lll.latency;
-		pdu->timeout = conn->supervision_reload *
-			conn->lll.interval * 125U / 1000;
+		pdu->timeout = conn->supervision_timeout;
 	}
 	/* Enqueue notification towards LL */
 	ll_rx_put(ntf->hdr.link, ntf);
