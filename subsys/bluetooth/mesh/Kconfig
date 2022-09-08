@@ -343,16 +343,13 @@ config BT_MESH_MSG_CACHE_SIZE
 	  for each received network PDU and increases RAM footprint proportionately.
 
 config BT_MESH_ADV_BUF_COUNT
-	int "Number of advertising buffers"
+	int "Number of advertising buffers for local messages"
 	default 6
 	range 1 256
 	help
-	  Number of advertising buffers available. This should be chosen
-	  based on what kind of features the local node should have. E.g.
-	  a relay will perform better the more buffers it has. Another
-	  thing to consider is outgoing segmented messages. There must
-	  be at least three more advertising buffers than the maximum
-	  supported outgoing segment count (BT_MESH_TX_SEG_MAX).
+	  Number of advertising buffers available for sending local messages.
+	  This should be chosen based on the number of local messages that the node
+	  can send at concurrently.
 
 choice BT_MESH_ADV
 	prompt "Advertiser mode"
@@ -642,6 +639,21 @@ config BT_MESH_RELAY_RETRANSMIT_INTERVAL
 	  Controls the initial interval between retransmissions of relayed
 	  messages, in milliseconds. Can be changed through runtime
 	  configuration.
+
+config BT_MESH_RELAY_BUF_COUNT
+	int "Number of advertising buffers for relayed messages"
+	default 32
+	range 1 256
+	help
+	  Number of advertising buffers available for messages to be relayed.
+	  High number of advertising buffers increases the reliability of the
+	  mesh network. Low number of advertising buffers reduces the message
+	  latency on the Relay Node, but at the same time increases the amount
+	  of packet drops. When considering the message latency, also consider
+	  the values of BT_MESH_RELAY_RETRANSMIT_COUNT and
+	  BT_MESH_RELAY_RETRANSMIT_INTERVAL. A higher number of
+	  BT_MESH_RELAY_ADV_SETS allows the increase in the number of buffers
+	  while maintaining the latency.
 
 endif
 
