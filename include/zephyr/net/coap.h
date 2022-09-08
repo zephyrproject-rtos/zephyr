@@ -514,7 +514,10 @@ int coap_packet_append_payload(struct coap_packet *cpkt, const uint8_t *payload,
  * @param addr Peer address
  * @param addr_len Peer address length
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success.
+ * @retval -ENOTSUP in case of invalid request code.
+ * @retval -EPERM in case resource handler is not implemented.
+ * @retval -ENOENT in case the resource is not found.
  */
 int coap_handle_request(struct coap_packet *cpkt,
 			struct coap_resource *resources,
