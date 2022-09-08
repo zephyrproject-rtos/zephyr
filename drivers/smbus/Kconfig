@@ -34,4 +34,34 @@ module = SMBUS
 module-str = smbus
 source "subsys/logging/Kconfig.template.log_config"
 
+config SMBUS_INTEL_PCH
+	bool "SMBus Intel PCH driver"
+	default y
+	depends on DT_HAS_INTEL_PCH_SMBUS_ENABLED
+	help
+	  Enable Intel Platform Controller Hub (PCH) SMBus driver.
+
+if SMBUS_INTEL_PCH
+
+choice SMBUS_INTEL_PCH_ACCESS
+	bool "SMBus register access mode"
+	default SMBUS_INTEL_PCH_ACCESS_IO
+	help
+	  Default PCH register access mode. Set default access IO so
+	  that both Qemu Q35 and Intel hardware are supported.
+
+config SMBUS_INTEL_PCH_ACCESS_IO
+	bool "I/O PCH SMBus Register Access Mode"
+	help
+	  Access PCH SMBus registers through I/O space.
+
+config SMBUS_INTEL_PCH_ACCESS_MMIO
+	bool "MMIO PCH SMBus Register Access Mode"
+	help
+	  Access PCH SMBus registers though MMIO space.
+
+endchoice
+
+endif # SMBUS_INTEL_PCH
+
 endif # SMBUS
