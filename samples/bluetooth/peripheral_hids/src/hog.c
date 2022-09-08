@@ -61,6 +61,7 @@ static uint8_t report_map[] = {
 	0x05, 0x01, /* Usage Page (Generic Desktop Ctrls) */
 	0x09, 0x02, /* Usage (Mouse) */
 	0xA1, 0x01, /* Collection (Application) */
+	0x85, 0x01, /*	 Report Id (1) */
 	0x09, 0x01, /*   Usage (Pointer) */
 	0xA1, 0x00, /*   Collection (Physical) */
 	0x05, 0x09, /*     Usage Page (Button) */
