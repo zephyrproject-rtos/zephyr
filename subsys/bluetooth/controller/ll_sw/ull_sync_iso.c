@@ -516,7 +516,11 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 
 	/* Events elapsed used in timeout checks below */
 	latency_event = lll->latency_event;
-	elapsed_event = latency_event + 1U;
+	if (lll->latency_prepare) {
+		elapsed_event = latency_event + lll->latency_prepare;
+	} else {
+		elapsed_event = latency_event + 1U;
+	}
 
 	/* Sync drift compensation and new skip calculation
 	 */

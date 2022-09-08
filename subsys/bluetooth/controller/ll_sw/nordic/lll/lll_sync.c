@@ -532,6 +532,7 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
+	struct event_done_extra *e;
 	struct lll_sync *lll;
 	int err;
 
@@ -556,6 +557,20 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	/* Accumulate the latency as event is aborted while being in pipeline */
 	lll = prepare_param->param;
 	lll->skip_prepare += (prepare_param->lazy + 1U);
+
+	/* Extra done event, to check sync lost */
+	e = ull_event_done_extra_get();
+	LL_ASSERT(e);
+
+	e->type = EVENT_DONE_EXTRA_TYPE_SYNC;
+	e->trx_cnt = 0U;
+	e->crc_valid = 0U;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
+	defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+	e->sync_term = 0U;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING &&
+	* CONFIG_BT_CTLR_CTEINLINE_SUPPORT
+	*/
 
 	lll_done(param);
 }

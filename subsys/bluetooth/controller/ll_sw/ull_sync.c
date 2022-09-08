@@ -983,7 +983,11 @@ void ull_sync_done(struct node_rx_event_done *done)
 
 		/* Events elapsed used in timeout checks below */
 		skip_event = lll->skip_event;
-		elapsed_event = skip_event + 1;
+		if (lll->skip_prepare) {
+			elapsed_event = skip_event + lll->skip_prepare;
+		} else {
+			elapsed_event = skip_event + 1U;
+		}
 
 		/* Sync drift compensation and new skip calculation */
 		ticks_drift_plus = 0U;
