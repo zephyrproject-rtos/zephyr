@@ -377,11 +377,20 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 			imxrt_usdhc_pinmux(cfg->nusdhc, false, 2, 7);
 #endif
 			break;
+		case SDHC_TIMING_HS400:
+#if FSL_FEATURE_USDHC_HAS_HS400_MODE
+			USDHC_EnableHS400Mode(cfg->base, true);
+			USDHC_EnableDDRMode(cfg->base, true, 0U);
+			USDHC_ConfigStrobeDLL(cfg->base, 7U, 4U);
+			USDHC_EnableStrobeDLL(cfg->base, true);
+#else
+			LOG_ERR("HS400 not supported for this device");
+			return -ENOTSUP;
+#endif
 		case SDHC_TIMING_SDR104:
 		case SDHC_TIMING_DDR50:
 		case SDHC_TIMING_DDR52:
 		case SDHC_TIMING_HS200:
-		case SDHC_TIMING_HS400:
 #ifdef CONFIG_PINCTRL
 			pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_FAST);
 #else
