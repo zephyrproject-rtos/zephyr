@@ -11,3 +11,16 @@ include: mm_drv.yaml
 properties:
     reg:
         required: true
+
+    paddr-size:
+        type: int
+        description: Number of significant bits in the page index.
+        required: true
+
+    exec-bit-idx:
+        type: int
+        description: Index of the execute permission bit.
+
+    write-bit-idx:
+        type: int
+        description: Index of the write permission bit.
