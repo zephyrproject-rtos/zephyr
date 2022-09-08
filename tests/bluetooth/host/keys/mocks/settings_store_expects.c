@@ -35,3 +35,11 @@ void expect_single_call_settings_save_one(const void *value)
 	zassert_equal(settings_save_one_fake.arg2_val, BT_KEYS_STORAGE_LEN,
 		      "'%s()' was called with incorrect '%s' value", func_name, "val_len");
 }
+
+void expect_not_called_settings_save_one(void)
+{
+	const char *func_name = "settings_save_one";
+
+	zassert_equal(settings_save_one_fake.call_count, 0, "'%s()' was called unexpectedly",
+		      func_name);
+}
