@@ -131,7 +131,7 @@ static void prepare(void *param)
 
 	/* Accumulate window widening */
 	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   (p->lazy + 1);
+					   (p->lazy + 1U);
 	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
 		lll->window_widening_prepare_us = lll->window_widening_max_us;
 	}
@@ -256,12 +256,12 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	event_counter = lll->event_counter + lll->skip_event;
 
 	/* Reset accumulated latencies */
-	lll->skip_prepare = 0;
+	lll->skip_prepare = 0U;
 
 	chan_idx = data_channel_calc(lll);
 
 	/* Update event counter to next value */
-	lll->event_counter = (event_counter + 1);
+	lll->event_counter = (event_counter + 1U);
 
 	err = prepare_cb_common(p, chan_idx);
 	if (err) {
@@ -320,16 +320,17 @@ static int prepare_cb(struct lll_prepare_param *p)
 	event_counter = lll->event_counter + lll->skip_event;
 
 	/* Reset accumulated latencies */
-	lll->skip_prepare = 0;
+	lll->skip_prepare = 0U;
 
 	chan_idx = data_channel_calc(lll);
 
 	/* Update event counter to next value */
-	lll->event_counter = (event_counter + 1);
+	lll->event_counter = (event_counter + 1U);
 
 	err = prepare_cb_common(p, chan_idx);
 	if (err) {
 		DEBUG_RADIO_START_O(1);
+
 		return 0;
 	}
 
@@ -554,7 +555,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	/* Accumulate the latency as event is aborted while being in pipeline */
 	lll = prepare_param->param;
-	lll->skip_prepare += (prepare_param->lazy + 1);
+	lll->skip_prepare += (prepare_param->lazy + 1U);
 
 	lll_done(param);
 }
