@@ -69,8 +69,8 @@
 	status = "okay";
 };
 
-&i2c3 {
-	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pb5>;
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pa13 &i2c1_sda_pa14>;
 	pinctrl-names = "default";
 	status = "okay";
 };
