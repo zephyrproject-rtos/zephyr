@@ -188,7 +188,7 @@ static void intel_adsp_gpdma_clock_enable(const struct device *dev)
 	uint32_t reg = dev_cfg->shim + GPDMA_CTL_OFFSET;
 	uint32_t val;
 
-	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_ACE1X)) {
+	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_ACE)) {
 		val = sys_read32(reg) | GPDMA_CTL_DGCD;
 	} else {
 		val = GPDMA_CTL_FDCGB;
@@ -197,7 +197,7 @@ static void intel_adsp_gpdma_clock_enable(const struct device *dev)
 	sys_write32(val, reg);
 }
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 static void intel_adsp_gpdma_select_owner(const struct device *dev)
 {
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
@@ -228,7 +228,7 @@ int intel_adsp_gpdma_init(const struct device *dev)
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
 	int ret;
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 	/* Power up */
 	ret = intel_adsp_gpdma_enable(dev);
 	if (ret != 0) {
@@ -246,7 +246,7 @@ int intel_adsp_gpdma_init(const struct device *dev)
 	/* Disable dynamic clock gating appropriately before initializing */
 	intel_adsp_gpdma_clock_enable(dev);
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 	/* DW DMA Owner Select to DSP */
 	intel_adsp_gpdma_select_owner(dev);
 #endif
