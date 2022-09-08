@@ -96,6 +96,7 @@ static int img_mgmt_flash_check_empty_inner(const struct flash_area *fa, bool *o
 	return 0;
 }
 
+#ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
 static int img_mgmt_flash_check_empty(uint8_t fa_id, bool *out_empty)
 {
 	const struct flash_area *fa;
@@ -112,6 +113,7 @@ static int img_mgmt_flash_check_empty(uint8_t fa_id, bool *out_empty)
 
 	return rc;
 }
+#endif
 
 /**
  * Get flash_area ID for a image number; actually the slots are images
@@ -519,8 +521,10 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 {
 	const struct image_header *hdr;
 	struct image_version cur_ver;
-	bool empty;
 	int rc;
+#ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
+	bool empty;
+#endif
 
 	memset(action, 0, sizeof(*action));
 
@@ -613,9 +617,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 			}
 		}
 
-#if CONFIG_IMG_ERASE_PROGRESSIVELY
-		(void) empty;
-#else
+#ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
 		rc = img_mgmt_flash_check_empty(action->area_id, &empty);
 		if (rc) {
 			return MGMT_ERR_EUNKNOWN;
