@@ -1,22 +1,15 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_INTEL_ACE1X
+if SOC_SERIES_INTEL_ACE
 
 config SOC_SERIES
 	string
-	default "ace_v1x"
+	default "ace"
 
 config SOC_TOOLCHAIN_NAME
 	string
 	default "intel_s1000"
-
-config SOC
-	string
-	default "intel_ace15_mtpm"
-
-config MP_NUM_CPUS
-	default 3
 
 config SMP
 	default y
@@ -72,4 +65,6 @@ config LOG_BACKEND_ADSP
 
 endif # LOG
 
-endif # SOC_SERIES_INTEL_ACE1X
+source "soc/xtensa/intel_adsp/ace/Kconfig.defconfig.ace*"
+
+endif # SOC_SERIES_INTEL_ACE
