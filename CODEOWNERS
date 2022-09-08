@@ -249,11 +249,12 @@
 /drivers/dai/intel/dmic/                  @marcinszkudlinski @abonislawski
 /drivers/dai/intel/alh/                   @abonislawski
 /drivers/dma/*dw*                         @tbursztyka
+/drivers/dma/*dw_common*                  @abonislawski
 /drivers/dma/*sam0*                       @Sizurka
 /drivers/dma/dma_stm32*                   @cybertale @lowlander
 /drivers/dma/*pl330*                      @raveenp
 /drivers/dma/*iproc_pax*                  @raveenp
-/drivers/dma/*intel_adsp*                 @teburd
+/drivers/dma/*intel_adsp*                 @teburd @abonislawski
 /drivers/ec_host_cmd_periph/              @jettr
 /drivers/edac/                            @finikorg
 /drivers/eeprom/                          @henrikbrixandersen
