@@ -120,7 +120,7 @@ void power_gate_entry(uint32_t core_id)
 	xthal_window_spill();
 	_save_core_context(core_id);
 	lpsheader->adsp_lpsram_magic = LPSRAM_MAGIC_VALUE;
-	lpsheader->lp_restore_vector = (uint32_t) &dsp_restore_vector;
+	lpsheader->lp_restore_vector = &dsp_restore_vector;
 	soc_cpus_active[core_id] = false;
 	xthal_dcache_all_writeback();
 	z_xt_ints_on(ALL_USED_INT_LEVELS_MASK);
