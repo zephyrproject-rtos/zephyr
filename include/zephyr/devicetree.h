@@ -1191,11 +1191,11 @@
  * Example devicetree fragment:
  *
  * @code{.dts}
- *     gpio0: gpio@... {
+ *     gpio0: gpio@abcd1234 {
  *             #gpio-cells = <2>;
  *     };
  *
- *     gpio1: gpio@... {
+ *     gpio1: gpio@1234abcd {
  *             #gpio-cells = <2>;
  *     };
  *
@@ -1367,11 +1367,11 @@
  * Example devicetree fragment:
  *
  * @code{.dts}
- *     adc1: adc@... {
+ *     adc1: adc@abcd1234 {
  *             foobar = "ADC_1";
  *     };
  *
- *     adc2: adc@... {
+ *     adc2: adc@1234abcd {
  *             foobar = "ADC_2";
  *     };
  *
@@ -2121,7 +2121,7 @@
  * Example devicetree fragment:
  *
  * @code{.dts}
- *     my-serial: serial@... {
+ *     my-serial: serial@abcd1234 {
  *             interrupts = < 33 0 >, < 34 1 >;
  *     };
  * @endcode
