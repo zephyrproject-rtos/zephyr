@@ -37,6 +37,18 @@ These files provides shield configuration as follows:
   shield configuration should be done by keeping in mind that features
   activation is application responsibility.
 
+Besides, in order to avoid name conflicts with devices that may be defined at
+board level, it is advised, specifically for shields devicetree descriptions,
+to provide a device nodelabel is the form <device>_<shield>, for instance:
+
+.. code-block:: devicetree
+
+        sdhc_myshield: sdhc@1 {
+                reg = <1>;
+                ...
+        };
+
+
 Board compatibility
 *******************
 
