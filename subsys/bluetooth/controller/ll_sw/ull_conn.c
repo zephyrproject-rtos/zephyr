@@ -1552,7 +1552,11 @@ void ull_conn_done(struct node_rx_event_done *done)
 #else
 	latency_event = lll->latency_event;
 #endif
-	elapsed_event = latency_event + 1;
+	if (lll->latency_prepare) {
+		elapsed_event = latency_event + lll->latency_prepare;
+	} else {
+		elapsed_event = latency_event + 1U;
+	}
 
 	/* Peripheral drift compensation calc and new latency or
 	 * central terminate acked

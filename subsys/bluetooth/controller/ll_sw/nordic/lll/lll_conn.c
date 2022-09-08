@@ -149,6 +149,7 @@ void lll_conn_prepare_reset(void)
 
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
+	struct event_done_extra *e;
 	struct lll_conn *lll;
 	int err;
 
@@ -172,6 +173,17 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	/* Accumulate the latency as event is aborted while being in pipeline */
 	lll = prepare_param->param;
 	lll->latency_prepare += (prepare_param->lazy + 1);
+
+	/* Extra done event, to check supervision timeout */
+	e = ull_event_done_extra_get();
+	LL_ASSERT(e);
+
+	e->type = EVENT_DONE_EXTRA_TYPE_CONN;
+	e->trx_cnt = 0U;
+	e->crc_valid = 0U;
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	e->mic_state = LLL_CONN_MIC_NONE;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	lll_done(param);
 }
