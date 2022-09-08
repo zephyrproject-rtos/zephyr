@@ -25,7 +25,7 @@ some highlights of the Nucleo G431KB board:
   :width: 426px
   :align: center
   :height: 256px
-  :alt: Nucleo G431RB
+  :alt: Nucleo G431kB
 
 More information about the board can be found at the `Nucleo G431KB website`_.
 
@@ -140,19 +140,13 @@ Default Zephyr Peripheral Mapping:
 - USART_1_RX : PA10
 - USART_2_TX : PA2
 - USART_2_RX : PA3
-- I2C_1_SCL : PA13
-- I2C_1_SDA : PA14
+- I2C_3_SCL : PA8
+- I2C_3_SDA : PB5
 - SPI_1_SCK : PA5
 - SPI_1_MISO : PA6
 - SPI_1_MOSI : PA7
-- SPI_2_NSS : PF0
-- SPI_2_SCK : PF1
-- SPI_2_MISO : PA10
-- SPI_2_MOSI : PA11
-- SPI_3_NSS : PA4
-- SPI_3_SCK : PB3
-- SPI_3_MISO : PB4
-- SPI_3_MOSI : PB5
+- FDCAN1_TX : PA12
+- FDCAN1_RX : PA11
 - PWM_2_CH1 : PA15
 - USER_PB : PC13
 - LD2 : PB8

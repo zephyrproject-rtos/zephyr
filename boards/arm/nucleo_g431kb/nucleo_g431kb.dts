@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2019 Richard Osterloh <richard.osterloh@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +6,7 @@
 /dts-v1/;
 #include <st/g4/stm32g431Xb.dtsi>
 #include <st/g4/stm32g431k(6-8-b)tx-pinctrl.dtsi>
-
+#include "arduino_nano_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32G431KB-NUCLEO board";
@@ -28,21 +27,23 @@
 			label = "User LD2";
 		};
 	};
+	aliases {
+		led0 = &green_led;
+	};
 
 };
 
-&clk_hse {
-	clock-frequency = <DT_FREQ_M(24)>;
+&clk_hsi {
 	status = "okay";
 };
 
 &pll {
-	div-m = <6>;
+	div-m = <4>;
 	mul-n = <85>;
-	div-p = <7>;
+      div-p = <7>;
 	div-q = <2>;
 	div-r = <2>;
-	clocks = <&clk_hse>;
+	clocks = <&clk_hsi>;
 	status = "okay";
 };
 
@@ -68,8 +69,8 @@
 	status = "okay";
 };
 
-&i2c1 {
-	pinctrl-0 = <&i2c1_scl_pa13 &i2c1_sda_pa14>;
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pb5>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -78,7 +79,7 @@
 	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
-	bus-speed-data = <125000>;
+	bus-speed-data = <1000000>;
 	bus-speed = <125000>;
 };
 
@@ -89,20 +90,6 @@
 	status = "okay";
 };
 
-&spi2 {
-	pinctrl-0 = <&spi2_nss_pf0 &spi2_sck_pf1
-		     &spi2_miso_pa10 &spi2_mosi_pa11>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
-&spi3 {
-	/* SPI3 on the ST Morpho Connector CN7 pins 17, 1, 2, 3*/
-	pinctrl-0 = <&spi3_nss_pa4 &spi3_sck_pb3
-		     &spi3_miso_pb4 &spi3_mosi_pb5>;
-	pinctrl-names = "default";
-	status = "okay";
-};
 
 &timers2 {
 	status = "okay";

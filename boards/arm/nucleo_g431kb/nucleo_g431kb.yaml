@@ -17,4 +17,6 @@ supported:
   - counter
   - spi
   - dac
+  - can
+  - fdcan
   - watchdog
