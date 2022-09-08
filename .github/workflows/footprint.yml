@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.2
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.3
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
