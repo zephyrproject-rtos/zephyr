@@ -34,7 +34,6 @@ jobs:
       PUSH_MATRIX_SIZE: 15
       DAILY_MATRIX_SIZE: 80
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.0
-      CLANG_ROOT_DIR: /usr/lib/llvm-12
       TESTS_PER_BUILDER: 700
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
@@ -128,7 +127,6 @@ jobs:
         subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.0
-      CLANG_ROOT_DIR: /usr/lib/llvm-12
       TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 '
       DAILY_OPTIONS: ' -M --build-only --all'
       PR_OPTIONS: ' --clobber-output --integration'
@@ -176,7 +174,6 @@ jobs:
       - name: Check Environment
         run: |
           cmake --version
-          ${CLANG_ROOT_DIR}/bin/clang --version
           gcc --version
           ls -la
           echo "github.ref: ${{ github.ref }}"
