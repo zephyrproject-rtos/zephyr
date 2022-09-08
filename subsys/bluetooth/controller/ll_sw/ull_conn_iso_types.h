@@ -24,6 +24,7 @@ struct ll_conn_iso_stream {
 				   * notified.
 				   */
 	uint16_t teardown:1;       /* 1 if CIS teardown has been initiated */
+	uint16_t trx_performed:1;  /* 1 if CIS had a transaction */
 	uint16_t p_max_sdu:12;     /* Maximum SDU size P_To_C */
 	uint16_t c_max_sdu:12;     /* Maximum SDU size C_To_P */
 	union {
@@ -33,6 +34,7 @@ struct ll_conn_iso_stream {
 			uint16_t instant;
 		} central;
 	};
+	uint16_t event_expire;     /* Supervision & Connect Timeout event counter */
 };
 
 struct ll_conn_iso_group {
