@@ -390,7 +390,7 @@ static void hexdump_line_print(const struct log_output *output,
 		}
 
 		if (i < length) {
-			char c = (char)data[i];
+			unsigned char c = (unsigned char)data[i];
 
 			print_formatted(output, "%c",
 			      isprint((int)c) ? c : '.');
