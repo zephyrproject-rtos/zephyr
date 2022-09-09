@@ -278,7 +278,7 @@ static int cmd_register(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_BT_L2CAP_ECRED)
 static int cmd_ecred_reconfigure(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_l2cap_chan *l2cap_ecred_chans[1] = {&l2ch_chan.ch.chan};
+	struct bt_l2cap_chan *l2cap_ecred_chans[] = { &l2ch_chan.ch.chan, NULL };
 	uint16_t mtu;
 	int err = 0;
 
@@ -311,7 +311,7 @@ static int cmd_ecred_reconfigure(const struct shell *sh, size_t argc, char *argv
 
 static int cmd_ecred_connect(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_l2cap_chan *l2cap_ecred_chans[1] = {&l2ch_chan.ch.chan};
+	struct bt_l2cap_chan *l2cap_ecred_chans[] = { &l2ch_chan.ch.chan, NULL };
 	uint16_t psm;
 	int err = 0;
 
