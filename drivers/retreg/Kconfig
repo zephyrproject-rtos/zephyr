@@ -1,0 +1,12 @@
+menuconfig RETREG
+	bool "Retention registers support"
+	help
+	  Enable support for the hardware retention registers
+
+if RETREG
+
+module = RETREG
+module-str = retreg
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
