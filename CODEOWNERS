@@ -621,6 +621,7 @@
 /include/zephyr/logging/                         @nordic-krch
 /include/zephyr/lorawan/lorawan.h                @Mani-Sadhasivam
 /include/zephyr/mgmt/osdp.h                      @sidcha
+/include/zephyr/mgmt/mcumgr/                     @de-nordic
 /include/zephyr/net/                             @rlubos @tbursztyka @pfalcon
 /include/zephyr/net/buf.h                        @jhedberg @tbursztyka @pfalcon @rlubos
 /include/zephyr/net/coap*.h                      @rlubos
@@ -763,8 +764,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/logging/log_backend_net.c         @nordic-krch @rlubos
 /subsys/lorawan/                          @Mani-Sadhasivam
 /subsys/mgmt/ec_host_cmd/                 @jettr
-/subsys/mgmt/mcumgr/                      @carlescufi @nvlsianpu
-/subsys/mgmt/mcumgr/lib/                  @de-nordic
+/subsys/mgmt/mcumgr/                      @carlescufi @nvlsianpu @de-nordic
 /subsys/mgmt/hawkbit/                     @Navin-Sankar
 /subsys/mgmt/mcumgr/smp_udp.c             @aunsbjerg
 /subsys/mgmt/updatehub/                   @nandojve @otavio
@@ -834,6 +834,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/net/socket/                        @rlubos @tbursztyka @pfalcon
 /tests/subsys/debug/coredump/             @dcpleung
 /tests/subsys/fs/                         @nashif @nvlsianpu @de-nordic
+/tests/subsys/mgmt/mcumgr/                @de-nordic
 /tests/subsys/sd/                         @danieldegrasse
 /tests/subsys/rtio/                       @teburd
 /tests/subsys/settings/                   @nvlsianpu
