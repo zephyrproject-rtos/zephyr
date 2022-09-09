@@ -4,17 +4,7 @@
 #ifndef _ZEPHYR_SOC_INTEL_ADSP_VECTORS
 #define _ZEPHYR_SOC_INTEL_ADSP_VECTORS
 
-/* Definitions for our linker script to place and size all the bits of
- * the interrupt vector tables.  Originally these were SOF-derived and
- * part of a platform abstraction layer, but all current hardware has
- * the same values.
- *
- * FIXME: really, we want to be computing this from the core-isa.h
- * file, where the offsets from VECBASE are available as
- * "XCHAL_*_VECOFS" symbols, etc...  There's no reason for us to be
- * managing these numbers (nor especially for us to be usurping the
- * XCHAL_ namespace to do it!).
- */
+#include <xtensa/config/core-isa.h>
 
 /* This is the base address of all the vectors defined in SRAM */
 #define VECBASE_RESET_PADDR_SRAM \
@@ -26,31 +16,34 @@
  * Only the memerror vector continues to point to its ROM address.
  */
 #define INTLEVEL2_VECTOR_PADDR_SRAM \
-	(VECBASE_RESET_PADDR_SRAM + 0x180)
+	(VECBASE_RESET_PADDR_SRAM + XCHAL_INTLEVEL2_VECOFS)
 
 #define INTLEVEL3_VECTOR_PADDR_SRAM \
-	(VECBASE_RESET_PADDR_SRAM + 0x1C0)
+	(VECBASE_RESET_PADDR_SRAM + XCHAL_INTLEVEL3_VECOFS)
 
 #define INTLEVEL4_VECTOR_PADDR_SRAM \
-	(VECBASE_RESET_PADDR_SRAM + 0x200)
+	(VECBASE_RESET_PADDR_SRAM + XCHAL_INTLEVEL4_VECOFS)
 
+#ifndef SOC_SERIES_INTEL_ACE
 #define INTLEVEL5_VECTOR_PADDR_SRAM \
-	(VECBASE_RESET_PADDR_SRAM + 0x240)
+	(VECBASE_RESET_PADDR_SRAM + XCHAL_INTLEVEL5_VECOFS)
 
 #define INTLEVEL6_VECTOR_PADDR_SRAM \
-	(VECBASE_RESET_PADDR_SRAM + 0x280)
+	(VECBASE_RESET_PADDR_SRAM + XCHAL_INTLEVEL6_VECOFS)
+#endif /* SOC_SERIES_INTEL_ACE */
+
 
 #define INTLEVEL7_VECTOR_PADDR_SRAM \
-	(VECBASE_RESET_PADDR_SRAM + 0x2C0)
+	(VECBASE_RESET_PADDR_SRAM + XCHAL_NMI_VECOFS)
 
 #define KERNEL_VECTOR_PADDR_SRAM \
-	(VECBASE_RESET_PADDR_SRAM + 0x300)
+	(VECBASE_RESET_PADDR_SRAM + XCHAL_KERNEL_VECOFS)
 
 #define USER_VECTOR_PADDR_SRAM \
-	(VECBASE_RESET_PADDR_SRAM + 0x340)
+	(VECBASE_RESET_PADDR_SRAM + XCHAL_USER_VECOFS)
 
 #define DOUBLEEXC_VECTOR_PADDR_SRAM \
-	(VECBASE_RESET_PADDR_SRAM + 0x3C0)
+	(VECBASE_RESET_PADDR_SRAM + XCHAL_DOUBLEEXC_VECOFS)
 
 #define VECTOR_TBL_SIZE				0x0400
 
