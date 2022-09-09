@@ -78,18 +78,6 @@ MEMORY {
   vector_int4_text :
 	org = INTLEVEL4_VECTOR_PADDR_SRAM,
         len = MEM_VECT_TEXT_SIZE
-  vector_int5_lit :
-	org = INTLEVEL5_VECTOR_PADDR_SRAM - MEM_VECT_LIT_SIZE,
-        len = MEM_VECT_LIT_SIZE
-  vector_int5_text :
-	org = INTLEVEL5_VECTOR_PADDR_SRAM,
-        len = MEM_VECT_TEXT_SIZE
-  vector_int6_lit :
-	org = INTLEVEL6_VECTOR_PADDR_SRAM - MEM_VECT_LIT_SIZE,
-        len = MEM_VECT_LIT_SIZE
-  vector_int6_text :
-	org = INTLEVEL6_VECTOR_PADDR_SRAM,
-        len = MEM_VECT_TEXT_SIZE
   vector_int7_lit :
 	org = INTLEVEL7_VECTOR_PADDR_SRAM - MEM_VECT_LIT_SIZE,
         len = MEM_VECT_LIT_SIZE
@@ -194,16 +182,6 @@ SECTIONS {
     KEEP (*(.Level4InterruptVector.text))
     _Level4InterruptVector_text_end = .;
   } >vector_int4_text
-  .Level5InterruptVector.literal : {
-    _Level5InterruptVector_literal_start = .;
-    *(.Level5InterruptVector.literal)
-    _Level5InterruptVector_literal_end = .;
-  } >vector_int5_lit
-  .Level5InterruptVector.text : {
-    _Level5InterruptVector_text_start = .;
-    KEEP (*(.Level5InterruptVector.text))
-    _Level5InterruptVector_text_end = .;
-  } >vector_int5_text
   .DebugExceptionVector.literal : {
     _DebugExceptionVector_literal_start = .;
     *(.DebugExceptionVector.literal)
