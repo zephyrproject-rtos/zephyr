@@ -27,9 +27,6 @@ If no errors are encountered, the node is marked as configured.
 The configuration of a node involves adding an application key, getting
 the composition data, and binding all its models to the application key.
 
-Please note that this sample uses the CDB API which is currently marked
-as EXPERIMENTAL and is likely to change.
-
 Requirements
 ************
 
