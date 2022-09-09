@@ -1522,6 +1522,40 @@ static inline int i2c_reg_update_byte_dt_idx(const struct i2c_dt_spec *spec, uin
 }
 
 /**
+ * @brief Detect which address an I2C device responds on.
+ *
+ * For drivers that support multiple potential I2C addresses, check
+ * which address from the @a addresses field responds. Check is done
+ * through the @ref i2c_reg_read_byte_dt_idx API call.
+ *
+ * @param spec I2C specification from devicetree.
+ * @param spec_idx Address index that responded to read command.
+ * @param reg_addr Internal address to test reads on.
+ *
+ * @retval 0 if device detected on an address.
+ * @retval -ENODEV if device was not found.
+ */
+static inline int i2c_address_detect_dt_idx(const struct i2c_dt_spec *spec,
+					    uint8_t *spec_idx,
+					    uint8_t reg_addr)
+{
+	uint8_t dummy;
+
+	for (int i = 0; i < ARRAY_SIZE(spec->addresses); i++) {
+		/* Only test valid addresses */
+		if (spec->addresses[i] == 0x00) {
+			continue;
+		}
+		/* Test reading a byte */
+		if (i2c_reg_read_byte_dt_idx(spec, i, reg_addr, &dummy) == 0) {
+			*spec_idx = i;
+			return 0;
+		}
+	}
+	return -ENODEV;
+}
+
+/**
  * @brief Dump out an I2C message
  *
  * Dumps out a list of I2C messages. For any that are writes (W), the data is
