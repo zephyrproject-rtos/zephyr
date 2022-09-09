@@ -47,8 +47,11 @@ For more information about the LPC55S69 SoC and LPCXPRESSO55S69 board, see:
 Supported Features
 ==================
 
-The lpcxpresso55s69 board configuration supports the following hardware
-features:
+NXP considers the LPCXpresso55S69 as the superset board for the LPC55xx
+series of MCUs.  This board is a focus for NXP's Full Platform Support for
+Zephyr, to better enable the entire LPC55xx series.  NXP prioritizes enabling
+this board with new support for Zephyr features.  The lpcxpresso55s69 board
+configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
