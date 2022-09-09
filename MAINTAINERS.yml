@@ -228,6 +228,7 @@ Bluetooth Mesh:
     - jhedberg
     - LingaoM
     - alxelax
+    - Andrewpini
   files:
     - subsys/bluetooth/mesh/
     - include/zephyr/bluetooth/mesh/
