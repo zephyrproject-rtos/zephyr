@@ -1314,7 +1314,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 	}
 
 #if !defined(CONFIG_BT_HCI_MESH_EXT)
-	ticks_anchor = ticker_ticks_now_get();
+	ticks_anchor = ticker_ticks_now_get() + HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 #else /* CONFIG_BT_HCI_MESH_EXT */
 	if (!at_anchor) {
 		ticks_anchor = ticker_ticks_now_get();
@@ -1995,11 +1995,10 @@ void ull_adv_done(struct node_rx_event_done *done)
 
 		rx_hdr = (void *)lll->node_rx_adv_term;
 		rx_hdr->rx_ftr.param_adv_term.status = BT_HCI_ERR_LIMIT_REACHED;
-	} else if (adv->ticks_remain_duration &&
-		   (adv->ticks_remain_duration <=
-		    HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval *
-			ADV_INT_UNIT_US))) {
-		adv->ticks_remain_duration = 0;
+	} else if (adv->remain_duration_us &&
+		   (adv->remain_duration_us <=
+		    ((uint64_t)adv->interval * ADV_INT_UNIT_US))) {
+		adv->remain_duration_us = 0;
 
 		rx_hdr = (void *)lll->node_rx_adv_term;
 		rx_hdr->rx_ftr.param_adv_term.status = BT_HCI_ERR_ADV_TIMEOUT;
@@ -2290,21 +2289,20 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 						  0, 0, ticker_update_op_cb);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		adv->event_counter += (lazy + 1);
+		if (adv->remain_duration_us && adv->event_counter > 0) {
+			uint32_t interval_us = (uint64_t)adv->interval * ADV_INT_UNIT_US;
+			uint32_t elapsed_us = interval_us * (lazy + 1) +
+						 HAL_TICKER_TICKS_TO_US(ticks_drift);
 
-		if (adv->ticks_remain_duration) {
-			uint32_t ticks_interval =
-				HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval *
-						       ADV_INT_UNIT_US);
-			uint32_t ticks_elapsed = ticks_interval * (lazy + 1) +
-						 ticks_drift;
-
-			if (adv->ticks_remain_duration > ticks_elapsed) {
-				adv->ticks_remain_duration -= ticks_elapsed;
+			/* End advertising if the added random delay pushes us beyond the limit */
+			if (adv->remain_duration_us > elapsed_us + interval_us + random_delay) {
+				adv->remain_duration_us -= elapsed_us;
 			} else {
-				adv->ticks_remain_duration = ticks_interval;
+				adv->remain_duration_us = interval_us;
 			}
 		}
+
+		adv->event_counter += (lazy + 1);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	}
 
@@ -2494,8 +2492,7 @@ static void adv_max_events_duration_set(struct ll_adv_set *adv,
 {
 	adv->event_counter = 0;
 	adv->max_events = max_ext_adv_evts;
-	adv->ticks_remain_duration =
-		HAL_TICKER_US_TO_TICKS((uint64_t)duration * 10 * USEC_PER_MSEC);
+	adv->remain_duration_us = (uint32_t)duration * 10 * USEC_PER_MSEC;
 }
 
 static void ticker_stop_aux_op_cb(uint32_t status, void *param)

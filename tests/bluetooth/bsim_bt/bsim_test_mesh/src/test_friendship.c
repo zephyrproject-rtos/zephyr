@@ -395,7 +395,7 @@ static void test_lpn_est(void)
 	 * when Friend Request from several devices collide in emulated radio channel.
 	 * This shift of start moment helps to avoid Friend Request collisions.
 	 */
-	k_sleep(K_MSEC(10 * get_device_nbr()));
+	 k_sleep(K_MSEC(9 * get_device_nbr()));
 
 	bt_mesh_lpn_set(true);
 

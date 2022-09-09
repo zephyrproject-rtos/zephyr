@@ -324,6 +324,8 @@ static bool wait_for_beacon(bool (*process_cb)(const uint8_t *net_id, void *ctx)
 		k_sleep(K_SECONDS(1));
 	}
 
+	k_sleep(K_MSEC(100));
+
 	return received;
 }
 
