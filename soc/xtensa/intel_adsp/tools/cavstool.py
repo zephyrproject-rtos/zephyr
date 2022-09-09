@@ -61,6 +61,9 @@ CSTALL = 8
 SPA    = 16
 CPA    = 24
 
+
+adsp_log_handler_over_tcp = None
+
 class HDAStream:
     # creates an hda stream with at 2 buffers of buf_len
     def __init__(self, stream_id: int):
@@ -636,12 +639,12 @@ def ipc_command(data, ext_data):
         assert read_lens[1] % 128 == 0
         buf_data0 = hda_str.mem.read(read_lens[0])
         hda_msg0 = buf_data0.decode("utf-8", "replace")
-        sys.stdout.write(hda_msg0)
+        adsp_log(hda_msg0, adsp_log_handler_over_tcp)
         if read_lens[1] != 0:
             hda_str.mem.seek(0)
             buf_data1 = hda_str.mem.read(read_lens[1])
             hda_msg1 = buf_data1.decode("utf-8", "replace")
-            sys.stdout.write(hda_msg1)
+            adsp_log(hda_msg1, adsp_log_handler_over_tcp)
         pos = hda_str.mem.tell()
         sys.stdout.flush()
     else:
@@ -791,6 +794,9 @@ class adsp_log_handler(socketserver.BaseRequestHandler):
         self.loop.run_until_complete(_main(self))
 
     def handle(self):
+        # expose the adsp_log_handler in the context of the TCP server
+        global adsp_log_handler_over_tcp
+        adsp_log_handler_over_tcp = self
         cmd = self.request.recv(MAX_CMD_SZ)
         log.info(f"{self.client_address[0]} wrote: {cmd}")
         action = cmd.decode("utf-8")
@@ -829,7 +835,8 @@ class adsp_log_handler(socketserver.BaseRequestHandler):
 
 def is_connection_alive(server):
     try:
-        server.request.sendall(b' ')
+        # DO NOT use displayable char because it WILL mess with the log
+        server.request.sendall(b'\x00')
     except (BrokenPipeError, ConnectionResetError):
         log.info("Client is disconnect.")
         return False
@@ -838,7 +845,10 @@ def is_connection_alive(server):
 
 def adsp_log(output, server):
     if server:
-        server.request.sendall(output.encode("utf-8"))
+        # also print on the DUT, just in case of comparison.
+        sys.stdout.write(output)
+        sys.stdout.flush()
+        server.request.sendall(output.encode("utf-8", "replace"))
     else:
         sys.stdout.write(output)
         sys.stdout.flush()
