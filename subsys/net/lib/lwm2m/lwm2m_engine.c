@@ -984,6 +984,11 @@ static int lwm2m_engine_init(const struct device *dev)
 
 	(void)memset(block1_contexts, 0, sizeof(block1_contexts));
 
+	if (IS_ENABLED(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)) {
+		/* Init data cache */
+		lwm2m_engine_data_cache_init();
+	}
+
 	/* start sock receive thread */
 	engine_thread_id = k_thread_create(&engine_thread_data, &engine_thread_stack[0],
 			K_KERNEL_STACK_SIZEOF(engine_thread_stack), (k_thread_entry_t)socket_loop,

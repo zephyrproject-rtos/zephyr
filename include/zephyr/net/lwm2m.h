@@ -23,6 +23,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_LWM2M_H_
 #define ZEPHYR_INCLUDE_NET_LWM2M_H_
 
+#include <time.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/mutex.h>
 #include <zephyr/net/coap.h>
@@ -215,6 +216,25 @@ struct lwm2m_ctx {
 	uint8_t validate_buf[CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE];
 };
 
+/**
+ * LwM2M Time series data structure
+ */
+struct lwm2m_time_series_elem {
+	/* Cached data Unix timestamp */
+	time_t t;
+	union {
+		uint8_t u8;
+		uint16_t u16;
+		uint32_t u32;
+		uint64_t u64;
+		int8_t i8;
+		int16_t i16;
+		int32_t i32;
+		int64_t i64;
+		double f;
+		bool b;
+	};
+};
 
 /**
  * @brief Asynchronous callback to get a resource buffer and length.
@@ -1383,6 +1403,22 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
  *
  */
 struct lwm2m_ctx *lwm2m_rd_client_ctx(void);
+
+/** 
+ * @brief Enable data cache for a resource.
+ *
+ * Application may enable caching of resource data by allocating buffer for LwM2M engine to use.
+ * Buffer must be size of struct @ref lwm2m_time_series_elem times cache_len
+ *
+ * @param resource_path LwM2M resourcepath string "obj/obj-inst/res(/res-inst)"
+ * @param data_cache Pointer to Data cache array
+ * @param cache_len number of cached entries
+ * 
+ * @return 0 for success or negative in case of error.
+ *
+ */
+int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
+			      size_t cache_len);
 
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */
