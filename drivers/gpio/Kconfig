@@ -110,6 +110,8 @@ source "drivers/gpio/Kconfig.npcx"
 
 source "drivers/gpio/Kconfig.emul"
 
+source "drivers/gpio/Kconfig.emul_sdl"
+
 source "drivers/gpio/Kconfig.psoc6"
 
 source "drivers/gpio/Kconfig.pcal6408a"
