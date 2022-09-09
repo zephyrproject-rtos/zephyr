@@ -274,6 +274,17 @@ static const struct spi_driver_api spi_nrfx_driver_api = {
 	.release = spi_nrfx_release,
 };
 
+#ifdef CONFIG_SPI_NRF_WORKAROUND_ERRATA89
+static void spi_workaround_errata89(const nrfx_spi_t *p)
+{
+	volatile uint8_t *base = (volatile uint8_t *)p->p_reg;
+	volatile  uint32_t *POWER = (volatile uint32_t *)(base + 0xFFC);
+	*POWER = 0;
+	*POWER;
+	*POWER = 1;
+}
+#endif
+
 #ifdef CONFIG_PM_DEVICE
 static int spi_nrfx_pm_action(const struct device *dev,
 			      enum pm_device_action action)
@@ -299,6 +310,10 @@ static int spi_nrfx_pm_action(const struct device *dev,
 	case PM_DEVICE_ACTION_SUSPEND:
 		if (dev_data->initialized) {
 			nrfx_spi_uninit(&dev_config->spi);
+
+#ifdef CONFIG_SPI_NRF_WORKAROUND_ERRATA89
+			spi_workaround_errata89(&dev_config->spi);
+#endif
 			dev_data->initialized = false;
 		}
 

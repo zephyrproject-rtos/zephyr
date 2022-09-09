@@ -137,4 +137,14 @@ config SPI_NRFX_RAM_BUFFER_SIZE
 	  supplying buffers located in flash to the driver, otherwise such
 	  transfers will fail.
 
+config SPI_NRF_WORKAROUND_ERRATA89
+	bool "Workaround for errata 89"
+	depends on SOC_NRF52832
+	help
+	  When GPIOTE (gpio interrupts) is active and SPI or TWI is
+	  also active, there is excessive current drain during low
+	  power (sleep/idle).
+	  This implements the workaround recommended in errata 89,
+	  which toggles the power to the TWI or SPI module after suspend.
+
 endif # SPI_NRFX
