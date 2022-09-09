@@ -1048,7 +1048,7 @@ function(zephyr_check_compiler_flag lang option check)
   set(key_string "${key_string}${option}_")
   set(key_string "${key_string}${CMAKE_REQUIRED_FLAGS}_")
 
-  string(MD5 key ${key_string})
+  string(MD5 key "${key_string}")
 
   # Check the cache
   set(key_path ${ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE_DIR}/${key})
@@ -1068,7 +1068,7 @@ function(zephyr_check_compiler_flag lang option check)
   # tested, so to test -Wno-<warning> flags we test -W<warning>
   # instead.
   if("${option}" MATCHES "-Wno-(.*)")
-    set(possibly_translated_option -W${CMAKE_MATCH_1})
+    string(REPLACE "-Wno-" "-W" possibly_translated_option "${option}")
   else()
     set(possibly_translated_option ${option})
   endif()
@@ -1814,7 +1814,7 @@ function(check_compiler_flag lang option ok)
   endif()
 
   string(MAKE_C_IDENTIFIER
-    check${option}_${lang}_${CMAKE_REQUIRED_FLAGS}
+    "check${option}_${lang}_${CMAKE_REQUIRED_FLAGS}"
     ${ok}
     )
 
@@ -2004,6 +2004,12 @@ endfunction()
 # with the extension that it will check that the compiler supports the flag
 # before setting the property on compiler or compiler-cpp targets.
 #
+# To test flags together, such as '-Wformat -Wformat-security', an option group
+# can be specified by using shell-like quoting along with a 'SHELL:' prefix.
+# The 'SHELL:' prefix will be dropped before testing, so that
+# '"SHELL:-Wformat -Wformat-security"' becomes '-Wformat -Wformat-security' for
+# testing.
+#
 # APPEND: Flag indicated that the property should be appended to the existing
 #         value list for the property.
 # PROPERTY: Name of property with the value(s) following immediately after
@@ -2021,8 +2027,13 @@ function(check_set_compiler_property)
   list(REMOVE_AT COMPILER_PROPERTY_PROPERTY 0)
 
   foreach(option ${COMPILER_PROPERTY_PROPERTY})
+    if(${option} MATCHES "^SHELL:")
+      string(REGEX REPLACE "^SHELL:" "" option ${option})
+      separate_arguments(option UNIX_COMMAND ${option})
+    endif()
+
     if(CONFIG_CPLUSPLUS)
-      zephyr_check_compiler_flag(CXX ${option} check)
+      zephyr_check_compiler_flag(CXX "${option}" check)
 
       if(${check})
         set_property(TARGET compiler-cpp ${APPEND-CPP} PROPERTY ${property} ${option})
@@ -2030,7 +2041,7 @@ function(check_set_compiler_property)
       endif()
     endif()
 
-    zephyr_check_compiler_flag(C ${option} check)
+    zephyr_check_compiler_flag(C "${option}" check)
 
     if(${check})
       set_property(TARGET compiler ${APPEND} PROPERTY ${property} ${option})
