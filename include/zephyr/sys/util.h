@@ -475,7 +475,7 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  */
 #define WAIT_FOR(expr, timeout, delay_stmt)                                                        \
 	({                                                                                         \
-		uint32_t cycle_count = (sys_clock_hw_cycles_per_sec() / USEC_PER_SEC) * (timeout); \
+		uint32_t cycle_count = k_us_to_cyc_ceil32(timeout); \
 		uint32_t start = k_cycle_get_32();                                                 \
 		while (!(expr) && (cycle_count > (k_cycle_get_32() - start))) {                    \
 			delay_stmt;                                                                \
