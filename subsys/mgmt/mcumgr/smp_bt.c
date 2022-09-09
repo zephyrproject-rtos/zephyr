@@ -442,6 +442,10 @@ static int smp_bt_tx_pkt(struct zephyr_smp_transport *zst, struct net_buf *nb)
 		}
 	}
 
+	if (rc != MGMT_ERR_ENOENT) {
+		bt_conn_unref(conn);
+	}
+
 	smp_bt_ud_free(net_buf_user_data(nb));
 	mcumgr_buf_free(nb);
 
