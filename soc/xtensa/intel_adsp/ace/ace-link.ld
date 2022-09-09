@@ -208,12 +208,12 @@ SECTIONS {
     _DebugExceptionVector_literal_start = .;
     *(.DebugExceptionVector.literal)
     _DebugExceptionVector_literal_end = .;
-  } >vector_int6_lit
+  } >vector_int4_lit
   .DebugExceptionVector.text : {
     _DebugExceptionVector_text_start = .;
     KEEP (*(.DebugExceptionVector.text))
     _DebugExceptionVector_text_end = .;
-  } >vector_int6_text
+  } >vector_int4_text
   .NMIExceptionVector.literal : {
     _NMIExceptionVector_literal_start = .;
     *(.NMIExceptionVector.literal)
