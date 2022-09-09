@@ -10,7 +10,7 @@
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
 #include <mgmt/mgmt.h>
-#include "../../../../../subsys/mgmt/mcumgr/smp_reassembly.h"
+#include "../../../../../../subsys/mgmt/mcumgr/smp_reassembly.h"
 
 static struct zephyr_smp_transport zst;
 static uint8_t buff[CONFIG_MCUMGR_BUF_SIZE];
