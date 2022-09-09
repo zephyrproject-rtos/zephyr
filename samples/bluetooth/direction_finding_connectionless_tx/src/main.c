@@ -31,6 +31,7 @@ static struct bt_le_ext_adv *adv_set;
 
 static struct bt_le_adv_param param =
 		BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_EXT_ADV |
+				     BT_LE_ADV_OPT_USE_IDENTITY |
 				     BT_LE_ADV_OPT_USE_NAME,
 				     BT_GAP_ADV_FAST_INT_MIN_2,
 				     BT_GAP_ADV_FAST_INT_MAX_2,
@@ -136,7 +137,14 @@ void main(void)
 	}
 	printk("success\n");
 
-	bt_le_ext_adv_oob_get_local(adv_set, &oob_local);
+	printk("Get extended advertising address...");
+	err = bt_le_ext_adv_oob_get_local(adv_set, &oob_local);
+	if (err) {
+		printk("failed (err %d)\n", err);
+		return;
+	}
+	printk("success\n");
+
 	bt_addr_le_to_str(&oob_local.addr, addr_s, sizeof(addr_s));
 
 	printk("Started extended advertising as %s\n", addr_s);
