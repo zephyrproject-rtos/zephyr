@@ -19,7 +19,7 @@ some highlights of the Nucleo G431KB board:
   - Power management access point
 
 - Three LEDs: USB communication (LD1), power LED (LD4), user LED (LD2), overcurrent (LD3)
-- Two push-buttons: RESET
+- One push-button: RESET
 
 .. image:: img/nucleo_g431kb.jpg
   :width: 426px
@@ -34,8 +34,6 @@ Hardware
 
 The STM32G431KB SoC provides the following hardware IPs:
 
-- Ultra-low-power with FlexPowerControl (down to 28 nA Standby mode and 84
-  |micro| A/MHz run mode)
 - Core: ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU, frequency up to 170 MHz
 - Clock Sources:
 
@@ -148,7 +146,6 @@ Default Zephyr Peripheral Mapping:
 - FDCAN1_TX : PA12
 - FDCAN1_RX : PA11
 - PWM_2_CH1 : PA15
-- USER_PB : PC13
 - LD2 : PB8
 - DAC1_OUT1 : PA4
 
@@ -156,8 +153,8 @@ System Clock
 ------------
 
 Nucleo G431KB System Clock could be driven by internal or external oscillator,
-as well as main PLL clock. By default System clock is driven by PLL clock at 150MHz,
-driven by 16MHz high speed internal oscillator. The clock can be boosted to 170MHz if boost mode is selected.
+as well as main PLL clock. By default System clock is driven by PLL clock at 170MHz,
+driven by 16MHz high speed internal oscillator. 
 
 Serial Port
 -----------
