@@ -877,7 +877,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 	} u;
 	const struct jesd216_sfdp_header *hp = &u.sfdp;
 
-	rc = read_sfdp(dev, 0, u.raw, sizeof(u.raw));
+	rc = spi_nor_sfdp_read(dev, 0, u.raw, sizeof(u.raw));
 	if (rc != 0) {
 		LOG_ERR("SFDP read failed: %d", rc);
 		return rc;
@@ -910,7 +910,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 			} u;
 			const struct jesd216_bfp *bfp = &u.bfp;
 
-			rc = read_sfdp(dev, jesd216_param_addr(php), u.dw, sizeof(u.dw));
+			rc = spi_nor_sfdp_read(dev, jesd216_param_addr(php), u.dw, sizeof(u.dw));
 			if (rc == 0) {
 				rc = spi_nor_process_bfp(dev, php, bfp);
 			}
