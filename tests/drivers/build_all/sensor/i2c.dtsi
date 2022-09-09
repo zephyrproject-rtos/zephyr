@@ -252,7 +252,7 @@ test_i2c_si7060: si7060@25 {
 
 test_i2c_si7210: si7010@30 {
 	compatible = "silabs,si7210";
-	reg = <0x30>;
+	reg = <0x30 0x31 0x32 0x33>;
 };
 
 test_i2c_hts221: hts221@27 {
