@@ -873,14 +873,18 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			 *       when auxiliary and Periodic Advertising have
 			 *       similar event interval.
 			 */
-			ticks_anchor_sync = ticker_ticks_now_get();
+			ticks_anchor_sync =
+				ticker_ticks_now_get() +
+				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 		} else {
 			/* Auxiliary set will be started due to inclusion of
 			 * sync info field.
 			 */
 			lll_aux = adv->lll.aux;
 			aux = HDR_LLL2ULL(lll_aux);
-			ticks_anchor_aux = ticker_ticks_now_get();
+			ticks_anchor_aux =
+				ticker_ticks_now_get() +
+				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 			ticks_slot_overhead_aux =
 				ull_adv_aux_evt_init(aux, &ticks_anchor_aux);
 			ticks_anchor_sync = ticks_anchor_aux +

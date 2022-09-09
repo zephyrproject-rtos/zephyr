@@ -602,7 +602,9 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			 *       Advertising sets are non-overlapping
 			 *       for the same event interval.
 			 */
-			ticks_anchor = ticker_ticks_now_get();
+			ticks_anchor =
+				ticker_ticks_now_get() +
+				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 			ticks_slot_overhead =
 				ull_adv_aux_evt_init(aux, &ticks_anchor);
