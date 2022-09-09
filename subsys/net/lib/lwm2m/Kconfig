@@ -480,6 +480,19 @@ config LWM2M_RW_SENML_CBOR_RECORDS
 	  The CBOR library requires you to set an upper limit for the records when encoder
 	  and decoder do get generated.
 
+config LWM2M_RESOURCE_DATA_CACHE_SUPPORT
+	bool "Resource Time series data cache support"
+	depends on (LWM2M_RW_SENML_JSON_SUPPORT || LWM2M_RW_SENML_CBOR_SUPPORT)
+	help
+	  Enable Time series data storage for selected resources.
+
+config LWM2M_RESOURCE_DATA_CACHE_ELEMENT_SIZE
+	int "Maxium # of resource count for data cache"
+	default 4
+	range 1 10
+	help
+		This settings define how many different resource client can be enable for data cache.
+
 config LWM2M_DEVICE_PWRSRC_MAX
 	int "Maximum # of device power source records"
 	default 5

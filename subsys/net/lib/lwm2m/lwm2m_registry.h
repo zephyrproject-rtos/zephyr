@@ -196,4 +196,27 @@ size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in, uint8_t *buf
 /* Resources */
 sys_slist_t *lwm2m_engine_obj_list(void);
 sys_slist_t *lwm2m_engine_obj_inst_list(void);
+
+/* Data cache Internal API */
+
+/**
+* LwM2M Time series resoursce data storage
+*/
+struct lwm2m_time_series_resource {
+	/* object list */
+	sys_snode_t node;
+	/* Resource Path url */
+	const char *path;
+	/* Size of cached data */
+	size_t size;
+	/* Data cache capacity */
+	size_t capacity;
+	/* Cache buffer */
+	struct lwm2m_time_series_elem *elements;
+};
+
+int lwm2m_engine_data_cache_init(void);
+struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_object(struct lwm2m_obj_path *obj_path);
+struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_string(char const *resource_path);
+
 #endif /* LWM2M_REGISTRY_H */

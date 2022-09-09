@@ -965,18 +965,167 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 	return ret;
 }
 
+static int lwm2m_read_resource_data(struct lwm2m_message *msg, void *data_ptr, size_t data_len,
+			       uint8_t data_type)
+{
+	int ret;
+
+	switch (data_type) {
+
+	case LWM2M_RES_TYPE_OPAQUE:
+		ret = engine_put_opaque(&msg->out, &msg->path, (uint8_t *)data_ptr, data_len);
+		break;
+
+	case LWM2M_RES_TYPE_STRING:
+		ret = engine_put_string(&msg->out, &msg->path, (uint8_t *)data_ptr,
+					strlen((uint8_t *)data_ptr));
+		break;
+
+	case LWM2M_RES_TYPE_U32:
+		ret = engine_put_s64(&msg->out, &msg->path, (int64_t) * (uint32_t *)data_ptr);
+		break;
+
+	case LWM2M_RES_TYPE_U16:
+		ret = engine_put_s32(&msg->out, &msg->path, (int32_t) * (uint16_t *)data_ptr);
+		break;
+
+	case LWM2M_RES_TYPE_U8:
+		ret = engine_put_s16(&msg->out, &msg->path, (int16_t) * (uint8_t *)data_ptr);
+		break;
+
+	case LWM2M_RES_TYPE_S64:
+		ret = engine_put_s64(&msg->out, &msg->path, *(int64_t *)data_ptr);
+		break;
+
+	case LWM2M_RES_TYPE_S32:
+		ret = engine_put_s32(&msg->out, &msg->path, *(int32_t *)data_ptr);
+		break;
+
+	case LWM2M_RES_TYPE_S16:
+		ret = engine_put_s16(&msg->out, &msg->path, *(int16_t *)data_ptr);
+		break;
+
+	case LWM2M_RES_TYPE_S8:
+		ret = engine_put_s8(&msg->out, &msg->path, *(int8_t *)data_ptr);
+		break;
+
+	case LWM2M_RES_TYPE_TIME:
+		ret = engine_put_time(&msg->out, &msg->path, (int64_t) * (uint32_t *)data_ptr);
+		break;
+
+	case LWM2M_RES_TYPE_BOOL:
+		ret = engine_put_bool(&msg->out, &msg->path, *(bool *)data_ptr);
+		break;
+
+	case LWM2M_RES_TYPE_FLOAT:
+		ret = engine_put_float(&msg->out, &msg->path, (double *)data_ptr);
+		break;
+
+	case LWM2M_RES_TYPE_OBJLNK:
+		ret = engine_put_objlnk(&msg->out, &msg->path, (struct lwm2m_objlnk *)data_ptr);
+		break;
+
+	default:
+		LOG_ERR("unknown obj data_type %d", data_type);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+static int lwm2m_read_cached_data(struct lwm2m_message *msg,
+				  struct lwm2m_time_series_resource *cached_data, uint8_t data_type)
+{
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	int ret, i;
+	struct lwm2m_time_series_elem *elements_ptr = cached_data->elements;
+	int cache_lenght = cached_data->size;
+
+	cached_data->size = 0;
+	LOG_DBG("Read cached data size %u", cache_lenght);
+
+	for (i = 0; i < cache_lenght; i++) {
+
+		ret = engine_put_timestamp(&msg->out, elements_ptr->t);
+		if (ret) {
+			return ret;
+		}
+
+		switch (data_type) {
+
+		case LWM2M_RES_TYPE_U32:
+			ret = engine_put_s64(&msg->out, &msg->path, (int64_t)elements_ptr->u32);
+			break;
+
+		case LWM2M_RES_TYPE_U16:
+			ret = engine_put_s32(&msg->out, &msg->path, (int32_t)elements_ptr->u16);
+			break;
+
+		case LWM2M_RES_TYPE_U8:
+			ret = engine_put_s16(&msg->out, &msg->path, (int16_t)elements_ptr->u8);
+			break;
+
+		case LWM2M_RES_TYPE_S64:
+			ret = engine_put_s64(&msg->out, &msg->path, elements_ptr->i64);
+			break;
+
+		case LWM2M_RES_TYPE_S32:
+			ret = engine_put_s32(&msg->out, &msg->path, elements_ptr->i32);
+			break;
+
+		case LWM2M_RES_TYPE_S16:
+			ret = engine_put_s16(&msg->out, &msg->path, elements_ptr->i16);
+			break;
+
+		case LWM2M_RES_TYPE_S8:
+			ret = engine_put_s8(&msg->out, &msg->path, elements_ptr->i8);
+			break;
+
+		case LWM2M_RES_TYPE_BOOL:
+			ret = engine_put_bool(&msg->out, &msg->path, elements_ptr->b);
+			break;
+
+		case LWM2M_RES_TYPE_FLOAT:
+			ret = engine_put_float(&msg->out, &msg->path, &elements_ptr->f);
+			break;
+
+		default:
+			LOG_ERR("unknown obj data_type %d", data_type);
+			return -EINVAL;
+		}
+
+		/* Validate that we really read some data */
+		if (ret < 0) {
+			LOG_ERR("Read operation fail");
+			return -ENOMEM;
+		}
+		elements_ptr++;
+	}
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_engine_res *res,
 			      struct lwm2m_engine_obj_field *obj_field, struct lwm2m_message *msg)
 {
 	int i, loop_max = 1, found_values = 0;
 	uint16_t res_inst_id_tmp = 0U;
 	void *data_ptr = NULL;
+	struct lwm2m_time_series_resource *cached_data = NULL;
 	size_t data_len = 0;
+	struct lwm2m_obj_path temp_path;
 	int ret = 0;
 
 	if (!obj_inst || !res || !obj_field || !msg) {
 		return -EINVAL;
 	}
+	temp_path.obj_id = obj_inst->obj->obj_id;
+
+	temp_path.obj_inst_id = obj_inst->obj_inst_id;
+	temp_path.res_id = obj_field->res_id;
+	temp_path.level = LWM2M_PATH_LEVEL_RESOURCE;
 
 	loop_max = res->res_inst_count;
 	if (res->multi_res_inst) {
@@ -1014,97 +1163,47 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm
 		if (res->res_inst_count > 1) {
 			msg->path.res_inst_id = res->res_instances[i].res_inst_id;
 		}
-
-		/* setup initial data elements */
-		data_ptr = res->res_instances[i].data_ptr;
-		data_len = res->res_instances[i].data_len;
-
-		/* allow user to override data elements via callback */
-		if (res->read_cb) {
-			data_ptr = res->read_cb(obj_inst->obj_inst_id, res->res_id,
-						res->res_instances[i].res_inst_id, &data_len);
+		if (res->multi_res_inst) {
+			temp_path.res_inst_id = res->res_instances[i].res_inst_id;
+			temp_path.level = LWM2M_PATH_LEVEL_RESOURCE_INST;
 		}
 
-		if (!data_ptr && data_len) {
-			return -ENOENT;
-		}
+		
 
-		if (!data_len) {
-			if (obj_field->data_type != LWM2M_RES_TYPE_OPAQUE &&
-			    obj_field->data_type != LWM2M_RES_TYPE_STRING) {
+		cached_data = lwm2m_cache_entry_get_by_object(&temp_path);
+
+		if (cached_data && cached_data->size && msg->out.writer->put_data_timestamp) {
+			/* Content Format Writer have to support timestamp write */
+			ret = lwm2m_read_cached_data(msg, cached_data, obj_field->data_type);
+		} else {
+			/* setup initial data elements */
+			data_ptr = res->res_instances[i].data_ptr;
+			data_len = res->res_instances[i].data_len;
+
+			/* allow user to override data elements via callback */
+			if (res->read_cb) {
+				data_ptr =
+					res->read_cb(obj_inst->obj_inst_id, res->res_id,
+						     res->res_instances[i].res_inst_id, &data_len);
+			}
+
+			if (!data_ptr && data_len) {
 				return -ENOENT;
 			}
-			/* Only opaque and string types can be empty, and when
-			 * empty, we should not give pointer to potentially uninitialized
-			 * data to a content formatter. Give pointer to empty string instead.
-			 */
-			data_ptr = "";
-		}
 
-		switch (obj_field->data_type) {
-
-		case LWM2M_RES_TYPE_OPAQUE:
-			ret = engine_put_opaque(&msg->out, &msg->path, (uint8_t *)data_ptr,
-						data_len);
-			break;
-
-		case LWM2M_RES_TYPE_STRING:
-			ret = engine_put_string(&msg->out, &msg->path, (uint8_t *)data_ptr,
-						strlen((uint8_t *)data_ptr));
-			break;
-
-		case LWM2M_RES_TYPE_U32:
-			ret = engine_put_s64(&msg->out, &msg->path,
-					     (int64_t) *(uint32_t *)data_ptr);
-			break;
-
-		case LWM2M_RES_TYPE_U16:
-			ret = engine_put_s32(&msg->out, &msg->path,
-					     (int32_t) *(uint16_t *)data_ptr);
-			break;
-
-		case LWM2M_RES_TYPE_U8:
-			ret = engine_put_s16(&msg->out, &msg->path,
-					     (int16_t) *(uint8_t *)data_ptr);
-			break;
-
-		case LWM2M_RES_TYPE_S64:
-			ret = engine_put_s64(&msg->out, &msg->path, *(int64_t *)data_ptr);
-			break;
-
-		case LWM2M_RES_TYPE_S32:
-			ret = engine_put_s32(&msg->out, &msg->path, *(int32_t *)data_ptr);
-			break;
-
-		case LWM2M_RES_TYPE_S16:
-			ret = engine_put_s16(&msg->out, &msg->path, *(int16_t *)data_ptr);
-			break;
-
-		case LWM2M_RES_TYPE_S8:
-			ret = engine_put_s8(&msg->out, &msg->path, *(int8_t *)data_ptr);
-			break;
-
-		case LWM2M_RES_TYPE_TIME:
-			ret = engine_put_time(&msg->out, &msg->path,
-					      (int64_t) *(uint32_t *)data_ptr);
-			break;
-
-		case LWM2M_RES_TYPE_BOOL:
-			ret = engine_put_bool(&msg->out, &msg->path, *(bool *)data_ptr);
-			break;
-
-		case LWM2M_RES_TYPE_FLOAT:
-			ret = engine_put_float(&msg->out, &msg->path, (double *)data_ptr);
-			break;
-
-		case LWM2M_RES_TYPE_OBJLNK:
-			ret = engine_put_objlnk(&msg->out, &msg->path,
-						(struct lwm2m_objlnk *)data_ptr);
-			break;
-
-		default:
-			LOG_ERR("unknown obj data_type %d", obj_field->data_type);
-			return -EINVAL;
+			if (!data_len) {
+				if (obj_field->data_type != LWM2M_RES_TYPE_OPAQUE &&
+				    obj_field->data_type != LWM2M_RES_TYPE_STRING) {
+					return -ENOENT;
+				}
+				/* Only opaque and string types can be empty, and when
+				 * empty, we should not give pointer to potentially uninitialized
+				 * data to a content formatter. Give pointer to empty string
+				 * instead.
+				 */
+				data_ptr = "";
+			}
+			ret = lwm2m_read_resource_data(msg, data_ptr, data_len, obj_field->data_type);
 		}
 
 		/* Validate that we really read some data */

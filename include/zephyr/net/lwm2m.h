@@ -215,6 +215,25 @@ struct lwm2m_ctx {
 	uint8_t validate_buf[CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE];
 };
 
+/**
+* LwM2M Time series data structure
+*/
+struct lwm2m_time_series_elem {
+	/* Cached data Unix timestamp */
+	int64_t t;
+	union {
+		uint8_t u8;
+		uint16_t u16;
+		uint32_t u32;
+		uint32_t u64;
+		int8_t i8;
+		int8_t i16;
+		int8_t i32;
+		int8_t i64;
+		double f;
+		bool b;
+	};
+};
 
 /**
  * @brief Asynchronous callback to get a resource buffer and length.
@@ -1377,6 +1396,19 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
  *
  */
 struct lwm2m_ctx *lwm2m_rd_client_ctx(void);
+
+/** 
+ * @brief LwM2M Resource data cache enable
+ *
+ * @param resource_path LwM2M resourcepath string "obj/obj-inst/res(/res-inst)"
+ * @param data_cache Pointer to Data cache array
+ * @param cache_element_size Length of Data cache entries
+ * 
+ * @return 0 for success or negative in case of error.
+ *
+ */
+int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_series_elem *data_cache,
+			      size_t cache_element_size);
 
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */

@@ -989,6 +989,8 @@ static int lwm2m_engine_init(const struct device *dev)
 	}
 
 	(void)memset(block1_contexts, 0, sizeof(block1_contexts));
+	/* Init data cache */
+	lwm2m_engine_data_cache_init();
 
 	/* start sock receive thread */
 	engine_thread_id = k_thread_create(&engine_thread_data, &engine_thread_stack[0],
