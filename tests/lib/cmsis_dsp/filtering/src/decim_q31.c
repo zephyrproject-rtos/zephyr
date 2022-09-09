@@ -17,7 +17,7 @@
 #define ABS_ERROR_THRESH_Q31		((q31_t)2)
 #define STATE_BUF_LEN			(16 + 768 - 1)
 
-static void test_arm_fir_decimate_q31(void)
+ZTEST(filtering_decim_q31, test_arm_fir_decimate_q31)
 {
 	uint32_t decim_factor, tap_count;
 	size_t sample_index, block_size, ref_size;
@@ -81,7 +81,7 @@ static void test_arm_fir_decimate_q31(void)
 	free(output_buf);
 }
 
-static void test_arm_fir_interpolate_q31(void)
+ZTEST(filtering_decim_q31, test_arm_fir_interpolate_q31)
 {
 	uint32_t filter_length, tap_count;
 	size_t sample_index, block_size, ref_size;
@@ -145,12 +145,4 @@ static void test_arm_fir_interpolate_q31(void)
 	free(output_buf);
 }
 
-void test_filtering_decim_q31(void)
-{
-	ztest_test_suite(filtering_decim_q31,
-		ztest_unit_test(test_arm_fir_decimate_q31),
-		ztest_unit_test(test_arm_fir_interpolate_q31)
-		);
-
-	ztest_run_test_suite(filtering_decim_q31);
-}
+ZTEST_SUITE(filtering_decim_q31, NULL, NULL, NULL, NULL, NULL);
