@@ -47,7 +47,13 @@ For more information about the LPC55S36 SoC and LPCXPresso55S36 board, see:
 Supported Features
 ==================
 
-The Zephyr configuration for the LPC55S36 board (lpcxpresso55s36) is as follows:
+NXP considers the LPCXpresso55S36 as a superset board for the LPC55(S)3x
+family of MCUs.  This board is a focus for NXP's Full Platform Support for
+Zephyr, to better enable the entire LPC55(S)3x family.  NXP prioritizes enabling
+this board with new support for Zephyr features.  The lpcxpresso55s36 board
+configuration supports the hardware features below.  Another similar superset
+board is the :ref:`lpcxpresso55s69`, and that board may have additional features
+already supported, which can also be re-used on this lpcxpresso55s36 board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

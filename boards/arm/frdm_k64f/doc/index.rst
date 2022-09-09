@@ -58,7 +58,11 @@ For more information about the K64F SoC and FRDM-K64F board:
 Supported Features
 ==================
 
-The frdm_k64f board configuration supports the following hardware features:
+NXP considers the FRDM-K64F as the superset board for the Kinetis K
+series of MCUs.  This board is a focus for NXP's Full Platform Support for
+Zephyr, to better enable the entire Kinetis K series.  NXP prioritizes enabling
+this board with new support for Zephyr features.  The frdm_k64f board
+configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

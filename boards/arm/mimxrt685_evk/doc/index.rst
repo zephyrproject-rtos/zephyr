@@ -54,8 +54,13 @@ these references:
 Supported Features
 ==================
 
-The mimxrt685_evk board configuration supports the following hardware
-features:
+NXP considers the MIMXRT685-EVK as a superset board for the i.MX RT6xx
+family of MCUs.  This board is a focus for NXP's Full Platform Support for
+Zephyr, to better enable the entire RT6xx family.  NXP prioritizes enabling
+this board with new support for Zephyr features.  The mimxrt685_evk board
+configuration supports the hardware features below.  Another very similar
+board is the :ref:`mimxrt595_evk`, and that board may have additional features
+already supported, which can also be re-used on this mimxrt685_evk board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
