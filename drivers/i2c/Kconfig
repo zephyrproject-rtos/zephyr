@@ -13,6 +13,17 @@ menuconfig I2C
 
 if I2C
 
+config I2C_FALLBACK_ADDRESSES
+	int "Maximum number of I2C fallback addresses"
+	range 0 255
+	default 0
+	help
+	  Maximum number of I2C fallback addresses.
+
+	  If a device has variants with different I2C addresses, drivers
+	  can be written to use an alternate address if the device does
+	  not respond on the original address.
+
 config I2C_SHELL
 	bool "I2C Shell"
 	default y
