@@ -1932,13 +1932,11 @@ void ull_adv_done(struct node_rx_event_done *done)
 	lll = &adv->lll;
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	if (done->extra.result == DONE_COMPLETED) {
-		/* Event completed successfully */
-		adv->delay_remain = ULL_ADV_RANDOM_DELAY;
-	} else {
+	if (done->extra.result != DONE_COMPLETED) {
 		/* Event aborted or too late - try to re-schedule */
 		uint32_t ticks_elapsed;
 		uint32_t ticks_now;
+		uint32_t delay_remain;
 
 		const uint32_t prepare_overhead =
 			HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
@@ -1952,39 +1950,52 @@ void ull_adv_done(struct node_rx_event_done *done)
 			ticks_elapsed = ticks_now - ticks_adv_airtime;
 		}
 
-		if (adv->delay_remain >= adv->delay + ticks_elapsed) {
+		if (adv->delay_at_expire + ticks_elapsed <= ULL_ADV_RANDOM_DELAY) {
 			/* The perturbation window is still open */
-			adv->delay_remain -= (adv->delay + ticks_elapsed);
+			delay_remain = ULL_ADV_RANDOM_DELAY - (adv->delay_at_expire +
+							       ticks_elapsed);
 		} else {
-			adv->delay_remain = 0;
+			delay_remain = 0;
 		}
 
 		/* Check if we have enough time to re-schedule */
-		if (adv->delay_remain > prepare_overhead) {
+		if (delay_remain > prepare_overhead) {
 			uint32_t ticks_adjust_minus;
+			uint32_t interval_us = adv->interval * ADV_INT_UNIT_US;
 
 			/* Get negative ticker adjustment needed to pull back ADV one
 			 * interval plus the randomized delay. This means that the ticker
 			 * will be updated to expire in time frame of now + start
 			 * overhead, until 10 ms window is exhausted.
 			 */
-			ticks_adjust_minus = HAL_TICKER_US_TO_TICKS(
-				(uint64_t)adv->interval * ADV_INT_UNIT_US) + adv->delay;
+			ticks_adjust_minus = HAL_TICKER_US_TO_TICKS(interval_us) + adv->delay;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+			if (adv->remain_duration_us > interval_us) {
+				/* Reset remain_duration_us to value before last ticker expire
+				 * to correct for the re-scheduling
+				 */
+				adv->remain_duration_us += interval_us +
+							   HAL_TICKER_TICKS_TO_US(
+								adv->delay_at_expire);
+			}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 			/* Apply random delay in range [prepare_overhead..delay_remain].
 			 * NOTE: This ticker_update may fail if update races with
 			 * ticker_stop, e.g. from ull_periph_setup. This is not a problem
 			 * and we can safely ignore the operation result.
 			 */
-			ticker_update_rand(adv, adv->delay_remain - prepare_overhead,
+			ticker_update_rand(adv, delay_remain - prepare_overhead,
 					   prepare_overhead, ticks_adjust_minus, NULL);
+
+			/* Delay from ticker_update_rand is in addition to the last random delay */
+			adv->delay += adv->delay_at_expire;
 
 			/* Score of the event was increased due to the result, but since
 			 * we're getting a another chance we'll set it back.
 			 */
 			adv->lll.hdr.score -= 1;
-		} else {
-			adv->delay_remain = ULL_ADV_RANDOM_DELAY;
 		}
 	}
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
@@ -2276,6 +2287,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		adv->ticks_at_expire = ticks_at_expire;
+		adv->delay_at_expire = adv->delay;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 	}
 
@@ -2290,12 +2302,17 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		if (adv->remain_duration_us && adv->event_counter > 0) {
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+			/* ticks_drift is always 0 with JIT scheduling, populate manually */
+			ticks_drift = adv->delay_at_expire;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 			uint32_t interval_us = (uint64_t)adv->interval * ADV_INT_UNIT_US;
 			uint32_t elapsed_us = interval_us * (lazy + 1) +
 						 HAL_TICKER_TICKS_TO_US(ticks_drift);
 
 			/* End advertising if the added random delay pushes us beyond the limit */
-			if (adv->remain_duration_us > elapsed_us + interval_us + random_delay) {
+			if (adv->remain_duration_us > elapsed_us + interval_us +
+						      HAL_TICKER_TICKS_TO_US(random_delay)) {
 				adv->remain_duration_us -= elapsed_us;
 			} else {
 				adv->remain_duration_us = interval_us;
@@ -2933,7 +2950,7 @@ static void init_set(struct ll_adv_set *adv)
 	adv->lll.chan_map = BT_LE_ADV_CHAN_MAP_ALL;
 	adv->lll.filter_policy = BT_LE_ADV_FP_NO_FILTER;
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	adv->delay_remain = ULL_ADV_RANDOM_DELAY;
+	adv->delay = 0;
 #endif /* ONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	init_pdu(lll_adv_data_peek(&ll_adv[0].lll), PDU_ADV_TYPE_ADV_IND);
