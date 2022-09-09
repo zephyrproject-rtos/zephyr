@@ -80,7 +80,7 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	 * are still disabled at this stage and will remain so
 	 * consistently until Zephyr switches into the main thread.
 	 */
-	reg = XCHAL_VECBASE_RESET_PADDR_SRAM;
+	reg = VECBASE_RESET_PADDR_SRAM;
 	__asm__ volatile("wsr %0, VECBASE" :: "r"(reg));
 }
 
