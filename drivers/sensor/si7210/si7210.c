@@ -95,6 +95,8 @@ struct si7210_config {
 };
 
 struct si7210_data {
+	uint8_t bus_idx;
+
 	int8_t otp_temp_offset;
 	int8_t otp_temp_gain;
 
@@ -118,14 +120,14 @@ static int si7210_sleep(const struct device *dev)
 	 * Disable measurements during sleep. This overrides the other fields of
 	 * the register, but they get reloaded from OTP during wake-up.
 	 */
-	rc = i2c_reg_write_byte_dt(&config->bus, SI7210_REG_CTRL3, 0);
+	rc = i2c_reg_write_byte_dt_idx(&config->bus, data->bus_idx, SI7210_REG_CTRL3, 0);
 	if (rc < 0) {
 		LOG_ERR("Failed to disable SLTIME");
 		return rc;
 	}
 
 	/* Go to sleep mode */
-	rc = i2c_reg_write_byte_dt(&config->bus, SI7210_REG_POWER_CTRL,
+	rc = i2c_reg_write_byte_dt_idx(&config->bus, data->bus_idx, SI7210_REG_POWER_CTRL,
 				   SI7210_BIT_POWER_CTRL_SLEEP);
 	if (rc < 0) {
 		LOG_ERR("Failed to go to sleep mode");
@@ -143,6 +145,7 @@ static int si7210_sleep(const struct device *dev)
 static int si7210_wakeup(const struct device *dev)
 {
 	const struct si7210_config *config = dev->config;
+	struct si7210_data *data = dev->data;
 	uint8_t val;
 	int rc;
 
@@ -151,7 +154,7 @@ static int si7210_wakeup(const struct device *dev)
 	 * is to write a zero byte length message, but it might not be
 	 * supported by all I2C controllers.
 	 */
-	rc = i2c_read_dt(&config->bus, &val, 1);
+	rc = i2c_read_dt_idx(&config->bus, data->bus_idx, &val, 1);
 	if (rc < 0) {
 		LOG_ERR("Failed to go wake-up chip");
 		return rc;
@@ -182,15 +185,18 @@ static int si7210_otp_reg_read_byte(const struct device *dev,
 				    uint8_t otp_reg_addr, uint8_t *value)
 {
 	const struct si7210_config *config = dev->config;
+	struct si7210_data *data = dev->data;
 	int rc;
 
-	rc = i2c_reg_write_byte_dt(&config->bus, SI7210_REG_OTP_ADDR, otp_reg_addr);
+	rc = i2c_reg_write_byte_dt_idx(&config->bus, data->bus_idx,
+				   SI7210_REG_OTP_ADDR, otp_reg_addr);
 	if (rc) {
 		LOG_ERR("Failed to write OTP address register");
 		return rc;
 	}
 
-	rc = i2c_reg_write_byte_dt(&config->bus, SI7210_REG_OTP_CTRL, SI7210_BIT_OTP_CTRL_READEN);
+	rc = i2c_reg_write_byte_dt_idx(&config->bus, data->bus_idx,
+				   SI7210_REG_OTP_CTRL, SI7210_BIT_OTP_CTRL_READEN);
 	if (rc) {
 		LOG_ERR("Failed to write OTP control register");
 		return rc;
@@ -201,7 +207,8 @@ static int si7210_otp_reg_read_byte(const struct device *dev,
 	 * !BUSY), as the I2C bus timing ensure the data is available (see
 	 * datasheet).
 	 */
-	rc = i2c_reg_read_byte_dt(&config->bus, SI7210_REG_OTP_DATA, value);
+	rc = i2c_reg_read_byte_dt_idx(&config->bus, data->bus_idx,
+				  SI7210_REG_OTP_DATA, value);
 	if (rc) {
 		LOG_ERR("Failed to read OTP data register");
 		return rc;
@@ -242,7 +249,7 @@ static int si7210_set_dspsigsel(const struct device *dev, uint8_t value)
 		return 0;
 	}
 
-	rc = i2c_reg_write_byte_dt(&config->bus, SI7210_REG_DSPSIGSEL, value);
+	rc = i2c_reg_write_byte_dt_idx(&config->bus, data->bus_idx, SI7210_REG_DSPSIGSEL, value);
 	if (rc < 0) {
 		LOG_ERR("Failed to select channel");
 		return rc;
@@ -264,7 +271,7 @@ static int si7210_set_arautoinc(const struct device *dev, uint8_t value)
 		return 0;
 	}
 
-	rc = i2c_reg_write_byte_dt(&config->bus, SI7210_REG_ARAUTOINC, value);
+	rc = i2c_reg_write_byte_dt_idx(&config->bus, data->bus_idx, SI7210_REG_ARAUTOINC, value);
 	if (rc < 0) {
 		LOG_ERR("Failed to set the auto increment register");
 		return rc;
@@ -278,6 +285,7 @@ static int si7210_set_arautoinc(const struct device *dev, uint8_t value)
 static int si7210_sample_fetch_one(const struct device *dev, uint8_t channel, uint16_t *dspsig)
 {
 	const struct si7210_config *config = dev->config;
+	struct si7210_data *data = dev->data;
 	uint16_t val;
 	int rc;
 
@@ -294,8 +302,8 @@ static int si7210_sample_fetch_one(const struct device *dev, uint8_t channel, ui
 	}
 
 	/* Start a single conversion */
-	rc = i2c_reg_write_byte_dt(&config->bus, SI7210_REG_POWER_CTRL,
-				   SI7210_BIT_POWER_CTRL_ONEBURST);
+	rc = i2c_reg_write_byte_dt_idx(&config->bus, data->bus_idx,
+				       SI7210_REG_POWER_CTRL, SI7210_BIT_POWER_CTRL_ONEBURST);
 	if (rc < 0) {
 		LOG_ERR("Failed to write power control register");
 		return rc;
@@ -307,7 +315,8 @@ static int si7210_sample_fetch_one(const struct device *dev, uint8_t channel, ui
 	 */
 
 	/* Read DSPSIG in one burst as auto increment is enabled */
-	rc = i2c_burst_read_dt(&config->bus, SI7210_REG_DSPSIGM, (uint8_t *)&val, sizeof(val));
+	rc = i2c_burst_read_dt_idx(&config->bus, data->bus_idx,
+				   SI7210_REG_DSPSIGM, (uint8_t *)&val, sizeof(val));
 	if (rc < 0) {
 		LOG_ERR("Failed to read sample data");
 		return rc;
@@ -462,6 +471,15 @@ static int si7210_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if CONFIG_I2C_FALLBACK_ADDRESSES
+	/* Find address that device has */
+	rc = i2c_address_detect_dt_idx(&config->bus, &data->bus_idx, SI7210_REG_CHIPID);
+	if (rc < 0) {
+		LOG_ERR("No device found");
+		return rc;
+	}
+#endif /* CONFIG_I2C_FALLBACK_ADDRESSES */
+
 	/* Possibly wakeup device */
 	rc = si7210_wakeup(dev);
 	if (rc < 0) {
@@ -470,7 +488,7 @@ static int si7210_init(const struct device *dev)
 	}
 
 	/* Read chip ID */
-	rc = i2c_reg_read_byte_dt(&config->bus, SI7210_REG_CHIPID, &chipid);
+	rc = i2c_reg_read_byte_dt_idx(&config->bus, data->bus_idx, SI7210_REG_CHIPID, &chipid);
 	if (rc < 0) {
 		LOG_ERR("Failed to read chip ID");
 		return rc;
