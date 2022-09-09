@@ -401,6 +401,9 @@ static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 		return -EIO;
 	}
 
+	/* Reset Tx/Rx FIFO for successsful peci transactions */
+	peci_xec_bus_recovery(dev, false);
+
 	return 0;
 }
 
