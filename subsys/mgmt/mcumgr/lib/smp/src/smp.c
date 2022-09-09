@@ -224,8 +224,8 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
 	}
 
 	/* Free any extra buffers. */
-	zephyr_smp_free_buf(req, &streamer->mgmt_stmr.cb_arg);
-	zephyr_smp_free_buf(rsp, &streamer->mgmt_stmr.cb_arg);
+	zephyr_smp_free_buf(req, streamer->mgmt_stmr.cb_arg);
+	zephyr_smp_free_buf(rsp, streamer->mgmt_stmr.cb_arg);
 }
 
 /**
@@ -323,8 +323,8 @@ smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		return rc;
 	}
 
-	zephyr_smp_free_buf(req, &streamer->mgmt_stmr.cb_arg);
-	zephyr_smp_free_buf(rsp, &streamer->mgmt_stmr.cb_arg);
+	zephyr_smp_free_buf(req, streamer->mgmt_stmr.cb_arg);
+	zephyr_smp_free_buf(rsp, streamer->mgmt_stmr.cb_arg);
 
 	return rc;
 }
