@@ -68,8 +68,7 @@ config BT_MESH_PROVISIONER
 	  Enable this option to have support for provisioning remote devices.
 
 config BT_MESH_CDB
-	bool "Mesh Configuration Database [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Mesh Configuration Database"
 
 if BT_MESH_CDB
 
