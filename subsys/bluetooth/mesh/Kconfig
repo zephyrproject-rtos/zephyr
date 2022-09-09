@@ -61,6 +61,7 @@ config BT_MESH_PB_ADV_RETRANS_TIMEOUT
 
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
+	depends on BT_MESH_CDB
 	depends on BT_MESH_PROV
 	depends on BT_MESH_PB_ADV || BT_MESH_PB_GATT_CLIENT
 	help
@@ -68,7 +69,6 @@ config BT_MESH_PROVISIONER
 
 config BT_MESH_CDB
 	bool "Mesh Configuration Database [EXPERIMENTAL]"
-	default y if BT_MESH_PROVISIONER
 	select EXPERIMENTAL
 
 if BT_MESH_CDB
@@ -533,6 +533,30 @@ config BT_MESH_TX_SEG_MAX
 	  which leaves 56 bytes for application layer data using a
 	  4-byte MIC and 52 bytes using an 8-byte MIC.
 
+config BT_MESH_SEG_ACK_BASE_TIMEOUT
+	int "SegAck transmission base timeout"
+	default 150
+	range 150 400
+	help
+	  Defines a base timeout for the acknowledgment timer used to delay
+	  transmission of the Segmented Acknowledgment message.
+
+config BT_MESH_SEG_ACK_PER_HOP_TIMEOUT
+	int "SegAck transmission timeout per hop"
+	default 50
+	range 50 250
+	help
+	  Defines an additional per-hop timeout for the acknowledgment timer
+	  used to delay transmission of the Segmented Acknowledgment message.
+
+config BT_MESH_SEG_ACK_PER_SEGMENT_TIMEOUT
+	int "SegAck transmission timeout per segment not yet received"
+	default 0
+	range 0 100
+	help
+	  Defines an additional timeout for the acknowledgment timer for every
+	  segment not yet received.
+
 config BT_MESH_DEFAULT_TTL
 	int "Default TTL value"
 	default 7
@@ -733,7 +757,7 @@ config BT_MESH_LPN_INIT_POLL_TIMEOUT
 config BT_MESH_LPN_SCAN_LATENCY
 	int "Latency for enabling scanning"
 	range 0 50
-	default 10
+	default 15
 	help
 	  Latency in milliseconds that it takes to enable scanning. This
 	  is in practice how much time in advance before the Receive Window

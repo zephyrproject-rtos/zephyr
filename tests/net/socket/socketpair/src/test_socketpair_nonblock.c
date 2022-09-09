@@ -23,7 +23,7 @@ LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #undef write
 #define write(fd, buf, len) zsock_send(fd, buf, len, 0)
 
-void test_socketpair_write_nonblock(void)
+ZTEST_USER(net_socketpair, test_socketpair_write_nonblock)
 {
 	int res;
 	int sv[2] = {-1, -1};
@@ -57,7 +57,7 @@ void test_socketpair_write_nonblock(void)
 	close(sv[1]);
 }
 
-void test_socketpair_read_nonblock(void)
+ZTEST_USER(net_socketpair, test_socketpair_read_nonblock)
 {
 	int res;
 	int sv[2] = {-1, -1};

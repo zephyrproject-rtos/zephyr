@@ -11,6 +11,7 @@ from pathlib import Path
 import platform
 import os
 import shlex
+import shutil
 from typing import List, Optional, ClassVar, Dict
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps, RunnerConfig
@@ -63,6 +64,10 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         """Obtain path of the STM32CubeProgrammer CLI tool."""
 
         if platform.system() == "Linux":
+            cmd = shutil.which("STM32_Programmer_CLI")
+            if cmd is not None:
+                return Path(cmd)
+
             return (
                 Path.home()
                 / "STMicroelectronics"

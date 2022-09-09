@@ -28,7 +28,7 @@ some highlights of the Nucleo F412ZG board:
 - Three user LEDs
 - Two push-buttons: USER and RESET
 
-.. image:: img/nucleo_f412zg.png
+.. image:: img/nucleo_f412zg.jpg
    :align: center
    :alt: Nucleo F412ZG
 
@@ -104,25 +104,17 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo_f412zg_zio_left.png
-   :width: 720px
+.. image:: img/nucleo_f412zg_zio_left.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F412ZG ZIO connectors (left)
-.. image:: img/nucleo_f412zg_zio_right.png
-   :width: 720px
+.. image:: img/nucleo_f412zg_zio_right.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F412ZG ZIO connectors (right)
-.. image:: img/nucleo_f412zg_morpho_left.png
-   :width: 720px
+.. image:: img/nucleo_f412zg_morpho_left.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F412ZG Morpho connectors (left)
-.. image:: img/nucleo_f412zg_morpho_right.png
-   :width: 720px
+.. image:: img/nucleo_f412zg_morpho_right.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F412ZG Morpho connectors (right)
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.

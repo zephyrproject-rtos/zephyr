@@ -8,7 +8,7 @@
 #include <zephyr/drivers/lora.h>
 #include <errno.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define DEFAULT_RADIO_NODE DT_ALIAS(lora0)
 BUILD_ASSERT(DT_NODE_HAS_STATUS(DEFAULT_RADIO_NODE, okay),
@@ -40,7 +40,7 @@ void lora_receive_cb(const struct device *dev, uint8_t *data, uint16_t size,
 
 void main(void)
 {
-	const struct device *lora_dev = DEVICE_DT_GET(DEFAULT_RADIO_NODE);
+	const struct device *const lora_dev = DEVICE_DT_GET(DEFAULT_RADIO_NODE);
 	struct lora_modem_config config;
 	int ret, len;
 	uint8_t data[MAX_DATA_LEN] = {0};
@@ -57,6 +57,8 @@ void main(void)
 	config.datarate = SF_10;
 	config.preamble_len = 8;
 	config.coding_rate = CR_4_5;
+	config.iq_inverted = false;
+	config.public_network = false;
 	config.tx_power = 14;
 	config.tx = false;
 

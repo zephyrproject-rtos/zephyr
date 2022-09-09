@@ -841,10 +841,8 @@ static void mcux_lpuart_async_tx_timeout(struct k_work *work)
 static void mcux_lpuart_isr(const struct device *dev)
 {
 	struct mcux_lpuart_data *data = dev->data;
-#if CONFIG_PM || CONFIG_UART_ASYNC_API
 	const struct mcux_lpuart_config *config = dev->config;
 	const uint32_t status = LPUART_GetStatusFlags(config->base);
-#endif
 
 #if CONFIG_PM
 	if (status & kLPUART_TransmissionCompleteFlag) {
@@ -865,6 +863,10 @@ static void mcux_lpuart_isr(const struct device *dev)
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
 	}
+
+	if (status & kLPUART_RxOverrunFlag) {
+		LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag);
+	}
 #endif
 
 #if CONFIG_UART_ASYNC_API
@@ -882,6 +884,10 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 	const struct mcux_lpuart_config *config = dev->config;
 	struct mcux_lpuart_data *data = dev->data;
 	uint32_t clock_freq;
+
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {

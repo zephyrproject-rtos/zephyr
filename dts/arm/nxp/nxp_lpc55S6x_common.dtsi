@@ -69,19 +69,25 @@
 		reg = <0x20010000 DT_SIZE_K(64)>;
 	};
 
-	sram2: memory@20018000 {
+	sram2: memory@20020000 {
 		compatible = "mmio-sram";
 		reg = <0x20020000 DT_SIZE_K(64)>;
 	};
 
-	sram3: memory@20020000 {
+	sram3: memory@20030000 {
 		compatible = "mmio-sram";
 		reg = <0x20030000 DT_SIZE_K(64)>;
 	};
 
-	sram4: memory@40100000 {
+	sram4: memory@20040000 {
 		compatible = "mmio-sram";
 		reg = <0x20040000  DT_SIZE_K(16)>;
+	};
+
+	usb_sram: memory@40100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x40100000  DT_SIZE_K(16)>;
+		zephyr,memory-region = "USB_SRAM";
 	};
 };
 
@@ -96,10 +102,11 @@
 	};
 
 	iap: flash-controller@34000 {
-		compatible = "nxp,lpc-iap";
+		compatible = "nxp,iap-fmc55";
 		reg = <0x34000 0x1000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_K(630)>;
@@ -248,6 +255,14 @@
 		status = "disabled";
 	};
 
+	sdif: sdif@9b000 {
+		compatible = "nxp,lpc-sdif";
+		reg = <0x9b000 0x1000>;
+		interrupts = <42 0>;
+		clocks = <&syscon MCUX_SDIF_CLK>;
+		status = "disabled";
+	};
+
 	hs_lspi: spi@9f000 {
 		compatible = "nxp,lpc-spi";
 		/* Enabling cs-gpios below will allow using GPIO CS,
@@ -298,6 +313,7 @@
 		reg = <0x94000 0x1000>;
 		interrupts = <47 1>;
 		num-bidir-endpoints = <5>;
+		usb-controller-index = "LpcIp3511Hs0";
 		status = "disabled";
 	};
 

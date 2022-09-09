@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ONE(maxim_max17262);
+	const struct device *const dev = DEVICE_DT_GET_ONE(maxim_max17262);
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");

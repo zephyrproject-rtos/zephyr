@@ -221,7 +221,7 @@ static int spi_bitbang_transceive(const struct device *dev,
 
 	spi_context_cs_control(ctx, false);
 
-	spi_context_complete(ctx, 0);
+	spi_context_complete(ctx, dev, 0);
 
 	return 0;
 }

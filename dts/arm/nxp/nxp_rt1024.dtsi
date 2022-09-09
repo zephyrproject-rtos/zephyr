@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_rt.dtsi>
+#include <nxp/nxp_rt10xx.dtsi>
 
 &sysclk {
 	clock-frequency = <500000000>;
@@ -31,7 +31,8 @@
 &flexspi {
 	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(4)>;
-	is25wp032: is25wp032@0 {
+	/* 32 megabit internal flash present on chip */
+	w25q32jvwj0: w25q32jvwj0@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(32)>;
 		reg = <0>;
@@ -51,6 +52,8 @@
 		/delete-node/ gpio@42004000;
 		/delete-node/ gpio@42008000;
 		/delete-node/ gpio@4200c000;
+		/* RT1024 has only one flexSPI controller */
+		/delete-node/ spi@402a4000;
 	};
 };
 

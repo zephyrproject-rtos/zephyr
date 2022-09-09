@@ -204,8 +204,8 @@
 					       &CPU2_intc 7 &CPU3_intc 7>;
 		};
 
-		smu: smu@f0100000 {
-			compatible = "andestech,atcsmu100";
+		syscon: syscon@f0100000 {
+			compatible = "syscon";
 			reg = <0xf0100000 0x1000>;
 			status = "disabled";
 		};
@@ -241,6 +241,7 @@
 			interrupts = <3 1>;
 			interrupt-parent = <&plic0>;
 			clock-frequency = <60000000>;
+			prescaler = <600>;
 			status = "disabled";
 		};
 
@@ -283,7 +284,6 @@
 			interrupt-parent = <&plic0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			num-cs = <1>;
 			clock-frequency = <66000000>;
 			status = "disabled";
 		};
@@ -296,7 +296,6 @@
 			interrupt-parent = <&plic0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			num-cs = <1>;
 			clock-frequency = <66000000>;
 			status = "disabled";
 		};

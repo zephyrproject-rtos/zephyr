@@ -21,6 +21,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -115,7 +116,6 @@
 		/* MCP4725 not populated at factory */
 		compatible = "microchip,mcp4725";
 		reg = <0x60>;
-		label = "MCP4725";
 		#io-channel-cells = <1>;
 		status = "disabled";
 	};
@@ -168,5 +168,9 @@
 
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};
+
+&ieee802154 {
 	status = "okay";
 };

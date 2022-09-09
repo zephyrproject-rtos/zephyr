@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
@@ -24,7 +24,7 @@ void main(void)
 {
 	uint8_t buffer[32];
 	const struct device *flash_device;
-	off_t address = FLASH_AREA_OFFSET(storage);
+	off_t address = FIXED_PARTITION_OFFSET(storage_partition);
 
 	flash_device = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 	if (!device_is_ready(flash_device)) {

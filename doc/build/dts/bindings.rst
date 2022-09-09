@@ -72,7 +72,7 @@ What the build system does with bindings
 ========================================
 
 The build system uses bindings both to validate devicetree nodes and to convert
-the devicetree's contents into the generated :ref:`devicetree_unfixed.h
+the devicetree's contents into the generated :ref:`devicetree_generated.h
 <dt-outputs>` header file.
 
 For example, the build system would use the above binding to check that the
@@ -298,10 +298,6 @@ For example, a binding for a UART peripheral might look something like this:
        type: int
        description: current baud rate
        required: true
-     label:
-       type: string
-       description: human-readable name
-       required: false
 
 The properties in the following node would be validated by the above binding:
 
@@ -311,7 +307,6 @@ The properties in the following node would be validated by the above binding:
    	compatible = "manufacturer,serial";
    	reg = <0xdeadbeef 0x1000>;
    	current-speed = <115200>;
-        label = "UART_0";
    };
 
 This is used to check that required properties appear, and to control the
@@ -420,7 +415,7 @@ this:
        - <item2>
        ...
        - <itemN>
-     const: <string | int>
+     const: <string | int | array | uint8-array | string-array>
 
 Required properties
 +++++++++++++++++++
@@ -445,7 +440,7 @@ for more details about writing values of each type in a DTS file.
 
    * - ``string``
      - exactly one string
-     - ``label = "UART_0";``
+     - ``status = "disabled";``
 
    * - ``int``
      - exactly one 32-bit value (cell)

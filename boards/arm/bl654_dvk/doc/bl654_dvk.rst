@@ -28,14 +28,12 @@ This development kit has the following features:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/bl654_dvk.jpg
-     :width: 500px
      :align: center
      :alt: BL654 Development Kit
 
      BL654 Development Kit Board
 
 .. figure:: img/455-00001_BoxContents.jpg
-     :width: 500px
      :align: center
      :alt: 455-00001 Box Contents
 

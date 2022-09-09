@@ -11,7 +11,4 @@ config SOC
 config NUM_IRQS
 	default 30
 
-config NET_CONFIG_IEEE802154_DEV_NAME
-	default "IEEE802154_nrf5"
-
 endif # SOC_NRF52811_QFAA

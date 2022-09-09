@@ -29,7 +29,7 @@
 #endif
 #if CONFIG_USB_DC_NXP_LPCIP3511
 #include "usb_phy.h"
-#include "usb_dc_mcux.h"
+#include "usb.h"
 #endif
 
 #define CTIMER_CLOCK_SOURCE(node_id) \
@@ -194,6 +194,13 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 	CLOCK_SetClkDiv(kCLOCK_DivCanClk, 1U, false);
 	CLOCK_AttachClk(kMCAN_DIV_to_MCAN);
 	RESET_PeripheralReset(kMCAN_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(sdif), nxp_lpc_sdif, okay) && \
+	CONFIG_MCUX_SDIF
+	/* attach main clock to SDIF */
+	CLOCK_AttachClk(kMAIN_CLK_to_SDIO_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivSdioClk, 3, true);
 #endif
 
 #endif /* CONFIG_SOC_LPC55S69_CPU0 */

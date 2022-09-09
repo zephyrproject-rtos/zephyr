@@ -48,8 +48,9 @@
 			interrupt-names = "rx";
 		};
 
-		gpio: gpio {
+		gpio: gpio@40005000 {
 			compatible = "quicklogic,eos-s3-gpio";
+			reg = <0x40005000 DT_SIZE_K(4)>;
 			status = "disabled";
 			interrupts = <5 2>;
 			#gpio-cells = <2>;

@@ -11,6 +11,7 @@ menuconfig KSCAN
 if KSCAN
 
 source "drivers/kscan/Kconfig.ft5336"
+source "drivers/kscan/Kconfig.gt911"
 source "drivers/kscan/Kconfig.it8xxx2"
 source "drivers/kscan/Kconfig.xec"
 source "drivers/kscan/Kconfig.sdl"

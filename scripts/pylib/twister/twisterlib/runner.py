@@ -19,6 +19,7 @@ from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
+from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -218,7 +219,7 @@ class CMake:
                     log.write(log_msg)
 
             if log_msg:
-                overflow_found = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM)' overflowed by", log_msg)
+                overflow_found = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|dram0_1_seg)' overflowed by", log_msg)
                 if overflow_found and not self.options.overflow_as_errors:
                     logger.debug("Test skipped due to {} Overflow".format(overflow_found[0]))
                     self.instance.status = "skipped"
@@ -262,11 +263,11 @@ class CMake:
         cmake_opts = ['-DBOARD={}'.format(self.platform.name)]
         cmake_args.extend(cmake_opts)
 
-
-        logger.debug("Calling cmake with arguments: {}".format(cmake_args))
         cmake = shutil.which('cmake')
         cmd = [cmake] + cmake_args
         kwargs = dict()
+
+        log_command(logger, "Calling cmake", cmd)
 
         if self.capture_output:
             kwargs['stdout'] = subprocess.PIPE

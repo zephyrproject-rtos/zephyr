@@ -38,3 +38,22 @@ properties:
           - 1
           - 4
           - 8
+
+    dmas:
+      description: |
+        Optional DMA channel specifier. If DMA should be used, specifier should
+        hold a phandle reference to the dma controller, the channel number,
+        the slot number, channel configuration and finally features.
+
+        Only priority bits are used in the configuration. There are no feature
+        flags.
+
+        For example dmas for TX/RX on SDMMC
+           dmas = <&dma2 4 6 0x30000 0x00>, <&dma2 4 3 0x30000 0x00>;
+
+    dma-names:
+      description: |
+        DMA channel name. If DMA should be used, expected value is "tx", "rx".
+
+        For example
+           dma-names = "tx", "rx";

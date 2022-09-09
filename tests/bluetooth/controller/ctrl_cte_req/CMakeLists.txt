@@ -5,15 +5,10 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-if (NOT BOARD STREQUAL unit_testing)
-  message(FATAL_ERROR "This project can only be used with '-DBOARD=unit_testing'.")
-endif()
-
 FILE(GLOB SOURCES
   src/*.c
 )
 
-set(CONFIG_ZTEST_NEW_API y)
 project(bluetooth_ull_llcp_le_cte_req)
 find_package(Zephyr COMPONENTS unittest HINTS $ENV{ZEPHYR_BASE})
 include(${ZEPHYR_BASE}/tests/bluetooth/controller/common/defaults_cmake.txt)

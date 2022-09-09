@@ -1,0 +1,12 @@
+sample:
+  name: CAN driver counter sample
+tests:
+  sample.drivers.can.counter:
+    tags: can
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Counter received: (.*)"

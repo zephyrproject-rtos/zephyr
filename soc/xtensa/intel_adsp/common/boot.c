@@ -41,8 +41,9 @@
 #define HOST_PAGE_SIZE		4096
 #define MANIFEST_SEGMENT_COUNT	3
 
-#if defined(CONFIG_SOC_INTEL_CAVS_V15)
-#define PLATFORM_DISABLE_L2CACHE_AT_BOOT
+/* FIXME: Use Kconfig or some other means */
+#if !defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
+#define RESET_MEMORY_HOLE
 #endif
 
 /* Initial/true entry point.  Does nothing but jump to
@@ -139,6 +140,9 @@ __imr void win_setup(void)
 	CAVS_WIN[0].dmwba = (HP_SRAM_WIN0_BASE | CAVS_DMWBA_READONLY
 			     | CAVS_DMWBA_ENABLE);
 
+	CAVS_WIN[2].dmwlo = HP_SRAM_WIN2_SIZE | 0x7;
+	CAVS_WIN[2].dmwba = (HP_SRAM_WIN2_BASE | CAVS_DMWBA_ENABLE);
+
 	CAVS_WIN[3].dmwlo = HP_SRAM_WIN3_SIZE | 0x7;
 	CAVS_WIN[3].dmwba = (HP_SRAM_WIN3_BASE | CAVS_DMWBA_READONLY
 			     | CAVS_DMWBA_ENABLE);
@@ -148,18 +152,18 @@ extern void hp_sram_init(uint32_t memory_size);
 extern void lp_sram_init(void);
 extern void hp_sram_pm_banks(uint32_t banks);
 
-#ifdef CONFIG_INTEL_ADSP_CAVS
 __imr void boot_core0(void)
 {
 	cpu_early_init();
 
-#ifdef PLATFORM_DISABLE_L2CACHE_AT_BOOT
-		/* FIXME: L2 cache control PCFG register */
-		*(uint32_t *)0x1508 = 0;
+#ifdef CONFIG_ADSP_DISABLE_L2CACHE_AT_BOOT
+	ADSP_L2PCFG_REG = 0;
 #endif
 
+#ifdef RESET_MEMORY_HOLE
 	/* reset memory hole */
 	CAVS_SHIM.l2mecs = 0;
+#endif
 
 	hp_sram_init(L2_SRAM_SIZE);
 	win_setup();
@@ -172,4 +176,3 @@ __imr void boot_core0(void)
 	extern FUNC_NORETURN void z_cstart(void);
 	z_cstart();
 }
-#endif

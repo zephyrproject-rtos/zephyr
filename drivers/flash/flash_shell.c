@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 
 #include <zephyr/shell/shell.h>
@@ -26,7 +26,7 @@
  */
 BUILD_ASSERT(BUF_ARRAY_CNT >= 1);
 
-static const struct device *zephyr_flash_controller =
+static const struct device *const zephyr_flash_controller =
 	DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_flash_controller));
 
 static uint8_t __aligned(4) test_arr[TEST_ARR_SIZE];

@@ -151,14 +151,14 @@ a mailbox. When a transmitting mailbox is assigned, sending cannot be canceled.
 
 .. code-block:: C
 
-  struct zcan_frame frame = {
+  struct can_frame frame = {
           .id_type = CAN_STANDARD_IDENTIFIER,
           .rtr = CAN_DATAFRAME,
           .id = 0x123,
           .dlc = 8,
           .data = {1,2,3,4,5,6,7,8}
   };
-  const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+  const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
   int ret;
 
   ret = can_send(can_dev, &frame, K_MSEC(100), NULL, NULL);
@@ -186,7 +186,7 @@ occurred. It does not block until the message is sent like the example above.
 
   int send_function(const struct device *can_dev)
   {
-          struct zcan_frame frame = {
+          struct can_frame frame = {
                   .id_type = CAN_EXTENDED_IDENTIFIER,
                   .rtr = CAN_DATAFRAME,
                   .id = 0x1234567,
@@ -211,7 +211,7 @@ added.
 
 .. code-block:: C
 
-  void rx_callback_function(const struct device *dev, struct zcan_frame *frame, void *user_data)
+  void rx_callback_function(const struct device *dev, struct can_frame *frame, void *user_data)
   {
           ... do something with the frame ...
   }
@@ -226,7 +226,7 @@ The filter for this example is configured to match the identifier 0x123 exactly.
 
 .. code-block:: C
 
-  const struct zcan_filter my_filter = {
+  const struct can_filter my_filter = {
           .id_type = CAN_STANDARD_IDENTIFIER,
           .rtr = CAN_DATAFRAME,
           .id = 0x123,
@@ -234,7 +234,7 @@ The filter for this example is configured to match the identifier 0x123 exactly.
           .id_mask = CAN_STD_ID_MASK
   };
   int filter_id;
-  const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+  const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
   filter_id = can_add_rx_filter(can_dev, rx_callback_function, callback_arg, &my_filter);
   if (filter_id < 0) {
@@ -251,7 +251,7 @@ The filter for this example is configured to match the extended identifier
 
 .. code-block:: C
 
-  const struct zcan_filter my_filter = {
+  const struct can_filter my_filter = {
           .id_type = CAN_EXTENDED_IDENTIFIER,
           .rtr = CAN_DATAFRAME,
           .id = 0x1234567,
@@ -259,9 +259,9 @@ The filter for this example is configured to match the extended identifier
           .id_mask = CAN_EXT_ID_MASK
   };
   CAN_MSGQ_DEFINE(my_can_msgq, 2);
-  struct zcan_frame rx_frame;
+  struct can_frame rx_frame;
   int filter_id;
-  const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+  const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
   filter_id = can_add_rx_filter_msgq(can_dev, &my_can_msgq, &my_filter);
   if (filter_id < 0) {
@@ -292,7 +292,7 @@ The following example sets the bitrate to 250k baud with the sampling point at
 .. code-block:: C
 
   struct can_timing timing;
-  const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+  const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
   int ret;
 
   ret = can_calc_timing(can_dev, &timing, 250000, 875);
@@ -328,7 +328,7 @@ Samples
 *******
 
 We have two ready-to-build samples demonstrating use of the Zephyr CAN API
-:ref:`Zephyr CAN sample <can-sample>` and
+:ref:`Zephyr CAN counter sample <can-counter-sample>` and
 :ref:`SocketCAN sample <socket-can-sample>`.
 
 

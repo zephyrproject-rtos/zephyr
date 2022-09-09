@@ -37,7 +37,6 @@
 		compatible = "regulator-fixed";
 		enable-gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
 		regulator-name = "REL1";
-		label = "REL1";
 		startup-delay-us = <10000>;
 		off-on-delay-us = <5000>;
 	};
@@ -46,7 +45,6 @@
 		compatible = "regulator-fixed";
 		enable-gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		regulator-name = "REL2";
-		label = "REL2";
 		startup-delay-us = <10000>;
 		off-on-delay-us = <5000>;
 	};

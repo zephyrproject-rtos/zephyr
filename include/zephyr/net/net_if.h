@@ -371,8 +371,10 @@ struct net_if_ip {
  * @brief IP and other configuration related data for network interface.
  */
 struct net_if_config {
+#if defined(CONFIG_NET_IP)
 	/** IP address configuration setting */
 	struct net_if_ip ip;
+#endif
 
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 	struct net_if_dhcpv4 dhcpv4;
@@ -631,7 +633,7 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt);
  *
  * @param iface Network interface
  *
- * @return True if IP offlining is active, false otherwise.
+ * @return True if IP offloading is active, false otherwise.
  */
 static inline bool net_if_is_ip_offloaded(struct net_if *iface)
 {
@@ -2250,6 +2252,12 @@ struct net_if_api {
 	void (*init)(struct net_if *iface);
 };
 
+#if defined(CONFIG_NET_IP)
+#define NET_IF_IP_INIT .ip = {},
+#else
+#define NET_IF_IP_INIT
+#endif
+
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 #define NET_IF_DHCPV4_INIT .dhcpv4.state = NET_DHCPV4_DISABLED,
 #else
@@ -2258,8 +2266,7 @@ struct net_if_api {
 
 #define NET_IF_CONFIG_INIT				\
 	.config = {					\
-		.ip = {					\
-		},					\
+		NET_IF_IP_INIT				\
 		NET_IF_DHCPV4_INIT			\
 	}
 
@@ -2319,8 +2326,6 @@ struct net_if_api {
 	NET_IF_INIT(dev_name, 0, l2, mtu, NET_IF_MAX_CONFIGS)
 
 /**
- * @def NET_DEVICE_INIT
- *
  * @brief Create a network interface and bind it to network device.
  *
  * @param dev_name Network device name.
@@ -2347,8 +2352,6 @@ struct net_if_api {
 			l2_ctx_type, mtu)
 
 /**
- * @def NET_DEVICE_DT_DEFINE
- *
  * @brief Like NET_DEVICE_INIT but taking metadata from a devicetree node.
  * Create a network interface and bind it to network device.
  *
@@ -2369,13 +2372,11 @@ struct net_if_api {
 #define NET_DEVICE_DT_DEFINE(node_id, init_fn, pm_action_cb, data, cfg,	\
 			   prio, api, l2, l2_ctx_type, mtu)		\
 	Z_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
-			  DT_PROP_OR(node_id, label, ""), init_fn,	\
+			  DEVICE_DT_NAME(node_id), init_fn,		\
 			  pm_action_cb, data, cfg, prio, api, l2,	\
 			  l2_ctx_type, mtu)
 
 /**
- * @def NET_DEVICE_DT_INST_DEFINE
- *
  * @brief Like NET_DEVICE_DT_DEFINE for an instance of a DT_DRV_COMPAT compatible
  *
  * @param inst instance number.  This is replaced by
@@ -2398,8 +2399,6 @@ struct net_if_api {
 	NET_IF_INIT(dev_name, instance, l2, mtu, NET_IF_MAX_CONFIGS)
 
 /**
- * @def NET_DEVICE_INIT_INSTANCE
- *
  * @brief Create multiple network interfaces and bind them to network device.
  * If your network device needs more than one instance of a network interface,
  * use this macro below and provide a different instance suffix each time
@@ -2431,8 +2430,6 @@ struct net_if_api {
 				   l2_ctx_type, mtu)
 
 /**
- * @def NET_DEVICE_DT_DEFINE_INSTANCE
- *
  * @brief Like NET_DEVICE_OFFLOAD_INIT but taking metadata from a devicetree.
  * Create multiple network interfaces and bind them to network device.
  * If your network device needs more than one instance of a network interface,
@@ -2459,14 +2456,12 @@ struct net_if_api {
 				      api, l2, l2_ctx_type, mtu)	\
 	Z_NET_DEVICE_INIT_INSTANCE(node_id,				\
 				   Z_DEVICE_DT_DEV_NAME(node_id),	\
-				   DT_PROP_OR(node_id, label, ""),	\
+				   DEVICE_DT_NAME(node_id),		\
 				   instance, init_fn,			\
 				   pm_action_cb, data, cfg, prio, api,	\
 				   l2, l2_ctx_type, mtu)
 
 /**
- * @def NET_DEVICE_DT_INST_DEFINE_INSTANCE
- *
  * @brief Like NET_DEVICE_DT_DEFINE_INSTANCE for an instance of a DT_DRV_COMPAT
  * compatible
  *
@@ -2488,8 +2483,6 @@ struct net_if_api {
 	NET_IF_OFFLOAD_INIT(dev_name, 0, mtu)
 
 /**
- * @def NET_DEVICE_OFFLOAD_INIT
- *
  * @brief Create a offloaded network interface and bind it to network device.
  * The offloaded network interface is implemented by a device vendor HAL or
  * similar.
@@ -2515,8 +2508,6 @@ struct net_if_api {
 				api, mtu)
 
 /**
- * @def NET_DEVICE_DT_OFFLOAD_DEFINE
- *
  * @brief Like NET_DEVICE_OFFLOAD_INIT but taking metadata from a devicetree
  * node. Create a offloaded network interface and bind it to network device.
  * The offloaded network interface is implemented by a device vendor HAL or
@@ -2537,13 +2528,11 @@ struct net_if_api {
 #define NET_DEVICE_DT_OFFLOAD_DEFINE(node_id, init_fn, pm_action_cb,	\
 				   data, cfg, prio, api, mtu)		\
 	Z_NET_DEVICE_OFFLOAD_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id), \
-				  DT_PROP_OR(node_id, label, ""),	\
+				  DEVICE_DT_NAME(node_id),		\
 				  init_fn, pm_action_cb, data, cfg,	\
 				  prio, api, mtu)
 
 /**
- * @def NET_DEVICE_DT_INST_OFFLOAD_DEFINE
- *
  * @brief Like NET_DEVICE_DT_OFFLOAD_DEFINE for an instance of a DT_DRV_COMPAT
  * compatible
  *

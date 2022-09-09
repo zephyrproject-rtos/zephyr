@@ -27,9 +27,7 @@ some highlights of the Nucleo L476RG board:
 - Two push-buttons: USER and RESET
 
 .. image:: img/nucleo_l476rg.jpg
-   :width: 250px
    :align: center
-   :height: 250px
    :alt: Nucleo L476RG
 
 More information about the board can be found at the `Nucleo L476RG website`_.
@@ -140,15 +138,11 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo_l476rg_arduino.png
-   :width: 720px
+.. image:: img/nucleo_l476rg_arduino.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo L476RG Arduino connectors
-.. image:: img/nucleo_l476rg_morpho.png
-   :width: 720px
+.. image:: img/nucleo_l476rg_morpho.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo L476RG Morpho connectors
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.

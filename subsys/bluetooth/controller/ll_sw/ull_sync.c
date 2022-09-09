@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci.h>
@@ -252,6 +252,11 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	/* Initialise ULL and LLL headers */
 	ull_hdr_init(&sync->ull);
 	lll_hdr_init(lll_sync, sync);
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
+	/* Initialise LLL abort count */
+	lll_sync->abort_count = 0U;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
 
 	/* Enable scanner to create sync */
 	scan->periodic.sync = sync;
@@ -529,6 +534,19 @@ struct ll_sync_set *ull_sync_is_valid_get(struct ll_sync_set *sync)
 	return sync;
 }
 
+struct lll_sync *ull_sync_lll_is_valid_get(struct lll_sync *lll)
+{
+	struct ll_sync_set *sync;
+
+	sync = HDR_LLL2ULL(lll);
+	sync = ull_sync_is_valid_get(sync);
+	if (sync) {
+		return &sync->lll;
+	}
+
+	return NULL;
+}
+
 uint16_t ull_sync_handle_get(struct ll_sync_set *sync)
 {
 	return mem_index_get(sync, ll_sync_pool, sizeof(struct ll_sync_set));
@@ -761,7 +779,8 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	sync->ull.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
-				       PDU_AC_MAX_US(0U, lll->phy) +
+				       PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE,
+						     lll->phy) +
 				       EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,

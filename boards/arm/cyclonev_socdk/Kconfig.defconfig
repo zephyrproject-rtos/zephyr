@@ -14,14 +14,7 @@ config I2C_DW_CLOCK_SPEED
 	default 200
 endif # I2C_DW
 
-if EEPROM
-config EEPROM_AT24
-	default y
-endif # EEPROM
-
 if USB_DEVICE_STACK
-config USB_DW
-	default y
 config USB_DW_USB_2_0
 	default y
 config USB_DEVICE_DRIVER

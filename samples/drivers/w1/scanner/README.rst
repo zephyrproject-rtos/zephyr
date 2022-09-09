@@ -19,7 +19,7 @@ enable and configure the drivers.
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/w1/scanner
    :board: nrf52840dk_nrf52840
-   :gen-args: -DDTC_OVERLAY_FILE=w1_serial.overlay -DOVERLAY_CONFIG=w1_serial.conf
+   :gen-args: -DDTC_OVERLAY_FILE=w1_serial.overlay
    :goals: build flash
    :compact:
 

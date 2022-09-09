@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32.dtsi>
+
+/ {
+	model = "esp32_net";
+	compatible = "espressif,esp32_net";
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&cpu1 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&trng0 {
+	status = "okay";
+};

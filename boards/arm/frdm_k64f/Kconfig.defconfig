@@ -20,9 +20,6 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 1
 
-config I2C
-	default y if SENSOR
-
 if NETWORKING
 
 config NET_L2_ETHERNET

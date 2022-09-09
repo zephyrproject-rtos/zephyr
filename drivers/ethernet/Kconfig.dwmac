@@ -3,13 +3,12 @@
 # Copyright (c) 2021 BayLibre SAS
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_SNPS_DESIGNWARE_ETHERNET := snps,designware-ethernet
-
 menuconfig ETH_DWMAC
 	bool "Synopsys DesignWare MAC driver"
+	default y
 	depends on NET_BUF_FIXED_DATA_SIZE
 	depends on (SOC_SERIES_STM32H7X && !ETH_STM32_HAL) || MMU
-	default y if $(dt_compat_enabled,$(DT_COMPAT_SNPS_DESIGNWARE_ETHERNET))
+	depends on DT_HAS_SNPS_DESIGNWARE_ETHERNET_ENABLED
 	help
 	  This is a driver for the Synopsys DesignWare MAC, also referred to
 	  as "DesignWare Cores Ethernet Quality-of-Service". Hardware versions

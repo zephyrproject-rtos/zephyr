@@ -64,7 +64,7 @@
  *	--------------------
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/sys/printk.h>
 #include <zephyr/drivers/gpio.h>
@@ -527,7 +527,7 @@ void pi_lcd_init(const struct device *gpio_dev, uint8_t cols, uint8_t rows,
 
 void main(void)
 {
-	const struct device *gpio_dev = DEVICE_DT_GET(GPIO_NODE);
+	const struct device *const gpio_dev = DEVICE_DT_GET(GPIO_NODE);
 
 	if (!device_is_ready(gpio_dev)) {
 		printk("Device %s not ready!\n", gpio_dev->name);

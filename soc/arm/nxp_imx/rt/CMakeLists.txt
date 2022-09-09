@@ -41,8 +41,10 @@ endif()
 zephyr_compile_definitions(
   XIP_EXTERNAL_FLASH
 )
-zephyr_linker_sources(
-  RWDATA nocache.ld)
+
+zephyr_compile_definitions_ifdef(CONFIG_ENTROPY_MCUX_CAAM CACHE_MODE_WRITE_THROUGH)
+
+zephyr_compile_definitions_ifdef(CONFIG_USB_DEVICE_DRIVER DATA_SECTION_IS_CACHEABLE=1)
 
 zephyr_linker_section_configure(
   SECTION .rom_start

@@ -35,17 +35,17 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 	switch (state_testing[_current_cpu->id]) {
 	case PM_STATE_ACTIVE:
-		zassert_equal(PM_STATE_ACTIVE, state, NULL);
+		zassert_equal(PM_STATE_ACTIVE, state);
 		break;
 	case  PM_STATE_RUNTIME_IDLE:
-		zassert_equal(PM_STATE_RUNTIME_IDLE, state, NULL);
+		zassert_equal(PM_STATE_RUNTIME_IDLE, state);
 		break;
 	case  PM_STATE_SUSPEND_TO_IDLE:
-		zassert_equal(PM_STATE_SUSPEND_TO_IDLE, state, NULL);
+		zassert_equal(PM_STATE_SUSPEND_TO_IDLE, state);
 		break;
 	case  PM_STATE_STANDBY:
-		zassert_equal(_current_cpu->id, 1U, NULL);
-		zassert_equal(PM_STATE_STANDBY, state, NULL);
+		zassert_equal(_current_cpu->id, 1U);
+		zassert_equal(PM_STATE_STANDBY, state);
 		break;
 	default:
 		zassert_unreachable(NULL);
@@ -102,7 +102,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int ticks)
  *
  * @ingroup power_tests
  */
-void test_power_idle(void)
+ZTEST(pm_multicore, test_power_idle)
 {
 
 	for (uint8_t i = 0U; i < NUM_OF_ITERATIONS; i++) {
@@ -116,9 +116,4 @@ void test_power_idle(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(pm_multicore_test,
-			 ztest_unit_test(test_power_idle));
-	ztest_run_test_suite(pm_multicore_test);
-}
+ZTEST_SUITE(pm_multicore, NULL, NULL, NULL, NULL, NULL);

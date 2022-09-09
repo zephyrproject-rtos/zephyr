@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 Actinius
+ * Copyright (c) 2019-2022 Actinius
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -73,9 +73,9 @@
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
 		sw0 = &button0;
-		bootloader-led0 = &green_pwm_led;
+		bootloader-led0 = &blue_led;
 		mcuboot-button0 = &button0;
-		mcuboot-led0 = &green_pwm_led;
+		mcuboot-led0 = &blue_led;
 		watchdog0 = &wdt0;
 		accel0 = &lis2dh12_accel;
 	};
@@ -88,7 +88,7 @@
 	};
 
 	sim_select: sim-select {
-		compatible = "sim-select";
+		compatible = "actinius-sim-select";
 		sim-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		sim = "esim";
 	};
@@ -145,7 +145,6 @@
 		reg = <0x19>;
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>,
 			  <&gpio0 29 GPIO_ACTIVE_HIGH>;
-		label = "LIS2DH12-ACCEL";
 	};
 };
 
@@ -221,7 +220,7 @@
 			/* Secure image memory */
 		};
 
-		sram0_modem: image_modem@20010000 {
+		sram0_modem: image_modem@20016000 {
 			/* Modem (shared) memory */
 		};
 

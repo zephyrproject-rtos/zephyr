@@ -58,7 +58,6 @@
 
 	lcd_backlight_en {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "lcd_backlight_enable";
 		regulator-name = "lcd_backlight_enable";
 		enable-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -113,7 +112,6 @@
 
 	ili9341: ili9341@0 {
 		compatible = "ilitek,ili9341";
-		label = "DISPLAY";
 		spi-max-frequency = <25000000>;
 		reg = <0>;
 		cmd-data-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
@@ -127,11 +125,9 @@
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		status = "okay";
-		label = "SDHC_0";
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			status = "okay";
-			label = "SDMMC_0";
 		};
 		spi-max-frequency = <20000000>;
 	};

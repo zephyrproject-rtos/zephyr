@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/printk.h>
@@ -13,7 +13,7 @@
 #include "greenled.h"
 #include <eoss3_dev.h>
 
-const struct device *fpga = DEVICE_DT_GET(DT_NODELABEL(fpga0));
+const struct device *const fpga = DEVICE_DT_GET(DT_NODELABEL(fpga0));
 
 void main(void)
 {

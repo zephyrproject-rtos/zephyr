@@ -12,9 +12,7 @@ Overview
 It is possible to order 2 different types of H3 Starter Kit Boards, one with Ethernet connection onboard and one with Ethernet connection on ComExpress.
 
 .. figure:: img/rcar_h3ulcb_starter_kit.jpg
-   :width: 460px
    :align: center
-   :height: 288px
    :alt: R-Car starter kit
 
 .. note:: The H3ULCB board can be plugged on a Renesas Kingfisher Infotainment daughter board through COM Express connector in order to physically access more I/O. CAUTION: In this case, power supply is managed by the daughter board.
@@ -27,9 +25,7 @@ Hardware
 Hardware capabilities for the H3ULCB for can be found on the `eLinux H3SK page`_ of the board.
 
 .. figure:: img/rcar_h3ulcb_features.jpg
-   :width: 286px
    :align: center
-   :height: 280px
    :alt: R-Car starter kit features
 
 .. note:: Zephyr will be booted on the CR7 processor provided for RTOS purpose.
@@ -61,6 +57,8 @@ Here is the current supported features when running Zephyr Project on the R-Car 
 |           | TCAN332GDCNT                 | loopback mode                  |
 +-----------+------------------------------+--------------------------------+
 | I2C       | i2c                          | interrupt driven               |
++-----------+------------------------------+--------------------------------+
+| PWM       | pwm                          | All channels                   |
 +-----------+------------------------------+--------------------------------+
 
 It's also currently possible to write on the ram console.
@@ -165,6 +163,13 @@ H3ULCB board provides two I2C buses. Unfortunately direct access to these buses 
 I2C is mainly used to manage and power on multiple of onboard chips on the H3ULCB and Kingfisher daughter board.
 
 Embedded I2C devices and I/O expanders are not yet supported. The current I2C support therefore does not make any devices available to the user at this time.
+
+PWM
+---
+
+ULCB boards provide one PWM controller with a maximum of 7 channels [0..6]. H3ULCB does provide the pwm0 from test pin CP8 only.
+
+When plugged on a Kingfisher daughter board, pwm4 channel is available on CN7 LVDS connector.
 
 Programming and Debugging
 *************************

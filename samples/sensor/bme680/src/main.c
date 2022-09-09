@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ONE(bosch_bme680);
+	const struct device *const dev = DEVICE_DT_GET_ONE(bosch_bme680);
 	struct sensor_value temp, press, humidity, gas_res;
 
 	if (!device_is_ready(dev)) {

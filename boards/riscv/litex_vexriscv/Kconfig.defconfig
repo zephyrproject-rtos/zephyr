@@ -8,12 +8,6 @@ config BOARD
 
 if NETWORKING
 
-config ETH_LITEETH
-	default y
-
-config ETH_LITEETH_0
-	default y
-
 config NET_L2_ETHERNET
 	default y
 

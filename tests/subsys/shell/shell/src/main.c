@@ -9,7 +9,7 @@
  *
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #include <zephyr/shell/shell.h>
@@ -23,9 +23,10 @@ static char dynamic_cmd_buffer[][MAX_CMD_SYNTAX_LEN] = {
 
 static void test_shell_execute_cmd(const char *cmd, int result)
 {
+	const struct shell *sh = shell_backend_dummy_get_ptr();
 	int ret;
 
-	ret = shell_execute_cmd(NULL, cmd);
+	ret = shell_execute_cmd(sh, cmd);
 
 	TC_PRINT("shell_execute_cmd(%s): %d\n", cmd, ret);
 
@@ -344,12 +345,12 @@ ZTEST(shell, test_shell_fprintf)
 }
 
 #define RAW_ARG "aaa \"\" bbb"
-#define CMD_NAME test_cmd_raw_arg
+#define CMD_MAND_1_OPT_RAW_NAME cmd_mand_1_opt_raw
 
-static int cmd_raw_arg(const struct shell *shell, size_t argc, char **argv)
+static int cmd_mand_1_opt_raw_handler(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 2) {
-		if (strcmp(argv[0], STRINGIFY(CMD_NAME))) {
+		if (strcmp(argv[0], STRINGIFY(CMD_MAND_1_OPT_RAW_NAME))) {
 			return -1;
 		}
 		if (strcmp(argv[1], RAW_ARG)) {
@@ -362,14 +363,53 @@ static int cmd_raw_arg(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-SHELL_CMD_ARG_REGISTER(CMD_NAME, NULL, NULL, cmd_raw_arg, 1, SHELL_OPT_ARG_RAW);
+SHELL_CMD_ARG_REGISTER(CMD_MAND_1_OPT_RAW_NAME, NULL, NULL, cmd_mand_1_opt_raw_handler, 1,
+		       SHELL_OPT_ARG_RAW);
 
-ZTEST(shell, test_raw_arg)
+ZTEST(shell, test_cmd_mand_1_opt_raw)
 {
-	test_shell_execute_cmd("test_cmd_raw_arg aaa \"\" bbb", 0);
-	test_shell_execute_cmd("test_cmd_raw_arg", 0);
-	test_shell_execute_cmd("select test_cmd_raw_arg", 0);
+	test_shell_execute_cmd("cmd_mand_1_opt_raw aaa \"\" bbb", 0);
+	test_shell_execute_cmd("cmd_mand_1_opt_raw", 0);
+	test_shell_execute_cmd("select cmd_mand_1_opt_raw", 0);
 	test_shell_execute_cmd("aaa \"\" bbb", 0);
+	shell_set_root_cmd(NULL);
+}
+
+#define CMD_MAND_2_OPT_RAW_NAME cmd_mand_2_opt_raw
+
+static int cmd_mand_2_opt_raw_handler(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc < 2 || argc > 3) {
+		return -1;
+	}
+
+	if (strcmp(argv[0], STRINGIFY(CMD_MAND_2_OPT_RAW_NAME))) {
+		return -1;
+	}
+
+	if (argc >= 2 && strcmp(argv[1], "mandatory")) {
+		return -1;
+	}
+
+	if (argc == 3 && strcmp(argv[2], RAW_ARG)) {
+		return -1;
+	}
+
+	return 0;
+}
+
+SHELL_CMD_ARG_REGISTER(CMD_MAND_2_OPT_RAW_NAME, NULL, NULL, cmd_mand_2_opt_raw_handler, 2,
+		       SHELL_OPT_ARG_RAW);
+
+ZTEST(shell, test_mand_2_opt_raw)
+{
+	test_shell_execute_cmd("cmd_mand_2_opt_raw", -EINVAL);
+	test_shell_execute_cmd("cmd_mand_2_opt_raw mandatory", 0);
+	test_shell_execute_cmd("cmd_mand_2_opt_raw mandatory aaa \"\" bbb", 0);
+	test_shell_execute_cmd("select cmd_mand_2_opt_raw", 0);
+	test_shell_execute_cmd("", -ENOEXEC);
+	test_shell_execute_cmd("mandatory", 0);
+	test_shell_execute_cmd("mandatory aaa \"\" bbb", 0);
 	shell_set_root_cmd(NULL);
 }
 
@@ -382,13 +422,14 @@ SHELL_CMD_REGISTER(dummy, NULL, NULL, cmd_dummy);
 
 ZTEST(shell, test_max_argc)
 {
-	BUILD_ASSERT(CONFIG_SHELL_ARGC_MAX == 12,
+	BUILD_ASSERT(CONFIG_SHELL_ARGC_MAX == 20,
 		     "Unexpected test configuration.");
 
-	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11", 0);
-	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12", -ENOEXEC);
+	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19", 0);
+	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
+			       " 16 17 18 19 20",
+			       -ENOEXEC);
 }
-
 
 static int cmd_handler_dict_1(const struct shell *sh, size_t argc, char **argv, void *data)
 {
@@ -450,8 +491,12 @@ ZTEST(shell, test_section_cmd)
 
 static void *shell_setup(void)
 {
-	/* Let the shell backend initialize. */
-	k_msleep(20);
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+
+	/* Wait for the initialization of the shell dummy backend. */
+	WAIT_FOR(shell_ready(sh), 20000, k_msleep(1));
+	zassert_true(shell_ready(sh), "timed out waiting for dummy shell backend");
+
 	return NULL;
 }
 

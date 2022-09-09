@@ -434,6 +434,11 @@ static int uart_npcx_init(const struct device *dev)
 	uint32_t uart_rate;
 	int ret;
 
+	if (!device_is_ready(clk_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Turn on device clock first and get source clock freq. */
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
 	if (ret < 0) {

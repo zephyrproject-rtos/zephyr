@@ -344,6 +344,11 @@
 			misc-prop = <1234>;
 		};
 
+		test_vendor: vendor {
+			compatible = "vnd,model1", "gpio", "zephyr,model2";
+			status = "okay";
+		};
+
 		test_intc: interrupt-controller@bbbbcccc  {
 			compatible = "vnd,intc";
 			reg = <0xbbbbcccc 0x1000>;
@@ -505,6 +510,21 @@
 		test_string_token_2: string-token-2 {
 			compatible = "vnd,string-token";
 			val = "token_two";
+		};
+
+		test_str_array_token_0: string-array-token-0 {
+			compatible = "vnd,string-array-token";
+			val = "token_first_idx_zero",
+			      "token_first_idx_one",
+			      "token_first_idx_two";
+		};
+
+		test_str_array_token_1: string-array-token-1 {
+			compatible = "vnd,string-array-token";
+			val = "token_second_idx_zero",
+			      "token_second_idx_one",
+			      "token_second_idx_two",
+			      "token_second_idx_three";
 		};
 	};
 };

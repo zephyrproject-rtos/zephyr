@@ -589,8 +589,8 @@ ZTEST(posix_apis, test_pthread_descriptor_leak)
 	pthread_t pthread1;
 	pthread_attr_t attr;
 
-	zassert_ok(pthread_attr_init(&attr), NULL);
-	zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS), NULL);
+	zassert_ok(pthread_attr_init(&attr));
+	zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
 
 	/* If we are leaking descriptors, then this loop will never complete */
 	for (size_t i = 0; i < CONFIG_MAX_PTHREAD_COUNT * 2; ++i) {

@@ -17,14 +17,4 @@ config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x0   if !BOOTLOADER_MCUBOOT
 
-config STM32_LPTIM_TIMER
-	default y if PM
-
-if ENTROPY_GENERATOR
-
-config ENTROPY_STM32_RNG
-	default y
-
-endif # ENTROPY_GENERATOR
-
 endif # SOC_SERIES_STM32H7X

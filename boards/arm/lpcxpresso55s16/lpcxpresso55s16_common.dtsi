@@ -157,6 +157,27 @@
 	pinctrl-names = "default";
 };
 
+&flash0 {
+	/*
+	 * LPC flash controller requires minimum 512 byte
+	 * write to flash, so MCUBoot is not supported. Just
+	 * provide storage and code partition.
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(196)>;
+		};
+		storage_partition: partition@30000 {
+			label = "storage";
+			reg = <0x00030000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
 arduino_i2c: &flexcomm4 {};
 
 arduino_spi: &hs_lspi {};

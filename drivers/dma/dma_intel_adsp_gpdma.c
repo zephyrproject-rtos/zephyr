@@ -24,6 +24,10 @@
 #define SHIM_CLKCTL_LPGPDMA_SPA	BIT(0)
 #define SHIM_CLKCTL_LPGPDMA_CPA	BIT(8)
 
+# define DSP_INIT_LPGPDMA(x)	  (0x71A60 + (2*x))
+# define LPGPDMA_CTLOSEL_FLAG	  BIT(15)
+# define LPGPDMA_CHOSEL_FLAG	  0xFF
+
 #include "dma_dw_common.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
@@ -232,6 +236,11 @@ int intel_adsp_gpdma_init(const struct device *dev)
 			dev->name);
 		goto out;
 	}
+#endif
+
+#ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP
+	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(0));
+	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(1));
 #endif
 
 	/* Disable dynamic clock gating appropriately before initializing */

@@ -6,7 +6,6 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     log_core.c
     log_mgmt.c
     log_msg.c
-    log_output.c
   )
 
   zephyr_sources_ifdef(
@@ -86,6 +85,11 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
   zephyr_sources_ifdef(
     CONFIG_LOG_BACKEND_ADSP_HDA
     log_backend_adsp_hda.c
+  )
+
+  zephyr_sources_ifdef(
+    CONFIG_LOG_BACKEND_ADSP_MTRACE
+    log_backend_adsp_mtrace.c
   )
 
   zephyr_sources_ifdef(

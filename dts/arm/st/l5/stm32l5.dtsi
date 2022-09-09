@@ -337,6 +337,14 @@
 			status = "disabled";
 		};
 
+		sdmmc1: sdmmc@420c8000 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x420c8000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00400000>;
+			interrupts = <78 0>;
+			status = "disabled";
+		};
+
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
@@ -381,6 +389,7 @@
 			reg = <0x420c0800 0x400>;
 			interrupts = <94 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>;
+			nist-config = <0xf00d00>;
 			health-test-magic = <0x17590abc>;
 			health-test-config = <0xa2b3>;
 			status = "disabled";
@@ -536,6 +545,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
 			interrupts = <37 0>;
 			status = "disabled";
+			vref-mv = <3300>;
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;
@@ -571,21 +581,22 @@
 		};
 	};
 
-	usb_fs_phy: usbphy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
-	};
-
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
 		ts-cal1-addr = <0x0BFA05A8>;
 		ts-cal2-addr = <0x0BFA05CA>;
 		ts-cal1-temp = <30>;
-		ts-cal2-temp = <110>;
+		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
 		io-channels = <&adc1 17>;
 		status = "disabled";
 	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+	};
+
 };
 
 &nvic {

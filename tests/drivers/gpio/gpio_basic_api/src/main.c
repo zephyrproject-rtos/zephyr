@@ -21,8 +21,8 @@ static void board_setup(void)
 {
 #if DT_NODE_HAS_STATUS(DT_INST(0, test_gpio_basic_api), okay)
 	/* PIN_IN and PIN_OUT must be on same controller. */
-	const struct device *in_dev = DEVICE_DT_GET(DEV_OUT);
-	const struct device *out_dev = DEVICE_DT_GET(DEV_IN);
+	const struct device *const in_dev = DEVICE_DT_GET(DEV_OUT);
+	const struct device *const out_dev = DEVICE_DT_GET(DEV_IN);
 
 	if (in_dev != out_dev) {
 		printk("FATAL: output controller %s != input controller %s\n",
@@ -81,16 +81,9 @@ static void board_setup(void)
 			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
 			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
-#elif defined(CONFIG_BOARD_RV32M1_VEGA)
-	const struct device *pmx = DEVICE_DT_GET(DT_NODELABEL(porta));
-
-	zassert_true(device_is_ready(pmx), "pinmux dev is not ready");
-
-	pinmux_pin_set(pmx, PIN_OUT, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(pmx, PIN_IN, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #elif defined(CONFIG_GPIO_EMUL)
 	extern struct gpio_callback gpio_emul_callback;
-	const struct device *dev = DEVICE_DT_GET(DEV);
+	const struct device *const dev = DEVICE_DT_GET(DEV);
 
 	zassert_true(device_is_ready(dev), "GPIO dev is not ready");
 	int rc = gpio_add_callback(dev, &gpio_emul_callback);
@@ -98,14 +91,18 @@ static void board_setup(void)
 #endif
 }
 
-void test_main(void)
+static void *gpio_basic_setup(void)
 {
 	board_setup();
-	ztest_test_suite(gpio_basic_test,
-			 ztest_unit_test(test_gpio_port),
-			 ztest_unit_test(test_gpio_callback_add_remove),
-			 ztest_unit_test(test_gpio_callback_self_remove),
-			 ztest_unit_test(test_gpio_callback_enable_disable),
-			 ztest_unit_test(test_gpio_callback_variants));
-	ztest_run_test_suite(gpio_basic_test);
+
+	return NULL;
 }
+
+/* Test GPIO port configuration */
+ZTEST_SUITE(gpio_port, NULL, gpio_basic_setup, NULL, NULL, NULL);
+
+/* Test GPIO callback management */
+ZTEST_SUITE(gpio_cb_mgnt, NULL, gpio_basic_setup, NULL, NULL, NULL);
+
+/* Test GPIO callbacks */
+ZTEST_SUITE(gpio_cb_vari, NULL, gpio_basic_setup, NULL, NULL, NULL);

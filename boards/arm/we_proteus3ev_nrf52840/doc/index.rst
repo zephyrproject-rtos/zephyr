@@ -26,7 +26,6 @@ nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/we_proteus3ev_nrf52840.jpg
-     :width: 2810px
      :align: center
      :alt: Proteus-III EV
 

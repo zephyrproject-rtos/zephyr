@@ -76,8 +76,7 @@ config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 
 choice BT_LL_SW_LLCP_IMPL
 	prompt "Bluetooth Low Energy Software Link Layer Control Procedure Implementation"
-	default BT_LL_SW_LLCP if BT_CTLR_DF_CONN_CTE_RX || BT_CTLR_DF_CONN_CTE_TX
-	default BT_LL_SW_LLCP_LEGACY
+	default BT_LL_SW_LLCP
 	help
 	  Select the Bluetooth Low Energy Software Link Layer Control Procedure implementation.
 
@@ -88,11 +87,9 @@ config BT_LL_SW_LLCP_LEGACY
 	  Use the Bluetooth Low Energy Software Link Layer Legacy Control Procedure implementation.
 
 config BT_LL_SW_LLCP
-	bool "New implementation, replacing the legacy one [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "State-machine based implementation, replacing the legacy one"
 	help
 	  Use the new Bluetooth Low Energy Software Link Layer Control Procedure implementation.
-	  It is considered experimental because it is still under development and is not qualifiable yet.
 
 endchoice
 
@@ -192,6 +189,22 @@ config BT_CTLR_ADV_SYNC_SET
 	help
 	  Maximum supported periodic advertising sets.
 
+config BT_CTLR_ADV_DATA_CHAIN
+	bool "Advertising Data chaining [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable support for Advertising Data chaining in Extended and
+	  Periodic Advertising. This will allow to have Advertising Data Length
+	  upto 1650 bytes.
+
+	  This is experimental and work in progress, does not implement
+	  recombining the AD Data and could return BT_HCI_ERR_PACKET_TOO_LONG
+	  when a chain PDU needs its AD data overflow into a new chain PDU.
+	  I.e. AD data in the last PDU could overflow due to the need to add
+	  Aux Pointer field, and if this overflow bytes plus the next AD data
+	  fragment length could be over 255 bytes needing additional chain PDU.
+	  This is not implemented.
+
 config BT_CTLR_ADV_PDU_LINK
 	# Enables extra space in each advertising PDU to allow linking PDUs.
 	# This is required to enable advertising data trains (i.e. transmission
@@ -207,6 +220,7 @@ config BT_CTLR_ADV_AUX_PDU_BACK2BACK
 	bool "Back-to-back transmission of extended advertising trains"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
 	select BT_CTLR_ADV_AUX_PDU_LINK
+	default y if BT_CTLR_ADV_DATA_LEN_MAX > 191
 	help
 	  Enables transmission of AUX_CHAIN_IND in extended advertising train by
 	  sending each AUX_CHAIN_IND one after another back-to-back.
@@ -215,6 +229,7 @@ config BT_CTLR_ADV_AUX_PDU_BACK2BACK_AFS
 	int "AUX Frame Space for back-to-back transmission of extended advertising trains"
 	depends on BT_CTLR_ADV_AUX_PDU_BACK2BACK
 	range 300 1000
+	default 300
 	help
 	  Specific AUX Frame Space to be used for back-to-back transmission of
 	  extended advertising trains. Time specified in microseconds.
@@ -284,6 +299,38 @@ config BT_CTRL_ADV_ADI_IN_SCAN_RSP
 	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
 	help
 	  Enable ADI field in AUX_SCAN_RSP PDU
+
+config BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN
+	bool "Use minimal Scan Auxiliary and Periodic Sync PDU time reservation"
+	depends on (BT_OBSERVER && BT_CTLR_ADV_EXT) || BT_CTLR_SYNC_PERIODIC
+	default y
+	help
+	  Use minimal time reservation for Auxiliary and Periodic Sync PDU
+	  reception. A peer device could scheduling multiple advertising sets
+	  in a short duration with small PDUs hence using the minimal time
+	  reservation would avoid skipping closely scheduled reception of
+	  multiple Auxiliary or Periodic Sync PDUs.
+
+config BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX
+	bool "Skip Periodic Sync event on overlap with Extended Scan Event"
+	depends on BT_CTLR_SYNC_PERIODIC
+	help
+	  When AUX_ADV_IND or AUX_CHAIN_IND auxiliary channel PDU scan radio
+	  event overlaps Periodic Sync radio event in unreserved time space,
+	  let the Periodic Sync radio event be aborted so that the auxiliary
+	  channel PDU can be received to generate Extended Advertising Reports.
+
+	  By default we want Periodic Advertising Sync Events to take priority
+	  over any overlapping Extended Advertising Primary and Auxiliary
+	  channel PDU reception in order to not skip Periodic Advertising Report
+	  generation.
+
+	  But under simultaneous multiple Periodic Advertising Sync support with
+	  small Periodic Advertising Intervals where there will be a lot of
+	  overlapping Periodic Advertising Sync events, it is desirable to
+	  permit Extended Advertising auxiliary PDU reception be allowed in a
+	  round robin scheduling to skip the overlapping Periodic Advertising
+	  Sync event. This permits new Periodic Advertising peers be discovered.
 
 config BT_CTLR_SCAN_AUX_SET
 	int "LE Extended Scanning Auxiliary Sets"
@@ -559,6 +606,7 @@ config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
 
 config BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM
 	int "Number of local control procedure contexts to be available across all connections"
+	default 4 if (BT_AUTO_PHY_UPDATE=y || BT_AUTO_DATA_LEN_UPDATE=y) && BT_CTLR_LLCP_CONN < 4
 	default 2 if BT_CTLR_LLCP_CONN = 1
 	default BT_CTLR_LLCP_CONN if BT_CTLR_LLCP_CONN > 1
 	range 2 255

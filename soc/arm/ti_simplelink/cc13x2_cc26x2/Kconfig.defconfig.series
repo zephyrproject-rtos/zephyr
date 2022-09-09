@@ -22,13 +22,6 @@ config SYS_CLOCK_TICKS_PER_SEC
 config NUM_IRQS
 	default 38
 
-config CC13X2_CC26X2_RTC_TIMER
-	default y
-
-config ENTROPY_CC13XX_CC26XX_RNG
-	default y
-	depends on ENTROPY_GENERATOR
-
 if IEEE802154
 
 config IEEE802154_CC13XX_CC26XX
@@ -40,9 +33,6 @@ config IEEE802154_CC13XX_CC26XX_SUB_GHZ
 	# required for linking with PowerCC26X2_config in
 	# soc/arm/ti_simplelink/cc13x2_cc26x2/power.c
 	select PM
-
-config NET_CONFIG_IEEE802154_DEV_NAME
-	default "IEEE802154_0"
 
 endif # IEEE802154
 

@@ -33,6 +33,7 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan2;
 		zephyr,display = &lcdif;
+		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	sdram0: memory@80000000 {
@@ -200,10 +201,6 @@ arduino_i2c: &lpi2c1 {};
 			};
 		};
 	};
-};
-
-&flexspi2 {
-	status = "okay";
 };
 
 &w25q32jvwj0 {

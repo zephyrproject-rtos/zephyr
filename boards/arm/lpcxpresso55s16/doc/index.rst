@@ -13,8 +13,7 @@ with additional expansion ports around the Arduino footprint, along
 with a PMod/host interface port and MikroElektronika Click module
 site.
 
-.. image:: ./lpcxpresso55S16.jpg
-   :width: 720px
+.. image:: lpcxpresso55S16.jpg
    :align: center
    :alt: LPCXpresso55S16
 
@@ -77,6 +76,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | entropy;                            |
 |           |            | random                              |
++-----------+------------+-------------------------------------+
+| IAP       | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.

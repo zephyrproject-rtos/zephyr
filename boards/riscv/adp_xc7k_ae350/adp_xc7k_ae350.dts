@@ -14,9 +14,12 @@
 
 	aliases {
 		gpio-0 = &gpio0;
+		counter-0 = &pit0;
+		i2c-0 = &i2c0;
 		led0 = &seg7_led1_g;
 		led1 = &seg7_led2_g;
 		sw0 = &user_button1;
+		eeprom-0 = &eeprom;
 	};
 
 	chosen {
@@ -130,6 +133,10 @@
 	};
 };
 
+&syscon {
+	status = "okay";
+};
+
 &uart1 {
 	status = "okay";
 	clock-frequency = <19660800>;
@@ -137,6 +144,10 @@
 };
 
 &gpio0 {
+	status = "okay";
+};
+
+&pit0 {
 	status = "okay";
 };
 
@@ -148,6 +159,24 @@
 		size = <16777216>;
 		spi-max-frequency = <1000000>;
 		jedec-id = [c2 25 35];
-		status = "okay";
+		status = "disabled";
 	};
+};
+
+&i2c0 {
+	status = "okay";
+	eeprom: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		status = "okay";
+		size = <16384>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <5>;
+	};
+};
+
+&spi1 {
+	status = "okay";
+	cs-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 };

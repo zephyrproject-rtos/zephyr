@@ -13,21 +13,21 @@ on:
 
 jobs:
   bluetooth-test-prep:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.6.0
         with:
           access_token: ${{ github.token }}
   bluetooth-test-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: bluetooth-test-prep
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.2
       options: '--entrypoint /bin/bash'
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.2
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.0
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components

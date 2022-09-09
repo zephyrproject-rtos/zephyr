@@ -36,10 +36,13 @@ description: |
   After the phandle referring to rcc node, the first index specifies the registers of
   the bus controlling the peripheral and the second index specifies the bit used to
   control the peripheral clock in that bus register.
+  The gated clock is required when accessing to the peripheral controller is needed
+  (generally for configuring the device). If dual clock domain is not used, it is
+  also used for peripheral operation.
 
-  Specifying an alternate clock source:
+  Specifying a domain clock source:
 
-  Specifying an alternate source clock could be done by adding a clock specifier to the
+  Specifying a domain source clock could be done by adding a clock specifier to the
   clock property:
   ... {
            ...
@@ -47,9 +50,15 @@ description: |
                         <&rcc STM32_SRC_HSI I2C1_SEL(2)>;
            ...
   }
-  In this example I2C1 device is assigned HSI as clock source.
-  It is device driver's responsibility to querry and use clock source information in
+  In this example, I2C1 device is assigned HSI as domain clock source.
+  Domain clock is independent from the bus/gatted clock and allows access to the device's
+  register while the gated clock is off. As it doesn't feed the peripheral's controller, it
+  allows peripheral operation, but can't be used for peripheral configuration.
+  It is peripheral driver's responsibility to querry and use clock source information in
   accordance with clock_control API specifications.
+
+  Since the peripheral subsystem rate is dictated by the clock used for peripheral
+  operation, same clock should be used in calls to `clock_control_get_rate()`
 
   Note 1: No additional specifier means gating clock is also the clock source (ie
           'PCLK/PCLK1/PCLK2' depending on the device). There is no need to add a second

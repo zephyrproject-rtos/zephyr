@@ -1,0 +1,30 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCUMGR_SMP_SHELL
+	bool "Shell mcumgr SMP transport"
+	select SHELL
+	select SHELL_BACKEND_SERIAL
+	select BASE64
+	help
+	  Enables handling of SMP commands received over shell.  This allows
+	  the shell to be use for both mcumgr commands and shell commands.
+
+if MCUMGR_SMP_SHELL
+
+config MCUMGR_SMP_SHELL_MTU
+	int "Shell SMP MTU"
+	default 256
+	help
+	  Maximum size of SMP frames sent and received over shell.  This value
+	  must satisfy the following relation:
+	  MCUMGR_SMP_SHELL_MTU <= MCUMGR_BUF_SIZE + 2
+
+config MCUMGR_SMP_SHELL_RX_BUF_COUNT
+	int "Shell SMP RX buffer count"
+	default 2
+	help
+	  Number of buffers used for receiving SMP fragments over shell.
+
+endif # MCUMGR_SMP_SHELL

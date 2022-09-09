@@ -10,7 +10,7 @@
 
 static void test_acpi_shared_memory(void)
 {
-	const struct device *espi_dev = DEVICE_DT_GET(DT_NODELABEL(espi0));
+	const struct device *const espi_dev = DEVICE_DT_GET(DT_NODELABEL(espi0));
 	struct espi_cfg cfg = {
 		.channel_caps = ESPI_CHANNEL_VWIRE | ESPI_CHANNEL_PERIPHERAL,
 	};
@@ -18,7 +18,7 @@ static void test_acpi_shared_memory(void)
 
 	zassert_true(device_is_ready(espi_dev), "Device is not ready");
 
-	zassert_ok(espi_config(espi_dev, &cfg), NULL);
+	zassert_ok(espi_config(espi_dev, &cfg));
 
 	host_shm = emul_espi_host_get_acpi_shm(espi_dev);
 	zassert_not_equal(host_shm, 0, NULL);
@@ -27,7 +27,7 @@ static void test_acpi_shared_memory(void)
 					 (uint32_t *)&peripheral_shm),
 		   NULL);
 
-	zassert_equal(host_shm, peripheral_shm, NULL);
+	zassert_equal(host_shm, peripheral_shm);
 }
 
 ztest_test_suite(acpi, ztest_unit_test(test_acpi_shared_memory));

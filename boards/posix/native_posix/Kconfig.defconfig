@@ -21,13 +21,9 @@ config NET_L2_ETHERNET
 	default y if !NET_LOOPBACK && !NET_TEST
 
 config ETH_NATIVE_POSIX
-	default y if NET_L2_ETHERNET
+	default y if NET_L2_ETHERNET && ETH_DRIVER
 
 endif # NETWORKING
-
-config FAKE_ENTROPY_NATIVE_POSIX
-	default y
-	depends on ENTROPY_GENERATOR
 
 choice BT_HCI_BUS_TYPE
 	default BT_USERCHAN
@@ -53,14 +49,6 @@ config UART_CONSOLE
 	default y if SERIAL
 
 endif # CONSOLE
-
-config SDL_DISPLAY
-	default y
-	depends on DISPLAY
-
-config KSCAN_SDL
-	default y
-	depends on KSCAN
 
 config FLASH_SIMULATOR
 	default y

@@ -314,6 +314,11 @@ static int tach_npcx_init(const struct device *dev)
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int ret;
 
+	if (!device_is_ready(clk_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Turn on device clock first and get source clock freq. */
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
 							&config->clk_cfg);

@@ -55,6 +55,10 @@
 	};
 };
 
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1 &stop2>;
+};
+
 &clk_msi {
 	status = "okay";
 	msi-range = <6>;
@@ -81,6 +85,12 @@
 	ahb-prescaler = <1>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <1>;
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
 };
 
 &usart1 {
@@ -147,6 +157,7 @@
 		size = <DT_SIZE_M(64)>;
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
 		status = "okay";
 		sfdp-bfp = [
 			53 46 44 50 06 01 02 ff
@@ -202,4 +213,19 @@ zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dp_pa12 &usb_dm_pa11>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&sdmmc1 {
+	status = "okay";
+
+	pinctrl-0 = <&sdmmc1_d0_pc8
+		     &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10
+		     &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12
+		     &sdmmc1_cmd_pd2>;
+
+	pinctrl-names = "default";
+
+	cd-gpios = <&gpiof 2 GPIO_ACTIVE_LOW>;
 };

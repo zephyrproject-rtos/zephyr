@@ -20,7 +20,8 @@
 #include <tracing_backend.h>
 
 
-static const struct device *tracing_uart_dev;
+static const struct device *const tracing_uart_dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_tracing_uart));
 
 #ifdef CONFIG_TRACING_HANDLE_HOST_CMD
 static void uart_isr(const struct device *dev, void *user_data)
@@ -76,7 +77,6 @@ static void tracing_backend_uart_output(
 
 static void tracing_backend_uart_init(void)
 {
-	tracing_uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_tracing_uart));
 	__ASSERT(device_is_ready(tracing_uart_dev), "uart backend is not ready");
 
 #ifdef CONFIG_TRACING_HANDLE_HOST_CMD

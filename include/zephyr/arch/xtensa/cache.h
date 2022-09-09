@@ -78,7 +78,9 @@ static ALWAYS_INLINE void z_xtensa_cache_flush_inv_all(void)
 	z_xtensa_cache_flush_inv(NULL, Z_DCACHE_MAX);
 }
 
-#ifdef CONFIG_ARCH_HAS_COHERENCE
+
+#if defined(CONFIG_XTENSA_RPO_CACHE)
+#if defined(CONFIG_ARCH_HAS_COHERENCE)
 static inline bool arch_mem_coherent(void *ptr)
 {
 	size_t addr = (size_t) ptr;
@@ -107,7 +109,6 @@ static ALWAYS_INLINE uint32_t z_xtrpoflip(uint32_t addr, uint32_t rto, uint32_t 
 		return (addr & ~(7U << 29)) | rto;
 	}
 }
-
 /**
  * @brief Return cached pointer to a RAM address
  *
@@ -210,6 +211,8 @@ static inline void *arch_xtensa_uncached_ptr(void __sparse_cache *ptr)
 	register uint32_t addr = 0, addrincr = 0x20000000;	\
 	FOR_EACH(_SET_ONE_TLB, (;), 0, 1, 2, 3, 4, 5, 6, 7);	\
 } while (0)
+
+#endif
 
 #ifdef __cplusplus
 } /* extern "C" */

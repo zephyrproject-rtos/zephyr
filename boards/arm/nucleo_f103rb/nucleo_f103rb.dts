@@ -119,9 +119,17 @@
 	status = "okay";
 };
 
+&rtc {
+	status = "okay";
+};
+
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 

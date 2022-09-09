@@ -44,9 +44,7 @@ power consumption, and features.
 
 
 .. image:: img/nucleo_wl55jc.jpg
-   :width: 426px
    :align: center
-   :height: 683px
    :alt: Nucleo WL55JC
 
 More information about the board can be found at the `Nucleo WL55JC website`_.
@@ -207,6 +205,8 @@ features:
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.

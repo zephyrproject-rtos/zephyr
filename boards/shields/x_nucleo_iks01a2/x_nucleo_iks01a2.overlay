@@ -7,9 +7,9 @@
 
 / {
 	aliases {
-		magn0 = &lsm303agr_magn;
-		accel0 = &lsm303agr_accel;
-		accel1 = &lsm6dsl;
+		magn0 = &lsm303agr_magn_1e;
+		accel0 = &lsm303agr_accel_19;
+		accel1 = &lsm6dsl_6b;
 	};
 };
 
@@ -25,19 +25,19 @@
 		reg = <0x5d>;
 	};
 
-	lsm6dsl: lsm6dsl@6b {
+	lsm6dsl_6b: lsm6dsl@6b {
 		compatible = "st,lsm6dsl";
 		reg = <0x6b>;
 		irq-gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>;	/* D4 */
 	};
 
-	lsm303agr_magn: lsm303agr-magn@1e {
+	lsm303agr_magn_1e: lsm303agr-magn@1e {
 		compatible = "st,lis2mdl","st,lsm303agr-magn";
 		reg = <0x1e>;
 		irq-gpios = <&arduino_header 3 GPIO_ACTIVE_HIGH>;	/* A3 */
 	};
 
-	lsm303agr_accel: lsm303agr-accel@19 {
+	lsm303agr_accel_19: lsm303agr-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303agr-accel";
 		reg = <0x19>;
 		irq-gpios = <&arduino_header 3 GPIO_ACTIVE_HIGH>;	/* A3 */

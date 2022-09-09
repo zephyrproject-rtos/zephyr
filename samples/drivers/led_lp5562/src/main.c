@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define LOG_LEVEL 4
 #include <zephyr/logging/log.h>
@@ -164,7 +164,7 @@ static int turn_off_all_leds(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ANY(ti_lp5562);
+	const struct device *const dev = DEVICE_DT_GET_ANY(ti_lp5562);
 	int i, ret;
 
 	if (!dev) {

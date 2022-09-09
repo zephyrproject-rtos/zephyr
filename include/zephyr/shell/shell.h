@@ -7,7 +7,7 @@
 #ifndef SHELL_H__
 #define SHELL_H__
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/shell/shell_types.h>
 #include <zephyr/shell/shell_history.h>
 #include <zephyr/shell/shell_fprintf.h>
@@ -1152,6 +1152,15 @@ int shell_set_root_cmd(const char *cmd);
  * @param[in] bypass	Bypass callback or null to disable.
  */
 void shell_set_bypass(const struct shell *shell, shell_bypass_cb_t bypass);
+
+/** @brief Get shell readiness to execute commands.
+ *
+ * @param[in] sh	Pointer to the shell instance.
+ *
+ * @retval true		Shell backend is ready to execute commands.
+ * @retval false	Shell backend is not initialized or not started.
+ */
+bool shell_ready(const struct shell *sh);
 
 /**
  * @brief Allow application to control text insert mode.

@@ -12,8 +12,6 @@ integrated ST-LINK debugger and programmer is included (V1), but the only
 included I/O devices are two user LEDs and one user button.
 
 .. image:: img/stm32vl_disco.jpg
-     :width: 552px
-     :height: 1024px
      :align: center
      :alt: STM32VLDISCOVERY
 

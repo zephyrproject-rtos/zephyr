@@ -13,15 +13,16 @@ import mmap
 import argparse
 import socketserver
 import threading
-import netifaces
 import hashlib
+from urllib.parse import urlparse
 
 # Global variable use to sync between log and request services.
 # When it is true, the adsp is able to start running.
 start_output = False
 lock = threading.Lock()
 
-HOST = None
+# INADDR_ANY as default
+HOST = ''
 PORT_LOG = 9999
 PORT_REQ = PORT_LOG + 1
 BUF_SIZE = 4096
@@ -116,6 +117,7 @@ class HDAStream:
         self.regs.BDPL = self.buf_list_addr & 0xffffffff
         self.regs.CBL = buf_len
         self.regs.LVI = self.n_bufs - 1
+        self.mem.seek(0)
         self.debug()
         log.info(f"Configured stream {self.stream_id}")
 
@@ -619,17 +621,29 @@ def ipc_command(data, ext_data):
             buf[i] = i
         hda_streams[stream_id].write(buf)
     elif data == 12: # HDA PRINT
-        log.info("Doing HDA Print")
         stream_id = ext_data & 0xFF
         buf_len = ext_data >> 8 & 0xFFFF
         hda_str = hda_streams[stream_id]
+        # check for wrap here
         pos = hda_str.mem.tell()
-        buf_data = hda_str.mem.read(buf_len).decode("utf-8", "replace")
-        log.info(f"DSP LOG MSG (idx: {pos}, len: {buf_len}): {buf_data}")
-        pos = hda_str.mem.tell()
-        if pos >= hda_str.buf_len*2:
-            log.info(f"Wrapping log reader, pos {pos} len {hda_str.buf_len}")
+        read_lens = [buf_len, 0]
+        if pos + buf_len >= hda_str.buf_len*2:
+            read_lens[0] = hda_str.buf_len*2 - pos
+            read_lens[1] = buf_len - read_lens[0]
+        # validate the read lens
+        assert (read_lens[0] + pos) <= (hda_str.buf_len*2)
+        assert read_lens[0] % 128 == 0
+        assert read_lens[1] % 128 == 0
+        buf_data0 = hda_str.mem.read(read_lens[0])
+        hda_msg0 = buf_data0.decode("utf-8", "replace")
+        sys.stdout.write(hda_msg0)
+        if read_lens[1] != 0:
             hda_str.mem.seek(0)
+            buf_data1 = hda_str.mem.read(read_lens[1])
+            hda_msg1 = buf_data1.decode("utf-8", "replace")
+            sys.stdout.write(hda_msg1)
+        pos = hda_str.mem.tell()
+        sys.stdout.flush()
     else:
         log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
         if not fw_is_alive():
@@ -829,22 +843,6 @@ def adsp_log(output, server):
         sys.stdout.write(output)
         sys.stdout.flush()
 
-def get_host_ip():
-    """
-    Helper tool use to detect host's serving ip address.
-    """
-    interfaces = netifaces.interfaces()
-
-    for i in interfaces:
-        if i != "lo":
-            try:
-                netifaces.ifaddresses(i)
-                ip = netifaces.ifaddresses(i)[netifaces.AF_INET][0]['addr']
-                log.info (f"Use interface {i}, IP address: {ip}")
-            except Exception:
-                log.info(f"Ignore the interface {i} which is not activated.")
-    return ip
-
 
 ap = argparse.ArgumentParser(description="DSP loader/logger tool")
 ap.add_argument("-q", "--quiet", action="store_true",
@@ -856,7 +854,11 @@ ap.add_argument("-l", "--log-only", action="store_true",
 ap.add_argument("-n", "--no-history", action="store_true",
                 help="No current log buffer at start, just new output")
 ap.add_argument("-s", "--server-addr",
-                help="Specify the IP address that the server to active")
+                help="Specify the only IP address the log server will LISTEN on")
+ap.add_argument("-p", "--log-port",
+                help="Specify the PORT that the log server to active")
+ap.add_argument("-r", "--req-port",
+                help="Specify the PORT that the request server to active")
 ap.add_argument("fw_file", nargs="?", help="Firmware file")
 
 args = ap.parse_args()
@@ -872,12 +874,23 @@ else:
     fw_file = None
 
 if args.server_addr:
-    HOST = args.server_addr
-else:
-    HOST = get_host_ip()
+    url = urlparse("//" + args.server_addr)
+
+    if url.hostname:
+        HOST = url.hostname
+
+    if url.port:
+        PORT_LOG = int(url.port)
+
+if args.log_port:
+    PORT_LOG = int(args.log_port)
+
+if args.req_port:
+    PORT_REQ = int(args.req_port)
+
+log.info(f"Serve on LOG PORT: {PORT_LOG} REQ PORT: {PORT_REQ}")
 
 if __name__ == "__main__":
-
     # When fw_file is assigned or in log_only mode, it will
     # not serve as a daemon. That mean it just run load
     # firmware or read the log directly.
@@ -887,6 +900,8 @@ if __name__ == "__main__":
             asyncio.get_event_loop().run_until_complete(_main(None))
         except KeyboardInterrupt:
             start_output = False
+        except Exception as e:
+            log.error(e)
         finally:
             sys.exit(0)
 

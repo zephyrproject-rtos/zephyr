@@ -110,10 +110,12 @@
 #define conn_ack(_conn, _req) (_conn)->ack += (_req)
 #endif
 
-#define conn_mss(_conn)					\
-	((_conn)->recv_options.mss_found ?		\
-	 MIN((_conn)->recv_options.mss, \
-	 net_tcp_get_supported_mss(_conn)) : net_tcp_get_supported_mss(_conn))
+#define NET_TCP_DEFAULT_MSS 536
+
+#define conn_mss(_conn)							\
+	MIN((_conn)->recv_options.mss_found ? (_conn)->recv_options.mss	\
+					    : NET_TCP_DEFAULT_MSS,	\
+	    net_tcp_get_supported_mss(_conn))
 
 #define conn_state(_conn, _s)						\
 ({									\
@@ -271,6 +273,10 @@ struct tcp { /* TCP connection */
 	uint16_t rto;
 #endif
 	uint8_t send_data_retries;
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+	uint8_t dup_ack_cnt;
+#endif
+	uint8_t zwp_retries;
 	bool in_retransmission : 1;
 	bool in_connect : 1;
 	bool in_close : 1;

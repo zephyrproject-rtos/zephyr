@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/drivers/sensor.h>
 
@@ -17,7 +17,7 @@
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ONE(maxim_max44009);
+	const struct device *const dev = DEVICE_DT_GET_ONE(maxim_max44009);
 	struct sensor_value val;
 	uint32_t lum = 0U;
 

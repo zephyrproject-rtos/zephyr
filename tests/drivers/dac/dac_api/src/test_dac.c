@@ -6,7 +6,7 @@
 
 
 #include <zephyr/drivers/dac.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #if defined(CONFIG_BOARD_NUCLEO_F091RC) || \
@@ -77,7 +77,7 @@ const struct device *get_dac_device(void)
 static const struct device *init_dac(void)
 {
 	int ret;
-	const struct device *dac_dev = DEVICE_DT_GET(DAC_DEVICE_NODE);
+	const struct device *const dac_dev = DEVICE_DT_GET(DAC_DEVICE_NODE);
 
 	zassert_true(device_is_ready(dac_dev), "DAC device is not ready");
 
@@ -91,25 +91,23 @@ static const struct device *init_dac(void)
 /*
  * test_dac_write_value
  */
-static int test_task_write_value(void)
+ZTEST(dac, test_task_write_value)
 {
 	int ret;
 
 	const struct device *dac_dev = init_dac();
 
-	if (!dac_dev) {
-		return TC_FAIL;
-	}
-
 	/* write a value of half the full scale resolution */
 	ret = dac_write_value(dac_dev, DAC_CHANNEL_ID,
 						(1U << DAC_RESOLUTION) / 2);
 	zassert_equal(ret, 0, "dac_write_value() failed with code %d", ret);
-
-	return TC_PASS;
 }
 
-void test_dac_write_value(void)
+static void *dac_setup(void)
 {
-	zassert_true(test_task_write_value() == TC_PASS, NULL);
+	k_object_access_grant(get_dac_device(), k_current_get());
+
+	return NULL;
 }
+
+ZTEST_SUITE(dac, NULL, dac_setup, NULL, NULL, NULL);

@@ -16,7 +16,7 @@ extern "C" {
 
 #define IOMUXC_SW_MUX_CTL_PAD_MUX_MODE(x) ((x) & 0xF)
 #define IOMUXC_SW_MUX_CTL_PAD_SION(x) (((x) & 0x1) << 4)
-#define IOMUXC_SELECT_INPUT_DAISY(x) ((x) & 0x2)
+#define IOMUXC_SELECT_INPUT_DAISY(x) ((x) & 0x7)
 
 #define MCUX_IMX_INPUT_SCHMITT_ENABLE_SHIFT 16
 #define MCUX_IMX_BIAS_PULL_DOWN_SHIFT 14

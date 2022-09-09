@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 
@@ -32,7 +32,7 @@ static void notification_callback(const struct device *dev, void *data)
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
 
 	if (!device_is_ready(dev)) {
 		printk("%s: device not ready.\n", dev->name);

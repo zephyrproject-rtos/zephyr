@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <stdio.h>
@@ -120,7 +120,7 @@ void test_8bit_xfer(const struct device *dev, struct spi_cs_control *cs)
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET(SPIBB_NODE);
+	const struct device *const dev = DEVICE_DT_GET(SPIBB_NODE);
 
 	if (!device_is_ready(dev)) {
 		printk("%s: device not ready.\n", dev->name);

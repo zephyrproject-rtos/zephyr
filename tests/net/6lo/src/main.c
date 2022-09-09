@@ -9,7 +9,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_6LO_LOG_LEVEL);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/linker/sections.h>
 
@@ -1100,7 +1100,7 @@ static void test_6lo(struct net_6lo_data *data)
 	net_pkt_hexdump(pkt, "after-uncompression");
 #endif
 
-	zassert_true(compare_pkt(pkt, data), NULL);
+	zassert_true(compare_pkt(pkt, data));
 
 	net_pkt_unref(pkt);
 }

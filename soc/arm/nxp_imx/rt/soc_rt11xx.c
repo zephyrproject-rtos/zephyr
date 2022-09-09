@@ -20,7 +20,7 @@
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"
-#include "usb_dc_mcux.h"
+#include "usb.h"
 #endif
 
 #if CONFIG_USB_DC_NXP_EHCI /* USB PHY configuration */
@@ -368,6 +368,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 
 #ifdef CONFIG_ETH_MCUX
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
 	/* 50 MHz ENET clock */
 	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
 	rootCfg.div = 10;
@@ -375,6 +376,19 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Set ENET_REF_CLK as an output driven by ENET1_CLK_ROOT */
 	IOMUXC_GPR->GPR4 |= (IOMUXC_GPR_GPR4_ENET_REF_CLK_DIR(0x01U) |
 		IOMUXC_GPR_GPR4_ENET_TX_CLK_SEL(0x1U));
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet1g), okay)
+	/*
+	 * 50 MHz clock for 10/100Mbit RMII PHY -
+	 * operate ENET1G just like ENET peripheral
+	 */
+	rootCfg.mux = kCLOCK_ENET2_ClockRoot_MuxSysPll1Div2;
+	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_Enet2, &rootCfg);
+	/* Set ENET1G_REF_CLK as an output driven by ENET2_CLK_ROOT */
+	IOMUXC_GPR->GPR5 |= (IOMUXC_GPR_GPR5_ENET1G_REF_CLK_DIR(0x01U) |
+		IOMUXC_GPR_GPR5_ENET1G_TX_CLK_SEL(0x1U));
+#endif
 #endif
 
 #ifdef CONFIG_PTP_CLOCK_MCUX
@@ -443,12 +457,22 @@ static ALWAYS_INLINE void clock_init(void)
 	USB_EhciPhyInit(kUSB_ControllerEhci1, CPU_XTAL_CLK_HZ, &usbPhyConfig);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC
+#if CONFIG_IMX_USDHC
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay)
 	/* Configure USDHC1 using  SysPll2Pfd2*/
 	rootCfg.mux = kCLOCK_USDHC1_ClockRoot_MuxSysPll2Pfd2;
 	rootCfg.div = 2;
 	CLOCK_SetRootClock(kCLOCK_Root_Usdhc1, &rootCfg);
 	CLOCK_EnableClock(kCLOCK_Usdhc1);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay)
+	/* Configure USDHC2 using  SysPll2Pfd2*/
+	rootCfg.mux = kCLOCK_USDHC2_ClockRoot_MuxSysPll2Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Usdhc2, &rootCfg);
+	CLOCK_EnableClock(kCLOCK_Usdhc2);
+#endif
 #endif
 
 #if !(defined(CONFIG_CODE_FLEXSPI) || defined(CONFIG_CODE_FLEXSPI2)) && \

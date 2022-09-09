@@ -44,9 +44,9 @@
 /soc/arm/infineon_xmc/                    @parthitce
 /soc/arm/nxp*/                            @mmahadevan108 @dleach02
 /soc/arm/nordic_nrf/                      @anangl
-/soc/arm/nuvoton_npcx/                    @MulinChao @WealianLiao @ChiHuaL
+/soc/arm/nuvoton_npcx/                    @MulinChao @ChiHuaL
 /soc/arm/nuvoton_numicro/                 @ssekar15
-/soc/arm/quicklogic_eos_s3/               @kowalewskijan @kgugala
+/soc/arm/quicklogic_eos_s3/               @fkokosinski @kgugala
 /soc/arm/rpi_pico/                        @yonsch
 /soc/arm/silabs_exx32/efm32pg1b/          @rdmeneze
 /soc/arm/silabs_exx32/efr32mg21/          @l-alfred
@@ -64,7 +64,7 @@
 /soc/arm64/bcm_vk/                        @abhishek-brcm
 /soc/arm64/nxp_layerscape/                @JiafeiPan
 /soc/arm64/xenvm/                         @lorc @firscity
-/soc/arm64/nxp_imx/                       @MrVan
+/soc/arm64/nxp_imx/                       @MrVan @JiafeiPan
 /soc/arm64/arm/                           @povergoing
 /soc/arm64/arm/fvp_aemv8a/                @carlocaione
 /soc/arm64/intel_socfpga/*                @siclim
@@ -124,7 +124,7 @@
 /boards/arm/mimxrt*/doc/                  @dleach02 @MeganHansen
 /boards/arm/mps2_an385/                   @fvincenzo
 /boards/arm/msp_exp432p401r_launchxl/     @Mani-Sadhasivam
-/boards/arm/npcx7m6fb_evb/                @MulinChao @WealianLiao @ChiHuaL
+/boards/arm/npcx7m6fb_evb/                @MulinChao @ChiHuaL
 /boards/arm/nrf*/                         @carlescufi @lemrey
 /boards/arm/nucleo*/                      @erwango @ABOSTM @FRASTM
 /boards/arm/nucleo_f401re/                @idlethread
@@ -133,7 +133,7 @@
 /boards/arm/qemu_cortex_a9/               @ibirnbaum
 /boards/arm/qemu_cortex_r*/               @stephanosio
 /boards/arm/qemu_cortex_m*/               @ioannisg @stephanosio
-/boards/arm/quick_feather/                @kowalewskijan @kgugala
+/boards/arm/quick_feather/                @fkokosinski @kgugala
 /boards/arm/rak4631_nrf52840/             @gpaquet85
 /boards/arm/rak5010_nrf52840/             @gpaquet85
 /boards/arm/rpi_pico/                     @yonsch
@@ -182,8 +182,9 @@
 /boards/sparc/                            @julius-barendt
 /boards/arm64/qemu_cortex_a53/            @carlocaione
 /boards/arm64/bcm958402m2_a72/            @abhishek-brcm
-/boards/arm64/imx8mm_evk/                 @MrVan
-/boards/arm64/imx8mp_evk/                 @MrVan
+/boards/arm64/mimx8mm_evk/                @MrVan @JiafeiPan
+/boards/arm64/mimx8mp_evk/                @MrVan @JiafeiPan
+/boards/arm64/mimx8mn_evk/                @JiafeiPan
 /boards/arm64/nxp_ls1046ardb/             @JiafeiPan
 /boards/arm64/xenvm/                      @lorc @firscity
 /boards/arm64/fvp_baser_aemv8r/           @povergoing
@@ -212,7 +213,7 @@
 /drivers/*/*stm32*                        @erwango @ABOSTM @FRASTM
 /drivers/*/*native_posix*                 @aescolar @daor-oti
 /drivers/*/*lpc11u6x*                     @mbittan @simonguinot
-/drivers/*/*npcx*                         @MulinChao @WealianLiao @ChiHuaL
+/drivers/*/*npcx*                         @MulinChao @ChiHuaL
 /drivers/*/*andes*                        @cwshu @kevinwang821020 @jimmyzhe
 /drivers/*/*neorv32*                      @henrikbrixandersen
 /drivers/adc/                             @anangl
@@ -252,7 +253,7 @@
 /drivers/dma/dma_stm32*                   @cybertale @lowlander
 /drivers/dma/*pl330*                      @raveenp
 /drivers/dma/*iproc_pax*                  @raveenp
-/drivers/dma/*cavs*                       @teburd
+/drivers/dma/*intel_adsp*                 @teburd
 /drivers/ec_host_cmd_periph/              @jettr
 /drivers/edac/                            @finikorg
 /drivers/eeprom/                          @henrikbrixandersen
@@ -273,6 +274,7 @@
 /drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*stm32_qspi*               @lmajewski
 /drivers/flash/*b91*                      @andy-liu-telink
+/drivers/flash/*cadence*                  @ngboonkhai
 /drivers/flash/*cc13xx_cc26xx*            @pepe2k
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/flash/*esp32*                    @glaubermaroto
@@ -280,9 +282,9 @@
 /drivers/gpio/                            @mnkp
 /drivers/gpio/*b91*                       @andy-liu-telink
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
-/drivers/gpio/*nct38xx*                   @MulinChao @WealianLiao @ChiHuaL
+/drivers/gpio/*nct38xx*                   @MulinChao @ChiHuaL
 /drivers/gpio/*stm32*                     @erwango
-/drivers/gpio/*eos_s3*                    @wtatarski @kowalewskijan @kgugala
+/drivers/gpio/*eos_s3*                    @fkokosinski @kgugala
 /drivers/gpio/*rcar*                      @aaillet
 /drivers/gpio/*esp32*                     @glaubermaroto
 /drivers/gpio/*rpi_pico*                  @yonsch
@@ -319,6 +321,7 @@
 /drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic
 /drivers/ipm/ipm_stm32_ipcc.c             @arnopo
 /drivers/ipm/ipm_stm32_hsem.c             @cameled
+/drivers/ipm/ipm_esp32.c                  @uLipe
 /drivers/kscan/                           @VenkatKotakonda @franciscomunoz @sjvasanth1
 /drivers/kscan/*xec*                      @franciscomunoz @sjvasanth1
 /drivers/kscan/*ft5336*                   @MaureenHelm
@@ -345,7 +348,7 @@
 /drivers/power_domain/                    @ceolin
 /drivers/ps2/                             @franciscomunoz @sjvasanth1
 /drivers/ps2/*xec*                        @franciscomunoz @sjvasanth1
-/drivers/ps2/*npcx*                       @MulinChao @WealianLiao @ChiHuaL
+/drivers/ps2/*npcx*                       @MulinChao @ChiHuaL
 /drivers/pwm/*b91*                        @andy-liu-telink
 /drivers/pwm/*rpi_pico*                   @burumaj
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
@@ -358,6 +361,7 @@
 /drivers/pwm/*gecko*                      @sun681
 /drivers/pwm/*it8xxx2*                    @RuibinChang
 /drivers/pwm/*esp32*                      @LucasTambor
+/drivers/pwm/*rcar*                       @pmarzin
 /drivers/regulator/*pmic*                 @danieldegrasse
 /drivers/reset/                           @andrei-edward-popa
 /drivers/sensor/                          @MaureenHelm
@@ -471,14 +475,14 @@
 /dts/arm64/armv8-r.dtsi                   @povergoing
 /dts/arm64/intel/*intel_socfpga*          @siclim
 /dts/arm64/nxp/                           @JiafeiPan
-/dts/arm/quicklogic/                      @wtatarski @kowalewskijan @kgugala
+/dts/arm/quicklogic/                      @fkokosinski @kgugala
 /dts/arm/seeed/                           @str4t0m
 /dts/arm/st/                              @erwango
 /dts/arm/ti/cc13?2*                       @bwitherspoon
 /dts/arm/ti/cc26?2*                       @bwitherspoon
 /dts/arm/ti/cc3235*                       @vanti
 /dts/arm/nordic/                          @anangl @carlescufi
-/dts/arm/nuvoton/                         @ssekar15 @MulinChao @WealianLiao @ChiHuaL
+/dts/arm/nuvoton/                         @ssekar15 @MulinChao @ChiHuaL
 /dts/arm/nxp/                             @mmahadevan108 @dleach02
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @sjvasanth1
 /dts/arm/rpi_pico/                        @yonsch
@@ -518,7 +522,7 @@
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
 /dts/bindings/wifi/*esp-at.yaml           @mniestroj
 /dts/bindings/*/*gd32*                    @nandojve
-/dts/bindings/*/*npcx*                    @MulinChao @WealianLiao @ChiHuaL
+/dts/bindings/*/*npcx*                    @MulinChao @ChiHuaL
 /dts/bindings/*/*psoc6*                   @nandojve
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @mmahadevan108 @dleach02
@@ -718,6 +722,8 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/series-push-hook.sh              @erwango
 /scripts/utils/pinctrl_nrf_migrate.py     @gmarull
 /scripts/west_commands/                   @mbolivar-nordic
+/scripts/west_commands/blobs.py           @carlescufi
+/scripts/west_commands/fetchers/          @carlescufi
 /scripts/west_commands/runners/gd32isp.py @mbolivar-nordic @nandojve
 /scripts/west_commands/tests/test_gd32isp.py @mbolivar-nordic @nandojve
 /scripts/west-commands.yml                @mbolivar-nordic

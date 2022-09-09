@@ -195,7 +195,10 @@ static void *device_usb_setup(void)
 	int ret;
 
 	ret = usb_enable(NULL);
-	zassume_true(ret == 0, "Failed to enable USB");
+	zassert_true(ret == 0, "Failed to enable USB");
+	/*
+	 *Judge failure whether is due to failing to enable USB.
+	 */
 
 	return NULL;
 }

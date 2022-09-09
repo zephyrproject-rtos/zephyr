@@ -6,6 +6,12 @@
 
 SECTIONS
 {
+	.data.ztest_expected_result_area : ALIGN(4)
+	{
+		_ztest_expected_result_entry_list_start = .;
+		KEEP(*(SORT_BY_NAME(._ztest_expected_result_entry.static.*)))
+		_ztest_expected_result_entry_list_end = .;
+	}
 	.data.ztest_suite_node_area : ALIGN(4)
 	{
 		_ztest_suite_node_list_start = .;

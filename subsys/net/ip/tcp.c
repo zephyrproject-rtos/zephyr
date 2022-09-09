@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/random/rand32.h>
 
 #if defined(CONFIG_NET_TCP_ISN_RFC6528)
@@ -30,6 +30,8 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
 #define FIN_TIMEOUT K_MSEC(tcp_fin_timeout_ms)
 #define ACK_DELAY K_MSEC(100)
+#define ZWP_MAX_DELAY_MS 120000
+#define DUPLICATE_ACK_RETRANSMIT_TRHESHOLD 3
 
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
@@ -774,21 +776,55 @@ static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT &&
 	    !net_pkt_is_empty(conn->queue_recv_data)) {
+		/* Some potentential cases:
+		 * Note: MI = MAX_INT
+		 * Packet | Queued| End off   | Gap size | Required handling
+		 * Seq|Len|Seq|Len|           |          |
+		 *  3 | 3 | 6 | 4 | 3+3-6=  0 | 6-3-3=0  | Append
+		 *  3 | 4 | 6 | 4 | 3+4-6 = 1 | 6-3-4=-1 | Append, pull from queue
+		 *  3 | 7 | 6 | 4 | 3+7-6 = 4 | 6-3-7=-4 | Drop queued data
+		 *  3 | 8 | 6 | 4 | 3+8-6 = 5 | 6-3-8=-5 | Drop queued data
+		 *  6 | 5 | 6 | 4 | 6+5-6 = 5 | 6-6-5=-5 | Drop queued data
+		 *  6 | 4 | 6 | 4 | 6+4-6 = 4 | 6-6-4=-4 | Drop queued data / packet
+		 * 10 | 2 | 6 | 4 | 10+2-6= 6 | 6-10-2=-6| Should not happen, dropping queue
+		 *  7 | 4 | 6 | 4 | 7+4-6 = 5 | 6-7-4=-5 | Should not happen, dropping queue
+		 * 11 | 2 | 6 | 4 | 11+2-6= 7 | 6-11-2=-7| Should not happen, dropping queue
+		 *  2 | 3 | 6 | 4 | 2+3-6= MI | 6-2-3=1  | Keep queued data
+		 */
 		struct tcphdr *th = th_get(pkt);
 		uint32_t expected_seq = th_seq(th) + len;
 		uint32_t pending_seq;
+		int32_t gap_size;
+		uint32_t end_offset;
 
 		pending_seq = tcp_get_seq(conn->queue_recv_data->buffer);
-		if (pending_seq == expected_seq) {
-			pending_len = net_pkt_get_len(conn->queue_recv_data);
+		end_offset = expected_seq - pending_seq;
+		gap_size = (int32_t)(pending_seq - th_seq(th) - ((uint32_t)len));
+		pending_len = net_pkt_get_len(conn->queue_recv_data);
+		if (end_offset < pending_len) {
+			if (end_offset) {
+				net_pkt_remove_tail(pkt, end_offset);
+				pending_len -= end_offset;
+			}
 
 			NET_DBG("Found pending data seq %u len %zd",
-				pending_seq, pending_len);
+				expected_seq, pending_len);
+
 			net_buf_frag_add(pkt->buffer,
 					 conn->queue_recv_data->buffer);
 			conn->queue_recv_data->buffer = NULL;
 
 			k_work_cancel_delayable(&conn->recv_queue_timer);
+		} else {
+			/* Check if the queued data is just a section of the incoming data */
+			if (gap_size <= 0) {
+				net_buf_unref(conn->queue_recv_data->buffer);
+				conn->queue_recv_data->buffer = NULL;
+
+				k_work_cancel_delayable(&conn->recv_queue_timer);
+			}
+
+			pending_len = 0;
 		}
 	}
 
@@ -1346,8 +1382,20 @@ static void tcp_send_zwp(struct k_work *work)
 	tcp_derive_rto(conn);
 
 	if (conn->send_win == 0) {
+		uint64_t timeout;
+
+		/* Make sure the retry counter does not overflow. */
+		if (conn->zwp_retries < UINT8_MAX) {
+			conn->zwp_retries++;
+		}
+
+		timeout = TCP_RTO_MS << conn->zwp_retries;
+		if (timeout == 0 || timeout > ZWP_MAX_DELAY_MS) {
+			timeout = ZWP_MAX_DELAY_MS;
+		}
+
 		(void)k_work_reschedule_for_queue(
-			&tcp_work_q, &conn->persist_timer, K_MSEC(TCP_RTO_MS));
+			&tcp_work_q, &conn->persist_timer, K_MSEC(timeout));
 	}
 
 	k_mutex_unlock(&conn->lock);
@@ -1411,6 +1459,9 @@ static struct tcp *tcp_conn_alloc(struct net_context *context)
 	conn->state = TCP_LISTEN;
 	conn->recv_win_max = tcp_window;
 	conn->tcp_nodelay = false;
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+	conn->dup_ack_cnt = 0;
+#endif
 
 	/* Set the recv_win with the rcvbuf configured for the socket. */
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_RCVBUF) &&
@@ -1759,18 +1810,30 @@ static bool tcp_validate_seq(struct tcp *conn, struct tcphdr *hdr)
 		(net_tcp_seq_cmp(th_seq(hdr), conn->ack + conn->recv_win) < 0);
 }
 
-static void print_seq_list(struct net_buf *buf)
+static bool check_seq_list(struct net_buf *buf)
 {
+	struct net_buf *last = NULL;
 	struct net_buf *tmp = buf;
 	uint32_t seq;
+	uint32_t next_seq = 0;
+	bool result = true;
 
 	while (tmp) {
 		seq = tcp_get_seq(tmp);
 
 		NET_DBG("buf %p seq %u len %d", tmp, seq, tmp->len);
 
+		if (last != NULL) {
+			if (next_seq != seq) {
+				result = false;
+			}
+		}
+
+		next_seq = seq + tmp->len;
+		last = tmp;
 		tmp = tmp->frags;
 	}
+	return result;
 }
 
 static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
@@ -1796,42 +1859,101 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 
 	if (IS_ENABLED(CONFIG_NET_TCP_LOG_LEVEL_DBG)) {
 		NET_DBG("Queuing data: conn %p", conn);
-		print_seq_list(pkt->buffer);
 	}
 
 	if (!net_pkt_is_empty(conn->queue_recv_data)) {
 		/* Place the data to correct place in the list. If the data
 		 * would not be sequential, then drop this packet.
+		 *
+		 * Only work with subtractions between sequence numbers in uint32_t format
+		 * to proper handle cases that are around the wrapping point.
 		 */
+
+		/* Some potentential cases:
+		 * Note: MI = MAX_INT
+		 * Packet | Queued| End off1  | Start off| End off2    | Required handling
+		 * Seq|Len|Seq|Len|           |          |             |
+		 *  3 | 3 | 6 | 4 | 3+3-6=  0 | NA       | NA          | Prepend
+		 *  3 | 4 | 6 | 4 | 3+4-6 = 1 | NA       | NA          | Prepend, pull from buffer
+		 *  3 | 7 | 6 | 4 | 3+7-6 = 4 | 6-3=3    | 6+4-3=7     | Drop queued data
+		 *  3 | 8 | 6 | 4 | 3+8-6 = 5 | 6-3=3    | 6+4-3=7     | Drop queued data
+		 *  6 | 5 | 6 | 4 | 6+5-6 = 5 | 6-6=0    | 6+4-6=4     | Drop queued data
+		 *  6 | 4 | 6 | 4 | 6+4-6 = 4 | 6-6=0    | 6+4-6=4     | Drop queued data / packet
+		 *  7 | 2 | 6 | 4 | 7+2-6 = 3 | 6-7=MI   | 6+4-7=3     | Drop packet
+		 * 10 | 2 | 6 | 4 | 10+2-6= 6 | 6-10=MI-3| 6+4-10=0    | Append
+		 *  7 | 4 | 6 | 4 | 7+4-6 = 5 | 6-7 =MI  | 6+4-7 =3    | Append, pull from packet
+		 * 11 | 2 | 6 | 4 | 11+2-6= 7 | 6-11=MI-6| 6+4-11=MI-1 | Drop incoming packet
+		 *  2 | 3 | 6 | 4 | 2+3-6= MI | 6-2=4    | 6+4-2=8     | Drop incoming packet
+		 */
+
 		uint32_t pending_seq;
+		uint32_t start_offset;
+		uint32_t end_offset;
+		size_t pending_len;
 
 		pending_seq = tcp_get_seq(conn->queue_recv_data->buffer);
-		if (pending_seq == seq) {
-			/* Put new data before the pending data */
-			net_buf_frag_add(pkt->buffer,
-					 conn->queue_recv_data->buffer);
-			conn->queue_recv_data->buffer = pkt->buffer;
-			inserted = true;
+		end_offset = seq - pending_seq;
+		pending_len = net_pkt_get_len(conn->queue_recv_data);
+		if (end_offset < pending_len) {
+			if (end_offset < len) {
+				if (end_offset) {
+					net_pkt_remove_tail(pkt, end_offset);
+				}
+
+				/* Put new data before the pending data */
+				net_buf_frag_add(pkt->buffer,
+						 conn->queue_recv_data->buffer);
+				NET_DBG("Adding at before queue, end_offset %i, pending_len %zu",
+					end_offset, pending_len);
+				conn->queue_recv_data->buffer = pkt->buffer;
+				inserted = true;
+			}
 		} else {
 			struct net_buf *last;
 
 			last = net_buf_frag_last(conn->queue_recv_data->buffer);
 			pending_seq = tcp_get_seq(last);
 
-			if ((pending_seq + last->len) == seq_start) {
-				/* Put new data after pending data */
-				last->frags = pkt->buffer;
+			start_offset = pending_seq - seq_start;
+			/* Compute the offset w.r.t. the start point of the new packet */
+			end_offset = (pending_seq + last->len) - seq_start;
+
+			/* Check if queue start with within the within the new packet */
+			if ((start_offset < len) && (end_offset <= len)) {
+				/* The queued data is irrelevant since the new packet overlaps the
+				 * new packet, take the new packet as contents
+				 */
+				net_buf_unref(conn->queue_recv_data->buffer);
+				conn->queue_recv_data->buffer = pkt->buffer;
 				inserted = true;
+			} else {
+				if (end_offset < len) {
+					if (end_offset) {
+						net_pkt_remove_tail(conn->queue_recv_data,
+								    end_offset);
+					}
+
+					/* Put new data after pending data */
+					NET_DBG("Adding at end of queue, start %i, end %i, len %zu",
+						start_offset, end_offset, len);
+					net_buf_frag_add(conn->queue_recv_data->buffer,
+							 pkt->buffer);
+					inserted = true;
+				}
 			}
 		}
 
-		if (IS_ENABLED(CONFIG_NET_TCP_LOG_LEVEL_DBG)) {
-			if (inserted) {
-				NET_DBG("All pending data: conn %p", conn);
-				print_seq_list(conn->queue_recv_data->buffer);
-			} else {
-				NET_DBG("Cannot add new data to queue");
+		if (inserted) {
+			NET_DBG("All pending data: conn %p", conn);
+			if (check_seq_list(conn->queue_recv_data->buffer) == false) {
+				NET_ERR("Incorrect order in out of order sequence for conn %p",
+					conn);
+				/* error in sequence list, drop it */
+				net_buf_unref(conn->queue_recv_data->buffer);
+				conn->queue_recv_data->buffer = NULL;
 			}
+		} else {
+			NET_DBG("Cannot add new data to queue");
 		}
 	} else {
 		net_pkt_append_buffer(conn->queue_recv_data, pkt->buffer);
@@ -1962,6 +2084,21 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		goto next_state;
 	}
 
+	if (th && (conn->state != TCP_LISTEN) && (conn->state != TCP_SYN_SENT) &&
+	    tcp_validate_seq(conn, th) && FL(&fl, &, SYN)) {
+		/* According to RFC 793, ch 3.9 Event Processing, receiving SYN
+		 * once the connection has been established is an error
+		 * condition, reset should be sent and connection closed.
+		 */
+		NET_DBG("conn: %p, SYN received in %s state, dropping connection",
+			conn, tcp_state_to_str(conn->state, false));
+		net_stats_update_tcp_seg_drop(conn->iface);
+		tcp_out(conn, RST);
+		conn_state(conn, TCP_CLOSED);
+		close_status = -ECONNRESET;
+		goto next_state;
+	}
+
 	if (th) {
 		size_t max_win;
 
@@ -1993,8 +2130,12 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		}
 
 		if (conn->send_win == 0) {
-			(void)k_work_reschedule_for_queue(
-				&tcp_work_q, &conn->persist_timer, K_MSEC(TCP_RTO_MS));
+			if (!k_work_delayable_is_pending(&conn->persist_timer)) {
+				conn->zwp_retries = 0;
+				(void)k_work_reschedule_for_queue(
+					&tcp_work_q, &conn->persist_timer,
+					K_MSEC(TCP_RTO_MS));
+			}
 		} else {
 			(void)k_work_cancel_delayable(&conn->persist_timer);
 		}
@@ -2122,7 +2263,39 @@ next_state:
 			break;
 		}
 
-		if (th && net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+		if (th && (net_tcp_seq_cmp(th_ack(th), conn->seq) == 0)) {
+			/* Only if there is pending data, increment the duplicate ack count */
+			if (conn->send_data_total > 0) {
+				/* There could be also payload, only without payload account them */
+				if (len == 0) {
+					/* Increment the duplicate acc counter,
+					 * but maximize the value
+					 */
+					conn->dup_ack_cnt = MIN(conn->dup_ack_cnt + 1,
+						DUPLICATE_ACK_RETRANSMIT_TRHESHOLD + 1);
+				}
+			} else {
+				conn->dup_ack_cnt = 0;
+			}
+
+			/* Only do fast retransmit when not already in a resend state */
+			if ((conn->data_mode == TCP_DATA_MODE_SEND) &&
+			    (conn->dup_ack_cnt == DUPLICATE_ACK_RETRANSMIT_TRHESHOLD)) {
+				/* Apply a fast retransmit */
+				int temp_unacked_len = conn->unacked_len;
+
+				conn->unacked_len = 0;
+
+				(void)tcp_send_data(conn);
+
+				/* Restore the current transmission */
+				conn->unacked_len = temp_unacked_len;
+			}
+		}
+#endif
+
+		if (th && (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0)) {
 			uint32_t len_acked = th_ack(th) - conn->seq;
 
 			NET_DBG("conn: %p len_acked=%u", conn, len_acked);
@@ -2139,6 +2312,11 @@ next_state:
 				close_status = -ECONNRESET;
 				break;
 			}
+
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+			/* New segment, reset duplicate ack counter */
+			conn->dup_ack_cnt = 0;
+#endif
 
 			conn->send_data_total -= len_acked;
 			if (conn->unacked_len < len_acked) {
@@ -2197,12 +2375,23 @@ next_state:
 			if (th_seq(th) == conn->ack) {
 				verdict = tcp_data_received(conn, pkt, &len);
 			} else if (net_tcp_seq_greater(conn->ack, th_seq(th))) {
+				/* This should handle the acknowledgements of keep alive
+				 * packets and retransmitted data.
+				 * RISK:
+				 * There is a tiny risk of creating a ACK loop this way when
+				 * both ends of the connection are out of order due to packet
+				 * loss is a simulatanious bidirectional data flow.
+				 */
 				tcp_out(conn, ACK); /* peer has resent */
 
 				net_stats_update_tcp_seg_ackerr(conn->iface);
 			} else if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
 				tcp_out_of_order_data(conn, pkt, len,
 						      th_seq(th));
+				/* Send out a duplicated ACK */
+				if ((len > 0) || FL(&fl, &, FIN)) {
+					tcp_out(conn, ACK);
+				}
 			}
 		}
 		break;
@@ -2644,7 +2833,7 @@ int net_tcp_connect(struct net_context *context,
 
 	net_context_set_state(context, NET_CONTEXT_CONNECTING);
 
-	ret = net_conn_register(net_context_get_ip_proto(context),
+	ret = net_conn_register(net_context_get_proto(context),
 				net_context_get_family(context),
 				remote_addr, local_addr,
 				ntohs(remote_port), ntohs(local_port),
@@ -2749,7 +2938,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 	 */
 	net_conn_unregister(context->conn_handler);
 
-	return net_conn_register(net_context_get_ip_proto(context),
+	return net_conn_register(net_context_get_proto(context),
 				 local_addr.sa_family,
 				 context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
 				 &context->remote : NULL,

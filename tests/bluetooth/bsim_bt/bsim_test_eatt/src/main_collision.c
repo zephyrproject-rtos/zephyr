@@ -12,7 +12,15 @@ static void test_peripheral_main(void)
 {
 	int err;
 
+	backchannel_init();
+
 	peripheral_setup_and_connect();
+
+	/*
+	 * we need to sync with peer to ensure that we get collisions
+	 */
+	backchannel_sync_send();
+	backchannel_sync_wait();
 
 	err = bt_eatt_connect(default_conn, CONFIG_BT_EATT_MAX);
 	if (err) {
@@ -35,7 +43,12 @@ static void test_central_main(void)
 {
 	int err;
 
+	backchannel_init();
+
 	central_setup_and_connect();
+
+	backchannel_sync_wait();
+	backchannel_sync_send();
 
 	err = bt_eatt_connect(default_conn, CONFIG_BT_EATT_MAX);
 	if (err) {

@@ -11,6 +11,7 @@ config PINCTRL_STM32
 config PINCTRL_STM32_REMAP_INIT_PRIORITY
 	int "Remap initialization priority"
 	default 2
+	depends on PINCTRL_STM32
 	help
 	  Initialization priority for the routine in charge of configuring the
 	  remap for pins PA11/12.

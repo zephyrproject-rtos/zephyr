@@ -5,18 +5,6 @@ if SHIELD_X_NUCLEO_EEPRMA2
 
 if EEPROM
 
-config SPI
-	default y
-
-config EEPROM_AT25
-	default y
-
-config I2C
-	default y
-
-config EEPROM_AT24
-	default y
-
 config EEPROM_INIT_PRIORITY
 	default 75
 

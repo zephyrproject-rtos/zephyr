@@ -31,16 +31,10 @@ config FLASH_MCUX_FLEXSPI_HYPERFLASH
 
 endif #FLASH
 
-config I2C
-	default y if KSCAN
-
 config KSCAN
 	default y if LVGL
 
 if KSCAN
-
-config KSCAN_FT5336
-	default y
 
 config KSCAN_FT5336_INTERRUPT
 	default y
@@ -61,9 +55,6 @@ if LVGL
 
 config LV_Z_POINTER_KSCAN
 	default y
-
-config LV_Z_POINTER_KSCAN_DEV_NAME
-	default "FT5336"
 
 config LV_Z_VDB_SIZE
 	default 16

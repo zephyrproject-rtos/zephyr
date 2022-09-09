@@ -37,7 +37,7 @@ unsigned int vectors[ITS_TEST_NUM_DEVS][ITS_TEST_NUM_ITES];
 ZTEST(arm64_gicv3_its, test_gicv3_its_alloc)
 {
 	int devn, event_id;
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 
 	zassert_false(dev == NULL, "");
 
@@ -60,7 +60,7 @@ ZTEST(arm64_gicv3_its, test_gicv3_its_alloc)
 ZTEST(arm64_gicv3_its, test_gicv3_its_connect)
 {
 	int devn, event_id;
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	unsigned int remain = 0;
 
 	zassert_false(dev == NULL, "");
@@ -80,7 +80,7 @@ ZTEST(arm64_gicv3_its, test_gicv3_its_connect)
 
 ZTEST(arm64_gicv3_its, test_gicv3_its_irq_simple)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	unsigned int irqn = vectors[0][0];
 	unsigned int timeout;
 	int device_id = ITS_TEST_DEV(0);
@@ -103,7 +103,7 @@ ZTEST(arm64_gicv3_its, test_gicv3_its_irq_simple)
 
 ZTEST(arm64_gicv3_its, test_gicv3_its_irq_disable)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	unsigned int irqn = vectors[0][0];
 	unsigned int timeout;
 	int device_id = ITS_TEST_DEV(0);
@@ -143,7 +143,7 @@ ZTEST(arm64_gicv3_its, test_gicv3_its_irq_disable)
 ZTEST(arm64_gicv3_its, test_gicv3_its_irq)
 {
 	int devn, event_id;
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	unsigned int timeout;
 	unsigned int remain = 0;
 

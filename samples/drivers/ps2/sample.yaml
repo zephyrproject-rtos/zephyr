@@ -10,4 +10,4 @@ tests:
         regex:
             - "mb data(.*)"
         fixture: fixture_connect_mouse
-    depends_on: ps2
+    filter: dt_compat_enabled("microchip,xec-ps2")

@@ -41,13 +41,13 @@ if UART_NRF_DK_SERIAL_WORKAROUND
 
 config UART_NRF_DK_SERIAL_WORKAROUND_COUNT
 	int
-	default 32
+	default 64
 	help
 	  Number of bytes transferred after which a busy wait is added.
 
 config UART_NRF_DK_SERIAL_WORKAROUND_WAIT_MS
 	int
-	default 10
+	default 7
 	help
 	  Busy wait time (in milliseconds).
 endif

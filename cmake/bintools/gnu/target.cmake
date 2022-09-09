@@ -11,7 +11,7 @@ find_program(CMAKE_READELF ${CROSS_COMPILE}readelf PATHS ${TOOLCHAIN_HOME} NO_DE
 find_program(CMAKE_NM      ${CROSS_COMPILE}nm      PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 find_program(CMAKE_STRIP   ${CROSS_COMPILE}strip   PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
-find_program(CMAKE_GDB     ${CROSS_COMPILE}gdb     PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_GDB     ${CROSS_COMPILE}gdb-py  PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 if(CMAKE_GDB)
   execute_process(
@@ -20,16 +20,15 @@ if(CMAKE_GDB)
     OUTPUT_QUIET
     ERROR_QUIET
     )
-  if (${GDB_CFG_ERR})
-    # Failed to execute GDB, likely because of Python deps
-    find_program(CMAKE_GDB_NO_PY  ${CROSS_COMPILE}gdb-no-py  PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-    if (CMAKE_GDB_NO_PY)
-      set(CMAKE_GDB ${CMAKE_GDB_NO_PY} CACHE FILEPATH "Path to a program." FORCE)
-    endif()
-  endif()
 endif()
 
-find_program(CMAKE_GDB     gdb-multiarch           PATHS ${TOOLCHAIN_HOME}                )
+if(NOT CMAKE_GDB OR GDB_CFG_ERR)
+  find_program(CMAKE_GDB_NO_PY ${CROSS_COMPILE}gdb PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+
+  if(CMAKE_GDB_NO_PY)
+    set(CMAKE_GDB ${CMAKE_GDB_NO_PY} CACHE FILEPATH "Path to a program." FORCE)
+  endif()
+endif()
 
 # Include bin tool properties
 include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_bintools.cmake)

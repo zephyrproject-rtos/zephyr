@@ -12,8 +12,7 @@ microcontrollers. The kit includes Atmel’s Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
 hardware.
 
-.. image:: img/atsaml21-xpro.png
-     :width: 500px
+.. image:: img/atsaml21-xpro.jpg
      :align: center
      :alt: ATSAML21-XPRO
 
@@ -85,8 +84,7 @@ controllers are responsible for pin muxing, input/output, pull-up, etc.
 For mode details please refer to `SAM L21 Family Datasheet`_ and the `SAM L21
 Xplained Pro Schematic`_.
 
-.. image:: img/atsaml21-xpro-pinout.png
-     :width: 500px
+.. image:: img/atsaml21-xpro-pinout.jpg
      :align: center
      :alt: ATSAML21-XPRO-pinout
 

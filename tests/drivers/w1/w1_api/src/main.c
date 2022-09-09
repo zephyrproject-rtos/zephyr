@@ -7,7 +7,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/w1_sensor.h>
 #include <zephyr/drivers/w1.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #define W1_MASTER  DT_NODELABEL(w1_0)
@@ -16,7 +16,7 @@
 
 const struct device *get_w1_master_dev(void)
 {
-	const struct device *master_dev = DEVICE_DT_GET(W1_MASTER);
+	const struct device *const master_dev = DEVICE_DT_GET(W1_MASTER);
 
 	zassert_true(device_is_ready(master_dev), "W1 master not found");
 

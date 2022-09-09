@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
 #include <zephyr/drivers/video.h>
@@ -34,7 +34,7 @@ void main(void)
 
 	/* But would be better to use a real video device if any */
 #if defined(CONFIG_VIDEO_MCUX_CSI)
-	const struct device *dev = DEVICE_DT_GET_ONE(nxp_imx_csi);
+	const struct device *const dev = DEVICE_DT_GET_ONE(nxp_imx_csi);
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("%s: device not ready.\n", dev->name);

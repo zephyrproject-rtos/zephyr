@@ -8,7 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_bos);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/usb/usb_device.h>
 

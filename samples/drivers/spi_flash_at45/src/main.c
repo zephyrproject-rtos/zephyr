@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/pm/device.h>
@@ -27,7 +27,7 @@ void main(void)
 {
 	printk("DataFlash sample on %s\n", CONFIG_BOARD);
 
-	const struct device *flash_dev = DEVICE_DT_GET_ONE(atmel_at45);
+	const struct device *const flash_dev = DEVICE_DT_GET_ONE(atmel_at45);
 	int i;
 	int err;
 	uint8_t data;

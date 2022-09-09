@@ -144,7 +144,9 @@ struct _callee_saved_stack {
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
 	uintptr_t r58;
+#ifndef CONFIG_64BIT
 	uintptr_t r59;
+#endif /* !CONFIG_64BIT */
 #endif
 
 #ifdef CONFIG_FPU_SHARING

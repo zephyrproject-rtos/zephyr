@@ -95,7 +95,7 @@ static int sys_clock_driver_init(const struct device *dev)
 
 	ARG_UNUSED(dev);
 	clk = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
-	if (clk == NULL) {
+	if (!device_is_ready(clk)) {
 		return -ENODEV;
 	}
 

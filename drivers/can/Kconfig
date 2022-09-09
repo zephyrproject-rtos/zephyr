@@ -24,12 +24,30 @@ config CAN_INIT_PRIORITY
 	  CAN driver device initialization priority.
 
 config CAN_SHELL
-	bool "CAN Shell"
+	bool "CAN shell"
 	default y
 	depends on SHELL
 	select POLL
 	help
 	  Enable CAN Shell for testing.
+
+if CAN_SHELL
+
+config CAN_SHELL_TX_QUEUE_SIZE
+	int "CAN shell transmit queue size"
+	default 5
+	range 1 256
+	help
+	  Maximum number of events in the CAN shell transmit queue.
+
+config CAN_SHELL_RX_QUEUE_SIZE
+	int "CAN shell receive queue size"
+	default 5
+	range 1 256
+	help
+	  Maximum number of CAN frames in the CAN shell receive queue.
+
+endif # CAN_SHELL
 
 config CAN_STATS
 	bool "CAN controller device statistics"
@@ -53,18 +71,6 @@ config CAN_FD_MODE
 	depends on CAN_HAS_CANFD
 	help
 	  Enable CAN-FD compatible API
-
-if CAN_FD_MODE
-
-config CANFD_MAX_DLC
-	int "Max data length code in CAN frames"
-	range 8 15
-	default 15
-	help
-	  Maximum allowed DLC in a CAN frame. This parameter sets the
-	  data buffer size in a CAN frame and is therefore only used to
-	  optimize memory consumption.
-endif # CAN_FD_MODE
 
 config CAN_RX_TIMESTAMP
 	bool "Receiving timestamps"
@@ -92,7 +98,7 @@ source "drivers/can/Kconfig.mcp2515"
 source "drivers/can/Kconfig.mcan"
 source "drivers/can/Kconfig.rcar"
 source "drivers/can/Kconfig.loopback"
-
+source "drivers/can/Kconfig.native_posix_linux"
 source "drivers/can/Kconfig.sja1000"
 source "drivers/can/Kconfig.esp32"
 

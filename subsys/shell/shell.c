@@ -574,10 +574,13 @@ static void active_cmd_prepare(const struct shell_static_entry *entry,
 	if (entry->handler) {
 		*handler_lvl = *lvl;
 		*active_cmd = *entry;
+		/* If command is final handler and it has a raw optional argument,
+		 * then set remaining arguments to mandatory - 1 so after processing mandatory
+		 * args, handler is passed remaining raw string
+		 */
 		if ((entry->subcmd == NULL)
 		    && entry->args.optional == SHELL_OPT_ARG_RAW) {
 			*args_left = entry->args.mandatory - 1;
-			*lvl = *lvl + 1;
 		}
 	}
 	if (entry->help) {
@@ -621,7 +624,7 @@ static bool wildcard_check_report(const struct shell *shell, bool found,
 static int execute(const struct shell *shell)
 {
 	struct shell_static_entry dloc; /* Memory for dynamic commands. */
-	const char *argv[CONFIG_SHELL_ARGC_MAX + 1]; /* +1 reserved for NULL */
+	const char *argv[CONFIG_SHELL_ARGC_MAX + 1] = {0}; /* +1 reserved for NULL */
 	const struct shell_static_entry *parent = selected_cmd_get(shell);
 	const struct shell_static_entry *entry = NULL;
 	struct shell_static_entry help_entry;
@@ -782,8 +785,17 @@ static int execute(const struct shell *shell)
 		}
 	}
 
-	/* terminate arguments with NULL */
-	argv[cmd_lvl] = NULL;
+	/* If a command was found */
+	if (parent != NULL) {
+		/* If the found command uses a raw optional argument and
+		 * we have a remaining unprocessed non-null string,
+		 * then increment command level so handler receives raw string
+		 */
+		if (parent->args.optional == SHELL_OPT_ARG_RAW && argv[cmd_lvl] != NULL) {
+			cmd_lvl++;
+		}
+	}
+
 	/* Executing the deepest found handler. */
 	return exec_cmd(shell, cmd_lvl - cmd_with_handler_lvl,
 			&argv[cmd_with_handler_lvl], &help_entry);
@@ -1513,6 +1525,8 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 void shell_hexdump_line(const struct shell *shell, unsigned int offset,
 			const uint8_t *data, size_t len)
 {
+	__ASSERT_NO_MSG(shell);
+
 	int i;
 
 	shell_fprintf(shell, SHELL_NORMAL, "%08X: ", offset);
@@ -1552,6 +1566,8 @@ void shell_hexdump_line(const struct shell *shell, unsigned int offset,
 
 void shell_hexdump(const struct shell *shell, const uint8_t *data, size_t len)
 {
+	__ASSERT_NO_MSG(shell);
+
 	const uint8_t *p = data;
 	size_t line_len;
 
@@ -1669,7 +1685,16 @@ int shell_mode_delete_set(const struct shell *shell, bool val)
 
 void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 {
+	__ASSERT_NO_MSG(sh);
+
 	sh->ctx->bypass = bypass;
+}
+
+bool shell_ready(const struct shell *sh)
+{
+	__ASSERT_NO_MSG(sh);
+
+	return state_get(sh) ==	SHELL_STATE_ACTIVE;
 }
 
 static int cmd_help(const struct shell *shell, size_t argc, char **argv)

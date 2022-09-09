@@ -3,23 +3,18 @@
 # Copyright (c) 2015 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Ethernet Drivers"
+menuconfig ETH_DRIVER
+	bool "Ethernet Drivers"
+	default y
 	depends on NET_L2_ETHERNET
+
+if ETH_DRIVER
 
 module = ETHERNET
 module-dep = LOG
 module-str = Log level for Ethernet driver
 module-help = Sets log level for Ethernet Device Drivers.
 source "subsys/net/Kconfig.template.log_config.net"
-
-config ETH_INIT_PRIORITY
-	int "Ethernet driver init priority"
-	default 80
-	help
-	  Ethernet device driver initialization priority.
-	  Do not mess with it unless you know what you are doing.
-	  Note that the priority needs to be lower than the net stack
-	  so that it can start before the networking sub-system.
 
 config ETH_QEMU_IFACE_NAME
 	string "Network interface name for QEMU"
@@ -62,4 +57,13 @@ source "drivers/ethernet/Kconfig.xlnx_gem"
 
 source "drivers/ethernet/phy/Kconfig"
 
-endmenu # "Ethernet Drivers"
+endif # "Ethernet Drivers"
+
+config ETH_INIT_PRIORITY
+	int "Ethernet driver init priority"
+	default 80
+	help
+	  Ethernet device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.

@@ -13,8 +13,7 @@ It is basically a clone of the official nRF52840 development kit (PCA10056)
 from Nordic Semiconductor. Please refer to :ref:`nrf52840dk_nrf52840` for
 further information.
 
-.. figure:: pan1780_evaluation_board.png
-     :width: 400px
+.. figure:: pan1780_evaluation_board.jpg
      :align: center
      :alt: PAN1780 Evaluation Board
 

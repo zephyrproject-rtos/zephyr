@@ -7,7 +7,7 @@
 #ifndef SHELL_FPRINTF_H__
 #define SHELL_FPRINTF_H__
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdbool.h>
 #include <stddef.h>
 

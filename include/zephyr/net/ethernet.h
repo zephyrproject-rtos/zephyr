@@ -66,6 +66,8 @@ struct net_eth_addr {
 #define NET_ETH_PTYPE_LLDP		0x88cc
 #define NET_ETH_PTYPE_ALL               0x0003 /* from linux/if_ether.h */
 #define NET_ETH_PTYPE_ECAT		0x88a4
+#define NET_ETH_PTYPE_EAPOL		0x888e
+#define NET_ETH_PTYPE_IEEE802154	0x00F6 /* from linux/if_ether.h: IEEE802.15.4 frame */
 
 #if !defined(ETH_P_ALL)
 #define ETH_P_ALL	NET_ETH_PTYPE_ALL
@@ -87,6 +89,9 @@ struct net_eth_addr {
 #endif
 #if !defined(ETH_P_ECAT)
 #define  ETH_P_ECAT	NET_ETH_PTYPE_ECAT
+#endif
+#if !defined(ETH_P_IEEE802154)
+#define  ETH_P_IEEE802154 NET_ETH_PTYPE_IEEE802154
 #endif
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
@@ -850,8 +855,6 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 #endif /* CONFIG_NET_VLAN */
 
 /**
- * @def ETH_NET_DEVICE_INIT
- *
  * @brief Create an Ethernet network interface and bind it to network device.
  *
  * @param dev_name Network device name.
@@ -875,8 +878,6 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 			      api, mtu)
 
 /**
- * @def ETH_NET_DEVICE_DT_DEFINE
- *
  * @brief Like ETH_NET_DEVICE_INIT but taking metadata from a devicetree.
  * Create an Ethernet network interface and bind it to network device.
  *
@@ -895,13 +896,11 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 #define ETH_NET_DEVICE_DT_DEFINE(node_id, init_fn, pm_action_cb, data,	\
 			       cfg, prio, api, mtu)			\
 	Z_ETH_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
-			      DT_PROP_OR(node_id, label, ""),		\
+			      DEVICE_DT_NAME(node_id),			\
 			      init_fn, pm_action_cb, data, cfg, prio,	\
 			      api, mtu)
 
 /**
- * @def ETH_NET_DEVICE_DT_INST_DEFINE
- *
  * @brief Like ETH_NET_DEVICE_DT_DEFINE for an instance of a DT_DRV_COMPAT
  * compatible
  *

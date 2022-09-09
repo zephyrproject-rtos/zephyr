@@ -13,7 +13,7 @@
 #ifndef __IPV4_AUTOCONF_INTERNAL_H
 #define __IPV4_AUTOCONF_INTERNAL_H
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/net/ipv4_autoconf.h>
 

@@ -110,6 +110,35 @@ This is achieved via fixtures in the following way::
 Advanced features
 *****************
 
+Test result expectations
+========================
+
+Some tests were made to be broken. In cases where the test is expected to fail or skip due to the
+nature of the code, it's possible to annotate the test as such. For example::
+
+  .. code-block:: C
+
+  #include <zephyr/ztest.h>
+
+  ZTEST_SUITE(my_suite, NULL, NULL, NULL, NULL, NULL);
+
+  ZTEST_EXPECT_FAIL(my_suite, test_fail)
+  ZTEST(my_suite, test_fail)
+  {
+    /** This will fail the test */
+    zassert_true(false, NULL);
+  }
+
+  ZTEST_EXPECT_SKIP(my_suite, test_fail)
+  ZTEST(my_suite, test_skip)
+  {
+    /** This will skip the test */
+    zassume_true(false, NULL);
+  }
+
+In this example, the above tests should be marked as failed and skipped respectively. Instead,
+Ztest will mark both as passed due to the expectation.
+
 Test rules
 ==========
 

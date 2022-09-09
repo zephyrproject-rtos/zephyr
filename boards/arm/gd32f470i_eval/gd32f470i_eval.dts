@@ -17,6 +17,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &usart0;
 		zephyr,shell-uart = &usart0;
+		zephyr,flash-controller = &fmc;
 	};
 
 	leds {
@@ -126,7 +127,6 @@
 		compatible = "atmel,at24";
 		reg = <0x50>;
 		status = "okay";
-		label = "EEPROM_AT24C02";
 		size = <256>;
 		pagesize = <8>;
 		address-width = <8>;
@@ -143,7 +143,6 @@
 	nor_flash: gd25q16@0 {
 		compatible ="jedec,spi-nor";
 		size = <0x1000000>;
-		label = "GD25Q16";
 		reg = <0>;
 		spi-max-frequency = <4000000>;
 		status = "okay";

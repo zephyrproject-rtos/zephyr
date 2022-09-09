@@ -389,10 +389,11 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (!num_msgs) {
 		return 0;
 	}
-	data->num_msgs = num_msgs;
-	data->msgs = msgs;
 
 	k_sem_take(&data->lock, K_FOREVER);
+
+	data->num_msgs = num_msgs;
+	data->msgs = msgs;
 
 	for (; data->num_msgs > 0;) {
 		if (!data->msgs->len) {

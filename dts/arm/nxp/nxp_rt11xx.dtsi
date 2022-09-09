@@ -13,6 +13,10 @@
 #include <zephyr/dt-bindings/pm/imx_spc.h>
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 / {
+	chosen {
+		zephyr,entropy = &caam;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -699,6 +703,33 @@
 			};
 		};
 
+		/*
+		 * enet1g peripheral to use with kinetis-ethernet (eth_mcux) driver
+		 * just like the enet peripheral (i.e. only 10/100Mbit for now)
+		 */
+		enet1g: ethernet@40420000 {
+			compatible = "nxp,kinetis-ethernet";
+			reg = <0x40420000 0x628>;
+			interrupts = <141 0>;
+			interrupt-names = "COMMON";
+			status = "disabled";
+			phy-addr = <1>;
+			ptp1g: ptp {
+				compatible = "nxp,kinetis-ptp";
+				status = "disabled";
+				interrupts = <142 0>;
+				interrupt-names = "IEEE1588_TMR";
+			};
+		};
+
+		caam: caam@40440000 {
+			compatible = "nxp,imx-caam";
+			reg = <0x40440000 0x81000>;
+			interrupts = <69 0>, <70 0>, <71 0>,
+				     <72 0>,  <73 0>,  <74 0>;
+			status = "okay";
+		};
+
 		usb1: usbd@40430000 {
 			compatible = "nxp,mcux-usbd";
 			reg = <0x40430000 0x200>;
@@ -706,7 +737,7 @@
 			interrupt-names = "usb_otg";
 			clocks = <&xtal>;
 			num-bidir-endpoints = <8>;
-			maximum-speed = "full-speed";
+			usb-controller-index = "Ehci0";
 			status = "disabled";
 		};
 
@@ -717,7 +748,7 @@
 			interrupt-names = "usb_otg";
 			clocks = <&xtal>;
 			num-bidir-endpoints = <8>;
-			maximum-speed = "full-speed";
+			usb-controller-index = "Ehci1";
 			status = "disabled";
 		};
 

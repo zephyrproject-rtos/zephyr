@@ -5,7 +5,7 @@
  */
 
 #include <stddef.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
@@ -1520,22 +1520,24 @@ void ull_conn_done(struct node_rx_event_done *done)
 	reason_final = conn->llcp_terminate.reason_final;
 	if (reason_final && (
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-#if defined(CONFIG_BT_CENTRAL)
-		(((conn->llcp_terminate.req -
-		       conn->llcp_terminate.ack) & 0xFF) ==
-		     TERM_ACKED) ||
-		    conn->central.terminate_ack ||
-		    (reason_final == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL) ||
-#endif /* CONFIG_BT_CENTRAL */
 #if defined(CONFIG_BT_PERIPHERAL)
-		lll->role
+			    lll->role ||
 #else /* CONFIG_BT_PERIPHERAL */
-		false
+			    false ||
 #endif /* CONFIG_BT_PERIPHERAL */
-#else /* defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
-	    true
-#endif /* !defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
-		)) {
+#if defined(CONFIG_BT_CENTRAL)
+			    (((conn->llcp_terminate.req -
+			       conn->llcp_terminate.ack) & 0xFF) ==
+			     TERM_ACKED) ||
+			    conn->central.terminate_ack ||
+			    (reason_final == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
+#else /* CONFIG_BT_CENTRAL */
+			    true
+#endif /* CONFIG_BT_CENTRAL */
+#else /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
+			    true
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
+			    )) {
 		conn_cleanup(conn, reason_final);
 
 		return;
@@ -6387,9 +6389,6 @@ static uint8_t cis_req_recv(struct ll_conn *conn, memq_link_t *link,
 	void *node;
 
 	conn->llcp_cis.cig_id = req->cig_id;
-	conn->llcp_cis.c_max_sdu = (uint16_t)(req->c_max_sdu_packed[1] & 0x0F) << 8 |
-					      req->c_max_sdu_packed[0];
-	conn->llcp_cis.p_max_sdu = (uint16_t)(req->p_max_sdu[1] & 0x0F) << 8 | req->p_max_sdu[0];
 	conn->llcp_cis.cis_offset_min = sys_get_le24(req->cis_offset_min);
 	conn->llcp_cis.cis_offset_max = sys_get_le24(req->cis_offset_max);
 	conn->llcp_cis.conn_event_count = sys_le16_to_cpu(req->conn_event_count);

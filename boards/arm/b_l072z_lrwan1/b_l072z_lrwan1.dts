@@ -71,10 +71,6 @@
 	cpu-power-states = <&stop>;
 };
 
-&lptim1 {
-	status = "okay";
-};
-
 &clk_hsi {
 	status = "okay";
 };

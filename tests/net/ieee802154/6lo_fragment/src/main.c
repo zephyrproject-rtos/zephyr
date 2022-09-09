@@ -9,7 +9,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/linker/sections.h>
 
@@ -438,11 +438,11 @@ static struct net_fragment_data test_data_8 = {
 	.iphc = false
 };
 
-static uint8_t frame_buffer_data[IEEE802154_MTU - 2];
+static uint8_t frame_buffer_data[IEEE802154_MTU];
 
 static struct net_buf frame_buf = {
 	.data = frame_buffer_data,
-	.size = IEEE802154_MTU - 2,
+	.size = IEEE802154_MTU,
 	.frags = NULL,
 	.__buf = frame_buffer_data,
 };
@@ -579,56 +579,56 @@ ZTEST(ieee802154_6lo_fragment, test_fragment_sam00_dam00)
 {
 	bool ret = test_fragment(&test_data_1);
 
-	zassert_true(ret, NULL);
+	zassert_true(ret);
 }
 
 ZTEST(ieee802154_6lo_fragment, test_fragment_sam01_dam01)
 {
 	bool ret = test_fragment(&test_data_2);
 
-	zassert_true(ret, NULL);
+	zassert_true(ret);
 }
 
 ZTEST(ieee802154_6lo_fragment, test_fragment_sam10_dam10)
 {
 	bool ret = test_fragment(&test_data_3);
 
-	zassert_true(ret, NULL);
+	zassert_true(ret);
 }
 
 ZTEST(ieee802154_6lo_fragment, test_fragment_sam00_m1_dam00)
 {
 	bool ret = test_fragment(&test_data_4);
 
-	zassert_true(ret, NULL);
+	zassert_true(ret);
 }
 
 ZTEST(ieee802154_6lo_fragment, test_fragment_sam01_m1_dam01)
 {
 	bool ret = test_fragment(&test_data_5);
 
-	zassert_true(ret, NULL);
+	zassert_true(ret);
 }
 
 ZTEST(ieee802154_6lo_fragment, test_fragment_sam10_m1_dam10)
 {
 	bool ret = test_fragment(&test_data_6);
 
-	zassert_true(ret, NULL);
+	zassert_true(ret);
 }
 
 ZTEST(ieee802154_6lo_fragment, test_fragment_ipv6_dispatch_small)
 {
 	bool ret = test_fragment(&test_data_7);
 
-	zassert_true(ret, NULL);
+	zassert_true(ret);
 }
 
 ZTEST(ieee802154_6lo_fragment, test_fragment_ipv6_dispatch_big)
 {
 	bool ret = test_fragment(&test_data_8);
 
-	zassert_true(ret, NULL);
+	zassert_true(ret);
 }
 
 

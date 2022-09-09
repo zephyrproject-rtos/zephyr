@@ -42,6 +42,27 @@
 		};
 	};
 
+	power-states {
+		stop0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <500>;
+		};
+		stop1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <700>;
+		};
+		stop2: state2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <3>;
+			min-residency-us = <1000>;
+		};
+	};
+
 	aliases {
 		led0 = &green_led_2;
 		led1 = &green_led_1;
@@ -51,6 +72,14 @@
 		spi-flash0 = &mx25r6435f;
 		accel0 = &lsm6dsl;
 	};
+};
+
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1 &stop2>;
+};
+
+&clk_lse {
+	status = "okay";
 };
 
 &clk_hsi {
@@ -110,6 +139,7 @@
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
+		drdy-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
 	};
 
 	lps22hb-press@5d {
@@ -214,6 +244,8 @@
 };
 
 &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
 
@@ -241,6 +273,10 @@ zephyr_udc0: &usbotg_fs {
 		     &adc1_in4_pc3 &adc1_in13_pc4
 		     &adc1_in14_pc5>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 

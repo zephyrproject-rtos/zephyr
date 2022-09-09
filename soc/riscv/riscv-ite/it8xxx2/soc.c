@@ -14,7 +14,6 @@
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 
 #ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
-#define __intc_ram_code __attribute__((section(".__ram_code")))
 
 struct pll_config_t {
 	uint8_t pll_freq;
@@ -87,7 +86,7 @@ uint32_t chip_get_pll_freq(void)
 	return pllfreq;
 }
 
-void __intc_ram_code chip_pll_ctrl(enum chip_pll_mode mode)
+void __soc_ram_code chip_pll_ctrl(enum chip_pll_mode mode)
 {
 	volatile uint8_t _pll_ctrl __unused;
 
@@ -100,7 +99,7 @@ void __intc_ram_code chip_pll_ctrl(enum chip_pll_mode mode)
 	_pll_ctrl = IT8XXX2_ECPM_PLLCTRL;
 }
 
-void __intc_ram_code chip_run_pll_sequence(const struct pll_config_t *pll)
+void __soc_ram_code chip_run_pll_sequence(const struct pll_config_t *pll)
 {
 	/* Enable HW timer to wakeup chip from the sleep mode */
 	timer_5ms_one_shot();

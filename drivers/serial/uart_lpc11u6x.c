@@ -347,6 +347,10 @@ static int lpc11u6x_uart0_init(const struct device *dev)
 		return err;
 	}
 
+	if (!device_is_ready(cfg->clock_dev)) {
+		return -ENODEV;
+	}
+
 	clock_control_on(cfg->clock_dev, (clock_control_subsys_t) cfg->clkid);
 
 	/* Configure baudrate, parity and stop bits */

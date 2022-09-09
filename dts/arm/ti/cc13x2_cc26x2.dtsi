@@ -141,13 +141,11 @@
 
 			ieee802154: ieee802154 {
 				compatible = "ti,cc13xx-cc26xx-ieee802154";
-				label = "IEEE802154_0";
 				status = "disabled";
 			};
 
 			ieee802154g: ieee802154g {
 				compatible = "ti,cc13xx-cc26xx-ieee802154-subghz";
-				label = "IEEE802154_1";
 				status = "disabled";
 			};
 		};

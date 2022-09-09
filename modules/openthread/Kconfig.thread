@@ -61,9 +61,9 @@ config OPENTHREAD_POLL_PERIOD
 
 config OPENTHREAD_MAX_CHILDREN
 	int "The maximum number of children"
-	range 10 511
+	range 1 511
+	default 1 if OPENTHREAD_MTD
 	default 32
-	depends on OPENTHREAD_FTD
 
 config OPENTHREAD_MAX_IP_ADDR_PER_CHILD
 	int "The maximum number of IPv6 address registrations per child"
@@ -162,3 +162,8 @@ config OPENTHREAD_CLI_TCP_ENABLE
 
 config OPENTHREAD_HISTORY_TRACKER
 	bool "History tracker support"
+
+config OPENTHREAD_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS
+	bool "Stay awake between packet fragments"
+	help
+	  This optimization is done at the expense of power consumption on SED/SSED devices.

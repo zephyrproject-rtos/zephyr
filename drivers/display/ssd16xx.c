@@ -45,24 +45,40 @@ struct ssd16xx_dt_array {
 	uint8_t len;
 };
 
+struct ssd16xx_profile {
+	struct ssd16xx_dt_array lut;
+	struct ssd16xx_dt_array gdv;
+	struct ssd16xx_dt_array sdv;
+	uint8_t vcom;
+	uint8_t bwf;
+
+	bool override_vcom;
+	bool override_bwf;
+};
+
 struct ssd16xx_config {
 	struct spi_dt_spec bus;
 	struct gpio_dt_spec dc_gpio;
 	struct gpio_dt_spec busy_gpio;
 	struct gpio_dt_spec reset_gpio;
-	struct ssd16xx_dt_array lut_initial;
-	struct ssd16xx_dt_array lut_default;
+
 	struct ssd16xx_dt_array softstart;
-	struct ssd16xx_dt_array gdv;
-	struct ssd16xx_dt_array sdv;
+
+	struct ssd16xx_profile profile_initial;
+	struct ssd16xx_dt_array lut_default;
+
 	bool orientation;
 	uint16_t height;
 	uint16_t width;
-	uint8_t vcom;
-	uint8_t b_waveform;
 	uint8_t tssv;
 	uint8_t pp_width_bits;
 	uint8_t pp_height_bits;
+
+	uint8_t dummy_line;
+	bool override_dummy_line;
+
+	uint8_t gate_line_width;
+	bool override_gate_line_width;
 };
 
 static inline void ssd16xx_busy_wait(const struct device *dev)
@@ -78,7 +94,7 @@ static inline void ssd16xx_busy_wait(const struct device *dev)
 }
 
 static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
-				    uint8_t *data, size_t len)
+				    const uint8_t *data, size_t len)
 {
 	const struct ssd16xx_config *config = dev->config;
 	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
@@ -98,7 +114,7 @@ static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
 	}
 
 	if (data != NULL) {
-		buf.buf = data;
+		buf.buf = (void *)data;
 		buf.len = len;
 
 		err = gpio_pin_set_dt(&config->dc_gpio, 0);
@@ -115,6 +131,12 @@ static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
 spi_out:
 	spi_release_dt(&config->bus);
 	return err;
+}
+
+static inline int ssd16xx_write_uint8(const struct device *dev, uint8_t cmd,
+				      uint8_t data)
+{
+	return ssd16xx_write_cmd(dev, cmd, &data, 1);
 }
 
 static inline int ssd16xx_read_cmd(const struct device *dev, uint8_t cmd,
@@ -244,18 +266,23 @@ static inline int ssd16xx_set_ram_ptr(const struct device *dev, uint16_t x,
 	return ssd16xx_write_cmd(dev, SSD16XX_CMD_RAM_YPOS_CNTR, tmp, len);
 }
 
-static int ssd16xx_update_display(const struct device *dev)
+static int ssd16xx_activate(const struct device *dev, uint8_t ctrl2)
 {
-	struct ssd16xx_data *data = dev->data;
 	int err;
 
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_CTRL2,
-				&data->update_cmd, 1);
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_UPDATE_CTRL2, ctrl2);
 	if (err < 0) {
 		return err;
 	}
 
 	return ssd16xx_write_cmd(dev, SSD16XX_CMD_MASTER_ACTIVATION, NULL, 0);
+}
+
+static int ssd16xx_update_display(const struct device *dev)
+{
+	struct ssd16xx_data *data = dev->data;
+
+	return ssd16xx_activate(dev, data->update_cmd);
 }
 
 static int ssd16xx_blanking_off(const struct device *dev)
@@ -521,7 +548,6 @@ static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd,
 	const struct ssd16xx_config *config = dev->config;
 	uint16_t panel_h = config->height / EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 	uint16_t last_gate = config->width - 1;
-	uint8_t scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
 	uint8_t clear_page[64];
 	int err;
 
@@ -533,7 +559,8 @@ static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd,
 		panel_h += 1;
 	}
 
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_ENTRY_MODE, &scan_mode, 1);
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_ENTRY_MODE,
+				  SSD16XX_DATA_ENTRY_XIYDY);
 	if (err < 0) {
 		return err;
 	}
@@ -576,7 +603,6 @@ static inline int ssd16xx_load_ws_from_otp_tssv(const struct device *dev)
 {
 	const struct ssd16xx_config *config = dev->config;
 	struct ssd16xx_data *data = dev->data;
-	uint8_t tssv = config->tssv;
 	int err;
 
 	/*
@@ -584,7 +610,8 @@ static inline int ssd16xx_load_ws_from_otp_tssv(const struct device *dev)
 	 * temperature sensor is connected to the controller.
 	 */
 	LOG_INF("Select and load WS from OTP");
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_TSENSOR_SELECTION, &tssv, 1);
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_TSENSOR_SELECTION,
+				  config->tssv);
 	if (err == 0) {
 		data->update_cmd |= SSD16XX_CTRL2_LOAD_LUT |
 				    SSD16XX_CTRL2_LOAD_TEMPERATURE;
@@ -602,13 +629,7 @@ static inline int ssd16xx_load_ws_from_otp(const struct device *dev)
 
 	LOG_INF("Load default WS (25 degrees Celsius) from OTP");
 
-	tmp[0] = SSD16XX_CTRL2_ENABLE_CLK;
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_CTRL2, tmp, 1);
-	if (err < 0) {
-		return err;
-	}
-
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_MASTER_ACTIVATION, NULL, 0);
+	err = ssd16xx_activate(dev, SSD16XX_CTRL2_ENABLE_CLK);
 	if (err < 0) {
 		return err;
 	}
@@ -620,13 +641,7 @@ static inline int ssd16xx_load_ws_from_otp(const struct device *dev)
 		return err;
 	}
 
-	tmp[0] = SSD16XX_CTRL2_DISABLE_CLK;
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_CTRL2, tmp, 1);
-	if (err < 0) {
-		return err;
-	}
-
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_MASTER_ACTIVATION, NULL, 0);
+	err = ssd16xx_activate(dev, SSD16XX_CTRL2_DISABLE_CLK);
 	if (err < 0) {
 		return err;
 	}
@@ -636,14 +651,19 @@ static inline int ssd16xx_load_ws_from_otp(const struct device *dev)
 	return 0;
 }
 
-static int ssd16xx_load_ws_initial(const struct device *dev)
+
+static int ssd16xx_load_lut(const struct device *dev,
+			    const struct ssd16xx_dt_array *lut)
 {
 	const struct ssd16xx_config *config = dev->config;
+	struct ssd16xx_data *data = dev->data;
 
-	if (config->lut_initial.len) {
+	if (lut && lut->len) {
+		LOG_DBG("Using user-provided LUT");
+		/* Don't load the default LUT on the next refresh */
+		data->update_cmd &= ~SSD16XX_CTRL2_LOAD_LUT;
 		return ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_LUT,
-					 config->lut_initial.data,
-					 config->lut_initial.len);
+					 lut->data, lut->len);
 	} else {
 		if (config->tssv) {
 			return ssd16xx_load_ws_from_otp_tssv(dev);
@@ -651,6 +671,55 @@ static int ssd16xx_load_ws_initial(const struct device *dev)
 			return ssd16xx_load_ws_from_otp(dev);
 		}
 	}
+}
+
+static int ssd16xx_load_profile(const struct device *dev,
+				const struct ssd16xx_profile *p)
+{
+	int err = 0;
+
+	err = ssd16xx_load_lut(dev, &p->lut);
+	if (err < 0) {
+		return err;
+	}
+
+	if (p->gdv.len) {
+		LOG_DBG("Setting GDV");
+		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_GDV_CTRL,
+					p->gdv.data, p->gdv.len);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	if (p->sdv.len) {
+		LOG_DBG("Setting SDV");
+		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_SDV_CTRL,
+					p->sdv.data, p->sdv.len);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	if (p->override_vcom) {
+		LOG_DBG("Setting VCOM");
+		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_VCOM_VOLTAGE,
+					&p->vcom, 1);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	if (p->override_bwf) {
+		LOG_DBG("Setting BWF");
+		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_BWF_CTRL,
+					&p->bwf, 1);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	return 0;
 }
 
 static int ssd16xx_load_ws_default(const struct device *dev)
@@ -714,40 +783,21 @@ static int ssd16xx_controller_init(const struct device *dev)
 		}
 	}
 
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_GDV_CTRL, config->gdv.data,
-				config->gdv.len);
-	if (err < 0) {
-		return err;
+	if (config->override_dummy_line) {
+		tmp[0] = config->dummy_line;
+		err = ssd16xx_write_uint8(dev, SSD16XX_CMD_DUMMY_LINE,
+					  config->dummy_line);
+		if (err < 0) {
+			return err;
+		}
 	}
 
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_SDV_CTRL, config->sdv.data,
-				config->sdv.len);
-	if (err < 0) {
-		return err;
-	}
-
-	tmp[0] = config->vcom;
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_VCOM_VOLTAGE, tmp, 1);
-	if (err < 0) {
-		return err;
-	}
-
-	tmp[0] = SSD16XX_VAL_DUMMY_LINE;
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_DUMMY_LINE, tmp, 1);
-	if (err < 0) {
-		return err;
-	}
-
-	tmp[0] = SSD16XX_VAL_GATE_LWIDTH;
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_GATE_LINE_WIDTH, tmp, 1);
-	if (err < 0) {
-		return err;
-	}
-
-	tmp[0] = config->b_waveform;
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_BWF_CTRL, tmp, 1);
-	if (err < 0) {
-		return err;
+	if (config->override_gate_line_width) {
+		err = ssd16xx_write_uint8(dev, SSD16XX_CMD_GATE_LINE_WIDTH,
+					  config->override_gate_line_width);
+		if (err < 0) {
+			return err;
+		}
 	}
 
 	if (config->orientation == 1) {
@@ -762,7 +812,7 @@ static int ssd16xx_controller_init(const struct device *dev)
 			      SSD16XX_CTRL2_DISABLE_ANALOG |
 			      SSD16XX_CTRL2_DISABLE_CLK);
 
-	err = ssd16xx_load_ws_initial(dev);
+	err = ssd16xx_load_profile(dev, &config->profile_initial);
 	if (err < 0) {
 		return err;
 	}
@@ -851,19 +901,6 @@ static struct display_driver_api ssd16xx_driver_api = {
 	.set_orientation = ssd16xx_set_orientation,
 };
 
-#define LUT_INITIAL_DEFINE(n)						\
-	static uint8_t lut_initial_##n[] = DT_INST_PROP(n, lut_initial);
-#define LUT_DEFAULT_DEFINE(n)						\
-	static uint8_t lut_default_##n[] = DT_INST_PROP(n, lut_default);
-#define SOFTSTART_DEFINE(n)						\
-	static uint8_t softstart_##n[] = DT_INST_PROP(n, softstart);
-
-#define LUT_INITIAL_ASSIGN(n)						\
-		.lut_initial = {					\
-			.data = lut_initial_##n,			\
-			.len = sizeof(lut_initial_##n),			\
-		},
-
 #define LUT_DEFAULT_ASSIGN(n)						\
 		.lut_default = {					\
 			.data = lut_default_##n,			\
@@ -876,33 +913,35 @@ static struct display_driver_api ssd16xx_driver_api = {
 			.len = sizeof(softstart_##n),			\
 		},
 
-#define CMD_ARRAY_DEFINE(n)						\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, lut_initial),		\
-		    (LUT_INITIAL_DEFINE(n)),				\
-		    ())							\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, lut_default),		\
-		    (LUT_DEFAULT_DEFINE(n)),				\
-		    ())							\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, softstart),		\
-		    (SOFTSTART_DEFINE(n)),				\
-		    ())
+#define SSD16XX_MAKE_INST_ARRAY_OPT(n, p)				\
+	static uint8_t data_ ## n ## _ ## p[] = DT_INST_PROP_OR(n, p, {})
 
-#define CMD_ARRAY_COND(n)						\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, lut_initial),		\
-		    (LUT_INITIAL_ASSIGN(n)),				\
-		    ())							\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, lut_default),		\
-		    (LUT_DEFAULT_ASSIGN(n)),				\
-		    ())							\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, softstart),		\
-		    (SOFTSTART_ASSIGN(n)),				\
-		    ())
+#define SSD16XX_ASSIGN_ARRAY(n, p)					\
+	{								\
+		.data = data_ ## n ## _ ## p,				\
+		.len = sizeof(data_ ## n ## _ ## p),			\
+	}
+
+#define SSD16XX_INITIAL_PROFILE_DEFINE(n)				\
+	SSD16XX_MAKE_INST_ARRAY_OPT(n, lut_initial);			\
+	SSD16XX_MAKE_INST_ARRAY_OPT(n, gdv);				\
+	SSD16XX_MAKE_INST_ARRAY_OPT(n, sdv)
+
+#define SSD16XX_INITIAL_PROFILE(n)					\
+	{								\
+		.lut = SSD16XX_ASSIGN_ARRAY(n, lut_initial),		\
+		.gdv = SSD16XX_ASSIGN_ARRAY(n, gdv),			\
+		.sdv = SSD16XX_ASSIGN_ARRAY(n, sdv),			\
+		.vcom = DT_INST_PROP_OR(n, vcom, 0),			\
+		.override_vcom = DT_INST_NODE_HAS_PROP(n, vcom),	\
+		.bwf = DT_INST_PROP_OR(n, border_waveform, 0),		\
+		.override_bwf = DT_INST_NODE_HAS_PROP(n, border_waveform), \
+	}
 
 #define SSD16XX_DEFINE(n)						\
-	static uint8_t gdv_##n[] = DT_INST_PROP(n, gdv);		\
-	static uint8_t sdv_##n[] = DT_INST_PROP(n, sdv);		\
-									\
-	CMD_ARRAY_DEFINE(n)						\
+	SSD16XX_MAKE_INST_ARRAY_OPT(n, lut_default);			\
+	SSD16XX_MAKE_INST_ARRAY_OPT(n, softstart);			\
+	SSD16XX_INITIAL_PROFILE_DEFINE(n);				\
 									\
 	static const struct ssd16xx_config ssd16xx_cfg_##n = {		\
 		.bus = SPI_DT_SPEC_INST_GET(n,				\
@@ -915,20 +954,19 @@ static struct display_driver_api ssd16xx_driver_api = {
 		.height = DT_INST_PROP(n, height),			\
 		.width = DT_INST_PROP(n, width),			\
 		.orientation = DT_INST_PROP(n, orientation_flipped),	\
-		.vcom = DT_INST_PROP(n, vcom),				\
 		.pp_width_bits = DT_INST_PROP(n, pp_width_bits),	\
 		.pp_height_bits = DT_INST_PROP(n, pp_height_bits),	\
-		.b_waveform = DT_INST_PROP(n, border_waveform),		\
-		.gdv = {						\
-			.data = gdv_##n,				\
-			.len = sizeof(gdv_##n),				\
-		},							\
-		.sdv = {						\
-			.data = sdv_##n,				\
-			.len = sizeof(sdv_##n),				\
-		},							\
 		.tssv = DT_INST_PROP_OR(n, tssv, 0),			\
-		CMD_ARRAY_COND(n)					\
+		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),	\
+		.lut_default = SSD16XX_ASSIGN_ARRAY(n, lut_default),	\
+		.profile_initial = SSD16XX_INITIAL_PROFILE(n),		\
+		.dummy_line = DT_INST_PROP_OR(n, dummy_line, 0),	\
+		.override_dummy_line =					\
+			DT_INST_NODE_HAS_PROP(n, dummy_line),		\
+		.gate_line_width =					\
+			DT_INST_PROP_OR(n, gate_line_width, 0),		\
+		.override_gate_line_width =				\
+			DT_INST_NODE_HAS_PROP(n, gate_line_width),	\
 	};								\
 									\
 	static struct ssd16xx_data ssd16xx_data_##n;			\

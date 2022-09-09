@@ -15,8 +15,16 @@
 #define ZEPHYR_INCLUDE_STORAGE_DISK_ACCESS_H_
 
 /**
+ * @brief Storage APIs
+ * @defgroup storage_apis Storage APIs
+ * @{
+ * @}
+ */
+
+/**
  * @brief Disk Access APIs
  * @defgroup disk_access_interface Disk Access Interface
+ * @ingroup storage_apis
  * @{
  */
 

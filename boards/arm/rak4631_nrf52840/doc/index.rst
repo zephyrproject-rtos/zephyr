@@ -17,7 +17,6 @@ power communication solution. RAK4631 can be comfortably
 programmed with ZephyrRTOS.
 
 .. image:: img/rak4631-front-parts.jpg
-     :width: 500px
      :align: center
      :alt: RAK4631-NRF52840
 

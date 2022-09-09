@@ -68,7 +68,7 @@ static int random_entropy(const struct device *dev, char *buffer, char num)
  */
 static int get_entropy(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 	uint8_t buffer[BUFFER_LENGTH] = { 0 };
 	int ret;
 
@@ -98,18 +98,18 @@ static int get_entropy(void)
 	return ret;
 }
 
-static void test_entropy_get_entropy(void)
+ZTEST(entropy_api, test_entropy_get_entropy)
 {
-	zassert_true(get_entropy() == TC_PASS, NULL);
+	zassert_true(get_entropy() == TC_PASS);
 }
 
-void test_main(void)
+void *entropy_api_setup(void)
 {
 #ifdef CONFIG_BT
 	bt_enable(NULL);
 #endif /* CONFIG_BT */
 
-	ztest_test_suite(entropy_api,
-			 ztest_unit_test(test_entropy_get_entropy));
-	ztest_run_test_suite(entropy_api);
+	return NULL;
 }
+
+ZTEST_SUITE(entropy_api, NULL, entropy_api_setup, NULL, NULL, NULL);

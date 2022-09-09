@@ -54,6 +54,9 @@ list(APPEND zephyr_cmake_modules user_cache)
 list(APPEND zephyr_cmake_modules extensions)
 list(APPEND zephyr_cmake_modules version)
 
+# Load basic settings
+list(APPEND zephyr_cmake_modules basic_settings)
+
 #
 # Find tools
 #
@@ -76,31 +79,15 @@ list(APPEND zephyr_cmake_modules shields)
 list(APPEND zephyr_cmake_modules arch)
 list(APPEND zephyr_cmake_modules configuration_files)
 
-list(APPEND zephyr_cmake_modules verify-toolchain)
-list(APPEND zephyr_cmake_modules host-tools)
-
 # Include board specific device-tree flags before parsing.
 set(pre_dt_board "\${BOARD_DIR}/pre_dt_board.cmake" OPTIONAL)
 list(APPEND zephyr_cmake_modules "\${pre_dt_board}")
 
 # DTS should be close to kconfig because CONFIG_ variables from
 # kconfig and dts should be available at the same time.
-#
-# The DT system uses a C preprocessor for it's code generation needs.
-# This creates an awkward chicken-and-egg problem, because we don't
-# always know exactly which toolchain the user needs until we know
-# more about the target, e.g. after DT and Kconfig.
-#
-# To resolve this we find "some" C toolchain, configure it generically
-# with the minimal amount of configuration needed to have it
-# preprocess DT sources, and then, after we have finished processing
-# both DT and Kconfig we complete the target-specific configuration,
-# and possibly change the toolchain.
-list(APPEND zephyr_cmake_modules generic_toolchain)
 list(APPEND zephyr_cmake_modules dts)
 list(APPEND zephyr_cmake_modules kconfig)
 list(APPEND zephyr_cmake_modules soc)
-list(APPEND zephyr_cmake_modules target_toolchain)
 
 foreach(component ${SUB_COMPONENTS})
   if(NOT ${component} IN_LIST zephyr_cmake_modules)

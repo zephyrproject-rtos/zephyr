@@ -93,9 +93,6 @@ config 2ND_LVL_INTR_07_OFFSET
 	int
 	default 31
 
-config RV32M1_INTMUX
-	default y
-
 config RV32M1_INTMUX_CHANNEL_0
 	default y
 
@@ -124,9 +121,6 @@ endif # MULTI_LEVEL_INTERRUPTS
 
 if FLASH
 
-config SOC_FLASH_RV32M1
-	default y
-
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
 
@@ -134,9 +128,5 @@ config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 endif # FLASH
-
-config ENTROPY_RV32M1_TRNG
-	default y
-	depends on ENTROPY_GENERATOR
 
 endif # SOC_OPENISA_RV32M1_RISCV32

@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <stdlib.h>
 #include <zephyr/sys/atomic.h>
@@ -50,12 +50,17 @@ static void find_key_in_use(struct bt_conn *conn, void *data)
 	struct key_data *kdata = data;
 	struct bt_keys *key;
 
+	__ASSERT_NO_MSG(conn != NULL);
+	__ASSERT_NO_MSG(data != NULL);
+
 	if (conn->state == BT_CONN_CONNECTED) {
 		key = bt_keys_find_addr(conn->id, bt_conn_get_dst(conn));
 		if (key == NULL) {
 			return;
 		}
-		if (bt_addr_cmp(&key->addr.a, &key_pool[kdata->id].addr.a) == 0) {
+
+		/* Ensure that the reference returned matches the current pool item */
+		if (key == &key_pool[kdata->id]) {
 			kdata->in_use = true;
 			BT_DBG("Connected device %s is using key_pool[%d]",
 			       bt_addr_le_str(bt_conn_get_dst(conn)), kdata->id);
@@ -79,6 +84,8 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 	int i;
 	size_t first_free_slot = ARRAY_SIZE(key_pool);
 
+	__ASSERT_NO_MSG(addr != NULL);
+
 	BT_DBG("%s", bt_addr_le_str(addr));
 
 	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
@@ -100,7 +107,7 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 
 		for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 			struct bt_keys *current = &key_pool[i];
-			bool key_in_use = (CONFIG_BT_MAX_CONN > 1) && key_is_in_use(i);
+			bool key_in_use = key_is_in_use(i);
 
 			if (key_in_use) {
 				continue;
@@ -148,6 +155,8 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 {
 	int i;
 
+	__ASSERT_NO_MSG(func != NULL);
+
 	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 		struct bt_keys *keys = &key_pool[i];
 
@@ -160,10 +169,11 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 	}
 }
 
-void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys, void *data),
-		     void *data)
+void bt_keys_foreach_type(int type, void (*func)(struct bt_keys *keys, void *data), void *data)
 {
 	int i;
+
+	__ASSERT_NO_MSG(func != NULL);
 
 	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 		if ((key_pool[i].keys & type)) {
@@ -175,6 +185,8 @@ void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys, void *data),
 struct bt_keys *bt_keys_find(int type, uint8_t id, const bt_addr_le_t *addr)
 {
 	int i;
+
+	__ASSERT_NO_MSG(addr != NULL);
 
 	BT_DBG("type %d %s", type, bt_addr_le_str(addr));
 
@@ -191,6 +203,8 @@ struct bt_keys *bt_keys_find(int type, uint8_t id, const bt_addr_le_t *addr)
 struct bt_keys *bt_keys_get_type(int type, uint8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
+
+	__ASSERT_NO_MSG(addr != NULL);
 
 	BT_DBG("type %d %s", type, bt_addr_le_str(addr));
 
@@ -212,6 +226,8 @@ struct bt_keys *bt_keys_get_type(int type, uint8_t id, const bt_addr_le_t *addr)
 struct bt_keys *bt_keys_find_irk(uint8_t id, const bt_addr_le_t *addr)
 {
 	int i;
+
+	__ASSERT_NO_MSG(addr != NULL);
 
 	BT_DBG("%s", bt_addr_le_str(addr));
 
@@ -262,6 +278,8 @@ struct bt_keys *bt_keys_find_addr(uint8_t id, const bt_addr_le_t *addr)
 {
 	int i;
 
+	__ASSERT_NO_MSG(addr != NULL);
+
 	BT_DBG("%s", bt_addr_le_str(addr));
 
 	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
@@ -276,11 +294,15 @@ struct bt_keys *bt_keys_find_addr(uint8_t id, const bt_addr_le_t *addr)
 
 void bt_keys_add_type(struct bt_keys *keys, int type)
 {
+	__ASSERT_NO_MSG(keys != NULL);
+
 	keys->keys |= type;
 }
 
 void bt_keys_clear(struct bt_keys *keys)
 {
+	__ASSERT_NO_MSG(keys != NULL);
+
 	BT_DBG("%s (keys 0x%04x)", bt_addr_le_str(&keys->addr), keys->keys);
 
 	if (keys->state & BT_KEYS_ID_ADDED) {
@@ -314,6 +336,8 @@ int bt_keys_store(struct bt_keys *keys)
 {
 	char key[BT_SETTINGS_KEY_MAX];
 	int err;
+
+	__ASSERT_NO_MSG(keys != NULL);
 
 	if (keys->id) {
 		char id[4];
@@ -433,21 +457,21 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 static void id_add(struct bt_keys *keys, void *user_data)
 {
+	__ASSERT_NO_MSG(keys != NULL);
+
 	bt_id_add(keys);
 }
 
 static int keys_commit(void)
 {
-	BT_DBG("");
-
 	/* We do this in commit() rather than add() since add() may get
 	 * called multiple times for the same address, especially if
 	 * the keys were already removed.
 	 */
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) && IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		bt_keys_foreach(BT_KEYS_ALL, id_add, NULL);
+		bt_keys_foreach_type(BT_KEYS_ALL, id_add, NULL);
 	} else {
-		bt_keys_foreach(BT_KEYS_IRK, id_add, NULL);
+		bt_keys_foreach_type(BT_KEYS_IRK, id_add, NULL);
 	}
 
 	return 0;
@@ -461,6 +485,8 @@ SETTINGS_STATIC_HANDLER_DEFINE(bt_keys, "bt/keys", NULL, keys_set, keys_commit,
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 void bt_keys_update_usage(uint8_t id, const bt_addr_le_t *addr)
 {
+	__ASSERT_NO_MSG(addr != NULL);
+
 	struct bt_keys *keys = bt_keys_find_addr(id, addr);
 
 	if (!keys) {
@@ -488,6 +514,8 @@ void bt_keys_update_usage(uint8_t id, const bt_addr_le_t *addr)
 void bt_keys_show_sniffer_info(struct bt_keys *keys, void *data)
 {
 	uint8_t ltk[16];
+
+	__ASSERT_NO_MSG(keys != NULL);
 
 	if (keys->keys & BT_KEYS_LTK_P256) {
 		sys_memcpy_swap(ltk, keys->ltk.val, keys->enc_size);

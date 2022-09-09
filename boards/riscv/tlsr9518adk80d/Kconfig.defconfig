@@ -6,14 +6,8 @@ if BOARD_TLSR9518ADK80D
 config BOARD
 	default "tlsr9518adk80d"
 
-config ENTROPY_TELINK_B91_TRNG
-	default y if ENTROPY_GENERATOR
-
 config SOC_FLASH_TELINK_B91
 	default y if FLASH
-
-config NET_CONFIG_IEEE802154_DEV_NAME
-	default "IEEE802154_b91"
 
 if BT
 

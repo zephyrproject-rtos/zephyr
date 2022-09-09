@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
 #include <zephyr/net/socket.h>
@@ -40,7 +40,7 @@ void main(void)
 	struct video_buffer *buffers[2], *vbuf;
 	int i, ret, sock, client;
 	struct video_format fmt;
-	const struct device *video = DEVICE_DT_GET_ONE(nxp_imx_csi);
+	const struct device *const video = DEVICE_DT_GET_ONE(nxp_imx_csi);
 
 	/* Prepare Network */
 	(void)memset(&addr, 0, sizeof(addr));

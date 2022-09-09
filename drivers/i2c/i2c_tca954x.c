@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
@@ -93,7 +93,7 @@ static int tca954x_transfer(const struct device *dev,
 		goto end_trans;
 	}
 
-	res = i2c_transfer_dt(&config->i2c, msgs, num_msgs);
+	res = i2c_transfer(config->i2c.bus, msgs, num_msgs, addr);
 
 end_trans:
 	k_mutex_unlock(&data->lock);

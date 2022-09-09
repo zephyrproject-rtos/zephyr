@@ -68,6 +68,11 @@
 			reg = <0x1000 0x100>;
 		};
 
+		l2cc: l2cc@1500 {
+			compatible = "intel,cavs-l2cc";
+			reg = <0x1500 0x40>;
+		};
+
 		win: win@1580 {
 			compatible = "intel,cavs-win";
 			reg = <0x1580 0x20>;
@@ -80,8 +85,8 @@
 			#interrupt-cells = <3>;
 		};
 
-		cavs_host_ipc: cavs_host_ipc@1180 {
-			compatible = "intel,cavs-host-ipc";
+		adsp_host_ipc: cavs_host_ipc@1180 {
+			compatible = "intel,adsp-host-ipc";
 			reg = <0x1180 0x30>;
 			interrupts = <7 0 0>;
 			interrupt-parent = <&cavs0>;
@@ -123,8 +128,8 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		idc: idc@1200 {
-			compatible = "intel,cavs-idc";
+		adsp_idc: idc@1200 {
+			compatible = "intel,adsp-idc";
 			reg = <0x1200 0x80>;
 			interrupts = <8 0 0>;
 			interrupt-parent = <&cavs0>;
@@ -155,7 +160,7 @@
 		hda_link_out: dma@2400 {
 			compatible = "intel,adsp-hda-link-out";
 			#dma-cells = <1>;
-			reg = <0x00002400 0x40>;
+			reg = <0x00002400 0x20>;
 			dma-channels = <2>;
 			dma-buf-alignment = <128>;
 
@@ -165,7 +170,7 @@
 		hda_link_in: dma@2600 {
 			compatible = "intel,adsp-hda-link-in";
 			#dma-cells = <1>;
-			reg = <0x00002600 0x40>;
+			reg = <0x00002600 0x20>;
 			dma-channels = <2>;
 			dma-buf-alignment = <128>;
 

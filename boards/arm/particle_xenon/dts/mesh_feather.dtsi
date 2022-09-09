@@ -28,6 +28,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -125,6 +126,10 @@ feather_adc: &adc { /* feather ADC */
 	status = "okay";
 };
 
+&ieee802154 {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -198,7 +203,6 @@ feather_i2c: &i2c0 { };
 	pinctrl-names = "default", "sleep";
 	mx25l32: mx25l3233f@0 {
 		compatible = "jedec,spi-nor";
-		label = "MX25L3233F";
 		reg = <0>;
 		spi-max-frequency = <80000000>;
 		wp-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;

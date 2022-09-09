@@ -98,6 +98,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 #else
 		*rate = CLOCK_GetFlexCommClkFreq(14);
 #endif
+		break;
 	case MCUX_HS_SPI1_CLK:
 		*rate = CLOCK_GetFlexCommClkFreq(16);
 		break;
@@ -109,6 +110,14 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		break;
 	case MCUX_USDHC2_CLK:
 		*rate = CLOCK_GetSdioClkFreq(1);
+		break;
+#endif
+
+#if (defined(FSL_FEATURE_SOC_SDIF_COUNT) && \
+	(FSL_FEATURE_SOC_SDIF_COUNT)) && \
+	CONFIG_MCUX_SDIF
+	case MCUX_SDIF_CLK:
+		*rate = CLOCK_GetSdioClkFreq();
 		break;
 #endif
 

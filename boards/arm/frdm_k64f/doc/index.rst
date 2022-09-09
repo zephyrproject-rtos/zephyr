@@ -19,8 +19,7 @@ K63, and K24 MCUs.
   running an open source bootloader, offers options for serial communication,
   flash programming, and run-control debugging
 
-.. image:: ./frdm_k64f.jpg
-   :width: 720px
+.. image:: frdm_k64f.jpg
    :align: center
    :alt: FRDM-K64F
 
@@ -104,6 +103,8 @@ The frdm_k64f board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | RNGA      | on-chip    | entropy;                            |
 |           |            | random                              |
++-----------+------------+-------------------------------------+
+| FTFE      | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

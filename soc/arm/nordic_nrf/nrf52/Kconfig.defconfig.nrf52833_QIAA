@@ -13,7 +13,4 @@ config NUM_IRQS
 	int
 	default 48
 
-config NET_CONFIG_IEEE802154_DEV_NAME
-	default "IEEE802154_nrf5"
-
 endif # SOC_NRF52833_QIAA

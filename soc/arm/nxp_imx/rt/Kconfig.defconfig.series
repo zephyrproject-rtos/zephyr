@@ -12,29 +12,13 @@ config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
 
-config DISPLAY_MCUX_ELCDIF
-	default y if HAS_MCUX_ELCDIF
-	depends on DISPLAY
-
 config PINCTRL_IMX
 	default y if HAS_MCUX_IOMUXC
 	depends on PINCTRL
 
-config ENTROPY_MCUX_TRNG
-	default y if HAS_MCUX_TRNG
-	depends on ENTROPY_GENERATOR
-
 config ADC_MCUX_12B1MSPS_SAR
 	default y if HAS_MCUX_12B1MSPS_SAR
 	depends on ADC
-
-config ETH_MCUX
-	default y if HAS_MCUX_ENET
-	depends on NET_L2_ETHERNET
-
-config IMX_USDHC
-	default y if (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
-	depends on SDHC
 
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 7500000
@@ -56,15 +40,12 @@ endif
 # set the tick per sec as a divider of the GPT clock source
 config SYS_CLOCK_TICKS_PER_SEC
 	default 4096 if MCUX_GPT_TIMER
+
+DT_SYSCLK_PATH := $(dt_nodelabel_path,sysclk)
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if SOC_SERIES_IMX_RT10XX && CORTEX_M_SYSTICK
 	default 32768 if MCUX_GPT_TIMER
-
-if COUNTER
-
-config COUNTER_MCUX_GPT
-	default y if HAS_MCUX_GPT
-
-endif # COUNTER
 
 config PM_MCUX_GPC
 	default y if HAS_MCUX_GPC
@@ -147,17 +128,9 @@ config FLASH_BASE_ADDRESS
 
 endif # CODE_FLEXSPI2
 
-config USB_MCUX
-	default y
-	depends on USB_DEVICE_DRIVER
-
 choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_EHCI
 endchoice
-
-config DMA_MCUX_EDMA
-	default y if HAS_MCUX_EDMA
-	depends on DMA
 
 DT_CHOSEN_Z_DTCM := zephyr,dtcm
 

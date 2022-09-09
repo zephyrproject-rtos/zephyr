@@ -238,7 +238,7 @@ static const struct timeutil_test_data tests[] = {
 	  } },
 };
 
-void test_s32(void)
+ZTEST(timeutil_api, test_s32)
 {
 	timeutil_check(tests, sizeof(tests) / sizeof(*tests));
 }

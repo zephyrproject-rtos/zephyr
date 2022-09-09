@@ -14,7 +14,7 @@
 
 #include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/adc.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 /*
@@ -168,7 +168,7 @@ static const struct adc_channel_cfg adc_ch_cfg = {
 static const struct device *init_dac(void)
 {
 	int ret;
-	const struct device *dac_dev = DEVICE_DT_GET(DAC_DEVICE_NODE);
+	const struct device *const dac_dev = DEVICE_DT_GET(DAC_DEVICE_NODE);
 
 	zassert_true(device_is_ready(dac_dev), "DAC device is not ready");
 
@@ -183,7 +183,7 @@ static const struct device *init_dac(void)
 static const struct device *init_adc(void)
 {
 	int ret;
-	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+	const struct device *const adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
 	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
 
@@ -234,7 +234,9 @@ static int test_task_loopback(void)
 	return TC_PASS;
 }
 
-void test_dac_loopback(void)
+ZTEST(dac_loopback, test_dac_loopback)
 {
-	zassert_true(test_task_loopback() == TC_PASS, NULL);
+	zassert_true(test_task_loopback() == TC_PASS);
 }
+
+ZTEST_SUITE(dac_loopback, NULL, NULL, NULL, NULL, NULL);

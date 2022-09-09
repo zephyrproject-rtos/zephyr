@@ -26,8 +26,7 @@ nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/EVK-NINA-B3.png
-     :width: 600px
+.. figure:: img/EVK-NINA-B3.jpg
      :align: center
      :alt: EVK-NINA-B3
 

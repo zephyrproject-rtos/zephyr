@@ -7,7 +7,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -42,6 +42,8 @@ static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_A
 static struct bt_audio_source {
 	struct bt_audio_stream *stream;
 	uint32_t seq_num;
+	uint16_t max_sdu;
+	size_t len_to_send;
 } source_streams[CONFIG_BT_ASCS_ASE_SRC_COUNT];
 static size_t configured_source_stream_count;
 
@@ -77,7 +79,7 @@ static uint32_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
 	return 0;
 }
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 
 #include "lc3.h"
 
@@ -170,7 +172,6 @@ static void audio_timer_timeout(struct k_work *work)
 	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
 	static bool data_initialized;
 	struct net_buf *buf;
-	static size_t len_to_send = 1;
 
 	if (!data_initialized) {
 		/* TODO: Actually encode some audio data */
@@ -191,7 +192,7 @@ static void audio_timer_timeout(struct k_work *work)
 		buf = net_buf_alloc(&tx_pool, K_FOREVER);
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
-		net_buf_add_mem(buf, buf_data, len_to_send);
+		net_buf_add_mem(buf, buf_data, ++source_streams[i].len_to_send);
 
 		ret = bt_audio_stream_send(stream, buf,
 					   get_and_incr_seq_num(stream),
@@ -202,16 +203,15 @@ static void audio_timer_timeout(struct k_work *work)
 			net_buf_unref(buf);
 		} else {
 			printk("Sending mock data with len %zu on streams[%zu] (%p)\n",
-			       len_to_send, i, stream);
+			       source_streams[i].len_to_send, i, stream);
+		}
+
+		if (source_streams[i].len_to_send >= source_streams[i].max_sdu) {
+			source_streams[i].len_to_send = 0;
 		}
 	}
 
 	k_work_schedule(&audio_send_work, K_MSEC(1000U));
-
-	len_to_send++;
-	if (len_to_send > ARRAY_SIZE(buf_data)) {
-		len_to_send = 1;
-	}
 }
 
 static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
@@ -240,7 +240,7 @@ static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 
 	printk("No streams available\n");
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 	/* Nothing to free as static memory is used */
 	lc3_decoder = NULL;
 #endif
@@ -256,7 +256,7 @@ static int lc3_reconfig(struct bt_audio_stream *stream,
 
 	print_codec(codec);
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 	/* Nothing to free as static memory is used */
 	lc3_decoder = NULL;
 #endif
@@ -271,6 +271,13 @@ static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 
 	print_qos(qos);
 
+	for (size_t i = 0U; i < configured_source_stream_count; i++) {
+		if (source_streams[i].stream == stream) {
+			source_streams[i].max_sdu = qos->sdu;
+			break;
+		}
+	}
+
 	return 0;
 }
 
@@ -280,7 +287,7 @@ static int lc3_enable(struct bt_audio_stream *stream,
 {
 	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 	{
 		const int freq = bt_codec_cfg_get_freq(stream->codec);
 		const int frame_duration_us = bt_codec_cfg_get_frame_duration_us(stream->codec);
@@ -427,7 +434,7 @@ static struct bt_audio_capability_ops lc3_ops = {
 };
 
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 
 static void stream_recv_lc3_codec(struct bt_audio_stream *stream,
 				  const struct bt_iso_recv_info *info,
@@ -490,7 +497,7 @@ static void stream_recv(struct bt_audio_stream *stream,
 #endif
 
 static struct bt_audio_stream_ops stream_ops = {
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 	.recv = stream_recv_lc3_codec
 #else
 	.recv = stream_recv
@@ -586,6 +593,32 @@ static int set_location(void)
 	return 0;
 }
 
+static int set_available_contexts(void)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		err = bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
+							AVAILABLE_SINK_CONTEXT);
+		if (err != 0) {
+			printk("Failed to set sink available contexts (err %d)\n", err);
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		err = bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
+							AVAILABLE_SOURCE_CONTEXT);
+		if (err != 0) {
+			printk("Failed to set source available contexts (err %d)\n", err);
+			return err;
+		}
+	}
+
+	printk("Available contexts successfully set\n");
+	return 0;
+}
+
 void main(void)
 {
 	struct bt_le_ext_adv *adv;
@@ -608,6 +641,11 @@ void main(void)
 	}
 
 	err = set_location();
+	if (err != 0) {
+		return;
+	}
+
+	err = set_available_contexts();
 	if (err != 0) {
 		return;
 	}

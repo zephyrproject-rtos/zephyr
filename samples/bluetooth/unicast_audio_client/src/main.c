@@ -7,7 +7,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -68,7 +68,7 @@ static uint32_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
 	return 0;
 }
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 
 #include "lc3.h"
 #include "math.h"
@@ -322,7 +322,7 @@ static void audio_timer_timeout(struct k_work *work)
 	k_work_schedule(&audio_send_work, K_MSEC(1000));
 
 	len_to_send++;
-	if (len_to_send > ARRAY_SIZE(buf_data)) {
+	if (len_to_send > codec_configuration.qos.sdu) {
 		len_to_send = 1;
 	}
 }
@@ -752,7 +752,7 @@ static int init(void)
 
 	bt_gatt_cb_register(&gatt_callbacks);
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 	k_work_init_delayable(&audio_send_work, lc3_audio_timer_timeout);
 #else
 	k_work_init_delayable(&audio_send_work, audio_timer_timeout);
@@ -961,7 +961,7 @@ static int set_stream_qos(void)
 
 static int enable_streams(void)
 {
-	if (IS_ENABLED(CONFIG_LIBLC3CODEC)) {
+	if (IS_ENABLED(CONFIG_LIBLC3)) {
 		init_lc3();
 	}
 

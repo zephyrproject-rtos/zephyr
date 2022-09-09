@@ -110,17 +110,6 @@ void zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
 			       zephyr_smp_transport_ud_copy_fn *ud_copy_func,
 			       zephyr_smp_transport_ud_free_fn *ud_free_func);
 
-/**
- * @brief Enqueues an incoming SMP request packet for processing.
- *
- * This function always consumes the supplied net_buf.
- *
- * @param zst                   The transport to use to send the corresponding
- *                                  response(s).
- * @param nb                    The request packet to process.
- */
-void zephyr_smp_rx_req(struct zephyr_smp_transport *zst, struct net_buf *nb);
-
 #ifdef __cplusplus
 }
 #endif

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/gpio.h>
@@ -29,7 +29,7 @@ typedef void (*fsm_state)(void);
 
 static int64_t last_mode_change;
 
-static const struct device *sensors[] = {
+static const struct device *const sensors[] = {
 	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_l)),
 	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_c)),
 	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_r)),

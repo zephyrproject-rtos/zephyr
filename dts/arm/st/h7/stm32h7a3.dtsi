@@ -67,6 +67,12 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		rng: rng@48021800 {
+			nist-config = <0xf00d00>;
+			health-test-magic = <0x17590abc>;
+			health-test-config = <0x72ac>;
+		};
 	};
 
 	/* System data RAM accessible over AXI bus: AXI SRAM1 in CD domain */
@@ -125,5 +131,12 @@
 	otghs_fs_phy: otghs_fs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+
+	die_temp: dietemp {
+		ts-cal1-addr = <0x08FFF814>;
+		ts-cal2-addr = <0x08FFF818>;
+		io-channels = <&adc2 18>;
+		ts-cal2-temp = <130>;
 	};
 };

@@ -14,8 +14,6 @@ humidity and temperature sensor, and the LPS25HB pressure sensor.
 The X-NUCLEO-IKS01A1 interfaces with the main board via an I2C interface.
 
 .. image:: img/x-nucleo-iks01a1.jpg
-     :width: 350px
-     :height: 489px
      :align: center
      :alt: X-NUCLEO-IKS01A
 

@@ -11,8 +11,7 @@ high-performance feature set in low-cost LQFP packages, further simplifying
 board design and layout for customers. The i.MX RT1024 runs on the Arm®
 Cortex®-M7 core at 500 MHz.
 
-.. image:: ./mimxrt1024_evk.jpg
-   :width: 720px
+.. image:: mimxrt1024_evk.jpg
    :align: center
    :alt: MIMXRT1024-EVK
 
@@ -25,7 +24,7 @@ Hardware
 - Memory
 
   - 256 Mbit SDRAM
-  - 64 Mbit QSPI Flash
+  - 32 Mbit QSPI Flash
   - TF socket for SD card
 
 - Connectivity
@@ -104,6 +103,8 @@ features:
 | USB       | on-chip    | USB                                 |
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

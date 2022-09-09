@@ -110,6 +110,15 @@
 			current-speed = <115200>;
 		};
 
+		pcnt: pcnt@3f417000 {
+			compatible = "espressif,esp32-pcnt";
+			reg = <0x3f417000 0x1000>;
+			interrupts = <PCNT_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_PCNT_MODULE>;
+			status = "disabled";
+		};
+
 		ledc0: ledc@3f419000 {
 			compatible = "espressif,esp32-ledc";
 			pwm-controller;

@@ -5,9 +5,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BT_EXT_ADV
-	bool "Extended Advertising and Scanning support [EXPERIMENTAL]"
+	bool "Extended Advertising and Scanning support"
 	depends on !BT_CTLR || BT_CTLR_ADV_EXT_SUPPORT
-	select EXPERIMENTAL
 	help
 	  Select this to enable Extended Advertising API support.
 	  This enables support for advertising with multiple advertising sets,

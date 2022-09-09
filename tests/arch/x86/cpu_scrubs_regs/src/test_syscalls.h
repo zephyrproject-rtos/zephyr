@@ -6,7 +6,7 @@
 
 #ifndef _TEST_SYSCALLS_H_
 #define _TEST_SYSCALLS_H_
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 __syscall void test_cpu_write_reg(void);
 

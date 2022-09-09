@@ -5,5 +5,10 @@ tests:
   sample.sensor.stm32_temp_sensor:
     depends_on: adc
     tags: sensors
-    build_only: true
-    platform_allow: nucleo_f401re stm32f103_mini stm32l562e_dk
+    tags: tests
+    filter: dt_compat_enabled("st,stm32-temp-cal") or dt_compat_enabled("st,stm32-temp")
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Current temperature: [1-5][0-9].[0-9] °C"

@@ -59,7 +59,16 @@ extern "C" {
  *         0 otherwise.
  */
 #define DT_HAS_FIXED_PARTITION_LABEL(label) \
-	IS_ENABLED(DT_COMPAT_fixed_partitions_LABEL_##label##_EXISTS)
+	IS_ENABLED(DT_CAT3(DT_COMPAT_fixed_partitions_LABEL_, label, _EXISTS))
+
+/**
+ * @brief Test if fixed-partition compatible node exists
+ *
+ * @param node_id DTS node to test
+ * @return 1 if node exists and is fixed-partition compatible, 0 otherwise.
+ */
+#define DT_FIXED_PARTITION_EXISTS(node_id)		\
+	DT_NODE_HAS_COMPAT(DT_PARENT(node_id), fixed_partitions)
 
 /**
  * @brief Get a numeric identifier for a fixed partition

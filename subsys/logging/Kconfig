@@ -1,7 +1,9 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig LOG
+menu "Logging"
+
+config LOG
 	bool "Logging"
 	select PRINTK if USERSPACE
 	help
@@ -37,3 +39,11 @@ endif #LOG_FRONTEND
 rsource "Kconfig.misc"
 
 endif # LOG
+
+config LOG_OUTPUT
+	bool "Formatter helper"
+	help
+	  Module which provides formatting of log messages to a human-readable
+	  strings.
+
+endmenu

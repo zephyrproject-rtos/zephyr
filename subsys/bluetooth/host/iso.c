@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
@@ -194,6 +194,18 @@ static int hci_le_setup_iso_data_path(const struct bt_conn *iso, uint8_t dir,
 	uint8_t *cc;
 	int err;
 
+	__ASSERT(dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR ||
+		 dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST,
+		 "invalid ISO data path dir: %u", dir);
+
+	if ((path->cc == NULL && path->cc_len != 0) ||
+	    (path->cc != NULL && path->cc_len == 0)) {
+		BT_DBG("Invalid ISO data path CC: %p %u",
+		       path->cc, path->cc_len);
+
+		return -EINVAL;
+	}
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SETUP_ISO_PATH, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
@@ -238,7 +250,9 @@ static void bt_iso_chan_add(struct bt_conn *iso, struct bt_iso_chan *chan)
 static int bt_iso_setup_data_path(struct bt_iso_chan *chan)
 {
 	int err;
-	struct bt_iso_chan_path default_hci_path = { .pid = BT_ISO_DATA_PATH_HCI };
+	struct bt_iso_chan_path default_hci_path = { .pid = BT_ISO_DATA_PATH_HCI,
+						     .format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+						     .cc_len = 0x00 };
 	struct bt_iso_chan_path *out_path = NULL;
 	struct bt_iso_chan_path *in_path = NULL;
 	struct bt_iso_chan_io_qos *tx_qos;
@@ -705,9 +719,31 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 #endif /* CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER */
 
 #if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
+static uint16_t iso_chan_max_data_len(const struct bt_iso_chan *chan,
+				      uint32_t ts)
+{
+	size_t max_controller_data_len;
+	uint16_t max_data_len;
+
+	if (chan->qos->tx == NULL) {
+		return 0;
+	}
+
+	max_data_len = chan->qos->tx->sdu;
+
+	/* Ensure that the SDU fits when using all the buffers */
+	max_controller_data_len = bt_dev.le.iso_mtu * bt_dev.le.iso_pkts.limit;
+
+	/* Update the max_data_len to take the max_controller_data_len into account */
+	max_data_len = MIN(max_data_len, max_controller_data_len);
+
+	return max_data_len;
+}
+
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
 		     uint32_t seq_num, uint32_t ts)
 {
+	uint16_t max_data_len;
 	struct bt_conn *iso_conn;
 
 	CHECKIF(!chan || !buf) {
@@ -730,6 +766,18 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
 		return -EINVAL;
 	}
 
+	if (ts == BT_ISO_TIMESTAMP_NONE &&
+	    buf->size < BT_HCI_ISO_DATA_HDR_SIZE) {
+		BT_DBG("Cannot send ISO packet with buffer size %u", buf->size);
+
+		return -EMSGSIZE;
+	} else if (buf->size < BT_HCI_ISO_TS_DATA_HDR_SIZE) {
+		BT_DBG("Cannot send ISO packet with timestamp with buffer size %u",
+		       buf->size);
+
+		return -EMSGSIZE;
+	}
+
 	/* Once the stored seq_num reaches the maximum value sendable to the
 	 * controller (BT_ISO_MAX_SEQ_NUM) we will allow the application to wrap
 	 * it. This ensures that up to 2^32-1 SDUs can be sent without wrapping
@@ -741,6 +789,13 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
 		BT_DBG("Invalid seq_num %u - Shall be > than %u",
 		       seq_num, iso_conn->iso.seq_num);
 		return -EINVAL;
+	}
+
+	max_data_len = iso_chan_max_data_len(chan, ts);
+	if (buf->len > max_data_len) {
+		BT_DBG("Cannot send %u octets, maximum %u",
+		       buf->len, max_data_len);
+		return -EMSGSIZE;
 	}
 
 	iso_conn->iso.seq_num = seq_num;
@@ -1977,6 +2032,27 @@ static int iso_chan_connect_security(const struct bt_iso_connect_param *param,
 }
 #endif /* CONFIG_BT_SMP */
 
+static bool iso_chans_connecting(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(iso_conns); i++) {
+		const struct bt_conn *iso = &iso_conns[i];
+		const struct bt_iso_chan *iso_chan;
+
+		if (iso == NULL ||
+		    iso->iso.info.type != BT_ISO_CHAN_TYPE_CONNECTED) {
+			continue;
+		}
+
+		iso_chan = iso_chan(iso);
+		if (iso_chan->state == BT_ISO_STATE_CONNECTING ||
+		    iso_chan->state == BT_ISO_STATE_ENCRYPT_PENDING) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 {
 	int err;
@@ -2024,6 +2100,11 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 			       i, param[i].iso_chan->state);
 			return -EINVAL;
 		}
+	}
+
+	if (iso_chans_connecting()) {
+		BT_DBG("There are pending ISO connections");
+		return -EBUSY;
 	}
 
 #if defined(CONFIG_BT_SMP)

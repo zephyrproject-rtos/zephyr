@@ -40,8 +40,8 @@ static void tstack_pop(struct k_stack *pstack)
 
 	for (int i = STACK_LEN - 1; i >= 0; i--) {
 		/**TESTPOINT: stack pop*/
-		zassert_false(k_stack_pop(pstack, &rx_data, K_NO_WAIT), NULL);
-		zassert_equal(rx_data, data[i], NULL);
+		zassert_false(k_stack_pop(pstack, &rx_data, K_NO_WAIT));
+		zassert_equal(rx_data, data[i]);
 	}
 }
 

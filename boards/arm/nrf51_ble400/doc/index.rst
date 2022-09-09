@@ -57,7 +57,6 @@ Core board
 In June of 2015, Core51822 and its variant, Core51822 (B), upgraded the onboard chip to Rev3 (nRF51822_QFAC) that features 32kB RAM.
 
 .. image:: img/Core51822-Compare.jpg
-   :width: 500px
    :align: center
    :alt: Compare
 
@@ -71,7 +70,6 @@ Motherboard
 ------------
 
 .. image:: img/nrf51_ble400.jpg
-   :width: 500px
    :align: center
    :alt: BLE400
 
@@ -95,7 +93,6 @@ Core board
 ----------
 
 .. image:: img/Core51822-pin.jpg
-   :width: 500px
    :align: center
    :alt: Core board pinout
 
@@ -103,7 +100,6 @@ BLE400 dimensions
 =================
 
 .. image:: img/BLE400-size.jpg
-   :width: 500px
    :align: center
    :alt: BLE400 size
 

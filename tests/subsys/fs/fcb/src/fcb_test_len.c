@@ -7,7 +7,7 @@
 
 #include "fcb_test.h"
 
-void test_fcb_len(void)
+ZTEST(fcb_test_with_2sectors_set, test_fcb_len)
 {
 	uint8_t buf[3];
 	uint16_t len;

@@ -159,10 +159,14 @@ struct ztress_context_data {
 #define ZTRESS_EXECUTE(...) do {							\
 	Z_ZTRESS_TIMER_CONTEXT_VALIDATE(__VA_ARGS__);					\
 	int has_timer = Z_ZTRESS_HAS_TIMER(__VA_ARGS__);				\
-	struct ztress_context_data data[] = {						\
+	struct ztress_context_data data1[] = {						\
 		FOR_EACH(Z_ZTRESS_GET_HANDLER_DATA, (,), __VA_ARGS__)			\
 	};										\
-	size_t cnt = ARRAY_SIZE(data) - has_timer;					\
+	size_t cnt = ARRAY_SIZE(data1) - has_timer;					\
+	static struct ztress_context_data data[ARRAY_SIZE(data1)];                      \
+	for (int i = 0; i < ARRAY_SIZE(data1); i++) {                                    \
+		data[i] = data1[i];                                                     \
+	}	                                                                        \
 	int err = ztress_execute(has_timer ? &data[0] : NULL, &data[has_timer], cnt);	\
 											\
 	zassert_equal(err, 0, "ztress_execute failed (err: %d)", err);			\

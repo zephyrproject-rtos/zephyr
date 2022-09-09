@@ -11,26 +11,11 @@ config SOC
 config NUM_IRQS
 	default 32
 
-config COUNTER_MCUX_RTC
-	default y
-	depends on COUNTER
-
-config ENTROPY_MCUX_TRNG
-	default y
-	depends on ENTROPY_GENERATOR
-
-config SOC_FLASH_MCUX
-	default y
-	depends on FLASH
-
 if NETWORKING
 
 config NET_L2_IEEE802154
 	default y
 	depends on !NET_L2_OPENTHREAD
-
-config NET_CONFIG_IEEE802154_DEV_NAME
-	default "KW41Z"
 
 endif # NETWORKING
 

@@ -118,7 +118,7 @@ const struct isotp_msg_id tx_addr_fixed = {
 	.use_fixed_addr = 1
 };
 
-const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 struct isotp_recv_ctx recv_ctx;
 struct isotp_send_ctx send_ctx;
 uint8_t data_buf[128];
@@ -232,7 +232,7 @@ static void send_frame_series(struct frame_desired *frames, size_t length,
 			      uint32_t id)
 {
 	int i, ret;
-	struct zcan_frame frame = {
+	struct can_frame frame = {
 		.id_type = (id > 0x7FF) ? CAN_EXTENDED_IDENTIFIER :
 			CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
@@ -253,7 +253,7 @@ static void check_frame_series(struct frame_desired *frames, size_t length,
 			       struct k_msgq *msgq)
 {
 	int i, ret;
-	struct zcan_frame frame;
+	struct can_frame frame;
 	struct frame_desired *desired = frames;
 
 	for (i = 0; i < length; i++) {
@@ -282,7 +282,7 @@ static void check_frame_series(struct frame_desired *frames, size_t length,
 static int add_rx_msgq(uint32_t id, uint32_t mask)
 {
 	int filter_id;
-	struct zcan_filter filter = {
+	struct can_filter filter = {
 		.id_type = (id > 0x7FF) ? CAN_EXTENDED_IDENTIFIER :
 			CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
@@ -323,7 +323,7 @@ static void prepare_cf_frames(struct frame_desired *frames, size_t frames_cnt,
 	}
 }
 
-static void test_send_sf(void)
+ZTEST(isotp_conformance, test_send_sf)
 {
 	int filter_id;
 	struct frame_desired des_frame;
@@ -343,7 +343,7 @@ static void test_send_sf(void)
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
-static void test_receive_sf(void)
+ZTEST(isotp_conformance, test_receive_sf)
 {
 	int ret;
 	struct frame_desired single_frame;
@@ -374,7 +374,7 @@ static void test_receive_sf(void)
 	isotp_unbind(&recv_ctx);
 }
 
-static void test_send_sf_ext(void)
+ZTEST(isotp_conformance, test_send_sf_ext)
 {
 	int filter_id, ret;
 	struct frame_desired des_frame;
@@ -398,7 +398,7 @@ static void test_send_sf_ext(void)
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
-static void test_receive_sf_ext(void)
+ZTEST(isotp_conformance, test_receive_sf_ext)
 {
 	int ret;
 	struct frame_desired single_frame;
@@ -430,7 +430,7 @@ static void test_receive_sf_ext(void)
 	isotp_unbind(&recv_ctx);
 }
 
-static void test_send_sf_fixed(void)
+ZTEST(isotp_conformance, test_send_sf_fixed)
 {
 	int filter_id, ret;
 	struct frame_desired des_frame;
@@ -454,7 +454,7 @@ static void test_send_sf_fixed(void)
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
-static void test_receive_sf_fixed(void)
+ZTEST(isotp_conformance, test_receive_sf_fixed)
 {
 	int ret;
 	struct frame_desired single_frame;
@@ -486,7 +486,7 @@ static void test_receive_sf_fixed(void)
 	isotp_unbind(&recv_ctx);
 }
 
-static void test_send_data(void)
+ZTEST(isotp_conformance, test_send_data)
 {
 	struct frame_desired fc_frame, ff_frame;
 	const uint8_t *data_ptr = random_data;
@@ -523,13 +523,13 @@ static void test_send_data(void)
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
-static void test_send_data_blocks(void)
+ZTEST(isotp_conformance, test_send_data_blocks)
 {
 	const uint8_t *data_ptr = random_data;
 	size_t remaining_length = DATA_SEND_LENGTH;
 	struct frame_desired *data_frame_ptr = des_frames;
 	int filter_id, ret;
-	struct zcan_frame dummy_frame;
+	struct can_frame dummy_frame;
 	struct frame_desired fc_frame, ff_frame;
 
 	ff_frame.data[0] = FF_PCI_BYTE_1(DATA_SEND_LENGTH);
@@ -588,7 +588,7 @@ static void test_send_data_blocks(void)
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
-static void test_receive_data(void)
+ZTEST(isotp_conformance, test_receive_data)
 {
 	const uint8_t *data_ptr = random_data;
 	size_t remaining_length = DATA_SEND_LENGTH;
@@ -628,7 +628,7 @@ static void test_receive_data(void)
 	isotp_unbind(&recv_ctx);
 }
 
-static void test_receive_data_blocks(void)
+ZTEST(isotp_conformance, test_receive_data_blocks)
 {
 	const uint8_t *data_ptr = random_data;
 	size_t remaining_length = DATA_SEND_LENGTH;
@@ -637,7 +637,7 @@ static void test_receive_data_blocks(void)
 	size_t remaining_frames;
 	struct frame_desired fc_frame, ff_frame;
 
-	struct zcan_frame dummy_frame;
+	struct can_frame dummy_frame;
 
 	ff_frame.data[0] = FF_PCI_BYTE_1(DATA_SEND_LENGTH);
 	ff_frame.data[1] = FF_PCI_BYTE_2(DATA_SEND_LENGTH);
@@ -691,7 +691,7 @@ static void test_receive_data_blocks(void)
 	isotp_unbind(&recv_ctx);
 }
 
-static void test_send_timeouts(void)
+ZTEST(isotp_conformance, test_send_timeouts)
 {
 	int ret;
 	uint32_t start_time, time_diff;
@@ -752,7 +752,7 @@ static void test_send_timeouts(void)
 		     "Timeout too early (%dms)", time_diff);
 }
 
-static void test_receive_timeouts(void)
+ZTEST(isotp_conformance, test_receive_timeouts)
 {
 	int ret;
 	uint32_t start_time, time_diff;
@@ -786,11 +786,11 @@ static void test_receive_timeouts(void)
 	isotp_unbind(&recv_ctx);
 }
 
-static void test_stmin(void)
+ZTEST(isotp_conformance, test_stmin)
 {
 	int filter_id, ret;
 	struct frame_desired fc_frame, ff_frame;
-	struct zcan_frame raw_frame;
+	struct can_frame raw_frame;
 	uint32_t start_time, time_diff;
 
 	ff_frame.data[0] = FF_PCI_BYTE_1(DATA_SIZE_FF + DATA_SIZE_CF * 4);
@@ -843,7 +843,7 @@ static void test_stmin(void)
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
-void test_receiver_fc_errors(void)
+ZTEST(isotp_conformance, test_receiver_fc_errors)
 {
 	int ret, filter_id;
 	struct frame_desired ff_frame, fc_frame;
@@ -888,7 +888,7 @@ void test_receiver_fc_errors(void)
 	isotp_unbind(&recv_ctx);
 }
 
-void test_sender_fc_errors(void)
+ZTEST(isotp_conformance, test_sender_fc_errors)
 {
 	int ret, filter_id, i;
 	struct frame_desired ff_frame, fc_frame;
@@ -960,7 +960,7 @@ void test_sender_fc_errors(void)
 }
 
 
-void test_main(void)
+void *isotp_conformance_setup(void)
 {
 	int ret;
 
@@ -974,22 +974,7 @@ void test_main(void)
 
 	k_sem_init(&send_compl_sem, 0, 1);
 
-	ztest_test_suite(isotp_conformance,
-			 ztest_unit_test(test_send_sf),
-			 ztest_unit_test(test_receive_sf),
-			 ztest_unit_test(test_send_sf_ext),
-			 ztest_unit_test(test_receive_sf_ext),
-			 ztest_unit_test(test_send_sf_fixed),
-			 ztest_unit_test(test_receive_sf_fixed),
-			 ztest_unit_test(test_send_data),
-			 ztest_unit_test(test_send_data_blocks),
-			 ztest_unit_test(test_receive_data),
-			 ztest_unit_test(test_receive_data_blocks),
-			 ztest_unit_test(test_send_timeouts),
-			 ztest_unit_test(test_receive_timeouts),
-			 ztest_unit_test(test_stmin),
-			 ztest_unit_test(test_receiver_fc_errors),
-			 ztest_unit_test(test_sender_fc_errors)
-			 );
-	ztest_run_test_suite(isotp_conformance);
+	return NULL;
 }
+
+ZTEST_SUITE(isotp_conformance, NULL, isotp_conformance_setup, NULL, NULL, NULL);

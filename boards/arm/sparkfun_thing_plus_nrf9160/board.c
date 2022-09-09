@@ -15,7 +15,7 @@ static int board_sparkfun_thing_plus_nrf9160_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	/* Get handle of the GPIO device. */
-	const struct device *gpio = DEVICE_DT_GET(GPIO0);
+	const struct device *const gpio = DEVICE_DT_GET(GPIO0);
 
 	if (!device_is_ready(gpio)) {
 		return -ENODEV;

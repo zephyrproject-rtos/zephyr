@@ -9,4 +9,3 @@ toolchain:
   - gnuarmemb
 supported:
   - ble
-  - ieee802154

@@ -22,8 +22,9 @@ if HAS_GD32_HAL
 
 choice GD32_HXTAL_FREQUENCY
 	prompt "High speed external oscillator clock frequency"
-	default GD32_HXTAL_FIRMWARE_DEFINED if !SOC_SERIES_GD32VF103
-	default GD32_HXTAL_25MHZ if SOC_SERIES_GD32VF103
+	default GD32_HXTAL_FIRMWARE_DEFINED if \
+		SOC_SERIES_GD32F403 || SOC_SERIES_GD32F4XX || SOC_SERIES_GD32F3X0
+	default GD32_HXTAL_25MHZ if SOC_SERIES_GD32VF103 || SOC_SERIES_GD32E50X
 	default GD32_HXTAL_8MHZ if SOC_SERIES_GD32E10X
 	help
 	  Define value of high speed crystal oscillator (HXTAL) in Hz

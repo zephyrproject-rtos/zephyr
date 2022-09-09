@@ -8,7 +8,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/w1.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -20,7 +20,7 @@ void w1_search_callback(struct w1_rom rom, void *user_data)
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(w1));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(w1));
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");

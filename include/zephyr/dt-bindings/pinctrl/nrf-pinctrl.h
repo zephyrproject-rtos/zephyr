@@ -11,12 +11,12 @@
  * organized as follows:
  *
  * - 31..16: Pin function.
- * - 15..14: Reserved.
- * - 13:     Pin inversion mode.
- * - 12:     Pin low power mode.
- * - 11..8:  Pin output drive configuration.
- * - 7..6:   Pin pull configuration.
- * - 5..0:   Pin number (combination of port and pin).
+ * - 15:     Reserved.
+ * - 14:     Pin inversion mode.
+ * - 13:     Pin low power mode.
+ * - 12..9:  Pin output drive configuration.
+ * - 8..7:   Pin pull configuration.
+ * - 6..0:   Pin number (combination of port and pin).
  */
 
 /**
@@ -29,25 +29,25 @@
 /** Mask for the function field. */
 #define NRF_FUN_MSK 0xFFFFU
 /** Position of the invert field. */
-#define NRF_INVERT_POS 13U
+#define NRF_INVERT_POS 14U
 /** Mask for the invert field. */
 #define NRF_INVERT_MSK 0x1U
 /** Position of the low power field. */
-#define NRF_LP_POS 12U
+#define NRF_LP_POS 13U
 /** Mask for the low power field. */
 #define NRF_LP_MSK 0x1U
 /** Position of the drive configuration field. */
-#define NRF_DRIVE_POS 8U
+#define NRF_DRIVE_POS 9U
 /** Mask for the drive configuration field. */
 #define NRF_DRIVE_MSK 0xFU
 /** Position of the pull configuration field. */
-#define NRF_PULL_POS 6U
+#define NRF_PULL_POS 7U
 /** Mask for the pull configuration field. */
 #define NRF_PULL_MSK 0x3U
 /** Position of the pin field. */
 #define NRF_PIN_POS 0U
 /** Mask for the pin field. */
-#define NRF_PIN_MSK 0x3FU
+#define NRF_PIN_MSK 0x7FU
 
 /** @} */
 
@@ -184,6 +184,16 @@
 /** @} */
 
 /**
+ * @name nRF pinctrl helpers to indicate disconnected pins.
+ * @{
+ */
+
+/** Indicates that a pin is disconnected */
+#define NRF_PIN_DISCONNECTED NRF_PIN_MSK
+
+/** @} */
+
+/**
  * @brief Utility macro to build nRF psels property entry.
  *
  * @param fun Pin function configuration (see NRF_FUNC_{name} macros).
@@ -191,7 +201,19 @@
  * @param pin Pin (0..31).
  */
 #define NRF_PSEL(fun, port, pin)						       \
-	((((((port) * 32U) + (pin)) & NRF_PIN_MSK) << NRF_PIN_POS) |	       \
+	((((((port) * 32U) + (pin)) & NRF_PIN_MSK) << NRF_PIN_POS) |		       \
+	 ((NRF_FUN_ ## fun & NRF_FUN_MSK) << NRF_FUN_POS))
+
+/**
+ * @brief Utility macro to build nRF psels property entry when a pin is disconnected.
+ *
+ * This can be useful in situations where code running before Zephyr, e.g. a bootloader
+ * configures pins that later needs to be disconnected.
+ *
+ * @param fun Pin function configuration (see NRF_FUN_{name} macros).
+ */
+#define NRF_PSEL_DISCONNECTED(fun)						       \
+	(NRF_PIN_DISCONNECTED |							       \
 	 ((NRF_FUN_ ## fun & NRF_FUN_MSK) << NRF_FUN_POS))
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_NRF_PINCTRL_H_ */

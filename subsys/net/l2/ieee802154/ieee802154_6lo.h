@@ -55,9 +55,10 @@ enum net_verdict ieee802154_6lo_decode_pkt(struct net_if *iface, struct net_pkt 
  *  @param ll_hdr_len The size of the link layer header plus (if security
  *         is enabled) the authentication tag
  *
- *  @return true if additional 6LoWPAN fragmentation is needed, otherwise false
+ *  @return 1 if additional 6LoWPAN fragmentation is needed, 0 if no
+ *          fragmentation is needed, negative value on error
  */
-bool ieee802154_6lo_encode_pkt(struct net_if *iface, struct net_pkt *pkt,
-			       struct ieee802154_6lo_fragment_ctx *f_ctx, uint8_t ll_hdr_len);
+int ieee802154_6lo_encode_pkt(struct net_if *iface, struct net_pkt *pkt,
+			      struct ieee802154_6lo_fragment_ctx *f_ctx, uint8_t ll_hdr_len);
 
 #endif /* __NET_IEEE802154_6LO_H__ */

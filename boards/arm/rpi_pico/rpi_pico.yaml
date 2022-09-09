@@ -11,7 +11,9 @@ toolchain:
 supported:
   - uart
   - gpio
+  - adc
   - i2c
+  - spi
   - hwinfo
   - watchdog
   - pwm

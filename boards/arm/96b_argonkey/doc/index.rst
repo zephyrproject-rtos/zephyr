@@ -13,9 +13,7 @@ This board acts as a sensor hub platform for all 96Boards compliant
 family products. It can also be used as a standalone board.
 
 .. figure:: img/96b_argonkey.jpg
-     :width: 540px
      :align: center
-     :height: 558px
      :alt: 96Boards Argonkey
 
      96Boards Argonkey

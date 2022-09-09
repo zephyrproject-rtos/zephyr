@@ -6,7 +6,7 @@
 
 #define DISABLE_SYSCALL_TRACING
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <tracing_test.h>
 #include <tracing_test_syscall.h>
 #include <zephyr/tracing/tracing_format.h>
@@ -316,7 +316,8 @@ void sys_trace_k_thread_sched_set_priority(struct k_thread *thread, int prio)
 void sys_trace_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 			     k_timeout_t period)
 {
-	TRACING_STRING("%s: %p, duration: %d, period: %d\n", __func__, timer, duration, period);
+	TRACING_STRING("%s: %p, duration: %d, period: %d\n", __func__, timer,
+		(uint32_t)duration.ticks, (uint32_t)period.ticks);
 }
 
 void sys_trace_k_timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,

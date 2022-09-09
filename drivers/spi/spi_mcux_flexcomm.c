@@ -36,6 +36,7 @@ struct spi_mcux_config {
 	uint32_t post_delay;
 	uint32_t frame_delay;
 	uint32_t transfer_delay;
+	uint32_t def_char;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
 #endif
@@ -84,7 +85,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	if ((ctx->tx_len == 0) && (ctx->rx_len == 0)) {
 		/* nothing left to rx or tx, we're done! */
 		spi_context_cs_control(&data->ctx, false);
-		spi_context_complete(&data->ctx, 0);
+		spi_context_complete(&data->ctx, dev, 0);
 		return;
 	}
 
@@ -201,6 +202,11 @@ static int spi_mcux_configure(const struct device *dev,
 
 		SPI_MasterGetDefaultConfig(&master_config);
 
+		if (!device_is_ready(config->clock_dev)) {
+			LOG_ERR("clock control device not ready");
+			return -ENODEV;
+		}
+
 		/* Get the clock frequency */
 		if (clock_control_get_rate(config->clock_dev,
 					   config->clock_subsys, &clock_freq)) {
@@ -247,9 +253,10 @@ static int spi_mcux_configure(const struct device *dev,
 
 		SPI_MasterInit(base, &master_config, clock_freq);
 
+		SPI_SetDummyData(base, (uint8_t)config->def_char);
+
 		SPI_MasterTransferCreateHandle(base, &data->handle,
 					     spi_mcux_transfer_callback, data);
-		SPI_SetDummyData(base, 0);
 
 		data->ctx.config = spi_cfg;
 	} else {
@@ -278,8 +285,12 @@ static int spi_mcux_configure(const struct device *dev,
 
 		SPI_SlaveInit(base, &slave_config);
 
+		SPI_SetDummyData(base, (uint8_t)config->def_char);
+
 		SPI_SlaveTransferCreateHandle(base, &data->handle,
 					      spi_mcux_transfer_callback, data);
+
+		data->ctx.config = spi_cfg;
 	}
 
 	return 0;
@@ -294,7 +305,8 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 			 uint32_t channel, int status)
 {
 	/* arg directly holds the spi device */
-	struct spi_mcux_data *data = arg;
+	const struct device *spi_dev = arg;
+	struct spi_mcux_data *data = spi_dev->data;
 
 	if (status != 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
@@ -314,7 +326,7 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 		}
 	}
 
-	spi_context_complete(&data->ctx, 0);
+	spi_context_complete(&data->ctx, spi_dev, 0);
 }
 
 
@@ -452,7 +464,7 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	/* direction is given by the DT */
 	stream->dma_cfg.head_block = &stream->dma_blk_cfg[0];
 	/* give the client dev as arg, as the callback comes from the dma */
-	stream->dma_cfg.user_data = data;
+	stream->dma_cfg.user_data = (struct device *)dev;
 	/* pass our client origin to the dma: data->dma_tx.dma_channel */
 	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.channel,
 			&stream->dma_cfg);
@@ -514,7 +526,7 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf,
 
 	/* direction is given by the DT */
 	stream->dma_cfg.head_block = blk_cfg;
-	stream->dma_cfg.user_data = data;
+	stream->dma_cfg.user_data = (struct device *)dev;
 
 	/* Enables the DMA request from SPI rxFIFO */
 	base->FIFOCFG |= SPI_FIFOCFG_DMARX_MASK;
@@ -572,7 +584,8 @@ static int transceive_dma(const struct device *dev,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous,
-		      struct k_poll_signal *signal)
+		      spi_callback_t cb,
+		      void *userdata)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
@@ -580,7 +593,7 @@ static int transceive_dma(const struct device *dev,
 	int ret;
 	uint32_t word_size;
 
-	spi_context_lock(&data->ctx, asynchronous, signal, spi_cfg);
+	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {
@@ -653,12 +666,13 @@ static int transceive(const struct device *dev,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous,
-		      struct k_poll_signal *signal)
+		      spi_callback_t cb,
+		      void *userdata)
 {
 	struct spi_mcux_data *data = dev->data;
 	int ret;
 
-	spi_context_lock(&data->ctx, asynchronous, signal, spi_cfg);
+	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {
@@ -684,9 +698,9 @@ static int spi_mcux_transceive(const struct device *dev,
 			       const struct spi_buf_set *rx_bufs)
 {
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
-	return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL);
+	return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 #endif
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -694,9 +708,10 @@ static int spi_mcux_transceive_async(const struct device *dev,
 				     const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     struct k_poll_signal *async)
+				     spi_callback_t cb,
+				     void *userdata)
 {
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, async);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -823,6 +838,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		.post_delay = DT_INST_PROP_OR(id, post_delay, 0),		\
 		.frame_delay = DT_INST_PROP_OR(id, frame_delay, 0),		\
 		.transfer_delay = DT_INST_PROP_OR(id, transfer_delay, 0),		\
+		.def_char = DT_INST_PROP_OR(id, def_char, 0),		\
 		SPI_MCUX_FLEXCOMM_PINCTRL_INIT(id)			\
 	};								\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\

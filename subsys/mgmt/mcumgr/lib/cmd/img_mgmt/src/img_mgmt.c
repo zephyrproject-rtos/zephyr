@@ -39,7 +39,7 @@ struct img_mgmt_state g_img_mgmt_state;
 #error "Unsupported size_t encoding"
 #endif
 
-#if CONFIG_IMG_MGMT_VERBOSE_ERR
+#ifdef CONFIG_IMG_MGMT_VERBOSE_ERR
 const char *img_mgmt_err_str_app_reject = "app reject";
 const char *img_mgmt_err_str_hdr_malformed = "header malformed";
 const char *img_mgmt_err_str_magic_mismatch = "magic mismatch";
@@ -86,7 +86,7 @@ img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 				   uint32_t *flags)
 {
 
-#if CONFIG_IMG_MGMT_DUMMY_HDR
+#ifdef CONFIG_IMG_MGMT_DUMMY_HDR
 	uint8_t dummy_hash[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x00, 0x11, 0x22,
 				0x33, 0x44, 0x55, 0x66, 0x77};
 
@@ -257,24 +257,38 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 {
 	struct image_version ver;
 	int rc;
+	zcbor_state_t *zsd = ctxt->cnbd->zs;
 	zcbor_state_t *zse = ctxt->cnbe->zs;
 	bool ok;
+	uint32_t slot = 1;
+	size_t decoded = 0;
+
+	struct zcbor_map_decode_key_val image_erase_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_VAL(slot, zcbor_uint32_decode, &slot),
+	};
+
+	ok = zcbor_map_decode_bulk(zsd, image_erase_decode,
+		ARRAY_SIZE(image_erase_decode), &decoded) == 0;
+
+	if (!ok) {
+		return MGMT_ERR_EINVAL;
+	}
 
 	/*
 	 * First check if image info is valid.
 	 * This check is done incase the flash area has a corrupted image.
 	 */
-	rc = img_mgmt_read_info(1, &ver, NULL, NULL);
+	rc = img_mgmt_read_info(slot, &ver, NULL, NULL);
 
 	if (rc == 0) {
 		/* Image info is valid. */
-		if (img_mgmt_slot_in_use(1)) {
+		if (img_mgmt_slot_in_use(slot)) {
 			/* No free slot. */
 			return MGMT_ERR_EBADSTATE;
 		}
 	}
 
-	rc = img_mgmt_impl_erase_slot();
+	rc = img_mgmt_impl_erase_slot(slot);
 
 	if (rc != 0) {
 		img_mgmt_dfu_stopped();

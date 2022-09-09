@@ -15,8 +15,4 @@ config IPM_IMX
 	default y
 	depends on IPM
 
-config COUNTER_IMX_EPIT
-	default y
-	depends on COUNTER
-
 endif # SOC_MCIMX6X_M4

@@ -9,7 +9,7 @@
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>,	/* D10 */
 		   <&arduino_header 12 GPIO_ACTIVE_LOW>;	/* D04 */
 
-	sdhc0: sdhc@1 {
+	waveshare_epaper_sdhc: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		status = "okay";

@@ -30,7 +30,6 @@ const char *ztest_relative_filename(const char *file)
 void z_ztest_run_all(const void *state)
 {
 	ztest_run_test_suites(state);
-	ztest_verify_all_test_suites_ran();
 }
 
 /**

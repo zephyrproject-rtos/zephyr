@@ -11,8 +11,7 @@ high-performance feature set in low-cost LQFP packages, further simplifying
 board design and layout for customers. The i.MX RT1020 runs on the Arm®
 Cortex®-M7 core at 500 MHz.
 
-.. image:: ./mimxrt1020_evk.jpg
-   :width: 720px
+.. image:: mimxrt1020_evk.jpg
    :align: center
    :alt: MIMXRT1020-EVK
 
@@ -95,6 +94,8 @@ features:
 | GPT       | on-chip    | gpt                                 |
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

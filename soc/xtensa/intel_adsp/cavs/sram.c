@@ -16,11 +16,7 @@
 
 #define DELAY_COUNT			256
 #define LPSRAM_MASK(x)		0x00000003
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
-#define SRAM_BANK_SIZE		(128 * 1024)
-#else
 #define SRAM_BANK_SIZE		(64 * 1024)
-#endif
 #define EBB_SEGMENT_SIZE	32
 #if !defined(CONFIG_SOC_INTEL_CAVS_V15)
 #define PLATFORM_INIT_HPSRAM
@@ -38,7 +34,7 @@ BUILD_ASSERT((DT_REG_SIZE(DT_NODELABEL(sram0)) % SRAM_BANK_SIZE) == 0,
  */
 static __imr void hp_sram_pm_banks(uint32_t banks)
 {
-#ifdef PLATFORM_INIT_HPSRAM
+#ifdef CONFIG_ADSP_INIT_HPSRAM
 	uint32_t status, ebb_mask0, ebb_mask1, ebb_avail_mask0, ebb_avail_mask1,
 		total_banks_count = PLATFORM_HPSRAM_EBB_COUNT;
 

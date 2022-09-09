@@ -1,8 +1,0 @@
-# Silicon Labs EFM32HG-SLSTK3400A platform configuration options
-
-# Copyright (c) 2018 Marcio Montenegro
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_FLASH_GECKO
-	default y
-	depends on FLASH

@@ -4,10 +4,12 @@
 #include <stdlib.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <cavs_ipc.h>
+#include <intel_adsp_ipc.h>
 #include "tests.h"
 
 #define RUN_ON_STACKSZ 2048
+#define HAR_STACKSZ    1024
+#define HAR_PRIORITY   7
 
 /* Utility for spin-polled loops.  Avoids spamming shared resources
  * like SRAM or MMIO registers
@@ -18,7 +20,7 @@ static ALWAYS_INLINE void delay_relax(void)
 	}
 }
 
-void run_on_cpu_threadfn(void *a, void *b, void *c)
+static void run_on_cpu_threadfn(void *a, void *b, void *c)
 {
 	void (*fn)(void *) = a;
 	void *arg = b;
@@ -28,13 +30,16 @@ void run_on_cpu_threadfn(void *a, void *b, void *c)
 	*done_flag = true;
 }
 
+static struct k_thread thread_har;
+static K_THREAD_STACK_DEFINE(tstack_har, HAR_STACKSZ);
+
 static struct k_thread run_on_threads[CONFIG_MP_NUM_CPUS];
 static K_THREAD_STACK_ARRAY_DEFINE(run_on_stacks, CONFIG_MP_NUM_CPUS, RUN_ON_STACKSZ);
 static volatile bool run_on_flags[CONFIG_MP_NUM_CPUS];
 
 static uint32_t clk_ratios[CONFIG_MP_NUM_CPUS];
 
-void run_on_cpu(int cpu, void (*fn)(void *), void *arg, bool wait)
+static void run_on_cpu(int cpu, void (*fn)(void *), void *arg, bool wait)
 {
 	__ASSERT_NO_MSG(cpu < CONFIG_MP_NUM_CPUS);
 
@@ -132,7 +137,7 @@ static void core_smoke(void *arg)
 	printk(" CPI = %d.%2.2d\n", dt / insns, ((1000 * dt) / insns) % 1000);
 }
 
-void test_cpu_behavior(void)
+ZTEST(intel_adsp_boot, test_4th_cpu_behavior)
 {
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 		printk("Per-CPU smoke test %d...\n", i);
@@ -140,26 +145,28 @@ void test_cpu_behavior(void)
 	}
 }
 
-void alive_fn(void *arg)
+static void alive_fn(void *arg)
 {
 	*(bool *)arg = true;
 }
 
-void halt_and_restart(int cpu)
+static void halt_and_restart(int cpu)
 {
 	printk("halt/restart core %d...\n", cpu);
 	static bool alive_flag;
 	uint32_t all_cpus = BIT(CONFIG_MP_NUM_CPUS) - 1;
+	int ret;
 
 	/* On older hardware we need to get the host to turn the core
 	 * off.  Construct an ADSPCS with only this core disabled
 	 */
 	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
-		cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_ADSPCS,
+		intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_ADSPCS,
 				     (all_cpus & ~BIT(cpu)) << 16);
 	}
 
-	soc_adsp_halt_cpu(cpu);
+	ret = soc_adsp_halt_cpu(cpu);
+	zassert_ok(ret, "Couldn't halt CPU");
 
 	alive_flag = false;
 	run_on_cpu(cpu, alive_fn, &alive_flag, false);
@@ -172,7 +179,7 @@ void halt_and_restart(int cpu)
 		 * We don't have a return message wired to be notified
 		 * of completion.
 		 */
-		cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_ADSPCS,
+		intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_ADSPCS,
 				     all_cpus << 16);
 		k_msleep(50);
 	}
@@ -187,28 +194,30 @@ void halt_and_restart(int cpu)
 	k_thread_abort(&run_on_threads[cpu]);
 }
 
-void test_cpu_halt(void)
+void halt_and_restart_thread(void *p1, void *p2, void *p3)
 {
-	/* Obviously this only works on CPU0.  This sequence is a
-	 * little whiteboxey: officially the cpu_mask API isn't
-	 * supposed to be used on a running thread, but by setting it
-	 * with interrupts masked we're guaranteed not to accidentally
-	 * disable ourselves, and the minimum-time sleep will
-	 * guarantee we re-enter the scheduler (and thus have our mask
-	 * honored) before running further.
-	 */
-	uint32_t key = arch_irq_lock();
+	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
+		halt_and_restart(i);
+	}
+}
 
-	k_thread_cpu_mask_clear(k_current_get());
-	k_thread_cpu_mask_enable(k_current_get(), 1);
-	arch_irq_unlock(key);
-	k_sleep(K_TICKS(0));
+ZTEST(intel_adsp_boot, test_2nd_cpu_halt)
+{
+	int ret;
 
 	if (IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
 		ztest_test_skip();
 	}
 
-	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
-		halt_and_restart(i);
-	}
+	/* Obviously this only works on CPU0. So, we create a thread pinned
+	 * to CPU0 to effectively run the test.
+	 */
+	k_thread_create(&thread_har, tstack_har, HAR_STACKSZ,
+			halt_and_restart_thread, NULL, NULL, NULL,
+			HAR_PRIORITY, 0, K_FOREVER);
+	ret = k_thread_cpu_pin(&thread_har, 0);
+	zassert_ok(ret, "Couldn't pin thread to CPU 0, test can't be run");
+	k_thread_start(&thread_har);
+
+	k_thread_join(&thread_har, K_FOREVER);
 }

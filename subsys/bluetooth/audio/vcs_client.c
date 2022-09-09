@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
 #include <zephyr/sys/check.h>
@@ -813,7 +813,9 @@ int bt_vcs_client_cb_register(struct bt_vcs_cb *cb)
 	struct bt_vocs_cb *vocs_cb = NULL;
 
 	if (cb != NULL) {
-		CHECKIF(cb->vocs_cb.discover) {
+		/* Ensure that the cb->vocs_cb.discover is the vocs_discover_cb */
+		CHECKIF(cb->vocs_cb.discover != NULL &&
+			cb->vocs_cb.discover != vocs_discover_cb) {
 			BT_ERR("VOCS discover callback shall not be set");
 			return -EINVAL;
 		}
@@ -837,7 +839,9 @@ int bt_vcs_client_cb_register(struct bt_vcs_cb *cb)
 	struct bt_aics_cb *aics_cb = NULL;
 
 	if (cb != NULL) {
-		CHECKIF(cb->aics_cb.discover) {
+		/* Ensure that the cb->aics_cb.discover is the aics_discover_cb */
+		CHECKIF(cb->aics_cb.discover != NULL &&
+			cb->aics_cb.discover != aics_discover_cb) {
 			BT_ERR("AICS discover callback shall not be set");
 			return -EINVAL;
 		}

@@ -20,6 +20,14 @@ set(
     FORCE
 )
 
+if(CONFIG_OPENTHREAD_FTD)
+  set(OT_FTD ON CACHE BOOL "Enable FTD" FORCE)
+  set(OT_MTD OFF CACHE BOOL "Enable MTD" FORCE)
+elseif(CONFIG_OPENTHREAD_MTD)
+  set(OT_FTD OFF CACHE BOOL "Enable FTD" FORCE)
+  set(OT_MTD ON CACHE BOOL "Enable MTD" FORCE)
+endif()
+
 if(CONFIG_ASSERT)
   set(OT_ASSERT ON CACHE BOOL "Enable assert function OT_ASSERT()" FORCE)
 else()

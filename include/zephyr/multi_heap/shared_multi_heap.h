@@ -17,9 +17,16 @@ extern "C" {
 #endif
 
 /**
+ * @brief Heap Management
+ * @defgroup heaps Heap Management
+ * @{
+ * @}
+ */
+
+/**
  * @brief Shared Multi-Heap (SMH) interface
  * @defgroup shared_multi_heap Shared multi-heap interface
- * @ingroup multi_heap
+ * @ingroup heaps
  * @{
  *
  * The shared multi-heap manager uses the multi-heap allocator to manage a set

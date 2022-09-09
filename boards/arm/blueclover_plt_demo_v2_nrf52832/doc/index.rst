@@ -27,8 +27,7 @@ The Nordic Semiconductor nRF52832 ARM Cortex-M4F MCU features the following:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/blueclover_plt_demo_v2.png
-     :width: 614px
+.. figure:: img/blueclover_plt_demo_v2.jpg
      :align: center
      :alt: Blue Clover PLT Demo V2 nRF52832
 

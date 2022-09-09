@@ -7,7 +7,6 @@ Overview
 ********
 
 .. figure:: img/PineTime_leaflet.jpg
-   :width: 600px
    :align: center
    :alt: Pine64 PineTime
 
@@ -19,7 +18,6 @@ for an open source smartwatch in collaboration with wearable RTOS and Linux
 app developers/communities.
 
 .. figure:: img/PineTime_DevKit0.jpg
-   :width: 600px
    :align: center
    :alt: Pine64 PineTime
 
@@ -153,7 +151,6 @@ contact with the programming cable.
 The pinout is:
 
 .. figure:: img/PineTime_SWD_location.jpg
-   :width: 300px
    :align: center
    :alt: PineTime SWD location
 

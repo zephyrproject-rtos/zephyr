@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/rtio/rtio_executor_simple.h>
 #include <zephyr/logging/log.h>
@@ -28,7 +28,7 @@ static uint8_t bufs[N][SAMPLE_SIZE];
 
 void main(void)
 {
-	const struct device *vnd_sensor = DEVICE_DT_GET(NODE_ID);
+	const struct device *const vnd_sensor = DEVICE_DT_GET(NODE_ID);
 	struct rtio_iodev *iodev = vnd_sensor->data;
 
 	/* Fill the entire submission queue. */

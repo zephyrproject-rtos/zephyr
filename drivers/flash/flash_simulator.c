@@ -31,9 +31,9 @@
 
 /* configuration derived from DT */
 #ifdef CONFIG_ARCH_POSIX
-#define SOC_NV_FLASH_NODE DT_CHILD(DT_DRV_INST(0), flash_0)
+#define SOC_NV_FLASH_NODE DT_INST_CHILD(0, flash_0)
 #else
-#define SOC_NV_FLASH_NODE DT_CHILD(DT_DRV_INST(0), flash_sim_0)
+#define SOC_NV_FLASH_NODE DT_INST_CHILD(0, flash_sim_0)
 #endif /* CONFIG_ARCH_POSIX */
 
 #define FLASH_SIMULATOR_BASE_OFFSET DT_REG_ADDR(SOC_NV_FLASH_NODE)

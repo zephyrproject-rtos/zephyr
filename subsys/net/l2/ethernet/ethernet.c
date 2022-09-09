@@ -240,6 +240,9 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		net_pkt_set_family(pkt, AF_INET6);
 		family = AF_INET6;
 		break;
+	case NET_ETH_PTYPE_EAPOL:
+		family = AF_UNSPEC;
+		break;
 #if defined(CONFIG_NET_L2_PTP)
 	case NET_ETH_PTYPE_PTP:
 		family = AF_UNSPEC;

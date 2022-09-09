@@ -59,7 +59,7 @@ static struct {
 } event;
 
 /* Entropy device */
-static const struct device *dev_entropy = DEVICE_DT_GET(DT_NODELABEL(rng));
+static const struct device *const dev_entropy = DEVICE_DT_GET(DT_NODELABEL(rng));
 
 static int init_reset(void);
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
@@ -738,10 +738,13 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 	uint32_t ret;
 
-	/* Stop any scheduled preempt ticker */
-	ret = preempt_ticker_stop();
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	/* NOTE: preempt timeout started prior for the current event that has
+	 *       its prepare that is now invoked is not explicitly stopped here.
+	 *       If there is a next prepare event in pipeline, then the prior
+	 *       preempt timeout if started will be stopped before starting
+	 *       the new preempt timeout. Refer to implementation in
+	 *       preempt_ticker_start().
+	 */
 
 	/* Find next prepare needing preempt timeout to be setup */
 	do {

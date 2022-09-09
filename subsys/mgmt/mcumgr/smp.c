@@ -5,7 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
@@ -25,10 +26,26 @@ LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
 #define WEAK
 #endif
 
-static const struct mgmt_streamer_cfg zephyr_smp_cbor_cfg;
+K_THREAD_STACK_DEFINE(smp_work_queue_stack, CONFIG_MCUMGR_SMP_WORKQUEUE_STACK_SIZE);
 
-static void *
-zephyr_smp_alloc_rsp(const void *req, void *arg)
+static struct k_work_q smp_work_queue;
+
+static const struct k_work_queue_config smp_work_queue_config = {
+	.name = "mcumgr smp"
+};
+
+/**
+ * @brief Allocates a response buffer.
+ *
+ * If a source buf is provided, its user data is copied into the new buffer.
+ *
+ * @param req		An optional source buffer to copy user data from.
+ * @param arg		The streamer providing the callback.
+ *
+ * @return	Newly-allocated buffer on success
+ *		NULL on failure.
+ */
+void *zephyr_smp_alloc_rsp(const void *req, void *arg)
 {
 	const struct net_buf_pool *pool;
 	const struct net_buf *req_nb;
@@ -115,16 +132,13 @@ zephyr_smp_split_frag(struct net_buf **nb, void *arg, uint16_t mtu)
 	return frag;
 }
 
-static int
-zephyr_smp_write_hdr(struct cbor_nb_writer *cnw, const struct mgmt_hdr *hdr)
-{
-	memcpy(cnw->nb->data, hdr, sizeof(*hdr));
-
-	return 0;
-}
-
-static void
-zephyr_smp_free_buf(void *buf, void *arg)
+/**
+ * @brief Frees an allocated buffer.
+ *
+ * @param buf		The buffer to free.
+ * @param arg		The streamer providing the callback.
+ */
+void zephyr_smp_free_buf(void *buf, void *arg)
 {
 	struct zephyr_smp_transport *zst = arg;
 
@@ -189,7 +203,6 @@ zephyr_smp_process_packet(struct zephyr_smp_transport *zst,
 
 	streamer = (struct smp_streamer) {
 		.mgmt_stmr = {
-			.cfg = &zephyr_smp_cbor_cfg,
 			.reader = &reader,
 			.writer = &writer,
 			.cb_arg = zst,
@@ -217,12 +230,6 @@ zephyr_smp_handle_reqs(struct k_work *work)
 	}
 }
 
-static const struct mgmt_streamer_cfg zephyr_smp_cbor_cfg = {
-	.alloc_rsp = zephyr_smp_alloc_rsp,
-	.write_hdr = zephyr_smp_write_hdr,
-	.free_buf = zephyr_smp_free_buf,
-};
-
 void
 zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
 			  zephyr_smp_transport_out_fn *output_func,
@@ -245,9 +252,31 @@ zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
 	k_fifo_init(&zst->zst_fifo);
 }
 
+/**
+ * @brief Enqueues an incoming SMP request packet for processing.
+ *
+ * This function always consumes the supplied net_buf.
+ *
+ * @param zst                   The transport to use to send the corresponding
+ *                                  response(s).
+ * @param nb                    The request packet to process.
+ */
 WEAK void
 zephyr_smp_rx_req(struct zephyr_smp_transport *zst, struct net_buf *nb)
 {
 	net_buf_put(&zst->zst_fifo, nb);
-	k_work_submit(&zst->zst_work);
+	k_work_submit_to_queue(&smp_work_queue, &zst->zst_work);
 }
+
+static int zephyr_smp_init(const struct device *dev)
+{
+	k_work_queue_init(&smp_work_queue);
+
+	k_work_queue_start(&smp_work_queue, smp_work_queue_stack,
+			   K_THREAD_STACK_SIZEOF(smp_work_queue_stack),
+			   CONFIG_MCUMGR_SMP_WORKQUEUE_THREAD_PRIO, &smp_work_queue_config);
+
+	return 0;
+}
+
+SYS_INIT(zephyr_smp_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

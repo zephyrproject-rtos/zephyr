@@ -85,6 +85,7 @@
 			compatible = "nxp,kinetis-ftfa";
 			reg = <0x40020000 0x2c>;
 			interrupts = <5 0>;
+			status = "okay";
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -242,9 +243,8 @@
 		};
 
 		ieee802154: ieee802154@4005d000 {
-			compatible = "nxp,kw41z-ieee802514";
+			compatible = "nxp,kw41z-ieee802154";
 			reg = <0x4005d000 0x1000>;
-			label = "KW41Z";
 			status = "disabled";
 		};
 	};

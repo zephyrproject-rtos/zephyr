@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U5_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U5_CLOCK_H_
 
-/** Peripheral clock sources */
+/** Domain clocks */
 
 /* RM0468, Table 56 Kernel clock distribution summary */
 
@@ -80,7 +80,7 @@
 #define CCIPR2_REG		0xE4
 #define CCIPR3_REG		0xE8
 
-/** @brief Device clk sources selection helpers */
+/** @brief Device domain clocks selection helpers */
 /** CCIPR1 devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR1_REG)
 #define USART2_SEL(val)		STM32_CLOCK(val, 3, 2, CCIPR1_REG)

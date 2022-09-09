@@ -12,59 +12,51 @@
 
 uint8_t var_in_res0[DT_REG_SIZE(DT_NODELABEL(syscon))] __attribute((__section__(RES_SECT)));
 
-static void test_size(void)
+ZTEST(syscon, test_size)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	const size_t expected_size = DT_REG_SIZE(DT_NODELABEL(syscon));
 	size_t size;
 
 	zassert_not_null(dev, NULL);
-	zassert_ok(syscon_get_size(dev, &size), NULL);
+	zassert_ok(syscon_get_size(dev, &size));
 	zassert_equal(size, expected_size, "size(0x%x) != expected_size(0x%x)", size,
 		      expected_size);
 }
 
-static void test_out_of_bounds(void)
+ZTEST(syscon, test_out_of_bounds)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uint32_t val;
 
-	zassert_equal(syscon_read_reg(dev, DT_REG_SIZE(DT_NODELABEL(syscon)), &val), -EINVAL, NULL);
-	zassert_equal(syscon_write_reg(dev, DT_REG_SIZE(DT_NODELABEL(syscon)), val), -EINVAL, NULL);
+	zassert_equal(syscon_read_reg(dev, DT_REG_SIZE(DT_NODELABEL(syscon)), &val), -EINVAL);
+	zassert_equal(syscon_write_reg(dev, DT_REG_SIZE(DT_NODELABEL(syscon)), val), -EINVAL);
 }
 
-static void test_read(void)
+ZTEST(syscon, test_read)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uintptr_t base_addr;
 	uint32_t val;
 
-	zassert_ok(syscon_get_base(dev, &base_addr), NULL);
+	zassert_ok(syscon_get_base(dev, &base_addr));
 	for (size_t i = 0; i < ARRAY_SIZE(var_in_res0); ++i) {
 		((uint8_t *)base_addr)[i] = i;
-		zassert_ok(syscon_read_reg(dev, i, &val), NULL);
-		zassert_equal(i, val, NULL);
+		zassert_ok(syscon_read_reg(dev, i, &val));
+		zassert_equal(i, val);
 	}
 }
 
-static void test_write(void)
+ZTEST(syscon, test_write)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uintptr_t base_addr;
 
-	zassert_ok(syscon_get_base(dev, &base_addr), NULL);
+	zassert_ok(syscon_get_base(dev, &base_addr));
 	for (uint32_t i = 0; i < ARRAY_SIZE(var_in_res0); ++i) {
-		zassert_ok(syscon_write_reg(dev, i, i), NULL);
-		zassert_equal(((uint8_t *)base_addr)[i], i, NULL);
+		zassert_ok(syscon_write_reg(dev, i, i));
+		zassert_equal(((uint8_t *)base_addr)[i], i);
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(syscon,
-			 ztest_unit_test(test_size),
-			 ztest_unit_test(test_out_of_bounds),
-			 ztest_unit_test(test_read),
-			 ztest_unit_test(test_write));
-	ztest_run_test_suite(syscon);
-}
+ZTEST_SUITE(syscon, NULL, NULL, NULL, NULL, NULL);

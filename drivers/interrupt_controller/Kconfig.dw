@@ -3,12 +3,16 @@
 
 config DW_ICTL_ACE_V1X
 	bool "Designware Interrupt Controller for ACE V1X"
+	default y
+	depends on DT_HAS_INTEL_ACE_INTC_ENABLED
 	depends on MULTI_LEVEL_INTERRUPTS
 	help
 	  Designware Interrupt Controller used by ACE V1X.
 
 menuconfig DW_ICTL
 	bool "Designware Interrupt Controller"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_INTC_ENABLED
 	depends on MULTI_LEVEL_INTERRUPTS
 	help
 	  Designware Interrupt Controller can be used as a 2nd level interrupt

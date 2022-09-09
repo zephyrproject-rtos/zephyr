@@ -78,13 +78,26 @@ union raw_double_u {
 };
 #endif
 
+static int WriteFrmtd_vf(FILE *stream, char *format, ...)
+{
+	int ret;
+	va_list args;
+
+	va_start(args, format);
+	ret = vfprintf(stream, format, args);
+	va_end(args);
+
+	return ret;
+}
+
 /**
  *
  * @brief Test sprintf with doubles
  *
  */
 
-void test_sprintf_double(void)
+#ifdef CONFIG_STDOUT_CONSOLE
+ZTEST(sprintf, test_sprintf_double)
 {
 	char buffer[400];
 	union raw_double_u var;
@@ -400,7 +413,7 @@ int tvsnprintf(char *s, size_t len, const char *format, ...)
  *
  */
 
-void test_vsnprintf(void)
+ZTEST(sprintf, test_vsnprintf)
 {
 	int len;
 	char buffer[100];
@@ -455,7 +468,7 @@ int tvsprintf(char *s, const char *format, ...)
  *
  */
 
-void test_vsprintf(void)
+ZTEST(sprintf, test_vsprintf)
 {
 	int len;
 	char buffer[100];
@@ -481,7 +494,7 @@ void test_vsprintf(void)
  *
  */
 
-void test_snprintf(void)
+ZTEST(sprintf, test_snprintf)
 {
 #if defined(__GNUC__) && __GNUC__ >= 7
 	/*
@@ -530,7 +543,7 @@ void test_snprintf(void)
  *
  */
 
-void test_sprintf_misc(void)
+ZTEST(sprintf, test_sprintf_misc)
 {
 	int count;
 	char buffer[100];
@@ -597,7 +610,7 @@ void test_sprintf_misc(void)
  * @brief Test the sprintf() routine with integers
  *
  */
-void test_sprintf_integer(void)
+ZTEST(sprintf, test_sprintf_integer)
 {
 	int len;
 	char buffer[100];
@@ -720,7 +733,7 @@ void test_sprintf_integer(void)
  *
  */
 
-void test_sprintf_string(void)
+ZTEST(sprintf, test_sprintf_string)
 {
 	char buffer[400];
 
@@ -750,7 +763,7 @@ void test_sprintf_string(void)
  * @see printf().
  *
  */
-void test_print(void)
+ZTEST(sprintf, test_print)
 {
 	int ret;
 
@@ -768,7 +781,7 @@ void test_print(void)
  * @see fprintf().
  *
  */
-void test_fprintf(void)
+ZTEST(sprintf, test_fprintf)
 {
 	int ret, i = 3;
 
@@ -791,19 +804,7 @@ void test_fprintf(void)
  *
  */
 
-static int WriteFrmtd_vf(FILE *stream, char *format, ...)
-{
-	int ret;
-	va_list args;
-
-	va_start(args, format);
-	ret = vfprintf(stream, format, args);
-	va_end(args);
-
-	return ret;
-}
-
-void test_vfprintf(void)
+ZTEST(sprintf, test_vfprintf)
 {
 	int ret;
 
@@ -846,7 +847,7 @@ static int WriteFrmtd_v(char *format, ...)
 	return ret;
 }
 
-void test_vprintf(void)
+ZTEST(sprintf, test_vprintf)
 {
 	int ret;
 
@@ -872,7 +873,7 @@ void test_vprintf(void)
  *
  * @see fputs(), puts(), fputc(), putc().
  */
-void test_put(void)
+ZTEST(sprintf, test_put)
 {
 	int ret;
 
@@ -918,7 +919,7 @@ void test_put(void)
  * @brief Test fwrite function
  *
  */
-void test_fwrite(void)
+ZTEST(sprintf, test_fwrite)
 {
 	int ret;
 
@@ -942,7 +943,9 @@ void test_fwrite(void)
  * @details When CONFIG_STDOUT_CONSOLE=n the default
  * stdout hook function _stdout_hook_default() returns EOF.
  */
-void test_EOF(void)
+
+#else
+ZTEST(sprintf, test_EOF)
 {
 	int ret;
 
@@ -958,6 +961,7 @@ void test_EOF(void)
 	ret = WriteFrmtd_vf(stdout, "This %d", 3);
 	zassert_equal(ret, EOF, "vfprintf \"3\" failed");
 }
+#endif
 
 /**
  * @}
@@ -969,27 +973,4 @@ void test_EOF(void)
  *
  */
 
-void test_main(void)
-{
-#ifndef CONFIG_STDOUT_CONSOLE
-	ztest_test_suite(test_sprintf,
-			 ztest_user_unit_test(test_EOF));
-	ztest_run_test_suite(test_sprintf);
-#else
-	ztest_test_suite(test_sprintf,
-			 ztest_unit_test(test_sprintf_misc),
-			 ztest_unit_test(test_sprintf_double),
-			 ztest_unit_test(test_sprintf_integer),
-			 ztest_unit_test(test_vsprintf),
-			 ztest_unit_test(test_vsnprintf),
-			 ztest_unit_test(test_sprintf_string),
-			 ztest_unit_test(test_snprintf),
-			 ztest_unit_test(test_print),
-			 ztest_unit_test(test_fprintf),
-			 ztest_unit_test(test_vfprintf),
-			 ztest_unit_test(test_vprintf),
-			 ztest_user_unit_test(test_put),
-			 ztest_user_unit_test(test_fwrite));
-	ztest_run_test_suite(test_sprintf);
-#endif
-}
+ZTEST_SUITE(sprintf, NULL, NULL, NULL, NULL, NULL);

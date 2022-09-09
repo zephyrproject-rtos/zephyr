@@ -449,9 +449,14 @@ static int crypto_stm32_query_caps(const struct device *dev)
 
 static int crypto_stm32_init(const struct device *dev)
 {
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
 	const struct crypto_stm32_config *cfg = CRYPTO_STM32_CFG(dev);
+
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	if (clock_control_on(clk, (clock_control_subsys_t *)&cfg->pclken) != 0) {
 		LOG_ERR("clock op failed\n");

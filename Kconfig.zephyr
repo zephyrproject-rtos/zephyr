@@ -27,6 +27,12 @@ osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc.defconfig"
 osource "soc/$(ARCH)/*/Kconfig.defconfig"
 # This loads the toolchain defconfigs
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
+# This loads the testsuite defconfig
+source "subsys/testsuite/Kconfig.defconfig"
+
+# This should be early since the autogen Kconfig.dts symbols may get
+# used by modules
+source "dts/Kconfig"
 
 menu "Modules"
 
@@ -38,7 +44,6 @@ source "boards/Kconfig"
 source "soc/Kconfig"
 source "arch/Kconfig"
 source "kernel/Kconfig"
-source "dts/Kconfig"
 source "drivers/Kconfig"
 source "lib/Kconfig"
 source "subsys/Kconfig"
@@ -627,6 +632,12 @@ config WARN_EXPERIMENTAL
 	  Print a warning when the Kconfig tree is parsed if any experimental
 	  features are enabled.
 
+config TAINT
+	bool
+	help
+	  Symbol that must be selected by a feature or module if the Zephyr
+	  build is considered tainted.
+
 config ENFORCE_ZEPHYR_STDINT
 	bool
 	prompt "Enforce Zephyr convention for stdint"
@@ -845,6 +856,7 @@ endmenu
 
 config LEGACY_INCLUDE_PATH
 	bool "Allow for the legacy include paths (without the zephyr/ prefix) (DEPRECATED)"
+	select DEPRECATED
 	help
 	  DEPRECATED: Allow applications and libraries to use the Zephyr legacy
 	  include path which does not use the zephyr/ prefix. For example, the

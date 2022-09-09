@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/services/ots.h>
@@ -219,6 +219,9 @@ static int olcp_ind_send(const struct bt_gatt_attr *olcp_attr,
 	ots->olcp_ind.params.func = olcp_ind_cb;
 	ots->olcp_ind.params.data = olcp_res;
 	ots->olcp_ind.params.len  = olcp_res_len;
+#if defined(CONFIG_BT_EATT)
+	ots->olcp_ind.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
+#endif /* CONFIG_BT_EATT */
 
 	LOG_DBG("Sending OLCP indication");
 

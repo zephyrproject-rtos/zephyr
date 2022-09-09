@@ -5,7 +5,7 @@
  */
 
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/storage/flash_map.h>
 #include <esp_log.h>
@@ -30,7 +30,7 @@ static int map_rom_segments(void)
 {
 	int rc = 0;
 
-	size_t _partition_offset = FLASH_AREA_OFFSET(image_0);
+	size_t _partition_offset = FIXED_PARTITION_OFFSET(image_0);
 	uint32_t _app_irom_start = _partition_offset + (uint32_t)&_image_irom_start;
 	uint32_t _app_irom_size = (uint32_t)&_image_irom_size;
 	uint32_t _app_irom_vaddr = (uint32_t)&_image_irom_vaddr;

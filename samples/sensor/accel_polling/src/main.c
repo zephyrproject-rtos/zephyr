@@ -10,14 +10,14 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define ACCEL_ALIAS(i) DT_ALIAS(_CONCAT(accel, i))
 #define ACCELEROMETER_DEVICE(i, _)                                                                 \
 	IF_ENABLED(DT_NODE_EXISTS(ACCEL_ALIAS(i)), (DEVICE_DT_GET(ACCEL_ALIAS(i)),))
 
 /* support up to 10 accelerometer sensors */
-static const struct device *sensors[] = {LISTIFY(10, ACCELEROMETER_DEVICE, ())};
+static const struct device *const sensors[] = {LISTIFY(10, ACCELEROMETER_DEVICE, ())};
 
 static const enum sensor_channel channels[] = {
 	SENSOR_CHAN_ACCEL_X,

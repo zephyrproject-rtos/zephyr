@@ -19,22 +19,22 @@
 extern struct bt_gatt_attr service_d_3_attrs[];
 extern struct bt_gatt_attr service_c_1_3_attrs[];
 
-/** @def BT_UUID_SERVICE_A
+/**
  *  @brief UUID for the Service A
  */
 #define BT_UUID_SERVICE_A               BT_UUID_DECLARE_16(0xa00a)
 
-/** @def BT_UUID_VALUE_V1
+/**
  *  @brief UUID for the Value V1 Characteristic
  */
 #define BT_UUID_VALUE_V1                BT_UUID_DECLARE_16(0xb001)
 
-/** @def BT_UUID_VALUE_V2
+/**
  *  @brief UUID for the Value V2 Characteristic
  */
 #define BT_UUID_VALUE_V2                BT_UUID_DECLARE_16(0xb002)
 
-/** @def BT_UUID_VALUE_V3
+/**
  *  @brief UUID for the Value V3 Characteristic
  */
 #define BT_UUID_VALUE_V3                BT_UUID_DECLARE_16(0xb003)

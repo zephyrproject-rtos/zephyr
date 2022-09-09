@@ -6,6 +6,7 @@
 
 / {
 	aliases {
+		/delete-property/ magn0;
 		accel0 = &lsm303dlhc_accel;
 	};
 };

@@ -15,8 +15,7 @@ ideal for real-time applications such as High-Speed GPIO, CAN-FD, and
 synchronous parallel NAND/NOR/PSRAM controller. The i.MX RT1060 runs on the
 Arm® Cortex-M7® core up to 600 MHz.
 
-.. image:: ./mimxrt1060_evk.jpg
-   :width: 720px
+.. image:: mimxrt1060_evk.jpg
    :align: center
    :alt: MIMXRT1060-EVK
 
@@ -126,6 +125,8 @@ features:
 | GPT       | on-chip    | gpt                                 |
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

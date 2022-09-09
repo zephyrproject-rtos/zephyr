@@ -28,8 +28,6 @@ Here are some highlights of the Nucleo F302R8 board:
 - Two push-buttons: USER and RESET
 
 .. image:: img/nucleo_f302r8.jpg
-   :width: 500px
-   :height: 367px
    :align: center
    :alt: Nucleo F302R8
 
@@ -113,10 +111,8 @@ responsible for pin muxing, input/output, pull-up, etc.
 
 Board connectors:
 -----------------
-.. image:: img/nucleo_f302r8_connectors.png
-   :width: 800px
+.. image:: img/nucleo_f302r8_connectors.jpg
    :align: center
-   :height: 619px
    :alt: Nucleo F302R8 connectors
 
 Default Zephyr Peripheral Mapping:

@@ -12,7 +12,7 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <sys/types.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include <zephyr/drivers/pcie/pcie.h>
@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 #include <zephyr/drivers/ptp_clock.h>
 
-#define PTP_INST_NODEID(n) DT_CHILD(DT_DRV_INST(n), ptp)
+#define PTP_INST_NODEID(n) DT_INST_CHILD(n, ptp)
 #endif
 
 #if defined(CONFIG_ETH_E1000_VERBOSE_DEBUG)
@@ -439,7 +439,7 @@ static const struct ptp_clock_driver_api api = {
 
 static int ptp_e1000_init(const struct device *port)
 {
-	const struct device *eth_dev = DEVICE_DT_INST_GET(0);
+	const struct device *const eth_dev = DEVICE_DT_INST_GET(0);
 	struct e1000_dev *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 

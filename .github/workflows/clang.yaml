@@ -4,7 +4,7 @@ on: pull_request_target
 
 jobs:
   clang-build-prep:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.6.0
@@ -14,7 +14,7 @@ jobs:
     runs-on: zephyr_runner
     needs: clang-build-prep
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.2
       options: '--entrypoint /bin/bash'
       volumes:
         - /home/runners/zephyrproject:/github/cache/zephyrproject
@@ -23,7 +23,7 @@ jobs:
       matrix:
         platform: ["native_posix"]
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.2
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.0
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}

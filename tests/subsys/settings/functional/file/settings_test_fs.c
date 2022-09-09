@@ -1,13 +1,13 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Copyright (c) 2022 Nordic semiconductor ASA */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <errno.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/fs/fs.h>
 
-void test_setting_storage_get(void)
+ZTEST(settings_functional, test_setting_storage_get)
 {
 	int rc;
 	void *storage;
@@ -23,3 +23,4 @@ void test_setting_storage_get(void)
 
 	zassert_true(rc >= 0, "Can't find the file (err=%d)", rc);
 }
+ZTEST_SUITE(settings_functional, NULL, NULL, NULL, NULL, NULL);

@@ -89,6 +89,8 @@
 };
 
 &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
 
@@ -113,6 +115,26 @@
 	status = "okay";
 };
 
+&timers4 {
+	status = "okay";
+	st,prescaler = <1>;
+	pwm4: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim4_ch1_pb6>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers3 {
+	status = "okay";
+	st,prescaler = <255>;
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch2_pe4>;
+		pinctrl-names = "default";
+	};
+};
+
 &octospi2 {
 	pinctrl-0 = <&octospim_p2_clk_pf4 &octospim_p2_ncs_pi5
 		     &octospim_p2_io0_pf0 &octospim_p2_io1_pf1
@@ -131,6 +153,7 @@
 		size = <DT_SIZE_M(64)>;
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
 		status = "okay";
 		sfdp-bfp = [
 			53 46 44 50 06 01 02 ff
@@ -185,6 +208,16 @@ zephyr_udc0: &usbotg_fs {
 &adc1 {
 	pinctrl-0 = <&adc1_in15_pb0>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc4 {
+	pinctrl-0 = <&adc4_in19_pb1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 

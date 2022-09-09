@@ -11,7 +11,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
 #define DT_DRV_COMPAT		ipc_service_backend

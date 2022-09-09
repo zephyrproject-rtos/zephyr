@@ -13,7 +13,7 @@
  */
 
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(i2c_0), okay)
@@ -31,7 +31,7 @@ uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER;
 static int test_gy271(void)
 {
 	unsigned char datas[6];
-	const struct device *i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
+	const struct device *const i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
 	uint32_t i2c_cfg_tmp;
 
 	if (!device_is_ready(i2c_dev)) {
@@ -97,7 +97,7 @@ static int test_gy271(void)
 static int test_burst_gy271(void)
 {
 	unsigned char datas[6];
-	const struct device *i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
+	const struct device *const i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
 	uint32_t i2c_cfg_tmp;
 
 	if (!device_is_ready(i2c_dev)) {
@@ -149,12 +149,14 @@ static int test_burst_gy271(void)
 	return TC_PASS;
 }
 
-void test_i2c_gy271(void)
+ZTEST(i2c_gy271, test_i2c_gy271)
 {
-	zassert_true(test_gy271() == TC_PASS, NULL);
+	zassert_true(test_gy271() == TC_PASS);
 }
 
-void test_i2c_burst_gy271(void)
+ZTEST(i2c_gy271, test_i2c_burst_gy271)
 {
-	zassert_true(test_burst_gy271() == TC_PASS, NULL);
+	zassert_true(test_burst_gy271() == TC_PASS);
 }
+
+ZTEST_SUITE(i2c_gy271, NULL, NULL, NULL, NULL, NULL);

@@ -180,7 +180,11 @@ static const struct dai_driver_api dai_intel_alh_api_funcs = {
 };
 
 #define DAI_INTEL_ALH_DEVICE_INIT(n)						\
-	static struct dai_config dai_intel_alh_config_##n;			\
+	static struct dai_config dai_intel_alh_config_##n = {			\
+		.type = DAI_INTEL_ALH,						\
+		.dai_index = (n / DAI_NUM_ALH_BI_DIR_LINKS_GROUP) << 8 |	\
+			(n % DAI_NUM_ALH_BI_DIR_LINKS_GROUP),			\
+	};									\
 	static struct dai_intel_alh dai_intel_alh_data_##n = {			\
 		.index = (n / DAI_NUM_ALH_BI_DIR_LINKS_GROUP) << 8 |		\
 			(n % DAI_NUM_ALH_BI_DIR_LINKS_GROUP),			\

@@ -8,10 +8,11 @@ config SOC_SERIES_AST10X0
 	select CPU_CORTEX_M4
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
-	select CORTEX_M_SYSTICK
 	select SOC_FAMILY_ASPEED
 	select SYSCON
 	select CACHE
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
 	select CACHE_MANAGEMENT
 	select CACHE_ASPEED
 	help

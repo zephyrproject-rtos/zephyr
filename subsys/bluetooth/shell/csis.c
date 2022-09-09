@@ -10,7 +10,7 @@
 
 #include <zephyr/types.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>
@@ -20,7 +20,7 @@
 #include "bt.h"
 
 extern const struct shell *ctx_shell;
-static struct bt_csis *csis;
+struct bt_csis *csis;
 static uint8_t sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT;
 
 static void locked_cb(struct bt_conn *conn, struct bt_csis *csis, bool locked)
@@ -105,55 +105,6 @@ static int cmd_csis_register(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_csis_advertise(const struct shell *sh, size_t argc,
-			      char *argv[])
-{
-	int err;
-
-	if (strcmp(argv[1], "off") == 0) {
-		err = bt_csis_advertise(csis, false);
-		if (err != 0) {
-			shell_error(sh, "Failed to stop advertising %d", err);
-			return -ENOEXEC;
-		}
-		shell_print(sh, "Advertising stopped");
-	} else if (strcmp(argv[1], "on") == 0) {
-		err = bt_csis_advertise(csis, true);
-		if (err != 0) {
-			shell_error(sh, "Failed to start advertising %d", err);
-			return -ENOEXEC;
-		}
-		shell_print(sh, "Advertising started");
-	} else {
-		shell_error(sh, "Invalid argument: %s", argv[1]);
-		return -ENOEXEC;
-	}
-
-	return 0;
-}
-
-static int cmd_csis_update_rsi(const struct shell *sh, size_t argc,
-				char *argv[])
-{
-	int err;
-
-	if (bt_csis_advertise(csis, false) != 0) {
-		shell_error(sh,
-			    "Failed to stop advertising - rsi not updated");
-		return -ENOEXEC;
-	}
-	err = bt_csis_advertise(csis, true);
-	if (err != 0) {
-		shell_error(sh,
-			    "Failed to start advertising  - rsi not updated");
-		return -ENOEXEC;
-	}
-
-	shell_print(sh, "RSI and optionally RPA updated");
-
-	return 0;
-}
-
 static int cmd_csis_print_sirk(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
@@ -234,12 +185,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(csis_cmds,
 		      "Initialize the service and register callbacks "
 		      "[size <int>] [rank <int>] [not-lockable] [sirk <data>]",
 		      cmd_csis_register, 1, 4),
-	SHELL_CMD_ARG(advertise, NULL,
-		      "Start/stop advertising CSIS RSIs <on/off>",
-		      cmd_csis_advertise, 2, 0),
-	SHELL_CMD_ARG(update_rsi, NULL,
-		      "Update the advertised RSI",
-		      cmd_csis_update_rsi, 1, 0),
 	SHELL_CMD_ARG(lock, NULL,
 		      "Lock the set",
 		      cmd_csis_lock, 1, 0),
@@ -258,3 +203,37 @@ SHELL_STATIC_SUBCMD_SET_CREATE(csis_cmds,
 
 SHELL_CMD_ARG_REGISTER(csis, &csis_cmds, "Bluetooth CSIS shell commands",
 		       cmd_csis, 1, 1);
+
+ssize_t csis_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
+			 const bool discoverable)
+{
+	size_t ad_len = 0;
+
+	/* Advertise RSI in discoverable mode only */
+	if (csis != NULL && discoverable) {
+		static uint8_t ad_rsi[BT_CSIS_RSI_SIZE];
+		int err;
+
+		/* A privacy-enabled Set Member should only advertise RSI values derived
+		 * from a SIRK that is exposed in encrypted form.
+		 */
+		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		    !IS_ENABLED(CONFIG_BT_CSIS_ENC_SIRK_SUPPORT)) {
+			shell_warn(ctx_shell, "RSI derived from unencrypted SIRK");
+		}
+
+		err = bt_csis_generate_rsi(csis, ad_rsi);
+		if (err != 0) {
+			shell_error(ctx_shell, "Failed to generate RSI (err %d)", err);
+			return err;
+		}
+
+		__ASSERT(data_array_size > ad_len, "No space for AD_RSI");
+		data_array[ad_len].type = BT_DATA_CSIS_RSI;
+		data_array[ad_len].data_len = ARRAY_SIZE(ad_rsi);
+		data_array[ad_len].data = &ad_rsi[0];
+		ad_len++;
+	}
+
+	return ad_len;
+}

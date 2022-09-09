@@ -35,7 +35,8 @@ static bool spi_esp32_transfer_ongoing(struct spi_esp32_data *data)
 	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
 }
 
-static inline void spi_esp32_complete(struct spi_esp32_data *data,
+static inline void spi_esp32_complete(const struct device *dev,
+				      struct spi_esp32_data *data,
 				      spi_dev_t *spi, int status)
 {
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
@@ -46,7 +47,7 @@ static inline void spi_esp32_complete(struct spi_esp32_data *data,
 	spi_context_cs_control(&data->ctx, false);
 
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
-	spi_context_complete(&data->ctx, status);
+	spi_context_complete(&data->ctx, dev, status);
 #endif
 
 }
@@ -98,7 +99,7 @@ static void IRAM_ATTR spi_esp32_isr(void *arg)
 		spi_esp32_transfer(dev);
 	} while (spi_esp32_transfer_ongoing(data));
 
-	spi_esp32_complete(data, cfg->spi, 0);
+	spi_esp32_complete(dev, data, cfg->spi, 0);
 }
 #endif
 
@@ -130,24 +131,24 @@ static int spi_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static inline spi_ll_io_mode_t spi_esp32_get_io_mode(uint16_t operation)
+static inline uint8_t spi_esp32_get_line_mode(uint16_t operation)
 {
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {
 		switch (operation & SPI_LINES_MASK) {
 		case SPI_LINES_SINGLE:
-			return SPI_LL_IO_MODE_NORMAL;
+			return 1;
 		case SPI_LINES_DUAL:
-			return SPI_LL_IO_MODE_DUAL;
+			return 2;
 		case SPI_LINES_OCTAL:
-			return SPI_LL_IO_MODE_QIO;
+			return 8;
 		case SPI_LINES_QUAD:
-			return SPI_LL_IO_MODE_QUAD;
+			return 4;
 		default:
 			break;
 		}
 	}
 
-	return SPI_LL_IO_MODE_NORMAL;
+	return 1;
 }
 
 static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
@@ -162,6 +163,11 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 
 	if (spi_context_configured(ctx, spi_cfg)) {
 		return 0;
+	}
+
+	if (!device_is_ready(cfg->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
 	}
 
 	/* enables SPI peripheral */
@@ -199,7 +205,8 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		.clock_speed_hz = spi_cfg->frequency,
 		.duty_cycle = cfg->duty_cycle == 0 ? 128 : cfg->duty_cycle,
 		.input_delay_ns = cfg->input_delay_ns,
-		.use_gpio = true
+		.use_gpio = !cfg->use_iomux,
+
 	};
 
 	spi_hal_cal_clock_conf(&timing_param, &freq, &hal_dev->timing_conf);
@@ -209,7 +216,14 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	hal_dev->tx_lsbfirst = spi_cfg->operation & SPI_TRANSFER_LSB ? 1 : 0;
 	hal_dev->rx_lsbfirst = spi_cfg->operation & SPI_TRANSFER_LSB ? 1 : 0;
 
-	data->trans_config.io_mode = spi_esp32_get_io_mode(spi_cfg->operation);
+	data->trans_config.line_mode.data_lines = spi_esp32_get_line_mode(spi_cfg->operation);
+
+	/* multiline for command and address not supported */
+	data->trans_config.line_mode.addr_lines = 1;
+	data->trans_config.line_mode.cmd_lines = 1;
+
+	/* keep cs line after transmission not supported */
+	data->trans_config.cs_keep_active = 0;
 
 	/* SPI mode */
 	hal_dev->mode = 0;
@@ -244,7 +258,8 @@ static int transceive(const struct device *dev,
 		      const struct spi_config *spi_cfg,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs, bool asynchronous,
-		      struct k_poll_signal *signal)
+		      spi_callback_t cb,
+		      void *userdata)
 {
 	const struct spi_esp32_config *cfg = dev->config;
 	struct spi_esp32_data *data = dev->data;
@@ -260,7 +275,7 @@ static int transceive(const struct device *dev,
 	}
 #endif
 
-	spi_context_lock(&data->ctx, asynchronous, signal, spi_cfg);
+	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	ret = spi_esp32_configure(dev, spi_cfg);
 	if (ret) {
@@ -282,7 +297,7 @@ static int transceive(const struct device *dev,
 		spi_esp32_transfer(dev);
 	} while (spi_esp32_transfer_ongoing(data));
 
-	spi_esp32_complete(data, cfg->spi, 0);
+	spi_esp32_complete(dev, data, cfg->spi, 0);
 
 #endif  /* CONFIG_SPI_ESP32_INTERRUPT */
 
@@ -297,7 +312,7 @@ static int spi_esp32_transceive(const struct device *dev,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs)
 {
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -305,9 +320,10 @@ static int spi_esp32_transceive_async(const struct device *dev,
 				      const struct spi_config *spi_cfg,
 				      const struct spi_buf_set *tx_bufs,
 				      const struct spi_buf_set *rx_bufs,
-				      struct k_poll_signal *async)
+				      spi_callback_t cb,
+				      void *userdata)
 {
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, async);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -365,6 +381,7 @@ static const struct spi_driver_api spi_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),	\
 		.clock_subsys =	\
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),	\
+		.use_iomux = DT_INST_PROP(idx, use_iomux),	\
 	};	\
 		\
 	DEVICE_DT_INST_DEFINE(idx, &spi_esp32_init,	\

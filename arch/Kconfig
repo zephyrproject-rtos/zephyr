@@ -107,6 +107,7 @@ config RISCV
 	select ARCH_IS_SET
 	select HAS_DTS
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select USE_SWITCH_SUPPORTED
@@ -149,7 +150,7 @@ config ARCH_IS_SET
 
 menu "General Architecture Options"
 
-source "$(ARCH_DIR)/common/Kconfig"
+source "arch/common/Kconfig"
 
 module = ARCH
 module-str = arch
@@ -577,6 +578,12 @@ config ARCH_HAS_SUSPEND_TO_RAM
 config ARCH_HAS_THREAD_ABORT
 	bool
 
+config ARCH_HAS_CODE_DATA_RELOCATION
+	bool
+	help
+	  When selected, the architecture/SoC implements support for
+	  CODE_DATA_RELOCATION in its linker scripts.
+
 #
 # Hidden CPU family configs
 #
@@ -631,6 +638,16 @@ config ARCH_HAS_RESERVED_PAGE_FRAMES
 	  certain RAM page frames need to be marked as reserved and never used for
 	  memory mappings. The architecture will need to implement
 	  arch_reserved_pages_update().
+
+config CPU_HAS_DCACHE
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has a d-cache.
+
+config CPU_HAS_ICACHE
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has an i-cache.
 
 config ARCH_MAPS_ALL_RAM
 	bool
@@ -745,6 +762,15 @@ config SRAM_REGION_PERMISSIONS
 	  paging, do not need memory protection, and would rather not use up
 	  RAM for the alignment between regions.
 
+config CODE_DATA_RELOCATION
+	bool "Support code/data section relocation"
+	depends on ARCH_HAS_CODE_DATA_RELOCATION
+	help
+	  Enable support for relocating .text, data and .bss sections from specified
+	  files and placing them in a chosen memory region. Files to relocate and
+	  the target regions should be specified in CMakeLists.txt using
+	  zephyr_code_relocate().
+
 menu "Floating Point Options"
 
 config FPU
@@ -789,20 +815,29 @@ endmenu
 menu "Cache Options"
 
 config DCACHE
-	bool "Data cache support"
+	bool "Data cache (d-cache) support"
+	depends on CPU_HAS_DCACHE
 	default y
 	help
-	  This option enables data cache (d-cache).
+	  This option enables the support for the data cache (d-cache).
+
+config ICACHE
+	bool "Instruction cache (i-cache) support"
+	depends on CPU_HAS_ICACHE
+	default y
+	help
+	  This option enables the support for the instruction cache (i-cache).
 
 config CACHE_MANAGEMENT
 	bool "Cache management features"
+	depends on DCACHE || ICACHE
 	help
 	  This links in the cache management functions (for d-cache and i-cache
 	  where possible).
 
 config DCACHE_LINE_SIZE_DETECT
 	bool "Detect d-cache line size at runtime"
-	depends on CACHE_MANAGEMENT
+	depends on CACHE_MANAGEMENT && DCACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the d-cache line size at the expense of taking more memory and
@@ -813,8 +848,8 @@ config DCACHE_LINE_SIZE_DETECT
 	  using the 'd-cache-line-size' property.
 
 config DCACHE_LINE_SIZE
-	int "d-cache line size" if !DCACHE_LINE_SIZE_DETECT
-	depends on CACHE_MANAGEMENT
+	int "d-cache line size"
+	depends on CACHE_MANAGEMENT && DCACHE && !DCACHE_LINE_SIZE_DETECT
 	default 0
 	help
 	  Size in bytes of a CPU d-cache line. If this is set to 0 the value is
@@ -825,7 +860,7 @@ config DCACHE_LINE_SIZE
 
 config ICACHE_LINE_SIZE_DETECT
 	bool "Detect i-cache line size at runtime"
-	depends on CACHE_MANAGEMENT
+	depends on CACHE_MANAGEMENT && ICACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the i-cache line size at the expense of taking more memory and
@@ -836,8 +871,8 @@ config ICACHE_LINE_SIZE_DETECT
 	  using the 'i-cache-line-size' property.
 
 config ICACHE_LINE_SIZE
-	int "i-cache line size" if !ICACHE_LINE_SIZE_DETECT
-	depends on CACHE_MANAGEMENT
+	int "i-cache line size"
+	depends on CACHE_MANAGEMENT && ICACHE && !ICACHE_LINE_SIZE_DETECT
 	default 0
 	help
 	  Size in bytes of a CPU i-cache line. If this is set to 0 the value is

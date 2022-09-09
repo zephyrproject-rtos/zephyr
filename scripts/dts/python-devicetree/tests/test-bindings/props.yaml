@@ -27,6 +27,7 @@ properties:
 
     string-array:
         type: string-array
+        const: ['foo', 'bar', 'baz']
 
     phandle-ref:
         type: phandle

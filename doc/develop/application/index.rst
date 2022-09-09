@@ -169,6 +169,7 @@ use of features commonly used in applications such as:
 - Custom devicetree bindings
 - Custom drivers
 - Continuous Integration (CI) setup
+- An example west :ref:`extension <west-extensions>` command
 
 Creating an Application
 ***********************
@@ -919,7 +920,7 @@ again.
 
    If the (Linux only) :ref:`Zephyr SDK <toolchain_zephyr_sdk>` is installed, the ``run``
    target will use the SDK's QEMU binary by default. To use another version of
-   QEMU, :ref:`set the environment variable <env_vars>` :envvar:`QEMU_BIN_PATH`
+   QEMU, :ref:`set the environment variable <env_vars>` ``QEMU_BIN_PATH``
    to the path of the QEMU binary you want to use instead.
 
 .. note::
@@ -1105,7 +1106,6 @@ Zephyr board, and provide the following files::
     board.h
     CMakeLists.txt
     doc/
-    dts_fixup.h
     Kconfig.board
     Kconfig.defconfig
     pinmux.c
@@ -1377,7 +1377,7 @@ Create a Debugger Configuration
 
      - GDB Client Setup
 
-       - Executable path example (use your :envvar:`GNUARMEMB_TOOLCHAIN_PATH`):
+       - Executable path example (use your ``GNUARMEMB_TOOLCHAIN_PATH``):
          :file:`C:\\gcc-arm-none-eabi-6_2017-q2-update\\bin\\arm-none-eabi-gdb.exe`
 
    - In the SVD Path tab:

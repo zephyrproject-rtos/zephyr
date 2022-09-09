@@ -3,7 +3,9 @@
 
 menuconfig HT16K33
 	bool "HT16K33 LED driver"
-	depends on I2C
+	default y
+	depends on DT_HAS_HOLTEK_HT16K33_ENABLED
+	select I2C
 	help
 	  Enable LED driver for HT16K33.
 

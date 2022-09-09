@@ -1,5 +1,0 @@
-tests:
-  drivers.memc.stm32_sdram:
-    tags: drivers memc
-    depends_on: memc
-    filter: dt_compat_enabled("st,stm32-fmc-sdram")

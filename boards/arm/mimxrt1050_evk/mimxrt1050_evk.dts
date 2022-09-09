@@ -33,6 +33,7 @@
 		zephyr,flash = &s26ks512s0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &lcdif;
+		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	sdram0: memory@80000000 {

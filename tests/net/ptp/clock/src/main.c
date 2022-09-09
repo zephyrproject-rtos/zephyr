@@ -235,7 +235,7 @@ static const struct ptp_clock_driver_api api = {
 
 static int ptp_test_1_init(const struct device *port)
 {
-	const struct device *eth_dev = DEVICE_GET(eth3_test);
+	const struct device *const eth_dev = DEVICE_GET(eth3_test);
 	struct eth_context *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 
@@ -251,7 +251,7 @@ DEVICE_DEFINE(ptp_clock_1, PTP_VIRT_CLOCK_NAME, ptp_test_1_init,
 
 static int ptp_test_2_init(const struct device *port)
 {
-	const struct device *eth_dev = DEVICE_GET(eth2_test);
+	const struct device *const eth_dev = DEVICE_GET(eth2_test);
 	struct eth_context *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 

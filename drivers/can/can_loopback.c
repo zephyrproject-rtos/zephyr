@@ -19,7 +19,7 @@
 LOG_MODULE_REGISTER(can_loopback, CONFIG_CAN_LOG_LEVEL);
 
 struct can_loopback_frame {
-	struct zcan_frame frame;
+	struct can_frame frame;
 	can_tx_callback_t cb;
 	void *cb_arg;
 	struct k_sem *tx_compl;
@@ -28,7 +28,7 @@ struct can_loopback_frame {
 struct can_loopback_filter {
 	can_rx_callback_t rx_cb;
 	void *cb_arg;
-	struct zcan_filter filter;
+	struct can_filter filter;
 };
 
 struct can_loopback_data {
@@ -44,10 +44,10 @@ struct can_loopback_data {
 };
 
 static void dispatch_frame(const struct device *dev,
-			   const struct zcan_frame *frame,
+			   const struct can_frame *frame,
 			   struct can_loopback_filter *filter)
 {
-	struct zcan_frame frame_tmp = *frame;
+	struct can_frame frame_tmp = *frame;
 
 	LOG_DBG("Receiving %d bytes. Id: 0x%x, ID type: %s %s",
 		frame->dlc, frame->id,
@@ -75,7 +75,7 @@ static void tx_thread(void *arg1, void *arg2, void *arg3)
 		for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
 			filter = &data->filters[i];
 			if (filter->rx_cb &&
-			    can_utils_filter_match(&frame.frame, &filter->filter) != 0) {
+			    can_utils_filter_match(&frame.frame, &filter->filter)) {
 				dispatch_frame(dev, &frame.frame, filter);
 			}
 		}
@@ -91,7 +91,7 @@ static void tx_thread(void *arg1, void *arg2, void *arg3)
 }
 
 static int can_loopback_send(const struct device *dev,
-			     const struct zcan_frame *frame,
+			     const struct can_frame *frame,
 			     k_timeout_t timeout, can_tx_callback_t callback,
 			     void *user_data)
 {
@@ -153,7 +153,7 @@ static inline int get_free_filter(struct can_loopback_filter *filters)
 }
 
 static int can_loopback_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
-				      void *cb_arg, const struct zcan_filter *filter)
+				      void *cb_arg, const struct can_filter *filter)
 {
 	struct can_loopback_data *data = dev->data;
 	struct can_loopback_filter *loopback_filter;
@@ -258,7 +258,7 @@ static int can_loopback_get_state(const struct device *dev, enum can_state *stat
 	ARG_UNUSED(dev);
 
 	if (state != NULL) {
-		*state = CAN_ERROR_ACTIVE;
+		*state = CAN_STATE_ERROR_ACTIVE;
 	}
 
 	if (err_cnt) {

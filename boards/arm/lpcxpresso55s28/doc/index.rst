@@ -12,8 +12,7 @@ architecture. The board includes a high-performance onboard debug probe, audio
 subsystem and accelerometer, with several options for adding off-the-shelf
 add-on boards for networking, sensors, displays, and other interfaces.
 
-.. image:: ./LPC55S28-EVK.png
-   :width: 720px
+.. image:: LPC55S28-EVK.jpg
    :align: center
    :alt: LPCXpresso55S28
 
@@ -77,6 +76,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | entropy;                            |
 |           |            | random                              |
++-----------+------------+-------------------------------------+
+| IAP       | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.

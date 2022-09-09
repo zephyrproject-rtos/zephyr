@@ -16,29 +16,35 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <0>;
-			cpu-power-states = <&off>;
+			cpu-power-states = <&d0i3 &d3>;
 		};
 
 		cpu1: cpu@1 {
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <1>;
-			cpu-power-states = <&off>;
+			cpu-power-states = <&d0i3 &d3>;
 		};
 
 		cpu2: cpu@2 {
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <2>;
-			cpu-power-states = <&off>;
+			cpu-power-states = <&d0i3 &d3>;
 		};
 	};
 
 	power-states {
+		d0i3: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <200>;
+			exit-latency-us = <100>;
+		};
 		/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
 		 * The procedure is triggered by IPC from the HOST (SET_DX).
 		 */
-		off: off {
+		d3: off {
 			compatible = "zephyr,power-state";
 			power-state-name = "soft-off";
 			min-residency-us = <2147483647>;
@@ -91,6 +97,21 @@
 			#interrupt-cells = <3>;
 		};
 
+		adsp_host_ipc: ace_host_ipc@73000 {
+			compatible = "intel,adsp-host-ipc";
+			status = "okay";
+			reg = <0x73000 0x30>;
+			interrupts = <0 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
+		adsp_idc: ace_idc@70400 {
+			compatible = "intel,adsp-idc";
+			reg = <0x70400 0x0400>;
+			interrupts = <24 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
 		/* This is actually an array of per-core designware
 		 * controllers, but the special setup and extra
 		 * masking layer makes it easier for MTL to handle
@@ -106,9 +127,29 @@
 			interrupt-parent = <&core_intc>;
 		};
 
+		ace_timestamp: ace_timestamp@72040 {
+			compatible = "intel,ace-timestamp";
+			reg = <0x72040 0x0032>;
+		};
+
+		ace_art_counter: ace_art_counter@72058 {
+			compatible = "intel,ace-art-counter";
+			reg = <0x72058 0x0064>;
+		};
+
+		ace_rtc_counter: ace_rtc_counter@72008 {
+			compatible = "intel,ace-rtc-counter";
+			reg = <0x72008 0x0064>;
+		};
+
 		shim: shim@71f00 {
 			compatible = "intel,cavs-shim";
 			reg = <0x71f00 0x100>;
+		};
+
+		lps: lps@71ac0 {
+			compatible = "intel,adsp-lps";
+			reg = <0x00071ac0 0x100>;
 		};
 
 		sspbase: ssp_base@28800 {
@@ -122,8 +163,11 @@
 		};
 
 		tlb: tlb@17e000 {
-			compatible = "intel,adsp-tlb";
+			compatible = "intel,adsp-mtl-tlb";
 			reg = <0x17e000 0x1000>;
+			paddr-size = <12>;
+			exec-bit-idx = <14>;
+			write-bit-idx= <15>;
 		};
 
 		lpgpdma0: dma@7c000 {
@@ -157,6 +201,7 @@
 			dmas = <&lpgpdma0 2
 					&lpgpdma0 3>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -171,6 +216,7 @@
 			dmas = <&lpgpdma0 4
 					&lpgpdma0 5>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -185,6 +231,7 @@
 			dmas = <&lpgpdma0 6
 					&lpgpdma0 7>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -199,6 +246,7 @@
 			dmas = <&lpgpdma0 8
 					&lpgpdma0 9>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -213,6 +261,7 @@
 			dmas = <&lpgpdma0 10
 					&lpgpdma0 11>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -227,6 +276,7 @@
 			dmas = <&lpgpdma0 12
 					&lpgpdma0 13>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -234,7 +284,7 @@
 			compatible = "intel,adsp-hda-host-out";
 			#dma-cells = <1>;
 			reg = <0x00072800 0x40>;
-			dma-channels = <5>;
+			dma-channels = <9>;
 			dma-buf-alignment = <128>;
 			status = "okay";
 		};
@@ -243,7 +293,7 @@
 			compatible = "intel,adsp-hda-host-in";
 			#dma-cells = <1>;
 			reg = <0x00072c00 0x40>;
-			dma-channels = <5>;
+			dma-channels = <10>;
 			dma-buf-alignment = <128>;
 			status = "okay";
 		};
@@ -251,8 +301,8 @@
 		hda_link_out: dma@72400 {
 			compatible = "intel,adsp-hda-link-out";
 			#dma-cells = <1>;
-			reg = <0x00072400 0x40>;
-			dma-channels = <5>;
+			reg = <0x00072400 0x20>;
+			dma-channels = <9>;
 			dma-buf-alignment = <128>;
 			status = "okay";
 		};
@@ -260,10 +310,56 @@
 		hda_link_in: dma@72600 {
 			compatible = "intel,adsp-hda-link-in";
 			#dma-cells = <1>;
-			reg = <0x00072600 0x40>;
-			dma-channels = <5>;
+			reg = <0x00072600 0x20>;
+			dma-channels = <10>;
 			dma-buf-alignment = <128>;
 			status = "okay";
+		};
+
+		hub_ulp_domain: hub_ulp_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <15>;
+		};
+		hub_hp_domain: hub_hpp_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <6>;
+		};
+		io0_domain: io0_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <8>;
+		};
+		io1_domain: io1_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <9>;
+		};
+		io2_domain: io2_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <10>;
+		};
+		io3_domain: io3_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <11>;
+		};
+		hst_domain: hst_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <4>;
+		};
+		ml0_domain: ml0_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <12>;
+		};
+		ml1_domain: ml1_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <13>;
 		};
 	};
 };

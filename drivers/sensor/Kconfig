@@ -240,6 +240,8 @@ source "drivers/sensor/vl53l0x/Kconfig"
 
 source "drivers/sensor/nxp_kinetis_temp/Kconfig"
 
+source "drivers/sensor/wsen_hids/Kconfig"
+
 source "drivers/sensor/wsen_itds/Kconfig"
 
 source "drivers/sensor/mcux_acmp/Kconfig"
@@ -251,5 +253,7 @@ source "drivers/sensor/nuvoton_adc_cmp_npcx/Kconfig"
 source "drivers/sensor/ite_tach_it8xxx2/Kconfig"
 
 source "drivers/sensor/ite_vcmp_it8xxx2/Kconfig"
+
+source "drivers/sensor/pcnt_esp32/Kconfig"
 
 endif # SENSOR

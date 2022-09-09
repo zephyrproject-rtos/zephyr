@@ -38,11 +38,9 @@
 NET_BUF_POOL_FIXED_DEFINE(num_complete_pool, 1, NUM_COMLETE_EVENT_SIZE, 8, NULL);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
 
-#if defined(CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT)
 NET_BUF_POOL_FIXED_DEFINE(discardable_pool, CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT,
 			  BT_BUF_EVT_SIZE(CONFIG_BT_BUF_EVT_DISCARDABLE_SIZE), 8,
 			  NULL);
-#endif /* CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT */
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BT_BUF_ACL_RX_COUNT,
@@ -128,7 +126,6 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 	case BT_HCI_EVT_CMD_STATUS:
 		return bt_buf_get_cmd_complete(timeout);
 	default:
-#if defined(CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT)
 		if (discardable) {
 			struct net_buf *buf;
 
@@ -140,8 +137,40 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 
 			return buf;
 		}
-#endif /* CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT */
 
 		return bt_buf_get_rx(BT_BUF_EVT, timeout);
 	}
 }
+
+#ifdef ZTEST_UNITTEST
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+struct net_buf_pool *bt_buf_get_evt_pool(void)
+{
+	return &evt_pool;
+}
+
+struct net_buf_pool *bt_buf_get_acl_in_pool(void)
+{
+	return &acl_in_pool;
+}
+#else
+struct net_buf_pool *bt_buf_get_hci_rx_pool(void)
+{
+	return &hci_rx_pool;
+}
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
+#if defined(CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT)
+struct net_buf_pool *bt_buf_get_discardable_pool(void)
+{
+	return &discardable_pool;
+}
+#endif /* CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT */
+
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
+struct net_buf_pool *bt_buf_get_num_complete_pool(void)
+{
+	return &num_complete_pool;
+}
+#endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
+#endif /* ZTEST_UNITTEST */

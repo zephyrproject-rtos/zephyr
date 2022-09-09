@@ -10,6 +10,13 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_ATT_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_ATT_H_
 
+/**
+ * @brief Attribute Protocol (ATT)
+ * @defgroup bt_att Attribute Protocol (ATT)
+ * @ingroup bluetooth
+ * @{
+ */
+
 #include <zephyr/sys/slist.h>
 #include <zephyr/bluetooth/conn.h>
 
@@ -76,8 +83,7 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu);
  * Must be in the range 1 - @kconfig{CONFIG_BT_EATT_MAX}, inclusive.
  *
  * @return 0 in case of success or negative value in case of error.
- * @retval -EINVAL if @p num_channels is not in the allowed range.
- * @retval -EINVAL if @p conn is NULL.
+ * @retval -EINVAL if @p num_channels is not in the allowed range or @p conn is NULL.
  * @retval -ENOMEM if less than @p num_channels are allocated.
  * @retval 0 in case of success
  */
@@ -94,8 +100,25 @@ size_t bt_eatt_count(struct bt_conn *conn);
 
 #endif /* CONFIG_BT_EATT */
 
+/** @brief ATT channel option bit field values.
+ * @note @ref BT_ATT_CHAN_OPT_UNENHANCED_ONLY and @ref BT_ATT_CHAN_OPT_ENHANCED_ONLY are mutually
+ * exclusive and both bits may not be set.
+ */
+enum bt_att_chan_opt {
+	/** Both Enhanced and Unenhanced channels can be used  */
+	BT_ATT_CHAN_OPT_NONE = 0x0,
+	/** Only Unenhanced channels will be used  */
+	BT_ATT_CHAN_OPT_UNENHANCED_ONLY = BIT(0),
+	/** Only Enhanced channels will be used  */
+	BT_ATT_CHAN_OPT_ENHANCED_ONLY = BIT(1),
+};
+
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_ATT_H_ */
