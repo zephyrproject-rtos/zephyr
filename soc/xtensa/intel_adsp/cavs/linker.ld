@@ -16,7 +16,7 @@ OUTPUT_ARCH(xtensa)
 #include <zephyr/devicetree.h>
 #include <xtensa/config/core-isa.h>
 #include <zephyr/linker/sections.h>
-#include <cavs-vectors.h>
+#include <adsp-vectors.h>
 #include <adsp_memory.h>
 
 #include <zephyr/linker/linker-defs.h>
