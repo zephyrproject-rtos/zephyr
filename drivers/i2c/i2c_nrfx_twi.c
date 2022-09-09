@@ -233,6 +233,17 @@ static int init_twi(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_I2C_NRF_WORKAROUND_ERRATA89
+static void twi_workaround_errata89(const nrfx_twi_t *p)
+{
+	volatile uint8_t *base = (volatile uint8_t *)p->p_twi;
+	volatile  uint32_t *POWER = (volatile uint32_t *)(base + 0xFFC);
+	*POWER = 0;
+	*POWER;
+	*POWER = 1;
+}
+#endif
+
 #ifdef CONFIG_PM_DEVICE
 static int twi_nrfx_pm_action(const struct device *dev,
 			      enum pm_device_action action)
@@ -258,6 +269,10 @@ static int twi_nrfx_pm_action(const struct device *dev,
 
 	case PM_DEVICE_ACTION_SUSPEND:
 		nrfx_twi_uninit(&config->twi);
+
+#ifdef CONFIG_I2C_NRF_WORKAROUND_ERRATA89
+		twi_workaround_errata89(&config->twi);
+#endif
 
 #ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(config->pcfg,

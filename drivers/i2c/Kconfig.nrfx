@@ -56,4 +56,14 @@ config I2C_3_NRF_TWIM
 	  This peripheral accepts transfers from RAM only,
 	  if provided buffer is placed in flash, transfer will fail.
 
+config I2C_NRF_WORKAROUND_ERRATA89
+	bool "Workaround errata 89"
+	depends on SOC_NRF52832
+	help
+	  When GPIOTE (gpio interrupts) is active and SPI or TWI is
+	  also active, there is excessive current drain during low
+	  power (sleep/idle).
+	  This implements the workaround recommended in errata 89,
+	  which toggles the power to the TWI or SPI module after suspend.
+
 endif # I2C_NRFX
