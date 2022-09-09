@@ -5,6 +5,7 @@
  */
 #ifndef LWM2M_REGISTRY_H
 #define LWM2M_REGISTRY_H
+#include <zephyr/sys/ring_buffer.h>
 #include "lwm2m_object.h"
 
 /**
@@ -196,4 +197,28 @@ size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in, uint8_t *buf
 /* Resources */
 sys_slist_t *lwm2m_engine_obj_list(void);
 sys_slist_t *lwm2m_engine_obj_inst_list(void);
+
+/* Data cache Internal API */
+
+/**
+ * LwM2M Time series resoursce data storage
+ */
+struct lwm2m_time_series_resource {
+	/* object list */
+	sys_snode_t node;
+	/* Resource Path url */
+	const char *path;
+	/* Ring buffer */
+	struct ring_buf rb;
+};
+
+int lwm2m_engine_data_cache_init(void);
+struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_object(struct lwm2m_obj_path *obj_path);
+struct lwm2m_time_series_resource *lwm2m_cache_entry_get_by_string(char const *resource_path);
+bool lwm2m_cache_write(struct lwm2m_time_series_resource *cache_entry,
+		       struct lwm2m_time_series_elem *buf);
+bool lwm2m_cache_read(struct lwm2m_time_series_resource *cache_entry,
+		      struct lwm2m_time_series_elem *buf);
+size_t lwm2m_cache_size(struct lwm2m_time_series_resource *cache_entry);
+
 #endif /* LWM2M_REGISTRY_H */

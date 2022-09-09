@@ -53,6 +53,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <sys/types.h>
+#include <time.h>
 
 #include <zephyr/net/coap.h>
 #include <zephyr/net/lwm2m.h>
@@ -536,6 +537,8 @@ struct lwm2m_writer {
 			    struct lwm2m_obj_path *path);
 	int (*put_end_ri)(struct lwm2m_output_context *out,
 			  struct lwm2m_obj_path *path);
+	int (*put_data_timestamp)(struct lwm2m_output_context *out,
+				time_t value);
 	int (*put_s8)(struct lwm2m_output_context *out,
 		      struct lwm2m_obj_path *path, int8_t value);
 	int (*put_s16)(struct lwm2m_output_context *out,
@@ -768,6 +771,15 @@ static inline int engine_put_corelink(struct lwm2m_output_context *out,
 {
 	if (out->writer->put_corelink) {
 		return out->writer->put_corelink(out, path);
+	}
+
+	return -ENOTSUP;
+}
+
+static inline int engine_put_timestamp(struct lwm2m_output_context *out, time_t timestamp)
+{
+	if (out->writer->put_data_timestamp) {
+		return out->writer->put_data_timestamp(out, timestamp);
 	}
 
 	return -ENOTSUP;
