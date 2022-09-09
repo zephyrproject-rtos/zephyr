@@ -192,6 +192,9 @@ void k_p4wq_enable_static_thread(struct k_p4wq *queue, struct k_thread *thread,
 	if (queue->flags & K_P4WQ_USER_CPU_MASK) {
 		unsigned int i;
 
+		i = k_thread_cpu_mask_clear(thread);
+		__ASSERT_NO_MSG(i == 0);
+
 		while ((i = find_lsb_set(cpu_mask))) {
 			int ret = k_thread_cpu_mask_enable(thread, i - 1);
 
