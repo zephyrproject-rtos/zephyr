@@ -968,6 +968,26 @@ static inline int i2c_write_dt(const struct i2c_dt_spec *spec,
 }
 
 /**
+ * @brief Write a set amount of data to an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_write(spec->bus, buf, num_bytes, spec->addresses[spec_idx]);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param spec_idx I2C address index from @ref i2c_address_detect_dt_idx.
+ * @param buf Memory pool from which the data is transferred.
+ * @param num_bytes Number of bytes to write.
+ *
+ * @return a value from i2c_write()
+ */
+static inline int i2c_write_dt_idx(const struct i2c_dt_spec *spec, uint8_t spec_idx,
+				   const uint8_t *buf, uint32_t num_bytes)
+{
+	return i2c_write(spec->bus, buf, num_bytes, spec->addr);
+}
+
+/**
  * @brief Read a set amount of data from an I2C device.
  *
  * This routine reads a set amount of data synchronously.
@@ -1010,6 +1030,26 @@ static inline int i2c_read_dt(const struct i2c_dt_spec *spec,
 			      uint8_t *buf, uint32_t num_bytes)
 {
 	return i2c_read(spec->bus, buf, num_bytes, spec->addr);
+}
+
+/**
+ * @brief Read a set amount of data from an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_read(spec->bus, buf, num_bytes, spec->addresses[spec_idx]);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param spec_idx I2C address index from @ref i2c_address_detect_dt_idx.
+ * @param buf Memory pool that stores the retrieved data.
+ * @param num_bytes Number of bytes to read.
+ *
+ * @return a value from i2c_read()
+ */
+static inline int i2c_read_dt_idx(const struct i2c_dt_spec *spec, uint8_t spec_idx,
+				  uint8_t *buf, uint32_t num_bytes)
+{
+	return i2c_read(spec->bus, buf, num_bytes, spec->addresses[spec_idx]);
 }
 
 /**
@@ -1074,6 +1114,33 @@ static inline int i2c_write_read_dt(const struct i2c_dt_spec *spec,
 }
 
 /**
+ * @brief Write then read data from an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_write_read(spec->bus, spec->addresses[spec_idx],
+ *                    write_buf, num_write,
+ *                    read_buf, num_read);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param spec_idx I2C address index from @ref i2c_address_detect_dt_idx.
+ * @param write_buf Pointer to the data to be written
+ * @param num_write Number of bytes to write
+ * @param read_buf Pointer to storage for read data
+ * @param num_read Number of bytes to read
+ *
+ * @return a value from i2c_write_read()
+ */
+static inline int i2c_write_read_dt_idx(const struct i2c_dt_spec *spec, uint8_t spec_idx,
+					const void *write_buf, size_t num_write,
+					void *read_buf, size_t num_read)
+{
+	return i2c_write_read(spec->bus, spec->addresses[spec_idx],
+			      write_buf, num_write,
+			      read_buf, num_read);
+}
+
+/**
  * @brief Read multiple bytes from an internal address of an I2C device.
  *
  * This routine reads multiple bytes from an internal address of an
@@ -1122,6 +1189,32 @@ static inline int i2c_burst_read_dt(const struct i2c_dt_spec *spec,
 				    uint32_t num_bytes)
 {
 	return i2c_burst_read(spec->bus, spec->addr,
+			      start_addr, buf, num_bytes);
+}
+
+/**
+ * @brief Read multiple bytes from an internal address of an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_burst_read(spec->bus, spec->address[spec_idx],
+ *                    start_addr, buf, num_bytes);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param spec_idx I2C address index from @ref i2c_address_detect_dt_idx.
+ * @param start_addr Internal address from which the data is being read.
+ * @param buf Memory pool that stores the retrieved data.
+ * @param num_bytes Number of bytes to read.
+ *
+ * @return a value from i2c_burst_read()
+ */
+static inline int i2c_burst_read_dt_idx(const struct i2c_dt_spec *spec,
+					uint8_t spec_idx,
+					uint8_t start_addr,
+					uint8_t *buf,
+					uint32_t num_bytes)
+{
+	return i2c_burst_read(spec->bus, spec->addresses[spec_idx],
 			      start_addr, buf, num_bytes);
 }
 
@@ -1189,6 +1282,32 @@ static inline int i2c_burst_write_dt(const struct i2c_dt_spec *spec,
 }
 
 /**
+ * @brief Write multiple bytes to an internal address of an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_burst_write(spec->bus, spec->addresses[spec_idx],
+ *                     start_addr, buf, num_bytes);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param spec_idx I2C address index from @ref i2c_address_detect_dt_idx.
+ * @param start_addr Internal address to which the data is being written.
+ * @param buf Memory pool from which the data is transferred.
+ * @param num_bytes Number of bytes being written.
+ *
+ * @return a value from i2c_burst_write()
+ */
+static inline int i2c_burst_write_dt_idx(const struct i2c_dt_spec *spec,
+					 uint8_t spec_idx,
+					 uint8_t start_addr,
+					 const uint8_t *buf,
+					 uint32_t num_bytes)
+{
+	return i2c_burst_write(spec->bus, spec->addresses[spec_idx],
+			       start_addr, buf, num_bytes);
+}
+
+/**
  * @brief Read internal register of an I2C device.
  *
  * This routine reads the value of an 8-bit internal register of an I2C
@@ -1229,6 +1348,26 @@ static inline int i2c_reg_read_byte_dt(const struct i2c_dt_spec *spec,
 				       uint8_t reg_addr, uint8_t *value)
 {
 	return i2c_reg_read_byte(spec->bus, spec->addr, reg_addr, value);
+}
+
+/**
+ * @brief Read internal register of an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_reg_read_byte(spec->bus, spec->addresses[spec_idx], reg_addr, value);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param spec_idx I2C address index from @ref i2c_address_detect_dt_idx.
+ * @param reg_addr Address of the internal register being read.
+ * @param value Memory pool that stores the retrieved register value.
+ *
+ * @return a value from i2c_reg_read_byte()
+ */
+static inline int i2c_reg_read_byte_dt_idx(const struct i2c_dt_spec *spec, uint8_t spec_idx,
+					   uint8_t reg_addr, uint8_t *value)
+{
+	return i2c_reg_read_byte(spec->bus, spec->addresses[spec_idx], reg_addr, value);
 }
 
 /**
@@ -1273,6 +1412,26 @@ static inline int i2c_reg_write_byte(const struct device *dev,
  */
 static inline int i2c_reg_write_byte_dt(const struct i2c_dt_spec *spec,
 					uint8_t reg_addr, uint8_t value)
+{
+	return i2c_reg_write_byte(spec->bus, spec->addr, reg_addr, value);
+}
+
+/**
+ * @brief Write internal register of an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_reg_write_byte(spec->bus, spec->addresses[spec_idx], reg_addr, value);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param spec_idx I2C address index from @ref i2c_address_detect_dt_idx.
+ * @param reg_addr Address of the internal register being written.
+ * @param value Value to be written to internal register.
+ *
+ * @return a value from i2c_reg_write_byte()
+ */
+static inline int i2c_reg_write_byte_dt_idx(const struct i2c_dt_spec *spec, uint8_t spec_idx,
+					    uint8_t reg_addr, uint8_t value)
 {
 	return i2c_reg_write_byte(spec->bus, spec->addr, reg_addr, value);
 }
@@ -1336,6 +1495,29 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
 					 uint8_t value)
 {
 	return i2c_reg_update_byte(spec->bus, spec->addr,
+				   reg_addr, mask, value);
+}
+
+/**
+ * @brief Update internal register of an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_reg_update_byte(spec->bus, spec->addresses[spec_idx], reg_addr, mask, value);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param spec_idx I2C address index from @ref i2c_address_detect_dt_idx.
+ * @param reg_addr Address of the internal register being updated.
+ * @param mask Bitmask for updating internal register.
+ * @param value Value for updating internal register.
+ *
+ * @return a value from i2c_reg_update_byte()
+ */
+static inline int i2c_reg_update_byte_dt_idx(const struct i2c_dt_spec *spec, uint8_t spec_idx,
+					     uint8_t reg_addr, uint8_t mask,
+					     uint8_t value)
+{
+	return i2c_reg_update_byte(spec->bus, spec->addresses[spec_idx],
 				   reg_addr, mask, value);
 }
 
