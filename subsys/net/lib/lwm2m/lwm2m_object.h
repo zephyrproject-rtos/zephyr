@@ -430,16 +430,6 @@ struct lwm2m_opaque_context {
 	size_t remaining;
 };
 
-struct lwm2m_senml_json_context {
-	bool base_name_stored : 1;
-	bool full_name_true : 1;
-	uint8_t base64_buf_len : 2;
-	uint8_t base64_mod_buf[3];
-	uint8_t json_flags;
-	struct lwm2m_obj_path base_name_path;
-	uint8_t resource_path_level;
-};
-
 struct lwm2m_block_context {
 	struct coap_block_context ctx;
 	struct lwm2m_opaque_context opaque;
