@@ -77,6 +77,7 @@ ip address), and the user account is ``user``. Then copy the python tool to the
 ``up_squared`` board from your build environment::
 
    $ scp boards/xtensa/intel_adsp/tools/cavstool.py user@cavs15:
+   $ scp boards/xtensa/intel_adsp/tools/remote-fw-service.py user@cavs15:
 
 
 Note that the ``/dev/hda`` device file created by the diagnostic driver must
@@ -85,7 +86,7 @@ loader script as root:
 
 .. code-block:: console
 
-   cavs15$ sudo ./cavstool.py
+   cavs15$ sudo ./remote-fw-service.py
 
 Cavstool_server.py is a daemon which accepts a firmware image from a remote host
 and loads it into the ADSP. After successful firmware download, the daemon also
