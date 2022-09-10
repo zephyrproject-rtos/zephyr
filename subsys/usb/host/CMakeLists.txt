@@ -16,4 +16,9 @@ zephyr_library_sources_ifdef(
 	usbh_shell.c
 )
 
+zephyr_library_sources_ifdef(
+  CONFIG_USBIP
+  usbip.c
+)
+
 zephyr_linker_sources(DATA_SECTIONS usbh_data.ld)
