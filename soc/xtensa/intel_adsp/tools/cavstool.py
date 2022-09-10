@@ -11,32 +11,8 @@ import subprocess
 import ctypes
 import mmap
 import argparse
-import socketserver
-import threading
-import hashlib
-from urllib.parse import urlparse
 
-# Global variable use to sync between log and request services.
-# When it is true, the adsp is able to start running.
-start_output = False
-lock = threading.Lock()
-
-# INADDR_ANY as default
-HOST = ''
-PORT_LOG = 9999
-PORT_REQ = PORT_LOG + 1
-BUF_SIZE = 4096
-
-# Define the command and the max size
-CMD_LOG_START = "start_log"
-CMD_DOWNLOAD = "download"
-MAX_CMD_SZ = 16
-
-# Define the header format and size for
-# transmiting the firmware
-PACKET_HEADER_FORMAT_FW = 'I 42s 32s'
-HEADER_SZ = 78
-
+start_output = True
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("cavs-fw")
@@ -666,10 +642,10 @@ def ipc_command(data, ext_data):
         dsp.HIPCIDD = ext_data
         dsp.HIPCIDR = (1<<31) | ext_data
 
-async def _main(server):
+async def main():
     #TODO this bit me, remove the globals, write a little FirmwareLoader class or something to contain.
     global hda, sd, dsp, hda_ostream_id, hda_streams
-    global start_output
+
     try:
         (hda, sd, dsp, hda_ostream_id) = map_regs()
     except Exception as e:
@@ -682,14 +658,14 @@ async def _main(server):
     if args.log_only:
         wait_fw_entered(timeout_s=None)
     else:
-        if not fw_file:
+        if not args.fw_file:
             log.error("Firmware file argument missing")
             sys.exit(1)
 
-        load_firmware(fw_file)
+        load_firmware(args.fw_file)
         time.sleep(0.1)
         if not args.quiet:
-            adsp_log("--\n", server)
+            sys.stdout.write("--\n")
 
     hda_streams = dict()
 
@@ -698,151 +674,13 @@ async def _main(server):
         await asyncio.sleep(0.03)
         (last_seq, output) = winstream_read(last_seq)
         if output:
-            adsp_log(output, server)
+            sys.stdout.write(output)
+            sys.stdout.flush()
         if not args.log_only:
             if dsp.HIPCIDA & 0x80000000:
                 dsp.HIPCIDA = 1<<31 # must ACK any DONE interrupts that arrive!
             if dsp.HIPCTDR & 0x80000000:
                 ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
-
-        if server:
-            # Check if the client connection is alive.
-            if not is_connection_alive(server):
-                lock.acquire()
-                start_output = False
-                lock.release()
-
-class adsp_request_handler(socketserver.BaseRequestHandler):
-    """
-    The request handler class for control the actions of server.
-    """
-
-    def receive_fw(self):
-        log.info("Receiving...")
-        # Receive the header first
-        d = self.request.recv(HEADER_SZ)
-
-        # Unpacked the header data
-        # Include size(4), filename(42) and MD5(32)
-        header = d[:HEADER_SZ]
-        total = d[HEADER_SZ:]
-        s = struct.Struct(PACKET_HEADER_FORMAT_FW)
-        fsize, fname, md5_tx_b = s.unpack(header)
-        log.info(f'size:{fsize}, filename:{fname}, MD5:{md5_tx_b}')
-
-        # Receive the firmware. We only receive the specified amount of bytes.
-        while len(total) < fsize:
-            data = self.request.recv(min(BUF_SIZE, fsize - len(total)))
-            if not data:
-                raise EOFError("truncated firmware file")
-            total += data
-
-        log.info(f"Done Receiving {len(total)}.")
-
-        try:
-            with open(fname,'wb') as f:
-                f.write(total)
-        except Exception as e:
-            log.error(f"Get exception {e} during FW transfer.")
-            return None
-
-        # Check the MD5 of the firmware
-        md5_rx = hashlib.md5(total).hexdigest()
-        md5_tx = md5_tx_b.decode('utf-8')
-
-        if md5_tx != md5_rx:
-            log.error(f'MD5 mismatch: {md5_tx} vs. {md5_rx}')
-            return None
-
-        return fname
-
-    def handle(self):
-        global start_output, fw_file
-
-        cmd = self.request.recv(MAX_CMD_SZ)
-        log.info(f"{self.client_address[0]} wrote: {cmd}")
-        action = cmd.decode("utf-8")
-        log.debug(f'load {action}')
-
-        if action == CMD_DOWNLOAD:
-            self.request.sendall(cmd)
-            recv_file = self.receive_fw()
-
-            if recv_file:
-                self.request.sendall("success".encode('utf-8'))
-                log.info("Firmware well received. Ready to download.")
-            else:
-                self.request.sendall("failed".encode('utf-8'))
-                log.error("Receive firmware failed.")
-
-            lock.acquire()
-            fw_file = recv_file
-            start_output = True
-            lock.release()
-
-        else:
-            log.error("incorrect load communitcation!")
-
-class adsp_log_handler(socketserver.BaseRequestHandler):
-    """
-    The log handler class for grabbing output messages of server.
-    """
-    def run_adsp(self):
-        self.loop = asyncio.get_event_loop()
-        self.loop.run_until_complete(_main(self))
-
-    def handle(self):
-        cmd = self.request.recv(MAX_CMD_SZ)
-        log.info(f"{self.client_address[0]} wrote: {cmd}")
-        action = cmd.decode("utf-8")
-        log.debug(f'monitor {action}')
-
-        if action == CMD_LOG_START:
-            global start_output, fw_file
-
-            self.request.sendall(cmd)
-
-            log.info(f"Waiting for instruction...")
-            while start_output is False:
-                time.sleep(1)
-                if not is_connection_alive(self):
-                    break
-
-            if fw_file:
-                log.info(f"Loaded FW {fw_file} and running...")
-                if os.path.exists(fw_file):
-                    self.run_adsp()
-                    log.info("service complete.")
-                else:
-                    log.error("Cannot find the FW file.")
-
-            lock.acquire()
-            start_output = False
-            if fw_file:
-                os.remove(fw_file)
-            fw_file = None
-            lock.release()
-
-        else:
-            log.error("incorrect monitor communitcation!")
-
-        log.info("Wait for next service...")
-
-def is_connection_alive(server):
-    try:
-        server.request.sendall(b' ')
-    except (BrokenPipeError, ConnectionResetError):
-        log.info("Client is disconnect.")
-        return False
-
-    return True
-
-def adsp_log(output, server):
-    if server:
-        server.request.sendall(output.encode("utf-8"))
-    else:
-        sys.stdout.write(output)
-        sys.stdout.flush()
 
 
 ap = argparse.ArgumentParser(description="DSP loader/logger tool")
@@ -854,12 +692,6 @@ ap.add_argument("-l", "--log-only", action="store_true",
                 help="Don't load firmware, just show log output")
 ap.add_argument("-n", "--no-history", action="store_true",
                 help="No current log buffer at start, just new output")
-ap.add_argument("-s", "--server-addr",
-                help="Specify the only IP address the log server will LISTEN on")
-ap.add_argument("-p", "--log-port",
-                help="Specify the PORT that the log server to active")
-ap.add_argument("-r", "--req-port",
-                help="Specify the PORT that the request server to active")
 ap.add_argument("fw_file", nargs="?", help="Firmware file")
 
 args = ap.parse_args()
@@ -869,58 +701,8 @@ if args.quiet:
 elif args.verbose:
     log.setLevel(logging.DEBUG)
 
-if args.fw_file:
-    fw_file = args.fw_file
-else:
-    fw_file = None
-
-if args.server_addr:
-    url = urlparse("//" + args.server_addr)
-
-    if url.hostname:
-        HOST = url.hostname
-
-    if url.port:
-        PORT_LOG = int(url.port)
-
-if args.log_port:
-    PORT_LOG = int(args.log_port)
-
-if args.req_port:
-    PORT_REQ = int(args.req_port)
-
-log.info(f"Serve on LOG PORT: {PORT_LOG} REQ PORT: {PORT_REQ}")
-
 if __name__ == "__main__":
-    # When fw_file is assigned or in log_only mode, it will
-    # not serve as a daemon. That mean it just run load
-    # firmware or read the log directly.
-    if args.fw_file or args.log_only:
-        start_output = True
-        try:
-            asyncio.get_event_loop().run_until_complete(_main(None))
-        except KeyboardInterrupt:
-            start_output = False
-        except Exception as e:
-            log.error(e)
-        finally:
-            sys.exit(0)
-
-    # Launch the command request service
-    socketserver.TCPServer.allow_reuse_address = True
-    req_server = socketserver.TCPServer((HOST, PORT_REQ), adsp_request_handler)
-    req_t = threading.Thread(target=req_server.serve_forever, daemon=True)
-
-    # Activate the log service which output adsp execution
-    with socketserver.TCPServer((HOST, PORT_LOG), adsp_log_handler) as log_server:
-        try:
-            log.info("Req server start...")
-            req_t.start()
-            log.info("Log server start...")
-            log_server.serve_forever()
-        except KeyboardInterrupt:
-            lock.acquire()
-            start_output = False
-            lock.release()
-            log_server.shutdown()
-            req_server.shutdown()
+    try:
+        asyncio.get_event_loop().run_until_complete(main())
+    except KeyboardInterrupt:
+        start_output = False
