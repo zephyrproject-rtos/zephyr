@@ -684,7 +684,14 @@ isr_rx_find_subevent:
 				 */
 				node_rx = ull_iso_pdu_rx_alloc_peek(2U);
 				if (node_rx) {
+					struct pdu_bis *pdu;
+
 					ull_iso_pdu_rx_alloc();
+
+					pdu = (void *)node_rx->pdu;
+					pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
+					pdu->len = 0U;
+
 					isr_rx_iso_data_invalid(lll, stream_idx,
 								bn, node_rx);
 
