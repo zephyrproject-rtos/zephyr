@@ -783,6 +783,28 @@ struct sensor_info {
 	SENSOR_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
+ * @brief Helper function for converting struct sensor_value to integer milli units.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @return The converted value.
+ */
+static inline int64_t sensor_value_to_milli(struct sensor_value *val)
+{
+	return ((int64_t)val->val1 * 1000) + val->val2 / 1000;
+}
+
+/**
+ * @brief Helper function for converting struct sensor_value to integer micro units.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @return The converted value.
+ */
+static inline int64_t sensor_value_to_micro(struct sensor_value *val)
+{
+	return ((int64_t)val->val1 * 1000000) + val->val2;
+}
+
+/**
  * @}
  */
 
