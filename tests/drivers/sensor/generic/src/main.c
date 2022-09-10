@@ -268,6 +268,8 @@ ZTEST(sensor_api, test_sensor_handle_triggers)
  * Gs to m/s^2 and from m/s^2 to Gs.  Verify helper function
  * to convert radians to degrees and degrees to radians.  Verify
  * helper function for converting struct sensor_value to double.
+ * Verify helper functions for converting to milli and micro prefix
+ * units.
  */
 ZTEST(sensor_api, test_sensor_unit_conversion)
 {
@@ -309,6 +311,27 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 	zassert_equal((long long)(sensor_value_to_double(&data) * 1000000LL),
 			SENSOR_PI, "the data is not match.");
 #endif
+	/* reset test data to positive value */
+	data.val1 = 3;
+	data.val2 = 300000;
+	zassert_equal(sensor_value_to_milli(&data), 3300LL,
+			"the result does not match");
+	zassert_equal(sensor_value_to_micro(&data), 3300000LL,
+			"the result does not match");
+	/* reset test data to negative value */
+	data.val1 = -data.val1;
+	data.val2 = -data.val2;
+	zassert_equal(sensor_value_to_milli(&data), -3300LL,
+			"the result does not match");
+	zassert_equal(sensor_value_to_micro(&data), -3300000LL,
+			"the result does not match");
+	/* Test when result is greater than 32-bit wide */
+	data.val1 = 5432109;
+	data.val2 = 876543;
+	zassert_equal(sensor_value_to_milli(&data), 5432109876LL,
+			"the result does not match");
+	zassert_equal(sensor_value_to_micro(&data), 5432109876543LL,
+			"the result does not match");
 }
 
 ZTEST_SUITE(sensor_api, NULL, NULL, ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
