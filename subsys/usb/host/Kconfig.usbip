@@ -1,0 +1,42 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USBIP
+	bool "USB USBIP support"
+	select EXPERIMENTAL
+	select EVENTS
+	depends on NETWORKING
+	depends on NET_IPV4
+	depends on NET_TCP
+	depends on NET_SOCKETS
+	help
+	  Experimental USB USBIP support.
+
+if USBIP
+
+config USBIP_THREAD_STACK_SIZE
+	int "USBIP thread stack size"
+	default 2048
+	help
+	  USBIP thread stack size in bytes.
+
+config USBIP_SUBMIT_BACKLOG_COUNT
+	int "Number of submit commands in the backlog"
+	range 32 128
+	default 48
+	help
+	  Number of submit commands that can be stored in the backlog.
+
+config USBIP_DEVICES_COUNT
+	int "Number of devices that can be exported"
+	range 1 255
+	default 1
+	help
+	  Number of devices that can be exported.
+
+module = USBIP
+module-str = usbip
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBIP
