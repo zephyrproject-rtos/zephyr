@@ -10,6 +10,7 @@ choice
 
 config SOC_RP2040
 	bool "Raspberry Pi RP2040"
+	select HAS_SEGGER_RTT
 
 endchoice
 
