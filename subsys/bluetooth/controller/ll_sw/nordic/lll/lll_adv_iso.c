@@ -246,40 +246,47 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Get ISO data PDU */
 #if !TEST_WITH_DUMMY_PDU
 	struct lll_adv_iso_stream *stream;
+	memq_link_t *link = NULL;
+	struct node_tx_iso *tx;
 	uint64_t payload_count;
 	uint16_t stream_handle;
 	uint16_t handle;
-	struct node_tx_iso *tx;
-	memq_link_t *link;
+	uint8_t bis_idx;
 
-	stream_handle = lll->stream_handle[lll->bis_curr - 1U];
-	handle = stream_handle + BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
-	stream = ull_adv_iso_lll_stream_get(stream_handle);
-	LL_ASSERT(stream);
+	bis_idx = lll->num_bis;
+	while (bis_idx--) {
+		stream_handle = lll->stream_handle[bis_idx];
+		handle = stream_handle + BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
+		stream = ull_adv_iso_lll_stream_get(stream_handle);
+		LL_ASSERT(stream);
 
-	payload_count = lll->payload_count - lll->bn;
+		payload_count = lll->payload_count - lll->bn;
 
-	do {
-		link = memq_peek(stream->memq_tx.head, stream->memq_tx.tail,
-				 (void **)&tx);
-		if (link) {
-			if (tx->payload_count < payload_count) {
-				memq_dequeue(stream->memq_tx.tail,
-					     &stream->memq_tx.head, NULL);
+		do {
+			link = memq_peek(stream->memq_tx.head,
+					 stream->memq_tx.tail, (void **)&tx);
+			if (link) {
+				if (tx->payload_count < payload_count) {
+					memq_dequeue(stream->memq_tx.tail,
+						     &stream->memq_tx.head,
+						     NULL);
 
-				tx->next = link;
-				ull_iso_lll_ack_enqueue(handle, tx);
-			} else if (tx->payload_count >= lll->payload_count) {
-				link = NULL;
-			} else {
-				if (tx->payload_count != payload_count) {
+					tx->next = link;
+					ull_iso_lll_ack_enqueue(handle, tx);
+				} else if (tx->payload_count >=
+					   lll->payload_count) {
 					link = NULL;
-				}
+				} else {
+					if (tx->payload_count !=
+					    payload_count) {
+						link = NULL;
+					}
 
-				break;
+					break;
+				}
 			}
-		}
-	} while (link);
+		} while (link);
+	}
 
 	if (!link) {
 		pdu = radio_pkt_empty_get();
@@ -501,36 +508,37 @@ static void isr_tx_common(void *param,
 	} else {
 		struct lll_adv_iso_stream *stream;
 		uint16_t stream_handle;
-		uint16_t handle;
 		memq_link_t *link;
+		uint16_t handle;
 
-		/* TODO:
-		 * stream_handle = lll->stream_handle[lll->bis_curr - 1U];
-		 */
-		stream_handle = 0U;
-		handle = stream_handle + BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
-		stream = ull_adv_iso_lll_stream_get(stream_handle);
-		LL_ASSERT(stream);
+		for (uint8_t bis_idx = 0U; bis_idx < lll->num_bis; bis_idx++) {
+			stream_handle = lll->stream_handle[bis_idx];
+			handle = stream_handle +
+				 BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
+			stream = ull_adv_iso_lll_stream_get(stream_handle);
+			LL_ASSERT(stream);
 
-		do {
-			struct node_tx_iso *tx;
+			do {
+				struct node_tx_iso *tx;
 
-			link = memq_peek(stream->memq_tx.head,
-					 stream->memq_tx.tail,
-					 (void **)&tx);
-			if (link) {
-				if (tx->payload_count >= lll->payload_count) {
-					break;
+				link = memq_peek(stream->memq_tx.head,
+						 stream->memq_tx.tail,
+						 (void **)&tx);
+				if (link) {
+					if (tx->payload_count >=
+					    lll->payload_count) {
+						break;
+					}
+
+					memq_dequeue(stream->memq_tx.tail,
+						     &stream->memq_tx.head,
+						     NULL);
+
+					tx->next = link;
+					ull_iso_lll_ack_enqueue(handle, tx);
 				}
-
-				memq_dequeue(stream->memq_tx.tail,
-					     &stream->memq_tx.head,
-					     NULL);
-
-				tx->next = link;
-				ull_iso_lll_ack_enqueue(handle, tx);
-			}
-		} while (link);
+			} while (link);
+		}
 
 		/* Close the BIG event as no more subevents */
 		radio_isr_set(isr_done, lll);
