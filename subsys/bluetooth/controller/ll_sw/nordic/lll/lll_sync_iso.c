@@ -519,11 +519,11 @@ static void isr_rx(void *param)
 		stream = ull_sync_iso_lll_stream_get(handle);
 
 		if ((lll->bis_curr == stream->bis_index) && pdu->len &&
-		    !lll->payload[lll->stream_curr][payload_index] &&
+		    !lll->payload[bis_idx][payload_index] &&
 		    ((payload_index >= lll->payload_tail) ||
 		     (payload_index < lll->payload_head))) {
 			ull_iso_pdu_rx_alloc();
-			isr_rx_iso_data_valid(lll, lll->stream_curr, node_rx);
+			isr_rx_iso_data_valid(lll, bis_idx, node_rx);
 
 			lll->payload[bis_idx][payload_index] = node_rx;
 		}
@@ -653,7 +653,7 @@ isr_rx_find_subevent:
 	for (bis_idx = 0U; bis_idx < lll->num_bis; bis_idx++) {
 		struct lll_sync_iso_stream *stream;
 		uint8_t payload_tail;
-		uint8_t stream_idx;
+		uint8_t stream_curr;
 		uint16_t handle;
 
 		handle = lll->stream_handle[lll->stream_curr];
@@ -664,15 +664,14 @@ isr_rx_find_subevent:
 		if ((bis_idx + 1U) != stream->bis_index) {
 			continue;
 		}
-		stream_idx = lll->stream_curr;
 
 		payload_tail = lll->payload_tail;
 		bn = lll->bn;
 		while (bn--) {
-			if (lll->payload[stream_idx][payload_tail]) {
+			if (lll->payload[bis_idx][payload_tail]) {
 				node_rx =
-					lll->payload[stream_idx][payload_tail];
-				lll->payload[stream_idx][payload_tail] = NULL;
+					lll->payload[bis_idx][payload_tail];
+				lll->payload[bis_idx][payload_tail] = NULL;
 
 				iso_rx_put(node_rx->hdr.link, node_rx);
 			} else {
@@ -692,7 +691,7 @@ isr_rx_find_subevent:
 					pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
 					pdu->len = 0U;
 
-					isr_rx_iso_data_invalid(lll, stream_idx,
+					isr_rx_iso_data_invalid(lll, bis_idx,
 								bn, node_rx);
 
 					iso_rx_put(node_rx->hdr.link, node_rx);
@@ -706,9 +705,9 @@ isr_rx_find_subevent:
 			payload_tail = payload_index;
 		}
 
-		stream_idx++;
-		if (stream_idx < lll->stream_count) {
-			lll->stream_curr = stream_idx;
+		stream_curr = lll->stream_curr + 1U;
+		if (stream_curr < lll->stream_count) {
+			lll->stream_curr = stream_curr;
 		}
 	}
 	lll->payload_tail = payload_index;
