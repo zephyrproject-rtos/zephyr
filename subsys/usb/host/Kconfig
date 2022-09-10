@@ -53,4 +53,6 @@ config USBH_MAX_UHC_MSG
 	help
 	  Maximum number of USB host controller events that can be queued.
 
+rsource "Kconfig.usbip"
+
 endif # USB_HOST_STACK
