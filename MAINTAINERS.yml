@@ -1330,6 +1330,7 @@ MCU Manager:
     - subsys/mgmt/mcumgr/
     - include/zephyr/mgmt/mcumgr/
     - samples/subsys/mgmt/mcumgr/
+    - tests/subsys/mgmt/mcumgr/
   labels:
     - "area: mcumgr"
 
