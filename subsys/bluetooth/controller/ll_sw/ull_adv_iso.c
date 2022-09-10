@@ -794,9 +794,17 @@ static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t latency_pdu,
 	reserve = latency_packing + ctrl_spacing +
 		  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	if (reserve < latency_pdu) {
-		return ((latency_pdu - reserve) / (lll->sub_interval * lll->bn *
-						   lll->num_bis)) *
-			lll->bn;
+		uint8_t ptc;
+
+		/* Possible maximum Pre-transmission Subevents per BIS */
+		ptc = ((latency_pdu - reserve) / (lll->sub_interval * lll->bn *
+						  lll->num_bis)) *
+		      lll->bn;
+
+		/* Retrict to a maximum Pre-Transmission Subevents per BIS */
+		ptc = MIN(ptc, 1U);
+
+		return ptc;
 	}
 
 	return 0U;
