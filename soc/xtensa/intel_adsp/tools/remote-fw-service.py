@@ -171,7 +171,7 @@ class adsp_log_handler(socketserver.BaseRequestHandler):
 
     def is_connection_alive(self):
         try:
-            self.request.sendall(b' ')
+            self.request.sendall(b'\x00')
         except (BrokenPipeError, ConnectionResetError):
             log.info("Client is disconnect.")
             return False

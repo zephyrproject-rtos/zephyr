@@ -98,9 +98,10 @@ class cavstool_client():
         log.info(f"Start to monitor log output...")
         while True:
             # Receive data from the server and print out
-            receive_log = str(self.sock.recv(BUF_SIZE).strip(), "utf-8")
+            receive_log = str(self.sock.recv(BUF_SIZE), "utf-8").replace('\x00','')
             if receive_log:
-                print(f"{receive_log}")
+                sys.stdout.write(f"{receive_log}")
+                sys.stdout.flush()
                 time.sleep(0.1)
 
     def __del__(self):
