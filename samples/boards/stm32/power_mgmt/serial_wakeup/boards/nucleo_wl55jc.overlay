@@ -1,9 +1,3 @@
-&clk_lsi {
-    /* prefer LSE over LSI */
-    status = "disabled";
-};
-
-
 &clk_lse {
 	status = "okay";
 };
