@@ -2490,10 +2490,12 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 {
 	struct lll_tx *tx;
 	uint8_t cmplt;
+	uint8_t next;
 
+	next = *first;
 	tx = mfifo_dequeue_iter_get(mfifo_tx_ack.m, mfifo_tx_ack.s,
 				    mfifo_tx_ack.n, mfifo_tx_ack.f, last,
-				    first);
+				    &next);
 	if (!tx) {
 		return 0;
 	}
@@ -2614,9 +2616,10 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 next_ack:
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
+		*first = next;
 		tx = mfifo_dequeue_iter_get(mfifo_tx_ack.m, mfifo_tx_ack.s,
 					    mfifo_tx_ack.n, mfifo_tx_ack.f,
-					    last, first);
+					    last, &next);
 	} while (tx && tx->handle == *handle);
 
 	return cmplt;
