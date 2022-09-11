@@ -1,0 +1,13 @@
+&clk_lse {
+	status = "okay";
+};
+
+&lpuart1 {
+	pinctrl-1 = <&analog_pa2 &analog_pa3>;
+	pinctrl-names = "default","sleep";
+	/delete-property/ clocks;
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000001>,
+	         <&rcc STM32_SRC_LSE LPUART1_SEL(3)>;
+	wakeup-source;
+	current-speed = <9600>;
+};
