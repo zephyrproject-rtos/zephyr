@@ -55,6 +55,11 @@ int __sx12xx_configure_pin(const struct gpio_dt_spec *gpio, gpio_flags_t flags)
 		return err;
 	}
 
+	/* Disconnect inactive pins to save power */
+	if (flags == GPIO_OUTPUT_INACTIVE) {
+		gpio_pin_configure_dt(gpio, GPIO_DISCONNECTED);
+	}
+
 	return 0;
 }
 
