@@ -10,6 +10,8 @@ import re
 import hashlib
 import random
 import shutil
+import time
+import threading
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 from zephyr_ext_common import ZEPHYR_BASE
 
@@ -138,20 +140,30 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
 
         self.logger.debug(f"rcmd: {self.run_cmd}")
 
+        # Launch the log monitor thread before fw is downloaded to avoid log missing
+        if self.pty is not None:
+            log_monitor_thread = threading.Thread(target=self.log_monitor)
+            log_monitor_thread.start()
+            # Ensure the log monitor thread is alive.
+            while not log_monitor_thread.is_alive():
+                time.sleep(0.1)
+        # And the flash operation carried out in run_cmd takes some time to finish.
+        # Together with the above is_alive() check, we can be much more sure that the
+        # logging thread is ready when the board starts to run.
         self.check_call(self.run_cmd)
 
+    def log_monitor(self):
         # If the self.pty is assigned, the log will output to stdout
         # directly. That means you don't have to execute the command:
         #
         #   cavstool_client.py -s {host}:{port} -l
         #
         # to get the result later separately.
-        if self.pty is not None:
-            if self.pty == 'remote-host':
-                self.log_cmd = ([f'{self.cavstool}','-s', f'{self.remote_host}', '-l'])
-            else:
-                self.log_cmd = ([f'{self.cavstool}','-s', f'{self.pty}', '-l'])
+        if self.pty == 'remote-host':
+            self.log_cmd = ([f'{self.cavstool}','-s', f'{self.remote_host}', '-l'])
+        else:
+            self.log_cmd = ([f'{self.cavstool}','-s', f'{self.pty}', '-l'])
 
-            self.logger.debug(f"rcmd: {self.log_cmd}")
+        self.logger.debug(f"rcmd: {self.log_cmd}")
 
-            self.check_call(self.log_cmd)
+        self.check_call(self.log_cmd)
