@@ -12,10 +12,11 @@
 #include "hal/ccm.h"
 
 #include "util/util.h"
-#include "util/memq.h"
 #include "util/mem.h"
+#include "util/memq.h"
 #include "util/mfifo.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 #include "hal/ticker.h"
@@ -25,6 +26,7 @@
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
 #include "lll_adv_iso.h"
+#include "lll/lll_df_types.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 #include "lll_conn.h"
