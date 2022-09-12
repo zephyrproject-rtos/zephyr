@@ -1,24 +1,26 @@
 # Copyright (c) 2020 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "Intel CAVS SoC Selection"
-	depends on SOC_SERIES_INTEL_ADSP_CAVS
-
 config SOC_INTEL_CAVS_V15
-	bool "Intel Apollo Lake"
+	bool
+	help
+	  Intel Apollo Lake
 
 config SOC_INTEL_CAVS_V18
-	bool "Intel Cannon Lake"
+	bool
 	select XTENSA_WAITI_BUG
+	help
+	  Intel Cannon Lake
 
 config SOC_INTEL_CAVS_V20
-	bool "Intel Ice Lake"
+	bool
 	select XTENSA_WAITI_BUG
+	help
+	  Intel Ice Lake
 
 config SOC_INTEL_CAVS_V25
-	bool "Intel Tiger Lake"
+	bool
 	select XTENSA_WAITI_BUG
 	select SCHED_IPI_SUPPORTED
-
-endchoice
+	help
+	  Intel Tiger Lake
