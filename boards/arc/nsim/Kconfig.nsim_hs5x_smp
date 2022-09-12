@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NSIM_HS5X_SMP
+	bool
+	default y
+	select SOC_NSIM
+	select SOC_NSIM_HS5X_SMP
+	select HAS_COVERAGE_SUPPORT

@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_EM_STARTERKIT
+#if BOARD_EM_STARTERKIT
 
-config BOARD
-	default "em_starterkit"
+#config BOARD
+#	default "em_starterkit"
 
 if GPIO
 
@@ -29,4 +29,4 @@ config SPI_DW_ARC_AUX_REGS
 
 endif # SPI_DW
 
-endif # BOARD_EM_STARTERKIT
+#endif # BOARD_EM_STARTERKIT

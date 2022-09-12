@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NSIM_EM7D_V22
+	bool
+	default y
+	select SOC_NSIM
+	select SOC_NSIM_EM7D_V22
+	select HAS_COVERAGE_SUPPORT

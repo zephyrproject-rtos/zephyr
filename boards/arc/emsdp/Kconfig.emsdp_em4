@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EMSDP_EM4
+	bool
+	default y
+	select SOC_ARC_EMSDP
+	select SOC_EMSDP_EM4

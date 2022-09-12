@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EM_STARTERKIT_R23
+	bool
+	default y
+	select SOC_EMSK
+	select SOC_EMSK_EM7D

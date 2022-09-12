@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NSIM_SEM_MPU_STACK_GUARD
+	bool
+	default y
+	select SOC_NSIM
+	select SOC_NSIM_SEM
+	select HAS_COVERAGE_SUPPORT

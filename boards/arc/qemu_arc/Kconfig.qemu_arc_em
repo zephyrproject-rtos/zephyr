@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_ARC_EM
+	bool
+	default y
+	select SOC_QEMU_ARC
+	select SOC_QEMU_ARC_EM
+	select QEMU_TARGET
+	select HAS_COVERAGE_SUPPORT
