@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_H745ZI_Q_M4
+	bool
+	default y
+	select SOC_SERIES_STM32H7X
+	select SOC_STM32H745XX
+	select CPU_CORTEX_M4

@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MPS2_AN521_NS
+	bool
+	default y
+	select SOC_SERIES_MPS2
+	select SOC_MPS2_AN521_CPU0
+	select QEMU_TARGET
+	select HAS_COVERAGE_SUPPORT

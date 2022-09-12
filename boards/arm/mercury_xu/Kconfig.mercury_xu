@@ -1,0 +1,7 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MERCURY_XU
+	bool
+	default y
+	select SOC_XILINX_ZYNQMP_RPU

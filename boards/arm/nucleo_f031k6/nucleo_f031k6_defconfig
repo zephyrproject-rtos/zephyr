@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Platform Configuration
-CONFIG_SOC_SERIES_STM32F0X=y
-CONFIG_SOC_STM32F031X6=y
 
 # Kernel Options due to Low Memory (4k)
 CONFIG_MAIN_STACK_SIZE=512

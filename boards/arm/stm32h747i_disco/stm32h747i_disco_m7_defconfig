@@ -1,10 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_SOC_SERIES_STM32H7X=y
-CONFIG_SOC_STM32H747XX=y
 
 # Board config should be specified since there are 2 possible targets
-CONFIG_BOARD_STM32H747I_DISCO_M7=y
 
 # Enable the internal SMPS regulator
 CONFIG_POWER_SUPPLY_DIRECT_SMPS=y

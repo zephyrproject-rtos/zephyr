@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIMX8MQ_EVK_CM4
+	bool
+	default y
+	select SOC_SERIES_IMX8MQ_M4
+	select SOC_MIMX8MQ6
+	select SOC_PART_NUMBER_MIMX8MQ6DVAJZ

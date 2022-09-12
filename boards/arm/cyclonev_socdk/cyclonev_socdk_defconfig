@@ -3,9 +3,6 @@
 # Description:
 # Cyclone V SoC Development Kit Board configuration file
 
-CONFIG_SOC_SERIES_CYCLONE5=y
-CONFIG_SOC_CYCLONE5=y
-CONFIG_BOARD_CVSXDEVKIT=y
 CONFIG_ARM_ARCH_TIMER=y
 
 CONFIG_SYSCON=y

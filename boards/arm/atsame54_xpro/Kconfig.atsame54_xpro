@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ATSAME54_XPRO
+	bool
+	default y
+	select SOC_SERIES_SAME54
+	select SOC_PART_NUMBER_SAME54P20A

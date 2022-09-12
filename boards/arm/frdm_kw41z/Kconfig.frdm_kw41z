@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_KW41Z
+	bool
+	default y
+	select SOC_MKW41Z4
+	select SOC_SERIES_KINETIS_KWX
+	select SOC_PART_NUMBER_MKW41Z512VHT4

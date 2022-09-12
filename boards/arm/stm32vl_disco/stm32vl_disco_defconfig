@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Platform Configuration
-CONFIG_SOC_SERIES_STM32F1X=y
-CONFIG_SOC_STM32F100XB=y
 
 # Enable MPU
 CONFIG_ARM_MPU=y

@@ -6,10 +6,6 @@
 
 if BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
 
-config BOARD
-	default "bl5340_dvk_cpuapp" if BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
-
-
 config FLASH
 	default y
 
@@ -91,6 +87,3 @@ config I2C
 	default $(dt_compat_on_bus,$(DT_COMPAT_TI_TCA9538),i2c)
 
 endif # BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
-
-config BOARD
-	default "bl5340_dvk_cpunet" if BOARD_BL5340_DVK_CPUNET

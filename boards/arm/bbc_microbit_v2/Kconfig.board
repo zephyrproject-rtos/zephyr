@@ -1,8 +1,0 @@
-# nRF52 BBC_MICROBIT_V2 board configuration
-
-# Copyright (c) 2020 Lingao Meng
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_BBC_MICROBIT_V2
-	bool "BBC MICRO:BIT_V2"
-	depends on SOC_NRF52833_QIAA

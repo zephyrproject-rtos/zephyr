@@ -1,6 +1,0 @@
-# Copyright (c) 2021, Microchip Technology Inc.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_MEC172XEVB_ASSY6906
-	bool "Microchip MEC172X EVB ASSY 6906 Development board"
-	depends on SOC_MEC172X_NSZ

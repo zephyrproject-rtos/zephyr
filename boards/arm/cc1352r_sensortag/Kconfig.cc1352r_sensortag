@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CC1352R_SENSORTAG
+	bool
+	default y
+	select SOC_SERIES_CC13X2_CC26X2
+	select SOC_CC1352R

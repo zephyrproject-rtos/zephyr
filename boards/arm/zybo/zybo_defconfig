@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_SOC_SERIES_XILINX_XC7ZXXX=y
-CONFIG_SOC_XILINX_XC7Z010=y
-CONFIG_BOARD_ZYBO=y
 
 # The GTC is always clocked at 1/2 of the CPU frequency (CPU_3x2x)
 CONFIG_ARM_ARCH_TIMER=y

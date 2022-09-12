@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Set SoC present on the board
-CONFIG_SOC_SERIES_STM32H7X=y
-CONFIG_SOC_STM32H7B3XXQ=y
 
 # Enable MPU
 CONFIG_ARM_MPU=y

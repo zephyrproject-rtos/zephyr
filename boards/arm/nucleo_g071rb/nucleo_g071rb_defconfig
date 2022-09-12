@@ -1,6 +1,4 @@
 # Zephyr Kernel Configuration
-CONFIG_SOC_SERIES_STM32G0X=y
-CONFIG_SOC_STM32G071XX=y
 
 # Enable MPU
 CONFIG_ARM_MPU=y

@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RCAR_H3ULCB_CR7
+	bool
+	default y
+	select SOC_R8A77951
+	select SOC_SERIES_RCAR_GEN3

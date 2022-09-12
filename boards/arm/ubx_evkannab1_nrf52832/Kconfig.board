@@ -1,8 +1,0 @@
-# u-blox EVK-ANNA-B1 board configuration
-#
-# Copyright (c) 2021 u-blox AG
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_UBX_EVKANNAB1_NRF52832
-	bool "u-blox EVK-ANNA-B1"
-	depends on SOC_NRF52832_QFAA

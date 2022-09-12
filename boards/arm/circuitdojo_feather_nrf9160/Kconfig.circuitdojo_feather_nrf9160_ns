@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CIRCUITDOJO_FEATHER_NRF9160_NS
+	bool
+	default y
+	select SOC_SERIES_NRF91X
+	select SOC_NRF9160_SICA

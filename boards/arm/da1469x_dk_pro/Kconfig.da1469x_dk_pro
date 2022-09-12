@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_DA1469X_DK_PRO
+	bool
+	default y
+	select SOC_SERIES_DA1469X
+	select SOC_DA14699

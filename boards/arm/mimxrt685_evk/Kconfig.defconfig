@@ -3,7 +3,7 @@
 # Copyright (c) 2020, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MIMXRT685_EVK
+if BOARD_MIMXRT685_EVK_CM33
 
 config BOARD
 	default "mimxrt685_evk_cm33"
@@ -46,4 +46,4 @@ endif # DMA_MCUX_LPC
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
 
-endif # BOARD_MIMXRT685_EVK
+endif # BOARD_MIMXRT685_EVK_CM33

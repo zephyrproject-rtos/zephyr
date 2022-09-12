@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LPCXPRESSO54114_M0
+	bool
+	default y
+	select SOC_LPC54114_M0
+	select SOC_SERIES_LPC54XXX
+	select SOC_PART_NUMBER_LPC54114J256BD64

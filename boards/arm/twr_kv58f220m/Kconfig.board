@@ -1,9 +1,0 @@
-# TWR-KV58F220M board configuration
-
-# Copyright (c) 2019 SEAL AG
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_TWR_KV58F220M
-	bool "NXP TWR-KV58F220M"
-	depends on SOC_SERIES_KINETIS_KV5X
-	select SOC_PART_NUMBER_MKV58F1M0VLQ24

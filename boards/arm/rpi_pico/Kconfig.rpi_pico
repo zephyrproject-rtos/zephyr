@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RPI_PICO
+	bool
+	default y
+	select SOC_SERIES_RP2XXX
+	select SOC_RP2040

@@ -1,8 +1,6 @@
 # Copyright (c) 2022, Rtone.
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_SOC_SERIES_STM32F7X=y
-CONFIG_SOC_STM32F750XX=y
 
 # Enable MPU
 CONFIG_ARM_MPU=y

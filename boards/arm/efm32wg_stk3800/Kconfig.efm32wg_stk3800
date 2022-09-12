@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EFM32WG_STK3800
+	bool
+	default y
+	select SOC_SERIES_EFM32WG
+	select SOC_PART_NUMBER_EFM32WG990F256

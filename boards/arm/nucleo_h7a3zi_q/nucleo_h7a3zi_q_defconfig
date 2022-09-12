@@ -1,8 +1,6 @@
 # Copyright (c) 2021 Electrolance Solutions
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_SOC_SERIES_STM32H7X=y
-CONFIG_SOC_STM32H7A3XXQ=y
 
 # Enable MPU
 CONFIG_ARM_MPU=y

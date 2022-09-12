@@ -3,11 +3,6 @@
 # Copyright (c) 2019 Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_BL652_DVK
-
-config BOARD
-	default "bl652_dvk"
-
 config BT_CTLR
 	default BT
 
@@ -17,5 +12,3 @@ config I2C
 	default y
 
 endif # DAC
-
-endif # BOARD_BL652_DVK

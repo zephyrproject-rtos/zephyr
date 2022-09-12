@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SWAN_R5
+	bool
+	default y
+	select SOC_SERIES_STM32L4X
+	select SOC_STM32L4R5XX

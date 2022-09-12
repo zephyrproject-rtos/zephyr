@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_KL25Z
+	bool
+	default y
+	select SOC_SERIES_KINETIS_KL2X
+	select SOC_PART_NUMBER_MKL25Z128VLK4
+	select SOC_MKL25Z4

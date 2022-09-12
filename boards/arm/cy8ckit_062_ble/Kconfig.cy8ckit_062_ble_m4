@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CY8CKIT_062_BLE_M4
+	bool
+	default y
+	select SOC_SERIES_PSOC63
+	select SOC_PSOC6_M4
+	select SOC_PART_NUMBER_CY8C6347BZI_BLD53

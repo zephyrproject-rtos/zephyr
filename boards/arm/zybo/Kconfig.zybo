@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ZYBO
+	bool
+	default y
+	select SOC_SERIES_XILINX_XC7ZXXX
+	select SOC_XILINX_XC7Z010

@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Zephyr Kernel Configuration
-CONFIG_SOC_SERIES_STM32F0X=y
 
 # Platform Configuration
-CONFIG_SOC_STM32F030X8=y
 
 # Kernel Options due to Low Memory (8k)
 CONFIG_MAIN_STACK_SIZE=640

@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NPCX9M6F_EVB
+	bool
+	default y
+	select SOC_NPCX9M6F
+	select SOC_SERIES_NPCX9

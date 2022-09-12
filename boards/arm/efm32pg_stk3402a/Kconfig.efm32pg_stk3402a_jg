@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EFM32PG_STK3402A_JG
+	bool
+	default y
+	select SOC_SERIES_EFM32JG12B
+	select SOC_PART_NUMBER_EFM32JG12B500F1024GL125

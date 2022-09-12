@@ -1,8 +1,0 @@
-# NUCLEO-144 F207ZG board configuration
-
-# Copyright (c) 2018 qianfan Zhao
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NUCLEO_F207ZG
-	bool "NUCLEO-144 F207ZG Development Board"
-	depends on SOC_STM32F207XX

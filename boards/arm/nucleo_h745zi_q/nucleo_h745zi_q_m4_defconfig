@@ -1,10 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_SOC_SERIES_STM32H7X=y
-CONFIG_SOC_STM32H745XX=y
 
 # Board config should be specified since there are 2 possible targets
-CONFIG_BOARD_NUCLEO_H745ZI_Q_M4=y
 
 # Enable GPIO
 CONFIG_GPIO=y
