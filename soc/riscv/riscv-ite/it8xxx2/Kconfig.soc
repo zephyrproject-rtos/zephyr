@@ -1,12 +1,8 @@
 # Copyright (c) 2020 ITE Corporation. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-prompt "ITE IT8XXX2 system implementation"
-depends on SOC_SERIES_RISCV32_IT8XXX2
-
 config SOC_IT8XXX2
-	bool "ITE IT8XXX2 system implementation"
+	bool
 	select RISCV
 	select ATOMIC_OPERATIONS_BUILTIN
 	select RISCV_ISA_RV32I
@@ -17,8 +13,8 @@ config SOC_IT8XXX2
 	#select RISCV_ISA_EXT_M
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_C
-
-endchoice
+	help
+	  ITE IT8XXX2 system implementation
 
 if SOC_IT8XXX2
 
