@@ -114,6 +114,8 @@
 		magn0 = &bmm150;
 		watchdog0 = &wdt0;
 		accel0 = &adxl362;
+		mcuboot-button0 = &button1;
+		mcuboot-led0 = &blue_led;
 	};
 };
 
