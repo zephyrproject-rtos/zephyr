@@ -1,9 +1,6 @@
 # Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_SOC_SERIES_FVP_AEMV8A=y
-CONFIG_SOC_FVP_BASE_REVC_2XAEMV8A=y
-CONFIG_BOARD_FVP_BASE_REVC_2XAEMV8A=y
 
 CONFIG_XIP=n
 

@@ -5,9 +5,6 @@
 # Intel Arm Trusted Firmware (ATF)
 # Boot Flow: BL21 -> BL31 -> Zephyr
 
-CONFIG_SOC_SERIES_AGILEX=y
-CONFIG_SOC_AGILEX=y
-CONFIG_BOARD_INTEL_SOCFPGA_AGILEX_SOCDK=y
 CONFIG_ARM_ARCH_TIMER=y
 
 # Serial Drivers

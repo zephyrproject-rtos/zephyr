@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Platform Configuration
-CONFIG_SOC_SERIES_LS1046A=y
-CONFIG_SOC_LS1046A=y
-CONFIG_BOARD_NXP_LS1046ARDB=y
 CONFIG_ARM64_VA_BITS_40=y
 CONFIG_ARM64_PA_BITS_40=y
 # 25 MHz system clock

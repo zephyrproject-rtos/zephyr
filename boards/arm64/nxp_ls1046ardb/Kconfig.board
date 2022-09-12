@@ -1,8 +1,0 @@
-#
-# Copyright 2021 NXP
-# SPDX-License-Identifier: Apache-2.0
-#
-
-config BOARD_NXP_LS1046ARDB
-	bool "NXP Layerscape ls1046ardb"
-	depends on SOC_SERIES_LS1046A

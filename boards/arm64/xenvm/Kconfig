@@ -3,6 +3,6 @@
 
 config XENVM_USE_GIC_V3
 	bool "Xen VM using GICv3"
-	depends on BOARD_XENVM
+	depends on BOARD_XENVM_GICV3
 	help
 	  Configure Xen VM to use GICv3 instead of default GICv2.
