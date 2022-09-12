@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_GD32F4XX
-	bool "GigaDevice GD32F4XX series Cortex-M4F MCU"
+	bool
 	select ARM
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
