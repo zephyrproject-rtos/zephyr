@@ -14,19 +14,17 @@ config SOC_NRF5340_CPUNET
 	bool
 	select HAS_NO_PM
 
-choice
-	prompt "nRF53x MCU Selection"
-
 config SOC_NRF5340_CPUAPP_QKAA
-	bool "NRF5340_CPUAPP_QKAA"
+	bool
 	select SOC_NRF5340_CPUAPP
+	help
+	  NRF5340_CPUAPP_QKAA
 
 config SOC_NRF5340_CPUNET_QKAA
-	bool "NRF5340_CPUNET_QKAA"
+	bool
 	select SOC_NRF5340_CPUNET
-
-endchoice
-
+	help
+	  NRF5340_CPUNET_QKAA
 
 if SOC_NRF5340_CPUAPP
 

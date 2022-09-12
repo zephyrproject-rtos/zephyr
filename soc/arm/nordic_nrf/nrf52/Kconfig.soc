@@ -38,47 +38,59 @@ config SOC_NRF52840
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 
-choice
-	prompt "nRF52x MCU Selection"
-	depends on SOC_SERIES_NRF52X
-
 config SOC_NRF52805_CAAA
-	bool "NRF52805_CAAA"
+	bool
 	select SOC_NRF52805
+	help
+	  NRF52805_CAAA
 
 config SOC_NRF52810_QFAA
-	bool "NRF52810_QFAA"
+	bool
 	select SOC_NRF52810
+	help
+	  NRF52810_QFAA
 
 config SOC_NRF52811_QFAA
-	bool "NRF52811_QFAA"
+	bool
 	select SOC_NRF52811
+	help
+	  NRF52811_QFAA
 
 config SOC_NRF52820_QDAA
-	bool "NRF52820_QDAA"
+	bool
 	select SOC_NRF52820
+	help
+	  NRF52820_QDAA
 
 config SOC_NRF52832_CIAA
-	bool "NRF52832_CIAA"
+	bool
 	select SOC_NRF52832
+	help
+	  NRF52832_CIAA
 
 config SOC_NRF52832_QFAA
-	bool "NRF52832_QFAA"
+	bool
 	select SOC_NRF52832
+	help
+	  NRF52832_QFAA
 
 config SOC_NRF52832_QFAB
-	bool "NRF52832_QFAB"
+	bool
 	select SOC_NRF52832
+	help
+	  NRF52832_QFAB
 
 config SOC_NRF52833_QIAA
-	bool "NRF52833_QIAA"
+	bool
 	select SOC_NRF52833
+	help
+	  NRF52833_QIAA
 
 config SOC_NRF52840_QIAA
-	bool "NRF52840_QIAA"
+	bool
 	select SOC_NRF52840
-
-endchoice
+	help
+	  NRF52840_QIAA
 
 config SOC_DCDC_NRF52X
 	bool

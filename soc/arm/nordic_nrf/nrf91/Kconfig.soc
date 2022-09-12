@@ -7,15 +7,11 @@ config SOC_NRF9160
 	depends on SOC_SERIES_NRF91X
 	bool
 
-choice
-	prompt "nRF91x MCU Selection"
-	depends on SOC_SERIES_NRF91X
-
 config SOC_NRF9160_SICA
-	bool "NRF9160_SICA"
+	bool
 	select SOC_NRF9160
-
-endchoice
+	help
+	  NRF9160_SICA
 
 config NRF_ENABLE_ICACHE
 	bool "Instruction cache (I-Cache)"
