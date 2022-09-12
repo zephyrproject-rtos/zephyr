@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_NXP_IMX8
-	bool "NXP i.MX8"
+	bool
 	select SOC_FAMILY_NXP_ADSP
 	select XTENSA
 	select XTENSA_HAL if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
