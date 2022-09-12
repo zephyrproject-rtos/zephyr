@@ -3,15 +3,11 @@
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "MEC1501 Selection"
-	depends on SOC_SERIES_MEC1501X
-
 config SOC_MEC1501_HSZ
-	bool "MEC1501_HSZ"
+	bool
 	select HAS_MEC_HAL
-
-endchoice
+	help
+	  MEC1501_HSZ
 
 config RTOS_TIMER
 	bool "MEC1501 RTOS timer"
