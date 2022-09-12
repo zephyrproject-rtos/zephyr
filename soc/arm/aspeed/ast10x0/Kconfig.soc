@@ -2,14 +2,10 @@
 #
 # Copyright (c) 2021 ASPEED Technology Inc.
 
-choice
-	prompt "ASPEED AST10X0 Selection"
-	depends on SOC_SERIES_AST10X0
-
 config SOC_AST1030
-	bool "AST1030"
-
-endchoice
+	bool
+	help
+	  AST1030
 
 config SRAM_NC_SIZE
 	int "noncached SRAM Size in kB"
