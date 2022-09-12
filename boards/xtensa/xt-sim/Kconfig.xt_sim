@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XT_SIM
+	bool
+	default y
+	select SOC_XTENSA_SAMPLE_CONTROLLER
+	select SIMULATOR_XTENSA

@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_HELTEC_WIFI_LORA32_V2
+	bool
+	default y
+	select SOC_ESP32

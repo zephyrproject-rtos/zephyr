@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_INTEL_ADSP_ACE15_MTPM
+	bool
+	default y
+	select SOC_SERIES_INTEL_ACE
+	select SOC_INTEL_ACE15_MTPM

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_XTENSA
+	bool
+	default y
+	select SOC_XTENSA_SAMPLE_CONTROLLER
+	select QEMU_TARGET

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_INTEL_ADSP_CAVS18
+	bool
+	default y
+	select SOC_INTEL_CAVS_V18
+	select SOC_SERIES_INTEL_ADSP_CAVS
