@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_VIPER
-	bool "Broadcom Viper Series"
+	bool
 	select ARM64
 	select SOC_FAMILY_BCMVK
 	help
