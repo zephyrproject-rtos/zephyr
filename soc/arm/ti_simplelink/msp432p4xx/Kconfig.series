@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MSP432P4XX
-	bool "TI SimpleLink Family MSP432P4XX"
+	bool
 	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT

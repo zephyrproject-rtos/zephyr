@@ -3,11 +3,8 @@
 # Copyright (c) 2017, Linaro Ltd
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "TI SimpleLink MCU Selection"
-	depends on SOC_SERIES_MSP432P4XX
-
 config SOC_MSP432P401R
-	bool "MSP432P401R"
+	bool
 	select HAS_MSP432P4XXSDK
-endchoice
+	help
+	  MSP432P401R
