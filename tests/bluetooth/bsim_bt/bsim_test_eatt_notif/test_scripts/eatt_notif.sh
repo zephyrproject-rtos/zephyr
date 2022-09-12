@@ -37,3 +37,5 @@ for process_id in $process_ids; do
   wait $process_id || let "exit_code=$?"
 done
 exit $exit_code #the last exit code != 0
+
+# Dummy comment to trigger BSIM test
