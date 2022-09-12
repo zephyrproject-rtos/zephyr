@@ -3,15 +3,8 @@
 # Copyright (c) 2022 Marcin Niestroj
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_XIAO_BLE
-
-config BOARD
-	default "xiao_ble"
-
 config BT_CTLR
 	default BT
-
-endif # BOARD_XIAO_BLE
 
 if USB_DEVICE_STACK
 

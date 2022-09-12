@@ -5,9 +5,6 @@
 
 if BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
 
-config BOARD
-	default "thingy53_nrf5340_cpuapp"
-
 # Code Partition:
 #
 # For the secure version of the board the firmware is linked at the beginning
@@ -85,9 +82,6 @@ endif # !TRUSTED_EXECUTION_SECURE
 endif # BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
 
 if BOARD_THINGY53_NRF5340_CPUNET
-
-config BOARD
-	default "thingy53_nrf5340_cpunet"
 
 config BT_CTLR
 	default BT

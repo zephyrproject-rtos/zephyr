@@ -3,11 +3,6 @@
 # Copyright (c) 2019 SEAL AG
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_FRDM_K82F
-
-config BOARD
-	default "frdm_k82f"
-
 config OSC_XTAL0_FREQ
 	default 12000000
 
@@ -33,5 +28,3 @@ endif # FXOS8700
 config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER
-
-endif # BOARD_FRDM_K82F

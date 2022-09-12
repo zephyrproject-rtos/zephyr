@@ -3,11 +3,6 @@
 # Copyright (c) 2020 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_B_L4S5I_IOT01A
-
-config BOARD
-	default "b_l4s5i_iot01a"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
@@ -46,5 +41,3 @@ config BT_HCI_VS_EXT
 	default n
 
 endif # BT
-
-endif # BOARD_B_L4S5I_IOT01A

@@ -3,11 +3,6 @@
 # Copyright (c) 2022 Byte-Lab d.o.o. <dev@byte-lab.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_STM32H7B3I_DK
-
-config BOARD
-	default "stm32h7b3i_dk"
-
 config KSCAN
 	default y if DISPLAY
 
@@ -18,5 +13,3 @@ config KSCAN_FT5336_INTERRUPT
 # display buffer to external SDRAM connected to FMC
 config MEMC
 	default y if DISPLAY
-
-endif # BOARD_STM32H7B3I_DK

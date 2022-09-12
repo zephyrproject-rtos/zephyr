@@ -3,11 +3,6 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA.
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_QEMU_CORTEX_M0
-
-config BOARD
-	default "qemu_cortex_m0"
-
 config NRF_RTC_TIMER
 	default n if SYS_CLOCK_EXISTS
 
@@ -19,5 +14,3 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 config LOG_BUFFER_SIZE
 	default 128 if LOG
-
-endif # BOARD_QEMU_CORTEX_M0

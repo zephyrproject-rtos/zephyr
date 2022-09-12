@@ -4,14 +4,6 @@
 # Copyright (c) 2020 TriaGnoSys GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_EFR32_RADIO
-
-config BOARD
-	default "efr32_radio_brd4104a" if BOARD_EFR32_RADIO_BRD4104A
-	default "efr32_radio_brd4250b" if BOARD_EFR32_RADIO_BRD4250B
-	default "efr32_radio_brd4180a" if BOARD_EFR32_RADIO_BRD4180A
-	default "efr32_radio_brd4255a" if BOARD_EFR32_RADIO_BRD4255A
-
 config CMU_HFXO_FREQ
 	default 38400000
 
@@ -21,5 +13,3 @@ config CMU_LFXO_FREQ
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 875000
 	depends on LOG_BACKEND_SWO
-
-endif # BOARD_EFR32_RADIO

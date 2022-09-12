@@ -3,11 +3,6 @@
 # Copyright (c) 2019 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NUCLEO_WB55RG
-
-config BOARD
-	default "nucleo_wb55rg"
-
 choice BT_HCI_BUS_TYPE
 	default BT_STM32_IPM
 	depends on BT
@@ -16,5 +11,3 @@ endchoice
 # LPTIM clocked by LSE, force tick freq to 4096 for tick accuracy
 config SYS_CLOCK_TICKS_PER_SEC
 	default 4096 if STM32_LPTIM_TIMER
-
-endif # BOARD_NUCLEO_WB55RG

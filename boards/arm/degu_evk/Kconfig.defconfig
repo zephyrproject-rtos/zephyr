@@ -3,11 +3,6 @@
 # Copyright (c) 2019 Atmark Techno, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_DEGU_EVK
-
-config BOARD
-	default "degu_evk"
-
 if USB_DEVICE_STACK
 
 config USB_DEVICE_PRODUCT
@@ -42,5 +37,3 @@ config DISK_VOLUME_SIZE
 	default 0x8000
 
 endif # DISK_DRIVER_FLASH
-
-endif # BOARD_DEGU_EVK

@@ -3,11 +3,6 @@
 # Copyright (c) 2016, Freescale Semiconductor, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_HEXIWEAR_K64
-
-config BOARD
-	default "hexiwear_k64"
-
 config OSC_XTAL0_FREQ
 	default 12000000
 
@@ -22,5 +17,3 @@ config MCG_FCRDIV
 
 config REGULATOR
 	default y if ADC || SENSOR
-
-endif # BOARD_HEXIWEAR_K64

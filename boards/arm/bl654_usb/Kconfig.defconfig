@@ -3,11 +3,6 @@
 # Copyright (c) 2021-2022 Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_BL654_USB
-
-config BOARD
-	default "bl654_usb"
-
 # To let the nRF5 bootloader load an application, the application
 # must be linked after Nordic MBR, that is factory-programmed on the board.
 
@@ -46,5 +41,3 @@ endif #BL654_USB_SERIAL_BACKEND_CDCACM
 
 config BT_CTLR
 	default BT
-
-endif # BOARD_BL654_USB

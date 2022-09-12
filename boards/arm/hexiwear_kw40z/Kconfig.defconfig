@@ -3,11 +3,6 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_HEXIWEAR_KW40Z
-
-config BOARD
-	default "hexiwear_kw40z"
-
 config OSC_XTAL0_FREQ
 	default 32000000
 
@@ -16,5 +11,3 @@ config MCG_FRDIV
 
 config MCG_FCRDIV
 	default 0
-
-endif # BOARD_HEXIWEAR_KW40Z

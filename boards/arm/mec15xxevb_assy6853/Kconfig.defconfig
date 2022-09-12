@@ -1,11 +1,6 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MEC15XXEVB_ASSY6853
-
-config BOARD
-	default "mec15xxevb_assy6853"
-
 config ESPI_XEC
 	default y
 	depends on ESPI
@@ -38,5 +33,3 @@ config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
 
 endif # RTOS_TIMER
-
-endif # BOARD_MEC15XXEVB_ASSY6853

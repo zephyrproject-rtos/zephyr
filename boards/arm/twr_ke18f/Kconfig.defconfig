@@ -3,11 +3,6 @@
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_TWR_KE18F
-
-config BOARD
-	default "twr_ke18f"
-
 config I2C_MCUX_LPI2C_BUS_RECOVERY
 	default y
 	depends on I2C_MCUX_LPI2C && PINCTRL
@@ -16,5 +11,3 @@ config I2C_MCUX_LPI2C_BUS_RECOVERY
 # and userspace. Only enable HW stack protection if userspace is not enabled.
 config HW_STACK_PROTECTION
 	default y if !USERSPACE
-
-endif # BOARD_TWR_KE18F

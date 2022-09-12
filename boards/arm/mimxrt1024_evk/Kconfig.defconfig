@@ -3,11 +3,6 @@
 # Copyright (c) 2020, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MIMXRT1024_EVK
-
-config BOARD
-	default "mimxrt1024_evk" if BOARD_MIMXRT1024_EVK
-
 choice CODE_LOCATION
 	default CODE_FLEXSPI
 endchoice
@@ -25,5 +20,3 @@ config ETH_MCUX_PHY_RESET
 	default y
 
 endif # NETWORKING
-
-endif # BOARD_MIMXRT1024_EVK

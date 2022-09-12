@@ -1,11 +1,6 @@
 # Copyright (c) 2018-2021 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MPS3_AN547
-
-config BOARD
-	default "mps3_an547"
-
 # MPU-based null-pointer dereferencing detection cannot
 # be applied as the (0x0 - 0x400) is unmapped but QEMU
 # will still permit bus access.
@@ -20,5 +15,3 @@ config UART_INTERRUPT_DRIVEN
 	default y
 
 endif # SERIAL
-
-endif

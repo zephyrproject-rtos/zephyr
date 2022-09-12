@@ -3,11 +3,6 @@
 # Copyright (c) 2019 Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_PINNACLE_100_DVK
-
-config BOARD
-	default "pinnacle_100_dvk"
-
 config MODEM
 	default NETWORKING
 
@@ -22,5 +17,3 @@ config NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 
 config BT_CTLR
 	default BT
-
-endif # BOARD_PINNACLE_100_DVK

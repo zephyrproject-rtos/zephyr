@@ -3,11 +3,6 @@
 # Copyright (c) 2022, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MIMXRT595_EVK
-
-config BOARD
-	default "mimxrt595_evk_cm33"
-
 config FLASH_MCUX_FLEXSPI_MX25UM51345G
 	default y if FLASH
 config FLASH_SIZE
@@ -34,5 +29,3 @@ config HEAP_MEM_POOL_SIZE
 	default 4096
 
 endif # DMA_MCUX_LPC
-
-endif # BOARD_MIMXRT595_EVK

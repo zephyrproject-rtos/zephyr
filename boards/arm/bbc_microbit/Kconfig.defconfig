@@ -3,11 +3,6 @@
 # Copyright (c) 2016 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_BBC_MICROBIT
-
-config BOARD
-	default "bbc_microbit"
-
 config BT_CTLR
 	default BT
 
@@ -21,5 +16,3 @@ choice FXOS8700_MODE
 endchoice
 
 endif # FXOS8700
-
-endif # BOARD_BBC_MICROBIT

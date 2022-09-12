@@ -1,7 +1,0 @@
-# Copyright (c) 2022 BayLibre, SAS
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_RCAR_H3_SALVATORX_CR7
-config BOARD
-	default "rcar_h3_salvatorx_cr7"
-endif # BOARD_RCAR_H3_SALVATORX_CR7

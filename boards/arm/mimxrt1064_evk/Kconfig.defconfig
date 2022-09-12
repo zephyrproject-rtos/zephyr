@@ -3,11 +3,6 @@
 # Copyright (c) 2018, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MIMXRT1064_EVK
-
-config BOARD
-	default "mimxrt1064_evk"
-
 choice CODE_LOCATION
 	default CODE_FLEXSPI2
 endchoice
@@ -51,5 +46,3 @@ choice LV_COLOR_DEPTH
 endchoice
 
 endif # LVGL
-
-endif # BOARD_MIMXRT1064_EVK

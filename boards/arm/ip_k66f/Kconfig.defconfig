@@ -3,11 +3,6 @@
 # Copyright (c) 2020 DENX Software Engineering GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_IP_K66F
-
-config BOARD
-	default "ip_k66f"
-
 config OSC_XTAL0_FREQ
 	default 12000000
 
@@ -32,5 +27,3 @@ config ETH_MCUX_NO_PHY_SMI
 	default y if ETH_MCUX
 
 endif # NETWORKING
-
-endif # BOARD_IP_K66F

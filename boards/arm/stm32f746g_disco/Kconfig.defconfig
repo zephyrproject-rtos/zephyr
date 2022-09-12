@@ -3,11 +3,6 @@
 # Copyright (c) 2018 Yurii Hamann
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_STM32F746G_DISCO
-
-config BOARD
-	default "stm32f746g_disco"
-
 if NETWORKING
 
 config NET_L2_ETHERNET
@@ -36,5 +31,3 @@ endif # KSCAN
 
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
-
-endif # BOARD_STM32F746G_DISCO

@@ -3,11 +3,6 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_FRDM_KW41Z
-
-config BOARD
-	default "frdm_kw41z"
-
 config OSC_XTAL0_FREQ
 	default 32000000
 
@@ -24,5 +19,3 @@ config FXOS8700_DRDY_INT1
 choice ADC_MCUX_ADC16_VREF
 	default ADC_MCUX_ADC16_VREF_ALTERNATE
 endchoice
-
-endif # BOARD_FRDM_KW41Z
