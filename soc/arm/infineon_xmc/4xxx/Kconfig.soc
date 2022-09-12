@@ -4,15 +4,11 @@
 # Author: Parthiban Nallathambi <parthiban@linumiz.com>
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "XMC 4xxx MCU Selection"
-	depends on SOC_SERIES_XMC_4XXX
-
 config SOC_XMC4500
-	bool "SOC_XMC4500"
+	bool
 	select HAS_XMCLIB
-
-endchoice
+	help
+	  SOC_XMC4500
 
 if SOC_SERIES_XMC_4XXX
 
