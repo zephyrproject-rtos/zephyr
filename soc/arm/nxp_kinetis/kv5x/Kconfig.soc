@@ -3,17 +3,15 @@
 # Copyright (c) 2019 SEAL AG
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "Kinetis KV5x MCU Selection"
-	depends on SOC_SERIES_KINETIS_KV5X
-
 config SOC_MKV56F24
-	bool "MKV56F24"
+	bool
+	help
+	  MKV56F24
 
 config SOC_MKV58F24
-	bool "MKV58F24"
-
-endchoice
+	bool
+	help
+	  MKV58F24
 
 if SOC_SERIES_KINETIS_KV5X
 

@@ -3,12 +3,8 @@
 # Copyright (c) 2017-2021, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "i.MX RT Selection"
-	depends on SOC_SERIES_IMX_RT
-
 config SOC_MIMXRT1011
-	bool "SOC_MIMXRT1011"
+	bool
 	select SOC_SERIES_IMX_RT10XX
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
@@ -30,9 +26,11 @@ config SOC_MIMXRT1011
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
 	select HAS_SWO
+	help
+	  SOC_MIMXRT1011
 
 config SOC_MIMXRT1015
-	bool "SOC_MIMXRT1015"
+	bool
 	select SOC_SERIES_IMX_RT10XX
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
@@ -55,9 +53,11 @@ config SOC_MIMXRT1015
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
 	select HAS_SWO
+	help
+	  SOC_MIMXRT1015
 
 config SOC_MIMXRT1021
-	bool "SOC_MIMXRT1021"
+	bool
 	select SOC_SERIES_IMX_RT10XX
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
@@ -86,9 +86,11 @@ config SOC_MIMXRT1021
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
 	select HAS_SWO
+	help
+	  SOC_MIMXRT1021
 
 config SOC_MIMXRT1024
-	bool "SOC_MIMXRT1024"
+	bool
 	select SOC_SERIES_IMX_RT10XX
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
@@ -117,9 +119,11 @@ config SOC_MIMXRT1024
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
 	select HAS_SWO
+	help
+	  SOC_MIMXRT1024
 
 config SOC_MIMXRT1051
-	bool "SOC_MIMXRT1051"
+	bool
 	select SOC_SERIES_IMX_RT10XX
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
@@ -148,9 +152,11 @@ config SOC_MIMXRT1051
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
 	select HAS_SWO
+	help
+	  SOC_MIMXRT1051
 
 config SOC_MIMXRT1052
-	bool "SOC_MIMXRT1052"
+	bool
 	select SOC_SERIES_IMX_RT10XX
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
@@ -184,9 +190,11 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_IOMUXC
 	select HAS_MCUX_SRC
 	select HAS_SWO
+	help
+	  SOC_MIMXRT1052
 
 config SOC_MIMXRT1061
-	bool "SOC_MIMXRT1061"
+	bool
 	select SOC_SERIES_IMX_RT10XX
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
@@ -215,9 +223,11 @@ config SOC_MIMXRT1061
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
 	select HAS_SWO
+	help
+	  SOC_MIMXRT1061
 
 config SOC_MIMXRT1062
-	bool "SOC_MIMXRT1062"
+	bool
 	select SOC_SERIES_IMX_RT10XX
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
@@ -256,9 +266,11 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_SRC
 	select HAS_SWO
 	select HAS_MCUX_XBARA
+	help
+	  SOC_MIMXRT1062
 
 config SOC_MIMXRT1064
-	bool "SOC_MIMXRT1064"
+	bool
 	select SOC_SERIES_IMX_RT10XX
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
@@ -294,9 +306,11 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
 	select HAS_SWO
+	help
+	  SOC_MIMXRT1064
 
 config SOC_MIMXRT1176_CM7
-	bool "SOC_MIMXRT1176_CM7"
+	bool
 	select CPU_CORTEX_M7
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_SERIES_IMX_RT11XX
@@ -334,9 +348,11 @@ config SOC_MIMXRT1176_CM7
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
 	select HAS_SWO
+	help
+	  SOC_MIMXRT1176_CM7
 
 config SOC_MIMXRT1176_CM4
-	bool "SOC_MIMXRT1176_CM4"
+	bool
 	select CPU_CORTEX_M4
 	select SOC_SERIES_IMX_RT11XX
 	select HAS_MCUX_CACHE
@@ -364,9 +380,11 @@ config SOC_MIMXRT1176_CM4
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
 	select HAS_SWO
+	help
+	  SOC_MIMXRT1176_CM4
 
 config SOC_MIMXRT1166_CM7
-	bool "SOC_MIMXRT1166_CM7"
+	bool
 	select CPU_CORTEX_M7
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_SERIES_IMX_RT11XX
@@ -400,10 +418,11 @@ config SOC_MIMXRT1166_CM7
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
 	select HAS_SWO
-
+	help
+	  SOC_MIMXRT1166_CM7
 
 config SOC_MIMXRT1166_CM4
-	bool "SOC_MIMXRT1166_CM4"
+	bool
 	select CPU_CORTEX_M4
 	select SOC_SERIES_IMX_RT11XX
 	select HAS_MCUX_CACHE
@@ -429,8 +448,8 @@ config SOC_MIMXRT1166_CM4
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
 	select HAS_SWO
-
-endchoice
+	help
+	  SOC_MIMXRT1166_CM4
 
 if SOC_SERIES_IMX_RT
 

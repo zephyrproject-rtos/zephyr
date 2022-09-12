@@ -3,12 +3,8 @@
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "Kinetis K6x MCU Selection"
-	depends on SOC_SERIES_KINETIS_K6X
-
 config SOC_MK64F12
-	bool "SOC_MK64F12"
+	bool
 	select HAS_MCUX
 	select HAS_MCUX_ADC16
 	select HAS_MCUX_ENET
@@ -24,9 +20,11 @@ config SOC_MK64F12
 	select HAS_MCUX_DAC
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_RCM
+	help
+	  SOC_MK64F12
 
 config SOC_MK66F18
-	bool "SOC_MK66F18"
+	bool
 	select HAS_MCUX
 	select HAS_MCUX_ADC16
 	select HAS_MCUX_ENET
@@ -43,8 +41,8 @@ config SOC_MK66F18
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_RCM
 	select HAS_MCUX_LPUART
-
-endchoice
+	help
+	  SOC_MK66F18
 
 if SOC_SERIES_KINETIS_K6X
 

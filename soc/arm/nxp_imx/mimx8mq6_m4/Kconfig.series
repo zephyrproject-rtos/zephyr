@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_IMX8MQ_M4
-	bool "i.MX8MQ M4 Core Series"
+	bool
 	select ARM
 	select CPU_CORTEX_M4
 	select SOC_FAMILY_IMX

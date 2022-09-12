@@ -3,20 +3,20 @@
 # Copyright (c) 2020, Seagate
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "LPC LPC11U6X MCU Selection"
-	depends on SOC_SERIES_LPC11U6X
-
 config SOC_LPC11U68
-	bool "SOC_LPC11U68"
+	bool
+	help
+	  SOC_LPC11U68
 
 config SOC_LPC11U67
-	bool "SOC_LPC11U67"
+	bool
+	help
+	  SOC_LPC11U67
 
 config SOC_LPC11U66
-	bool "SOC_LPC11U66"
-
-endchoice
+	bool
+	help
+	  SOC_LPC11U66
 
 if SOC_SERIES_LPC11U6X
 

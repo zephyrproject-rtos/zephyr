@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_IMX_RT
-	bool "i.MX RT Series"
+	bool
 	select ARM
 	select SOC_FAMILY_IMX
 	select CLOCK_CONTROL

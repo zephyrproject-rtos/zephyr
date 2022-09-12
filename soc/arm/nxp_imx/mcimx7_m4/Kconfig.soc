@@ -3,18 +3,14 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "i.MX7 M4 Selection"
-	depends on SOC_SERIES_IMX7_M4
-
 config SOC_MCIMX7_M4
-	bool "SOC_MCIMX7_M4"
+	bool
 	select HAS_IMX_HAL
 	select HAS_IMX_GPIO
 	select HAS_IMX_I2C
 	select HAS_IMX_IOMUXC
-
-endchoice
+	help
+	  SOC_MCIMX7_M4
 
 if SOC_MCIMX7_M4
 

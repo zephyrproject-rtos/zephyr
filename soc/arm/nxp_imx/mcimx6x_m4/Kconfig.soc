@@ -3,19 +3,15 @@
 # Copyright (c) 2018, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "i.MX 6SoloX Selection"
-	depends on SOC_SERIES_IMX_6X_M4
-
 config SOC_MCIMX6X_M4
-	bool "SOC_MCIMX6X_M4"
+	bool
 	select HAS_IMX_HAL
 	select HAS_IMX_GPIO
 	select HAS_IMX_EPIT
 	select HAS_IMX_I2C
 	select HAS_IMX_IOMUXC
-
-endchoice
+	help
+	  SOC_MCIMX6X_M4
 
 if SOC_SERIES_IMX_6X_M4
 

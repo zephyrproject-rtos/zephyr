@@ -3,19 +3,15 @@
 # Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-prompt "i.MX8MM M4 Selection"
-depends on SOC_SERIES_IMX8MM_M4
-
 config SOC_MIMX8MM6
-	bool "SOC_MIMX8MM6"
+	bool
 	select HAS_MCUX
 	select HAS_MCUX_CCM
 	select HAS_MCUX_RDC
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_IOMUXC
-
-endchoice
+	help
+	  SOC_MIMX8MM6
 
 if SOC_SERIES_IMX8MM_M4
 

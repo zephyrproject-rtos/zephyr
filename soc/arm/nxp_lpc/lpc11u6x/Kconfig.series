@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_LPC11U6X
-	bool "LPC LPC11U6X Series MCU"
+	bool
 	select ARM
 	select CPU_CORTEX_M0PLUS
 	select CPU_CORTEX_M_HAS_SYSTICK

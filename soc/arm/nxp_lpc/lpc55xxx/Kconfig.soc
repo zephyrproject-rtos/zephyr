@@ -3,12 +3,8 @@
 # Copyright (c) 2019, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "LPC5500 Series MCU Selection"
-	depends on SOC_SERIES_LPC55XXX
-
 config SOC_LPC55S06
-	bool "SOC_LPC55S06 M33"
+	bool
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
@@ -18,9 +14,11 @@ config SOC_LPC55S06
 	select CLOCK_CONTROL
 	select HAS_MCUX_IAP if !TRUSTED_EXECUTION_NONSECURE
 	select HAS_MCUX_RNG
+	help
+	  SOC_LPC55S06 M33
 
 config SOC_LPC55S16
-	bool "SOC_LPC55S16 M33"
+	bool
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
@@ -31,9 +29,11 @@ config SOC_LPC55S16
 	select HAS_MCUX_IAP if !TRUSTED_EXECUTION_NONSECURE
 	select HAS_MCUX_MCAN
 	select HAS_MCUX_RNG
+	help
+	  SOC_LPC55S16 M33
 
 config SOC_LPC55S28
-	bool "SOC_LPC55S28 M33"
+	bool
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
@@ -43,9 +43,11 @@ config SOC_LPC55S28
 	select HAS_MCUX_LPADC
 	select HAS_MCUX_LPC_DMA
 	select HAS_MCUX_RNG
+	help
+	  SOC_LPC55S28 M33
 
 config SOC_LPC55S36
-	bool "SOC_LPC55S36 M33"
+	bool
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
@@ -54,9 +56,11 @@ config SOC_LPC55S36
 	select ARM_TRUSTZONE_M
 	select CLOCK_CONTROL
 	select HAS_MCUX_MCAN
+	help
+	  SOC_LPC55S36 M33
 
 config SOC_LPC55S69_CPU0
-	bool "SOC_LPC55S69 M33 [CPU 0]"
+	bool
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
@@ -71,12 +75,14 @@ config SOC_LPC55S69_CPU0
 	select HAS_MCUX_CTIMER
 	select HAS_MCUX_SCTIMER
 	select HAS_MCUX_RNG
+	help
+	  SOC_LPC55S69 M33 [CPU 0]
 
 config SOC_LPC55S69_CPU1
-	bool "SOC_LPC55S69 M33 [CPU 1]"
+	bool
 	select CPU_CORTEX_M33
-
-endchoice
+	help
+	  SOC_LPC55S69 M33 [CPU 1]
 
 if SOC_SERIES_LPC55XXX
 

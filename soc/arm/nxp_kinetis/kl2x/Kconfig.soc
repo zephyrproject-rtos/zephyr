@@ -3,12 +3,8 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "Kinetis KL2x MCU Selection"
-	depends on SOC_SERIES_KINETIS_KL2X
-
 config SOC_MKL25Z4
-	bool "SOC_MKL25Z4"
+	bool
 	select CPU_CORTEX_M0PLUS
 	select HAS_MCUX
 	select HAS_MCUX_ADC16
@@ -18,8 +14,8 @@ config SOC_MKL25Z4
 	select HAS_OSC
 	select HAS_MCG
 	select HAS_MCUX_RCM
-
-endchoice
+	help
+	  SOC_MKL25Z4
 
 if SOC_SERIES_KINETIS_KL2X
 

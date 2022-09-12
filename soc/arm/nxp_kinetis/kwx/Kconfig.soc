@@ -3,12 +3,8 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "Kinetis KWx MCU Selection"
-	depends on SOC_SERIES_KINETIS_KWX
-
 config SOC_MKW22D5
-	bool "SOC_MKW22D5"
+	bool
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select HAS_MCUX
@@ -20,9 +16,11 @@ config SOC_MKW22D5
 	select HAS_OSC
 	select HAS_MCG
 	select HAS_MCUX_RCM
+	help
+	  SOC_MKW22D5
 
 config SOC_MKW24D5
-	bool "SOC_MKW24D5"
+	bool
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select HAS_MCUX
@@ -34,9 +32,11 @@ config SOC_MKW24D5
 	select HAS_OSC
 	select HAS_MCG
 	select HAS_MCUX_RCM
+	help
+	  SOC_MKW24D5
 
 config SOC_MKW40Z4
-	bool "SOC_MKW40Z4"
+	bool
 	select CPU_CORTEX_M0PLUS
 	select HAS_MCUX
 	select HAS_MCUX_ADC16
@@ -46,9 +46,11 @@ config SOC_MKW40Z4
 	select HAS_OSC
 	select HAS_MCG
 	select HAS_MCUX_RCM
+	help
+	  SOC_MKW40Z4
 
 config SOC_MKW41Z4
-	bool "SOC_MKW41Z4"
+	bool
 	select CPU_CORTEX_M0PLUS
 	select HAS_MCUX
 	select HAS_MCUX_ADC16
@@ -61,8 +63,8 @@ config SOC_MKW41Z4
 	select HAS_OSC
 	select HAS_MCG
 	select HAS_MCUX_RCM
-
-endchoice
+	help
+	  SOC_MKW41Z4
 
 if SOC_SERIES_KINETIS_KWX
 

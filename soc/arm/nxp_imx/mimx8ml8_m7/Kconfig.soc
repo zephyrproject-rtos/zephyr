@@ -3,12 +3,8 @@
 # Copyright (c) 2021, Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-prompt "i.MX8ML M7 Selection"
-depends on SOC_SERIES_IMX8ML_M7
-
 config SOC_MIMX8ML8
-	bool "SOC_MIMX8ML8"
+	bool
 	select HAS_MCUX
 	select HAS_MCUX_CCM
 	select HAS_MCUX_RDC
@@ -17,8 +13,8 @@ config SOC_MIMX8ML8
 	select ARM_MPU
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_IOMUXC
-
-endchoice
+	help
+	  SOC_MIMX8ML8
 
 if SOC_SERIES_IMX8ML_M7
 
