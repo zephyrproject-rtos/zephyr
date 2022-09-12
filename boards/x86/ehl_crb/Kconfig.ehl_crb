@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EHL_CRB
+	bool
+	default y
+	select SOC_ELKHART_LAKE
+	select X86_64
+	select HAS_COVERAGE_SUPPORT

@@ -1,7 +1,0 @@
-# Copyright (c) 2018 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_UP_SQUARED
-	bool "UP Squared (x86_64)"
-	depends on SOC_APOLLO_LAKE
-	select X86_64

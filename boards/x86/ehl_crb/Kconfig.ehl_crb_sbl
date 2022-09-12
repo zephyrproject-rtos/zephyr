@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EHL_CRB_SBL
+	bool
+	default y
+	select SOC_ELKHART_LAKE
+	select X86_64

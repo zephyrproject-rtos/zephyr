@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_UP_SQUARED
-
 config BOARD
 	default "up_squared"
 
@@ -28,5 +26,3 @@ config APIC_TIMER_TSC_M
 config APIC_TIMER_TSC_N
 	default 249
 endif
-
-endif # BOARD_UP_SQUARED

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_UP_SQUARED
+	bool
+	default y
+	select SOC_APOLLO_LAKE
+	select X86_64

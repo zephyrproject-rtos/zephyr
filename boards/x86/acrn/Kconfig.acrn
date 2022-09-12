@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ACRN_EHL_CRB
+	bool
+	default y
+	select SOC_IA32
+	select CPU_HAS_FPU
+	select X86_64
