@@ -707,6 +707,11 @@ quit:
 		k_free(data_to_send);
 	}
 
+	/* Do no math with 0 and error codes */
+	if (ret <= 0) {
+		return ret;
+	}
+
 	return ret - hdr_len;
 }
 
