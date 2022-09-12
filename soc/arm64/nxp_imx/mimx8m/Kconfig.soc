@@ -1,12 +1,8 @@
 # Copyright 2020-2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-prompt "NXP i.MX8M A53 Selection"
-depends on SOC_SERIES_MIMX8M_A53
-
 config SOC_MIMX8MM_A53
-	bool "NXP i.MX8MM A53"
+	bool
 	select ARM64
 	select CPU_CORTEX_A53
 	select ARM_ARCH_TIMER
@@ -14,9 +10,11 @@ config SOC_MIMX8MM_A53
 	select HAS_MCUX if CLOCK_CONTROL
 	select HAS_MCUX_CCM if CLOCK_CONTROL
 	select HAS_MCUX_IOMUXC if PINCTRL
+	help
+	  NXP i.MX8MM A53
 
 config SOC_MIMX8MP_A53
-	bool "NXP i.MX8MP A53"
+	bool
 	select ARM64
 	select CPU_CORTEX_A53
 	select ARM_ARCH_TIMER
@@ -24,9 +22,11 @@ config SOC_MIMX8MP_A53
 	select HAS_MCUX if CLOCK_CONTROL
 	select HAS_MCUX_CCM if CLOCK_CONTROL
 	select HAS_MCUX_IOMUXC if PINCTRL
+	help
+	  NXP i.MX8MP A53
 
 config SOC_MIMX8MN_A53
-	bool "NXP i.MX8MN A53"
+	bool
 	select ARM64
 	select CPU_CORTEX_A53
 	select ARM_ARCH_TIMER
@@ -34,8 +34,8 @@ config SOC_MIMX8MN_A53
 	select HAS_MCUX if CLOCK_CONTROL
 	select HAS_MCUX_CCM if CLOCK_CONTROL
 	select HAS_MCUX_IOMUXC if PINCTRL
-
-endchoice
+	help
+	  NXP i.MX8MN A53
 
 config SOC_PART_NUMBER_MIMX8ML8DVNLZ
 	bool

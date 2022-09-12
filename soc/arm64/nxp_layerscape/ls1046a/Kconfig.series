@@ -5,7 +5,7 @@
 #
 
 config SOC_SERIES_LS1046A
-	bool "NXP LS1046A Series"
+	bool
 	select ARM64
 	select SOC_FAMILY_LS
 	help
