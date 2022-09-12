@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_FVP_AEMV8R_AARCH32
-	bool "ARM FVP AEMv8R AArch32 Series"
+	bool
 	select ARM
 	select SOC_FAMILY_ARM
 	help

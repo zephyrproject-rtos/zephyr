@@ -1,12 +1,8 @@
 # Copyright (c) 2017-2021 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "Arm MPS3 SoCs"
-	depends on SOC_SERIES_MPS3
-
 config SOC_MPS3_AN547
-	bool "Arm Cortex-M55 SSE-300 on MPS3 (AN547)"
+	bool
 	select CPU_CORTEX_M55
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
@@ -14,5 +10,5 @@ config SOC_MPS3_AN547
 	select ARMV8_M_DSP
 	select ARMV8_1_M_MVEI
 	select ARMV8_1_M_MVEF
-
-endchoice
+	help
+	  Arm Cortex-M55 SSE-300 on MPS3 (AN547)

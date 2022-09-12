@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_ARM_DESIGNSTART
-	bool "Arm DesignStart SoC Series"
+	bool
 	select ARM
 	select SOC_FAMILY_ARM
 	help
