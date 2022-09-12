@@ -4,7 +4,7 @@
 #
 
 config SOC_SERIES_XILINX_XC7ZXXXS
-	bool "Xilinx Zynq-7000S (XC7ZxxxS) SoC series"
+	bool
 	select SOC_FAMILY_XILINX_ZYNQ7000
 	select ARM
 	select CPU_CORTEX_A9
