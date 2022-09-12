@@ -3,29 +3,35 @@
 # Copyright (c) 2016 RnDity Sp. z o.o.
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "STM32F3x MCU Selection"
-	depends on SOC_SERIES_STM32F3X
-
 config SOC_STM32F302X8
-	bool "STM32F302X8"
+	bool
+	help
+	  STM32F302X8
 
 config SOC_STM32F303X8
-	bool "STM32F303X8"
+	bool
+	help
+	  STM32F303X8
 
 config SOC_STM32F303XC
-	bool "STM32F303XC"
+	bool
 	select CPU_HAS_ARM_MPU
+	help
+	  STM32F303XC
 
 config SOC_STM32F303XE
-	bool "STM32F303XE"
+	bool
 	select CPU_HAS_ARM_MPU
+	help
+	  STM32F303XE
 
 config SOC_STM32F334X8
-	bool "STM32F334X8"
+	bool
+	help
+	  STM32F334X8
 
 config SOC_STM32F373XC
-	bool "STM32F373XC"
+	bool
 	select CPU_HAS_ARM_MPU
-
-endchoice
+	help
+	  STM32F373XC

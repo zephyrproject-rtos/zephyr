@@ -4,37 +4,45 @@
 # Copyright (c) RnDity Sp. z o.o.
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "STM32F1x MCU Selection"
-	depends on SOC_SERIES_STM32F1X
-
 config SOC_STM32F100XB
-	bool "STM32F100XB"
+	bool
+	help
+	  STM32F100XB
 
 config SOC_STM32F100XE
-	bool "STM32F100XE"
+	bool
+	help
+	  STM32F100XE
 
 config SOC_STM32F103XE
-	bool "STM32F103XE"
+	bool
 	select SOC_STM32F10X_DENSITY_DEVICE
+	help
+	  STM32F103XE
 
 config SOC_STM32F103XB
-	bool "STM32F103XB"
+	bool
 	select SOC_STM32F10X_DENSITY_DEVICE
+	help
+	  STM32F103XB
 
 config SOC_STM32F103X8
-	bool "STM32F103X8"
+	bool
 	select SOC_STM32F10X_DENSITY_DEVICE
+	help
+	  STM32F103X8
 
 config SOC_STM32F105XC
-	bool "STM32F105XC"
+	bool
 	select SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+	help
+	  STM32F105XC
 
 config SOC_STM32F107XC
-	bool "STM32F107XC"
+	bool
 	select SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
-
-endchoice
+	help
+	  STM32F107XC
 
 config SOC_STM32F10X_DENSITY_DEVICE
 	bool

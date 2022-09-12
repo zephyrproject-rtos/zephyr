@@ -5,37 +5,47 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "STM32L0x MCU Selection"
-	depends on SOC_SERIES_STM32L0X
-
 config SOC_STM32L010XB
-	bool "STM32L010XB"
+	bool
+	help
+	  STM32L010XB
 
 config SOC_STM32L011XX
-	bool "STM32L011XX"
+	bool
+	help
+	  STM32L011XX
 
 config SOC_STM32L031XX
-	bool "STM32L031XX"
+	bool
+	help
+	  STM32L031XX
 
 config SOC_STM32L051XX
-	bool "STM32L051XX"
+	bool
 	select CPU_HAS_ARM_MPU
+	help
+	  STM32L051XX
 
 config SOC_STM32L053XX
-	bool "STM32L053XX"
+	bool
 	select CPU_HAS_ARM_MPU
+	help
+	  STM32L053XX
 
 config SOC_STM32L071XX
-	bool "STM32L071XX"
+	bool
 	select CPU_HAS_ARM_MPU
+	help
+	  STM32L071XX
 
 config SOC_STM32L072XX
-	bool "STM32L072XX"
+	bool
 	select CPU_HAS_ARM_MPU
+	help
+	  STM32L072XX
 
 config SOC_STM32L073XX
-	bool "STM32L073XX"
+	bool
 	select CPU_HAS_ARM_MPU
-
-endchoice
+	help
+	  STM32L073XX

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_STM32U5X
-	bool "STM32U5x Series MCU"
+	bool
 	select ARM
 	select CPU_CORTEX_M33
 	select SOC_FAMILY_STM32

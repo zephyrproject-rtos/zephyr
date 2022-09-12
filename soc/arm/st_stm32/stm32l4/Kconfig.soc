@@ -6,47 +6,67 @@
 # Copyright (c) 2019 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "STM32L4x MCU Selection"
-	depends on SOC_SERIES_STM32L4X
-
 config SOC_STM32L476XX
-	bool "STM32L476X"
+	bool
+	help
+	  STM32L476X
 
 config SOC_STM32L496XX
-	bool "STM32L496XX"
+	bool
+	help
+	  STM32L496XX
 
 config SOC_STM32L412XX
-	bool "STM32L412XX"
+	bool
+	help
+	  STM32L412XX
 
 config SOC_STM32L422XX
-	bool "STM32L422XX"
+	bool
+	help
+	  STM32L422XX
 
 config SOC_STM32L432XX
-	bool "STM32L432XX"
+	bool
+	help
+	  STM32L432XX
 
 config SOC_STM32L433XX
-	bool "STM32L433XX"
+	bool
+	help
+	  STM32L433XX
 
 config SOC_STM32L452XX
-	bool "STM32L452XX"
+	bool
+	help
+	  STM32L452XX
 
 config SOC_STM32L462XX
-	bool "STM32L462XX"
+	bool
+	help
+	  STM32L462XX
 
 config SOC_STM32L475XX
-	bool "STM32L475XX"
+	bool
+	help
+	  STM32L475XX
 
 config SOC_STM32L4S5XX
-	bool "STM32L4S5XX"
+	bool
+	help
+	  STM32L4S5XX
 
 config SOC_STM32L4R5XX
-	bool "STM32L4R5XX"
+	bool
+	help
+	  STM32L4R5XX
 
 config SOC_STM32L4R9XX
-	bool "STM32L4R9XX"
+	bool
+	help
+	  STM32L4R9XX
 
 config SOC_STM32L471XX
-	bool "STM32L471XX"
-
-endchoice
+	bool
+	help
+	  STM32L471XX
