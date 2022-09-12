@@ -18,7 +18,7 @@ config UART_XEN_HVC
 config UART_XEN_HVC_CONSOLEIO
 	bool "Xen hypervisor Dom0 console UART driver"
 	select SERIAL_HAS_DRIVER
-	depends on BOARD_XENVM
+	depends on SOC_XENVM
 	depends on XEN_INITIAL_DOMAIN
 	default y
 	help
@@ -35,7 +35,7 @@ config XEN_HVC_INIT_PRIORITY
 
 config XEN_EARLY_CONSOLEIO
 	bool "Early printk/stdout through console_io Xen interface"
-	depends on BOARD_XENVM
+	depends on SOC_XENVM
 	depends on UART_XEN_HVC
 	help
 	  Enable setting of console_io symbol hook for stdout and printk.
