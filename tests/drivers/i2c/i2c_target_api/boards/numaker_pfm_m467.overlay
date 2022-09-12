@@ -1,0 +1,45 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&pinctrl {
+    i2c1_default: i2c1_default {
+        pinmux = <PB2MFP_I2C1_SDA 0x0000>,  /* UNO D0 */
+                 <PB3MFP_I2C1_SCL 0x0000>;  /* UNO D1 */
+    };
+
+    i2c3_default: i2c3_default {
+        pinmux = <PG1MFP_I2C3_SDA 0x0000>,  /* UNO D14 */
+                 <PG0MFP_I2C3_SCL 0x0000>;  /* UNO D15 */
+    };
+};
+
+&i2c1 {
+    pinctrl-0 = <&i2c1_default>;
+    pinctrl-names = "default";
+    status = "okay";
+
+    eeprom0: eeprom@54 {
+        compatible = "atmel,at24";
+        reg = <0x54>;
+        label = "EEPROM_0";
+        size = <1024>;
+        pagesize = <16>;
+        address-width = <8>;
+        timeout = <5>;
+    };
+};
+
+&i2c3 {
+    pinctrl-0 = <&i2c3_default>;
+    pinctrl-names = "default";
+    status = "okay";
+
+    eeprom1: eeprom@56 {
+        compatible = "atmel,at24";
+        reg = <0x56>;
+        label = "EEPROM_1";
+        size = <1024>;
+        pagesize = <16>;
+        address-width = <8>;
+        timeout = <5>;
+    };
+};
