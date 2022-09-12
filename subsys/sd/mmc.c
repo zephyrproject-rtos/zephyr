@@ -46,6 +46,9 @@
 #define MMC_SWITCH_PWR_CLASS_ARG                                                                   \
 	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (187U << 16)) +    \
 		(0x0000FF00 & (0U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
+#define MMC_SWITCH_CACHE_ON_ARG                                                                    \
+	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (33U << 16)) +     \
+		(0x0000FF00 & (1U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
 
 LOG_MODULE_DECLARE(sd, CONFIG_SD_LOG_LEVEL);
 
@@ -88,6 +91,9 @@ static int mmc_set_bus_width(struct sd_card *card);
 
 /* Sets card to the fastest timing mode (using CMD6) and SDHC to max frequency */
 static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *card_ext_csd);
+
+/* Enable cache for emmc if applicable */
+static int mmc_set_cache(struct sd_card *card, struct mmc_ext_csd *card_ext_csd);
 
 /*
  * Initialize MMC card for use with subsystem
@@ -183,6 +189,12 @@ int mmc_card_init(struct sd_card *card)
 
 	/* Set timing to fastest supported */
 	ret = mmc_set_timing(card, &card_ext_csd);
+	if (ret) {
+		return ret;
+	}
+
+	/* Turn on cache if it exists */
+	ret = mmc_set_cache(card, &card_ext_csd);
 	if (ret) {
 		return ret;
 	}
@@ -603,4 +615,29 @@ static inline void mmc_decode_ext_csd(struct mmc_ext_csd *ext, uint8_t *raw)
 	ext->power_class = (raw[187] & 0x0F);
 	ext->mmc_driver_strengths = raw[197U];
 	ext->pwr_class_200MHZ_VCCQ195 = raw[237U];
+	ext->cache_size =
+		(raw[252] << 24U) + (raw[251] << 16U) + (raw[250] << 8U) + (raw[249] << 0U);
+}
+
+static int mmc_set_cache(struct sd_card *card, struct mmc_ext_csd *card_ext_csd)
+{
+	int ret = 0;
+	struct sdhc_command cmd = {0};
+
+	/* If there is no cache, don't use cache */
+	if (card_ext_csd->cache_size == 0) {
+		return 0;
+	}
+	/* CMD6 to write to EXT CSD to turn on cache */
+	cmd.opcode = SD_SWITCH;
+	cmd.arg = MMC_SWITCH_CACHE_ON_ARG;
+	cmd.response_type = SD_RSP_TYPE_R1b;
+	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	if (ret) {
+		LOG_DBG("Error turning on card cache: %d", ret);
+		return ret;
+	}
+	ret = sdmmc_wait_ready(card);
+	return ret;
 }
