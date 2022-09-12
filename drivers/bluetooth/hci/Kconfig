@@ -62,6 +62,12 @@ config BT_STM32_IPM
 	help
 	  TODO
 
+config BT_STM32WBA
+	bool "STM32WBA HCI driver"
+	select HAS_STM32LIB
+	help
+	  ST STM32WBA HCI Bluetooth interface
+
 config BT_SILABS_HCI
 	bool "Silicon Labs Bluetooth interface"
 	depends on SOC_SERIES_EFR32BG22 || SOC_SERIES_EFR32MG24 || SOC_SERIES_EFR32BG27
