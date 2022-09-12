@@ -465,7 +465,9 @@ static void ascs_iso_sent(struct bt_iso_chan *chan)
 	struct bt_audio_stream *stream = audio_iso->source_stream;
 	struct bt_audio_stream_ops *ops = stream->ops;
 
-	BT_DBG("stream %p ep %p", stream, stream->ep);
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+		BT_DBG("stream %p ep %p", stream, stream->ep);
+	}
 
 	if (ops != NULL && ops->sent != NULL) {
 		ops->sent(stream);
@@ -507,6 +509,7 @@ static void ascs_iso_connected(struct bt_iso_chan *chan)
 		return;
 	}
 
+	/* TODO: Should only do this for sink ASEs */
 	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 }
 
@@ -1713,9 +1716,9 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 			if (!bt_pacs_context_available(ep->dir, context)) {
 				BT_WARN("Context 0x%04x is unavailable", context);
 
-				result->err = -EACCES;
+				// result->err = -EACCES;
 
-				return false;
+				// return false;
 			}
 		} else if (data_type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
 			/* Verify that the CCID is a known CCID on the

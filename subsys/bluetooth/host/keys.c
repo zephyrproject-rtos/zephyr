@@ -515,6 +515,8 @@ void bt_keys_show_sniffer_info(struct bt_keys *keys, void *data)
 {
 	uint8_t ltk[16];
 
+	BT_ERR("keys %p keys->keys %u", keys, keys->keys);
+
 	__ASSERT_NO_MSG(keys != NULL);
 
 	if (keys->keys & BT_KEYS_LTK_P256) {

@@ -93,7 +93,9 @@ void hci_iso(struct net_buf *buf)
 	struct bt_conn *iso;
 	uint8_t flags;
 
-	BT_DBG("buf %p", buf);
+	if (IS_ENABLED(CONFIG_BT_DEBUG_ISO_DATA)) {
+		BT_DBG("buf %p", buf);
+	}
 
 	BT_ASSERT(buf->len >= sizeof(*hdr));
 
@@ -105,7 +107,9 @@ void hci_iso(struct net_buf *buf)
 	iso(buf)->handle = bt_iso_handle(handle);
 	iso(buf)->index = BT_CONN_INDEX_INVALID;
 
-	BT_DBG("handle %u len %u flags %u", iso(buf)->handle, len, flags);
+	if (IS_ENABLED(CONFIG_BT_DEBUG_ISO_DATA)) {
+		BT_DBG("handle %u len %u flags %u", iso(buf)->handle, len, flags);
+	}
 
 	if (buf->len != len) {
 		BT_ERR("ISO data length mismatch (%u != %u)", buf->len, len);
@@ -628,9 +632,11 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 			iso_info(buf)->flags = 0;
 		}
 
-		BT_DBG("%s, len %u total %u flags 0x%02x timestamp %u",
-		       pb == BT_ISO_START ? "Start" : "Single", buf->len, len,
-		       flags, iso_info(buf)->ts);
+		if (IS_ENABLED(CONFIG_BT_DEBUG_ISO_DATA)) {
+			BT_DBG("%s, len %u total %u flags 0x%02x timestamp %u",
+			       pb == BT_ISO_START ? "Start" : "Single", 
+			       buf->len, len, flags, iso_info(buf)->ts);
+		}
 
 		if (iso->rx) {
 			BT_ERR("Unexpected ISO %s fragment",
@@ -662,7 +668,9 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 			return;
 		}
 
-		BT_DBG("Cont, len %u rx_len %u", buf->len, iso->rx_len);
+		if (IS_ENABLED(CONFIG_BT_DEBUG_ISO_DATA)) {
+			BT_DBG("Cont, len %u rx_len %u", buf->len, iso->rx_len);
+		}
 
 		if (buf->len > net_buf_tailroom(iso->rx)) {
 			BT_ERR("Not enough buffer space for ISO data");
@@ -680,7 +688,9 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 		/* The ISO_Data_Load field contains the last fragment of an
 		 * SDU.
 		 */
-		BT_DBG("End, len %u rx_len %u", buf->len, iso->rx_len);
+		if (IS_ENABLED(CONFIG_BT_DEBUG_ISO_DATA)) {
+			BT_DBG("End, len %u rx_len %u", buf->len, iso->rx_len);
+		}
 
 		if (iso->rx == NULL) {
 			BT_ERR("Unexpected ISO end fragment");

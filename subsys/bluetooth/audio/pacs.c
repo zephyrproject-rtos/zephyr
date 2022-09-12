@@ -105,6 +105,8 @@ static void get_pac_records(struct bt_conn *conn, enum bt_audio_dir dir,
 		BT_DBG("pac #%u: codec capability len %u metadata len %u",
 		       rsp->num_pac, pac->cc_len, meta->len);
 
+		/* TODO: Print pac record data */
+
 		rsp->num_pac++;
 	}
 }

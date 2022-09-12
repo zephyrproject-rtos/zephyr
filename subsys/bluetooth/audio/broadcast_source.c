@@ -103,7 +103,9 @@ static void broadcast_source_iso_sent(struct bt_iso_chan *chan)
 	struct bt_audio_stream *stream = audio_iso->source_stream;
 	struct bt_audio_stream_ops *ops = stream->ops;
 
-	BT_DBG("stream %p ep %p", stream, stream->ep);
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+		BT_DBG("stream %p ep %p", stream, stream->ep);
+	}
 
 	if (ops != NULL && ops->sent != NULL) {
 		ops->sent(stream);
@@ -626,7 +628,6 @@ int bt_audio_broadcast_source_create(struct bt_audio_broadcast_source_create_par
 	for (size_t i = 0U; i < param->subgroup_count; i++) {
 		const struct bt_audio_broadcast_source_subgroup_param *subgroup_param;
 
-
 		subgroup_param = &param->subgroup_params[i];
 
 		subgroup = broadcast_source_new_subgroup(index);
@@ -657,16 +658,22 @@ int bt_audio_broadcast_source_create(struct bt_audio_broadcast_source_create_par
 				return err;
 			}
 
-			/* Store the BIS specific codec configuration data in
-			 * the broadcast source. It is stored in the broadcast
-			 * source, instead of the stream object, as this is
-			 * only relevant for the broadcast source, and not used
-			 * for unicast or broadcast sink.
-			 */
-			(void)memcpy(source->stream_data[stream_count].data,
-				     stream_param->data,
-				     stream_param->data_count * sizeof(*stream_param->data));
-			source->stream_data[stream_count].data_count = stream_param->data_count;
+			if (stream_param->data != NULL && 
+			    stream_param->data_count > 0) {
+				/* Store the BIS specific codec configuration data in
+				* the broadcast source. It is stored in the broadcast
+				* source, instead of the stream object, as this is
+				* only relevant for the broadcast source, and not used
+				* for unicast or broadcast sink.
+				*/
+				(void)memcpy(source->stream_data[stream_count].data,
+					stream_param->data,
+					stream_param->data_count * sizeof(*stream_param->data));
+				source->stream_data[stream_count].data_count = stream_param->data_count;
+			} else {
+				(void)memset(source->stream_data[stream_count].data, 0, sizeof(source->stream_data[stream_count].data));
+				source->stream_data[stream_count].data_count = 0U;
+			}
 
 			sys_slist_append(&subgroup->streams, &stream->_node);
 			stream_count++;

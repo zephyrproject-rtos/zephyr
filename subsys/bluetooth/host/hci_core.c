@@ -3661,6 +3661,30 @@ static void rx_work_handler(struct k_work *work)
 }
 #endif /* !CONFIG_BT_RECV_BLOCKING */
 
+#include "zephyr/bluetooth/hci.h"
+#define HCI_OPCODE_VS_SET_BD_ADDR BT_OP(BT_OGF_VS, 0x3F0)
+struct ble_hci_vs_cp_set_bd_addr {
+	uint8_t bd_addr[6];
+} __packed;
+
+int ble_hci_vsc_set_bd_addr(uint8_t *bd_addr)
+{
+	int ret;
+	struct ble_hci_vs_cp_set_bd_addr *cp;
+	struct net_buf *buf = NULL;
+
+	buf = bt_hci_cmd_create(HCI_OPCODE_VS_SET_BD_ADDR, sizeof(*cp));
+	if (!buf) {
+		printk("Unable to allocate command buffer\n");
+		return -ENOMEM;
+	}
+	cp = net_buf_add(buf, sizeof(*cp));
+	memcpy(cp, bd_addr, sizeof(*cp));
+
+	ret = bt_hci_cmd_send(HCI_OPCODE_VS_SET_BD_ADDR, buf);
+	return ret;
+}
+
 int bt_enable(bt_ready_cb_t cb)
 {
 	int err;
@@ -3723,6 +3747,10 @@ int bt_enable(bt_ready_cb_t cb)
 	}
 
 	bt_monitor_send(BT_MONITOR_OPEN_INDEX, NULL, 0);
+
+	uint8_t addr[] = {0x00, 0xAA, 0xA0, 0xAC, 0xDC, 0xFF};
+	/* As workaround set public address */
+	ble_hci_vsc_set_bd_addr(addr);
 
 	if (!cb) {
 		return bt_init();

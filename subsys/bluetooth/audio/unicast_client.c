@@ -126,7 +126,9 @@ static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 
 	ops = stream->ops;
 
-	BT_DBG("stream %p", stream);
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+		BT_DBG("stream %p", stream);
+	}
 
 	if (ops != NULL && ops->sent != NULL) {
 		ops->sent(stream);
@@ -2602,7 +2604,7 @@ fail:
 	return BT_GATT_ITER_STOP;
 }
 
-static void unicast_client_pac_reset(struct bt_conn *conn)
+static void unicast_client_pac_reset(struct bt_conn *conn, enum bt_audio_dir dir)
 {
 	int index = bt_conn_index(conn);
 	int i;
@@ -2610,7 +2612,7 @@ static void unicast_client_pac_reset(struct bt_conn *conn)
 	for (i = 0; i < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT; i++) {
 		struct unicast_client_pac *pac = &pac_cache[index][i];
 
-		if (!PAC_DIR_UNUSED(pac->dir)) {
+		if (dir == pac->dir) {
 			(void)memset(pac, 0, sizeof(*pac));
 		}
 	}
@@ -2621,7 +2623,8 @@ static void unicast_client_disconnected(struct bt_conn *conn, uint8_t reason)
 	BT_DBG("conn %p reason 0x%02x", conn, reason);
 
 	unicast_client_ep_reset(conn);
-	unicast_client_pac_reset(conn);
+	unicast_client_pac_reset(conn, BT_AUDIO_DIR_SINK);
+	unicast_client_pac_reset(conn, BT_AUDIO_DIR_SOURCE);
 }
 
 static struct bt_conn_cb conn_cbs = {
@@ -2633,6 +2636,7 @@ int bt_audio_discover(struct bt_conn *conn,
 {
 	static bool conn_cb_registered;
 	uint8_t role;
+	int err;
 
 	if (!conn || conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
@@ -2671,7 +2675,12 @@ int bt_audio_discover(struct bt_conn *conn,
 	params->num_caps = 0u;
 	params->num_eps = 0u;
 
-	return bt_gatt_read(conn, &params->read);
+	err = bt_gatt_read(conn, &params->read);
+	if (err == 0) {
+		unicast_client_pac_reset(conn, params->dir);
+	}
+
+	return err;
 }
 
 

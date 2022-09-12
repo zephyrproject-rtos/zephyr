@@ -33,7 +33,7 @@ static bool stopping;
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 
-#define BROADCAST_SOURCE_LIFETIME  30U /* seconds */
+#define BROADCAST_SOURCE_LIFETIME  3000U /* seconds */
 
 static void stream_started_cb(struct bt_audio_stream *stream)
 {
@@ -97,6 +97,8 @@ static int setup_broadcast_source(struct bt_audio_broadcast_source **source)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
 		stream_params[i].stream = &streams[i];
+		stream_params[i].data = NULL;
+		stream_params[i].data_count = 0U;
 		bt_audio_stream_cb_register(stream_params[i].stream,
 					    &stream_ops);
 	}
@@ -125,6 +127,8 @@ void main(void)
 {
 	struct bt_le_ext_adv *adv;
 	int err;
+
+	printk("Bluetooth not initialized\n");
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -176,12 +180,13 @@ void main(void)
 			printk("Unable to get broadcast ID: %d\n", err);
 			return;
 		}
+		printk("Broadcast ID: 0x%06X\n", broadcast_id);
 
 		/* Setup extended advertising data */
 		net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
 		net_buf_simple_add_le24(&ad_buf, broadcast_id);
 		ext_ad.type = BT_DATA_SVC_DATA16;
-		ext_ad.data_len = ad_buf.len + sizeof(ext_ad.type);
+		ext_ad.data_len = ad_buf.len;
 		ext_ad.data = ad_buf.data;
 		err = bt_le_ext_adv_set_data(adv, &ext_ad, 1, NULL, 0);
 		if (err != 0) {

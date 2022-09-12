@@ -1881,7 +1881,7 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
 
-	BT_DBG("status 0x%x", status);
+	BT_ERR("status 0x%x", status);
 
 	if (!status) {
 #if defined(CONFIG_BT_BREDR)
@@ -1897,6 +1897,8 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 #endif /* CONFIG_BT_BREDR */
 		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
 		struct bt_conn_auth_info_cb *listener, *next;
+
+		BT_ERR("%p", conn->le.keys);
 
 		if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
 			bt_keys_show_sniffer_info(conn->le.keys, NULL);
@@ -5829,9 +5831,11 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	 * exclusive with legacy pairing. Other keys are added on keys
 	 * distribution.
 	 */
+	BT_ERR("%p", conn->le.keys);
 	if (atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 		conn->le.keys->flags |= BT_KEYS_SC;
 
+		/* TODO: Why bond check here? */
 		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(conn->le.keys, BT_KEYS_LTK_P256);
 			memcpy(conn->le.keys->ltk.val, smp->tk,

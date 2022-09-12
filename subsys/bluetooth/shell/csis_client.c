@@ -32,6 +32,11 @@ static const struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN
 
 static bool is_discovered(const bt_addr_le_t *addr)
 {
+	/* TODO: Should check all connected devices as well, as if we are 
+	 * already connected to a set member, they may not continue their 
+	 * advertising 
+	 */
+
 	for (int i = 0; i < members_found; i++) {
 		if (bt_addr_le_cmp(addr, &addr_found[i]) == 0) {
 			return true;
@@ -99,6 +104,10 @@ static void csis_discover_cb(struct bt_conn *conn,
 
 	shell_print(ctx_shell, "Found %zu sets on member[%u]",
 		    set_count, conn_index);
+	
+	for (size_t i = 0U; i < set_count; i++) {
+		shell_print(ctx_shell, "CSIS[%zu]: %p", i, &member->insts[i]);
+	}
 
 	set_members[conn_index] = member;
 }
@@ -157,13 +166,14 @@ static bool csis_client_oap_cb(const struct bt_csis_client_set_info *set_info,
 
 static bool csis_found(struct bt_data *data, void *user_data)
 {
-	if (bt_csis_client_is_set_member(cur_inst->info.set_sirk, data)) {
-		bt_addr_le_t *addr = user_data;
-		char addr_str[BT_ADDR_LE_STR_LEN];
+	bt_addr_le_t *addr = user_data;
+	char addr_str[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-		shell_print(ctx_shell, "Found CSIS advertiser with address %s",
-			    addr_str);
+	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+	shell_print(ctx_shell, "Found CSIS advertiser with address %s", 
+		    addr_str);
+
+	if (bt_csis_client_is_set_member(cur_inst->info.set_sirk, data)) {
 
 		if (is_discovered(addr)) {
 			shell_print(ctx_shell, "Set member already found");
@@ -247,6 +257,8 @@ static int cmd_csis_client_init(const struct shell *sh, size_t argc,
 static int cmd_csis_client_discover(const struct shell *sh, size_t argc,
 				    char *argv[])
 {
+	char addr[BT_ADDR_LE_STR_LEN];
+	struct bt_conn *conn;
 	int err;
 	long member_index = 0;
 
@@ -264,8 +276,12 @@ static int cmd_csis_client_discover(const struct shell *sh, size_t argc,
 		ctx_shell = sh;
 	}
 
-	shell_print(sh, "Discovering for member[%u]", (uint8_t)member_index);
-	err = bt_csis_client_discover(conns[member_index]);
+	conn = conns[member_index];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	shell_print(sh, "Discovering for member[%u] (%s)", 
+		    (uint8_t)member_index, addr);
+	err = bt_csis_client_discover(conn);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}

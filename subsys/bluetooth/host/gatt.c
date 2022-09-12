@@ -4360,6 +4360,8 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 			return;
 		}
 
+		/* TODO: verify that handle is within the `params` handle range */
+
 		len = rsp->len > length ? length - 2 : rsp->len - 2;
 
 		BT_DBG("handle 0x%04x len %u value %u", handle, rsp->len, len);

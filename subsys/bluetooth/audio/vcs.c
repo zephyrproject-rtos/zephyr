@@ -171,7 +171,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 		volume_change = true;
 		break;
 	case BT_VCS_OPCODE_SET_ABS_VOL:
-		BT_DBG("Set Absolute Volume (0x%x) %u",
+		BT_DBG("Set Absolute Volume (0x%x): Current volume %u",
 		       opcode, vcs_inst.srv.state.volume);
 		if (vcs_inst.srv.state.volume != cp_val->volume) {
 			vcs_inst.srv.state.volume = cp_val->volume;

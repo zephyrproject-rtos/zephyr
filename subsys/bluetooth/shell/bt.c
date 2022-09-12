@@ -144,7 +144,6 @@ static bool is_substring(const char *substr, const char *str)
 	for (size_t pos = 0; pos < str_len; pos++) {
 		if (tolower(substr[0]) == tolower(str[pos])) {
 			if (pos + sub_str_len > str_len) {
-				shell_print(ctx_shell, "length fail");
 				return false;
 			}
 
@@ -1232,6 +1231,16 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 		ad_len++;
 	}
 
+	__ASSERT(data_array_size > ad_len, "No space for appearance");
+	const uint16_t appearance = bt_get_appearance();
+	static uint8_t appearance_data[2];
+	appearance_data[0] = appearance & 0xFF;
+	appearance_data[1] = (appearance >> 8) & 0xFF;
+	data_array[ad_len].type = BT_DATA_GAP_APPEARANCE;
+	data_array[ad_len].data_len = sizeof(appearance_data);
+	data_array[ad_len].data = appearance_data;
+	ad_len++;
+
 	if (IS_ENABLED(CONFIG_BT_CSIS)) {
 		ssize_t csis_ad_len;
 
@@ -1264,7 +1273,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_le_adv_param param = {};
-	struct bt_data ad[2];
+	struct bt_data ad[3];
 	bool discoverable = true;
 	size_t ad_len;
 	int err;

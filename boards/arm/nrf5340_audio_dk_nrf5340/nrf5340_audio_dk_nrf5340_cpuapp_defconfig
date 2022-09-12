@@ -58,3 +58,11 @@ CONFIG_FS_FATFS_LFN_MODE_STACK=y
 # exFAT enabled to support longer file names and higher transfer speed
 CONFIG_FS_FATFS_EXFAT=y
 CONFIG_FS_FATFS_MAX_LFN=255
+
+
+# Enable uart driver
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
