@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_SAM4S
-	bool "Atmel SAM4S MCU"
+	bool
 	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT

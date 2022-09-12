@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_SAME53
-	bool "Atmel SAME53 MCU"
+	bool
 	select ARM
 	select CPU_CORTEX_M4
 	select SOC_FAMILY_SAM0

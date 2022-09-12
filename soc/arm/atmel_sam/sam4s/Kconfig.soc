@@ -4,44 +4,60 @@
 # Copyright (c) 2018 Vincent van der Locht
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "Atmel SAM4S MCU Selection"
-	depends on SOC_SERIES_SAM4S
+config SOC_PART_NUMBER_SAM4S16C
+	bool
+	help
+	  SAM4S16C
 
-	config SOC_PART_NUMBER_SAM4S16C
-		bool "SAM4S16C"
+config SOC_PART_NUMBER_SAM4SA16C
+	bool
+	help
+	  SAM4SA16C
 
-	config SOC_PART_NUMBER_SAM4SA16C
-		bool "SAM4SA16C"
+config SOC_PART_NUMBER_SAM4S16B
+	bool
+	help
+	  SAM4S16B
 
-	config SOC_PART_NUMBER_SAM4S16B
-		bool "SAM4S16B"
+config SOC_PART_NUMBER_SAM4S8C
+	bool
+	help
+	  SAM4S8C
 
-	config SOC_PART_NUMBER_SAM4S8C
-		bool "SAM4S8C"
+config SOC_PART_NUMBER_SAM4S8B
+	bool
+	help
+	  SAM4S8B
 
-	config SOC_PART_NUMBER_SAM4S8B
-		bool "SAM4S8B"
+config SOC_PART_NUMBER_SAM4S4C
+	bool
+	help
+	  SAM4S4C
 
-	config SOC_PART_NUMBER_SAM4S4C
-		bool "SAM4S4C"
+config SOC_PART_NUMBER_SAM4S4B
+	bool
+	help
+	  SAM4S4B
 
-	config SOC_PART_NUMBER_SAM4S4B
-		bool "SAM4S4B"
+config SOC_PART_NUMBER_SAM4S4A
+	bool
+	help
+	  SAM4S4A
 
-	config SOC_PART_NUMBER_SAM4S4A
-		bool "SAM4S4A"
+config SOC_PART_NUMBER_SAM4S2C
+	bool
+	help
+	  SAM4S2C
 
-	config SOC_PART_NUMBER_SAM4S2C
-		bool "SAM4S2C"
+config SOC_PART_NUMBER_SAM4S2B
+	bool
+	help
+	  SAM4S2B
 
-	config SOC_PART_NUMBER_SAM4S2B
-		bool "SAM4S2B"
-
-	config SOC_PART_NUMBER_SAM4S2A
-		bool "SAM4S2A"
-
-endchoice
+config SOC_PART_NUMBER_SAM4S2A
+	bool
+	help
+	  SAM4S2A
 
 if SOC_SERIES_SAM4S
 

@@ -5,23 +5,25 @@
 # Copyright (c) 2019 Gerson Fernando Budke
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "Atmel SAM4E MCU Selection"
-	depends on SOC_SERIES_SAM4E
+config SOC_PART_NUMBER_SAM4E16E
+	bool
+	help
+	  SAM4E16E
 
-	config SOC_PART_NUMBER_SAM4E16E
-		bool "SAM4E16E"
+config SOC_PART_NUMBER_SAM4E16C
+	bool
+	help
+	  SAM4E16C
 
-	config SOC_PART_NUMBER_SAM4E16C
-		bool "SAM4E16C"
+config SOC_PART_NUMBER_SAM4E8E
+	bool
+	help
+	  SAM4E8E
 
-	config SOC_PART_NUMBER_SAM4E8E
-		bool "SAM4E8E"
-
-	config SOC_PART_NUMBER_SAM4E8C
-		bool "SAM4E8C"
-
-endchoice
+config SOC_PART_NUMBER_SAM4E8C
+	bool
+	help
+	  SAM4E8C
 
 if SOC_SERIES_SAM4E
 
