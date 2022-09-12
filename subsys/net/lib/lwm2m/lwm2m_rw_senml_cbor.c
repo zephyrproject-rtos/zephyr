@@ -42,6 +42,9 @@ struct cbor_out_fmt_data {
 		size_t name_sz; /* Name buff size */
 		uint8_t name_cnt;
 	};
+
+	/* Basetime for Cached data timestamp */
+	int64_t basetime;
 };
 
 struct cbor_in_fmt_data {
@@ -83,6 +86,7 @@ static void setup_out_fmt_data(struct lwm2m_message *msg)
 	(void)memset(fd, 0, sizeof(*fd));
 	engine_set_out_user_data(&msg->out, fd);
 	fd->name_sz = sizeof("/65535/999/");
+	fd->basetime = 0;
 }
 
 static void clear_out_fmt_data(struct lwm2m_message *msg)
@@ -253,6 +257,32 @@ static int put_begin_r(struct lwm2m_output_context *out, struct lwm2m_obj_path *
 	return 0;
 }
 
+static int put_data_timestamp(struct lwm2m_output_context *out, int64_t value)
+{
+	struct cbor_out_fmt_data *fd = LWM2M_OFD_CBOR(out);
+	int ret;
+
+	ret = fmt_range_check(fd);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Tell CBOR encoder where to find the name */
+	struct record *record = GET_CBOR_FD_REC(fd);
+	if (fd->basetime) {
+		record->_record_t._record_t = value - fd->basetime;
+		record->_record_t_present = 1;
+	} else {
+		
+		fd->basetime = value;
+		record->_record_bt._record_bt = value;
+		record->_record_bt_present = 1;
+	}
+
+	return 0;
+
+}
+
 static int put_begin_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path *path)
 {
 	struct cbor_out_fmt_data *fd = LWM2M_OFD_CBOR(out);
@@ -301,9 +331,11 @@ static int put_begin_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 static int put_name_nth_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path *path)
 {
 	int ret = 0;
+	struct cbor_out_fmt_data *fd = LWM2M_OFD_CBOR(out);
+	struct record *record = GET_CBOR_FD_REC(fd);
 
-	/* With the first ri the resource name (and ri name) are already in place */
-	if (path->res_inst_id > 0) {
+	/* With the first ri the resource name (and ri name) are already in place or Cached data*/
+	if (path->res_inst_id > 0 || (record && record->_record_t_present)) {
 		ret = put_begin_ri(out, path);
 	}
 
@@ -696,6 +728,7 @@ const struct lwm2m_writer senml_cbor_writer = {
 	.put_bool = put_bool,
 	.put_opaque = put_opaque,
 	.put_objlnk = put_objlnk,
+	.put_data_timestamp = put_data_timestamp,
 };
 
 const struct lwm2m_reader senml_cbor_reader = {
