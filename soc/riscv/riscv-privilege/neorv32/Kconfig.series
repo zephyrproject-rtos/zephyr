@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_NEORV32
-	bool "NEORV32 Processor"
+	bool
 	select RISCV
 	select RISCV_ISA_RV32I
 	select RISCV_ISA_EXT_M

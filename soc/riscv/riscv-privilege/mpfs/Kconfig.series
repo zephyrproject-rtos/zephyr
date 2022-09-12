@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_RISCV64_MIV
-	bool "Microchip RV64 implementation"
+	bool
 	select RISCV
 	select SOC_FAMILY_RISCV_PRIVILEGE
 	help

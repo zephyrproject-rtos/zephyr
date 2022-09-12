@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_GD32VF103
-	bool "GigaDevice GD32VF103 series SoC implementation"
+	bool
 	select RISCV
 	select SOC_FAMILY_RISCV_PRIVILEGE
 	select ATOMIC_OPERATIONS_C

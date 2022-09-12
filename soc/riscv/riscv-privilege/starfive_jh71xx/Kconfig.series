@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_STARFIVE_JH71XX
-	bool "Starfive JH71XX series"
+	bool
 	select RISCV
 	select SOC_FAMILY_RISCV_PRIVILEGE
 	help

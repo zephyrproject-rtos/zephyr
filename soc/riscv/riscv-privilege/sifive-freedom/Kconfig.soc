@@ -3,12 +3,8 @@
 # Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "SiFive Freedom SOC implementation"
-	depends on SOC_SERIES_RISCV_SIFIVE_FREEDOM
-
 config SOC_RISCV_SIFIVE_FREEDOM
-	bool "SiFive Freedom SOC implementation"
+	bool
 	select ATOMIC_OPERATIONS_C
 	select INCLUDE_RESET_VECTOR
 	select RISCV_ISA_RV32I
@@ -16,9 +12,11 @@ config SOC_RISCV_SIFIVE_FREEDOM
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI
+	help
+	  SiFive Freedom SOC implementation
 
 config SOC_RISCV_SIFIVE_FU540
-	bool "SiFive Freedom U540 SOC implementation"
+	bool
 	select ATOMIC_OPERATIONS_C
 	select INCLUDE_RESET_VECTOR
 	select 64BIT
@@ -28,9 +26,11 @@ config SOC_RISCV_SIFIVE_FU540
 	select RISCV_ISA_EXT_C
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI
+	help
+	  SiFive Freedom U540 SOC implementation
 
 config SOC_RISCV_SIFIVE_FU740
-	bool "SiFive Freedom U740 SOC implementation"
+	bool
 	select ATOMIC_OPERATIONS_C
 	select INCLUDE_RESET_VECTOR
 	select 64BIT
@@ -40,5 +40,5 @@ config SOC_RISCV_SIFIVE_FU740
 	select RISCV_ISA_EXT_C
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI
-
-endchoice
+	help
+	  SiFive Freedom U740 SOC implementation

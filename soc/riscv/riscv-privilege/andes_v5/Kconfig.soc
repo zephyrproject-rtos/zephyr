@@ -1,18 +1,14 @@
 # Copyright (c) 2021 Andes Technology Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-prompt "Andes V5 SoC Selection"
-depends on SOC_SERIES_RISCV_ANDES_V5
-
 config SOC_RISCV_ANDES_AE350
-	bool "Andes AE350 SoC implementation"
+	bool
 	select ATOMIC_OPERATIONS_BUILTIN
 	select INCLUDE_RESET_VECTOR
 	select RISCV_ISA_EXT_M
 	select RISCV_ISA_EXT_A
-
-endchoice
+	help
+	  Andes AE350 SoC implementation
 
 if SOC_SERIES_RISCV_ANDES_V5
 
