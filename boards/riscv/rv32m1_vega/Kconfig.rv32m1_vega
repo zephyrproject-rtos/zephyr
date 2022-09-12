@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RV32M1_VEGA
+	bool
+	default y
+	select SOC_OPENISA_RV32M1_RISCV32
+	select SOC_OPENISA_RV32M1_RI5CY

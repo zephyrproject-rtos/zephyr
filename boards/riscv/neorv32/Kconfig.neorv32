@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NEORV32
+	bool
+	default y
+	select SOC_SERIES_NEORV32
+	select SOC_NEORV32_ISA_C

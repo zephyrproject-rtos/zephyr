@@ -1,0 +1,7 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LITEX_VEXRISCV
+	bool
+	default y
+	select SOC_RISCV32_LITEX_VEXRISCV
