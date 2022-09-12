@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_EFM32GG11B
-	bool "EFM32GG11B Series MCU"
+	bool
 	select ARM
 	select HAS_SILABS_GECKO
 	select HAS_SWO

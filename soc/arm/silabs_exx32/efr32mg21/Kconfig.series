@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_EFR32MG21
-	bool "EFR32MG21 Series MCU"
+	bool
 	select ARM
 	select CPU_CORTEX_M33
 	select CPU_CORTEX_M_HAS_DWT
