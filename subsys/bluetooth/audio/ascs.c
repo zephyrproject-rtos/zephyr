@@ -941,8 +941,8 @@ static int ascs_ep_stream_bind_audio_iso(struct bt_audio_stream *stream,
 		audio_iso->iso_chan.ops = &ascs_iso_ops;
 		audio_iso->iso_chan.qos = &audio_iso->iso_qos;
 		audio_iso->iso_chan.qos->tx = &audio_iso->source_io_qos;
-		audio_iso->iso_chan.qos->rx->path = &audio_iso->sink_path;
-		audio_iso->iso_chan.qos->rx->path->cc = audio_iso->source_path_cc;
+		audio_iso->iso_chan.qos->tx->path = &audio_iso->source_path;
+		audio_iso->iso_chan.qos->tx->path->cc = audio_iso->source_path_cc;
 	} else if (dir == BT_AUDIO_DIR_SINK) {
 		if (audio_iso->sink_stream == NULL) {
 			audio_iso->sink_stream = stream;
