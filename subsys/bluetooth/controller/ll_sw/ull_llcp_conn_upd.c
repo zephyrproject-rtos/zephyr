@@ -213,7 +213,18 @@ static void cu_prepare_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 			ctx->data.cu.interval_max = interval_max;
 		}
 	}
-#endif
+
+#if !defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+	/* Use valid offset0 in range [0..interval]. An offset of
+	 * 0xffff means not valid. Disregard other preferred offsets.
+	 */
+	/* Handle win_offset/'anchor point move' */
+	if (ctx->data.cu.offsets[0] <= ctx->data.cu.interval_max) {
+		ctx->data.cu.win_offset_us = ctx->data.cu.offsets[0] * CONN_INT_UNIT_US;
+	}
+#endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 	ctx->data.cu.instant = ull_conn_event_counter(conn) + conn->lll.latency +
 			       CONN_UPDATE_INSTANT_DELTA;
 }
