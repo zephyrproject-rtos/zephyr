@@ -4,7 +4,7 @@
 # Author: Saravanan Sekar <saravanan@linumiz.com>
 
 config SOC_SERIES_M48X
-	bool "Nuvoton M48X Series MCU"
+	bool
 	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
