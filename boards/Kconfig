@@ -2,6 +2,7 @@
 
 config BOARD
 	string
+	default "$(BOARD)"
 	help
 	  This option holds the name of the board and is used to locate the files
 	  related to the board in the source tree (under boards/).
@@ -39,13 +40,7 @@ config NET_DRIVERS
 	  enabled to allow for easy use of SLIP or PPP
 
 # Note: $BOARD_DIR might be a glob pattern
-
-choice
-	prompt "Board Selection"
-
-source "$(BOARD_DIR)/Kconfig.board"
-
-endchoice
+source "$(BOARD_DIR)/Kconfig.$(BOARD)"
 
 # Parse shields references
 # Don't do it as a menuconfig, as shield selection is a CMake feature.
