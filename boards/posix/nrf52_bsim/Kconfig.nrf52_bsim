@@ -1,7 +1,10 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF52_BSIM
-	bool "NRF52 simulation model"
+	bool
+	default y
+	select SOC_POSIX
 	select SOC_SERIES_BSIM_NRFXX
 	select SOC_SERIES_BSIM_NRF52X
 	select SOC_COMPATIBLE_NRF
@@ -11,6 +14,3 @@ config BOARD_NRF52_BSIM
 	select NRF_RTC_TIMER
 	select CLOCK_CONTROL
 	select HAS_NRFX
-	help
-	  Will produce a console Linux process which can be executed natively.
-	  It needs the BabbleSim simulator both in compile time and to execute

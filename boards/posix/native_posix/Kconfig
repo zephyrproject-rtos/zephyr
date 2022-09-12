@@ -1,12 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_NATIVE_POSIX
-	bool
-	select NATIVE_POSIX_TIMER
-	select NATIVE_POSIX_CONSOLE
-
-if BOARD_NATIVE_POSIX
-
 comment "Native POSIX options"
 
 config NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
@@ -25,5 +18,3 @@ config HAS_SDL
 	bool
 	help
 	  This option specifies that the target board has SDL support
-
-endif

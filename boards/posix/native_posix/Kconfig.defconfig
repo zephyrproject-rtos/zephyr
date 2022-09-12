@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NATIVE_POSIX
-
 config BUILD_OUTPUT_BIN
 	default n
 
@@ -68,5 +66,3 @@ config EMUL
 	default y
 
 endif # I2C
-
-endif # BOARD_NATIVE_POSIX
