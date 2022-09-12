@@ -4,7 +4,7 @@
 #
 
 config SOC_SERIES_VALKYRIE
-	bool "Broadcom Valkyrie Series"
+	bool
 	select ARM
 	select CPU_CORTEX_M7
 	select SOC_FAMILY_BCMVK
