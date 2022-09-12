@@ -39,4 +39,8 @@ menu "Nuvoton NuMaker drivers"
         bool "NuMaker FMC"
         help
             Enable Nuvoton FMC HAL module driver
+    config HAS_NUMAKER_I2C
+        bool "NuMaker I2C"
+        help
+            Enable Nuvoton I2C HAL module driver
 endmenu

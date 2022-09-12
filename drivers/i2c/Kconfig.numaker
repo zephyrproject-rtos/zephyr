@@ -1,0 +1,14 @@
+# NuMaker I2C driver configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_NUMAKER_I2C := nuvoton,numaker-i2c
+
+config I2C_NUMAKER
+	bool "Nuvoton NuMaker I2C driver"
+	depends on SOC_FAMILY_NUMAKER
+	select HAS_NUMAKER_I2C
+	default $(dt_compat_enabled,$(DT_COMPAT_NUMAKER_I2C))
+	help
+	  Enables Nuvoton NuMaker I2C driver
