@@ -4,7 +4,7 @@
 # Adding configuration options for Cyclone V SoC FPGA
 
 config SOC_SERIES_CYCLONE5
-	bool "Intel SoC FPGA Cyclone5 Series"
+	bool
 	select ARM
 	select CPU_CORTEX_A9
 	select GIC_V1
