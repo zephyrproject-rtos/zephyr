@@ -536,7 +536,16 @@ int http_client_req(int sock, struct http_request *req,
 
 	total_sent += ret;
 
-	if (req->port) {
+	bool host_header_present = false;
+
+	for (i = 0; req->header_fields && req->header_fields[i]; i++) {
+		if (strcasecmp(req->header_fields[i], "Host:") == 0) {
+			host_header_present = true;
+			break;
+		}
+	}
+
+	if (!host_header_present && req->port) {
 		ret = http_send_data(sock, send_buf, send_buf_max_len,
 				     &send_buf_pos, "Host", ": ", req->host,
 				     ":", req->port, HTTP_CRLF, NULL);
@@ -546,7 +555,7 @@ int http_client_req(int sock, struct http_request *req,
 		}
 
 		total_sent += ret;
-	} else {
+	} else if (!host_header_present) {
 		ret = http_send_data(sock, send_buf, send_buf_max_len,
 				     &send_buf_pos, "Host", ": ", req->host,
 				     HTTP_CRLF, NULL);

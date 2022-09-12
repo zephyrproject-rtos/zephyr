@@ -263,7 +263,8 @@ struct http_request {
 	 * The Content-Type may be specified here or in the next field.
 	 * Depending on your application, the Content-Type may vary, however
 	 * some header fields may remain constant through the application's
-	 * life cycle. This is a NULL terminated list of header fields.
+	 * life cycle. A custom Host header may also be specified here.
+	 * This is a NULL terminated list of header fields.
 	 */
 	const char **header_fields;
 
