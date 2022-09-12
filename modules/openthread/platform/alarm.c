@@ -58,6 +58,12 @@ void platformAlarmInit(void)
 
 void platformAlarmProcess(otInstance *aInstance)
 {
+#if OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
+	if (timer_us_fired) {
+		timer_us_fired = false;
+		otPlatAlarmMicroFired(aInstance);
+	}
+#endif
 	if (timer_ms_fired) {
 		timer_ms_fired = false;
 #if defined(CONFIG_OPENTHREAD_DIAG)
@@ -69,12 +75,6 @@ void platformAlarmProcess(otInstance *aInstance)
 			otPlatAlarmMilliFired(aInstance);
 		}
 	}
-#if OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
-	if (timer_us_fired) {
-		timer_us_fired = false;
-		otPlatAlarmMicroFired(aInstance);
-	}
-#endif
 }
 
 uint32_t otPlatAlarmMilliGetNow(void)
