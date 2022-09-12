@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_PSOC62
-	bool "Cypress PSoC6 series MCU - Standard"
+	bool
 	select ARM
 	select SOC_FAMILY_PSOC6
 	select HAS_CYPRESS_DRIVERS
@@ -13,7 +13,7 @@ config SOC_SERIES_PSOC62
 	  Enable support for Cypress PSoC6 MCU series
 
 config SOC_SERIES_PSOC63
-	bool "Cypress PSoC6 series MCU - Bluetooth Low Energy"
+	bool
 	select ARM
 	select SOC_FAMILY_PSOC6
 	select HAS_CYPRESS_DRIVERS
