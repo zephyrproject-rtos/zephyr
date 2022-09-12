@@ -3754,6 +3754,7 @@
 #include <zephyr/devicetree/fixed-partitions.h>
 #include <zephyr/devicetree/zephyr.h>
 #include <zephyr/devicetree/ordinals.h>
+#include <zephyr/devicetree/pcie.h>
 #include <zephyr/devicetree/pinctrl.h>
 #include <zephyr/devicetree/can.h>
 #include <zephyr/devicetree/reset.h>
