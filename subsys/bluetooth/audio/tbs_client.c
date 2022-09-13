@@ -50,35 +50,30 @@ static const struct bt_uuid *gtbs_uuid = BT_UUID_GTBS;
 
 static void discover_next_instance(struct bt_conn *conn, uint8_t index);
 
-static bool valid_inst_index(struct bt_conn *conn, uint8_t idx)
+static struct bt_tbs_instance *tbs_inst_by_index(struct bt_conn *conn, uint8_t index)
 {
-	uint8_t conn_index;
+	struct bt_tbs_server_inst *server;
 
 	__ASSERT(conn, "NULL conn");
 
-	conn_index = bt_conn_index(conn);
+	server = &srv_insts[bt_conn_index(conn)];
 
-	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) && idx == BT_TBS_GTBS_INDEX) {
-		return true;
-	} else {
-		return idx < srv_insts[conn_index].inst_cnt;
+	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS)) {
+		/* GTBS can be accessed by BT_TBS_GTBS_INDEX only */
+		if (index == GTBS_INDEX) {
+			return NULL;
+		}
+
+		if (index == BT_TBS_GTBS_INDEX) {
+			return &server->tbs_insts[GTBS_INDEX];
+		}
 	}
-}
 
-static struct bt_tbs_instance *get_inst_by_index(struct bt_conn *conn,
-						 uint8_t idx)
-{
-	uint8_t conn_index;
-
-	__ASSERT(conn, "NULL conn");
-
-	conn_index = bt_conn_index(conn);
-
-	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) && idx == BT_TBS_GTBS_INDEX) {
-		return &srv_insts[conn_index].tbs_insts[GTBS_INDEX];
-	} else {
-		return &srv_insts[conn_index].tbs_insts[idx];
+	if (index < ARRAY_SIZE(server->tbs_insts)) {
+		return &server->tbs_insts[index];
 	}
+
+	return NULL;
 }
 
 #if defined(CONFIG_BT_TBS_CLIENT_ORIGINATE_CALL)
@@ -592,9 +587,10 @@ static int tbs_client_common_call_control(struct bt_conn *conn,
 					  uint8_t call_index,
 					  uint8_t opcode)
 {
-	const struct bt_tbs_instance *inst = get_inst_by_index(conn, inst_index);
+	struct bt_tbs_instance *inst;
 	struct bt_tbs_call_cp_acc common;
 
+	inst = tbs_inst_by_index(conn, inst_index);
 	if (inst == NULL) {
 		return -EINVAL;
 	}
@@ -1718,14 +1714,15 @@ int bt_tbs_client_originate_call(struct bt_conn *conn, uint8_t inst_index,
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	} else if (!bt_tbs_valid_uri(uri)) {
 		BT_DBG("Invalid URI: %s", uri);
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	/* Check if there are free spots */
 	if (!free_call_spot(inst)) {
@@ -1768,10 +1765,12 @@ int bt_tbs_client_join_calls(struct bt_conn *conn, uint8_t inst_index,
 		uint8_t write_buf[CONFIG_BT_L2CAP_TX_MTU];
 		const size_t max_call_cnt = sizeof(write_buf) - sizeof(join->opcode);
 
-		inst = get_inst_by_index(conn, inst_index);
+		inst = tbs_inst_by_index(conn, inst_index);
 		if (inst == NULL) {
 			return -EINVAL;
-		} else if (inst->call_cp_sub_params.value_handle == 0) {
+		}
+
+		if (inst->call_cp_sub_params.value_handle == 0) {
 			BT_DBG("Handle not set");
 			return -EINVAL;
 		}
@@ -1807,11 +1806,13 @@ int bt_tbs_client_set_signal_strength_interval(struct bt_conn *conn,
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
+	}
+
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
 	/* Populate Outgoing Remote URI */
 	if (inst->signal_interval_handle == 0) {
 		BT_DBG("Handle not set");
@@ -1834,11 +1835,12 @@ int bt_tbs_client_read_bearer_provider_name(struct bt_conn *conn,
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->name_sub_params.value_handle == 0) {
 		BT_DBG("Handle not set");
@@ -1867,11 +1869,12 @@ int bt_tbs_client_read_bearer_uci(struct bt_conn *conn, uint8_t inst_index)
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->bearer_uci_handle == 0) {
 		BT_DBG("Handle not set");
@@ -1900,11 +1903,12 @@ int bt_tbs_client_read_technology(struct bt_conn *conn, uint8_t inst_index)
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->technology_sub_params.value_handle == 0) {
 		BT_DBG("Handle not set");
@@ -1933,11 +1937,12 @@ int bt_tbs_client_read_uri_list(struct bt_conn *conn, uint8_t inst_index)
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->uri_list_handle == 0) {
 		BT_DBG("Handle not set");
@@ -1966,11 +1971,12 @@ int bt_tbs_client_read_signal_strength(struct bt_conn *conn, uint8_t inst_index)
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->signal_strength_sub_params.value_handle == 0) {
 		BT_DBG("Handle not set");
@@ -1999,11 +2005,12 @@ int bt_tbs_client_read_signal_interval(struct bt_conn *conn, uint8_t inst_index)
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->signal_interval_handle == 0) {
 		BT_DBG("Handle not set");
@@ -2032,11 +2039,12 @@ int bt_tbs_client_read_current_calls(struct bt_conn *conn, uint8_t inst_index)
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->current_calls_sub_params.value_handle == 0) {
 		BT_DBG("Handle not set");
@@ -2065,11 +2073,12 @@ int bt_tbs_client_read_ccid(struct bt_conn *conn, uint8_t inst_index)
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->ccid_handle == 0) {
 		BT_DBG("Handle not set");
@@ -2098,11 +2107,12 @@ int bt_tbs_client_read_call_uri(struct bt_conn *conn, uint8_t inst_index)
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->in_target_uri_sub_params.value_handle == 0) {
 		BT_DBG("Handle not set");
@@ -2131,11 +2141,12 @@ int bt_tbs_client_read_status_flags(struct bt_conn *conn, uint8_t inst_index)
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->status_flags_sub_params.value_handle == 0) {
 		BT_DBG("Handle not set");
@@ -2163,11 +2174,12 @@ int bt_tbs_client_read_call_state(struct bt_conn *conn, uint8_t inst_index)
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->call_state_sub_params.value_handle == 0) {
 		BT_DBG("Handle not set");
@@ -2196,11 +2208,12 @@ int bt_tbs_client_read_optional_opcodes(struct bt_conn *conn,
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->optional_opcodes_handle == 0) {
 		BT_DBG("Handle not set");
@@ -2229,11 +2242,12 @@ int bt_tbs_client_read_remote_uri(struct bt_conn *conn, uint8_t inst_index)
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->incoming_call_sub_params.value_handle == 0) {
 		BT_DBG("Handle not set");
@@ -2262,11 +2276,12 @@ int bt_tbs_client_read_friendly_name(struct bt_conn *conn, uint8_t inst_index)
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(conn, inst_index)) {
-		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(conn, inst_index);
+	inst = tbs_inst_by_index(conn, inst_index);
+	if (inst == NULL) {
+		return -EINVAL;
+	}
 
 	if (inst->friendly_name_sub_params.value_handle == 0) {
 		BT_DBG("Handle not set");
