@@ -217,6 +217,8 @@ Drivers and Sensors
 
 * PWM
 
+  * Added PWM driver for Renesas R-Car platform
+
 * Sensor
 
 * Serial
