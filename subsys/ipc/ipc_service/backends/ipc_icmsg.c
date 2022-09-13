@@ -65,14 +65,6 @@ static void mbox_callback_process(struct k_work *item)
 		if (dev_data->cfg->cb.received) {
 			dev_data->cfg->cb.received(cb_buffer, len, dev_data->cfg->priv);
 		}
-
-		/* Reading with NULL buffer to know if there are data in the
-		 * buffer to be read.
-		 */
-		len = spsc_pbuf_read(dev_data->rx_ib, NULL, 0);
-		if (len > 0) {
-			(void)k_work_submit(&dev_data->mbox_work);
-		}
 	} else {
 		__ASSERT_NO_MSG(state == ICMSG_STATE_BUSY);
 		if (len != sizeof(magic) || memcmp(magic, cb_buffer, len)) {
@@ -85,6 +77,19 @@ static void mbox_callback_process(struct k_work *item)
 		}
 
 		atomic_set(&dev_data->state, ICMSG_STATE_READY);
+	}
+
+	/* Reading with NULL buffer to know if there are data in the
+	 * buffer to be read.
+	 */
+	len = spsc_pbuf_read(dev_data->rx_ib, NULL, 0);
+	if (len > 0) {
+		if (k_work_submit(&dev_data->mbox_work) < 0) {
+			/* The mbox processing work is never canceled.
+			 * The negative error code should never be seen.
+			 */
+			__ASSERT_NO_MSG(false);
+		}
 	}
 }
 
