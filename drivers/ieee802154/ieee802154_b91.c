@@ -31,6 +31,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "ieee802154_b91.h"
 
+#include "ieee802154_b91_frame.c"
+
 
 #ifdef CONFIG_OPENTHREAD_FTD
 /* B91 radio source match table structure */
@@ -43,54 +45,6 @@ static struct  b91_data data = {
 	.src_match_table = &src_match_table
 #endif /* CONFIG_OPENTHREAD_FTD */
 };
-
-/*
- * Check if received buffer contains destination PANID
- * buffer should be valid and contains at lest 2 bytes
- */
-static bool b91_is_dest_panid_present(const uint8_t fcb[2])
-{
-	bool result = true;
-	const uint8_t frame_ver_t = fcb[1] & B91_FRAME_VER_MASK;
-	const uint8_t dst_addr_t = fcb[1] & B91_DEST_ADDR_TYPE_MASK;
-	const uint8_t src_addr_t = fcb[1] & B91_SRC_ADDR_TYPE_MASK;
-	const uint8_t panid_compr_t = fcb[0] & B91_PANID_COMPRESSION_MASK;
-
-	if (frame_ver_t == B91_FRAME_VER_2015) {
-		if ((dst_addr_t == B91_DEST_ADDR_TYPE_NA &&
-				src_addr_t == B91_SRC_ADDR_TYPE_NA &&
-				panid_compr_t == B91_PANID_COMPRESSION_OFF) ||
-			(dst_addr_t == B91_DEST_ADDR_TYPE_IEEE &&
-				src_addr_t == B91_SRC_ADDR_TYPE_NA &&
-				panid_compr_t == B91_PANID_COMPRESSION_ON) ||
-			(dst_addr_t == B91_DEST_ADDR_TYPE_SHORT &&
-				src_addr_t == B91_SRC_ADDR_TYPE_NA &&
-				panid_compr_t == B91_PANID_COMPRESSION_ON) ||
-			(dst_addr_t == B91_DEST_ADDR_TYPE_NA &&
-				src_addr_t == B91_SRC_ADDR_TYPE_IEEE &&
-				panid_compr_t == B91_PANID_COMPRESSION_OFF) ||
-			(dst_addr_t == B91_DEST_ADDR_TYPE_NA &&
-				src_addr_t == B91_SRC_ADDR_TYPE_SHORT &&
-				panid_compr_t == B91_PANID_COMPRESSION_OFF) ||
-			(dst_addr_t == B91_DEST_ADDR_TYPE_NA &&
-				src_addr_t == B91_SRC_ADDR_TYPE_IEEE &&
-				panid_compr_t == B91_PANID_COMPRESSION_ON) ||
-			(dst_addr_t == B91_DEST_ADDR_TYPE_NA &&
-				src_addr_t == B91_SRC_ADDR_TYPE_SHORT &&
-				panid_compr_t == B91_PANID_COMPRESSION_ON) ||
-			(dst_addr_t == B91_DEST_ADDR_TYPE_IEEE &&
-				src_addr_t == B91_SRC_ADDR_TYPE_IEEE &&
-				panid_compr_t == B91_PANID_COMPRESSION_ON)) {
-			result = false;
-		}
-	} else {
-		if (dst_addr_t == B91_DEST_ADDR_TYPE_NA) {
-			result = false;
-		}
-	}
-
-	return result;
-}
 
 #ifdef CONFIG_OPENTHREAD_FTD
 
@@ -109,7 +63,8 @@ static bool b91_src_match_table_search(
 	for (size_t i = 0; i < CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
 		if (table->item[i].valid && table->item[i].ext == ext &&
 			!memcmp(table->item[i].addr, addr,
-				ext ? B91_IEEE_ADDRESS_SIZE : B91_SHORT_ADDRESS_SIZE)) {
+				ext ? IEEE802154_FRAME_LENGTH_ADDR_EXT :
+				IEEE802154_FRAME_LENGTH_ADDR_SHORT)) {
 			result = true;
 			break;
 		}
@@ -128,7 +83,8 @@ static void b91_src_match_table_add(
 				table->item[i].valid = true;
 				table->item[i].ext = ext;
 				memcpy(table->item[i].addr, addr,
-					ext ? B91_IEEE_ADDRESS_SIZE : B91_SHORT_ADDRESS_SIZE);
+					ext ? IEEE802154_FRAME_LENGTH_ADDR_EXT :
+					IEEE802154_FRAME_LENGTH_ADDR_SHORT);
 				break;
 			}
 		}
@@ -142,11 +98,13 @@ static void b91_src_match_table_remove(
 	for (size_t i = 0; i < CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
 		if (table->item[i].valid && table->item[i].ext == ext &&
 			!memcmp(table->item[i].addr, addr,
-				ext ? B91_IEEE_ADDRESS_SIZE : B91_SHORT_ADDRESS_SIZE)) {
+				ext ? IEEE802154_FRAME_LENGTH_ADDR_EXT :
+				IEEE802154_FRAME_LENGTH_ADDR_SHORT)) {
 			table->item[i].valid = false;
 			table->item[i].ext = false;
 			memset(table->item[i].addr, 0,
-				ext ? B91_IEEE_ADDRESS_SIZE : B91_SHORT_ADDRESS_SIZE);
+				ext ? IEEE802154_FRAME_LENGTH_ADDR_EXT :
+				IEEE802154_FRAME_LENGTH_ADDR_SHORT);
 			break;
 		}
 	}
@@ -160,116 +118,30 @@ static void b91_src_match_table_remove_group(struct b91_src_match_table *table, 
 			table->item[i].valid = false;
 			table->item[i].ext = false;
 			memset(table->item[i].addr, 0,
-				ext ? B91_IEEE_ADDRESS_SIZE : B91_SHORT_ADDRESS_SIZE);
+				ext ? IEEE802154_FRAME_LENGTH_ADDR_EXT :
+				IEEE802154_FRAME_LENGTH_ADDR_SHORT);
 		}
 	}
 }
 
 /*
- * Check if received buffer contains data request
+ * Check frame possible require to set pending bit
+ * data request command or data
  * buffer should be valid
  */
-static bool b91_is_data_request(const uint8_t *buf, uint8_t size,
-	uint8_t *sn, const uint8_t **addr, bool *ext)
+static bool b91_require_pending_bit(const struct ieee802154_frame *frame)
 {
 	bool result = false;
 
-	do {
-		size_t pos = 0;
-		/* at frame control */
-		if (size < B91_PAN_ID_OFFSET) { /* FCB[2], SN[1] */
-			break;
-		}
-		*sn = buf[B91_DSN_OFFSET];
-		pos += B91_PAN_ID_OFFSET; /* FCB[2], SN[1] */
-		if ((buf[0] & B91_FRAME_TYPE_MASK) != B91_FRAME_TYPE_CMD) {
-			break;
-		}
-		/* at destination PANID */
-		if (pos + B91_PAN_ID_SIZE > size) {
-			break;
-		}
-		if (b91_is_dest_panid_present(buf)) {
-			pos += B91_PAN_ID_SIZE; /* PANID[2] */
-		}
-		/* at destination address */
-		if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_NA) {
-			/* no destination address */
-		} else if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_SHORT) {
-			pos += B91_SHORT_ADDRESS_SIZE; /* ADDR[2] */
-		} else if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_IEEE) {
-			pos += B91_IEEE_ADDRESS_SIZE; /* ADDR[8] */
-		} else {
-			break;
-		}
-		/* at source PAN ID */
-		if ((buf[1] & B91_SRC_ADDR_TYPE_MASK) != B91_SRC_ADDR_TYPE_NA &&
-			(buf[0] & B91_PANID_COMPRESSION_MASK) == B91_PANID_COMPRESSION_OFF) {
-			if ((buf[1] & B91_FRAME_VER_MASK) != B91_FRAME_VER_2015 ||
-				(buf[1] & B91_DEST_ADDR_TYPE_MASK) != B91_DEST_ADDR_TYPE_IEEE ||
-				(buf[1] & B91_SRC_ADDR_TYPE_MASK) != B91_SRC_ADDR_TYPE_IEEE) {
-				pos += B91_PAN_ID_SIZE; /* PANID[2] */
+	if (frame->general.valid) {
+		if (frame->general.type == IEEE802154_FRAME_FCF_TYPE_DATA) {
+			result = true;
+		} else if (frame->general.type == IEEE802154_FRAME_FCF_TYPE_CMD && frame->data) {
+			if (frame->data[0] == B91_CMD_ID_DATA_REQ) {
+				result = true;
 			}
 		}
-		/* at source address */
-		if ((buf[1] & B91_SRC_ADDR_TYPE_MASK) == B91_SRC_ADDR_TYPE_NA) {
-			/* no source address */
-			*addr = NULL;
-		} else if ((buf[1] & B91_SRC_ADDR_TYPE_MASK) == B91_SRC_ADDR_TYPE_SHORT) {
-			*addr = &buf[pos];
-			*ext = false;
-			pos += B91_SHORT_ADDRESS_SIZE; /* ADDR[2] */
-		} else if ((buf[1] & B91_SRC_ADDR_TYPE_MASK) == B91_SRC_ADDR_TYPE_IEEE) {
-			*addr = &buf[pos];
-			*ext = true;
-			pos += B91_IEEE_ADDRESS_SIZE; /* ADDR[8] */
-		} else {
-			break;
-		}
-		if (pos >= size) {
-			break;
-		}
-		/* at security header */
-		if ((buf[0] & B91_SECURITY_EABLE_MASK) == B91_SECURITY_EABLE_ON) {
-			const uint8_t key_mode_t = buf[pos] & B91_KEY_ID_MODE_MASK;
-
-			if (key_mode_t == B91_KEY_ID_MODE_0) {
-				pos += B91_KEY_ID_MODE_0_LEN; /* SC[1], FC[4] */
-			} else if (key_mode_t == B91_KEY_ID_MODE_1) {
-				pos += B91_KEY_ID_MODE_1_LEN; /* SC[1], FC[4], KEYID[1] */
-			} else if (key_mode_t == B91_KEY_ID_MODE_2) {
-				pos += B91_KEY_ID_MODE_2_LEN; /* SC[1], FC[4], KEY[4], KEYID[1] */
-			} else if (key_mode_t == B91_KEY_ID_MODE_3) {
-				pos += B91_KEY_ID_MODE_3_LEN; /* SC[1], FC[4], KEY[8], KEYID[1] */
-			}
-		}
-		/* at IE header */
-		bool ie_error = false;
-
-		if ((buf[1] & B91_IE_PRESENT_MASK) == B91_IE_PRESENT_ON) {
-			ie_error = true;
-			while (pos + 1 < size) {
-				uint8_t ie_type =
-					((buf[pos + 1] & B91_IE_TYPE_H_MASK) << B91_IE_TYPE_H_OFS) |
-					((buf[pos] & B91_IE_TYPE_L_MASK) >> B91_IE_TYPE_L_OFS);
-				/* at IE header begin, probably not last */
-				pos += B91_IE_HEADER_SIZE + (buf[pos] & B91_IE_LEN_MASK);
-				if (ie_type == B91_IE_TYPE_TERMINATE) {
-					ie_error = false;
-					break;
-				}
-			}
-		}
-		if (ie_error || pos >= size) {
-			break;
-		}
-		/* at payload */
-		if (buf[pos] != B91_CMD_ID_DATA_REQ) {
-			break;
-		}
-		result = true;
-	} while (0);
-
+	}
 	return result;
 }
 
@@ -306,10 +178,10 @@ static void b91_enable_pm(const struct device *dev)
 /* Set filter PAN ID */
 static int b91_set_pan_id(uint16_t pan_id)
 {
-	uint8_t pan_id_le[B91_PAN_ID_SIZE];
+	uint8_t pan_id_le[IEEE802154_FRAME_LENGTH_PANID];
 
 	sys_put_le16(pan_id, pan_id_le);
-	memcpy(data.filter_pan_id, pan_id_le, B91_PAN_ID_SIZE);
+	memcpy(data.filter_pan_id, pan_id_le, IEEE802154_FRAME_LENGTH_PANID);
 
 	return 0;
 }
@@ -317,10 +189,10 @@ static int b91_set_pan_id(uint16_t pan_id)
 /* Set filter short address */
 static int b91_set_short_addr(uint16_t short_addr)
 {
-	uint8_t short_addr_le[B91_SHORT_ADDRESS_SIZE];
+	uint8_t short_addr_le[IEEE802154_FRAME_LENGTH_ADDR_SHORT];
 
 	sys_put_le16(short_addr, short_addr_le);
-	memcpy(data.filter_short_addr, short_addr_le, B91_SHORT_ADDRESS_SIZE);
+	memcpy(data.filter_short_addr, short_addr_le, IEEE802154_FRAME_LENGTH_ADDR_SHORT);
 
 	return 0;
 }
@@ -328,57 +200,41 @@ static int b91_set_short_addr(uint16_t short_addr)
 /* Set filter IEEE address */
 static int b91_set_ieee_addr(const uint8_t *ieee_addr)
 {
-	memcpy(data.filter_ieee_addr, ieee_addr, B91_IEEE_ADDRESS_SIZE);
+	memcpy(data.filter_ieee_addr, ieee_addr, IEEE802154_FRAME_LENGTH_ADDR_EXT);
 
 	return 0;
 }
 
 /* Filter PAN ID, short address and IEEE address */
-static bool b91_run_filter(const uint8_t *buf, uint8_t size)
+static bool b91_run_filter(const struct ieee802154_frame *frame)
 {
 	bool result = false;
 
 	do {
-		size_t pos = 0;
-		/* at frame control */
-		if (buf == NULL || size < B91_PAN_ID_OFFSET) { /* FCB[2], SN[1] */
-			break;
+		if (frame->dst_panid != NULL) {
+			if (memcmp(frame->dst_panid, data.filter_pan_id,
+					IEEE802154_FRAME_LENGTH_PANID) != 0 &&
+				memcmp(frame->dst_panid, B91_BROADCAST_ADDRESS,
+					IEEE802154_FRAME_LENGTH_PANID) != 0) {
+				break;
+			}
 		}
-		pos += B91_PAN_ID_OFFSET; /* FCB[2], SN[1] */
-		/* at destination PANID */
-		if (pos + 2 > size) {
-			break;
-		}
-		if (b91_is_dest_panid_present(buf)) {
-			if (memcmp(&buf[pos], data.filter_pan_id, B91_PAN_ID_SIZE) != 0 &&
-				memcmp(&buf[pos], B91_BROADCAST_ADDRESS, B91_PAN_ID_SIZE) != 0) {
-				break;
+		if (frame->dst_addr != NULL) {
+			if (frame->dst_addr_ext) {
+				if ((net_if_get_link_addr(data.iface)->len !=
+						IEEE802154_FRAME_LENGTH_ADDR_EXT) ||
+					memcmp(frame->dst_addr, data.filter_ieee_addr,
+						IEEE802154_FRAME_LENGTH_ADDR_EXT) != 0) {
+					break;
+				}
+			} else {
+				if (memcmp(frame->dst_addr, B91_BROADCAST_ADDRESS,
+						IEEE802154_FRAME_LENGTH_ADDR_SHORT) != 0 &&
+					memcmp(frame->dst_addr, data.filter_short_addr,
+						IEEE802154_FRAME_LENGTH_ADDR_SHORT) != 0) {
+					break;
+				}
 			}
-			pos += B91_PAN_ID_SIZE; /* PANID[2] */
-		}
-		/* at destination address */
-		if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_NA) {
-			/* no destination address */
-		} else if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_SHORT) {
-			if (pos + B91_SHORT_ADDRESS_SIZE > size) {
-				break;
-			}
-			if (memcmp(&buf[pos], B91_BROADCAST_ADDRESS, B91_SHORT_ADDRESS_SIZE) != 0 &&
-				memcmp(&buf[pos], data.filter_short_addr,
-					B91_SHORT_ADDRESS_SIZE) != 0) {
-				break;
-			}
-		} else if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_IEEE) {
-			if (pos + B91_IEEE_ADDRESS_SIZE > size) {
-				break;
-			}
-			if ((net_if_get_link_addr(data.iface)->len != B91_IEEE_ADDRESS_SIZE) ||
-				memcmp(&buf[pos], data.filter_ieee_addr,
-					B91_IEEE_ADDRESS_SIZE) != 0) {
-				break;
-			}
-		} else {
-			break;
 		}
 		result = true;
 	} while (0);
@@ -472,176 +328,145 @@ static void b91_set_tx_payload(uint8_t *payload, uint8_t payload_len)
 	memcpy(data.tx_buffer + B91_PAYLOAD_OFFSET, payload, payload_len);
 }
 
-/* Enable ack handler */
-static void b91_handle_ack_en(void)
-{
-	data.ack_handler_en = true;
-}
-
-/* Disable ack handler */
-static void b91_handle_ack_dis(void)
-{
-	data.ack_handler_en = false;
-}
-
 /* Handle acknowledge packet */
-static void b91_handle_ack(void)
+static void b91_handle_ack(const void *buf, size_t buf_len)
 {
-	struct net_pkt *ack_pkt;
+	struct net_pkt *ack_pkt = net_pkt_rx_alloc_with_buffer(
+		data.iface, buf_len, AF_UNSPEC, 0, K_NO_WAIT);
 
-	/* allocate ack packet */
-	ack_pkt = net_pkt_rx_alloc_with_buffer(data.iface, B91_ACK_FRAME_LEN,
-					       AF_UNSPEC, 0, K_NO_WAIT);
-	if (!ack_pkt) {
-		LOG_ERR("No free packet available.");
-		return;
+	do {
+		if (!ack_pkt) {
+			LOG_ERR("No free packet available.");
+			break;
+		}
+		if (net_pkt_write(ack_pkt, buf, buf_len) < 0) {
+			LOG_ERR("Failed to write to a packet.");
+			break;
+		}
+		b91_update_rssi_and_lqi(ack_pkt);
+		net_pkt_cursor_init(ack_pkt);
+		if (ieee802154_radio_handle_ack(data.iface, ack_pkt) != NET_OK) {
+			LOG_INF("ACK packet not handled - releasing.");
+		}
+		k_sem_give(&data.ack_wait);
+	} while (0);
+
+	if (ack_pkt) {
+		net_pkt_unref(ack_pkt);
 	}
-
-	/* update packet data */
-	if (net_pkt_write(ack_pkt, data.rx_buffer + B91_PAYLOAD_OFFSET,
-			  B91_ACK_FRAME_LEN) < 0) {
-		LOG_ERR("Failed to write to a packet.");
-		goto out;
-	}
-
-	/* update RSSI and LQI */
-	b91_update_rssi_and_lqi(ack_pkt);
-
-	/* init net cursor */
-	net_pkt_cursor_init(ack_pkt);
-
-	/* handle ack */
-	if (ieee802154_radio_handle_ack(data.iface, ack_pkt) != NET_OK) {
-		LOG_INF("ACK packet not handled - releasing.");
-	}
-
-	/* release ack_wait semaphore */
-	k_sem_give(&data.ack_wait);
-
-out:
-	net_pkt_unref(ack_pkt);
 }
 
 /* Send acknowledge packet */
-static void b91_send_ack(uint8_t seq_num, bool fp_bit)
+static void b91_send_ack(const struct ieee802154_frame *frame)
 {
-	uint8_t ack_buf[] = { B91_ACK_TYPE, 0, seq_num };
+	uint8_t ack_buf[64];
+	size_t ack_len;
 
-	data.ack_sending = true;
-	k_sem_reset(&data.tx_wait);
-	if (fp_bit) {
-		ack_buf[0] |= B91_FP_BIT;
+	if (b91_ieee802154_frame_build(frame, ack_buf, sizeof(ack_buf), &ack_len)) {
+		data.ack_sending = true;
+		k_sem_reset(&data.tx_wait);
+		b91_set_tx_payload(ack_buf, ack_len);
+		rf_set_txmode();
+		delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
+		rf_tx_pkt(data.tx_buffer);
+	} else {
+		LOG_ERR("Failed to create ACK.");
 	}
-	b91_set_tx_payload(ack_buf, sizeof(ack_buf));
-	rf_set_txmode();
-	delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
-	rf_tx_pkt(data.tx_buffer);
 }
 
 /* RX IRQ handler */
 static void b91_rf_rx_isr(void)
 {
-	uint8_t status;
-	uint8_t length;
-	uint8_t *payload;
-	struct net_pkt *pkt;
+	int status = -EINVAL;
+	struct net_pkt *pkt = NULL;
 
-	/* disable DMA and clear IRQ flag */
 	dma_chn_dis(DMA1);
 	rf_clr_irq_status(FLD_RF_IRQ_RX);
 
-	/* check CRC */
-	if (rf_zigbee_packet_crc_ok(data.rx_buffer)) {
-		/* get payload length */
-		if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) ||
-		    IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
-			length = data.rx_buffer[B91_LENGTH_OFFSET];
-		} else {
-			length = data.rx_buffer[B91_LENGTH_OFFSET] - B91_FCS_LENGTH;
+	do {
+		if (!rf_zigbee_packet_crc_ok(data.rx_buffer)) {
+			break;
 		}
+		uint8_t length = data.rx_buffer[B91_LENGTH_OFFSET];
 
-		/* check length */
 		if ((length < B91_PAYLOAD_MIN) || (length > B91_PAYLOAD_MAX)) {
-			LOG_ERR("Invalid length\n");
-			goto exit;
+			LOG_ERR("Invalid length.\n");
+			break;
 		}
+		uint8_t *payload = (data.rx_buffer + B91_PAYLOAD_OFFSET);
+		struct ieee802154_frame frame;
 
-		/* get payload */
-		payload = (uint8_t *)(data.rx_buffer + B91_PAYLOAD_OFFSET);
-
-		/* handle acknowledge packet if enabled */
-		if ((length == (B91_ACK_FRAME_LEN + B91_FCS_LENGTH)) &&
-		    ((payload[B91_FRAME_TYPE_OFFSET] & B91_FRAME_TYPE_MASK) == B91_ACK_TYPE)) {
+		if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) ||
+			IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+			b91_ieee802154_frame_parse(payload, length - B91_FCS_LENGTH, &frame);
+		} else {
+			length -= B91_FCS_LENGTH;
+			b91_ieee802154_frame_parse(payload, length, &frame);
+		}
+		if (!frame.general.valid) {
+			LOG_ERR("Invalid frame\n");
+			break;
+		}
+		if (frame.general.type == IEEE802154_FRAME_FCF_TYPE_ACK) {
 			if (data.ack_handler_en) {
-				b91_handle_ack();
+				b91_handle_ack(payload, length);
 			}
-			goto exit;
+			break;
 		}
-
-		/* run filter (check PAN ID and destination address) */
-		if (b91_run_filter(payload, length) == false) {
-			LOG_DBG("Packet received is not addressed to me");
-			goto exit;
+		if (!b91_run_filter(&frame)) {
+			LOG_DBG("Packet received is not addressed to me.");
+			break;
 		}
-
-#ifdef CONFIG_OPENTHREAD_FTD
-		bool frame_pending_bit = false;
-#endif /* CONFIG_OPENTHREAD_FTD */
-
-		/* send ack if requested */
-		if (payload[B91_FRAME_TYPE_OFFSET] & B91_ACK_REQUEST) {
-#ifdef CONFIG_OPENTHREAD_FTD
-
-			uint8_t m_sn;
-			const uint8_t *m_addr;
-			bool m_ext;
-
-			if (b91_is_data_request(payload, length, &m_sn, &m_addr, &m_ext)) {
-				if (m_addr) {
-					if (!data.src_match_table->enabled ||
-						b91_src_match_table_search(data.src_match_table,
-							m_addr, m_ext)) {
-						frame_pending_bit = true;
-					}
-				}
-				b91_send_ack(m_sn, frame_pending_bit);
-			} else {
-				b91_send_ack(payload[B91_DSN_OFFSET], false);
-			}
-#else
-			b91_send_ack(payload[B91_DSN_OFFSET], false);
-#endif /* CONFIG_OPENTHREAD_FTD */
-		}
-
-		/* get packet pointer from NET stack */
 		pkt = net_pkt_rx_alloc_with_buffer(data.iface, length, AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
-			LOG_ERR("No pkt available");
-			goto exit;
+			LOG_ERR("No pkt available.");
+			break;
 		}
-
-		/* update packet data */
+		if (frame.general.ack_req) {
+#ifdef CONFIG_OPENTHREAD_FTD
+			if (b91_require_pending_bit(&frame)) {
+				if (frame.src_addr) {
+					if (!data.src_match_table->enabled ||
+						b91_src_match_table_search(data.src_match_table,
+							frame.src_addr, frame.src_addr_ext)) {
+						net_pkt_set_ieee802154_ack_fpb(pkt, true);
+					} else {
+						net_pkt_set_ieee802154_ack_fpb(pkt, false);
+					}
+				} else {
+					net_pkt_set_ieee802154_ack_fpb(pkt, false);
+				}
+			} else {
+				net_pkt_set_ieee802154_ack_fpb(pkt, false);
+			}
+#else
+			net_pkt_set_ieee802154_ack_fpb(pkt, false);
+#endif
+			const struct ieee802154_frame ack_frame = {
+				.general = {
+					.valid = true,
+					.ver = IEEE802154_FRAME_FCF_VER_2003,
+					.type = IEEE802154_FRAME_FCF_TYPE_ACK,
+					.fp_bit = net_pkt_ieee802154_ack_fpb(pkt)
+				},
+				.sn = frame.sn
+			};
+			b91_send_ack(&ack_frame);
+		}
 		if (net_pkt_write(pkt, payload, length)) {
 			LOG_ERR("Failed to write to a packet.");
-			net_pkt_unref(pkt);
-			goto exit;
+			break;
 		}
-#ifdef CONFIG_OPENTHREAD_FTD
-		/* frame pending bit */
-		net_pkt_set_ieee802154_ack_fpb(pkt, frame_pending_bit);
-#endif /* CONFIG_OPENTHREAD_FTD */
-		/* update RSSI and LQI parameters */
 		b91_update_rssi_and_lqi(pkt);
-
-		/* transfer data to NET stack */
 		status = net_recv_data(data.iface, pkt);
 		if (status < 0) {
 			LOG_ERR("RCV Packet dropped by NET stack: %d", status);
-			net_pkt_unref(pkt);
 		}
-	}
+	} while (0);
 
-exit:
+	if (status < 0 && pkt != NULL) {
+		net_pkt_unref(pkt);
+	}
 	dma_chn_en(DMA1);
 }
 
@@ -717,7 +542,7 @@ static void b91_iface_init(struct net_if *iface)
 	struct b91_data *b91 = dev->data;
 	uint8_t *mac = b91_get_mac(dev);
 
-	net_if_set_link_addr(iface, mac, B91_IEEE_ADDRESS_SIZE, NET_LINK_IEEE802154);
+	net_if_set_link_addr(iface, mac, IEEE802154_FRAME_LENGTH_ADDR_EXT, NET_LINK_IEEE802154);
 
 	b91->iface = iface;
 
@@ -859,7 +684,7 @@ static int b91_tx(const struct device *dev,
 
 	/* check for supported mode */
 	if (mode != IEEE802154_TX_MODE_DIRECT) {
-		LOG_DBG("TX mode %d not supported", mode);
+		LOG_WRN("TX mode %d not supported", mode);
 		return -ENOTSUP;
 	}
 
@@ -889,12 +714,13 @@ static int b91_tx(const struct device *dev,
 	}
 
 	/* wait for ACK if requested */
-	if (!status && frag->data[B91_FRAME_TYPE_OFFSET] & B91_ACK_REQUEST) {
-		b91_handle_ack_en();
+	if (!status && (frag->data[0] & IEEE802154_FRAME_FCF_ACK_REQ_MASK) ==
+		IEEE802154_FRAME_FCF_ACK_REQ_ON) {
+		data.ack_handler_en = true;
 		if (k_sem_take(&b91->ack_wait, K_MSEC(B91_ACK_WAIT_TIME_MS)) != 0) {
 			status = -ENOMSG;
 		}
-		b91_handle_ack_dis();
+		data.ack_handler_en = false;
 	}
 
 	return status;
@@ -962,6 +788,14 @@ static int b91_configure(const struct device *dev,
 	return result;
 }
 
+/* API implementation: get_sch_acc */
+static uint8_t b91_get_sch_acc(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return CONFIG_IEEE802154_B91_DELAY_TRX_ACC;
+}
+
 /* IEEE802154 driver APIs structure */
 static struct ieee802154_radio_api b91_radio_api = {
 	.iface_api.init = b91_iface_init,
@@ -975,6 +809,7 @@ static struct ieee802154_radio_api b91_radio_api = {
 	.tx = b91_tx,
 	.ed_scan = b91_ed_scan,
 	.configure = b91_configure,
+	.get_sch_acc = b91_get_sch_acc,
 };
 
 
