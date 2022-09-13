@@ -39,19 +39,19 @@ void idle(void *unused1, void *unused2, void *unused3)
 	__ASSERT_NO_MSG(_current->base.prio >= 0);
 
 	while (true) {
-		/* SMP systems without a working IPI can't
-		 * actual enter an idle state, because they
-		 * can't be notified of scheduler changes
-		 * (i.e. threads they should run).  They just
-		 * spin in a yield loop.  This is intended as
-		 * a fallback configuration for new platform
-		 * bringup.
+		/* SMP systems without a working IPI can't actual
+		 * enter an idle state, because they can't be notified
+		 * of scheduler changes (i.e. threads they should
+		 * run).  They just spin instead, with a minimal
+		 * relaxation loop to prevent hammering the scheduler
+		 * lock and/or timer driver.  This is intended as a
+		 * fallback configuration for new platform bringup.
 		 */
 		if (IS_ENABLED(CONFIG_SMP) &&
 		    !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
-			k_busy_wait(100);
-			k_yield();
-			continue;
+			for (volatile int i = 0; i < 100000; i++)
+				;
+			z_swap_unlocked();
 		}
 
 		/* Note weird API: k_cpu_idle() is called with local
