@@ -388,6 +388,7 @@
 /drivers/regulator/regulator_pca9420.c    @danieldegrasse
 /drivers/regulator/regulator_shell.c      @danieldegrasse
 /drivers/reset/                           @andrei-edward-popa
+/drivers/reset/reset_intel_socfpga.c      @nbalabak
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
