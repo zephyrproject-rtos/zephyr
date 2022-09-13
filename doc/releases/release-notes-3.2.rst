@@ -194,6 +194,8 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * renesas_smartbond da1469x SoC series
+
 * Removed support for these SoC series:
 
 * Made these changes in other SoC series:
@@ -201,6 +203,8 @@ Boards & SoC Support
 * Changes for ARC boards:
 
 * Added support for these ARM boards:
+
+  * da1469x_dk_pro
 
 * Added support for these ARM64 boards:
 
@@ -255,7 +259,11 @@ Drivers and Sensors
 
 * Flash
 
+  * Added flash driver for Renesas Smartbond platform
+
 * GPIO
+
+  * Added GPIO driver for Renesas Smartbond platform
 
 * I2C
 
@@ -273,6 +281,8 @@ Drivers and Sensors
 
 * Pin control
 
+  * Added pin control driver for Renesas Smartbond platform
+
 * PWM
 
   * Added PWM driver for Renesas R-Car platform
@@ -280,6 +290,8 @@ Drivers and Sensors
 * Sensor
 
 * Serial
+
+  * Added serial driver for Renesas Smartbond platform
 
 * SPI
 
