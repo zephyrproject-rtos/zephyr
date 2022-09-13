@@ -119,6 +119,14 @@ ZTEST(smp, test_smp_coop_threads)
 {
 	int i, ok = 1;
 
+	if (!IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
+		/* The spawned thread enters an infinite loop, so it can't be
+		 * successfully aborted via an IPI.  Just skip in that
+		 * configuration.
+		 */
+		ztest_test_skip();
+	}
+
 	k_tid_t tid = k_thread_create(&t2, t2_stack, T2_STACK_SIZE, t2_fn,
 				      NULL, NULL, NULL,
 				      K_PRIO_COOP(2), 0, K_NO_WAIT);
@@ -546,6 +554,14 @@ ZTEST(smp, test_get_cpu)
 {
 	k_tid_t thread_id;
 
+	if (!IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
+		/* The spawned thread enters an infinite loop, so it can't be
+		 * successfully aborted via an IPI.  Just skip in that
+		 * configuration.
+		 */
+		ztest_test_skip();
+	}
+
 	/* get current cpu number */
 	_cpu_id = arch_curr_cpu()->id;
 
@@ -615,6 +631,7 @@ void z_trace_sched_ipi(void)
  *
  * @see arch_sched_ipi()
  */
+#ifdef CONFIG_SCHED_IPI_SUPPORTED
 ZTEST(smp, test_smp_ipi)
 {
 #ifndef CONFIG_TRACE_SCHED_IPI
@@ -640,6 +657,7 @@ ZTEST(smp, test_smp_ipi)
 				sched_ipi_has_called);
 	}
 }
+#endif
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
