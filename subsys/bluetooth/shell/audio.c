@@ -831,18 +831,98 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static uint16_t strmeta(const char *name)
+{
+	if (strcmp(name, "Unspecified") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
+	} else if (strcmp(name, "Conversational") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL;
+	} else if (strcmp(name, "Media") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_MEDIA;
+	} else if (strcmp(name, "Game") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_GAME;
+	} else if (strcmp(name, "Instructional") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL;
+	} else if (strcmp(name, "VoiceAssistants") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_VOICE_ASSISTANTS;
+	} else if (strcmp(name, "Live") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_LIVE;
+	} else if (strcmp(name, "SoundEffects") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_SOUND_EFFECTS;
+	} else if (strcmp(name, "Notifications") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS;
+	} else if (strcmp(name, "Ringtone") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_RINGTONE;
+	} else if (strcmp(name, "Alerts") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_ALERTS;
+	} else if (strcmp(name, "EmergencyAlarm") == 0) {
+		return BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM;
+	}
+
+	return 0u;
+}
+
+static int handle_metadata_update(const char *meta_str, struct bt_codec_data *meta_out[], size_t *meta_count_out)
+{
+	static struct bt_codec_data meta[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
+	size_t meta_count;
+
+	/* For some reason we cannot just the new value into 
+	 * default_preset->preset.codec.meta, so we create a copy 
+	 * and put it there
+	 */
+	meta_count = default_preset->preset.codec.meta_count;
+	(void)memset(meta, 0, sizeof(meta));
+	for (size_t i = 0U; i < meta_count; i++) {
+		(void)memcpy(meta[i].value, 
+			     default_preset->preset.codec.meta[i].data.data, 
+			     default_preset->preset.codec.meta[i].data.data_len);
+		meta[i].data.data_len = default_preset->preset.codec.meta[i].data.data_len;
+		meta[i].data.data = meta[i].value;
+	}
+
+	if (meta_str != NULL) {
+		uint16_t context;
+
+		context = strmeta(meta_str);
+		if (context == 0) {
+			return -ENOEXEC;
+		}
+		
+		/* TODO: Check the type nad only overwrite the streaming context */
+		sys_put_le16(context, meta[0].value);
+	}
+
+	*meta_count_out = meta_count;
+	*meta_out = meta;
+
+	return 0;
+}
+
 static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 {
+	struct bt_codec_data *meta;
+	size_t meta_count;
 	int err;
 
 	if (default_stream == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
+	
+	if (argc > 1) {
+		err = handle_metadata_update(argv[1], &meta, &meta_count);
 
-	err = bt_audio_stream_enable(default_stream,
-				     default_preset->preset.codec.meta,
-				     default_preset->preset.codec.meta_count);
+		if (err != 0) {
+			shell_error(sh, "Unable to handle metadata update: %d", 
+				    err);
+			return err;
+		}
+	} else {
+		err = handle_metadata_update(NULL, &meta, &meta_count);
+	}
+
+	err = bt_audio_stream_enable(default_stream, meta, meta_count);
 	if (err) {
 		shell_error(sh, "Unable to enable Channel");
 		return -ENOEXEC;
@@ -854,57 +934,27 @@ static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 #define MAX_META_DATA \
 	(CONFIG_BT_CODEC_MAX_METADATA_COUNT * sizeof(struct bt_codec_data))
 
-static uint16_t strmeta(const char *name)
-{
-	if (!strcmp(name, "Unspecified")) {
-		return BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
-	} else if (!strcmp(name, "Conversational")) {
-		return BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL;
-	} else if (!strcmp(name, "Media")) {
-		return BT_AUDIO_CONTEXT_TYPE_MEDIA;
-	} else if (!strcmp(name, "Game")) {
-		return BT_AUDIO_CONTEXT_TYPE_GAME;
-	} else if (!strcmp(name, "Instructional")) {
-		return BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL;
-	} else if (!strcmp(name, "VoiceAssistants")) {
-		return BT_AUDIO_CONTEXT_TYPE_VOICE_ASSISTANTS;
-	} else if (!strcmp(name, "Live")) {
-		return BT_AUDIO_CONTEXT_TYPE_LIVE;
-	} else if (!strcmp(name, "SoundEffects")) {
-		return BT_AUDIO_CONTEXT_TYPE_SOUND_EFFECTS;
-	} else if (!strcmp(name, "Notifications")) {
-		return BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS;
-	} else if (!strcmp(name, "Ringtone")) {
-		return BT_AUDIO_CONTEXT_TYPE_RINGTONE;
-	} else if (!strcmp(name, "Alerts")) {
-		return BT_AUDIO_CONTEXT_TYPE_ALERTS;
-	} else if (!strcmp(name, "EmergencyAlarm")) {
-		return BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM;
-	}
-
-	return 0u;
-}
-
 static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 {
+	struct bt_codec_data *meta;
+	size_t meta_count;
 	int err;
 
 	if (default_stream == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
-
+	
 	if (argc > 1) {
-		uint16_t context;
+		err = handle_metadata_update(argv[1], &meta, &meta_count);
 
-		context = strmeta(argv[1]);
-		if (context == 0) {
-			shell_error(sh, "Invalid context");
-			return -ENOEXEC;
+		if (err != 0) {
+			shell_error(sh, "Unable to handle metadata update: %d", 
+				    err);
+			return err;
 		}
-
-		sys_put_le16(context,
-			     default_preset->preset.codec.meta[0].value);
+	} else {
+		err = handle_metadata_update(NULL, &meta, &meta_count);
 	}
 
 	err = bt_audio_stream_metadata(default_stream,
