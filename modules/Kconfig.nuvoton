@@ -35,4 +35,8 @@ menu "Nuvoton NuMaker drivers"
         bool "NuMaker GPIO"
         help
             Enable Nuvoton gpio HAL module driver
+    config HAS_NUMAKER_FMC
+        bool "NuMaker FMC"
+        help
+            Enable Nuvoton FMC HAL module driver
 endmenu

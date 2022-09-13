@@ -13,6 +13,10 @@
 #include "m46x/clk_reg.h"
 
 / {
+	chosen {
+		zephyr,flash-controller = &fmc;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -27,14 +31,6 @@
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
         reg = <0x20000000 DT_SIZE_K(512)>;
-	};
-
-	flash0: flash@0 {
-		compatible = "serial-flash";
-		label = "FLASH_NUMAKER";
-        reg = <0 DT_SIZE_K(1024)>;
-		erase-block-size = <4096>;
-		write-block-size = <4>;
 	};
 
 	sysclk: system-clock {
@@ -61,6 +57,22 @@
 				#clock-cells = <3>;
 			};
 		};
+
+        fmc: flash-controller@4000c000 {
+            compatible = "nuvoton,numaker-fmc";
+            label = "FLASH_CTRL";
+            reg = <0x4000c000 0x110>;
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            flash0: flash@0 {
+                compatible = "soc-nv-flash";
+                label = "FLASH_NUMAKER";
+                reg = <0 DT_SIZE_K(1024)>;
+                erase-block-size = <4096>;
+                write-block-size = <4>;
+            };
+        };
 
 		uart0: serial@40070000 {
 			compatible = "nuvoton,numaker-uart";
@@ -203,11 +215,11 @@
 			label = "GPIOC";
 		};
 
-		gpiod: gpio@400040C0 {
+		gpiod: gpio@400040c0 {
 			compatible = "nuvoton,numaker-gpio";
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x400040C0 0x40>;
+			reg = <0x400040c0 0x40>;
             clocks = <&pcc GPD_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <19 2>;
@@ -247,11 +259,11 @@
 			label = "GPIOG";
 		};
 
-		gpioh: gpio@400041C0 {
+		gpioh: gpio@400041c0 {
 			compatible = "nuvoton,numaker-gpio";
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x400041C0 0x40>;
+			reg = <0x400041c0 0x40>;
             clocks = <&pcc GPH_MODULE 0 0>;
 			status = "disabled";
 			interrupts = <88 2>;

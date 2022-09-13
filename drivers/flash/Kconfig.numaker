@@ -1,0 +1,14 @@
+# NUMAKER GPIO driver configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_NUMAKER
+	bool "Nuvoton NUMAKER MCU flash driver"
+	depends on SOC_FAMILY_NUMAKER
+    select HAS_NUMAKER_FMC
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	default y
+	help
+	  This option enables the GPIO driver for Nuvoton NUMAKER family of processors. Say y if you wish to enable NUMAKER FMC.
