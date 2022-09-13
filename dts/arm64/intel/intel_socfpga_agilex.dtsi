@@ -8,7 +8,9 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/clock/intel_socfpga_clock.h>
+#include <zephyr/dt-bindings/reset/intel_socfpga_reset.h>
 #include <mem.h>
+
 
 / {
 	cpus {
@@ -189,5 +191,15 @@
 		#gpio-cells=<2>;
 		status = "disabled";
 		ngpios = <24>;   /* 24..47 */
+	};
+
+	reset: reset-controller@ffd11000 {
+		compatible = "intel,socfpga-reset";
+		reg = <0xffd11000 0x100>;
+		reg-width = <4>;
+		active-low = <0>;
+		#reset-cells = <1>;
+		label = "reset";
+		status = "okay";
 	};
 };
