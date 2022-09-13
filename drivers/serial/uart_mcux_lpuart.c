@@ -8,7 +8,6 @@
 #define DT_DRV_COMPAT nxp_kinetis_lpuart
 
 #include <errno.h>
-#include <soc.h>
 #include <fsl_lpuart.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
