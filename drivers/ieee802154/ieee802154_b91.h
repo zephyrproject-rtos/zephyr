@@ -12,65 +12,23 @@
 #define B91_ACK_WAIT_TIME_MS                (10)
 
 /* Received data parsing */
+#ifndef IEEE802154_FRAME_LENGTH_PANID
+#define IEEE802154_FRAME_LENGTH_PANID       (2)
+#endif
+#ifndef IEEE802154_FRAME_LENGTH_ADDR_SHORT
+#define IEEE802154_FRAME_LENGTH_ADDR_SHORT  (2)
+#endif
+#ifndef IEEE802154_FRAME_LENGTH_ADDR_EXT
+#define IEEE802154_FRAME_LENGTH_ADDR_EXT    (8)
+#endif
 #define B91_PAYLOAD_OFFSET                  (5)
 #define B91_PAYLOAD_MIN                     (5)
 #define B91_PAYLOAD_MAX                     (127)
-#define B91_FRAME_TYPE_OFFSET               (0)
-#define B91_FRAME_TYPE_MASK                 (0x07)
-#define B91_DEST_ADDR_TYPE_OFFSET           (1)
-#define B91_DEST_ADDR_TYPE_MASK             (0x0c)
-#define B91_DEST_ADDR_TYPE_SHORT            (8)
-#define B91_DEST_ADDR_TYPE_IEEE             (0x0c)
-#define B91_PAN_ID_OFFSET                   (3)
-#define B91_PAN_ID_SIZE                     (2)
-#define B91_DEST_ADDR_OFFSET                (5)
-#define B91_SHORT_ADDRESS_SIZE              (2)
-#define B91_IEEE_ADDRESS_SIZE               (8)
 #define B91_LENGTH_OFFSET                   (4)
 #define B91_RSSI_OFFSET                     (11)
 #define B91_BROADCAST_ADDRESS               ((uint8_t [2]) { 0xff, 0xff })
-#define B91_ACK_FRAME_LEN                   (3)
-#define B91_ACK_TYPE                        (2)
-#define B91_ACK_REQUEST                     (1 << 5)
-#define B91_DSN_OFFSET                      (2)
 #define B91_FCS_LENGTH                      (2)
-#define B91_FRAME_TYPE_CMD                  (3)
-#define B91_DEST_ADDR_TYPE_NA               (0x00)
-#define B91_SRC_ADDR_TYPE_MASK              (0xc0)
-#define B91_SRC_ADDR_TYPE_SHORT             (0x80)
-#define B91_SRC_ADDR_TYPE_IEEE              (0xc0)
-#define B91_SRC_ADDR_TYPE_NA                (0x00)
-#define B91_PANID_COMPRESSION_MASK          (0x40)
-#define B91_PANID_COMPRESSION_ON            (0x40)
-#define B91_PANID_COMPRESSION_OFF           (0x00)
-#define B91_SECURITY_EABLE_MASK             (0x08)
-#define B91_SECURITY_EABLE_ON               (0x08)
-#define B91_SECURITY_EABLE_OFF              (0x00)
-#define B91_KEY_ID_MODE_MASK                (0x18)
-#define B91_KEY_ID_MODE_0                   (0x00)
-#define B91_KEY_ID_MODE_1                   (0x08)
-#define B91_KEY_ID_MODE_2                   (0x10)
-#define B91_KEY_ID_MODE_3                   (0x18)
-#define B91_CMD_ID_DATA_REQ                 (4)
-#define B91_FP_BIT                          (1 << 4)
-#define B91_KEY_ID_MODE_0_LEN               (5)
-#define B91_KEY_ID_MODE_1_LEN               (6)
-#define B91_KEY_ID_MODE_2_LEN               (10)
-#define B91_KEY_ID_MODE_3_LEN               (14)
-#define B91_FRAME_VER_MASK                  (0x30)
-#define B91_FRAME_VER_2003                  (0x00)
-#define B91_FRAME_VER_2006                  (0x10)
-#define B91_FRAME_VER_2015                  (0x20)
-#define B91_IE_PRESENT_MASK                 (0x02)
-#define B91_IE_PRESENT_ON                   (0x02)
-#define B91_IE_PRESENT_OFF                  (0x00)
-#define B91_IE_LEN_MASK						(0x7f)
-#define B91_IE_TYPE_H_MASK					(0x7f)
-#define B91_IE_TYPE_L_MASK					(0x80)
-#define B91_IE_TYPE_H_OFS					(1)
-#define B91_IE_TYPE_L_OFS					(7)
-#define B91_IE_TYPE_TERMINATE				(0x7f)
-#define B91_IE_HEADER_SIZE					(2)
+#define B91_CMD_ID_DATA_REQ                 (0x04)
 
 /* Generic */
 #define B91_TRX_LENGTH                      (256)
@@ -132,22 +90,23 @@ struct b91_src_match_table {
 	struct {
 		bool valid;
 		bool ext;
-		uint8_t addr[MAX(B91_IEEE_ADDRESS_SIZE, B91_SHORT_ADDRESS_SIZE)];
+		uint8_t addr[MAX(IEEE802154_FRAME_LENGTH_ADDR_EXT,
+			IEEE802154_FRAME_LENGTH_ADDR_SHORT)];
 	} item[CONFIG_OPENTHREAD_MAX_CHILDREN];
 };
 #endif /* CONFIG_OPENTHREAD_FTD */
 
 /* data structure */
 struct b91_data {
-	uint8_t mac_addr[B91_IEEE_ADDRESS_SIZE];
+	uint8_t mac_addr[IEEE802154_FRAME_LENGTH_ADDR_EXT];
 	uint8_t rx_buffer[B91_TRX_LENGTH] __aligned(4);
 	uint8_t tx_buffer[B91_TRX_LENGTH] __aligned(4);
 	struct net_if *iface;
 	struct k_sem tx_wait;
 	struct k_sem ack_wait;
-	uint8_t filter_pan_id[B91_PAN_ID_SIZE];
-	uint8_t filter_short_addr[B91_SHORT_ADDRESS_SIZE];
-	uint8_t filter_ieee_addr[B91_IEEE_ADDRESS_SIZE];
+	uint8_t filter_pan_id[IEEE802154_FRAME_LENGTH_PANID];
+	uint8_t filter_short_addr[IEEE802154_FRAME_LENGTH_ADDR_SHORT];
+	uint8_t filter_ieee_addr[IEEE802154_FRAME_LENGTH_ADDR_EXT];
 	bool is_started;
 	volatile bool ack_handler_en;
 	uint16_t current_channel;

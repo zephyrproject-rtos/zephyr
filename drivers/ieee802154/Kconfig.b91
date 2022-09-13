@@ -66,5 +66,12 @@ config IEEE802154_B91_MAC7
 	help
 	  This is the byte 7 of the MAC address.
 
+config IEEE802154_B91_DELAY_TRX_ACC
+	int "Clock accuracy for delayed operations"
+	default 20
+	help
+	  Accuracy of the clock used for scheduling radio delayed operations (delayed transmission
+	  or delayed reception), in ppm.
+
 endif # ! IEEE802154_B91_RANDOM_MAC
 endif # IEEE802154_TELINK_B91
