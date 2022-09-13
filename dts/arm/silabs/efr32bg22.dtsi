@@ -13,6 +13,7 @@
 / {
 	chosen {
 		zephyr,flash-controller = &msc;
+		zephyr,entropy = &trng;
 	};
 
 	power-states {
@@ -67,6 +68,13 @@
 			interrupts = <15 0>, <16 0>;
 			interrupt-names = "rx", "tx";
 			status = "disabled";
+		};
+
+		trng: trng@4c021000 {
+			compatible = "silabs,gecko-trng";
+			reg = <0x4C021000 0x1000>;
+			status = "disabled";
+			interrupts = <0x1 0x0>;
 		};
 
 		i2c0: i2c@5a010000 {

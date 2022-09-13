@@ -115,3 +115,7 @@
 &stimer0 {
 	status = "okay";
 };
+
+&trng {
+	status = "okay";
+};
