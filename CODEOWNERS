@@ -803,6 +803,8 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/bluetooth/controller/              @cvinayak @thoh-ot @kruithofa @erbr-ot @sjanc @ppryga
 /tests/bluetooth/bsim_bt/                 @alwa-nordic @jhedberg @Vudentz @wopu-ot
 /tests/bluetooth/bsim_bt/bsim_test_audio/ @jhedberg @Vudentz @wopu-ot @Thalley
+/tests/bluetooth/bsim_bt/bsim_test_mesh/  @jhedberg @Vudentz @wopu-ot @PavelVPV
+/tests/bluetooth/mesh_shell/              @jhedberg @Vudentz @sjanc @PavelVPV
 /tests/bluetooth/tester/                  @alwa-nordic @jhedberg @Vudentz @sjanc
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
