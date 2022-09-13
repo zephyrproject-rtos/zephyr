@@ -38,14 +38,14 @@ struct cavs_clock_info *cavs_clocks_get(void);
 #define CAVS_SHIM_BASE          DT_REG_ADDR(DT_NODELABEL(shim))
 #define CAVS_SHIM_CLKCTL        (*((volatile uint32_t *)(CAVS_SHIM_BASE + 0x78)))
 
-#define CAVS_CLOCK_FREQ_ENC     DT_PROP(DT_NODELABEL(clkctl), cavs_clkctl_freq_enc)
-#define CAVS_CLOCK_FREQ_MASK    DT_PROP(DT_NODELABEL(clkctl), cavs_clkctl_freq_mask)
-#define CAVS_CLOCK_FREQ_LEN     DT_PROP_LEN(DT_NODELABEL(clkctl), cavs_clkctl_freq_enc)
+#define CAVS_CLOCK_FREQ_ENC     DT_PROP(DT_NODELABEL(clkctl), adsp_clkctl_freq_enc)
+#define CAVS_CLOCK_FREQ_MASK    DT_PROP(DT_NODELABEL(clkctl), adsp_clkctl_freq_mask)
+#define CAVS_CLOCK_FREQ_LEN     DT_PROP_LEN(DT_NODELABEL(clkctl), adsp_clkctl_freq_enc)
 
-#define CAVS_CLOCK_FREQ_DEFAULT DT_PROP(DT_NODELABEL(clkctl), cavs_clkctl_freq_default)
-#define CAVS_CLOCK_FREQ_LOWEST  DT_PROP(DT_NODELABEL(clkctl), cavs_clkctl_freq_lowest)
+#define CAVS_CLOCK_FREQ_DEFAULT DT_PROP(DT_NODELABEL(clkctl), adsp_clkctl_freq_default)
+#define CAVS_CLOCK_FREQ_LOWEST  DT_PROP(DT_NODELABEL(clkctl), adsp_clkctl_freq_lowest)
 
-#define CAVS_CLOCK_FREQ(name)   DT_PROP(DT_NODELABEL(clkctl), cavs_clkctl_clk_##name)
+#define CAVS_CLOCK_FREQ(name)   DT_PROP(DT_NODELABEL(clkctl), adsp_clkctl_clk_##name)
 
 #if DT_PROP(DT_NODELABEL(clkctl), wovcro_supported)
 #define CAVS_CLOCK_HAS_WOVCRO
