@@ -18,7 +18,7 @@ config APP_FIRMWARE_UPDATE_IMAGE
 	help
 	  This required option specifies the path to an image that this
 	  exapmle will update to.
-	default "$(shell, dirname $(filename))/boards/hello-an547.hex" if BOARD_MPS3_AN547
+	default "$(shell, dirname $(filename))/boards/hello-an547.hex" if BOARD_MPS3_AN547_NS
 
 config APP_FIRMWARE_UPDATE_IMAGE_VERSION
 	string "Version of the new image to update to"
