@@ -12,6 +12,9 @@ before they can be used; these are discussed individually below. These macros
 are generally meant for use within :ref:`device drivers <device_model_api>`,
 though they can be used outside of drivers with appropriate care.
 
+.. contents:: Contents
+   :local:
+
 .. _devicetree-generic-apis:
 
 Generic APIs
