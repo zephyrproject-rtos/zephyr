@@ -1,0 +1,14 @@
+# Copyright (c) 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Special fields for 1KHz rtc
+
+description: NXP The High-resolution/Wake-up Timer (WAKE) 
+    which is clocked at a 1 kHz rate 
+
+compatible: "nxp,lpc-rtc-1khz"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+
+
