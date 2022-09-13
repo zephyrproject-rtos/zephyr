@@ -1199,10 +1199,11 @@ void gsm_ppp_stop(const struct device *dev)
 		if (gsm->ppp_dev != NULL) {
 			uart_mux_disable(gsm->ppp_dev);
 		}
-	}
 
-	if (modem_cmd_handler_tx_lock(&gsm->context.cmd_handler, GSM_CMD_LOCK_TIMEOUT) < 0) {
-		LOG_WRN("Failed locking modem cmds!");
+		if (modem_cmd_handler_tx_lock(&gsm->context.cmd_handler,
+								GSM_CMD_LOCK_TIMEOUT) < 0) {
+			LOG_WRN("Failed locking modem cmds!");
+		}
 	}
 
 	if (gsm->modem_off_cb != NULL) {
