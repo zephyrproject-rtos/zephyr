@@ -11,7 +11,7 @@
 #include <zephyr/init.h>
 
 #include <adsp_shim.h>
-#include <cavs-clk.h>
+#include <adsp-clk.h>
 #include <cavs-idc.h>
 #include "soc.h"
 
