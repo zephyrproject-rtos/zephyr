@@ -45,6 +45,14 @@
 			status = "disabled";
 		};
 
+		uart5: serial@40005000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
+			interrupts = <53 0>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@48000000 {
 
 			gpioe: gpio@48001000 {
