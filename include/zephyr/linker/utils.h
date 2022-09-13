@@ -35,16 +35,12 @@ static inline bool linker_is_in_rodata(const void *addr)
 
 #if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86) || \
 	defined(CONFIG_ARM64) || defined(CONFIG_NIOS2) || \
-	defined(CONFIG_RISCV) || defined(CONFIG_SPARC) || defined(CONFIG_MIPS)
+	defined(CONFIG_RISCV) || defined(CONFIG_SPARC) || \
+	defined(CONFIG_MIPS) || defined(CONFIG_XTENSA)
 	extern char __rodata_region_start[];
 	extern char __rodata_region_end[];
 	#define RO_START __rodata_region_start
 	#define RO_END __rodata_region_end
-#elif defined(CONFIG_XTENSA)
-	extern const char _rodata_start[];
-	extern const char _rodata_end[];
-	#define RO_START _rodata_start
-	#define RO_END _rodata_end
 #else
 	#define RO_START 0
 	#define RO_END 0
