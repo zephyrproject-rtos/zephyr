@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Todo: deprecate CLANG_ROOT_DIR
-set_ifndef(LLVM_TOOLCHAIN_PATH "$ENV{CLANG_ROOT_DIR}")
+find_package(Deprecated COMPONENTS CLANG_ROOT_DIR)
 zephyr_get(LLVM_TOOLCHAIN_PATH)
 
 if(LLVM_TOOLCHAIN_PATH)

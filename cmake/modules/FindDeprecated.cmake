@@ -68,6 +68,18 @@ if("CROSS_COMPILE" IN_LIST Deprecated_FIND_COMPONENTS)
   endif()
 endif()
 
+if("CLANG_ROOT_DIR" IN_LIST Deprecated_FIND_COMPONENTS)
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS CLANG_ROOT_DIR)
+  # This code was deprecated after Zephyr v3.1.0
+  if(NOT LLVM_TOOLCHAIN_PATH AND
+     (DEFINED ENV{CLANG_ROOT_DIR}))
+      set(LLVM_TOOLCHAIN_PATH "$ENV{CLANG_ROOT_DIR}")
+      message(DEPRECATION  "Setting CLANG_ROOT_DIR in environment is deprecated. "
+                           "Please set LLVM_TOOLCHAIN_PATH to '$ENV{CLANG_ROOT_DIR}' instead'"
+      )
+  endif()
+endif()
+
 if(NOT "${Deprecated_FIND_COMPONENTS}" STREQUAL "")
   message(STATUS "The following deprecated component(s) could not be found: "
                  "${Deprecated_FIND_COMPONENTS}")
