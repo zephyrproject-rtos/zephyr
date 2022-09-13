@@ -26,12 +26,23 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif /* defined(CONFIG_CAN_MCUX_MCAN) */
 
+#if defined(CONFIG_RTC_MCUX_OSC32K)
+	if (MCUX_OSC32K_CLK == (uint32_t)sub_system) {
+		CLOCK_EnableOsc32K(true);
+	}
+#endif
+
 	return 0;
 }
 
 static int mcux_lpc_syscon_clock_control_off(const struct device *dev,
 			       clock_control_subsys_t sub_system)
 {
+#if defined(CONFIG_RTC_MCUX_OSC32K)
+	if (MCUX_OSC32K_CLK == (uint32_t)sub_system) {
+		CLOCK_EnableOsc32K(false);
+	}
+#endif
 	return 0;
 }
 
@@ -154,8 +165,32 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		*rate = CLOCK_GetI3cClkFreq();
 		break;
 #endif
+
+#if defined(CONFIG_RTC_MCUX_OSC32K)
+		*rate = CLOCK_GetOsc32KFreq();
+		break;
+#endif
 	}
 
+	return 0;
+}
+
+static int mcux_lpc_syscon_clock_control_configure(const struct device *dev,
+					  clock_control_subsys_t sys,
+					  void *data)
+{
+#if defined(CONFIG_RTC_MCUX_OSC32K)
+	/* config low frequency output clock */
+	if (MCUX_OSC32K_CLK == (uint32_t)sys) {
+		uint8_t divide = *(uint8_t *)data;
+
+		CLKCTL0->LOWFREQCLKDIV = CLKCTL0_LOWFREQCLKDIV_HALT(1);
+
+		CLKCTL0->LOWFREQCLKDIV = CLKCTL0_LOWFREQCLKDIV_HALT(1) | CLKCTL0_LOWFREQCLKDIV_RESET(1) | CLKCTL0_LOWFREQCLKDIV_DIV(divide-1);
+		CLKCTL0->LOWFREQCLKDIV = CLKCTL0_LOWFREQCLKDIV_HALT(1) | CLKCTL0_LOWFREQCLKDIV_RESET(0) | CLKCTL0_LOWFREQCLKDIV_DIV(divide-1);
+		CLKCTL0->LOWFREQCLKDIV = CLKCTL0_LOWFREQCLKDIV_HALT(0) | CLKCTL0_LOWFREQCLKDIV_RESET(0) | CLKCTL0_LOWFREQCLKDIV_DIV(divide-1);
+	}
+#endif
 	return 0;
 }
 
@@ -168,6 +203,7 @@ static const struct clock_control_driver_api mcux_lpc_syscon_api = {
 	.on = mcux_lpc_syscon_clock_control_on,
 	.off = mcux_lpc_syscon_clock_control_off,
 	.get_rate = mcux_lpc_syscon_clock_control_get_subsys_rate,
+	.configure = mcux_lpc_syscon_clock_control_configure,
 };
 
 #define LPC_CLOCK_INIT(n) \
