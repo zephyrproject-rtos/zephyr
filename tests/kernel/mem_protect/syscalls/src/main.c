@@ -225,7 +225,7 @@ ZTEST_USER(syscalls, test_string_nlen)
 	 * if it attempts to access any address outside the image Flash or RAM
 	 * boundaries, and the program will hang.
 	 */
-#if !((defined(CONFIG_BOARD_NSIM) && defined(CONFIG_SOC_NSIM_SEM)) || \
+#if !(defined(CONFIG_SOC_NSIM_SEM) || \
 	defined(CONFIG_SOC_EMSK_EM7D) || \
 	(defined(CONFIG_CPU_CORTEX_M) && \
 		defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)))
