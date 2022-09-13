@@ -518,6 +518,9 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf,
 	if (buf == NULL) {
 		/* if rx buff is null, then write data to dummy address. */
 		blk_cfg->dest_address = (uint32_t)&dummy_rx_buffer;
+		/* The address cannot be incremented automatically, otherwise the buffer will overflow  */
+		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
 		blk_cfg->dest_address = (uint32_t)buf;
 	}
