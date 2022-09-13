@@ -110,7 +110,8 @@ ZTEST(sprintf, test_sprintf_double)
 	 */
 	if (IS_MINIMAL_LIBC_NOFP
 	    || !(IS_ENABLED(CONFIG_FPU)
-		 || IS_ENABLED(CONFIG_BOARD_NATIVE_POSIX))) {
+		 || IS_ENABLED(CONFIG_BOARD_NATIVE_POSIX)
+		 || IS_ENABLED(CONFIG_BOARD_NATIVE_POSIX_64))) {
 		ztest_test_skip();
 		return;
 	}

@@ -11,8 +11,9 @@
  * Test should be run on qemu_x86 or native_posix target.
  */
 
-#if !defined(CONFIG_BOARD_QEMU_X86) && !defined(CONFIG_BOARD_NATIVE_POSIX)
-#error "Run on qemu_x86 or native_posix only"
+#if !defined(CONFIG_BOARD_QEMU_X86) && !defined(CONFIG_BOARD_NATIVE_POSIX) && \
+	!defined(CONFIG_BOARD_NATIVE_POSIX_64)
+#error "Run on qemu_x86, native_posix or native_posix_64 only"
 #endif
 
 #include <stdio.h>
