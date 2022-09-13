@@ -131,7 +131,7 @@ SECTIONS
    */
   SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
   {
-    _rodata_start = ABSOLUTE(.);
+    __rodata_region_start = ABSOLUTE(.);
 
     . = ALIGN(4);
     #include <snippets-rodata.ld>
@@ -162,7 +162,7 @@ SECTIONS
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
-    _rodata_end = ABSOLUTE(.);
+    __rodata_region_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
     *(*.lit4)
