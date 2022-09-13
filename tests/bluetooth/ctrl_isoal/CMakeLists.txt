@@ -6,11 +6,12 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(bluetooth_ctrl_isoal)
 
 zephyr_library_include_directories(
-	${ZEPHYR_BASE}/subsys/bluetooth
-	${ZEPHYR_BASE}/subsys/bluetooth/controller
-	${ZEPHYR_BASE}/subsys/bluetooth/controller/include
-	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic
-	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic/lll
+  ${ZEPHYR_BASE}/subsys/bluetooth
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/include
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic/lll
 )
 
 FILE(GLOB app_sources src/*.c)
