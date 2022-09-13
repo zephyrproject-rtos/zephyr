@@ -247,7 +247,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		block_config = block_config->next_block;
 
 		while (block_config != NULL) {
-			next_transfer = data->curr_transfer + sizeof(dma_descriptor_t);
+			next_transfer = data->curr_transfer + 1;
 
 			/* Ensure descriptor is aligned */
 			next_transfer = (dma_descriptor_t *)ROUND_UP(
@@ -445,7 +445,7 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 			next_transfer = data->dma_descriptor_table;
 			data->descriptor_index = 1;
 		} else {
-			next_transfer = data->curr_transfer + sizeof(dma_descriptor_t);
+			next_transfer = data->curr_transfer + 1;
 			data->descriptor_index++;
 		}
 		/* Ensure descriptor is aligned */
