@@ -85,18 +85,21 @@ static void reset_write_stats(void)
 	memset(&write_stats, 0, sizeof(write_stats));
 }
 
+/* This variable is write-locked when `(exchange_params.func != NULL)`.
+ * Must be zero-initialized when unlocked.
+ */
+static struct bt_gatt_exchange_params exchange_params;
+
 static void exchange_func(struct bt_conn *conn, uint8_t err,
 			  struct bt_gatt_exchange_params *params)
 {
 	shell_print(ctx_shell, "Exchange %s", err == 0U ? "successful" :
 		    "failed");
 
+	/* Release global `exchange_params`. */
+	__ASSERT_NO_MSG(params == &exchange_params);
 	(void)memset(params, 0, sizeof(*params));
 }
-
-static struct bt_gatt_exchange_params exchange_params = {
-	.func = exchange_func,
-};
 
 static int cmd_exchange_mtu(const struct shell *sh,
 			     size_t argc, char *argv[])
@@ -108,7 +111,19 @@ static int cmd_exchange_mtu(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
+	if (exchange_params.func) {
+		shell_print(sh, "Shell command busy. A previous invocation is in progress.");
+		return -EBUSY;
+	}
+
+	exchange_params.func = exchange_func;
+
 	err = bt_gatt_exchange_mtu(default_conn, &exchange_params);
+	if (err) {
+		/* Release global `exchange_params`. */
+		exchange_params.func = NULL;
+	}
+
 	if (err == -EALREADY) {
 		shell_print(sh, "Already exchanged");
 	} else if (err) {
