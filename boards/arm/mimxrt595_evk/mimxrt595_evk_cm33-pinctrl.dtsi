@@ -49,6 +49,18 @@
 		};
 	};
 
+	pinmux_flexcomm5_spi: pinmux_flexcomm5_spi {
+		group0 {
+			pinmux = <FC5_SCK_PIO1_3>,
+					<FC5_TXD_SCL_MISO_WS_PIO1_4>,
+					<FC5_RXD_SDA_MOSI_DATA_PIO1_5>,
+					<FC5_CTS_SDA_SSEL0_PIO1_6>;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+	};
+
 	pinmux_flexcomm16_spi: pinmux_flexcomm16_spi {
 		group0 {
 			pinmux = <HS_SPI1_SCK_PIO1_3>,

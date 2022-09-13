@@ -270,6 +270,10 @@ void clock_init(void)
 	/* Switch FLEXCOMM4 to FRO_DIV4 */
 	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM4);
 #endif
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_spi, okay)
+	/* Switch FLEXCOMM5 to FRO_DIV4 */
+	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM5);
+#endif
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(hs_spi1), nxp_lpc_spi, okay)
 	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM16);
 #endif
