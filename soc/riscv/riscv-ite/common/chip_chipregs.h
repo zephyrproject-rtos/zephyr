@@ -10,17 +10,6 @@
 
 #define EC_REG_BASE_ADDR 0x00f00000
 
-#ifndef FALSE
-#define FALSE   0
-#endif
-
-/* TRUE can be defined as !FALSE but defining
- * it as 1 allows it to fit into a bitfield.
- */
-#ifndef TRUE
-#define TRUE    1
-#endif
-
 #ifdef _ASMLANGUAGE
 #define ECREG(x)        x
 #else
