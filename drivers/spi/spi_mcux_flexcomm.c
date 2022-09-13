@@ -49,11 +49,13 @@ struct spi_mcux_config {
 #define SPI_MCUX_FLEXCOMM_DMA_DONE_FLAG		\
 	(SPI_MCUX_FLEXCOMM_DMA_RX_DONE_FLAG | SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG)
 
+#define DMA_MAX_TRANS_NUM	(1024)
+
 struct stream {
 	const struct device *dma_dev;
 	uint32_t channel; /* stores the channel for dma */
 	struct dma_config dma_cfg;
-	struct dma_block_config dma_blk_cfg[2];
+	struct dma_block_config dma_blk_cfg[CONFIG_DMA_LINK_QUEUE_SIZE];
 };
 #endif
 
@@ -107,7 +109,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	/* Send tx data first, then receive rx data. */
 	if (data->tx_sended == false) {
 		if (spi_context_tx_buf_on(ctx)) {
-			transfer.txData = ctx->tx_buf;
+			transfer.txData = (uint8_t *)ctx->tx_buf;
 			transfer.dataSize = ctx->tx_len;
 
 			data->tx_sended = true;
@@ -374,6 +376,15 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	SPI_Type *base = cfg->base;
 	uint32_t word_size;
 
+	/* The maximum length of a DMA transfer is 1024. So we need to divide into several transfers */
+	uint8_t block_count = (len & 0x3FF) ? ((len >> 10) + 1) : (len >> 10);
+	if (block_count + 1 > CONFIG_DMA_LINK_QUEUE_SIZE) {
+		LOG_ERR("please config DMA_LINK_QUEUE_SIZE as %d", block_count + 1);
+		return  -EINVAL;
+	}
+	uint8_t final_block_count = block_count;
+	uint16_t transfer_bytes = len;
+	size_t remain_bytes = len;
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 
 	/* remember active TX DMA channel (used in callback) */
@@ -381,73 +392,102 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 
 	blk_cfg = &stream->dma_blk_cfg[0];
 
-	/* prepare the block for this TX DMA channel */
-	memset(blk_cfg, 0, sizeof(struct dma_block_config));
+	for (uint8_t i = 0; i < block_count; i++) {
+		/* prepare the block for this TX DMA channel */
+		memset(blk_cfg, 0, sizeof(struct dma_block_config));
 
-	/* tx direction has memory as source and periph as dest. */
-	if (buf == NULL) {
-		data->dummy_tx_buffer = 0;
-		data->last_word = 0;
-		spi_mcux_prepare_txdummy(&data->dummy_tx_buffer, last_packet, spi_cfg);
-
-		if (last_packet  &&
-		    ((word_size > 8) ? (len > 2U) : (len > 1U))) {
-			spi_mcux_prepare_txdummy(&data->last_word, last_packet, spi_cfg);
+		/* If only tx length == sizeof(word_size), don't use dma linked descriptor  */
+		if (i == 0 && ((word_size > 8) ? (len > 2U) : (len > 1U))) {
 			blk_cfg->source_gather_en = 1;
-			blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
-			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
-			blk_cfg->block_size = (word_size > 8) ?
-						(len - 2U) : (len - 1U);
-			blk_cfg->next_block = &stream->dma_blk_cfg[1];
-			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		}
 
-			blk_cfg = &stream->dma_blk_cfg[1];
+		transfer_bytes = (DMA_MAX_TRANS_NUM >= remain_bytes) ? remain_bytes : DMA_MAX_TRANS_NUM;
+		bool last_frame = (DMA_MAX_TRANS_NUM >= remain_bytes) ? true : false;
 
-			/* prepare the block for this TX DMA channel */
-			memset(blk_cfg, 0, sizeof(struct dma_block_config));
-			blk_cfg->source_address = (uint32_t)&data->last_word;
-			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
-			blk_cfg->block_size = sizeof(uint32_t);
-			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		/* tx direction has memory as source and periph as dest. */
+		if (buf == NULL) {
+			data->dummy_tx_buffer = 0;
+			data->last_word = 0;
+			spi_mcux_prepare_txdummy(&data->dummy_tx_buffer, last_packet, spi_cfg);
+
+			if (last_frame  && last_packet &&
+				((word_size > 8) ? (transfer_bytes > 2U) : (transfer_bytes > 1U))) {
+				spi_mcux_prepare_txdummy(&data->last_word, last_packet, spi_cfg);
+					
+				blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
+				blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+				blk_cfg->block_size = (word_size > 8) ?
+								(transfer_bytes - 2U) : (transfer_bytes - 1U);
+				blk_cfg->next_block = &stream->dma_blk_cfg[i + 1];
+				blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+				blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
+				blk_cfg = &stream->dma_blk_cfg[i + 1];
+				final_block_count++;
+
+				/* prepare the block for this TX DMA channel */
+				memset(blk_cfg, 0, sizeof(struct dma_block_config));
+				blk_cfg->source_address = (uint32_t)&data->last_word;
+				blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+				blk_cfg->block_size = sizeof(uint32_t);
+				blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+				blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			} else {
+				blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
+				blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+				blk_cfg->block_size = transfer_bytes;
+				blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+				blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			}
 		} else {
-			blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
-			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
-			blk_cfg->block_size = len;
-			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		}
-	} else {
-		if (last_packet) {
-			spi_mcux_prepare_txlastword(&data->last_word, buf, spi_cfg, len);
-		}
-		/* If last packet and data transfer frame is bigger then 1,
-		 * use dma descriptor to send the last data.
-		 */
-		if (last_packet  &&
-		    ((word_size > 8) ? (len > 2U) : (len > 1U))) {
-			blk_cfg->source_gather_en = 1;
-			blk_cfg->source_address = (uint32_t)buf;
-			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
-			blk_cfg->block_size = (word_size > 8) ?
-						(len - 2U) : (len - 1U);
-			blk_cfg->next_block = &stream->dma_blk_cfg[1];
+			if (last_frame && last_packet) {
+				spi_mcux_prepare_txlastword(&data->last_word, buf + i * DMA_MAX_TRANS_NUM, spi_cfg, transfer_bytes);
+			}
+			/* If last packet and data transfer frame is bigger then 1,
+			* use dma descriptor to send the last data.
+			*/
+			if (last_frame  && last_packet ) {
+				if (((word_size > 8) ? (transfer_bytes > 2U) : (transfer_bytes > 1U))) {
+					blk_cfg->source_address = (uint32_t)(buf + i * DMA_MAX_TRANS_NUM);
+					blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+					blk_cfg->block_size = (word_size > 8) ?
+								(transfer_bytes - 2U) : (transfer_bytes - 1U);
 
-			blk_cfg = &stream->dma_blk_cfg[1];
+					blk_cfg->next_block = (blk_cfg + 1);
 
-			/* prepare the block for this TX DMA channel */
-			memset(blk_cfg, 0, sizeof(struct dma_block_config));
-			blk_cfg->source_address = (uint32_t)&data->last_word;
-			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
-			blk_cfg->block_size = sizeof(uint32_t);
-			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		} else {
-			blk_cfg->source_address = (uint32_t)buf;
-			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
-			blk_cfg->block_size = len;
+					blk_cfg = blk_cfg->next_block;
+					/* prepare the block for this TX DMA channel */
+					memset(blk_cfg, 0, sizeof(struct dma_block_config));
+					final_block_count++;
+				}
+				
+				if ((word_size > 8) ? (len > 2U) : (len > 1U)) {
+					/* send the last byte with end of transfor flag */
+					blk_cfg->source_address = (uint32_t)&data->last_word;
+					blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+					blk_cfg->block_size = sizeof(uint32_t);
+					blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+					blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+				} else {
+					/* send the last byte, and set the end of transfor flag at the tail of this function */
+					blk_cfg->source_address = (uint32_t)(buf + i * DMA_MAX_TRANS_NUM);
+					blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+					blk_cfg->block_size = transfer_bytes;
+				}
+
+			} else {
+				blk_cfg->source_address = (uint32_t)(buf + i * DMA_MAX_TRANS_NUM);
+				blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+				blk_cfg->block_size = transfer_bytes;
+			}
 		}
+
+		/* At the last DMA transfer, next_block is NULL or end of frame */
+		if (i != block_count - 1) {
+			blk_cfg->next_block = &stream->dma_blk_cfg[i + 1];
+		}
+		remain_bytes -= transfer_bytes;
+		blk_cfg = blk_cfg->next_block;
 	}
 
 	/* Enables the DMA request from SPI txFIFO */
@@ -455,6 +495,7 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 
 	/* direction is given by the DT */
 	stream->dma_cfg.head_block = &stream->dma_blk_cfg[0];
+	stream->dma_cfg.block_count = final_block_count;
 	/* give the client dev as arg, as the callback comes from the dma */
 	stream->dma_cfg.user_data = (struct device *)dev;
 	/* pass our client origin to the dma: data->dma_tx.dma_channel */
@@ -484,8 +525,7 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		*((uint16_t *)((uint32_t)&base->FIFOWR) + 1) = (uint16_t)(tmpData >> 16U);
 	}
 
-	/* gives the request ID */
-	return dma_start(data->dma_tx.dma_dev, data->dma_tx.channel);
+	return 0;
 }
 
 static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf,
@@ -500,27 +540,52 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf,
 	/* retrieve active RX DMA channel (used in callback) */
 	struct stream *stream = &data->dma_rx;
 
+	uint8_t block_count = (len & 0x3FF) ? ((len >> 10) + 1) : (len >> 10);
+	if (block_count > CONFIG_DMA_LINK_QUEUE_SIZE) {
+		LOG_ERR("please config DMA_LINK_QUEUE_SIZE as %d", block_count);
+		return  -EINVAL;
+	}
+	uint16_t transfer_bytes = len;
+	size_t remain_bytes = len;
+
 	blk_cfg = &stream->dma_blk_cfg[0];
 
-	/* prepare the block for this RX DMA channel */
-	memset(blk_cfg, 0, sizeof(struct dma_block_config));
-	blk_cfg->block_size = len;
+	for (uint8_t i = 0; i < block_count; i++) {
+		/* prepare the block for this RX DMA channel */
+		memset(blk_cfg, 0, sizeof(struct dma_block_config));
 
-	/* rx direction has periph as source and mem as dest. */
-	if (buf == NULL) {
-		/* if rx buff is null, then write data to dummy address. */
-		blk_cfg->dest_address = (uint32_t)&dummy_rx_buffer;
-		/* The address cannot be incremented automatically, otherwise the buffer will overflow  */
-		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-	} else {
-		blk_cfg->dest_address = (uint32_t)buf;
-	}
+
+		transfer_bytes = (DMA_MAX_TRANS_NUM >= remain_bytes) ? remain_bytes : DMA_MAX_TRANS_NUM;
+
+		if (block_count > 1) {
+			blk_cfg->dest_scatter_en = 1;
+		}
+		blk_cfg->block_size = transfer_bytes;
+
+		/* rx direction has periph as source and mem as dest. */
+		if (buf == NULL) {
+			/* if rx buff is null, then write data to dummy address. */
+			blk_cfg->dest_address = (uint32_t)&dummy_rx_buffer;
+
+			/* note: the address is not automatically incremented to avoid buffer overflow  */
+			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		} else {
+			blk_cfg->dest_address = (uint32_t)(buf + i * DMA_MAX_TRANS_NUM);
+		}
 
 	blk_cfg->source_address = (uint32_t)&base->FIFORD;
 
+		/* At the last DMA transfer, next_block is NULL */
+		if (i != block_count - 1) {
+			blk_cfg->next_block = &stream->dma_blk_cfg[i + 1];
+		}
+		blk_cfg = &stream->dma_blk_cfg[i + 1];
+		remain_bytes -= transfer_bytes;
+	}
 	/* direction is given by the DT */
-	stream->dma_cfg.head_block = blk_cfg;
+	stream->dma_cfg.head_block = &stream->dma_blk_cfg[0];
+	stream->dma_cfg.block_count = block_count;
 	stream->dma_cfg.user_data = (struct device *)dev;
 
 	/* Enables the DMA request from SPI rxFIFO */
@@ -534,8 +599,7 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf,
 		return ret;
 	}
 
-	/* gives the request ID */
-	return dma_start(data->dma_rx.dma_dev, data->dma_rx.channel);
+	return ret;
 }
 
 static int spi_mcux_dma_move_buffers(const struct device *dev, size_t len,
@@ -553,6 +617,8 @@ static int spi_mcux_dma_move_buffers(const struct device *dev, size_t len,
 	ret = spi_mcux_dma_tx_load(dev, data->ctx.tx_buf, spi_cfg,
 							len, last_packet);
 
+	dma_start(data->dma_rx.dma_dev, data->dma_rx.channel);
+	dma_start(data->dma_tx.dma_dev, data->dma_tx.channel);
 	return ret;
 }
 
@@ -841,7 +907,6 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 			.channel_direction = MEMORY_TO_PERIPHERAL,	\
 			.dma_callback = spi_mcux_dma_callback,		\
 			.source_data_size = 1,				\
-			.block_count = 2,		\
 		}							\
 	},								\
 	.dma_rx = {						\
@@ -852,7 +917,6 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 			.channel_direction = PERIPHERAL_TO_MEMORY,	\
 			.dma_callback = spi_mcux_dma_callback,		\
 			.source_data_size = 1,				\
-			.block_count = 1,		\
 		}							\
 	}
 

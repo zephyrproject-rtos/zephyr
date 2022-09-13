@@ -231,7 +231,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		}
 
 		/* Enable interrupt */
-		xferConfig = DMA_CHANNEL_XFER(1UL, 0UL, 1UL, 0UL,
+		xferConfig = DMA_CHANNEL_XFER(1UL, 0UL, 0UL, 0UL,
 					dest_width,
 					src_inc,
 					dst_inc,
@@ -254,18 +254,30 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 					next_transfer,
 					FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE);
 
+			/* Only the last descriptor in the linked descriptor allows the address not to auto increment */
+			if (block_config->next_block == NULL &&
+				(block_config->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) &&
+				(block_config->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE)) {
+				src_inc = 0;
+				dst_inc = 0;
+			}
+
 			/* SPI TX transfers need to queue a DMA descriptor to
 			 * indicate an end of transfer. Source or destination
 			 * address does not need to be change for these
 			 * transactions and the transfer width is 4 bytes
 			 */
-			if ((block_config->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) &&
-				(block_config->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE)) {
-				src_inc = 0;
-				dst_inc = 0;
-				dest_width = sizeof(uint32_t);
+			if (block_config->next_block == NULL) {
+				/* 1. The width of last SPI RX transfer is sizeof(word_size).
+				 * 2. For the last SPI TX transfer, if the transfer length == sizeof(word_size),
+				 * the end of transfor flag (EOT) already set by SPI device.
+				 */
+				if (config->channel_direction == MEMORY_TO_PERIPHERAL && 
+					dest_width != block_config->block_size) {
+					dest_width = sizeof(uint32_t);
+				}
+					
 				next_transfer = NULL;
-			}
 
 			/* Set interrupt to be true for the descriptor */
 			xferConfig = DMA_CHANNEL_XFER(1UL, 0UL, 1U, 0U,
@@ -273,6 +285,13 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 						src_inc,
 						dst_inc,
 						block_config->block_size);
+			} else {
+				xferConfig = DMA_CHANNEL_XFER(1UL, 0UL, 0U, 0U,
+					dest_width,
+					src_inc,
+					dst_inc,
+					block_config->block_size);
+			}
 
 			DMA_SetupDescriptor(data->curr_transfer,
 					xferConfig,
