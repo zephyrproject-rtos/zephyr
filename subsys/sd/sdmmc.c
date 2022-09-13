@@ -950,6 +950,14 @@ static int sdmmc_init_hs(struct sd_card *card)
 		LOG_ERR("Failed to switch card to HS mode");
 		return ret;
 	}
+	if (card->flags & SD_4BITS_WIDTH) {
+		/* Raise bus width to 4 bits */
+		ret = sdmmc_set_bus_width(card, SDHC_BUS_WIDTH4BIT);
+		if (ret) {
+			LOG_ERR("Failed to change card bus width to 4 bits");
+			return ret;
+		}
+	}
 	return 0;
 }
 
