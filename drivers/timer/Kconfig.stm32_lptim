@@ -44,4 +44,16 @@ config STM32_LPTIM_TIMEBASE
 	default 0xFFFF if STM32_LPTIM_CLOCK_LSE
 	default 0xF9FF if STM32_LPTIM_CLOCK_LSI
 
+config STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE
+	bool "Override tick to freq ratio check"
+	default y if ZTEST
+	help
+	  For LPTIM configuration, a specific tick freq is advised
+	  depending on LPTIM input clock:
+	  - LSI(32KHz): 4000 ticks/sec
+	  - LSE(32678): 4096 ticks/sec
+	  To prevent misconfigurations, a dedicated check is implemented
+	  in the driver.
+	  This options allows to override this check
+
 endif # STM32_LPTIM_TIMER
