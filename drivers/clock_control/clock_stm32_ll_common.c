@@ -616,6 +616,11 @@ static void set_up_fixed_clock_sources(void)
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
 #endif
 
+		if (IS_ENABLED(STM32_LSE_BYPASS)) {
+			/* Configure LSE bypass */
+			LL_RCC_LSE_EnableBypass();
+		}
+
 		/* Enable LSE Oscillator (32.768 kHz) */
 		LL_RCC_LSE_Enable();
 		while (!LL_RCC_LSE_IsReady()) {
