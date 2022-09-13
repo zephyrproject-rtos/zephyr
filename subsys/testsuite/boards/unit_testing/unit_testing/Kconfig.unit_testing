@@ -3,6 +3,7 @@
 # Copyright (c) 2022 Nordic Semiconductor
 
 config BOARD_UNIT_TESTING
-	bool "Unit testing board"
+	bool
+	default y
 	help
 	  Board for unit testing
