@@ -122,6 +122,14 @@ config NET_INIT_PRIO
 	  Network initialization priority level. This number tells how
 	  early in the boot the network stack is initialized.
 
+config NET_IP_DSCP_ECN
+	bool "DSCP/ECN processing at IP layer"
+	depends on NET_IP
+	default y
+	help
+	  Specify whether DSCP/ECN values are processed at IP layer. The values
+	  are encoded within ToS field in IPv4 and TC field in IPv6.
+
 source "subsys/net/ip/Kconfig.ipv6"
 
 source "subsys/net/ip/Kconfig.ipv4"
