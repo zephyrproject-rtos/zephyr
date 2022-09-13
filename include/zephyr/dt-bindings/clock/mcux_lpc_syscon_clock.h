@@ -44,4 +44,5 @@
 
 #define MCUX_I3C_CLK			30
 
+#define MCUX_OSC32K_CLK			31  /* The 32 kHz output of the RTC oscillator */
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */

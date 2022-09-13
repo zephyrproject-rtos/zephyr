@@ -7,3 +7,25 @@ config COUNTER_MCUX_LPC_RTC
 	depends on DT_HAS_NXP_LPC_RTC_ENABLED
 	help
 	  Enable support for LPC rtc driver.
+
+if COUNTER_MCUX_LPC_RTC
+
+config RTC_MCUX_OSC32K
+	bool "Enable RTC high-resolution/wake-up timer"
+	help
+	  Enables the 32 kHz output of the RTC oscillator (32k_clk). This output is only available if the RTC oscillator is
+	  running.
+
+config RTC_FLEXIO_OUTPUT_ENABLE
+	bool "Enable FLEXIO output low frequency"
+	select RTC_MCUX_OSC32K
+
+if RTC_FLEXIO_OUTPUT_ENABLE
+
+config RTC_FLEXIO_OUTPUT_FREQ
+	int "FLEXIO output frequency"
+	range 4 1000
+	default 60
+endif
+
+endif
