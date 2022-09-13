@@ -62,6 +62,7 @@ struct spi_mcux_data {
 	spi_master_handle_t handle;
 	struct spi_context ctx;
 	size_t transfer_len;
+	bool tx_sended;
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 	volatile uint32_t status_flags;
 	struct stream dma_rx;
@@ -79,52 +80,46 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	struct spi_mcux_data *data = dev->data;
 	SPI_Type *base = config->base;
 	struct spi_context *ctx = &data->ctx;
-	spi_transfer_t transfer;
+	spi_transfer_t transfer = {0};
 	status_t status;
 
 	if ((ctx->tx_len == 0) && (ctx->rx_len == 0)) {
+		data->tx_sended = false;
 		/* nothing left to rx or tx, we're done! */
 		spi_context_cs_control(&data->ctx, false);
 		spi_context_complete(&data->ctx, dev, 0);
 		return;
 	}
 
+	/* If exist rx data, cs remain valid. */
 	transfer.configFlags = 0;
-	if (ctx->tx_len == 0) {
-		/* rx only, nothing to tx */
-		transfer.txData = NULL;
-		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->rx_len;
-	} else if (ctx->rx_len == 0) {
-		/* tx only, nothing to rx */
-		transfer.txData = (uint8_t *) ctx->tx_buf;
-		transfer.rxData = NULL;
-		transfer.dataSize = ctx->tx_len;
-	} else if (ctx->tx_len == ctx->rx_len) {
-		/* rx and tx are the same length */
-		transfer.txData = (uint8_t *) ctx->tx_buf;
-		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->tx_len;
-	} else if (ctx->tx_len > ctx->rx_len) {
-		/* Break up the tx into multiple transfers so we don't have to
-		 * rx into a longer intermediate buffer. Leave chip select
-		 * active between transfers.
-		 */
-		transfer.txData = (uint8_t *) ctx->tx_buf;
-		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->rx_len;
-	} else {
-		/* Break up the rx into multiple transfers so we don't have to
-		 * tx from a longer intermediate buffer. Leave chip select
-		 * active between transfers.
-		 */
-		transfer.txData = (uint8_t *) ctx->tx_buf;
-		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->tx_len;
+	if (ctx->tx_count + ctx->rx_count <= 1) {
+		transfer.configFlags = kSPI_FrameAssert;
 	}
 
-	if (ctx->tx_count <= 1 && ctx->rx_count <= 1) {
-		transfer.configFlags = kSPI_FrameAssert;
+	/* If there are no rx data following tx data, clear tx_sended. */
+	if (data->tx_sended == true) {
+		if (!spi_context_rx_buf_on(ctx)) {
+			data->tx_sended = false;
+		}
+	}
+
+	/* Send tx data first, then receive rx data. */
+	if (data->tx_sended == false) {
+		if (spi_context_tx_buf_on(ctx)) {
+			transfer.txData = ctx->tx_buf;
+			transfer.dataSize = ctx->tx_len;
+
+			data->tx_sended = true;
+			spi_context_update_tx(&data->ctx, 1, ctx->tx_len);
+		}
+	} else {
+		if (spi_context_rx_buf_on(ctx)) {
+			transfer.rxData = ctx->rx_buf;
+			transfer.dataSize = ctx->rx_len;
+			spi_context_update_rx(&data->ctx, 1, ctx->rx_len);
+		}
+		data->tx_sended = false;
 	}
 
 	data->transfer_len = transfer.dataSize;
@@ -148,9 +143,6 @@ static void spi_mcux_transfer_callback(SPI_Type *base,
 		spi_master_handle_t *handle, status_t status, void *userData)
 {
 	struct spi_mcux_data *data = userData;
-
-	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
-	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
 
 	spi_mcux_transfer_next_packet(data->dev);
 }
@@ -574,7 +566,19 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 		if (data->status_flags & SPI_MCUX_FLEXCOMM_DMA_ERROR_FLAG) {
 			return -EIO;
 		}
+		/* only start rx dma request */
+		if (!spi_context_tx_buf_on(&data->ctx) && 
+			(data->status_flags & SPI_MCUX_FLEXCOMM_DMA_RX_DONE_FLAG)) {
+				return 0;
+		}
 
+		/* only start tx dma request */
+		if (!spi_context_rx_buf_on(&data->ctx) && 
+		(data->status_flags & SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG)) {
+			return 0;
+		}
+
+		/* both start tx/rx dma request */
 		if ((data->status_flags & SPI_MCUX_FLEXCOMM_DMA_DONE_FLAG) ==
 			SPI_MCUX_FLEXCOMM_DMA_DONE_FLAG) {
 			return 0;
@@ -614,20 +618,29 @@ static int transceive_dma(const struct device *dev,
 	data->dma_tx.dma_cfg.dest_data_size = data->dma_rx.dma_cfg.dest_data_size;
 
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
+		size_t dma_tx_len = 0, dma_rx_len = 0;
 		size_t dma_len;
 		bool last = false;
 
+		/* It seems that only the tx DMA would outputs the clock.
+		 * If both receive and transmit exist, rx DMA first start,
+		 * and rx DMA callback function is invoked after tx DMA callback.
+		 * If only receive exsit, tx DMA start with dummy data.
+		 */
 		if (data->ctx.rx_len == 0) {
 			dma_len = data->ctx.tx_len;
+			dma_tx_len = dma_len;
 			last = true;
 		} else if (data->ctx.tx_len == 0) {
 			dma_len = data->ctx.rx_len;
+			dma_rx_len = dma_len;
 			last = true;
 		} else if (data->ctx.tx_len == data->ctx.rx_len) {
 			dma_len = data->ctx.rx_len;
 			last = true;
 		} else {
 			dma_len = MIN(data->ctx.tx_len, data->ctx.rx_len);
+			dma_tx_len = dma_len;
 			last = false;
 		}
 
@@ -647,8 +660,13 @@ static int transceive_dma(const struct device *dev,
 		while (0U == (base->FIFOSTAT & SPI_FIFOSTAT_TXEMPTY_MASK)) {
 		}
 
-		spi_context_update_tx(&data->ctx, 1, dma_len);
-		spi_context_update_rx(&data->ctx, 1, dma_len);
+		if (dma_tx_len) {
+			spi_context_update_tx(&data->ctx, 1, dma_tx_len);
+		}
+		
+		if (dma_rx_len) {
+			spi_context_update_rx(&data->ctx, 1, dma_rx_len);
+		}
 	}
 
 	base->FIFOCFG &= ~SPI_FIFOCFG_DMATX_MASK;
@@ -664,6 +682,13 @@ out:
 
 #endif
 
+/**
+ * @brief SPI FIFO Transfor
+ *
+ * The following scenarios are supported.
+ * a. multiple tx bufs, without rx buf
+ * b. single tx/rx buf and the count is equal.
+ */
 static int transceive(const struct device *dev,
 		      const struct spi_config *spi_cfg,
 		      const struct spi_buf_set *tx_bufs,
@@ -675,12 +700,18 @@ static int transceive(const struct device *dev,
 	struct spi_mcux_data *data = dev->data;
 	int ret;
 
+	if (tx_bufs && rx_bufs && tx_bufs->count != rx_bufs->count) {
+		LOG_ERR("Unsupport arguement, tx set count should be equal to rx set count");
+		return -EINVAL;
+	}
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {
 		goto out;
 	}
+
+	data->tx_sended = false;
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
