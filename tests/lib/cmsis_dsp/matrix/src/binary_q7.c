@@ -111,16 +111,9 @@ static void test_op2(int op, const q7_t *input1, const q7_t *input2,
 	free(output);
 }
 
-DEFINE_TEST_VARIANT5(
+DEFINE_TEST_VARIANT5(matrix_binary_q7,
 	op2, arm_mat_mult_q7, OP2_MULT,
 	in_mult1, in_mult2, ref_mult,
 	ARRAY_SIZE(ref_mult));
 
-void test_matrix_binary_q7(void)
-{
-	ztest_test_suite(matrix_binary_q7,
-		ztest_unit_test(test_op2_arm_mat_mult_q7)
-		);
-
-	ztest_run_test_suite(matrix_binary_q7);
-}
+ZTEST_SUITE(matrix_binary_q7, NULL, NULL, NULL, NULL, NULL);
