@@ -14,10 +14,10 @@ TagAddr1 = 0
 BoardID = 0
 
 [IMAGE "0"]
-ImageLocation = 0x1000
+ImageLocation = 0x100
 SpiFreqMHz = 24
-SpiReadCommand = Dual
-SpiDriveStrength = 4
+SpiReadCommand = Quad
+SpiDriveStrength = 8
 SpiSlewFast = false
 SpiSignalControl = 0x00
 FwBinFile = zephyr.bin
