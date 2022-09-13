@@ -128,6 +128,17 @@ arduino_i2c: &flexcomm4 {
 	};
 };
 
+spi5: &flexcomm5 {
+	compatible = "nxp,lpc-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm5_spi>;
+	pinctrl-names = "default";
+	dmas = <&dma0 10>, <&dma0 11>;
+	dma-names = "rx", "tx";
+	status = "disabled";
+};
+
 hs_spi1: &hs_lspi1 {
 	compatible = "nxp,lpc-spi";
 	pinctrl-0 = <&pinmux_flexcomm16_spi>;
