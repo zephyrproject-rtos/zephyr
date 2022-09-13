@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#if defined(__ZEPHYR__) && !(defined(CONFIG_BOARD_NATIVE_POSIX_32BIT) \
-	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
+#if defined(__ZEPHYR__) && !(defined(CONFIG_BOARD_NATIVE_POSIX) \
+	|| defined(CONFIG_BOARD_NATIVE_POSIX_64) \
 	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
 
 #include <zephyr/net/socket.h>
@@ -44,8 +44,8 @@ static const char *const names[] = {
 	"Charlie",
 };
 
-#if defined(__ZEPHYR__) && !(defined(CONFIG_BOARD_NATIVE_POSIX_32BIT) \
-	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
+#if defined(__ZEPHYR__) && !(defined(CONFIG_BOARD_NATIVE_POSIX) \
+	|| defined(CONFIG_BOARD_NATIVE_POSIX_64) \
 	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
 
 #define STACK_SIZE (1024)
@@ -126,8 +126,8 @@ int main(int argc, char *argv[])
 			goto out;
 		}
 
-#if defined(__ZEPHYR__) && !(defined(CONFIG_BOARD_NATIVE_POSIX_32BIT) \
-	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
+#if defined(__ZEPHYR__) && !(defined(CONFIG_BOARD_NATIVE_POSIX) \
+	|| defined(CONFIG_BOARD_NATIVE_POSIX_64) \
 	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
 		/* Zephyr requires a non-NULL attribute for pthread_create */
 		attrp = &attr[i];
