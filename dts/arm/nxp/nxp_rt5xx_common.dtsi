@@ -328,6 +328,12 @@
 		reg = <0x30000 0x1000>;
 		interrupts = <32 0>;
 		status = "disabled";
+		rtc_1khz: rtc_1khz {
+			compatible = "nxp,lpc-rtc-1khz";
+			clocks = <&clkctl0 MCUX_OSC32K_CLK>;
+			status = "disabled";
+			#clock-cells = <0>;
+		};
 	};
 
 	trng: random@138000 {
