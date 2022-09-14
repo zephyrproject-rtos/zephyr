@@ -16,9 +16,9 @@
 const uint32_t TIME_US[] = { 60 * 1000 * 1000, 1000 * 1000, 1000, 0 };
 const char *TIME_US_UNIT[] = { "m", "s", "ms", "us" };
 const uint32_t KBPS[] = { 1024, 0 };
-const char *KBPS_UNIT[] = { "Mbps", "Kbps" };
+const char *KBPS_UNIT[] = { "Mbps", "kbps" };
 const uint32_t K[] = { 1024 * 1024, 1024, 0 };
-const char *K_UNIT[] = { "M", "K", "" };
+const char *K_UNIT[] = { "M", "k", "" };
 
 void print_number(const struct shell *sh, uint32_t value,
 		  const uint32_t *divisor, const char **units)
