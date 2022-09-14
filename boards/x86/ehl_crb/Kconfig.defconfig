@@ -3,10 +3,6 @@
 
 if BOARD_EHL_CRB || BOARD_EHL_CRB_SBL
 
-config BOARD
-	default "ehl_crb_sbl" if BOARD_EHL_CRB_SBL
-	default "ehl_crb"
-
 config BUILD_OUTPUT_STRIPPED
 	default y
 

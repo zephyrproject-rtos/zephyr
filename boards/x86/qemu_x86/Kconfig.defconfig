@@ -5,9 +5,6 @@ if BOARD_QEMU_X86 || BOARD_QEMU_X86_XIP || BOARD_QEMU_X86_VIRT || BOARD_QEMU_X86
 config BUILD_OUTPUT_BIN
 	default n
 
-config BOARD
-	default "qemu_x86"
-
 config FLASH_SIMULATOR
 	default y
 	depends on FLASH
@@ -34,9 +31,6 @@ endif # BOARD_QEMU_X86 || BOARD_QEMU_X86_XIP || BOARD_QEMU_X86_VIRT || BOARD_QEM
 
 if BOARD_QEMU_X86_64 || BOARD_QEMU_X86_64_NOKPTI
 
-config BOARD
-	default "qemu_x86_64"
-
 config KERNEL_VM_SIZE
 	default 0x10000000 if ACPI
 
@@ -46,9 +40,6 @@ if BOARD_QEMU_X86_LAKEMONT
 
 config BUILD_OUTPUT_BIN
 	default n
-
-config BOARD
-	default "qemu_x86_lakemont"
 
 config KERNEL_VM_SIZE
 	default 0x400000
@@ -76,9 +67,6 @@ if BOARD_QEMU_X86_TINY
 
 config BUILD_OUTPUT_BIN
 	default n
-
-config BOARD
-	default "qemu_x86_tiny"
 
 config KERNEL_VM_SIZE
 	default 0x400000
