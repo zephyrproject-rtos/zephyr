@@ -16,6 +16,23 @@
 #define BOOT_MAGIC_VALUES {BOOT_MAGIC_VAL_W0, BOOT_MAGIC_VAL_W1,\
 			   BOOT_MAGIC_VAL_W2, BOOT_MAGIC_VAL_W3 }
 
+static void erase_image_status_page(const struct flash_area *fa)
+{
+	int ret;
+	struct flash_pages_info page;
+	const struct device *sf_dev;
+
+	sf_dev = flash_area_get_device(fa);
+
+	/* Erase flash page to which image status belongs. */
+	ret = flash_get_page_info_by_offs(sf_dev, fa->fa_off + fa->fa_size - 1,
+					  &page);
+	zassert_true(ret == 0, "can't get the trailer's flash page info.");
+
+	ret = flash_erase(sf_dev, page.start_offset, page.size);
+	zassert_true(ret == 0, "can't erase the trailer flash page.");
+}
+
 static void _test_request_upgrade_n(uint8_t fa_id, int img_index, int confirmed)
 {
 	const struct flash_area *fa;
@@ -29,21 +46,11 @@ static void _test_request_upgrade_n(uint8_t fa_id, int img_index, int confirmed)
 	};
 	uint32_t readout[ARRAY_SIZE(expectation)];
 	int ret;
-	struct flash_pages_info page;
-	const struct device *sf_dev;
 
 	ret = flash_area_open(fa_id, &fa);
 	zassert_true(ret == 0, "can't open the images's flash area.");
 
-	sf_dev = flash_area_get_device(fa);
-
-	/* Erase flash page to which image status belongs. */
-	ret = flash_get_page_info_by_offs(sf_dev, fa->fa_off + fa->fa_size - 1,
-					  &page);
-	zassert_true(ret == 0, "can't get the trailer's flash page info.");
-
-	ret = flash_erase(sf_dev, page.start_offset, page.size);
-	zassert_true(ret == 0, "can't erase the trailer flash page.");
+	erase_image_status_page(fa);
 
 	ret = (confirmed) ? BOOT_UPGRADE_PERMANENT : BOOT_UPGRADE_TEST;
 	zassert_true(boot_request_upgrade_multi(img_index, ret) == 0,
@@ -79,8 +86,6 @@ static void _test_write_confirm_n(uint8_t fa_id, int img_index)
 	uint8_t flag[BOOT_MAX_ALIGN];
 	const struct flash_area *fa;
 	int ret;
-	struct flash_pages_info page;
-	const struct device *sf_dev;
 
 	flag[0] = 0x01;
 	memset(&flag[1], 0xff, sizeof(flag) - 1);
@@ -88,15 +93,7 @@ static void _test_write_confirm_n(uint8_t fa_id, int img_index)
 	ret = flash_area_open(fa_id, &fa);
 	zassert_true(ret == 0, "can't open the images's flash area.");
 
-	sf_dev = flash_area_get_device(fa);
-
-	/* Erase flash page to which image status belongs. */
-	ret = flash_get_page_info_by_offs(sf_dev, fa->fa_off + fa->fa_size - 1,
-					  &page);
-	zassert_true(ret == 0, "can't get the trailer's flash page info.");
-
-	ret = flash_erase(sf_dev, page.start_offset, page.size);
-	zassert_true(ret == 0, "can't erase the trailer flash page.");
+	erase_image_status_page(fa);
 
 	ret = flash_area_read(fa, fa->fa_size - sizeof(img_magic),
 			      &readout, sizeof(img_magic));
