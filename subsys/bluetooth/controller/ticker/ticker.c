@@ -781,17 +781,31 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 				lazy_next -= ticker_next->lazy_periodic;
 			}
 
-			/* Is the current and next node equal in priority? */
-			uint8_t equal_priority = ticker->priority ==
-				ticker_next->priority;
-
 			/* Age is time since last expiry */
-			uint32_t next_age = (ticker_next->ticks_periodic == 0U ?
-					  0U :
-					 (ticker_next->ticks_periodic -
-					  ticker_next->ticks_to_expire)) +
-					 (lazy_next *
-					  ticker_next->ticks_periodic);
+			uint32_t next_age;
+
+			if (ticker_next->ticks_periodic) {
+				next_age = ticker_next->ticks_periodic -
+					   ticker_next->ticks_to_expire;
+				if (next_age & BIT(HAL_TICKER_CNTR_MSBIT)) {
+					uint32_t ticks_to_expire =
+						ticker_next->ticks_to_expire;
+
+					while (ticks_to_expire >
+					       ticker_next->ticks_periodic) {
+						ticks_to_expire -=
+							ticker_next->ticks_periodic;
+					}
+
+					next_age = ticker_next->ticks_periodic -
+						   ticks_to_expire;
+				}
+
+				next_age += (lazy_next *
+					     ticker_next->ticks_periodic);
+			} else {
+				next_age = 0U;
+			}
 
 			/* Was the current node scheduled earlier? */
 			uint8_t current_is_older =
@@ -799,8 +813,8 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 				(current_age > next_age);
 			/* Was next node scheduled earlier (legacy priority)? */
 			uint8_t next_is_older =
-					(ticker->ticks_periodic != 0U) &&
-					(next_age > current_age);
+				(ticker->ticks_periodic != 0U) &&
+				(next_age > current_age);
 
 			/* Is force requested for next node (e.g. update) -
 			 * more so than for current node?
@@ -813,13 +827,16 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 			uint8_t next_is_critical = ticker_next->priority ==
 				TICKER_PRIORITY_CRITICAL;
 
+			/* Is the current and next node equal in priority? */
+			uint8_t equal_priority =
+				(ticker->priority == ticker_next->priority);
+
 #if defined(CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD)
 			/* Does next node have higher priority? */
 			uint8_t next_has_priority =
 				(!ticker_next->ext_data ||
 				 !ticker_next->ext_data->ticks_slot_window) &&
-				((lazy_next - ticker_next->priority) >
-				 (lazy_current - ticker->priority));
+				(ticker_next->priority > ticker->priority);
 
 			/* Can the current ticker with ticks_slot_window be
 			 * scheduled after the colliding ticker?
@@ -846,8 +863,7 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 #else /* !CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD */
 			/* Does next node have higher priority? */
 			uint8_t next_has_priority =
-				(lazy_next - ticker_next->priority) >
-				(lazy_current - ticker->priority);
+				(ticker_next->priority > ticker->priority);
 
 			uint8_t curr_has_ticks_slot_window = 0U;
 			uint8_t next_not_ticks_slot_window = 1U;
