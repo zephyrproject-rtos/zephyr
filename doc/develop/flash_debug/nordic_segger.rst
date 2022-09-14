@@ -63,7 +63,7 @@ Where ``<x>`` is either 1 for nRF51-based boards or 2 for nRF52-based boards
 
    nrfjprog --program outdir/<board>/zephyr.hex -f nrf5<x>
 
-Where: ``<board>`` is the board name you used in the BOARD directive when building (for example nrf52dk_nrf52832)
+Where: ``<board>`` is the board name you used in the BOARD directive when building (for example nrf52dk/nrf52832)
 and ``<x>`` is either 1 for nRF51-based boards or 2 for nRF52-based boards
 
 * Reset and start Zephyr:

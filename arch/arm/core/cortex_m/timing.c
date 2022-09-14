@@ -28,8 +28,8 @@
  */
 static inline uint64_t z_arm_dwt_freq_get(void)
 {
-#if defined(CONFIG_SOC_FAMILY_NRF) || \
-	defined(CONFIG_SOC_SERIES_IMX_RT6XX)
+#if defined(CONFIG_SOC_FAMILY_NORDIC_NRF) || \
+	defined(CONFIG_SOC_SERIES_IMXRT6XX)
 	/*
 	 * DWT frequency is taken directly from the
 	 * System Core clock (CPU) frequency, if the
@@ -77,7 +77,7 @@ static inline uint64_t z_arm_dwt_freq_get(void)
 
 	}
 	return dwt_frequency;
-#endif /* CONFIG_SOC_FAMILY_NRF */
+#endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
 }
 
 void arch_timing_init(void)

@@ -46,7 +46,7 @@ Following is an example based on ``west build``
 
    .. code-block:: bash
 
-      $ west build samples/tfm_integration/psa_protected_storage/ -p -b mps2_an521_ns -t run
+      $ west build samples/tfm_integration/psa_protected_storage/ -p -b mps2/an521/cpu0/ns -t run
 
 Sample Output
 =============

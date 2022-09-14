@@ -1,0 +1,21 @@
+identifier: pan1783a_evb/nrf5340/cpuapp
+name: PAN1783A-EVB-application-MCU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 448
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - watchdog
+  - usb_cdc
+  - usb_device
+  - netif:openthread
+  - gpio
+vendor: panasonic

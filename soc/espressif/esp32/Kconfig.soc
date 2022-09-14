@@ -1,0 +1,153 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32
+	bool
+	select SOC_FAMILY_ESPRESSIF_ESP32
+	help
+	  ESP32 Series
+
+config SOC_ESP32_D0WD_V3
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_D0WD_V3
+
+config SOC_ESP32_D0WDR2_V3
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_D0WDR2_V3
+
+config SOC_ESP32_U4WDH
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_U4WDH
+
+config SOC_ESP32_PICO_V3
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_PICO_V3
+
+config SOC_ESP32_PICO_V3_02
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_PICO_V3_02
+
+config SOC_ESP32_PICO_D4
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_PICO_D4
+
+# SiP with external flash / psram
+config SOC_ESP32_WROOM_DA_N4
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_WROOM_DA_N4
+
+config SOC_ESP32_WROOM_DA_N8
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_WROOM_DA_N8
+
+config SOC_ESP32_WROOM_DA_N16
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_WROOM_DA_N16
+
+config SOC_ESP32_WROOM_32UE_N4
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_WROOM_32UE_N4
+
+config SOC_ESP32_WROOM_32UE_N8
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_WROOM_32UE_N8
+
+config SOC_ESP32_WROOM_32UE_N16
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_WROOM_32UE_N16
+
+config SOC_ESP32_WROVER_E_N4R2
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_WROVER_E_N4R2
+
+config SOC_ESP32_WROVER_E_N8R2
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_WROVER_E_N8R2
+
+config SOC_ESP32_WROVER_E_N16R2
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_WROVER_E_N16R2
+
+config SOC_ESP32_WROVER_E_N4R8
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_WROVER_E_N4R8
+
+config SOC_ESP32_WROVER_E_N8R8
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_WROVER_E_N8R8
+
+config SOC_ESP32_WROVER_E_N16R8
+	bool
+	select SOC_ESP32
+	help
+	  ESP32_WROVER_E_N16R8
+
+config SOC_ESP32
+	bool
+	select SOC_SERIES_ESP32
+	help
+	  ESP32
+
+config SOC_SERIES
+	default "esp32" if SOC_SERIES_ESP32
+
+config SOC
+	default "esp32" if SOC_SERIES_ESP32
+
+config SOC_PART_NUMBER
+	default "ESP32_D0WD_V3" if SOC_ESP32_D0WD_V3
+	default "ESP32_D0WDR2_V3" if SOC_ESP32_D0WDR2_V3
+	default "ESP32_U4WDH" if SOC_ESP32_U4WDH
+	default "ESP32_PICO_V3" if SOC_ESP32_PICO_V3
+	default "ESP32_PICO_V3_02" if SOC_ESP32_PICO_V3_02
+	default "ESP32_PICO_D4" if SOC_ESP32_PICO_D4
+	default "ESP32_WROOM_DA_N4" if SOC_ESP32_WROOM_DA_N4
+	default "ESP32_WROOM_DA_N8" if SOC_ESP32_WROOM_DA_N8
+	default "ESP32_WROOM_DA_N16" if SOC_ESP32_WROOM_DA_N16
+	default "ESP32_WROOM_32UE_N4" if SOC_ESP32_WROOM_32UE_N4
+	default "ESP32_WROOM_32UE_N8" if SOC_ESP32_WROOM_32UE_N8
+	default "ESP32_WROOM_32UE_N16" if SOC_ESP32_WROOM_32UE_N16
+	default "ESP32_WROVER_E_N4R2" if SOC_ESP32_WROVER_E_N4R2
+	default "ESP32_WROVER_E_N8R2" if SOC_ESP32_WROVER_E_N8R2
+	default "ESP32_WROVER_E_N16R2" if SOC_ESP32_WROVER_E_N16R2
+	default "ESP32_WROVER_E_N4R8" if SOC_ESP32_WROVER_E_N4R8
+	default "ESP32_WROVER_E_N8R8" if SOC_ESP32_WROVER_E_N8R8
+	default "ESP32_WROVER_E_N16R8" if SOC_ESP32_WROVER_E_N16R8
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "espressif_esp32" if SOC_SERIES_ESP32

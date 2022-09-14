@@ -112,7 +112,7 @@ if("SEARCHED_LINKER_SCRIPT" IN_LIST Deprecated_FIND_COMPONENTS)
   set(LINKER_SCRIPT ${BOARD_DIR}/linker.ld)
   if(NOT EXISTS ${LINKER_SCRIPT})
     # If not available, try an SoC specific linker file
-    set(LINKER_SCRIPT ${SOC_DIR}/${ARCH}/${SOC_PATH}/linker.ld)
+    set(LINKER_SCRIPT ${SOC_FULL_DIR}/linker.ld)
   endif()
   message(DEPRECATION
       "Pre-defined `linker.ld` script is deprecated. Please set "

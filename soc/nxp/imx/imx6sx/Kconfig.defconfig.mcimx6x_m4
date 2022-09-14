@@ -1,0 +1,11 @@
+# i.MX 6SoloX
+
+# Copyright 2018,2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MCIMX6X_M4
+
+config FPU
+	default y
+
+endif # SOC_MCIMX6X_M4

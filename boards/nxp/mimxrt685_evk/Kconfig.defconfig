@@ -1,0 +1,29 @@
+# MIMXRT685-EVK board
+
+# Copyright 2020, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT685_EVK
+
+config NXP_IMXRT_BOOT_HEADER
+	default y if !BOOTLOADER_MCUBOOT
+
+config XTAL_SYS_CLK_HZ
+	default 24000000
+
+config SYSOSC_SETTLING_US
+	default 260
+
+choice FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_MODE
+	default FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_STR
+endchoice
+
+choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
+	default FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM
+endchoice
+
+config FXOS8700_DRDY_INT1
+	default y
+	depends on FXOS8700_TRIGGER
+
+endif # BOARD_MIMXRT685_EVK

@@ -1,0 +1,20 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_UCANS32K1SIC
+
+if SERIAL
+
+config UART_CONSOLE
+	default y
+
+endif # SERIAL
+
+if CAN
+
+config GPIO
+	default y
+
+endif # CAN
+
+endif # BOARD_UCANS32K1SIC

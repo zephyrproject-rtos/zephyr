@@ -166,9 +166,7 @@ ARM arch:
     - include/zephyr/arch/arm/
     - tests/arch/arm/
     - doc/hardware/arch/arm_cortex_m.rst
-    - boards/arm/qemu_cortex_m3/
-    - boards/arm/qemu_cortex_m0/
-    - soc/arm/*
+    - boards/qemu/cortex_m0/
   labels:
     - "area: ARM"
   tests:
@@ -186,9 +184,9 @@ ARM64 arch:
     - arch/arm64/
     - include/zephyr/arch/arm64/
     - tests/arch/arm64/
-    - soc/arm64/
-    - boards/arm64/
     - dts/arm64/
+    - boards/qemu/kvm_arm64/
+    - boards/qemu/cortex_a53/
   labels:
     - "area: ARM64"
   tests:
@@ -198,8 +196,11 @@ ARM Platforms:
   status: odd fixes
   files:
     - boards/arm/mps*/
-    - soc/arm/arm/
     - boards/arm/v2m_*/
+    - soc/arm/mps*/
+    - soc/arm/musca/
+    - soc/arm/beetle/
+    - soc/arm/fvp_aemv8r/aarch32/
     - dts/arm/armv*.dtsi
   labels:
     - "platform: ARM"
@@ -207,7 +208,7 @@ ARM Platforms:
 ASPEED Platforms:
   status: odd fixes
   files:
-    - soc/arm/aspeed/
+    - soc/aspeed/
     - dts/arm/aspeed/
     - drivers/*/*_ast10x0.c
     - drivers/*/Kconfig.aspeed
@@ -230,10 +231,9 @@ ARM SiP SVC:
 MIPS arch:
   status: odd fixes
   files:
-    - soc/mips/
     - arch/mips/
     - include/zephyr/arch/mips/
-    - boards/mips/
+    - boards/qemu/malta/
   labels:
     - "area: MIPS"
   tests:
@@ -249,8 +249,8 @@ Ambiq Platforms:
     - aaronyegx
     - RichardSWheatley
   files:
-    - soc/arm/ambiq/
-    - boards/arm/apollo*/
+    - soc/ambiq/
+    - boards/ambiq/apollo*/
     - dts/arm/ambiq/
     - dts/bindings/*/ambiq,*
     - drivers/*/*ambiq*
@@ -268,8 +268,7 @@ BeagleBoard Platforms:
     - con-pax
     - vaishnavachath
   files:
-    - boards/arm/beagle*/
-    - boards/riscv/beagle*/
+    - boards/beagle/
   labels:
     - "platform: BeagleBoard"
 
@@ -524,7 +523,7 @@ Board/SoC configuration:
     - nordicjm
     - "57300"
   files:
-    - soc/Kconfig
+    - soc/Kconfig*
     - boards/Kconfig
   labels:
     - "area: Board/SoC configuration"
@@ -2011,8 +2010,8 @@ Xen Platform:
     - include/zephyr/xen/
     - drivers/xen/
     - arch/arm64/core/xen/
-    - soc/arm64/xenvm/
-    - boards/arm64/xenvm/
+    - soc/xen/
+    - boards/xen/
   labels:
     - "area: Xen Platform"
 
@@ -2070,7 +2069,7 @@ Google Platforms:
     - fabiobaltieri
     - keith-zephyr
   files:
-    - boards/*/google_*/
+    - boards/google/
     - samples/boards/google_*/
 
 Hash Utilities:
@@ -2303,12 +2302,7 @@ Laird Connectivity platforms:
   collaborators:
     - greg-leach
   files:
-    - boards/arm/bl5340_dvk/
-    - boards/arm/bl65*/
-    - boards/arm/bt510/
-    - boards/arm/bt610/
-    - boards/arm/pinnacle_100_dvk/
-    - boards/arm/mg100/
+    - boards/lairdconnect/
   labels:
     - "platform: Laird Connectivity"
 
@@ -2513,10 +2507,10 @@ Native POSIX/Sim and POSIX arch:
     - aescolar
   files:
     - arch/posix/
-    - boards/posix/common/
-    - boards/posix/native_*/
-    - boards/posix/doc/
-    - boards/posix/*.rst
+    - boards/native/common/
+    - boards/native/native_*/
+    - boards/native/doc/
+    - boards/native/*.rst
     - drivers/*/*posix*
     - drivers/*/*native*
     - drivers/*/*/*posix*
@@ -2525,7 +2519,7 @@ Native POSIX/Sim and POSIX arch:
     - include/zephyr/arch/posix/
     - scripts/native_simulator/
     - scripts/valgrind.supp
-    - soc/posix/
+    - soc/native/
     - tests/boards/native_sim/
   labels:
     - "area: native port"
@@ -2769,11 +2763,11 @@ NIOS-2 arch:
     - arch/nios2/
     - dts/nios2/intel/
     - boards/common/nios2.board.cmake
-    - boards/nios2/
-    - soc/nios2/
+    - soc/altr/*nios2*/
     - include/zephyr/arch/nios2/
     - tests/boards/altera_max10/
-    - boards/nios2/qemu_nios2/
+    - boards/qemu/nios2/
+    - boards/altr/max10/
     - scripts/support/quartus-flash.py
   labels:
     - "area: NIOS2"
@@ -2785,7 +2779,7 @@ nRF BSIM:
   maintainers:
     - aescolar
   files:
-    - boards/posix/nrf_bsim/
+    - boards/native/nrf_bsim/
     - tests/boards/nrf52_bsim/
     - tests/bsim/
   files-exclude:
@@ -2846,7 +2840,7 @@ Power management:
 "Quicklogic Platform":
   status: odd fixes
   files:
-    - soc/arm/quicklogic_eos_s3/
+    - soc/quicklogic/
     - dts/arm/quicklogic/
   labels:
     - "platform: Quicklogic"
@@ -2865,10 +2859,14 @@ RISCV arch:
     - npitre
   files:
     - arch/riscv/
-    - boards/riscv/
+    - boards/qemu/riscv*/
+    - boards/sifive/
+    - boards/sparkfun/red_v_things_plus/
     - dts/bindings/riscv/
     - dts/riscv/
     - include/zephyr/arch/riscv/
+    - soc/common/riscv-privileged/
+    - soc/sifive/
     - soc/riscv/
     - tests/arch/riscv/
     - doc/hardware/arch/risc-v.rst
@@ -3009,9 +3007,19 @@ SPARC arch:
   files:
     - arch/sparc/
     - include/zephyr/arch/sparc/
-    - soc/sparc/
-    - boards/sparc/
     - dts/sparc/
+    - boards/qemu/leon3/
+  labels:
+    - "area: SPARC"
+
+Gaisler Platforms:
+  status: odd fixes
+  collaborators:
+    - julius-barendt
+  files:
+    - dts/sparc/gaisler/
+    - soc/gaisler/
+    - boards/gaisler/
   labels:
     - "area: SPARC"
 
@@ -3039,7 +3047,7 @@ ADI Platforms:
     - galak
     - microbuilder
   files:
-    - boards/arm/adi_*/
+    - boards/adi/
     - drivers/*/max*
     - drivers/*/*max*/
     - drivers/dac/dac_ltc*
@@ -3058,8 +3066,8 @@ Broadcom Platforms:
   status: odd fixes
   files:
     - dts/arm/broadcom/
-    - soc/arm/bcm_vk/
-    - boards/arm/bcm95840*/
+    - soc/brcm/
+    - boards/brcm/
 
 GD32 Platforms:
   status: maintained
@@ -3070,14 +3078,12 @@ GD32 Platforms:
     - gmarull
     - soburi
   files:
-    - boards/arm/gd32*/
-    - boards/riscv/gd32*/
-    - boards/riscv/longan_nano/
+    - boards/gd/
     - drivers/*/*gd32*
     - dts/*/gd/
     - dts/bindings/*/*gd32*
-    - soc/*/gd_gd32/
     - scripts/west_commands/*/*gd32*
+    - soc/gd/gd32/
   labels:
     - "platform: GD32"
   description: >-
@@ -3093,8 +3099,8 @@ Synopsys Platforms:
     - evgeniy-paltsev
     - IRISZZW
   files:
-    - soc/arc/
-    - boards/arc/
+    - soc/synopsys/
+    - boards/synopsys/
     - samples/boards/arc_secure_services/
   labels:
     - "platform: Synopsys"
@@ -3112,8 +3118,8 @@ Nuvoton NPCX Platforms:
     - jackrosenthal
     - fabiobaltieri
   files:
-    - soc/arm/nuvoton_npcx/
-    - boards/arm/npcx*/
+    - soc/nuvoton/npcx/
+    - boards/nuvoton/npcx*/
     - dts/arm/nuvoton/
     - dts/bindings/*/*npcx*
     - drivers/*/*_npcx*.c
@@ -3127,10 +3133,9 @@ Nuvoton Numicro Numaker Platforms:
   collaborators:
     - ssekar15
   files:
-    - soc/arm/nuvoton_numicro/
-    - soc/arm/nuvoton_numaker/
-    - boards/arm/nuvoton_pfm*/
-    - boards/arm/numaker_*/
+    - soc/nuvoton/numaker/
+    - soc/nuvoton/numicro/
+    - boards/nuvoton/numaker*/
     - dts/arm/nuvoton/
     - dts/bindings/*/*numicro*
     - dts/bindings/*/*numaker*
@@ -3146,15 +3151,15 @@ Raspberry Pi Pico Platforms:
   collaborators:
     - soburi
   files:
-    - boards/arm/rpi_pico/
-    - boards/arm/adafruit_kb2040/
-    - boards/arm/sparkfun_pro_micro_rp2040/
+    - boards/raspberrypi/
+    - boards/adafruit/kb2040/
+    - boards/sparkfun/pro_micro_rp2040/
     - dts/arm/rpi_pico/
     - dts/bindings/*/raspberrypi,pico*
     - drivers/*/*rpi_pico
     - drivers/*/*rpi_pico*/
     - drivers/*/*rpi_pico*.c
-    - soc/arm/rpi_pico/
+    - soc/raspberrypi/
   labels:
     - "platform: Raspberry Pi Pico"
 
@@ -3165,8 +3170,8 @@ SiLabs Platforms:
   collaborators:
     - tgorochowik
   files:
-    - soc/arm/silabs_*/
-    - boards/arm/ef*/
+    - soc/silabs/
+    - boards/silabs/
     - dts/arm/silabs/
     - dts/bindings/*/silabs*
     - drivers/*/*_gecko*
@@ -3181,9 +3186,13 @@ Intel Platforms (X86):
     - tbursztyka
     - laurenmurphyx64
   files:
-    - boards/x86/
+    - boards/intel/adl/
+    - boards/intel/ehl/
+    - boards/intel/rpl/
     - dts/x86/intel/
-    - soc/x86/
+    - soc/intel/atom/
+    - soc/intel/lakemont/
+    - soc/intel/*_lake/
     - samples/boards/up_squared/
   labels:
     - "platform: X86"
@@ -3205,8 +3214,8 @@ Intel Platforms (Xtensa):
     - jxstelter
     - marcinszkudlinski
   files:
-    - boards/xtensa/intel_*/
-    - soc/xtensa/intel_*/
+    - boards/intel/adsp/
+    - soc/intel/intel_adsp/
     - dts/xtensa/intel/
     - tests/boards/intel_adsp/
     - samples/boards/intel_adsp/
@@ -3223,8 +3232,8 @@ Intel Platforms (ISH):
     - teburd
     - likongintel
   files:
-    - boards/x86/intel_ish/
-    - soc/x86/intel_ish/
+    - boards/intel/ish/
+    - soc/intel/intel_ish/
     - dts/x86/intel/intel_ish*
     - dts/bindings/*/intel,sedi*
     - drivers/*/*sedi*
@@ -3239,8 +3248,8 @@ Intel Platforms (Agilex):
     - nbalabak
     - teikheng
   files:
-    - boards/arm64/intel_*/
-    - soc/arm64/intel_*/
+    - boards/intel/socfpga/
+    - soc/intel/intel_socfpga/
     - dts/arm64/intel/
     - dts/bindings/*/intel,agilex*
     - dts/arm/intel_socfpga_std/
@@ -3272,17 +3281,13 @@ NXP Drivers:
     - include/zephyr/drivers/*/*mcux*
     - arch/arm/core/mpu/nxp_mpu.c
     - dts/bindings/*/nxp*
-  files-exclude:
-    - drivers/*/*s32*
-    - drivers/misc/*/*s32*
-    - include/zephyr/dt-bindings/*/*s32*
-    - include/zephyr/drivers/*/*s32*
-    - dts/bindings/*/*s32*
+  files-regex-exclude:
+    - .*s32.*
   labels:
     - "platform: NXP Drivers"
   description: NXP Drivers
 
-NXP Platforms (MCUX):
+NXP Platforms (MCU):
   status: maintained
   maintainers:
     - dleach02
@@ -3294,23 +3299,21 @@ NXP Platforms (MCUX):
     - EmilioCBen
     - decsny
   files:
-    - boards/arm/mimx*/
-    - boards/arm/frdm*/
-    - boards/arm/lpcxpress*/
-    - boards/arm/twr_*/
-    - boards/arm/vmu*/
-    - soc/arm/nxp_imx/
-    - soc/arm/nxp_kinetis/
-    - soc/arm/nxp_lpc/
+    - boards/nxp/mimxrt*/
+    - boards/nxp/frdm*/
+    - boards/nxp/lpcxpress*/
+    - boards/nxp/twr_*/
+    - boards/nxp/vmu*/
+    - soc/nxp/imxrt/
+    - soc/nxp/kinetis/
+    - soc/nxp/lpc/
     - dts/arm/nxp/
     - samples/boards/nxp*/
-  files-exclude:
-    - boards/arm/*s32*/
-    - dts/arm/nxp/*s32*
-    - samples/boards/nxp_s32/
+  files-regex-exclude:
+    - .*s32.*
   labels:
     - "platform: NXP"
-  description: NXP Platforms supported by MCUXpresso suite
+  description: NXP MCU Platforms supported by MCUXpresso suite
 
 NXP Platforms (S32):
   status: maintained
@@ -3321,11 +3324,11 @@ NXP Platforms (S32):
     - bperseghetti
     - Dat-NguyenDuy
   files:
-    - boards/arm/s32*/
-    - boards/arm/mr_canhubk3/
-    - boards/arm/ucans32k1sic/
+    - boards/nxp/s32*/
+    - boards/nxp/mr_canhubk3/
+    - boards/nxp/ucans32k1sic/
     - boards/common/*nxp_s32*
-    - soc/arm/nxp_s32/
+    - soc/nxp/s32/
     - drivers/*/*nxp_s32*
     - drivers/misc/*nxp_s32*/
     - dts/bindings/*/nxp,s32*
@@ -3338,6 +3341,26 @@ NXP Platforms (S32):
     - "platform: NXP S32"
   description: NXP S32 platforms and S32-specific drivers
 
+NXP Platforms (MPU):
+  status: maintained
+  maintainers:
+    - dleach
+  collaborators:
+    - JiafeiPan
+    - dbaluta
+    - iuliana-prodan
+    - danieldegrasse
+    - decsny
+    - yvanderv
+  files:
+    - soc/nxp/imx/
+    - soc/nxp/layerscape/
+  files-regex:
+    - boards/nxp/m?imx[^(rt)].*/
+  labels:
+    - "platform: NXP MPU"
+  description: NXP MPU platforms
+
 NXP Platforms (Xtensa):
   status: maintained
   maintainers:
@@ -3345,10 +3368,10 @@ NXP Platforms (Xtensa):
   collaborators:
     - iuliana-prodan
   files:
-    - soc/xtensa/nxp_adsp/
-    - boards/xtensa/nxp_adsp_*/
+    - soc/nxp/imx/*/adsp/
+    - soc/nxp/imxrt/imxrt5xx/f1/
   labels:
-    - "platform: NXP ADSP"
+    - "platform: NXP Xtensa"
   description: NXP Xtensa platforms
 
 Microchip MEC Platforms:
@@ -3359,9 +3382,9 @@ Microchip MEC Platforms:
     - VenkatKotakonda
     - albertofloyd
   files:
-    - boards/arm/mec*/
+    - boards/microchip/mec*/
     - dts/arm/microchip/
-    - soc/arm/microchip_mec/
+    - soc/microchip/mec/
     - drivers/*/*mchp*.c
     - tests/boards/mec15xxevb_assy6853/
     - tests/boards/mec172xevb_assy6906/
@@ -3379,10 +3402,9 @@ Microchip SAM Platforms:
     - mnkp
     - stephanosio
   files:
-    - boards/arm/atsam*/
-    - boards/arm/sam*/
+    - boards/atmel/
     - dts/arm/atmel/
-    - soc/arm/atmel_sam*/
+    - soc/atmel/
     - drivers/*/*sam*.c
     - dts/bindings/*/atmel,*
   labels:
@@ -3393,9 +3415,9 @@ nRF Platforms:
   maintainers:
     - anangl
   files:
-    - boards/arm/*nrf*/
+    - boards/nordic/
     - drivers/*/*nrfx*.c
-    - soc/arm/nordic_nrf/
+    - soc/nordic/
     - samples/boards/nrf/
     - dts/arm/nordic/
     - dts/bindings/*/nordic,*
@@ -3409,11 +3431,11 @@ Renesas SmartBond Platforms:
     - andrzej-kaczmarek
     - blauret
   files:
-    - boards/arm/da14*/
+    - boards/renesas/da14*/
     - drivers/*/*smartbond*
     - dts/arm/renesas/smartbond/
     - dts/bindings/*/renesas,smartbond*
-    - soc/arm/renesas_smartbond/
+    - soc/renesas/smartbond/
   labels:
     - "platform: Renesas SmartBond"
   description: >-
@@ -3425,11 +3447,11 @@ Renesas RA Platforms:
   maintainers:
     - soburi
   files:
-    - boards/arm/arduino_uno_r4/
+    - boards/arduino/uno_r4_minima/
     - drivers/*/*renesas_ra*
     - dts/arm/renesas/ra/
     - dts/bindings/*/*renesas,ra*
-    - soc/arm/renesas_ra/
+    - soc/renesas/ra/
   labels:
     - "platforms: Renesas RA"
   description: >-
@@ -3441,11 +3463,11 @@ Renesas RZ Platforms:
   maintainers:
     - tgorochowik
   files:
-    - boards/arm/rzt2m_*/
+    - boards/renesas/rzt2m_*/
     - drivers/*/*rzt2m*
     - dts/arm/renesas/rz/
     - dts/bindings/*/*rzt2m*
-    - soc/arm/renesas_rzt2m/
+    - soc/renesas/rzt2m/
   labels:
     - "platforms: Renesas RZ"
   description: >-
@@ -3461,15 +3483,13 @@ Renesas R-Car Platforms:
     - xakep-amatop
   files:
     - dts/arm/renesas/rcar/
-    - boards/arm/rcar_*/
-    - boards/arm64/rcar_*/
+    - boards/renesas/rcar_*/
     - drivers/*/*rcar*
     - drivers/clock_control/*cpg_mssr*
     - dts/arm/renesas/rcar/
     - dts/arm64/renesas/
     - dts/bindings/*/*rcar*
-    - soc/arm/renesas_rcar/
-    - soc/arm64/renesas_rcar/
+    - soc/renesas/rcar/
   labels:
     - "platform: Renesas R-Car"
   description: >-
@@ -3488,11 +3508,7 @@ STM32 Platforms:
     - Desvauxm-st
     - GeorgeCGV
   files:
-    - boards/arm/b_*/
-    - boards/arm/nucleo_*/
-    - boards/arm/stm32*_disco/
-    - boards/arm/stm32*_dk*/
-    - boards/arm/stm32*_eval/
+    - boards/st/
     - drivers/*/*stm32*/
     - drivers/*/*stm32*.c
     - drivers/*/*stm32*.h
@@ -3500,7 +3516,7 @@ STM32 Platforms:
     - drivers/*/*stm32*
     - dts/arm/st/
     - dts/bindings/*/*stm32*
-    - soc/arm/st_stm32/
+    - soc/st/stm32/
     - samples/boards/stm32/
   labels:
     - "platform: STM32"
@@ -3518,16 +3534,14 @@ Espressif Platforms:
     - uLipe
   files:
     - drivers/*/*esp32*.c
-    - boards/xtensa/esp32*/
-    - soc/xtensa/espressif_esp32*/
-    - boards/riscv/esp32*/
-    - soc/riscv/espressif_esp32*/
+    - boards/espressif/
+    - soc/espressif/
     - dts/xtensa/espressif/
     - dts/riscv/espressif/
     - dts/bindings/*/*esp32*
     - samples/boards/esp32*/
     - tests/boards/espressif_esp32/
-    - drivers/wifi/esp32/
+    - drivers/*/*esp32*/
   labels:
     - "platform: ESP32"
 
@@ -3543,13 +3557,13 @@ ITE Platforms:
     - brockus-zephyr
     - sjg20
   files:
-    - boards/riscv/it8*_evb/
+    - boards/ite/
     - drivers/*/*/*it8xxx2*.c
     - drivers/*/*it8xxx2*.c
     - drivers/*/*_ite_*
     - dts/bindings/*/*ite*
     - dts/riscv/ite/
-    - soc/riscv/ite_ec/
+    - soc/ite/
   labels:
     - "platform: ITE"
 
@@ -3560,17 +3574,15 @@ TI SimpleLink Platforms:
   collaborators:
     - vanti
   files:
-    - boards/arm/cc13*/
-    - boards/arm/cc26*/
-    - boards/arm/cc32*/
-    - boards/*/msp*/
+    - boards/ti/cc*/
+    - boards/ti/msp*/
     - drivers/*/*cc13*
     - drivers/*/*cc25*
     - drivers/*/*cc26*
     - drivers/*/*cc32*
     - dts/arm/ti/
     - dts/bindings/*/ti,*
-    - soc/arm/ti_simplelink/
+    - soc/ti/simplelink/
     - dts/bindings/*/ti,*
     - modules/Kconfig.simplelink
   labels:
@@ -3583,18 +3595,18 @@ TI K3 Platforms:
   collaborators:
     - gramsay0
   files:
-    - boards/*/*phycore_am6*/
-    - boards/*/am6*/
+    - boards/phytec/*am62*/
+    - boards/ti/*am62*/
     - drivers/*/*ti_k3*
     - dts/bindings/*/ti,k3*
-    - soc/*/ti_k3/
+    - soc/ti/k3/
   labels:
     - "platform: TI K3"
 
 TI Platforms:
   status: odd fixes
   files:
-    - soc/arm/ti_lm3s6965/
+    - soc/ti/lm3s6965/
     - dts/arm/ti/lm3s6965.dtsi
   labels:
     - "platform: TI"
@@ -3609,7 +3621,7 @@ Xilinx Platforms:
     - dts/*/xilinx/
     - dts/bindings/*/*xlnx*
     - include/zephyr/*/*/*xlnx*
-    - soc/arm/xilinx*/
+    - soc/xlnx/
   labels:
     - "platform: Xilinx"
 
@@ -3621,18 +3633,17 @@ Infineon Platforms:
     - npal-cy
     - talih0
   files:
-    - boards/arm/cy8ckit_*/
-    - boards/arm/cy8cproto_*/
-    - boards/arm/xmc*_relax*/
+    - boards/cypress/
+    - boards/infineon/
     - drivers/*/*ifx_cat1*
     - drivers/*/*xmc*/
     - drivers/*/*xmc*.c
     - drivers/*/*/*xmc*
     - dts/arm/infineon/
     - dts/arm/cypress/
-    - soc/arm/cypress/
+    - soc/cypress/
     - dts/bindings/*/*infineon*
-    - soc/arm/infineon_*/
+    - soc/infineon/
   labels:
     - "platform: Infineon"
   description: >-
@@ -3644,7 +3655,7 @@ Panasonic Platforms:
   maintainers:
     - pideu-sj
   files:
-    - boards/arm/pan17*/
+    - boards/panasonic/
   labels:
     - "platform: Panasonic"
 
@@ -4588,11 +4599,11 @@ Xtensa arch:
     - arch/xtensa/
     - include/zephyr/arch/xtensa/
     - dts/xtensa/
-    - boards/xtensa/qemu_xtensa/
-    - boards/xtensa/xt-sim/
-    - soc/xtensa/dc233c/
-    - soc/xtensa/sample_controller/
-    - soc/xtensa/CMakeLists.txt
+    - boards/qemu/xtensa/
+    - boards/cdns/xt-sim/
+    - soc/cdns/dc233c/
+    - soc/cdns/dc233c/
+    - soc/cdns/xtensa_sample_controller/
   labels:
     - "area: Xtensa"
 
@@ -4698,8 +4709,8 @@ Testing with Renode:
     - fkokosinski
   files:
     - cmake/emu/renode.cmake
-    - boards/*/*/support/*.repl
-    - boards/*/*/support/*.resc
+    - boards/**/*/support/*.repl
+    - boards/**/*/support/*.resc
   labels:
     - "area: Renode"
 

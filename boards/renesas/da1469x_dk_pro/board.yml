@@ -1,0 +1,5 @@
+board:
+  name: da1469x_dk_pro
+  vendor: renesas
+  socs:
+  - name: da14699

@@ -122,7 +122,7 @@ struct pcr_hw_regs {
 #define XEC_CC_PCR_CLK32K_SRC_PIN	2
 #define XEC_CC_PCR_CLK32K_SRC_OFF	3
 
-#ifdef CONFIG_SOC_SERIES_MEC1501X
+#ifdef CONFIG_SOC_SERIES_MEC15XX
 #define XEC_CC_PCR3_CRYPTO_MASK		(BIT(26) | BIT(27) | BIT(28))
 #else
 #define XEC_CC_PCR3_CRYPTO_MASK		BIT(26)
@@ -263,7 +263,7 @@ static int periph_clk_src_using_pin(enum periph_clk32k_src src)
 	}
 }
 
-#ifdef CONFIG_SOC_SERIES_MEC1501X
+#ifdef CONFIG_SOC_SERIES_MEC15XX
 /* MEC15xx uses the same 32KHz source for both PLL and Peripheral 32K clock domains.
  * We ignore the peripheral clock source.
  * If XTAL is selected (parallel) or single-ended the external 32KHz MUST stay on
@@ -915,7 +915,7 @@ static inline int xec_clock_control_off(const struct device *dev,
  */
 static uint32_t get_turbo_clock(const struct device *dev)
 {
-#ifdef CONFIG_SOC_SERIES_MEC1501X
+#ifdef CONFIG_SOC_SERIES_MEC15XX
 	ARG_UNUSED(dev);
 
 	return MHZ(48);
@@ -1079,7 +1079,7 @@ const struct xec_pcr_config pcr_xec_config = {
 		(uint16_t)DT_INST_PROP_OR(0, pll_lock_timeout_ms, XEC_CC_DFLT_PLL_LOCK_WAIT_MS),
 	.period_min = (uint16_t)DT_INST_PROP_OR(0, clk32kmon_period_min, CNT32K_TMIN),
 	.period_max = (uint16_t)DT_INST_PROP_OR(0, clk32kmon_period_max, CNT32K_TMAX),
-	.core_clk_div = (uint8_t)DT_INST_PROP_OR(0, core_clk_div, CONFIG_SOC_MEC172X_PROC_CLK_DIV),
+	.core_clk_div = (uint8_t)DT_INST_PROP_OR(0, core_clk_div, CONFIG_SOC_MEC_PROC_CLK_DIV),
 	.xtal_se = (uint8_t)DT_INST_PROP_OR(0, xtal_single_ended, 0),
 	.max_dc_va = (uint8_t)DT_INST_PROP_OR(0, clk32kmon_duty_cycle_var_max, CNT32K_DUTY_MAX),
 	.min_valid = (uint8_t)DT_INST_PROP_OR(0, clk32kmon_valid_min, CNT32K_VAL_MIN),

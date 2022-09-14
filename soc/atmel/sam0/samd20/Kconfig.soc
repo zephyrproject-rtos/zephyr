@@ -1,0 +1,100 @@
+# Atmel SAMD20 MCU series
+
+# Copyright (c) 2018 Sean Nyekjaer
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAMD20
+	bool
+	select SOC_FAMILY_ATMEL_SAM0
+	help
+	  Enable support for Atmel SAMD20 Cortex-M0+ microcontrollers.
+
+config SOC_SERIES
+	default "samd20" if SOC_SERIES_SAMD20
+
+config SOC_SAMD20E14
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20E15
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20E16
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20E17
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20E18
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20G14
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20G15
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20G16
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20G17
+	bool
+
+config SOC_SAMD20G18
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20G17U
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20G18U
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20J14
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20J15
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20J16
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20J17
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC_SAMD20J18
+	bool
+	select SOC_SERIES_SAMD20
+
+config SOC
+	default "samd20e14" if SOC_SAMD20E14
+	default "samd20e15" if SOC_SAMD20E15
+	default "samd20e16" if SOC_SAMD20E16
+	default "samd20e17" if SOC_SAMD20E17
+	default "samd20e18" if SOC_SAMD20E18
+	default "samd20g14" if SOC_SAMD20G14
+	default "samd20g15" if SOC_SAMD20G15
+	default "samd20g16" if SOC_SAMD20G16
+	default "samd20g17" if SOC_SAMD20G17
+	default "samd20g18" if SOC_SAMD20G18
+	default "samd20g17u" if SOC_SAMD20G17U
+	default "samd20g18u" if SOC_SAMD20G18U
+	default "samd20j14" if SOC_SAMD20J14
+	default "samd20j15" if SOC_SAMD20J15
+	default "samd20j16" if SOC_SAMD20J16
+	default "samd20j17" if SOC_SAMD20J17
+	default "samd20j18" if SOC_SAMD20J18

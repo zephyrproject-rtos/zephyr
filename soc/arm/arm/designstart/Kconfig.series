@@ -1,9 +1,0 @@
-# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_SERIES_ARM_DESIGNSTART
-	bool "Arm DesignStart SoC Series"
-	select ARM
-	select SOC_FAMILY_ARM
-	help
-	  Enable support for the ARM DesignStart SoC Series

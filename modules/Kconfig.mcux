@@ -5,10 +5,15 @@
 
 config HAS_MCUX
 	bool
-	depends on SOC_FAMILY_KINETIS || SOC_FAMILY_IMX || SOC_FAMILY_LPC || \
-		SOC_FAMILY_NXP_ADSP || SOC_FAMILY_NXP_S32
-
+	depends on SOC_FAMILY_KINETIS || SOC_FAMILY_NXP_IMX || SOC_FAMILY_LPC || \
+		SOC_FAMILY_NXP_S32 || SOC_FAMILY_NXP_IMXRT
 if HAS_MCUX
+
+config MCUX_CORE_SUFFIX
+	string
+	help
+	  String describing the core identifer used by MCUX SDK when using
+	  dual core parts
 
 config HAS_MCUX_12B1MSPS_SAR
 	bool

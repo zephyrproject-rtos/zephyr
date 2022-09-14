@@ -35,9 +35,9 @@
 
 #include "hal/ccm.h"
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
+#if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 #include "hal/radio.h"
-#endif /* CONFIG_SOC_FAMILY_NRF */
+#endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
 
 #include "ll_sw/pdu_df.h"
 #include "lll/pdu_vendor.h"

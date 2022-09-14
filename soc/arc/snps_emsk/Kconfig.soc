@@ -1,7 +1,0 @@
-# Copyright (c) 2014 Wind River Systems, Inc.
-# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_EMSK
-	bool "Synopsys ARC EM Starter Kit SoC"
-	select ARC

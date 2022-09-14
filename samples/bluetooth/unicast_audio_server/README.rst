@@ -32,7 +32,7 @@ Building for an nrf52840dk
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/unicast_audio_server/
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build
    :gen-args: -DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
 
@@ -44,7 +44,7 @@ core with:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/unicast_audio_server/
-   :board: nrf5340dk_nrf5340_cpuapp
+   :board: nrf5340dk/nrf5340/cpuapp
    :goals: build
    :west-args: --sysbuild
 
@@ -52,7 +52,7 @@ If you prefer to only build the application core image, you can do so by doing i
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/unicast_audio_server/
-   :board: nrf5340dk_nrf5340_cpuapp
+   :board: nrf5340dk/nrf5340/cpuapp
    :goals: build
 
 In that case you can pair this application core image with the

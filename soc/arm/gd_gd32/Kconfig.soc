@@ -1,4 +1,0 @@
-# Copyright (c) 2021, ATL Electronics
-# SPDX-License-Identifier: Apache-2.0
-
-source "soc/arm/gd_gd32/*/Kconfig.series"

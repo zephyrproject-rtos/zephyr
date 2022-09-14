@@ -1,11 +1,11 @@
 common:
   depends_on: netif
-  # FIXME: This test fails very frequently on mps2_an385 due to the system
+  # FIXME: This test fails very frequently on mps2/an385 due to the system
   #        timer stability issues, so keep it disabled until the root cause
   #        is fixed (GitHub issue zephyrproject-rtos/zephyr#48608).
   # eventfd API does not work with native_posix so exclude it here
   platform_exclude:
-    - mps2_an385
+    - mps2/an385
     - native_posix
     - native_posix_64
 tests:

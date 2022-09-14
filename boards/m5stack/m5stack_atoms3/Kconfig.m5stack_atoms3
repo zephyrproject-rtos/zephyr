@@ -1,0 +1,7 @@
+# M5Stack AtomS3 board configuration
+
+# Copyright (c) 2023 Benjamin Cabé <benjamin@zephyrproject.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_M5STACK_ATOMS3
+	select SOC_ESP32S3_FN8

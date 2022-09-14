@@ -1,0 +1,25 @@
+boards:
+
+  - name: qemu_x86
+    socs:
+      - name: atom
+        variants:
+          - name: 'nokpti'
+          - name: 'nommu'
+          - name: 'nopae'
+          - name: 'virt'
+          - name: 'xip'
+
+  - name: qemu_x86_lakemont
+    socs:
+      - name: lakemont
+
+  - name: qemu_x86_64
+    socs:
+      - name: atom
+        variants:
+          - name: 'nokpti'
+
+  - name: qemu_x86_tiny
+    socs:
+      - name: atom

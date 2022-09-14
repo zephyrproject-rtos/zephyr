@@ -1,0 +1,19 @@
+#
+# Copyright 2022 Huawei France Technologies SASU
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_RK3399
+	bool
+	select SOC_SERIES_RK3399
+
+config SOC_SERIES_RK3399
+	bool
+	select SOC_FAMILY_ROCKCHIP
+
+config SOC
+	default "rk3399" if SOC_RK3399
+
+config SOC_SERIES
+	default "rk3399" if SOC_SERIES_RK3399

@@ -1,0 +1,10 @@
+board:
+  name: imx8mp_evk
+  vendor: nxp
+  socs:
+  - name: mimx8ml8
+    variants:
+    - name: smp
+      cpucluster: a53
+    - name: ddr
+      cpucluster: m7

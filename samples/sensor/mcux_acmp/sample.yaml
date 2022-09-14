@@ -4,8 +4,8 @@ sample:
 common:
   platform_allow:
     - twr_ke18f
-    - mimxrt1170_evk_cm7
-    - mimxrt1170_evk_cm4
+    - mimxrt1170_evk/mimxrt1176/cm7
+    - mimxrt1170_evk/mimxrt1176/cm4
   integration_platforms:
     - twr_ke18f
   tags:

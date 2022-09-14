@@ -3,9 +3,9 @@ tests:
     tags:
       - kernel
       - timer
-    # FIXME: This test may fail for qemu_arc_hs on certain host systems.
+    # FIXME: This test may fail for qemu_arc/qemu_arc_hs on certain host systems.
     #        See foss-for-synopsys-dwc-arc-processors/qemu#67.
-    platform_exclude: qemu_arc_hs
+    platform_exclude: qemu_arc/qemu_arc_hs
   kernel.timer.monotonic.apic.tsc:
     tags:
       - kernel
@@ -20,6 +20,6 @@ tests:
     tags:
       - kernel
       - timer
-    platform_allow: mps2_an385
+    platform_allow: mps2/an385
     extra_configs:
       - CONFIG_QEMU_ICOUNT=n

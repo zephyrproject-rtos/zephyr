@@ -54,7 +54,7 @@
 #error "Define a PWM device"
 #endif
 
-#if defined(CONFIG_BOARD_COLIBRI_IMX7D_M4) || defined(CONFIG_SOC_MK64F12) ||                       \
+#if defined(CONFIG_BOARD_COLIBRI_IMX7D_MCIMX7D_M4) || defined(CONFIG_SOC_MK64F12) ||               \
 	defined(CONFIG_SOC_MKW41Z4) || defined(CONFIG_SOC_SERIES_ESP32S2) ||                       \
 	defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32C3)
 #define DEFAULT_PERIOD_CYCLE 1024
@@ -81,7 +81,7 @@
 #define DEFAULT_PWM_PORT 2 /* TCC1/WO[2] on PA18 (D7) */
 #elif defined CONFIG_BOARD_MIMXRT685_EVK
 #define DEFAULT_PWM_PORT 7 /* D3 on Arduino connector J27 */
-#elif defined CONFIG_BOARD_LPCXPRESSO55S69_CPU0
+#elif defined CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0
 #define DEFAULT_PWM_PORT 2 /* D2 on Arduino connector P18 */
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwm)
 /* Default port should be adapted per board to fit the channel

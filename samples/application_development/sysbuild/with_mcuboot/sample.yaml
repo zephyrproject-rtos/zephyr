@@ -8,9 +8,9 @@ tests:
     # filtering support, see discussion in #49552.
     platform_allow:
       - reel_board
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     tags: mcuboot
     harness: console
     harness_config:

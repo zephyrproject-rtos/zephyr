@@ -201,7 +201,7 @@ if (CONFIG_BUILD_WITH_TFM)
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_tz_psa_ns_api.c
 
-    # Specific to nordic_nrf platform
+    # Specific to nordic platform
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c
     )
 
@@ -226,7 +226,7 @@ if (CONFIG_BUILD_WITH_TFM)
 
   string(REPLACE "toolchain" "toolchain_ns" TFM_TOOLCHAIN_NS_FILE ${TFM_TOOLCHAIN_FILE})
 
-  if(CONFIG_BOARD_LPCXPRESSO55S69_CPU0)
+  if(CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0)
     # Supply path to NXP HAL sources used for TF-M build
     set(TFM_PLATFORM_NXP_HAL_FILE_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/nxp/)
     list(APPEND TFM_CMAKE_ARGS -DTFM_PLATFORM_NXP_HAL_FILE_PATH=${TFM_PLATFORM_NXP_HAL_FILE_PATH})
@@ -358,7 +358,7 @@ if (CONFIG_BUILD_WITH_TFM)
 
   zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_tz_psa_ns_api.c)
 
-  if(CONFIG_SOC_FAMILY_NRF)
+  if(CONFIG_SOC_FAMILY_NORDIC_NRF)
     zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
   endif()
 

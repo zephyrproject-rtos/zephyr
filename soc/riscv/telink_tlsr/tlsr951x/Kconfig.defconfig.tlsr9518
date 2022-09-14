@@ -1,5 +1,0 @@
-# Copyright (c) 2024 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC
-	default "tlsr9518" if SOC_TELINK_TLSR9518

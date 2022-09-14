@@ -1,0 +1,5 @@
+board:
+  name: stm32l496g_disco
+  vendor: st
+  socs:
+    - name: stm32l496xx

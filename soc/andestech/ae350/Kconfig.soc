@@ -1,0 +1,20 @@
+# Copyright (c) 2021 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ANDES_AE350
+	bool
+	select SOC_FAMILY_ANDES_V5
+	help
+	  Andes V5 AE350 SoC Series Implementation"
+
+config SOC_ANDES_AE350
+	bool
+	select SOC_SERIES_ANDES_AE350
+	help
+	  Andes AE350 SoC implementation"
+
+config SOC_SERIES
+	default "ae350" if SOC_SERIES_ANDES_AE350
+
+config SOC
+	default "ae350" if SOC_ANDES_AE350

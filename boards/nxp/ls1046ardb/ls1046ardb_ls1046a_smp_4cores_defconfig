@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# SMP support
+CONFIG_MP_MAX_NUM_CPUS=4

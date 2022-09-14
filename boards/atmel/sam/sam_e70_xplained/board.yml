@@ -1,0 +1,6 @@
+board:
+  name: sam_e70_xplained
+  vendor: atmel
+  socs:
+    - name: same70q21
+    - name: same70q21b

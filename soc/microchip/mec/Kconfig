@@ -1,0 +1,226 @@
+# Microchip MEC MCU line
+
+# Copyright (c) 2018, Intel Corporation
+# Copyright (c) 2022, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_MICROCHIP_MEC
+
+menuconfig MCHP_MEC_UNSIGNED_HEADER
+	bool "Create an unsigned output binary with MCHP MEC binary header"
+	help
+	  On Microchip MEC series chip, the ROM code loads firmware image from flash
+	  to RAM using a TAG to locate a Header which specifies the location and
+	  size of the firmware image. Enable this to invoke the mec_spi_gen tool
+	  which generates an SPI image with TAG, Header, and firmware binary. This
+	  tool does not produce a signed image which can be authenticated by the
+	  Boot-ROM. Use the full Microchip SPI image generator program for
+	  authentication and all other Boot-ROM loader features. Refer to the MCHP
+	  EVB boards for an example.
+
+if MCHP_MEC_UNSIGNED_HEADER
+
+config MCHP_MEC_HEADER_CHIP
+	string
+	default "mec15xx" if SOC_SERIES_MEC15XX
+	default "mec172x" if SOC_SERIES_MEC172X
+
+choice MCHP_MEC_HEADER_SPI_FREQ_MHZ_CHOICE
+	prompt "Clock rate to use for SPI flash"
+	default MCHP_MEC_HEADER_SPI_FREQ_MHZ_12
+	help
+	  This selects the SPI clock frequency that will be used for loading
+	  firmware binary from flash to RAM.
+
+config MCHP_MEC_HEADER_SPI_FREQ_MHZ_12
+	bool "SPI flash clock rate of 12 MHz"
+
+config MCHP_MEC_HEADER_SPI_FREQ_MHZ_16
+	bool "SPI flash clock rate of 16 MHz"
+
+config MCHP_MEC_HEADER_SPI_FREQ_MHZ_24
+	bool "SPI flash clock rate of 24 MHz"
+
+config MCHP_MEC_HEADER_SPI_FREQ_MHZ_48
+	bool "SPI flash clock rate of 48 MHz"
+
+endchoice
+
+config MCHP_MEC_HEADER_SPI_FREQ_MHZ
+	int
+	default 12 if MCHP_MEC_HEADER_SPI_FREQ_MHZ_12
+	default 25 if MCHP_MEC_HEADER_SPI_FREQ_MHZ_16
+	default 24 if MCHP_MEC_HEADER_SPI_FREQ_MHZ_24
+	default 48 if MCHP_MEC_HEADER_SPI_FREQ_MHZ_48
+
+choice MCHP_MEC_HEADER_SPI_READ_MODE_CHOICE
+	prompt "Reading mode used by the SPI flash"
+	default MCHP_MEC_HEADER_SPI_READ_MODE_FAST
+	help
+	  This sets the reading mode that can be used by the SPI flash.
+	  Reading modes supported are normal, fast, dual, and quad.
+
+config MCHP_MEC_HEADER_SPI_READ_MODE_NORMAL
+	bool "SPI flash operates full-duplex with frequency (< 25 MHz)"
+
+config MCHP_MEC_HEADER_SPI_READ_MODE_FAST
+	bool "SPI flash operates full-duplex with fast reading mode"
+
+config MCHP_MEC_HEADER_SPI_READ_MODE_DUAL
+	bool "SPI flash operates with dual data reading mode"
+
+config MCHP_MEC_HEADER_SPI_READ_MODE_QUAD
+	bool "SPI flash operates with quad data reading mode"
+
+endchoice
+
+config MCHP_MEC_HEADER_SPI_READ_MODE
+	string
+	default "slow" if MCHP_MEC_HEADER_SPI_READ_MODE_NORMAL
+	default "fast" if MCHP_MEC_HEADER_SPI_READ_MODE_FAST
+	default "dual" if MCHP_MEC_HEADER_SPI_READ_MODE_DUAL
+	default "quad" if MCHP_MEC_HEADER_SPI_READ_MODE_QUAD
+
+choice MCHP_MEC_HEADER_FLASH_SIZE_CHOICE
+	prompt "Flash size"
+	default MCHP_MEC_HEADER_FLASH_SIZE_16M
+	help
+	  This sets the SPI flash size.
+
+config MCHP_MEC_HEADER_FLASH_SIZE_256K
+	bool "SPI flash size 256K Bytes"
+	help
+	  The SPI flash size is 256K Bytes.
+
+config MCHP_MEC_HEADER_FLASH_SIZE_512K
+	bool "SPI flash size 512K Bytes"
+	help
+	  The SPI flash size is 512K Bytes.
+
+config MCHP_MEC_HEADER_FLASH_SIZE_1M
+	bool "SPI flash size 1M Bytes"
+	help
+	  The SPI flash size is 1M Bytes.
+
+config MCHP_MEC_HEADER_FLASH_SIZE_2M
+	bool "SPI flash size 2M Bytes"
+	help
+	  The SPI flash size is 2M Bytes.
+
+config MCHP_MEC_HEADER_FLASH_SIZE_4M
+	bool "SPI flash size 4M Bytes"
+	help
+	  The SPI flash size is 4M Bytes.
+
+config MCHP_MEC_HEADER_FLASH_SIZE_8M
+	bool "SPI flash size 8M Bytes"
+	help
+	  The SPI flash size is 8M Bytes.
+
+config MCHP_MEC_HEADER_FLASH_SIZE_16M
+	bool "SPI flash size 16M Bytes"
+	help
+	  The SPI flash size is 16M Bytes.
+
+endchoice
+
+config MCHP_MEC_HEADER_FLASH_SIZE
+	int
+	default 256 if MCHP_MEC_HEADER_FLASH_SIZE_256K
+	default 512 if MCHP_MEC_HEADER_FLASH_SIZE_512K
+	default 1024 if MCHP_MEC_HEADER_FLASH_SIZE_1M
+	default 2048 if MCHP_MEC_HEADER_FLASH_SIZE_2M
+	default 4096 if MCHP_MEC_HEADER_FLASH_SIZE_4M
+	default 8192 if MCHP_MEC_HEADER_FLASH_SIZE_8M
+	default 16384 if MCHP_MEC_HEADER_FLASH_SIZE_16M
+
+choice MCHP_MEC_HEADER_SPI_DRVSTR_CHOICE
+	prompt "Flash drive strength"
+	default MCHP_MEC_HEADER_SPI_DRVSTR_1X
+	help
+	  This sets the SPI flash size.
+
+config MCHP_MEC_HEADER_SPI_DRVSTR_1X
+	bool "SPI flash drive strength multiplier 1"
+	help
+	  The SPI flash size is 256K Bytes.
+
+config MCHP_MEC_HEADER_SPI_DRVSTR_2X
+	bool "SPI flash drive strength multiplier 2"
+	help
+	  The SPI flash size is 256K Bytes.
+
+config MCHP_MEC_HEADER_SPI_DRVSTR_4X
+	bool "SPI flash drive strength multiplier 4"
+	help
+	  The SPI flash size is 512K Bytes.
+
+config MCHP_MEC_HEADER_SPI_DRVSTR_6X
+	bool "SPI flash drive strength multiplier 6"
+	help
+	  The SPI flash size is 1M Bytes.
+
+endchoice
+
+config MCHP_MEC_HEADER_SPI_DRVSTR
+	string
+	default "1x" if MCHP_MEC_HEADER_SPI_DRVSTR_1X
+	default "2x" if MCHP_MEC_HEADER_SPI_DRVSTR_2X
+	default "4x" if MCHP_MEC_HEADER_SPI_DRVSTR_4X
+	default "6x" if MCHP_MEC_HEADER_SPI_DRVSTR_6X
+
+choice MCHP_MEC_HEADER_SPI_SLEW_RATE_CHOICE
+	prompt "Slew rate of SPI pins"
+	default MCHP_MEC_HEADER_SPI_SLEW_RATE_SLOW
+	help
+	  This sets the slew rate of the SPI pins. Default is slow
+	  slew rate which is 1/2 the AHB clock rate. Fast slew is the
+	  AHB clock rate.
+
+config MCHP_MEC_HEADER_SPI_SLEW_RATE_SLOW
+	bool "SPI pins slew rate is 1/2 AHB frequency"
+
+config MCHP_MEC_HEADER_SPI_SLEW_RATE_FAST
+	bool "SPI pins slew rate is 1x AHB frequency"
+
+endchoice
+
+config MCHP_MEC_HEADER_SPI_SLEW_RATE
+	string
+	default "slow" if MCHP_MEC_HEADER_SPI_SLEW_RATE_SLOW
+	default "fast" if MCHP_MEC_HEADER_SPI_SLEW_RATE_FAST
+
+config MCHP_MEC_HEADER_FLASH_SPI_MODE
+	int "Flash SPI Mode"
+	range 0 7
+	default 0
+	help
+	  This three bit value corresponds to the QMSPI controllers clock idle and
+	  input/output data phases. Bits[0:2] are CPOL:CPHA_MOSI:CPHA_MISO. Refer
+	  to the data sheet. Default value is 0 corresponding to SPI Mode 0
+	  signalling.
+	  Setting this field to 0 selects mode 0, CPOL=0, CPHA_MOSI=0, CPHA_MISO=0
+	  Setting this filed to 7 selects mode 3, CPOL=1, CPHA_MOSI=1, CPHA_MISO=1
+
+config MCHP_HEADER_VERBOSE_OUTPUT
+	bool "Debug console output"
+	default n
+	help
+	  Enable print output from SPI generator script for debug
+
+endif # MCHP_MEC_UNSIGNED_HEADER
+
+config SOC_MEC_PROC_CLK_DIV
+	int "PROC_CLK_DIV"
+	default 1
+	range 1 48
+	help
+	  This divisor defines a ratio between processor clock (HCLK)
+	  and main 96 MHz clock (MCK):
+	  HCLK = MCK / PROC_CLK_DIV
+	  Allowed divider values: 1, 3, 4, 16, and 48.
+
+# Select SoC Part No. and configuration options
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_MICROCHIP_MEC

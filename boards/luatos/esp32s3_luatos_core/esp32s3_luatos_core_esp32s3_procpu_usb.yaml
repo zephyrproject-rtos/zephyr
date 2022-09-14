@@ -1,0 +1,22 @@
+identifier: esp32s3_luatos_core/esp32s3/procpu/usb
+name: ESP32-S3 LuatOS Core USB
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - can
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: luatos

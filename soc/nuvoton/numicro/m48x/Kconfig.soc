@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+# Author: Saravanan Sekar <saravanan@linumiz.com>
+
+config SOC_SERIES_M48X
+	bool
+	select SOC_FAMILY_NUMICRO
+	help
+	  Enable support for NUVOTON M48X MCU series
+
+config SOC_M487
+	bool
+	select SOC_SERIES_M48X
+
+config SOC_SERIES
+	default "m48x" if SOC_SERIES_M48X
+
+config SOC
+	default "m487" if SOC_M487

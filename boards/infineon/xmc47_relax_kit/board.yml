@@ -1,0 +1,5 @@
+board:
+  name: xmc47_relax_kit
+  vendor: infineon
+  socs:
+  - name: xmc4700

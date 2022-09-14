@@ -4,31 +4,31 @@ common:
     - flash
 tests:
   drivers.flash.common.nrf_qspi_nor:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     extra_args: OVERLAY_CONFIG=boards/nrf52840_flash_qspi.conf
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
   drivers.flash.common.nrf_qspi_nor.size_in_bytes:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     extra_args:
       - OVERLAY_CONFIG=boards/nrf52840_flash_qspi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840_size_in_bytes.overlay
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
   drivers.flash.common.nrf_qspi_nor_4B_addr:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     extra_args:
       - OVERLAY_CONFIG=boards/nrf52840_flash_qspi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_mx25l51245g.overlay
     harness_config:
       fixture: external_flash_mx25l51245g
     integration_platforms:
-      - nrf52840dk_nrf52840
-  drivers.flash.common.soc_flash_nrf:
-    platform_allow: nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
+  drivers.flash.common.soc_flash/nrf:
+    platform_allow: nrf52840dk/nrf52840
     extra_args: OVERLAY_CONFIG=boards/nrf52840_flash_soc.conf
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
   drivers.flash.common.default:
     filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
       and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
@@ -40,7 +40,7 @@ tests:
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
       and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
     integration_platforms:
-      - nrf9161dk_nrf9161_ns
+      - nrf9161dk/nrf9161/ns
   drivers.flash.common.stm32:
     platform_allow:
       - nucleo_f103rb
@@ -57,32 +57,32 @@ tests:
       - nucleo_wb55rg
       - nucleo_wl55jc
       - stm32l562e_dk
-      - stm32l562e_dk_ns
+      - stm32l562e_dk/stm32l562xx/ns
     integration_platforms:
       - nucleo_f103rb
     filter: (dt_compat_enabled("st,stm32-flash-controller") or
              dt_compat_enabled("st,stm32h7-flash-controller")) and
              dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
   drivers.flash.common.mx25r_high_perf:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     extra_args:
       - OVERLAY_CONFIG=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_mx25r_high_perf.overlay
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
   drivers.flash.common.mr_canhubk3_sfdp_runtime:
     platform_allow: mr_canhubk3
     extra_configs:
       - CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME=y
   drivers.flash.common.spi_nor:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     extra_args:
       - OVERLAY_CONFIG=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor.overlay
     harness_config:
       fixture: external_flash_mx25v1635f
   drivers.flash.common.spi_nor_wp_hold:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     extra_args:
       - OVERLAY_CONFIG=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor_wp_hold.overlay
@@ -90,9 +90,9 @@ tests:
       fixture: external_flash_mx25v1635f
   drivers.flash.common.sam0:
     platform_allow:
-      - atsamd20_xpro
-      - atsamr21_xpro
-      - atsame54_xpro
+      - samd20_xpro
+      - samr21_xpro
+      - same54_xpro
   drivers.flash.common.gd32:
     platform_allow:
       - gd32vf103v_eval

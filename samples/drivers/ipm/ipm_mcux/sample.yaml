@@ -5,10 +5,10 @@ sample:
 tests:
   sample.ipm.ipm_mcux:
     platform_allow:
-      - lpcxpresso54114_m4
-      - lpcxpresso55s69_cpu0
+      - lpcxpresso54114/lpc54114/m4
+      - lpcxpresso55s69/lpc55s69/cpu0
     integration_platforms:
-      - lpcxpresso54114_m4
+      - lpcxpresso54114/lpc54114/m4
     tags: ipm
     harness: console
     sysbuild: true

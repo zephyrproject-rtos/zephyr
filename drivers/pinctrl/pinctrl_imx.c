@@ -19,7 +19,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		uint32_t input_daisy = pins[i].pinmux.input_daisy;
 		uint32_t config_register = pins[i].pinmux.config_register;
 		uint32_t pin_ctrl_flags = pins[i].pin_ctrl_flags;
-#if defined(CONFIG_SOC_SERIES_IMX_RT10XX) || defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 		volatile uint32_t *gpr_register =
 			(volatile uint32_t *)((uintptr_t)pins[i].pinmux.gpr_register);
 		if (gpr_register) {
@@ -33,7 +33,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		}
 #endif
 
-#ifdef CONFIG_SOC_MIMX93_A55
+#ifdef CONFIG_SOC_MIMX9352_A55
 		sys_write32(IOMUXC1_SW_MUX_CTL_PAD_MUX_MODE(mux_mode) |
 			IOMUXC1_SW_MUX_CTL_PAD_SION(MCUX_IMX_INPUT_ENABLE(pin_ctrl_flags)),
 			(mem_addr_t)mux_register);
@@ -65,17 +65,17 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 
 static int imx_pinctrl_init(void)
 {
-#ifdef CONFIG_SOC_SERIES_IMX_RT
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	CLOCK_EnableClock(kCLOCK_Iomuxc);
-#ifdef CONFIG_SOC_SERIES_IMX_RT10XX
+#ifdef CONFIG_SOC_SERIES_IMXRT10XX
 	CLOCK_EnableClock(kCLOCK_IomuxcSnvs);
 	CLOCK_EnableClock(kCLOCK_IomuxcGpr);
-#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	CLOCK_EnableClock(kCLOCK_Iomuxc_Lpsr);
-#endif /* CONFIG_SOC_SERIES_IMX_RT10XX */
+#endif /* CONFIG_SOC_SERIES_IMXRT10XX */
 #elif defined(CONFIG_SOC_MIMX8MQ6)
 	CLOCK_EnableClock(kCLOCK_Iomux);
-#endif /* CONFIG_SOC_SERIES_IMX_RT */
+#endif /* CONFIG_SOC_SERIES_IMXRT10XX || CONFIG_SOC_SERIES_IMXRT11XX */
 
 	return 0;
 }

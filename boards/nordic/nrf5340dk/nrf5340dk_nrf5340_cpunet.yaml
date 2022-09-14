@@ -1,0 +1,14 @@
+identifier: nrf5340dk/nrf5340/cpunet
+name: NRF5340-DK-NRF5340-network-MCU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 64
+flash: 256
+supported:
+  - watchdog
+  - gpio
+vendor: nordic
