@@ -1,0 +1,184 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32/esp32_wroom_32ue_n16.dtsi>
+#include <zephyr/dt-bindings/led/led.h>
+#include "yd_esp32-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "VCC-GND Studio YD-ESP32 PROCPU";
+	compatible = "espressif,esp32";
+
+	aliases {
+		uart-0 = &uart0;
+		i2c-0 = &i2c0;
+		sw0 = &button0;
+		watchdog0 = &wdt0;
+		led-strip = &rgb_led;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&pinctrl {
+	spim2_default: spim2_default {
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO16>;
+			output-low;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+	cpu-power-states = <&light_sleep &deep_sleep>;
+};
+
+&cpu1 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&uart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	sda-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+
+	rgb_led: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+
+		/* SPI */
+		reg = <0>; /* ignored, but necessary for SPI bindings */
+		spi-max-frequency = <6400000>;
+
+		/* XL-5050RGBC-WS2812B */
+		chain-length = <1>;
+		spi-one-frame = <0xfc>; /* 11111100: 0.937 us high and 0.313 us low */
+		spi-zero-frame = <0xc0>; /* 11000000: 0.313 us high and 0.937 us low */
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+	};
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+};
+
+&timer0 {
+	status = "disabled";
+};
+
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+&timer3 {
+	status = "disabled";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&flash0 {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserve 60kB for the bootloader */
+		boot_partition: partition@1000 {
+			label = "mcuboot";
+			reg = <0x00001000 0x0000F000>;
+			read-only;
+		};
+
+		/* Reserve 1024kB for the application in slot 0 */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0x00100000>;
+		};
+
+		/* Reserve 1024kB for the application in slot 1 */
+		slot1_partition: partition@110000 {
+			label = "image-1";
+			reg = <0x00110000 0x00100000>;
+		};
+
+		/* Reserve 256kB for the scratch partition */
+		scratch_partition: partition@210000 {
+			   label = "image-scratch";
+			   reg = <0x00210000 0x00040000>;
+		};
+
+		storage_partition: partition@250000 {
+			label = "storage";
+			reg = <0x00250000 0x00006000>;
+		};
+	};
+};

@@ -14,12 +14,12 @@ Building and Running
 
 The sample can be built and executed on boards supporting MBOX.
 
-Building the application for nrf5340dk_nrf5340_cpuapp
+Building the application for nrf5340dk/nrf5340/cpuapp
 *****************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/mbox/
-   :board: nrf5340dk_nrf5340_cpuapp
+   :board: nrf5340dk/nrf5340/cpuapp
    :goals: debug
    :west-args: --sysbuild
 

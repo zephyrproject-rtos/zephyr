@@ -1,0 +1,5 @@
+# Copyright (c) 2021 Electrolance Solutions
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_H7A3ZI_Q
+	select SOC_STM32H7A3XXQ

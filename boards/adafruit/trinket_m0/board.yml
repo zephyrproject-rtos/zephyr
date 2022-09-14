@@ -1,0 +1,5 @@
+board:
+  name: adafruit_trinket_m0
+  vendor: adafruit
+  socs:
+    - name: samd21e18a

@@ -5,4 +5,4 @@ tests:
       - vector_relay
     arch_allow: arm
     integration_platforms:
-      - mps2_an385
+      - mps2/an385

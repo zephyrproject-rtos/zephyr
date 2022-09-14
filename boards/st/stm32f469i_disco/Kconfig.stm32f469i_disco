@@ -1,0 +1,5 @@
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32F469I_DISCO
+	select SOC_STM32F469XX

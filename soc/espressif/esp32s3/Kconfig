@@ -1,0 +1,313 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32S3
+	select XTENSA
+	select DYNAMIC_INTERRUPTS
+	select ARCH_SUPPORTS_COREDUMP
+	select CLOCK_CONTROL
+	select PINCTRL
+	select XIP if !MCUBOOT
+	select HAS_ESPRESSIF_HAL
+	select CPU_HAS_FPU
+
+if SOC_SERIES_ESP32S3
+
+config IDF_TARGET_ESP32S3
+	bool "ESP32S3 as target SOC"
+	default y
+
+config ESP32S3_APPCPU_IRAM
+	hex "ESP32S3 APPCPU IRAM size"
+	depends on SOC_ESP32S3_PROCPU || SOC_ESP32S3_APPCPU
+	default 0x20000
+	help
+	  Defines APPCPU IRAM area in bytes.
+
+config ESP32S3_APPCPU_DRAM
+	hex "ESP32S3 APPCPU DRAM size"
+	depends on SOC_ESP32S3_PROCPU || SOC_ESP32S3_APPCPU
+	default 0x10000
+	help
+	  Defines APPCPU DRAM area in bytes.
+
+config SOC_ESP32S3_PROCPU
+	bool
+	help
+	  This hidden configuration defines that build is targeted for PROCPU (core 0).
+
+config SOC_ESP32S3_APPCPU
+	bool
+	help
+	  This hidden configuration defines that build is targeted for APPCPU (core 1).
+
+config SOC_ENABLE_APPCPU
+	bool
+	default y
+	depends on IPM && SOC_ESP32S3_PROCPU
+	help
+	  This hidden configuration lets PROCPU core to map and start APPCPU whenever IPM is enabled.
+
+choice ESP32S3_RTC_CLK_SRC
+	prompt "RTC clock source"
+	default ESP32S3_RTC_CLK_SRC_INT_RC
+	help
+	  Choose which clock is used as RTC clock source.
+
+	config ESP32S3_RTC_CLK_SRC_INT_RC
+		bool "Internal 150kHz RC oscillator"
+	config ESP32S3_RTC_CLK_SRC_EXT_CRYS
+		bool "External 32kHz crystal"
+		select ESP_SYSTEM_RTC_EXT_XTAL
+	config ESP32S3_RTC_CLK_SRC_EXT_OSC
+		bool "External 32kHz oscillator at 32K_XP pin"
+		select ESP_SYSTEM_RTC_EXT_OSC
+	config ESP32S3_RTC_CLK_SRC_INT_8MD256
+		bool "Internal 8MHz oscillator, divided by 256 (~32kHz)"
+endchoice
+
+config ESP32S3_RTC_CLK_CAL_CYCLES
+	int "Number of cycles for RTC_SLOW_CLK calibration"
+	default 3000 if ESP32S3_RTC_CLK_SRC_EXT_CRYS || ESP32S3_RTC_CLK_SRC_EXT_OSC || ESP32S3_RTC_CLK_SRC_INT_8MD256
+	default 1024 if ESP32S3_RTC_CLK_SRC_INT_RC
+	range 0 27000 if ESP32S3_RTC_CLK_SRC_EXT_CRYS || ESP32S3_RTC_CLK_SRC_EXT_OSC || ESP32S3_RTC_CLK_SRC_INT_8MD256
+	range 0 32766 if ESP32S3_RTC_CLK_SRC_INT_RC
+	help
+	  When the startup code initializes RTC_SLOW_CLK, it can perform
+	  calibration by comparing the RTC_SLOW_CLK frequency with main XTAL
+	  frequency. This option sets the number of RTC_SLOW_CLK cycles measured
+	  by the calibration routine. Higher numbers increase calibration
+	  precision, which may be important for applications which spend a lot of
+	  time in deep sleep. Lower numbers reduce startup time.
+
+	  When this option is set to 0, clock calibration will not be performed at
+	  startup, and approximate clock frequencies will be assumed:
+
+	  - 150000 Hz if internal RC oscillator is used as clock source. For this use value 1024.
+	  - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
+	  In case more value will help improve the definition of the launch of the crystal.
+	  If the crystal could not start, it will be switched to internal RC.
+
+choice ESP32_UNIVERSAL_MAC_ADDRESSES
+	bool "Number of universally administered (by IEEE) MAC address"
+	default ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR
+	help
+	  Configure the number of universally administered (by IEEE) MAC addresses.
+	  During initialization, MAC addresses for each network interface are generated or
+	  derived from a single base MAC address. If the number of universal MAC addresses is four,
+	  all four interfaces (WiFi station, WiFi softap, Bluetooth and Ethernet) receive a universally
+	  administered MAC address. These are generated sequentially by adding 0, 1, 2 and 3 (respectively)
+	  to the final octet of the base MAC address. If the number of universal MAC addresses is two,
+	  only two interfaces (WiFi station and Bluetooth) receive a universally administered MAC address.
+	  These are generated sequentially by adding 0 and 1 (respectively) to the base MAC address.
+	  The remaining two interfaces (WiFi softap and Ethernet) receive local MAC addresses.
+	  These are derived from the universal WiFi station and Bluetooth MAC addresses, respectively.
+	  When using the default (Espressif-assigned) base MAC address, either setting can be used.
+	  When using a custom universal MAC address range, the correct setting will depend on the
+	  allocation of MAC addresses in this range (either 2 or 4 per device.)
+
+config ESP32_UNIVERSAL_MAC_ADDRESSES_TWO
+	bool "Two"
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+	select ESP_MAC_ADDR_UNIVERSE_BT
+
+config ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR
+	bool "Four"
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+	select ESP_MAC_ADDR_UNIVERSE_BT
+	select ESP_MAC_ADDR_UNIVERSE_ETH
+
+endchoice # ESP32_UNIVERSAL_MAC_ADDRESSES
+
+config ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+	bool
+
+config ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+	bool
+
+config ESP_MAC_ADDR_UNIVERSE_BT
+	bool
+
+config ESP_MAC_ADDR_UNIVERSE_ETH
+	bool
+
+config ESP32_UNIVERSAL_MAC_ADDRESSES
+	int
+	default 2 if ESP32_UNIVERSAL_MAC_ADDRESSES_TWO
+	default 4 if ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR
+
+config ESP32_PHY_MAX_WIFI_TX_POWER
+	int "Max WiFi/BLE TX power (dBm)"
+	range 10 20
+	default 20
+	help
+	  Set maximum transmit power for WiFi radio. Actual transmit power for high
+	  data rates may be lower than this setting.
+
+config ESP32_PHY_MAX_TX_POWER
+	int
+	default ESP32_PHY_MAX_WIFI_TX_POWER
+
+menu "Cache config"
+
+choice ESP32S3_INSTRUCTION_CACHE_SIZE
+	prompt "Instruction cache size"
+	default ESP32S3_INSTRUCTION_CACHE_16KB
+	help
+	  Instruction cache size to be set on application startup.
+	  If you use 16KB instruction cache rather than 32KB instruction cache,
+	  then the other 16KB will be managed by heap allocator.
+
+	config ESP32S3_INSTRUCTION_CACHE_16KB
+		bool "16KB"
+	config ESP32S3_INSTRUCTION_CACHE_32KB
+		bool "32KB"
+endchoice
+
+config ESP32S3_INSTRUCTION_CACHE_SIZE
+	hex
+	default 0x4000 if ESP32S3_INSTRUCTION_CACHE_16KB
+	default 0x8000 if ESP32S3_INSTRUCTION_CACHE_32KB
+
+choice ESP32S3_ICACHE_ASSOCIATED_WAYS
+	prompt "Instruction cache associated ways"
+	default ESP32S3_INSTRUCTION_CACHE_8WAYS
+	help
+	  Instruction cache associated ways to be set on application startup.
+
+	config ESP32S3_INSTRUCTION_CACHE_4WAYS
+		bool "4 ways"
+	config ESP32S3_INSTRUCTION_CACHE_8WAYS
+		bool "8 ways"
+endchoice
+
+config ESP32S3_ICACHE_ASSOCIATED_WAYS
+	int
+	default 4 if ESP32S3_INSTRUCTION_CACHE_4WAYS
+	default 8 if ESP32S3_INSTRUCTION_CACHE_8WAYS
+
+choice ESP32S3_INSTRUCTION_CACHE_LINE_SIZE
+	prompt "Instruction cache line size"
+	default ESP32S3_INSTRUCTION_CACHE_LINE_32B
+	help
+	  Instruction cache line size to be set on application startup.
+
+	config ESP32S3_INSTRUCTION_CACHE_LINE_16B
+		bool "16 Bytes"
+		depends on ESP32S3_INSTRUCTION_CACHE_16KB
+	config ESP32S3_INSTRUCTION_CACHE_LINE_32B
+		bool "32 Bytes"
+endchoice
+
+config ESP32S3_INSTRUCTION_CACHE_LINE_SIZE
+	int
+	default 16 if ESP32S3_INSTRUCTION_CACHE_LINE_16B
+	default 32 if ESP32S3_INSTRUCTION_CACHE_LINE_32B
+
+config ESP32S3_INSTRUCTION_CACHE_WRAP
+	bool "Define instruction cache wrap mode"
+	help
+	  If enabled, instruction cache will use wrap mode to read spi flash or spi ram.
+	  The wrap length equals to ESP32S3_INSTRUCTION_CACHE_LINE_SIZE.
+	  However, it depends on complex conditions.
+
+choice ESP32S3_DATA_CACHE_SIZE
+	prompt "Data cache size"
+	default ESP32S3_DATA_CACHE_32KB
+	help
+	  Data cache size to be set on application startup.
+	  If you use 32KB data cache rather than 64KB data cache,
+	  the other 32KB will be added to the heap.
+
+	config ESP32S3_DATA_CACHE_16KB
+		bool "16KB"
+	config ESP32S3_DATA_CACHE_32KB
+		bool "32KB"
+	config ESP32S3_DATA_CACHE_64KB
+		bool "64KB"
+endchoice
+
+config ESP32S3_DATA_CACHE_SIZE
+	hex
+	# For 16KB the actual configuration is 32kb cache, but 16kb will be reserved for heap at startup
+	default 0x8000 if ESP32S3_DATA_CACHE_16KB
+	default 0x8000 if ESP32S3_DATA_CACHE_32KB
+	default 0x10000 if ESP32S3_DATA_CACHE_64KB
+
+choice ESP32S3_DCACHE_ASSOCIATED_WAYS
+	prompt "Data cache associated ways"
+	default ESP32S3_DATA_CACHE_8WAYS
+	help
+	  Data cache associated ways to be set on application startup.
+
+	config ESP32S3_DATA_CACHE_4WAYS
+		bool "4 ways"
+	config ESP32S3_DATA_CACHE_8WAYS
+		bool "8 ways"
+endchoice
+
+config ESP32S3_DCACHE_ASSOCIATED_WAYS
+	int
+	default 4 if ESP32S3_DATA_CACHE_4WAYS
+	default 8 if ESP32S3_DATA_CACHE_8WAYS
+
+choice ESP32S3_DATA_CACHE_LINE_SIZE
+	prompt "Data cache line size"
+	default ESP32S3_DATA_CACHE_LINE_32B
+	help
+	  Data cache line size to be set on application startup.
+
+	config ESP32S3_DATA_CACHE_LINE_16B
+		bool "16 Bytes"
+		depends on ESP32S3_DATA_CACHE_16KB || ESP32S3_DATA_CACHE_32KB
+	config ESP32S3_DATA_CACHE_LINE_32B
+		bool "32 Bytes"
+	config ESP32S3_DATA_CACHE_LINE_64B
+		bool "64 Bytes"
+endchoice
+
+config ESP32S3_DATA_CACHE_LINE_SIZE
+	int
+	default 16 if ESP32S3_DATA_CACHE_LINE_16B
+	default 32 if ESP32S3_DATA_CACHE_LINE_32B
+	default 64 if ESP32S3_DATA_CACHE_LINE_64B
+
+config ESP32S3_DATA_CACHE_WRAP
+	bool "Define data cache wrap mode"
+	help
+	  If enabled, data cache will use wrap mode to read spi flash or spi ram.
+	  The wrap length equals to ESP32S3_DATA_CACHE_LINE_SIZE.
+	  However, it depends on complex conditions.
+
+config MAC_BB_PD
+	bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
+	depends on SOC_SERIES_ESP32S3 && TICKLESS_KERNEL
+	default n
+	help
+	  If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered
+	  down when PHY is disabled. Enabling this setting reduces power consumption
+	  by a small amount but increases RAM use by approximat
+
+endmenu  # Cache config
+
+menu "PSRAM Clock and CS IO for ESP32S3"
+	depends on ESP_SPIRAM
+
+config DEFAULT_PSRAM_CLK_IO
+	int "PSRAM CLK IO number"
+	range 0 33
+	default 30
+	help
+	  The PSRAM Clock IO can be any unused GPIO, please refer to your hardware design.
+
+config DEFAULT_PSRAM_CS_IO
+	int "PSRAM CS IO number"
+	range 0 33
+	default 26
+	help
+	  The PSRAM CS IO can be any unused GPIO, please refer to your hardware design.
+
+endmenu # PSRAM clock and cs IO for ESP32S3
+
+endif # SOC_SERIES_ESP32S3

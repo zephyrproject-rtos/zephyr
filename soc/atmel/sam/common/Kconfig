@@ -1,0 +1,96 @@
+# Atmel SAM MCU series general configuration options
+
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ATMEL_SAM && !SOC_SERIES_SAM4L
+
+menu "Clocks"
+
+config SOC_ATMEL_SAM_EXT_SLCK
+	bool "Use external crystal oscillator for slow clock"
+	help
+	  Says y if you want to use external 32 kHz crystal oscillator to drive
+	  the slow clock. Note that this adds a few seconds to boot time, as the
+	  crystal needs to stabilize after power-up.
+
+	  Says n if you do not need accurate and precise timers. The slow clock
+	  will be driven by the internal fast RC oscillator running at 32 kHz.
+
+config SOC_ATMEL_SAM_EXT_MAINCK
+	bool "Use external crystal oscillator for main clock"
+	default y
+	help
+	  The main clock is being used to drive the PLL, and thus driving the
+	  processor clock.
+
+	  Says y if you want to use external crystal oscillator to drive the
+	  main clock. Note that this adds about a second to boot time, as the
+	  crystal needs to stabilize after power-up.
+
+	  The crystal used here can be from 3 to 20 MHz.
+
+	  Says n here will use the internal fast RC oscillator running at 12 MHz.
+
+menu "PLL A"
+
+config SOC_ATMEL_SAM_PLLA_MULA
+	int "PLL MULA"
+	default  6 if SOC_SERIES_SAM3X
+	default  9 if SOC_SERIES_SAM4S  || SOC_SERIES_SAM4E
+	default 24 if SOC_SERIES_SAME70 || SOC_SERIES_SAMV71
+	range 1 62
+	help
+	  This is the multiplier (MULA) used by the PLL.
+	  The processor clock is (MAINCK * (MULA + 1) / DIVA).
+
+	  Board config file can override this settings for a particular board.
+
+	  With default of MULA == N, and DIVA == 1 the PLL will run at N+1 times
+	  the main clock frequency.
+
+config SOC_ATMEL_SAM_PLLA_DIVA
+	int "PLL DIVA"
+	default 1
+	range 1 255
+	help
+	  This is the divider (DIVA) used by the PLL.
+	  The processor clock is (MAINCK * (MULA + 1) / DIVA).
+
+	  Board config file can override this settings
+	  for a particular board.
+
+	  With default of MULA == N, and DIVA == 1 the PLL will run at N+1 times
+	  the main clock frequency.
+
+config SOC_ATMEL_SAM_MDIV
+	int "MDIV"
+	depends on SOC_SERIES_SAME70 || SOC_SERIES_SAMV71
+	default 2
+	range 1 4
+	help
+	  This divisor defines a ratio between processor clock (HCLK)
+	  and master clock (MCK) where the maximum value is 150MHz:
+	  MCK = HCLK / MDIV
+
+endmenu # PLL A
+endmenu # clocks
+
+config SOC_ATMEL_SAM_WAIT_MODE
+	bool "CPU goes to Wait mode instead of Sleep mode"
+	depends on SOC_ATMEL_SAM_EXT_MAINCK
+	default y if DEBUG
+	help
+	  For JTAG debugging CPU clock (HCLK) should not stop. In order to
+	  achieve this, make CPU go to Wait mode instead of Sleep mode while
+	  using external crystal oscillator for main clock.
+
+config SOC_ATMEL_SAM_DISABLE_ERASE_PIN
+	bool "Disable ERASE pin"
+	help
+	  At reset ERASE pin is configured in System IO mode. Asserting the
+	  ERASE pin at '1' will completely erase Flash memory. Setting this
+	  option will switch the pin to general IO mode giving control of the
+	  pin to the GPIO module.
+
+endif # SOC_FAMILY_ATMEL_SAM && !SOC_SERIES_SAM4L

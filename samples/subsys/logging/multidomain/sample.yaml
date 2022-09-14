@@ -6,9 +6,9 @@ common:
 tests:
   sample.logging.multidomain.ipc_static_vrings.hw:
     platform_allow:
-      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk/nrf5340/cpuapp
     integration_platforms:
-      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk/nrf5340/cpuapp
     build_only: true
   sample.logging.multidomain.ipc_static_vrings.simu:
     platform_allow:

@@ -26,7 +26,7 @@ Build the ESP32 IPM sample code as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ipm/ipm_esp32
-   :board: esp32_devkitc_wroom
+   :board: esp32_devkitc_wroom/esp32/procpu
    :goals: build
    :compact:
 

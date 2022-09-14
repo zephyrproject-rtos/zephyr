@@ -1,0 +1,114 @@
+# Copyright 2019,2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_LPC55XXX
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 60
+
+# In the LPC55XXX Family, this is currently being used to set the
+# core clock value at it's highest frequency which clocks at 150MHz.
+# Note that flash programming operations are limited to 100MHz, and
+# this PLL should not be used as the core clock in those cases.
+config INIT_PLL1
+	default "y"
+	depends on !(SOC_LPC55S06 || FLASH || BUILD_WITH_TFM)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 144000000 if INIT_PLL1
+	default 96000000
+
+# Indicates the second core will be enabled, and the part will run
+# in dual core mode.
+config SECOND_CORE_MCUX
+	depends on HAS_MCUX
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_CPU1_PARTITION := zephyr,code-cpu1-partition
+
+
+# Move the LMA for the second core image to be in the flash region of primary
+# core, so that JLink flash will load it correctly.
+config BUILD_OUTPUT_ADJUST_LMA
+	depends on SECOND_CORE_MCUX && SOC_LPC55S69_CPU1
+	default "0x10000000"
+
+# SRAM controllers 1,2,3, and 4 are disabled at reset.
+# By default, CMSIS SystemInit will enable the clock to these RAM banks.
+# Disable this Kconfig to leave the ram banks untouched out of reset.
+config LPC55XXX_SRAM_CLOCKS
+	default y
+
+# Some SoC's in the LPC5500 Series do have a dedicated USB RAM.
+# By default, USB RAM is assumed to be present.
+# Disable this Kconfig in case there is no dedicated USB RAM.
+config LPC55XXX_USB_RAM
+	default y
+
+if SOC_LPC55S06
+
+config LPC55XXX_USB_RAM
+	default n
+
+endif # SOC_LPC55S06
+
+if SOC_LPC55S16
+
+config CAN_MCUX_MCAN
+	default y
+	depends on CAN
+
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_LPCIP3511
+endchoice
+
+endif # SOC_LPC55S16
+
+if SOC_LPC55S28
+
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_LPCIP3511
+endchoice
+
+endif # SOC_LPC55S28
+
+if SOC_LPC55S36
+
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_LPCIP3511
+endchoice
+
+config LPC55XXX_USB_RAM
+	default n
+
+endif # SOC_LPC55S36
+
+if SOC_LPC55S69
+
+config SOC_FLASH_MCUX
+	default y
+	depends on FLASH
+	depends on !TRUSTED_EXECUTION_NONSECURE
+
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_LPCIP3511
+endchoice
+
+config I2S_MCUX_FLEXCOMM
+	select INIT_PLL0
+
+endif # SOC_LPC55S69
+
+if SOC_LPC55S69_CPU1
+
+
+config GPIO
+	default y
+
+config SERIAL
+	default n
+
+endif # SOC_LPC55S69_CPU1
+
+endif # SOC_SERIES_LPC55XXX

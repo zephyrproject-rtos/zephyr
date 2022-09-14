@@ -1,0 +1,5 @@
+board:
+  name: it8xxx2_evb
+  vendor: ite
+  socs:
+    - name: it82202ax

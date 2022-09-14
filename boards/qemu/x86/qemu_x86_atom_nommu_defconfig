@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2019 Intel Corp.
+
+CONFIG_X86_MMU=n
+CONFIG_SCHED_DUMB=y
+CONFIG_WAITQ_DUMB=y
+CONFIG_X86_VERY_EARLY_CONSOLE=n

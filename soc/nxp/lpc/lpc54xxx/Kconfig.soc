@@ -1,0 +1,38 @@
+# LPC LPC54XXX MCU line
+
+# Copyright (c) 2017, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_LPC54XXX
+	bool
+	select SOC_FAMILY_LPC
+
+config SOC_SERIES
+	default "lpc54xxx" if SOC_SERIES_LPC54XXX
+
+config SOC_LPC54114
+	bool
+	select SOC_SERIES_LPC54XXX
+
+config SOC_LPC54114_M4
+	bool
+	select SOC_LPC54114
+
+config SOC_LPC54114_M0
+	bool
+	select SOC_LPC54114
+
+# The NXP HAL expects the SOC to just be lpc54114 if targeting
+# the M4. When targeting M0 it expects lpc54114_m0.
+#
+# Action to update the NXP HAL to support checking for SOC_LPC54114_M0
+# instead.
+config SOC
+	default "lpc54114" if SOC_LPC54114_M4
+	default "lpc54114" if SOC_LPC54114_M0
+
+config SOC_PART_NUMBER_LPC54114J256BD64
+	bool
+
+config SOC_PART_NUMBER
+	default "LPC54114J256BD64" if SOC_PART_NUMBER_LPC54114J256BD64

@@ -66,7 +66,7 @@ config HWINFO_STM32
 config HWINFO_NRF
 	bool "NRF device ID"
 	default y
-	depends on SOC_FAMILY_NRF
+	depends on SOC_FAMILY_NORDIC_NRF
 	depends on NRF_SOC_SECURE_SUPPORTED
 	help
 	  Enable Nordic NRF hwinfo driver.
@@ -109,7 +109,7 @@ config HWINFO_MCUX_SYSCON
 config HWINFO_IMXRT
 	bool "NXP i.mx RT device ID"
 	default y
-	depends on SOC_SERIES_IMX_RT
+	depends on SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
 	help
 	  Enable NXP i.mx RT hwinfo driver.
 
@@ -124,14 +124,14 @@ config HWINFO_RPI_PICO
 config HWINFO_SAM_RSTC
 	bool "Atmel SAM reset cause"
 	default y
-	depends on SOC_FAMILY_SAM && !SOC_SERIES_SAM4L
+	depends on SOC_FAMILY_ATMEL_SAM && !SOC_SERIES_SAM4L
 	help
 	  Enable Atmel SAM reset cause hwinfo driver.
 
 config HWINFO_SAM
 	bool "Atmel SAM device ID"
 	default y
-	depends on SOC_FAMILY_SAM && !SOC_SERIES_SAM4L
+	depends on SOC_FAMILY_ATMEL_SAM && !SOC_SERIES_SAM4L
 	help
 	  Enable Atmel SAM device ID hwinfo driver.
 
@@ -145,28 +145,28 @@ config HWINFO_SAM4L
 config HWINFO_SAM0
 	bool "Atmel SAM0 device ID"
 	default y
-	depends on SOC_FAMILY_SAM0
+	depends on SOC_FAMILY_ATMEL_SAM0
 	help
 	  Enable Atmel SAM0 hwinfo driver.
 
 config HWINFO_SMARTBOND
 	bool "Smartbond device reset cause"
 	default y
-	depends on SOC_FAMILY_SMARTBOND
+	depends on SOC_FAMILY_RENESAS_SMARTBOND
 	help
 	  Enable Smartbond reset cause hwinfo driver.
 
 config HWINFO_ESP32
 	bool "ESP32 device ID"
 	default y
-	depends on SOC_FAMILY_ESP32
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
 	help
 	  Enable ESP32 hwinfo driver.
 
 config HWINFO_LITEX
 	bool "LiteX device ID"
 	default y
-	depends on SOC_RISCV32_LITEX_VEXRISCV
+	depends on SOC_LITEX_VEXRISCV
 	help
 	  Enable LiteX hwinfo driver
 
@@ -180,7 +180,7 @@ config HWINFO_PSOC6
 config HWINFO_GECKO
 	bool "GECKO hwinfo"
 	default y
-	depends on SOC_FAMILY_EXX32 && !SOC_SERIES_EFR32MG21  && !SOC_SERIES_EFR32BG22
+	depends on SOC_VENDOR_SILABS && !SOC_SERIES_EFR32MG21 && !SOC_SERIES_EFR32BG22
 	select SOC_GECKO_RMU
 	help
 	  Enable Silabs GECKO hwinfo driver.

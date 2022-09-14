@@ -1,9 +1,0 @@
-# FRDM-K22F board
-
-# Copyright (c) 2018, Prevas A/S
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_FRDM_K22F
-	bool "NXP FRDM-K22F"
-	depends on SOC_SERIES_KINETIS_K2X
-	select SOC_PART_NUMBER_MK22FN512VLH12

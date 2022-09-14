@@ -1,0 +1,23 @@
+# EFM32PG1B (Pearl Gecko) MCU line
+
+# Copyright (c) 2018 Christian Taedcke
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFM32PG1B
+	bool
+	select SOC_FAMILY_SILABS_S1
+	help
+	  EFM32PG1B Series MCU
+
+config SOC_PART_NUMBER_EFM32PG1B200F256GM48
+	bool
+	select SOC_SERIES_EFM32PG1B
+
+config SOC_SERIES
+	default "efm32pg1b" if SOC_SERIES_EFM32PG1B
+
+config SOC
+	default "efm32pg1b200f256gm48" if SOC_PART_NUMBER_EFM32PG1B200F256GM48
+
+config SOC_PART_NUMBER
+	default "EFM32PG1B200F256GM48" if SOC_PART_NUMBER_EFM32PG1B200F256GM48

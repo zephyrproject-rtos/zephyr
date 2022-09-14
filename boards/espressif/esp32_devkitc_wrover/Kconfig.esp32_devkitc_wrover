@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32_DEVKITC_WROVER
+	select SOC_ESP32_WROVER_E_N4R8

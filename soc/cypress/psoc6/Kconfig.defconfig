@@ -1,0 +1,30 @@
+# Cypress Semiconductor PSoC6 series configuration options
+# Copyright (c) 2018, Cypress
+# Copyright (c) 2020, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_PSOC62 || SOC_SERIES_PSOC63
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 50000000
+
+rsource "old/Kconfig.defconfig.psoc*"
+
+endif # SOC_SERIES_PSOC62 || SOC_SERIES_PSOC63
+
+if SOC_FAMILY_INFINEON_CAT1
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 100000000
+
+config SOC_PSOC6_CM0P_IMAGE_ROM_SIZE
+	hex
+	default 0x2000 if SOC_PSOC6_CM0P_IMAGE_SLEEP
+
+config SOC_PSOC6_CM0P_IMAGE_RAM_SIZE
+	hex
+	default 0x2000 if SOC_PSOC6_CM0P_IMAGE_SLEEP
+
+rsource "new/Kconfig.defconfig.psoc6*"
+
+endif # SOC_FAMILY_INFINEON_CAT1

@@ -8,19 +8,19 @@ tests:
       - qemu_cortex_m3
       - qemu_x86
       - nrf5340bsim_nrf5340_cpuapp
-      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk/nrf5340/cpuapp
       - native_sim
     tags: bluetooth
     integration_platforms:
-      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk/nrf5340/cpuapp
     sysbuild: true
   sample.bluetooth.audio_unicast_server.bt_ll_sw_split:
     harness: bluetooth
     platform_allow:
       - nrf52_bsim
-      - nrf52dk_nrf52832
-      - nrf52840dk_nrf52840
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
     integration_platforms:
-      - nrf52dk_nrf52832
+      - nrf52dk/nrf52832
     extra_args: OVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
     tags: bluetooth

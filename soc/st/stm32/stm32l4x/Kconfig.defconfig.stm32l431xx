@@ -1,0 +1,11 @@
+# ST Microelectronics STM32L432XX MCU
+
+# Copyright (c) 2022 Liam Clark
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L431XX
+
+config NUM_IRQS
+	default 83
+
+endif # SOC_STM32L431XX

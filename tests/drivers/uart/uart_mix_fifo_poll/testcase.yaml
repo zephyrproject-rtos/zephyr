@@ -5,12 +5,12 @@ common:
   depends_on: gpio
   harness: ztest
   platform_allow:
-    - nrf52840dk_nrf52840
-    - nrf9160dk_nrf9160
-    - nrf5340dk_nrf5340_cpuapp
+    - nrf52840dk/nrf52840
+    - nrf9160dk/nrf9160
+    - nrf5340dk/nrf5340/cpuapp
     - nrf52_bsim
   integration_platforms:
-    - nrf52840dk_nrf52840
+    - nrf52840dk/nrf52840
   harness_config:
     fixture: gpio_loopback
 tests:

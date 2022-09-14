@@ -188,7 +188,7 @@ zephyr_library_include_directories_ifdef(
   )
 
 zephyr_library_include_directories_ifdef(
-  CONFIG_SOC_OPENISA_RV32M1_RISCV32
+  CONFIG_SOC_OPENISA_RV32M1
   ll_sw/openisa
   hci/openisa
   )
@@ -204,7 +204,7 @@ add_subdirectory_ifdef(
   )
 
 add_subdirectory_ifdef(
-  CONFIG_SOC_OPENISA_RV32M1_RISCV32
+  CONFIG_SOC_OPENISA_RV32M1
   ll_sw/openisa
   )
 

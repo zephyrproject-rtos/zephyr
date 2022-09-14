@@ -1,0 +1,12 @@
+# ESP32S2 Franzininho board configuration
+
+# Copyright (c) 2022 Felipe Neves
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_GENERATOR
+	default y
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 32768 if WIFI
+	default 4096

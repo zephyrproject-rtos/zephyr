@@ -1,6 +1,0 @@
-# Copyright (c) 2021 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD
-	default "intel_socfpga_agilex_socdk"
-	depends on BOARD_INTEL_SOCFPGA_AGILEX_SOCDK

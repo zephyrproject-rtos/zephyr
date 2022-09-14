@@ -8,7 +8,8 @@ common:
           dt_chosen_enabled("zephyr,osdp-uart") and CONFIG_SERIAL
   harness: osdp
   integration_platforms:
-    - stm32_min_dev_black
+    - stm32_min_dev@black
+    - stm32_min_dev@blue
 tests:
   sample.mgmt.osdp.control_panel:
     extra_args: CONF_FILE=prj.conf

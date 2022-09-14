@@ -23,8 +23,8 @@ tests:
       - stmf103_mini
       - nucleo_f103rb
       - olimexino_stm32
-      - stm32_min_dev_black
-      - stm32_min_dev_blue
+      - stm32_min_dev@black
+      - stm32_min_dev@blue
       - usb_kw24d512
       - v2m_beetle
       - cc1352r1_launchxl
@@ -71,7 +71,7 @@ tests:
     arch_allow: riscv
     platform_exclude:
       - m2gl025_miv
-      - adp_xc7k_ae350
+      - adp_xc7k/ae350
     filter: CONFIG_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=y

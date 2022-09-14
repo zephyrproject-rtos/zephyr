@@ -23,11 +23,11 @@ This application can be built and executed on an RT595 EVK as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/memc
    :host-os: unix
-   :board: mimxrt595_evk_cm33
+   :board: mimxrt595_evk/mimxrt595s/cm33
    :goals: run
    :compact:
 
-To build for another board, change "mimxrt595_evk_cm33" above to that
+To build for another board, change "mimxrt595_evk/mimxrt595s/cm33" above to that
 board's name.
 
 Sample Output

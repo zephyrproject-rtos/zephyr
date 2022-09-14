@@ -53,7 +53,7 @@ file(WRITE ${CORE_ISA_IN} "#include <xtensa/config/core-isa.h>\n")
 add_custom_command(OUTPUT ${CORE_ISA_DM}
   COMMAND ${CMAKE_C_COMPILER} -E -dM -U__XCC__
           -I${ZEPHYR_XTENSA_MODULE_DIR}/zephyr/soc/${CONFIG_SOC}
-          -I${SOC_DIR}/${ARCH}/${SOC_PATH}
+          -I${SOC_FULL_DIR}
           ${CORE_ISA_IN} -o ${CORE_ISA_DM})
 
 # Generates a list of device-specific scratch register choices

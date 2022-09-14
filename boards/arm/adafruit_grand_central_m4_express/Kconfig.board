@@ -1,8 +1,0 @@
-# Adafruit Grand Central M4 Express board configuration
-
-# Copyright (c) 2023 Lukas Jung <lukas.jung@mailbox.org>
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_ADAFRUIT_GRAND_CENTRAL_M4_EXPRESS
-	bool "Adafruit Grand Central M4 Express"
-	depends on SOC_PART_NUMBER_SAMD51P20A

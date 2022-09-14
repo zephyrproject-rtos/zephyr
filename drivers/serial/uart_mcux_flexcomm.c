@@ -813,7 +813,7 @@ static void mcux_flexcomm_uart_dma_rx_callback(const struct device *dma_device, 
 	data->rx_data.offset = 0;
 }
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT5XX) || defined(CONFIG_SOC_SERIES_IMX_RT6XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT5XX) || defined(CONFIG_SOC_SERIES_IMXRT6XX)
 /*
  * This functions calculates the inputmux connection value
  * needed by INPUTMUX_EnableSignal to allow the UART's DMA
@@ -825,7 +825,7 @@ static uint32_t fc_uart_calc_inmux_connection(uint8_t channel, DMA_Type *base)
 	uint32_t chmux_sel = 0;
 	uint32_t chmux_val = 0;
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT5XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT5XX)
 	uint32_t chmux_sel_id = 0;
 
 	if (base == (DMA_Type *)DMA0_BASE) {
@@ -902,7 +902,7 @@ static int flexcomm_uart_async_init(const struct device *dev)
 	USART_EnableRxDMA(config->base, false);
 
 	/* Route DMA requests */
-#if defined(CONFIG_SOC_SERIES_IMX_RT5XX) || defined(CONFIG_SOC_SERIES_IMX_RT6XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT5XX) || defined(CONFIG_SOC_SERIES_IMXRT6XX)
 	/* RT 3 digit uses input mux to route DMA requests from
 	 * the UART peripheral to a hardware designated DMA channel
 	 */

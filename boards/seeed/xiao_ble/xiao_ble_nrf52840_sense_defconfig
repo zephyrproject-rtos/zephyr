@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Required to enable LSM6DS3TR-C power
+CONFIG_REGULATOR=y

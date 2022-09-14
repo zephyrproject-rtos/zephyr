@@ -1,0 +1,40 @@
+# Kinetis K2X MCU line
+
+# Copyright (c) 2018 Prevas A/S
+# Copyright (c) 2019 Thomas Burdick <thomas.burdick@gmail.com>
+# Copyright 2024 NXP
+
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_KINETIS_K2X
+	bool
+	select SOC_FAMILY_KINETIS
+
+config SOC_SERIES
+	default "k2x" if SOC_SERIES_KINETIS_K2X
+
+config SOC_MK22F51212
+	bool
+	select SOC_SERIES_KINETIS_K2X
+
+# Note- the MK22F12 SKU is a legacy SOC, no longer officially supported by
+# NXP's MCUX SDK, and not recommended for new designs.
+config SOC_MK22F12
+	bool
+	select SOC_SERIES_KINETIS_K2X
+
+config SOC
+	default "mk22f51212" if SOC_MK22F51212
+	default "mk22f12" if SOC_MK22F12
+
+config SOC_PART_NUMBER_MK22FN512VLH12
+	bool
+
+config SOC_PART_NUMBER_MK22FX512VLQ12
+	bool
+
+config SOC_PART_NUMBER
+	default "MK22FN512VLH12" if SOC_PART_NUMBER_MK22FN512VLH12
+	default "MK22FX512VLQ12" if SOC_PART_NUMBER_MK22FX512VLQ12

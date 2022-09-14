@@ -1,0 +1,5 @@
+board:
+  name: dragino_nbsn95
+  vendor: dragino
+  socs:
+    - name: stm32l072xx

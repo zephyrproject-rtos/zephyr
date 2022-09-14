@@ -13,4 +13,4 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE
     arch_allow: riscv
     integration_platforms:
-      - hifive1_revb
+      - hifive1@B

@@ -7,21 +7,21 @@
 #include <st/f0/stm32f051.dtsi>
 
 / {
+	clocks {
+		clk_hsi48: clk-hsi48 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32f071", "st,stm32f0", "simple-bus";
 
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
 				erase-block-size = <2048>;
-			};
-		};
-
-		clocks {
-			clk_hsi48: clk-hsi48 {
-				#clock-cells = <0>;
-				compatible = "fixed-clock";
-				clock-frequency = <DT_FREQ_M(48)>;
-				status = "disabled";
 			};
 		};
 

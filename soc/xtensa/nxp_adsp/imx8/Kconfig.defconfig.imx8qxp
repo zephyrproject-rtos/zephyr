@@ -1,9 +1,0 @@
-# Copyright 2023 NXP
-# SPDX-License-Identifier: Apache-2.0
-
-if SOC_MIMX8QXP_ADSP
-
-config SOC
-	default "mimx8qx6"
-
-endif # SOC_MIMX8QXP_ADSP

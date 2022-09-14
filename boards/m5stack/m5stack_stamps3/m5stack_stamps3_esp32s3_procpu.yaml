@@ -1,0 +1,20 @@
+identifier: m5stack_stamps3/esp32s3/procpu
+name: M5Stack StampS3
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - uart
+  - pwm
+  - pinmux
+  - nvs
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: m5stack

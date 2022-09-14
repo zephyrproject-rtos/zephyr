@@ -1,0 +1,44 @@
+#
+# Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+# Device data: comp.
+# https://www.xilinx.com/products/silicon-devices/soc/zynq-7000.html#productTable
+#
+
+config SOC_SERIES_XC7ZXXXS
+	bool
+	select SOC_FAMILY_XILINX_ZYNQ7000
+	help
+	  Enable support for the Xilinx Zynq-7000S (XC7ZxxxS)
+	  SoC series (single core ARM Cortex-A9).
+
+config SOC_XILINX_XC7Z007S
+	bool
+	select SOC_SERIES_XC7ZXXXS
+	help
+	  1 ARM Cortex-A9 core up to 766 MHz, Artix-7 programmable logic,
+	  23k logic cells, 1.8 Mb block RAM, 60 DSP slices, up to 100 I/O pins.
+
+config SOC_XILINX_XC7Z012S
+	bool
+	select SOC_SERIES_XC7ZXXXS
+	help
+	  1 ARM Cortex-A9 core up to 766 MHz, Artix-7 programmable logic,
+	  55k logic cells, 2.5Mb block RAM, 120 DSP slices, up to 150 I/O pins,
+	  up to 4 transceivers.
+
+config SOC_XILINX_XC7Z014S
+	bool
+	select SOC_SERIES_XC7ZXXXS
+	help
+	  1 ARM Cortex-A9 core up to 766 MHz, Artix-7 programmable logic,
+	  65k logic cells, 3.8Mb block RAM, 170 DSP slices, up to 200 I/O pins.
+
+config SOC_SERIES
+	default "xc7zxxxs" if SOC_SERIES_XC7ZXXXS
+
+config SOC
+	default "xc7z007s" if SOC_XILINX_XC7Z007S
+	default "xc7z012s" if SOC_XILINX_XC7Z012S
+	default "xc7z014s" if SOC_XILINX_XC7Z014S

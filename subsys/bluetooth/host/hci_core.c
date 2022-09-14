@@ -18,7 +18,6 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/sys/__assert.h>
-#include <soc.h>
 
 #include <zephyr/settings/settings.h>
 

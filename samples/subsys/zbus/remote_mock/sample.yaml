@@ -7,6 +7,6 @@ tests:
     platform_allow:
       - native_posix
       - native_sim
-      - hifive1_revb
+      - hifive1@B
     integration_platforms:
       - native_sim

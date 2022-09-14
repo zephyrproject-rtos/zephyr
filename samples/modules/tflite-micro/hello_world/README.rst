@@ -58,7 +58,7 @@ the `PATH` variable, then building and testing can be done with following
 commands.
 
 ```
-$ west build -p auto -b mps3_an547 samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
+$ west build -p auto -b mps3/an547 samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
 $ FVP_Corstone_SSE-300_Ethos-U55 build/zephyr/zephyr.elf
 ```
 

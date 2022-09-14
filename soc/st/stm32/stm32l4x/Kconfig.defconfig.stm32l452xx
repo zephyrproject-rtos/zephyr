@@ -1,0 +1,11 @@
+# ST Microelectronics STM32L452XX MCU
+
+# Copyright (c) 2018 Georgij Cernysiov
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L452XX
+
+config NUM_IRQS
+	default 85
+
+endif # SOC_STM32L452XX

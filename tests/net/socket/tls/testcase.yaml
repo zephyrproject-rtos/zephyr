@@ -9,7 +9,7 @@ common:
   filter: CONFIG_FULL_LIBC_SUPPORTED
   integration_platforms:
     - qemu_x86
-  platform_exclude: vmu_rt1170 # See #61129
+  platform_exclude: vmu_rt1170/mimxrt1176/cm7 # See #61129
 tests:
   net.socket.tls:
     extra_configs:
@@ -17,4 +17,4 @@ tests:
   net.socket.tls.preempt:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
-    platform_exclude: mps2_an385
+    platform_exclude: mps2/an385

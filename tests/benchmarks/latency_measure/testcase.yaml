@@ -12,7 +12,7 @@ tests:
     harness: console
     integration_platforms:
       - qemu_x86
-      - qemu_arc_em
+      - qemu_arc/qemu_arc_em
     harness_config:
       type: one_line
       record:
@@ -30,7 +30,7 @@ tests:
     harness: console
     integration_platforms:
       - qemu_x86
-      - qemu_arc_em
+      - qemu_arc/qemu_arc_em
     extra_configs:
       - CONFIG_OBJ_CORE=y
       - CONFIG_OBJ_CORE_STATS=y
@@ -107,7 +107,7 @@ tests:
     harness: console
     integration_platforms:
       - qemu_x86
-      - qemu_arc_em
+      - qemu_arc/qemu_arc_em
     extra_configs:
       - CONFIG_TIMESLICING=y
     harness_config:

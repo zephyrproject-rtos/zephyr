@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BEAGLEV_FIRE
+	select SOC_POLARFIRE

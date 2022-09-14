@@ -1,0 +1,11 @@
+# ST STM32H7B0XX MCU configuration options
+
+# Copyright (c) 2023 Charles Dias <charlesdias.cd@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32H7B0XX || SOC_STM32H7B0XXQ
+
+config NUM_IRQS
+	default 155
+
+endif # SOC_STM32H7B0XX || SOC_STM32H7B0XXQ

@@ -1,0 +1,7 @@
+# XTENSA board configuration
+
+# Copyright (c) 2017, 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_XTENSA
+	select SOC_XTENSA_DC233C

@@ -1,0 +1,20 @@
+identifier: nrf5340_audio_dk/nrf5340/cpuapp
+name: NRF5340-AUDIO-DK-NRF5340-application-MCU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 448
+flash: 1024
+supported:
+  - gpio
+  - i2s
+  - spi
+  - i2c
+  - pwm
+  - watchdog
+  - usb_cdc
+  - usb_device
+vendor: nordic

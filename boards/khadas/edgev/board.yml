@@ -1,0 +1,5 @@
+board:
+  name: khadas_edgev
+  vendor: khadas
+  socs:
+  - name: rk3399

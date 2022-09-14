@@ -147,7 +147,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: aad79bf530b69b72712d18873df4120ad052d921
+      revision: d6221e73d76a4a31d802e0657342fcbda77e21ae
       path: modules/hal/atmel
       groups:
         - hal
@@ -168,7 +168,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 69c883d3bd9fac8a18dd8384624b8c472a68d06f
+      revision: b1a47231e8671c882c5f055f9f10c32b18133d08
       path: modules/hal/infineon
       groups:
         - hal
@@ -178,7 +178,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 5d079f1683a00b801373bbbbf5d181d4e33b30d5
+      revision: 68575aa28cd33c68b3b8d66f510d15746c57fdb5
       path: modules/hal/microchip
       groups:
         - hal
@@ -193,7 +193,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: d45b14c198d778658b7853b48378d2e132a6c4be
+      revision: f436a4529f284067af29ad72af5bd0ad51b09f3e
       path: modules/hal/nxp
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 0b1f2fdb99d6386f125a8dba72083e3c56aecc2b
+      revision: 991e060b6825f0f6830f4dbccbed8252598f2a6d
       groups:
         - hal
     - name: hal_rpi_pico
@@ -219,7 +219,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: b11b29167f3f9a0fd0c34a8eeeb36b0c1d218917
+      revision: 59c6c6e2e8862f0ff5c6087ef055793bed125778
       path: modules/hal/silabs
       groups:
         - hal
@@ -249,7 +249,7 @@ manifest:
       groups:
         - hal
     - name: hal_xtensa
-      revision: 08325d6fb7190a105f5382d35e64ed2812c57cf4
+      revision: a2d658525b16c57bea8dd565f5bd5167e4b9f1ee
       path: modules/hal/xtensa
       groups:
         - hal
@@ -282,7 +282,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: a4eda30f5b0cfd0cf15512be9dcd559239dbfc91
+      revision: fefe701a5de7ffcec001938c978ef57ff7d0592d
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -335,7 +335,7 @@ manifest:
       revision: 150f4eb2955eaf36ac0f9519d4f4f58d5ade5740
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
-      revision: d3093b5684f62268c7f27f8a5079f166772619de
+      revision: 75d088037eb237b18e7ec1f47c9ce494b9b95aab
       path: modules/lib/zcbor
 
   self:

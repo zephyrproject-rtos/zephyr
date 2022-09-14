@@ -1,0 +1,5 @@
+board:
+  name: gd32f450i_eval
+  vendor: gd
+  socs:
+    - name: gd32f450

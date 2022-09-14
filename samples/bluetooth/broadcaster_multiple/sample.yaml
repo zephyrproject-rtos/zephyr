@@ -6,9 +6,9 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
-      - nrf51dk_nrf51422
+      - nrf51dk/nrf51822
       - nrf52_bsim
-      - nrf52dk_nrf52832
+      - nrf52dk/nrf52832
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3

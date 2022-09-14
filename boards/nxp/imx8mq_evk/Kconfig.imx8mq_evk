@@ -1,0 +1,9 @@
+# MIMX8MQ EVK board
+
+# Copyright (c) 2021, Kwon Tae-young <tykwon@m2i.co.kr>
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_IMX8MQ_EVK
+	select SOC_PART_NUMBER_MIMX8MQ6DVAJZ
+	select SOC_MIMX8MQ6_M4 if BOARD_IMX8MQ_EVK_MIMX8MQ6_M4

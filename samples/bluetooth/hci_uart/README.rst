@@ -50,7 +50,7 @@ For example, to build for the nRF52832 Development Kit:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/hci_uart
-   :board: nrf52dk_nrf52832
+   :board: nrf52dk/nrf52832
    :goals: build flash
 
 .. _bluetooth-hci-uart-qemu-posix:
@@ -135,12 +135,12 @@ required hardware configuration for the Radio.
 
 .. code-block:: console
 
-   west build samples/bluetooth/hci_uart -b nrf52833dk_nrf52833@df -- -DCONFIG_BT_CTLR_DF=y
+   west build samples/bluetooth/hci_uart -b nrf52833dk/nrf52833@df -- -DCONFIG_BT_CTLR_DF=y
 
 You can use following targets:
 
-* ``nrf5340dk_nrf5340_cpunet@df``
-* ``nrf52833dk_nrf52833@df``
+* ``nrf5340dk/nrf5340/cpunet@df``
+* ``nrf52833dk/nrf52833@df``
 
 Check the :ref:`bluetooth_direction_finding_connectionless_rx` and the :ref:`bluetooth_direction_finding_connectionless_tx` for more details.
 

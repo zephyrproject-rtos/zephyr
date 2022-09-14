@@ -7,9 +7,9 @@ tests:
   drivers.pwm.cc13xx_cc26xx_timer.build:
     platform_allow: cc1352p1_launchxl
   drivers.pwm.gecko.build:
-    platform_allow: efr32_radio_brd4250b
+    platform_allow: efr32_radio/efr32fg1p133f256gm48
   drivers.pwm.imx.build:
-    platform_allow: colibri_imx7d_m4
+    platform_allow: colibri_imx7d/mcimx7d/m4
   drivers.pwm.litex.build:
     platform_allow: litex_vexriscv
   drivers.pwm.mcux.ftm.build:
@@ -23,32 +23,32 @@ tests:
   drivers.pwm.mcux.build:
     platform_allow: mimxrt1064_evk
   drivers.pwm.mcux.sctimer.build:
-    platform_allow: mimxrt685_evk_cm33
+    platform_allow: mimxrt685_evk
   drivers.pwm.rv32m1.tpm.build:
-    platform_allow: rv32m1_vega_ri5cy
+    platform_allow: rv32m1_vega/openisa_rv32m1/ri5cy
   drivers.pwm.sifive.build:
-    platform_allow: hifive1_revb
+    platform_allow: hifive1@B
   drivers.pwm.npcx.build:
     platform_allow: npcx7m6fb_evb
   drivers.pwm.nrf.sw.build:
-    platform_allow: nrf51dk_nrf51422
+    platform_allow: nrf51dk/nrf51822
   drivers.pwm.nrf.build:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
   drivers.pwm.pca9685.build:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     extra_args: SHIELD=adafruit_pca9685
   drivers.pwm.sam0.tcc.build:
-    platform_allow: atsame54_xpro
+    platform_allow: same54_xpro
   drivers.pwm.build.sam:
     platform_allow:
-      - sam_e70_xplained
-      - sam_v71b_xult
+      - sam_e70_xplained/same70q21
+      - sam_v71_xult/samv71q21b
   drivers.pwm.stm32.build:
     platform_allow: disco_l475_iot1
   drivers.pwm.xec.build:
     platform_allow: mec15xxevb_assy6853
   drivers.pwm.build.xlnx:
-    platform_allow: arty_a7_arm_designstart_m1
+    platform_allow: arty_a7/designstart_fpga_cortex_m1
   drivers.pwm.build.test:
     platform_allow: qemu_cortex_m3
   drivers.pwm.max31790.build:

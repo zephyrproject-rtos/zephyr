@@ -27,7 +27,7 @@ It can be built and executed on Musca B1 CPU 0 as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ipm/ipm_mhu_dual_core
-   :board: v2m_musca_b1
+   :board: v2m_musca_b1/musca_b1
    :goals: run
    :compact:
 
@@ -36,7 +36,7 @@ It can be built and executed on Musca B1 CPU 1 as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ipm/ipm_mhu_dual_core
-   :board: v2m_musca_b1_ns
+   :board: v2m_musca_b1/musca_b1/ns
    :goals: run
    :compact:
 

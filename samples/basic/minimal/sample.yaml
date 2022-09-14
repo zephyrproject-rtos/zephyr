@@ -15,8 +15,8 @@ tests:
     platform_allow:
       - reel_board
       - frdm_k64f
-      - mps2_an385
-      - nrf51dk_nrf51422
+      - mps2/an385
+      - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
     integration_platforms:
@@ -27,8 +27,8 @@ tests:
     platform_allow:
       - reel_board
       - frdm_k64f
-      - mps2_an385
-      - nrf51dk_nrf51422
+      - mps2/an385
+      - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
   sample.minimal.mt-no-preempt-no-timers.arm:
@@ -37,8 +37,8 @@ tests:
     platform_allow:
       - reel_board
       - frdm_k64f
-      - mps2_an385
-      - nrf51dk_nrf51422
+      - mps2/an385
+      - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
   sample.minimal.no-mt.arm:
@@ -47,8 +47,8 @@ tests:
     platform_allow:
       - reel_board
       - frdm_k64f
-      - mps2_an385
-      - nrf51dk_nrf51422
+      - mps2/an385
+      - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
   sample.minimal.no-mt-no-timers.arm:
@@ -57,8 +57,8 @@ tests:
     platform_allow:
       - reel_board
       - frdm_k64f
-      - mps2_an385
-      - nrf51dk_nrf51422
+      - mps2/an385
+      - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
   sample.minimal.mt.x86:
@@ -88,7 +88,7 @@ tests:
     tags:
       - kernel
     integration_platforms:
-      - qemu_arc_em
+      - qemu_arc/qemu_arc_em
   sample.minimal.riscv.runtime:
     extra_args:
       - CONF_FILE='common-runtime.conf;no-timers.conf;no-mt.conf;riscv.conf'

@@ -1,0 +1,6 @@
+family:
+- name: numaker
+  series:
+  - name: m46x
+    socs:
+    - name: m467

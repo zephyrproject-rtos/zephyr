@@ -1,21 +1,22 @@
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "SoC/CPU/Configuration Selection"
-
-# This loads custom SoC root Kconfig (only available if custom SoC root are defined)
-osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc"
-# This loads Zephyr base SoC root Kconfig
-osource "soc/$(ARCH)/*/Kconfig.soc"
-
-endchoice
+# Only v1 model has choice for SoC selection, therefore the optional source
+# Sourced here and not in Kconfig.v1 to keep current SoC/CPU selection menu
+# side-by-side with "Hardware Configuration" in the menu structure.
+orsource "Kconfig.$(HWM_SCHEME).choice"
 
 menu "Hardware Configuration"
-# This loads custom SoC root Kconfig (only available if custom SoC root are defined)
-osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc.arch"
-# This loads Zephyr base SoC Kconfigs
-osource "soc/$(ARCH)/Kconfig"
-osource "soc/$(ARCH)/*/Kconfig"
+
+rsource "Kconfig.$(HWM_SCHEME)"
+
+# This loads Zephyr base SoC Kconfigs for both hw model v1 and v2
+osource "soc/soc_legacy/$(ARCH)/Kconfig"
+
+# Source Zephyr Kconfig specifics from SoC roots.
+osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig"
+
+# Source common Kconfig file
+osource "soc/common/Kconfig"
 
 module = SOC
 module-str = SOC
@@ -43,10 +44,6 @@ config SOC_COMPATIBLE_NRF5340_CPUNET
 
 config SOC_COMPATIBLE_NRF5340_CPUAPP
 	bool
-
-#
-# SOC_*_LD: SoC specific Linker script additions
-#
 
 config SOC_DEPRECATED_RELEASE
 	string

@@ -1,0 +1,115 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IMX8M
+	bool
+	select SOC_FAMILY_NXP_IMX
+
+config SOC_SERIES
+	default "imx8m" if SOC_SERIES_IMX8M
+
+config SOC_MIMX8MP
+	bool
+	select SOC_SERIES_IMX8M
+
+config SOC_MIMX8MM6
+	bool
+	select SOC_SERIES_IMX8M
+
+config SOC_MIMX8MM6_A53
+	bool
+	select SOC_MIMX8MM6
+	help
+	  NXP i.MX8MM A53
+
+config SOC_MIMX8MM6_M4
+	bool
+	select SOC_MIMX8MM6
+	help
+	  NXP i.MX8MM M4
+
+config SOC_MIMX8MP
+	bool
+	select SOC_SERIES_IMX8M
+
+config SOC_MIMX8ML8_A53
+	bool
+	select SOC_MIMX8MP
+	help
+	  NXP i.MX8MP A53
+
+config SOC_MIMX8MP_ADSP
+	bool
+	select SOC_MIMX8MP
+	help
+	  Enable support for NXP i.MX 8MPLUS Audio DSP
+
+config SOC_MIMX8MP_M7
+	bool
+	select SOC_MIMX8MP
+	help
+	  Enable support for NXP i.MX 8MPLUS M7 MCU
+
+config SOC_MIMX8MQ6
+	bool
+	select SOC_SERIES_IMX8M
+
+config SOC_MIMX8MQ6_M4
+	bool
+	select SOC_MIMX8MQ6
+	help
+	  Enable support for NXP i.MX 8M Quad M4 MCU
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "nxp_imx8m_adsp" if SOC_MIMX8MP_ADSP
+
+config SOC_MIMX8MN6
+	bool
+	select SOC_SERIES_IMX8M
+
+config SOC_MIMX8MN6_A53
+	bool
+	select SOC_MIMX8MN6
+	help
+	  NXP i.MX8MN A53
+
+config SOC
+	default "mimx8mm6" if SOC_MIMX8MM6
+	default "mimx8mn6" if SOC_MIMX8MN6
+	default "mimx8ml8" if SOC_MIMX8MP
+	default "mimx8mq6" if SOC_MIMX8MQ6
+
+config SOC_PART_NUMBER_MIMX8ML8DVNLZ
+	bool
+
+config SOC_PART_NUMBER_MIMX8MM6DVTLZ
+	bool
+
+config SOC_PART_NUMBER_MIMX8MM6CVTKZ
+	bool
+
+config SOC_PART_NUMBER_MIMX8MN6DVTJZ
+	bool
+
+config SOC_PART_NUMBER_MIMX8MN6DUCJZ
+	bool
+
+config SOC_PART_NUMBER_MIMX8MN6CVTIZ
+	bool
+
+config SOC_PART_NUMBER_MIMX8MN6CUCIZ
+	bool
+
+config SOC_PART_NUMBER_MIMX8MQ6DVAJZ
+	bool
+
+config SOC_PART_NUMBER
+	default "MIMX8ML8DVNLZ" if SOC_PART_NUMBER_MIMX8ML8DVNLZ
+	default "MIMX8MM6DVTLZ" if SOC_PART_NUMBER_MIMX8MM6DVTLZ
+	default "MIMX8MM6CVTKZ" if SOC_PART_NUMBER_MIMX8MM6CVTKZ
+	default "MIMX8MN6DVTJZ" if SOC_PART_NUMBER_MIMX8MN6DVTJZ
+	default "MIMX8MN6DUCJZ" if SOC_PART_NUMBER_MIMX8MN6DUCJZ
+	default "MIMX8MN6CVTIZ" if SOC_PART_NUMBER_MIMX8MN6CVTIZ
+	default "MIMX8MN6CUCIZ" if SOC_PART_NUMBER_MIMX8MN6CUCIZ
+	default "MIMX8MQ6DVAJZ" if SOC_PART_NUMBER_MIMX8MQ6DVAJZ

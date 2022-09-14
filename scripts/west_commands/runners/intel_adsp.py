@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Intel Corporation
+# Copyright (c) 2022-2024 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -14,7 +14,7 @@ import shutil
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 from zephyr_ext_common import ZEPHYR_BASE
 
-DEFAULT_CAVSTOOL='soc/xtensa/intel_adsp/tools/cavstool_client.py'
+DEFAULT_CAVSTOOL='soc/intel/intel_adsp/tools/cavstool_client.py'
 
 class SignParamError(argparse.Action):
     'User-friendly feedback when trying to sign with west flash'
@@ -78,7 +78,7 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
     def do_run(self, command, **kwargs):
         self.logger.info('Starting Intel ADSP runner')
 
-        if re.search("intel_adsp", self.platform):
+        if re.search("adsp", self.platform):
             self.require(self.cavstool)
             self.flash(**kwargs)
         else:

@@ -1148,13 +1148,13 @@ static void audio_clock_settings(const struct device *dev)
 	imxrt_audio_codec_pll_init(clock_name, dev_cfg->clk_src,
 				   dev_cfg->clk_pre_div, dev_cfg->clk_src_div);
 
-	#ifdef CONFIG_SOC_SERIES_IMX_RT11XX
+	#ifdef CONFIG_SOC_SERIES_IMXRT11XX
 		audioPllConfig.loopDivider = dev_cfg->pll_lp;
 		audioPllConfig.postDivider = dev_cfg->pll_pd;
 		audioPllConfig.numerator = dev_cfg->pll_num;
 		audioPllConfig.denominator = dev_cfg->pll_den;
 		audioPllConfig.ssEnable = false;
-	#elif defined CONFIG_SOC_SERIES_IMX_RT10XX
+	#elif defined CONFIG_SOC_SERIES_IMXRT10XX
 		audioPllConfig.src = dev_cfg->pll_src;
 		audioPllConfig.loopDivider = dev_cfg->pll_lp;
 		audioPllConfig.postDivider = dev_cfg->pll_pd;

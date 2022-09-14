@@ -27,7 +27,7 @@ or `slot1_ns_partition`, when the Kconfig option is selected.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/soc_flash_nrf
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:
 

@@ -1,0 +1,119 @@
+# BL5340-DVK board configuration
+
+# Copyright (c) 2019-2020 Nordic Semiconductor ASA
+# Copyright (c) 2021-2023 Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BL5340_DVK_NRF5340_CPUAPP || BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
+
+config I2C
+	default GPIO || DAC
+
+# Code Partition:
+#
+# For the secure version of the board the firmware is linked at the beginning
+# of the flash, or into the code-partition defined in DT if it is intended to
+# be loaded by MCUboot. If the secure firmware is to be combined with a non-
+# secure image (TRUSTED_EXECUTION_SECURE=y), the secure FW image shall always
+# be restricted to the size of its code partition.
+#
+# For the non-secure version of the board, the firmware
+# must be linked into the code-partition (non-secure) defined in DT, regardless.
+# Apply this configuration below by setting the Kconfig symbols used by
+# the linker according to the information extracted from DT partitions.
+
+# SRAM Partition:
+#
+# If the secure firmware is to be combined with a non-secure image
+# (TRUSTED_EXECUTION_SECURE=y), the secure FW image SRAM shall always
+# be restricted to the secure image SRAM partition (sram-secure-partition).
+# Otherwise (if TRUSTED_EXECUTION_SECURE is not set) the whole zephyr,sram
+# may be used by the image.
+#
+# For the non-secure version of the board, the firmware image SRAM is
+# always restricted to the allocated non-secure SRAM partition.
+#
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+DT_CHOSEN_Z_SRAM_PARTITION := zephyr,sram-secure-partition
+
+if BOARD_BL5340_DVK_NRF5340_CPUAPP && TRUSTED_EXECUTION_SECURE
+
+config FLASH_LOAD_SIZE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+config SRAM_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM_PARTITION),0,K)
+
+endif # BOARD_BL5340_DVK_NRF5340_CPUAPP && TRUSTED_EXECUTION_SECURE
+
+if BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
+
+config FLASH_LOAD_OFFSET
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+config FLASH_LOAD_SIZE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+endif # BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
+
+choice BT_HCI_BUS_TYPE
+	default BT_HCI_IPC if BT
+endchoice
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BT_HCI_IPC
+
+config BT_HCI_VS
+	default y if BT
+
+# 2.8" TFT Touch Shield for Arduino w/Capacitive Touch Screen Module
+# is mounted to the DVK using standoffs.
+# https://www.buydisplay.com/2-8-inch-tft-touch-shield-for-arduino-w-capacitive-touch-screen-module
+if DISPLAY
+
+config INPUT_FT5336_INTERRUPT
+	default y
+
+if LVGL
+
+config LV_Z_VDB_SIZE
+	default 64
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+config LV_COLOR_16_SWAP
+	default y
+
+config INPUT
+	default y
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # BOARD_BL5340_DVK_NRF5340_CPUAPP || BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
+
+config IPM_NRFX
+	default IPM
+
+config MBOX_NRFX_IPC
+	default MBOX
+
+if BOARD_BL5340_DVK_NRF5340_CPUNET
+
+# BT_CTLR depends on BT. When BT is enabled we should default to also
+# enabling the controller.
+config BT_CTLR
+	default y if BT
+
+config BT_ECC
+	default y if BT
+
+endif # BOARD_BL5340_DVK_NRF5340_CPUNET

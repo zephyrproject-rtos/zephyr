@@ -26,12 +26,12 @@ Building and Running
 By default the application supports Angle of Arrival and Angle of Departure mode.
 
 To use Angle of Departure mode only, build this application as follows,
-changing ``nrf52833dk_nrf52833`` as needed for your board:
+changing ``nrf52833dk/nrf52833`` as needed for your board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/direction_finding_central
    :host-os: unix
-   :board: nrf52833dk_nrf52833
+   :board: nrf52833dk/nrf52833
    :gen-args: -DEXTRA_CONF_FILE=overlay-aod.conf
    :goals: build flash
    :compact:

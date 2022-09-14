@@ -1,0 +1,43 @@
+# Nuvoton Cortex-M4 Embedded Controller NPCX9 series
+
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NPCX9
+	bool
+	select SOC_FAMILY_NPCX
+	help
+	  Enable support for Nuvoton NPCX9 series
+
+config SOC_NPCX9M3F
+	bool
+	select SOC_SERIES_NPCX9
+	help
+	  NPCX9M3F
+
+config SOC_NPCX9M6F
+	bool
+	select SOC_SERIES_NPCX9
+	help
+	  NPCX9M6F
+
+config SOC_NPCX9M7F
+	bool
+	select SOC_SERIES_NPCX9
+	help
+	  NPCX9M7F
+
+config SOC_NPCX9MFP
+	bool
+	select SOC_SERIES_NPCX9
+	help
+	  NPCX9MFP
+
+config SOC_SERIES
+	default "npcx9" if SOC_SERIES_NPCX9
+
+config SOC
+	default "npcx9m3f" if SOC_NPCX9M3F
+	default "npcx9m6f" if SOC_NPCX9M6F
+	default "npcx9m7f" if SOC_NPCX9M7F
+	default "npcx9mfp" if SOC_NPCX9MFP

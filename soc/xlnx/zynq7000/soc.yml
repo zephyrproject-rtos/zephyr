@@ -1,0 +1,18 @@
+family:
+- name: xilinx_zynq7000
+  series:
+  - name: xc7zxxx
+    socs:
+    - name: xc7z010
+    - name: xc7z010
+    - name: xc7z015
+    - name: xc7z020
+    - name: xc7z030
+    - name: xc7z035
+    - name: xc7z045
+    - name: xc7z100
+  - name: xc7zxxxs
+    socs:
+    - name: xc7z007s
+    - name: xc7z012s
+    - name: xc7z014s

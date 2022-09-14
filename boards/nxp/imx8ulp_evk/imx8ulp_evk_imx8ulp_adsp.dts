@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2023-2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx8ulp.dtsi>
+
+/ {
+	model = "NXP i.MX 8ULP Audio DSP";
+	compatible = "nxp";
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};

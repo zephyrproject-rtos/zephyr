@@ -362,7 +362,7 @@ class ZephyrBinaryRunner(abc.ABC):
     This class provides an API for these commands. Every subclass is
     called a 'runner' for short. Each runner has a name (like
     'pyocd'), and declares commands it can handle (like
-    'flash'). Boards (like 'nrf52dk_nrf52832') declare which runner(s)
+    'flash'). Boards (like 'nrf52dk/nrf52832') declare which runner(s)
     are compatible with them to the Zephyr build system, along with
     information on how to configure the runner to work with the board.
 

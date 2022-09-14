@@ -1,0 +1,8 @@
+# nRF52833 DK NRF52833 board configuration
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF52833DK
+	select SOC_NRF52820_QDAA if BOARD_NRF52833DK_NRF52820
+	select SOC_NRF52833_QIAA if BOARD_NRF52833DK_NRF52833

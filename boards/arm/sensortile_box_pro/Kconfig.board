@@ -1,8 +1,0 @@
-# SENSORTILE_BOX_PRO board configuration
-
-# Copyright (c) 2023 STMicroelectronics
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_SENSORTILE_BOX_PRO
-	bool "SENSORTILE_BOX_PRO Board"
-	depends on SOC_STM32U585XX

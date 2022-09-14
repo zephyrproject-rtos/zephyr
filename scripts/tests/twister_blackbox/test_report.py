@@ -26,9 +26,9 @@ class TestReport:
     TESTDATA_1 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64'],
+            ['qemu_x86', 'mps2/an385'],
             [
-                'qemu_x86_64.xml', 'qemu_x86.xml',
+                'qemu_x86.xml', 'mps2_an385.xml',
                 'testplan.json', 'twister.json',
                 'twister.log', 'twister_report.xml',
                 'twister_suite_report.xml', 'twister.xml'
@@ -38,9 +38,9 @@ class TestReport:
     TESTDATA_2 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64'],
+            ['qemu_x86', 'mps2/an385'],
             [
-                'qemu_x86_64_TEST.xml', 'qemu_x86_TEST.xml',
+                'mps2_an385_TEST.xml', 'qemu_x86_TEST.xml',
                 'twister_TEST.json', 'twister_TEST_report.xml',
                 'twister_TEST_suite_report.xml', 'twister_TEST.xml'
             ]
@@ -49,7 +49,7 @@ class TestReport:
     TESTDATA_3 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64'],
+            ['qemu_x86', 'mps2/an385'],
             ['--report-name', 'abcd'],
             [
                 'abcd.json', 'abcd_report.xml',
@@ -58,20 +58,20 @@ class TestReport:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64'],
+            ['qemu_x86', 'mps2/an385'],
             ['--report-name', '1234', '--platform-reports'],
             [
-                'qemu_x86_64.xml', 'qemu_x86.xml',
+                'mps2_an385.xml', 'qemu_x86.xml',
                 '1234.json', '1234_report.xml',
                 '1234_suite_report.xml', '1234.xml'
             ]
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64'],
+            ['qemu_x86', 'mps2/an385'],
             ['--report-name', 'Final', '--platform-reports', '--report-suffix=Test'],
             [
-                'qemu_x86_64_Test.xml', 'qemu_x86_Test.xml',
+                'mps2_an385_Test.xml', 'qemu_x86_Test.xml',
                 'Final_Test.json', 'Final_Test_report.xml',
                 'Final_Test_suite_report.xml', 'Final_Test.xml'
             ]
@@ -182,7 +182,7 @@ class TestReport:
                 pytest.fail(f"Unsupported file type: '{path}'")
 
         for f_platform in test_platforms:
-            platform_path = os.path.join(out_path, f_platform)
+            platform_path = os.path.join(out_path, f_platform.replace("/", "_"))
             assert os.path.exists(platform_path), f'file not found {f_platform}'
 
         assert str(sys_exit.value) == '0'

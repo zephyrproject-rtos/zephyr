@@ -1,0 +1,7 @@
+# XIAO ESP32S3 board configuration
+
+# Copyright (c) 2023 Seeed Studio inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XIAO_ESP32S3
+	select SOC_ESP32S3_WROOM_N8R8

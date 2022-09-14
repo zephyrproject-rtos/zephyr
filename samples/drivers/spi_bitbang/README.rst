@@ -25,7 +25,7 @@ test for receive data.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_bitbang
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:
 

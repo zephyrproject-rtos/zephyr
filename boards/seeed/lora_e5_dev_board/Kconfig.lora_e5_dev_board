@@ -1,0 +1,5 @@
+# Copyright (c) 2021 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LORA_E5_DEV_BOARD
+	select SOC_STM32WLE5XX

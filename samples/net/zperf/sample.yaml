@@ -6,7 +6,7 @@ common:
   platform_exclude:
     - native_posix
     - native_posix_64
-    - sam_e70_xplained
+    - sam_e70_xplained/same70q21
   min_ram: 64
 sample:
   description: Network performance measurement tool for Zephyr
@@ -44,7 +44,7 @@ tests:
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-usbd_next_ecm.conf"
                 DTC_OVERLAY_FILE="usbd_next_ecm.overlay"
-    platform_allow: nrf52840dk_nrf52840 frdm_k64f
+    platform_allow: nrf52840dk/nrf52840 frdm_k64f
     tags: usb net zperf
     depends_on: usb_device
   sample.net.zperf.netusb_eem:
@@ -91,5 +91,5 @@ tests:
       - mimxrt1064_evk
       - mimxrt1024_evk
       - frdm_k64f
-      - mimxrt1170_evk_cm7
-      - mimxrt1160_evk_cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1160_evk/mimxrt1166/cm7

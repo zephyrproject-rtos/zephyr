@@ -5,7 +5,7 @@ tests:
     integration_platforms:
       - native_sim
     platform_exclude:
-      - qemu_arc_hs5x  # See issue #62405
+      - qemu_arc/qemu_arc_hs5x  # See issue #62405
     tags: cmsis_rtos
     min_ram: 32
     min_flash: 34

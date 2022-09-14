@@ -5,9 +5,9 @@ tests:
     # consistently when coverage is enabled. Disable until 14173 is fixed.
     platform_exclude:
       - litex_vexriscv
-      - rv32m1_vega_zero_riscy
-      - rv32m1_vega_ri5cy
-      - nrf5340dk_nrf5340_cpunet
+      - rv32m1_vega/openisa_rv32m1/zero_riscy
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+      - nrf5340dk/nrf5340/cpunet
       - nucleo_l073rz
     tags:
       - kernel

@@ -9,17 +9,17 @@ config ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
 
 config TFM_BOARD
 	string
-	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_CPU0
+	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_LPC55S69_CPU0
 	default "arm/mps2/an521" if BOARD_MPS2_AN521_CPU0_NS
 	default "arm/mps3/an547" if BOARD_MPS3_AN547
 	default "stm/b_u585i_iot02a" if BOARD_B_U585I_IOT02A
 	default "stm/nucleo_l552ze_q" if BOARD_NUCLEO_L552ZE_Q
 	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
-	default "arm/musca_b1" if BOARD_MUSCA_B1
-	default "arm/musca_s1" if BOARD_MUSCA_S1
-	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic_nrf/nrf9160" if SOC_NRF9160
-	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic_nrf/nrf9120" if SOC_NRF9120
-	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic_nrf/nrf5340_cpuapp" if SOC_NRF5340_CPUAPP
+	default "arm/musca_b1" if BOARD_V2M_MUSCA_B1
+	default "arm/musca_s1" if BOARD_V2M_MUSCA_S1
+	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf9160" if SOC_NRF9160
+	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf9120" if SOC_NRF9120
+	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf5340_cpuapp" if SOC_NRF5340_CPUAPP
 	help
 	  The board name used for building TFM. Building with TFM requires that
 	  TFM has been ported to the given board/SoC.
@@ -43,7 +43,7 @@ menuconfig BUILD_WITH_TFM
 	  them, are generated during the normal Zephyr build process.
 
 	  Notes:
-	    Building with the "_ns" BOARD variant (e.g. "mps2_an521_ns")
+	    Building with the "/ns" BOARD variant (e.g. "mps2/an521/cpu0/ns")
 	    ensures that CONFIG_TRUSTED_EXECUTION_NONSECURE is enabled.
 
 	    By default we allow Zephyr preemptible threads be preempted

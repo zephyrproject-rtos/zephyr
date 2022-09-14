@@ -1,0 +1,285 @@
+/*
+ * Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32/esp32_d0wd_v3.dtsi>
+#include "m5stack_core2-pinctrl.dtsi"
+#include "grove_connectors.dtsi"
+#include "m5stack_mbus_connectors.dtsi"
+#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/regulator/axp192.h>
+
+/ {
+	model = "M5Stack Core2 PROCPU";
+	compatible = "m5stack,core2";
+
+	aliases {
+		pwr-led = &pwr_led;
+		uart-0 = &uart0;
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
+		rtc = &pfc8563_rtc;
+		led0 = &led_pwr;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,display = &ili9342c;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,rtc = &pfc8563_rtc;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_pwr: led_pwr {
+			gpios = <&axp192_gpio 1 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+			label = "Power LED";
+		};
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336_touch>;
+		swap-xy;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		dc-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&axp192_gpio 4 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		spi-dev = <&spi3>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ili9342c: ili9342c@0 {
+			compatible = "ilitek,ili9342c";
+			mipi-max-frequency = <30000000>;
+			reg = <0>;
+			vin-supply = <&lcd_bg>;
+			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+			display-inversion;
+			width = <320>;
+			height = <240>;
+			rotation = <0>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&cpu1 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&psram0 {
+	reg = <0x3f800000 DT_SIZE_M(8)>;
+	status = "disabled";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_tx_gpio1 &uart0_rx_gpio3>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_gpio33 &uart1_tx_gpio32>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
+	pinctrl-0 = <&i2c0_default>;
+	scl-timeout-us = <0>;
+	pinctrl-names = "default";
+
+	pfc8563_rtc: pfc8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+		status = "okay";
+	};
+
+	axp192_pmic: axp192@34 {
+		compatible = "x-powers,axp192";
+		reg = <0x34>;
+		status = "okay";
+
+		axp192_regulator: axp192_regulator {
+			compatible = "x-powers,axp192-regulator";
+			status = "okay";
+
+			vdd_mcu: DCDC1 {
+				regulator-init-microvolt = <3350000>;
+				regulator-min-microvolt = <3200000>;
+				regulator-max-microvolt = <3400000>;
+				regulator-initial-mode = <AXP192_DCDC_MODE_AUTO>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			lcd_bg: DCDC3 {
+				regulator-init-microvolt = <2800000>;
+				regulator-min-microvolt = <2500000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+
+			v_peri: LDO2 {
+				regulator-init-microvolt = <3300000>;
+				regulator-min-microvolt = <3200000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+
+			vib_motor: LDO3 {
+				regulator-init-microvolt = <2800000>;
+			};
+		};
+
+		axp192_gpio: axp192_gpio {
+			compatible = "x-powers,axp192-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <5>;
+			status = "okay";
+
+			pwr_led: axp192_gpio1 {
+				gpio-hog;
+				gpios = <1 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+				output-high;
+				line-name = "pwr-led";
+			};
+
+			bus_pwr_en: axp192_gpio0 {
+				gpio-hog;
+				gpios = <0 0>;
+				input;
+			};
+		};
+	};
+
+	ft5336_touch: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpio1 7 0>;
+	};
+};
+
+&i2c1 {
+	status = "disabled";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	sda-gpios = <&gpio1 0 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio1 1 GPIO_OPEN_DRAIN>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+	dma-enabled;
+	clock-frequency = <20000000>;
+	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>,
+			   <&gpio0 4 GPIO_ACTIVE_LOW>;
+
+	sdhc0: sdhc@1 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <1>;
+		status = "okay";
+		spi-max-frequency = <20000000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+
+	};
+};
+
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&timer3 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&flash0 {
+	status = "okay";
+	reg = <0 DT_SIZE_M(16)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserve 60kB for the bootloader */
+		boot_partition: partition@1000 {
+			label = "mcuboot";
+			reg = <0x00001000 0x0000F000>;
+			read-only;
+		};
+
+		/* Reserve 1024kB for the application in slot 0 */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0x00100000>;
+		};
+
+		/* Reserve 1024kB for the application in slot 1 */
+		slot1_partition: partition@110000 {
+			label = "image-1";
+			reg = <0x00110000 0x00100000>;
+		};
+
+		/* Reserve 256kB for the scratch partition */
+		scratch_partition: partition@210000 {
+			label = "image-scratch";
+			reg = <0x00210000 0x00040000>;
+		};
+
+		/* 14MB storage */
+		storage_partition: partition@250000 {
+			label = "storage";
+			reg = <0x00250000 0x00db0000>;
+		};
+	};
+};

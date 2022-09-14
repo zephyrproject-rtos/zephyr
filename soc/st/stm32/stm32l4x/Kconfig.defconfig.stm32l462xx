@@ -1,0 +1,11 @@
+# ST Microelectronics STM32L462XX MCU
+
+# Copyright (c) 2020 Giancarlo Stasi
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L462XX
+
+config NUM_IRQS
+	default 85
+
+endif # SOC_STM32L462XX

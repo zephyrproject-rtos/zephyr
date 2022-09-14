@@ -1,8 +1,0 @@
-# MikroE Clicker 2 board configuration
-
-# Copyright (c) 2020 Trifork
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_MIKROE_CLICKER_2
-	bool "MikroE Clicker 2 for STM32 board"
-	depends on SOC_STM32F407XG

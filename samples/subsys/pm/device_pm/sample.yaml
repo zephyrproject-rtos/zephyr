@@ -3,10 +3,10 @@ sample:
 tests:
   sample.power.ospm.dev_idle_pm:
     platform_allow:
-      - nrf52840dk_nrf52840
-      - nrf52dk_nrf52832
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
       - qemu_x86
-      - mps2_an385
+      - mps2/an385
     integration_platforms:
       - qemu_x86
     tags: power

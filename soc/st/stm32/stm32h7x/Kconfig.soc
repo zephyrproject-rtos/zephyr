@@ -1,0 +1,103 @@
+# ST Microelectronics STM32H7 MCU line
+
+# Copyright (c) 2019 Linaro Limited
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# Copyright (c) 2021 Electrolance Solutions
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32H7X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32h7x" if SOC_SERIES_STM32H7X
+
+config SOC_STM32H723XX
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H725XX
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H730XX
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H730XXQ
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H735XX
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H743XX
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H745XX_M7
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H745XX_M4
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H747XX_M7
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H747XX_M4
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H750XX
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H753XX
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H7A3XX
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H7A3XXQ
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H7B0XX
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H7B0XXQ
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H7B3XX
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC_STM32H7B3XXQ
+	bool
+	select SOC_SERIES_STM32H7X
+
+config SOC
+	default "stm32h7a3xx" if SOC_STM32H7A3XX
+	default "stm32h7a3xxq" if SOC_STM32H7A3XXQ
+	default "stm32h7b0xx" if SOC_STM32H7B0XX
+	default "stm32h7b0xxq" if SOC_STM32H7B0XXQ
+	default "stm32h7b3xx" if SOC_STM32H7B3XX
+	default "stm32h7b3xxq"if SOC_STM32H7B3XXQ
+	default "stm32h723xx" if SOC_STM32H723XX
+	default "stm32h725xx" if SOC_STM32H725XX
+	default "stm32h730xx" if SOC_STM32H730XX
+	default "stm32h730xxq" if SOC_STM32H730XXQ
+	default "stm32h735xx" if SOC_STM32H735XX
+	default "stm32h743xx" if SOC_STM32H743XX
+	default "stm32h745xx" if SOC_STM32H745XX_M7 || SOC_STM32H745XX_M4
+	default "stm32h747xx" if SOC_STM32H747XX_M7 || SOC_STM32H747XX_M4
+	default "stm32h750xx" if SOC_STM32H750XX
+	default "stm32h753xx" if SOC_STM32H753XX

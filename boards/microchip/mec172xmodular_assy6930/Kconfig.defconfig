@@ -1,0 +1,36 @@
+# Copyright (c) 2022 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MEC172XMODULAR_ASSY6930
+
+if RTOS_TIMER
+
+# XEC RTOS timer HW frequency is fixed at 32768 Hz.
+# The driver requires tickless mode and ticks per second to be 32768 for
+# accurate operation.
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 32768
+
+endif # RTOS_TIMER
+
+if !RTOS_TIMER
+
+# If RTOS timer is not enabled we use ARM Cortex-M
+# SYSTICK. SYSTICK frequency is 96 MHz divided down by the MEC172x PCR
+# processor clock divider register. We assume PCR processor clock divider
+# is set to 1. Refer to SOC_MEC_PROC_CLK_DIV
+#
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 96000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+endif # RTOS_TIMER
+
+endif # BOARD_MEC172XMODULAR_ASSY6930

@@ -34,7 +34,7 @@ building for the nRF52840 DK, the following command can be used:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/shields/npm6001_ek
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build
    :compact:
 

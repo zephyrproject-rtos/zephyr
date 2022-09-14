@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Enphase Energy
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PHYCORE_AM62X
+	select SOC_AM6234_A53 if BOARD_PHYCORE_AM62X_AM6234_A53

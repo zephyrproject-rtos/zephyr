@@ -13,25 +13,25 @@ tests:
       - cy8cproto_063_ble
       - stm32l496g_disco
       - stm32h735g_disco
-      - nrf51dk_nrf51422
-      - nrf52840dk_nrf52840
+      - nrf51dk/nrf51822
+      - nrf52840dk/nrf52840
       - mec172xevb_assy6906
       - gd32f350r_eval
       - gd32f450i_eval
       - gd32vf103v_eval
       - gd32f403z_eval
-      - esp32_devkitc_wroom
-      - esp32_devkitc_wrover
+      - esp32_devkitc_wroom/esp32/procpu
+      - esp32_devkitc_wrover/esp32/procpu
       - esp32s2_saola
       - esp32c3_devkitm
       - gd32l233r_eval
       - lpcxpresso55s36
       - mr_canhubk3
       - longan_nano
-      - longan_nano_lite
+      - longan_nano/gd32vf103/lite
     integration_platforms:
       - nucleo_l073rz
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     harness: console
     timeout: 10
     harness_config:

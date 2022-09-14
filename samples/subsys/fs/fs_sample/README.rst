@@ -28,20 +28,20 @@ For the FAT FS to work with internal flash, the device needs to support erase
 pages of size <= 4096 bytes and have at least 64kiB of flash available for
 FAT FS partition alone.
 Currently the following boards are supported:
-``nrf52840dk_nrf52840``
+``nrf52840dk/nrf52840``
 
 Requirements for setting up FAT FS on external flash
 ****************************************************
 
 This type of configuration requires external flash device to be available
 on DK board. Currently following boards support the configuration:
-``nrf52840dk_nrf52840`` by ``nrf52840dk_nrf52840_qspi`` configuration.
+``nrf52840dk/nrf52840`` by ``nrf52840dk_nrf52840_qspi`` configuration.
 
 Building and Running FAT samples
 ********************************
 
 Boards with default configurations, for example ``arduino_mkrzero`` or
-``nrf52840dk_nrf52840`` using internal flash can be build using command:
+``nrf52840dk/nrf52840`` using internal flash can be build using command:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/fs/fs_sample
@@ -52,12 +52,12 @@ Boards with default configurations, for example ``arduino_mkrzero`` or
 Where used example board ``nrf52840_blip`` should be replaced with desired board.
 
 In case when some more specific configuration is to be used for a given board,
-for example ``nrf52840dk_nrf52840`` with MX25 device over QSPI, configuration
+for example ``nrf52840dk/nrf52840`` with MX25 device over QSPI, configuration
 and DTS overlays need to be also selected. The command would look like this:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/fs/fs_sample
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :gen-args: -DEXTRA_CONF_FILE=nrf52840dk_nrf52840_qspi.conf -DDTC_OVERLAY_FILE=nrf52840dk_nrf52840_qspi.overlay
    :goals: build
    :compact:
@@ -73,7 +73,7 @@ sample lists them out on the debug serial output.
 Building and Running EXT2 samples
 *********************************
 
-Ext2 sample can be build for ``hifive_unmatched`` or ``bl5340_dvk_cpuapp``. Because
+Ext2 sample can be build for ``hifive_unmatched`` or ``bl5340_dvk/nrf5340/cpuapp``. Because
 FAT is default file system for this sample, additional flags must be passed to build
 the sample.
 

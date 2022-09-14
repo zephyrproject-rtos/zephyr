@@ -1,0 +1,11 @@
+# STMicroelectronics stm32f207 MCU
+
+# Copyright (c) 2018 qianfan Zhao <qianfanguijin@163.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F207XX
+
+config NUM_IRQS
+	default 81
+
+endif

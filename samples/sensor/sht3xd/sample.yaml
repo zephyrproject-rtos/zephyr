@@ -11,10 +11,10 @@ common:
     - efr32mg_sltb004a
     - frdm_k64f
     - nrf51_ble400
-    - nrf52840dk_nrf52840
+    - nrf52840dk/nrf52840
     - nucleo_l476rg
   integration_platforms:
-    - nrf52840dk_nrf52840
+    - nrf52840dk/nrf52840
   tags: sensors
   build_only: true
 tests:

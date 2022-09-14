@@ -9,8 +9,8 @@ tests:
       - sensor
       - grove
       - light
-    platform_allow: nrf52dk_nrf52832
+    platform_allow: nrf52dk/nrf52832
     integration_platforms:
-      - nrf52dk_nrf52832
+      - nrf52dk/nrf52832
     harness: grove
     depends_on: adc

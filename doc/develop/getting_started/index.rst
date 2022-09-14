@@ -560,6 +560,17 @@ users. Users may also use the ``-p auto`` option, which will use
 heuristics to determine if a pristine build is required, such as when building
 another sample.
 
+.. note::
+
+   A board may contain one or multiple SoCs, Also, each SoC may contain one or
+   more CPU clusters.
+   When building for such boards it is necessary to specify the SoC or CPU
+   cluster for which the sample must be built.
+   For example to build :zephyr:code-sample:`blinky` for the ``cpuapp`` core on
+   the :ref:`nRF5340DK <nrf5340dk_nrf5340>` the board must be provided as:
+   ``nrf5340dk/nrf5340/cpuapp``. Also read :ref:`board_and_identifiers` for more
+   details.
+
 Flash the Sample
 ****************
 

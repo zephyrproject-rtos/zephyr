@@ -1,0 +1,14 @@
+identifier: nrf51dongle/nrf51822
+name: nRF51-Dongle-nRF51822
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 256
+supported:
+  - ble
+  - nvs
+vendor: nordic

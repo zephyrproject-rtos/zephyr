@@ -1,15 +1,15 @@
 tests:
   settings.functional.fcb:
     platform_allow:
-      - nrf52840dk_nrf52840
-      - nrf52dk_nrf52832
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
       - native_posix
       - native_posix_64
       - native_sim
       - native_sim_64
       - mr_canhubk3
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     tags:
       - settings
       - fcb

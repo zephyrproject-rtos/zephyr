@@ -1,0 +1,25 @@
+identifier: esp32_devkitc_wrover/esp32/procpu
+name: ESP32-DevkitC-WROVER-E
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - dac
+  - gpio
+  - i2c
+  - watchdog
+  - uart
+  - nvs
+  - pwm
+  - dac
+  - spi
+  - counter
+  - entropy
+  - input
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: espressif

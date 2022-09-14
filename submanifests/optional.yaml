@@ -34,7 +34,7 @@ manifest:
       groups:
         - optional
     - name: sof
-      revision: 0606152d4aafc1f7ed43df1b1813252bfc74e154
+      revision: 3e70d036a2df94b854add51742681b64ea0df729
       path: modules/audio/sof
       remote: upstream
       groups:
@@ -60,7 +60,7 @@ manifest:
         - optional
     - name: zscilib
       path: modules/lib/zscilib
-      revision: a4bb6cfd6800e14373261904825f7f34a3a7f2e5
+      revision: ee1b287d9dd07208d2cc52284240ac25bb66eae3
       remote: upstream
       groups:
         - optional

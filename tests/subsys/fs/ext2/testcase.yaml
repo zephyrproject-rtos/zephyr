@@ -6,7 +6,7 @@ tests:
       - native_sim
       - native_sim_64
       - hifive_unmatched
-      - bl5340_dvk_cpuapp
+      - bl5340_dvk/nrf5340/cpuapp
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="ramdisk_small.overlay"
 
@@ -23,7 +23,7 @@ tests:
       - renode
     platform_allow:
       - hifive_unmatched
-      - bl5340_dvk_cpuapp
+      - bl5340_dvk/nrf5340/cpuapp
     extra_args: CONF_FILE=prj_sdcard.conf
 
   filesystem.ext2.flash:

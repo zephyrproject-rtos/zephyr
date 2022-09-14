@@ -1,8 +1,0 @@
-#
-# Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
-# SPDX-License-Identifier: Apache-2.0
-#
-
-config SOC
-	default "XC7Z012S"
-	depends on SOC_XILINX_XC7Z012S

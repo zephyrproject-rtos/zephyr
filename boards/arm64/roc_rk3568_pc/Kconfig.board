@@ -1,8 +1,0 @@
-# Copyright 2022 HNU-ESNL
-# Copyright 2022 openEuler SIG-Zephyr
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_ROC_RK3568_PC
-	bool "Rockchip ROC-RK3568-PC"
-	depends on SOC_SERIES_RK3568
-	select ARM64
