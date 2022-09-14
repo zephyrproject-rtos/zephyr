@@ -12,3 +12,12 @@ config COUNTER_GECKO_RTCC
 	help
 	  Enable counter driver based on RTCC module for Silicon Labs Gecko
 	  chips.
+
+config COUNTER_GECKO_STIMER
+	bool "Silicon Labs Gecko Counter Sleep Timer driver"
+	default y
+	depends on DT_HAS_SILABS_GECKO_STIMER_ENABLED
+	select SOC_GECKO_RTCC
+	help
+	  Enable the counter driver for Sleep Timer module for Silicon Labs
+	  Gecko chips.
