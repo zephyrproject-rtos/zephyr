@@ -81,10 +81,12 @@ struct ticker_node {
 	uint8_t  must_expire;		    /* Node must expire, even if it
 					     * collides with other nodes
 					     */
+#if defined(CONFIG_BT_TICKER_PRIORITY_SET)
 	int8_t  priority;		    /* Ticker node priority. 0 is
 					     * default. Lower value is higher
 					     * priority
 					     */
+#endif /* CONFIG_BT_TICKER_PRIORITY_SET */
 #endif /* !CONFIG_BT_TICKER_LOW_LAT &&
 	* !CONFIG_BT_TICKER_SLOT_AGNOSTIC
 	*/
@@ -745,8 +747,15 @@ static uint32_t ticker_dequeue(struct ticker_instance *instance, uint8_t id)
 static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 				     struct ticker_node *ticker)
 {
+#if defined(CONFIG_BT_TICKER_PRIORITY_SET)
 	if ((ticker->priority != TICKER_PRIORITY_CRITICAL) &&
 	    (ticker->next != TICKER_NULL)) {
+
+#else /* !CONFIG_BT_TICKER_PRIORITY_SET */
+	if (ticker->next != TICKER_NULL) {
+
+#endif /* !CONFIG_BT_TICKER_PRIORITY_SET */
+
 		uint16_t lazy_current = ticker->lazy_current;
 
 		/* Check if this ticker node will starve next node which has
@@ -802,28 +811,43 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 				(ticker->ticks_periodic != 0U) &&
 				(next_age > current_age);
 
+			/* Is the current and next node equal in force? */
+			uint8_t equal_force =
+				(ticker->force == ticker_next->force);
 			/* Is force requested for next node (e.g. update) -
 			 * more so than for current node?
 			 */
-			uint8_t next_force = (ticker_next->force > ticker->force);
+			uint8_t next_force =
+				(ticker_next->force > ticker->force);
 
+#if defined(CONFIG_BT_TICKER_PRIORITY_SET)
 			/* Does next node have critical priority and should
 			 * always be scheduled?
 			 */
-			uint8_t next_is_critical = ticker_next->priority ==
-				TICKER_PRIORITY_CRITICAL;
+			uint8_t next_is_critical =
+				(ticker_next->priority ==
+				 TICKER_PRIORITY_CRITICAL);
 
 			/* Is the current and next node equal in priority? */
 			uint8_t equal_priority =
 				(ticker->priority == ticker_next->priority);
 
+#else /* !CONFIG_BT_TICKER_PRIORITY_SET */
+			uint8_t next_is_critical = 0U;
+			uint8_t equal_priority = 1U;
+			uint8_t next_has_priority = 0U;
+
+#endif /* !CONFIG_BT_TICKER_PRIORITY_SET */
+
 #if defined(CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD)
+#if defined(CONFIG_BT_TICKER_PRIORITY_SET)
 			/* Does next node have higher priority? */
 			uint8_t next_has_priority =
 				(!ticker_next->ext_data ||
 				 !ticker_next->ext_data->ticks_slot_window) &&
 				((lazy_next - ticker_next->priority) >
 				 (lazy_current - ticker->priority));
+#endif /* CONFIG_BT_TICKER_PRIORITY_SET */
 
 			/* Can the current ticker with ticks_slot_window be
 			 * scheduled after the colliding ticker?
@@ -848,10 +872,12 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 					   ticker_next->ticks_slot) <
 					  ticker->ticks_slot));
 #else /* !CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD */
+#if defined(CONFIG_BT_TICKER_PRIORITY_SET)
 			/* Does next node have higher priority? */
 			uint8_t next_has_priority =
 				(lazy_next - ticker_next->priority) >
 				(lazy_current - ticker->priority);
+#endif /* CONFIG_BT_TICKER_PRIORITY_SET */
 
 			uint8_t curr_has_ticks_slot_window = 0U;
 			uint8_t next_not_ticks_slot_window = 1U;
@@ -862,10 +888,10 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 			 */
 			if (curr_has_ticks_slot_window ||
 			    (!lazy_next_periodic_skip &&
-			     (next_force ||
-			      next_is_critical ||
+			     (next_is_critical ||
+			      next_force ||
 			      (next_has_priority && !current_is_older) ||
-			      (equal_priority && next_is_older &&
+			      (equal_priority && equal_force && next_is_older &&
 			       next_not_ticks_slot_window)))) {
 				/* This node must be skipped - check window */
 				return 1U;
@@ -2308,12 +2334,15 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 					NULL);
 #endif /* !CONFIG_BT_TICKER_LAZY_GET */
 		__fallthrough;
+
 	case TICKER_USER_OP_TYPE_IDLE_GET:
 		uop->status = TICKER_STATUS_SUCCESS;
 		fp_op_func = uop->fp_op_func;
 		break;
+
 #if !defined(CONFIG_BT_TICKER_LOW_LAT) && \
-	!defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+	!defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC) && \
+	defined(CONFIG_BT_TICKER_PRIORITY_SET)
 	case TICKER_USER_OP_TYPE_PRIORITY_SET:
 		if (uop->id < instance->count_node) {
 			struct ticker_node *node = instance->nodes;
@@ -2328,7 +2357,9 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 		break;
 #endif /* !CONFIG_BT_TICKER_LOW_LAT &&
 	* !CONFIG_BT_TICKER_SLOT_AGNOSTIC
+	* CONFIG_BT_TICKER_PRIORITY_SET
 	*/
+
 	default:
 		/* do nothing for other ops */
 		break;
@@ -2635,12 +2666,14 @@ uint32_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 	instance->nodes = node;
 
 #if !defined(CONFIG_BT_TICKER_LOW_LAT) && \
-	!defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+	!defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC) && \
+	defined(CONFIG_BT_TICKER_PRIORITY_SET)
 	while (count_node--) {
 		instance->nodes[count_node].priority = 0;
 	}
 #endif /* !CONFIG_BT_TICKER_LOW_LAT &&
 	* !CONFIG_BT_TICKER_SLOT_AGNOSTIC
+	* CONFIG_BT_TICKER_PRIORITY_SET
 	*/
 
 	instance->count_user = count_user;
@@ -3223,7 +3256,8 @@ uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
 }
 
 #if !defined(CONFIG_BT_TICKER_LOW_LAT) && \
-	!defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+	!defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC) && \
+	defined(CONFIG_BT_TICKER_PRIORITY_SET)
 /**
  * @brief Set ticker node priority
  *
@@ -3281,7 +3315,8 @@ uint32_t ticker_priority_set(uint8_t instance_index, uint8_t user_id, uint8_t ti
 	return user_op->status;
 }
 #endif /* !CONFIG_BT_TICKER_LOW_LAT &&
-	* !CONFIG_BT_TICKER_SLOT_AGNOSTIC
+	* !CONFIG_BT_TICKER_SLOT_AGNOSTIC &&
+	* CONFIG_BT_TICKER_PRIORITY_SET
 	*/
 
 /**
