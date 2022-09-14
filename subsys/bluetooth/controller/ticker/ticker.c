@@ -1245,14 +1245,13 @@ static void ticker_job_op_cb(struct ticker_user_op *user_op, uint32_t status)
  */
 static inline void ticker_job_node_update(struct ticker_node *ticker,
 					  struct ticker_user_op *user_op,
+					  uint32_t ticks_now,
 					  uint32_t ticks_current,
 					  uint32_t ticks_elapsed,
 					  uint8_t *insert_head)
 {
 	uint32_t ticks_to_expire = ticker->ticks_to_expire;
-	uint32_t ticks_now;
 
-	ticks_now = cntr_cnt_get();
 	ticks_elapsed += ticker_ticks_diff_get(ticks_now, ticks_current);
 	if (ticks_to_expire > ticks_elapsed) {
 		ticks_to_expire -= ticks_elapsed;
@@ -1349,6 +1348,7 @@ static inline void ticker_job_node_update(struct ticker_node *ticker,
 static inline void ticker_job_node_manage(struct ticker_instance *instance,
 					  struct ticker_node *ticker,
 					  struct ticker_user_op *user_op,
+					  uint32_t ticks_now,
 					  uint32_t ticks_elapsed,
 					  uint8_t *insert_head)
 {
@@ -1358,8 +1358,9 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 		ticker->ticks_to_expire = ticker_dequeue(instance, user_op->id);
 
 		/* Update node and insert back */
-		ticker_job_node_update(ticker, user_op, instance->ticks_current,
-				       ticks_elapsed, insert_head);
+		ticker_job_node_update(ticker, user_op, ticks_now,
+				       instance->ticks_current, ticks_elapsed,
+				       insert_head);
 
 		/* Set schedule status of node
 		 * as updating.
@@ -1390,7 +1391,7 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 				ticks_at_yield =
 					user_op->params.yield.ticks_at_yield;
 			} else {
-				ticks_at_yield = cntr_cnt_get();
+				ticks_at_yield = ticks_now;
 			}
 
 			ticks_current = instance->ticks_current;
@@ -1441,8 +1442,9 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
  * @internal
  */
 static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
-					  uint32_t ticks_elapsed,
-					  uint8_t *insert_head)
+					     uint32_t ticks_now,
+					     uint32_t ticks_elapsed,
+					     uint8_t *insert_head)
 {
 	uint8_t pending;
 	struct ticker_node *node;
@@ -1516,7 +1518,8 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
 			if ((state == 1U) ||
 			    (user_op->op == TICKER_USER_OP_TYPE_YIELD_ABS)) {
 				ticker_job_node_manage(instance, ticker,
-						       user_op, ticks_elapsed,
+						       user_op, ticks_now,
+						       ticks_elapsed,
 						       insert_head);
 			} else {
 				/* Update on expired node requested, deferring
@@ -1556,6 +1559,7 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
  * @internal
  */
 static inline void ticker_job_worker_bh(struct ticker_instance *instance,
+					uint32_t ticks_now,
 					uint32_t ticks_previous,
 					uint32_t ticks_elapsed,
 					uint8_t *insert_head)
@@ -1565,9 +1569,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 
 #if !defined(CONFIG_BT_TICKER_LOW_LAT)
 	uint32_t ticks_latency;
-	uint32_t ticks_now;
 
-	ticks_now = cntr_cnt_get();
 	ticks_latency = ticker_ticks_diff_get(ticks_now, ticks_previous);
 #endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
@@ -2471,13 +2473,14 @@ static inline void ticker_job_compare_update(struct ticker_instance *instance,
 void ticker_job(void *param)
 {
 	struct ticker_instance *instance = param;
-	uint8_t ticker_id_old_head;
-	uint8_t insert_head;
-	uint32_t ticks_elapsed;
-	uint32_t ticks_previous;
-	uint8_t flag_elapsed;
-	uint8_t pending;
 	uint8_t flag_compare_update;
+	uint8_t ticker_id_old_head;
+	uint32_t ticks_previous;
+	uint32_t ticks_elapsed;
+	uint8_t flag_elapsed;
+	uint8_t insert_head;
+	uint32_t ticks_now;
+	uint8_t pending;
 
 	DEBUG_TICKER_JOB(1);
 
@@ -2527,7 +2530,9 @@ void ticker_job(void *param)
 	ticker_id_old_head = instance->ticker_id_head;
 
 	/* Manage user operations (updates and deletions) in ticker list */
-	pending = ticker_job_list_manage(instance, ticks_elapsed, &insert_head);
+	ticks_now = cntr_cnt_get();
+	pending = ticker_job_list_manage(instance, ticks_now, ticks_elapsed,
+					 &insert_head);
 
 	/* Detect change in head of the list */
 	if (instance->ticker_id_head != ticker_id_old_head) {
@@ -2536,8 +2541,8 @@ void ticker_job(void *param)
 
 	/* Handle expired tickers */
 	if (flag_elapsed) {
-		ticker_job_worker_bh(instance, ticks_previous, ticks_elapsed,
-				     &insert_head);
+		ticker_job_worker_bh(instance, ticks_now, ticks_previous,
+				     ticks_elapsed, &insert_head);
 
 		/* Detect change in head of the list */
 		if (instance->ticker_id_head != ticker_id_old_head) {
