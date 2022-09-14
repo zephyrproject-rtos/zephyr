@@ -13,20 +13,17 @@ properties:
 
     single-mode:
       type: boolean
-      required: false
       description: |
         Set to config the sensor in single measurement mode. Leave
         unset to configure the sensor in continious measurement mode.
 
     cancel-offset:
       type: boolean
-      required: false
       description: |
         Set to enable the offset cancellation. Otherwise it would be
         disabled as default.
 
     spi-full-duplex:
       type: boolean
-      required: false
       description: |
         Enable SPI 4wires mode with separated MISO and MOSI lines
