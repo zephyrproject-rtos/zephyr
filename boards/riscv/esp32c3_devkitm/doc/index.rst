@@ -86,18 +86,9 @@ message in the monitor:
 Debugging
 ---------
 
-As with much custom hardware, the ESP32C3 modules require patches to
-OpenOCD that are not upstreamed. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained by running the following extension:
-
-.. code-block:: console
-
-   west espressif install
-
-.. note::
-
-   By default, the OpenOCD will be downloaded and installed under $HOME/.espressif/tools/zephyr directory
-   (%USERPROFILE%/.espressif/tools/zephyr on Windows).
+As with much custom hardware, the ESP32 modules require patches to
+OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
+the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_
 
 The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
 ``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
@@ -124,3 +115,4 @@ References
 .. [1] https://www.espressif.com/en/products/socs/esp32-c3
 .. _`ESP32C3 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf
 .. _`ESP32C3 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
