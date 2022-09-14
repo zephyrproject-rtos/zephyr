@@ -3,9 +3,6 @@
 
 if BOARD_LITEX_VEXRISCV
 
-config BOARD
-	default "litex_vexriscv"
-
 if NETWORKING
 
 config NET_L2_ETHERNET

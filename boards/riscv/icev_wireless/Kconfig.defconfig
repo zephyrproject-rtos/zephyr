@@ -1,10 +1,6 @@
 # Copyright (c) 2022 Friedt Professional Engineering Services, Inc
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD
-	default "icev_wireless"
-	depends on BOARD_ICEV_WIRELESS
-
 if BT
 
 config HEAP_MEM_POOL_SIZE

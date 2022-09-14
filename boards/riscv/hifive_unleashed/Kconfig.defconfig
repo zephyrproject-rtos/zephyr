@@ -3,9 +3,6 @@
 
 if BOARD_HIFIVE_UNLEASHED
 
-config BOARD
-	default "hifive_unleashed"
-
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
 
