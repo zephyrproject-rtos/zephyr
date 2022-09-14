@@ -116,6 +116,11 @@ ZTEST(util_cxx, test_ARRAY_INDEX)
 	run_ARRAY_INDEX();
 }
 
+ZTEST(util_cxx, test_ARRAY_SIZE)
+{
+	run_ARRAY_SIZE();
+}
+
 ZTEST(util_cxx, test_PART_OF_ARRAY)
 {
 	run_PART_OF_ARRAY();
@@ -232,6 +237,11 @@ ZTEST(util_cc, test_IS_ARRAY_ELEMENT)
 ZTEST(util_cc, test_ARRAY_INDEX)
 {
 	run_ARRAY_INDEX();
+}
+
+ZTEST(util_cc, test_ARRAY_SIZE)
+{
+	run_ARRAY_SIZE();
 }
 
 ZTEST(util_cc, test_PART_OF_ARRAY)

@@ -526,3 +526,9 @@ void run_ARRAY_INDEX_FLOOR(void)
 
 	zassert_equal(array[ARRAY_INDEX_FLOOR(array, &alias[1])], 0);
 }
+
+void run_ARRAY_SIZE(void)
+{
+	size_t array[] = {1, 2, 3, 4};
+	zassert_equal(ARRAY_SIZE(array), 4);
+}
