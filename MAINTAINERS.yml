@@ -418,7 +418,7 @@ Board/SoC configuration:
     - nordicjm
     - "57300"
   files:
-    - soc/Kconfig
+    - soc/Kconfig*
     - boards/Kconfig
   labels:
     - "area: Board/SoC configuration"
