@@ -1,8 +1,0 @@
-# nRF52 VBLUno52 board configuration
-
-# Copyright (c) 2017 VNG IoT Lab
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_NRF52_VBLUNO52
-
-endif # BOARD_NRF52_VBLUNO52

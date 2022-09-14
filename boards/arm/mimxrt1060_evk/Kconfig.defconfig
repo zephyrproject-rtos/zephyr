@@ -22,7 +22,7 @@ config FLASH_MCUX_FLEXSPI_HYPERFLASH
 	default n if BOARD_MIMXRT1060_EVK
 	default n if BOARD_MIMXRT1060_EVKB
 
-endif #FLASH
+endif # FLASH
 
 config KSCAN
 	default y if LVGL

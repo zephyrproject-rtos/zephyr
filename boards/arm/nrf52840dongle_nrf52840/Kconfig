@@ -3,8 +3,6 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52840DONGLE_NRF52840
-
 config BOARD_ENABLE_DCDC
 	bool "DCDC mode"
 	select SOC_DCDC_NRF52X
@@ -21,5 +19,3 @@ config BOARD_HAS_NRF5_BOOTLOADER
 	help
 	  If selected, applications are linked so that they can be loaded by Nordic
 	  nRF5 bootloader.
-
-endif # BOARD_NRF52840DONGLE_NRF52840

@@ -25,7 +25,7 @@ choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
 	default FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM if CPU_CORTEX_M4
 endchoice
 
-endif #FLASH
+endif # FLASH
 
 if KSCAN
 
