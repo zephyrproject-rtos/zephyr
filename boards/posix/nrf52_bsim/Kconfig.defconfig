@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52_BSIM
-
 config BUILD_OUTPUT_BIN
 	default n
 
@@ -24,5 +22,3 @@ choice LOG_MODE
 endchoice
 
 endif # LOG
-
-endif # BOARD_NRF52_BSIM
