@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NUCLEO_F411RE
-
 if I2S
 
 # The I2S should be configured in such a way it generates a 2MHz
@@ -41,5 +39,3 @@ config I2S_STM32_PLLI2S_PLLR
 	default 3
 
 endif # I2S
-
-endif # BOARD_NUCLEO_F411RE
