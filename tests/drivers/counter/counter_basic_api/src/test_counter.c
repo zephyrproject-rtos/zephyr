@@ -91,6 +91,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_XLNX_AXI_TIMER
 	DEVS_FOR_DT_COMPAT(xlnx_xps_timer_1_00_a)
 #endif
+#ifdef CONFIG_COUNTER_TMR_ESP32
+	DEVS_FOR_DT_COMPAT(espressif_esp32_timer)
+#endif
 };
 
 static const struct device *const period_devs[] = {
