@@ -135,4 +135,6 @@
 
 &tach0 {
 	status = "okay";
+	pinctrl-0 = <&ict0_tach0_gpio050>;
+	pinctrl-names = "default";
 };
