@@ -305,9 +305,19 @@ The following example sets the bitrate to 250k baud with the sampling point at
     return;
   }
 
+  ret = can_stop(can_dev);
+  if (ret != 0) {
+    LOG_ERR("Failed to stop CAN controller");
+  }
+
   ret = can_set_timing(can_dev, &timing);
   if (ret != 0) {
     LOG_ERR("Failed to set timing");
+  }
+
+  ret = can_start(can_dev);
+  if (ret != 0) {
+    LOG_ERR("Failed to start CAN controller");
   }
 
 A similar API exists for calculating and setting the timing for the data phase for CAN-FD capable

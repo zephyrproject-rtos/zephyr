@@ -127,10 +127,13 @@ static int can_stm32_get_state(const struct device *dev, enum can_state *state,
 			       struct can_bus_err_cnt *err_cnt)
 {
 	const struct can_stm32_config *cfg = dev->config;
+	struct can_stm32_data *data = dev->data;
 	CAN_TypeDef *can = cfg->can;
 
 	if (state != NULL) {
-		if (can->ESR & CAN_ESR_BOFF) {
+		if (!data->started) {
+			*state = CAN_STATE_STOPPED;
+		} else if (can->ESR & CAN_ESR_BOFF) {
 			*state = CAN_STATE_BUS_OFF;
 		} else if (can->ESR & CAN_ESR_EPVF) {
 			*state = CAN_STATE_ERROR_PASSIVE;
@@ -352,12 +355,91 @@ static int can_stm32_get_capabilities(const struct device *dev, can_mode_t *cap)
 	return 0;
 }
 
+static int can_stm32_start(const struct device *dev)
+{
+	const struct can_stm32_config *cfg = dev->config;
+	struct can_stm32_data *data = dev->data;
+	CAN_TypeDef *can = cfg->can;
+	int ret = 0;
+
+	k_mutex_lock(&data->inst_mutex, K_FOREVER);
+
+	if (data->started) {
+		ret = -EALREADY;
+		goto unlock;
+	}
+
+	if (cfg->phy != NULL) {
+		ret = can_transceiver_enable(cfg->phy);
+		if (ret != 0) {
+			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			goto unlock;
+		}
+	}
+
+	ret = can_stm32_leave_init_mode(can);
+	if (ret < 0) {
+		LOG_ERR("Failed to leave init mode");
+
+		if (cfg->phy != NULL) {
+			/* Attempt to disable the CAN transceiver in case of error */
+			(void)can_transceiver_disable(cfg->phy);
+		}
+
+		ret = -EIO;
+		goto unlock;
+	}
+
+	data->started = true;
+
+unlock:
+	k_mutex_unlock(&data->inst_mutex);
+
+	return ret;
+}
+
+static int can_stm32_stop(const struct device *dev)
+{
+	const struct can_stm32_config *cfg = dev->config;
+	struct can_stm32_data *data = dev->data;
+	CAN_TypeDef *can = cfg->can;
+	int ret = 0;
+
+	k_mutex_lock(&data->inst_mutex, K_FOREVER);
+
+	if (!data->started) {
+		ret = -EALREADY;
+		goto unlock;
+	}
+
+	ret = can_stm32_enter_init_mode(can);
+	if (ret < 0) {
+		LOG_ERR("Failed to enter init mode");
+		ret = -EIO;
+		goto unlock;
+	}
+
+	if (cfg->phy != NULL) {
+		ret = can_transceiver_disable(cfg->phy);
+		if (ret != 0) {
+			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			goto unlock;
+		}
+	}
+
+	data->started = false;
+
+unlock:
+	k_mutex_unlock(&data->inst_mutex);
+
+	return ret;
+}
+
 static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct can_stm32_config *cfg = dev->config;
 	CAN_TypeDef *can = cfg->can;
 	struct can_stm32_data *data = dev->data;
-	int ret;
 
 	LOG_DBG("Set mode %d", mode);
 
@@ -366,21 +448,11 @@ static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 		return -ENOTSUP;
 	}
 
+	if (data->started) {
+		return -EBUSY;
+	}
+
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
-
-	if (cfg->phy != NULL) {
-		ret = can_transceiver_enable(cfg->phy);
-		if (ret != 0) {
-			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
-			goto done;
-		}
-	}
-
-	ret = can_stm32_enter_init_mode(can);
-	if (ret) {
-		LOG_ERR("Failed to enter init mode");
-		goto done;
-	}
 
 	if ((mode & CAN_MODE_LOOPBACK) != 0) {
 		/* Loopback mode */
@@ -403,20 +475,9 @@ static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 		can->MCR &= ~CAN_MCR_NART;
 	}
 
-done:
-	ret = can_stm32_leave_init_mode(can);
-	if (ret) {
-		LOG_ERR("Failed to leave init mode");
-
-		if (cfg->phy != NULL) {
-			/* Attempt to disable the CAN transceiver in case of error */
-			(void)can_transceiver_disable(cfg->phy);
-		}
-	}
-
 	k_mutex_unlock(&data->inst_mutex);
 
-	return ret;
+	return 0;
 }
 
 static int can_stm32_set_timing(const struct device *dev,
@@ -425,13 +486,12 @@ static int can_stm32_set_timing(const struct device *dev,
 	const struct can_stm32_config *cfg = dev->config;
 	CAN_TypeDef *can = cfg->can;
 	struct can_stm32_data *data = dev->data;
-	int ret = -EIO;
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
-	ret = can_stm32_enter_init_mode(can);
-	if (ret) {
-		LOG_ERR("Failed to enter init mode");
-		goto done;
+
+	if (data->started) {
+		k_mutex_unlock(&data->inst_mutex);
+		return -EBUSY;
 	}
 
 	can->BTR = (can->BTR & ~(CAN_BTR_BRP_Msk | CAN_BTR_TS1_Msk | CAN_BTR_TS2_Msk)) |
@@ -444,16 +504,9 @@ static int can_stm32_set_timing(const struct device *dev,
 			   (((timing->sjw - 1) << CAN_BTR_SJW_Pos) & CAN_BTR_SJW_Msk);
 	}
 
-	ret = can_stm32_leave_init_mode(can);
-	if (ret) {
-		LOG_ERR("Failed to leave init mode");
-	} else {
-		ret = 0;
-	}
-
-done:
 	k_mutex_unlock(&data->inst_mutex);
-	return ret;
+
+	return 0;
 }
 
 static int can_stm32_get_core_clock(const struct device *dev, uint32_t *rate)
@@ -630,6 +683,10 @@ static int can_stm32_recover(const struct device *dev, k_timeout_t timeout)
 	int ret = -EAGAIN;
 	int64_t start_time;
 
+	if (!data->started) {
+		return -ENETDOWN;
+	}
+
 	if (!(can->ESR & CAN_ESR_BOFF)) {
 		return 0;
 	}
@@ -689,6 +746,10 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 	if (frame->dlc > CAN_MAX_DLC) {
 		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
 		return -EINVAL;
+	}
+
+	if (!data->started) {
+		return -ENETDOWN;
 	}
 
 	if (can->ESR & CAN_ESR_BOFF) {
@@ -966,6 +1027,8 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 
 static const struct can_driver_api can_api_funcs = {
 	.get_capabilities = can_stm32_get_capabilities,
+	.start = can_stm32_start,
+	.stop = can_stm32_stop,
 	.set_mode = can_stm32_set_mode,
 	.set_timing = can_stm32_set_timing,
 	.send = can_stm32_send,
