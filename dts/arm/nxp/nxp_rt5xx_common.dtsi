@@ -411,6 +411,7 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		timer-no = <0>;
 	};
 
 	ctimer1: ctimer@29000 {
@@ -423,6 +424,7 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		timer-no = <1>;
 	};
 
 	ctimer2: ctimer@2a000 {
@@ -435,6 +437,7 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		timer-no = <2>;
 	};
 
 	ctimer3: ctimer@2b000 {
@@ -447,6 +450,7 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		timer-no = <3>;
 	};
 
 	ctimer4: ctimer@2c000 {
@@ -459,6 +463,7 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		timer-no = <4>;
 	};
 };
 

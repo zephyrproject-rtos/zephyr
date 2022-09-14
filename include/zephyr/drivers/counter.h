@@ -24,6 +24,9 @@
 #include <stddef.h>
 #include <zephyr/device.h>
 #include <stdbool.h>
+#if defined(CONFIG_DMA)
+#include <zephyr/drivers/dma.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,6 +84,18 @@ extern "C" {
  * Alarm callback must be called from the same context as if it was set on time.
  */
 #define COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE  BIT(1)
+
+/**
+ * @brief Alarm flag enabling stop counter when counter expire.
+ *
+ */
+#define COUNTER_ALARM_CFG_AUTO_STOP  BIT(2)
+
+/**
+ * @brief Alarm flag enabling reset counter when counter expire.
+ *
+ */
+#define COUNTER_ALARM_CFG_AUTO_RESET  BIT(3)
 
 /**@} */
 
@@ -170,6 +185,41 @@ struct counter_config_info {
 	uint8_t channels;
 };
 
+/** @brief DMA callback
+ *
+ * @param dev       Pointer to the device structure for the driver instance.
+ * @param user_data User data.
+ * @param chan_id   Channel ID.
+ * @param status    DMA status.
+ */
+typedef void (*counter_dma_callback_t)(const struct device *dev, void *user_data,
+			       uint32_t chan_id, int status);
+
+/** @brief DMA transfer parameters structure.
+ *
+ * @param channel_direction refer to channel_direction of struct dma_config
+ * @param channel_priority channel priority
+ * @param source_data_size width of source data (in bytes)
+ * @param dest_data_size width of dest data (in bytes)
+ * @param callback Callback called on DMA complete (cannot be NULL).
+ */
+struct counter_dma_cfg {
+	uint8_t channel_direction;
+	uint32_t  channel_priority;
+	uint32_t  source_data_size :    16;
+	uint32_t  dest_data_size :      16;
+	uint32_t  source_burst_length : 16;
+	uint32_t  dest_burst_length :   16;
+	uint32_t src_addr;
+	uint32_t dest_addr;
+	uint32_t length;
+	uint16_t  source_addr_adj :   2;
+	uint16_t  dest_addr_adj :     2;
+	counter_dma_callback_t callback;
+	void *user_data;
+	void *priv_config;
+};
+
 typedef int (*counter_api_start)(const struct device *dev);
 typedef int (*counter_api_stop)(const struct device *dev);
 typedef int (*counter_api_get_value)(const struct device *dev,
@@ -192,6 +242,12 @@ typedef int (*counter_api_set_guard_period)(const struct device *dev,
 						uint32_t flags);
 typedef uint32_t (*counter_api_get_freq)(const struct device *dev);
 
+typedef int (*counter_api_set_dma_cfg)(const struct device *dev,
+				     uint8_t chan_id,
+				     struct counter_dma_cfg *config);
+
+typedef int (*counter_api_reset)(const struct device *dev);
+
 __subsystem struct counter_driver_api {
 	counter_api_start start;
 	counter_api_stop stop;
@@ -205,6 +261,8 @@ __subsystem struct counter_driver_api {
 	counter_api_get_guard_period get_guard_period;
 	counter_api_set_guard_period set_guard_period;
 	counter_api_get_freq get_freq;
+	counter_api_set_dma_cfg set_dma_cfg;
+	counter_api_reset reset;
 };
 
 /**
@@ -604,6 +662,62 @@ static inline uint32_t z_impl_counter_get_guard_period(const struct device *dev,
 				(struct counter_driver_api *)dev->api;
 
 	return (api->get_guard_period) ? api->get_guard_period(dev, flags) : 0;
+}
+
+/**
+ * @brief Set DMA configtue on a channel.
+ *
+ * Some timers can trigger DMA operations when the count is reached.
+ *
+ * @note API is not thread safe.
+ *
+ * @param dev		Pointer to the device structure for the driver instance.
+ * @param chan_id	Channel ID.
+ * @param counter_dma_cfg	DMA transfor parameters configuration.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP if request is not supported (device does not support
+ *		    interrupts or requested channel).
+ * @retval -EINVAL The DMA corresponding to the channel is not configured
+ * 			in the device tree.
+ */
+
+#if defined(CONFIG_DMA)
+__syscall int counter_set_dma_cfg(const struct device *dev,
+					uint8_t chan_id,
+					struct counter_dma_cfg *counter_dma_cfg);
+
+static inline int z_impl_counter_set_dma_cfg(const struct device *dev,
+						   uint8_t chan_id,
+						   struct counter_dma_cfg *counter_dma_cfg)
+{
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->api;
+
+	if (chan_id >= counter_get_num_of_channels(dev)) {
+		return -ENOTSUP;
+	}
+
+	return api->set_dma_cfg(dev, chan_id, counter_dma_cfg);
+}
+#endif
+
+/**
+ * @brief reset counter device in free running mode.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval 0 If successful.
+ * @retval Negative errno code if failure.
+ */
+__syscall int counter_reset(const struct device *dev);
+
+static inline int z_impl_counter_reset(const struct device *dev)
+{
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->api;
+
+	return api->reset(dev);
 }
 
 #ifdef __cplusplus

@@ -5,7 +5,7 @@ description: NXP MCUX Standard Timer/Counter
 
 compatible: "nxp,lpc-ctimer"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -27,9 +27,85 @@ properties:
     input:
       type: int
       required: true
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
       description: input channel
+        00 - Channel 0. CAPn.0 for CTIMERn
+        01 - Channel 1. CAPn.1 for CTIMERn
+        10 - Channel 2. CAPn.2 for CTIMERn
+        11 - Channel 3. CAPn.3 for CTIMERn
 
     prescale:
       type: int
       required: true
       description: prescale value
+
+    timer-no:
+      type: int
+      required: true
+      description: timer number
+
+    capture-pin:
+      type: int
+      required: false
+      default: 0
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+      description: |
+        INPUTMUX CT32BIT0_CAP0_SEL - CT32BIT4_CAP3_SEL
+        Counter Timer n, Capture Input m 
+        for example: Timer2 Cap0 select INP1 pin as capture channel input.
+        00000 - CT_INP0 (function must be selected in IOPCTL)
+        00001 - CT_INP1 (function must be selected in IOPCTL)
+        00010 - CT_INP2 (function must be selected in IOPCTL)
+        00011 - CT_INP3 (function must be selected in IOPCTL)
+        00100 - CT_INP4 (function must be selected in IOPCTL)
+        00101 - CT_INP5 (function must be selected in IOPCTL)
+        00110 - CT_INP6 (function must be selected in IOPCTL)
+        00111 - CT_INP7 (function must be selected in IOPCTL)
+        01000 - CT_INP8 (function must be selected in IOPCTL)
+        01001 - CT_INP9 (function must be selected in IOPCTL)
+        01010 - CT_INP10 (function must be selected in IOPCTL)
+        01011 - CT_INP11 (function must be selected in IOPCTL)
+        01100 - CT_INP12 (function must be selected in IOPCTL)
+        01101 - CT_INP13 (function must be selected in IOPCTL)
+        01110 - CT_INP14 (function must be selected in IOPCTL)
+        01111 - CT_INP15 (function must be selected in IOPCTL)
+        10000 - SHARED I2S0_WS
+        10001 - SHARED I2S1_WS
+        10010 - USB1_FRAME_TOGGLE (see USB Controller Chapter)
+       
+    capture-edge:
+      type: int
+      required: false
+      default: 1
+      enum:
+        - 1
+        - 2
+        - 3
+      description: |
+        select capture edge 
+        1 - rising edge
+        2 - falling edge
+        3 - rising and falling edge

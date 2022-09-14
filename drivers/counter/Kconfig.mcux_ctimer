@@ -17,3 +17,19 @@ config COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
 	help
 	  This reserves a CTimer channel to set the top value. Without
 	  this the set top value can be set only to the max counter value.
+
+if COUNTER_MCUX_CTIMER
+
+config COUNTER_MCUX_CTIMER_CAPTURE
+	bool "MCUX CTIMER Capture function"
+	default n
+	select PINCTRL
+	help
+	  Enable support for MCUX CTIMER Capture
+
+config COUNTER_MCUX_CTIMER_DMA
+	bool "MCUX CTIMER DMA function"
+	default n
+	help
+	  Enable support for MCUX CTIMER DMA
+endif
