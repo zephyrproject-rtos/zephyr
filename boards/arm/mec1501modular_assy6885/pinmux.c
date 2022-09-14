@@ -280,13 +280,6 @@ static int board_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portb, MCHP_GPIO_073, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 
-#ifdef CONFIG_PECI_XEC
-	ECS_REGS->PECI_DIS = 0x00u;
-	mchp_pcr_periph_slp_ctrl(PCR_PECI, MCHP_PCR_SLEEP_DIS);
-	pinmux_pin_set(portb, MCHP_GPIO_042, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(portb, MCHP_GPIO_044, MCHP_GPIO_CTRL_MUX_F1);
-#endif
-
 #ifdef CONFIG_SPI_XEC_QMSPI
 #if DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_qmspi), okay)
 	mchp_pcr_periph_slp_ctrl(PCR_QMSPI, MCHP_PCR_SLEEP_DIS);
