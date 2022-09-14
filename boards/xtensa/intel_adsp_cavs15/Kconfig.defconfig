@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_INTEL_ADSP_CAVS15
-
 config CAVS_ICTL_0_OFFSET
 	default 6
 config CAVS_ICTL_1_OFFSET
@@ -31,5 +29,3 @@ config 2ND_LVL_ISR_TBL_OFFSET
 
 config CAVS_ISR_TBL_OFFSET
 	default 2ND_LVL_ISR_TBL_OFFSET
-
-endif # BOARD_INTEL_ADSP_CAVS15
