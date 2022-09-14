@@ -62,6 +62,14 @@ function(pre_dt_module_run)
   # Finalize DTS_ROOT.
   list(REMOVE_DUPLICATES DTS_ROOT)
 
+  if(HWMv1)
+    set(arch_include dts/${ARCH})
+  else()
+    foreach(arch ${ARCH_V2_NAME_LIST})
+      list(APPEND arch_include dts/${arch})
+    endforeach()
+  endif()
+
   # Finalize DTS_ROOT_SYSTEM_INCLUDE_DIRS.
   set(DTS_ROOT_SYSTEM_INCLUDE_DIRS)
   foreach(dts_root ${DTS_ROOT})
@@ -69,7 +77,7 @@ function(pre_dt_module_run)
         include
         include/zephyr
         dts/common
-        dts/${ARCH}
+        ${arch_include}
         dts
         )
       get_filename_component(full_path ${dts_root}/${dts_root_path} REALPATH)
