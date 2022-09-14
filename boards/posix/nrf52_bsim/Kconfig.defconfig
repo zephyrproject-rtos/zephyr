@@ -11,9 +11,6 @@ config BUILD_OUTPUT_EXE
 config OUTPUT_PRINT_MEMORY_USAGE
 	default n
 
-config BOARD
-	default "nrf52_bsim"
-
 config BT_CTLR
 	default y
 	depends on BT
