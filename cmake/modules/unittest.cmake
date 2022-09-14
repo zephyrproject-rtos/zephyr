@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.20.0)
 
 include(root)
 include(boards)
-include(arch)
+include(arch_v1)
 include(configuration_files)
 
 include(west)
