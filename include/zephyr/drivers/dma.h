@@ -183,6 +183,7 @@ typedef void (*dma_callback_t)(const struct device *dev, void *user_data,
  *     depends on availability of the DMA controller.
  * @param user_data  private data from DMA client.
  * @param dma_callback see dma_callback_t for details
+ * @param priv_dma_config which is private dma config (HW specific)
  */
 struct dma_config {
 	uint32_t  dma_slot :             8;
@@ -205,6 +206,7 @@ struct dma_config {
 	struct dma_block_config *head_block;
 	void *user_data;
 	dma_callback_t dma_callback;
+	void *priv_dma_config;
 };
 
 /**
