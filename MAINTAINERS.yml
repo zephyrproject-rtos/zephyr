@@ -2535,7 +2535,6 @@ West:
     - marc-hb
   files:
     - modules/Kconfig.sof
-    - samples/modules/sof/
   labels:
     - manifest-sof
 
