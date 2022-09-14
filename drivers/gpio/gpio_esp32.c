@@ -124,7 +124,7 @@ static int gpio_esp32_config(const struct device *dev,
 			int rtcio_num = rtc_io_num_map[io_pin];
 
 			if (rtc_io_desc[rtcio_num].pullup) {
-				rtcio_hal_pullup_enable(rtc_io_num_map[io_pin]);
+				rtcio_hal_pullup_enable(rtcio_num);
 			} else {
 				ret = -ENOTSUP;
 				goto end;
@@ -136,7 +136,14 @@ static int gpio_esp32_config(const struct device *dev,
 			gpio_ll_pullup_dis(&GPIO, io_pin);
 		} else {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-			rtcio_hal_pullup_disable(io_pin);
+			int rtcio_num = rtc_io_num_map[io_pin];
+
+			if (rtc_io_desc[rtcio_num].pulldown) {
+				rtcio_hal_pullup_disable(rtcio_num);
+			} else {
+				ret = -ENOTSUP;
+				goto end;
+			}
 #else
 			ret = -ENOTSUP;
 			goto end;
@@ -164,7 +171,7 @@ static int gpio_esp32_config(const struct device *dev,
 			int rtcio_num = rtc_io_num_map[io_pin];
 
 			if (rtc_io_desc[rtcio_num].pulldown) {
-				rtcio_hal_pulldown_enable(rtc_io_num_map[io_pin]);
+				rtcio_hal_pulldown_enable(rtcio_num);
 			} else {
 				ret = -ENOTSUP;
 				goto end;
@@ -176,7 +183,14 @@ static int gpio_esp32_config(const struct device *dev,
 			gpio_ll_pulldown_dis(&GPIO, io_pin);
 		} else {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-			rtcio_hal_pulldown_disable(io_pin);
+			int rtcio_num = rtc_io_num_map[io_pin];
+
+			if (rtc_io_desc[rtcio_num].pulldown) {
+				rtcio_hal_pulldown_disable(rtcio_num);
+			} else {
+				ret = -ENOTSUP;
+				goto end;
+			}
 #else
 			ret = -ENOTSUP;
 			goto end;
