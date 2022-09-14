@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF52840DK_NRF52840
+	bool
+	default y
+	select SOC_SERIES_NRF52X
+	select SOC_NRF52840_QIAA
