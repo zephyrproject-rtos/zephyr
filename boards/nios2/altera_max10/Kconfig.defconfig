@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_ALTERA_MAX10
-
 if FLASH
 
 config SOC_FLASH_NIOS2_QSPI
@@ -34,5 +32,3 @@ endif # DISK_DRIVER_FLASH
 endif # SOC_FLASH_NIOS2_QSPI
 
 endif # FLASH
-
-endif # BOARD_ALTERA_MAX10
