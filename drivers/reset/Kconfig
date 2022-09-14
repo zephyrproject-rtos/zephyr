@@ -32,4 +32,6 @@ rsource "Kconfig.gd32"
 rsource "Kconfig.aspeed"
 rsource "Kconfig.stm32"
 
+source "drivers/reset/Kconfig.intel_socfpga"
+
 endif # RESET
