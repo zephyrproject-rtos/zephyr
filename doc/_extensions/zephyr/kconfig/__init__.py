@@ -83,6 +83,10 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
         with open(Path(td) / "Kconfig.dts", "w") as f:
             f.write(kconfig)
 
+        (Path(td) / 'soc').mkdir(exist_ok=True)
+        with open(Path(td) / "soc" / "Kconfig.defconfig", "w") as f:
+            f.write('')
+
         # base environment
         os.environ["ZEPHYR_BASE"] = str(ZEPHYR_BASE)
         os.environ["srctree"] = str(ZEPHYR_BASE)
@@ -91,8 +95,9 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
 
         # include all archs and boards
         os.environ["ARCH_DIR"] = "arch"
-        os.environ["ARCH"] = "*"
+        os.environ["ARCH"] = "[!v][!2]*"
         os.environ["BOARD_DIR"] = "boards/*/*"
+        os.environ["HWM_SCHEME"] = "v1"
 
         # insert external Kconfigs to the environment
         module_paths = dict()
