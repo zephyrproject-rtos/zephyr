@@ -229,8 +229,8 @@ class KconfigCheck(ComplianceTest):
     doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
     path_hint = ZEPHYR_BASE
 
-    def run(self, full=True):
-        kconf = self.parse_kconfig()
+    def run(self, full=True, board_scheme="v*", filename="Kconfig"):
+        kconf = self.parse_kconfig(board_scheme=board_scheme, filename=filename)
 
         self.check_top_menu_not_too_long(kconf)
         self.check_no_pointless_menuconfigs(kconf)
@@ -294,7 +294,7 @@ class KconfigCheck(ComplianceTest):
             self.error(ex.output)
 
 
-    def parse_kconfig(self):
+    def parse_kconfig(self, board_scheme="v*", filename="Kconfig"):
         """
         Returns a kconfiglib.Kconfig object for the Kconfig files. We reuse
         this object for all tests to avoid having to reparse for each test.
@@ -321,6 +321,8 @@ class KconfigCheck(ComplianceTest):
         os.environ["SOC_DIR"] = "soc/"
         os.environ["ARCH_DIR"] = "arch/"
         os.environ["BOARD_DIR"] = "boards/*/*"
+        os.environ["BOARD_SCHEME"] = board_scheme
+        os.environ["BOARD"] = "*"
         os.environ["ARCH"] = "*"
         os.environ["KCONFIG_BINARY_DIR"] = tempfile.gettempdir()
         os.environ['DEVICETREE_CONF'] = "dummy"
@@ -345,7 +347,7 @@ class KconfigCheck(ComplianceTest):
             # them: so some warnings might get printed
             # twice. "warn_to_stderr=False" could unfortunately cause
             # some (other) warnings to never be printed.
-            return kconfiglib.Kconfig()
+            return kconfiglib.Kconfig(filename=filename)
         except kconfiglib.KconfigError as e:
             self.add_failure(str(e))
             raise EndTest
@@ -630,6 +632,24 @@ class KconfigBasicCheck(KconfigCheck, ComplianceTest):
 
     def run(self):
         super().run(full=False)
+
+
+class KconfigBoardV2Check(KconfigCheck, ComplianceTest):
+    """
+    This runs the Kconfig test for board and SoC v2 scheme.
+    This check ensures that all symbols inside the v2 scheme is also defined
+    within the same tree.
+    This ensures the board and SoC trees are fully self-contained and reusable.
+    """
+    name = "KconfigBoardV2"
+    doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
+    path_hint = ZEPHYR_BASE
+
+    def run(self):
+        # Use dedicated Kconfig board / soc v2 scheme file.
+        # This file sources only v2 scheme tree.
+        kconfig_file = os.path.join(os.path.dirname(__file__), "Kconfig.board.v2")
+        super().run(full=False, board_scheme="v2", filename=kconfig_file)
 
 
 class Codeowners(ComplianceTest):

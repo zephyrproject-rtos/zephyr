@@ -97,6 +97,7 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
         os.environ["ARCH_DIR"] = "arch"
         os.environ["ARCH"] = "*"
         os.environ["BOARD_DIR"] = "boards/*/*"
+        os.environ["BOARD_SCHEME"] = "v*"
 
         # insert external Kconfigs to the environment
         module_paths = dict()

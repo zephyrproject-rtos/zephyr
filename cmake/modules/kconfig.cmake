@@ -111,6 +111,17 @@ string(REPLACE ";" "\\\;" SHIELD_AS_LIST_ESCAPED "${SHIELD_AS_LIST}")
 # cmake commands are escaped differently
 string(REPLACE ";" "\\;" SHIELD_AS_LIST_ESCAPED_COMMAND "${SHIELD_AS_LIST}")
 
+# A Kconfig.board indicates legacy style board definition, whereas
+# Kconfig.${BOARD} indicates new and improved style.
+if(EXISTS ${BOARD_DIR}/Kconfig.board AND NOT EXISTS ${BOARD_DIR}/Kconfig.${BOARD})
+  set(BOARD_SCHEME v1)
+elseif(NOT EXISTS ${BOARD_DIR}/Kconfig.board AND EXISTS ${BOARD_DIR}/Kconfig.${BOARD})
+  set(BOARD_SCHEME v2)
+elseif(EXISTS ${BOARD_DIR}/Kconfig.board AND EXISTS ${BOARD_DIR}/Kconfig.${BOARD})
+  message(WARNING "Mixed board scheme (v1 + v2) not allowed, using board scheme v2.")
+  set(BOARD_SCHEME v2)
+endif()
+
 set(COMMON_KCONFIG_ENV_SETTINGS
   PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
   srctree=${ZEPHYR_BASE}
@@ -122,7 +133,9 @@ set(COMMON_KCONFIG_ENV_SETTINGS
   ARCH=${ARCH}
   ARCH_DIR=${ARCH_DIR}
   BOARD_DIR=${BOARD_DIR}
+  BOARD=${BOARD}
   BOARD_REVISION=${BOARD_REVISION}
+  BOARD_SCHEME=${BOARD_SCHEME}
   KCONFIG_BINARY_DIR=${KCONFIG_BINARY_DIR}
   ZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
   TOOLCHAIN_KCONFIG_DIR=${TOOLCHAIN_KCONFIG_DIR}

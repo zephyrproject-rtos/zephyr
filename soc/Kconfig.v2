@@ -1,0 +1,37 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+
+# Load all SoCs.
+# SoCs that has transistioned to SoC scheme v2 are promptless, and thus
+# unselectable by the user or thorugh configuration files.
+#
+# SoC that are still using scheme v1 are still having a prompt but is loaded as
+# they offer board maintainers the possibility to use board scheme v2.
+
+config SOC
+	string
+	help
+	  SoC name which can be found under soc/<arch>/<soc name>.
+	  This option holds the directory name used by the build system to locate
+	  the correct linker and header files for the SoC.
+
+config SOC_SERIES
+	string
+	help
+	  SoC series name which can be found under soc/<arch>/<family>/<series>.
+	  This option holds the directory name used by the build system to locate
+	  the correct linker and header files.
+
+config SOC_FAMILY
+	string
+	help
+	  SoC family name which can be found under soc/<arch>/<family>.
+	  This option holds the directory name used by the build system to locate
+	  the correct linker and header files.
+
+osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc.v2"
+# This loads Zephyr base SoC root Kconfig
+osource "soc/$(ARCH)/*/Kconfig.soc.v2"
+
+#endif
