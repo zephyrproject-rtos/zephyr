@@ -10,6 +10,7 @@
 #include <soc.h>
 #include <errno.h>
 #include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include "espi_utils.h"
 
@@ -70,6 +71,7 @@ struct espi_xec_config {
 	uint8_t bus_girq_id;
 	uint8_t vw_girq_ids[VW_MAX_GIRQS];
 	uint8_t pc_girq_id;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct espi_xec_data {
@@ -1456,12 +1458,16 @@ static const struct espi_driver_api espi_xec_driver_api = {
 
 static struct espi_xec_data espi_xec_data;
 
+/* pin control structure(s) */
+PINCTRL_DT_INST_DEFINE(0);
+
 static const struct espi_xec_config espi_xec_config = {
 	.base_addr = DT_INST_REG_ADDR(0),
 	.bus_girq_id = DT_INST_PROP(0, io_girq),
 	.vw_girq_ids[0] = DT_INST_PROP_BY_IDX(0, vw_girqs, 0),
 	.vw_girq_ids[1] = DT_INST_PROP_BY_IDX(0, vw_girqs, 1),
 	.pc_girq_id = DT_INST_PROP(0, pc_girq),
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 DEVICE_DT_INST_DEFINE(0, &espi_xec_init, NULL,
@@ -1473,6 +1479,13 @@ static int espi_xec_init(const struct device *dev)
 {
 	const struct espi_xec_config *config = dev->config;
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
+	int ret;
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret != 0) {
+		LOG_ERR("XEC eSPI pinctrl setup failed (%d)", ret);
+		return ret;
+	}
 
 	data->plt_rst_asserted = 0;
 
