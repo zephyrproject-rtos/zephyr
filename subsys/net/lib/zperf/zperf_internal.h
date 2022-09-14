@@ -9,6 +9,7 @@
 #include <limits.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/__assert.h>
 
 #define IP6PREFIX_STR2(s) #s
 #define IP6PREFIX_STR(p) IP6PREFIX_STR2(p)
@@ -35,13 +36,15 @@
 #define DST_IP4ADDR NULL
 #endif
 
-#define PACKET_SIZE_MAX      1024
+#define PACKET_SIZE_MAX CONFIG_NET_ZPERF_MAX_PACKET_SIZE
 
 struct zperf_udp_datagram {
 	int32_t id;
 	uint32_t tv_sec;
 	uint32_t tv_usec;
 } __packed;
+
+BUILD_ASSERT(sizeof(struct zperf_udp_datagram) <= PACKET_SIZE_MAX, "Invalid PACKET_SIZE_MAX");
 
 struct zperf_client_hdr_v1 {
 	int32_t flags;
