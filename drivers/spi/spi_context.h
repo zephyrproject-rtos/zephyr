@@ -80,6 +80,11 @@ static inline bool spi_context_configured(struct spi_context *ctx,
 	return !!(ctx->config == config);
 }
 
+static inline bool spi_buf_addr_nochange(const struct spi_buf *current)
+{
+	return current->addr_nochange;
+}
+
 static inline bool spi_context_is_slave(struct spi_context *ctx)
 {
 	return (ctx->config->operation & SPI_OP_MODE_SLAVE);

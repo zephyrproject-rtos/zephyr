@@ -385,6 +385,8 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	uint8_t final_block_count = block_count;
 	uint16_t transfer_bytes = len;
 	size_t remain_bytes = len;
+	bool addr_nochange = spi_buf_addr_nochange(data->ctx.current_tx);
+
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 
 	/* remember active TX DMA channel (used in callback) */
@@ -399,6 +401,12 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		/* If only tx length == sizeof(word_size), don't use dma linked descriptor  */
 		if (i == 0 && ((word_size > 8) ? (len > 2U) : (len > 1U))) {
 			blk_cfg->source_gather_en = 1;
+		}
+
+		/* buffer address don't auto increase */
+		if (addr_nochange) {
+			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		}
 
 		transfer_bytes = (DMA_MAX_TRANS_NUM >= remain_bytes) ? remain_bytes : DMA_MAX_TRANS_NUM;
@@ -441,14 +449,22 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 			}
 		} else {
 			if (last_frame && last_packet) {
-				spi_mcux_prepare_txlastword(&data->last_word, buf + i * DMA_MAX_TRANS_NUM, spi_cfg, transfer_bytes);
+				if (addr_nochange) {
+					spi_mcux_prepare_txlastword(&data->last_word, buf, spi_cfg, (word_size > 8) ? sizeof(uint16_t) : sizeof(uint8_t));
+				} else {
+					spi_mcux_prepare_txlastword(&data->last_word, buf + i * DMA_MAX_TRANS_NUM, spi_cfg, transfer_bytes);
+				}
 			}
 			/* If last packet and data transfer frame is bigger then 1,
 			* use dma descriptor to send the last data.
 			*/
 			if (last_frame  && last_packet ) {
 				if (((word_size > 8) ? (transfer_bytes > 2U) : (transfer_bytes > 1U))) {
-					blk_cfg->source_address = (uint32_t)(buf + i * DMA_MAX_TRANS_NUM);
+					if (addr_nochange) {
+						blk_cfg->source_address = (uint32_t)buf;
+					} else {
+						blk_cfg->source_address = (uint32_t)(buf + i * DMA_MAX_TRANS_NUM);
+					}
 					blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
 					blk_cfg->block_size = (word_size > 8) ?
 								(transfer_bytes - 2U) : (transfer_bytes - 1U);
@@ -470,13 +486,21 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
 					blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 				} else {
 					/* send the last byte, and set the end of transfor flag at the tail of this function */
-					blk_cfg->source_address = (uint32_t)(buf + i * DMA_MAX_TRANS_NUM);
+					if (addr_nochange) {
+						blk_cfg->source_address = (uint32_t)buf;
+					} else {
+						blk_cfg->source_address = (uint32_t)(buf + i * DMA_MAX_TRANS_NUM);
+					}
 					blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
 					blk_cfg->block_size = transfer_bytes;
 				}
 
 			} else {
-				blk_cfg->source_address = (uint32_t)(buf + i * DMA_MAX_TRANS_NUM);
+				if (addr_nochange) {
+					blk_cfg->source_address = (uint32_t)buf;
+				} else {
+					blk_cfg->source_address = (uint32_t)(buf + i * DMA_MAX_TRANS_NUM);
+				}
 				blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
 				blk_cfg->block_size = transfer_bytes;
 			}

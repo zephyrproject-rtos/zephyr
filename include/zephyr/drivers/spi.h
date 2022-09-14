@@ -430,10 +430,14 @@ struct spi_dt_spec {
  * @param len is the length of the buffer or, if buf is NULL, will be the
  *    length which as to be sent as dummy bytes (as TX buffer) or
  *    the length of bytes that should be skipped (as RX buffer).
+ * @param addr_nochange is a flag that whether adjust buf address when use
+ * 	  DMA. In default address is increased. If true, DMA will transfer the
+ *    first data @ref len times
  */
 struct spi_buf {
 	void *buf;
 	size_t len;
+	uint8_t  addr_nochange :  1;
 };
 
 /**
