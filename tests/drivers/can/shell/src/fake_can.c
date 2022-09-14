@@ -16,6 +16,10 @@
 
 #define DT_DRV_COMPAT test_fake_can
 
+DEFINE_FAKE_VALUE_FUNC(int, fake_can_start, const struct device *);
+
+DEFINE_FAKE_VALUE_FUNC(int, fake_can_stop, const struct device *);
+
 DEFINE_FAKE_VALUE_FUNC(int, fake_can_set_timing, const struct device *, const struct can_timing *);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_can_set_timing_data, const struct device *,
@@ -49,6 +53,8 @@ static void fake_can_reset_rule_before(const struct ztest_unit_test *test, void 
 	ARG_UNUSED(test);
 	ARG_UNUSED(fixture);
 
+	RESET_FAKE(fake_can_start);
+	RESET_FAKE(fake_can_stop);
 	RESET_FAKE(fake_can_get_capabilities);
 	RESET_FAKE(fake_can_set_mode);
 	RESET_FAKE(fake_can_set_timing);
@@ -84,6 +90,8 @@ static int fake_can_get_max_bitrate(const struct device *dev, uint32_t *max_bitr
 }
 
 static const struct can_driver_api fake_can_driver_api = {
+	.start = fake_can_start,
+	.stop = fake_can_stop,
 	.get_capabilities = fake_can_get_capabilities,
 	.set_mode = fake_can_set_mode,
 	.set_timing = fake_can_set_timing,

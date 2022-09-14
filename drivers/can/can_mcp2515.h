@@ -45,6 +45,8 @@ struct mcp2515_data {
 	/* general data */
 	struct k_mutex mutex;
 	enum can_state old_state;
+	uint8_t mcp2515_mode;
+	bool started;
 	uint8_t sjw;
 };
 
