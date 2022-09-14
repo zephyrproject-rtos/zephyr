@@ -15,6 +15,16 @@
  * @}
  */
 
+/**
+ * Test bitrates in bits/second.
+ */
+#define TEST_BITRATE 1000000
+
+/**
+ * Test sample points in per mille.
+ */
+#define TEST_SAMPLE_POINT 750
+
 
 /**
  * @brief Test timeouts.
@@ -380,6 +390,36 @@ ZTEST(canfd, test_send_receive_mixed)
 		     &test_std_frame_fd_1, &test_std_frame_2);
 }
 
+/**
+ * @brief Test setting bitrate is not allowed while started.
+ */
+ZTEST_USER(canfd, test_set_bitrate_data_while_started)
+{
+	int err;
+
+	err = can_set_bitrate_data(can_dev, TEST_BITRATE);
+	zassert_not_equal(err, 0, "changed data bitrate while started");
+	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
+}
+
+/**
+ * @brief Test setting timing is not allowed while started.
+ */
+ZTEST_USER(canfd, test_set_timing_data_while_started)
+{
+	struct can_timing timing;
+	int err;
+
+	timing.sjw = CAN_SJW_NO_CHANGE;
+
+	err = can_calc_timing_data(can_dev, &timing, TEST_BITRATE, TEST_SAMPLE_POINT);
+	zassert_ok(err, "failed to calculate data timing (err %d)", err);
+
+	err = can_set_timing(can_dev, &timing);
+	zassert_not_equal(err, 0, "changed data timing while started");
+	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
+}
+
 void *canfd_setup(void)
 {
 	int err;
@@ -391,6 +431,9 @@ void *canfd_setup(void)
 
 	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK | CAN_MODE_FD);
 	zassert_equal(err, 0, "failed to set CAN-FD loopback mode (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 
 	return NULL;
 }

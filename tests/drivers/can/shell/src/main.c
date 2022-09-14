@@ -94,6 +94,26 @@ static int can_shell_test_capture_frame(const struct device *dev, const struct c
 	return 0;
 }
 
+ZTEST(can_shell, test_can_start)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	int err;
+
+	err = shell_execute_cmd(sh, "can start " FAKE_CAN_NAME);
+	zassert_ok(err, "failed to execute shell command (err %d)", err);
+	zassert_equal(fake_can_start_fake.call_count, 1, "start function not called");
+}
+
+ZTEST(can_shell, test_can_stop)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	int err;
+
+	err = shell_execute_cmd(sh, "can stop " FAKE_CAN_NAME);
+	zassert_ok(err, "failed to execute shell command (err %d)", err);
+	zassert_equal(fake_can_stop_fake.call_count, 1, "stop function not called");
+}
+
 ZTEST(can_shell, test_can_show)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();

@@ -37,6 +37,7 @@ struct rpl_val {
 
 static struct bt_mesh_rpl replay_list[CONFIG_BT_MESH_CRPL];
 static ATOMIC_DEFINE(store, CONFIG_BT_MESH_CRPL);
+static atomic_t clear;
 
 static inline int rpl_idx(const struct bt_mesh_rpl *rpl)
 {
@@ -75,11 +76,6 @@ static void schedule_rpl_store(struct bt_mesh_rpl *entry, bool force)
 	    ) {
 		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_RPL_PENDING);
 	}
-}
-
-static void schedule_rpl_clear(void)
-{
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_RPL_PENDING);
 }
 
 void bt_mesh_rpl_update(struct bt_mesh_rpl *rpl,
@@ -164,11 +160,14 @@ void bt_mesh_rpl_clear(void)
 {
 	BT_DBG("");
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		schedule_rpl_clear();
-	} else {
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		(void)memset(replay_list, 0, sizeof(replay_list));
+		return;
 	}
+
+	(void)atomic_cas(&clear, 0, 1);
+
+	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_RPL_PENDING);
 }
 
 static struct bt_mesh_rpl *bt_mesh_rpl_find(uint16_t src)
@@ -315,18 +314,9 @@ static void store_rpl(struct bt_mesh_rpl *entry)
 	}
 }
 
-static void store_pending_rpl(struct bt_mesh_rpl *rpl)
-{
-	BT_DBG("");
-
-	if (atomic_test_and_clear_bit(store, rpl_idx(rpl))) {
-		store_rpl(rpl);
-	}
-}
-
 void bt_mesh_rpl_pending_store(uint16_t addr)
 {
-	int i;
+	bool clr;
 
 	if (!IS_ENABLED(CONFIG_BT_SETTINGS) ||
 	    (!BT_MESH_ADDR_IS_UNICAST(addr) &&
@@ -338,16 +328,18 @@ void bt_mesh_rpl_pending_store(uint16_t addr)
 		bt_mesh_settings_store_cancel(BT_MESH_SETTINGS_RPL_PENDING);
 	}
 
-	for (i = 0; i < ARRAY_SIZE(replay_list); i++) {
+	clr = atomic_cas(&clear, 1, 0);
+
+	for (int i = 0; i < ARRAY_SIZE(replay_list); i++) {
 		if (addr != BT_MESH_ADDR_ALL_NODES &&
 		    addr != replay_list[i].src) {
 			continue;
 		}
 
-		if (atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
-			store_pending_rpl(&replay_list[i]);
-		} else {
+		if (clr) {
 			clear_rpl(&replay_list[i]);
+		} else if (atomic_test_and_clear_bit(store, rpl_idx(&replay_list[i]))) {
+			store_rpl(&replay_list[i]);
 		}
 
 		if (addr != BT_MESH_ADDR_ALL_NODES) {

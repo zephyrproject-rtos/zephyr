@@ -18,8 +18,6 @@
 #define MEMCTL_INIT_BIT         BIT(23)
 #define MEMCTL_DEFAULT_VALUE    (MEMCTL_L0IBUF_EN | MEMCTL_INIT_BIT)
 
-__aligned(XCHAL_DCACHE_LINESIZE) uint8_t d0i3_stack[CONFIG_MM_DRV_PAGE_SIZE];
-
 __imr void power_init(void)
 {
 	/* Disable idle power gating */
@@ -39,6 +37,8 @@ __imr void power_init(void)
 #define L3_INTERRUPT_MASK       (1<<L3_INTERRUPT_NUMBER)
 
 #define ALL_USED_INT_LEVELS_MASK (L2_INTERRUPT_MASK | L3_INTERRUPT_MASK)
+
+__aligned(XCHAL_DCACHE_LINESIZE) uint8_t d0i3_stack[CONFIG_MM_DRV_PAGE_SIZE];
 
 /**
  * @brief Power down procedure.
