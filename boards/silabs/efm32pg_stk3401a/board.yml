@@ -1,0 +1,5 @@
+board:
+  name: efm32pg_stk3401a
+  vendor: silabs
+  socs:
+  - name: efm32pg1b200f256gm48

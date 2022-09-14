@@ -1,0 +1,11 @@
+# Electronut Labs Blip board configuration
+
+# Copyright (c) 2018 Electronut Labs
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52840_BLIP
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_NRF52840_BLIP

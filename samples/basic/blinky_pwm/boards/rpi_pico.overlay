@@ -1,3 +1,11 @@
+/* The rpi_pico/rp2040/w doesn't have a pwm. */
+/* Use the HAS_DT_PWM defined by the based board to identify when this overlay is valid */
+#if HAS_DT_PWM_LED
+
+&{/pwm_leds} {
+	status = "okay";
+};
+
 &pwm_led0 {
 	status = "okay";
 };
@@ -7,3 +15,5 @@
 	divider-frac-4 = <15>;
 	divider-int-4 = <255>;
 };
+
+#endif

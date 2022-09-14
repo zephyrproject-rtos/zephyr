@@ -147,7 +147,7 @@ static void phy_link_state_changed(const struct device *pdev,
 	}
 }
 
-#if defined(CONFIG_SOC_SERIES_S32K3XX)
+#if defined(CONFIG_SOC_SERIES_S32K3)
 static int select_phy_interface(Gmac_Ip_MiiModeType mode)
 {
 	uint32_t regval;
@@ -174,7 +174,7 @@ static int select_phy_interface(Gmac_Ip_MiiModeType mode)
 }
 #else
 #error "SoC not supported"
-#endif /* CONFIG_SOC_SERIES_S32K3XX */
+#endif /* CONFIG_SOC_SERIES_S32K3 */
 
 static int eth_nxp_s32_init(const struct device *dev)
 {

@@ -1,9 +1,0 @@
-# Copyright (C) 2023, Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_NIOSV_M
-
-config BOARD
-	default "niosv_m"
-
-endif # BOARD_NIOSV_M

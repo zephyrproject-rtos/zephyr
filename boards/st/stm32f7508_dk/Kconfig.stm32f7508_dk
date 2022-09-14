@@ -1,0 +1,5 @@
+# Copyright (c) 2022, Rtone.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32F7508_DK
+	select SOC_STM32F750XX

@@ -1,9 +1,0 @@
-# LPCXpresso11U68 board
-
-# Copyright (c) 2020, Seagate
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_LPCXPRESSO11U68
-	bool "NXP LPCXPRESSO-11U68"
-	depends on SOC_SERIES_LPC11U6X
-	select SOC_PART_NUMBER_LPC11U68JBD100

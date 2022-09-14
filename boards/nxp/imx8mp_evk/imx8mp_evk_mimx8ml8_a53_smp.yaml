@@ -1,0 +1,21 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx8mp_evk/mimx8ml8/a53/smp
+name: NXP i.MX8M Plus EVK A53 with SMP kernel
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 128
+supported:
+  - smp
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: nxp

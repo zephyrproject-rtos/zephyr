@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2023 Panasonic Industrial Devices Europe GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpuapp_qkaa.dtsi>
+#include "pan1783_nrf5340_cpuapp_common.dtsi"
+
+/ {
+	model = "Panasonic PAN1783A-PA EVB (NRF5340) Application";
+	compatible = "panasonic,pan1783a_pa-evb-cpuapp";
+
+	chosen {
+		zephyr,sram = &sram0_image;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram-secure-partition = &sram0_s;
+	};
+};
+
+&gpio_fwd {
+	/delete-node/ uart;
+
+	status = "okay";
+	fem {
+		gpios = <&gpio0 19 0>, <&gpio0 21 0>;
+	};
+};

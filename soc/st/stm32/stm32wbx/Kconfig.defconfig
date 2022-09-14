@@ -1,0 +1,13 @@
+# ST Microelectronics STM32WB MCU line
+
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32WBX
+
+rsource "Kconfig.defconfig.stm32wb*"
+
+config BT_USER_PHY_UPDATE
+	default y if BT
+
+endif # SOC_SERIES_STM32WBX

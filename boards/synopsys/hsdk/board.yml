@@ -1,0 +1,7 @@
+board:
+  name: hsdk
+  vendor: snps
+  socs:
+  - name: arc_hsdk
+    variants:
+    - name: 2cores

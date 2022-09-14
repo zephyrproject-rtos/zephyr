@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Kernel Options due to Low Memory (4k)
+CONFIG_MAIN_STACK_SIZE=640
+CONFIG_IDLE_STACK_SIZE=200
+CONFIG_ISR_STACK_SIZE=512
+# Prevent Interrupt Vector Table in RAM
+CONFIG_SRAM_VECTOR_TABLE=n
+
+# Serial Drivers
+CONFIG_SERIAL=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# GPIO Controller
+CONFIG_GPIO=y
+
+# Enable Clocks
+CONFIG_CLOCK_CONTROL=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

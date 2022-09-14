@@ -5,7 +5,7 @@ common:
     - clib
     - newlib
   integration_platforms:
-    - mps2_an521
+    - mps2/an521/cpu0
     - qemu_x86
 tests:
   libraries.libc.newlib.thread_safety:

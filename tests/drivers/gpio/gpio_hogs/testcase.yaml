@@ -8,12 +8,14 @@ tests:
       - native_sim
       - native_sim_64
       - frdm_k64f
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
       - nucleo_g474re
       - nrf52_bsim
       - mr_canhubk3
-      - s32z270dc2_rtu0_r52
-      - s32z270dc2_rtu1_r52
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
     integration_platforms:
       - native_sim
       - native_sim_64

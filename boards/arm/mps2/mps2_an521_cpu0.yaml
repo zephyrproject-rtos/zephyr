@@ -1,0 +1,21 @@
+identifier: mps2/an521/cpu0
+name: ARM V2M MPS2-AN521
+type: mcu
+arch: arm
+ram: 4096
+flash: 4096
+simulation: qemu
+toolchain:
+  - gnuarmemb
+  - zephyr
+  - xtools
+supported:
+  - gpio
+testing:
+  default: true
+  ignore_tags:
+    - drivers
+    - bluetooth
+    - net
+    - timer
+vendor: arm

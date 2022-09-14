@@ -1,0 +1,34 @@
+family:
+- name: nxp_imxrt
+  series:
+  - name: imxrt10xx
+    socs:
+    - name: mimxrt1011
+    - name: mimxrt1015
+    - name: mimxrt1021
+    - name: mimxrt1024
+    - name: mimxrt1042
+    - name: mimxrt1051
+    - name: mimxrt1052
+    - name: mimxrt1061
+    - name: mimxrt1062
+    - name: mimxrt1064
+  - name: imxrt11xx
+    socs:
+    - name: mimxrt1166
+      cpuclusters:
+      - name: cm7
+      - name: cm4
+    - name: mimxrt1176
+      cpuclusters:
+      - name: cm7
+      - name: cm4
+  - name: imxrt5xx
+    socs:
+    - name: mimxrt595s
+      cpuclusters:
+      - name: cm33
+      - name: f1
+  - name: imxrt6xx
+    socs:
+    - name: mimxrt685s

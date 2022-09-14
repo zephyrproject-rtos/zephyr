@@ -1,0 +1,119 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMXRT595S_CM33
+
+config ROM_START_OFFSET
+	default 0x1200 if NXP_IMXRT_BOOT_HEADER
+
+# The PVT Sensor uses IRQ #75.  For more details, see
+# https://www.nxp.com/design/design-center/software/embedded-software/application-software-packs/application-software-pack-dynamic-voltage-scaling-using-pvt-sensor:APP-SW-PACK-DVS-PVT-SENSOR
+config NUM_IRQS
+	default 76
+
+config ZTEST_NO_YIELD
+	default y if (PM && ZTEST)
+
+# Code relocation is needed for flash clock setup
+config CODE_DATA_RELOCATION_SRAM
+	default y
+
+#
+# MBEDTLS is larger but much faster than TinyCrypt so choose wisely
+#
+config MBEDTLS
+#config TINYCRYPT
+	default y if CSPRNG_ENABLED
+	depends on ENTROPY_GENERATOR
+
+if MBEDTLS
+#
+# MBEDTLS CTR_DRBG code path needs extra stack space for initialization than
+# what the ztest_thread_stack defaults to.
+#
+config TEST_EXTRA_STACK_SIZE
+	int
+	default 1024
+endif # MBEDTLS
+
+if MCUX_OS_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000
+
+endif # MCUX_OS_TIMER
+
+if CORTEX_M_SYSTICK
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 250105263
+
+endif # CORTEX_M_SYSTICK
+
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_LPCIP3511
+endchoice
+
+if PM_DEVICE
+# Enable the MEMC FlexSPI driver when using device power
+# management so we can reconfigure the FlexSPI pins to
+# save power. The MEMC FlexSPI driver is enabled when we
+# enable the Flash subsystem, however we would like to
+# reconfigure the FlexSPI pins even when the Flash driver
+# is disabled, hence MEMC is selected when PM_DEVICE
+# is turned on.
+config MEMC
+	default y
+	select MEMC_MCUX_FLEXSPI
+
+endif
+
+endif # SOC_MIMXRT595S_CM33
+
+if SOC_MIMXRT595S_F1
+
+config SMP
+	default n
+
+config XTENSA_TIMER
+	default y
+
+config KERNEL_ENTRY
+	default "__start"
+
+config MULTI_LEVEL_INTERRUPTS
+	default n
+
+config 2ND_LEVEL_INTERRUPTS
+	default n
+
+# To prevent test uses TEST_LOGGING_MINIMAL
+config TEST_LOGGING_DEFAULTS
+	default n
+	depends on TEST
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 198000000
+
+config XTENSA_CCOUNT_HZ
+	default SYS_CLOCK_HW_CYCLES_PER_SEC
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config DYNAMIC_INTERRUPTS
+	default n
+
+config CACHE
+	default n
+
+config DCACHE
+	default n
+
+config CACHE_MANAGEMENT
+	default n
+
+config LOG
+	default n
+
+endif # SOC_MIMXRT595S_F1

@@ -1,0 +1,26 @@
+# Intel ISH family default configuration options
+#
+# Copyright (c) 2023-2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_INTEL_ISH
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if HPET_TIMER
+
+config X86_VERY_EARLY_CONSOLE
+	default n
+
+config SRAM_OFFSET
+	hex
+	default 0x0
+
+# Target platforms are not PC-compatible
+# (e.g. without BIOS, ACPI, CMOS, etc.).
+config X86_PC_COMPATIBLE
+	default n
+
+rsource "*/Kconfig.defconfig.series"
+
+endif # SOC_FAMILY_INTEL_ISH

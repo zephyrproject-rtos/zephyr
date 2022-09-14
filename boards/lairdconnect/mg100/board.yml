@@ -1,0 +1,5 @@
+board:
+  name: mg100
+  vendor: lairdconnect
+  socs:
+  - name: nrf52840

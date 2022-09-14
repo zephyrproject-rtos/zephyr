@@ -1,8 +1,0 @@
-# Raytac MDBT50Q-DB-33 nRF52833 board configuration
-
-# Copyright (c) 2022 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_RAYTAC_MDBT50Q_DB_33_NRF52833
-	bool "Raytac MDBT50Q-DB-33 nRF52833"
-	depends on SOC_NRF52833_QIAA

@@ -17,17 +17,17 @@ tests:
       - hifive1
       - hifive_unleashed
       - hifive_unmatched
-      - mimxrt1170_evk_cm7
-      - mimxrt1170_evk_cm4
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1170_evk/mimxrt1176/cm4
     filter: dt_compat_enabled("jedec,spi-nor")
     depends_on: spi
   sample.drivers.jesd216.nrf52840dk_spi:
     extra_args:
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_spi.overlay
       - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_spi.conf
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
   sample.drivers.stm32.jesd216:
     filter: dt_compat_enabled("st,stm32-ospi-nor") or dt_compat_enabled("st,stm32-qspi-nor")
     depends_on: spi

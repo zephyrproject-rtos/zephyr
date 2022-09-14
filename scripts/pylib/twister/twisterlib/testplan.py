@@ -18,6 +18,7 @@ import shutil
 import random
 import snippets
 from pathlib import Path
+from argparse import Namespace
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -34,7 +35,7 @@ from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.testinstance import TestInstance
 from twisterlib.quarantine import Quarantine
 
-
+import list_boards
 from zephyr_module import parse_modules
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
@@ -398,13 +399,25 @@ class TestPlan:
 
 
     def add_configurations(self):
-        for board_root in self.env.board_roots:
-            board_root = os.path.abspath(board_root)
-            logger.debug("Reading platform configuration files under %s..." %
-                         board_root)
+        board_dirs = set()
+        # Create a list of board roots as defined by the build system in general
+        # Note, internally in twister a board root includes the `boards` folder
+        # but in Zephyr build system, the board root is without the `boards` in folder path.
+        board_roots = [Path(os.path.dirname(root)) for root in self.env.board_roots]
+        lb_args = Namespace(arch_roots=[Path(ZEPHYR_BASE)], soc_roots=[Path(ZEPHYR_BASE),
+                            Path(ZEPHYR_BASE) / 'scripts' / 'pylib' / 'twister'],
+                            board_roots=board_roots, board=None, board_dir=None)
+        v1_boards = list_boards.find_boards(lb_args)
+        v2_boards = list_boards.find_v2_boards(lb_args)
+        for b in v1_boards:
+            board_dirs.add(b.dir)
+        for b in v2_boards:
+            board_dirs.add(b.dir)
+        logger.debug("Reading platform configuration files under %s..." % self.env.board_roots)
 
-            platform_config = self.test_config.get('platforms', {})
-            for file in glob.glob(os.path.join(board_root, "*", "*", "*.yaml")):
+        platform_config = self.test_config.get('platforms', {})
+        for folder in board_dirs:
+            for file in glob.glob(os.path.join(folder, "*.yaml")):
                 try:
                     platform = Platform()
                     platform.load(file)
@@ -447,6 +460,7 @@ class TestPlan:
                                         platform_revision = copy.deepcopy(platform)
                                         revision = revision.replace("_", ".")
                                         platform_revision.name = f"{platform.name}@{revision}"
+                                        platform_revision.normalized_name = platform_revision.name.replace("/", "_")
                                         platform_revision.default = False
                                         self.platforms.append(platform_revision)
 

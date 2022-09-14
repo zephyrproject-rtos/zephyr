@@ -8,35 +8,34 @@ tests:
   sample.filesystem.littlefs:
     build_only: true
     platform_allow:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
       - particle_xenon
       - disco_l475_iot1
-      - mimxrt685_evk_cm33
+      - mimxrt685_evk
       - mimxrt1060_evk
       - mimxrt1064_evk
       - qemu_x86
       - native_posix
       - native_sim
-      - mimxrt1160_evk_cm7
-      - lpcxpresso55s69_cpu0
+      - mimxrt1160_evk/mimxrt1166/cm7
+      - lpcxpresso55s69/lpc55s69/cpu0
       - mr_canhubk3
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
   sample.filesystem.littlefs.nrf52840dk_spi:
     build_only: true
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     extra_args:
       - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_spi.overlay
   sample.filesystem.littlefs.nrf52840dk_qspi:
     build_only: true
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     extra_args:
       - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_qspi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_qspi.overlay
   sample.filesystem.littlefs.stm32h747i_disco_m7_sdmmc:
     build_only: true
-    platform_allow: stm32h747i_disco_m7
+    platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args:
-      - OVERLAY_CONFIG=boards/stm32h747i_disco_m7.conf
       - CONF_FILE=prj_blk.conf

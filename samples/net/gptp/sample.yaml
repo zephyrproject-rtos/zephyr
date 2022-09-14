@@ -10,14 +10,14 @@ tests:
   sample.net.gptp:
     platform_allow:
       - frdm_k64f
-      - sam_e70_xplained
+      - sam_e70_xplained/same70q21
       - native_posix
       - native_posix_64
       - native_sim
       - native_sim_64
       - nucleo_f767zi
       - nucleo_h743zi
-      - nucleo_h745zi_q_m7
+      - nucleo_h745zi_q/stm32h745xx/m7
     depends_on: netif
     integration_platforms:
       - frdm_k64f

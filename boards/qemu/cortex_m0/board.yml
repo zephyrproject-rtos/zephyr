@@ -1,0 +1,5 @@
+board:
+  name: qemu_cortex_m0
+  vendor: nordic
+  socs:
+  - name: nrf51822

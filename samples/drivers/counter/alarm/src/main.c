@@ -15,9 +15,9 @@
 
 struct counter_alarm_cfg alarm_cfg;
 
-#if defined(CONFIG_BOARD_ATSAMD20_XPRO)
+#if defined(CONFIG_BOARD_SAMD20_XPRO)
 #define TIMER DT_NODELABEL(tc4)
-#elif defined(CONFIG_SOC_FAMILY_SAM)
+#elif defined(CONFIG_SOC_FAMILY_ATMEL_SAM)
 #define TIMER DT_NODELABEL(tc0)
 #elif defined(CONFIG_COUNTER_MICROCHIP_MCP7940N)
 #define TIMER DT_NODELABEL(extrtc0)

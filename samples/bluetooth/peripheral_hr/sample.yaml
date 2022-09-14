@@ -10,8 +10,8 @@ tests:
     integration_platforms:
       - qemu_cortex_m3
     tags: bluetooth
-  sample.bluetooth.peripheral_hr_rv32m1_vega_ri5cy:
-    platform_allow: rv32m1_vega_ri5cy
+  sample.bluetooth.peripheral_hr_rv32m1_vega_openisa_rv32m1_ri5cy:
+    platform_allow: rv32m1_vega/openisa_rv32m1/ri5cy
     tags: bluetooth
     build_only: true
   sample.bluetooth.peripheral_hr.frdm_kw41z_shield:

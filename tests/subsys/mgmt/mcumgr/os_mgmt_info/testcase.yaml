@@ -33,13 +33,13 @@ tests:
     platform_exclude:
       - qemu_cortex_a9
       - qemu_x86
-      - qemu_riscv64_smp
+      - qemu_riscv64/qemu_virt_riscv64/smp
       - qemu_riscv64
       - qemu_riscv32e
       - qemu_riscv32
-      - qemu_riscv32_smp
+      - qemu_riscv32/qemu_virt_riscv32/smp
       - qemu_cortex_m3
-      - mps2_an385
+      - mps2/an385
     extra_configs:
       - CONFIG_NETWORKING=y
       - CONFIG_NET_HOSTNAME_ENABLE=y

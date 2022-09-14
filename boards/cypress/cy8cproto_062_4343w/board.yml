@@ -1,0 +1,5 @@
+board:
+  name: cy8cproto_062_4343w
+  vendor: cypress
+  socs:
+  - name: cy8c624abzi_s2d44

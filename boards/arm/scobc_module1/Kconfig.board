@@ -1,8 +1,0 @@
-# Space Cubics OBC module 1 configuration
-
-# Copyright (c) 2021 Space Cubics, LLC. <yashi@spacecubics.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_SCOBC_MODULE1
-	bool "Space Cubics OBC Module 1"
-	depends on SOC_SERIES_ARM_DESIGNSTART

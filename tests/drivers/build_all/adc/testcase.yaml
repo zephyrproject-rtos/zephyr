@@ -26,13 +26,13 @@ tests:
   drivers.adc.npcx.build:
     platform_allow: npcx7m6fb_evb
   drivers.adc.nrf.build:
-    platform_allow: nrf51dk_nrf51422
+    platform_allow: nrf51dk/nrf51822
   drivers.adc.nrf.saadc.build:
-    platform_allow: nrf21540dk_nrf52840
+    platform_allow: nrf21540dk/nrf52840
   drivers.adc.sam0.build:
-    platform_allow: atsame54_xpro
+    platform_allow: same54_xpro
   drivers.adc.sam.afec.build:
-    platform_allow: sam_e70_xplained
+    platform_allow: sam_e70_xplained/same70q21
   drivers.adc.stm32.build:
     platform_allow: disco_l475_iot1
   drivers.adc.xec.build:

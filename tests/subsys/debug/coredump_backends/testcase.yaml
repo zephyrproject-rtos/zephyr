@@ -19,10 +19,10 @@ tests:
       - CONFIG_TEST_STORED_COREDUMP=y
     platform_allow:
       - qemu_x86
-      - esp32_devkitc_wroom
-      - esp32_devkitc_wrover
+      - esp32_devkitc_wroom/esp32/procpu
+      - esp32_devkitc_wrover/esp32/procpu
       - esp32s2_saola
-      - esp32s3_devkitm
+      - esp32s3_devkitm/esp32s3/procpu
       - esp32c3_devkitm
   debug.coredump.backends.other:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP

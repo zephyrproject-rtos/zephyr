@@ -1,0 +1,18 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+
+BOARD_STRING := $(sanitize_upper,$(BOARD))
+BOARD_FULL_STRING := $(sanitize_upper,$(BOARD)$(BOARD_IDENTIFIER))
+
+config BOARD_$(BOARD_STRING)
+	def_bool y
+	help
+	  Kconfig symbol identifying the board.
+
+config BOARD_$(BOARD_FULL_STRING)
+	def_bool y
+	help
+	  Kconfig symbol identifying the board including full board identifier.
+
+osource "$(BOARD_DIR)/Kconfig.$(BOARD)"

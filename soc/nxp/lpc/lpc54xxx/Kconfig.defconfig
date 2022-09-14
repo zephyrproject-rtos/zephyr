@@ -1,0 +1,15 @@
+# NXP LPC54114 M0 platform configuration options
+
+# Copyright 2017, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_LPC54XXX
+
+config GPIO
+	default n if SOC_LPC54114_M0
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 40
+
+endif # SOC_SERIES_LPC54XXX

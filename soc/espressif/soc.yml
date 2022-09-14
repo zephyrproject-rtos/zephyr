@@ -1,0 +1,21 @@
+family:
+- name: espressif_esp32
+  series:
+  - name: esp32
+    socs:
+    - name: esp32
+      cpuclusters:
+      - name: procpu
+      - name: appcpu
+  - name: esp32s2
+    socs:
+    - name: esp32s2
+  - name: esp32s3
+    socs:
+    - name: esp32s3
+      cpuclusters:
+      - name: procpu
+      - name: appcpu
+  - name: esp32c3
+    socs:
+    - name: esp32c3

@@ -1,0 +1,223 @@
+/*
+ * Copyright (c) 2022 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "robokit1-pinctrl.dtsi"
+
+/ {
+	aliases {
+		led0 = &led_0;
+		magn0 = &akm09918c;
+		accel0 = &icm42688;
+		die-temp0 = &icm42688;
+		ambient-temp0 = &temp_sensor;
+	};
+
+	chosen {
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_0: led_0 {
+			gpios = <&pioa 11 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+		led_1: led_1 {
+			gpios = <&pioa 12 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+		led_2: led_2 {
+			gpios = <&pioa 13 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+		led_3: led_3 {
+			gpios = <&pioa 14 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+
+	temp_sensor: ambient_temp_sensor {
+		compatible = "epcos,b57861s0103a039";
+		io-channels = <&spi_adc 0>;
+		pullup-uv = <3300000>;
+		pullup-ohm = <0>;
+		pulldown-ohm = <10000>;
+		connected-positive;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <300000000>;
+};
+
+&afec0 {
+	pinctrl-0 = <&afec0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dacc {
+	status = "okay";
+};
+
+&twihs0 {
+	pinctrl-0 = <&twihs0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&twihs1 {
+	pinctrl-0 = <&twihs1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&twihs2 {
+	pinctrl-0 = <&twihs2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	akm09918c: akm09918c@c {
+		compatible = "asahi-kasei,akm09918c";
+		reg = <0xc>;
+	};
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	dmas = <&xdmac 0 DMA_PERID_SPI0_TX>, <&xdmac 1 DMA_PERID_SPI0_RX>;
+	dma-names = "tx", "rx";
+	cs-gpios =<&pioa 31 GPIO_ACTIVE_LOW>,
+				<&pioc 31 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	icm42688: icm42688p@0 {
+		compatible = "invensense,icm42688";
+		reg = <0>;
+		int-gpios = <&pioc 5 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <24000000>;
+		accel-hz = <32000>;
+		accel-fs = <16>;
+		gyro-hz = <32000>;
+		gyro-fs = <2000>;
+	};
+	spi_adc: adc@1 {
+		compatible = "ti,ads7052";
+		reg = <1>;
+		#io-channel-cells = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		spi-max-frequency = <24000000>;
+		channel@0 {
+			reg = <0>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_VDD_1";
+			zephyr,vref-mv = <3300>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			zephyr,resolution = <14>;
+		};
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&pioc 25 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&wdt {
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pwm0 {
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+
+&xdmac {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The first half of sector 0 (64 kbytes)
+		 * is reserved for the bootloader
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0x00010000>;
+			read-only;
+		};
+
+		/* From sector 1 to sector 7 (included): slot0 (896 kbytes) */
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x000e0000>;
+		};
+
+		/* From sector 8 to sector 14 (included): slot1 (896 kbytes) */
+		slot1_partition: partition@100000 {
+			label = "image-1";
+			reg = <0x00100000 0x000e0000>;
+		};
+
+		/* Sector 15: scratch (128 kbytes) */
+		scratch_partition: partition@1e0000 {
+			label = "image-scratch";
+			reg = <0x001e0000 0x00020000>;
+		};
+	};
+};

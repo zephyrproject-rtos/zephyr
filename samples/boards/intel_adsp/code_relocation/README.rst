@@ -20,7 +20,7 @@ This application can be built and executed as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: intel_adsp_cavs25
+   :board: intel_adsp/cavs25
    :goals: build
    :compact:
 

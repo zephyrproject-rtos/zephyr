@@ -1,9 +1,0 @@
-# Copyright (c) 2020 Synopsys, Inc. All rights reserved.
-#
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_QEMU_ARC
-	bool "ARC QEMU for EM & HS cores"
-	depends on SOC_QEMU_ARC
-	select QEMU_TARGET
-	select HAS_COVERAGE_SUPPORT

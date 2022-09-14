@@ -1,0 +1,16 @@
+identifier: imx8mp_evk/mimx8ml8/adsp
+name: NXP i.MX 8MPLUS Audio DSP
+type: mcu
+arch: xtensa
+toolchain:
+  - xcc
+  - xt-clang
+  - zephyr
+supported:
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - mcumgr
+vendor: nxp

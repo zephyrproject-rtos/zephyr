@@ -45,7 +45,7 @@ Execution output:
    *** Booting Zephyr OS build v3.2.0-rc3-209-gdcf4201d3573  ***
    *** Booting Zephyr OS build v3.2.0-rc3-209-gdcf4201d3573  ***
    Address of sample 0xc000
-   Hello sysbuild with mcuboot! nrf52840dk_nrf52840
+   Hello sysbuild with mcuboot! nrf52840dk
 
 The first ``Booting Zephyr OS build`` is printed by MCUboot itself and the
 following lines are printed by the ``with_mcuboot`` sample.

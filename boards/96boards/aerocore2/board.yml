@@ -1,0 +1,5 @@
+board:
+  name: 96b_aerocore2
+  vendor: 96boards
+  socs:
+    - name: stm32f427xx

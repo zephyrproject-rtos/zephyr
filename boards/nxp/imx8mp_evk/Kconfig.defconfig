@@ -1,0 +1,15 @@
+# MIMX8MP EVK board defconfig
+
+# Copyright (c) 2021, Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_IMX8MP_EVK_MIMX8ML8_M7 || BOARD_IMX8MP_EVK_MIMX8ML8_M7_DDR
+
+if !XIP
+config FLASH_SIZE
+	default 0
+config FLASH_BASE_ADDRESS
+	default 0
+endif
+
+endif # BOARD_IMX8MP_EVK_MIMX8ML8_M7 || BOARD_IMX8MP_EVK_MIMX8ML8_M7_DDR
