@@ -11,7 +11,7 @@ tests:
     harness: ztest
     build_only: true
     platform_allow:
-      - sam_v71_xult
+      - sam_v71_xult/samv71q21
       - b_u585i_iot02a
-      - nrf9160dk_nrf9160
-      - nrf5340dk_nrf5340_cpuapp
+      - nrf9160dk/nrf9160
+      - nrf5340dk/nrf5340/cpuapp

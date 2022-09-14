@@ -1,6 +1,0 @@
-# Texas Instruments Keystone 3 (K3) Family
-#
-# Copyright (c) 2023 Enphase Energy
-# SPDX-License-Identifier: Apache-2.0
-
-source "soc/arm64/ti_k3/*/Kconfig.defconfig.series"

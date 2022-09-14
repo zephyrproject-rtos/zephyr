@@ -6,8 +6,8 @@ tests:
       - aes
       - ccm
     platform_exclude:
-      - qemu_arc_em
-      - qemu_arc_hs
+      - qemu_arc/qemu_arc_em
+      - qemu_arc/qemu_arc_hs
       - m2gl025_miv
     timeout: 500
     integration_platforms:

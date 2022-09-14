@@ -19,13 +19,7 @@
 # entries that are not covered by the MAINTAINERS file.
 
 /soc/arm/aspeed/                          @aspeeddylan
-/soc/arm/atmel_sam/common/*_sam4l_*.c     @nandojve
-/soc/arm/atmel_sam/sam3x/                 @ioannisg
-/soc/arm/atmel_sam/sam4e/                 @nandojve
-/soc/arm/atmel_sam/sam4l/                 @nandojve
-/soc/arm/atmel_sam/sam4s/                 @fallrisk
-/soc/arm/atmel_sam/same70/                @nandojve
-/soc/arm/atmel_sam/samv71/                @nandojve
+/soc/atmel/                               @nandojve
 /soc/arm/bcm*/                            @sbranden
 /soc/arm/infineon_cat1/                   @ifyall @npal-cy
 /soc/arm/infineon_xmc/                    @parthitce
@@ -101,11 +95,7 @@
 /boards/arm/rpi_pico/                     @yonsch
 /boards/arm/ronoth_lodev/                 @NorthernDean
 /boards/arm/xmc45_relax_kit/              @parthitce
-/boards/arm/sam4e_xpro/                   @nandojve
-/boards/arm/sam4l_ek/                     @nandojve
-/boards/arm/sam4s_xplained/               @fallrisk
-/boards/arm/sam_e70_xplained/             @nandojve
-/boards/arm/sam_v71_xult/                 @nandojve
+/boards/atmel/                            @nandojve
 /boards/arm/scobc_module1/                @yashi
 /boards/arm/v2m_beetle/                   @fvincenzo
 /boards/arm/olimexino_stm32/              @ydamigos
@@ -411,13 +401,7 @@
 /dts/arc/                                 @abrodkin @ruuddw @iriszzw @evgeniy-paltsev
 /dts/arm/acsip/                           @NorthernDean
 /dts/arm/aspeed/                          @aspeeddylan
-/dts/arm/atmel/sam4e*                     @nandojve
-/dts/arm/atmel/sam4l*                     @nandojve
-/dts/arm/atmel/samr21.dtsi                @benpicco
-/dts/arm/atmel/sam*5*.dtsi                @benpicco
-/dts/arm/atmel/same70*                    @nandojve
-/dts/arm/atmel/samv71*                    @nandojve
-/dts/arm/atmel/                           @galak
+/dts/arm/atmel/                           @galak @nandojve
 /dts/arm/broadcom/                        @sbranden
 /dts/arm/cypress/                         @ifyall @npal-cy
 /dts/arm/gd/                              @nandojve
@@ -428,7 +412,7 @@
 /dts/arm64/nxp/                           @JiafeiPan
 /dts/arm64/renesas/                       @lorc @xakep-amatop
 /dts/arm/quicklogic/                      @fkokosinski @kgugala
-/dts/arm/seeed/                           @str4t0m
+/dts/arm/seeed_studio/                    @str4t0m
 /dts/arm/st/                              @erwango
 /dts/arm/st/h7/*stm32h735*                @benediktibk
 /dts/arm/st/l4/*stm32l451*                @benediktibk
@@ -475,6 +459,7 @@
 /dts/bindings/counter/snps,dw-timers.yaml @pbalsundar
 /dts/bindings/wifi/*esp-at.yaml           @mniestroj
 /dts/bindings/*/*gd32*                    @nandojve
+/dts/bindings/*/*sam*                     @nandojve
 /dts/bindings/*/*npcx*                    @MulinChao @ChiHuaL
 /dts/bindings/*/*psoc6*                   @ifyall @npal-cy
 /dts/bindings/*/*infineon*cat1*           @ifyall @npal-cy

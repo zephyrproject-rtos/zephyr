@@ -1,0 +1,5 @@
+board:
+  name: m2gl025_miv
+  vendor: microchip
+  socs:
+  - name: miv

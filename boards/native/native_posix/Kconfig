@@ -1,0 +1,47 @@
+# Copyright (c) 2017 Oticon A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NATIVE_POSIX
+	bool
+	imply NATIVE_POSIX_TIMER
+	select POSIX_ARCH_CONSOLE
+	select NATIVE_APPLICATION
+	select 64BIT if BOARD_NATIVE_POSIX_NATIVE_64
+	help
+	  Native POSIX
+	  Will produce a console Linux process which can be executed natively.
+	  It provides some minimal needed models:
+	  An interrupt controller, timer (system tick), and redirects kernel prints to
+	  stdout.
+
+config BOARD_NATIVE_POSIX_64
+	bool
+	select BOARD_NATIVE_POSIX
+	select 64BIT
+	help
+	  Native POSIX - 64 bit version
+	  Will produce a console Linux process which can be executed natively
+	  as a 64-bit executable.
+	  It provides some minimal needed models:
+	  An interrupt controller, timer (system tick), and redirects kernel prints to
+	  stdout.
+
+if BOARD_NATIVE_POSIX
+
+comment "Native POSIX options"
+
+config NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
+	bool "Slow down execution to real time"
+	default n if ARCH_POSIX_LIBFUZZER
+	default y if BT_USERCHAN || !TEST
+	help
+	  When selected the execution of the process will be slowed down to real time.
+	  (if there is a lot of load it may be slower than real time)
+	  If deselected, the process will run as fast as possible.
+	  Note that this only decouples simulated time from real/wall time. In either
+	  case the zephyr kernel and application cannot tell the difference unless they
+	  interact with some other driver/device which runs at real time.
+
+source "boards/native/common/sdl/Kconfig"
+
+endif # BOARD_NATIVE_POSIX

@@ -1,0 +1,12 @@
+# STM32 Nucleo-64 development board with STM32L053R8 MCU
+
+# Copyright (c) 2018 Anthony Kreft <anthony.kreft@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_L053R8
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_NUCLEO_L053R8

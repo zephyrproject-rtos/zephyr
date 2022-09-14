@@ -1,9 +1,0 @@
-# Copyright (c) 2022 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD
-	default "intel_socfpga_agilex5_socdk"
-	depends on BOARD_INTEL_SOCFPGA_AGILEX5_SOCDK
-
-config MAX_THREAD_BYTES
-	default 5

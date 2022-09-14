@@ -17,8 +17,8 @@ documentation and are prefixed with :literal:`hci_` in their folder names.
 
 .. note::
    If you want to run any bluetooth sample on the nRF5340 device (build using
-   ``-DBOARD=nrf5340dk_nrf5340_cpuapp`` or
-   ``-DBOARD=nrf5340dk_nrf5340_cpuapp_ns``) you must also build
+   ``-DBOARD=nrf5340dk/nrf5340/cpuapp`` or
+   ``-DBOARD=nrf5340dk/nrf5340/cpuapp/ns``) you must also build
    and program the corresponding sample for the nRF5340 network core
    :ref:`bluetooth-hci-ipc-sample` which implements the Bluetooth
    Low Energy controller.

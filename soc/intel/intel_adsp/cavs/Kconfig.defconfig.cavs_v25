@@ -1,0 +1,56 @@
+# Copyright (c) 2020,2022-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_INTEL_CAVS_V25
+
+# For backward compatibility, to be removed
+config SOC_SERIES_INTEL_CAVS_V25
+	def_bool y
+
+# Hardware has four cores, limited to two pending test fixes
+config MP_MAX_NUM_CPUS
+	default 2
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 400000000 if XTENSA_TIMER
+	default 38400000 if INTEL_ADSP_TIMER
+
+config CAVS_ICTL_0_OFFSET
+	default 6
+config CAVS_ICTL_1_OFFSET
+	default 10
+config CAVS_ICTL_2_OFFSET
+	default 13
+config CAVS_ICTL_3_OFFSET
+	default 16
+
+config 2ND_LVL_INTR_00_OFFSET
+	default CAVS_ICTL_0_OFFSET
+config 2ND_LVL_INTR_01_OFFSET
+	default CAVS_ICTL_1_OFFSET
+config 2ND_LVL_INTR_02_OFFSET
+	default CAVS_ICTL_2_OFFSET
+config 2ND_LVL_INTR_03_OFFSET
+	default CAVS_ICTL_3_OFFSET
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 32
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 4
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 21
+
+config CAVS_ISR_TBL_OFFSET
+	default 2ND_LVL_ISR_TBL_OFFSET
+
+if KERNEL_VM_SUPPORT
+
+config KERNEL_VM_SIZE
+	default 0x800000
+
+endif
+
+config ADSP_NEED_POWER_ON_CACHE
+	default y
+
+endif # SOC_INTEL_CAVS_V25

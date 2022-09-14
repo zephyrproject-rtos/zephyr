@@ -69,7 +69,7 @@ To make sure the sample is set up properly for building, you must:
 For example devicetree configurations for each compatible, see
 :zephyr_file:`samples/drivers/led_ws2812/boards/thingy52_nrf52832.overlay`,
 :zephyr_file:`samples/drivers/led_ws2812/boards/nrf52dk_nrf52832.overlay` and
-:zephyr_file:`samples/drivers/led_ws2812/boards/nrf51dk_nrf51422.overlay`.
+:zephyr_file:`samples/drivers/led_ws2812/boards/nrf51dk_nrf51822.overlay`.
 
 Some boards are already supported out of the box; see the :file:`boards`
 directory for this sample for details.
@@ -101,15 +101,14 @@ This sample uses different drivers depending on the selected board:
 
 I2S driver:
 
-- thingy52_nrf52832
-- nrf5340dk_nrf5340 (3.3V logic level, a logic level shifter may be required)
+- thingy52/nrf52832
+- nrf5340dk/nrf5340 (3.3V logic level, a logic level shifter may be required)
     - should work for other boards featuring an nRF5340 host processor
 
 SPI driver:
 
 - mimxrt1050_evk
-- mimxrt1050_evk_qspi
-- nrf52dk_nrf52832
+- nrf52dk/nrf52832
 - nucleo_f070rb
 - nucleo_g071rb
 - nucleo_h743zi
@@ -118,7 +117,7 @@ SPI driver:
 GPIO driver (cortex-M0 only):
 
 - bbc_microbit
-- nrf51dk_nrf51422
+- nrf51dk/nrf51822
 
 References
 **********

@@ -1,0 +1,64 @@
+# Copyright (c) 2023-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_UP_SQUARED_PRO_7000
+
+config BUILD_OUTPUT_STRIPPED
+	default y
+
+config MP_MAX_NUM_CPUS
+	default 2
+
+# TSC on this board is 1.9 GHz, HPET and APIC are 19.2 MHz
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1900000000 if APIC_TSC_DEADLINE_TIMER
+	default 1900000000 if APIC_TIMER_TSC
+	default 19200000
+
+if APIC_TIMER
+
+config APIC_TIMER_IRQ
+	default 24
+config APIC_TIMER_TSC_M
+	default 3
+config APIC_TIMER_TSC_N
+	default 249
+endif
+
+config ACPI
+	default y
+
+if ACPI
+
+config HEAP_MEM_POOL_ADD_SIZE_ACPI
+	default 64000000
+config MAIN_STACK_SIZE
+	default 320000
+
+if SHELL
+
+config SHELL_STACK_SIZE
+	default 320000
+endif # SHELL
+endif # ACPI
+
+if DMA
+
+config DMA_64BIT
+	default y
+
+config DMA_DW_HW_LLI
+	default n
+
+config DMA_DW_CHANNEL_COUNT
+	default 2
+
+endif
+
+config UART_NS16550_INTEL_LPSS_DMA
+	default y
+
+config HAS_COVERAGE_SUPPORT
+	default y
+
+endif # BOARD_UP_SQUARED_PRO_7000

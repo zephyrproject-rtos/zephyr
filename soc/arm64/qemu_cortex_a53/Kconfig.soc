@@ -1,7 +1,0 @@
-# Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_QEMU_CORTEX_A53
-	bool "QEMU virt platform (cortex-a53)"
-	select ARM64
-	select CPU_CORTEX_A53

@@ -8,4 +8,4 @@ tests:
       - proximity
     filter: dt_alias_exists("prox-sensor0")
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840

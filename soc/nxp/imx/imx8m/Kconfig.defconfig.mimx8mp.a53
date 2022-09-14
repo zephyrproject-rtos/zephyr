@@ -1,0 +1,27 @@
+# Copyright 2021-2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMX8ML8_A53
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config NUM_IRQS
+	int
+	default 240
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 8000000
+
+config PINCTRL_IMX
+	default y if HAS_MCUX_IOMUXC
+	depends on PINCTRL
+
+endif

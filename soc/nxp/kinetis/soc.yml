@@ -1,0 +1,31 @@
+family:
+- name: kinetis
+  series:
+  - name: kwx
+    socs:
+    - name: mkw22d5
+    - name: mkw24d5
+    - name: mkw40z4
+    - name: mkw41z4
+  - name: k6x
+    socs:
+    - name: mk64f12
+    - name: mk66f18
+  - name: k2x
+    socs:
+    - name: mk22f51212
+    - name: mk22f12
+  - name: ke1xf
+    socs:
+    - name: mke18f16
+  - name: k8x
+    socs:
+    - name: mk80f25615
+    - name: mk82f25615
+  - name: kl2x
+    socs:
+    - name: mkl25z4
+  - name: kv5x
+    socs:
+    - name: mkv56f24
+    - name: mkv58f24

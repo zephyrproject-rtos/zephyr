@@ -12,7 +12,7 @@ tests:
       - drivers
       - counter
     depends_on: counter
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     timeout: 400
     extra_configs:
       - CONFIG_ZERO_LATENCY_IRQS=y
@@ -32,7 +32,7 @@ tests:
       - drivers
       - counter
     depends_on: counter
-    platform_allow: mimxrt685_evk_cm33
+    platform_allow: mimxrt685_evk
     timeout: 400
     extra_args:
-      DTC_OVERLAY_FILE="boards/mimxrt685_evk_cm33_rtc_1khz.overlay"
+      DTC_OVERLAY_FILE="boards/mimxrt685_evk_rtc_1khz.overlay"

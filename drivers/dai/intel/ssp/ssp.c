@@ -1607,7 +1607,7 @@ static int dai_ssp_check_aux_data(struct ssp_intel_aux_tlv *aux_tlv, int aux_len
 		size = sizeof(struct ssp_intel_ext_ctl);
 		break;
 	case SSP_LINK_CLK_SOURCE:
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 		size = sizeof(struct ssp_intel_link_ctl);
 		break;
 #else
@@ -1642,7 +1642,7 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 	struct ssp_intel_node_ctl *node;
 	struct ssp_intel_sync_ctl *sync;
 	struct ssp_intel_ext_ctl *ext;
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	struct ssp_intel_link_ctl *link;
 #endif
 	uint8_t *aux_ptr;
@@ -1698,7 +1698,7 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 			LOG_INF("ext ext_data %u", ext->ext_data);
 			break;
 		case SSP_LINK_CLK_SOURCE:
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 			link = (struct ssp_intel_link_ctl *)&aux_tlv->val;
 
 #if CONFIG_SOC_INTEL_ACE15_MTPM

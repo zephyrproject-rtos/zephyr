@@ -1,0 +1,16 @@
+# Nordic Semiconductor nRF54L MCU line
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_NRF54LX
+
+rsource "Kconfig.defconfig.nrf54l*"
+
+config CORTEX_M_SYSTICK
+	default !NRF_GRTC_TIMER
+
+config CACHE_NRF_CACHE
+	default y if EXTERNAL_CACHE
+
+endif # SOC_SERIES_NRF54LX

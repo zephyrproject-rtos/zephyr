@@ -1,9 +1,0 @@
-#
-# Copyright (c) 2023 Andreas Sandberg
-#
-# SPDX-License-Identifier: Apache-2.0
-#
-
-config BOARD_WEACT_STM32G431_CORE
-	bool "WeAct Studio STM32G431 Core Board"
-	depends on SOC_STM32G431XX

@@ -15,26 +15,26 @@ tests:
     extra_args: >
       OVERLAY_CONFIG="configuration/crc32.conf"
     platform_exclude:
-      - arduino_giga_r1_m4
-      - arduino_portenta_h7_m4
+      - arduino_giga_r1/stm32h747xx/m4
+      - arduino_portenta_h7/stm32h747xx/m4
       - lpcxpresso51u68
-      - nucleo_h745zi_q_m4
-      - stm32h747i_disco_m4
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - stm32h747i_disco/stm32h747xx/m4
   mgmt.mcumgr.fs.mgmt.hash.supported.sha256:
     extra_args: >
       OVERLAY_CONFIG="configuration/sha256.conf"
     platform_exclude:
-      - arduino_giga_r1_m4
-      - arduino_portenta_h7_m4
+      - arduino_giga_r1/stm32h747xx/m4
+      - arduino_portenta_h7/stm32h747xx/m4
       - lpcxpresso51u68
-      - nucleo_h745zi_q_m4
-      - stm32h747i_disco_m4
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - stm32h747i_disco/stm32h747xx/m4
   mgmt.mcumgr.fs.mgmt.hash.supported.all:
     extra_args: >
       OVERLAY_CONFIG="configuration/all.conf"
     platform_exclude:
-      - arduino_giga_r1_m4
-      - arduino_portenta_h7_m4
+      - arduino_giga_r1/stm32h747xx/m4
+      - arduino_portenta_h7/stm32h747xx/m4
       - lpcxpresso51u68
-      - nucleo_h745zi_q_m4
-      - stm32h747i_disco_m4
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - stm32h747i_disco/stm32h747xx/m4

@@ -1,0 +1,26 @@
+# Copyright (c) 2019-2020 Cobham Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_GR716A
+
+config SPARC_NWIN
+	default 31
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 50000000
+
+if FLASH
+
+config SPI
+	default y
+
+config SPI_NOR
+	default y
+
+config SPI_GRLIB_SPIMCTRL
+	default y
+
+endif
+
+endif

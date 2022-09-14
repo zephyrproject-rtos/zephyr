@@ -1,0 +1,53 @@
+# MIMXRT1160-EVK board
+
+# Copyright 2021,2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT1160_EVK
+
+# Only use DCD when booting primary core (M7)
+config DEVICE_CONFIGURATION_DATA
+	default y if CPU_CORTEX_M7
+
+config NXP_IMX_EXTERNAL_SDRAM
+	default y if CPU_CORTEX_M7
+
+if SECOND_CORE_MCUX && BOARD_MIMXRT1160_EVK_MIMXRT1166_CM4
+
+config BUILD_OUTPUT_INFO_HEADER
+	default y
+
+DT_CHOSEN_IMAGE_M4 = nxp,m4-partition
+
+# Adjust the offset of the output image if building for RT11xx SOC
+config BUILD_OUTPUT_ADJUST_LMA
+	default "($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4)) + \
+	$(dt_node_reg_addr_hex,/soc/spi@400cc000,1)) - \
+	$(dt_node_reg_addr_hex,/soc/ocram@20200000)"
+
+endif
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 240000000 if BOARD_MIMXRT1160_EVK_MIMXRT1166_CM4 && CORTEX_M_SYSTICK
+	default 600000000 if BOARD_MIMXRT1160_EVK_MIMXRT1166_CM7 && CORTEX_M_SYSTICK
+
+if FLASH_MCUX_FLEXSPI_XIP && MEMC_MCUX_FLEXSPI
+
+choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
+	default FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM if CPU_CORTEX_M7
+	default FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM if CPU_CORTEX_M4
+endchoice
+
+endif # FLASH_MCUX_FLEXSPI_XIP && MEMC_MCUX_FLEXSPI
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y if CPU_CORTEX_M7 # No cache memory support is required for driver
+
+config ETH_MCUX_PHY_RESET
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_MIMXRT1160_EVK

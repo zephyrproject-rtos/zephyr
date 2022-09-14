@@ -1,0 +1,5 @@
+board:
+  name: nucleo_h743zi
+  vendor: st
+  socs:
+    - name: stm32h743xx

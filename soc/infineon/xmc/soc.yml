@@ -1,0 +1,7 @@
+family:
+- name: infineon_xmc
+  series:
+  - name: xmc4xxx
+    socs:
+    - name: xmc4500
+    - name: xmc4700

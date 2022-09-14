@@ -57,7 +57,7 @@
 #elif defined(CONFIG_BOARD_BL652_DVK) || \
 	defined(CONFIG_BOARD_BL653_DVK) || \
 	defined(CONFIG_BOARD_BL654_DVK) || \
-	defined(CONFIG_BOARD_BL5340_DVK_CPUAPP)
+	defined(CONFIG_BOARD_BL5340_DVK)
  /* Note external DAC MCP4725 is not populated on BL652_DVK, BL653_DVK and
   * BL654_DVK at factory
   */

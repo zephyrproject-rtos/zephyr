@@ -1,0 +1,5 @@
+board:
+  name: arduino_nano_33_iot
+  vendor: arduino
+  socs:
+    - name: samd21g18a

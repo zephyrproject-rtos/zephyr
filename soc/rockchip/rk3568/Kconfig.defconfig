@@ -1,0 +1,9 @@
+# Copyright 2022 HNU-ESNL
+# Copyright 2022 openEuler SIG-Zephyr
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RK3568
+
+rsource "Kconfig.defconfig.rk3568"
+
+endif # SOC_SERIES_RK3568

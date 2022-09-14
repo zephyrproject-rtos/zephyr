@@ -1,0 +1,10 @@
+# Copyright (c) 2021-2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MP_MAX_NUM_CPUS
+	default 2
+
+config HEAP_MEM_POOL_ADD_SIZE_ACPI
+	default 32768
+	depends on ACPI

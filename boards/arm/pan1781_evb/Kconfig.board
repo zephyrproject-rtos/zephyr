@@ -1,8 +1,0 @@
-# PAN1781 EVB configuration
-
-# Copyright (c) 2022 Panasonic Industrial Devices Europe GmbH
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_PAN1781_EVB
-	bool "pan1781-evb"
-	depends on SOC_NRF52820_QDAA

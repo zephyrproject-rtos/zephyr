@@ -1,0 +1,7 @@
+# Copyright (c) 2022-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_INTEL_SOCFPGA_AGILEX5_SOCDK
+	select SOC_AGILEX5
+	help
+	  Intel SoC FPGA Development Kit (Agilex5)

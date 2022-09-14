@@ -2,10 +2,10 @@ tests:
   bluetooth.adv:
     platform_allow:
       - nrf52_bsim
-      - nrf51dk_nrf51422
-      - nrf52840dk_nrf52840
+      - nrf51dk/nrf51822
+      - nrf52840dk/nrf52840
     tags: bluetooth
     slow: true
     timeout: 360
     integration_platforms:
-      - nrf51dk_nrf51422
+      - nrf51dk/nrf51822

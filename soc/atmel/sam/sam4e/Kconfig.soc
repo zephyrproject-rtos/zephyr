@@ -1,0 +1,37 @@
+# Atmel SAM4E MCU series
+
+# Copyright (c) 2017 Justin Watson
+# Copyright (c) 2018 Vincent van der Locht
+# Copyright (c) 2019-2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAM4E
+	bool
+	select SOC_FAMILY_ATMEL_SAM
+	help
+	  Enable support for Atmel SAM4E MCU series
+
+config SOC_SERIES
+	default "sam4e" if SOC_SERIES_SAM4E
+
+config SOC_SAM4E16E
+	bool
+	select SOC_SERIES_SAM4E
+
+config SOC_SAM4E16C
+	bool
+	select SOC_SERIES_SAM4E
+
+config SOC_SAM4E8E
+	bool
+	select SOC_SERIES_SAM4E
+
+config SOC_SAM4E8C
+	bool
+	select SOC_SERIES_SAM4E
+
+config SOC
+	default "sam4e16e" if SOC_SAM4E16E
+	default "sam4e16c" if SOC_SAM4E16C
+	default "sam4e8e" if SOC_SAM4E8E
+	default "sam4e8c" if SOC_SAM4E8C

@@ -1,0 +1,14 @@
+identifier: nrf9160dk@0.7.0/nrf52840
+name: nRF9160-DK-NRF52840
+type: mcu
+arch: arm
+ram: 64
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - ble
+  - netif:openthread
+  - gpio
+vendor: nordic

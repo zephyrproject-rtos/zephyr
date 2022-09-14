@@ -27,7 +27,6 @@ void flexram_magic_addr_isr_cb(enum memc_flexram_interrupt_cause cause,
 	}
 }
 
-
 int main(void)
 {
 	memc_flexram_register_callback(flexram_magic_addr_isr_cb, NULL);

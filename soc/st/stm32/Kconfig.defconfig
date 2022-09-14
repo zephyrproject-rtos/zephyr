@@ -1,0 +1,63 @@
+# ST Microelectronics STM32 all MCU lines
+
+# Copyright (c) 2017, I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+# Default configurations appplied tp the whole STM32 family
+
+if SOC_FAMILY_STM32
+
+rsource "*/Kconfig.defconfig"
+
+config CORTEX_M_SYSTICK
+	default n if STM32_LPTIM_TIMER
+
+DT_STM32_RCC_PATH := $(dt_nodelabel_path,rcc)
+DT_STM32_RCC_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_RCC_PATH),clock-frequency)
+
+DT_ST_PRESCALER := st,prescaler
+DT_STM32_LPTIM_PATH := $(dt_nodelabel_path,stm32_lp_tick_source)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default "$(DT_STM32_RCC_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,rcc)"
+
+config LOG_BACKEND_SWO_REF_FREQ_HZ
+	default "$(DT_STM32_RCC_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,rcc)"
+	depends on LOG_BACKEND_SWO
+
+# set the tick per sec as a divider of the LPTIM clock source
+# with a minimum value of 4096 for SYS_CLOCK_TICKS_PER_SEC to keep
+# SYS_CLOCK_TICKS_PER_SEC not too high compared to the LPTIM counter clock
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if "$(dt_node_int_prop_int,$(DT_STM32_LPTIM_PATH),$(DT_ST_PRESCALER))" < 16
+	default 2048 if "$(dt_node_int_prop_int,$(DT_STM32_LPTIM_PATH),$(DT_ST_PRESCALER))" = 16
+	default 1024 if "$(dt_node_int_prop_int,$(DT_STM32_LPTIM_PATH),$(DT_ST_PRESCALER))" = 32
+	default  512 if "$(dt_node_int_prop_int,$(DT_STM32_LPTIM_PATH),$(DT_ST_PRESCALER))" = 64
+	default  256 if "$(dt_node_int_prop_int,$(DT_STM32_LPTIM_PATH),$(DT_ST_PRESCALER))" = 128
+	depends on STM32_LPTIM_TIMER && STM32_LPTIM_CLOCK_LSE
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4000 if "$(dt_node_int_prop_int,$(DT_STM32_LPTIM_PATH),$(DT_ST_PRESCALER))" < 16
+	default 2000 if "$(dt_node_int_prop_int,$(DT_STM32_LPTIM_PATH),$(DT_ST_PRESCALER))" = 16
+	default 1000 if "$(dt_node_int_prop_int,$(DT_STM32_LPTIM_PATH),$(DT_ST_PRESCALER))" = 32
+	default  500 if "$(dt_node_int_prop_int,$(DT_STM32_LPTIM_PATH),$(DT_ST_PRESCALER))" = 64
+	default  250 if "$(dt_node_int_prop_int,$(DT_STM32_LPTIM_PATH),$(DT_ST_PRESCALER))" = 128
+	depends on STM32_LPTIM_TIMER && STM32_LPTIM_CLOCK_LSI
+
+config CLOCK_CONTROL_STM32_CUBE
+	default y
+	depends on CLOCK_CONTROL
+
+config CLOCK_CONTROL_INIT_PRIORITY
+	default 1
+	depends on CLOCK_CONTROL
+
+config MEMC_STM32
+	default y
+	depends on MEMC
+
+# Get flash configuration for NS image from dts flash partition
+config USE_DT_CODE_PARTITION
+	default y if TRUSTED_EXECUTION_NONSECURE
+
+endif # SOC_FAMILY_STM32

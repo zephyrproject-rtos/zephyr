@@ -1,0 +1,6 @@
+board:
+  name: nrf52833dk
+  vendor: nordic
+  socs:
+  - name: nrf52820
+  - name: nrf52833

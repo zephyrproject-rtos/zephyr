@@ -196,10 +196,20 @@ function __zephyr_west_complete_help
 end
 
 function __zephyr_west_complete_board
+    # HWMv1
     set -l boards (west 2>/dev/null boards --format="{name} {arch}")
     for board in $boards
         set -l b (string split " " $board)
         printf "%s\n" $b[1]\t"$b[2]"
+    end
+
+    # HWMv2
+    set -l boards (west 2>/dev/null boards --format="{identifiers}")
+    for board in $boards
+        set -l b (string split "," $board)
+        for variant in $b
+            printf "%s\n" $variant[1]
+        end
     end
 end
 
@@ -292,6 +302,7 @@ complete -c west -n "__zephyr_west_seen_subcommand_from boards" -o f -l format -
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -o n -l name -d "name regex"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l arch-root -xa "(__zephyr_west_complete_directories)" -d "add an arch root"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l board-root -xa "(__zephyr_west_complete_directories)" -d "add a board root"
+complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l soc-root -xa "(__zephyr_west_complete_directories)" -d "add a soc root"
 
 # build
 complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra build -d "compile a Zephyr application"

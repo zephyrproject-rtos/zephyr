@@ -1,0 +1,11 @@
+# Adafruit Feather nRF52840 Express board configuration
+
+# Copyright (c) 2020 Tobias Svehagen
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ADAFRUIT_FEATHER
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_ADAFRUIT_FEATHER

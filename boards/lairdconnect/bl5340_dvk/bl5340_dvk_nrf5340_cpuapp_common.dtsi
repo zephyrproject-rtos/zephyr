@@ -1,0 +1,381 @@
+/*
+ * Copyright (c) 2019-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "bl5340_dvk_nrf5340_cpuapp_common-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,display = &ili9340;
+		zephyr,bt-hci-ipc = &ipc0;
+	};
+
+	/* Main LEDs and buttons are on an I2C TCA9538 GPIO port expander */
+	/* Note TCA9538 does not have configurable internal pull ups/ downs */
+	buttons {
+		compatible = "gpio-keys";
+		boot_button0: boot_button {
+			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+			label = "Bootloader button (S4)";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpio_exp0 0 GPIO_ACTIVE_LOW>;
+			label = "Push button switch 1 (S1)";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		button2: button_2 {
+			gpios = <&gpio_exp0 1 GPIO_ACTIVE_LOW>;
+			label = "Push button switch 2 (S2)";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		button3: button_3 {
+			gpios = <&gpio_exp0 2 GPIO_ACTIVE_LOW>;
+			label = "Push button switch 3 (S9)";
+			zephyr,code = <INPUT_KEY_3>;
+		};
+
+		button4: button_4 {
+			gpios = <&gpio_exp0 3 GPIO_ACTIVE_LOW>;
+			label = "Push button switch 4 (S10)";
+			zephyr,code = <INPUT_KEY_4>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led_1 {
+			gpios = <&gpio_exp0 4 GPIO_ACTIVE_LOW>;
+			label = "Blue LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio_exp0 5 GPIO_ACTIVE_LOW>;
+			label = "Blue LED 2";
+		};
+		led3: led_3 {
+			gpios = <&gpio_exp0 6 GPIO_ACTIVE_LOW>;
+			label = "Blue LED 3";
+		};
+		led4: led_4 {
+			gpios = <&gpio_exp0 7 GPIO_ACTIVE_LOW>;
+			label = "Blue LED 4";
+		};
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336>;
+		swap-xy;
+		invert-x;
+		invert-y;
+	};
+
+	gpio_fwd: nrf-gpio-forwarder {
+		compatible = "nordic,nrf-gpio-forwarder";
+		status = "okay";
+		uart {
+			gpios = <&gpio1 8 0>, <&gpio1 10 0>, <&gpio1 7 0>, <&gpio1 9 0>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		led2 = &led3;
+		led3 = &led4;
+		sw0 = &button1;
+		sw1 = &button2;
+		sw2 = &button3;
+		sw3 = &button4;
+		mcuboot-button0 = &button1;
+		mcuboot-led0 = &led1;
+		sdhc0 = &sdhc0;
+		watchdog0 = &wdt0;
+		accel0 = &lis3dh;
+		bbram0 = &extrtc0;
+		spi-flash0 = &mx25r64;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		spi-dev = <&spi2>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ili9340: ili9340@0 {
+			compatible = "ilitek,ili9340";
+			reg = <0>;
+			mipi-max-frequency = <32000000>;
+			rotation = <270>;
+			width = <320>;
+			height = <240>;
+		};
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+	at24c256@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		size = <32768>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <10>;
+	};
+
+	lis3dh: lis3dh@18 {
+		compatible = "st,lis2dh";
+		reg = <0x18>;
+		irq-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>, <&gpio0 24 GPIO_ACTIVE_HIGH>;
+	};
+
+	ft5336: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+	};
+
+	bme680@76 {
+		compatible = "bosch,bme680";
+		reg = <0x76>;
+	};
+
+	dac0: mcp4725@60 {
+		compatible = "microchip,mcp4725";
+		reg = <0x60>;
+		#io-channel-cells = <1>;
+	};
+
+	extrtc0: mcp7940n@6f {
+		compatible = "microchip,mcp7940n";
+		reg = <0x6f>;
+		status = "okay";
+	};
+
+	gpio_exp0: tca9538@70 {
+		compatible = "ti,tca9538";
+		reg = <0x70>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		nint-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi2 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
+	enc424j600@0 {
+		compatible = "microchip,enc424j600";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		int-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+	sdhc0: sdhc@0 {
+		reg = <0>;
+		compatible = "zephyr,sdhc-spi-slot";
+		status = "okay";
+		spi-max-frequency = <8000000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+	};
+};
+
+&spi4 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi4_default>;
+	pinctrl-1 = <&spi4_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&qspi {
+	status = "okay";
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
+	mx25r64: mx25r6435f@0 {
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		/* MX25R64 supports only pp and pp4io */
+		writeoc = "pp4io";
+		/* MX25R64 supports all readoc options */
+		readoc = "read4io";
+		sck-frequency = <8000000>;
+		jedec-id = [c2 28 17];
+		sfdp-bfp = [
+			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+			10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 68 44
+			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
+		];
+		size = <67108864>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <35000>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 64K */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+		};
+		/* 640K */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+		/* 256K */
+		slot0_ns_partition: partition@b0000 {
+			label = "image-0-nonsecure";
+		};
+
+		/*
+		 * The flash starting at 0x000f8000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 */
+
+		/*
+		 * Storage partition will be used by FCB/NVS
+		 * if enabled. 32K
+		 */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};
+
+&mx25r64 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 640K */
+		slot1_partition: partition@0 {
+			label = "image-1";
+		};
+		/* 256K */
+		slot1_ns_partition: partition@A0000 {
+			label = "image-1-nonsecure";
+		};
+		/* 128K */
+		scratch_partition: partition@e0000 {
+			label = "image-scratch";
+			reg = <0x000e0000 0x00020000>;
+		};
+		/* 7MB */
+		lfs_partition: partition@100000 {
+			label = "lfs_storage";
+			reg = <0x00100000 0x00700000>;
+		};
+	};
+};
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_image: image@20000000 {
+			/* Zephyr image(s) memory */
+		};
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_ns: image_ns@20040000 {
+			/* Non-Secure image memory */
+		};
+	};
+};
+
+/* Include partition configuration file */
+#include "bl5340_dvk_nrf5340_cpuapp_partition_conf.dtsi"

@@ -1,0 +1,75 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IMXRT11XX
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	select CPU_CORTEX_M_HAS_DWT
+	select PLATFORM_SPECIFIC_INIT
+	select ARM
+	select CLOCK_CONTROL
+	select HAS_MCUX_CACHE
+	select HAS_MCUX
+	select HAS_MCUX_SEMC
+	select HAS_MCUX_CCM_REV2
+	select HAS_MCUX_IGPIO
+	select HAS_MCUX_LPI2C
+	select HAS_MCUX_LPSPI
+	select HAS_MCUX_LPADC
+	select HAS_MCUX_LPUART
+	select HAS_MCUX_ELCDIF
+	select HAS_MCUX_MIPI_DSI
+	select HAS_MCUX_GPT
+	select HAS_MCUX_FLEXSPI
+	select HAS_MCUX_FLEXCAN
+	select CPU_HAS_ARM_MPU
+	select INIT_ARM_PLL
+	select INIT_ENET_PLL if NET_L2_ETHERNET && ETH_DRIVER
+	select INIT_VIDEO_PLL
+	select HAS_MCUX_EDMA
+	select CPU_HAS_ICACHE if CPU_CORTEX_M7
+	select CPU_HAS_DCACHE if CPU_CORTEX_M7
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION if CPU_CORTEX_M7
+	select BYPASS_LDO_LPSR
+	select ADJUST_LDO
+	select HAS_MCUX_PWM
+	select HAS_MCUX_USDHC1
+	select HAS_MCUX_USDHC2
+	select HAS_MCUX_ENET
+	select HAS_MCUX_GPC
+	select HAS_MCUX_I2S
+	select HAS_MCUX_USB_EHCI
+	select HAS_MCUX_ACMP
+	select HAS_MCUX_SRC_V2
+	select HAS_MCUX_IOMUXC
+	select HAS_MCUX_XBARA
+	select HAS_SWO
+
+config SOC_MIMXRT1176_CM4
+	select CPU_CORTEX_M4
+
+config SOC_MIMXRT1176_CM7
+	select CPU_CORTEX_M7
+
+config SOC_MIMXRT1166_CM4
+	select CPU_CORTEX_M4
+
+config SOC_MIMXRT1166_CM7
+	select CPU_CORTEX_M7
+
+if SOC_SERIES_IMXRT11XX
+
+config MCUX_CORE_SUFFIX
+	default "_cm7" if SOC_MIMXRT1176_CM7 || SOC_MIMXRT1166_CM7
+	default "_cm4" if SOC_MIMXRT1176_CM4 || SOC_MIMXRT1166_CM4
+
+config BYPASS_LDO_LPSR
+	bool "Bypass LDO lpsr"
+
+config ADJUST_LDO
+	bool "Adjust LDO setting"
+
+config ADJUST_DCDC
+	bool "Adjust internal DCDC output"
+
+endif # SOC_SERIES_IMXRT11XX

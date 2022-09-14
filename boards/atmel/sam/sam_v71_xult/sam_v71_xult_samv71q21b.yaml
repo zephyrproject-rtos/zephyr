@@ -1,0 +1,33 @@
+identifier: sam_v71_xult/samv71q21b
+name: SAM V71 Xplained Ultra (Revision B)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+flash: 2048
+ram: 384
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - can
+  - counter
+  - dac
+  - dma
+  - hwinfo
+  - gpio
+  - i2s
+  - pwm
+  - netif:eth
+  - spi
+  - usb
+  - usb_device
+  - watchdog
+  - xpro_gpio
+  - xpro_i2c
+  - xpro_serial
+  - xpro_spi
+vendor: atmel

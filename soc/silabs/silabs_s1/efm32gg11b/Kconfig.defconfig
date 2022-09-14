@@ -1,0 +1,17 @@
+# EFM32GG11B series configuration options
+# Copyright (c) 2019 Interay Solutions B.V.
+# Copyright (c) 2019 Oane Kingma
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFM32GG11B
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	default 68
+
+config GPIO_GECKO
+	default y
+	depends on GPIO || LOG_BACKEND_SWO
+
+endif # SOC_SERIES_EFM32GG11B

@@ -26,7 +26,7 @@ tests:
     integration_platforms:
       - nucleo_h743zi
   drivers.uart.async_api.nrf_uarte_new:
-    platform_allow: nrf52840dk_nrf52840 nrf52_bsim
+    platform_allow: nrf52840dk/nrf52840 nrf52_bsim
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     harness: ztest
     harness_config:
@@ -38,13 +38,13 @@ tests:
   drivers.uart.async_api.nrf_uart:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     harness: ztest
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     harness_config:
       fixture: gpio_loopback
     depends_on: gpio
     extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;boards/nrf_uart.overlay"
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
   drivers.uart.async_api.rtt:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_HAS_SEGGER_RTT
       and not CONFIG_UART_MCUX_LPUART and not CONFIG_UART_MCUX_FLEXCOMM
@@ -63,14 +63,14 @@ tests:
     harness: ztest
     depends_on: dma
   drivers.uart.async_api.sam0:
-    filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_SOC_FAMILY_SAM0
+    filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_SOC_FAMILY_ATMEL_SAM0
     platform_allow:
-      - atsamc21n_xpro
-      - atsamd21_xpro
-      - atsaml21_xpro
-      - atsamr21_xpro
-      - atsamr34_xpro
-      - atsame54_xpro
+      - samc21n_xpro
+      - samd21_xpro
+      - saml21_xpro
+      - samr21_xpro
+      - samr34_xpro
+      - same54_xpro
     extra_configs:
       - CONFIG_UART_SAM0_ASYNC=y
       - CONFIG_DMA=y

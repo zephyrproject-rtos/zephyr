@@ -226,7 +226,8 @@ class Filters:
             roots.append(repository_path)
 
         # Look for boards in monitored repositories
-        lb_args = argparse.Namespace(**{ 'arch_roots': roots, 'board_roots': roots})
+        lb_args = argparse.Namespace(**{'arch_roots': roots, 'board_roots': roots, 'board': None,
+                                        'board_dir': None})
         known_boards = list_boards.find_boards(lb_args)
         for b in boards:
             name_re = re.compile(b)

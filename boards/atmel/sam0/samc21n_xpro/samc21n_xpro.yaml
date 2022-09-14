@@ -1,0 +1,23 @@
+# Copyright (c) 2022 Kamil Serwus
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+identifier: samc21n_xpro
+name: SAM C21N Xplained Pro
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+flash: 256
+ram: 32
+supported:
+  - adc
+  - can
+  - dma
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - uart
+vendor: atmel
