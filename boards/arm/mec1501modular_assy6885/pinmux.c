@@ -263,23 +263,6 @@ static int board_pinmux_init(const struct device *dev)
 
 #endif /* CONFIG_I2C_XEC */
 
-#ifdef CONFIG_ESPI_XEC
-	mchp_pcr_periph_slp_ctrl(PCR_ESPI, MCHP_PCR_SLEEP_DIS);
-	/* ESPI RESET */
-	pinmux_pin_set(portb, MCHP_GPIO_061, MCHP_GPIO_CTRL_MUX_F1);
-	/* ESPI ALERT */
-	pinmux_pin_set(portb, MCHP_GPIO_063, MCHP_GPIO_CTRL_MUX_F1);
-	/* ESPI CS */
-	pinmux_pin_set(portb, MCHP_GPIO_066, MCHP_GPIO_CTRL_MUX_F1);
-	/* ESPI CLK */
-	pinmux_pin_set(portb, MCHP_GPIO_065, MCHP_GPIO_CTRL_MUX_F1);
-	/* ESPI IO1-4*/
-	pinmux_pin_set(portb, MCHP_GPIO_070, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(portb, MCHP_GPIO_071, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(portb, MCHP_GPIO_072, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(portb, MCHP_GPIO_073, MCHP_GPIO_CTRL_MUX_F1);
-#endif
-
 #ifdef CONFIG_SPI_XEC_QMSPI
 #if DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_qmspi), okay)
 	mchp_pcr_periph_slp_ctrl(PCR_QMSPI, MCHP_PCR_SLEEP_DIS);
