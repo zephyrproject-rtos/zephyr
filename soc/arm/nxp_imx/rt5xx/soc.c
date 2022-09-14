@@ -314,6 +314,12 @@ void clock_init(void)
 
 	/* Set main clock to FRO as deep sleep clock by default. */
 	POWER_SetDeepSleepClock(kDeepSleepClk_Fro);
+#ifdef CONFIG_DISPLAY_JDI
+	CLOCK_AttachClk(kFRO_DIV2_to_FLEXIO);
+	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 1);
+	RESET_SetPeripheralReset(kFLEXIO_RST_SHIFT_RSTn);
+	RESET_ClearPeripheralReset(kFLEXIO_RST_SHIFT_RSTn);
+#endif
 }
 
 /**

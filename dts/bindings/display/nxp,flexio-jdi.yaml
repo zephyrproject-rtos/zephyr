@@ -1,0 +1,42 @@
+# Copyright (c) 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP  (FLEXIO Interface) JDI display controller
+
+compatible: "nxp,flexio-jdi"
+
+include: [display-controller.yaml, pinctrl-device.yaml]
+
+properties:
+    reg:
+      required: true
+
+    clocks:
+      required: true
+
+    clock-names:
+      required: true
+      # There are the following names to choose
+      # "input_clock" use to transmit jdi data
+      # "vcom" use to generate VCOM/FRP/XFRP signal
+
+    timers:
+      required: false
+      type: phandle-array
+      description: timers specifiers
+
+    timer-names:
+      required: false
+      type: string-array
+      description: Provided names of timers specifiers. There are "pixel", "xrst", "enb".
+
+    gpios:
+      type: phandle-array
+      required: true
+      description:
+        GPIO pins used by JDI.
+
+    gpio-names:
+      required: true
+      type: string-array
+      description: Provided names of gpio specifiers. There are "vst", "xrst".
