@@ -37,8 +37,13 @@ static void _test_request_upgrade_n(uint8_t fa_id, int img_index, int confirmed)
 
 	sf_dev = flash_area_get_device(fa);
 
-	ret = flash_get_page_info_by_offs(sf_dev, fa->fa_size - 1, &page);
+	/* Erase flash page to which image status belongs. */
+	ret = flash_get_page_info_by_offs(sf_dev, fa->fa_off + fa->fa_size - 1,
+					  &page);
+	zassert_true(ret == 0, "can't get the trailer's flash page info.");
+
 	ret = flash_erase(sf_dev, page.start_offset, page.size);
+	zassert_true(ret == 0, "can't erase the trailer flash page.");
 
 	ret = (confirmed) ? BOOT_UPGRADE_PERMANENT : BOOT_UPGRADE_TEST;
 	zassert_true(boot_request_upgrade_multi(img_index, ret) == 0,
@@ -85,7 +90,9 @@ static void _test_write_confirm_n(uint8_t fa_id, int img_index)
 
 	sf_dev = flash_area_get_device(fa);
 
-	ret = flash_get_page_info_by_offs(sf_dev, fa->fa_size - 1, &page);
+	/* Erase flash page to which image status belongs. */
+	ret = flash_get_page_info_by_offs(sf_dev, fa->fa_off + fa->fa_size - 1,
+					  &page);
 	zassert_true(ret == 0, "can't get the trailer's flash page info.");
 
 	ret = flash_erase(sf_dev, page.start_offset, page.size);
