@@ -3,9 +3,6 @@
 
 if BOARD_QEMU_ARC
 
-config BOARD
-	default "qemu_arc"
-
 if NETWORKING
 
 	config NET_L2_ETHERNET
