@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_RV32M1_VEGA
-
 if BT
 
 config BT_CTLR
@@ -24,5 +22,3 @@ config RV32M1_INTMUX_CHANNEL_3
 	default n
 
 endif # BT
-
-endif # BOARD_RV32M1_VEGA

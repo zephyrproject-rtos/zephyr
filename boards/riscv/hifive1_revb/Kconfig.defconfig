@@ -1,8 +1,6 @@
 # Copyright (c) 2019 SiFive Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_HIFIVE1_REVB
-
 config HAS_FLASH_LOAD_OFFSET
 	default y
 
@@ -14,5 +12,3 @@ config FLASH_LOAD_OFFSET
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 128
-
-endif
