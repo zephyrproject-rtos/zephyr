@@ -747,9 +747,14 @@ static int start_read(const struct device *dev,
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	LL_ADC_REG_SetSequencerChannels(adc, channel);
 #elif defined(CONFIG_SOC_SERIES_STM32WLX)
-	/* STM32G0 in "not fully configurable" sequencer mode */
-	LL_ADC_REG_SetSequencerChannels(adc, channel);
+	/* Init the the ADC group for REGULAR conversion*/
 	LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_CONFIGURABLE);
+	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
+	LL_ADC_REG_SetSequencerLength(adc, LL_ADC_REG_SEQ_SCAN_DISABLE);
+	LL_ADC_REG_SetOverrun(adc, LL_ADC_REG_OVR_DATA_OVERWRITTEN);
+	LL_ADC_REG_SetSequencerRanks(adc, LL_ADC_REG_RANK_1, channel);
+	LL_ADC_REG_SetSequencerChannels(adc, channel);
+	/* Wait for config complete config is ready */
 	while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
 	}
 	LL_ADC_ClearFlag_CCRDY(adc);
@@ -760,15 +765,6 @@ static int start_read(const struct device *dev,
 	while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
 	}
 	LL_ADC_ClearFlag_CCRDY(adc);
-#if defined(CONFIG_SOC_SERIES_STM32WLX)
-	/* Init the the ADC group for REGULAR conversion*/
-	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
-	LL_ADC_REG_SetSequencerLength(adc, LL_ADC_REG_SEQ_SCAN_DISABLE);
-	LL_ADC_REG_SetSequencerDiscont(adc, LL_ADC_REG_SEQ_DISCONT_DISABLE);
-	LL_ADC_REG_SetContinuousMode(adc, LL_ADC_REG_CONV_SINGLE);
-	LL_ADC_REG_SetOverrun(adc, LL_ADC_REG_OVR_DATA_OVERWRITTEN);
-	LL_ADC_REG_SetSequencerRanks(adc, LL_ADC_REG_RANK_1, channel);
-#endif /* CONFIG_SOC_SERIES_STM32WLX */
 
 #else
 	LL_ADC_REG_SetSequencerRanks(adc, table_rank[0], channel);
@@ -1009,6 +1005,13 @@ static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 	}
 	LL_ADC_SetSamplingTimeCommonChannels(adc, LL_ADC_SAMPLINGTIME_COMMON_1,
 		table_samp_time[acq_time_index]);
+#elif defined(CONFIG_SOC_SERIES_STM32WLX)
+	LL_ADC_SetChannelSamplingTime(adc,
+				      __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
+				      LL_ADC_SAMPLINGTIME_COMMON_1);
+	LL_ADC_SetSamplingTimeCommonChannels(adc,
+					     __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
+					     table_samp_time[acq_time_index]);
 #else
 	LL_ADC_SetChannelSamplingTime(adc,
 		__LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
@@ -1130,6 +1133,9 @@ static int adc_stm32_init(const struct device *dev)
 	 */
 
 	LL_ADC_DisableDeepPowerDown(adc);
+#elif defined(CONFIG_SOC_SERIES_STM32WLX)
+	/* The ADC clock must be disabled by clock gating during CPU1 sleep/stop */
+	LL_APB2_GRP1_DisableClockSleep(LL_APB2_GRP1_PERIPH_ADC);
 #endif
 	/*
 	 * F3, L4, WB, G0 and G4 ADC modules need some time
