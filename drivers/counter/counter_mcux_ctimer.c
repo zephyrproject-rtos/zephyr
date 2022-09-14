@@ -378,8 +378,10 @@ static int mcux_lpc_ctimer_set_dma_cfg(const struct device *dev, uint8_t chan_id
 			dma_blk_cfg->dest_address = counter_dma_cfg->dest_addr + (i * DMA_MAX_TRANS_NUM) * counter_dma_cfg->dest_data_size;
 		}
 
-		dma_blk_cfg->next_block = dma_blk_cfg + 1;
-		dma_blk_cfg = dma_blk_cfg->next_block;
+		if (i != dma_cfg->block_count - 1) {
+			dma_blk_cfg->next_block = dma_blk_cfg + 1;
+			dma_blk_cfg = dma_blk_cfg->next_block;
+		}
 	}
 
 	data->stream[chan_id].counter_dma_callback = counter_dma_cfg->callback;
