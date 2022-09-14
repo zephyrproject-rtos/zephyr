@@ -13,7 +13,7 @@
 #include <fsl_spi.h>
 #include <zephyr/logging/log.h>
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
-#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_mcux_lpc.h>
 #endif
 #ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
@@ -48,8 +48,6 @@ struct spi_mcux_config {
 #define SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG	0x04
 #define SPI_MCUX_FLEXCOMM_DMA_DONE_FLAG		\
 	(SPI_MCUX_FLEXCOMM_DMA_RX_DONE_FLAG | SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG)
-
-#define DMA_MAX_TRANS_NUM	(1024)
 
 struct stream {
 	const struct device *dma_dev;
