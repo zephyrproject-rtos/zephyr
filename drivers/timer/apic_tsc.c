@@ -129,7 +129,7 @@ static void clear_tsc_adjust(void)
 	 * confuses the APIC emulation and deadline interrupts don't
 	 * arrive.
 	 */
-#ifndef CONFIG_BOARD_ACRN
+#ifndef CONFIG_BOARD_ACRN_EHL_CRB
 	wrmsr(IA32_TSC_ADJUST_MSR, 0);
 #endif
 }
