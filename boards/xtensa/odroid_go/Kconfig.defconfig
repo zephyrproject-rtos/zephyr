@@ -3,10 +3,6 @@
 # Copyright (c) 2019 Yannis Damigos
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD
-	default "odroid_go"
-	depends on BOARD_ODROID_GO
-
 config DISK_DRIVER_SDMMC
 	default y if DISK_ACCESS
 

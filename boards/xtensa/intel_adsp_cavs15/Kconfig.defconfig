@@ -4,9 +4,6 @@
 
 if BOARD_INTEL_ADSP_CAVS15
 
-config BOARD
-	default "intel_adsp_cavs15"
-
 config CAVS_ICTL_0_OFFSET
 	default 6
 config CAVS_ICTL_1_OFFSET
