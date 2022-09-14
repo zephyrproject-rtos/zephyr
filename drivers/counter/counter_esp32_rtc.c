@@ -107,8 +107,13 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	counter_esp32_get_value(dev, &now);
 
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
+		WRITE_PERI_REG(RTC_CNTL_SLP_TIMER0_REG, (now + alarm_cfg->ticks));
+	} else {
+		WRITE_PERI_REG(RTC_CNTL_SLP_TIMER0_REG, alarm_cfg->ticks);
+	}
+
 	/* RTC main timer set alarm value */
-	WRITE_PERI_REG(RTC_CNTL_SLP_TIMER0_REG, (now + alarm_cfg->ticks));
 	CLEAR_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, 0xffffffff);
 
 	/* RTC main timer interrupt enable */

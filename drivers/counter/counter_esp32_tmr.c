@@ -140,9 +140,15 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t now;
 
 	counter_esp32_get_value(dev, &now);
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	timer_hal_set_alarm_value(&data->hal_ctx, (now + alarm_cfg->ticks));
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
+		timer_hal_set_alarm_value(&data->hal_ctx, (now + alarm_cfg->ticks));
+	} else {
+		timer_hal_set_alarm_value(&data->hal_ctx, alarm_cfg->ticks);
+	}
+
 	timer_hal_intr_enable(&data->hal_ctx);
 	timer_hal_set_alarm_enable(&data->hal_ctx, TIMER_ALARM_EN);
 	data->alarm_cfg.callback = alarm_cfg->callback;
