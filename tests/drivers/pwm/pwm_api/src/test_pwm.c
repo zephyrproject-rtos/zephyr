@@ -64,15 +64,17 @@
 #define DEFAULT_PULSE_NSEC 1000000
 #endif
 
-#if defined CONFIG_BOARD_SAM_E70_XPLAINED
+#if defined(CONFIG_BOARD_SAM_E70_XPLAINED) || \
+	defined(CONFIG_BOARD_SAM_E70B_XPLAINED)
 #define DEFAULT_PWM_PORT 2 /* PWM on EXT2 connector, pin 8 */
 #elif defined CONFIG_PWM_NRFX
 #define DEFAULT_PWM_PORT DT_PROP(DT_ALIAS(pwm_0), ch0_pin)
 #elif defined CONFIG_BOARD_ADAFRUIT_ITSYBITSY_M4_EXPRESS
 #define DEFAULT_PWM_PORT 2 /* TCC1/WO[2] on PA18 (D7) */
-#elif defined CONFIG_BOARD_MIMXRT685_EVK
+#elif defined CONFIG_BOARD_MIMXRT685_EVK_CM33
 #define DEFAULT_PWM_PORT 7 /* D3 on Arduino connector J27 */
-#elif defined CONFIG_BOARD_LPCXPRESSO55S69_CPU0
+#elif defined(CONFIG_BOARD_LPCXPRESSO55S69_CPU0) || \
+	defined(CONFIG_BOARD_LPCXPRESSO55S69_NS)
 #define DEFAULT_PWM_PORT 2 /* D2 on Arduino connector P18 */
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwm)
 /* Default port should be adapted per board to fit the channel
