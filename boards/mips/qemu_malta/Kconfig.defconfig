@@ -4,9 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BOARD_QEMU_MALTA || BOARD_QEMU_MALTA_BE
-
 config BUILD_OUTPUT_BIN
 	default n
-
-endif # BOARD_QEMU_MALTA || BOARD_QEMU_MALTA_BE
