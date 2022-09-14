@@ -193,6 +193,12 @@ static void unprovisioned_beacon_recv(struct net_buf_simple *buf)
 	uint32_t uri_hash_val;
 	uint32_t *uri_hash = NULL;
 
+	prov = bt_mesh_prov_get();
+
+	if (!prov->unprovisioned_beacon) {
+		return;
+	}
+
 	if (buf->len != 18 && buf->len != 22) {
 		BT_ERR("Invalid unprovisioned beacon length (%u)", buf->len);
 		return;
@@ -208,13 +214,9 @@ static void unprovisioned_beacon_recv(struct net_buf_simple *buf)
 
 	BT_DBG("uuid %s", bt_hex(uuid, 16));
 
-	prov = bt_mesh_prov_get();
-
-	if (prov->unprovisioned_beacon) {
-		prov->unprovisioned_beacon(uuid,
-					   (bt_mesh_prov_oob_info_t)oob_info,
-					   uri_hash);
-	}
+	prov->unprovisioned_beacon(uuid,
+				   (bt_mesh_prov_oob_info_t)oob_info,
+				   uri_hash);
 }
 
 static void sub_update_beacon_observation(struct bt_mesh_subnet *sub)
