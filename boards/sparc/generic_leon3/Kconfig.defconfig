@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_GENERIC_LEON3
-
 config SPARC_CASA
 	default n
 
@@ -12,5 +10,3 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 config UART_INTERRUPT_DRIVEN
 	default y
-
-endif
