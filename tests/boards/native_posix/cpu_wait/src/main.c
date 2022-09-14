@@ -213,7 +213,8 @@ static void np_timer_isr_test_replacement(const void *arg)
  */
 ZTEST(native_cpu_hold, test_cpu_hold_with_interrupts)
 {
-#if defined(CONFIG_BOARD_NATIVE_POSIX)
+#if defined(CONFIG_BOARD_NATIVE_POSIX) || \
+	defined(CONFIG_BOARD_NATIVE_POSIX_64)
 	/* So far we only have a test for native_posix.
 	 * As the test hooks into an interrupt to cause an extra delay
 	 * this is very platform specific
@@ -286,7 +287,7 @@ ZTEST(native_cpu_hold, test_cpu_hold_with_interrupts)
 			PRIu64"-"PRIu64"!="PRIu32"\n",
 			time2, time1, ONE_TICK_TIME);
 
-#endif /* defined(CONFIG_BOARD_NATIVE_POSIX) */
+#endif /* defined(CONFIG_BOARD_NATIVE_POSIX) || defined(CONFIG_BOARD_NATIVE_POSIX_64) || */
 }
 
 ZTEST_SUITE(native_cpu_hold, NULL, NULL, NULL, NULL, NULL);
