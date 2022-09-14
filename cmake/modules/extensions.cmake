@@ -1472,6 +1472,7 @@ endfunction()
 # Usage:
 #   zephyr_build_string(<out-variable>
 #                       BOARD <board>
+#                       [BOARD_IDENTIFIER <identifier>]
 #                       [BOARD_REVISION <revision>]
 #                       [BUILD <type>]
 #   )
@@ -1491,7 +1492,7 @@ endfunction()
 # will return the string `alpha_1_0_0_debug` in `build_string` parameter.
 #
 function(zephyr_build_string outvar)
-  set(single_args BOARD BOARD_REVISION BUILD)
+  set(single_args BOARD BOARD_IDENTIFIER BOARD_REVISION BUILD)
 
   cmake_parse_arguments(BUILD_STR "" "${single_args}" "" ${ARGN})
   if(BUILD_STR_UNPARSED_ARGUMENTS)
@@ -1508,7 +1509,19 @@ function(zephyr_build_string outvar)
     )
   endif()
 
+  if(DEFINED BUILD_STR_BOARD_IDENTIFIER AND NOT BUILD_STR_BOARD)
+    message(FATAL_ERROR
+      "zephyr_build_string(${ARGV0} <list> BOARD_IDENTIFIER ${BUILD_STR_BOARD_IDENTIFIER} ...)"
+      " given without BOARD argument, please specify BOARD"
+    )
+  endif()
+
   set(${outvar} ${BUILD_STR_BOARD})
+
+  if(DEFINED BUILD_STR_BOARD_IDENTIFIER)
+    string(REPLACE "/" "_" variant_string ${BUILD_STR_BOARD_IDENTIFIER})
+    set(${outvar} "${${outvar}}${variant_string}")
+  endif()
 
   if(DEFINED BUILD_STR_BOARD_REVISION)
     string(REPLACE "." "_" revision_string ${BUILD_STR_BOARD_REVISION})
