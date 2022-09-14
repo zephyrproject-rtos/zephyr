@@ -808,6 +808,21 @@ config BT_TICKER_EXT_SLOT_WINDOW_YIELD
 	  This options forces tickers with slot window extensions to yield to
 	  normal tickers and be placed at the end of their slot window.
 
+config BT_TICKER_PRIORITY_SET
+	bool "Tickers with priority based collision resolution"
+	depends on BT_TICKER_EXT
+	help
+	  This option provide tickers with persistent priority value that will
+	  be used in resolving collisions.
+
+	  The priority feature if enabled then a custom ULL is needed by vendors
+	  to avoid repeated skipping of overlapping events as next_has_priority
+	  check uses lazy value that would be always lazy_next > lazy_current as
+	  currently skipped event becomes the next event with lazy value
+	  incremented by 1. This repeated skip happens when all the time
+	  between the event intervals are occupied continuously by overlapping
+	  tickers.
+
 config BT_TICKER_SLOT_AGNOSTIC
 	bool "Slot agnostic ticker mode"
 	help
