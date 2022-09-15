@@ -792,6 +792,9 @@ static int gpio_emul_pm_device_pm_action(const struct device *dev,
 		.num_pins = DT_INST_PROP(_num, ngpios),			\
 		.interrupt_caps = GPIO_EMUL_INT_CAPS(_num)		\
 	};								\
+	BUILD_ASSERT(							\
+		DT_INST_PROP(_num, ngpios) <= GPIO_MAX_PINS_PER_PORT,	\
+		"Too many ngpios");					\
 									\
 	static struct gpio_emul_data gpio_emul_data_##_num = {		\
 		.flags = gpio_emul_flags_##_num,			\
