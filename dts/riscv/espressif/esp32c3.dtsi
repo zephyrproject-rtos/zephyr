@@ -189,6 +189,8 @@
 			interrupts = <SPI2_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_SPI2_MODULE>;
+			dma-clk = <ESP32_GDMA_MODULE>;
+			dma-host = <1>;
 			status = "disabled";
 		};
 
