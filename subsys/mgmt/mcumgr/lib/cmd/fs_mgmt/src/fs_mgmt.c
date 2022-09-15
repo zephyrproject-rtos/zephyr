@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
  * Copyright (c) 2022 Laird Connectivity
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +56,8 @@ LOG_MODULE_REGISTER(fs_mgmt);
 
 #define HASH_CHECKSUM_TYPE_SIZE 8
 
+#define HASH_CHECKSUM_SUPPORTED_COLUMNS_MAX 4
+
 static struct {
 	/** Whether an upload is currently in progress. */
 	bool uploading;
@@ -67,6 +70,14 @@ static struct {
 } fs_mgmt_ctxt;
 
 static const struct mgmt_handler fs_mgmt_handlers[];
+
+#if defined(CONFIG_FS_MGMT_CHECKSUM_HASH)
+/* Hash/checksum iterator information passing structure */
+struct hash_checksum_iterator_info {
+	zcbor_state_t *zse;
+	bool ok;
+};
+#endif
 
 #ifdef CONFIG_FS_MGMT_FILE_ACCESS_HOOK
 static fs_mgmt_on_evt_cb fs_evt_cb;
@@ -565,6 +576,52 @@ static int fs_mgmt_file_hash_checksum(struct mgmt_ctxt *ctxt)
 
 	return MGMT_ERR_EOK;
 }
+
+#if defined(CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_CMD)
+/* Callback for supported hash/checksum types to encode details on one type into CBOR map */
+static void supported_hash_checksum_callback(const struct hash_checksum_mgmt_group *group,
+					     void *user_data)
+{
+	struct hash_checksum_iterator_info *ctx = (struct hash_checksum_iterator_info *)user_data;
+
+	if (!ctx->ok) {
+		return;
+	}
+
+	ctx->ok = zcbor_tstr_encode_ptr(ctx->zse, group->group_name, strlen(group->group_name))	&&
+		  zcbor_map_start_encode(ctx->zse, HASH_CHECKSUM_SUPPORTED_COLUMNS_MAX)		&&
+		  zcbor_tstr_put_lit(ctx->zse, "format")					&&
+		  zcbor_uint32_put(ctx->zse, (uint32_t)group->byte_string)			&&
+		  zcbor_tstr_put_lit(ctx->zse, "size")						&&
+		  zcbor_uint32_put(ctx->zse, (uint32_t)group->output_size)			&&
+		  zcbor_map_end_encode(ctx->zse, HASH_CHECKSUM_SUPPORTED_COLUMNS_MAX);
+}
+
+/**
+ * Command handler: fs supported hash/checksum (read)
+ */
+static int
+fs_mgmt_supported_hash_checksum(struct mgmt_ctxt *ctxt)
+{
+	zcbor_state_t *zse = ctxt->cnbe->zs;
+	struct hash_checksum_iterator_info ctx = {
+		.zse = zse,
+	};
+
+	ctx.ok = zcbor_tstr_put_lit(zse, "types");
+
+	zcbor_map_start_encode(zse, CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_MAX_TYPES);
+
+	hash_checksum_mgmt_find_handlers(supported_hash_checksum_callback, &ctx);
+
+	if (!ctx.ok ||
+	    !zcbor_map_end_encode(zse, CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_MAX_TYPES)) {
+		return MGMT_ERR_EMSGSIZE;
+	}
+
+	return MGMT_ERR_EOK;
+}
+#endif
 #endif
 
 static const struct mgmt_handler fs_mgmt_handlers[] = {
@@ -583,6 +640,12 @@ static const struct mgmt_handler fs_mgmt_handlers[] = {
 		.mh_read = fs_mgmt_file_hash_checksum,
 		.mh_write = NULL,
 	},
+#if defined(CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_CMD)
+	[FS_MGMT_ID_SUPPORTED_HASH_CHECKSUM] = {
+		.mh_read = fs_mgmt_supported_hash_checksum,
+		.mh_write = NULL,
+	},
+#endif
 #endif
 };
 

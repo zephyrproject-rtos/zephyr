@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018-2022 mcumgr authors
  * Copyright (c) 2022 Laird Connectivity
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,6 +50,15 @@ struct hash_checksum_mgmt_group {
 	hash_checksum_mgmt_handler_fn function;
 };
 
+/** @typedef hash_checksum_mgmt_handler_fn
+ * @brief Function that gets called with hash/checksum details
+ *
+ * @param group         Details about a supported hash/checksum
+ * @param user_data     User-supplied value to calling function
+ */
+typedef void (*hash_checksum_mgmt_list_cb)(const struct hash_checksum_mgmt_group *group,
+					   void *user_data);
+
 /**
  * @brief Registers a full hash/checksum group.
  *
@@ -72,6 +82,14 @@ void hash_checksum_mgmt_unregister_group(struct hash_checksum_mgmt_group *group)
  *		NULL on failure.
  */
 const struct hash_checksum_mgmt_group *hash_checksum_mgmt_find_handler(const char *name);
+
+/**
+ * @brief Runs a callback with all supported hash/checksum types.
+ *
+ * @param cb		The callback function to call with each hash/checksum type.
+ * @param user_data	Data to pass back with the callback function.
+ */
+void hash_checksum_mgmt_find_handlers(hash_checksum_mgmt_list_cb cb, void *user_data);
 
 #ifdef __cplusplus
 }
