@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_NRF91X
-	bool "Nordic Semiconductor nRF91 series MCU"
+	bool "Nordic Semiconductor nRF91 series MCU" if "$(SOC_SCHEME)" = "v1"
 	select ARM
 	select CPU_CORTEX_M33
 	select CPU_CORTEX_M_HAS_DWT

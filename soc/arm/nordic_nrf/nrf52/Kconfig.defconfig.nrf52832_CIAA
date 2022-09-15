@@ -5,9 +5,6 @@
 
 if SOC_NRF52832_CIAA
 
-config SOC
-	default "nRF52832_CIAA"
-
 config NUM_IRQS
 	default 39
 

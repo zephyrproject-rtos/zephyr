@@ -1,0 +1,43 @@
+# Nordic Semiconductor nRF52 MCU line SoC names.
+
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# This file contains SoC names and is shared between SoC scheme v1 and v2.
+
+config SOC
+	default "nRF52805_CAAA"
+	depends on SOC_NRF52805_CAAA
+
+config SOC
+	default "nRF52840_QIAA"
+	depends on SOC_NRF52840_QIAA
+
+config SOC
+	default "nRF52810_QFAA"
+	depends on SOC_NRF52810_QFAA
+
+config SOC
+	default "nRF52811_QFAA"
+	depends on SOC_NRF52811_QFAA
+
+config SOC
+	string
+	default "nRF52820_QDAA"
+	depends on SOC_NRF52820_QDAA
+
+config SOC
+	default "nRF52832_CIAA"
+	depends on SOC_NRF52832_CIAA
+
+config SOC
+	default "nRF52832_QFAA"
+	depends on SOC_NRF52832_QFAA
+
+config SOC
+	default "nRF52832_QFAB"
+	depends on SOC_NRF52832_QFAB
+
+config SOC
+	default "nRF52833_QIAA"
+	depends on SOC_NRF52833_QIAA

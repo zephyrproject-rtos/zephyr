@@ -5,10 +5,6 @@
 
 if SOC_NRF52833_QIAA
 
-config SOC
-	string
-	default "nRF52833_QIAA"
-
 config NUM_IRQS
 	int
 	default 48
