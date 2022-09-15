@@ -117,8 +117,8 @@ static int cmd_exec(const struct shell *sh, size_t argc, char **argv)
 
 	struct lwm2m_engine_res *res = lwm2m_engine_get_res(&path);
 
-	if (ret < 0) {
-		shell_error(sh, "Resource not found (err %d)\n", ret);
+	if (res == NULL) {
+		shell_error(sh, "Resource not found\n");
 		return -EINVAL;
 	}
 
