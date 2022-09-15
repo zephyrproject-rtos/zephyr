@@ -81,6 +81,8 @@
 			compatible = "silabs,gecko-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x5a010000 0x3044>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			interrupts = <27 0>;
 			status = "disabled";
 		};
@@ -89,6 +91,8 @@
 			compatible = "silabs,gecko-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x50068000 0x3044>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			interrupts = <28 0>;
 			status = "disabled";
 		};
