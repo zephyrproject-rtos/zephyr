@@ -221,6 +221,11 @@ struct bt_codec_data {
  * These values are defined by the Generic Audio Assigned Numbers, bluetooth.com
  */
 enum bt_audio_location {
+	/*
+	 * As Audio Location is not mandatory, for handling lack of this field
+	 * in codec configuration we introduce special opcode with unspecified location.
+	 */
+	BT_AUDIO_LOCATION_UNSPECIFIED = 0,
 	BT_AUDIO_LOCATION_FRONT_LEFT = BIT(0),
 	BT_AUDIO_LOCATION_FRONT_RIGHT = BIT(1),
 	BT_AUDIO_LOCATION_FRONT_CENTER = BIT(2),

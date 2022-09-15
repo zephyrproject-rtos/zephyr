@@ -123,13 +123,16 @@ int bt_codec_cfg_get_chan_allocation_val(const struct bt_codec *codec,
 
 	*chan_allocation = 0;
 	if (bt_codec_get_val(codec, BT_CODEC_CONFIG_LC3_CHAN_ALLOC, &element)) {
-
 		*chan_allocation = sys_le32_to_cpu(*((uint32_t *)&element->data.data[0]));
 
 		return BT_AUDIO_CODEC_PARSE_ERR_SUCCESS;
 	}
 
-	return BT_AUDIO_CODEC_PARSE_ERR_TYPE_NOT_FOUND;
+	/* BAP v1.0.1 4.3.2 Codec_Specific_Configuration LTV requirements
+	 * The absence of the Audio_Channel_Allocation LTV structure
+	 * shall be interpreted as a single channel with no specified Audio Location.
+	 */
+	return BT_AUDIO_LOCATION_UNSPECIFIED;
 }
 
 int bt_codec_cfg_get_octets_per_frame(const struct bt_codec *codec)
