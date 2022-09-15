@@ -79,6 +79,12 @@ void main(void)
 		return;
 	}
 
+	err = can_start(dev);
+	if (err != 0) {
+		printk("Error starting CAN controller [%d]", err);
+		return;
+	}
+
 #if DT_NODE_EXISTS(BUTTON_NODE)
 	k_sem_init(&btn_cb_ctx.sem, 0, 1);
 
