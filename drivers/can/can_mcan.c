@@ -357,12 +357,6 @@ int can_mcan_init(const struct device *dev)
 			LOG_ERR("CAN transceiver not ready");
 			return -ENODEV;
 		}
-
-		ret = can_transceiver_enable(cfg->phy);
-		if (ret != 0) {
-			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
-			return -EIO;
-		}
 	}
 
 	ret = can_exit_sleep_mode(can);
