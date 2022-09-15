@@ -8,8 +8,6 @@
  */
 #include <soc_common.h>
 
-#define __soc_ram_code __attribute__((section(".__ram_code")))
-
 /*
  * This define gets the total number of USBPD ports available on the
  * ITE EC chip from dtsi (include status disable). Both it81202 and
