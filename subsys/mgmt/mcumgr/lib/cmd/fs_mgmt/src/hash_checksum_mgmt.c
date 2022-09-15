@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Laird Connectivity
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,4 +39,16 @@ const struct hash_checksum_mgmt_group *hash_checksum_mgmt_find_handler(const cha
 	}
 
 	return group;
+}
+
+void hash_checksum_mgmt_find_handlers(hash_checksum_mgmt_list_cb cb, void *user_data)
+{
+	/* Run a callback with all supported hash/checksums */
+	sys_snode_t *snp, *sns;
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&hash_checksum_mgmt_group_list, snp, sns) {
+		struct hash_checksum_mgmt_group *group =
+			CONTAINER_OF(snp, struct hash_checksum_mgmt_group, node);
+		cb(group, user_data);
+	}
 }

@@ -9,7 +9,6 @@
 #include <zephyr/fs/fs.h>
 #include <mgmt/mgmt.h>
 #include <fs_mgmt/fs_mgmt_config.h>
-#include <fs_mgmt/fs_mgmt_impl.h>
 #include "fs_mgmt/hash_checksum_mgmt.h"
 #include "fs_mgmt/hash_checksum_sha256.h"
 
