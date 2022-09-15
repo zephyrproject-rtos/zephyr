@@ -103,11 +103,11 @@ static void rx_thread(void *arg1, void *arg2, void *arg3)
 
 				k_sem_give(&data->tx_idle);
 
-				if (!data->loopback || !data->started) {
+				if (!data->loopback) {
 					continue;
 				}
 			}
-			if (count <= 0) {
+			if ((count <= 0) || !data->started) {
 				break;
 			}
 
