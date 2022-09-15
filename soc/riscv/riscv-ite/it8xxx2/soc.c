@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include "ilm.h"
 #include <soc.h>
 #include "soc_espi.h"
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>

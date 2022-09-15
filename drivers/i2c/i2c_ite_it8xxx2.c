@@ -12,6 +12,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <errno.h>
+#include <ilm.h>
 #include <soc.h>
 #include <soc_dt.h>
 #include <zephyr/dt-bindings/i2c/it8xxx2-i2c.h>
