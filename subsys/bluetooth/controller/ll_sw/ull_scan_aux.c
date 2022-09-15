@@ -697,7 +697,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 				      ticks_slot_overhead),
 				     ticker_cb, aux, ticker_op_cb, aux);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
+		  (ticker_status == TICKER_STATUS_BUSY) ||
+		  ((ticker_status == TICKER_STATUS_FAILURE) &&
+		   IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT)));
 
 	return;
 
