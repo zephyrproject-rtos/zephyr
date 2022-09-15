@@ -641,6 +641,10 @@ static void ascs_cp_rsp_add(uint8_t id, uint8_t op, uint8_t code,
 	 */
 	case BT_ASCS_RSP_NOT_SUPPORTED:
 	case BT_ASCS_RSP_TRUNCATED:
+		if (rsp->num_ase) {
+			net_buf_simple_remove_mem(&rsp_buf,
+						  sizeof(*ase_rsp) * rsp->num_ase);
+		}
 		rsp->num_ase = 0xff;
 		break;
 	default:
@@ -652,6 +656,12 @@ static void ascs_cp_rsp_add(uint8_t id, uint8_t op, uint8_t code,
 	ase_rsp->id = id;
 	ase_rsp->code = code;
 	ase_rsp->reason = reason;
+
+	if (rsp->num_ase == 0xff) {
+		__ASSERT_NO_MSG(rsp_buf.len == sizeof(*rsp) + sizeof(*ase_rsp));
+	} else {
+		__ASSERT_NO_MSG(rsp_buf.len == (sizeof(*rsp) + sizeof(*ase_rsp) * rsp->num_ase));
+	}
 }
 
 static void ascs_cp_rsp_add_errno(uint8_t id, uint8_t op, int err,
