@@ -955,6 +955,10 @@ static int can_rcar_add_rx_filter(const struct device *dev, can_rx_callback_t cb
 	struct can_rcar_data *data = dev->data;
 	int filter_id;
 
+	if (filter->rtr == CAN_REMOTEREQUEST) {
+		return -ENOTSUP;
+	}
+
 	k_mutex_lock(&data->rx_mutex, K_FOREVER);
 	filter_id = can_rcar_add_rx_filter_unlocked(dev, cb, cb_arg, filter);
 	k_mutex_unlock(&data->rx_mutex);
