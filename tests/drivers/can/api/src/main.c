@@ -654,7 +654,14 @@ void send_receive_rtr(const struct can_filter *data_filter,
 	int filter_id;
 	int err;
 
-	filter_id = add_rx_msgq(can_dev, rtr_filter);
+	filter_id = can_add_rx_filter_msgq(can_dev, &can_msgq, rtr_filter);
+	if (filter_id == -ENOTSUP) {
+		/* Not all CAN controller drivers support remote transmission requests */
+		ztest_test_skip();
+	}
+
+	zassert_not_equal(filter_id, -ENOSPC, "no filters available");
+	zassert_true(filter_id >= 0, "negative filter number");
 
 	/* Verify that RTR filter does not match data frame */
 	send_test_frame(can_dev, data_frame);
