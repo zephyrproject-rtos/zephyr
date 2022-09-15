@@ -24,6 +24,10 @@ namespace std {
 	};
 #endif /* __cplusplus */
 	extern const std::nothrow_t nothrow;
-}
 
+#if __cplusplus >= 201703L
+	enum class align_val_t : std::size_t {};
+#endif /* CONFIG_STD_CPP17 */
+
+}
 #endif /* ZEPHYR_SUBSYS_CPP_INCLUDE_NEW_ */
