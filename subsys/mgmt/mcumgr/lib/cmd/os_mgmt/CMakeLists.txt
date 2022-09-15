@@ -11,7 +11,3 @@ target_include_directories(MCUMGR INTERFACE
 zephyr_library_sources(
     src/os_mgmt.c
 )
-
-zephyr_library_sources_ifdef(CONFIG_REBOOT
-    src/zephyr_os_mgmt.c
-)
