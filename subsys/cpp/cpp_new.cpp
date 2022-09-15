@@ -22,6 +22,16 @@ void* operator new[](size_t size)
 	return malloc(size);
 }
 
+void* operator new(std::size_t size, const std::nothrow_t& tag) NOEXCEPT
+{
+	return malloc(size);
+}
+
+void* operator new[](std::size_t size, const std::nothrow_t& tag) NOEXCEPT
+{
+	return malloc(size);
+}
+
 void operator delete(void* ptr) NOEXCEPT
 {
 	free(ptr);
