@@ -15,9 +15,10 @@ extern "C" {
 /**
  * Command IDs for file system management group.
  */
-#define FS_MGMT_ID_FILE			 0
-#define FS_MGMT_ID_STAT			 1
-#define FS_MGMT_ID_HASH_CHECKSUM	 2
+#define FS_MGMT_ID_FILE				0
+#define FS_MGMT_ID_STAT				1
+#define FS_MGMT_ID_HASH_CHECKSUM		2
+#define FS_MGMT_ID_SUPPORTED_HASH_CHECKSUM	3
 
 #ifdef CONFIG_FS_MGMT_FILE_ACCESS_HOOK
 /** @typedef fs_mgmt_on_evt_cb
