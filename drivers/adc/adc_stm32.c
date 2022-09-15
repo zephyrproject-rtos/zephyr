@@ -1158,8 +1158,7 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	LL_ADC_SetClock(adc, LL_ADC_CLOCK_SYNC_PCLK_DIV4);
-#elif defined(STM32F3X_ADC_V1_1) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+#elif defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
@@ -1167,6 +1166,15 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
 			      LL_ADC_CLOCK_SYNC_PCLK_DIV4);
+#elif defined(STM32F3X_ADC_V1_1)
+	/*
+	 * Set the synchronous clock mode to HCLK/1 (DIV1) or HCLK/2 (DIV2)
+	 * Both are valid common clock setting values.
+	 * The HCLK/1(DIV1) is possible only if
+	 * the ahb-prescaler = <1> in the RCC_CFGR.
+	 */
+	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
+			      LL_ADC_CLOCK_SYNC_PCLK_DIV2);
 #elif defined(CONFIG_SOC_SERIES_STM32L1X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
