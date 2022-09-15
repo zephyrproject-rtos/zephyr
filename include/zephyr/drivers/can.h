@@ -1132,6 +1132,7 @@ static inline int z_impl_can_send(const struct device *dev, const struct can_fra
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
+ * @retval -ENOTSUP if the requested filter type is not supported.
  */
 static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 				    void *user_data, const struct can_filter *filter)
@@ -1174,6 +1175,7 @@ static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t 
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
+ * @retval -ENOTSUP if the requested filter type is not supported.
  */
 __syscall int can_add_rx_filter_msgq(const struct device *dev, struct k_msgq *msgq,
 				     const struct can_filter *filter);
