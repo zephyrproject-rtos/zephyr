@@ -972,6 +972,11 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 
 		max_len = MAX(max_len, NET_IPV6_MTU);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+		if (IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT) && (size > max_len)) {
+			/* We support larger packets if IPv4 fragmentation is enabled */
+			max_len = size;
+		}
+
 		max_len = MAX(max_len, NET_IPV4_MTU);
 	} else { /* family == AF_UNSPEC */
 #if defined (CONFIG_NET_L2_ETHERNET)

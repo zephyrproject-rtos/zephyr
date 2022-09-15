@@ -255,4 +255,106 @@ static inline void net_ipv4_set_ecn(uint8_t *tos, uint8_t ecn)
 	*tos |= ecn & NET_IPV4_ECN_MASK;
 }
 
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+/** Store pending IPv4 fragment information that is needed for reassembly. */
+struct net_ipv4_reassembly {
+	/** IPv4 source address of the fragment */
+	struct in_addr src;
+
+	/** IPv4 destination address of the fragment */
+	struct in_addr dst;
+
+	/**
+	 * Timeout for cancelling the reassembly. The timer is used
+	 * also to detect if this reassembly slot is used or not.
+	 */
+	struct k_work_delayable timer;
+
+	/** Pointers to pending fragments */
+	struct net_pkt *pkt[CONFIG_NET_IPV4_FRAGMENT_MAX_PKT];
+
+	/** IPv4 fragment identification */
+	uint16_t id;
+	uint8_t protocol;
+};
+#else
+struct net_ipv4_reassembly;
+#endif
+
+/**
+ * @typedef net_ipv4_frag_cb_t
+ * @brief Callback used while iterating over pending IPv4 fragments.
+ *
+ * @param reass IPv4 fragment reassembly struct
+ * @param user_data A valid pointer on some user data or NULL
+ */
+typedef void (*net_ipv4_frag_cb_t)(struct net_ipv4_reassembly *reass, void *user_data);
+
+/**
+ * @brief Go through all the currently pending IPv4 fragments.
+ *
+ * @param cb Callback to call for each pending IPv4 fragment.
+ * @param user_data User specified data or NULL.
+ */
+void net_ipv4_frag_foreach(net_ipv4_frag_cb_t cb, void *user_data);
+
+#if defined(CONFIG_NET_NATIVE_IPV4)
+/**
+ * @brief Initialises IPv4
+ */
+void net_ipv4_init(void);
+
+/**
+ * @brief Handles IPv4 fragmented packets.
+ *
+ * @param pkt     Network head packet.
+ * @param hdr     The IPv4 header of the current packet
+ *
+ * @return Return verdict about the packet.
+ */
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ipv4_hdr *hdr);
+#else
+static inline enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt,
+							    struct net_ipv4_hdr *hdr)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(hdr);
+
+	return NET_DROP;
+}
+#endif /* CONFIG_NET_IPV4_FRAGMENT */
+
+/**
+ * @brief Prepare packet for sending, this will split up a packet that is too large to send into
+ * multiple fragments so that it can be sent.
+ *
+ * @param pkt Network packet
+ *
+ * @return Return verdict about the packet.
+ */
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt);
+#else
+static inline enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
+{
+	return NET_OK;
+}
+#endif /* CONFIG_NET_IPV4_FRAGMENT */
+
+/**
+ * @brief Sets up fragment buffers for usage, should only be called by the SYS_INIT() handler in
+ * net_core.c
+ */
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+void net_ipv4_setup_fragment_buffers(void);
+#else
+static inline void net_ipv4_setup_fragment_buffers(void)
+{
+}
+#endif /* CONFIG_NET_IPV4_FRAGMENT */
+#else
+#define net_ipv4_init(...)
+#endif /* CONFIG_NET_NATIVE_IPV4 */
+
 #endif /* __IPV4_H */
