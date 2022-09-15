@@ -86,6 +86,44 @@ config NET_IPV4_HDR_OPTIONS
 	  Enables IPv4 header options support. Current support for only
 	  ICMPv4 Echo request. Only RecordRoute and Timestamp are handled.
 
+config NET_IPV4_FRAGMENT
+	bool "Support IPv4 fragmentation"
+	help
+	  IPv4 fragmentation is disabled by default. This limits incoming and
+	  outgoing packets to the MTU (1500 bytes for Ethernet). If you enable
+	  fragmentation support, please increase amount of RX data buffers so
+	  that larger packets can be received.
+
+config NET_IPV4_FRAGMENT_MAX_COUNT
+	int "How many packets to reassemble at a time"
+	range 1 16
+	default 1
+	depends on NET_IPV4_FRAGMENT
+	help
+	  How many fragmented IPv4 packets can be waiting reassembly
+	  simultaneously. You may need to increase the network buffer
+	  count.
+
+config NET_IPV4_FRAGMENT_MAX_PKT
+	int "How many fragments can be handled to reassemble a packet"
+	default 2
+	depends on NET_IPV4_FRAGMENT
+	help
+	  Incoming fragments are stored in per-packet queue before being
+	  reassembled. This value defines the number of fragments that
+	  can be handled at the same time to reassemble a single packet.
+
+	  You can increase this value if you expect packets with more
+	  than two fragments.
+
+config NET_IPV4_FRAGMENT_TIMEOUT
+	int "How long to wait for fragments to be received"
+	range 1 60
+	default 5
+	depends on NET_IPV4_FRAGMENT
+	help
+	  How long to wait for IPv4 fragment to arrive before the reassembly
+	  will timeout. This value is in seconds.
 
 module = NET_IPV4
 module-dep = NET_LOG

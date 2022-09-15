@@ -21,9 +21,13 @@
 #define NET_ICMPV4_DST_UNREACH  3	/* Destination unreachable */
 #define NET_ICMPV4_ECHO_REQUEST 8
 #define NET_ICMPV4_ECHO_REPLY   0
+#define NET_ICMPV4_TIME_EXCEEDED 11	/* Time exceeded */
+#define NET_ICMPV4_BAD_IP_HEADER 12	/* Bad IP header */
 
 #define NET_ICMPV4_DST_UNREACH_NO_PROTO  2 /* Protocol not supported */
 #define NET_ICMPV4_DST_UNREACH_NO_PORT   3 /* Port unreachable */
+#define NET_ICMPV4_TIME_EXCEEDED_FRAGMENT_REASSEMBLY_TIME 1 /* Fragment reassembly time exceeded */
+#define NET_ICMPV4_BAD_IP_HEADER_LENGTH  2 /* Bad length field */
 
 #define NET_ICMPV4_UNUSED_LEN 4
 
