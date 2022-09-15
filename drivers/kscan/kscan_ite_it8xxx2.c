@@ -10,11 +10,13 @@
 #include <zephyr/drivers/interrupt_controller/wuc_ite_it8xxx2.h>
 #include <zephyr/drivers/kscan.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl/pinctrl_kscan_it8xxx2.h>
 #include <zephyr/dt-bindings/interrupt-controller/it8xxx2-wuc.h>
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <soc_dt.h>
+#include <pinctrl_kscan_soc.h>
 #include <zephyr/sys/atomic.h>
 
 #include <zephyr/logging/log.h>
@@ -55,7 +57,9 @@ struct kscan_it8xxx2_config {
 	int irq;
 	/* KSI[7:0] wake-up input source configuration list */
 	const struct kscan_wuc_map_cfg *wuc_map_list;
-	/* Keyboard scan alternate configuration */
+	/* KSI[7:0]/KSO[15:0] keyboard scan alternate configuration */
+	const struct pinctrl_kscan_dev_config *pcfg_kscan;
+	/* KSO[17:16] keyboard scan alternate configuration */
 	const struct pinctrl_dev_config *pcfg;
 	/* KSO16 GPIO cells */
 	struct gpio_dt_spec kso16_gpios;
@@ -425,19 +429,12 @@ static int kscan_it8xxx2_init(const struct device *dev)
 	const struct kscan_it8xxx2_config *const config = dev->config;
 	struct kscan_it8xxx2_data *data = dev->data;
 	struct kscan_it8xxx2_regs *const inst = config->base;
+	int status;
 
 	/* Disable wakeup and interrupt of KSI pins before configuring */
 	keyboard_raw_enable_interrupt(dev, 0);
 
-	/*
-	 * Bit[2] = 1: Enable the internal pull-up of KSO[15:0] pins
-	 * Bit[0] = 1: Enable the open-drain mode of KSO[17:0] pins
-	 */
-	inst->KBS_KSOCTRL = (IT8XXX2_KBS_KSOOD | IT8XXX2_KBS_KSOPU);
-
 #if (CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE > 16)
-	int status;
-
 	/*
 	 * For KSO[16] and KSO[17]:
 	 * 1.GPOTRC:
@@ -453,14 +450,21 @@ static int kscan_it8xxx2_init(const struct device *dev)
 	gpio_pin_configure_dt(&config->kso17_gpios, GPIO_INPUT);
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure kscan pins");
+		LOG_ERR("Failed to configure KSO[17:16] pins");
 		return status;
 	}
-
 #endif
-
-	/* Bit[2] = 1: Enable the internal pull-up of KSI[7:0] pins */
-	inst->KBS_KSICTRL = IT8XXX2_KBS_KSIPU;
+	/*
+	 * Enable the internal pull-up and kbs mode of the KSI[7:0] pins.
+	 * Enable the internal pull-up and kbs mode of the KSO[15:0] pins.
+	 * Enable the open-drain mode of the KSO[17:0] pins.
+	 */
+	status = pinctrl_kscan_configure_pins(config->pcfg_kscan->pins,
+					      config->pcfg_kscan->pin_cnt);
+	if (status < 0) {
+		LOG_ERR("Failed to configure KSI[7:0] and KSO[15:0] pins");
+		return status;
+	}
 
 	/* KSO[17:0] pins output low */
 	inst->KBS_KSOL = 0x00;
@@ -572,12 +576,14 @@ static const struct kscan_driver_api kscan_it8xxx2_driver_api = {
 static const struct kscan_wuc_map_cfg kscan_wuc_0[IT8XXX2_DT_INST_WUCCTRL_LEN(0)] =
 		IT8XXX2_DT_WUC_ITEMS_LIST(0);
 
+PINCTRL_KSCAN_DT_INST_DEFINE(0);
 PINCTRL_DT_INST_DEFINE(0);
 
 static const struct kscan_it8xxx2_config kscan_it8xxx2_cfg_0 = {
 	.base = (struct kscan_it8xxx2_regs *)DT_INST_REG_ADDR_BY_IDX(0, 0),
 	.irq = DT_INST_IRQN(0),
 	.wuc_map_list = kscan_wuc_0,
+	.pcfg_kscan = PINCTRL_KSCAN_DT_INST_DEV_CONFIG_GET(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.kso16_gpios = GPIO_DT_SPEC_INST_GET(0, kso16_gpios),
 	.kso17_gpios = GPIO_DT_SPEC_INST_GET(0, kso17_gpios),

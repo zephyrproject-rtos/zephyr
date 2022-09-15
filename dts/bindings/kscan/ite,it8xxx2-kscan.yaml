@@ -5,7 +5,7 @@ description: ITE it8xxx2 keyboard matrix controller
 
 compatible: "ite,it8xxx2-kscan"
 
-include: [kscan.yaml, pinctrl-device.yaml]
+include: [kscan.yaml, pinctrl-device.yaml, ite-it8xxx2-pinctrl-kscan-kbs-device.yaml]
 
 properties:
     reg:
@@ -34,6 +34,9 @@ properties:
       required: true
       description: |
         The KSO17 pin for the selected port.
+
+    pinctrl-kscan:
+      required: true
 
     pinctrl-0:
       required: true

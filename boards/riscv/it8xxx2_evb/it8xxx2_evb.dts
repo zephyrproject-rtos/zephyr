@@ -8,6 +8,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <ite/it8xxx2.dtsi>
 #include <ite/it8xxx2-pinctrl-map.dtsi>
+#include <ite/it8xxx2-pinctrl-kscan-map.dtsi>
 
 / {
 	model = "IT8XXX2 EV-Board";
@@ -148,6 +149,30 @@
 };
 &kscan0 {
 	status = "okay";
+	pinctrl-kscan = <&kscan_ksi_0_kbs
+			 &kscan_ksi_1_kbs
+			 &kscan_ksi_2_kbs
+			 &kscan_ksi_3_kbs
+			 &kscan_ksi_4_kbs
+			 &kscan_ksi_5_kbs
+			 &kscan_ksi_6_kbs
+			 &kscan_ksi_7_kbs
+			 &kscan_kso_0_kbs
+			 &kscan_kso_1_kbs
+			 &kscan_kso_2_kbs
+			 &kscan_kso_3_kbs
+			 &kscan_kso_4_kbs
+			 &kscan_kso_5_kbs
+			 &kscan_kso_6_kbs
+			 &kscan_kso_7_kbs
+			 &kscan_kso_8_kbs
+			 &kscan_kso_9_kbs
+			 &kscan_kso_10_kbs
+			 &kscan_kso_11_kbs
+			 &kscan_kso_12_kbs
+			 &kscan_kso_13_kbs
+			 &kscan_kso_14_kbs
+			 &kscan_kso_15_kbs>;
 	pinctrl-0 = <&kso16_gpc3_default
 		     &kso17_gpc5_default>;
 	pinctrl-names = "default";
