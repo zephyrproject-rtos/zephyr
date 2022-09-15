@@ -3490,6 +3490,12 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 			break;
 		}
 
+		if (addr_type == NET_ADDR_DHCP && NET_IF_MAX_IPV4_ADDR == 1 &&
+		    cur->addr_type == NET_ADDR_AUTOCONF) {
+			ifaddr = cur;
+			break;
+		}
+
 		if (!ipv4->unicast[i].is_used) {
 			ifaddr = cur;
 			break;
