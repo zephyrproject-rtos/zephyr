@@ -50,7 +50,7 @@ config NET_ARP_TABLE_SIZE
 	depends on NET_ARP
 	default 2
 	help
-	  Each entry in the ARP table consumes 22 bytes of memory.
+	  Each entry in the ARP table consumes 48 bytes of memory.
 
 config NET_ARP_GRATUITOUS
 	bool "Support gratuitous ARP requests/replies."
