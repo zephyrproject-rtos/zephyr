@@ -214,6 +214,25 @@ struct net_pkt {
 		uint16_t ipv6_ext_len; /* length of extension headers */
 #endif
 	};
+
+#if defined(CONFIG_NET_IPV4_FRAGMENT) || defined(CONFIG_NET_IPV6_FRAGMENT)
+	union {
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+		struct {
+			uint16_t flags;		/* Fragment offset and M (More Fragment) flag */
+			uint16_t id;		/* Fragment ID */
+		} ipv4_fragment;
+#endif /* CONFIG_NET_IPV4_FRAGMENT */
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+		struct {
+			uint16_t flags;		/* Fragment offset and M (More Fragment) flag */
+			uint32_t id;		/* Fragment id */
+			uint16_t hdr_start;	/* Where starts the fragment header */
+		} ipv6_fragment;
+#endif /* CONFIG_NET_IPV6_FRAGMENT */
+	};
+#endif /* CONFIG_NET_IPV4_FRAGMENT || CONFIG_NET_IPV6_FRAGMENT */
+
 #if defined(CONFIG_NET_IPV6)
 	/* Where is the start of the last header before payload data
 	 * in IPv6 packet. This is offset value from start of the IPv6
@@ -221,12 +240,6 @@ struct net_pkt {
 	 * adds IPv6 extension headers to the network packet.
 	 */
 	uint16_t ipv6_prev_hdr_start;
-
-#if defined(CONFIG_NET_IPV6_FRAGMENT)
-	uint16_t ipv6_fragment_flags;	/* Fragment offset and M (More Fragment) flag */
-	uint32_t ipv6_fragment_id;	/* Fragment id */
-	uint16_t ipv6_frag_hdr_start;	/* Where starts the fragment header */
-#endif /* CONFIG_NET_IPV6_FRAGMENT */
 
 	uint8_t ipv6_ext_opt_len; /* IPv6 ND option length */
 	uint8_t ipv6_next_hdr;	/* What is the very first next header */
@@ -684,42 +697,102 @@ static inline uint16_t net_pkt_ip_opts_len(struct net_pkt *pkt)
 #endif
 }
 
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+static inline uint16_t net_pkt_ipv4_fragment_offset(struct net_pkt *pkt)
+{
+	return (pkt->ipv4_fragment.flags & NET_IPV4_FRAGH_OFFSET_MASK) * 8;
+}
+
+static inline bool net_pkt_ipv4_fragment_more(struct net_pkt *pkt)
+{
+	return (pkt->ipv4_fragment.flags & NET_IPV4_MORE_FRAG_MASK) != 0;
+}
+
+static inline void net_pkt_set_ipv4_fragment_flags(struct net_pkt *pkt, uint16_t flags)
+{
+	pkt->ipv4_fragment.flags = flags;
+}
+
+static inline uint32_t net_pkt_ipv4_fragment_id(struct net_pkt *pkt)
+{
+	return pkt->ipv4_fragment.id;
+}
+
+static inline void net_pkt_set_ipv4_fragment_id(struct net_pkt *pkt, uint32_t id)
+{
+	pkt->ipv4_fragment.id = id;
+}
+#else /* CONFIG_NET_IPV4_FRAGMENT */
+static inline uint16_t net_pkt_ipv4_fragment_offset(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline bool net_pkt_ipv4_fragment_more(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv4_fragment_flags(struct net_pkt *pkt, uint16_t flags)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(flags);
+}
+
+static inline uint32_t net_pkt_ipv4_fragment_id(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv4_fragment_id(struct net_pkt *pkt, uint32_t id)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(id);
+}
+#endif /* CONFIG_NET_IPV4_FRAGMENT */
+
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 static inline uint16_t net_pkt_ipv6_fragment_start(struct net_pkt *pkt)
 {
-	return pkt->ipv6_frag_hdr_start;
+	return pkt->ipv6_fragment.hdr_start;
 }
 
 static inline void net_pkt_set_ipv6_fragment_start(struct net_pkt *pkt,
 						   uint16_t start)
 {
-	pkt->ipv6_frag_hdr_start = start;
+	pkt->ipv6_fragment.hdr_start = start;
 }
 
 static inline uint16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
 {
-	return pkt->ipv6_fragment_flags & NET_IPV6_FRAGH_OFFSET_MASK;
+	return pkt->ipv6_fragment.flags & NET_IPV6_FRAGH_OFFSET_MASK;
 }
 static inline bool net_pkt_ipv6_fragment_more(struct net_pkt *pkt)
 {
-	return (pkt->ipv6_fragment_flags & 0x01) != 0;
+	return (pkt->ipv6_fragment.flags & 0x01) != 0;
 }
 
 static inline void net_pkt_set_ipv6_fragment_flags(struct net_pkt *pkt,
 						   uint16_t flags)
 {
-	pkt->ipv6_fragment_flags = flags;
+	pkt->ipv6_fragment.flags = flags;
 }
 
 static inline uint32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)
 {
-	return pkt->ipv6_fragment_id;
+	return pkt->ipv6_fragment.id;
 }
 
 static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 						uint32_t id)
 {
-	pkt->ipv6_fragment_id = id;
+	pkt->ipv6_fragment.id = id;
 }
 #else /* CONFIG_NET_IPV6_FRAGMENT */
 static inline uint16_t net_pkt_ipv6_fragment_start(struct net_pkt *pkt)

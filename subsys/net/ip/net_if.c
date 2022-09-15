@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/net/virtual.h>
 
 #include "net_private.h"
+#include "ipv4.h"
 #include "ipv6.h"
 #include "ipv4_autoconf_internal.h"
 
@@ -486,6 +487,12 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
 		verdict = net_ipv6_prepare_for_send(pkt);
 	}
+
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+	if (net_pkt_family(pkt) == AF_INET) {
+		verdict = net_ipv4_prepare_for_send(pkt);
+	}
+#endif
 
 done:
 	/*   NET_OK in which case packet has checked successfully. In this case
