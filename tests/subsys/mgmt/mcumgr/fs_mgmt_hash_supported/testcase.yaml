@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+tests:
+  fs.mgmt.hash.supported.crc32:
+    tags: fs_mgmt_hash_supported
+    extra_args: >
+      OVERLAY_CONFIG="configuration/crc32.conf"
+  fs.mgmt.hash.supported.sha256:
+    tags: fs_mgmt_hash_supported
+    extra_args: >
+      OVERLAY_CONFIG="configuration/sha256.conf"
+  fs.mgmt.hash.supported.all:
+    tags: fs_mgmt_hash_supported
+    extra_args: >
+      OVERLAY_CONFIG="configuration/all.conf"
