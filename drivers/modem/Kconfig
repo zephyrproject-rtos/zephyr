@@ -141,6 +141,7 @@ config MODEM_CELL_INFO
 
 source "drivers/modem/Kconfig.ublox-sara-r4"
 source "drivers/modem/Kconfig.quectel-bg9x"
+source "drivers/modem/Kconfig.quectel-bg95"
 source "drivers/modem/Kconfig.wncm14a2a"
 source "drivers/modem/Kconfig.gsm"
 

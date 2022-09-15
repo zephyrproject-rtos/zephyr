@@ -177,6 +177,27 @@ enum sensor_channel {
 	/** Desired charging current in mA */
 	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
 
+	/** Design capacity  **/
+	SENSOR_CHAN_GAUGE_DESIGN_CAPACITY,
+	/** Safety Alert  **/
+	SENSOR_CHAN_GAUGE_SAFETY_ALERT,
+	/** Safety Status  **/
+	SENSOR_CHAN_GAUGE_SAFETY_STATUS,
+	/** PF Alert  **/
+	SENSOR_CHAN_GAUGE_PF_ALERT,
+	/** PF Status  **/
+	SENSOR_CHAN_GAUGE_PF_STATUS,
+	/** Operation Status  **/
+	SENSOR_CHAN_GAUGE_OPERATING_STATUS,
+	/** Charging Status  **/
+	SENSOR_CHAN_GAUGE_CHARGING_STATUS,
+	/** Gauging Status  **/
+	SENSOR_CHAN_GAUGE_GAUGING_STATUS,
+	/** Manufacturing Status  **/
+	SENSOR_CHAN_GAUGE_MANUFACTURING_STATUS,
+	/** Gauge flags  **/
+	SENSOR_CHAN_GAUGE_FLAGS,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 

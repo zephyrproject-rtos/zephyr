@@ -240,4 +240,10 @@ source "drivers/sensor/nuvoton_tach_npcx/Kconfig"
 
 source "drivers/sensor/ite_tach_it8xxx2/Kconfig"
 
+source "drivers/sensor/hdc2080/Kconfig"
+
+source "drivers/sensor/icm20600/Kconfig"
+
+source "drivers/sensor/bq40zxx/Kconfig"
+
 endif # SENSOR

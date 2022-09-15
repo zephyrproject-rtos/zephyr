@@ -5,8 +5,8 @@
  */
 
 /dts-v1/;
-#include <st/h7/stm32h743Xi.dtsi>
-#include <st/h7/stm32h743zitx-pinctrl.dtsi>
+#include <st/h7/stm32h743Xg.dtsi>
+#include <st/h7/stm32h743zgtx-pinctrl.dtsi>
 //#include "arduino_r3_connector.dtsi"
 
 / {
@@ -14,9 +14,9 @@
 	compatible = "st,stm32h743zi-zb_tv";
 
 	chosen {
-		zephyr,console = &usart3;
+		zephyr,console = &uart5;
 		//zephyr,console = &cdc_acm_uart0;
-		zephyr,shell-uart = &usart3;
+		zephyr,shell-uart = &uart5;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
@@ -30,7 +30,7 @@
 			gpios = <&gpiof 12 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
-        /*
+        /* FIXME
 		yellow_led: led_1 {
 			gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
@@ -58,19 +58,96 @@
 		};
 	};
 
+    vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 15>;
+		output-ohms = <10760>;
+		full-ohms = <(10760 + 97600)>;
+        //power-gpios = <&sx1509b 8 GPIO_ACTIVE_HIGH>;
+	};
+
 	aliases {
 		led0 = &green_led;
+		led1 = &green_led;
+		led2 = &green_led;
 		//led1 = &yellow_led;
 		sw0 = &user_button_0;
 		sw1 = &user_button_1;
 		sw2 = &user_button_2;
 		sw3 = &user_button_3;
         gpioa = &gpioa;
+        gpioc = &gpioc;
         gpiod = &gpiod;
         gpiog = &gpiog;
         gpioe = &gpioe;
         gpiof = &gpiof;
+        spi3 = &spi3;
+		uart5 = &uart5;
 	};
+
+/*
+	LG_COMP_CTRL - PF2
+	LG_COMP_CTRL1 - PC4
+	LG_COMP_CTRL2 - PC5
+	USR_BUTTON1 - PG1
+	USR_BUTTON2 - PE7
+	USR_BUTTON3 - PE8
+	USR_BUTTON4 - PE9
+	NRF_LCD_CS - PA15
+	NRF_LCD_RSTB - PD0
+	NTC_ADC - PF5
+	PWM1 - PC8
+	GPIO1 - PD3
+	GPIO2 - PD4
+	GPIO3 - PD5
+	RESET_MCU - PG6
+	PWRKEY_MCU - PG5
+	PWR_OUT_CTRL - PD11
+	HEATER_CTRL - PD12
+	SEL1 - PD13
+	SEL2 - PD14
+	DIAG_EN - PD15
+	LED_CTRL - PF11
+	FAN_CTRL - PB2
+	BACKLIGHT_EN - PA0
+	BUZZER - PA7
+	LED1 - PE2
+	LED2 - PE3
+	LED3 - PE4
+	LG_CMP - PF3
+	IMU_INT1 - PF13
+	IMU_INT2 - PG0
+	BATTERY - PF4
+	3V8_GOOD - PG7
+*/
+    zephyr,user {
+		lg_cmp-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
+		imu_int1-gpios = <&gpiof 13 GPIO_ACTIVE_HIGH>;
+		imu_int2-gpios = <&gpiog 0 GPIO_ACTIVE_HIGH>;
+		battery-gpios = <&gpiof 4 GPIO_ACTIVE_HIGH>;
+		3v8_good-gpios = <&gpiog 7 GPIO_ACTIVE_HIGH>;
+		reset_mcu-gpios = <&gpiog 6 GPIO_ACTIVE_HIGH>;
+		pwrkey_mcu-gpios = <&gpiog 5 GPIO_ACTIVE_HIGH>;
+		pwr_out_ctrl-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+		htr_ctrl-gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+		sel1-gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
+		sel2-gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
+		diag_en-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
+		led_ctrl-gpios = <&gpiof 11 GPIO_ACTIVE_HIGH>;
+		fan_ctrl-gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+		backlight_en-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+		buzzer-gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+		lg_comp_ctrl-gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
+		lg_comp_ctrl1-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
+		lg_comp_ctrl2-gpios = <&gpioc 5 GPIO_ACTIVE_HIGH>;
+		nrf_lcd_cs-gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
+		nrf_lcd_rstb-gpios = <&gpiod 0 GPIO_ACTIVE_HIGH>;
+		ntc_adc-gpios = <&gpiof 5 GPIO_ACTIVE_HIGH>;
+		pwm1-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
+		gpio1-gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+		gpio2-gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
+		gpio3-gpios = <&gpiod 5 GPIO_ACTIVE_HIGH>;
+    };
 };
 
 zephyr_udc0: &usbotg_hs {
@@ -111,9 +188,9 @@ zephyr_udc0: &usbotg_hs {
 };
 
 &pll {
-	div-m = <32>;
-	mul-n = <256>;
-	div-p = <4>;
+	div-m = <4>;
+	mul-n = <10>;
+	div-p = <2>;
 	div-q = <2>;
 	div-r = <2>;
 	clocks = <&clk_hsi>;
@@ -125,20 +202,20 @@ zephyr_udc0: &usbotg_hs {
 	mul-n = <16>;
 	div-p = <2>;
 	div-q = <2>;
-	div-r = <12>;
+	div-r = <2>;
 	clocks = <&clk_hsi>;
 	status = "okay";
 };
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(128)>;
+	clock-frequency = <DT_FREQ_M(75)>;
 	d1cpre = <1>;
-	hpre = <2>;
+	hpre = <1>;
 	d1ppre = <1>;
-	d2ppre1 = <1>;
-	d2ppre2 = <1>;
-	d3ppre = <1>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
 };
 
 &usart1 {
@@ -186,6 +263,15 @@ zephyr_udc0: &usbotg_hs {
     pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+    bq40zxx: bq40zxx@b {
+        compatible = "ti,bq40zxx";
+        reg = <0x0b>;
+        label = "BQ40ZXX";
+        design-voltage = <11100>;
+        design-capacity = <16400>;
+        taper-current = <130>;
+        terminate-voltage = <9000>;
+    };
 };
 
 &i2c3 {
@@ -193,6 +279,12 @@ zephyr_udc0: &usbotg_hs {
     pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+    
+    ti_tmp116_int: ti_tmp116@48 {
+		compatible = "ti,tmp116";
+		reg = <0x48>;
+		label = "TMP116_INT";
+	};
 };
 
 &i2c4 {
@@ -200,6 +292,11 @@ zephyr_udc0: &usbotg_hs {
     pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+    icm20600: icm20600@68 {
+        compatible = "invensense,icm20xxx";
+        reg = <0x68>;
+        label = "ICM20600";
+    };
 };
 
 &timers12 {
@@ -227,9 +324,26 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&spi5_sck_pf7 &spi5_miso_pf8 &spi5_mosi_pf9>;
     pinctrl-names = "default";
 	cs-gpios = <&gpiof 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	s25_mx25: s25_mx25_64@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		//writeoc = "pp4io";
+		//readoc = "read4io";
+		//sck-frequency = <8000000>;
+		//has-be32k;
+        spi-max-frequency = <8000000>;
+		label = "S25-OR-MX25_65";
+		//jedec-id = [01 60 17];
+		jedec-id = [C2 28 17];
+		size = <67108864>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <35000>;
+	};
 };
 
 &spi3 {
+    // SPI LCD Display
 	status = "okay";
 	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
     pinctrl-names = "default";
@@ -284,6 +398,11 @@ zephyr_udc0: &usbotg_hs {
 			reg = <0x000c0000 0x00020000>;
 		};
 
+        /* Storage partition will be used by nvs settings */
+		//settings_partition: partition@f8000 {
+		//	label = "settings_store";
+		//	reg = <0x000e0000 0x00020000>;
+		//};
 	};
 };
 
@@ -336,7 +455,6 @@ zephyr_udc0: &usbotg_hs {
 	cd-gpios = <&gpioi 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
-*/
 
 &ltdc {
 	pinctrl-0 = <&ltdc_r0_pg13 &ltdc_r1_pa2 &ltdc_r2_pa1 &ltdc_r3_pb0
@@ -366,4 +484,34 @@ zephyr_udc0: &usbotg_hs {
 	def-back-color-red = <0x00>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0x00>;
+};
+*/
+
+&s25_mx25 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Storage partition will be used by FCB if enabled. */
+		ext_storage_partition: partition@0 {
+			label = "ext_storage";
+			reg = <0x00000000 0x00400000>;
+		};
+
+		/* Storage partition will be used by filesystem if enabled. */
+		fs_partition: partition@400000 {
+			label = "fs_storage";
+			reg = <0x00400000 0x003E0000>;
+		};
+
+		settings_partition: partition@7e0000 {
+			label = "settings_store";
+			reg = <0x007e0000 0x00020000>;
+		};
+	};
 };
