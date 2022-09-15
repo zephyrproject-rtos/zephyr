@@ -390,7 +390,7 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 	/* Start Wi-Fi in AP mode with configuration built above */
 	ret = esp_wifi_set_mode(ESP32_WIFI_MODE_AP);
 	ret |= esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
-	ret = esp_wifi_start();
+	ret |= esp_wifi_start();
 	if (ret != ESP_OK) {
 		LOG_ERR("Failed to enable Wi-Fi AP mode");
 		return -EAGAIN;
