@@ -23,15 +23,6 @@ config FLASH_JESD216
 	 Selected by drivers that support JESD216-compatible flash
 	 devices to enable building a common support module.
 
-config FLASH_JESD216_API
-	bool "Provide API to read JESD216 flash parameters"
-	depends on FLASH_JESD216
-	help
-	  This option extends the Zephyr flash API with the ability
-	  to access the Serial Flash Discoverable Parameter section
-	  allowing runtime determination of serial flash parameters
-	  for flash drivers that expose this capability.
-
 menuconfig FLASH
 	bool "Flash hardware support"
 	help
@@ -42,6 +33,15 @@ if FLASH
 module = FLASH
 module-str = flash
 source "subsys/logging/Kconfig.template.log_config"
+
+config FLASH_JESD216_API
+	bool "Provide API to read JESD216 flash parameters"
+	depends on FLASH_JESD216
+	help
+	  This option extends the Zephyr flash API with the ability
+	  to access the Serial Flash Discoverable Parameter section
+	  allowing runtime determination of serial flash parameters
+	  for flash drivers that expose this capability.
 
 config FLASH_SHELL
 	bool "Flash shell"
