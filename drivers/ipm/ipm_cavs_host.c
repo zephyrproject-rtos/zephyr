@@ -163,7 +163,7 @@ static int init(const struct device *dev)
 	 * futureproofing.
 	 */
 	CAVS_WIN[1].dmwlo = ROUND_UP(MAX_MSG, 8);
-	CAVS_WIN[1].dmwba = ((uint32_t) MSG_INBUF) | CAVS_DMWBA_ENABLE;
+	CAVS_WIN[1].dmwba = ((uint32_t) MSG_INBUF) | ADSP_DMWBA_ENABLE;
 
 	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, ipc_handler, (void *)dev);
 
