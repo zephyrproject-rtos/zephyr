@@ -1,0 +1,9 @@
+tests:
+  usb.device_next:
+    depends_on: usb_device
+    tags: usb
+    platform_allow:
+      - native_posix
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_posix
