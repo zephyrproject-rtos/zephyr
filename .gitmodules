@@ -7,3 +7,6 @@
 [submodule "zb_ap_bv_l151c8"]
 	path = zb_ap_bv_l151c8
 	url = git@github.com:zedblox/zb_bv_v1.0_l151c8_app.git
+[submodule "zb_actipod_app"]
+	path = zb_actipod_app
+	url = https://github.com/sviraaj/zb_actipod_app.git
