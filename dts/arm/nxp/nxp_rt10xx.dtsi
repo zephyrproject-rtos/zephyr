@@ -875,7 +875,7 @@
 			#size-cells = <0>;
 			#pinmux-cells = <2>;
 			reg = <0x40384000 0x4000>;
-			clocks = <&ccm IMX_CCM_SAI1_CLK 0x7C 2>;
+			clocks = <&ccm IMX_CCM_SAI1_CLK 0x7C 18>;
 			/* Audio PLL Output Frequency is determined by:
 			 * (Fref * (DIV_SELECT + NUM/DENOM)) / POST_DIV
 			 * = (24MHz * (32 + 77 / 100)) / 1 = 786.48 MHz
@@ -913,7 +913,7 @@
 			#size-cells = <0>;
 			#pinmux-cells = <2>;
 			reg = <0x40388000 0x4000>;
-			clocks = <&ccm IMX_CCM_SAI2_CLK 0x7C 2>;
+			clocks = <&ccm IMX_CCM_SAI2_CLK 0x7C 20>;
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0x70 0xC000 0x0>,
@@ -938,7 +938,7 @@
 			#size-cells = <0>;
 			#pinmux-cells = <2>;
 			reg = <0x4038C000 0x4000>;
-			clocks = <&ccm IMX_CCM_SAI3_CLK 0x7C 2>;
+			clocks = <&ccm IMX_CCM_SAI3_CLK 0x7C 22>;
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0x70 0xC000 0>,
