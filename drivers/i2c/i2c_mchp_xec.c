@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_mchp, CONFIG_I2C_LOG_LEVEL);
 
@@ -49,6 +50,7 @@ struct i2c_xec_config {
 	uint8_t girq_bit;
 	struct gpio_dt_spec sda_gpio;
 	struct gpio_dt_spec scl_gpio;
+	const struct pinctrl_dev_config *pcfg;
 	void (*irq_config_func)(void);
 };
 
@@ -849,6 +851,12 @@ static int i2c_xec_init(const struct device *dev)
 	data->pending_stop = 0;
 	data->slave_attached = false;
 
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret != 0) {
+		LOG_ERR("XEC I2C pinctrl setup failed (%d)", ret);
+		return ret;
+	}
+
 	if (!device_is_ready(cfg->sda_gpio.port)) {
 		LOG_ERR("%s GPIO device is not ready for SDA GPIO", dev->name);
 		return -ENODEV;
@@ -878,6 +886,9 @@ static int i2c_xec_init(const struct device *dev)
 }
 
 #define I2C_XEC_DEVICE(n)						\
+									\
+	PINCTRL_DT_INST_DEFINE(n);					\
+									\
 	static void i2c_xec_irq_config_func_##n(void);			\
 									\
 	static struct i2c_xec_data i2c_xec_data_##n;			\
@@ -890,6 +901,7 @@ static int i2c_xec_init(const struct device *dev)
 		.sda_gpio = GPIO_DT_SPEC_INST_GET(n, sda_gpios),	\
 		.scl_gpio = GPIO_DT_SPEC_INST_GET(n, scl_gpios),	\
 		.irq_config_func = i2c_xec_irq_config_func_##n,		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xec_init, NULL,	\
 		&i2c_xec_data_##n, &i2c_xec_config_##n,			\
