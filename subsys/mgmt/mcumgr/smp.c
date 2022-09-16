@@ -114,11 +114,9 @@ zephyr_smp_process_packet(struct zephyr_smp_transport *zst,
 	int rc;
 
 	streamer = (struct smp_streamer) {
-		.mgmt_stmr = {
-			.reader = &reader,
-			.writer = &writer,
-			.cb_arg = zst,
-		},
+		.reader = &reader,
+		.writer = &writer,
+		.smpt = zst,
 		.tx_rsp_cb = zephyr_smp_tx_rsp,
 	};
 

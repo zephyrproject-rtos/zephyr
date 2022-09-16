@@ -49,7 +49,9 @@ typedef int smp_tx_rsp_fn(struct smp_streamer *ss, void *buf, void *arg);
  * @brief Decodes, encodes, and transmits SMP packets.
  */
 struct smp_streamer {
-	struct mgmt_streamer mgmt_stmr;
+	struct zephyr_smp_transport *smpt;
+	struct cbor_nb_reader *reader;
+	struct cbor_nb_writer *writer;
 	smp_tx_rsp_fn *tx_rsp_cb;
 };
 

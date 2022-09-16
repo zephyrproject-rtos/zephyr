@@ -132,15 +132,6 @@ typedef void *(*mgmt_alloc_rsp_fn)(const void *src_buf, void *arg);
 typedef void (*mgmt_reset_buf_fn)(void *buf, void *arg);
 
 /**
- * @brief Decodes requests and encodes responses for any mcumgr protocol.
- */
-struct mgmt_streamer {
-	void *cb_arg;
-	struct cbor_nb_reader *reader;
-	struct cbor_nb_writer *writer;
-};
-
-/**
  * @brief Context required by command handlers for parsing requests and writing
  *		responses.
  */
