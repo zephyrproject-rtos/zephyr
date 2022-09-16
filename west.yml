@@ -125,7 +125,7 @@ manifest:
         - hal
     - name: hal_stm32
       remote: carbon
-      revision: carbon/master-v2
+      revision: b80405468538d358dc644f7c16951c6fc2cf6b14
       path: modules/hal/stm32
       groups:
         - hal
