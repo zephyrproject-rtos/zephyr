@@ -29,15 +29,6 @@ config ESPI_PERIPHERAL_DEBUG_PORT_80
 config ESPI_PERIPHERAL_UART
 	default y
 
-config ESPI_PERIPHERAL_UART_SOC_MAPPING
-	int "SoC port exposed as logical eSPI UART"
-	default 2 if SOC_SERIES_MEC1501X
-	default 1 if SOC_SERIES_MEC172X
-	depends on ESPI_PERIPHERAL_UART
-	help
-	  This tells the driver to which SoC UART to direct the UART traffic
-	  send over eSPI from host.
-
 config ESPI_OOB_BUFFER_SIZE
 	int "eSPI OOB channel buffer size in bytes"
 	default 128

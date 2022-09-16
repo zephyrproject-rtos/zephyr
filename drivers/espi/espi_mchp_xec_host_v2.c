@@ -898,7 +898,7 @@ static int init_p80bd0(const struct device *dev)
 
 #ifdef CONFIG_ESPI_PERIPHERAL_UART
 
-#if CONFIG_ESPI_PERIPHERAL_UART_SOC_MAPPING == 0
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
 int init_uart0(const struct device *dev)
 {
 	struct espi_xec_config *const cfg = ESPI_XEC_CONFIG(dev);
@@ -913,7 +913,8 @@ int init_uart0(const struct device *dev)
 #undef	INIT_UART0
 #define	INIT_UART0		init_uart0
 
-#elif CONFIG_ESPI_PERIPHERAL_UART_SOC_MAPPING == 1
+#elif DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
+
 int init_uart1(const struct device *dev)
 {
 	struct espi_xec_config *const cfg = ESPI_XEC_CONFIG(dev);
@@ -927,7 +928,7 @@ int init_uart1(const struct device *dev)
 
 #undef	INIT_UART1
 #define	INIT_UART1		init_uart1
-#endif /* CONFIG_ESPI_PERIPHERAL_UART_SOC_MAPPING */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay) */
 #endif /* CONFIG_ESPI_PERIPHERAL_UART */
 
 typedef int (*host_dev_irq_connect)(const struct device *dev);

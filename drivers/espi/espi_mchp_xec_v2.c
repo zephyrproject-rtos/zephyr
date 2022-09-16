@@ -794,15 +794,12 @@ static void configure_sirq(const struct device *dev)
 	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
 
 #ifdef CONFIG_ESPI_PERIPHERAL_UART
-	switch (CONFIG_ESPI_PERIPHERAL_UART_SOC_MAPPING) {
-	case ESPI_PERIPHERAL_UART_PORT0:
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
 		regs->SIRQ[SIRQ_UART0] = UART_DEFAULT_IRQ;
-		break;
-	case ESPI_PERIPHERAL_UART_PORT1:
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
 		regs->SIRQ[SIRQ_UART1] = UART_DEFAULT_IRQ;
-		break;
-	}
 #endif
+#endif /* CONFIG_ESPI_PERIPHERAL_UART */
 #ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
 	regs->SIRQ[SIRQ_KBC_KIRQ] = 1;
 	regs->SIRQ[SIRQ_KBC_MIRQ] = 12;

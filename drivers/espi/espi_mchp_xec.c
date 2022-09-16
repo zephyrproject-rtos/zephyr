@@ -880,21 +880,17 @@ static void config_sub_devices(const struct device *dev)
 	 * Not all boards use same UART port for debug, hence needs to set
 	 * eSPI host logical UART0 bar address based on configuration.
 	 */
-	switch (CONFIG_ESPI_PERIPHERAL_UART_SOC_MAPPING) {
-	case 0:
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
 		ESPI_EIO_BAR_REGS->EC_BAR_UART_0 = ESPI_XEC_UART0_BAR_ADDRESS |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
-		break;
-	case 1:
+#elif DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
 		ESPI_EIO_BAR_REGS->EC_BAR_UART_1 = ESPI_XEC_UART0_BAR_ADDRESS |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
-		break;
-	case 2:
+#elif DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
 		ESPI_EIO_BAR_REGS->EC_BAR_UART_2 = ESPI_XEC_UART0_BAR_ADDRESS |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
-		break;
-	}
 #endif
+#endif /* CONFIG_ESPI_PERIPHERAL_UART */
 #ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
 	KBC_REGS->KBC_CTRL |= MCHP_KBC_CTRL_AUXH;
 	KBC_REGS->KBC_CTRL |= MCHP_KBC_CTRL_OBFEN;
@@ -929,18 +925,14 @@ static void config_sub_devices(const struct device *dev)
 static void configure_sirq(void)
 {
 #ifdef CONFIG_ESPI_PERIPHERAL_UART
-	switch (CONFIG_ESPI_PERIPHERAL_UART_SOC_MAPPING) {
-	case ESPI_PERIPHERAL_UART_PORT0:
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
 		ESPI_SIRQ_REGS->UART_0_SIRQ = UART_DEFAULT_IRQ;
-		break;
-	case ESPI_PERIPHERAL_UART_PORT1:
+#elif DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
 		ESPI_SIRQ_REGS->UART_1_SIRQ = UART_DEFAULT_IRQ;
-		break;
-	case ESPI_PERIPHERAL_UART_PORT2:
+#elif DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
 		ESPI_SIRQ_REGS->UART_2_SIRQ = UART_DEFAULT_IRQ;
-		break;
-	}
 #endif
+#endif /* CONFIG_ESPI_PERIPHERAL_UART */
 #ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
 	ESPI_SIRQ_REGS->KBC_SIRQ_0 = 0x01;
 	ESPI_SIRQ_REGS->KBC_SIRQ_1 = 0x0C;
