@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stddef.h>
 #include <ztest.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 #include <host/hci_core.h>
 
 #include "util/util.h"
@@ -335,7 +335,7 @@ void common_validate_per_adv_pdu(struct pdu_adv *pdu, enum test_pdu_ext_adv_type
 }
 
 /*
- * @brief Helper function to prepre CTE configuration for a given advertising set.
+ * @brief Helper function to prepare CTE configuration for a given advertising set.
  *
  * Note: There is a single instance of CTE configuration. In case there is a need
  * to use multiple advertising sets at once, all will use the same CTE configuration.

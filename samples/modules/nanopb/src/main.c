@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
 #include <pb_encode.h>
 #include <pb_decode.h>
@@ -30,6 +30,9 @@ bool encode_message(uint8_t *buffer, size_t buffer_size, size_t *message_length)
 
 	/* Fill in the lucky number */
 	message.lucky_number = 13;
+	for (int i = 0; i < 8; ++i) {
+		message.buffer[i] = (uint8_t)(i * 2);
+	}
 
 	/* Now we are ready to encode the message! */
 	status = pb_encode(&stream, SimpleMessage_fields, &message);
@@ -59,6 +62,11 @@ bool decode_message(uint8_t *buffer, size_t message_length)
 	if (status) {
 		/* Print the data contained in the message. */
 		printk("Your lucky number was %d!\n", (int)message.lucky_number);
+		printk("Buffer contains: ");
+		for (int i = 0; i < 8; ++i) {
+			printk("%s%d", ((i == 0) ? "" : ", "), (int) message.buffer[i]);
+		}
+		printk("\n");
 	} else {
 		printk("Decoding failed: %s\n", PB_GET_ERROR(&stream));
 	}

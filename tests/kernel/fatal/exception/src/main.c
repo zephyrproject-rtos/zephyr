@@ -4,24 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
-#include <kernel_structs.h>
-#include <irq_offload.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/irq_offload.h>
 #include <kswap.h>
 #include <assert.h>
 
 #if defined(CONFIG_USERSPACE)
-#include <sys/mem_manage.h>
-#include <syscall_handler.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/syscall_handler.h>
 #include "test_syscalls.h"
 #endif
 
 #if defined(CONFIG_X86) && defined(CONFIG_X86_MMU)
 #define STACKSIZE (8192)
 #else
-#define  STACKSIZE (2048 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define  STACKSIZE (2048 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #endif
 #define MAIN_PRIORITY 7
 #define PRIORITY 5
@@ -97,7 +97,7 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 
 #if defined(CONFIG_ARM64)
 	__asm__ volatile ("svc 0");
-#elif defined(CONFIG_CPU_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 	__asm__ volatile ("BKPT");
 #elif defined(CONFIG_CPU_CORTEX_M)
 	__asm__ volatile ("swi 0");

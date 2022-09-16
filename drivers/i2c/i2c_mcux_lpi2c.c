@@ -8,12 +8,17 @@
 #define DT_DRV_COMPAT nxp_imx_lpi2c
 
 #include <errno.h>
-#include <drivers/i2c.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_lpi2c.h>
 
-#include <logging/log.h>
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif /* CONFIG_PINCTRL */
+
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mcux_lpi2c);
+
 
 #include "i2c-priv.h"
 /* Wait for the duration of 12 bits to detect a NAK after a bus
@@ -28,6 +33,9 @@ struct mcux_lpi2c_config {
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
 	uint32_t bus_idle_timeout_ns;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
+#endif /* CONFIG_PINCTRL */
 };
 
 struct mcux_lpi2c_data {
@@ -233,6 +241,13 @@ static int mcux_lpi2c_init(const struct device *dev)
 		return error;
 	}
 
+#ifdef CONFIG_PINCTRL
+	error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (error) {
+		return error;
+	}
+#endif /* CONFIG_PINCTRL */
+
 	config->irq_config_func(dev);
 
 	return 0;
@@ -243,7 +258,17 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 	.transfer = mcux_lpi2c_transfer,
 };
 
+#ifdef CONFIG_PINCTRL
+#define I2C_MCUX_LPI2C_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
+#define I2C_MCUX_LPI2C_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#else
+#define I2C_MCUX_LPI2C_PINCTRL_DEFINE(n)
+#define I2C_MCUX_LPI2C_PINCTRL_INIT(n)
+#endif /* CONFIG_PINCTRL */
+
 #define I2C_MCUX_LPI2C_INIT(n)						\
+	I2C_MCUX_LPI2C_PINCTRL_DEFINE(n)				\
+									\
 	static void mcux_lpi2c_config_func_##n(const struct device *dev); \
 									\
 	static const struct mcux_lpi2c_config mcux_lpi2c_config_##n = {	\
@@ -253,6 +278,7 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 		.irq_config_func = mcux_lpi2c_config_func_##n,		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\
+		I2C_MCUX_LPI2C_PINCTRL_INIT(n)				\
 		.bus_idle_timeout_ns =					\
 			UTIL_AND(DT_INST_NODE_HAS_PROP(n, bus_idle_timeout),\
 				 DT_INST_PROP(n, bus_idle_timeout)),	\
@@ -263,7 +289,7 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 	I2C_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_init, NULL,		\
 			    &mcux_lpi2c_data_##n,			\
 			    &mcux_lpi2c_config_##n, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_I2C_INIT_PRIORITY,			\
 			    &mcux_lpi2c_driver_api);			\
 									\
 	static void mcux_lpi2c_config_func_##n(const struct device *dev) \

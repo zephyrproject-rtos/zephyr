@@ -8,8 +8,8 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_INA23X_INA230_H_
 #define ZEPHYR_DRIVERS_SENSOR_INA23X_INA230_H_
 
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 
 #define INA230_REG_CONFIG     0x00
 #define INA230_REG_SHUNT_VOLT 0x01

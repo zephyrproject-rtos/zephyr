@@ -9,9 +9,9 @@
  * @brief Stub driver to measure the footprint impact of power management
  *
  */
-#include <device.h>
-#include <pm/device.h>
-#include <pm/device_runtime.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #define DUMMY_PM_DRIVER_NAME	"dummy_pm_driver"
 #define DUMMY_DRIVER_NAME	"dummy_driver"

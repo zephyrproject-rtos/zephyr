@@ -6,8 +6,8 @@
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;
@@ -18,6 +18,7 @@ static void test_main(void)
 	struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1;
 	struct bt_audio_lc3_preset preset_16_2_2 = BT_AUDIO_LC3_BROADCAST_PRESET_16_2_2;
 	struct bt_audio_stream broadcast_source_streams[CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT];
+	struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_audio_broadcast_source *source;
 
 	err = bt_enable(NULL);
@@ -31,9 +32,12 @@ static void test_main(void)
 	(void)memset(broadcast_source_streams, 0,
 		     sizeof(broadcast_source_streams));
 
+	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+		streams[i] = &broadcast_source_streams[i];
+	}
+
 	printk("Creating broadcast source\n");
-	err = bt_audio_broadcast_source_create(broadcast_source_streams,
-					       ARRAY_SIZE(broadcast_source_streams),
+	err = bt_audio_broadcast_source_create(streams, ARRAY_SIZE(streams),
 					       &preset_16_2_1.codec,
 					       &preset_16_2_1.qos,
 					       &source);
@@ -62,8 +66,7 @@ static void test_main(void)
 
 	/* Recreate broadcast source to verify that it's possible */
 	printk("Recreating broadcast source\n");
-	err = bt_audio_broadcast_source_create(broadcast_source_streams,
-					       ARRAY_SIZE(broadcast_source_streams),
+	err = bt_audio_broadcast_source_create(streams, ARRAY_SIZE(streams),
 					       &preset_16_2_1.codec,
 					       &preset_16_2_1.qos,
 					       &source);

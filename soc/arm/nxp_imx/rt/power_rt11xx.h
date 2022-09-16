@@ -9,7 +9,7 @@
 #define _SOC_ARM_NXP_IMX_RT_POWER_RT11XX_H_
 
 /*
- * Set point configurations. These are kept in a seprate file for readability.
+ * Set point configurations. These are kept in a separate file for readability.
  */
 
 #define SP0  0

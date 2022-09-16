@@ -15,4 +15,9 @@ config SOC_SERIES
 config SRAM_VECTOR_TABLE
 	default y
 
+# adjust the fallback because of the LSI oscaillator characteristics
+config TASK_WDT_HW_FALLBACK_DELAY
+	depends on TASK_WDT_HW_FALLBACK
+	default 100
+
 endif # SOC_SERIES_STM32F0X

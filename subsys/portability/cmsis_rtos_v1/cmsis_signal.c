@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <cmsis_os.h>
 
 #define NSEC_PER_MSEC		(NSEC_PER_USEC * USEC_PER_MSEC)

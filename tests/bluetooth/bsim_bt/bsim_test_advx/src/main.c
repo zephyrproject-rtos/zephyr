@@ -9,11 +9,11 @@
 #include <stddef.h>
 
 #include <zephyr/types.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "ll.h"
 
@@ -38,7 +38,7 @@
 #define ADV_PHY_1M      BIT(0)
 #define ADV_PHY_2M      BIT(1)
 #define ADV_PHY_CODED   BIT(2)
-#define ADV_SID         0
+#define ADV_SID         0x0a
 #define SCAN_REQ_NOT    0
 
 #define AD_OP           0x03

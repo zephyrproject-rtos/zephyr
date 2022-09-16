@@ -5,13 +5,12 @@
  */
 
 #include <ztest.h>
-#include <stdio.h>
-#include <app_memory/app_memdomain.h>
+#include <zephyr/app_memory/app_memdomain.h>
 #ifdef CONFIG_USERSPACE
-#include <sys/libc-hooks.h>
+#include <zephyr/sys/libc-hooks.h>
 #endif
-#include <sys/reboot.h>
-#include <logging/log_ctrl.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/logging/log_ctrl.h>
 
 #ifdef KERNEL
 static struct k_thread ztest_thread;
@@ -21,16 +20,38 @@ static struct k_thread ztest_thread;
 #include <unistd.h>
 #endif
 
+#ifdef CONFIG_ZTEST_SHUFFLE
+#include <zephyr/random/rand32.h>
+#include <stdlib.h>
+#include <time.h>
+#define NUM_ITER_PER_SUITE CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
+#define NUM_ITER_PER_TEST CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT
+#else
+#define NUM_ITER_PER_SUITE 1
+#define NUM_ITER_PER_TEST 1
+#endif
+
 /* ZTEST_DMEM and ZTEST_BMEM are used for the application shared memory test  */
 
-ZTEST_DMEM enum {
+/**
+ * @brief Each enum member represents a distinct phase of execution for the
+ *        test binary. TEST_PHASE_FRAMEWORK is active when internal ztest code
+ *        is executing; the rest refer to corresponding phases of user test
+ *        code.
+ */
+enum ztest_phase {
 	TEST_PHASE_SETUP,
 	TEST_PHASE_BEFORE,
 	TEST_PHASE_TEST,
 	TEST_PHASE_AFTER,
 	TEST_PHASE_TEARDOWN,
 	TEST_PHASE_FRAMEWORK
-} phase = TEST_PHASE_FRAMEWORK;
+};
+
+/**
+ * @brief Tracks the current phase that ztest is operating in.
+ */
+ZTEST_DMEM enum ztest_phase phase = TEST_PHASE_FRAMEWORK;
 
 static ZTEST_BMEM int test_status;
 
@@ -52,8 +73,7 @@ const char *ztest_relative_filename(const char *file)
 	char buf[200];
 
 	cwd = getcwd(buf, sizeof(buf));
-	if (cwd && strlen(file) > strlen(cwd) &&
-	    !strncmp(file, cwd, strlen(cwd)))
+	if (cwd && strlen(file) > strlen(cwd) && !strncmp(file, cwd, strlen(cwd)))
 		return file + strlen(cwd) + 1; /* move past the trailing '/' */
 #endif
 	return file;
@@ -77,12 +97,10 @@ static int cleanup_test(struct ztest_unit_test *test)
 #endif
 
 	if (!ret && mock_status == 1) {
-		PRINT("Test %s failed: Unused mock parameter values\n",
-		      test->name);
+		PRINT("Test %s failed: Unused mock parameter values\n", test->name);
 		ret = TC_FAIL;
 	} else if (!ret && mock_status == 2) {
-		PRINT("Test %s failed: Unused mock return values\n",
-		      test->name);
+		PRINT("Test %s failed: Unused mock return values\n", test->name);
 		ret = TC_FAIL;
 	} else {
 		;
@@ -97,7 +115,7 @@ static int cleanup_test(struct ztest_unit_test *test)
 #else
 #define NUM_CPUHOLD 0
 #endif
-#define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static struct k_thread cpuhold_threads[NUM_CPUHOLD];
 K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, NUM_CPUHOLD, CPUHOLD_STACK_SZ);
@@ -140,8 +158,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	 * logic views it as one "job") and cause other test failures.
 	 */
 	dt = k_uptime_get_32() - start_ms;
-	zassert_true(dt < 3000,
-		     "1cpu test took too long (%d ms)", dt);
+	zassert_true(dt < 3000, "1cpu test took too long (%d ms)", dt);
 	arch_irq_unlock(key);
 }
 
@@ -159,11 +176,10 @@ void z_impl_z_test_1cpu_start(void)
 	 * to flag the following loop as DEADCODE so suppress the warning.
 	 */
 	/* coverity[DEADCODE] */
-	for (int i = 0; i < NUM_CPUHOLD; i++)  {
-		k_thread_create(&cpuhold_threads[i],
-				cpuhold_stacks[i], CPUHOLD_STACK_SZ,
-				(k_thread_entry_t) cpu_hold, NULL, NULL, NULL,
-				K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+	for (int i = 0; i < NUM_CPUHOLD; i++) {
+		k_thread_create(&cpuhold_threads[i], cpuhold_stacks[i], CPUHOLD_STACK_SZ,
+				(k_thread_entry_t)cpu_hold, NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO,
+				0, K_NO_WAIT);
 		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 			snprintk(tname, CONFIG_THREAD_MAX_NAME_LEN, "cpuhold%02d", i);
 			k_thread_name_set(&cpuhold_threads[i], tname);
@@ -180,7 +196,7 @@ void z_impl_z_test_1cpu_stop(void)
 	 * to flag the following loop as DEADCODE so suppress the warning.
 	 */
 	/* coverity[DEADCODE] */
-	for (int i = 0; i < NUM_CPUHOLD; i++)  {
+	for (int i = 0; i < NUM_CPUHOLD; i++) {
 		k_thread_abort(&cpuhold_threads[i]);
 	}
 }
@@ -248,14 +264,34 @@ void ztest_test_pass(void)
 	longjmp(test_pass, 1);
 }
 
+/**
+ * @brief Get a friendly name string for a given test phrase.
+ *
+ * @param phase an enum ztest_phase value describing the desired test phase
+ * @returns a string name for `phase`
+ */
+static inline const char *get_friendly_phase_name(enum ztest_phase phase)
+{
+	switch (phase) {
+	case TEST_PHASE_SETUP:
+		return "setup";
+	case TEST_PHASE_BEFORE:
+		return "before";
+	case TEST_PHASE_TEST:
+		return "test";
+	case TEST_PHASE_AFTER:
+		return "after";
+	case TEST_PHASE_TEARDOWN:
+		return "teardown";
+	case TEST_PHASE_FRAMEWORK:
+		return "framework";
+	default:
+		return "(unknown)";
+	}
+}
+
 static void handle_signal(int sig)
 {
-	static const char *const phase_str[] = {
-		"setup",
-		"unit test",
-		"teardown",
-	};
-
 	PRINT("    %s", strsignal(sig));
 	switch (phase) {
 	case TEST_PHASE_SETUP:
@@ -263,7 +299,7 @@ static void handle_signal(int sig)
 	case TEST_PHASE_TEST:
 	case TEST_PHASE_AFTER:
 	case TEST_PHASE_TEARDOWN:
-		PRINT(" at %s function\n", phase_str[phase]);
+		PRINT(" at %s function\n", get_friendly_phase_name(phase));
 		longjmp(test_fail, 1);
 	case TEST_PHASE_FRAMEWORK:
 		PRINT("\n");
@@ -277,7 +313,7 @@ static void init_testing(void)
 	signal(SIGSEGV, handle_signal);
 
 	if (setjmp(stack_fail)) {
-		PRINT("Test suite crashed.");
+		PRINT("TESTSUITE crashed.");
 		exit(1);
 	}
 }
@@ -317,7 +353,7 @@ out:
 #define FAIL_FAST 0
 #endif
 
-K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACKSIZE + CONFIG_TEST_EXTRA_STACKSIZE);
+K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
 static ZTEST_BMEM int test_result;
 
 static void test_finalize(void)
@@ -369,10 +405,10 @@ static void test_cb(void *a, void *b, void *c)
 	struct ztest_unit_test *test = b;
 
 	test_result = 1;
+	run_test_rules(/*is_before=*/true, test, /*data=*/c);
 	if (suite->before) {
 		suite->before(/*data=*/c);
 	}
-	run_test_rules(/*is_before=*/true, test, /*data=*/c);
 	run_test_functions(suite, test, c);
 	test_result = 0;
 }
@@ -392,6 +428,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 				CONFIG_ZTEST_THREAD_PRIORITY,
 				test->thread_options | K_INHERIT_PERMS, K_FOREVER);
 
+		k_thread_access_grant(&ztest_thread, suite, test, suite->stats);
 		if (test->name != NULL) {
 			k_thread_name_set(&ztest_thread, test->name);
 		}
@@ -399,10 +436,10 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 		k_thread_join(&ztest_thread, K_FOREVER);
 	} else {
 		test_result = 1;
+		run_test_rules(/*is_before=*/true, test, data);
 		if (suite->before) {
 			suite->before(data);
 		}
-		run_test_rules(/*is_before=*/true, test, data);
 		run_test_functions(suite, test, data);
 	}
 
@@ -415,8 +452,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 
 	/* Flush all logs in case deferred mode and default logging thread are used. */
 	while (IS_ENABLED(CONFIG_TEST_LOGGING_FLUSH_AFTER_TEST) &&
-	       IS_ENABLED(CONFIG_LOG_PROCESS_THREAD) &&
-	       log_data_pending()) {
+	       IS_ENABLED(CONFIG_LOG_PROCESS_THREAD) && log_data_pending()) {
 		k_msleep(100);
 	}
 
@@ -464,6 +500,24 @@ struct ztest_unit_test *ztest_get_next_test(const char *suite, struct ztest_unit
 	return NULL;
 }
 
+#ifdef CONFIG_ZTEST_SHUFFLE
+static void z_ztest_shuffle(void *dest[], intptr_t start, size_t num_items, size_t element_size)
+{
+	for (size_t i = 0; i < num_items; ++i) {
+		int pos = sys_rand32_get() % num_items;
+		const int start_pos = pos;
+
+		/* Get the next valid position */
+		while (dest[pos] != NULL) {
+			pos = (pos + 1) % num_items;
+			__ASSERT_NO_MSG(pos != start_pos);
+		}
+
+		dest[pos] = (void *)(start + (i * element_size));
+	}
+}
+#endif /* CONFIG_ZTEST_SHUFFLE */
+
 static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 {
 	struct ztest_unit_test *test = NULL;
@@ -486,20 +540,46 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 	if (suite->setup != NULL) {
 		data = suite->setup();
 	}
-	while ((test = ztest_get_next_test(suite->name, test)) != NULL) {
-		fail += run_test(suite, test, data);
 
-		if (fail && FAIL_FAST) {
-			break;
+	for (int i = 0; i < NUM_ITER_PER_TEST; i++) {
+		fail = 0;
+
+#ifdef CONFIG_ZTEST_SHUFFLE
+		struct ztest_unit_test *tests_to_run[ZTEST_TEST_COUNT];
+
+		memset(tests_to_run, 0, ZTEST_TEST_COUNT * sizeof(struct ztest_unit_test *));
+		z_ztest_shuffle((void **)tests_to_run, (intptr_t)_ztest_unit_test_list_start,
+				ZTEST_TEST_COUNT, sizeof(struct ztest_unit_test));
+		for (size_t i = 0; i < ZTEST_TEST_COUNT; ++i) {
+			test = tests_to_run[i];
+			/* Make sure that the test belongs to this suite */
+			if (strcmp(suite->name, test->test_suite_name) != 0) {
+				continue;
+			}
+			fail += run_test(suite, test, data);
+
+			if (fail && FAIL_FAST) {
+				break;
+			}
 		}
+#else
+		while (((test = ztest_get_next_test(suite->name, test)) != NULL)) {
+			fail += run_test(suite, test, data);
+
+			if (fail && FAIL_FAST) {
+				break;
+			}
+		}
+#endif
+
+		test_status = (test_status || fail) ? 1 : 0;
 	}
+
 	TC_SUITE_END(suite->name, (fail > 0 ? TC_FAIL : TC_PASS));
 	phase = TEST_PHASE_TEARDOWN;
 	if (suite->teardown != NULL) {
 		suite->teardown(data);
 	}
-
-	test_status = (test_status || fail) ? 1 : 0;
 
 	return fail;
 }
@@ -522,22 +602,20 @@ void end_report(void)
 K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 #endif
 
-int ztest_run_test_suites(const void *state)
+static int __ztest_run_test_suite(struct ztest_suite_node *ptr, const void *state)
 {
-	struct ztest_suite_node *ptr;
+	struct ztest_suite_stats *stats = ptr->stats;
+	bool should_run = true;
 	int count = 0;
 
-	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
-		struct ztest_suite_stats *stats = &ptr->stats;
-		bool should_run = true;
+	if (ptr->predicate != NULL) {
+		should_run = ptr->predicate(state);
+	} else {
+		/* If predicate is NULL, only run this test once. */
+		should_run = stats->run_count == 0;
+	}
 
-		if (ptr->predicate != NULL) {
-			should_run = ptr->predicate(state);
-		} else  {
-			/* If predicate is NULL, only run this test once. */
-			should_run = stats->run_count == 0;
-		}
-
+	for (int i = 0; i < NUM_ITER_PER_SUITE; i++) {
 		if (should_run) {
 			int fail = z_ztest_run_test_suite_ptr(ptr);
 
@@ -552,6 +630,29 @@ int ztest_run_test_suites(const void *state)
 	return count;
 }
 
+int z_impl_ztest_run_test_suites(const void *state)
+{
+	int count = 0;
+
+#ifdef CONFIG_ZTEST_SHUFFLE
+	struct ztest_suite_node *suites_to_run[ZTEST_SUITE_COUNT];
+
+	memset(suites_to_run, 0, ZTEST_SUITE_COUNT * sizeof(struct ztest_suite_node *));
+	z_ztest_shuffle((void **)suites_to_run, (intptr_t)_ztest_suite_node_list_start,
+			ZTEST_SUITE_COUNT, sizeof(struct ztest_suite_node));
+	for (size_t i = 0; i < ZTEST_SUITE_COUNT; ++i) {
+		count += __ztest_run_test_suite(suites_to_run[i], state);
+	}
+#else
+	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
+	     ptr < _ztest_suite_node_list_end; ++ptr) {
+		count += __ztest_run_test_suite(ptr, state);
+	}
+#endif
+
+	return count;
+}
+
 void ztest_verify_all_test_suites_ran(void)
 {
 	bool all_tests_run = true;
@@ -559,7 +660,7 @@ void ztest_verify_all_test_suites_ran(void)
 	struct ztest_unit_test *test;
 
 	for (suite = _ztest_suite_node_list_start; suite < _ztest_suite_node_list_end; ++suite) {
-		if (suite->stats.run_count < 1) {
+		if (suite->stats->run_count < 1) {
 			PRINT("ERROR: Test suite '%s' did not run.\n", suite->name);
 			all_tests_run = false;
 		}
@@ -603,12 +704,10 @@ void main(void)
 	 * placed in this partition if no other memory domain configuration
 	 * is made.
 	 */
-	k_mem_domain_add_partition(&k_mem_domain_default,
-				   &ztest_mem_partition);
+	k_mem_domain_add_partition(&k_mem_domain_default, &ztest_mem_partition);
 #ifdef Z_MALLOC_PARTITION_EXISTS
 	/* Allow access to malloc() memory */
-	k_mem_domain_add_partition(&k_mem_domain_default,
-				   &z_malloc_partition);
+	k_mem_domain_add_partition(&k_mem_domain_default, &z_malloc_partition);
 #endif
 #endif /* CONFIG_USERSPACE */
 
@@ -629,8 +728,7 @@ void main(void)
 		}
 		state.boots += 1;
 		if (test_status == 0) {
-			PRINT("Reset board #%u to test again\n",
-				state.boots);
+			PRINT("Reset board #%u to test again\n", state.boots);
 			k_msleep(10);
 			sys_reboot(SYS_REBOOT_COLD);
 		} else {

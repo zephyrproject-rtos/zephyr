@@ -9,6 +9,7 @@
  *
  * NOTE: This file is replicated in particle_{argon,boron,xenon}.
  * Changes should be made in all instances. */
+#include "mesh_feather-pinctrl.dtsi"
 
 / {
 	aliases {
@@ -132,7 +133,7 @@ feather_adc: &adc { /* feather ADC */
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
+			reg = <0x00000000 0x0000C000>;
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
@@ -179,8 +180,9 @@ arduino_i2c: &i2c0 { /* feather I2C */
 	compatible = "nordic,nrf-twi";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <26>;
-	scl-pin = <27>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 feather_i2c: &i2c0 { };
@@ -190,10 +192,10 @@ feather_i2c: &i2c0 { };
 &spi2 { /* dedicated MX25L */
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <19>;
-	mosi-pin = <20>;
-	miso-pin = <21>;
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
 	mx25l32: mx25l3233f@0 {
 		compatible = "jedec,spi-nor";
 		label = "MX25L3233F";
@@ -220,9 +222,10 @@ feather_serial: &uart0 { /* feather UART1 */
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <6>;
-	rx-pin = <8>;
 	/* optional mesh_feather_uart1_rtscts.dtsi */
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 zephyr_udc0: &usbd {

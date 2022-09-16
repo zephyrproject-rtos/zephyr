@@ -5,12 +5,13 @@
  */
 
 #include <errno.h>
-#include <drivers/pwm.h>
+#include <zephyr/drivers/pwm.h>
 #include <soc.h>
 #include <device_imx.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_imx);
 
 #define PWM_PWMSR_FIFOAV_4WORDS	0x4
@@ -24,6 +25,7 @@ LOG_MODULE_REGISTER(pwm_imx);
 struct imx_pwm_config {
 	PWM_Type *base;
 	uint16_t prescaler;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct imx_pwm_data {
@@ -37,7 +39,7 @@ static bool imx_pwm_is_enabled(PWM_Type *base)
 }
 
 static int imx_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
-				       uint64_t *cycles)
+				      uint64_t *cycles)
 {
 	PWM_Type *base = DEV_BASE(dev);
 	const struct imx_pwm_config *config = dev->config;
@@ -47,9 +49,9 @@ static int imx_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int imx_pwm_pin_set(const struct device *dev, uint32_t pwm,
-			   uint32_t period_cycles, uint32_t pulse_cycles,
-			   pwm_flags_t flags)
+static int imx_pwm_set_cycles(const struct device *dev, uint32_t channel,
+			      uint32_t period_cycles, uint32_t pulse_cycles,
+			      pwm_flags_t flags)
 {
 	PWM_Type *base = DEV_BASE(dev);
 	const struct imx_pwm_config *config = dev->config;
@@ -60,10 +62,9 @@ static int imx_pwm_pin_set(const struct device *dev, uint32_t pwm,
 	uint32_t cr, sr;
 
 
-	if ((period_cycles == 0U) || (pulse_cycles > period_cycles)) {
-		LOG_ERR("Invalid combination: period_cycles=%d, "
-			    "pulse_cycles=%d", period_cycles, pulse_cycles);
-		return -EINVAL;
+	if (period_cycles == 0U) {
+		LOG_ERR("Channel can not be set to inactive level");
+		return -ENOTSUP;
 	}
 
 	if (flags) {
@@ -141,8 +142,15 @@ static int imx_pwm_pin_set(const struct device *dev, uint32_t pwm,
 
 static int imx_pwm_init(const struct device *dev)
 {
+	const struct imx_pwm_config *config = dev->config;
 	struct imx_pwm_data *data = dev->data;
+	int err;
 	PWM_Type *base = DEV_BASE(dev);
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
 
 	PWM_PWMPR_REG(base) = data->period_cycles;
 
@@ -150,14 +158,16 @@ static int imx_pwm_init(const struct device *dev)
 }
 
 static const struct pwm_driver_api imx_pwm_driver_api = {
-	.pin_set = imx_pwm_pin_set,
+	.set_cycles = imx_pwm_set_cycles,
 	.get_cycles_per_sec = imx_pwm_get_cycles_per_sec,
 };
 
 #define PWM_IMX_INIT(n)							\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static const struct imx_pwm_config imx_pwm_config_##n = {	\
 		.base = (PWM_Type *)DT_INST_REG_ADDR(n),		\
 		.prescaler = DT_INST_PROP(n, prescaler),		\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\
 	static struct imx_pwm_data imx_pwm_data_##n;			\

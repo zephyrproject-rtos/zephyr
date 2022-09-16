@@ -35,16 +35,16 @@
 	(defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP_NS) && defined(CONFIG_BUILD_WITH_TFM))
 #define DEBUG_SETUP() \
 	do { \
-		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX0, NRF_GPIO_PIN_MCUSEL_NETWORK);
-		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX1, NRF_GPIO_PIN_MCUSEL_NETWORK);
-		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX2, NRF_GPIO_PIN_MCUSEL_NETWORK);
-		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX3, NRF_GPIO_PIN_MCUSEL_NETWORK);
-		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX4, NRF_GPIO_PIN_MCUSEL_NETWORK);
-		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX5, NRF_GPIO_PIN_MCUSEL_NETWORK);
-		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX6, NRF_GPIO_PIN_MCUSEL_NETWORK);
-		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX7, NRF_GPIO_PIN_MCUSEL_NETWORK);
-		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX8, NRF_GPIO_PIN_MCUSEL_NETWORK);
-		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX9, NRF_GPIO_PIN_MCUSEL_NETWORK);
+		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX0, NRF_GPIO_PIN_MCUSEL_NETWORK); \
+		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX1, NRF_GPIO_PIN_MCUSEL_NETWORK); \
+		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX2, NRF_GPIO_PIN_MCUSEL_NETWORK); \
+		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX3, NRF_GPIO_PIN_MCUSEL_NETWORK); \
+		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX4, NRF_GPIO_PIN_MCUSEL_NETWORK); \
+		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX5, NRF_GPIO_PIN_MCUSEL_NETWORK); \
+		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX6, NRF_GPIO_PIN_MCUSEL_NETWORK); \
+		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX7, NRF_GPIO_PIN_MCUSEL_NETWORK); \
+		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX8, NRF_GPIO_PIN_MCUSEL_NETWORK); \
+		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX9, NRF_GPIO_PIN_MCUSEL_NETWORK); \
 	} while (0)
 #endif /* CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP */
 #elif defined(CONFIG_BOARD_NRF52840DK_NRF52840) || \

@@ -14,8 +14,8 @@
  * and exiting a C exception handler.
  */
 
-#include <arch/x86/ia32/asm.h>
-#include <arch/x86/ia32/arch.h> /* For MK_ISR_NAME */
+#include <zephyr/arch/x86/ia32/asm.h>
+#include <zephyr/arch/x86/ia32/arch.h> /* For MK_ISR_NAME */
 #include <offsets_short.h>
 
 

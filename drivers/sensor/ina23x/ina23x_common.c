@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include "ina23x_common.h"
 
 int ina23x_reg_read_24(const struct i2c_dt_spec *bus, uint8_t reg, uint32_t *val)

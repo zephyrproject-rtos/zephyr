@@ -4,7 +4,7 @@
 
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
-# Test receieves on group and virtual addresses in the LPN
+# Test receives on group and virtual addresses in the LPN
 RunTest mesh_friendship_msg_group \
 	friendship_lpn_group \
 	friendship_other_group \

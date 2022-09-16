@@ -29,8 +29,9 @@ static void test_timeout(void)
 	uint32_t repeat = 1000000;
 	k_timeout_t t = Z_TIMEOUT_TICKS(20);
 	int err;
+	int timeout = 1000;
 
-	ztress_set_timeout(K_MSEC(1000));
+	ztress_set_timeout(K_MSEC(timeout));
 
 	d = k_uptime_get();
 
@@ -52,7 +53,7 @@ static void test_timeout(void)
 	d = k_uptime_get();
 	err = ztress_execute(&timer_data, thread_data, ARRAY_SIZE(thread_data));
 	d = k_uptime_get() - d;
-	zassert_within(d, 1000, 200, NULL);
+	zassert_within(d, timeout + 500, 500, NULL);
 
 	ztress_set_timeout(K_NO_WAIT);
 }

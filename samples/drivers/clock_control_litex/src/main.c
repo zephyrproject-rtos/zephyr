@@ -3,11 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
-#include <devicetree.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/clock_control_litex.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_litex.h>
 /* Test defines */
 
 /* Select clock outputs for tests [0-6] */

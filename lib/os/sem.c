@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/sem.h>
-#include <syscall_handler.h>
+#include <zephyr/sys/sem.h>
+#include <zephyr/syscall_handler.h>
 
 #ifdef CONFIG_USERSPACE
 #define SYS_SEM_MINIMUM      0

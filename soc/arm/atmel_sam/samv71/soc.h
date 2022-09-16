@@ -14,7 +14,7 @@
 #ifndef _ATMEL_SAMV71_SOC_H_
 #define _ATMEL_SAMV71_SOC_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -73,6 +73,9 @@
 /** Master Clock (MCK) Frequency */
 #define SOC_ATMEL_SAM_MCK_FREQ_HZ \
 	(SOC_ATMEL_SAM_HCLK_FREQ_HZ / CONFIG_SOC_ATMEL_SAMV71_MDIV)
+
+/** UTMI PLL clock (UPLLCK) Frequency */
+#define SOC_ATMEL_SAM_UPLLCK_FREQ_HZ MHZ(480)
 
 #endif /* _ASMLANGUAGE */
 

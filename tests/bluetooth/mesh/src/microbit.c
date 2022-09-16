@@ -6,11 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
-#include <display/mb_display.h>
+#include <zephyr/display/mb_display.h>
 
-#include <bluetooth/mesh.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #include "board.h"
 

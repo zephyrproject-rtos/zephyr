@@ -10,14 +10,14 @@
 
 #define DT_DRV_COMPAT st_lsm6dso
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "lsm6dso.h"
 
@@ -51,19 +51,26 @@ static int lsm6dso_odr_to_freq_val(uint16_t odr)
 }
 
 static const uint16_t lsm6dso_accel_fs_map[] = {2, 16, 4, 8};
-static const uint16_t lsm6dso_accel_fs_sens[] = {1, 8, 2, 4};
 
-static int lsm6dso_accel_range_to_fs_val(int32_t range)
+static int lsm6dso_accel_range_to_fs_val(int32_t range, bool double_range)
 {
 	size_t i;
 
 	for (i = 0; i < ARRAY_SIZE(lsm6dso_accel_fs_map); i++) {
-		if (range == lsm6dso_accel_fs_map[i]) {
+		if (range == (lsm6dso_accel_fs_map[i] << double_range)) {
 			return i;
 		}
 	}
 
 	return -EINVAL;
+}
+
+static int lsm6dso_accel_fs_val_to_gain(int fs, bool double_range)
+{
+	/* Range of ±2G has a LSB of GAIN_UNIT_XL, thus divide by 2 */
+	return double_range ?
+		lsm6dso_accel_fs_map[fs] * GAIN_UNIT_XL :
+		lsm6dso_accel_fs_map[fs] * GAIN_UNIT_XL / 2;
 }
 
 static const uint16_t lsm6dso_gyro_fs_map[] = {250, 125, 500, 0, 1000, 0, 2000};
@@ -172,8 +179,10 @@ static int lsm6dso_accel_range_set(const struct device *dev, int32_t range)
 {
 	int fs;
 	struct lsm6dso_data *data = dev->data;
+	const struct lsm6dso_config *cfg = dev->config;
+	bool range_double = !!(cfg->accel_range & ACCEL_RANGE_DOUBLE);
 
-	fs = lsm6dso_accel_range_to_fs_val(range);
+	fs = lsm6dso_accel_range_to_fs_val(range, range_double);
 	if (fs < 0) {
 		return fs;
 	}
@@ -183,7 +192,7 @@ static int lsm6dso_accel_range_set(const struct device *dev, int32_t range)
 		return -EIO;
 	}
 
-	data->acc_gain = (lsm6dso_accel_fs_sens[fs] * GAIN_UNIT_XL);
+	data->acc_gain = lsm6dso_accel_fs_val_to_gain(fs, range_double);
 	return 0;
 }
 
@@ -297,16 +306,11 @@ static int lsm6dso_sample_fetch_accel(const struct device *dev)
 	const struct lsm6dso_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dso_data *data = dev->data;
-	int16_t buf[3];
 
-	if (lsm6dso_acceleration_raw_get(ctx, buf) < 0) {
+	if (lsm6dso_acceleration_raw_get(ctx, data->acc) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
-
-	data->acc[0] = sys_le16_to_cpu(buf[0]);
-	data->acc[1] = sys_le16_to_cpu(buf[1]);
-	data->acc[2] = sys_le16_to_cpu(buf[2]);
 
 	return 0;
 }
@@ -316,16 +320,11 @@ static int lsm6dso_sample_fetch_gyro(const struct device *dev)
 	const struct lsm6dso_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dso_data *data = dev->data;
-	int16_t buf[3];
 
-	if (lsm6dso_angular_rate_raw_get(ctx, buf) < 0) {
+	if (lsm6dso_angular_rate_raw_get(ctx, data->gyro) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
-
-	data->gyro[0] = sys_le16_to_cpu(buf[0]);
-	data->gyro[1] = sys_le16_to_cpu(buf[1]);
-	data->gyro[2] = sys_le16_to_cpu(buf[2]);
 
 	return 0;
 }
@@ -336,14 +335,11 @@ static int lsm6dso_sample_fetch_temp(const struct device *dev)
 	const struct lsm6dso_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dso_data *data = dev->data;
-	int16_t buf;
 
-	if (lsm6dso_temperature_raw_get(ctx, &buf) < 0) {
+	if (lsm6dso_temperature_raw_get(ctx, &data->temp_sample) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
-
-	data->temp_sample = sys_le16_to_cpu(buf);
 
 	return 0;
 }
@@ -759,13 +755,13 @@ static int lsm6dso_init_chip(const struct device *dev)
 		break;
 	}
 
-	fs = cfg->accel_range;
+	fs = cfg->accel_range & ACCEL_RANGE_MASK;
 	LOG_DBG("accel range is %d", fs);
 	if (lsm6dso_accel_set_fs_raw(dev, fs) < 0) {
 		LOG_ERR("failed to set accelerometer range %d", fs);
 		return -EIO;
 	}
-	lsm6dso->acc_gain = lsm6dso_accel_fs_sens[fs] * GAIN_UNIT_XL;
+	lsm6dso->acc_gain = lsm6dso_accel_fs_val_to_gain(fs, cfg->accel_range & ACCEL_RANGE_DOUBLE);
 
 	odr = cfg->accel_odr;
 	LOG_DBG("accel odr is %d", odr);
@@ -889,6 +885,18 @@ static int lsm6dso_init(const struct device *dev)
 			 SPI_MODE_CPOL |				\
 			 SPI_MODE_CPHA)					\
 
+#define LSM6DSO_CONFIG_COMMON(inst)					\
+	.accel_pm = DT_INST_PROP(inst, accel_pm),			\
+	.accel_odr = DT_INST_PROP(inst, accel_odr),			\
+	.accel_range = DT_INST_PROP(inst, accel_range) |		\
+		(DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), st_lsm6dso32) ?	\
+			ACCEL_RANGE_DOUBLE : 0),			\
+	.gyro_pm = DT_INST_PROP(inst, gyro_pm),				\
+	.gyro_odr = DT_INST_PROP(inst, gyro_odr),			\
+	.gyro_range = DT_INST_PROP(inst, gyro_range),			\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
+		(LSM6DSO_CFG_IRQ(inst)), ())
+
 #define LSM6DSO_CONFIG_SPI(inst)					\
 	{								\
 		.ctx = {						\
@@ -904,14 +912,7 @@ static int lsm6dso_init(const struct device *dev)
 					   LSM6DSO_SPI_OP,		\
 					   0),				\
 		},							\
-		.accel_pm = DT_INST_PROP(inst, accel_pm),		\
-		.accel_odr = DT_INST_PROP(inst, accel_odr),		\
-		.accel_range = DT_INST_PROP(inst, accel_range),		\
-		.gyro_pm = DT_INST_PROP(inst, gyro_pm),			\
-		.gyro_odr = DT_INST_PROP(inst, gyro_odr),		\
-		.gyro_range = DT_INST_PROP(inst, gyro_range),		\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
-			(LSM6DSO_CFG_IRQ(inst)), ())			\
+		LSM6DSO_CONFIG_COMMON(inst)				\
 	}
 
 /*
@@ -931,14 +932,7 @@ static int lsm6dso_init(const struct device *dev)
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
-		.accel_pm = DT_INST_PROP(inst, accel_pm),		\
-		.accel_odr = DT_INST_PROP(inst, accel_odr),		\
-		.accel_range = DT_INST_PROP(inst, accel_range),		\
-		.gyro_pm = DT_INST_PROP(inst, gyro_pm),			\
-		.gyro_odr = DT_INST_PROP(inst, gyro_odr),		\
-		.gyro_range = DT_INST_PROP(inst, gyro_range),		\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
-			(LSM6DSO_CFG_IRQ(inst)), ())			\
+		LSM6DSO_CONFIG_COMMON(inst)				\
 	}
 
 /*

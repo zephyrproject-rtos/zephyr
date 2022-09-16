@@ -9,6 +9,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "nrf52840_blip-pinctrl.dtsi"
 
 / {
 	model = "Electronut Labs Blip";
@@ -77,57 +78,58 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <6>;
-	rx-pin = <8>;
-	rts-pin = <5>;
-	cts-pin = <7>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <12>;
-	scl-pin = <11>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c1 {
 	compatible = "nordic,nrf-twi";
 	/* Cannot be used together with spi1. */
 	/* status = "okay"; */
-	sda-pin = <2>;
-	scl-pin = <3>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi0 {
 	compatible = "nordic,nrf-spi";
 	/* Cannot be used together with i2c0. */
 	/* status = "okay"; */
-	sck-pin = <19>;
-	mosi-pin = <20>;
-	miso-pin = <21>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <25>;
-	mosi-pin = <34>;
-	miso-pin = <24>;
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi2 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <26>;
-	mosi-pin = <23>;
-	miso-pin = <27>;
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi3 {
 	status = "okay";
-	sck-pin = <29>;
-	mosi-pin = <30>;
-	miso-pin = <31>;
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {
@@ -139,7 +141,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
+			reg = <0x00000000 0x0000C000>;
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";

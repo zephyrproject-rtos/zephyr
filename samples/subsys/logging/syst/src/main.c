@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <logging/log.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_output.h>
 
 #define DATA_MAX_DLEN 8
 #define LOG_MODULE_NAME syst
@@ -29,7 +31,7 @@ struct test_frame {
 	};
 } __packed;
 
-void main(void)
+void log_msgs(void)
 {
 	struct test_frame frame = { 0 };
 	const uint8_t data[DATA_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
@@ -37,13 +39,14 @@ void main(void)
 #ifndef CONFIG_LOG2
 	struct log_msg_ids src_level = {
 		.level = LOG_LEVEL_INTERNAL_RAW_STRING,
-		.source_id = 0, /* not used as level indicates raw string. */
 		.domain_id = 0, /* not used as level indicates raw string. */
+		.source_id = 0, /* not used as level indicates raw string. */
 	};
 #endif
 
 	char c = '!';
-	char *s = "static str";
+	const char *s = "static str";
+	const char *s1 = "c str";
 	char vs0[32];
 	char vs1[32];
 
@@ -65,7 +68,7 @@ void main(void)
 	snprintk(&vs1[0], sizeof(vs1), "%s", "another dynamic str");
 
 	LOG_DBG("char %c", c);
-	LOG_DBG("s str %s", s);
+	LOG_DBG("s str %s %s", s, s1);
 
 #ifdef CONFIG_LOG1
 	LOG_DBG("d str %s", log_strdup(vs0));
@@ -101,6 +104,41 @@ void main(void)
 #ifndef CONFIG_LOG2
 	/* log output string */
 	log_string_sync(src_level, "%s", "log string sync");
+#endif
+
+#if CONFIG_LOG_MODE_DEFERRED
+	/*
+	 * When deferred logging is enabled, the work is being performed by
+	 * another thread. This k_sleep() gives that thread time to process
+	 * those messages.
+	 */
+
+	k_sleep(K_TICKS(10));
+#endif
+}
+
+void main(void)
+{
+	log_msgs();
+
+#ifndef CONFIG_LOG1
+
+	uint32_t log_type = LOG_OUTPUT_TEXT;
+
+	log_format_set_all_active_backends(log_type);
+
+	log_msgs();
+
+	log_type = LOG_OUTPUT_SYST;
+	log_format_set_all_active_backends(log_type);
+
+	log_msgs();
+
+	log_type = LOG_OUTPUT_TEXT;
+	log_format_set_all_active_backends(log_type);
+
+	/* raw string */
+	printk("SYST Sample Execution Completed\n");
 #endif
 
 }

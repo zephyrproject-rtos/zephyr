@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_virtual_interface_sample, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <errno.h>
 
-#include <net/net_core.h>
-#include <net/ethernet.h>
-#include <net/virtual.h>
-#include <net/virtual_mgmt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/virtual.h>
+#include <zephyr/net/virtual_mgmt.h>
 
 /* User data for the interface callback */
 struct ud {
@@ -396,7 +396,7 @@ void main(void)
 	net_virtual_interface_attach(ud.ip_tunnel_1, ud.ethernet);
 
 	/* Attach our example virtual interface on top of the IPv4 one.
-	 * This is just an exaple how to stack the interface on top of
+	 * This is just an example how to stack the interface on top of
 	 * each other.
 	 */
 	net_virtual_interface_attach(ud.my_iface, ud.ip_tunnel_1);

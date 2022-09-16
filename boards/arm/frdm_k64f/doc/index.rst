@@ -215,7 +215,7 @@ CAN
 ===
 
 The FRDM-K64F board does not come with an onboard CAN transceiver. In order to
-use the CAN bus, an external CAN bus tranceiver must be connected to ``PTB18``
+use the CAN bus, an external CAN bus transceiver must be connected to ``PTB18``
 (``CAN0_TX``) and ``PTB19`` (``CAN0_RX``).
 
 Programming and Debugging

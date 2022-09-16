@@ -6,7 +6,7 @@
 
 
 #include <limits.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include "test_gpio_api.h"
 
 struct gpio_callback gpio_cb;

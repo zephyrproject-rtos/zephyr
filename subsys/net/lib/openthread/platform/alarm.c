@@ -7,10 +7,10 @@
 #define LOG_MODULE_NAME net_openthread_alarm
 #define LOG_LEVEL CONFIG_OPENTHREAD_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <inttypes.h>
 
@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "openthread-core-zephyr-config.h"
 
 static bool timer_ms_fired, timer_us_fired;
+static int32_t time_offset_us;
+static int32_t time_offset_ms;
 
 static void ot_timer_ms_fired(struct k_timer *timer)
 {
@@ -47,7 +49,11 @@ K_TIMER_DEFINE(ot_us_timer, ot_timer_us_fired, NULL);
 
 void platformAlarmInit(void)
 {
-	/* Intentionally empty */
+#if defined(CONFIG_NET_PKT_TXTIME)
+	time_offset_us =
+		(int32_t)((int64_t)otPlatAlarmMicroGetNow() - (uint32_t)otPlatRadioGetNow(NULL));
+	time_offset_ms = time_offset_us / 1000;
+#endif
 }
 
 void platformAlarmProcess(otInstance *aInstance)
@@ -73,7 +79,7 @@ void platformAlarmProcess(otInstance *aInstance)
 
 uint32_t otPlatAlarmMilliGetNow(void)
 {
-	return k_uptime_get_32();
+	return k_uptime_get_32() - time_offset_ms;
 }
 
 void otPlatAlarmMilliStartAt(otInstance *aInstance, uint32_t aT0, uint32_t aDt)
@@ -118,5 +124,10 @@ void otPlatAlarmMicroStop(otInstance *aInstance)
 
 uint32_t otPlatAlarmMicroGetNow(void)
 {
-	return (uint32_t)k_ticks_to_us_floor64(k_uptime_ticks());
+	return (uint32_t)(k_ticks_to_us_floor64(k_uptime_ticks()) - time_offset_us);
+}
+
+uint16_t otPlatTimeGetXtalAccuracy(void)
+{
+	return otPlatRadioGetCslAccuracy(NULL);
 }

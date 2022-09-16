@@ -5,8 +5,6 @@ source "lib/libc/Kconfig"
 
 menu "Additional libraries"
 
-source "lib/gui/Kconfig"
-
 source "lib/os/Kconfig"
 
 source "lib/posix/Kconfig"

@@ -221,7 +221,7 @@ config SRAM_OFFSET
 menu "Linker Sections"
 
 config LINKER_USE_BOOT_SECTION
-	bool "Enable Usage of Boot Linker Section"
+	bool "Use Boot Linker Section"
 	help
 	  If enabled, the symbols which are needed for the boot process
 	  will be put into another linker section reserved for these
@@ -231,7 +231,7 @@ config LINKER_USE_BOOT_SECTION
 	  board or custom linker script.
 
 config LINKER_USE_PINNED_SECTION
-	bool "Enable Usage of Pinned Linker Section"
+	bool "Use Pinned Linker Section"
 	help
 	  If enabled, the symbols which need to be pinned in memory
 	  will be put into another linker section reserved for pinned
@@ -309,7 +309,7 @@ config NO_OPTIMIZATIONS
 endchoice
 
 config COMPILER_COLOR_DIAGNOSTICS
-	bool "Enable colored diagnostics"
+	bool "Colored diagnostics"
 	default y
 	help
 	  Compiler diagnostic messages are colorized.
@@ -349,7 +349,7 @@ config NO_RUNTIME_CHECKS
 	  Do not do any runtime checks or asserts when using the CHECK macro.
 
 config RUNTIME_ERROR_CHECKS
-	bool "Enable runtime error checks"
+	bool "Runtime error checks"
 	help
 	  Always perform runtime checks covered with the CHECK macro. This
 	  option is the default and the only option used during testing.
@@ -459,6 +459,7 @@ if BUILD_OUTPUT_UF2
 config BUILD_OUTPUT_UF2_FAMILY_ID
 	string "UF2 device family ID"
 	default "0x1c5f21b0" if SOC_ESP32
+	default "0x621e937a" if SOC_NRF52833_QIAA
 	default "0xada52840" if SOC_NRF52840_QIAA
 	default "0x4fb2d5bd" if SOC_SERIES_IMX_RT
 	default "0x2abc77ec" if SOC_SERIES_LPC55XXX
@@ -799,3 +800,15 @@ config COMPAT_INCLUDES
 	  deprecated header files.
 
 endmenu
+
+config LEGACY_INCLUDE_PATH
+	bool "Allow for the legacy include paths (without the zephyr/ prefix)"
+	default y
+	help
+	  Allow applications and libraries to use the Zephyr legacy include
+	  path which does not use the zephyr/ prefix. For example, the
+	  preferred way to include a Zephyr header is to use <zephyr/kernel.h>,
+	  but enabling CONFIG_LEGACY_INCLUDE_PATH will allow developers to
+	  use <kernel.h> instead. This (without the zephyr/ prefix) is
+	  deprecated and should be avoided. Eventually, it will not be
+	  supported.

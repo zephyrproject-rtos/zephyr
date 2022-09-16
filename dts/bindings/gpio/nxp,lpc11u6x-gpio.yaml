@@ -29,12 +29,12 @@ properties:
     clocks:
       required: true
 
-    pinmux-port:
+    iocon:
       required: true
       type: phandle
       description: |
-        a phandle reference to the device tree node that contains the pinmux
-        port associated with this GPIO controller.
+        a phandle reference to the devicetree node that contains the pinmux
+        controller associated with the GPIO controller.
 
 gpio-cells:
   - pin

@@ -8,10 +8,10 @@
 
 #define DT_DRV_COMPAT isil_isl29035
 
-#include <drivers/i2c.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include "isl29035.h"
 
 extern struct isl29035_driver_data isl29035_data;

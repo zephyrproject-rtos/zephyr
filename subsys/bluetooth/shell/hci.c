@@ -6,14 +6,14 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <zephyr.h>
-#include <shell/shell.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/hci_vs.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/conn.h>
 
 #include "../host/hci_core.h"
 

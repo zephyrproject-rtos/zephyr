@@ -7,9 +7,9 @@
 #ifndef APP_SHARED_H
 #define APP_SHARED_H
 
-#include <kernel.h>
-#include <app_memory/app_memdomain.h>
-#include <sys/sys_heap.h>
+#include <zephyr/kernel.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/sys/sys_heap.h>
 
 #include "sample_driver.h"
 

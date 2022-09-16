@@ -1,0 +1,222 @@
+/*
+ * Copyright 2018 Foundries.io Ltd
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <riscv/openisa/rv32m1.dtsi>
+
+/ {
+	aliases {
+		intmux = &intmux0;
+		system-lptmr = &lptmr0;
+	};
+
+	cpus {
+		/delete-node/ cpu@1;
+	};
+};
+
+&m4_flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* This configuration assumes the Arm cores are disabled, as
+		 * these base addresses contain the Arm core vector tables if
+		 * they are used.
+		 */
+
+		ri5cy_code_partition: partition@0 {
+			label = "ri5cy-code";
+			reg = <0x00000000 0x000fff00>;
+		};
+
+		ri5cy_vector_partition: partition@fff00 {
+			label = "ri5cy-vector";
+			reg = <0x000fff00 0x100>;
+		};
+	};
+};
+
+/*
+ * INTMUX channels below are somewhat arbitrary.
+ *
+ * The system timer (assumed at LPTMR0) is placed on channel 0, and peripherals
+ * are in channel 1. This can be overridden with overlays, e.g. to manage IRQ
+ * priorities, and it will Just Work, but using fewer channels here allows
+ * disabling unused ones in Kconfig, making the binary smaller.
+ *
+ * Each enabled channel requires 256 bytes in _sw_isr_table, so the savings for
+ * disabling channels can add up.
+ */
+
+&intmux0 {
+	status = "okay";
+};
+
+&intmux0_ch0 {
+	interrupt-parent = <&event0>;
+	status = "okay";
+};
+
+&intmux0_ch1 {
+	interrupt-parent = <&event0>;
+	status = "okay";
+};
+
+&intmux0_ch2 {
+	interrupt-parent = <&event0>;
+};
+
+&intmux0_ch3 {
+	interrupt-parent = <&event0>;
+};
+
+&intmux0_ch4 {
+	interrupt-parent = <&event0>;
+};
+
+&intmux0_ch5 {
+	interrupt-parent = <&event0>;
+};
+
+&intmux0_ch6 {
+	interrupt-parent = <&event0>;
+};
+
+&intmux0_ch7 {
+	interrupt-parent = <&event0>;
+};
+
+/delete-node/ &intmux1;
+
+&lptmr0 {
+	interrupt-parent = <&intmux0_ch0>;
+	interrupts = <7>;
+};
+
+&lptmr1 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <8>;
+};
+
+&lptmr2 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <22>;
+};
+
+&gpioa {
+	interrupt-parent = <&event0>;
+	interrupts = <18>;
+};
+
+&gpiob {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <15>;
+};
+
+&gpioc {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <16>;
+};
+
+&gpiod {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <17>;
+};
+
+&gpioe {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <27>;
+};
+
+&lpuart0 {
+	interrupt-parent = <&event0>;
+	interrupts = <17>;
+};
+
+&lpuart1 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <13>;
+};
+
+&lpuart2 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <14>;
+};
+
+&lpuart3 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <26>;
+};
+
+&lpi2c0 {
+	interrupt-parent = <&event0>;
+	interrupts = <15>;
+};
+
+&lpi2c1 {
+	interrupt-parent = <&event0>;
+	interrupts = <16>;
+};
+
+&lpi2c2 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <11>;
+};
+
+&lpi2c3 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <24>;
+};
+
+&lpspi0 {
+	interrupt-parent = <&event0>;
+	interrupts = <13>;
+};
+
+&lpspi1 {
+	interrupt-parent = <&event0>;
+	interrupts = <14>;
+};
+
+&lpspi2 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <12>;
+};
+
+&lpspi3 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <25>;
+};
+
+&generic_fsk {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <29>;
+};
+
+&tpm0 {
+	interrupt-parent = <&event0>;
+	interrupts = <19>;
+};
+
+&tpm1 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <9>;
+};
+
+&tpm2 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <10>;
+};
+
+&tpm3 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <23>;
+};
+
+&trng {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <20>;
+};

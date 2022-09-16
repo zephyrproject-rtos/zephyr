@@ -11,12 +11,12 @@
  * @brief GPIO driven LEDs
  */
 
-#include <drivers/led.h>
-#include <drivers/gpio.h>
-#include <device.h>
-#include <zephyr.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/zephyr.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(led_gpio, CONFIG_LED_LOG_LEVEL);
 
 struct led_gpio_config {

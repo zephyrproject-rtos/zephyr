@@ -1,9 +1,18 @@
 /*
- * Copyright (c) 2021 Lukasz Majewski, DENX Software Engineering GmbH
+ * Copyright (c) 2022 Lukasz Majewski, DENX Software Engineering GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 /delete-node/ &storage_partition;
+
+&sdmmc1 {
+	status = "okay";
+	pinctrl-0 = <&sdmmc1_d0_pc8
+		     &sdmmc1_ck_pc12
+		     &sdmmc1_cmd_pd2>;
+
+	pinctrl-names = "default";
+};
 
 &quadspi {
 	pinctrl-0 = <&quadspi_clk_pf10 &quadspi_bk2_ncs_pc11
@@ -32,7 +41,7 @@
 
 			   partition@0 {
 			       label = "storage";
-			       reg = <0x01000000 0x00800000>;
+			       reg = <0x01000000 DT_SIZE_M(8)>;
 			   };
 		};
 	};

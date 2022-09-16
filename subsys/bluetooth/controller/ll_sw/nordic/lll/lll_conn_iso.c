@@ -6,9 +6,9 @@
 
 #include <stddef.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #include "util/memq.h"
 #include "util/mem.h"

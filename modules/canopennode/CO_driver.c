@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/can.h>
-#include <init.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
 
 #include <canopennode.h>
 
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(canopen_driver);
 
 K_KERNEL_STACK_DEFINE(canopen_tx_workq_stack,
@@ -78,10 +78,12 @@ static void canopen_detach_all_rx_filters(CO_CANmodule_t *CANmodule)
 	}
 }
 
-static void canopen_rx_callback(struct zcan_frame *msg, void *arg)
+static void canopen_rx_callback(const struct device *dev, struct zcan_frame *msg, void *arg)
 {
 	CO_CANrx_t *buffer = (CO_CANrx_t *)arg;
 	CO_CANrxMsg_t rxMsg;
+
+	ARG_UNUSED(dev);
 
 	if (!buffer || !buffer->pFunct) {
 		LOG_ERR("failed to process CAN rx callback");
@@ -94,9 +96,11 @@ static void canopen_rx_callback(struct zcan_frame *msg, void *arg)
 	buffer->pFunct(buffer->object, &rxMsg);
 }
 
-static void canopen_tx_callback(int error, void *arg)
+static void canopen_tx_callback(const struct device *dev, int error, void *arg)
 {
 	CO_CANmodule_t *CANmodule = arg;
+
+	ARG_UNUSED(dev);
 
 	if (!CANmodule) {
 		LOG_ERR("failed to process CAN tx callback");
@@ -180,18 +184,20 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 	}
 
 	max_filters = can_get_max_filters(ctx->dev, CAN_STANDARD_IDENTIFIER);
-	if (max_filters < 0) {
-		LOG_ERR("unable to determine number of CAN RX filters");
-		return CO_ERROR_SYSCALL;
-	}
+	if (max_filters != -ENOSYS) {
+		if (max_filters < 0) {
+			LOG_ERR("unable to determine number of CAN RX filters");
+			return CO_ERROR_SYSCALL;
+		}
 
-	if (rxSize > max_filters) {
-		LOG_ERR("insufficient number of concurrent CAN RX filters"
-			" (needs %d, %d available)", rxSize, max_filters);
-		return CO_ERROR_OUT_OF_MEMORY;
-	} else if (rxSize < max_filters) {
-		LOG_DBG("excessive number of concurrent CAN RX filters enabled"
-			" (needs %d, %d available)", rxSize, max_filters);
+		if (rxSize > max_filters) {
+			LOG_ERR("insufficient number of concurrent CAN RX filters"
+				" (needs %d, %d available)", rxSize, max_filters);
+			return CO_ERROR_OUT_OF_MEMORY;
+		} else if (rxSize < max_filters) {
+			LOG_DBG("excessive number of concurrent CAN RX filters enabled"
+				" (needs %d, %d available)", rxSize, max_filters);
+		}
 	}
 
 	canopen_detach_all_rx_filters(CANmodule);
@@ -217,13 +223,13 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 		txArray[i].bufferFull = false;
 	}
 
-	err = can_set_bitrate(CANmodule->dev, KHZ(CANbitRate), 0);
+	err = can_set_bitrate(CANmodule->dev, KHZ(CANbitRate));
 	if (err) {
 		LOG_ERR("failed to configure CAN bitrate (err %d)", err);
 		return CO_ERROR_ILLEGAL_ARGUMENT;
 	}
 
-	err = can_set_mode(CANmodule->dev, CAN_NORMAL_MODE);
+	err = can_set_mode(CANmodule->dev, CAN_MODE_NORMAL);
 	if (err) {
 		LOG_ERR("failed to configure CAN interface (err %d)", err);
 		return CO_ERROR_ILLEGAL_ARGUMENT;
@@ -244,7 +250,7 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule)
 
 	canopen_detach_all_rx_filters(CANmodule);
 
-	err = can_set_mode(CANmodule->dev, CAN_SILENT_MODE);
+	err = can_set_mode(CANmodule->dev, CAN_MODE_LISTENONLY);
 	if (err) {
 		LOG_ERR("failed to disable CAN interface (err %d)", err);
 	}

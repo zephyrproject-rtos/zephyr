@@ -11,7 +11,7 @@ common:
         - "Digest: d3b4349010abb691b9584b6fd6b41ec54596ef7b98d853fb4f5bfa690f50f222"
         - "Digest: 5afbcfede855ca834ff5b4e8a44a32206a51381f3cf52f5001a3241f017ac41a"
         - "Digest: 983318380c325099da63de2e7ca57c1630693b28b4754e08817533295dbfcfbb"
-        - "Status: -135"
+        - "No valid secret for key, received expected error code"
 sample:
   name: "TFM Secure Partition Sample"
 

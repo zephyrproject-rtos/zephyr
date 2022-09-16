@@ -5,10 +5,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if(CONFIG_PINMUX_MCUX_LPC)
-  zephyr_library()
-  zephyr_library_sources(pinmux.c)
-endif()
+zephyr_library()
+zephyr_library_sources(pinmux.c)
 
 
 if (CONFIG_SECOND_CORE_MCUX)

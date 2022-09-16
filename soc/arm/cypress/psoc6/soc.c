@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #include "cy_syslib.h"
 #include "cy_gpio.h"
@@ -36,6 +36,14 @@
 #define CY_CFG_PWR_LDO_VOLTAGE CY_SYSPM_LDO_VOLTAGE_1_1V
 #define CY_CFG_PWR_VDDA_MV 3300
 #define CY_CFG_PWR_USING_ULP 0
+
+/* Dummy symbols, requres for cy_sysint.c module.
+ * NOTE: in this PSoC 6 integration, PSoC 6 Zephyr drivers (uart, spi, gpio)
+ * do not use cy_sysint.c implementation to handle interrupt routine.
+ * Instead this they use IRQ_CONNECT to define ISR.
+ */
+uint32_t __ramVectors;
+uint32_t __Vectors;
 
 static const cy_stc_fll_manual_config_t srss_0__clock_0__fll_0__fllConfig = {
 	.fllMult = 500u,

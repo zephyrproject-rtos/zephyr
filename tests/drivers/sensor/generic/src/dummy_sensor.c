@@ -5,9 +5,9 @@
  */
 
 #include "dummy_sensor.h"
-#include <drivers/sensor.h>
-#include <device.h>
-#include <logging/log.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
 #include <ztest.h>
 
 LOG_MODULE_REGISTER(dummy_sensor, LOG_LEVEL_DBG);

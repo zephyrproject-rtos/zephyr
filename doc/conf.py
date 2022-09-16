@@ -74,7 +74,7 @@ extensions = [
     "sphinx.ext.graphviz",
     "zephyr.application",
     "zephyr.html_redirects",
-    "zephyr.kconfig-role",
+    "zephyr.kconfig",
     "zephyr.dtcompatible-role",
     "zephyr.link-roles",
     "sphinx_tabs.tabs",
@@ -82,6 +82,7 @@ extensions = [
     "zephyr.doxyrunner",
     "zephyr.vcs_link",
     "notfound.extension",
+    "sphinx_copybutton",
     "zephyr.external_content",
 ]
 
@@ -139,6 +140,7 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("3.1.0", "/3.1.0/"),
         ("3.0.0", "/3.0.0/"),
         ("2.7.0", "/2.7.0/"),
         ("2.6.0", "/2.6.0/"),
@@ -150,8 +152,8 @@ html_context = {
     "display_vcs_link": True,
     "reference_links": {
         "API": f"{reference_prefix}/doxygen/html/index.html",
-        "Kconfig Options": f"{reference_prefix}/reference/kconfig/index.html",
-        "Devicetree Bindings": f"{reference_prefix}/reference/devicetree/bindings.html",
+        "Kconfig Options": f"{reference_prefix}/kconfig.html",
+        "Devicetree Bindings": f"{reference_prefix}/build/dts/api/bindings.html",
     }
 }
 
@@ -221,7 +223,6 @@ html_redirect_pages = redirects.REDIRECTS
 # -- Options for zephyr.warnings_filter -----------------------------------
 
 warnings_filter_config = str(ZEPHYR_BASE / "doc" / "known-warnings.txt")
-warnings_filter_silent = False
 
 # -- Options for notfound.extension ---------------------------------------
 
@@ -238,9 +239,14 @@ vcs_link_prefixes = {
 }
 vcs_link_exclude = [
     "reference/kconfig.*",
-    "reference/devicetree/bindings.*",
-    "reference/devicetree/compatibles.*",
+    "build/dts/api/bindings.*",
+    "build/dts/api/compatibles.*",
 ]
+
+# -- Options for zephyr.kconfig -------------------------------------------
+
+kconfig_generate_db = True
+kconfig_ext_paths = [ZEPHYR_BASE]
 
 # -- Options for zephyr.external_content ----------------------------------
 
@@ -253,9 +259,9 @@ external_content_contents = [
 ]
 external_content_keep = [
     "reference/kconfig/*",
-    "reference/devicetree/bindings.rst",
-    "reference/devicetree/bindings/**/*",
-    "reference/devicetree/compatibles/**/*",
+    "build/dts/api/bindings.rst",
+    "build/dts/api/bindings/**/*",
+    "build/dts/api/compatibles/**/*",
 ]
 
 # -- Options for sphinx.ext.graphviz --------------------------------------

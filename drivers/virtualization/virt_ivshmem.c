@@ -7,19 +7,19 @@
 #define DT_DRV_COMPAT qemu_ivshmem
 
 #define LOG_LEVEL CONFIG_IVSHMEM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ivshmem);
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 
 #include <soc.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <drivers/virtualization/ivshmem.h>
+#include <zephyr/drivers/virtualization/ivshmem.h>
 #include "virt_ivshmem.h"
 
 #ifdef CONFIG_IVSHMEM_DOORBELL

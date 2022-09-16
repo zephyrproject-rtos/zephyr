@@ -8,13 +8,14 @@
 #include "soc.h"
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
-#include <drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
+#include <kernel_internal.h>
 #include <string.h>
-#include <toolchain/gcc.h>
+#include <zephyr/toolchain/gcc.h>
 #include <zephyr/types.h>
 
 #include "esp_private/system_internal.h"
@@ -24,10 +25,8 @@
 #include "hal/cpu_ll.h"
 #include "esp_err.h"
 #include "esp32s2/spiram.h"
-#include "sys/printk.h"
+#include <zephyr/sys/printk.h>
 
-extern void z_cstart(void);
-extern void z_bss_zero(void);
 extern void rtc_clk_cpu_freq_set_xtal(void);
 
 #if CONFIG_ESP_SPIRAM
@@ -40,7 +39,7 @@ extern int _ext_ram_bss_end;
  * Zephyr is being booted by the Espressif bootloader.  With it, the C stack
  * is already set up.
  */
-void __attribute__((section(".iram1"))) __start(void)
+void __attribute__((section(".iram1"))) __esp_platform_start(void)
 {
 	volatile uint32_t *wdt_rtc_protect = (uint32_t *)RTC_CNTL_WDTWPROTECT_REG;
 	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
@@ -73,23 +72,6 @@ void __attribute__((section(".iram1"))) __start(void)
 	esp_rom_Cache_Enable_DCache(0);
 #endif
 
-#if !CONFIG_BOOTLOADER_ESP_IDF
-	/* The watchdog timer is enabled in the 1st stage (ROM) bootloader.
-	 * We're done booting, so disable it.
-	 * If 2nd stage bootloader from IDF is enabled, then that will take
-	 * care of this.
-	 */
-	volatile uint32_t *wdt_timg_protect = (uint32_t *)TIMG_WDTWPROTECT_REG(0);
-	volatile uint32_t *wdt_timg_reg = (uint32_t *)TIMG_WDTCONFIG0_REG(0);
-
-	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
-	*wdt_rtc_reg &= ~RTC_CNTL_WDT_FLASHBOOT_MOD_EN;
-	*wdt_rtc_protect = 0;
-	*wdt_timg_protect = TIMG_WDT_WKEY_VALUE;
-	*wdt_timg_reg &= ~TIMG_WDT_FLASHBOOT_MOD_EN;
-	*wdt_timg_protect = 0;
-#endif
-
 	/* Disable normal interrupts. */
 	__asm__ __volatile__ (
 		"wsr %0, PS"
@@ -102,7 +84,6 @@ void __attribute__((section(".iram1"))) __start(void)
 	 */
 	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
-#if CONFIG_BOOTLOADER_ESP_IDF
 	/* ESP-IDF 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
 	 * Zephyr environment.
@@ -110,7 +91,6 @@ void __attribute__((section(".iram1"))) __start(void)
 	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
 	*wdt_rtc_reg &= ~RTC_CNTL_WDT_EN;
 	*wdt_rtc_protect = 0;
-#endif
 
 #if CONFIG_ESP_SPIRAM
 

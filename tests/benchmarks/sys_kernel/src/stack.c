@@ -190,7 +190,7 @@ int stack_test(void)
 
 	return_value += check_result(i, t);
 
-	/* test get wait & put stack functions across co-op and premptive
+	/* test get wait & put stack functions across co-op and preemptive
 	 * threads
 	 */
 	fprintf(output_file, sz_test_case_fmt,

@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2022, NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../twr_ke18f-pinctrl.dtsi"
+
+&lpspi1 {
+	pinctrl-0 = <&lpspi1_pcs0_pcs2>;
+	pinctrl-names = "default";
+};

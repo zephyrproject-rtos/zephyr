@@ -6,13 +6,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BT_AUDIO
-
 ##################### Microphone Input Control Service #####################
 
 config BT_MICS
 	bool "Microphone Input Control Service Support [EXPERIMENTAL]"
-	default n
 	select EXPERIMENTAL
 	help
 	  This option enables support for Microphone Input Control Service.
@@ -38,7 +35,6 @@ config BT_MICS_AICS
 
 config BT_DEBUG_MICS
 	bool "Microphone Input Control Service debug"
-	depends on BT_AUDIO_DEBUG
 	help
 	  Use this option to enable Microphone Input Control Service debug logs
 	  for the Bluetooth Audio functionality.
@@ -76,11 +72,8 @@ config BT_MICS_CLIENT_AICS
 
 config BT_DEBUG_MICS_CLIENT
 	bool "Microphone Control Profile debug"
-	depends on BT_AUDIO_DEBUG
 	help
 	  Use this option to enable Microphone Control Profile debug logs for
 	  the Bluetooth Audio functionality.
 
 endif # BT_MICS_CLIENT
-
-endif # BT_AUDIO

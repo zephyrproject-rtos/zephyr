@@ -6,11 +6,11 @@
 #include <nrfx_dppi.h>
 #include <hal/nrf_ipc.h>
 #include <helpers/nrfx_gppi.h>
-#include <drivers/timer/nrf_rtc_timer.h>
-#include <drivers/ipm.h>
-#include <drivers/mbox.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
+#include <zephyr/drivers/timer/nrf_rtc_timer.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/drivers/mbox.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sync_rtc, CONFIG_SYNC_RTC_LOG_LEVEL);
 
 /* Arbitrary delay is used needed to handle cases when offset between cores is
@@ -306,4 +306,9 @@ bail:
 	return rv;
 }
 
-SYS_INIT(sync_rtc_setup, POST_KERNEL, 0);
+#if defined(CONFIG_MBOX_INIT_PRIORITY)
+BUILD_ASSERT(CONFIG_NRF53_SYNC_RTC_INIT_PRIORITY > CONFIG_MBOX_INIT_PRIORITY,
+		"RTC Sync must be initialized after MBOX driver.");
+#endif
+
+SYS_INIT(sync_rtc_setup, POST_KERNEL, CONFIG_NRF53_SYNC_RTC_INIT_PRIORITY);

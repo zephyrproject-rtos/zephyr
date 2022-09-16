@@ -5,9 +5,10 @@
  */
 #include <ztest.h>
 #include <ztress.h>
-#include <sys/ring_buffer.h>
-#include <sys/mutex.h>
-#include <random/rand32.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/mutex.h>
+#include <zephyr/random/rand32.h>
+#include <stdint.h>
 
 /**
  * @defgroup lib_ringbuffer_tests Ringbuffer
@@ -16,7 +17,7 @@
  * @}
  */
 
-#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #define RINGBUFFER			256
 #define LENGTH				64
@@ -24,7 +25,7 @@
 #define TYPE				0xc
 
 static ZTEST_BMEM SYS_MUTEX_DEFINE(mutex);
-RING_BUF_ITEM_DECLARE_SIZE(ringbuf, RINGBUFFER);
+RING_BUF_ITEM_DECLARE(ringbuf, RINGBUFFER);
 static uint32_t output[LENGTH];
 static uint32_t databuffer1[LENGTH];
 static uint32_t databuffer2[LENGTH];
@@ -252,23 +253,26 @@ static bool consume(void *user_data, uint32_t iter_cnt, bool last, int prio)
 	return true;
 }
 
-extern uint32_t test_rewind_threshold;
-
 static void test_ztress(ztress_handler high_handler,
 			ztress_handler low_handler,
 			bool item_mode)
 {
-	uint8_t buf[32];
-	uint32_t buf32[32];
-	uint32_t old_rewind_threshold = test_rewind_threshold;
+	union {
+		uint8_t buf8[32];
+		uint32_t buf32[32];
+	} buf;
 	k_timeout_t timeout;
+	int32_t offset;
 
-	test_rewind_threshold = 256;
 	if (item_mode) {
-		ring_buf_init(&ringbuf, ARRAY_SIZE(buf32), buf32);
+		ring_buf_item_init(&ringbuf, ARRAY_SIZE(buf.buf32), buf.buf32);
 	} else {
-		ring_buf_init(&ringbuf, ARRAY_SIZE(buf), buf);
+		ring_buf_init(&ringbuf, ARRAY_SIZE(buf.buf8), buf.buf8);
 	}
+
+	/* force internal 32-bit index roll-over */
+	offset = INT32_MAX - ring_buf_capacity_get(&ringbuf)/2;
+	ring_buf_internal_reset(&ringbuf, offset);
 
 	/* Timeout after 5 seconds. */
 	timeout =  (CONFIG_SYS_CLOCK_TICKS_PER_SEC < 10000) ? K_MSEC(1000) : K_MSEC(10000);
@@ -276,8 +280,6 @@ static void test_ztress(ztress_handler high_handler,
 	ztress_set_timeout(timeout);
 	ZTRESS_EXECUTE(ZTRESS_THREAD(high_handler, NULL, 0, 0, Z_TIMEOUT_TICKS(20)),
 		       ZTRESS_THREAD(low_handler, NULL, 0, 2000, Z_TIMEOUT_TICKS(20)));
-	test_rewind_threshold = old_rewind_threshold;
-
 }
 
 void test_ringbuffer_stress(ztress_handler produce_handler,

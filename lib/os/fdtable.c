@@ -15,11 +15,11 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <kernel.h>
-#include <sys/fdtable.h>
-#include <sys/speculation.h>
-#include <syscall_handler.h>
-#include <sys/atomic.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/fdtable.h>
+#include <zephyr/sys/speculation.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/atomic.h>
 
 struct fd_entry {
 	void *obj;

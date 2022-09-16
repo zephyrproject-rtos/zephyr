@@ -9,13 +9,13 @@
 
 #define LOG_MODULE_NAME dwmac_core
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <sys/types.h>
-#include <zephyr.h>
-#include <cache.h>
-#include <net/ethernet.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/cache.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 
 #include "eth_dwmac_priv.h"
@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  */
 #define TX_AVAIL_WAIT K_MSEC(1)
 
-/* descriptor index itterators */
+/* descriptor index iterators */
 #define INC_WRAP(idx, size) ({ idx = (idx + 1) % size; })
 #define DEC_WRAP(idx, size) ({ idx = (idx + size - 1) % size; })
 

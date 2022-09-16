@@ -17,7 +17,7 @@ twister to verify this sample's output automatically.
 Building and Running
 ********************
 
-Build and flash as follows, replacig ``stm32f3_disco`` with your board:
+Build and flash as follows, replacing ``stm32f3_disco`` with your board:
 
  .. zephyr-app-commands::
     :zephyr-app: samples/drivers/uart/stm32/single_wire

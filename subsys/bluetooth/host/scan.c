@@ -6,14 +6,14 @@
  */
 #include <sys/types.h>
 
-#include <sys/byteorder.h>
-#include <sys/check.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/iso.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/direction.h>
-#include <bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/direction.h>
+#include <zephyr/bluetooth/addr.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -330,14 +330,14 @@ int bt_le_scan_update(bool fast_scan)
 
 		/* don't restart scan if we have pending connection */
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
-					       BT_CONN_CONNECT);
+					       BT_CONN_CONNECTING);
 		if (conn) {
 			bt_conn_unref(conn);
 			return 0;
 		}
 
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
-					       BT_CONN_CONNECT_SCAN);
+					       BT_CONN_CONNECTING_SCAN);
 		if (conn) {
 			atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
 
@@ -373,7 +373,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	}
 
 	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, id_addr,
-				       BT_CONN_CONNECT_SCAN);
+				       BT_CONN_CONNECTING_SCAN);
 	if (!conn) {
 		return;
 	}
@@ -388,7 +388,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 		goto failed;
 	}
 
-	bt_conn_set_state(conn, BT_CONN_CONNECT);
+	bt_conn_set_state(conn, BT_CONN_CONNECTING);
 	bt_conn_unref(conn);
 	return;
 
@@ -941,6 +941,12 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 		/* Now we know which address and SID we synchronized to. */
 		bt_addr_le_copy(&pending_per_adv_sync->addr, &evt->adv_addr);
 		pending_per_adv_sync->sid = evt->sid;
+
+		/* Translate "enhanced" identity address type to normal one */
+		if (pending_per_adv_sync->addr.type == BT_ADDR_LE_PUBLIC_ID ||
+		    pending_per_adv_sync->addr.type == BT_ADDR_LE_RANDOM_ID) {
+			pending_per_adv_sync->addr.type -= BT_ADDR_LE_PUBLIC_ID;
+		}
 	}
 
 	sync_info.addr = &pending_per_adv_sync->addr;
@@ -1373,14 +1379,19 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	cp = net_buf_add(buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
 
-
-	bt_addr_le_copy(&cp->addr, &param->addr);
-
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST) {
 		atomic_set_bit(per_adv_sync->flags,
 			       BT_PER_ADV_SYNC_SYNCING_USE_LIST);
 
 		cp->options |= BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST;
+	} else {
+		/* If BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST is set, then the
+		 * address and SID are ignored by the controller, so we only
+		 * copy/assign them in case that the periodic advertising list
+		 * is not used.
+		 */
+		bt_addr_le_copy(&cp->addr, &param->addr);
+		cp->sid = param->sid;
 	}
 
 	if (param->options &
@@ -1415,7 +1426,6 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 		cp->cte_type |= BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_ONLY_CTE;
 	}
 
-	cp->sid = param->sid;
 	cp->skip = sys_cpu_to_le16(param->skip);
 	cp->sync_timeout = sys_cpu_to_le16(param->timeout);
 

@@ -63,13 +63,13 @@ config LIB_CPLUSPLUS
 if LIB_CPLUSPLUS
 
 config EXCEPTIONS
-	bool "Enable C++ exceptions support"
+	bool "C++ exceptions support"
 	depends on !NEWLIB_LIBC_NANO
 	help
 	  This option enables support of C++ exceptions.
 
 config RTTI
-	bool "Enable C++ RTTI support"
+	bool "C++ RTTI support"
 	help
 	  This option enables support of C++ RTTI.
 

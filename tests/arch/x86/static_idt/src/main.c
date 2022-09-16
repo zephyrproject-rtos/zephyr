@@ -10,10 +10,10 @@
  *  Ensures interrupt and exception stubs are installed correctly.
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
-#include <arch/x86/ia32/segmentation.h>
+#include <zephyr/arch/x86/ia32/segmentation.h>
 
 #include <kernel_internal.h>
 #if defined(__GNUC__)

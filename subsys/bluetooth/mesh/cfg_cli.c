@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <zephyr/types.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
-#include <sys/check.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_MODEL)
 #define LOG_MODULE_NAME bt_mesh_cfg_cli
@@ -895,7 +895,7 @@ static int cfg_cli_init(struct bt_mesh_model *model)
 
 	cli = model->user_data;
 	cli->model = model;
-	msg_timeout = 2 * MSEC_PER_SEC;
+	msg_timeout = CONFIG_BT_MESH_CFG_CLI_TIMEOUT;
 
 	/*
 	 * Configuration Model security is device-key based and both the local
@@ -1883,7 +1883,7 @@ static int mod_sub(uint32_t op, uint16_t net_idx, uint16_t addr, uint16_t elem_a
 int bt_mesh_cfg_mod_sub_add(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 			    uint16_t sub_addr, uint16_t mod_id, uint8_t *status)
 {
-	if (!BT_MESH_ADDR_IS_GROUP(sub_addr)) {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) && !BT_MESH_ADDR_IS_FIXED_GROUP(sub_addr)) {
 		return -EINVAL;
 	}
 
@@ -1895,7 +1895,8 @@ int bt_mesh_cfg_mod_sub_add_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
 				 uint16_t sub_addr, uint16_t mod_id, uint16_t cid,
 				 uint8_t *status)
 {
-	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) || cid == CID_NVAL) {
+	if ((!BT_MESH_ADDR_IS_GROUP(sub_addr) && !BT_MESH_ADDR_IS_FIXED_GROUP(sub_addr)) ||
+		cid == CID_NVAL) {
 		return -EINVAL;
 	}
 
@@ -1906,7 +1907,7 @@ int bt_mesh_cfg_mod_sub_add_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
 int bt_mesh_cfg_mod_sub_del(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 			    uint16_t sub_addr, uint16_t mod_id, uint8_t *status)
 {
-	if (!BT_MESH_ADDR_IS_GROUP(sub_addr)) {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) && !BT_MESH_ADDR_IS_FIXED_GROUP(sub_addr)) {
 		return -EINVAL;
 	}
 
@@ -1926,7 +1927,8 @@ int bt_mesh_cfg_mod_sub_del_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
 				uint16_t sub_addr, uint16_t mod_id, uint16_t cid,
 				uint8_t *status)
 {
-	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) || cid == CID_NVAL) {
+	if ((!BT_MESH_ADDR_IS_GROUP(sub_addr) && !BT_MESH_ADDR_IS_FIXED_GROUP(sub_addr)) ||
+		cid == CID_NVAL) {
 		return -EINVAL;
 	}
 
@@ -1949,7 +1951,7 @@ int bt_mesh_cfg_mod_sub_del_all_vnd(uint16_t net_idx, uint16_t addr,
 int bt_mesh_cfg_mod_sub_overwrite(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 				  uint16_t sub_addr, uint16_t mod_id, uint8_t *status)
 {
-	if (!BT_MESH_ADDR_IS_GROUP(sub_addr)) {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) && !BT_MESH_ADDR_IS_FIXED_GROUP(sub_addr)) {
 		return -EINVAL;
 	}
 
@@ -1961,7 +1963,8 @@ int bt_mesh_cfg_mod_sub_overwrite_vnd(uint16_t net_idx, uint16_t addr,
 				      uint16_t elem_addr, uint16_t sub_addr,
 				      uint16_t mod_id, uint16_t cid, uint8_t *status)
 {
-	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) || cid == CID_NVAL) {
+	if ((!BT_MESH_ADDR_IS_GROUP(sub_addr) && !BT_MESH_ADDR_IS_FIXED_GROUP(sub_addr)) ||
+		cid == CID_NVAL) {
 		return -EINVAL;
 	}
 

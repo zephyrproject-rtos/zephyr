@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <arm/armv6-m.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include "gpio_gecko.h"
 
 / {

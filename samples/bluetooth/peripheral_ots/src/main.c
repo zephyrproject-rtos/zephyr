@@ -7,14 +7,14 @@
 #include <zephyr/types.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/services/ots.h>
 
 #define DEVICE_NAME      CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN  (sizeof(DEVICE_NAME) - 1)
@@ -182,13 +182,15 @@ static ssize_t ots_obj_write(struct bt_ots *ots, struct bt_conn *conn,
 	return len;
 }
 
-void ots_obj_name_written(struct bt_ots *ots, struct bt_conn *conn, uint64_t id, const char *name)
+static void ots_obj_name_written(struct bt_ots *ots, struct bt_conn *conn,
+				 uint64_t id, const char *cur_name, const char *new_name)
 {
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
 
 	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
 
-	printk("Name for object with %s ID has been written\n", id_str);
+	printk("Name for object with %s ID is being changed from '%s' to '%s'\n",
+		id_str, cur_name, new_name);
 }
 
 static struct bt_ots_cb ots_callbacks = {

@@ -1,5 +1,5 @@
 tests:
   arch.arm.mem_protect.syscalls:
     arch_allow: arm
-    filter: CONFIG_CPU_CORTEX_R and CONFIG_ARCH_HAS_USERSPACE
+    filter: CONFIG_CPU_AARCH32_CORTEX_R and CONFIG_ARCH_HAS_USERSPACE
     tags: arm userspace

@@ -5,9 +5,9 @@
  */
 
 #include <ztest.h>
-#include <pm/pm.h>
-#include <irq_offload.h>
-#include <debug/stack.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/debug/stack.h>
 
 #define SLEEP_MS 100
 #define NUM_OF_WORK 2

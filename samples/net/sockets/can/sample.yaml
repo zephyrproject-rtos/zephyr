@@ -1,14 +1,14 @@
+sample:
+  name: SocketCAN sample
 common:
-  tags: net socket can CAN
+  tags: net socket can
+  filter: dt_chosen_enabled("zephyr,canbus")
   depends_on: can
   harness: can
-sample:
-  description: Test BSD sockets CAN support
-  name: Socket CAN example
 tests:
-  sample.net.sockets.can.test_with_one_socket:
+  sample.net.sockets.can.one_socket:
     extra_configs:
       - CONFIG_NET_SOCKETS_CAN_RECEIVERS=1
-  sample.net.sockets.can.test_with_two_sockets:
+  sample.net.sockets.can.two_sockets:
     extra_configs:
       - CONFIG_NET_SOCKETS_CAN_RECEIVERS=2

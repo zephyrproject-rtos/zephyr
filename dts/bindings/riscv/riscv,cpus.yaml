@@ -24,8 +24,3 @@ properties:
       - rv32imafcb
       - rv64imac
       - rv64imafdc
-
-  riscv,pmpregions:
-    description: Physical Memory Protection (PMP)
-    required: true
-    type: int

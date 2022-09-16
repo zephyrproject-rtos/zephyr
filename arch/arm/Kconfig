@@ -36,7 +36,7 @@ config ARM_CUSTOM_INTERRUPT_CONTROLLER
 
 config CODE_DATA_RELOCATION
 	bool "Relocate code/data sections"
-	depends on CPU_CORTEX_M
+	depends on CPU_CORTEX_M || CPU_AARCH32_CORTEX_R
 	help
 	  When selected this will relocate .text, data and .bss sections from
 	  the specified files and places it in the required memory region. The
@@ -55,5 +55,6 @@ config CODE_DATA_RELOCATION_SRAM
 	  relocation.
 
 rsource "core/aarch32/Kconfig"
+rsource "core/aarch32/Kconfig.vfp"
 
 endmenu

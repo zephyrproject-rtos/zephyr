@@ -5,8 +5,7 @@
  */
 
 
-#include <autoconf.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 MEMORY
      {
@@ -17,4 +16,14 @@ MEMORY
 #endif
      }
 
-#include <arch/arm/aarch32/cortex_m/scripts/linker.ld>
+#include <zephyr/arch/arm/aarch32/cortex_m/scripts/linker.ld>
+
+SECTIONS
+     {
+#ifdef CONFIG_OPENAMP_RSC_TABLE
+        SECTION_PROLOGUE(.resource_table,, SUBALIGN(4))
+        {
+            KEEP(*(.resource_table*))
+        } GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+     }

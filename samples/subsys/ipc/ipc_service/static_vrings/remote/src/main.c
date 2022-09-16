@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 
-#include <ipc/ipc_service.h>
+#include <zephyr/ipc/ipc_service.h>
 
-#define STACKSIZE	(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE	(1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define PRIORITY	K_PRIO_PREEMPT(2)
 
 K_THREAD_STACK_DEFINE(ipc0A_stack, STACKSIZE);
@@ -181,7 +181,12 @@ K_THREAD_DEFINE(ipc0B_thread_id, STACKSIZE, ipc0B_entry, NULL, NULL, NULL, PRIOR
 
 /*
  * ==> THREAD 1 (IPC instance 1) <==
+ *
+ * NOTE: This instance is using the NOCOPY copability of the backend.
  */
+
+static struct ipc_ept ipc1_ept;
+static void *recv_data;
 
 static void ipc1_ept_bound(void *priv)
 {
@@ -190,7 +195,18 @@ static void ipc1_ept_bound(void *priv)
 
 static void ipc1_ept_recv(const void *data, size_t len, void *priv)
 {
-	ipc1_received_data = *((uint8_t *) data);
+	int ret;
+
+	ret = ipc_service_hold_rx_buffer(&ipc1_ept, (void *) data);
+	if (ret < 0) {
+		printk("ipc_service_hold_rx_buffer failed with ret %d\n", ret);
+	}
+
+	/*
+	 * This will only support a synchronous request-answer mechanism. For
+	 * asynchronous cases a chain list should be implemented.
+	 */
+	recv_data = (void *) data;
 
 	k_sem_give(&ipc1_data_sem);
 }
@@ -211,7 +227,6 @@ static void ipc1_entry(void *dummy0, void *dummy1, void *dummy2)
 
 	const struct device *ipc1_instance;
 	unsigned char message = 0;
-	struct ipc_ept ipc1_ept;
 	int ret;
 
 	printk("IPC-service REMOTE [INST 1] demo started\n");
@@ -232,19 +247,35 @@ static void ipc1_entry(void *dummy0, void *dummy1, void *dummy2)
 
 	k_sem_take(&ipc1_bound_sem, K_FOREVER);
 
-	while (message < 99) {
+	while (message < 50) {
+		uint32_t len = sizeof(message);
+		void *data;
+
 		k_sem_take(&ipc1_data_sem, K_FOREVER);
-		message = ipc1_received_data;
 
-		printk("REMOTE [1]: %d\n", message);
+		printk("REMOTE [1]: %d\n", *((unsigned char *) recv_data));
 
-		message++;
+		ret = ipc_service_get_tx_buffer(&ipc1_ept, &data, &len, K_FOREVER);
+		if (ret < 0) {
+			printk("ipc_service_get_tx_buffer failed with ret %d\n", ret);
+			break;
+		}
 
-		ret = ipc_service_send(&ipc1_ept, &message, sizeof(message));
+		*((unsigned char *) data) = *((unsigned char *) recv_data) + 1;
+
+		ret = ipc_service_release_rx_buffer(&ipc1_ept, recv_data);
+		if (ret < 0) {
+			printk("ipc_service_release_rx_buffer failed with ret %d\n", ret);
+			break;
+		}
+
+		ret = ipc_service_send_nocopy(&ipc1_ept, data, sizeof(unsigned char));
 		if (ret < 0) {
 			printk("send_message(%d) failed with ret %d\n", message, ret);
 			break;
 		}
+
+		message++;
 	}
 
 	printk("IPC-service REMOTE [INST 1] demo ended.\n");

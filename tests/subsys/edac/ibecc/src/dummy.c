@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <ztest.h>
 
-#include <drivers/edac.h>
+#include <zephyr/drivers/edac.h>
 
 /**
  * EDAC dummy is used for coverage tests for -ENOSYS returns

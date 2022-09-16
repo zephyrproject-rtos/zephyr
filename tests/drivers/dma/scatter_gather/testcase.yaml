@@ -1,0 +1,5 @@
+tests:
+  drivers.dma.scatter_gather:
+    depends_on: dma
+    tags: drivers dma
+    platform_allow: intel_adsp_cavs25 intel_adsp_cavs20 intel_adsp_cavs18 intel_adsp_cavs15

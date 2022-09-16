@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
-#include <sys/__assert.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
 #include "icm42605_spi.h"
 
 LOG_MODULE_DECLARE(ICM42605, CONFIG_SENSOR_LOG_LEVEL);

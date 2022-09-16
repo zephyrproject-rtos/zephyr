@@ -5,11 +5,11 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ztest_error_hook.h>
 
 static struct k_poll_signal signal_err;
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #ifdef CONFIG_USERSPACE
 /**

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell_fprintf.h>
-#include <shell/shell.h>
-#include <sys/cbprintf.h>
+#include <zephyr/shell/shell_fprintf.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/cbprintf.h>
 
 static int out_func(int c, void *ctx)
 {

@@ -8,18 +8,18 @@
 #define DT_DRV_COMPAT cypress_psoc6_gpio
 
 #include <errno.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "gpio_utils.h"
 #include "cy_gpio.h"
 #include "cy_sysint.h"
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_psoc6);
 
 typedef void (*config_func_t)(const struct device *dev);
@@ -178,7 +178,7 @@ static int gpio_psoc6_pin_interrupt_configure(const struct device *dev,
 	Cy_GPIO_SetInterruptEdge(port, pin, lv_trg);
 	Cy_GPIO_SetInterruptMask(port, pin, is_enabled);
 	/**
-	 * The driver will set 50ns glich free filter for any interrupt.
+	 * The driver will set 50ns glitch free filter for any interrupt.
 	 */
 	Cy_GPIO_SetFilter(port, pin);
 

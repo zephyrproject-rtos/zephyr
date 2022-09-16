@@ -205,7 +205,7 @@ int lifo_test(void)
 		k_fifo_put(&sync_fifo, element);
 	}
 
-	/* test get wait & put functions between co-op and premptive threads */
+	/* test get wait & put functions between co-op and preemptive threads */
 	fprintf(output_file, sz_test_case_fmt,
 			"LIFO #3");
 	fprintf(output_file, sz_description,

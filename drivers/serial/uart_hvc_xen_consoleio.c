@@ -9,13 +9,13 @@
  * should be used (uart_hvc_xen.c), this console will not be available.
  */
 
-#include <arch/arm64/hypercall.h>
-#include <xen/public/xen.h>
+#include <zephyr/arch/arm64/hypercall.h>
+#include <zephyr/xen/public/xen.h>
 
-#include <device.h>
-#include <drivers/uart.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 
 static int xen_consoleio_poll_in(const struct device *dev,
 			unsigned char *c)

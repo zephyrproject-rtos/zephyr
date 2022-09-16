@@ -1,0 +1,21 @@
+# Bluetooth Controller configuration options for ISO-AL Unit Tests
+
+# Copyright (c) 2022 Oticon A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_CTLR_CONN_ISO
+	bool "LE Connected Isochronous Streams (for unit tests)"
+
+config BT_CTLR_CONN_ISO_GROUPS
+	int "LE Connected Isochronous Groups (for unit tests)"
+	depends on BT_CTLR_CONN_ISO
+	range 1 240
+	default 1
+
+config BT_CTLR_ISOAL_SINKS
+	int "Number of Isochronous Adaptation Layer sinks (for unit tests)"
+
+config BT_CTLR_ISOAL_SOURCES
+	int "Number of Isochronous Adaptation Layer sinks (for unit tests)"
+
+source "Kconfig.zephyr"

@@ -4,21 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-struct node_tx_iso {
-	union {
-		void        *next;
-		memq_link_t *link;
-	};
-
-	uint64_t payload_number : 39; /* cisPayloadNumber */
-	uint8_t  pdu[];
-};
-
 struct lll_conn_iso_stream_rxtx {
-	uint8_t phy;            /* PHY */
-	uint8_t burst_number;   /* Burst number (BN) */
-	uint8_t flush_timeout;  /* Flush timeout (FT) */
-	uint8_t max_octets;     /* Maximum PDU size */
+	uint64_t payload_number:39; /* cisPayloadNumber */
+	uint8_t  phy;               /* PHY */
+	uint8_t  burst_number;      /* Burst number (BN) */
+	uint8_t  flush_timeout;     /* Flush timeout (FT) */
+	uint8_t  max_octets;        /* Maximum PDU size */
 };
 
 struct lll_conn_iso_stream {
@@ -37,12 +28,13 @@ struct lll_conn_iso_stream {
 
 	/* Event and payload counters */
 	uint64_t event_count : 39;       /* cisEventCount */
-	uint64_t rx_payload_number : 39; /* cisPayloadNumber */
 
 	/* Acknowledgment and flow control */
 	uint8_t sn:1;               /* Sequence number */
 	uint8_t nesn:1;             /* Next expected sequence number */
 	uint8_t cie:1;              /* Close isochronous event */
+	uint8_t flushed:1;          /* 1 if CIS LLL has been flushed */
+	uint8_t datapath_ready_rx:1;/* 1 if datapath for RX is ready */
 
 	/* Resumption information */
 	uint8_t next_subevent;      /* Next subevent to schedule */

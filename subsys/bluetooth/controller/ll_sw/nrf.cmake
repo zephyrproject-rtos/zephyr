@@ -100,3 +100,9 @@ zephyr_library_include_directories(
   ll_sw/nordic
   hci/nordic
 )
+
+# This path needs to be added globally as it is supposed to be used
+# in nrfx_glue.h when other libraries are built.
+zephyr_include_directories(
+  ll_sw/nordic/hal/nrf5/nrfx_glue
+)

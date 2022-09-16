@@ -10,14 +10,14 @@
 
 #define DT_DRV_COMPAT st_ism330dhcx
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "ism330dhcx.h"
 
@@ -742,19 +742,8 @@ static const struct ism330dhcx_config ism330dhcx_config = {
 	.gyro_range = DT_INST_PROP(0, gyro_range),
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	.bus_init = ism330dhcx_spi_init,
-	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			       SPI_MODE_CPHA | SPI_WORD_SET(8)),
-	.spi_conf.slave     = DT_INST_REG_ADDR(0),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-	.cs_gpio_flags	    = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
-
-	.spi_conf.cs        =  &ism330dhcx_data.cs_ctrl,
-#else
-	.spi_conf.cs        = NULL,
-#endif
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
+				SPI_MODE_CPHA | SPI_WORD_SET(8), 0),
 #elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	.bus_init = ism330dhcx_i2c_init,
 	.i2c_slv_addr = DT_INST_REG_ADDR(0),

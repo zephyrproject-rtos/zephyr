@@ -10,25 +10,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <strings.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <sys/fdtable.h>
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/http_client.h>
-#include <net/websocket.h>
+#include <zephyr/sys/fdtable.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/http_client.h>
+#include <zephyr/net/websocket.h>
 
-#include <random/rand32.h>
-#include <sys/byteorder.h>
-#include <sys/base64.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/base64.h>
 #include <mbedtls/sha1.h>
 
 #include "net_private.h"
@@ -282,7 +282,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 					sizeof("Sec-Websocket-Key: "),
 			    &olen, sec_accept_key,
 			    /* We are only interested in 16 first bytes so
-			     * substract 4 from the SHA-1 length
+			     * subtract 4 from the SHA-1 length
 			     */
 			    sizeof(sec_accept_key) - 4);
 	if (ret) {
@@ -443,7 +443,7 @@ static inline int websocket_poll_offload(struct zsock_pollfd *fds, int nfds,
 	int ret = 0;
 	int i;
 
-	/* Overwrite websocket file decriptors with underlying ones. */
+	/* Overwrite websocket file descriptors with underlying ones. */
 	for (i = 0; i < nfds; i++) {
 		fd_backup[i] = fds[i].fd;
 

@@ -9,8 +9,8 @@
  * @brief ARM64 Cortex-A interrupt initialisation
  */
 
-#include <arch/cpu.h>
-#include <drivers/interrupt_controller/gic.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
 
 /**
  * @brief Initialise interrupts

@@ -6,11 +6,10 @@
 
 #define DT_DRV_COMPAT nxp_lpc11u6x_syscon
 
-#include <devicetree.h>
-#include <device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/device.h>
 
-#include <drivers/clock_control/lpc11u6x_clock_control.h>
-#include <drivers/pinmux.h>
+#include <zephyr/drivers/clock_control/lpc11u6x_clock_control.h>
 
 #include "clock_control_lpc11u6x.h"
 
@@ -73,43 +72,6 @@ static void syscon_ahb_clock_enable(struct lpc11u6x_syscon_regs *syscon,
 		syscon->sys_ahb_clk_ctrl &= ~mask;
 	}
 }
-
-#if defined(CONFIG_CLOCK_CONTROL_LPC11U6X_PLL_SRC_SYSOSC) \
-	&& DT_INST_NODE_HAS_PROP(0, pinmuxs)
-/**
- * @brief: configure system oscillator pins.
- *
- * This system oscillator pins and their configurations are retrieved from the
- * "pinmuxs" property of the DT clock controller node.
- */
-static void pinmux_enable_sysosc(void)
-{
-	const struct device *pinmux_dev;
-	uint32_t pin, func;
-
-	pinmux_dev = device_get_binding(
-		DT_LABEL(DT_INST_PHANDLE_BY_NAME(0, pinmuxs, xtalin)));
-	if (!pinmux_dev) {
-		return;
-	}
-	pin = DT_INST_PHA_BY_NAME(0, pinmuxs, xtalin, pin);
-	func = DT_INST_PHA_BY_NAME(0, pinmuxs, xtalin, function);
-
-	pinmux_pin_set(pinmux_dev, pin, func);
-
-	pinmux_dev = device_get_binding(
-		DT_LABEL(DT_INST_PHANDLE_BY_NAME(0, pinmuxs, xtalout)));
-	if (!pinmux_dev) {
-		return;
-	}
-	pin = DT_INST_PHA_BY_NAME(0, pinmuxs, xtalout, pin);
-	func = DT_INST_PHA_BY_NAME(0, pinmuxs, xtalout, function);
-
-	pinmux_pin_set(pinmux_dev, pin, func);
-}
-#else
-#define pinmux_enable_sysosc() do { } while (0)
-#endif
 
 static void syscon_peripheral_reset(struct lpc11u6x_syscon_regs *syscon,
 				    uint32_t mask, bool reset)
@@ -347,7 +309,7 @@ static int lpc11u6x_syscon_init(const struct device *dev)
 	/* Configure PLL input */
 	syscon_set_pll_src(cfg->syscon, LPC11U6X_SYS_PLL_CLK_SEL_SYSOSC);
 
-	pinmux_enable_sysosc();
+	pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 
 #elif defined(CONFIG_CLOCK_CONTROL_LPC11U6X_PLL_SRC_IRC)
 	syscon_power_up(cfg->syscon, LPC11U6X_PDRUNCFG_IRC_PD, true);
@@ -381,8 +343,12 @@ static const struct clock_control_driver_api lpc11u6x_clock_control_api = {
 	.get_rate = lpc11u6x_clock_control_get_rate,
 };
 
+
+PINCTRL_DT_INST_DEFINE(0);
+
 static const struct lpc11u6x_syscon_config syscon_config = {
 	.syscon = (struct lpc11u6x_syscon_regs *) DT_INST_REG_ADDR(0),
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 static struct lpc11u6x_syscon_data syscon_data;

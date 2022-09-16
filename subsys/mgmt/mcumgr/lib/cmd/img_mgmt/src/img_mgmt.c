@@ -4,12 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <limits.h>
 #include <assert.h>
 #include <string.h>
+#include <zephyr/toolchain.h>
 
-#include "cborattr/cborattr.h"
+#include <zcbor_common.h>
+#include <zcbor_decode.h>
+#include <zcbor_encode.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
+#include "zcbor_bulk/zcbor_bulk_priv.h"
 #include "mgmt/mgmt.h"
 
 #include "img_mgmt/image.h"
@@ -18,7 +23,6 @@
 #include "img_mgmt_priv.h"
 #include "img_mgmt/img_mgmt_config.h"
 
-static void *img_mgmt_upload_arg;
 static img_mgmt_upload_fn img_mgmt_upload_cb;
 
 const struct img_mgmt_dfu_callbacks_t *img_mgmt_dfu_callbacks_fn;
@@ -235,21 +239,6 @@ img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver)
 	return -1;
 }
 
-#if CONFIG_IMG_MGMT_VERBOSE_ERR
-int
-img_mgmt_error_rsp(struct mgmt_ctxt *ctxt, int rc, const char *rsn)
-{
-	/*
-	 * This is an error response so returning a different error when failed to
-	 * encode other error probably does not make much sense - just ignore errors
-	 * here.
-	 */
-	cbor_encode_text_stringz(&ctxt->encoder, "rsn");
-	cbor_encode_text_stringz(&ctxt->encoder, rsn);
-	return rc;
-}
-#endif
-
 /**
  * Command handler: image erase
  */
@@ -257,8 +246,9 @@ static int
 img_mgmt_erase(struct mgmt_ctxt *ctxt)
 {
 	struct image_version ver;
-	CborError err;
 	int rc;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
+	bool ok;
 
 	/*
 	 * First check if image info is valid.
@@ -276,36 +266,28 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 
 	rc = img_mgmt_impl_erase_slot();
 
-	if (!rc) {
+	if (rc != 0) {
 		img_mgmt_dfu_stopped();
 	}
 
-	err = 0;
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "rc");
-	err |= cbor_encode_int(&ctxt->encoder, rc);
+	ok = zcbor_tstr_put_lit(zse, "rc")	&&
+	     zcbor_int32_put(zse, rc);
 
-	if (err != 0) {
-		return MGMT_ERR_ENOMEM;
-	}
-
-	return 0;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 static int
 img_mgmt_upload_good_rsp(struct mgmt_ctxt *ctxt)
 {
-	CborError err = CborNoError;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
+	bool ok;
 
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "rc");
-	err |= cbor_encode_int(&ctxt->encoder, MGMT_ERR_EOK);
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "off");
-	err |= cbor_encode_int(&ctxt->encoder, g_img_mgmt_state.off);
+	ok = zcbor_tstr_put_lit(zse, "rc")			&&
+	     zcbor_int32_put(zse, MGMT_ERR_EOK)			&&
+	     zcbor_tstr_put_lit(zse, "off")			&&
+	     zcbor_int32_put(zse,  g_img_mgmt_state.off);
 
-	if (err != 0) {
-		return MGMT_ERR_ENOMEM;
-	}
-
-	return 0;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 /**
@@ -351,70 +333,44 @@ static int
 img_mgmt_upload(struct mgmt_ctxt *ctxt)
 {
 	struct mgmt_evt_op_cmd_status_arg cmd_status_arg;
+	zcbor_state_t *zsd = ctxt->cnbd->zs;
+	bool ok;
+	size_t decoded = 0;
 	struct img_mgmt_upload_req req = {
 		.off = -1,
 		.size = -1,
-		.data_len = 0,
-		.data_sha_len = 0,
+		.img_data = { 0 },
+		.data_sha = { 0 },
 		.upgrade = false,
 		.image = 0,
 	};
-
-	const struct cbor_attr_t off_attr[] = {
-		[0] = {
-			.attribute = "image",
-			.type = CborAttrUnsignedIntegerType,
-			.addr.uinteger = &req.image,
-			.nodefault = true
-		},
-		[1] = {
-			.attribute = "data",
-			.type = CborAttrByteStringType,
-			.addr.bytestring.data = req.img_data,
-			.addr.bytestring.len = &req.data_len,
-			.len = sizeof(req.img_data)
-		},
-		[2] = {
-			.attribute = "len",
-			.type = CborAttrUnsignedIntegerType,
-			.addr.uinteger = &req.size,
-			.nodefault = true
-		},
-		[3] = {
-			.attribute = "off",
-			.type = CborAttrUnsignedIntegerType,
-			.addr.uinteger = &req.off,
-			.nodefault = true
-		},
-		[4] = {
-			.attribute = "sha",
-			.type = CborAttrByteStringType,
-			.addr.bytestring.data = req.data_sha,
-			.addr.bytestring.len = &req.data_sha_len,
-			.len = sizeof(req.data_sha)
-		},
-		[5] = {
-			.attribute = "upgrade",
-			.type = CborAttrBooleanType,
-			.addr.boolean = &req.upgrade,
-			.dflt.boolean = false,
-		},
-		[6] = { 0 },
-	};
 	int rc;
-	const char *errstr = NULL;
 	struct img_mgmt_upload_action action;
 	bool last = false;
 
-	rc = cbor_read_object(&ctxt->it, off_attr);
-	if (rc != 0) {
+	struct zcbor_map_decode_key_val image_upload_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_VAL(image, zcbor_int64_decode, &req.image),
+		ZCBOR_MAP_DECODE_KEY_VAL(data, zcbor_bstr_decode, &req.img_data),
+		ZCBOR_MAP_DECODE_KEY_VAL(len, zcbor_uint64_decode, &req.size),
+		ZCBOR_MAP_DECODE_KEY_VAL(off, zcbor_uint64_decode, &req.off),
+		ZCBOR_MAP_DECODE_KEY_VAL(sha, zcbor_bstr_decode, &req.data_sha),
+		ZCBOR_MAP_DECODE_KEY_VAL(upgrade, zcbor_bool_decode, &req.upgrade)
+	};
+
+	ok = zcbor_map_decode_bulk(zsd, image_upload_decode,
+		ARRAY_SIZE(image_upload_decode), &decoded) == 0;
+
+	IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action, NULL);
+
+	if (!ok) {
 		return MGMT_ERR_EINVAL;
 	}
 
 	/* Determine what actions to take as a result of this request. */
-	rc = img_mgmt_impl_upload_inspect(&req, &action, &errstr);
+	rc = img_mgmt_impl_upload_inspect(&req, &action);
 	if (rc != 0) {
 		img_mgmt_dfu_stopped();
+		MGMT_CTXT_SET_RC_RSN(ctxt, IMG_MGMT_UPLOAD_ACTION_RC_RSN(&action));
 		return rc;
 	}
 
@@ -429,9 +385,10 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 	 * request.
 	 */
 	if (img_mgmt_upload_cb != NULL) {
-		rc = img_mgmt_upload_cb(req.off, action.size, img_mgmt_upload_arg);
+		rc = img_mgmt_upload_cb(req, action);
+
 		if (rc != 0) {
-			errstr = img_mgmt_err_str_app_reject;
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action, img_mgmt_err_str_app_reject);
 			goto end;
 		}
 	}
@@ -454,10 +411,10 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 		 * to make sure provided data are good enough to avoid collisions when
 		 * resuming upload.
 		 */
-		g_img_mgmt_state.data_sha_len = req.data_sha_len;
-		memcpy(g_img_mgmt_state.data_sha, req.data_sha, req.data_sha_len);
-		memset(&g_img_mgmt_state.data_sha[req.data_sha_len], 0,
-			   IMG_MGMT_DATA_SHA_LEN - req.data_sha_len);
+		g_img_mgmt_state.data_sha_len = req.data_sha.len;
+		memcpy(g_img_mgmt_state.data_sha, req.data_sha.value, req.data_sha.len);
+		memset(&g_img_mgmt_state.data_sha[req.data_sha.len], 0,
+			   IMG_MGMT_DATA_SHA_LEN - req.data_sha.len);
 
 #if CONFIG_IMG_ERASE_PROGRESSIVELY
 		/* setup for lazy sector by sector erase */
@@ -469,7 +426,8 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 			rc = img_mgmt_impl_erase_image_data(0, req.size);
 			if (rc != 0) {
 				rc = MGMT_ERR_EUNKNOWN;
-				errstr = img_mgmt_err_str_flash_erase_failed;
+				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
+					img_mgmt_err_str_flash_erase_failed);
 				goto end;
 			}
 		}
@@ -479,25 +437,27 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 	}
 
 	/* Write the image data to flash. */
-	if (req.data_len != 0) {
+	if (req.img_data.len != 0) {
 #if CONFIG_IMG_ERASE_PROGRESSIVELY
 		/* erase as we cross sector boundaries */
 		if (img_mgmt_impl_erase_if_needed(req.off, action.write_bytes) != 0) {
 			rc = MGMT_ERR_EUNKNOWN;
-			errstr = img_mgmt_err_str_flash_erase_failed;
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
+				img_mgmt_err_str_flash_erase_failed);
 			goto end;
 		}
 #endif
 		/* If this is the last chunk */
-		if (g_img_mgmt_state.off + req.data_len == g_img_mgmt_state.size) {
+		if (g_img_mgmt_state.off + req.img_data.len == g_img_mgmt_state.size) {
 			last = true;
 		}
 
-		rc = img_mgmt_impl_write_image_data(req.off, req.img_data, action.write_bytes,
+		rc = img_mgmt_impl_write_image_data(req.off, req.img_data.value, action.write_bytes,
 						    last);
 		if (rc != 0) {
 			rc = MGMT_ERR_EUNKNOWN;
-			errstr = img_mgmt_err_str_flash_write_failed;
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
+				img_mgmt_err_str_flash_write_failed);
 			goto end;
 		} else {
 			g_img_mgmt_state.off += action.write_bytes;
@@ -517,7 +477,7 @@ end:
 
 	if (rc != 0) {
 		img_mgmt_dfu_stopped();
-		return img_mgmt_error_rsp(ctxt, rc, errstr);
+		return rc;
 	}
 
 	return img_mgmt_upload_good_rsp(ctxt);
@@ -556,10 +516,9 @@ img_mgmt_dfu_confirmed(void)
 }
 
 void
-img_mgmt_set_upload_cb(img_mgmt_upload_fn cb, void *arg)
+img_mgmt_set_upload_cb(img_mgmt_upload_fn cb)
 {
 	img_mgmt_upload_cb = cb;
-	img_mgmt_upload_arg = arg;
 }
 
 void

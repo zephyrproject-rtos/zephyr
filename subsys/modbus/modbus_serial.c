@@ -20,13 +20,13 @@
  *      Version 2.0 available at www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modbus_serial, CONFIG_MODBUS_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <sys/crc.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
 #include <modbus_internal.h>
 
 static void modbus_serial_tx_on(struct modbus_context *ctx)
@@ -366,7 +366,7 @@ static void cb_handler_tx(struct modbus_context *ctx)
 	}
 
 	/* Must wait till the transmission is complete or
-	 * RS-485 tranceiver could be disabled before all data has
+	 * RS-485 transceiver could be disabled before all data has
 	 * been transmitted and message will be corrupted.
 	 */
 	if (uart_irq_tx_complete(cfg->dev)) {
@@ -545,6 +545,20 @@ int modbus_serial_init(struct modbus_context *ctx,
 		break;
 	default:
 		return -EINVAL;
+	}
+
+	if (ctx->client) {
+		/* Allow custom stop bit settings only in client mode */
+		switch (param.serial.stop_bits_client) {
+		case UART_CFG_STOP_BITS_0_5:
+		case UART_CFG_STOP_BITS_1:
+		case UART_CFG_STOP_BITS_1_5:
+		case UART_CFG_STOP_BITS_2:
+			uart_cfg.stop_bits = param.serial.stop_bits_client;
+			break;
+		default:
+			return -EINVAL;
+		}
 	}
 
 	if (uart_configure(cfg->dev, &uart_cfg) != 0) {

@@ -7,20 +7,20 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
-#include <init.h>
-#include <fs/fs.h>
-#include <fs/fs_sys.h>
+#include <zephyr/init.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/fs_sys.h>
 
 #define LFS_LOG_REGISTER
 #include <lfs_util.h>
 
 #include <lfs.h>
-#include <fs/littlefs.h>
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
-#include <storage/disk_access.h>
+#include <zephyr/fs/littlefs.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/storage/disk_access.h>
 
 #include "fs_impl.h"
 
@@ -904,6 +904,7 @@ static const struct fs_file_system_t littlefs_fs = {
 
 #define DT_DRV_COMPAT zephyr_fstab_littlefs
 #define FS_PARTITION(inst) DT_PHANDLE_BY_IDX(DT_DRV_INST(inst), partition, 0)
+#define FS_PARTITION_LABEL(inst) DT_STRING_TOKEN(FS_PARTITION(inst), label)
 
 #define DEFINE_FS(inst) \
 static uint8_t __aligned(4) \
@@ -936,7 +937,7 @@ struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = { \
 	.type = FS_LITTLEFS, \
 	.mnt_point = DT_INST_PROP(inst, mount_point), \
 	.fs_data = &fs_data_##inst, \
-	.storage_dev = (void *)DT_FIXED_PARTITION_ID(FS_PARTITION(inst)), \
+	.storage_dev = (void *)FLASH_AREA_ID(FS_PARTITION_LABEL(inst)), \
 	.flags = FSTAB_ENTRY_DT_MOUNT_FLAGS(DT_DRV_INST(inst)), \
 };
 

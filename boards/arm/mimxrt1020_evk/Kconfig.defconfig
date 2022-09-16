@@ -15,16 +15,19 @@ endchoice
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
 
-config FLASH_MCUX_FLEXSPI_NOR
-	default y if FLASH && BOARD_MIMXRT1020_EVK
+if FLASH
 
-config FLASH_MCUX_FLEXSPI_XIP
-	default y if FLASH && BOARD_MIMXRT1020_EVK
-	depends on MEMC_MCUX_FLEXSPI
+config FLASH_MCUX_FLEXSPI_NOR
+	default y
+
+endif #FLASH
 
 if NETWORKING
 
 config NET_L2_ETHERNET
+	default y
+
+config ETH_MCUX_PHY_RESET
 	default y
 
 endif # NETWORKING

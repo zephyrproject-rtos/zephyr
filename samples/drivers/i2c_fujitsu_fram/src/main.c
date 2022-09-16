@@ -5,10 +5,10 @@
  */
 
 #include <errno.h>
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <device.h>
-#include <drivers/i2c.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 
 /**
  * @file Sample app using the Fujitsu MB85RC256V FRAM through I2C.

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_L2_PPP
-	bool "Enable point-to-point (PPP) support [EXPERIMENTAL]"
+	bool "Point-to-point (PPP) support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Add support for PPP.
@@ -86,7 +86,7 @@ module-help = Enables ppp L2 to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_L2_PPP_MGMT
-	bool "Enable ppp network management interface"
+	bool "Ppp network management interface"
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	help

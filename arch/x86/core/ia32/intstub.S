@@ -14,10 +14,10 @@
  * entering and exiting a C interrupt handler.
  */
 
-#include <arch/x86/ia32/asm.h>
+#include <zephyr/arch/x86/ia32/asm.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
-#include <drivers/interrupt_controller/sysapic.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/interrupt_controller/sysapic.h>
 
 	/* exports (internal APIs) */
 

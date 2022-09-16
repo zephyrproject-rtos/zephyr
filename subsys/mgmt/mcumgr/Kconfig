@@ -5,7 +5,7 @@
 menuconfig MCUMGR
 	bool "mcumgr Support"
 	select NET_BUF
-	select TINYCBOR
+	select ZCBOR
 	help
 	  This option enables the mcumgr management library.
 
@@ -24,335 +24,120 @@ config APP_LINK_WITH_MCUMGR
 	  disabled if the include paths for MCUMGR are causing aliasing
 	  issues for 'app'.
 
-config MGMT_CBORATTR_MAX_SIZE
-	int "The maximum size of a CBOR attribute during decoding"
-        default 512
-        help
-          The maximum size of a CBOR attribute during decoding
+rsource "lib/Kconfig"
 
-config MGMT_CBORATTR_FLOAT_SUPPORT
-	bool "Enable support for float"
+config MGMT_MAX_MAIN_MAP_ENTRIES
+	int "Number of predicted maximum entries to main response map"
+	default 15
 	help
-	  The option enables float processing within CBOR attributes.
-	  If your code requires processing of float numbers by CBOR,
-	  the option needs to be enabled.
-	  Disabling the option slightly reduces code footprint.
+	  This is number of predicted entries in main response map,
+	  the one that encapsulates everything within response.
+	  This value is used by zcbor to predict needed map encoding,
+	  and does not affect memory allocation or usage.
+	  Builtin command processors rarely add large amounts of
+	  data directly to main map, creating sub-maps instead so
+	  the default value works fine with them.
+	  If your app directly adds fields to main map, without
+	  encapsulating them, you may want to increase this value
+	  in case when encoding starts to fail.
+
+config MGMT_MIN_DECODING_LEVELS
+	int
+	help
+	  Minimal decoding levels, map/list encapsulation, required
+	  to be supported by zcbor decoding of SMP responses
+	  is auto genereated from MGMT_MIN_DECODING_LEVEL_? options.
+	  A group or command that adds additional maps/lists above the
+	  base map, which is already taken into account, should
+	  select one of the MGMT_MIN_DECODING_LEVEL_?.
+	default 5 if MGMT_MIN_DECODING_LEVEL_5
+	default 4 if MGMT_MIN_DECODING_LEVEL_4
+	default 3 if MGMT_MIN_DECODING_LEVEL_3
+	default 2 if MGMT_MIN_DECODING_LEVEL_2
+	default 1 if MGMT_MIN_DECODING_LEVEL_1
+	default 0
+
+
+config MGMT_MIN_DECODING_LEVEL_1
+	bool
+
+config MGMT_MIN_DECODING_LEVEL_2
+	bool
+
+config MGMT_MIN_DECODING_LEVEL_3
+	bool
+
+config MGMT_MIN_DECODING_LEVEL_4
+	bool
+
+config MGMT_MIN_DECODING_LEVEL_5
+	bool
+
+config MGMT_MAX_DECODING_LEVELS
+	int "Number of map/list encapsulations allowed by SMP encoding"
+	range MGMT_MIN_DECODING_LEVELS 15
+	default MGMT_MIN_DECODING_LEVELS
+	help
+	  This is a maximum number of levels of maps/lists that will
+	  be expected to be decoded within different command groups.
+	  SMP commands/groups that provide no CBOR encoded payload
+	  have no requirements.
+	  Commands that provide CBOR payload require at least 1 level,
+	  and additional levels for each map/list encapsulation.
+	  For example if command accepts payload of map of parameters
+	  it will need 2 levels.
+	  This number translates to zcbor backup states, it increases
+	  size of cbor_nb_reader structure by zcbor_state_t size per
+	  one unit selected here.
 
 menu "Command Handlers"
-menuconfig MCUMGR_CMD_FS_MGMT
-	bool "Enable mcumgr handlers for file management (insecure)"
-	depends on FILE_SYSTEM
-	help
-	  Enables mcumgr handlers for file management
 
-	  This option allows mcumgr clients to access anything in the
-	  file system, including application-stored secrets like
-	  private keys. Use of this feature in production is strongly
-	  discouraged.
+rsource "lib/cmd/Kconfig"
 
-if MCUMGR_CMD_FS_MGMT
-
-choice FS_MGMT_MAX_FILE_SIZE
-	prompt "Maximum file size that could be uploaded/downloaded"
-	default FS_MGMT_MAX_FILE_SIZE_64KB
-	help
-	  Maximum file size that will be allowed to be downloaded from
-	  device.
-	  This option decides on number of bytes that are reserved in
-	  CBOR frame for storage of offset/size of file downloaded.
-
-config FS_MGMT_MAX_FILE_SIZE_64KB
-	bool "<= 64KB"
-	help
-	  Files that have size up to 64KB require 1 to 3 bytes to encode
-	  size/offset within CBOR frame with file chunk.
-
-config FS_MGMT_MAX_FILE_SIZE_4GB
-	bool "<= 4GB"
-	help
-	  Files that have size up to 4GB require 1 to 5 bytes to encode
-	  size/offset within CBOR frame with file chunk.
-
-endchoice
-
-config FS_MGMT_MAX_OFFSET_LEN
-	int
-	default	3 if FS_MGMT_MAX_FILE_SIZE_64KB
-	default 5 if FS_MGMT_MAX_FILE_SIZE_4GB
-	help
-	  Maximal byte length of encoded offset/size, within transferred
-	  CBOR frame containing chunk of downloaded file.
-	  This value affects how much of data will fit into download buffer,
-	  as it selects sizes of fields within headers.
-	  NOTE: This option is hidden intentionally as it is intended
-	  to be assigned from limited set of allowed values, depending on
-	  the selection made in FS_MGMT_MAX_FILE_SIZE menu.
-
-config FS_MGMT_UL_CHUNK_SIZE
-	int "Maximum chunk size for file uploads"
-	default 512
-	help
-	  Limits the maximum chunk size for file uploads, in bytes.  A buffer of
-	  this size gets allocated on the stack during handling of a file upload command.
-
-config FS_MGMT_DL_CHUNK_SIZE_LIMIT
-	bool "Enable setting custom size of download file chunk"
-	help
-	  By default file chunk, that will be read off storage and fit into
-	  mcumgr frame, is automatically calculated to fit into buffer
-	  of size MCUGMR_BUF_SIZE with all headers.
-	  Enabling this option allows to set MAXIMUM value that will be
-	  allowed for such chunk.
-	  Look inside fs_mgmt_config.h for details.
-
-if FS_MGMT_DL_CHUNK_SIZE_LIMIT
-
-config FS_MGMT_DL_CHUNK_SIZE
-	int "Maximum chunk size for file downloads"
-	range 65 MCUMGR_BUF_SIZE
-	default MCUMGR_BUF_SIZE
-	help
-	  Sets the MAXIMUM size of chunk which will be rounded down to
-	  number of bytes that, with all the required headers, will fit
-	  into MCUMGR_BUF_SIZE. This means that actual value might be lower
-	  then selected, in which case compiler warning will be issued.
-	  Look inside fs_mgmt_config.h for details.
-	  Note that header sizes are affected by FS_MGMT_MAX_OFFSET_LEN.
-
-endif
-
-
-config FS_MGMT_PATH_SIZE
-	int "Maximum file path length"
-	default 64
-	help
-	  Limits the maximum path length for file operations, in bytes.  A buffer
-	  of this size gets allocated on the stack during handling of file upload
-	  and download commands.
-endif
-
-config MCUMGR_CMD_SHELL_MGMT
-	bool "Enable mcumgr handlers for shell management"
-	depends on SHELL
-	select SHELL_BACKEND_DUMMY
-	help
-	  Enables mcumgr handlers for shell management. The handler will utilize
-	  the dummy backend to execute shell commands and capture the output to
-	  an internal memory buffer. This way, there is no interaction with
-	  physical interfaces outside of the scope of the user.
-	  It is possible to use additional shell backends in coordination
-	  with this handler and they will not interfere.
-	  The SHELL_BACKEND_DUMMY_BUF_SIZE will affect how many characters
-	  will be returned from command output, if your output gets cut, then
-	  increase the value. Remember to set MCUMGR_BUF_SIZE accordingly.
-
-menuconfig MCUMGR_CMD_IMG_MGMT
-	bool "Enable mcumgr handlers for image management"
-	select FLASH
-	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
-	select IMG_MANAGER
-	help
-	  Enables mcumgr handlers for image management
-
-if MCUMGR_CMD_IMG_MGMT
-config IMG_MGMT_UL_CHUNK_SIZE
-	int "Maximum chunk size for image uploads"
-	default 512
-	depends on MCUMGR_CMD_IMG_MGMT
-	help
-	  Limits the maximum chunk size for image uploads, in bytes.  A buffer of
-	  this size gets allocated on the stack during handling of a image upload
-	  command.
-
-config IMG_MGMT_UPDATABLE_IMAGE_NUMBER
-	int "Number of supported images"
-	default UPDATEABLE_IMAGE_NUMBER
-	range 1 2
-	help
-	  Sets how many application images are supported (pairs of secondary and primary slots).
-	  Setting this to 2 requires MCUMGR_BUF_SIZE to be at least 512b.
-	  NOTE: The UPDATEABLE_IMAGE_NUMBER of MCUBOOT configuration, even for Zephyr build,
-	  needs to be set to the same value; this is due to the fact that the mcumgr uses
-	  boot_util and the UPDATEABLE_IMAGE_NUMBER controls number of images supported
-	  by that library.
-
-config IMG_MGMT_VERBOSE_ERR
-	bool "Verbose logging when uploading a new image"
-	help
-	  Enable verbose logging during a firmware upgrade.
-
-config IMG_MGMT_DUMMY_HDR
-	bool "Return dummy image header data for imgr functions"
-	help
-	  Returns dummy image header data for imgr functions,
-	  useful when there are no images present, Eg: unit tests.
-
-config IMG_MGMT_DIRECT_IMAGE_UPLOAD
-	bool "Allow direct image upload"
-	help
-	  Enables directly uploading image to selected image partition.
-	  This changes how "image" is understood by mcumgr: normally the mcumgr allows to upload
-	  to first slot of the only image it knows, where image is understood as two slots
-	  (two DTS images for Zephyr); this allows to treat every DTS defined image as direct
-	  target for upload, and more than two may be used (4 at this time).
-	  NOTE: When direct upload is used the image numbers are shifted by + 1, and the default
-	  behaviour is, when image is not selected, to upload to image that represents secndary
-	  slot in normal operation.
-
-config IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT
-	bool "Reject Direct-XIP applications with mismatched address"
-	help
-	  When enabled, the mcumgr will compare base address of application,
-	  encoded into .bin file header with use of imgtool, on upload and will
-	  reject binaries that would not be able to start from available
-	  Direct-XIP address.
-	  The base address can be set, to an image binary header, with imgtool,
-	  using the --rom-fixed command line option.
-
-config IMG_MGMT_FRUGAL_LIST
-	bool "Omit zero, empty or false values from status list"
-	help
-	  The status list send back from the device will only be filled with data that is non-zero,
-	  non-empty or true.  This option slightly reduces number of bytes transferred back from
-	  a device but requires support in client software, which has to default omitted values.
-	  Works correctly with mcumgr-cli.
-
-endif
-
-
-menuconfig MCUMGR_CMD_OS_MGMT
-	bool "Enable mcumgr handlers for OS management"
-	select REBOOT
-	help
-	  Enables mcumgr handlers for OS management
-
-if MCUMGR_CMD_OS_MGMT
-config OS_MGMT_RESET_MS
-	int "Delay before executing reset command (ms)"
-	default 250
-	help
-	  When a reset command is received, the system waits this many milliseconds
-	  before performing the reset.  This delay allows time for the mcumgr
-	  response to be delivered.
-
-config OS_MGMT_TASKSTAT
-	bool "Support for taskstat command"
-	depends on THREAD_MONITOR
-
-if OS_MGMT_TASKSTAT
-
-config OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS
-	bool "Send only data gathered by Zephyr"
-	default y
-	help
-	  Response will not include fields the Zephyr does not collect statistic for.
-	  Enable this if your client software is able to process "taskstat" response
-	  that would be missing "runtime", "cswcnt", "last_checkin" and "next_checkin"
-	  map entries for each listed task.
-	  Enabling this option will slightly reduce code size.
-
-choice OS_MGMT_TASKSTAT_THREAD_NAME_CHOICE
-	prompt "Characteristic used as thread name in taskstat"
-	default OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME if THREAD_NAME
-	default OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
-	help
-	  Select what will serve as thread name in "taskstat" response.
-	  By default taskstat responses use thread priority, when THREAD_NAME is disabled,
-
-	config OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME
-		bool "Thread name"
-		depends on THREAD_NAME
-
-	config OS_MGMT_TASKSTAT_USE_THREAD_IDX_FOR_NAME
-		bool "Thread index"
-
-	config OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
-		bool "Thread priority"
-
-endchoice
-
-config OS_MGMT_TASKSTAT_THREAD_NAME_LEN
-	int "Length of thread name to return in response"
-	default THREAD_MAX_NAME_LEN if THREAD_NAME
-	default 5 if !THREAD_NAME
-	range 3 THREAD_MAX_NAME_LEN if THREAD_NAME
-	range 3 6 if !THREAD_NAME
-	help
-	  The length, including terminating 0, of the string that is sent in response
-	  to taskstat command, as a thread name.
-	  When THREAD_NAME is enabled then this defaults to THREAD_MAX_NAME_LEN.
-	  When THREAD_NAME is disabled the name is generated from thread priority,
-	  signed integer, and this number regulates how many digits will be used;
-	  in such case this value should also take into account possible '-'
-	  sign.
-
-config OS_MGMT_TASKSTAT_SIGNED_PRIORITY
-	bool "Enable signed priorities"
-	help
-	  Zephyr uses int8_t as thread priorities, but in taskstat response it encodes
-	  them as unsigned.  Enabling this option will use signed int for priorities in
-	  responses, which is more natural for Zephyr.
-	  Enable this option only if your client software is able to properly decode
-	  and accept signed integers as priorities.
-
-config OS_MGMT_TASKSTAT_STACK_INFO
-	bool "Include stack info in taskstat responses"
-	depends on THREAD_STACK_INFO
-	help
-	  Enabling this option adds stack information into "taskstat" command
-	  responses, this is default when THREAD_STACK_INFO is selected.
-	  Disable this option only when your client application is able to
-	  process "taskstat" response without the "stksiz" and "stkuse" fields.
-	  It is worth disabling this option when THREAD_STACK_INFO is disabled,
-	  as it will prevent sending zeroed stack information just to fill
-	  all the fields in "taskstat" responses, and it will slightly reduce code size.
-
-endif
-
-config OS_MGMT_ECHO
-	bool "Support for echo command"
-	default y
-endif
-
-
-menuconfig MCUMGR_CMD_STAT_MGMT
-	bool "Enable mcumgr handlers for statistics management"
-	depends on STATS
-	help
-	  Enables mcumgr handlers for statistics management.
-
-config STAT_MGMT_MAX_NAME_LEN
-	int "Maximum stat group name length"
-	default 32
-	depends on MCUMGR_CMD_STAT_MGMT
-	help
-	  Limits the maximum stat group name length in mcumgr requests, in bytes.
-	  A buffer of this size gets allocated on the stack during handling of all
-	  stat read commands.  If a stat group's name exceeds this limit, it will
-	  be impossible to retrieve its values with a stat show command.
-
-
-menuconfig MCUMGR_GRP_ZEPHYR_BASIC
-	bool "Enable Zephyr specific basic group of commands"
-	help
-	  Enables mcumgr to processing of Zephyr specific groups.
-
-if MCUMGR_GRP_ZEPHYR_BASIC
-config MCUMGR_GRP_BASIC_CMD_STORAGE_ERASE
-	bool "Enables storage erase command"
-	help
-	  Enables command that allows to erase storage partition.
-
-module=MGMT_SETTINGS
-module-dep=LOG
-module-str=SETTINGS
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
-
-endif
+rsource "zephyr_grp/Kconfig"
 
 endmenu
 
-config MCUMGR_SMP_BT
+menu "Transports and Transport Related Configuration Options"
+
+config MCUMGR_SMP_REASSEMBLY
+	bool
+	help
+	  Enable structures and functions needed for packet reassembly by SMP backend.
+
+config MCUMGR_BUF_COUNT
+	int "Number of mcumgr buffers"
+	default 2 if MCUMGR_SMP_UDP
+	default 4
+	help
+	  The number of net_bufs to allocate for mcumgr.  These buffers are
+	  used for both requests and responses.
+
+config MCUMGR_BUF_SIZE
+	int "Size of each mcumgr buffer"
+	default 2048 if MCUMGR_SMP_UDP
+	default 384
+	help
+	  The size, in bytes, of each mcumgr buffer.  This value must satisfy
+	  the following relation:
+	  MCUMGR_BUF_SIZE >= transport-specific-MTU + transport-overhead
+	  In case when MCUMGR_SMP_SHELL is enabled this value should be set to
+	  at least SHELL_BACKEND_DUMMY_BUF_SIZE + 32.
+
+config MCUMGR_BUF_USER_DATA_SIZE
+	int "Size of mcumgr buffer user data"
+	default 24 if MCUMGR_SMP_UDP && MCUMGR_SMP_UDP_IPV6
+	default 8 if MCUMGR_SMP_UDP && MCUMGR_SMP_UDP_IPV4
+	default 4
+	help
+	  The size, in bytes, of user data to allocate for each mcumgr buffer.
+
+	  Different mcumgr transports impose different requirements for this
+	  setting. A value of 4 is sufficient for UART, shell, and bluetooth.
+	  For UDP, the userdata must be large enough to hold a IPv4/IPv6 address.
+
+
+menuconfig MCUMGR_SMP_BT
 	bool "Bluetooth mcumgr SMP transport"
 	select BT
 	select BT_PERIPHERAL
@@ -362,6 +147,14 @@ config MCUMGR_SMP_BT
 
 if MCUMGR_SMP_BT
 
+config MCUMGR_SMP_REASSEMBLY_BT
+	bool "Reassemble packets in Bluetooth SMP transport"
+	select MCUMGR_SMP_REASSEMBLY
+	help
+	  When enabled, the SMP BT transport will buffer and reassemble received
+	  packet fragments before passing it for further processing.
+
+
 config MCUMGR_SMP_BT_AUTHEN
 	bool "Authenticated requirement for Bluetooth mcumgr SMP transport"
 	select BT_SMP
@@ -370,55 +163,68 @@ config MCUMGR_SMP_BT_AUTHEN
 	  Enables encrypted and authenticated connection requirement to
 	  Bluetooth SMP transport.
 
-config MCUMGR_SMP_BT_LATENCY_CONTROL
-	bool "Request low latency connection when handling SMP commands"
+config MCUMGR_SMP_BT_CONN_PARAM_CONTROL
+	bool "Request specific connection parameters for SMP packet exchange"
 	depends on SYSTEM_WORKQUEUE_PRIORITY < 0
+	depends on BT_GAP_PERIPHERAL_PREF_PARAMS
 	help
-	  Enables support for requesting low latency connection parameter when
+	  Enables support for requesting specific connection parameters when
 	  SMP commands are handled. This option allows to speed up the command
 	  exchange process.
 	  Its recommended to enable this if SMP is used for DFU.
 
-config MCUMGR_SMP_BT_LATENCY_CONTROL_DEFAULT_LATENCY
-	int "Default value for connection latency"
-	depends on MCUMGR_SMP_BT_LATENCY_CONTROL
-	default BT_PERIPHERAL_PREF_LATENCY if BT_GAP_PERIPHERAL_PREF_PARAMS
-	default 99
+if MCUMGR_SMP_BT_CONN_PARAM_CONTROL
+
+config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MIN_INT
+	int "Minimum connection interval for SMP packet exchange"
+	default 6
+	range 6 3200
+	help
+	  Minimum connection interval in 1.25ms units used during the exchange of SMP packets.
+
+config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MAX_INT
+	int "Maximum connection interval for SMP packet exchange"
+	default 9
+	range MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MIN_INT 3200
+	help
+	  Maximum connection interval in 1.25ms units used during the exchange of SMP packets.
+
+config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_LATENCY
+	int "Peripheral latency for SMP packet exchange"
+	default 0
 	range 0 499
 	help
-	  The value is a default connection latency that is used when restoring
-	  from low latency mode.
+	  Peripheral latency in Connection Intervals used during the exchange of SMP packets.
 
-config MCUMGR_SMP_BT_LATENCY_CONTROL_RESTORE_TIME
-	int "Connection latency restore time in milliseconds"
-	depends on MCUMGR_SMP_BT_LATENCY_CONTROL
-	default 5000
-	range 1 65535
+config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_TIMEOUT
+	int "Supervision timeout for SMP packet exchange"
+	default 42
+	range 10 3200
 	help
-	  The value is a time after which connection latency is restored
-	  to default value
-	  (:kconfig:`MCUMGR_SMP_BT_LATENCY_CONTROL_DEFAULT_LATENCY`). Latency
-	  restoration time could take up to twice as long as specified time.
-	  This is because of limiting CPU time needed to support this feature.
-	  The implementation periodically checks if the low latency is still
-	  needed every :kconfig:`MCUMGR_SMP_BT_LATENCY_CONTROL_RESTORE_TIME`.
-	  The default latency is restored during check only if there was no SMP
-	  command exchanged in period before the check
+	  Supervision timeout in 10ms used during the exchange of SMP packets.
 
-config MCUMGR_SMP_BT_LATENCY_CONTROL_RESTORE_RETRY_TIME
-	int "Connection latency restore retry time in milliseconds"
-	depends on MCUMGR_SMP_BT_LATENCY_CONTROL
+config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_RESTORE_TIME
+	int "Connection parameters restore time in milliseconds"
+	default 5000
+	range 1000 65535
+	help
+	  The value is a time of inactivity on the SMP characteristic after which
+	  connection parameters are restored to peripheral preferred values
+	  (BT_GAP_PERIPHERAL_PREF_PARAMS).
+
+config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_RETRY_TIME
+	int "Connection parameters update retry time in milliseconds"
 	default 1000
 	range 1 5000
 	help
-	  In case connection latency restoration fails due to an error, this
-	  option specifies the time after retry to set the default latency
-	  (:kconfig:`MCUMGR_SMP_BT_LATENCY_CONTROL_DEFAULT_LATENCY`) would be
-	  executed.
+	  In case connection parameters update fails due to an error, this
+	  option specifies the time of the next update attempt.
+
+endif # MCUMGR_SMP_BT_CONN_PARAM_CONTROL
 
 endif # MCUMGR_SMP_BT
 
-config MCUMGR_SMP_SHELL
+menuconfig MCUMGR_SMP_SHELL
 	bool "Shell mcumgr SMP transport"
 	select SHELL
 	select SHELL_BACKEND_SERIAL
@@ -445,7 +251,7 @@ config MCUMGR_SMP_SHELL_RX_BUF_COUNT
 
 endif # MCUMGR_SMP_SHELL
 
-config MCUMGR_SMP_UART
+menuconfig MCUMGR_SMP_UART
 	bool "UART mcumgr SMP transport"
 	select UART_MCUMGR
 	select BASE64
@@ -492,7 +298,7 @@ config MCUMGR_SMP_UART_MTU
 	  MCUMGR_SMP_UART_MTU <= MCUMGR_BUF_SIZE + 2
 
 
-config MCUMGR_SMP_UDP
+menuconfig MCUMGR_SMP_UDP
 	bool "UDP mcumgr SMP transport"
 	select NETWORKING
 	select NET_UDP
@@ -547,34 +353,10 @@ config MCUMGR_SMP_UDP_MTU
 
 endif # MCUMGR_SMP_UDP
 
-config MCUMGR_BUF_COUNT
-	int "Number of mcumgr buffers"
-	default 2 if MCUMGR_SMP_UDP
-	default 4
-	help
-	  The number of net_bufs to allocate for mcumgr.  These buffers are
-	  used for both requests and responses.
+endmenu
 
-config MCUMGR_BUF_SIZE
-	int "Size of each mcumgr buffer"
-	default 2048 if MCUMGR_SMP_UDP
-	default 384
-	help
-	  The size, in bytes, of each mcumgr buffer.  This value must satisfy
-	  the following relation:
-	  MCUMGR_BUF_SIZE >= transport-specific-MTU + transport-overhead
-	  In case when MCUMGR_SMP_SHELL is enabled this value should be set to
-	  at least SHELL_BACKEND_DUMMY_BUF_SIZE + 32.
+module = MCUMGR_SMP
+module-str = mcumgr_smp
+source "subsys/logging/Kconfig.template.log_config"
 
-config MCUMGR_BUF_USER_DATA_SIZE
-	int "Size of mcumgr buffer user data"
-	default 24 if MCUMGR_SMP_UDP && MCUMGR_SMP_UDP_IPV6
-	default 8 if MCUMGR_SMP_UDP && MCUMGR_SMP_UDP_IPV4
-	default 4
-	help
-	  The size, in bytes, of user data to allocate for each mcumgr buffer.
-
-	  Different mcumgr transports impose different requirements for this
-	  setting. A value of 4 is sufficient for UART, shell, and bluetooth.
-	  For UDP, the userdata must be large enough to hold a IPv4/IPv6 address.
 endif # MCUMGR

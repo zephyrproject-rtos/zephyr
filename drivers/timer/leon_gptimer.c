@@ -12,9 +12,9 @@
 
 #define DT_DRV_COMPAT gaisler_gptimer
 
-#include <device.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
 
 /* GPTIMER subtimer increments each microsecond. */
 #define PRESCALER (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000000)

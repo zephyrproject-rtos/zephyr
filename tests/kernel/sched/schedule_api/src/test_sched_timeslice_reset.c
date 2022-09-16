@@ -143,8 +143,13 @@ void test_slice_reset(void)
 	uint32_t slice_ticks = k_ms_to_ticks_ceil32(SLICE_SIZE);
 	uint32_t half_slice_cyc = k_ticks_to_cyc_ceil32(slice_ticks / 2);
 
-	__ASSERT(slice_ticks % 2 == 0,
-		 "timeslice in ticks much be divisible by two");
+	if (slice_ticks % 2 != 0) {
+		uint32_t deviation = k_ticks_to_cyc_ceil32(1);
+		/* slice_ticks can't be divisible by two, so we add the
+		 * (slice_ticks / 2) floating part back to half_slice_cyc.
+		 */
+		half_slice_cyc = half_slice_cyc + (deviation / 2);
+	}
 
 	for (int j = 0; j < 2; j++) {
 		k_sem_reset(&sema);

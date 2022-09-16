@@ -10,38 +10,63 @@
 
 #include <errno.h>
 
-#include <zephyr.h>
-#include <init.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
 
-#include <mgmt/mcumgr/smp_bt.h>
-#include <mgmt/mcumgr/buf.h>
+#include <zephyr/mgmt/mcumgr/smp_bt.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 
-#include <mgmt/mcumgr/smp.h>
+#include <zephyr/mgmt/mcumgr/smp.h>
+#include "smp_reassembly.h"
 
-#define RESTORE_TIME	   COND_CODE_1(CONFIG_MCUMGR_SMP_BT_LATENCY_CONTROL, \
-				(CONFIG_MCUMGR_SMP_BT_LATENCY_CONTROL_RESTORE_TIME), (0))
-#define RESTORE_RETRY_TIME COND_CODE_1(CONFIG_MCUMGR_SMP_BT_LATENCY_CONTROL, \
-				(CONFIG_MCUMGR_SMP_BT_LATENCY_CONTROL_RESTORE_RETRY_TIME), (0))
-#define DEFAULT_LATENCY	   COND_CODE_1(CONFIG_MCUMGR_SMP_BT_LATENCY_CONTROL, \
-				(CONFIG_MCUMGR_SMP_BT_LATENCY_CONTROL_DEFAULT_LATENCY), (0))
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
 
+#define RESTORE_TIME	COND_CODE_1(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL, \
+				(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_RESTORE_TIME), \
+				(0))
+#define RETRY_TIME	COND_CODE_1(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL, \
+				(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_RETRY_TIME), \
+				(0))
+
+#define CONN_PARAM_SMP	COND_CODE_1(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL,		  \
+				BT_LE_CONN_PARAM(					  \
+					CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MIN_INT,  \
+					CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MAX_INT,  \
+					CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_LATENCY,  \
+					CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_TIMEOUT), \
+					(NULL))
+#define CONN_PARAM_PREF	COND_CODE_1(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL, \
+				BT_LE_CONN_PARAM(			     \
+					CONFIG_BT_PERIPHERAL_PREF_MIN_INT,   \
+					CONFIG_BT_PERIPHERAL_PREF_MAX_INT,   \
+					CONFIG_BT_PERIPHERAL_PREF_LATENCY,   \
+					CONFIG_BT_PERIPHERAL_PREF_TIMEOUT),  \
+				(NULL))
+
+#ifdef CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL
+/* Verification of SMP Connection Parameters configuration that is not possible in the Kconfig. */
+BUILD_ASSERT((CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_TIMEOUT * 4U) >
+	     ((1U + CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_LATENCY) *
+	      CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MAX_INT));
+#endif
 
 struct smp_bt_user_data {
 	struct bt_conn *conn;
 };
 
 enum {
-	CONN_LOW_LATENCY_ENABLED	= BIT(0),
-	CONN_LOW_LATENCY_REQUIRED	= BIT(1),
+	CONN_PARAM_SMP_REQUESTED = BIT(0),
 };
 
 struct conn_param_data {
 	struct bt_conn *conn;
 	struct k_work_delayable dwork;
-	uint8_t latency_state;
+	struct k_work_delayable ework;
+	uint8_t state;
 };
 
 static struct zephyr_smp_transport smp_bt_transport;
@@ -60,7 +85,7 @@ static struct bt_uuid_128 smp_bt_chr_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xda2e7828, 0xfbce, 0x4e01, 0xae9e, 0x261174997c48));
 
 /* Helper function that allocates conn_param_data for a conn. */
-static struct conn_param_data *alloc_conn_param_data(struct bt_conn *conn)
+static struct conn_param_data *conn_param_data_alloc(struct bt_conn *conn)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(conn_data); i++) {
 		if (conn_data[i].conn == NULL) {
@@ -75,7 +100,7 @@ static struct conn_param_data *alloc_conn_param_data(struct bt_conn *conn)
 }
 
 /* Helper function that returns conn_param_data associated with a conn. */
-static struct conn_param_data *get_conn_param_data(const struct bt_conn *conn)
+static struct conn_param_data *conn_param_data_get(const struct bt_conn *conn)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(conn_data); i++) {
 		if (conn_data[i].conn == conn) {
@@ -89,63 +114,51 @@ static struct conn_param_data *get_conn_param_data(const struct bt_conn *conn)
 }
 
 /* Sets connection parameters for a given conn. */
-static void set_conn_latency(struct bt_conn *conn, bool low_latency)
+static void conn_param_set(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
-	struct bt_le_conn_param params;
-	struct conn_param_data *cpd;
-	struct bt_conn_info info;
 	int ret = 0;
+	struct conn_param_data *cpd = conn_param_data_get(conn);
 
-	cpd = get_conn_param_data(conn);
-
-	ret = bt_conn_get_info(conn, &info);
-	__ASSERT_NO_MSG(!ret);
-
-	if ((low_latency && (info.le.latency == 0)) ||
-	    ((!low_latency) && (info.le.latency == DEFAULT_LATENCY))) {
-		/* Already updated. */
-		return;
-	}
-
-	params.interval_min = info.le.interval;
-	params.interval_max = info.le.interval;
-	params.latency = (low_latency) ? (0) : (DEFAULT_LATENCY);
-	params.timeout = info.le.timeout;
-
-	ret = bt_conn_le_param_update(cpd->conn, &params);
+	ret = bt_conn_le_param_update(conn, param);
 	if (ret && (ret != -EALREADY)) {
-		if (!low_latency) {
-			/* Try again to avoid stucking in low latency. */
-			(void)k_work_reschedule(&cpd->dwork, K_MSEC(RESTORE_RETRY_TIME));
-		}
+		/* Try again to avoid being stuck with incorrect connection parameters. */
+		(void)k_work_reschedule(&cpd->ework, K_MSEC(RETRY_TIME));
+	} else {
+		(void)k_work_cancel_delayable(&cpd->ework);
 	}
 }
 
 
-/* Work handler function for restoring the default latency for the connection. */
-static void restore_default_latency(struct k_work *work)
+/* Work handler function for restoring the preferred connection parameters for the connection. */
+static void conn_param_on_pref_restore(struct k_work *work)
 {
-	struct conn_param_data *cpd;
+	struct conn_param_data *cpd = CONTAINER_OF(work, struct conn_param_data, dwork);
 
-	cpd = CONTAINER_OF(work, struct conn_param_data, dwork);
-
-	if (cpd->latency_state & CONN_LOW_LATENCY_REQUIRED) {
-		cpd->latency_state &= ~CONN_LOW_LATENCY_REQUIRED;
-		(void)k_work_reschedule(&cpd->dwork, K_MSEC(RESTORE_TIME));
-	} else {
-		set_conn_latency(cpd->conn, false);
-	}
+	conn_param_set(cpd->conn, CONN_PARAM_PREF);
+	cpd->state &= ~CONN_PARAM_SMP_REQUESTED;
 }
 
-static void enable_low_latency(struct bt_conn *conn)
+/* Work handler function for retrying on conn negotiation API error. */
+static void conn_param_on_error_retry(struct k_work *work)
 {
-	struct conn_param_data *cpd = get_conn_param_data(conn);
+	struct conn_param_data *cpd = CONTAINER_OF(work, struct conn_param_data, ework);
+	struct bt_le_conn_param *param = (cpd->state & CONN_PARAM_SMP_REQUESTED) ?
+		CONN_PARAM_SMP : CONN_PARAM_PREF;
 
-	if (cpd->latency_state & CONN_LOW_LATENCY_ENABLED) {
-		cpd->latency_state |= CONN_LOW_LATENCY_REQUIRED;
-	} else {
-		set_conn_latency(conn, true);
+	conn_param_set(cpd->conn, param);
+}
+
+static void conn_param_smp_enable(struct bt_conn *conn)
+{
+	struct conn_param_data *cpd = conn_param_data_get(conn);
+
+	if (!(cpd->state & CONN_PARAM_SMP_REQUESTED)) {
+		conn_param_set(conn, CONN_PARAM_SMP);
+		cpd->state |= CONN_PARAM_SMP_REQUESTED;
 	}
+
+	/* SMP characteristic in use; refresh the restore timeout. */
+	(void)k_work_reschedule(&cpd->dwork, K_MSEC(RESTORE_TIME));
 }
 
 /**
@@ -156,29 +169,106 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 				const void *buf, uint16_t len, uint16_t offset,
 				uint8_t flags)
 {
+#ifdef CONFIG_MCUMGR_SMP_REASSEMBLY_BT
+	int ret;
+	bool started;
+
+	started = (zephyr_smp_reassembly_expected(&smp_bt_transport) >= 0);
+
+	LOG_DBG("started = %s, buf len = %d", started ? "true" : "false", len);
+	LOG_HEXDUMP_DBG(buf, len, "buf = ");
+
+	ret = zephyr_smp_reassembly_collect(&smp_bt_transport, buf, len);
+	LOG_DBG("collect = %d", ret);
+
+	/*
+	 * Collection can fail only due to failing to allocate memory or by receiving
+	 * more data than expected.
+	 */
+	if (ret == -ENOMEM) {
+		/* Failed to collect the buffer */
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	} else if (ret < 0) {
+		/* Failed operation on already allocated buffer, drop the packet and report
+		 * error.
+		 */
+		struct smp_bt_user_data *ud =
+			(struct smp_bt_user_data *)zephyr_smp_reassembly_get_ud(&smp_bt_transport);
+
+		if (ud != NULL) {
+			bt_conn_unref(ud->conn);
+			ud->conn = NULL;
+		}
+
+		zephyr_smp_reassembly_drop(&smp_bt_transport);
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+	}
+
+	if (!started) {
+		/*
+		 * Transport context is attached to the buffer after first fragment
+		 * has been collected.
+		 */
+		struct smp_bt_user_data *ud = zephyr_smp_reassembly_get_ud(&smp_bt_transport);
+
+		if (IS_ENABLED(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL)) {
+			conn_param_smp_enable(conn);
+		}
+
+		ud->conn = bt_conn_ref(conn);
+	}
+
+	/* No more bytes are expected for this packet */
+	if (ret == 0) {
+		zephyr_smp_reassembly_complete(&smp_bt_transport, false);
+	}
+
+	/* BT expects entire len to be consumed */
+	return len;
+#else
 	struct smp_bt_user_data *ud;
 	struct net_buf *nb;
 
 	nb = mcumgr_buf_alloc();
 	if (!nb) {
+		LOG_DBG("failed net_buf alloc for SMP packet");
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
+
+	if (net_buf_tailroom(nb) < len) {
+		LOG_DBG("SMP packet len (%zu) > net_buf len (%zu)",
+			len, net_buf_tailroom(nb));
+		mcumgr_buf_free(nb);
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	}
+
 	net_buf_add_mem(nb, buf, len);
 
 	ud = net_buf_user_data(nb);
 	ud->conn = bt_conn_ref(conn);
 
-	if (IS_ENABLED(CONFIG_MCUMGR_SMP_BT_LATENCY_CONTROL)) {
-		enable_low_latency(conn);
+	if (IS_ENABLED(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL)) {
+		conn_param_smp_enable(conn);
 	}
 
 	zephyr_smp_rx_req(&smp_bt_transport, nb);
 
 	return len;
+#endif
 }
 
 static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
+#ifdef CONFIG_MCUMGR_SMP_REASSEMBLY_BT
+	if (zephyr_smp_reassembly_expected(&smp_bt_transport) >= 0 && value == 0) {
+		struct smp_bt_user_data *ud = zephyr_smp_reassembly_get_ud(&smp_bt_transport);
+
+		bt_conn_unref(ud->conn);
+		ud->conn = NULL;
+
+		zephyr_smp_reassembly_drop(&smp_bt_transport);
+	}
+#endif
 }
 
 static struct bt_gatt_attr smp_bt_attrs[] = {
@@ -303,51 +393,36 @@ int smp_bt_unregister(void)
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err == 0) {
-		alloc_conn_param_data(conn);
+		conn_param_data_alloc(conn);
 	}
 }
 
 /* BT disconnected callback. */
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct conn_param_data *cpd = get_conn_param_data(conn);
+	struct conn_param_data *cpd = conn_param_data_get(conn);
 
 	/* Cancel work if ongoing. */
 	(void)k_work_cancel_delayable(&cpd->dwork);
+	(void)k_work_cancel_delayable(&cpd->ework);
 
 	/* Clear cpd. */
-	cpd->latency_state = 0;
+	cpd->state = 0;
 	cpd->conn = NULL;
 }
 
-/* BT LE connection parameters updated callback. */
-static void le_param_updated(struct bt_conn *conn, uint16_t interval,
-			     uint16_t latency, uint16_t timeout)
-{
-	struct conn_param_data *cpd = get_conn_param_data(conn);
-
-	if (latency == 0) {
-		cpd->latency_state |= CONN_LOW_LATENCY_ENABLED;
-		cpd->latency_state &= ~CONN_LOW_LATENCY_REQUIRED;
-		(void)k_work_reschedule(&cpd->dwork, K_MSEC(RESTORE_TIME));
-	} else {
-		cpd->latency_state &= ~CONN_LOW_LATENCY_ENABLED;
-		(void)k_work_cancel_delayable(&cpd->dwork);
-	}
-}
-
-static void init_latency_control_support(void)
+static void conn_param_control_init(void)
 {
 	/* Register BT callbacks */
 	static struct bt_conn_cb conn_callbacks = {
 		.connected = connected,
 		.disconnected = disconnected,
-		.le_param_updated = le_param_updated,
 	};
 	bt_conn_cb_register(&conn_callbacks);
 
 	for (size_t i = 0; i < ARRAY_SIZE(conn_data); i++) {
-		k_work_init_delayable(&conn_data[i].dwork, restore_default_latency);
+		k_work_init_delayable(&conn_data[i].dwork, conn_param_on_pref_restore);
+		k_work_init_delayable(&conn_data[i].ework, conn_param_on_error_retry);
 	}
 }
 
@@ -355,8 +430,8 @@ static int smp_bt_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	if (IS_ENABLED(CONFIG_MCUMGR_SMP_BT_LATENCY_CONTROL)) {
-		init_latency_control_support();
+	if (IS_ENABLED(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL)) {
+		conn_param_control_init();
 	}
 
 	zephyr_smp_transport_init(&smp_bt_transport, smp_bt_tx_pkt,

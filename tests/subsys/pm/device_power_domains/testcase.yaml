@@ -1,4 +1,4 @@
 tests:
-  subsys.pm.device_power_domains:
+  pm.power_domain.device:
     tags: pm
     platform_allow: qemu_cortex_m3

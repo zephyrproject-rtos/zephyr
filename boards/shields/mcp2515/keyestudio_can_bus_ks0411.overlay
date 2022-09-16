@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+
+	mcp2515: can@0 {
+		compatible = "microchip,mcp2515";
+		spi-max-frequency = <1000000>;
+		int-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>; /* D8 */
+		status = "okay";
+		label = "MCP2515";
+		reg = <0x0>;
+		osc-freq = <16000000>;
+		bus-speed = <125000>;
+		sjw = <1>;
+		sample-point = <875>;
+
+		can-transceiver {
+			max-bitrate = <1000000>;
+		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,canbus = &mcp2515;
+	};
+};

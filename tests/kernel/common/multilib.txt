@@ -6,7 +6,7 @@ Some architectures support different ISA variants, each backed a different
 multilib in a same compiler. Selecting wrong multilib may have adverse
 effects on performance, or sometime produce broken executables altogether
 (for example, ARM Cortex-M requires thumb2 multilib and will be broken with
-default ("arm") multilib or "thumb" multlib). This app is a smoke-test
+default ("arm") multilib or "thumb" multilib). This app is a smoke-test
 for selecting non-wrong multilib - it uses operation(s) which guaranteedly
 will call support routine(s) in libgcc and checks for expected result.
 

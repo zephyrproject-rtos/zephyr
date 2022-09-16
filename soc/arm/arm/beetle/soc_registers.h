@@ -95,9 +95,9 @@ struct syscon {
 	/* Offset: 0x0e4 (r/w) event interface control register */
 	volatile uint32_t eventcfg;
 	volatile uint32_t reserved6[2];
-	/* Offset: 0x0f0 (r/w) sram power control overide */
+	/* Offset: 0x0f0 (r/w) sram power control override */
 	volatile uint32_t pwrovride0;
-	/* Offset: 0x0f4 (r/w) embedded flash power control overide */
+	/* Offset: 0x0f4 (r/w) embedded flash power control override */
 	volatile uint32_t pwrovride1;
 	/* Offset: 0x0f8 (r/ ) memory status register */
 	volatile uint32_t memorystatus;

@@ -18,18 +18,24 @@ module-str = CAN
 source "subsys/logging/Kconfig.template.log_config"
 
 config CAN_INIT_PRIORITY
-	int "CAN init priority"
+	int "CAN driver init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  CAN driver device initialization priority.
 
 config CAN_SHELL
-	bool "Enable CAN Shell"
+	bool "CAN Shell"
 	default y
 	depends on SHELL
 	select POLL
 	help
 	  Enable CAN Shell for testing.
+
+config CAN_STATS
+	bool "CAN controller device statistics"
+	depends on STATS
+	help
+	  Enable CAN controller device statistics.
 
 config CAN_HAS_CANFD
 	bool
@@ -60,24 +66,20 @@ config CANFD_MAX_DLC
 	  optimize memory consumption.
 endif # CAN_FD_MODE
 
-config CAN_INIT_PRIORITY
-	int "CAN driver init priority"
-	default 80
+config CAN_SOCKETCAN_INIT_PRIORITY
+	int "socketCAN net device init priority"
+	default 81
+	depends on NET_SOCKETS_CAN
 	help
-	  CAN device driver initialization priority.
+	  socketCAN net device initialization priority.
 	  Do not mess with it unless you know what you are doing.
 	  Note that the priority needs to be lower than the net stack
-	  so that it can start before the networking sub-system.
-
-config CAN_WORKQ_FRAMES_BUF_CNT
-	int "Work queue buffer frame count (DEPRECATED)"
-	default 4
-	range 1 65534
-	help
-	  Number of frames in the buffer of a zcan_work.
+	  so that it can start before the networking sub-system,
+	  and higher than the CAN driver so that it can use the underlaying
+	  driver when starting.
 
 config CAN_RX_TIMESTAMP
-	bool "Enable receiving timestamps"
+	bool "Receiving timestamps"
 	depends on CAN_HAS_RX_TIMESTAMP
 	help
 	  This option enables a timestamp value of the CAN free running timer.
@@ -85,7 +87,7 @@ config CAN_RX_TIMESTAMP
 	  is initialized.
 
 config CAN_AUTO_BUS_OFF_RECOVERY
-	bool "Enable automatic recovery from bus-off"
+	bool "Automatic recovery from bus-off"
 	default y
 	help
 	  This option enables the automatic bus-off recovery according to
@@ -102,6 +104,7 @@ source "drivers/can/Kconfig.mcp2515"
 source "drivers/can/Kconfig.mcan"
 source "drivers/can/Kconfig.rcar"
 source "drivers/can/Kconfig.loopback"
-source "drivers/can/Kconfig.net"
+
+source "drivers/can/transceiver/Kconfig"
 
 endif # CAN

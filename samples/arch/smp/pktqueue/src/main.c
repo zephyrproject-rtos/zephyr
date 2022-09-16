@@ -49,7 +49,7 @@ void init_datagram_queue(struct phdr_desc_queue *queue, int queue_num)
 			else
 				descriptors[queue_num][i].ptr[j] = 0;
 		}
-		/* Compute crc for further comparisson */
+		/* Compute crc for further comparison */
 		uint16_t crc;
 
 		crc = crc16(POLYNOMIAL, 0x0000,

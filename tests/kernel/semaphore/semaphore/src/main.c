@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 #include <ztest_error_hook.h>
 
 /* Macro declarations */
@@ -17,7 +17,7 @@
 #define sem_take_from_isr(sema) irq_offload(isr_sem_take, (const void *)sema)
 
 #define SEM_TIMEOUT (K_MSEC(100))
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define TOTAL_THREADS_WAITING (5)
 
 #define SEC2MS(s) ((s) * 1000)
@@ -181,17 +181,18 @@ void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
 /* First function for mutual exclusion test */
 void sem_queue_mutual_exclusion1(void *p1, void *p2, void *p3)
 {
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 10000; i++) {
 		expect_k_sem_take_nomsg(&mut_sem, K_FOREVER, 0);
 
 		/* in that function critical section makes critical var +1 */
+		uint32_t tmp = critical_var;
 		critical_var += 1;
 
 		/* Check that common value was not changed by another thread,
 		 * when semaphore is taken by current thread, and no other
 		 * thread can enter the critical section
 		 */
-		zassert_true(critical_var == 1, NULL);
+		zassert_true(critical_var == tmp + 1, NULL);
 		k_sem_give(&mut_sem);
 	}
 }
@@ -199,17 +200,18 @@ void sem_queue_mutual_exclusion1(void *p1, void *p2, void *p3)
 /* Second function for mutual exclusion test */
 void sem_queue_mutual_exclusion2(void *p1, void *p2, void *p3)
 {
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 10000; i++) {
 		expect_k_sem_take_nomsg(&mut_sem, K_FOREVER, 0);
 
 		/* in that function critical section makes critical var 0 */
+		uint32_t tmp = critical_var;
 		critical_var -= 1;
 
 		/* Check that common value was not changed by another thread,
 		 * when semaphore is taken by current thread, and no other
 		 * thread can enter the critical section
 		 */
-		zassert_true(critical_var == 0, NULL);
+		zassert_true(critical_var == tmp - 1, NULL);
 		k_sem_give(&mut_sem);
 	}
 }

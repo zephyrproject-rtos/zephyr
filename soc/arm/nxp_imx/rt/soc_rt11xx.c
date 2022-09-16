@@ -4,27 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <linker/sections.h>
-#include <linker/linker-defs.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/linker/linker-defs.h>
 #include <fsl_clock.h>
 #include <fsl_gpc.h>
 #include <fsl_pmu.h>
 #include <fsl_dcdc.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <fsl_flexspi_nor_boot.h>
-#include <dt-bindings/clock/imx_ccm_rev2.h>
+#include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"
 #include "usb_dc_mcux.h"
 #endif
 
-#if CONFIG_USB_DC_NXP_EHCI /* USB PHY condfiguration */
-#define BOARD_USB_PHY_D_CAL (0x0CU)
+#if CONFIG_USB_DC_NXP_EHCI /* USB PHY configuration */
+#define BOARD_USB_PHY_D_CAL (0x07U)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
@@ -372,6 +372,9 @@ static ALWAYS_INLINE void clock_init(void)
 	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
 	rootCfg.div = 10;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet1, &rootCfg);
+	/* Set ENET_REF_CLK as an output driven by ENET1_CLK_ROOT */
+	IOMUXC_GPR->GPR4 |= (IOMUXC_GPR_GPR4_ENET_REF_CLK_DIR(0x01U) |
+		IOMUXC_GPR_GPR4_ENET_TX_CLK_SEL(0x1U));
 #endif
 
 #ifdef CONFIG_PTP_CLOCK_MCUX
@@ -403,13 +406,35 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 #endif
 
+#ifdef CONFIG_DISPLAY_MCUX_ELCDIF
+	rootCfg.mux = kCLOCK_LCDIF_ClockRoot_MuxSysPll2Out;
+	rootCfg.div = 9;
+	CLOCK_SetRootClock(kCLOCK_Root_Lcdif, &rootCfg);
+#endif
+
 #ifdef CONFIG_COUNTER_MCUX_GPT
 	rootCfg.mux = kCLOCK_GPT1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Gpt1, &rootCfg);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay) && CONFIG_USB_DC_NXP_EHCI
+	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
+	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
+	USB_EhciPhyInit(kUSB_ControllerEhci0, CPU_XTAL_CLK_HZ, &usbPhyConfig);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb2), okay) && CONFIG_USB_DC_NXP_EHCI
+	CLOCK_EnableUsbhs1PhyPllClock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
+	CLOCK_EnableUsbhs1Clock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
+	USB_EhciPhyInit(kUSB_ControllerEhci1, CPU_XTAL_CLK_HZ, &usbPhyConfig);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC
 	/* Configure USDHC1 using  SysPll2Pfd2*/
 	rootCfg.mux = kCLOCK_USDHC1_ClockRoot_MuxSysPll2Pfd2;
 	rootCfg.div = 2;
@@ -436,60 +461,13 @@ static ALWAYS_INLINE void clock_init(void)
 	GPC_CM_EnableCpuSleepHold(GPC_CPU_MODE_CTRL_0, false);
 	GPC_CM_EnableCpuSleepHold(GPC_CPU_MODE_CTRL_1, false);
 
-#ifdef CONFIG_SEGGER_RTT_SECTION_DTCM
+#if !defined(CONFIG_PM)
 	/* Enable the AHB clock while the CM7 is sleeping to allow debug access
 	 * to TCM
 	 */
 	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_CM7_FORCE_HCLK_EN_MASK;
 #endif
 }
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
-
-/* Usdhc driver needs to re-configure pinmux
- * Pinmux depends on board design.
- * From the perspective of Usdhc driver,
- * it can't access board specific function.
- * So SoC provides this for board to register
- * its usdhc pinmux and for usdhc to access
- * pinmux.
- */
-
-static usdhc_pin_cfg_cb g_usdhc_pin_cfg_cb;
-
-void imxrt_usdhc_pinmux_cb_register(usdhc_pin_cfg_cb cb)
-{
-	g_usdhc_pin_cfg_cb = cb;
-}
-
-void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
-	uint32_t speed, uint32_t strength)
-{
-	if (g_usdhc_pin_cfg_cb)
-		g_usdhc_pin_cfg_cb(nusdhc, init,
-			speed, strength);
-}
-
-/* Usdhc driver needs to reconfigure the dat3 line to a pullup in order to
- * detect an SD card on the bus. Expose a callback to do that here. The board
- * must register this callback in its init function.
- */
-static usdhc_dat3_cfg_cb g_usdhc_dat3_cfg_cb;
-
-void imxrt_usdhc_dat3_cb_register(usdhc_dat3_cfg_cb cb)
-{
-	g_usdhc_dat3_cfg_cb = cb;
-}
-
-void imxrt_usdhc_dat3_pull(bool pullup)
-{
-	if (g_usdhc_dat3_cfg_cb) {
-		g_usdhc_dat3_cfg_cb(pullup);
-	}
-}
-
-#endif
-
 
 #if CONFIG_I2S_MCUX_SAI
 void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
@@ -518,6 +496,63 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
 		return;
 	}
 }
+#endif
+
+#if CONFIG_MIPI_DSI
+void imxrt_pre_init_display_interface(void)
+{
+	/* elcdif output to MIPI DSI */
+	CLOCK_EnableClock(kCLOCK_Video_Mux);
+	VIDEO_MUX->VID_MUX_CTRL.CLR = VIDEO_MUX_VID_MUX_CTRL_MIPI_DSI_SEL_MASK;
+
+	/* Power on and isolation off. */
+	PGMC_BPC4->BPC_POWER_CTRL |= (PGMC_BPC_BPC_POWER_CTRL_PSW_ON_SOFT_MASK |
+				PGMC_BPC_BPC_POWER_CTRL_ISO_OFF_SOFT_MASK);
+
+	/* Assert MIPI reset. */
+	IOMUXC_GPR->GPR62 &= ~(IOMUXC_GPR_GPR62_MIPI_DSI_PCLK_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_ESC_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_BYTE_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_DPI_SOFT_RESET_N_MASK);
+
+	/* setup clock */
+	const clock_root_config_t mipiEscClockConfig = {
+		.clockOff = false,
+		.mux = 4,
+		.div = 11,
+	};
+
+	CLOCK_SetRootClock(kCLOCK_Root_Mipi_Esc, &mipiEscClockConfig);
+
+	/* TX esc clock */
+	const clock_group_config_t mipiEscClockGroupConfig = {
+		.clockOff = false,
+		.resetDiv = 2,
+		.div0 = 2,
+	};
+
+	CLOCK_SetGroupConfig(kCLOCK_Group_MipiDsi, &mipiEscClockGroupConfig);
+
+	const clock_root_config_t mipiDphyRefClockConfig = {
+		.clockOff = false,
+		.mux = 1,
+		.div = 1,
+	};
+
+	CLOCK_SetRootClock(kCLOCK_Root_Mipi_Ref, &mipiDphyRefClockConfig);
+
+	/* Deassert PCLK and ESC reset. */
+	IOMUXC_GPR->GPR62 |= (IOMUXC_GPR_GPR62_MIPI_DSI_PCLK_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_ESC_SOFT_RESET_N_MASK);
+}
+
+void imxrt_post_init_display_interface(void)
+{
+	/* deassert BYTE and DBI reset */
+	IOMUXC_GPR->GPR62 |= (IOMUXC_GPR_GPR62_MIPI_DSI_BYTE_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_DPI_SOFT_RESET_N_MASK);
+}
+
 #endif
 
 /**
@@ -601,5 +636,19 @@ static int imxrt_init(const struct device *arg)
 	irq_unlock(oldLevel);
 	return 0;
 }
+
+#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+void z_arm_platform_init(void)
+{
+#if (DT_DEP_ORD(DT_NODELABEL(ocram)) != DT_DEP_ORD(DT_CHOSEN(zephyr_sram))) && \
+	CONFIG_OCRAM_NOCACHE
+	/* Copy data from flash to OCRAM */
+	memcpy(&__ocram_data_start, &__ocram_data_load_start,
+		(&__ocram_data_end - &__ocram_data_start));
+	/* Zero BSS region */
+	memset(&__ocram_bss_start, 0, (&__ocram_bss_end - &__ocram_bss_start));
+#endif
+}
+#endif
 
 SYS_INIT(imxrt_init, PRE_KERNEL_1, 0);

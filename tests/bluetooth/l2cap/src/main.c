@@ -6,13 +6,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stddef.h>
 #include <ztest.h>
 
-#include <bluetooth/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/l2cap.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/l2cap.h>
 
 static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
@@ -38,7 +38,9 @@ static struct bt_l2cap_server test_inv_server = {
 	.psm		= 0xffff,
 };
 
-void test_l2cap_register(void)
+ZTEST_SUITE(test_l2cap, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(test_l2cap, test_l2cap_register)
 {
 	/* Attempt to register server with PSM auto allocation */
 	zassert_false(bt_l2cap_server_register(&test_server),
@@ -67,12 +69,4 @@ void test_l2cap_register(void)
 	/* Attempt to re-register server with dynamic PSM */
 	zassert_true(bt_l2cap_server_register(&test_dyn_server),
 		     "Test dynamic PSM server duplicate succeeded");
-}
-
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_l2cap,
-			 ztest_unit_test(test_l2cap_register));
-	ztest_run_test_suite(test_l2cap);
 }

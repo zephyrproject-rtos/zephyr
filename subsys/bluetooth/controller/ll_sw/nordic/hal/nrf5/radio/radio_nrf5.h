@@ -29,6 +29,9 @@
 #define RADIO_EVENTS_PHYEND_DELAY_US 16
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
+/* Delay of CCM TASKS_CRYPT start in number of bits for Radio Bit counter */
+#define CCM_TASKS_CRYPT_DELAY_BITS 3
+
 /* EVENTS_TIMER capture register used for sampling TIMER time-stamps. */
 #define HAL_EVENT_TIMER_SAMPLE_CC_OFFSET 3
 #define HAL_EVENT_TIMER_SAMPLE_TASK NRF_TIMER_TASK_CAPTURE3
@@ -52,8 +55,10 @@
 #elif defined(CONFIG_SOC_NRF52833)
 #include "radio_nrf52833.h"
 #elif defined(CONFIG_SOC_NRF52840)
+#include <nrf52_erratas.h>
 #include "radio_nrf52840.h"
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
+#include <hal/nrf_vreqctrl.h>
 #include "radio_nrf5340.h"
 #elif
 #error "Unsupported SoC."

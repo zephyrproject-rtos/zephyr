@@ -10,9 +10,9 @@
  * @brief Andes V5 L2 Cache Controller driver
  */
 
-#include <init.h>
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 #include <soc.h>
 
 /*

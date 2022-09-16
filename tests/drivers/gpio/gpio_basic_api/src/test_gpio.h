@@ -7,9 +7,9 @@
 #ifndef __TEST_GPIO_H__
 #define __TEST_GPIO_H__
 
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
 #include <ztest.h>
 
 #if DT_NODE_HAS_STATUS(DT_INST(0, test_gpio_basic_api), okay)

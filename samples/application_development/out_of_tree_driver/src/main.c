@@ -6,7 +6,7 @@
 
 #include "hello_world_driver.h"
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 const struct device *dev;
 

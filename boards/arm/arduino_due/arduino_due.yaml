@@ -11,3 +11,4 @@ toolchain:
 supported:
   - watchdog
   - gpio
+  - arduino_i2c

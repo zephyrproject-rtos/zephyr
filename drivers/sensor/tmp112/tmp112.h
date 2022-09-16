@@ -7,8 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_TMP112_TMP112_H_
 #define ZEPHYR_DRIVERS_SENSOR_TMP112_TMP112_H_
 
-#include <device.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 
 #define TMP112_REG_TEMPERATURE          0x00
 #define TMP112_DATA_INVALID_BIT         (BIT(1) | BIT(2))

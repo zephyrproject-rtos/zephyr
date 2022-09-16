@@ -7,17 +7,9 @@
 #ifndef _I2S_LITEI2S__H
 #define _I2S_LITEI2S__H
 
-#include <device.h>
-#include <drivers/i2s.h>
-#include <devicetree.h>
-
-/* i2s register offsets*/
-#define I2S_EV_STATUS_REG_OFFSET 0x0
-#define I2S_EV_PENDING_REG_OFFSET 0x4
-#define I2S_EV_ENABLE_REG_OFFSET 0x8
-#define I2S_CONTROL_REG_OFFSET 0xc
-#define I2S_STATUS_REG_OFFSET 0x10
-#define I2S_CONFIG_REG_OFFSET 0x20
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/devicetree.h>
 
 /* i2s configuration mask*/
 #define I2S_CONF_FORMAT_OFFSET 0
@@ -36,14 +28,6 @@
 #define I2S_EV_READY (1 << 0)
 #define I2S_EV_ERROR (1 << 1)
 /* i2s rx*/
-#define I2S_RX_BASE_ADDR DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_rx), control)
-#define I2S_RX_EV_STATUS_REG (I2S_RX_BASE_ADDR + I2S_EV_STATUS_REG_OFFSET)
-#define I2S_RX_EV_PENDING_REG (I2S_RX_BASE_ADDR + I2S_EV_PENDING_REG_OFFSET)
-#define I2S_RX_EV_ENABLE_REG (I2S_RX_BASE_ADDR + I2S_EV_ENABLE_REG_OFFSET)
-#define I2S_RX_CONTROL_REG (I2S_RX_BASE_ADDR + I2S_CONTROL_REG_OFFSET)
-#define I2S_RX_STATUS_REG (I2S_RX_BASE_ADDR + I2S_STATUS_REG_OFFSET)
-#define I2S_RX_CONFIG_REG (I2S_RX_BASE_ADDR + I2S_CONFIG_REG_OFFSET)
-
 #define I2S_RX_STAT_CHANNEL_CONCATENATED_OFFSET 31
 #define I2S_RX_STAT_CHANNEL_CONCATENATED_MASK                                  \
 	(0x1 << I2S_RX_STAT_CHANNEL_CONCATENATED_OFFSET)
@@ -52,20 +36,27 @@
 #define I2S_RX_FIFO_DEPTH DT_PROP(DT_NODELABEL(i2s_rx), fifo_depth)
 
 /* i2s tx*/
-#define I2S_TX_BASE_ADDR DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_tx), control)
-#define I2S_TX_EV_STATUS_REG (I2S_RX_BASE_ADDR + I2S_EV_STATUS_REG_OFFSET)
-#define I2S_TX_EV_PENDING_REG (I2S_TX_BASE_ADDR + I2S_EV_PENDING_REG_OFFSET)
-#define I2S_TX_EV_ENABLE_REG (I2S_TX_BASE_ADDR + I2S_EV_ENABLE_REG_OFFSET)
-#define I2S_TX_CONTROL_REG (I2S_TX_BASE_ADDR + I2S_CONTROL_REG_OFFSET)
-#define I2S_TX_STATUS_REG (I2S_TX_BASE_ADDR + I2S_STATUS_REG_OFFSET)
-#define I2S_TX_CONFIG_REG (I2S_TX_BASE_ADDR + I2S_CONFIG_REG_OFFSET)
-
 #define I2S_TX_STAT_CHANNEL_CONCATENATED_OFFSET 24
 #define I2S_TX_STAT_CHANNEL_CONCATENATED_MASK                                  \
 	(0x1 << I2S_TX_STAT_CHANNEL_CONCATENATED_OFFSET)
 
 #define I2S_TX_FIFO_ADDR DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_tx), fifo)
 #define I2S_TX_FIFO_DEPTH DT_PROP(DT_NODELABEL(i2s_tx), fifo_depth)
+
+/* i2s register offsets (they are the same for all i2s nodes, both rx and tx) */
+#define I2S_BASE_ADDR		DT_REG_ADDR(DT_NODELABEL(i2s_rx))
+#define I2S_EV_STATUS_OFFSET	(DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_rx), ev_status) \
+					- I2S_BASE_ADDR)
+#define I2S_EV_PENDING_OFFSET	(DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_rx), ev_pending) \
+					- I2S_BASE_ADDR)
+#define I2S_EV_ENABLE_OFFSET	(DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_rx), ev_enable) \
+					- I2S_BASE_ADDR)
+#define I2S_CONTROL_OFFSET	(DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_rx), rx_ctl) \
+					- I2S_BASE_ADDR)
+#define I2S_STATUS_OFFSET	(DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_rx), rx_stat) \
+					- I2S_BASE_ADDR)
+#define I2S_CONFIG_OFFSET	(DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_rx), rx_conf) \
+					- I2S_BASE_ADDR)
 
 enum litex_i2s_fmt {
 	LITEX_I2S_STANDARD = 1,

@@ -40,6 +40,13 @@
 		};
 	};
 
+	transceiver0: can-phy0 {
+		compatible = "microchip,mcp2551", "can-transceiver-gpio";
+		max-bitrate = <1000000>;
+		standby-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+		#phy-cells = <0>;
+	};
+
 	aliases {
 		led0 = &green_led_1;
 		led1 = &yellow_led_2;
@@ -118,11 +125,16 @@ uext_serial: &usart1 {};
 	cs-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
 
 	sdhc0: sdhc@0 {
-		compatible = "zephyr,mmc-spi-slot";
+		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
 		status = "okay";
-		label = "SDHC0";
+		label = "SDHC_0";
 		spi-max-frequency = <24000000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+			label = "SDMMC_0";
+		};
 	};
 };
 
@@ -149,12 +161,9 @@ zephyr_udc0: &usb {
 };
 
 &can1 {
-	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
+	pinctrl-0 = <&can_rx_remap1_pb8 &can_tx_remap1_pb9>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
-	sjw = <1>;
-	prop-seg = <0>;
-	phase-seg1 = <5>;
-	phase-seg2 = <6>;
+	phys = <&transceiver0>;
 	status = "okay";
 };

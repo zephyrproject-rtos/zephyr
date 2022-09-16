@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT st_stm32_hsem_mailbox
 
-#include <device.h>
-#include <drivers/clock_control.h>
-#include <drivers/ipm.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 #include "stm32_hsem.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ipm_stm32_hsem, CONFIG_IPM_LOG_LEVEL);
 
 #define HSEM_CPU1                   1

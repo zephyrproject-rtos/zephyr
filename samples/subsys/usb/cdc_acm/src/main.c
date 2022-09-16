@@ -14,13 +14,13 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <zephyr.h>
-#include <sys/ring_buffer.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/ring_buffer.h>
 
-#include <usb/usb_device.h>
-#include <logging/log.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cdc_acm_echo, LOG_LEVEL_INF);
 
 #define RING_BUF_SIZE 1024

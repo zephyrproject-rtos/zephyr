@@ -7,9 +7,9 @@
 #define DT_DRV_COMPAT renesas_rcar_cpg_mssr
 #include <errno.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/rcar_clock_control.h>
-#include <dt-bindings/clock/renesas_rcar_cpg.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/rcar_clock_control.h>
+#include <zephyr/dt-bindings/clock/renesas_rcar_cpg.h>
 
 struct rcar_mssr_config {
 	uint32_t base_address;

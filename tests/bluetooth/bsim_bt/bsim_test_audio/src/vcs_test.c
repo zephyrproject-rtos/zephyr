@@ -5,7 +5,7 @@
  */
 
 #ifdef CONFIG_BT_VCS
-#include "bluetooth/audio/vcs.h"
+#include <zephyr/bluetooth/audio/vcs.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;
@@ -41,7 +41,6 @@ static volatile uint8_t g_aics_gain_min;
 static volatile bool g_aics_active = 1;
 static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
-static struct bt_conn *g_conn;
 static bool g_is_connected;
 
 static void vcs_state_cb(struct bt_vcs *vcs, int err, uint8_t volume,
@@ -197,7 +196,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 	printk("Connected to %s\n", addr);
-	g_conn = conn;
+	default_conn = bt_conn_ref(conn);
 	g_is_connected = true;
 }
 
@@ -223,7 +222,7 @@ static int test_aics_standalone(void)
 		FAIL("Could not deactivate AICS (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(expected_aics_active == g_aics_active);
+	WAIT_FOR_COND(expected_aics_active == g_aics_active);
 	printk("AICS deactivated\n");
 
 	printk("Activating AICS\n");
@@ -233,7 +232,7 @@ static int test_aics_standalone(void)
 		FAIL("Could not activate AICS (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(expected_aics_active == g_aics_active);
+	WAIT_FOR_COND(expected_aics_active == g_aics_active);
 	printk("AICS activated\n");
 
 	printk("Getting AICS state\n");
@@ -243,7 +242,7 @@ static int test_aics_standalone(void)
 		FAIL("Could not get AICS state (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("AICS state get\n");
 
 	printk("Getting AICS gain setting\n");
@@ -253,7 +252,7 @@ static int test_aics_standalone(void)
 		FAIL("Could not get AICS gain setting (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("AICS gain setting get\n");
 
 	printk("Getting AICS input type\n");
@@ -264,7 +263,7 @@ static int test_aics_standalone(void)
 		return err;
 	}
 	/* Expect and wait for input_type from init */
-	WAIT_FOR(expected_input_type == g_aics_input_type);
+	WAIT_FOR_COND(expected_input_type == g_aics_input_type);
 	printk("AICS input type get\n");
 
 	printk("Getting AICS status\n");
@@ -274,7 +273,7 @@ static int test_aics_standalone(void)
 		FAIL("Could not get AICS status (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("AICS status get\n");
 
 	printk("Getting AICS description\n");
@@ -284,7 +283,7 @@ static int test_aics_standalone(void)
 		FAIL("Could not get AICS description (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("AICS description get\n");
 
 	printk("Setting AICS mute\n");
@@ -294,7 +293,7 @@ static int test_aics_standalone(void)
 		FAIL("Could not set AICS mute (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(expected_input_mute == g_aics_input_mute);
+	WAIT_FOR_COND(expected_input_mute == g_aics_input_mute);
 	printk("AICS mute set\n");
 
 	printk("Setting AICS unmute\n");
@@ -304,7 +303,7 @@ static int test_aics_standalone(void)
 		FAIL("Could not set AICS unmute (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(expected_input_mute == g_aics_input_mute);
+	WAIT_FOR_COND(expected_input_mute == g_aics_input_mute);
 	printk("AICS unmute set\n");
 
 	printk("Setting AICS auto mode\n");
@@ -314,7 +313,7 @@ static int test_aics_standalone(void)
 		FAIL("Could not set AICS auto mode (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(expected_mode == g_aics_mode);
+	WAIT_FOR_COND(expected_mode == g_aics_mode);
 	printk("AICS auto mode set\n");
 
 	printk("Setting AICS manual mode\n");
@@ -324,7 +323,7 @@ static int test_aics_standalone(void)
 		FAIL("Could not set AICS manual mode (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(expected_mode == g_aics_mode);
+	WAIT_FOR_COND(expected_mode == g_aics_mode);
 	printk("AICS manual mode set\n");
 
 	printk("Setting AICS gain\n");
@@ -334,7 +333,7 @@ static int test_aics_standalone(void)
 		FAIL("Could not set AICS gain (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(expected_gain == g_aics_gain);
+	WAIT_FOR_COND(expected_gain == g_aics_gain);
 	printk("AICS gain set\n");
 
 	printk("Setting AICS Description\n");
@@ -348,7 +347,7 @@ static int test_aics_standalone(void)
 		FAIL("Could not set AICS Description (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb && !strncmp(expected_aics_desc, g_aics_desc,
+	WAIT_FOR_COND(g_cb && !strncmp(expected_aics_desc, g_aics_desc,
 				  sizeof(expected_aics_desc)));
 	printk("AICS Description set\n");
 
@@ -369,7 +368,7 @@ static int test_vocs_standalone(void)
 		FAIL("Could not get VOCS state (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("VOCS state get\n");
 
 	printk("Getting VOCS location\n");
@@ -379,7 +378,7 @@ static int test_vocs_standalone(void)
 		FAIL("Could not get VOCS location (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("VOCS location get\n");
 
 	printk("Getting VOCS description\n");
@@ -389,7 +388,7 @@ static int test_vocs_standalone(void)
 		FAIL("Could not get VOCS description (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("VOCS description get\n");
 
 	printk("Setting VOCS location\n");
@@ -400,7 +399,7 @@ static int test_vocs_standalone(void)
 		FAIL("Could not set VOCS location (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(expected_location == g_vocs_location);
+	WAIT_FOR_COND(expected_location == g_vocs_location);
 	printk("VOCS location set\n");
 
 	printk("Setting VOCS state\n");
@@ -410,7 +409,7 @@ static int test_vocs_standalone(void)
 		FAIL("Could not set VOCS state (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(expected_offset == g_vocs_offset);
+	WAIT_FOR_COND(expected_offset == g_vocs_offset);
 	printk("VOCS state set\n");
 
 	printk("Setting VOCS description\n");
@@ -424,7 +423,7 @@ static int test_vocs_standalone(void)
 		FAIL("Could not set VOCS description (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb && !strncmp(expected_description, g_vocs_desc,
+	WAIT_FOR_COND(g_cb && !strncmp(expected_description, g_vocs_desc,
 				  sizeof(expected_description)));
 	printk("VOCS description set\n");
 
@@ -509,7 +508,7 @@ static void test_standalone(void)
 		FAIL("Could not get VCS volume (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("VCS volume get\n");
 
 	printk("Getting VCS flags\n");
@@ -519,7 +518,7 @@ static void test_standalone(void)
 		FAIL("Could not get VCS flags (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("VCS flags get\n");
 
 	printk("Downing VCS volume\n");
@@ -529,7 +528,7 @@ static void test_standalone(void)
 		FAIL("Could not get down VCS volume (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(expected_volume == g_volume || g_volume == 0);
+	WAIT_FOR_COND(expected_volume == g_volume || g_volume == 0);
 	printk("VCS volume downed\n");
 
 	printk("Upping VCS volume\n");
@@ -539,7 +538,7 @@ static void test_standalone(void)
 		FAIL("Could not up VCS volume (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(expected_volume == g_volume || g_volume == UINT8_MAX);
+	WAIT_FOR_COND(expected_volume == g_volume || g_volume == UINT8_MAX);
 	printk("VCS volume upped\n");
 
 	printk("Muting VCS\n");
@@ -549,7 +548,7 @@ static void test_standalone(void)
 		FAIL("Could not mute VCS (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(expected_mute == g_mute);
+	WAIT_FOR_COND(expected_mute == g_mute);
 	printk("VCS muted\n");
 
 	printk("Downing and unmuting VCS\n");
@@ -560,7 +559,7 @@ static void test_standalone(void)
 		FAIL("Could not down and unmute VCS (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR((expected_volume == g_volume || g_volume == 0) &&
+	WAIT_FOR_COND((expected_volume == g_volume || g_volume == 0) &&
 		 expected_mute == g_mute);
 	printk("VCS volume downed and unmuted\n");
 
@@ -571,7 +570,7 @@ static void test_standalone(void)
 		FAIL("Could not mute VCS (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(expected_mute == g_mute);
+	WAIT_FOR_COND(expected_mute == g_mute);
 	printk("VCS muted\n");
 
 	printk("Upping and unmuting VCS\n");
@@ -582,7 +581,7 @@ static void test_standalone(void)
 		FAIL("Could not up and unmute VCS (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR((expected_volume == g_volume  || g_volume == UINT8_MAX) &&
+	WAIT_FOR_COND((expected_volume == g_volume  || g_volume == UINT8_MAX) &&
 		 expected_mute == g_mute);
 	printk("VCS volume upped and unmuted\n");
 
@@ -593,7 +592,7 @@ static void test_standalone(void)
 		FAIL("Could not mute VCS (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(expected_mute == g_mute);
+	WAIT_FOR_COND(expected_mute == g_mute);
 	printk("VCS volume upped\n");
 
 	printk("Unmuting VCS\n");
@@ -603,7 +602,7 @@ static void test_standalone(void)
 		FAIL("Could not unmute VCS (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(expected_mute == g_mute);
+	WAIT_FOR_COND(expected_mute == g_mute);
 	printk("VCS volume unmuted\n");
 
 	expected_volume = g_volume - 5;
@@ -612,7 +611,7 @@ static void test_standalone(void)
 		FAIL("Could not set VCS volume (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(expected_volume == g_volume);
+	WAIT_FOR_COND(expected_volume == g_volume);
 	printk("VCS volume set\n");
 
 	if (CONFIG_BT_VCS_VOCS_INSTANCE_COUNT > 0) {
@@ -697,7 +696,7 @@ static void test_main(void)
 
 	printk("Advertising successfully started\n");
 
-	WAIT_FOR(g_is_connected);
+	WAIT_FOR_COND(g_is_connected);
 
 	PASS("VCS passed\n");
 }

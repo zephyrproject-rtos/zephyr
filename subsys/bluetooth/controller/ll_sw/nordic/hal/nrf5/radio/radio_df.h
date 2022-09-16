@@ -34,13 +34,13 @@ void radio_df_cte_tx_aod_4us_set(uint8_t cte_len);
 /* Configure CTE transmission with for AoA. */
 void radio_df_cte_tx_aoa_set(uint8_t cte_len);
 /* Configure CTE reception with optionall AoA mode and 2us antenna switching. */
-void radio_df_cte_rx_2us_switching(bool cte_info_in_s1);
+void radio_df_cte_rx_2us_switching(bool cte_info_in_s1, uint8_t phy);
 /* Configure CTE reception with optionall AoA mode and 4us antenna switching. */
-void radio_df_cte_rx_4us_switching(bool cte_info_in_s1);
+void radio_df_cte_rx_4us_switching(bool cte_info_in_s1, uint8_t phy);
 
 /* Clears antenna switch pattern. */
 void radio_df_ant_switch_pattern_clear(void);
-/* Set antenna switch pattern. Pay attention, paterns are added to
+/* Set antenna switch pattern. Pay attention, patterns are added to
  * Radio internal list. Before start of new patterns clear the list
  * by call to @ref radio_df_ant_switch_pattern_clear.
  */

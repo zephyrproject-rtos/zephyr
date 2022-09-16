@@ -4,21 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include <soc.h>
-#include <drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include "esp_attr.h"
 #include <hal/cpu_hal.h>
 #include <hal/interrupt_controller_hal.h>
 #include <limits.h>
 #include <assert.h>
 #include "soc/soc.h"
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_intc, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define ETS_INTERNAL_TIMER0_INTR_NO 6
@@ -62,7 +62,7 @@ static inline void esp_intr_unlock(void)
 }
 
 /*
- * Interrupt handler table and unhandled uinterrupt routine. Duplicated
+ * Interrupt handler table and unhandled interrupt routine. Duplicated
  * from xtensa_intr.c... it's supposed to be private, but we need to look
  * into it in order to see if someone allocated an int using
  * set_interrupt_handler.
@@ -360,7 +360,7 @@ static int get_available_int(int flags, int cpu, int force, int source)
 		/* if existing vd found, don't need to search any more. */
 		INTC_LOG("%s: existing vd found. intno: %d", __func__, vd->intno);
 		if (force != -1 && force != vd->intno) {
-			INTC_LOG("%s: intr forced but not matach existing. "
+			INTC_LOG("%s: intr forced but not match existing. "
 				 "existing intno: %d, force: %d", __func__, vd->intno, force);
 		} else if (!is_vect_desc_usable(vd, flags, cpu, force)) {
 			INTC_LOG("%s: existing vd invalid.", __func__);

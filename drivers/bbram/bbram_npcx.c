@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT nuvoton_npcx_bbram
 
-#include <drivers/bbram.h>
+#include <zephyr/drivers/bbram.h>
 #include <errno.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bbram, CONFIG_BBRAM_LOG_LEVEL);
 
 /** Device config */

@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <syscall_handler.h>
-#include <sys/math_extras.h>
-#include <net/socket.h>
+#include <zephyr/kernel.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/math_extras.h>
+#include <zephyr/net/socket.h>
 #include "sockets_internal.h"
 
 /* Get size, in elements, of an array within a struct. */

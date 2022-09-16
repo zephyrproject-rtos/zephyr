@@ -8,17 +8,17 @@
  * @brief IEEE 802.15.4 shell module
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154_shell, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <shell/shell.h>
-#include <sys/printk.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/printk.h>
 
-#include <net/net_if.h>
-#include <net/ieee802154_mgmt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ieee802154_mgmt.h>
 
 #include "ieee802154_frame.h"
 

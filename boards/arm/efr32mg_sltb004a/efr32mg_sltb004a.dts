@@ -59,7 +59,7 @@
 		compatible = "pwm-leds";
 		status = "okay";
 		pwm_led0: pwm_led0 {
-			pwms = <&pwm0 0 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 };

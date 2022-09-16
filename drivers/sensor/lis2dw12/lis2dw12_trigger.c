@@ -10,10 +10,10 @@
 
 #define DT_DRV_COMPAT st_lis2dw12
 
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 
 #include "lis2dw12.h"
 
@@ -67,6 +67,21 @@ static int lis2dw12_enable_int(const struct device *dev,
 		return lis2dw12_pin_int1_route_set(ctx,
 				&int_route.ctrl4_int1_pad_ctrl);
 #endif /* CONFIG_LIS2DW12_TAP */
+#ifdef CONFIG_LIS2DW12_THRESHOLD
+	/**
+	 * Trigger fires when channel reading transitions configured
+	 * thresholds.  The thresholds are configured via the @ref
+	 * SENSOR_ATTR_LOWER_THRESH and @ref SENSOR_ATTR_UPPER_THRESH
+	 * attributes.
+	 */
+	case SENSOR_TRIG_THRESHOLD:
+		LOG_DBG("Setting int1_wu: %d\n", enable);
+		lis2dw12_pin_int1_route_get(ctx,
+				&int_route.ctrl4_int1_pad_ctrl);
+		int_route.ctrl4_int1_pad_ctrl.int1_wu = enable;
+		return lis2dw12_pin_int1_route_set(ctx,
+						   &int_route.ctrl4_int1_pad_ctrl);
+#endif
 	default:
 		LOG_ERR("Unsupported trigger interrupt route %d", type);
 		return -ENOTSUP;
@@ -121,6 +136,14 @@ int lis2dw12_trigger_set(const struct device *dev,
 		lis2dw12->double_tap_handler = handler;
 		return lis2dw12_enable_int(dev, SENSOR_TRIG_DOUBLE_TAP, state);
 #endif /* CONFIG_LIS2DW12_TAP */
+#ifdef CONFIG_LIS2DW12_THRESHOLD
+	case SENSOR_TRIG_THRESHOLD:
+	{
+		LOG_DBG("Set trigger %d (handler: %p)\n", trig->type, handler);
+		lis2dw12->threshold_handler = handler;
+		return lis2dw12_enable_int(dev, SENSOR_TRIG_THRESHOLD, state);
+	}
+#endif
 	default:
 		LOG_ERR("Unsupported sensor trigger");
 		return -ENOTSUP;
@@ -179,6 +202,25 @@ static int lis2dw12_handle_double_tap_int(const struct device *dev)
 }
 #endif /* CONFIG_LIS2DW12_TAP */
 
+#ifdef CONFIG_LIS2DW12_THRESHOLD
+static int lis2dw12_handle_wu_ia_int(const struct device *dev)
+{
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	sensor_trigger_handler_t handler = lis2dw12->threshold_handler;
+
+	struct sensor_trigger thresh_trig = {
+		.type = SENSOR_TRIG_THRESHOLD,
+		.chan = SENSOR_CHAN_ALL,
+	};
+
+	if (handler) {
+		handler(dev, &thresh_trig);
+	}
+
+	return 0;
+}
+#endif
+
 /**
  * lis2dw12_handle_interrupt - handle the drdy event
  * read data and call handler if registered any
@@ -202,6 +244,11 @@ static void lis2dw12_handle_interrupt(const struct device *dev)
 		lis2dw12_handle_double_tap_int(dev);
 	}
 #endif /* CONFIG_LIS2DW12_TAP */
+#ifdef CONFIG_LIS2DW12_THRESHOLD
+	if (sources.all_int_src.wu_ia) {
+		lis2dw12_handle_wu_ia_int(dev);
+	}
+#endif
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
 					GPIO_INT_EDGE_TO_ACTIVE);
@@ -375,9 +422,14 @@ int lis2dw12_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	/* enable interrupt on int1/int2 in pulse mode */
-	if (lis2dw12_int_notification_set(ctx, LIS2DW12_INT_PULSED)) {
-		return -EIO;
+	/* set interrupt notification mode on int1/int2 */
+	LOG_DBG("drdy_pulsed is %d", (int)cfg->drdy_pulsed);
+	lis2dw12_lir_t mode = cfg->drdy_pulsed ? LIS2DW12_INT_PULSED : LIS2DW12_INT_LATCHED;
+
+	ret = lis2dw12_int_notification_set(ctx, mode);
+	if (ret < 0) {
+		LOG_ERR("drdy_pulsed config error %d", (int)cfg->drdy_pulsed);
+		return ret;
 	}
 
 #ifdef CONFIG_LIS2DW12_TAP

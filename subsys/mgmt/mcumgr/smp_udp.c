@@ -9,17 +9,17 @@
  * @brief UDP transport for the mcumgr SMP protocol.
  */
 
-#include <zephyr.h>
-#include <init.h>
-#include <net/socket.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/net/socket.h>
 #include <errno.h>
 #include <mgmt/mgmt.h>
-#include <mgmt/mcumgr/smp_udp.h>
-#include <mgmt/mcumgr/buf.h>
-#include <mgmt/mcumgr/smp.h>
+#include <zephyr/mgmt/mcumgr/smp_udp.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
+#include <zephyr/mgmt/mcumgr/smp.h>
 
 #define LOG_LEVEL CONFIG_MCUMGR_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smp_udp);
 
 struct config {

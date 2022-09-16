@@ -6,7 +6,7 @@
 
 #include <tracing_user.h>
 #include <kernel_internal.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <ksched.h>
 
 static int nested_interrupts[CONFIG_MP_NUM_CPUS];
@@ -22,7 +22,8 @@ void sys_trace_k_thread_switched_in(void)
 	int key = irq_lock();
 
 	__ASSERT_NO_MSG(nested_interrupts[_current_cpu->id] == 0);
-	sys_trace_thread_switched_in_user(k_current_get());
+	/* Can't use k_current_get as thread base and z_tls_current might be incorrect */
+	sys_trace_thread_switched_in_user(z_current_get());
 
 	irq_unlock(key);
 }
@@ -32,7 +33,8 @@ void sys_trace_k_thread_switched_out(void)
 	int key = irq_lock();
 
 	__ASSERT_NO_MSG(nested_interrupts[_current_cpu->id] == 0);
-	sys_trace_thread_switched_out_user(k_current_get());
+	/* Can't use k_current_get as thread base and z_tls_current might be incorrect */
+	sys_trace_thread_switched_out_user(z_current_get());
 
 	irq_unlock(key);
 }

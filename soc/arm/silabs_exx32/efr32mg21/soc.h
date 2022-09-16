@@ -13,7 +13,7 @@
 #ifndef ZEPHYR_SOC_ARM_SILABS_EXX32_EFR32MG21_SOC_H
 #define ZEPHYR_SOC_ARM_SILABS_EXX32_EFR32MG21_SOC_H
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
 

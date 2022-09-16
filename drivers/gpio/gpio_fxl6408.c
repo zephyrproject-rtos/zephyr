@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 #include "gpio_utils.h"
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(fxl6408, CONFIG_FXL6408_LOG_LEVEL);
 #define DT_DRV_COMPAT             fcs_fxl6408
@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(fxl6408, CONFIG_FXL6408_LOG_LEVEL);
 
 #define SUPPORTED_FLAGS (GPIO_INPUT | GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW |\
 			GPIO_OUTPUT_INIT_HIGH | GPIO_PULL_DOWN | GPIO_PULL_UP |\
-			GPIO_ACTIVE_HIGH | GPIO_ACTIVE_LOW | GPIO_INT_DEBOUNCE)
+			GPIO_ACTIVE_HIGH | GPIO_ACTIVE_LOW)
 
 /** Configuration data*/
 struct gpio_fxl6408_config {

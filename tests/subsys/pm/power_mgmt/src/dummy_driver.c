@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
-#include <pm/device.h>
-#include <pm/device_runtime.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include "dummy_driver.h"
 
 static int dummy_open(const struct device *dev)

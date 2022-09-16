@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell_log_backend.h>
-#include <shell/shell.h>
+#include <zephyr/shell/shell_log_backend.h>
+#include <zephyr/shell/shell.h>
 #include "shell_ops.h"
-#include <logging/log_ctrl.h>
+#include <zephyr/logging/log_ctrl.h>
 
 static bool process_msg2_from_buffer(const struct shell *shell);
 
@@ -320,7 +320,9 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 	const struct shell *shell = (const struct shell *)backend->cb->ctx;
 	const struct shell_log_backend *log_backend = shell->log_backend;
 
-	atomic_add(&shell->stats->log_lost_cnt, cnt);
+	if (IS_ENABLED(CONFIG_SHELL_STATS)) {
+		atomic_add(&shell->stats->log_lost_cnt, cnt);
+	}
 	atomic_add(&log_backend->control_block->dropped_cnt, cnt);
 }
 
@@ -337,7 +339,7 @@ static void copy_to_pbuffer(struct mpsc_pbuf_buffer *mpsc_buffer,
 		return;
 	}
 
-	/* First word contains intenal mpsc packet flags and when copying
+	/* First word contains internal mpsc packet flags and when copying
 	 * those flags must be omitted.
 	 */
 	uint8_t *dst_data = (uint8_t *)dst + sizeof(struct mpsc_pbuf_hdr);

@@ -9,12 +9,12 @@
 #include "soc/gpio_periph.h"
 #include "soc/rtc_periph.h"
 
-#include <drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <soc.h>
-#include <device.h>
-#include <zephyr.h>
-#include <spinlock.h>
-#include <kernel_structs.h>
+#include <zephyr/device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/kernel_structs.h>
 
 #define Z_REG(base, off) (*(volatile uint32_t *)((base) + (off)))
 

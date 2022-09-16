@@ -10,7 +10,7 @@
  *   This file includes the platform-specific initializers.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <openthread/instance.h>
 #include <openthread/tasklet.h>
 
@@ -21,8 +21,8 @@ void otSysInit(int argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	platformAlarmInit();
 	platformRadioInit();
+	platformAlarmInit();
 }
 
 void otSysProcessDrivers(otInstance *aInstance)

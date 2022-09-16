@@ -41,12 +41,12 @@
 
 		/* NOTE: bridge TIMER1_CH1 and LED_GREEN (PA1) */
 		pwm_led_green: pwm_led_green {
-			pwms = <&pwm1 1 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm1 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "PWM_LED_G";
 		};
 		/* NOTE: bridge TIMER1_CH2 and LED_BLUE (PA2) */
 		pwm_led_blue: pwm_led_blue {
-			pwms = <&pwm1 2 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm1 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "PWM_LED_B";
 		};
 	};
@@ -95,4 +95,20 @@
 	status = "okay";
 	pinctrl-0 = <&dac_default>;
 	pinctrl-names = "default";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,mmc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		label = "SDHC0";
+		spi-max-frequency = <24000000>;
+	};
 };

@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_PS2_PS2_NPCX_CONTROLLER_H_
 #define ZEPHYR_DRIVERS_PS2_PS2_NPCX_CONTROLLER_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,7 +21,7 @@ extern "C" {
  * @param value the data write to the PS/2 device.
  *
  * @retval 0 If successful.
- * @retval -EINVAL Channel ID is invlaid.
+ * @retval -EINVAL Channel ID is invalid.
  * @retval -ETIMEDOUT Timeout occurred for a PS/2 write transaction.
  */
 int ps2_npcx_ctrl_write(const struct device *dev, uint8_t channel_id,
@@ -35,7 +35,7 @@ int ps2_npcx_ctrl_write(const struct device *dev, uint8_t channel_id,
  * @param enable True to enable channel, false to disable channel.
  *
  * @retval 0 If successful.
- * @retval -EINVAL Channel ID is invlaid.
+ * @retval -EINVAL Channel ID is invalid.
  */
 int ps2_npcx_ctrl_enable_interface(const struct device *dev, uint8_t channel,
 				   bool enable);

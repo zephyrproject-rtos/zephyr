@@ -8,7 +8,7 @@
 #include <ztest_error_hook.h>
 
 /* Macro declarations */
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define SEM_INIT_VAL (0U)
 #define SEM_MAX_VAL  (3U)
 #define TOTAL_MAX (4U)
@@ -24,7 +24,7 @@ static struct k_thread multi_tid_give[STACK_NUMS];
 static struct k_thread multi_tid_take[STACK_NUMS];
 static struct k_sem usage_sem, sync_sem, limit_sem, uninit_sem;
 static ZTEST_DMEM int flag;
-static ZTEST_DMEM int count;
+static ZTEST_DMEM atomic_t atomic_count;
 
 /**
  * @defgroup kernel_sys_sem_tests Semaphore
@@ -37,7 +37,7 @@ static void sem_thread_give_uninit(void *p1, void *p2, void *p3)
 {
 	ztest_set_fault_valid(true);
 
-	/* use sem without initialse */
+	/* use sem without initialise */
 	k_sem_give(&uninit_sem);
 
 	ztest_test_fail();
@@ -70,7 +70,7 @@ static void thread_high_prio_sem_take(void *p1, void *p2, void *p3)
  *
  * @details Using semaphore with some situations
  * - Use a uninitialized semaphore
- * - Use semphore normally
+ * - Use semaphore normally
  * - Use semaphore with different priority threads
  *
  * @ingroup kernel_sys_sem_tests
@@ -127,7 +127,10 @@ void test_multiple_thread_sem_usage(void)
 
 static void multi_thread_sem_give(void *p1, void *p2, void *p3)
 {
-	count++;
+	int count;
+
+	(void)atomic_inc(&atomic_count);
+	count = atomic_get(&atomic_count);
 	k_sem_give(&limit_sem);
 
 	if (count < TOTAL_MAX)
@@ -140,8 +143,11 @@ static void multi_thread_sem_give(void *p1, void *p2, void *p3)
 
 static void multi_thread_sem_take(void *p1, void *p2, void *p3)
 {
+	int count;
+
 	k_sem_take(&limit_sem, K_FOREVER);
-	count--;
+	(void)atomic_dec(&atomic_count);
+	count = atomic_get(&atomic_count);
 
 	if (count >= 0)
 		zassert_equal(k_sem_count_get(&limit_sem), count, "multi take sem error");
@@ -167,7 +173,7 @@ void test_multi_thread_sem_limit(void)
 	k_sem_init(&limit_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 	k_sem_init(&sync_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 
-	count = 0;
+	(void)atomic_set(&atomic_count, 0);
 	for (int i = 1; i <= TOTAL_MAX; i++) {
 		k_thread_create(&multi_tid_give[i], multi_stack_give[i], STACK_SIZE,
 				multi_thread_sem_give, NULL, NULL, NULL,
@@ -176,7 +182,7 @@ void test_multi_thread_sem_limit(void)
 
 	k_sleep(K_MSEC(50));
 
-	count = SEM_MAX_VAL;
+	(void)atomic_set(&atomic_count, SEM_MAX_VAL);
 	for (int i = 1; i <= TOTAL_MAX; i++) {
 		k_thread_create(&multi_tid_take[i], multi_stack_take[i], STACK_SIZE,
 				multi_thread_sem_take, NULL, NULL, NULL,

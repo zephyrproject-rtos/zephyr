@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <linker/linker-defs.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/linker/linker-defs.h>
 
 /* Programmable PMA mechanism is supported */
 #define MMSC_CFG_PPMA		(1 << 30)

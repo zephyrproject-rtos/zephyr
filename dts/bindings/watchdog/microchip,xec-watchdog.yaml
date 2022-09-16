@@ -16,3 +16,29 @@ properties:
 
     interrupts:
       required: true
+
+    girqs:
+      type: array
+      required: true
+      description: Array of GIRQ numbers [8:26] and bit positions [0:31].
+
+    pcrs:
+      type: array
+      required: true
+      description: PCR sleep enable register index and bit position.
+
+    "#girq-cells":
+      type: int
+      const: 2
+
+    "#pcr-cells":
+      type: int
+      const: 2
+
+girq-cells:
+    - girq_num
+    - bitpos
+
+pcr-cells:
+    - reg_index
+    - bitpos

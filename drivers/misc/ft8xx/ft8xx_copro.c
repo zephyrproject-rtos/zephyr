@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/misc/ft8xx/ft8xx_copro.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_copro.h>
 
 #include <stdint.h>
 #include <string.h>
 
-#include <drivers/misc/ft8xx/ft8xx_common.h>
-#include <drivers/misc/ft8xx/ft8xx_memory.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_common.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_memory.h>
 #include "ft8xx_drv.h"
 
 #define FT800_RAM_CMD_SIZE 4096UL

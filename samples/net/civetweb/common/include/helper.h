@@ -7,7 +7,7 @@
 #ifndef __HELPER__
 #define __HELPER__
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #define STR_LOG_ALLOC(str)	((str == NULL) ? log_strdup("null") :\
 						  log_strdup(str))

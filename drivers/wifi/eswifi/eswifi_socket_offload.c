@@ -7,23 +7,23 @@
 #include "eswifi_log.h"
 LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 
-#include <net/socket_offload.h>
-#include <net/tls_credentials.h>
+#include <zephyr/net/socket_offload.h>
+#include <zephyr/net/tls_credentials.h>
 
 #include "sockets_internal.h"
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #include "tls_internal.h"
 #endif
 #include "eswifi.h"
-#include <net/net_pkt.h>
+#include <zephyr/net/net_pkt.h>
 
 /* Increment by 1 to make sure we do not store the value of 0, which has
  * a special meaning in the fdtable subsys.
@@ -492,10 +492,27 @@ static int eswifi_socket_bind(void *obj, const struct sockaddr *addr,
 
 static bool eswifi_socket_is_supported(int family, int type, int proto)
 {
+	enum eswifi_transport_type eswifi_socket_type;
+	int err;
+
+	if (family != AF_INET) {
+		return false;
+	}
+
+	if (type != SOCK_DGRAM &&
+	    type != SOCK_STREAM) {
+		return false;
+	}
+
+	err = eswifi_socket_type_from_zephyr(proto, &eswifi_socket_type);
+	if (err) {
+		return false;
+	}
+
 	return true;
 }
 
-static int eswifi_socket_create(int family, int type, int proto)
+int eswifi_socket_create(int family, int type, int proto)
 {
 	int fd = z_reserve_fd();
 	int sock;
@@ -571,8 +588,8 @@ static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
 };
 
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
-NET_SOCKET_REGISTER(eswifi, NET_SOCKET_DEFAULT_PRIO, AF_UNSPEC,
-		    eswifi_socket_is_supported, eswifi_socket_create);
+NET_SOCKET_OFFLOAD_REGISTER(eswifi, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,
+			    eswifi_socket_is_supported, eswifi_socket_create);
 #endif
 
 static int eswifi_off_getaddrinfo(const char *node, const char *service,

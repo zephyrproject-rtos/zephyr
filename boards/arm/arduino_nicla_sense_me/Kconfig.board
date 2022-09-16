@@ -1,0 +1,8 @@
+# Arduino Nicla Sense ME board configuration
+
+# Copyright (c) 2022 Benjamin Björnsson <benjamin.bjornsson@gmail.com>.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ARDUINO_NICLA_SENSE_ME
+	bool "Arduino Nicla Sense ME"
+	depends on SOC_NRF52832_QFAA

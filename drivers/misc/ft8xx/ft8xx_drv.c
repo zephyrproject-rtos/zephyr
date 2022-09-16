@@ -6,10 +6,10 @@
 
 #include "ft8xx_drv.h"
 
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/logging/log.h>
 
 #define LOG_MODULE_NAME ft8xx_drv
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);

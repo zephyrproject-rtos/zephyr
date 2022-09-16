@@ -8,9 +8,9 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ITDS_H_
 #define ZEPHYR_DRIVERS_SENSOR_ITDS_H_
 
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
 
 /* registers */
 #define ITDS_REG_TEMP_L			0x0d

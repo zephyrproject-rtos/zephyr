@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <net/net_timeout.h>
-#include <sys_clock.h>
+#include <zephyr/net/net_timeout.h>
+#include <zephyr/sys_clock.h>
 
 void net_timeout_set(struct net_timeout *timeout,
 		     uint32_t lifetime,

@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <tc_util.h>
 
 #include "syskernel.h"
@@ -127,7 +127,7 @@ void main(void)
 
 	number_of_loops = NUMBER_OF_LOOPS;
 
-	/* The following code is needed to make the benchmakring run on
+	/* The following code is needed to make the benchmarking run on
 	 * slower platforms.
 	 */
 	uint64_t time_stamp = sys_clock_tick_get();

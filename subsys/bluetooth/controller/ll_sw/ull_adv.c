@@ -7,10 +7,10 @@
 
 #include <string.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -91,6 +91,7 @@ static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static uint8_t leg_adv_type_get(uint8_t evt_prop);
 static void adv_max_events_duration_set(struct ll_adv_set *adv,
 					uint16_t duration,
 					uint8_t max_ext_adv_evts);
@@ -255,24 +256,25 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	if (adv_type == PDU_ADV_TYPE_EXT_IND) {
 		/* legacy */
 		if (evt_prop & BT_HCI_LE_ADV_PROP_LEGACY) {
-			/* lookup evt_prop to PDU type in  pdu_adv_type[] */
-			uint8_t const leg_adv_type[] = {
-				0x03, /* PDU_ADV_TYPE_NONCONN_IND */
-				0x04, /* PDU_ADV_TYPE_DIRECT_IND */
-				0x02, /* PDU_ADV_TYPE_SCAN_IND */
-				0x00  /* PDU_ADV_TYPE_ADV_IND */
-			};
-
 			if (evt_prop & BT_HCI_LE_ADV_PROP_ANON) {
 				return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 			}
 
-			adv_type = leg_adv_type[evt_prop & 0x03];
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+			/* disallow changing to legacy advertising while
+			 * periodic advertising enabled.
+			 */
+			if (adv->lll.sync) {
+				const struct ll_adv_sync_set *sync;
 
-			/* high duty cycle directed */
-			if (evt_prop & BT_HCI_LE_ADV_PROP_HI_DC_CONN) {
-				adv_type = 0x01; /* PDU_ADV_TYPE_DIRECT_IND */
+				sync = HDR_LLL2ULL(adv->lll.sync);
+				if (sync->is_enabled) {
+					return BT_HCI_ERR_INVALID_PARAM;
+				}
 			}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
+			adv_type = leg_adv_type_get(evt_prop);
 
 			adv->lll.phy_p = PHY_1M;
 		} else {
@@ -287,6 +289,20 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+			if (adv->lll.sync &&
+			    (evt_prop & (BT_HCI_LE_ADV_PROP_ANON |
+					 BT_HCI_LE_ADV_PROP_CONN |
+					 BT_HCI_LE_ADV_PROP_SCAN))) {
+				const struct ll_adv_sync_set *sync;
+
+				sync = HDR_LLL2ULL(adv->lll.sync);
+				if (sync->is_enabled) {
+					return BT_HCI_ERR_INVALID_PARAM;
+				}
+			}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
 #if (CONFIG_BT_CTLR_ADV_AUX_SET == 0)
 			/* Connectable or scannable requires aux */
 			if (evt_prop & (BT_HCI_LE_ADV_PROP_CONN |
@@ -295,8 +311,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			}
 #endif
 
-			adv_type = 0x05; /* PDU_ADV_TYPE_EXT_IND in */
-					 /* pdu_adv_type array. */
+			adv_type = 0x05; /* index of PDU_ADV_TYPE_EXT_IND in */
+					 /* pdu_adv_type[] */
 
 			adv->lll.phy_p = phy_p;
 			adv->lll.phy_flags = PHY_FLAGS_S8;
@@ -463,9 +479,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			pri_dptr_prev += BDADDR_SIZE;
 		}
 		if (!pri_com_hdr->adv_mode &&
-		    (!pri_hdr_prev.aux_ptr ||
-		     (!(evt_prop & BT_HCI_LE_ADV_PROP_ANON) &&
-		      (phy_p != PHY_CODED)))) {
+		    !(evt_prop & BT_HCI_LE_ADV_PROP_ANON) &&
+		    (!pri_hdr_prev.aux_ptr || (phy_p != PHY_CODED))) {
 			/* TODO: optional on 1M with Aux Ptr */
 			pri_hdr->adv_addr = 1;
 
@@ -959,12 +974,16 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn_lll->max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
 						      PHY_1M);
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		conn_lll->max_tx_time = MAX(conn_lll->max_tx_time,
-					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
-							  lll->phy_s));
-		conn_lll->max_rx_time = MAX(conn_lll->max_rx_time,
-					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
-							  lll->phy_s));
+		if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
+			conn_lll->max_tx_time =
+				MAX(conn_lll->max_tx_time,
+				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						  lll->phy_s));
+			conn_lll->max_rx_time =
+				MAX(conn_lll->max_rx_time,
+				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						  lll->phy_s));
+		}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif
@@ -1035,7 +1054,9 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 		conn->connect_expire = 6;
 		conn->supervision_expire = 0;
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 		conn->procedure_expire = 0;
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 		conn->apto_expire = 0U;
@@ -1070,6 +1091,12 @@ uint8_t ll_adv_enable(uint8_t enable)
 		 * terminate ind rx node
 		 */
 		conn->llcp_terminate.node_rx.hdr.link = link;
+
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+		conn->llcp_rx_hold = NULL;
+		conn_lll->rx_hold_req = 0U;
+		conn_lll->rx_hold_ack = 0U;
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		conn_lll->enc_rx = conn_lll->enc_tx = 0U;
@@ -1120,6 +1147,10 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+		conn->pause_rx_data = 0U;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 		/* Re-initialize the Tx Q */
 		ull_tx_q_init(&conn->tx_q);
@@ -1409,16 +1440,31 @@ uint8_t ll_adv_enable(uint8_t enable)
 				sync_is_started = 1U;
 
 				lll_adv_data_enqueue(lll, pri_idx);
+			} else {
+				/* TODO: Find the anchor before the group of
+				 *       active Periodic Advertising events, so
+				 *       that auxiliary sets are grouped such
+				 *       that auxiliary sets and Periodic
+				 *       Advertising sets are non-overlapping
+				 *       for the same event interval.
+				 */
 			}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
 			/* Keep aux interval equal or higher than primary PDU
 			 * interval.
+			 * Use periodic interval units to represent the
+			 * periodic behavior of scheduling of AUX_ADV_IND PDUs
+			 * so that it is grouped with similar interval units
+			 * used for ACL Connections, Periodic Advertising and
+			 * BIG radio events.
 			 */
-			aux->interval = adv->interval +
-					(HAL_TICKER_TICKS_TO_US(
-						ULL_ADV_RANDOM_DELAY) /
-						ADV_INT_UNIT_US);
+			aux->interval =
+				ceiling_fraction(((uint64_t)adv->interval *
+						  ADV_INT_UNIT_US) +
+						 HAL_TICKER_TICKS_TO_US(
+							ULL_ADV_RANDOM_DELAY),
+						 PERIODIC_INT_UNIT_US);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
 						ticks_slot_overhead_aux);
@@ -1492,7 +1538,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		ull_filter_adv_scan_state_cb(BIT(0) | BIT(1));
 	}
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-	if (IS_ENABLED(CONFIG_BT_OBSERVER) && !ull_scan_is_enabled_get(0)) {
+	if (!IS_ENABLED(CONFIG_BT_OBSERVER) || !ull_scan_is_enabled_get(0)) {
 		ull_filter_adv_scan_state_cb(BIT(0));
 	}
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
@@ -1813,13 +1859,14 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 
 static uint32_t ticker_update_rand(struct ll_adv_set *adv, uint32_t ticks_delay_window,
 				   uint32_t ticks_delay_window_offset,
-				   uint32_t ticks_adjust_minus)
+				   uint32_t ticks_adjust_minus,
+				   ticker_op_func fp_op_func)
 {
 	uint32_t random_delay;
 	uint32_t ret;
 
 	/* Get pseudo-random number in the range [0..ticks_delay_window].
-	 * Please note that using modulo of 2^32 samle space has an uneven
+	 * Please note that using modulo of 2^32 sample space has an uneven
 	 * distribution, slightly favoring smaller values.
 	 */
 	lll_rand_isr_get(&random_delay, sizeof(random_delay));
@@ -1831,10 +1878,11 @@ static uint32_t ticker_update_rand(struct ll_adv_set *adv, uint32_t ticks_delay_
 			    TICKER_ID_ADV_BASE + ull_adv_handle_get(adv),
 			    random_delay,
 			    ticks_adjust_minus, 0, 0, 0, 0,
-			    ticker_update_op_cb, adv);
+			    fp_op_func, adv);
 
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+		  (ret == TICKER_STATUS_BUSY) ||
+		  (fp_op_func == NULL));
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	adv->delay = random_delay;
@@ -1899,9 +1947,13 @@ void ull_adv_done(struct node_rx_event_done *done)
 			ticks_adjust_minus = HAL_TICKER_US_TO_TICKS(
 				(uint64_t)adv->interval * ADV_INT_UNIT_US) + adv->delay;
 
-			/* Apply random delay in range [prepare_overhead..delay_remain] */
+			/* Apply random delay in range [prepare_overhead..delay_remain].
+			 * NOTE: This ticker_update may fail if update races with
+			 * ticker_stop, e.g. from ull_periph_setup. This is not a problem
+			 * and we can safely ignore the operation result.
+			 */
 			ticker_update_rand(adv, adv->delay_remain - prepare_overhead,
-					   prepare_overhead, ticks_adjust_minus);
+					   prepare_overhead, ticks_adjust_minus, NULL);
 
 			/* Score of the event was increased due to the result, but since
 			 * we're getting a another chance we'll set it back.
@@ -2210,7 +2262,8 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
 		/* Apply random delay in range [0..ULL_ADV_RANDOM_DELAY] */
-		random_delay = ticker_update_rand(adv, ULL_ADV_RANDOM_DELAY, 0, 0);
+		random_delay = ticker_update_rand(adv, ULL_ADV_RANDOM_DELAY,
+						  0, 0, ticker_update_op_cb);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		adv->event_counter += (lazy + 1);
@@ -2389,6 +2442,28 @@ static void conn_release(struct ll_adv_set *adv)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static uint8_t leg_adv_type_get(uint8_t evt_prop)
+{
+	/* We take advantage of the fact that 2 LS bits
+	 * of evt_prop can be used in a lookup to return
+	 * PDU type value in the pdu_adv_type[] lookup.
+	 */
+	uint8_t const leg_adv_type[] = {
+		0x03, /* index of PDU_ADV_TYPE_NONCONN_IND in pdu_adv_type[] */
+		0x04, /* index of PDU_ADV_TYPE_DIRECT_IND in pdu_adv_type[] */
+		0x02, /* index of PDU_ADV_TYPE_SCAN_IND in pdu_adv_type[] */
+		0x00  /* index of PDU_ADV_TYPE_ADV_IND in pdu_adv_type[] */
+	};
+
+	/* if high duty cycle directed */
+	if (evt_prop & BT_HCI_LE_ADV_PROP_HI_DC_CONN) {
+		/* index of PDU_ADV_TYPE_DIRECT_IND in pdu_adv_type[] */
+		return 0x01;
+	}
+
+	return leg_adv_type[evt_prop & 0x03];
+}
+
 static void adv_max_events_duration_set(struct ll_adv_set *adv,
 					uint16_t duration,
 					uint8_t max_ext_adv_evts)
@@ -2630,7 +2705,7 @@ static inline uint8_t disable(uint8_t handle)
 	adv->is_enabled = 0U;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (IS_ENABLED(CONFIG_BT_OBSERVER) && !ull_scan_is_enabled_get(0)) {
+	if (!IS_ENABLED(CONFIG_BT_OBSERVER) || !ull_scan_is_enabled_get(0)) {
 		ull_filter_adv_scan_state_cb(0);
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */

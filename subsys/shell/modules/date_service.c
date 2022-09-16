@@ -5,11 +5,11 @@
  */
 
 #include <stdlib.h>
-#include <shell/shell.h>
-#include <init.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/init.h>
 #include <string.h>
-#include <posix/time.h>
-#include <sys/timeutil.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/sys/timeutil.h>
 
 #define HELP_NONE      "[none]"
 #define HELP_DATE_SET  "[Y-m-d] <H:M:S>"

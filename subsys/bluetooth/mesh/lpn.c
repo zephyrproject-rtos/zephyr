@@ -5,12 +5,12 @@
  */
 
 #include <stdint.h>
-#include <zephyr.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_LOW_POWER)
 #define LOG_MODULE_NAME bt_mesh_lpn
@@ -377,7 +377,7 @@ static void req_sent(uint16_t duration, int err, void *user_data)
 
 	if (lpn->established || IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
 		lpn_set_state(BT_MESH_LPN_RECV_DELAY);
-		/* We start scanning a bit early to elimitate risk of missing
+		/* We start scanning a bit early to eliminate risk of missing
 		 * response data due to HCI and other latencies.
 		 */
 		k_work_reschedule(&lpn->timer,
@@ -530,7 +530,7 @@ void bt_mesh_lpn_msg_received(struct bt_mesh_net_rx *rx)
 	}
 
 	if (lpn->sent_req != TRANS_CTL_OP_FRIEND_POLL) {
-		BT_WARN("Unexpected message withouth a preceding Poll");
+		BT_WARN("Unexpected message without a preceding Poll");
 		return;
 	}
 

@@ -8,13 +8,13 @@
 #define __SENSOR_MS5607_H__
 
 #include <zephyr/types.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
 #define MS5607_CMD_RESET 0x1E

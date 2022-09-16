@@ -11,7 +11,7 @@ config APP_REPORT_TEMP_ALERTS
 	default n
 
 config APP_ENABLE_ONE_SHOT
-	bool "Enable one shot low power mode"
+	bool "One shot low power mode"
 	default n
 	help
 		One shot requires a callback to be invoked after the tmp108 has
@@ -19,7 +19,7 @@ config APP_ENABLE_ONE_SHOT
 		starts this process. Set this to enable 1 shot mode example.
 
 config APP_TEMP_ALERT_HIGH_THRESH
-	int "RH [%] high threshold for alert trigger in celcius"
+	int "RH [%] high threshold for alert trigger in celsius"
 	range 0 50
 	default 26
 	help
@@ -30,7 +30,7 @@ config APP_TEMP_ALERT_HIGH_THRESH
 		See spec sheet for more details.
 
 config APP_TEMP_ALERT_LOW_THRESH
-	int "RH [%] low threshold for alert trigger in celcius"
+	int "RH [%] low threshold for alert trigger in celsius"
 	range 0 50
 	default 18
 	help

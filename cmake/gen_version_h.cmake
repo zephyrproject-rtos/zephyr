@@ -22,5 +22,5 @@ if(NOT DEFINED BUILD_VERSION)
   endif()
 endif()
 
-include(${ZEPHYR_BASE}/cmake/version.cmake)
+include(${ZEPHYR_BASE}/cmake/modules/version.cmake)
 configure_file(${ZEPHYR_BASE}/version.h.in ${OUT_FILE})

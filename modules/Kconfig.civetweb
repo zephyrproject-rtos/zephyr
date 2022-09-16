@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CIVETWEB
-	bool "Civetweb Support"
+	bool "Civetweb Support (DEPRECATED)"
 	# The CONFIG_NET_TCP_ISN_RFC6528 option would pull in mbedtls,
 	# and there are include file issues if CONFIG_POSIX_API is set.
 	# Because Civetweb sets the POSIX API option in the samples,
@@ -11,3 +11,7 @@ config CIVETWEB
 	depends on !NET_TCP_ISN_RFC6528
 	help
 	  This option enables the civetweb HTTP API.
+	  Support for this module is now deprecated due to a lack
+	  of maintainers. Please volunteer to maintain this module
+	  if you would like to see support for it remain in upstream
+	  Zephyr.

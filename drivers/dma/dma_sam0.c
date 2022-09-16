@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT atmel_sam0_dmac
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_sam0, CONFIG_DMA_LOG_LEVEL);
 
 #define DMA_REGS	((Dmac *)DT_INST_REG_ADDR(0))

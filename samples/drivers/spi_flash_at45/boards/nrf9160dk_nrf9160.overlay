@@ -4,10 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&pinctrl {
+	spi3_default_alt: spi3_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 11)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 12)>,
+				<NRF_PSEL(SPIM_MISO, 0, 13)>;
+		};
+	};
+
+	spi3_sleep_alt: spi3_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 11)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 12)>,
+				<NRF_PSEL(SPIM_MISO, 0, 13)>;
+			low-power-enable;
+		};
+	};
+};
+
 &spi3 {
-	sck-pin = <11>;
-	mosi-pin = <12>;
-	miso-pin = <13>;
+	pinctrl-0 = <&spi3_default_alt>;
+	pinctrl-1 = <&spi3_sleep_alt>;
+	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>,
 		   <&gpio0 10 GPIO_ACTIVE_LOW>;
 
@@ -45,8 +64,8 @@
 
 &uart0 {
 	/*
-	 * Only TX is used in this sample, so delete the RX pin assignment
-	 * to prevent UART receiver from being enabled and consuming power.
+	 * Only TX is used in this sample, so disable RX to prevent UART
+	 * receiver from being enabled and consuming power.
 	 */
-	/delete-property/ rx-pin;
+	disable-rx;
 };

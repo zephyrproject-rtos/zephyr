@@ -18,7 +18,7 @@
 #include "testfs_lfs.h"
 #include <lfs.h>
 
-#include <fs/littlefs.h>
+#include <zephyr/fs/littlefs.h>
 
 static struct testfs_bcmd test_hierarchy[] = {
 	TESTFS_BCMD_FILE("f1", 1, 1),
@@ -301,7 +301,7 @@ static int check_rename(struct fs_mount_t *mp)
 
 	while (cp != to_end_bcmd) {
 		if (cp->name) {
-			zassert_true(cp->matched, "foriegn file retained");
+			zassert_true(cp->matched, "foreign file retained");
 		}
 		++cp;
 	}

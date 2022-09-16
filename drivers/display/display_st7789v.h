@@ -6,7 +6,7 @@
 #ifndef ST7789V_DISPLAY_DRIVER_H__
 #define ST7789V_DISPLAY_DRIVER_H__
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #define ST7789V_CMD_SW_RESET			0x01
 

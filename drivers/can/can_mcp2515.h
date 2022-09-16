@@ -8,10 +8,12 @@
 #ifndef _MCP2515_H_
 #define _MCP2515_H_
 
-#include <drivers/can.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/can.h>
 
 #define MCP2515_RX_CNT                   2
-#define MCP2515_TX_CNT                   3
+/* Reduce the number of Tx buffers to 1 in order to avoid priority inversion. */
+#define MCP2515_TX_CNT                   1
 #define MCP2515_FRAME_LEN               13
 
 struct mcp2515_tx_cb {
@@ -22,7 +24,6 @@ struct mcp2515_tx_cb {
 
 struct mcp2515_data {
 	/* interrupt data */
-	const struct device *int_gpio;
 	struct gpio_callback int_gpio_cb;
 	struct k_thread int_thread;
 	k_thread_stack_t *int_thread_stack;
@@ -52,8 +53,7 @@ struct mcp2515_config {
 	struct spi_dt_spec bus;
 
 	/* interrupt configuration */
-	uint8_t int_pin;
-	const char *int_port;
+	struct gpio_dt_spec int_gpio;
 	size_t int_thread_stack_size;
 	int int_thread_priority;
 
@@ -65,6 +65,10 @@ struct mcp2515_config {
 	uint32_t bus_speed;
 	uint32_t osc_freq;
 	uint16_t sample_point;
+
+	/* CAN transceiver */
+	const struct device *phy;
+	uint32_t max_bitrate;
 };
 
 /*

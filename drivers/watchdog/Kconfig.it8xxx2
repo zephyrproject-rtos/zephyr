@@ -12,6 +12,7 @@ config WDT_ITE_IT8XXX2
 
 config WDT_ITE_WARNING_LEADING_TIME_MS
 	int "Number of ms before generating watchdog event/signal"
+	depends on WDT_ITE_IT8XXX2
 	default 500
 	help
 	  This option defines the window in which a watchdog event must be
@@ -20,8 +21,7 @@ config WDT_ITE_WARNING_LEADING_TIME_MS
 
 config WDT_ITE_REDUCE_WARNING_LEADING_TIME
 	bool "Reduce warning leading time"
-	depends on SOC_IT8XXX2
-	default n
+	depends on WDT_ITE_IT8XXX2
 	help
 	  Once warning timer triggered, if watchdog timer isn't reloaded,
 	  then we will reduce interval of warning timer to 30ms to print

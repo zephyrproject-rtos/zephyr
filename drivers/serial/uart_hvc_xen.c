@@ -4,22 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/arm64/hypercall.h>
-#include <xen/console.h>
-#include <xen/events.h>
-#include <xen/generic.h>
-#include <xen/hvm.h>
-#include <xen/public/io/console.h>
-#include <xen/public/sched.h>
-#include <xen/public/xen.h>
+#include <zephyr/arch/arm64/hypercall.h>
+#include <zephyr/xen/console.h>
+#include <zephyr/xen/events.h>
+#include <zephyr/xen/generic.h>
+#include <zephyr/xen/hvm.h>
+#include <zephyr/xen/public/io/console.h>
+#include <zephyr/xen/public/sched.h>
+#include <zephyr/xen/public/xen.h>
 
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
-#include <logging/log.h>
-#include <sys/device_mmio.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/device_mmio.h>
 
-LOG_MODULE_REGISTER(uart_hvc_xen);
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(uart_hvc_xen, CONFIG_UART_LOG_LEVEL);
 
 static struct hvc_xen_data hvc_data = {0};
 

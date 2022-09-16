@@ -10,9 +10,15 @@
 #ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_MCR20A_H_
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_MCR20A_H_
 
-#include <linker/sections.h>
-#include <sys/atomic.h>
-#include <drivers/spi.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/drivers/spi.h>
+
+struct mcr20a_config {
+	struct spi_dt_spec bus;
+	struct gpio_dt_spec irq_gpio;
+	struct gpio_dt_spec reset_gpio;
+};
 
 /* Runtime context structure
  ***************************
@@ -20,8 +26,6 @@
 struct mcr20a_context {
 	struct net_if *iface;
 	/**************************/
-	const struct device *irq_gpio;
-	const struct device *reset_gpio;
 	struct gpio_callback irqb_cb;
 	const struct device *spi;
 	struct spi_config spi_cfg;
@@ -42,22 +46,22 @@ struct mcr20a_context {
 
 #include "ieee802154_mcr20a_regs.h"
 
-uint8_t z_mcr20a_read_reg(struct mcr20a_context *dev, bool dreg, uint8_t addr);
-bool z_mcr20a_write_reg(struct mcr20a_context *dev, bool dreg, uint8_t addr,
+uint8_t z_mcr20a_read_reg(const struct device *dev, bool dreg, uint8_t addr);
+bool z_mcr20a_write_reg(const struct device *dev, bool dreg, uint8_t addr,
 		       uint8_t value);
-bool z_mcr20a_write_burst(struct mcr20a_context *dev, bool dreg, uint16_t addr,
+bool z_mcr20a_write_burst(const struct device *dev, bool dreg, uint16_t addr,
 			 uint8_t *data_buf, uint8_t len);
-bool z_mcr20a_read_burst(struct mcr20a_context *dev, bool dreg, uint16_t addr,
+bool z_mcr20a_read_burst(const struct device *dev, bool dreg, uint16_t addr,
 			uint8_t *data_buf, uint8_t len);
 
 #define DEFINE_REG_READ(__reg_name, __reg_addr, __dreg)			\
-	static inline uint8_t read_reg_##__reg_name(struct mcr20a_context *dev) \
+	static inline uint8_t read_reg_##__reg_name(const struct device *dev) \
 	{								\
 		return z_mcr20a_read_reg(dev, __dreg, __reg_addr);	\
 	}
 
 #define DEFINE_REG_WRITE(__reg_name, __reg_addr, __dreg)		\
-	static inline bool write_reg_##__reg_name(struct mcr20a_context *dev, \
+	static inline bool write_reg_##__reg_name(const struct device *dev, \
 						  uint8_t value)		\
 	{								\
 		return z_mcr20a_write_reg(dev, __dreg, __reg_addr, value); \
@@ -151,13 +155,13 @@ DEFINE_BITS_SET(clk_out_div, MCR20A_CLK_OUT, _DIV)
 
 #define DEFINE_BURST_WRITE(__reg_addr, __addr, __sz, __dreg)		\
 	static inline bool write_burst_##__reg_addr(			\
-		struct mcr20a_context *dev, uint8_t *buf)			\
+		const struct device *dev, uint8_t *buf)			\
 	{								\
 		return z_mcr20a_write_burst(dev, __dreg, __addr, buf, __sz); \
 	}
 
 #define DEFINE_BURST_READ(__reg_addr, __addr, __sz, __dreg)		    \
-	static inline bool read_burst_##__reg_addr(struct mcr20a_context *dev, \
+	static inline bool read_burst_##__reg_addr(const struct device *dev, \
 						   uint8_t *buf)		\
 	{								    \
 		return z_mcr20a_read_burst(dev, __dreg, __addr, buf, __sz);  \

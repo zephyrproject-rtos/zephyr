@@ -9,8 +9,8 @@
  * @brief DAC shell commands.
  */
 
-#include <shell/shell.h>
-#include <drivers/dac.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/dac.h>
 #include <stdlib.h>
 
 struct args_index {

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 
 #include <errno.h>
@@ -13,10 +13,10 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/printk.h>
-#include <kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/kernel.h>
 
-#include <net/coap.h>
+#include <zephyr/net/coap.h>
 
 #include <tc_util.h>
 #include <ztest.h>

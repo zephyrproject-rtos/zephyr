@@ -54,7 +54,7 @@ This example uses ``west espressif monitor``, which automatically detects the se
    I (613) wifi:wifi firmware version: 9c89486
    I (613) wifi:wifi certification version: v7.0
    I (614) wifi:config NVS flash: disabled
-   I (618) wifi:config nano formating: disabled
+   I (618) wifi:config nano formatting: disabled
    I (622) wifi:Init data frame dynamic rx buffer num: 32
    I (627) wifi:Init management frame dynamic rx buffer num: 32
    I (632) wifi:Init management short buffer num: 32
@@ -89,7 +89,7 @@ This example uses ``west espressif monitor``, which automatically detects the se
 Sample console interaction
 ==========================
 
-If the :kconfig:`CONFIG_NET_SHELL` option is set, network shell functions
+If the :kconfig:option:`CONFIG_NET_SHELL` option is set, network shell functions
 can be used to check internet connection.
 
 .. code-block:: console

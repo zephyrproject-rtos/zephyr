@@ -4,17 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
-#ifdef CONFIG_GROVE_LCD_RGB
-#include <display/grove_lcd.h>
+#include <zephyr/drivers/misc/grove_lcd/grove_lcd.h>
 #include <stdio.h>
 #include <string.h>
-#endif
 
 struct channel_info {
 	int chan;
@@ -29,6 +27,7 @@ static struct channel_info info[] = {
 
 void main(void)
 {
+	const struct device *glcd = DEVICE_DT_GET(DT_NODELABEL(glcd));
 	const struct device *dev[ARRAY_SIZE(info)];
 	struct sensor_value val[ARRAY_SIZE(info)];
 	unsigned int i;
@@ -43,12 +42,8 @@ void main(void)
 		}
 	}
 
-#ifdef CONFIG_GROVE_LCD_RGB
-	const struct device *glcd;
-
-	glcd = device_get_binding(GROVE_LCD_NAME);
-	if (glcd == NULL) {
-		printk("Failed to get Grove LCD\n");
+	if (!device_is_ready(glcd)) {
+		printk("Grove LCD not ready\n");
 		return;
 	}
 
@@ -56,7 +51,6 @@ void main(void)
 	glcd_function_set(glcd, GLCD_FS_ROWS_2 | GLCD_FS_DOT_SIZE_LITTLE |
 			  GLCD_FS_8BIT_MODE);
 	glcd_display_state_set(glcd, GLCD_DS_DISPLAY_ON);
-#endif
 
 	while (1) {
 		/* fetch sensor samples */
@@ -77,7 +71,6 @@ void main(void)
 			}
 		}
 
-#ifdef CONFIG_GROVE_LCD_RGB
 		char row[16];
 
 		/* clear LCD */
@@ -93,13 +86,11 @@ void main(void)
 			223 /* degree symbol */);
 		glcd_print(glcd, row, strlen(row));
 
-		/* display himidity on LCD */
+		/* display humidity on LCD */
 		glcd_cursor_pos_set(glcd, 17 - strlen(row), 0);
 		sprintf(row, "RH:%.0f%c", sensor_value_to_double(val + 1),
 			37 /* percent symbol */);
 		glcd_print(glcd, row, strlen(row));
-
-#endif
 
 		k_sleep(K_MSEC(2000));
 	}

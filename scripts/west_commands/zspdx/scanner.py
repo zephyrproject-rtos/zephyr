@@ -190,7 +190,7 @@ def scanDocument(cfg, doc):
             # get hashes for file
             hashes = getHashes(f.abspath)
             if not hashes:
-                log.wrn("unable to get hashes for file {f.abspath}; skipping")
+                log.wrn(f"unable to get hashes for file {f.abspath}; skipping")
                 continue
             hSHA1, hSHA256, hMD5 = hashes
             f.sha1 = hSHA1

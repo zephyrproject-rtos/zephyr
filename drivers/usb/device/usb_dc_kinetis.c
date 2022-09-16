@@ -11,13 +11,13 @@
 #include <soc.h>
 #include <string.h>
 #include <stdio.h>
-#include <kernel.h>
-#include <sys/byteorder.h>
-#include <usb/usb_device.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/device.h>
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_kinetis);
 
 #define NUM_OF_EP_MAX		DT_INST_PROP(0, num_bidir_endpoints)
@@ -267,7 +267,7 @@ int usb_dc_set_address(const uint8_t addr)
 	/*
 	 * The device stack tries to set the address before
 	 * sending the ACK with ZLP, which is totally stupid,
-	 * as workaround the addresse will be buffered and
+	 * as workaround the address will be buffered and
 	 * placed later inside isr handler (see KINETIS_IN_TOKEN).
 	 */
 	dev_data.address = 0x80 | (addr & 0x7f);

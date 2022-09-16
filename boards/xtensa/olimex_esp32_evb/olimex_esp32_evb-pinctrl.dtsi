@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <dt-bindings/pinctrl/esp32-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32-gpio-sigmap.h>
+
+&pinctrl {
+	uart0_tx_gpio1: uart0_tx_gpio1 {
+		pinmux = <UART0_TX_GPIO1>;
+	};
+
+	uart0_rx_gpio3: uart0_rx_gpio3 {
+		pinmux = <UART0_RX_GPIO3>;
+	};
+
+	uart1_tx_gpio4: uart1_tx_gpio4 {
+		pinmux = <UART1_TX_GPIO4>;
+	};
+
+	uart1_rx_gpio36: uart1_rx_gpio36 {
+		pinmux = <UART1_RX_GPIO36>;
+	};
+
+	i2c0_scl_gpio16: i2c0_scl_gpio16 {
+		pinmux = <I2C0_SCL_GPIO16>;
+		drive-open-drain;
+		output-high;
+	};
+
+	i2c0_sda_gpio13: i2c0_sda_gpio13 {
+		pinmux = <I2C0_SDA_GPIO13>;
+		drive-open-drain;
+		output-high;
+	};
+
+	spim2_miso_gpio15: spim2_miso_gpio15 {
+		pinmux = <SPIM2_MISO_GPIO15>;
+	};
+
+	spim2_mosi_gpio2: spim2_mosi_gpio2 {
+		pinmux = <SPIM2_MOSI_GPIO2>;
+		output-low;
+	};
+
+	spim2_sclk_gpio14: spim2_sclk_gpio14 {
+		pinmux = <SPIM2_SCLK_GPIO14>;
+	};
+
+	spim2_csel_gpio17: spim2_csel_gpio17 {
+		pinmux = <SPIM2_CSEL_GPIO17>;
+	};
+};

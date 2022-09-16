@@ -10,10 +10,10 @@
 
 #define DT_DRV_COMPAT st_stts751
 
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 
 #include "stts751.h"
 

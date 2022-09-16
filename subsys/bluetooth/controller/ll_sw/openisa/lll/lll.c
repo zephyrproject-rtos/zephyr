@@ -9,12 +9,12 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #include <soc.h>
-#include <device.h>
+#include <zephyr/device.h>
 
-#include <drivers/entropy.h>
+#include <zephyr/drivers/entropy.h>
 
 #include "hal/swi.h"
 #include "hal/ccm.h"
@@ -52,7 +52,7 @@ static struct {
 } event;
 
 /* Entropy device */
-static const struct device *dev_entropy;
+static const struct device *dev_entropy = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 
 static int init_reset(void);
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
@@ -123,9 +123,8 @@ int lll_init(void)
 {
 	int err;
 
-	/* Get reference to entropy device */
-	dev_entropy = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-	if (!dev_entropy) {
+	/* Check if entropy device is ready */
+	if (!device_is_ready(dev_entropy)) {
 		return -ENODEV;
 	}
 
@@ -457,6 +456,16 @@ uint32_t lll_radio_rx_ready_delay_get(uint8_t phy, uint8_t flags)
 	return radio_rx_ready_delay_get(phy, flags);
 }
 
+void lll_isr_status_reset(void)
+{
+	radio_status_reset();
+	radio_tmr_status_reset();
+	radio_filter_status_reset();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
+		radio_ar_status_reset();
+	}
+	radio_rssi_status_reset();
+}
 
 static int init_reset(void)
 {

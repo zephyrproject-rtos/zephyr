@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <atmel/sam4e16e.dtsi>
+#include "sam4e_xpro-pinctrl.dtsi"
 
 / {
 	model = "Atmel SAM4E Xplained Pro Board with an Atmel SAM4E16E SoC";
@@ -123,30 +124,51 @@
 	clock-frequency = <120000000>;
 };
 
+&twi0 {
+	status = "okay";
+
+	pinctrl-0 = <&twi0_default>;
+	pinctrl-names = "default";
+};
+
 &spi0 {
 	status = "okay";
-	pinctrl-0 = <&pa12a_spi_miso
-		     &pa13a_spi_mosi
-		     &pa14a_spi_spck
-		     &pb14a_spi_npcs1>;
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
 	cs-gpios = <&piob 14 GPIO_ACTIVE_LOW>,
 		   <&piod 23 GPIO_ACTIVE_LOW>,
 		   <&piod 30 GPIO_ACTIVE_LOW>;
 };
 
 &uart0 {
-	current-speed = <115200>;
 	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
 };
 
 &usart1 {
-	pinctrl-0 = <&pa21a_usart1_rxd1 &pa22a_usart1_txd1>;
-	current-speed = <115200>;
 	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
 };
 
 &gmac {
 	status = "okay";
+
+	pinctrl-0 = <&gmac_mii>;
+	pinctrl-names = "default";
+
 	zephyr,random-mac-address;
 
 	phy: phy {
@@ -159,6 +181,9 @@
 
 &mdio {
 	status = "okay";
+
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
 };
 
 &wdt {

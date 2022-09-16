@@ -59,7 +59,7 @@
 #define LOG_MODULE_NAME net_lwm2m_plain_text
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdarg.h>
@@ -381,7 +381,7 @@ static int get_objlnk(struct lwm2m_input_context *in,
 	total_len = len;
 	value->obj_id = (uint16_t)tmp;
 
-	/* Skip ':' delimeter. */
+	/* Skip ':' delimiter. */
 	total_len++;
 	in->offset++;
 
@@ -403,6 +403,7 @@ const struct lwm2m_writer plain_text_writer = {
 	.put_s64 = put_s64,
 	.put_string = put_string,
 	.put_float = plain_text_put_float,
+	.put_time = put_s64,
 	.put_bool = put_bool,
 	.put_objlnk = put_objlnk,
 };
@@ -411,6 +412,7 @@ const struct lwm2m_reader plain_text_reader = {
 	.get_s32 = get_s32,
 	.get_s64 = get_s64,
 	.get_string = get_string,
+	.get_time = get_s64,
 	.get_float = get_float,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
@@ -419,9 +421,15 @@ const struct lwm2m_reader plain_text_reader = {
 
 int do_read_op_plain_text(struct lwm2m_message *msg, int content_format)
 {
-	/* Plain text can only return single resource */
-	if (msg->path.level != 3U) {
-		return -EPERM; /* NOT_ALLOWED */
+	/* Plain text can only return single resource (instance) */
+	if (msg->path.level < LWM2M_PATH_LEVEL_RESOURCE) {
+		return -EPERM;
+	} else if (msg->path.level > LWM2M_PATH_LEVEL_RESOURCE) {
+		if (!IS_ENABLED(CONFIG_LWM2M_VERSION_1_1)) {
+			return -ENOENT;
+		} else if (msg->path.level > LWM2M_PATH_LEVEL_RESOURCE_INST) {
+			return -ENOENT;
+		}
 	}
 
 	return lwm2m_perform_read_op(msg, content_format);
@@ -433,7 +441,7 @@ int do_write_op_plain_text(struct lwm2m_message *msg)
 	struct lwm2m_engine_obj_field *obj_field;
 	struct lwm2m_engine_res *res = NULL;
 	struct lwm2m_engine_res_inst *res_inst = NULL;
-	int ret, i;
+	int ret;
 	uint8_t created = 0U;
 
 	ret = lwm2m_get_or_create_engine_obj(msg, &obj_inst, &created);
@@ -441,40 +449,13 @@ int do_write_op_plain_text(struct lwm2m_message *msg)
 		return ret;
 	}
 
-	obj_field = lwm2m_get_engine_obj_field(obj_inst->obj, msg->path.res_id);
-	if (!obj_field) {
-		return -ENOENT;
+	ret = lwm2m_engine_validate_write_access(msg, obj_inst, &obj_field);
+	if (ret < 0) {
+		return ret;
 	}
 
-	if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W) &&
-	    !lwm2m_engine_bootstrap_override(msg->ctx, &msg->path)) {
-		return -EPERM;
-	}
-
-	if (!obj_inst->resources || obj_inst->resource_count == 0U) {
-		return -EINVAL;
-	}
-
-	for (i = 0; i < obj_inst->resource_count; i++) {
-		if (obj_inst->resources[i].res_id == msg->path.res_id) {
-			res = &obj_inst->resources[i];
-			break;
-		}
-	}
-
-	if (!res) {
-		return -ENOENT;
-	}
-
-	for (i = 0; i < res->res_inst_count; i++) {
-		if (res->res_instances[i].res_inst_id ==
-		    msg->path.res_inst_id) {
-			res_inst = &res->res_instances[i];
-			break;
-		}
-	}
-
-	if (!res_inst) {
+	ret = lwm2m_engine_get_create_res_inst(&msg->path, &res, &res_inst);
+	if (ret < 0) {
 		return -ENOENT;
 	}
 

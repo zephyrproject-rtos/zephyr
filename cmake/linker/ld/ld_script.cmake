@@ -311,6 +311,7 @@ function(section_to_string)
 
   if(NOT nosymbols)
     set(TEMP "${TEMP}\n__${name_clean}_size = __${name_clean}_end - __${name_clean}_start;")
+    set(TEMP "${TEMP}\nPROVIDE(__${name_clean}_align = ALIGNOF(${name}));")
     set(TEMP "${TEMP}\n__${name_clean}_load_start = LOADADDR(${name});")
   endif()
 

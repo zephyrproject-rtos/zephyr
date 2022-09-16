@@ -115,7 +115,7 @@ Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 
 For qemu_x86_64 platform, it also supports to use UEFI bootable method
 to run Zephyr applications and kernel tests, but you need to set up
-some environemnt configurations as follows:
+some environment configurations as follows:
 
 * Please install uefi-run in your system environment according to this
   reference link https://github.com/Richard-W/uefi-run.

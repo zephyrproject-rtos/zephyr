@@ -8,18 +8,18 @@
  * Populated vector table
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets.h>
-#include <arch/cpu.h>
-#include <arch/arm64/tpidrro_el0.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm64/tpidrro_el0.h>
 
 _ASM_FILE_PROLOGUE
 
 /*
- * Save volatile registers, x30, SPSR_EL1 and ELR_EL1
+ * Save volatile registers, LR, SPSR_EL1 and ELR_EL1
  *
- * Save the volatile registers and x30 on the process stack. This is
+ * Save the volatile registers and LR on the process stack. This is
  * needed if the thread is switched out because they can be clobbered by the
  * ISR and/or context switch.
  */
@@ -45,7 +45,7 @@ _ASM_FILE_PROLOGUE
 	stp	x12, x13, [sp, ___esf_t_x12_x13_OFFSET]
 	stp	x14, x15, [sp, ___esf_t_x14_x15_OFFSET]
 	stp	x16, x17, [sp, ___esf_t_x16_x17_OFFSET]
-	stp	x18, x30, [sp, ___esf_t_x18_x30_OFFSET]
+	stp	x18, lr, [sp, ___esf_t_x18_lr_OFFSET]
 
 	mrs	\xreg0, spsr_el1
 	mrs	\xreg1, elr_el1
@@ -205,7 +205,7 @@ SECTION_FUNC(TEXT, z_arm64_serror)
 	b	z_arm64_exit_exc
 
 /*
- * Restore volatile registers, x30, SPSR_EL1 and ELR_EL1
+ * Restore volatile registers, LR, SPSR_EL1 and ELR_EL1
  *
  * This is the common exit point for z_arm64_sync_exc() and _isr_wrapper().
  */
@@ -242,7 +242,7 @@ SECTION_FUNC(TEXT, z_arm64_exit_exc)
 	ldp	x12, x13, [sp, ___esf_t_x12_x13_OFFSET]
 	ldp	x14, x15, [sp, ___esf_t_x14_x15_OFFSET]
 	ldp	x16, x17, [sp, ___esf_t_x16_x17_OFFSET]
-	ldp	x18, x30, [sp, ___esf_t_x18_x30_OFFSET]
+	ldp	x18, lr, [sp, ___esf_t_x18_lr_OFFSET]
 
 	add	sp, sp, ___esf_t_SIZEOF
 

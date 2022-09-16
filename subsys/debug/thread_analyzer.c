@@ -8,11 +8,12 @@
  *  @brief Thread analyzer implementation
  */
 
-#include <kernel.h>
-#include <debug/thread_analyzer.h>
-#include <debug/stack.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <kernel_internal.h>
+#include <zephyr/debug/thread_analyzer.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <stdio.h>
 
 LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
@@ -125,12 +126,38 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	cb(&info);
 }
 
+extern K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+				   CONFIG_ISR_STACK_SIZE);
+
+static void isr_stacks(void)
+{
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		const uint8_t *buf = Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
+		size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
+		size_t unused;
+		int err;
+
+		err = z_stack_space_get(buf, size, &unused);
+		if (err == 0) {
+			THREAD_ANALYZER_PRINT(
+				THREAD_ANALYZER_FMT(
+					" %s%-17d: STACK: unused %zu usage %zu / %zu (%zu %%)"),
+					THREAD_ANALYZER_VSTR("ISR"), i, unused,
+					size - unused, size, (100 * (size - unused)) / size);
+		}
+	}
+}
+
 void thread_analyzer_run(thread_analyzer_cb cb)
 {
 	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_RUN_UNLOCKED)) {
 		k_thread_foreach_unlocked(thread_analyze_cb, cb);
 	} else {
 		k_thread_foreach(thread_analyze_cb, cb);
+	}
+
+	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_ISR_STACK_USAGE)) {
+		isr_stacks();
 	}
 }
 

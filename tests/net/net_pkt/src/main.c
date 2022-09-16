@@ -8,11 +8,11 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/net_ip.h>
-#include <net/ethernet.h>
-#include <random/rand32.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/random/rand32.h>
 
 #include <ztest.h>
 

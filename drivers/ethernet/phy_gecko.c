@@ -8,11 +8,11 @@
 /* SiLabs Giant Gecko GG11 Ethernet PHY driver. */
 
 #include <errno.h>
-#include <kernel.h>
-#include <net/mii.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/mii.h>
 #include "phy_gecko.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eth_gecko_phy, CONFIG_ETHERNET_LOG_LEVEL);
 
 /* Maximum time to establish a link through auto-negotiation for

@@ -5,9 +5,9 @@
  */
 
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <drivers/i2s.h>
+#include <zephyr/drivers/i2s.h>
 
 #define I2S_DEV_NAME_RX "I2S_0"
 #ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
@@ -45,13 +45,29 @@ static int16_t data_r[SAMPLE_NO] = {
 
 #define BLOCK_SIZE (2 * sizeof(data_l))
 
+#ifdef CONFIG_NOCACHE_MEMORY
+	#define MEM_SLAB_CACHE_ATTR __nocache
+#else
+	#define MEM_SLAB_CACHE_ATTR
+#endif /* CONFIG_NOCACHE_MEMORY */
+
 /*
  * NUM_BLOCKS is the number of blocks used by the test. Some of the drivers,
  * e.g. i2s_mcux_flexcomm, permanently keep ownership of a few RX buffers. Add a few more
  * RX blocks to satisfy this requirement
  */
-K_MEM_SLAB_DEFINE(rx_0_mem_slab, BLOCK_SIZE, NUM_BLOCKS + 2, 32);
-K_MEM_SLAB_DEFINE(tx_0_mem_slab, BLOCK_SIZE, NUM_BLOCKS, 32);
+
+char MEM_SLAB_CACHE_ATTR __aligned(WB_UP(32))
+	_k_mem_slab_buf_rx_0_mem_slab[(NUM_BLOCKS + 2) * WB_UP(BLOCK_SIZE)];
+STRUCT_SECTION_ITERABLE(k_mem_slab, rx_0_mem_slab) =
+	Z_MEM_SLAB_INITIALIZER(rx_0_mem_slab, _k_mem_slab_buf_rx_0_mem_slab,
+				WB_UP(BLOCK_SIZE), NUM_BLOCKS + 2);
+
+char MEM_SLAB_CACHE_ATTR __aligned(WB_UP(32))
+	_k_mem_slab_buf_tx_0_mem_slab[(NUM_BLOCKS) * WB_UP(BLOCK_SIZE)];
+STRUCT_SECTION_ITERABLE(k_mem_slab, tx_0_mem_slab) =
+	Z_MEM_SLAB_INITIALIZER(tx_0_mem_slab, _k_mem_slab_buf_tx_0_mem_slab,
+				WB_UP(BLOCK_SIZE), NUM_BLOCKS);
 
 static const struct device *dev_i2s_rx;
 static const struct device *dev_i2s_tx;

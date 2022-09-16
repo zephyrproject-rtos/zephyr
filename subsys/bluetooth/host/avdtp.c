@@ -5,18 +5,18 @@
  *
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <strings.h>
 #include <errno.h>
-#include <sys/atomic.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/avdtp.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/avdtp.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_AVDTP)
 #define LOG_MODULE_NAME bt_avdtp
@@ -204,7 +204,7 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 	}
 
 	session->br_chan.chan.ops = &ops;
-	session->br_chan.chan.required_sec_level = BT_SECURITY_L2;
+	session->br_chan.required_sec_level = BT_SECURITY_L2;
 
 	return bt_l2cap_chan_connect(conn, &session->br_chan.chan,
 				     BT_L2CAP_PSM_AVDTP);

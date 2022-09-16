@@ -47,15 +47,15 @@
 /* stdint conversions */
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#include <net/net_ip.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 #include <sys/types.h>
 
-#include <net/coap.h>
-#include <net/lwm2m.h>
+#include <zephyr/net/coap.h>
+#include <zephyr/net/lwm2m.h>
 
 #include "buf_util.h"
 
@@ -137,6 +137,15 @@ BUILD_ASSERT(CONFIG_LWM2M_COAP_BLOCK_SIZE <= CONFIG_LWM2M_COAP_MAX_MSG_SIZE,
 /* buffer util macros */
 #define CPKT_BUF_WRITE(cpkt)	(cpkt)->data, &(cpkt)->offset, (cpkt)->max_len
 #define CPKT_BUF_READ(cpkt)	(cpkt)->data, (cpkt)->max_len
+#define CPKT_BUF_W_PTR(cpkt)	((cpkt)->data + (cpkt)->offset)
+#define CPKT_BUF_W_SIZE(cpkt)	((cpkt)->max_len - (cpkt)->offset)
+
+#define CPKT_BUF_W_REGION(cpkt)  CPKT_BUF_W_PTR(cpkt), CPKT_BUF_W_SIZE(cpkt)
+
+/* Input context buffer util macros */
+#define ICTX_BUF_R_LEFT_SZ(i_ctx) ((i_ctx)->in_cpkt->max_len - (i_ctx)->offset)
+#define ICTX_BUF_R_PTR(i_ctx)	  ((i_ctx)->in_cpkt->data + (i_ctx)->offset)
+#define ICTX_BUF_R_REGION(i_ctx)   ICTX_BUF_R_PTR(i_ctx), ICTX_BUF_R_LEFT_SZ(i_ctx)
 
 struct lwm2m_engine_obj;
 struct lwm2m_message;
@@ -398,15 +407,30 @@ struct lwm2m_opaque_context {
 	size_t remaining;
 };
 
+struct lwm2m_senml_json_context {
+	bool base_name_stored : 1;
+	bool full_name_true : 1;
+	uint8_t base64_buf_len : 2;
+	uint8_t base64_mod_buf[3];
+	uint8_t json_flags;
+	struct lwm2m_obj_path base_name_path;
+	uint8_t resource_path_level;
+};
+
 struct lwm2m_block_context {
 	struct coap_block_context ctx;
 	struct lwm2m_opaque_context opaque;
+#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
+struct lwm2m_senml_json_context senml_json_ctx;
+#endif
 	int64_t timestamp;
 	uint32_t expected;
 	uint8_t token[8];
 	uint8_t tkl;
 	bool last_block : 1;
+	uint8_t  level;  /* 3/4 (4 = resource instance) */
 	uint16_t res_id;
+	uint16_t res_inst_id;
 };
 
 struct lwm2m_output_context {
@@ -500,6 +524,8 @@ struct lwm2m_writer {
 		       struct lwm2m_obj_path *path, int32_t value);
 	int (*put_s64)(struct lwm2m_output_context *out,
 		       struct lwm2m_obj_path *path, int64_t value);
+	int (*put_time)(struct lwm2m_output_context *out,
+		       struct lwm2m_obj_path *path, int64_t value);
 	int (*put_string)(struct lwm2m_output_context *out,
 			  struct lwm2m_obj_path *path, char *buf,
 			  size_t buflen);
@@ -520,6 +546,7 @@ struct lwm2m_writer {
 struct lwm2m_reader {
 	int (*get_s32)(struct lwm2m_input_context *in, int32_t *value);
 	int (*get_s64)(struct lwm2m_input_context *in, int64_t *value);
+	int (*get_time)(struct lwm2m_input_context *in, int64_t *value);
 	int (*get_string)(struct lwm2m_input_context *in, uint8_t *buf,
 			  size_t buflen);
 	int (*get_float)(struct lwm2m_input_context *in, double *value);
@@ -686,6 +713,12 @@ static inline int engine_put_float(struct lwm2m_output_context *out,
 	return out->writer->put_float(out, path, value);
 }
 
+static inline int engine_put_time(struct lwm2m_output_context *out,
+				  struct lwm2m_obj_path *path, int64_t value)
+{
+	return out->writer->put_time(out, path, value);
+}
+
 static inline int engine_put_bool(struct lwm2m_output_context *out,
 				  struct lwm2m_obj_path *path, bool value)
 {
@@ -734,6 +767,11 @@ static inline int engine_get_string(struct lwm2m_input_context *in,
 				    uint8_t *buf, size_t buflen)
 {
 	return in->reader->get_string(in, buf, buflen);
+}
+
+static inline int engine_get_time(struct lwm2m_input_context *in, int64_t *value)
+{
+	return in->reader->get_time(in, value);
 }
 
 static inline int engine_get_float(struct lwm2m_input_context *in,

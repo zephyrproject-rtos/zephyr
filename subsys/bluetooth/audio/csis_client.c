@@ -18,19 +18,19 @@
  * 10) Unlock all members
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
 
-#include <device.h>
-#include <init.h>
-#include <sys/check.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/check.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/buf.h>
-#include <sys/byteorder.h>
-#include <bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/bluetooth/audio/csis.h>
 #include "csis_crypto.h"
 #include "csis_internal.h"
 #include "../host/conn_internal.h"
@@ -38,9 +38,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CSIS_CLIENT)
 #define LOG_MODULE_NAME bt_csis_client
 #include "common/log.h"
-
-#define FIRST_HANDLE                    0x0001
-#define LAST_HANDLE                     0xFFFF
 
 static uint8_t gatt_write_buf[1];
 static struct bt_gatt_write_params write_params;
@@ -186,6 +183,10 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
+	if (conn == NULL) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
 	csis_inst = lookup_instance_by_handle(conn, handle);
 
 	if (csis_inst != NULL) {
@@ -254,6 +255,10 @@ static uint8_t size_notify_func(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
+	if (conn == NULL) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
 	csis_inst = lookup_instance_by_handle(conn, handle);
 
 	if (csis_inst != NULL) {
@@ -295,6 +300,10 @@ static uint8_t lock_notify_func(struct bt_conn *conn,
 		params->value_handle = 0U;
 
 		return BT_GATT_ITER_STOP;
+	}
+
+	if (conn == NULL) {
+		return BT_GATT_ITER_CONTINUE;
 	}
 
 	csis_inst = lookup_instance_by_handle(conn, handle);
@@ -623,7 +632,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 		cur_inst->cli.idx = client->inst_count;
 		cur_inst->cli.start_handle = attr->handle + 1;
 		cur_inst->cli.end_handle = prim_service->end_handle;
-		cur_inst->cli.conn = conn;
+		cur_inst->cli.conn = bt_conn_ref(conn);
 		client->inst_count++;
 	}
 
@@ -1224,6 +1233,55 @@ static int csis_client_read_set_lock(struct bt_csis *inst)
 	return bt_gatt_read(inst->cli.conn, &read_params);
 }
 
+static void csis_client_reset(struct bt_csis_client_inst *inst)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(inst->csis_insts); i++) {
+		struct bt_csis_client_svc_inst *cli = &inst->csis_insts[i].cli;
+
+		cli->idx = 0;
+		cli->rank = 0;
+		cli->set_lock = 0;
+		cli->start_handle = 0;
+		cli->end_handle = 0;
+		cli->set_sirk_handle = 0;
+		cli->set_size_handle = 0;
+		cli->set_lock_handle = 0;
+		cli->rank_handle = 0;
+
+		if (cli->conn != NULL) {
+			struct bt_conn *conn = cli->conn;
+
+			/* It's okay if these fail. In case of disconnect,
+			 * we can't unsubscribe and they will just fail.
+			 * In case that we reset due to another call of the
+			 * discover function, we will unsubscribe (regardless of
+			 * bonding state) to accommodate the new discovery
+			 * values.
+			 */
+			(void)bt_gatt_unsubscribe(conn, &cli->sirk_sub_params);
+			(void)bt_gatt_unsubscribe(conn, &cli->size_sub_params);
+			(void)bt_gatt_unsubscribe(conn, &cli->lock_sub_params);
+
+			bt_conn_unref(conn);
+			cli->conn = NULL;
+		}
+	}
+}
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	struct bt_csis_client_inst *inst = &client_insts[bt_conn_index(conn)];
+
+	/* All csis_insts share the same conn pointer */
+	if (inst->csis_insts[0].cli.conn == conn) {
+		csis_client_reset(inst);
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected,
+};
+
 /*************************** PUBLIC FUNCTIONS ***************************/
 void bt_csis_client_register_cb(struct bt_csis_client_cb *cb)
 {
@@ -1260,8 +1318,8 @@ int bt_csis_client_discover(struct bt_csis_client_set_member *member)
 	discover_params.func = primary_discover_func;
 	discover_params.uuid = &uuid.uuid;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
-	discover_params.start_handle = FIRST_HANDLE;
-	discover_params.end_handle = LAST_HANDLE;
+	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
 	err = bt_gatt_discover(member->conn, &discover_params);
 	if (err == 0) {

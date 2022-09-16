@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
-#include <spinlock.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/spinlock.h>
 #include <kswap.h>
-#include <syscall_handler.h>
-#include <init.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/init.h>
 #include <ksched.h>
 
 static struct z_futex_data *k_futex_find_data(struct k_futex *futex)

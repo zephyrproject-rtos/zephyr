@@ -5,17 +5,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
-#include <drivers/lora.h>
-#include <drivers/spi.h>
-#include <zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/lora.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/zephyr.h>
 
 #include <sx126x/sx126x.h>
 
 #include "sx12xx_common.h"
 #include "sx126x_common.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sx126x, CONFIG_LORA_LOG_LEVEL);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +
@@ -38,6 +38,19 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +
 #endif
 
 #define SX126X_CALIBRATION_ALL 0x7f
+
+static const struct sx126x_config dev_config = {
+	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
+#if HAVE_GPIO_ANTENNA_ENABLE
+	.antenna_enable = GPIO_DT_SPEC_INST_GET(0, antenna_enable_gpios),
+#endif
+#if HAVE_GPIO_TX_ENABLE
+	.tx_enable = GPIO_DT_SPEC_INST_GET(0, tx_enable_gpios),
+#endif
+#if HAVE_GPIO_RX_ENABLE
+	.rx_enable = GPIO_DT_SPEC_INST_GET(0, rx_enable_gpios),
+#endif
+};
 
 static struct sx126x_data dev_data;
 
@@ -109,10 +122,9 @@ static int sx126x_spi_transceive(uint8_t *req_tx, uint8_t *req_rx,
 	SX126xCheckDeviceReady();
 
 	if (!req_rx && !data_rx) {
-		ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+		ret = spi_write_dt(&dev_config.bus, &tx);
 	} else {
-		ret = spi_transceive(dev_data.spi, &dev_data.spi_cfg,
-				     &tx, &rx);
+		ret = spi_transceive_dt(&dev_config.bus, &tx, &rx);
 	}
 
 	if (ret < 0) {
@@ -225,7 +237,7 @@ void SX126xAntSwOn(void)
 {
 #if HAVE_GPIO_ANTENNA_ENABLE
 	LOG_DBG("Enabling antenna switch");
-	gpio_pin_set(dev_data.antenna_enable, GPIO_ANTENNA_ENABLE_PIN, 1);
+	gpio_pin_set_dt(&dev_config.antenna_enable, 1);
 #else
 	LOG_DBG("No antenna switch configured");
 #endif
@@ -235,7 +247,7 @@ void SX126xAntSwOff(void)
 {
 #if HAVE_GPIO_ANTENNA_ENABLE
 	LOG_DBG("Disabling antenna switch");
-	gpio_pin_set(dev_data.antenna_enable, GPIO_ANTENNA_ENABLE_PIN, 0);
+	gpio_pin_set_dt(&dev_config.antenna_enable, 0);
 #else
 	LOG_DBG("No antenna switch configured");
 #endif
@@ -244,14 +256,14 @@ void SX126xAntSwOff(void)
 static void sx126x_set_tx_enable(int value)
 {
 #if HAVE_GPIO_TX_ENABLE
-	gpio_pin_set(dev_data.tx_enable, GPIO_TX_ENABLE_PIN, value);
+	gpio_pin_set_dt(&dev_config.tx_enable, value);
 #endif
 }
 
 static void sx126x_set_rx_enable(int value)
 {
 #if HAVE_GPIO_RX_ENABLE
-	gpio_pin_set(dev_data.rx_enable, GPIO_RX_ENABLE_PIN, value);
+	gpio_pin_set_dt(&dev_config.rx_enable, value);
 #endif
 }
 
@@ -376,7 +388,7 @@ void SX126xWakeup(void)
 	};
 
 	LOG_DBG("Sending GET_STATUS");
-	ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+	ret = spi_write_dt(&dev_config.bus, &tx);
 	if (ret < 0) {
 		LOG_ERR("SPI transaction failed: %i", ret);
 		return;
@@ -418,6 +430,7 @@ static void sx126x_dio1_irq_work_handler(struct k_work *work)
 
 static int sx126x_lora_init(const struct device *dev)
 {
+	const struct sx126x_config *config = dev->config;
 	int ret;
 
 	LOG_DBG("Initializing %s", DT_INST_LABEL(0));
@@ -436,30 +449,10 @@ static int sx126x_lora_init(const struct device *dev)
 		return ret;
 	}
 
-	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!dev_data.spi) {
-		LOG_ERR("Cannot get pointer to %s device",
-			DT_INST_BUS_LABEL(0));
-		return -EINVAL;
+	if (!spi_is_ready(&config->bus)) {
+		LOG_ERR("SPI device not ready");
+		return -ENODEV;
 	}
-
-#if HAVE_GPIO_CS
-	dev_data.spi_cs.gpio_dev = device_get_binding(GPIO_CS_LABEL);
-	if (!dev_data.spi_cs.gpio_dev) {
-		LOG_ERR("Cannot get pointer to %s device", GPIO_CS_LABEL);
-		return -EIO;
-	}
-
-	dev_data.spi_cs.gpio_pin = GPIO_CS_PIN;
-	dev_data.spi_cs.gpio_dt_flags = GPIO_CS_FLAGS;
-	dev_data.spi_cs.delay = 0U;
-
-	dev_data.spi_cfg.cs = &dev_data.spi_cs;
-#endif
-	dev_data.spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
-	dev_data.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
-
 
 	ret = sx12xx_init(dev);
 	if (ret < 0) {
@@ -480,5 +473,5 @@ static const struct lora_driver_api sx126x_lora_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0, &sx126x_lora_init, NULL, &dev_data,
-		      NULL, POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,
+		      &dev_config, POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,
 		      &sx126x_lora_api);

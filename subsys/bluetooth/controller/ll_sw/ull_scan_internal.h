@@ -58,7 +58,7 @@ struct ll_scan_set *ull_scan_is_valid_get(struct ll_scan_set *scan);
 /* Return ll_scan_set context if enabled */
 struct ll_scan_set *ull_scan_is_enabled_get(uint8_t handle);
 
-/* Return ll_scan_set contesst if disabled */
+/* Return ll_scan_set context if disabled */
 struct ll_scan_set *ull_scan_is_disabled_get(uint8_t handle);
 
 /* Return flags if enabled */

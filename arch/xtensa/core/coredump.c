@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <debug/coredump.h>
+#include <zephyr/debug/coredump.h>
 #include <xtensa-asm2.h>
 
 #define ARCH_HDR_VER			1

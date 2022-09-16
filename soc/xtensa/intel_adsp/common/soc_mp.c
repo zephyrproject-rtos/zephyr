@@ -4,23 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
-#include <kernel_structs.h>
-#include <toolchain.h>
-#include <sys/__assert.h>
-#include <sys/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <xtensa/config/core-isa.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 
 #include <zsr.h>
 #include <cavs-idc.h>
 #include <soc.h>
-#include <arch/xtensa/cache.h>
+#include <zephyr/arch/xtensa/cache.h>
 #include <cavs-shim.h>
 #include <cavs-mem.h>
 #include <cpu_init.h>

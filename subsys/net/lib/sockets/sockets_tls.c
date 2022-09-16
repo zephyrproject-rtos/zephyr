@@ -8,15 +8,15 @@
 #include <stdbool.h>
 #include <fcntl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <init.h>
-#include <sys/util.h>
-#include <net/socket.h>
-#include <random/rand32.h>
-#include <syscall_handler.h>
-#include <sys/fdtable.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/fdtable.h>
 
 /* TODO: Remove all direct access to private fields.
  * According with Mbed TLS migration guide:
@@ -46,6 +46,8 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <mbedtls/ssl_cookie.h>
 #include <mbedtls/error.h>
 #include <mbedtls/debug.h>
+#include <mbedtls/platform.h>
+#include <mbedtls/ssl_cache.h>
 #endif /* CONFIG_MBEDTLS */
 
 #include "sockets_internal.h"
@@ -86,6 +88,21 @@ struct dtls_timing_context {
 	 *  (mbedtls_ssl_set_timer_t).
 	 */
 	uint32_t fin_ms;
+};
+
+/** TLS peer address/session ID mapping. */
+struct tls_session_cache {
+	/** Creation time. */
+	int64_t timestamp;
+
+	/** Peer address. */
+	struct sockaddr peer_addr;
+
+	/** Session buffer. */
+	uint8_t *session;
+
+	/** Session length. */
+	size_t session_len;
 };
 
 /** TLS context information. */
@@ -145,6 +162,9 @@ __net_socket struct tls_context {
 		 */
 		const char *alpn_list[ALPN_MAX_PROTOCOLS];
 
+		/** Session cache enabled on a socket. */
+		bool cache_enabled;
+
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 		/* DTLS handshake timeout */
 		uint32_t dtls_handshake_timeout_min;
@@ -187,11 +207,29 @@ __net_socket struct tls_context {
 #endif /* CONFIG_MBEDTLS */
 };
 
+
 /* A global pool of TLS contexts. */
 static struct tls_context tls_contexts[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
 
+static struct tls_session_cache client_cache[CONFIG_NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT];
+
+#if defined(MBEDTLS_SSL_CACHE_C)
+static mbedtls_ssl_cache_context server_cache;
+#endif
+
 /* A mutex for protecting TLS context allocation. */
 static struct k_mutex context_lock;
+
+static void tls_session_cache_reset(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(client_cache); i++) {
+		if (client_cache[i].session != NULL) {
+			mbedtls_free(client_cache[i].session);
+		}
+	}
+
+	(void)memset(client_cache, 0, sizeof(client_cache));
+}
 
 bool net_socket_is_tls(void *obj)
 {
@@ -292,11 +330,16 @@ static int tls_init(const struct device *unused)
 #endif
 
 	(void)memset(tls_contexts, 0, sizeof(tls_contexts));
+	(void)memset(client_cache, 0, sizeof(client_cache));
 
 	k_mutex_init(&context_lock);
 
 #if defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG)
 	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
+#endif
+
+#if defined(MBEDTLS_SSL_CACHE_C)
+	mbedtls_ssl_cache_init(&server_cache);
 #endif
 
 	return 0;
@@ -463,6 +506,190 @@ static int tls_release(struct tls_context *tls)
 	return 0;
 }
 
+static bool peer_addr_cmp(const struct sockaddr *addr,
+			  const struct sockaddr *peer_addr)
+{
+	if (addr->sa_family != peer_addr->sa_family) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && peer_addr->sa_family == AF_INET6) {
+		struct sockaddr_in6 *addr1 = net_sin6(peer_addr);
+		struct sockaddr_in6 *addr2 = net_sin6(addr);
+
+		return (addr1->sin6_port == addr2->sin6_port) &&
+			net_ipv6_addr_cmp(&addr1->sin6_addr, &addr2->sin6_addr);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && peer_addr->sa_family == AF_INET) {
+		struct sockaddr_in *addr1 = net_sin(peer_addr);
+		struct sockaddr_in *addr2 = net_sin(addr);
+
+		return (addr1->sin_port == addr2->sin_port) &&
+			net_ipv4_addr_cmp(&addr1->sin_addr, &addr2->sin_addr);
+	}
+
+	return false;
+}
+
+static int tls_session_save(const struct sockaddr *peer_addr,
+			    mbedtls_ssl_session *session)
+{
+	struct tls_session_cache *entry = NULL;
+	size_t session_len;
+	int ret;
+
+	for (int i = 0; i < ARRAY_SIZE(client_cache); i++) {
+		if (client_cache[i].session == NULL) {
+			/* New entry. */
+			if (entry == NULL || entry->session != NULL) {
+				entry = &client_cache[i];
+			}
+		} else {
+			if (peer_addr_cmp(&client_cache[i].peer_addr, peer_addr)) {
+				/* Reuse old entry for given address. */
+				entry = &client_cache[i];
+				break;
+			}
+
+			/* Remember the oldest entry and reuse if needed. */
+			if (entry == NULL ||
+			    (entry->session != NULL &&
+			     entry->timestamp < client_cache[i].timestamp)) {
+				entry = &client_cache[i];
+			}
+		}
+	}
+
+	/* Allocate session and save */
+
+	if (entry->session != NULL) {
+		mbedtls_free(entry->session);
+		entry->session = NULL;
+	}
+
+	(void)mbedtls_ssl_session_save(session, NULL, 0, &session_len);
+
+	entry->session = mbedtls_calloc(1, session_len);
+	if (entry->session == NULL) {
+		NET_ERR("Failed to allocate session buffer.");
+		return -ENOMEM;
+	}
+
+	ret = mbedtls_ssl_session_save(session, entry->session, session_len,
+				       &session_len);
+	if (ret < 0) {
+		NET_ERR("Failed to serialize session, err: 0x%x.", -ret);
+		mbedtls_free(entry->session);
+		entry->session = NULL;
+		return -ENOMEM;
+	}
+
+	entry->session_len = session_len;
+	entry->timestamp = k_uptime_get();
+	memcpy(&entry->peer_addr, peer_addr, sizeof(*peer_addr));
+
+	return 0;
+}
+
+static int tls_session_get(const struct sockaddr *peer_addr,
+			   mbedtls_ssl_session *session)
+{
+	struct tls_session_cache *entry = NULL;
+	int ret;
+
+	for (int i = 0; i < ARRAY_SIZE(client_cache); i++) {
+		if (client_cache[i].session != NULL &&
+		    peer_addr_cmp(&client_cache[i].peer_addr, peer_addr)) {
+			entry = &client_cache[i];
+			break;
+		}
+	}
+
+	if (entry == NULL) {
+		return -ENOENT;
+	}
+
+	ret = mbedtls_ssl_session_load(session, entry->session,
+				       entry->session_len);
+	if (ret < 0) {
+		/* Discard corrupted session data. */
+		mbedtls_free(entry->session);
+		entry->session = NULL;
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static void tls_session_store(struct tls_context *context,
+			      const struct sockaddr *addr,
+			      socklen_t addrlen)
+{
+	mbedtls_ssl_session session;
+	struct sockaddr peer_addr = { 0 };
+	int ret;
+
+	if (!context->options.cache_enabled) {
+		return;
+	}
+
+	memcpy(&peer_addr, addr, addrlen);
+	mbedtls_ssl_session_init(&session);
+
+	ret = mbedtls_ssl_get_session(&context->ssl, &session);
+	if (ret < 0) {
+		NET_ERR("Failed to obtain session for %p", context);
+		goto exit;
+	}
+
+	ret = tls_session_save(&peer_addr, &session);
+	if (ret < 0) {
+		NET_ERR("Failed to save session for %p", context);
+	}
+
+exit:
+	mbedtls_ssl_session_free(&session);
+}
+
+static void tls_session_restore(struct tls_context *context,
+				const struct sockaddr *addr,
+				socklen_t addrlen)
+{
+	mbedtls_ssl_session session;
+	struct sockaddr peer_addr = { 0 };
+	int ret;
+
+	if (!context->options.cache_enabled) {
+		return;
+	}
+
+	memcpy(&peer_addr, addr, addrlen);
+	mbedtls_ssl_session_init(&session);
+
+	ret = tls_session_get(&peer_addr, &session);
+	if (ret < 0) {
+		NET_DBG("Session not found for %p", context);
+		goto exit;
+	}
+
+	ret = mbedtls_ssl_set_session(&context->ssl, &session);
+	if (ret < 0) {
+		NET_ERR("Failed to set session for %p", context);
+	}
+
+exit:
+	mbedtls_ssl_session_free(&session);
+}
+
+static void tls_session_purge(void)
+{
+	tls_session_cache_reset();
+
+#if defined(MBEDTLS_SSL_CACHE_C)
+	mbedtls_ssl_cache_free(&server_cache);
+	mbedtls_ssl_cache_init(&server_cache);
+#endif
+}
+
 static inline int time_left(uint32_t start, uint32_t timeout)
 {
 	uint32_t elapsed = k_uptime_get_32() - start;
@@ -475,29 +702,11 @@ static bool dtls_is_peer_addr_valid(struct tls_context *context,
 				    const struct sockaddr *peer_addr,
 				    socklen_t addrlen)
 {
-	if (context->dtls_peer_addrlen != addrlen ||
-	    context->dtls_peer_addr.sa_family != peer_addr->sa_family) {
+	if (context->dtls_peer_addrlen != addrlen) {
 		return false;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && peer_addr->sa_family == AF_INET6) {
-		struct sockaddr_in6 *addr1 = net_sin6(peer_addr);
-		struct sockaddr_in6 *addr2 =
-				net_sin6(&context->dtls_peer_addr);
-
-		return (addr1->sin6_port == addr2->sin6_port) &&
-			net_ipv6_addr_cmp(&addr1->sin6_addr, &addr2->sin6_addr);
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   peer_addr->sa_family == AF_INET) {
-		struct sockaddr_in *addr1 = net_sin(peer_addr);
-		struct sockaddr_in *addr2 =
-				net_sin(&context->dtls_peer_addr);
-
-		return (addr1->sin_port == addr2->sin_port) &&
-			net_ipv4_addr_cmp(&addr1->sin_addr, &addr2->sin_addr);
-	}
-
-	return false;
+	return peer_addr_cmp(&context->dtls_peer_addr, peer_addr);
 }
 
 static void dtls_peer_address_set(struct tls_context *context,
@@ -1076,6 +1285,13 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 		return ret;
 	}
 
+	if (context->options.ciphersuites[0] != 0) {
+		/* Specific ciphersuites configured, so use them */
+		NET_DBG("Using user-specified ciphersuites");
+		mbedtls_ssl_conf_ciphersuites(&context->config,
+					      context->options.ciphersuites);
+	}
+
 #if defined(CONFIG_MBEDTLS_SSL_ALPN)
 	if (ALPN_MAX_PROTOCOLS && context->options.alpn_list[0] != NULL) {
 		ret = mbedtls_ssl_conf_alpn_protocols(&context->config,
@@ -1085,6 +1301,14 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 		}
 	}
 #endif /* CONFIG_MBEDTLS_SSL_ALPN */
+
+#if defined(MBEDTLS_SSL_CACHE_C)
+	if (is_server && context->options.cache_enabled) {
+		mbedtls_ssl_conf_session_cache(&context->config, &server_cache,
+					       mbedtls_ssl_cache_get,
+					       mbedtls_ssl_cache_set);
+	}
+#endif
 
 	ret = mbedtls_ssl_setup(&context->ssl,
 				&context->config);
@@ -1198,6 +1422,8 @@ static int tls_opt_ciphersuite_list_set(struct tls_context *context,
 	memcpy(context->options.ciphersuites, optval, optlen);
 	context->options.ciphersuites[cipher_cnt] = 0;
 
+	mbedtls_ssl_conf_ciphersuites(&context->config,
+				      context->options.ciphersuites);
 	return 0;
 }
 
@@ -1360,6 +1586,52 @@ static int tls_opt_alpn_list_get(struct tls_context *context,
 	}
 
 	*optlen = i * sizeof(const char *);
+
+	return 0;
+}
+
+static int tls_opt_session_cache_set(struct tls_context *context,
+				     const void *optval, socklen_t optlen)
+{
+	int *val = (int *)optval;
+
+	if (!optval) {
+		return -EINVAL;
+	}
+
+	if (sizeof(int) != optlen) {
+		return -EINVAL;
+	}
+
+	context->options.cache_enabled = (*val == TLS_SESSION_CACHE_ENABLED);
+
+	return 0;
+}
+
+static int tls_opt_session_cache_get(struct tls_context *context,
+				     void *optval, socklen_t *optlen)
+{
+	int cache_enabled = context->options.cache_enabled ?
+			    TLS_SESSION_CACHE_ENABLED :
+			    TLS_SESSION_CACHE_DISABLED;
+
+	if (*optlen != sizeof(cache_enabled)) {
+		return -EINVAL;
+	}
+
+	*(int *)optval = cache_enabled;
+
+	return 0;
+}
+
+static int tls_opt_session_cache_purge_set(struct tls_context *context,
+					   const void *optval, socklen_t optlen)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(optval);
+	ARG_UNUSED(optlen);
+
+	tls_session_purge();
 
 	return 0;
 }
@@ -1559,6 +1831,8 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 		/* Do not use any socket flags during the handshake. */
 		ctx->flags = 0;
 
+		tls_session_restore(ctx, addr, addrlen);
+
 		/* TODO For simplicity, TLS handshake blocks the socket
 		 * even for non-blocking socket.
 		 */
@@ -1566,6 +1840,8 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 		if (ret < 0) {
 			goto error;
 		}
+
+		tls_session_store(ctx, addr, addrlen);
 	} else {
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 		/* Just store the address. */
@@ -1702,6 +1978,9 @@ static ssize_t sendto_dtls_client(struct tls_context *ctx, const void *buf,
 	}
 
 	if (!is_handshake_complete(ctx)) {
+		tls_session_restore(ctx, &ctx->dtls_peer_addr,
+				    ctx->dtls_peer_addrlen);
+
 		/* TODO For simplicity, TLS handshake blocks the socket even for
 		 * non-blocking socket.
 		 */
@@ -1709,6 +1988,9 @@ static ssize_t sendto_dtls_client(struct tls_context *ctx, const void *buf,
 		if (ret < 0) {
 			goto error;
 		}
+
+		tls_session_store(ctx, &ctx->dtls_peer_addr,
+				  ctx->dtls_peer_addrlen);
 	}
 
 	return send_tls(ctx, buf, len, flags);
@@ -1773,6 +2055,19 @@ ssize_t ztls_sendmsg_ctx(struct tls_context *ctx, const struct msghdr *msg,
 	ssize_t len;
 	ssize_t ret;
 	int i;
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_ENABLE_DTLS) &&
+	    ctx->type == SOCK_DGRAM) {
+		/*
+		 * Current mbedTLS API (i.e. mbedtls_ssl_write()) allows only to send a single
+		 * contiguous buffer. This means that gather write using sendmsg() can only be
+		 * handled correctly if there is a single non-empty buffer in msg->msg_iov.
+		 */
+		if (msghdr_non_empty_iov_count(msg) > 1) {
+			errno = EMSGSIZE;
+			return -1;
+		}
+	}
 
 	len = 0;
 	if (msg) {
@@ -2356,7 +2651,7 @@ static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 	int remaining;
 	uint32_t entry = k_uptime_get_32();
 
-	/* Overwrite TLS file decriptors with underlying ones. */
+	/* Overwrite TLS file descriptors with underlying ones. */
 	for (i = 0; i < nfds; i++) {
 		fd_backup[i] = fds[i].fd;
 
@@ -2497,6 +2792,10 @@ int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 		err = tls_opt_alpn_list_get(ctx, optval, optlen);
 		break;
 
+	case TLS_SESSION_CACHE:
+		err = tls_opt_session_cache_get(ctx, optval, optlen);
+		break;
+
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	case TLS_DTLS_HANDSHAKE_TIMEOUT_MIN:
 		err = tls_opt_dtls_handshake_timeout_get(ctx, optval,
@@ -2562,6 +2861,14 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 		err = tls_opt_alpn_list_set(ctx, optval, optlen);
 		break;
 
+	case TLS_SESSION_CACHE:
+		err = tls_opt_session_cache_set(ctx, optval, optlen);
+		break;
+
+	case TLS_SESSION_CACHE_PURGE:
+		err = tls_opt_session_cache_purge_set(ctx, optval, optlen);
+		break;
+
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	case TLS_DTLS_HANDSHAKE_TIMEOUT_MIN:
 		err = tls_opt_dtls_handshake_timeout_set(ctx, optval,
@@ -2573,6 +2880,11 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 							 optlen, true);
 		break;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+
+	case TLS_NATIVE:
+		/* Option handled at the socket dispatcher level. */
+		err = 0;
+		break;
 
 	default:
 		/* Unknown or read-only option. */
@@ -2669,6 +2981,13 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	}
 }
 
+static int tls_sock_shutdown_vmeth(void *obj, int how)
+{
+	struct tls_context *ctx = obj;
+
+	return zsock_shutdown(ctx->sock, how);
+}
+
 static int tls_sock_bind_vmeth(void *obj, const struct sockaddr *addr,
 			       socklen_t addrlen)
 {
@@ -2737,6 +3056,14 @@ static int tls_sock_close_vmeth(void *obj)
 	return ztls_close_ctx(obj);
 }
 
+static int tls_sock_getpeername_vmeth(void *obj, struct sockaddr *addr,
+				      socklen_t *addrlen)
+{
+	struct tls_context *ctx = obj;
+
+	return zsock_getpeername(ctx->sock, addr, addrlen);
+}
+
 static int tls_sock_getsockname_vmeth(void *obj, struct sockaddr *addr,
 				      socklen_t *addrlen)
 {
@@ -2752,6 +3079,7 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 		.close = tls_sock_close_vmeth,
 		.ioctl = tls_sock_ioctl_vmeth,
 	},
+	.shutdown = tls_sock_shutdown_vmeth,
 	.bind = tls_sock_bind_vmeth,
 	.connect = tls_sock_connect_vmeth,
 	.listen = tls_sock_listen_vmeth,
@@ -2761,6 +3089,7 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 	.recvfrom = tls_sock_recvfrom_vmeth,
 	.getsockopt = tls_sock_getsockopt_vmeth,
 	.setsockopt = tls_sock_setsockopt_vmeth,
+	.getpeername = tls_sock_getpeername_vmeth,
 	.getsockname = tls_sock_getsockname_vmeth,
 };
 

@@ -12,7 +12,7 @@
 /*
  * WARNING: The pin PA7 will conflict on selection of SPI_1 and ETH_STM32_HAL.
  *          If you require both peripherals, and you do not need Arduino Uno v3
- *          comaptability, the pin PB5 (also on ST Zio connector) can be used
+ *          compatibility, the pin PB5 (also on ST Zio connector) can be used
  *          for the SPI_1 MOSI signal.
  */
 

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <syscall_handler.h>
-#include <drivers/i2s.h>
+#include <zephyr/kernel.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/i2s.h>
 
 
 static inline int z_vrfy_i2s_configure(const struct device *dev,

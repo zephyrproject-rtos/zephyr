@@ -16,7 +16,7 @@ menuconfig FLASH_MAP
 if FLASH_MAP
 
 config FLASH_MAP_SHELL
-	bool "Enable flash map shell interface"
+	bool "Flash map shell interface"
 	depends on SHELL
 	help
 	  This enables shell commands to list and test flash maps.
@@ -29,7 +29,7 @@ config FLASH_MAP_CUSTOM
 	  if had enabled this option.
 
 config FLASH_AREA_CHECK_INTEGRITY
-	bool "Enable flash check functions"
+	bool "Flash check functions"
 	help
 	  If enabled, there will be available the backend to check flash
 	  integrity using SHA-256 verification algorithm.

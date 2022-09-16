@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -204,8 +204,14 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	timeout = sys_le16_to_cpu(pdu_adv->connect_ind.timeout);
 	conn->supervision_reload =
 		RADIO_CONN_EVENTS((timeout * 10U * 1000U), conn_interval_us);
+
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	conn->procedure_reload =
 		RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
+#else
+	/* Setup the PRT reload */
+	ull_cp_prt_reload_set(conn, conn_interval_us);
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	/* APTO in no. of connection events */
@@ -606,22 +612,10 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 		conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 	}
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-	/*
-	 * TODO: add info to the conn-structure
-	 * - refresh
-	 * - no procedure in progress
-	 * - procedure type
-	 * and use that info to decide if the cmd is allowed
-	 * or if we should terminate the connection
-	 * see BT 5.2 Vol. 6 part B chapter 5.1.3
-	 * see also ull_periph.c line 395-439
-	 *
-	 * TODO: the ull_cp_ltx_req* functions should return success/fail status
-	 */
 	if (error_code) {
-		ull_cp_ltk_req_neq_reply(conn);
+		return ull_cp_ltk_req_neq_reply(conn);
 	} else {
-		ull_cp_ltk_req_reply(conn, ltk);
+		return ull_cp_ltk_req_reply(conn, ltk);
 	}
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 

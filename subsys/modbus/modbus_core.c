@@ -5,12 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modbus, CONFIG_MODBUS_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include <modbus_internal.h>
 
 #define DT_DRV_COMPAT zephyr_modbus_serial
@@ -55,13 +55,13 @@ static struct modbus_serial_config modbus_serial_cfg[] = {
 		.iface_name = "RAW_"#x,				\
 		.raw_tx_cb = NULL,				\
 		.mode = MODBUS_MODE_RAW,			\
-	},
+	}
 
 
 static struct modbus_context mb_ctx_tbl[] = {
 	DT_INST_FOREACH_STATUS_OKAY(MODBUS_DT_GET_DEV)
 #ifdef CONFIG_MODBUS_RAW_ADU
-	UTIL_LISTIFY(CONFIG_MODBUS_NUMOF_RAW_ADU, DEFINE_MODBUS_RAW_ADU, _)
+	LISTIFY(CONFIG_MODBUS_NUMOF_RAW_ADU, DEFINE_MODBUS_RAW_ADU, (,), _)
 #endif
 };
 
@@ -204,7 +204,7 @@ static struct modbus_context *modbus_init_iface(const uint8_t iface)
 	ctx = &mb_ctx_tbl[iface];
 
 	if (atomic_test_and_set_bit(&ctx->state, MODBUS_STATE_CONFIGURED)) {
-		LOG_ERR("Interface allready used");
+		LOG_ERR("Interface already used");
 		return NULL;
 	}
 
@@ -238,6 +238,8 @@ int modbus_init_server(const int iface, struct modbus_iface_param param)
 		goto init_server_error;
 	}
 
+	ctx->client = false;
+
 	switch (param.mode) {
 	case MODBUS_MODE_RTU:
 	case MODBUS_MODE_ASCII:
@@ -262,7 +264,6 @@ int modbus_init_server(const int iface, struct modbus_iface_param param)
 		goto init_server_error;
 	}
 
-	ctx->client = false;
 	ctx->unit_id = param.server.unit_id;
 	ctx->mbs_user_cb = param.server.user_cb;
 	if (IS_ENABLED(CONFIG_MODBUS_FC08_DIAGNOSTIC)) {
@@ -298,6 +299,8 @@ int modbus_init_client(const int iface, struct modbus_iface_param param)
 		goto init_client_error;
 	}
 
+	ctx->client = true;
+
 	switch (param.mode) {
 	case MODBUS_MODE_RTU:
 	case MODBUS_MODE_ASCII:
@@ -322,7 +325,6 @@ int modbus_init_client(const int iface, struct modbus_iface_param param)
 		goto init_client_error;
 	}
 
-	ctx->client = true;
 	ctx->unit_id = 0;
 	ctx->mbs_user_cb = NULL;
 	ctx->rxwait_to = param.rx_timeout;

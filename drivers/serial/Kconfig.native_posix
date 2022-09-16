@@ -50,7 +50,7 @@ config UART_NATIVE_WAIT_PTS_READY_ENABLE
 	  Otherwise writes are sent irrespectively.
 
 config UART_NATIVE_POSIX_PORT_1_ENABLE
-	bool "Enable second UART port"
+	bool "Second UART port"
 	help
 	  Useful if you need to have another serial connection to host.
 	  This is used for example in PPP (Point-to-Point Protocol)

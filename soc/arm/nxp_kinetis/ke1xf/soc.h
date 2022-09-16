@@ -7,7 +7,7 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
 

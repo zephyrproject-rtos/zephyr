@@ -7,15 +7,15 @@
  *
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <syscall.h>
+#include <zephyr/syscall.h>
 
-#include <arch/arm/aarch32/exc.h>
+#include <zephyr/arch/arm/aarch32/exc.h>
 
 #if defined(CONFIG_ARMV7_R)
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 #endif
 
 _ASM_FILE_PROLOGUE
@@ -245,7 +245,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     mov r0, lr
 
 #if defined(CONFIG_ARMV7_R)
-    /* change processor mode to unprivileged, with all interrrupts enabled. */
+    /* change processor mode to unprivileged, with all interrupts enabled. */
     msr CPSR_c, #MODE_USR
 #else
     /* change processor mode to unprivileged */

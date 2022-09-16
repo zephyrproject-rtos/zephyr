@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <mgmt/mcumgr/smp_udp.h>
-#include <net/net_mgmt.h>
-#include <net/net_event.h>
-#include <net/net_conn_mgr.h>
+#include <zephyr/mgmt/mcumgr/smp_udp.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/net_conn_mgr.h>
 
 #define LOG_LEVEL LOG_LEVEL_DBG
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smp_udp_sample);
 
 #define EVENT_MASK (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED)

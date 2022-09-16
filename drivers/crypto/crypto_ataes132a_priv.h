@@ -8,9 +8,9 @@
 #ifndef ZEPHYR_DRIVERS_CRYPTO_CRYPTO_ATAES132A_PRIV_H_
 #define ZEPHYR_DRIVERS_CRYPTO_CRYPTO_ATAES132A_PRIV_H_
 
-#include <drivers/i2c.h>
-#include <kernel.h>
-#include <sys/util.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 
 /* Configuration Read Only Registers */
 #define ATAES_SERIALNUM_REG	0xF000
@@ -24,7 +24,7 @@
 #define ATAES_MANUFACTID_REG	0xF02B
 #define ATAES_PERMCONFIG_REG	0xF02D
 
-/* Configuarion Pre-Lock Writable Registers */
+/* Configuration Pre-Lock Writable Registers */
 #define ATAES_I2CADDR_REG	0xF040
 #define ATAES_CHIPCONFIG_REG	0xF042
 #define ATAES_FREESPACE_ADDR	0xF180

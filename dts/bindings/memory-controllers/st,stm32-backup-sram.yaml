@@ -9,7 +9,7 @@ description: |
 
 compatible: "st,stm32-backup-sram"
 
-include: [base.yaml, mem-region.yaml]
+include: base.yaml
 
 properties:
   label:

@@ -2,10 +2,10 @@
 
 #include <mem.h>
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/clock/kinetis_sim.h>
-#include <dt-bindings/clock/kinetis_mcg.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/kinetis_sim.h>
+#include <zephyr/dt-bindings/clock/kinetis_mcg.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	aliases {
@@ -38,8 +38,9 @@
 	 * https://sourceware.org/ml/binutils/2017-02/msg00250.html
 	 */
 	sram_l: memory@1fff0000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x1fff0000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "SRAML";
 	};
 
 	sram0: memory@20000000 {
@@ -70,6 +71,14 @@
 		label = "TEMP1";
 		status = "disabled";
 	};
+
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,kinetis-pinctrl";
+		status = "okay";
+	};
+
 
 	soc {
 		mpu: mpu@4000d000 {
@@ -380,7 +389,7 @@
 			reg = <0x400ac000 0x88>;
 			interrupts = <65 3>;
 			label = "SPI_2";
-			dmas = <&edma0 0 17>, <&edma0 0 17>;
+			dmas = <&edma0 0 38>, <&edma0 0 39>;
 			dma-names = "rx", "tx";
 			rx-fifo-size = <1>;
 			tx-fifo-size = <1>;
@@ -506,7 +515,7 @@
 			label = "ETH_0";
 			phy-addr = <0>;
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0 0>;
-			ptp {
+			ptp: ptp {
 				compatible = "nxp,kinetis-ptp";
 				status = "disabled";
 				interrupts = <82 0>;

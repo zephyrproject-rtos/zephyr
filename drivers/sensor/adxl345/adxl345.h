@@ -8,10 +8,10 @@
 #define ZEPHYR_DRIVERS_SENSOR_ADX345_ADX345_H_
 
 #include <zephyr/types.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
 
 #define ADXL345_DEVICE_ID_REG      0x00
 #define ADXL345_RATE_REG           0x2c

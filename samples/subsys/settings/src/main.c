@@ -7,21 +7,21 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "settings/settings.h"
+#include <zephyr/settings/settings.h>
 
 #include <errno.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #if IS_ENABLED(CONFIG_SETTINGS_FS)
-#include <fs/fs.h>
-#include <fs/littlefs.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
 #endif
 
 #define GAMMA_DEFAULT_VAl 0
 #define FAIL_MSG "fail (err %d)\n"
 #define SECTION_BEGIN_LINE \
 	"\n=================================================\n"
-/* Default valuse are assigned to settings valuses consuments
+/* Default values are assigned to settings values consuments
  * All of them will be overwritten if storage contain proper key-values
  */
 uint8_t angle_val;
@@ -203,7 +203,7 @@ static void example_save_and_load_basic(void)
 	printk("basic load and save using registered handlers\n");
 	/* load all key-values at once
 	 * In case a key-value doesn't exist in the storage
-	 * default valuse should be assigned to settings consuments variable
+	 * default values should be assigned to settings consuments variable
 	 * before any settings load call
 	 */
 	printk("\nload all key-value pairs using registered handlers\n");
@@ -310,7 +310,7 @@ static void example_direct_load_subtree(void)
 	int rc;
 
 	/* load subtree directly using call-specific handler `direct_loader'
-	 * This handder loads subtree values to call-speciffic structure of type
+	 * This handler loads subtree values to call-specific structure of type
 	 * 'direct_length_data`.
 	 */
 	printk(SECTION_BEGIN_LINE);
@@ -359,7 +359,7 @@ static int direct_loader_immediate_value(const char *name, size_t len,
 		return -EINVAL;
 	}
 
-	/* other keys aren't served by the calback
+	/* other keys aren't served by the callback
 	 * Return success in order to skip them
 	 * and keep storage processing.
 	 */
@@ -511,7 +511,7 @@ void example_runtime_usage(void)
 	printk("  The settings destination off the key <alpha/beta/source> has "
 	       "got value: \"%s\"\n\n", source_name_val);
 
-	/* set settins destination value "by hand" for next example */
+	/* set settings destination value "by hand" for next example */
 	(void) strcpy(source_name_val, "rtos");
 
 	printk(SECTION_BEGIN_LINE);

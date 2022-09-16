@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Byte-Lab d.o.o.
+# Copyright (c) 2022, Byte-Lab d.o.o. <dev@byte-lab.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: STM32 LCD-TFT display controller
@@ -13,16 +13,21 @@ properties:
       required: false
       description: |
         Display on/off GPIO pin.
-
-        Configure the polarity (active high/active low) according to LCD datasheet.
+        Configure the GPIO polarity (active high/active low) according to LCD datasheet.
 
     bl-ctrl-gpios:
       type: phandle-array
       required: false
       description: |
         Backlight on/off GPIO pin.
+        Configure the GPIO polarity (active high/active low) according to LCD datasheet.
 
-        Configure the polarity (active high/active low) according to LCD datasheet.
+    ext-sdram:
+      type: phandle
+      required: false
+      description: |
+        External SDRAM in which frame buffer will be stored.
+        If not defined, internal RAM will be used.
 
     clocks:
       required: true
@@ -36,22 +41,34 @@ properties:
     hsync-pol:
       type: int
       required: true
-      description: Horizontal synchronization pulse polarity
+      description: |
+        Horizontal synchronization pulse polarity.
+        If HSYNC is active low, use STM32_LTDC_HSPOL_ACTIVE_LOW,
+        otherwise use STM32_LTDC_HSPOL_ACTIVE_HIGH.
 
     vsync-pol:
       type: int
       required: true
-      description: Vertical synchronization pulse polarity
+      description: |
+        Vertical synchronization pulse polarity.
+        If VSYNC is active low, use STM32_LTDC_VSPOL_ACTIVE_LOW,
+        otherwise use STM32_LTDC_VSPOL_ACTIVE_HIGH.
 
     de-pol:
       type: int
-      required: false
-      description: Data enable pulse polarity
+      required: true
+      description: |
+        Data enable pulse polarity.
+        If DE is active low, use STM32_LTDC_DEPOL_ACTIVE_LOW,
+        otherwise use STM32_LTDC_DEPOL_ACTIVE_HIGH.
 
     pclk-pol:
       type: int
       required: true
-      description: Pixel clock polarity (data sampled on rising or falling edge)
+      description: |
+        Pixel clock polarity.
+        If RGB data is sampled on falling edge of PCLK, use STM32_LTDC_PCPOL_ACTIVE_LOW,
+        otherwise use STM32_LTDC_PCPOL_ACTIVE_HIGH.
 
     hsync-duration:
       type: int

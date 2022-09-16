@@ -6,8 +6,8 @@
 #ifndef TESTSUITE_ZTEST_INCLUDE_ZTRESS_H__
 #define TESTSUITE_ZTEST_INCLUDE_ZTRESS_H__
 
-#include <sys/util.h>
-#include <kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
 
 /** @internal Internal ID's to distinguish context type. */
 #define ZTRESS_ID_THREAD 0

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <drivers/gpio.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
 
 #define VDD_5V0_PWR_CTRL_GPIO_PIN  21   /* ENABLE_5V0_BOOST  --> speed sensor */
 

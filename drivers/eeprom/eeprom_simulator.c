@@ -7,13 +7,13 @@
 
 #define DT_DRV_COMPAT zephyr_sim_eeprom
 
-#include <device.h>
-#include <drivers/eeprom.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/eeprom.h>
 
-#include <init.h>
-#include <kernel.h>
-#include <sys/util.h>
-#include <stats/stats.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/stats/stats.h>
 #include <string.h>
 #include <errno.h>
 
@@ -27,15 +27,13 @@
 #endif
 
 #define LOG_LEVEL CONFIG_EEPROM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eeprom_simulator);
 
 struct eeprom_sim_config {
 	size_t size;
 	bool readonly;
 };
-
-#define DEV_NAME(dev) ((dev)->name)
 
 #define EEPROM(addr) (mock_eeprom + (addr))
 
@@ -51,7 +49,7 @@ static struct k_sem sem_lock;
 #define SYNC_UNLOCK()
 #endif
 
-/* simulator statistcs */
+/* simulator statistics */
 STATS_SECT_START(eeprom_sim_stats)
 STATS_SECT_ENTRY32(bytes_read)		/* total bytes read */
 STATS_SECT_ENTRY32(bytes_written)	/* total bytes written */

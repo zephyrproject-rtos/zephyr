@@ -6,8 +6,8 @@
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;

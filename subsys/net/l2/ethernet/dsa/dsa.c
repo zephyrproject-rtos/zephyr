@@ -8,16 +8,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_dsa, CONFIG_NET_DSA_LOG_LEVEL);
 
 #include <errno.h>
 #include <stdlib.h>
 
-#include <net/net_core.h>
-#include <net/ethernet.h>
-#include <net/net_mgmt.h>
-#include <net/dsa.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/dsa.h>
 
 /*
  * Store, in the ethernet_context for master interface, the original

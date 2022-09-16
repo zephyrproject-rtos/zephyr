@@ -258,7 +258,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
             # It's important for tool_opt to come last, so it can override
             # any options that we set here.
             program_commands.append(['nrfjprog', '--program', self.hex_,
-                                     erase_arg, '-f', self.family,
+                                     erase_arg, '--verify',
+                                     '-f', self.family,
                                      '--snr', self.dev_id] +
                                     self.tool_opt)
 
@@ -307,7 +308,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         def add_program_cmd(hex_file, coprocessor):
             program_commands.append(
                 ['nrfjprog', '--program', hex_file, erase_arg,
-                 '-f', 'NRF53', '--snr', self.dev_id,
+                '--verify', '-f', 'NRF53', '--snr', self.dev_id,
                  '--coprocessor', coprocessor] + self.tool_opt)
 
         full_hex = IntelHex()

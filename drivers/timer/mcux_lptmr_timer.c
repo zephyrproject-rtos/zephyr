@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_lptmr
 
-#include <device.h>
-#include <drivers/timer/system_timer.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
 #include <fsl_lptmr.h>
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
@@ -82,7 +82,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	return LPTMR_GetCurrentTimerCount(LPTMR_BASE) + cycles;
 }
 
-static void mcux_lptmr_timer_isr(void *arg)
+static void mcux_lptmr_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 

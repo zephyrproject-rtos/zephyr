@@ -8,16 +8,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include <errno.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_stats.h>
-#include <net/net_context.h>
-#include <net/net_mgmt.h>
-#include <random/rand32.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/random/rand32.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"
@@ -706,7 +706,7 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	/* The Maximum payload can fit into each packet after IPv6 header,
-	 * Extenstion headers and Fragmentation header.
+	 * Extension headers and Fragmentation header.
 	 */
 	fit_len = NET_IPV6_MTU - NET_IPV6_FRAGH_LEN -
 		(net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));

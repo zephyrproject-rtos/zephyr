@@ -1,0 +1,54 @@
+# Copyright (c) 2022 ITE Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE, it8xxx2 Voltage Comparator node
+
+compatible: "ite,it8xxx2-vcmp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  label:
+    required: true
+
+  interrupts:
+    required: true
+
+  vcmp-ch:
+    type: int
+    required: true
+    description: Voltage comparator channel.
+
+  scan-period:
+    type: int
+    required: true
+    description: |
+      Select the scan interval for all comparator channel.
+      Check include/zephyr/dt-bindings/sensor/it8xxx2_vcmp.h file for
+      pre-defined values.
+
+  comparison:
+    type: int
+    required: true
+    description: |
+      Determines the condition to be met between ADC data and
+      threshold assert value that will trigger comparator interrupt.
+      Check include/zephyr/dt-bindings/sensor/it8xxx2_vcmp.h file for
+      pre-defined values.
+
+  threshold-mv:
+    type: int
+    required: true
+    description: |
+      16-bit value in milli-volts present on ADC data as threshold assert.
+      Check include/zephyr/dt-bindings/sensor/it8xxx2_vcmp.h file for
+      pre-defined values.
+
+  io-channels:
+    type: phandle-array
+    required: true
+    description: |
+      ADC channel that will perform measurement.

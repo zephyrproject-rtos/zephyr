@@ -31,7 +31,7 @@ config LSM9DS0_GYRO_FULLSCALE_2000
 endchoice
 
 config LSM9DS0_GYRO_FULLSCALE_RUNTIME
-	bool "Enable dynamic full-scale"
+	bool "Dynamic full-scale"
 	help
 	  Enable alteration of full-scale attribute at runtime.
 
@@ -56,14 +56,14 @@ config LSM9DS0_GYRO_SAMPLING_RATE_760
 endchoice
 
 config LSM9DS0_GYRO_SAMPLING_RATE_RUNTIME
-	bool "Enable dynamic sampling rate"
+	bool "Dynamic sampling rate"
 	help
 	  Enable alteration of sampling rate frequency at runtime.
 
 endmenu
 
 config LSM9DS0_GYRO_TRIGGERS
-	bool "Enable triggers"
+	bool "Triggers"
 	depends on GPIO
 
 config LSM9DS0_GYRO_THREAD_STACK_SIZE
@@ -74,7 +74,7 @@ config LSM9DS0_GYRO_THREAD_STACK_SIZE
 	  Specify the internal thread stack size.
 
 config LSM9DS0_GYRO_TRIGGER_DRDY
-	bool "Enable data ready trigger"
+	bool "Data ready trigger"
 	depends on LSM9DS0_GYRO_TRIGGERS
 
 endif # LSM9DS0_GYRO

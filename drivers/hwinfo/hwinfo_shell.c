@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/printk.h>
-#include <shell/shell.h>
-#include <drivers/hwinfo.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/types.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 static int cmd_get_device_id(const struct shell *sh, size_t argc, char **argv)
 {
@@ -160,7 +160,7 @@ static int cmd_supported_reset_cause(const struct shell *sh, size_t argc,
 		shell_print(sh, "supported reset causes:");
 		print_all_reset_causes(sh, cause);
 	} else {
-		shell_print(sh, "No causes supporte");
+		shell_print(sh, "No causes supported");
 	}
 
 	return 0;
@@ -180,7 +180,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_reset_cause,
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_hwinfo,
 	SHELL_CMD_ARG(devid, NULL, "Show device id", cmd_get_device_id, 1, 0),
 	SHELL_CMD_ARG(reset_cause, &sub_reset_cause, "Reset cause commands",
-		      cmd_get_device_id, 1, 0),
+		      cmd_show_reset_cause, 1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

@@ -27,12 +27,19 @@ config PINMUX_MCUX
 
 endif # PINMUX
 
+config GPIO
+	default y
+
 if SERIAL
 
 config UART_MCUX_IUART
 	default y
 
 endif # SERIAL
+
+config IPM_IMX_REV2
+	default y
+	depends on IPM
 
 if CODE_ITCM
 

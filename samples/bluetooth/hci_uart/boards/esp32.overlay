@@ -10,12 +10,31 @@
 	};
 };
 
+&pinctrl {
+
+	uart1_tx_gpio5: uart1_tx_gpio5 {
+		pinmux = <UART1_TX_GPIO5>;
+	};
+
+	uart1_rx_gpio18: uart1_rx_gpio18 {
+		pinmux = <UART1_RX_GPIO18>;
+	};
+
+	uart1_rts_gpio19: uart1_rts_gpio19 {
+		pinmux = <UART1_RTS_GPIO19>;
+	};
+
+	uart1_cts_gpio23: uart1_cts_gpio23 {
+		pinmux = <UART1_CTS_GPIO23>;
+		bias-pull-up;
+	};
+
+};
+
 &uart1 {
 	status = "okay";
 	current-speed = <921600>;
-	tx-pin = <5>;
-	rx-pin = <18>;
-	rts-pin = <19>;
-	cts-pin = <23>;
-	hw-flow-control;
+	pinctrl-0 = <&uart1_tx_gpio5 &uart1_rx_gpio18
+		     &uart1_rts_gpio19 &uart1_cts_gpio23>;
+	pinctrl-names = "default";
 };

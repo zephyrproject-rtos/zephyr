@@ -9,10 +9,10 @@
 
 #include <stdint.h>
 
-#include <devicetree.h>
-#include <sys/__assert.h>
-#include <sys/util_macro.h>
-#include <toolchain.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 /*
  * NPCX register structure size/offset checking macro function to mitigate
@@ -192,6 +192,16 @@ static inline uint32_t npcx_devalt_offset(uint32_t alt_no)
 	return 0x010 + alt_no;
 }
 
+static inline uint32_t npcx_devalt_lk_offset(uint32_t alt_lk_no)
+{
+	return 0x210 + alt_lk_no;
+}
+
+static inline uint32_t npcx_pupd_en_offset(uint32_t pupd_en_no)
+{
+	return 0x28 + pupd_en_no;
+}
+
 static inline uint32_t npcx_lv_gpio_ctl_offset(uint32_t ctl_no)
 {
 	if (ctl_no < 5) {
@@ -204,6 +214,10 @@ static inline uint32_t npcx_lv_gpio_ctl_offset(uint32_t ctl_no)
 /* Macro functions for SCFG multi-registers */
 #define NPCX_DEVALT(base, n) (*(volatile uint8_t *)(base + \
 						npcx_devalt_offset(n)))
+#define NPCX_DEVALT_LK(base, n) (*(volatile uint8_t *)(base + \
+						npcx_devalt_lk_offset(n)))
+#define NPCX_PUPD_EN(base, n) (*(volatile uint8_t *)(base + \
+						npcx_pupd_en_offset(n)))
 #define NPCX_LV_GPIO_CTL(base, n) (*(volatile uint8_t *)(base + \
 						npcx_lv_gpio_ctl_offset(n)))
 
@@ -508,17 +522,11 @@ struct adc_reg {
 	volatile uint16_t MEAST;
 };
 
-static inline uint32_t npcx_thrctl_offset(uint32_t ctl_no)
-{
-	return DT_PROP(DT_INST(0, nuvoton_npcx_adc), threshold_reg_offset) + (ctl_no - 1) * 2;
-}
-
 static inline uint32_t npcx_chndat_offset(uint32_t ch)
 {
 	return 0x40 + ch * 2;
 }
 
-#define THRCTL(base, ctl_no) (*(volatile uint16_t *)((base) + npcx_thrctl_offset(ctl_no)))
 #define CHNDAT(base, ch) (*(volatile uint16_t *)((base) + npcx_chndat_offset(ch)))
 
 /* ADC register fields */
@@ -527,11 +535,15 @@ static inline uint32_t npcx_chndat_offset(uint32_t ch)
 #define NPCX_ASCADD_SADDR_FIELD               FIELD(0, 5)
 #define NPCX_ADCSTS_EOCEV                     0
 #define NPCX_ADCSTS_EOCCEV                    1
+#define NPCX_ADCCNF_ADCEN                     0
 #define NPCX_ADCCNF_ADCMD_FIELD               FIELD(1, 2)
 #define NPCX_ADCCNF_ADCRPTC                   3
-#define NPCX_ADCCNF_INTECEN                   6
 #define NPCX_ADCCNF_START                     4
-#define NPCX_ADCCNF_ADCEN                     0
+#define NPCX_ADCCNF_ADCTTE                    5
+#define NPCX_ADCCNF_INTECEN                   6
+#define NPCX_ADCCNF_INTECCEN                  7
+#define NPCX_ADCCNF_INTETCEN                  8
+#define NPCX_ADCCNF_INTOVFEN                  9
 #define NPCX_ADCCNF_STOP                      11
 #define NPCX_CHNDAT_CHDAT_FIELD               FIELD(0, 10)
 #define NPCX_CHNDAT_NEW                       15
@@ -638,29 +650,36 @@ struct espi_reg {
 	volatile uint32_t PERCFG;
 	/* 0x04C: Peripheral Channel Control */
 	volatile uint32_t PERCTL;
-	volatile uint32_t reserved2[44];
+	/* 0x050: Status Image Register */
+	volatile uint16_t STATUS_IMG;
+	volatile uint16_t reserved2[79];
+	/* 0x0F0: NPCX specific eSPI Register1 */
+	volatile uint8_t NPCX_ONLY_ESPI_REG1;
+	/* 0x0F1: NPCX specific eSPI Register2 */
+	volatile uint8_t NPCX_ONLY_ESPI_REG2;
+	volatile uint16_t reserved3[7];
 	/* 0x100 - 127: Virtual Wire Event Slave-to-Master 0 - 9 */
 	volatile uint32_t VWEVSM[10];
-	volatile uint32_t reserved3[6];
+	volatile uint32_t reserved4[6];
 	/* 0x140 - 16F: Virtual Wire Event Master-to-Slave 0 - 11 */
 	volatile uint32_t VWEVMS[12];
-	volatile uint32_t reserved4[99];
+	volatile uint32_t reserved5[99];
 	/* 0x2FC: Virtual Wire Channel Control */
 	volatile uint32_t VWCTL;
 	/* 0x300 - 34F: OOB Receive Buffer 0 - 19 */
 	volatile uint32_t OOBRXBUF[20];
-	volatile uint32_t reserved5[12];
+	volatile uint32_t reserved6[12];
 	/* 0x380 - 3CF: OOB Transmit Buffer 0-19 */
 	volatile uint32_t OOBTXBUF[20];
-	volatile uint32_t reserved6[11];
+	volatile uint32_t reserved7[11];
 	/* 0x3FC: OOB Channel Control used in 'direct' mode */
 	volatile uint32_t OOBCTL_DIRECT;
 	/* 0x400 - 443: Flash Receive Buffer 0-16 */
 	volatile uint32_t FLASHRXBUF[17];
-	volatile uint32_t reserved7[15];
+	volatile uint32_t reserved8[15];
 	/* 0x480 - 497: Flash Transmit Buffer 0-5 */
 	volatile uint32_t FLASHTXBUF[6];
-	volatile uint32_t reserved8[25];
+	volatile uint32_t reserved9[25];
 	/* 0x4FC: Flash Channel Control used in 'direct' mode */
 	volatile uint32_t FLASHCTL_DIRECT;
 };
@@ -755,6 +774,9 @@ struct espi_reg {
 #define NPCX_FLASHCTL_CHKSUMSEL          15
 #define NPCX_FLASHCTL_AMTEN              16
 
+#define NPCX_ONLY_ESPI_REG1_UNLOCK_REG2         0x55
+#define NPCX_ONLY_ESPI_REG1_LOCK_REG2           0
+#define NPCX_ONLY_ESPI_REG2_TRANS_END_CONFIG    4
 /*
  * Mobile System Wake-Up Control (MSWC) device registers
  */
@@ -1158,7 +1180,7 @@ struct smb_fifo_reg {
 	/* 0x01C: SMB Rx-FIFO Status */
 	volatile uint8_t SMBRXF_STS;
 	volatile uint8_t reserved12;
-	/* 0x01E: SMB Rx-FIFO Contro */
+	/* 0x01E: SMB Rx-FIFO Control */
 	volatile uint8_t SMBRXF_CTL;
 	volatile uint8_t reserved13;
 };
@@ -1305,7 +1327,7 @@ struct tach_reg {
 	/* 0x018: Compare Configuration */
 	volatile uint8_t TCPCFG;
 	volatile uint8_t reserved7;
-	/* 0x01A: Timer Wake-Up Enablen */
+	/* 0x01A: Timer Wake-Up Enable */
 	volatile uint8_t TWUEN;
 	volatile uint8_t reserved8;
 	/* 0x01C: Timer Configuration */
@@ -1373,7 +1395,7 @@ struct ps2_reg {
 	/* 0x006: PS/2 Output Signal */
 	volatile uint8_t PSOSIG;
 	volatile uint8_t reserved4;
-	/* 0x008: PS/2 Iutput Signal */
+	/* 0x008: PS/2 Input Signal */
 	volatile uint8_t PSISIG;
 	volatile uint8_t reserved5;
 	/* 0x00A: PS/2 Interrupt Enable */

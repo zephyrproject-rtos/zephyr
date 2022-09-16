@@ -126,7 +126,7 @@ Build Zephyr with a non-secure configuration:
 
       $ west build -b stm32l562e_dk_ns samples/tfm_integration/tfm_ipc/
 
-The script to initialize the device is avalaible in the ``build/tfm`` folder:
+The script to initialize the device is available in the ``build/tfm`` folder:
 
   - ``regression.sh``: Sets platform option bytes config and erase platform.
 
@@ -189,7 +189,7 @@ the MCUboot bootloader image binary (``bl2.hex``).
 
    .. code-block:: bash
 
-      nrfjprg -f NRF91 --program tfm/bin/bl2.hex --sectorerase
+      nrfjprog -f NRF91 --program tfm/bin/bl2.hex --sectorerase
 
 Finally, flash the concatenated TF-M + Zephyr binary.
 

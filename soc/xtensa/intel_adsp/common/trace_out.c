@@ -1,10 +1,10 @@
 /* Copyright (c) 2021 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
 #include <cavs-mem.h>
-#include <sys/winstream.h>
+#include <zephyr/sys/winstream.h>
 
 struct k_spinlock trace_lock;
 

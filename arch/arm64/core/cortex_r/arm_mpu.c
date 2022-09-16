@@ -5,14 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <kernel_arch_func.h>
 #include <soc.h>
-#include <arch/arm64/mm.h>
-#include <linker/linker-defs.h>
-#include <logging/log.h>
-#include <sys/check.h>
+#include <zephyr/arch/arm64/mm.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/check.h>
 
 LOG_MODULE_REGISTER(mpu, CONFIG_MPU_LOG_LEVEL);
 
@@ -150,8 +151,6 @@ static void region_init(const uint32_t index,
  */
 void z_arm64_mm_init(bool is_primary_core)
 {
-	/* This param is only for compatibility with the MMU init */
-	ARG_UNUSED(is_primary_core);
 	uint64_t val;
 	uint32_t r_index;
 
@@ -199,7 +198,12 @@ void z_arm64_mm_init(bool is_primary_core)
 
 	arm_core_mpu_enable();
 
+	if (!is_primary_core) {
+		return;
+	}
+
 #ifdef CONFIG_USERSPACE
+	/* Only primary core do the dynamic_areas_init. */
 	int rc = dynamic_areas_init(MPU_DYNAMIC_REGIONS_AREA_START,
 				    MPU_DYNAMIC_REGIONS_AREA_SIZE);
 	if (rc <= 0) {

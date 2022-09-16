@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
-#include <drivers/flash.h>
-#include <dfu/mcuboot.h>
-#include <dfu/flash_img.h>
-#include <sys/reboot.h>
-#include "mgmt/hawkbit.h"
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/dfu/mcuboot.h>
+#include <zephyr/dfu/flash_img.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/mgmt/hawkbit.h>
 #include "hawkbit_firmware.h"
 #include "hawkbit_device.h"
 

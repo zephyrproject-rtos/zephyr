@@ -16,7 +16,7 @@
 		compatible = "pwm-leds";
 		status = "okay";
 		pwm_led0: pwm_led0 {
-			pwms = <&pwm0 0 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 
@@ -55,7 +55,7 @@
 		/* Reserve 94 kB for the application in slot 0 */
 		slot0_partition: partition@8000 {
 			label = "image-0";
-			reg = <0x0008000 0x00017800>;
+			reg = <0x00008000 0x00017800>;
 		};
 
 		/* Reserve 94 kB for the application in slot 1 */

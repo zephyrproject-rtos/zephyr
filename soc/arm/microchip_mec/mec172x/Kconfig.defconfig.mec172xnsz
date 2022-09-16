@@ -23,6 +23,10 @@ config PINMUX_XEC
 	default y
 	depends on PINMUX
 
+config PWM_XEC
+	default y
+	depends on PWM
+
 config ADC_XEC_V2
 	default y
 	depends on ADC
@@ -38,5 +42,9 @@ config ESPI_XEC_V2
 config SPI_XEC_QMSPI_LDMA
 	default y
 	depends on SPI
+
+config PECI_XEC
+	default y
+	depends on PECI
 
 endif # SOC_MEC172X_NSZ

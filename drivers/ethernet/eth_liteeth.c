@@ -9,18 +9,18 @@
 #define LOG_MODULE_NAME eth_liteeth
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <stdbool.h>
-#include <net/ethernet.h>
-#include <net/net_if.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #include "eth.h"
 
@@ -29,30 +29,28 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LITEETH_EV_RX		0x1
 
 /* slots */
-#define LITEETH_SLOT_BASE	DT_INST_REG_ADDR_BY_NAME(0, buffers)
-#define LITEETH_SLOT_RX0	((LITEETH_SLOT_BASE) + 0x0000)
-#define LITEETH_SLOT_RX1	((LITEETH_SLOT_BASE) + 0x0800)
-#define LITEETH_SLOT_TX0	((LITEETH_SLOT_BASE) + 0x1000)
-#define LITEETH_SLOT_TX1	((LITEETH_SLOT_BASE) + 0x1800)
+#define LITEETH_SLOT_BASE_ADDR		DT_INST_REG_ADDR_BY_NAME(0, buffers)
+#define LITEETH_SLOT_RX0_ADDR		(LITEETH_SLOT_BASE_ADDR + 0x0000)
+#define LITEETH_SLOT_RX1_ADDR		(LITEETH_SLOT_BASE_ADDR + 0x0800)
+#define LITEETH_SLOT_TX0_ADDR		(LITEETH_SLOT_BASE_ADDR + 0x1000)
+#define LITEETH_SLOT_TX1_ADDR		(LITEETH_SLOT_BASE_ADDR + 0x1800)
 
 /* sram - rx */
-#define LITEETH_RX_BASE		DT_INST_REG_ADDR_BY_NAME(0, control)
-#define LITEETH_RX_SLOT		((LITEETH_RX_BASE) + 0x00)
-#define LITEETH_RX_LENGTH	((LITEETH_RX_BASE) + 0x04)
-#define LITEETH_RX_EV_PENDING	((LITEETH_RX_BASE) + 0x28)
-#define LITEETH_RX_EV_ENABLE	((LITEETH_RX_BASE) + 0x2c)
+#define LITEETH_RX_SLOT_ADDR		DT_INST_REG_ADDR_BY_NAME(0, rx_slot)
+#define LITEETH_RX_LENGTH_ADDR		DT_INST_REG_ADDR_BY_NAME(0, rx_length)
+#define LITEETH_RX_EV_PENDING_ADDR	DT_INST_REG_ADDR_BY_NAME(0, rx_ev_pending)
+#define LITEETH_RX_EV_ENABLE_ADDR	DT_INST_REG_ADDR_BY_NAME(0, rx_ev_enable)
 
 /* sram - tx */
-#define LITEETH_TX_BASE		((DT_INST_REG_ADDR_BY_NAME(0, control)) + 0x30)
-#define LITEETH_TX_START	((LITEETH_TX_BASE) + 0x00)
-#define LITEETH_TX_READY	((LITEETH_TX_BASE) + 0x04)
-#define LITEETH_TX_SLOT		((LITEETH_TX_BASE) + 0x0c)
-#define LITEETH_TX_LENGTH	((LITEETH_TX_BASE) + 0x10)
-#define LITEETH_TX_EV_PENDING	((LITEETH_TX_BASE) + 0x1c)
+#define LITEETH_TX_START_ADDR		DT_INST_REG_ADDR_BY_NAME(0, tx_start)
+#define LITEETH_TX_READY_ADDR		DT_INST_REG_ADDR_BY_NAME(0, tx_ready)
+#define LITEETH_TX_SLOT_ADDR		DT_INST_REG_ADDR_BY_NAME(0, tx_slot)
+#define LITEETH_TX_LENGTH_ADDR		DT_INST_REG_ADDR_BY_NAME(0, tx_length)
+#define LITEETH_TX_EV_PENDING_ADDR	DT_INST_REG_ADDR_BY_NAME(0, tx_ev_pending)
 
 /* irq */
-#define LITEETH_IRQ		DT_INST_IRQN(0)
-#define LITEETH_IRQ_PRIORITY	DT_INST_IRQ(0, priority)
+#define LITEETH_IRQ			DT_INST_IRQN(0)
+#define LITEETH_IRQ_PRIORITY		DT_INST_IRQ(0, priority)
 
 #define MAX_TX_FAILURE 100
 
@@ -93,12 +91,11 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	len = net_pkt_get_len(pkt);
 	net_pkt_read(pkt, context->tx_buf[context->txslot], len);
 
-	sys_write8(context->txslot, LITEETH_TX_SLOT);
-	sys_write8(len >> 8, LITEETH_TX_LENGTH);
-	sys_write8(len & 0xFF, LITEETH_TX_LENGTH + 4);
+	litex_write8(context->txslot, LITEETH_TX_SLOT_ADDR);
+	litex_write16(len, LITEETH_TX_LENGTH_ADDR);
 
 	/* wait for the device to be ready to transmit */
-	while (sys_read8(LITEETH_TX_READY) == 0) {
+	while (litex_read8(LITEETH_TX_READY_ADDR) == 0) {
 		if (attempts++ == MAX_TX_FAILURE) {
 			goto error;
 		}
@@ -106,7 +103,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	/* start transmitting */
-	sys_write8(1, LITEETH_TX_START);
+	litex_write8(1, LITEETH_TX_START_ADDR);
 
 	/* change slot */
 	context->txslot = (context->txslot + 1) % 2;
@@ -132,13 +129,10 @@ static void eth_rx(const struct device *port)
 	key = irq_lock();
 
 	/* get frame's length */
-	for (int i = 0; i < 4; i++) {
-		len <<= 8;
-		len |= sys_read8(LITEETH_RX_LENGTH + i * 0x4);
-	}
+	len = litex_read16(LITEETH_RX_LENGTH_ADDR);
 
 	/* which slot is the frame in */
-	context->rxslot = sys_read8(LITEETH_RX_SLOT);
+	context->rxslot = litex_read8(LITEETH_RX_SLOT_ADDR);
 
 	/* obtain rx buffer */
 	pkt = net_pkt_rx_alloc_with_buffer(context->iface, len, AF_UNSPEC, 0,
@@ -169,19 +163,19 @@ out:
 static void eth_irq_handler(const struct device *port)
 {
 	/* check sram reader events (tx) */
-	if (sys_read8(LITEETH_TX_EV_PENDING) & LITEETH_EV_TX) {
+	if (litex_read8(LITEETH_TX_EV_PENDING_ADDR) & LITEETH_EV_TX) {
 		/* TX event is not enabled nor used by this driver; ack just
 		 * in case if some rogue TX event appeared
 		 */
-		sys_write8(LITEETH_EV_TX, LITEETH_TX_EV_PENDING);
+		litex_write8(LITEETH_EV_TX, LITEETH_TX_EV_PENDING_ADDR);
 	}
 
 	/* check sram writer events (rx) */
-	if (sys_read8(LITEETH_RX_EV_PENDING) & LITEETH_EV_RX) {
+	if (litex_read8(LITEETH_RX_EV_PENDING_ADDR) & LITEETH_EV_RX) {
 		eth_rx(port);
 
 		/* ack writer irq */
-		sys_write8(LITEETH_EV_RX, LITEETH_RX_EV_PENDING);
+		litex_write8(LITEETH_EV_RX, LITEETH_RX_EV_PENDING_ADDR);
 	}
 }
 
@@ -226,18 +220,18 @@ static void eth_iface_init(struct net_if *iface)
 	}
 
 	/* clear pending events */
-	sys_write8(LITEETH_EV_TX, LITEETH_TX_EV_PENDING);
-	sys_write8(LITEETH_EV_RX, LITEETH_RX_EV_PENDING);
+	litex_write8(LITEETH_EV_TX, LITEETH_TX_EV_PENDING_ADDR);
+	litex_write8(LITEETH_EV_RX, LITEETH_RX_EV_PENDING_ADDR);
 
 	/* setup tx slots */
 	context->txslot = 0;
-	context->tx_buf[0] = (uint8_t *)LITEETH_SLOT_TX0;
-	context->tx_buf[1] = (uint8_t *)LITEETH_SLOT_TX1;
+	context->tx_buf[0] = (uint8_t *)LITEETH_SLOT_TX0_ADDR;
+	context->tx_buf[1] = (uint8_t *)LITEETH_SLOT_TX1_ADDR;
 
 	/* setup rx slots */
 	context->rxslot = 0;
-	context->rx_buf[0] = (uint8_t *)LITEETH_SLOT_RX0;
-	context->rx_buf[1] = (uint8_t *)LITEETH_SLOT_RX1;
+	context->rx_buf[0] = (uint8_t *)LITEETH_SLOT_RX0_ADDR;
+	context->rx_buf[1] = (uint8_t *)LITEETH_SLOT_RX1_ADDR;
 
 	init_done = true;
 }
@@ -264,7 +258,7 @@ static void eth_irq_config(void)
 	IRQ_CONNECT(LITEETH_IRQ, LITEETH_IRQ_PRIORITY, eth_irq_handler,
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(LITEETH_IRQ);
-	sys_write8(1, LITEETH_RX_EV_ENABLE);
+	litex_write8(1, LITEETH_RX_EV_ENABLE_ADDR);
 }
 
 #endif /* CONFIG_ETH_LITEETH_0 */

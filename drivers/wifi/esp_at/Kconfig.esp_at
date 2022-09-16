@@ -130,7 +130,7 @@ endif
 
 choice WIFI_ESP_AT_VERSION
 	prompt "AT version"
-	default WIFI_ESP_AT_VERSION_2_0
+	default WIFI_ESP_AT_VERSION_2_1
 	help
 	  Select which version of AT command set should be used.
 
@@ -143,6 +143,11 @@ config WIFI_ESP_AT_VERSION_2_0
 	bool "AT version 2.0"
 	help
 	  Use AT command set version 2.0.
+
+config WIFI_ESP_AT_VERSION_2_1
+	bool "AT version 2.1"
+	help
+	  Use AT command set version 2.1.
 
 endchoice
 

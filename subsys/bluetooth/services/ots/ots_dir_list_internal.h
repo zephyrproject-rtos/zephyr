@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021 - 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,13 +13,29 @@ extern "C" {
 
 #include <sys/types.h>
 #include <zephyr/types.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/ots.h>
+
+/** Maximum size of the Directory Listing Object Record. Table 4.1 in the OTS spec. */
+#define DIR_LIST_OBJ_RECORD_MIN_SIZE       13
+#define DIR_LIST_OBJ_RECORD_MAX_SIZE       172
+#define DIR_LIST_MAX_SIZE (DIR_LIST_OBJ_RECORD_MAX_SIZE * CONFIG_BT_OTS_MAX_OBJ_CNT)
+
+/** @brief Directory Listing Buffer Size
+ *
+ * In order to transmit the maximum size we choose CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU
+ * as the buffer size. However, dir_list_object_encode function encodes one full
+ * object record at a time so the buffer must be a multiple of object record length.
+ */
+#define OTS_DIR_LIST_BUFFER_SIZE (DIR_LIST_OBJ_RECORD_MAX_SIZE * \
+	ceiling_fraction(CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU, DIR_LIST_OBJ_RECORD_MAX_SIZE))
 
 struct bt_ots_dir_list {
 	struct net_buf_simple net_buf;
 	struct bt_gatt_ots_object *dir_list_obj;
-	uint8_t _content[DIR_LIST_MAX_SIZE];
+	off_t anchor_offset;
+	struct bt_gatt_ots_object *anchor_object;
+	uint8_t _content[OTS_DIR_LIST_BUFFER_SIZE];
 };
 
 /** @brief Directory Listing record flag field. */
@@ -140,15 +156,12 @@ enum {
 #define BT_OTS_DIR_LIST_GET_FLAG_EXTENDED(flags) \
 	((flags) & BIT(BT_OTS_DIR_LIST_FLAG_EXTENDED))
 
-void bt_ots_dir_list_obj_add(struct bt_ots_dir_list *dir_list, void *obj_manager,
-			     struct bt_gatt_ots_object *cur_obj, struct bt_gatt_ots_object *objj);
-void bt_ots_dir_list_obj_remove(struct bt_ots_dir_list *dir_list, void *obj_manager,
-				struct bt_gatt_ots_object *cur_obj, struct bt_gatt_ots_object *obj);
 void bt_ots_dir_list_selected(struct bt_ots_dir_list *dir_list, void *obj_manager,
 			      struct bt_gatt_ots_object *cur_obj);
 void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager);
-ssize_t bt_ots_dir_list_content_get(struct bt_ots_dir_list *dir_list, void **data,
-				size_t len, off_t offset);
+ssize_t bt_ots_dir_list_content_get(struct bt_ots_dir_list *dir_list, void *obj_manager,
+				    void **data, size_t len, off_t offset);
+bool bt_ots_dir_list_is_idle(const struct bt_ots_dir_list *dir_list);
 
 #ifdef __cplusplus
 }

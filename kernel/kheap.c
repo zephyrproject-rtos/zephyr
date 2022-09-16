@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <wait_q.h>
-#include <init.h>
-#include <linker/linker-defs.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/init.h>
+#include <zephyr/linker/linker-defs.h>
 
 void k_heap_init(struct k_heap *h, void *mem, size_t bytes)
 {

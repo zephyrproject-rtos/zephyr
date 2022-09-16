@@ -15,11 +15,11 @@
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 #define LOG_MODULE_NAME mesh_prov
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /*
@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  */
 
 #define PROV_MULTI_COUNT 3
-#define PROV_REPROV_COUNT 10
+#define PROV_REPROV_COUNT 3
 #define WAIT_TIME 80 /*seconds*/
 
 enum test_flags {

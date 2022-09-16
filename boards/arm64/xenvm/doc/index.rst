@@ -19,7 +19,7 @@ configuration is unique in many aspects.
 It provides minimal set of devices:
 
 * ARM Generic timer
-* GICv2
+* GICv2/GICv3
 
 Hardware
 ********
@@ -37,6 +37,12 @@ The following hardware features are supported:
 +--------------+-------------+----------------------+
 
 The kernel currently does not support other hardware features on this platform.
+
+The default configuration using GICv2 can be found in the defconfig file:
+    ``boards/arm64/xenvm/xenvm_defconfig``
+
+The default configuration using GICv3 can be found in the defconfig file:
+    ``boards/arm64/xenvm/xenvm_gicv3_defconfig``
 
 Devices
 ========
@@ -56,9 +62,11 @@ boot log:
 Interrupt Controller
 --------------------
 
-By default, GICv2 is selected. If your hardware is based on GICv3, you can
-configure Zephyr to use it, by amending device tree and Kconfig
-option in "xenvm" SoC as well as guest configuration file.
+Depending on the version of the GIC on your hardware, you may choose one of the
+following board configurations:
+
+- ``xenvm_defconfig`` selects GICv2
+- ``xenvm_gicv3_defconfig`` selects GICv3
 
 CPU Core type
 -------------
@@ -94,10 +102,17 @@ Building and Running
 Use this configuration to run basic Zephyr applications and kernel tests as Xen
 guest, for example, with the :ref:`synchronization_sample`:
 
+- if your hardware is based on GICv2:
 
 .. code-block::
 
    $ west build -b xenvm samples/synchronization
+
+- if your hardware is based on GICv3:
+
+.. code-block::
+
+   $ west build -b xenvm_gicv3 samples/synchronization
 
 This will build an image with the synchronization sample app. Next, you need to
 create guest configuration file :code:`zephyr.conf`. There is example:
@@ -110,6 +125,9 @@ create guest configuration file :code:`zephyr.conf`. There is example:
    memory=16
    gic_version="v2"
    on_crash="preserve"
+
+When using ``xenvm_gicv3`` configuration, you need to remove the ``gic_version``
+parameter or set it to ``"v3"``.
 
 You need to upload both :code:`zephyr.bin` and :code:`zephyr.conf` to your Dom0
 and then you can run Zephyr by issuing

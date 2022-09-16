@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2021 Nordic Semicondutor ASA
+# Copyright (c) 2021 Nordic Semiconductor ASA
 
 config ARM_STORE_EXC_RETURN
 	bool

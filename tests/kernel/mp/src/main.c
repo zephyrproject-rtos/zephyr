@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <tc_util.h>
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef CONFIG_SMP
 #error Cannot test MP API if SMP is using the CPUs
@@ -76,7 +76,7 @@ FUNC_NORETURN void cpu1_fn(void *arg)
  * -# Enter a while loop and wait for cpu_running equals to 1.
  * -# In target function, check if the address is &cpu_arg and its content
  *  equal to 12345.
- * -# Set the global flag varible cpu_running to 1.
+ * -# Set the global flag variable cpu_running to 1.
  * -# In main thread, check if the cpu_running equals to 1.
  *
  * Expected Test Result:

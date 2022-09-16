@@ -8,11 +8,11 @@
 #define LOG_MODULE_NAME net_lwm2m_obj_server
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdint.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -82,6 +82,9 @@ static uint8_t  server_flag_disabled[MAX_INSTANCE_COUNT];
 static uint32_t disabled_timeout[MAX_INSTANCE_COUNT];
 static uint8_t  server_flag_store_notify[MAX_INSTANCE_COUNT];
 static char  transport_binding[MAX_INSTANCE_COUNT][TRANSPORT_BINDING_LEN];
+#if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
+static bool mute_send[MAX_INSTANCE_COUNT];
+#endif
 
 static struct lwm2m_engine_obj server;
 static struct lwm2m_engine_obj_field fields[] = {
@@ -155,6 +158,18 @@ static int bootstrap_trigger_cb(uint16_t obj_inst_id,
 #else
 	return -EPERM;
 #endif
+}
+
+bool lwm2m_server_get_mute_send(uint16_t obj_inst_id)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(inst); i++) {
+		if (inst[i].obj && inst[i].obj_inst_id == obj_inst_id) {
+			return mute_send[i];
+		}
+	}
+	return false;
 }
 #endif /* defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1) */
 
@@ -252,6 +267,10 @@ static struct lwm2m_engine_obj_inst *server_create(uint16_t obj_inst_id)
 	default_min_period[index] = CONFIG_LWM2M_SERVER_DEFAULT_PMIN;
 	default_max_period[index] = CONFIG_LWM2M_SERVER_DEFAULT_PMAX;
 	disabled_timeout[index] = 86400U;
+#if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
+	mute_send[index] = false;
+#endif
+
 	lwm2m_engine_get_binding(transport_binding[index]);
 
 	(void)memset(res[index], 0,
@@ -312,7 +331,8 @@ static struct lwm2m_engine_obj_inst *server_create(uint16_t obj_inst_id)
 			     res_inst[index], j);
 	INIT_OBJ_RES_OPTDATA(SERVER_SMS_TRIGGER_ID, res[index], i, res_inst[index], j);
 	INIT_OBJ_RES_OPTDATA(SERVER_PREFERRED_TRANSPORT_ID, res[index], i, res_inst[index], j);
-	INIT_OBJ_RES_OPTDATA(SERVER_MUTE_SEND_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_DATA(SERVER_MUTE_SEND_ID, res[index], i, res_inst[index], j, &mute_send[index],
+			  sizeof(bool));
 #endif /* defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1) */
 
 	inst[index].resources = res[index];
@@ -323,7 +343,6 @@ static struct lwm2m_engine_obj_inst *server_create(uint16_t obj_inst_id)
 
 static int lwm2m_server_init(const struct device *dev)
 {
-	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	int ret = 0;
 
 	server.obj_id = LWM2M_OBJECT_SERVER_ID;
@@ -336,10 +355,14 @@ static int lwm2m_server_init(const struct device *dev)
 	server.create_cb = server_create;
 	lwm2m_register_obj(&server);
 
-	/* auto create the first instance */
-	ret = lwm2m_create_obj_inst(LWM2M_OBJECT_SERVER_ID, 0, &obj_inst);
-	if (ret < 0) {
-		LOG_ERR("Create LWM2M server instance 0 error: %d", ret);
+	/* don't create automatically when using bootstrap */
+	if (!IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)) {
+		struct lwm2m_engine_obj_inst *obj_inst = NULL;
+
+		ret = lwm2m_create_obj_inst(LWM2M_OBJECT_SERVER_ID, 0, &obj_inst);
+		if (ret < 0) {
+			LOG_ERR("Create LWM2M server instance 0 error: %d", ret);
+		}
 	}
 
 	return ret;

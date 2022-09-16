@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT gd_gd32_exti
 
-#include <device.h>
-#include <drivers/interrupt_controller/gd32_exti.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/gd32_exti.h>
 #include <soc.h>
-#include <sys/__assert.h>
-#include <sys/util_macro.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
 
 /** Unsupported line indicator */
 #define EXTI_NOTSUP 0xFFU
@@ -82,7 +82,7 @@ static const uint8_t line2irq[NUM_EXTI_LINES] = {
 #endif /* CONFIG_SOC_SERIES_GD32F4XX */
 };
 
-__unused static void gd32_exti_isr(void *isr_data)
+__unused static void gd32_exti_isr(const void *isr_data)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);
 	struct gd32_exti_data *data = dev->data;
@@ -191,4 +191,4 @@ static int gd32_exti_init(const struct device *dev)
 static struct gd32_exti_data data;
 
 DEVICE_DT_INST_DEFINE(0, gd32_exti_init, NULL, &data, NULL, PRE_KERNEL_1,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+		      CONFIG_INTC_INIT_PRIORITY, NULL);

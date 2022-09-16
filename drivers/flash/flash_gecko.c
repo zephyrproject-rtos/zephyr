@@ -10,14 +10,14 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <em_msc.h>
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 #include <soc.h>
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_gecko);
 
 struct flash_gecko_data {
@@ -29,8 +29,6 @@ static const struct flash_parameters flash_gecko_parameters = {
 	.write_block_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
 	.erase_value = 0xff,
 };
-
-#define DEV_NAME(dev) ((dev)->name)
 
 static bool write_range_is_valid(off_t offset, uint32_t size);
 static bool read_range_is_valid(off_t offset, uint32_t size);
@@ -204,7 +202,7 @@ static int flash_gecko_init(const struct device *dev)
 	/* Lock the MSC module. */
 	MSC->LOCK = 0;
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

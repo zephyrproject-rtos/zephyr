@@ -9,18 +9,19 @@
  */
 
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdbool.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <stdio.h>
 #include <zephyr/types.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/ots.h>
-#include <bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
 
 #include "media_proxy_internal.h"
 
@@ -33,7 +34,7 @@
  * (Number found by experiment.)
  *
  * Either find a better way of setting up the Kconfig, or serialize the
- * notfications.
+ * notifications.
  */
 BUILD_ASSERT(CONFIG_BT_L2CAP_TX_BUF_COUNT >= 10, "Too few L2CAP buffers");
 
@@ -41,7 +42,7 @@ static struct media_proxy_sctrl_cbs cbs;
 
 /* Functions for reading and writing attributes, and for keeping track
  * of attribute configuration changes.
- * Functions for notifications are placed after the service defition.
+ * Functions for notifications are placed after the service definition.
  */
 static ssize_t read_player_name(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
@@ -510,7 +511,7 @@ static ssize_t write_control_point(struct bt_conn *conn,
 		BT_DBG("Parameter: %d", command.param);
 	}
 
-	media_proxy_sctrl_send_command(command);
+	media_proxy_sctrl_send_command(&command);
 
 	return len;
 }
@@ -560,7 +561,7 @@ static ssize_t write_search_control_point(struct bt_conn *conn,
 	BT_DBG("Search length: %d", len);
 	BT_HEXDUMP_DBG(&search.search, search.len, "Search content");
 
-	media_proxy_sctrl_send_search(search);
+	media_proxy_sctrl_send_search(&search);
 
 	return len;
 }
@@ -794,7 +795,7 @@ struct bt_ots *bt_mcs_get_ots(void)
 /* Callback functions from the media player, notifying attributes */
 /* Placed here, after the service definition, because they reference it. */
 
-/* Helper function to shorten functions that notify */
+/* Helper function to notify non-string values */
 static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len)
 {
 	int err = bt_gatt_notify_uuid(NULL, uuid, mcs.attrs, data, len);
@@ -808,6 +809,37 @@ static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len)
 	}
 }
 
+/* Helper function to notify UTF8 string values
+ * Will truncate string to fit within notification if required.
+ * The string must be null-terminated.
+ */
+static void notify_string(const struct bt_uuid *uuid, const char *str)
+{
+	/* TODO:
+	 * This function will need to get the ATT_MTU to know what length to
+	 * truncate the string to.  But the ATT_MTU is per connection, and MCS
+	 * is not connection-aware yet.
+	 * For now: Truncate according to the default ATT_MTU, so that
+	 * notifications will go through
+	 */
+
+	/* TODO: Use bt_gatt_get_mtu() to find the ATT_MTU */
+	const uint16_t att_mtu = 23;
+	const uint16_t maxlen = att_mtu - 1 - 2; /* Subtract opcode and handle */
+	const uint16_t len = strlen(str);
+
+	if (len > maxlen) {
+		/* Truncation requires, and gives, a null-terminated string. */
+		char trunc_str[maxlen + 1];
+
+		utf8_lcpy(trunc_str, str, sizeof(trunc_str));
+		/* Null-termination is not sent on air */
+		notify(uuid, (void *)trunc_str, strlen(trunc_str));
+	} else {
+		notify(uuid, (void *)str, len);
+	}
+}
+
 void media_proxy_sctrl_track_changed_cb(void)
 {
 	BT_DBG("Notifying track change");
@@ -817,7 +849,7 @@ void media_proxy_sctrl_track_changed_cb(void)
 void media_proxy_sctrl_track_title_cb(const char *title)
 {
 	BT_DBG("Notifying track title: %s", log_strdup(title));
-	notify(BT_UUID_MCS_TRACK_TITLE, title, strlen(title));
+	notify_string(BT_UUID_MCS_TRACK_TITLE, title);
 }
 
 void media_proxy_sctrl_track_position_cb(int32_t position)
@@ -887,11 +919,11 @@ void media_proxy_sctrl_media_state_cb(uint8_t state)
 	notify(BT_UUID_MCS_MEDIA_STATE, &state, sizeof(state));
 }
 
-void media_proxy_sctrl_command_cb(struct mpl_cmd_ntf cmd_ntf)
+void media_proxy_sctrl_command_cb(const struct mpl_cmd_ntf *cmd_ntf)
 {
 	BT_DBG("Notifying control point command - opcode: %d, result: %d",
-	       cmd_ntf.requested_opcode, cmd_ntf.result_code);
-	notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &cmd_ntf, sizeof(cmd_ntf));
+	       cmd_ntf->requested_opcode, cmd_ntf->result_code);
+	notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, cmd_ntf, sizeof(*cmd_ntf));
 }
 
 void media_proxy_sctrl_commands_supported_cb(uint32_t opcodes)

@@ -5,13 +5,13 @@
  */
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(main);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <usb/usb_device.h>
-#include <usb/class/usb_hid.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/usb/class/usb_hid.h>
 
 #define REPORT_ID_1	0x01
 #define REPORT_ID_2	0x02

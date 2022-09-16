@@ -72,6 +72,7 @@ struct z_heap {
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	size_t free_bytes;
 	size_t allocated_bytes;
+	size_t max_allocated_bytes;
 #endif
 	struct z_heap_bucket buckets[0];
 };

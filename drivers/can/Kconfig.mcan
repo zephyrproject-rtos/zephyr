@@ -16,7 +16,7 @@ config CAN_MCAN
 if CAN_MCAN
 
 config CAN_DELAY_COMP
-	bool "Enable transceiver delay compensation"
+	bool "Transceiver delay compensation"
 	default y
 	help
 	  Enable the automatic transceiver delay compensation.

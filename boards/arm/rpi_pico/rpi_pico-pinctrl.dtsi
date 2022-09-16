@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
 
 &pinctrl {
 	uart0_default: uart0_default {
@@ -13,6 +13,22 @@
 		group2 {
 			pinmux = <UART0_RX_P1>;
 			input-enable;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_P4>, <I2C0_SCL_P5>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_P14>, <I2C1_SCL_P15>;
+			input-enable;
+			input-schmitt-enable;
 		};
 	};
 };

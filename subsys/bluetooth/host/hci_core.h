@@ -29,6 +29,7 @@ enum {
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
 	BT_DEV_ENABLE,
+	BT_DEV_DISABLE,
 	BT_DEV_READY,
 	BT_DEV_PRESET_ID,
 	BT_DEV_HAS_PUB_KEY,
@@ -340,9 +341,9 @@ struct bt_dev {
 	/* Last sent HCI command */
 	struct net_buf		*sent_cmd;
 
-#if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
+#if !defined(CONFIG_BT_RECV_BLOCKING)
 	/* Queue for incoming HCI events & ACL data */
-	struct k_fifo		rx_queue;
+	sys_slist_t rx_queue;
 #endif
 
 	/* Queue for outgoing HCI commands */
@@ -363,12 +364,16 @@ struct bt_dev {
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	char			name[CONFIG_BT_DEVICE_NAME_MAX + 1];
 #endif
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
+	/* Appearance Value */
+	uint16_t		appearance;
+#endif
 };
 
 extern struct bt_dev bt_dev;
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 extern const struct bt_conn_auth_cb *bt_auth;
-
+extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
@@ -470,8 +475,3 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf);
 
 void bt_hci_le_df_connection_iq_report(struct net_buf *buf);
 void bt_hci_le_df_cte_req_failed(struct net_buf *buf);
-
-/** First thread that called bt_recv. NULL if not yet called.
- *  Updated non-atomically; may be used only to compare to current thread id.
- */
-extern k_tid_t bt_recv_thread_id;

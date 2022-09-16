@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT st_lsm303dlhc_magn
 
-#include <drivers/i2c.h>
-#include <init.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(lsm303dlhc_magn, CONFIG_SENSOR_LOG_LEVEL);
 

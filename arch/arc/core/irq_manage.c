@@ -17,14 +17,14 @@
  * number from 16 to last IRQ number on the platform.
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <sys/__assert.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <sw_isr_table.h>
-#include <irq.h>
-#include <sys/printk.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/irq.h>
+#include <zephyr/sys/printk.h>
 
 
 /*
@@ -135,7 +135,7 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 
 	__ASSERT(prio < CONFIG_NUM_IRQ_PRIO_LEVELS,
 		 "invalid priority %d for irq %d", prio, irq);
-/* 0 -> CONFIG_NUM_IRQ_PRIO_LEVELS allocted to secure world
+/* 0 -> CONFIG_NUM_IRQ_PRIO_LEVELS allocated to secure world
  * left prio levels allocated to normal world
  */
 #if defined(CONFIG_ARC_SECURE_FIRMWARE)

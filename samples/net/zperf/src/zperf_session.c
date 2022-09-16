@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <net/net_pkt.h>
-#include <net/udp.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/udp.h>
 
 #include "zperf_session.h"
 

@@ -8,7 +8,7 @@
 
 void ull_tx_q_init(struct ull_tx_q *queue)
 {
-	queue->pause_data = 0;
+	queue->pause_data = 0U;
 	sys_slist_init(&queue->tx_list);
 	sys_slist_init(&queue->data_list);
 }

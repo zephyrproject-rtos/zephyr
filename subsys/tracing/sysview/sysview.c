@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <kernel_structs.h>
-#include <init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/init.h>
 #include <ksched.h>
 
 #include <SEGGER_SYSVIEW.h>

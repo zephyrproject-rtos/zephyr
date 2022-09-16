@@ -42,9 +42,11 @@ struct fw_resource_table {
 	unsigned int reserved[2];
 	unsigned int offset[RSC_TABLE_NUM_ENTRY];
 
+#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
 	struct fw_rsc_vdev vdev;
 	struct fw_rsc_vdev_vring vring0;
 	struct fw_rsc_vdev_vring vring1;
+#endif
 
 #if defined(CONFIG_RAM_CONSOLE)
 	/* rpmsg trace entry */
@@ -53,6 +55,8 @@ struct fw_resource_table {
 } METAL_PACKED_END;
 
 void rsc_table_get(void **table_ptr, int *length);
+
+#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
 
 inline struct fw_rsc_vdev *rsc_table_to_vdev(void *rsc_table)
 {
@@ -68,5 +72,7 @@ inline struct fw_rsc_vdev_vring *rsc_table_get_vring1(void *rsc_table)
 {
 	return &((struct fw_resource_table *)rsc_table)->vring1;
 }
+
+#endif
 
 #endif

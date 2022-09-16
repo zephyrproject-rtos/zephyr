@@ -7,8 +7,8 @@
 #define __ZPERF_INTERNAL_H
 
 #include <limits.h>
-#include <net/net_ip.h>
-#include <shell/shell.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/shell/shell.h>
 
 #define IP6PREFIX_STR2(s) #s
 #define IP6PREFIX_STR(p) IP6PREFIX_STR2(p)

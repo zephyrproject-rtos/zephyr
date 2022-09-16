@@ -14,7 +14,7 @@ Requirements
 ************
 
 Nanopb uses the protocol buffer compiler to generate source and header files,
-make sure the ``protoc`` executable is intalled and available.
+make sure the ``protoc`` executable is installed and available.
 
 .. tabs::
 

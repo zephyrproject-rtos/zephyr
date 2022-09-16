@@ -1,18 +1,32 @@
 # SPDX-License-Identifier: Apache-2.0
+from asyncio.log import logger
 import re
 import os
 import subprocess
 from collections import OrderedDict
 import xml.etree.ElementTree as ET
+import logging
 
-result_re = re.compile(".*(PASS|FAIL|SKIP) - (test_)?(.*) in")
+logger = logging.getLogger('twister')
+logger.setLevel(logging.DEBUG)
 
+# pylint: disable=anomalous-backslash-in-string
+result_re = re.compile(".*(PASS|FAIL|SKIP) - (test_)?(.*) in (\d*[.,]?\d*) seconds")
 class Harness:
     GCOV_START = "GCOV_COVERAGE_DUMP_START"
     GCOV_END = "GCOV_COVERAGE_DUMP_END"
     FAULT = "ZEPHYR FATAL ERROR"
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
+    run_id_pattern = r"RunID: (?P<run_id>.*)"
+
+
+    ztest_to_status = {
+        'PASS': 'passed',
+        'SKIP': 'skipped',
+        'BLOCK': 'blocked',
+        'FAIL': 'failed'
+        }
 
     def __init__(self):
         self.state = None
@@ -21,7 +35,7 @@ class Harness:
         self.matches = OrderedDict()
         self.ordered = True
         self.repeat = 1
-        self.tests = {}
+        self.testcases = []
         self.id = None
         self.fail_on_fault = True
         self.fault = False
@@ -32,11 +46,20 @@ class Harness:
         self.fieldnames = []
         self.ztest = False
         self.is_pytest = False
+        self.detected_suite_names = []
+        self.run_id = None
+        self.matched_run_id = False
+        self.run_id_exists = False
+        self.instance = None
+        self.testcase_output = ""
+        self._match = False
 
     def configure(self, instance):
-        config = instance.testcase.harness_config
-        self.id = instance.testcase.id
-        if "ignore_faults" in instance.testcase.tags:
+        self.instance = instance
+        config = instance.testsuite.harness_config
+        self.id = instance.testsuite.id
+        self.run_id = instance.run_id
+        if "ignore_faults" in instance.testsuite.tags:
             self.fail_on_fault = False
 
         if config:
@@ -47,6 +70,13 @@ class Harness:
             self.record = config.get('record', {})
 
     def process_test(self, line):
+
+        runid_match = re.search(self.run_id_pattern, line)
+        if runid_match:
+            run_id = runid_match.group("run_id")
+            self.run_id_exists = True
+            if run_id == str(self.run_id):
+                self.matched_run_id = True
 
         if self.RUN_PASSED in line:
             if self.fault:
@@ -94,6 +124,8 @@ class Console(Harness):
                     self.matches[r] = line
             if len(self.matches) == len(self.regex):
                 self.state = "passed"
+        else:
+            logger.error("Unknown harness_config type")
 
         if self.fail_on_fault:
             if self.FAULT in line:
@@ -120,22 +152,25 @@ class Console(Harness):
 
         self.process_test(line)
 
+        tc = self.instance.get_case_or_create(self.id)
         if self.state == "passed":
-            self.tests[self.id] = "PASS"
+            tc.status = "passed"
         else:
-            self.tests[self.id] = "FAIL"
+            tc.status = "failed"
 
 class Pytest(Harness):
     def configure(self, instance):
         super(Pytest, self).configure(instance)
         self.running_dir = instance.build_dir
-        self.source_dir = instance.testcase.source_dir
+        self.source_dir = instance.testsuite.source_dir
         self.pytest_root = 'pytest'
+        self.pytest_args = []
         self.is_pytest = True
-        config = instance.testcase.harness_config
+        config = instance.testsuite.harness_config
 
         if config:
             self.pytest_root = config.get('pytest_root', 'pytest')
+            self.pytest_args = config.get('pytest_args', [])
 
     def handle(self, line):
         ''' Test cases that make use of pytest more care about results given
@@ -144,7 +179,8 @@ class Pytest(Harness):
             is writen into handler.log
         '''
         self.state = "passed"
-        self.tests[self.id] = "PASS"
+        tc = self.instance.get_case_or_create(self.id)
+        tc.status = "passed"
 
     def pytest_run(self, log_file):
         ''' To keep artifacts of pytest in self.running_dir, pass this directory
@@ -163,6 +199,9 @@ class Pytest(Harness):
 			os.path.join(self.running_dir, 'report.xml'),
 			'-q'
         ]
+
+        for arg in self.pytest_args:
+            cmd.append(arg)
 
         log = open(log_file, "a")
         outs = []
@@ -194,15 +233,16 @@ class Pytest(Harness):
                 log.write("Can't access report.xml\n")
                 self.state = "failed"
 
+        tc = self.instance.get_case_or_create(self.id)
         if self.state == "passed":
-            self.tests[self.id] = "PASS"
+            tc.status = "passed"
             log.write("Pytest cases passed\n")
         elif self.state == "skipped":
-            self.tests[self.id] = "SKIP"
+            tc.status = "skipped"
             log.write("Pytest cases skipped\n")
             log.write("Please refer report.xml for detail")
         else:
-            self.tests[self.id] = "FAIL"
+            tc.status = "failed"
             log.write("Pytest cases failed\n")
 
         log.write("\nOutput from pytest:\n")
@@ -214,22 +254,45 @@ class Pytest(Harness):
 class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
+    test_suite_start_pattern = r"Running TESTSUITE (?P<suite_name>.*)"
+    ZTEST_START_PATTERN = r"START - (test_)?(.*)"
 
     def handle(self, line):
+        test_suite_match = re.search(self.test_suite_start_pattern, line)
+        if test_suite_match:
+            suite_name = test_suite_match.group("suite_name")
+            self.detected_suite_names.append(suite_name)
+
+        testcase_match = re.search(self.ZTEST_START_PATTERN, line)
+        if testcase_match or self._match:
+            self.testcase_output += line + "\n"
+            self._match = True
+
         match = result_re.match(line)
+
         if match and match.group(2):
             name = "{}.{}".format(self.id, match.group(3))
-            self.tests[name] = match.group(1)
+            tc = self.instance.get_case_or_create(name)
+
+            matched_status = match.group(1)
+            tc.status = self.ztest_to_status[matched_status]
+            if tc.status == "skipped":
+                tc.reason = "ztest skip"
+            tc.duration = float(match.group(4))
+            if tc.status == "failed":
+                tc.output = self.testcase_output
+            self.testcase_output = ""
+            self._match = False
             self.ztest = True
 
         self.process_test(line)
 
         if not self.ztest and self.state:
+            tc = self.instance.get_case_or_create(self.id)
             if self.state == "passed":
-                self.tests[self.id] = "PASS"
+                tc.status = "passed"
             else:
-                self.tests[self.id] = "FAIL"
-
+                tc.status = "failed"
 
 class Ztest(Test):
     pass

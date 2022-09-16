@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_L2_IPIP
-	bool "Enable IP-to-IP tunneling support"
+	bool "IP-to-IP tunneling support"
 	depends on NET_L2_VIRTUAL
 	help
 	  Add a IP-to-IP tunnel driver. If this is enabled, then a network

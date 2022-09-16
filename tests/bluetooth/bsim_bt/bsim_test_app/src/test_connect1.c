@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "kernel.h"
+#include <zephyr/kernel.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -14,15 +14,15 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/sys/byteorder.h>
 
 static struct bt_conn *default_conn;
 
@@ -201,7 +201,7 @@ static void update_conn(struct bt_conn *conn, bool bonded)
 	}
 }
 
-static struct bt_conn_auth_cb auth_cb_success = {
+static struct bt_conn_auth_info_cb auth_cb_success = {
 	.pairing_complete = update_conn,
 };
 
@@ -225,7 +225,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 
 	if (encrypt_link) {
 		k_sleep(K_MSEC(500));
-		bt_conn_auth_cb_register(&auth_cb_success);
+		bt_conn_auth_info_cb_register(&auth_cb_success);
 		err = bt_conn_set_security(conn, BT_SECURITY_L2);
 		if (err) {
 			FAIL("bt_conn_set_security failed (err %d)\n", err);

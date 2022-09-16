@@ -22,10 +22,8 @@ config I2S_LITEX_TX_BLOCK_COUNT
 
 config I2S_LITEX_CHANNELS_CONCATENATED
 	bool "Channels placed without padding in fifo"
-	default n
 
 config I2S_LITEX_DATA_BIG_ENDIAN
 	bool "Received data will be stored as big endian"
-	default n
 
 endif

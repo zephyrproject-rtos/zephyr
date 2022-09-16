@@ -9,7 +9,7 @@
 #ifndef _MASTER_H
 #define _MASTER_H
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include <stdio.h>
 
@@ -19,7 +19,7 @@
 
 #include <string.h>
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 
 /* uncomment the define below to use floating point arithmetic */

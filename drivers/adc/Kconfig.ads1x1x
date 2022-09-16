@@ -1,0 +1,34 @@
+# ADS1X1X ADC configuration options
+
+# Copyright (c) 2021 Facebook, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ADS1X1X
+	bool "ADS1X1X driver"
+	depends on I2C
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable ADS1X1X ADC driver.
+
+if ADC_ADS1X1X
+
+config ADC_ADS1X1X_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  ADS1X1X ADC device driver initialization priority.
+
+config ADC_ADS1X1X_ACQUISITION_THREAD_PRIO
+	int "Priority for the ADC data acquisition thread"
+	default 0
+	help
+	  Priority level for the internal ADC data acquisition thread.
+
+config ADC_ADS1X1X_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 1024
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.
+
+endif # ADC_ADS1X1X

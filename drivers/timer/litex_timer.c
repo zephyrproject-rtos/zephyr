@@ -6,33 +6,35 @@
 
 #define DT_DRV_COMPAT litex_timer0
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <device.h>
-#include <irq.h>
-#include <spinlock.h>
-#include <drivers/timer/system_timer.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/device.h>
+#include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/drivers/timer/system_timer.h>
 
-#define TIMER_BASE	        DT_INST_REG_ADDR(0)
-#define TIMER_LOAD_ADDR		((TIMER_BASE) + 0x00)
-#define TIMER_RELOAD_ADDR	((TIMER_BASE) + 0x10)
-#define TIMER_EN_ADDR		((TIMER_BASE) + 0x20)
-#define TIMER_EV_PENDING_ADDR	((TIMER_BASE) + 0x3c)
-#define TIMER_EV_ENABLE_ADDR	((TIMER_BASE) + 0x40)
-#define TIMER_TOTAL_UPDATE	((TIMER_BASE) + 0x44)
-#define TIMER_TOTAL		((TIMER_BASE) + 0x48)
+#define TIMER_LOAD_ADDR			DT_INST_REG_ADDR_BY_NAME(0, load)
+#define TIMER_RELOAD_ADDR		DT_INST_REG_ADDR_BY_NAME(0, reload)
+#define TIMER_EN_ADDR			DT_INST_REG_ADDR_BY_NAME(0, en)
+#define TIMER_UPDATE_VALUE_ADDR		DT_INST_REG_ADDR_BY_NAME(0, update_value)
+#define TIMER_VALUE_ADDR		DT_INST_REG_ADDR_BY_NAME(0, value)
+#define TIMER_EV_STATUS_ADDR		DT_INST_REG_ADDR_BY_NAME(0, ev_status)
+#define TIMER_EV_PENDING_ADDR		DT_INST_REG_ADDR_BY_NAME(0, ev_pending)
+#define TIMER_EV_ENABLE_ADDR		DT_INST_REG_ADDR_BY_NAME(0, ev_enable)
+#define TIMER_UPTIME_LATCH_ADDR		DT_INST_REG_ADDR_BY_NAME(0, uptime_latch)
+#define TIMER_UPTIME_CYCLES_ADDR	DT_INST_REG_ADDR_BY_NAME(0, uptime_cycles)
 
-#define TIMER_EV	0x1
-#define TIMER_IRQ	DT_INST_IRQN(0)
-#define TIMER_DISABLE	0x0
-#define TIMER_ENABLE	0x1
-#define UPDATE_TOTAL	0x1
+#define TIMER_EV		0x1
+#define TIMER_IRQ		DT_INST_IRQN(0)
+#define TIMER_DISABLE		0x0
+#define TIMER_ENABLE		0x1
+#define TIMER_UPTIME_LATCH	0x1
 
 static void litex_timer_irq_handler(const void *device)
 {
 	int key = irq_lock();
 
-	sys_write8(TIMER_EV, TIMER_EV_PENDING_ADDR);
+	litex_write8(TIMER_EV, TIMER_EV_PENDING_ADDR);
 	sys_clock_announce(1);
 
 	irq_unlock(key);
@@ -41,29 +43,29 @@ static void litex_timer_irq_handler(const void *device)
 uint32_t sys_clock_cycle_get_32(void)
 {
 	static struct k_spinlock lock;
-	uint32_t timer_total;
+	uint32_t uptime_cycles;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	litex_write8(UPDATE_TOTAL, TIMER_TOTAL_UPDATE);
-	timer_total = (uint32_t)litex_read64(TIMER_TOTAL);
+	litex_write8(TIMER_UPTIME_LATCH, TIMER_UPTIME_LATCH_ADDR);
+	uptime_cycles = (uint32_t)litex_read64(TIMER_UPTIME_CYCLES_ADDR);
 
 	k_spin_unlock(&lock, key);
 
-	return timer_total;
+	return uptime_cycles;
 }
 
 uint64_t sys_clock_cycle_get_64(void)
 {
 	static struct k_spinlock lock;
-	uint64_t timer_total;
+	uint64_t uptime_cycles;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	litex_write8(UPDATE_TOTAL, TIMER_TOTAL_UPDATE);
-	timer_total = litex_read64(TIMER_TOTAL);
+	litex_write8(TIMER_UPTIME_LATCH, TIMER_UPTIME_LATCH_ADDR);
+	uptime_cycles = litex_read64(TIMER_UPTIME_CYCLES_ADDR);
 
 	k_spin_unlock(&lock, key);
 
-	return timer_total;
+	return uptime_cycles;
 }
 
 /* tickless kernel is not supported */
@@ -79,18 +81,14 @@ static int sys_clock_driver_init(const struct device *dev)
 			litex_timer_irq_handler, NULL, 0);
 	irq_enable(TIMER_IRQ);
 
-	sys_write8(TIMER_DISABLE, TIMER_EN_ADDR);
+	litex_write8(TIMER_DISABLE, TIMER_EN_ADDR);
 
-	for (int i = 0; i < 4; i++) {
-		sys_write8(k_ticks_to_cyc_floor32(1) >> (24 - i * 8),
-				TIMER_RELOAD_ADDR + i * 0x4);
-		sys_write8(k_ticks_to_cyc_floor32(1) >> (24 - i * 8),
-				TIMER_LOAD_ADDR + i * 0x4);
-	}
+	litex_write32(k_ticks_to_cyc_floor32(1), TIMER_RELOAD_ADDR);
+	litex_write32(k_ticks_to_cyc_floor32(1), TIMER_LOAD_ADDR);
 
-	sys_write8(TIMER_ENABLE, TIMER_EN_ADDR);
-	sys_write8(sys_read8(TIMER_EV_PENDING_ADDR), TIMER_EV_PENDING_ADDR);
-	sys_write8(TIMER_EV, TIMER_EV_ENABLE_ADDR);
+	litex_write8(TIMER_ENABLE, TIMER_EN_ADDR);
+	litex_write8(litex_read8(TIMER_EV_PENDING_ADDR), TIMER_EV_PENDING_ADDR);
+	litex_write8(TIMER_EV, TIMER_EV_ENABLE_ADDR);
 
 	return 0;
 }

@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "contextualelectronics_abc-pinctrl.dtsi"
 
 / {
 	model = "nRF52840 BLE Cell";
@@ -37,8 +38,9 @@
 	status = "okay";
 	current-speed = <115200>;
 
-	tx-pin = <7>;
-	rx-pin = <6>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 arduino_serial: &uart1 {
@@ -46,15 +48,14 @@ arduino_serial: &uart1 {
 	current-speed = <115200>;
 
 	/* UART Pin info. */
-	rx-pin  = <20>;
-	tx-pin  = <24>;
-	rts-pin = <17>;
-	cts-pin = <16>;
 
 	/* Use hardware flow control. */
 	hw-flow-control;
 
 	/* BG9x description. */
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
 	quectel_bg9x {
 		compatible = "quectel,bg9x";
 		label      = "quectel-bg9x";
@@ -69,18 +70,19 @@ arduino_serial: &uart1 {
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <27>;
-	scl-pin = <26>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi2 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin  = <19>;
-	mosi-pin = <23>;
-	miso-pin = <21>;
 
 	/* This SPI device is interfaced with the SD card. */
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {
@@ -92,7 +94,7 @@ arduino_i2c: &i2c0 {
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
+			reg = <0x00000000 0x0000C000>;
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";

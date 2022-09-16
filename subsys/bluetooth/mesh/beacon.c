@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_BEACON)
 #define LOG_MODULE_NAME bt_mesh_beacon
@@ -47,6 +47,11 @@ static bool beacon_cache_match(struct bt_mesh_subnet *sub, void *beacon_data)
 static void cache_add(uint8_t data[21], struct bt_mesh_subnet *sub)
 {
 	memcpy(sub->beacon_cache, data, 21);
+}
+
+void bt_mesh_beacon_cache_clear(struct bt_mesh_subnet *sub)
+{
+	(void)memset(sub->beacon_cache, 0, 21);
 }
 
 static void beacon_complete(int err, void *user_data)
@@ -96,12 +101,15 @@ static bool secure_beacon_send(struct bt_mesh_subnet *sub, void *cb_data)
 	uint32_t now = k_uptime_get_32();
 	struct net_buf *buf;
 	uint32_t time_diff;
+	uint32_t time_since_last_recv;
 
 	BT_DBG("");
 
 	time_diff = now - sub->beacon_sent;
+	time_since_last_recv = now - sub->beacon_recv;
 	if (time_diff < (600 * MSEC_PER_SEC) &&
-		time_diff < BEACON_THRESHOLD(sub)) {
+		(time_diff < BEACON_THRESHOLD(sub) ||
+		 time_since_last_recv < (10 * MSEC_PER_SEC))) {
 		return false;
 	}
 
@@ -221,7 +229,7 @@ static void update_beacon_observation(void)
 
 	/* Observation period is 20 seconds, whereas the beacon timer
 	 * runs every 10 seconds. We process what's happened during the
-	 * window only after the seconnd half.
+	 * window only after the second half.
 	 */
 	first_half = !first_half;
 	if (first_half) {
@@ -369,6 +377,7 @@ update_stats:
 	if (bt_mesh_beacon_enabled() &&
 	    sub->beacons_cur < 0xff) {
 		sub->beacons_cur++;
+		sub->beacon_recv = k_uptime_get_32();
 	}
 }
 

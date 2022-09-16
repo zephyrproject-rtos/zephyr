@@ -7,14 +7,14 @@
 #define DT_DRV_COMPAT atmel_winc1500
 
 #define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(winc1500);
 
 #include <stdio.h>
 #include <stdint.h>
 
-#include <device.h>
-#include <drivers/spi.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
 
 #include "wifi_winc1500_nm_bsp_internal.h"
 

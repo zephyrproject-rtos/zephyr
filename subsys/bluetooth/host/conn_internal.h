@@ -9,18 +9,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/iso.h>
+#include <zephyr/bluetooth/iso.h>
 
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
 	BT_CONN_DISCONNECT_COMPLETE,
-	BT_CONN_CONNECT_SCAN,
-	BT_CONN_CONNECT_AUTO,
-	BT_CONN_CONNECT_ADV,
-	BT_CONN_CONNECT_DIR_ADV,
-	BT_CONN_CONNECT,
+	BT_CONN_CONNECTING_SCAN,
+	BT_CONN_CONNECTING_AUTO,
+	BT_CONN_CONNECTING_ADV,
+	BT_CONN_CONNECTING_DIR_ADV,
+	BT_CONN_CONNECTING,
 	BT_CONN_CONNECTED,
-	BT_CONN_DISCONNECT,
+	BT_CONN_DISCONNECTING,
 } bt_conn_state_t;
 
 /* bt_conn flags: the flags defined here represent connection parameters */
@@ -32,19 +32,16 @@ enum {
 	BT_CONN_BR_NOBOND,		/* SSP no bond pairing tracker */
 	BT_CONN_BR_PAIRING_INITIATOR,	/* local host starts authentication */
 	BT_CONN_CLEANUP,                /* Disconnected, pending cleanup */
-	BT_CONN_AUTO_PHY_UPDATE,        /* Auto-update PHY */
 	BT_CONN_PERIPHERAL_PARAM_UPDATE,/* If periph param update timer fired */
 	BT_CONN_PERIPHERAL_PARAM_SET,	/* If periph param were set from app */
 	BT_CONN_PERIPHERAL_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
 	BT_CONN_FORCE_PAIR,             /* Pairing even with existing keys. */
+#if defined(CONFIG_BT_GATT_CLIENT)
+	BT_CONN_ATT_MTU_EXCHANGED,	/* If ATT MTU has been exchanged. */
+#endif /* CONFIG_BT_GATT_CLIENT */
 
-	BT_CONN_AUTO_PHY_COMPLETE,      /* Auto-initiated PHY procedure done */
 	BT_CONN_AUTO_FEATURE_EXCH,	/* Auto-initiated LE Feat done */
 	BT_CONN_AUTO_VERSION_INFO,      /* Auto-initiated LE version done */
-
-	/* Auto-initiated Data Length done. Auto-initiated Data Length Update
-	 * is only needed for controllers with BT_QUIRK_NO_AUTO_DLE. */
-	BT_CONN_AUTO_DATA_LEN_COMPLETE,
 
 	BT_CONN_CTE_RX_ENABLED,          /* CTE receive and sampling is enabled */
 	BT_CONN_CTE_RX_PARAMS_SET,       /* CTE parameters are set */
@@ -128,11 +125,16 @@ struct bt_conn_iso {
 		uint8_t			bis_id;
 	};
 
-	/** Type of the ISO channel */
-	enum bt_iso_chan_type type;
+#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
+	/** 16-bit sequence number that shall be incremented per SDU interval */
+	uint16_t seq_num;
+#endif /* CONFIG_BT_ISO_UNICAST) || CONFIG_BT_ISO_BROADCASTER */
+
+	/** Stored information about the ISO stream */
+	struct bt_iso_info info;
 };
 
-typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data);
+typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data, int err);
 
 struct bt_conn_tx {
 	sys_snode_t node;
@@ -273,9 +275,6 @@ struct bt_iso_create_param {
 
 int bt_conn_iso_init(void);
 
-/* Add a new ISO connection */
-struct bt_conn *bt_conn_add_iso(struct bt_conn *acl);
-
 /* Cleanup ISO references */
 void bt_iso_cleanup_acl(struct bt_conn *iso_conn);
 
@@ -306,10 +305,10 @@ static inline bool bt_conn_is_handle_valid(struct bt_conn *conn)
 {
 	switch (conn->state) {
 	case BT_CONN_CONNECTED:
-	case BT_CONN_DISCONNECT:
+	case BT_CONN_DISCONNECTING:
 	case BT_CONN_DISCONNECT_COMPLETE:
 		return true;
-	case BT_CONN_CONNECT:
+	case BT_CONN_CONNECTING:
 		/* ISO connection handle assigned at connect state */
 		if (IS_ENABLED(CONFIG_BT_ISO) &&
 		    conn->type == BT_CONN_TYPE_ISO) {
@@ -416,7 +415,7 @@ struct net_buf *bt_conn_create_frag_timeout(size_t reserve,
 /* Initialize connection management */
 int bt_conn_init(void);
 
-/* Selects based on connecton type right semaphore for ACL packets */
+/* Selects based on connection type right semaphore for ACL packets */
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn);
 
 /* k_poll related helpers for the TX thread */

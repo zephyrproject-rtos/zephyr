@@ -11,7 +11,7 @@
 #ifndef __TLS_INTERNAL_H
 #define __TLS_INTERNAL_H
 
-#include <net/tls_credentials.h>
+#include <zephyr/net/tls_credentials.h>
 
 /* Internal structure representing TLS credential. */
 struct tls_credential {

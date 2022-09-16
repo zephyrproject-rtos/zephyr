@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "degu_evk-pinctrl.dtsi"
 
 / {
 	model = "Degu Evaluation Kit";
@@ -55,6 +56,22 @@
 		};
 	};
 
+	en-3v3-switch {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "en_3v3_switch";
+		regulator-name = "en_3v3_switch";
+		enable-gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	en-vin1-moni {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "en_vin1_moni";
+		regulator-name = "en_vin1_moni";
+		enable-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
@@ -87,31 +104,28 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <25>;
-	rx-pin = <24>;
-	rts-pin = <23>;
-	cts-pin = <21>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <20>;
-	scl-pin = <22>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <41>;
-	scl-pin = <11>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/reference/devicetree/index.html#fixed-flash-partitions
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -119,23 +133,23 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x00014000>;
+			reg = <0x00000000 0x00014000>;
 		};
 		slot0_partition: partition@14000 {
 			label = "image-0";
-			reg = <0x000014000 0x0006e000>;
+			reg = <0x00014000 0x0006e000>;
 		};
 		slot1_partition: partition@82000 {
 			label = "image-1";
-			reg = <0x000082000 0x0006e000>;
+			reg = <0x00082000 0x0006e000>;
 		};
 		scratch_partition: partition@f0000 {
 			label = "image-scratch";
-			reg = <0x0000f0000 0x00008000>;
+			reg = <0x000f0000 0x00008000>;
 		};
 		storage_partition: partition@f8000 {
 			label = "storage";
-			reg = <0x0000f8000 0x00008000>;
+			reg = <0x000f8000 0x00008000>;
 		};
 	};
 };

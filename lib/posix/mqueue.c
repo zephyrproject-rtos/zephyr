@@ -3,12 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 #include <string.h>
-#include <sys/atomic.h>
-#include <posix/time.h>
-#include <posix/mqueue.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/posix/mqueue.h>
 
 typedef struct mqueue_object {
 	sys_snode_t snode;
@@ -97,7 +97,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 
 	if ((msg_queue != NULL) && (oflags & O_CREAT) != 0 &&
 	    (oflags & O_EXCL) != 0) {
-		/* Message queue has alreadey been opened and O_EXCL is set */
+		/* Message queue has already been opened and O_EXCL is set */
 		errno = EEXIST;
 		return (mqd_t)mqd;
 	}

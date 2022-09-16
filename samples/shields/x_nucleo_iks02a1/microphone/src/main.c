@@ -5,10 +5,10 @@
  */
 
 #include <string.h>
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
-#include <audio/dmic.h>
+#include <zephyr/audio/dmic.h>
 
 /* uncomment if you want PCM output in ascii */
 /*#define PCM_OUTPUT_IN_ASCII		1  */

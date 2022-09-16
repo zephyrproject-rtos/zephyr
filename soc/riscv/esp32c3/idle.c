@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <irq.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/irq.h>
+#include <zephyr/arch/cpu.h>
 
 /**
  * @brief Power save idle routine
@@ -17,7 +17,7 @@
  */
 void arch_cpu_idle(void)
 {
-	/* curiously it arives here with the interrupts masked
+	/* curiously it arrives here with the interrupts masked
 	 * so umask it before wait for an event
 	 */
 	arch_irq_unlock(MSTATUS_IEN);

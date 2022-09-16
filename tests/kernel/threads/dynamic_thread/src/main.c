@@ -5,10 +5,10 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
-#include <debug/stack.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/debug/stack.h>
 
-#define STACKSIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (256 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static K_THREAD_STACK_DEFINE(dyn_thread_stack, STACKSIZE);
 static K_SEM_DEFINE(start_sem, 0, 1);
@@ -143,9 +143,19 @@ static void test_thread_index_management(void)
 	TC_PRINT("created %d thread objects\n", ctr);
 
 	/* Show that the above NULL return value wasn't because we ran out of
-	 * heap space/
+	 * heap space. For that we need to duplicate how objects are allocated
+	 * in kernel/userspace.c. We pessimize the alignment to the worst
+	 * case to simplify things somewhat.
 	 */
-	void *blob = k_malloc(256);
+	size_t ret = 1024 * 1024;  /* sure-to-fail initial value */
+	void *blob;
+
+	switch (K_OBJ_THREAD) {
+	/** @cond keep_doxygen_away */
+	#include <otype-to-size.h>
+	/** @endcond */
+	}
+	blob = z_dynamic_object_aligned_create(16, ret);
 	zassert_true(blob != NULL, "out of heap memory");
 
 	/* Free one of the threads... */

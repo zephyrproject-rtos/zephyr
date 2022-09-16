@@ -17,8 +17,11 @@ config MM_DRV_PAGE_SIZE
 	help
 	  Size of memory pages.
 
+DT_COMPAT_MM_INTEL_ADSP_TLB := intel,adsp-tlb
+
 config MM_DRV_INTEL_ADSP_TLB
 	bool "Intel Audio DSP TLB Driver"
+	default $(dt_compat_enabled,$(DT_COMPAT_MM_INTEL_ADSP_TLB))
 	depends on SOC_FAMILY_INTEL_ADSP
 	help
 	  Driver for the translation lookup buffer on

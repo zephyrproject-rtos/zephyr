@@ -10,6 +10,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
+#include "pinetime_devkit0-pinctrl.dtsi"
 
 / {
 	model = "Pine64 PineTime DevKit0";
@@ -32,6 +33,7 @@
 		led2 = &blled2;	/* backlight high */
 		led3 = &statusled;	/* status led, may be not populated */
 		sw0 = &key_in;  /* key in */
+		kscan0 = &cst816s;
 	};
 
 	leds {
@@ -66,6 +68,17 @@
 		gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 		label = "Key out";
 	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 7>;
+		output-ohms = <1000000>;
+		full-ohms = <(1000000 + 1000000)>;
+	};
+};
+
+&adc {
+	status = "okay";
 };
 
 &gpiote {
@@ -80,18 +93,20 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <11>;
-	rx-pin = <30>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <6>;
-	scl-pin = <7>;
 	clock-frequency = <I2C_BITRATE_FAST>; /* 400KHz */
 
 	/* BOSCH BMA421 Triaxial Acceleration Sensor (1000KHz) */
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 	bma421: bma421@18 {
 		compatible = "bosch,bma4xx";
 		reg = <0x18>;
@@ -108,7 +123,7 @@
 
 	/* Hynitron CST816S Capacitive Touch Controller (400KHz) */
 	cst816s: cst816s@15 {
-		compatible = "hynitron-cst816s";
+		compatible = "hynitron,cst816s";
 		reg = <0x15>;
 		label = "CST816S";
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
@@ -119,18 +134,19 @@
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <2>;
-	mosi-pin = <3>;
-	miso-pin = <4>;
 
 	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>, <&gpio0 25 GPIO_ACTIVE_LOW>;
 
-	/* Macronix MX25L CMOS Flash Memory */
-	mx25l: mx25l@0 {
-		compatible = "mxicy,cmos-mx25l";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+	xt25fb32: xt25fb32@0 {
+		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <8000000>; /* 8MHz */
-		label = "CMOS MX25L";
+		label = "XT25FB32";
+		jedec-id = [0b 40 16];
+		size = <DT_SIZE_M(32)>;
 	};
 
 	/* Sitronix ST7789V LCD */

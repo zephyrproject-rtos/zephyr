@@ -7,10 +7,11 @@
 #define DT_DRV_COMPAT microchip_xec_gpio_v2
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/mchp-xec-pinctrl.h>
 #include <soc.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #include "gpio_utils.h"
 
@@ -368,6 +369,7 @@ static void gpio_gpio_xec_port_isr(const struct device *dev)
 	gpio_fire_callbacks(&data->callbacks, dev, girq_result);
 }
 
+/* GPIO driver official API table */
 static const struct gpio_driver_api gpio_xec_driver_api = {
 	.pin_configure = gpio_xec_configure,
 	.port_get_raw = gpio_xec_port_get_raw,

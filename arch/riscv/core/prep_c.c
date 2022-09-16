@@ -16,8 +16,8 @@
  */
 
 #include <stddef.h>
-#include <toolchain.h>
-#include <kernel_structs.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 
 /**
@@ -30,9 +30,7 @@
 void _PrepC(void)
 {
 	z_bss_zero();
-#ifdef CONFIG_XIP
 	z_data_copy();
-#endif
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
 	soc_interrupt_init();
 #endif

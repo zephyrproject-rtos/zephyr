@@ -8,17 +8,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 
 #include <errno.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/udp.h>
-#include <net/ethernet.h>
-#include <net/socket_can.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/udp.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/socket_can.h>
 
 #include "net_private.h"
 #include "icmpv6.h"
@@ -514,6 +514,15 @@ static bool conn_are_end_points_valid(struct net_pkt *pkt,
 static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
 					struct net_conn *conn, uint8_t proto)
 {
+	if (proto == ETH_P_ALL) {
+		enum net_sock_type type = net_context_get_type(conn->context);
+
+		if ((type == SOCK_DGRAM && !net_pkt_is_l2_processed(pkt)) ||
+		    (type == SOCK_RAW && net_pkt_is_l2_processed(pkt))) {
+			goto out;
+		}
+	}
+
 	if (conn->flags & NET_CONN_LOCAL_ADDR_SET) {
 		struct net_if *pkt_iface = net_pkt_iface(pkt);
 		struct sockaddr_ll *local;
@@ -547,6 +556,7 @@ static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
 		return NET_OK;
 	}
 
+out:
 	return NET_CONTINUE;
 }
 
@@ -602,7 +612,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	/* TODO: Make core part of networing subsystem less dependent on
+	/* TODO: Make core part of networking subsystem less dependent on
 	 * UDP, TCP, IPv4 or IPv6. So that we can add new features with
 	 * less cross-module changes.
 	 */

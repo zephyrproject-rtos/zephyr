@@ -9,13 +9,13 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#include "settings/settings.h"
+#include <zephyr/settings/settings.h>
 #include "settings_priv.h"
 #include <zephyr/types.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 #if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)

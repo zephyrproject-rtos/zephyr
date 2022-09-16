@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <devicetree.h>
-#include <sys/printk.h>
-#include <drivers/flash.h>
-#include <random/rand32.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/random/rand32.h>
 #include <soc/soc_memory_layout.h>
 
 /* definitions used in Flash & RAM operations */
@@ -25,11 +25,7 @@
 #define STACKSIZE 1024
 #define PRIORITY 7
 
-#ifndef DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
-#define DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL ""
-#endif
-
-static const struct device *flash_dev;
+static const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 static struct flash_pages_info page_info;
 static int *mem;
 uint8_t flash_fill_buff[FLASH_READBACK_LEN];
@@ -245,9 +241,8 @@ void flash_test(void)
 
 void flash_init(void)
 {
-	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	if (!flash_dev) {
-		TC_ERROR("flash controller initialization failedi\n");
+	if (!device_is_ready(flash_dev)) {
+		TC_ERROR("flash controller not ready\n");
 	}
 	flash_test();
 }

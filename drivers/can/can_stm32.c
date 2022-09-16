@@ -4,20 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/clock_control.h>
-#include <drivers/pinctrl.h>
-#include <sys/util.h>
+#include <zephyr/drivers/can/transceiver.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <drivers/can.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/logging/log.h>
+
 #include "can_stm32.h"
 
-#include <logging/log.h>
-LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
+LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
 
@@ -53,10 +55,10 @@ LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 static const uint8_t filter_in_bank[] = {2, 4, 1, 2};
 static const uint8_t reg_demand[] = {2, 1, 4, 2};
 
-static void can_stm32_signal_tx_complete(struct can_mailbox *mb)
+static void can_stm32_signal_tx_complete(const struct device *dev, struct can_mailbox *mb)
 {
 	if (mb->tx_callback) {
-		mb->tx_callback(mb->error, mb->callback_arg);
+		mb->tx_callback(dev, mb->error, mb->callback_arg);
 	} else  {
 		k_sem_give(&mb->tx_int_sem);
 	}
@@ -82,9 +84,11 @@ static void can_stm32_get_msg_fifo(CAN_FIFOMailBox_TypeDef *mbox,
 #endif
 }
 
-static inline
-void can_stm32_rx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
+static inline void can_stm32_rx_isr_handler(const struct device *dev)
 {
+	struct can_stm32_data *data = dev->data;
+	const struct can_stm32_config *cfg = dev->config;
+	CAN_TypeDef *can = cfg->can;
 	CAN_FIFOMailBox_TypeDef *mbox;
 	int filter_match_index;
 	struct zcan_frame frame;
@@ -105,7 +109,7 @@ void can_stm32_rx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 		callback = data->rx_cb[filter_match_index];
 
 		if (callback) {
-			callback(&frame, data->cb_arg[filter_match_index]);
+			callback(dev, &frame, data->cb_arg[filter_match_index]);
 		}
 
 		/* Release message */
@@ -117,40 +121,89 @@ void can_stm32_rx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 	}
 }
 
-static inline void can_stm32_bus_state_change_isr(CAN_TypeDef *can,
-						  struct can_stm32_data *data)
+static int can_stm32_get_state(const struct device *dev, enum can_state *state,
+			       struct can_bus_err_cnt *err_cnt)
 {
+	const struct can_stm32_config *cfg = dev->config;
+	CAN_TypeDef *can = cfg->can;
+
+	if (state != NULL) {
+		if (can->ESR & CAN_ESR_BOFF) {
+			*state = CAN_BUS_OFF;
+		} else if (can->ESR & CAN_ESR_EPVF) {
+			*state = CAN_ERROR_PASSIVE;
+		} else if (can->ESR & CAN_ESR_EWGF) {
+			*state = CAN_ERROR_WARNING;
+		} else {
+			*state = CAN_ERROR_ACTIVE;
+		}
+	}
+
+	if (err_cnt != NULL) {
+		err_cnt->tx_err_cnt =
+			((can->ESR & CAN_ESR_TEC) >> CAN_ESR_TEC_Pos);
+		err_cnt->rx_err_cnt =
+			((can->ESR & CAN_ESR_REC) >> CAN_ESR_REC_Pos);
+	}
+
+	return 0;
+}
+
+static inline void can_stm32_bus_state_change_isr(const struct device *dev)
+{
+	struct can_stm32_data *data = dev->data;
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
 	const can_state_change_callback_t cb = data->state_change_cb;
 	void *state_change_cb_data = data->state_change_cb_data;
 
-	if (!(can->ESR & CAN_ESR_EPVF) && !(can->ESR & CAN_ESR_BOFF) &&
-	    !(can->ESR & CAN_ESR_EWGF)) {
-		return;
+#ifdef CONFIG_CAN_STATS
+	const struct can_stm32_config *cfg = dev->config;
+	CAN_TypeDef *can = cfg->can;
+
+	switch (can->ESR & CAN_ESR_LEC) {
+	case (CAN_ESR_LEC_0):
+		CAN_STATS_STUFF_ERROR_INC(dev);
+		break;
+	case (CAN_ESR_LEC_1):
+		CAN_STATS_FORM_ERROR_INC(dev);
+		break;
+	case (CAN_ESR_LEC_1 | CAN_ESR_LEC_0):
+		CAN_STATS_ACK_ERROR_INC(dev);
+		break;
+	case (CAN_ESR_LEC_2):
+		CAN_STATS_BIT1_ERROR_INC(dev);
+		break;
+	case (CAN_ESR_LEC_2 | CAN_ESR_LEC_0):
+		CAN_STATS_BIT0_ERROR_INC(dev);
+		break;
+	case (CAN_ESR_LEC_2 | CAN_ESR_LEC_1):
+		CAN_STATS_CRC_ERROR_INC(dev);
+		break;
+	default:
+		break;
 	}
 
-	err_cnt.tx_err_cnt = ((can->ESR & CAN_ESR_TEC) >> CAN_ESR_TEC_Pos);
-	err_cnt.rx_err_cnt = ((can->ESR & CAN_ESR_REC) >> CAN_ESR_REC_Pos);
+	/* Clear last error code flag */
+	can->ESR |= CAN_ESR_LEC;
+#endif /* CONFIG_CAN_STATS */
 
-	if (can->ESR & CAN_ESR_BOFF) {
-		state = CAN_BUS_OFF;
-	} else if (can->ESR & CAN_ESR_EPVF) {
-		state = CAN_ERROR_PASSIVE;
-	} else if (can->ESR & CAN_ESR_EWGF) {
-		state = CAN_ERROR_WARNING;
-	} else {
-		state = CAN_ERROR_ACTIVE;
-	}
+	(void)can_stm32_get_state(dev, &state, &err_cnt);
 
-	if (cb != NULL) {
-		cb(state, err_cnt, state_change_cb_data);
+	if (state != data->state) {
+		data->state = state;
+
+		if (cb != NULL) {
+			cb(dev, state, err_cnt, state_change_cb_data);
+		}
 	}
 }
 
-static inline
-void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
+static inline void can_stm32_tx_isr_handler(const struct device *dev)
 {
+	struct can_stm32_data *data = dev->data;
+	const struct can_stm32_config *cfg = dev->config;
+	CAN_TypeDef *can = cfg->can;
 	uint32_t bus_off;
 
 	bus_off = can->ESR & CAN_ESR_BOFF;
@@ -164,7 +217,7 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 							   -EIO;
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP0;
-		can_stm32_signal_tx_complete(&data->mb0);
+		can_stm32_signal_tx_complete(dev, &data->mb0);
 	}
 
 	if ((can->TSR & CAN_TSR_RQCP1) | bus_off) {
@@ -176,7 +229,7 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 							   -EIO;
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP1;
-		can_stm32_signal_tx_complete(&data->mb1);
+		can_stm32_signal_tx_complete(dev, &data->mb1);
 	}
 
 	if ((can->TSR & CAN_TSR_RQCP2) | bus_off) {
@@ -188,7 +241,7 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 							   -EIO;
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP2;
-		can_stm32_signal_tx_complete(&data->mb2);
+		can_stm32_signal_tx_complete(dev, &data->mb2);
 	}
 
 	if (can->TSR & CAN_TSR_TME) {
@@ -200,18 +253,14 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 
 static void can_stm32_isr(const struct device *dev)
 {
-	struct can_stm32_data *data;
-	const struct can_stm32_config *cfg;
-	CAN_TypeDef *can;
+	const struct can_stm32_config *cfg = dev->config;
+	CAN_TypeDef *can = cfg->can;
 
-	data = dev->data;
-	cfg = dev->config;
-	can = cfg->can;
+	can_stm32_tx_isr_handler(dev);
+	can_stm32_rx_isr_handler(dev);
 
-	can_stm32_tx_isr_handler(can, data);
-	can_stm32_rx_isr_handler(can, data);
 	if (can->MSR & CAN_MSR_ERRI) {
-		can_stm32_bus_state_change_isr(can, data);
+		can_stm32_bus_state_change_isr(dev);
 		can->MSR |= CAN_MSR_ERRI;
 	}
 }
@@ -220,45 +269,23 @@ static void can_stm32_isr(const struct device *dev)
 
 static void can_stm32_rx_isr(const struct device *dev)
 {
-	struct can_stm32_data *data;
-	const struct can_stm32_config *cfg;
-	CAN_TypeDef *can;
-
-	data = dev->data;
-	cfg = dev->config;
-	can = cfg->can;
-
-	can_stm32_rx_isr_handler(can, data);
+	can_stm32_rx_isr_handler(dev);
 }
 
 static void can_stm32_tx_isr(const struct device *dev)
 {
-	struct can_stm32_data *data;
-	const struct can_stm32_config *cfg;
-	CAN_TypeDef *can;
-
-	data = dev->data;
-	cfg = dev->config;
-	can = cfg->can;
-
-	can_stm32_tx_isr_handler(can, data);
+	can_stm32_tx_isr_handler(dev);
 }
 
 static void can_stm32_state_change_isr(const struct device *dev)
 {
-	struct can_stm32_data *data;
-	const struct can_stm32_config *cfg;
-	CAN_TypeDef *can;
+	const struct can_stm32_config *cfg = dev->config;
+	CAN_TypeDef *can = cfg->can;
 
-	data = dev->data;
-	cfg = dev->config;
-	can = cfg->can;
-
-
-	/*Signal bus-off to waiting tx*/
+	/* Signal bus-off to waiting tx */
 	if (can->MSR & CAN_MSR_ERRI) {
-		can_stm32_tx_isr_handler(can, data);
-		can_stm32_bus_state_change_isr(can, data);
+		can_stm32_tx_isr_handler(dev);
+		can_stm32_bus_state_change_isr(dev);
 		can->MSR |= CAN_MSR_ERRI;
 	}
 }
@@ -314,7 +341,7 @@ static int can_leave_sleep_mode(CAN_TypeDef *can)
 	return 0;
 }
 
-int can_stm32_set_mode(const struct device *dev, enum can_mode mode)
+static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct can_stm32_config *cfg = dev->config;
 	CAN_TypeDef *can = cfg->can;
@@ -323,51 +350,64 @@ int can_stm32_set_mode(const struct device *dev, enum can_mode mode)
 
 	LOG_DBG("Set mode %d", mode);
 
+	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) != 0) {
+		LOG_ERR("unsupported mode: 0x%08x", mode);
+		return -ENOTSUP;
+	}
+
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
+
+	if (cfg->phy != NULL) {
+		ret = can_transceiver_enable(cfg->phy);
+		if (ret != 0) {
+			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			goto done;
+		}
+	}
+
 	ret = can_enter_init_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to enter init mode");
 		goto done;
 	}
 
-	switch (mode) {
-	case CAN_NORMAL_MODE:
-		can->BTR &= ~(CAN_BTR_LBKM | CAN_BTR_SILM);
-		break;
-	case CAN_LOOPBACK_MODE:
-		can->BTR &= ~(CAN_BTR_SILM);
+	if ((mode & CAN_MODE_LOOPBACK) != 0) {
+		/* Loopback mode */
 		can->BTR |= CAN_BTR_LBKM;
-		break;
-	case CAN_SILENT_MODE:
-		can->BTR &= ~(CAN_BTR_LBKM);
+	} else {
+		can->BTR &= ~CAN_BTR_LBKM;
+	}
+
+	if ((mode & CAN_MODE_LISTENONLY) != 0) {
+		/* Silent mode */
 		can->BTR |= CAN_BTR_SILM;
-		break;
-	case CAN_SILENT_LOOPBACK_MODE:
-		can->BTR |= CAN_BTR_LBKM | CAN_BTR_SILM;
-		break;
-	default:
-		break;
+	} else {
+		can->BTR &= ~CAN_BTR_SILM;
 	}
 
 done:
 	ret = can_leave_init_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to leave init mode");
+
+		if (cfg->phy != NULL) {
+			/* Attempt to disable the CAN transceiver in case of error */
+			(void)can_transceiver_disable(cfg->phy);
+		}
 	}
+
 	k_mutex_unlock(&data->inst_mutex);
+
 	return ret;
 }
 
-int can_stm32_set_timing(const struct device *dev,
-			 const struct can_timing *timing,
-			 const struct can_timing *timing_data)
+static int can_stm32_set_timing(const struct device *dev,
+				const struct can_timing *timing)
 {
 	const struct can_stm32_config *cfg = dev->config;
 	CAN_TypeDef *can = cfg->can;
 	struct can_stm32_data *data = dev->data;
 	int ret = -EIO;
-
-	ARG_UNUSED(timing_data);
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 	ret = can_enter_init_mode(can);
@@ -398,7 +438,7 @@ done:
 	return ret;
 }
 
-int can_stm32_get_core_clock(const struct device *dev, uint32_t *rate)
+static int can_stm32_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const struct can_stm32_config *cfg = dev->config;
 	const struct device *clock;
@@ -417,11 +457,13 @@ int can_stm32_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
-int can_stm32_get_max_filters(const struct device *dev, enum can_ide id_type)
+static int can_stm32_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
-	ARG_UNUSED(id_type);
+	const struct can_stm32_config *config = dev->config;
 
-	return CONFIG_CAN_MAX_FILTER;
+	*max_bitrate = config->max_bitrate;
+
+	return 0;
 }
 
 static int can_stm32_init(const struct device *dev)
@@ -450,6 +492,13 @@ static int can_stm32_init(const struct device *dev)
 	data->filter_usage = (1ULL << CAN_MAX_NUMBER_OF_FILTERS) - 1ULL;
 	(void)memset(data->rx_cb, 0, sizeof(data->rx_cb));
 	(void)memset(data->cb_arg, 0, sizeof(data->cb_arg));
+
+	if (cfg->phy != NULL) {
+		if (!device_is_ready(cfg->phy)) {
+			LOG_ERR("CAN transceiver not ready");
+			return -ENODEV;
+		}
+	}
 
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
@@ -481,11 +530,8 @@ static int can_stm32_init(const struct device *dev)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay)
 	master_can->FMR &= ~CAN_FMR_CAN2SB; /* Assign all filters to CAN2 */
 #endif
-
-	/* Set TX priority to chronological order */
-	can->MCR |= CAN_MCR_TXFP;
 	can->MCR &= ~CAN_MCR_TTCM & ~CAN_MCR_ABOM & ~CAN_MCR_AWUM &
-		    ~CAN_MCR_NART & ~CAN_MCR_RFLM;
+		    ~CAN_MCR_NART & ~CAN_MCR_RFLM & ~CAN_MCR_TXFP;
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	can->MCR |= CAN_MCR_TTCM;
 #endif
@@ -517,15 +563,17 @@ static int can_stm32_init(const struct device *dev)
 		}
 	}
 
-	ret = can_stm32_set_timing(dev, &timing, NULL);
+	ret = can_stm32_set_timing(dev, &timing);
 	if (ret) {
 		return ret;
 	}
 
-	ret = can_stm32_set_mode(dev, CAN_NORMAL_MODE);
+	ret = can_stm32_set_mode(dev, CAN_MODE_NORMAL);
 	if (ret) {
 		return ret;
 	}
+
+	(void)can_stm32_get_state(dev, &data->state, NULL);
 
 	cfg->config_irq(can);
 	can->IER |= CAN_IER_TMEIE;
@@ -551,36 +599,8 @@ static void can_stm32_set_state_change_callback(const struct device *dev,
 	}
 }
 
-static int can_stm32_get_state(const struct device *dev, enum can_state *state,
-			       struct can_bus_err_cnt *err_cnt)
-{
-	const struct can_stm32_config *cfg = dev->config;
-	CAN_TypeDef *can = cfg->can;
-
-	if (state != NULL) {
-		if (can->ESR & CAN_ESR_BOFF) {
-			*state = CAN_BUS_OFF;
-		} else if (can->ESR & CAN_ESR_EPVF) {
-			*state = CAN_ERROR_PASSIVE;
-		} else if (can->ESR & CAN_ESR_EWGF) {
-			*state = CAN_ERROR_WARNING;
-		} else {
-			*state = CAN_ERROR_ACTIVE;
-		}
-	}
-
-	if (err_cnt != NULL) {
-		err_cnt->tx_err_cnt =
-			((can->ESR & CAN_ESR_TEC) >> CAN_ESR_TEC_Pos);
-		err_cnt->rx_err_cnt =
-			((can->ESR & CAN_ESR_REC) >> CAN_ESR_REC_Pos);
-	}
-
-	return 0;
-}
-
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-int can_stm32_recover(const struct device *dev, k_timeout_t timeout)
+static int can_stm32_recover(const struct device *dev, k_timeout_t timeout)
 {
 	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
@@ -621,9 +641,9 @@ done:
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
 
-int can_stm32_send(const struct device *dev, const struct zcan_frame *frame,
-		   k_timeout_t timeout, can_tx_callback_t callback,
-		   void *user_data)
+static int can_stm32_send(const struct device *dev, const struct zcan_frame *frame,
+			  k_timeout_t timeout, can_tx_callback_t callback,
+			  void *user_data)
 {
 	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
@@ -769,8 +789,8 @@ static int can_stm32_shift_arr(void **arr, int start, int count)
 	return 0;
 }
 
-enum can_filter_type can_stm32_get_filter_type(int bank_nr, uint32_t mode_reg,
-					       uint32_t scale_reg)
+static enum can_filter_type can_stm32_get_filter_type(int bank_nr, uint32_t mode_reg,
+						      uint32_t scale_reg)
 {
 	uint32_t mode_masked  = (mode_reg  >> bank_nr) & 0x01;
 	uint32_t scale_masked = (scale_reg >> bank_nr) & 0x01;
@@ -1050,8 +1070,8 @@ static inline int can_stm32_add_rx_filter_unlocked(const struct device *dev,
 	return filter_id;
 }
 
-int can_stm32_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
-			    void *cb_arg,
+static int can_stm32_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
+				   void *cb_arg,
 			    const struct zcan_filter *filter)
 {
 	struct can_stm32_data *data = dev->data;
@@ -1064,7 +1084,7 @@ int can_stm32_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
 	return filter_id;
 }
 
-void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
+static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
@@ -1089,7 +1109,7 @@ void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	filter_index = can_calc_filter_index(filter_id, mode_reg, scale_reg);
 	type = can_stm32_get_filter_type(bank_nr, mode_reg, scale_reg);
 
-	LOG_DBG("Detatch filter number %d (index %d), type %d", filter_id,
+	LOG_DBG("Detach filter number %d (index %d), type %d", filter_id,
 		    filter_index,
 		    type);
 
@@ -1104,7 +1124,7 @@ void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	if (!CAN_BANK_IS_EMPTY(data->filter_usage, bank_nr)) {
 		can->FA1R |= bank_bit;
 	} else {
-		LOG_DBG("Bank number %d is empty -> deakivate", bank_nr);
+		LOG_DBG("Bank number %d is empty -> deactivate", bank_nr);
 	}
 
 	can->FMR &= ~(CAN_FMR_FINIT);
@@ -1126,7 +1146,7 @@ static const struct can_driver_api can_api_funcs = {
 #endif
 	.set_state_change_callback = can_stm32_set_state_change_callback,
 	.get_core_clock = can_stm32_get_core_clock,
-	.get_max_filters = can_stm32_get_max_filters,
+	.get_max_bitrate = can_stm32_get_max_bitrate,
 	.timing_min = {
 		.sjw = 0x1,
 		.prop_seg = 0x00,
@@ -1164,15 +1184,17 @@ static const struct can_stm32_config can_stm32_cfg_1 = {
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can1), bus),
 	},
 	.config_irq = config_can_1_irq,
-	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(can1))
+	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(can1)),
+	.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(DT_NODELABEL(can1), phys)),
+	.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(DT_NODELABEL(can1), 1000000),
 };
 
 static struct can_stm32_data can_stm32_dev_data_1;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(can1), &can_stm32_init, NULL,
-		    &can_stm32_dev_data_1, &can_stm32_cfg_1,
-		    POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,
-		    &can_api_funcs);
+CAN_DEVICE_DT_DEFINE(DT_NODELABEL(can1), can_stm32_init, NULL,
+		     &can_stm32_dev_data_1, &can_stm32_cfg_1,
+		     POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,
+		     &can_api_funcs);
 
 static void config_can_1_irq(CAN_TypeDef *can)
 {
@@ -1201,42 +1223,10 @@ static void config_can_1_irq(CAN_TypeDef *can)
 #endif
 	can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 |
 		    CAN_IER_FMPIE1 | CAN_IER_BOFIE;
+#ifdef CONFIG_CAN_STATS
+	can->IER |= CAN_IER_LECIE;
+#endif /* CONFIG_CAN_STATS */
 }
-
-#if defined(CONFIG_NET_SOCKETS_CAN)
-
-#include "socket_can_generic.h"
-
-static struct socket_can_context socket_can_context_1;
-
-static int socket_can_init_1(const struct device *dev)
-{
-	const struct device *can_dev = DEVICE_DT_GET(DT_NODELABEL(can1));
-	struct socket_can_context *socket_context = dev->data;
-
-	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
-		dev, dev->name, can_dev, can_dev->name);
-
-	socket_context->can_dev = can_dev;
-	socket_context->msgq = &socket_can_msgq;
-
-	socket_context->rx_tid =
-		k_thread_create(&socket_context->rx_thread_data,
-				rx_thread_stack,
-				K_KERNEL_STACK_SIZEOF(rx_thread_stack),
-				rx_thread, socket_context, NULL, NULL,
-				RX_THREAD_PRIORITY, 0, K_NO_WAIT);
-
-	return 0;
-}
-
-NET_DEVICE_INIT(socket_can_stm32_1, SOCKET_CAN_NAME_1, socket_can_init_1,
-		NULL, &socket_can_context_1, NULL,
-		CONFIG_CAN_INIT_PRIORITY,
-		&socket_can_api,
-		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
-
-#endif /* CONFIG_NET_SOCKETS_CAN */
 
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(can1), okay) */
 
@@ -1262,15 +1252,17 @@ static const struct can_stm32_config can_stm32_cfg_2 = {
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can2), bus),
 	},
 	.config_irq = config_can_2_irq,
-	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(can2))
+	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(can2)),
+	.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(DT_NODELABEL(can2), phys)),
+	.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(DT_NODELABEL(can2), 1000000),
 };
 
 static struct can_stm32_data can_stm32_dev_data_2;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(can2), &can_stm32_init, NULL,
-		    &can_stm32_dev_data_2, &can_stm32_cfg_2,
-		    POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,
-		    &can_api_funcs);
+CAN_DEVICE_DT_DEFINE(DT_NODELABEL(can2), can_stm32_init, NULL,
+		     &can_stm32_dev_data_2, &can_stm32_cfg_2,
+		     POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,
+		     &can_api_funcs);
 
 static void config_can_2_irq(CAN_TypeDef *can)
 {
@@ -1292,41 +1284,9 @@ static void config_can_2_irq(CAN_TypeDef *can)
 	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(can2), sce, irq));
 	can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 |
 		    CAN_IER_FMPIE1 | CAN_IER_BOFIE;
+#ifdef CONFIG_CAN_STATS
+	can->IER |= CAN_IER_LECIE;
+#endif /* CONFIG_CAN_STATS */
 }
-
-#if defined(CONFIG_NET_SOCKETS_CAN)
-
-#include "socket_can_generic.h"
-
-static struct socket_can_context socket_can_context_2;
-
-static int socket_can_init_2(const struct device *dev)
-{
-	const struct device *can_dev = DEVICE_DT_GET(DT_NODELABEL(can2));
-	struct socket_can_context *socket_context = dev->data;
-
-	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
-		dev, dev->name, can_dev, can_dev->name);
-
-	socket_context->can_dev = can_dev;
-	socket_context->msgq = &socket_can_msgq;
-
-	socket_context->rx_tid =
-		k_thread_create(&socket_context->rx_thread_data,
-				rx_thread_stack,
-				K_KERNEL_STACK_SIZEOF(rx_thread_stack),
-				rx_thread, socket_context, NULL, NULL,
-				RX_THREAD_PRIORITY, 0, K_NO_WAIT);
-
-	return 0;
-}
-
-NET_DEVICE_INIT(socket_can_stm32_2, SOCKET_CAN_NAME_2, socket_can_init_2,
-		NULL, &socket_can_context_2, NULL,
-		CONFIG_CAN_INIT_PRIORITY,
-		&socket_can_api,
-		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
-
-#endif /* CONFIG_NET_SOCKETS_CAN */
 
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay) */

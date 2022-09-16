@@ -2,8 +2,8 @@
 
 .. _zephyr_3.0:
 
-Zephyr 3.0.0 (Working draft)
-############################
+Zephyr 3.0.0
+############
 
 We are pleased to announce the release of Zephyr RTOS version 3.0.0.
 
@@ -109,6 +109,58 @@ Removed APIs in this release
 
 * Removed ``CONFIG_LOG_MINIMAL``. Use ``CONFIG_LOG_MODE_MINIMAL`` instead.
 
+* STM32 clock_control driver configuration was moved from Kconfig to :ref:`devicetree <dt-guide>`.
+  See the :dtcompatible:`st,stm32-rcc` devicetree binding for more information.
+  As a consequence, following Kconfig symbols were removed:
+
+  * ``CONFIG_CLOCK_STM32_SYSCLK_SRC_HSE``
+  * ``CONFIG_CLOCK_STM32_SYSCLK_SRC_HSI``
+  * ``CONFIG_CLOCK_STM32_SYSCLK_SRC_MSI``
+  * ``CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL``
+  * ``CONFIG_CLOCK_STM32_SYSCLK_SRC_CSI``
+  * ``CONFIG_CLOCK_STM32_HSE_BYPASS``
+  * ``CONFIG_CLOCK_STM32_MSI_RANGE``
+  * ``CONFIG_CLOCK_STM32_PLL_SRC_MSI``
+  * ``CONFIG_CLOCK_STM32_PLL_SRC_HSI``
+  * ``CONFIG_CLOCK_STM32_PLL_SRC_HSE``
+  * ``CONFIG_CLOCK_STM32_PLL_SRC_PLL2``
+  * ``CONFIG_CLOCK_STM32_PLL_SRC_CSI``
+  * ``CONFIG_CLOCK_STM32_AHB_PRESCALER``
+  * ``CONFIG_CLOCK_STM32_APB1_PRESCALER``
+  * ``CONFIG_CLOCK_STM32_APB2_PRESCALER``
+  * ``CONFIG_CLOCK_STM32_CPU1_PRESCALER``
+  * ``CONFIG_CLOCK_STM32_CPU2_PRESCALER``
+  * ``CONFIG_CLOCK_STM32_AHB3_PRESCALER``
+  * ``CONFIG_CLOCK_STM32_AHB4_PRESCALER``
+  * ``CONFIG_CLOCK_STM32_PLL_PREDIV``
+  * ``CONFIG_CLOCK_STM32_PLL_PREDIV1``
+  * ``CONFIG_CLOCK_STM32_PLL_MULTIPLIER``
+  * ``CONFIG_CLOCK_STM32_PLL_XTPRE``
+  * ``CONFIG_CLOCK_STM32_PLL_M_DIVISOR``
+  * ``CONFIG_CLOCK_STM32_PLL_N_MULTIPLIER``
+  * ``CONFIG_CLOCK_STM32_PLL_P_DIVISOR``
+  * ``CONFIG_CLOCK_STM32_PLL_Q_DIVISOR``
+  * ``CONFIG_CLOCK_STM32_PLL_R_DIVISOR``
+  * ``CONFIG_CLOCK_STM32_LSE``
+  * ``CONFIG_CLOCK_STM32_HSI_DIVISOR``
+  * ``CONFIG_CLOCK_STM32_D1CPRE``
+  * ``CONFIG_CLOCK_STM32_HPRE``
+  * ``CONFIG_CLOCK_STM32_D2PPRE1``
+  * ``CONFIG_CLOCK_STM32_D2PPRE2``
+  * ``CONFIG_CLOCK_STM32_D1PPRE``
+  * ``CONFIG_CLOCK_STM32_D3PPRE``
+  * ``CONFIG_CLOCK_STM32_PLL3_ENABLE``
+  * ``CONFIG_CLOCK_STM32_PLL3_M_DIVISOR``
+  * ``CONFIG_CLOCK_STM32_PLL3_N_MULTIPLIER``
+  * ``CONFIG_CLOCK_STM32_PLL3_P_ENABLE``
+  * ``CONFIG_CLOCK_STM32_PLL3_P_DIVISOR``
+  * ``CONFIG_CLOCK_STM32_PLL3_Q_ENABLE``
+  * ``CONFIG_CLOCK_STM32_PLL3_Q_DIVISOR``
+  * ``CONFIG_CLOCK_STM32_PLL3_R_ENABLE``
+  * ``CONFIG_CLOCK_STM32_PLL3_R_DIVISOR``
+  * ``CONFIG_CLOCK_STM32_PLL_DIVISOR``
+  * ``CONFIG_CLOCK_STM32_MSI_PLL_MODE``
+
 Deprecated in this release
 ==========================
 
@@ -151,7 +203,7 @@ New APIs in this release
 
   * Added new APIs to support datum wider than 8-bit.
 
-    * :kconfig:`CONFIG_UART_WIDE_DATA` is added to enable this new APIs.
+    * :kconfig:option:`CONFIG_UART_WIDE_DATA` is added to enable this new APIs.
 
     * Following functions, mirroring similar functions for 8-bit datum,
       are added:
@@ -293,9 +345,9 @@ Bluetooth
 
 * Host
 
-  * The :kconfig:`CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE` is now enabled by default.
-    Storing CCC right after it's written reduces risk of inconsistency of CCC values between
-    bonded peers
+  * The :kconfig:option:`CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE` is now enabled
+    by default. Storing CCC right after it's written reduces risk of
+    inconsistency of CCC values between bonded peers
   * Added support for L2CAP channel reconfiguration.
   * Added support for SMP error code 0xF, where the peer rejects a distributed
     key
@@ -575,9 +627,98 @@ Drivers and Sensors
 Networking
 **********
 
+* CoAP:
+
+  * Refactored ``coap_client``/``coap_server`` samples to make better use of
+    observe APIs.
+  * Added PATCH, iPATCH and FETCH methods.
+  * A few fixes for the block transfer handling.
+
+* DNS:
+
+  * Make mdns and llmnr responders join their multicast groups.
+  * Added support for mdns/dns_sd service type enumeration.
+
+* ICMPv6:
+
+  * Added support for Route Information option processing.
+
+* IPv4:
+
+  *  Add IPv4 support to multicast monitor.
+
+* LwM2M:
+
+  * Added a parameter to forcefully close the LwM2M session to
+    :c:func:`lwm2m_rd_client_stop` function.
+  * Replaced custom ``float32_value_t`` type with double.
+  * Added :kconfig:option:`LWM2M_FIRMWARE_PORT_NONSECURE`/
+    :kconfig:option:`LWM2M_FIRMWARE_PORT_SECURE` options, which allow to
+    specify a custom port or firmware update.
+  * Added :c:func:`lwm2m_update_device_service_period` API function.
+  * Added observe callback for observe and notification events.
+  * Added support for multiple LwM2M Firmware Update object instances.
+  * Improved error handling in LwM2M content writers.
+  * Added unit tests for LwM2M content writers.
+  * Implmented LwM2M Security, Server, Connection Monitor objects in version 1.1.
+  * Multiple minor bugfixes in the LwM2M stack.
+  * Added support for the following objects:
+
+    * LWM2M Software Management (ID 9)
+    * LwM2M Gateway (ID 25)
+    * IPSO Current (ID 3317)
+    * uCIFI Battery (ID 3411)
+    * IPSO Filling level (ID 3435)
+
 * Misc:
 
   * gptp: clock sync ratio as double, not float
+  * Added support for route lifetime and preference.
+  * Refactored various packed structures across the networking stack, to avoid
+    unaliged access warnings from gcc.
+  * Added automatic loopback addresses registration to loopback interface.
+  * Fixed source address selection for ARP.
+  * Allow to implment a custom IEEE802154 L2 on top of existing drivers.
+  * Introduced a network packet filtering framework.
+
+* MQTT:
+
+  * Fixed incomplete :c:func:`zsock_sendmsg` writes handling.
+  * Fixed :c:func:`zsock_setsockopt` error handling in SOCKS5 transport.
+
+* OpenThread:
+
+  * Updated OpenThread revision up to commit ``ce77ab3c1d7ad91b284615112ae38c08527bf73e``.
+  * Fixed an overflow bug in the alarm implementation for Zephyr.
+  * Added crypto backend based on PSA API.
+  * Allow to store OpenThread settings in RAM.
+
+* Socket:
+
+  * Fixed :c:func:`zsock_sendmsg` when payload size exceeded network MTU.
+  * Added socket processing priority.
+  * Fixed possible crash in :c:func:`zsock_getaddrinfo` when DNS callback is
+    delayed.
+
+* Telnet:
+
+  * Fixed handling of multiple commands in a single packet.
+  * Enabled command handling by default.
+
+* TCP:
+
+  * Added support for sending our MSS to peer.
+  * Fixed packet sending to local addresses.
+  * Fixed possible deadlock between TCP and socket layer, when connection close
+    is initiated from both sides.
+  * Multiple other minor bugfixes and improvements in the TCP implementation.
+
+* TLS:
+
+  * Added support for ``TLS_CERT_NOCOPY`` socket option, which allows to
+    optimise mbed TLS heap usage.
+  * Fixed ``POLLHUP`` detection when underlying TCP connection is closed.
+  * Fixed mbedtls session reset on handshake errors.
 
 USB
 ***

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
+
 / {
 	chosen {
 		/delete-property/ zephyr,ipc_shm;
@@ -21,35 +23,26 @@
 		};
 	};
 
-	soc {
-		/delete-node/ ipc@41012000;
+	ipc {
+		/delete-node/ ipc0;
 
-		mbox: mbox@41012000 {
-			compatible = "nordic,mbox-nrf-ipc";
-			reg = <0x41012000 0x1000>;
-			tx-mask = <0x0000ffff>;
-			rx-mask = <0x0000ffff>;
-			interrupts = <18 NRF_DEFAULT_IRQ_PRIORITY>;
-			#mbox-cells = <1>;
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram_ipc0>;
+			mboxes = <&mbox 0>, <&mbox 1>;
+			mbox-names = "rx", "tx";
+			role = "remote";
 			status = "okay";
 		};
-	};
 
-	ipc0: ipc0 {
-		compatible = "zephyr,ipc-openamp-static-vrings";
-		memory-region = <&sram_ipc0>;
-		mboxes = <&mbox 0>, <&mbox 1>;
-		mbox-names = "rx", "tx";
-		role = "remote";
-		status = "okay";
-	};
-
-	ipc1: ipc1 {
-		compatible = "zephyr,ipc-openamp-static-vrings";
-		memory-region = <&sram_ipc1>;
-		mboxes = <&mbox 2>, <&mbox 3>;
-		mbox-names = "rx", "tx";
-		role = "remote";
-		status = "okay";
+		ipc1: ipc1 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram_ipc1>;
+			mboxes = <&mbox 2>, <&mbox 3>;
+			mbox-names = "rx", "tx";
+			role = "remote";
+			zephyr,priority = <2 PRIO_PREEMPT>;
+			status = "okay";
+		};
 	};
 };

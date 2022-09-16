@@ -13,11 +13,11 @@
 
 #include <tc_util.h>
 #include <stdbool.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <logging/log_backend.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
 #include "test_helpers.h"
 
 #define LOG_MODULE_NAME test
@@ -97,8 +97,8 @@ struct backend_cb backend_ctrl_blk;
 	int _cnt = 0; \
 	test_helpers_log_setup(); \
 	while (!test_helpers_log_dropped_pending()) { \
-		LOG_ERR("test" UTIL_LISTIFY(nargs, TEST_FORMAT_SPEC) \
-				UTIL_LISTIFY(nargs, TEST_VALUE)); \
+		LOG_ERR("test" LISTIFY(nargs, TEST_FORMAT_SPEC, ()) \
+				LISTIFY(nargs, TEST_VALUE, ())); \
 		_cnt++; \
 	} \
 	_cnt--; \
@@ -135,8 +135,8 @@ void test_log_capacity(void)
 	test_helpers_log_setup(); \
 	uint32_t cyc = test_helpers_cycle_get(); \
 	for (int i = 0; i < _msg_cnt; i++) { \
-		LOG_ERR("test" UTIL_LISTIFY(nargs, TEST_FORMAT_SPEC) \
-				UTIL_LISTIFY(nargs, TEST_VALUE)); \
+		LOG_ERR("test" LISTIFY(nargs, TEST_FORMAT_SPEC, ()) \
+				LISTIFY(nargs, TEST_VALUE, ())); \
 	} \
 	cyc = test_helpers_cycle_get() - cyc; \
 	inc_time += cyc; \
@@ -164,7 +164,7 @@ void test_log_message_store_time_no_overwrite(void)
 
 	uint32_t total_us = k_cyc_to_us_ceil32(total_cyc);
 
-	PRINT("%sAvarage logging a message:  %u cycles (%u us)\n",
+	PRINT("%sAverage logging a message:  %u cycles (%u us)\n",
 		k_is_user_context() ? "USERSPACE: " : "",
 		total_cyc / total_msg, total_us / total_msg);
 }
@@ -175,8 +175,8 @@ void test_log_message_store_time_no_overwrite(void)
 	TEST_LOG_CAPACITY(nargs, _dummy, 0); \
 	uint32_t cyc = test_helpers_cycle_get(); \
 	for (int i = 0; i < _msg_cnt; i++) { \
-		LOG_ERR("test" UTIL_LISTIFY(nargs, TEST_FORMAT_SPEC) \
-				UTIL_LISTIFY(nargs, TEST_VALUE)); \
+		LOG_ERR("test" LISTIFY(nargs, TEST_FORMAT_SPEC, ()) \
+				LISTIFY(nargs, TEST_VALUE, ())); \
 	} \
 	cyc = test_helpers_cycle_get() - cyc; \
 	inc_time += cyc; \
@@ -204,7 +204,7 @@ void test_log_message_store_time_overwrite(void)
 
 	uint32_t total_us = k_cyc_to_us_ceil32(total_cyc);
 
-	PRINT("Avarage overwrite logging a message:  %u cycles (%u us)\n",
+	PRINT("Average overwrite logging a message:  %u cycles (%u us)\n",
 		total_cyc / total_msg, total_us / total_msg);
 }
 

@@ -1,0 +1,43 @@
+common:
+  tags: bluetooth
+tests:
+  bluetooth.isoal.test:
+    testcases:
+      - unframed_single_pdu
+      - unframed_dbl_pdu
+      - unframed_long_pdu_short_sdu
+      - sink_create_destroy
+      - sink_create_err
+      - unframed_single_pdu_err
+      - unframed_seq_err
+      - unframed_seq_pdu_err
+      - unframed_padding
+      - unframed_padding_no_end
+      - unframed_padding_error1
+      - unframed_padding_error2
+      - unframed_padding_error3
+      - unframed_zero_len_packet
+      - unframed_dbl_packet_no_end
+      - unframed_dbl_split
+      - unframed_multi_split
+      - unframed_single_pdu
+      - unframed_dbl_pdu_prem
+      - unframed_disabled_sink
+      - trig_assert_isoal_sink_create
+      - trig_assert_isoal_rx_pdu_recombine_first
+      - trig_assert_isoal_rx_pdu_recombine_second
+      - trig_assert_isoal_get_sink_param_ref
+      - framed_single_pdu
+      - framed_double_pdu
+      - framed_single_pdu_err
+      - framed_dbl_pdu_err
+      - framed_single_pdu
+      - framed_dbl_pdu_err
+      - framed_double_pdu
+      - framed_seq_err
+      - framed_padding
+      - framed_pdu_seq_err1
+      - framed_pdu_seq_err2
+      - framed_error1
+      - framed_error2
+    platform_allow: native_posix

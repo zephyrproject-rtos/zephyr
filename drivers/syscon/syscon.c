@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT syscon
 
-#include <sys/util.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <drivers/syscon.h>
+#include <zephyr/drivers/syscon.h>
 
 #include "syscon_common.h"
 

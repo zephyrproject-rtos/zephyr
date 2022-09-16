@@ -25,10 +25,6 @@ if(CONFIG_BT_LL_SW_SPLIT)
 		    "default value change could change Zephyr Bluetooth "
 		    "Controller's functional behavior.")
   endif()
-  if(CONFIG_BT_CTLR_ADV_EXT)
-    message(WARNING "\nCONFIG_BT_CTLR_ADV_EXT=y, Advertising Extensions "
-		    "Feature in Zephyr Bluetooth Controller is EXPERIMENTAL.")
-  endif()
   zephyr_library_sources(
     ll_sw/ll_feat.c
     ll_sw/ull.c
@@ -111,11 +107,12 @@ if(CONFIG_BT_LL_SW_SPLIT)
         ll_sw/ull_central_iso.c
       )
     endif()
-    if(CONFIG_BT_CTLR_SCHED_ADVANCED)
-      zephyr_library_sources(
-        ll_sw/ull_sched.c
-      )
-    endif()
+  endif()
+  if(CONFIG_BT_CTLR_SCHED_ADVANCED AND
+     (CONFIG_BT_CONN OR CONFIG_BT_CTLR_ADV_ISO))
+    zephyr_library_sources(
+      ll_sw/ull_sched.c
+    )
   endif()
   if(CONFIG_BT_CTLR_DF)
     zephyr_library_sources(

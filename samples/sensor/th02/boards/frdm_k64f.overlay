@@ -10,4 +10,10 @@
 		reg = <0x40>;
 		label = "TH02";
 	};
+
+	glcd: glcd@3e {
+		compatible = "seeed,grove-lcd-rgb";
+		label = "GLCD";
+		reg = <0x3e>;
+	};
 };

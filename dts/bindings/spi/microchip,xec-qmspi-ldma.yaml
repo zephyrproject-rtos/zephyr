@@ -6,7 +6,7 @@ description: Microchip XEC QMSPI controller with local DMA
 
 compatible: "microchip,xec-qmspi-ldma"
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -27,6 +27,12 @@ properties:
       description: |
         A two entry integer array containing the QMSPI PCR sleep register
         index and bit position.
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
 
     lines:
       type: int

@@ -8,18 +8,18 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/bas.h>
-#include <bluetooth/services/hrs.h>
-#include <bluetooth/direction.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/bas.h>
+#include <zephyr/bluetooth/services/hrs.h>
+#include <zephyr/bluetooth/direction.h>
 
 #define DF_FEAT_ENABLED BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)
 
@@ -30,7 +30,7 @@ static const struct bt_data ad[] = {
 
 /* Latency set to zero, to enforce PDU exchange every connection event */
 #define CONN_LATENCY 0U
-/* Inteval used to run CTE request procedure periodically.
+/* Interval used to run CTE request procedure periodically.
  * Value is a number of connection events.
  */
 #define CTE_REQ_INTERVAL (CONN_LATENCY + 10U)

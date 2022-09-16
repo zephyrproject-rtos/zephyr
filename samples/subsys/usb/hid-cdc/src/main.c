@@ -3,16 +3,16 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/uart.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/uart.h>
 #include <string.h>
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 
-#include <usb/usb_device.h>
-#include <usb/class/usb_hid.h>
-#include <usb/class/usb_cdc.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/usb/class/usb_hid.h>
+#include <zephyr/usb/class/usb_cdc.h>
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(main);
@@ -531,8 +531,7 @@ int callbacks_configure(const struct device *gpio, uint32_t pin, int flags,
 		return -ENXIO;
 	}
 
-	gpio_pin_configure(gpio, pin,
-			   GPIO_INPUT | GPIO_INT_DEBOUNCE | flags);
+	gpio_pin_configure(gpio, pin, GPIO_INPUT | flags);
 
 	gpio_init_callback(callback, handler, BIT(pin));
 	gpio_add_callback(gpio, callback);

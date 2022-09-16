@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <fs/littlefs.h>
+#include <zephyr/fs/littlefs.h>
 #include "testfs_tests.h"
 #include "testfs_lfs.h"
 

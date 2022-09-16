@@ -16,7 +16,7 @@
 #error __FILE__ goes only with x86 GCC
 #endif
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include "float_context.h"
 
 /**

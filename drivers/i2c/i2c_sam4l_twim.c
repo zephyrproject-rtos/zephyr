@@ -16,15 +16,16 @@
  */
 
 #include <errno.h>
-#include <sys/__assert.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_sam_twim);
 
 #include "i2c-priv.h"
@@ -64,8 +65,7 @@ struct i2c_sam_twim_dev_cfg {
 	Twim *regs;
 	void (*irq_config)(void);
 	uint32_t bitrate;
-	const struct soc_gpio_pin *pin_list;
-	uint8_t pin_list_size;
+	const struct pinctrl_dev_config *pcfg;
 	uint8_t periph_id;
 	uint8_t irq_id;
 
@@ -101,8 +101,6 @@ struct i2c_sam_twim_dev_data {
 	bool next_need_rs;
 	bool cur_need_rs;
 };
-
-#define DEV_NAME(dev) ((dev)->name)
 
 static int i2c_clk_set(const struct device *dev, uint32_t speed)
 {
@@ -554,7 +552,10 @@ static int i2c_sam_twim_initialize(const struct device *dev)
 	k_sem_init(&data->sem, 0, 1);
 
 	/* Connect pins to the peripheral */
-	soc_gpio_list_configure(cfg->pin_list, cfg->pin_list_size);
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Enable module's clock */
 	soc_pmc_peripheral_enable(cfg->periph_id);
@@ -572,14 +573,14 @@ static int i2c_sam_twim_initialize(const struct device *dev)
 
 	ret = i2c_sam_twim_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize %s device", DEV_NAME(dev));
+		LOG_ERR("Failed to initialize %s device", dev->name);
 		return ret;
 	}
 
 	/* Enable module's IRQ */
 	irq_enable(cfg->irq_id);
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }
@@ -601,6 +602,7 @@ static const struct i2c_driver_api i2c_sam_twim_driver_api = {
 	.hs_data_strength_low = DT_INST_ENUM_IDX(n, hs_data_strength_low)
 
 #define I2C_TWIM_SAM_INIT(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static void i2c##n##_sam_irq_config(void)			\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
@@ -608,15 +610,12 @@ static const struct i2c_driver_api i2c_sam_twim_driver_api = {
 			    DEVICE_DT_INST_GET(n), 0);			\
 	}								\
 									\
-	static const struct soc_gpio_pin pins_twim##n[] = ATMEL_SAM_DT_INST_PINS(n); \
-									\
 	static const struct i2c_sam_twim_dev_cfg i2c##n##_sam_config = {\
 		.regs = (Twim *)DT_INST_REG_ADDR(n),			\
 		.irq_config = i2c##n##_sam_irq_config,			\
 		.periph_id = DT_INST_PROP(n, peripheral_id),		\
 		.irq_id = DT_INST_IRQN(n),				\
-		.pin_list = pins_twim##n,				\
-		.pin_list_size = ARRAY_SIZE(pins_twim##n),		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\
 		.hs_master_code = DT_INST_ENUM_IDX(n, hs_master_code),	\
 		I2C_TWIM_SAM_SLEW_REGS(n),				\

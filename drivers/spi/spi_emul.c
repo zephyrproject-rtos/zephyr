@@ -11,13 +11,13 @@
 #define DT_DRV_COMPAT zephyr_spi_emul_controller
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_emul_ctlr);
 
-#include <device.h>
-#include <drivers/emul.h>
-#include <drivers/spi.h>
-#include <drivers/spi_emul.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi_emul.h>
 
 /** Working data for the device */
 struct spi_emul_data {

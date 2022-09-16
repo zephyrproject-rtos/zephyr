@@ -608,7 +608,7 @@ def parse_args():
     parser.add_argument("--map", action='append',
                         help=textwrap.dedent('''\
                             Map extra memory:
-                            <physical address>,<size>[,<flags:LUWXD>[,<virtual adderss>]]
+                            <physical address>,<size>[,<flags:LUWXD>[,<virtual address>]]
                             where flags can be empty or combination of:
                                 L - Large page (2MB or 4MB),
                                 U - Userspace accessible,

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <linker/sections.h>
-#include <toolchain.h>
-#include <arch/cpu.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/arch/cpu.h>
 
 /* Exports */
 GTEXT(_WdogInit)

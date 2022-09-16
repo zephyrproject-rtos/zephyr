@@ -98,7 +98,7 @@ For em starter kit, run the following commands
     $ cd samples/boards/arc_secure_services/build
     $ west debug
     # load normal application
-    $ monitor load_image ../../../philosophers/build/zepher/zephyr.elf
+    $ monitor load_image ../../../philosophers/build/zephyr/zephyr.elf
     $ c
 
 For nsim sem, you need two consoles: one for application output, and one for
@@ -121,7 +121,7 @@ In the console for debugger:
     $ arc-elf32-gdb zephyr/zephyr.elf
     $ target remote :3333
     # load normal application
-    $ load ../../../philosophers/build/zepher/zephyr.elf
+    $ load ../../../philosophers/build/zephyr/zephyr.elf
     # load secure application
     $ load
     $ c

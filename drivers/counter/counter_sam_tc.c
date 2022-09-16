@@ -24,14 +24,15 @@
  */
 
 #include <errno.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/pinctrl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_sam_tc, CONFIG_COUNTER_LOG_LEVEL);
 
 #define MAX_ALARMS_PER_TC_CHANNEL 2
@@ -49,8 +50,7 @@ struct counter_sam_dev_cfg {
 	uint32_t reg_cmr;
 	uint32_t reg_rc;
 	void (*irq_config_func)(const struct device *dev);
-	const struct soc_gpio_pin *pin_list;
-	uint8_t pin_list_size;
+	const struct pinctrl_dev_config *pcfg;
 	uint8_t clk_sel;
 	bool nodivclk;
 	uint8_t tc_chan_num;
@@ -69,8 +69,6 @@ struct counter_sam_dev_data {
 
 	struct counter_sam_alarm_data alarm[MAX_ALARMS_PER_TC_CHANNEL];
 };
-
-#define DEV_NAME(dev) ((dev)->name)
 
 static const uint32_t sam_tc_input_freq_table[] = {
 #if defined(CONFIG_SOC_SERIES_SAME70) || defined(CONFIG_SOC_SERIES_SAMV71)
@@ -314,9 +312,13 @@ static int counter_sam_initialize(const struct device *dev)
 	const struct counter_sam_dev_cfg *const dev_cfg = dev->config;
 	Tc *const tc = dev_cfg->regs;
 	TcChannel *tc_ch = &tc->TcChannel[dev_cfg->tc_chan_num];
+	int retval;
 
 	/* Connect pins to the peripheral */
-	soc_gpio_list_configure(dev_cfg->pin_list, dev_cfg->pin_list_size);
+	retval = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
 
 	/* Enable channel's clock */
 	soc_pmc_peripheral_enable(dev_cfg->periph_id[dev_cfg->tc_chan_num]);
@@ -332,7 +334,7 @@ static int counter_sam_initialize(const struct device *dev)
 #endif
 	dev_cfg->irq_config_func(dev);
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }
@@ -363,7 +365,7 @@ static const struct counter_driver_api counter_sam_driver_api = {
 						     & TC_CMR_TCCLKS_Msk]))
 
 #define COUNTER_SAM_TC_INIT(n)					\
-static const struct soc_gpio_pin pins_tc##n[] = ATMEL_SAM_DT_INST_PINS(n); \
+PINCTRL_DT_INST_DEFINE(n);					\
 								\
 static void counter_##n##_sam_config_func(const struct device *dev); \
 								\
@@ -378,8 +380,7 @@ static const struct counter_sam_dev_cfg counter_##n##_sam_config = { \
 	.reg_cmr = COUNTER_SAM_TC_REG_CMR(n),			\
 	.reg_rc = DT_INST_PROP_OR(n, reg_rc, 0),		\
 	.irq_config_func = &counter_##n##_sam_config_func,	\
-	.pin_list = pins_tc##n,					\
-	.pin_list_size = ARRAY_SIZE(pins_tc##n),		\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	.nodivclk = DT_INST_PROP(n, nodivclk),			\
 	.tc_chan_num = DT_INST_PROP_OR(n, channel, 0),		\
 	.periph_id = DT_INST_PROP(n, peripheral_id),		\

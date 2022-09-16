@@ -13,7 +13,7 @@
 #ifndef __HAWKBIT_PRIV_H__
 #define __HAWKBIT_PRIV_H__
 
-#include <data/json.h>
+#include <zephyr/data/json.h>
 
 #define HAWKBIT_SLEEP_LENGTH 8
 

@@ -8,15 +8,15 @@
 
 #define DT_DRV_COMPAT adi_adxl362
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <drivers/sensor.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <drivers/spi.h>
-#include <logging/log.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/logging/log.h>
 
 #include "adxl362.h"
 

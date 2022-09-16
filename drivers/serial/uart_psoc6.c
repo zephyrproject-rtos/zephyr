@@ -12,12 +12,12 @@
  * - Error handling is not implemented.
  * - The driver works only in polling mode, interrupt mode is not implemented.
  */
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <init.h>
-#include <sys/__assert.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
 #include <soc.h>
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 
 #include "cy_syslib.h"
 #include "cy_sysclk.h"
@@ -99,7 +99,7 @@ static const cy_stc_scb_uart_config_t uartConfig = {
 /**
  * Function Name: uart_psoc6_init()
  *
- *  Peforms hardware initialization: debug UART.
+ *  Performs hardware initialization: debug UART.
  *
  */
 static int uart_psoc6_init(const struct device *dev)

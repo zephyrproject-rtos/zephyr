@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
-#include <drivers/virtualization/ivshmem.h>
+#include <zephyr/drivers/virtualization/ivshmem.h>
 
 static const struct device *ivshmem;
 

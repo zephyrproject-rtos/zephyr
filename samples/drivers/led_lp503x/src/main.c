@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <drivers/led.h>
-#include <drivers/led/lp503x.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/drivers/led/lp503x.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
 #define MAX_BRIGHTNESS	100
@@ -105,7 +105,7 @@ static int run_led_test(const struct device *lp503x_dev, uint8_t led)
 }
 
 /**
- * @brief Run tests on a all the LEDs using the channel-based API syscalls.
+ * @brief Run tests on all the LEDs using the channel-based API syscalls.
  *
  * @param lp503x_dev LP503X LED controller device.
  */
@@ -115,7 +115,7 @@ static int run_channel_test(const struct device *lp503x_dev)
 	uint8_t buffer[LP503X_COLORS_PER_LED * LP503X_MAX_LEDS];
 	int err;
 
-	LOG_INF("Testing alls LEDs (channel API)");
+	LOG_INF("Testing all LEDs (channel API)");
 
 	for (idx = 0; idx < ARRAY_SIZE(colors); idx++) {
 		uint8_t led;
@@ -190,7 +190,7 @@ static int run_channel_test(const struct device *lp503x_dev)
 		}
 		k_sleep(SLEEP_DELAY);
 
-		/* Turn LED off. */
+		/* Turn LEDs off. */
 		for (led = 0; led < LP503X_MAX_LEDS; led++) {
 			buffer[led] = 0;
 		}

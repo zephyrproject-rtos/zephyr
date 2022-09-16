@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <settings/settings.h>
-#include <shell/shell.h>
-#include <sys/util.h>
-#include <toolchain.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include <stdint.h>
 #include <stddef.h>
@@ -53,7 +53,7 @@ static int cmd_list(const struct shell *shell_ptr, size_t argc, char *argv[])
 		shell_error(shell_ptr, "Failed to load settings: %d", err);
 	}
 
-	return 0;
+	return err;
 }
 
 struct settings_read_callback_params {
@@ -106,19 +106,56 @@ static int cmd_read(const struct shell *shell_ptr, size_t argc, char *argv[])
 	err = settings_load_subtree_direct(name, settings_read_callback, &params);
 
 	if (err) {
-		shell_error(shell_ptr, "Failed to load settings: %d", err);
+		shell_error(shell_ptr, "Failed to load setting: %d", err);
 	} else if (!params.value_found) {
+		err = -ENOENT;
 		shell_error(shell_ptr, "Setting not found");
 	}
 
-	return 0;
+	return err;
+}
+
+static int cmd_write(const struct shell *shell_ptr, size_t argc, char *argv[])
+{
+	int err;
+	uint8_t buffer[CONFIG_SHELL_CMD_BUFF_SIZE / 2];
+	size_t buffer_len;
+
+	buffer_len = hex2bin(argv[2], strlen(argv[2]), buffer, sizeof(buffer));
+
+	if (buffer_len == 0) {
+		shell_error(shell_ptr, "Failed to parse hex value");
+		return -EINVAL;
+	}
+
+	err = settings_save_one(argv[1], buffer, buffer_len);
+
+	if (err) {
+		shell_error(shell_ptr, "Failed to write setting: %d", err);
+	}
+
+	return err;
+}
+
+static int cmd_delete(const struct shell *shell_ptr, size_t argc, char *argv[])
+{
+	int err;
+
+	err = settings_delete(argv[1]);
+
+	if (err) {
+		shell_error(shell_ptr, "Failed to delete setting: %d", err);
+	}
+
+	return err;
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(settings_cmds,
 			       SHELL_CMD_ARG(list, NULL, "[<subtree>]", cmd_list, 1, 1),
 			       SHELL_CMD_ARG(read, NULL, "<name>", cmd_read, 2, 0),
-			       SHELL_SUBCMD_SET_END
-			       );
+			       SHELL_CMD_ARG(write, NULL, "<name> <hex>", cmd_write, 3, 0),
+			       SHELL_CMD_ARG(delete, NULL, "<name>", cmd_delete, 2, 0),
+			       SHELL_SUBCMD_SET_END);
 
 static int cmd_settings(const struct shell *shell_ptr, size_t argc, char **argv)
 {

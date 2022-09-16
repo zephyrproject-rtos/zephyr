@@ -14,7 +14,7 @@ config TEST
 	  Mark a project or an application as a test. This will enable a few
 	  test defaults.
 
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	int "Test function extra thread stack size"
 	default 2048 if COVERAGE_GCOV
 	default 768 if XTENSA
@@ -76,7 +76,7 @@ config TEST_USERSPACE
 	  testcase.yaml.
 
 config TEST_LOGGING_DEFAULTS
-	bool "Enable test case logging defaults"
+	bool "Test case logging defaults"
 	depends on TEST
 	select LOG
 	select LOG_DEFAULT_MINIMAL
@@ -116,7 +116,7 @@ config TEST_USERSPACE_WITHOUT_HW_STACK_PROTECTION
 	  related tests without enabling HW stack protection.
 
 config TEST_HW_STACK_PROTECTION
-	bool "Enable hardware-based stack overflow detection if available"
+	bool "Hardware-based stack overflow detection if available"
 	depends on ARCH_HAS_STACK_PROTECTION
 	depends on TEST
 	select HW_STACK_PROTECTION
@@ -151,7 +151,7 @@ config TEST_ARM_CORTEX_M
 	  set, these exceptions are set to target the Non-Secure state.
 
 config TEST_BUSY_SIM
-	bool "Enable busy simulator"
+	bool "Busy simulator"
 	depends on TEST
 	select ENTROPY_GENERATOR
 	select RING_BUFFER if !XOSHIRO_RANDOM_GENERATOR

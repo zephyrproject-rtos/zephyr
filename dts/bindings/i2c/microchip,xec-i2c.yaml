@@ -25,3 +25,17 @@ properties:
       type: int
       required: true
       description: Bit position in GIRQ for this device
+
+    sda-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        The SDA pin for the selected port. Pin choice for port is
+        determined by chip and package.
+
+    scl-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        The SCL pin for the selected port. Pin choice for port is
+        determined by chip and package.

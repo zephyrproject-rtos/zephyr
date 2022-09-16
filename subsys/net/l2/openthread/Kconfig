@@ -50,9 +50,9 @@ config OPENTHREAD_MANUAL_START
 	help
 	  If enabled, OpenThread stack will have to be configured and
 	  started manually, with respective API calls or CLI/NCP commands.
-	  Otherwise, OpenThread will configure the network parametrs and try to
+	  Otherwise, OpenThread will configure the network parameters and try to
 	  join the Thread network automatically during initialization (using
-	  credentials stored in persistend storage, obtained during
+	  credentials stored in persistent storage, obtained during
 	  commissioning or pre-commissioned with other Kconfig options,
 	  depending on configuration used).
 
@@ -156,7 +156,7 @@ config OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE
 endmenu # "Zephyr optimizations"
 
 config OPENTHREAD_SHELL
-	bool "Enable OpenThread shell"
+	bool "OpenThread shell"
 	depends on SHELL
 	default y
 
@@ -284,42 +284,49 @@ config OPENTHREAD_TMF_ADDRESS_CACHE_ENTRIES
 	  The number of EID-to-RLOC cache entries.
 
 config OPENTHREAD_LOG_PREPEND_LEVEL_ENABLE
-	bool "Enable prepending the log level to all OpenThread log messages"
+	bool "Prepending the log level to all OpenThread log messages"
 	help
 	  When enabled the OpenThread logs will be prepended with the appropriate
 	  log level prefix i.e. [CRIT], [WARN], [NOTE], [INFO], [DEBG].
 
 config OPENTHREAD_MAC_SOFTWARE_ACK_TIMEOUT_ENABLE
-	bool "Enable software ACK timeout logic"
+	bool "Software ACK timeout logic"
 	default y
 	help
 	  Set y if the radio supports AckTime event
 
 config OPENTHREAD_MAC_SOFTWARE_RETRANSMIT_ENABLE
-	bool "Enable software retransmission logic"
+	bool "Software retransmission logic"
 	default y
 	help
 	  Set y if the radio supports tx retry logic with collision avoidance (CSMA)
 
 config OPENTHREAD_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE
-	bool "Enable software CSMA backoff logic"
+	bool "Software CSMA backoff logic"
 	default y
 	help
 	  Set y to enable software CSMA backoff. The option can be disabled if
 	  the radio has hardware support for this feature (IEEE802154_HW_CSMA).
 
 config OPENTHREAD_CRYPTO_PSA
-	bool "Enable ARM PSA crypto API"
+	bool "ARM PSA crypto API"
 	depends on BUILD_WITH_TFM
 	select OPENTHREAD_PLATFORM_KEY_REFERENCES_ENABLE
+	select OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
 	help
 	  Enable crypto backend library implementation based on ARM PSA crypto
 	  API instead of the default, using mbedTLS.
 
 config OPENTHREAD_PLATFORM_KEY_REFERENCES_ENABLE
-	bool "Enable cryptographic key reference support"
+	bool "Cryptographic key reference support"
 	help
 	  Enable usage of cryptographic key references instead of literal keys
 	  This requires a crypto backend library that supports key references.
+
+config OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
+	bool "Make MAC keys exportable"
+	depends on OPENTHREAD_PLATFORM_KEY_REFERENCES_ENABLE
+	help
+	  Enable the creation of exportable MAC keys in the OpenThread Key Manager.
 
 endif # NET_L2_OPENTHREAD

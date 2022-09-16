@@ -3,30 +3,8 @@
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig GPIO_STM32
+config GPIO_STM32
 	bool "GPIO Driver for STM32 family of MCUs"
 	depends on SOC_FAMILY_STM32
 	help
 	  Enable GPIO driver for STM32 line of MCUs
-
-if GPIO_STM32
-
-choice GPIO_STM32_SWJ
-	prompt "Serial wire JTAG configuration"
-	depends on SOC_SERIES_STM32F1X
-
-config GPIO_STM32_SWJ_ENABLE
-	bool "Full SWJ (JTAG-DP + SW-DP): Reset State"
-
-config GPIO_STM32_SWJ_NONJTRST
-	bool "Full SWJ (JTAG-DP + SW-DP) but without NJTRST"
-
-config GPIO_STM32_SWJ_NOJTAG
-	bool "JTAG-DP Disabled and SW-DP Enabled"
-
-config GPIO_STM32_SWJ_DISABLE
-	bool "JTAG-DP Disabled and SW-DP Disabled"
-
-endchoice
-
-endif # GPIO_STM32

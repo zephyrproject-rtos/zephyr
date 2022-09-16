@@ -29,8 +29,46 @@ config CAN_MAX_EXT_ID_FILTER
 	  Defines the maximum number of filters with extended ID (29-bit)
 	  that can be attached.
 
-config CAN_STM32_CLOCK_DIVISOR
+choice CAN_STM32FD_CLOCK_SOURCE
+	prompt "CAN clock source"
+	default CAN_STM32FD_CLOCK_SOURCE_HSE
+	help
+	  CAN clock source selection.
+
+config CAN_STM32FD_CLOCK_SOURCE_HSE
+	bool "HSE"
+	help
+	  HSE clock used as FDCAN clock source.
+
+config CAN_STM32FD_CLOCK_SOURCE_PLL
+	bool "PLL"
+	depends on !SOC_SERIES_STM32U5X
+	help
+	  PLL "Q" clock used ad FDCAN clock source.
+
+config CAN_STM32FD_CLOCK_SOURCE_PCLK1
+	bool "PCLK1"
+	depends on !SOC_SERIES_STM32U5X
+	help
+	  PCLK1 clock used ad FDCAN clock source.
+
+config CAN_STM32FD_CLOCK_SOURCE_PLL1Q
+	bool "PLL1Q"
+	depends on SOC_SERIES_STM32U5X
+	help
+	  PLL1 "Q" clock used as FDCAN clock source.
+
+config CAN_STM32FD_CLOCK_SOURCE_PLL2P
+	bool "PLL2P"
+	depends on SOC_SERIES_STM32U5X
+	help
+	  PLL2 "P" clock used as FDCAN clock source.
+
+endchoice
+
+config CAN_STM32FD_CLOCK_DIVISOR
 	int "CAN clock divisor"
+	depends on CAN_STM32FD_CLOCK_SOURCE_PCLK1
 	range 1 30
 	default 1
 	help
@@ -39,4 +77,4 @@ config CAN_STM32_CLOCK_DIVISOR
 	  Note that the the divisor affects all CAN controllers.
 	  Allowed values: 1 or 2 * n, where n <= 15.
 
-endif #CAN_STM32FD
+endif # CAN_STM32FD

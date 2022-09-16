@@ -8,8 +8,8 @@
 #define FLASH_SIZE DT_REG_SIZE(DT_INST(0, soc_nv_flash))
 
 #include "flash.h"
-#include <device.h>
-#include <drivers/flash.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
 
 
 /* driver data structure */

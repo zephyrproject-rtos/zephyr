@@ -4,6 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+dcnf: dcnf@0 {
+	compatible = "nordic,nrf-dcnf";
+	reg = <0x0 0x1000>;
+	status = "okay";
+};
+
+oscillators: oscillator@4000 {
+	compatible = "nordic,nrf-oscillators";
+	reg = <0x4000 0x1000>;
+	status = "okay";
+};
+
 regulators: regulator@4000 {
 	compatible = "nordic,nrf-regulators";
 	reg = <0x4000 0x1000>;
@@ -22,6 +34,18 @@ power: power@5000 {
 	compatible = "nordic,nrf-power";
 	reg = <0x5000 0x1000>;
 	interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "okay";
+};
+
+reset: reset-controller@5000 {
+	compatible = "nordic,nrf-reset";
+	reg = <0x5000 0x1000>;
+	status = "okay";
+};
+
+ctrlap: ctrlap@6000 {
+	compatible = "nordic,nrf-ctrlapperi";
+	reg = <0x6000 0x1000>;
 	status = "okay";
 };
 
@@ -267,7 +291,7 @@ dppic: dppic@17000 {
 };
 
 wdt: wdt0: watchdog@18000 {
-	compatible = "nordic,nrf-watchdog";
+	compatible = "nordic,nrf-wdt";
 	reg = <0x18000 0x1000>;
 	interrupts = <24 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
@@ -275,11 +299,25 @@ wdt: wdt0: watchdog@18000 {
 };
 
 wdt1: watchdog@19000 {
-	compatible = "nordic,nrf-watchdog";
+	compatible = "nordic,nrf-wdt";
 	reg = <0x19000 0x1000>;
 	interrupts = <25 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "WDT_1";
+};
+
+comp: comparator@1a000 {
+	/*
+	 * This comparator node can be COMP or LPCOMP,
+	 * for the user to pick:
+	 * compatible = "nordic,nrf-comp" or
+	 *              "nordic,nrf-lpcomp".
+	 */
+	compatible = "nordic,nrf-comp";
+	reg = <0x1a000 0x1000>;
+	interrupts = <26 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "disabled";
+	#io-channel-cells = <1>;
 };
 
 egu0: egu@1b000 {
@@ -330,7 +368,7 @@ pwm0: pwm@21000 {
 	interrupts = <33 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "PWM_0";
-	#pwm-cells = <1>;
+	#pwm-cells = <3>;
 };
 
 pwm1: pwm@22000 {
@@ -339,7 +377,7 @@ pwm1: pwm@22000 {
 	interrupts = <34 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "PWM_1";
-	#pwm-cells = <1>;
+	#pwm-cells = <3>;
 };
 
 pwm2: pwm@23000 {
@@ -348,7 +386,7 @@ pwm2: pwm@23000 {
 	interrupts = <35 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "PWM_2";
-	#pwm-cells = <1>;
+	#pwm-cells = <3>;
 };
 
 pwm3: pwm@24000 {
@@ -357,7 +395,7 @@ pwm3: pwm@24000 {
 	interrupts = <36 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "PWM_3";
-	#pwm-cells = <1>;
+	#pwm-cells = <3>;
 };
 
 pdm0: pdm@26000 {
@@ -378,12 +416,14 @@ i2s0: i2s@28000 {
 	label = "I2S_0";
 };
 
-ipc: ipc@2a000 {
-	compatible = "nordic,nrf-ipc";
+mbox: ipc: mbox@2a000 {
+	compatible = "nordic,mbox-nrf-ipc", "nordic,nrf-ipc";
 	reg = <0x2a000 0x1000>;
+	tx-mask = <0x0000ffff>;
+	rx-mask = <0x0000ffff>;
 	interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
+	#mbox-cells = <1>;
 	status = "okay";
-	label = "IPC";
 };
 
 qspi: qspi@2b000 {
@@ -395,6 +435,19 @@ qspi: qspi@2b000 {
 	interrupts = <43 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "QSPI";
+};
+
+nfct: nfct@2d000 {
+	compatible = "nordic,nrf-nfct";
+	reg = <0x2d000 0x1000>;
+	interrupts = <45 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "disabled";
+};
+
+mutex: mutex@30000 {
+	compatible = "nordic,nrf-mutex";
+	reg = <0x30000 0x1000>;
+	status = "okay";
 };
 
 qdec0: qdec@33000 {
@@ -426,9 +479,17 @@ usbd: usbd@36000 {
 	label = "USBD";
 };
 
+usbreg: regulator@37000 {
+	compatible = "nordic,nrf-usbreg";
+	reg = <0x37000 0x1000>;
+	interrupts = <55 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "okay";
+};
+
 flash_controller: flash-controller@39000 {
 	compatible = "nordic,nrf53-flash-controller";
 	reg = <0x39000 0x1000>;
+	partial-erase;
 
 	#address-cells = <1>;
 	#size-cells = <1>;

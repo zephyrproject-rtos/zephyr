@@ -122,9 +122,6 @@ config RV32M1_INTMUX_CHANNEL_7
 
 endif # MULTI_LEVEL_INTERRUPTS
 
-config PINMUX_RV32M1
-	default y
-
 config GPIO_RV32M1
 	default y
 	depends on GPIO

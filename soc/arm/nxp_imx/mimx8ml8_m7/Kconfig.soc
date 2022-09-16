@@ -15,6 +15,8 @@ config SOC_MIMX8ML8
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	select ARM_MPU
+	select HAS_MCUX_IGPIO
+	select HAS_MCUX_IOMUXC
 
 endchoice
 

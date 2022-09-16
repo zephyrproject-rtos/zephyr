@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
-#include <sys/crc.h>
-#include <random/rand32.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/random/rand32.h>
 
 struct phdr_desc {
 	struct phdr_desc  *next;    /* Next pkt descriptor in respective queue */

@@ -7,12 +7,12 @@
 #define DT_DRV_COMPAT nxp_lpc_syscon
 #include <errno.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
-#include <dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <fsl_clock.h>
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
 
 static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
@@ -133,6 +133,10 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		*rate = CLOCK_GetCTimerClkFreq(4);
 		break;
 #endif
+
+	case MCUX_BUS_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
+		break;
 	}
 
 	return 0;

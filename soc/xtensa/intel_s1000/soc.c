@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <xtensa/xtruntime.h>
-#include <irq_nextlevel.h>
+#include <zephyr/irq_nextlevel.h>
 #include <xtensa/hal.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include "soc.h"
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(soc);
 
 static uint32_t ref_clk_freq;

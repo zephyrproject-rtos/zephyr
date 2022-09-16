@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_RV32M1_VEGA
-comment "RV32M1 board Kconfig.defconfig"
 
 config BOARD
 	default "rv32m1_vega_ri5cy" if SOC_OPENISA_RV32M1_RI5CY

@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 void nrf_802154_spinel_log(const char *p_fmt, ...)
 {

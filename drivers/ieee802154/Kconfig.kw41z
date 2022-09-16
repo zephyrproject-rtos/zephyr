@@ -25,7 +25,7 @@ config IEEE802154_KW41Z_INIT_PRIO
 	  you know what you are doing. It has to start before the net stack.
 
 config KW41_DBG_TRACE
-	bool "Enabled simplified debug tracing of events"
+	bool "Simplified debug tracing of events"
 	help
 	  The value depends on your debugging needs. This generates an encoded
 	  trace of events without going to debug logging to avoid timing impact

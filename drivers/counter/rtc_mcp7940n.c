@@ -7,15 +7,15 @@
 
 #define DT_DRV_COMPAT microchip_mcp7940n
 
-#include <device.h>
-#include <drivers/counter.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <drivers/rtc/mcp7940n.h>
-#include <kernel.h>
-#include <logging/log.h>
-#include <sys/timeutil.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/rtc/mcp7940n.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/timeutil.h>
+#include <zephyr/sys/util.h>
 #include <time.h>
 
 LOG_MODULE_REGISTER(MCP7940N, CONFIG_COUNTER_LOG_LEVEL);
@@ -204,7 +204,7 @@ static int read_register(const struct device *dev, uint8_t addr, uint8_t *val)
  *
  * @param dev the MCP7940N device pointer.
  * @param unix_time pointer to time_t value that will contain unix time if
- * sucessful.
+ * successful.
  *
  * @retval return 0 on success, or a negative error code from an I2C
  * transaction.

@@ -6,17 +6,17 @@
 
 #define DT_DRV_COMPAT zephyr_gpio_emul
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/gpio/gpio_emul.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_emul.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <pm/device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/pm/device.h>
 
 #include "gpio_utils.h"
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_emul);
 
 #define GPIO_EMUL_INT_BITMASK						\
@@ -486,7 +486,7 @@ static int gpio_emul_port_set_masked_raw(const struct device *port,
 	k_mutex_unlock(&drv_data->mu);
 	__ASSERT_NO_MSG(rv == 0);
 
-	/* for output-wiring, so the user can take action based on ouput */
+	/* for output-wiring, so the user can take action based on output */
 	if (prev_values ^ values) {
 		gpio_fire_callbacks(&drv_data->callbacks, port, mask & ~get_input_pins(port));
 	}
@@ -510,7 +510,7 @@ static int gpio_emul_port_set_bits_raw(const struct device *port,
 	__ASSERT_NO_MSG(rv == 0);
 
 	k_mutex_unlock(&drv_data->mu);
-	/* for output-wiring, so the user can take action based on ouput */
+	/* for output-wiring, so the user can take action based on output */
 	gpio_fire_callbacks(&drv_data->callbacks, port, pins & ~get_input_pins(port));
 
 	return 0;
@@ -530,7 +530,7 @@ static int gpio_emul_port_clear_bits_raw(const struct device *port,
 	rv = gpio_emul_input_set_masked(port, pins & get_input_pins(port), drv_data->output_vals);
 	k_mutex_unlock(&drv_data->mu);
 	__ASSERT_NO_MSG(rv == 0);
-	/* for output-wiring, so the user can take action based on ouput */
+	/* for output-wiring, so the user can take action based on output */
 	gpio_fire_callbacks(&drv_data->callbacks, port, pins & ~get_input_pins(port));
 
 	return 0;
@@ -549,7 +549,7 @@ static int gpio_emul_port_toggle_bits(const struct device *port, gpio_port_pins_
 		drv_data->output_vals, false);
 	k_mutex_unlock(&drv_data->mu);
 	__ASSERT_NO_MSG(rv == 0);
-	/* for output-wiring, so the user can take action based on ouput */
+	/* for output-wiring, so the user can take action based on output */
 	gpio_fire_callbacks(&drv_data->callbacks, port, pins);
 
 	return 0;
@@ -738,6 +738,6 @@ static int gpio_emul_pm_device_pm_action(const struct device *dev,
 			    &gpio_emul_data_##_num,			\
 			    &gpio_emul_config_##_num, POST_KERNEL,	\
 			    CONFIG_GPIO_INIT_PRIORITY,			\
-			    &gpio_emul_driver)
+			    &gpio_emul_driver);
 
-DT_INST_FOREACH_STATUS_OKAY(DEFINE_GPIO_EMUL);
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_GPIO_EMUL)

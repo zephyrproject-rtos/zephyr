@@ -1,0 +1,15 @@
+# Copyright 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_NXP_LPC_PINCTRL := nxp,lpc-iocon-pinctrl
+DT_COMPAT_NXP_LPC_11U6X_PINCTRL := nxp,lpc11u6x-pinctrl
+DT_COMPAT_NXP_RT_PINCTRL := nxp,rt-iocon-pinctrl
+
+config PINCTRL_NXP_IOCON
+	bool "IOCON Pin controller driver for NXP LPC MCUs"
+	depends on SOC_FAMILY_LPC || SOC_SERIES_IMX_RT6XX || SOC_SERIES_IMX_RT5XX
+	default $(dt_compat_enabled,$(DT_COMPAT_NXP_LPC_PINCTRL)) || \
+		$(dt_compat_enabled,$(DT_COMPAT_NXP_RT_PINCTRL)) || \
+		$(dt_compat_enabled,$(DT_COMPAT_NXP_LPC_11U6X_PINCTRL))
+	help
+	  Enable pin controller driver for NXP LPC MCUs

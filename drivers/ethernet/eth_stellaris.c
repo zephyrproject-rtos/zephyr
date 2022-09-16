@@ -9,13 +9,13 @@
 
 #define LOG_MODULE_NAME eth_stellaris
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <net/ethernet.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <device.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <ethernet/eth_stats.h>
 #include "eth_stellaris_priv.h"
@@ -293,7 +293,7 @@ static struct net_stats_eth *eth_stellaris_stats(const struct device *dev)
 {
 	struct eth_stellaris_runtime *dev_data = dev->data;
 
-	return &data->stats;
+	return &dev_data->stats;
 }
 #endif
 

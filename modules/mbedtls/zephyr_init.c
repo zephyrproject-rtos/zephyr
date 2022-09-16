@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <app_memory/app_memdomain.h>
+#include <zephyr/init.h>
+#include <zephyr/app_memory/app_memdomain.h>
 
 #if defined(CONFIG_MBEDTLS)
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)

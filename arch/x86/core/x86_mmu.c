@@ -5,23 +5,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <arch/x86/mmustructs.h>
-#include <sys/mem_manage.h>
-#include <sys/__assert.h>
-#include <sys/check.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/x86/mmustructs.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/logging/log.h>
 #include <errno.h>
 #include <ctype.h>
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 #include <kernel_arch_func.h>
 #include <x86_mmu.h>
-#include <init.h>
+#include <zephyr/init.h>
 #include <kernel_internal.h>
 #include <mmu.h>
-#include <drivers/interrupt_controller/loapic.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <mmu.h>
-#include <arch/x86/memmap.h>
+#include <zephyr/arch/x86/memmap.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -977,7 +977,7 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
  * bits and return the previous PTE value.
  *
  * Common mask values:
- *  MASK_ALL  - Update all PTE bits. Exitsing state totally discarded.
+ *  MASK_ALL  - Update all PTE bits. Existing state totally discarded.
  *  MASK_PERM - Only update permission bits. All other bits and physical
  *              mapping preserved.
  *
@@ -1147,7 +1147,7 @@ out:
  * @param size Size of the physical region to map
  * @param entry_flags Desired state of non-address PTE bits covered by mask,
  *                    ignored if OPTION_RESET
- * @param mask What bits in the PTE to actually modifiy; unset bits will
+ * @param mask What bits in the PTE to actually modify; unset bits will
  *             be preserved. Ignored if OPTION_RESET.
  * @param options Control options. Do not set OPTION_USER here. OPTION_FLUSH
  *                will trigger a TLB shootdown after all tables are updated.
@@ -1334,7 +1334,7 @@ static void identity_map_remove(uint32_t level)
 #endif
 
 /* Invoked to remove the identity mappings in the page tables,
- * they were only needed to tranisition the instruction pointer at early boot
+ * they were only needed to transition the instruction pointer at early boot
  */
 __boot_func
 void z_x86_mmu_init(void)

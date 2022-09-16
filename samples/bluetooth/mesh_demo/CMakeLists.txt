@@ -8,8 +8,6 @@ project(mesh_demo)
 
 target_sources(app PRIVATE src/main.c)
 target_sources_ifdef(CONFIG_BOARD_BBC_MICROBIT app PRIVATE src/microbit.c)
-zephyr_include_directories_ifdef(CONFIG_BOARD_BBC_MICROBIT
-				 ${ZEPHYR_BASE}/boards/arm/bbc_microbit)
 
 if(NODE_ADDR)
   zephyr_compile_definitions(NODE_ADDR=${NODE_ADDR})

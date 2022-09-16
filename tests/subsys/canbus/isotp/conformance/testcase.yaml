@@ -1,4 +1,5 @@
 tests:
-  can.isotp.conformance:
+  canbus.isotp.conformance:
     tags: can isotp
     depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")

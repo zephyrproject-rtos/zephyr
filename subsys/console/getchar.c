@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <console/console.h>
-#include <console/tty.h>
-#include <drivers/uart.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/console/console.h>
+#include <zephyr/console/tty.h>
+#include <zephyr/drivers/uart.h>
 
 static struct tty_serial console_serial;
 

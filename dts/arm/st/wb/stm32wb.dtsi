@@ -6,10 +6,11 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/clock/stm32_clock.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/clock/stm32wb_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <freq.h>
 
 / {
@@ -34,13 +35,13 @@
 	};
 
 	sram1: memory@20030000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20030000 0x2800>;
 		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2: memory@20038000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20038000 0x5000>;
 		zephyr,memory-region = "SRAM2";
 	};
@@ -70,8 +71,9 @@
 
 		clk_lse: clk-lse {
 			#clock-cells = <0>;
-			compatible = "fixed-clock";
+			compatible = "st,stm32-lse-clock";
 			clock-frequency = <32768>;
+			driving-capability = <0>;
 			status = "disabled";
 		};
 
@@ -357,6 +359,8 @@
 			status = "disabled";
 			label = "ADC_1";
 			#io-channel-cells = <1>;
+			has-temp-channel;
+			has-vref-channel;
 		};
 
 		iwdg: watchdog@40003000 {

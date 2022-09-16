@@ -5,15 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
-#include <sys/mutex.h>
+#include <zephyr/sys/mutex.h>
 #include <ztest_assert.h>
 
-#include <net/socket.h>
-#include <net/ethernet.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/ethernet.h>
 
 #include "ipv6.h"
 #include "../../socket_helpers.h"
@@ -35,12 +35,17 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 	"from across the industry to build a best-in-breed small, scalable, " \
 	"real-time operating system (RTOS) optimized for resource-" \
 	"constrained devices, across multiple architectures."
+/* More than available TX buffers */
+static const char test_str_all_tx_bufs[] =
+#include <string_all_tx_bufs.inc>
+"!"
+;
 
 #define ANY_PORT 0
 #define SERVER_PORT 4242
 #define CLIENT_PORT 9898
 
-static ZTEST_BMEM char rx_buf[400];
+static ZTEST_BMEM char rx_buf[NET_ETH_MTU + 1];
 
 /* Common routine to communicate packets over pair of sockets. */
 static void comm_sendto_recvfrom(int client_sock,
@@ -1212,6 +1217,123 @@ void test_v6_msg_trunc(void)
 		       (struct sockaddr *)&server_addr, sizeof(server_addr));
 }
 
+static void test_dgram_overflow(int sock_c, int sock_s,
+				struct sockaddr *addr_c, socklen_t addrlen_c,
+				struct sockaddr *addr_s, socklen_t addrlen_s,
+				const void *buf, size_t buf_size)
+{
+	int rv;
+
+	rv = bind(sock_s, addr_s, addrlen_s);
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = bind(sock_c, addr_c, addrlen_c);
+	zassert_equal(rv, 0, "client bind failed");
+
+	rv = connect(sock_c, addr_s, addrlen_s);
+	zassert_equal(rv, 0, "connect failed");
+
+	rv = send(sock_c, buf, buf_size, 0);
+	zassert_equal(rv, -1, "send succeeded");
+	zassert_equal(errno, ENOMEM, "incorrect errno value");
+
+	rv = close(sock_c);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(sock_s);
+	zassert_equal(rv, 0, "close failed");
+}
+
+static void test_dgram_fragmented(int sock_c, int sock_s,
+				  struct sockaddr *addr_c, socklen_t addrlen_c,
+				  struct sockaddr *addr_s, socklen_t addrlen_s,
+				  const void *buf, size_t buf_size)
+{
+	int rv;
+
+	rv = bind(sock_s, addr_s, addrlen_s);
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = bind(sock_c, addr_c, addrlen_c);
+	zassert_equal(rv, 0, "client bind failed");
+
+	rv = connect(sock_c, addr_s, addrlen_s);
+	zassert_equal(rv, 0, "connect failed");
+
+	rv = send(sock_c, buf, buf_size, 0);
+	zassert_equal(rv, buf_size, "send failed");
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	rv = recv(sock_s, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(rv, buf_size, "recv failed");
+	zassert_mem_equal(rx_buf, buf, buf_size, "wrong data");
+
+	rv = close(sock_c);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(sock_s);
+	zassert_equal(rv, 0, "close failed");
+}
+
+void test_v4_dgram_overflow(void)
+{
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &client_sock, &client_addr);
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &server_sock, &server_addr);
+
+	test_dgram_overflow(client_sock, server_sock,
+			    (struct sockaddr *)&client_addr, sizeof(client_addr),
+			    (struct sockaddr *)&server_addr, sizeof(server_addr),
+			    test_str_all_tx_bufs, NET_ETH_MTU + 1);
+}
+
+void test_v6_dgram_fragmented_or_overflow(void)
+{
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 server_addr;
+
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &client_sock, &client_addr);
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &server_sock, &server_addr);
+
+	if (IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT)) {
+		test_dgram_fragmented(client_sock, server_sock,
+				      (struct sockaddr *)&client_addr, sizeof(client_addr),
+				      (struct sockaddr *)&server_addr, sizeof(server_addr),
+				      test_str_all_tx_bufs, NET_ETH_MTU + 1);
+	} else {
+		test_dgram_overflow(client_sock, server_sock,
+				    (struct sockaddr *)&client_addr, sizeof(client_addr),
+				    (struct sockaddr *)&server_addr, sizeof(server_addr),
+				    test_str_all_tx_bufs, NET_ETH_MTU + 1);
+	}
+}
+
+void test_v6_dgram_overflow(void)
+{
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 server_addr;
+
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &client_sock, &client_addr);
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &server_sock, &server_addr);
+
+	test_dgram_overflow(client_sock, server_sock,
+			    (struct sockaddr *)&client_addr, sizeof(client_addr),
+			    (struct sockaddr *)&server_addr, sizeof(server_addr),
+			    BUF_AND_SIZE(test_str_all_tx_bufs));
+}
+
 void test_main(void)
 {
 	k_thread_system_pool_assign(k_current_get());
@@ -1242,7 +1364,10 @@ void test_main(void)
 			 ztest_unit_test(test_v6_sendmsg_with_txtime),
 			 ztest_user_unit_test(test_v6_sendmsg_with_txtime),
 			 ztest_unit_test(test_v4_msg_trunc),
-			 ztest_unit_test(test_v6_msg_trunc)
+			 ztest_unit_test(test_v6_msg_trunc),
+			 ztest_unit_test(test_v4_dgram_overflow),
+			 ztest_unit_test(test_v6_dgram_fragmented_or_overflow),
+			 ztest_unit_test(test_v6_dgram_overflow)
 		);
 
 	ztest_run_test_suite(socket_udp);

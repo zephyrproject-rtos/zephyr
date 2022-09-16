@@ -18,7 +18,7 @@ This sample requires the ArgonKey board plus a USB to TTL 1V8 serial
 cable to get the output audio stream. The board can be powered
 in either one of the following two ways:
 
-- mezzanine mode, plugging the ArgonKey to HiKey board thru its 96Board
+- mezzanine mode, plugging the ArgonKey to HiKey board through its 96Board
   low-speed connector
 - standalone mode, supplying 5V directly on P1 connector
 

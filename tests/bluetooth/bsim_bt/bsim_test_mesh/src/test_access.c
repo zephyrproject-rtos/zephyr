@@ -6,10 +6,11 @@
 #include "mesh_test.h"
 #include "mesh/net.h"
 #include "mesh/access.h"
+#include "mesh/foundation.h"
 
 #define LOG_MODULE_NAME test_access
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 
 #define GROUP_ADDR 0xc000
@@ -17,14 +18,18 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 #define UNICAST_ADDR2 0x0006
 #define WAIT_TIME 10 /*seconds*/
 
-#define TEST_MODEL_ID_1 0x2b2b
-#define TEST_MODEL_ID_2 0x2a2a
+#define TEST_MODEL_ID_1 0x2a2a
+#define TEST_MODEL_ID_2 0x2b2b
 #define TEST_MODEL_ID_3 0x2c2c
+#define TEST_MODEL_ID_4 0x2d2d
+#define TEST_MODEL_ID_5 0x2e2e
 
 #define TEST_MESSAGE_OP_1  BT_MESH_MODEL_OP_1(0x11)
 #define TEST_MESSAGE_OP_2  BT_MESH_MODEL_OP_1(0x12)
 #define TEST_MESSAGE_OP_3  BT_MESH_MODEL_OP_1(0x13)
 #define TEST_MESSAGE_OP_4  BT_MESH_MODEL_OP_1(0x14)
+#define TEST_MESSAGE_OP_5  BT_MESH_MODEL_OP_1(0x15)
+#define TEST_MESSAGE_OP_F  BT_MESH_MODEL_OP_1(0x1F)
 
 #define PUB_PERIOD_COUNT 3
 #define RX_JITTER_MAX (10 + CONFIG_BT_MESH_NETWORK_TRANSMIT_COUNT * \
@@ -33,7 +38,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 static int model1_init(struct bt_mesh_model *model);
 static int model2_init(struct bt_mesh_model *model);
 static int model3_init(struct bt_mesh_model *model);
+static int model4_init(struct bt_mesh_model *model);
+static int model5_init(struct bt_mesh_model *model);
 static int test_msg_handler(struct bt_mesh_model *model,
+			struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf);
+static int test_msg_ne_handler(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf);
 
@@ -72,13 +82,13 @@ static const struct {
 	int32_t sleep;
 	int32_t duration;
 } test_cancel[] = {
-	/* Test cancelling periodic publication. */
+	/* Test canceling periodic publication. */
 	{
 		BT_MESH_PUB_PERIOD_SEC(2), 0, 2,
 		2000 /* period */ + 100 /* margin */,
 		3 /* messages */ * 2000 /* period */
 	},
-	/* Test cancelling publication retransmission. */
+	/* Test canceling publication retransmission. */
 	{
 		BT_MESH_PUB_PERIOD_SEC(3), BT_MESH_PUB_TRANSMIT(3, 200), 3,
 		200 /* retransmission interval */ + 50 /* margin */,
@@ -98,7 +108,7 @@ static int model1_update(struct bt_mesh_model *model)
 	return publish_allow ? k_sem_give(&publish_sem), 0 : -1;
 }
 
-static int test_msg4_handler(struct bt_mesh_model *model,
+static int test_msgf_handler(struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
@@ -132,9 +142,17 @@ static const struct bt_mesh_model_cb test_model3_cb = {
 	.init = model3_init,
 };
 
+static const struct bt_mesh_model_cb test_model4_cb = {
+	.init = model4_init,
+};
+
+static const struct bt_mesh_model_cb test_model5_cb = {
+	.init = model5_init,
+};
+
 static const struct bt_mesh_model_op model_op1[] = {
 	{ TEST_MESSAGE_OP_1, 0, test_msg_handler },
-	{ TEST_MESSAGE_OP_4, 0, test_msg4_handler },
+	{ TEST_MESSAGE_OP_F, 0, test_msgf_handler },
 	BT_MESH_MODEL_OP_END
 };
 
@@ -148,39 +166,119 @@ static const struct bt_mesh_model_op model_op3[] = {
 	BT_MESH_MODEL_OP_END
 };
 
+static const struct bt_mesh_model_op model_op4[] = {
+	{ TEST_MESSAGE_OP_4, 0, test_msg_handler },
+	BT_MESH_MODEL_OP_END
+};
+
+static const struct bt_mesh_model_op model_op5[] = {
+	{ TEST_MESSAGE_OP_5, 0, test_msg_handler },
+	BT_MESH_MODEL_OP_END
+};
+
+static const struct bt_mesh_model_op model_ne_op1[] = {
+	{ TEST_MESSAGE_OP_1, 0, test_msg_ne_handler },
+	BT_MESH_MODEL_OP_END
+};
+
+static const struct bt_mesh_model_op model_ne_op2[] = {
+	{ TEST_MESSAGE_OP_2, 0, test_msg_ne_handler },
+	BT_MESH_MODEL_OP_END
+};
+
+static const struct bt_mesh_model_op model_ne_op3[] = {
+	{ TEST_MESSAGE_OP_3, 0, test_msg_ne_handler },
+	BT_MESH_MODEL_OP_END
+};
+
+static const struct bt_mesh_model_op model_ne_op4[] = {
+	{ TEST_MESSAGE_OP_4, 0, test_msg_ne_handler },
+	BT_MESH_MODEL_OP_END
+};
+
+static const struct bt_mesh_model_op model_ne_op5[] = {
+	{ TEST_MESSAGE_OP_5, 0, test_msg_ne_handler },
+	BT_MESH_MODEL_OP_END
+};
+
 static struct bt_mesh_cfg_cli cfg_cli;
 
+/* do not change model sequence. it will break pointer arithmetic. */
 static struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_1, model_op1, &model_pub1, NULL, &test_model1_cb),
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_2, model_op2, NULL, NULL, &test_model2_cb),
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_3, model_op3, NULL, NULL, &test_model3_cb),
+	BT_MESH_MODEL_CB(TEST_MODEL_ID_4, model_op4, NULL, NULL, &test_model4_cb),
+	BT_MESH_MODEL_CB(TEST_MODEL_ID_5, model_op5, NULL, NULL, &test_model5_cb),
+};
+
+/* do not change model sequence. it will break pointer arithmetic. */
+static struct bt_mesh_model models_ne[] = {
+	BT_MESH_MODEL_CB(TEST_MODEL_ID_1, model_ne_op1, NULL, NULL, &test_model1_cb),
+	BT_MESH_MODEL_CB(TEST_MODEL_ID_2, model_ne_op2, NULL, NULL, &test_model2_cb),
+	BT_MESH_MODEL_CB(TEST_MODEL_ID_3, model_ne_op3, NULL, NULL, &test_model3_cb),
+	BT_MESH_MODEL_CB(TEST_MODEL_ID_4, model_ne_op4, NULL, NULL, &test_model4_cb),
+	BT_MESH_MODEL_CB(TEST_MODEL_ID_5, model_ne_op5, NULL, NULL, &test_model5_cb),
 };
 
 static struct bt_mesh_model vnd_models[] = {};
 
 static struct bt_mesh_elem elems[] = {
 	BT_MESH_ELEM(0, models, vnd_models),
+	BT_MESH_ELEM(1, models_ne, vnd_models),
 };
 
 const struct bt_mesh_comp local_comp = {
 	.elem = elems,
 	.elem_count = ARRAY_SIZE(elems),
 };
+/*     extension dependency (basic models are on top)
+ *
+ *        element idx0  element idx1
+ *
+ *         m1    m2     mne2  mne1
+ *        / \    /       |   /  \
+ *       /   \  /        |  /    \
+ *      m5    m3------->mne3    mne5
+ *            |          |
+ *            m4        mne4
+ */
 
 static int model1_init(struct bt_mesh_model *model)
 {
-	return bt_mesh_model_extend(&models[2], &models[3]);
+	return 0;
 }
 
 static int model2_init(struct bt_mesh_model *model)
 {
-	return bt_mesh_model_extend(&models[3], &models[4]);
+	return 0;
 }
 
 static int model3_init(struct bt_mesh_model *model)
 {
+	ASSERT_OK(bt_mesh_model_extend(model, model - 2));
+	ASSERT_OK(bt_mesh_model_extend(model, model - 1));
+
+	if (model->elem_idx == 0) {
+		ASSERT_OK(bt_mesh_model_extend(&models_ne[2], model));
+	}
+
+	return 0;
+}
+
+static int model4_init(struct bt_mesh_model *model)
+{
+	ASSERT_OK(bt_mesh_model_extend(model, model - 1));
+
+	return 0;
+}
+
+static int model5_init(struct bt_mesh_model *model)
+{
+	ASSERT_OK(bt_mesh_model_extend(model, model - 4));
+
 	return 0;
 }
 
@@ -190,6 +288,15 @@ static int test_msg_handler(struct bt_mesh_model *model,
 {
 	LOG_DBG("msg rx model id: %u", model->id);
 	k_poll_signal_raise(&model_pub_signal, model->id);
+
+	return 0;
+}
+
+static int test_msg_ne_handler(struct bt_mesh_model *model,
+			struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf)
+{
+	FAIL("Model %#4x on neighbor element received msg", model->id);
 
 	return 0;
 }
@@ -209,7 +316,8 @@ static void common_configure(uint16_t addr)
 {
 	uint8_t status;
 	int err;
-	uint16_t models[] = {TEST_MODEL_ID_1, TEST_MODEL_ID_2, TEST_MODEL_ID_3};
+	uint16_t model_ids[] = {TEST_MODEL_ID_1, TEST_MODEL_ID_2,
+			TEST_MODEL_ID_3, TEST_MODEL_ID_4, TEST_MODEL_ID_5};
 
 	err = bt_mesh_cfg_app_key_add(0, addr, 0, 0, app_key,
 				      &status);
@@ -218,12 +326,20 @@ static void common_configure(uint16_t addr)
 		return;
 	}
 
-	for (int i = 0; i < ARRAY_SIZE(models); i++) {
-		err = bt_mesh_cfg_mod_app_bind(0, addr, addr, 0, models[i],
+	for (int i = 0; i < ARRAY_SIZE(model_ids); i++) {
+		err = bt_mesh_cfg_mod_app_bind(0, addr, addr, 0, model_ids[i],
 					       &status);
 		if (err || status) {
 			FAIL("Model %#4x bind failed (err %d, status %u)",
-					models[i], err, status);
+					model_ids[i], err, status);
+			return;
+		}
+
+		err = bt_mesh_cfg_mod_app_bind(0, addr, addr + 1, 0, model_ids[i],
+					       &status);
+		if (err || status) {
+			FAIL("Model %#4x bind failed (err %d, status %u)",
+					model_ids[i], err, status);
 			return;
 		}
 	}
@@ -276,6 +392,12 @@ static void test_tx_ext_model(void)
 	bt_mesh_model_msg_init(&msg, TEST_MESSAGE_OP_3);
 	bt_mesh_model_send(&models[4], &ctx, &msg, NULL, NULL);
 
+	bt_mesh_model_msg_init(&msg, TEST_MESSAGE_OP_4);
+	bt_mesh_model_send(&models[5], &ctx, &msg, NULL, NULL);
+
+	bt_mesh_model_msg_init(&msg, TEST_MESSAGE_OP_5);
+	bt_mesh_model_send(&models[6], &ctx, &msg, NULL, NULL);
+
 	PASS();
 }
 
@@ -297,8 +419,10 @@ static void test_sub_ext_model(void)
 	bool m1_fired = false;
 	bool m2_fired = false;
 	bool m3_fired = false;
+	bool m4_fired = false;
+	bool m5_fired = false;
 
-	while (!m1_fired || !m2_fired || !m3_fired) {
+	while (!m1_fired || !m2_fired || !m3_fired || !m4_fired || !m5_fired) {
 		ASSERT_OK(k_poll(events, 1, K_SECONDS(3)));
 
 		switch (model_pub_signal.result) {
@@ -314,6 +438,14 @@ static void test_sub_ext_model(void)
 			ASSERT_FALSE(m3_fired);
 			m3_fired = true;
 			break;
+		case TEST_MODEL_ID_4:
+			ASSERT_FALSE(m4_fired);
+			m4_fired = true;
+			break;
+		case TEST_MODEL_ID_5:
+			ASSERT_FALSE(m5_fired);
+			m5_fired = true;
+			break;
 		default:
 			FAIL();
 			break;
@@ -323,6 +455,43 @@ static void test_sub_ext_model(void)
 		events[0].state = K_POLL_STATE_NOT_READY;
 	}
 
+
+	PASS();
+}
+
+static void test_sub_capacity_ext_model(void)
+{
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &local_comp);
+	provision(UNICAST_ADDR2);
+	common_configure(UNICAST_ADDR2);
+
+	uint8_t status;
+	int i;
+
+	/* Models in the extension linked list use the subscription list capacity of
+	 * each other to the full extent. If a model cannot put a subscription address in
+	 * its own subscription list it looks for the closest empty cell in model
+	 * in the extension linked list.
+	 */
+	for (i = 0; i < 5 * CONFIG_BT_MESH_MODEL_GROUP_COUNT; i++) {
+		ASSERT_OK(bt_mesh_cfg_mod_sub_add(0, UNICAST_ADDR2, UNICAST_ADDR2,
+			GROUP_ADDR + i, TEST_MODEL_ID_2, &status),
+			"Can't deliver subscription on address %#4x", GROUP_ADDR + i);
+
+		ASSERT_EQUAL(STATUS_SUCCESS, status);
+	}
+
+	uint16_t model_ids[] = {TEST_MODEL_ID_1, TEST_MODEL_ID_2,
+			TEST_MODEL_ID_3, TEST_MODEL_ID_4, TEST_MODEL_ID_5};
+
+	for (int j = 0; j < ARRAY_SIZE(model_ids); j++) {
+		ASSERT_OK(bt_mesh_cfg_mod_sub_add(0, UNICAST_ADDR2, UNICAST_ADDR2,
+			GROUP_ADDR + i, model_ids[j], &status),
+			"Can't deliver subscription on address %#4x", GROUP_ADDR + i);
+
+		ASSERT_EQUAL(STATUS_INSUFF_RESOURCES, status);
+	}
 
 	PASS();
 }
@@ -348,11 +517,11 @@ static void pub_param_set(uint8_t period, uint8_t transmit)
 	}
 }
 
-static void msg4_publish(void)
+static void msgf_publish(void)
 {
 	struct bt_mesh_model *model = &models[2];
 
-	bt_mesh_model_msg_init(model->pub->msg, TEST_MESSAGE_OP_4);
+	bt_mesh_model_msg_init(model->pub->msg, TEST_MESSAGE_OP_F);
 	net_buf_simple_add_u8(model->pub->msg, 1);
 	bt_mesh_model_publish(model);
 }
@@ -391,7 +560,7 @@ static void recv_jitter_check(int32_t interval, uint8_t count)
 	uint32_t jitter = 0;
 	int err;
 
-	/* The measurment starts by the first received message. */
+	/* The measurement starts by the first received message. */
 	err = k_sem_take(&publish_sem, K_SECONDS(20));
 	if (err) {
 		FAIL("Recv timed out");
@@ -444,7 +613,7 @@ static void test_tx_period(void)
 		LOG_INF("Publication period: %d", test_period[i].period_ms);
 
 		/* Start publishing messages and measure jitter. */
-		msg4_publish();
+		msgf_publish();
 		publish_allow = true;
 		pub_jitter_check(test_period[i].period_ms, PUB_PERIOD_COUNT);
 
@@ -517,7 +686,7 @@ static void test_tx_transmit(void)
 		LOG_INF("Retransmission interval: %d, count: %d", interval, count);
 
 		/* Start publishing messages and measure jitter. */
-		msg4_publish();
+		msgf_publish();
 		pub_jitter_check(interval, count);
 
 		/* Let the receiver hit the first semaphore. */
@@ -569,7 +738,7 @@ static void test_tx_cancel(void)
 	for (size_t i = 0; i < ARRAY_SIZE(test_cancel); i++) {
 		pub_param_set(test_cancel[i].period, test_cancel[i].transmit);
 
-		msg4_publish();
+		msgf_publish();
 		publish_allow = true;
 		int64_t timestamp = k_uptime_get();
 
@@ -668,6 +837,7 @@ static void test_rx_cancel(void)
 static const struct bst_test_instance test_access[] = {
 	TEST_CASE(tx, ext_model, "Access: tx data of extended models"),
 	TEST_CASE(sub, ext_model, "Access: data subscription of extended models"),
+	TEST_CASE(sub_capacity, ext_model, "Access: subscription capacity of extended models"),
 	TEST_CASE(tx, period, "Access: Publish a message periodically"),
 	TEST_CASE(rx, period, "Access: Receive periodically published message"),
 	TEST_CASE(tx, transmit, "Access: Publish and retransmit message"),

@@ -6,7 +6,8 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
-#include <dt-bindings/lora/sx126x.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+#include "rak4631_nrf52840-pinctrl.dtsi"
 
 / {
 	model = "RAKWireless RAK4631 WisBlock LPWAN Module with a Nordic NRF52840 SoC";
@@ -62,42 +63,46 @@
 	compatible = "nordic,nrf-uart";
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <20>;
-	rx-pin = <19>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &uart1 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <16>;
-	rx-pin = <15>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <13>;
-	scl-pin = <14>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c1 {
 	compatible = "nordic,nrf-twi";
 	/* Cannot be used together with spi1. */
 	/* status = "okay"; */
-	sda-pin = <24>;
-	scl-pin = <25>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <43>;
-	mosi-pin = <44>;
-	miso-pin = <45>;
 	cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
 
-	lora: sx1262@0 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+	lora: lora@0 {
 		compatible = "semtech,sx1262";
 		reg = <0>;
 		label = "sx1262";
@@ -115,9 +120,9 @@
 
 &qspi {
 	status = "okay";
-	sck-pin = <3>;
-	io-pins = <30>, <29>, <28>, <2>;
-	csn-pins = <26>;
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {
@@ -129,7 +134,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
+			reg = <0x00000000 0x0000C000>;
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";

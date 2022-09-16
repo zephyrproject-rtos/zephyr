@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -27,6 +27,8 @@
 #define OP_EUCLIDEAN		(6)
 #define OP_JENSENSHANNON	(7)
 #define OP_MINKOWSKI		(8)
+
+ZTEST_SUITE(distance_f32, NULL, NULL, NULL, NULL, NULL);
 
 static void test_arm_distance(int op, bool scratchy, const uint16_t *dims,
 	const uint32_t *dinput1, const uint32_t *dinput2, const uint32_t *ref)
@@ -118,39 +120,39 @@ static void test_arm_distance(int op, bool scratchy, const uint16_t *dims,
 	free(tmp2);
 }
 
-DEFINE_TEST_VARIANT6(
+DEFINE_TEST_VARIANT6(distance_f32,
 	arm_distance, braycurtis, OP_BRAYCURTIS, false, in_dims,
 	in_com1, in_com2, ref_braycurtis);
 
-DEFINE_TEST_VARIANT6(
+DEFINE_TEST_VARIANT6(distance_f32,
 	arm_distance, canberra, OP_CANBERRA, false, in_dims,
 	in_com1, in_com2, ref_canberra);
 
-DEFINE_TEST_VARIANT6(
+DEFINE_TEST_VARIANT6(distance_f32,
 	arm_distance, chebyshev, OP_CHEBYSHEV, false, in_dims,
 	in_com1, in_com2, ref_chebyshev);
 
-DEFINE_TEST_VARIANT6(
+DEFINE_TEST_VARIANT6(distance_f32,
 	arm_distance, cityblock, OP_CITYBLOCK, false, in_dims,
 	in_com1, in_com2, ref_cityblock);
 
-DEFINE_TEST_VARIANT6(
+DEFINE_TEST_VARIANT6(distance_f32,
 	arm_distance, correlation, OP_CORRELATION, true, in_dims,
 	in_com1, in_com2, ref_correlation);
 
-DEFINE_TEST_VARIANT6(
+DEFINE_TEST_VARIANT6(distance_f32,
 	arm_distance, cosine, OP_COSINE, false, in_dims,
 	in_com1, in_com2, ref_cosine);
 
-DEFINE_TEST_VARIANT6(
+DEFINE_TEST_VARIANT6(distance_f32,
 	arm_distance, euclidean, OP_EUCLIDEAN, false, in_dims,
 	in_com1, in_com2, ref_euclidean);
 
-DEFINE_TEST_VARIANT6(
+DEFINE_TEST_VARIANT6(distance_f32,
 	arm_distance, jensenshannon, OP_JENSENSHANNON, false, in_dims,
 	in_jen1, in_jen2, ref_jensenshannon);
 
-static void test_arm_distance_minkowski(void)
+ZTEST(distance_f32, test_arm_distance_minkowski)
 {
 	size_t index;
 	const size_t length = in_dims_minkowski[0];
@@ -184,21 +186,4 @@ static void test_arm_distance_minkowski(void)
 
 	/* Free buffers */
 	free(output);
-}
-
-void test_distance_f32(void)
-{
-	ztest_test_suite(distance_f32,
-		ztest_unit_test(test_arm_distance_braycurtis),
-		ztest_unit_test(test_arm_distance_canberra),
-		ztest_unit_test(test_arm_distance_chebyshev),
-		ztest_unit_test(test_arm_distance_cityblock),
-		ztest_unit_test(test_arm_distance_correlation),
-		ztest_unit_test(test_arm_distance_cosine),
-		ztest_unit_test(test_arm_distance_euclidean),
-		ztest_unit_test(test_arm_distance_jensenshannon),
-		ztest_unit_test(test_arm_distance_minkowski)
-		);
-
-	ztest_run_test_suite(distance_f32);
 }

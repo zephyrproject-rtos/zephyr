@@ -17,8 +17,8 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_ARCH_INTERFACE_H_
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_ARCH_INTERFACE_H_
 
-#include <kernel.h>
-#include <sys/arch_interface.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/arch_interface.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -340,7 +340,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys);
  * Some page frames within system RAM may not be available for use. A good
  * example of this is reserved regions in the first megabyte on PC-like systems.
  *
- * Implementations of this function should mark all relavent entries in
+ * Implementations of this function should mark all relevant entries in
  * z_page_frames with K_PAGE_FRAME_RESERVED. This function is called at
  * early system initialization with mm_lock held.
  */

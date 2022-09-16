@@ -2,7 +2,7 @@ description: OpenISA LPUART
 
 compatible: "openisa,rv32m1-lpuart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:

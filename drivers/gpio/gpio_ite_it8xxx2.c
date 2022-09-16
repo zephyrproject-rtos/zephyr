@@ -5,19 +5,20 @@
  *
  */
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <dt-bindings/interrupt-controller/ite-intc.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/ite-it8xxx2-gpio.h>
+#include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 #include <zephyr/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "gpio_utils.h"
 
 #define DT_DRV_COMPAT ite_it8xxx2_gpio
 
 /*
- * Strcture gpio_ite_cfg is about the setting of gpio
+ * Structure gpio_ite_cfg is about the setting of gpio
  * this config will be used at initial time
  */
 struct gpio_ite_cfg {
@@ -37,7 +38,7 @@ struct gpio_ite_cfg {
 	uint8_t gpio_irq[8];
 };
 
-/* Strcture gpio_ite_data is about callback function */
+/* Structure gpio_ite_data is about callback function */
 struct gpio_ite_data {
 	struct gpio_driver_data common;
 	sys_slist_t callbacks;
@@ -379,14 +380,14 @@ static int gpio_ite_configure(const struct device *dev,
 			gpio_1p8v[gpio_config->index][pin].offset);
 	mask_1p8v = gpio_1p8v[gpio_config->index][pin].mask_1p8v;
 	if (reg_1p8v != &IT8XXX2_GPIO_GCRX(0)) {
-		gpio_flags_t volt = flags & GPIO_VOLTAGE_MASK;
+		gpio_flags_t volt = flags & IT8XXX2_GPIO_VOLTAGE_MASK;
 
-		if (volt == GPIO_VOLTAGE_1P8) {
+		if (volt == IT8XXX2_GPIO_VOLTAGE_1P8) {
 			__ASSERT(!(flags & GPIO_PULL_UP),
 			"Don't enable internal pullup if 1.8V voltage is used");
 			*reg_1p8v |= mask_1p8v;
-		} else if (volt == GPIO_VOLTAGE_3P3 ||
-			   volt == GPIO_VOLTAGE_DEFAULT) {
+		} else if (volt == IT8XXX2_GPIO_VOLTAGE_3P3 ||
+			   volt == IT8XXX2_GPIO_VOLTAGE_DEFAULT) {
 			*reg_1p8v &= ~mask_1p8v;
 		} else {
 			return -EINVAL;

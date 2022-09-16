@@ -14,11 +14,11 @@
  * definitions and more complex routines, if needed.
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <sys/util.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <linker/linker-defs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/linker/linker-defs.h>
 
 #if defined(CONFIG_CPU_HAS_NXP_MPU)
 #include <fsl_sysmpu.h>
@@ -108,7 +108,7 @@ void z_arm_init_arch_hw_at_boot(void)
 		NVIC->ICPR[i] = 0xFFFFFFFF;
 	}
 
-#if defined(CONFIG_CPU_CORTEX_M7)
+#if defined(CONFIG_CPU_CORTEX_M_HAS_CACHE)
 	/* Reset D-Cache settings. If the D-Cache was enabled,
 	 * SCB_DisableDCache() takes care of cleaning and invalidating it.
 	 * If it was already disabled, just call SCB_InvalidateDCache() to
@@ -121,7 +121,7 @@ void z_arm_init_arch_hw_at_boot(void)
 	}
 	/* Reset I-Cache settings. */
 	SCB_DisableICache();
-#endif /* CONFIG_CPU_CORTEX_M7 */
+#endif /* CONFIG_CPU_CORTEX_M_HAS_CACHE */
 
 	/* Restore Interrupts */
 	__enable_irq();

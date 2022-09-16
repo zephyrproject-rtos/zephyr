@@ -6,8 +6,8 @@
 #ifndef ZEPHYR_TRACE_SYSVIEW_H
 #define ZEPHYR_TRACE_SYSVIEW_H
 #include <string.h>
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <tracing_sysview_ids.h>
 
 #include <SEGGER_SYSVIEW.h>

@@ -6,8 +6,8 @@
 
 #include "test_driver.h"
 
-#include <kernel.h>
-#include <pm/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 
 struct test_driver_data {
 	bool ongoing;

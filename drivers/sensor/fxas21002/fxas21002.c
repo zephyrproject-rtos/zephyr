@@ -7,9 +7,9 @@
 #define DT_DRV_COMPAT nxp_fxas21002
 
 #include "fxas21002.h"
-#include <sys/util.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(FXAS21002, CONFIG_SENSOR_LOG_LEVEL);
 

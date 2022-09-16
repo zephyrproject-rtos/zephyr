@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, NXP
+# Copyright 2022, NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -10,6 +10,7 @@ CONFIG_BOARD_MIMXRT595_EVK=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 CONFIG_SERIAL=y
+CONFIG_PINCTRL=y
 CONFIG_UART_INTERRUPT_DRIVEN=y
 CONFIG_GPIO=y
 # Enable TrustZone-M

@@ -12,7 +12,7 @@
  * intended.
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #include <stdio.h>
@@ -20,7 +20,7 @@
 #include <malloc.h>
 #include <envlock.h>
 
-#define STACK_SIZE	(512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE	(512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #ifdef CONFIG_USERSPACE
 #define THREAD_OPT	(K_USER | K_INHERIT_PERMS)

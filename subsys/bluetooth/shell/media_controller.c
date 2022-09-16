@@ -10,14 +10,14 @@
  */
 
 #include <stdlib.h>
-#include <shell/shell.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 
 #include "bt.h"
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/services/ots.h>
 
-#include <bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
 #include "../audio/media_proxy_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
@@ -50,6 +50,7 @@ static void local_player_instance_cb(struct media_player *plr, int err)
 	}
 }
 
+#ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL
 static void discover_player_cb(struct media_player *plr, int err)
 {
 	if (err) {
@@ -63,6 +64,7 @@ static void discover_player_cb(struct media_player *plr, int err)
 	/* Assuming that since discovery was called, the remote player is wanted */
 	current_player = remote_player;
 }
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 static void player_name_cb(struct media_player *plr, int err, const char *name)
 {
@@ -291,17 +293,17 @@ static void media_state_cb(struct media_player *plr, int err, uint8_t state)
 	/* TODO: Parse state and output state name (e.g. "Playing") */
 }
 
-static void command_send_cb(struct media_player *plr, int err, struct mpl_cmd cmd)
+static void command_send_cb(struct media_player *plr, int err, const struct mpl_cmd *cmd)
 {
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Command send failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Player: %p, Command opcode sent: %u", plr, cmd.opcode);
+	shell_print(ctx_shell, "Player: %p, Command opcode sent: %u", plr, cmd->opcode);
 }
 
-static void command_recv_cb(struct media_player *plr, int err, struct mpl_cmd_ntf cmd_ntf)
+static void command_recv_cb(struct media_player *plr, int err, const struct mpl_cmd_ntf *cmd_ntf)
 {
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Command failed (%d)", plr, err);
@@ -309,7 +311,7 @@ static void command_recv_cb(struct media_player *plr, int err, struct mpl_cmd_nt
 	}
 
 	shell_print(ctx_shell, "Player: %p, Command opcode: %u, result: %u",
-		    plr, cmd_ntf.requested_opcode, cmd_ntf.result_code);
+		    plr, cmd_ntf->requested_opcode, cmd_ntf->result_code);
 }
 
 static void commands_supported_cb(struct media_player *plr, int err, uint32_t opcodes)
@@ -324,14 +326,14 @@ static void commands_supported_cb(struct media_player *plr, int err, uint32_t op
 }
 
 #ifdef CONFIG_BT_OTS
-static void search_send_cb(struct media_player *plr, int err, struct mpl_search search)
+static void search_send_cb(struct media_player *plr, int err, const struct mpl_search *search)
 {
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Search send failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Player: %p, Search sent with len %u", plr, search.len);
+	shell_print(ctx_shell, "Player: %p, Search sent with len %u", plr, search->len);
 }
 
 static void search_recv_cb(struct media_player *plr, int err, uint8_t result_code)
@@ -386,7 +388,9 @@ int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	/* Set up the callback structure */
+#ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL
 	cbs.discover_player               = discover_player_cb;
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 	cbs.local_player_instance         = local_player_instance_cb;
 	cbs.player_name_recv              = player_name_cb;
 	cbs.icon_id_recv                  = icon_id_cb;
@@ -478,7 +482,7 @@ static int cmd_media_show_players(const struct shell *sh, size_t argc, char *arg
 	return 0;
 }
 
-#ifdef CONFIG_BT_MCC
+#ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL
 static int cmd_media_discover_player(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = media_proxy_ctrl_discover_player(default_conn);
@@ -489,7 +493,7 @@ static int cmd_media_discover_player(const struct shell *sh, size_t argc, char *
 
 	return err;
 }
-#endif /* CONFIG_BT_MCC */
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 static int cmd_media_read_player_name(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -731,7 +735,7 @@ static int cmd_media_send_command(const struct shell *sh, size_t argc, char *arg
 		cmd.param = 0;
 	}
 
-	err = media_proxy_ctrl_send_command(current_player, cmd);
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
 
 	if (err) {
 		shell_error(ctx_shell, "Command send failed (%d)", err);
@@ -765,7 +769,7 @@ int cmd_media_set_search(const struct shell *sh, size_t argc, char *argv[])
 	memcpy(search.search, argv[1], search.len);
 	BT_DBG("Search string: %s", log_strdup(argv[1]));
 
-	err = media_proxy_ctrl_send_search(current_player, search);
+	err = media_proxy_ctrl_send_search(current_player, &search);
 	if (err) {
 		shell_error(ctx_shell, "Search send failed (%d)", err);
 	}

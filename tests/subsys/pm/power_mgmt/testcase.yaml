@@ -1,4 +1,4 @@
 tests:
-  subsys.pm.system:
+  pm.system:
     platform_allow: native_posix
     tags: pm

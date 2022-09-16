@@ -8,10 +8,10 @@
 
 #include <errno.h>
 
-#include <drivers/adc.h>
-#include <device.h>
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <soc.h>
 
 /* Driverlib includes */
@@ -28,7 +28,7 @@
 #include "adc_context.h"
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_cc32xx);
 
 #define ISR_MASK (ADC_DMA_DONE | ADC_FIFO_OVERFLOW | ADC_FIFO_UNDERFLOW	\

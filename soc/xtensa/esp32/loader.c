@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <storage/flash_map.h>
+#include <zephyr/storage/flash_map.h>
 #include <esp_log.h>
 
 #include <esp32/rom/cache.h>

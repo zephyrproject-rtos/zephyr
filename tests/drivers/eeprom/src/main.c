@@ -6,9 +6,9 @@
 
 #include <ztest.h>
 #include <ztest_test.h>
-#include <drivers/eeprom.h>
-#include <drivers/i2c.h>
-#include <device.h>
+#include <zephyr/drivers/eeprom.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/device.h>
 
 /* There is no obvious way to pass this to tests, so use a global */
 ZTEST_BMEM static const char *eeprom_label;

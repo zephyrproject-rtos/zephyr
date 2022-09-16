@@ -7,15 +7,15 @@
 
 #include <string.h>
 #include <stdbool.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 
-#include "settings/settings.h"
+#include <zephyr/settings/settings.h>
 #include "settings/settings_file.h"
 #include "settings_priv.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
@@ -263,7 +263,7 @@ static int settings_file_save_and_compress(struct settings_file *cf,
 		rc = settings_next_line_ctx(&loc1);
 
 		if (rc || loc1.len == 0) {
-			/* try to amend new value to the commpresed file */
+			/* try to amend new value to the compressed file */
 			break;
 		}
 
@@ -297,7 +297,7 @@ static int settings_file_save_and_compress(struct settings_file *cf,
 
 			if (rc || loc2.len == 0) {
 				/* try to amend new value to */
-				/* the commpresed file */
+				/* the compressed file */
 				break;
 			}
 
@@ -442,7 +442,7 @@ static int read_handler(void *ctx, off_t off, char *buf, size_t *len)
 	ssize_t r_len;
 	int rc;
 
-	/* 0 is reserved for reding the length-field only */
+	/* 0 is reserved for reading the length-field only */
 	if (entry_ctx->len != 0) {
 		if (off >= entry_ctx->len) {
 			*len = 0;

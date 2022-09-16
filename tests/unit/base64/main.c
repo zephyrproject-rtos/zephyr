@@ -26,7 +26,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <ztest.h>
-#include <sys/base64.h>
+#include <zephyr/sys/base64.h>
 
 #include "../../../lib/os/base64.c"
 

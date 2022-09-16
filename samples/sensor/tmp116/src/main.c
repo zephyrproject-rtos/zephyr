@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
-#include <drivers/eeprom.h>
-#include <drivers/sensor/tmp116.h>
-#include <sys/printk.h>
-#include <sys/__assert.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/eeprom.h>
+#include <zephyr/drivers/sensor/tmp116.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/__assert.h>
 
 static uint8_t eeprom_content[EEPROM_TMP116_SIZE];
 

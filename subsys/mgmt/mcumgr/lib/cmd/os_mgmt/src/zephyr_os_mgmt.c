@@ -4,12 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/reboot.h>
-#include <debug/object_tracing.h>
-#include <kernel_structs.h>
-#include <mgmt/mgmt.h>
-#include <util/mcumgr_util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/debug/object_tracing.h>
+#include <zephyr/kernel_structs.h>
 #include <os_mgmt/os_mgmt.h>
 #include <os_mgmt/os_mgmt_impl.h>
 

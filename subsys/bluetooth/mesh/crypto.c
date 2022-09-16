@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,22 +8,24 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 #include <tinycrypt/aes.h>
 #include <tinycrypt/cmac_mode.h>
 #include <tinycrypt/ccm_mode.h>
+#include <tinycrypt/ecc.h>
+#include <tinycrypt/ecc_dh.h>
 
-#include <bluetooth/mesh.h>
-#include <bluetooth/crypto.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/bluetooth/crypto.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_CRYPTO)
-#define LOG_MODULE_NAME bt_mesh_crypto
+#define LOG_MODULE_NAME bt_mesh_tc_crypto
 #include "common/log.h"
 
 #include "mesh.h"
@@ -31,8 +34,13 @@
 #define NET_MIC_LEN(pdu) (((pdu)[1] & 0x80) ? 8 : 4)
 #define APP_MIC_LEN(aszmic) ((aszmic) ? 8 : 4)
 
-int bt_mesh_aes_cmac(const uint8_t key[16], struct bt_mesh_sg *sg,
-		     size_t sg_len, uint8_t mac[16])
+struct bt_mesh_sg {
+	const void *data;
+	size_t len;
+};
+
+static int bt_mesh_aes_cmac(const uint8_t key[16], struct bt_mesh_sg *sg,
+			size_t sg_len, uint8_t mac[16])
 {
 	struct tc_aes_key_sched_struct sched;
 	struct tc_cmac_struct state;
@@ -53,6 +61,21 @@ int bt_mesh_aes_cmac(const uint8_t key[16], struct bt_mesh_sg *sg,
 	}
 
 	return 0;
+}
+
+static int bt_mesh_aes_cmac_one(const uint8_t key[16], const void *m,
+				size_t len, uint8_t mac[16])
+{
+	struct bt_mesh_sg sg = { m, len };
+
+	return bt_mesh_aes_cmac(key, &sg, 1, mac);
+}
+
+int bt_mesh_s1(const char *m, uint8_t salt[16])
+{
+	const uint8_t zero[16] = { 0 };
+
+	return bt_mesh_aes_cmac_one(zero, m, strlen(m), salt);
 }
 
 int bt_mesh_k1(const uint8_t *ikm, size_t ikm_len, const uint8_t salt[16],
@@ -491,6 +514,19 @@ int bt_mesh_virtual_addr(const uint8_t virtual_label[16], uint16_t *addr)
 	return 0;
 }
 
+int bt_mesh_prov_salt(const uint8_t conf_salt[16], const uint8_t prov_rand[16],
+		      const uint8_t dev_rand[16], uint8_t prov_salt[16])
+{
+	const uint8_t prov_salt_key[16] = { 0 };
+	struct bt_mesh_sg sg[] = {
+		{ conf_salt, 16 },
+		{ prov_rand, 16 },
+		{ dev_rand, 16 },
+	};
+
+	return bt_mesh_aes_cmac(prov_salt_key, sg, ARRAY_SIZE(sg), prov_salt);
+}
+
 int bt_mesh_prov_conf_salt(const uint8_t conf_inputs[145], uint8_t salt[16])
 {
 	const uint8_t conf_salt_key[16] = { 0 };
@@ -551,4 +587,18 @@ int bt_mesh_beacon_auth(const uint8_t beacon_key[16], uint8_t flags,
 	}
 
 	return err;
+}
+
+int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key, uint8_t *dhkey)
+{
+	if (uECC_valid_public_key(pub_key, &curve_secp256r1)) {
+		BT_ERR("Public key is not valid");
+		return -EIO;
+	} else if (uECC_shared_secret(pub_key, priv_key, dhkey,
+				&curve_secp256r1) != TC_CRYPTO_SUCCESS) {
+		BT_ERR("DHKey generation failed");
+		return -EIO;
+	}
+
+	return 0;
 }

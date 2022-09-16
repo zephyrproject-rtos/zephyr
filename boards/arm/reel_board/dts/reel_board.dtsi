@@ -4,6 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "reel_board-pinctrl.dtsi"
 
 / {
 	leds {
@@ -25,13 +26,13 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		red_pwm_led: pwm_led_0 {
-			pwms = <&pwm0 11>;
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 		green_pwm_led: pwm_led_1 {
-			pwms = <&pwm0 12>;
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 		blue_pwm_led: pwm_led_2 {
-			pwms = <&pwm0 41>;
+			pwms = <&pwm0 3 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
 
@@ -102,24 +103,27 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <6>;
-	rx-pin = <8>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 arduino_serial: &uart1 {
 	status = "okay";
 	current-speed = <115200>;
-	rx-pin = <33>;
-	tx-pin = <34>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <26>;
-	scl-pin = <27>;
 
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 	mma8652fc@1d {
 		compatible = "nxp,fxos8700","nxp,mma8652fc";
 		reg = <0x1d>;
@@ -145,21 +149,17 @@ arduino_i2c: &i2c0 {
 
 &pwm0 {
 	status = "okay";
-	ch0-pin = <13>;
-	ch1-pin = <11>;
-	ch1-inverted;
-	ch2-pin = <12>;
-	ch2-inverted;
-	ch3-pin = <41>;
-	ch3-inverted;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 arduino_spi: &spi3 {
 	status = "okay";
-	sck-pin = <47>;
-	miso-pin = <46>;
-	mosi-pin = <45>;
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {
@@ -171,7 +171,7 @@ arduino_spi: &spi3 {
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
+			reg = <0x00000000 0x0000C000>;
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";

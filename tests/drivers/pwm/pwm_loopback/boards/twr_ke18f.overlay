@@ -4,7 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&pinctrl {
+	pwt_default: pwt_default {
+		group0 {
+			pinmux = <PWT_IN1_PTE11>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
+	ftm2_default: ftm2_default {
+		group0 {
+			pinmux = <FTM2_CH6_PTE15>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};
 
 / {
 	pwm_loopback_0 {
@@ -17,7 +35,8 @@
 &pwt {
 	status = "okay";
 	prescaler = <32>;
-	pinctrl-0 = <&PWT_IN1_PTE11>;
+	pinctrl-0 = <&pwt_default>;
+	pinctrl-names = "default";
 };
 
 &ftm2 {
@@ -25,5 +44,6 @@
 	compatible = "nxp,kinetis-ftm-pwm";
 	prescaler = <128>;
 	#pwm-cells = <3>;
-	pinctrl-0 = <&FTM2_CH6_PTE15>;
+	pinctrl-0 = <&ftm2_default>;
+	pinctrl-names = "default";
 };

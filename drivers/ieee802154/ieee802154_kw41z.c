@@ -9,24 +9,24 @@
 #define LOG_MODULE_NAME ieee802154_kw41z
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <irq.h>
-#include <net/ieee802154_radio.h>
-#include <net/net_if.h>
-#include <net/net_pkt.h>
-#include <sys/byteorder.h>
-#include <random/rand32.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/irq.h>
+#include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/random/rand32.h>
 
 #include "fsl_xcvr.h"
 
 #if defined(CONFIG_NET_L2_OPENTHREAD)
-#include <net/openthread.h>
+#include <zephyr/net/openthread.h>
 #endif
 
 
@@ -98,7 +98,7 @@ int kw41_dbg_idx;
 				ZLL_IRQSTS_TMR4MSK_MASK)
 
 /*
- * Clear channel assement types. Note that there is an extra one when
+ * Clear channel assessment types. Note that there is an extra one when
  * bit 26 is included for "No CCA before transmit" if we are handling
  * ACK frames but we will let the hardware handle that automatically.
  */
@@ -328,7 +328,7 @@ static void kw41z_tmr3_set_timeout(uint32_t timeout)
 	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TMR3CMP_EN_MASK;
 	ZLL->T3CMP = timeout & ZLL_T3CMP_T3CMP_MASK;
 
-	/* aknowledge TMR3 IRQ */
+	/* acknowledge TMR3 IRQ */
 	irqsts  = ZLL->IRQSTS & BM_ZLL_IRQSTS_TMRxMSK;
 	irqsts |= ZLL_IRQSTS_TMR3IRQ_MASK;
 	ZLL->IRQSTS = irqsts;
@@ -350,7 +350,7 @@ static void kw41z_tmr3_disable(void)
 	/* mask TMR3 interrupt (do not change other IRQ status) */
 	irqsts  = ZLL->IRQSTS & BM_ZLL_IRQSTS_TMRxMSK;
 	irqsts |= ZLL_IRQSTS_TMR3MSK_MASK;
-	/* aknowledge TMR3 IRQ */
+	/* acknowledge TMR3 IRQ */
 	irqsts |= ZLL_IRQSTS_TMR3IRQ_MASK;
 
 	ZLL->IRQSTS = irqsts;
@@ -948,7 +948,7 @@ static inline uint8_t *get_mac(const struct device *dev)
 
 	/*
 	 * Clear bit 0 to ensure it isn't a multicast address and set
-	 * bit 1 to indicate address is locally administrered and may
+	 * bit 1 to indicate address is locally administered and may
 	 * not be globally unique.
 	 */
 	kw41z->mac_addr[0] = (kw41z->mac_addr[0] & ~0x01) | 0x02;
@@ -1002,7 +1002,7 @@ static int kw41z_init(const struct device *dev)
 			       ZLL_RX_FRAME_FILTER_ACK_FT_MASK		|
 			       ZLL_RX_FRAME_FILTER_BEACON_FT_MASK;
 
-	/* Set prescaller to obtain 1 symbol (16us) timebase */
+	/* Set prescaler to obtain 1 symbol (16us) timebase */
 	ZLL->TMR_PRESCALE = 0x05;
 
 	kw41z_tmr3_disable();

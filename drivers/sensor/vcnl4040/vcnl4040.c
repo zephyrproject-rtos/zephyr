@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT vishay_vcnl4040
 
 #include "vcnl4040.h"
-#include <pm/device.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 #include <stdlib.h>
 
 LOG_MODULE_REGISTER(vcnl4040, CONFIG_SENSOR_LOG_LEVEL);
@@ -267,7 +267,7 @@ static int vcnl4040_pm_action(const struct device *dev,
 		als_conf |= VCNL4040_ALS_SD_MASK;
 
 		ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF,
-					als_conf)
+					als_conf);
 		if (ret < 0)
 			return ret;
 #endif

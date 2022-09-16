@@ -9,9 +9,9 @@
 #include "soc/extmem_reg.h"
 #include <bootloader_flash_priv.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <storage/flash_map.h>
+#include <zephyr/storage/flash_map.h>
 #include <esp_log.h>
 #include <stdlib.h>
 

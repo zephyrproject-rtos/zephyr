@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/util.h>
-#include <drivers/gpio.h>
-#include <modbus/modbus.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/modbus/modbus.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbc_sample, LOG_LEVEL_INF);
 
 static int client_iface;
@@ -20,6 +20,7 @@ const static struct modbus_iface_param client_param = {
 	.serial = {
 		.baud = 19200,
 		.parity = UART_CFG_PARITY_NONE,
+		.stop_bits_client = UART_CFG_STOP_BITS_2,
 	},
 };
 

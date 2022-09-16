@@ -5,6 +5,7 @@
  */
 
 #include <st/f7/stm32f7.dtsi>
+#include <zephyr/dt-bindings/display/stm32_ltdc.h>
 
 / {
 	/* 128KB DTCM @ 20000000, 368KB SRAM1 @ 20020000,
@@ -17,7 +18,7 @@
 	};
 
 	dtcm: memory@20000000 {
-		compatible = "arm,dtcm";
+		compatible = "zephyr,memory-region", "arm,dtcm";
 		reg = <0x20000000 DT_SIZE_K(128)>;
 		zephyr,memory-region = "DTCM";
 	};
@@ -90,6 +91,16 @@
 			interrupts = <103 0>;
 			status = "disabled";
 			label = "SDMMC_2";
+		};
+
+		ltdc: display-controller@40016800 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x40016800 0x200>;
+			interrupts = <88 0>, <89 0>;
+			interrupt-names = "ltdc", "ltdc_err";
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x04000000>;
+			status = "disabled";
+			label = "LTDC";
 		};
 	};
 };

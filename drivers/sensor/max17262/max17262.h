@@ -75,7 +75,7 @@ struct max17262_data {
 struct max17262_config {
 	const struct device *i2c;
 	uint16_t i2c_addr;
-	/* Value of Rsense resistor in milliohms (typicallly 5 or 10) */
+	/* Value of Rsense resistor in milliohms (typically 5 or 10) */
 	uint16_t rsense_mohms;
 	/* Design voltage of cell in mV */
 	uint16_t design_voltage;

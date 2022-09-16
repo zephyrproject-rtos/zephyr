@@ -1,9 +1,30 @@
-# Copyright (c) 2020 Synopsys, Inc. All rights reserved.
+# Copyright (c) 2020,2021 Synopsys, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_QEMU_ARC
 
 config BOARD
 	default "qemu_arc"
+
+if NETWORKING
+
+	config NET_L2_ETHERNET
+	default y
+
+	# Required to satisfy dependency of networking stack on RNG
+	config TEST_RANDOM_GENERATOR
+	default y
+
+endif # NETWORKING
+
+if UART_PIPE
+
+	# By fefault "UART_0" is selected, while we'd like
+	# to keep using "UART_0" as a normal serial port for
+	# debug prints and possibly interaction with the board.
+	config UART_PIPE_ON_DEV_NAME
+	default "UART_1"
+
+endif # UART_PIPE
 
 endif

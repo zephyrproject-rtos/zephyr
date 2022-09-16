@@ -12,11 +12,11 @@
 
 #include <errno.h>
 
-#include <drivers/adc.h>
-#include <drivers/pinctrl.h>
-#include <device.h>
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <stm32_ll_adc.h>
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
@@ -27,10 +27,10 @@
 #include "adc_context.h"
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_stm32);
 
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
 #if defined(ADC1_V2_5)
@@ -39,6 +39,9 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define STM32F3X_ADC_V1_1
 #endif
 #endif
+
+/* reference voltage for the ADC */
+#define STM32_ADC_VREF_MV DT_INST_PROP(0, vref_mv)
 
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32G0X) && \
@@ -233,11 +236,6 @@ static const uint32_t table_samp_time[] = {
 };
 #endif
 
-/* Bugfix for STM32G4 HAL */
-#if !defined(ADC_CHANNEL_TEMPSENSOR)
-#define ADC_CHANNEL_TEMPSENSOR ADC_CHANNEL_TEMPSENSOR_ADC1
-#endif
-
 /* External channels (maximum). */
 #define STM32_CHANNEL_COUNT		20
 
@@ -261,6 +259,8 @@ struct adc_stm32_cfg {
 	void (*irq_cfg_func)(void);
 	struct stm32_pclken pclken;
 	const struct pinctrl_dev_config *pcfg;
+	bool has_temp_channel;
+	bool has_vref_channel;
 };
 
 #ifdef CONFIG_ADC_STM32_SHARED_IRQS
@@ -762,7 +762,7 @@ static int adc_stm32_check_acq_time(uint16_t acq_time)
 		return 0;
 	}
 
-	LOG_ERR("Conversion time not supportted.");
+	LOG_ERR("Conversion time not supported.");
 	return -EINVAL;
 }
 
@@ -799,6 +799,37 @@ static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 		__LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
 		table_samp_time[acq_time_index]);
 #endif
+}
+
+static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_id)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+#ifdef CONFIG_SOC_SERIES_STM32G4X
+	if (config->has_temp_channel) {
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
+		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC1) == channel_id)
+		    && (config->base == ADC1)) {
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+		}
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc5), okay)
+		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC5) == channel_id)
+		   && (config->base == ADC5)) {
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+		}
+#endif
+	}
+#else
+	if (config->has_temp_channel &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+	}
+#endif /* CONFIG_SOC_SERIES_STM32G4X */
+
+	if (config->has_vref_channel &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VREFINT) == channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
+	}
 }
 
 static int adc_stm32_channel_setup(const struct device *dev,
@@ -849,11 +880,7 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR) == channel_cfg->channel_id) {
-		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-	} else if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_VREFINT) == channel_cfg->channel_id) {
-		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
-	}
+	adc_stm32_setup_channels(dev, channel_cfg->channel_id);
 
 	adc_stm32_setup_speed(dev, channel_cfg->channel_id,
 				  acq_time_index);
@@ -1071,6 +1098,7 @@ static const struct adc_driver_api api_stm32_driver_api = {
 #ifdef CONFIG_ADC_ASYNC
 	.read_async = adc_stm32_read_async,
 #endif
+	.ref_internal = STM32_ADC_VREF_MV, /* VREF is usually connected to VDD */
 };
 
 #ifdef CONFIG_ADC_STM32_SHARED_IRQS
@@ -1117,6 +1145,8 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
+	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),		\
+	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),		\
 };
 #else
 #define ADC_STM32_CONFIG(index)						\
@@ -1136,6 +1166,8 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
+	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),		\
+	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),		\
 };
 #endif /* CONFIG_ADC_STM32_SHARED_IRQS */
 

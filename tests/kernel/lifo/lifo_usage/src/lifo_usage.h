@@ -6,7 +6,7 @@
 
 #ifndef __TEST_LIFO_USAGE_H__
 #define __TEST_LIFO_USAGE_H__
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
 typedef struct ldata {
 	sys_snode_t snode;

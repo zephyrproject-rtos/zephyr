@@ -5,8 +5,8 @@
 
 #include <zephyr/types.h>
 #include <stdio.h>
-#include <arch/xtensa/irq.h>
-#include <sys/__assert.h>
+#include <zephyr/arch/xtensa/irq.h>
+#include <zephyr/sys/__assert.h>
 
 /**
  * @internal

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_L2_ETHERNET
-	bool "Enable Ethernet support"
+	bool "Ethernet support"
 	help
 	  Add support for Ethernet, enabling selecting relevant hardware drivers.
 	  If NET_SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully
@@ -17,7 +17,7 @@ module-help = Enables Ethernet L2 to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_L2_ETHERNET_MGMT
-	bool "Enable Ethernet network management interface"
+	bool "Ethernet network management interface"
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	help
@@ -25,7 +25,7 @@ config NET_L2_ETHERNET_MGMT
 	  configure at run-time Ethernet drivers and L2 settings.
 
 config NET_VLAN
-	bool "Enable virtual lan support"
+	bool "Virtual lan support"
 	help
 	  Enables virtual lan (VLAN) support for Ethernet.
 
@@ -38,7 +38,7 @@ config NET_VLAN_COUNT
 	  How many VLAN tags can be configured.
 
 config NET_ARP
-	bool "Enable ARP"
+	bool "ARP"
 	default y
 	depends on NET_IPV4
 	help
@@ -107,5 +107,13 @@ config NET_ETHERNET_BRIDGE_DEFAULT
 	  it needs at least one bridge instance to be useful.
 	  Say y if this is the case. If you only want to inspect
 	  existing bridge instances then say n.
+
+config NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE
+	bool "Forward unrecognized EtherType frames further into net stack"
+	default y if NET_SOCKETS_PACKET
+	help
+	  When enabled, the Ethernet L2 will forward even those frames for which
+	  it does not recognize the EtherType in the header. By default, such
+	  frames are dropped at the L2 processing.
 
 endif # NET_L2_ETHERNET

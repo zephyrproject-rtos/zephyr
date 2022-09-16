@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztress.h>
-#include <sys/printk.h>
-#include <random/rand32.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/random/rand32.h>
 #include <string.h>
 
 
@@ -39,12 +39,12 @@ static uint32_t exec_cnt[CONFIG_ZTRESS_MAX_THREADS];
 static k_timeout_t backoff[CONFIG_ZTRESS_MAX_THREADS];
 static k_timeout_t init_backoff[CONFIG_ZTRESS_MAX_THREADS];
 K_THREAD_STACK_ARRAY_DEFINE(stacks, CONFIG_ZTRESS_MAX_THREADS, CONFIG_ZTRESS_STACK_SIZE);
-static k_tid_t idle_tid;
+static k_tid_t idle_tid[CONFIG_MP_NUM_CPUS];
 
-#define THREAD_NAME(i, _) STRINGIFY(ztress_##i),
+#define THREAD_NAME(i, _) STRINGIFY(ztress_##i)
 
 static const char * const thread_names[] = {
-	UTIL_LISTIFY(CONFIG_ZTRESS_MAX_THREADS, THREAD_NAME, _)
+	LISTIFY(CONFIG_ZTRESS_MAX_THREADS, THREAD_NAME, (,))
 };
 
 struct ztress_runtime {
@@ -59,7 +59,7 @@ static void test_timeout(struct k_timer *timer)
 	ztress_abort();
 }
 
-/* Ratio is 1/16, e.g using ratio 14 reduces all timeouts by multipling it by 14/16.
+/* Ratio is 1/16, e.g using ratio 14 reduces all timeouts by multiplying it by 14/16.
  * 16 fraction is used to avoid dividing which may take more time on certain platforms.
  */
 static void adjust_load(uint8_t ratio)
@@ -107,16 +107,21 @@ static void progress_timeout(struct k_timer *timer)
 
 static void control_load(void)
 {
-	static uint64_t prev_cycles;
+	static uint64_t prev_idle_cycles;
 	static uint64_t total_cycles;
-
-	k_thread_runtime_stats_t rt_stats_thread;
+	uint64_t idle_cycles = 0;
 	k_thread_runtime_stats_t rt_stats_all;
 	int err = 0;
 
-	err = k_thread_runtime_stats_get(idle_tid, &rt_stats_thread);
-	if (err < 0) {
-		return;
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		k_thread_runtime_stats_t thread_stats;
+
+		err = k_thread_runtime_stats_get(idle_tid[i], &thread_stats);
+		if (err < 0) {
+			return;
+		}
+
+		idle_cycles += thread_stats.execution_cycles;
 	}
 
 	err = k_thread_runtime_stats_all_get(&rt_stats_all);
@@ -124,10 +129,10 @@ static void control_load(void)
 		return;
 	}
 
-	int load = 1000 - (1000 * (rt_stats_thread.execution_cycles - prev_cycles) /
+	int load = 1000 - (1000 * (idle_cycles - prev_idle_cycles) /
 			(rt_stats_all.execution_cycles - total_cycles));
 
-	prev_cycles = rt_stats_thread.execution_cycles;
+	prev_idle_cycles = idle_cycles;
 	total_cycles = rt_stats_all.execution_cycles;
 
 	int avg_load = (rt.cpu_load * rt.cpu_load_measurements + load) /
@@ -259,11 +264,15 @@ static void ztress_thread(void *data, void *prio, void *unused)
 
 static void thread_cb(const struct k_thread *cthread, void *user_data)
 {
+#define GET_IDLE_TID(i, tid) do {\
+	if (strcmp(tname, (CONFIG_MP_NUM_CPUS == 1) ? "idle" : "idle 0" STRINGIFY(i)) == 0) { \
+		idle_tid[i] = tid; \
+	} \
+} while (0)
+
 	const char *tname = k_thread_name_get((struct k_thread *)cthread);
 
-	if (strcmp(tname, "idle 00") == 0) {
-		idle_tid = (struct k_thread *)cthread;
-	}
+	LISTIFY(CONFIG_MP_NUM_CPUS, GET_IDLE_TID, (;), (k_tid_t)cthread);
 }
 
 static void ztress_init(struct ztress_context_data *thread_data)
@@ -344,15 +353,16 @@ int ztress_execute(struct ztress_context_data *timer_data,
 		tids[i] = k_thread_create(&threads[i], stacks[i], CONFIG_ZTRESS_STACK_SIZE,
 					  ztress_thread,
 					  &thread_data[i], (void *)(uintptr_t)ztress_prio, NULL,
-					  priority, 0, K_NO_WAIT);
+					  priority, 0, K_MSEC(10));
 		(void)k_thread_name_set(tids[i], thread_names[i]);
 		priority++;
 		ztress_prio++;
 	}
 
 	if (timer_data != NULL) {
-		k_timer_start(&ztress_timer, backoff[0], K_NO_WAIT);
+		k_timer_start(&ztress_timer, K_MSEC(10), K_NO_WAIT);
 	}
+
 
 	/* Wait until all threads complete. */
 	for (int i = 0; i < cnt; i++) {
@@ -365,7 +375,7 @@ int ztress_execute(struct ztress_context_data *timer_data,
 		(void)k_timer_status_sync(&ztress_timer);
 	}
 
-	/* print raport */
+	/* print report */
 	ztress_report();
 
 	ztress_end(old_prio);
@@ -393,7 +403,7 @@ void ztress_report(void)
 			(uint32_t)init_backoff[i].ticks, (uint32_t)backoff[i].ticks);
 	}
 
-	printk("\tAvarage CPU load:%u%%, measurements:%u\n",
+	printk("\tAverage CPU load:%u%%, measurements:%u\n",
 			rt.cpu_load / 10, rt.cpu_load_measurements);
 }
 

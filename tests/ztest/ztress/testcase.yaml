@@ -1,11 +1,8 @@
 common:
   tags: test_framework
-  filter: CONFIG_QEMU_TARGET
+  platform_type:
+    - qemu
 tests:
   testing.ztest.ztress:
-    extra_configs:
-      - CONFIG_MP_NUM_CPUS=1
     integration_platforms:
       - qemu_x86
-    #FIXME Fails for unknown reason #41710
-    platform_exclude: qemu_cortex_a9

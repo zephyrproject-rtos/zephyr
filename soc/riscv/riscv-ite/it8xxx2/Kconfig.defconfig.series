@@ -19,11 +19,14 @@ config RISCV_GP
 config ITE_IT8XXX2_TIMER
 	default y
 
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768
 
 config SYS_CLOCK_TICKS_PER_SEC
-	default 32768
+	default 8192
 
 config UART_NS16550
 	default y
@@ -40,10 +43,6 @@ config UART_ITE_IT8XXX2
 config RISCV_HAS_CPU_IDLE
 	default y
 
-config PINMUX_ITE_IT8XXX2
-	default y
-	depends on PINMUX
-
 config WDT_ITE_IT8XXX2
 	default y
 	depends on WATCHDOG
@@ -56,10 +55,6 @@ config GPIO_ITE_IT8XXX2
 	default y
 	depends on GPIO
 
-config I2C_ITE_IT8XXX2
-	default y
-	depends on I2C
-
 config ADC_ITE_IT8XXX2
 	default y
 	depends on ADC
@@ -68,6 +63,14 @@ config SOC_FLASH_ITE_IT8XXX2
 	default y
 	depends on FLASH
 
+config FLASH_INIT_PRIORITY
+	default 0
+
+config IT8XXX2_PLL_SEQUENCE_PRIORITY
+	int
+	default 1
+	depends on SOC_IT8XXX2_PLL_FLASH_48M
+
 config PWM_ITE_IT8XXX2
 	default y
 	depends on PWM
@@ -75,6 +78,14 @@ config PWM_ITE_IT8XXX2
 config TACH_IT8XXX2
 	default y
 	depends on SENSOR
+
+config PECI_ITE_IT8XXX2
+	default y
+	depends on PECI
+	select PECI_INTERRUPT_DRIVEN
+
+config PINCTRL
+	default y
 
 if ITE_IT8XXX2_INTC
 config NUM_IRQS
@@ -90,6 +101,9 @@ config GEN_IRQ_START_VECTOR
 	default 0
 
 config GEN_SW_ISR_TABLE
+	default y
+
+config RISCV_SOC_INTERRUPT_INIT
 	default y
 
 endif # ITE_IT8XXX2_INTC

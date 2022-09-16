@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <syscall_handler.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/kernel_structs.h>
 
 static struct z_object *validate_any_object(const void *obj)
 {

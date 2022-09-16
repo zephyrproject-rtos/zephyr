@@ -6,26 +6,24 @@
 
 #ifdef CONFIG_BT_MCS
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
 
-#include <bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
 
 #include "common.h"
 
 extern enum bst_result_t bst_result;
-
-static struct bt_conn *default_conn;
 
 CREATE_FLAG(ble_link_is_ready);
 
@@ -58,7 +56,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	if (err) {
 		FAIL("Failed to connect to %s (%u)\n", addr, err);
 	} else {
-		default_conn = conn;
+		default_conn = bt_conn_ref(conn);
 		printk("Connected: %s\n", addr);
 		SET_FLAG(ble_link_is_ready);
 	}

@@ -12,6 +12,10 @@
 	model = "intel_adsp_cavs25";
 	compatible = "intel";
 
+	aliases {
+		dma0 = &lpgpdma0;
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
 	};

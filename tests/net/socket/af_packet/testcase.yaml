@@ -5,5 +5,5 @@ common:
   # needs root permission.
   platform_exclude: native_posix native_posix_64
 tests:
-  net.socket.packet:
+  net.socket.af_packet:
     min_ram: 21

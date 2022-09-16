@@ -10,7 +10,7 @@
 
 / {
 	chosen {
-		zephyr,flash-controller = &flexspi;
+		zephyr,flash-controller = &is25wp064;
 		zephyr,flash = &is25wp064;
 		zephyr,code-partition = &slot0_partition;
 	};

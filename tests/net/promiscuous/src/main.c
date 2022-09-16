@@ -8,7 +8,7 @@
 
 #define NET_LOG_LEVEL CONFIG_NET_IF_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <zephyr/types.h>
@@ -16,14 +16,14 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #include <ztest.h>
 
-#include <net/ethernet.h>
-#include <net/net_ip.h>
-#include <net/net_if.h>
-#include <net/promiscuous.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/promiscuous.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -228,7 +228,7 @@ static void test_iface_setup(void)
 		zassert_not_null(ifaddr, "addr1");
 	}
 
-	/* For testing purposes we need to set the adddresses preferred */
+	/* For testing purposes we need to set the addresses preferred */
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &ll_addr,

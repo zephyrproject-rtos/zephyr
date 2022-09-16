@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT silabs_si7210
 
-#include <kernel.h>
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <pm/device.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(SI7210, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -512,7 +512,7 @@ static int si7210_init(const struct device *dev)
 	data->scale = (part_variant == 5 || part_variant == 15) ?
 		      si7210_scale_2000G : si7210_scale_200G;
 
-	/* Read temperature adjustement values */
+	/* Read temperature adjustment values */
 	rc = si7210_otp_reg_read_byte(dev, SI7210_OTPREG_TEMP_OFFSET, &data->otp_temp_offset);
 	if (rc < 0) {
 		return rc;

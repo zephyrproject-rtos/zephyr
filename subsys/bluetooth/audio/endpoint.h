@@ -23,16 +23,13 @@
 #define BROADCAST_STREAM_CNT 0
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 
-#define BT_AUDIO_EP_LOCAL	0x00
-#define BT_AUDIO_EP_REMOTE	0x01
-
 /* Temp struct declarations to handle circular dependencies */
 struct bt_audio_unicast_group;
 struct bt_audio_broadcast_source;
 struct bt_audio_broadcast_sink;
 
 struct bt_audio_ep {
-	uint8_t  type;
+	uint8_t  dir;
 	uint16_t handle;
 	uint16_t cp_handle;
 	uint8_t  cig_id;
@@ -80,7 +77,7 @@ struct bt_audio_broadcast_source {
 	struct bt_iso_chan *bis[BROADCAST_STREAM_CNT];
 	struct bt_codec_qos *qos;
 	/* The streams used to create the broadcast source */
-	struct bt_audio_stream *streams;
+	struct bt_audio_stream **streams;
 };
 
 struct bt_audio_broadcast_sink {
@@ -99,7 +96,7 @@ struct bt_audio_broadcast_sink {
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_SNK_STREAM_CNT];
 	/* The streams used to create the broadcast sink */
-	struct bt_audio_stream *streams;
+	struct bt_audio_stream **streams;
 };
 
 static inline const char *bt_audio_ep_state_str(uint8_t state)

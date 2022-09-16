@@ -12,9 +12,9 @@
 
 #define DT_DRV_COMPAT xlnx_gem
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_pkt.h>
 
 #include "phy_xlnx_gem.h"
 
@@ -512,15 +512,9 @@ struct eth_xlnx_dma_area_gem##port {\
 };
 
 /* DMA memory area instantiation macro */
-#ifdef CONFIG_SOC_FAMILY_XILINX_ZYNQ7000
 #define ETH_XLNX_GEM_DMA_AREA_INST(port) \
 static struct eth_xlnx_dma_area_gem##port eth_xlnx_gem##port##_dma_area\
 	__ocm_bss_section __aligned(4096);
-#else
-#define ETH_XLNX_GEM_DMA_AREA_INST(port) \
-static struct eth_xlnx_dma_area_gem##port eth_xlnx_gem##port##_dma_area\
-	__aligned(4096);
-#endif
 
 /* Interrupt configuration function macro */
 #define ETH_XLNX_GEM_CONFIG_IRQ_FUNC(port) \
@@ -780,5 +774,3 @@ struct eth_xlnx_gem_dev_data {
 };
 
 #endif /* _ZEPHYR_DRIVERS_ETHERNET_ETH_XLNX_GEM_PRIV_H_ */
-
-/* EOF */

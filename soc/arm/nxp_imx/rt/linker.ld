@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <autoconf.h>
- #include <devicetree.h>
+  #include <zephyr/devicetree.h>
 
 #define IS_CHOSEN_SRAM(x) (DT_DEP_ORD(DT_NODELABEL(x)) == DT_DEP_ORD(DT_CHOSEN(zephyr_sram)))
 
@@ -19,4 +18,4 @@ MEMORY
 #endif
      }
 
-#include <arch/arm/aarch32/cortex_m/scripts/linker.ld>
+#include <zephyr/arch/arm/aarch32/cortex_m/scripts/linker.ld>

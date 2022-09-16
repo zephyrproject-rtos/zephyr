@@ -72,7 +72,7 @@ config MODBUS_FP_EXTENSIONS
 	  Enable Floating-Point extensions
 
 config MODBUS_FC08_DIAGNOSTIC
-	bool "Enable FC08 Diagnostic support"
+	bool "FC08 Diagnostic support"
 	depends on MODBUS_SERVER
 	default y
 	help

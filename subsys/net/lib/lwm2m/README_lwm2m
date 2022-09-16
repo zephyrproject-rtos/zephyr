@@ -1,0 +1,50 @@
+LwM2M Client in Zephyr
+----------------------
+
+### SenML CBOR
+
+SenML CBOR content format support takes advantage of the Zcbor library's capability of generating
+domain specific code. To generate the SenML encoder and decoder the following CDDL file
+is used as an input for the generator:
+
+```
+lwm2m_senml = [1* record]
+
+record = {
+	? bn => tstr,            ; Base Name
+	? n => tstr,             ; Name
+	? ( vi => int .size 8 // ; Integer Value
+	    vf => float       // ; Float Value
+	    vs => tstr        // ; String Value
+	    vb => bool        // ; Boolean Value
+	    vd => bstr ),        ; Data Value
+	0*3 key-value-pair       ; To handle unordered maps; length-first ordered map keys
+}
+
+; now define the generic versions
+key-value-pair = ( int => value )
+
+value = tstr / bstr / int .size 8 / float / bool
+
+n  = 0
+bn = -2
+vi = 2
+vf = 2
+vs = 3
+vd = 8
+vb = 4
+```
+
+The CDDL description is based on the RFC 8428 - Sensor Measurement Lists (SenML). For further
+details please see the chapter 11 - CDDL.
+
+To generate the encoder and decoder:
+
+```console
+zcbor --default-max-qty 99 -c CDDL_FILE code -e -t lwm2m_senml --oc lwm2m_senml_cbor_encode.c --oh lwm2m_senml_cbor_encode.h
+zcbor --default-max-qty 99 -c CDDL_FILE code -d -t lwm2m_senml --oc lwm2m_senml_cbor_decode.c --oh lwm2m_senml_cbor_decode.h
+```
+
+The default value of the number of maximum allowed records doesn't really matter as it's replaced
+with a Kconfig option.
+

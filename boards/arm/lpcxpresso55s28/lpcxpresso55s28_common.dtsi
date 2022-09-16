@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "lpcxpresso55s28-pinctrl.dtsi"
+
 / {
 	aliases{
 		led0 = &red_led;
@@ -88,6 +90,8 @@
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
 };
 
 arduino_i2c: &flexcomm4 {
@@ -95,16 +99,20 @@ arduino_i2c: &flexcomm4 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
+	pinctrl-names = "default";
 
 	mma8652fc@1d {
 		compatible = "nxp,fxos8700","nxp,mma8652fc";
 		reg = <0x1d>;
 		label = "MMA8652FC";
-		int1-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
+		int1-gpios = <&gpio1 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 };
 
 arduino_spi: &hs_lspi {
+	pinctrl-0 = <&pinmux_hs_lspi>;
+	pinctrl-names = "default";
 };
 
 arduino_gpio: &gpio1 {

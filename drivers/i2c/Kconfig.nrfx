@@ -12,18 +12,14 @@ menuconfig I2C_NRFX
 
 if I2C_NRFX
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_NORDIC_NRF_TWI  := nordic,nrf-twi
-DT_COMPAT_NORDIC_NRF_TWIM := nordic,nrf-twim
-
 config I2C_0_NRF_TWI
-	def_bool $(dt_nodelabel_has_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWI))
+	def_bool HAS_HW_NRF_TWI0
 	select NRFX_TWI0
 	help
 	  Enable nRF TWI Master without EasyDMA on port 0.
 
 config I2C_0_NRF_TWIM
-	def_bool $(dt_nodelabel_has_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	def_bool HAS_HW_NRF_TWIM0
 	select NRFX_TWIM0
 	help
 	  Enable nRF TWI Master with EasyDMA on port 0.
@@ -31,13 +27,13 @@ config I2C_0_NRF_TWIM
 	  if provided buffer is placed in flash, transfer will fail.
 
 config I2C_1_NRF_TWI
-	def_bool $(dt_nodelabel_has_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWI))
+	def_bool HAS_HW_NRF_TWI1
 	select NRFX_TWI1
 	help
 	  Enable nRF TWI Master without EasyDMA on port 1.
 
 config I2C_1_NRF_TWIM
-	def_bool $(dt_nodelabel_has_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	def_bool HAS_HW_NRF_TWIM1
 	select NRFX_TWIM1
 	help
 	  Enable nRF TWI Master with EasyDMA on port 1.
@@ -45,7 +41,7 @@ config I2C_1_NRF_TWIM
 	  if provided buffer is placed in flash, transfer will fail.
 
 config I2C_2_NRF_TWIM
-	def_bool $(dt_nodelabel_has_compat,i2c2,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	def_bool HAS_HW_NRF_TWIM2
 	select NRFX_TWIM2
 	help
 	  Enable nRF TWI Master with EasyDMA on port 2.
@@ -53,7 +49,7 @@ config I2C_2_NRF_TWIM
 	  if provided buffer is placed in flash, transfer will fail.
 
 config I2C_3_NRF_TWIM
-	def_bool $(dt_nodelabel_has_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	def_bool HAS_HW_NRF_TWIM3
 	select NRFX_TWIM3
 	help
 	  Enable nRF TWI Master with EasyDMA on port 3.

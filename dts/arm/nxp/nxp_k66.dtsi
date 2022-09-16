@@ -18,6 +18,8 @@
 			reg = <0x400c4000 0x14>;
 			interrupts = <86 0>;
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1038 20>;
+			dmas = <&edma0 1 58>, <&edma0 2 59>;
+			dma-names = "rx", "tx";
 			label = "LPUART_0";
 			status = "disabled";
 		};
@@ -32,9 +34,7 @@
 			clk-source = <1>;
 			label = "CAN_1";
 			sjw = <1>;
-			prop-seg = <1>;
-			phase-seg1 = <3>;
-			phase-seg2 = <2>;
+			sample-point = <875>;
 			status = "disabled";
 		  };
 	};

@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Esco Medical ApS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TLC5971_STRIP
+	bool "TLC5971 (and compatible) LED strip driver"
+	depends on SPI
+	help
+	  Enable LED strip driver for daisy chains of TLC5971-ish devices

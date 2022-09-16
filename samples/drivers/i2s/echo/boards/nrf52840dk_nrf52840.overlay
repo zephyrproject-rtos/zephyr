@@ -4,10 +4,37 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&pinctrl {
+	i2c0_default_alt: i2c0_default_alt {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+				<NRF_PSEL(TWIM_SCL, 0, 31)>;
+		};
+	};
+
+	i2c0_sleep_alt: i2c0_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+				<NRF_PSEL(TWIM_SCL, 0, 31)>;
+			low-power-enable;
+		};
+	};
+
+	i2s0_default_alt: i2s0_default_alt {
+		group1 {
+			psels = <NRF_PSEL(I2S_SCK_M, 1, 15)>,
+				<NRF_PSEL(I2S_LRCK_M, 1, 12)>,
+				<NRF_PSEL(I2S_SDOUT, 1, 13)>,
+				<NRF_PSEL(I2S_SDIN, 1, 14)>;
+		};
+	};
+};
+
 &i2c0 {
 	status = "okay";
-	sda-pin = <30>;
-	scl-pin = <31>;
+	pinctrl-0 = <&i2c0_default_alt>;
+	pinctrl-1 = <&i2c0_sleep_alt>;
+	pinctrl-names = "default", "sleep";
 
 	wm8731: wm8731@1a {
 		compatible = "wolfson,wm8731";
@@ -18,8 +45,6 @@
 
 i2s_rxtx: &i2s0 {
 	status = "okay";
-	sck-pin = <47>;
-	lrck-pin = <44>;
-	sdout-pin = <45>;
-	sdin-pin = <46>;
+	pinctrl-0 = <&i2s0_default_alt>;
+	pinctrl-names = "default";
 };

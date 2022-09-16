@@ -5,7 +5,7 @@ description: Nordic I2S (Inter-IC sound interface)
 
 compatible: "nordic,nrf-i2s"
 
-include: i2s-controller.yaml
+include: [i2s-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -16,28 +16,62 @@ properties:
 
     sck-pin:
       type: int
-      required: true
-      description: SCK pin
+      required: false
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        The SCK pin to use.
+
+        For pins P0.0 through P0.31, use the pin number. For example,
+        to use P0.16 for SCK, set:
+
+            sck-pin = <16>;
+
+        For pins P1.0 through P1.31, add 32 to the pin number. For
+        example, to use P1.2 for SCK, set:
+
+            sck-pin = <34>;  /* 32 + 2 */
 
     lrck-pin:
       type: int
-      required: true
-      description: LRCK pin
+      required: false
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        The LRCK pin to use. The pin numbering scheme is the same as
+        the sck-pin property's.
 
     sdout-pin:
       type: int
       required: false
-      description: SDOUT pin
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        The SDOUT pin to use. The pin numbering scheme is the same as
+        the sck-pin property's.
 
     sdin-pin:
       type: int
       required: false
-      description: SDIN pin
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        The SDIN pin to use. The pin numbering scheme is the same as
+        the sck-pin property's.
 
     mck-pin:
       type: int
       required: false
-      description: MCK pin
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        The MCK pin to use. The pin numbering scheme is the same as
+        the sck-pin property's.
 
     clock-source:
       type: string

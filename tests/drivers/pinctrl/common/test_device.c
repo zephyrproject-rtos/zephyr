@@ -8,8 +8,8 @@
 
 #include "test_device.h"
 
-#include <device.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pinctrl.h>
 
 int test_device_init(const struct device *dev)
 {

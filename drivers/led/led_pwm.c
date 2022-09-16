@@ -11,33 +11,26 @@
  * @brief PWM driven LEDs
  */
 
-#include <drivers/led.h>
-#include <drivers/pwm.h>
-#include <device.h>
-#include <pm/device.h>
-#include <zephyr.h>
-#include <sys/math_extras.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/math_extras.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(led_pwm, CONFIG_LED_LOG_LEVEL);
-
-struct led_pwm {
-	const struct device *dev;
-	uint32_t channel;
-	uint32_t period;
-	pwm_flags_t flags;
-};
 
 struct led_pwm_config {
 	int num_leds;
-	const struct led_pwm *led;
+	const struct pwm_dt_spec *led;
 };
 
 static int led_pwm_blink(const struct device *dev, uint32_t led,
 			 uint32_t delay_on, uint32_t delay_off)
 {
 	const struct led_pwm_config *config = dev->config;
-	const struct led_pwm *led_pwm;
+	const struct pwm_dt_spec *dt_led;
 	uint32_t period_usec, pulse_usec;
 
 	if (led >= config->num_leds) {
@@ -54,29 +47,25 @@ static int led_pwm_blink(const struct device *dev, uint32_t led,
 		return -EINVAL;
 	}
 
-	led_pwm = &config->led[led];
+	dt_led = &config->led[led];
 
-	return pwm_pin_set_usec(led_pwm->dev, led_pwm->channel,
-				period_usec, pulse_usec, led_pwm->flags);
+	return pwm_set_dt(dt_led, PWM_USEC(period_usec), PWM_USEC(pulse_usec));
 }
 
 static int led_pwm_set_brightness(const struct device *dev,
 				  uint32_t led, uint8_t value)
 {
 	const struct led_pwm_config *config = dev->config;
-	const struct led_pwm *led_pwm;
-	uint32_t pulse;
+	const struct pwm_dt_spec *dt_led;
 
 	if (led >= config->num_leds || value > 100) {
 		return -EINVAL;
 	}
 
-	led_pwm = &config->led[led];
+	dt_led = &config->led[led];
 
-	pulse = led_pwm->period * value / 100;
-
-	return pwm_pin_set_nsec(led_pwm->dev, led_pwm->channel,
-				led_pwm->period, pulse, led_pwm->flags);
+	return pwm_set_pulse_dt(&config->led[led],
+				dt_led->period * value / 100);
 }
 
 static int led_pwm_on(const struct device *dev, uint32_t led)
@@ -101,10 +90,10 @@ static int led_pwm_init(const struct device *dev)
 	}
 
 	for (i = 0; i < config->num_leds; i++) {
-		const struct led_pwm *led = &config->led[i];
+		const struct pwm_dt_spec *led = &config->led[i];
 
 		if (!device_is_ready(led->dev)) {
-			LOG_ERR("%s: pwm device not ready", dev->name);
+			LOG_ERR("%s: pwm device not ready", led->dev->name);
 			return -ENODEV;
 		}
 	}
@@ -121,14 +110,13 @@ static int led_pwm_pm_action(const struct device *dev,
 	/* switch all underlying PWM devices to the new state */
 	for (size_t i = 0; i < config->num_leds; i++) {
 		int err;
-		const struct led_pwm *led_pwm = &config->led[i];
+		const struct pwm_dt_spec *led = &config->led[i];
 
-		LOG_DBG("PWM %p running pm action %" PRIu32, led_pwm->dev,
-				action);
+		LOG_DBG("PWM %p running pm action %" PRIu32, led->dev, action);
 
-		err = pm_device_action_run(led_pwm->dev, action);
+		err = pm_device_action_run(led->dev, action);
 		if (err && (err != -EALREADY)) {
-			LOG_ERR("Cannot switch PWM %p power state", led_pwm->dev);
+			LOG_ERR("Cannot switch PWM %p power state", led->dev);
 		}
 	}
 
@@ -143,19 +131,12 @@ static const struct led_driver_api led_pwm_api = {
 	.set_brightness	= led_pwm_set_brightness,
 };
 
-#define LED_PWM(led_node_id)						\
-{									\
-	.dev		= DEVICE_DT_GET(DT_PWMS_CTLR(led_node_id)),	\
-	.channel	= DT_PWMS_CHANNEL(led_node_id),			\
-	.period		= DT_PHA_OR(led_node_id, pwms, period, 100000),	\
-	.flags		= DT_PHA_OR(led_node_id, pwms, flags,		\
-				    PWM_POLARITY_NORMAL),		\
-},
+#define PWM_DT_SPEC_GET_AND_COMMA(node_id) PWM_DT_SPEC_GET(node_id),
 
 #define LED_PWM_DEVICE(id)					\
 								\
-static const struct led_pwm led_pwm_##id[] = {			\
-	DT_INST_FOREACH_CHILD(id, LED_PWM)			\
+static const struct pwm_dt_spec led_pwm_##id[] = {		\
+	DT_INST_FOREACH_CHILD(id, PWM_DT_SPEC_GET_AND_COMMA)	\
 };								\
 								\
 static const struct led_pwm_config led_pwm_config_##id = {	\

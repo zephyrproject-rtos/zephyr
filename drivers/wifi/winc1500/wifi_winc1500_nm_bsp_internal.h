@@ -7,9 +7,9 @@
 #ifndef ZEPHYR_DRIVERS_WIFI_WINC1500_WIFI_WINC1500_NM_BSP_INTERNAL_H_
 #define ZEPHYR_DRIVERS_WIFI_WINC1500_WIFI_WINC1500_NM_BSP_INTERNAL_H_
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
 
 #include "wifi_winc1500_config.h"
 #include <bus_wrapper/include/nm_bus_wrapper.h>

@@ -6,16 +6,16 @@
 
 #define DT_DRV_COMPAT nuvoton_npcx_gpio
 
-#include <kernel.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
 
 #include "gpio_utils.h"
 #include "soc_gpio.h"
 #include "soc_miwu.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_npcx, LOG_LEVEL_ERR);
 
 /* GPIO module instances declarations */
@@ -61,7 +61,7 @@ void npcx_gpio_enable_io_pads(const struct device *dev, int pin)
 	const struct npcx_wui *io_wui = &config->wui_maps[pin];
 
 	/*
-	 * If this pin is configurred as a GPIO interrupt source, do not
+	 * If this pin is configured as a GPIO interrupt source, do not
 	 * implement bypass. Or ec cannot wake up via this event.
 	 */
 	if (pin < NPCX_GPIO_PORT_PIN_NUM && !npcx_miwu_irq_get_state(io_wui)) {
@@ -75,7 +75,7 @@ void npcx_gpio_disable_io_pads(const struct device *dev, int pin)
 	const struct npcx_wui *io_wui = &config->wui_maps[pin];
 
 	/*
-	 * If this pin is configurred as a GPIO interrupt source, do not
+	 * If this pin is configured as a GPIO interrupt source, do not
 	 * implement bypass. Or ec cannot wake up via this event.
 	 */
 	if (pin < NPCX_GPIO_PORT_PIN_NUM && !npcx_miwu_irq_get_state(io_wui)) {

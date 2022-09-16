@@ -8,15 +8,3 @@ config CAN_SAM
 	bool "Atmel SAM CAN driver"
 	default $(dt_compat_enabled,$(DT_COMPAT_ATMEL_SAM_CAN))
 	select CAN_MCAN
-
-if CAN_SAM
-
-config CAN_SAM_CKDIV
-	int "Clock divider"
-	range 0 255
-	default 0
-	depends on CAN_SAM
-	help
-	  Clock divider for the MCAN core clock.
-
-endif #CAN_SAM

@@ -26,6 +26,10 @@
 
 /* Macro to define length of the BLE packet length field in bits */
 #define RADIO_PKT_CONF_LENGTH_8BIT (8U)
+#define RADIO_PKT_CONF_LENGTH_5BIT (5U)
+
+/* Macro to define length of the BLE packet S1 field in bits */
+#define RADIO_PKT_CONF_S1_8BIT (8U)
 
 /* Helper macro to create bitfield with PDU type only*/
 #define RADIO_PKT_CONF_PDU_TYPE(phy) ((uint8_t)((phy) << RADIO_PKT_CONF_PDU_TYPE_POS))
@@ -39,7 +43,7 @@
 	((uint8_t)((((flags) >> RADIO_PKT_CONF_PHY_POS)) & RADIO_PKT_CONF_PHY_MSK))
 /* Helper macro to create bitfield with CTE type only */
 #define RADIO_PKT_CONF_CTE(phy) ((uint8_t)((phy) << RADIO_PKT_CONF_CTE_POS))
-/* Helper macro to get CTE enable field value from radion packet configuration bitfield */
+/* Helper macro to get CTE enable field value from radio packet configuration bitfield */
 #define RADIO_PKT_CONF_CTE_GET(flags)                                                              \
 	((uint8_t)((((flags) >> RADIO_PKT_CONF_CTE_POS)) & RADIO_PKT_CONF_CTE_MSK))
 /* Helper macro to create a radio packet configure bitfield */
@@ -55,6 +59,7 @@ void radio_isr_set(radio_isr_cb_t cb, void *param);
 
 void radio_setup(void);
 void radio_reset(void);
+void radio_stop(void);
 void radio_phy_set(uint8_t phy, uint8_t flags);
 void radio_tx_power_set(int8_t power);
 void radio_tx_power_max_set(void);
@@ -95,6 +100,8 @@ void radio_switch_complete_with_delay_compensation_and_tx(
 	uint8_t phy_rx, uint8_t flags_rx, uint8_t phy_tx, uint8_t flags_tx,
 	enum radio_end_evt_delay_state end_evt_delay_en);
 void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
+				      uint8_t phy_next, uint8_t flags_next);
+void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
 				      uint8_t phy_next, uint8_t flags_next);
 void radio_switch_complete_and_disable(void);
 

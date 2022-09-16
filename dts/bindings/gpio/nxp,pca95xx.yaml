@@ -16,6 +16,11 @@ properties:
       required: false
       description: Supports pull-up/pull-down
 
+    has-interrupt-mask-reg:
+      type: boolean
+      required: false
+      description: Has Interrupt mask register (PCAL95xx)
+
     interrupt-gpios:
       type: phandle-array
       required: false

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <pm/pm.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/pm/pm.h>
 #include <soc.h>
 #include <soc_power.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
 #define CLK_BIT_GPIO0	_BEETLE_GPIO0

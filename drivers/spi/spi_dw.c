@@ -9,7 +9,7 @@
 /* spi_dw.c - Designware SPI driver implementation */
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_dw);
 
 #if (CONFIG_SPI_LOG_LEVEL == 4)
@@ -27,22 +27,22 @@ LOG_MODULE_REGISTER(spi_dw);
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 
 #include <soc.h>
-#include <device.h>
-#include <init.h>
-#include <pm/device.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/pm/device.h>
 
-#include <sys/sys_io.h>
-#include <sys/util.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/interrupt_controller/ioapic.h>
+#include <zephyr/drivers/interrupt_controller/ioapic.h>
 #endif
 
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 
 #include "spi_dw.h"
 #include "spi_context.h"

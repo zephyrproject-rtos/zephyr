@@ -139,7 +139,7 @@
 };
 
 &can1 {
-	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
+	pinctrl-0 = <&can_rx_remap1_pb8 &can_tx_remap1_pb9>;
 	pinctrl-names = "default";
 	/*
 	 * make sure CAN and USB are not enabled at the same time
@@ -148,10 +148,6 @@
 	 */
 	status = "disabled";
 	bus-speed = <125000>;
-	sjw = <1>;
-	prop-seg = <0>;
-	phase-seg1 = <5>;
-	phase-seg2 = <6>;
 };
 
 zephyr_udc0: &usb {

@@ -7,7 +7,7 @@
 #include "soc/interrupt_reg.h"
 #include "riscv/rvruntime-frames.h"
 #include "soc/soc_caps.h"
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /* Imports */
 GTEXT(__irq_wrapper)

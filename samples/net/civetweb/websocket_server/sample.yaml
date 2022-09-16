@@ -3,4 +3,6 @@ sample:
   name: websocket_server
 tests:
   sample.net.civetweb.websocket_server:
+    modules:
+      - civetweb
     platform_allow: nucleo_h745zi_q_m7

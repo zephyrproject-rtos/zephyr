@@ -8,12 +8,12 @@
 #ifndef _BLE_MESH_H
 #define _BLE_MESH_H
 
-#include <settings/settings.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/mesh.h>
 
 /* Model Operation Codes */
 #define	BT_MESH_MODEL_OP_GEN_ONOFF_GET          BT_MESH_MODEL_OP_2(0x82, 0x01)

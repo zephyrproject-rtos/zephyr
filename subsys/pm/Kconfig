@@ -25,7 +25,26 @@ config PM_STATS
 	help
 	  Enable System Power Management Stats.
 
-source "subsys/pm/policy/Kconfig"
+choice PM_POLICY
+	prompt "Idle State Power Management Policy"
+	default PM_POLICY_DEFAULT
+	help
+	  Select the idle state power management policy.
+
+config PM_POLICY_DEFAULT
+	bool "Default PM policy"
+	help
+	  This option selects the default PM policy. Default policy is based
+	  on CPU residency times and other constraints imposed by the drivers or
+	  application.
+
+config PM_POLICY_CUSTOM
+	bool "Custom PM Policy"
+	help
+	  This options allows applications to override the default policy with
+	  a custom implementation.
+
+endchoice
 
 endif # PM
 
@@ -55,13 +74,27 @@ module-str = Device Power Management
 source "subsys/logging/Kconfig.template.log_config"
 
 config PM_DEVICE_POWER_DOMAIN
-	bool "Enable power domain"
+	bool "Power domain"
 	depends on PM_DEVICE
 	default y
 	help
 	  Enable support for Power Domain. With power domain enabled,
 	  devices that depend on a domain will be notified when this
 	  domain is suspended or resumed.
+
+config PM_DEVICE_POWER_DOMAIN_DYNAMIC
+	bool "Dynamically bind devices to a Power Pomain"
+	depends on PM_DEVICE_POWER_DOMAIN
+	select HAS_DYNAMIC_DEVICE_HANDLES
+	help
+	  Enable support for dynamically bind devices to a Power Domain.
+
+config PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM
+	int "Number of devices that can dynamically be bind to a Power Domain"
+	depends on PM_DEVICE_POWER_DOMAIN_DYNAMIC
+	default 1
+	help
+	  The number of devices that can dynamically be bind to a Power Domain.
 
 config PM_DEVICE_RUNTIME
 	bool "Runtime Device Power Management"

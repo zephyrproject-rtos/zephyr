@@ -51,7 +51,7 @@
 		};
 	};
 
-	fpga {
+	fpga0: fpga {
 		status = "okay";
 	};
 };

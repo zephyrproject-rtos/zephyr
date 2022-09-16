@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <drivers/sensor.h>
-#include <drivers/sensor/mhz19b.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/mhz19b.h>
 
 void main(void)
 {

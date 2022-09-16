@@ -6,4 +6,18 @@
 
 #include <mem.h>
 #include <st/l4/stm32l4r5.dtsi>
+#include <zephyr/dt-bindings/display/stm32_ltdc.h>
 
+/ {
+	soc {
+		ltdc: display-controller@40016800 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x40016800 0x200>;
+			interrupts = <91 0>, <92 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x40000000>;
+			label = "LTDC";
+			status = "disabled";
+		};
+	};
+};

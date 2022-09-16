@@ -1,0 +1,9 @@
+# cAVS HDA configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_CAVS_HDA
+	bool "Intel cAVS HDA DMA driver"
+	help
+	  Intel cAVS HDA DMA driver.

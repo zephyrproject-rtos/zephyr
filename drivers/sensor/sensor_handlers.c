@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/sensor.h>
-#include <syscall_handler.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/syscall_handler.h>
 
 static inline int z_vrfy_sensor_attr_set(const struct device *dev,
 					 enum sensor_channel chan,

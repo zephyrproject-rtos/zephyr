@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <devicetree.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/logging/log.h>
 #include <hal/nrf_gpio.h>
 
 LOG_MODULE_REGISTER(board_control, CONFIG_BOARD_NRF9160DK_LOG_LEVEL);

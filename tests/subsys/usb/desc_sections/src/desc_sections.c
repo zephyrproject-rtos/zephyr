@@ -7,11 +7,11 @@
 #include <ztest.h>
 #include <tc_util.h>
 
-#include <sys/byteorder.h>
-#include <usb/usb_device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test_main, LOG_LEVEL_DBG);
 
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
@@ -78,7 +78,7 @@ struct usb_test_config {
 	.if0_in2_ep = INITIALIZER_IF_EP(AUTO_EP_IN,			\
 					USB_DC_EP_BULK,			\
 					TEST_BULK_EP_MPS),		\
-	};
+	}
 
 #define INITIALIZER_EP_DATA(cb, addr)					\
 	{								\
@@ -91,7 +91,7 @@ struct usb_test_config {
 		INITIALIZER_EP_DATA(NULL, AUTO_EP_OUT),		\
 		INITIALIZER_EP_DATA(NULL, AUTO_EP_IN),		\
 		INITIALIZER_EP_DATA(NULL, AUTO_EP_IN),		\
-	};
+	}
 
 #define DEFINE_TEST_CFG_DATA(x, _)				\
 	USBD_DEFINE_CFG_DATA(test_config_##x) = {		\
@@ -106,7 +106,7 @@ struct usb_test_config {
 	},							\
 	.num_endpoints = ARRAY_SIZE(ep_cfg_##x),		\
 	.endpoint = ep_cfg_##x,					\
-	};
+	}
 
 #define NUM_INSTANCES 2
 
@@ -120,9 +120,9 @@ static void interface_config(struct usb_desc_header *head,
 	if_desc->bInterfaceNumber = iface_num;
 }
 
-UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_DESC, _)
-UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_EP_CFG, _)
-UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_CFG_DATA, _)
+LISTIFY(NUM_INSTANCES, DEFINE_TEST_DESC, (;), _);
+LISTIFY(NUM_INSTANCES, DEFINE_TEST_EP_CFG, (;), _);
+LISTIFY(NUM_INSTANCES, DEFINE_TEST_CFG_DATA, (;), _);
 
 static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 {
@@ -227,7 +227,7 @@ static void test_desc_sections(void)
 
 	LOG_HEXDUMP_DBG((uint8_t *)_usb_cfg_data_list_start,
 			SYMBOL_SPAN(_usb_cfg_data_list_end, _usb_cfg_data_list_start),
-			"USB Configuratio structures section");
+			"USB Configuration structures section");
 
 	head = (struct usb_desc_header *)__usb_descriptor_start;
 	zassert_not_null(head, NULL);

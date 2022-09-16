@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf51822_qfac.dtsi>
+#include "nrf51_vbluno51-pinctrl.dtsi"
 
 / {
 	model = "VNG VBLUno51 BLE board";
@@ -57,15 +58,15 @@
 &uart0 {
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <10>;
-	rx-pin = <11>;
-	rts-pin = <12>;
-	cts-pin = <13>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <29>;
-	scl-pin = <30>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };

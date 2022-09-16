@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <sys/cbprintf.h>
+#include <zephyr/sys/cbprintf.h>
 #include <tracing_buffer.h>
 #include <tracing_format_common.h>
 

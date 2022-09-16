@@ -14,7 +14,7 @@
 #include <wctype.h>
 #include <stddef.h>
 #include <string.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define CBPRINTF_VIA_UNIT_TEST
 
@@ -131,7 +131,7 @@
 #define PACKAGE_FLAGS 0
 #endif
 
-#include <sys/cbprintf.h>
+#include <zephyr/sys/cbprintf.h>
 #include "../../../lib/os/cbprintf.c"
 
 #if defined(CONFIG_CBPRINTF_COMPLETE)
@@ -1250,7 +1250,8 @@ static void test_cbprintf_package_rw_string_indexes(void)
 	uint8_t str_idx;
 	char *addr;
 
-	CBPRINTF_STATIC_PACKAGE(NULL, 0, len0, 0, 0, test_str, 100, test_str1);
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, len0, 0, CBPRINTF_PACKAGE_CONST_CHAR_RO,
+				test_str, 100, test_str1);
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, len1, 0,
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
@@ -1262,7 +1263,8 @@ static void test_cbprintf_package_rw_string_indexes(void)
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package0[len0];
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package1[len1];
 
-	CBPRINTF_STATIC_PACKAGE(package0, sizeof(package0), len0, 0, 0,
+	CBPRINTF_STATIC_PACKAGE(package0, sizeof(package0), len0, 0,
+				CBPRINTF_PACKAGE_CONST_CHAR_RO,
 				test_str, 100, test_str1);
 	CBPRINTF_STATIC_PACKAGE(package1, sizeof(package1), len1, 0,
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
@@ -1297,7 +1299,7 @@ static int fsc_package_cb(int c, void *ctx)
 	return c;
 }
 
-/* Test for validating convesion to fully self-contained package. */
+/* Test for validating conversion to fully self-contained package. */
 static void test_cbprintf_fsc_package(void)
 {
 	if (!ENABLED_USE_PACKAGED) {
@@ -1311,7 +1313,7 @@ static void test_cbprintf_fsc_package(void)
 	}
 
 	char test_str[] = "test %d %s";
-	char *test_str1 = "lorem ipsum";
+	const char *test_str1 = "lorem ipsum";
 	char exp_str0[256];
 	char exp_str1[256];
 	char out_str[256];
@@ -1326,6 +1328,7 @@ static void test_cbprintf_fsc_package(void)
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
 
+	zassert_true(len > 0, NULL);
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len];
 
 	CBPRINTF_STATIC_PACKAGE(package, sizeof(package), len, 0,

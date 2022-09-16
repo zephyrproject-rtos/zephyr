@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MODEM_WNCM14A2A
-	bool "Enable Wistron LTE-M modem driver"
+	bool "Wistron LTE-M modem driver"
 	select MODEM_RECEIVER
 	select NET_OFFLOAD
 	imply GPIO

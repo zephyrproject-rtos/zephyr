@@ -10,11 +10,12 @@
 
 #define DT_DRV_COMPAT nxp_mcux_12b1msps_sar
 
-#include <drivers/adc.h>
+#include <zephyr/drivers/adc.h>
 #include <fsl_adc.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_mcux_12b1msps_sar);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
@@ -27,6 +28,7 @@ struct mcux_12b1msps_sar_adc_config {
 	adc_reference_voltage_source_t ref_src;
 	adc_sample_period_mode_t sample_period_mode;
 	void (*irq_config_func)(const struct device *dev);
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct mcux_12b1msps_sar_adc_data {
@@ -217,6 +219,12 @@ static int mcux_12b1msps_sar_adc_init(const struct device *dev)
 	struct mcux_12b1msps_sar_adc_data *data = dev->data;
 	ADC_Type *base = config->base;
 	adc_config_t adc_config;
+	int err;
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
 
 	ADC_GetDefaultConfig(&adc_config);
 
@@ -275,6 +283,7 @@ static const struct adc_driver_api mcux_12b1msps_sar_adc_driver_api = {
 				    "Invalid clock divider");		       \
 	ASSERT_WITHIN_RANGE(DT_INST_PROP(n, sample_period_mode), 0, 3,	       \
 			    "Invalid sample period mode");		       \
+	PINCTRL_DT_INST_DEFINE(n);						\
 									       \
 	static const struct mcux_12b1msps_sar_adc_config mcux_12b1msps_sar_adc_config_##n = {  \
 		.base = (ADC_Type *)DT_INST_REG_ADDR(n),		       \
@@ -283,7 +292,8 @@ static const struct adc_driver_api mcux_12b1msps_sar_adc_driver_api = {
 			TO_RT_ADC_CLOCK_DIV(DT_INST_PROP(n, clk_divider)),     \
 		.ref_src = kADC_ReferenceVoltageSourceAlt0,		       \
 		.sample_period_mode = DT_INST_PROP(n, sample_period_mode),     \
-		.irq_config_func = mcux_12b1msps_sar_adc_config_func_##n,		       \
+		.irq_config_func = mcux_12b1msps_sar_adc_config_func_##n,	\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	};								       \
 									       \
 	static struct mcux_12b1msps_sar_adc_data mcux_12b1msps_sar_adc_data_##n = {	 \

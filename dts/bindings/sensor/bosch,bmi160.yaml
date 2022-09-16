@@ -3,10 +3,6 @@
 
 description: BMI160 inertial measurement unit
 
-compatible: "bosch,bmi160"
-
-include: spi-device.yaml
-
 properties:
     int-gpios:
       type: phandle-array

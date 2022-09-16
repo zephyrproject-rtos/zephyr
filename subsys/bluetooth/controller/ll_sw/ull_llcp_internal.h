@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* LLCP Memory Pool Descriptor */
+struct llcp_mem_pool {
+	void *free;
+	uint8_t *pool;
+};
+
 /* LLCP Procedure */
 enum llcp_proc {
 	PROC_UNKNOWN,
@@ -20,9 +26,15 @@ enum llcp_proc {
 	PROC_CHAN_MAP_UPDATE,
 	PROC_DATA_LENGTH_UPDATE,
 	PROC_CTE_REQ,
-	/* A helper enum entry, to use in pause prcedure context */
+	/* A helper enum entry, to use in pause procedure context */
 	PROC_NONE = 0x0,
 };
+enum llcp_tx_q_pause_data_mask {
+	LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION = 0x01,
+	LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE = 0x02,
+	LLCP_TX_QUEUE_PAUSE_DATA_DATA_LENGTH = 0x04,
+};
+
 #if ((CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM <\
 			(CONFIG_BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX *\
 			CONFIG_BT_CTLR_LLCP_CONN)) &&\
@@ -50,22 +62,16 @@ struct llcp_enc {
 	/* NOTE: To save memory, SKD(m|s) and IV(m|s) are
 	 * generated just-in-time for PDU enqueuing and are
 	 * therefore not present in this structure.
-	 */
-
-	/* TODO(thoh): Do we want a version without JIT vector
-	 * generation?
-	 */
-
-	/* TODO(thoh): Optimize memory layout.
-	 *	* Overlay memory?
+	 * Further candidates for optimizing memory layout.
+	 *	* Overlay memory
 	 *	* Repurpose memory used by lll.ccm_tx/rx?
 	 */
 
-	/* Master: Rand and EDIV are input copies from
+	/* Central: Rand and EDIV are input copies from
 	 * HCI that only live until the LL_ENC_REQ has
 	 * been enqueued.
 	 *
-	 * Slave: Rand and EDIV are input copies from
+	 * Peripheral: Rand and EDIV are input copies from
 	 * the LL_ENC_REQ that only live until host
 	 * notification has been enqueued.
 	 */
@@ -114,6 +120,9 @@ struct proc_ctx {
 	/* Must be the first for sys_slist to work */
 	sys_snode_t node;
 
+	/* llcp_mem_pool owner of this context */
+	struct llcp_mem_pool *owner;
+
 	/* PROC_ */
 	enum llcp_proc proc;
 
@@ -125,14 +134,14 @@ struct proc_ctx {
 	/* Expected opcode to be received next */
 	enum pdu_data_llctrl_type rx_opcode;
 
+	/* Greedy RX (used for central encryption) */
+	uint8_t rx_greedy;
+
 	/* Last transmitted opcode used for unknown/reject */
 	enum pdu_data_llctrl_type tx_opcode;
 
 	/* Instant collision */
 	int collision;
-
-	/* Procedure pause */
-	int pause;
 
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
 	/* Wait list next pointer */
@@ -184,10 +193,10 @@ struct proc_ctx {
 		} pu;
 #endif /* CONFIG_BT_CTLR_PHY */
 
-		/* TODO(tosk): leave out some params below if !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 		/* Connection Update & Connection Parameter Request */
 		struct {
 			uint8_t error;
+			uint8_t rejected_opcode;
 			uint8_t params_changed;
 			uint16_t instant;
 			uint8_t win_size;
@@ -196,6 +205,7 @@ struct proc_ctx {
 			uint16_t interval_max;
 			uint16_t latency;
 			uint16_t timeout;
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 			uint8_t  preferred_periodicity;
 			uint16_t reference_conn_event_count;
 			uint16_t offset0;
@@ -204,6 +214,7 @@ struct proc_ctx {
 			uint16_t offset3;
 			uint16_t offset4;
 			uint16_t offset5;
+#endif /* defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) */
 		} cu;
 
 		/* Use by ACL Termination Procedure */
@@ -335,14 +346,23 @@ struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc);
 bool llcp_tx_alloc_peek(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_tx_alloc_unpeek(struct proc_ctx *ctx);
 struct node_tx *llcp_tx_alloc(struct ll_conn *conn, struct proc_ctx *ctx);
+void llcp_proc_ctx_release(struct proc_ctx *ctx);
 
 /*
  * ULL -> LLL Interface
  */
 void llcp_tx_enqueue(struct ll_conn *conn, struct node_tx *tx);
-void llcp_tx_pause_data(struct ll_conn *conn);
-void llcp_tx_resume_data(struct ll_conn *conn);
-void llcp_tx_flush(struct ll_conn *conn);
+void llcp_tx_pause_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask pause_mask);
+void llcp_tx_resume_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask resume_mask);
+
+/*
+ * LLCP Procedure Response Timeout
+ */
+void llcp_lr_prt_restart(struct ll_conn *conn);
+void llcp_lr_prt_restart_with_value(struct ll_conn *conn, uint16_t value);
+void llcp_lr_prt_stop(struct ll_conn *conn);
+void llcp_rr_prt_restart(struct ll_conn *conn);
+void llcp_rr_prt_stop(struct ll_conn *conn);
 
 /*
  * LLCP Local Procedure Common
@@ -375,7 +395,9 @@ void llcp_rp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_p
 void llcp_rp_enc_init_proc(struct proc_ctx *ctx);
 void llcp_rp_enc_ltk_req_reply(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_rp_enc_ltk_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx);
+bool llcp_rp_enc_ltk_req_reply_allowed(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_rp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -398,6 +420,7 @@ void llcp_lp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 /*
  * LLCP Local Channel Map Update
  */
+void llcp_lp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_lp_chmu_init_proc(struct proc_ctx *ctx);
 void llcp_lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
@@ -431,6 +454,7 @@ void llcp_pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
  * LLCP Local Request
  */
 struct proc_ctx *llcp_lr_peek(struct ll_conn *conn);
+bool llcp_lr_ispaused(struct ll_conn *conn);
 void llcp_lr_pause(struct ll_conn *conn);
 void llcp_lr_resume(struct ll_conn *conn);
 void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
@@ -451,6 +475,7 @@ bool llcp_rr_get_collision(struct ll_conn *conn);
 void llcp_rr_set_paused_cmd(struct ll_conn *conn, enum llcp_proc);
 enum llcp_proc llcp_rr_get_paused_cmd(struct ll_conn *conn);
 struct proc_ctx *llcp_rr_peek(struct ll_conn *conn);
+bool llcp_rr_ispaused(struct ll_conn *conn);
 void llcp_rr_pause(struct ll_conn *conn);
 void llcp_rr_resume(struct ll_conn *conn);
 void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
@@ -461,7 +486,7 @@ void llcp_rr_run(struct ll_conn *conn);
 void llcp_rr_complete(struct ll_conn *conn);
 void llcp_rr_connect(struct ll_conn *conn);
 void llcp_rr_disconnect(struct ll_conn *conn);
-void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx);
+void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 /*
@@ -571,7 +596,6 @@ void llcp_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-void llcp_proc_ctx_release(struct proc_ctx *ctx);
 
 /*
  * Remote Channel Map Update Procedure Helper
@@ -617,5 +641,5 @@ bool lr_is_disconnected(struct ll_conn *conn);
 bool lr_is_idle(struct ll_conn *conn);
 bool rr_is_disconnected(struct ll_conn *conn);
 bool rr_is_idle(struct ll_conn *conn);
-int ctx_buffers_free(void);
+uint16_t ctx_buffers_free(void);
 #endif

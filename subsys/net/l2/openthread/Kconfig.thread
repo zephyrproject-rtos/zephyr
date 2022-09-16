@@ -31,7 +31,7 @@ config OPENTHREAD_NETWORKKEY
 	  "00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff"
 
 config OPENTHREAD_JOINER_AUTOSTART
-	bool "Enable automatic joiner start"
+	bool "Automatic joiner start"
 	depends on OPENTHREAD_JOINER
 
 config OPENTHREAD_JOINER_PSKD
@@ -76,19 +76,15 @@ config OPENTHREAD_CONFIG_PLATFORM_INFO
 	default "Zephyr"
 
 config OPENTHREAD_RADIO_LINK_IEEE_802_15_4_ENABLE
-	bool "Enable support for IEEE802.15.4 radio link"
+	bool "Support for IEEE802.15.4 radio link"
 	default y
 
 config OPENTHREAD_RADIO_LINK_TREL_ENABLE
 	bool "Thread Radio Encapsulation Link (TREL)"
 
 config OPENTHREAD_CSL_AUTO_SYNC
-	bool "Enable CSL autosync"
+	bool "CSL autosync"
 	default y if OPENTHREAD_CSL_RECEIVER
-
-config OPENTHREAD_CSL_SAMPLE_WINDOW
-	int "CSL sample window in units of 10 symbols"
-	default 30
 
 config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
 	int "CSL receiver wake up margin in units of 10 symbols"
@@ -101,13 +97,14 @@ config OPENTHREAD_CSL_MIN_RECEIVE_ON
 	  The minimum CSL receive window (in microseconds) required to receive a full IEEE 802.15.4 frame
 
 config OPENTHREAD_PLATFORM_CSL_UNCERT
-	int "CSL clock uncertainty"
+	int "CSL uncertainty"
 	default 255
+	range 0 255
 	help
-	  The Uncertainty of the scheduling CSL of transmission by the parent, in ±10 us units.
+	  The fixed uncertainty of the Device for scheduling CSL Transmissions in units of 10 microseconds.
 
 config OPENTHREAD_MAC_SOFTWARE_TX_SECURITY_ENABLE
-	bool "Enable software transmission security logic"
+	bool "Software transmission security logic"
 	default y if OPENTHREAD_THREAD_VERSION_1_2
 
 config OPENTHREAD_MLE_INFORM_PREVIOUS_PARENT_ON_REATTACH
@@ -119,7 +116,7 @@ config OPENTHREAD_MLE_INFORM_PREVIOUS_PARENT_ON_REATTACH
 	  router, enable the Inform Previous Parent on Reattach feature.
 
 config OPENTHREAD_PARENT_SEARCH
-	bool "Enable periodic parent search support"
+	bool "Periodic parent search support"
 	help
 	  To allow end devices (EDs) in a Thread network to switch to a
 	  better parent router than their current one—while still attached
@@ -156,12 +153,12 @@ config OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS
 	default 2
 
 config OPENTHREAD_TCP_ENABLE
-	bool "Enable TCP"
+	bool "TCP"
 
 config OPENTHREAD_CLI_TCP_ENABLE
-	bool "Enable TCP in the CLI tool"
+	bool "TCP in the CLI tool"
 	default y if SHELL
 	depends on OPENTHREAD_TCP_ENABLE
 
 config OPENTHREAD_HISTORY_TRACKER
-	bool "Enable history tracker support"
+	bool "History tracker support"

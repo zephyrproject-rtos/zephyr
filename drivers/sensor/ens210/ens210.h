@@ -7,9 +7,9 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ENS210_ENS210_H_
 #define ZEPHYR_DRIVERS_SENSOR_ENS210_ENS210_H_
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
 
 /* Registers */
 #define ENS210_REG_PART_ID    0x00

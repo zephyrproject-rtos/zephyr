@@ -192,7 +192,7 @@ class CheckPatch(ComplianceTest):
 
     """
     name = "checkpatch"
-    doc = "See https://docs.zephyrproject.org/latest/contribute/#coding-style for more details."
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#coding-style for more details."
     path_hint = "<git-top>"
 
     def run(self):
@@ -219,7 +219,7 @@ class CheckPatch(ComplianceTest):
 class KconfigCheck(ComplianceTest):
     """
     Checks is we are introducing any new warnings/errors with Kconfig,
-    for example using undefiend Kconfig variables.
+    for example using undefined Kconfig variables.
     """
     name = "Kconfig"
     doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
@@ -231,6 +231,8 @@ class KconfigCheck(ComplianceTest):
         self.check_top_menu_not_too_long(kconf)
         self.check_no_pointless_menuconfigs(kconf)
         self.check_no_undef_within_kconfig(kconf)
+        self.check_no_redefined_in_defconfig(kconf)
+        self.check_no_enable_in_boolean_prompt(kconf)
         if full:
             self.check_no_undef_outside_kconfig(kconf)
 
@@ -343,6 +345,42 @@ Expected no more than {} potentially visible items (items with prompts) in the
 top-level Kconfig menu, found {} items. If you're deliberately adding new
 entries, then bump the 'max_top_items' variable in {}.
 """.format(max_top_items, n_top_items, __file__))
+
+    def check_no_redefined_in_defconfig(self, kconf):
+        # Checks that no symbols are (re)defined in defconfigs.
+
+        for node in kconf.node_iter():
+            if "defconfig" in node.filename and (node.prompt or node.help):
+                self.add_failure(f"""
+Kconfig node '{node.item.name}' found with prompt or help in {node.filename}.
+Options must not be defined in defconfig files.
+""")
+                continue
+
+    def check_no_enable_in_boolean_prompt(self, kconf):
+        # Checks that boolean's prompt does not start with "Enable...".
+
+        for node in kconf.node_iter():
+            # skip Kconfig nodes not in-tree (will present an absolute path)
+            if os.path.isabs(node.filename):
+                continue
+
+            # 'kconfiglib' is global
+            # pylint: disable=undefined-variable
+
+            # only process boolean symbols with a prompt
+            if (not isinstance(node.item, kconfiglib.Symbol) or
+                node.item.type != kconfiglib.BOOL or
+                not node.prompt or
+                not node.prompt[0]):
+                continue
+
+            if re.match(r"^[Ee]nable.*", node.prompt[0]):
+                self.add_failure(f"""
+Boolean option '{node.item.name}' prompt must not start with 'Enable...'. Please
+check Kconfig guidelines.
+""")
+                continue
 
     def check_no_pointless_menuconfigs(self, kconf):
         # Checks that there are no pointless 'menuconfig' symbols without
@@ -523,6 +561,8 @@ UNDEF_KCONFIG_WHITELIST = {
     "REG2",
     "SAMPLE_MODULE_LOG_LEVEL",  # Used as an example in samples/subsys/logging
     "SAMPLE_MODULE_LOG_LEVEL_DBG",  # Used in tests/subsys/logging/log_api
+    "LOG_BACKEND_MOCK_OUTPUT_DEFAULT", #Referenced in tests/subsys/logging/log_syst
+    "LOG_BACKEND_MOCK_OUTPUT_SYST", #Referenced in testcase.yaml of log_syst test
     "SEL",
     "SHIFT",
     "SOC_WATCH",  # Issue 13749
@@ -548,7 +588,7 @@ UNDEF_KCONFIG_WHITELIST = {
 class KconfigBasicCheck(KconfigCheck, ComplianceTest):
     """
     Checks is we are introducing any new warnings/errors with Kconfig,
-    for example using undefiend Kconfig variables.
+    for example using undefined Kconfig variables.
     This runs the basic Kconfig test, which is checking only for undefined
     references inside the Kconfig tree.
     """
@@ -697,7 +737,7 @@ class Nits(ComplianceTest):
     already covered by e.g. checkpatch.pl and pylint.
     """
     name = "Nits"
-    doc = "See https://docs.zephyrproject.org/latest/contribute/#coding-style for more details."
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#coding-style for more details."
     path_hint = "<git-top>"
 
     def run(self):
@@ -795,7 +835,7 @@ class GitLint(ComplianceTest):
 
     """
     name = "Gitlint"
-    doc = "See https://docs.zephyrproject.org/latest/contribute/#commit-guidelines for more details"
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#commit-guidelines for more details"
     path_hint = "<git-top>"
 
     def run(self):
@@ -883,7 +923,7 @@ class Identity(ComplianceTest):
     Checks if Emails of author and signed-off messages are consistent.
     """
     name = "Identity"
-    doc = "See https://docs.zephyrproject.org/latest/contribute/#commit-guidelines for more details"
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#commit-guidelines for more details"
     # git rev-list and git log don't depend on the current (sub)directory
     # unless explicited
     path_hint = "<git-top>"

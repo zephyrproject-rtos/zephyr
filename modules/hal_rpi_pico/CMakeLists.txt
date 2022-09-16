@@ -27,17 +27,19 @@ if(CONFIG_HAS_RPI_PICO)
       SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/bootloader
       BINARY_DIR ${rp2_bootloader_prefix}
       CMAKE_ARGS
+        -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
         -DCMAKE_ASM_COMPILER=${CMAKE_ASM_COMPILER}
         -DZEPHYR_HAL_RPI_PICO_MODULE_DIR=${ZEPHYR_HAL_RPI_PICO_MODULE_DIR}
         -DZEPHYR_BASE=${ZEPHYR_BASE}
         -DFLASH_TYPE=${flash_type}
         -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}
+        -DCONFIG_LEGACY_INCLUDE_PATH=$<BOOL:${CONFIG_LEGACY_INCLUDE_PATH}>
       INSTALL_COMMAND "" # No installation needed
-      BUILD_BYPRODUCTS ${rp2_bootloader_prefix}/boot_stage2.S
+      BUILD_BYPRODUCTS ${rp2_bootloader_prefix}/boot_stage2
       BUILD_ALWAYS TRUE
       )
-    zephyr_library_sources(${rp2_bootloader_prefix}/boot_stage2.S)
+    zephyr_library_sources(${rp2_bootloader_prefix}/boot_stage2)
   endif()
 
   # Pico sources and headers necessary for every build.
@@ -50,6 +52,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2_common_dir}/hardware_xosc/xosc.c
     ${rp2_common_dir}/hardware_watchdog/watchdog.c
     ${rp2_common_dir}/pico_platform/platform.c
+    ${rp2_common_dir}/pico_bootrom/bootrom.c
   )
 
   zephyr_include_directories(
@@ -62,6 +65,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2_common_dir}/hardware_sync/include
     ${rp2_common_dir}/hardware_timer/include
     ${rp2_common_dir}/hardware_resets/include
+    ${rp2_common_dir}/pico_bootrom/include
     ${rp2040_dir}/hardware_regs/include
     ${rp2040_dir}/hardware_structs/include
     ${common_dir}/pico_base/include
@@ -78,4 +82,21 @@ if(CONFIG_HAS_RPI_PICO)
           ${rp2_common_dir}/hardware_uart/uart.c)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_UART
           ${rp2_common_dir}/hardware_uart/include)
+
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_FLASH
+          ${rp2_common_dir}/hardware_flash/flash.c)
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_FLASH
+          ${rp2_common_dir}/hardware_flash/include)
+
+  # Some flash driver functions must be executed from the RAM.
+  # Originally pico-sdk places them in the RW data section, so this
+  # implementation does the same.
+  zephyr_linker_sources_ifdef(CONFIG_PICOSDK_USE_FLASH RWDATA timecritical.ld)
+
+  # A function in flash.c adds 1 to a function pointer, causing a warning
+  set_source_files_properties(
+    ${rp2_common_dir}/hardware_flash/flash.c
+    PROPERTIES
+    COMPILE_FLAGS $<TARGET_PROPERTY:compiler,warning_no_pointer_arithmetic>
+  )
 endif()

@@ -69,12 +69,12 @@
 #include "mbedtls/error.h"
 
 #include <zephyr/types.h>
-#include <sys/byteorder.h>
-#include <random/rand32.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/random/rand32.h>
 
-#include "kernel.h"
+#include <zephyr/kernel.h>
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #define  MBEDTLS_PRINT ((int(*)(const char *, ...)) printk)
 
 static void my_debug(void *ctx, int level,

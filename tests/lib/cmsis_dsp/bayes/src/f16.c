@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <arm_math_f16.h>
 #include "../../common/test_common.h"
@@ -15,7 +15,11 @@
 
 #define REL_ERROR_THRESH	(3.0e-3)
 
-void test_gaussian_naive_bayes_predict_f16(void)
+/* Note: this source file is only built when CONFIG_CMSIS_DSP_FLOAT16 is enabled */
+
+ZTEST_SUITE(bayes_f16, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(bayes_f16, test_gaussian_naive_bayes_predict_f16)
 {
 	arm_gaussian_naive_bayes_instance_f16 inst;
 
@@ -79,13 +83,4 @@ void test_gaussian_naive_bayes_predict_f16(void)
 	/* Free output buffers */
 	free(output_probs_buf);
 	free(output_preds_buf);
-}
-
-void test_bayes_f16(void)
-{
-	ztest_test_suite(bayes_f16,
-		ztest_unit_test(test_gaussian_naive_bayes_predict_f16)
-		);
-
-	ztest_run_test_suite(bayes_f16);
 }

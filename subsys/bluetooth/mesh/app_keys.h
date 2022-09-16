@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_SUBSYS_BLUETOOTH_MESH_APP_KEYS_H_
 #define ZEPHYR_SUBSYS_BLUETOOTH_MESH_APP_KEYS_H_
 
-#include <bluetooth/mesh.h>
+#include <zephyr/bluetooth/mesh.h>
 #include "subnet.h"
 
 /** @brief Reset the app keys module. */

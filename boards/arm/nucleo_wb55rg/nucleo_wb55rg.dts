@@ -189,38 +189,38 @@ zephyr_udc0: &usb {
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/reference/devicetree/index.html#fixed-flash-partitions
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Set all partitions with first 808K of flash */
-		/* last 216K are reseved for M0 usage */
-		/* Configure partitions to make use of the whole 808K */
+		/*
+		 * Configure partitions while leaving space for M0 BLE f/w
+		 * First 794K are configured for Zephyr to run on M4 core
+		 * Last 232K are left for BLE f/w on the M0 core
+		 * This partition set up is compatible with use of
+		 * stm32wb5x_BLE_Stack_full_fw.bin v1.13.x
+		 */
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0xc000>;
+			reg = <0x00000000 DT_SIZE_K(48)>;
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x5c000>;
+			reg = <0x0000c000 DT_SIZE_K(360)>;
 		};
-		slot1_partition: partition@68000 {
+		slot1_partition: partition@66000 {
 			label = "image-1";
-			reg = <0x00068000 0x5c000>;
+			reg = <0x00066000 DT_SIZE_K(360)>;
 		};
-		scratch_partition: partition@c4000 {
+		scratch_partition: partition@c0000 {
 			label = "image-scratch";
-			reg = <0x000c4000 0x4000>;
+			reg = <0x000c0000 DT_SIZE_K(16)>;
 		};
-		storage_partition: partition@c8000 {
+		storage_partition: partition@c4000 {
 			label = "storage";
-			reg = <0x000c8000 0x2000>;
+			reg = <0x000c4000 DT_SIZE_K(8)>;
 		};
 
 	};

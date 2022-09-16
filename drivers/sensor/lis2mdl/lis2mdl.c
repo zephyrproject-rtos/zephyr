@@ -10,13 +10,13 @@
 
 #define DT_DRV_COMPAT st_lis2mdl
 
-#include <init.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
-#include <pm/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "lis2mdl.h"
 
 /* Based on the data sheet, the maximum turn-on time is ("9.4 ms + 1/ODR") when
@@ -238,7 +238,7 @@ static int lis2mdl_sample_fetch_mag(const struct device *dev)
 			 * cancellation is enabled in the single mode. Then the
 			 * average of the first measurement done above and this
 			 * one would be the final value. This process is not
-			 * needed in continuous mode since it has beed taken
+			 * needed in continuous mode since it has been taken
 			 * care by lis2mdl itself automatically. Please refer
 			 * to the application note for more details.
 			 */
@@ -398,7 +398,7 @@ static int lis2mdl_init(const struct device *dev)
 		rc = lis2mdl_set_rst_sensor_single_set(ctx,
 							PROPERTY_ENABLE);
 		if (rc) {
-			LOG_ERR("Set offset cancelaltion failed");
+			LOG_ERR("Set offset cancellation failed");
 			return rc;
 		}
 	}
@@ -425,7 +425,7 @@ static int lis2mdl_init(const struct device *dev)
 		rc = lis2mdl_operating_mode_set(ctx,
 						LIS2MDL_CONTINUOUS_MODE);
 		if (rc) {
-			LOG_ERR("set continuos mode failed");
+			LOG_ERR("set continuous mode failed");
 			return rc;
 		}
 	}

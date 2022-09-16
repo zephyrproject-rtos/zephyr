@@ -4,22 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
-#include <kernel_structs.h>
-#include <sys/sys_io.h>
-#include <sys/__assert.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/__assert.h>
 #include <xtensa/corebits.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 
 #include "soc.h"
 #include "memory.h"
 
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
-#include <drivers/ipm.h>
+#include <zephyr/drivers/ipm.h>
 #include <ipm/ipm_cavs_idc.h>
 
 static const struct device *idc;

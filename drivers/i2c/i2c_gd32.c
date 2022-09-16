@@ -7,13 +7,13 @@
 #define DT_DRV_COMPAT gd_gd32_i2c
 
 #include <errno.h>
-#include <kernel.h>
-#include <devicetree.h>
-#include <drivers/pinctrl.h>
-#include <drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/i2c.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_gd32, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
@@ -429,7 +429,7 @@ static int i2c_gd32_transfer(const struct device *dev,
 
 	current = msgs;
 
-	/* First message flags implict contain I2C_MSG_RESTART flag. */
+	/* First message flags implicitly contain I2C_MSG_RESTART flag. */
 	current->flags |= I2C_MSG_RESTART;
 
 	for (uint8_t i = 1; i <= num_msgs; i++) {
@@ -453,7 +453,7 @@ static int i2c_gd32_transfer(const struct device *dev,
 				return -EINVAL;
 			}
 		} else {
-			/* Last message flags implict contain I2C_MSG_STOP flag. */
+			/* Last message flags implicitly contain I2C_MSG_STOP flag. */
 			current->flags |= I2C_MSG_STOP;
 		}
 

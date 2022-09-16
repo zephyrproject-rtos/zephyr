@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT ti_bq274xx
 
-#include <drivers/i2c.h>
-#include <init.h>
-#include <drivers/sensor.h>
-#include <pm/device.h>
-#include <sys/__assert.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/__assert.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "bq274xx.h"
 
@@ -530,7 +530,7 @@ static int bq274xx_gauge_configure(const struct device *dev)
 				    BQ274XX_EXTENDED_BLOCKDATA_DESIGN_CAP_LOW,
 				    designcap_lsb);
 	if (status < 0) {
-		LOG_ERR("Failed to erite designCAP LSB");
+		LOG_ERR("Failed to write designCAP LSB");
 		return -EIO;
 	}
 
@@ -546,7 +546,7 @@ static int bq274xx_gauge_configure(const struct device *dev)
 				    BQ274XX_EXTENDED_BLOCKDATA_DESIGN_ENR_LOW,
 				    designenergy_lsb);
 	if (status < 0) {
-		LOG_ERR("Failed to erite designEnergy LSB");
+		LOG_ERR("Failed to write designEnergy LSB");
 		return -EIO;
 	}
 
@@ -580,7 +580,7 @@ static int bq274xx_gauge_configure(const struct device *dev)
 				    BQ274XX_EXTENDED_BLOCKDATA_TAPERRATE_LOW,
 				    taperrate_lsb);
 	if (status < 0) {
-		LOG_ERR("Failed to erite taperRate LSB");
+		LOG_ERR("Failed to write taperRate LSB");
 		return -EIO;
 	}
 

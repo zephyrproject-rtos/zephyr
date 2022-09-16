@@ -12,12 +12,12 @@
  *        for RISC-V processors
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/init.h>
 #include <soc.h>
 
-#include <sw_isr_table.h>
+#include <zephyr/sw_isr_table.h>
 
 #define PLIC_MAX_PRIO	DT_INST_PROP(0, riscv_max_priority)
 #define PLIC_PRIO	DT_INST_REG_ADDR_BY_NAME(0, prio)
@@ -208,4 +208,4 @@ static int plic_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(plic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(plic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);

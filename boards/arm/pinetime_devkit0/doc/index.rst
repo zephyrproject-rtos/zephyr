@@ -185,7 +185,7 @@ Debugging
 Using Segger Ozone debugger, debugging and flashing is made easy.
 
 Simply load the .elf file containing the final firmware and
-setup the debbuger to use SWD over USB for the chip nRF52832_xxAA.
+setup the debugger to use SWD over USB for the chip nRF52832_xxAA.
 This setup can be done using the menu Tools/J-Link Settings. or by directly
 typing the following in the debugger console:
 

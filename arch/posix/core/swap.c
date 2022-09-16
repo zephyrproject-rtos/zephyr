@@ -13,17 +13,17 @@
  *
  */
 
-#include "kernel.h"
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include "posix_core.h"
-#include "irq.h"
+#include <zephyr/irq.h>
 #include "kswap.h"
-#include <pm/pm.h>
+#include <zephyr/pm/pm.h>
 
 int arch_swap(unsigned int key)
 {
 	/*
-	 * struct k_thread * _current is the currently runnig thread
+	 * struct k_thread * _current is the currently running thread
 	 * struct k_thread * _kernel.ready_q.cache contains the next thread to
 	 * run (cannot be NULL)
 	 *

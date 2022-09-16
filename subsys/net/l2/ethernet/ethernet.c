@@ -4,26 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 
-#include <net/net_core.h>
-#include <net/net_l2.h>
-#include <net/net_if.h>
-#include <net/net_mgmt.h>
-#include <net/ethernet.h>
-#include <net/ethernet_mgmt.h>
-#include <net/gptp.h>
-#include <random/rand32.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/ethernet_mgmt.h>
+#include <zephyr/net/gptp.h>
+#include <zephyr/random/rand32.h>
 
 #if defined(CONFIG_NET_LLDP)
-#include <net/lldp.h>
+#include <zephyr/net/lldp.h>
 #endif
 
-#include <syscall_handler.h>
-#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
-#include <net/can.h>
-#endif
+#include <zephyr/syscall_handler.h>
 
 #include "arp.h"
 #include "eth_stats.h"
@@ -257,6 +254,11 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		goto drop;
 #endif
 	default:
+		if (IS_ENABLED(CONFIG_NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE)) {
+			family = AF_UNSPEC;
+			break;
+		}
+
 		NET_DBG("Unknown hdr type 0x%04x iface %p", type, iface);
 		goto drop;
 	}
@@ -291,12 +293,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			       net_pkt_lladdr_src(pkt),
 			       net_pkt_lladdr_dst(pkt));
 	}
-
-#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
-	if (net_canbus_translate_eth_frame(iface, pkt) == NET_OK) {
-		return NET_OK;
-	}
-#endif
 
 	if (!net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr) &&
 	    !net_eth_is_addr_multicast((struct net_eth_addr *)lladdr->addr) &&
@@ -673,7 +669,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	} else if (IS_ENABLED(CONFIG_NET_LLDP) && net_pkt_is_lldp(pkt)) {
 		ptype = htons(NET_ETH_PTYPE_LLDP);
 	} else if (IS_ENABLED(CONFIG_NET_ARP)) {
-		/* Unktown type: Unqueued pkt is an ARP reply.
+		/* Unknown type: Unqueued pkt is an ARP reply.
 		 */
 		ptype = htons(NET_ETH_PTYPE_ARP);
 		net_pkt_set_family(pkt, AF_INET);

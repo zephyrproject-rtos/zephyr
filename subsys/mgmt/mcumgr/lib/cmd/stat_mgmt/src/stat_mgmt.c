@@ -4,35 +4,109 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
 #include <stdio.h>
 
-#include "mgmt/mgmt.h"
-#include "cborattr/cborattr.h"
-#include "stat_mgmt/stat_mgmt.h"
-#include "stat_mgmt/stat_mgmt_impl.h"
-#include "stat_mgmt/stat_mgmt_config.h"
+#include <zephyr/stats/stats.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
+#include <mgmt/mgmt.h>
+#include <stat_mgmt/stat_mgmt_config.h>
+#include <stat_mgmt/stat_mgmt.h>
+#include <zcbor_common.h>
+#include <zcbor_decode.h>
+#include <zcbor_encode.h>
 
 static struct mgmt_handler stat_mgmt_handlers[];
 
+typedef int stat_mgmt_foreach_entry_fn(zcbor_state_t *zse, struct stat_mgmt_entry *entry);
+
 static int
-stat_mgmt_cb_encode(struct stat_mgmt_entry *entry, void *arg)
+stats_mgmt_count_plus_one(struct stats_hdr *hdr, void *arg, const char *name, uint16_t off)
 {
-	CborEncoder *enc;
-	CborError err;
+	size_t *counter = arg;
 
-	enc = arg;
-
-	err = 0;
-	err |= cbor_encode_text_stringz(enc, entry->name);
-	err |= cbor_encode_uint(enc, entry->value);
-
-	if (err != 0) {
-		return MGMT_ERR_ENOMEM;
-	}
+	(*counter)++;
 
 	return 0;
+}
+
+static int
+stat_mgmt_count(const char *group_name, size_t *counter)
+{
+	struct stats_hdr *hdr = stats_group_find(group_name);
+
+	if (hdr == NULL) {
+		return MGMT_ERR_ENOENT;
+	}
+
+	*counter = 0;
+
+	return stats_walk(hdr, stats_mgmt_count_plus_one, &counter);
+}
+
+static int
+stat_mgmt_walk_cb(struct stats_hdr *hdr, void *arg, const char *name, uint16_t off);
+
+struct stat_mgmt_walk_arg {
+	stat_mgmt_foreach_entry_fn *cb;
+	zcbor_state_t *zse;
+};
+
+static int
+stat_mgmt_walk_cb(struct stats_hdr *hdr, void *arg, const char *name, uint16_t off)
+{
+	struct stat_mgmt_walk_arg *walk_arg;
+	struct stat_mgmt_entry entry;
+	void *stat_val;
+
+	walk_arg = arg;
+
+	stat_val = (uint8_t *)hdr + off;
+	switch (hdr->s_size) {
+	case sizeof(uint16_t):
+		entry.value = *(uint16_t *) stat_val;
+		break;
+	case sizeof(uint32_t):
+		entry.value = *(uint32_t *) stat_val;
+		break;
+	case sizeof(uint64_t):
+		entry.value = *(uint64_t *) stat_val;
+		break;
+	default:
+		return MGMT_ERR_EINVAL;
+	}
+	entry.name = name;
+
+	return walk_arg->cb(walk_arg->zse, &entry);
+}
+
+static int
+stat_mgmt_foreach_entry(zcbor_state_t *zse, const char *group_name, stat_mgmt_foreach_entry_fn *cb)
+{
+	struct stat_mgmt_walk_arg walk_arg;
+	struct stats_hdr *hdr;
+
+	hdr = stats_group_find(group_name);
+	if (hdr == NULL) {
+		return MGMT_ERR_ENOENT;
+	}
+
+	walk_arg = (struct stat_mgmt_walk_arg) {
+		.cb = cb,
+		.zse = zse
+	};
+
+	return stats_walk(hdr, stat_mgmt_walk_cb, &walk_arg);
+}
+
+static int
+stat_mgmt_cb_encode(zcbor_state_t *zse, struct stat_mgmt_entry *entry)
+{
+	bool ok = zcbor_tstr_put_term(zse, entry->name) &&
+		  zcbor_uint32_put(zse, entry->value);
+
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 /**
@@ -41,44 +115,64 @@ stat_mgmt_cb_encode(struct stat_mgmt_entry *entry, void *arg)
 static int
 stat_mgmt_show(struct mgmt_ctxt *ctxt)
 {
+	struct zcbor_string value = { 0 };
+	zcbor_state_t *zse = ctxt->cnbe->zs;
+	zcbor_state_t *zsd = ctxt->cnbd->zs;
 	char stat_name[STAT_MGMT_MAX_NAME_LEN];
-	CborEncoder map_enc;
-	CborError err;
-	int rc;
+	bool ok;
+	size_t counter = 0;
 
-	struct cbor_attr_t attrs[] = {
-		{
-			.attribute = "name",
-			.type = CborAttrTextStringType,
-			.addr.string = stat_name,
-			.len = sizeof(stat_name)
-		},
-		{ NULL },
-	};
+	if (!zcbor_map_start_decode(zsd)) {
+		return MGMT_ERR_EUNKNOWN;
+	}
 
-	err = cbor_read_object(&ctxt->it, attrs);
-	if (err != 0) {
+	/* Only interested in "name" keyword */
+	do {
+		struct zcbor_string key;
+		static const char name_key[] = "name";
+
+		ok = zcbor_tstr_decode(zsd, &key);
+
+		if (ok) {
+			if (key.len == (ARRAY_SIZE(name_key) - 1) &&
+			    memcmp(key.value, name_key, ARRAY_SIZE(name_key) - 1) == 0) {
+				ok = zcbor_tstr_decode(zsd, &value);
+				break;
+			}
+
+			ok = zcbor_any_skip(zsd, NULL);
+		}
+	} while (ok);
+
+	if (!ok || value.len == 0 || value.len >= ARRAY_SIZE(stat_name)) {
 		return MGMT_ERR_EINVAL;
 	}
 
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "rc");
-	err |= cbor_encode_int(&ctxt->encoder, MGMT_ERR_EOK);
+	memcpy(stat_name, value.value, value.len);
+	stat_name[value.len] = '\0';
 
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "name");
-	err |= cbor_encode_text_stringz(&ctxt->encoder, stat_name);
-
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "fields");
-	err |= cbor_encoder_create_map(&ctxt->encoder, &map_enc, CborIndefiniteLength);
-
-	rc = stat_mgmt_impl_foreach_entry(stat_name, stat_mgmt_cb_encode,
-									  &map_enc);
-
-	err |= cbor_encoder_close_container(&ctxt->encoder, &map_enc);
-	if (err != 0) {
-		rc = MGMT_ERR_ENOMEM;
+	if (stat_mgmt_count(stat_name, &counter) != 0) {
+		return MGMT_ERR_EUNKNOWN;
 	}
 
-	return rc;
+	ok = zcbor_tstr_put_lit(zse, "rc")		&&
+	     zcbor_int32_put(zse, MGMT_ERR_EOK)		&&
+	     zcbor_tstr_put_lit(zse, "name")		&&
+	     zcbor_tstr_encode(zse, &value)		&&
+	     zcbor_tstr_put_lit(zse, "fields")		&&
+	     zcbor_map_start_encode(zse, counter);
+
+	if (ok) {
+		int rc = stat_mgmt_foreach_entry(zse, stat_name,
+						 stat_mgmt_cb_encode);
+
+		if (rc != MGMT_ERR_EOK) {
+			return rc;
+		}
+	}
+
+	ok = ok && zcbor_map_end_encode(zse, counter);
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 /**
@@ -87,39 +181,41 @@ stat_mgmt_show(struct mgmt_ctxt *ctxt)
 static int
 stat_mgmt_list(struct mgmt_ctxt *ctxt)
 {
-	const char *group_name;
-	CborEncoder arr_enc;
-	CborError err;
-	int rc;
-	int i;
+	const struct stats_hdr *cur = NULL;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
+	bool ok;
+	size_t counter = 0;
 
-	err = CborNoError;
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "rc");
-	err |= cbor_encode_int(&ctxt->encoder, MGMT_ERR_EOK);
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "stat_list");
-	err |= cbor_encoder_create_array(&ctxt->encoder, &arr_enc, CborIndefiniteLength);
+	do {
+		cur = stats_group_get_next(cur);
+		if (cur != NULL) {
+			counter++;
+		}
+	} while (cur != NULL);
 
+	ok = zcbor_tstr_put_lit(zse, "rc")		&&
+	     zcbor_int32_put(zse, MGMT_ERR_EOK)		&&
+	     zcbor_tstr_put_lit(zse, "stat_list")	&&
+	     zcbor_list_start_encode(zse, counter);
+
+	if (!ok) {
+		return MGMT_ERR_EMSGSIZE;
+	}
 	/* Iterate the list of stat groups, encoding each group's name in the CBOR
 	 * array.
 	 */
-	for (i = 0; ; i++) {
-		rc = stat_mgmt_impl_get_group(i, &group_name);
-		if (rc == MGMT_ERR_ENOENT) {
-			/* No more stat groups. */
-			break;
-		} else if (rc != 0) {
-			/* Error. */
-			cbor_encoder_close_container(&ctxt->encoder, &arr_enc);
-			return rc;
+	cur = NULL;
+	do {
+		cur = stats_group_get_next(cur);
+		if (cur != NULL) {
+			ok = zcbor_tstr_put_term(zse, cur->s_name);
 		}
+	} while (ok && cur != NULL);
 
-		err |= cbor_encode_text_stringz(&ctxt->encoder, group_name);
+	if (!ok || !zcbor_list_end_encode(zse, counter)) {
+		return MGMT_ERR_EMSGSIZE;
 	}
-	err |= cbor_encoder_close_container(&ctxt->encoder, &arr_enc);
 
-	if (err != 0) {
-		return MGMT_ERR_ENOMEM;
-	}
 	return 0;
 }
 

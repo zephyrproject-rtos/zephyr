@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <espressif/esp32s2.dtsi>
+#include "esp32s2_saola-pinctrl.dtsi"
 
 / {
 	model = "esp32s2_saola";
@@ -31,8 +32,8 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <43>;
-	rx-pin = <44>;
+	pinctrl-0 = <&uart0_tx_gpio43 &uart0_rx_gpio44>;
+	pinctrl-names = "default";
 };
 
 &gpio0 {
@@ -62,14 +63,14 @@
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	sda-pin = <8>;
-	scl-pin = <9>;
+	pinctrl-0 = <&i2c0_sda_gpio8 &i2c0_scl_gpio9>;
+	pinctrl-names = "default";
 };
 
 &i2c1 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	sda-pin = <3>;
-	scl-pin = <4>;
+	pinctrl-0 = <&i2c1_sda_gpio3 &i2c1_scl_gpio4>;
+	pinctrl-names = "default";
 };
 
 &trng0 {
@@ -80,20 +81,18 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	miso-pin = <13>;
-	mosi-pin = <11>;
-	sclk-pin = <12>;
-	csel-pin = <10>;
+	pinctrl-0 = <&spim2_miso_gpio13 &spim2_mosi_gpio11
+		     &spim2_sclk_gpio12 &spim2_csel_gpio10>;
+	pinctrl-names = "default";
 };
 
 &spi3 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	miso-pin = <37>;
-	mosi-pin = <35>;
-	sclk-pin = <36>;
-	csel-pin = <34>;
+	pinctrl-0 = <&spim3_miso_gpio37 &spim3_mosi_gpio35
+		     &spim3_sclk_gpio36 &spim3_csel_gpio34>;
+	pinctrl-names = "default";
 };
 
 &flash0 {
@@ -103,9 +102,39 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		storage_partition: partition@9000 {
+		/* Reserve 60kB for the bootloader */
+		boot_partition: partition@1000 {
+			label = "mcuboot";
+			reg = <0x00001000 0x0000F000>;
+			read-only;
+		};
+
+		/* Reserve 1024kB for the application in slot 0 */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0x00100000>;
+		};
+
+		/* Reserve 1024kB for the application in slot 1 */
+		slot1_partition: partition@110000 {
+			label = "image-1";
+			reg = <0x00110000 0x00100000>;
+		};
+
+		/* Reserve 256kB for the scratch partition */
+		scratch_partition: partition@210000 {
+			   label = "image-scratch";
+			   reg = <0x00210000 0x00040000>;
+		};
+
+		storage_partition: partition@250000 {
 			label = "storage";
 			reg = <0x00009000 0x00006000>;
+			reg = <0x00250000 0x00006000>;
 		};
 	};
+};
+
+&wdt0 {
+	status = "okay";
 };

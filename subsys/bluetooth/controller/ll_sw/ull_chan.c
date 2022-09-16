@@ -8,8 +8,8 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <toolchain.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h>
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -50,13 +50,17 @@ uint8_t ll_chm_update(uint8_t const *const chm)
 	(void)ull_central_chm_update();
 #endif /* CONFIG_BT_CENTRAL */
 
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+	(void)ull_adv_aux_chm_update();
+#endif /*(CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 	(void)ull_adv_sync_chm_update();
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
-#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
-	(void)ull_adv_aux_chm_update();
-#endif /*(CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	(void)ull_adv_iso_chm_update();
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 	/* TODO: Should failure due to Channel Map Update being already in
 	 *       progress be returned to caller?

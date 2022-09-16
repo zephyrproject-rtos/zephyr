@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <kernel_internal.h>
 #include <inttypes.h>
-#include <exc_handle.h>
-#include <logging/log.h>
+#include <zephyr/exc_handle.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_USERSPACE
@@ -39,7 +40,10 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 		LOG_ERR("     a5: " PR_REG "    t5: " PR_REG, esf->a5, esf->t5);
 		LOG_ERR("     a6: " PR_REG "    t6: " PR_REG, esf->a6, esf->t6);
 		LOG_ERR("     a7: " PR_REG, esf->a7);
-		LOG_ERR("         " NO_REG "    tp: " PR_REG, esf->tp);
+#ifdef CONFIG_USERSPACE
+		LOG_ERR("     sp: " PR_REG, esf->sp);
+#endif
+		LOG_ERR("     tp: " PR_REG, esf->tp);
 		LOG_ERR("     ra: " PR_REG, esf->ra);
 		LOG_ERR("   mepc: " PR_REG, esf->mepc);
 		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
@@ -86,6 +90,51 @@ static char *cause_str(ulong_t cause)
 	}
 }
 
+static bool bad_stack_pointer(z_arch_esf_t *esf)
+{
+#ifdef CONFIG_PMP_STACK_GUARD
+	/*
+	 * Check if the kernel stack pointer prior this exception (before
+	 * storing the exception stack frame) was in the stack guard area.
+	 */
+	uintptr_t sp = (uintptr_t)esf + sizeof(z_arch_esf_t);
+
+#ifdef CONFIG_USERSPACE
+	if (_current->arch.priv_stack_start != 0 &&
+	    sp >= _current->arch.priv_stack_start &&
+	    sp <  _current->arch.priv_stack_start + Z_RISCV_STACK_GUARD_SIZE) {
+		return true;
+	}
+
+	if (z_stack_is_user_capable(_current->stack_obj) &&
+	    sp >= _current->stack_info.start - K_THREAD_STACK_RESERVED &&
+	    sp <  _current->stack_info.start - K_THREAD_STACK_RESERVED
+		  + Z_RISCV_STACK_GUARD_SIZE) {
+		return true;
+	}
+#endif /* CONFIG_USERSPACE */
+
+	if (sp >= _current->stack_info.start - K_KERNEL_STACK_RESERVED &&
+	    sp <  _current->stack_info.start - K_KERNEL_STACK_RESERVED
+		  + Z_RISCV_STACK_GUARD_SIZE) {
+		return true;
+	}
+#endif /* CONFIG_PMP_STACK_GUARD */
+
+#ifdef CONFIG_USERSPACE
+	if ((esf->mstatus & MSTATUS_MPP) == 0 &&
+	    (esf->sp < _current->stack_info.start ||
+	     esf->sp > _current->stack_info.start +
+		       _current->stack_info.size -
+		       _current->stack_info.delta)) {
+		/* user stack pointer moved outside of its allowed stack */
+		return true;
+	}
+#endif
+
+	return false;
+}
+
 void _Fault(z_arch_esf_t *esf)
 {
 #ifdef CONFIG_USERSPACE
@@ -103,6 +152,7 @@ void _Fault(z_arch_esf_t *esf)
 		}
 	}
 #endif /* CONFIG_USERSPACE */
+
 	ulong_t mcause;
 
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
@@ -121,11 +171,9 @@ void _Fault(z_arch_esf_t *esf)
 
 	unsigned int reason = K_ERR_CPU_EXCEPTION;
 
-#if !defined(CONFIG_USERSPACE)
-	if (esf->t5 == ARCH_EXCEPT_MARKER) {
-		reason = esf->t6;
+	if (bad_stack_pointer(esf)) {
+		reason = K_ERR_STACK_CHK_FAIL;
 	}
-#endif
 
 	z_riscv_fatal_error(reason, esf);
 }

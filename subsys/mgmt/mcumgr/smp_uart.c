@@ -9,14 +9,14 @@
  */
 
 #include <string.h>
-#include <zephyr.h>
-#include <init.h>
-#include "net/buf.h"
-#include <drivers/console/uart_mcumgr.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
+#include <zephyr/drivers/console/uart_mcumgr.h>
 #include "mgmt/mgmt.h"
-#include <mgmt/mcumgr/serial.h>
-#include "mgmt/mcumgr/buf.h"
-#include "mgmt/mcumgr/smp.h"
+#include <zephyr/mgmt/mcumgr/serial.h>
+#include <zephyr/mgmt/mcumgr/smp.h>
 
 struct device;
 

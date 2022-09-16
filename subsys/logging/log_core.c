@@ -3,22 +3,24 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <logging/log_msg.h>
+#include <zephyr/logging/log_msg.h>
 #include "log_list.h"
-#include <logging/log.h>
-#include <logging/log_backend.h>
-#include <logging/log_ctrl.h>
-#include <logging/log_output.h>
-#include <logging/log_internal.h>
-#include <sys/mpsc_pbuf.h>
-#include <sys/printk.h>
-#include <sys_clock.h>
-#include <init.h>
-#include <sys/__assert.h>
-#include <sys/atomic.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_internal.h>
+#include <zephyr/sys/mpsc_pbuf.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <ctype.h>
-#include <logging/log_frontend.h>
-#include <syscall_handler.h>
+#include <zephyr/logging/log_frontend.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/logging/log_output_dict.h>
+#include <zephyr/linker/utils.h>
 
 LOG_MODULE_REGISTER(log);
 
@@ -56,6 +58,37 @@ LOG_MODULE_REGISTER(log);
 
 #ifndef CONFIG_LOG_BUFFER_SIZE
 #define CONFIG_LOG_BUFFER_SIZE 4
+#endif
+
+#ifndef CONFIG_LOG_TAG_MAX_LEN
+#define CONFIG_LOG_TAG_MAX_LEN 0
+#endif
+
+#ifndef CONFIG_LOG2_ALWAYS_RUNTIME
+BUILD_ASSERT(!IS_ENABLED(CONFIG_NO_OPTIMIZATIONS),
+	     "Option must be enabled when CONFIG_NO_OPTIMIZATIONS is set");
+BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE),
+	     "Option must be enabled when CONFIG_LOG_MODE_IMMEDIATE is set");
+#endif
+
+#ifndef CONFIG_LOG1
+static const log_format_func_t format_table[] = {
+	[LOG_OUTPUT_TEXT] = log_output_msg2_process,
+	[LOG_OUTPUT_SYST] = IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) ?
+						log_output_msg2_syst_process : NULL,
+	[LOG_OUTPUT_DICT] = IS_ENABLED(CONFIG_LOG_DICTIONARY_SUPPORT) ?
+						log_dict_output_msg2_process : NULL
+};
+
+log_format_func_t log_format_func_t_get(uint32_t log_type)
+{
+	return format_table[log_type];
+}
+
+size_t log_format_table_size(void)
+{
+	return ARRAY_SIZE(format_table);
+}
 #endif
 
 struct log_strdup_buf {
@@ -105,8 +138,10 @@ static const struct mpsc_pbuf_buffer_config mpsc_config = {
 	.size = ARRAY_SIZE(buf32),
 	.notify_drop = notify_drop,
 	.get_wlen = log_msg2_generic_get_wlen,
-	.flags = IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW) ?
-		MPSC_PBUF_MODE_OVERWRITE : 0
+	.flags = (IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW) ?
+		  MPSC_PBUF_MODE_OVERWRITE : 0) |
+		 (IS_ENABLED(CONFIG_LOG_MEM_UTILIZATION) ?
+		  MPSC_PBUF_MAX_UTILIZATION : 0)
 };
 
 /* Check that default tag can fit in tag buffer. */
@@ -123,6 +158,11 @@ static void msg_process(union log_msgs msg, bool bypass);
 static log_timestamp_t dummy_timestamp(void)
 {
 	return 0;
+}
+
+log_timestamp_t z_log_timestamp(void)
+{
+	return timestamp_func();
 }
 
 uint32_t z_log_get_s_mask(const char *str, uint32_t nargs)
@@ -152,36 +192,6 @@ uint32_t z_log_get_s_mask(const char *str, uint32_t nargs)
 }
 
 /**
- * @brief Check if address is in read only section.
- *
- * @param addr Address.
- *
- * @return True if address identified within read only section.
- */
-static bool is_rodata(const void *addr)
-{
-#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86) || \
-	defined(CONFIG_ARM64) || defined(CONFIG_NIOS2) || \
-	defined(CONFIG_RISCV) || defined(CONFIG_SPARC) || defined(CONFIG_MIPS)
-	extern const char *__rodata_region_start[];
-	extern const char *__rodata_region_end[];
-	#define RO_START __rodata_region_start
-	#define RO_END __rodata_region_end
-#elif defined(CONFIG_XTENSA)
-	extern const char *_rodata_start[];
-	extern const char *_rodata_end[];
-	#define RO_START _rodata_start
-	#define RO_END _rodata_end
-#else
-	#define RO_START 0
-	#define RO_END 0
-#endif
-
-	return (((const char *)addr >= (const char *)RO_START) &&
-		((const char *)addr < (const char *)RO_END));
-}
-
-/**
  * @brief Scan string arguments and report every address which is not in read
  *	  only memory and not yet duplicated.
  *
@@ -206,7 +216,7 @@ static void detect_missed_strdup(struct log_msg *msg)
 	while (mask) {
 		idx = 31 - __builtin_clz(mask);
 		str = (const char *)log_msg_arg_get(msg, idx);
-		if (!is_rodata(str) && !log_is_strdup(str) &&
+		if (!linker_is_in_rodata(str) && !log_is_strdup(str) &&
 			(str != log_strdup_fail_msg)) {
 			const char *src_name =
 				log_source_name_get(CONFIG_LOG_DOMAIN_ID,
@@ -352,6 +362,26 @@ void log_n(const char *str,
 	}
 }
 
+#ifndef CONFIG_LOG1
+const struct log_backend *log_format_set_all_active_backends(size_t log_type)
+{
+	const struct log_backend *backend;
+	const struct log_backend *failed_backend = NULL;
+
+	for (int i = 0; i < log_backend_count_get(); i++) {
+		backend = log_backend_get(i);
+		if (log_backend_is_active(backend)) {
+			int retCode = log_backend_format_set(backend, log_type);
+
+			if (retCode != 0) {
+				failed_backend = backend;
+			}
+		}
+	}
+	return failed_backend;
+}
+#endif
+
 void log_hexdump(const char *str, const void *data, uint32_t length,
 		 struct log_msg_ids src_level)
 {
@@ -378,7 +408,7 @@ void z_log_vprintk(const char *fmt, va_list ap)
 
 	if (!IS_ENABLED(CONFIG_LOG1)) {
 		z_log_msg2_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, NULL,
-					   LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0,
+					   LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, 0,
 					   fmt, ap);
 		return;
 	}
@@ -486,7 +516,7 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
 				uint32_t idx = 31 - __builtin_clz(mask);
 				const char *str = (const char *)args[idx];
 
-				/* is_rodata(str) is not checked,
+				/* linker_is_in_rodata(str) is not checked,
 				 * because log_strdup does it.
 				 * Hence, we will do only optional check
 				 * if already not duplicated.
@@ -586,16 +616,16 @@ void log_core_init(void)
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		z_log_runtime_filters_init();
 	}
+
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+		log_frontend_init();
+	}
 }
 
 void log_init(void)
 {
 	__ASSERT_NO_MSG(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
 	int i;
-
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
-		log_frontend_init();
-	}
 
 	if (atomic_inc(&initialized) != 0) {
 		return;
@@ -665,6 +695,10 @@ void z_impl_log_panic(void)
 	 * Forcing initialization of the logger and auto-starting backends.
 	 */
 	log_init();
+
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+		log_frontend_panic();
+	}
 
 	for (int i = 0; i < log_backend_count_get(); i++) {
 		backend = log_backend_get(i);
@@ -890,7 +924,7 @@ char *z_log_strdup(const char *str)
 	int err;
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ||
-	    is_rodata(str) || k_is_user_context()) {
+	    linker_is_in_rodata(str) || k_is_user_context()) {
 		return (char *)str;
 	}
 
@@ -1237,10 +1271,7 @@ const char *z_log_get_tag(void)
 
 int log_set_tag(const char *str)
 {
-	if (CONFIG_LOG_TAG_MAX_LEN == 0) {
-		return -ENOTSUP;
-	}
-
+#if CONFIG_LOG_TAG_MAX_LEN > 0
 	if (str == NULL) {
 		return -EINVAL;
 	}
@@ -1257,6 +1288,45 @@ int log_set_tag(const char *str)
 	}
 
 	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+int log_mem_get_usage(uint32_t *buf_size, uint32_t *usage)
+{
+	__ASSERT_NO_MSG(buf_size != NULL);
+	__ASSERT_NO_MSG(usage != NULL);
+
+	if (!IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG1)) {
+		*buf_size = CONFIG_LOG_BUFFER_SIZE;
+		*usage = log_msg_mem_get_used() * log_msg_get_slab_size();
+		return 0;
+	}
+
+	mpsc_pbuf_get_utilization(&log_buffer, buf_size, usage);
+
+	return 0;
+}
+
+int log_mem_get_max_usage(uint32_t *max)
+{
+	__ASSERT_NO_MSG(max != NULL);
+
+	if (!IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG1)) {
+		*max = log_msg_mem_get_max_used() * log_msg_get_slab_size();
+		return 0;
+	}
+
+	return mpsc_pbuf_get_max_utilization(&log_buffer, max);
 }
 
 static void log_process_thread_timer_expiry_fn(struct k_timer *timer)

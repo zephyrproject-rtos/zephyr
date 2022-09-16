@@ -9,12 +9,12 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_wdog32
 
-#include <drivers/watchdog.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/watchdog.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_wdog32.h>
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_mcux_wdog32);
 
 #define MIN_TIMEOUT 1

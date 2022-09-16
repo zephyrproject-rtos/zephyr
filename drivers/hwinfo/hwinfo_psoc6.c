@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT cypress_psoc6_uid
 
-#include <device.h>
-#include <drivers/hwinfo.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/hwinfo.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <string.h>
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <ztest.h>
 
 /* pinctrl test driver implemented as a mock */

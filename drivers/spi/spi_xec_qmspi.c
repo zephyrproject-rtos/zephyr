@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT microchip_xec_qmspi
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 #include <errno.h>
-#include <device.h>
-#include <drivers/spi.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
 #include <soc.h>
 
 /* Device constant configuration parameters */
@@ -89,7 +89,7 @@ static void qmspi_set_frequency(QMSPI_Type *regs, uint32_t freq_hz)
  * SPI signalling mode: CPOL and CPHA
  * CPOL = 0 is clock idles low, 1 is clock idle high
  * CPHA = 0 Transmitter changes data on trailing of preceding clock cycle.
- *          Receiver samples data on leading edge of clock cyle.
+ *          Receiver samples data on leading edge of clock cycle.
  *        1 Transmitter changes data on leading edge of current clock cycle.
  *          Receiver samples data on the trailing edge of clock cycle.
  * SPI Mode nomenclature:
@@ -239,7 +239,7 @@ static int qmspi_configure(const struct device *dev,
  * SPI clocks with I/O pins tri-stated.
  * Single mode: 1 bit per clock -> IFM field = 00b. Max 0x7fff clocks
  * Dual mode: 2 bits per clock  -> IFM field = 01b. Max 0x3fff clocks
- * Quad mode: 4 bits per clock  -> IFM fiels = 1xb. Max 0x1fff clocks
+ * Quad mode: 4 bits per clock  -> IFM field = 1xb. Max 0x1fff clocks
  * QMSPI unit size set to bits.
  */
 static int qmspi_tx_dummy_clocks(QMSPI_Type *regs, uint32_t nclocks)

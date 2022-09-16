@@ -3,12 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
-#include <logging/log.h>
-#include <logging/log_msg.h>
-#include <logging/log_ctrl.h>
-#include <logging/log_internal.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_internal.h>
+#include <zephyr/sys/__assert.h>
 #include <string.h>
 
 BUILD_ASSERT((sizeof(struct log_msg_ids) == sizeof(uint16_t)),
@@ -497,4 +497,9 @@ uint32_t log_msg_mem_get_used(void)
 uint32_t log_msg_mem_get_max_used(void)
 {
 	return k_mem_slab_max_used_get(&log_msg_pool);
+}
+
+size_t log_msg_get_slab_size(void)
+{
+	return MSG_SIZE;
 }

@@ -3,8 +3,8 @@
  * Copyright (c) 2021 Lexmark International, Inc.
  */
 
-#include <zephyr.h>
-#include <syscall_handler.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/syscall_handler.h>
 #include <ztest.h>
 
 ZTEST_BMEM char user_stack[256];

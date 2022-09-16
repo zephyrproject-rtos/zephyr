@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/heap_listener.h>
-#include <zephyr.h>
+#include <zephyr/sys/heap_listener.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #include <malloc.h>

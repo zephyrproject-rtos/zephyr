@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 /* Offset for the Direct interrupt used in this test. */
 #define DIRECT_ISR_OFFSET (CONFIG_NUM_IRQS - 1)

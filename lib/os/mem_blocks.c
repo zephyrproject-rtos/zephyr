@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/__assert.h>
-#include <sys/check.h>
-#include <sys/heap_listener.h>
-#include <sys/mem_blocks.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/heap_listener.h>
+#include <zephyr/sys/mem_blocks.h>
+#include <zephyr/sys/util.h>
 
-static void *alloc_one(sys_mem_blocks_t *mem_block)
+static void *alloc_blocks(sys_mem_blocks_t *mem_block, size_t num_blocks)
 {
 	size_t offset;
 	int r;
@@ -19,7 +19,7 @@ static void *alloc_one(sys_mem_blocks_t *mem_block)
 	void *ret = NULL;
 
 	/* Find an unallocated block */
-	r = sys_bitarray_alloc(mem_block->bitmap, 1, &offset);
+	r = sys_bitarray_alloc(mem_block->bitmap, num_blocks, &offset);
 	if (r != 0) {
 		goto out;
 	}
@@ -33,7 +33,7 @@ out:
 	return ret;
 }
 
-static int free_one(sys_mem_blocks_t *mem_block, void *ptr)
+static int free_blocks(sys_mem_blocks_t *mem_block, void *ptr, size_t num_blocks)
 {
 	size_t offset;
 	uint8_t *blk = ptr;
@@ -51,10 +51,47 @@ static int free_one(sys_mem_blocks_t *mem_block, void *ptr)
 		goto out;
 	}
 
-	ret = sys_bitarray_free(mem_block->bitmap, 1, offset);
+	ret = sys_bitarray_free(mem_block->bitmap, num_blocks, offset);
 
 out:
 	return ret;
+}
+
+int sys_mem_blocks_alloc_contiguous(sys_mem_blocks_t *mem_block, size_t count,
+				   void **out_block)
+{
+	int ret = 0;
+
+	__ASSERT_NO_MSG(mem_block != NULL);
+	__ASSERT_NO_MSG(out_block != NULL);
+
+	if (count == 0) {
+		/* Nothing to allocate */
+		*out_block = NULL;
+		goto out;
+	}
+
+	if (count > mem_block->num_blocks) {
+		/* Definitely not enough blocks to be allocated */
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	void *ptr = alloc_blocks(mem_block, count);
+
+	if (ptr == NULL) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	*out_block = ptr;
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+	heap_listener_notify_alloc(HEAP_ID_FROM_POINTER(mem_block),
+				   ptr, count << mem_block->blk_sz_shift);
+#endif
+
+out:
+		return ret;
 }
 
 int sys_mem_blocks_alloc(sys_mem_blocks_t *mem_block, size_t count,
@@ -63,15 +100,10 @@ int sys_mem_blocks_alloc(sys_mem_blocks_t *mem_block, size_t count,
 	int ret = 0;
 	int i;
 
-	if ((mem_block == NULL) || (out_blocks == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	CHECKIF((mem_block->bitmap == NULL) || (mem_block->buffer == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
+	__ASSERT_NO_MSG(mem_block != NULL);
+	__ASSERT_NO_MSG(out_blocks != NULL);
+	__ASSERT_NO_MSG(mem_block->bitmap != NULL);
+	__ASSERT_NO_MSG(mem_block->buffer != NULL);
 
 	if (count == 0) {
 		/* Nothing to allocate */
@@ -85,7 +117,7 @@ int sys_mem_blocks_alloc(sys_mem_blocks_t *mem_block, size_t count,
 	}
 
 	for (i = 0; i < count; i++) {
-		void *ptr = alloc_one(mem_block);
+		void *ptr = alloc_blocks(mem_block, 1);
 
 		if (ptr == NULL) {
 			break;
@@ -109,21 +141,54 @@ out:
 	return ret;
 }
 
+int sys_mem_blocks_get(sys_mem_blocks_t *mem_block, void *in_block, size_t count)
+{
+	int ret = 0;
+	int offset;
+
+	__ASSERT_NO_MSG(mem_block != NULL);
+	__ASSERT_NO_MSG(mem_block->bitmap != NULL);
+	__ASSERT_NO_MSG(mem_block->buffer != NULL);
+
+	if (count == 0) {
+		/* Nothing to allocate */
+		goto out;
+	}
+
+	offset = ((uint8_t *)in_block - mem_block->buffer) >> mem_block->blk_sz_shift;
+
+	if (offset + count > mem_block->num_blocks) {
+		/* Definitely not enough blocks to be allocated */
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	ret = sys_bitarray_test_and_set_region(mem_block->bitmap, count, offset, true);
+	if (ret != 0) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+	heap_listener_notify_alloc(HEAP_ID_FROM_POINTER(mem_block),
+			in_block, count << mem_block->blk_sz_shift);
+#endif
+
+out:
+	return ret;
+}
+
+
 int sys_mem_blocks_free(sys_mem_blocks_t *mem_block, size_t count,
 			void **in_blocks)
 {
 	int ret = 0;
 	int i;
 
-	if ((mem_block == NULL) || (in_blocks == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	CHECKIF((mem_block->bitmap == NULL) || (mem_block->buffer == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
+	__ASSERT_NO_MSG(mem_block != NULL);
+	__ASSERT_NO_MSG(in_blocks != NULL);
+	__ASSERT_NO_MSG(mem_block->bitmap != NULL);
+	__ASSERT_NO_MSG(mem_block->buffer != NULL);
 
 	if (count == 0) {
 		/* Nothing to be freed. */
@@ -138,7 +203,7 @@ int sys_mem_blocks_free(sys_mem_blocks_t *mem_block, size_t count,
 	for (i = 0; i < count; i++) {
 		void *ptr = in_blocks[i];
 
-		int r = free_one(mem_block, ptr);
+		int r = free_blocks(mem_block, ptr, 1);
 
 		if (r != 0) {
 			ret = r;
@@ -155,6 +220,38 @@ int sys_mem_blocks_free(sys_mem_blocks_t *mem_block, size_t count,
 		}
 #endif
 	}
+
+out:
+	return ret;
+}
+
+int sys_mem_blocks_free_contiguous(sys_mem_blocks_t *mem_block, void *block, size_t count)
+{
+	int ret = 0;
+
+	__ASSERT_NO_MSG(mem_block != NULL);
+	__ASSERT_NO_MSG(mem_block->bitmap != NULL);
+	__ASSERT_NO_MSG(mem_block->buffer != NULL);
+
+	if (count == 0) {
+		/* Nothing to be freed. */
+		goto out;
+	}
+
+	if (count > mem_block->num_blocks) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = free_blocks(mem_block, block, count);
+
+	if (ret != 0) {
+		goto out;
+	}
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+	heap_listener_notify_free(HEAP_ID_FROM_POINTER(mem_block),
+			block, count << mem_block->blk_sz_shift);
+#endif
 
 out:
 	return ret;
@@ -183,10 +280,8 @@ int sys_multi_mem_blocks_alloc(sys_multi_mem_blocks_t *group,
 	sys_mem_blocks_t *allocator;
 	int ret = 0;
 
-	if ((group == NULL) || (out_blocks == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
+	__ASSERT_NO_MSG(group != NULL);
+	__ASSERT_NO_MSG(out_blocks != NULL);
 
 	if (count == 0) {
 		if (blk_size != NULL) {
@@ -223,10 +318,8 @@ int sys_multi_mem_blocks_free(sys_multi_mem_blocks_t *group,
 	int ret = 0;
 	sys_mem_blocks_t *allocator = NULL;
 
-	if ((group == NULL) || (in_blocks == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
+	__ASSERT_NO_MSG(group != NULL);
+	__ASSERT_NO_MSG(in_blocks != NULL);
 
 	if (count == 0) {
 		goto out;

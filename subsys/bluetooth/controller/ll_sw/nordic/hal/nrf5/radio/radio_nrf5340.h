@@ -358,7 +358,7 @@
  * or reception of a PDU on air. In case of regular PDU it is generated when last bit of CRC is
  * received or transmitted.
  *
- * When direction finding is enabled a PDU may include Constant Tone Extensio at its end. For PDU
+ * When direction finding is enabled a PDU may include Constant Tone Extension at its end. For PDU
  * including CTE EVENTS_PHYEND event is generated at very end of a PDU, after CTE is received or
  * transmitted. In case there is no CTE in a PDU the EVENTS_PHYEND event is generated in the same
  * instant as EVENTS_END event.
@@ -387,9 +387,30 @@
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
+/* nRF5340 supports +3dBm Tx Power using high voltage request, define +3dBm
+ * value for Controller use.
+ */
+#ifndef RADIO_TXPOWER_TXPOWER_Pos3dBm
+#define RADIO_TXPOWER_TXPOWER_Pos3dBm (0x03UL)
+#endif
+
+static inline void hal_radio_tx_power_high_voltage_clear(void);
+
 static inline void hal_radio_reset(void)
 {
-	/* TODO */
+	/* TODO: Add any required setup for each radio event
+	 */
+}
+
+static inline void hal_radio_stop(void)
+{
+	/* If +3dBm Tx power was used, then turn off high voltage when radio not
+	 * used.
+	 */
+	hal_radio_tx_power_high_voltage_clear();
+
+	/* TODO: Add any required cleanup of actions taken in hal_radio_reset()
+	 */
 }
 
 static inline void hal_radio_ram_prio_setup(void)
@@ -406,11 +427,17 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 	default:
 		mode = RADIO_MODE_MODE_Ble_1Mbit;
 
+		/* Workaround: nRF5340 Revision 1 Errata 117 */
+		*((volatile uint32_t *)0x41008588) =
+			*((volatile uint32_t *)0x01FF0080); /* non-2M mode */
 		break;
 
 	case BIT(1):
 		mode = RADIO_MODE_MODE_Ble_2Mbit;
 
+		/* Workaround: nRF5340 Revision 1 Errata 117 */
+		*((volatile uint32_t *)0x41008588) =
+			*((volatile uint32_t *)0x01FF0084); /* 2M mode */
 		break;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -421,6 +448,9 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 			mode = RADIO_MODE_MODE_Ble_LR500Kbit;
 		}
 
+		/* Workaround: nRF5340 Revision 1 Errata 117 */
+		*((volatile uint32_t *)0x41008588) =
+			*((volatile uint32_t *)0x01FF0080); /* non-2M mode */
 		break;
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
@@ -490,6 +520,18 @@ static inline uint32_t hal_radio_tx_power_floor(int8_t tx_power_lvl)
 
 	/* Note: The -30 dBm power level is deprecated so ignore it! */
 	return RADIO_TXPOWER_TXPOWER_Neg40dBm;
+}
+
+static inline void hal_radio_tx_power_high_voltage_set(int8_t tx_power_lvl)
+{
+	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos3dBm) {
+		nrf_vreqctrl_radio_high_voltage_set(NRF_VREQCTRL, true);
+	}
+}
+
+static inline void hal_radio_tx_power_high_voltage_clear(void)
+{
+	nrf_vreqctrl_radio_high_voltage_set(NRF_VREQCTRL, false);
 }
 
 static inline uint32_t hal_radio_tx_ready_delay_us_get(uint8_t phy, uint8_t flags)

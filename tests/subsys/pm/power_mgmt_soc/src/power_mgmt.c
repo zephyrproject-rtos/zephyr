@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ztest.h>
-#include <pm/pm.h>
-#include <logging/log.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/logging/log.h>
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(pwrmgmt_test);
 

@@ -6,11 +6,11 @@
  */
 
 #include <ztest.h>
-#include <devicetree.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 
-#include <linker/devicetree_regions.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 #define TEST_SRAM1      DT_NODELABEL(test_sram1)
 #define TEST_SRAM2      DT_NODELABEL(test_sram2)
@@ -18,7 +18,7 @@
 static void test_linker_regions(void)
 {
 	zassert_true(!strcmp(LINKER_DT_NODE_REGION_NAME(TEST_SRAM1), "SRAM_REGION"), "");
-	zassert_true(!strcmp(LINKER_DT_NODE_REGION_NAME(TEST_SRAM2), "/test/sram@20001000"), "");
+	zassert_true(!strcmp(LINKER_DT_NODE_REGION_NAME(TEST_SRAM2), "SRAM_REGION_2"), "");
 }
 
 void test_main(void)

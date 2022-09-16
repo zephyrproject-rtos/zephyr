@@ -69,7 +69,7 @@ endchoice
 
 
 config TRACING_CTF_TIMESTAMP
-	bool "Enable CTF internal timestamp"
+	bool "CTF internal timestamp"
 	default y
 	depends on TRACING_CTF
 	help
@@ -121,7 +121,7 @@ config TRACING_BUFFER_SIZE
 	help
 	  Size of tracing buffer. If TRACING_ASYNC is enabled, tracing buffer
 	  is used as a ring buffer to buffer data packet and string packet. If
-	  TRACING_SYNC is enabled, the buffer is used to hold the formated data.
+	  TRACING_SYNC is enabled, the buffer is used to hold the formatted data.
 
 config TRACING_PACKET_MAX_SIZE
 	int "Max size of one tracing packet"
@@ -134,32 +134,33 @@ choice
 	default TRACING_BACKEND_UART
 
 config TRACING_BACKEND_UART
-	bool "Enable UART backend"
+	bool "UART backend"
 	depends on UART_CONSOLE
 
 	help
 	  Use UART to output tracing data.
 
 config TRACING_BACKEND_USB
-	bool "Enable USB backend"
+	bool "USB backend"
 	depends on USB_DEVICE_STACK
 	depends on TRACING_ASYNC
 	help
 	  Use USB to output tracing data.
 
 config TRACING_BACKEND_POSIX
-	bool "Enable posix architecture (native) backend"
+	bool "Posix architecture (native) backend"
 	depends on TRACING_SYNC
 	depends on ARCH_POSIX
 	help
 	  Use posix architecture to output tracing data to file system.
 
 config TRACING_BACKEND_RAM
-	bool "Enable RAM backend"
+	bool "RAM backend"
 	help
 	  Use a ram buffer to output tracing data which can
 	  be dumped to a file at runtime with a debugger.
 	  See gdb dump binary memory documentation for example.
+endchoice
 
 config RAM_TRACING_BUFFER_SIZE
 	int "Ram Tracing buffer size"
@@ -169,7 +170,6 @@ config RAM_TRACING_BUFFER_SIZE
 	  Size of the RAM trace buffer. Trace will be discarded if the
 	  length is exceeded.
 
-endchoice
 
 config TRACING_BACKEND_UART_NAME
 	string "Device Name of UART Device for UART backend"
@@ -188,7 +188,7 @@ config TRACING_USB_MPS
 	  USB tracing backend max packet size(endpoint MPS).
 
 config TRACING_HANDLE_HOST_CMD
-	bool "Enable host command handle"
+	bool "Host command handle"
 	select UART_INTERRUPT_DRIVEN if TRACING_BACKEND_UART
 	help
 	  When enabled tracing will handle cmd from host to dynamically
@@ -203,118 +203,117 @@ config TRACING_CMD_BUFFER_SIZE
 	  Size of tracing command buffer.
 
 config TRACING_OBJECT_TRACKING
-	bool "Enable object tracking"
-	default n
+	bool "Object tracking"
 	help
 	  Keep lists to track kernel objects.
 
 menu "Tracing Configuration"
 
 config TRACING_SYSCALL
-	bool "Enable tracing Syscalls"
+	bool "Tracing Syscalls"
 	default y
 	help
 	  Enable tracing Syscalls.
 
 config TRACING_THREAD
-	bool "Enable tracing Threads"
+	bool "Tracing Threads"
 	default y
 	help
 	  Enable tracing Threads.
 
 config TRACING_WORK
-	bool "Enable tracing Work"
+	bool "Tracing Work"
 	default y
 	help
 	  Enable tracing Work and Work queue events
 
 config TRACING_ISR
-	bool "Enable tracing ISRs"
+	bool "Tracing ISRs"
 	default y
 	help
 	  Enable tracing ISRs. This requires the backend to be
 	  very low-latency.
 
 config TRACING_SEMAPHORE
-	bool "Enable tracing Semaphores"
+	bool "Tracing Semaphores"
 	default y
 	help
 	  Enable tracing Semaphores.
 
 config TRACING_MUTEX
-	bool "Enable tracing Mutexes"
+	bool "Tracing Mutexes"
 	default y
 	help
 	  Enable tracing Mutexes.
 
 config TRACING_CONDVAR
-	bool "Enable tracing Condition Variables"
+	bool "Tracing Condition Variables"
 	default y
 	help
 	  Enable tracing Condition Variables
 
 config TRACING_QUEUE
-	bool "Enable tracing Queues"
+	bool "Tracing Queues"
 	default y
 	help
 	  Enable tracing Queues.
 
 config TRACING_FIFO
-	bool "Enable tracing FIFO queues"
+	bool "Tracing FIFO queues"
 	default y
 	help
 	  Enable tracing FIFO queues.
 
 config TRACING_LIFO
-	bool "Enable tracing LIFO queues"
+	bool "Tracing LIFO queues"
 	default y
 	help
 	  Enable tracing LIFO queues.
 
 config TRACING_STACK
-	bool "Enable tracing Memory Stacks"
+	bool "Tracing Memory Stacks"
 	default y
 	help
 	  Enable tracing Memory Stacks.
 
 config TRACING_MESSAGE_QUEUE
-	bool "Enable tracing Message Queues"
+	bool "Tracing Message Queues"
 	default y
 	help
 	  Enable tracing Message Queues.
 
 config TRACING_MAILBOX
-	bool "Enable tracing Mailboxes"
+	bool "Tracing Mailboxes"
 	default y
 	help
 	  Enable tracing Mailboxes.
 
 config TRACING_PIPE
-	bool "Enable tracing Pipes"
+	bool "Tracing Pipes"
 	default y
 	help
 	  Enable tracing Pipes.
 
 config TRACING_HEAP
-	bool "Enable tracing Memory Heaps"
+	bool "Tracing Memory Heaps"
 	default y
 	help
 	  Enable tracing Memory Heaps.
 
 config TRACING_MEMORY_SLAB
-	bool "Enable tracing Memory Slabs"
+	bool "Tracing Memory Slabs"
 	default y
 	help
 	  Enable tracing Memory Slabs.
 
 config TRACING_TIMER
-	bool "Enable tracing Timers"
+	bool "Tracing Timers"
 	default y
 	help
 	  Enable tracing Timers.
 
 config TRACING_EVENT
-	bool "Enable tracing Events"
+	bool "Tracing Events"
 	default y
 	help
 	  Enable tracing Events.

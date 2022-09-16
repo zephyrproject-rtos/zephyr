@@ -6,16 +6,16 @@
 
 #define DT_DRV_COMPAT silabs_si7006
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
-#include <drivers/i2c.h>
-#include <logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "si7006.h"
@@ -141,7 +141,7 @@ static const struct sensor_driver_api si7006_api = {
 };
 
 /**
- * @brief initiasize the sensor
+ * @brief initialize the sensor
  *
  * @return 0 for success
  */

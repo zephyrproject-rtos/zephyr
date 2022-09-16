@@ -29,13 +29,13 @@
  */
 
 #include <assert.h>
-#include <drivers/gpio.h>
-#include <drivers/clock_control.h>
-#include <drivers/watchdog.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/watchdog.h>
 #include <soc.h>
 
 #include "soc_miwu.h"
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_npcx, CONFIG_WDT_LOG_LEVEL);
 
 /* Watchdog operating frequency is fixed to LFCLK (32.768) kHz */
@@ -280,7 +280,7 @@ static int wdt_npcx_disable(const struct device *dev)
 	npcx_miwu_irq_disable(&config->t0out);
 	data->timeout_installed = false;
 
-	/* Wait for watchdof is stopped. */
+	/* Wait until watchdog is stopped. */
 	return wdt_wait_stopped(dev);
 }
 

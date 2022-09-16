@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
-#include <drivers/lora.h>
-#include <logging/log.h>
-#include <sys/atomic.h>
-#include <zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/lora.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/zephyr.h>
 
 /* LoRaMac-node specific includes */
 #include <radio.h>
@@ -39,21 +39,19 @@ static struct sx12xx_data {
 	struct sx12xx_rx_params rx_params;
 } dev_data;
 
-int __sx12xx_configure_pin(const struct device **dev, const char *controller,
-			   gpio_pin_t pin, gpio_flags_t flags)
+int __sx12xx_configure_pin(const struct gpio_dt_spec *gpio, gpio_flags_t flags)
 {
 	int err;
 
-	*dev = device_get_binding(controller);
-	if (!(*dev)) {
-		LOG_ERR("Cannot get pointer to %s device", controller);
-		return -EIO;
+	if (!device_is_ready(gpio->port)) {
+		LOG_ERR("GPIO device not ready %s", gpio->port->name);
+		return -ENODEV;
 	}
 
-	err = gpio_pin_configure(*dev, pin, flags);
+	err = gpio_pin_configure_dt(gpio, flags);
 	if (err) {
-		LOG_ERR("Cannot configure gpio %s %d: %d", controller, pin,
-			err);
+		LOG_ERR("Cannot configure gpio %s %d: %d", gpio->port->name,
+			gpio->pin, err);
 		return err;
 	}
 

@@ -12,7 +12,7 @@
  * specific contexts are properly handled (i.e. re-entrant).
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #include <stdio.h>
@@ -20,7 +20,7 @@
 #include <malloc.h>
 
 #define THREAD_COUNT	(64)
-#define STACK_SIZE	(512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE	(512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define TEST_INTERVAL	(30) /* seconds */
 
 #ifdef CONFIG_USERSPACE

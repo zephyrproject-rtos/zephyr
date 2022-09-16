@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include "util/mem.h"
 #include "util/memq.h"
@@ -51,6 +51,7 @@ static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan);
 static inline struct ll_sync_iso_set *
 	sync_iso_create_get(struct ll_sync_set *sync);
 static void done_disabled_cb(void *param);
+static void flush_safe(void *param);
 static void flush(void *param);
 static void rx_release_put(struct node_rx_hdr *rx);
 static void aux_sync_incomplete(void *param);
@@ -100,6 +101,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	uint32_t ticks_slot_overhead;
 	struct lll_scan_aux *lll_aux;
 	struct ll_scan_aux_set *aux;
+	uint8_t ticker_yield_handle;
 	uint32_t window_widening_us;
 	uint32_t ticks_slot_offset;
 	uint32_t ticks_aux_offset;
@@ -140,7 +142,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		scan = HDR_LLL2ULL(lll);
 		sync = sync_create_get(scan);
 		phy = BT_HCI_LE_EXT_SCAN_PHY_1M;
+
+		ticker_yield_handle = TICKER_ID_SCAN_BASE +
+				      ull_scan_handle_get(scan);
 		break;
+
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 		lll_aux = NULL;
 		aux = NULL;
@@ -154,7 +160,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		scan = HDR_LLL2ULL(lll);
 		sync = sync_create_get(scan);
 		phy = BT_HCI_LE_EXT_SCAN_PHY_CODED;
+
+		ticker_yield_handle = TICKER_ID_SCAN_BASE +
+				      ull_scan_handle_get(scan);
 		break;
+
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
 		sync_iso = NULL;
 		rx_incomplete = NULL;
@@ -170,6 +180,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			/* aux parent will be NULL for periodic sync */
 			lll = aux->parent;
 			LL_ASSERT(lll);
+
+			ticker_yield_handle = TICKER_ID_SCAN_AUX_BASE +
+					      aux_handle_get(aux);
 
 		} else if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) ||
 			   ull_scan_is_valid_get(HDR_LLL2ULL(ftr->param))) {
@@ -188,6 +201,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			aux = HDR_LLL2ULL(lll_aux);
 			LL_ASSERT(lll == aux->parent);
 
+			ticker_yield_handle = TICKER_NULL;
+
 		} else {
 			lll = NULL;
 
@@ -200,6 +215,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 			aux = HDR_LLL2ULL(lll_aux);
 			LL_ASSERT(sync_lll == aux->parent);
+
+			ticker_yield_handle = TICKER_NULL;
 		}
 
 		if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || lll) {
@@ -289,6 +306,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			 * incomplete report
 			 */
 			rx_incomplete = ftr->extra;
+
+			ticker_yield_handle = TICKER_ID_SCAN_SYNC_BASE +
+					      ull_sync_handle_get(ull_sync);
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 		}
@@ -614,11 +634,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	lll_aux->window_size_us += (EVENT_TICKER_RES_MARGIN_US +
 				    ((EVENT_JITTER_US + window_widening_us) << 1));
 
-	ready_delay_us = lll_radio_rx_ready_delay_get(lll_aux->phy, 1);
+	ready_delay_us = lll_radio_rx_ready_delay_get(lll_aux->phy,
+						      PHY_FLAGS_S8);
 
 	/* Calculate the aux offset from start of the scan window */
 	aux_offset_us += ftr->radio_end_us;
 	aux_offset_us -= PDU_AC_US(pdu->len, phy, ftr->phy_flags);
+	aux_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	aux_offset_us -= EVENT_JITTER_US;
 	aux_offset_us -= ready_delay_us;
 	aux_offset_us -= window_widening_us;
@@ -647,15 +669,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	ticks_aux_offset = HAL_TICKER_US_TO_TICKS(aux_offset_us);
 
-	/* Yield the primary scan window ticks in ticker */
-	if (scan) {
-		uint8_t handle;
-
-		handle = ull_scan_handle_get(scan);
-
+	/* Yield the primary scan window or auxiliary or periodic sync event
+	 * in ticker.
+	 */
+	if (ticker_yield_handle != TICKER_NULL) {
 		ticker_status = ticker_yield_abs(TICKER_INSTANCE_ID_CTLR,
 						 TICKER_USER_ID_ULL_HIGH,
-						 (TICKER_ID_SCAN_BASE + handle),
+						 ticker_yield_handle,
 						 (ftr->ticks_anchor +
 						  ticks_aux_offset -
 						  ticks_slot_offset),
@@ -665,7 +685,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 
 	aux_handle = aux_handle_get(aux);
-
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				     TICKER_USER_ID_ULL_HIGH,
 				     TICKER_ID_SCAN_AUX_BASE + aux_handle,
@@ -690,46 +709,39 @@ ull_scan_aux_rx_flush:
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	if (aux) {
-		struct ull_hdr *hdr;
-		uint8_t ref;
-
 		/* Enqueue last rx in aux context if possible, otherwise send
 		 * immediately since we are in sync context.
 		 */
 		if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || aux->rx_last) {
+			/* If scan is being disabled, rx has already been
+			 * enqueued before coming here, ull_scan_aux_rx_flush.
+			 * Do not add it, to avoid duplicate report generation,
+			 * release and probable infinite loop processing the
+			 * list.
+			 */
+			if (unlikely(scan->is_stop)) {
+				return;
+			}
+
 			aux->rx_last->rx_ftr.extra = rx;
 			aux->rx_last = rx;
 		} else {
+			const struct ll_sync_set *sync;
+
 			LL_ASSERT(sync_lll);
 
 			ll_rx_put(link, rx);
 			ll_rx_sched();
+
+			sync = HDR_LLL2ULL(sync_lll);
+			if (unlikely(sync->is_stop)) {
+				return;
+			}
 		}
 
-		/* ref == 0
-		 * All PDUs were scheduled from LLL and there is no pending done
-		 * event, we can flush here.
-		 *
-		 * ref == 1
-		 * There is pending done event so we need to flush from disabled
-		 * callback. Flushing here would release aux context and thus
-		 * ull_hdr before done event was processed.
-		 */
-		hdr = &aux->ull;
-		ref = ull_ref_get(hdr);
-		if (ref == 0) {
-			flush(aux);
-		} else {
-			/* A specific single shot scheduled aux context cannot
-			 * overlap, i.e. ULL reference count shall be less than
-			 * 2.
-			 */
-			LL_ASSERT(ref < 2);
+		LL_ASSERT(aux->parent);
 
-			LL_ASSERT(!hdr->disabled_cb);
-			hdr->disabled_param = aux;
-			hdr->disabled_cb = done_disabled_cb;
-		}
+		flush_safe(aux);
 
 		return;
 	}
@@ -763,6 +775,7 @@ void ull_scan_aux_done(struct node_rx_event_done *done)
 		}
 
 		aux = HDR_LLL2ULL(sync->lll.lll_aux);
+		LL_ASSERT(aux->parent);
 	} else {
 		struct ll_scan_set *scan;
 		struct lll_scan *lll;
@@ -888,7 +901,6 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 		struct ll_scan_aux_set *aux;
 		struct ll_scan_set *scan;
 		struct lll_scan *lll;
-		struct ull_hdr *hdr;
 		uint8_t is_stop;
 
 		aux = HDR_LLL2ULL(lll_aux);
@@ -909,30 +921,13 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 		}
 
 		if (!is_stop) {
-			uint8_t ref;
+			LL_ASSERT(aux->parent);
 
-			/* Flush from here or from done event, if one is
-			 * pending.
-			 */
-			hdr = &aux->ull;
-			ref = ull_ref_get(hdr);
-			if (ref == 0) {
-				flush(aux);
-			} else {
-				/* A specific single shot scheduled aux context
-				 * cannot overlap, i.e. ULL reference count
-				 * shall be less than 2.
-				 */
-				LL_ASSERT(ref < 2);
+			flush_safe(aux);
 
-				LL_ASSERT(!hdr->disabled_cb);
-				hdr->disabled_param = aux;
-				hdr->disabled_cb = done_disabled_cb;
-			}
-		} else {
-			/* Sync terminate requested, enqueue node rx that will
-			 * be flushed by the disabled_cb setup by the
-			 * terminate.
+		} else if (!scan) {
+			/* Sync terminate requested, enqueue node rx so that it
+			 * be flushed by ull_scan_aux_stop().
 			 */
 			rx->link = link;
 			if (aux->rx_last) {
@@ -969,7 +964,7 @@ int ull_scan_aux_stop(struct ll_scan_aux_set *aux)
 	/* Abort LLL event if ULL scheduling not used or already in prepare */
 	if (err == -EALREADY) {
 		err = ull_disable(&aux->lll);
-		if (err) {
+		if (err && (err != -EALREADY)) {
 			return err;
 		}
 
@@ -1065,7 +1060,47 @@ static inline struct ll_sync_iso_set *
 
 static void done_disabled_cb(void *param)
 {
-	flush(param);
+	struct ll_scan_aux_set *aux;
+
+	aux = param;
+	LL_ASSERT(aux->parent);
+
+	flush(aux);
+}
+
+static void flush_safe(void *param)
+{
+	struct ll_scan_aux_set *aux;
+	struct ull_hdr *hdr;
+	uint8_t ref;
+
+	aux = param;
+	LL_ASSERT(aux->parent);
+
+	/* ref == 0
+	 * All PDUs were scheduled from LLL and there is no pending done
+	 * event, we can flush here.
+	 *
+	 * ref == 1
+	 * There is pending done event so we need to flush from disabled
+	 * callback. Flushing here would release aux context and thus
+	 * ull_hdr before done event was processed.
+	 */
+	hdr = &aux->ull;
+	ref = ull_ref_get(hdr);
+	if (ref == 0U) {
+		flush(aux);
+	} else {
+		/* A specific single shot scheduled aux context
+		 * cannot overlap, i.e. ULL reference count
+		 * shall be less than 2.
+		 */
+		LL_ASSERT(ref < 2U);
+
+		LL_ASSERT(!hdr->disabled_cb);
+		hdr->disabled_param = aux;
+		hdr->disabled_cb = done_disabled_cb;
+	}
 }
 
 static void flush(void *param)
@@ -1084,13 +1119,18 @@ static void flush(void *param)
 
 	rx = aux->rx_head;
 	if (rx) {
+		aux->rx_head = NULL;
+
 		ll_rx_put(rx->link, rx);
 		sched = true;
 	}
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-	if (aux->rx_incomplete) {
-		rx_release_put(aux->rx_incomplete);
+	rx = aux->rx_incomplete;
+	if (rx) {
+		aux->rx_incomplete = NULL;
+
+		rx_release_put(rx);
 		sched = true;
 	}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
@@ -1134,6 +1174,7 @@ static void aux_sync_partial(void *param)
 	rx = aux->rx_head;
 	aux->rx_head = NULL;
 
+	LL_ASSERT(rx);
 	rx->rx_ftr.aux_sched = 1U;
 
 	ll_rx_put(rx->link, rx);
@@ -1146,6 +1187,7 @@ static void aux_sync_incomplete(void *param)
 	struct ll_scan_aux_set *aux;
 
 	aux = param;
+	LL_ASSERT(aux->parent);
 
 	/* ULL scheduling succeeded hence no backup node rx present, use the
 	 * extra node rx reserved for incomplete data status generation.
@@ -1171,6 +1213,7 @@ static void aux_sync_incomplete(void *param)
 		/* prepare sync report with failure */
 		rx->type = NODE_RX_TYPE_SYNC_REPORT;
 		rx->handle = ull_sync_handle_get(sync);
+		rx->rx_ftr.param = lll;
 
 		/* flag chain reception failure */
 		rx->rx_ftr.aux_failed = 1U;
@@ -1254,7 +1297,12 @@ static void ticker_op_cb(uint32_t status, void *param)
 		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync) {
 			mfy.fp = aux_sync_incomplete;
 		} else {
-			mfy.fp = flush;
+			struct ll_scan_aux_set *aux;
+
+			aux = param;
+			LL_ASSERT(aux->parent);
+
+			mfy.fp = flush_safe;
 		}
 	}
 

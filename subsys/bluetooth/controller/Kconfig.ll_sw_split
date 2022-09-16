@@ -5,9 +5,6 @@
 
 if BT_LL_SW_SPLIT
 
-DT_PATH_NORDIC_RADIO := $(dt_nodelabel_path,radio)
-DT_NORDIC_RADIO_DFE_SUPPORTED := $(dt_node_has_bool_prop,$(DT_PATH_NORDIC_RADIO),dfe-supported)
-
 config BT_LLL_VENDOR_NORDIC
 	bool "Use Nordic LLL"
 	depends on SOC_COMPATIBLE_NRF
@@ -34,8 +31,8 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_SYNC_PERIODIC_SUPPORT
 	select BT_CTLR_ADV_ISO_SUPPORT
 	select BT_CTLR_SYNC_ISO_SUPPORT
-	select BT_CTLR_DF_SUPPORT if $(DT_NORDIC_RADIO_DFE_SUPPORTED)
-	select BT_CTLR_CTEINLINE_SUPPORT if $(DT_NORDIC_RADIO_DFE_SUPPORTED)
+	select BT_CTLR_DF_SUPPORT if HAS_HW_NRF_RADIO_DFE
+	select BT_CTLR_CTEINLINE_SUPPORT if HAS_HW_NRF_RADIO_DFE
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
@@ -76,12 +73,14 @@ config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 
 choice BT_LL_SW_LLCP_IMPL
 	prompt "Bluetooth Low Energy Software Link Layer Control Procedure Implementation"
+	default BT_LL_SW_LLCP if BT_CTLR_DF_CONN_CTE_RX || BT_CTLR_DF_CONN_CTE_TX
 	default BT_LL_SW_LLCP_LEGACY
 	help
 	  Select the Bluetooth Low Energy Software Link Layer Control Procedure implementation.
 
 config BT_LL_SW_LLCP_LEGACY
 	bool "Legacy implementation"
+	depends on !BT_CTLR_DF_CONN_CTE_RX && !BT_CTLR_DF_CONN_CTE_TX
 	help
 	  Use the Bluetooth Low Energy Software Link Layer Legacy Control Procedure implementation.
 
@@ -191,14 +190,14 @@ config BT_CTLR_ADV_SYNC_SET
 	  Maximum supported periodic advertising sets.
 
 config BT_CTLR_ADV_PDU_LINK
-	bool "Enable linking of advertising PDU trains"
+	bool "Linking of advertising PDU trains"
 	help
 	  Enables extra space in each advertising PDU to allow linking PDUs. This
 	  is required to enable advertising data trains (i.e. transmission of
 	  AUX_CHAIN_IND).
 
 config BT_CTLR_ADV_PDU_BACK2BACK
-	bool "Enable back-to-back transmission of extended advertising trains"
+	bool "Back-to-back transmission of extended advertising trains"
 	depends on BT_CTLR_ADV_EXT && BT_BROADCASTER
 	select BT_CTLR_ADV_PDU_LINK
 	help
@@ -214,7 +213,7 @@ config BT_CTLR_ADV_PDU_BACK2BACK_AFS
 	  extended advertising trains. Time specified in microseconds.
 
 config BT_CTLR_ADV_SYNC_PDU_BACK2BACK
-	bool "Enable back-to-back transmission of periodic advertising trains"
+	bool "Back-to-back transmission of periodic advertising trains"
 	depends on BT_CTLR_ADV_PERIODIC
 	select BT_CTLR_ADV_PDU_LINK
 	help
@@ -249,7 +248,7 @@ config BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
 	help
 	  Add additional memory to advertising PDU storage. The memory is a
 	  general purpose storage for data that should be send from ULL to LLL.
-	  The data stored in the memory are in synchoronization with content
+	  The data stored in the memory are in synchronization with content
 	  of PDU memory.
 
 	  For example, the extra data memory is used for storage for parameters
@@ -371,7 +370,7 @@ config BT_CTLR_SCHED_ADVANCED_CENTRAL_CONN_SPACING
 	  of the established central role connections.
 	  The precision is determined by the resolution of the platform dependent
 	  ticker clock.
-	  When spefifying values above 6.25 ms, the spacing may be unobtainable if
+	  When specifying values above 6.25 ms, the spacing may be unobtainable if
 	  the connection interval becomes smaller than the total spacing. In that
 	  case, modulo is applied and a total spacing of 15 ms on a 10 ms connection
 	  interval yields 5 ms spacing.
@@ -431,14 +430,14 @@ config BT_CTLR_LOW_LAT_ULL_DONE
 	  Done events be processed and dequeued in ULL context.
 
 config BT_CTLR_CONN_META
-	prompt "Enable connection meta data extension"
+	prompt "Connection meta data extension"
 	bool
 	help
 	  Enables vendor specific per-connection meta data as part of the
 	  LLL connection object.
 
 config BT_CTLR_RX_PDU_META
-	prompt "Enable RX pdu meta data"
+	prompt "RX pdu meta data"
 	bool
 
 config BT_CTLR_RADIO_ENABLE_FAST
@@ -472,7 +471,7 @@ config BT_CTLR_SW_SWITCH_SINGLE_TIMER
 	  less left for other uses
 
 config BT_CTLR_PARAM_CHECK
-	bool "Enable HCI Command Parameter checking"
+	bool "HCI Command Parameter checking"
 	default y if BT_HCI_RAW
 	help
 	  Enable code checking HCI Command Parameters. This is not needed in
@@ -532,16 +531,26 @@ config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
 	  procedures/connections with allocation through a fifo queue.
 	  Configure between 0 and (4 - BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) * BT_CTLR_LLCP_CONN
 
-config BT_CTLR_LLCP_PROC_CTX_BUF_NUM
-	int "Number of control procedure contexts to be available across all connections"
+config BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM
+	int "Number of local control procedure contexts to be available across all connections"
 	default 2 if BT_CTLR_LLCP_CONN = 1
 	default BT_CTLR_LLCP_CONN if BT_CTLR_LLCP_CONN > 1
 	range 2 255
 	help
 	  Set the number control procedure contexts that is to be available.
 	  This defines the size of the pool of control procedure contexts available
-	  for handlign control procedures. This pool is shared across all
-	  connections (local vs remote initiate), with allocation through a queue
+	  for handling local initiated control procedures.
+	  This pool is shared across all connections, with allocation through a queue.
+
+config BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM
+	int "Number of remote control procedure contexts to be available across all connections"
+	default BT_CTLR_LLCP_CONN
+	range 1 255
+	help
+	  Set the number control procedure contexts that is to be available.
+	  This defines the size of the pool of control procedure contexts available
+	  for handling remote initiated control procedures.
+	  This pool is shared across all connections, with allocation through a queue.
 
 endif #!BT_LL_SW_LLCP_LEGACY
 
@@ -554,6 +563,7 @@ config BT_CTLR_LLID_DATA_START_EMPTY
 
 config BT_CTLR_RX_ENQUEUE_HOLD
 	bool "Procedure Complete after on-air instant"
+	depends on BT_LL_SW_LLCP_LEGACY
 	default y if BT_HCI_RAW
 	help
 	  Hold enqueue of Procedure Complete events with instant until after the
@@ -579,6 +589,7 @@ config BT_CTLR_THROUGHPUT
 
 config BT_CTLR_FORCE_MD_COUNT
 	int "Forced MD bit count" if !BT_CTLR_FORCE_MD_AUTO
+	depends on !BT_CTLR_LOW_LAT_ULL
 	range 0 255
 	default 1 if BT_CTLR_FORCE_MD_AUTO
 	default 0
@@ -592,6 +603,7 @@ config BT_CTLR_FORCE_MD_COUNT
 
 config BT_CTLR_FORCE_MD_AUTO
 	bool "Forced MD bit automatic calculation"
+	depends on !BT_CTLR_LOW_LAT_ULL
 	select BT_CTLR_THROUGHPUT
 	default y if BT_HCI_RAW
 	help
@@ -599,7 +611,7 @@ config BT_CTLR_FORCE_MD_AUTO
 	  data throughput.
 
 config BT_CTLR_CONN_RANDOM_FORCE
-	bool "Enable random forced scheduling for peripheral on missed anchor point"
+	bool "Random forced scheduling for peripheral on missed anchor point"
 	depends on BT_PERIPHERAL
 	default y
 	help
@@ -725,7 +737,7 @@ config BT_CTLR_JIT_SCHEDULING
 	  the link layer.
 
 config BT_CTLR_USER_EXT
-	prompt "Enable proprietary extensions in Controller"
+	prompt "Proprietary extensions in Controller"
 	bool
 	help
 	  Catch-all for enabling proprietary event types in Controller behavior.
@@ -759,7 +771,7 @@ config BT_RX_USER_PDU_LEN
 	  PDUs are assumed to not go across HCI.
 
 config BT_CTLR_USER_CPR_INTERVAL_MIN
-	bool "Enable proprietary Connection Parameter Request minimum interval"
+	bool "Proprietary Connection Parameter Request minimum interval"
 	depends on BT_CTLR_USER_EXT
 	help
 	  When enabled, controller will accept Connection Parameter Request

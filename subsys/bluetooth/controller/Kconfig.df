@@ -3,9 +3,12 @@
 # Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+# BT_CTLR_DF_SUPPORT is a wrapper for all DF features.
+# If only certain DF features are supported, those should be selected
+# individually.
 config BT_CTLR_DF_SUPPORT
 	bool
-	depends on !BT_CTLR_TIFS_HW
+	depends on BT_LL_SW_SPLIT && !BT_CTLR_TIFS_HW
 	select BT_CTLR_DF_CTE_TX_SUPPORT
 	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
 	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
@@ -31,9 +34,8 @@ config BT_CTLR_CTEINLINE_SUPPORT
 	bool
 
 menuconfig BT_CTLR_DF
-	bool "LE Direction Finding [EXPERIMENTAL]"
-	depends on BT_CTLR_DF_SUPPORT
-	select EXPERIMENTAL
+	bool "LE Direction Finding"
+	depends on BT_CTLR_DF_CTE_TX_SUPPORT || BT_CTLR_DF_CTE_RX_SUPPORT
 	help
 	  Enable support for Bluetooth 5.1 Direction Finding
 
@@ -43,7 +45,7 @@ if BT_CTLR_DF
 # Bluetooth v5.1 Direction Finding
 
 config BT_CTLR_DF_CTE_TX
-	bool "Enable transmission of Constant Tone Extension"
+	bool "Transmission of Constant Tone Extension"
 	depends on BT_CTLR_DF_CTE_TX_SUPPORT
 	default y
 	help
@@ -51,7 +53,7 @@ config BT_CTLR_DF_CTE_TX
 	  controller.
 
 config BT_CTLR_DF_CTE_RX_SAMPLE_1US
-	bool "Enable reception of CTE with 1us sampling slots"
+	bool "Reception of CTE with 1us sampling slots"
 	depends on BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT
 	default y
 	help
@@ -61,7 +63,7 @@ config BT_CTLR_DF_CTE_RX_SAMPLE_1US
 	  Bluetooth v5.1.
 
 config BT_CTLR_DF_ANT_SWITCH_1US
-	bool "Enable support for 1us antenna switch slots"
+	bool "Support for 1us antenna switch slots"
 	depends on BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
 	default y
 	help
@@ -72,7 +74,7 @@ config BT_CTLR_DF_ANT_SWITCH_1US
 # BT Core spec 5.1, Vol 6, Part B, sec. 4.6 Feature Support
 
 config BT_CTLR_DF_ANT_SWITCH_TX
-	bool "Enable antenna switching during CTE transmission (AoD) feature"
+	bool "Antenna switching during CTE transmission (AoD) feature"
 	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
 	default y
 	help
@@ -80,7 +82,7 @@ config BT_CTLR_DF_ANT_SWITCH_TX
 	  Also known as Angle of Departure mode.
 
 config BT_CTLR_DF_ANT_SWITCH_RX
-	bool "Enable antenna switching during CTE reception (AoA) feature"
+	bool "Antenna switching during CTE reception (AoA) feature"
 	depends on BT_CTLR_DF_CTE_RX && BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
 	default y
 	help
@@ -88,7 +90,7 @@ config BT_CTLR_DF_ANT_SWITCH_RX
 	  Also known as Angle of Arrival mode.
 
 config BT_CTLR_DF_CTE_RX
-	bool "Enable reception of Constant Tone Extension feature"
+	bool "Reception of Constant Tone Extension feature"
 	depends on BT_CTLR_DF_CTE_RX_SUPPORT
 	select BT_CTLR_CONN_RSSI if BT_CONN
 	default y
@@ -96,30 +98,30 @@ config BT_CTLR_DF_CTE_RX
 	  Enable support for reception of Constant Tone Extension in controller.
 
 config BT_CTLR_DF_CONN_CTE_REQ
-	bool "Enable Connection CTE Request feature"
+	bool "Connection CTE Request feature"
 	depends on BT_CTLR_DF_CONN_CTE_RX
 	help
 	  Enable support for Bluetooth v5.1 Connection CTE Request feature
 	  in controller.
 
 config BT_CTLR_DF_CONN_CTE_RSP
-	bool "Enable Connection CTE Response feature"
+	bool "Connection CTE Response feature"
 	depends on BT_CTLR_DF_CONN_CTE_TX
 	help
 	  Enable support for Bluetooth v5.1 Connection CTE Response feature
 	  in controller.
 
 config BT_CTLR_DF_ADV_CTE_TX
-	bool "Enable Connectionless CTE Transmitter feature"
+	bool "Connectionless CTE Transmitter feature"
 	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_ADV_PERIODIC
-	select BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
+	select BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY if BT_LL_SW_SPLIT
 	default y
 	help
 	  Enable support for Bluetooth v5.1 Connectionless CTE Transmitter
 	  feature in controller.
 
 config BT_CTLR_DF_SCAN_CTE_RX
-	bool "Enable Connectionless CTE Receiver"
+	bool "Connectionless CTE Receiver"
 	depends on BT_CTLR_DF_CTE_RX && BT_CTLR_SYNC_PERIODIC
 	default y
 	help
@@ -127,7 +129,7 @@ config BT_CTLR_DF_SCAN_CTE_RX
 	  in controller.
 
 config BT_CTLR_DF_CONN_CTE_TX
-	bool "Enable Connection based CTE Transmitter"
+	bool "Connection based CTE Transmitter"
 	depends on BT_CTLR_DF_CTE_TX && BT_CONN
 	default y
 	help
@@ -135,15 +137,17 @@ config BT_CTLR_DF_CONN_CTE_TX
 	  direction finding connected mode.
 
 config BT_CTLR_DF_CONN_CTE_RX
-	bool "Enable Connection based CTE Receiver"
+	bool "Connection based CTE Receiver"
 	depends on BT_CTLR_DF_CTE_RX && BT_CONN
 	default y
 	help
 	  Enable reception and sampling of Constant Tone Extension in direction
 	  finding connected mode.
 
+if BT_LL_SW_SPLIT
+
 config BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC
-	bool "Enable sampling of CTE for PDUs with bad CRC"
+	bool "Sampling of CTE for PDUs with bad CRC"
 	depends on BT_CTLR_DF_SCAN_CTE_RX
 	default y
 	help
@@ -153,18 +157,18 @@ config BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC
 
 config BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN
 	int "Maximum length of antenna switch pattern"
-	range 3 39 if SOC_COMPATIBLE_NRF
+	range 2 38 if SOC_COMPATIBLE_NRF
 	range 2 75 if !SOC_COMPATIBLE_NRF
 	default 12
 	help
 	  Defines maximum length of antenna switch pattern that controller
 	  is able to store. For nRF5x-based controllers, the hardware imposes
-	  the value is within range 3 to 40, where last value is maximum.
+	  the value is within range 2 to 38, where last value is maximum.
 	  For general use cases Bluetooth Core 5.1 spec. required the value
 	  to be within range 2 up to 75.
 
 config BT_CTLR_DF_INIT_ANT_SEL_GPIOS
-	bool "Enable initialization of GPIOs responsible for antenna switching"
+	bool "Initialization of GPIOs responsible for antenna switching"
 	depends on BT_CTLR_DF_ANT_SWITCH_TX || BT_CTLR_DF_ANT_SWITCH_RX
 	default y
 	help
@@ -195,6 +199,61 @@ config BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX
 	  periodic advertising chain. The range is taken from BT Core spec 5.1, Vol 4 Part E
 	  section 7.8.82 HCI_LE_Set_Connectionless_IQ_Sampling_Enable Max_Sampled_CTEs parameter.
 
+config BT_CTLR_DF_SWITCH_OFFSET
+	int "Antenna switch offset relative to end of CRC"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 0
+	help
+	  Offset of start of antenna switching after end of the CRC. It is a signed value in number
+	  of 16M cycles. Decreasing the offset value beyond the trigger of the AoA/AoD procedure
+	  will have no effect.
+
+config BT_CTLR_DF_SAMPLE_OFFSET_PHY_1M_SAMPLING_1US
+	int "CTE sampling offset relative for PHY 1M and 1US samples spacing"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 1
+	help
+	  Offset of sampling start from beginning of sampling slot. The value is a signed number
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duration
+	  is 1 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
+	  no effect.
+
+config BT_CTLR_DF_SAMPLE_OFFSET_PHY_2M_SAMPLING_1US
+	int "CTE sampling offset relative for PHY 1M and 1US samples spacing"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 15
+	help
+	  Offset of sampling start from beginning of sampling slot. The value is a signed number
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duration
+	  is 1 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
+	  no effect.
+
+
+config BT_CTLR_DF_SAMPLE_OFFSET_PHY_1M_SAMPLING_2US
+	int "CTE sampling offset relative for PHY 1M and 2US samples spacing"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 6
+	help
+	  Offset of sampling start from beginning of sampling slot. The value is a signed number
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duration
+	  is 2 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
+	  no effect.
+
+config BT_CTLR_DF_SAMPLE_OFFSET_PHY_2M_SAMPLING_2US
+	int "CTE sampling offset relative for PHY 1M and 2US samples spacing"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 20
+	help
+	  Offset of sampling start from beginning of sampling slot. The value is a signed number
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duration
+	  is 2 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
+	  no effect.
+
 config BT_CTLR_DF_DEBUG_ENABLE
 	bool "Bluetooth Direction Finding debug support enable"
 	help
@@ -210,5 +269,7 @@ config BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE
 	  CTEINLINECTRLEN is enabled and received PDU does not have CTEInfo field. The option
 	  enables workaround for the delay to maintain inter frame spacing (IFS) for connection
 	  events.
+
+endif # BT_LL_SW_SPLIT
 
 endif # BT_CTLR_DF

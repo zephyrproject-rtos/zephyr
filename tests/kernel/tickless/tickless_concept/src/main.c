@@ -5,9 +5,9 @@
  */
 
 #include <ztest.h>
-#include <pm/pm.h>
+#include <zephyr/pm/pm.h>
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define NUM_THREAD 4
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
 static struct k_thread tdata[NUM_THREAD];

@@ -6,12 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_socks, CONFIG_SOCKS_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <net/socket.h>
-#include <net/net_pkt.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/net_pkt.h>
 
 #include "socks.h"
 #include "socks_internal.h"

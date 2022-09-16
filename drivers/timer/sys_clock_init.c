@@ -12,9 +12,9 @@
  * duplication.
  */
 
-#include <kernel.h>
-#include <init.h>
-#include <drivers/timer/system_timer.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/timer/system_timer.h>
 
 /* Weak-linked noop defaults for optional driver interfaces*/
 

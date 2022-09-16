@@ -6,15 +6,15 @@
 
 #define DT_DRV_COMPAT adi_adxl362
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
 
 #include "adxl362.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(ADXL362, CONFIG_SENSOR_LOG_LEVEL);
 
 static void adxl362_thread_cb(const struct device *dev)

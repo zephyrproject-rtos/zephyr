@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/gpio/gpio_sx1509b.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_sx1509b.h>
 
 #define NUMBER_OF_LEDS 3
 #define GREEN_LED DT_GPIO_PIN(DT_NODELABEL(led0), gpios)

@@ -57,8 +57,8 @@
  * @}
  */
 
-#include <drivers/watchdog.h>
-#include <zephyr.h>
+#include <zephyr/drivers/watchdog.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include "test_wdt.h"
 
@@ -76,8 +76,8 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_watchdog)
 #define TIMEOUTS 0
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_watchdog)
-#define WDT_NODE DT_INST(0, nordic_nrf_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_wdt)
+#define WDT_NODE DT_INST(0, nordic_nrf_wdt)
 #define TIMEOUTS 2
 #elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_watchdog)
 #define WDT_NODE DT_INST(0, espressif_esp32_watchdog)

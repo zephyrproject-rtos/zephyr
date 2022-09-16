@@ -374,7 +374,7 @@ Troubleshooting
 
 If the debug probe fails to connect with the following error, it's possible
 that the boot header in QSPI flash is invalid or corrupted. The boot header is
-configured by :kconfig:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
+configured by :kconfig:option:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
 
 .. code-block:: console
 

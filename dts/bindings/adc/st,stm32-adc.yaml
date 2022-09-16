@@ -27,5 +27,19 @@ properties:
     pinctrl-names:
       required: true
 
+    vref_mv:
+      type: int
+      required: false
+      default: 3300
+      description: Indicates the reference voltage of the ADC in mV.
+
+    has-temp-channel:
+      type: boolean
+      description: Indicates if the ADC has a dedicated internal temperature sensor channel.
+
+    has-vref-channel:
+      type: boolean
+      description: Indicates if the ADC has a dedicated internal voltage reference channel.
+
 io-channel-cells:
     - input

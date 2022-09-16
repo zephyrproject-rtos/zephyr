@@ -20,8 +20,15 @@ mkdir -p ${WORK_DIR}
 
 source ${ZEPHYR_BASE}/tests/bluetooth/bsim_bt/compile.source
 
+app=tests/bluetooth/bsim_bt/bsim_test_notify compile
+app=tests/bluetooth/bsim_bt/bsim_test_eatt_notif conf_file=prj.conf compile
+app=tests/bluetooth/bsim_bt/bsim_test_gatt_caching compile
+app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_encryption.conf compile
+app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_collision.conf compile
+app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_multiple_conn.conf compile
+app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_autoconnect.conf compile
 app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split.conf \
-	compile
+  compile
 app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split_privacy.conf \
   compile
 app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split_low_lat.conf \
@@ -29,7 +36,10 @@ app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split_low_lat.conf \
 app=tests/bluetooth/bsim_bt/bsim_test_multiple compile
 app=tests/bluetooth/bsim_bt/bsim_test_advx compile
 app=tests/bluetooth/bsim_bt/bsim_test_gatt compile
+app=tests/bluetooth/bsim_bt/bsim_test_l2cap compile
 app=tests/bluetooth/bsim_bt/bsim_test_iso compile
+app=tests/bluetooth/bsim_bt/bsim_test_iso conf_file=prj_vs_dp.conf \
+  compile
 app=tests/bluetooth/bsim_bt/bsim_test_audio compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
   conf_file=prj_dut_llcp.conf compile

@@ -28,7 +28,6 @@ config PLIC
 
 config SWERV_PIC
 	bool "SweRV EH1 Programmable Interrupt Controller (PIC)"
-	default n
 	help
 	  Programmable Interrupt Controller for the SweRV EH1 RISC-V CPU;
 
@@ -44,6 +43,16 @@ config LEON_IRQMP
 	depends on SOC_SPARC_LEON
 	help
 	  GRLIB IRQMP and IRQAMP
+
+config INTC_INIT_PRIORITY
+	int "Interrupt controller init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Interrupt controller device initialization priority.
+
+module = INTC
+module-str = intc
+source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/interrupt_controller/Kconfig.multilevel"
 

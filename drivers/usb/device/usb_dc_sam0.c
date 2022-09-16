@@ -7,10 +7,11 @@
 #define DT_DRV_COMPAT atmel_sam0_usb
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_sam0);
 
-#include <usb/usb_device.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <string.h>
 
@@ -62,6 +63,8 @@ struct usb_sam0_data {
 };
 
 static struct usb_sam0_data usb_sam0_data_0;
+PINCTRL_DT_INST_DEFINE(0);
+static const struct pinctrl_dev_config *pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
 static struct usb_sam0_data *usb_sam0_get_data(void)
 {
@@ -214,6 +217,7 @@ int usb_dc_attach(void)
 {
 	UsbDevice *regs = &REGS->DEVICE;
 	struct usb_sam0_data *data = usb_sam0_get_data();
+	int retval;
 
 #ifdef MCLK
 	/* Enable the clock in MCLK */
@@ -246,6 +250,11 @@ int usb_dc_attach(void)
 	 */
 	regs->QOSCTRL.bit.CQOS = 2;
 	regs->QOSCTRL.bit.DQOS = 2;
+
+	retval = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
 
 	usb_sam0_load_padcal();
 
@@ -304,7 +313,7 @@ int usb_dc_reset(void)
 }
 
 /* Queue a change in address.  This is processed later when the
- * current transfers are compelete.
+ * current transfers are complete.
  */
 int usb_dc_set_address(const uint8_t addr)
 {

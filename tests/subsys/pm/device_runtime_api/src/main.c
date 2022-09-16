@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <pm/device.h>
-#include <pm/device_runtime.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include "test_driver.h"
 
@@ -217,6 +217,25 @@ static void test_api(void)
 	zassert_equal(ret, 0, NULL);
 }
 
+static int pm_unsupported_init(const struct device *dev)
+{
+	return 0;
+}
+
+DEVICE_DEFINE(pm_unsupported_device, "PM Unsupported", pm_unsupported_init,
+	      NULL, NULL, NULL, APPLICATION, 0, NULL);
+
+static void test_unsupported(void)
+{
+	const struct device *dev = DEVICE_GET(pm_unsupported_device);
+
+	zassert_false(pm_device_runtime_is_enabled(dev), "");
+	zassert_equal(pm_device_runtime_enable(dev), -ENOTSUP, "");
+	zassert_equal(pm_device_runtime_disable(dev), -ENOTSUP, "");
+	zassert_equal(pm_device_runtime_get(dev), -ENOTSUP, "");
+	zassert_equal(pm_device_runtime_put(dev), -ENOTSUP, "");
+}
+
 void test_main(void)
 {
 	dev = device_get_binding("test_driver");
@@ -225,6 +244,7 @@ void test_main(void)
 	ztest_test_suite(device_runtime_api,
 			 ztest_unit_test_setup_teardown(test_api,
 							test_api_setup,
-							test_api_teardown));
+							test_api_teardown),
+			 ztest_unit_test(test_unsupported));
 	ztest_run_test_suite(device_runtime_api);
 }

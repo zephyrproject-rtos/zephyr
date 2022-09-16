@@ -20,11 +20,7 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 1
 
-if ADC
-
-config BATTERY_SENSE
-	default y
-
-endif # ADC
+config REGULATOR
+	default y if ADC || SENSOR
 
 endif # BOARD_HEXIWEAR_K64

@@ -8,13 +8,13 @@
  * @brief Driver for Nuclie's Extended Core Interrupt Controller
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <sys/util.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/init.h>
 #include <soc.h>
 
-#include <sw_isr_table.h>
+#include <zephyr/sw_isr_table.h>
 
 union CLICCFG {
 	struct {
@@ -181,4 +181,4 @@ static int nuclei_eclic_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(nuclei_eclic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(nuclei_eclic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);

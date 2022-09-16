@@ -17,3 +17,6 @@ supported:
   - gpio
   - pinmux
   - i2c
+  - adc
+  - pwm
+  - counter

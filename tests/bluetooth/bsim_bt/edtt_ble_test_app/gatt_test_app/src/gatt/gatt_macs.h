@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/gatt.h>
 
 /** @def BT_GATT_H_ATTRIBUTE
  *  @brief Attribute Declaration Macro.

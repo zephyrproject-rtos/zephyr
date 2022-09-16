@@ -34,6 +34,58 @@
 			status = "okay";
 		};
 
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			label = "TEST_I2C_CTLR";
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_i2c_ads1013: ads1013@0 {
+				compatible = "ti,ads1013";
+				label = "ADS1013";
+				reg = <0x0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads1014: ads1014@1 {
+				compatible = "ti,ads1014";
+				label = "ADS1014";
+				reg = <0x1>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads1015: ads1015@2 {
+				compatible = "ti,ads1015";
+				label = "ADS1015";
+				reg = <0x2>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads1113: ads1113@3 {
+				compatible = "ti,ads1113";
+				label = "ADS1113";
+				reg = <0x3>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads1114: ads1114@4 {
+				compatible = "ti,ads1114";
+				label = "ADS1114";
+				reg = <0x4>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads1115: ads1115@5 {
+				compatible = "ti,ads1115";
+				label = "ADS1115";
+				reg = <0x5>;
+				#io-channel-cells = <1>;
+			};
+		};
+
 		test_spi: spi@33334444 {
 			#address-cells = <1>;
 			#size-cells = <0>;

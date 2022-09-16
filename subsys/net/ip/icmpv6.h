@@ -13,11 +13,11 @@
 #ifndef __ICMPV6_H
 #define __ICMPV6_H
 
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/types.h>
 
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
 
 struct net_icmpv6_ns_hdr {
 	uint32_t reserved;
@@ -84,7 +84,7 @@ struct net_icmpv6_nd_opt_route_info {
 #endif
 	} flags;
 	uint32_t route_lifetime;
-	/* Variable-legnth prefix field follows, can be 0, 8 or 16 bytes
+	/* Variable-length prefix field follows, can be 0, 8 or 16 bytes
 	 * depending on the option length.
 	 */
 } __packed;
@@ -148,8 +148,8 @@ struct net_icmpv6_mld_mcast_record {
 /* Codes for ICMPv6 Destination Unreachable message */
 #define NET_ICMPV6_DST_UNREACH_NO_ROUTE  0 /* No route to destination */
 #define NET_ICMPV6_DST_UNREACH_ADMIN     1 /* Admin prohibited communication */
-#define NET_ICMPV6_DST_UNREACH_SCOPE     2 /* Beoynd scope of source address */
-#define NET_ICMPV6_DST_UNREACH_NO_ADDR   3 /* Address unrechable */
+#define NET_ICMPV6_DST_UNREACH_SCOPE     2 /* Beyond scope of source address */
+#define NET_ICMPV6_DST_UNREACH_NO_ADDR   3 /* Address unreachable */
 #define NET_ICMPV6_DST_UNREACH_NO_PORT   4 /* Port unreachable */
 #define NET_ICMPV6_DST_UNREACH_SRC_ADDR  5 /* Source address failed */
 #define NET_ICMPV6_DST_UNREACH_REJ_ROUTE 6 /* Reject route to destination */

@@ -51,4 +51,4 @@ Sample Output
     Found EEPROM device "EEPROM_M24C02"
     Using eeprom with size of: 256.
     Device booted 7 times.
-    Reset the MCU to see the inceasing boot counter.
+    Reset the MCU to see the increasing boot counter.

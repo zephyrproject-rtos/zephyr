@@ -7,7 +7,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #define csr_read(csr)						\
 ({								\

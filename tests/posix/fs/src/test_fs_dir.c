@@ -6,8 +6,8 @@
 
 #include <stdio.h>
 #include <fcntl.h>
-#include <posix/unistd.h>
-#include <posix/dirent.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/dirent.h>
 #include "test_fs.h"
 
 extern int test_file_write(void);
@@ -54,6 +54,7 @@ static int test_mkdir(void)
 static int test_lsdir(const char *path)
 {
 	DIR *dirp;
+	int res = 0;
 	struct dirent *entry;
 
 	TC_PRINT("\nreaddir test:\n");
@@ -67,20 +68,24 @@ static int test_lsdir(const char *path)
 
 	TC_PRINT("\nListing dir %s:\n", path);
 	/* Verify fs_readdir() */
-	entry = readdir(dirp);
+	errno = 0;
+	while ((entry = readdir(dirp)) != NULL) {
+		if (entry->d_name[0] == 0) {
+			res = -EIO;
+			break;
+		}
 
-	/* entry.name[0] == 0 means end-of-dir */
-	if (entry == NULL) {
-		closedir(dirp);
-		return -EIO;
-	} else {
 		TC_PRINT("[FILE] %s\n", entry->d_name);
+	}
+
+	if (errno) {
+		res = -EIO;
 	}
 
 	/* Verify fs_closedir() */
 	closedir(dirp);
 
-	return 0;
+	return res;
 }
 
 /**

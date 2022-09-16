@@ -7,7 +7,7 @@
 #ifndef SRC_MOCK_BACKEND_H__
 #define SRC_MOCK_BACKEND_H__
 
-#include <logging/log_backend.h>
+#include <zephyr/logging/log_backend.h>
 
 #ifdef __cplusplus
 extern "C" {

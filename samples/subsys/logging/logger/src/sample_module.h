@@ -6,7 +6,7 @@
 #ifndef SAMPLE_MODULE_H
 #define SAMPLE_MODULE_H
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #ifdef __cplusplus
 extern "C" {

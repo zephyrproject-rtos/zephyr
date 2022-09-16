@@ -7,22 +7,22 @@
 #define LOG_MODULE_NAME ieee802154_uart_pipe
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 
-#include <device.h>
-#include <init.h>
-#include <net/net_if.h>
-#include <net/net_pkt.h>
-#include <random/rand32.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/random/rand32.h>
 
-#include <drivers/console/uart_pipe.h>
-#include <net/ieee802154_radio.h>
+#include <zephyr/drivers/console/uart_pipe.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 #include "ieee802154_uart_pipe.h"
 

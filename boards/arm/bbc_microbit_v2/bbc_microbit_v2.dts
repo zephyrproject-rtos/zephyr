@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52833_qiaa.dtsi>
+#include "bbc_microbit_v2-pinctrl.dtsi"
 
 / {
 	model = "BBC Micro:bit V2";
@@ -111,19 +112,21 @@
 	compatible = "nordic,nrf-uart";
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <6>;
-	rx-pin = <40>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <16>;
-	scl-pin = <8>;
 
 	/* See https://tech.microbit.org/hardware/i2c/ for board variants */
 
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 	lsm303agr-magn@1e {
 		compatible = "st,lis2mdl", "st,lsm303agr-magn";
 		status = "okay";
@@ -150,7 +153,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0xC000>;
+			reg = <0x00000000 0xC000>;
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";

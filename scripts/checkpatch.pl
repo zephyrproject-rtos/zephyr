@@ -493,6 +493,7 @@ our $allocFunctions = qr{(?x:
 
 our $signature_tags = qr{(?xi:
 	Signed-off-by:|
+	Co-authored-by:|
 	Co-developed-by:|
 	Acked-by:|
 	Tested-by:|
@@ -4723,6 +4724,13 @@ sub process {
 					# colon immediately before or after
 					if (($op eq ':') &&
 					    ($ca =~ /:$/ || $cc =~ /^:/)) {
+						$ok = 1;
+					}
+
+					# some macros require a separator
+					# argument to be in parentheses,
+					# e.g. (||).
+					if ($ca =~ /\($/ || $cc =~ /^\)/) {
 						$ok = 1;
 					}
 

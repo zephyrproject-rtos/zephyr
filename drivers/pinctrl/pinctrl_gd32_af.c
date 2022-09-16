@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 BUILD_ASSERT((GD32_PUPD_NONE == GPIO_PUPD_NONE) &&

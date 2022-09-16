@@ -9,14 +9,14 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <em_cmu.h>
 #include <em_rtcc.h>
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_gecko, CONFIG_COUNTER_LOG_LEVEL);
 
 #define RTCC_MAX_VALUE       (_RTCC_CNT_MASK)
@@ -38,8 +38,6 @@ struct counter_gecko_data {
 	counter_top_callback_t top_callback;
 	void *top_user_data;
 };
-
-#define DEV_NAME(dev) ((dev)->name)
 
 #ifdef CONFIG_SOC_GECKO_HAS_ERRATA_RTCC_E201
 #define ERRATA_RTCC_E201_MESSAGE \
@@ -302,7 +300,7 @@ static int counter_gecko_init(const struct device *dev)
 	/* Configure & enable module interrupts */
 	dev_cfg->irq_config();
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

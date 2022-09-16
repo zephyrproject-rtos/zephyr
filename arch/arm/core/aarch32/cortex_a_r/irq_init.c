@@ -9,8 +9,8 @@
  * @brief ARM Cortex-A and Cortex-R interrupt initialization
  */
 
-#include <arch/cpu.h>
-#include <drivers/interrupt_controller/gic.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
 
 /**
  *

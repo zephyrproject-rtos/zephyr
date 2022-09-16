@@ -6,7 +6,7 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
-ram: 96
+ram: 192
 flash: 1024
 supported:
   - gpio

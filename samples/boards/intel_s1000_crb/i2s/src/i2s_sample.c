@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/i2s.h>
-#include <audio/codec.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/codec.h>
 
 #include <string.h>
 #include <math.h>
 
 #define LOG_LEVEL LOG_LEVEL_INF
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2s_sample);
 
 #define AUDIO_SAMPLE_FREQ		(48000)

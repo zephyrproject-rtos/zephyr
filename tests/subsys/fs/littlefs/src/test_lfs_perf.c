@@ -8,13 +8,13 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ztest.h>
 #include "testfs_tests.h"
 #include "testfs_lfs.h"
 #include <lfs.h>
 
-#include <fs/littlefs.h>
+#include <zephyr/fs/littlefs.h>
 
 #define HELLO "hello"
 #define GOODBYE "goodbye"

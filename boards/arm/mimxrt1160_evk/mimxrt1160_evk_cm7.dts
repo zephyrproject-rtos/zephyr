@@ -20,7 +20,7 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan3;
-		zephyr,flash-controller = &flexspi;
+		zephyr,flash-controller = &is25wp128;
 		zephyr,flash = &is25wp128;
 		zephyr,code-partition = &slot0_partition;
 	};
@@ -40,6 +40,10 @@
 &flexcan3 {
 	status = "okay";
 	bus-speed = <125000>;
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
 };
 
 &lpi2c1 {
@@ -117,7 +121,13 @@
 
 &enet {
 	status = "okay";
+	int-gpios = <&gpio9 11 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio12 12 GPIO_ACTIVE_HIGH>;
 	ptp {
 		status = "okay";
 	};
+};
+
+zephyr_udc0: &usb1 {
+	status = "okay";
 };

@@ -14,13 +14,12 @@ config XTENSA_TIMER
 
 config XTENSA_TIMER_ID
 	int "System timer CCOMPAREn register index"
-	default 1
+	default 0
 	depends on XTENSA_TIMER
 	help
 	  Index of the CCOMPARE register (and associated interrupt)
 	  used for the system timer.  Xtensa CPUs have hard-configured
 	  interrupt priorities associated with each timer, and some of
 	  them can be unmaskable (and thus not usable by OS code that
-	  need synchronization, like the timer subsystem!).  Choose
-	  carefully.  Generally you want the timer with the highest
-	  priority maskable interrupt.
+	  need synchronization, like the timer subsystem!).  In
+	  general timer zero is guaranteed to be present and usable.

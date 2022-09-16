@@ -12,16 +12,19 @@ choice CODE_LOCATION
 	default CODE_FLEXSPI
 endchoice
 
-config FLASH_MCUX_FLEXSPI_NOR
-	default y if FLASH
+if FLASH
 
-config FLASH_MCUX_FLEXSPI_XIP
-	default y if FLASH
-	depends on MEMC_MCUX_FLEXSPI
+config FLASH_MCUX_FLEXSPI_NOR
+	default y
+
+endif #FLASH
 
 if NETWORKING
 
 config NET_L2_ETHERNET
+	default y
+
+config ETH_MCUX_PHY_RESET
 	default y
 
 endif # NETWORKING

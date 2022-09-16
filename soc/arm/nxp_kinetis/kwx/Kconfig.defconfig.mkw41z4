@@ -23,10 +23,6 @@ config COUNTER_MCUX_RTC
 	default y
 	depends on COUNTER
 
-config PINMUX_MCUX
-	default y
-	depends on PINMUX
-
 config GPIO_MCUX
 	default y
 	depends on GPIO

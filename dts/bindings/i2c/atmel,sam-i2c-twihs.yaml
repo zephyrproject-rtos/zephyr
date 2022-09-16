@@ -5,7 +5,9 @@ description: Atmel SAM Family I2C (TWIHS) node
 
 compatible: "atmel,sam-i2c-twihs"
 
-include: i2c-controller.yaml
+include:
+    - name: i2c-controller.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:
@@ -18,15 +20,3 @@ properties:
       type: int
       description: peripheral ID
       required: true
-
-    pinctrl-0:
-      type: phandles
-      required: true
-      description: |
-        PIO pin configuration for TWCK & TWD signals.  We expect that
-        the phandles will reference pinctrl nodes.  These nodes will
-        have a nodelabel that matches the Atmel SoC HAL defines and
-        be of the form p<port><pin><periph>_<inst>_<signal>.
-
-        For example the I2C on SAME7x would be
-           pinctrl-0 = <&pa4a_twihs0_twck0 &pa3a_twihs0_twd0>;

@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/pm/pm.h>
 #include <soc.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include <stm32u5xx_ll_utils.h>
 #include <stm32u5xx_ll_bus.h>
@@ -16,7 +16,7 @@
 #include <stm32u5xx_ll_system.h>
 #include <clock_control/clock_stm32_ll_common.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* select MSI as wake-up system clock if configured, HSI otherwise */
@@ -62,22 +62,21 @@ void set_mode_shutdown(uint8_t substate_id)
 }
 
 /* Invoke Low Power/System Off specific Tasks */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-
-	switch (info.state) {
+	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
-		set_mode_stop(info.substate_id);
+		set_mode_stop(substate_id);
 		break;
 	case PM_STATE_STANDBY:
 		/* To be tested */
-		set_mode_standby(info.substate_id);
+		set_mode_standby(substate_id);
 		break;
 	case PM_STATE_SOFT_OFF:
-		set_mode_shutdown(info.substate_id);
+		set_mode_shutdown(substate_id);
 		break;
 	default:
-		LOG_DBG("Unsupported power state %u", info.state);
+		LOG_DBG("Unsupported power state %u", state);
 		return;
 	}
 
@@ -89,16 +88,16 @@ __weak void pm_power_state_set(struct pm_state_info info)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	switch (info.state) {
+	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
-		if (info.substate_id <= 3) {
+		if (substate_id <= 3) {
 			LL_LPM_DisableSleepOnExit();
 			LL_LPM_EnableSleep();
 		} else {
 			LOG_DBG("Unsupported power substate-id %u",
-							info.substate_id);
+							substate_id);
 		}
 	case PM_STATE_STANDBY:
 		/* To be tested */
@@ -113,7 +112,7 @@ __weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 	case PM_STATE_SUSPEND_TO_DISK:
 		__fallthrough;
 	default:
-		LOG_DBG("Unsupported power state %u", info.state);
+		LOG_DBG("Unsupported power state %u", state);
 		break;
 	}
 	/* need to restore the clock */

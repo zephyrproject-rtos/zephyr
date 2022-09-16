@@ -1,8 +1,12 @@
 # Xtensa board configuration
 
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2020,2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config  BOARD_INTEL_ADSP_CAVS20
-	bool "Intel ADSP CAVS 2.0"
+	bool "Intel ADSP CAVS 2.0 for Ice Lake"
+	depends on SOC_SERIES_INTEL_CAVS_V20
+
+config  BOARD_INTEL_ADSP_CAVS20_JSL
+	bool "Intel ADSP CAVS 2.0 for Jasper Lake"
 	depends on SOC_SERIES_INTEL_CAVS_V20

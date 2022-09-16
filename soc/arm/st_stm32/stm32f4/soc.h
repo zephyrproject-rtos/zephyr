@@ -22,6 +22,10 @@
 
 #include <stm32f4xx.h>
 
+/* The STM32 HAL headers define these, but they conflict with the Zephyr can.h */
+#undef CAN_MODE_NORMAL
+#undef CAN_MODE_LOOPBACK
+
 /* Add generated devicetree information and STM32 helper macros */
 #include <st_stm32_dt.h>
 

@@ -87,6 +87,12 @@ endif #ISA_ARCV2
 
 if ISA_ARCV3
 
+config CPU_HS5X
+	bool
+	select CPU_ARCHS
+	help
+	  If y, the SoC uses an ARC HS6x CPU
+
 config CPU_HS6X
 	bool
 	select CPU_ARCHS
@@ -168,7 +174,7 @@ config ARC_FIRQ
 	  from the performance point of view.
 
 config ARC_FIRQ_STACK
-	bool "Enable separate firq stack"
+	bool "Separate firq stack"
 	depends on ARC_FIRQ && RGF_NUM_BANKS > 1
 	help
 	  Use separate stack for FIRQ handing. When the fast irq is also a direct
@@ -220,7 +226,7 @@ config ARC_STACK_PROTECTION
 	  prioritized over the MPU-based stack guard.
 
 config ARC_USE_UNALIGNED_MEM_ACCESS
-	bool "Enable unaligned access in HW"
+	bool "Unaligned access in HW"
 	default y if CPU_ARCHS
 	depends on (CPU_ARCEM && !ARC_HAS_SECURE) || CPU_ARCHS
 	help
@@ -325,7 +331,7 @@ menu "ARC MPU Options"
 depends on CPU_HAS_MPU
 
 config ARC_MPU_ENABLE
-	bool "Enable MPU"
+	bool "Memory Protection Unit (MPU)"
 	select ARC_MPU
 	help
 	  Enable MPU
@@ -375,7 +381,7 @@ config IDLE_STACK_SIZE
 config IPM_CONSOLE_STACK_SIZE
 	default 2048 if 64BIT
 
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	default 2048 if 64BIT
 
 config CMSIS_THREAD_MAX_STACK_SIZE

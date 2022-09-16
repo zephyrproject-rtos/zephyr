@@ -9,12 +9,18 @@
 #include <string.h>
 
 #include "fcb_test.h"
-#include <storage/flash_map.h>
-#include <drivers/flash.h>
-#include <device.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/device.h>
 
 struct fcb test_fcb;
 uint8_t fcb_test_erase_value;
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	#define SECTOR_SIZE 0x20000 /* 128K */
+#else
+	#define SECTOR_SIZE 0x4000 /* 16K */
+#endif
 
 /* Sectors for FCB are defined far from application code
  * area. This test suite is the non bootable application so 1. image slot is
@@ -23,19 +29,19 @@ uint8_t fcb_test_erase_value;
 struct flash_sector test_fcb_sector[] = {
 	[0] = {
 		.fs_off = 0,
-		.fs_size = 0x4000, /* 16K */
+		.fs_size = SECTOR_SIZE
 	},
 	[1] = {
-		.fs_off = 0x4000,
-		.fs_size = 0x4000
+		.fs_off = SECTOR_SIZE,
+		.fs_size = SECTOR_SIZE
 	},
 	[2] = {
-		.fs_off = 0x8000,
-		.fs_size = 0x4000
+		.fs_off = 2 * SECTOR_SIZE,
+		.fs_size = SECTOR_SIZE
 	},
 	[3] = {
-		.fs_off = 0xc000,
-		.fs_size = 0x4000
+		.fs_off = 3 * SECTOR_SIZE,
+		.fs_size = SECTOR_SIZE
 	}
 };
 

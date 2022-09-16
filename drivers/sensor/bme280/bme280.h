@@ -10,10 +10,10 @@
 #define ZEPHYR_DRIVERS_SENSOR_BME280_BME280_H_
 
 #include <zephyr/types.h>
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/spi.h>
-#include <drivers/i2c.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/i2c.h>
 
 #define DT_DRV_COMPAT bosch_bme280
 

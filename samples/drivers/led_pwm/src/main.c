@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <drivers/led.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/zephyr.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 #if DT_NODE_HAS_STATUS(DT_INST(0, pwm_leds), okay)

@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <posix/pthread.h>
+#include <zephyr/posix/pthread.h>
 
 /**
  * @brief Destroy semaphore.

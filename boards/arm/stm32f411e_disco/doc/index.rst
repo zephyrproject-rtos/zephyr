@@ -150,7 +150,7 @@ Here is an example for the :ref:`blinky-sample` application.
    :board: stm32f411e_disco
    :goals: build flash
 
-Incase you are using PCB revision B, you have to use an
+In case you are using PCB revision B, you have to use an
 adapted board definition as the default PCB rev here is D:
 
 .. zephyr-app-commands::

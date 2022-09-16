@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
-#include <net/openthread.h>
-#include <sys/printk.h>
-#include <shell/shell.h>
-#include <shell/shell_uart.h>
+#include <zephyr/net/openthread.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_uart.h>
 
 #include <openthread/cli.h>
 #include <openthread/instance.h>

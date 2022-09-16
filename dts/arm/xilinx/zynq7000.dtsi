@@ -5,21 +5,21 @@
 
 #include <mem.h>
 #include <arm/armv7-a.dtsi>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
-#include <dt-bindings/ethernet/xlnx_gem.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/ethernet/xlnx_gem.h>
 
 / {
 	soc {
 		interrupt-parent = <&gic>;
 
 		ocm_low: memory@1000 {
-			compatible = "xlnx,zynq-ocm";
+			compatible = "zephyr,memory-region", "xlnx,zynq-ocm";
 			reg = <0x00001000 DT_SIZE_K(188)>;
 			zephyr,memory-region = "OCM_LOW";
 		};
 
 		ocm_high: memory@fffc0000 {
-			compatible = "xlnx,zynq-ocm";
+			compatible = "zephyr,memory-region", "xlnx,zynq-ocm";
 			reg = <0xFFFC0000 DT_SIZE_K(256)>;
 			zephyr,memory-region = "OCM_HIGH";
 		};
@@ -126,5 +126,58 @@
 			label = "uart1";
 		};
 
+		psgpio: gpio@e000a000 {
+			compatible = "xlnx,ps-gpio";
+			status = "disabled";
+			reg = <0xe000a000 0x1000>;
+			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			label = "psgpio";
+
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			psgpio_bank0: psgpio_bank@0 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x0>;
+				label = "psgpio_bank0_mio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "okay";
+			};
+
+			psgpio_bank1: psgpio_bank@1 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x1>;
+				label = "psgpio_bank1_mio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <22>;
+				status = "okay";
+			};
+
+			psgpio_bank2: psgpio_bank@2 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x2>;
+				label = "psgpio_bank2_emio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "okay";
+			};
+
+			psgpio_bank3: psgpio_bank@3 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x3>;
+				label = "psgpio_bank3_emio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "okay";
+			};
+		};
 	};
 };

@@ -12,26 +12,26 @@
  */
 
 #define LOG_LEVEL CONFIG_NET_PPP_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ppp, LOG_LEVEL);
 
 #include <stdio.h>
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #include <stdbool.h>
 #include <errno.h>
 #include <stddef.h>
-#include <net/ppp.h>
-#include <net/buf.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/net_core.h>
-#include <sys/ring_buffer.h>
-#include <sys/crc.h>
-#include <drivers/uart.h>
-#include <drivers/console/uart_mux.h>
-#include <random/rand32.h>
+#include <zephyr/net/ppp.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/console/uart_mux.h>
+#include <zephyr/random/rand32.h>
 
 #include "../../subsys/net/ip/net_stats.h"
 #include "../../subsys/net/ip/net_private.h"

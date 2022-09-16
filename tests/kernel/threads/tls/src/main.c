@@ -5,14 +5,14 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
-#include <kernel_structs.h>
-#include <app_memory/app_memdomain.h>
-#include <sys/libc-hooks.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/sys/libc-hooks.h>
+#include <zephyr/sys/util.h>
 
 #define NUM_THREADS	3
-#define STACK_SIZE	(512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE	(512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #define STATIC_DATA8	0x7FU
 #define STATIC_DATA32	0xABCDEF00U

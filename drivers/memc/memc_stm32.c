@@ -4,15 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT st_stm32_fmc
+#include <zephyr/device.h>
+#include <soc.h>
 
-#include <device.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/pinctrl.h>
-
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(memc_stm32, CONFIG_MEMC_LOG_LEVEL);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_fmc)
+#define DT_DRV_COMPAT st_stm32_fmc
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_fmc)
+#define DT_DRV_COMPAT st_stm32h7_fmc
+#else
+#error "No compatible FMC devicetree node found"
+#endif
 
 struct memc_stm32_config {
 	uint32_t fmc;
@@ -42,6 +49,16 @@ static int memc_stm32_init(const struct device *dev)
 		LOG_ERR("Could not initialize FMC clock (%d)", r);
 		return r;
 	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_fmc)
+#if (DT_ENUM_IDX(DT_DRV_INST(0), st_mem_swap) == 1)
+	/* sdram-sram */
+	MODIFY_REG(FMC_Bank1_R->BTCR[0], FMC_BCR1_BMAP, FMC_BCR1_BMAP_0);
+#elif (DT_ENUM_IDX(DT_DRV_INST(0), st_mem_swap) == 2)
+	/* sdramb2 */
+	MODIFY_REG(FMC_Bank1_R->BTCR[0], FMC_BCR1_BMAP, FMC_BCR1_BMAP_1);
+#endif
+#endif
 
 	return 0;
 }

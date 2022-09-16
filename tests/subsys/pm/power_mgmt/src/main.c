@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/printk.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
-#include <pm/device.h>
-#include <pm/device_runtime.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <ztest.h>
 #include <ksched.h>
-#include <kernel.h>
-#include <pm/pm.h>
+#include <zephyr/kernel.h>
+#include <zephyr/pm/pm.h>
 #include "dummy_driver.h"
 
 #define SLEEP_MSEC 100
@@ -141,8 +141,11 @@ DEVICE_DT_DEFINE(DT_INST(2, test_device_pm), device_init,
 
 
 
-void pm_power_state_set(struct pm_state_info info)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
+	ARG_UNUSED(substate_id);
+	ARG_UNUSED(state);
+
 	enum pm_device_state device_power_state;
 
 	/* If testing device order this function does not need to anything */
@@ -185,12 +188,15 @@ void pm_power_state_set(struct pm_state_info info)
 	/* this function is called when system entering low power state, so
 	 * parameter state should not be PM_STATE_ACTIVE
 	 */
-	zassert_false(info.state == PM_STATE_ACTIVE,
+	zassert_false(state == PM_STATE_ACTIVE,
 		      "Entering low power state with a wrong parameter");
 }
 
-void pm_power_state_exit_post_ops(struct pm_state_info info)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
 	/* pm_system_suspend is entered with irq locked
 	 * unlock irq before leave pm_system_suspend
 	 */
@@ -207,6 +213,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	/* make sure this is idle thread */
 	zassert_true(z_is_idle_thread_object(_current), NULL);
 	zassert_true(ticks == _kernel.idle, NULL);
+	zassert_false(k_can_yield(), NULL);
 	idle_entered = true;
 
 	if (enter_low_power) {
@@ -411,7 +418,7 @@ void test_busy(void)
 
 void test_device_state_lock(void)
 {
-	pm_device_state_lock((struct device *)device_a);
+	pm_device_state_lock(device_a);
 	zassert_true(pm_device_state_is_locked(device_a), NULL);
 
 	testing_device_lock = true;
@@ -419,7 +426,7 @@ void test_device_state_lock(void)
 
 	k_sleep(SLEEP_TIMEOUT);
 
-	pm_device_state_unlock((struct device *)device_a);
+	pm_device_state_unlock(device_a);
 
 	testing_device_lock = false;
 }

@@ -2,6 +2,8 @@ identifier: nrf52833dk_nrf52833
 name: nRF52833-DK-NRF52833
 type: mcu
 arch: arm
+ram: 128
+flash: 512
 toolchain:
   - zephyr
   - gnuarmemb

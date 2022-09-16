@@ -9,6 +9,5 @@ target_include_directories(MCUMGR INTERFACE
 )
 
 zephyr_library_sources(
-    src/zephyr_shell_mgmt.c
     src/shell_mgmt.c
 )

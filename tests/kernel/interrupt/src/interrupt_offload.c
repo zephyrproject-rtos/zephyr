@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 #include <interrupt_util.h>
 
 #define STACK_SIZE	1024
@@ -71,10 +71,10 @@ void isr_handler(const void *param)
 
 	orig_t_keep_run = 0;
 
-	/* If the work is busy, we don't sumbit it. */
+	/* If the work is busy, we don't submit it. */
 	if (!k_work_busy_get(work)) {
 		zassert_equal(k_work_submit_to_queue(&wq_queue, work),
-				1, "kwork not sumbmitted or queued");
+				1, "kwork not submitted or queued");
 
 		atomic_inc(&submit_success);
 	}
@@ -104,7 +104,7 @@ static void init_dyn_interrupt(void)
 		ztest_test_skip();
 	}
 
-	/* We just initialize dynamic interrput once, then reuse them */
+	/* We just initialize dynamic interrupt once, then reuse them */
 	if (!vector_num) {
 		vector_num = irq_connect_dynamic(TEST_IRQ_DYN_LINE, 1,
 					isr_handler, (void *)&irq_param, 0);

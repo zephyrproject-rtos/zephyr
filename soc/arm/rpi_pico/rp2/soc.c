@@ -13,9 +13,9 @@
  * for the Raspberry Pi RP2040 family processor.
  */
 
-#include <kernel.h>
-#include <init.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 
 #include <hardware/regs/resets.h>
 #include <hardware/clocks.h>

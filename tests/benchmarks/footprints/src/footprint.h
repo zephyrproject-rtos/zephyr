@@ -7,9 +7,9 @@
 #ifndef _FOOTPRINT_H_
 #define _FOOTPRINT_H_
 
-#include <kernel.h>
-#include <zephyr.h>
-#include <app_memory/app_memdomain.h>
+#include <zephyr/kernel.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/app_memory/app_memdomain.h>
 
 K_THREAD_STACK_EXTERN(my_stack_area);
 K_THREAD_STACK_EXTERN(my_stack_area_0);

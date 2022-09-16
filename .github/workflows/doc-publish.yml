@@ -2,24 +2,23 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-name: Publish Documentation
+name: Documentation Publish
 
 on:
   workflow_run:
     workflows: ["Documentation Build"]
     branches:
-      - main
-      - v*
-    tags:
-      - v*
+    - main
+    - v*
     types:
-      - completed
+    - completed
 
 jobs:
   doc-publish:
     name: Publish Documentation
     runs-on: ubuntu-latest
     if: |
+      github.event.workflow_run.event != 'pull_request' &&
       github.event.workflow_run.conclusion == 'success' &&
       github.repository == 'zephyrproject-rtos/zephyr'
 

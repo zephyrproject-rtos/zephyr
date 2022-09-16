@@ -67,11 +67,11 @@
  */
 
 #include <assert.h>
-#include <drivers/clock_control.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/i2c.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_npcx, LOG_LEVEL_ERR);
 
 /* I2C controller mode */
@@ -143,7 +143,7 @@ struct i2c_ctrl_data {
 	struct i2c_msg *msg; /* cache msg for transaction state machine */
 	int is_write; /* direction of current msg */
 	uint8_t *ptr_msg; /* current msg pointer for FIFO read/write */
-	uint16_t addr; /* slave address of transcation */
+	uint16_t addr; /* slave address of transaction */
 	uint8_t port; /* current port used the controller */
 	bool is_configured; /* is port configured? */
 	const struct npcx_i2c_timing_cfg *ptr_speed_confs;
@@ -298,7 +298,7 @@ static inline void i2c_ctrl_fifo_clear_status(const struct device *dev)
 /*
  * I2C local functions which touch the registers in 'Normal' bank. These
  * utilities will change bank back to FIFO mode when leaving themselves in case
- * the other utilities acces the registers in 'FIFO' bank.
+ * the other utilities access the registers in 'FIFO' bank.
  */
 static void i2c_ctrl_hold_bus(const struct device *dev, int stall)
 {
@@ -739,9 +739,11 @@ static void i2c_ctrl_isr(const struct device *dev)
 	}
 
 	/* Clear unexpected status bits */
-	inst_fifo->SMBST = status;
-	LOG_ERR("Unexpected  SMBST 0x%02x occurred on i2c port%02x!", status,
-								data->port);
+	if (status != 0) {
+		inst_fifo->SMBST = status;
+		LOG_ERR("Unexpected  SMBST 0x%02x occurred on i2c port%02x!",
+			status, data->port);
+	}
 }
 
 /* NPCX specific I2C controller functions */
@@ -919,7 +921,7 @@ static int i2c_ctrl_init(const struct device *dev)
 	/* Initialize i2c module */
 	i2c_ctrl_init_module(dev);
 
-	/* initialize mutux and semaphore for i2c/smb controller */
+	/* initialize mutex and semaphore for i2c/smb controller */
 	k_sem_init(&data->lock_sem, 1, 1);
 	k_sem_init(&data->sync_sem, 0, K_SEM_MAX_LIMIT);
 
@@ -965,7 +967,7 @@ static int i2c_ctrl_init(const struct device *dev)
 			    NPCX_I2C_CTRL_INIT_FUNC(inst),                     \
 			    NULL,                                              \
 			    &i2c_ctrl_data_##inst, &i2c_ctrl_cfg_##inst,       \
-			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
+			    PRE_KERNEL_1, CONFIG_I2C_INIT_PRIORITY,            \
 			    NULL);                                             \
 									       \
 	NPCX_I2C_CTRL_INIT_FUNC_IMPL(inst)

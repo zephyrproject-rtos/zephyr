@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "mimxrt1160_evk-pinctrl.dtsi"
+
 / {
 	aliases {
 		led0 = &green_led;
@@ -30,7 +32,7 @@
 		compatible = "pwm-leds";
 
 		green_pwm_led: green_pwm_led {
-			pwms = <&flexpwm1_pwm2 0>;
+			pwms = <&flexpwm1_pwm2 0 PWM_MSEC(20)>;
 		};
 	};
 };
@@ -38,6 +40,15 @@
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &user_button {
@@ -50,6 +61,8 @@
 
 &lpi2c5 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
 
 	fxos8700@1f {
 		compatible = "nxp,fxos8700";
@@ -68,4 +81,67 @@
 
 &flexpwm1_pwm2 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm1>;
+	pinctrl-names = "default";
+};
+
+&enet {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	ptp {
+		pinctrl-0 = <&pinmux_ptp>;
+		pinctrl-names = "default";
+	};
+};
+
+&csi {
+	pinctrl-0 = <&pinmux_csi>;
+	pinctrl-names = "default";
+};
+
+&flexcan3 {
+	pinctrl-0 = <&pinmux_flexcan3>;
+	pinctrl-names = "default";
+};
+
+&lcdif {
+	pinctrl-0 = <&pinmux_lcdif>;
+	pinctrl-names = "default";
+};
+
+&lpi2c1 {
+	pinctrl-0 =<&pinmux_lpi2c5>;
+	pinctrl-names = "default";
+};
+
+&lpspi1 {
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
+&lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&sai1 {
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+};
+
+&lpadc0 {
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+&flexspi {
+	pinctrl-0 = <&pinmux_flexspi1>;
+	pinctrl-names = "default";
+};
+
+&usdhc1 {
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_dat3_nopull>;
+	pinctrl-names = "default", "nopull";
 };

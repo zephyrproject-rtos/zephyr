@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT zephyr_spi_bitbang
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_bitbang);
 
-#include <sys/sys_io.h>
-#include <drivers/spi.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/drivers/spi.h>
 #include "spi_context.h"
 
 struct spi_bitbang_data {

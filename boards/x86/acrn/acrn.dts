@@ -11,7 +11,7 @@
 #define DT_DRAM_SIZE	DT_SIZE_K(8192)
 #define DT_DRAM_BASE	0
 
-#include <ia32.dtsi>
+#include <intel/ia32.dtsi>
 
 / {
 	model = "ACRN";

@@ -7,11 +7,10 @@
 
 #include "pm_stats.h"
 
-#include <autoconf.h>
-#include <init.h>
-#include <kernel_structs.h>
-#include <stats/stats.h>
-#include <sys/printk.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/stats/stats.h>
+#include <zephyr/sys/printk.h>
 
 STATS_SECT_START(pm_stats)
 STATS_SECT_ENTRY32(state_count)

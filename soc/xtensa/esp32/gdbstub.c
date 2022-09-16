@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <xtensa-asm2-context.h>
-#include <debug/gdbstub.h>
+#include <zephyr/debug/gdbstub.h>
 
 /*
  * Address Mappings From ESP32 Technical Reference Manual Version 4.5

@@ -6,7 +6,9 @@ description: |
 
 compatible: "atmel,sam-usbhs"
 
-include: usb-ep.yaml
+include:
+    - name: usb-ep.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:

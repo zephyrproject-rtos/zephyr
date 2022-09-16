@@ -10,16 +10,14 @@ config BT_AUDIO_UNICAST
 	bool
 	depends on BT_CONN
 	select BT_SMP
-	select BT_L2CAP_DYNAMIC_CHANNEL
 	select BT_ISO_UNICAST
-	select BT_L2CAP_ECRED
-	select BT_EATT
 
 config BT_AUDIO_UNICAST_SERVER
 	bool "Bluetooth Unicast Audio Server Support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select BT_PERIPHERAL
 	select BT_AUDIO_UNICAST
+	select BT_ISO_PERIPHERAL
 	select BT_GATT_DYNAMIC_DB
 	select BT_GATT_CACHING
 	select BT_PACS
@@ -32,14 +30,14 @@ config BT_AUDIO_UNICAST_CLIENT
 	bool "Bluetooth Unicast Audio Client Support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select BT_AUDIO_UNICAST
+	select BT_ISO_CENTRAL
 	select BT_CENTRAL
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
+	select BT_GATT_AUTO_UPDATE_MTU
 	help
 	  This option enables support for Bluetooth Unicast Audio Client
 	  using Isochronous channels.
-
-if BT_AUDIO_UNICAST
 
 config BT_CODEC_MAX_DATA_COUNT
 	int "Codec Capabilities Data Count"
@@ -118,7 +116,6 @@ config BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT
 	  instances for Basic Audio Profile on a per connection basis.
 
 endif # BT_AUDIO_UNICAST_CLIENT
-endif # BT_AUDIO_UNICAST
 
 config BT_AUDIO_BROADCAST_SOURCE
 	bool "Bluetooth Broadcast Source Audio Support [EXPERIMENTAL]"
@@ -128,6 +125,10 @@ config BT_AUDIO_BROADCAST_SOURCE
 	  This option enables support for Bluetooth Broadcast Source Audio using
 	  Isochronous channels.
 if BT_AUDIO_BROADCAST_SOURCE
+
+config BT_AUDIO_BROADCAST_SRC_SUBGROUP_COUNT
+	int # hidden: TODO: Update once the API supports it
+	default 1
 
 config BT_AUDIO_BROADCAST_SRC_COUNT
 	int "Basic Audio Broadcaster source count"
@@ -159,7 +160,7 @@ config BT_AUDIO_BROADCAST_SINK
 
 if BT_AUDIO_BROADCAST_SINK
 
-config BT_AUDIO_BROADCAST_SUBGROUP_COUNT
+config BT_AUDIO_BROADCAST_SNK_SUBGROUP_COUNT
 	int # hidden: TODO: Update once the API supports it
 	default 1
 
@@ -183,14 +184,6 @@ config BT_AUDIO_BROADCAST_SNK_STREAM_COUNT
 
 endif # BT_AUDIO_BROADCAST_SINK
 
-config BT_AUDIO_DEBUG
-	bool "Enable debug logs"
-	depends on BT_DEBUG
-	help
-	  Use this option to enable debug logs for the Bluetooth
-	  Audio functionality.
-
-if BT_AUDIO_DEBUG
 
 config BT_DEBUG_PACS
 	bool "Published Audio Capabilities Service debug"
@@ -208,7 +201,7 @@ config BT_AUDIO_DEBUG_STREAM
 
 config BT_AUDIO_DEBUG_CAPABILITIES
 	bool "Bluetooth Audio Capabilities debug"
-	depends on BT_AUDIO_CAPABILITIES
+	depends on BT_AUDIO_CAPABILITY
 	help
 	  Use this option to enable Bluetooth Audio Capabilities debug logs for
 	  the Bluetooth Audio functionality.
@@ -248,7 +241,6 @@ config BT_AUDIO_DEBUG_BROADCAST_SINK
 	  Use this option to enable Bluetooth Audio Broadcast Sink debug logs
 	  for the Bluetooth Audio functionality.
 
-endif # BT_AUDIO_DEBUG
 
 config BT_AUDIO_STREAM
 	# Virtual/hidden option
@@ -256,7 +248,7 @@ config BT_AUDIO_STREAM
 	default y if BT_ASCS || BT_AUDIO_UNICAST_CLIENT || \
 			BT_AUDIO_BROADCAST_SOURCE || BT_AUDIO_BROADCAST_SINK
 
-config BT_AUDIO_CAPABILITIES
+config BT_AUDIO_CAPABILITY
 	# Virtual/hidden option
 	bool
 	default y if BT_ASCS || BT_AUDIO_BROADCAST_SINK

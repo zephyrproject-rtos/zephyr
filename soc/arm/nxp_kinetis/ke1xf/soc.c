@@ -8,12 +8,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <fsl_clock.h>
 #include <fsl_cache.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #define ASSERT_WITHIN_RANGE(val, min, max, str) \
 	BUILD_ASSERT(val >= min && val <= max, str)

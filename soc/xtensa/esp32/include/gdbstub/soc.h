@@ -10,7 +10,7 @@
 #define SOC_XTENSA_ESP32_GDBSTUB_H_
 
 #ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_GDBSTUB_SYS_H_
-#error "Must be inclued after arch/xtensa/gdbstub.h"
+#error "Must be included after arch/xtensa/gdbstub.h"
 #endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_GDBSTUB_SYS_H_ */
 
 #define SOC_GDB_GPKT_BIN_SIZE		420

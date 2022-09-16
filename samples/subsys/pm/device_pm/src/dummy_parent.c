@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <pm/device.h>
-#include <pm/device_runtime.h>
-#include <sys/printk.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/printk.h>
 #include "dummy_parent.h"
 
 static uint32_t store_value;
@@ -14,8 +14,6 @@ static uint32_t store_value;
 static int dummy_transfer(const struct device *dev, uint32_t cmd,
 			  uint32_t *val)
 {
-	printk("transfer()\n");
-
 	if (cmd == DUMMY_PARENT_WR) {
 		store_value = *val;
 	} else {

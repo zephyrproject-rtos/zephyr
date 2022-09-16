@@ -20,7 +20,6 @@ module = DISPLAY
 module-str = display
 source "subsys/logging/Kconfig.template.log_config"
 
-source "drivers/display/Kconfig.grove"
 source "drivers/display/Kconfig.mcux_elcdif"
 source "drivers/display/Kconfig.microbit"
 source "drivers/display/Kconfig.nrf_led_matrix"
@@ -34,6 +33,7 @@ source "drivers/display/Kconfig.stm32_ltdc"
 source "drivers/display/Kconfig.gd7965"
 source "drivers/display/Kconfig.dummy"
 source "drivers/display/Kconfig.ls0xx"
+source "drivers/display/Kconfig.rm68200"
 
 config FRAMEBUF_DISPLAY
 	# Hidden, selected by client drivers.

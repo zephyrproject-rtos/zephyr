@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/sensor.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/device.h>
 #include <stdio.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #ifdef CONFIG_APDS9960_TRIGGER
 K_SEM_DEFINE(sem, 0, 1);

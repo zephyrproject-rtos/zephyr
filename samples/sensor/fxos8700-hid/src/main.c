@@ -5,12 +5,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 
-#include <usb/usb_device.h>
-#include <usb/class/usb_hid.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/usb/class/usb_hid.h>
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(main);
@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(main);
 #define LED_FLAGS	DT_GPIO_FLAGS(DT_ALIAS(led0), gpios)
 
 #ifdef CONFIG_FXOS8700
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 #define SENSOR_ACCEL_NAME DT_LABEL(DT_INST(0, nxp_fxos8700))
 #endif
 
@@ -110,8 +110,7 @@ int callbacks_configure(const struct device *gpio, uint32_t pin, int flags,
 		return -ENXIO;
 	}
 
-	gpio_pin_configure(gpio, pin,
-			   GPIO_INPUT | GPIO_INT_DEBOUNCE | flags);
+	gpio_pin_configure(gpio, pin, GPIO_INPUT | flags);
 	ret = gpio_pin_get(gpio, pin);
 	if (ret < 0) {
 		return ret;

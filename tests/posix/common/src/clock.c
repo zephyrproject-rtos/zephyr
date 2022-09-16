@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztest.h>
-#include <posix/time.h>
-#include <posix/sys/time.h>
-#include <posix/unistd.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/posix/sys/time.h>
+#include <zephyr/posix/unistd.h>
 
 #define SLEEP_SECONDS 1
 #define CLOCK_INVALID -1
@@ -84,7 +84,7 @@ void test_posix_realtime(void)
 	for (int i = 1; i <= 20; i++) {
 		usleep(USEC_PER_MSEC * 90U);
 		ret = clock_gettime(CLOCK_REALTIME, &rts);
-		zassert_equal(ret, 0, "Fail to read realitime clock");
+		zassert_equal(ret, 0, "Fail to read realtime clock");
 
 		int64_t delta =
 			((int64_t)rts.tv_sec * NSEC_PER_SEC -

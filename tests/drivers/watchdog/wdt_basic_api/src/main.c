@@ -12,7 +12,7 @@
  * @}
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include "test_wdt.h"
 

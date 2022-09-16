@@ -121,6 +121,12 @@ features:
 +-----------+------------+-------------------------------------+
 | SAI       | on-chip    | i2s                                 |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB Device                          |
++-----------+------------+-------------------------------------+
+| HWINFO    | on-chip    | Unique device serial number         |
++-----------+------------+-------------------------------------+
+| DISPLAY   | on-chip    | display                             |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1170_evk/mimxrt1170_evk_cm7_defconfig``

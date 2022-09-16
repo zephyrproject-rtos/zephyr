@@ -10,11 +10,10 @@
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
-#include <drivers/clock_control.h>
-#include <sys/util.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
-
 
 #if STM32_SYSCLK_SRC_PLL
 
@@ -26,14 +25,45 @@
 #define pllp(v) z_pllp(v)
 
 /**
- * @brief fill in pll configuration structure
+ * @brief Return PLL source
  */
-void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
+__unused
+static uint32_t get_pll_source(void)
 {
-	pllinit->PLLM = pllm(STM32_PLL_M_DIVISOR);
-	pllinit->PLLN = STM32_PLL_N_MULTIPLIER;
-	pllinit->PLLP = pllp(STM32_PLL_P_DIVISOR);
+	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		return LL_RCC_PLLSOURCE_HSI;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		return LL_RCC_PLLSOURCE_HSE;
+	}
+
+	__ASSERT(0, "Invalid source");
+	return 0;
 }
+
+/**
+ * @brief Set up pll configuration
+ */
+__unused
+void config_pll_sysclock(void)
+{
+	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(),
+				    pllm(STM32_PLL_M_DIVISOR),
+				    STM32_PLL_N_MULTIPLIER,
+				    pllp(STM32_PLL_P_DIVISOR));
+}
+
+/**
+ * @brief Return pllout frequency
+ */
+__unused
+uint32_t get_pllout_frequency(void)
+{
+	return __LL_RCC_CALC_PLLCLK_FREQ(get_pll_source(),
+					 pllm(STM32_PLL_M_DIVISOR),
+					 STM32_PLL_N_MULTIPLIER,
+					 pllp(STM32_PLL_P_DIVISOR));
+}
+
 #endif /* STM32_SYSCLK_SRC_PLL */
 
 /**
@@ -43,12 +73,4 @@ void config_enable_default_clocks(void)
 {
 	/* Power Interface clock enabled by default */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-}
-
-/**
- * @brief Function kept for driver genericity
- */
-void LL_RCC_MSI_Disable(void)
-{
-	/* Do nothing */
 }

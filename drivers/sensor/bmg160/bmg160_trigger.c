@@ -8,14 +8,14 @@
  * http://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMG160-DS000-09.pdf
  */
 
-#include <kernel.h>
-#include <drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
 
 #include "bmg160.h"
 
 extern struct bmg160_device_data bmg160_data;
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(BMG160, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int setup_int(const struct device *dev,

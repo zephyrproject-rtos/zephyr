@@ -10,10 +10,10 @@
 
 #define DT_DRV_COMPAT st_iis2mdc
 
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 #include "iis2mdc.h"
 
 LOG_MODULE_DECLARE(IIS2MDC, CONFIG_SENSOR_LOG_LEVEL);

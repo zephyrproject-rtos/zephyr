@@ -1,0 +1,18 @@
+# Copyright (c) 2022 KT-Elektronik, Klaucke und Partner GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX Quad Timer (QTMR)
+
+compatible: "nxp,imx-qtmr"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    label:
+      required: true

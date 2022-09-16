@@ -12,11 +12,11 @@
  * @brief LED driver for the TLC59108 I2C LED driver
  */
 
-#include <drivers/i2c.h>
-#include <drivers/led.h>
-#include <sys/util.h>
-#include <zephyr.h>
-#include <logging/log.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(tlc59108, CONFIG_LED_LOG_LEVEL);
 
@@ -140,7 +140,7 @@ static int tlc59108_led_blink(const struct device *dev, uint32_t led,
 		return -EIO;
 	}
 
-	/* Select the GRPPWM source to drive the LED outpout */
+	/* Select the GRPPWM source to drive the LED output */
 	return tlc59108_set_ledout(dev, led, TLC59108_LED_GRP_PWM);
 }
 

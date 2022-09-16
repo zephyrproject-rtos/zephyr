@@ -13,7 +13,7 @@ if COAP
 
 # This setting is only used by unit test. Do not enable it in applications
 config COAP_TEST_API_ENABLE
-	bool "Enable test API for CoAP unit tests"
+	bool "Test API for CoAP unit tests"
 	help
 	  Do not enable this for normal use.
 
@@ -70,14 +70,14 @@ config COAP_RANDOMIZE_ACK_TIMEOUT
 	  will be fixed to the value of COAP_INIT_ACK_TIMEOUT_MS option.
 
 config COAP_URI_WILDCARD
-	bool "Enable wildcards in CoAP resource path"
+	bool "Wildcards in CoAP resource path"
 	default y
 	help
 	  This option enables MQTT-style wildcards in path. Disable it if
 	  resource path may contain plus or hash symbol.
 
 config COAP_KEEP_USER_DATA
-	bool "Enable keeping user data in the CoAP packet"
+	bool "Keeping user data in the CoAP packet"
 	help
 	  This option enables keeping application-specific user data
 

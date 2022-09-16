@@ -11,30 +11,30 @@
  * This module contains routines that are used to initialize the kernel.
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <offsets_short.h>
-#include <kernel.h>
-#include <sys/printk.h>
-#include <debug/stack.h>
-#include <random/rand32.h>
-#include <linker/sections.h>
-#include <toolchain.h>
-#include <kernel_structs.h>
-#include <device.h>
-#include <init.h>
-#include <linker/linker-defs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/linker/linker-defs.h>
 #include <ksched.h>
 #include <string.h>
-#include <sys/dlist.h>
+#include <zephyr/sys/dlist.h>
 #include <kernel_internal.h>
-#include <drivers/entropy.h>
-#include <logging/log_ctrl.h>
-#include <tracing/tracing.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/tracing/tracing.h>
 #include <stdbool.h>
-#include <debug/gcov.h>
+#include <zephyr/debug/gcov.h>
 #include <kswap.h>
-#include <timing/timing.h>
-#include <logging/log.h>
+#include <zephyr/timing/timing.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* the only struct z_kernel instance */
@@ -76,6 +76,32 @@ extern void idle(void *unused1, void *unused2, void *unused3);
  */
 
 /**
+ * @brief equivalent of memset() for early boot usage
+ *
+ * Architectures that can't safely use the regular (optimized) memset very
+ * early during boot because e.g. hardware isn't yet sufficiently initialized
+ * may override this with their own safe implementation.
+ */
+__boot_func
+void __weak z_early_memset(void *dst, int c, size_t n)
+{
+	(void) memset(dst, c, n);
+}
+
+/**
+ * @brief equivalent of memcpy() for early boot usage
+ *
+ * Architectures that can't safely use the regular (optimized) memcpy very
+ * early during boot because e.g. hardware isn't yet sufficiently initialized
+ * may override this with their own safe implementation.
+ */
+__boot_func
+void __weak z_early_memcpy(void *dst, const void *src, size_t n)
+{
+	(void) memcpy(dst, src, n);
+}
+
+/**
  * @brief Clear BSS
  *
  * This routine clears the BSS region, so all bytes are 0.
@@ -83,14 +109,21 @@ extern void idle(void *unused1, void *unused2, void *unused3);
 __boot_func
 void z_bss_zero(void)
 {
-	(void)memset(__bss_start, 0, __bss_end - __bss_start);
+	z_early_memset(__bss_start, 0, __bss_end - __bss_start);
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
-	(void)memset(&__ccm_bss_start, 0,
-		     ((uint32_t) &__ccm_bss_end - (uint32_t) &__ccm_bss_start));
+	z_early_memset(&__ccm_bss_start, 0,
+		       (uintptr_t) &__ccm_bss_end
+		       - (uintptr_t) &__ccm_bss_start);
 #endif
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
-	(void)memset(&__dtcm_bss_start, 0,
-		     ((uint32_t) &__dtcm_bss_end - (uint32_t) &__dtcm_bss_start));
+	z_early_memset(&__dtcm_bss_start, 0,
+		       (uintptr_t) &__dtcm_bss_end
+		       - (uintptr_t) &__dtcm_bss_start);
+#endif
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
+	z_early_memset(&__ocm_bss_start, 0,
+		       (uintptr_t) &__ocm_bss_end
+		       - (uintptr_t) &__ocm_bss_start);
 #endif
 #ifdef CONFIG_CODE_DATA_RELOCATION
 	extern void bss_zeroing_relocation(void);
@@ -98,8 +131,8 @@ void z_bss_zero(void)
 	bss_zeroing_relocation();
 #endif	/* CONFIG_CODE_DATA_RELOCATION */
 #ifdef CONFIG_COVERAGE_GCOV
-	(void)memset(&__gcov_bss_start, 0,
-		 ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
+	z_early_memset(&__gcov_bss_start, 0,
+		       ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
 #endif
 }
 
@@ -115,9 +148,9 @@ void z_bss_zero(void)
 __boot_func
 void z_bss_zero_boot(void)
 {
-	(void)memset(&lnkr_boot_bss_start, 0,
-		     (uintptr_t)&lnkr_boot_bss_end
-		     - (uintptr_t)&lnkr_boot_bss_start);
+	z_early_memset(&lnkr_boot_bss_start, 0,
+		       (uintptr_t)&lnkr_boot_bss_end
+		       - (uintptr_t)&lnkr_boot_bss_start);
 }
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
@@ -137,9 +170,9 @@ __pinned_func
 #endif
 void z_bss_zero_pinned(void)
 {
-	(void)memset(&lnkr_pinned_bss_start, 0,
-		(uintptr_t)&lnkr_pinned_bss_end
-		- (uintptr_t)&lnkr_pinned_bss_start);
+	z_early_memset(&lnkr_pinned_bss_start, 0,
+		       (uintptr_t)&lnkr_pinned_bss_end
+		       - (uintptr_t)&lnkr_pinned_bss_start);
 }
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
@@ -198,7 +231,9 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 
 #ifdef CONFIG_SMP
-	z_smp_init();
+	if (!IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
+		z_smp_init();
+	}
 	z_sys_init_run_level(_SYS_INIT_LEVEL_SMP);
 #endif
 
@@ -210,7 +245,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 
 	main();
 
-	/* Mark nonessenrial since main() has no more work to do */
+	/* Mark nonessential since main() has no more work to do */
 	z_main_thread.base.user_options &= ~K_ESSENTIAL;
 
 #ifdef CONFIG_COVERAGE_DUMP
@@ -227,9 +262,14 @@ static void init_idle_thread(int i)
 	k_thread_stack_t *stack = z_idle_stacks[i];
 
 #ifdef CONFIG_THREAD_NAME
-	char tname[8];
 
+#if CONFIG_MP_NUM_CPUS > 1
+	char tname[8];
 	snprintk(tname, 8, "idle %02d", i);
+#else
+	char *tname = "idle";
+#endif
+
 #else
 	char *tname = NULL;
 #endif /* CONFIG_THREAD_NAME */
@@ -245,9 +285,18 @@ static void init_idle_thread(int i)
 #endif
 }
 
-void z_reinit_idle_thread(int i)
+void z_init_cpu(int id)
 {
-	init_idle_thread(i);
+	init_idle_thread(id);
+	_kernel.cpus[id].idle_thread = &z_idle_threads[id];
+	_kernel.cpus[id].id = id;
+	_kernel.cpus[id].irq_stack =
+		(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[id]) +
+		 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[id]));
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+	_kernel.cpus[id].usage.track_usage =
+		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
+#endif
 }
 
 /**
@@ -290,18 +339,7 @@ static char *prepare_multithreading(void)
 	z_mark_thread_as_started(&z_main_thread);
 	z_ready_thread(&z_main_thread);
 
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-		init_idle_thread(i);
-		_kernel.cpus[i].idle_thread = &z_idle_threads[i];
-		_kernel.cpus[i].id = i;
-		_kernel.cpus[i].irq_stack =
-			(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]) +
-			 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]));
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-		_kernel.cpus[i].usage.track_usage =
-			CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
-#endif
-	}
+	z_init_cpu(0);
 
 	return stack_ptr;
 }
@@ -328,12 +366,11 @@ static FUNC_NORETURN void switch_to_main_thread(char *stack_ptr)
 __boot_func
 void z_early_boot_rand_get(uint8_t *buf, size_t length)
 {
-	int n = sizeof(uint32_t);
 #ifdef CONFIG_ENTROPY_HAS_DRIVER
-	const struct device *entropy = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
+	const struct device *entropy = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy));
 	int rc;
 
-	if (entropy == NULL) {
+	if (!device_is_ready(entropy)) {
 		goto sys_rand_fallback;
 	}
 
@@ -361,25 +398,7 @@ sys_rand_fallback:
 	 * devices are available should be built, this is only a fallback for
 	 * those devices without a HWRNG entropy driver.
 	 */
-
-	while (length > 0U) {
-		uint32_t rndbits;
-		uint8_t *p_rndbits = (uint8_t *)&rndbits;
-
-		rndbits = sys_rand32_get();
-
-		if (length < sizeof(uint32_t)) {
-			n = length;
-		}
-
-		for (int i = 0; i < n; i++) {
-			*buf = *p_rndbits;
-			buf++;
-			p_rndbits++;
-		}
-
-		length -= n;
-	}
+	sys_rand_get(buf, length);
 }
 /* defined(CONFIG_ENTROPY_HAS_DRIVER) || defined(CONFIG_TEST_RANDOM_GENERATOR) */
 #endif

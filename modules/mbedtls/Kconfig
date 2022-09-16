@@ -11,7 +11,7 @@ config MBEDTLS_PROMPTLESS
 	  Symbol to disable the prompt for MBEDTLS selection.
 	  This symbol may be used internally in a Kconfig tree to hide the
 	  mbed TLS menu prompt and instead handle the selection of MBEDTLS from
-	  dependent sub-configurations and thus preven stuck symbol behavior.
+	  dependent sub-configurations and thus prevent stuck symbol behavior.
 
 
 menuconfig MBEDTLS
@@ -127,7 +127,7 @@ config MBEDTLS_INSTALL_PATH
 	  is enabled otherwise the build will fail.
 
 config MBEDTLS_ENABLE_HEAP
-	bool "Enable global heap for mbed TLS"
+	bool "Global heap for mbed TLS"
 	help
 	  This option enables the mbedtls to use the heap. This setting must
 	  be global so that various applications and libraries in Zephyr do not

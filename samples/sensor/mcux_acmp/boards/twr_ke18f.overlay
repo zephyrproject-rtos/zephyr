@@ -4,7 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&pinctrl {
+	cmp2_default: cmp2_default {
+		group0 {
+			pinmux = <ADC0_SE12_PTC14>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};
+
 &cmp2 {
 	status = "okay";
-	pinctrl-0 = <&ADC0_SE12_PTC14>;
+	pinctrl-0 = <&cmp2_default>;
+	pinctrl-names = "default";
 };

@@ -6,14 +6,14 @@
 #ifndef __ZPERF_SESSION_H
 #define __ZPERF_SESSION_H
 
-#include <linker/sections.h>
-#include <toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/toolchain.h>
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
-#include <net/net_ip.h>
-#include <net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_core.h>
 
 #include "zperf.h"
 #include "zperf_internal.h"

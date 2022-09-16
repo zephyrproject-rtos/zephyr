@@ -7,8 +7,6 @@ menuconfig HAWKBIT
 	select FLASH
 	select REBOOT
 	select HWINFO
-	select MBEDTLS
-	select MBEDTLS_ENABLE_HEAP
 	select NET_TCP
 	select NET_SOCKETS
 	select IMG_MANAGER
@@ -18,6 +16,7 @@ menuconfig HAWKBIT
 	select JSON_LIBRARY
 	select BOOTLOADER_MCUBOOT
 	select MPU_ALLOW_FLASH_WRITE
+	select IMG_ENABLE_IMAGE_CHECK
 	select IMG_ERASE_PROGRESSIVELY
 	select NET_SOCKETS_POSIX_NAMES
 	help
@@ -35,7 +34,7 @@ config HAWKBIT_POLL_INTERVAL
 	  This time interval is zero and 43200 minutes(30 days).
 
 config HAWKBIT_SHELL
-	bool "Enable Hawkbit shell utilities"
+	bool "Hawkbit shell utilities"
 	depends on SHELL
 	help
 	  Activate shell module that provides Hawkbit commands.
@@ -52,7 +51,7 @@ config HAWKBIT_PORT
 	help
 	  Configure the hawkbit port number.
 
-choice
+choice HAWKBIT_DDI_SECURITY
 	prompt "Hawkbit DDI API authentication modes"
 	default HAWKBIT_DDI_NO_SECURITY
 

@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT atmel_sam_usbhs
 
-#include <usb/usb_device.h>
+#include <zephyr/usb/usb_device.h>
 #include <soc.h>
 #include <string.h>
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_sam_usbhs);
 
 /*
@@ -542,7 +542,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 
 	/* Check that the endpoint is correctly configured */
 	if (!usb_dc_ep_is_configured(ep_idx)) {
-		LOG_ERR("endpoint configurationf failed");
+		LOG_ERR("endpoint configuration failed");
 		return -EINVAL;
 	}
 

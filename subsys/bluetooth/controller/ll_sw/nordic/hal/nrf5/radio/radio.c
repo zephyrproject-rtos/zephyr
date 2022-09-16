@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/dlist.h>
-#include <toolchain.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <soc.h>
 
 #include <hal/nrf_rtc.h>
@@ -229,6 +229,11 @@ void radio_reset(void)
 #endif
 }
 
+void radio_stop(void)
+{
+	hal_radio_stop();
+}
+
 void radio_phy_set(uint8_t phy, uint8_t flags)
 {
 	uint32_t mode;
@@ -246,13 +251,31 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 
 void radio_tx_power_set(int8_t power)
 {
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	uint32_t value;
+
+	/* NOTE: TXPOWER register only accepts upto 0dBm, hence use the HAL
+	 * floor value for the TXPOWER register. Permit +3dBm by using high
+	 * voltage being set for radio.
+	 */
+	value = hal_radio_tx_power_floor(power);
+	NRF_RADIO->TXPOWER = value;
+	hal_radio_tx_power_high_voltage_set(power);
+
+#else /* !CONFIG_SOC_SERIES_NRF53X */
+
 	/* NOTE: valid value range is passed by Kconfig define. */
 	NRF_RADIO->TXPOWER = (uint32_t)power;
+
+#endif /* !CONFIG_SOC_SERIES_NRF53X */
 }
 
 void radio_tx_power_max_set(void)
 {
-	NRF_RADIO->TXPOWER = hal_radio_tx_power_max_get();
+	int8_t power;
+
+	power = radio_tx_power_max_get();
+	radio_tx_power_set(power);
 }
 
 int8_t radio_tx_power_min_get(void)
@@ -262,11 +285,26 @@ int8_t radio_tx_power_min_get(void)
 
 int8_t radio_tx_power_max_get(void)
 {
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	return RADIO_TXPOWER_TXPOWER_Pos3dBm;
+
+#else /* !CONFIG_SOC_SERIES_NRF53X */
 	return (int8_t)hal_radio_tx_power_max_get();
+
+#endif /* !CONFIG_SOC_SERIES_NRF53X */
 }
 
 int8_t radio_tx_power_floor(int8_t power)
 {
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* NOTE: TXPOWER register only accepts upto 0dBm, +3dBm permitted by
+	 * use of high voltage being set for radio when TXPOWER register is set.
+	 */
+	if (power >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos3dBm) {
+		return RADIO_TXPOWER_TXPOWER_Pos3dBm;
+	}
+#endif /* CONFIG_SOC_SERIES_NRF53X */
+
 	return (int8_t)hal_radio_tx_power_floor(power);
 }
 
@@ -310,9 +348,10 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	/* nRF51 supports only 27 byte PDU when using h/w CCM for encryption. */
 	if (!IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR) &&
 	    pdu_type == RADIO_PKT_CONF_PDU_TYPE_DC) {
-		bits_len = 5U;
-		bits_s1 = 3U;
+		bits_len = RADIO_PKT_CONF_LENGTH_5BIT;
 	}
+	bits_s1 = RADIO_PKT_CONF_LENGTH_8BIT - bits_len;
+
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF52X) || \
 	defined(CONFIG_SOC_SERIES_NRF53X)
 	extra = 0U;
@@ -351,7 +390,7 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 			  RADIO_PCNF0_S1INCL_Pos) & RADIO_PCNF0_S1INCL_Msk;
 #if defined(CONFIG_BT_CTLR_DF)
 		if (RADIO_PKT_CONF_CTE_GET(flags) == RADIO_PKT_CONF_CTE_ENABLED) {
-			bits_s1 = 8U;
+			bits_s1 = RADIO_PKT_CONF_S1_8BIT;
 		} else
 #endif /* CONFIG_BT_CTLR_DF */
 		{
@@ -472,12 +511,10 @@ void radio_status_reset(void)
 #if defined(CONFIG_BT_CTLR_DF_SUPPORT) && !defined(CONFIG_ZTEST)
 	/* Clear it only for SoCs supporting DF extension */
 	NRF_RADIO->EVENTS_PHYEND = 0;
+	NRF_RADIO->EVENTS_CTEPRESENT = 0;
+	NRF_RADIO->EVENTS_BCMATCH = 0;
 #endif /* CONFIG_BT_CTLR_DF_SUPPORT && !CONFIG_ZTEST */
 	NRF_RADIO->EVENTS_DISABLED = 0;
-#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
-	NRF_RADIO->EVENTS_CTEPRESENT = 0;
-#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
-
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 	NRF_RADIO->EVENTS_RATEBOOST = 0;
@@ -587,7 +624,7 @@ static uint8_t sw_tifs_toggle;
  * @param dir_curr         Current direction the Radio is working: SW_SWITCH_TX or SW_SWITCH_RX
  * @param dir_next         Next direction the Radio is preparing for: SW_SWITCH_TX or SW_SWITCH_RX
  * @param phy_curr         PHY the Radio is working on.
- * @param flags_curr       Flags related with current PHY, the Radio is workingo on.
+ * @param flags_curr       Flags related with current PHY, the Radio is working on.
  * @param phy_next         Next PHY the Radio is preparing for.
  * @param flags_next       Flags related with next PHY, the Radio is preparing for.
  * @param end_evt_delay_en Enable end event delay compensation for TIFS after switch from current
@@ -695,7 +732,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			hal_radio_sw_switch_coded_tx_config_set(ppi_en, ppi_dis,
 				cc_s2, sw_tifs_toggle);
 
-		} else if (dir_curr == SW_SWITCH_RX) {
+		} else {
 			/* Switching to TX after RX on LE 1M/2M PHY.
 			 *
 			 * NOTE: PHYEND delay compensation and switching between Coded S2 and S8 PHY
@@ -720,12 +757,26 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		/* RX */
 
 		/* Calculate delay with respect to current and next PHY. */
-		delay = HAL_RADIO_NS2US_CEIL(
-			hal_radio_rx_ready_delay_ns_get(phy_next, flags_next) +
-			hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr)) +
-			(EVENT_CLOCK_JITTER_US << 1);
+		if (dir_curr) {
+			delay = HAL_RADIO_NS2US_CEIL(
+				hal_radio_rx_ready_delay_ns_get(phy_next,
+								flags_next) +
+				hal_radio_tx_chain_delay_ns_get(phy_curr,
+								flags_curr)) +
+				(EVENT_CLOCK_JITTER_US << 1);
 
-		hal_radio_rxen_on_sw_switch(ppi);
+			hal_radio_rxen_on_sw_switch(ppi);
+		} else {
+			delay = HAL_RADIO_NS2US_CEIL(
+				hal_radio_rx_ready_delay_ns_get(phy_next,
+								flags_next) +
+				hal_radio_rx_chain_delay_ns_get(phy_curr,
+								flags_curr)) +
+				(EVENT_CLOCK_JITTER_US << 1);
+
+			hal_radio_b2b_rxen_on_sw_switch(ppi);
+		}
+
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 		hal_radio_sw_switch_phyend_delay_compensation_config_clear(radio_enable_ppi,
@@ -838,6 +889,21 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
 
 	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next,
+		  END_EVT_DELAY_DISABLED);
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+}
+
+void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
+				      uint8_t phy_next, uint8_t flags_next)
+{
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
+			    RADIO_SHORTS_END_DISABLE_Msk |
+			    RADIO_SHORTS_DISABLED_RXEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
+
+	sw_switch(SW_SWITCH_RX, SW_SWITCH_RX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
@@ -966,6 +1032,9 @@ void radio_tmr_status_reset(void)
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 			BIT(HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI) |
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+			BIT(HAL_TRIGGER_CRYPT_DELAY_PPI) |
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 			BIT(HAL_TRIGGER_CRYPT_PPI));
 }
 
@@ -1011,7 +1080,7 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	SW_SWITCH_TIMER->MODE = 0;
 	SW_SWITCH_TIMER->PRESCALER = 4;
 	SW_SWITCH_TIMER->BITMODE = 0; /* 16 bit */
-	/* FIXME: start alongwith EVENT_TIMER, to save power */
+	/* FIXME: start along with EVENT_TIMER, to save power */
 	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_START);
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
@@ -1429,12 +1498,30 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 		mode |= (CCM_MODE_DATARATE_1Mbit <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+		/* When direction finding CTE receive feature is enabled then on-the-fly PDU
+		 * parsing for CTEInfo is always done. In such situation, the CCM TASKS_CRYPT
+		 * must be started with short delay. That give the Radio time to store received bits
+		 * in shared memory.
+		 */
+		radio_bc_configure(CCM_TASKS_CRYPT_DELAY_BITS);
+		radio_bc_status_reset();
+		hal_trigger_crypt_by_bcmatch_ppi_config();
+		hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_DELAY_PPI));
+#else
+		hal_trigger_crypt_ppi_config();
+		hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 		break;
 
 	case PHY_2M:
 		mode |= (CCM_MODE_DATARATE_2Mbit <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
+
+		hal_trigger_crypt_ppi_config();
+		hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
+
 		break;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -1452,6 +1539,10 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 		hal_trigger_rateoverride_ppi_config();
 		hal_radio_nrf_ppi_channels_enable(
 			BIT(HAL_TRIGGER_RATEOVERRIDE_PPI));
+
+		hal_trigger_crypt_ppi_config();
+		hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
+
 		break;
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
@@ -1473,11 +1564,9 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 	NRF_CCM->OUTPTR = (uint32_t)pkt;
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = 0;
+	NRF_CCM->EVENTS_ENDKSGEN = 0;
 	NRF_CCM->EVENTS_ENDCRYPT = 0;
 	NRF_CCM->EVENTS_ERROR = 0;
-
-	hal_trigger_crypt_ppi_config();
-	hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
 
@@ -1509,6 +1598,7 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	NRF_CCM->OUTPTR = (uint32_t)_pkt_scratch;
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = CCM_SHORTS_ENDKSGEN_CRYPT_Msk;
+	NRF_CCM->EVENTS_ENDKSGEN = 0;
 	NRF_CCM->EVENTS_ENDCRYPT = 0;
 	NRF_CCM->EVENTS_ERROR = 0;
 
@@ -1536,6 +1626,7 @@ uint32_t radio_ccm_mic_is_valid(void)
 	return (NRF_CCM->MICSTATUS != 0);
 }
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 static uint8_t MALIGN(4) _aar_scratch[3];
 
 void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
@@ -1606,10 +1697,27 @@ void radio_ar_status_reset(void)
 
 uint32_t radio_ar_has_match(void)
 {
-	return (radio_bc_has_match() &&
-		NRF_AAR->EVENTS_END &&
-		NRF_AAR->EVENTS_RESOLVED &&
-		!NRF_AAR->EVENTS_NOTRESOLVED);
+	if (!radio_bc_has_match()) {
+		return 0U;
+	}
+
+	nrf_aar_int_enable(NRF_AAR, AAR_INTENSET_END_Msk);
+
+	while (NRF_AAR->EVENTS_END == 0U) {
+		__WFE();
+		__SEV();
+		__WFE();
+	}
+
+	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);
+
+	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
+
+	if (NRF_AAR->EVENTS_RESOLVED && !NRF_AAR->EVENTS_NOTRESOLVED) {
+		return 1U;
+	}
+
+	return 0U;
 }
 
 void radio_ar_resolve(const uint8_t *addr)
@@ -1643,6 +1751,7 @@ void radio_ar_resolve(const uint8_t *addr)
 			  AAR_ENABLE_ENABLE_Msk;
 
 }
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_DF_SUPPORT) && !defined(CONFIG_ZTEST)
 /* @brief Function configures CTE inline register to start sampling of CTE

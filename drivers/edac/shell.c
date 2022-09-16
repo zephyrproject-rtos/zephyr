@@ -5,10 +5,10 @@
  */
 
 #include <stdlib.h>
-#include <device.h>
-#include <shell/shell.h>
+#include <zephyr/device.h>
+#include <zephyr/shell/shell.h>
 
-#include <drivers/edac.h>
+#include <zephyr/drivers/edac.h>
 #include "ibecc.h"
 
 #define DEVICE_NAME DT_LABEL(DT_NODELABEL(ibecc))

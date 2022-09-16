@@ -34,7 +34,7 @@ if(CONFIG_CPLUSPLUS)
   #
   # The compiler fills the constructor pointers table below,
   # hence symbol __CTOR_LIST__ must be aligned on word
-  # boundary.  To align with the C++ standard, the first elment
+  # boundary. To align with the C++ standard, the first element
   # of the array contains the number of actual constructors. The
   # last element is NULL.
   #

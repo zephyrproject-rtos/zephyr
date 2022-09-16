@@ -11,10 +11,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_context, CONFIG_MODEM_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #include "modem_context.h"
 

@@ -1,15 +1,54 @@
 # Copyright (c) 2020 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 Pin controller Node
+description: |
+    STM32F1 Pin controller Node
+    Based on pincfg-node.yaml binding.
+
+    Note: `bias-disable` and `drive-push-pull` are default pin configurations.
+           They will be applied in case no `bias-foo` or `driver-bar` properties
+           are set.
 
 compatible: "st,stm32f1-pinctrl"
 
-include: [base.yaml]
+include:
+    - name: base.yaml
+    - name: pincfg-node.yaml
+      child-binding:
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - drive-push-pull
+          - drive-open-drain
+          - output-low
+          - output-high
 
 properties:
     reg:
       required: true
+
+    swj-cfg:
+        type: string
+        required: false
+        default: "full" # reset state
+        enum:
+          - "full"
+          - "no-njtrst"
+          - "jtag-disable"
+          - "disable"
+        description: |
+          Configures number of pins assigned to the SWJ debug port.
+
+          * full         - Full SWJ (JTAG-DP + SW-DP).
+          * no-njtrst    - Full SWJ (JTAG-DP + SW-DP) but without NJTRST.
+                           Releases: PB4.
+          * jtag-disable - JTAG-DP Disabled and SW-DP Enabled.
+                           Releases: PA15 PB3 PB4.
+          * disable      - JTAG-DP Disabled and SW-DP Disabled.
+                           Releases: PA13 PA14 PA15 PB3 PB4.
+
+          If absent, then Full SWJ (JTAG-DP + SW-DP) is used (reset state).
 
 child-binding:
     description: |
@@ -31,6 +70,10 @@ child-binding:
             * 0 : Alternate function output
             * 1 : Input
             * 2 : Analog
+            * 3 : GPIO output
+            In case selected pin function is GPIO output, pin is statically configured as
+            a plain output GPIO, which configuration can be set by adding 'ouptut-low' or
+            'output-high' properties to the pinctrl configuration. Default is output-low.
             - remap: The pin remapping configuration. It allows to assign the pin
             function to a different peripheral. Remain configuration can be:
             * 0 : No remap
@@ -40,7 +83,7 @@ child-binding:
             * 4 : Full remap
             To simplify the usage, macro is available to generate "pinmux" field.
             This macro is available here:
-              -include/dt-bindings/pinctrl/stm32f1-pinctrl.h
+              -include/zephyr/dt-bindings/pinctrl/stm32f1-pinctrl.h
             Some examples of macro usage:
                GPIO A9 set as alernate with no remap
             ... {
@@ -54,43 +97,11 @@ child-binding:
             ... {
                      pinmux = <STM32F1_PINMUX('A', 9, GPIO_IN, REMAP_NO)>;
             };
-
-        bias-disable:
-          required: false
-          type: boolean
-          description: |
-            Pin bias (push-pull) disabled. This is the default pin
-            configuration and will be applied if no bias- property is
-            specified. Only available in input mode ("floating" configuration).
-
-        bias-pull-down:
-          required: false
-          type: boolean
-          description: |
-            Weak pull down resistor enabled. Not compatible with
-            output configuration modes (atlernate or general purpose output).
-
-        bias-pull-up:
-          required: false
-          type: boolean
-          description: |
-            Weak pull up resistor enabled. Not compatible with
-            output configuration modes (atlernate or general purpose output).
-
-        drive-push-pull:
-          required: false
-          type: boolean
-          description: |
-            Pin driven actively high and low. This is the default pin
-            configueration and will be applied if no drive- property is
-            specified. Only valid for output configuration modes.
-
-        drive-open-drain:
-          required: false
-          type: boolean
-          description: |
-            Pin driven in open drain. Only valid for output
-            configuration modes.
+               GPIO A9 set as output-high
+            ... {
+                     pinmux = <STM32F1_PINMUX('A', 9, GPIO_OUT, REMAP_NO)>;
+                     output-high;
+            };
 
         slew-rate:
           required: false

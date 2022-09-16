@@ -9,11 +9,11 @@
  * @brief Measure time
  *
  */
-#include <kernel.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/zephyr.h>
 #include <ksched.h>
-#include <syscall_handler.h>
-#include <app_memory/app_memdomain.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/app_memory/app_memdomain.h>
 
 #include "footprint.h"
 #include "userspace.h"

@@ -4,16 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <board.h>
-#include <drivers/gpio.h>
-#include <drivers/pwm.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/device.h>
 
-#include <display/mb_display.h>
+#include <zephyr/display/mb_display.h>
 
-#define BUZZER_PIN     EXT_P0_GPIO_PIN
+#define BUZZER_PWM_CHANNEL 0
 
 #define PERIOD_MIN     50
 #define PERIOD_MAX     3900
@@ -34,11 +33,11 @@ static void beep(struct k_work *work)
 	/* The "period / 2" pulse duration gives 50% duty cycle, which
 	 * should result in the maximum sound volume.
 	 */
-	pwm_pin_set_usec(pwm, BUZZER_PIN, period, period / 2U, 0);
+	pwm_set(pwm, BUZZER_PWM_CHANNEL, PWM_USEC(period), PWM_USEC(period) / 2U, 0);
 	k_sleep(BEEP_DURATION);
 
 	/* Disable the PWM */
-	pwm_pin_set_usec(pwm, BUZZER_PIN, 0, 0, 0);
+	pwm_set(pwm, BUZZER_PWM_CHANNEL, 0, 0, 0);
 
 	/* Ensure there's a clear silent period between two tones */
 	k_sleep(K_MSEC(50));

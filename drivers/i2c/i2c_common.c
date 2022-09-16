@@ -8,10 +8,10 @@
 
 #include <stdio.h>
 
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c);
 
 void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,

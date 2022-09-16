@@ -9,8 +9,8 @@
 
 #if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_NATIVE)
 
-#include <sys/slist.h>
-#include <net/ethernet.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/net/ethernet.h>
 
 #ifdef __cplusplus
 extern "C" {

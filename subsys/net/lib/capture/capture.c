@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_capture, CONFIG_NET_CAPTURE_LOG_LEVEL);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
-#include <sys/slist.h>
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/net_if.h>
-#include <net/net_pkt.h>
-#include <net/virtual.h>
-#include <net/virtual_mgmt.h>
-#include <net/capture.h>
-#include <net/ethernet.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/virtual.h>
+#include <zephyr/net/virtual_mgmt.h>
+#include <zephyr/net/capture.h>
+#include <zephyr/net/ethernet.h>
 
 #include "net_private.h"
 #include "ipv4.h"
@@ -691,7 +691,7 @@ static const struct net_capture_interface_api capture_interface_api = {
 };
 
 #define DEFINE_NET_CAPTURE_DEV_DATA(x, _)				\
-	static struct net_capture capture_dev_data_##x;
+	static struct net_capture capture_dev_data_##x
 
 #define DEFINE_NET_CAPTURE_DEVICE(x, _)					\
 	DEVICE_DEFINE(net_capture_##x,					\
@@ -702,7 +702,7 @@ static const struct net_capture_interface_api capture_interface_api = {
 		      NULL,						\
 		      POST_KERNEL,					\
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-		      &capture_interface_api);
+		      &capture_interface_api)
 
-UTIL_LISTIFY(CONFIG_NET_CAPTURE_DEVICE_COUNT, DEFINE_NET_CAPTURE_DEV_DATA, _)
-UTIL_LISTIFY(CONFIG_NET_CAPTURE_DEVICE_COUNT, DEFINE_NET_CAPTURE_DEVICE, _)
+LISTIFY(CONFIG_NET_CAPTURE_DEVICE_COUNT, DEFINE_NET_CAPTURE_DEV_DATA, (;), _);
+LISTIFY(CONFIG_NET_CAPTURE_DEVICE_COUNT, DEFINE_NET_CAPTURE_DEVICE, (;), _);

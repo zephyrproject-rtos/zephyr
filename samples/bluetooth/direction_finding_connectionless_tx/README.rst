@@ -45,12 +45,15 @@ support enabled:
   :zephyr_file:`samples/bluetooth/direction_finding_connectionless_tx/boards/nrf52833dk_nrf52833.overlay`
   to a new file,
   :file:`samples/bluetooth/hci_rpmsg/boards/nrf5340dk_nrf5340_cpunet.overlay`.
+* Make sure the same GPIO pins are assigned to Direction Finding Extension in file
+  :zephyr_file:`samples/bluetooth/direction_finding_connectionless_tx/boards/nrf5340dk_nrf5340_cpuapp.overlay`.
+  as those in the created file :file:`samples/bluetooth/hci_rpmsg/boards/nrf5340dk_nrf5340_cpunet.overlay`.
 * Copy
   :zephyr_file:`samples/bluetooth/direction_finding_connectionless_tx/boards/nrf52833dk_nrf52833.conf`
   to a new file,
   :file:`samples/bluetooth/hci_rpmsg/boards/nrf5340dk_nrf5340_cpunet.conf`. Add
   the line ``CONFIG_BT_EXT_ADV=y`` to enable extended size of
-  :kconfig:`CONFIG_BT_BUF_CMD_TX_SIZE` to support the LE Set Extended
+  :kconfig:option:`CONFIG_BT_BUF_CMD_TX_SIZE` to support the LE Set Extended
   Advertising Data command.
 
 Antenna matrix configuration

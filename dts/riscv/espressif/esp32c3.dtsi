@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <mem.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/interrupt-controller/esp-esp32c3-intmux.h>
-#include <dt-bindings/clock/esp32c3_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/interrupt-controller/esp-esp32c3-intmux.h>
+#include <zephyr/dt-bindings/clock/esp32c3_clock.h>
+#include <dt-bindings/pinctrl/esp32-pinctrl.h>
 
 / {
 	#address-cells = <1>;
@@ -29,6 +30,11 @@
 		};
 	};
 
+	pinctrl: pin-controller {
+		compatible = "espressif,esp32-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -38,11 +44,6 @@
 		sram0: memory@3fc7c000 {
 			compatible = "mmio-sram";
 			reg = <0x3fc7c000 0x50000>;
-		};
-
-		pinmux: pinmux@60009000 {
-			compatible = "espressif,esp32-pinmux";
-			reg = <0x60009000 0x800>;
 		};
 
 		intc: interrupt-controller@600c2000 {
@@ -120,7 +121,6 @@
 			interrupts = <UART0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART0_MODULE>;
-			peripheral = <0>;
 		};
 
 		uart1: uart@60010000 {
@@ -132,7 +132,6 @@
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			current-speed = <115200>;
-			peripheral = <1>;
 		};
 
 		timer0: counter@6001f000 {
@@ -168,7 +167,6 @@
 			label = "SPI_2";
 			clocks = <&rtc ESP32_SPI2_MODULE>;
 			status = "disabled";
-			use-iomux;
 		};
 
 		wdt0: watchdog@6001f048  {
@@ -176,6 +174,7 @@
 			reg = <0x6001f048 0x20>;
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TIMG0_MODULE>;
 			label = "WDT_0";
 			status = "disabled";
 		};
@@ -185,6 +184,7 @@
 			reg = <0x60020048 0x20>;
 			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TIMG1_MODULE>;
 			label = "WDT_1";
 			status = "disabled";
 		};

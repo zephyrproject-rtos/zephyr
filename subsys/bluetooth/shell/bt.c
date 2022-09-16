@@ -18,28 +18,25 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/zephyr.h>
 
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/rfcomm.h>
-#include <bluetooth/sdp.h>
-#include <bluetooth/iso.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/rfcomm.h>
+#include <zephyr/bluetooth/sdp.h>
+#include <zephyr/bluetooth/iso.h>
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 #include "bt.h"
 #include "ll.h"
 #include "hci.h"
-
-/* Multiply bt 1.25 to get MS */
-#define BT_INTERVAL_TO_MS(interval) ((interval) * 5 / 4)
 
 static bool no_settings_load;
 
@@ -57,6 +54,10 @@ static struct bt_le_oob oob_local;
 static struct bt_le_oob oob_remote;
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_SMP)
+static struct bt_conn_auth_info_cb auth_info_cb;
+#endif /* CONFIG_BT_SMP */
 
 #define NAME_LEN 30
 
@@ -172,7 +173,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		    (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
 		    (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
 		    phy2str(info->primary_phy), phy2str(info->secondary_phy),
-		    info->interval, BT_INTERVAL_TO_MS(info->interval),
+		    info->interval, BT_CONN_INTERVAL_TO_MS(info->interval),
 		    info->sid);
 }
 
@@ -529,7 +530,7 @@ static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
 	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
 		    "Interval 0x%04x (%u ms), PHY %s, SD 0x%04X, PAST peer %s",
 		    bt_le_per_adv_sync_get_index(sync), le_addr,
-		    info->interval, BT_INTERVAL_TO_MS(info->interval),
+		    info->interval, BT_CONN_INTERVAL_TO_MS(info->interval),
 		    phy2str(info->phy), info->service_data, past_peer);
 
 	if (info->conn) { /* if from PAST */
@@ -586,7 +587,7 @@ static void per_adv_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
 		    "%sencrypted",
 		    bt_le_per_adv_sync_get_index(sync), le_addr, biginfo->sid, biginfo->num_bis,
 		    biginfo->sub_evt_count, biginfo->iso_interval,
-		    BT_INTERVAL_TO_MS(biginfo->iso_interval), biginfo->burst_number,
+		    BT_CONN_INTERVAL_TO_MS(biginfo->iso_interval), biginfo->burst_number,
 		    biginfo->offset, biginfo->rep_count, biginfo->max_pdu, biginfo->sdu_interval,
 		    biginfo->max_sdu, phy2str(biginfo->phy), biginfo->framing,
 		    biginfo->encryption ? "" : "not ");
@@ -631,6 +632,10 @@ static void bt_ready(int err)
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 	bt_le_per_adv_sync_cb_register(&per_adv_sync_cb);
 #endif /* CONFIG_BT_PER_ADV_SYNC */
+
+#if defined(CONFIG_BT_SMP)
+	bt_conn_auth_info_cb_register(&auth_info_cb);
+#endif /* CONFIG_BT_SMP */
 }
 
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
@@ -746,6 +751,37 @@ static int cmd_name(const struct shell *sh, size_t argc, char *argv[])
 			    err);
 		return err;
 	}
+
+	return 0;
+}
+
+static int cmd_appearance(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (argc == 1) {
+		shell_print(sh, "Bluetooth Appearance: 0x%04x", bt_get_appearance());
+		return 0;
+	}
+
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
+	uint16_t app;
+	int err;
+	const char *val;
+
+	val = argv[1];
+	if (strlen(val) != 6 || strncmp(val, "0x", 2) ||
+	    !hex2bin(&val[2], strlen(&val[2]), ((uint8_t *)&app), sizeof(app))) {
+		shell_error(sh, "Argument must be 0x followed by exactly 4 hex digits.");
+		return -EINVAL;
+	}
+
+	app = sys_be16_to_cpu(app);
+
+	err = bt_set_appearance(app);
+	if (err) {
+		shell_error(sh, "bt_set_appearance(0x%04x) failed with err %d", app, err);
+		return err;
+	}
+#endif /* defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC) */
 
 	return 0;
 }
@@ -1012,8 +1048,8 @@ static int cmd_scan_filter_set_addr(const struct shell *sh, size_t argc,
 {
 	const char *addr_arg = argv[1];
 
-	/* Validate length */
-	if (strlen(addr_arg) > sizeof(scan_filter.addr)) {
+	/* Validate length including null terminator. */
+	if (strlen(addr_arg) >= sizeof(scan_filter.addr)) {
 		shell_error(ctx_shell, "Invalid address string: %s\n",
 			    addr_arg);
 		return -ENOEXEC;
@@ -1798,7 +1834,7 @@ static int cmd_per_adv_sync_delete(const struct shell *sh, size_t argc,
 	}
 
 	if (index >= ARRAY_SIZE(per_adv_syncs)) {
-		shell_error(sh, "Maximum index is %ld but %d was requested",
+		shell_error(sh, "Maximum index is %zu but %d was requested",
 			    ARRAY_SIZE(per_adv_syncs) - 1, index);
 	}
 
@@ -1935,7 +1971,7 @@ static int cmd_per_adv_sync_transfer(const struct shell *sh, size_t argc,
 	}
 
 	if (index >= ARRAY_SIZE(per_adv_syncs)) {
-		shell_error(sh, "Maximum index is %ld but %d was requested",
+		shell_error(sh, "Maximum index is %zu but %d was requested",
 			    ARRAY_SIZE(per_adv_syncs) - 1, index);
 	}
 
@@ -2192,10 +2228,10 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 
 		shell_print(ctx_shell, "Interval: 0x%04x (%u ms)",
 			    info.le.interval,
-			    BT_INTERVAL_TO_MS(info.le.interval));
+			    BT_CONN_INTERVAL_TO_MS(info.le.interval));
 		shell_print(ctx_shell, "Latency: 0x%04x (%u ms)",
 			    info.le.latency,
-			    BT_INTERVAL_TO_MS(info.le.latency));
+			    BT_CONN_INTERVAL_TO_MS(info.le.latency));
 		shell_print(ctx_shell, "Supervision timeout: 0x%04x (%d ms)",
 			    info.le.timeout, info.le.timeout * 10);
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
@@ -2841,12 +2877,9 @@ static struct bt_conn_auth_cb auth_cb_display = {
 	.oob_data_request = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
-	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_display_yes_no = {
@@ -2859,12 +2892,9 @@ static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 	.oob_data_request = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
-	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_input = {
@@ -2877,12 +2907,9 @@ static struct bt_conn_auth_cb auth_cb_input = {
 	.oob_data_request = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
-	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_confirm = {
@@ -2892,12 +2919,9 @@ static struct bt_conn_auth_cb auth_cb_confirm = {
 	.oob_data_request = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
-	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_all = {
@@ -2910,12 +2934,9 @@ static struct bt_conn_auth_cb auth_cb_all = {
 	.oob_data_request = auth_pairing_oob_data_request,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
-	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_oob = {
@@ -2928,20 +2949,21 @@ static struct bt_conn_auth_cb auth_cb_oob = {
 	.oob_data_request = auth_pairing_oob_data_request,
 	.cancel = auth_cancel,
 	.pairing_confirm = NULL,
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
-	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_status = {
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
+};
+
+static struct bt_conn_auth_info_cb auth_info_cb = {
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
+	.bond_deleted = bond_deleted,
 };
 
 static int cmd_auth(const struct shell *sh, size_t argc, char *argv[])
@@ -3248,6 +3270,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(id-show, NULL, HELP_NONE, cmd_id_show, 1, 0),
 	SHELL_CMD_ARG(id-select, NULL, "<id>", cmd_id_select, 2, 0),
 	SHELL_CMD_ARG(name, NULL, "[name]", cmd_name, 1, 1),
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
+	SHELL_CMD_ARG(appearance, NULL, "[new appearance value]", cmd_appearance, 1, 1),
+#else
+	SHELL_CMD_ARG(appearance, NULL, "", cmd_appearance, 1, 0),
+#endif /* CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC */
 #if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scan, NULL,
 		      "<value: on, passive, off> [filter: dups, nodups] [fal]"

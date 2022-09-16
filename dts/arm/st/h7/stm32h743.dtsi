@@ -5,7 +5,7 @@
  */
 
 #include <st/h7/stm32h7.dtsi>
-#include <dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/display/stm32_ltdc.h>
 
 / {
 	soc {
@@ -28,24 +28,10 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x080000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x80000000>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
 			label= "OTG_FS";
-		};
-
-        usbotg_hs: usb@40040000 {
-			compatible = "st,stm32-otghs";
-			reg = <0x40040000 0x40000>;
-			interrupts = <77 0>, <74 0>, <75 0>;
-			interrupt-names = "otghs", "ep1_out", "ep1_in";
-			num-bidir-endpoints = <6>;
-			ram-size = <4096>;
-			maximum-speed = "full-speed";
-			phys = <&otghs_fs_phy>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x20000000>;
-			status = "disabled";
-			label= "OTGHS";
 		};
 
 		ltdc: display-controller@50001000 {
@@ -53,7 +39,7 @@
 			reg = <0x50001000 0x200>;
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x000000008>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
 			status = "disabled";
 			label = "LTDC";
 		};
@@ -68,20 +54,20 @@
 	/* System data RAM accessible over AHB bus: SRAM1 in D2 domain */
 	sram1: memory@30000000 {
 		reg = <0x30000000 DT_SIZE_K(128)>;
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "SRAM1";
 	};
 
 	/* System data RAM accessible over AHB bus: SRAM2 in D2 domain */
 	sram2: memory@30020000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x30020000 DT_SIZE_K(128)>;
 		zephyr,memory-region = "SRAM2";
 	};
 
 	/* System data RAM accessible over AHB bus: SRAM3 in D2 domain */
 	sram3: memory@30040000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x30040000 DT_SIZE_K(32)>;
 		zephyr,memory-region = "SRAM3";
 	};
@@ -89,12 +75,12 @@
 	/* System data RAM accessible over AHB bus: SRAM4 in D3 domain  */
 	sram4: memory@38000000 {
 		reg = <0x38000000 DT_SIZE_K(64)>;
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "SRAM4";
 	};
 
 	dtcm: memory@20000000 {
-		compatible = "arm,dtcm";
+		compatible = "zephyr,memory-region", "arm,dtcm";
 		reg = <0x20000000 DT_SIZE_K(128)>;
 		zephyr,memory-region = "DTCM";
 	};

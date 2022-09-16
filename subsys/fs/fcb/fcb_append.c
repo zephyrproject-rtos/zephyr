@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <fs/fcb.h>
+#include <zephyr/fs/fcb.h>
 #include "fcb_priv.h"
 
 static struct flash_sector *
@@ -51,7 +51,7 @@ fcb_append_to_scratch(struct fcb *fcb)
 		return rc;
 	}
 	fcb->f_active.fe_sector = sector;
-	fcb->f_active.fe_elem_off = sizeof(struct fcb_disk_area);
+	fcb->f_active.fe_elem_off = fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area));
 	fcb->f_active_id++;
 	return 0;
 }
@@ -64,7 +64,7 @@ fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *append_loc)
 	int cnt;
     int meta_info_len;
 	int rc;
-	uint8_t tmp_str[8];
+	uint8_t tmp_str[MAX(8, fcb->f_align)];
 
 	cnt = fcb_put_len(fcb, tmp_str, len);
 	if (cnt < 0) {
@@ -84,7 +84,7 @@ fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *append_loc)
     if (active->fe_elem_off + len + meta_info_len + cnt > active->fe_sector->fs_size) {
 		sector = fcb_new_sector(fcb, fcb->f_scratch_cnt);
 		if (!sector || (sector->fs_size <
-            sizeof(struct fcb_disk_area) + len + meta_info_len + cnt)) {
+			fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area)) + len + meta_info_len + cnt)) {
 			rc = -ENOSPC;
 			goto err;
 		}
@@ -93,7 +93,7 @@ fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *append_loc)
 			goto err;
 		}
 		fcb->f_active.fe_sector = sector;
-		fcb->f_active.fe_elem_off = sizeof(struct fcb_disk_area);
+		fcb->f_active.fe_elem_off = fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area));
 		fcb->f_active_id++;
 	}
 

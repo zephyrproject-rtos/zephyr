@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154_fake_driver, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <net/net_core.h>
+#include <zephyr/net/net_core.h>
 #include "net_private.h"
 
-#include <net/net_pkt.h>
+#include <zephyr/net/net_pkt.h>
 
 /** FAKE ieee802.15.4 driver **/
-#include <net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 extern struct net_pkt *current_pkt;
 extern struct k_sem driver_lock;

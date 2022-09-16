@@ -14,7 +14,7 @@
 #ifndef __TEST_UART_H__
 #define __TEST_UART_H__
 
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include <ztest.h>
 
 /* RX and TX pins have to be connected together*/
@@ -46,8 +46,27 @@
 #elif defined(CONFIG_BOARD_DISCO_L475_IOT1)
 #define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(uart4))
 #elif defined(CONFIG_BOARD_NUCLEO_F429ZI) || \
-	defined(CONFIG_BOARD_NUCLEO_F207ZG)
+	defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
+	defined(CONFIG_BOARD_NUCLEO_F767ZI) || \
+	defined(CONFIG_BOARD_NUCLEO_F746ZG)
 #define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(usart6))
+#elif defined(CONFIG_BOARD_FRDM_K82F)
+#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(lpuart0))
+#elif defined(CONFIG_BOARD_MIMXRT1020_EVK) || \
+	defined(CONFIG_BOARD_MIMXRT1024_EVK) || \
+	defined(CONFIG_BOARD_MIMXRT1160_EVK_CM4) || \
+	defined(CONFIG_BOARD_MIMXRT1170_EVK_CM4) || \
+	defined(CONFIG_BOARD_MIMXRT1160_EVK_CM7) || \
+	defined(CONFIG_BOARD_MIMXRT1170_EVK_CM7) || \
+	defined(CONFIG_BOARD_TWR_KE18F)
+#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(lpuart2))
+#elif defined(CONFIG_BOARD_MIMXRT1050_EVK) || \
+	defined(CONFIG_BOARD_MIMXRT1060_EVK) || \
+	defined(CONFIG_BOARD_MIMXRT1064_EVK)
+#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(lpuart3))
+#elif defined(CONFIG_BOARD_MIMXRT1010_EVK) || \
+	defined(CONFIG_BOARD_MIMXRT1015_EVK)
+#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(lpuart4))
 #else
 #define UART_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_console))
 #endif

@@ -2,7 +2,7 @@
 
 /dts-v1/;
 
-#include <nios2-qemu.dtsi>
+#include <intel/nios2-qemu.dtsi>
 
 / {
 	model = "qemu_nios2";

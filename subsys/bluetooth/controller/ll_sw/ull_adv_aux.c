@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -101,7 +101,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	/* op param definitions:
 	 * 0x00 - Intermediate fragment of fragmented extended advertising data
 	 * 0x01 - First fragment of fragmented extended advertising data
-	 * 0x02 - Last fragemnt of fragemented extended advertising data
+	 * 0x02 - Last fragment of fragmented extended advertising data
 	 * 0x03 - Complete extended advertising data
 	 * 0x04 - Unchanged data (just update the advertising data)
 	 * All other values, Reserved for future use
@@ -144,13 +144,27 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			uint32_t ticks_anchor;
 			uint32_t ret;
 
-			aux->interval =	adv->interval +
-					(HAL_TICKER_TICKS_TO_US(
-						ULL_ADV_RANDOM_DELAY) /
-						ADV_INT_UNIT_US);
+			/* Keep aux interval equal or higher than primary PDU
+			 * interval.
+			 * Use periodic interval units to represent the
+			 * periodic behavior of scheduling of AUX_ADV_IND PDUs
+			 * so that it is grouped with similar interval units
+			 * used for ACL Connections, Periodic Advertising and
+			 * BIG radio events.
+			 */
+			aux->interval =
+				ceiling_fraction(((uint64_t)adv->interval *
+						  ADV_INT_UNIT_US) +
+						 HAL_TICKER_TICKS_TO_US(
+							ULL_ADV_RANDOM_DELAY),
+						 PERIODIC_INT_UNIT_US);
 
-			/* FIXME: Find absolute ticks until after primary PDU
-			 *        on air to place the auxiliary advertising PDU.
+			/* TODO: Find the anchor before the group of
+			 *       active Periodic Advertising events, so
+			 *       that auxiliary sets are grouped such
+			 *       that auxiliary sets and Periodic
+			 *       Advertising sets are non-overlapping
+			 *       for the same event interval.
 			 */
 			ticks_anchor = ticker_ticks_now_get();
 
@@ -299,11 +313,19 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	sr_adi = NULL;
 #endif
 
+	/* Check Max Advertising Data Length */
+	if (len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
+
 	/* Check if data will fit in remaining space */
 	/* TODO: need aux_chain_ind support */
 	ext_hdr_len = sr_dptr - &sr_com_hdr->ext_hdr_adv_data[0];
 	if ((PDU_AC_EXT_HEADER_SIZE_MIN + ext_hdr_len + len) >
 	    PDU_AC_PAYLOAD_SIZE_MAX) {
+		/* Will use packet too long error to determine fragmenting
+		 * long data
+		 */
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
 
@@ -810,18 +832,22 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		ad_data = sec_dptr_prev;
 	}
 
-	/* Add AD len to secondary PDU length */
-	sec_len += ad_len;
+	/* Check Max Advertising Data Length */
+	if (ad_len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
 
 	/* Check AdvData overflow */
 	/* TODO: need aux_chain_ind support */
-	if (sec_len > PDU_AC_PAYLOAD_SIZE_MAX) {
-		/* FIXME: release allocations */
+	if ((sec_len + ad_len) > PDU_AC_PAYLOAD_SIZE_MAX) {
+		/* Will use packet too long error to determine fragmenting
+		 * long data
+		 */
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
 
 	/* set the secondary PDU len */
-	sec_pdu->len = sec_len;
+	sec_pdu->len = sec_len + ad_len;
 
 	/* Start filling pri and sec PDU payload based on flags from here
 	 * ==============================================================
@@ -1052,8 +1078,11 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   uint32_t ticks_slot_overhead)
 {
 	uint32_t volatile ret_cb;
+	uint32_t interval_us;
 	uint8_t aux_handle;
 	uint32_t ret;
+
+	interval_us = aux->interval * PERIODIC_INT_UNIT_US;
 
 	ull_hdr_init(&aux->ull);
 	aux_handle = ull_adv_aux_handle_get(aux);
@@ -1062,8 +1091,7 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_AUX_BASE + aux_handle),
 			   ticks_anchor, 0,
-			   HAL_TICKER_US_TO_TICKS((uint64_t)aux->interval *
-						  ADV_INT_UNIT_US),
+			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 			   (aux->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, aux,

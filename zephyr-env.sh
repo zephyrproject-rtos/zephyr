@@ -11,7 +11,7 @@
 # original value of $0 in spite of the current FUNCTION_ARGZERO setting.
 #
 # Note: The version of zsh need to be 5.0.6 or above. Any versions below
-# 5.0.6 maybe encoutner errors when sourcing this script.
+# 5.0.6 maybe encounter errors when sourcing this script.
 if [ -n "${ZSH_VERSION:-}" ]; then
 	dir="${(%):-%N}"
 	if [ $options[posixargzero] != "on" ]; then

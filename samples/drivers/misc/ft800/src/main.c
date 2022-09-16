@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <drivers/misc/ft8xx/ft8xx.h>
-#include <drivers/misc/ft8xx/ft8xx_copro.h>
-#include <drivers/misc/ft8xx/ft8xx_dl.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_copro.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_dl.h>
 
 /**
  * @file Display a counter using FT800.

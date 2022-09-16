@@ -10,10 +10,10 @@
 
 #define DT_DRV_COMPAT st_lsm6dso
 
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 
 #include "lsm6dso.h"
 
@@ -27,7 +27,6 @@ static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	struct lsm6dso_data *lsm6dso = dev->data;
 	lsm6dso_int2_ctrl_t int2_ctrl;
 
 	if (enable) {
@@ -42,7 +41,7 @@ static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 		return -EIO;
 
 	lsm6dso_read_reg(ctx, LSM6DSO_INT2_CTRL, (uint8_t *)&int2_ctrl, 1);
-	int2_route.int2_ctrl.int2_drdy_temp = enable;
+	int2_ctrl.int2_drdy_temp = enable;
 	return lsm6dso_write_reg(ctx, LSM6DSO_INT2_CTRL,
 				 (uint8_t *)&int2_ctrl, 1);
 }

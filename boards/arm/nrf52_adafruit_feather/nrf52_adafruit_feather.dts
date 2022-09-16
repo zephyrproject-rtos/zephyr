@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
 #include "feather_connector.dtsi"
+#include "nrf52_adafruit_feather-pinctrl.dtsi"
 
 / {
 	model = "nRF52 Adafruit Feather";
@@ -50,10 +51,10 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		red_pwm_led: pwm_led_0 {
-			pwms = <&pwm0 17>;
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 		blue_pwm_led: pwm_led_1 {
-			pwms = <&pwm0 19>;
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 
@@ -78,14 +79,16 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <6>;
-	rx-pin = <8>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
-	sda-pin = <25>;
-	scl-pin = <26>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {
@@ -120,6 +123,7 @@
 
 &pwm0 {
 	status = "okay";
-	ch0-pin = <17>;
-	ch0-inverted;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };

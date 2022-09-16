@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT atmel_sam0_eic
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/interrupt_controller/sam0_eic.h>
+#include <zephyr/drivers/interrupt_controller/sam0_eic.h>
 #include "intc_sam0_eic_priv.h"
 
 struct sam0_eic_line_assignment {
@@ -409,5 +409,5 @@ static int sam0_eic_init(const struct device *dev)
 static struct sam0_eic_data eic_data;
 DEVICE_DT_INST_DEFINE(0, sam0_eic_init,
 	      NULL, &eic_data, NULL,
-	      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+	      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 	      NULL);

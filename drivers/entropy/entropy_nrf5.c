@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/entropy.h>
-#include <sys/atomic.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/sys/atomic.h>
 #include <soc.h>
 #include <hal/nrf_rng.h>
 

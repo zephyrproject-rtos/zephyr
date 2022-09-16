@@ -7,14 +7,14 @@
 #define DT_DRV_COMPAT ethernet_phy
 
 #include <errno.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/mdio.h>
-#include <net/phy.h>
-#include <net/mii.h>
+#include <zephyr/drivers/mdio.h>
+#include <zephyr/net/phy.h>
+#include <zephyr/net/mii.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(phy_mii, CONFIG_PHY_LOG_LEVEL);
 
 struct phy_mii_dev_config {
@@ -33,8 +33,6 @@ struct phy_mii_dev_data {
 	struct phy_link_state state;
 	struct k_sem sem;
 };
-
-#define DEV_NAME(dev) ((dev)->name)
 
 static int phy_mii_get_link_state(const struct device *dev,
 				  struct phy_link_state *state);

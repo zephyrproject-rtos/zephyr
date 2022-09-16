@@ -14,8 +14,8 @@ config ROM_START_OFFSET
 config NUM_IRQS
 	default 60
 
-config PM
-	select CODE_DATA_RELOCATION_SRAM
+config ZTEST_NO_YIELD
+	default y if (ZTEST && PM)
 
 #
 # The base address of the external flash comes from the FLEXSPI base
@@ -59,7 +59,7 @@ if MBEDTLS
 # MBEDTLS CTR_DRBG code path needs extra stack space for initialization than
 # what the ztest_thread_stack defaults to.
 #
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	int
 	default 1024
 endif # MBEDTLS

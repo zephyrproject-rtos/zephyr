@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "rv32m1_vega-pinctrl.dtsi"
+
 / {
 	aliases {
 		led0 = &green_led;
@@ -44,15 +46,15 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		blue_pwm_led: pwm_led_0 {
-			pwms = <&tpm2 2 0 0>;
+			pwms = <&tpm2 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "User PWM LD1";
 		};
 		green_pwm_led: pwm_led_1 {
-			pwms = <&tpm2 1 0 0>;
+			pwms = <&tpm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "User PWM LD2";
 		};
 		red_pwm_led: pwm_led_2 {
-			pwms = <&tpm2 0 0 0>;
+			pwms = <&tpm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "User PWM LD3";
 		};
 	};
@@ -107,19 +109,28 @@
 	};
 };
 
-arduino_serial: &lpuart1 {};
+arduino_serial: &lpuart1 {
+	pinctrl-0 = <&lpuart1_default>;
+	pinctrl-names = "default";
+};
 
 &lpuart0 {
 	current-speed = <115200>;
 	status = "okay";
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
 };
 
 arduino_i2c: &lpi2c0 {
 	status = "okay";
+	pinctrl-0 = <&lpi2c0_default>;
+	pinctrl-names = "default";
 };
 
 &lpi2c3 {
 	status = "okay";
+	pinctrl-0 = <&lpi2c3_default>;
+	pinctrl-names = "default";
 
 	fxos8700@1e {
 		compatible = "nxp,fxos8700";
@@ -133,11 +144,16 @@ arduino_i2c: &lpi2c0 {
 
 arduino_spi: &lpspi0 {
 	status = "okay";
+	pinctrl-0 = <&lpspi0_default>;
+	pinctrl-names = "default";
 };
 
 &lpspi1 {
 	status = "okay";
 	cs-gpios = <&gpiob 22 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&lpspi1_default>;
+	pinctrl-names = "default";
+
 	mx25r32: mx25r3235f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -150,4 +166,6 @@ arduino_spi: &lpspi0 {
 
 &tpm2 {
 	status = "okay";
+	pinctrl-0 = <&tpm2_default>;
+	pinctrl-names = "default";
 };

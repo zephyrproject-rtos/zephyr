@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/mbox.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/mbox.h>
 #include <hal/nrf_ipc.h>
-#include <drivers/ipm.h>
-#include <sys/printk.h>
-#include <drivers/timer/nrf_rtc_timer.h>
-#include <logging/log.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/timer/nrf_rtc_timer.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
 static void sync_callback(void)

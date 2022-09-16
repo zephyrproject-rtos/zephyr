@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/gpio.h>
-#include <init.h>
-#include <logging/log.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(board, CONFIG_LOG_DEFAULT_LEVEL);
 
 #include "board.h"

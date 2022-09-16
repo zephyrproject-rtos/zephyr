@@ -144,7 +144,7 @@ def run_footprint_build(commit=None):
                                 os.path.basename(os.environ.get('ZEPHYR_BASE')))
         if os.path.exists(tmp_location):
             shutil.rmtree(tmp_location)
-        logging.debug("clonning into %s" % tmp_location)
+        logging.debug("cloning into %s" % tmp_location)
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 cwd=tempfile.gettempdir(), shell=True)

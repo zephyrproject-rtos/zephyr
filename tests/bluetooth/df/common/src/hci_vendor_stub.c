@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/addr.h>
-#include <bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/hci_vs.h>
 
 /**
  * @brief This is a stub of a function that provides static address.
  *
- * This function is defined to silent wanring printed by Host during BT stack initialization due
+ * This function is defined to silent warning printed by Host during BT stack initialization due
  * to lack of static address stored in controller.
  */
 uint8_t hci_vendor_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size)

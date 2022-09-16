@@ -6,18 +6,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/types.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <toolchain.h>
-#include <bluetooth/bluetooth.h>
-#include <sys/byteorder.h>
-#include <drivers/console/uart_pipe.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/console/uart_pipe.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 

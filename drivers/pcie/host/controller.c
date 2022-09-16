@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcie_core, LOG_LEVEL_INF);
 
-#include <kernel.h>
-#include <drivers/pcie/pcie.h>
-#include <drivers/pcie/controller.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/controller.h>
 
 #if CONFIG_PCIE_MSI
-#include <drivers/pcie/msi.h>
+#include <zephyr/drivers/pcie/msi.h>
 #endif
 
 /* arch agnostic PCIe API implementation */
@@ -410,3 +410,49 @@ void pcie_generic_ctrl_enumerate(const struct device *ctrl_dev, pcie_bdf_t bdf_s
 		}
 	}
 }
+
+#ifdef CONFIG_PCIE_MSI
+uint32_t pcie_msi_map(unsigned int irq, msi_vector_t *vector, uint8_t n_vector)
+{
+	ARG_UNUSED(irq);
+
+	return vector->arch.address;
+}
+
+uint16_t pcie_msi_mdr(unsigned int irq, msi_vector_t *vector)
+{
+	ARG_UNUSED(irq);
+
+	return vector->arch.eventid;
+}
+
+uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
+				       msi_vector_t *vectors,
+				       uint8_t n_vector)
+{
+	const struct device *dev;
+
+	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller));
+	if (!dev) {
+		LOG_ERR("Failed to get PCIe root complex");
+		return 0;
+	}
+
+	return pcie_ctrl_msi_device_setup(dev, priority, vectors, n_vector);
+}
+
+bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
+				  void (*routine)(const void *parameter),
+				  const void *parameter,
+				  uint32_t flags)
+{
+	if (irq_connect_dynamic(vector->arch.irq, vector->arch.priority, routine,
+				parameter, flags) != vector->arch.irq) {
+		return false;
+	}
+
+	irq_enable(vector->arch.irq);
+
+	return true;
+}
+#endif

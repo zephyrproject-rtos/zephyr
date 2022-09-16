@@ -19,6 +19,10 @@
 			};
 		};
 
+		rcc: rcc@40021000 {
+			undershoot-prevention;
+		};
+
 		pinctrl: pin-controller@48000000 {
 			gpiod: gpio@48000c00 {
 				compatible = "st,stm32-gpio";
@@ -248,11 +252,8 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>; //RCC_APB1ENR1_CAN1EN
 			status = "disabled";
 			label = "CAN_1";
-			bus-speed = <125000>;
 			sjw = <1>;
-			prop-seg = <0>;
-			phase-seg1 = <4>;
-			phase-seg2 = <5>;
+			sample-point = <875>;
 		};
 
 		usbotg_fs: otgfs@50000000 {
@@ -306,6 +307,11 @@
 			status = "disabled";
 			label = "DAC_1";
 			#io-channel-cells = <1>;
+		};
+
+		adc1: adc@50040000 {
+			has-temp-channel;
+			has-vref-channel;
 		};
 	};
 

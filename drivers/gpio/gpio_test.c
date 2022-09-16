@@ -12,7 +12,7 @@
 
 #define DT_DRV_COMPAT vnd_gpio
 
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 static int vnd_gpio_pin_configure(const struct device *port,
 				  gpio_pin_t pin,

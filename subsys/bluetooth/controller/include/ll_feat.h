@@ -37,7 +37,7 @@
 #define LL_FEAT_BIT_PING 0
 #endif /* !CONFIG_BT_CTLR_LE_PING */
 
-/* Maximum supported ACL Tx fragement size is limited by uint8_t len field in
+/* Maximum supported ACL Tx fragment size is limited by uint8_t len field in
  * the PDU structure of the Controller implementation. 4 octets reserved for
  * MIC in encrypted ACL PDUs, hence ACL Tx fragment maximum size of 251 octets.
  */

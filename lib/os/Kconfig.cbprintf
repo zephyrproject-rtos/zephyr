@@ -47,7 +47,7 @@ config CBPRINTF_REDUCED_INTEGRAL
 
 	  This will decrease stack space, but affects conversion of any type
 	  with more than 32 bits.  This includes not only intmax_t but any
-	  type that can be converted to an integral represention including
+	  type that can be converted to an integral representation including
 	  size_t and pointers.
 
 	  With CBPRINTF_COMPLETE conversions that may result in value-specific
@@ -61,7 +61,7 @@ endchoice
 
 # 02: 82% / 1530 B (02 / 00)
 config CBPRINTF_FP_SUPPORT
-	bool "Enable floating point formatting in cbprintf"
+	bool "Floating point formatting in cbprintf"
 	default y if FPU
 	depends on CBPRINTF_COMPLETE
 	help
@@ -71,7 +71,7 @@ config CBPRINTF_FP_SUPPORT
 
 # 04: 13% / 456 B (07 / 03)
 config CBPRINTF_FP_A_SUPPORT
-	bool "Enable floating point %a conversions"
+	bool "Floating point %a conversions"
 	depends on CBPRINTF_FULL_INTEGRAL
 	select CBPRINTF_FP_SUPPORT
 	help

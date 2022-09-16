@@ -101,6 +101,8 @@ features:
 +-----------+------------+-------------------------------------+
 | GPT       | on-chip    | gpt                                 |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1024_evk/mimxrt1024_evk_defconfig``

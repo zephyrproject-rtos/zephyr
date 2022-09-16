@@ -5,7 +5,7 @@
  */
 
 #include <st/f4/stm32f401.dtsi>
-#include <dt-bindings/memory-controller/stm32-fmc-sdram.h>
+#include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
 
 / {
 	soc {
@@ -58,11 +58,8 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
 			label = "CAN_1";
-			bus-speed = <125000>;
 			sjw = <1>;
-			prop-seg = <0>;
-			phase-seg1 = <5>;
-			phase-seg2 = <6>;
+			sample-point = <875>;
 		};
 
 		can2: can@40006800 {
@@ -74,11 +71,8 @@
 			master-can-reg = <0x40006400>;
 			status = "disabled";
 			label = "CAN_2";
-			bus-speed = <125000>;
 			sjw = <1>;
-			prop-seg = <0>;
-			phase-seg1 = <5>;
-			phase-seg2 = <6>;
+			sample-point = <875>;
 		};
 
 		usbotg_fs: usb@50000000 {
@@ -100,7 +94,7 @@
 		};
 
 		backup_sram: memory@40024000 {
-			compatible = "st,stm32-backup-sram";
+			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
 			reg = <0x40024000 DT_SIZE_K(4)>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
 			label = "BACKUP_SRAM";

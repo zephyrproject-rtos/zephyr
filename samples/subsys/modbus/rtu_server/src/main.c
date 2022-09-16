@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/util.h>
-#include <drivers/gpio.h>
-#include <modbus/modbus.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/modbus/modbus.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbs_sample, LOG_LEVEL_INF);
 
 static uint16_t holding_reg[8];

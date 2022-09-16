@@ -50,7 +50,7 @@
  * /@ include struct definitions for which offsets symbols are to be
  * generated @/
  *
- * #include <kernel_structs.h>
+ * #include <zephyr/kernel_structs.h>
  * GEN_ABS_SYM_BEGIN (_OffsetAbsSyms)	/@ the name parameter is arbitrary @/
  * /@ _kernel_t structure member offsets @/
  *
@@ -76,7 +76,7 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_GEN_OFFSET_H_
 #define ZEPHYR_KERNEL_INCLUDE_GEN_OFFSET_H_
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <stddef.h>
 
 /* definition of the GEN_OFFSET_SYM() macros is toolchain independent  */

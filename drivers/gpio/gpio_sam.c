@@ -7,11 +7,12 @@
 #define DT_DRV_COMPAT atmel_sam_gpio
 
 #include <errno.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/atmel-sam-gpio.h>
 
 #include "gpio_utils.h"
 
@@ -66,7 +67,7 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask,
 		return 0;
 	}
 
-	/* Setup the pin direcion. */
+	/* Setup the pin direction. */
 	if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			/* Set the pin. */
@@ -116,7 +117,7 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask,
 
 #if defined(CONFIG_SOC_SERIES_SAM3X)
 	/* Setup debounce. */
-	if (flags & GPIO_INT_DEBOUNCE) {
+	if (flags & SAM_GPIO_DEBOUNCE) {
 		pio->PIO_DIFSR = mask;
 	} else {
 		pio->PIO_SCIFSR = mask;
@@ -127,7 +128,7 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask,
 	defined(CONFIG_SOC_SERIES_SAMV71)
 
 	/* Setup debounce. */
-	if (flags & GPIO_INT_DEBOUNCE) {
+	if (flags & SAM_GPIO_DEBOUNCE) {
 		pio->PIO_IFSCER = mask;
 	} else {
 		pio->PIO_IFSCDR = mask;

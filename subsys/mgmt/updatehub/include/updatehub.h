@@ -65,7 +65,7 @@ enum updatehub_response updatehub_probe(void);
  * @return UPDATEHUB_NETWORKING_ERROR if fail to connect to the server.
  * @return UPDATEHUB_DOWNLOAD_ERROR fail while downloading the update package.
  * @return UPDATEHUB_INSTALL_ERROR fail while installing the update package.
- * @return UPDATEHUB_FLASH_INIT_ERROR fail to initilialize the flash.
+ * @return UPDATEHUB_FLASH_INIT_ERROR fail to initialize the flash.
  */
 enum updatehub_response updatehub_update(void);
 

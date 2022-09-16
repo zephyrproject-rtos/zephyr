@@ -5,14 +5,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROXY)
 #define LOG_MODULE_NAME bt_mesh_gatt
@@ -63,7 +63,6 @@ static struct bt_mesh_proxy_client {
 };
 
 static bool service_registered;
-static int conn_count;
 
 static struct bt_mesh_proxy_client *find_client(struct bt_conn *conn)
 {
@@ -75,7 +74,6 @@ static ssize_t gatt_recv(struct bt_conn *conn,
 			 uint16_t len, uint16_t offset, uint8_t flags)
 {
 	const uint8_t *data = buf;
-	struct bt_mesh_proxy_client *client = find_client(conn);
 
 	if (len < 1) {
 		BT_WARN("Too small Proxy PDU");
@@ -87,7 +85,7 @@ static ssize_t gatt_recv(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	return bt_mesh_proxy_msg_recv(client->cli, buf, len);
+	return bt_mesh_proxy_msg_recv(conn, buf, len);
 }
 
 /* Next subnet in queue to be advertised */
@@ -207,7 +205,7 @@ static void send_filter_status(struct bt_mesh_proxy_client *client,
 		return;
 	}
 
-	err = bt_mesh_proxy_msg_send(client->cli, BT_MESH_PROXY_CONFIG,
+	err = bt_mesh_proxy_msg_send(client->cli->conn, BT_MESH_PROXY_CONFIG,
 				     buf, NULL, NULL);
 	if (err) {
 		BT_ERR("Failed to send proxy cfg message (err %d)", err);
@@ -315,7 +313,7 @@ static int beacon_send(struct bt_mesh_proxy_client *client,
 	net_buf_simple_reserve(&buf, 1);
 	bt_mesh_beacon_create(sub, &buf);
 
-	return bt_mesh_proxy_msg_send(client->cli, BT_MESH_PROXY_BEACON,
+	return bt_mesh_proxy_msg_send(client->cli->conn, BT_MESH_PROXY_BEACON,
 				      &buf, NULL, NULL);
 }
 
@@ -399,9 +397,6 @@ int bt_mesh_proxy_identity_enable(void)
 	return 0;
 }
 
-#define ID_TYPE_NET  0x00
-#define ID_TYPE_NODE 0x01
-
 #define NODE_ID_LEN  19
 #define NET_ID_LEN   11
 
@@ -436,7 +431,7 @@ static int node_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 
 	BT_DBG("");
 
-	proxy_svc_data[2] = ID_TYPE_NODE;
+	proxy_svc_data[2] = BT_MESH_ID_TYPE_NODE;
 
 	err = bt_rand(proxy_svc_data + 11, 8);
 	if (err) {
@@ -475,7 +470,7 @@ static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 
 	BT_DBG("");
 
-	proxy_svc_data[2] = ID_TYPE_NET;
+	proxy_svc_data[2] = BT_MESH_ID_TYPE_NET;
 
 	BT_DBG("Advertising with NetId %s",
 	       bt_hex(sub->keys[SUBNET_KEY_TX_IDX(sub)].net_id, 8));
@@ -560,7 +555,7 @@ static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 
 	BT_DBG("");
 
-	if (conn_count == CONFIG_BT_MAX_CONN) {
+	if (bt_mesh_proxy_conn_count_get() == CONFIG_BT_MAX_CONN) {
 		BT_DBG("Connectable advertising deferred (max connections)");
 		return -ENOMEM;
 	}
@@ -801,24 +796,15 @@ static bool client_filter_match(struct bt_mesh_proxy_client *client,
 	return false;
 }
 
-static void buf_send_end(struct bt_conn *conn, void *user_data)
-{
-	struct net_buf *buf = user_data;
-
-	net_buf_unref(buf);
-}
-
 bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
 {
 	bool relayed = false;
-	int i, err;
+	int i;
 
 	BT_DBG("%u bytes to dst 0x%04x", buf->len, dst);
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
 		struct bt_mesh_proxy_client *client = &clients[i];
-
-		NET_BUF_SIMPLE_DEFINE(msg, 32);
 
 		if (!client->cli) {
 			continue;
@@ -828,25 +814,7 @@ bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
 			continue;
 		}
 
-		/* Proxy PDU sending modifies the original buffer,
-		 * so we need to make a copy.
-		 */
-		net_buf_simple_reserve(&msg, 1);
-		net_buf_simple_add_mem(&msg, buf->data, buf->len);
-
-		err = bt_mesh_proxy_msg_send(client->cli, BT_MESH_PROXY_NET_PDU,
-					     &msg, buf_send_end, net_buf_ref(buf));
-
-		bt_mesh_adv_send_start(0, err, BT_MESH_ADV(buf));
-		if (err) {
-			BT_ERR("Failed to send proxy message (err %d)", err);
-
-			/* If segment_and_send() fails the buf_send_end() callback will
-			 * not be called, so we need to clear the user data (net_buf,
-			 * which is just opaque data to segment_and send) reference given
-			 * to segment_and_send() here.
-			 */
-			net_buf_unref(buf);
+		if (bt_mesh_proxy_relay_send(client->cli->conn, buf)) {
 			continue;
 		}
 
@@ -869,8 +837,6 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 
 	BT_DBG("conn %p err 0x%02x", (void *)conn, err);
 
-	conn_count++;
-
 	client = find_client(conn);
 
 	client->filter_type = NONE;
@@ -879,7 +845,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 					       proxy_msg_recv);
 
 	/* Try to re-enable advertising in case it's possible */
-	if (conn_count < CONFIG_BT_MAX_CONN) {
+	if (bt_mesh_proxy_conn_count_get() < CONFIG_BT_MAX_CONN) {
 		bt_mesh_adv_gatt_update();
 	}
 }
@@ -901,7 +867,6 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 
 	client = find_client(conn);
 	if (client->cli) {
-		conn_count--;
 		bt_mesh_proxy_role_cleanup(client->cli);
 		client->cli = NULL;
 	}

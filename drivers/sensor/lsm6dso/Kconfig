@@ -56,12 +56,12 @@ config LSM6DSO_THREAD_STACK_SIZE
 endif # LSM6DSO_TRIGGER
 
 config LSM6DSO_ENABLE_TEMP
-	bool "Enable temperature"
+	bool "Temperature"
 	help
 	  Enable/disable temperature
 
 config LSM6DSO_SENSORHUB
-	bool "Enable I2C sensorhub feature"
+	bool "I2C sensorhub feature"
 	help
 	  Enable/disable internal sensorhub. You can enable
 	  a maximum of two external sensors (if more than two are enabled
@@ -70,18 +70,18 @@ config LSM6DSO_SENSORHUB
 if LSM6DSO_SENSORHUB
 
 config LSM6DSO_EXT_LIS2MDL
-	bool "Enable LIS2MDL as external sensor"
+	bool "LIS2MDL as external sensor"
 	default y
 
 config LSM6DSO_EXT_LPS22HH
-	bool "Enable LPS22HH as external sensor"
+	bool "LPS22HH as external sensor"
 	default y
 
 config LSM6DSO_EXT_HTS221
-	bool "Enable HTS221 as external sensor"
+	bool "HTS221 as external sensor"
 
 config LSM6DSO_EXT_LPS22HB
-	bool "Enable LPS22HB as external sensor"
+	bool "LPS22HB as external sensor"
 
 endif # LSM6DSO_SENSORHUB
 

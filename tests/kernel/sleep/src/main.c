@@ -6,15 +6,15 @@
 
 #include <tc_util.h>
 #include <ztest.h>
-#include <arch/cpu.h>
-#include <sys/util.h>
-#include <irq_offload.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/irq_offload.h>
 #include <stdbool.h>
 
 #if defined(CONFIG_ASSERT) && defined(CONFIG_DEBUG)
-#define THREAD_STACK    (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define THREAD_STACK    (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #else
-#define THREAD_STACK    (384 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define THREAD_STACK    (384 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #endif
 
 #define TEST_THREAD_PRIORITY    -4

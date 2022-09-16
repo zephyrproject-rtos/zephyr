@@ -27,19 +27,14 @@ config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	  then nRF52832 PPI and GPIOTE resources can be saved by not
 	  enabling 'anomaly-58-workaround' via the Devicetree.
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_NORDIC_NRF_SPI  := nordic,nrf-spi
-DT_COMPAT_NORDIC_NRF_SPIM := nordic,nrf-spim
-DT_COMPAT_NORDIC_NRF_SPIS := nordic,nrf-spis
-
 config SPI_0_NRF_SPI
-	def_bool $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPI))
+	def_bool HAS_HW_NRF_SPI0
 	select NRFX_SPI0
 	help
 	  Enable nRF SPI Master without EasyDMA on port 0.
 
 config SPI_0_NRF_SPIM
-	def_bool $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	def_bool HAS_HW_NRF_SPIM0
 	# This driver is not available for nRF52832 because of Product Anomaly 58
 	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
 	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
@@ -49,7 +44,7 @@ config SPI_0_NRF_SPIM
 	  Enable nRF SPI Master with EasyDMA on port 0.
 
 config SPI_0_NRF_SPIS
-	def_bool $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	def_bool  HAS_HW_NRF_SPIS0
 	depends on SPI_SLAVE
 	select NRFX_SPIS0
 	help
@@ -67,13 +62,13 @@ config SPI_0_NRF_ORC
 	  of the transmit buffer.
 
 config SPI_1_NRF_SPI
-	def_bool $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPI))
+	def_bool  HAS_HW_NRF_SPI1
 	select NRFX_SPI1
 	help
 	  Enable nRF SPI Master without EasyDMA on port 1.
 
 config SPI_1_NRF_SPIM
-	def_bool $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	def_bool HAS_HW_NRF_SPIM1
 	# This driver is not available for nRF52832 because of Product Anomaly 58
 	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
 	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
@@ -83,7 +78,7 @@ config SPI_1_NRF_SPIM
 	  Enable nRF SPI Master with EasyDMA on port 1.
 
 config SPI_1_NRF_SPIS
-	def_bool $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	def_bool HAS_HW_NRF_SPIS1
 	depends on SPI_SLAVE
 	select NRFX_SPIS1
 	help
@@ -101,13 +96,13 @@ config SPI_1_NRF_ORC
 	  of the transmit buffer.
 
 config SPI_2_NRF_SPI
-	def_bool $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPI))
+	def_bool HAS_HW_NRF_SPI2
 	select NRFX_SPI2
 	help
 	  Enable nRF SPI Master without EasyDMA on port 2.
 
 config SPI_2_NRF_SPIM
-	def_bool $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	def_bool HAS_HW_NRF_SPIM2
 	# This driver is not available for nRF52832 because of Product Anomaly 58
 	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
 	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
@@ -117,7 +112,7 @@ config SPI_2_NRF_SPIM
 	  Enable nRF SPI Master with EasyDMA on port 2.
 
 config SPI_2_NRF_SPIS
-	def_bool $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	def_bool HAS_HW_NRF_SPIS2
 	depends on SPI_SLAVE
 	select NRFX_SPIS2
 	help
@@ -135,13 +130,13 @@ config SPI_2_NRF_ORC
 	  of the transmit buffer.
 
 config SPI_3_NRF_SPIM
-	def_bool $(dt_nodelabel_has_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	def_bool HAS_HW_NRF_SPIM3
 	select NRFX_SPIM3
 	help
 	  Enable nRF SPI Master with EasyDMA on port 3.
 
 config SPI_3_NRF_SPIS
-	def_bool $(dt_nodelabel_has_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	def_bool HAS_HW_NRF_SPIS3
 	depends on SPI_SLAVE
 	select NRFX_SPIS3
 	help
@@ -169,7 +164,7 @@ config SPI_3_NRF_RX_DELAY
 	  until the input serial data on MISO is actually sampled.
 
 config SPI_4_NRF_SPIM
-	def_bool $(dt_nodelabel_has_compat,spi4,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	def_bool HAS_HW_NRF_SPIM4
 	select NRFX_SPIM4
 	help
 	  Enable nRF SPI Master with EasyDMA on port 4.

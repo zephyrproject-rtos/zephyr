@@ -19,8 +19,8 @@
 	 * Radio peripheral. The pins will be acquired by Radio to
 	 * drive antenna switching when AoD is enabled.
 	 */
-	dfegpio0-gpios = <&gpio0 1 0>;
-	dfegpio1-gpios = <&gpio0 2 0>;
-	dfegpio2-gpios = <&gpio0 3 0>;
-	dfegpio3-gpios = <&gpio0 4 0>;
+	dfegpio0-gpios = <&gpio0 3 0>;
+	dfegpio1-gpios = <&gpio0 4 0>;
+	dfegpio2-gpios = <&gpio0 28 0>;
+	dfegpio3-gpios = <&gpio0 29 0>;
 };

@@ -6,9 +6,9 @@
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/audio.h>
-#include <bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/capabilities.h>
 #include "common.h"
 #include "unicast_common.h"
 
@@ -17,7 +17,6 @@ extern enum bst_result_t bst_result;
 static struct bt_audio_stream g_streams[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_codec *g_remote_codecs[CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
 static struct bt_audio_ep *g_sinks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
-static struct bt_conn *g_conn;
 
 /* Mandatory support preset by both client and server */
 static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
@@ -28,6 +27,7 @@ CREATE_FLAG(flag_sink_discovered);
 CREATE_FLAG(flag_stream_configured);
 CREATE_FLAG(flag_stream_qos);
 CREATE_FLAG(flag_stream_enabled);
+CREATE_FLAG(flag_stream_released);
 
 static void stream_configured(struct bt_audio_stream *stream,
 			      const struct bt_codec_qos_pref *pref)
@@ -78,17 +78,8 @@ static void stream_stopped(struct bt_audio_stream *stream)
 static void stream_released(struct bt_audio_stream *stream)
 {
 	printk("Released stream %p\n", stream);
-}
 
-static void stream_connected(struct bt_audio_stream *stream)
-{
-	printk("Audio Stream %p connected\n", stream);
-}
-
-static void stream_disconnected(struct bt_audio_stream *stream, uint8_t reason)
-{
-	printk("Audio Stream %p disconnected (reason 0x%02x)\n",
-	       stream, reason);
+	SET_FLAG(flag_stream_released);
 }
 
 static struct bt_audio_stream_ops stream_ops = {
@@ -100,8 +91,6 @@ static struct bt_audio_stream_ops stream_ops = {
 	.disabled = stream_disabled,
 	.stopped = stream_stopped,
 	.released = stream_released,
-	.connected = stream_connected,
-	.disconnected = stream_disconnected,
 };
 
 static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
@@ -111,13 +100,14 @@ static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
 	g_sinks[index] = ep;
 }
 
-static void add_remote_codec(struct bt_codec *codec, int index, uint8_t type)
+static void add_remote_codec(struct bt_codec *codec, int index,
+			     enum bt_audio_dir dir)
 {
-	printk("#%u: codec %p type 0x%02x\n", index, codec, type);
+	printk("#%u: codec %p dir 0x%02x\n", index, codec, dir);
 
 	print_codec(codec);
 
-	if (type != BT_AUDIO_SINK && type != BT_AUDIO_SOURCE) {
+	if (dir != BT_AUDIO_DIR_SINK && dir != BT_AUDIO_DIR_SOURCE) {
 		return;
 	}
 
@@ -140,17 +130,17 @@ static void discover_sink_cb(struct bt_conn *conn,
 	}
 
 	if (codec != NULL) {
-		add_remote_codec(codec, params->num_caps, params->type);
+		add_remote_codec(codec, params->num_caps, params->dir);
 		codec_found = true;
 		return;
 	}
 
 	if (ep != NULL) {
-		if (params->type == BT_AUDIO_SINK) {
+		if (params->dir == BT_AUDIO_DIR_SINK) {
 			add_remote_sink(ep, params->num_eps);
 			endpoint_found = true;
 		} else {
-			FAIL("Invalid param type: %u\n", params->type);
+			FAIL("Invalid param dir: %u\n", params->dir);
 		}
 
 		return;
@@ -167,18 +157,6 @@ static void discover_sink_cb(struct bt_conn *conn,
 	}
 }
 
-static void gatt_mtu_cb(struct bt_conn *conn, uint8_t err,
-		   struct bt_gatt_exchange_params *params)
-{
-	if (err != 0) {
-		FAIL("Failed to exchange MTU (%u)\n", err);
-		return;
-	}
-
-	printk("MTU exchanged\n");
-	SET_FLAG(flag_mtu_exchanged);
-}
-
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -186,21 +164,30 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
-		bt_conn_unref(conn);
-		g_conn = NULL;
+		bt_conn_unref(default_conn);
+		default_conn = NULL;
 
 		FAIL("Failed to connect to %s (%u)\n", addr, err);
 		return;
 	}
 
 	printk("Connected to %s\n", addr);
-	g_conn = conn;
 	SET_FLAG(flag_connected);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+};
+
+static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+{
+	printk("MTU exchanged\n");
+	SET_FLAG(flag_mtu_exchanged);
+}
+
+static struct bt_gatt_cb gatt_callbacks = {
+	.att_mtu_updated = att_mtu_updated,
 };
 
 static void init(void)
@@ -216,6 +203,8 @@ static void init(void)
 	for (size_t i = 0; i < ARRAY_SIZE(g_streams); i++) {
 		g_streams[i].ops = &stream_ops;
 	}
+
+	bt_gatt_cb_register(&gatt_callbacks);
 }
 
 static void scan_and_connect(void)
@@ -234,17 +223,6 @@ static void scan_and_connect(void)
 
 static void exchange_mtu(void)
 {
-	struct bt_gatt_exchange_params mtu_params = {
-		.func = gatt_mtu_cb
-	};
-	int err;
-
-	err = bt_gatt_exchange_mtu(g_conn, &mtu_params);
-	if (err != 0) {
-		FAIL("Failed to exchange MTU %d\n", err);
-		return;
-	}
-
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
 }
 
@@ -254,9 +232,9 @@ static void discover_sink(void)
 	int err;
 
 	params.func = discover_sink_cb;
-	params.type = BT_AUDIO_SINK;
+	params.dir = BT_AUDIO_DIR_SINK;
 
-	err = bt_audio_discover(g_conn, &params);
+	err = bt_audio_discover(default_conn, &params);
 	if (err != 0) {
 		printk("Failed to discover sink: %d\n", err);
 		return;
@@ -272,7 +250,7 @@ static int configure_stream(struct bt_audio_stream *stream,
 
 	UNSET_FLAG(flag_stream_configured);
 
-	err = bt_audio_stream_config(g_conn, stream, ep,
+	err = bt_audio_stream_config(default_conn, stream, ep,
 				     &preset_16_2_1.codec);
 	if (err != 0) {
 		FAIL("Could not configure stream: %d\n", err);
@@ -284,11 +262,127 @@ static int configure_stream(struct bt_audio_stream *stream,
 	return 0;
 }
 
+static size_t configure_streams(void)
+{
+	size_t stream_cnt;
+
+	for (stream_cnt = 0; stream_cnt < ARRAY_SIZE(g_sinks); stream_cnt++) {
+		struct bt_audio_stream *stream = &g_streams[stream_cnt];
+		int err;
+
+		if (g_sinks[stream_cnt] == NULL) {
+			break;
+		}
+
+		err = configure_stream(stream, g_sinks[stream_cnt]);
+		if (err != 0) {
+			FAIL("Unable to configure stream[%zu]: %d",
+			     stream_cnt, err);
+			return 0;
+		}
+	}
+
+	return stream_cnt;
+}
+
+static size_t release_streams(size_t stream_cnt)
+{
+	for (size_t i = 0; i < stream_cnt; i++) {
+		int err;
+
+		if (g_sinks[i] == NULL) {
+			break;
+		}
+
+		UNSET_FLAG(flag_stream_released);
+
+		err = bt_audio_stream_release(&g_streams[i], false);
+		if (err != 0) {
+			FAIL("Unable to release stream[%zu]: %d", i, err);
+			return 0;
+		}
+
+		WAIT_FOR_FLAG(flag_stream_released);
+	}
+
+	return stream_cnt;
+}
+
+static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
+				 size_t stream_cnt)
+{
+	struct bt_audio_stream *streams[ARRAY_SIZE(g_streams)];
+	int err;
+
+	for (size_t i = 0U; i < stream_cnt; i++) {
+		streams[i] = &g_streams[i];
+	}
+
+	printk("Creating unicast group\n");
+	err = bt_audio_unicast_group_create(streams, 1, unicast_group);
+	if (err != 0) {
+		FAIL("Unable to create unicast group: %d", err);
+		return;
+	}
+
+	/* Test removing streams from group before adding them */
+	if (stream_cnt > 1) {
+		const size_t remaining_streams = stream_cnt - 1;
+
+		err = bt_audio_unicast_group_remove_streams(*unicast_group,
+							    &streams[1],
+							    remaining_streams);
+		if (err == 0) {
+			FAIL("Able to remove stream not in group");
+			return;
+		}
+
+		/* Test adding streams to group after creation */
+		err = bt_audio_unicast_group_add_streams(*unicast_group,
+							 &streams[1],
+							 remaining_streams);
+		if (err != 0) {
+			FAIL("Unable to add streams to unicast group: %d", err);
+			return;
+		}
+	}
+}
+
+static void delete_unicast_group(struct bt_audio_unicast_group *unicast_group,
+				 size_t stream_cnt)
+{
+	struct bt_audio_stream *streams[ARRAY_SIZE(g_streams)];
+	int err;
+
+	for (size_t i = 0U; i < stream_cnt; i++) {
+		streams[i] = &g_streams[i];
+	}
+
+	if (stream_cnt > 1) {
+		const size_t remove_streams_cnt = stream_cnt - 1;
+
+		err = bt_audio_unicast_group_remove_streams(unicast_group,
+							    &streams[1],
+							    remove_streams_cnt);
+		if (err != 0) {
+			FAIL("Unable to remove streams from unicast group: %d",
+			     err);
+			return;
+		}
+	}
+
+	err = bt_audio_unicast_group_delete(unicast_group);
+	if (err != 0) {
+		FAIL("Unable to delete unicast group: %d", err);
+		return;
+	}
+}
+
 static void test_main(void)
 {
+	const unsigned int iterations = 3;
 	struct bt_audio_unicast_group *unicast_group;
-	uint8_t stream_cnt;
-	int err;
+	size_t stream_cnt;
 
 	init();
 
@@ -298,55 +392,28 @@ static void test_main(void)
 
 	discover_sink();
 
-	printk("Configuring streams\n");
-	for (stream_cnt = 0; stream_cnt < ARRAY_SIZE(g_sinks); stream_cnt++) {
-		if (g_sinks[stream_cnt] == NULL) {
-			break;
-		}
+	/* Run the stream setup multiple time to ensure states are properly
+	 * set and reset
+	 */
+	for (unsigned int i = 0U; i < iterations; i++) {
+		printk("\n########### Running iteration #%u\n\n", i);
 
-		err = configure_stream(&g_streams[stream_cnt],
-				       g_sinks[stream_cnt]);
-		if (err != 0) {
-			FAIL("Unable to configure stream[%u]: %d",
-			     stream_cnt, err);
-			return;
-		}
+		printk("Configuring streams\n");
+		stream_cnt = configure_streams();
+
+		printk("Creating unicast group\n");
+		create_unicast_group(&unicast_group, stream_cnt);
+
+		/* TODO: When babblesim supports ISO setup Audio streams */
+
+		release_streams(stream_cnt);
+
+		/* Test removing streams from group after creation */
+		printk("Deleting unicast group\n");
+		delete_unicast_group(unicast_group, stream_cnt);
+		unicast_group = NULL;
 	}
 
-	printk("Creating unicast group\n");
-	err = bt_audio_unicast_group_create(g_streams, stream_cnt,
-					    &unicast_group);
-	if (err != 0) {
-		FAIL("Unable to create unicast group: %d", err);
-		return;
-	}
-
-	/* TODO: When babblesim supports ISO setup Audio streams */
-
-	printk("Deleting unicast group\n");
-	err = bt_audio_unicast_group_delete(unicast_group);
-	if (err != 0) {
-		FAIL("Unable to delete unicast group: %d", err);
-		return;
-	}
-	unicast_group = NULL;
-
-	/* Recreate unicast group to verify that it's possible */
-	printk("Recreating unicast group\n");
-	err = bt_audio_unicast_group_create(g_streams, stream_cnt,
-					    &unicast_group);
-	if (err != 0) {
-		FAIL("Unable to create unicast group: %d", err);
-		return;
-	}
-
-	printk("Deleting unicast group\n");
-	err = bt_audio_unicast_group_delete(unicast_group);
-	if (err != 0) {
-		FAIL("Unable to delete unicast group: %d", err);
-		return;
-	}
-	unicast_group = NULL;
 
 	PASS("Unicast client passed\n");
 }

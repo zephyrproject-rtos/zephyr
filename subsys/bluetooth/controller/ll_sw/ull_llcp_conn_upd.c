@@ -6,10 +6,10 @@
 
 #include <zephyr/types.h>
 
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
-#include <sys/slist.h>
-#include <sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 
 #include "hal/ccm.h"
 
@@ -42,10 +42,25 @@
 #include "hal/debug.h"
 
 /* Hardcoded instant delta +6 */
-#define CONN_UPDATE_INSTANT_DELTA 6U
+#define CONN_UPDATE_INSTANT_DELTA	6U
 
-/* TODO: Known, missing items (missing implementation):
- *	LL/CON/MAS/BV-34-C [Accepting Connection Parameter Request – event masked]
+/* CPR parameter ranges */
+#define CONN_UPDATE_TIMEOUT_100MS	10U
+#define CONN_UPDATE_TIMEOUT_32SEC	3200U
+#define CONN_UPDATE_LATENCY_MAX		499U
+#define CONN_UPDATE_CONN_INTV_4SEC	3200U
+
+/*
+ * TODO - Known, missing items (missing implementation):
+ *
+ * If DLE procedure supported:
+ *  and current PHY is Coded PHY:
+ *  ... (5.3.6.B.5.1.1) the new connection interval shall be at least connIntervalCodedMin us.
+ *  ... (5.3.6.B.5.1.7.4) packet tx time restrictions should be in effect
+ *
+ * Inter-connection mutual exclusion on CPR
+ *
+ * LL/CON/MAS/BV-34-C [Accepting Connection Parameter Request w. event masked]
  */
 
 /* LLCP Local Procedure Connection Update FSM states */
@@ -55,6 +70,7 @@ enum {
 	LP_CU_STATE_WAIT_RX_CONN_PARAM_RSP,
 	LP_CU_STATE_WAIT_TX_CONN_UPDATE_IND,
 	LP_CU_STATE_WAIT_RX_CONN_UPDATE_IND,
+	LP_CU_STATE_WAIT_TX_REJECT_EXT_IND,
 	LP_CU_STATE_WAIT_INSTANT,
 	LP_CU_STATE_WAIT_NTF,
 };
@@ -81,6 +97,7 @@ enum {
 enum {
 	RP_CU_STATE_IDLE,
 	RP_CU_STATE_WAIT_RX_CONN_PARAM_REQ,
+	RP_CU_STATE_WAIT_CONN_PARAM_REQ_AVAILABLE,
 	RP_CU_STATE_WAIT_NTF_CONN_PARAM_REQ,
 	RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY,
 	RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY_CONTINUE,
@@ -139,6 +156,39 @@ static void cu_update_conn_parameters(struct ll_conn *conn, struct proc_ctx *ctx
 				   ctx->data.cu.instant);
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+static bool cu_check_conn_parameters(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	const uint16_t interval_min = ctx->data.cu.interval_min;
+	const uint16_t interval_max = ctx->data.cu.interval_max; /* unit conn events (ie 1.25ms) */
+	const uint16_t timeout = ctx->data.cu.timeout; /* unit 10ms */
+	const uint16_t latency = ctx->data.cu.latency;
+	const uint16_t preferred_periodicity = ctx->data.cu.preferred_periodicity;
+
+	/* Invalid parameters */
+	const bool invalid = ((interval_min < CONN_INTERVAL_MIN(conn)) ||
+	    (interval_max > CONN_UPDATE_CONN_INTV_4SEC) ||
+	    (interval_min > interval_max) ||
+	    (latency > CONN_UPDATE_LATENCY_MAX) ||
+	    (timeout < CONN_UPDATE_TIMEOUT_100MS) || (timeout > CONN_UPDATE_TIMEOUT_32SEC) ||
+	    ((timeout * 4U) <= /* *4U re. conn events is equivalent to *2U re. ms */
+	     ((latency + 1) * interval_max)) ||
+	    (preferred_periodicity > interval_max));
+
+	return !invalid;
+}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+static void cu_prepare_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	ctx->data.cu.win_size = 1U;
+	ctx->data.cu.win_offset_us = 0U;
+
+
+	ctx->data.cu.instant = ull_conn_event_counter(conn) + conn->lll.latency +
+			       CONN_UPDATE_INSTANT_DELTA;
+}
+
 static bool cu_should_notify_host(struct proc_ctx *ctx)
 {
 	return (((ctx->proc == PROC_CONN_PARAM_REQ) && (ctx->data.cu.error != 0U)) ||
@@ -162,6 +212,10 @@ static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
 		llcp_pdu_encode_conn_param_req(ctx, pdu);
 		break;
+	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
+		llcp_pdu_encode_reject_ext_ind(pdu, ctx->data.cu.rejected_opcode,
+					       ctx->data.cu.error);
+		break;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 #if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
@@ -169,6 +223,7 @@ static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 		break;
 #endif /* CONFIG_BT_CENTRAL */
 	default:
+		/* Unknown opcode */
 		LL_ASSERT(0);
 		break;
 	}
@@ -177,6 +232,13 @@ static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 	/* Enqueue LL Control PDU towards LLL */
 	llcp_tx_enqueue(conn, tx);
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	if (ctx->proc == PROC_CONN_PARAM_REQ) {
+		/* Restart procedure response timeout timer */
+		llcp_lr_prt_restart(conn);
+	}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 }
 
 static void lp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -202,22 +264,48 @@ static void lp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	ll_rx_sched();
 }
 
-static void lp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	llcp_lr_complete(conn);
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	if (ctx->proc == PROC_CONN_PARAM_REQ &&
+	    !(conn->lll.role && ull_cp_remote_cpr_pending(conn))) {
+		/* For a peripheral without a remote initiated CPR */
+		cpr_active_check_and_reset(conn);
+	}
+#endif /* defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) */
+	ctx->state = LP_CU_STATE_IDLE;
+}
+
+static void lp_cu_wait_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
 {
 	if (!llcp_ntf_alloc_is_available()) {
 		ctx->state = LP_CU_STATE_WAIT_NTF;
 	} else {
 		lp_cu_ntf(conn, ctx);
-		llcp_lr_complete(conn);
-		ctx->state = LP_CU_STATE_IDLE;
+		lp_cu_complete(conn, ctx);
 	}
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+static void lp_cu_send_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				      void *param)
+{
+	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+		ctx->state = LP_CU_STATE_WAIT_TX_REJECT_EXT_IND;
+	} else {
+		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+		lp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND);
+		lp_cu_complete(conn, ctx);
+	}
+}
+
 static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (ctx->pause || llcp_rr_get_collision(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (cpr_active_is_set(conn) || llcp_lr_ispaused(conn) ||
+	     llcp_rr_get_collision(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_CU_STATE_WAIT_TX_CONN_PARAM_REQ;
 	} else {
 		uint16_t event_counter = ull_conn_event_counter(conn);
@@ -232,6 +320,9 @@ static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx
 		ctx->data.cu.offset3 = 0xffffU;
 		ctx->data.cu.offset4 = 0xffffU;
 		ctx->data.cu.offset5 = 0xffffU;
+
+		/* Mark CPR as active */
+		cpr_active_set(conn);
 
 		lp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ);
 
@@ -261,13 +352,10 @@ static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx
 static void lp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				       void *param)
 {
-	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
-		ctx->data.cu.win_size = 1U;
-		ctx->data.cu.win_offset_us = 0U;
-		ctx->data.cu.instant = ull_conn_event_counter(conn) + conn->lll.latency +
-				       CONN_UPDATE_INSTANT_DELTA;
+		cu_prepare_update_ind(conn, ctx);
 		lp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		ctx->state = LP_CU_STATE_WAIT_INSTANT;
@@ -303,6 +391,20 @@ static void lp_cu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+static void lp_cu_st_wait_tx_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+					       uint8_t evt, void *param)
+{
+	switch (evt) {
+	case LP_CU_EVT_RUN:
+		lp_cu_send_reject_ext_ind(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+
 static void lp_cu_st_wait_tx_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					    void *param)
 {
@@ -326,7 +428,15 @@ static void lp_cu_st_wait_rx_conn_param_rsp(struct ll_conn *conn, struct proc_ct
 
 	switch (evt) {
 	case LP_CU_EVT_CONN_PARAM_RSP:
+		llcp_pdu_decode_conn_param_rsp(ctx, param);
 		llcp_rr_set_incompat(conn, INCOMPAT_RESERVED);
+		/* Perform Param check and possibly reject (LL_REJECT_EXT_IND) */
+		if (!cu_check_conn_parameters(conn, ctx)) {
+			ctx->data.cu.rejected_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP;
+			ctx->data.cu.error = BT_HCI_ERR_INVALID_LL_PARAM;
+			lp_cu_send_reject_ext_ind(conn, ctx, evt, param);
+			break;
+		}
 		lp_cu_send_conn_update_ind(conn, ctx, evt, param);
 		break;
 	case LP_CU_EVT_UNKNOWN:
@@ -336,7 +446,6 @@ static void lp_cu_st_wait_rx_conn_param_rsp(struct ll_conn *conn, struct proc_ct
 		lp_cu_send_conn_update_ind(conn, ctx, evt, param);
 		break;
 	case LP_CU_EVT_REJECT:
-		/* TODO(tosk): Select between LL_REJECT_IND and LL_REJECT_EXT_IND */
 		if (pdu->llctrl.reject_ext_ind.error_code == BT_HCI_ERR_UNSUPP_REMOTE_FEATURE) {
 			/* Remote legacy Host */
 			llcp_rr_set_incompat(conn, INCOMPAT_RESERVED);
@@ -346,7 +455,7 @@ static void lp_cu_st_wait_rx_conn_param_rsp(struct ll_conn *conn, struct proc_ct
 		} else {
 			llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 			ctx->data.cu.error = pdu->llctrl.reject_ext_ind.error_code;
-			lp_cu_complete(conn, ctx, evt, param);
+			lp_cu_wait_complete(conn, ctx, evt, param);
 		}
 		break;
 	default:
@@ -382,12 +491,14 @@ static void lp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 		ctx->state = LP_CU_STATE_WAIT_INSTANT;
 		break;
 	case LP_CU_EVT_UNKNOWN:
+		/* Unsupported in peer, so disable locally for this connection */
+		feature_unmask_features(conn, LL_FEAT_BIT_CONN_PARAM_REQ);
 		ctx->data.cu.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
-		lp_cu_complete(conn, ctx, evt, param);
+		lp_cu_wait_complete(conn, ctx, evt, param);
 		break;
 	case LP_CU_EVT_REJECT:
 		ctx->data.cu.error = pdu->llctrl.reject_ext_ind.error_code;
-		lp_cu_complete(conn, ctx, evt, param);
+		lp_cu_wait_complete(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -407,15 +518,22 @@ static void lp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		/* Procedure is complete when the instant has passed, and the
 		 * new connection event parameters have been applied.
 		 */
+		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		cu_update_conn_parameters(conn, ctx);
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+		if (ctx->proc == PROC_CONN_PARAM_REQ) {
+			/* Stop procedure response timeout timer */
+			llcp_lr_prt_stop(conn);
+		}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 		notify = cu_should_notify_host(ctx);
 		if (notify) {
-			llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 			ctx->data.cu.error = BT_HCI_ERR_SUCCESS;
-			lp_cu_complete(conn, ctx, evt, param);
+			lp_cu_wait_complete(conn, ctx, evt, param);
 		} else {
-			llcp_lr_complete(conn);
-			ctx->state = LP_CU_STATE_IDLE;
+			lp_cu_complete(conn, ctx);
 		}
 	}
 }
@@ -423,7 +541,6 @@ static void lp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 static void lp_cu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				  void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case LP_CU_EVT_RUN:
 		lp_cu_check_instant(conn, ctx, evt, param);
@@ -438,7 +555,7 @@ static void lp_cu_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 {
 	switch (evt) {
 	case LP_CU_EVT_RUN:
-		lp_cu_complete(conn, ctx, evt, param);
+		lp_cu_wait_complete(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -472,6 +589,11 @@ static void lp_cu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 		lp_cu_st_wait_rx_conn_update_ind(conn, ctx, evt, param);
 		break;
 #endif /* CONFIG_BT_PERIPHERAL */
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	case LP_CU_STATE_WAIT_TX_REJECT_EXT_IND:
+		lp_cu_st_wait_tx_reject_ext_ind(conn, ctx, evt, param);
+		break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	case LP_CU_STATE_WAIT_INSTANT:
 		lp_cu_st_wait_instant(conn, ctx, evt, param);
 		break;
@@ -505,8 +627,10 @@ void llcp_lp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		lp_cu_execute_fsm(conn, ctx, LP_CU_EVT_REJECT, pdu);
 		break;
 	default:
-		/* Unknown opcode */
-		LL_ASSERT(0);
+		/* Invalid behaviour */
+		/* Invalid PDU received so terminate connection */
+		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+		lp_cu_complete(conn, ctx);
 		break;
 	}
 }
@@ -548,8 +672,7 @@ static void rp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 		break;
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
-		/* TODO(thoh): Select between LL_REJECT_IND and LL_REJECT_EXT_IND */
-		llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+		llcp_pdu_encode_reject_ext_ind(pdu, ctx->data.cu.rejected_opcode,
 					       ctx->data.cu.error);
 		break;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
@@ -557,6 +680,7 @@ static void rp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 		llcp_pdu_encode_unknown_rsp(ctx, pdu);
 		break;
 	default:
+		/* Unknown opcode */
 		LL_ASSERT(0);
 		break;
 	}
@@ -565,6 +689,13 @@ static void rp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 	/* Enqueue LL Control PDU towards LLL */
 	llcp_tx_enqueue(conn, tx);
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	if (ctx->proc == PROC_CONN_PARAM_REQ) {
+		/* Restart procedure response timeout timer */
+		llcp_rr_prt_restart(conn);
+	}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 }
 
 static void rp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -612,27 +743,35 @@ static void rp_cu_conn_param_req_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
-static void rp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	llcp_rr_complete(conn);
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	if (ctx->proc == PROC_CONN_PARAM_REQ) {
+		cpr_active_check_and_reset(conn);
+	}
+#endif /* defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) */
+	ctx->state = RP_CU_STATE_IDLE;
+}
+
+static void rp_cu_wait_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
 {
 	if (!llcp_ntf_alloc_is_available()) {
 		ctx->state = RP_CU_STATE_WAIT_NTF;
 	} else {
 		rp_cu_ntf(conn, ctx);
-		llcp_rr_complete(conn);
-		ctx->state = RP_CU_STATE_IDLE;
+		rp_cu_complete(conn, ctx);
 	}
 }
 
 static void rp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				       void *param)
 {
-	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
-		ctx->data.cu.win_size = 1U;
-		ctx->data.cu.win_offset_us = 0U;
-		ctx->data.cu.instant = ull_conn_event_counter(conn) + conn->lll.latency +
-				       CONN_UPDATE_INSTANT_DELTA;
+		cu_prepare_update_ind(conn, ctx);
 		rp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		ctx->state = RP_CU_STATE_WAIT_INSTANT;
@@ -643,19 +782,18 @@ static void rp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ct
 static void rp_cu_send_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_CU_STATE_WAIT_TX_REJECT_EXT_IND;
 	} else {
 		rp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND);
-		llcp_rr_complete(conn);
-		ctx->state = RP_CU_STATE_IDLE;
+		rp_cu_complete(conn, ctx);
 	}
 }
 
 static void rp_cu_send_conn_param_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_CU_STATE_WAIT_TX_CONN_PARAM_RSP;
 	} else {
 		rp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP);
@@ -679,12 +817,11 @@ static void rp_cu_send_conn_param_req_ntf(struct ll_conn *conn, struct proc_ctx 
 static void rp_cu_send_unknown_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				   void *param)
 {
-	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_CU_STATE_WAIT_TX_UNKNOWN_RSP;
 	} else {
 		rp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP);
-		llcp_rr_complete(conn);
-		ctx->state = RP_CU_STATE_IDLE;
+		rp_cu_complete(conn, ctx);
 	}
 }
 
@@ -702,7 +839,7 @@ static void rp_cu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 			ctx->state = RP_CU_STATE_WAIT_RX_CONN_UPDATE_IND;
 			break;
 		default:
-			/* Unknown proceduce */
+			/* Unknown procedure */
 			LL_ASSERT(0);
 			break;
 		}
@@ -714,6 +851,44 @@ static void rp_cu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+static void rp_cu_st_wait_conn_param_req_available(struct ll_conn *conn, struct proc_ctx *ctx,
+						   uint8_t evt, void *param)
+{
+	/* Check if CPR is already active on other connection.
+	 * If so check if possible to send reject right away
+	 * otherwise stay in wait state in case CPR becomes
+	 * available before we can send send reject
+	 */
+	switch (evt) {
+	case RP_CU_EVT_CONN_PARAM_REQ:
+	case RP_CU_EVT_RUN:
+		if (cpr_active_is_set(conn)) {
+			ctx->state = RP_CU_STATE_WAIT_CONN_PARAM_REQ_AVAILABLE;
+			if (!llcp_rr_ispaused(conn) && llcp_tx_alloc_peek(conn, ctx)) {
+				/* We're good to reject immediately */
+				ctx->data.cu.rejected_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
+				ctx->data.cu.error = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL;
+				rp_cu_send_reject_ext_ind(conn, ctx, evt, param);
+			}
+		} else {
+			cpr_active_set(conn);
+			const bool params_changed =
+				cu_have_params_changed(conn, ctx->data.cu.interval_max,
+						       ctx->data.cu.latency, ctx->data.cu.timeout);
+
+			/* notify Host if conn parameters changed, else respond */
+			if (params_changed) {
+				rp_cu_send_conn_param_req_ntf(conn, ctx, evt, param);
+			} else {
+				ctx->state = RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY_CONTINUE;
+			}
+		}
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
 static void rp_cu_st_wait_rx_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					    void *param)
 {
@@ -721,16 +896,15 @@ static void rp_cu_st_wait_rx_conn_param_req(struct ll_conn *conn, struct proc_ct
 	case RP_CU_EVT_CONN_PARAM_REQ:
 		llcp_pdu_decode_conn_param_req(ctx, param);
 
-		bool params_changed =
-			cu_have_params_changed(conn, ctx->data.cu.interval_max,
-					       ctx->data.cu.latency, ctx->data.cu.timeout);
-
-		/* notify Host if conn parameters changed, else respond */
-		if (params_changed) {
-			rp_cu_send_conn_param_req_ntf(conn, ctx, evt, param);
-		} else {
-			ctx->state = RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY;
+		/* Perform Param check and reject if invalid (LL_REJECT_EXT_IND) */
+		if (!cu_check_conn_parameters(conn, ctx)) {
+			ctx->data.cu.rejected_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
+			ctx->data.cu.error = BT_HCI_ERR_INVALID_LL_PARAM;
+			rp_cu_send_reject_ext_ind(conn, ctx, evt, param);
+			break;
 		}
+
+		rp_cu_st_wait_conn_param_req_available(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -761,6 +935,7 @@ static void rp_cu_state_wait_conn_param_req_reply(struct ll_conn *conn, struct p
 		break;
 	case RP_CU_EVT_CONN_PARAM_REQ_NEG_REPLY:
 		/* Send reject in next prepare run */
+		ctx->data.cu.rejected_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
 		ctx->state = RP_CU_STATE_WAIT_TX_REJECT_EXT_IND;
 		break;
 	default:
@@ -830,35 +1005,6 @@ static void rp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_c
 	}
 }
 
-static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
-					     uint8_t evt, void *param)
-{
-	switch (evt) {
-	case RP_CU_EVT_CONN_UPDATE_IND:
-		switch (conn->lll.role) {
-		case BT_HCI_ROLE_CENTRAL:
-			ctx->unknown_response.type = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
-			rp_cu_send_unknown_rsp(conn, ctx, evt, param);
-			break;
-		case BT_HCI_ROLE_PERIPHERAL:
-			llcp_pdu_decode_conn_update_ind(ctx, param);
-			/* TODO(tosk): skip/terminate if instant passed? */
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-			/* conn param req procedure, if any, is complete */
-			ull_conn_prt_clear(conn);
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
-			ctx->state = RP_CU_STATE_WAIT_INSTANT;
-			break;
-		default:
-			/* Unknown role */
-			LL_ASSERT(0);
-		}
-	default:
-		/* Ignore other evts */
-		break;
-	}
-}
-
 static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
@@ -871,14 +1017,56 @@ static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		 * new connection event parameters have been applied.
 		 */
 		cu_update_conn_parameters(conn, ctx);
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+		if (ctx->proc == PROC_CONN_PARAM_REQ) {
+			/* Stop procedure response timeout timer */
+			llcp_rr_prt_stop(conn);
+		}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 		notify = cu_should_notify_host(ctx);
 		if (notify) {
 			ctx->data.cu.error = BT_HCI_ERR_SUCCESS;
-			rp_cu_complete(conn, ctx, evt, param);
+			rp_cu_wait_complete(conn, ctx, evt, param);
 		} else {
-			llcp_rr_complete(conn);
-			ctx->state = RP_CU_STATE_IDLE;
+			rp_cu_complete(conn, ctx);
 		}
+	}
+}
+
+static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+					     uint8_t evt, void *param)
+{
+	switch (evt) {
+	case RP_CU_EVT_CONN_UPDATE_IND:
+		switch (conn->lll.role) {
+		case BT_HCI_ROLE_CENTRAL:
+			ctx->unknown_response.type = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
+			rp_cu_send_unknown_rsp(conn, ctx, evt, param);
+			break;
+		case BT_HCI_ROLE_PERIPHERAL:
+			llcp_pdu_decode_conn_update_ind(ctx, param);
+
+			if (is_instant_not_passed(ctx->data.cu.instant,
+						  ull_conn_event_counter(conn))) {
+
+				ctx->state = RP_CU_STATE_WAIT_INSTANT;
+				/* In case we only just received it in time */
+				rp_cu_check_instant(conn, ctx, evt, param);
+			} else {
+				conn->llcp_terminate.reason_final = BT_HCI_ERR_INSTANT_PASSED;
+				llcp_rr_complete(conn);
+				ctx->state = RP_CU_STATE_IDLE;
+			}
+			break;
+		default:
+			/* Unknown role */
+			LL_ASSERT(0);
+		}
+	default:
+		/* Ignore other evts */
+		break;
 	}
 }
 
@@ -899,7 +1087,7 @@ static void rp_cu_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 {
 	switch (evt) {
 	case RP_CU_EVT_RUN:
-		rp_cu_complete(conn, ctx, evt, param);
+		rp_cu_wait_complete(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -916,6 +1104,9 @@ static void rp_cu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case RP_CU_STATE_WAIT_RX_CONN_PARAM_REQ:
 		rp_cu_st_wait_rx_conn_param_req(conn, ctx, evt, param);
+		break;
+	case RP_CU_STATE_WAIT_CONN_PARAM_REQ_AVAILABLE:
+		rp_cu_st_wait_conn_param_req_available(conn, ctx, evt, param);
 		break;
 	case RP_CU_STATE_WAIT_NTF_CONN_PARAM_REQ:
 		rp_cu_state_wait_ntf_conn_param_req(conn, ctx, evt, param);
@@ -966,8 +1157,10 @@ void llcp_rp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		rp_cu_execute_fsm(conn, ctx, RP_CU_EVT_CONN_UPDATE_IND, pdu);
 		break;
 	default:
-		/* Unknown opcode */
-		LL_ASSERT(0);
+		/* Invalid behaviour */
+		/* Invalid PDU received so terminate connection */
+		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+		rp_cu_complete(conn, ctx);
 		break;
 	}
 }

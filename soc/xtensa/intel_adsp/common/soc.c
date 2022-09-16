@@ -4,22 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <xtensa/xtruntime.h>
-#include <irq_nextlevel.h>
+#include <zephyr/irq_nextlevel.h>
 #include <xtensa/hal.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include <cavs-shim.h>
 #include <cavs-idc.h>
 #include "soc.h"
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-#include <sw_isr_table.h>
+#include <zephyr/sw_isr_table.h>
 #endif
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(soc);
 
 #ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
@@ -35,12 +35,22 @@ LOG_MODULE_REGISTER(soc);
 # define DSP_INIT_GENO	          0x71A6C
 # define GENO_MDIVOSEL		  BIT(1)
 # define GENO_DIOPTOSEL           BIT(2)
+
+# define DSP_INIT_IOPO             0x71A68
+# define IOPO_DMIC_FLAG            BIT(0)
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V18
+/* amount of i2s nodes = amount of bits set in second byte */
+# define IOPO_I2S_FLAG             7 << 8
+#else
+# define IOPO_I2S_FLAG             63 << 8
+#endif
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 1
 extern void soc_mp_init(void);
 #endif
 
+#ifdef CONFIG_INTEL_ADSP_CAVS
 static __imr void power_init_v15(void)
 {
 	/* HP domain clocked by PLL
@@ -101,13 +111,10 @@ static __imr void power_init(void)
 		    DSP_INIT_LPGPDMA(0));
 	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG,
 		    DSP_INIT_LPGPDMA(1));
+
+	sys_write32(IOPO_DMIC_FLAG | IOPO_I2S_FLAG, DSP_INIT_IOPO);
 #endif
 }
-
-#if !DT_NODE_EXISTS(DT_NODELABEL(cavs0)) || CONFIG_MP_NUM_CPUS == 1
-void arch_sched_ipi(void) {}
-#endif
-
 
 static __imr int soc_init(const struct device *dev)
 {
@@ -125,3 +132,4 @@ static __imr int soc_init(const struct device *dev)
 }
 
 SYS_INIT(soc_init, PRE_KERNEL_1, 99);
+#endif /* CONFIG_INTEL_ADSP_CAVS */

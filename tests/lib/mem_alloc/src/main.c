@@ -16,7 +16,16 @@
  * it guarantee that ALL functionality provided is working correctly.
  */
 
-#include <zephyr.h>
+#if defined(__GNUC__)
+/*
+ * Don't complain about ridiculous alloc size requests
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Walloc-size-larger-than="
+#endif
+
+#define _BSD_SOURCE
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <stdlib.h>
 #include <errno.h>

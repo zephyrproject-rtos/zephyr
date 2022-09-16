@@ -17,6 +17,7 @@ zephyr_library_sources(
 zephyr_library_sources_ifdef(CONFIG_USERSPACE thread.c)
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE __aeabi_read_tp.S)
+zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)
 
 if(CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
   zephyr_library_sources(debug.c)

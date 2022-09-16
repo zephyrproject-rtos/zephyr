@@ -96,30 +96,18 @@ config BT_CENTRAL
 	help
 	  Select this for LE Central role support.
 
-menu "Broadcaster"
-	visible if !BT_PERIPHERAL
-
 config BT_BROADCASTER
 	bool "Broadcaster Role support"
 	default y if !BT_OBSERVER
 	help
 	  Select this for LE Broadcaster role support.
 
-endmenu
-
-rsource "Kconfig.adv"
-
-menu "Observer"
-	visible if !BT_CENTRAL
-
 config BT_OBSERVER
 	bool "Observer Role support"
 	help
 	  Select this for LE Observer role support.
 
-endmenu
-
-rsource "services/Kconfig"
+rsource "Kconfig.adv"
 
 config BT_CONN
 	bool
@@ -127,7 +115,8 @@ config BT_CONN
 config BT_MAX_CONN
 	int "Maximum number of simultaneous connections"
 	depends on BT_CONN
-	range 1 64
+	range 1 250
+	default 2 if BT_MESH_GATT_CLIENT
 	default 1
 	help
 	  Maximum number of simultaneous Bluetooth connections
@@ -154,7 +143,7 @@ config BT_HCI_ACL_FLOW_CONTROL
 	  not run out of incoming ACL buffers.
 
 config BT_REMOTE_VERSION
-	bool "Enable fetching of remote version"
+	bool "Allow fetching of remote version"
 	# Enable if building a Controller-only build
 	default y if BT_HCI_RAW
 	help
@@ -195,8 +184,5 @@ config BT_COMPANY_ID
 	  controlled by BT_CTLR_COMPANY_ID. The full list of Bluetooth
 	  Company Identifiers can be found here:
 	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
-
-rsource "mesh/Kconfig"
-rsource "audio/Kconfig"
 
 endif # BT

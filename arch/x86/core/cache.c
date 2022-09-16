@@ -11,11 +11,11 @@
  * This module contains functions for manipulation caches.
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <sys/util.h>
-#include <toolchain.h>
-#include <cache.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/cache.h>
 #include <stdbool.h>
 
 /**

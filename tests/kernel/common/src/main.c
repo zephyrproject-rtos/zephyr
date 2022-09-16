@@ -6,8 +6,8 @@
 
 
 #include <ztest.h>
-#include <kernel_version.h>
-#include <sys/speculation.h>
+#include <zephyr/kernel_version.h>
+#include <zephyr/sys/speculation.h>
 #include "version.h"
 
 extern void test_byteorder_memcpy_swap(void);
@@ -45,6 +45,7 @@ extern void test_multilib(void);
 extern void test_thread_context(void);
 extern void test_bootdelay(void);
 extern void test_irq_offload(void);
+extern void test_nested_irq_offload(void);
 extern void test_bitarray_declare(void);
 extern void test_bitarray_set_clear(void);
 extern void test_bitarray_alloc_free(void);
@@ -125,6 +126,7 @@ void test_main(void)
 	ztest_test_suite(common,
 			 ztest_unit_test(test_bootdelay),
 			 ztest_unit_test(test_irq_offload),
+			 ztest_1cpu_unit_test(test_nested_irq_offload),
 			 ztest_unit_test(test_byteorder_memcpy_swap),
 			 ztest_unit_test(test_byteorder_mem_swap),
 			 ztest_unit_test(test_sys_get_be64),

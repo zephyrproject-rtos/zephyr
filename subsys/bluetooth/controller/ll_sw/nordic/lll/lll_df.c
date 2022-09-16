@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -14,6 +14,7 @@
 #include "util/dbuf.h"
 
 #include "hal/cpu.h"
+#include "hal/ccm.h"
 #include "hal/radio_df.h"
 
 #include "pdu.h"
@@ -217,22 +218,23 @@ struct lll_df_sync_cfg *lll_df_sync_cfg_latest_get(struct lll_df_sync *df_cfg,
  * @param chan_idx          Channel used to receive PDU with CTE
  * @param cte_info_in_s1    Inform if CTEInfo is in S1 byte for conn. PDU or in extended advertising
  *                          header of per. adv. PDU.
+ * @param phy               Current PHY
  *
  * In case of AoA mode ant_num and ant_ids parameters are not used.
  */
 void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, const uint8_t *ant_ids,
-			       uint8_t chan_idx, bool cte_info_in_s1)
+			       uint8_t chan_idx, bool cte_info_in_s1, uint8_t phy)
 {
 	struct node_rx_iq_report *node_rx;
 
 	/* ToDo change to appropriate HCI constant */
 #if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US)
 	if (slot_duration == 0x1) {
-		radio_df_cte_rx_2us_switching(cte_info_in_s1);
+		radio_df_cte_rx_2us_switching(cte_info_in_s1, phy);
 	} else
 #endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_1US */
 	{
-		radio_df_cte_rx_4us_switching(cte_info_in_s1);
+		radio_df_cte_rx_4us_switching(cte_info_in_s1, phy);
 	}
 
 #if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
@@ -261,8 +263,10 @@ void lll_df_conf_cte_info_parsing_enable(void)
 	/* Use of mandatory 2 us switching and sampling slots for CTEInfo parsing.
 	 * The configuration here does not matter for actual IQ sampling.
 	 * The collected data will not be reported to host.
+	 * Also sampling offset does not matter so, provided PHY is legacy to setup
+	 * the offset to default zero value.
 	 */
-	radio_df_cte_rx_4us_switching(true);
+	radio_df_cte_rx_4us_switching(true, PHY_LEGACY);
 
 #if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
 	/* Use PDU_ANTENNA so no actual antenna change will be done. */

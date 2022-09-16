@@ -56,12 +56,12 @@ config IIS2ICLX_THREAD_STACK_SIZE
 endif # IIS2ICLX_TRIGGER
 
 config IIS2ICLX_ENABLE_TEMP
-	bool "Enable temperature"
+	bool "Temperature"
 	help
 	  Enable/disable temperature
 
 config IIS2ICLX_SENSORHUB
-	bool "Enable I2C sensorhub feature"
+	bool "I2C sensorhub feature"
 	help
 	  Enable/disable internal sensorhub. You can enable
 	  a maximum of two external sensors (if more than two are enabled
@@ -70,19 +70,19 @@ config IIS2ICLX_SENSORHUB
 if IIS2ICLX_SENSORHUB
 
 config IIS2ICLX_EXT_LIS2MDL
-	bool "Enable LIS2MDL as external sensor"
+	bool "LIS2MDL as external sensor"
 
 config IIS2ICLX_EXT_IIS2MDC
-	bool "Enable IIS2MDC as external sensor"
+	bool "IIS2MDC as external sensor"
 
 config IIS2ICLX_EXT_LPS22HH
-	bool "Enable LPS22HH as external sensor"
+	bool "LPS22HH as external sensor"
 
 config IIS2ICLX_EXT_HTS221
-	bool "Enable HTS221 as external sensor"
+	bool "HTS221 as external sensor"
 
 config IIS2ICLX_EXT_LPS22HB
-	bool "Enable LPS22HB as external sensor"
+	bool "LPS22HB as external sensor"
 
 endif # IIS2ICLX_SENSORHUB
 

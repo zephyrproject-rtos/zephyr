@@ -6,11 +6,11 @@
 
 #ifdef CONFIG_MULTITHREADING
 
-#include <init.h>
-#include <kernel.h>
-#include <sys/__assert.h>
-#include <sys/mutex.h>
-#include <logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/mutex.h>
+#include <zephyr/logging/log.h>
 #include <../lib/src/c/inc/internal/thread.h>
 
 #ifndef CONFIG_USERSPACE

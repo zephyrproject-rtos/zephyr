@@ -2,19 +2,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <xtensa/xtruntime.h>
-#include <irq_nextlevel.h>
+#include <zephyr/irq_nextlevel.h>
 #include <xtensa/hal.h>
-#include <init.h>
-#include <logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 
 #include <cavs-shim.h>
 #include <cavs-idc.h>
 #include "soc.h"
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-#include <sw_isr_table.h>
+#include <zephyr/sw_isr_table.h>
 #endif
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);

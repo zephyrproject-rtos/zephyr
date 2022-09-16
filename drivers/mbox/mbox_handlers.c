@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <syscall_handler.h>
-#include <drivers/mbox.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/mbox.h>
 
 static inline int z_vrfy_mbox_send(const struct mbox_channel *channel,
 				   const struct mbox_msg *msg)
@@ -21,7 +21,7 @@ static inline int z_vrfy_mbox_send(const struct mbox_channel *channel,
 
 static inline int z_vrfy_mbox_mtu_get(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_MBOX(dev, max_data_size_get));
+	Z_OOPS(Z_SYSCALL_DRIVER_MBOX(dev, mtu_get));
 
 	return z_impl_mbox_mtu_get(dev);
 }

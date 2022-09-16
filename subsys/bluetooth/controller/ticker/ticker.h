@@ -178,7 +178,7 @@ struct ticker_ext {
 				    * reservation may be re-scheduled
 				    * to avoid collision
 				    */
-	int32_t ticks_drift;	   /* Applied drift since last expiry */
+	uint32_t ticks_drift;      /* Actual drift since last expiry */
 	uint8_t reschedule_state;  /* State of re-scheduling of the
 				    * node. See defines
 				    * TICKER_RESCHEDULE_STATE_XXX

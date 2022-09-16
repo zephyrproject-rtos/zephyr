@@ -8,18 +8,18 @@
 #include <stdbool.h>
 #include <fcntl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_can, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <kernel.h>
-#include <drivers/entropy.h>
-#include <sys/util.h>
-#include <net/net_context.h>
-#include <net/net_pkt.h>
-#include <net/socket.h>
-#include <syscall_handler.h>
-#include <sys/fdtable.h>
-#include <net/socket_can.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/fdtable.h>
+#include <zephyr/net/socket_can.h>
 
 #include "sockets_internal.h"
 
@@ -542,7 +542,7 @@ static int can_register_receiver(struct net_if *iface, struct net_context *ctx,
 {
 	int i;
 
-	NET_DBG("Max %lu receivers", ARRAY_SIZE(receivers));
+	NET_DBG("Max %zu receivers", ARRAY_SIZE(receivers));
 
 	for (i = 0; i < ARRAY_SIZE(receivers); i++) {
 		if (receivers[i].ctx != NULL) {

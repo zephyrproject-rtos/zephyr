@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <tracing/tracing.h>
+#include <zephyr/kernel.h>
+#include <zephyr/tracing/tracing.h>
 
 static void leon_idle(unsigned int key)
 {

@@ -22,7 +22,7 @@
 	};
 
 	sdram2: sdram@d0000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(32)>;
 		zephyr,memory-region = "SDRAM2";
@@ -91,7 +91,7 @@
 		/* Set 2KB of storage at the end of first 1MB flash */
 		storage_partition: partition@ff800 {
 			label = "storage";
-			reg = <0x000ff800 0x00000800>;
+			reg = <0x000ff800 DT_SIZE_K(2)>;
 		};
 	};
 };

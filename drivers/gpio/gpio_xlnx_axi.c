@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT xlnx_xps_gpio_1_00_a
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <sys/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/sys_io.h>
 
 #include "gpio_utils.h"
 
-/* AXI GPIO v2 register offsetd (See Xilinx PG144 for details) */
+/* AXI GPIO v2 register offsets (See Xilinx PG144 for details) */
 #define GPIO_DATA_OFFSET  0x0000
 #define GPIO_TRI_OFFSET   0x0004
 #define GPIO2_DATA_OFFSET 0x0008

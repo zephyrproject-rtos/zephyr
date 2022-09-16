@@ -11,11 +11,11 @@
 
 #include <errno.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_clock.h>
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_mcux_pcc);
 
 struct mcux_pcc_config {

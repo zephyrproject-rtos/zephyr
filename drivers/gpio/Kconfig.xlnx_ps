@@ -1,0 +1,17 @@
+#
+# Xilinx Processor System MIO / EMIO GPIO controller driver
+# configuration options
+#
+# Copyright (c) 2022, Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+DT_COMPAT_XLNX_PS_GPIO := xlnx,ps-gpio
+
+config GPIO_XLNX_PS
+	bool "Xilinx Processor System MIO / EMIO GPIO controller driver"
+	default $(dt_compat_enabled,$(DT_COMPAT_XLNX_PS_GPIO))
+	depends on SOC_XILINX_ZYNQMP_RPU || SOC_FAMILY_XILINX_ZYNQ7000
+	depends on !QEMU_TARGET
+	help
+	  Enable the Xilinx Processor System MIO / EMIO GPIO controller driver.

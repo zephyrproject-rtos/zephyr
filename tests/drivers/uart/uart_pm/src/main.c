@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/uart.h>
-#include <device.h>
-#include <pm/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <ztest.h>
 
 #if defined(CONFIG_BOARD_NRF52840DK_NRF52840)

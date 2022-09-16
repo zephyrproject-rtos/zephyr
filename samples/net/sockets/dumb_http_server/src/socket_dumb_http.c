@@ -17,10 +17,10 @@
 
 #else
 
-#include <net/socket.h>
-#include <kernel.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/kernel.h>
 
-#include <net/net_pkt.h>
+#include <zephyr/net/net_pkt.h>
 
 #endif
 

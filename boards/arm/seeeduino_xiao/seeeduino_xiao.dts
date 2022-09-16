@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <atmel/samd21.dtsi>
+#include "seeeduino_xiao-pinctrl.dtsi"
 #include "seeed_xiao_connector.dtsi"
 
 / {
@@ -55,7 +56,8 @@
 	rxpo = <1>;
 	txpo = <0>;
 
-	pinctrl-0 = <&pb9d_sercom4_pad1 &pb8d_sercom4_pad0>;
+	pinctrl-0 = <&sercom4_uart_default>;
+	pinctrl-names = "default";
 };
 
 &sercom0 {
@@ -65,6 +67,9 @@
 	dopo = <1>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom0_spi_default>;
+	pinctrl-names = "default";
 };
 
 &sercom2 {
@@ -73,10 +78,16 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom2_i2c_default>;
+	pinctrl-names = "default";
 };
 
 zephyr_udc0: &usb0 {
 	status = "okay";
+
+	pinctrl-0 = <&usb_dc_default>;
+	pinctrl-names = "default";
 };
 
 &flash0 {

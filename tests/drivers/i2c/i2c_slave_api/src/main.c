@@ -8,13 +8,13 @@
 #include <errno.h>
 #include <string.h>
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <stdio.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <drivers/i2c.h>
-#include <drivers/i2c/slave/eeprom.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i2c/slave/eeprom.h>
 
 #include <ztest.h>
 

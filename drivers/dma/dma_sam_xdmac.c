@@ -11,16 +11,16 @@
  */
 
 #include <errno.h>
-#include <sys/__assert.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <string.h>
 #include <soc.h>
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 #include "dma_sam_xdmac.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_sam_xdmac);
 
 #define XDMAC_INT_ERR (XDMAC_CIE_RBIE | XDMAC_CIE_WBIE | XDMAC_CIE_ROIE)
@@ -45,8 +45,6 @@ struct sam_xdmac_dev_cfg {
 struct sam_xdmac_dev_data {
 	struct sam_xdmac_channel_cfg dma_channels[DMA_CHANNELS_NO];
 };
-
-#define DEV_NAME(dev) ((dev)->name)
 
 static void sam_xdmac_isr(const struct device *dev)
 {
@@ -353,7 +351,7 @@ static int sam_xdmac_initialize(const struct device *dev)
 	/* Enable module's IRQ */
 	irq_enable(dev_cfg->irq_id);
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

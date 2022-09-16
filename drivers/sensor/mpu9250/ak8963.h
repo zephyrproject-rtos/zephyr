@@ -9,8 +9,8 @@
 
 #include <stdint.h>
 
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 
 
 int ak8963_convert_magn(struct sensor_value *val, int16_t raw_val,

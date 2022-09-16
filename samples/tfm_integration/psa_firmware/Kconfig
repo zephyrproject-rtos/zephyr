@@ -1,0 +1,27 @@
+# Private config options for PSA firmware application
+
+# Copyright (c) 2021 Linaro
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "PSA firmware sample application"
+
+menu "Application configuration"
+
+module = APP
+module-str = app
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu
+
+config APP_FIRMWARE_UPDATE_IMAGE
+	string "Firmware update image to update to"
+	help
+	  This required option specifies the path to an image that this
+	  exapmle will update to.
+	default "$(shell, dirname $(filename))/boards/hello-an547.hex" if BOARD_MPS3_AN547
+
+config APP_FIRMWARE_UPDATE_IMAGE_VERSION
+	string "Version of the new image to update to"
+	default "0.0.2+0"
+
+source "Kconfig.zephyr"

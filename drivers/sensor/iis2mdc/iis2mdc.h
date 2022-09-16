@@ -11,17 +11,17 @@
 #ifndef __MAG_IIS2MDC_H
 #define __MAG_IIS2MDC_H
 
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/util.h>
 #include "iis2mdc_reg.h"
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 

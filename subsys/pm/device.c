@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <pm/device.h>
-#include <pm/device_runtime.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 
 const char *pm_device_state_str(enum pm_device_state state)
@@ -23,59 +23,6 @@ const char *pm_device_state_str(enum pm_device_state state)
 	default:
 		return "";
 	}
-}
-
-int pm_device_state_set(const struct device *dev,
-			enum pm_device_state state)
-{
-	int ret;
-	enum pm_device_action action;
-	struct pm_device *pm = dev->pm;
-
-	if (pm == NULL) {
-		return -ENOSYS;
-	}
-
-	if (pm_device_state_is_locked(dev)) {
-		return -EPERM;
-	}
-
-	switch (state) {
-	case PM_DEVICE_STATE_SUSPENDED:
-		if (pm->state == PM_DEVICE_STATE_SUSPENDED) {
-			return -EALREADY;
-		} else if (pm->state == PM_DEVICE_STATE_OFF) {
-			return -ENOTSUP;
-		}
-
-		action = PM_DEVICE_ACTION_SUSPEND;
-		break;
-	case PM_DEVICE_STATE_ACTIVE:
-		if (pm->state == PM_DEVICE_STATE_ACTIVE) {
-			return -EALREADY;
-		}
-
-		action = PM_DEVICE_ACTION_RESUME;
-		break;
-	case PM_DEVICE_STATE_OFF:
-		if (pm->state == state) {
-			return -EALREADY;
-		}
-
-		action = PM_DEVICE_ACTION_TURN_OFF;
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	ret = pm->action_cb(dev, action);
-	if (ret < 0) {
-		return ret;
-	}
-
-	pm->state = state;
-
-	return 0;
 }
 
 int pm_device_action_run(const struct device *dev,
@@ -154,6 +101,82 @@ int pm_device_action_run(const struct device *dev,
 	return 0;
 }
 
+static int power_domain_add_or_remove(const struct device *dev,
+				      const struct device *domain,
+				      bool add)
+{
+#if defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
+	device_handle_t *rv = domain->handles;
+	device_handle_t dev_handle = -1;
+	extern const struct device __device_start[];
+	extern const struct device __device_end[];
+	size_t i, region = 0;
+	size_t numdev = __device_end - __device_start;
+
+	/*
+	 * Supported devices are stored as device handle and not
+	 * device pointers. So, it is necessary to find what is
+	 * the handle associated to the given device.
+	 */
+	for (i = 0; i < numdev; i++) {
+		if (&__device_start[i] == dev) {
+			dev_handle = i + 1;
+			break;
+		}
+	}
+
+	/*
+	 * The last part is to find an available slot in the
+	 * supported section of handles array and replace it
+	 * with the device handle.
+	 */
+	while (region != 2) {
+		if (*rv == DEVICE_HANDLE_SEP) {
+			region++;
+		}
+		rv++;
+	}
+
+	i = 0;
+	while (rv[i] != DEVICE_HANDLE_ENDS) {
+		if (add == false) {
+			if (rv[i] == dev_handle) {
+				dev->pm->domain = NULL;
+				rv[i] = DEVICE_HANDLE_NULL;
+				return 0;
+			}
+		} else {
+			if (rv[i] == DEVICE_HANDLE_NULL) {
+				dev->pm->domain = domain;
+				rv[i] = dev_handle;
+				return 0;
+			}
+		}
+		++i;
+	}
+
+	return add ? -ENOSPC : -ENOENT;
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(domain);
+	ARG_UNUSED(add);
+
+	return -ENOSYS;
+#endif
+}
+
+int pm_device_power_domain_remove(const struct device *dev,
+				  const struct device *domain)
+{
+	return power_domain_add_or_remove(dev, domain, false);
+}
+
+int pm_device_power_domain_add(const struct device *dev,
+			       const struct device *domain)
+{
+	return power_domain_add_or_remove(dev, domain, true);
+}
+
 void pm_device_children_action_run(const struct device *dev,
 				   enum pm_device_action action,
 				   pm_device_action_failed_cb_t failure_cb)
@@ -173,6 +196,10 @@ void pm_device_children_action_run(const struct device *dev,
 	for (size_t i = 0U; i < handle_count; ++i) {
 		device_handle_t dh = handles[i];
 		const struct device *cdev = device_from_handle(dh);
+
+		if (cdev == NULL) {
+			continue;
+		}
 
 		rc = pm_device_action_run(cdev, action);
 		if ((failure_cb != NULL) && (rc < 0)) {
@@ -253,7 +280,7 @@ void pm_device_busy_clear(const struct device *dev)
 	atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_BUSY);
 }
 
-bool pm_device_wakeup_enable(struct device *dev, bool enable)
+bool pm_device_wakeup_enable(const struct device *dev, bool enable)
 {
 	atomic_val_t flags, new_flags;
 	struct pm_device *pm = dev->pm;

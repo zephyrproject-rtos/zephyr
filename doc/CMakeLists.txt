@@ -3,8 +3,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 project(Zephyr-Kernel-Doc LANGUAGES)
 
-set(NO_BOILERPLATE TRUE)
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} ..)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} .. COMPONENTS doc)
 
 file(TO_CMAKE_PATH "${ZEPHYR_BASE}" ZEPHYR_BASE)
 message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
@@ -14,6 +13,7 @@ message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 
 set(SPHINXOPTS "-j auto" CACHE STRING "Default Sphinx Options")
 set(LATEXMKOPTS "-halt-on-error -no-shell-escape" CACHE STRING "Default latexmk options")
+set(DT_TURBO_MODE OFF CACHE BOOL "Enable DT turbo mode")
 set(DOC_TAG "development" CACHE STRING "Documentation tag")
 set(DTS_ROOTS "${ZEPHYR_BASE}" CACHE STRING "DT bindings root folders")
 
@@ -36,11 +36,6 @@ if(NOT LATEX_PDFLATEX_FOUND OR NOT LATEXMK)
   message(WARNING "LaTeX components not found. PDF build will not be available.")
 endif()
 
-include(${ZEPHYR_BASE}/cmake/python.cmake)
-
-# Find west to (optionally) process modules for Kconfig
-find_program(WEST west)
-
 #-------------------------------------------------------------------------------
 # Environment & Paths
 
@@ -56,6 +51,12 @@ set(DOCS_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 set(DOCS_HTML_DIR ${CMAKE_CURRENT_BINARY_DIR}/html)
 set(DOCS_LATEX_DIR ${CMAKE_CURRENT_BINARY_DIR}/latex)
 
+if(WIN32)
+  set(SEP $<SEMICOLON>)
+else()
+  set(SEP :)
+endif()
+
 #-------------------------------------------------------------------------------
 # Functions
 
@@ -69,7 +70,7 @@ set(DOCS_LATEX_DIR ${CMAKE_CURRENT_BINARY_DIR}/latex)
 #
 # Both targets will produce same result, but target 2 must have no dependencies.
 # This is useful to, e.g. re-run the Sphinx build without dependencies such as
-# devicetree or Kconfig generators.
+# devicetree generator.
 #
 function(add_doc_target name)
   add_custom_target(${name} ${ARGN})
@@ -100,80 +101,18 @@ set_target_properties(
 )
 
 #-------------------------------------------------------------------------------
-# kconfig
-
-set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
-list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
-file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
-
-include(${ZEPHYR_BASE}/cmake/extensions.cmake)
-include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
-
-foreach(module_name ${ZEPHYR_MODULE_NAMES})
-  zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
-  list(APPEND
-       ZEPHYR_KCONFIG_MODULES
-       "ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR=${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR}"
-  )
-
-  if(ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG)
-    list(APPEND
-         ZEPHYR_KCONFIG_MODULES
-         "ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG=${ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG}"
-    )
-  endif()
-endforeach()
-
-if(WIN32)
-  set(SEP $<SEMICOLON>)
-else()
-  set(SEP :)
-endif()
-
-set(GEN_KCONFIG_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_kconfig_rest.py)
-
-add_custom_target(
-  kconfig
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${DOCS_SRC_DIR}/reference/kconfig
-  COMMAND ${CMAKE_COMMAND} -E env
-  PYTHONPATH=${ZEPHYR_BASE}/scripts/kconfig${SEP}$ENV{PYTHONPATH}
-  ZEPHYR_BASE=${ZEPHYR_BASE}
-  srctree=${ZEPHYR_BASE}
-  BOARD_DIR=boards/*/*
-  ARCH=*
-  ARCH_DIR=arch
-  SOC_DIR=soc
-  TOOLCHAIN_HAS_NEWLIB=y
-  KCONFIG_BINARY_DIR=${KCONFIG_BINARY_DIR}
-  KCONFIG_WARN_UNDEF=y
-  KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
-  KCONFIG_DOC_MODE=1
-  ${ZEPHYR_KCONFIG_MODULES}
-    ${PYTHON_EXECUTABLE} ${GEN_KCONFIG_REST_SCRIPT} ${DOCS_SRC_DIR}/reference/kconfig/
-      --separate-all-index
-      --keep-module-paths
-      --modules Architecture,arch,${ZEPHYR_BASE}/arch
-                Driver,drivers,${ZEPHYR_BASE}/drivers
-                Kernel,kernel,${ZEPHYR_BASE}/kernel
-                Library,lib,${ZEPHYR_BASE}/lib
-                Subsystem,subsys,${ZEPHYR_BASE}/subsys
-                "External Module,modules,${ZEPHYR_BASE}/modules"
-
-  VERBATIM
-  COMMENT "Generating Kconfig documentation..."
-)
-
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_KCONFIG_REST_SCRIPT})
-
-#-------------------------------------------------------------------------------
 # devicetree
 
 set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_devicetree_rest.py)
 
-set(DTS_ROOT_ARGS)
+set(DTS_ARGS)
 foreach(root ${DTS_ROOTS})
-  list(APPEND DTS_ROOT_ARGS --dts-root ${root})
+  list(APPEND DTS_ARGS --dts-root ${root})
 endforeach()
+
+if(DT_TURBO_MODE)
+  list(APPEND DTS_ARGS --turbo-mode)
+endif()
 
 add_custom_target(
   devicetree
@@ -182,8 +121,8 @@ add_custom_target(
   ZEPHYR_BASE=${ZEPHYR_BASE}
   ${PYTHON_EXECUTABLE} ${GEN_DEVICETREE_REST_SCRIPT}
     --vendor-prefixes ${ZEPHYR_BASE}/dts/bindings/vendor-prefixes.txt
-    ${DTS_ROOT_ARGS}
-    ${DOCS_SRC_DIR}/reference/devicetree
+    ${DTS_ARGS}
+    ${DOCS_SRC_DIR}/build/dts/api
   VERBATIM
   USES_TERMINAL
   COMMENT "Generating Devicetree bindings documentation..."
@@ -216,7 +155,7 @@ set_target_properties(
     ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_HTML_DIR};${DOCS_DOCTREE_DIR}"
 )
 
-add_dependencies(html devicetree kconfig)
+add_dependencies(html devicetree)
 
 #-------------------------------------------------------------------------------
 # pdf
@@ -244,7 +183,7 @@ set_target_properties(
     ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_LATEX_DIR};${DOCS_DOCTREE_DIR}"
 )
 
-add_dependencies(latex kconfig devicetree)
+add_dependencies(latex devicetree)
 
 if(LATEX_PDFLATEX_FOUND AND LATEXMK)
   if(WIN32)

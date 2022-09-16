@@ -5,10 +5,10 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 #include "test_kheap.h"
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 struct k_thread tdata;
 

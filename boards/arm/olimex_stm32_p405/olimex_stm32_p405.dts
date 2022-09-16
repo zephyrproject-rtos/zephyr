@@ -81,6 +81,10 @@
 	pinctrl-names = "default";
 	bus-speed = <125000>;
 	status = "okay";
+
+	can-transceiver {
+		max-bitrate = <1000000>;
+	};
 };
 
 &rng {

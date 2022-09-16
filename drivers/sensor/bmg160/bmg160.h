@@ -9,9 +9,9 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMG160_BMG160_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMG160_BMG160_H_
 
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
 
 /* registers */
 #define BMG160_REG_CHIPID		0x00

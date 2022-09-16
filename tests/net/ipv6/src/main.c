@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include <zephyr/types.h>
@@ -14,17 +14,17 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <linker/sections.h>
-#include <random/rand32.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/random/rand32.h>
 
 #include <ztest.h>
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_ip.h>
-#include <net/ethernet.h>
-#include <net/dummy.h>
-#include <net/udp.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/udp.h>
 
 #include "icmpv6.h"
 #include "ipv6.h"
@@ -245,7 +245,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 	icmp = get_icmp_hdr(pkt);
 
-	/* Reply with RA messge */
+	/* Reply with RA message */
 	if (icmp->type == NET_ICMPV6_RS) {
 		if (expecting_ra) {
 			prepare_ra_message(pkt);
@@ -1106,14 +1106,9 @@ static void test_dad_timeout(void)
 
 	k_sleep(K_MSEC(200));
 
-	/* We should have received three DAD queries, make sure they are in
-	 * proper order.
-	 */
-	zassert_true(dad_time[0] < dad_time[1], "DAD timer 1+2 failure");
-	zassert_true(dad_time[1] < dad_time[2], "DAD timer 2+3 failure");
-	zassert_true((dad_time[2] - dad_time[0]) < 100,
-		     "DAD timers took too long time [%u] [%u] [%u]",
-		     dad_time[0], dad_time[1], dad_time[2]);
+	/* Check we have received three DAD queries */
+	zassert_true((dad_time[0] != 0U) && (dad_time[1] != 0U) &&
+			(dad_time[2] != 0U), "Did not get DAD reply");
 #endif
 }
 

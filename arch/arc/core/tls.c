@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <kernel_tls.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 {

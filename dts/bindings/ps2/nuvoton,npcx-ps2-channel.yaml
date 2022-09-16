@@ -5,7 +5,7 @@ description: Nuvoton, NPCX-PS/2 channel pads node
 
 compatible: "nuvoton,npcx-ps2-channel"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
     channel:
@@ -14,6 +14,7 @@ properties:
         description: index of i2c channel
 
     pinctrl-0:
-        type: phandles
         required: true
-        description: configurations of pinmux controllers
+
+    pinctrl-names:
+        required: true

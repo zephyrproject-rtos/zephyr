@@ -6,10 +6,10 @@
 
 #include <ctype.h>
 #include <stdlib.h>
-#include <sys/atomic.h>
-#include <shell/shell.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/shell/shell.h>
 #if defined(CONFIG_SHELL_BACKEND_DUMMY)
-#include <shell/shell_dummy.h>
+#include <zephyr/shell/shell_dummy.h>
 #endif
 #include "shell_ops.h"
 #include "shell_help.h"
@@ -539,7 +539,7 @@ static int exec_cmd(const struct shell *shell, size_t argc, const char **argv,
 		uint8_t opt8 = shell->ctx->active_cmd.args.optional;
 		uint32_t opt = (opt8 == SHELL_OPT_ARG_CHECK_SKIP) ?
 				UINT16_MAX : opt8;
-		bool in_range = (argc >= mand) && (argc <= (mand + opt));
+		const bool in_range = IN_RANGE(argc, mand, mand + opt);
 
 		/* Check if argc is within allowed range */
 		ret_val = cmd_precheck(shell, in_range);
@@ -1330,15 +1330,15 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 
 		k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 
-		if (shell->iface->api->update) {
-			shell->iface->api->update(shell->iface);
-		}
-
 		shell_signal_handle(shell, SHELL_SIGNAL_KILL, kill_handler);
 		shell_signal_handle(shell, SHELL_SIGNAL_RXRDY, shell_process);
 		if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
 			shell_signal_handle(shell, SHELL_SIGNAL_LOG_MSG,
 					    shell_log_process);
+		}
+
+		if (shell->iface->api->update) {
+			shell->iface->api->update(shell->iface);
 		}
 
 		k_mutex_unlock(&shell->ctx->wr_mtx);

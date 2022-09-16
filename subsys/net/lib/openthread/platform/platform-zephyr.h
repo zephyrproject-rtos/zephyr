@@ -16,7 +16,7 @@
 #include <stdint.h>
 
 #include <openthread/instance.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_pkt.h>
 
 /**
  * This function initializes the alarm service used by OpenThread.

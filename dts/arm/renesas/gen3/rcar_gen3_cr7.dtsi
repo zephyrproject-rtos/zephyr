@@ -6,10 +6,10 @@
 
 #include <mem.h>
 #include <arm/armv7-r.dtsi>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
-#include <dt-bindings/clock/renesas_rcar_cpg.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/clock/renesas_rcar_cpg.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -99,11 +99,8 @@
 					IRQ_DEFAULT_PRIORITY>;
 			clocks = <&cpg CPG_MOD 916>,
 				<&cpg CPG_CORE CPG_CORE_CLK_CANFD>;
-			bus-speed = <125000>;
 			sjw = <1>;
-			prop-seg = <8>;
-			phase-seg1 = <8>;
-			phase-seg2 = <3>;
+			sample-point = <875>;
 			status = "disabled";
 			label = "can0";
 		};

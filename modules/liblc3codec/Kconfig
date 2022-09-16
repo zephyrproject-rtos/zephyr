@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Bose Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config LIBLC3CODEC
+	bool "liblc3codec Support"
+	depends on FPU
+	help
+	  This option enables the Android liblc3codec library for Bluetooth LE Audio

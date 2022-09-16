@@ -6,18 +6,18 @@
 
 #define DT_DRV_COMPAT zephyr_gsm_ppp
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 
 #include <stdlib.h>
-#include <kernel.h>
-#include <device.h>
-#include <sys/ring_buffer.h>
-#include <sys/util.h>
-#include <net/ppp.h>
-#include <drivers/modem/gsm_ppp.h>
-#include <drivers/uart.h>
-#include <drivers/console/uart_mux.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/ppp.h>
+#include <zephyr/drivers/modem/gsm_ppp.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/console/uart_mux.h>
 
 #include "modem_context.h"
 #include "modem_iface_uart.h"
@@ -30,11 +30,15 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #define GSM_CMD_READ_BUF                128
 #define GSM_CMD_AT_TIMEOUT              K_SECONDS(2)
 #define GSM_CMD_SETUP_TIMEOUT           K_SECONDS(6)
-#define GSM_RX_STACK_SIZE               CONFIG_MODEM_GSM_RX_STACK_SIZE
-#define GSM_WORKQ_STACK_SIZE            CONFIG_MODEM_GSM_WORKQ_STACK_SIZE
+/* GSM_CMD_LOCK_TIMEOUT should be longer than GSM_CMD_AT_TIMEOUT & GSM_CMD_SETUP_TIMEOUT,
+ * otherwise the gsm_ppp_stop might fail to lock tx.
+ */
+#define GSM_CMD_LOCK_TIMEOUT            K_SECONDS(10)
 #define GSM_RECV_MAX_BUF                30
 #define GSM_RECV_BUF_SIZE               128
 #define GSM_ATTACH_RETRY_DELAY_MSEC     1000
+#define GSM_REGISTER_DELAY_MSEC         1000
+#define GSM_RETRY_DELAY                 K_SECONDS(1)
 
 #define GSM_RSSI_RETRY_DELAY_MSEC       2000
 #define GSM_RSSI_RETRIES                10
@@ -45,6 +49,17 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #else
 	#define GSM_RSSI_MAXVAL         -51
 #endif
+
+/* Modem network registration state */
+enum network_state {
+	GSM_NET_INIT = -1,
+	GSM_NET_NOT_REGISTERED,
+	GSM_NET_HOME_NETWORK,
+	GSM_NET_SEARCHING,
+	GSM_NET_REGISTRATION_DENIED,
+	GSM_NET_UNKNOWN,
+	GSM_NET_ROAMING,
+};
 
 /* During the modem setup, we first create DLCI control channel and then
  * PPP and AT channels. Currently the modem does not create possible GNSS
@@ -65,6 +80,7 @@ static struct gsm_modem {
 	struct modem_cmd_handler_data cmd_handler_data;
 	uint8_t cmd_match_buf[GSM_CMD_READ_BUF];
 	struct k_sem sem_response;
+	struct k_sem sem_if_down;
 
 	struct modem_iface_uart_data gsm_data;
 	struct k_work_delayable gsm_configure_work;
@@ -85,11 +101,12 @@ static struct gsm_modem {
 	struct k_work_delayable rssi_work_handle;
 	struct gsm_ppp_modem_info minfo;
 
+	enum network_state net_state;
+
+	int register_retries;
 	int rssi_retries;
 	int attach_retries;
 	bool mux_enabled : 1;
-	bool mux_setup_done : 1;
-	bool setup_done : 1;
 	bool attached : 1;
 	bool modem_info_queried : 1;
 
@@ -97,12 +114,12 @@ static struct gsm_modem {
 
 	gsm_modem_power_cb modem_on_cb;
 	gsm_modem_power_cb modem_off_cb;
+	struct net_mgmt_event_callback gsm_mgmt_cb;
 } gsm;
 
-NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE,
-		    0, NULL);
-K_KERNEL_STACK_DEFINE(gsm_rx_stack, GSM_RX_STACK_SIZE);
-K_KERNEL_STACK_DEFINE(gsm_workq_stack, GSM_WORKQ_STACK_SIZE);
+NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE, 0, NULL);
+K_KERNEL_STACK_DEFINE(gsm_rx_stack, CONFIG_MODEM_GSM_RX_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(gsm_workq_stack, CONFIG_MODEM_GSM_WORKQ_STACK_SIZE);
 
 static inline int gsm_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
 {
@@ -169,9 +186,19 @@ MODEM_CMD_DEFINE(gsm_cmd_error)
 	return 0;
 }
 
+/* Handler: +CME Error: <err>[0] */
+MODEM_CMD_DEFINE(gsm_cmd_exterror)
+{
+	/* TODO: map extended error codes to values */
+	modem_cmd_handler_set_error(data, -EIO);
+	k_sem_give(&gsm.sem_response);
+	return 0;
+}
+
 static const struct modem_cmd response_cmds[] = {
 	MODEM_CMD("OK", gsm_cmd_ok, 0U, ""),
 	MODEM_CMD("ERROR", gsm_cmd_error, 0U, ""),
+	MODEM_CMD("+CME ERROR: ", gsm_cmd_exterror, 1U, ""),
 	MODEM_CMD("CONNECT", gsm_cmd_ok, 0U, ""),
 };
 
@@ -307,6 +334,36 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 }
 #endif /* CONFIG_MODEM_SIM_NUMBERS */
 
+MODEM_CMD_DEFINE(on_cmd_net_reg_sts)
+{
+	gsm.net_state = (enum network_state)atoi(argv[1]);
+
+	switch (gsm.net_state) {
+	case GSM_NET_NOT_REGISTERED:
+		LOG_INF("Network %s.", "not registered");
+		break;
+	case GSM_NET_HOME_NETWORK:
+		LOG_INF("Network %s.", "registered, home network");
+		break;
+	case GSM_NET_SEARCHING:
+		LOG_INF("Searching for network...");
+		break;
+	case GSM_NET_REGISTRATION_DENIED:
+		LOG_INF("Network %s.", "registration denied");
+		break;
+	case GSM_NET_UNKNOWN:
+		LOG_INF("Network %s.", "unknown");
+		break;
+	case GSM_NET_ROAMING:
+		LOG_INF("Network %s.", "registered, roaming");
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_MODEM_CELL_INFO)
 
 /*
@@ -396,8 +453,6 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 		LOG_INF("RSSI: %d", rssi);
 	}
 
-	k_sem_give(&gsm.sem_response);
-
 	return 0;
 }
 #endif
@@ -427,28 +482,20 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("ATE0"),
 	/* hang up */
 	SETUP_CMD_NOHANDLE("ATH"),
-	/* extender errors in numeric form */
+	/* extended errors in numeric form */
 	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
-
 	/* disable unsolicited network registration codes */
 	SETUP_CMD_NOHANDLE("AT+CREG=0"),
-
 	/* create PDP context */
 	SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\""),
 };
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
 {
-	int error = -EAGAIN;
-
 	/* Expected response is "+CGATT: 0|1" so simply look for '1' */
 	if (argc && atoi(argv[0]) == 1) {
-		error = 0;
 		LOG_INF("Attached to packet service!");
 	}
-
-	modem_cmd_handler_set_error(data, error);
-	k_sem_give(&gsm.sem_response);
 
 	return 0;
 }
@@ -456,6 +503,9 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
 
 static const struct modem_cmd read_cops_cmd =
 	MODEM_CMD_ARGS_MAX("+COPS:", on_cmd_atcmdinfo_cops, 1U, 4U, ",");
+
+static const struct modem_cmd check_net_reg_cmd =
+	MODEM_CMD("+CREG: ", on_cmd_net_reg_sts, 2U, ",");
 
 static const struct modem_cmd check_attached_cmd =
 	MODEM_CMD("+CGATT:", on_cmd_atcmdinfo_attached, 1U, ",");
@@ -588,19 +638,20 @@ static void rssi_handler(struct k_work *work)
 		LOG_DBG("No answer to RSSI readout, %s", "ignoring...");
 	}
 
-#if defined(CONFIG_GSM_MUX)
+	if (IS_ENABLED(CONFIG_GSM_MUX)) {
 #if defined(CONFIG_MODEM_CELL_INFO)
-	(void)gsm_query_cellinfo(gsm);
+		(void)gsm_query_cellinfo(gsm);
 #endif
-	(void)gsm_work_reschedule(&gsm->rssi_work_handle,
-				  K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
-#endif
-
+		(void)gsm_work_reschedule(&gsm->rssi_work_handle,
+					  K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
+	}
 }
 
-static void gsm_finalize_connection(struct gsm_modem *gsm)
+static void gsm_finalize_connection(struct k_work *work)
 {
 	int ret = 0;
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct gsm_modem *gsm = CONTAINER_OF(dwork, struct gsm_modem, gsm_configure_work);
 
 	/* If already attached, jump right to RSSI readout */
 	if (gsm->attached) {
@@ -612,7 +663,12 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 		goto attaching;
 	}
 
-	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
+	/* If modem is searching for network, we should skip the setup step */
+	if (gsm->register_retries) {
+		goto registering;
+	}
+
+	if (IS_ENABLED(CONFIG_GSM_MUX)) {
 		ret = modem_cmd_send_nolock(&gsm->context.iface,
 					    &gsm->context.cmd_handler,
 					    &response_cmds[0],
@@ -620,10 +676,8 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 					    "AT", &gsm->sem_response,
 					    GSM_CMD_AT_TIMEOUT);
 		if (ret < 0) {
-			LOG_ERR("modem setup returned %d, %s",
-				ret, "retrying...");
-			(void)gsm_work_reschedule(&gsm->gsm_configure_work,
-						K_SECONDS(1));
+			LOG_ERR("%s returned %d, %s", "AT", ret, "retrying...");
+			(void)gsm_work_reschedule(&gsm->gsm_configure_work, GSM_RETRY_DELAY);
 			return;
 		}
 	}
@@ -639,13 +693,10 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 	}
 
 	ret = gsm_setup_mccmno(gsm);
-
 	if (ret < 0) {
-		LOG_ERR("modem setup returned %d, %s",
-				ret, "retrying...");
+		LOG_ERR("%s returned %d, %s", "gsm_setup_mccmno", ret, "retrying...");
 
-		(void)gsm_work_reschedule(&gsm->gsm_configure_work,
-							K_SECONDS(1));
+		(void)gsm_work_reschedule(&gsm->gsm_configure_work, GSM_RETRY_DELAY);
 		return;
 	}
 
@@ -656,18 +707,41 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 						  &gsm->sem_response,
 						  GSM_CMD_SETUP_TIMEOUT);
 	if (ret < 0) {
-		LOG_DBG("modem setup returned %d, %s",
-			ret, "retrying...");
-		(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
+		LOG_DBG("%s returned %d, %s", "setup_cmds", ret, "retrying...");
+		(void)gsm_work_reschedule(&gsm->gsm_configure_work, GSM_RETRY_DELAY);
 		return;
 	}
 
 	ret = gsm_query_modem_info(gsm);
 	if (ret < 0) {
 		LOG_DBG("Unable to query modem information %d", ret);
-		(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
+		(void)gsm_work_reschedule(&gsm->gsm_configure_work, GSM_RETRY_DELAY);
 		return;
 	}
+
+registering:
+	/* Wait for cell tower registration */
+	ret = modem_cmd_send_nolock(&gsm->context.iface,
+				    &gsm->context.cmd_handler,
+				    &check_net_reg_cmd, 1,
+				    "AT+CREG?",
+				    &gsm->sem_response,
+				    GSM_CMD_SETUP_TIMEOUT);
+	if ((ret < 0) || ((gsm->net_state != GSM_NET_ROAMING) &&
+			 (gsm->net_state != GSM_NET_HOME_NETWORK))) {
+		if (!gsm->register_retries) {
+			gsm->register_retries = CONFIG_MODEM_GSM_REGISTER_TIMEOUT *
+				MSEC_PER_SEC / GSM_REGISTER_DELAY_MSEC;
+		} else {
+			gsm->register_retries--;
+		}
+
+		(void)gsm_work_reschedule(&gsm->gsm_configure_work,
+					  K_MSEC(GSM_REGISTER_DELAY_MSEC));
+		return;
+	}
+
+	gsm->register_retries = 0;
 
 attaching:
 	/* Don't initialize PPP until we're attached to packet service */
@@ -725,7 +799,7 @@ attaching:
 #endif
 	}
 
-	LOG_DBG("modem setup returned %d, %s", ret, "enable PPP");
+	LOG_DBG("modem RSSI: %d, %s", *gsm->context.data_rssi, "enable PPP");
 
 	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
 						  &gsm->context.cmd_handler,
@@ -734,17 +808,14 @@ attaching:
 						  &gsm->sem_response,
 						  GSM_CMD_SETUP_TIMEOUT);
 	if (ret < 0) {
-		LOG_DBG("modem setup returned %d, %s",
-			ret, "retrying...");
-		(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
+		LOG_DBG("%s returned %d, %s", "connect_cmds", ret, "retrying...");
+		(void)gsm_work_reschedule(&gsm->gsm_configure_work, GSM_RETRY_DELAY);
 		return;
 	}
 
-	gsm->setup_done = true;
-
 	set_ppp_carrier_on(gsm);
 
-	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
+	if (IS_ENABLED(CONFIG_GSM_MUX)) {
 		/* Re-use the original iface for AT channel */
 		ret = modem_iface_uart_init_dev(&gsm->context.iface,
 						gsm->at_dev);
@@ -760,16 +831,15 @@ attaching:
 				"AT", &gsm->sem_response,
 				GSM_CMD_AT_TIMEOUT);
 			if (ret < 0) {
-				LOG_WRN("modem setup returned %d, %s",
-					ret, "AT cmds failed");
+				LOG_WRN("%s returned %d, %s", "AT", ret, "iface failed");
 			} else {
 				LOG_INF("AT channel %d connected to %s",
 					DLCI_AT, gsm->at_dev->name);
 			}
 		}
 		modem_cmd_handler_tx_unlock(&gsm->context.cmd_handler);
-		k_work_schedule(&gsm->rssi_work_handle,
-				K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
+		(void)gsm_work_reschedule(&gsm->rssi_work_handle,
+					  K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
 	}
 }
 
@@ -892,12 +962,12 @@ static void mux_setup(struct k_work *work)
 			}
 		}
 
-		gsm->state = STATE_PPP_CHANNEL;
-
 		ret = mux_attach(gsm->control_dev, uart, DLCI_CONTROL, gsm);
 		if (ret < 0) {
 			goto fail;
 		}
+
+		gsm->state = STATE_PPP_CHANNEL;
 
 		break;
 
@@ -911,12 +981,12 @@ static void mux_setup(struct k_work *work)
 			}
 		}
 
-		gsm->state = STATE_AT_CHANNEL;
-
 		ret = mux_attach(gsm->ppp_dev, uart, DLCI_PPP, gsm);
 		if (ret < 0) {
 			goto fail;
 		}
+
+		gsm->state = STATE_AT_CHANNEL;
 
 		break;
 
@@ -930,12 +1000,12 @@ static void mux_setup(struct k_work *work)
 			}
 		}
 
-		gsm->state = STATE_DONE;
-
 		ret = mux_attach(gsm->at_dev, uart, DLCI_AT, gsm);
 		if (ret < 0) {
 			goto fail;
 		}
+
+		gsm->state = STATE_DONE;
 
 		break;
 
@@ -950,14 +1020,14 @@ static void mux_setup(struct k_work *work)
 						gsm->ppp_dev);
 		if (ret < 0) {
 			LOG_DBG("iface %suart error %d", "PPP ", ret);
-			gsm->mux_enabled = false;
 			goto fail;
 		}
 
 		LOG_INF("PPP channel %d connected to %s",
 			DLCI_PPP, gsm->ppp_dev->name);
 
-		gsm_finalize_connection(gsm);
+		k_work_init_delayable(&gsm->gsm_configure_work, gsm_finalize_connection);
+		(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
 		break;
 	}
 
@@ -997,34 +1067,28 @@ static void gsm_configure(struct k_work *work)
 
 	if (IS_ENABLED(CONFIG_GSM_MUX) && ret == 0 &&
 	    gsm->mux_enabled == false) {
-		gsm->mux_setup_done = false;
 
 		ret = mux_enable(gsm);
-		if (ret == 0) {
-			gsm->mux_enabled = true;
-		} else {
-			gsm->mux_enabled = false;
+		if (ret) {
+			LOG_DBG("GSM muxing %s", "disabled");
 			(void)gsm_work_reschedule(&gsm->gsm_configure_work,
 						K_NO_WAIT);
 			return;
 		}
 
-		LOG_DBG("GSM muxing %s", gsm->mux_enabled ? "enabled" :
-							    "disabled");
+		LOG_DBG("GSM muxing %s", "enabled");
+		gsm->mux_enabled = true;
 
-		if (gsm->mux_enabled) {
-			gsm->state = STATE_INIT;
+		gsm->state = STATE_INIT;
 
-			k_work_init_delayable(&gsm->gsm_configure_work,
-					      mux_setup);
+		k_work_init_delayable(&gsm->gsm_configure_work, mux_setup);
 
-			(void)gsm_work_reschedule(&gsm->gsm_configure_work,
-						K_NO_WAIT);
-			return;
-		}
+		(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
+		return;
 	}
 
-	gsm_finalize_connection(gsm);
+	k_work_init_delayable(&gsm->gsm_configure_work, gsm_finalize_connection);
+	(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
 }
 
 void gsm_ppp_start(const struct device *dev)
@@ -1041,10 +1105,6 @@ void gsm_ppp_start(const struct device *dev)
 
 	k_work_init_delayable(&gsm->gsm_configure_work, gsm_configure);
 	(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
-
-#if defined(CONFIG_GSM_MUX)
-	k_work_init_delayable(&gsm->rssi_work_handle, rssi_handler);
-#endif
 }
 
 void gsm_ppp_stop(const struct device *dev)
@@ -1054,9 +1114,14 @@ void gsm_ppp_stop(const struct device *dev)
 	struct k_work_sync work_sync;
 
 	(void)k_work_cancel_delayable_sync(&gsm->gsm_configure_work, &work_sync);
-	(void)k_work_cancel_delayable_sync(&gsm->rssi_work_handle, &work_sync);
+	if (IS_ENABLED(CONFIG_GSM_MUX)) {
+		(void)k_work_cancel_delayable_sync(&gsm->rssi_work_handle, &work_sync);
+	}
 
 	net_if_l2(iface)->enable(iface, false);
+
+	/* wait for the interface to be properly down */
+	(void)k_sem_take(&gsm->sem_if_down, K_FOREVER);
 
 	if (IS_ENABLED(CONFIG_GSM_MUX)) {
 		/* Lower mux_enabled flag to trigger re-sending AT+CMUX etc */
@@ -1067,14 +1132,16 @@ void gsm_ppp_stop(const struct device *dev)
 		}
 	}
 
-	if (modem_cmd_handler_tx_lock(&gsm->context.cmd_handler,
-				      K_SECONDS(10))) {
+	if (modem_cmd_handler_tx_lock(&gsm->context.cmd_handler, GSM_CMD_LOCK_TIMEOUT)) {
 		LOG_WRN("Failed locking modem cmds!");
 	}
 
 	if (gsm->modem_off_cb) {
 		gsm->modem_off_cb(gsm->dev, gsm->user_data);
 	}
+
+	gsm->attached = false;
+	gsm->net_state = GSM_NET_INIT;
 }
 
 void gsm_ppp_register_modem_power_callback(const struct device *dev,
@@ -1097,6 +1164,26 @@ const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev)
 	return &gsm->minfo;
 }
 
+static void gsm_mgmt_event_handler(struct net_mgmt_event_callback *cb,
+			  uint32_t mgmt_event, struct net_if *iface)
+{
+	if ((mgmt_event & NET_EVENT_IF_DOWN) != mgmt_event) {
+		return;
+	}
+
+	/* Right now we only support 1 GSM instance */
+	if (iface != gsm.iface) {
+		return;
+	}
+
+	if (mgmt_event == NET_EVENT_IF_DOWN) {
+		LOG_INF("GSM network interface down");
+		/* raise semaphore to indicate the interface is down */
+		k_sem_give(&gsm.sem_if_down);
+		return;
+	}
+}
+
 static int gsm_init(const struct device *dev)
 {
 	struct gsm_modem *gsm = dev->data;
@@ -1115,6 +1202,7 @@ static int gsm_init(const struct device *dev)
 	gsm->cmd_handler_data.eol = "\r";
 
 	k_sem_init(&gsm->sem_response, 0, 1);
+	k_sem_init(&gsm->sem_if_down, 0, 1);
 
 	r = modem_cmd_handler_init(&gsm->context.cmd_handler,
 				   &gsm->cmd_handler_data);
@@ -1153,6 +1241,8 @@ static int gsm_init(const struct device *dev)
 		return r;
 	}
 
+	gsm->net_state = GSM_NET_INIT;
+
 	LOG_DBG("iface->read %p iface->write %p",
 		gsm->context.iface.read, gsm->context.iface.write);
 
@@ -1168,11 +1258,19 @@ static int gsm_init(const struct device *dev)
 			   K_PRIO_COOP(7), NULL);
 	k_thread_name_set(&gsm->workq.thread, "gsm_workq");
 
+	if (IS_ENABLED(CONFIG_GSM_MUX)) {
+		k_work_init_delayable(&gsm->rssi_work_handle, rssi_handler);
+	}
+
 	gsm->iface = ppp_net_if();
 	if (!gsm->iface) {
 		LOG_ERR("Couldn't find ppp net_if!");
 		return -ENODEV;
 	}
+
+	net_mgmt_init_event_callback(&gsm->gsm_mgmt_cb, gsm_mgmt_event_handler,
+				     NET_EVENT_IF_DOWN);
+	net_mgmt_add_event_callback(&gsm->gsm_mgmt_cb);
 
 	if (IS_ENABLED(CONFIG_GSM_PPP_AUTOSTART)) {
 		gsm_ppp_start(dev);

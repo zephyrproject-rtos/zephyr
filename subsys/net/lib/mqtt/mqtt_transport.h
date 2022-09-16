@@ -12,7 +12,7 @@
 #ifndef MQTT_TRANSPORT_H_
 #define MQTT_TRANSPORT_H_
 
-#include <net/mqtt.h>
+#include <zephyr/net/mqtt.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -59,4 +59,16 @@ config LIS2DW12_TAP
 
 endif # LIS2DW12_TRIGGER
 
+config LIS2DW12_THRESHOLD
+	bool "Wakeup threshold trigger (via interrupt)"
+	help
+	  Enable the wakeup threshold trigger feature.
+	  The wake-up interrupt signal is generated if a certain number of
+	  consecutive data exceed the configured threshold (config in DT).
+	  The threshold is applied to both positive and negative data: for
+	  a wake-up interrupt generation at least one of the three axes must
+	  be bigger than the threshold. See ST AN5038 for more details about
+	  the feature.
+
+
 endif # LIS2DW12

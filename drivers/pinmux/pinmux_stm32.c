@@ -13,15 +13,15 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_gpio.h>
 #include <stm32_ll_system.h>
-#include <drivers/pinmux.h>
+#include <zephyr/drivers/pinmux.h>
 #include <gpio/gpio_stm32.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <pinmux/pinmux_stm32.h>
 
 const struct device * const gpio_ports[STM32_PORTS_MAX] = {
@@ -184,6 +184,40 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 }
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+
+/* ignore swj-cfg reset state (default value) */
+#if ((DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg)) && \
+	(DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) != 0))
+
+static int stm32f1_swj_cfg_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+
+	/* reset state is '000' (Full SWJ, (JTAG-DP + SW-DP)) */
+	/* only one of the 3 bits can be set */
+#if (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 1)
+	/* 001: Full SWJ (JTAG-DP + SW-DP) but without NJTRST */
+	/* releases: PB4 */
+	LL_GPIO_AF_Remap_SWJ_NONJTRST();
+#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 2)
+	/* 010: JTAG-DP Disabled and SW-DP Enabled */
+	/* releases: PB4 PB3 PA15 */
+	LL_GPIO_AF_Remap_SWJ_NOJTAG();
+#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 3)
+	/* 100: JTAG-DP Disabled and SW-DP Disabled */
+	/* releases: PB4 PB3 PA13 PA14 PA15 */
+	LL_GPIO_AF_DisableRemap_SWJ();
+#endif
+
+	return 0;
+}
+
+SYS_INIT(stm32f1_swj_cfg_init, PRE_KERNEL_1, 0);
+
+#endif /* DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg) */
+
 /**
  * @brief Helper function to check and apply provided pinctrl remap
  *        configuration
@@ -199,9 +233,7 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 			   size_t list_size)
 {
-	uint8_t pos;
 	uint32_t reg_val;
-	volatile uint32_t *reg;
 	uint16_t remap;
 
 	remap = (uint16_t)STM32_DT_PINMUX_REMAP(pinctrl[0].pinmux);
@@ -222,17 +254,17 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
 
 	if (STM32_REMAP_REG_GET(remap) == 0U) {
-		reg = &AFIO->MAPR;
+		/* read initial value, ignore write-only SWJ_CFG */
+		reg_val = AFIO->MAPR & ~AFIO_MAPR_SWJ_CFG;
+		reg_val |= STM32_REMAP_VAL_GET(remap) << STM32_REMAP_SHIFT_GET(remap);
+		/* apply undocumented '111' (AFIO_MAPR_SWJ_CFG) to affirm SWJ_CFG */
+		/* the pins are not remapped without that (when SWJ_CFG is not default) */
+		AFIO->MAPR = reg_val | AFIO_MAPR_SWJ_CFG;
 	} else {
-		reg = &AFIO->MAPR2;
+		reg_val = AFIO->MAPR2;
+		reg_val |= STM32_REMAP_VAL_GET(remap) << STM32_REMAP_SHIFT_GET(remap);
+		AFIO->MAPR2 = reg_val;
 	}
-
-	pos = STM32_REMAP_SHIFT_GET(remap);
-
-	reg_val = *reg;
-	reg_val &= ~(STM32_REMAP_MASK_GET(remap) << pos);
-	reg_val |= STM32_REMAP_VAL_GET(remap) << pos;
-	*reg = reg_val;
 
 	return 0;
 }

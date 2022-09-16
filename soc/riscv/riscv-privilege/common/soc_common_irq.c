@@ -9,7 +9,7 @@
  * @brief interrupt management code for riscv SOCs supporting the riscv
 	  privileged architecture specification
  */
-#include <irq.h>
+#include <zephyr/irq.h>
 
 void arch_irq_enable(unsigned int irq)
 {
@@ -107,7 +107,7 @@ int arch_irq_is_enabled(unsigned int irq)
 __weak void soc_interrupt_init(void)
 {
 	/* ensure that all interrupts are disabled */
-	(void)irq_lock();
+	(void)arch_irq_lock();
 
 	__asm__ volatile ("csrwi mie, 0\n"
 			  "csrwi mip, 0\n");

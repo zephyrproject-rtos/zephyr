@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/arm64/hypercall.h>
-#include <xen/public/xen.h>
-#include <xen/public/event_channel.h>
-#include <xen/events.h>
+#include <zephyr/arch/arm64/hypercall.h>
+#include <zephyr/xen/public/xen.h>
+#include <zephyr/xen/public/event_channel.h>
+#include <zephyr/xen/events.h>
 
 #include <errno.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(xen_events);
 

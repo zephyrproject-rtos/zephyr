@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/display.h>
-#include <devicetree.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/drivers/display.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <hal/nrf_timer.h>
 #ifdef PWM_PRESENT
 #include <hal/nrf_pwm.h>
@@ -16,7 +16,7 @@
 #include <nrfx_ppi.h>
 #endif
 #include <nrf_peripherals.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nrf_led_matrix, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define MATRIX_NODE  DT_INST(0, nordic_nrf_led_matrix)
@@ -535,8 +535,8 @@ static struct display_drv_data instance_data = {
 	 ((DT_GPIO_FLAGS_BY_IDX(node_id, pha, idx) & GPIO_ACTIVE_LOW) ? \
 		ACTIVE_LOW_MASK : 0)),
 
-#define ADD_FF(i, _) 0xFF,
-#define FILL_ROW_WITH_FF(node_id, pha, idx)  UTIL_LISTIFY(COL_COUNT, ADD_FF)
+#define ADD_FF(i, _) 0xFF
+#define FILL_ROW_WITH_FF(node_id, pha, idx)  LISTIFY(COL_COUNT, ADD_FF, (,)),
 #define GET_PIXEL_ORDINAL(node_id, pha, idx) \
 	[GET_DT_ROW_IDX(idx) * COL_COUNT + \
 	 GET_DT_COL_IDX(idx)] = idx,

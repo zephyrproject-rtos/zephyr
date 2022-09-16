@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT bosch_bmi270
 
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <init.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <logging/log.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log.h>
 
 #include "bmi270.h"
 #include "bmi270_config_file.h"

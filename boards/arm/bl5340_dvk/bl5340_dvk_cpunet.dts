@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf5340_cpunet_qkaa.dtsi>
+#include "bl5340_dvk_cpunet-pinctrl.dtsi"
 
 / {
 	model = "Laird Connectivity BL5340 (nRF5340) Network";
@@ -38,10 +39,9 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <40>;
-	rx-pin = <42>;
-	rts-pin = <39>;
-	cts-pin = <41>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &timer0 {
@@ -57,10 +57,6 @@
 };
 
 &flash1 {
-	/*
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

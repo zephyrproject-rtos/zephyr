@@ -14,8 +14,8 @@
  */
 
 #include <ztest.h>
-#include <kernel_structs.h>
-#include <kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <string.h>
 #include <ksched.h>
@@ -48,7 +48,7 @@ extern void test_abort_from_isr_not_self(void);
 extern void test_essential_thread_abort(void);
 
 struct k_thread tdata;
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 size_t tstack_size = K_THREAD_STACK_SIZEOF(tstack);
 
@@ -89,7 +89,7 @@ static void customdata_entry(void *p1, void *p2, void *p3)
 	zassert_is_null(k_thread_custom_data_get(), NULL);
 	while (1) {
 		k_thread_custom_data_set((void *)data);
-		/* relinguish cpu for a while */
+		/* relinquish cpu for a while */
 		k_msleep(50);
 		/** TESTPOINT: custom data comparison */
 		zassert_equal(data, (long)k_thread_custom_data_get(), NULL);
@@ -491,7 +491,7 @@ void test_thread_join_deadlock(void)
 /*
  * entry for a delayed thread, do nothing. After the thread is created,
  * just check how many ticks expires and how many ticks remain before
- * the trhead start
+ * the thread start
  */
 static void user_start_thread(void *p1, void *p2, void *p3)
 {
@@ -546,7 +546,7 @@ static void foreach_callback(const struct k_thread *thread, void *user_data)
 	((k_thread_runtime_stats_t *)user_data)->execution_cycles +=
 		stats.execution_cycles;
 }
-/* This case accumulates every threath's execution_cycles first, then
+/* This case accumulates every thread's execution_cycles first, then
  * get the total execution_cycles from a global
  * k_thread_runtime_stats_t to see that all time is reflected in the
  * total.
@@ -620,10 +620,10 @@ void test_k_busy_wait_user(void)
 #define INT_ARRAY_SIZE 128
 int large_stack(size_t *space)
 {
-	/* use "volatile" to protect this varaible from being optimized out */
+	/* use "volatile" to protect this variable from being optimized out */
 	volatile int a[INT_ARRAY_SIZE];
 
-	/* to avoid unused varaible error */
+	/* to avoid unused variable error */
 	a[0] = 1;
 	return k_thread_stack_space_get(k_current_get(), space);
 
@@ -635,7 +635,7 @@ int small_stack(size_t *space)
 }
 
 /* test k_thread_stack_sapce_get(), unused stack space in large_stack_space()
- * is samller than that in small_stack() because the former function has a
+ * is smaller than that in small_stack() because the former function has a
  * large local variable
  */
 void test_k_thread_stack_space_get_user(void)

@@ -8,7 +8,7 @@
 
 #define LOG_DOMAIN modem_wncm14a2a
 #define LOG_LEVEL CONFIG_MODEM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include <zephyr/types.h>
@@ -16,16 +16,16 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <device.h>
-#include <init.h>
-#include <random/rand32.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/random/rand32.h>
 
-#include <net/net_context.h>
-#include <net/net_if.h>
-#include <net/net_offload.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_offload.h>
+#include <zephyr/net/net_pkt.h>
 #if defined(CONFIG_NET_IPV6)
 #include "ipv6.h"
 #endif
@@ -1251,7 +1251,7 @@ static int modem_pin_init(void)
 			 pinconfig[SHLD_3V3_1V8_SIG_TRANS_ENA].pin,
 			 SHLD_3V3_1V8_SIG_TRANS_DISABLED);
 
-	/* While the level translator is disabled and ouptut pins
+	/* While the level translator is disabled and output pins
 	 * are tristated, make sure the inputs are in the same state
 	 * as the WNC Module pins so that when the level translator is
 	 * enabled, there are no differences.

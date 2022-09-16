@@ -12,9 +12,9 @@
 
 #define DT_DRV_COMPAT vnd_adc
 
-#include <drivers/adc.h>
-#include <device.h>
-#include <kernel.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
 
 static int vnd_adc_channel_setup(const struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)

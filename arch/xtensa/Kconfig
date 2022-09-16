@@ -6,18 +6,6 @@
 menu "XTENSA Options"
 	depends on XTENSA
 
-menu "Specific core configuration"
-
-config IRQ_OFFLOAD_INTNUM
-	int "IRQ offload SW interrupt index"
-	help
-	  The index of the software interrupt to be used for IRQ offload.
-
-	  Please note that in order for IRQ offload to work correctly the selected
-	  interrupt shall have its priority shall not exceed XCHAL_EXCM_LEVEL.
-
-endmenu
-
 config ARCH
 	default "xtensa"
 
@@ -56,9 +44,9 @@ config XTENSA_USE_CORE_CRT1
 	  to false.
 
 config XTENSA_ENABLE_BACKTRACE
-	bool "Enable backtrace on panic exception"
+	bool "Backtrace on panic exception"
 	default y
-	depends on SOC_ESP32
+	depends on SOC_ESP32 || SOC_FAMILY_INTEL_ADSP
 	help
 	  Enable this config option to print backtrace on panic exception
 
@@ -68,14 +56,14 @@ config XTENSA_CPU_IDLE_SPIN
 	  Use a spin loop instead of WAITI for the CPU idle state.
 
 config XTENSA_WAITI_BUG
-	bool "Enable workaround sequence for WAITI bug on LX6"
+	bool "Workaround sequence for WAITI bug on LX6"
 	help
 	  SOF traditionally contains this workaround on its ADSP
 	  platforms which prefixes a WAITI entry with 128 NOP
 	  instructions followed by an ISYNC and EXTW.
 
 config XTENSA_SMALL_VECTOR_TABLE_ENTRY
-	bool "Enable workaround for small vector table entries"
+	bool "Workaround for small vector table entries"
 	help
 	  This option enables a small indirection to bypass the size
 	  constraint of the vector table entry and moved the default

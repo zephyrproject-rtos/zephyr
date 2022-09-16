@@ -137,14 +137,14 @@ config NET_IPV6_RA_RDNSS
 	  See RFC 6106 for details. The value depends on your network needs.
 
 config NET_6LO
-	bool "Enable 6lowpan IPv6 Compression library"
+	bool "6lowpan IPv6 Compression library"
 	default y if NET_L2_IEEE802154
 	help
 	  6lowpan compression and fragmentation. It is enabled by default
 	  if 802.15.4 is present, since using IPv6 on it requires it.
 
 config NET_6LO_CONTEXT
-	bool "Enable 6lowpan context based compression"
+	bool "6lowpan context based compression"
 	depends on NET_6LO
 	help
 	  Enables 6lowpan context based compression based on information

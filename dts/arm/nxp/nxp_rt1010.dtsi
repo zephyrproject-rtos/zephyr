@@ -83,11 +83,28 @@
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
+			pinmux = <&iomuxc_gpio_sd_00_gpio2_io00>,
+				<&iomuxc_gpio_sd_01_gpio2_io01>,
+				<&iomuxc_gpio_sd_02_gpio2_io02>,
+				<&iomuxc_gpio_sd_03_gpio2_io03>,
+				<&iomuxc_gpio_sd_04_gpio2_io04>,
+				<&iomuxc_gpio_sd_05_gpio2_io05>,
+				<&iomuxc_gpio_sd_06_gpio2_io06>,
+				<&iomuxc_gpio_sd_07_gpio2_io07>,
+				<&iomuxc_gpio_sd_08_gpio2_io08>,
+				<&iomuxc_gpio_sd_09_gpio2_io09>,
+				<&iomuxc_gpio_sd_10_gpio2_io10>,
+				<&iomuxc_gpio_sd_11_gpio2_io11>,
+				<&iomuxc_gpio_sd_12_gpio2_io12>,
+				<&iomuxc_gpio_sd_13_gpio2_io13>;
 		};
 
-		/* Remove GPIO3 & GPIO4, they dont exist on RT1010 */
+		/* Remove GPIO3-GPIO9, they dont exist on RT1010 */
 		/delete-node/ gpio@401c0000;
 		/delete-node/ gpio@401c4000;
+		/delete-node/ gpio@42004000;
+		/delete-node/ gpio@42008000;
+		/delete-node/ gpio@4200c000;
 
 		/* Fixup LPSPI1 and LPSPI2, they have different base addr on RT1010 */
 		/delete-node/ spi@40394000;
@@ -122,3 +139,40 @@
 /* RT1015 only has two LPSPI blocks */
 /delete-node/ &lpspi3;
 /delete-node/ &lpspi4;
+
+
+&gpio1{
+	pinmux = <&iomuxc_gpio_00_gpiomux_io00>,
+		<&iomuxc_gpio_01_gpiomux_io01>,
+		<&iomuxc_gpio_02_gpiomux_io02>,
+		<&iomuxc_gpio_03_gpiomux_io03>,
+		<&iomuxc_gpio_04_gpiomux_io04>,
+		<&iomuxc_gpio_05_gpiomux_io05>,
+		<&iomuxc_gpio_06_gpiomux_io06>,
+		<&iomuxc_gpio_07_gpiomux_io07>,
+		<&iomuxc_gpio_08_gpiomux_io08>,
+		<&iomuxc_gpio_09_gpiomux_io09>,
+		<&iomuxc_gpio_10_gpiomux_io10>,
+		<&iomuxc_gpio_11_gpiomux_io11>,
+		<&iomuxc_gpio_12_gpiomux_io12>,
+		<&iomuxc_gpio_13_gpiomux_io13>,
+		<&iomuxc_gpio_ad_00_gpiomux_io14>,
+		<&iomuxc_gpio_ad_01_gpiomux_io15>,
+		<&iomuxc_gpio_ad_02_gpiomux_io16>,
+		<&iomuxc_gpio_ad_03_gpiomux_io17>,
+		<&iomuxc_gpio_ad_04_gpiomux_io18>,
+		<&iomuxc_gpio_ad_05_gpiomux_io19>,
+		<&iomuxc_gpio_ad_06_gpiomux_io20>,
+		<&iomuxc_gpio_ad_07_gpiomux_io21>,
+		<&iomuxc_gpio_ad_08_gpiomux_io22>,
+		<&iomuxc_gpio_ad_09_gpiomux_io23>,
+		<&iomuxc_gpio_ad_10_gpiomux_io24>,
+		<&iomuxc_gpio_ad_11_gpiomux_io25>,
+		<&iomuxc_gpio_ad_12_gpiomux_io26>,
+		<&iomuxc_gpio_ad_13_gpiomux_io27>,
+		<&iomuxc_gpio_ad_14_gpiomux_io28>;
+};
+
+&gpio5{
+	pinmux = <&iomuxc_snvs_pmic_on_req_gpio5_io00>;
+};

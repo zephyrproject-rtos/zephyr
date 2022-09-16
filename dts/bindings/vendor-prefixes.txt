@@ -258,6 +258,7 @@ hugsun	Shenzhen Hugsun Technology Co. Ltd.
 hwacom	HwaCom Systems Inc.
 hycon	Hycon Technology Corp.
 hydis	Hydis Technologies
+hynitron	Hynitron
 hyundai	Hyundai Technology
 i2se	I2SE GmbH
 ibm	International Business Machines (IBM)
@@ -480,6 +481,7 @@ qi	Qi Hardware
 qihua	Chengdu Kaixuan Information Technology Co., Ltd.
 qiaodian	QiaoDian XianShi Corporation
 qnap	QNAP Systems, Inc.
+qorvo	Qorvo, Inc.
 quectel	Quectel Wireless Solutions Co., Ltd.
 quicklogic	QuickLogic Corp.
 radxa	Radxa

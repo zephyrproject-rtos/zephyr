@@ -2,8 +2,9 @@
  * Copyright (c) 2020 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
-#include <arch/x86/acpi.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/x86/acpi.h>
+#include <zephyr/arch/x86/efi.h>
 
 static struct acpi_rsdp *rsdp;
 static bool is_rsdp_searched;
@@ -27,11 +28,24 @@ static void find_rsdp(void)
 	uint8_t *bda_seg, *zero_page_base;
 	uint64_t *search;
 	uintptr_t search_phys, rsdp_phys = 0U;
-	size_t search_length, rsdp_length;
+	size_t search_length = 0U, rsdp_length;
 
 	if (is_rsdp_searched) {
 		/* Looking up for RSDP has already been done */
 		return;
+	}
+
+	/* Let's first get it from EFI, if enabled */
+	if (IS_ENABLED(CONFIG_X86_EFI)) {
+		rsdp_phys = (uintptr_t)efi_get_acpi_rsdp();
+		if (rsdp_phys != 0UL) {
+			/* See at found label why this is required */
+			search_length = sizeof(struct acpi_rsdp);
+			z_phys_map((uint8_t **)&search, rsdp_phys, search_length, 0);
+			rsdp = (struct acpi_rsdp *)search;
+
+			goto found;
+		}
 	}
 
 	/* We never identity map the NULL page, so need to map it before
@@ -41,7 +55,7 @@ static void find_rsdp(void)
 
 	/* Physical (real mode!) address 0000:040e stores a (real
 	 * mode!!) segment descriptor pointing to the 1kb Extended
-	 * BIOS Data Area.  Look there first.
+	 * BIOS Data Area.
 	 *
 	 * We had to memory map this segment descriptor since it is in
 	 * the NULL page. The remaining structures (EBDA etc) are identity
@@ -91,10 +105,6 @@ static void find_rsdp(void)
 
 	z_phys_unmap((uint8_t *)search, search_length);
 
-	/* Now we're supposed to look in the UEFI system table, which
-	 * is passed as a function argument to the bootloader and long
-	 * forgotten by now...
-	 */
 	rsdp = NULL;
 
 	is_rsdp_searched = true;
@@ -113,7 +123,9 @@ found:
 	}
 
 	/* Need to unmap search since it is still mapped */
-	z_phys_unmap((uint8_t *)search, search_length);
+	if (search_length != 0U) {
+		z_phys_unmap((uint8_t *)search, search_length);
+	}
 
 	/* Now map the RSDP */
 	z_phys_map((uint8_t **)&rsdp, rsdp_phys, rsdp_length, 0);

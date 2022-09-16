@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <pm/pm.h>
+#include <zephyr/pm/pm.h>
 
 /* Last state has not declared a minimum residency, so it should be
  * set the default 0 value

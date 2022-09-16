@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/gpio/gpio_emul.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_emul.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/zephyr.h>
 
 #include "test_gpio.h"
 

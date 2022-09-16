@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <arch/cpu.h>
-#include <sys/arch_interface.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/arch_interface.h>
 
 #define NUM_THREADS 20
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 K_THREAD_STACK_EXTERN(tstack);
 K_THREAD_STACK_ARRAY_DEFINE(tstacks, NUM_THREADS, STACK_SIZE);

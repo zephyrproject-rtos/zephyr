@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <sys/sys_heap.h>
+#include <zephyr/sys/sys_heap.h>
 
 #define HEAP_SZ 0x1000
 
@@ -17,7 +17,7 @@ uint8_t *heap_start, *heap_end;
 /* Note that this test is making whitebox assumptions about the
  * behavior of the heap in order to exercise coverage of the
  * underlying code: that chunk headers are 8 bytes, that heap chunks
- * are returned low-adddress to high, and that freed blocks are merged
+ * are returned low-address to high, and that freed blocks are merged
  * immediately with adjacent free blocks.
  */
 static void check_heap_align(struct sys_heap *h,

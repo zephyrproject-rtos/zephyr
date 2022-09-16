@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
 #include "feather_connector.dtsi"
+#include "adafruit_feather_nrf52840-pinctrl.dtsi"
 
 / {
 	model = "Adafruit Feather nRF52840 Express";
@@ -71,38 +72,37 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <25>;
-	rx-pin = <24>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <12>;
-	scl-pin = <11>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <14>;
-	mosi-pin = <13>;
-	miso-pin = <15>;
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &qspi {
 	status = "okay";
-	sck-pin = <19>;
-	io-pins = <17>, <22>, <23>, <21>;
-	csn-pins = <20>;
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
 	gd25q16: gd25q16@0 {
-		/* NOTE: Quad mode not supported as driver does not handle
-		 * QE bit setting in SR2. Ref. GD25Q16C, Rev 3.0, p. 12.
-		 */
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
-		writeoc = "pp2o";
-		readoc = "read2io";
+		writeoc = "pp4o";
+		readoc = "read4io";
 		sck-frequency = <16000000>;
 		label = "GD25Q16";
 		jedec-id = [c8 40 15];
@@ -110,6 +110,7 @@
 		has-dpd;
 		t-enter-dpd = <20000>;
 		t-exit-dpd = <20000>;
+		quad-enable-requirements = "S2B1v1";
 	};
 };
 
@@ -122,7 +123,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
+			reg = <0x00000000 0x0000C000>;
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";

@@ -48,7 +48,7 @@
  */
 /*
  * Minimal configuration of features that do not require an entropy source
- * Distinguishing reatures:
+ * Distinguishing features:
  * - no entropy module
  * - no TLS protocol implementation available due to absence of an entropy
  *   source

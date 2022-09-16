@@ -29,6 +29,7 @@
 	};
 
 	chosen {
+		zephyr,entropy = &rng_hci;
 		zephyr,flash-controller = &flash_controller;
 	};
 
@@ -47,6 +48,11 @@
 			 */
 			#include "nrf5340_cpuapp_peripherals.dtsi"
 		};
+	};
+
+	/* Default IPC description */
+	ipc {
+		#include "nrf5340_cpuapp_ipc.dtsi"
 	};
 };
 

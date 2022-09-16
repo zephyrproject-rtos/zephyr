@@ -37,7 +37,7 @@ Building and Running for Linux kernels released before 4.12
 .. note::
 
    For hosts using kernels released before 4.12,
-   option :kconfig:`CONFIG_NET_L2_BT_ZEP1656`
+   option :kconfig:option:`CONFIG_NET_L2_BT_ZEP1656`
    must be selected. For more information, see :github:`Zephyr issue #3111
    <3111>`.
 

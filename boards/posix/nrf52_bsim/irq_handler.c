@@ -7,17 +7,17 @@
  */
 
 #include <stdint.h>
-#include "irq_offload.h"
-#include "kernel_structs.h"
+#include <zephyr/irq_offload.h>
+#include <zephyr/kernel_structs.h>
 #include "kernel_internal.h"
 #include "kswap.h"
 #include "irq_ctrl.h"
 #include "posix_core.h"
 #include "board_soc.h"
-#include "sw_isr_table.h"
+#include <zephyr/sw_isr_table.h>
 #include "soc.h"
 #include "bs_tracing.h"
-#include <tracing/tracing.h>
+#include <zephyr/tracing/tracing.h>
 #include "bstests.h"
 
 static bool CPU_will_be_awaken_from_WFE;

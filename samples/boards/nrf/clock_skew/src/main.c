@@ -5,11 +5,11 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
-#include <sys/timeutil.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
-#include <drivers/counter.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/timeutil.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/counter.h>
 #include <nrfx_clock.h>
 
 #define TIMER_NODE DT_NODELABEL(timer0)

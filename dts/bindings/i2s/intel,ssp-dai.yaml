@@ -1,0 +1,25 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel SSP DAI controller
+
+compatible: "intel,ssp-dai"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    interrupt-parent:
+      required: true
+
+    dmas:
+      required: true
+
+    dma-names:
+      required: true

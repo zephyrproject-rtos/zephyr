@@ -14,7 +14,7 @@ build. Note that the copy is *smart*, that is, only updated files are actually
 copied. Therefore, incremental builds detect changes correctly and behave as
 expected.
 
-Paths for external content ingluded via e.g. figure, literalinclude, etc.
+Paths for external content included via e.g. figure, literalinclude, etc.
 are adjusted as needed.
 
 Configuration options
@@ -93,7 +93,7 @@ def adjust_includes(
 
 
 def sync_contents(app: Sphinx) -> None:
-    """Synhronize external contents.
+    """Synchronize external contents.
 
     Args:
         app: Sphinx application instance.

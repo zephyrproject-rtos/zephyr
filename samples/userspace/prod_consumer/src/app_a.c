@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <sys/libc-hooks.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/libc-hooks.h>
+#include <zephyr/logging/log.h>
 
 #include "sample_driver.h"
 #include "app_shared.h"
@@ -231,7 +231,7 @@ void app_a_entry(void *p1, void *p2, void *p3)
 	 * This child thread automatically inherits the memory domain of
 	 * this thread that created it; it will be a member of app_a_domain.
 	 *
-	 * Initiailize this thread with K_FOREVER timeout so we can
+	 * Initialize this thread with K_FOREVER timeout so we can
 	 * modify its permissions and then start it.
 	 */
 	k_thread_create(&writeback_thread, writeback_stack,

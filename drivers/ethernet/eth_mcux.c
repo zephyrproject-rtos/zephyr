@@ -19,25 +19,25 @@
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 #define RING_ID 0
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <device.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <sys/__assert.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/ethernet.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
-#include <pm/device.h>
+#include <zephyr/pm/device.h>
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-#include <drivers/ptp_clock.h>
+#include <zephyr/drivers/ptp_clock.h>
 #endif
 
 #if IS_ENABLED(CONFIG_NET_DSA)
-#include <net/dsa.h>
+#include <zephyr/net/dsa.h>
 #endif
 
 #include "fsl_enet.h"
@@ -46,9 +46,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "fsl_enet_mdio.h"
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 #include "fsl_clock.h"
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #endif
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#if defined(CONFIG_PINCTRL)
+#include <zephyr/drivers/pinctrl.h>
+#endif
 
 #include "eth.h"
 
@@ -209,6 +213,13 @@ struct eth_context {
 	struct k_mutex rx_frame_buf_mutex;
 	uint8_t *tx_frame_buf; /* Max MTU + ethernet header */
 	uint8_t *rx_frame_buf; /* Max MTU + ethernet header */
+#if defined(CONFIG_PINCTRL)
+	const struct pinctrl_dev_config *pincfg;
+#endif
+#if defined(CONFIG_ETH_MCUX_PHY_RESET)
+	const struct gpio_dt_spec int_gpio;
+	const struct gpio_dt_spec reset_gpio;
+#endif
 };
 
 /* Use ENET_FRAME_MAX_VLANFRAMELEN for VLAN frame size
@@ -421,7 +432,7 @@ void eth_mcux_phy_stop(struct eth_context *context)
 		break;
 	case eth_mcux_phy_state_wait:
 		k_work_cancel_delayable(&context->delayed_phy_work);
-		/* @todo, actually power downt he PHY ? */
+		/* @todo, actually power down the PHY ? */
 		context->phy_state = eth_mcux_phy_state_initial;
 		break;
 	case eth_mcux_phy_state_closing:
@@ -994,6 +1005,31 @@ static void eth_tx_thread(void *arg1, void *unused1, void *unused2)
 	}
 }
 
+
+#if defined(CONFIG_ETH_MCUX_PHY_RESET)
+static int eth_phy_reset(const struct device *dev)
+{
+	int err;
+	struct eth_context *context = dev->data;
+
+	/* pull up the ENET_INT before RESET. */
+	err =  gpio_pin_configure_dt(&context->int_gpio, GPIO_OUTPUT_ACTIVE);
+	if (err) {
+		return err;
+	}
+	return gpio_pin_configure_dt(&context->reset_gpio, GPIO_OUTPUT_INACTIVE);
+}
+
+static int eth_phy_init(const struct device *dev)
+{
+	struct eth_context *context = dev->data;
+
+	/* RESET PHY chip. */
+	k_busy_wait(USEC_PER_MSEC * 500);
+	return gpio_pin_set_dt(&context->reset_gpio, 1);
+}
+#endif
+
 static void eth_mcux_init(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
@@ -1092,11 +1128,24 @@ static void eth_mcux_init(const struct device *dev)
 static int eth_init(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
+#if defined(CONFIG_PINCTRL)
+	int err;
+
+	err = pinctrl_apply_state(context->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_PINCTRL */
 
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	const uint32_t inst = ENET_GetInstance(context->base);
 
 	context->clock = enet_clocks[inst];
+#endif
+
+#if defined(CONFIG_ETH_MCUX_PHY_RESET)
+	eth_phy_reset(dev);
+	eth_phy_init(dev);
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
@@ -1505,8 +1554,26 @@ static void eth_mcux_err_isr(const struct device *dev)
 #endif
 #define ETH_MCUX_MAC_ADDR_TO_BOOL(n) ETH_MCUX_MAC_ADDR_TO_BOOL_##n
 
+#if defined(CONFIG_PINCTRL)
+#define ETH_MCUX_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
+#define ETH_MCUX_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#else
+#define ETH_MCUX_PINCTRL_DEFINE(n)
+#define ETH_MCUX_PINCTRL_INIT(n)
+#endif
+
+#if defined(CONFIG_ETH_MCUX_PHY_RESET)
+#define ETH_MCUX_PHY_GPIOS(n)						\
+	.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),		\
+	.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),
+#else
+#define ETH_MCUX_PHY_GPIOS(n)
+#endif
+
 #define ETH_MCUX_INIT(n)						\
 	ETH_MCUX_GEN_MAC(n)                                             \
+									\
+	ETH_MCUX_PINCTRL_DEFINE(n)					\
 									\
 	static void eth##n##_config_func(void);				\
 	static NOCACHE uint8_t						\
@@ -1531,6 +1598,8 @@ static void eth_mcux_err_isr(const struct device *dev)
 		.phy_handle = &eth##n##_phy_handle,			\
 		.tx_frame_buf = tx_enet_frame_##n##_buf,		\
 		.rx_frame_buf = rx_enet_frame_##n##_buf,		\
+		ETH_MCUX_PINCTRL_INIT(n)				\
+		ETH_MCUX_PHY_GPIOS(n)					\
 		ETH_MCUX_MAC_ADDR(n)					\
 		ETH_MCUX_POWER(n)					\
 	};								\
@@ -1592,9 +1661,24 @@ DT_INST_FOREACH_STATUS_OKAY(ETH_MCUX_INIT)
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 struct ptp_context {
 	struct eth_context *eth_context;
+#if defined(CONFIG_PINCTRL)
+	const struct pinctrl_dev_config *pincfg;
+#endif /* CONFIG_PINCTRL */
 };
 
-static struct ptp_context ptp_mcux_0_context;
+#if defined(CONFIG_PINCTRL)
+#define ETH_MCUX_PTP_PINCTRL_DEFINE(n) PINCTRL_DT_DEFINE(n);
+#define ETH_MCUX_PTP_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_DEV_CONFIG_GET(n),
+#else
+#define ETH_MCUX_PTP_PINCTRL_DEFINE(n)
+#define ETH_MCUX_PTP_PINCTRL_INIT(n)
+#endif /* CONFIG_PINCTRL */
+
+ETH_MCUX_PTP_PINCTRL_DEFINE(DT_NODELABEL(ptp))
+
+static struct ptp_context ptp_mcux_0_context = {
+	ETH_MCUX_PTP_PINCTRL_INIT(DT_NODELABEL(ptp))
+};
 
 static int ptp_clock_mcux_set(const struct device *dev,
 			      struct net_ptp_time *tm)
@@ -1716,6 +1800,14 @@ static int ptp_mcux_init(const struct device *port)
 	const struct device *eth_dev = DEVICE_DT_GET(DT_NODELABEL(enet));
 	struct eth_context *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
+#if defined(CONFIG_PINCTRL)
+	int err;
+
+	err = pinctrl_apply_state(ptp_context->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_PINCTRL */
 
 	context->ptp_clock = port;
 	ptp_context->eth_context = context;

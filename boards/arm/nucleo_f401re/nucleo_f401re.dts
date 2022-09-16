@@ -33,7 +33,7 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		green_pwm_led: green_pwm_led {
-			pwms = <&pwm2 1 0 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 
@@ -119,7 +119,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00010000>;
+			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
 
@@ -130,15 +130,15 @@
 
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00020000 0x00020000>;
+			reg = <0x00020000 DT_SIZE_K(128)>;
 		};
 		slot1_partition: partition@40000 {
 			label = "image-1";
-			reg = <0x00040000 0x00020000>;
+			reg = <0x00040000 DT_SIZE_K(128)>;
 		};
 		scratch_partition: partition@60000 {
 			label = "image-scratch";
-			reg = <0x00060000 0x00020000>;
+			reg = <0x00060000 DT_SIZE_K(128)>;
 		};
 	};
 };

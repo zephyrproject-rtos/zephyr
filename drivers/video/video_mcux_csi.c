@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_imx_csi
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include <fsl_csi.h>
 
@@ -14,11 +14,13 @@
 #include <fsl_cache.h>
 #endif
 
-#include <drivers/video.h>
+#include <zephyr/drivers/video.h>
+#include <zephyr/drivers/pinctrl.h>
 
 struct video_mcux_csi_config {
 	CSI_Type *base;
 	char *sensor_label;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct video_mcux_csi_data {
@@ -230,7 +232,7 @@ static int video_mcux_csi_flush(const struct device *dev,
 			k_sleep(K_MSEC(1));
 		} while (!k_fifo_is_empty(&data->fifo_in));
 	} else {
-		/* Flush driver ouput queue */
+		/* Flush driver output queue */
 		do {
 			ret = CSI_TransferGetFullBuffer(config->base,
 							&(data->csi_handle),
@@ -359,6 +361,7 @@ static int video_mcux_csi_init(const struct device *dev)
 {
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
+	int err;
 
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
@@ -371,6 +374,11 @@ static int video_mcux_csi_init(const struct device *dev)
 		if (data->sensor_dev == NULL) {
 			return -ENODEV;
 		}
+	}
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
 	}
 
 	return 0;
@@ -410,9 +418,12 @@ static const struct video_driver_api video_mcux_csi_driver_api = {
 };
 
 #if 1 /* Unique Instance */
+PINCTRL_DT_INST_DEFINE(0);
+
 static const struct video_mcux_csi_config video_mcux_csi_config_0 = {
 	.base = (CSI_Type *)DT_INST_REG_ADDR(0),
 	.sensor_label = DT_INST_PROP(0, sensor_label),
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 static struct video_mcux_csi_data video_mcux_csi_data_0;

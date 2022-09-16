@@ -12,8 +12,8 @@
 #ifndef ZEPHYR_SOC_ARM_NORDIC_NRF_COMMON_PINCTRL_SOC_H_
 #define ZEPHYR_SOC_ARM_NORDIC_NRF_COMMON_PINCTRL_SOC_H_
 
-#include <devicetree.h>
-#include <dt-bindings/pinctrl/nrf-pinctrl.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -36,8 +36,9 @@ typedef uint32_t pinctrl_soc_pin_t;
 	(DT_PROP_BY_IDX(node_id, prop, idx) |				       \
 	 ((NRF_PULL_DOWN * DT_PROP(node_id, bias_pull_down)) << NRF_PULL_POS) |\
 	 ((NRF_PULL_UP * DT_PROP(node_id, bias_pull_up)) << NRF_PULL_POS) |    \
-	 (DT_PROP(node_id, drive_mode) << NRF_DRIVE_POS) |		       \
-	 ((NRF_LP_ENABLE * DT_PROP(node_id, low_power_enable)) << NRF_LP_POS)  \
+	 (DT_PROP(node_id, nordic_drive_mode) << NRF_DRIVE_POS) |	       \
+	 ((NRF_LP_ENABLE * DT_PROP(node_id, low_power_enable)) << NRF_LP_POS) |\
+	 (DT_PROP(node_id, nordic_invert) << NRF_INVERT_POS)		       \
 	),
 
 /**
@@ -57,6 +58,13 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @param pincfg Pin configuration bit field.
  */
 #define NRF_GET_FUN(pincfg) (((pincfg) >> NRF_FUN_POS) & NRF_FUN_MSK)
+
+/**
+ * @brief Utility macro to obtain pin inversion flag.
+ *
+ * @param pincfg Pin configuration bit field.
+ */
+#define NRF_GET_INVERT(pincfg) (((pincfg) >> NRF_INVERT_POS) & NRF_INVERT_MSK)
 
 /**
  * @brief Utility macro to obtain pin low power flag.

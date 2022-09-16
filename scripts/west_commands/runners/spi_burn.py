@@ -11,13 +11,14 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps
 class SpiBurnBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for SPI_burn.'''
 
-    def __init__(self, cfg, addr, spiburn, iceman, erase=False):
+    def __init__(self, cfg, addr, spiburn, iceman, timeout, erase=False):
         super().__init__(cfg)
 
         self.bin = cfg.bin_file
         self.spiburn = spiburn
         self.iceman = iceman
         self.addr = addr
+        self.timeout = int(timeout)
         self.erase = bool(erase)
 
     @classmethod
@@ -32,6 +33,8 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
     def do_add_parser(cls, parser):
         parser.add_argument('--addr', default='0x0',
                             help='start flash address to write')
+        parser.add_argument('--timeout', default=10,
+                            help='ICEman connection establishing timeout in seconds')
         parser.add_argument('--telink-tools-path', help='path to Telink flash tools')
 
     @classmethod
@@ -45,7 +48,7 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
             spiburn = 'SPI_burn'
             iceman  = 'ICEman'
 
-        return SpiBurnBinaryRunner(cfg, args.addr, spiburn, iceman, args.erase)
+        return SpiBurnBinaryRunner(cfg, args.addr, spiburn, iceman, args.timeout, args.erase)
 
     def do_run(self, command, **kwargs):
 
@@ -58,6 +61,25 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
             self._flash()
         else:
             self.logger.error(f'{command} not supported!')
+
+    def start_iceman(self):
+
+        # Start ICEman as background process
+        cmd_ice_run = ["./ICEman", '-Z', 'v5', '-l', 'aice_sdp.cfg']
+        self.ice_process = subprocess.Popen(cmd_ice_run, stdout=subprocess.PIPE)
+
+        # Wait till it ready or exit by timeout
+        start = time.time()
+        while True:
+            out = self.ice_process.stdout.readline()
+            if b'ICEman is ready to use.' in out:
+                break
+            if time.time() - start > self.timeout:
+                raise RuntimeError("TIMEOUT: ICEman is not ready")
+
+    def stop_iceman(self):
+        # Kill ICEman subprocess
+        self.ice_process.terminate()
 
     def _flash(self):
 
@@ -74,13 +96,7 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
             # Go into ICEman dir
             os.chdir(iceman_dir)
 
-            # RUN ice in a background
-            cmd_ice_run = ["./ICEman", '-Z', 'v5', '-l', 'aice_sdp.cfg']
-
-            ice_process = subprocess.Popen(cmd_ice_run)
-
-            # Wait for initialization
-            time.sleep(1)
+            self.start_iceman()
 
             # Compose flash command
             cmd_flash = [self.spiburn, '--addr', str(self.addr), '--image', self.bin]
@@ -92,9 +108,7 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
             self.check_call(cmd_flash)
 
         finally:
-
-            # Kill ICEman
-            ice_process.terminate()
+            self.stop_iceman()
 
             # Restore origin dir
             os.chdir(origin_dir)

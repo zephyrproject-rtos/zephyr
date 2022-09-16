@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/pwm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/pwm.h>
 #include <ztest.h>
 
 #include "test_pwm_loopback.h"
@@ -50,17 +50,16 @@ void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit unit,
 	case TEST_PWM_UNIT_NSEC:
 		TC_PRINT("Testing PWM capture @ %u/%u nsec\n",
 			 pulse, period);
-		err = pwm_pin_set_nsec(out.dev, out.pwm, period,
-				       pulse, out.flags ^=
-				       (flags & PWM_POLARITY_MASK));
+		err = pwm_set(out.dev, out.pwm, period, pulse, out.flags ^=
+			      (flags & PWM_POLARITY_MASK));
 		break;
 
 	case TEST_PWM_UNIT_USEC:
 		TC_PRINT("Testing PWM capture @ %u/%u usec\n",
 			 pulse, period);
-		err = pwm_pin_set_usec(out.dev, out.pwm, period,
-				       pulse, out.flags ^=
-				       (flags & PWM_POLARITY_MASK));
+		err = pwm_set(out.dev, out.pwm, PWM_USEC(period),
+			      PWM_USEC(pulse), out.flags ^=
+			      (flags & PWM_POLARITY_MASK));
 		break;
 
 	default:
@@ -72,15 +71,13 @@ void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit unit,
 
 	switch (unit) {
 	case TEST_PWM_UNIT_NSEC:
-		err = pwm_pin_capture_nsec(in.dev, in.pwm, flags,
-					   &period_capture, &pulse_capture,
-					   K_NSEC(period * 10));
+		err = pwm_capture_nsec(in.dev, in.pwm, flags, &period_capture,
+				       &pulse_capture, K_NSEC(period * 10));
 		break;
 
 	case TEST_PWM_UNIT_USEC:
-		err = pwm_pin_capture_usec(in.dev, in.pwm, flags,
-					   &period_capture, &pulse_capture,
-					   K_USEC(period * 10));
+		err = pwm_capture_usec(in.dev, in.pwm, flags, &period_capture,
+				       &pulse_capture, K_USEC(period * 10));
 		break;
 
 	default:
@@ -166,18 +163,17 @@ void test_capture_timeout(void)
 
 	get_test_pwms(&out, &in);
 
-	err = pwm_pin_set_cycles(out.dev, out.pwm, 100, 0, out.flags);
+	err = pwm_set_cycles(out.dev, out.pwm, 100, 0, out.flags);
 	zassert_equal(err, 0, "failed to set pwm output (err %d)", err);
 
-	err = pwm_pin_capture_cycles(in.dev, in.pwm,
-				     PWM_CAPTURE_TYPE_PULSE,
-				     &period, &pulse, K_MSEC(1000));
+	err = pwm_capture_cycles(in.dev, in.pwm, PWM_CAPTURE_TYPE_PULSE,
+				 &period, &pulse, K_MSEC(1000));
 	if (err == -ENOTSUP) {
 		TC_PRINT("Pulse capture not supported, "
 			 "trying period capture\n");
-		err = pwm_pin_capture_cycles(in.dev, in.pwm,
-					     PWM_CAPTURE_TYPE_PERIOD,
-					     &period, &pulse, K_MSEC(1000));
+		err = pwm_capture_cycles(in.dev, in.pwm,
+					 PWM_CAPTURE_TYPE_PERIOD, &period,
+					 &pulse, K_MSEC(1000));
 	}
 
 	zassert_equal(err, -EAGAIN, "pwm capture did not timeout (err %d)",
@@ -238,42 +234,40 @@ void test_continuous_capture(void)
 	memset(buffer, 0, sizeof(buffer));
 	k_sem_init(&data.sem, 0, 1);
 
-	err = pwm_pin_set_usec(out.dev, out.pwm, period_usec, pulse_usec,
-			       out.flags);
+	err = pwm_set(out.dev, out.pwm, PWM_USEC(period_usec),
+		      PWM_USEC(pulse_usec), out.flags);
 	zassert_equal(err, 0, "failed to set pwm output (err %d)", err);
 
-	err = pwm_pin_configure_capture(in.dev, in.pwm,
-					in.flags |
-					PWM_CAPTURE_MODE_CONTINUOUS |
-					PWM_CAPTURE_TYPE_PULSE,
-					continuous_capture_callback,
-					&data);
+	err = pwm_configure_capture(in.dev, in.pwm,
+				    in.flags |
+				    PWM_CAPTURE_MODE_CONTINUOUS |
+				    PWM_CAPTURE_TYPE_PULSE,
+				    continuous_capture_callback, &data);
 	if (err == -ENOTSUP) {
 		TC_PRINT("Pulse capture not supported, "
 			 "trying period capture\n");
-		err = pwm_pin_configure_capture(in.dev, in.pwm,
-						in.flags |
-						PWM_CAPTURE_MODE_CONTINUOUS |
-						PWM_CAPTURE_TYPE_PERIOD,
-						continuous_capture_callback,
-						&data);
+		err = pwm_configure_capture(in.dev, in.pwm,
+					    in.flags |
+					    PWM_CAPTURE_MODE_CONTINUOUS |
+					    PWM_CAPTURE_TYPE_PERIOD,
+					    continuous_capture_callback, &data);
 		zassert_equal(err, 0, "failed to configure pwm input (err %d)",
 			      err);
 		data.pulse_capture = false;
 	}
 
-	err = pwm_pin_enable_capture(in.dev, in.pwm);
+	err = pwm_enable_capture(in.dev, in.pwm);
 	zassert_equal(err, 0, "failed to enable pwm capture (err %d)", err);
 
 	err = k_sem_take(&data.sem, K_USEC(period_usec * data.buffer_len * 10));
 	zassert_equal(err, 0, "pwm capture timed out (err %d)", err);
 	zassert_equal(data.status, 0, "pwm capture failed (err %d)", err);
 
-	err = pwm_pin_disable_capture(in.dev, in.pwm);
+	err = pwm_disable_capture(in.dev, in.pwm);
 	zassert_equal(err, 0, "failed to disable pwm capture (err %d)", err);
 
 	for (i = 0; i < data.buffer_len; i++) {
-		err = pwm_pin_cycles_to_usec(in.dev, in.pwm, buffer[i], &usec);
+		err = pwm_cycles_to_usec(in.dev, in.pwm, buffer[i], &usec);
 		zassert_equal(err, 0, "failed to calculate usec (err %d)", err);
 
 		if (data.pulse_capture) {
@@ -306,38 +300,32 @@ void test_capture_busy(void)
 	memset(buffer, 0, sizeof(buffer));
 	k_sem_init(&data.sem, 0, 1);
 
-	err = pwm_pin_set_cycles(out.dev, out.pwm, 100, 0, out.flags);
+	err = pwm_set_cycles(out.dev, out.pwm, 100, 0, out.flags);
 	zassert_equal(err, 0, "failed to set pwm output (err %d)", err);
 
-	err = pwm_pin_configure_capture(in.dev, in.pwm,
-					in.flags | flags,
-					continuous_capture_callback,
-					&data);
+	err = pwm_configure_capture(in.dev, in.pwm, in.flags | flags,
+				    continuous_capture_callback, &data);
 	if (err == -ENOTSUP) {
 		TC_PRINT("Pulse capture not supported, "
 			 "trying period capture\n");
 		flags = PWM_CAPTURE_MODE_SINGLE | PWM_CAPTURE_TYPE_PERIOD;
-		err = pwm_pin_configure_capture(in.dev, in.pwm,
-						in.flags | flags,
-						continuous_capture_callback,
-						&data);
+		err = pwm_configure_capture(in.dev, in.pwm, in.flags | flags,
+					    continuous_capture_callback, &data);
 		zassert_equal(err, 0, "failed to configure pwm input (err %d)",
 			      err);
 		data.pulse_capture = false;
 	}
 
-	err = pwm_pin_enable_capture(in.dev, in.pwm);
+	err = pwm_enable_capture(in.dev, in.pwm);
 	zassert_equal(err, 0, "failed to enable pwm capture (err %d)", err);
 
-	err = pwm_pin_configure_capture(in.dev, in.pwm,
-					in.flags | flags,
-					continuous_capture_callback,
-					&data);
+	err = pwm_configure_capture(in.dev, in.pwm, in.flags | flags,
+				    continuous_capture_callback, &data);
 	zassert_equal(err, -EBUSY, "pwm capture not busy (err %d)", err);
 
-	err = pwm_pin_enable_capture(in.dev, in.pwm);
+	err = pwm_enable_capture(in.dev, in.pwm);
 	zassert_equal(err, -EBUSY, "pwm capture not busy (err %d)", err);
 
-	err = pwm_pin_disable_capture(in.dev, in.pwm);
+	err = pwm_disable_capture(in.dev, in.pwm);
 	zassert_equal(err, 0, "failed to disable pwm capture (err %d)", err);
 }

@@ -5,10 +5,10 @@
  */
 
 #include <string.h>
-#include <zephyr.h>
-#include <devicetree.h>
-#include <sys/byteorder.h>
-#include <sys/crc.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
 #include <hal/nrf_power.h>
 #include "retained.h"
 

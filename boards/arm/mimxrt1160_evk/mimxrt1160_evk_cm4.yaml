@@ -19,3 +19,4 @@ supported:
   - uart
   - i2c
   - pwm
+  - dma

@@ -6,7 +6,7 @@ description: Microchip XEC ADC
 
 compatible: "microchip,xec-adc-v2"
 
-include: adc-controller.yaml
+include: [adc-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -27,6 +27,12 @@ properties:
       type: array
       required: true
       description: ADC PCR register index and bit position
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
 
     "#girq-cells":
       type: int

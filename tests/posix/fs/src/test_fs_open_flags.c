@@ -6,7 +6,7 @@
 
 #include <string.h>
 #include <fcntl.h>
-#include <posix/unistd.h>
+#include <zephyr/posix/unistd.h>
 #include "test_fs.h"
 
 #define THE_FILE FATFS_MNTP"/the_file.txt"

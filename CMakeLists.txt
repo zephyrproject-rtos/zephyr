@@ -104,6 +104,10 @@ add_library(zephyr_interface INTERFACE)
 # flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
 
+if(CONFIG_LEGACY_INCLUDE_PATH)
+  zephyr_include_directories(include/zephyr)
+endif()
+
 zephyr_include_directories(
   include
   ${PROJECT_BINARY_DIR}/include/generated
@@ -131,7 +135,7 @@ zephyr_compile_definitions(
   __ZEPHYR__=1
 )
 
-# Ensure that include/toolchain.h includes toolchain/other.h for all off-tree toolchains
+# Ensure that include/zephyr/toolchain.h includes toolchain/other.h for all off-tree toolchains
 if(TOOLCHAIN_USE_CUSTOM)
   zephyr_compile_definitions(__TOOLCHAIN_CUSTOM__)
 endif()
@@ -263,6 +267,12 @@ if(CONFIG_COMPILER_COLOR_DIAGNOSTICS)
 zephyr_compile_options($<TARGET_PROPERTY:compiler,diagnostic>)
 endif()
 
+if("${SPARSE}" STREQUAL "y")
+  list(APPEND TOOLCHAIN_C_FLAGS -D__CHECKER__)
+  # Avoid compiler "attribute directive ignored" warnings
+  list(APPEND TOOLCHAIN_C_FLAGS -Wno-attributes)
+endif()
+
 zephyr_compile_options(
   ${TOOLCHAIN_C_FLAGS}
 )
@@ -271,13 +281,13 @@ zephyr_compile_options(
 # ToDo: Remember to get feedback from Oticon on this, as they might use the `ASM_BASE_FLAG` since this is done this way.
 zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,required>>)
 
-# @Intent: Enforce standard integer type correspondance to match Zephyr usage.
+# @Intent: Enforce standard integer type correspondence to match Zephyr usage.
 # (must be after compiler specific flags)
 if(NOT CONFIG_ARCH_POSIX)
   # `zephyr_stdint.h` is not included for the POSIX (native) arch because it
   # compiles with the host toolchain/headers and there can be conflicts if we
   # arbitrarily redefine our own type system (see #37718).
-  zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h")
+  zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/zephyr/toolchain/zephyr_stdint.h")
 endif()
 
 # Common toolchain-agnostic assembly flags
@@ -431,12 +441,47 @@ endif()
 
 if(DEFINED BUILD_VERSION)
   set(build_version_argument "-DBUILD_VERSION=${BUILD_VERSION}")
-elseif(EXISTS ${ZEPHYR_BASE}/.git/index)
-  set(git_dependency ${ZEPHYR_BASE}/.git/index)
-else()
-  message(WARNING "ZEPHYR_BASE=${ZEPHYR_BASE} doesn't appear to be a git "
-    "repository, please specify '-DBUILD_VERSION=<version>'")
+elseif(NOT ZEPHYR_GIT_INDEX)
+  set(ZEPHYR_GIT_INDEX ZEPHYR_GIT_INDEX-NOTFOUND CACHE PATH
+    "Path to Zephyr git repository index file")
+  if(EXISTS ${ZEPHYR_BASE}/.git/index)
+    set(ZEPHYR_GIT_DIR ${ZEPHYR_BASE}/.git/index CACHE PATH
+      "Path to Zephyr git repository index file" FORCE)
+  elseif(EXISTS ${ZEPHYR_BASE}/.git)
+    # Likely a git-submodule. Let's ask git where the real database is located.
+    find_package(Git QUIET)
+    if(GIT_FOUND)
+      execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --absolute-git-dir
+        WORKING_DIRECTORY ${ZEPHYR_BASE}
+        OUTPUT_VARIABLE zephyr_git_dir
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_STRIP_TRAILING_WHITESPACE
+        ERROR_VARIABLE stderr
+        RESULT_VARIABLE return_code)
+      if(return_code)
+        message(WARNING "BUILD_VERSION: git rev-parse failed: ${stderr}")
+      else()
+        if(NOT "${stderr}" STREQUAL "")
+          message(WARNING "BUILD_VERSION: git rev-parse warned: ${stderr}")
+        endif()
+        set(ZEPHYR_GIT_INDEX ${zephyr_git_dir}/index CACHE PATH
+          "Path to Zephyr git repository index file" FORCE)
+      endif()
+    else()
+      message(WARNING "Could not find git installation, "
+        "please specify '-DBUILD_VERSION=<version>'")
+    endif()
+  else()
+    message(WARNING "ZEPHYR_BASE=${ZEPHYR_BASE} doesn't appear to be a git "
+      "repository, please specify '-DBUILD_VERSION=<version>'")
+  endif()
 endif()
+
+if(ZEPHYR_GIT_INDEX)
+  set(git_dependency ${ZEPHYR_GIT_INDEX})
+endif()
+
 add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/include/generated/version.h
   COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
@@ -672,7 +717,7 @@ if(CONFIG_64BIT)
 endif()
 
 if(CONFIG_TIMEOUT_64BIT)
-  set(SYSCALL_SPLIT_TIMEOUT_ARG --split-type k_timeout_t)
+  set(SYSCALL_SPLIT_TIMEOUT_ARG --split-type k_timeout_t --split-type k_ticks_t)
 endif()
 
 add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
@@ -801,6 +846,12 @@ zephyr_get_include_directories_for_lang(C
   STRIP_PREFIX # Don't use a -I prefix
   )
 
+if(CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC)
+  set(number_of_dynamic_devices ${CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM})
+else()
+  set(number_of_dynamic_devices 0)
+endif()
+
 if(CONFIG_HAS_DTS)
   # dev_handles.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by
   # gen_handles.py
@@ -810,6 +861,7 @@ if(CONFIG_HAS_DTS)
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_handles.py
     --output-source dev_handles.c
+    --num-dynamic-devices ${number_of_dynamic_devices}
     --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
     --zephyr-base ${ZEPHYR_BASE}
     --start-symbol "$<TARGET_PROPERTY:linker,devices_start_symbol>"
@@ -877,10 +929,10 @@ if(CONFIG_USERSPACE)
   set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
 
   if(CONFIG_NEWLIB_LIBC)
-    set(NEWLIB_PART -l libc.a z_libc_partition)
+    set(NEWLIB_PART -l libc.a z_libc_partition -l libm.a z_libc_partition)
   endif()
   if(CONFIG_NEWLIB_LIBC_NANO)
-    set(NEWLIB_PART -l libc_nano.a z_libc_partition)
+    set(NEWLIB_PART -l libc_nano.a z_libc_partition -l libm_nano.a z_libc_partition)
   endif()
 
   add_custom_command(
@@ -1370,7 +1422,7 @@ set(post_build_byproducts "")
 list(APPEND
   post_build_commands
   COMMAND
-  ${CMAKE_COMMAND} -E rename ${logical_target_for_zephyr_elf}.map ${KERNEL_MAP_NAME}
+  ${CMAKE_COMMAND} -E copy ${logical_target_for_zephyr_elf}.map ${KERNEL_MAP_NAME}
 )
 list(APPEND post_build_byproducts ${KERNEL_MAP_NAME})
 
@@ -1417,6 +1469,17 @@ if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
     )
 endif()
 
+if(NOT CONFIG_EXCEPTIONS)
+  set(eh_frame_section ".eh_frame")
+else()
+  set(eh_frame_section "")
+endif()
+set(remove_sections_argument_list "")
+foreach(section .comment COMMON ${eh_frame_section})
+  list(APPEND remove_sections_argument_list
+    $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>${section})
+endforeach()
+
 if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(ihex IN_LIST elfconvert_formats)
@@ -1426,9 +1489,7 @@ if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
               $<TARGET_PROPERTY:bintools,elfconvert_flag>
               ${GAP_FILL}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>ihex
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.comment
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>COMMON
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.eh_frame
+              ${remove_sections_argument_list}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_HEX_NAME}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
@@ -1450,9 +1511,7 @@ if(CONFIG_BUILD_OUTPUT_BIN)
               $<TARGET_PROPERTY:bintools,elfconvert_flag>
               ${GAP_FILL}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.comment
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>COMMON
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.eh_frame
+              ${remove_sections_argument_list}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_BIN_NAME}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
@@ -1654,22 +1713,28 @@ list(APPEND
   ${extra_post_build_byproducts}
   )
 
-if(CONFIG_LOG_DICTIONARY_SUPPORT)
-  set(LOG_DICT_DB_NAME ${PROJECT_BINARY_DIR}/log_dictionary.json)
+if(CONFIG_LOG_DICTIONARY_DB)
+  set(log_dict_db_output --json=${PROJECT_BINARY_DIR}/log_dictionary.json)
+elseif(CONFIG_LOG_MIPI_SYST_USE_CATALOG)
+  set(log_dict_db_output --syst=${PROJECT_BINARY_DIR}/mipi_syst_collateral.xml)
+endif()
 
+if(log_dict_db_output)
   list(APPEND
     post_build_commands
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
     ${KERNEL_ELF_NAME}
-    ${LOG_DICT_DB_NAME}
+    ${log_dict_db_output}
     --build-header ${PROJECT_BINARY_DIR}/include/generated/version.h
     )
   list(APPEND
     post_build_byproducts
     ${LOG_DICT_DB_NAME}
     )
+
+  unset(log_dict_db_output)
 endif()
 
 # Add post_build_commands to post-process the final .elf file produced by
@@ -1712,10 +1777,14 @@ endif()
 
 if(SUPPORTED_EMU_PLATFORMS)
   list(GET SUPPORTED_EMU_PLATFORMS 0 default_emu)
-  add_custom_target(run DEPENDS run_${default_emu})
+  if(EXISTS ${ZEPHYR_BASE}/cmake/emu/${default_emu}.cmake)
+    add_custom_target(run DEPENDS run_${default_emu})
+  endif()
 
   foreach(EMU_PLATFORM ${SUPPORTED_EMU_PLATFORMS})
-    include(${ZEPHYR_BASE}/cmake/emu/${EMU_PLATFORM}.cmake)
+    if(EXISTS ${ZEPHYR_BASE}/cmake/emu/${EMU_PLATFORM}.cmake)
+      include(${ZEPHYR_BASE}/cmake/emu/${EMU_PLATFORM}.cmake)
+    endif()
   endforeach()
 
   if(TARGET debugserver_${default_emu})
@@ -1754,6 +1823,8 @@ if(CONFIG_SOC_DEPRECATED_RELEASE)
       removed in version ${CONFIG_SOC_DEPRECATED_RELEASE}"
   )
 endif()
+
+include(modules/deprecation_warnings.cmake)
 
 # In CMake projects, 'CMAKE_BUILD_TYPE' usually determines the
 # optimization flag, but in Zephyr it is determined through

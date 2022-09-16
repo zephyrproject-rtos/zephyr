@@ -17,3 +17,4 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE                  entropy_handlers.
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_RV32M1_TRNG        entropy_rv32m1_trng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_TRNG         entropy_gecko_trng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_NEORV32_TRNG       entropy_neorv32_trng.c)
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_BT_HCI             entropy_bt_hci.c)

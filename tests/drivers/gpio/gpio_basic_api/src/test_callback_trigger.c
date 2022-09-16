@@ -54,7 +54,7 @@ static int test_callback(int mode)
 	}
 
 	/* 2. configure PIN_IN callback and trigger condition */
-	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT | GPIO_INT_DEBOUNCE);
+	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT);
 	if (rc != 0) {
 		TC_ERROR("config PIN_IN fail: %d\n", rc);
 		goto err_exit;

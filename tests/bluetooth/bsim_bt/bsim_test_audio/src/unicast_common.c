@@ -42,8 +42,8 @@ void print_codec(const struct bt_codec *codec)
 
 void print_qos(const struct bt_codec_qos *qos)
 {
-	printk("QoS: dir 0x%02x interval %u framing 0x%02x phy 0x%02x sdu %u "
+	printk("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u "
 	       "rtn %u latency %u pd %u\n",
-	       qos->dir, qos->interval, qos->framing, qos->phy, qos->sdu,
+	       qos->interval, qos->framing, qos->phy, qos->sdu,
 	       qos->rtn, qos->latency, qos->pd);
 }

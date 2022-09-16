@@ -6,14 +6,15 @@
 
 #define DT_DRV_COMPAT atmel_sam_usbc
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_sam_usbc, CONFIG_USB_DRIVER_LOG_LEVEL);
 
-#include <kernel.h>
-#include <usb/usb_device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/usb/usb_device.h>
 #include <soc.h>
 #include <string.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define EP_UDINT_MASK           0x000FF000
 
@@ -24,7 +25,7 @@ LOG_MODULE_REGISTER(usb_dc_sam_usbc, CONFIG_USB_DRIVER_LOG_LEVEL);
 /**
  * @brief USB Driver Control Endpoint Finite State Machine states
  *
- * FSM states to keep tracking of control endpoint hiden states.
+ * FSM states to keep tracking of control endpoint hidden states.
  */
 enum usb_dc_epctrl_state {
 	/* Wait a SETUP packet */
@@ -99,8 +100,8 @@ struct usb_device_data {
 static struct sam_usbc_desc_table dev_desc[(NUM_OF_EP_MAX + 1) * 2];
 static struct usb_device_data dev_data;
 static volatile Usbc *regs = (Usbc *) DT_INST_REG_ADDR(0);
-static uint32_t num_pins = ATMEL_SAM_DT_INST_NUM_PINS(0);
-static struct soc_gpio_pin pins[] = ATMEL_SAM_DT_INST_PINS(0);
+PINCTRL_DT_INST_DEFINE(0);
+static const struct pinctrl_dev_config *pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 static enum usb_dc_epctrl_state epctrl_fsm;
 static const char *const usb_dc_epctrl_state_string[] = {
 	"STP",
@@ -660,6 +661,7 @@ int usb_dc_attach(void)
 	uint32_t pmcon;
 	uint32_t regval;
 	uint32_t key = irq_lock();
+	int retval;
 
 	/* Enable USBC asynchronous wake-up source */
 	PM->AWEN |= BIT(PM_AWEN_USBC);
@@ -677,7 +679,6 @@ int usb_dc_attach(void)
 		PM_CLOCK_MASK(PM_CLK_GRP_PBB, SYSCLK_USBC_REGS));
 	soc_pmc_peripheral_enable(
 		PM_CLOCK_MASK(PM_CLK_GRP_HSB, SYSCLK_USBC_DATA));
-	soc_gpio_list_configure(pins, num_pins);
 
 	/* Enable USB Generic clock */
 	SCIF->GCCTRL[GEN_CLK_USBC] = 0;
@@ -688,6 +689,11 @@ int usb_dc_attach(void)
 	while ((regs->USBSTA & USBC_USBSTA_CLKUSABLE) == 0) {
 		;
 	};
+
+	retval = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
 
 	/* Enable the USB controller in device mode with the clock unfrozen */
 	regs->USBCON = USBC_USBCON_UIMOD | USBC_USBCON_USBE;

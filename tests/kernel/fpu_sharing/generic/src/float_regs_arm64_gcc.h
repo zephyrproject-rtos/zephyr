@@ -12,7 +12,7 @@
 #ifndef _FLOAT_REGS_ARM64_GCC_H
 #define _FLOAT_REGS_ARM64_GCC_H
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include "float_context.h"
 
 /**

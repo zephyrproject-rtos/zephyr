@@ -9,26 +9,17 @@
  * @brief Software interrupts utility code - ARM64 implementation
  */
 
-#include <kernel.h>
-#include <irq_offload.h>
+#include <zephyr/kernel.h>
+#include <zephyr/irq_offload.h>
 #include <exc.h>
-
-volatile irq_offload_routine_t offload_routine;
-static const void *offload_param;
-
-void z_irq_do_offload(void)
-{
-	offload_routine(offload_param);
-}
 
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
-	k_sched_lock();
-	offload_routine = routine;
-	offload_param = parameter;
+	register const void *x0 __asm__("x0") = routine;
+	register const void *x1 __asm__("x1") = parameter;
 
-	z_arm64_offload();
-
-	offload_routine = NULL;
-	k_sched_unlock();
+	__asm__ volatile ("svc %[svid]"
+			  :
+			  : [svid] "i" (_SVC_CALL_IRQ_OFFLOAD),
+			    "r" (x0), "r" (x1));
 }

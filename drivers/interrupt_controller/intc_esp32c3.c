@@ -14,11 +14,14 @@
 #include <assert.h>
 #include "soc/soc.h"
 #include <soc.h>
-#include <zephyr.h>
-#include <drivers/interrupt_controller/intc_esp32c3.h>
-#include <sw_isr_table.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#include <zephyr/sw_isr_table.h>
+#include <riscv/interrupt.h>
 
-#include <logging/log.h>
+#define ESP32C3_INTC_DEFAULT_PRIO			15
+
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intc_esp32c3, CONFIG_LOG_DEFAULT_LEVEL);
 
 /*
@@ -39,17 +42,6 @@ LOG_MODULE_REGISTER(intc_esp32c3, CONFIG_LOG_DEFAULT_LEVEL);
 #define ESP32C3_INTC_AVAILABLE_IRQS     30
 
 static uint32_t esp_intr_enabled_mask[2] = {0, 0};
-
-static void esp_intr_default_isr(const void *arg)
-{
-	ARG_UNUSED(arg);
-	ulong_t mcause;
-
-	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
-	mcause &= SOC_MCAUSE_EXP_MASK;
-
-	INTC_LOG("Spurious interrupt, mcause: %ld, source %d", mcause, soc_intr_get_next_source());
-}
 
 static uint32_t esp_intr_find_irq_for_source(uint32_t source)
 {
@@ -80,15 +72,7 @@ void esp_intr_initialize(void)
 	}
 
 	for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
-		esp_rom_intr_matrix_set(0,
-			i,
-			ESP32C3_INTC_DISABLED_SLOT);
-
-		irq_connect_dynamic(i,
-			ESP32C3_INTC_DEFAULT_PRIORITY,
-			esp_intr_default_isr,
-			NULL,
-			0);
+		esp_rom_intr_matrix_set(0, i, ESP32C3_INTC_DISABLED_SLOT);
 	}
 
 	/* set global esp32c3's INTC masking level */
@@ -113,9 +97,6 @@ int esp_intr_alloc(int source,
 	}
 
 	uint32_t key = irq_lock();
-	uint32_t irq = esp_intr_find_irq_for_source(source);
-
-	esp_rom_intr_matrix_set(0, source, irq);
 
 	irq_connect_dynamic(source,
 		ESP32C3_INTC_DEFAULT_PRIORITY,
@@ -133,7 +114,7 @@ int esp_intr_alloc(int source,
 		esp_intr_enabled_mask[0], esp_intr_enabled_mask[1]);
 
 	irq_unlock(key);
-	irq_enable(irq);
+	irq_enable(source);
 
 	return 0;
 }
@@ -146,7 +127,7 @@ int esp_intr_disable(int source)
 
 	uint32_t key = irq_lock();
 
-	esp_rom_intr_matrix_set(source,
+	esp_rom_intr_matrix_set(0,
 		source,
 		ESP32C3_INTC_DISABLED_SLOT);
 
@@ -173,7 +154,6 @@ int esp_intr_enable(int source)
 	uint32_t key = irq_lock();
 	uint32_t irq = esp_intr_find_irq_for_source(source);
 
-	irq_disable(irq);
 	esp_rom_intr_matrix_set(0, source, irq);
 
 	if (source < 32) {
@@ -185,7 +165,10 @@ int esp_intr_enable(int source)
 	INTC_LOG("Enabled ISRs -- 0: 0x%X -- 1: 0x%X",
 		esp_intr_enabled_mask[0], esp_intr_enabled_mask[1]);
 
-	irq_enable(irq);
+	esprv_intc_int_set_priority(irq, ESP32C3_INTC_DEFAULT_PRIO);
+	esprv_intc_int_set_type(irq, INTR_TYPE_LEVEL);
+	esprv_intc_int_enable(1 << irq);
+
 	irq_unlock(key);
 
 	return 0;

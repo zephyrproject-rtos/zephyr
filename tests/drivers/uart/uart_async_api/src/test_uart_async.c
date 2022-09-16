@@ -15,6 +15,10 @@ K_SEM_DEFINE(rx_disabled, 0, 1);
 ZTEST_BMEM volatile bool failed_in_isr;
 ZTEST_BMEM static const struct device *uart_dev;
 
+static void read_abort_timeout(struct k_timer *timer);
+K_TIMER_DEFINE(read_abort_timer, read_abort_timeout, NULL);
+
+
 void init_test(void)
 {
 	uart_dev = device_get_binding(UART_DEVICE_NAME);
@@ -25,7 +29,7 @@ void set_permissions(void)
 {
 	k_thread_access_grant(k_current_get(), &tx_done, &tx_aborted,
 			      &rx_rdy, &rx_buf_released, &rx_disabled,
-			      uart_dev);
+			      uart_dev, &read_abort_timer);
 }
 #endif
 
@@ -366,6 +370,14 @@ void test_read_abort_callback(const struct device *dev,
 	}
 }
 
+static void read_abort_timeout(struct k_timer *timer)
+{
+	int err;
+
+	err = uart_rx_disable(uart_dev);
+	zassert_equal(err, 0, "Unexpected err:%d", err);
+}
+
 void test_read_abort_setup(void)
 {
 	failed_in_isr = false;
@@ -394,12 +406,10 @@ void test_read_abort(void)
 
 	uart_tx(uart_dev, tx_buf, 95, 100 * USEC_PER_MSEC);
 
-	/* Wait for at least one character. RX_RDY event will be generated only
-	 * if there is pending data.
-	 */
-	k_busy_wait(1000);
+	k_timer_start(&read_abort_timer, K_USEC(300), K_NO_WAIT);
 
-	uart_rx_disable(uart_dev);
+	/* RX will be aborted from k_timer timeout */
+
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
 	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), 0,
 		      "RX_DISABLED timeout");

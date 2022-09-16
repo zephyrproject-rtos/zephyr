@@ -5,19 +5,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <stdbool.h>
-#include <drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/pcie.h>
 
 #if CONFIG_PCIE_MSI
-#include <drivers/pcie/msi.h>
+#include <zephyr/drivers/pcie/msi.h>
 #endif
 
 #ifdef CONFIG_PCIE_CONTROLLER
-#include <drivers/pcie/controller.h>
+#include <zephyr/drivers/pcie/controller.h>
 #endif
 
 /* functions documented in drivers/pcie/pcie.h */

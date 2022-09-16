@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include "boot.h"
 #include "macro_priv.inc"
 
@@ -38,7 +38,7 @@ SECTION_FUNC(TEXT,z_arm64_el1_plat_prep_c)
 GTEXT(__reset_prep_c)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset_prep_c)
 	/* return address: x23 */
-	mov	x23, x30
+	mov	x23, lr
 
 	switch_el x0, 3f, 2f, 1f
 3:
@@ -109,9 +109,18 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 	ldr	x0, =arm64_cpu_boot_params
 	get_cpu_id x1
-	ldr	x2, [x0, #BOOT_PARAM_MPID_OFFSET]
+
+	/*
+	 * If the cores start up at the same time, we should atomically load and
+	 * store the mpid into arm64_cpu_boot_params.
+	 */
+	ldaxr	x2, [x0, #BOOT_PARAM_MPID_OFFSET]
 	cmp	x2, #-1
-	beq	primary_core
+	bne	1f
+	/* try to store x1 (mpid) */
+	stlxr	w3, x1, [x0]
+	/* If succeed, go to primary_core */
+	cbz	w3, primary_core
 
 	/* loop until our turn comes */
 1:	dmb	ld
@@ -125,8 +134,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	b	2f
 
 primary_core:
-	/* advertise ourself */
-	str	x1, [x0, #BOOT_PARAM_MPID_OFFSET]
 #endif
 	/* load primary stack and entry point */
 	ldr	x24, =(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE)
@@ -164,6 +171,9 @@ switch_el:
 1:
 	/* EL1 init */
 	bl	z_arm64_el1_init
+
+	/* We want to use SP_ELx from now on */
+	msr	SPSel, #1
 
 	/* Enable SError interrupts */
 	msr	DAIFClr, #(DAIFCLR_ABT_BIT)

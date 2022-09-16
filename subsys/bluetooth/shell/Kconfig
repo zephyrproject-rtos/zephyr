@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BT_SHELL
-	bool "Enable Bluetooth shell"
+	bool "Bluetooth shell"
 	select SHELL
 	help
 	  Activate shell module that provides Bluetooth commands to the

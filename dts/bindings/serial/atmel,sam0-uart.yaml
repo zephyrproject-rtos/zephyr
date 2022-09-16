@@ -2,7 +2,9 @@ description: Atmel SAM0 SERCOM UART driver
 
 compatible: "atmel,sam0-uart"
 
-include: uart-controller.yaml
+include:
+    - name: uart-controller.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:
@@ -30,19 +32,6 @@ properties:
     collision-detection:
       type: boolean
       description: Enable collision detection for half-duplex mode.
-
-    pinctrl-0:
-      type: phandles
-      description: |
-        PORT pin configuration for RXD & TRD signals.  We expect that
-        the phandles will reference pinctrl nodes.  These nodes will
-        have a nodelabel that matches the Atmel SoC HAL defines and
-        be of the form p<port><pin><periph>_<inst>_<signal>.
-
-        For example the SERCOM0 on SAMR21 would be
-           pinctrl-0 = <&pa5d_sercom0_pad1 &pa4d_sercom0_pad0>;
-
-      required: true
 
     dmas:
       description: |

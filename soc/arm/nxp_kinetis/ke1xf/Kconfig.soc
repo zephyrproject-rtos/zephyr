@@ -98,7 +98,7 @@ config WDOG_INITIAL_TIMEOUT
 	  milliseconds.
 
 config KINETIS_KE1XF_ENABLE_CODE_CACHE
-	bool "Enable the code cache"
+	bool "Code cache"
 	default y
 
 endif # SOC_SERIES_KINETIS_KE1XF

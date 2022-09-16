@@ -130,6 +130,32 @@ static inline void hal_trigger_crypt_ppi_config(void)
 	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_CRYPT, HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI);
 }
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+/*******************************************************************************
+ * Trigger encryption task on Bit counter match:
+ * wire the RADIO EVENTS_BCMATCH event to the CCM TASKS_CRYPT task.
+ *
+ * PPI channel HAL_TRIGGER_CRYPT_DELAY_PPI is also used for HAL_TRIGGER-
+ * _RATEOVERRIDE_PPI.
+ * Make sure the same PPI is not configured for both events at once.
+ *
+ *   EEP: RADIO->EVENTS_BCMATCH
+ *   TEP: CCM->TASKS_CRYPT
+ */
+static inline void hal_trigger_crypt_by_bcmatch_ppi_config(void)
+{
+	/* Configure Bit counter to trigger EVENTS_BCMATCH for CCM_TASKS_CRYPT-
+	 * _DELAY_BITS bit. This is a time required for Radio to store
+	 * received data in memory before the CCM TASKS_CRYPT starts. This
+	 * makes CCM to do not read the memory before Radio stores received
+	 * data.
+	 */
+	nrf_radio_publish_set(NRF_RADIO,
+			      NRF_RADIO_EVENT_BCMATCH, HAL_TRIGGER_CRYPT_DELAY_PPI);
+	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_CRYPT, HAL_TRIGGER_CRYPT_DELAY_PPI);
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+
 /*******************************************************************************
  * Trigger automatic address resolution on Bit counter match:
  * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
@@ -492,6 +518,20 @@ static inline void hal_radio_rxen_on_sw_switch(uint8_t ppi)
 	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN, ppi);
 }
 
+static inline void hal_radio_b2b_rxen_on_sw_switch(uint8_t ppi)
+{
+	/* NOTE: Calling radio_tmr_start/radio_tmr_start_us/radio_tmr_start_now
+	 *       after the radio_switch_complete_and_b2b_rx() call would have
+	 *       changed the PPI channel to HAL_RADIO_ENABLE_ON_TICK_PPI as we
+	 *       cannot double buffer the subscribe buffer. Hence, lets have
+	 *       both DPPI channel enabled (other one was enabled by the DPPI
+	 *       group when the Radio End occurred) so that when both timer
+	 *       trigger one of the DPPI is correct in the radio rx
+	 *       subscription.
+	 */
+	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN, ppi);
+	nrf_dppi_channels_enable(NRF_DPPIC, BIT(ppi));
+}
 
 static inline void hal_radio_sw_switch_disable(void)
 {

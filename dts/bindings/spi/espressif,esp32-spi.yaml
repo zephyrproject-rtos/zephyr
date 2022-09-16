@@ -2,7 +2,7 @@ description: ESP32 SPI
 
 compatible: "espressif,esp32-spi"
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -11,33 +11,11 @@ properties:
     interrupts:
       required: false
 
-    miso-pin:
-      type: int
-      description: MISO pin
+    pinctrl-0:
       required: true
 
-    mosi-pin:
-      type: int
-      description: MOSI pin
+    pinctrl-names:
       required: true
-
-    sclk-pin:
-      type: int
-      description: SPI generated clock pin
-      required: true
-
-    csel-pin:
-      type: int
-      description: chip select pin
-      required: true
-
-    use-iomux:
-      type: boolean
-      required: false
-      description: |
-        Support IO muxing for the target SPI peripheral pins
-
-        Some SPI interfaces are not allowed to mux its pins
 
     half-duplex:
       type: boolean

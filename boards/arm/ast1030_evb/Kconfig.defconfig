@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Aspeed AST1030 evaluation board configuration
+#
+# Copyright (c) 2021 Aspeed Technology Inc.
+
+if BOARD_AST1030_EVB
+config BOARD
+	default "ast1030_evb"
+endif # BOARD_AST1030_EVB

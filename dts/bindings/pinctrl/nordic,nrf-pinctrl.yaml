@@ -47,7 +47,7 @@ description: |
     Each group can specify a list of pin function selections in the 'psels'
     property. The NRF_PSEL macro is used to specify a pin function selection.
     Available pin functions can be found in the
-    include/dt-bindings/pinctrl/nrf-pinctrl.h header file.
+    include/zephyr/dt-bindings/pinctrl/nrf-pinctrl.h header file.
 
     A group can also specify shared pin properties common to all the specified
     pins, such as the 'bias-pull-up' property in group 2. Here is a list of
@@ -100,7 +100,7 @@ child-binding:
           be defined using the NRF_PSEL utility macro that encodes the port,
           pin and function.
 
-      drive-mode:
+      nordic,drive-mode:
         type: int
         default: 0
         description: |
@@ -108,3 +108,9 @@ child-binding:
           nrf-pinctrl.h. Note that extra modes may not be available on certain
           devices. Defaults to standard mode for 0 and 1 (NRF_DRIVE_S0S1), the
           SoC default.
+
+      nordic,invert:
+        type: boolean
+        description: |
+          Invert pin polarity (set the active state to low).
+          Only valid for PWM channel output pins.

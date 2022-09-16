@@ -10,11 +10,11 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <sys/types.h>
-#include <device.h>
-#include <storage/flash_map.h>
-#include <drivers/flash.h>
+#include <zephyr/device.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/flash.h>
 #include <soc.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 struct layout_data {
 	uint32_t area_idx;

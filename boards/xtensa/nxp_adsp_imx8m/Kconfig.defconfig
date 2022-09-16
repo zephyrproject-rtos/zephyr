@@ -8,10 +8,12 @@ config BOARD
 	default "nxp_adsp_imx8m"
 
 config DUMMY_DMA
+	bool
 	default y
 	depends on DMA
 
 config IMX_SDMA
+	bool
 	default y
 	depends on DMA
 

@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT apa_apa102
 
 #include <errno.h>
-#include <drivers/led_strip.h>
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
+#include <zephyr/drivers/led_strip.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
 
 struct apa102_config {
 	struct spi_dt_spec bus;

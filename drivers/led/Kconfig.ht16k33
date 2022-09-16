@@ -12,7 +12,7 @@ menuconfig HT16K33
 	  (up to 16 rows and 8 commons).
 
 config HT16K33_KEYSCAN
-	bool "Enable keyscan support"
+	bool "Keyscan support"
 	depends on (HT16K33 && KSCAN)
 	select KSCAN_HT16K33
 	help

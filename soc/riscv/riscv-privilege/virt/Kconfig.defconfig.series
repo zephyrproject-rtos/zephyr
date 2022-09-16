@@ -33,10 +33,7 @@ config MAX_IRQ_PER_AGGREGATOR
 config NUM_IRQS
 	default 64
 
-config PMP_POWER_OF_TWO_ALIGNMENT
-	default y
-
-config PMP_SLOT
+config PMP_SLOTS
 	default 16
 
 endif

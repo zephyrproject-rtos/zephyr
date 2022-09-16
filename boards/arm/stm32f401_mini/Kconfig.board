@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Brian Bradley
+# SPDX-License-Identifier: Apache-2.0
+
+# STM32 Mini F401 Board
+
+config BOARD_STM32F401_MINI
+	bool "STM32 Mini F401 Board"
+	depends on SOC_STM32F401XC

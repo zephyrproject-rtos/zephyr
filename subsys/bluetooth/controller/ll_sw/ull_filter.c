@@ -6,10 +6,10 @@
 
 #include <string.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -62,7 +62,7 @@ static struct lll_filter fal_filter;
 #include "common/rpa.h"
 
 /* Filter Accept List peer list */
-static struct lll_fal fal[FAL_SIZE];
+static struct lll_fal fal[CONFIG_BT_CTLR_FAL_SIZE];
 
 /* Resolving list */
 static struct lll_resolve_list rl[CONFIG_BT_CTLR_RL_SIZE];
@@ -192,7 +192,7 @@ static uint32_t pal_remove(const bt_addr_le_t *const id_addr,
 #if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
 uint8_t ll_fal_size_get(void)
 {
-	return FAL_SIZE;
+	return CONFIG_BT_CTLR_FAL_SIZE;
 }
 
 uint8_t ll_fal_clear(void)
@@ -777,12 +777,15 @@ void ull_filter_rpa_update(bool timeout)
 
 	if (timeout) {
 #if defined(CONFIG_BT_BROADCASTER)
-		struct ll_adv_set *adv;
+		uint8_t handle;
 
-		/* TODO: foreach adv set */
-		adv = ull_adv_is_enabled_get(0);
-		if (adv) {
-			rpa_adv_refresh(adv);
+		for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
+			struct ll_adv_set *adv;
+
+			adv = ull_adv_is_enabled_get(handle);
+			if (adv) {
+				rpa_adv_refresh(adv);
+			}
 		}
 #endif
 	}
@@ -1013,7 +1016,7 @@ uint8_t ull_filter_deferred_targeta_resolve(bt_addr_t *rpa, uint8_t rl_idx,
 
 static void fal_clear(void)
 {
-	for (int i = 0; i < FAL_SIZE; i++) {
+	for (int i = 0; i < CONFIG_BT_CTLR_FAL_SIZE; i++) {
 		uint8_t j = fal[i].rl_idx;
 
 		if (j < ARRAY_SIZE(rl)) {
@@ -1032,7 +1035,7 @@ static uint8_t fal_find(uint8_t addr_type, const uint8_t *const addr,
 		*free_idx = FILTER_IDX_NONE;
 	}
 
-	for (i = 0; i < FAL_SIZE; i++) {
+	for (i = 0; i < CONFIG_BT_CTLR_FAL_SIZE; i++) {
 		if (LIST_MATCH(fal, i, addr_type, addr)) {
 			return i;
 		} else if (free_idx && !fal[i].taken &&
@@ -1098,7 +1101,7 @@ static void fal_update(void)
 	uint8_t i;
 
 	/* Populate filter from fal peers */
-	for (i = 0U; i < FAL_SIZE; i++) {
+	for (i = 0U; i < CONFIG_BT_CTLR_FAL_SIZE; i++) {
 		uint8_t j;
 
 		if (!fal[i].taken) {
@@ -1131,26 +1134,101 @@ static void rl_update(void)
 #if defined(CONFIG_BT_BROADCASTER)
 static void rpa_adv_refresh(struct ll_adv_set *adv)
 {
+	struct lll_adv_aux *lll_aux;
 	struct pdu_adv *prev;
+	struct lll_adv *lll;
 	struct pdu_adv *pdu;
-	uint8_t idx;
+	uint8_t pri_idx;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	uint8_t sec_idx;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	if (adv->own_addr_type != BT_ADDR_LE_PUBLIC_ID &&
 	    adv->own_addr_type != BT_ADDR_LE_RANDOM_ID) {
 		return;
 	}
 
-	if (adv->lll.rl_idx >= ARRAY_SIZE(rl)) {
+	lll = &adv->lll;
+	if (lll->rl_idx >= ARRAY_SIZE(rl)) {
 		return;
 	}
 
-	prev = lll_adv_data_peek(&adv->lll);
-	pdu = lll_adv_data_alloc(&adv->lll, &idx);
 
-	(void)memcpy(pdu, prev, PDU_AC_LL_HEADER_SIZE + prev->len);
-	ull_adv_pdu_update_addrs(adv, pdu);
+	pri_idx = UINT8_MAX;
+	lll_aux = NULL;
+	pdu = NULL;
+	prev = lll_adv_data_peek(lll);
 
-	lll_adv_data_enqueue(&adv->lll, idx);
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	} else if (prev->type == PDU_ADV_TYPE_EXT_IND) {
+		struct pdu_adv_com_ext_adv *pri_com_hdr;
+		struct pdu_adv_ext_hdr pri_hdr_flags;
+		struct pdu_adv_ext_hdr *pri_hdr;
+
+		/* Pick the primary PDU header flags */
+		pri_com_hdr = (void *)&prev->adv_ext_ind;
+		pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
+		if (pri_com_hdr->ext_hdr_len) {
+			pri_hdr_flags = *pri_hdr;
+		} else {
+			*(uint8_t *)&pri_hdr_flags = 0U;
+		}
+
+		/* AdvA, in primary or auxiliary PDU */
+		if (pri_hdr_flags.adv_addr) {
+			pdu = lll_adv_data_alloc(lll, &pri_idx);
+			(void)memcpy(pdu, prev, (PDU_AC_LL_HEADER_SIZE +
+						 prev->len));
+
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+		} else if (pri_hdr_flags.aux_ptr) {
+			struct pdu_adv_com_ext_adv *sec_com_hdr;
+			struct pdu_adv_ext_hdr sec_hdr_flags;
+			struct pdu_adv_ext_hdr *sec_hdr;
+			struct pdu_adv *sec_pdu;
+
+			lll_aux = lll->aux;
+			sec_pdu = lll_adv_aux_data_peek(lll_aux);
+
+			sec_com_hdr = (void *)&sec_pdu->adv_ext_ind;
+			sec_hdr = (void *)sec_com_hdr->ext_hdr_adv_data;
+			if (sec_com_hdr->ext_hdr_len) {
+				sec_hdr_flags = *sec_hdr;
+			} else {
+				*(uint8_t *)&sec_hdr_flags = 0U;
+			}
+
+			if (sec_hdr_flags.adv_addr) {
+				pdu = lll_adv_aux_data_alloc(lll_aux, &sec_idx);
+				(void)memcpy(pdu, sec_pdu,
+					     (PDU_AC_LL_HEADER_SIZE +
+					      sec_pdu->len));
+			}
+#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+	} else {
+		pdu = lll_adv_data_alloc(lll, &pri_idx);
+		(void)memcpy(pdu, prev, (PDU_AC_LL_HEADER_SIZE + prev->len));
+	}
+
+	if (pdu) {
+		ull_adv_pdu_update_addrs(adv, pdu);
+
+		if (pri_idx != UINT8_MAX) {
+			lll_adv_data_enqueue(lll, pri_idx);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		} else {
+			lll_adv_aux_data_enqueue(lll_aux, sec_idx);
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+		}
+	}
 }
 #endif /* CONFIG_BT_BROADCASTER */
 
@@ -1244,7 +1322,7 @@ static uint32_t filter_find(const struct lll_filter *const filter,
 		return FILTER_IDX_NONE;
 	}
 
-	index = FAL_SIZE;
+	index = LLL_FILTER_SIZE;
 	while (index--) {
 		if ((filter->enable_bitmask & BIT(index)) &&
 		    (((filter->addr_type_bitmask >> index) & 0x01) ==
@@ -1340,6 +1418,7 @@ static uint32_t pal_add(const bt_addr_le_t *const id_addr, const uint8_t sid)
 
 	pal[i].id_addr_type = id_addr->type & 0x1;
 	bt_addr_copy(&pal[i].id_addr, &id_addr->a);
+	pal[i].sid = sid;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* Get index to Resolving List if applicable */

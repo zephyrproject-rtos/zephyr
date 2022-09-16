@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nxp/nxp_imx7d_m4.dtsi>
+#include "96b_meerkat96-pinctrl.dtsi"
 
 / {
 	model = "Meerkat96 Board";
@@ -50,6 +51,8 @@
 	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <0>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
 };
 
 &gpio1 {

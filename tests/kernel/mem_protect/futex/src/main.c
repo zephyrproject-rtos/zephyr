@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
-#include <sys/mutex.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/sys/mutex.h>
 
 
 /**
@@ -21,7 +21,7 @@
 #define TOTAL_THREADS_WAITING (3)
 #define PRIO_WAIT (CONFIG_ZTEST_THREAD_PRIORITY - 1)
 #define PRIO_WAKE (CONFIG_ZTEST_THREAD_PRIORITY - 2)
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define PRIORITY 5
 
 /******************************************************************************/
@@ -481,7 +481,7 @@ void futex_wake(void *p1, void *p2, void *p3)
 	zassert_equal(ret_value, 0, NULL);
 
 	/* Test user can write to the futex value
-	 * Use assertion to verify substraction correctness
+	 * Use assertion to verify subtraction correctness
 	 * Initial value was 13, after atomic_sub() must be 12
 	 */
 	atomic_sub(&simple_futex.val, 1);

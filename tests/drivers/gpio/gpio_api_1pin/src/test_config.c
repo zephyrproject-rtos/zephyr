@@ -6,7 +6,7 @@
 
 
 #include <limits.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include "test_gpio_api.h"
 
 #define TEST_GPIO_MAX_SINGLE_ENDED_RISE_FALL_TIME_MS    100

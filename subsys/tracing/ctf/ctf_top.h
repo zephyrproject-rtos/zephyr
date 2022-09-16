@@ -10,7 +10,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <ctf_map.h>
-#include <tracing/tracing_format.h>
+#include <zephyr/tracing/tracing_format.h>
 
 /* Limit strings to 20 bytes to optimize bandwidth */
 #define CTF_MAX_STRING_LEN 20

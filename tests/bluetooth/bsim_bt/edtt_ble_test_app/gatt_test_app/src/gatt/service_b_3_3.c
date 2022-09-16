@@ -9,10 +9,10 @@
  *  This code is auto-generated from the Excel Workbook
  *  'GATT_Test_Databases.xlsm' Sheet: 'Large Database 3'
  */
-#include <sys/byteorder.h>
-#include <sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #include "gatt_macs.h"
 
@@ -151,7 +151,7 @@ static void value_v6_indicate_cb(struct bt_conn *conn,
 				 uint8_t err)
 {
 	printk("Indication for attribute 'Value V6' %s\n",
-	       (err) ? "failed" : "succeded");
+	       (err) ? "failed" : "succeeded");
 }
 
 /**

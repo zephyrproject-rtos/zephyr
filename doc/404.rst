@@ -33,11 +33,10 @@ It's also possible we've removed or renamed the page you're looking for.
 Please try using the navigation links on the left of this page to navigate
 the major sections of our site, or use the search box.
 
-If you got this error by following a link, please let us know by sending
-us a message using this `contact us form`_, or send an email message to
-info@zephyrproject.org
+If you got this error by following a link, please let us know by creating an
+issue on `GitHub`_.
 
-.. _contact us form: https://www.zephyrproject.org/contact-us/
+.. _GitHub: https://github.com/zephyrproject-rtos/zephyr/issues
 
 .. raw:: html
 

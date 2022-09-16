@@ -7,33 +7,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>
-#include <app_memory/app_memdomain.h>
-#include <sys/util.h>
-#include <debug/stack.h>
-#include <syscall_handler.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/syscall_handler.h>
 #include "test_syscall.h"
+#include <zephyr/sys/libc-hooks.h> /* for z_libc_partition */
 
 #if defined(CONFIG_ARC)
-#include <arch/arc/v2/mpu/arc_core_mpu.h>
+#include <zephyr/arch/arc/v2/mpu/arc_core_mpu.h>
 #endif
 
 #if defined(CONFIG_ARM)
 extern void arm_core_mpu_disable(void);
 #endif
 
-#if defined(CONFIG_RISCV)
-#include <../arch/riscv/include/core_pmp.h>
-#endif
-
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #define PIPE_LEN 1
 #define BYTES_TO_READ_WRITE 1
-#define STACKSIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (256 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 K_SEM_DEFINE(test_revoke_sem, 0, 1);
 
@@ -239,7 +236,12 @@ static void test_disable_mmu_mpu(void)
 #elif defined(CONFIG_RISCV)
 	set_fault(K_ERR_CPU_EXCEPTION);
 
-	z_riscv_pmp_clear_config();
+	/*
+	 * Try to make everything accessible through PMP slot 3
+	 * which should not be locked.
+	 */
+	csr_write(pmpaddr3, LLONG_MAX);
+	csr_write(pmpcfg0, (PMP_R|PMP_W|PMP_X|PMP_NAPOT) << 24);
 #else
 #error "Not implemented for this architecture"
 #endif
@@ -279,7 +281,7 @@ static void test_write_kernram(void)
 
 extern int _k_neg_eagain;
 
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 
 /**
  * @brief Test to write kernel RO
@@ -364,7 +366,7 @@ K_APP_DMEM(default_part) int32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
 #endif
 
 /**
- * @brief Test to read provileged stack
+ * @brief Test to read privileged stack
  *
  * @ingroup kernel_memprotect_tests
  */
@@ -680,7 +682,12 @@ static void drop_user(volatile bool *to_modify)
  */
 static void test_init_and_access_other_memdomain(void)
 {
-	struct k_mem_partition *parts[] = { &ztest_mem_partition, &alt_part };
+	struct k_mem_partition *parts[] = {
+#if Z_LIBC_PARTITION_EXISTS
+		&z_libc_partition,
+#endif
+		&ztest_mem_partition, &alt_part
+	};
 
 	zassert_equal(
 		k_mem_domain_init(&alternate_domain, ARRAY_SIZE(parts), parts),
@@ -940,6 +947,7 @@ void test_syscall_context(void)
 	check_syscall_context();
 }
 
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 static void tls_leakage_user_part(void *p1, void *p2, void *p3)
 {
 	char *tls_area = p1;
@@ -949,9 +957,11 @@ static void tls_leakage_user_part(void *p1, void *p2, void *p3)
 			      "TLS data leakage to user mode");
 	}
 }
+#endif
 
 void test_tls_leakage(void)
 {
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	/* Tests two assertions:
 	 *
 	 * - That a user thread has full access to its TLS area
@@ -964,15 +974,21 @@ void test_tls_leakage(void)
 
 	k_thread_user_mode_enter(tls_leakage_user_part,
 				 _current->userspace_local_data, NULL, NULL);
+#else
+	ztest_test_skip();
+#endif
 }
 
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 void tls_entry(void *p1, void *p2, void *p3)
 {
 	printk("tls_entry\n");
 }
+#endif
 
 void test_tls_pointer(void)
 {
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	k_thread_create(&test_thread, test_stack, STACKSIZE, tls_entry,
 			NULL, NULL, NULL, 1, K_USER, K_FOREVER);
 
@@ -996,6 +1012,9 @@ void test_tls_pointer(void)
 		printk("tls area out of bounds\n");
 		ztest_test_fail();
 	}
+#else
+	ztest_test_skip();
+#endif
 }
 
 
@@ -1030,10 +1049,8 @@ void test_main(void)
 #if defined(CONFIG_GEN_PRIV_STACKS)
 	priv_stack_ptr = (char *)z_priv_stack_find(ztest_thread_stack);
 #else
-	struct _thread_arch *thread_struct;
-
-	thread_struct = ((struct _thread_arch *) ztest_thread_stack);
-	priv_stack_ptr = (char *)thread_struct->priv_stack_start + 1;
+	priv_stack_ptr = (char *)((uintptr_t)ztest_thread_stack +
+				  Z_RISCV_STACK_GUARD_SIZE);
 #endif
 #endif
 	k_thread_access_grant(k_current_get(),

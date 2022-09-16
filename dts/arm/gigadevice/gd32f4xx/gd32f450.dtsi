@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2021 BrainCo Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <gigadevice/gd32f4xx/gd32f4xx.dtsi>
+
+/ {
+	soc {
+		spi3: spi@40013400 {
+			compatible = "gd,gd32-spi";
+			reg = <0x40013400 0x400>;
+			interrupts = <84 0>;
+			rcu-periph-clock = <0x110d>;
+			status = "disabled";
+			label = "SPI_3";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi4: spi@40015000 {
+			compatible = "gd,gd32-spi";
+			reg = <0x40015000 0x400>;
+			interrupts = <85 0>;
+			rcu-periph-clock = <0x1114>;
+			status = "disabled";
+			label = "SPI_4";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi5: spi@40015400 {
+			compatible = "gd,gd32-spi";
+			reg = <0x40015400 0x400>;
+			interrupts = <86 0>;
+			rcu-periph-clock = <0x1115>;
+			status = "disabled";
+			label = "SPI_5";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};

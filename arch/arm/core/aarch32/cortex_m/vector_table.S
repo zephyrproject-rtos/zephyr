@@ -17,8 +17,8 @@
  * rest should not be triggered until the kernel is ready to handle them.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include "vector_table.h"
 
 _ASM_FILE_PROLOGUE

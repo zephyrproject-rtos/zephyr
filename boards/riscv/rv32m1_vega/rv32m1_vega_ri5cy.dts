@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include "rv32m1_ri5cy.dtsi"
+#include "openisa/rv32m1_ri5cy.dtsi"
 #include "rv32m1_vega.dtsi"
 
 / {
@@ -34,11 +34,11 @@
 
 		slot0_partition: partition@0 {
 			label = "image-0";
-			reg = <0x00000000 0x000069000>;
+			reg = <0x00000000 0x00069000>;
 		};
 		slot1_partition: partition@69000 {
 			label = "image-1";
-			reg = <0x00069000 0x000069000>;
+			reg = <0x00069000 0x00069000>;
 		};
 		scratch_partition: partition@d2000 {
 			label = "image-scratch";

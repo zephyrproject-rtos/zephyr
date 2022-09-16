@@ -40,10 +40,6 @@
 #define __IO
 #endif
 
-#define uint32_t uint32_t
-#define uint16_t uint16_t
-#define uint8_t uint8_t
-
 #define GET_BITFIELD(val, lsb, msb) \
 	(((val) >> (lsb)) & ((1 << ((msb) - (lsb) + 1)) - 1))
 #define BFIELD(val, name) GET_BITFIELD(val, name ## _Lsb, name ## _Msb)

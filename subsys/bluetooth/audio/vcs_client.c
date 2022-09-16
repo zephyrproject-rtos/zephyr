@@ -7,18 +7,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
 
-#include <sys/check.h>
+#include <zephyr/sys/check.h>
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/audio/vcs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/vcs.h>
 
 #include "vcs_internal.h"
 
@@ -677,10 +677,8 @@ static void vocs_discover_cb(struct bt_vocs *inst, int err)
 }
 #endif /* CONFIG_BT_VCS_CLIENT_VOCS */
 
-static void vcs_client_reset(struct bt_conn *conn)
+static void vcs_client_reset(struct bt_vcs *vcs_inst)
 {
-	struct bt_vcs *vcs_inst = &vcs_insts[bt_conn_index(conn)];
-
 	memset(&vcs_inst->cli.state, 0, sizeof(vcs_inst->cli.state));
 	vcs_inst->cli.flags = 0;
 	vcs_inst->cli.start_handle = 0;
@@ -693,10 +691,35 @@ static void vcs_client_reset(struct bt_conn *conn)
 
 	memset(&vcs_inst->cli.discover_params, 0, sizeof(vcs_inst->cli.discover_params));
 
-	/* It's okay if these fail */
-	(void)bt_gatt_unsubscribe(conn, &vcs_inst->cli.state_sub_params);
-	(void)bt_gatt_unsubscribe(conn, &vcs_inst->cli.flag_sub_params);
+	if (vcs_inst->cli.conn != NULL) {
+		struct bt_conn *conn = vcs_inst->cli.conn;
+
+		/* It's okay if these fail. In case of disconnect, we can't
+		 * unsubscribe and they will just fail.
+		 * In case that we reset due to another call of the discover
+		 * function, we will unsubscribe (regardless of bonding state)
+		 * to accommodate the new discovery values.
+		 */
+		(void)bt_gatt_unsubscribe(conn, &vcs_inst->cli.state_sub_params);
+		(void)bt_gatt_unsubscribe(conn, &vcs_inst->cli.flag_sub_params);
+
+		bt_conn_unref(conn);
+		vcs_inst->cli.conn = NULL;
+	}
 }
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	struct bt_vcs *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+
+	if (vcs_inst->cli.conn == conn) {
+		vcs_client_reset(vcs_inst);
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected,
+};
 
 static void bt_vcs_client_init(void)
 {
@@ -765,12 +788,12 @@ int bt_vcs_discover(struct bt_conn *conn, struct bt_vcs **vcs)
 		initialized = true;
 	}
 
-	vcs_client_reset(conn);
+	vcs_client_reset(vcs_inst);
 
 	memcpy(&vcs_inst->cli.uuid, BT_UUID_VCS, sizeof(vcs_inst->cli.uuid));
 
 	vcs_inst->client_instance = true;
-	vcs_inst->cli.conn = conn;
+	vcs_inst->cli.conn = bt_conn_ref(conn);
 	vcs_inst->cli.discover_params.func = primary_discover_func;
 	vcs_inst->cli.discover_params.uuid = &vcs_inst->cli.uuid.uuid;
 	vcs_inst->cli.discover_params.type = BT_GATT_DISCOVER_PRIMARY;

@@ -6,24 +6,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_6LO_LOG_LEVEL);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <device.h>
-#include <init.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_ip.h>
-#include <net/dummy.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/dummy.h>
 
 #include <tc_util.h>
 
@@ -98,7 +98,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_6LO_LOG_LEVEL);
 uint8_t src_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb };
 uint8_t dst_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbb, 0xaa };
 
-/* Source and Destination addresses are contect related addresses. */
+/* Source and Destination addresses are context related addresses. */
 #if defined(CONFIG_NET_6LO_CONTEXT)
 /* CONFIG_NET_MAX_6LO_CONTEXTS=2, defined in prj.conf, If you want
  * to increase this value, then add extra contexts here.
@@ -290,7 +290,7 @@ static bool compare_ipv6_hdr(struct net_pkt *pkt, struct net_6lo_data *data)
 	res = memcmp((uint8_t *)ipv6_hdr, (uint8_t *)&data->ipv6,
 		      sizeof(struct net_ipv6_hdr));
 	if (res) {
-		TC_PRINT("Missmatch IPv6 HDR\n");
+		TC_PRINT("Mismatch IPv6 HDR\n");
 		return false;
 	}
 
@@ -313,7 +313,7 @@ static bool compare_udp_hdr(struct net_pkt *pkt, struct net_6lo_data *data)
 	res = memcmp((uint8_t *)udp_hdr, (uint8_t *)&data->nh.udp,
 		      sizeof(struct net_udp_hdr));
 	if (res) {
-		TC_PRINT("Missmatch UDP HDR\n");
+		TC_PRINT("Mismatch UDP HDR\n");
 		return false;
 	}
 
@@ -336,7 +336,7 @@ static bool compare_icmp_hdr(struct net_pkt *pkt, struct net_6lo_data *data)
 	res = memcmp((uint8_t *)icmp_hdr, (uint8_t *)&data->nh.icmp,
 		      sizeof(struct net_icmp_hdr));
 	if (res) {
-		TC_PRINT("Missmatch ICMP HDR\n");
+		TC_PRINT("Mismatch ICMP HDR\n");
 		return false;
 	}
 
@@ -358,7 +358,7 @@ static bool compare_data_small(struct net_pkt *pkt, const char *data)
 
 	res = memcmp(test_data->data, data, sizeof(struct user_data_small));
 	if (res) {
-		TC_PRINT("User data missmatch\n");
+		TC_PRINT("User data mismatch\n");
 		return false;
 	}
 
@@ -380,7 +380,7 @@ static bool compare_data_large(struct net_pkt *pkt, const char *data)
 
 	res = memcmp(test_data->data, data, sizeof(struct user_data_large));
 	if (res) {
-		TC_PRINT("User data missmatch\n");
+		TC_PRINT("User data mismatch\n");
 		return false;
 	}
 

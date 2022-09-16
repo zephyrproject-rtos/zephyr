@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
-#include <net/net_core.h>
-#include <net/net_l2.h>
-#include <net/net_if.h>
-#include <net/capture.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/capture.h>
 
 #include "ipv6.h"
 
@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include "ieee802154_fragment.h"
 #include <6lo.h>
 
-#include <net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 #include "ieee802154_frame.h"
 #include "ieee802154_mgmt_priv.h"
@@ -145,7 +145,7 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface,
 	if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
 		/*
 		 * d.1. A short destination address is included in the frame,
-		 * and it matches either macShortAddress orthe broadcast
+		 * and it matches either macShortAddress or the broadcast
 		 * address.
 		 */
 		if (!(dst_plain->addr.short_addr == IEEE802154_BROADCAST_ADDRESS ||

@@ -5,7 +5,7 @@
  */
 
 #include "vcnl4040.h"
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(vcnl4040, CONFIG_SENSOR_LOG_LEVEL);
 

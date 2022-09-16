@@ -11,8 +11,8 @@
 #define DT_DRV_COMPAT st_stts751
 
 #include <string.h>
-#include <drivers/i2c.h>
-#include <logging/log.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
 
 #include "stts751.h"
 

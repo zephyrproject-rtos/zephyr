@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <zephyr/types.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_MODEL)
 #define LOG_MODULE_NAME bt_mesh_cfg_srv
@@ -1039,7 +1039,7 @@ static int mod_sub_add(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (!BT_MESH_ADDR_IS_GROUP(sub_addr)) {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) && !BT_MESH_ADDR_IS_FIXED_GROUP(sub_addr)) {
 		status = STATUS_INVALID_ADDRESS;
 		goto send_status;
 	}
@@ -1117,7 +1117,7 @@ static int mod_sub_del(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (!BT_MESH_ADDR_IS_GROUP(sub_addr)) {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) && !BT_MESH_ADDR_IS_FIXED_GROUP(sub_addr)) {
 		status = STATUS_INVALID_ADDRESS;
 		goto send_status;
 	}
@@ -1198,7 +1198,7 @@ static int mod_sub_overwrite(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (!BT_MESH_ADDR_IS_GROUP(sub_addr)) {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) && !BT_MESH_ADDR_IS_FIXED_GROUP(sub_addr)) {
 		status = STATUS_INVALID_ADDRESS;
 		goto send_status;
 	}

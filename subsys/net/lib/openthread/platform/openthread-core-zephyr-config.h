@@ -13,9 +13,8 @@
 #ifndef OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 #define OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 
-#include <autoconf.h>
-#include <devicetree.h>
-#include <toolchain.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/toolchain.h>
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT
@@ -223,7 +222,7 @@
  */
 #define OPENTHREAD_CONFIG_HEAP_INTERNAL_SIZE_NO_DTLS (4 * sizeof(void *))
 
-/* Disable software srouce address matching. */
+/* Disable software source address matching. */
 
 /**
  * @def RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM
@@ -295,17 +294,6 @@
 #endif /* CONFIG_OPENTHREAD_RADIO_LINK_TREL_ENABLE */
 
 /**
- * @def OPENTHREAD_CONFIG_CSL_SAMPLE_WINDOW
- *
- * CSL sample window in units of 10 symbols.
- *
- */
-#ifdef CONFIG_OPENTHREAD_CSL_SAMPLE_WINDOW
-#define OPENTHREAD_CONFIG_CSL_SAMPLE_WINDOW \
-	CONFIG_OPENTHREAD_CSL_SAMPLE_WINDOW
-#endif /* CONFIG_OPENTHREAD_CSL_SAMPLE_WINDOW */
-
-/**
  * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
  *
  * For some reasons, CSL receivers wake up a little later than expected. This
@@ -327,16 +315,6 @@
 #ifdef CONFIG_OPENTHREAD_CSL_MIN_RECEIVE_ON
 #define OPENTHREAD_CONFIG_CSL_MIN_RECEIVE_ON CONFIG_OPENTHREAD_CSL_MIN_RECEIVE_ON
 #endif /* CONFIG_OPENTHREAD_CSL_MIN_RECEIVE_ON */
-
-/**
- * @def OPENTHREAD_CONFIG_PLATFORM_CSL_UNCERT
- *
- * The Uncertainty of the scheduling CSL of transmission by the parent, in ±10 us units.
- */
-
-#ifdef CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT
-#define OPENTHREAD_CONFIG_PLATFORM_CSL_UNCERT CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT
-#endif /* CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT */
 
 /**
  * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE
@@ -424,6 +402,16 @@
  */
 #ifdef CONFIG_OPENTHREAD_PLATFORM_KEY_REFERENCES_ENABLE
 #define OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_KEYS_EXPORTABLE_ENABLE
+ *
+ * Set to 1 if you want to make MAC keys exportable.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_KEYS_EXPORTABLE_ENABLE 1
 #endif
 
 #endif  /* OPENTHREAD_CORE_ZEPHYR_CONFIG_H_ */

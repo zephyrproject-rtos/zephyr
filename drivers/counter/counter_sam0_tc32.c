@@ -6,11 +6,12 @@
 
 #define DT_DRV_COMPAT atmel_sam0_tc32
 
-#include <drivers/counter.h>
-#include <device.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/device.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_sam0_tc32, CONFIG_COUNTER_LOG_LEVEL);
 
 struct counter_sam0_tc32_ch_data {
@@ -28,6 +29,7 @@ struct counter_sam0_tc32_data {
 struct counter_sam0_tc32_config {
 	struct counter_config_info info;
 	TcCount32 *regs;
+	const struct pinctrl_dev_config *pcfg;
 #ifdef MCLK
 	volatile uint32_t *mclk;
 	uint32_t mclk_mask;
@@ -331,6 +333,7 @@ static int counter_sam0_tc32_initialize(const struct device *dev)
 {
 	const struct counter_sam0_tc32_config *const cfg = dev->config;
 	TcCount32 *tc = cfg->regs;
+	int retval;
 
 #ifdef MCLK
 	/* Enable the GCLK */
@@ -366,6 +369,11 @@ static int counter_sam0_tc32_initialize(const struct device *dev)
 
 	/* Disable all interrupts */
 	tc->INTENCLR.reg = TC_INTENCLR_MASK;
+
+	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
 
 	/* Set the initial top as the maximum */
 	tc->CC[0].reg = UINT32_MAX;
@@ -410,6 +418,7 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 		    (DT_INST_PROP(n, prescaler)), (1))
 
 #define COUNTER_SAM0_TC32_DEVICE(n)					\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static void counter_sam0_tc32_config_##n(const struct device *dev); \
 	static const struct counter_sam0_tc32_config			\
 									\
@@ -426,6 +435,7 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 		.prescaler = UTIL_CAT(TC_CTRLA_PRESCALER_DIV,		\
 				      SAM0_TC32_PRESCALER(n)),		\
 		.irq_config_func = &counter_sam0_tc32_config_##n,	\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\
 	static struct counter_sam0_tc32_data counter_sam0_tc32_dev_data_##n;\

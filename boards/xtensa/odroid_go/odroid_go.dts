@@ -6,15 +6,18 @@
 /dts-v1/;
 
 #include "espressif/esp32.dtsi"
+#include "odroid_go-pinctrl.dtsi"
 
 / {
 	model = "ODROID-GO Game Kit";
-	compatible = "hardkernel,odroid-go", "espressif,esp32";
+	compatible = "hardkernel,odroid_go", "espressif,esp32";
 
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,display = &ili9341;
 	};
 
 	leds {
@@ -29,24 +32,36 @@
 		compatible = "gpio-keys";
 		menu_button: menu_button {
 			label = "Menu";
-			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		};
+		volume_button: volume_button {
+			label = "Volume";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 		};
 		select_button: select_button {
 			label = "Select";
-			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 		a_button: a_button {
 			label = "A";
-			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 		b_button: b_button {
 			label = "B";
-			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 		start_button: start_button {
 			label = "Start";
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	lcd_backlight_en {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "lcd_backlight_enable";
+		regulator-name = "lcd_backlight_enable";
+		enable-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
 	};
 
 	aliases {
@@ -57,18 +72,26 @@
 };
 
 &cpu0 {
-	clock-frequency = <40000000>;
+	clock-frequency = <ESP32_CLK_CPU_240M>;
 };
 
 &cpu1 {
-	clock-frequency = <40000000>;
+	clock-frequency = <ESP32_CLK_CPU_240M>;
 };
 
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <1>;
-	rx-pin = <3>;
+	pinctrl-0 = <&uart0_tx_gpio1 &uart0_rx_gpio3>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
 };
 
 &i2c0 {
@@ -76,8 +99,86 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <4>;
 	scl-pin = <15>;
+	pinctrl-0 = <&i2c0_sda_gpio4 &i2c0_scl_gpio15>;
+	pinctrl-names = "default";
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_miso_gpio19 &spim3_mosi_gpio23
+		     &spim3_sclk_gpio18 &spim3_csel_gpio5>;
+	pinctrl-names = "default";
+
+	ili9341: ili9341@0 {
+		compatible = "ilitek,ili9341";
+		label = "DISPLAY";
+		spi-max-frequency = <25000000>;
+		reg = <0>;
+		cmd-data-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		pixel-format = <0>;
+		rotation = <270>;
+		width = <320>;
+		height = <240>;
+	};
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&timer3 {
+	status = "okay";
 };
 
 &trng0 {
 	status = "okay";
+};
+
+&flash0 {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserve 60kB for the bootloader */
+		boot_partition: partition@1000 {
+			label = "mcuboot";
+			reg = <0x00001000 0x0000F000>;
+			read-only;
+		};
+
+		/* Reserve 1024kB for the application in slot 0 */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0x00100000>;
+		};
+
+		/* Reserve 1024kB for the application in slot 1 */
+		slot1_partition: partition@110000 {
+			label = "image-1";
+			reg = <0x00110000 0x00100000>;
+		};
+
+		/* Reserve 256kB for the scratch partition */
+		scratch_partition: partition@210000 {
+			   label = "image-scratch";
+			   reg = <0x00210000 0x00040000>;
+		};
+
+		storage_partition: partition@250000 {
+			label = "storage";
+			reg = <0x00250000 0x00006000>;
+		};
+	};
 };

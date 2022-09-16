@@ -16,10 +16,10 @@
  * interrupt unit. The ARCv2 interrupt unit is highly programmable.
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
 /*
  * @brief Initialize the interrupt unit device driver

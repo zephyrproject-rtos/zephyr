@@ -5,15 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <debug/stack.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/sys/util.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_ADV)
 #define LOG_MODULE_NAME bt_mesh_adv
@@ -221,7 +221,7 @@ int bt_mesh_adv_gatt_send(void)
 		}
 	} else if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
 		BT_DBG("PB-GATT Advertising");
-		return bt_mesh_pb_gatt_adv_start();
+		return bt_mesh_pb_gatt_srv_adv_start();
 	}
 
 	return -ENOTSUP;

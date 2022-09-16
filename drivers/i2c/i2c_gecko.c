@@ -7,15 +7,15 @@
 #define DT_DRV_COMPAT silabs_gecko_i2c
 
 #include <errno.h>
-#include <drivers/i2c.h>
-#include <sys/util.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
 #include <em_cmu.h>
 #include <em_i2c.h>
 #include <em_gpio.h>
 #include <soc.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_gecko);
 
 #include "i2c-priv.h"
@@ -225,7 +225,7 @@ static struct i2c_gecko_data i2c_gecko_data_##idx; \
 I2C_DEVICE_DT_INST_DEFINE(idx, i2c_gecko_init, \
 		 NULL, \
 		 &i2c_gecko_data_##idx, &i2c_gecko_config_##idx, \
-		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+		 POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, \
 		 &i2c_gecko_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_INIT)

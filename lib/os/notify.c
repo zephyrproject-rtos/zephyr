@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/notify.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/notify.h>
 
 int sys_notify_validate(struct sys_notify *notify)
 {

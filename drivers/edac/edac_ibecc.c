@@ -6,18 +6,18 @@
 
 #define DT_DRV_COMPAT intel_ibecc
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/pcie/pcie.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pcie/pcie.h>
 
-#include <drivers/edac.h>
+#include <zephyr/drivers/edac.h>
 #include "ibecc.h"
 
 /**
  * In the driver 64 bit registers are used and not all of then at the
  * moment may be correctly logged.
  */
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(edac_ibecc, CONFIG_EDAC_LOG_LEVEL);
 
 #define DEVICE_NODE DT_NODELABEL(ibecc)
@@ -307,6 +307,12 @@ static int edac_ibecc_init(const struct device *dev)
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU11):
 		__fallthrough;
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU12):
+		__fallthrough;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU13):
+		__fallthrough;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU14):
+		__fallthrough;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU15):
 		break;
 	default:
 		LOG_ERR("PCI Probe failed"); /* LCOV_EXCL_BR_LINE */

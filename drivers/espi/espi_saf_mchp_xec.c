@@ -7,12 +7,12 @@
 
 #define DT_DRV_COMPAT microchip_xec_espi_saf
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <errno.h>
-#include <drivers/espi.h>
-#include <drivers/espi_saf.h>
-#include <logging/log.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi_saf.h>
+#include <zephyr/logging/log.h>
 
 #include "espi_utils.h"
 LOG_MODULE_REGISTER(espi_saf, CONFIG_ESPI_LOG_LEVEL);
@@ -659,7 +659,7 @@ static int check_ecp_access_size(uint32_t reqlen)
 }
 
 /*
- * EC access (read/erase/write) to SAF atttached flash array
+ * EC access (read/erase/write) to SAF attached flash array
  * cmd  0 = read
  *	1 = write
  *	2 = erase

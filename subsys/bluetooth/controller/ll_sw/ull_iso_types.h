@@ -25,7 +25,16 @@
 #define IS_CIS_HANDLE(_handle) 0
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
-/* Common memebers for ll_conn_iso_stream and ll_broadcast_iso_stream */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+#define IS_ADV_ISO_HANDLE(_handle) \
+	(((_handle) >= BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE) && \
+	((_handle) <= (BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE + BT_CTLR_ADV_ISO_STREAM_MAX - 1)))
+#else
+#define IS_ADV_ISO_HANDLE(_handle) 0
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
+/* Common members for ll_conn_iso_stream and ll_broadcast_iso_stream */
 struct ll_iso_stream_hdr {
 	struct ll_iso_datapath *datapath_in;
 	struct ll_iso_datapath *datapath_out;
@@ -37,4 +46,5 @@ struct ll_iso_datapath {
 	uint8_t  coding_format;
 	uint16_t company_id;
 	isoal_sink_handle_t sink_hdl;
+	isoal_source_handle_t source_hdl;
 };

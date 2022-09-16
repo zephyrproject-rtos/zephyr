@@ -19,7 +19,7 @@
 	 * Radio peripheral. The pins will be acquired by Radio to
 	 * drive antenna switching when AoA is enabled.
 	 * Pin numbers are selected to drive switches on antenna matrix
-	 * desinged by Nordic. For more information see README.rst.
+	 * designed by Nordic. For more information see README.rst.
 	 */
 	dfegpio0-gpios = <&gpio0 3 0>;
 	dfegpio1-gpios = <&gpio0 4 0>;

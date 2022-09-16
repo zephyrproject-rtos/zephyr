@@ -9,19 +9,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_route, CONFIG_NET_ROUTE_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <limits.h>
 #include <zephyr/types.h>
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
-#include <net/net_pkt.h>
-#include <net/net_core.h>
-#include <net/net_stats.h>
-#include <net/net_mgmt.h>
-#include <net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_ip.h>
 
 #include "net_private.h"
 #include "ipv6.h"
@@ -41,7 +41,7 @@ static sys_slist_t routes;
 /* Track currently active route lifetime timers */
 static sys_slist_t active_route_lifetime_timers;
 
-/* Timer that manages expired route entires. */
+/* Timer that manages expired route entries. */
 static struct k_work_delayable route_lifetime_timer;
 
 static K_MUTEX_DEFINE(lock);

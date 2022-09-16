@@ -5,11 +5,11 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <cmsis_os.h>
 
-#include <irq_offload.h>
-#include <kernel_structs.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/kernel_structs.h>
 
 #define TIMEOUT		(100)
 #define SIGNAL1		(0x00000020)

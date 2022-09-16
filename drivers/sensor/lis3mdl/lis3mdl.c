@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT st_lis3mdl_magn
 
-#include <drivers/i2c.h>
-#include <init.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "lis3mdl.h"
 
@@ -33,7 +33,7 @@ static int lis3mdl_channel_get(const struct device *dev,
 	struct lis3mdl_data *drv_data = dev->data;
 
 	if (chan == SENSOR_CHAN_MAGN_XYZ) {
-		/* magn_val = sample / mang_gain */
+		/* magn_val = sample / magn_gain */
 		lis3mdl_convert(val, drv_data->x_sample,
 				lis3mdl_magn_gain[LIS3MDL_FS_IDX]);
 		lis3mdl_convert(val + 1, drv_data->y_sample,
@@ -49,10 +49,12 @@ static int lis3mdl_channel_get(const struct device *dev,
 	} else if (chan == SENSOR_CHAN_MAGN_Z) {
 		lis3mdl_convert(val, drv_data->z_sample,
 				lis3mdl_magn_gain[LIS3MDL_FS_IDX]);
-	} else { /* chan == SENSOR_CHAN_DIE_TEMP */
+	} else if (chan == SENSOR_CHAN_DIE_TEMP) {
 		/* temp_val = 25 + sample / 8 */
 		lis3mdl_convert(val, drv_data->temp_sample, 8);
 		val->val1 += 25;
+	} else {
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -68,7 +70,7 @@ int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	/* fetch magnetometer sample */
 	if (i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
 			   LIS3MDL_REG_SAMPLE_START, (uint8_t *)buf, 8) < 0) {
-		LOG_DBG("Failed to fetch megnetometer sample.");
+		LOG_DBG("Failed to fetch magnetometer sample.");
 		return -EIO;
 	}
 

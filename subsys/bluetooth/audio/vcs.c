@@ -8,17 +8,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/byteorder.h>
-#include <sys/check.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/audio/vcs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/vcs.h>
 
 #include "vcs_internal.h"
 
@@ -242,8 +242,8 @@ static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 #define DUMMY_INCLUDE(i, _) BT_GATT_INCLUDE_SERVICE(NULL),
-#define VOCS_INCLUDES(cnt) UTIL_LISTIFY(cnt, DUMMY_INCLUDE)
-#define AICS_INCLUDES(cnt) UTIL_LISTIFY(cnt, DUMMY_INCLUDE)
+#define VOCS_INCLUDES(cnt) LISTIFY(cnt, DUMMY_INCLUDE, ())
+#define AICS_INCLUDES(cnt) LISTIFY(cnt, DUMMY_INCLUDE, ())
 
 #define BT_VCS_SERVICE_DEFINITION \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_VCS), \

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <drivers/gpio.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
 
 #define GPIO0 DT_LABEL(DT_NODELABEL(gpio0))
 #define POWER_LATCH_PIN 31

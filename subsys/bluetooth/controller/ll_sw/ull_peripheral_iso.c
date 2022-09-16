@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <bluetooth/buf.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "util/memq.h"
 #include "util/mayfly.h"
@@ -92,6 +92,7 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 {
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
+	uint16_t handle;
 
 	/* Get CIG by id */
 	cig = ll_conn_iso_group_get_by_id(req->cig_id);
@@ -106,8 +107,9 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 		memset(&cig->lll, 0, sizeof(cig->lll));
 
 		cig->cig_id = req->cig_id;
-		cig->lll.handle = 0xFFFF;
+		cig->lll.handle = LLL_HANDLE_INVALID;
 		cig->lll.role = acl->lll.role;
+		cig->lll.resume_cis = LLL_HANDLE_INVALID;
 
 		ull_hdr_init(&cig->ull);
 		lll_hdr_init(&cig->lll, cig);
@@ -118,6 +120,14 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
+	for (handle = LL_CIS_HANDLE_BASE; handle <= LAST_VALID_CIS_HANDLE; handle++) {
+		cis = ll_iso_stream_connected_get(handle);
+		if (cis && cis->cis_id == req->cis_id) {
+			/* CIS ID already in use */
+			return BT_HCI_ERR_INVALID_LL_PARAM;
+		}
+	}
+
 	/* Acquire new CIS */
 	cis = ll_conn_iso_stream_acquire();
 	if (cis == NULL) {
@@ -125,11 +135,13 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
-	cig->iso_interval   = sys_le16_to_cpu(req->iso_interval);
-	cig->c_sdu_interval = sys_get_le24(req->c_sdu_interval);
-	cig->p_sdu_interval = sys_get_le24(req->p_sdu_interval);
+	cig->iso_interval = sys_le16_to_cpu(req->iso_interval);
+	/* Read 20-bit SDU intervals (mask away RFU bits) */
+	cig->c_sdu_interval = sys_get_le24(req->c_sdu_interval) & 0x0FFFFF;
+	cig->p_sdu_interval = sys_get_le24(req->p_sdu_interval) & 0x0FFFFF;
 
 	cis->cis_id = req->cis_id;
+	cis->framed = (req->c_max_sdu_packed[1] & BIT(7)) >> 7;
 	cis->established = 0;
 	cis->group = cig;
 	cis->teardown = 0;
@@ -143,16 +155,28 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->lll.sn = 0;
 	cis->lll.nesn = 0;
 	cis->lll.cie = 0;
+	cis->lll.flushed = 0;
+	cis->lll.datapath_ready_rx = 0;
 
 	cis->lll.rx.phy = req->c_phy;
 	cis->lll.rx.burst_number = req->c_bn;
 	cis->lll.rx.flush_timeout = req->c_ft;
 	cis->lll.rx.max_octets = sys_le16_to_cpu(req->c_max_pdu);
+	cis->lll.rx.payload_number = 0;
 
 	cis->lll.tx.phy = req->p_phy;
 	cis->lll.tx.burst_number = req->p_bn;
 	cis->lll.tx.flush_timeout = req->p_ft;
 	cis->lll.tx.max_octets = sys_le16_to_cpu(req->p_max_pdu);
+	cis->lll.tx.payload_number = 0;
+
+	if (!cis->lll.link_tx_free) {
+		cis->lll.link_tx_free = &cis->lll.link_tx;
+	}
+
+	memq_init(cis->lll.link_tx_free, &cis->lll.memq_tx.head,
+		  &cis->lll.memq_tx.tail);
+	cis->lll.link_tx_free = NULL;
 
 	*cis_handle = ll_conn_iso_stream_handle_get(cis);
 	cig->lll.num_cis++;
@@ -198,11 +222,13 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	static struct lll_prepare_param p;
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
+	uint64_t leading_event_count;
 	uint16_t handle_iter;
 	uint32_t err;
 	uint8_t ref;
 
 	cig = param;
+	leading_event_count = 0;
 
 	/* Check if stopping ticker (on disconnection, race with ticker expiry)
 	 */
@@ -225,7 +251,25 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		 */
 		if (cis->lll.handle != 0xFFFF) {
 			cis->lll.event_count++;
+
+
+			leading_event_count = MAX(leading_event_count,
+						cis->lll.event_count);
 		}
+
+		/* Latch datapath validity entering event */
+		cis->lll.datapath_ready_rx = cis->hdr.datapath_out != NULL;
+	}
+
+	/* Update the CIG reference point for this event. Event 0 for the
+	 * leading CIS in the CIG would have had it's reference point set in
+	 * ull_peripheral_iso_start(). The reference point should only be
+	 * updated from event 1 onwards. Although the cig reference point set
+	 * this way is not accurate, it is the best possible until the anchor
+	 * point for the leading CIS is available for this event.
+	 */
+	if (leading_event_count > 0) {
+		cig->cig_ref_point += (cig->iso_interval * CONN_INT_UNIT_US);
 	}
 
 	/* Increment prepare reference count */
@@ -252,7 +296,8 @@ static void ticker_op_cb(uint32_t status, void *param)
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
 
-void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire)
+void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
+			      uint16_t cis_handle)
 {
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
@@ -262,17 +307,12 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire)
 	uint32_t ticks_interval;
 	uint32_t ticker_status;
 	int32_t cig_offset_us;
-	uint16_t handle_iter;
-	uint16_t cis_handle;
 	uint8_t ticker_id;
 
-	cis_handle = acl->llcp_cis.cis_handle;
-
-	cig = ll_conn_iso_group_get_by_id(acl->llcp_cis.cig_id);
 	cis = ll_conn_iso_stream_get(cis_handle);
+	cig = cis->group;
 
 	cis_offs_to_cig_ref = cig->sync_delay - cis->sync_delay;
-	handle_iter = UINT16_MAX;
 
 	cis->lll.offset = cis_offs_to_cig_ref;
 	cis->lll.handle = cis_handle;
@@ -281,17 +321,7 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire)
 	 * running. If so, we just return with updated offset and
 	 * validated handle.
 	 */
-	for (int i = 0; i < cig->lll.num_cis; i++) {
-		struct ll_conn_iso_stream *other_cis;
-
-		other_cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
-		LL_ASSERT(other_cis);
-
-		if (other_cis == cis || other_cis->lll.handle == 0xFFFF) {
-			/* Same CIS or not valid - skip */
-			continue;
-		}
-
+	if (cig->started) {
 		/* We're done */
 		return;
 	}
@@ -312,7 +342,9 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire)
 	ready_delay_us = lll_radio_rx_ready_delay_get(0, 0);
 #endif
 
+	/* Calculate initial ticker offset - we're one ACL interval early */
 	cig_offset_us  = acl_to_cig_ref_point;
+	cig_offset_us += (acl->lll.interval * CONN_INT_UNIT_US);
 	cig_offset_us -= EVENT_OVERHEAD_START_US;
 	cig_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	cig_offset_us -= EVENT_JITTER_US;
@@ -322,6 +354,14 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire)
 	 * by skipping <n> interval(s) and incrementing event_count.
 	 */
 	LL_ASSERT(cig_offset_us > 0);
+
+	/* Calculate the CIG reference point of first CIG event. This
+	 * calculation is inaccurate. However it is the best estimate available
+	 * until the first anchor point for the leading CIS is available.
+	 */
+	cig->cig_ref_point = HAL_TICKER_TICKS_TO_US(ticks_at_expire);
+	cig->cig_ref_point += acl_to_cig_ref_point;
+	cig->cig_ref_point += (acl->lll.interval * CONN_INT_UNIT_US);
 
 	/* Start CIS peripheral CIG ticker */
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
@@ -338,4 +378,6 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire)
 
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
+
+	cig->started = 1;
 }

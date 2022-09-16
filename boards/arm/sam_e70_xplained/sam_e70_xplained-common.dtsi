@@ -7,11 +7,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sam_e70_xplained-pinctrl.dtsi"
+
 / {
 	aliases {
 		i2c-0 = &twihs0;
-		i2c-1 = &twihs1;
-		i2c-2 = &twihs2;
+		i2c-1 = &twihs2;
 		led0 = &green_led;
 		sw0 = &sw0_user_button;
 	};
@@ -52,10 +53,16 @@
 
 &afec0 {
 	status = "okay";
+
+	pinctrl-0 = <&afec0_default>;
+	pinctrl-names = "default";
 };
 
 &afec1 {
 	status = "okay";
+
+	pinctrl-0 = <&afec1_default>;
+	pinctrl-names = "default";
 };
 
 &dacc {
@@ -64,20 +71,34 @@
 
 &twihs0 {
 	status = "okay";
+
+	pinctrl-0 = <&twihs0_default>;
+	pinctrl-names = "default";
 };
 
 &twihs2 {
 	status = "okay";
+
+	pinctrl-0 = <&twihs2_default>;
+	pinctrl-names = "default";
 };
 
 &spi0 {
 	status = "okay";
-	pinctrl-0 = <&pc26c_spi1_miso &pc27c_spi1_mosi &pc24c_spi1_spck &pd27b_spi0_npcs3>;
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&piod 25 GPIO_ACTIVE_LOW>,
+		   <&piod 27 GPIO_ACTIVE_LOW>;
 };
 
 &usart1 {
-	current-speed = <115200>;
 	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
 };
 
 &wdt {
@@ -91,6 +112,9 @@ zephyr_udc0: &usbhs {
 &gmac {
 	status = "okay";
 
+	pinctrl-0 = <&gmac_rmii>;
+	pinctrl-names = "default";
+
 	phy: phy {
 		compatible = "ethernet-phy";
 		status = "okay";
@@ -101,10 +125,16 @@ zephyr_udc0: &usbhs {
 
 &mdio {
 	status = "okay";
+
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
 };
 
 &pwm0 {
 	status = "okay";
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
 };
 
 &flash0 {
@@ -126,7 +156,7 @@ zephyr_udc0: &usbhs {
 		/* From sector 1 to sector 7 (included): slot0 (896 kbytes) */
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x0020000 0x000e0000>;
+			reg = <0x00020000 0x000e0000>;
 		};
 
 		/* From sector 8 to sector 14 (included): slot1 (896 kbytes) */
@@ -146,19 +176,24 @@ zephyr_udc0: &usbhs {
 &ssc {
 	status = "okay";
 	label = "I2S_0";
+
+	pinctrl-0 = <&ssc_default>;
+	pinctrl-names = "default";
+
 	dma-names = "rx", "tx";
 	dmas = <&xdmac 22 DMA_PERID_SSC_RX>, <&xdmac 23 DMA_PERID_SSC_TX>;
-	pinctrl-0 = <&pd24b_ssc_rf &pa22a_ssc_rk &pa10c_ssc_rd
-		     &pb0d_ssc_tf &pb1d_ssc_tk &pb5d_ssc_td>;
 };
 
 &can0 {
 	status = "okay";
-	pinctrl-0 = <&pb3a_can0_rx0 &pb2a_can0_tx0>;
+
+	pinctrl-0 = <&can0_default>;
+	pinctrl-names = "default";
+
 	bus-speed = <125000>;
-	sjw = <1>;
-	sample-point = <875>;
 	bus-speed-data = <1000000>;
-	sjw-data = <1>;
-	sample-point-data = <875>;
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
 };

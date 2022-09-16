@@ -6,10 +6,10 @@
 
 #include <stdio.h>
 
-#include <zephyr.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-#include <data/json.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/data/json.h>
 
 #include "mbedtls/pk.h"
 #include "mbedtls/x509.h"
@@ -40,7 +40,7 @@ static const struct json_obj_descr csr_json_descr[] = {
 /**
  * @brief Extracts the public key from the specified persistent key id.
  *
- * @param key_id        The permament identifier for the generated key.
+ * @param key_id        The permanent identifier for the generated key.
  * @param key           Pointer to the buffer where the public key data
  *                      will be written.
  * @param key_buf_size  Size of key buffer in bytes.
@@ -213,11 +213,11 @@ err:
  * @brief Generates a new permanent, persistent prime256v1 (ecdsa-with-SHA256)
  *        key in ITS, associating it with the specified unique key identifier.
  *
- * This function will generate a new permament prime256v1 key in internal trusted
+ * This function will generate a new permanent prime256v1 key in internal trusted
  * storage. Cryptographic operations can then be performed using the key
  * identifier (key_id) associated with this persistent key.
  *
- * @param key_id        The permament identifier for the generated key.
+ * @param key_id        The permanent identifier for the generated key.
  * @param key_usage     The usage policy for the key.
  */
 static psa_status_t crp_gen_key_secp256r1(psa_key_id_t key_id,
@@ -841,7 +841,7 @@ void crp_test(void)
 
 	/* Sign the hash using key #1. */
 	status = crp_sign_hash(1,
-			       hash, sizeof(hash),
+			       hash, hash_len,
 			       sig, sizeof(sig), &sig_len);
 
 	/* Verify the hash signature using the public key. */

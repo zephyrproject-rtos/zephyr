@@ -3,14 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <logging/log.h>
-#include <sys/p4wq.h>
-#include <wait_q.h>
-#include <kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/p4wq.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <init.h>
+#include <zephyr/init.h>
 
-LOG_MODULE_REGISTER(p4wq);
+LOG_MODULE_REGISTER(p4wq, CONFIG_LOG_DEFAULT_LEVEL);
 
 struct device;
 

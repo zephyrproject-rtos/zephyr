@@ -5,7 +5,7 @@ description: NXP i.MX LPI2C controller
 
 compatible: "nxp,imx-lpi2c"
 
-include: i2c-controller.yaml
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_IMG_PRIV_
-#define H_IMG_PRIV_
+#ifndef H_IMG_MGMT_PRIV_
+#define H_IMG_MGMT_PRIV_
 
 #include <stdint.h>
 
@@ -59,17 +59,13 @@ extern "C" {
 
 struct mgmt_ctxt;
 
-int img_mgmt_core_erase(struct mgmt_ctxt *ctxt);
-int img_mgmt_core_list(struct mgmt_ctxt *ctxt);
-int img_mgmt_core_load(struct mgmt_ctxt *ctxt);
 int img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver);
 int img_mgmt_find_by_ver(struct image_version *find, uint8_t *hash);
 int img_mgmt_state_read(struct mgmt_ctxt *ctxt);
 int img_mgmt_state_write(struct mgmt_ctxt *njb);
-int img_mgmt_ver_str(const struct image_version *ver, char *dst);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __IMG_PRIV_H */
+#endif /* __IMG_MGMT_PRIV_H */

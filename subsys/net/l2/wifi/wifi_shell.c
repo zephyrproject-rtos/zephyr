@@ -8,19 +8,19 @@
  * @brief WiFi shell module
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <shell/shell.h>
-#include <sys/printk.h>
-#include <init.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/init.h>
 
-#include <net/net_if.h>
-#include <net/wifi_mgmt.h>
-#include <net/net_event.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/net_event.h>
 
 #include "net_private.h"
 

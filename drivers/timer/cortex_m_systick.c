@@ -3,11 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <device.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
-#include <spinlock.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000

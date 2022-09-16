@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT intel_cavs_idc
 
 #include <stdint.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/ipm.h>
-#include <arch/common/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/arch/common/sys_io.h>
 
 #include <soc.h>
 

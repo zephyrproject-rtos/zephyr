@@ -10,7 +10,7 @@
 #ifndef ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_
 #define ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_
 
-#include "kernel.h"
+#include <zephyr/kernel.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -20,19 +20,19 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <sys_clock.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys_clock.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #define WAIT_SECONDS 30                         /* seconds */
 #define WAIT_TIME (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
 
-#define WAIT_FOR(cond) while (!(cond)) { k_sleep(K_MSEC(1)); }
+#define WAIT_FOR_COND(cond) while (!(cond)) { k_sleep(K_MSEC(1)); }
 
 #define CREATE_FLAG(flag) static atomic_t flag = (atomic_t)false
 #define SET_FLAG(flag) (void)atomic_set(&flag, (atomic_t)true)
@@ -57,6 +57,7 @@
 
 #define AD_SIZE 1
 extern const struct bt_data ad[AD_SIZE];
+extern struct bt_conn *default_conn;
 
 void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		  struct net_buf_simple *ad);

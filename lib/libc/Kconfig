@@ -121,8 +121,18 @@ endif # NEWLIB_LIBC
 
 if MINIMAL_LIBC
 
+config MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS
+	bool "Non-reentrant functions"
+	default y if !USERSPACE
+	select NEED_LIBC_MEM_PARTITION
+	help
+	  Enable non-reentrant functions that make use of the globals; e.g.
+	  rand() and gmtime(). The globals must be put into a dedicated C
+	  library memory partition when CONFIG_USERSPACE=y, and enabling this
+	  option may require an additional memory protection region.
+
 config MINIMAL_LIBC_MALLOC
-	bool "Enable minimal libc malloc implementation"
+	bool "Minimal libc malloc implementation"
 	default y
 	help
 	  Enable the minimal libc's implementation of malloc, free, and realloc.
@@ -137,14 +147,14 @@ config MINIMAL_LIBC_MALLOC_ARENA_SIZE
 	  minimal libc's malloc() implementation.
 
 config MINIMAL_LIBC_CALLOC
-	bool "Enable minimal libc trivial calloc implementation"
+	bool "Minimal libc trivial calloc implementation"
 	default y
 	help
 	  Enable the minimal libc's trivial implementation of calloc, which
 	  forwards to malloc and memset.
 
 config MINIMAL_LIBC_REALLOCARRAY
-	bool "Enable minimal libc trivial reallocarray implementation"
+	bool "Minimal libc trivial reallocarray implementation"
 	default y
 	help
 	  Enable the minimal libc's trivial implementation of reallocarray, which
@@ -165,17 +175,24 @@ config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 	  memset. On the Cortex-M0+ this reduces the total code size by 120 bytes.
 
 config MINIMAL_LIBC_RAND
-	bool "Enables rand and srand functions"
-	select NEED_LIBC_MEM_PARTITION
+	bool "Rand and srand functions"
 	help
-	  Enable rand() and srand() for the minimal libc. The
-	  functions implicitly access global/static data.  Such data
-	  must be put into a memory partition if CONFIG_USERSPACE=y,
-	  and disabling this option may save an entry for application
-	  defining many custom partitions.
+	  Enable rand_r() for the minimal libc.
 
-	  Say 'Y' here if you need rand() and srand(). This might require
-	  an additional memory partition.
+	  In order to make use of the non-reentrant rand() and srand(), it is
+	  necessary to set CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y.
+
+config MINIMAL_LIBC_TIME
+	bool "Time functions"
+	default y
+	help
+	  Enable time() and gmtime_r() for the minimal libc.
+
+	  time() requires CONFIG_POSIX_CLOCK=y because it relies on the POSIX
+	  clock_gettime() function.
+
+	  In order to make use of the non-reentrant gmtime(), it is necessary
+	  to set CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y.
 
 endif # MINIMAL_LIBC
 
@@ -193,7 +210,7 @@ config NEED_LIBC_MEM_PARTITION
 	bool
 	help
 	  Hidden option to signal that a memory partition is needed for
-	  the C libraray even though it would not have been enabled
+	  the C library even though it would not have been enabled
 	  otherwise.
 
 endmenu

@@ -3,12 +3,14 @@
 
 choice LOG_MODE
 	prompt "Mode"
+	depends on !LOG_FRONTEND_ONLY
 	default LOG_MODE_MINIMAL if LOG_DEFAULT_MINIMAL
 	default LOG_MODE_IMMEDIATE if LOG2_MODE_IMMEDIATE
 	default LOG_MODE_DEFERRED
 
 config LOG_MODE_DEFERRED
 	bool "Deferred logging"
+	depends on !LOG2_MODE_IMMEDIATE
 	help
 	  Log messages are buffered and processed later. This mode has the
 	  least impact on the application. Time consuming processing is
@@ -16,6 +18,7 @@ config LOG_MODE_DEFERRED
 
 config LOG_MODE_IMMEDIATE
 	bool "Synchronous"
+	depends on !LOG2_MODE_DEFERRED
 	help
 	  When enabled log is processed in the context of the call. It impacts
 	  performance of the system since time consuming operations are
@@ -27,6 +30,8 @@ config LOG_MODE_IMMEDIATE
 config LOG_MODE_MINIMAL
 	bool "Minimal-footprint"
 	imply PRINTK
+	depends on !LOG2_MODE_DEFERRED
+	depends on !LOG2_MODE_IMMEDIATE
 	help
 	  Enable minimal logging implementation. This has very little footprint
 	  overhead on top of the printk() implementation for standard
@@ -36,14 +41,23 @@ config LOG_MODE_MINIMAL
 	  colors, or asynchronous logging, and all messages are simply
 	  sent to printk().
 
+endchoice
+
 config LOG_FRONTEND
 	bool "Frontend"
+	depends on !LOG2_MODE_DEFERRED
+	depends on !LOG2_MODE_IMMEDIATE
 	help
-	  When enabled, logs are redirected to a custom frontend instead
-	  of being processed by the logger. In this mode runtime filtering and
-	  multiple backends are not used.
+	  When enabled, logs are redirected to a custom frontend which is the
+	  fastest way of getting logs out.
 
-endchoice
+config LOG_FRONTEND_ONLY
+	bool "No backends" if !LOG1
+	default y if LOG1
+	depends on LOG_FRONTEND
+	help
+	  Option indicates that there are no backends intended to be used.
+	  Code asserts if any backend is enabled.
 
 config LOG2_MODE_DEFERRED
 	bool "Deferred v2 (DEPRECATED)"

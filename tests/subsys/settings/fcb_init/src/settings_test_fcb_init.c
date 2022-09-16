@@ -7,13 +7,13 @@
 #include <stdio.h>
 #include <ztest.h>
 
-#include <zephyr.h>
-#include <sys/reboot.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/reboot.h>
 #include <string.h>
 
-#include <settings/settings.h>
-#include <storage/flash_map.h>
-#include <drivers/flash.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/flash.h>
 
 static uint32_t val32;
 
@@ -23,7 +23,7 @@ static uint32_t val32;
 #define ERASED_VAL 0xFF
 #endif
 
-/* leverage that this area has to be embededd flash part */
+/* leverage that this area has to be embedded flash part */
 #if FLASH_AREA_LABEL_EXISTS(image_0)
 #define FLASH_WRITE_BLOCK_SIZE \
 	DT_PROP(DT_CHOSEN(zephyr_flash), write_block_size)
@@ -113,7 +113,7 @@ void test_prepare_storage(void)
 	}
 #else
 	TC_PRINT("Storage preparation can't be performed\r\n");
-	TC_PRINT("Erase storage manually before test flashin\r\n");
+	TC_PRINT("Erase storage manually before test flashing\r\n");
 #endif
 }
 
@@ -127,7 +127,7 @@ void test_init_setup(void)
 	zassert_true(err == 0, "subsys init failed");
 
 	err = settings_register(&c1_settings);
-	zassert_true(err == 0, "can't regsister the settings handler");
+	zassert_true(err == 0, "can't register the settings handler");
 
 	err = settings_load();
 	zassert_true(err == 0, "can't load settings");
@@ -144,7 +144,7 @@ void test_init_setup(void)
 void test_main(void)
 {
 	/* Bellow call is not used as a test setup intentionally.    */
-	/* It causes device reboota at the first device run after it */
+	/* It causes device reboot at the first device run after it */
 	/* was flashed. */
 	test_init_setup();
 

@@ -6,9 +6,9 @@
 
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
-#include <dt-bindings/clock/mcux_lpc_syscon_clock.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	chosen {
@@ -44,10 +44,10 @@
 	};
 
 	sram1: memory@40140000 {
-		compatible = "mmio-sram";
+		compatible =  "zephyr,memory-region", "mmio-sram";
 		reg = <0x40140000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM1";
 	};
-
 };
 
 &systick {
@@ -73,6 +73,14 @@
 		reg = <0x1000 0x1000>;
 		label = "CLKCTL_0";
 		#clock-cells = <1>;
+	};
+
+	iocon: iocon@4000 {
+		compatible = "nxp,lpc-iocon";
+		reg = <0x4000 0x1000>;
+		pinctrl: pinctrl {
+			compatible = "nxp,rt-iocon-pinctrl";
+		};
 	};
 
 	clkctl1: clkctl@21000 {
@@ -116,6 +124,32 @@
 		port = <2>;
 	};
 
+	gpio3: gpio@3 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x1000>;
+		label = "GPIO_3";
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <3>;
+	};
+
+	gpio4: gpio@4 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x1000>;
+		label = "GPIO_4";
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <4>;
+	};
+
+	gpio7: gpio@7 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x1000>;
+		label = "GPIO_7";
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <7>;
+	};
 
 	flexcomm0: flexcomm@106000 {
 		compatible = "nxp,lpc-flexcomm";
@@ -273,7 +307,7 @@
 		status = "disabled";
 		prescaler = <8>;
 		label = "SC_TIMER";
-		#pwm-cells = <2>;
+		#pwm-cells = <3>;
 	};
 
 	wwdt0: watchdog@e000 {
@@ -300,7 +334,11 @@
 		status = "disabled";
 		interrupts = <45 0>;
 		clocks = <&clkctl1 MCUX_USDHC1_CLK>;
-		label = "USDHC_1";
+		label = "SDHC_0";
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <208000000>;
+		min-bus-freq = <400000>;
 	};
 
 	usdhc2: usdhc@137000 {
@@ -309,7 +347,11 @@
 		status = "disabled";
 		interrupts = <46 0>;
 		clocks = <&clkctl1 MCUX_USDHC2_CLK>;
-		label = "USDHC_2";
+		label = "SDHC_1";
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <208000000>;
+		min-bus-freq = <400000>;
 	};
 
 	lpadc0: lpadc@13A0000 {

@@ -16,19 +16,20 @@
 #define DT_DRV_COMPAT microchip_xec_uart
 
 #include <errno.h>
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/types.h>
 #include <soc.h>
 
-#include <init.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <drivers/clock_control/mchp_xec_clock_control.h>
-#include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
-#include <drivers/uart.h>
-#include <sys/sys_io.h>
-#include <spinlock.h>
+#include <zephyr/init.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
+#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/spinlock.h>
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_SOC_SERIES_MEC172X),
 	     "XEC UART driver only support MEC172x at this time");
@@ -173,6 +174,7 @@ struct uart_xec_device_config {
 	uint8_t girq_pos;
 	uint8_t pcr_idx;
 	uint8_t pcr_bitpos;
+	const struct pinctrl_dev_config *pcfg;
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	uart_irq_config_func_t	irq_config_func;
 #endif
@@ -363,6 +365,11 @@ static int uart_xec_init(const struct device *dev)
 
 	ret = z_mchp_xec_pcr_periph_sleep(dev_cfg->pcr_idx,
 					  dev_cfg->pcr_bitpos, 0);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
 		return ret;
 	}
@@ -869,6 +876,9 @@ static const struct uart_driver_api uart_xec_driver_api = {
 	DT_INST_PROP_OR(n, hw_flow_control, UART_CFG_FLOW_CTRL_NONE)
 
 #define UART_XEC_DEVICE_INIT(n)						\
+									\
+	PINCTRL_DT_INST_DEFINE(n);					\
+									\
 	UART_XEC_IRQ_FUNC_DECLARE(n);					\
 									\
 	static const struct uart_xec_device_config uart_xec_dev_cfg_##n = { \
@@ -878,6 +888,7 @@ static const struct uart_driver_api uart_xec_driver_api = {
 		.girq_pos = DT_INST_PROP_BY_IDX(n, girqs, 1),		\
 		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),		\
 		.pcr_bitpos = DT_INST_PROP_BY_IDX(n, pcrs, 1),		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		DEV_CONFIG_IRQ_FUNC_INIT(n)				\
 	};								\
 	static struct uart_xec_dev_data uart_xec_dev_data_##n = {	\

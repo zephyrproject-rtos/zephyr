@@ -18,6 +18,8 @@ extern "C" {
 
 unsigned long strtoul(const char *nptr, char **endptr, int base);
 long strtol(const char *nptr, char **endptr, int base);
+unsigned long long strtoull(const char *nptr, char **endptr, int base);
+long long strtoll(const char *nptr, char **endptr, int base);
 int atoi(const char *s);
 
 void *malloc(size_t size);
@@ -32,6 +34,8 @@ void *bsearch(const void *key, const void *array,
 
 void qsort_r(void *base, size_t nmemb, size_t size,
 	     int (*compar)(const void *, const void *, void *), void *arg);
+void qsort(void *base, size_t nmemb, size_t size,
+	   int (*compar)(const void *, const void *));
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
@@ -44,6 +48,7 @@ void abort(void);
 
 #ifdef CONFIG_MINIMAL_LIBC_RAND
 #define RAND_MAX INT_MAX
+int rand_r(unsigned int *seed);
 int rand(void);
 void srand(unsigned int seed);
 #endif /* CONFIG_MINIMAL_LIBC_RAND */
@@ -61,14 +66,6 @@ static inline long labs(long __n)
 static inline long long llabs(long long __n)
 {
 	return (__n < 0LL) ? -__n : __n;
-}
-
-static inline void qsort(void *base, size_t nmemb, size_t size,
-	int (*compar)(const void *, const void *))
-{
-	typedef int (*compar3)(const void *, const void *, void *);
-
-	qsort_r(base, nmemb, size, (compar3)compar, NULL);
 }
 
 #ifdef __cplusplus

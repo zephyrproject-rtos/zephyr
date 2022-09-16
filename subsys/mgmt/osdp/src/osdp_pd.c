@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 
 #include <stdlib.h>
@@ -50,7 +50,7 @@ static struct osdp_pd_id osdp_pd_id = {
 };
 
 static struct osdp_pd_cap osdp_pd_cap[] = {
-	/* Driver Implicit cababilities */
+	/* Driver Implicit capabilities */
 	{
 		OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT,
 		1, /* The PD supports the 16-bit CRC-16 mode */
@@ -510,7 +510,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		break;
 	case REPLY_NAK:
 		if (max_len < REPLY_NAK_LEN) {
-			LOG_ERR(TAG "Fatal: insufficent space for sending NAK");
+			LOG_ERR(TAG "Fatal: insufficient space for sending NAK");
 			return -1;
 		}
 		buf[len++] = pd->reply_id;
@@ -585,10 +585,10 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	if (ret != 0) {
 		/* catch all errors and report it as a RECORD error to CP */
-		LOG_ERR(TAG "ReplyID unknown or insufficent space or some other"
+		LOG_ERR(TAG "ReplyID unknown or insufficient space or some other"
 			"error. Sending NAK");
 		if (max_len < REPLY_NAK_LEN) {
-			LOG_ERR(TAG "Fatal: insufficent space for sending NAK");
+			LOG_ERR(TAG "Fatal: insufficient space for sending NAK");
 			return -1;
 		}
 		buf[0] = REPLY_NAK;

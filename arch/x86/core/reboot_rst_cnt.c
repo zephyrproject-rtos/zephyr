@@ -10,8 +10,8 @@
  * @details Implements the required 'arch' sub-APIs.
  */
 
-#include <kernel.h>
-#include <sys/reboot.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/reboot.h>
 
 /* reboot through Reset Control Register (I/O port 0xcf9) */
 

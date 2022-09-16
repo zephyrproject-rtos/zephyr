@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 
 const struct device *get_fuel_gauge_device(void)
 {

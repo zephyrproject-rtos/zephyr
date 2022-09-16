@@ -5,13 +5,13 @@
  */
 
 #include <string.h>
-#include <drivers/i2s.h>
-#include <sys/byteorder.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/sys/byteorder.h>
 #include <soc.h>
-#include <sys/util.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
 #include "i2s_litex.h"
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(i2s_litex);
 
@@ -27,9 +27,9 @@ LOG_MODULE_REGISTER(i2s_litex);
  */
 static void i2s_enable(uintptr_t reg)
 {
-	uint8_t reg_data = litex_read8(reg + I2S_CONTROL_REG_OFFSET);
+	uint8_t reg_data = litex_read8(reg + I2S_CONTROL_OFFSET);
 
-	litex_write8(reg_data | I2S_ENABLE, reg + I2S_CONTROL_REG_OFFSET);
+	litex_write8(reg_data | I2S_ENABLE, reg + I2S_CONTROL_OFFSET);
 }
 
 /**
@@ -39,9 +39,9 @@ static void i2s_enable(uintptr_t reg)
  */
 static void i2s_disable(uintptr_t reg)
 {
-	uint8_t reg_data = litex_read8(reg + I2S_CONTROL_REG_OFFSET);
+	uint8_t reg_data = litex_read8(reg + I2S_CONTROL_OFFSET);
 
-	litex_write8(reg_data & ~(I2S_ENABLE), reg + I2S_CONTROL_REG_OFFSET);
+	litex_write8(reg_data & ~(I2S_ENABLE), reg + I2S_CONTROL_OFFSET);
 }
 
 /**
@@ -51,9 +51,9 @@ static void i2s_disable(uintptr_t reg)
  */
 static void i2s_reset_fifo(uintptr_t reg)
 {
-	uint8_t reg_data = litex_read8(reg + I2S_CONTROL_REG_OFFSET);
+	uint8_t reg_data = litex_read8(reg + I2S_CONTROL_OFFSET);
 
-	litex_write8(reg_data | I2S_FIFO_RESET, reg + I2S_CONTROL_REG_OFFSET);
+	litex_write8(reg_data | I2S_FIFO_RESET, reg + I2S_CONTROL_OFFSET);
 }
 
 /**
@@ -66,7 +66,7 @@ static void i2s_reset_fifo(uintptr_t reg)
  */
 static i2s_fmt_t i2s_get_foramt(uintptr_t reg)
 {
-	uint8_t reg_data = litex_read32(reg + I2S_CONFIG_REG_OFFSET);
+	uint8_t reg_data = litex_read32(reg + I2S_CONFIG_OFFSET);
 
 	reg_data &= I2S_CONF_FORMAT_MASK;
 	if (reg_data == LITEX_I2S_STANDARD) {
@@ -86,7 +86,7 @@ static i2s_fmt_t i2s_get_foramt(uintptr_t reg)
  */
 static uint32_t i2s_get_sample_width(uintptr_t reg)
 {
-	uint32_t reg_data = litex_read32(reg + I2S_CONFIG_REG_OFFSET);
+	uint32_t reg_data = litex_read32(reg + I2S_CONFIG_OFFSET);
 
 	reg_data &= I2S_CONF_SAMPLE_WIDTH_MASK;
 	return reg_data >> I2S_CONF_SAMPLE_WIDTH_OFFSET;
@@ -101,7 +101,7 @@ static uint32_t i2s_get_sample_width(uintptr_t reg)
  */
 static uint32_t i2s_get_audio_freq(uintptr_t reg)
 {
-	uint32_t reg_data = litex_read32(reg + I2S_CONFIG_REG_OFFSET);
+	uint32_t reg_data = litex_read32(reg + I2S_CONFIG_OFFSET);
 
 	reg_data &= I2S_CONF_LRCK_MASK;
 	return reg_data >> I2S_CONF_LRCK_FREQ_OFFSET;
@@ -117,9 +117,9 @@ static void i2s_irq_enable(uintptr_t reg, int irq_type)
 {
 	__ASSERT_NO_MSG(irq_type == I2S_EV_READY || irq_type == I2S_EV_ERROR);
 
-	uint8_t reg_data = litex_read8(reg + I2S_EV_ENABLE_REG_OFFSET);
+	uint8_t reg_data = litex_read8(reg + I2S_EV_ENABLE_OFFSET);
 
-	litex_write8(reg_data | irq_type, reg + I2S_EV_ENABLE_REG_OFFSET);
+	litex_write8(reg_data | irq_type, reg + I2S_EV_ENABLE_OFFSET);
 }
 
 /**
@@ -132,9 +132,9 @@ static void i2s_irq_disable(uintptr_t reg, int irq_type)
 {
 	__ASSERT_NO_MSG(irq_type == I2S_EV_READY || irq_type == I2S_EV_ERROR);
 
-	uint8_t reg_data = litex_read8(reg + I2S_EV_ENABLE_REG_OFFSET);
+	uint8_t reg_data = litex_read8(reg + I2S_EV_ENABLE_OFFSET);
 
-	litex_write8(reg_data & ~(irq_type), reg + I2S_EV_ENABLE_REG_OFFSET);
+	litex_write8(reg_data & ~(irq_type), reg + I2S_EV_ENABLE_OFFSET);
 }
 
 /**
@@ -144,9 +144,9 @@ static void i2s_irq_disable(uintptr_t reg, int irq_type)
  */
 static void i2s_clear_pending_irq(uintptr_t reg)
 {
-	uint8_t reg_data = litex_read8(reg + I2S_EV_PENDING_REG_OFFSET);
+	uint8_t reg_data = litex_read8(reg + I2S_EV_PENDING_OFFSET);
 
-	litex_write8(reg_data, reg + I2S_EV_PENDING_REG_OFFSET);
+	litex_write8(reg_data, reg + I2S_EV_PENDING_OFFSET);
 }
 
 /**
@@ -157,7 +157,7 @@ static void i2s_clear_pending_irq(uintptr_t reg)
  *
  * @param dst memory destination where fifo data will be copied to
  * @param size amount of data to be copied
- * @param sample_width width of signle sample in bits
+ * @param sample_width width of single sample in bits
  * @param channels number of received channels
  */
 static void i2s_copy_from_fifo(uint8_t *dst, size_t size, int sample_width,
@@ -169,7 +169,7 @@ static void i2s_copy_from_fifo(uint8_t *dst, size_t size, int sample_width,
 	if (channels == 2) {
 		for (size_t i = 0; i < size / chan_size; i += 4) {
 			/* using sys_read function, as fifo is not a csr,
-			 * but a contignous memory space
+			 * but a contiguous memory space
 			 */
 			*(dst + i) = sys_read32(I2S_RX_FIFO_ADDR);
 		}
@@ -210,7 +210,7 @@ static void i2s_copy_from_fifo(uint8_t *dst, size_t size, int sample_width,
  *
  * @param src memory from which data will be copied to fifo
  * @param size amount of data to be copied in bytes
- * @param sample_width width of signle sample in bits
+ * @param sample_width width of single sample in bits
  * @param channels number of received channels
  */
 static void i2s_copy_to_fifo(uint8_t *src, size_t size, int sample_width,
@@ -323,18 +323,16 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 	struct i2s_litex_data *const dev_data = dev->data;
 	const struct i2s_litex_cfg *const cfg = dev->config;
 	struct stream *stream;
-	int channels_concatenated;
+	int channels_concatenated = litex_read8(cfg->base + I2S_STATUS_OFFSET);
 	int dev_audio_freq = i2s_get_audio_freq(cfg->base);
 	int channel_div;
 
 	if (dir == I2S_DIR_RX) {
 		stream = &dev_data->rx;
-		channels_concatenated = litex_read8(I2S_RX_STATUS_REG) &
-					I2S_RX_STAT_CHANNEL_CONCATENATED_MASK;
+		channels_concatenated &= I2S_RX_STAT_CHANNEL_CONCATENATED_MASK;
 	} else if (dir == I2S_DIR_TX) {
 		stream = &dev_data->tx;
-		channels_concatenated = litex_read8(I2S_TX_STATUS_REG) &
-					I2S_TX_STAT_CHANNEL_CONCATENATED_MASK;
+		channels_concatenated &= I2S_TX_STAT_CHANNEL_CONCATENATED_MASK;
 	} else if (dir == I2S_DIR_BOTH) {
 		return -ENOSYS;
 	} else {
@@ -369,7 +367,7 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 		(cfg->fifo_depth * (i2s_cfg->word_size / 8)) / channel_div;
 
 	if (i2s_cfg->block_size < req_buf_s) {
-		LOG_ERR("not enough space to allocate signle buffer");
+		LOG_ERR("not enough space to allocate single buffer");
 		LOG_ERR("fifo requires at least %i bytes", req_buf_s);
 		return -EINVAL;
 	} else if (i2s_cfg->block_size != req_buf_s) {
@@ -612,7 +610,7 @@ static const struct i2s_driver_api i2s_litex_driver_api = {
 	static void i2s_litex_irq_config_func_##dir(const struct device *dev); \
 									       \
 	static struct i2s_litex_cfg i2s_litex_cfg_##dir = {                    \
-		.base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_##dir), control), \
+		.base = DT_REG_ADDR(DT_NODELABEL(i2s_##dir)), \
 		.fifo_base =                                                   \
 			DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_##dir), fifo),    \
 		.fifo_depth = DT_PROP(DT_NODELABEL(i2s_##dir), fifo_depth),    \

@@ -4,7 +4,7 @@
 menu "Backends"
 
 config LOG_BACKEND_UART
-	bool "Enable UART backend"
+	bool "UART backend"
 	depends on UART_CONSOLE
 	default y if !SHELL_BACKEND_SERIAL
 	help
@@ -17,49 +17,42 @@ config LOG_BACKEND_UART_ASYNC
 	depends on UART_ASYNC_API
 	depends on !LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX
 
-config LOG_BACKEND_UART_OUTPUT_DICTIONARY
-	bool
-	depends on LOG2
-	select LOG_DICTIONARY_SUPPORT
+config LOG_BACKEND_UART_BUFFER_SIZE
+	int "Number of bytes to buffer in RAM before flushing"
+	default 32 if LOG_BACKEND_UART_ASYNC
+	default 1
 	help
-	  UART backend is in dictionary-based logging output mode.
+	  Sets the number of bytes which can be buffered in RAM before log_output_flush
+	  is automatically called on the backend.
 
-choice LOG_BACKEND_UART_OUTPUT
-	prompt "UART Backend Output Mode"
-	default LOG_BACKEND_UART_OUTPUT_TEXT
+backend = UART
+backend-str = uart
+source "subsys/logging/Kconfig.template.log_format_config"
 
-config LOG_BACKEND_UART_OUTPUT_TEXT
-	bool "Text"
-	help
-	  Output in text.
+if LOG_BACKEND_UART_OUTPUT_DICTIONARY
 
-config LOG_BACKEND_UART_SYST_ENABLE
-	bool "MIPI SyS-T"
-	depends on LOG_BACKEND_UART
-	depends on LOG_MIPI_SYST_ENABLE
-	help
-	  When enabled backend is using UART to output syst format logs.
-
-config LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX
-	bool "Dictionary (hexadecimal)"
-	depends on LOG2
-	select LOG_BACKEND_UART_OUTPUT_DICTIONARY
-	help
-	  Dictionary-based logging output in hexadecimal.
+choice
+	prompt "Dictionary mode output format"
+	default LOG_BACKEND_UART_OUTPUT_DICTIONARY_BIN
 
 config LOG_BACKEND_UART_OUTPUT_DICTIONARY_BIN
 	bool "Dictionary (binary)"
-	depends on LOG2
-	select LOG_BACKEND_UART_OUTPUT_DICTIONARY
 	help
 	  Dictionary-based logging output in binary.
 
+config LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX
+	bool "Dictionary (hexadecimal)"
+	help
+	  Dictionary-based logging output in hexadecimal. Supported only for UART backend.
+
 endchoice
+
+endif # LOG_BACKEND_UART_OUTPUT_DICTIONARY
 
 endif # LOG_BACKEND_UART
 
 config LOG_BACKEND_SWO
-	bool "Enable Serial Wire Output (SWO) backend"
+	bool "Serial Wire Output (SWO) backend"
 	depends on HAS_SWO
 	help
 	  When enabled, backend will use SWO for logging.
@@ -81,16 +74,14 @@ config LOG_BACKEND_SWO_FREQ_HZ
 	  reset. To ensure flawless operation the frequency configured here and
 	  by the SWO viewer program has to match.
 
-config LOG_BACKEND_SWO_SYST_ENABLE
-	bool "Enable SWO syst backend"
-	depends on LOG_MIPI_SYST_ENABLE
-	help
-	  When enabled backend is using SWO to output syst format logs.
+backend = SWO
+backend-str = swo
+source "subsys/logging/Kconfig.template.log_format_config"
 
 endif # LOG_BACKEND_SWO
 
 config LOG_BACKEND_RTT
-	bool "Enable Segger J-Link RTT backend"
+	bool "Segger J-Link RTT backend"
 	depends on USE_SEGGER_RTT
 	default y if !SHELL_BACKEND_RTT
 	select SEGGER_RTT_CUSTOM_LOCKING
@@ -120,12 +111,6 @@ config LOG_BACKEND_RTT_MODE_BLOCK
 	help
 	  Waits until there is enough space in the up-buffer for a message.
 
-config LOG_BACKEND_RTT_SYST_ENABLE
-	bool "Enable RTT syst backend"
-	depends on LOG_MIPI_SYST_ENABLE
-	help
-	  When enabled backend is using RTT to output syst format logs.
-
 config LOG_BACKEND_RTT_MODE_OVERWRITE
 	bool "Overwrite messages if up-buffer full"
 	help
@@ -133,6 +118,10 @@ config LOG_BACKEND_RTT_MODE_OVERWRITE
 	  oldest one.
 
 endchoice
+
+backend = RTT
+backend-str = rtt
+source "subsys/logging/Kconfig.template.log_format_config"
 
 config LOG_BACKEND_RTT_MESSAGE_SIZE
 	int "Size of internal buffer for storing messages."
@@ -197,14 +186,14 @@ config LOG_BACKEND_RTT_FORCE_PRINTK
 endif # LOG_BACKEND_RTT
 
 config LOG_BACKEND_SPINEL
-	bool "Enable OpenThread dedicated Spinel protocol backend"
+	bool "OpenThread dedicated Spinel protocol backend"
 	depends on !LOG_BACKEND_UART
 	depends on NET_L2_OPENTHREAD
 	help
 	  When enabled, backend will use OpenThread dedicated SPINEL protocol for logging.
-	  This protocol is byte oriented and wrapps given messages into serial frames.
+	  This protocol is byte oriented and wraps given messages into serial frames.
 	  Backend should be enabled only to OpenThread purposes and when UART backend is disabled
-	  or works on antoher UART device to avoid interference.
+	  or works on another UART device to avoid interference.
 
 if LOG_BACKEND_SPINEL
 
@@ -214,17 +203,31 @@ config LOG_BACKEND_SPINEL_BUFFER_SIZE
 	help
 	  Specify reserved size of up-buffer used for logger output.
 
+backend = SPINEL
+backend-str = spinel
+source "subsys/logging/Kconfig.template.log_format_config"
+
 endif # LOG_BACKEND_SPINEL
 
 config LOG_BACKEND_NATIVE_POSIX
-	bool "Enable native backend"
+	bool "Native backend"
 	depends on ARCH_POSIX
+	default y if !SERIAL
 	help
 	  Enable backend in native_posix
 
+if LOG_BACKEND_NATIVE_POSIX
+
+backend = NATIVE_POSIX
+backend-str = native_posix
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_NATIVE_POSIX
+
 config LOG_BACKEND_XTENSA_SIM
-	bool "Enable xtensa simulator backend"
+	bool "Xtensa simulator backend"
 	depends on SOC_XTENSA_SAMPLE_CONTROLLER || SOC_FAMILY_INTEL_ADSP
+	default y if SOC_XTENSA_SAMPLE_CONTROLLER
 	help
 	  Enable backend in xtensa simulator
 
@@ -236,10 +239,18 @@ config LOG_BACKEND_XTENSA_OUTPUT_BUFFER_SIZE
 	  Buffer is used by log_output module for preparing output data (e.g.
 	  string formatting).
 
+if LOG_BACKEND_XTENSA_SIM
+
+backend = XTENSA_SIM
+backend-str = xtensa_sim
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_XTENSA_SIM
+
 # Immediate mode cannot be used with network backend as it would cause the sent
 # rsyslog message to be malformed.
 config LOG_BACKEND_NET
-	bool "Enable networking backend"
+	bool "Networking backend"
 	depends on NETWORKING && NET_UDP && !LOG_MODE_IMMEDIATE
 	select NET_CONTEXT_NET_PKT_POOL
 	help
@@ -283,12 +294,6 @@ config LOG_BACKEND_NET_MAX_BUF_SIZE
 	  IPv6 the size is 1180 octets. As each buffer will use RAM, the value
 	  should be selected so that typical messages will fit the buffer.
 
-config LOG_BACKEND_NET_SYST_ENABLE
-	bool "Enable networking syst backend"
-	depends on LOG_MIPI_SYST_ENABLE
-	help
-	  When enabled backend is using networking to output syst format logs.
-
 config LOG_BACKEND_NET_AUTOSTART
 	bool "Automatically start networking backend"
 	default y if NET_CONFIG_NEED_IPV4 || NET_CONFIG_NEED_IPV6
@@ -299,17 +304,64 @@ config LOG_BACKEND_NET_AUTOSTART
 	  started by the application later on. Otherwise the logging
 	  thread might block.
 
+backend = NET
+backend-str = net
+source "subsys/logging/Kconfig.template.log_format_config"
+
 endif # LOG_BACKEND_NET
 
 config LOG_BACKEND_ADSP
-	bool "Enable Intel ADSP buffer backend"
+	bool "Intel ADSP buffer backend"
 	depends on SOC_FAMILY_INTEL_ADSP
 	help
 	  Enable backend for the host trace protocol of the Intel ADSP
 	  family of audio processors
 
+if LOG_BACKEND_ADSP
+
+backend = ADSP
+backend-str = adsp
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_ADSP
+
+config LOG_BACKEND_CAVS_HDA
+	bool "cAVS HDA backend"
+	depends on SOC_FAMILY_INTEL_ADSP && DMA && DMA_CAVS_HDA && LOG2
+	help
+	  Provide a logging backend which writes to a buffer and
+	  periodically flushes to hardware using ringbuffer like
+	  semantics provided by DMA_CAVS_HDA.
+
+if LOG_BACKEND_CAVS_HDA
+
+backend = CAVS_HDA
+backend-str = cavs_hda
+source "subsys/logging/Kconfig.template.log_format_config"
+
+config LOG_BACKEND_CAVS_HDA_SIZE
+	int "Size of ring buffer"
+	range 128 8192
+	default 4096
+	help
+	  Sets the ring buffer size cAVS HDA uses for logging. Effectively
+	  determines how many log messages may be written to in a period of time.
+	  The period of time is decided by how often to inform the hardware of
+	  writes to the buffer.
+
+config LOG_BACKEND_CAVS_HDA_FLUSH_TIME
+	int "Time in milliseconds to periodically flush writes to hardware"
+	range 1 10000
+	default 500
+	help
+	    The cAVS HDA backend periodically writes out its buffer contents
+	    to hardware by informing the DMA hardware the contents of the ring
+	    buffer.
+
+endif # LOG_BACKEND_CAVS_HDA
+
 config LOG_BACKEND_FS
-	bool "Enable file system backend"
+	bool "File system backend"
 	depends on FILE_SYSTEM
 	help
 	  When enabled, backend is using the configured file system to output logs.
@@ -319,33 +371,12 @@ config LOG_BACKEND_FS
 
 if LOG_BACKEND_FS
 
-config LOG_BACKEND_FS_OUTPUT_DICTIONARY
-	bool
-	depends on LOG2
-	select LOG_DICTIONARY_SUPPORT
-	help
-	  FS backend is in dictionary-based logging output mode.
-
-choice LOG_BACKEND_FS_OUTPUT
-	prompt "FS Backend Output Mode"
-	default LOG_BACKEND_FS_OUTPUT_TEXT
-
-config LOG_BACKEND_FS_OUTPUT_TEXT
-	bool "Text"
-	help
-	  Output in text.
-
-config LOG_BACKEND_FS_OUTPUT_DICTIONARY_BIN
-	bool "Dictionary (binary)"
-	depends on LOG2
-	select LOG_BACKEND_FS_OUTPUT_DICTIONARY
-	help
-	  Dictionary-based logging output in binary.
-
-endchoice
+backend = FS
+backend-str = fs
+source "subsys/logging/Kconfig.template.log_format_config"
 
 config LOG_BACKEND_FS_OVERWRITE
-	bool "Enable old log files overwrite"
+	bool "Old log files overwrite"
 	default y
 	help
 	  When enabled backend overwrites oldest log files.

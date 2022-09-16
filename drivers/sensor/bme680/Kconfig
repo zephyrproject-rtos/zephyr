@@ -1,13 +1,15 @@
 # BME680 temperature, pressure, humidity and gas sensor configuration options
 
 # Copyright (c) 2018 Bosch Sensortec GmbH
+# Copyright (c) 2022, Leonard Pollak
+#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BME680
 	bool "BME680 sensor"
-	depends on I2C
+	depends on I2C || SPI
 	help
-	  Enable driver for BME680 I2C-based based temperature, pressure, humidity and gas sensor.
+	  Enable driver for BME680 I2C- or SPI- based temperature, pressure, humidity and gas sensor.
 
 if BME680
 

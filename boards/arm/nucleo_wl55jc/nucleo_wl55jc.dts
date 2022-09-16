@@ -135,6 +135,23 @@
 	status = "okay";
 };
 
+
+&dac1 {
+	pinctrl-0 = <&dac_out1_pa10>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&timers2 {
+	status = "okay";
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch4_pb11>;
+		pinctrl-names = "default";
+	};
+};
+
+
 &adc1 {
 	pinctrl-0 = <&adc_in5_pb1>;
 	pinctrl-names = "default";
@@ -146,6 +163,10 @@
 };
 
 &rng {
+	status = "okay";
+};
+
+&iwdg {
 	status = "okay";
 };
 
@@ -161,10 +182,6 @@
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -176,7 +193,7 @@
 		 */
 		storage_partition: partition@3c000 {
 			label = "storage";
-			reg = <0x0003c000 0x00004000>;
+			reg = <0x0003c000 DT_SIZE_K(16)>;
 		};
 	};
 };

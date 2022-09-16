@@ -2,9 +2,8 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ZEPHYR_MMC_SPI_SLOT := zephyr,mmc-spi-slot
-DT_COMPAT_NXP_USDHC := nxp,imx-usdhc
 DT_COMPAT_ST_STM32_SDMMC := st,stm32-sdmmc
+DT_COMPAT_ZEPHYR_MMC := zephyr,sdmmc-disk
 
 config DISK_DRIVER_SDMMC
 	bool "SDMMC card driver"
@@ -26,24 +25,13 @@ config SDMMC_VOLUME_NAME
 	help
 	  Disk name as per file system naming guidelines.
 
-config SDMMC_OVER_SPI
-	bool "SDHC access over SPI"
-	select SPI
-	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_MMC_SPI_SLOT))
+config SDMMC_SUBSYS
+	bool "SDMMC access via SD subsystem"
+	select SD_STACK
+	select SDHC
+	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_MMC))
 	help
-	  File system on a SDHC card accessed over SPI.
-
-config SDMMC_USDHC
-	bool "NXP i.MXRT USDHC driver"
-	depends on (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
-	default $(dt_compat_enabled,$(DT_COMPAT_NXP_USDHC))
-	help
-	  File system on a SDHC card accessed over
-	  NXP USDHC.
-
-if SDMMC_USDHC
-source "drivers/disk/Kconfig.usdhc"
-endif
+	  Enable SDMMC access via SD subsystem
 
 config SDMMC_STM32
 	bool "STM32 SDMMC driver"
@@ -51,7 +39,7 @@ config SDMMC_STM32
 	select USE_STM32_HAL_SD
 	select USE_STM32_HAL_SD_EX if SOC_SERIES_STM32L4X
 	select USE_STM32_LL_SDMMC
-	select USE_STM32_HAL_DMA if (SOC_SERIES_STM32L4X || SOC_SERIES_STM32F7X)
+	select USE_STM32_HAL_DMA if (SOC_SERIES_STM32L4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32F4X)
 	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_SDMMC))
 	help
 	  File system on sdmmc accessed through stm32 sdmmc.

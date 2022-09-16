@@ -15,19 +15,19 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/rfcomm.h>
-#include <bluetooth/sdp.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/rfcomm.h>
+#include <zephyr/bluetooth/sdp.h>
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 #include "bt.h"
 
@@ -297,7 +297,7 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 
 		sec = *argv[2] - '0';
 
-		l2ch_chan.ch.chan.required_sec_level = sec;
+		l2ch_chan.ch.required_sec_level = sec;
 	}
 
 	err = bt_l2cap_chan_connect(default_conn, &l2ch_chan.ch.chan, psm);
@@ -440,7 +440,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 	SHELL_CMD_ARG(connect, NULL, "<psm> [sec_level]", cmd_connect, 2, 1),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(metrics, NULL, "<value on, off>", cmd_metrics, 2, 0),
-	SHELL_CMD_ARG(recv, NULL, "[delay (in miliseconds)", cmd_recv, 1, 1),
+	SHELL_CMD_ARG(recv, NULL, "[delay (in milliseconds)", cmd_recv, 1, 1),
 	SHELL_CMD_ARG(register, NULL, "<psm> [sec_level] "
 		      "[policy: allowlist, 16byte_key]", cmd_register, 2, 2),
 	SHELL_CMD_ARG(send, NULL, "[number of packets] [length of packet(s)]",

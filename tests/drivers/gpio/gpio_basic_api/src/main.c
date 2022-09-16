@@ -9,15 +9,12 @@
 
 /* Grotesque hack for pinmux boards */
 #if defined(CONFIG_BOARD_RV32M1_VEGA)
-#include <drivers/pinmux.h>
+#include <zephyr/drivers/pinmux.h>
 #include <fsl_port.h>
 #elif defined(CONFIG_BOARD_UDOO_NEO_FULL_M4)
 #include "device_imx.h"
 #elif defined(CONFIG_BOARD_MIMXRT1050_EVK)
 #include <fsl_iomuxc.h>
-#elif defined(CONFIG_SOC_FAMILY_LPC)
-#include <drivers/pinmux.h>
-#include "soc.h"
 #endif
 
 static void board_setup(void)
@@ -89,18 +86,6 @@ static void board_setup(void)
 			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
 			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
-#elif defined(CONFIG_SOC_FAMILY_LPC)
-	/* Assumes ARDUINO pins are mapped on PORT0 on all boards*/
-	const struct device *port0 = DEVICE_DT_GET(DT_NODELABEL(pio0));
-	const uint32_t pin_config = (
-			IOCON_PIO_FUNC0 |
-			IOCON_PIO_INV_DI |
-			IOCON_PIO_DIGITAL_EN |
-			IOCON_PIO_INPFILT_OFF |
-			IOCON_PIO_OPENDRAIN_DI
-			);
-	pinmux_pin_set(port0, PIN_IN,  pin_config);
-	pinmux_pin_set(port0, PIN_OUT, pin_config);
 #elif defined(CONFIG_BOARD_RV32M1_VEGA)
 	const char *pmx_name = DT_LABEL(DT_NODELABEL(porta));
 	const struct device *pmx = device_get_binding(pmx_name);

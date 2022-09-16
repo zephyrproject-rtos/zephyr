@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nuvoton/npcx9m6f.dtsi>
+#include "npcx9m6f_evb-pinctrl.dtsi"
 
 / {
 	model = "Nuvoton NPCX9M6F evaluation board";
@@ -33,7 +34,7 @@
 	leds-pwm {
 		compatible = "pwm-leds";
 		pwm_led0_green: pwm_led_0 {
-			pwms = <&pwm6 0 PWM_POLARITY_INVERTED>;
+			pwms = <&pwm6 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User D7 green";
 		};
 	};
@@ -64,6 +65,7 @@
 
 	vsby-psl-in-list {
 		psl-in-pads = <&psl_in1>; /* Use PSL_IN1 as detection pins */
+		status = "okay";
 	};
 };
 
@@ -76,30 +78,40 @@
 	flag = <NPCX_PSL_FALLING_EDGE>;
 };
 
-/* Overwirte default device properties with overlays in board dt file here. */
+/* Overwrite default device properties with overlays in board dt file here. */
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
 	/* Use UART1_SL2 ie. PIN64.65 */
-	pinctrl-0 = <&altj_cr_sin1_sl2 &altj_cr_sout1_sl2>;
+	pinctrl-0 = <&uart1_2_sin_gp64
+		     &uart1_2_sout_gp65>;
+	pinctrl-names = "default";
 };
 
 &pwm6 {
-	drive-open-drain;
 	status = "okay";
+	pinctrl-0 = <&pwm6_gpc0>;
+	pinctrl-names = "default";
 };
 
 &adc0 {
-	/* ADC pinmux is changed only if related channel is configured. */
 	status = "okay";
+	/* Use adc0 channel 0 and 2 for 'adc_api' driver tests */
+	pinctrl-0 = <&adc0_chan0_gp45
+		     &adc0_chan2_gp43>;
+	pinctrl-names = "default";
 };
 
 &espi0 {
 	status = "okay";
+	pinctrl-0 = <&espi_lpc_gp46_47_51_52_53_54_55_57>;
+	pinctrl-names = "default";
 };
 
 &i2c0_0 {
 	status = "okay";
+	pinctrl-0 = <&i2c0_0_sda_scl_gpb4_b5>;
+	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
@@ -109,7 +121,8 @@
 
 &tach1 {
 	status = "okay";
-	pinctrl-0 = <&alt3_ta1_sl1>; /* Use TA1_SL1 (PIN40) as input pin */
+	pinctrl-0 = <&ta1_1_in_gp40>;
+	pinctrl-names = "default";
 	port = <NPCX_TACH_PORT_A>; /* port-A is selected */
 	sample-clk = <NPCX_TACH_FREQ_LFCLK>; /* Use LFCLK as sampling clock */
 	pulses-per-round = <1>; /* number of pulses per round of encoder */

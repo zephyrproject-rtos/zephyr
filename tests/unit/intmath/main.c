@@ -13,7 +13,7 @@
  */
 
 /* Recent GCC's can detect integer overflow in static expressions and
- * will warn about it heplfully.  But obviously integer overflow is
+ * will warn about it helpfully.  But obviously integer overflow is
  * the whole point here, so turn that warning off.
  */
 #ifdef __GNUC__

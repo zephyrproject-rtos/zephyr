@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <mem.h>
-#include <emsk.dtsi>
+#include <synopsys/emsk.dtsi>
 #include "em_starterkit_r22.dtsi"
 #include "board.dtsi"
 

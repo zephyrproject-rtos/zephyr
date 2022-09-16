@@ -22,18 +22,18 @@
 
 #define DT_DRV_COMPAT intel_adsp_tlb
 
-#include <device.h>
-#include <kernel.h>
-#include <spinlock.h>
-#include <sys/__assert.h>
-#include <sys/check.h>
-#include <sys/mem_manage.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/sys/util.h>
 
 #include <soc.h>
 #include <cavs-mem.h>
 
-#include <drivers/mm/system_mm.h>
+#include <zephyr/drivers/mm/system_mm.h>
 #include "mm_drv_common.h"
 
 DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
@@ -59,7 +59,7 @@ static struct k_spinlock tlb_lock;
 /**
  * Calculate the index to the TLB table.
  *
- * @param vaddr Page-aligned virutal address.
+ * @param vaddr Page-aligned virtual address.
  * @return Index to the TLB table.
  */
 static uint32_t get_tlb_entry_idx(uintptr_t vaddr)

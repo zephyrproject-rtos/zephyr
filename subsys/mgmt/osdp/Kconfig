@@ -69,7 +69,7 @@ config OSDP_PACKET_TRACE
 	  LOG_HEXDUMP_DBG() is used to achieve this and can be very verbose.
 
 config OSDP_SC_ENABLED
-	bool "Enable OSDP Secure Channel"
+	bool "OSDP Secure Channel"
 	depends on CSPRING_ENABLED
 	default y
 	select CRYPTO

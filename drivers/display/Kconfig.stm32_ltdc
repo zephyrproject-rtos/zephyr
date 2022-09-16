@@ -1,20 +1,20 @@
 # STM32 LTDC display driver configuration options
 
-# Copyright (c) 2022 Byte-Lab d.o.o.
+# Copyright (c) 2022 Byte-Lab d.o.o. <dev@byte-lab.com>
 # SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_STM32_LTDC := st,stm32-ltdc
 
 menuconfig STM32_LTDC
 	bool "STM32 LCD-TFT display controller driver"
-	depends on SOC_FAMILY_STM32
-	depends on SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X || SOC_SERIES_STM32L4X
-	depends on HAS_STM32CUBE
+	default $(dt_compat_enabled,$(DT_COMPAT_STM32_LTDC))
 	select USE_STM32_HAL_LTDC
 	help
 	  Enable driver for STM32 LCT-TFT display controller periheral.
 
 choice STM32_LTDC_PIXEL_FORMAT
 	prompt "Color pixel format"
-	default STM32_LTDC_RGB888
+	default STM32_LTDC_RGB565
 	depends on STM32_LTDC
 	help
 	  Specify the color pixel format for the STM32 LCD-TFT display controller.
@@ -38,10 +38,3 @@ config STM32_LTDC_RGB565
 	  (2 bytes per pixel)
 
 endchoice
-
-config PLACE_FRAME_BUFFER_IN_EXTERNAL_SDRAM
-	bool "Place display frame buffer in external SDRAM"
-	depends on STM32_LTDC
-	help
-	  Use this option if board contains an external SDRAM in
-	  which display frame buffer should be placed.

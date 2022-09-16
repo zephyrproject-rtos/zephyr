@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/util.h>
-#include <init.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <version.h>
 
 /* boot banner items */

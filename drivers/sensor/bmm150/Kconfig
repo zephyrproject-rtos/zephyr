@@ -32,17 +32,17 @@ config BMM150_PRESET_HIGH_ACCURACY
 endchoice
 
 config BMM150_SAMPLING_RATE_RUNTIME
-	bool "Enable dynamic sampling rate"
+	bool "Dynamic sampling rate"
 	help
 	  Enable alteration of sampling rate attribute at runtime.
 
 config BMM150_SAMPLING_REP_XY
-	bool "Enable dynamic XY oversampling"
+	bool "Dynamic XY oversampling"
 	help
 	  Enable alteration of XY oversampling at runtime.
 
 config BMM150_SAMPLING_REP_Z
-	bool "Enable dynamic Z oversampling"
+	bool "Dynamic Z oversampling"
 	help
 	  Enable alteration of Z oversampling at runtime.
 

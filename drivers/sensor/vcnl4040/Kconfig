@@ -12,7 +12,7 @@ menuconfig VCNL4040
 if VCNL4040
 
 config VCNL4040_ENABLE_ALS
-	bool "Enable ambient light sensor"
+	bool "Ambient light sensor"
 	help
 	  Enable Ambient Light Sense (ALS).
 

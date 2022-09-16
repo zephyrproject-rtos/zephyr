@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/cpu.h>
-#include <drivers/gpio/gpio_mmio32.h>
-#include <init.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/gpio/gpio_mmio32.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 
 
 /* Setup GPIO drivers for accessing FPGAIO registers */

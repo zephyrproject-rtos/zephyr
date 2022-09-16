@@ -6,14 +6,14 @@
 
 #define NET_LOG_LEVEL CONFIG_NET_L2_ETHERNET_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <net/net_if.h>
-#include <net/ethernet.h>
-#include <net/ethernet_mgmt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/ethernet_mgmt.h>
 
 #include <ztest.h>
 

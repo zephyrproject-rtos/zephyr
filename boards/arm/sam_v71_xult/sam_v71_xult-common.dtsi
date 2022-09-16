@@ -1,17 +1,18 @@
 /*
  * Copyright (c) 2017 Piotr Mienkowski
  * Copyright (c) 2017 Justin Watson
- * Copyright (c) 2019-2020 Gerson Fernando Budke <nandojve@gmail.com>
  * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (c) 2019-2022 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sam_v71_xult-pinctrl.dtsi"
+
 / {
 	aliases {
 		i2c-0 = &twihs0;
-		i2c-1 = &twihs1;
-		i2c-2 = &twihs2;
+		i2c-1 = &twihs2;
 		led0 = &yellow_led1;
 		pwm-led0 = &pwm_led0;
 		pwm-0 = &pwm0;
@@ -25,6 +26,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &can1;
 	};
 
 	leds {
@@ -43,7 +45,7 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		pwm_led0: pwm_led_0 {
-			pwms = <&pwm0 0 1000000>;
+			pwms = <&pwm0 0 PWM_MSEC(20)>;
 		};
 	};
 
@@ -51,7 +53,7 @@
 		compatible = "gpio-keys";
 
 		/* The switch is labeled SW300/301 in the schematic, and
-		 * labeled SW0 on the board, and labeld ERASE User Button
+		 * labeled SW0 on the board, and labeled ERASE User Button
 		 * on docs
 		 */
 		sw0_user_button: button_1 {
@@ -150,10 +152,16 @@
 
 &afec0 {
 	status = "okay";
+
+	pinctrl-0 = <&afec0_default>;
+	pinctrl-names = "default";
 };
 
 &afec1 {
 	status = "okay";
+
+	pinctrl-0 = <&afec1_default>;
+	pinctrl-names = "default";
 };
 
 &dacc {
@@ -162,35 +170,43 @@
 
 &twihs0 {
 	status = "okay";
+
+	pinctrl-0 = <&twihs0_default>;
+	pinctrl-names = "default";
 };
 
 &twihs2 {
 	status = "okay";
+
+	pinctrl-0 = <&twihs2_default>;
+	pinctrl-names = "default";
 };
 
 &spi0 {
 	status = "okay";
 
-	pinctrl-0 = <&pd20b_spi0_miso
-		     &pd21b_spi0_mosi
-		     &pd22b_spi0_spck
-		     &pd25b_spi0_npcs1
-		     &pd27b_spi0_npcs3>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
 
 	cs-gpios = <&piod 25 GPIO_ACTIVE_LOW>,
 		   <&piod 27 GPIO_ACTIVE_LOW>;
 };
 
 &usart1 {
-	current-speed = <115200>;
 	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
 };
 
 &uart3 {
 	status = "okay";
-
-	pinctrl-0 = <&pd28a_uart3_urxd3 &pd30a_uart3_utxd3>;
 	current-speed = <115200>;
+
+
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-names = "default";
 };
 
 &wdt {
@@ -204,6 +220,9 @@ zephyr_udc0: &usbhs {
 &gmac {
 	status = "okay";
 
+	pinctrl-0 = <&gmac_rmii>;
+	pinctrl-names = "default";
+
 	phy: phy {
 		compatible = "ethernet-phy";
 		status = "okay";
@@ -214,10 +233,16 @@ zephyr_udc0: &usbhs {
 
 &mdio {
 	status = "okay";
+
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
 };
 
 &pwm0 {
 	status = "okay";
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
 };
 
 &pioa {
@@ -259,7 +284,7 @@ zephyr_udc0: &usbhs {
 		/* From sector 1 to sector 7 (included): slot0 (896 kbytes) */
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x0020000 0x000e0000>;
+			reg = <0x00020000 0x000e0000>;
 		};
 
 		/* From sector 8 to sector 14 (included): slot1 (896 kbytes) */
@@ -279,10 +304,26 @@ zephyr_udc0: &usbhs {
 &ssc {
 	status = "okay";
 	label = "I2S_0";
+
+	pinctrl-0 = <&ssc_default>;
+	pinctrl-names = "default";
+
 	dma-names = "rx", "tx";
 	dmas = <&xdmac 22 DMA_PERID_SSC_RX>, <&xdmac 23 DMA_PERID_SSC_TX>;
-	pinctrl-0 = <&pd24b_ssc_rf &pa22a_ssc_rk &pa10c_ssc_rd
-		     &pb0d_ssc_tf &pb1d_ssc_tk &pb5d_ssc_td>;
+};
+
+&can1 {
+	status = "okay";
+
+	pinctrl-0 = <&can1_default>;
+	pinctrl-names = "default";
+
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
 };
 
 ext1_spi: &spi0 {

@@ -11,7 +11,11 @@
 #include "lwm2m_object.h"
 
 #define LWM2M_PROTOCOL_VERSION_MAJOR 1
+#if CONFIG_LWM2M_VERSION_1_1
+#define LWM2M_PROTOCOL_VERSION_MINOR 1
+#else
 #define LWM2M_PROTOCOL_VERSION_MINOR 0
+#endif
 
 #define LWM2M_PROTOCOL_VERSION_STRING STRINGIFY(LWM2M_PROTOCOL_VERSION_MAJOR) \
 				      "." \
@@ -23,6 +27,9 @@
 #define LWM2M_FORMAT_APP_OCTET_STREAM	42
 #define LWM2M_FORMAT_APP_EXI		47
 #define LWM2M_FORMAT_APP_JSON		50
+#define LWM2M_FORMAT_APP_CBOR		60
+#define LWM2M_FORMAT_APP_SEML_JSON	110
+#define LWM2M_FORMAT_APP_SENML_CBOR	112
 #define LWM2M_FORMAT_OMA_PLAIN_TEXT	1541
 #define LWM2M_FORMAT_OMA_OLD_TLV	1542
 #define LWM2M_FORMAT_OMA_OLD_JSON	1543
@@ -50,6 +57,12 @@
 #define COAP_REPLY_STATUS_NONE		0
 #define COAP_REPLY_STATUS_ERROR		1
 
+/* path object list */
+struct lwm2m_obj_path_list {
+	sys_snode_t node;
+	struct lwm2m_obj_path path;
+};
+
 /* Establish a request handler callback type */
 typedef int (*udp_request_handler_cb_t)(struct coap_packet *request,
 					struct lwm2m_message *msg);
@@ -69,12 +82,21 @@ int  lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id);
 int  lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 				    struct lwm2m_engine_obj_inst **obj_inst,
 				    uint8_t *created);
+/* Validate write access to object. */
+int lwm2m_engine_validate_write_access(struct lwm2m_message *msg,
+				       struct lwm2m_engine_obj_inst *obj_inst,
+				       struct lwm2m_engine_obj_field **obj_field);
+/* Create or Allocate resource instance. */
+int lwm2m_engine_get_create_res_inst(struct lwm2m_obj_path *path, struct lwm2m_engine_res **res,
+				     struct lwm2m_engine_res_inst **res_inst);
 
 struct lwm2m_engine_obj *lwm2m_engine_get_obj(
 					const struct lwm2m_obj_path *path);
 struct lwm2m_engine_obj_inst *lwm2m_engine_get_obj_inst(
 					const struct lwm2m_obj_path *path);
 struct lwm2m_engine_res *lwm2m_engine_get_res(
+					const struct lwm2m_obj_path *path);
+struct lwm2m_engine_res_inst *lwm2m_engine_get_res_inst(
 					const struct lwm2m_obj_path *path);
 
 bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj);
@@ -87,16 +109,34 @@ void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx);
 uint8_t *lwm2m_get_message_buf(void);
 int lwm2m_put_message_buf(uint8_t *buf);
 
+/* Initialize path list */
+void lwm2m_engine_path_list_init(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
+				 struct lwm2m_obj_path_list path_object_buf[],
+				 uint8_t path_object_size);
+/* Add new Path to the list */
+int lwm2m_engine_add_path_to_list(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
+				  struct lwm2m_obj_path *path);
+/* Remove paths when parent already exist in the list. */
+void lwm2m_engine_clear_duplicate_path(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list);
+
 /* LwM2M message functions */
 struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
 void lwm2m_reset_message(struct lwm2m_message *msg, bool release);
 int lwm2m_init_message(struct lwm2m_message *msg);
 int lwm2m_send_message_async(struct lwm2m_message *msg);
+/* Notification and Send operation */
+int lwm2m_information_interface_send(struct lwm2m_message *msg);
 int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid);
 
 int lwm2m_register_payload_handler(struct lwm2m_message *msg);
 
 int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format);
+
+int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_format,
+				    sys_slist_t *lwm2m_path_list);
+
+int lwm2m_perform_composite_observation_op(struct lwm2m_message *msg, uint8_t *token,
+					   uint8_t token_length, sys_slist_t *lwm2m_path_list);
 
 int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_res *res,
@@ -116,6 +156,7 @@ int lwm2m_engine_get_resource(const char *pathstr,
 			      struct lwm2m_engine_res **res);
 
 void lwm2m_engine_get_binding(char *binding);
+void lwm2m_engine_get_queue_mode(char *queue);
 
 size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
 				    uint8_t *buf, size_t buflen,
@@ -128,6 +169,10 @@ int lwm2m_security_index_to_inst_id(int index);
 int32_t lwm2m_server_get_pmin(uint16_t obj_inst_id);
 int32_t lwm2m_server_get_pmax(uint16_t obj_inst_id);
 int lwm2m_server_short_id_to_inst(uint16_t short_id);
+
+#if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
+bool lwm2m_server_get_mute_send(uint16_t obj_inst_id);
+#endif
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state);
@@ -150,6 +195,11 @@ const char *lwm2m_engine_get_attr_name(const struct lwm2m_attr *attr);
 int  lwm2m_socket_add(struct lwm2m_ctx *ctx);
 void lwm2m_socket_del(struct lwm2m_ctx *ctx);
 int  lwm2m_socket_start(struct lwm2m_ctx *client_ctx);
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+int lwm2m_engine_close_socket_connection(struct lwm2m_ctx *client_ctx);
+int lwm2m_engine_connection_resume(struct lwm2m_ctx *client_ctx);
+int lwm2m_push_queued_buffers(struct lwm2m_ctx *client_ctx);
+#endif
 int  lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmware_uri);
 
 #endif /* LWM2M_ENGINE_H */

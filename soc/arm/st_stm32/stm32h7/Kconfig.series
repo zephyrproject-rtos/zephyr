@@ -18,5 +18,5 @@ config SOC_SERIES_STM32H7X
 	  Enable support for STM32H7 MCU series
 
 config STM32H7_DUAL_CORE
-	bool "Enable Dual Core"
+	bool "Dual Core"
 	depends on SOC_SERIES_STM32H7X

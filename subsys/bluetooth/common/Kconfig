@@ -4,6 +4,8 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+menu "Bluetooth buffer configuration"
+
 config BT_BUF_ACL_TX_SIZE
 	int "Maximum supported ACL size for outgoing data"
 	range 27 65535
@@ -76,7 +78,7 @@ config BT_BUF_ACL_RX_SIZE
 	  This means the maximum L2CAP PDU MTU is restricted by the maximum ACL
 	  size subtracting the 4 byte header of an L2CAP PDU.
 	  When using L2CAP Connection oriented Channels without segmentation
-	  then the L2CAP SDU MTU is also restricetd by the maximum ACL size
+	  then the L2CAP SDU MTU is also restricted by the maximum ACL size
 	  subtracting the 4 Byte header of an L2CAP PDU plus the 2 byte header
 	  of an L2CAP SDU.
 
@@ -93,7 +95,7 @@ config BT_BUF_ACL_RX_SIZE
 config BT_BUF_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
 	default NET_BUF_RX_COUNT if NET_L2_BT
-	default 3 if BT_RECV_IS_RX_THREAD
+	default 3 if BT_RECV_BLOCKING
 	default 6
 	range 1 64
 	help
@@ -124,7 +126,7 @@ config BT_BUF_EVT_RX_SIZE
 
 config BT_BUF_EVT_RX_COUNT
 	int "Number of HCI Event buffers"
-	default 3 if BT_RECV_IS_RX_THREAD
+	default 3 if BT_RECV_BLOCKING
 	default 20 if (BT_MESH && !(BT_BUF_EVT_DISCARDABLE_COUNT > 0))
 	default 10
 	range 2 255
@@ -185,6 +187,8 @@ config BT_BUF_CMD_TX_COUNT
 	range 2 64
 	help
 	  Number of buffers available for outgoing HCI commands from the Host.
+
+endmenu
 
 config BT_HAS_HCI_VS
 	bool

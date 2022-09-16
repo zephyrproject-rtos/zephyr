@@ -7,6 +7,8 @@
 *.swp
 *.swo
 *~
+.\#*
+\#*\#
 build*/
 !doc/guides/build
 !tests/drivers/build_all
@@ -45,6 +47,7 @@ hide-defaults-note
 venv
 .venv
 .DS_Store
+.clangd
 
 # CI output
 compliance.xml

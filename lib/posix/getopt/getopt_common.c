@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <shell/shell.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/shell/shell.h>
 #include "getopt.h"
 
 /* Referring  below variables is not thread safe. They reflects getopt state

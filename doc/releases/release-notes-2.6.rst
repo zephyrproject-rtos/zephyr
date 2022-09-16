@@ -831,7 +831,7 @@ Build and Infrastructure
       some Arduino IDE bootloaders.
 
     * jlink runner: Zephyr thread awareness is now available in GDB by default
-      for application builds with :kconfig:`CONFIG_DEBUG_THREAD_INFO` set to ``y``
+      for application builds with :kconfig:option:`CONFIG_DEBUG_THREAD_INFO` set to ``y``
       in :ref:`kconfig`. This applies to ``west debug``, ``west debugserver``,
       and ``west attach``. JLink version 7.11b or later must be installed on the
       host system, with JLink 7.20 or later strongly recommended.

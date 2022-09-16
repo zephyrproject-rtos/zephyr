@@ -6,14 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #include <errno.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/att.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_l2cap
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -259,7 +259,7 @@ static void connect(uint8_t *data, uint16_t len)
 fail:
 	for (i = 0U; i < ARRAY_SIZE(allocated_channels); i++) {
 		if (allocated_channels[i]) {
-			channels[allocated_channels[i]->ident].in_use = false;
+			channels[BT_L2CAP_LE_CHAN(allocated_channels[i])->ident].in_use = false;
 		}
 	}
 	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_CONNECT, CONTROLLER_INDEX,
@@ -441,17 +441,17 @@ static int accept(struct bt_conn *conn, struct bt_l2cap_chan **l2cap_chan)
 {
 	struct channel *chan;
 
+	if (bt_conn_enc_key_size(conn) < req_keysize) {
+		return -EPERM;
+	}
+
+	if (authorize_flag) {
+		return -EACCES;
+	}
+
 	chan = get_free_channel();
 	if (!chan) {
 		return -ENOMEM;
-	}
-
-	if (bt_conn_enc_key_size(conn) < req_keysize) {
-		req_keysize = 0;
-		return -EPERM;
-	} else if (authorize_flag) {
-		authorize_flag = false;
-		return -EACCES;
 	}
 
 	chan->le.chan.ops = &l2cap_ops;

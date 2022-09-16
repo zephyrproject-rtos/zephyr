@@ -3,12 +3,20 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <sys/sys_heap.h>
-#include <sys/util.h>
-#include <sys/heap_listener.h>
-#include <kernel.h>
+#include <zephyr/sys/sys_heap.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/heap_listener.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include "heap.h"
+
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+static inline void increase_allocated_bytes(struct z_heap *h, size_t num_bytes)
+{
+	h->allocated_bytes += num_bytes;
+	h->max_allocated_bytes = MAX(h->max_allocated_bytes, h->allocated_bytes);
+}
+#endif
 
 static void *chunk_mem(struct z_heap *h, chunkid_t c)
 {
@@ -275,7 +283,7 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 	mem = chunk_mem(h, c);
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
-	h->allocated_bytes += chunksz_to_bytes(h, chunk_size(h, c));
+	increase_allocated_bytes(h, chunksz_to_bytes(h, chunk_size(h, c)));
 #endif
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
@@ -351,7 +359,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 
 	set_chunk_used(h, c, true);
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
-	h->allocated_bytes += chunksz_to_bytes(h, chunk_size(h, c));
+	increase_allocated_bytes(h, chunksz_to_bytes(h, chunk_size(h, c)));
 #endif
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
@@ -425,7 +433,7 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 #endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
-		h->allocated_bytes += split_size * CHUNK_UNIT;
+		increase_allocated_bytes(h, split_size * CHUNK_UNIT);
 #endif
 
 		free_list_remove(h, rc);
@@ -498,6 +506,7 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	h->free_bytes = 0;
 	h->allocated_bytes = 0;
+	h->max_allocated_bytes = 0;
 #endif
 
 	int nb_buckets = bucket_idx(h, heap_sz) + 1;

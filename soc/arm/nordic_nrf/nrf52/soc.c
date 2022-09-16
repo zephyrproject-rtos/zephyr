@@ -12,12 +12,12 @@
  * for the Nordic Semiconductor nRF52 family processor.
  */
 
-#include <kernel.h>
-#include <init.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <hal/nrf_power.h>
 #include <soc/nrfx_coredep.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #ifdef CONFIG_RUNTIME_NMI
 extern void z_arm_nmi_init(void);

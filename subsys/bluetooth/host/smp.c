@@ -10,20 +10,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
-#include <sys/atomic.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
-#include <debug/stack.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/debug/stack.h>
 
-#include <net/buf.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/buf.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/buf.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/aes.h>
@@ -845,16 +845,20 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 #endif
 
 #if defined(CONFIG_BT_PRIVACY)
-static void smp_id_sent(struct bt_conn *conn, void *user_data)
+static void smp_id_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	smp_check_complete(conn, BT_SMP_DIST_ID_KEY);
+	if (!err) {
+		smp_check_complete(conn, BT_SMP_DIST_ID_KEY);
+	}
 }
 #endif /* CONFIG_BT_PRIVACY */
 
 #if defined(CONFIG_BT_SIGNING)
-static void smp_sign_info_sent(struct bt_conn *conn, void *user_data)
+static void smp_sign_info_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	smp_check_complete(conn, BT_SMP_DIST_SIGN);
+	if (!err) {
+		smp_check_complete(conn, BT_SMP_DIST_SIGN);
+	}
 }
 #endif /* CONFIG_BT_SIGNING */
 
@@ -996,24 +1000,33 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 	keys = bt_keys_find_addr(conn->id, &addr);
 
 	if (status) {
+		struct bt_conn_auth_info_cb *listener, *next;
+
 		if (keys) {
 			bt_keys_clear(keys);
 		}
 
-		if (bt_auth && bt_auth->pairing_failed) {
-			bt_auth->pairing_failed(smp->chan.chan.conn,
-						security_err_get(status));
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+						  next, node) {
+			if (listener->pairing_failed) {
+				listener->pairing_failed(smp->chan.chan.conn,
+							 security_err_get(status));
+			}
 		}
 	} else {
 		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
+		struct bt_conn_auth_info_cb *listener, *next;
 
 		if (bond_flag && keys) {
 			bt_keys_store(keys);
 		}
 
-		if (bt_auth && bt_auth->pairing_complete) {
-			bt_auth->pairing_complete(smp->chan.chan.conn,
-						  bond_flag);
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+						  next, node) {
+			if (listener->pairing_complete) {
+				listener->pairing_complete(smp->chan.chan.conn,
+							   bond_flag);
+			}
 		}
 	}
 
@@ -1866,6 +1879,7 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 		}
 #endif /* CONFIG_BT_BREDR */
 		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
+		struct bt_conn_auth_info_cb *listener, *next;
 
 		if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
 			bt_keys_show_sniffer_info(conn->le.keys, NULL);
@@ -1875,8 +1889,11 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 			bt_keys_store(conn->le.keys);
 		}
 
-		if (bt_auth && bt_auth->pairing_complete) {
-			bt_auth->pairing_complete(conn, bond_flag);
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+						  next, node) {
+			if (listener->pairing_complete) {
+				listener->pairing_complete(conn, bond_flag);
+			}
 		}
 	} else {
 		enum bt_security_err security_err = security_err_get(status);
@@ -1901,9 +1918,16 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 		/* Check SMP_FLAG_PAIRING as bt_conn_security_changed may
 		 * have called the pairing_failed callback already.
 		 */
-		if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING) &&
-		    bt_auth && bt_auth->pairing_failed) {
-			bt_auth->pairing_failed(conn, security_err);
+		if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
+			struct bt_conn_auth_info_cb *listener, *next;
+
+			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs,
+							  listener, next,
+							  node) {
+				if (listener->pairing_failed) {
+					listener->pairing_failed(conn, security_err);
+				}
+			}
 		}
 	}
 
@@ -2089,9 +2113,11 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 }
 
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
-static void smp_ident_sent(struct bt_conn *conn, void *user_data)
+static void smp_ident_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	smp_check_complete(conn, BT_SMP_DIST_ENC_KEY);
+	if (!err) {
+		smp_check_complete(conn, BT_SMP_DIST_ENC_KEY);
+	}
 }
 
 static void legacy_distribute_keys(struct bt_smp *smp)
@@ -3885,16 +3911,22 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_INVALID_PARAMS;
 	}
 
-	if (bt_addr_le_cmp(&conn->le.dst, &req->addr) != 0) {
-		struct bt_keys *keys = bt_keys_find_addr(conn->id, &req->addr);
+	struct bt_keys *keys = bt_keys_find_addr(conn->id, &req->addr);
 
-		if (keys) {
+	if (keys) {
+		if (bt_addr_le_cmp(&conn->le.dst, &req->addr) != 0) {
 			if (!update_keys_check(smp, keys)) {
 				return BT_SMP_ERR_UNSPECIFIED;
 			}
-
-			bt_keys_clear(keys);
 		}
+
+		/* We found a key for this address.  We don't know if it has been added
+		 * to resolving list before.  Clear the key - because if we try to add
+		 * the same item to resolving list, controller have the option to
+		 * accept or reject the command.
+		 * Refer to Core v5.3, Vol 4, Part E, 7.8.38.
+		 */
+		bt_keys_clear(keys);
 	}
 
 	if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {

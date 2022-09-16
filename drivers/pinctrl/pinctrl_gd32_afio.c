@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <soc.h>
 
 /** AFIO DT node */
 #define AFIO_NODE DT_NODELABEL(afio)

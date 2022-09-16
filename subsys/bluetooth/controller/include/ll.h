@@ -5,10 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LL_ADV_CMDS_ANY    0 /* Any advertising cmd/evt allowed */
-#define LL_ADV_CMDS_LEGACY 1 /* Only legacy advertising cmd/evt allowed */
-#define LL_ADV_CMDS_EXT    2 /* Only extended advertising cmd/evt allowed */
-
 int ll_init(struct k_sem *sem_rx);
 void ll_reset(void);
 
@@ -62,16 +58,6 @@ static inline uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle,
 #endif
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-#if defined(CONFIG_BT_HCI_RAW)
-int ll_adv_cmds_set(uint8_t adv_cmds);
-int ll_adv_cmds_is_ext(void);
-#else
-static inline int ll_adv_cmds_is_ext(void)
-{
-	return 1;
-}
-#endif /* CONFIG_BT_HCI_RAW */
-
 uint8_t ll_adv_params_set(uint8_t handle, uint16_t evt_prop, uint32_t interval,
 		       uint8_t adv_type, uint8_t own_addr_type,
 		       uint8_t direct_addr_type, uint8_t const *const direct_addr,
@@ -335,7 +321,8 @@ void ll_iso_rx_mem_release(void **node_rx);
 /* Downstream - ISO Data */
 void *ll_iso_tx_mem_acquire(void);
 void ll_iso_tx_mem_release(void *tx);
-int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx);
+int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx, void *link);
+void ll_iso_link_tx_release(void *link);
 
 /* External co-operation */
 void ll_timeslice_ticker_id_get(uint8_t * const instance_index,

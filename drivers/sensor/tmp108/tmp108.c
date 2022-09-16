@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT ti_tmp108
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
-#include <logging/log.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/kernel.h>
 
 #include "tmp108.h"
 

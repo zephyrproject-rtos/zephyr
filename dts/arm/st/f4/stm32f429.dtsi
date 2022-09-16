@@ -5,6 +5,7 @@
  */
 
 #include <st/f4/stm32f427.dtsi>
+#include <zephyr/dt-bindings/display/stm32_ltdc.h>
 
 / {
 	soc {
@@ -15,6 +16,16 @@
 			status = "disabled";
 			label = "DAC_1";
 			#io-channel-cells = <1>;
+		};
+
+		ltdc: display-controller@40016800 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x40016800 0x200>;
+			interrupts = <88 0>, <89 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x04000000>;
+			status = "disabled";
+			label = "LTDC";
 		};
 	};
 };

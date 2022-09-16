@@ -7,14 +7,16 @@
 
 
 #include <arm/armv8-m.dtsi>
-#include <dt-bindings/clock/stm32_clock.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/stm32u5_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <freq.h>
 
 / {
 	chosen {
 		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flash;
 	};
 
 	cpus {
@@ -61,10 +63,18 @@
 			status = "disabled";
 		};
 
+		clk_msik: clk-msik {
+			#clock-cells = <0>;
+			compatible = "st,stm32u5-msi-clock";
+			msi-range = <4>; /* 4MHz (reset value) */
+			status = "disabled";
+		};
+
 		clk_lse: clk-lse {
 			#clock-cells = <0>;
-			compatible = "fixed-clock";
+			compatible = "st,stm32-lse-clock";
 			clock-frequency = <32768>;
+			driving-capability = <0>;
 			status = "disabled";
 		};
 
@@ -83,8 +93,8 @@
 	};
 
 	soc {
-		flash-controller@40022000 {
-			compatible = "st,stm32u5-flash-controller";
+		flash: flash-controller@40022000 {
+			compatible = "st,stm32-flash-controller", "st,stm32u5-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x40022000 0x400>;
 			interrupts = <6 0>;
@@ -93,8 +103,13 @@
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				label = "FLASH_STM32";
+
+				write-block-size = <16>;
+				erase-block-size = <8192>;
+				/* maximum erase time(ms) for a 8K sector */
+				max-erase-time = <5>;
 			};
 		};
 
@@ -207,7 +222,7 @@
 			status = "disabled";
 		};
 
-		wwdg1: watchdog@40002c00 {
+		wwdg: wwdg1: watchdog@40002c00 {
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002c00 0x1000>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000800>;
@@ -341,6 +356,28 @@
 			label = "LPTIM_1";
 		};
 
+		octospi1: octospi@420d1400 {
+			compatible = "st,stm32-ospi";
+			reg = <0x420d1400 0x400>;
+			interrupts = <76 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2_2 0x00000010>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			label= "OCTOSPI1";
+		};
+
+		octospi2: octospi@420d2400 {
+			compatible = "st,stm32-ospi";
+			reg = <0x420d2400 0x400>;
+			interrupts = <120 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2_2 0x00000100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			label= "OCTOSPI2";
+		};
+
 		rng: rng@420c0800 {
 			compatible = "st,stm32-rng";
 			reg = <0x420c0800 0x400>;
@@ -368,6 +405,8 @@
 			status = "disabled";
 			label = "ADC_1";
 			#io-channel-cells = <1>;
+			has-temp-channel;
+			has-vref-channel;
 		};
 
 		adc4: adc@46021000 {
@@ -378,6 +417,34 @@
 			status = "disabled";
 			label = "ADC_4";
 			#io-channel-cells = <1>;
+			has-temp-channel;
+			has-vref-channel;
+		};
+
+		can {
+			compatible = "bosch,m_can-base";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			std-filter-elements = <28>;
+			ext-filter-elements = <8>;
+			rx-fifo0-elements = <3>;
+			rx-fifo1-elements = <3>;
+			rx-buffer-elements = <0>;
+			tx-buffer-elements = <3>;
+
+			can1: can@4000a400 {
+				compatible = "st,stm32-fdcan";
+				reg = <0x4000a400 0x400>, <0x4000ac00 0x350>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <39 0>, <40 0>;
+				interrupt-names = "LINE_0", "LINE_1";
+				status = "disabled";
+				label = "CAN_1";
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+			};
 		};
 
 		ucpd1: ucpd@4000dc00 {

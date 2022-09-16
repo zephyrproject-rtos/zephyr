@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154_frame, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
-#include <net/net_core.h>
-#include <net/net_if.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_if.h>
 
 #include <ipv6.h>
 #include <nbr.h>
@@ -475,7 +475,7 @@ uint8_t ieee802154_compute_header_size(struct net_if *iface,
 		&((struct ieee802154_context *)net_if_l2_data(iface))->sec_ctx;
 #endif
 
-	/** if dst is NULL, we'll consider it as a brodcast header */
+	/** if dst is NULL, we'll consider it as a broadcast header */
 	if (!dst ||
 	    net_ipv6_is_addr_mcast(dst) ||
 	    net_ipv6_is_addr_unspecified(dst)) {

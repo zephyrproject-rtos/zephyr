@@ -23,4 +23,20 @@ add_subdirectory(core)
 
 if(COMPILER STREQUAL arcmwdt)
   add_subdirectory(arcmwdt)
+
+  if(CONFIG_64BIT)
+    zephyr_compile_options(-Ml)
+    # Instruct MWDT assembler not to warn when we load only lower half (32bit) of symbol
+    # instead of full 64bit address in ASM code. It is valid as we don't support Zephyr
+    # linkage to high addresses for 64bit ARC platforms.
+    zephyr_compile_options(-Wa,-offwarn=168)
+  endif()
+endif()
+
+if(CONFIG_ISA_ARCV3 AND CONFIG_64BIT)
+  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf64-littlearc)
+elseif(CONFIG_ISA_ARCV3 AND NOT CONFIG_64BIT)
+  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-littlearc64)
+else()
+  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-littlearc)
 endif()

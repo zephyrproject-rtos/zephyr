@@ -1,4 +1,4 @@
 tests:
-  drivers.sensor:
+  drivers.sensor.accel:
     tags: drivers sensor subsys
     platform_allow: native_posix

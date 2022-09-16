@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT sensirion_sht3xd
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <sys/crc.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/logging/log.h>
 
 #include "sht3xd.h"
 

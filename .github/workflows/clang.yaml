@@ -14,7 +14,7 @@ jobs:
     runs-on: zephyr_runner
     needs: clang-build-prep
     container:
-      image: zephyrprojectrtos/ci:v0.21.0
+      image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
       options: '--entrypoint /bin/bash'
       volumes:
         - /home/runners/zephyrproject:/github/cache/zephyrproject
@@ -23,13 +23,21 @@ jobs:
       matrix:
         platform: ["native_posix"]
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.2
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.2
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     outputs:
       report_needed: ${{ steps.twister.outputs.report_needed }}
     steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
       - name: Cleanup
         run: |
           # hotfix, until we have a better way to deal with existing data
@@ -39,10 +47,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Environment Setup
         run: |
-          pip3 install GitPython
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Bot"
@@ -99,10 +107,10 @@ jobs:
           python3 ./scripts/ci/test_plan.py --platform ${{ matrix.platform }} -c origin/${BASE_REF}..
 
           # We can limit scope to just what has changed
-          if [ -s testplan.csv ]; then
+          if [ -s testplan.json ]; then
             echo "::set-output name=report_needed::1";
             # Full twister but with options based on changes
-            ./scripts/twister --inline-logs -M -N -v --load-tests testplan.csv --retry-failed 2
+            ./scripts/twister --force-color --inline-logs -M -N -v --load-tests testplan.json --retry-failed 2
           else
             # if nothing is run, skip reporting step
             echo "::set-output name=report_needed::0";

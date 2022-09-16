@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "bl654_usb-pinctrl.dtsi"
 
 / {
 	model = "Laird Connectivity BL654 USB adapter";
@@ -31,7 +32,7 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		led1bluepwm: led_pwm_1 {
-			pwms = <&pwm0 13>;
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "PWM LED 1 Blue";
 		};
 
@@ -54,14 +55,12 @@
 
 &pwm0 {
 	status = "okay";
-	ch0-pin = <13>;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -73,16 +72,16 @@
 		 */
 		boot_partition: partition@1000 {
 			label = "mcuboot";
-			reg = <0x00001000 0x000f000>;
+			reg = <0x00001000 0x0000f000>;
 		};
 
 		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x00010000 0x00005e000>;
+			reg = <0x00010000 0x0005e000>;
 		};
 		slot1_partition: partition@6e000 {
 			label = "image-1";
-			reg = <0x006e000 0x00005e000>;
+			reg = <0x0006e000 0x0005e000>;
 		};
 		storage_partition: partition@cc000 {
 			label = "storage";

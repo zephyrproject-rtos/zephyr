@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "nrf52840_mdk-pinctrl.dtsi"
 
 / {
 	model = "nRF52840-MDK Dev Kit";
@@ -41,15 +42,15 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		pwm_led0_green: pwm_led_0 {
-			pwms = <&pwm0 22>;
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "Green PWM LED 0";
 		};
 		pwm_led1_red: pwm_led_1 {
-			pwms = <&pwm0 23>;
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "Red PWM LED 1";
 		};
 		pwm_led2_blue: pwm_led_2 {
-			pwms = <&pwm0 24>;
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "Blue PWM LED 2";
 		};
 	};
@@ -100,41 +101,39 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <20>;
-	rx-pin = <19>;
-	rts-pin = <5>;
-	cts-pin = <7>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <26>;
-	scl-pin = <27>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c1 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <30>;
-	scl-pin = <31>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &pwm0 {
 	status = "okay";
-	ch0-pin = <22>;
-	ch0-inverted;
-	ch1-pin = <23>;
-	ch1-inverted;
-	ch2-pin = <24>;
-	ch2-inverted;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &qspi {
 	status = "okay";
-	sck-pin = <35>;
-	io-pins = <37>, <36>, <34>, <33>;
-	csn-pins = <38>;
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
@@ -165,7 +164,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
+			reg = <0x00000000 0x0000C000>;
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";

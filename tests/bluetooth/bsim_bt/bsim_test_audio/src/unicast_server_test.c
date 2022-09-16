@@ -6,16 +6,20 @@
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/audio.h>
-#include <bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/capabilities.h>
 #include "common.h"
 #include "unicast_common.h"
 
 extern enum bst_result_t bst_result;
 
-/* Mandatory support preset by both client and server */
-static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
+#define CHANNEL_COUNT_1 BIT(0)
+
+static struct bt_codec lc3_codec =
+	BT_CODEC_LC3(BT_CODEC_LC3_FREQ_16KHZ, BT_CODEC_LC3_DURATION_10, CHANNEL_COUNT_1, 40u, 40u,
+		     1u, (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA),
+		     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
 
@@ -30,10 +34,12 @@ CREATE_FLAG(flag_stream_configured);
 
 static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					struct bt_audio_ep *ep,
+					enum bt_audio_dir dir,
 					struct bt_audio_capability *cap,
 					struct bt_codec *codec)
 {
-	printk("ASE Codec Config: conn %p ep %p cap %p\n", conn, ep, cap);
+	printk("ASE Codec Config: conn %p ep %p dir %u, cap %p\n",
+	       conn, ep, dir, cap);
 
 	print_codec(codec);
 
@@ -73,10 +79,11 @@ static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 	return 0;
 }
 
-static int lc3_enable(struct bt_audio_stream *stream, uint8_t meta_count,
-		      struct bt_codec_data *meta)
+static int lc3_enable(struct bt_audio_stream *stream,
+		      struct bt_codec_data *meta,
+		      size_t meta_count)
 {
-	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
+	printk("Enable: stream %p meta_count %zu\n", stream, meta_count);
 
 	return 0;
 }
@@ -88,10 +95,11 @@ static int lc3_start(struct bt_audio_stream *stream)
 	return 0;
 }
 
-static int lc3_metadata(struct bt_audio_stream *stream, uint8_t meta_count,
-			struct bt_codec_data *meta)
+static int lc3_metadata(struct bt_audio_stream *stream,
+			struct bt_codec_data *meta,
+			size_t meta_count)
 {
-	printk("Metadata: stream %p meta_count %u\n", stream, meta_count);
+	printk("Metadata: stream %p meta_count %zu\n", stream, meta_count);
 
 	return 0;
 }
@@ -129,25 +137,14 @@ static struct bt_audio_capability_ops lc3_ops = {
 	.release = lc3_release,
 };
 
-static void stream_connected(struct bt_audio_stream *stream)
-{
-	printk("Audio Stream %p connected\n", stream);
-}
-
-static void stream_disconnected(struct bt_audio_stream *stream, uint8_t reason)
-{
-	printk("Audio Stream %p disconnected (reason 0x%02x)\n",
-	       stream, reason);
-}
-
-static void stream_recv(struct bt_audio_stream *stream, struct net_buf *buf)
+static void stream_recv(struct bt_audio_stream *stream,
+			const struct bt_iso_recv_info *info,
+			struct net_buf *buf)
 {
 	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
 }
 
 static struct bt_audio_stream_ops stream_ops = {
-	.connected = stream_connected,
-	.disconnected = stream_disconnected,
 	.recv = stream_recv
 };
 
@@ -174,11 +171,11 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 static void init(void)
 {
 	static struct bt_audio_capability caps = {
-		.type = BT_AUDIO_SINK,
+		.dir = BT_AUDIO_DIR_SINK,
 		.pref = BT_AUDIO_CAPABILITY_PREF(
 				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
 				BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000),
-		.codec = &preset_16_2_1.codec,
+		.codec = &lc3_codec,
 		.ops = &lc3_ops,
 	};
 	int err;
@@ -210,9 +207,37 @@ static void init(void)
 	}
 }
 
+static void set_location(void)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
+		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
+						       BT_AUDIO_LOCATION_FRONT_CENTER);
+		if (err != 0) {
+			FAIL("Failed to set sink location (err %d)\n", err);
+			return;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
+		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
+						       (BT_AUDIO_LOCATION_FRONT_LEFT |
+							BT_AUDIO_LOCATION_FRONT_RIGHT));
+		if (err != 0) {
+			FAIL("Failed to set source location (err %d)\n", err);
+			return;
+		}
+	}
+
+	printk("Location successfully set\n");
+}
+
 static void test_main(void)
 {
 	init();
+
+	set_location();
 
 	/* TODO: When babblesim supports ISO, wait for audio stream to pass */
 

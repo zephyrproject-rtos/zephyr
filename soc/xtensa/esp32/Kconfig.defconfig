@@ -9,9 +9,6 @@ if BOOTLOADER_MCUBOOT
 	config HAS_FLASH_LOAD_OFFSET
 		default y
 
-	config XIP
-		default y
-
 	config MCUBOOT_GENERATE_UNSIGNED_IMAGE
 		default y
 
@@ -25,8 +22,9 @@ endif
 config SOC
 	default "esp32"
 
-config IRQ_OFFLOAD_INTNUM
-	default 7
+config SOC_TOOLCHAIN_NAME
+	string
+	default "espressif_esp32"
 
 if SMP
 

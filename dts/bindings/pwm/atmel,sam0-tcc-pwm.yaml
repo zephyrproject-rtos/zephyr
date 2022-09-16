@@ -5,7 +5,10 @@ description: Atmel SAM0 TCC in PWM mode
 
 compatible: "atmel,sam0-tcc-pwm"
 
-include: [pwm-controller.yaml, base.yaml]
+include:
+    - name: base.yaml
+    - name: pwm-controller.yaml
+    - name: pinctrl-device.yaml
 
 properties:
   reg:
@@ -56,7 +59,8 @@ properties:
       - 1024
 
   "#pwm-cells":
-    const: 1
+    const: 2
 
 pwm-cells:
   - channel
+  - period

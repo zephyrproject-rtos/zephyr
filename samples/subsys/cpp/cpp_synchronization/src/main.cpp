@@ -19,9 +19,9 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
-#include <arch/cpu.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/printk.h>
 
 /**
  * @class semaphore the basic pure virtual semaphore class

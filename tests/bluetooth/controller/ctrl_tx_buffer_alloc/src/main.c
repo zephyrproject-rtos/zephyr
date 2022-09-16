@@ -10,10 +10,10 @@
 
 #define ULL_LLCP_UNITTEST
 
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
-#include <sys/slist.h>
-#include <sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 #include "hal/ccm.h"
 
 #include "util/util.h"
@@ -134,7 +134,7 @@ void test_tx_buffer_alloc(void)
 	tx_alloc_idx++;
 
 #else /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
-	/* Test that there are excactly LLCP_CONN * LLCP_TX_CTRL_BUF_NUM_MAX
+	/* Test that there are exactly LLCP_CONN * LLCP_TX_CTRL_BUF_NUM_MAX
 	 * buffers available
 	 */
 	for (i = 0;

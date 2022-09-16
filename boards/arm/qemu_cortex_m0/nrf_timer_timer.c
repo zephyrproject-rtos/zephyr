@@ -6,12 +6,12 @@
  */
 
 #include <soc.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
 #include <hal/nrf_timer.h>
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 
 #define TIMER NRF_TIMER0
 
@@ -71,7 +71,7 @@ static void prevent_false_prev_evt(void)
 	uint32_t prev_val;
 
 	/* First take care of a risk of an event coming from CC being set to
-	 * next tick. Reconfigure CC to future (now tick is the furtherest
+	 * next tick. Reconfigure CC to future (now tick is the furthest
 	 * future). If CC was set to next tick we need to wait for up to 0.5us
 	 * (half of 1M tick) and clean potential event. After that time there
 	 * is no risk of unwanted event.

@@ -7,19 +7,7 @@ config WDT_NRFX
 	bool "nRF WDT nrfx driver"
 	default y
 	depends on SOC_FAMILY_NRF
-	select NRFX_WDT
+	select NRFX_WDT0 if HAS_HW_NRF_WDT0
+	select NRFX_WDT1 if HAS_HW_NRF_WDT1
 	help
 	  Enable support for nrfx WDT driver for nRF MCU series.
-
-config NRFX_WDT0
-	bool "Enable WDT0 instance"
-	depends on HAS_HW_NRF_WDT || HAS_HW_NRF_WDT0
-	default y
-	help
-	  Enable support for nrfx WDT instance 0.
-
-config NRFX_WDT1
-	bool "Enable WDT1 instance"
-	depends on HAS_HW_NRF_WDT1
-	help
-	  Enable support for nrfx WDT instance 1.

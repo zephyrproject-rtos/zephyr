@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
 
-#include <net/ppp.h>
-#include <random/rand32.h>
+#include <zephyr/net/ppp.h>
+#include <zephyr/random/rand32.h>
 
 #include "net_private.h"
 
@@ -191,7 +191,7 @@ static void terminate(struct ppp_fsm *fsm, enum ppp_state next_state)
 		fsm_down(fsm);
 	}
 
-	fsm->retransmits = MAX_CONFIGURE_REQ;
+	fsm->retransmits = MAX_TERMINATE_REQ;
 	fsm->req_id = ++fsm->id;
 
 	(void)ppp_send_pkt(fsm, NULL, PPP_TERMINATE_REQ, fsm->req_id,

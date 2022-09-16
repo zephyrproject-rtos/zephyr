@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <intel_socfpga/intel_socfpga_agilex.dtsi>
+#include <intel/intel_socfpga_agilex.dtsi>
 
 / {
 	model = "Intel SoC FPGA Agilex";

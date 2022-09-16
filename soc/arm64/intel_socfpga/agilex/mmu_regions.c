@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/cpu.h>
-#include <arch/arm64/arm_mmu.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm64/arm_mmu.h>
 
 static const struct arm_mmu_region mmu_regions[] = {
 

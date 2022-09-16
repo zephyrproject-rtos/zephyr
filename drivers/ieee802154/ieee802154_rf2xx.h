@@ -74,18 +74,12 @@ enum rf2xx_trx_model_t {
 	RF2XX_TRX_MODEL_233     = 0x0B,
 };
 
-struct rf2xx_dt_gpio_t {
-	const char *devname;
-	uint32_t pin;
-	uint32_t flags;
-};
-
 struct rf2xx_config {
-	struct rf2xx_dt_gpio_t irq;
-	struct rf2xx_dt_gpio_t reset;
-	struct rf2xx_dt_gpio_t slptr;
-	struct rf2xx_dt_gpio_t dig2;
-	struct rf2xx_dt_gpio_t clkm;
+	struct gpio_dt_spec irq_gpio;
+	struct gpio_dt_spec reset_gpio;
+	struct gpio_dt_spec slptr_gpio;
+	struct gpio_dt_spec dig2_gpio;
+	struct gpio_dt_spec clkm_gpio;
 
 	struct spi_dt_spec spi;
 
@@ -97,12 +91,6 @@ struct rf2xx_context {
 	struct net_if *iface;
 
 	const struct device *dev;
-
-	const struct device *irq_gpio;
-	const struct device *reset_gpio;
-	const struct device *slptr_gpio;
-	const struct device *dig2_gpio;
-	const struct device *clkm_gpio;
 
 	struct gpio_callback irq_cb;
 

@@ -83,7 +83,7 @@ config KERNEL_VM_SIZE
 endif # KERNEL_VM_SUPPORT
 
 menuconfig MMU
-	bool "Enable MMU features"
+	bool "MMU features"
 	depends on CPU_HAS_MMU
 	select KERNEL_VM_SUPPORT
 	help
@@ -99,7 +99,7 @@ config MMU_PAGE_SIZE
 	  support multiple page sizes, put the smallest one here.
 
 menuconfig DEMAND_PAGING
-	bool "Enable demand paging [EXPERIMENTAL]"
+	bool "Demand paging [EXPERIMENTAL]"
 	depends on ARCH_HAS_DEMAND_PAGING
 	help
 	  Enable demand paging. Requires architecture support in how the kernel
@@ -167,7 +167,7 @@ config DEMAND_PAGING_TIMING_HISTOGRAM
 	  Should say N in production system as this is not without cost.
 
 config DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS
-	int "Number of bins (buckets) in Demand Paging Timing Histogrm"
+	int "Number of bins (buckets) in Demand Paging Timing Histogram"
 	depends on DEMAND_PAGING_TIMING_HISTOGRAM
 	default 10
 	help

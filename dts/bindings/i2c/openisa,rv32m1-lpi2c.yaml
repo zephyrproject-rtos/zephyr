@@ -5,7 +5,7 @@ description: OpenISA LPI2C controller
 
 compatible: "openisa,rv32m1-lpi2c"
 
-include: i2c-controller.yaml
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:

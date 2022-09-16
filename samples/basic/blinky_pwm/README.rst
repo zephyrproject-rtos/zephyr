@@ -28,13 +28,6 @@ controlling this LED must be configured using the ``pwm_led0`` :ref:`devicetree
 <dt-guide>` alias, usually in the :ref:`BOARD.dts file
 <devicetree-in-out-files>`.
 
-You will see this error if you try to build this sample for an unsupported
-board:
-
-.. code-block:: none
-
-   Unsupported board: pwm_led0 devicetree alias is not defined
-
 Wiring
 ******
 

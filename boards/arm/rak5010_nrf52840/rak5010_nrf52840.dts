@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "rak5010_nrf52840-pinctrl.dtsi"
 
 / {
 	model = "RAKWireless RAK5010 Wistrio Board with a Nordic NRF52840 SoC";
@@ -56,12 +57,11 @@
 	compatible = "nordic,nrf-uart";
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <6>;
-	rx-pin = <8>;
-	rts-pin = <7>;
-	cts-pin = <11>;
 
 	/* QUECTEL BG9X */
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 	quectel_bg9x: quectel_bg9x {
 		compatible = "quectel,bg9x";
 		label = "quectel,bg9x";
@@ -76,17 +76,19 @@
 &uart1 {
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <33>;
-	rx-pin = <34>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c1 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <14>;
-	scl-pin = <13>;
 
 	/* TI OPT3001 light sensor */
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 	opt3001@44 {
 		compatible = "ti,opt3001";
 		label = "OPT3001";
@@ -111,9 +113,9 @@
 
 &qspi {
 	status = "okay";
-	sck-pin = <43>;
-	io-pins = <47>, <46>, <45>, <44>;
-	csn-pins = <42>;
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
 	is25wp064a: is25wp064a@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
@@ -138,7 +140,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
+			reg = <0x00000000 0x0000C000>;
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";

@@ -2,7 +2,7 @@ description: Kinetis UART
 
 compatible: "nxp,kinetis-uart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:

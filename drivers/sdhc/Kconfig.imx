@@ -1,0 +1,42 @@
+# Copyright (c) 2022, NXP
+# SPDX -License-Identifier: Apache-2.0
+
+config IMX_USDHC
+	bool "NXP IMX USDHC Driver"
+	depends on (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
+	select SDHC_SUPPORTS_UHS
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  Enable the NXP IMX SD Host controller driver
+
+if IMX_USDHC
+
+config IMX_USDHC_DAT3_PWR_TOGGLE
+	bool "Toggle power when pulling DAT3 line low"
+	default y
+	help
+	  Toggle power to SD card to clear DAT3 pull when pulling line low
+
+config IMX_USDHC_DMA_SUPPORT
+	bool
+	depends on ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	default y
+	select NOCACHE_MEMORY
+
+if IMX_USDHC_DMA_SUPPORT
+
+# USDHC DMA needs 32 bit aligned buffers
+config SDHC_BUFFER_ALIGNMENT
+	default 4
+
+config IMX_USDHC_DMA_BUFFER_SIZE
+	int "Size of DMA descriptor buffer in bytes"
+	default 128
+	help
+	  Size of USDHC ADMA descriptor buffer in bytes
+
+endif # IMX_USDHC_DMA_SUPPORT
+
+
+
+endif

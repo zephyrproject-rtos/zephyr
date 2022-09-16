@@ -13,7 +13,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <sys/types.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 extern const struct flash_area *flash_map;
 extern const int flash_map_entries;

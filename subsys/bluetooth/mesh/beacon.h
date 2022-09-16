@@ -6,7 +6,7 @@
 
 void bt_mesh_beacon_enable(void);
 void bt_mesh_beacon_disable(void);
-
+void bt_mesh_beacon_cache_clear(struct bt_mesh_subnet *sub);
 void bt_mesh_beacon_ivu_initiator(bool enable);
 
 void bt_mesh_beacon_recv(struct net_buf_simple *buf);

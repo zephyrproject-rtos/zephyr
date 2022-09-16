@@ -93,7 +93,7 @@ Command example (reel_board):
 .. code-block:: console
 
          uart:~$ cfb set_font 0
-         Font idx=0 height=32 widht=20 set
+         Font idx=0 height=32 width=20 set
 
 **invert**: invert the pixel color of the display.
 

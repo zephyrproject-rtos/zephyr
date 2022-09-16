@@ -35,12 +35,4 @@ config 2ND_LVL_ISR_TBL_OFFSET
 config CAVS_ISR_TBL_OFFSET
 	default 2ND_LVL_ISR_TBL_OFFSET
 
-config DMA_DW
-	default y
-	depends on DMA
-
-config I2S_CAVS
-	default y
-	depends on I2S
-
 endif # BOARD_INTEL_ADSP_CAVS15

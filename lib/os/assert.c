@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/__assert.h>
-#include <zephyr.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/zephyr.h>
 
 
 /**
@@ -40,4 +41,15 @@ __weak void assert_post_action(const char *file, unsigned int line)
 #endif
 
 	k_panic();
+}
+
+void assert_print(const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+
+	vprintk(fmt, ap);
+
+	va_end(ap);
 }

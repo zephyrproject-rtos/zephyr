@@ -18,8 +18,8 @@
  */
 
 #include <errno.h>
-#include <kernel.h>
-#include <drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
 #include "i2c_bitbang.h"
 
 /*

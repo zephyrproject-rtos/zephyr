@@ -7,9 +7,9 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_FDC2X1X_FDC2X1X_H_
 #define ZEPHYR_DRIVERS_SENSOR_FDC2X1X_FDC2X1X_H_
 
-#include <drivers/sensor.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 
 #define PI              (3.14159265)
 

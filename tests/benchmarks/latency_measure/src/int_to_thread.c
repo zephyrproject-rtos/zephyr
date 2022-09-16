@@ -14,10 +14,10 @@
  * handler back to the interrupted thread.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include "utils.h"
 
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 
 static volatile int flag_var;
 

@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_DRIVERS_SYSTEM_MM_DRV_COMMON_H_
 #define ZEPHYR_DRIVERS_SYSTEM_MM_DRV_COMMON_H_
 
-#include <kernel.h>
-#include <toolchain.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 
-#include <drivers/mm/system_mm.h>
+#include <zephyr/drivers/mm/system_mm.h>
 
 extern struct k_spinlock sys_mm_drv_common_lock;
 

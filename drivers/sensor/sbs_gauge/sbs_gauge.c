@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT sbs_sbs_gauge
 
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <sys/byteorder.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "sbs_gauge.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sbs_gauge, CONFIG_SENSOR_LOG_LEVEL);
 
 static int sbs_cmd_reg_read(const struct device *dev,

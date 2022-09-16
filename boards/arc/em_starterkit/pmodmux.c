@@ -5,7 +5,7 @@
  */
 
 #include <soc.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #define PMODMUX_BASE_ADDR	0xF0000000
 

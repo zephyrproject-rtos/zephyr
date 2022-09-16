@@ -5,7 +5,7 @@
 
 config GPIO_SIFIVE
 	bool "SiFive Freedom Processor GPIO driver"
-	depends on SOC_RISCV_SIFIVE_FREEDOM
+	depends on SOC_SERIES_RISCV_SIFIVE_FREEDOM
 	help
 	  Enable driver for the SiFive Freedom GPIO controller.
 

@@ -5,7 +5,7 @@ description: Sifive SPI controller
 
 compatible: "sifive,spi0"
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:

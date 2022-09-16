@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT nuvoton_npcx_spi_fiu
 
-#include <drivers/clock_control.h>
-#include <drivers/spi.h>
-#include <logging/log.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/logging/log.h>
 #include <soc.h>
 
 LOG_MODULE_REGISTER(spi_npcx_fiu, LOG_LEVEL_ERR);

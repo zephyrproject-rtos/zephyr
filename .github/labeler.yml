@@ -70,7 +70,7 @@
   - "arch/xtensa/**/*"
   - "include/arch/xtensa/**/*"
 "area: RISCV":
-  - "arch/risv/**/*"
+  - "arch/riscv/**/*"
   - "include/arch/riscv/**/*"
 "area: ARC":
   - "arch/arc/**/*"

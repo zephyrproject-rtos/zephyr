@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <xtensa/xtensa.dtsi>
-#include <dt-bindings/i2c/i2c.h>
+#include <xtensa/intel/intel_cavs.dtsi>
 #include <mem.h>
 
 / {
@@ -15,25 +14,25 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx4";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
 		};
 
 		cpu1: cpu@1 {
 			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx4";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <1>;
 		};
 
 		cpu2: cpu@2 {
 			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx4";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <2>;
 		};
 
 		cpu3: cpu@3 {
 			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx4";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <3>;
 		};
 	};
@@ -71,6 +70,13 @@
 			reg = <0x00 0x400>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
+		};
+
+		cavs_host_ipc: cavs_host_ipc@71e00 {
+			compatible = "intel,cavs-host-ipc";
+			reg = <0x71e00 0x30>;
+			interrupts = <7 0 0>;
+			interrupt-parent = <&cavs0>;
 		};
 
 		cavs0: cavs@78800  {

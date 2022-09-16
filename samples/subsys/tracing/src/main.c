@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <logging/log.h>
-#include <usb/usb_device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/usb/usb_device.h>
 
 /*
  * The hello world demo has two threads that utilize semaphores and sleeping
@@ -19,7 +19,7 @@
 
 
 /* size of stack area used by each thread */
-#define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 /* scheduling priority used by each thread */
 #define PRIORITY 7

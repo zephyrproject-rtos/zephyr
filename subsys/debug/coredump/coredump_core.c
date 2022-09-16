@@ -6,10 +6,10 @@
 
 #include <errno.h>
 #include <kernel_internal.h>
-#include <toolchain.h>
-#include <debug/coredump.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/debug/coredump.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include "coredump_internal.h"
 

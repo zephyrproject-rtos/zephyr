@@ -60,7 +60,7 @@ def main():
         # know what is going on
         logger.setLevel(logging.INFO)
 
-    # Setup logging for "gdbstuc"
+    # Setup logging for "gdbstub"
     logger = logging.getLogger("gdbstub")
     if args.debug:
         logger.setLevel(logging.DEBUG)

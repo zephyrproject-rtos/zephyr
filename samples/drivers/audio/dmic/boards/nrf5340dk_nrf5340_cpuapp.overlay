@@ -8,9 +8,18 @@
 	hfclkaudio-frequency = <12288000>;
 };
 
+&pinctrl {
+	pdm0_default_alt: pdm0_default_alt {
+		group1 {
+			psels = <NRF_PSEL(PDM_CLK, 0, 25)>,
+				<NRF_PSEL(PDM_DIN, 0, 26)>;
+		};
+	};
+};
+
 dmic_dev: &pdm0 {
 	status = "okay";
-	clk-pin = <25>;
-	din-pin = <26>;
+	pinctrl-0 = <&pdm0_default_alt>;
+	pinctrl-names = "default";
 	clock-source = "ACLK";
 };

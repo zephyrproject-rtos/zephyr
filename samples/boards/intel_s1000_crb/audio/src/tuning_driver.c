@@ -5,13 +5,13 @@
  */
 
 #define LOG_LEVEL LOG_LEVEL_INF
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tuning);
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <string.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include "audio_core.h"
 #include "usb_transport.h"

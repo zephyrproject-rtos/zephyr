@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2021 Denx Software Enginerring GmbH
+ * Copyright (c) 2021 Denx Software Engineering GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	pwm_loopback_0 {

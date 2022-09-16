@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/types.h>
-#include <net/buf.h>
-#include <net/dns_resolve.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/dns_resolve.h>
 
 #include "dns_pack.h"
 

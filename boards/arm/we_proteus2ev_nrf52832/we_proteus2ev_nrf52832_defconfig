@@ -1,0 +1,33 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_NRF52X=y
+CONFIG_SOC_NRF52832_CIAA=y
+CONFIG_BOARD_WE_PROTEUS2EV_NRF52832=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable RTT
+CONFIG_USE_SEGGER_RTT=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# additional board options
+CONFIG_GPIO_AS_PINRESET=y
+
+# Use internal oscillator
+CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
+
+CONFIG_PINCTRL=y

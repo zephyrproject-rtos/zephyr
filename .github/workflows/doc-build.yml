@@ -5,10 +5,10 @@ name: Documentation Build
 
 on:
   schedule:
-    - cron: '0 */3 * * *'
+  - cron: '0 */3 * * *'
   push:
     tags:
-      - v*
+    - v*
   pull_request:
     paths:
     - 'doc/**'
@@ -26,11 +26,11 @@ on:
 
 env:
   # NOTE: west docstrings will be extracted from the version listed here
-  WEST_VERSION: 0.12.0
+  WEST_VERSION: 0.13.0a1
   # The latest CMake available directly with apt is 3.18, but we need >=3.20
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
-  DOXYGEN_VERSION: 1.9.2
+  DOXYGEN_VERSION: 1.9.4
 
 jobs:
   doc-build-html:
@@ -49,7 +49,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y ninja-build graphviz libclang1-9 libclang-cpp9
-        wget --no-verbose https://www.doxygen.nl/files/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+        wget --no-verbose https://downloads.sourceforge.net/project/doxygen/rel-${DOXYGEN_VERSION}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
         tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
         echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
@@ -95,6 +95,23 @@ jobs:
       with:
         name: html-output
         path: html-output.tar.xz
+
+    - name: process-pr
+      if: github.event_name == 'pull_request'
+      run: |
+        REPO_NAME="${{ github.event.repository.name }}"
+        PR_NUM="${{ github.event.pull_request.number }}"
+        DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/"
+
+        echo "${PR_NUM}" > pr_num
+        echo "Documentation will be available shortly at: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
+
+    - name: upload-pr-number
+      uses: actions/upload-artifact@v2
+      if: github.event_name == 'pull_request'
+      with:
+        name: pr_num
+        path: pr_num
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"

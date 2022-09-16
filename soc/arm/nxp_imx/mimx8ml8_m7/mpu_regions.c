@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include "../../common/cortex_m/arm_mpu_mem_cfg.h"
 
 #define REGION_MASK_BASE_ADDRESS			0x00000000U
@@ -61,7 +61,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 	/*
 	 * Non-cacheable area is provided in DDR memory, the DDR region [0x80000000 ~ 0x81000000]
-	 * (please see the imx8mp-evk-rpmsg.dts) totally 16MB is revserved for CM7 core. You can put
+	 * (please see the imx8mp-evk-rpmsg.dts) totally 16MB is reserved for CM7 core. You can put
 	 * global or static uninitialized variables in NonCacheable section(initialized variables in
 	 * NonCacheable.init section) to make them uncacheable. Since the base address of MPU region
 	 * should be multiples of region size, to make it simple, the MPU region 5 set the address

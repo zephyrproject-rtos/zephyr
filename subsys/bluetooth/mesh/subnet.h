@@ -9,8 +9,8 @@
 
 #include <stdint.h>
 #include <sys/types.h>
-#include <net/buf.h>
-#include <zephyr.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/zephyr.h>
 
 #define BT_MESH_NET_FLAG_KR       BIT(0)
 #define BT_MESH_NET_FLAG_IVU      BIT(1)
@@ -36,10 +36,11 @@ struct bt_mesh_net_cred {
 /** Subnet instance. */
 struct bt_mesh_subnet {
 	uint32_t beacon_sent;        /* Timestamp of last sent beacon */
+	uint32_t beacon_recv;        /* Timestamp of last received beacon */
 	uint8_t  beacons_last;       /* Number of beacons during last
 				      * observation window
 				      */
-	uint8_t  beacons_cur;        /* Number of beaconds observed during
+	uint8_t  beacons_cur;        /* Number of beacons observed during
 				      * currently ongoing window.
 				      */
 

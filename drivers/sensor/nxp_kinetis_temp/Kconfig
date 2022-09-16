@@ -29,7 +29,7 @@ config TEMP_KINETIS_OVERSAMPLING
 	  more stable readings.
 
 config TEMP_KINETIS_FILTER
-	bool "Enable digital filtering of ADC readings"
+	bool "Digital filtering of ADC readings"
 	help
 	  Enable weighted average digital filtering of the ADC
 	  readings as per NXP AN3031.

@@ -9,11 +9,11 @@
  *
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #include "test_fs_shell.h"
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 static void test_shell_exec(const char *line, int result)
 {

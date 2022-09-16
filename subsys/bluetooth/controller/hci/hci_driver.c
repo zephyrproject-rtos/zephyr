@@ -9,23 +9,23 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <init.h>
-#include <device.h>
-#include <drivers/clock_control.h>
-#include <sys/atomic.h>
+#include <zephyr/init.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/atomic.h>
 
-#include <sys/util.h>
-#include <debug/stack.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #ifdef CONFIG_CLOCK_CONTROL_NRF
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #endif
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -111,9 +111,9 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 {
 	struct bt_hci_iso_ts_data_hdr *data_hdr;
 	uint16_t packet_status_flag;
-	uint16_t slen, slen_packed;
 	struct bt_hci_iso_hdr *hdr;
 	uint16_t handle_packed;
+	uint16_t slen_packed;
 	struct net_buf *buf;
 	uint16_t handle;
 	uint8_t  ts, pb;
@@ -131,12 +131,8 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 			return ISOAL_STATUS_OK;
 		}
 #endif /* CONFIG_BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA */
-		data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
-		hdr = net_buf_push(buf, BT_HCI_ISO_HDR_SIZE);
-
-		handle = sink_ctx->session.handle;
-
-		pb = sink_ctx->sdu_production.sdu_state;
+		pb  = sink_ctx->sdu_production.sdu_state;
+		len = sink_ctx->sdu_production.sdu_written;
 
 		/*
 		 * BLUETOOTH CORE SPECIFICATION Version 5.3 | Vol 4, Part E
@@ -154,20 +150,36 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 		 * Time_Stamp field. This bit shall only be set if the PB_Flag field equals 0b00 or
 		 * 0b10.
 		 */
-		ts = !(pb & 1);
+		ts = (pb & 0x1) == 0x0;
+
+		if (ts) {
+			data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
+			packet_status_flag = valid_sdu->status;
+
+			/* TODO: Validity of length might need to be reconsidered here. Not handled
+			 * in ISO-AL.
+			 * BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
+			 * 5.4.5 HCI ISO Data packets
+			 * If Packet_Status_Flag equals 0b10 then PB_Flag shall equal 0b10.
+			 * When Packet_Status_Flag is set to 0b10 in packets from the Controller to
+			 * the Host, there is no data and ISO_SDU_Length shall be set to zero.
+			 */
+			slen_packed = bt_iso_pkt_len_pack(len, packet_status_flag);
+
+			data_hdr->ts = sys_cpu_to_le32((uint32_t) valid_sdu->timestamp);
+			data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) valid_sdu->seqn);
+			data_hdr->data.slen = sys_cpu_to_le16(slen_packed);
+
+			len += BT_HCI_ISO_TS_DATA_HDR_SIZE;
+		}
+
+		hdr = net_buf_push(buf, BT_HCI_ISO_HDR_SIZE);
+
+		handle = sink_ctx->session.handle;
 		handle_packed = bt_iso_handle_pack(handle, pb, ts);
-		len = sink_ctx->sdu_production.sdu_written + BT_HCI_ISO_TS_DATA_HDR_SIZE;
 
 		hdr->handle = sys_cpu_to_le16(handle_packed);
 		hdr->len = sys_cpu_to_le16(len);
-
-		packet_status_flag = valid_sdu->status;
-		slen = sink_ctx->sdu_production.sdu_written;
-		slen_packed = bt_iso_pkt_len_pack(slen, packet_status_flag);
-
-		data_hdr->ts = sys_cpu_to_le32((uint32_t) valid_sdu->timestamp);
-		data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) valid_sdu->seqn);
-		data_hdr->data.slen = sys_cpu_to_le16(slen_packed);
 
 		/* send fragment up the chain */
 		bt_recv(buf);
@@ -219,9 +231,9 @@ static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx,
  * @brief Handover from Controller thread to Host thread
  * @details Execution context: Controller thread
  *   Pull from memq_ll_rx and push up to Host thread recv_thread() via recv_fifo
- * @param p1  Unused. Required to conform with Zephyr thread protoype
- * @param p2  Unused. Required to conform with Zephyr thread protoype
- * @param p3  Unused. Required to conform with Zephyr thread protoype
+ * @param p1  Unused. Required to conform with Zephyr thread prototype
+ * @param p2  Unused. Required to conform with Zephyr thread prototype
+ * @param p3  Unused. Required to conform with Zephyr thread prototype
  */
 static void prio_recv_thread(void *p1, void *p2, void *p3)
 {
@@ -234,7 +246,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 		iso_received = false;
 
-#if defined(CONFIG_BT_CTLR_ISO)
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 		node_rx = ll_iso_rx_get();
 		if (node_rx) {
 			ll_iso_rx_dequeue();
@@ -250,11 +262,12 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 			iso_received = true;
 		}
-#endif /* CONFIG_BT_CTLR_ISO */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 		/* While there are completed rx nodes */
 		while ((num_cmplt = ll_rx_get((void *)&node_rx, &handle))) {
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO) || \
+	defined(CONFIG_BT_CTLR_CONN_ISO)
 
 			buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS,
 					     false, K_FOREVER);
@@ -262,7 +275,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 			BT_DBG("Num Complete: 0x%04x:%u", handle, num_cmplt);
 			bt_recv_prio(buf);
 			k_yield();
-#endif
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 		}
 
 		if (node_rx) {
@@ -349,7 +362,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		hci_acl_encode(node_rx, buf);
 		break;
 #endif
-#if defined(CONFIG_BT_CTLR_ISO)
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 	case HCI_CLASS_ISO_DATA: {
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 		uint8_t handle = node_rx->hdr.handle;
@@ -404,7 +417,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 
 		return buf;
 	}
-#endif /* CONFIG_BT_CTLR_ISO */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 	default:
 		LL_ASSERT(0);
@@ -658,6 +671,22 @@ static int acl_handle(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+static int iso_handle(struct net_buf *buf)
+{
+	struct net_buf *evt;
+	int err;
+
+	err = hci_iso_handle(buf, &evt);
+	if (evt) {
+		BT_DBG("Replying with event of %u bytes", evt->len);
+		bt_recv_prio(evt);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
 static int hci_driver_send(struct net_buf *buf)
 {
 	uint8_t type;
@@ -680,6 +709,11 @@ static int hci_driver_send(struct net_buf *buf)
 	case BT_BUF_CMD:
 		err = cmd_handle(buf);
 		break;
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+	case BT_BUF_ISO_OUT:
+		err = iso_handle(buf);
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 	default:
 		BT_ERR("Unknown HCI type %u", type);
 		return -EINVAL;

@@ -20,11 +20,11 @@
 
 #define EXTI_NODE DT_INST(0, st_stm32_exti)
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <stm32_ll_exti.h>
-#include <sys/__assert.h>
-#include <drivers/interrupt_controller/exti_stm32.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 
 #include "stm32_hsem.h"
 
@@ -264,145 +264,145 @@ static void __stm32_exti_isr(int min, int max, const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X)
-static inline void __stm32_exti_isr_0_1(const void *arg)
+static inline void __stm32_exti_isr_0_1(const struct device *dev)
 {
-	__stm32_exti_isr(0, 2, arg);
+	__stm32_exti_isr(0, 2, dev);
 }
 
-static inline void __stm32_exti_isr_2_3(const void *arg)
+static inline void __stm32_exti_isr_2_3(const struct device *dev)
 {
-	__stm32_exti_isr(2, 4, arg);
+	__stm32_exti_isr(2, 4, dev);
 }
 
-static inline void __stm32_exti_isr_4_15(const void *arg)
+static inline void __stm32_exti_isr_4_15(const struct device *dev)
 {
-	__stm32_exti_isr(4, 16, arg);
+	__stm32_exti_isr(4, 16, dev);
 }
 
 #else
-static inline void __stm32_exti_isr_0(const void *arg)
+static inline void __stm32_exti_isr_0(const struct device *dev)
 {
-	__stm32_exti_isr(0, 1, arg);
+	__stm32_exti_isr(0, 1, dev);
 }
 
-static inline void __stm32_exti_isr_1(const void *arg)
+static inline void __stm32_exti_isr_1(const struct device *dev)
 {
-	__stm32_exti_isr(1, 2, arg);
+	__stm32_exti_isr(1, 2, dev);
 }
 
-static inline void __stm32_exti_isr_2(const void *arg)
+static inline void __stm32_exti_isr_2(const struct device *dev)
 {
-	__stm32_exti_isr(2, 3, arg);
+	__stm32_exti_isr(2, 3, dev);
 }
 
-static inline void __stm32_exti_isr_3(const void *arg)
+static inline void __stm32_exti_isr_3(const struct device *dev)
 {
-	__stm32_exti_isr(3, 4, arg);
+	__stm32_exti_isr(3, 4, dev);
 }
 
-static inline void __stm32_exti_isr_4(const void *arg)
+static inline void __stm32_exti_isr_4(const struct device *dev)
 {
-	__stm32_exti_isr(4, 5, arg);
+	__stm32_exti_isr(4, 5, dev);
 }
 
 #if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
-static inline void __stm32_exti_isr_5(const void *arg)
+static inline void __stm32_exti_isr_5(const struct device *dev)
 {
-	__stm32_exti_isr(5, 6, arg);
+	__stm32_exti_isr(5, 6, dev);
 }
 
-static inline void __stm32_exti_isr_6(const void *arg)
+static inline void __stm32_exti_isr_6(const struct device *dev)
 {
-	__stm32_exti_isr(6, 7, arg);
+	__stm32_exti_isr(6, 7, dev);
 }
 
-static inline void __stm32_exti_isr_7(const void *arg)
+static inline void __stm32_exti_isr_7(const struct device *dev)
 {
-	__stm32_exti_isr(7, 8, arg);
+	__stm32_exti_isr(7, 8, dev);
 }
 
-static inline void __stm32_exti_isr_8(const void *arg)
+static inline void __stm32_exti_isr_8(const struct device *dev)
 {
-	__stm32_exti_isr(8, 9, arg);
+	__stm32_exti_isr(8, 9, dev);
 }
 
-static inline void __stm32_exti_isr_9(const void *arg)
+static inline void __stm32_exti_isr_9(const struct device *dev)
 {
-	__stm32_exti_isr(9, 10, arg);
+	__stm32_exti_isr(9, 10, dev);
 }
 
-static inline void __stm32_exti_isr_10(const void *arg)
+static inline void __stm32_exti_isr_10(const struct device *dev)
 {
-	__stm32_exti_isr(10, 11, arg);
+	__stm32_exti_isr(10, 11, dev);
 }
 
-static inline void __stm32_exti_isr_11(const void *arg)
+static inline void __stm32_exti_isr_11(const struct device *dev)
 {
-	__stm32_exti_isr(11, 12, arg);
+	__stm32_exti_isr(11, 12, dev);
 }
 
-static inline void __stm32_exti_isr_12(const void *arg)
+static inline void __stm32_exti_isr_12(const struct device *dev)
 {
-	__stm32_exti_isr(12, 13, arg);
+	__stm32_exti_isr(12, 13, dev);
 }
 
-static inline void __stm32_exti_isr_13(const void *arg)
+static inline void __stm32_exti_isr_13(const struct device *dev)
 {
-	__stm32_exti_isr(13, 14, arg);
+	__stm32_exti_isr(13, 14, dev);
 }
 
-static inline void __stm32_exti_isr_14(const void *arg)
+static inline void __stm32_exti_isr_14(const struct device *dev)
 {
-	__stm32_exti_isr(14, 15, arg);
+	__stm32_exti_isr(14, 15, dev);
 }
 
-static inline void __stm32_exti_isr_15(const void *arg)
+static inline void __stm32_exti_isr_15(const struct device *dev)
 {
-	__stm32_exti_isr(15, 16, arg);
+	__stm32_exti_isr(15, 16, dev);
 }
 #endif
 
-static inline void __stm32_exti_isr_9_5(const void *arg)
+static inline void __stm32_exti_isr_9_5(const struct device *dev)
 {
-	__stm32_exti_isr(5, 10, arg);
+	__stm32_exti_isr(5, 10, dev);
 }
 
-static inline void __stm32_exti_isr_15_10(const void *arg)
+static inline void __stm32_exti_isr_15_10(const struct device *dev)
 {
-	__stm32_exti_isr(10, 16, arg);
+	__stm32_exti_isr(10, 16, dev);
 }
 
 #if defined(CONFIG_SOC_SERIES_STM32F4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F7X) || \
 	defined(CONFIG_SOC_SERIES_STM32F2X) || \
 	defined(CONFIG_SOC_SERIES_STM32MP1X)
-static inline void __stm32_exti_isr_16(const void *arg)
+static inline void __stm32_exti_isr_16(const struct device *dev)
 {
-	__stm32_exti_isr(16, 17, arg);
+	__stm32_exti_isr(16, 17, dev);
 }
 
-static inline void __stm32_exti_isr_18(const void *arg)
+static inline void __stm32_exti_isr_18(const struct device *dev)
 {
-	__stm32_exti_isr(18, 19, arg);
+	__stm32_exti_isr(18, 19, dev);
 }
 
-static inline void __stm32_exti_isr_21(const void *arg)
+static inline void __stm32_exti_isr_21(const struct device *dev)
 {
-	__stm32_exti_isr(21, 22, arg);
+	__stm32_exti_isr(21, 22, dev);
 }
 
-static inline void __stm32_exti_isr_22(const void *arg)
+static inline void __stm32_exti_isr_22(const struct device *dev)
 {
-	__stm32_exti_isr(22, 23, arg);
+	__stm32_exti_isr(22, 23, dev);
 }
 #endif
 #if defined(CONFIG_SOC_SERIES_STM32F7X) || \
 	defined(CONFIG_SOC_SERIES_STM32MP1X)
-static inline void __stm32_exti_isr_23(const void *arg)
+static inline void __stm32_exti_isr_23(const struct device *dev)
 {
-	__stm32_exti_isr(23, 24, arg);
+	__stm32_exti_isr(23, 24, dev);
 }
 #endif
 #endif /* CONFIG_SOC_SERIES_STM32F0X */
@@ -423,7 +423,7 @@ static struct stm32_exti_data exti_data;
 DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
 		 NULL,
 		 &exti_data, NULL,
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		 NULL);
 
 /**

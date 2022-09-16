@@ -6,17 +6,17 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_uart
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/uart.h>
-#include <kernel.h>
-#include <pm/device.h>
-#include <pm/pm.h>
-#include <pm/policy.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <soc.h>
 
-#include <logging/log.h>
-LOG_MODULE_REGISTER(uart_ite_it8xxx2, LOG_LEVEL_ERR);
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(uart_ite_it8xxx2, CONFIG_UART_LOG_LEVEL);
 
 #if defined(CONFIG_PM_DEVICE) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)
 static struct uart_it8xxx2_data *uart_console_data;
@@ -28,6 +28,8 @@ struct uart_it8xxx2_config {
 	struct gpio_dt_spec gpio_wui;
 	/* UART handle */
 	const struct device *uart_dev;
+	/* UART alternate configuration */
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct uart_it8xxx2_data {
@@ -57,7 +59,7 @@ void uart1_wui_isr(const struct device *gpio, struct gpio_callback *cb,
 	 * The pm state of it8xxx2 chip only supports standby, so here we
 	 * can directly set the constraint for standby.
 	 */
-	pm_constraint_set(PM_STATE_STANDBY);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	k_work_reschedule(&uart_console_data->rx_refresh_timeout_work, delay);
 #endif
 }
@@ -77,7 +79,7 @@ void uart2_wui_isr(const struct device *gpio, struct gpio_callback *cb,
 	 * The pm state of it8xxx2 chip only supports standby, so here we
 	 * can directly set the constraint for standby.
 	 */
-	pm_constraint_set(PM_STATE_STANDBY);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	k_work_reschedule(&uart_console_data->rx_refresh_timeout_work, delay);
 #endif
 }
@@ -97,7 +99,7 @@ static inline int uart_it8xxx2_pm_action(const struct device *dev,
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* Enable UART WUI */
 		ret = gpio_pin_interrupt_configure_dt(&config->gpio_wui,
-						      GPIO_INT_TRIG_LOW);
+						      GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_LOW);
 		if (ret < 0) {
 			LOG_ERR("Failed to configure UART%d WUI (ret %d)",
 				config->port, ret);
@@ -117,7 +119,7 @@ static void uart_it8xxx2_rx_refresh_timeout(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
-	pm_constraint_release(PM_STATE_STANDBY);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 }
 #endif
 #endif /* CONFIG_PM_DEVICE */
@@ -125,8 +127,17 @@ static void uart_it8xxx2_rx_refresh_timeout(struct k_work *work)
 
 static int uart_it8xxx2_init(const struct device *dev)
 {
-#ifdef CONFIG_PM_DEVICE
 	const struct uart_it8xxx2_config *const config = dev->config;
+	int status;
+
+	/* Set the pin to UART alternate function. */
+	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		LOG_ERR("Failed to configure UART pins");
+		return status;
+	}
+
+#ifdef CONFIG_PM_DEVICE
 	const struct device *uart_console_dev =
 		DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	int ret = 0;
@@ -176,10 +187,12 @@ static int uart_it8xxx2_init(const struct device *dev)
 }
 
 #define UART_ITE_IT8XXX2_INIT(inst)                                            \
+	PINCTRL_DT_INST_DEFINE(inst);                                          \
 	static const struct uart_it8xxx2_config uart_it8xxx2_cfg_##inst = {    \
 		.port = DT_INST_PROP(inst, port_num),                          \
 		.gpio_wui = GPIO_DT_SPEC_INST_GET(inst, gpios),                \
 		.uart_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, uart_dev)),    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
 	};                                                                     \
 									       \
 	static struct uart_it8xxx2_data uart_it8xxx2_data_##inst;              \

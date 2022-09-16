@@ -14,11 +14,12 @@ config LOG_PRINTK_MAX_STRING_LENGTH
 	int "Maximum string length supported by LOG_PRINTK"
 	depends on LOG_PRINTK
 	depends on (!LOG_MODE_IMMEDIATE || USERSPACE)
+	depends on LOG1
 	default 128
 	help
 	  Array is allocated on the stack.
 
-if !LOG_MODE_IMMEDIATE
+if LOG_MODE_DEFERRED && !LOG_FRONTEND_ONLY
 
 config LOG_MODE_OVERFLOW
 	bool "Drop oldest message when full"
@@ -93,6 +94,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	default 1152 if LOG_BACKEND_NET
 	default 4096 if NO_OPTIMIZATIONS
 	default 1024 if XTENSA
+	default 2048 if ASSERT || SPIN_VALIDATE
 	default 768
 	help
 	  Set the internal stack size for log processing thread.
@@ -106,7 +108,7 @@ config LOG_BUFFER_SIZE
 	help
 	  Number of bytes dedicated for the logger internal buffer.
 
-endif # !LOG_MODE_IMMEDIATE
+endif # LOG_MODE_DEFERRED && !LOG_FRONTEND_ONLY
 
 if LOG1_DEFERRED
 
@@ -142,7 +144,7 @@ config LOG_STRDUP_BUF_COUNT
 	  some additional fixed overhead.
 
 config LOG_STRDUP_POOL_PROFILING
-	bool "Enable profiling of pool used for log_strdup()"
+	bool "Profiling of pool used for log_strdup()"
 	help
 	  When enabled, maximal utilization of the pool is tracked. It can
 	  be read out using shell command.
@@ -163,6 +165,8 @@ config LOG_TIMESTAMP_64BIT
 
 config LOG_SPEED
 	bool "Prefer performance over size"
+	depends on LOG_MODE_DEFERRED
+	depends on !LOG_FRONTEND
 	help
 	  If enabled, logging may take more code size to get faster logging.
 endif # LOG2

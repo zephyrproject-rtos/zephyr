@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
-#include <drivers/pinmux.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/pinmux.h>
 #include <soc.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 
 #define IOMUX_MAIN_INSEL	(0x68 >> 2)
 #define IOMUX_MAIN_OUTSEL	(0x70 >> 2)

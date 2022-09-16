@@ -4,13 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/sensor.h>
-#include <pm/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <soc.h>
 
 #include <nrfx_qdec.h>
 #include <hal/nrf_gpio.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(qdec_nrfx, CONFIG_SENSOR_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_qdec
@@ -27,8 +29,13 @@ struct qdec_nrfx_data {
 	sensor_trigger_handler_t data_ready_handler;
 };
 
-
 static struct qdec_nrfx_data qdec_nrfx_data;
+
+#ifdef CONFIG_PINCTRL
+PINCTRL_DT_DEFINE(DT_DRV_INST(0));
+static const struct pinctrl_dev_config *qdec_nrfx_pcfg =
+	PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(0));
+#endif
 
 static void accumulate(struct qdec_nrfx_data *data, int16_t acc)
 {
@@ -166,23 +173,24 @@ static void qdec_nrfx_gpio_ctrl(bool enable)
 #endif
 }
 
+NRF_DT_CHECK_PIN_ASSIGNMENTS(DT_DRV_INST(0), 1, a_pin, b_pin, led_pin);
+
 static int qdec_nrfx_init(const struct device *dev)
 {
 	static const nrfx_qdec_config_t config = {
-		.reportper          = NRF_QDEC_REPORTPER_40,
-		.sampleper          = NRF_QDEC_SAMPLEPER_2048us,
-		.psela              = DT_INST_PROP(0, a_pin),
-		.pselb              = DT_INST_PROP(0, b_pin),
-#if DT_INST_NODE_HAS_PROP(0, led_pin)
-		.pselled            = DT_INST_PROP(0, led_pin),
+		.reportper = NRF_QDEC_REPORTPER_40,
+		.sampleper = NRF_QDEC_SAMPLEPER_2048us,
+#ifdef CONFIG_PINCTRL
+		.skip_gpio_cfg = true,
+		.skip_psel_cfg = true,
 #else
-		.pselled            = 0xFFFFFFFF, /* disabled */
+		.psela   = DT_INST_PROP(0, a_pin),
+		.pselb   = DT_INST_PROP(0, b_pin),
+		.pselled = DT_INST_PROP_OR(0, led_pin,
+					   NRF_QDEC_LED_NOT_CONNECTED),
 #endif
-		.ledpre             = DT_INST_PROP(0, led_pre),
-		.ledpol             = NRF_QDEC_LEPOL_ACTIVE_HIGH,
-		.interrupt_priority = NRFX_QDEC_DEFAULT_CONFIG_IRQ_PRIORITY,
-		.dbfen              = 0, /* disabled */
-		.sample_inten       = 0, /* disabled */
+		.ledpre  = DT_INST_PROP(0, led_pre),
+		.ledpol  = NRF_QDEC_LEPOL_ACTIVE_HIGH,
 	};
 
 	nrfx_err_t nerr;
@@ -191,6 +199,14 @@ static int qdec_nrfx_init(const struct device *dev)
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nrfx_isr, nrfx_qdec_irq_handler, 0);
+
+#ifdef CONFIG_PINCTRL
+	int ret = pinctrl_apply_state(qdec_nrfx_pcfg, PINCTRL_STATE_DEFAULT);
+
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 
 	nerr = nrfx_qdec_init(&config, qdec_nrfx_event_handler);
 	if (nerr == NRFX_ERROR_INVALID_STATE) {
@@ -211,27 +227,51 @@ static int qdec_nrfx_init(const struct device *dev)
 static int qdec_nrfx_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
+	int ret = 0;
 	ARG_UNUSED(dev);
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+#ifdef CONFIG_PINCTRL
+		ret = pinctrl_apply_state(qdec_nrfx_pcfg,
+					  PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
+#endif
 		qdec_nrfx_gpio_ctrl(true);
 		nrfx_qdec_enable();
 		break;
+
 	case PM_DEVICE_ACTION_TURN_OFF:
 		/* device must be uninitialized */
 		nrfx_qdec_uninit();
+#ifdef CONFIG_PINCTRL
+		ret = pinctrl_apply_state(qdec_nrfx_pcfg,
+					  PINCTRL_STATE_SLEEP);
+		if (ret < 0) {
+			return ret;
+		}
+#endif
 		break;
+
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* device must be suspended */
 		nrfx_qdec_disable();
 		qdec_nrfx_gpio_ctrl(false);
+#ifdef CONFIG_PINCTRL
+		ret = pinctrl_apply_state(qdec_nrfx_pcfg,
+					  PINCTRL_STATE_SLEEP);
+		if (ret < 0) {
+			return ret;
+		}
+#endif
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztest.h>
-#include <sys/rb.h>
+#include <zephyr/sys/rb.h>
 
 #include "../../../lib/os/rb.c"
 
@@ -20,7 +20,7 @@ static struct rbnode nodes[MAX_NODES];
 /* Bit is set if node is in the tree */
 static unsigned int node_mask[(MAX_NODES + 31)/32];
 
-/* Array of nodes dumed via rb_walk */
+/* Array of nodes dumped via rb_walk */
 static struct rbnode *walked_nodes[MAX_NODES];
 
 /* Node currently being inserted, for testing lessthan() argument order */

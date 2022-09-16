@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT espressif_esp32_wifi
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 
-#include <net/ethernet.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <device.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <ethernet/eth_stats.h>
 #include "esp_networking_priv.h"

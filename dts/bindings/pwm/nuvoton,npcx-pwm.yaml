@@ -5,7 +5,7 @@ description: Nuvoton, NPCX Pulse Width Modulator (PWM) node
 
 compatible: "nuvoton,npcx-pwm"
 
-include: [pwm-controller.yaml, base.yaml]
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -15,14 +15,14 @@ properties:
     label:
         required: true
     pinctrl-0:
-        type: phandles
         required: true
-        description: configurations of pinmux controllers
-    drive-open-drain:
-        type: boolean
+    pinctrl-names:
+        required: true
+    pwm-channel:
+        type: int
         description: |
-            The PWM output will be configured as open-drain. If not set,
-            defaults to push-pull.
+            A index to indicate PWM module that generates a single PWM signal.
+            Please don't overwrite it in the board-level DT driver.
     clock-bus:
         required: false
         type: string
@@ -35,4 +35,5 @@ properties:
 
 pwm-cells:
     - channel
+    - period
     - flags

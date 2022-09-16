@@ -11,9 +11,9 @@
  * Provide 64-bit time stamp API
  */
 
-#include <kernel.h>
-#include <toolchain.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/kernel_structs.h>
 
 /*
  * @brief Read 64-bit timestamp value

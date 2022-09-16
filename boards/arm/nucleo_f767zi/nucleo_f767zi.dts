@@ -12,7 +12,7 @@
 /*
  * WARNING: The pin PA7 will conflict on selection of SPI_1 and ETH_STM32_HAL.
  *          If you require both peripherals, and you do not need Arduino Uno v3
- *          comaptability, the pin PB5 (also on ST Zio connector) can be used
+ *          compatibility, the pin PB5 (also on ST Zio connector) can be used
  *          for the SPI_1 MOSI signal.
  */
 
@@ -155,10 +155,6 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
-	sjw = <1>;
-	prop-seg = <0>;
-	phase-seg1 = <6>;
-	phase-seg2 = <5>;
 	status = "okay";
 };
 
@@ -204,7 +200,7 @@ zephyr_udc0: &usbotg_fs {
 		 */
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x0 0x00010000>;
+			reg = <0x0 DT_SIZE_K(64)>;
 			read-only;
 		};
 
@@ -215,7 +211,7 @@ zephyr_udc0: &usbotg_fs {
 		 */
 		storage_partition: partition@10000 {
 			label = "storage";
-			reg = <0x00010000 0x00010000>;
+			reg = <0x00010000 DT_SIZE_K(64)>;
 		};
 
 		/*
@@ -227,7 +223,7 @@ zephyr_udc0: &usbotg_fs {
 		 */
 		slot0_partition: partition@40000 {
 			label = "image-0";
-			reg = <0x00040000 0x000C0000>;
+			reg = <0x00040000 DT_SIZE_K(768)>;
 		};
 
 		/*
@@ -235,7 +231,7 @@ zephyr_udc0: &usbotg_fs {
 		 */
 		slot1_partition: partition@100000 {
 			label = "image-1";
-			reg = <0x00100000 0x000C0000>;
+			reg = <0x00100000 DT_SIZE_K(768)>;
 		};
 
 		/*
@@ -243,7 +239,7 @@ zephyr_udc0: &usbotg_fs {
 		 */
 		scratch_partition: partition@1C0000 {
 			label = "image-scratch";
-			reg = <0x001C0000 0x00040000>;
+			reg = <0x001C0000 DT_SIZE_K(256)>;
 		};
 	};
 };

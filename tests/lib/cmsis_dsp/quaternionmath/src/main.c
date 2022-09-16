@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 extern void test_quaternionmath_f32(void);
 

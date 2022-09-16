@@ -52,9 +52,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default 50000
 
-config IRQ_OFFLOAD_INTNUM
-	default 0
-
 config KERNEL_ENTRY
 	default "_MainEntry"
 
@@ -66,11 +63,6 @@ config 2ND_LEVEL_INTERRUPTS
 
 config DYNAMIC_INTERRUPTS
 	default y
-
-# To prevent test uses TEST_LOGGING_MINIMAL
-config TEST_LOGGING_DEFAULTS
-	default n
-	depends on TEST
 
 if LOG
 

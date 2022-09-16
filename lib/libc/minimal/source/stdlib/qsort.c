@@ -6,10 +6,9 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <sys/types.h>
-#include <sys/util.h>
-
-typedef int (*comp3_t)(const void *, const void *, void *);
+#include <zephyr/sys/util.h>
 
 /*
  * Normally parent is defined parent(k) = floor((k-1) / 2) but we can avoid a
@@ -32,7 +31,25 @@ typedef int (*comp3_t)(const void *, const void *, void *);
 
 #define A(k) ((uint8_t *)base + size * (k))
 
-static void sift_down(void *base, int start, int end, size_t size, comp3_t comp, void *comp_arg)
+struct qsort_comp {
+	bool has3;
+	void *arg;
+	union {
+		int (*comp2)(const void *a, const void *b);
+		int (*comp3)(const void *a, const void *b, void *arg);
+	};
+};
+
+static inline int compare(struct qsort_comp *cmp, void *a, void *b)
+{
+	if (cmp->has3) {
+		return cmp->comp3(a, b, cmp->arg);
+	}
+
+	return cmp->comp2(a, b);
+}
+
+static void sift_down(void *base, int start, int end, size_t size, struct qsort_comp *cmp)
 {
 	int root;
 	int child;
@@ -42,12 +59,12 @@ static void sift_down(void *base, int start, int end, size_t size, comp3_t comp,
 		child = left(root);
 
 		/* if root < left */
-		if (comp(A(swap), A(child), comp_arg) < 0) {
+		if (compare(cmp, A(swap), A(child)) < 0) {
 			swap = child;
 		}
 
 		/* right exists and min(A(root),A(left)) < A(right) */
-		if (right(root) < end && comp(A(swap), A(right(root)), comp_arg) < 0) {
+		if (right(root) < end && compare(cmp, A(swap), A(right(root))) < 0) {
 			swap = right(root);
 		}
 
@@ -59,28 +76,51 @@ static void sift_down(void *base, int start, int end, size_t size, comp3_t comp,
 	}
 }
 
-static void heapify(void *base, int nmemb, size_t size, comp3_t comp, void *comp_arg)
+static void heapify(void *base, int nmemb, size_t size, struct qsort_comp *cmp)
 {
 	int start;
 
 	for (start = parent(nmemb - 1); start >= 0; --start) {
-		sift_down(base, start, nmemb, size, comp, comp_arg);
+		sift_down(base, start, nmemb, size, cmp);
 	}
 }
 
-static void heap_sort(void *base, int nmemb, size_t size, comp3_t comp, void *comp_arg)
+static void heap_sort(void *base, int nmemb, size_t size, struct qsort_comp *cmp)
 {
 	int end;
 
-	heapify(base, nmemb, size, comp, comp_arg);
+	heapify(base, nmemb, size, cmp);
 
 	for (end = nmemb - 1; end > 0; --end) {
 		byteswp(A(end), A(0), size);
-		sift_down(base, 0, end, size, comp, comp_arg);
+		sift_down(base, 0, end, size, cmp);
 	}
 }
 
-void qsort_r(void *base, size_t nmemb, size_t size, comp3_t comp, void *arg)
+void qsort_r(void *base, size_t nmemb, size_t size,
+	     int (*comp3)(const void *a, const void *b, void *arg), void *arg)
 {
-	heap_sort(base, nmemb, size, comp, arg);
+	struct qsort_comp cmp = {
+		.has3 = true,
+		.arg = arg,
+		{
+			.comp3 = comp3
+		}
+	};
+
+	heap_sort(base, nmemb, size, &cmp);
+}
+
+void qsort(void *base, size_t nmemb, size_t size,
+	   int (*comp2)(const void *a, const void *b))
+{
+	struct qsort_comp cmp = {
+		.has3 = false,
+		.arg = NULL,
+		{
+			.comp2 = comp2
+		}
+	};
+
+	heap_sort(base, nmemb, size, &cmp);
 }

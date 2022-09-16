@@ -14,15 +14,15 @@
  * constructs.
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
-#include <wait_q.h>
+#include <zephyr/wait_q.h>
 #include <ksched.h>
-#include <syscall_handler.h>
-#include <sys/dlist.h>
-#include <sys/util.h>
-#include <sys/__assert.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
 #include <stdbool.h>
 
 /* Single subsystem lock.  Locking per-event would be better on highly
@@ -457,7 +457,7 @@ void z_impl_k_poll_signal_init(struct k_poll_signal *sig)
 {
 	sys_dlist_init(&sig->poll_events);
 	sig->signaled = 0U;
-	/* signal->result is left unitialized */
+	/* signal->result is left uninitialized */
 	z_object_init(sig);
 
 	SYS_PORT_TRACING_FUNC(k_poll_api, signal_init, sig);
@@ -576,6 +576,9 @@ static void triggered_work_expiration_handler(struct _timeout *timeout)
 	k_work_submit_to_queue(twork->workq, &twork->work);
 }
 
+extern int z_work_submit_to_queue(struct k_work_q *queue,
+			 struct k_work *work);
+
 static int signal_triggered_work(struct k_poll_event *event, uint32_t status)
 {
 	struct z_poller *poller = event->poller;
@@ -587,7 +590,7 @@ static int signal_triggered_work(struct k_poll_event *event, uint32_t status)
 
 		z_abort_timeout(&twork->timeout);
 		twork->poll_result = 0;
-		k_work_submit_to_queue(work_q, &twork->work);
+		z_work_submit_to_queue(work_q, &twork->work);
 	}
 
 	return 0;

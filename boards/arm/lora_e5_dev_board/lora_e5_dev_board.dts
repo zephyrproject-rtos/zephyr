@@ -111,16 +111,6 @@
 	msi-range = <11>;
 };
 
-&pll {
-	clocks = <&clk_msi>;
-	div-m = <3>;
-	mul-n = <6>;
-	div-r = <2>;
-	div-q = <2>;
-	div-p = <2>;
-	status = "okay";
-};
-
 &rcc {
 	clocks = <&clk_msi>;
 	clock-frequency = <DT_FREQ_M(48)>;
@@ -161,7 +151,7 @@
 	/* LM75ADP temperature sensor on addr 0x48 */
 };
 
-/* Attention!: the spi-sck pin is in confict with the boot_button on pb13 */
+/* Attention!: the spi-sck pin is in conflict with the boot_button on pb13 */
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb9 &spi2_sck_pb13
 		     &spi2_miso_pb14 &spi2_mosi_pa10>;
@@ -202,7 +192,7 @@ grove_i2c: &i2c2 {};
 		/* 16KB (8x2kB pages) of storage at the end of the flash */
 		storage_partition: partition@3c000 {
 			label = "storage";
-			reg = <0x0003c000 0x00004000>;
+			reg = <0x0003c000 DT_SIZE_K(16)>;
 		};
 	};
 };

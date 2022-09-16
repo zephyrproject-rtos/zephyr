@@ -19,11 +19,12 @@ USB bridge. This chip enables to use JTAG for direct debugging of ESP32 through 
 without a separate JTAG debugger. ESP-WROVER-KIT makes development convenient, easy, and
 cost-effective.
 
-Most of the ESP32 I/O pins are broken out to the board’s pin headers for easy access.
+Most of the ESP32 I/O pins are broken out to the board's pin headers for easy access.
 
 .. note::
-   ESP32’s GPIO16 and GPIO17 are used as chip select and clock signals for PSRAM. By default, the two
-   GPIOs are not broken out to the board’s pin headers in order to ensure reliable performance.
+
+   ESP32's GPIO16 and GPIO17 are used as chip select and clock signals for PSRAM. By default, the two
+   GPIOs are not broken out to the board's pin headers in order to ensure reliable performance.
 
 Functionality Overview
 **********************
@@ -268,6 +269,7 @@ Legend:
 +---+-----------+
 
 .. note::
+
    Since GPIO32 and GPIO33 are connected to the oscillator by default, they are not connected to
    the JP1 I/O connector to maintain signal integrity. This allocation may be changed from the
    oscillator to JP1 by desoldering the zero-ohm resistors from positions R11 / R23 and re-
@@ -442,37 +444,11 @@ Turn the Power Switch to ON, the 5V Power On LED should light up.
 System requirements
 *******************
 
-Build Environment Setup
-=======================
+Prerequisites
+-------------
 
-Some variables must be exported into the environment prior to building this port.
-Find more information at :ref:`env_vars` on how to keep this settings saved in you environment.
-
-.. note::
-
-   In case of manual toolchain installation, set :file:`ESPRESSIF_TOOLCHAIN_PATH` accordingly.
-   Otherwise, set toolchain path as below. If necessary.
-
-On Linux and macOS:
-
-.. code-block:: console
-
-   export ZEPHYR_TOOLCHAIN_VARIANT="espressif"
-   export ESPRESSIF_TOOLCHAIN_PATH="${HOME}/.espressif/tools/zephyr"
-
-On Windows:
-
-.. code-block:: console
-
-   # on CMD:
-   set ESPRESSIF_TOOLCHAIN_PATH=%USERPROFILE%\.espressif\tools\zephyr
-   set ZEPHYR_TOOLCHAIN_VARIANT=espressif
-
-   # on PowerShell
-   $env:ESPRESSIF_TOOLCHAIN_PATH="$env:USERPROFILE\.espressif\tools\zephyr"
-   $env:ZEPHYR_TOOLCHAIN_VARIANT="espressif"
-
-Finally, retrieve required submodules to build this port. This might take a while for the first time:
+Espressif HAL requires binary blobs in order work. The west extension below performs the required
+syncronization to clone, checkout and pull the submodules:
 
 .. code-block:: console
 
@@ -480,10 +456,18 @@ Finally, retrieve required submodules to build this port. This might take a whil
 
 .. note::
 
-    It is recommended running the command above after :file:`west update` so that submodules also get updated.
+   It is recommended running the command above after :file:`west update`.
 
-Flashing
-========
+Building & Flashing
+-------------------
+
+Build and flash applications as usual (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: esp_wrover_kit
+   :goals: build
 
 The usual ``flash`` target will work with the ``esp_wrover_kit`` board
 configuration. Here is an example for the :ref:`hello_world`
@@ -494,52 +478,54 @@ application.
    :board: esp_wrover_kit
    :goals: flash
 
-Refer to :ref:`build_an_application` and :ref:`application_run` for
-more details.
+Open the serial monitor using the following command:
 
-It's impossible to determine which serial port the ESP-WROVER-KIT board is
-connected to, as it uses a generic RS232-USB converter.  The default of
-``/dev/ttyUSB1`` is provided as that's often the assigned name on a Linux
-machine without any other such converters.
+.. code-block:: shell
 
-The baud rate of 921600bps is recommended.  If experiencing issues when
-flashing, try halving the value a few times (460800, 230400, 115200,
-etc).
+   west espressif monitor
 
-All flashing options are now handled by the :ref:`west` tool, including flashing
-with custom options such as a different serial port.  The ``west`` tool supports
-specific options for the ESP32-S2 board, as listed here:
-
-  --esp-idf-path ESP_IDF_PATH
-                        path to ESP-IDF
-  --esp-device ESP_DEVICE
-                        serial port to flash, default $ESPTOOL_PORT if defined.
-                        If not, esptool will loop over available serial ports until
-                        it finds ESP32 device to flash.
-  --esp-baud-rate ESP_BAUD_RATE
-                        serial baud rate, default 921600
-  --esp-flash-size ESP_FLASH_SIZE
-                        flash size, default "detect"
-  --esp-flash-freq ESP_FLASH_FREQ
-                        flash frequency, default "40m"
-  --esp-flash-mode ESP_FLASH_MODE
-                        flash mode, default "dio"
-  --esp-tool ESP_TOOL   if given, complete path to espidf. default is to
-                        search for it in ``[ESP_IDF_PATH]/components/esptool_py/
-                        esptool/esptool.py``
-  --esp-flash-bootloader ESP_FLASH_BOOTLOADER
-                        Bootloader image to flash
-  --esp-flash-partition_table ESP_FLASH_PARTITION_TABLE
-                        Partition table to flash
-
-For example, to flash to ``/dev/ttyUSB2``, use the following command after
-having build the application in the ``build`` directory:
-
+After the board has automatically reset and booted, you should see the following
+message in the monitor:
 
 .. code-block:: console
 
-   west flash -d build/ --skip-rebuild --esp-device /dev/ttyUSB2
+   ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
+   Hello World! esp_wrover_kit
 
+Debugging
+---------
+
+As with much custom hardware, the ESP32 modules require patches to
+OpenOCD that are not upstreamed. Espressif maintains their own fork of
+the project. The custom OpenOCD can be obtained by running the following extension:
+
+.. code-block:: console
+
+   west espressif install
+
+.. note::
+
+   By default, the OpenOCD will be downloaded and installed under $HOME/.espressif/tools/zephyr directory
+   (%USERPROFILE%/.espressif/tools/zephyr on Windows).
+
+The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
+``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
+parameter when building.
+
+Here is an example for building the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: esp_wrover_kit
+   :goals: build flash
+   :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
+
+You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: esp_wrover_kit
+   :goals: debug
 
 Related Documents
 *****************

@@ -20,17 +20,17 @@
 #ifndef ZEPHYR_ARCH_ARM64_INCLUDE_KERNEL_ARCH_DATA_H_
 #define ZEPHYR_ARCH_ARM64_INCLUDE_KERNEL_ARCH_DATA_H_
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 
 #include <exc.h>
 
 #ifndef _ASMLANGUAGE
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <sys/dlist.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/atomic.h>
 
 #ifdef __cplusplus
 extern "C" {

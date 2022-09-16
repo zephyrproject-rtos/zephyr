@@ -7,15 +7,21 @@
 
 #include <errno.h>
 #include <stdbool.h>
-#include <fs/fcb.h>
+#include <zephyr/fs/fcb.h>
 #include <string.h>
 
-#include "settings/settings.h"
+#include <zephyr/settings/settings.h>
 #include "settings/settings_fcb.h"
 #include "settings_priv.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
+
+#if DT_HAS_CHOSEN(zephyr_settings_partition)
+#define SETTINGS_PARTITION DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
+#else
+#define SETTINGS_PARTITION FLASH_AREA_ID(storage)
+#endif
 
 #define SETTINGS_FCB_VERS		1
 
@@ -40,7 +46,7 @@ int settings_fcb_src(struct settings_fcb *cf)
 	cf->cf_fcb.f_scratch_cnt = 1;
 
 	while (1) {
-		rc = fcb_init(FLASH_AREA_ID(storage), &cf->cf_fcb);
+		rc = fcb_init(SETTINGS_PARTITION, &cf->cf_fcb);
 		if (rc) {
 			return -EINVAL;
 		}
@@ -389,7 +395,7 @@ int settings_backend_init(void)
 	int rc;
 	const struct flash_area *fap;
 
-	rc = flash_area_get_sectors(FLASH_AREA_ID(storage), &cnt,
+	rc = flash_area_get_sectors(SETTINGS_PARTITION, &cnt,
 				    settings_fcb_area);
 	if (rc == -ENODEV) {
 		return rc;
@@ -402,7 +408,7 @@ int settings_backend_init(void)
 	rc = settings_fcb_src(&config_init_settings_fcb);
 
 	if (rc != 0) {
-		rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
+		rc = flash_area_open(SETTINGS_PARTITION, &fap);
 
 		if (rc == 0) {
 			rc = flash_area_erase(fap, 0, fap->fa_size);

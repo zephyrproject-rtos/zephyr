@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/atomic.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <cmsis_os.h>
 
 #define TOTAL_CMSIS_THREAD_PRIORITIES (osPriorityRealtime - osPriorityIdle + 1)

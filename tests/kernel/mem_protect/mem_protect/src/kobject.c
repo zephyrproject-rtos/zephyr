@@ -5,7 +5,7 @@
  */
 
 #include "mem_protect.h"
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 
 /* Kernel objects */
 
@@ -80,14 +80,23 @@ void test_kobject_access_grant_error(void)
  */
 void test_kobject_access_grant_error_user(void)
 {
-	struct k_msgq *m;
+	struct k_queue *q;
 
-	m = k_object_alloc(K_OBJ_MSGQ);
-	k_object_access_grant(m, k_current_get());
+	/*
+	 * avoid using K_OBJ_PIPE, K_OBJ_MSGQ, or K_OBJ_STACK because the
+	 * k_object_alloc() returns an uninitialized kernel object and these
+	 * objects are types that can have additional memory allocations that
+	 * need to be freed. This becomes a problem on the fault handler clean
+	 * up because when it is freeing this uninitialized object the random
+	 * data in the object can cause the clean up to try to free random
+	 * data resulting in a secondary fault that fails the test.
+	 */
+	q = k_object_alloc(K_OBJ_QUEUE);
+	k_object_access_grant(q, k_current_get());
 
 	set_fault_valid(true);
 	/* a K_ERR_KERNEL_OOPS expected */
-	k_object_access_grant(m, NULL);
+	k_object_access_grant(q, NULL);
 }
 
 /**
@@ -129,7 +138,7 @@ static void syscall_invalid_kobject_user_part(void *p1, void *p2, void *p3)
 {
 	k_sem_give(&kobject_sem);
 
-	/* should causdde a fault */
+	/* should cause a fault */
 	set_fault_valid(true);
 
 	/* should cause fault. typecasting to override compiler warning */
@@ -353,7 +362,7 @@ void test_kobject_release_from_user(void)
 }
 
 /**
- * @brief Test release and access grant an invaild kobject
+ * @brief Test release and access grant an invalid kobject
  *
  * @details Validate release and access grant an invalid kernel object.
  *
@@ -622,7 +631,7 @@ static void new_thread_from_user_child(void *p1, void *p2, void *p3)
  * - Test user thread can create new thread.
  * - Verify that given thread and thread stack permissions to the user thread,
  *   allow to create new user thread.
- * - Veify that new created user thread have access to its own thread object
+ * - Verify that new created user thread have access to its own thread object
  *   by aborting itself.
  *
  * @ingroup kernel_memprotect_tests
@@ -670,7 +679,7 @@ static void new_user_thrd_child_with_in_use_stack(void *p1, void *p2, void *p3)
 /**
  * @brief Test create new user thread from a user thread with in-use stack obj
  *
- * @details The kernel must prevent new user threads to use initiliazed (in-use)
+ * @details The kernel must prevent new user threads to use initialized (in-use)
  * stack objects. In that case extra_thread is going to be create with in-use
  * stack object child_stack. That will generate error, showing that kernel
  * memory protection is working correctly.
@@ -956,7 +965,7 @@ static void higher_prio_from_user_child(void *p1, void *p2, void *p3)
 	zassert_unreachable("k_object validation failure in k thread create");
 }
 /**
- * @brief Thread creation with prority is higher than current thread
+ * @brief Thread creation with priority is higher than current thread
  *
  * @details  _handler_k_thread_create validation.
  *
@@ -1003,7 +1012,7 @@ static void invalid_prio_from_user_child(void *p1, void *p2, void *p3)
 	zassert_unreachable("k_object validation failure in k thread create");
 }
 /**
- * @brief Create a new thread whose prority is invalid.
+ * @brief Create a new thread whose priority is invalid.
  *
  * @details _handler_k_thread_create validation.
  *
@@ -1084,7 +1093,7 @@ void test_mark_thread_exit_uninitialized(void)
 }
 
 /****************************************************************************/
-/* object validatoin checks */
+/* object validation checks */
 
 static void tThread_object_free_error(void *p1, void *p2, void *p3)
 {
@@ -1122,7 +1131,7 @@ void test_kobject_free_error(void)
 /**
  * @brief Test alloc an invalid kernel object
  *
- * @details Allocate invalid kernel objects, then no alloction
+ * @details Allocate invalid kernel objects, then no allocation
  * will be returned.
  *
  * @ingroup kernel_memprotect_tests
@@ -1131,7 +1140,7 @@ void test_kobject_free_error(void)
  */
 void test_kobject_init_error(void)
 {
-	/* invalid kernel object alloction */
+	/* invalid kernel object allocation */
 	zassert_is_null(k_object_alloc(K_OBJ_ANY-1),
 			"expected got NULL kobject");
 	zassert_is_null(k_object_alloc(K_OBJ_LAST),
@@ -1267,10 +1276,13 @@ void test_alloc_kobjects(void)
 	zassert_not_null(t, "alloc obj (0x%lx)\n", (uintptr_t)t);
 	p = k_object_alloc(K_OBJ_PIPE);
 	zassert_not_null(p, "alloc obj (0x%lx)\n", (uintptr_t)p);
+	k_pipe_init(p, NULL, 0);
 	s = k_object_alloc(K_OBJ_STACK);
 	zassert_not_null(s, "alloc obj (0x%lx)\n", (uintptr_t)s);
+	k_stack_init(s, NULL, 0);
 	m = k_object_alloc(K_OBJ_MSGQ);
 	zassert_not_null(m, "alloc obj (0x%lx)\n", (uintptr_t)m);
+	k_msgq_init(m, NULL, 0, 0);
 	q = k_object_alloc(K_OBJ_QUEUE);
 	zassert_not_null(q, "alloc obj (0x%lx)\n", (uintptr_t)q);
 

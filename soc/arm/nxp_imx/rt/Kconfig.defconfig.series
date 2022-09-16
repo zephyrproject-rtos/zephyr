@@ -32,6 +32,10 @@ config GPIO_MCUX_IGPIO
 	default y if HAS_MCUX_IGPIO
 	depends on GPIO
 
+config PINCTRL_IMX
+	default y if HAS_MCUX_IOMUXC
+	depends on PINCTRL
+
 config ENTROPY_MCUX_TRNG
 	default y if HAS_MCUX_TRNG
 	depends on ENTROPY_GENERATOR
@@ -56,6 +60,10 @@ config UART_MCUX_LPUART
 	default y if HAS_MCUX_LPUART
 	depends on SERIAL
 
+config IMX_USDHC
+	default y if (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
+	depends on SDHC
+
 if FLASH_MCUX_FLEXSPI_XIP
 
 # Avoid RWW hazards by defaulting logging to disabled
@@ -72,7 +80,6 @@ endif
 # set the tick per sec as a divider of the GPT clock source
 config SYS_CLOCK_TICKS_PER_SEC
 	default 4096 if MCUX_GPT_TIMER
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768 if MCUX_GPT_TIMER
 
@@ -98,6 +105,26 @@ config WDT_MCUX_IMX_WDOG
 config PM_MCUX_GPC
 	default y if HAS_MCUX_GPC
 	depends on SOC_SERIES_IMX_RT11XX && PM
+
+# Don't allow SOC to sleep after tests complete when PM is enabled
+config ZTEST_NO_YIELD
+	default y if (ZTEST && PM)
+
+if SOC_SERIES_IMX_RT10XX && PM
+
+config CODE_DATA_RELOCATION
+	default y
+
+config PM_MCUX_GPC
+	default y if HAS_MCUX_GPC
+
+config PM_MCUX_DCDC
+	default y if HAS_MCUX_DCDC
+
+config PM_MCUX_PMU
+	default y if HAS_MCUX_PMU
+
+endif # SOC_SERIES_IMX_RT10XX && PM
 
 if CODE_SEMC
 
@@ -197,7 +224,7 @@ if MBEDTLS
 # MBEDTLS CTR_DRBG code path needs extra stack space for initialization than
 # what the ztest_thread_stack defaults to.
 #
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	int
 	default 1024
 endif # MBEDTLS

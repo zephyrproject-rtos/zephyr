@@ -7,7 +7,7 @@
 /* This test covers deprecated API.  Avoid inappropriate diagnostics
  * about the use of that API.
  */
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #undef __deprecated
 #define __deprecated
 #undef __DEPRECATED_MACRO
@@ -15,7 +15,7 @@
 
 #include <ztest.h>
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define COOPHI_PRIORITY K_PRIO_COOP(0) /* = -4 */
 /* SYSTEM_WORKQUEUE_PRIORITY = -3 */
 /* ZTEST_THREAD_PRIORITY = -2 */
@@ -694,6 +694,7 @@ static void test_1cpu_running_cancel(void)
 {
 	struct test_running_cancel_timer *ctx = &test_running_cancel_ctx;
 	struct k_work *wp = &ctx->work;
+	static const uint32_t ms_timeout = 10;
 	int rc;
 
 	/* Reset state and use the blocking handler */
@@ -713,7 +714,7 @@ static void test_1cpu_running_cancel(void)
 	ctx->submit_rc = INT_MAX;
 	ctx->busy_rc = INT_MAX;
 	k_timer_init(&ctx->timer, test_running_cancel_cb, NULL);
-	k_timer_start(&ctx->timer, K_TICKS(1), K_NO_WAIT);
+	k_timer_start(&ctx->timer, K_MSEC(ms_timeout), K_NO_WAIT);
 
 	/* Cancellation should not complete. */
 	zassert_equal(k_work_cancel(wp), K_WORK_RUNNING | K_WORK_CANCELING,
@@ -721,6 +722,13 @@ static void test_1cpu_running_cancel(void)
 
 	/* Handler should not have run. */
 	zassert_equal(coophi_counter(), 0, NULL);
+
+	/* Busy wait until timer expires. Thread context is blocked so cancelling
+	 * of work won't be completed.
+	 */
+	k_busy_wait(1000 * (ms_timeout + 1));
+
+	zassert_equal(k_timer_status_get(&ctx->timer), 1, NULL);
 
 	/* Wait for cancellation to complete. */
 	zassert_true(k_work_cancel_sync(wp, &work_sync), NULL);
@@ -730,8 +738,7 @@ static void test_1cpu_running_cancel(void)
 	zassert_equal(rc, 0, NULL);
 
 	/* Handler should have detected running and canceling. */
-	zassert_equal(ctx->busy_rc, K_WORK_RUNNING | K_WORK_CANCELING,
-		      NULL);
+	zassert_equal(ctx->busy_rc, K_WORK_RUNNING | K_WORK_CANCELING, NULL);
 
 	/* Attempt to submit while cancelling should have been
 	 * rejected.
@@ -750,6 +757,7 @@ static void test_1cpu_running_cancel_sync(void)
 {
 	struct test_running_cancel_timer *ctx = &test_running_cancel_ctx;
 	struct k_work *wp = &ctx->work;
+	static const uint32_t ms_timeout = 10;
 	int rc;
 
 	/* Reset state and use the blocking handler */
@@ -769,13 +777,20 @@ static void test_1cpu_running_cancel_sync(void)
 	ctx->submit_rc = INT_MAX;
 	ctx->busy_rc = INT_MAX;
 	k_timer_init(&ctx->timer, test_running_cancel_cb, NULL);
-	k_timer_start(&ctx->timer, K_TICKS(1), K_NO_WAIT);
+	k_timer_start(&ctx->timer, K_MSEC(ms_timeout), K_NO_WAIT);
 
 	/* Cancellation should wait. */
 	zassert_true(k_work_cancel_sync(wp, &work_sync), NULL);
 
 	/* Handler should have run. */
 	zassert_equal(coophi_counter(), 1, NULL);
+
+	/* Busy wait until timer expires. Thread context is blocked so cancelling
+	 * of work won't be completed.
+	 */
+	k_busy_wait(1000 * (ms_timeout + 1));
+
+	zassert_equal(k_timer_status_get(&ctx->timer), 1, NULL);
 
 	/* Verify completion */
 	rc = k_sem_take(&sync_sem, K_NO_WAIT);

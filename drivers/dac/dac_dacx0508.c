@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/spi.h>
-#include <drivers/dac.h>
-#include <logging/log.h>
-#include <dt-bindings/dac/dacx0508.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/dt-bindings/dac/dacx0508.h>
 
 LOG_MODULE_REGISTER(dac_dacx0508, CONFIG_DAC_LOG_LEVEL);
 
@@ -406,8 +406,8 @@ static const struct dac_driver_api dacx0508_driver_api = {
 #define CALL_WITH_ARG(arg, expr) expr(arg)
 
 #define INST_DT_DACX0508_FOREACH(t, inst_expr) \
-	UTIL_LISTIFY(DT_NUM_INST_STATUS_OKAY(ti_dac##t), \
-		     CALL_WITH_ARG, inst_expr)
+	LISTIFY(DT_NUM_INST_STATUS_OKAY(ti_dac##t), \
+		     CALL_WITH_ARG, (), inst_expr)
 
 INST_DT_DACX0508_FOREACH(60508, DAC60508_DEVICE);
 INST_DT_DACX0508_FOREACH(70508, DAC70508_DEVICE);

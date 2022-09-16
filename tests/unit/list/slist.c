@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
 static sys_slist_t test_list;
 static sys_slist_t append_list;
@@ -368,6 +368,18 @@ void test_slist(void)
 			      ((struct data_node *)node)->data);
 	}
 
+	/* test sys_slist_append_list with emtpy list */
+	sys_slist_init(&test_list);
+	sys_slist_init(&append_list);
+	for (ii = 0; ii < 6; ii++) {
+		/* regenerate test_list only */
+		sys_slist_append(&test_list, &data_node[ii].node);
+	}
+	sys_slist_append_list(&test_list, append_list.head, append_list.tail);
+	node = sys_slist_peek_tail(&test_list);
+	zassert_equal(((struct data_node *)node)->data, data_node[5].data, "expected %d got %d",
+		      data_node[5].data, ((struct data_node *)node)->data);
+
 	/* test sys_slist_merge_slist */
 	sys_slist_init(&test_list);
 	sys_slist_init(&append_list);
@@ -385,6 +397,19 @@ void test_slist(void)
 	}
 	zassert_true(sys_slist_is_empty(&append_list),
 		     "merged list is not empty");
+
+	/* test sys_slist_merge_slist with emtpy list */
+	sys_slist_init(&test_list);
+	sys_slist_init(&append_list);
+	for (ii = 0; ii < 6; ii++) {
+		/* regenerate test_list only */
+		sys_slist_append(&test_list, &data_node[ii].node);
+	}
+
+	sys_slist_merge_slist(&test_list, &append_list);
+	node = sys_slist_peek_tail(&test_list);
+	zassert_equal(((struct data_node *)node)->data, data_node[5].data, "expected %d got %d",
+		      data_node[5].data, ((struct data_node *)node)->data);
 }
 
 /**

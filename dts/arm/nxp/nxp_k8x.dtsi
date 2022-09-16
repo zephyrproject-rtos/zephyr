@@ -5,10 +5,10 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/clock/kinetis_mcg.h>
-#include <dt-bindings/clock/kinetis_sim.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/kinetis_mcg.h>
+#include <zephyr/dt-bindings/clock/kinetis_sim.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	aliases {
@@ -29,6 +29,12 @@
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
 		};
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,kinetis-pinctrl";
+		status = "okay";
 	};
 
 	soc {
@@ -219,6 +225,8 @@
 			reg = <0x400c4000 0x1000>;
 			interrupts = <30 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x102c 4>;
+			dmas = <&edma0 1 2>, <&edma0 2 3>;
+			dma-names = "rx", "tx";
 			label = "UART_0";
 			status = "disabled";
 		};
@@ -228,6 +236,8 @@
 			reg = <0x400c5000 0x1000>;
 			interrupts = <31 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x102c 5>;
+			dmas = <&edma0 3 4>, <&edma0 4 5>;
+			dma-names = "rx", "tx";
 			label = "UART_1";
 			status = "disabled";
 		};
@@ -237,6 +247,8 @@
 			reg = <0x400c6000 0x1000>;
 			interrupts = <32 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x102c 6>;
+			dmas = <&edma0 5 6>, <&edma0 6 7>;
+			dma-names = "rx", "tx";
 			label = "UART_2";
 			status = "disabled";
 		};
@@ -246,6 +258,8 @@
 			reg = <0x400c7000 0x1000>;
 			interrupts = <33 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x102c 7>;
+			dmas = <&edma0 7 8>, <&edma0 8 9>;
+			dma-names = "rx", "tx";
 			label = "UART_3";
 			status = "disabled";
 		};
@@ -255,6 +269,8 @@
 			reg = <0x400d6000 0x1000>;
 			interrupts = <34 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x102c 22>;
+			dmas = <&edma0 9 10>, <&edma0 10 11>;
+			dma-names = "rx", "tx";
 			label = "UART_4";
 			status = "disabled";
 		};

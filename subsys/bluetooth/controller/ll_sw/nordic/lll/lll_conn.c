@@ -8,10 +8,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <soc.h>
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -249,6 +249,15 @@ void lll_conn_isr_rx(void *param)
 		err = isr_rx_pdu(lll, pdu_data_rx, &is_rx_enqueue, &tx_release,
 				 &is_done);
 		if (err) {
+			/* Disable radio trx switch on MIC failure for both
+			 * central and peripheral, and close the radio event.
+			 */
+			radio_isr_set(isr_done, param);
+			radio_disable();
+
+			/* assert if radio started tx before being disabled */
+			LL_ASSERT(!radio_is_ready());
+
 			goto lll_conn_isr_rx_exit;
 		}
 
@@ -267,6 +276,20 @@ void lll_conn_isr_rx(void *param)
 		crc_expire--;
 		is_done = (crc_expire == 0U);
 	}
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX) && defined(CONFIG_BT_CTLR_LE_ENC)
+		if (lll->enc_rx) {
+			struct pdu_data *pdu_scratch;
+
+			pdu_scratch = (struct pdu_data *)radio_pkt_scratch_get();
+
+			if (pdu_scratch->cp) {
+				(void)memcpy((void *)&pdu_data_rx->cte_info,
+					     (void *)&pdu_scratch->cte_info,
+					     sizeof(pdu_data_rx->cte_info));
+			}
+		}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX && defined(CONFIG_BT_CTLR_LE_ENC) */
 
 	/* prepare tx packet */
 	is_empty_pdu_tx_retry = lll->empty;
@@ -372,6 +395,13 @@ lll_conn_isr_rx_exit:
 
 	is_ull_rx = 0U;
 
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+	if (((lll->rx_hold_req - lll->rx_hold_ack) & RX_HOLD_MASK) ==
+	    RX_HOLD_REQ) {
+		lll->rx_hold_ack--;
+	}
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+
 	if (tx_release) {
 		LL_ASSERT(lll->handle != 0xFFFF);
 
@@ -397,7 +427,6 @@ lll_conn_isr_rx_exit:
 #elif !defined(HAL_RADIO_PDU_LEN_MAX)
 #error "Undefined HAL_RADIO_PDU_LEN_MAX."
 #endif
-
 		ull_pdu_rx_alloc();
 
 		node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
@@ -490,7 +519,8 @@ void lll_conn_isr_tx(void *param)
 		if (df_rx_params->is_enabled) {
 			lll_df_conf_cte_rx_enable(df_rx_params->slot_durations,
 						  df_rx_params->ant_sw_len, df_rx_params->ant_ids,
-						  df_rx_cfg->chan, CTE_INFO_IN_S1_BYTE);
+						  df_rx_cfg->chan, CTE_INFO_IN_S1_BYTE,
+						  lll->phy_rx);
 		} else {
 			lll_df_conf_cte_info_parsing_enable();
 		}
@@ -590,6 +620,10 @@ void lll_conn_isr_tx(void *param)
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 	radio_isr_set(lll_conn_isr_rx, param);
+
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+	ull_conn_lll_tx_demux_sched(lll);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 }
 
 void lll_conn_rx_pkt_set(struct lll_conn *lll)
@@ -1051,6 +1085,10 @@ static inline bool create_iq_report(struct lll_conn *lll, uint8_t rssi_ready, ui
 		iq_report->rssi_ant_id = ant;
 		iq_report->cte_info = *(struct pdu_cte_info *)&cte_info;
 		iq_report->local_slot_durations = rx_params->slot_durations;
+		/* Event counter is updated to next value during event preparation, hence
+		 * it has to be subtracted to store actual event counter value.
+		 */
+		iq_report->event_counter = lll->event_counter - 1;
 
 		ftr = &iq_report->hdr.rx_ftr;
 		ftr->param = lll;

@@ -5,12 +5,12 @@
  */
 
 #include "isotp_internal.h"
-#include <net/buf.h>
-#include <kernel.h>
-#include <init.h>
-#include <sys/util.h>
-#include <logging/log.h>
-#include <timeout_q.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/timeout_q.h>
 
 LOG_MODULE_REGISTER(isotp, CONFIG_ISOTP_LOG_LEVEL);
 
@@ -76,9 +76,11 @@ static inline void receive_report_error(struct isotp_recv_ctx *ctx, int err)
 	ctx->error_nr = err;
 }
 
-static void receive_can_tx(int error, void *arg)
+static void receive_can_tx(const struct device *dev, int error, void *arg)
 {
 	struct isotp_recv_ctx *ctx = (struct isotp_recv_ctx *)arg;
+
+	ARG_UNUSED(dev);
 
 	if (error != 0) {
 		LOG_ERR("Error sending FC frame (%d)", error);
@@ -487,7 +489,7 @@ static void process_cf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 		      K_MSEC(ISOTP_CR));
 
 	if ((frame->data[index++] & ISOTP_PCI_SN_MASK) != ctx->sn_expected++) {
-		LOG_ERR("Sequence number missmatch");
+		LOG_ERR("Sequence number mismatch");
 		receive_report_error(ctx, ISOTP_N_WRONG_SN);
 		k_work_submit(&ctx->work);
 		return;
@@ -525,9 +527,11 @@ static void process_cf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 	}
 }
 
-static void receive_can_rx(struct zcan_frame *frame, void *arg)
+static void receive_can_rx(const struct device *dev, struct zcan_frame *frame, void *arg)
 {
 	struct isotp_recv_ctx *ctx = (struct isotp_recv_ctx *)arg;
+
+	ARG_UNUSED(dev);
 
 	switch (ctx->state) {
 	case ISOTP_RX_STATE_WAIT_FF_SF:
@@ -723,11 +727,14 @@ static inline void send_report_error(struct isotp_send_ctx *ctx, uint32_t err)
 	ctx->error_nr = err;
 }
 
-static void send_can_tx_cb(int error, void *arg)
+static void send_can_tx_cb(const struct device *dev, int error, void *arg)
 {
 	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
 
+	ARG_UNUSED(dev);
+
 	ctx->tx_backlog--;
+	k_sem_give(&ctx->tx_sem);
 
 	if (ctx->state == ISOTP_TX_WAIT_BACKLOG) {
 		if (ctx->tx_backlog > 0) {
@@ -784,6 +791,7 @@ static void send_process_fc(struct isotp_send_ctx *ctx,
 		ctx->state = ISOTP_TX_SEND_CF;
 		ctx->wft = 0;
 		ctx->tx_backlog = 0;
+		k_sem_reset(&ctx->tx_sem);
 		ctx->opts.bs = *data++;
 		ctx->opts.stmin = *data++;
 		ctx->bs = ctx->opts.bs;
@@ -814,9 +822,11 @@ static void send_process_fc(struct isotp_send_ctx *ctx,
 	}
 }
 
-static void send_can_rx_cb(struct zcan_frame *frame, void *arg)
+static void send_can_rx_cb(const struct device *dev, struct zcan_frame *frame, void *arg)
 {
 	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
+
+	ARG_UNUSED(dev);
 
 	if (ctx->state == ISOTP_TX_WAIT_FC) {
 		z_abort_timeout(&ctx->timeout);
@@ -921,7 +931,7 @@ static inline int send_ff(struct isotp_send_ctx *ctx)
 	}
 
 	/* According to ISO FF has sn 0 and is incremented to one
-	 * alltough it's not part of the FF frame
+	 * although it's not part of the FF frame
 	 */
 	ctx->sn = 1;
 	data = get_data_ctx(ctx);
@@ -1068,6 +1078,9 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 				ctx->state = ISOTP_TX_WAIT_ST;
 				break;
 			}
+
+			/* Ensure FIFO style transmission of CF */
+			k_sem_take(&ctx->tx_sem, K_FOREVER);
 		} while (ret > 0);
 
 		break;
@@ -1154,6 +1167,7 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 		ctx->has_callback = 0;
 	}
 
+	k_sem_init(&ctx->tx_sem, 0, 1);
 	ctx->can_dev = can_dev;
 	ctx->tx_addr = *tx_addr;
 	ctx->rx_addr = *rx_addr;

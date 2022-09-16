@@ -5,15 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
-#include <fs/nvs.h>
-#include <sys/crc.h>
+#include <zephyr/fs/nvs.h>
+#include <zephyr/sys/crc.h>
 #include "nvs_priv.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(fs_nvs, CONFIG_NVS_LOG_LEVEL);
 
 /* basic routines */
@@ -353,7 +353,7 @@ static int nvs_flash_wrt_entry(struct nvs_fs *fs, uint16_t id, const void *data,
 /* end of flash routines */
 
 /* If the closing ate is invalid, its offset cannot be trusted and
- * the last valod ate of the sector should instead try to be recovered by going
+ * the last valid ate of the sector should instead try to be recovered by going
  * through all ate's.
  *
  * addr should point to the faulty closing ate and will be updated to the last
@@ -623,7 +623,7 @@ static int nvs_startup(struct nvs_fs *fs)
 	struct nvs_ate last_ate;
 	size_t ate_size, empty_len;
 	/* Initialize addr to 0 for the case fs->sector_count == 0. This
-	 * should never happen as this is verified in nvs_init() but both
+	 * should never happen as this is verified in nvs_mount() but both
 	 * Coverity and GCC believe the contrary.
 	 */
 	uint32_t addr = 0U;
@@ -714,7 +714,7 @@ static int nvs_startup(struct nvs_fs *fs)
 			 */
 			fs->data_wra += nvs_al_size(fs, last_ate.offset + last_ate.len);
 
-			/* ate on the last possition within the sector is
+			/* ate on the last position within the sector is
 			 * reserved for deletion an entry
 			 */
 			if (fs->ate_wra == fs->data_wra && last_ate.len) {
@@ -847,7 +847,7 @@ int nvs_clear(struct nvs_fs *fs)
 	return 0;
 }
 
-int nvs_init(struct nvs_fs *fs, const char *dev_name)
+int nvs_mount(struct nvs_fs *fs)
 {
 
 	int rc;
@@ -855,12 +855,6 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 	size_t write_block_size;
 
 	k_mutex_init(&fs->nvs_lock);
-
-	fs->flash_device = device_get_binding(dev_name);
-	if (!fs->flash_device) {
-		LOG_ERR("No valid flash device found");
-		return -ENXIO;
-	}
 
 	fs->flash_parameters = flash_get_parameters(fs->flash_device);
 	if (fs->flash_parameters == NULL) {

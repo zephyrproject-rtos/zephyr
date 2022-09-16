@@ -11,19 +11,19 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 
-#include <zephyr.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/console/uart_pipe.h>
-#include <sys/byteorder.h>
-#include <drivers/uart.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/console/uart_pipe.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/uart.h>
 
-#include <logging/log_backend.h>
-#include <logging/log_output.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
 
-#include <bluetooth/buf.h>
+#include <zephyr/bluetooth/buf.h>
 
 #include "monitor.h"
 

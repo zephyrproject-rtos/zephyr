@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config LPD880X_STRIP
-	bool "Enable LPD880x SPI LED strip driver"
+	bool "LPD880x SPI LED strip driver"
 	depends on SPI
 	help
 	  Enable LED strip driver for daisy chains of LPD880x

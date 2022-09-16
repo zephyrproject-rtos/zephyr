@@ -18,7 +18,7 @@ module-str = DAC
 source "subsys/logging/Kconfig.template.log_config"
 
 config DAC_SHELL
-	bool "Enable DAC shell"
+	bool "DAC shell"
 	default y
 	depends on SHELL
 	help
@@ -43,6 +43,8 @@ source "drivers/dac/Kconfig.dacx0508"
 source "drivers/dac/Kconfig.dacx3608"
 
 source "drivers/dac/Kconfig.mcp4725"
+
+source "drivers/dac/Kconfig.mcp4728"
 
 source "drivers/dac/Kconfig.gd32"
 

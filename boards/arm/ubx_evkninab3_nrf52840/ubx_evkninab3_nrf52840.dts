@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "ubx_evkninab3_nrf52840-pinctrl.dtsi"
 
 / {
 	model = "u-blox EVK NINA-B3 nRF52840";
@@ -41,13 +42,13 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		red_pwm_led: red_pwm_led {
-			pwms = <&pwm0 13>;
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 		green_pwm_led: green_pwm_led {
-			pwms = <&pwm0 25>;
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 		blue_pwm_led: blue_pwm_led {
-			pwms = <&pwm0 32>;
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
 
@@ -141,44 +142,41 @@
 	compatible = "nordic,nrf-uarte";
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <45>;
-	rx-pin = <29>;
-	rts-pin = <31>;
-	cts-pin = <44>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <16>;
-	scl-pin = <24>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi0 {
 	compatible = "nordic,nrf-spi";
 	/* Cannot be used together with i2c0. */
 	/* status = "okay"; */
-	sck-pin = <7>;
-	mosi-pin = <32>;
-	miso-pin = <15>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <3>;
-	mosi-pin = <28>;
-	miso-pin = <9>;
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &pwm0 {
 	status = "okay";
-	ch0-pin = <13>;
-	ch0-inverted;
-	ch1-pin = <32>;
-	ch1-inverted;
-	ch2-pin = <25>;
-	ch2-inverted;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {
@@ -190,7 +188,7 @@ arduino_i2c: &i2c0 {
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
+			reg = <0x00000000 0x0000C000>;
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";

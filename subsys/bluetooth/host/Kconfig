@@ -4,8 +4,6 @@
 # Copyright (c) 2015-2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-comment "Host Stack Configuration"
-
 config BT_HCI_HOST
 	# Hidden option to make the conditions more intuitive
 	bool
@@ -24,7 +22,7 @@ config BT_HCI_TX_STACK_SIZE
 	default 416 if BT_SPI
 	default 940 if BT_CTLR && BT_LL_SW_SPLIT && NO_OPTIMIZATIONS
 	default 1024 if BT_CTLR && BT_LL_SW_SPLIT && BT_CENTRAL
-	default 640 if BT_CTLR && BT_LL_SW_SPLIT
+	default 768 if BT_CTLR && BT_LL_SW_SPLIT
 	default 512 if BT_USERCHAN
 	default 640 if BT_STM32_IPM
 	# Even if no driver is selected the following default is still
@@ -70,21 +68,52 @@ config BT_HCI_RESERVE
 	  Headroom that the driver needs for sending and receiving buffers. Add a
 	  new 'default' entry for each new driver.
 
-config BT_RECV_IS_RX_THREAD
-	# Hidden option set by the HCI driver to indicate that there's
-	# no need for the host to have its own RX thread.
-	# If this option has been enabled it is then the responsibility of the
-	# HCI driver to call bt_recv_prio from a higher priority context than
-	# bt_recv in order to avoid deadlocks.
-	# If this option is disabled then only bt_recv should be called.
-	bool
-	prompt "bt_recv is called from RX thread" if BT_NO_DRIVER
+
+choice BT_RECV_CONTEXT
+	prompt "BT RX Thread Selection"
+	default BT_RECV_BLOCKING if BT_LL_SW_SPLIT || BT_H4
+	default BT_RECV_WORKQ_BT
+	help
+	  Selects in which context incoming low priority HCI packets are processed.
+	  The host defines some events as high priority to avoid race conditions and deadlocks.
+	  High priority events are always processed in the context of the caller of bt_recv()
+	  or bt_recv_prio(). The choice will influence RAM usage and how fast incoming HCI
+	  packets are processed.
+
+config BT_RECV_BLOCKING
+	bool "Process HCI packets in the context of bt_recv() and bt_recv_prio()"
+	help
+	  When this option is selected, the host will not have its own RX thread.
+	  With this option it is the responsibility of the HCI driver to call
+	  bt_recv_prio from a higher priority context than bt_recv() in order to avoid deadlocks.
+
+config BT_RECV_WORKQ_SYS
+	bool "Process low priority HCI packets in the system work queue"
+	help
+	  When this option is selected, the host will process incoming low priority HCI packets
+	  in the system work queue. The HCI driver shall not call bt_recv_prio().
+	  High priority HCI packets will processed in the context of the caller of bt_recv().
+	  The application needs to ensure the system workqueue stack size (SYSTEM_WORKQUEUE_STACK_SIZE)
+	  is large enough, refer to BT_RX_STACK_SIZE for the recommended minimum.
+	  Note: When this option is used, other users of the system work queue will influence the
+	  latency of incoming Bluetooth events.
+
+config BT_RECV_WORKQ_BT
+	bool "Process low priority HCI packets in the bluetooth-specific work queue"
+	help
+	  When this option is selected, the host will process incoming low priority HCI packets
+	  in the bluetooth-specific work queue. The HCI driver shall not call bt_recv_prio().
+	  High priority HCI packets will processed in the context of the caller of bt_recv().
+	  The application needs to ensure the bluetooth-specific work queue size is large enough,
+	  refer to BT_RX_STACK_SIZE for the recommended minimum.
+endchoice
 
 config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
-	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
-	default 512 if BT_HCI_RAW
+	default 768 if BT_HCI_RAW
+	default 3092 if BT_MESH_GATT_CLIENT
 	default 2048 if BT_MESH
+	default 2048 if BT_AUDIO
 	default 2200 if BT_SETTINGS
 	default 1024
 	help
@@ -98,7 +127,6 @@ config BT_RX_STACK_SIZE
 config BT_RX_PRIO
 	# Hidden option for Co-Operative Rx thread priority
 	int
-	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
 	default 8
 
 config BT_DRIVER_RX_HIGH_PRIO
@@ -106,19 +134,37 @@ config BT_DRIVER_RX_HIGH_PRIO
 	int
 	default 6
 
+menu "Bluetooth Host"
+
 if BT_HCI_HOST
 
+rsource "../mesh/Kconfig"
+rsource "../audio/Kconfig"
+
 config BT_HOST_CRYPTO
-	# Hidden option that compiles in random number generation and AES
-	# encryption support using TinyCrypt library if this is not provided
-	# by the controller implementation.
+	# Hidden option that compiles in AES encryption support using TinyCrypt
+	# library if this is not provided by the controller implementation.
 	bool
 	default y if !BT_CTLR_CRYPTO
 	select TINYCRYPT
 	select TINYCRYPT_AES
+
+config BT_HOST_CRYPTO_PRNG
+	bool "Use Tinycrypt library for random number generation"
+	default y
 	select TINYCRYPT_SHA256
 	select TINYCRYPT_SHA256_HMAC
 	select TINYCRYPT_SHA256_HMAC_PRNG
+	depends on BT_HOST_CRYPTO
+	help
+	  When selected, will use tinycrypt library for random number generation.
+	  This will consume additional ram, but may speed up the generation of random
+	  numbers.
+
+	  Otherwise, random numbers will be generated through multiple HCI calls,
+	  which will not consume additional resources, but may take a long time,
+	  depending on the length of the random data.
+	  This method is generally recommended within 16 bytes.
 
 config BT_SETTINGS
 	bool "Store Bluetooth state and configuration persistently"
@@ -169,14 +215,10 @@ config BT_SETTINGS_USE_PRINTK
 	  printk is enabled then the program memory footprint will be larger.
 endif # BT_SETTINGS
 
-config BT_WHITELIST
-	bool "DEPRECATED: Use BT_FILTER_ACCEPT_LIST instead"
-	select BT_FILTER_ACCEPT_LIST
-
 config BT_FILTER_ACCEPT_LIST
-	bool "Enable filter accept list support"
+	bool "Filter accept list support"
 	help
-	  This option enables the filter accep list API. This takes advantage of the
+	  This option enables the filter accept list API. This takes advantage of the
 	  filtering feature of a BLE controller.
 	  The filter accept list is a global list and the same list is used
 	  by both scanner and advertiser. The filter accept list cannot be modified while
@@ -188,8 +230,16 @@ config BT_FILTER_ACCEPT_LIST
 	  advertising reports.
 	  Connections can be established automatically for accepted peers.
 
-	  This options deprecates the bt_le_set_auto_conn API in favor of the
-	  bt_conn_create_aute_le API.
+config BT_LIM_ADV_TIMEOUT
+	int "Timeout for limited advertising in 1s units"
+	default 30
+	range 1 180
+	depends on BT_BROADCASTER
+	help
+	  After this timeout is reached, advertisement with BT_LE_AD_LIMITED flag
+	  set shall be terminated. As per BT Core Spec 5.2, Vol 3, Part C,
+	  Appendix A (NORMATIVE): TIMERS AND CONSTANTS it's required to be no more
+	  than 180s.
 
 if BT_CONN
 
@@ -243,7 +293,7 @@ config BT_AUTO_DATA_LEN_UPDATE
 	  procedure at its discretion or want to initiate manually.
 
 config BT_REMOTE_INFO
-	bool "Enable application access to remote information"
+	bool "Application access to remote information"
 	help
 	  Enable application access to the remote information available in the
 	  stack. The remote information is retrieved once a connection has been
@@ -355,10 +405,10 @@ config BT_FIXED_PASSKEY
 	help
 	  With this option enabled, the application will be able to call the
 	  bt_passkey_set() API to set a fixed passkey. If set, the
-	  pairing_confim() callback will be called for all incoming pairings.
+	  pairing_confirm() callback will be called for all incoming pairings.
 
 config BT_USE_DEBUG_KEYS
-	bool "Enable Security Manager Debug Mode"
+	bool "Security Manager Debug Mode"
 	help
 	  This option places Security Manager in a Debug Mode. In this mode
 	  predefined Diffie-Hellman private/public key pair is used as described
@@ -441,6 +491,7 @@ endif # BT_SMP
 
 rsource "Kconfig.l2cap"
 rsource "Kconfig.gatt"
+rsource "../services/Kconfig"
 
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
@@ -532,6 +583,16 @@ config BT_DEVICE_NAME
 	  Bluetooth device name. Name can be up to 248 bytes long (excluding
 	  NULL termination). Can be empty string.
 
+config BT_DEVICE_APPEARANCE_DYNAMIC
+	bool "Runtime Bluetooth Appearance changing"
+	help
+	  Enables use of bt_set_appearance.
+	  If CONFIG_BT_SETTINGS is set, the appearance is persistently stored.
+
+config BT_DEVICE_APPEARANCE_GATT_WRITABLE
+	bool "Allow authenticated peers to set GAP Appearance"
+	depends on BT_DEVICE_APPEARANCE_DYNAMIC
+
 config BT_DEVICE_APPEARANCE
 	int "Bluetooth device appearance"
 	range 0 65535
@@ -543,14 +604,14 @@ config BT_DEVICE_APPEARANCE
 
 config BT_ID_MAX
 	int "Maximum number of local identities"
-	range 1 64
+	range 1 250
 	default 1
 	help
 	  Maximum number of supported local identity addresses. For most
 	  products this is safe to leave as the default value (1).
 
 config BT_DF
-	bool "Enable Direction Finding support [EXPERIMENTAL]"
+	bool "Direction Finding support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Enable support for Bluetooth 5.1 Direction Finding.
@@ -560,45 +621,45 @@ config BT_DF
 if BT_DF
 
 config BT_DF_CONNECTIONLESS_CTE_RX
-	bool "Enable support for receive of CTE in connectionless mode"
+	bool "Support for receive of CTE in connectionless mode"
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connectionless mode.
 
 config BT_DF_CONNECTIONLESS_CTE_TX
-	bool "Enable support for transmission of CTE in connectionless mode"
+	bool "Support for transmission of CTE in connectionless mode"
 	help
 	  Enable support for transmission of Constant Tone Extension in
 	  connectionless mode.
 
 config BT_DF_CONNECTION_CTE_RX
-	bool "Enable support for receive of CTE in connection mode"
+	bool "Support for receive of CTE in connection mode"
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connection mode.
 
 config BT_DF_CONNECTION_CTE_TX
-	bool "Enable support for transmission of CTE in connection mode"
+	bool "Support for transmission of CTE in connection mode"
 	help
 	  Enable support for transmission of Constant Tone Extension in
 	  connection mode.
 
 config BT_DF_CONNECTION_CTE_REQ
-	bool "Enable support for CTE request procedure in connection mode"
+	bool "Support for CTE request procedure in connection mode"
 	depends on BT_DF_CONNECTION_CTE_RX
 	help
 	  Enable support for request of Constant Tone Extension in connection
 	  mode.
 
 config BT_DF_CONNECTION_CTE_RSP
-	bool "Enable support for CTE request procedure in connection mode"
+	bool "Support for CTE request procedure in connection mode"
 	depends on BT_DF_CONNECTION_CTE_TX
 	help
 	  Enable support for request of Constant Tone Extension in connection
 	  mode.
 
 config BT_DF_CTE_RX_AOA
-	bool "Enable antenna switching during CTE reception (AoA) feature"
+	bool "Antenna switching during CTE reception (AoA) feature"
 	depends on BT_DF_CONNECTIONLESS_CTE_RX || BT_DF_CONNECTION_CTE_RX
 	default y
 	help
@@ -606,7 +667,7 @@ config BT_DF_CTE_RX_AOA
 	  Also known as Angle of Arrival mode.
 
 config BT_DF_CTE_TX_AOD
-	bool "Enable antenna switching during CTE transmission (AoD) feature"
+	bool "Antenna switching during CTE transmission (AoD) feature"
 	depends on BT_DF_CONNECTIONLESS_CTE_TX || BT_DF_CONNECTION_CTE_TX
 	default y
 	help
@@ -622,7 +683,7 @@ endif # BT_DF
 endif # BT_HCI_HOST
 
 config BT_ECC
-	bool "Enable ECDH key generation support"
+	bool "ECDH key generation support"
 	default y if BT_MESH_PROV || (BT_SMP && !BT_SMP_OOB_LEGACY_PAIR_ONLY)
 	help
 	  This option adds support for ECDH HCI commands.
@@ -646,7 +707,7 @@ config BT_TINYCRYPT_ECC
 	  does not have any special ECC support itself (at least not currently).
 
 config BT_HOST_CCM
-	bool "Enable host side AES-CCM module"
+	bool "Host side AES-CCM module"
 	help
 	  Enables the software based AES-CCM engine in the host. Will use the
 	  controller's AES encryption functions if available, or BT_HOST_CRYPTO
@@ -870,3 +931,5 @@ config BT_HCI_VS_EVT_USER
 	help
 	  Enable registering a callback for delegating to the user the handling of
 	  VS events that are not known to the stack
+
+endmenu

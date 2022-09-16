@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -22,6 +22,7 @@
 #include "ull_conn_internal.h"
 
 #include "ll_feat.h"
+#include "ll_settings.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ll_feat

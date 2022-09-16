@@ -6,16 +6,16 @@
 
 #define DT_DRV_COMPAT st_stm32_ipcc_mailbox
 
-#include <drivers/clock_control.h>
-#include <device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <drivers/ipm.h>
+#include <zephyr/drivers/ipm.h>
 #include <soc.h>
 #include <stm32_ll_ipcc.h>
 
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ipm_stm32_ipcc, CONFIG_IPM_LOG_LEVEL);
 
 #define MBX_STRUCT(dev)					\
@@ -120,7 +120,7 @@ static void stm32_ipcc_mailbox_rx_isr(const struct device *dev)
 			/* Only one MAILBOX, id is unused and set to 0 */
 			data->callback(dev, data->user_data, i, &value);
 		}
-		/* clear status to acknoledge message reception */
+		/* clear status to acknowledge message reception */
 		IPCC_ClearFlag_CHx(cfg->ipcc, i);
 		IPCC_EnableReceiveChannel(cfg->ipcc, i);
 	}
@@ -157,7 +157,7 @@ static int stm32_ipcc_mailbox_ipm_send(const struct device *dev, int wait,
 	ARG_UNUSED(wait);
 	ARG_UNUSED(buff);
 
-	/* No data transmition, only doorbell */
+	/* No data transmission, only doorbell */
 	if (size) {
 		return -EMSGSIZE;
 	}

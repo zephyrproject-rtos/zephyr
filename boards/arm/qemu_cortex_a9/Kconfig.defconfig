@@ -20,13 +20,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
 
-if CONSOLE
-
-	config UART_CONSOLE
-	default y
-
-endif # CONSOLE
-
 if LOG
 
 	if LOG_PROCESS_THREAD

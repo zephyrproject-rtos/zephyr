@@ -46,7 +46,7 @@ properties:
       description: |
         Range in g. Default is power-up configuration.
       enum:
-        - 0 # 2g  (0.061 mg/LSB)
+        - 0 # 2g  (0.061 mg/LSB) (LSM6DSO32 will be double these values)
         - 1 # 16g (0.488 mg/LSB)
         - 2 # 4g  (0.122 mg/LSB)
         - 3 # 8g  (0.244 mg/LSB)

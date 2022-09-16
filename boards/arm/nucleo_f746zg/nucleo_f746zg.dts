@@ -12,7 +12,7 @@
 /*
  * WARNING: The pin PA7 will conflict on selection of SPI_1 and ETH_STM32_HAL.
  *          If you require both peripherals, and you do not need Arduino Uno v3
- *          comaptability, the pin PB5 (also on ST Zio connector) can be used
+ *          compatibility, the pin PB5 (also on ST Zio connector) can be used
  *          for the SPI_1 MOSI signal.
  */
 
@@ -148,10 +148,6 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
-	sjw = <1>;
-	prop-seg = <0>;
-	phase-seg1 = <6>;
-	phase-seg2 = <5>;
 	status = "okay";
 };
 
@@ -161,6 +157,12 @@ zephyr_udc0: &usbotg_fs {
 
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dac1 {
+	pinctrl-0 = <&dac_out1_pa4>;
 	pinctrl-names = "default";
 	status = "okay";
 };

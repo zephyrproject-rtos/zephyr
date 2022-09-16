@@ -7,13 +7,13 @@
 #define LOG_MODULE_NAME net_lwm2m_obj_conn_mon
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <string.h>
-#include <init.h>
-#include <net/net_if.h>
-#include <net/net_ip.h>
+#include <zephyr/init.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_ip.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"

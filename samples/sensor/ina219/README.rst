@@ -31,7 +31,7 @@ Building and Running
 
 Sample Output
 =============
-When monitoring a 3.3 V bus with a 0.1 Ohm shunt restistor
+When monitoring a 3.3 V bus with a 0.1 Ohm shunt resistor
 you should get a similar output as below, repeated every 2 seconds:
 
 .. code-block:: console

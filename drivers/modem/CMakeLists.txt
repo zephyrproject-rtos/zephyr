@@ -10,7 +10,8 @@ zephyr_library_sources_ifdef(CONFIG_MODEM_CONTEXT
 	modem_pin.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_MODEM_IFACE_UART modem_iface_uart.c)
+zephyr_library_sources_ifdef(CONFIG_MODEM_IFACE_UART_INTERRUPT modem_iface_uart_interrupt.c)
+zephyr_library_sources_ifdef(CONFIG_MODEM_IFACE_UART_ASYNC modem_iface_uart_async.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_CMD_HANDLER modem_cmd_handler.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_SOCKET modem_socket.c)
 

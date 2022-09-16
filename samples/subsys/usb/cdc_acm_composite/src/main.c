@@ -14,13 +14,13 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <zephyr.h>
-#include <sys/ring_buffer.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/ring_buffer.h>
 
-#include <usb/usb_device.h>
-#include <logging/log.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cdc_acm_composite, LOG_LEVEL_INF);
 
 #define RING_BUF_SIZE	(64 * 2)
@@ -50,7 +50,8 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 
 		if (uart_irq_rx_ready(dev)) {
 			uint8_t buf[64];
-			size_t read, wrote;
+			int read;
+			size_t wrote;
 			struct ring_buf *rb = &peer->data->rb;
 
 			read = uart_fifo_read(dev, buf, sizeof(buf));

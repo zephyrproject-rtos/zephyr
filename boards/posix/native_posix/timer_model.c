@@ -26,8 +26,8 @@
 #include "irq_ctrl.h"
 #include "board_soc.h"
 #include "zephyr/types.h"
-#include <arch/posix/posix_trace.h>
-#include <sys/util.h>
+#include <zephyr/arch/posix/posix_trace.h>
+#include <zephyr/sys/util.h>
 #include "cmdline.h"
 #include "soc.h"
 
@@ -174,7 +174,7 @@ void hwtimer_cleanup(void)
 }
 
 /**
- * Enable the HW timer tick interrupts with a period <period> in micoseconds
+ * Enable the HW timer tick interrupts with a period <period> in microseconds
  */
 void hwtimer_enable(uint64_t period)
 {
@@ -373,7 +373,7 @@ void hwtimer_get_pseudohost_rtc_time(uint32_t *nsec, uint64_t *sec)
 	/*
 	 * Note: long double has a 64bits mantissa in x86.
 	 * Therefore to avoid loss of precision after 500 odd years into
-	 * the epoc, we first calculate the offset from the last adjustment
+	 * the epoch, we first calculate the offset from the last adjustment
 	 * time split in us and ns. So we keep the full precision for 500 odd
 	 * years after the last clock ratio adjustment (or native_posix boot,
 	 * whichever is latest).

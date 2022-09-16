@@ -16,13 +16,13 @@
  * must queue the PendSV exception.
  */
 
-#include <kernel.h>
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <ksched.h>
 #include <kswap.h>
-#include <wait_q.h>
-#include <sys/__assert.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/sys/__assert.h>
 
 void z_impl_k_thread_abort(k_tid_t thread)
 {
@@ -40,6 +40,12 @@ void z_impl_k_thread_abort(k_tid_t thread)
 			 * is not an implicit scheduler invocation.
 			 */
 			SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+			/* Clear any system calls that may be pending
+			 * as they have a higher priority than the PendSV
+			 * handler and will check the stack of the thread
+			 * being aborted.
+			 */
+			SCB->SHCSR &= ~SCB_SHCSR_SVCALLPENDED_Msk;
 		}
 	}
 

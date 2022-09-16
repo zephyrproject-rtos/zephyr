@@ -11,8 +11,8 @@
 #define DT_DRV_COMPAT st_ism330dhcx
 
 #include <string.h>
-#include <drivers/i2c.h>
-#include <logging/log.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
 
 #include "ism330dhcx.h"
 

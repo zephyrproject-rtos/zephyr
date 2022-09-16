@@ -5,9 +5,9 @@
  */
 
 #include <string.h>
-#include <device.h>
-#include <sys/atomic.h>
-#include <syscall_handler.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/syscall_handler.h>
 
 extern const struct init_entry __init_start[];
 extern const struct init_entry __init_PRE_KERNEL_1_start[];
@@ -23,7 +23,6 @@ extern const struct init_entry __init_SMP_start[];
 extern const struct device __device_start[];
 extern const struct device __device_end[];
 
-extern uint32_t __device_init_status_start[];
 
 /**
  * @brief Initialize state for all static devices.

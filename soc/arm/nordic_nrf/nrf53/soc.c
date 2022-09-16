@@ -12,13 +12,15 @@
  * for the Nordic Semiconductor nRF53 family processor.
  */
 
-#include <kernel.h>
-#include <init.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <soc/nrfx_coredep.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include <nrf_erratas.h>
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/devicetree.h>
 #include <hal/nrf_cache.h>
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_oscillators.h>
@@ -44,6 +46,21 @@ extern void z_arm_nmi_init(void);
 #include <system_nrf5340_network.h>
 #else
 #error "Unknown nRF53 SoC."
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_gpio_forwarder) && \
+	defined(CONFIG_BOARD_ENABLE_CPUNET) && \
+	(!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(CONFIG_BUILD_WITH_TFM))
+#define NRF_GPIO_FORWARDER_FOR_NRF5340_CPUAPP_ENABLED
+#endif
+
+#if defined(NRF_GPIO_FORWARDER_FOR_NRF5340_CPUAPP_ENABLED)
+#define GPIOS_PSEL_BY_IDX(node_id, prop, idx) \
+	NRF_DT_GPIOS_TO_PSEL_BY_IDX(node_id, prop, idx),
+#define ALL_GPIOS_IN_NODE(node_id) \
+	DT_FOREACH_PROP_ELEM(node_id, gpios, GPIOS_PSEL_BY_IDX)
+#define ALL_GPIOS_IN_FORWARDER(node_id) \
+	DT_FOREACH_CHILD(node_id, ALL_GPIOS_IN_NODE)
 #endif
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
@@ -118,6 +135,17 @@ static int nordicsemi_nrf53_init(const struct device *arg)
 #endif
 #if defined(CONFIG_SOC_DCDC_NRF53X_HV)
 	nrf_regulators_dcdcen_vddh_set(NRF_REGULATORS, true);
+#endif
+
+#if defined(NRF_GPIO_FORWARDER_FOR_NRF5340_CPUAPP_ENABLED)
+	static const uint8_t forwarded_psels[] = {
+		DT_FOREACH_STATUS_OKAY(nordic_nrf_gpio_forwarder, ALL_GPIOS_IN_FORWARDER)
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(forwarded_psels); i++) {
+		soc_secure_gpio_pin_mcu_select(forwarded_psels[i], NRF_GPIO_PIN_MCUSEL_NETWORK);
+	}
+
 #endif
 
 	/* Install default handler that simply resets the CPU

@@ -1,6 +1,7 @@
 # Each line should contain the regular expression of a known Sphinx warning
 # that should be filtered out
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: dma_config'.*
+.*Duplicate C declaration.*\n.*'\.\. c:.*:: flash_img_check'.*
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: zsock_fd_set'.*
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: net_if_mcast_monitor'.*
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: fs_statvfs'.*
@@ -14,3 +15,4 @@
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: .*struct in_addr.*'.*
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: .*struct in6_addr.*'.*
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: .*struct net_if.*'.*
+.*Duplicate C declaration.*\n.*'\.\. c:struct:: bt_ots_init'.*

@@ -7,8 +7,8 @@
 #ifndef _DNS_PACK_H_
 #define _DNS_PACK_H_
 
-#include <net/net_ip.h>
-#include <net/buf.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/buf.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>

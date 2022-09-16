@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 #include <zephyr/types.h>
-#include <init.h>
-#include <toolchain.h>
+#include <zephyr/init.h>
+#include <zephyr/toolchain.h>
 
-#include <arch/arc/v2/secureshield/arc_secure.h>
+#include <zephyr/arch/arc/v2/secureshield/arc_secure.h>
 
 static void _default_sjli_entry(void);
 /*
@@ -34,7 +34,7 @@ static void _default_sjli_entry(void)
 }
 
 /*
- * @brief initializaiton of sjli related functions
+ * @brief initialization of sjli related functions
  *
  */
 static void sjli_table_init(void)
@@ -46,7 +46,7 @@ static void sjli_table_init(void)
 }
 
 /*
- * @brief initializaiton of secureshield related functions.
+ * @brief initialization of secureshield related functions.
  */
 static int arc_secureshield_init(const struct device *arg)
 {

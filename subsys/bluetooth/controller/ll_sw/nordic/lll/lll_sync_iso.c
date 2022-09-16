@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 #include <soc.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -44,6 +44,11 @@ static int prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb_common(struct lll_prepare_param *p);
 static void isr_rx_estab(void *param);
 static void isr_rx(void *param);
+static void isr_rx_iso_data_valid(struct lll_sync_iso *lll, uint8_t bis_idx,
+				  struct node_rx_pdu *node_rx);
+static void isr_rx_iso_data_invalid(struct lll_sync_iso *lll, uint8_t bis_idx,
+				    uint8_t bn, struct node_rx_pdu *node_rx);
+static void isr_rx_ctrl_recv(struct lll_sync_iso *lll, struct pdu_bis *pdu);
 
 /* FIXME: Optimize by moving to a common place, as similar variable is used for
  *        connections too.
@@ -258,7 +263,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	phy = lll->phy;
 	radio_phy_set(phy, PHY_FLAGS_S8);
-	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, lll->max_pdu, RADIO_PKT_CONF_PHY(phy));
+	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, lll->max_pdu,
+			    RADIO_PKT_CONF_PHY(phy));
 	radio_aa_set(access_addr);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 	lll_chan_set(data_chan_use);
@@ -430,6 +436,7 @@ static void isr_rx(void *param)
 	if (crc_ok) {
 		struct pdu_bis *pdu;
 
+		/* Check if Control Subevent being received */
 		if ((lll->bn_curr == lll->bn) &&
 		    (lll->irc_curr == lll->irc) &&
 		    (lll->ptc_curr == lll->ptc) &&
@@ -445,17 +452,14 @@ static void isr_rx(void *param)
 				goto isr_rx_done;
 			}
 
-			if (pdu->ctrl.opcode == PDU_BIG_CTRL_TYPE_TERM_IND) {
-				if (!lll->term_reason) {
-					struct pdu_big_ctrl_term_ind *term;
-
-					term = (void *)&pdu->ctrl.term_ind;
-					lll->term_reason = term->reason;
-					lll->ctrl_instant = term->instant;
-				}
-			}
+			isr_rx_ctrl_recv(lll, pdu);
 		} else {
-			node_rx = ull_iso_pdu_rx_alloc_peek(3U);
+			/* check if there are 2 free rx buffers, one will be
+			 * consumed to receive the current PDU, and the other
+			 * is to ensure a PDU can be setup for the radio DMA to
+			 * receive in the next sub_interval/iso_interval.
+			 */
+			node_rx = ull_iso_pdu_rx_alloc_peek(2U);
 			if (!node_rx) {
 				goto isr_rx_done;
 			}
@@ -475,27 +479,11 @@ static void isr_rx(void *param)
 			payload_index -= lll->payload_count_max;
 		}
 
-		if (!lll->payload[bis_idx][payload_index] &&
+		if (pdu->len && !lll->payload[bis_idx][payload_index] &&
 		    ((payload_index >= lll->payload_tail) ||
 		     (payload_index < lll->payload_head))) {
-			struct node_rx_iso_meta *iso_meta;
-
 			ull_iso_pdu_rx_alloc();
-
-			node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
-			node_rx->hdr.handle = lll->stream_handle[bis_idx];
-
-			iso_meta = &node_rx->hdr.rx_iso_meta;
-			iso_meta->payload_number = lll->payload_count +
-						   (lll->bn_curr - 1U) +
-						   (lll->ptc_curr * lll->pto) -
-						   lll->bn;
-			iso_meta->timestamp =
-				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
-				radio_tmr_aa_restore() - addr_us_get(lll->phy) +
-				(ceiling_fraction(lll->ptc_curr, lll->bn) *
-				 lll->iso_interval * CONN_INT_UNIT_US);
-			iso_meta->status = 0U;
+			isr_rx_iso_data_valid(lll, bis_idx, node_rx);
 
 			lll->payload[bis_idx][payload_index] = node_rx;
 		}
@@ -602,6 +590,21 @@ isr_rx_find_subevent:
 				lll->payload[bis_idx][payload_tail] = NULL;
 
 				iso_rx_put(node_rx->hdr.link, node_rx);
+			} else {
+				/* check if there are 2 free rx buffers, one
+				 * will be consumed to generate PDU with invalid
+				 * status, and the other is to ensure a PDU can
+				 * be setup for the radio DMA to receive in the
+				 * next sub_interval/iso_interval.
+				 */
+				node_rx = ull_iso_pdu_rx_alloc_peek(2U);
+				if (node_rx) {
+					ull_iso_pdu_rx_alloc();
+					isr_rx_iso_data_invalid(lll, bis_idx,
+								bn, node_rx);
+
+					iso_rx_put(node_rx->hdr.link, node_rx);
+				}
 			}
 
 			payload_index = payload_tail + 1U;
@@ -627,7 +630,34 @@ isr_rx_find_subevent:
 		e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO_TERMINATE;
 
 		lll_isr_cleanup(param);
+
 		return;
+
+	/* Check if BIG Channel Map Update */
+	} else if (lll->chm_chan_count) {
+		const uint16_t event_counter = lll->payload_count / lll->bn;
+
+		/* Bluetooth Core Specification v5.3 Vol 6, Part B,
+		 * Section 5.5.2 BIG Control Procedures
+		 *
+		 * When a Synchronized Receiver receives such a PDU where
+		 * (instant - bigEventCounter) mod 65536 is greater than or
+		 * equal to 32767 (because the instant is in the past), the
+		 * the Link Layer may stop synchronization with the BIG.
+		 */
+
+		/* Note: We are not validating whether the control PDU was
+		 * received after the instant but apply the new channel map.
+		 * If the channel map was new at or after the instant and the
+		 * the channel at the event counter did not match then the
+		 * control PDU would not have been received.
+		 */
+		if (((event_counter - lll->ctrl_instant) & 0xFFFF) <= 0x7FFF) {
+			(void)memcpy(lll->data_chan_map, lll->chm_chan_map,
+				     sizeof(lll->data_chan_map));
+			lll->data_chan_count = lll->chm_chan_count;
+			lll->chm_chan_count = 0U;
+		}
 	}
 
 	/* Calculate and place the drift information in done event */
@@ -752,4 +782,69 @@ isr_rx_next_subevent:
 							  PHY_FLAGS_S8) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
+}
+
+static void isr_rx_iso_data_valid(struct lll_sync_iso *lll, uint8_t bis_idx,
+				  struct node_rx_pdu *node_rx)
+{
+	struct node_rx_iso_meta *iso_meta;
+
+	node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
+	node_rx->hdr.handle = lll->stream_handle[bis_idx];
+
+	iso_meta = &node_rx->hdr.rx_iso_meta;
+	iso_meta->payload_number = lll->payload_count + (lll->bn_curr - 1U) +
+				   (lll->ptc_curr * lll->pto) - lll->bn;
+	iso_meta->timestamp = HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
+			      radio_tmr_aa_restore() - addr_us_get(lll->phy) +
+			      (ceiling_fraction(lll->ptc_curr, lll->bn) *
+			       lll->iso_interval * PERIODIC_INT_UNIT_US);
+	iso_meta->status = 0U;
+}
+
+static void isr_rx_iso_data_invalid(struct lll_sync_iso *lll, uint8_t bis_idx,
+				    uint8_t bn, struct node_rx_pdu *node_rx)
+{
+	struct node_rx_iso_meta *iso_meta;
+
+	node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
+	node_rx->hdr.handle = lll->stream_handle[bis_idx];
+
+	iso_meta = &node_rx->hdr.rx_iso_meta;
+	iso_meta->payload_number = lll->payload_count - bn - 1U;
+	iso_meta->timestamp = HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
+			      radio_tmr_aa_restore() - addr_us_get(lll->phy);
+	iso_meta->status = 1U;
+}
+
+static void isr_rx_ctrl_recv(struct lll_sync_iso *lll, struct pdu_bis *pdu)
+{
+	const uint8_t opcode = pdu->ctrl.opcode;
+
+	if (opcode == PDU_BIG_CTRL_TYPE_TERM_IND) {
+		if (!lll->term_reason) {
+			struct pdu_big_ctrl_term_ind *term;
+
+			term = (void *)&pdu->ctrl.term_ind;
+			lll->term_reason = term->reason;
+			lll->ctrl_instant = term->instant;
+		}
+	} else if (opcode == PDU_BIG_CTRL_TYPE_CHAN_MAP_IND) {
+		if (!lll->chm_chan_count) {
+			struct pdu_big_ctrl_chan_map_ind *chm;
+			uint8_t chan_count;
+
+			chm = (void *)&pdu->ctrl.chan_map_ind;
+			chan_count =
+				util_ones_count_get(chm->chm, sizeof(chm->chm));
+			if (chan_count >= CHM_USED_COUNT_MIN) {
+				lll->chm_chan_count = chan_count;
+				(void)memcpy(lll->chm_chan_map, chm->chm,
+					     sizeof(lll->chm_chan_map));
+				lll->ctrl_instant = chm->instant;
+			}
+		}
+	} else {
+		/* Unknown control PDU, ignore */
+	}
 }

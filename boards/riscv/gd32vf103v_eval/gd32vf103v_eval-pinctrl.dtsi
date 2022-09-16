@@ -23,4 +23,11 @@
 			pinmux = <TIMER0_CH0_PA8_OUT_NORMP>;
 		};
 	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <SPI0_SCK_PA5_OUT_NORMP>, <SPI0_MOSI_PA7_OUT_NORMP>,
+				 <SPI0_MISO_PA6_OUT_NORMP>;
+		};
+	};
 };

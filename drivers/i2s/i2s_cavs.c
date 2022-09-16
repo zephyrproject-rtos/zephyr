@@ -16,18 +16,18 @@
 
 #include <errno.h>
 #include <string.h>
-#include <sys/__assert.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/dma.h>
-#include <drivers/i2s.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/i2s.h>
 #include <soc.h>
 #include "i2s_cavs.h"
 
 #define LOG_DOMAIN dev_i2s_cavs
 #define LOG_LEVEL CONFIG_I2S_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 /* length of the buffer queue */
@@ -84,8 +84,6 @@ struct i2s_cavs_dev_data {
 	struct stream tx;
 	struct stream rx;
 };
-
-#define DEV_NAME(dev) ((dev)->name)
 
 static void i2s_dma_tx_callback(const struct device *, void *, uint32_t, int);
 static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *,
@@ -147,7 +145,7 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg,
 			/*
 			 * DMA encountered an error (status != 0)
 			 * or
-			 * No bufers in input queue
+			 * No buffers in input queue
 			 */
 			LOG_ERR("DMA status %08x channel %u k_msgq_get ret %d",
 					status, channel, ret);
@@ -588,7 +586,7 @@ static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *dev_data,
 	unsigned int key;
 
 	/*
-	 * Enable transmit undderrun interrupt to allow notification
+	 * Enable transmit underrun interrupt to allow notification
 	 * upon transmit FIFO being emptied.
 	 * Defer disabling of TX to the underrun processing in ISR
 	 */
@@ -791,7 +789,7 @@ static int i2s_cavs_initialize(const struct device *dev)
 	dev_data->tx.state = I2S_STATE_NOT_READY;
 	dev_data->rx.state = I2S_STATE_NOT_READY;
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

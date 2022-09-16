@@ -9,18 +9,18 @@
  */
 
 #include <zephyr/types.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/conn.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #include "bt.h"
 
-#include <bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/audio/csis.h>
 
 static uint8_t members_found;
 static struct k_work_delayable discover_members_timer;

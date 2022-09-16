@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <sys/byteorder.h>
-#include <bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "util/util.h"
 #include "util/mem.h"
@@ -51,6 +51,14 @@
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
+
+/* Check that timeout_reload member is at safe offset when ll_sync_set is
+ * allocated using mem interface. timeout_reload being non-zero is used to
+ * indicate that a sync is established. And is used to check for sync being
+ * terminated under race conditions between HCI Tx and Rx thread when
+ * Periodic Advertising Reports are generated.
+ */
+MEM_FREE_MEMBER_ACCESS_BUILD_ASSERT(struct ll_sync_set, timeout_reload);
 
 static int init_reset(void);
 static inline struct ll_sync_set *sync_acquire(void);
@@ -174,8 +182,13 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	/* Initialize sync context */
 	node_rx->link = link_sync_estab;
-	sync->node_rx_sync_estab = node_rx;
 	sync->node_rx_lost.hdr.link = link_sync_lost;
+
+	/* Make sure that the node_rx_sync_establ hasn't got anything assigned. It is used to
+	 * mark when sync establishment is in progress.
+	 */
+	LL_ASSERT(!sync->node_rx_sync_estab);
+	sync->node_rx_sync_estab = node_rx;
 
 	/* Reporting initially enabled/disabled */
 	sync->rx_enable =
@@ -242,8 +255,16 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	/* Enable scanner to create sync */
 	scan->periodic.sync = sync;
+
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+	scan->lll.is_sync = 1U;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded->periodic.sync = sync;
+
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+		scan_coded->lll.is_sync = 1U;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 	}
 
 	return 0;
@@ -285,18 +306,45 @@ uint8_t ll_sync_create_cancel(void **rx)
 	}
 	cpu_dmb();
 	sync = scan->periodic.sync;
-	if (!sync || sync->timeout_reload) {
-		/* FIXME: sync establishment in progress looking for first
-		 *        AUX_SYNC_IND. Cleanup by stopping ticker and disabling
-		 *        LLL events.
-		 */
+	if (!sync) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* It is safe to remove association with scanner as cancelled flag is
-	 * set and sync has not been established.
+	/* node_rx_sync_estab is assigned when Host calls create sync and cleared when sync is
+	 * established. timeout_reload is set when sync is found and setup. It is non-zero until
+	 * sync is terminated. Together they give information about current sync state:
+	 * - node_rx_sync_estab == NULL && timeout_reload != 0 => sync is established
+	 * - node_rx_sync_estab == NULL && timeout_reload == 0 => sync is terminated
+	 * - node_rx_sync_estab != NULL && timeout_reload == 0 => sync is created
+	 * - node_rx_sync_estab != NULL && timeout_reload != 0 => sync is waiting to be established
 	 */
-	scan->periodic.sync = NULL;
+	if (!sync->node_rx_sync_estab) {
+		/* There is no sync to be cancelled */
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	sync->is_stop = 1U;
+	cpu_dmb();
+
+	if (sync->timeout_reload != 0) {
+		uint16_t sync_handle = ull_sync_handle_get(sync);
+
+		LL_ASSERT(sync_handle <= UINT8_MAX);
+
+		/* Sync is not established yet, so stop sync ticker */
+		int err = ull_ticker_stop_with_mark(
+			TICKER_ID_SCAN_SYNC_BASE + (uint8_t)sync_handle, sync, &sync->lll);
+
+		LL_ASSERT(err == 0 || err == -EALREADY);
+		if (err != 0 && err != -EALREADY) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+	} /* else: sync was created but not yet setup, there is no sync ticker yet. */
+
+	/* It is safe to remove association with scanner as cancelled flag is
+	 * set, sync is_stop flag was set and sync has not been established.
+	 */
+	ull_sync_setup_reset(scan);
 
 	/* Mark the sync context as sync create cancelled */
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)) {
@@ -310,6 +358,11 @@ uint8_t ll_sync_create_cancel(void **rx)
 	ll_rx_link_release(link_sync_lost);
 	ll_rx_link_release(link_sync_estab);
 	ll_rx_release(node_rx);
+
+	/* Clear the node after release to mark the sync establish as being completed.
+	 * In this case the completion reason is sync cancelled by Host.
+	 */
+	sync->node_rx_sync_estab = NULL;
 
 	node_rx = (void *)&sync->node_rx_lost;
 	node_rx->hdr.type = NODE_RX_TYPE_SYNC;
@@ -362,9 +415,11 @@ uint8_t ll_sync_terminate(uint16_t handle)
 
 		aux = HDR_LLL2ULL(lll_aux);
 		err = ull_scan_aux_stop(aux);
-		if (err) {
+		if (err && (err != -EALREADY)) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
+
+		LL_ASSERT(!aux->parent);
 	}
 
 	link_sync_lost = sync->node_rx_lost.hdr.link;
@@ -619,7 +674,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	lll->phy = aux->lll.phy;
 
 	interval = sys_le16_to_cpu(si->interval);
-	interval_us = interval * CONN_INT_UNIT_US;
+	interval_us = interval * PERIODIC_INT_UNIT_US;
 
 	/* Convert fromm 10ms units to interval units */
 	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U *
@@ -703,10 +758,12 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	sync->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(
-			EVENT_OVERHEAD_START_US + ready_delay_us +
-			PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX, lll->phy) +
-			EVENT_OVERHEAD_END_US);
+	sync->ull.ticks_slot =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
+				       ready_delay_us +
+				       PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
+						     lll->phy) +
+				       EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
 				sync->ull.ticks_prepare_to_start);
@@ -733,22 +790,30 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		  (ret == TICKER_STATUS_BUSY));
 }
 
-void ull_sync_setup_complete(struct ll_scan_set *scan)
+void ull_sync_setup_reset(struct ll_scan_set *scan)
 {
 	/* Remove the sync context from being associated with scan contexts */
 	scan->periodic.sync = NULL;
+
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+	scan->lll.is_sync = 0U;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		struct ll_scan_set *scan_1m;
 
 		scan_1m = ull_scan_set_get(SCAN_HANDLE_1M);
 		if (scan == scan_1m) {
-			struct ll_scan_set *scan_coded;
-
-			scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
-			scan_coded->periodic.sync = NULL;
+			scan = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
 		} else {
-			scan_1m->periodic.sync = NULL;
+			scan = scan_1m;
 		}
+
+		scan->periodic.sync = NULL;
+
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+		scan->lll.is_sync = 0U;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 	}
 }
 
@@ -763,6 +828,11 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	ftr = &rx->rx_ftr;
 	lll = ftr->param;
 	sync = HDR_LLL2ULL(lll);
+
+	/* Do nothing if sync is cancelled or lost. */
+	if (unlikely(sync->is_stop || !sync->timeout_reload)) {
+		return;
+	}
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 	enum sync_status sync_status;
@@ -780,12 +850,20 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 		sync_status = lll_sync_cte_is_allowed(lll->cte_type, lll->filter_policy, 0,
 						      BT_HCI_LE_NO_CTE);
 	}
+
+	/* If there is no CTEInline support, notify done event handler to terminate periodic
+	 * advertising sync in case the CTE is not allowed.
+	 * If the periodic filtering list is not used then terminate synchronization and notify
+	 * host. If the periodic filtering list is used then stop synchronization with this
+	 * particular periodic advertised but continue to search for other one.
+	 */
+	sync->is_term = ((sync_status == SYNC_STAT_TERM) || (sync_status == SYNC_STAT_CONT_SCAN));
 #endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 
 	/* Send periodic advertisement sync established report when sync has correct CTE type
 	 * or the CTE type is incorrect and filter policy doesn't allow to continue scanning.
 	 */
-	if (sync_status != SYNC_STAT_READY_OR_CONT_SCAN) {
+	if (sync_status == SYNC_STAT_ALLOWED || sync_status == SYNC_STAT_TERM) {
 #else /* !CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 
 	if (1) {
@@ -796,16 +874,15 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 		rx_establ->hdr.type = NODE_RX_TYPE_SYNC;
 		rx_establ->hdr.handle = ull_sync_handle_get(sync);
 		se = (void *)rx_establ->pdu;
+		/* Clear the node to mark the sync establish as being completed.
+		 * In this case the completion reason is sync being established.
+		 */
+		sync->node_rx_sync_estab = NULL;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 		se->status = (ftr->sync_status == SYNC_STAT_TERM) ?
 					   BT_HCI_ERR_UNSUPP_REMOTE_FEATURE :
 					   BT_HCI_ERR_SUCCESS;
-
-#if !defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
-		/* Notify done event handler to terminate sync scan if required. */
-		sync->is_term = (sync_status == SYNC_STAT_TERM);
-#endif /* !CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 #else
 		se->status = BT_HCI_ERR_SUCCESS;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
@@ -823,13 +900,13 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	 * the sync was found or was established in the past. The report is not send if
 	 * scanning is terminated due to wrong CTE type.
 	 */
-	if (sync_status != SYNC_STAT_TERM) {
+	if (sync_status == SYNC_STAT_ALLOWED || sync_status == SYNC_STAT_READY) {
 #else /* !CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 
 	if (1) {
 #endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 
-		/* Switch sync event prepare function to one reposnsible for regular PDUs receive */
+		/* Switch sync event prepare function to one responsible for regular PDUs receive */
 		sync->lll_sync_prepare = lll_sync_prepare;
 
 		/* Change node type to appropriately handle periodic
@@ -868,7 +945,16 @@ void ull_sync_done(struct node_rx_event_done *done)
 #else
 	if (sync->is_term) {
 #endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
-		/* Stop periodic advertising scan ticker */
+		/* In case the periodic advertising list filtering is not used the synchronization
+		 * must be terminated and host notification must be send.
+		 * In case the periodic advertising list filtering is used the synchronization with
+		 * this particular periodic advertiser but search for other one from the list.
+		 *
+		 * Stop periodic advertising sync ticker and clear variables informing the
+		 * sync is pending. That is a step to completely terminate the synchronization.
+		 * In case search for another periodic advertiser it allows to setup new ticker for
+		 * that.
+		 */
 		sync_ticker_cleanup(sync, NULL);
 	} else
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
@@ -1052,8 +1138,8 @@ void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
 int ull_sync_slot_update(struct ll_sync_set *sync, uint32_t slot_plus_us,
 			 uint32_t slot_minus_us)
 {
+	uint32_t volatile ret_cb;
 	uint32_t ret;
-	uint32_t ret_cb;
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
@@ -1061,8 +1147,8 @@ int ull_sync_slot_update(struct ll_sync_set *sync, uint32_t slot_plus_us,
 			    (TICKER_ID_SCAN_SYNC_BASE +
 			    ull_sync_handle_get(sync)),
 			    0, 0,
-			    slot_plus_us,
-			    slot_minus_us,
+			    HAL_TICKER_US_TO_TICKS(slot_plus_us),
+			    HAL_TICKER_US_TO_TICKS(slot_minus_us),
 			    0, 0,
 			    ticker_update_op_status_give,
 			    (void *)&ret_cb);
@@ -1202,6 +1288,11 @@ static void sync_expire(void *param)
 	rx = (void *)sync->node_rx_sync_estab;
 	rx->hdr.type = NODE_RX_TYPE_SYNC;
 	rx->hdr.handle = LLL_HANDLE_INVALID;
+
+	/* Clear the node to mark the sync establish as being completed.
+	 * In this case the completion reason is sync expire.
+	 */
+	sync->node_rx_sync_estab = NULL;
 
 	/* NOTE: struct node_rx_sync_estab has uint8_t member following the
 	 *       struct node_rx_hdr to store the reason.

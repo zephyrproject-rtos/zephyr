@@ -5,13 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
-#include <drivers/timer/system_timer.h>
-#include <drivers/timer/nrf_rtc_timer.h>
-#include <sys_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/drivers/timer/nrf_rtc_timer.h>
+#include <zephyr/sys_clock.h>
 #include <hal/nrf_rtc.h>
 
 #define EXT_CHAN_COUNT CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT
@@ -98,7 +98,7 @@ static uint32_t full_int_lock(void)
 {
 	uint32_t mcu_critical_state;
 
-	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
+	if (IS_ENABLED(CONFIG_NRF_RTC_TIMER_LOCK_ZERO_LATENCY_IRQS)) {
 		mcu_critical_state = __get_PRIMASK();
 		__disable_irq();
 	} else {
@@ -110,7 +110,7 @@ static uint32_t full_int_lock(void)
 
 static void full_int_unlock(uint32_t mcu_critical_state)
 {
-	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
+	if (IS_ENABLED(CONFIG_NRF_RTC_TIMER_LOCK_ZERO_LATENCY_IRQS)) {
 		__set_PRIMASK(mcu_critical_state);
 	} else {
 		irq_unlock(mcu_critical_state);
@@ -266,7 +266,7 @@ static uint32_t set_absolute_alarm(int32_t chan, uint32_t abs_val)
 		/* Rerun the algorithm if counter progressed during execution
 		 * and cc_val is in the past or one tick from now. In such
 		 * scenario, it is possible that event will not be generated.
-		 * Reruning the algorithm will delay the alarm but ensure that
+		 * Rerunning the algorithm will delay the alarm but ensure that
 		 * event will be generated at the moment indicated by value in
 		 * CC register.
 		 */

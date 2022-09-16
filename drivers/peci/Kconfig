@@ -11,6 +11,7 @@ menuconfig PECI
 if PECI
 
 source "drivers/peci/Kconfig.xec"
+source "drivers/peci/Kconfig.it8xxx2"
 
 module = PECI
 module-str = peci

@@ -24,9 +24,11 @@ config SOC_MIMXRT1011
 	select CPU_HAS_ARM_MPU
 	select INIT_ENET_PLL
 	select HAS_MCUX_USB_EHCI
-	select HAS_MCUX_USDHC1
-	select HAS_MCUX_USDHC2
 	select HAS_MCUX_EDMA
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1015
 	bool "SOC_MIMXRT1015"
@@ -46,9 +48,11 @@ config SOC_MIMXRT1015
 	select CPU_HAS_ARM_MPU
 	select INIT_ENET_PLL
 	select HAS_MCUX_USB_EHCI
-	select HAS_MCUX_USDHC1
-	select HAS_MCUX_USDHC2
 	select HAS_MCUX_EDMA
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1021
 	bool "SOC_MIMXRT1021"
@@ -75,6 +79,10 @@ config SOC_MIMXRT1021
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_PWM
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1024
 	bool "SOC_MIMXRT1024"
@@ -101,6 +109,10 @@ config SOC_MIMXRT1024
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_SRC
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1051
 	bool "SOC_MIMXRT1051"
@@ -127,6 +139,10 @@ config SOC_MIMXRT1051
 	select HAS_MCUX_CSI
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1052
 	bool "SOC_MIMXRT1052"
@@ -157,6 +173,10 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_PWM
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"
@@ -183,6 +203,10 @@ config SOC_MIMXRT1061
 	select HAS_MCUX_CSI
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1062
 	bool "SOC_MIMXRT1062"
@@ -200,6 +224,7 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_GPT
+	select HAS_MCUX_QTMR
 	select HAS_MCUX_SEMC
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
@@ -214,6 +239,10 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_I2S
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
@@ -231,6 +260,7 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_GPT
+	select HAS_MCUX_QTMR
 	select HAS_MCUX_SEMC
 	select HAS_MCUX_SNVS
 	select HAS_MCUX_SRC
@@ -246,10 +276,15 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_CSI
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1176_CM7
 	bool "SOC_MIMXRT1176_CM7"
 	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_CACHE
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_SERIES_IMX_RT11XX
 	select HAS_MCUX_CACHE
@@ -261,6 +296,8 @@ config SOC_MIMXRT1176_CM7
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPADC
 	select HAS_MCUX_LPUART
+	select HAS_MCUX_ELCDIF
+	select HAS_MCUX_MIPI_DSI
 	select HAS_MCUX_GPT
 	select HAS_MCUX_FLEXSPI
 	select HAS_MCUX_FLEXCAN
@@ -279,6 +316,9 @@ config SOC_MIMXRT1176_CM7
 	select HAS_MCUX_ENET
 	select HAS_MCUX_GPC
 	select HAS_MCUX_I2S
+	select HAS_MCUX_USB_EHCI
+	select HAS_MCUX_SRC_V2
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1176_CM4
 	bool "SOC_MIMXRT1176_CM4"
@@ -305,10 +345,13 @@ config SOC_MIMXRT1176_CM4
 	select HAS_MCUX_ENET
 	select HAS_MCUX_GPC
 	select HAS_MCUX_I2S
+	select HAS_MCUX_SRC_V2
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1166_CM7
 	bool "SOC_MIMXRT1166_CM7"
 	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_CACHE
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_SERIES_IMX_RT11XX
 	select HAS_MCUX_CACHE
@@ -337,6 +380,9 @@ config SOC_MIMXRT1166_CM7
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_ENET
 	select HAS_MCUX_GPC
+	select HAS_MCUX_USB_EHCI
+	select HAS_MCUX_SRC_V2
+	select HAS_MCUX_IOMUXC
 
 
 config SOC_MIMXRT1166_CM4
@@ -363,6 +409,8 @@ config SOC_MIMXRT1166_CM4
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_ENET
 	select HAS_MCUX_GPC
+	select HAS_MCUX_SRC_V2
+	select HAS_MCUX_IOMUXC
 
 endchoice
 
@@ -534,6 +582,7 @@ config SOC_PART_NUMBER_IMX_RT
 config SOC_SERIES_IMX_RT10XX
 	bool "i.MX RT 10XX Series"
 	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_CACHE
 	select CPU_CORTEX_M_HAS_DWT
 
 config SOC_SERIES_IMX_RT11XX
@@ -587,8 +636,14 @@ config ADJUST_LDO
 config PM_MCUX_GPC
 	bool "MCUX general power controller driver"
 
+config PM_MCUX_DCDC
+	bool "MCUX dcdc converter module driver"
+
+config PM_MCUX_PMU
+	bool "MCUX power management unit driver"
+
 menuconfig NXP_IMX_RT_BOOT_HEADER
-	bool "Enable the boot header"
+	bool "Boot header"
 	depends on !BOOTLOADER_MCUBOOT
 	help
 	  Enable data structures required by the boot ROM to boot the
@@ -620,7 +675,7 @@ config FLEXSPI_CONFIG_BLOCK_OFFSET
 	help
 	  FlexSPI configuration block consists of parameters regarding specific
 	  flash devices including read command sequence, quad mode enablement
-	  sequence (optional), etc. The boot ROM expectes FlexSPI configuration
+	  sequence (optional), etc. The boot ROM expects FlexSPI configuration
 	  parameter to be presented in serial nor flash.
 
 config IMAGE_VECTOR_TABLE_OFFSET
@@ -633,7 +688,7 @@ config IMAGE_VECTOR_TABLE_OFFSET
 	  ROM requires a fixed IVT offset for each type of boot device.
 
 config DEVICE_CONFIGURATION_DATA
-	bool "Enable device configuration data"
+	bool "Device configuration data"
 	default y if HAS_MCUX_SEMC
 	help
 	  Device configuration data (DCD) provides a sequence of commands to
@@ -653,14 +708,23 @@ config CODE_ITCM
 
 config CODE_FLEXSPI
 	bool "Link code into external FlexSPI-controlled memory"
-	select NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_FLEXSPI2
 	bool "Link code into internal FlexSPI-controlled memory"
-	select NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_SRAM0
 	bool "Link code into RAM_L memory (RAM_L)"
 endchoice
+
+config OCRAM_NOCACHE
+	bool "Create noncacheable OCRAM region"
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	select PLATFORM_SPECIFIC_INIT
+	help
+	  Creates linker section and MPU region for OCRAM region with
+	  noncacheable attribute. OCRAM memory is useful for fast DMA transfers.
+
 
 endif # SOC_SERIES_IMX_RT

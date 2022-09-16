@@ -24,8 +24,6 @@
 &i2c2 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <30>;
-	scl-pin = <31>;
 
 	pcal6408a: pcal6408a@20 {
 		compatible = "nxp,pcal6408a";
@@ -39,11 +37,30 @@
 	};
 };
 
+&pinctrl {
+	spi3_default_v14: spi3_default_v14 {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 13)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 11)>,
+				<NRF_PSEL(SPIM_MISO, 0, 12)>;
+		};
+	};
+
+	spi3_sleep_v14: spi3_sleep_v14 {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 13)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 11)>,
+				<NRF_PSEL(SPIM_MISO, 0, 12)>;
+			low-power-enable;
+		};
+	};
+};
+
 &spi3 {
 	status = "okay";
-	sck-pin = <13>;
-	mosi-pin = <11>;
-	miso-pin = <12>;
+	pinctrl-0 = <&spi3_default_v14>;
+	pinctrl-1 = <&spi3_sleep_v14>;
+	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
 	mx25r64: mx25r6435f@0 {
 		compatible = "jedec,spi-nor";

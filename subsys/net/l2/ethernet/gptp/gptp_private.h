@@ -14,7 +14,7 @@
 #ifndef __GPTP_PRIVATE_H
 #define __GPTP_PRIVATE_H
 
-#include <net/gptp.h>
+#include <zephyr/net/gptp.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +51,7 @@ bool gptp_is_slave_port(int port);
 int gptp_get_port_number(struct net_if *iface);
 
 /**
- * @brief Calculate a logInteral and store in Uscaled ns structure.
+ * @brief Calculate a logInterval and store in Uscaled ns structure.
  *
  * @param interval Result of calculation.
  *

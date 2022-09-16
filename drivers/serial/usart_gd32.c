@@ -6,8 +6,8 @@
 #define DT_DRV_COMPAT gd_gd32_usart
 
 #include <errno.h>
-#include <drivers/pinctrl.h>
-#include <drivers/uart.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/uart.h>
 #include <soc.h>
 
 /* Unify GD32 HAL USART status register name to USART_STAT */

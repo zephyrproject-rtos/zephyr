@@ -6,8 +6,8 @@
  */
 
 
-#include <drivers/adc.h>
-#include <zephyr.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #if defined(CONFIG_SHIELD_MIKROE_ADC_CLICK)
@@ -51,6 +51,7 @@
 	defined(CONFIG_BOARD_BT510) || \
 	defined(CONFIG_BOARD_PINNACLE_100_DVK) || \
 	defined(CONFIG_BOARD_ARDUINO_NANO_33_BLE) || \
+	defined(CONFIG_BOARD_ARDUINO_NANO_33_BLE_SENSE) || \
 	defined(CONFIG_BOARD_UBX_BMD300EVAL_NRF52832) || \
 	defined(CONFIG_BOARD_UBX_BMD330EVAL_NRF52810) || \
 	defined(CONFIG_BOARD_UBX_BMD340EVAL_NRF52840) || \
@@ -61,6 +62,8 @@
 	defined(CONFIG_BOARD_UBX_EVKNINAB1_NRF52832) || \
 	defined(CONFIG_BOARD_UBX_EVKNINAB3_NRF52840) || \
 	defined(CONFIG_BOARD_UBX_EVKNINAB4_NRF52833) || \
+	defined(CONFIG_BOARD_WE_PROTEUS2EV_NRF52832) || \
+	defined(CONFIG_BOARD_WE_PROTEUS3EV_NRF52840) || \
 	defined(CONFIG_BOARD_BT610)
 
 #include <hal/nrf_saadc.h>
@@ -209,6 +212,7 @@
 
 #elif defined(CONFIG_BOARD_NUCLEO_L476RG) || \
 	defined(CONFIG_BOARD_BLACKPILL_F411CE) || \
+	defined(CONFIG_BOARD_STM32F401_MINI) || \
 	defined(CONFIG_BOARD_BLACKPILL_F401CE) || \
 	defined(CONFIG_BOARD_NUCLEO_L4R5ZI) || \
 	defined(CONFIG_BOARD_MIKROE_CLICKER_2)
@@ -264,6 +268,15 @@
 #define ADC_1ST_CHANNEL_ID	4
 #define ADC_2ND_CHANNEL_ID	5
 
+#elif defined(CONFIG_BOARD_MEC172XEVB_ASSY6906)
+#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, microchip_xec_adc_v2))
+#define ADC_RESOLUTION          12
+#define ADC_GAIN                ADC_GAIN_1
+#define ADC_REFERENCE           ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME    ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID      4
+#define ADC_2ND_CHANNEL_ID      5
+
 #elif defined(CONFIG_BOARD_LPCXPRESSO55S69_CPU0) || \
 	defined(CONFIG_BOARD_LPCXPRESSO55S28) || \
 	defined(CONFIG_BOARD_MIMXRT1170_EVK_CM7) || \
@@ -298,7 +311,7 @@
 
 #elif defined(CONFIG_BOARD_IT8XXX2_EVB)
 #define ADC_DEVICE_NAME	DT_LABEL(DT_INST(0, ite_it8xxx2_adc))
-#define ADC_RESOLUTION	3
+#define ADC_RESOLUTION	10
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
@@ -335,7 +348,7 @@
 #endif
 
 /* Invalid value that is not supposed to be written by the driver. It is used
- * to mark the sample buffer entries as empty. If needed, it can be overriden
+ * to mark the sample buffer entries as empty. If needed, it can be overridden
  * for a particular board by providing a specific definition above.
  */
 #if !defined(INVALID_ADC_VALUE)

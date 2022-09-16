@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(npf_base, CONFIG_NET_PKT_FILTER_LOG_LEVEL);
 
-#include <net/net_core.h>
-#include <net/net_pkt_filter.h>
-#include <spinlock.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt_filter.h>
+#include <zephyr/spinlock.h>
 
 /*
  * Our actual rule lists for supported test points

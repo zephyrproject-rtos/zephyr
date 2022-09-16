@@ -128,20 +128,6 @@ test_spi_ms5607: ms5607@e {
 	spi-max-frequency = <0>;
 };
 
-test_spi_mcp2515: mcp2515@12 {
-	compatible = "microchip,mcp2515";
-	label = "MCP2515";
-	reg = <0x12>;
-	spi-max-frequency = <0>;
-	osc-freq = <0>;
-	int-gpios = <&test_gpio 0 0>;
-	bus-speed = <0>;
-	sjw = <0>;
-	prop-seg = <0>;
-	phase-seg1 = <0>;
-	phase-seg2 = <0>;
-};
-
 test_spi_mcr20a: mcr20a@13 {
 	compatible = "nxp,mcr20a";
 	label = "MCR20A";
@@ -337,5 +323,24 @@ test_spi_i3g4250d: i3g4250d@3b {
 	compatible = "st,i3g4250d";
 	label = "I3G4250D";
 	reg = <0x3b>;
+	spi-max-frequency = <0>;
+};
+
+test_spi_icm42670: icm42670@3c {
+	compatible = "invensense,icm42670";
+	label = "ICM42670";
+	reg = <0x3c>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	accel-hz = <800>;
+	accel-fs = <16>;
+	gyro-hz = <800>;
+	gyro-fs = <2000>;
+};
+
+test_spi_bme680: bme680@3c {
+	compatible = "bosch,bme680";
+	label = "BME680";
+	reg = <0x3c>;
 	spi-max-frequency = <0>;
 };

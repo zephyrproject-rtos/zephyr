@@ -12,6 +12,7 @@ config SOC_MCIMX7_M4
 	select HAS_IMX_HAL
 	select HAS_IMX_GPIO
 	select HAS_IMX_I2C
+	select HAS_IMX_IOMUXC
 
 endchoice
 

@@ -5,10 +5,11 @@
  */
 #include <mem.h>
 #include <xtensa/xtensa.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/clock/esp32_clock.h>
-#include <dt-bindings/interrupt-controller/esp-xtensa-intmux.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/esp32_clock.h>
+#include <zephyr/dt-bindings/interrupt-controller/esp-xtensa-intmux.h>
+#include <dt-bindings/pinctrl/esp32-pinctrl.h>
 
 / {
 	chosen {
@@ -37,6 +38,11 @@
 	wifi: wifi {
 		compatible = "espressif,esp32-wifi";
 		status = "disabled";
+	};
+
+	pinctrl: pin-controller {
+		compatible = "espressif,esp32-pinctrl";
+		status = "okay";
 	};
 
 	soc {
@@ -105,7 +111,6 @@
 			label = "UART_0";
 			clocks = <&rtc ESP32_UART0_MODULE>;
 			status = "disabled";
-			peripheral = <0>;
 		};
 
 		uart1: uart@3ff50000 {
@@ -116,7 +121,6 @@
 			label = "UART_1";
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			status = "disabled";
-			peripheral = <1>;
 		};
 
 		uart2: uart@3ff6e000 {
@@ -127,12 +131,6 @@
 			label = "UART_2";
 			clocks = <&rtc ESP32_UART2_MODULE>;
 			status = "disabled";
-			peripheral = <2>;
-		};
-
-		pinmux: pinmux@3ff49000 {
-			compatible = "espressif,esp32-pinmux";
-			reg = <0x3ff49000 0x94>;
 		};
 
 		ledc0: ledc@3ff59000 {
@@ -144,26 +142,40 @@
 			status = "disabled";
 		};
 
-		gpio0: gpio@3ff44000 {
-			compatible = "espressif,esp32-gpio";
-			gpio-controller;
+		gpio: gpio {
+			compatible = "simple-bus";
+			gpio-map-mask = <0xffffffe0 0xffffffc0>;
+			gpio-map-pass-thru = <0x1f 0x3f>;
+			gpio-map = <
+				0x00 0x0 &gpio0 0x0 0x0
+				0x20 0x0 &gpio1 0x0 0x0
+			>;
 			#gpio-cells = <2>;
-			reg = <0x3ff44000 0x800>;
-			interrupts = <GPIO_INTR_SOURCE>;
-			interrupt-parent = <&intc>;
-			label = "GPIO_0";
-			ngpios = <32>;   /* 0..31 */
-		};
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 
-		gpio1: gpio@3ff44800 {
-			compatible = "espressif,esp32-gpio";
-			gpio-controller;
-			#gpio-cells = <2>;
-			reg = <0x3ff44800 0x800>;
-			interrupts = <GPIO_INTR_SOURCE>;
-			interrupt-parent = <&intc>;
-			label = "GPIO_1";
-			ngpios = <8>;   /* 32..39 */
+			gpio0: gpio@3ff44000 {
+				compatible = "espressif,esp32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x3ff44000 0x800>;
+				interrupts = <GPIO_INTR_SOURCE>;
+				interrupt-parent = <&intc>;
+				label = "GPIO_0";
+				ngpios = <32>;   /* 0..31 */
+			};
+
+			gpio1: gpio@3ff44800 {
+				compatible = "espressif,esp32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x3ff44800 0x800>;
+				interrupts = <GPIO_INTR_SOURCE>;
+				interrupt-parent = <&intc>;
+				label = "GPIO_1";
+				ngpios = <8>;   /* 32..39 */
+			};
 		};
 
 		i2c0: i2c@3ff53000 {
@@ -203,6 +215,7 @@
 			reg = <0x3ff5f048 0x20>;
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TIMG0_MODULE>;
 			label = "WDT_0";
 			status = "okay";
 		};
@@ -212,6 +225,7 @@
 			reg = <0x3ff60048 0x20>;
 			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TIMG1_MODULE>;
 			label = "WDT_1";
 			status = "disabled";
 		};
@@ -224,7 +238,6 @@
 			label = "SPI_2";
 			clocks = <&rtc ESP32_HSPI_MODULE>;
 			status = "disabled";
-			use-iomux;
 		};
 
 		spi3: spi@3ff65000 {
@@ -235,7 +248,6 @@
 			label = "SPI_3";
 			clocks = <&rtc ESP32_VSPI_MODULE>;
 			status = "disabled";
-			use-iomux;
 		};
 
 		timer0: counter@3ff5f000 {

@@ -1,0 +1,61 @@
+# Zephyr Bluetooth Controller configuration options
+
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_CTLR_DTM_HCI_SUPPORT
+	bool
+
+config BT_CTLR_DTM
+	bool
+	help
+	  Enable support for Direct Test Mode in the Controller.
+
+menuconfig BT_CTLR_DTM_HCI
+	bool "Direct Test Mode over HCI"
+	depends on BT_CTLR_DTM_HCI_SUPPORT
+	select BT_CTLR_DTM
+	help
+	  Enable support for Direct Test Mode over the HCI transport.
+
+if BT_CTLR_DTM_HCI
+
+config BT_CTLR_DTM_HCI_RX_V3
+	bool "HCI LE Receiver Test v3"
+	default y
+	help
+	  Enable support for the DTM Receiver test command v3.
+
+config BT_CTLR_DTM_HCI_TX_V3
+	bool "HCI LE Transmitter Test v3"
+	default y
+	help
+	  Enable support for the DTM Transmitter test command v3.
+
+config BT_CTLR_DTM_HCI_TX_V4
+	bool "HCI LE Transmitter Test v4"
+	default y
+	help
+	  Enable support for the DTM Transmitter test command v4.
+
+menuconfig BT_CTLR_DTM_HCI_DF_IQ_REPORT
+	bool "Connectionless IQ report HCI event [EXPERIMENTAL]"
+	depends on BT_CTLR_DF_CTE_RX && BT_CTLR_DTM_HCI_RX_V3
+	select EXPERIMENTAL
+	help
+	  Enable generation of the HCI LE Connectionless IQ Report event
+	  after the Constant Tone Extension reception.
+
+if BT_CTLR_DTM_HCI_DF_IQ_REPORT
+
+	config BT_CTLR_DTM_HCI_DF_IQ_REPORT_NUM_MAX
+	int "IQ Report pool size"
+	default 32
+	help
+	  Maximum number of the DTM IQ Reports in pool. It depends on the upper tester
+	  test packets transmission interval.
+
+
+endif # BT_CTLR_DTM_HCI_DF_IQ_REPORT
+
+endif # BT_CTLR_DTM_HCI

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <app_memory/app_memdomain.h>
+#include <zephyr/app_memory/app_memdomain.h>
 #include "ext_log_system.h"
 
 K_APP_BMEM(app_part) static ext_log_handler log_handler;

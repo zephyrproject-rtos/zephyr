@@ -1,0 +1,13 @@
+identifier: nsim_hs5x_smp
+name: Multi-core HS5x nSIM simulator
+type: mcu
+simulation: mdb-nsim
+arch: arc
+toolchain:
+  - arcmwdt
+  - cross-compile
+testing:
+  timeout_multiplier: 1.5
+  ignore_tags:
+    - net
+    - bluetooth

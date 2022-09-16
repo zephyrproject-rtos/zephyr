@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
-#include <drivers/ptp_clock.h>
+#include <zephyr/drivers/ptp_clock.h>
 
 #include "gptp_messages.h"
 #include "gptp_data_set.h"
@@ -706,9 +706,9 @@ static void gptp_mi_clk_slave_sync_compute(void)
 
 	pss = &state->pss_rcv_ptr->sync_info;
 
-	sync_receipt_time = pss->rate_ratio;
+	sync_receipt_time = port_ds->neighbor_prop_delay;
+	sync_receipt_time *= pss->rate_ratio;
 	sync_receipt_time /= port_ds->neighbor_rate_ratio;
-	sync_receipt_time *= port_ds->neighbor_prop_delay;
 	sync_receipt_time += pss->follow_up_correction_field;
 	sync_receipt_time += port_ds->delay_asymmetry;
 
@@ -778,7 +778,7 @@ static void gptp_update_local_port_clock(void)
 
 	if (second_diff < 0 && nanosecond_diff > 0) {
 		second_diff++;
-		nanosecond_diff = -NSEC_PER_SEC + nanosecond_diff;
+		nanosecond_diff = -(int64_t)NSEC_PER_SEC + nanosecond_diff;
 	}
 
 	ptp_clock_rate_adjust(clk, port_ds->neighbor_rate_ratio);
@@ -1527,7 +1527,7 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 	case GPTP_PA_INFO_SUPERIOR_MASTER_PORT:
 		/* We copy directly the content of the message to the port
 		 * priority vector without using an intermediate
-		 * messagePrioriry structure.
+		 * messagePriority structure.
 		 */
 
 		if (!bmca_data->rcvd_announce_ptr) {

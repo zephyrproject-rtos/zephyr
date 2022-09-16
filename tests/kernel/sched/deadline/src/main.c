@@ -3,15 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 
 #define NUM_THREADS 8
 /* this should be large enough for us
  * to print a failing assert if necessary
  */
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 struct k_thread worker_threads[NUM_THREADS];
 k_tid_t worker_tids[NUM_THREADS];
@@ -169,7 +169,7 @@ void unqueue_worker(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Validate the behavior of dealine_set when the thread is not queued
+ * @brief Validate the behavior of deadline_set when the thread is not queued
  *
  * @details Create a bunch of threads with scheduling delay which make the
  * thread in unqueued state. The k_thread_deadline_set() call should not make

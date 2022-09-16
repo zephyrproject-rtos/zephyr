@@ -39,6 +39,43 @@ uint8_t ull_conn_llcp_req(void *conn);
 
 void ull_pdu_data_init(struct pdu_data *pdu);
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+/* Connection context pointer used as CPR mutex to serialize connection
+ * parameter requests procedures across simulataneous connections so that
+ * offsets exchanged to the peer do not get changed.
+ */
+extern struct ll_conn *conn_upd_curr;
+
+static inline void cpr_active_check_and_set(struct ll_conn *conn)
+{
+	if (!conn_upd_curr) {
+		conn_upd_curr = conn;
+	}
+}
+
+static inline void cpr_active_set(struct ll_conn *conn)
+{
+	conn_upd_curr = conn;
+}
+
+static inline bool cpr_active_is_set(struct ll_conn *conn)
+{
+	return conn_upd_curr && (conn_upd_curr != conn);
+}
+
+static inline void cpr_active_check_and_reset(struct ll_conn *conn)
+{
+	if (conn == conn_upd_curr) {
+		conn_upd_curr = NULL;
+	}
+}
+
+static inline void cpr_active_reset(void)
+{
+	conn_upd_curr = NULL;
+}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 
 uint16_t ull_conn_event_counter(struct ll_conn *conn);
@@ -86,15 +123,5 @@ void ull_conn_pause_rx_data(struct ll_conn *conn);
  * @brief Resume the data path of a rx queue.
  */
 void ull_conn_resume_rx_data(struct ll_conn *conn);
-
-/**
- * @brief Restart procedure timeout timer
- */
-void ull_conn_prt_reload(struct ll_conn *conn, uint16_t procedure_reload);
-
-/**
- * @brief Clear procedure timeout timer
- */
-void ull_conn_prt_clear(struct ll_conn *conn);
 
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */

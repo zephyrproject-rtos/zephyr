@@ -19,7 +19,7 @@ The partition is built by the TF-M build system, refer to :ref:`tfm_build_system
 
 For more information on how to add custom secure partitions refer to TF-M's guide: https://tf-m-user-guide.trustedfirmware.org/docs/integration_guide/services/tfm_secure_partition_addition.html
 
-When adapting this partition for your own purposes, please change all occurences of "dummy_partition", "DUMMY_PARTITION", "dp", and "DP" to your own partition name.
+When adapting this partition for your own purposes, please change all occurrences of "dummy_partition", "DUMMY_PARTITION", "dp", and "DP" to your own partition name.
 Also, look through both the secure and non-secure CMakeLists.txt file and make relevant changes, as well as the yaml files inside "partition".
 
 Building and Running
@@ -42,10 +42,10 @@ Sample Output
 
    .. code-block:: console
 
-      *** Booting Zephyr OS build v2.6.0-rc1-ncs1-1-g58213e91eef1  ***
+      *** Booting Zephyr OS build zephyr-v3.0.0-3061-g9bb87f4d46e9  ***
       Digest: be45cb2605bf36bebde684841a28f0fd43c69850a3dce5fedba69928ee3a8991
       Digest: 1452c8f04245d355722fdbfb03c69bcfd380b7dff911a3e425013397251f6a4e
       Digest: d3b4349010abb691b9584b6fd6b41ec54596ef7b98d853fb4f5bfa690f50f222
       Digest: 5afbcfede855ca834ff5b4e8a44a32206a51381f3cf52f5001a3241f017ac41a
       Digest: 983318380c325099da63de2e7ca57c1630693b28b4754e08817533295dbfcfbb
-      Status: -135
+      No valid secret for key, received expected error code

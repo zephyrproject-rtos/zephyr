@@ -6,8 +6,8 @@
 
 #include "mesh_test.h"
 #include "settings_test_backend.h"
-#include <bluetooth/mesh.h>
-#include <sys/reboot.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/sys/reboot.h>
 #include "mesh/net.h"
 #include "mesh/app_keys.h"
 #include "mesh/crypto.h"
@@ -15,10 +15,12 @@
 
 #define LOG_MODULE_NAME test_persistence
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define WAIT_TIME 60 /*seconds*/
+
+static bool provisioner_ready;
 
 extern const struct bt_mesh_comp comp;
 
@@ -265,6 +267,12 @@ static void unprovisioned_beacon(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_i
 {
 	static bool once;
 
+	/* Subnet may not be ready yet when provisioner receives a beacon. */
+	if (!provisioner_ready) {
+		LOG_INF("Provisioner is not ready yet");
+		return;
+	}
+
 	if (once) {
 		return;
 	}
@@ -404,6 +412,8 @@ static void provisioner_setup(void)
 	if (err || status) {
 		FAIL("Failed to add test_netkey (err: %d, status: %d)", err, status);
 	}
+
+	provisioner_ready = true;
 }
 
 static void test_provisioning_data_save(void)
@@ -833,7 +843,7 @@ static void test_cfg_save(void)
 					   current_stack_cfg->net_transmit,
 					   &transmit);
 	if (err || transmit != current_stack_cfg->net_transmit) {
-		FAIL("Net transmit set failed (err %d, trasmit %x)", err, transmit);
+		FAIL("Net transmit set failed (err %d, transmit %x)", err, transmit);
 	}
 
 	err = bt_mesh_cfg_relay_set(test_netkey_idx, TEST_ADDR,

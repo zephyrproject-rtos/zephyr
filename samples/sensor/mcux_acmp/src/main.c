@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/sensor.h>
-#include <drivers/sensor/mcux_acmp.h>
-#include <zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/mcux_acmp.h>
+#include <zephyr/zephyr.h>
 
 #include <stdio.h>
 

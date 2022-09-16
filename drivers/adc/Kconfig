@@ -16,7 +16,7 @@ menuconfig ADC
 if ADC
 
 config ADC_SHELL
-	bool "Enable ADC Shell"
+	bool "ADC Shell"
 	default y
 	depends on SHELL
 	help
@@ -29,7 +29,7 @@ config ADC_CONFIGURABLE_INPUTS
 	bool
 
 config ADC_ASYNC
-	bool "Enable asynchronous call support"
+	bool "Asynchronous call support"
 	select POLL
 	help
 	  This option enables the asynchronous API calls.
@@ -69,5 +69,7 @@ source "drivers/adc/Kconfig.cc32xx"
 source "drivers/adc/Kconfig.adc_emul"
 
 source "drivers/adc/Kconfig.test"
+
+source "drivers/adc/Kconfig.ads1x1x"
 
 endif # ADC

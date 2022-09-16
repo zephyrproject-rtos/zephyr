@@ -5,7 +5,7 @@ description: NXP Kinetis MCUX DAC32
 
 compatible: "nxp,kinetis-dac32"
 
-include: dac-controller.yaml
+include: [dac-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:

@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_ACCESS)
 #define LOG_MODULE_NAME bt_mesh_access
@@ -583,7 +583,8 @@ static bool model_has_dst(struct bt_mesh_model *mod, uint16_t dst)
 {
 	if (BT_MESH_ADDR_IS_UNICAST(dst)) {
 		return (dev_comp->elem[mod->elem_idx].addr == dst);
-	} else if (BT_MESH_ADDR_IS_GROUP(dst) || BT_MESH_ADDR_IS_VIRTUAL(dst)) {
+	} else if (BT_MESH_ADDR_IS_GROUP(dst) || BT_MESH_ADDR_IS_VIRTUAL(dst) ||
+		  (BT_MESH_ADDR_IS_FIXED_GROUP(dst) &&  mod->elem_idx != 0)) {
 		return !!bt_mesh_model_find_group(&mod, dst);
 	}
 

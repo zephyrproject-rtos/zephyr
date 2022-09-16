@@ -10,10 +10,10 @@
 
 #define ULL_LLCP_UNITTEST
 
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
-#include <sys/slist.h>
-#include <sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 #include "hal/ccm.h"
 
 #include "util/util.h"
@@ -23,6 +23,7 @@
 
 #include "pdu.h"
 #include "ll.h"
+#include "ll_feat.h"
 #include "ll_settings.h"
 
 #include "lll.h"
@@ -93,6 +94,10 @@ struct ll_conn conn;
 static void setup(void)
 {
 	test_setup(&conn);
+
+	/* Fake that a Feature exchange proceudre has been executed */
+	conn.llcp.fex.valid = 1U;
+	conn.llcp.fex.features_used |= LL_FEAT_BIT_EXT_REJ_IND;
 }
 
 void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le,
@@ -167,7 +172,7 @@ int lll_csrand_get(void *buf, size_t len)
  *    |<---------------------------|                     |
  *    |                            |                     |
  */
-void test_encryption_start_mas_loc(void)
+void test_encryption_start_central_loc(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -191,15 +196,10 @@ void test_encryption_start_mas_loc(void)
 	/* Prepare LL_ENC_RSP */
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
-	/* Second call for IVm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 
 	/* Prepare mocked call to ecb_encrypt */
 	ztest_expect_data(ecb_encrypt, key_le, ltk);
@@ -286,7 +286,7 @@ void test_encryption_start_mas_loc(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -329,7 +329,7 @@ void test_encryption_start_mas_loc(void)
  *    |<---------------------------|                     |
  *    |                            |                     |
  */
-void test_encryption_start_mas_loc_limited_memory(void)
+void test_encryption_start_central_loc_limited_memory(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -354,15 +354,10 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	/* Prepare LL_ENC_RSP */
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
-	/* Second call for IVm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 
 	/* Prepare mocked call to ecb_encrypt */
 	ztest_expect_data(ecb_encrypt, key_le, ltk);
@@ -520,7 +515,206 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	/* Release dummy procedure */
 	llcp_proc_ctx_release(ctx);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", ctx_buffers_free());
+}
+
+/* +-----+                     +-------+              +-----+
+ * | UT  |                     | LL_A  |              | LT  |
+ * +-----+                     +-------+              +-----+
+ *    |                            |                     |
+ *    | Initiate                   |                     |
+ *    | Encryption Start Proc.     |                     |
+ *    |--------------------------->|                     |
+ *    |         -----------------\ |                     |
+ *    |         | Empty Tx queue |-|                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_ENC_REQ          |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |   LL_REJECT_EXT_IND |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |     Encryption Start Proc. |                     |
+ *    |                   Complete |                     |
+ *    |<---------------------------|                     |
+ *    |                            |                     |
+ */
+void test_encryption_start_central_loc_reject_ext(void)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	const uint8_t rand[] = { RAND };
+	const uint8_t ediv[] = { EDIV };
+	const uint8_t ltk[] = { LTK };
+
+	/* Prepare expected LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req exp_enc_req = {
+		.rand = { RAND },
+		.ediv = { EDIV },
+		.skdm = { SKDM },
+		.ivm = { IVM },
+	};
+
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
+
+	struct pdu_data_llctrl_reject_ind reject_ind = { .error_code =
+								 BT_HCI_ERR_UNSUPP_REMOTE_FEATURE };
+
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ,
+		.error_code = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	/* Initiate an Encryption Start Procedure */
+	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Rx */
+	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_REJECT_IND, &ntf, &reject_ind);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", ctx_buffers_free());
+}
+
+/* +-----+                     +-------+              +-----+
+ * | UT  |                     | LL_A  |              | LT  |
+ * +-----+                     +-------+              +-----+
+ *    |                            |                     |
+ *    | Initiate                   |                     |
+ *    | Encryption Start Proc.     |                     |
+ *    |--------------------------->|                     |
+ *    |         -----------------\ |                     |
+ *    |         | Empty Tx queue |-|                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_ENC_REQ          |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |   LL_REJECT_IND     |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |     Encryption Start Proc. |                     |
+ *    |                   Complete |                     |
+ *    |<---------------------------|                     |
+ *    |                            |                     |
+ */
+void test_encryption_start_central_loc_reject(void)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	const uint8_t rand[] = { RAND };
+	const uint8_t ediv[] = { EDIV };
+	const uint8_t ltk[] = { LTK };
+
+	/* Prepare expected LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req exp_enc_req = {
+		.rand = { RAND },
+		.ediv = { EDIV },
+		.skdm = { SKDM },
+		.ivm = { IVM },
+	};
+
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
+
+	struct pdu_data_llctrl_reject_ind reject_ind = { .error_code =
+								 BT_HCI_ERR_UNSUPP_REMOTE_FEATURE };
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	/* Initiate an Encryption Start Procedure */
+	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Rx */
+	lt_tx(LL_REJECT_IND, &conn, &reject_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_REJECT_IND, &ntf, &reject_ind);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -549,7 +743,7 @@ void test_encryption_start_mas_loc_limited_memory(void)
  *    |<---------------------------|                     |
  *    |                            |                     |
  */
-void test_encryption_start_mas_loc_no_ltk(void)
+void test_encryption_start_central_loc_no_ltk(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -570,15 +764,10 @@ void test_encryption_start_mas_loc_no_ltk(void)
 	/* Prepare LL_ENC_RSP */
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
-	/* Second call for IVm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 
 	struct pdu_data_llctrl_reject_ind reject_ind = { .error_code =
 								 BT_HCI_ERR_PIN_OR_KEY_MISSING };
@@ -636,7 +825,7 @@ void test_encryption_start_mas_loc_no_ltk(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -665,7 +854,7 @@ void test_encryption_start_mas_loc_no_ltk(void)
  *    |<---------------------------|                     |
  *    |                            |                     |
  */
-void test_encryption_start_mas_loc_no_ltk_2(void)
+void test_encryption_start_central_loc_no_ltk_2(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -686,15 +875,10 @@ void test_encryption_start_mas_loc_no_ltk_2(void)
 	/* Prepare LL_ENC_RSP */
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
-	/* Second call for IVm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 
 	struct pdu_data_llctrl_reject_ind reject_ind = { .error_code =
 								 BT_HCI_ERR_PIN_OR_KEY_MISSING };
@@ -747,7 +931,139 @@ void test_encryption_start_mas_loc_no_ltk_2(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", ctx_buffers_free());
+}
+
+/* +-----+                     +-------+              +-----+
+ * | UT  |                     | LL_A  |              | LT  |
+ * +-----+                     +-------+              +-----+
+ *    |                            |                     |
+ *    | Initiate                   |                     |
+ *    | Encryption Start Proc.     |                     |
+ *    |--------------------------->|                     |
+ *    |         -----------------\ |                     |
+ *    |         | Empty Tx queue |-|                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_ENC_REQ          |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |          LL_ENC_RSP |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |                            |      LL_VERSION_IND |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |     Encryption Start Proc. |                     |
+ *    |                   Complete |                     |
+ *    |<---------------------------|                     |
+ *    |                            |                     |
+ */
+void test_encryption_start_central_loc_mic(void)
+{
+	uint8_t err;
+	struct node_tx *tx;
+
+	const uint8_t rand[] = { RAND };
+	const uint8_t ediv[] = { EDIV };
+	const uint8_t ltk[] = { LTK };
+
+	/* Prepare expected LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req exp_enc_req = {
+		.rand = { RAND },
+		.ediv = { EDIV },
+		.skdm = { SKDM },
+		.ivm = { IVM },
+	};
+
+	/* Prepare LL_ENC_RSP */
+	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
+
+	struct pdu_data_llctrl_version_ind remote_version_ind = {
+		.version_number = 0x55,
+		.company_id = 0xABCD,
+		.sub_version_number = 0x1234,
+	};
+
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	/* Initiate an Encryption Start Procedure */
+	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Rx */
+	lt_tx(LL_ENC_RSP, &conn, &enc_rsp);
+
+	/* Rx */
+	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+	/* There should not be a host notification */
+	ut_rx_q_is_empty();
+
+	/**/
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL,
+		      "Expected termination due to MIC failure");
+
+	/*
+	 * For a 40s procedure response timeout with a connection interval of
+	 * 7.5ms, a total of 5333.33 connection events are needed, verify that
+	 * the state doesn't change for that many invocations.
+	 */
+	for (int n = 5334; n > 0; n--) {
+		/* Prepare */
+		event_prepare(&conn);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn);
+
+		/* Done */
+		event_done(&conn);
+
+		/* Check state */
+		CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+		CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+		/* There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Note that for this test the context is not released */
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -789,7 +1105,7 @@ void test_encryption_start_mas_loc_no_ltk_2(void)
  *    |     |---------------| |                     |
  *    |                       |                     |
  */
-void test_encryption_start_sla_rem(void)
+void test_encryption_start_periph_rem(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -812,15 +1128,10 @@ void test_encryption_start_sla_rem(void)
 		.ivs = { IVS },
 	};
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.skds);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds));
-	/* Second call for IVs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.ivs));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.ivs);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 
 	/* Prepare mocked call to ecb_encrypt */
 	ztest_expect_data(ecb_encrypt, key_le, ltk);
@@ -964,7 +1275,7 @@ void test_encryption_start_sla_rem(void)
 	/* CCM Tx Direction should be S->M */
 	CHECK_TX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_S_TO_M);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1010,7 +1321,7 @@ void test_encryption_start_sla_rem(void)
  *    |     |---------------| |                     |
  *    |                       |                     |
  */
-void test_encryption_start_sla_rem_limited_memory(void)
+void test_encryption_start_periph_rem_limited_memory(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1034,15 +1345,10 @@ void test_encryption_start_sla_rem_limited_memory(void)
 		.ivs = { IVS },
 	};
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.skds);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds));
-	/* Second call for IVs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.ivs));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.ivs);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 
 	/* Prepare mocked call to ecb_encrypt */
 	ztest_expect_data(ecb_encrypt, key_le, ltk);
@@ -1268,7 +1574,7 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	/* Release dummy procedure */
 	llcp_proc_ctx_release(ctx);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1294,7 +1600,7 @@ void test_encryption_start_sla_rem_limited_memory(void)
  *    |                       | LL_REJECT_EXT_IND   |
  *    |                       |-------------------->|
  */
-void test_encryption_start_sla_rem_no_ltk(void)
+void test_encryption_start_periph_rem_no_ltk(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1317,15 +1623,10 @@ void test_encryption_start_sla_rem_no_ltk(void)
 		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
 	};
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.skds);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds));
-	/* Second call for IVs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.ivs));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.ivs);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
@@ -1415,11 +1716,161 @@ void test_encryption_start_sla_rem_no_ltk(void)
 	ut_rx_q_is_empty();
 
 	/* Note that for this test the context is not released */
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM - 1,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_encryption_pause_mas_loc(void)
+/* +-----+                +-------+              +-----+
+ * | UT  |                | LL_A  |              | LT  |
+ * +-----+                +-------+              +-----+
+ *    |                       |                     |
+ *    |                       |          LL_ENC_REQ |
+ *    |                       |<--------------------|
+ *    |    -----------------\ |                     |
+ *    |    | Empty Tx queue |-|                     |
+ *    |    |----------------| |                     |
+ *    |                       |                     |
+ *    |                       | LL_ENC_RSP          |
+ *    |                       |-------------------->|
+ *    |                       |                     |
+ *    |                       |      LL_VERSION_IND |
+ *    |                       |<--------------------|
+ *    |                       |                     |
+ */
+void test_encryption_start_periph_rem_mic(void)
+{
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	/* Prepare LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req enc_req = {
+		.rand = { RAND },
+		.ediv = { EDIV },
+		.skdm = { SKDM },
+		.ivm = { IVM },
+	};
+
+	struct pdu_data_llctrl_enc_rsp exp_enc_rsp = {
+		.skds = { SKDS },
+		.ivs = { IVS },
+	};
+
+	struct pdu_data_llctrl_version_ind remote_version_ind = {
+		.version_number = 0x55,
+		.company_id = 0xABCD,
+		.sub_version_number = 0x1234,
+	};
+
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.skds);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_ENC_REQ, &conn, &enc_req);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	/* Done */
+	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_RSP, &conn, &tx, &exp_enc_rsp);
+	lt_rx_q_is_empty(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+	/* Done */
+	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* There should be a host notification */
+	ut_rx_pdu(LL_ENC_REQ, &ntf, &enc_req);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+	/* There should not be a host notification */
+	ut_rx_q_is_empty();
+
+	/**/
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL,
+		      "Expected termination due to MIC failure");
+
+	/*
+	 * For a 40s procedure response timeout with a connection interval of
+	 * 7.5ms, a total of 5333.33 connection events are needed, verify that
+	 * the state doesn't change for that many invocations.
+	 */
+	for (int n = 5334; n > 0; n--) {
+		/* Prepare */
+		event_prepare(&conn);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn);
+
+		/* Done */
+		event_done(&conn);
+
+		/* Check state */
+		CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+		CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+		/* There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Note that for this test the context is not released */
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
+				  "Free CTX buffers %d", ctx_buffers_free());
+}
+
+
+void test_encryption_pause_central_loc(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1443,15 +1894,10 @@ void test_encryption_pause_mas_loc(void)
 	/* Prepare LL_ENC_RSP */
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
-	/* Second call for IVm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 
 	/* Prepare mocked call to ecb_encrypt */
 	ztest_expect_data(ecb_encrypt, key_le, ltk);
@@ -1566,11 +2012,11 @@ void test_encryption_pause_mas_loc(void)
 	/* Rx Decryption should be enabled */
 	zassert_equal(conn.lll.enc_rx, 1U, NULL);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_encryption_pause_sla_rem(void)
+void test_encryption_pause_periph_rem(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1593,15 +2039,10 @@ void test_encryption_pause_sla_rem(void)
 		.ivs = { IVS },
 	};
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.skds);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds));
-	/* Second call for IVs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.ivs));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.ivs);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 
 	/* Prepare mocked call to ecb_encrypt */
 	ztest_expect_data(ecb_encrypt, key_le, ltk);
@@ -1742,7 +2183,7 @@ void test_encryption_pause_sla_rem(void)
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.lll.enc_tx, 1U, NULL);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1750,25 +2191,33 @@ void test_main(void)
 {
 	ztest_test_suite(
 		encryption_start,
-		ztest_unit_test_setup_teardown(test_encryption_start_mas_loc, setup,
+		ztest_unit_test_setup_teardown(test_encryption_start_central_loc, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_limited_memory, setup,
+		ztest_unit_test_setup_teardown(test_encryption_start_central_loc_limited_memory,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_encryption_start_central_loc_reject_ext, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_no_ltk, setup,
+		ztest_unit_test_setup_teardown(test_encryption_start_central_loc_reject, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_no_ltk_2, setup,
+		ztest_unit_test_setup_teardown(test_encryption_start_central_loc_no_ltk, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_encryption_start_sla_rem, setup,
+		ztest_unit_test_setup_teardown(test_encryption_start_central_loc_no_ltk_2, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_encryption_start_sla_rem_limited_memory, setup,
+		ztest_unit_test_setup_teardown(test_encryption_start_central_loc_mic, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_encryption_start_sla_rem_no_ltk, setup,
+		ztest_unit_test_setup_teardown(test_encryption_start_periph_rem, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_encryption_start_periph_rem_limited_memory,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_encryption_start_periph_rem_no_ltk, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_encryption_start_periph_rem_mic, setup,
 					       unit_test_noop));
 
 	ztest_test_suite(encryption_pause,
-			 ztest_unit_test_setup_teardown(test_encryption_pause_mas_loc, setup,
+			 ztest_unit_test_setup_teardown(test_encryption_pause_central_loc, setup,
 							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_encryption_pause_sla_rem, setup,
+			 ztest_unit_test_setup_teardown(test_encryption_pause_periph_rem, setup,
 							unit_test_noop));
 
 	ztest_run_test_suite(encryption_start);

@@ -7,12 +7,11 @@
 
 #include "zephyr/types.h"
 #include "ztest.h"
-#include "kconfig.h"
 
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
-#include <sys/slist.h>
-#include <sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 
 #include "hal/ccm.h"
 
@@ -70,7 +69,7 @@ void helper_pdu_encode_feature_req(struct pdu_data *pdu, void *param)
 		pdu->llctrl.feature_req.features[counter] = expected_value;
 	}
 }
-void helper_pdu_encode_slave_feature_req(struct pdu_data *pdu, void *param)
+void helper_pdu_encode_peripheral_feature_req(struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_feature_req *feature_req = param;
 
@@ -392,6 +391,12 @@ void helper_pdu_encode_cte_rsp(struct pdu_data *pdu, void *param)
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
 }
 
+void helper_pdu_encode_zero(struct pdu_data *pdu, void *param)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = 0;
+}
+
 void helper_node_encode_cte_rsp(struct node_rx_pdu *rx, void *param)
 {
 	rx->hdr.rx_ftr.iq_report = (struct cte_conn_iq_report *)param;
@@ -447,8 +452,8 @@ void helper_pdu_verify_feature_req(const char *file, uint32_t line, struct pdu_d
 	}
 }
 
-void helper_pdu_verify_slave_feature_req(const char *file, uint32_t line, struct pdu_data *pdu,
-					 void *param)
+void helper_pdu_verify_peripheral_feature_req(const char *file, uint32_t line, struct pdu_data *pdu,
+					      void *param)
 {
 	struct pdu_data_llctrl_feature_req *feature_req = param;
 
@@ -949,4 +954,13 @@ void helper_node_verify_cte_rsp(const char *file, uint32_t line, struct node_rx_
 		      "Sample count mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(memcmp(rx_iq_report->sample, p_iq_report->sample, p_iq_report->sample_count),
 		      0, "IQ samples mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_ntf_verify_cte_rsp(const char *file, uint32_t line, struct pdu_data *pdu,
+				   void *param)
+{
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
+		      line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CTE_RSP,
+		      "Not a LL_CTE_RSP. Called at %s:%d\n", file, line);
 }

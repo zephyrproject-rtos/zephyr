@@ -9,7 +9,7 @@ menuconfig MCUBOOT_BOOTUTIL_LIB
 
 if MCUBOOT_BOOTUTIL_LIB
 
-# hiden option for disabling module-own log configuration
+# hidden option for disabling module-own log configuration
 # while building MCUboot bootloader
 config MCUBOOT_BOOTUTIL_LIB_OWN_LOG
 	bool
@@ -22,7 +22,7 @@ source "subsys/logging/Kconfig.template.log_config"
 endif
 
 config BOOT_IMAGE_ACCESS_HOOKS
-	bool "Enable hooks for overriding MCUboot's bootutil native routines"
+	bool "Hooks for overriding MCUboot's bootutil native routines"
 	help
 	  Allow to provide procedures for override or extend native
 	  MCUboot's routines required for access the image data.

@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT adi_adxl345
 
-#include <drivers/sensor.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <logging/log.h>
-#include <sys/__assert.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
 
 #include "adxl345.h"
 

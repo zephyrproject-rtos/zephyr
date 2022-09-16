@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <sys/sys_heap.h>
-#include <sys/heap_listener.h>
+#include <zephyr/sys/sys_heap.h>
+#include <zephyr/sys/heap_listener.h>
 #include <inttypes.h>
 
 /* Guess at a value for heap size based on available memory on the

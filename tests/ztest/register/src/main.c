@@ -76,7 +76,7 @@ static void reset_state(enum phase phase)
 	global_state.phase = phase;
 
 	for (int i = 0; i < num_registered_suites; ++i) {
-		stats_snapshot[i] = _ztest_suite_node_list_start[i].stats;
+		stats_snapshot[i] = *_ztest_suite_node_list_start[i].stats;
 	}
 }
 
@@ -88,7 +88,7 @@ static void take_stats_snapshot(void)
 {
 	for (int i = 0; i < num_registered_suites; ++i) {
 		struct ztest_suite_stats *snapshot = stats_snapshot + i;
-		struct ztest_suite_stats *current = &_ztest_suite_node_list_start[i].stats;
+		struct ztest_suite_stats *current = _ztest_suite_node_list_start[i].stats;
 
 		snapshot->run_count = current->run_count - snapshot->run_count;
 		snapshot->skip_count = current->skip_count - snapshot->skip_count;

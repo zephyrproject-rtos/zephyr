@@ -6,23 +6,8 @@
 if BOARD_TWR_KE18F
 
 config BOARD_TWR_KE18F_FLEXIO_CLKOUT
-	bool "Enable CLKOUT signal on FlexIO header"
+	bool "CLKOUT signal on FlexIO header"
 	help
 	  Enable the CLKOUT signal on FlexIO header pin 7 (PTE10).
-
-config BOARD_TWR_KE18F_SPI_0_PCS2
-	bool "Use PTE6 as dedicated SPI_0 PCS2 chip select"
-	depends on "$(dt_nodelabel_enabled,lpspi0)"
-	default y
-
-config BOARD_TWR_KE18F_SPI_1_PCS0
-	bool "Use PTD3 as dedicated SPI_1 PCS0 chip select"
-	depends on "$(dt_nodelabel_enabled,lpspi1)"
-	default y
-
-config BOARD_TWR_KE18F_SPI_1_PCS2
-	bool "Use PTA16 as dedicated SPI_1 PCS2 chip select"
-	depends on "$(dt_nodelabel_enabled,lpspi1)"
-	default y
 
 endif # BOARD_TWR_KE18F

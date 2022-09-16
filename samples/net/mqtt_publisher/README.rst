@@ -123,7 +123,7 @@ try this sample with TLS enabled, by following these steps:
   https://test.mosquitto.org
 - In :file:`src/test_certs.h`, set ``ca_certificate[]`` using the certificate
   contents (or set it to its filename if the socket offloading feature is
-  enabled on your platform and :kconfig:`CONFIG_TLS_CREDENTIAL_FILENAMES` is
+  enabled on your platform and :kconfig:option:`CONFIG_TLS_CREDENTIAL_FILENAMES` is
   set to ``y``).
 - In :file:`src/config.h`, set SERVER_ADDR to the IP address to connect to,
   i.e., the IP address of test.mosquitto.org ``"37.187.106.16"``
@@ -160,7 +160,7 @@ same host as the MQTT broker.
 To start a proxy server, ``ssh`` can be used.
 Use the following command to run it on your host with the default port:
 
-.. code-block: console
+.. code-block:: console
 
 	$ ssh -N -D 0.0.0.0:1080 localhost
 

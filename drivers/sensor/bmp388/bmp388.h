@@ -11,9 +11,9 @@
 #ifndef __BMP388_H
 #define __BMP388_H
 
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/util.h>
 
 /* registers */
 #define BMP388_REG_CHIPID       0x00

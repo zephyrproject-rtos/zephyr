@@ -8,36 +8,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <stdlib.h>
-#include <fs/nvs.h>
-#include <data/json.h>
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/net_mgmt.h>
-#include <sys/reboot.h>
-#include <drivers/flash.h>
-#include <net/http_client.h>
-#include <net/dns_resolve.h>
-#include <logging/log_ctrl.h>
-#include <storage/flash_map.h>
+#include <zephyr/fs/nvs.h>
+#include <zephyr/data/json.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/net/http_client.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/storage/flash_map.h>
 
 #include "hawkbit_priv.h"
 #include "hawkbit_device.h"
-#include "mgmt/hawkbit.h"
+#include <zephyr/mgmt/hawkbit.h>
 #include "hawkbit_firmware.h"
-
-#include "mbedtls/md.h"
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #define CA_CERTIFICATE_TAG 1
-#include <net/tls_credentials.h>
+#include <zephyr/net/tls_credentials.h>
 #endif
 
 #define ADDRESS_ID 1
@@ -71,7 +69,6 @@ struct hawkbit_download {
 	int download_progress;
 	size_t downloaded_size;
 	size_t http_content_size;
-	mbedtls_md_context_t hash_ctx;
 	uint8_t file_hash[SHA256_HASH_SIZE];
 };
 
@@ -614,12 +611,15 @@ int hawkbit_init(void)
 	int ret = 0, rc = 0;
 	struct flash_pages_info info;
 	int32_t action_id;
-	const struct device *flash_dev;
 
-	flash_dev = DEVICE_DT_GET(FLASH_NODE);
+	fs.flash_device = DEVICE_DT_GET(FLASH_NODE);
+	if (!device_is_ready(fs.flash_device)) {
+		LOG_ERR("Flash device not ready");
+		return -ENODEV;
+	}
 
 	fs.offset = FLASH_AREA_OFFSET(storage);
-	rc = flash_get_page_info_by_offs(flash_dev, fs.offset, &info);
+	rc = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
 	if (rc) {
 		LOG_ERR("Unable to get storage page info: %d", rc);
 		return -EIO;
@@ -628,10 +628,10 @@ int hawkbit_init(void)
 	fs.sector_size = info.size;
 	fs.sector_count = 3U;
 
-	rc = nvs_init(&fs, flash_dev->name);
+	rc = nvs_mount(&fs);
 	if (rc) {
-		LOG_ERR("Storage flash init failed: %d", rc);
-		return -ENODEV;
+		LOG_ERR("Storage flash mount failed: %d", rc);
+		return rc;
 	}
 
 	rc = nvs_read(&fs, ADDRESS_ID, &action_id, sizeof(action_id));
@@ -688,28 +688,13 @@ static void response_cb(struct http_response *rsp,
 	switch (type) {
 	case HAWKBIT_PROBE:
 		if (hb_context.dl.http_content_size == 0) {
-			body_data = rsp->body_start;
-			body_len = rsp->data_len;
-			/*
-			 * subtract the size of the HTTP header from body_len
-			 */
-			body_len -= (rsp->body_start - rsp->recv_buf);
 			hb_context.dl.http_content_size = rsp->content_length;
-		} else {
-			/*
-			 * more general case where body data is set, but no need
-			 * to take the HTTP header into account
-			 */
-			body_data = rsp->body_start;
-			body_len = rsp->data_len;
 		}
 
-		if ((rsp->body_found == 1) && (body_data == NULL)) {
-			body_data = rsp->recv_buf;
-			body_len = rsp->data_len;
-		}
+		if (rsp->body_found) {
+			body_data = rsp->body_frag_start;
+			body_len = rsp->body_frag_len;
 
-		if (body_data != NULL) {
 			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
 				response_buffer_size <<= 1;
 				rsp_tmp = realloc(hb_context.response_data,
@@ -762,28 +747,13 @@ static void response_cb(struct http_response *rsp,
 
 	case HAWKBIT_PROBE_DEPLOYMENT_BASE:
 		if (hb_context.dl.http_content_size == 0) {
-			body_data = rsp->body_start;
-			body_len = rsp->data_len;
-			/*
-			 * subtract the size of the HTTP header from body_len
-			 */
-			body_len -= (rsp->body_start - rsp->recv_buf);
 			hb_context.dl.http_content_size = rsp->content_length;
-		} else {
-			/*
-			 * more general case where body data is set, but no need
-			 * to take the HTTP header into account
-			 */
-			body_data = rsp->body_start;
-			body_len = rsp->data_len;
 		}
 
-		if ((rsp->body_found == 1) && (body_data == NULL)) {
-			body_data = rsp->recv_buf;
-			body_len = rsp->data_len;
-		}
+		if (rsp->body_found) {
+			body_data = rsp->body_frag_start;
+			body_len = rsp->body_frag_len;
 
-		if (body_data != NULL) {
 			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
 				response_buffer_size <<= 1;
 				rsp_tmp = realloc(hb_context.response_data,
@@ -825,35 +795,12 @@ static void response_cb(struct http_response *rsp,
 
 	case HAWKBIT_DOWNLOAD:
 		if (hb_context.dl.http_content_size == 0) {
-			body_data = rsp->body_start;
-			body_len = rsp->data_len;
-			/*
-			 * subtract the size of the HTTP header from body_len
-			 */
-			body_len -= (rsp->body_start - rsp->recv_buf);
 			hb_context.dl.http_content_size = rsp->content_length;
-		} else {
-			/*
-			 * more general case where body data is set, but no need
-			 * to take the HTTP header into account
-			 */
-			body_data = rsp->body_start;
-			body_len = rsp->data_len;
 		}
 
-		if ((rsp->body_found == 1) && (body_data == NULL)) {
-			body_data = rsp->recv_buf;
-			body_len = rsp->data_len;
-		}
-
-		if (body_data != NULL) {
-			ret = mbedtls_md_update(&hb_context.dl.hash_ctx, body_data,
-					  body_len);
-			if (ret != 0) {
-				LOG_ERR("mbedTLS md update error: %d", ret);
-				hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
-				break;
-			}
+		if (rsp->body_found) {
+			body_data = rsp->body_frag_start;
+			body_len = rsp->body_frag_len;
 
 			ret = flash_img_buffered_write(
 				&hb_context.flash_ctx, body_data, body_len,
@@ -1079,8 +1026,7 @@ enum hawkbit_response hawkbit_probe(void)
 	int ret;
 	int32_t action_id;
 	int32_t file_size = 0;
-	uint8_t response_hash[SHA256_HASH_SIZE] = { 0 };
-	const mbedtls_md_info_t *hash_info;
+	struct flash_img_check fic;
 	char device_id[DEVICE_ID_HEX_MAX_SIZE] = { 0 },
 	     cancel_base[CANCEL_BASE_SIZE] = { 0 },
 	     download_http[DOWNLOAD_HTTP_SIZE] = { 0 },
@@ -1270,61 +1216,48 @@ enum hawkbit_response hawkbit_probe(void)
 
 	flash_img_init(&hb_context.flash_ctx);
 
-	hash_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
-	if (!hash_info) {
-		LOG_ERR("Unable to request hash type from mbedTLS");
-		hb_context.code_status = HAWKBIT_METADATA_ERROR;
-		goto cleanup;
-	}
-
-	mbedtls_md_init(&hb_context.dl.hash_ctx);
-	if (mbedtls_md_setup(&hb_context.dl.hash_ctx, hash_info, 0) < 0) {
-		LOG_ERR("Can't setup mbedTLS hash engine");
-		mbedtls_md_free(&hb_context.dl.hash_ctx);
-		hb_context.code_status = HAWKBIT_METADATA_ERROR;
-		goto free_md;
-	}
-
-	mbedtls_md_starts(&hb_context.dl.hash_ctx);
-
 	ret = (int)send_request(HTTP_GET, HAWKBIT_DOWNLOAD,
 			  HAWKBIT_STATUS_FINISHED_NONE,
 			  HAWKBIT_STATUS_EXEC_NONE);
 
-	mbedtls_md_finish(&hb_context.dl.hash_ctx, response_hash);
-
 	if (!ret) {
 		LOG_ERR("Send request failed (HAWKBIT_DOWNLOAD): %d", ret);
 		hb_context.code_status = HAWKBIT_NETWORKING_ERROR;
-		goto free_md;
+		goto cleanup;
 	}
 
 	if (hb_context.code_status == HAWKBIT_DOWNLOAD_ERROR) {
-		goto free_md;
+		goto cleanup;
 	}
 
+	/* Check if download finished */
 	if (!hb_context.final_data_received) {
 		LOG_ERR("Download is not complete");
 		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
-	} else if (memcmp(response_hash, hb_context.dl.file_hash,
-			  mbedtls_md_get_size(hash_info)) != 0) {
-		LOG_ERR("Hash mismatch");
-		LOG_HEXDUMP_DBG(response_hash, sizeof(response_hash), "resp");
-		LOG_HEXDUMP_DBG(hb_context.dl.file_hash,
-				sizeof(hb_context.dl.file_hash), "file");
-		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
-	} else if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
-		LOG_ERR("Failed to mark the image in slot 1 as pending");
-		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
-	} else {
-		hb_context.code_status = HAWKBIT_UPDATE_INSTALLED;
-		hawkbit_device_acid_update(hb_context.json_action_id);
+		goto cleanup;
 	}
 
-	hb_context.dl.http_content_size = 0;
+	/* Verify the hash of the stored firmware */
+	fic.match = hb_context.dl.file_hash;
+	fic.clen = hb_context.dl.downloaded_size;
+	if (flash_img_check(&hb_context.flash_ctx, &fic, FLASH_AREA_ID(image_1))) {
+		LOG_ERR("Firmware - flash validation has failed");
+		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
+		goto cleanup;
+	}
 
-free_md:
-	mbedtls_md_free(&hb_context.dl.hash_ctx);
+	/* Request mcuboot to upgrade */
+	if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
+		LOG_ERR("Failed to mark the image in slot 1 as pending");
+		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
+		goto cleanup;
+	}
+
+	/* If everything is successful */
+	hb_context.code_status = HAWKBIT_UPDATE_INSTALLED;
+	hawkbit_device_acid_update(hb_context.json_action_id);
+
+	hb_context.dl.http_content_size = 0;
 
 cleanup:
 	cleanup_connection();

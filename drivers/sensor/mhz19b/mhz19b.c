@@ -9,11 +9,11 @@
 
 #define DT_DRV_COMPAT winsen_mhz19b
 
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
 
-#include <drivers/sensor/mhz19b.h>
+#include <zephyr/drivers/sensor/mhz19b.h>
 #include "mhz19b.h"
 
 LOG_MODULE_REGISTER(mhz19b, CONFIG_SENSOR_LOG_LEVEL);
@@ -240,11 +240,11 @@ static int mhz19b_attr_get(const struct device *dev, enum sensor_channel chan,
 
 static int mhz19b_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	if (chan != SENSOR_CHAN_CO2) {
-		return -ENOTSUP;
+	if (chan == SENSOR_CHAN_CO2 || chan == SENSOR_CHAN_ALL) {
+		return mhz19b_poll_data(dev, MHZ19B_CMD_IDX_GET_CO2);
 	}
 
-	return mhz19b_poll_data(dev, MHZ19B_CMD_IDX_GET_CO2);
+	return -ENOTSUP;
 }
 
 static const struct sensor_driver_api mhz19b_api_funcs = {

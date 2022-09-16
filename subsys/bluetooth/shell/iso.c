@@ -12,15 +12,15 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include <zephyr.h>
-#include <shell/shell.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/iso.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
 
 #include "bt.h"
 
@@ -71,67 +71,11 @@ struct bt_iso_chan iso_chan = {
 	.qos = &iso_qos,
 };
 
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  8, NULL);
+
+#if defined(CONFIG_BT_ISO_CENTRAL)
 static struct bt_iso_cig *cig;
-
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8,
-			  NULL);
-
-static int iso_accept(const struct bt_iso_accept_info *info,
-		      struct bt_iso_chan **chan)
-{
-	shell_print(ctx_shell, "Incoming request from %p with CIG ID 0x%02X and CIS ID 0x%02X",
-		    info->acl, info->cig_id, info->cis_id);
-
-	if (iso_chan.iso) {
-		shell_print(ctx_shell, "No channels available");
-		return -ENOMEM;
-	}
-
-	*chan = &iso_chan;
-
-	return 0;
-}
-
-struct bt_iso_server iso_server = {
-	.sec_level = BT_SECURITY_L1,
-	.accept = iso_accept,
-};
-
-static int cmd_listen(const struct shell *sh, size_t argc, char *argv[])
-{
-	int err;
-	static struct bt_iso_chan_io_qos *tx_qos, *rx_qos;
-
-	if (!strcmp("tx", argv[1])) {
-		tx_qos = &iso_tx_qos;
-		rx_qos = NULL;
-	} else if (!strcmp("rx", argv[1])) {
-		tx_qos = NULL;
-		rx_qos = &iso_rx_qos;
-	} else if (!strcmp("txrx", argv[1])) {
-		tx_qos = &iso_tx_qos;
-		rx_qos = &iso_rx_qos;
-	} else {
-		shell_error(sh, "Invalid argument - use tx, rx or txrx");
-		return -ENOEXEC;
-	}
-
-	if (argc > 2) {
-		iso_server.sec_level = *argv[2] - '0';
-	}
-
-	err = bt_iso_server_register(&iso_server);
-	if (err) {
-		shell_error(sh, "Unable to register ISO cap (err %d)",
-			    err);
-		return err;
-	}
-
-	/* Setup peripheral iso data direction only if register is success */
-	iso_chan.qos->tx = tx_qos;
-	iso_chan.qos->rx = rx_qos;
-	return err;
-}
 
 static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -272,7 +216,67 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_ISO_CENTRAL */
 
+#if defined(CONFIG_BT_ISO_PERIPHERAL)
+
+static int iso_accept(const struct bt_iso_accept_info *info,
+		      struct bt_iso_chan **chan)
+{
+	shell_print(ctx_shell, "Incoming request from %p with CIG ID 0x%02X and CIS ID 0x%02X",
+		    info->acl, info->cig_id, info->cis_id);
+
+	if (iso_chan.iso) {
+		shell_print(ctx_shell, "No channels available");
+		return -ENOMEM;
+	}
+
+	*chan = &iso_chan;
+
+	return 0;
+}
+
+struct bt_iso_server iso_server = {
+	.sec_level = BT_SECURITY_L1,
+	.accept = iso_accept,
+};
+
+static int cmd_listen(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	static struct bt_iso_chan_io_qos *tx_qos, *rx_qos;
+
+	if (!strcmp("tx", argv[1])) {
+		tx_qos = &iso_tx_qos;
+		rx_qos = NULL;
+	} else if (!strcmp("rx", argv[1])) {
+		tx_qos = NULL;
+		rx_qos = &iso_rx_qos;
+	} else if (!strcmp("txrx", argv[1])) {
+		tx_qos = &iso_tx_qos;
+		rx_qos = &iso_rx_qos;
+	} else {
+		shell_error(sh, "Invalid argument - use tx, rx or txrx");
+		return -ENOEXEC;
+	}
+
+	if (argc > 2) {
+		iso_server.sec_level = *argv[2] - '0';
+	}
+
+	err = bt_iso_server_register(&iso_server);
+	if (err) {
+		shell_error(sh, "Unable to register ISO cap (err %d)",
+			    err);
+		return err;
+	}
+
+	/* Setup peripheral iso data direction only if register is success */
+	iso_chan.qos->tx = tx_qos;
+	iso_chan.qos->rx = rx_qos;
+	return err;
+}
+#endif /* CONFIG_BT_ISO_PERIPHERAL */
 
 static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -529,11 +533,15 @@ static int cmd_big_term(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 #if defined(CONFIG_BT_ISO_UNICAST)
+#if defined(CONFIG_BT_ISO_CENTRAL)
 	SHELL_CMD_ARG(cig_create, NULL, "[dir=tx,rx,txrx] [interval] [packing] [framing] "
 		      "[latency] [sdu] [phy] [rtn]", cmd_cig_create, 1, 8),
 	SHELL_CMD_ARG(cig_term, NULL, "Terminate the CIG", cmd_cig_term, 1, 0),
 	SHELL_CMD_ARG(connect, NULL, "Connect ISO Channel", cmd_connect, 1, 0),
+#endif /* CONFIG_BT_ISO_CENTRAL */
+#if defined(CONFIG_BT_ISO_PERIPHERAL)
 	SHELL_CMD_ARG(listen, NULL, "<dir=tx,rx,txrx> [security level]", cmd_listen, 2, 1),
+#endif /* CONFIG_BT_ISO_PERIPHERAL */
 	SHELL_CMD_ARG(send, NULL, "Send to ISO Channel [count]",
 		      cmd_send, 1, 1),
 	SHELL_CMD_ARG(disconnect, NULL, "Disconnect ISO Channel",

@@ -6,7 +6,7 @@ common:
     fixture: i2c_bus_short
 
 tests:
-  drivers.i2c_slave.dual_role:
-    platform_allow: nucleo_f091rc stm32f072b_disco nucleo_g071rb
+  drivers.i2c.slave_api.dual_role:
+    platform_allow: nucleo_f091rc stm32f072b_disco nucleo_g071rb rpi_pico
     extra_configs:
       - CONFIG_APP_DUAL_ROLE_I2C=y

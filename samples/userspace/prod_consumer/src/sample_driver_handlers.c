@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <syscall_handler.h>
+#include <zephyr/kernel.h>
+#include <zephyr/syscall_handler.h>
 #include "sample_driver.h"
 
 int z_vrfy_sample_driver_state_set(const struct device *dev, bool active)

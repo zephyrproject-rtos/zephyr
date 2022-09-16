@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <drivers/gpio.h>
-#include <sys/printk.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/printk.h>
 
 #define VDD_PWR_CTRL_GPIO_PIN 30
 #define CCS_VDD_PWR_CTRL_GPIO_PIN 10

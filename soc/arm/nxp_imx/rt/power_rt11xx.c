@@ -3,15 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <device.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/pm.h>
 #include <fsl_dcdc.h>
 #include <fsl_gpc.h>
-#include <dt-bindings/pm/imx_spc.h>
+#include <zephyr/dt-bindings/pm/imx_spc.h>
 #include "power_rt11xx.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /*
@@ -283,11 +283,13 @@ void cpu_mode_transition(gpc_cpu_mode_t mode, bool enable_standby)
  * SOC specific low power mode implementation
  * Drop to lowest power state possible given system's request
  */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
+	ARG_UNUSED(state);
+
 	/* Extract set point and GPC mode from the substate ID */
-	uint8_t set_point = IMX_SPC(info.substate_id);
-	gpc_cpu_mode_t gpc_mode = IMX_GPC_MODE(info.substate_id);
+	uint8_t set_point = IMX_SPC(substate_id);
+	gpc_cpu_mode_t gpc_mode = IMX_GPC_MODE(substate_id);
 	uint8_t current_set_point = GPC_SP_GetCurrentSetPoint(GPC_SET_POINT_CTRL);
 
 	LOG_DBG("Switch to Set Point %d, GPC Mode %d requested", set_point, gpc_mode);
@@ -304,9 +306,11 @@ __weak void pm_power_state_set(struct pm_state_info info)
 	}
 }
 
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	ARG_UNUSED(info);
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
 	/* Clear PRIMASK */
 	__enable_irq();
 	LOG_DBG("Exiting LPM");

@@ -53,19 +53,19 @@ The board configuration supports the following hardware features:
      - Kconfig option
      - Devicetree compatible
    * - GPIO
-     - :kconfig:`CONFIG_GPIO`
+     - :kconfig:option:`CONFIG_GPIO`
      - :dtcompatible:`gd,gd32-gpio`
    * - Machine timer
-     - :kconfig:`CONFIG_RISCV_MACHINE_TIMER`
+     - :kconfig:option:`CONFIG_RISCV_MACHINE_TIMER`
      - :dtcompatible:`riscv,machine-timer`
    * - Nuclei ECLIC Interrupt Controller
-     - :kconfig:`CONFIG_NUCLEI_ECLIC`
+     - :kconfig:option:`CONFIG_NUCLEI_ECLIC`
      - :dtcompatible:`nuclei,eclic`
    * - PWM
-     - :kconfig:`CONFIG_PWM`
+     - :kconfig:option:`CONFIG_PWM`
      - :dtcompatible:`gd,gd32-pwm`
    * - USART
-     - :kconfig:`CONFIG_SERIAL`
+     - :kconfig:option:`CONFIG_SERIAL`
      - :dtcompatible:`gd,gd32-usart`
 
 Serial Port

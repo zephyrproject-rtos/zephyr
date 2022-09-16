@@ -72,6 +72,7 @@ config FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
 
 config FLASH_MCUX_FLEXSPI_XIP
 	bool "MCUX FlexSPI flash access with xip"
+	default y
 	depends on MEMC_MCUX_FLEXSPI
 	depends on (CODE_FLEXSPI || CODE_FLEXSPI2 || SOC_SERIES_IMX_RT6XX)
 	select XIP

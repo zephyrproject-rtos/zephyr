@@ -6,8 +6,8 @@
 
 /dts-v1/;
 #include <posix/posix.dtsi>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	model = "Native POSIX Board";
@@ -75,15 +75,15 @@
 
 				boot_partition: partition@0 {
 					label = "mcuboot";
-					reg = <0x000000000 0x0000C000>;
+					reg = <0x00000000 0x0000C000>;
 				};
 				slot0_partition: partition@c000 {
 					label = "image-0";
-					reg = <0x0000C000 0x000069000>;
+					reg = <0x0000C000 0x00069000>;
 				};
 				slot1_partition: partition@75000 {
 					label = "image-1";
-					reg = <0x00075000 0x000069000>;
+					reg = <0x00075000 0x00069000>;
 				};
 				scratch_partition: partition@de000 {
 					label = "image-scratch";

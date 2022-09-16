@@ -78,7 +78,7 @@ config SYSOSC_SETTLING_US
 	  board's defconfig.
 
 menuconfig NXP_IMX_RT6XX_BOOT_HEADER
-	bool "Enable the boot header"
+	bool "Boot header"
 	depends on !BOOTLOADER_MCUBOOT
 	help
 	  Enable data structures required by the boot ROM to boot the
@@ -100,7 +100,7 @@ config FLASH_CONFIG_OFFSET
 	default 0x400
 	help
 	  The flash config offset provides the boot ROM with the on-board
-	  flash type and parameters. The boot ROM requires a fixed flash conifg
+	  flash type and parameters. The boot ROM requires a fixed flash config
 	  offset for FlexSPI device.
 
 config IMAGE_VECTOR_TABLE_OFFSET

@@ -9,8 +9,8 @@
 #ifndef ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_UNICAST_COMMON_
 #define ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_UNICAST_COMMON_
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/audio.h>
 
 void print_hex(const uint8_t *ptr, size_t len);
 void print_codec(const struct bt_codec *codec);

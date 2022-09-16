@@ -7,5 +7,4 @@ tests:
     integration_platforms:
       - adafruit_feather_stm32f405
     tags: sensors
-    depends_on: i2c gpio
     filter: dt_compat_enabled("vishay,vcnl4040")

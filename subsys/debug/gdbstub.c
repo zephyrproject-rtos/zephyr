@@ -4,24 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gdbstub);
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <sys/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <debug/gdbstub.h>
+#include <zephyr/debug/gdbstub.h>
 #include "gdbstub_backend.h"
 
 /* +1 is for the NULL character added during receive */
@@ -724,7 +724,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 
 		/**
 		 * Write the value of the CPU registers
-		 * Fromat: G XX...
+		 * Format: G XX...
 		 */
 		case 'G':
 			pkt_len = arch_gdb_reg_writeall(ctx, ptr, pkt_len - 1);

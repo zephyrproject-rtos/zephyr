@@ -19,9 +19,7 @@
 
 void _PrepC(void)
 {
-#ifdef CONFIG_XIP
 	z_data_copy();
-#endif
 	z_cstart();
 	CODE_UNREACHABLE;
 }

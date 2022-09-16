@@ -8,18 +8,18 @@
 #include <stdbool.h>
 #include <fcntl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_packet, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <kernel.h>
-#include <drivers/entropy.h>
-#include <sys/util.h>
-#include <net/net_context.h>
-#include <net/net_pkt.h>
-#include <net/socket.h>
-#include <net/ethernet.h>
-#include <syscall_handler.h>
-#include <sys/fdtable.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/fdtable.h>
 
 #include "../../ip/net_stats.h"
 

@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/g0/stm32g031X8.dtsi>
 #include <st/g0/stm32g031k(4-6-8)tx-pinctrl.dtsi>
+#include "arduino_nano_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32G031K8-NUCLEO board";

@@ -5,9 +5,9 @@
  */
 
 #include <string.h>
-#include <debug/coredump.h>
+#include <zephyr/debug/coredump.h>
 
-#define ARCH_HDR_VER			1
+#define ARCH_HDR_VER			2
 
 uint32_t z_arm_coredump_fault_sp;
 
@@ -22,6 +22,16 @@ struct arm_arch_block {
 		uint32_t	pc;
 		uint32_t	xpsr;
 		uint32_t	sp;
+
+		/* callee registers - optionally collected in V2 */
+		uint32_t	r4;
+		uint32_t	r5;
+		uint32_t	r6;
+		uint32_t	r7;
+		uint32_t	r8;
+		uint32_t	r9;
+		uint32_t	r10;
+		uint32_t	r11;
 	} r;
 } __packed;
 
@@ -63,6 +73,19 @@ void arch_coredump_info_dump(const z_arch_esf_t *esf)
 	arch_blk.r.xpsr = esf->basic.xpsr;
 
 	arch_blk.r.sp = z_arm_coredump_fault_sp;
+
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	if (esf->extra_info.callee) {
+		arch_blk.r.r4  = esf->extra_info.callee->v1;
+		arch_blk.r.r5  = esf->extra_info.callee->v2;
+		arch_blk.r.r6  = esf->extra_info.callee->v3;
+		arch_blk.r.r7  = esf->extra_info.callee->v4;
+		arch_blk.r.r8  = esf->extra_info.callee->v5;
+		arch_blk.r.r9  = esf->extra_info.callee->v6;
+		arch_blk.r.r10 = esf->extra_info.callee->v7;
+		arch_blk.r.r11 = esf->extra_info.callee->v8;
+	}
+#endif
 
 	/* Send for output */
 	coredump_buffer_output((uint8_t *)&hdr, sizeof(hdr));

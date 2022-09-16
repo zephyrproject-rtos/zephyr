@@ -8,12 +8,12 @@
 
 #include <errno.h>
 
-#include <drivers/pwm.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
-#include <sys/util_macro.h>
+#include <zephyr/sys/util_macro.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_gd32, CONFIG_PWM_LOG_LEVEL);
 
 /** PWM data. */
@@ -132,17 +132,13 @@ static uint32_t pwm_gd32_get_tim_clk(const struct device *dev)
 #endif /* RCU_CFG1_TIMERSEL */
 }
 
-static int pwm_gd32_pin_set(const struct device *dev, uint32_t pwm,
-			    uint32_t period_cycles, uint32_t pulse_cycles,
-			    pwm_flags_t flags)
+static int pwm_gd32_set_cycles(const struct device *dev, uint32_t channel,
+			      uint32_t period_cycles, uint32_t pulse_cycles,
+			      pwm_flags_t flags)
 {
 	const struct pwm_gd32_config *config = dev->config;
 
-	if (pwm >= config->channels) {
-		return -EINVAL;
-	}
-
-	if (pulse_cycles > period_cycles) {
+	if (channel >= config->channels) {
 		return -EINVAL;
 	}
 
@@ -153,19 +149,19 @@ static int pwm_gd32_pin_set(const struct device *dev, uint32_t pwm,
 
 	/* disable channel output if period is zero */
 	if (period_cycles == 0U) {
-		TIMER_CHCTL2(config->reg) &= ~TIMER_CHCTL2_CHXEN(pwm);
+		TIMER_CHCTL2(config->reg) &= ~TIMER_CHCTL2_CHXEN(channel);
 		return 0;
 	}
 
 	/* update polarity */
 	if ((flags & PWM_POLARITY_INVERTED) != 0U) {
-		TIMER_CHCTL2(config->reg) |= TIMER_CHCTL2_CHXP(pwm);
+		TIMER_CHCTL2(config->reg) |= TIMER_CHCTL2_CHXP(channel);
 	} else {
-		TIMER_CHCTL2(config->reg) &= ~TIMER_CHCTL2_CHXP(pwm);
+		TIMER_CHCTL2(config->reg) &= ~TIMER_CHCTL2_CHXP(channel);
 	}
 
 	/* update pulse */
-	switch (pwm) {
+	switch (channel) {
 	case 0U:
 		TIMER_CH0CV(config->reg) = pulse_cycles;
 		break;
@@ -187,22 +183,22 @@ static int pwm_gd32_pin_set(const struct device *dev, uint32_t pwm,
 	TIMER_CAR(config->reg) = period_cycles;
 
 	/* channel not enabled: configure it */
-	if ((TIMER_CHCTL2(config->reg) & TIMER_CHCTL2_CHXEN(pwm)) == 0U) {
+	if ((TIMER_CHCTL2(config->reg) & TIMER_CHCTL2_CHXEN(channel)) == 0U) {
 		volatile uint32_t *chctl;
 
 		/* select PWM1 mode, enable OC shadowing */
-		if (pwm < 2U) {
+		if (channel < 2U) {
 			chctl = &TIMER_CHCTL0(config->reg);
 		} else {
 			chctl = &TIMER_CHCTL1(config->reg);
 		}
 
-		*chctl &= ~TIMER_CHCTLX_MSK(pwm);
+		*chctl &= ~TIMER_CHCTLX_MSK(channel);
 		*chctl |= (TIMER_OC_MODE_PWM1 | TIMER_OC_SHADOW_ENABLE) <<
-			  (8U * (pwm % 2U));
+			  (8U * (channel % 2U));
 
 		/* enable channel output */
-		TIMER_CHCTL2(config->reg) |= TIMER_CHCTL2_CHXEN(pwm);
+		TIMER_CHCTL2(config->reg) |= TIMER_CHCTL2_CHXEN(channel);
 
 		/* generate update event (to load shadow values) */
 		TIMER_SWEVG(config->reg) |= TIMER_SWEVG_UPG;
@@ -211,8 +207,8 @@ static int pwm_gd32_pin_set(const struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int pwm_gd32_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
-				       uint64_t *cycles)
+static int pwm_gd32_get_cycles_per_sec(const struct device *dev,
+				       uint32_t channel, uint64_t *cycles)
 {
 	struct pwm_gd32_data *data = dev->data;
 	const struct pwm_gd32_config *config = dev->config;
@@ -223,7 +219,7 @@ static int pwm_gd32_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 }
 
 static const struct pwm_driver_api pwm_gd32_driver_api = {
-	.pin_set = pwm_gd32_pin_set,
+	.set_cycles = pwm_gd32_set_cycles,
 	.get_cycles_per_sec = pwm_gd32_get_cycles_per_sec,
 };
 

@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 #include <ztest.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <hal/nrf_rtc.h>
 LOG_MODULE_REGISTER(test);
 

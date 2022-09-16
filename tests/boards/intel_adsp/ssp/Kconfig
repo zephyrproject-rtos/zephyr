@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2022, Intel
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Dai SSP Test"
+
+source "Kconfig.zephyr"
+
+config INTEL_MN
+	bool "Use mn divider"
+	help
+	  Use MN divider.

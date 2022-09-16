@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config MODEM_UBLOX_SARA
-	bool "Enable u-blox SARA modem driver"
+	bool "U-blox SARA modem driver"
 	select MODEM_CONTEXT
 	select MODEM_CMD_HANDLER
 	select MODEM_IFACE_UART
@@ -91,7 +91,7 @@ config MODEM_UBLOX_SARA_R4_INIT_PRIORITY
 	  so that it can start before the networking sub-system.
 
 config MODEM_UBLOX_SARA_R4_NET_STATUS
-	bool "Enable support for network status indication"
+	bool "Support for network status indication"
 	help
 	  Choose this setting to use a modem GPIO pin as network indication.
 
@@ -108,7 +108,7 @@ config MODEM_UBLOX_SARA_R4_NET_STATUS_PIN
 endif # MODEM_UBLOX_SARA_R4_NET_STATUS
 
 config MODEM_UBLOX_SARA_RSSI_WORK
-	bool "Enable RSSI polling work"
+	bool "RSSI polling work"
 	default y
 	help
 	  u-blox SARA-R4 device is configured to poll for RSSI

@@ -7,8 +7,8 @@
 #include <ztest.h>
 #include <tc_util.h>
 
-#include <sys/byteorder.h>
-#include <usb/usb_device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usb_device.h>
 
 /* Max packet size for endpoints */
 #if IS_ENABLED(CONFIG_USB_DC_HAS_HS_SUPPORT)
@@ -101,10 +101,10 @@ static void test_usb_deconfig(void)
 	zassert_equal(usb_deconfig(), TC_PASS, "usb_deconfig() failed");
 }
 
-/* Test USB Device Cotnroller API */
+/* Test USB Device Controller API */
 static void test_usb_dc_api(void)
 {
-	/* Control endpoins are configured */
+	/* Control endpoints are configured */
 	zassert_equal(usb_dc_ep_mps(0x0), 64,
 		      "usb_dc_ep_mps(0x00) failed");
 	zassert_equal(usb_dc_ep_mps(0x80), 64,
@@ -115,7 +115,7 @@ static void test_usb_dc_api(void)
 		      "usb_dc_ep_mps(ENDP_BULK_IN) not configured");
 }
 
-/* Test USB Device Cotnroller API for invalid parameters */
+/* Test USB Device Controller API for invalid parameters */
 static void test_usb_dc_api_invalid(void)
 {
 	uint32_t size;

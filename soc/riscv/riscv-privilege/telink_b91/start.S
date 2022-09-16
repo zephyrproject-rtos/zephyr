@@ -7,7 +7,7 @@
 #define NDS_MCACHE_CTL               0x7CA
 #define NDS_MMISC_CTL                0x7D0
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 	.option push
 	.option norelax

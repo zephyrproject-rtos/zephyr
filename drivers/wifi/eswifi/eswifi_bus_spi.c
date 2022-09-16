@@ -8,13 +8,13 @@
 #include "eswifi_log.h"
 LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <errno.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
 
 #include "eswifi.h"
 
@@ -30,7 +30,11 @@ struct eswifi_spi_data {
 	struct k_thread poll_thread;
 };
 
-static struct eswifi_spi_data eswifi_spi0; /* Static instance */
+static struct eswifi_spi_data eswifi_spi0 = { /* Static instance */
+	.bus = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |
+				    SPI_WORD_SET(16) | SPI_HOLD_ON_CS |
+				    SPI_LOCK_ON, 1000U),
+};
 
 static bool eswifi_spi_cmddata_ready(struct eswifi_spi_data *spi)
 {
@@ -238,10 +242,11 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 			   GPIO_INPUT);
 
 	/* SPI BUS */
-	spi->bus = (struct spi_dt_spec) SPI_DT_SPEC_INST_GET(0,
-							     SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |
-							     SPI_WORD_SET(16) | SPI_HOLD_ON_CS |
-							     SPI_LOCK_ON, 1000U);
+	if (!spi_is_ready(&spi->bus)) {
+		LOG_ERR("SPI bus is not ready");
+		return -ENODEV;
+	};
+
 	eswifi->bus_data = spi;
 
 	LOG_DBG("success");

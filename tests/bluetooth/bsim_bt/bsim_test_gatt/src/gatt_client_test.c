@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #include "common.h"
 
@@ -19,9 +19,9 @@ static uint16_t chrc_handle;
 static uint16_t long_chrc_handle;
 static struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
 
-#define ARRAY_ITEM(i, _) i,
-static uint8_t chrc_data[] = { UTIL_LISTIFY(CHRC_SIZE, ARRAY_ITEM) }; /* 1, 2, 3 ... */
-static uint8_t long_chrc_data[] = { UTIL_LISTIFY(LONG_CHRC_SIZE, ARRAY_ITEM) }; /* 1, 2, 3 ... */
+#define ARRAY_ITEM(i, _) i
+static uint8_t chrc_data[] = { LISTIFY(CHRC_SIZE, ARRAY_ITEM, (,)) }; /* 1, 2, 3 ... */
+static uint8_t long_chrc_data[] = { LISTIFY(LONG_CHRC_SIZE, ARRAY_ITEM, (,)) }; /* 1, 2, 3 ... */
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {

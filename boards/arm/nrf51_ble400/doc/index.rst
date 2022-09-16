@@ -72,7 +72,7 @@ Motherboard
 3. I2C interface
 4. SPI interface
 5. 5V/3.3V power input/output: usually used as power output, also common-grounding with other user board
-6. USB connector: USB TO UART via onboard convertor CP2102
+6. USB connector: USB TO UART via onboard converter CP2102
 7. Debugging interface
 8. UART interface
 9. Battery holder

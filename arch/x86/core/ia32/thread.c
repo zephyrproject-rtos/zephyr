@@ -12,9 +12,9 @@
  * processor architecture.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <arch/x86/mmustructs.h>
+#include <zephyr/arch/x86/mmustructs.h>
 #include <kswap.h>
 #include <x86_mmu.h>
 
@@ -114,4 +114,18 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->arch.excNestCount = 0;
 #endif /* CONFIG_LAZY_FPU_SHARING */
 	thread->arch.flags = 0;
+
+	/*
+	 * When "eager FPU sharing" mode is enabled, FPU registers must be
+	 * initialised at the time of thread creation because the floating-point
+	 * context is always active and no further FPU initialisation is performed
+	 * later.
+	 */
+#if defined(CONFIG_EAGER_FPU_SHARING)
+	thread->arch.preempFloatReg.floatRegsUnion.fpRegs.fcw = 0x037f;
+	thread->arch.preempFloatReg.floatRegsUnion.fpRegs.ftw = 0xffff;
+#if defined(CONFIG_X86_SSE)
+	thread->arch.preempFloatReg.floatRegsUnion.fpRegsEx.mxcsr = 0x1f80;
+#endif /* CONFIG_X86_SSE */
+#endif /* CONFIG_EAGER_FPU_SHARING */
 }

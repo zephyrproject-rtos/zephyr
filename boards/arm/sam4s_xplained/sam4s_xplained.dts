@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <atmel/sam4s16c.dtsi>
+#include "sam4s_xplained-pinctrl.dtsi"
 
 / {
 	model = "Atmel SAM4S Xplained Board with an Atmel SAM4S16C SoC";
@@ -121,27 +122,35 @@
 
 &twi0 {
 	status = "okay";
+
+	pinctrl-0 = <&twi0_default>;
+	pinctrl-names = "default";
 };
 
 &spi0 {
-	pinctrl-0 = <&pa12a_spi_miso
-		     &pa13a_spi_mosi
-		     &pa14a_spi_spck
-		     &pa31a_spi_npcs1
-		     &pa30b_spi_npcs2>;
+	status = "okay";
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
 	cs-gpios = <&pioa 31 GPIO_ACTIVE_LOW>,
 		   <&pioa 30 GPIO_ACTIVE_LOW>;
-	status = "okay";
 };
 
 &uart0 {
-	current-speed = <115200>;
 	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
 };
 
 &uart1 {
-	current-speed = <115200>;
 	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
 };
 
 &wdt {

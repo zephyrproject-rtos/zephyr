@@ -13,7 +13,7 @@
 #ifndef _ASMLANGUAGE
 #include <kernel_internal.h>
 #include <string.h>
-#include <arch/xtensa/cache.h>
+#include <zephyr/arch/xtensa/cache.h>
 #include <zsr.h>
 
 #ifdef __cplusplus
@@ -65,6 +65,8 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 					     void *old_switch_handle,
 					     struct k_thread *new_thread)
 {
+	int32_t curr_cpu = _current_cpu->id;
+
 	size_t ostack = old_thread->stack_info.start;
 	size_t osz    = old_thread->stack_info.size;
 	size_t osp    = (size_t) old_switch_handle;
@@ -82,12 +84,19 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 				 : "=r"(a0save));
 	}
 
+	/* The following option ensures that a living thread will never
+	 * be executed in a different CPU so we can safely return without
+	 * invalidate and/or flush threads cache.
+	 */
+	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
+		return;
+	}
+
 	/* The "live" area (the region between the switch handle,
 	 * which is the stack pointer, and the top of the stack
-	 * memory) of the inbound stack needs to be invalidated: it
-	 * may contain data that was modified on another CPU since the
-	 * last time this CPU ran the thread, and our cache may be
-	 * stale.
+	 * memory) of the inbound stack needs to be invalidated if we
+	 * last ran on another cpu: it may contain data that was
+	 * modified there, and our cache may be stale.
 	 *
 	 * The corresponding "dead area" of the inbound stack can be
 	 * ignored.  We may have cached data in that region, but by
@@ -96,7 +105,10 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 	 * uninitialized data error) so our stale cache will be
 	 * automatically overwritten as needed.
 	 */
-	z_xtensa_cache_inv((void *)nsp, (nstack + nsz) - nsp);
+	if (curr_cpu != new_thread->arch.last_cpu) {
+		z_xtensa_cache_inv((void *)nsp, (nstack + nsz) - nsp);
+	}
+	old_thread->arch.last_cpu = curr_cpu;
 
 	/* Dummy threads appear at system initialization, but don't
 	 * have stack_info data and will never be saved.  Ignore.

@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stddef.h>
 #include <ztest.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 #include <host/hci_core.h>
 
 #include <bt_conn_common.h>
@@ -194,7 +194,7 @@ static void cte_rx_param_setup(void)
 
 	cte_req_params_set();
 
-	ut_bt_create_connection();
+	g_conn_handle = ut_bt_create_connection();
 	ut_bt_set_periph_latency(g_conn_handle, CONN_PERIPH_LATENCY);
 
 	send_set_conn_cte_rx_params(g_conn_handle, &cte_rx_params, true);

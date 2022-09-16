@@ -1,0 +1,51 @@
+# Copyright (c) 2021 Esco Medical ApS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments TLC5971 (and compatible) LED controller
+
+  Driver bindings for daisy chains of a TLC5971 devices using a single device
+  tree node. Length of daisy chains in pixels is defined by the chain-length
+  property.
+
+  The color order of the TLC5971 is BGR. Applications can provide custom mappings
+  using the color-mapping property.
+
+  Example device tree node w. 24 pixels (6 TLC5971 devices):
+
+    &spi1 {
+      led_controller: led_controller@0 {
+        status = "okay";
+        compatible = "ti,tlc59711", "ti,tlc5971";
+        label = "led controller";
+        spi-max-frequency = <DT_FREQ_M(1)>;
+        reg = <0x0>;
+        chain-length = <24>;
+        color-mapping = <LED_COLOR_ID_BLUE>,
+                        <LED_COLOR_ID_GREEN>,
+                        <LED_COLOR_ID_RED>;
+      };
+    };
+
+compatible: "ti,tlc5971"
+
+include: spi-device.yaml
+
+properties:
+  chain-length:
+    type: int
+    required: true
+    description: |
+      The number of RGB LEDs in the daisy-chain.
+      Must be multiple of 4. A single TLC5971 device supports 4 RGB LEDs.
+
+  color-mapping:
+    type: array
+    required: true
+    description: |
+      Channel to color mapping (or pixel order).
+      For example a BGR channel to color mapping would be
+
+         color-mapping = <LED_COLOR_ID_BLUE
+                          LED_COLOR_ID_GREEN
+                          LED_COLOR_ID_RED>;

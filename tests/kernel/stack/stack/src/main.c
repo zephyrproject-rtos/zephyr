@@ -42,9 +42,9 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 
-#define TSTACK_SIZE     (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define TSTACK_SIZE     (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define STACK_LEN       4
 
 /* stack objects used in this test */
@@ -295,7 +295,7 @@ void thread_entry_wait(void *p1, void *p2, void *p3)
 
 /**
  * @brief Test that the stack pop can be waited
- * if no item availablle
+ * if no item available
  *
  * @details Create and initialize a new stack
  * Set two timeout parameters to indicate
@@ -325,9 +325,9 @@ void test_stack_pop_can_wait(void)
 		k_stack_pop(&stack3, &rx_data[i], K_FOREVER);
 	}
 
-	zassert_true(rx_data[2] == tx_data[2], "wait foreve and pop failed\n");
+	zassert_true(rx_data[2] == tx_data[2], "wait forever and pop failed\n");
 	k_stack_pop(&stack3, &rx_data[3], K_MSEC(50));
-	zassert_true(rx_data[3] == tx_data[3], "Wait maxmum time pop failed\n");
+	zassert_true(rx_data[3] == tx_data[3], "Wait maximum time pop failed\n");
 	/* Clear the spawn thread to avoid side effect */
 	k_thread_abort(tid);
 	/*free the buffer allocated*/

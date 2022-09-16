@@ -60,31 +60,31 @@ The board configuration supports the following hardware features:
      - Kconfig option
      - Devicetree compatible
    * - EXTI
-     - :kconfig:`CONFIG_GD32_EXTI`
+     - :kconfig:option:`CONFIG_GD32_EXTI`
      - :dtcompatible:`gd,gd32-exti`
    * - GPIO
-     - :kconfig:`CONFIG_GPIO`
+     - :kconfig:option:`CONFIG_GPIO`
      - :dtcompatible:`gd,gd32-gpio`
    * - NVIC
      - N/A
      - :dtcompatible:`arm,v7m-nvic`
    * - PWM
-     - :kconfig:`CONFIG_PWM`
+     - :kconfig:option:`CONFIG_PWM`
      - :dtcompatible:`gd,gd32-pwm`
    * - SYSTICK
      - N/A
      - N/A
    * - USART
-     - :kconfig:`CONFIG_SERIAL`
+     - :kconfig:option:`CONFIG_SERIAL`
      - :dtcompatible:`gd,gd32-usart`
    * - DAC
-     - :kconfig:`CONFIG_DAC`
+     - :kconfig:option:`CONFIG_DAC`
      - :dtcompatible:`gd,gd32-dac`
    * - I2C
-     - :kconfig:`CONFIG_I2C`
+     - :kconfig:option:`CONFIG_I2C`
      - :dtcompatible:`gd,gd32-i2c`
    * - EEPROM
-     - :kconfig:`CONFIG_EEPROM`
+     - :kconfig:option:`CONFIG_EEPROM`
      - :dtcompatible:`atmel,at24`
 
 Serial Port

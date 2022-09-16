@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "ble_mesh.h"
 #include "common.h"
@@ -265,7 +265,7 @@ static int gen_onoff_status(struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from GEN_ONOFF_SRV\n");
+	printk("Acknowledgement from GEN_ONOFF_SRV\n");
 	printk("Present OnOff = %02x\n", net_buf_simple_pull_u8(buf));
 
 	if (buf->len == 2U) {
@@ -276,7 +276,7 @@ static int gen_onoff_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-/* Generic Level (lIGHTNESS) Server message handlers */
+/* Generic Level (LIGHTNESS) Server message handlers */
 static int gen_level_get(struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
@@ -787,7 +787,7 @@ static int gen_level_status(struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from GEN_LEVEL_SRV\n");
+	printk("Acknowledgement from GEN_LEVEL_SRV\n");
 	printk("Present Level = %04x\n", net_buf_simple_pull_le16(buf));
 
 	if (buf->len == 3U) {
@@ -885,7 +885,7 @@ static int gen_def_trans_time_status(struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx,
 				     struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from GEN_DEF_TT_SRV\n");
+	printk("Acknowledgement from GEN_DEF_TT_SRV\n");
 	printk("Transition Time = %02x\n", net_buf_simple_pull_u8(buf));
 
 	return 0;
@@ -913,7 +913,7 @@ static int gen_onpowerup_status(struct bt_mesh_model *model,
 				struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from GEN_POWER_ONOFF_SRV\n");
+	printk("Acknowledgement from GEN_POWER_ONOFF_SRV\n");
 	printk("OnPowerUp = %02x\n", net_buf_simple_pull_u8(buf));
 
 	return 0;
@@ -1052,7 +1052,7 @@ static int vnd_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 static int vnd_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		      struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from Vendor\n");
+	printk("Acknowledgement from Vendor\n");
 	printk("cmd = %04x\n", net_buf_simple_pull_le16(buf));
 	printk("response = %08x\n", net_buf_simple_pull_le32(buf));
 
@@ -1645,7 +1645,7 @@ static int light_lightness_status(struct bt_mesh_model *model,
 				  struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (Actual)\n");
+	printk("Acknowledgement from LIGHT_LIGHTNESS_SRV (Actual)\n");
 	printk("Present Lightness = %04x\n", net_buf_simple_pull_le16(buf));
 
 	if (buf->len == 3U) {
@@ -1661,7 +1661,7 @@ static int light_lightness_linear_status(struct bt_mesh_model *model,
 					 struct bt_mesh_msg_ctx *ctx,
 					 struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (Linear)\n");
+	printk("Acknowledgement from LIGHT_LIGHTNESS_SRV (Linear)\n");
 	printk("Present Lightness = %04x\n", net_buf_simple_pull_le16(buf));
 
 	if (buf->len == 3U) {
@@ -1677,7 +1677,7 @@ static int light_lightness_last_status(struct bt_mesh_model *model,
 				       struct bt_mesh_msg_ctx *ctx,
 				       struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (Last)\n");
+	printk("Acknowledgement from LIGHT_LIGHTNESS_SRV (Last)\n");
 	printk("Lightness = %04x\n", net_buf_simple_pull_le16(buf));
 
 	return 0;
@@ -1687,7 +1687,7 @@ static int light_lightness_default_status(struct bt_mesh_model *model,
 					  struct bt_mesh_msg_ctx *ctx,
 					  struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (Default)\n");
+	printk("Acknowledgement from LIGHT_LIGHTNESS_SRV (Default)\n");
 	printk("Lightness = %04x\n", net_buf_simple_pull_le16(buf));
 
 	return 0;
@@ -1697,7 +1697,7 @@ static int light_lightness_range_status(struct bt_mesh_model *model,
 					struct bt_mesh_msg_ctx *ctx,
 					struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (Lightness Range)\n");
+	printk("Acknowledgement from LIGHT_LIGHTNESS_SRV (Lightness Range)\n");
 	printk("Status Code = %02x\n", net_buf_simple_pull_u8(buf));
 	printk("Range Min = %04x\n", net_buf_simple_pull_le16(buf));
 	printk("Range Max = %04x\n", net_buf_simple_pull_le16(buf));
@@ -2152,7 +2152,7 @@ static int light_ctl_status(struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_CTL_SRV\n");
+	printk("Acknowledgement from LIGHT_CTL_SRV\n");
 	printk("Present CTL Lightness = %04x\n", net_buf_simple_pull_le16(buf));
 	printk("Present CTL Temperature = %04x\n",
 	       net_buf_simple_pull_le16(buf));
@@ -2172,7 +2172,7 @@ static int light_ctl_temp_range_status(struct bt_mesh_model *model,
 				       struct bt_mesh_msg_ctx *ctx,
 				       struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_CTL_SRV (Temperature Range)\n");
+	printk("Acknowledgement from LIGHT_CTL_SRV (Temperature Range)\n");
 	printk("Status Code = %02x\n", net_buf_simple_pull_u8(buf));
 	printk("Range Min = %04x\n", net_buf_simple_pull_le16(buf));
 	printk("Range Max = %04x\n", net_buf_simple_pull_le16(buf));
@@ -2184,7 +2184,7 @@ static int light_ctl_temp_status(struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_CTL_TEMP_SRV\n");
+	printk("Acknowledgement from LIGHT_CTL_TEMP_SRV\n");
 	printk("Present CTL Temperature = %04x\n",
 	       net_buf_simple_pull_le16(buf));
 	printk("Present CTL Delta UV = %04x\n",
@@ -2205,7 +2205,7 @@ static int light_ctl_default_status(struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_CTL_SRV (Default)\n");
+	printk("Acknowledgement from LIGHT_CTL_SRV (Default)\n");
 	printk("Lightness = %04x\n", net_buf_simple_pull_le16(buf));
 	printk("Temperature = %04x\n", net_buf_simple_pull_le16(buf));
 	printk("Delta UV = %04x\n", net_buf_simple_pull_le16(buf));
@@ -2423,7 +2423,7 @@ static int light_ctl_temp_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-/* Generic Level (TEMPERARTURE) Server message handlers */
+/* Generic Level (TEMPERATURE) Server message handlers */
 static int gen_level_get_temp(struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
@@ -2935,7 +2935,7 @@ static int gen_level_status_temp(struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from GEN_LEVEL_SRV\n");
+	printk("Acknowledgement from GEN_LEVEL_SRV\n");
 	printk("Present Level = %04x\n", net_buf_simple_pull_le16(buf));
 
 	if (buf->len == 3U) {

@@ -9,8 +9,8 @@
 #include <stddef.h>
 
 #include <compiler_abstraction.h>
-#include <drivers/clock_control/nrf_clock_control.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 
 static bool hfclk_is_running;
 static bool lfclk_is_running;

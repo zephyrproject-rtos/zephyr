@@ -5,14 +5,14 @@
  */
 #include <string.h>
 #include <xtensa-asm2.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <_soc_inthandlers.h>
-#include <toolchain.h>
-#include <logging/log.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -20,6 +20,14 @@ void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 			void (*entry)(void *, void *, void *),
 			void *arg1, void *arg2, void *arg3)
 {
+	/* Not-a-cpu ID Ensures that the first time this is run, the
+	 * stack will be invalidated.  That covers the edge case of
+	 * restarting a thread on a stack that had previously been run
+	 * on one CPU, but then initialized on this one, and
+	 * potentially run THERE and not HERE.
+	 */
+	thread->arch.last_cpu = -1;
+
 	/* We cheat and shave 16 bytes off, the top four words are the
 	 * A0-A3 spill area for the caller of the entry function,
 	 * which doesn't exist.  It will never be touched, so we
@@ -143,6 +151,12 @@ static ALWAYS_INLINE void usage_stop(void)
 #endif
 }
 
+static inline void *return_to(void *interrupted)
+{
+	return _current_cpu->nested <= 1 ?
+		z_get_next_switch_handle(interrupted) : interrupted;
+}
+
 /* The wrapper code lives here instead of in the python script that
  * generates _xtensa_handle_one_int*().  Seems cleaner, still kind of
  * ugly.
@@ -162,7 +176,7 @@ __unused void *xtensa_int##l##_c(void *interrupted_stack)	\
 		irqs ^= m;					\
 		__asm__ volatile("wsr.intclear %0" : : "r"(m)); \
 	}							\
-	return z_get_next_switch_handle(interrupted_stack);		\
+	return return_to(interrupted_stack);		\
 }
 
 #if XCHAL_NMILEVEL >= 2
@@ -246,7 +260,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 				     (void *)interrupted_stack);
 	}
 
-	return z_get_next_switch_handle(interrupted_stack);
+	return return_to(interrupted_stack);
 }
 
 #if defined(CONFIG_GDBSTUB)
@@ -256,7 +270,7 @@ void *xtensa_debugint_c(int *interrupted_stack)
 
 	z_gdb_isr((void *)interrupted_stack);
 
-	return z_get_next_switch_handle(interrupted_stack);
+	return return_to(interrupted_stack);
 }
 #endif
 

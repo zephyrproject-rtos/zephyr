@@ -5,7 +5,7 @@
  */
 
 #include "soc.h"
-#include "kernel.h"
+#include <zephyr/kernel.h>
 #include "posix_board_if.h"
 
 /**

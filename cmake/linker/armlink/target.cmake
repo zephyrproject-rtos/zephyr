@@ -2,7 +2,7 @@
 
 set_property(TARGET linker PROPERTY devices_start_symbol "Image$$device$$Base")
 
-find_program(CMAKE_LINKER ${CROSS_COMPILE}armlink PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_LINKER ${CROSS_COMPILE}armlink PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 add_custom_target(armlink)
 
@@ -94,8 +94,8 @@ function(toolchain_ld_link_elf)
     # The scatter file is generated, and thus sometimes input sections are specified
     # even though there will be no such sections found in the libraries linked.
     --diag_suppress=6314
-    # We use empty excution sections in order to define custom symbols, such as
-    # __kernel_ram_x symbols, but nothing will go in those section, so silnence
+    # We use empty execution sections in order to define custom symbols, such as
+    # __kernel_ram_x symbols, but nothing will go in those section, so silence
     # the warning. Note, marking the section EMPTY causes armlink to reserve the
     # address which in some cases leads to overlapping section errors.
     --diag_suppress=6312

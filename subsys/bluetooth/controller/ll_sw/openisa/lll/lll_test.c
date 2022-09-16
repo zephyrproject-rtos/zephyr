@@ -7,10 +7,10 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "hal/cpu.h"
 #include "hal/cntr.h"
@@ -158,7 +158,7 @@ static void isr_rx(void *param)
 	}
 }
 
-static uint32_t init(uint8_t chan, uint8_t phy, void (*isr)(void *))
+static uint8_t init(uint8_t chan, uint8_t phy, void (*isr)(void *))
 {
 	int err;
 
@@ -198,12 +198,20 @@ static uint32_t init(uint8_t chan, uint8_t phy, void (*isr)(void *))
 	return 0;
 }
 
-uint32_t ll_test_tx(uint8_t chan, uint8_t len, uint8_t type, uint8_t phy)
+uint8_t ll_test_tx(uint8_t chan, uint8_t len, uint8_t type, uint8_t phy,
+		   uint8_t cte_len, uint8_t cte_type, uint8_t switch_pattern_len,
+		   const uint8_t *ant_id, int8_t tx_power)
 {
 	uint32_t start_us;
 	uint8_t *payload;
 	uint8_t *pdu;
-	uint32_t err;
+	uint8_t err;
+
+	ARG_UNUSED(cte_len);
+	ARG_UNUSED(cte_type);
+	ARG_UNUSED(switch_pattern_len);
+	ARG_UNUSED(ant_id);
+	ARG_UNUSED(tx_power);
 
 	if ((type > 0x07) || !phy || (phy > 0x04)) {
 		return 1;
@@ -277,13 +285,21 @@ uint32_t ll_test_tx(uint8_t chan, uint8_t len, uint8_t type, uint8_t phy)
 	return 0;
 }
 
-uint32_t ll_test_rx(uint8_t chan, uint8_t phy, uint8_t mod_idx)
+uint8_t ll_test_rx(uint8_t chan, uint8_t phy, uint8_t mod_idx, uint8_t expected_cte_len,
+		   uint8_t expected_cte_type, uint8_t slot_duration, uint8_t switch_pattern_len,
+		   const uint8_t *ant_ids)
 {
-	uint32_t err;
+	uint8_t err;
 
 	if (!phy || (phy > 0x03)) {
 		return 1;
 	}
+
+	ARG_UNUSED(expected_cte_len);
+	ARG_UNUSED(expected_cte_type);
+	ARG_UNUSED(slot_duration);
+	ARG_UNUSED(switch_pattern_len);
+	ARG_UNUSED(ant_ids);
 
 	err = init(chan, phy, isr_rx);
 	if (err) {
@@ -303,7 +319,7 @@ uint32_t ll_test_rx(uint8_t chan, uint8_t phy, uint8_t mod_idx)
 	return 0;
 }
 
-uint32_t ll_test_end(uint16_t *num_rx)
+uint8_t ll_test_end(uint16_t *num_rx)
 {
 	int err;
 	uint8_t ack;

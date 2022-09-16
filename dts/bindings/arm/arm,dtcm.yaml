@@ -4,7 +4,7 @@ description: Cortex-M DTCM (Data Tightly Coupled Memory)
 
 compatible: "arm,dtcm"
 
-include: [base.yaml, mem-region.yaml]
+include: base.yaml
 
 properties:
     reg:

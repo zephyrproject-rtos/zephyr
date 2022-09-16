@@ -7,7 +7,10 @@ description: |
 
 compatible: "st,stm32u5-rcc"
 
-include: st,stm32-rcc.yaml
+include:
+  - name: st,stm32-rcc.yaml
+    property-blocklist:
+      - undershoot-prevention
 
 properties:
 

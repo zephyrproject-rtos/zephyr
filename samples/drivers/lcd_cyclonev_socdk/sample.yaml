@@ -1,0 +1,14 @@
+sample:
+  description: Cyclone V Soc Devkit LCD sample
+  name: lcd_cyclonev_socdk
+common:
+    tags: introduction
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello World! (.*)"
+tests:
+  sample.basic.helloworld:
+    platform_allow: cyclonev_socdk
+    tags: introduction

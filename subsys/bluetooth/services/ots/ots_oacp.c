@@ -8,17 +8,17 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include "ots_internal.h"
 #include "ots_dir_list_internal.h"
 #include "ots_obj_manager_internal.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 
@@ -426,7 +426,8 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	len = read_op->oacp_params.len - read_op->sent_len;
 	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) &&
 	    ots->cur_obj->id == OTS_OBJ_ID_DIR_LIST) {
-		len = bt_ots_dir_list_content_get(ots->dir_list, &obj_chunk, len, offset);
+		len = bt_ots_dir_list_content_get(ots->dir_list, ots->obj_manager,
+						  &obj_chunk, len, offset);
 	} else {
 		len = ots->cb->obj_read(ots, conn, ots->cur_obj->id, &obj_chunk,
 					len, offset);

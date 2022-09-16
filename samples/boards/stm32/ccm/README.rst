@@ -57,7 +57,7 @@ look like this:
 
    The total used CCM area   : [0x10000000, 0x10000021)
    Zero initialized BSS area : [0x10000000, 0x10000007)
-   Unitialized NOINIT area   : [0x10000008, 0x10000013)
+   Uninitialized NOINIT area : [0x10000008, 0x10000013)
    Initialised DATA area     : [0x10000014, 0x10000021)
    Start of DATA in FLASH    : 0x08003940
 
@@ -103,7 +103,7 @@ When the board is reset (without power-cycling), the output looks like this:
 
    The total used CCM area   : [0x10000000, 0x10000021)
    Zero initialized BSS area : [0x10000000, 0x10000007)
-   Unitialized NOINIT area   : [0x10000008, 0x10000013)
+   Uninitialized NOINIT area : [0x10000008, 0x10000013)
    Initialised DATA area     : [0x10000014, 0x10000021)
    Start of DATA in FLASH    : 0x08003940
 

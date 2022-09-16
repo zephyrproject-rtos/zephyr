@@ -5,7 +5,7 @@ description: NXP Kinetis DSPI controller
 
 compatible: "nxp,kinetis-dspi"
 
-include: spi-controller.yaml
+include: ["spi-controller.yaml", "pinctrl-device.yaml"]
 
 properties:
     reg:

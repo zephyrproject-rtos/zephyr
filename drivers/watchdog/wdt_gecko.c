@@ -8,11 +8,11 @@
 #define DT_DRV_COMPAT silabs_gecko_wdog
 
 #include <soc.h>
-#include <drivers/watchdog.h>
+#include <zephyr/drivers/watchdog.h>
 #include <em_wdog.h>
 #include <em_cmu.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_gecko, CONFIG_WDT_LOG_LEVEL);
 
 #ifdef cmuClock_CORELE
@@ -39,8 +39,6 @@ struct wdt_gecko_data {
 	WDOG_Init_TypeDef wdog_config;
 	bool timeout_installed;
 };
-
-#define DEV_NAME(dev) ((dev)->name)
 
 static uint32_t wdt_gecko_get_timeout_from_persel(int perSel)
 {
@@ -264,7 +262,7 @@ static int wdt_gecko_init(const struct device *dev)
 	/* Enable IRQs */
 	config->irq_cfg_func();
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

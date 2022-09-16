@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT ams_ccs811
 
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 #include "ccs811.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(CCS811);
 
 #define IRQ_PIN DT_INST_GPIO_PIN(0, irq_gpios)

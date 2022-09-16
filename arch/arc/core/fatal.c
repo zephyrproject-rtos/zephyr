@@ -12,12 +12,12 @@
  * ARCv2 CPUs.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
-#include <logging/log.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/logging/log.h>
 #include <kernel_arch_data.h>
-#include <arch/arc/v2/exc.h>
+#include <zephyr/arch/arc/v2/exc.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 

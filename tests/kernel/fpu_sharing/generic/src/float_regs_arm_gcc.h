@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief ARM Cortex-M4 GCC specific floating point register macros
+ * @brief ARM GCC specific floating point register macros
  */
 
 /*
@@ -12,11 +12,12 @@
 #ifndef _FLOAT_REGS_ARM_GCC_H
 #define _FLOAT_REGS_ARM_GCC_H
 
-#if !defined(__GNUC__) || !defined(CONFIG_ARMV7_M_ARMV8_M_FP)
-#error __FILE__ goes only with Cortex-M GCC
+#if !defined(__GNUC__) \
+	|| !(defined(CONFIG_ARMV7_M_ARMV8_M_FP) || defined(CONFIG_ARMV7_R_FP))
+#error __FILE__ goes only with ARM GCC
 #endif
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include "float_context.h"
 
 /**

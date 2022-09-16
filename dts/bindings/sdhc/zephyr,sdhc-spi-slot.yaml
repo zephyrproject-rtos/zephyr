@@ -1,0 +1,5 @@
+description: Generic Zephyr SPI based SDHC controller
+
+compatible: "zephyr,sdhc-spi-slot"
+
+include: [spi-device.yaml]

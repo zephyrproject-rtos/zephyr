@@ -10,27 +10,27 @@
 #define LOG_MODULE_NAME eth_stm32_hal
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <kernel.h>
-#include <device.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/ethernet.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include <soc.h>
-#include <sys/printk.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-#include <drivers/ptp_clock.h>
+#include <zephyr/drivers/ptp_clock.h>
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 #include "eth.h"
@@ -92,35 +92,6 @@ static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __eth_stm32_buf;
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 static ETH_TxPacketConfig tx_config;
 #endif
-
-#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
-#include <net/can.h>
-
-static void set_mac_to_translator_addr(uint8_t *mac_addr)
-{
-	/* Set the last 14 bit to the translator  link layer address to avoid
-	 * address collissions with the 6LoCAN address range
-	 */
-	mac_addr[4] = (mac_addr[4] & 0xC0) | (NET_CAN_ETH_TRANSLATOR_ADDR >> 8);
-	mac_addr[5] = NET_CAN_ETH_TRANSLATOR_ADDR & 0xFF;
-}
-
-static void enable_canbus_eth_translator_filter(ETH_HandleTypeDef *heth,
-						uint8_t *mac_addr)
-{
-	heth->Instance->MACA1LR = (mac_addr[3] << 24U) | (mac_addr[2] << 16U) |
-				  (mac_addr[1] << 8U) | mac_addr[0];
-
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	heth->Instance->MACA1HR = ETH_MACAHR_AE | ETH_MACAHR_MBC_HBITS15_8 |
-				  ETH_MACAHR_MBC_HBITS7_0;
-#else
-	/*enable filter 1 and ignore byte 5 and 6 for filtering*/
-	heth->Instance->MACA1HR = ETH_MACA1HR_AE |  ETH_MACA1HR_MBC_HBits15_8 |
-				  ETH_MACA1HR_MBC_HBits7_0;
-#endif  /* CONFIG_SOC_SERIES_STM32H7X */
-}
-#endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
 
 static HAL_StatusTypeDef read_eth_phy_register(ETH_HandleTypeDef *heth,
 						uint32_t PHYAddr,
@@ -592,6 +563,10 @@ release_desc:
 	}
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
+	if (!pkt) {
+		goto out;
+	}
+
 #if defined(CONFIG_NET_VLAN)
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 
@@ -624,6 +599,7 @@ release_desc:
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
+out:
 	if (!pkt) {
 		eth_stats_update_errors_rx(get_iface(dev_data, *vlan_tag));
 	}
@@ -839,10 +815,6 @@ static int eth_initialize(const struct device *dev)
 #if defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC)
 	generate_mac(dev_data->mac_addr);
 #endif
-#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
-	set_mac_to_translator_addr(dev_data->mac_addr);
-#endif
-
 	heth->Init.MACAddr = dev_data->mac_addr;
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
@@ -926,10 +898,6 @@ static int eth_initialize(const struct device *dev)
 	}
 
 	disable_mcast_filter(heth);
-
-#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
-	enable_canbus_eth_translator_filter(heth, dev_data->mac_addr);
-#endif
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	/* Adjust MDC clock range depending on HCLK frequency: */
@@ -1057,7 +1025,7 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 		break;
 	}
 
-	return -ENOTSUP;
+	return ret;
 }
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)

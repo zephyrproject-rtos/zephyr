@@ -57,6 +57,18 @@
 #define CR4_PAE		BIT(5)		/* enable PAE */
 #define CR4_OSFXSR	BIT(9)		/* enable SSE (OS FXSAVE/RSTOR) */
 
+#ifndef _ASMLANGUAGE
+
+/* x86 boot argument (see prep_c.c) */
+struct x86_boot_arg {
+	int boot_type;
+	void *arg;
+};
+
+typedef struct x86_boot_arg x86_boot_arg_t;
+
+#endif /* _ASMLANGUAGE  */
+
 #ifdef CONFIG_X86_64
 #include <intel64/kernel_arch_data.h>
 #else

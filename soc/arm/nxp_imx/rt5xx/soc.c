@@ -12,7 +12,7 @@
  * hardware for the RT5XX platforms.
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include "flash_clock_setup.h"
 #include "fsl_power.h"

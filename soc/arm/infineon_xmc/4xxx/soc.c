@@ -6,8 +6,8 @@
  *
  */
 
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <soc.h>
 
 #define PMU_FLASH_WS		(0x3U)

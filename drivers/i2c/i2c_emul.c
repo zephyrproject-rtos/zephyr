@@ -12,13 +12,15 @@
 #define DT_DRV_COMPAT zephyr_i2c_emul_controller
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_emul_ctlr);
 
-#include <device.h>
-#include <drivers/emul.h>
-#include <drivers/i2c.h>
-#include <drivers/i2c_emul.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i2c_emul.h>
+
+#include "i2c-priv.h"
 
 /** Working data for the device */
 struct i2c_emul_data {
@@ -26,6 +28,7 @@ struct i2c_emul_data {
 	sys_slist_t emuls;
 	/* I2C host configuration */
 	uint32_t config;
+	uint32_t bitrate;
 };
 
 /**
@@ -65,10 +68,6 @@ static int i2c_emul_configure(const struct device *dev, uint32_t dev_config)
 static int i2c_emul_get_config(const struct device *dev, uint32_t *dev_config)
 {
 	struct i2c_emul_data *data = dev->data;
-
-	if (data->config == -1) {
-		return -EIO;
-	}
 
 	*dev_config = data->config;
 
@@ -115,7 +114,7 @@ static int i2c_emul_init(const struct device *dev)
 	rc = emul_init_for_bus_from_list(dev, list);
 
 	/* Set config to an uninitialized state */
-	data->config = -1;
+	data->config = (I2C_MODE_MASTER | i2c_map_dt_bitrate(data->bitrate));
 
 	return rc;
 }
@@ -152,7 +151,9 @@ static struct i2c_driver_api i2c_emul_api = {
 		.children = emuls_##n, \
 		.num_children = ARRAY_SIZE(emuls_##n), \
 	}; \
-	static struct i2c_emul_data i2c_emul_data_##n; \
+	static struct i2c_emul_data i2c_emul_data_##n = { \
+		.bitrate = DT_INST_PROP(n, clock_frequency), \
+	}; \
 	I2C_DEVICE_DT_INST_DEFINE(n, \
 			    i2c_emul_init, \
 			    NULL, \

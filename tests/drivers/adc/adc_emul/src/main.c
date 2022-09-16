@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/adc.h>
-#include <drivers/adc/adc_emul.h>
-#include <zephyr.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/adc/adc_emul.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, zephyr_adc_emul))
@@ -18,7 +18,7 @@
 #define ADC_2ND_CHANNEL_ID	1
 
 #define INVALID_ADC_VALUE	SHRT_MIN
-/* Raw to milivolt conversion doesn't handle rounding */
+/* Raw to millivolt conversion doesn't handle rounding */
 #define MV_OUTPUT_EPS		2
 #define SEQUENCE_STEP		100
 
@@ -494,7 +494,7 @@ static void test_adc_emul_input_higher_than_ref(void)
 
 	/*
 	 * Check samples - returned value should max out on reference value.
-	 * Raw value shoudn't exceed resolution.
+	 * Raw value shouldn't exceed resolution.
 	 */
 	check_samples(samples, ADC_REF_INTERNAL_MV, 0 /* step */,
 		      1 /* channels */, 0 /* first channel data */,
@@ -538,7 +538,7 @@ static void test_adc_emul_reference(void)
 
 	ret = adc_channel_setup(adc_dev, &channel_cfg);
 	zassert_not_equal(ret, 0,
-			  "Setting up of the %d channel shuldn't succeeded",
+			  "Setting up of the %d channel shouldn't succeeded",
 			  ADC_2ND_CHANNEL_ID);
 
 	channel_setup(adc_dev, ADC_REF_INTERNAL, ADC_GAIN_1,

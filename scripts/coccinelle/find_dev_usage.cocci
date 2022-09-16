@@ -1,5 +1,5 @@
 // Copyright (c) 2020 Intel Corporation
-// SPDX-License-Identifer: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 // Uses a python database (a dict) to find where const struct device
 // variable are being used in zephyr functions and, if it's being in place

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/bbram.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/bbram.h>
 #include <string.h>
 #include <ztest.h>
 

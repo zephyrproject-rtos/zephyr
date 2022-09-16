@@ -8,9 +8,9 @@
 #define DT_DRV_COMPAT nxp_fxos8700
 
 #include "fxos8700.h"
-#include <sys/util.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 #include <stdlib.h>
 
 LOG_MODULE_REGISTER(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);

@@ -5,7 +5,7 @@
  */
 
 /*
- * This defines the required types for the ARMClang compiler when comiling with
+ * This defines the required types for the ARMClang compiler when compiling with
  * _AEABI_PORTABILITY_LEVEL = 1
  *
  * The types defined are according to:

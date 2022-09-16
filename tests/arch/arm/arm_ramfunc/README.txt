@@ -3,10 +3,10 @@ Title: Test to verify code execution from SRAM for XIP images (ARM Only)
 Description:
 
 This test verifies that we can define functions in SRAM (and
-sucessfully execute them from SRAM) in ARM XIP images. It
+successfully execute them from SRAM) in ARM XIP images. It
 also verifies that the .ramfunc section is accessible by
 nPRIV code when building with support for user mode
-(CONFIG_USERSPACE=y). Only for ARM Cortex-M targets.
+(CONFIG_TEST_USERSPACE=y). Only for ARM Cortex-M targets.
 
 ---------------------------------------------------------------------------
 

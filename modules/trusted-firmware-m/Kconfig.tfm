@@ -167,8 +167,31 @@ config TFM_ITS_MAX_ASSET_SIZE
 	  Maximum size (in bytes) of a single asset to be stored in Internal Trusted
 	  Storage (ITS).
 
+config TFM_BL2_NOT_SUPPORTED
+	bool
+	help
+	  Hidden option to mark the BL2, the MCUBoot included in TF-M, as not supported.
+	  Platforms that don't use BL2 should select this option.
+
+config TFM_IMAGE_VERSION_S
+	string "Version of the Secure Image"
+	default "0.0.0+0"
+	help
+	  MCUBoot may be configured to prevent rollback prevention based on image
+	  versions of both the secure firmware and non-secure firmware. This sets
+	  the secure firmware's version for rollback prevention.
+
+config TFM_IMAGE_VERSION_NS
+	string "Version of the Non-Secure Image"
+	default "0.0.0+0"
+	help
+	  MCUBoot may be configured to prevent rollback prevention based on image
+	  versions of both the secure firmware and non-secure firmware. This sets
+	  the non-secure firmware's version for rollback prevention.
+
 config TFM_BL2
 	bool "Add MCUboot to TFM"
+	depends on !TFM_BL2_NOT_SUPPORTED
 	default y
 	help
 	  TFM is designed to run with MCUboot in a certain configuration.
@@ -206,10 +229,16 @@ config TFM_MCUBOOT_PATH_LOCAL
 config TFM_MCUBOOT_PATH_DOWNLOAD
 	bool "TF-M to automatically download MCUboot during build"
 	help
-	  TF-M bulds with BL2 will let the TF-M build to automatically
+	  TF-M builds with BL2 will let the TF-M build to automatically
 	  fetch and check-out the MCUboot version to use in the build.
 
 endchoice
+
+config TFM_MCUBOOT_DATA_SHARING
+	bool "Share app-specific data between TF-M and MCUBoot"
+	help
+	  Add sharing of application specific data using the same
+	  shared data area as for the measured boot.
 
 endif # TFM_BL2
 
@@ -288,14 +317,20 @@ endif # !TFM_BL2
 config TFM_FLASH_MERGED_BINARY
 	bool
 	help
-		This option instructs west flash to program the
-		combined (merged) binary consisting of the TF-M
-		Secure firmware image, optionally, the BL2 image
-		(if building with TFM_BL2 is enabled), and the
-		Non-Secure application firmware.
+	  This option instructs west flash to program the combined (merged)
+	  binary consisting of the TF-M Secure firmware image, optionally, the
+	  BL2 image (if building with TFM_BL2 is enabled), and the Non-Secure
+	  application firmware.
+
+config TFM_LOG_LEVEL_SILENCE
+	bool "TF-M Disable secure logging"
+	help
+	  Set the log level to silence for all TF-M modules (SPM, partition, etc.).
+	  On some platforms this will release the UART from
+	  the secure domain and reduce the uart driver's flash usage.
 
 choice TFM_SPM_LOG_LEVEL
-	prompt "TF-M SPM Log Level"
+	prompt "TF-M SPM Log Level" if !TFM_LOG_LEVEL_SILENCE
 	default TFM_SPM_LOG_LEVEL_INFO
 config TFM_SPM_LOG_LEVEL_DEBUG
 	bool "Debug"

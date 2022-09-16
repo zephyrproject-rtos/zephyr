@@ -6,12 +6,12 @@
 
 #include <ztest.h>
 #include <stdio.h>
-#include <app_memory/app_memdomain.h>
+#include <zephyr/app_memory/app_memdomain.h>
 #ifdef CONFIG_USERSPACE
-#include <sys/libc-hooks.h>
+#include <zephyr/sys/libc-hooks.h>
 #endif
-#include <sys/reboot.h>
-#include <logging/log_ctrl.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/logging/log_ctrl.h>
 
 #ifdef KERNEL
 static struct k_thread ztest_thread;
@@ -95,7 +95,7 @@ static int cleanup_test(struct unit_test *test)
 #else
 #define NUM_CPUHOLD 0
 #endif
-#define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static struct k_thread cpuhold_threads[NUM_CPUHOLD];
 K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, NUM_CPUHOLD, CPUHOLD_STACK_SZ);
@@ -223,12 +223,18 @@ static void run_test_functions(struct unit_test *test)
 #define FAIL_FAST 0
 
 static jmp_buf test_fail;
+static jmp_buf test_skip;
 static jmp_buf test_pass;
 static jmp_buf stack_fail;
 
 void ztest_test_fail(void)
 {
 	raise(SIGABRT);
+}
+
+void ztest_test_skip(void)
+{
+	longjmp(test_skip, 1);
 }
 
 void ztest_test_pass(void)
@@ -263,7 +269,7 @@ static void init_testing(void)
 	signal(SIGSEGV, handle_signal);
 
 	if (setjmp(stack_fail)) {
-		PRINT("Test suite crashed.");
+		PRINT("TESTSUITE crashed.");
 		exit(1);
 	}
 }
@@ -271,11 +277,17 @@ static void init_testing(void)
 static int run_test(struct unit_test *test)
 {
 	int ret = TC_PASS;
+	int skip = 0;
 
 	TC_START(test->name);
 
 	if (setjmp(test_fail)) {
 		ret = TC_FAIL;
+		goto out;
+	}
+
+	if (setjmp(test_skip)) {
+		skip = 1;
 		goto out;
 	}
 
@@ -287,7 +299,12 @@ static int run_test(struct unit_test *test)
 	run_test_functions(test);
 out:
 	ret |= cleanup_test(test);
-	Z_TC_END_RESULT(ret, test->name);
+
+	if (skip) {
+		Z_TC_END_RESULT(TC_SKIP, test->name);
+	} else {
+		Z_TC_END_RESULT(ret, test->name);
+	}
 
 	return ret;
 }
@@ -303,8 +320,8 @@ out:
 #define FAIL_FAST 0
 #endif
 
-K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACKSIZE +
-		      CONFIG_TEST_EXTRA_STACKSIZE);
+K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACK_SIZE +
+		      CONFIG_TEST_EXTRA_STACK_SIZE);
 static ZTEST_BMEM int test_result;
 
 static void test_finalize(void)
@@ -364,6 +381,7 @@ static int run_test(struct unit_test *test)
 				test->thread_options | K_INHERIT_PERMS,
 					K_FOREVER);
 
+		k_thread_access_grant(&ztest_thread, test);
 		if (test->name != NULL) {
 			k_thread_name_set(&ztest_thread, test->name);
 		}
@@ -451,7 +469,7 @@ int ztest_run_registered_test_suites(const void *state)
 	int count = 0;
 
 	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
-		struct ztest_suite_stats *stats = &ptr->stats;
+		struct ztest_suite_stats *stats = ptr->stats;
 		bool should_run = true;
 
 		if (ptr->predicate != NULL) {
@@ -481,7 +499,7 @@ void ztest_verify_all_registered_test_suites_ran(void)
 	struct ztest_suite_node *ptr;
 
 	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
-		if (ptr->stats.run_count < 1) {
+		if (ptr->stats->run_count < 1) {
 			PRINT("ERROR: Test '%s' did not run.\n", ptr->name);
 			all_tests_run = false;
 		}
@@ -562,5 +580,17 @@ void main(void)
 			state.boots = 0;
 		}
 	}
+#ifdef CONFIG_ZTEST_NO_YIELD
+	/*
+	 * Rather than yielding to idle thread, keep the part awake so debugger can
+	 * still access it, since some SOCs cannot be debugged in low power states.
+	 */
+	uint32_t key = irq_lock();
+
+	while (1) {
+		; /* Spin */
+	}
+	irq_unlock(key);
+#endif
 }
 #endif

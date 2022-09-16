@@ -27,6 +27,14 @@ sequence:
       "runner":
         type: str
         required: true
+      "runner_params":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+      "serial_pty":
+        type: str
+        required: false
       "serial":
         type: str
         required: false

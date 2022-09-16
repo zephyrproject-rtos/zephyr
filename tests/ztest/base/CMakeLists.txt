@@ -11,4 +11,6 @@ else()
   project(base)
 
   target_sources(app PRIVATE src/main.c)
+
+  target_sources_ifdef(CONFIG_USERSPACE app PRIVATE src/main_userspace.c)
 endif()

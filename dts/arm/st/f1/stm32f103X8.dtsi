@@ -56,6 +56,8 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
 			label = "CAN_1";
+			sjw = <1>;
+			sample-point = <875>;
 		};
 	};
 

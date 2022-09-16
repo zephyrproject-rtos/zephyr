@@ -6,10 +6,10 @@
 
 #include <zephyr/types.h>
 
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
-#include <sys/slist.h>
-#include <sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 
 #include "hal/ccm.h"
 
@@ -74,16 +74,6 @@ enum {
 /*
  * LLCP Local Procedure Channel Map Update FSM
  */
-
-/* TODO should go into some utils file */
-static uint16_t lp_event_counter(struct ll_conn *conn)
-{
-	struct lll_conn *lll = &conn->lll;
-
-	/* Calculate current event counter */
-	return lll->event_counter + lll->latency_prepare;
-}
-
 static void lp_chmu_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	struct node_tx *tx;
@@ -114,13 +104,13 @@ static void lp_chmu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 static void lp_chmu_send_channel_map_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 						uint8_t evt, void *param)
 {
-	if (ctx->pause || llcp_rr_get_collision(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_lr_ispaused(conn) || llcp_rr_get_collision(conn) ||
+	    !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_CHMU_STATE_WAIT_TX_CHAN_MAP_IND;
 	} else {
 		llcp_rr_set_incompat(conn, INCOMPAT_RESOLVABLE);
 
-		/* TODO Hardcoded instant delta */
-		ctx->data.chmu.instant = lp_event_counter(conn) + CHMU_INSTANT_DELTA;
+		ctx->data.chmu.instant = ull_conn_event_counter(conn) + CHMU_INSTANT_DELTA;
 
 		lp_chmu_tx(conn, ctx);
 
@@ -156,7 +146,7 @@ static void lp_chmu_st_wait_tx_chan_map_ind(struct ll_conn *conn, struct proc_ct
 static void lp_chmu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				  void *param)
 {
-	uint16_t event_counter = lp_event_counter(conn);
+	uint16_t event_counter = ull_conn_event_counter(conn);
 
 	if (is_instant_reached_or_passed(ctx->data.chmu.instant, event_counter)) {
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
@@ -196,6 +186,21 @@ static void lp_chmu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
+void llcp_lp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+{
+	struct pdu_data *pdu = (struct pdu_data *)rx->pdu;
+
+	switch (pdu->llctrl.opcode) {
+	default:
+		/* Invalid behaviour */
+		/* Invalid PDU received so terminate connection */
+		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+		llcp_lr_complete(conn);
+		ctx->state = LP_CHMU_STATE_IDLE;
+		break;
+	}
+}
+
 void llcp_lp_chmu_init_proc(struct proc_ctx *ctx)
 {
 	ctx->state = LP_CHMU_STATE_IDLE;
@@ -205,22 +210,13 @@ void llcp_lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	lp_chmu_execute_fsm(conn, ctx, LP_CHMU_EVT_RUN, param);
 }
+
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 /*
  * LLCP Remote Procedure Channel Map Update FSM
  */
-
-/* TODO should go into some utils file */
-static uint16_t rp_event_counter(struct ll_conn *conn)
-{
-	struct lll_conn *lll = &conn->lll;
-
-	/* Calculate current event counter */
-	return lll->event_counter + lll->latency_prepare;
-}
-
 static void rp_chmu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	ull_conn_chan_map_set(conn, ctx->data.chmu.chm);
@@ -230,7 +226,6 @@ static void rp_chmu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 
 static void rp_chmu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_CHMU_EVT_RUN:
 		ctx->state = RP_CHMU_STATE_WAIT_RX_CHAN_MAP_IND;
@@ -247,7 +242,15 @@ static void rp_chmu_st_wait_rx_channel_map_update_ind(struct ll_conn *conn, stru
 	switch (evt) {
 	case RP_CHMU_EVT_RX_CHAN_MAP_IND:
 		llcp_pdu_decode_chan_map_update_ind(ctx, param);
-		ctx->state = RP_CHMU_STATE_WAIT_INSTANT;
+		if (is_instant_not_passed(ctx->data.chmu.instant,
+					  ull_conn_event_counter(conn))) {
+
+			ctx->state = RP_CHMU_STATE_WAIT_INSTANT;
+		} else {
+			conn->llcp_terminate.reason_final = BT_HCI_ERR_INSTANT_PASSED;
+			llcp_rr_complete(conn);
+			ctx->state = RP_CHMU_STATE_IDLE;
+		}
 		break;
 	default:
 		/* Ignore other evts */
@@ -258,7 +261,7 @@ static void rp_chmu_st_wait_rx_channel_map_update_ind(struct ll_conn *conn, stru
 static void rp_chmu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				  void *param)
 {
-	uint16_t event_counter = rp_event_counter(conn);
+	uint16_t event_counter = ull_conn_event_counter(conn);
 
 	if (((event_counter - ctx->data.chmu.instant) & 0xFFFF) <= 0x7FFF) {
 		rp_chmu_complete(conn, ctx, evt, param);
@@ -306,8 +309,12 @@ void llcp_rp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_
 		rp_chmu_execute_fsm(conn, ctx, RP_CHMU_EVT_RX_CHAN_MAP_IND, pdu);
 		break;
 	default:
-		/* Unknown opcode */
-		LL_ASSERT(0);
+		/* Invalid behaviour */
+		/* Invalid PDU received so terminate connection */
+		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+		llcp_rr_complete(conn);
+		ctx->state = RP_CHMU_STATE_IDLE;
+		break;
 	}
 }
 

@@ -18,11 +18,12 @@ struct ll_conn_iso_stream {
 	uint8_t  terminate_reason;
 	uint32_t offset;          /* Offset of CIS from ACL event in us */
 	ll_iso_stream_released_cb_t released_cb; /* CIS release callback */
-	uint8_t  established : 1; /* 0 if CIS has not yet been established.
+	uint8_t  framed:1;
+	uint8_t  established:1;   /* 0 if CIS has not yet been established.
 				   * 1 if CIS has been established and host
 				   * notified.
 				   */
-	uint8_t teardown : 1;     /* 1 if CIS teardown has been initiated */
+	uint8_t teardown:1;       /* 1 if CIS teardown has been initiated */
 };
 
 struct ll_conn_iso_group {
@@ -40,8 +41,12 @@ struct ll_conn_iso_group {
 				 */
 	uint32_t c_sdu_interval;
 	uint32_t p_sdu_interval;
+	uint32_t cig_ref_point;	/* CIG reference point timestamp (us) based on
+				 * controller's clock.
+				 */
 	uint16_t iso_interval;
 	uint8_t  cig_id;
+	uint8_t  started:1;     /* 1 if CIG started and ticker is running */
 };
 
 struct node_rx_conn_iso_req {

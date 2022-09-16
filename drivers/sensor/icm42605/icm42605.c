@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT invensense_icm42605
 
-#include <drivers/spi.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 
 #include "icm42605.h"
 #include "icm42605_reg.h"
@@ -434,9 +434,7 @@ static const struct sensor_driver_api icm42605_driver_api = {
 					    SPI_WORD_SET(8) |		\
 					    SPI_TRANSFER_MSB,		\
 					    0U),			\
-		.int_label = DT_INST_GPIO_LABEL(index, int_gpios),	\
-		.int_pin =  DT_INST_GPIO_PIN(index, int_gpios),		\
-		.int_flags = DT_INST_GPIO_FLAGS(index, int_gpios),	\
+		.gpio_int = GPIO_DT_SPEC_INST_GET(index, int_gpios),    \
 		.accel_hz = DT_INST_PROP(index, accel_hz),		\
 		.gyro_hz = DT_INST_PROP(index, gyro_hz),		\
 		.accel_fs = DT_INST_ENUM_IDX(index, accel_fs),		\

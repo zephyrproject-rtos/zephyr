@@ -10,21 +10,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_llmnr_responder, CONFIG_LLMNR_RESPONDER_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
 #include <string.h>
 #include <strings.h>
 #include <errno.h>
 #include <stdlib.h>
 
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
-#include <net/dns_resolve.h>
-#include <net/udp.h>
-#include <net/igmp.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/udp.h>
+#include <zephyr/net/igmp.h>
 
 #include "dns_pack.h"
 #include "ipv6.h"
@@ -456,7 +456,7 @@ static int dns_read(struct net_context *ctx,
 	data_len = MIN(net_pkt_remaining_data(pkt), DNS_RESOLVER_MAX_BUF_SIZE);
 
 	/* Store the DNS query name into a temporary net_buf, which will be
-	 * enventually used to send a response
+	 * eventually used to send a response
 	 */
 	result = net_buf_alloc(&llmnr_dns_msg_pool, BUF_ALLOC_TIMEOUT);
 	if (!result) {

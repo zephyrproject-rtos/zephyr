@@ -1,17 +1,17 @@
 # Bluetooth Audio - Media control configuration options
 
 #
-# Copyright (c) 2020 Nordic Semiconductor
+# Copyright (c) 2020-2022 Nordic Semiconductor
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-
-if BT_AUDIO
 
 #### Media Control Service ################################
 
 config BT_MCS
 	bool "Media Control Service Support"
+	depends on MCTL_LOCAL_PLAYER_REMOTE_CONTROL
+	depends on UTF8
 	select BT_CCID
 	select EXPERIMENTAL
 	help
@@ -19,23 +19,8 @@ config BT_MCS
 
 if BT_MCS
 
-config BT_MCS_MEDIA_PLAYER_NAME
-	string "Media Player Name"
-	default "Player0"
-	help
-	  Use this option to set the name of the media player.
-
-config BT_MCS_ICON_URL
-	string "Media player Icon URL"
-	default "http://server.some.where/path/icon.png"
-	help
-	  Use this option to set the URL of the Media Player Icon.
-
-#### Debug logs ################################################################
-
 config BT_DEBUG_MCS
 	bool "Media Control Service debug"
-	depends on BT_AUDIO_DEBUG
 	help
 	  Use this option to enable Media Control Service debug logs for the
 	  Bluetooth Audio functionality.
@@ -54,9 +39,46 @@ config BT_MCC
 
 if BT_MCC
 
+config BT_MCC_MEDIA_PLAYER_NAME_MAX
+	int "Max length of media player name"
+	default 20
+	range 1 255
+	help
+	  Sets the maximum number of bytes (including the null termination) of
+	  the name of the media player. If the name is longer, the media
+	  control client will truncate the name when reading it.
+
+config BT_MCC_ICON_URL_MAX
+	int "Max length of media player icon URL"
+	default 40
+	range 1 255
+	help
+	  Sets the maximum number of bytes (including the null termination) of
+	  the media player icon URL. If the URL is longer, the media control
+	  client will truncate the name when reading it.
+
+config BT_MCC_TRACK_TITLE_MAX
+	int "Max length of the title of a track"
+	default 40
+	range 1 255
+	help
+	  Sets the maximum number of bytes (including the null termination) of
+	  the title of any track in the media player. If the title is longer,
+	  the media control client will truncate the title when reading it.
+
+config BT_MCC_SEGMENT_NAME_MAX
+	int "Max length of the name of a track segment"
+	default 25
+	range 1 255
+	help
+	  Sets the the maximum number of bytes (including the null termination)
+	  of the name of any track segment in the media player. If the name is
+	  longer, the media control client will truncate the name when reading
+	  it.
+
 config BT_MCC_OTS
 	bool "Media Control Client support for Object Transfer Service"
-	depends on BT_OTC
+	depends on BT_OTS_CLIENT
 	help
 	  Use this option to configure support in the Media Control Client for
 	  an included Object Transfer Service in the Media Control Service.
@@ -112,96 +134,8 @@ config BT_MCC_SHELL
 
 config BT_DEBUG_MCC
 	bool "Media Control Client debug"
-	depends on BT_AUDIO_DEBUG
 	help
 	  Use this option to enable Media Control Client debug logs for the
 	  Bluetooth Audio functionality.
 
 endif # BT_MCC
-
-
-if BT_MCS || BT_MCC
-
-config BT_MCS_MEDIA_PLAYER_NAME_MAX
-	int "Max length of media player name"
-	default 20
-	range 1 255
-	help
-	  Sets the maximum number of bytes (including the null termination) of
-	  the name of the media player.
-
-config BT_MCS_ICON_URL_MAX
-	int "Max length of media player icon URL"
-	default 30
-	range 1 255
-	help
-	  Sets the maximum number of bytes (including the null termination) of
-	  the media player icon URL.
-
-config BT_MCS_TRACK_TITLE_MAX
-	int "Max length of the title of a track"
-	default 25
-	range 1 255
-	help
-	  Sets the maximum number of bytes (including the null termination) of
-	  the title of any track in the media player.
-
-config BT_MCS_GROUP_TITLE_MAX
-	int "Max length of the title of a group of tracks"
-	default BT_MCS_TRACK_TITLE_MAX
-	range 1 255
-	help
-	  Sets the maximum number of bytes (including the null termination) of
-	  the title of any track in the media player.
-
-config BT_MCS_SEGMENT_NAME_MAX
-	int "Max length of the name of a track segment"
-	default 25
-	range 1 255
-	help
-	  Sets the the maximum number of bytes (including the null termination)
-	  of the name of any track segment in the media player.
-
-config BT_MCS_ICON_BITMAP_SIZE
-	int "Media player Icon bitmap object size"
-	default 127
-	help
-	  This option sets the maximum size (in octets) of the icon object.
-
-config BT_MCS_TRACK_SEG_MAX_SIZE
-	int "Maximum size for a track segment object"
-	default 127
-	help
-	  This option sets the maximum size (in octets) of a track segment object.
-
-config BT_MCS_TRACK_MAX_SIZE
-	int "Maximum size for a track object"
-	default 127
-	help
-	  This option sets the maximum size (in octets) of a track object.
-
-config BT_MCS_GROUP_MAX_SIZE
-	int "Maximum size for a group object"
-	default 127
-	help
-	  This option sets the maximum size (in octets) of a group object.
-
-config BT_MCS_MAX_OBJ_SIZE
-	int "Total memory size to use for storing the content of objects"
-	default 127
-	range 0 65536
-	help
-	  Sets the total memory size (in octets) to use for storing the content of objects.
-	  This is used for the total memory pool buffer size from which memory
-	  is allocated when sending object content.
-
-config BT_DEBUG_MEDIA_PROXY
-	bool "Media Proxy debug"
-	depends on BT_AUDIO_DEBUG
-	help
-	  Use this option to enable Media Proxy debug logs for the
-	  Bluetooth Audio functionality.
-
-endif # BT_MCS || BT_MCC
-
-endif # BT_AUDIO

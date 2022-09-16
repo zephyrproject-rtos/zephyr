@@ -11,7 +11,7 @@
  * @brief Define and initialize test_pipe at compile time
  */
 K_PIPE_DEFINE(test_pipe, 256, 4);
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define PIPE_SIZE (256)
 
 K_PIPE_DEFINE(small_pipe, 10, 4);
@@ -36,7 +36,7 @@ ZTEST_BMEM uint8_t rx_buffer[PIPE_SIZE + 1];
 /* the pipe will always pass */
 #define NO_CONSTRAINT (0U)
 
-/* Pipe will atleast put one byte */
+/* Pipe will at least put one byte */
 #define ATLEAST_1 (1U)
 
 /* Pipe must put all data on the buffer */
@@ -46,7 +46,7 @@ ZTEST_BMEM uint8_t rx_buffer[PIPE_SIZE + 1];
 #define TIMEOUT_VAL (K_MSEC(10))
 #define TIMEOUT_200MSEC (K_MSEC(200))
 
-/* encompasing structs */
+/* encompassing structs */
 struct pipe_sequence {
 	uint32_t size;
 	uint32_t min_size;
@@ -156,12 +156,12 @@ void pipe_put_single(void)
 
 		zassert_true((return_value ==
 			      single_elements[index].return_value),
-			     " Return value of k_pipe_put missmatch at index = %d expected =%d received = %d\n",
+			     " Return value of k_pipe_put mismatch at index = %d expected =%d received = %d\n",
 			     index,
 			     single_elements[index].return_value, return_value);
 
 		zassert_true((written == single_elements[index].sent_bytes),
-			     "Bytes written missmatch written is %d but expected is %d index = %d\n",
+			     "Bytes written mismatch written is %d but expected is %d index = %d\n",
 			     written,
 			     single_elements[index].sent_bytes, index);
 
@@ -194,12 +194,12 @@ void pipe_get_single(void *p1, void *p2, void *p3)
 
 		zassert_true((return_value ==
 			      single_elements[index].return_value),
-			     "Return value of k_pipe_get missmatch at index = %d expected =%d received = %d\n",
+			     "Return value of k_pipe_get mismatch at index = %d expected =%d received = %d\n",
 			     index, single_elements[index].return_value,
 			     return_value);
 
 		zassert_true((read == single_elements[index].sent_bytes),
-			     "Bytes read missmatch read is %d but expected is %d index = %d\n",
+			     "Bytes read mismatch read is %d but expected is %d index = %d\n",
 			     read, single_elements[index].sent_bytes, index);
 
 		zassert_true(rx_buffer_check(rx_buffer, read) == read,
@@ -231,13 +231,13 @@ void pipe_put_multiple(void)
 
 		zassert_true((return_value ==
 			      multiple_elements[index].return_value),
-			     "Return value of k_pipe_put missmatch at index = %d expected =%d received = %d\n",
+			     "Return value of k_pipe_put mismatch at index = %d expected =%d received = %d\n",
 			     index,
 			     multiple_elements[index].return_value,
 			     return_value);
 
 		zassert_true((written == multiple_elements[index].sent_bytes),
-			     "Bytes written missmatch written is %d but expected is %d index = %d\n",
+			     "Bytes written mismatch written is %d but expected is %d index = %d\n",
 			     written,
 			     multiple_elements[index].sent_bytes, index);
 		if (return_value != RETURN_SUCCESS) {
@@ -272,12 +272,12 @@ void pipe_get_multiple(void *p1, void *p2, void *p3)
 
 		zassert_true((return_value ==
 			      multiple_elements[index].return_value),
-			     "Return value of k_pipe_get missmatch at index = %d expected =%d received = %d\n",
+			     "Return value of k_pipe_get mismatch at index = %d expected =%d received = %d\n",
 			     index, multiple_elements[index].return_value,
 			     return_value);
 
 		zassert_true((read == multiple_elements[index].sent_bytes),
-			     "Bytes read missmatch read is %d but expected is %d index = %d\n",
+			     "Bytes read mismatch read is %d but expected is %d index = %d\n",
 			     read, multiple_elements[index].sent_bytes, index);
 
 		zassert_true(rx_buffer_check(rx_buffer, read) == read,
@@ -591,12 +591,12 @@ void pipe_put_forever_timeout(void)
 
 		zassert_true((return_value ==
 			      wait_elements[index].return_value),
-			     "Return value of k_pipe_put missmatch at index = %d expected =%d received = %d\n",
+			     "Return value of k_pipe_put mismatch at index = %d expected =%d received = %d\n",
 			     index, wait_elements[index].return_value,
 			     return_value);
 
 		zassert_true((written == wait_elements[index].sent_bytes),
-			     "Bytes written missmatch written is %d but expected is %d index = %d\n",
+			     "Bytes written mismatch written is %d but expected is %d index = %d\n",
 			     written, wait_elements[index].sent_bytes, index);
 
 	}
@@ -625,12 +625,12 @@ void pipe_get_forever_timeout(void *p1, void *p2, void *p3)
 
 		zassert_true((return_value ==
 			      wait_elements[index].return_value),
-			     "Return value of k_pipe_get missmatch at index = %d expected =%d received = %d\n",
+			     "Return value of k_pipe_get mismatch at index = %d expected =%d received = %d\n",
 			     index, wait_elements[index].return_value,
 			     return_value);
 
 		zassert_true((read == wait_elements[index].sent_bytes),
-			     "Bytes read missmatch read is %d but expected is %d index = %d\n",
+			     "Bytes read mismatch read is %d but expected is %d index = %d\n",
 			     read, wait_elements[index].sent_bytes, index);
 
 
@@ -659,12 +659,12 @@ void pipe_put_get_timeout(void)
 
 		zassert_true((return_value ==
 			      timeout_elements[index].return_value),
-			     "Return value of k_pipe_get missmatch at index = %d expected =%d received = %d\n",
+			     "Return value of k_pipe_get mismatch at index = %d expected =%d received = %d\n",
 			     index, timeout_elements[index].return_value,
 			     return_value);
 
 		zassert_true((read == timeout_elements[index].sent_bytes),
-			     "Bytes read missmatch read is %d but expected is %d index = %d\n",
+			     "Bytes read mismatch read is %d but expected is %d index = %d\n",
 			     read, timeout_elements[index].sent_bytes, index);
 
 

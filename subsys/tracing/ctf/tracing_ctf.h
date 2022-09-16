@@ -7,9 +7,9 @@
 #ifndef _TRACE_CTF_H
 #define _TRACE_CTF_H
 
-#include <kernel.h>
-#include <kernel_structs.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/init.h>
 
 #ifdef __cplusplus
 extern "C" {

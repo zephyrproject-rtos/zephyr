@@ -26,7 +26,7 @@ BOARD="${BOARD:-nrf52_bsim}"
 cd ${EDTT_PATH}
 
 Execute ./src/edttool.py -s=${SIMULATION_ID} -d=0 --transport bsim \
-  -T gatt_verification -C "${CWD}/gatt.test_list" -v=${VERBOSITY_LEVEL}
+  -T gatt_verification -C "${CWD}/gatt.llcp.test_list" -v=${VERBOSITY_LEVEL}
 
 cd ${BSIM_OUT_PATH}/bin
 

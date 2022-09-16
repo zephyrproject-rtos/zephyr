@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <device.h>
-#include <drivers/i2c.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(i2c_channel_0), okay)
 #define I2C_0_CTRL_NODE_ID      DT_ALIAS(i2c_channel_0)

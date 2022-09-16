@@ -9,68 +9,49 @@
  * @file Sample app to demonstrate PWM-based LED fade
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <device.h>
-#include <drivers/pwm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pwm.h>
 
-#define PWM_LED0_NODE	DT_ALIAS(pwm_led0)
+static const struct pwm_dt_spec pwm_led0 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led0));
 
-#if DT_NODE_HAS_STATUS(PWM_LED0_NODE, okay)
-#define PWM_CTLR	DT_PWMS_CTLR(PWM_LED0_NODE)
-#define PWM_CHANNEL	DT_PWMS_CHANNEL(PWM_LED0_NODE)
-#define PWM_FLAGS	DT_PWMS_FLAGS(PWM_LED0_NODE)
-#else
-#error "Unsupported board: pwm-led0 devicetree alias is not defined"
-#define PWM_CTLR	DT_INVALID_NODE
-#define PWM_CHANNEL	0
-#define PWM_FLAGS	0
-#endif
-
-/*
- * This period should be fast enough to be above the flicker fusion
- * threshold. The steps should also be small enough, and happen
- * quickly enough, to make the output fade change appear continuous.
- */
-#define PERIOD_USEC	20000U
 #define NUM_STEPS	50U
-#define STEP_USEC	(PERIOD_USEC / NUM_STEPS)
 #define SLEEP_MSEC	25U
 
 void main(void)
 {
-	const struct device *pwm;
 	uint32_t pulse_width = 0U;
+	uint32_t step = pwm_led0.period / NUM_STEPS;
 	uint8_t dir = 1U;
 	int ret;
 
 	printk("PWM-based LED fade\n");
 
-	pwm = DEVICE_DT_GET(PWM_CTLR);
-	if (!device_is_ready(pwm)) {
-		printk("Error: PWM device %s is not ready\n", pwm->name);
+	if (!device_is_ready(pwm_led0.dev)) {
+		printk("Error: PWM device %s is not ready\n",
+		       pwm_led0.dev->name);
 		return;
 	}
 
 	while (1) {
-		ret = pwm_pin_set_usec(pwm, PWM_CHANNEL, PERIOD_USEC,
-				       pulse_width, PWM_FLAGS);
+		ret = pwm_set_pulse_dt(&pwm_led0, pulse_width);
 		if (ret) {
 			printk("Error %d: failed to set pulse width\n", ret);
 			return;
 		}
 
 		if (dir) {
-			pulse_width += STEP_USEC;
-			if (pulse_width >= PERIOD_USEC) {
-				pulse_width = PERIOD_USEC - STEP_USEC;
+			pulse_width += step;
+			if (pulse_width >= pwm_led0.period) {
+				pulse_width = pwm_led0.period - step;
 				dir = 0U;
 			}
 		} else {
-			if (pulse_width >= STEP_USEC) {
-				pulse_width -= STEP_USEC;
+			if (pulse_width >= step) {
+				pulse_width -= step;
 			} else {
-				pulse_width = STEP_USEC;
+				pulse_width = step;
 				dir = 1U;
 			}
 		}

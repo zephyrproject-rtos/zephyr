@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <stdlib.h>
-#include <drivers/kscan.h>
-#include <zephyr.h>
+#include <zephyr/drivers/kscan.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #define KSCAN_DEV_NAME DT_LABEL(DT_ALIAS(kscan0))

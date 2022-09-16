@@ -6,7 +6,7 @@
 
 #include <SDL.h>
 #include "posix_board_if.h"
-#include <arch/posix/posix_trace.h>
+#include <zephyr/arch/posix/posix_trace.h>
 #include "posix_arch_internal.h"
 #include "soc.h"
 #include "hw_models_top.h"

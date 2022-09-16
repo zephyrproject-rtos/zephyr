@@ -11,9 +11,6 @@ tests:
   sample.net.sockets.echo_server:
     platform_allow: qemu_x86 sam_e70_xplained frdm_k64f
       qemu_cortex_m3 frdm_kw41z
-  sample.net.sockets.echo_server.6locan:
-    extra_args: OVERLAY_CONFIG="overlay-6locan.conf"
-    platform_allow: nucleo_f746zg
   sample.net.sockets.echo_server.802154:
     extra_args: OVERLAY_CONFIG="overlay-qemu_802154.conf"
     platform_allow: qemu_x86

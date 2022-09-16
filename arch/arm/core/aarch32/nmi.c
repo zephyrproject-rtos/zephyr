@@ -13,12 +13,12 @@
  * custom run time handler.
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <sys/printk.h>
-#include <sys/reboot.h>
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 
 extern void z_SysNmiOnReset(void);
 #if !defined(CONFIG_RUNTIME_NMI)

@@ -56,14 +56,14 @@ description: |
   memory device/s in DeviceTree:
 
   sdram1: sdram@c0000000 {
-      compatible = "mmio-sram";
+      compatible = "zephyr,memory-region", "mmio-sram";
       device_type = "memory";
       reg = <0xc000000 DT_SIZE_M(X)>;
       zephyr,memory-region = "SDRAM1";
   };
 
   sdram2: sdram@d0000000 {
-      compatible = "mmio-sram";
+      compatible = "zephyr,memory-region", "mmio-sram";
       device_type = "memory";
       reg = <0xd000000 DT_SIZE_M(X)>;
       zephyr,memory-region = "SDRAM2";

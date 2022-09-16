@@ -18,6 +18,9 @@
 	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,                             \
 	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2
 
+#define BT_MESH_ID_TYPE_NET  0x00
+#define BT_MESH_ID_TYPE_NODE 0x01
+
 int bt_mesh_proxy_gatt_enable(void);
 int bt_mesh_proxy_gatt_disable(void);
 void bt_mesh_proxy_gatt_disconnect(void);

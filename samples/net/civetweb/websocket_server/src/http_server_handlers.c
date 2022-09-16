@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(http_server_handlers, LOG_LEVEL_DBG);
 
 #include "http_server_handlers.h"
@@ -112,7 +112,7 @@ __code_decl int this_send_buffer_chunked(struct mg_connection *conn,
 		}
 	}
 
-	/* Must be sent at the end of the chuked sequence */
+	/* Must be sent at the end of the chunked sequence */
 	ret = mg_send_chunk(conn, "", 0);
 
 error_this_send_buffer_chunked:

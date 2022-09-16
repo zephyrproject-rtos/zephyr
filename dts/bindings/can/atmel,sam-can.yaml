@@ -2,18 +2,27 @@ description: Specialization of Bosch m_can CAN-FD controller for Atmel SAM
 
 compatible: "atmel,sam-can"
 
-include: bosch,m-can.yaml
+include:
+    - name: can-fd-controller.yaml
+    - name: pinctrl-device.yaml
 
 properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
     peripheral-id:
       type: int
       required: true
       description: peripheral ID
-    pinctrl-0:
-      type: phandles
+
+    divider:
+      type: int
       required: true
-      description: |
-        PIO configuration for CAN_RX and CAN_TX. We expect that the phandles will
-        reference pinctrl nodes.  These nodes will have a nodelabel that
-        matches the Atmel SoC HAL defines and be of the form
-          pinctrl-0 = <&pb3a_can0_rx0 &pb2a_can0_tx0>;
+      enum:
+        - 6
+        - 12
+        - 24
+      description: Clock divider for the CAN core clock

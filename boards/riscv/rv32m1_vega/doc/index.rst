@@ -835,7 +835,7 @@ in the above flash and debug instructions.
 .. [#toolchain_openocd]
 
    For Linux users, the RISC-V toolchain in the :ref:`Zephyr SDK
-   <zephyr_sdk>` may work, but it hasn't been thoroughly tested with this
+   <toolchain_zephyr_sdk>` may work, but it hasn't been thoroughly tested with this
    SoC, and will not allow use of any available RISC-V ISA extensions.
 
    Support for the RV32M1 SoC is not currently available in the OpenOCD

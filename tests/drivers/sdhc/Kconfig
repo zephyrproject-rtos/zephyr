@@ -1,0 +1,13 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "SD Host controller test"
+
+source "Kconfig.zephyr"
+
+config SDHC_LABEL
+	string "SD host controller label"
+	default "SDHC_0"
+	help
+	  Devicetree label for SD host controller. Used to get reference to
+	  device

@@ -58,7 +58,7 @@ config NET_IPV4_IGMP
 	  See RFC 2236 for details.
 
 config NET_DHCPV4
-	bool "Enable DHCPv4 client"
+	bool "DHCPv4 client"
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	depends on NET_UDP
@@ -73,14 +73,14 @@ config NET_DHCPV4_INITIAL_DELAY_MAX
 	  1 and 10 seconds before sending the initial discover.
 
 config NET_IPV4_AUTO
-	bool "Enable IPv4 autoconfiguration [EXPERIMENTAL]"
+	bool "IPv4 autoconfiguration [EXPERIMENTAL]"
 	depends on NET_ARP
 	select EXPERIMENTAL
 	help
 	  Enables IPv4 auto IP address configuration (see RFC 3927)
 
 config NET_IPV4_HDR_OPTIONS
-	bool "Enable IPv4 Header options support"
+	bool "IPv4 Header options support"
 	help
 	  Enables IPv4 header options support. Current support for only
 	  ICMPv4 Echo request. Only RecordRoute and Timestamp are handled.

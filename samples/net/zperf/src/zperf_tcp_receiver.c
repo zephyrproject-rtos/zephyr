@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <linker/sections.h>
-#include <toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/toolchain.h>
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
 
 #include "zperf.h"
 #include "zperf_internal.h"
@@ -42,6 +42,7 @@ static void tcp_received(struct net_context *context,
 	const struct shell *shell = tcp_shell;
 	struct session *session;
 	int64_t time;
+	int len = 0;
 
 	if (!shell) {
 		printk("Shell is not set!\n");
@@ -70,7 +71,8 @@ static void tcp_received(struct net_context *context,
 		session->counter++;
 
 		if (pkt) {
-			session->length += net_pkt_remaining_data(pkt);
+			len = net_pkt_remaining_data(pkt);
+			session->length += len;
 		}
 
 		if (pkt == NULL && status == 0) { /* EOF */
@@ -109,6 +111,11 @@ static void tcp_received(struct net_context *context,
 			net_context_unref(context);
 			session->state = STATE_NULL;
 		}
+
+		if (pkt) {
+			(void)net_context_update_recv_wnd(context, len);
+		}
+
 		break;
 	case STATE_LAST_PACKET_RECEIVED:
 		break;

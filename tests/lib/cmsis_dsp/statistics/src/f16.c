@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <arm_math_f16.h>
 #include "../../common/test_common.h"
@@ -19,6 +19,18 @@
 #define SNR_ERROR_THRESH_KB	((float32_t)40)
 #define REL_ERROR_THRESH_KB	(5.0e-3)
 #define ABS_ERROR_THRESH_KB	(5.0e-3)
+
+#ifdef CONFIG_ARMV8_1_M_MVEF
+/*
+ * NOTE: The MVE vector version of the statistics functions are slightly less
+ *       accurate than the scalar version.
+ */
+#undef REL_ERROR_THRESH
+#define REL_ERROR_THRESH	(10.0e-3)
+
+#undef SNR_ERROR_THRESH_KB
+#define SNR_ERROR_THRESH_KB	((float32_t)39)
+#endif
 
 static void test_arm_max_f16(
 	const uint16_t *input1, int ref_index, size_t length)

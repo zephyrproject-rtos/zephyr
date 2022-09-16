@@ -9,10 +9,10 @@
 
 #define ULL_LLCP_UNITTEST
 
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
-#include <sys/slist.h>
-#include <sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 #include "hal/ccm.h"
 
 #include "util/util.h"
@@ -51,7 +51,6 @@ struct pdu_data_llctrl_conn_update_ind conn_update_ind = { .win_size = 1U,
 							   .timeout = TIMEOUT,
 							   .instant = 6U };
 
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /* Default conn_param_req PDU */
 struct pdu_data_llctrl_conn_param_req conn_param_req = { .interval_min = INTVL_MIN,
 							 .interval_max = INTVL_MAX,
@@ -66,6 +65,7 @@ struct pdu_data_llctrl_conn_param_req conn_param_req = { .interval_min = INTVL_M
 							 .offset4 = 0xffffU,
 							 .offset5 = 0xffffU };
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /* Default conn_param_rsp PDU */
 struct pdu_data_llctrl_conn_param_rsp conn_param_rsp = { .interval_min = INTVL_MIN,
 							 .interval_max = INTVL_MAX,
@@ -80,6 +80,32 @@ struct pdu_data_llctrl_conn_param_rsp conn_param_rsp = { .interval_min = INTVL_M
 							 .offset4 = 0xffffU,
 							 .offset5 = 0xffffU };
 
+/* Invalid conn_param_req PDU */
+struct pdu_data_llctrl_conn_param_req conn_param_req_invalid = { .interval_min = INTVL_MIN - 1,
+							 .interval_max = INTVL_MAX + 1,
+							 .latency = LATENCY,
+							 .timeout = TIMEOUT - 1,
+							 .preferred_periodicity = 0U,
+							 .reference_conn_event_count = 0u,
+							 .offset0 = 0x0000U,
+							 .offset1 = 0xffffU,
+							 .offset2 = 0xffffU,
+							 .offset3 = 0xffffU,
+							 .offset4 = 0xffffU,
+							 .offset5 = 0xffffU };
+/* Invalid conn_param_rsp PDU */
+struct pdu_data_llctrl_conn_param_rsp conn_param_rsp_invalid = { .interval_min = INTVL_MIN - 1,
+								 .interval_max = INTVL_MAX + 1,
+								 .latency = LATENCY,
+								 .timeout = TIMEOUT - 1,
+								 .preferred_periodicity = 0U,
+								 .reference_conn_event_count = 0u,
+								 .offset0 = 0x0000U,
+								 .offset1 = 0xffffU,
+								 .offset2 = 0xffffU,
+								 .offset3 = 0xffffU,
+								 .offset4 = 0xffffU,
+								 .offset5 = 0xffffU };
 /* Different PDU contents for (B) */
 
 /* Default conn_param_req PDU (B) */
@@ -165,11 +191,11 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host accepts.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_M  |                    | LT  |
+ * | UT  |                    | LL_C  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    | LE Connection Update      |                           |
@@ -190,7 +216,7 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_accept(void)
+void test_conn_update_central_loc_accept(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -214,10 +240,12 @@ void test_conn_update_mas_loc_accept(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
 	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
+	conn_param_rsp.reference_conn_event_count = conn_param_req.reference_conn_event_count;
 	lt_tx(LL_CONNECTION_PARAM_RSP, &conn, &conn_param_rsp);
 
 	/* Done */
@@ -274,16 +302,417 @@ void test_conn_update_mas_loc_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host rejects.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
+ * Parallel CPRs attemtped and rejected/cached
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_M  |                    | LT  |
+ * | UT  |                    | LL_C  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    | LE Connection Update      |                           |
+ *    |-------------------------->|                           |
+ *    |                           | LL_CONNECTION_PARAM_REQ   |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * ~~~~~  parallel remote CPR is attempted and rejected   ~~~~~~~
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |                           |   LL_CONNECTION_PARAM_RSP |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * ~~~~~  parallel remote CPR is attempted and rejected   ~~~~~~~
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * ~~~~~    parallel local CPR is attempted and cached    ~~~~~~~
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |                           | LL_CONNECTION_UPDATE_IND  |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |      LE Connection Update |                           |
+ *    |                  Complete |                           |
+ *    |<--------------------------|                           |
+ *    |                           |                           |
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * ~~~~~~~~~    parallel local CPR is now started    ~~~~~~~~~~~~
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ */
+void test_conn_update_central_loc_accept_reject_2nd_cpr(void)
+{
+	struct ll_conn conn_2nd;
+	struct ll_conn conn_3rd;
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	struct pdu_data *pdu;
+	uint16_t instant;
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+		.error_code = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL
+	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
+
+	/* Initialize extra connections */
+	test_setup_idx(&conn_2nd, 1);
+	test_setup_idx(&conn_3rd, 2);
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	/* Role */
+	test_set_role(&conn_2nd, BT_HCI_ROLE_PERIPHERAL);
+	/* Role */
+	test_set_role(&conn_3rd, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Connect */
+	ull_cp_state_set(&conn_2nd, ULL_CP_CONNECTED);
+
+	/* Connect */
+	ull_cp_state_set(&conn_3rd, ULL_CP_CONNECTED);
+
+	/* Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
+	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Now CPR is active on 'conn' so let 'conn_2nd' attempt to start a CPR */
+	/* Prepare */
+	event_prepare(&conn_2nd);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn_2nd);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn_2nd, &conn_param_req);
+
+	/* Done */
+	event_done(&conn_2nd);
+
+	/* Prepare */
+	event_prepare(&conn_2nd);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_REJECT_EXT_IND, &conn_2nd, &tx, &reject_ext_ind);
+	lt_rx_q_is_empty(&conn_2nd);
+
+	/* Done */
+	event_done(&conn_2nd);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn_2nd, tx);
+
+	/* Rx */
+	conn_param_rsp.reference_conn_event_count = conn_param_req.reference_conn_event_count;
+	lt_tx(LL_CONNECTION_PARAM_RSP, &conn, &conn_param_rsp);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Now CPR is active on 'conn' so let 'conn_2nd' attempt to start a CPR again */
+	/* Prepare */
+	event_prepare(&conn_3rd);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn_3rd);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn_3rd, &conn_param_req);
+
+	/* Done */
+	event_done(&conn_3rd);
+
+	/* Prepare */
+	event_prepare(&conn_3rd);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_REJECT_EXT_IND, &conn_3rd, &tx, &reject_ext_ind);
+	lt_rx_q_is_empty(&conn_3rd);
+
+	/* Done */
+	event_done(&conn_3rd);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn_3rd, tx);
+
+	/* Initiate a parallel Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn_3rd, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn_3rd);
+
+	/* Tx Queue should have no LL Control PDU */
+	lt_rx_q_is_empty(&conn_3rd);
+
+	/* Done */
+	event_done(&conn_3rd);
+
+	/* Prepare */
+	event_prepare(&conn_3rd);
+
+	/* Tx Queue should have no LL Control PDU */
+	lt_rx_q_is_empty(&conn_3rd);
+
+	/* Done */
+	event_done(&conn_3rd);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
+	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Save Instant */
+	pdu = (struct pdu_data *)tx->pdu;
+	instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* */
+	while (!is_instant_reached(&conn, instant)) {
+		/* Prepare */
+		event_prepare(&conn);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn);
+
+		/* Done */
+		event_done(&conn);
+
+		/* There should NOT be a host notification */
+		ut_rx_q_is_empty();
+
+		/* Prepare on conn_3rd for parallel CPR */
+		event_prepare(&conn_3rd);
+
+		/* Tx Queue should have no LL Control PDU */
+		lt_rx_q_is_empty(&conn_3rd);
+
+		/* Done on conn_3rd for parallel CPR */
+		event_done(&conn_3rd);
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be one host notification */
+	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu);
+	ut_rx_q_is_empty();
+
+	/* Now the locally initiated CPR on conn_3rd should be allowed to run */
+	/* Prepare */
+	event_prepare(&conn_3rd);
+
+	/* Tx Queue should have one LL Control PDU, indicating parallel CPR is now active */
+	conn_param_req.reference_conn_event_count = event_counter(&conn_3rd);
+	lt_rx(LL_CONNECTION_PARAM_REQ, &conn_3rd, &tx, &conn_param_req);
+	lt_rx_q_is_empty(&conn_3rd);
+
+	/* Done */
+	event_done(&conn_3rd);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn_3rd, tx);
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* One less CTXs as the conn_3rd CPR is still 'running' */
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		      "Free CTX buffers %d", ctx_buffers_free());
+}
+
+/*
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral
+ * responds with invalid params
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_C  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    | LE Connection Update      |                           |
+ *    |-------------------------->|                           |
+ *    |                           | LL_CONNECTION_PARAM_REQ   |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |   LL_CONNECTION_PARAM_RSP |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |                           | LL_REJECT_EXT_IND         |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |                           |
+ *    |                           |                           |
+ */
+void test_conn_update_central_loc_invalid_param_rsp(void)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP,
+		.error_code = BT_HCI_ERR_INVALID_LL_PARAM
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
+	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_RSP, &conn, &conn_param_rsp_invalid);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &reject_ext_ind);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+}
+
+/*
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_C  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    | LE Connection Update      |                           |
+ *    |-------------------------->|                           |
+ *    |                           | LL_CONNECTION_PARAM_REQ   |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |   LL_REJECT_IND           |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~ TERMINATE CONNECTION ~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |                           |                           |
+ */
+void test_conn_update_central_loc_invalid_rsp(void)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct pdu_data_llctrl_reject_ind reject_ind = {
+		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
+	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_REJECT_IND, &conn, &reject_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* There should be no host notifications */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+
+}
+
+/*
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host rejects.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_C  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    | LE Connection Update      |                           |
@@ -299,7 +728,7 @@ void test_conn_update_mas_loc_accept(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_reject(void)
+void test_conn_update_central_loc_reject(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -326,6 +755,7 @@ void test_conn_update_mas_loc_reject(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
 	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
 	lt_rx_q_is_empty(&conn);
 
@@ -344,16 +774,16 @@ void test_conn_update_mas_loc_reject(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host is legacy.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host is legacy.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_M  |                    | LT  |
+ * | UT  |                    | LL_C  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    | LE Connection Update      |                           |
@@ -374,7 +804,7 @@ void test_conn_update_mas_loc_reject(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_remote_legacy(void)
+void test_conn_update_central_loc_remote_legacy(void)
 {
 	bool feature_bit_param_req;
 	uint8_t err;
@@ -404,6 +834,7 @@ void test_conn_update_mas_loc_remote_legacy(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
 	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
 	lt_rx_q_is_empty(&conn);
 
@@ -424,6 +855,7 @@ void test_conn_update_mas_loc_remote_legacy(void)
 	zassert_equal(feature_bit_param_req, false, "Feature bit not unmasked");
 
 	/* Tx Queue should have one LL Control PDU */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
 	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind);
 	lt_rx_q_is_empty(&conn);
 
@@ -467,17 +899,17 @@ void test_conn_update_mas_loc_remote_legacy(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Controller do not
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Controller do not
  * support Connection Parameters Request procedure, features not exchanged.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_M  |                    | LT  |
+ * | UT  |                    | LL_C  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    | LE Connection Update      |                           |
@@ -498,7 +930,7 @@ void test_conn_update_mas_loc_remote_legacy(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
+void test_conn_update_central_loc_unsupp_wo_feat_exch(void)
 {
 	bool feature_bit_param_req;
 	uint8_t err;
@@ -527,6 +959,7 @@ void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
 	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
 	lt_rx_q_is_empty(&conn);
 
@@ -547,6 +980,7 @@ void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
 	zassert_equal(feature_bit_param_req, false, "Feature bit not unmasked");
 
 	/* Tx Queue should have one LL Control PDU */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
 	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind);
 	lt_rx_q_is_empty(&conn);
 
@@ -590,17 +1024,17 @@ void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Controller do not
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Controller do not
  * support Connection Parameters Request procedure, features exchanged.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_M  |                    | LT  |
+ * | UT  |                    | LL_C  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    | LE Connection Update      |                           |
@@ -615,7 +1049,7 @@ void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_unsupp_w_feat_exch(void)
+void test_conn_update_central_loc_unsupp_w_feat_exch(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -689,23 +1123,23 @@ void test_conn_update_mas_loc_unsupp_w_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
  * (A)
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host accepts.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
  *
  * and
  *
  * (B)
- * Slave-initiated Connection Parameters Request procedure.
+ * Peripheral-initiated Connection Parameters Request procedure.
  * Procedure collides and is rejected.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_M  |                    | LT  |
+ * | UT  |                    | LL_C  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    | LE Connection Update      |                           |
@@ -736,7 +1170,7 @@ void test_conn_update_mas_loc_unsupp_w_feat_exch(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_collision(void)
+void test_conn_update_central_loc_collision(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -754,6 +1188,9 @@ void test_conn_update_mas_loc_collision(void)
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
+	/* Emulate valid feature exchange */
+	conn.llcp.fex.valid = 1;
+
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
@@ -765,6 +1202,7 @@ void test_conn_update_mas_loc_collision(void)
 	event_prepare(&conn);
 
 	/* (A) Tx Queue should have one LL Control PDU */
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
 	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
 	lt_rx_q_is_empty(&conn);
 
@@ -776,8 +1214,6 @@ void test_conn_update_mas_loc_collision(void)
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
-
-	/**/
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -854,16 +1290,16 @@ void test_conn_update_mas_loc_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Host accepts.
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host accepts.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_M  |                    | LT  |
+ * | UT  |                    | LL_C  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    |                           |   LL_CONNECTION_PARAM_REQ |
@@ -887,7 +1323,7 @@ void test_conn_update_mas_loc_collision(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_rem_accept(void)
+void test_conn_update_central_rem_accept(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -974,16 +1410,73 @@ void test_conn_update_mas_rem_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Host rejects.
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection with invalid parameters,
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_M  |                    | LT  |
+ * | UT  |                    | LL_C  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |   LL_CONNECTION_PARAM_REQ |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |                           |                           |
+ *    |                           | LL_REJECT_EXT_IND         |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |                           |
+ */
+void test_conn_update_central_rem_invalid_req(void)
+{
+	struct node_tx *tx;
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+		.error_code = BT_HCI_ERR_INVALID_LL_PARAM
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req_invalid);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &reject_ext_ind);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+
+}
+
+/*
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host rejects.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_C  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    |                           |   LL_CONNECTION_PARAM_REQ |
@@ -1001,7 +1494,7 @@ void test_conn_update_mas_rem_accept(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  */
-void test_conn_update_mas_rem_reject(void)
+void test_conn_update_central_rem_reject(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1051,50 +1544,28 @@ void test_conn_update_mas_rem_reject(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
-}
-
-/* Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Controller do not
- * support Connection Parameters Request procedure.
- *
- * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_M  |                    | LT  |
- * +-----+                    +-------+                    +-----+
- *    |                           |                           |
- *    |                           |   LL_CONNECTION_PARAM_REQ |
- *    |                           |<--------------------------|
- *    |                           |                           |
- *    |                           | LL_UNKNOWN_RSP            |
- *    |                           |-------------------------->|
- *    |                           |                           |
- */
-void test_conn_update_mas_rem_unsupp_feat(void)
-{
-	/* TODO(thoh): Implement when Remote Request machine has feature
-	 * checking
-	 */
 }
 
 /*
  * (A)
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Host accepts.
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host accepts.
  *
  * and
  *
  * (B)
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host accepts.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
  *
  * NOTE:
- * Master-initiated Connection Parameters Request procedure is paused.
- * Slave-initiated Connection Parameters Request procedure is finished.
- * Master-initiated Connection Parameters Request procedure is resumed.
+ * Central-initiated Connection Parameters Request procedure is paused.
+ * Peripheral-initiated Connection Parameters Request procedure is finished.
+ * Central-initiated Connection Parameters Request procedure is resumed.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_M  |                    | LT  |
+ * | UT  |                    | LL_C  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    |                           |   LL_CONNECTION_PARAM_REQ |
@@ -1144,7 +1615,7 @@ void test_conn_update_mas_rem_unsupp_feat(void)
  *    |<--------------------------|                           | (B)
  *    |                           |                           |
  */
-void test_conn_update_mas_rem_collision(void)
+void test_conn_update_central_rem_collision(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1314,16 +1785,16 @@ void test_conn_update_mas_rem_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Host accepts.
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host accepts.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_S  |                    | LT  |
+ * | UT  |                    | LL_P  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    | LE Connection Update      |                           |
@@ -1341,7 +1812,7 @@ void test_conn_update_mas_rem_collision(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_sla_loc_accept(void)
+void test_conn_update_periph_loc_accept(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1380,6 +1851,7 @@ void test_conn_update_sla_loc_accept(void)
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
 	instant = conn_update_ind.instant;
 	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
 
@@ -1416,16 +1888,16 @@ void test_conn_update_sla_loc_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Host rejects.
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host rejects.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_S  |                    | LT  |
+ * | UT  |                    | LL_P  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    | LE Connection Update      |                           |
@@ -1441,7 +1913,7 @@ void test_conn_update_sla_loc_accept(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_sla_loc_reject(void)
+void test_conn_update_periph_loc_reject(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1495,17 +1967,17 @@ void test_conn_update_sla_loc_reject(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Controller do not
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Controller do not
  * support Connection Parameters Request procedure, features not exchanged.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_S  |                    | LT  |
+ * | UT  |                    | LL_P  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    | LE Connection Update      |                           |
@@ -1521,7 +1993,7 @@ void test_conn_update_sla_loc_reject(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_sla_loc_unsupp_feat_wo_feat_exch(void)
+void test_conn_update_periph_loc_unsupp_feat_wo_feat_exch(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1574,17 +2046,17 @@ void test_conn_update_sla_loc_unsupp_feat_wo_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Controller do not
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Controller do not
  * support Connection Parameters Request procedure, features exchanged.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_S  |                    | LT  |
+ * | UT  |                    | LL_P  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    | LE Connection Update      |                           |
@@ -1593,7 +2065,7 @@ void test_conn_update_sla_loc_unsupp_feat_wo_feat_exch(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  */
-void test_conn_update_sla_loc_unsupp_feat_w_feat_exch(void)
+void test_conn_update_periph_loc_unsupp_feat_w_feat_exch(void)
 {
 	uint8_t err;
 
@@ -1622,23 +2094,23 @@ void test_conn_update_sla_loc_unsupp_feat_w_feat_exch(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
  * (A)
- * Slave-initiated Connection Parameters Request procedure.
+ * Peripheral-initiated Connection Parameters Request procedure.
  * Procedure collides and is rejected.
  *
  * and
  *
  * (B)
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host accepts.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_S  |                    | LT  |
+ * | UT  |                    | LL_P  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    | LE Connection Update      |                           |
@@ -1663,7 +2135,7 @@ void test_conn_update_sla_loc_unsupp_feat_w_feat_exch(void)
  *    |-------------------------->|                           | (B)
  *    |                           |                           |
  *    |                           | LL_REJECT_EXT_IND         |
- *    |                           |-------------------------->| (A)
+ *    |                           |<--------------------------| (A)
  *    |                           |                           |
  *    |      LE Connection Update |                           |
  *    |                  Complete |                           |
@@ -1678,7 +2150,7 @@ void test_conn_update_sla_loc_unsupp_feat_w_feat_exch(void)
  *    |                  Complete |                           |
  *    |<--------------------------|                           | (B)
  */
-void test_conn_update_sla_loc_collision(void)
+void test_conn_update_periph_loc_collision(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1708,6 +2180,7 @@ void test_conn_update_sla_loc_collision(void)
 	event_prepare(&conn);
 
 	/* (A) Tx Queue should have one LL Control PDU */
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
 	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
 	lt_rx_q_is_empty(&conn);
 
@@ -1716,6 +2189,19 @@ void test_conn_update_sla_loc_collision(void)
 
 	/* Done */
 	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Done */
+	event_done(&conn);
+
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
@@ -1800,16 +2286,16 @@ void test_conn_update_sla_loc_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host accepts.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_S  |                    | LT  |
+ * | UT  |                    | LL_P  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    |                           |   LL_CONNECTION_PARAM_REQ |
@@ -1836,7 +2322,7 @@ void test_conn_update_sla_loc_collision(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_sla_rem_accept(void)
+void test_conn_update_periph_rem_accept(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1891,6 +2377,7 @@ void test_conn_update_sla_rem_accept(void)
 	event_prepare(&conn);
 
 	/* Rx */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
 	instant = conn_update_ind.instant;
 	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
 
@@ -1930,16 +2417,886 @@ void test_conn_update_sla_rem_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host rejects.
+ * (A)
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Procedure collides and is rejected.
+ *
+ * and
+ *
+ * (B)
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    | LE Connection Update      |                           |
+ *    |-------------------------->|                           | (A)
+ *    |                           | LL_CONNECTION_PARAM_REQ   |
+ *    |                           |-------------------------->| (A)
+ *    |                           |                           |
+ *    |                           |   LL_CONNECTION_PARAM_REQ |
+ *    |                           |<--------------------------| (B)
+ *    |                           |                           |
+ *    |                <--------------------->                |
+ *    |                < PROCEDURE COLLISION >                |
+ *    |                <--------------------->                |
+ *    |                           |                           |
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * ~~~~~    parallel remote CPRs attempted and rejected   ~~~~~~~
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |                           |                           |
+ *    |      LE Remote Connection |                           |
+ *    |         Parameter Request |                           |
+ *    |<--------------------------|                           | (B)
+ *    |                           |                           |
+ *    | LE Remote Connection      |                           |
+ *    | Parameter Request         |                           |
+ *    | Reply                     |                           |
+ *    |-------------------------->|                           | (B)
+ *    |                           |                           |
+ *    |                           | LL_REJECT_EXT_IND         |
+ *    |                           |<--------------------------| (A)
+ *    |                           |                           |
+ *    |      LE Connection Update |                           |
+ *    |                  Complete |                           |
+ *    |<--------------------------|                           | (A)
+ *    |                           |                           |
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * ~~~~~    parallel local CPR is attempted and cached    ~~~~~~~
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |  LL_CONNECTION_UPDATE_IND |
+ *    |                           |<--------------------------| (B)
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |      LE Connection Update |                           |
+ *    |                  Complete |                           |
+ *    |<--------------------------|                           | (B)
+ *    |                           |                           |
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * ~~~~~~~~~    parallel local CPR is now started    ~~~~~~~~~~~~
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ */
+void test_conn_update_periph_loc_collision_reject_2nd_cpr(void)
+{
+	struct ll_conn conn_2nd;
+	struct ll_conn conn_3rd;
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	uint16_t instant;
+
+	struct node_rx_pu cu1 = { .status = BT_HCI_ERR_LL_PROC_COLLISION };
+	struct node_rx_pu cu2 = { .status = BT_HCI_ERR_SUCCESS };
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
+	};
+	struct pdu_data_llctrl_reject_ext_ind parallel_reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+		.error_code = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL
+	};
+
+	/* Initialize extra connections */
+	test_setup_idx(&conn_2nd, 1);
+	test_setup_idx(&conn_3rd, 2);
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	/* Role */
+	test_set_role(&conn_2nd, BT_HCI_ROLE_PERIPHERAL);
+	/* Role */
+	test_set_role(&conn_3rd, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	/* Connect */
+	ull_cp_state_set(&conn_2nd, ULL_CP_CONNECTED);
+	/* Connect */
+	ull_cp_state_set(&conn_3rd, ULL_CP_CONNECTED);
+
+	/* (A) Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* (A) Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* (B) Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, req_B);
+
+	/* Done */
+	event_done(&conn);
+
+	{
+		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-2,
+		       "Free CTX buffers %d", ctx_buffers_free());
+		/* Parallel CPR from central */
+		/* Now CPR is active on 'conn' so let 'conn_2nd' attempt to start a CPR */
+		/* Prepare */
+		event_prepare(&conn_2nd);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn_2nd);
+
+		/* Rx */
+		lt_tx(LL_CONNECTION_PARAM_REQ, &conn_2nd, &conn_param_req);
+
+		/* Done */
+		event_done(&conn_2nd);
+
+		/* Tx Queue should have one LL Control PDU */
+		lt_rx(LL_REJECT_EXT_IND, &conn_2nd, &tx, &parallel_reject_ext_ind);
+		lt_rx_q_is_empty(&conn_2nd);
+
+		/* Release Tx */
+		ull_cp_release_tx(&conn_2nd, tx);
+
+		/* There should be no 'extra' procedure on acount of the parallel CPR */
+		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-2,
+		       "Free CTX buffers %d", ctx_buffers_free());
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	{
+		/* Parallel CPR from peripheral */
+		/* Now CPR is active on 'conn' so let 'conn_3rd' attempt to start a CPR */
+		/* Prepare */
+		event_prepare(&conn_3rd);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn_3rd);
+
+		/* Rx */
+		lt_tx(LL_CONNECTION_PARAM_REQ, &conn_3rd, &conn_param_req);
+
+		/* Done */
+		event_done(&conn_3rd);
+
+		/* Tx Queue should have one LL Control PDU */
+		lt_rx(LL_REJECT_EXT_IND, &conn_3rd, &tx, &parallel_reject_ext_ind);
+		lt_rx_q_is_empty(&conn_3rd);
+
+		/* Release Tx */
+		ull_cp_release_tx(&conn_3rd, tx);
+
+		/* There should be no 'extra' procedure on acount of the parallel CPR */
+		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-2,
+		       "Free CTX buffers %d", ctx_buffers_free());
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/*******************/
+
+	/* (B) There should be one host notification */
+	ut_rx_pdu(LL_CONNECTION_PARAM_REQ, &ntf, req_B);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/*******************/
+
+	/* (B) */
+	ull_cp_conn_param_req_reply(&conn);
+
+	/*******************/
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* (B) Tx Queue should have one LL Control PDU */
+	rsp_B->reference_conn_event_count = req_B->reference_conn_event_count;
+	lt_rx(LL_CONNECTION_PARAM_RSP, &conn, &tx, rsp_B);
+	lt_rx_q_is_empty(&conn);
+
+	/* (A) Rx */
+	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* (A) There should be one host notification */
+	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu1);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	{
+		/* Initiate a parallel local Connection Parameter Request Procedure */
+		err = ull_cp_conn_update(&conn_2nd, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+		/* Prepare */
+		event_prepare(&conn_2nd);
+
+		/* Tx Queue should have no LL Control PDU */
+		lt_rx_q_is_empty(&conn_2nd);
+
+		/* Done */
+		event_done(&conn_2nd);
+
+		/* Prepare */
+		event_prepare(&conn_2nd);
+
+		/* Tx Queue should have no LL Control PDU */
+		lt_rx_q_is_empty(&conn_2nd);
+
+		/* Done */
+		event_done(&conn_2nd);
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* (B) Rx */
+	cu_ind_B->instant = instant = event_counter(&conn) + 6;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, cu_ind_B);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* */
+	while (!is_instant_reached(&conn, instant)) {
+		/* Prepare */
+		event_prepare(&conn);
+
+		/* (B) Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn);
+
+		/* Done */
+		event_done(&conn);
+
+		/* (B) There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* (B) Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* (B) There should be one host notification */
+	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu2);
+	ut_rx_q_is_empty();
+
+	{
+		/* Now the locally initiated CPR on conn_3rd should be allowed to run */
+		/* Prepare */
+		event_prepare(&conn_2nd);
+
+		/* Tx Queue should have one LL Control PDU, indicating parallel CPR is now active */
+		conn_param_req.reference_conn_event_count = event_counter(&conn_2nd);
+		lt_rx(LL_CONNECTION_PARAM_REQ, &conn_2nd, &tx, &conn_param_req);
+		lt_rx_q_is_empty(&conn_2nd);
+
+		/* Done */
+		event_done(&conn_2nd);
+
+		/* Release Tx */
+		ull_cp_release_tx(&conn_2nd, tx);
+	}
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* One less CTXs as the conn_2nd CPR is still 'running' */
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		      "Free CTX buffers %d", ctx_buffers_free());
+}
+
+/*
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |   LL_CONNECTION_PARAM_REQ |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * ~~~~~  parallel remote CPR is attempted and rejected   ~~~~~~~
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |      LE Remote Connection |                           |
+ *    |         Parameter Request |                           |
+ *    |<--------------------------|                           |
+ *    | LE Remote Connection      |                           |
+ *    | Parameter Request         |                           |
+ *    | Reply                     |                           |
+ *    |-------------------------->|                           |
+ *    |                           |                           |
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * ~~~~~    parallel local CPR is attempted and cached    ~~~~~~~
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |                           | LL_CONNECTION_PARAM_RSP   |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |  LL_CONNECTION_UPDATE_IND |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |      LE Connection Update |                           |
+ *    |                  Complete |                           |
+ *    |<--------------------------|                           |
+ *    |                           |                           |
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * ~~~~~~~~~    parallel local CPR is now started    ~~~~~~~~~~~~
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ */
+void test_conn_update_periph_rem_accept_reject_2nd_cpr(void)
+{
+	uint8_t err;
+	struct ll_conn conn_2nd;
+	struct ll_conn conn_3rd;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	uint16_t instant;
+	struct pdu_data_llctrl_reject_ext_ind parallel_reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+		.error_code = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL
+	};
+
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
+
+	/* Initialize extra connections */
+	test_setup_idx(&conn_2nd, 1);
+	test_setup_idx(&conn_3rd, 2);
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	/* Role */
+	test_set_role(&conn_2nd, BT_HCI_ROLE_PERIPHERAL);
+	/* Role */
+	test_set_role(&conn_3rd, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	/* Connect */
+	ull_cp_state_set(&conn_2nd, ULL_CP_CONNECTED);
+	/* Connect */
+	ull_cp_state_set(&conn_3rd, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
+
+	/* Done */
+	event_done(&conn);
+
+	{
+		/* Parallel CPR from central */
+		/* Now CPR is active on 'conn' so let 'conn_2nd' attempt to start a CPR */
+		/* Prepare */
+		event_prepare(&conn_2nd);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn_2nd);
+
+		/* Rx */
+		lt_tx(LL_CONNECTION_PARAM_REQ, &conn_2nd, &conn_param_req);
+
+		/* Done */
+		event_done(&conn_2nd);
+
+		/* Tx Queue should have one LL Control PDU */
+		lt_rx(LL_REJECT_EXT_IND, &conn_2nd, &tx, &parallel_reject_ext_ind);
+		lt_rx_q_is_empty(&conn_2nd);
+
+		/* Release Tx */
+		ull_cp_release_tx(&conn_2nd, tx);
+
+		/* There should be no 'extra' procedure on acount of the parallel CPR */
+		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		       "Free CTX buffers %d", ctx_buffers_free());
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	{
+		/* Parallel CPR from peripheral */
+		/* Now CPR is active on 'conn' so let 'conn_3rd' attempt to start a CPR */
+		/* Prepare */
+		event_prepare(&conn_3rd);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn_3rd);
+
+		/* Rx */
+		lt_tx(LL_CONNECTION_PARAM_REQ, &conn_3rd, &conn_param_req);
+
+		/* Done */
+		event_done(&conn_3rd);
+
+		/* Tx Queue should have one LL Control PDU */
+		lt_rx(LL_REJECT_EXT_IND, &conn_3rd, &tx, &parallel_reject_ext_ind);
+		lt_rx_q_is_empty(&conn_3rd);
+
+		/* Release Tx */
+		ull_cp_release_tx(&conn_3rd, tx);
+
+		/* There should be no 'extra' procedure on acount of the parallel CPR */
+		zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		       "Free CTX buffers %d", ctx_buffers_free());
+	}
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_CONNECTION_PARAM_REQ, &ntf, &conn_param_req);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/*******************/
+
+	ull_cp_conn_param_req_reply(&conn);
+
+	{
+		/* Initiate a parallel local Connection Parameter Request Procedure */
+		err = ull_cp_conn_update(&conn_2nd, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+		/* Prepare */
+		event_prepare(&conn_2nd);
+
+		/* Tx Queue should have no LL Control PDU */
+		lt_rx_q_is_empty(&conn_2nd);
+
+		/* Done */
+		event_done(&conn_2nd);
+
+		/* Prepare */
+		event_prepare(&conn_2nd);
+
+		/* Tx Queue should have no LL Control PDU */
+		lt_rx_q_is_empty(&conn_2nd);
+
+		/* Done */
+		event_done(&conn_2nd);
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CONNECTION_PARAM_RSP, &conn, &tx, &conn_param_rsp);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
+	instant = conn_update_ind.instant;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* */
+	while (!is_instant_reached(&conn, instant)) {
+		/* Prepare */
+		event_prepare(&conn);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn);
+
+		/* Done */
+		event_done(&conn);
+
+		/* There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be one host notification */
+	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu);
+	ut_rx_q_is_empty();
+
+	{
+		/* Now the locally initiated CPR on conn_3rd should be allowed to run */
+		/* Prepare */
+		event_prepare(&conn_2nd);
+
+		/* Tx Queue should have one LL Control PDU, indicating parallel CPR is now active */
+		conn_param_req.reference_conn_event_count = event_counter(&conn_2nd);
+		lt_rx(LL_CONNECTION_PARAM_REQ, &conn_2nd, &tx, &conn_param_req);
+		lt_rx_q_is_empty(&conn_2nd);
+
+		/* Done */
+		event_done(&conn_2nd);
+
+		/* Release Tx */
+		ull_cp_release_tx(&conn_2nd, tx);
+	}
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* One less CTXs as the conn_2nd CPR is still 'running' */
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt()-1,
+		      "Free CTX buffers %d", ctx_buffers_free());
+}
+
+/*
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection with invalid parameters,
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |   LL_CONNECTION_PARAM_REQ |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |                           |                           |
+ *    |                           | LL_REJECT_EXT_IND         |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |                           |
+ */
+void test_conn_update_periph_rem_invalid_req(void)
+{
+	struct node_tx *tx;
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+		.error_code = BT_HCI_ERR_INVALID_LL_PARAM
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req_invalid);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &reject_ext_ind);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+
+}
+
+/*
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_S  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |   LL_CONNECTION_PARAM_REQ |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |      LE Remote Connection |                           |
+ *    |         Parameter Request |                           |
+ *    |<--------------------------|                           |
+ *    | LE Remote Connection      |                           |
+ *    | Parameter Request         |                           |
+ *    | Reply                     |                           |
+ *    |-------------------------->|                           |
+ *    |                           |                           |
+ *    |                           | LL_CONNECTION_PARAM_RSP   |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |       LL_<INVALID_IND>    |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~ TERMINATE CONNECTION ~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |                           |                           |
+ */
+void test_conn_update_periph_rem_invalid_ind(void)
+{
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	struct pdu_data_llctrl_reject_ind reject_ind = {
+		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
+	};
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP,
+		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
+	};
+	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
+		.type = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/*******************/
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_CONNECTION_PARAM_REQ, &ntf, &conn_param_req);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/*******************/
+
+	ull_cp_conn_param_req_reply(&conn);
+
+	/*******************/
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CONNECTION_PARAM_RSP, &conn, &tx, &conn_param_rsp);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_REJECT_IND, &conn, &reject_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Clear termination flag for subsequent test cycle */
+	conn.llcp_terminate.reason_final = 0;
+
+	/* There should be no host notifications */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/*******************/
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_CONNECTION_PARAM_REQ, &ntf, &conn_param_req);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/*******************/
+
+	ull_cp_conn_param_req_reply(&conn);
+
+	/*******************/
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CONNECTION_PARAM_RSP, &conn, &tx, &conn_param_rsp);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Clear termination flag for subsequent test cycle */
+	conn.llcp_terminate.reason_final = 0;
+
+	/* There should be no host notifications */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/*******************/
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_CONNECTION_PARAM_REQ, &ntf, &conn_param_req);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/*******************/
+
+	ull_cp_conn_param_req_reply(&conn);
+
+	/*******************/
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CONNECTION_PARAM_RSP, &conn, &tx, &conn_param_rsp);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* There should be no host notifications */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+}
+
+/*
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host rejects.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    |                           |   LL_CONNECTION_PARAM_REQ |
@@ -1957,7 +3314,7 @@ void test_conn_update_sla_rem_accept(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  */
-void test_conn_update_sla_rem_reject(void)
+void test_conn_update_periph_rem_reject(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -2010,51 +3367,28 @@ void test_conn_update_sla_rem_reject(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Controller do not
- * support Connection Parameters Request procedure.
- *
- * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_S  |                    | LT  |
- * +-----+                    +-------+                    +-----+
- *    |                           |                           |
- *    |                           |   LL_CONNECTION_PARAM_REQ |
- *    |                           |<--------------------------|
- *    |                           |                           |
- *    |                           | LL_UNKNOWN_RSP            |
- *    |                           |-------------------------->|
- *    |                           |                           |
- */
-void test_conn_update_sla_rem_unsupp_feat(void)
-{
-	/* TODO(thoh): Implement when Remote Request machine has feature
-	 * checking
-	 */
-}
-
-/*
  * (A)
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host accepts.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
  *
  * and
  *
  * (B)
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Host accepts.
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host accepts.
  *
  * NOTE:
- * Slave-initiated Connection Parameters Request procedure is paused.
- * Master-initiated Connection Parameters Request procedure is finished.
- * Slave-initiated Connection Parameters Request procedure is resumed.
+ * Peripheral-initiated Connection Parameters Request procedure is paused.
+ * Central-initiated Connection Parameters Request procedure is finished.
+ * Peripheral-initiated Connection Parameters Request procedure is resumed.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_S  |                    | LT  |
+ * | UT  |                    | LL_P  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    |                           |   LL_CONNECTION_PARAM_REQ |
@@ -2104,7 +3438,7 @@ void test_conn_update_sla_rem_unsupp_feat(void)
  *    |<--------------------------|                           | (B)
  *    |                           |                           |
  */
-void test_conn_update_sla_rem_collision(void)
+void test_conn_update_periph_rem_collision(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -2226,6 +3560,7 @@ void test_conn_update_sla_rem_collision(void)
 	lt_rx_q_is_empty(&conn);
 
 	/* (B) Rx */
+	cu_ind_B->instant = instant = event_counter(&conn) + 6;
 	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, cu_ind_B);
 
 	/* Done */
@@ -2261,18 +3596,18 @@ void test_conn_update_sla_rem_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 /*
  * Parameter Request Procedure not supported.
- * Master-initiated Connection Update procedure.
- * Master requests update of LE connection.
+ * Central-initiated Connection Update procedure.
+ * Central requests update of LE connection.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_M  |                    | LT  |
+ * | UT  |                    | LL_C  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    | LE Connection Update      |                           |
@@ -2291,7 +3626,7 @@ void test_conn_update_sla_rem_collision(void)
  *    |  not receive a ntf.)      |                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_accept_no_param_req(void)
+void test_conn_update_central_loc_accept_no_param_req(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -2373,17 +3708,17 @@ void test_conn_update_mas_loc_accept_no_param_req(void)
 		}
 	} while (parameters_changed-- > 0U);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
  * Parameter Request Procedure not supported.
- * Slave-initiated Connection Update procedure.
- * Master receives Connection Update parameters.
+ * Peripheral-initiated Connection Update/Connection Parameter Request procedure
+ * Central receives Connection Update parameters.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_M  |                    | LT  |
+ * | UT  |                    | LL_C  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    |                           |  LL_CONNECTION_UPDATE_IND |
@@ -2393,8 +3728,15 @@ void test_conn_update_mas_loc_accept_no_param_req(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  *    |                           |                           |
+ *    |                           |  LL_CONNECTION_PARAM_REQ  |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |                           |           LL_UNKNOWN_RSP  |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |                           |
  */
-void test_conn_update_mas_rem_accept_no_param_req(void)
+void test_conn_update_central_rem_unknown_no_param_req(void)
 {
 	struct node_tx *tx;
 
@@ -2430,17 +3772,104 @@ void test_conn_update_mas_rem_accept_no_param_req(void)
 	/* There should NOT be a host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
+
+	/* Check UNKNOWN_RSP on Connection Parameter Request */
+	unknown_rsp.type = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_UNKNOWN_RSP, &conn, &tx, &unknown_rsp);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should NOT be a host notification */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+
 }
 
 /*
  * Parameter Request Procedure not supported.
- * Master-initiated Connection Update procedure.
- * Slave receives Connection Update parameters.
+ * Peripheral-initiated Connection Update/Connection Parameter Request procedure
+ * Central receives Connection Update parameters.
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_S  |                    | LT  |
+ * | UT  |                    | LL_M  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |                           |
+ *    |                           |  LL_CONNECTION_PARAM_REQ  |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |                           |           LL_UNKNOWN_RSP  |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |                           |
+ */
+void test_conn_update_periph_rem_unknown_no_param_req(void)
+{
+	struct node_tx *tx;
+
+	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
+		.type = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_UNKNOWN_RSP, &conn, &tx, &unknown_rsp);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should NOT be a host notification */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+
+}
+
+/*
+ * Parameter Request Procedure not supported.
+ * Central-initiated Connection Update procedure.
+ * Peripheral receives Connection Update parameters.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    |                           |  LL_CONNECTION_UPDATE_IND |
@@ -2457,7 +3886,7 @@ void test_conn_update_mas_rem_accept_no_param_req(void)
  *    |  not receive a ntf.)      |                           |
  *    |                           |                           |
  */
-void test_conn_update_sla_rem_accept_no_param_req(void)
+void test_conn_update_periph_rem_accept_no_param_req(void)
 {
 	struct node_rx_pdu *ntf;
 	uint16_t instant;
@@ -2478,6 +3907,7 @@ void test_conn_update_sla_rem_accept_no_param_req(void)
 		event_prepare(&conn);
 
 		/* Rx */
+		conn_update_ind.instant = event_counter(&conn) + 6U;
 		instant = conn_update_ind.instant;
 		lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
 
@@ -2521,16 +3951,16 @@ void test_conn_update_sla_rem_accept_no_param_req(void)
 		}
 	} while (parameters_changed-- > 0U);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
  * Parameter Request Procedure not supported.
- * Slave-initiated Connection Update procedure (not allowed).
+ * Peripheral-initiated Connection Update procedure (not allowed).
  *
  * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_S  |                    | LT  |
+ * | UT  |                    | LL_P  |                    | LT  |
  * +-----+                    +-------+                    +-----+
  *    |                           |                           |
  *    | LE Connection Update      |                           |
@@ -2540,7 +3970,7 @@ void test_conn_update_sla_rem_accept_no_param_req(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_sla_loc_disallowed_no_param_req(void)
+void test_conn_update_periph_loc_disallowed_no_param_req(void)
 {
 	uint8_t err;
 
@@ -2566,7 +3996,7 @@ void test_conn_update_sla_loc_disallowed_no_param_req(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -2574,81 +4004,98 @@ void test_main(void)
 {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	ztest_test_suite(
-		mas_loc,
-		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_accept, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_reject, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_remote_legacy, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_unsupp_wo_feat_exch, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_unsupp_w_feat_exch, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_collision, setup,
-					       unit_test_noop));
+		central_loc,
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_accept,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_invalid_param_rsp,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_invalid_rsp,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_reject,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_accept_reject_2nd_cpr,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_remote_legacy,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_unsupp_wo_feat_exch,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_unsupp_w_feat_exch,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_collision,
+					       setup, unit_test_noop));
 
-	ztest_test_suite(mas_rem,
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_accept, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_reject, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_unsupp_feat, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_collision, setup,
-							unit_test_noop));
+	ztest_test_suite(central_rem,
+			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_accept,
+							setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_invalid_req,
+							setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_reject,
+							setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_collision,
+							setup, unit_test_noop));
 
 	ztest_test_suite(
-		sla_loc,
-		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_accept, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_reject, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_unsupp_feat_wo_feat_exch,
+		periph_loc,
+		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_accept,
 					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_unsupp_feat_w_feat_exch,
+		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_reject,
 					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_collision, setup,
-					       unit_test_noop));
+		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_unsupp_feat_wo_feat_exch,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_unsupp_feat_w_feat_exch,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_collision_reject_2nd_cpr,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_collision,
+					       setup, unit_test_noop));
 
-	ztest_test_suite(sla_rem,
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_accept, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_reject, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_unsupp_feat, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_collision, setup,
-							unit_test_noop));
+	ztest_test_suite(
+		periph_rem,
+		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_accept,
+					setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_invalid_req,
+					setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_invalid_ind,
+					setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_collision,
+					setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_accept_reject_2nd_cpr,
+					setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_reject,
+					setup, unit_test_noop));
 
-	ztest_run_test_suite(mas_loc);
-	ztest_run_test_suite(mas_rem);
-	ztest_run_test_suite(sla_loc);
-	ztest_run_test_suite(sla_rem);
+	ztest_run_test_suite(central_loc);
+	ztest_run_test_suite(central_rem);
+	ztest_run_test_suite(periph_loc);
+	ztest_run_test_suite(periph_rem);
 
 #else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
-	ztest_test_suite(mas_loc_no_param_req, ztest_unit_test_setup_teardown(
-				 test_conn_update_mas_loc_accept_no_param_req,
+	ztest_test_suite(central_loc_no_param_req, ztest_unit_test_setup_teardown(
+				 test_conn_update_central_loc_accept_no_param_req,
 				 setup, unit_test_noop));
 
-	ztest_test_suite(mas_rem_no_param_req, ztest_unit_test_setup_teardown(
-				 test_conn_update_mas_rem_accept_no_param_req,
+	ztest_test_suite(central_rem_no_param_req, ztest_unit_test_setup_teardown(
+				 test_conn_update_central_rem_unknown_no_param_req,
 				 setup, unit_test_noop));
 
 	ztest_test_suite(
-		sla_loc_no_param_req,
-		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_disallowed_no_param_req,
+		periph_loc_no_param_req,
+		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_disallowed_no_param_req,
 					       setup, unit_test_noop));
 
-	ztest_test_suite(sla_rem_no_param_req, ztest_unit_test_setup_teardown(
-				 test_conn_update_sla_rem_accept_no_param_req,
+	ztest_test_suite(periph_rem_no_param_req,
+			 ztest_unit_test_setup_teardown(
+				 test_conn_update_periph_rem_accept_no_param_req,
+				 setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(
+				 test_conn_update_periph_rem_unknown_no_param_req,
 				 setup, unit_test_noop));
 
-	ztest_run_test_suite(mas_loc_no_param_req);
-	ztest_run_test_suite(mas_rem_no_param_req);
-	ztest_run_test_suite(sla_loc_no_param_req);
-	ztest_run_test_suite(sla_rem_no_param_req);
+	ztest_run_test_suite(central_loc_no_param_req);
+	ztest_run_test_suite(central_rem_no_param_req);
+	ztest_run_test_suite(periph_loc_no_param_req);
+	ztest_run_test_suite(periph_rem_no_param_req);
 
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 }

@@ -28,5 +28,14 @@
 &usdhc1 {
 	status = "okay";
 	no-1-8-v;
-	detect-dat3;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+		label = "SDMMC_0";
+	};
 };

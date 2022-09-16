@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <init.h>
-#include <sys/printk.h>
-#include <sw_isr_table.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sw_isr_table.h>
 #include "intc_ite_it8xxx2.h"
 
 #define MAX_REGISR_IRQ_NUM		8
@@ -122,6 +122,7 @@ void ite_intc_irq_disable(unsigned int irq)
 {
 	uint32_t g, i;
 	volatile uint8_t *en;
+	volatile uint8_t _ier __unused;
 
 	if (irq > CONFIG_NUM_IRQS) {
 		return;
@@ -133,6 +134,11 @@ void ite_intc_irq_disable(unsigned int irq)
 	/* critical section due to run a bit-wise OR operation */
 	unsigned int key = irq_lock();
 	CLEAR_MASK(*en, BIT(i));
+	/*
+	 * This load operation will guarantee the above modification of
+	 * SOC's register can be seen by any following instructions.
+	 */
+	_ier = *en;
 	irq_unlock(key);
 }
 
@@ -179,6 +185,11 @@ uint8_t ite_intc_get_irq_num(void)
 	return intc_irq;
 }
 
+bool ite_intc_no_irq(void)
+{
+	return (IVECT == IVECT_OFFSET_WITH_IRQ);
+}
+
 uint8_t get_irq(void *arg)
 {
 	ARG_UNUSED(arg);
@@ -197,13 +208,11 @@ uint8_t get_irq(void *arg)
 	intc_irq -= IVECT_OFFSET_WITH_IRQ;
 	/* clear interrupt status */
 	ite_intc_isr_clear(intc_irq);
-	/* Clear flag on each interrupt. */
-	wait_interrupt_fired = 0;
 	/* return interrupt number */
 	return intc_irq;
 }
 
-static int ite_intc_init(const struct device *dev)
+void ite_intc_init(void)
 {
 	/* Ensure interrupts of soc are disabled at default */
 	for (int i = 0; i < ARRAY_SIZE(reg_enable); i++)
@@ -211,8 +220,4 @@ static int ite_intc_init(const struct device *dev)
 
 	/* Enable M-mode external interrupt */
 	csr_set(mie, MIP_MEIP);
-
-	return 0;
 }
-
-SYS_INIT(ite_intc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include "rv32m1_zero_riscy.dtsi"
+#include "openisa/rv32m1_zero_riscy.dtsi"
 #include "rv32m1_vega.dtsi"
 
 / {

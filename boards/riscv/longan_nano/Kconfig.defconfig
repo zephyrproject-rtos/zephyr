@@ -8,4 +8,7 @@ config BOARD
 	default "longan_nano" if BOARD_LONGAN_NANO
 	default "longan_nano_lite" if BOARD_LONGAN_NANO_LITE
 
+config DISK_DRIVER_SDMMC
+	default y if DISK_DRIVERS
+
 endif # BOARD_LONGAN_NANO || BOARD_LONGAN_NANO_LITE

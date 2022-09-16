@@ -9,8 +9,8 @@
  * @brief LOAPIC spurious interrupt handler
  */
 
-#include <kernel_structs.h>
-#include <arch/x86/ia32/asm.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/arch/x86/ia32/asm.h>
 
 	GTEXT(z_loapic_spurious_handler)
 

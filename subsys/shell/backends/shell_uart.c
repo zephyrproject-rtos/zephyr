@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell_uart.h>
-#include <drivers/uart.h>
-#include <init.h>
-#include <logging/log.h>
-#include <net/buf.h>
+#include <zephyr/shell/shell_uart.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/init.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
 
 #define LOG_MODULE_NAME shell_uart
 LOG_MODULE_REGISTER(shell_uart);

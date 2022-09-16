@@ -3,15 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 #include <kernel_arch_data.h>
 #include <kernel_arch_func.h>
-#include <drivers/interrupt_controller/sysapic.h>
-#include <drivers/interrupt_controller/loapic.h>
-#include <irq.h>
-#include <logging/log.h>
+#include <zephyr/drivers/interrupt_controller/sysapic.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
+#include <zephyr/irq.h>
+#include <zephyr/logging/log.h>
 #include <x86_mmu.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -31,22 +31,10 @@ const void *x86_irq_args[NR_IRQ_VECTORS];
 
 #if defined(CONFIG_INTEL_VTD_ICTL)
 
-#include <device.h>
-#include <drivers/interrupt_controller/intel_vtd.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/intel_vtd.h>
 
-static const struct device *vtd;
-
-static bool get_vtd(void)
-{
-	if (vtd != NULL) {
-		return true;
-	}
-#define DT_DRV_COMPAT intel_vt_d
-	vtd = device_get_binding(DT_INST_LABEL(0));
-#undef DT_DRV_COMPAT
-
-	return vtd == NULL ? false : true;
-}
+static const struct device *vtd = DEVICE_DT_GET_ONE(intel_vt_d);
 
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
@@ -131,7 +119,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	vector = z_x86_allocate_vector(priority, -1);
 	if (vector >= 0) {
 #if defined(CONFIG_INTEL_VTD_ICTL)
-		if (get_vtd()) {
+		if (device_is_ready(vtd)) {
 			int irte = vtd_allocate_entries(vtd, 1);
 
 			__ASSERT(irte >= 0, "IRTE allocation must succeed");
@@ -150,7 +138,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 }
 
 #ifdef CONFIG_IRQ_OFFLOAD
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {

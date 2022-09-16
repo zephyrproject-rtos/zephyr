@@ -6,11 +6,11 @@
  */
 
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 
-#define STACKSIZE       (2048 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE       (2048 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 ZTEST_BMEM static int count;
 ZTEST_BMEM static int ret = TC_PASS;
