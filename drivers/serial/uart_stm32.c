@@ -35,6 +35,9 @@
 
 #include <stm32_ll_usart.h>
 #include <stm32_ll_lpuart.h>
+#if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
+#include <stm32_ll_exti.h>
+#endif /* CONFIG_PM */
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
