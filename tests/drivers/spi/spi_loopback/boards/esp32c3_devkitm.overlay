@@ -18,8 +18,5 @@
 };
 
 &spi2 {
-	dma;
-	dma-clk = <ESP32_GDMA_MODULE>;
-	dma-host = <0>;
-	status = "okay";
+	dma-enabled;
 };
