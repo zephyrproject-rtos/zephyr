@@ -66,15 +66,12 @@ static osEventFlagsAttr_t event_flags_attrs = {
 	.cb_size = 0,
 };
 
-void test_event_flags_no_wait_timeout(void)
+ZTEST(cmsis_event_flags, test_event_flags_no_wait_timeout)
 {
 	osThreadId_t id1;
 	uint32_t flags;
 	const char *name;
 	osEventFlagsId_t dummy_id = NULL;
-
-	evt_id = osEventFlagsNew(&event_flags_attrs);
-	zassert_true(evt_id != NULL, "Failed creating event flags");
 
 	name = osEventFlagsGetName(dummy_id);
 	zassert_true(name == NULL,
@@ -115,9 +112,10 @@ void test_event_flags_no_wait_timeout(void)
 	 */
 	flags = osEventFlagsWait(evt_id, FLAG1, osFlagsWaitAny, TIMEOUT_TICKS);
 	zassert_equal(flags, osFlagsErrorTimeout, "EventFlagsWait failed");
+	osEventFlagsDelete(evt_id);
 }
 
-void test_event_flags_signalled(void)
+ZTEST(cmsis_event_flags, test_event_flags_signalled)
 {
 	osThreadId_t id1, id2;
 	uint32_t flags;
@@ -163,6 +161,7 @@ void test_event_flags_signalled(void)
 	zassert_equal(osEventFlagsWait(evt_id, 0x80010000, osFlagsWaitAny, 0),
 		      osFlagsErrorParameter,
 		      "EventFlagsWait passed unexpectedly");
+	osEventFlagsDelete(evt_id);
 }
 
 /* IRQ offload function handler to set event flag */
@@ -192,7 +191,7 @@ static osThreadAttr_t thread3_attr = {
 	.priority = osPriorityHigh,
 };
 
-void test_event_flags_isr(void)
+ZTEST(cmsis_event_flags, test_event_flags_isr)
 {
 	osThreadId_t id;
 	int flags;
@@ -217,15 +216,10 @@ void test_event_flags_isr(void)
 	zassert_true(osEventFlagsDelete(evt_id) == osOK,
 		     "EventFlagsDelete failed");
 }
-ZTEST(cmsis_event_flags, test_event_flags)
+void cmsis_event_flags_before(void *data)
 {
-	/*
-	 *These tests are order-dependent.
-	 *They have to be executed in order.
-	 *So put these tests in one ZTEST.
-	 */
-	test_event_flags_no_wait_timeout();
-	test_event_flags_signalled();
-	test_event_flags_isr();
+	ARG_UNUSED(data);
+	evt_id = osEventFlagsNew(&event_flags_attrs);
+	zassert_true(evt_id != NULL, "Failed creating event flags");
 }
-ZTEST_SUITE(cmsis_event_flags, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(cmsis_event_flags, NULL, NULL, cmsis_event_flags_before, NULL, NULL);
