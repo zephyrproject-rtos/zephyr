@@ -1694,6 +1694,10 @@ static int uart_stm32_init(const struct device *dev)
 		 * CONFIG_PM_DEVICE=y : Controlled by pm_device_wakeup_enable()
 		 */
 		LL_USART_EnableInStopMode(config->usart);
+		if (config->wakeup_line != STM32_EXTI_LINE_NONE) {
+			/* Prepare the WAKEUP with the expected EXTI line */
+			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
+		}
 	}
 #endif /* CONFIG_PM */
 
@@ -1843,8 +1847,11 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 #endif
 
 #ifdef CONFIG_PM
-#define STM32_UART_PM_WAKEUP(index)					\
-	.wakeup_source = DT_INST_PROP(index, wakeup_source),
+#define STM32_UART_PM_WAKEUP(index)						\
+	.wakeup_source = DT_INST_PROP(index, wakeup_source),			\
+	.wakeup_line = COND_CODE_1(DT_INST_NODE_HAS_PROP(index, wakeup_line),	\
+			(DT_INST_PROP(index, wakeup_line)),			\
+			(STM32_EXTI_LINE_NONE)),
 #else
 #define STM32_UART_PM_WAKEUP(index) /* Not used */
 #endif

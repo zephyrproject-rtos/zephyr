@@ -1555,10 +1555,8 @@ void net_pkt_frag_insert(struct net_pkt *pkt, struct net_buf *frag);
  *
  * @details After this there is no more any free space in individual fragments.
  * @param pkt Network packet.
- *
- * @return True if compact success, False otherwise.
  */
-bool net_pkt_compact(struct net_pkt *pkt);
+void net_pkt_compact(struct net_pkt *pkt);
 
 /**
  * @brief Get information about predefined RX, TX and DATA pools.
