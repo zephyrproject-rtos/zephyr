@@ -14,6 +14,7 @@ struct mem_win_config {
 	uint32_t offset;
 	uint32_t mem_base;
 	bool initialize;
+	bool read_only;
 };
 
 #endif
