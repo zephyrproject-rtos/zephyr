@@ -36,7 +36,7 @@ __imr int mem_win_init(const struct device *dev)
 	}
 
 	sys_write32(config->size | 0x7, DMWLO(config->base_addr));
-	sys_write32((config->mem_base | CAVS_DMWBA_READONLY | CAVS_DMWBA_ENABLE),
+	sys_write32((config->mem_base | ADSP_DMWBA_READONLY | ADSP_DMWBA_ENABLE),
 		    DMWBA(config->base_addr));
 
 	return 0;
