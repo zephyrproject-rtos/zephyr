@@ -760,7 +760,7 @@ config BT_MAYFLY_YIELD_AFTER_CALL
 
 config BT_TICKER_LOW_LAT
 	bool "Ticker low latency mode"
-	default y if SOC_SERIES_NRF51X
+	default y
 	help
 	  This option enables legacy ticker scheduling which defers overlapping
 	  ticker node timeouts and thereby prevents ticker interrupts during
