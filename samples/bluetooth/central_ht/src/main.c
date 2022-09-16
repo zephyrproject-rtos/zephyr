@@ -221,6 +221,23 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	}
 }
 
+/* UUIDs - https://www.guidgenerator.com */
+#define BT_UUID_PACKET_EXPLORER_SERVICE BT_UUID_128_ENCODE(0x595d0001, 0xc3b2, 0x40a2, 0xab93, 0x28e30fa26298)
+#define BT_UUID_START_STOP_CHARACTERISTIC BT_UUID_128_ENCODE(0x2fe883b0, 0x4305, 0x42f8, 0x8efe, 0x51bafee55253)
+#define BT_UUID_AUDIO_CHARACTERISTIC BT_UUID_128_ENCODE(0x7a482d03, 0x80cd, 0x4db4, 0xbfa5, 0x103910d89b61)
+
+
+static const struct bt_data ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1)
+};
+
+/* Scan Response Data */
+static const struct bt_data sd[] = {
+	BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_PACKET_EXPLORER_SERVICE)
+};
+
+
 static int scan_start(void)
 {
 	/* Use active scanning and disable duplicate filtering to handle any
@@ -234,6 +251,13 @@ static int scan_start(void)
 	};
 
 	return bt_le_scan_start(&scan_param, device_found);
+
+	/* Start advertising */
+	int err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	if (err) {
+		printk("Advertising failed to start (err %d)\n", err);
+		return;
+	}
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
