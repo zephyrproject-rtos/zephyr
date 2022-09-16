@@ -36,8 +36,12 @@ __imr int mem_win_init(const struct device *dev)
 	}
 
 	sys_write32(config->size | 0x7, DMWLO(config->base_addr));
-	sys_write32((config->mem_base | ADSP_DMWBA_READONLY | ADSP_DMWBA_ENABLE),
-		    DMWBA(config->base_addr));
+	if (config->read_only) {
+		sys_write32((config->mem_base | ADSP_DMWBA_READONLY | ADSP_DMWBA_ENABLE),
+			    DMWBA(config->base_addr));
+	} else {
+		sys_write32((config->mem_base | ADSP_DMWBA_ENABLE), DMWBA(config->base_addr));
+	}
 
 	return 0;
 }
@@ -47,6 +51,7 @@ __imr int mem_win_init(const struct device *dev)
 		.base_addr = DT_INST_REG_ADDR(inst),                                               \
 		.size = WIN_SIZE(inst),                                                            \
 		.offset = WIN_OFFSET(inst),                                                        \
+		.read_only = DT_INST_PROP(inst, read_only),					   \
 		.mem_base = DT_REG_ADDR(DT_INST_PHANDLE(inst, memory)) + WIN_OFFSET(inst),         \
 		.initialize = DT_INST_PROP(inst, initialize),                                      \
 	};                                                                                         \
