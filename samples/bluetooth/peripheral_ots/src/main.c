@@ -137,8 +137,7 @@ static ssize_t ots_obj_read(struct bt_ots *ots, struct bt_conn *conn,
 			   off_t offset)
 {
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
-	uint32_t obj_index = (id % ARRAY_SIZE(objects));
-
+	uint32_t obj_index = ((id - BT_OTS_OBJ_ID_MIN) % ARRAY_SIZE(objects));
 	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
 
 	if (!data) {
@@ -169,7 +168,7 @@ static ssize_t ots_obj_write(struct bt_ots *ots, struct bt_conn *conn,
 			     off_t offset, size_t rem)
 {
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
-	uint32_t obj_index = (id % ARRAY_SIZE(objects));
+	uint32_t obj_index = ((id - BT_OTS_OBJ_ID_MIN) % ARRAY_SIZE(objects));
 
 	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
 
