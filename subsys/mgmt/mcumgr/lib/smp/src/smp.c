@@ -219,7 +219,7 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
 	/* Build and transmit the error response. */
 	rc = smp_build_err_rsp(streamer, req_hdr, status, rsn);
 	if (rc == 0) {
-		streamer->tx_rsp_cb(streamer, rsp, streamer->smpt);
+		streamer->smpt->zst_output(rsp);
 		rsp = NULL;
 	}
 
@@ -297,7 +297,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		}
 
 		/* Send the response. */
-		rc = streamer->tx_rsp_cb(streamer, rsp, streamer->smpt);
+		rc = streamer->smpt->zst_output(rsp);
 		rsp = NULL;
 		if (rc != 0) {
 			break;
