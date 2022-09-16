@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: carbon
+      url-base: git@github.com:maka-autonomous-robotic-systems
 
   #
   # Please add items below based on alphabetical order
