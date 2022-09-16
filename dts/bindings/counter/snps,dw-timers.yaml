@@ -1,0 +1,22 @@
+# Copyright (c) 2022, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Synopsys Designware timer driver. Intel SoC FPGA contains
+    4x general purpose timers.
+
+compatible: "snps,dw-timers"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: false
+    description: clock frequency information for Timer
+
+  resets:
+    required: true
