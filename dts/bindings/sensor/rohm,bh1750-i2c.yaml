@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: ROHM integrated light sensor
+
+compatible: "rohm,bh1750"
+
+include: [sensor-device.yaml, i2c-device.yaml]

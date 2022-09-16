@@ -1,0 +1,12 @@
+# BH1750 light sensor configuration options
+
+# Copyright (c) 2022 Gaël PORTAY
+# SPDX-License-Identifier: Apache-2.0
+
+config BH1750
+	bool "BH1750 sensor"
+	default y
+	depends on DT_HAS_ROHM_BH1750_ENABLED
+	select I2C
+	help
+	  Enable driver for BH1750 I2C-based light sensor.
