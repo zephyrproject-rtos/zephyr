@@ -244,16 +244,6 @@ void mgmt_unregister_group(struct mgmt_group *group);
 const struct mgmt_handler *mgmt_find_handler(uint16_t group_id, uint16_t command_id);
 
 /**
- * @brief Encodes a response status into the specified management context.
- *
- * @param ctxt		The management context to encode into.
- * @param status	The response status to write.
- *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
- */
-int mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int status);
-
-/**
  * @brief Byte-swaps an mcumgr header from network to host byte order.
  *
  * @param hdr The mcumgr header to byte-swap.
