@@ -13,42 +13,6 @@
 #include "soc_espi.h"
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 
-#ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
-
-struct pll_config_t {
-	uint8_t pll_freq;
-	uint8_t div_fnd;
-	uint8_t div_uart;
-	uint8_t div_smb;
-	uint8_t div_sspi;
-	uint8_t div_ec;
-	uint8_t div_jtag;
-	uint8_t div_pwm;
-	uint8_t div_usbpd;
-};
-
-static const struct pll_config_t pll_configuration[] = {
-	/*
-	 * PLL frequency setting = 4 (48MHz)
-	 * FND   div = 0 (PLL / 1 = 48 mhz)
-	 * UART  div = 1 (PLL / 2 = 24 mhz)
-	 * SMB   div = 1 (PLL / 2 = 24 mhz)
-	 * SSPI  div = 1 (PLL / 2 = 24 mhz)
-	 * EC    div = 6 (FND / 6 =  8 mhz)
-	 * JTAG  div = 1 (PLL / 2 = 24 mhz)
-	 * PWM   div = 0 (PLL / 1 = 48 mhz)
-	 * USBPD div = 5 (PLL / 6 =  8 mhz)
-	 */
-	{.pll_freq  = 4,
-	 .div_fnd   = 0,
-	 .div_uart  = 1,
-	 .div_smb   = 1,
-	 .div_sspi  = 1,
-	 .div_ec    = 6,
-	 .div_jtag  = 1,
-	 .div_pwm   = 0,
-	 .div_usbpd = 5}
-};
 
 uint32_t chip_get_pll_freq(void)
 {
@@ -98,6 +62,42 @@ void __soc_ram_code chip_pll_ctrl(enum chip_pll_mode mode)
 	 */
 	_pll_ctrl = IT8XXX2_ECPM_PLLCTRL;
 }
+
+#ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
+struct pll_config_t {
+	uint8_t pll_freq;
+	uint8_t div_fnd;
+	uint8_t div_uart;
+	uint8_t div_smb;
+	uint8_t div_sspi;
+	uint8_t div_ec;
+	uint8_t div_jtag;
+	uint8_t div_pwm;
+	uint8_t div_usbpd;
+};
+
+static const struct pll_config_t pll_configuration[] = {
+	/*
+	 * PLL frequency setting = 4 (48MHz)
+	 * FND   div = 0 (PLL / 1 = 48 mhz)
+	 * UART  div = 1 (PLL / 2 = 24 mhz)
+	 * SMB   div = 1 (PLL / 2 = 24 mhz)
+	 * SSPI  div = 1 (PLL / 2 = 24 mhz)
+	 * EC    div = 6 (FND / 6 =  8 mhz)
+	 * JTAG  div = 1 (PLL / 2 = 24 mhz)
+	 * PWM   div = 0 (PLL / 1 = 48 mhz)
+	 * USBPD div = 5 (PLL / 6 =  8 mhz)
+	 */
+	{.pll_freq  = 4,
+	 .div_fnd   = 0,
+	 .div_uart  = 1,
+	 .div_smb   = 1,
+	 .div_sspi  = 1,
+	 .div_ec    = 6,
+	 .div_jtag  = 1,
+	 .div_pwm   = 0,
+	 .div_usbpd = 5}
+};
 
 void __soc_ram_code chip_run_pll_sequence(const struct pll_config_t *pll)
 {
