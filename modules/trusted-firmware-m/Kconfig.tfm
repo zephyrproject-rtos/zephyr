@@ -204,6 +204,8 @@ config TFM_BL1
 	help
           TFM provides a reference immutable bootloader, BL1.
           This config adds BL1 to the build - built via TFM's build system.
+          One usecase for using a BL1 bootloader is being able to sign
+          and update (the next stage) BL2 bootloader.
 
 config TFM_BL2
 	bool "Use BL2 bootloader from TFM"
@@ -211,7 +213,10 @@ config TFM_BL2
 	default y
 	help
           TFM provides a reference second-stage flash bootloader, BL2.
-          This config adds BL2 to the build - built via TFM's build system.
+          This bootloader is usually based on MCUBoot, and contains
+          the public keys used to verify firmware updates for subsequent
+          images in the chain of trust. This config adds BL2 to the build
+          - built via TFM's build system.
 
 config TFM_BUILD_NS
 	bool "Build the TF-M Non-Secure application and libraries"
@@ -356,8 +361,6 @@ config ROM_START_OFFSET
 
 endif # !TFM_BL2
 
-# Option to instruct flashing a merged binary consisting of BL1 (optionally),
-# BL2 (optionally), # TF-M (Secure), and application (Non-Secure).
 config TFM_FLASH_MERGED_BINARY
 	bool
 	help
