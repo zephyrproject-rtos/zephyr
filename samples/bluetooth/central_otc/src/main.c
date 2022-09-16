@@ -126,28 +126,35 @@ static void otc_btn_work_fn(struct k_work *work)
 		}
 
 	} else if (btn_work->pins == BIT(button2.pin)) {
-		size_to_write =
-			MIN(OBJ_MAX_SIZE, (otc.cur_object.size.alloc - otc.cur_object.size.cur));
-		(void)memset(obj_data_buf, 0, size_to_write);
-		printk("Going to write OTS object len %d\n", size_to_write);
-		for (uint32_t idx = 0; idx < size_to_write; idx++) {
-			obj_data_buf[idx] = UINT8_MAX - (idx % UINT8_MAX);
-		}
+		if (BT_OTS_OBJ_GET_PROP_WRITE(otc.cur_object.props)) {
+			size_to_write = MIN(OBJ_MAX_SIZE, otc.cur_object.size.alloc);
+			(void)memset(obj_data_buf, 0, size_to_write);
+			printk("Going to write OTS object len %d\n", size_to_write);
+			for (uint32_t idx = 0; idx < size_to_write; idx++) {
+				obj_data_buf[idx] = UINT8_MAX - (idx % UINT8_MAX);
+			}
 
-		err = bt_ots_client_write_object_data(&otc, default_conn, obj_data_buf,
-						      size_to_write, 0,
-						      BT_OTS_OACP_WRITE_OP_MODE_NONE);
-		if (err) {
-			printk("Failed to write object (%d)\n", err);
-			return;
+			err = bt_ots_client_write_object_data(&otc, default_conn, obj_data_buf,
+							size_to_write, 0,
+							BT_OTS_OACP_WRITE_OP_MODE_NONE);
+			if (err) {
+				printk("Failed to write object (%d)\n", err);
+				return;
+			}
+		} else {
+			printk("This OBJ does not support WRITE OP\n");
 		}
 
 	} else if (btn_work->pins == BIT(button3.pin)) {
-		printk("read OTS object\n");
-		err = bt_ots_client_read_object_data(&otc, default_conn);
-		if (err) {
-			printk("Failed to read object %d\n", err);
-			return;
+		if (BT_OTS_OBJ_GET_PROP_READ(otc.cur_object.props)) {
+			printk("read OTS object\n");
+			err = bt_ots_client_read_object_data(&otc, default_conn);
+			if (err) {
+				printk("Failed to read object %d\n", err);
+				return;
+			}
+		} else {
+			printk("This OBJ does not support READ OP\n");
 		}
 	}
 }
@@ -459,7 +466,11 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 			return BT_GATT_ITER_STOP;
 		}
 
-		bt_ots_client_register(&otc);
+		/* Read feature of OTS server*/
+		err = bt_ots_client_read_feature(&otc, default_conn);
+		if (err) {
+			printk("bt_ots_client_read_feature failed (err %d)", err);
+		}
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -470,13 +481,12 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
+	first_selected = false;
 	if (err) {
 		printk("Failed to connect to %s (%u)\n", addr, err);
 
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
-
 		start_scan();
 		return;
 	}
@@ -532,6 +542,7 @@ static void on_obj_selected(struct bt_ots_client *ots_inst, struct bt_conn *conn
 
 	if (err == BT_GATT_OTS_OLCP_RES_OPERATION_FAILED) {
 		printk("BT_GATT_OTS_OLCP_RES_OPERATION_FAILED %d\n", err);
+		first_selected = false;
 	} else if (err == BT_GATT_OTS_OLCP_RES_OUT_OF_BONDS) {
 		printk("BT_GATT_OTS_OLCP_RES_OUT_OF_BONDS %d. Select first valid instead\n", err);
 		(void)bt_ots_client_select_id(&otc, default_conn, BT_OTS_OBJ_ID_MIN);
@@ -593,6 +604,7 @@ static void bt_otc_init(void)
 	printk("Content callback: %p\n", otc_cb.obj_data_read);
 	printk("Metadata callback: %p\n", otc_cb.obj_metadata_read);
 	otc.cb = &otc_cb;
+	bt_ots_client_register(&otc);
 }
 
 void main(void)
