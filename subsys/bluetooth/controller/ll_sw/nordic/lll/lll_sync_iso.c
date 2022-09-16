@@ -428,6 +428,7 @@ static void isr_rx(void *param)
 	uint8_t crc_ok;
 	uint32_t hcto;
 	uint8_t bis;
+	uint8_t nse;
 	uint8_t bn;
 
 	/* Read radio status and events */
@@ -817,10 +818,10 @@ isr_rx_next_subevent:
 	 * microseconds by when a PDU header is to be received for each
 	 * subevent.
 	 */
-	hcto = (lll->sub_interval *
-		(((lll->bis_curr - 1U) * ((lll->bn * lll->irc) + lll->ptc)) +
-		 (((lll->irc_curr - 1U) * lll->bn) + (lll->bn_curr - 1U) +
-		  lll->ptc_curr) + lll->ctrl));
+	nse = ((lll->bis_curr - 1U) * ((lll->bn * lll->irc) + lll->ptc)) +
+	      ((lll->irc_curr - 1U) * lll->bn) + (lll->bn_curr - 1U) +
+	      lll->ptc_curr + lll->ctrl;
+	hcto = lll->sub_interval * nse;
 
 	if (trx_cnt) {
 		/* Setup radio packet timer header complete timeout for
@@ -841,11 +842,18 @@ isr_rx_next_subevent:
 		start_us = hcto;
 		radio_tmr_start_us(0U, start_us);
 
-		/* Add 4 us + 4 us, as radio was setup to listen 4 us early */
-		hcto += (EVENT_CLOCK_JITTER_US << 2);
+		/* Add 4 us + 4 us + (4 us * subevents so far), as radio
+		 * was setup to listen 4 us early and subevents could have
+		 * a 4 us drift each until the current subevent we are
+		 * listening.
+		 */
+		hcto += ((EVENT_CLOCK_JITTER_US << 1) * (2U + nse)) +
+			RANGE_DELAY_US + HCTO_START_DELAY_US;
 	} else {
-		/* Setup radio packet timer header complete timeout for
-		 * first subevent PDU which is the BIG event anchor point.
+		/* First subevent PDU was not received, hence setup radio packet
+		 * timer header complete timeout from where the first subevent
+		 * PDU which is the BIG event anchor point would have been
+		 * received.
 		 */
 		hcto += radio_tmr_ready_restore();
 
