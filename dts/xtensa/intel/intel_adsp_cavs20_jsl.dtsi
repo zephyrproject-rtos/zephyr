@@ -51,6 +51,7 @@
 			offset = <0x4000>;
 			memory = <&sram0>;
 			initialize;
+			read-only;
 		};
 		mem_window1: mem_window@71a08 {
 			compatible = "intel,adsp-mem-window";
@@ -68,6 +69,7 @@
 			compatible = "intel,adsp-mem-window";
 			reg = <0x71a18 0x8>;
 			memory = <&sram0>;
+			read-only;
 		};
 		l2lm: l2lm@71d00 {
 			compatible = "intel,cavs-l2lm";

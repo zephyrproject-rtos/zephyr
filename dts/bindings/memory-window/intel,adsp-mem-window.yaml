@@ -20,3 +20,6 @@ properties:
   offset:
     type: int
     description: offset from memory base.
+
+  read-only:
+    type: boolean

@@ -163,6 +163,7 @@
 			offset = <0x4000>;
 			memory = <&sram0>;
 			initialize;
+			read-only;
 		};
 		mem_window1: mem_window@70208 {
 			compatible = "intel,adsp-mem-window";
@@ -180,6 +181,7 @@
 			compatible = "intel,adsp-mem-window";
 			reg = <0x70218 0x8>;
 			memory = <&sram0>;
+			read-only;
 		};
 
 		tlb: tlb@17e000 {
