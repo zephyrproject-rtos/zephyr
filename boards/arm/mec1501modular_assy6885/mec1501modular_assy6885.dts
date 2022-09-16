@@ -63,6 +63,8 @@
 	port_sel = <0>;
 	sda-gpios = <&gpio_000_036 3 0>;
 	scl-gpios = <&gpio_000_036 4 0>;
+	pinctrl-0 = < &i2c00_scl_gpio004 &i2c00_sda_gpio003 >;
+	pinctrl-names = "default";
 };
 
 &i2c_smb_1 {
@@ -70,6 +72,8 @@
 	port_sel = <1>;
 	sda-gpios = <&gpio_100_136 24 0>;
 	scl-gpios = <&gpio_100_136 25 0>;
+	pinctrl-0 = < &i2c01_scl_gpio131 &i2c01_sda_gpio130 >;
+	pinctrl-names = "default";
 };
 
 &espi0 {
