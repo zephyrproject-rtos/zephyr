@@ -73,6 +73,12 @@ static struct bt_iso_big_create_param big_create_param = {
 	.framing = 0, /* 0 - unframed, 1 - framed */
 };
 
+static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
+		    struct net_buf_simple *buf)
+{
+	printk("Hello World\n");
+}
+
 void main(void)
 {
 	uint32_t timeout_counter = INITIAL_TIMEOUT_COUNTER;
@@ -118,6 +124,19 @@ void main(void)
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err) {
 		printk("Failed to start extended advertising (err %d)\n", err);
+		return;
+	}
+
+	struct bt_le_scan_param scan_param = {
+		.type       = BT_HCI_LE_SCAN_ACTIVE,
+		.options    = BT_LE_SCAN_OPT_NONE,
+		.interval   = 0x0020, // 10ms
+		.window     = 0x0020, // 10ms
+	};
+
+	err = bt_le_scan_start(&scan_param, scan_cb);
+	if (err) {
+		printk("Starting scanning failed (err %d)\n", err);
 		return;
 	}
 
