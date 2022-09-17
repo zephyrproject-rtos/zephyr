@@ -76,7 +76,7 @@
 		mem_window0: mem_window@1580 {
 			compatible = "intel,adsp-mem-window";
 			reg = <0x1580 0x8>;
-			offset = <0x6000>;
+			offset = <0x4000>;
 			memory = <&sram0>;
 			initialize;
 			read-only;
@@ -97,6 +97,7 @@
 			compatible = "intel,adsp-mem-window";
 			reg = <0x1598 0x8>;
 			memory = <&sram0>;
+			offset = <0>;
 			read-only;
 		};
 
