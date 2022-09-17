@@ -4,6 +4,8 @@
 #ifndef _ZEPHYR_SOC_INTEL_ADSP_DEBUG_WINDOW
 #define _ZEPHYR_SOC_INTEL_ADSP_DEBUG_WINDOW
 
+#include <mem_window.h>
+
 /*
  * SRAM window for debug info (window 2) is organized in slots,
  * described in the descriptors available on page 0.
@@ -64,7 +66,6 @@ struct adsp_debug_window {
 
 
 #define WIN2_MBASE DT_REG_ADDR(DT_PHANDLE(DT_NODELABEL(mem_window2), memory))
-#define WIN2_OFFSET DT_PROP(DT_NODELABEL(mem_window2), offset)
 
 #define ADSP_DW ((volatile struct adsp_debug_window *) \
 		 (z_soc_uncached_ptr((void *)(WIN2_MBASE + WIN2_OFFSET))))
