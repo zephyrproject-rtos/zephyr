@@ -145,6 +145,10 @@ New APIs in this release
   * Added :c:enumerator:`CAN_MODE_3_SAMPLES` for enabling CAN controller triple-sampling receive
     mode.
 
+* W1
+
+  * Introduced the :ref:`W1 api<w1_api>`, used to interact with 1-Wire masters.
+
 Kernel
 ******
 
@@ -415,6 +419,13 @@ Drivers and Sensors
 * USB
 
 * W1
+
+  * Added Zephyr-Serial 1-Wire master driver.
+  * Added DS2484 1-Wire master driver. See the :dtcompatible:`maxim,ds2484`
+    devicetree binding for more information.
+  * Added DS2485 1-Wire master driver. See the :dtcompatible:`maxim,ds2485`
+    devicetree binding for more information.
+  * Introduced a shell module for 1-Wire.
 
 * Watchdog
 
