@@ -5719,7 +5719,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		if (handle < BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE) {
 			return -EINVAL;
 		}
-		stream_handle = handle - BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
+		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
 
 		struct lll_adv_iso_stream *stream;
 
@@ -5778,7 +5778,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 
 		stream->pkt_seq_num++;
 
-		if (ll_iso_tx_mem_enqueue(stream_handle, tx, NULL)) {
+		if (ll_iso_tx_mem_enqueue(handle, tx, NULL)) {
 			BT_ERR("Invalid ISO Tx Enqueue");
 			ll_iso_tx_mem_release(tx);
 			return -EINVAL;
@@ -7604,8 +7604,7 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	for (uint8_t i = 0U; i < lll->stream_count; i++) {
 		uint16_t handle;
 
-		handle = BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE +
-			 lll->stream_handle[i];
+		handle = LL_BIS_SYNC_HANDLE_FROM_IDX(lll->stream_handle[i]);
 		sep->handle[i] = sys_cpu_to_le16(handle);
 	}
 }
@@ -7692,8 +7691,7 @@ static void le_big_complete(struct pdu_data *pdu_data,
 	for (uint8_t i = 0U; i < lll->num_bis; i++) {
 		uint16_t handle;
 
-		handle = BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE +
-			 lll->stream_handle[i];
+		handle = LL_BIS_ADV_HANDLE_FROM_IDX(lll->stream_handle[i]);
 		sep->handle[i] = sys_cpu_to_le16(handle);
 	}
 }
