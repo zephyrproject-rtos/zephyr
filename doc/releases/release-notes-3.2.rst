@@ -45,6 +45,33 @@ Changes in this release
   changes are required by applications other than replacing ``#include
   <zephyr/zephyr.h>`` with ``#include <zephyr/kernel.h>``.
 
+* CAN
+
+  * The Zephyr SocketCAN definitions have been moved from :zephyr_file:`include/zephyr/drivers/can.h`
+    to :zephyr_file:`include/zephyr/net/socketcan.h`, the SocketCAN ``struct can_frame`` has been
+    renamed to :c:struct:`socketcan_frame`, and the SocketCAN ``struct can_filter`` has been renamed
+    to :c:struct:`socketcan_filter`. The SocketCAN utility functions are now available in
+    :zephyr_file:`include/zephyr/net/socketcan_utils.h`.
+
+  * The CAN controller ``struct zcan_frame`` has been renamed to :c:struct:`can_frame`, and ``struct
+    zcan_filter`` has been renamed to :c:struct:`can_filter`.
+
+  * The :c:enum:`can_state` enumerations have been renamed to contain the word STATE in order to make
+    their context more clear:
+
+    * ``CAN_ERROR_ACTIVE`` renamed to :c:enumerator:`CAN_STATE_ERROR_ACTIVE`.
+    * ``CAN_ERROR_WARNING`` renamed to :c:enumerator:`CAN_STATE_ERROR_WARNING`.
+    * ``CAN_ERROR_PASSIVE`` renamed to :c:enumerator:`CAN_STATE_ERROR_PASSIVE`.
+    * ``CAN_BUS_OFF`` renamed to :c:enumerator:`CAN_STATE_BUS_OFF`.
+
+  * The error code for :c:func:`can_send` when the CAN controller is in bus off state has been
+    changed from ``-ENETDOWN`` to ``-ENETUNREACH``. A return value of ``-ENETDOWN`` now indicates
+    that the CAN controller is in :c:enumerator:`CAN_STATE_STOPPED`.
+
+  * The list of valid return values for the CAN timing calculation functions have been expanded to
+    allow distinguishing between an out of range bitrate/sample point, an unsupported bitrate, and a
+    resulting sample point outside the guard limit.
+
 Removed APIs in this release
 ============================
 
@@ -69,6 +96,9 @@ Removed APIs in this release
 
 * Removed deprecated SPI :c:struct:`spi_cs_control` fields for GPIO management
   that have been replaced with :c:struct:`gpio_dt_spec`.
+
+* Removed support for configuring the CAN-FD maximum DLC value via Kconfig
+  ``CONFIG_CANFD_MAX_DLC``.
 
 Deprecated in this release
 ==========================
@@ -103,6 +133,17 @@ Stable API changes in this release
 
 New APIs in this release
 ========================
+
+* CAN
+
+  * Added :c:func:`can_start` and :c:func:`can_stop` API functions for starting and stopping a CAN
+    controller. Applications will need to call :c:func:`can_start` to bring the CAN controller out
+    of :c:enumerator:`CAN_STATE_STOPPED` before being able to transmit and receive CAN frames.
+  * Added :c:func:`can_get_capabilities` for retrieving a bitmask of the capabilities supported by a
+    CAN controller.
+  * Added :c:enumerator:`CAN_MODE_ONE_SHOT` for enabling CAN controller one-shot transmission mode.
+  * Added :c:enumerator:`CAN_MODE_3_SAMPLES` for enabling CAN controller triple-sampling receive
+    mode.
 
 Kernel
 ******
@@ -180,6 +221,20 @@ Drivers and Sensors
 * ADC
 
 * CAN
+
+  * A driver for bridging from :ref:`native_posix` to Linux SocketCAN has been added.
+  * A driver for the Espressif ESP32 TWAI has been added. See the
+    :dtcompatible:`espressif,esp32-twai` devicetree binding for more information.
+  * The STM32 CAN-FD CAN driver clock configurion has been moved from Kconfig to :ref:`devicetree
+    <dt-guide>`. See the :dtcompatible:`st,stm32-fdcan` devicetree binding for more information.
+  * The filter handling of STM32 bxCAN driver has been simplified and made more reliable.
+  * The STM32 bxCAN driver now supports dual intances.
+  * The CAN loopback driver now supports CAN-FD.
+  * The CAN shell module has been rewritten to properly support the additions and changes to the CAN
+    controller API.
+  * The Zephyr network CAN bus driver, which provides raw L2 access to the CAN bus via a CAN
+    controller driver, has been moved to :zephyr_file:`drivers/net/canbus.c` and can now be enabled
+    using :kconfig:option:`CONFIG_NET_CANBUS`.
 
 * Counter
 
