@@ -3670,7 +3670,7 @@ static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 	PR("%p\t%d\t%u\tTX\n",
 	       tx, tx->num_blocks, k_mem_slab_num_free_get(tx));
 
-	PR("%p\t%d\t%ld\tRX DATA (%s)\n	", rx_data, rx_data->buf_count,
+	PR("%p\t%d\t%ld\tRX DATA (%s)\n", rx_data, rx_data->buf_count,
 	   atomic_get(&rx_data->avail_count), rx_data->name);
 
 	PR("%p\t%d\t%ld\tTX DATA (%s)\n", tx_data, tx_data->buf_count,
