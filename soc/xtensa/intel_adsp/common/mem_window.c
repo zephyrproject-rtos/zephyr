@@ -17,22 +17,12 @@
 
 #define DT_DRV_COMPAT intel_adsp_mem_window
 
-#define WIN_SIZE(N)   (CONFIG_MEMORY_WIN_##N##_SIZE)
-#define WIN0_OFFSET DT_PROP(DT_NODELABEL(mem_window0), offset)
-#define WIN1_OFFSET WIN0_OFFSET + WIN_SIZE(0)
-#define WIN2_OFFSET WIN1_OFFSET + WIN_SIZE(1)
-#define WIN3_OFFSET WIN2_OFFSET + WIN_SIZE(2)
-
-#define WIN_OFFSET(N) (WIN##N##_OFFSET)
-
 __imr int mem_win_init(const struct device *dev)
 {
 	const struct mem_win_config *config = dev->config;
 
 	if (config->initialize) {
-		uint32_t *win = z_soc_uncached_ptr((void *)config->mem_base);
-		/* Software protocol: "firmware entered" has the value 5 */
-		win[0] = 5;
+		bbzero((void *)config->mem_base, config->size);
 	}
 
 	sys_write32(config->size | 0x7, DMWLO(config->base_addr));
@@ -46,16 +36,27 @@ __imr int mem_win_init(const struct device *dev)
 	return 0;
 }
 
-#define MEM_WIN_INIT(inst)                                                                         \
-	static const struct mem_win_config mem_win_config_##inst = {                               \
-		.base_addr = DT_INST_REG_ADDR(inst),                                               \
-		.size = WIN_SIZE(inst),                                                            \
-		.offset = WIN_OFFSET(inst),                                                        \
-		.read_only = DT_INST_PROP(inst, read_only),					   \
-		.mem_base = DT_REG_ADDR(DT_INST_PHANDLE(inst, memory)) + WIN_OFFSET(inst),         \
-		.initialize = DT_INST_PROP(inst, initialize),                                      \
+#define MEM_WINDOW_DEFINE(n)                                                                       \
+	static const struct mem_win_config mem_win_config_##n = {                                  \
+		.base_addr = DT_REG_ADDR(MEM_WINDOW_NODE(n)),                                      \
+		.size = WIN_SIZE(n),                                                               \
+		.offset = WIN_OFFSET(n),                                                           \
+		.read_only = DT_PROP(MEM_WINDOW_NODE(n), read_only),                               \
+		.mem_base = DT_REG_ADDR(DT_PHANDLE(MEM_WINDOW_NODE(n), memory)) + WIN_OFFSET(n),   \
+		.initialize = DT_PROP(MEM_WINDOW_NODE(n), initialize),                             \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, mem_win_init, NULL, NULL, &mem_win_config_##inst, ARCH,        \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+	DEVICE_DT_DEFINE(MEM_WINDOW_NODE(n), mem_win_init, NULL, NULL, &mem_win_config_##n, ARCH,  \
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
-DT_INST_FOREACH_STATUS_OKAY(MEM_WIN_INIT)
+#if DT_NODE_HAS_STATUS(MEM_WINDOW_NODE(0), okay)
+MEM_WINDOW_DEFINE(0)
+#endif
+#if DT_NODE_HAS_STATUS(MEM_WINDOW_NODE(1), okay)
+MEM_WINDOW_DEFINE(1)
+#endif
+#if DT_NODE_HAS_STATUS(MEM_WINDOW_NODE(2), okay)
+MEM_WINDOW_DEFINE(2)
+#endif
+#if DT_NODE_HAS_STATUS(MEM_WINDOW_NODE(3), okay)
+MEM_WINDOW_DEFINE(3)
+#endif
