@@ -256,7 +256,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	bis_idx = lll->num_bis;
 	while (bis_idx--) {
 		stream_handle = lll->stream_handle[bis_idx];
-		handle = stream_handle + BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
+		handle = LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle);
 		stream = ull_adv_iso_lll_stream_get(stream_handle);
 		LL_ASSERT(stream);
 
@@ -513,8 +513,7 @@ static void isr_tx_common(void *param,
 
 		for (uint8_t bis_idx = 0U; bis_idx < lll->num_bis; bis_idx++) {
 			stream_handle = lll->stream_handle[bis_idx];
-			handle = stream_handle +
-				 BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
+			handle = LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle);
 			stream = ull_adv_iso_lll_stream_get(stream_handle);
 			LL_ASSERT(stream);
 
