@@ -149,6 +149,8 @@ enum {
 #else /* !CONFIG_BT_MAX_CONN */
 #define BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE 0
 #endif /* !CONFIG_BT_MAX_CONN */
+#define LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle) \
+	((stream_handle) + (BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE))
 #else /* !CONFIG_BT_CTLR_ADV_ISO */
 #define BT_CTLR_ADV_ISO_STREAM_MAX 0
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
@@ -165,6 +167,8 @@ enum {
 #else /* !CONFIG_BT_MAX_CONN */
 #define BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE 0
 #endif /* !CONFIG_BT_MAX_CONN */
+#define LL_BIS_SYNC_HANDLE_FROM_IDX(stream_handle) \
+	((stream_handle) + (BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE))
 #else /* !CONFIG_BT_CTLR_SYNC_ISO */
 #define BT_CTLR_SYNC_ISO_STREAM_MAX 0
 #endif /* !CONFIG_BT_CTLR_SYNC_ISO */

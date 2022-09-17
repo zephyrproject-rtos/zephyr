@@ -1243,7 +1243,7 @@ static void tx_lll_flush(void *param)
 		uint16_t handle;
 
 		stream_handle = lll->stream_handle[num_bis];
-		handle = stream_handle + BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
+		handle = LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle);
 		stream = ull_adv_iso_stream_get(stream_handle);
 
 		link = memq_dequeue(stream->memq_tx.tail, &stream->memq_tx.head,
