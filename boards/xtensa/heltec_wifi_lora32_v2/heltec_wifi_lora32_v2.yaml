@@ -9,7 +9,6 @@ supported:
   - i2c
   - watchdog
   - uart
-  - pinmux
   - nvs
 testing:
   ignore_tags:
