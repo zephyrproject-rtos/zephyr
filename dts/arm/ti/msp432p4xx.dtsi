@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+#define EXC_GPIOA0  0  /* (INT_GPIOA0 - 16) = (16-16) */
 
 / {
 	cpus {
@@ -34,6 +37,13 @@
 			interrupts = <32 0>;
 			clocks = <&sysclk>;
 			status = "disabled";
+		};
+		gpioa: gpio@40005000 {
+			compatible = "ti,msp432p4xx-gpio";
+			reg = <0x40005000 0x1000>;
+			interrupts = <0 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 	};
 };
