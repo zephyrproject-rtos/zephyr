@@ -862,3 +862,15 @@ config LEGACY_INCLUDE_PATH
 	  but enabling CONFIG_LEGACY_INCLUDE_PATH will allow developers to use
 	  <kernel.h> instead. This (without the zephyr/ prefix) is deprecated
 	  and should be avoided. Eventually, it will not be supported.
+
+config LEGACY_DEVICE_MODEL
+	bool "Define device drivers using the legacy device model"
+	default y
+	help
+	  The legacy device model allows for a single API pr device driver instance. The
+	  new multi api device model allows for multiple APIs pr device driver instance.
+	  Using this option, the new DEVICE_DT_NEW_DEFINE and DEVICE_NEW_DEFINE macros
+	  will expand to the legacy DEVICE_DEFINE and DEVICE_DT_DEFINE macros, allowing
+	  drivers to be updated to using the new DEFINE macros without breaking
+	  compatibility with the legacy device model. This option will be depricated
+	  once all drivers and subsystems have been updated to use the new device model.

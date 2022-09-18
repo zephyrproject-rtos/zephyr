@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Trackunit A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: Native POSIX UART
+
+compatible: "zephyr,native-posix-uart"
+
+api: uart

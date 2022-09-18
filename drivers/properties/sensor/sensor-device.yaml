@@ -1,0 +1,10 @@
+properties:
+  vendor:
+    type: string
+    required: true
+
+  model:
+    type: string
+    required: true
+
+api: sensor

@@ -1,0 +1,10 @@
+include: "sensor-device.yaml"
+
+compatible: "bosch,bma280"
+
+properties:
+  vendor:
+    value: "Bosch"
+
+  model:
+    value: "BMA280"

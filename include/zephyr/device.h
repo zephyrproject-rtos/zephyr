@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015 Intel Corporation.
+ * Copyright (c) 2022 Trackunit A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +26,8 @@
  * @defgroup device_model Device Model APIs
  * @{
  */
+
+#include <device_generated.h>
 
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
@@ -923,7 +926,694 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
 		(&DEVICE_NAME_GET(dev_name)), level, prio)
 
-#if CONFIG_HAS_DTS
+#ifdef CONFIG_LEGACY_DEVICE_MODEL
+
+/*
+ * The legacy device model can be used with the the new DEVICE_NEW_DEFINE() and
+ * DEVICE_DT_NEW_DEFINE() macros, which will expand to the legacy DEVICE_DEFINE()
+ * and DEVICE_DT_DEFINE() macros.
+ *
+ * This feature will allow for updating drivers to use the new multi API device
+ * model without breaking compatibility with the legacy device model, given that
+ * the device drivers only support a single API.
+ *
+ * Example from uart driver before update to new device model:
+ *
+ *     DEVICE_DT_DEFINE(node_id, ..., &uart_api_impl);
+ *
+ * Example from uart driver after update to new device model:
+ *
+ *     DEVICE_DT_NEW_DEFINE(node_id, ..., DEVICE_API(&uart_api_impl, uart));
+ *
+ * Using the legacy device model, both the legacy DEVICE_DT_DEFINE() and new
+ * driver DEVICE_DT_NEW_DEFINE() will expand identically. The device instances
+ * can be obtained using DEVICE_DT_GET(). The macros DEVICE_API_GET() and
+ * DEVICE_DT_API_GET() and their INST variants are not available. The new
+ * properties files and accompanying macros like DEVICE_DT_API_FOREACH(),
+ * DEVICE_DT_PROPERTY() etc. are available.
+ */
+
+#define DEVICE_NEW_DEFINE(dev_name, drv_name, init_fn, pm_dev_ptr, data_ptr,        \
+			cfg_ptr, init_level, init_prio, api_spec)                               \
+	DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_dev_ptr, data_ptr, cfg_ptr,       \
+		init_level, init_prio, Z_DEVICE_API_API_PTR(api_spec))
+
+#define DEVICE_DT_NEW_DEFINE(node_id, init_fn, pm_dev_ptr, data_ptr, cfg_ptr,       \
+			init_level, init_prio, api_spec, ...)                                   \
+	DEVICE_DT_DEFINE(node_id, init_fn, pm_dev_ptr, data_ptr, cfg_ptr, init_level,   \
+		init_prio, Z_DEVICE_API_API_PTR(api_spec), __VA_ARGS__)
+
+#define DEVICE_DT_INST_NEW_DEFINE(inst, ...) \
+	DEVICE_DT_NEW_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+#endif /* CONFIG_LEGACY_DEVICE_MODEL */
+
+/**
+ * @brief Multi API Device Model APIs
+ * @defgroup device_model_multi_api Multi API Device Model APIs
+ *
+ * @note The multi API device model doesn't support device handles or
+ * runtime device lookup using device_get_binding(). Use devicetree node
+ * identifiers with the DT and DEVICE_DT macros to look up and listify
+ * devices at compile time instead.
+ *
+ * @{
+ */
+
+/**
+ * @def DEVICE_API
+ *
+ * @brief Named tuple containing device API parameters used during device
+ * definition.
+ *
+ * @details The API type specified using this macro exist in the properties
+ * file associated with the device driver using the compatible property. An
+ * example which attributes the APIs "uart" and "spi" to the device driver
+ * with the compatible "dummy" follows:
+ *
+ *   compatible: "dummy"
+ *   api: ["uart", "spi"]
+ *
+ * These properties in the properties file allow for defining the following:
+ *
+ *   DEVICE_DT_NEW_DEFINE(node_id, ...,
+ *       DEVICE_API(&dymmy_uart_api_impl, uart),
+ *       DEVICE_API(&dymmy_spi_api_impl, spi));
+ *
+ * @param api_ptr Pointer to the device's API structure.
+ *
+ * @param api_type API type
+ */
+#define DEVICE_API(api_ptr, api_type) (api_ptr, api_type)
+
+#ifndef CONFIG_LEGACY_DEVICE_MODEL
+
+/**
+ * @def DEVICE_NEW_DEFINE
+ *
+ * @brief Define required <tt>struct device</tt> objects for device and
+ * set it up for boot time initialization.
+ *
+ * @details A <tt>struct device</tt> is created for each specified API.
+ *
+ * The following example shows how to define three <tt>struct device</tt>
+ * objects for a device which implements the uart, i2c and spi APIs.
+ *
+ * DEVICE_NEW_DEFINE(dev_name, drv_name, ...,
+ *     DEVICE_API(&uart_ptr, uart),
+ *     DEVICE_API(&i2c_ptr, i2c),
+ *     DEVICE_API(&spi_ptr, spi));
+ *
+ * See DEVICE_API_GET() to get a pointer to a <tt>struct device</tt>
+ * defined using this macro.
+ *
+ * @param dev_name A unique token which is used as the base name for
+ * the <tt>struct device</tt> objects C identifiers. The API type of
+ * the <tt>struct device</tt> object is appended to the C identifier.
+ *
+ * @param drv_name A string base name for the <tt>struct device</tt>
+ * objects, which will be stored in the <tt>struct device</tt>
+ * object's @p name field. The API type of the <tt>struct device</tt>
+ * is appended to the name.
+ *
+ * @param init_fn Pointer to the device's initialization function,
+ * which will be run by the kernel during system initialization.
+ *
+ * @param pm_dev_ptr Pointer to the device's power management
+ * resources, a <tt>struct pm_device</tt>, which will be stored in all
+ * <tt>struct device</tt> objects @p pm field. Set to NULL if the
+ * device does not use PM.
+ *
+ * @param data_ptr Pointer to the device's private mutable data, which
+ * is stored in the <tt>struct device</tt> objects @p data field.
+ *
+ * @param cfg_ptr Pointer to the device's private constant data, which
+ * is stored in the <tt>struct device</tt> objects @p config field.
+ *
+ * @param init_level The device's initialization level. See SYS_INIT() for
+ * details.
+ *
+ * @param init_prio The device's priority within its initialization level.
+ * See SYS_INIT() for details.
+ *
+ * @param api_spec The device's primary API specification, defined using
+ * DEVICE_API().
+ *
+ * @param ... List of further unique API specifications.
+ */
+#define DEVICE_NEW_DEFINE(dev_name, drv_name, init_fn, pm_dev_ptr, data_ptr,        \
+			cfg_ptr, init_level, init_prio, api_spec, ...)                          \
+	Z_DEVICE_NEW_STATE_DEFINE(dev_name)                                             \
+	                                                                                \
+	Z_DEVICE_NEW_DEFINE(dev_name, drv_name, init_fn, pm_dev_ptr, data_ptr,          \
+		cfg_ptr, init_level, init_prio, Z_DEVICE_API_API_PTR(api_spec),             \
+		Z_DEVICE_API_API_TYPE(api_spec),                                            \
+		&Z_DEVICE_NEW_STATE_NAME(dev_name))                                         \
+	                                                                                \
+	Z_DEVICE_ASSIGN_ADDITIONAL_APIS(                                                \
+		Z_DEVICE_DEV_TUPLE(dev_name, drv_name,                                      \
+			Z_DEVICE_API_API_TYPE(api_spec), pm_dev_ptr, data_ptr, cfg_ptr),        \
+		__VA_ARGS__)
+
+/**
+ * @def DEVICE_API_GET
+ *
+ * @brief Get a const struct device pointer from a device defined using
+ * DEVICE_API_DEFINE().
+ *
+ * @details The following example shows how to get a pointer to three
+ * <tt>struct device</tt> objects specified by API type, defined using
+ * DEVICE_API_DEFINE().
+ *
+ * static const struct device uart_dev = DEVICE_API_GET(dev_name, uart);
+ * static const struct device i2c_dev = DEVICE_API_GET(dev_name, i2c);
+ * static const struct device spi_dev = DEVICE_API_GET(dev_name, spi);
+ *
+ * @note DEVICE_API_GET() is only useful within the source file which
+ * defined the struct devices since they are static.
+ *
+ * @param dev_name The device name used when defining the device using
+ * DEVICE_API_DEFINE().
+ *
+ * @param api_type Specifies which <tt>struct device</tt> object to get.
+ *
+ * @return A pointer to the <tt>struct device</tt> object.
+ */
+#define DEVICE_API_GET(dev_name, api_type) \
+	(&Z_DEVICE_API_NAME(dev_name, api_type))
+
+/**
+ * @def DEVICE_DT_NEW_DEFINE
+ *
+ * @brief Define required <tt>struct device</tt> objects for device
+ * declared in devicetree and set it up for boot time initialization.
+ *
+ * @details A <tt>struct device</tt> is created for each specified API.
+ *
+ * The following example shows how to define three <tt>struct device</tt>
+ * objects for a device which implements the uart, i2c and spi APIs.
+ *
+ * DEVICE_DT_NEW_DEFINE(node_id, ...,
+ *     DEVICE_API(&uart_ptr, uart),
+ *     DEVICE_API(&i2c_ptr, i2c),
+ *     DEVICE_API(&spi_ptr, spi));
+ *
+ * See DEVICE_DT_API_GET() to get a pointer to a <tt>struct device</tt>
+ * defined using this macro.
+ *
+ * @param node_id The devicetree node identifier which the struct devices
+ * belong to.
+ *
+ * @param init_fn Pointer to the device's initialization function,
+ * which will be run by the kernel during system initialization.
+ *
+ * @param pm_dev_ptr Pointer to the device's power management
+ * resources, a <tt>struct pm_device</tt>, which will be stored in all
+ * <tt>struct device</tt> objects @p pm field. Set to NULL if the
+ * device does not use PM.
+ *
+ * @param data_ptr Pointer to the device's private mutable data, which
+ * is stored in the <tt>struct device</tt> objects @p data field.
+ *
+ * @param cfg_ptr Pointer to the device's private constant data, which
+ * is stored in the <tt>struct device</tt> objects @p config field.
+ *
+ * @param init_level The device's initialization level. See SYS_INIT() for
+ * details.
+ *
+ * @param init_prio The device's priority within its initialization level.
+ * See SYS_INIT() for details.
+ *
+ * @param api_spec The device's primary API specification, defined using
+ * DEVICE_API().
+ *
+ * @param ... List of further unique API specifications.
+ */
+#define DEVICE_DT_NEW_DEFINE(node_id, init_fn, pm_dev_ptr, data_ptr, cfg_ptr,       \
+			init_level, init_prio, api_spec, ...)                                   \
+	Z_DEVICE_NEW_STATE_DEFINE(Z_DEVICE_DT_NAME_FROM_NODE(node_id))                  \
+	                                                                                \
+	Z_DEVICE_DT_NEW_DEFINE(node_id, init_fn, pm_dev_ptr, data_ptr,                  \
+		cfg_ptr, init_level, init_prio, Z_DEVICE_API_API_PTR(api_spec),             \
+		Z_DEVICE_API_API_TYPE(api_spec),                                            \
+		&Z_DEVICE_NEW_STATE_NAME(Z_DEVICE_DT_NAME_FROM_NODE(node_id)))              \
+	                                                                                \
+	Z_DEVICE_DT_ASSIGN_ADDITIONAL_APIS(                                             \
+		Z_DEVICE_DT_DEV_TUPLE(node_id, Z_DEVICE_API_API_TYPE(api_spec),             \
+			pm_dev_ptr, data_ptr, cfg_ptr),                                         \
+		__VA_ARGS__)
+
+/**
+ * @def DEVICE_DT_INST_NEW_DEFINE
+ *
+ * @brief Wrapper macro for DEVICE_DT_NEW_DEFINE() using the compatible
+ * instance identifier instead of the node_id.
+ *
+ * @details This is equivalent to DEVICE_DT_NEW_DEFINE(DT_DRV_INST(inst), ...).
+ *
+ * @param inst DT_DRV_COMPAT instance index
+ */
+#define DEVICE_DT_INST_NEW_DEFINE(inst, ...) \
+	DEVICE_DT_NEW_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @def DEVICE_DT_API_GET
+ *
+ * @brief Get a const struct device* from a devicetree node
+ * identifier which implements the specified API type
+ *
+ * @details The following example shows how to get a pointer to three
+ * <tt>struct device</tt> objects specified by API type, defined using
+ * DEVICE_DT_NEW_DEFINE().
+ *
+ * const struct device uart_dev = DEVICE_DT_API_GET(node_id, uart);
+ * const struct device i2c_dev = DEVICE_DT_API_GET(node_id, i2c);
+ * const struct device spi_dev = DEVICE_DT_API_GET(node_id, spi);
+ *
+ * If a specific <tt>struct device</tt> object has not been allocated,
+ * this will fail at linker time. If you get an error that looks like
+ * undefined reference to __api_device_dts_ord_<N>, that is what happened.
+ * Check to make sure your device driver is being compiled, usually by
+ * enabling the Kconfig options it requires.
+ *
+ * @param node_id The devicetree node identifier which the
+ * <tt>struct device</tt> object belongs to.
+ *
+ * @param api_type Specifies which <tt>struct device</tt> object to get.
+ *
+ * @return A pointer to the <tt>struct device</tt> object.
+ */
+#define DEVICE_DT_API_GET(node_id, api_type) \
+	(&Z_DEVICE_DT_API_NAME(node_id, api_type))
+
+/**
+ * @def DEVICE_DT_INST_API_GET
+ *
+ * @brief Get a const struct device* for an instance of a
+ * DT_DRV_COMPAT compatible.
+ *
+ * @details This is equivalent to
+ * DEVICE_DT_API_GET(DT_DRV_INST(inst), ...).
+ *
+ * @param inst Compatible instance index.
+ *
+ * @return A pointer to the <tt>struct device</tt> object.
+ */
+#define DEVICE_DT_INST_API_GET(inst, ...) \
+	DEVICE_DT_API_GET(DT_DRV_INST(inst), __VA_ARGS__)
+
+#endif /* CONFIG_LEGACY_DEVICE_MODEL */
+
+/**
+ * @def DEVICE_DT_NEW_SUPPORTED
+ *
+ * @brief Test if device supports API.
+ *
+ * @param node_id Devicetree node identifier to test.
+ *
+ * @param api_type API type to test for.
+ */
+#define DEVICE_DT_API_SUPPORTED(node_id, api_type)                                  \
+	IS_ENABLED(_CONCAT(_CONCAT(_CONCAT(_CONCAT(DEVICE_, node_id), _API_),           \
+		api_type), _EXISTS))
+
+/**
+ * @def DEVICE_DT_INST_API_SUPPORTED
+ *
+ * @brief Test if device supports API
+ *
+ * @param inst Compatible instance id of device to test
+ *
+ * @param api_type API type to test for
+ */
+#define DEVICE_DT_INST_API_SUPPORTED(inst, api_type) \
+	DEVICE_DT_API_SUPPORTED(DT_DRV_INST(inst), api_type)
+
+/**
+ * @def DEVICE_DT_API_SUPPORTED_ANY
+ *
+ * @brief Test if any enabled device supports provided API
+ *
+ * @param api_type API type to test for
+ */
+#define DEVICE_DT_API_SUPPORTED_ANY(api_type) \
+	IS_ENABLED(_CONCAT(_CONCAT(DEVICE_DT_API_, api_type), _FOREACH_EXISTS))
+
+/**
+ * @def DEVICE_DT_API_FOREACH
+ *
+ * @brief Invoke fn macro for each node which implements the provided
+ * API type. The fn macro must take a single argument, which is the
+ * node identifier.
+ *
+ * @param fn Macro which is invoked for each node which supports provided API type.
+ *
+ * @param api_type API type which specifies which nodes to invoke fn macro for.
+ */
+#define DEVICE_DT_API_FOREACH(fn, api_type)                                         \
+	COND_CODE_1(                                                                    \
+		IS_ENABLED(_CONCAT(_CONCAT(DEVICE_DT_API_, api_type), _FOREACH_EXISTS)),    \
+		(_CONCAT(_CONCAT(DEVICE_DT_API_, api_type), _FOREACH)(fn)),                 \
+		())
+
+/**
+ * @def DEVICE_DT_API_FOREACH_VARGS
+ *
+ * @brief Invoke fn macro for each node which implements the provided
+ * API type. The fn macro must take multiple arguments, the first argument
+ * is the node identifier.
+ *
+ * @param fn Macro which is invoked for each node which supports provided API type.
+ *
+ * @param api_type API type which specifies which nodes to invoke fn macro for.
+ *
+ * @param ... Additional arguments to pass to fn macro.
+ */
+#define DEVICE_DT_API_FOREACH_VARGS(fn, api_type, ...)                              \
+	COND_CODE_1(                                                                    \
+		IS_ENABLED(_CONCAT(_CONCAT(DEVICE_DT_API_, api_type), _FOREACH_EXISTS)),    \
+		(_CONCAT(_CONCAT(DEVICE_DT_API_, api_type), _FOREACH_VARGS)                 \
+			(fn, __VA_ARGS__)),                                                     \
+		())
+
+/**
+ * @def DEVICE_DT_PROPERTY
+ *
+ * @brief Get a device property using a node identifier
+ *
+ * @details Device properties are defined in properties files. An example which
+ * defines the property vendor which will expand to "dummy" follows:
+ *
+ *   properties:
+ *     vendor:
+ *       value: "dummy"
+ *
+ * The properties files are tied to device nodes using the compatible property. To
+ * fetch the vendor property at compile time for a node, use the following macro:
+ *
+ *   DEVICE_DT_PROPERTY(node_id, vendor)
+ *
+ * @param node_id Devicetree node identifier to test.
+ *
+ * @param property Property to fetch.
+ */
+#define DEVICE_DT_PROPERTY(node_id, property) \
+	_CONCAT(_CONCAT(_CONCAT(DEVICE_, node_id), _PROPERTY_), property)
+
+/**
+ * @def DEVICE_DT_INST_PROPERTY
+ *
+ * @brief Get a device property using a compatible instance index
+ *
+ * @details See DEVICE_DT_PROPERTY() for details.
+ *
+ * @param inst Compatible instance index of the device
+ *
+ * @param property Property to fetch.
+ */
+#define DEVICE_DT_INST_PROPERTY(inst, property) \
+	DEVICE_DT_PROPERTY(DT_DRV_INST(inst), property)
+
+/**
+ * @def DEVICE_DT_PROPERTY_OR
+ *
+ * @brief Get a device property using a node identifier with fallback to default
+ * value if the device property doesn't exist.
+ *
+ * @details See DEVICE_DT_PROPERTY() for details.
+ *
+ * @param node_id Devicetree node identifier to test.
+ *
+ * @param property Property to fetch.
+ *
+ * @param default Default value used if device property doesn't exist.
+ */
+#define DEVICE_DT_PROPERTY_OR(node_id, property, default)                           \
+	COND_CODE_1(                                                                    \
+		IS_ENABLED(_CONCAT(_CONCAT(_CONCAT(DEVICE_DT_, node_id), _PROPERTY_),       \
+			property)),                                                             \
+		(_CONCAT(_CONCAT(_CONCAT(DEVICE_, node_id), _PROPERTY_), property)),        \
+		(default))
+
+/**
+ * @def DEVICE_DT_INST_PROPERTY_OR
+ *
+ * @brief Get a device property using a compatible instance index with fallback to
+ * default value if the device property doesn't exist.
+ *
+ * @details See DEVICE_DT_PROPERTY() for details.
+ *
+ * @param inst Compatible instance index of the device
+ *
+ * @param property Property to fetch.
+ *
+ * @param default Default value used if device property doesn't exist.
+ */
+#define DEVICE_DT_INST_PROPERTY_OR(inst, property, default) \
+	DEVICE_DT_PROPERTY_OR(DT_DRV_INST(inst), property, default)
+
+/**
+ * @}
+ */
+
+/*
+ * Private Multi API Device Model APIs shared between static and devicetree devices
+ */
+
+/* Helper which extracts API pointer from DEVICE_API */
+#define Z_DEVICE_API_API_PTR_(api_ptr, api_type) api_ptr
+#define Z_DEVICE_API_API_PTR(api_spec) Z_DEVICE_API_API_PTR_ api_spec
+
+#ifndef CONFIG_LEGACY_DEVICE_MODEL
+
+/* Helper which extracts API type from DEVICE_API */
+#define Z_DEVICE_API_API_TYPE_(api_ptr, api_type) api_type
+#define Z_DEVICE_API_API_TYPE(api_spec) Z_DEVICE_API_API_TYPE_ api_spec
+
+/* Helper which generates device name from name and API type */
+#define Z_DEVICE_API_NAME(name, api_type)                                           \
+	_CONCAT(_CONCAT(_CONCAT(__api_device_, name), _), api_type)
+
+/* Helper which generates device name from devicetree node id and API type */
+#define Z_DEVICE_DT_API_NAME(node_id, api_type)                                     \
+	Z_DEVICE_API_NAME(Z_DEVICE_DT_NAME_FROM_NODE(node_id), api_type)
+
+/* Helper which places API device struct in correct section in correct order */
+#define Z_DEVICE_API_PLACE_IN_SECTION(api_type)                                     \
+	__attribute__((__section__(".z_api_device")))
+
+/* Helper which creates a name from devicetree node id */
+#define Z_DEVICE_DT_NAME_FROM_NODE(node_id)                                         \
+	_CONCAT(dts_ord_, DT_DEP_ORD(node_id))
+
+/* Helper which creates a name for the API device state struct */
+#define Z_DEVICE_NEW_STATE_NAME(name)                                               \
+	_CONCAT(__api_devstate_, name)
+
+/* Define a device state struct and place it in correct section */
+#define Z_DEVICE_NEW_STATE_DEFINE(name)                                             \
+	static struct device_state Z_DEVICE_NEW_STATE_NAME(name)                        \
+		__attribute__((__section__(".z_devstate")));
+
+/* Helper which creates name string from driver name and API type */
+#define Z_DEVICE_API_FULL_NAME(drv_name, api_type)                                  \
+	(drv_name "_" STRINGIFY(api_type))
+
+/* Helper which creates name string from devicetree node and API type */
+#define Z_DEVICE_DT_API_FULL_NAME(node_id, api_type)                                \
+	(DT_NODE_FULL_NAME(node_id) "_" STRINGIFY(api_type))
+
+/*
+ * Private Multi API Device Model APIs specific to static devices
+ */
+
+/* Named tuple containing device parameters used when assigning API devices */
+#define Z_DEVICE_DEV_TUPLE(dev_name, drv_name, api_type, pm_dev_ptr, data_ptr,      \
+	cfg_ptr) (dev_name, drv_name, api_type, pm_dev_ptr, data_ptr, cfg_ptr)
+
+/* Helper which extracts device name from Z_DEVICE_DEV_TUPLE */
+#define Z_DEVICE_DEV_TUPLE_DEV_NAME_(dev_name, drv_name, api_type, pm_dev_ptr,      \
+	data_ptr, cfg_ptr) dev_name
+
+#define Z_DEVICE_DEV_TUPLE_DEV_NAME(dev_spec)                                       \
+	Z_DEVICE_DEV_TUPLE_DEV_NAME_ dev_spec
+
+/* Helper which extracts driver name from Z_DEVICE_DEV_TUPLE */
+#define Z_DEVICE_DEV_TUPLE_DRV_NAME_(dev_name, drv_name, api_type, pm_dev_ptr,      \
+	data_ptr, cfg_ptr) drv_name
+
+#define Z_DEVICE_DEV_TUPLE_DRV_NAME(dev_spec)                                       \
+	Z_DEVICE_DEV_TUPLE_DRV_NAME_ dev_spec
+
+/* Helper which extracts API type from Z_DEVICE_DEV_TUPLE */
+#define Z_DEVICE_DEV_TUPLE_API_TYPE_(dev_name, drv_name, api_type, pm_dev_ptr,      \
+	data_ptr, cfg_ptr) api_type
+
+#define Z_DEVICE_DEV_TUPLE_API_TYPE(dev_spec)                                       \
+	Z_DEVICE_DEV_TUPLE_API_TYPE_ dev_spec
+
+/* Helper which extracts PM device pointer from Z_DEVICE_DEV_TUPLE */
+#define Z_DEVICE_DEV_TUPLE_PM_DEV_PTR_(dev_name, drv_name, api_type,                \
+	pm_dev_ptr, data_ptr, cfg_ptr) pm_dev_ptr
+
+#define Z_DEVICE_DEV_TUPLE_PM_DEV_PTR(dev_spec)                                     \
+	Z_DEVICE_DEV_TUPLE_PM_DEV_PTR_ dev_spec
+
+/* Helper which extracts data pointer from Z_DEVICE_DEV_TUPLE */
+#define Z_DEVICE_DEV_TUPLE_DATA_PTR_(dev_name, drv_name, api_type, pm_dev_ptr,      \
+	data_ptr, cfg_ptr) data_ptr
+
+#define Z_DEVICE_DEV_TUPLE_DATA_PTR(dev_spec)                                       \
+	Z_DEVICE_DEV_TUPLE_DATA_PTR_ dev_spec
+
+/* Helper which extracts config pointer from Z_DEVICE_DEV_TUPLE */
+#define Z_DEVICE_DEV_TUPLE_CFG_PTR_(dev_name, drv_name, api_type, pm_dev_ptr,       \
+	data_ptr, cfg_ptr) cfg_ptr
+
+#define Z_DEVICE_DEV_TUPLE_CFG_PTR(dev_spec)                                        \
+	Z_DEVICE_DEV_TUPLE_CFG_PTR_ dev_spec
+
+/*
+ * Helper which defines an API device and its dependencies, places it in the correct
+ * section, and sets it up for initialization on boot.
+ */
+#define Z_DEVICE_NEW_DEFINE(dev_name, drv_name, init_fn, pm_dev_ptr, data_ptr,      \
+			cfg_ptr, init_level, init_prio, api_ptr, api_type, state_ptr)           \
+	static const Z_DECL_ALIGN(struct device) Z_DEVICE_API_NAME(dev_name, api_type)  \
+		Z_DEVICE_API_PLACE_IN_SECTION(api_type) = {                                 \
+		.name = drv_name,                                                           \
+		.config = (cfg_ptr),                                                        \
+		.api = (api_ptr),                                                           \
+		.state = (state_ptr),                                                       \
+		.data = (data_ptr),                                                         \
+		COND_CODE_1(CONFIG_PM_DEVICE, (.pm = pm_dev_ptr,), ())                      \
+	};                                                                              \
+                                                                                    \
+	Z_INIT_ENTRY_DEFINE(Z_DEVICE_API_NAME(dev_name, api_type), init_fn,             \
+		&(Z_DEVICE_API_NAME(dev_name, api_type)), init_level, init_prio);
+
+/*
+ * Helper which creates a device object which shares all members excluding the name
+ * and API pointer.
+ */
+#define Z_DEVICE_API_ASSIGN(api_spec, dev_spec)                                     \
+	const Z_DECL_ALIGN(struct device)                                               \
+		Z_DEVICE_API_NAME(Z_DEVICE_DEV_TUPLE_DEV_NAME(dev_spec),                    \
+			Z_DEVICE_API_API_TYPE(api_spec))                                        \
+		Z_DEVICE_API_PLACE_IN_SECTION(Z_DEVICE_API_API_TYPE(api_spec)) = {          \
+		.name = Z_DEVICE_API_FULL_NAME(                                             \
+			Z_DEVICE_DEV_TUPLE_DRV_NAME(dev_spec),                                  \
+			Z_DEVICE_API_API_TYPE(api_spec)),                                       \
+		.config = Z_DEVICE_DEV_TUPLE_CFG_PTR(dev_spec),                             \
+		.api = Z_DEVICE_API_API_PTR(api_spec),                                      \
+		.state = &Z_DEVICE_NEW_STATE_NAME(                                          \
+			Z_DEVICE_DEV_TUPLE_DEV_NAME(dev_spec)),                                 \
+		.data = Z_DEVICE_DEV_TUPLE_DATA_PTR(dev_spec),                              \
+		COND_CODE_1(CONFIG_PM_DEVICE,                                               \
+			(.pm = Z_DEVICE_DEV_TUPLE_PM_DEV_PTR(dev_spec)), ())                    \
+	}
+
+/* Helper which assigns every api_spec passed in VA_ARGS to dev_spec */
+#define Z_DEVICE_ASSIGN_ADDITIONAL_APIS(dev_spec, ...)                              \
+	COND_CODE_0(NUM_VA_ARGS_LESS_1(LIST_DROP_EMPTY(__VA_ARGS__, _)),                \
+		(),                                                                         \
+		(FOR_EACH_FIXED_ARG(Z_DEVICE_API_ASSIGN, (;), dev_spec,                     \
+			LIST_DROP_EMPTY(__VA_ARGS__))))
+
+/*
+ * Private Multi API Device Model APIs specific to devicetree device
+ */
+
+/* Named tuple containing device parameters used when assigning API devices */
+#define Z_DEVICE_DT_DEV_TUPLE(node_id, api_type, pm_dev_ptr, data_ptr, cfg_ptr)     \
+	(node_id, api_type, pm_dev_ptr, data_ptr, cfg_ptr)
+
+/* Helper which extracts node id from Z_DEVICE_DT_DEV_TUPLE */
+#define Z_DEVICE_DT_DEV_TUPLE_NODE_ID_(node_id, api_type, pm_dev_ptr, data_ptr,     \
+	cfg_ptr) node_id
+
+#define Z_DEVICE_DT_DEV_TUPLE_NODE_ID(dev_dt_spec)                                  \
+	Z_DEVICE_DT_DEV_TUPLE_NODE_ID_ dev_dt_spec
+
+/* Helper which extracts API type from Z_DEVICE_DT_DEV_TUPLE */
+#define Z_DEVICE_DT_DEV_TUPLE_API_TYPE_(node_id, api_type, pm_dev_ptr,              \
+	data_ptr, cfg_ptr) api_type
+
+#define Z_DEVICE_DT_DEV_TUPLE_API_TYPE(dev_dt_spec)                                 \
+	Z_DEVICE_DT_DEV_TUPLE_API_TYPE_ dev_dt_spec
+
+/* Helper which extracts PM device pointer from Z_DEVICE_DT_DEV_TUPLE */
+#define Z_DEVICE_DT_DEV_TUPLE_PM_DEV_PTR_(node_id, api_type, pm_dev_ptr,            \
+	data_ptr, cfg_ptr) pm_dev_ptr
+
+#define Z_DEVICE_DT_DEV_TUPLE_PM_DEV_PTR(dev_dt_spec)                               \
+	Z_DEVICE_DT_DEV_TUPLE_PM_DEV_PTR_ dev_dt_spec
+
+/* Helper which extracts data pointer from Z_DEVICE_DT_DEV_TUPLE */
+#define Z_DEVICE_DT_DEV_TUPLE_DATA_PTR_(node_id, api_type, pm_dev_ptr, data_ptr,    \
+	cfg_ptr) data_ptr
+
+#define Z_DEVICE_DT_DEV_TUPLE_DATA_PTR(dev_dt_spec)                                 \
+	Z_DEVICE_DT_DEV_TUPLE_DATA_PTR_ dev_dt_spec
+
+/* Helper which extracts config pointer from Z_DEVICE_DT_DEV_TUPLE */
+#define Z_DEVICE_DT_DEV_TUPLE_CFG_PTR_(node_id, api_type, pm_dev_ptr, data_ptr,     \
+	cfg_ptr) cfg_ptr
+
+#define Z_DEVICE_DT_DEV_TUPLE_CFG_PTR(dev_dt_spec)                                  \
+	Z_DEVICE_DT_DEV_TUPLE_CFG_PTR_ dev_dt_spec
+
+/*
+ * Helper which defines an API device and its dependencies, places it in the correct
+ * section, and sets it up for initialization on boot, using information from the
+ * devicetree.
+ */
+#define Z_DEVICE_DT_NEW_DEFINE(node_id, init_fn, pm_dev_ptr, data_ptr, cfg_ptr,     \
+			init_level, init_prio, api_ptr, api_type, state_ptr)                    \
+	const Z_DECL_ALIGN(struct device) Z_DEVICE_DT_API_NAME(node_id, api_type)       \
+		Z_DEVICE_API_PLACE_IN_SECTION(api_type) = {                                 \
+		.name = Z_DEVICE_DT_API_FULL_NAME(node_id, api_type),                       \
+		.config = (cfg_ptr),                                                        \
+		.api = api_ptr,                                                             \
+		.state = (state_ptr),                                                       \
+		.data = (data_ptr),                                                         \
+		COND_CODE_1(CONFIG_PM_DEVICE, (.pm = pm_dev_ptr,), ())                      \
+	};                                                                              \
+	                                                                                \
+	Z_INIT_ENTRY_DEFINE(Z_DEVICE_DT_API_NAME(node_id, api_type), init_fn,           \
+		&(Z_DEVICE_DT_API_NAME(node_id, api_type)), init_level, init_prio);
+
+/*
+ * Helper which creates a device object which shares all members excluding the name
+ * and API pointer.
+ */
+#define Z_DEVICE_DT_API_ASSIGN(api_spec, dev_dt_spec)                               \
+	const Z_DECL_ALIGN(struct device)                                               \
+		Z_DEVICE_DT_API_NAME(Z_DEVICE_DT_DEV_TUPLE_NODE_ID(dev_dt_spec),            \
+			Z_DEVICE_API_API_TYPE(api_spec))                                        \
+		Z_DEVICE_API_PLACE_IN_SECTION(Z_DEVICE_API_API_TYPE(api_spec)) = {          \
+		.name = Z_DEVICE_DT_API_FULL_NAME(                                          \
+			Z_DEVICE_DT_DEV_TUPLE_NODE_ID(dev_dt_spec),                             \
+			Z_DEVICE_API_API_TYPE(api_spec)),                                       \
+		.config = Z_DEVICE_DT_DEV_TUPLE_CFG_PTR(dev_dt_spec),                       \
+		.api = Z_DEVICE_API_API_PTR(api_spec),                                      \
+		.state = &Z_DEVICE_NEW_STATE_NAME(Z_DEVICE_DT_NAME_FROM_NODE(               \
+			Z_DEVICE_DT_DEV_TUPLE_NODE_ID(dev_dt_spec))),                           \
+		.data = Z_DEVICE_DT_DEV_TUPLE_DATA_PTR(dev_dt_spec),                        \
+		COND_CODE_1(CONFIG_PM_DEVICE,                                               \
+			(.pm = Z_DEVICE_DT_DEV_TUPLE_PM_DEV_PTR(dev_dt_spec)), ())              \
+	}
+
+/* Helper which assigns every api_spec passed in VA_ARGS to dev_dt_spec */
+#define Z_DEVICE_DT_ASSIGN_ADDITIONAL_APIS(dev_dt_spec, ...)                        \
+	COND_CODE_0(NUM_VA_ARGS_LESS_1(LIST_DROP_EMPTY(__VA_ARGS__, _)),                \
+		(),                                                                         \
+		(FOR_EACH_FIXED_ARG(Z_DEVICE_DT_API_ASSIGN, (;), dev_dt_spec,               \
+			LIST_DROP_EMPTY(__VA_ARGS__))))
+
+#endif /* CONFIG_LEGACY_DEVICE_MODEL */
+
+#ifdef CONFIG_HAS_DTS
 /*
  * Declare a device for each status "okay" devicetree node. (Disabled
  * nodes should not result in devices, so not predeclaring these keeps
