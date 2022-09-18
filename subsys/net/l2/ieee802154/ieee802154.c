@@ -96,11 +96,10 @@ static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
 				   enum ieee802154_addressing_mode mode,
 				   struct ieee802154_address_field *ll)
 {
-	if (mode == IEEE802154_ADDR_MODE_NONE) {
-		return;
-	}
+	addr->type = NET_LINK_IEEE802154;
 
-	if (mode == IEEE802154_ADDR_MODE_EXTENDED) {
+	switch (mode) {
+	case IEEE802154_ADDR_MODE_EXTENDED:
 		addr->len = IEEE802154_EXT_ADDR_LENGTH;
 
 		if (comp) {
@@ -108,13 +107,23 @@ static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
 		} else {
 			addr->addr = ll->plain.addr.ext_addr;
 		}
-	} else {
-		/* TODO: Handle short address (lookup known nbr, ...) */
+		break;
+
+	case IEEE802154_ADDR_MODE_SHORT:
+		addr->len = IEEE802154_SHORT_ADDR_LENGTH;
+
+		if (comp) {
+			addr->addr = (uint8_t *)&ll->comp.addr.short_addr;
+		} else {
+			addr->addr = (uint8_t *)&ll->plain.addr.short_addr;
+		}
+		break;
+
+	case IEEE802154_ADDR_MODE_NONE:
+	default:
 		addr->len = 0U;
 		addr->addr = NULL;
 	}
-
-	addr->type = NET_LINK_IEEE802154;
 }
 
 /**
