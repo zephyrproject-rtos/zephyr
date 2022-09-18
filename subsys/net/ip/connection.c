@@ -760,8 +760,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && conn_family == AF_CAN) {
 			best_match = conn;
 		}
-			/* loop end */
-	}
+	} /* loop end */
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
 		if (raw_pkt_continue) {
