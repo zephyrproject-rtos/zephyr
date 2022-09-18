@@ -43,6 +43,12 @@ struct gpio_msp432p4xx_data {
 	sys_slist_t callbacks;
 };
 
+static struct gpio_msp432p4xx_data gpio_msp432p4xx_data_0;
+
+static const struct gpio_driver_config gpio_msp432p4xx_cfg_0 = {
+	.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
+};
+
 static int gpio_msp432p4xx_port_set_bits_raw(const struct device *port,
 					 uint32_t mask);
 static int gpio_msp432p4xx_port_clear_bits_raw(const struct device *port,
@@ -222,3 +228,9 @@ static const struct gpio_driver_api api_funcs = {
 	.pin_interrupt_configure = gpio_msp432p4xx_pin_interrupt_configure,
 	.manage_callback = gpio_msp432p4xx_manage_callback,
 };
+
+DEVICE_DT_INST_DEFINE(0, gpio_msp432p4xx_init,
+		    NULL, &gpio_msp432p4xx_data_0,
+		    &gpio_msp432p4xx_cfg_0,
+		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
+		    &gpio_msp432p4xx_driver_api);
