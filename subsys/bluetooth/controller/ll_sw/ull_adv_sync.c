@@ -888,7 +888,6 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 				HAL_TICKER_US_TO_TICKS(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
-					EVENT_OVERHEAD_START_US +
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 		}
 
