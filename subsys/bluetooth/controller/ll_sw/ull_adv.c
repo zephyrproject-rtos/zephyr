@@ -1409,8 +1409,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 				ticks_anchor + ticks_slot +
 				HAL_TICKER_US_TO_TICKS(
 					MAX(EVENT_MAFS_US,
-					    EVENT_OVERHEAD_START_US) -
-					EVENT_OVERHEAD_START_US +
+					    EVENT_OVERHEAD_START_US) +
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 
 			ticks_slot_overhead_aux =
@@ -1450,8 +1449,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 					ticks_anchor_aux + ticks_slot_aux +
 					HAL_TICKER_US_TO_TICKS(
 						MAX(EVENT_MAFS_US,
-						    EVENT_OVERHEAD_START_US) -
-						EVENT_OVERHEAD_START_US +
+						    EVENT_OVERHEAD_START_US) +
 						(EVENT_TICKER_RES_MARGIN_US << 1));
 
 				ret = ull_adv_sync_start(adv, sync,
