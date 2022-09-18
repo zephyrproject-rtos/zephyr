@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags: device
+  integration_platforms:
+    - native_posix
+tests:
+  kernel.device.api:
+    tags: kernel device multi api
+    platform_exclude: beaglev_starlight_jh7100 mec15xxevb_assy6853

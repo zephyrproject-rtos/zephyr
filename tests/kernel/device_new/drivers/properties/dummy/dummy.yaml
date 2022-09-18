@@ -1,0 +1,17 @@
+# Copyright (c) 2022 Trackunit A/S
+# SPDX-License-Identifier: Apache-2.0
+
+include: dummy-base.yaml
+
+description: Dummy driver bindings
+
+compatible: "dummy_driver"
+
+properties:
+  vendor:
+    value: DummyVendor
+
+  serial:
+    value: 1432
+
+api: [uart, spi, i2c]

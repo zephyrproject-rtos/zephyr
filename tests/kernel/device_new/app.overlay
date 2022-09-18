@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2022 Trackunit A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dummy1: dummy1 {
+		compatible = "dummy_driver";
+		status = "okay";
+	};
+
+	dummy2: dummy2 {
+		compatible = "dummy_driver";
+		status = "okay";
+	};
+
+	dummy_low: dummy_low {
+		compatible = "dummy_driver_uart_low_prio";
+		status = "okay";
+	};
+
+	dummy_high: dummy_high {
+		compatible = "dummy_driver_uart_high_prio";
+		status = "okay";
+	};
+};

@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Trackunit A/S
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  vendor:
+    type: string
+    required: true
+
+  serial:
+    type: int
+    required: true
+
+  model:
+    type: string
+    default: DefaultDummyModel
