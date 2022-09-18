@@ -192,7 +192,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* TODO: parameters to ULL if only accessed by ULL */
 	lll_adv_iso = &adv_iso->lll;
 	lll_adv_iso->handle = big_handle;
-	lll_adv_iso->max_pdu = LL_BIS_OCTETS_TX_MAX;
+	lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX, max_sdu);
 	lll_adv_iso->phy = phy;
 	lll_adv_iso->phy_flags = PHY_FLAGS_S8;
 
