@@ -19,14 +19,20 @@
 
 #include "gpio_utils.h"
 
+struct gpio_pin_gaps {
+	uint8_t start;
+	uint8_t len;
+};
+
 struct mcux_igpio_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	GPIO_Type *base;
 #ifdef CONFIG_PINCTRL
-	uint8_t port_num;
 	const struct pinctrl_soc_pinmux *pin_muxes;
+	const struct gpio_pin_gaps *pin_gaps;
 	uint8_t mux_count;
+	uint8_t gap_count;
 #endif
 };
 
@@ -45,26 +51,25 @@ static int mcux_igpio_configure(const struct device *dev,
 
 #ifdef CONFIG_PINCTRL
 	struct pinctrl_soc_pin pin_cfg;
-	int cfg_idx = pin;
+	int cfg_idx = pin, i;
 
 	/* Some SOCs have non-contiguous gpio pin layouts, account for this */
-	if (IS_ENABLED(CONFIG_SOC_MIMXRT1015) &&
-		(config->port_num == 3) && (pin >= 20)) {
-		/* RT1015 does not have GPIO3 pins 4-19 */
-		cfg_idx -= 16;
-	} else if (IS_ENABLED(CONFIG_SOC_MIMXRT1015) &&
-		(config->port_num == 5)) {
-		/* RT1015 only has one GPIO5 pin */
-		cfg_idx = 0;
-	} else if ((IS_ENABLED(CONFIG_SOC_MIMXRT1024) ||
-		IS_ENABLED(CONFIG_SOC_MIMXRT1021)) &&
-		(config->port_num == 3) && (pin >= 13)) {
-		/* RT102x does not have GPIO3 pins 10-12 */
-		cfg_idx -= 3;
+	for (i = 0; i < config->gap_count; i++) {
+		if (cfg_idx >= config->pin_gaps[i].start) {
+			if (cfg_idx < (config->pin_gaps[i].start +
+				config->pin_gaps[i].len)) {
+				/* Pin is not connected to a mux */
+				return -ENOTSUP;
+			}
+			cfg_idx -= config->pin_gaps[i].len;
+		}
 	}
 
 	/* Init pin configuration struct, and use pinctrl api to apply settings */
-	assert(cfg_idx < config->mux_count);
+	if (cfg_idx >= config->mux_count) {
+		/* Pin is not connected to a mux */
+		return -ENOTSUP;
+	}
 
 	/* Set appropriate bits in pin configuration register */
 	volatile uint32_t *gpio_cfg_reg =
@@ -366,11 +371,14 @@ static const struct gpio_driver_api mcux_igpio_driver_api = {
 #define MCUX_IGPIO_PIN_DECLARE(n)						\
 	const struct pinctrl_soc_pinmux mcux_igpio_pinmux_##n[] = {		\
 		DT_FOREACH_PROP_ELEM(DT_DRV_INST(n), pinmux, PINMUX_INIT)	\
-	};
+	};									\
+	const uint8_t mcux_igpio_pin_gaps_##n[] =				\
+		DT_INST_PROP_OR(n, gpio_reserved_ranges, {});
 #define MCUX_IGPIO_PIN_INIT(n)							\
-	.port_num = (n + 1),								\
 	.pin_muxes = mcux_igpio_pinmux_##n,					\
-	.mux_count = DT_PROP_LEN(DT_DRV_INST(n), pinmux),
+	.pin_gaps = (const struct gpio_pin_gaps *)mcux_igpio_pin_gaps_##n,	\
+	.mux_count = DT_PROP_LEN(DT_DRV_INST(n), pinmux),			\
+	.gap_count = (ARRAY_SIZE(mcux_igpio_pin_gaps_##n) / 2)
 #else
 #define MCUX_IGPIO_PIN_DECLARE(n)
 #define MCUX_IGPIO_PIN_INIT(n)
