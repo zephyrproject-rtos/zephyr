@@ -55,7 +55,8 @@ static void b91_src_match_table_clean(struct b91_src_match_table *table)
 }
 
 /* Search in radio search match table */
-static bool b91_src_match_table_search(
+static bool
+inline b91_src_match_table_search(
 	const struct b91_src_match_table *table, const uint8_t *addr, bool ext)
 {
 	bool result = false;
@@ -129,7 +130,8 @@ static void b91_src_match_table_remove_group(struct b91_src_match_table *table, 
  * data request command or data
  * buffer should be valid
  */
-static bool b91_require_pending_bit(const struct ieee802154_frame *frame)
+static bool
+inline b91_require_pending_bit(const struct ieee802154_frame *frame)
 {
 	bool result = false;
 
@@ -206,7 +208,8 @@ static int b91_set_ieee_addr(const uint8_t *ieee_addr)
 }
 
 /* Filter PAN ID, short address and IEEE address */
-static bool b91_run_filter(const struct ieee802154_frame *frame)
+static bool
+inline b91_run_filter(const struct ieee802154_frame *frame)
 {
 	bool result = false;
 
@@ -278,7 +281,8 @@ static inline uint8_t *b91_get_mac(const struct device *dev)
 }
 
 /* Convert RSSI to LQI */
-static uint8_t b91_convert_rssi_to_lqi(int8_t rssi)
+static uint8_t
+inline b91_convert_rssi_to_lqi(int8_t rssi)
 {
 	uint32_t lqi32 = 0;
 
@@ -299,7 +303,8 @@ static uint8_t b91_convert_rssi_to_lqi(int8_t rssi)
 }
 
 /* Update RSSI and LQI parameters */
-static void b91_update_rssi_and_lqi(struct net_pkt *pkt)
+static void
+inline b91_update_rssi_and_lqi(struct net_pkt *pkt)
 {
 	int8_t rssi;
 	uint8_t lqi;
@@ -313,7 +318,8 @@ static void b91_update_rssi_and_lqi(struct net_pkt *pkt)
 }
 
 /* Prepare TX buffer */
-static void b91_set_tx_payload(uint8_t *payload, uint8_t payload_len)
+static void
+inline b91_set_tx_payload(uint8_t *payload, uint8_t payload_len)
 {
 	unsigned char rf_data_len;
 	unsigned int rf_tx_dma_len;
@@ -329,7 +335,8 @@ static void b91_set_tx_payload(uint8_t *payload, uint8_t payload_len)
 }
 
 /* Handle acknowledge packet */
-static void b91_handle_ack(const void *buf, size_t buf_len)
+static void
+inline b91_handle_ack(const void *buf, size_t buf_len)
 {
 	struct net_pkt *ack_pkt = net_pkt_rx_alloc_with_buffer(
 		data.iface, buf_len, AF_UNSPEC, 0, K_NO_WAIT);
@@ -357,7 +364,8 @@ static void b91_handle_ack(const void *buf, size_t buf_len)
 }
 
 /* Send acknowledge packet */
-static void b91_send_ack(const struct ieee802154_frame *frame)
+static void
+inline b91_send_ack(const struct ieee802154_frame *frame)
 {
 	uint8_t ack_buf[64];
 	size_t ack_len;
@@ -375,7 +383,9 @@ static void b91_send_ack(const struct ieee802154_frame *frame)
 }
 
 /* RX IRQ handler */
-static void b91_rf_rx_isr(void)
+static void
+__attribute__((section(".ram_code")))
+b91_rf_rx_isr(void)
 {
 	int status = -EINVAL;
 	struct net_pkt *pkt = NULL;
@@ -417,11 +427,8 @@ static void b91_rf_rx_isr(void)
 			LOG_DBG("Packet received is not addressed to me.");
 			break;
 		}
-		pkt = net_pkt_rx_alloc_with_buffer(data.iface, length, AF_UNSPEC, 0, K_NO_WAIT);
-		if (!pkt) {
-			LOG_ERR("No pkt available.");
-			break;
-		}
+		bool frame_pending = false;
+
 		if (frame.general.ack_req) {
 #ifdef CONFIG_OPENTHREAD_FTD
 			if (b91_require_pending_bit(&frame)) {
@@ -429,30 +436,28 @@ static void b91_rf_rx_isr(void)
 					if (!data.src_match_table->enabled ||
 						b91_src_match_table_search(data.src_match_table,
 							frame.src_addr, frame.src_addr_ext)) {
-						net_pkt_set_ieee802154_ack_fpb(pkt, true);
-					} else {
-						net_pkt_set_ieee802154_ack_fpb(pkt, false);
+						frame_pending = true;
 					}
-				} else {
-					net_pkt_set_ieee802154_ack_fpb(pkt, false);
 				}
-			} else {
-				net_pkt_set_ieee802154_ack_fpb(pkt, false);
 			}
-#else
-			net_pkt_set_ieee802154_ack_fpb(pkt, false);
 #endif
 			const struct ieee802154_frame ack_frame = {
 				.general = {
 					.valid = true,
 					.ver = IEEE802154_FRAME_FCF_VER_2003,
 					.type = IEEE802154_FRAME_FCF_TYPE_ACK,
-					.fp_bit = net_pkt_ieee802154_ack_fpb(pkt)
+					.fp_bit = frame_pending
 				},
 				.sn = frame.sn
 			};
 			b91_send_ack(&ack_frame);
 		}
+		pkt = net_pkt_rx_alloc_with_buffer(data.iface, length, AF_UNSPEC, 0, K_NO_WAIT);
+		if (!pkt) {
+			LOG_ERR("No pkt available.");
+			break;
+		}
+		net_pkt_set_ieee802154_ack_fpb(pkt, frame_pending);
 		if (net_pkt_write(pkt, payload, length)) {
 			LOG_ERR("Failed to write to a packet.");
 			break;

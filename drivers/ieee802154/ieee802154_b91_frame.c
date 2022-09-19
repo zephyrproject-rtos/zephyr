@@ -118,7 +118,8 @@ struct ieee802154_frame {
  * Check if FCF describes destination PANID
  * fcf should be valid and contains at lest 2 bytes
  */
-static bool ieee802154_frame_has_dest_panid(const uint8_t fcf[2])
+static bool
+inline ieee802154_frame_has_dest_panid(const uint8_t fcf[2])
 {
 	bool result = true;
 	const uint8_t frame_ver_t = (fcf[1] & IEEE802154_FRAME_FCF_VER_MASK) >>
@@ -167,7 +168,8 @@ static bool ieee802154_frame_has_dest_panid(const uint8_t fcf[2])
  * return PANID compression bit
  * frame should be valid
  */
-static bool ieee802154_frame_panid_compression(const struct ieee802154_frame *frame)
+static bool
+inline ieee802154_frame_panid_compression(const struct ieee802154_frame *frame)
 {
 	bool result = false;
 
@@ -208,7 +210,8 @@ static bool ieee802154_frame_panid_compression(const struct ieee802154_frame *fr
  * Parse IEEE802154 buffer
  * buf & frame should be valid
  */
-static void b91_ieee802154_frame_parse(const uint8_t *buf, size_t bul_len,
+static void
+inline b91_ieee802154_frame_parse(const uint8_t *buf, size_t bul_len,
 	struct ieee802154_frame *frame)
 {
 	size_t pos = 0; /* current buffer position */
@@ -459,7 +462,8 @@ static void b91_ieee802154_frame_parse(const uint8_t *buf, size_t bul_len,
  * Create ACK buffer
  * frame & buf should be valid
  */
-static bool b91_ieee802154_frame_build(const struct ieee802154_frame *frame,
+static bool
+inline b91_ieee802154_frame_build(const struct ieee802154_frame *frame,
 	uint8_t *buf, size_t bul_len, size_t *o_len)
 {
 	bool result = false;
