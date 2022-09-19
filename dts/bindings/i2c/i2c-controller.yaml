@@ -3,7 +3,10 @@
 
 # Common fields for I2C controllers
 
-include: base.yaml
+include:
+  - name: base.yaml
+    property-blocklist:
+      - label
 
 bus: i2c
 
@@ -18,3 +21,9 @@ properties:
       type: int
       required: false
       description: Initial clock frequency in Hz
+    label:
+      type: string
+      required: false
+      description: |
+        Friendly name for the I2C controller. Available for the "i2c" shell
+        commands only.

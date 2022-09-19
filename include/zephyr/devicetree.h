@@ -2585,6 +2585,11 @@
 		    (UTIL_CAT(DT_FOREACH_OKAY_, compat)(fn)),	\
 		    ())
 
+#define DT_BUS_FOREACH(bus, fn) \
+	COND_CODE_1(1,			\
+		    (DT_CAT3(DT_BUS_, bus, _FOREACH_HELPER)(fn)),	\
+		    ())
+
 /**
  * @brief Invokes @p fn for each status `okay` node of a compatible
  *        with multiple arguments.
