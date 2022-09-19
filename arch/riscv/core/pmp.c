@@ -334,7 +334,7 @@ void z_riscv_pmp_init(void)
 	if (global_pmp_end_index != 0) {
 		__ASSERT(global_pmp_end_index == index, "");
 		__ASSERT(global_pmp_cfg[0] == pmp_cfg[0], "");
-		__ASSERT(global_pmp_last_addr == pmp_addr[index - 1]);
+		__ASSERT(global_pmp_last_addr == pmp_addr[index - 1], "");
 	}
 #endif
 
