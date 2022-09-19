@@ -21,7 +21,11 @@ function compile(){
 
   local this_dir=${WORK_DIR}/${app}/${conf_file}
 
+  local modules_arg="${ZEPHYR_MODULES:+-DZEPHYR_MODULES=${ZEPHYR_MODULES}}"
+
   echo "Building $exe_name"
+
+  local ret=0
 
   # Set INCR_BUILD when calling to only do an incremental build
   if [ ! -v INCR_BUILD ] || [ ! -d "${this_dir}" ]; then
@@ -29,12 +33,13 @@ function compile(){
       mkdir -p ${this_dir} && cd ${this_dir}
       cmake -GNinja -DBOARD_ROOT=${BOARD_ROOT} -DBOARD=${BOARD} \
             -DCONF_FILE=${conf_file} -DOVERLAY_CONFIG=${conf_overlay} \
+            ${modules_arg} \
             ${cmake_args} -DCMAKE_C_FLAGS="${cc_flags}" ${app_root}/${app} \
-            &> cmake.out || { cat cmake.out && return 0; }
+            &> cmake.out || { ret="$?"; cat cmake.out && return $ret; }
   else
       cd ${this_dir}
   fi
-  ninja ${ninja_args} &> ninja.out || { cat ninja.out && return 0; }
+  ninja ${ninja_args} &> ninja.out || { ret="$?"; cat ninja.out && return $ret; }
   cp ${this_dir}/zephyr/zephyr.exe ${exe_name}
 
   nm ${exe_name} | grep -v " [U|w] " | sort | cut -d" " -f1,3 > ${map_file_name}
