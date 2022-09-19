@@ -869,12 +869,18 @@ def write_global_macros(edt):
     n_okay_macros = {}
     for_each_macros = {}
     compat2buses = defaultdict(list)  # just for "okay" nodes
+    bus2nodes = defaultdict(list)  # just for "okay" nodes
     for compat, okay_nodes in edt.compat2okay.items():
         for node in okay_nodes:
             buses = node.on_buses
             for bus in buses:
                 if bus is not None and bus not in compat2buses[compat]:
                     compat2buses[compat].append(bus)
+
+            buses = node.buses
+            for bus in buses:
+                if bus is not None and node not in bus2nodes[bus]:
+                    bus2nodes[bus].append(node)
 
         ident = str2ident(compat)
         n_okay_macros[f"DT_N_INST_{ident}_NUM_OKAY"] = len(okay_nodes)
@@ -928,6 +934,11 @@ def write_global_macros(edt):
         for bus in buses:
             out_define(
                 f"DT_COMPAT_{str2ident(compat)}_BUS_{str2ident(bus)}", 1)
+
+    out_comment('List of all nodes with valid "bus" property\n')
+    for bus, nodes in bus2nodes.items():
+        out_dt_define(f"BUS_{str2ident(bus)}_FOREACH_HELPER(fn)",
+            " ".join(f"fn(DT_{node.z_path_id})" for node in nodes))
 
 def str2ident(s):
     # Converts 's' to a form suitable for (part of) an identifier
