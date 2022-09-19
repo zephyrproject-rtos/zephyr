@@ -218,7 +218,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
-	static struct wifi_connect_req_params cnx_params;
+	struct wifi_connect_req_params cnx_params = { 0 };
 
 	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
 		shell_help(sh);
