@@ -341,6 +341,15 @@ Libraries / Subsystems
     not been used, and the ``nb`` parameter, of :c:struct:`net_buf` type,
     can carry additional transport information when needed.
 
+* Cbprintf and logging
+
+  * Updated cbprintf static packaging to interpret ``unsigned char *`` as a pointer
+    to a string. See :ref:`cbprintf_packaging_limitations` for more details about
+    how to efficienty use strings. Change mainly applies to the ``logging`` subsystem
+    since it uses this feature.
+  * Added :c:macro:`LOG_RAW` for logging strings without additional formatting.
+    It is similar to :c:macro:`LOG_PRINTK` but do not append ``<cr>`` when new line is found.
+
 HALs
 ****
 
