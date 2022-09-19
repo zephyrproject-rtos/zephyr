@@ -624,6 +624,24 @@ static void set_up_fixed_clock_sources(void)
 
 		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 	}
+
+#if defined(STM32_HSI48_ENABLED)
+	/* For all series with HSI 48 clock support */
+	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+		/*
+		 * HSI48 requires VREFINT (see RM0376 section 7.2.4).
+		 * The SYSCFG is needed to control VREFINT, so clock it.
+		 */
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
+		LL_SYSCFG_VREFINT_EnableHSI48();
+#endif /* CONFIG_SOC_SERIES_STM32L0X */
+
+		LL_RCC_HSI48_Enable();
+		while (LL_RCC_HSI48_IsReady() != 1) {
+		}
+	}
+#endif /* STM32_HSI48_ENABLED */
 }
 
 /**
