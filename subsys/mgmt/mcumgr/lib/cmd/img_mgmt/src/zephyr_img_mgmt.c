@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/init.h>
+#include <bootutil/bootutil_public.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/dfu/flash_img.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
@@ -456,6 +457,12 @@ img_mgmt_impl_erase_image_data(unsigned int off, unsigned int num_bytes)
 
 	LOG_INF("Erased 0x%zx bytes of image slot", erase_size);
 
+#ifdef CONFIG_MCUBOOT_IMG_MANAGER
+	/* Right now MCUmgr supports only mcuboot images.
+	 * Above compilation swich might help to recognize mcuboot related
+	 * code when supports for anothe bootloader will be introduced.
+	 */
+
 	/* erase the image trailer area if it was not erased */
 	off = BOOT_TRAILER_IMG_STATUS_OFFS(fa);
 	if (off >= erase_size) {
@@ -474,7 +481,7 @@ img_mgmt_impl_erase_image_data(unsigned int off, unsigned int num_bytes)
 
 		LOG_INF("Erased 0x%zx bytes of image slot trailer", erase_size);
 	}
-
+#endif
 	rc = 0;
 
 end_fa:
