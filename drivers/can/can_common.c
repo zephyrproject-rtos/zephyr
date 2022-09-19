@@ -17,6 +17,44 @@ LOG_MODULE_REGISTER(can_common, CONFIG_CAN_LOG_LEVEL);
 /* CAN sync segment is always one time quantum */
 #define CAN_SYNC_SEG 1
 
+struct can_tx_default_cb_ctx {
+	struct k_sem done;
+	int status;
+};
+
+static void can_tx_default_cb(const struct device *dev, int error, void *user_data)
+{
+	struct can_tx_default_cb_ctx *ctx = user_data;
+
+	ctx->status = error;
+	k_sem_give(&ctx->done);
+}
+
+int z_impl_can_send(const struct device *dev, const struct can_frame *frame,
+		    k_timeout_t timeout, can_tx_callback_t callback,
+		    void *user_data)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	if (callback == NULL) {
+		struct can_tx_default_cb_ctx ctx;
+		int err;
+
+		k_sem_init(&ctx.done, 0, 1);
+
+		err = api->send(dev, frame, timeout, can_tx_default_cb, &ctx);
+		if (err != 0) {
+			return err;
+		}
+
+		k_sem_take(&ctx.done, K_FOREVER);
+
+		return ctx.status;
+	}
+
+	return api->send(dev, frame, timeout, callback, user_data);
+}
+
 static void can_msgq_put(const struct device *dev, struct can_frame *frame, void *user_data)
 {
 	struct k_msgq *msgq = (struct k_msgq *)user_data;
