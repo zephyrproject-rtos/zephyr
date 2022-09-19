@@ -11,13 +11,13 @@
 
 #include "bmi088_gyr.h"
 
-#include <init.h>
-#include <drivers/sensor.h>
-#include <sys/byteorder.h>
-#include <kernel.h>
-#include <sys/__assert.h>
-#include <devicetree.h>
-#include <logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/logging/log.h>
 
 #include "../lib/libc/minimal/include/math.h"
 

@@ -52,7 +52,6 @@
  */
 #define SMF_CTX(o) ((struct smf_ctx *)o)
 
-#include <zephyr/zephyr.h>
 #include <zephyr/kernel.h>
 
 #ifdef __cplusplus

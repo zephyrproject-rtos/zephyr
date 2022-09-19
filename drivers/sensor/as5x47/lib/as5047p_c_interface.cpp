@@ -4,7 +4,7 @@
 
 #include "as5047p_c_interface.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include <AS5047P/src/AS5047P.h>
 
 LOG_MODULE_REGISTER(as5047p_c_interface, LOG_LEVEL_WRN);

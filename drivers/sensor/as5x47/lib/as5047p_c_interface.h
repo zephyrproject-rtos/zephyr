@@ -6,6 +6,8 @@
 #define CAROLO_APP_AS5047P_C_INTERFACE_H
 
 #include "as5047p_c_types.h"
+
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -38,8 +40,8 @@ bool initializeSensor(AS5047P_handle h, bool useUVW, int polePairs);
  * @param checkForSensorError Flag to activate sensor error check.
  * @return true on success
  */
-bool readMagnitude(AS5047P_handle h, uint16_t *magnitudeOut,
-                   bool verifyParity, bool checkForComError, bool checkForSensorError);
+bool readMagnitude(AS5047P_handle h, uint16_t *magnitudeOut, bool verifyParity,
+		   bool checkForComError, bool checkForSensorError);
 
 /**
  * Read the current raw angle value.
@@ -51,8 +53,8 @@ bool readMagnitude(AS5047P_handle h, uint16_t *magnitudeOut,
  * @param checkForSensorError Flag to activate sensor error check.
  * @return true on success
  */
-bool readAngleRaw(AS5047P_handle h, uint16_t *angleOut, bool withDAEC,
-                  bool verifyParity, bool checkForComError, bool checkForSensorError);
+bool readAngleRaw(AS5047P_handle h, uint16_t *angleOut, bool withDAEC, bool verifyParity,
+		  bool checkForComError, bool checkForSensorError);
 
 /**
  * Read the current angle value in degree value.
@@ -64,8 +66,8 @@ bool readAngleRaw(AS5047P_handle h, uint16_t *angleOut, bool withDAEC,
  * @param checkForSensorError  Flag to activate sensor error check.
  * @return true on success
  */
-bool readAngleDegree(AS5047P_handle h, float *angleOut, bool withDAEC,
-                     bool verifyParity, bool checkForComError, bool checkForSensorError);
+bool readAngleDegree(AS5047P_handle h, float *angleOut, bool withDAEC, bool verifyParity,
+		     bool checkForComError, bool checkForSensorError);
 
 // -------------------------------------------------------------
 
@@ -80,8 +82,8 @@ bool readAngleDegree(AS5047P_handle h, float *angleOut, bool withDAEC,
  * @param checkForSensorError Flag to activate sensor error check.
  * @return true on success
  */
-bool read_ERRFL(AS5047P_handle h, as5047p_ERRFL_data_t *regData,
-                bool verifyParity, bool checkForComError, bool checkForSensorError);
+bool read_ERRFL(AS5047P_handle h, as5047p_ERRFL_data_t *regData, bool verifyParity,
+		bool checkForComError, bool checkForSensorError);
 
 /**
  * Read the DIAAGC register.
@@ -92,8 +94,8 @@ bool read_ERRFL(AS5047P_handle h, as5047p_ERRFL_data_t *regData,
  * @param checkForSensorError Flag to activate sensor error check.
  * @return true on success
  */
-bool read_DIAAGC(AS5047P_handle h, as5047p_DIAAGC_data_t *regData,
-                 bool verifyParity, bool checkForComError, bool checkForSensorError);
+bool read_DIAAGC(AS5047P_handle h, as5047p_DIAAGC_data_t *regData, bool verifyParity,
+		 bool checkForComError, bool checkForSensorError);
 
 // -------------------------------------------------------------
 
@@ -108,8 +110,8 @@ bool read_DIAAGC(AS5047P_handle h, as5047p_DIAAGC_data_t *regData,
  * @param checkForSensorError Flag to activate sensor error check.
  * @return true on success
  */
-bool read_SETTINGS1(AS5047P_handle h, as5047p_SETTINGS1_data_t *regData,
-                    bool verifyParity, bool checkForComError, bool checkForSensorError);
+bool read_SETTINGS1(AS5047P_handle h, as5047p_SETTINGS1_data_t *regData, bool verifyParity,
+		    bool checkForComError, bool checkForSensorError);
 
 /**
  * Read the SETTINGS2 register.
@@ -120,8 +122,8 @@ bool read_SETTINGS1(AS5047P_handle h, as5047p_SETTINGS1_data_t *regData,
  * @param checkForSensorError Flag to activate sensor error check.
  * @return true on success
  */
-bool read_SETTINGS2(AS5047P_handle h, as5047p_SETTINGS2_data_t *regData,
-                    bool verifyParity, bool checkForComError, bool checkForSensorError);
+bool read_SETTINGS2(AS5047P_handle h, as5047p_SETTINGS2_data_t *regData, bool verifyParity,
+		    bool checkForComError, bool checkForSensorError);
 
 // -------------------------------------------------------------
 
@@ -136,7 +138,7 @@ bool read_SETTINGS2(AS5047P_handle h, as5047p_SETTINGS2_data_t *regData,
  * @return true on success
  */
 bool write_SETTINGS1(AS5047P_handle h, const as5047p_SETTINGS1_data_t *regData,
-                     bool checkForComError, bool verifyWittenReg);
+		     bool checkForComError, bool verifyWittenReg);
 
 /**
  * Write into the SETTINGS2 register.
@@ -147,11 +149,11 @@ bool write_SETTINGS1(AS5047P_handle h, const as5047p_SETTINGS1_data_t *regData,
  * @return true on success
  */
 bool write_SETTINGS2(AS5047P_handle h, const as5047p_SETTINGS2_data_t *regData,
-                     bool checkForComError, bool verifyWrittenReg);
+		     bool checkForComError, bool verifyWrittenReg);
 
 // -------------------------------------------------------------
 
 #ifdef __cplusplus
 }
 #endif
-#endif //CAROLO_APP_AS5047P_C_INTERFACE_H
+#endif // CAROLO_APP_AS5047P_C_INTERFACE_H

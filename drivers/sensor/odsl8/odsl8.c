@@ -1,8 +1,8 @@
-#include <drivers/sensor.h>
-#include <drivers/adc.h>
-#include <device.h>
-#include <logging/log.h>
-#include <devicetree.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/devicetree.h>
 
 #define DT_DRV_COMPAT leuze_odsl8
 
