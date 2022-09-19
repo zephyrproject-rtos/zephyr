@@ -24,6 +24,7 @@ endmenu
 menuconfig LOG_MIPI_SYST_ENABLE
 	bool "MIPI SyS-T format output"
 	select MIPI_SYST_LIB
+	select LOG_OUTPUT
 	help
 	  Enable MIPI SyS-T format output for the logger system.
 
