@@ -89,4 +89,14 @@ config SOC_IT8XXX2_USE_ILM
 	  predictable than executing from Flash directly, and some code (such as code
 	  that writes to the internal Flash) must execute out of RAM.
 
+config SOC_IT8XXX2_EXCEPTIONS_IN_RAM
+	bool "Place exception handling code in RAM"
+	default y
+	select SOC_IT8XXX2_USE_ILM
+	help
+	  Place exception handling (ISR entry/exit and related) code in ILM, which
+	  has more reliable performance characteristics than executing directly from
+	  Flash. This can significantly improve performance when under I-cache
+	  pressure.
+
 endif # SOC_IT8XXX2
