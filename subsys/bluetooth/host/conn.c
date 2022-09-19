@@ -1120,6 +1120,8 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 {
 	atomic_val_t old;
 
+	__ASSERT_NO_MSG(conn);
+
 	/* Reference counter must be checked to avoid incrementing ref from
 	 * zero, then we should return NULL instead.
 	 * Loop on clear-and-set in case someone has modified the reference
