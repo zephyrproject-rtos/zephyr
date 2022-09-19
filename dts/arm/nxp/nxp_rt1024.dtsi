@@ -90,6 +90,7 @@
 		<&iomuxc_gpio_ad_b1_13_gpio1_io29>,
 		<&iomuxc_gpio_ad_b1_14_gpio1_io30>,
 		<&iomuxc_gpio_ad_b1_15_gpio1_io31>;
+	gpio-reserved-ranges = <16 6>;
 };
 
 &gpio2{
@@ -157,6 +158,7 @@
 		<&iomuxc_gpio_sd_b1_09_gpio3_io29>,
 		<&iomuxc_gpio_sd_b1_10_gpio3_io30>,
 		<&iomuxc_gpio_sd_b1_11_gpio3_io31>;
+	gpio-reserved-ranges = <10 3>;
 };
 
 &gpio5{
