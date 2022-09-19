@@ -1,0 +1,10 @@
+# Kconfig top-level ci for compliance testing Kconfig tree for boards / SoC v2 scheme.
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Zephyr board / SoC v2 Configuration"
+
+source "boards/Kconfig.v2"
+source "soc/Kconfig.v2"
