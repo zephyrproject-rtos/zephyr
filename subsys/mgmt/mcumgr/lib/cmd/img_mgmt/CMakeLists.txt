@@ -15,3 +15,7 @@ zephyr_library_sources(
     src/img_mgmt_state.c
     src/img_mgmt_util.c
 )
+
+if(CONFIG_MCUBOOT_IMG_MANAGER)
+    zephyr_library_link_libraries(MCUBOOT_BOOTUTIL)
+endif()
