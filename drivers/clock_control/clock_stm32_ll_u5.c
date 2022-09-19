@@ -767,6 +767,11 @@ static void set_up_fixed_clock_sources(void)
 		}
 	}
 
+	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
+		LL_RCC_HSI48_Enable();
+		while (LL_RCC_HSI48_IsReady() != 1) {
+		}
+	}
 }
 
 int stm32_clock_control_init(const struct device *dev)
