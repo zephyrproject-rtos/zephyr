@@ -169,7 +169,8 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 	}
 }
 
-void bt_keys_foreach_type(int type, void (*func)(struct bt_keys *keys, void *data), void *data)
+void bt_keys_foreach_type(enum bt_keys_type type, void (*func)(struct bt_keys *keys, void *data),
+			  void *data)
 {
 	int i;
 
@@ -182,7 +183,7 @@ void bt_keys_foreach_type(int type, void (*func)(struct bt_keys *keys, void *dat
 	}
 }
 
-struct bt_keys *bt_keys_find(int type, uint8_t id, const bt_addr_le_t *addr)
+struct bt_keys *bt_keys_find(enum bt_keys_type type, uint8_t id, const bt_addr_le_t *addr)
 {
 	int i;
 
@@ -200,7 +201,7 @@ struct bt_keys *bt_keys_find(int type, uint8_t id, const bt_addr_le_t *addr)
 	return NULL;
 }
 
-struct bt_keys *bt_keys_get_type(int type, uint8_t id, const bt_addr_le_t *addr)
+struct bt_keys *bt_keys_get_type(enum bt_keys_type type, uint8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
 
@@ -292,7 +293,7 @@ struct bt_keys *bt_keys_find_addr(uint8_t id, const bt_addr_le_t *addr)
 	return NULL;
 }
 
-void bt_keys_add_type(struct bt_keys *keys, int type)
+void bt_keys_add_type(struct bt_keys *keys, enum bt_keys_type type)
 {
 	__ASSERT_NO_MSG(keys != NULL);
 
