@@ -120,11 +120,13 @@ SECTIONS
 		KEEP(*(.reset.*))
     } GROUP_LINK_IN(ROMABLE_REGION)
 
+#ifndef CONFIG_SOC_IT8XXX2_EXCEPTIONS_IN_RAM
     SECTION_PROLOGUE(_EXCEPTION_SECTION_NAME,,)
 	{
 		KEEP(*(".exception.entry.*"))
 		*(".exception.other.*")
 	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
@@ -148,6 +150,10 @@ SECTIONS
 		/* Specially-tagged functions in SoC sources */
 		KEEP(*(.__ram_code))
 		*(.__ram_code.*)
+#ifdef CONFIG_SOC_IT8XXX2_EXCEPTIONS_IN_RAM
+		KEEP(*(".exception.entry.*"))
+		*(".exception.other.*")
+#endif
 		__ilm_flash_end = .;
 		/* ILM mapping is always a multiple of 4k size; ensure following
 		 * sections won't incorrectly redirect to RAM. */
