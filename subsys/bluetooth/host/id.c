@@ -5,14 +5,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/sys/__assert.h>
 
 #include "hci_core.h"
 #include "id.h"
@@ -827,6 +831,60 @@ void bt_id_pending_keys_update(void)
 	}
 }
 
+struct bt_id_conflict {
+	struct bt_keys *candidate;
+	struct bt_keys *found;
+};
+
+/* The Controller Resolve List is constrained by 7.8.38 "LE Add Device To
+ * Resolving List command". The Host is designed with the assumption that all
+ * local bonds can be put in the resolve list if there is room. Therefore we
+ * must refuse bonds that conflict in the resolve list. Notably, this prevents
+ * multiple local identities to bond with the same remote identity.
+ */
+void find_rl_conflict(struct bt_keys *resident, void *user_data)
+{
+	struct bt_id_conflict *conflict = user_data;
+	bool addr_conflict;
+	bool irk_conflict;
+
+	__ASSERT_NO_MSG(conflict != NULL);
+	__ASSERT_NO_MSG(conflict->candidate != NULL);
+	__ASSERT_NO_MSG(resident != NULL);
+	/* Only uncommitted bonds can be in conflict with committed bonds. */
+	__ASSERT_NO_MSG((conflict->candidate->state & BT_KEYS_ID_ADDED) == 0);
+
+	if (conflict->found) {
+		return;
+	}
+
+	/* Test against committed bonds only. */
+	if ((resident->state & BT_KEYS_ID_ADDED) == 0) {
+		return;
+	}
+
+	addr_conflict = bt_addr_le_eq(&conflict->candidate->addr, &resident->addr);
+
+	/* All-zero IRK is "no IRK", and does not conflict with other Zero-IRKs. */
+	irk_conflict = (!bt_irk_eq(&conflict->candidate->irk, &(struct bt_irk){}) &&
+			bt_irk_eq(&conflict->candidate->irk, &resident->irk));
+
+	if (addr_conflict || irk_conflict) {
+		conflict->found = resident;
+	}
+}
+
+struct bt_keys *bt_id_find_conflict(struct bt_keys *candidate)
+{
+	struct bt_id_conflict conflict = {
+		.candidate = candidate,
+	};
+
+	bt_keys_foreach_type(BT_KEYS_IRK, find_rl_conflict, &conflict);
+
+	return conflict.found;
+}
+
 void bt_id_add(struct bt_keys *keys)
 {
 	CHECKIF(keys == NULL) {
@@ -837,6 +895,9 @@ void bt_id_add(struct bt_keys *keys)
 	int err;
 
 	BT_DBG("addr %s", bt_addr_le_str(&keys->addr));
+
+	__ASSERT_NO_MSG(keys != NULL);
+	__ASSERT_NO_MSG(!bt_id_find_conflict(keys));
 
 	/* Nothing to be done if host-side resolving is used */
 	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
