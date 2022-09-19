@@ -33,9 +33,7 @@
 #include "lll_central_iso.h"
 #include "lll_peripheral_iso.h"
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-#include "ull_tx_queue.h"
-#endif
+#include "ll_sw/ull_tx_queue.h"
 
 #include "isoal.h"
 
@@ -1048,11 +1046,9 @@ static void cis_disabled_cb(void *param)
 
 			cig->lll.num_cis--;
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 			/* CIS terminated, triggers completion of CIS_TERMINATE_IND procedure */
 			/* Only used by local procedure, ignored for remote procedure */
 			conn->llcp.cis.terminate_ack = 1U;
-#endif /* defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
 
 			/* Check if removed CIS has an ACL disassociation callback. Invoke
 			 * the callback to allow cleanup.
