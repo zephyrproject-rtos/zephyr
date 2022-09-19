@@ -15,7 +15,6 @@
 			interrupts = <17 0>;
 			interrupt-names = "global";
 			status = "disabled";
-			label = "TIMERS_6";
 		};
 
 		timers7: timers@40001400 {
@@ -26,7 +25,6 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_7";
 		};
 
 		timers15: timers@40014000 {
@@ -37,12 +35,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_15";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_15";
 				#pwm-cells = <3>;
 			};
 		};
@@ -52,7 +48,6 @@
 			reg = <0x40007400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
 			status = "disabled";
-			label = "DAC_1";
 			#io-channel-cells = <1>;
 		};
 

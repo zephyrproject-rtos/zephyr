@@ -5,6 +5,7 @@
 
 config CLOCK_CONTROL_MCUX_SIM
 	bool "MCUX SIM driver"
-	depends on HAS_MCUX_SIM
+	default y
+	depends on DT_HAS_NXP_KINETIS_SIM_ENABLED
 	help
 	  Enable support for mcux sim driver.

@@ -87,7 +87,6 @@ endif # BT_PAC_SRC
 
 config BT_PACS
 	def_bool BT_PAC_SNK || BT_PAC_SRC
-	select BT_SMP_SC_PAIR_ONLY
 
 config BT_DEBUG_PACS
 	bool "Published Audio Capabilities Service debug"

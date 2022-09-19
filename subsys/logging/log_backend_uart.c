@@ -20,7 +20,8 @@ LOG_MODULE_REGISTER(log_uart);
  */
 static const char LOG_HEX_SEP[10] = "##ZLOGV1##";
 
-static const struct device *uart_dev;
+static const struct device *const uart_dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 static struct k_sem sem;
 static volatile bool in_panic;
 static bool use_async;
@@ -107,7 +108,6 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 
 static void log_backend_uart_init(struct log_backend const *const backend)
 {
-	uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	__ASSERT_NO_MSG(device_is_ready(uart_dev));
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX)) {

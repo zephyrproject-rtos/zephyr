@@ -13,6 +13,7 @@
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/cache.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 void arch_dcache_enable(void)
 {

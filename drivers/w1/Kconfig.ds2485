@@ -1,0 +1,13 @@
+# Configuration options for the Zephyr DS2485 1-Wire master driver
+
+# Copyright (c) 2022 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+config W1_DS2485
+	bool "DS2485 1-wire master driver"
+	select I2C
+	depends on DT_HAS_MAXIM_DS2485_ENABLED
+	select W1_DS2477_85_COMMON
+	default y
+	help
+	  Enable the ds2485 w1 master driver.

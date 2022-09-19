@@ -321,6 +321,10 @@ static int i2c_rcar_init(const struct device *dev)
 
 	k_sem_init(&data->int_sem, 0, 1);
 
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
 	ret = clock_control_on(config->clock_dev,
 			       (clock_control_subsys_t *)&config->mod_clk);
 

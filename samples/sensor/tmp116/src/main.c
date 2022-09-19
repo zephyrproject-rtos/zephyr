@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/eeprom.h>
@@ -19,8 +19,8 @@ static uint8_t eeprom_content[EEPROM_TMP116_SIZE];
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET(TMP116_NODE);
-	const struct device *eeprom = DEVICE_DT_GET(TMP116_EEPROM_NODE);
+	const struct device *const dev = DEVICE_DT_GET(TMP116_NODE);
+	const struct device *const eeprom = DEVICE_DT_GET(TMP116_EEPROM_NODE);
 	struct sensor_value temp_value;
 
 	/* offset to be added to the temperature

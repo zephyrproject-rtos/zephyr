@@ -38,13 +38,13 @@ static const uint16_t srcr[] = {
 #define CANFDCKCR_PARENT_CLK_RATE 800000000
 #define CANFDCKCR_DIVIDER_MASK    0x1FF
 
-/* SCIF clock */
-#define S3D4_CLK_RATE             66600000
+/* Peripherals Clocks */
+#define S3D4_CLK_RATE             66600000	/* SCIF	*/
+#define S0D12_CLK_RATE            66600000	/* PWM	*/
 #endif /* CONFIG_SOC_SERIES_RCAR_GEN3 */
 
 void rcar_cpg_write(uint32_t base_address, uint32_t reg, uint32_t val);
 
-int rcar_cpg_mstp_clock_endisable(uint32_t base_address, uint32_t bit,
-				  uint32_t reg, bool enable);
+int rcar_cpg_mstp_clock_endisable(uint32_t base_address, uint32_t module, bool enable);
 
 #endif /* ZEPHYR_DRIVERS_RENESAS_RENESAS_CPG_MSSR_H_ */

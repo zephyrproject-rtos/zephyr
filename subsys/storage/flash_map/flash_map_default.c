@@ -8,7 +8,7 @@
 #define DT_DRV_COMPAT fixed_partitions
 
 #include <zephyr/device.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/storage/flash_map.h>
 
 #define FLASH_AREA_FOO(part)							\

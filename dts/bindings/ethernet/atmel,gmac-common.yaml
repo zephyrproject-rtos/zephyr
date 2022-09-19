@@ -52,3 +52,7 @@ properties:
         represents Reduced Media-Independent Interface (RMII) mode.
 
         This property must be used with pinctrl-0.
+
+    mac-eeprom:
+      type: phandle
+      description: phandle to I2C eeprom device node.

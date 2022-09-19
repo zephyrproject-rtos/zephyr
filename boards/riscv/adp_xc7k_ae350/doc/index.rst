@@ -16,13 +16,11 @@ of fundamental peripheral IPs.
 
 1st figure shows the green PCB is ADP-XC7K160 and 2nd figure shows the red PCB is ADP-XC7K410.
 
-.. image:: img/adp_xc7k160.png
-     :width: 600px
+.. image:: img/adp_xc7k160.jpg
      :align: center
      :alt: ADP-XC7K160
 
-.. image:: img/adp_xc7k410.png
-     :width: 600px
+.. image:: img/adp_xc7k410.jpg
      :align: center
      :alt: ADP-XC7K410
 
@@ -200,8 +198,7 @@ Connecting Andes ICE (AICE)
 AICE is used for flashing and debugging the board. Please connect AICE to both
 ADP-XC7K board and the host computer as shown in the figure.
 
-.. image:: img/connect_aice.png
-     :width: 600px
+.. image:: img/connect_aice.jpg
      :align: center
      :alt: Connect AICE
 

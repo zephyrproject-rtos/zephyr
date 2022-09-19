@@ -44,13 +44,6 @@ config SHELL_BACKEND_SERIAL_CHECK_DTR
 
 endif #BL654_USB_SERIAL_BACKEND_CDCACM
 
-if IEEE802154
-
-config IEEE802154_NRF5
-	default y
-
-endif # IEEE802154
-
 config BT_CTLR
 	default BT
 

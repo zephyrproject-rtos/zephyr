@@ -34,11 +34,11 @@
 #include <tinycrypt/ctr_prng.h>
 #include <tinycrypt/aes.h>
 #include <tinycrypt/constants.h>
-#include <test_utils.h>
+#include <zephyr/test_utils.h>
 
 #include <stdio.h>
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define MAX_EXPECTED_STRING	128
 #define MAX_BIN_SIZE		(MAX_EXPECTED_STRING / 2)
@@ -343,7 +343,7 @@ static int test_prng_vector(struct prng_vector *v)
 	return rc;
 }
 
-void test_ctr_prng_reseed(void)
+ZTEST(tinycrypt, test_ctr_prng_reseed)
 {
 	uint8_t expectedV1[] = {0x7E, 0xE3, 0xA0, 0xCB, 0x6D, 0x5C, 0x4B, 0xC2,
 				0x4B, 0x7E, 0x3C, 0x48, 0x88, 0xC3, 0x69, 0x70};
@@ -427,7 +427,7 @@ void test_ctr_prng_reseed(void)
 	TC_PRINT("CTR PRNG reseed test succeeded\n");
 }
 
-void test_ctr_prng_uninstantiate(void)
+ZTEST(tinycrypt, test_ctr_prng_uninstantiate)
 {
 	uint8_t entropy[32] = {0}; /* value not important */
 	TCCtrPrng_t ctx;
@@ -462,7 +462,7 @@ void test_ctr_prng_uninstantiate(void)
 	TC_PRINT("CTR PRNG uninstantiate test succeeded\n");
 }
 
-void test_ctr_prng_robustness(void)
+ZTEST(tinycrypt, test_ctr_prng_robustness)
 {
 	uint8_t entropy[32] = {0}; /* value not important */
 	uint8_t output[32];
@@ -538,7 +538,7 @@ void test_ctr_prng_robustness(void)
 /*
  * Main task to test CTR PRNG
  */
-void test_ctr_prng_vector(void)
+ZTEST(tinycrypt, test_ctr_prng_vector)
 {
 	int elements;
 	int rc;

@@ -5,10 +5,10 @@
  */
 
 #include "test_sched.h"
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
 #include <kernel_internal.h>
-#include <ztest_error_hook.h>
+#include <zephyr/ztest_error_hook.h>
 
 struct k_thread user_thread;
 K_SEM_DEFINE(user_sem, 0, 1);
@@ -29,7 +29,7 @@ static void sleepy_thread(void *p1, void *p2, void *p3)
 	k_sem_give(&user_sem);
 }
 
-void test_user_k_wakeup(void)
+ZTEST_USER(threads_scheduling, test_user_k_wakeup)
 {
 	k_tid_t tid = k_thread_create(&user_thread, ustack, STACK_SIZE, sleepy_thread,
 			NULL, NULL, NULL,
@@ -52,7 +52,7 @@ static void preempt_test_thread(void *p1, void *p2, void *p3)
 	k_sem_give(&user_sem);
 }
 
-void test_user_k_is_preempt(void)
+ZTEST_USER(threads_scheduling, test_user_k_is_preempt)
 {
 	/* thread_was_preempt is volatile, and static analysis doesn't
 	 * like to see it being tested inside zassert_true, because
@@ -113,7 +113,7 @@ static void thread_suspend_init_null(void *p1, void *p2, void *p3)
  *
  * @see k_thread_suspend()
  */
-void test_k_thread_suspend_init_null(void)
+ZTEST_USER(threads_scheduling, test_k_thread_suspend_init_null)
 {
 	k_tid_t tid = k_thread_create(&user_thread, ustack, STACK_SIZE,
 			(k_thread_entry_t)thread_suspend_init_null,
@@ -124,7 +124,7 @@ void test_k_thread_suspend_init_null(void)
 	k_thread_join(tid, K_FOREVER);
 }
 #else
-void test_k_thread_suspend_init_null(void)
+ZTEST_USER(threads_scheduling, test_k_thread_suspend_init_null)
 {
 	ztest_test_skip();
 }
@@ -150,7 +150,7 @@ static void thread_resume_init_null(void *p1, void *p2, void *p3)
  *
  * @see k_thread_resume()
  */
-void test_k_thread_resume_init_null(void)
+ZTEST_USER(threads_scheduling, test_k_thread_resume_init_null)
 {
 	k_tid_t tid = k_thread_create(&user_thread, ustack, STACK_SIZE,
 			(k_thread_entry_t)thread_resume_init_null,
@@ -161,7 +161,7 @@ void test_k_thread_resume_init_null(void)
 	k_thread_join(tid, K_FOREVER);
 }
 #else
-void test_k_thread_resume_init_null(void)
+ZTEST_USER(threads_scheduling, test_k_thread_resume_init_null)
 {
 	ztest_test_skip();
 }
@@ -187,7 +187,7 @@ static void thread_priority_get_init_null(void *p1, void *p2, void *p3)
  *
  * @see thread_k_thread_priority_get()
  */
-void test_k_thread_priority_get_init_null(void)
+ZTEST_USER(threads_scheduling, test_k_thread_priority_get_init_null)
 {
 	k_tid_t tid = k_thread_create(&user_thread, ustack, STACK_SIZE,
 			(k_thread_entry_t)thread_priority_get_init_null,
@@ -198,7 +198,7 @@ void test_k_thread_priority_get_init_null(void)
 	k_thread_join(tid, K_FOREVER);
 }
 #else
-void test_k_thread_priority_get_init_null(void)
+ZTEST_USER(threads_scheduling, test_k_thread_priority_get_init_null)
 {
 	ztest_test_skip();
 }
@@ -224,7 +224,7 @@ static void thread_priority_set_init_null(void *p1, void *p2, void *p3)
  *
  * @see k_thread_priority_set()
  */
-void test_k_thread_priority_set_init_null(void)
+ZTEST_USER(threads_scheduling, test_k_thread_priority_set_init_null)
 {
 	k_tid_t tid = k_thread_create(&user_thread, ustack, STACK_SIZE,
 			(k_thread_entry_t)thread_priority_set_init_null,
@@ -235,7 +235,7 @@ void test_k_thread_priority_set_init_null(void)
 	k_thread_join(tid, K_FOREVER);
 }
 #else
-void test_k_thread_priority_set_init_null(void)
+ZTEST_USER(threads_scheduling, test_k_thread_priority_set_init_null)
 {
 	ztest_test_skip();
 }
@@ -262,7 +262,7 @@ static void thread_priority_set_overmax(void *p1, void *p2, void *p3)
  *
  * @see k_thread_priority_set()
  */
-void test_k_thread_priority_set_overmax(void)
+ZTEST_USER(threads_scheduling, test_k_thread_priority_set_overmax)
 {
 	k_tid_t tid = k_thread_create(&user_thread, ustack, STACK_SIZE,
 			(k_thread_entry_t)thread_priority_set_overmax,
@@ -273,7 +273,7 @@ void test_k_thread_priority_set_overmax(void)
 	k_thread_join(tid, K_FOREVER);
 }
 #else
-void test_k_thread_priority_set_overmax(void)
+ZTEST_USER(threads_scheduling, test_k_thread_priority_set_overmax)
 {
 	ztest_test_skip();
 }
@@ -302,7 +302,7 @@ static void thread_priority_set_upgrade(void *p1, void *p2, void *p3)
  *
  * @see k_thread_priority_set()
  */
-void test_k_thread_priority_set_upgrade(void)
+ZTEST_USER(threads_scheduling, test_k_thread_priority_set_upgrade)
 {
 	k_tid_t tid = k_thread_create(&user_thread, ustack, STACK_SIZE,
 			(k_thread_entry_t)thread_priority_set_upgrade,
@@ -313,7 +313,7 @@ void test_k_thread_priority_set_upgrade(void)
 	k_thread_join(tid, K_FOREVER);
 }
 #else
-void test_k_thread_priority_set_upgrade(void)
+ZTEST_USER(threads_scheduling, test_k_thread_priority_set_upgrade)
 {
 	ztest_test_skip();
 }
@@ -339,7 +339,7 @@ static void thread_wakeup_init_null(void *p1, void *p2, void *p3)
  *
  * @see k_wakeup()
  */
-void test_k_wakeup_init_null(void)
+ZTEST_USER(threads_scheduling, test_k_wakeup_init_null)
 {
 	k_tid_t tid = k_thread_create(&user_thread, ustack, STACK_SIZE,
 			(k_thread_entry_t)thread_wakeup_init_null,
@@ -350,7 +350,7 @@ void test_k_wakeup_init_null(void)
 	k_thread_join(tid, K_FOREVER);
 }
 #else
-void test_k_wakeup_init_null(void)
+ZTEST_USER(threads_scheduling, test_k_wakeup_init_null)
 {
 	ztest_test_skip();
 }

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 
 #include "altera_avalon_sysid.h"
 
-void test_sysid(void)
+ZTEST(nios2_sysid, test_sysid)
 {
 	int32_t sysid, status = TC_FAIL;
 
@@ -26,9 +26,4 @@ void test_sysid(void)
 	zassert_equal(status, TC_PASS, "SysID test failed");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(nios2_sysid_test_suite,
-			ztest_unit_test(test_sysid));
-	ztest_run_test_suite(nios2_sysid_test_suite);
-}
+ZTEST_SUITE(nios2_sysid, NULL, NULL, NULL, NULL, NULL);

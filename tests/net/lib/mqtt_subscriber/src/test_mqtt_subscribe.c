@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, LOG_LEVEL_WRN);
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/mqtt.h>
 #include <zephyr/random/rand32.h>
@@ -303,20 +303,20 @@ static int test_disconnect(void)
 
 void test_mqtt_connect(void)
 {
-	zassert_true(test_connect() == TC_PASS, NULL);
+	zassert_true(test_connect() == TC_PASS);
 }
 
 void test_mqtt_subscribe(void)
 {
-	zassert_true(test_subscribe() == TC_PASS, NULL);
+	zassert_true(test_subscribe() == TC_PASS);
 }
 
 void test_mqtt_unsubscribe(void)
 {
-	zassert_true(test_unsubscribe() == TC_PASS, NULL);
+	zassert_true(test_unsubscribe() == TC_PASS);
 }
 
 void test_mqtt_disconnect(void)
 {
-	zassert_true(test_disconnect() == TC_PASS, NULL);
+	zassert_true(test_disconnect() == TC_PASS);
 }

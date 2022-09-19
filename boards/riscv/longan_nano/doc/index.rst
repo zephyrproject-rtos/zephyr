@@ -3,7 +3,7 @@
 Sipeed Longan Nano
 ##################
 
-.. image:: img/longan_nano.png
+.. image:: img/longan_nano.jpg
      :align: center
      :alt: longan_nano
 

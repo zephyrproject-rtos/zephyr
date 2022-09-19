@@ -31,9 +31,7 @@ board:
 - USB OTG full speed or device only
 
 .. image:: img/nucleo_l552ze_q.jpg
-   :width: 250px
    :align: center
-   :height: 250px
    :alt: Nucleo L552ZE Q
 
 More information about the board can be found at the `Nucleo L552ZE Q website`_.
@@ -163,6 +161,8 @@ hardware features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig and dts files:
 
@@ -227,15 +227,11 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo_l552ze_q_zio_left_2020_2_11.png
-   :width: 720px
+.. image:: img/nucleo_l552ze_q_zio_left_2020_2_11.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo L552ZE Q Zio left connector
-.. image:: img/nucleo_l552ze_q_zio_right_2020_2_11.png
-   :width: 720px
+.. image:: img/nucleo_l552ze_q_zio_right_2020_2_11.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo L552ZE Q Zio right connector
 
 For mode details please refer to `STM32 Nucleo-144 board User Manual`_.

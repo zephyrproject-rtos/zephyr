@@ -38,7 +38,6 @@
 		compatible ="jedec,spi-nor";
 		/* 4 Mbit Flash */
 		size = <DT_SIZE_M(4)>;
-		label = "SST25PF040";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(40)>;
 		status = "okay";

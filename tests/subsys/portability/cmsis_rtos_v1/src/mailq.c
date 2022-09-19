@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <cmsis_os.h>
 
@@ -127,9 +127,9 @@ void mail_recv(void)
 	zassert_true(evt.status == osEventMail, "osMailGet failure");
 
 	rx_ptr = evt.value.p;
-	zassert_equal(rx_ptr->data1, MAIL1_DATA1, NULL);
-	zassert_equal(rx_ptr->data2, MAIL1_DATA2, NULL);
-	zassert_equal(rx_ptr->data3, MAIL1_DATA3, NULL);
+	zassert_equal(rx_ptr->data1, MAIL1_DATA1);
+	zassert_equal(rx_ptr->data2, MAIL1_DATA2);
+	zassert_equal(rx_ptr->data3, MAIL1_DATA3);
 
 	status = osMailFree(mail_id, rx_ptr);
 	zassert_true(status == osOK, "osMailFree failure");
@@ -143,9 +143,9 @@ void mail_recv(void)
 		zassert_true(evt.status == osEventMail, "osMailGet failure");
 
 		rx_ptr = evt.value.p;
-		zassert_equal(rx_ptr->data1, i, NULL);
-		zassert_equal(rx_ptr->data2, i + 1, NULL);
-		zassert_equal(rx_ptr->data3, i + 2, NULL);
+		zassert_equal(rx_ptr->data1, i);
+		zassert_equal(rx_ptr->data2, i + 1);
+		zassert_equal(rx_ptr->data3, i + 2);
 
 		status = osMailFree(mail_id, rx_ptr);
 		zassert_true(status == osOK, "osMailFree failure");
@@ -156,9 +156,9 @@ void mail_recv(void)
 	zassert_true(evt.status == osEventMail, "osMailGet failure");
 
 	rx_ptr = evt.value.p;
-	zassert_equal(rx_ptr->data1, MAIL2_DATA1, NULL);
-	zassert_equal(rx_ptr->data2, MAIL2_DATA2, NULL);
-	zassert_equal(rx_ptr->data3, MAIL2_DATA3, NULL);
+	zassert_equal(rx_ptr->data1, MAIL2_DATA1);
+	zassert_equal(rx_ptr->data2, MAIL2_DATA2);
+	zassert_equal(rx_ptr->data3, MAIL2_DATA3);
 
 	status = osMailFree(mail_id, rx_ptr);
 	zassert_true(status == osOK, "osMailFree failure");
@@ -166,7 +166,7 @@ void mail_recv(void)
 
 osThreadDef(send_thread, osPriorityNormal, 1, 0);
 
-void test_mailq(void)
+ZTEST(cmsis_mailq, test_mailq)
 {
 	osThreadId tid;
 
@@ -178,3 +178,4 @@ void test_mailq(void)
 
 	mail_recv();
 }
+ZTEST_SUITE(cmsis_mailq, NULL, NULL, NULL, NULL, NULL);

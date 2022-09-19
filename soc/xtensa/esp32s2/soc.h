@@ -14,7 +14,8 @@
 #include <esp32s2/rom/ets_sys.h>
 #include <esp32s2/rom/spi_flash.h>
 #include <esp32s2/rom/cache.h>
-#include <esp_clk.h>
+#include <esp32s2/clk.h>
+#include <esp_rom_sys.h>
 
 #include <zephyr/types.h>
 #include <stdbool.h>
@@ -23,6 +24,10 @@
 
 void __esp_platform_start(void);
 
+static inline uint32_t esp_core_id(void)
+{
+	return 0;
+}
 extern void esp_rom_uart_attach(void);
 extern void esp_rom_uart_tx_wait_idle(uint8_t uart_no);
 extern STATUS esp_rom_uart_tx_one_char(uint8_t chr);

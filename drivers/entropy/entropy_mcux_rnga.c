@@ -57,13 +57,6 @@ static const struct entropy_driver_api entropy_mcux_rnga_api_funcs = {
 	.get_entropy = entropy_mcux_rnga_get_entropy
 };
 
-static int entropy_mcux_rnga_init(const struct device *);
-
-DEVICE_DT_INST_DEFINE(0,
-		    entropy_mcux_rnga_init, NULL, NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		    &entropy_mcux_rnga_api_funcs);
-
 static int entropy_mcux_rnga_init(const struct device *dev)
 {
 	uint32_t seed = k_cycle_get_32();
@@ -82,3 +75,8 @@ static int entropy_mcux_rnga_init(const struct device *dev)
 	RNGA_SetMode(RNG, kRNGA_ModeSleep);
 	return 0;
 }
+
+DEVICE_DT_INST_DEFINE(0,
+		    entropy_mcux_rnga_init, NULL, NULL, NULL,
+		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
+		    &entropy_mcux_rnga_api_funcs);

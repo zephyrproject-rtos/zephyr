@@ -28,6 +28,20 @@
 		zephyr,flash = &flash0;
 	};
 
+	sram1: sram@60000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0x60000000 DT_SIZE_K(512)>;
+		zephyr,memory-region = "SRAM1";
+	};
+
+	sram2: sram@61000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0x61000000 DT_SIZE_K(512)>;
+		zephyr,memory-region = "SRAM2";
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		yellow_led_1: led_1 {
@@ -174,4 +188,30 @@ xplained4_spi: &spi0 {
 };
 
 xplained4_serial: &uart1 {
+};
+
+&smc {
+	status = "okay";
+	pinctrl-0 = <&smc_default>;
+	pinctrl-names = "default";
+
+	is66wv51216dbll@0 {
+		reg = <0>;
+
+		atmel,smc-write-mode = "nwe";
+		atmel,smc-read-mode = "nrd";
+		atmel,smc-setup-timing = <1 1 1 1>;
+		atmel,smc-pulse-timing = <6 6 6 6>;
+		atmel,smc-cycle-timing = <7 7>;
+	};
+
+	is66wv51216dbll@1 {
+		reg = <1>;
+
+		atmel,smc-write-mode = "nwe";
+		atmel,smc-read-mode = "nrd";
+		atmel,smc-setup-timing = <1 1 1 1>;
+		atmel,smc-pulse-timing = <6 6 6 6>;
+		atmel,smc-cycle-timing = <7 7>;
+	};
 };

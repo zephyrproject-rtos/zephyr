@@ -5,13 +5,6 @@ if SHIELD_ST7735R_ADA_160x128
 
 if DISPLAY
 
-config SPI
-	default y
-
-config ST7735R
-	default y
-
-
 if LVGL
 
 config LV_Z_BITS_PER_PIXEL

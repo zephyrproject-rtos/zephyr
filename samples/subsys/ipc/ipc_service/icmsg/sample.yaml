@@ -6,4 +6,4 @@ tests:
         integration_platforms:
           - nrf5340dk_nrf5340_cpuapp
         tags: ipc
-        build_only: true
+        harness: remote

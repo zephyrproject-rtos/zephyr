@@ -3,14 +3,12 @@
 # Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ST_STM32_RNG := st,stm32-rng
-
 menuconfig ENTROPY_STM32_RNG
 	bool "STM32 RNG driver"
-	depends on SOC_FAMILY_STM32
+	default y
+	depends on DT_HAS_ST_STM32_RNG_ENABLED
 	select ENTROPY_HAS_DRIVER
 	select USE_STM32_LL_RNG
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_RNG))
 	help
 	  This option enables the RNG processor, which is a entropy number
 	  generator, based on a continuous analog noise, that provides

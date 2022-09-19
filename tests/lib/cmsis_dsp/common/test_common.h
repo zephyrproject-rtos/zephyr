@@ -8,8 +8,8 @@
 #ifndef ZEPHYR_TESTS_LIB_CMSIS_DSP_COMMON_TEST_COMMON_H_
 #define ZEPHYR_TESTS_LIB_CMSIS_DSP_COMMON_TEST_COMMON_H_
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #ifdef CONFIG_CMSIS_DSP_FLOAT16

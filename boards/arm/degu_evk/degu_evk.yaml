@@ -8,4 +8,3 @@ supported:
   - i2c
   - adc
   - usb_device
-  - ieee802154

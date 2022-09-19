@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
@@ -311,7 +311,7 @@ int litex_clk_test(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET(MMCM);
+	const struct device *const dev = DEVICE_DT_GET(MMCM);
 
 	printf("Clock Control Example! %s\n", CONFIG_ARCH);
 

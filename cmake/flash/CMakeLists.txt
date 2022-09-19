@@ -128,10 +128,7 @@ if(RUNNERS)
   create_runners_yaml(${RUNNERS})
 endif()
 
-if(DEFINED ENV{WEST_DIR} AND NOT WEST_DIR)
-  set(WEST_DIR $ENV{WEST_DIR})
-endif(DEFINED ENV{WEST_DIR} AND NOT WEST_DIR)
-
+zephyr_get(WEST_DIR)
 if(WEST_DIR)
   set(WEST "PYTHONPATH=${WEST_DIR}/src" "${PYTHON_EXECUTABLE};${WEST_DIR}/src/west/app/main.py;--zephyr-base=${ZEPHYR_BASE} ")
 endif()

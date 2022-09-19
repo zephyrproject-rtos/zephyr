@@ -38,40 +38,4 @@ config NUM_IRQS
 	default 74 if SOC_ATMEL_SAMV71_REVB
 	default 71
 
-# Configure default device drivers. If a feature is supported by more than one
-# device driver the default configuration will be placed in the board defconfig
-# file.
-
-config DMA_SAM_XDMAC
-	default y
-	depends on DMA
-
-config ADC_SAM_AFEC
-	default y
-	depends on ADC
-
-config I2C_SAM_TWIHS
-	default y
-	depends on I2C
-
-config I2S_SAM_SSC
-	default y
-	depends on I2S
-
-config USB_DC_SAM_USBHS
-	default y
-	depends on USB_DEVICE_DRIVER
-
-config ENTROPY_SAM_RNG
-	default y
-	depends on ENTROPY_GENERATOR
-
-config SOC_FLASH_SAM
-	default y
-	depends on FLASH
-
-config PWM_SAM
-	default y
-	depends on PWM
-
 endif # SOC_SERIES_SAMV71

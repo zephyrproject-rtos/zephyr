@@ -22,6 +22,7 @@
 
 	aliases {
 		pwm-led0 = &pwm_led0;
+		spi-flash0 = &mx25r80;
 	};
 };
 

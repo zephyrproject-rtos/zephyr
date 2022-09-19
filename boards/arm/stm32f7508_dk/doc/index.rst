@@ -35,9 +35,7 @@ and high-speed connectivity features. Important board features include:
 - Ethernet connector compliant with IEEE-802.3-2002
 
 .. image:: img/stm32f7508_dk.jpg
-     :width: 500px
      :align: center
-     :height: 357px
      :alt: STM32F7508-DK
 
 More information about the board can be found at the `32F7508-DK website`_.

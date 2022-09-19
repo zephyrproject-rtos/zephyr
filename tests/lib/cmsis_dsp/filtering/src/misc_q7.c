@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -43,7 +43,7 @@ static void test_arm_correlate_q7(
 }
 
 #define DEFINE_CORRELATE_TEST(a, b) \
-	DEFINE_TEST_VARIANT4( \
+	DEFINE_TEST_VARIANT4(filtering_misc_q7, \
 		arm_correlate_q7, a##_##b, a, b, \
 		ref_correlate_##a##_##b, ARRAY_SIZE(ref_correlate_##a##_##b))
 
@@ -100,7 +100,7 @@ static void test_arm_conv_q7(
 }
 
 #define DEFINE_CONV_TEST(a, b) \
-	DEFINE_TEST_VARIANT4( \
+	DEFINE_TEST_VARIANT4(filtering_misc_q7, \
 		arm_conv_q7, a##_##b, a, b, \
 		ref_conv_##a##_##b, ARRAY_SIZE(ref_conv_##a##_##b))
 
@@ -227,11 +227,11 @@ static void test_arm_conv_partial_opt_q7(
 #endif /* CONFIG_CMSIS_DSP_TEST_FILTERING_MISC_CONV_PARTIAL */
 
 #define DEFINE_CONV_PARTIAL_TEST(a, b, c) \
-	DEFINE_TEST_VARIANT5( \
+	DEFINE_TEST_VARIANT5(filtering_misc_q7, \
 		arm_conv_partial_q7, a##_##b##_##c, a, b, c, \
 		ref_conv_partial_##a##_##b##_##c, \
 		ARRAY_SIZE(ref_conv_partial_##a##_##b##_##c)) \
-	DEFINE_TEST_VARIANT5( \
+	DEFINE_TEST_VARIANT5(filtering_misc_q7, \
 		arm_conv_partial_opt_q7, a##_##b##_##c, a, b, c, \
 		ref_conv_partial_##a##_##b##_##c, \
 		ARRAY_SIZE(ref_conv_partial_##a##_##b##_##c))
@@ -240,66 +240,4 @@ DEFINE_CONV_PARTIAL_TEST(3, 6, 8);
 DEFINE_CONV_PARTIAL_TEST(9, 6, 8);
 DEFINE_CONV_PARTIAL_TEST(7, 6, 8);
 
-void test_filtering_misc_q7(void)
-{
-	ztest_test_suite(filtering_misc_q7,
-		ztest_unit_test(test_arm_correlate_q7_30_31),
-		ztest_unit_test(test_arm_correlate_q7_30_32),
-		ztest_unit_test(test_arm_correlate_q7_30_33),
-		ztest_unit_test(test_arm_correlate_q7_30_34),
-		ztest_unit_test(test_arm_correlate_q7_30_49),
-		ztest_unit_test(test_arm_correlate_q7_31_31),
-		ztest_unit_test(test_arm_correlate_q7_31_32),
-		ztest_unit_test(test_arm_correlate_q7_31_33),
-		ztest_unit_test(test_arm_correlate_q7_31_34),
-		ztest_unit_test(test_arm_correlate_q7_31_49),
-		ztest_unit_test(test_arm_correlate_q7_32_31),
-		ztest_unit_test(test_arm_correlate_q7_32_32),
-		ztest_unit_test(test_arm_correlate_q7_32_33),
-		ztest_unit_test(test_arm_correlate_q7_32_34),
-		ztest_unit_test(test_arm_correlate_q7_32_49),
-		ztest_unit_test(test_arm_correlate_q7_33_31),
-		ztest_unit_test(test_arm_correlate_q7_33_32),
-		ztest_unit_test(test_arm_correlate_q7_33_33),
-		ztest_unit_test(test_arm_correlate_q7_33_34),
-		ztest_unit_test(test_arm_correlate_q7_33_49),
-		ztest_unit_test(test_arm_correlate_q7_48_31),
-		ztest_unit_test(test_arm_correlate_q7_48_32),
-		ztest_unit_test(test_arm_correlate_q7_48_33),
-		ztest_unit_test(test_arm_correlate_q7_48_34),
-		ztest_unit_test(test_arm_correlate_q7_48_49),
-		ztest_unit_test(test_arm_conv_q7_30_31),
-		ztest_unit_test(test_arm_conv_q7_30_32),
-		ztest_unit_test(test_arm_conv_q7_30_33),
-		ztest_unit_test(test_arm_conv_q7_30_34),
-		ztest_unit_test(test_arm_conv_q7_30_49),
-		ztest_unit_test(test_arm_conv_q7_31_31),
-		ztest_unit_test(test_arm_conv_q7_31_32),
-		ztest_unit_test(test_arm_conv_q7_31_33),
-		ztest_unit_test(test_arm_conv_q7_31_34),
-		ztest_unit_test(test_arm_conv_q7_31_49),
-		ztest_unit_test(test_arm_conv_q7_32_31),
-		ztest_unit_test(test_arm_conv_q7_32_32),
-		ztest_unit_test(test_arm_conv_q7_32_33),
-		ztest_unit_test(test_arm_conv_q7_32_34),
-		ztest_unit_test(test_arm_conv_q7_32_49),
-		ztest_unit_test(test_arm_conv_q7_33_31),
-		ztest_unit_test(test_arm_conv_q7_33_32),
-		ztest_unit_test(test_arm_conv_q7_33_33),
-		ztest_unit_test(test_arm_conv_q7_33_34),
-		ztest_unit_test(test_arm_conv_q7_33_49),
-		ztest_unit_test(test_arm_conv_q7_48_31),
-		ztest_unit_test(test_arm_conv_q7_48_32),
-		ztest_unit_test(test_arm_conv_q7_48_33),
-		ztest_unit_test(test_arm_conv_q7_48_34),
-		ztest_unit_test(test_arm_conv_q7_48_49),
-		ztest_unit_test(test_arm_conv_partial_q7_3_6_8),
-		ztest_unit_test(test_arm_conv_partial_q7_9_6_8),
-		ztest_unit_test(test_arm_conv_partial_q7_7_6_8),
-		ztest_unit_test(test_arm_conv_partial_opt_q7_3_6_8),
-		ztest_unit_test(test_arm_conv_partial_opt_q7_9_6_8),
-		ztest_unit_test(test_arm_conv_partial_opt_q7_7_6_8)
-		);
-
-	ztest_run_test_suite(filtering_misc_q7);
-}
+ZTEST_SUITE(filtering_misc_q7, NULL, NULL, NULL, NULL, NULL);

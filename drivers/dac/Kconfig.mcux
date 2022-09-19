@@ -6,13 +6,15 @@
 
 config DAC_MCUX_DAC
 	bool "NXP Kinetis MCUX DAC driver"
-	depends on HAS_MCUX_DAC
+	default y
+	depends on DT_HAS_NXP_KINETIS_DAC_ENABLED
 	help
 	  Enable the driver for the NXP Kinetis MCUX DAC.
 
 config DAC_MCUX_DAC32
 	bool "NXP Kinetis MCUX DAC32 driver"
-	depends on HAS_MCUX_DAC32
+	default y
+	depends on DT_HAS_NXP_KINETIS_DAC32_ENABLED
 	select PINCTRL
 	help
 	  Enable the driver for the NXP Kinetis MCUX DAC32.

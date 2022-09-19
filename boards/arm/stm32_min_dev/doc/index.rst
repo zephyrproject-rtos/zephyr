@@ -17,9 +17,7 @@ Zephyr applications can use the stm32_min_dev_blue or stm32_min_dev_black board
 configuration to use these boards.
 
 .. figure:: img/stm32_min_dev.jpg
-     :width: 500px
      :align: center
-     :height: 350px
      :alt: STM32 Minimum Development Board
 
      STM32 Minimum Development Board
@@ -47,9 +45,7 @@ The pinout diagram of STM32 Minimum Development Blue Pill board can be seen
 below. The Black Pill's one is similar:
 
 .. figure:: img/stm32_min_dev_pinout_blue.jpg
-     :width: 500px
      :align: center
-     :height: 350px
      :alt: Pinout for STM32 Minimum Development Blue Pill Board
 
      Pinout for STM32 Minimum Development Blue Pill Board

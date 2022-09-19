@@ -133,8 +133,8 @@ static int nordicsemi_nrf53_init(const struct device *arg)
 	 * This is handled by the TF-M platform so we skip it when TF-M is
 	 * enabled.
 	 */
-	nrf_gpio_pin_mcu_select(PIN_XL1, NRF_GPIO_PIN_MCUSEL_PERIPHERAL);
-	nrf_gpio_pin_mcu_select(PIN_XL2, NRF_GPIO_PIN_MCUSEL_PERIPHERAL);
+	nrf_gpio_pin_control_select(PIN_XL1, NRF_GPIO_PIN_SEL_PERIPHERAL);
+	nrf_gpio_pin_control_select(PIN_XL2, NRF_GPIO_PIN_SEL_PERIPHERAL);
 #endif /* !defined(CONFIG_BUILD_WITH_TFM) */
 #endif /* defined(CONFIG_SOC_ENABLE_LFXO) */
 #if defined(CONFIG_SOC_HFXO_CAP_INTERNAL)
@@ -175,7 +175,7 @@ static int nordicsemi_nrf53_init(const struct device *arg)
 	};
 
 	for (int i = 0; i < ARRAY_SIZE(forwarded_psels); i++) {
-		soc_secure_gpio_pin_mcu_select(forwarded_psels[i], NRF_GPIO_PIN_MCUSEL_NETWORK);
+		soc_secure_gpio_pin_mcu_select(forwarded_psels[i], NRF_GPIO_PIN_SEL_NETWORK);
 	}
 
 #endif

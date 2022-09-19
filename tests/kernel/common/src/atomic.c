@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/sys/atomic.h>
 
 /* convenience macro - return either 64-bit or 32-bit value */

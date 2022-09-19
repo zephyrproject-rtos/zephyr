@@ -72,7 +72,7 @@ the DTR signal:
 
 .. code-block:: c
 
-    const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+    const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
     uint32_t dtr = 0;
 
     if (usb_enable(NULL)) {

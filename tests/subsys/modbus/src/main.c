@@ -6,54 +6,69 @@
 
 #include "test_modbus.h"
 
-void test_main(void)
+ZTEST(modbus, test_setup_low_none)
 {
-	ztest_test_suite(modbus_client_test,
-			 ztest_unit_test(test_server_setup_low_none),
-			 ztest_unit_test(test_client_setup_low_none),
-			 ztest_unit_test(test_coil_wr_rd),
-			 ztest_unit_test(test_di_rd),
-			 ztest_unit_test(test_input_reg),
-			 ztest_unit_test(test_holding_reg),
-			 ztest_unit_test(test_diagnostic),
-			 ztest_unit_test(test_client_disable),
-			 ztest_unit_test(test_server_disable),
-			 ztest_unit_test(test_server_setup_low_odd),
-			 ztest_unit_test(test_client_setup_low_odd),
-			 ztest_unit_test(test_coil_wr_rd),
-			 ztest_unit_test(test_di_rd),
-			 ztest_unit_test(test_input_reg),
-			 ztest_unit_test(test_holding_reg),
-			 ztest_unit_test(test_diagnostic),
-			 ztest_unit_test(test_client_disable),
-			 ztest_unit_test(test_server_disable),
-			 ztest_unit_test(test_server_setup_high_even),
-			 ztest_unit_test(test_client_setup_high_even),
-			 ztest_unit_test(test_coil_wr_rd),
-			 ztest_unit_test(test_di_rd),
-			 ztest_unit_test(test_input_reg),
-			 ztest_unit_test(test_holding_reg),
-			 ztest_unit_test(test_diagnostic),
-			 ztest_unit_test(test_client_disable),
-			 ztest_unit_test(test_server_disable),
-			 ztest_unit_test(test_server_setup_ascii),
-			 ztest_unit_test(test_client_setup_ascii),
-			 ztest_unit_test(test_coil_wr_rd),
-			 ztest_unit_test(test_di_rd),
-			 ztest_unit_test(test_input_reg),
-			 ztest_unit_test(test_holding_reg),
-			 ztest_unit_test(test_diagnostic),
-			 ztest_unit_test(test_client_disable),
-			 ztest_unit_test(test_server_disable),
-			 ztest_unit_test(test_server_setup_raw),
-			 ztest_unit_test(test_client_setup_raw),
-			 ztest_unit_test(test_coil_wr_rd),
-			 ztest_unit_test(test_di_rd),
-			 ztest_unit_test(test_input_reg),
-			 ztest_unit_test(test_holding_reg),
-			 ztest_unit_test(test_diagnostic),
-			 ztest_unit_test(test_client_disable),
-			 ztest_unit_test(test_server_disable)
-			 );
-	ztest_run_test_suite(modbus_client_test);
+	test_server_setup_low_none();
+	test_client_setup_low_none();
+	test_coil_wr_rd();
+	test_di_rd();
+	test_input_reg();
+	test_holding_reg();
+	test_diagnostic();
+	test_client_disable();
+	test_server_disable();
 }
+
+ZTEST(modbus, test_setup_low_odd)
+{
+	test_server_setup_low_odd();
+	test_client_setup_low_odd();
+	test_coil_wr_rd();
+	test_di_rd();
+	test_input_reg();
+	test_holding_reg();
+	test_diagnostic();
+	test_client_disable();
+	test_server_disable();
+}
+
+ZTEST(modbus, test_setup_high_even)
+{
+	test_server_setup_high_even();
+	test_client_setup_high_even();
+	test_coil_wr_rd();
+	test_di_rd();
+	test_input_reg();
+	test_holding_reg();
+	test_diagnostic();
+	test_client_disable();
+	test_server_disable();
+}
+
+ZTEST(modbus, test_setup_ascii)
+{
+	test_server_setup_ascii();
+	test_client_setup_ascii();
+	test_coil_wr_rd();
+	test_di_rd();
+	test_input_reg();
+	test_holding_reg();
+	test_diagnostic();
+	test_client_disable();
+	test_server_disable();
+}
+
+ZTEST(modbus, test_setup_raw)
+{
+	test_server_setup_raw();
+	test_client_setup_raw();
+	test_coil_wr_rd();
+	test_di_rd();
+	test_input_reg();
+	test_holding_reg();
+	test_diagnostic();
+	test_client_disable();
+	test_server_disable();
+}
+
+ZTEST_SUITE(modbus, NULL, NULL, NULL, NULL, NULL);

@@ -7,9 +7,6 @@ config BOARD
 	default "esp32c3_devkitm"
 	depends on BOARD_ESP32C3_DEVKITM
 
-config ENTROPY_ESP32_RNG
-	default y if ENTROPY_GENERATOR
-
 if BT
 
 config HEAP_MEM_POOL_SIZE

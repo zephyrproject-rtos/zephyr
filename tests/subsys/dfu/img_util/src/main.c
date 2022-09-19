@@ -5,11 +5,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/dfu/flash_img.h>
 
-void test_init_id(void)
+#define SLOT0_PARTITION		slot0_partition
+#define SLOT1_PARTITION		slot1_partition
+
+#define SLOT0_PARTITION_ID	FIXED_PARTITION_ID(SLOT0_PARTITION)
+
+#define SLOT1_PARTITION_ID	FIXED_PARTITION_ID(SLOT1_PARTITION)
+
+ZTEST(img_util, test_init_id)
 {
 	struct flash_img_context ctx_no_id;
 	struct flash_img_context ctx_id;
@@ -18,7 +25,7 @@ void test_init_id(void)
 	ret = flash_img_init(&ctx_no_id);
 	zassert_true(ret == 0, "Flash img init");
 
-	ret = flash_img_init_id(&ctx_id, FLASH_AREA_ID(image_1));
+	ret = flash_img_init_id(&ctx_id, SLOT1_PARTITION_ID);
 	zassert_true(ret == 0, "Flash img init id");
 
 	/* Verify that the default partition ID is IMAGE_1 */
@@ -26,14 +33,14 @@ void test_init_id(void)
 		      "Default partition ID is incorrect");
 
 	/* Note: IMAGE_0, not IMAGE_1 as above */
-	ret = flash_img_init_id(&ctx_id, FLASH_AREA_ID(image_0));
+	ret = flash_img_init_id(&ctx_id, SLOT0_PARTITION_ID);
 	zassert_true(ret == 0, "Flash img init id");
 
-	zassert_equal(ctx_id.flash_area->fa_id, FLASH_AREA_ID(image_0),
+	zassert_equal(ctx_id.flash_area->fa_id, SLOT0_PARTITION_ID,
 		      "Partition ID is not set correctly");
 }
 
-void test_collecting(void)
+ZTEST(img_util, test_collecting)
 {
 	const struct flash_area *fa;
 	struct flash_img_context ctx;
@@ -48,7 +55,7 @@ void test_collecting(void)
 	uint8_t erase_buf[8];
 	(void)memset(erase_buf, 0xff, sizeof(erase_buf));
 
-	ret = flash_area_open(FLASH_AREA_ID(image_1), &fa);
+	ret = flash_area_open(SLOT1_PARTITION_ID, &fa);
 	if (ret) {
 		printf("Flash driver was not found!\n");
 		return;
@@ -85,7 +92,7 @@ void test_collecting(void)
 					 "fail");
 
 
-	ret = flash_area_open(FLASH_AREA_ID(image_1), &fa);
+	ret = flash_area_open(SLOT1_PARTITION_ID, &fa);
 	if (ret) {
 		printf("Flash driver was not found!\n");
 		return;
@@ -108,7 +115,7 @@ void test_collecting(void)
 #endif
 }
 
-void test_check_flash(void)
+ZTEST(img_util, test_check_flash)
 {
 	/* echo $'0123456789abcdef\nfedcba9876543201' > tst.sha
 	 * hexdump tst.sha
@@ -128,7 +135,7 @@ void test_check_flash(void)
 	struct flash_img_context ctx;
 	int ret;
 
-	ret = flash_img_init_id(&ctx, FLASH_AREA_ID(image_1));
+	ret = flash_img_init_id(&ctx, SLOT1_PARTITION_ID);
 	zassert_true(ret == 0, "Flash img init 1");
 	ret = flash_area_erase(ctx.flash_area, 0, ctx.flash_area->fa_size);
 	zassert_true(ret == 0, "Flash erase failure (%d)\n", ret);
@@ -142,28 +149,20 @@ void test_check_flash(void)
 	ret = flash_img_check(&ctx, NULL, 0);
 	zassert_true(ret == -EINVAL, "Flash img check params 1\n");
 
-	ret = flash_img_check(&ctx, &fic, FLASH_AREA_ID(image_1));
+	ret = flash_img_check(&ctx, &fic, SLOT1_PARTITION_ID);
 	zassert_true(ret == -EINVAL, "Flash img check fic match\n");
 	fic.match = tst_sha;
-	ret = flash_img_check(&ctx, &fic, FLASH_AREA_ID(image_1));
+	ret = flash_img_check(&ctx, &fic, SLOT1_PARTITION_ID);
 	zassert_true(ret == -EINVAL, "Flash img check fic len\n");
 	fic.clen = sizeof(tst_vec);
 
-	ret = flash_img_check(&ctx, &fic, FLASH_AREA_ID(image_1));
+	ret = flash_img_check(&ctx, &fic, SLOT1_PARTITION_ID);
 	zassert_true(ret == 0, "Flash img check\n");
 	tst_sha[0] = 0x00;
-	ret = flash_img_check(&ctx, &fic, FLASH_AREA_ID(image_1));
+	ret = flash_img_check(&ctx, &fic, SLOT1_PARTITION_ID);
 	zassert_false(ret == 0, "Flash img check wrong sha\n");
 
 	flash_area_close(ctx.flash_area);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_util,
-			ztest_unit_test(test_collecting),
-			ztest_unit_test(test_init_id),
-			ztest_unit_test(test_check_flash)
-			);
-	ztest_run_test_suite(test_util);
-}
+ZTEST_SUITE(img_util, NULL, NULL, NULL, NULL, NULL);

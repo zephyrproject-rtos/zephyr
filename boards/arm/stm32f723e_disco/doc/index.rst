@@ -24,9 +24,7 @@ and high-speed connectivity features. Important board features include:
 - USB OTG FS with Micro-AB connectors
 
 .. image:: img/stm32f723e_disco.jpg
-     :width: 400px
      :align: center
-     :height: 261px
      :alt: STM32F723E-DISCO
 
 More information about the board can be found at the `32F723E-DISCO website`_.

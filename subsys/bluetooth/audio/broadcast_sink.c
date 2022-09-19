@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
@@ -951,9 +951,12 @@ static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
 	 * but the `rx` and `qos` pointers need to be set. This should be fixed.
 	 */
 	stream->iso->qos->rx = &sink_chan_io_qos;
+	stream->iso->qos->rx->path = &ep->iso->sink_path;
+	stream->iso->qos->rx->path->cc = ep->iso->sink_path_cc;
 	stream->iso->qos->tx = NULL;
 	stream->qos = &codec_qos;
 	bt_audio_codec_qos_to_iso_qos(stream->iso->qos->rx, &codec_qos);
+	bt_audio_codec_to_iso_path(stream->iso->qos->rx->path, codec);
 
 	return 0;
 }

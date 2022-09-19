@@ -19,7 +19,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lpd880x);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/util.h>

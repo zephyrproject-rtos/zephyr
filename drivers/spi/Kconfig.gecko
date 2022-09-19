@@ -5,8 +5,9 @@
 
 config SPI_GECKO
 	bool "Gecko SPI controller driver"
-	depends on HAS_SILABS_GECKO
-	depends on GPIO_GECKO
+	default y
+	depends on DT_HAS_SILABS_GECKO_SPI_USART_ENABLED
+	depends on GPIO
 	select SOC_GECKO_USART
 	help
 	  Enable the SPI peripherals on Gecko

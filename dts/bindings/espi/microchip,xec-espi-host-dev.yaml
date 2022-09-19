@@ -74,22 +74,7 @@ properties:
       type: int
       const: 3
 
-    "#girq-cells":
-      type: int
-      const: 1
-
-    "#pcr-cells":
-      type: int
-      const: 2
-
 emi-mem-cells:
     - base
     - rdlimit
     - wrlimit
-
-girq-cells:
-    - girqinfo
-
-pcr-cells:
-    - reg_idx
-    - bitpos

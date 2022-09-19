@@ -1139,10 +1139,10 @@ const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
 	return name[state];
 }
 
-void net_dhcpv4_start(struct net_if *iface)
+static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 {
-	uint32_t timeout;
 	uint32_t entropy;
+	uint32_t timeout = 0;
 
 	net_mgmt_event_notify(NET_EVENT_IPV4_DHCP_START, iface);
 
@@ -1166,15 +1166,15 @@ void net_dhcpv4_start(struct net_if *iface)
 		 */
 		iface->config.dhcpv4.xid = entropy;
 
-
-		/* RFC2131 4.1.1 requires we wait a random period
-		 * between 1 and 10 seconds before sending the initial
-		 * discover.
-		 */
-		timeout = entropy %
-				(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX -
-				  DHCPV4_INITIAL_DELAY_MIN) +
-				DHCPV4_INITIAL_DELAY_MIN;
+		/* Use default */
+		if (first_start) {
+			/* RFC2131 4.1.1 requires we wait a random period
+			 * between 1 and 10 seconds before sending the initial
+			 * discover.
+			 */
+			timeout = entropy % (CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX -
+					DHCPV4_INITIAL_DELAY_MIN) + DHCPV4_INITIAL_DELAY_MIN;
+		}
 
 		NET_DBG("wait timeout=%us", timeout);
 
@@ -1198,6 +1198,11 @@ void net_dhcpv4_start(struct net_if *iface)
 	}
 
 	k_mutex_unlock(&lock);
+}
+
+void net_dhcpv4_start(struct net_if *iface)
+{
+	return dhcpv4_start_internal(iface, true);
 }
 
 void net_dhcpv4_stop(struct net_if *iface)
@@ -1241,6 +1246,12 @@ void net_dhcpv4_stop(struct net_if *iface)
 	net_mgmt_event_notify(NET_EVENT_IPV4_DHCP_STOP, iface);
 
 	k_mutex_unlock(&lock);
+}
+
+void net_dhcpv4_restart(struct net_if *iface)
+{
+	net_dhcpv4_stop(iface);
+	dhcpv4_start_internal(iface, false);
 }
 
 int net_dhcpv4_init(void)

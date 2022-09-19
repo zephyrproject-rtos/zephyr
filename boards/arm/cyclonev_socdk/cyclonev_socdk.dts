@@ -66,13 +66,11 @@
 				address-width = <8>;
 				timeout = <25>;
 				pagesize = <32>;
-				label = "EEPROM";
 			};
 
 			ds3231: rtc@68 {
 				compatible = "maxim,ds3231";
 				reg = <0x68>;
-				label = "RTC_DS1339";
 			};
 		};
 	};

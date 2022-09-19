@@ -7,7 +7,7 @@
 /* Tests where time_t requires a 64-bit value */
 
 #include <errno.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "timeutil_test.h"
 
 static const struct timeutil_test_data tests[] = {
@@ -323,7 +323,7 @@ static void test_time32_overflow(void)
 		      "final errno state bad");
 }
 
-void test_s64(void)
+ZTEST(timeutil_api, test_s64)
 {
 	if (sizeof(time_t) < 8U) {
 		test_time32_errno_clear();

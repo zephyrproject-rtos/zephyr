@@ -9,7 +9,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_DHCPV4_LOG_LEVEL);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
 
 #include <zephyr/types.h>
@@ -30,8 +30,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include "ipv4.h"
 #include "udp_internal.h"
 
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"

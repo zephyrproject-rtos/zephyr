@@ -3,6 +3,8 @@
 
 config ADC_EMUL
 	bool "ADC emulator"
+	default y
+	depends on DT_HAS_ZEPHYR_ADC_EMUL_ENABLED
 	help
 	  Enable the ADC emulator driver. This is a fake driver in that it
 	  does not talk to real hardware. It pretends to be actual ADC. It

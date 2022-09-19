@@ -9,9 +9,9 @@
  * x86-specific tests for MMU features and page tables
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
-#include <tc_util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
 #include <zephyr/arch/x86/mmustructs.h>
 #include <x86_mmu.h>
 #include <zephyr/linker/linker-defs.h>

@@ -68,8 +68,10 @@ config RISCV_ISA_EXT_G
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_F
 	select RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
 	help
-	  (MAFD) MAFD extensions
+	  (IMAFDZicsr_Zifencei) IMAFDZicsr_Zifencei extensions
 
 config RISCV_ISA_EXT_Q
 	bool
@@ -91,3 +93,56 @@ config RISCV_ISA_EXT_C
 	  RISC-V standard compressed instruction set extension, named "C",
 	  which reduces static and dynamic code size by adding short 16-bit
 	  instruction encodings for common operations.
+
+config RISCV_ISA_EXT_ZICSR
+	bool
+	help
+	  (Zicsr) - Standard Extension for Control and Status Register (CSR) Instructions
+
+	  The "Zicsr" extension introduces support for the full set of CSR
+	  instructions that operate on CSRs registers.
+
+config RISCV_ISA_EXT_ZIFENCEI
+	bool
+	help
+	  (Zifencei) - Standard Extension for Instruction-Fetch Fence
+
+	  The "Zifencei" extension includes the FENCE.I instruction that
+	  provides explicit synchronization between writes to instruction
+	  memory and instruction fetches on the same hart.
+
+config RISCV_ISA_EXT_ZBA
+	bool
+	help
+	  (Zba) - Zba BitManip Extension
+
+	  The Zba instructions can be used to accelerate the generation of
+	  addresses that index into arrays of basic types (halfword, word,
+	  doubleword) using both unsigned word-sized and XLEN-sized indices: a
+	  shifted index is added to a base address.
+
+config RISCV_ISA_EXT_ZBB
+	bool
+	help
+	  (Zbb) - Zbb BitManip Extension (Basic bit-manipulation)
+
+	  The Zbb instructions can be used for basic bit-manipulation (logical
+	  with negate, count leading / trailing zero bits, count population,
+	  etc...).
+
+config RISCV_ISA_EXT_ZBC
+	bool
+	help
+	  (Zbc) - Zbc BitManip Extension (Carry-less multiplication)
+
+	  The Zbc instructions can be used for carry-less multiplication that
+	  is the multiplication in the polynomial ring over GF(2).
+
+config RISCV_ISA_EXT_ZBS
+	bool
+	help
+	  (Zbs) - Zbs BitManip Extension (Single-bit instructions)
+
+	  The Zbs instructions can be used for single-bit instructions that
+	  provide a mechanism to set, clear, invert, or extract a single bit in
+	  a register.

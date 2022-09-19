@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_GD32E507V_START
+
+config BOARD
+	default "gd32e507v_start"
+
+endif # BOARD_GD32E507V_START

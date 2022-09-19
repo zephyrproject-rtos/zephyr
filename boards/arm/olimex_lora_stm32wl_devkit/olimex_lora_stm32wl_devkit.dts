@@ -1,0 +1,179 @@
+/*
+ * Copyright (c) 2022 Martin Jäger <martin@libre.solar>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <olimex/bb-stm32wl.dtsi>
+
+/ {
+	model = "Olimex LoRa STM32WL DevKit";
+	compatible = "olimex,lora-stm32wl-devkit";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_0 {
+			gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
+			label = "User LED1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			label = "SW2";
+			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		sw0 = &user_button;
+		lora0 = &lora;
+		watchdog0 = &iwdg;
+	};
+
+	power-states {
+		stop0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <100>;
+		};
+		stop1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <500>;
+		};
+		stop2: state2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <3>;
+			min-residency-us = <900>;
+		};
+	};
+};
+
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1 &stop2>;
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <6>;
+	div-r = <2>;
+	div-q = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	cpu1-prescaler = <1>;
+	ahb3-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+uext_serial: &lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3 &lpuart1_cts_pa6 &lpuart1_rts_pb12>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+uext_i2c: &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pa9 &i2c1_sda_pa10>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	bme280: bme280@77 {
+		compatible = "bosch,bme280";
+		status = "okay";
+		reg = <0x77>;
+	};
+
+	iis2mdc@1e {
+		compatible = "st,iis2mdc";
+		reg = <0x1e>;
+		drdy-gpios =  <&gpioa 8 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+uext_spi: &spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa11 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&aes {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(32)>;
+			read-only;
+		};
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 DT_SIZE_K(108)>;
+		};
+		slot1_partition: partition@23000 {
+			label = "image-1";
+			reg = <0x00023000 DT_SIZE_K(108)>;
+		};
+		storage_partition: partition@3e000 {
+			label = "storage";
+			reg = <0x0003e000 DT_SIZE_K(8)>;
+		};
+	};
+};

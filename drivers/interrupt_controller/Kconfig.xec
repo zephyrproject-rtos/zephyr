@@ -6,6 +6,6 @@
 config MCHP_ECIA_XEC
 	bool "External EC Interrupt Aggregator (ECIA) Driver for MCHP MEC family of MCUs"
 	default y
-	depends on SOC_SERIES_MEC172X
+	depends on DT_HAS_MICROCHIP_XEC_ECIA_ENABLED
 	help
 	  Enable XEC ECIA driver for Microchip MEC line of MCUs

@@ -445,7 +445,7 @@ static void mss_qspi_interrupt(const struct device *dev)
 
 	if ((intfield & MSS_QSPI_IEN_RXDONE))  {
 		mss_qspi_write(cfg, MSS_QSPI_IEN_RXDONE, MSS_QSPI_REG_STATUS);
-		spi_context_complete(ctx, 0);
+		spi_context_complete(ctx, dev, 0);
 	}
 
 	if (intfield & MSS_QSPI_IEN_TXAVAILABLE) {
@@ -497,14 +497,16 @@ static int mss_qspi_transceive(const struct device *dev,
 			       const struct spi_config *spi_cfg,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs,
-			       bool async, struct k_poll_signal *sig)
+			       bool async,
+			       spi_callback_t cb,
+			       void *userdata)
 {
 	const struct mss_qspi_config *config = dev->config;
 	struct mss_qspi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int ret = 0;
 
-	spi_context_lock(ctx, async, sig, spi_cfg);
+	spi_context_lock(ctx, async, cb, userdata, spi_cfg);
 	ret = mss_qspi_configure(dev, spi_cfg);
 	if (ret) {
 		goto out;
@@ -528,7 +530,7 @@ static int mss_qspi_transceive_blocking(const struct device *dev,
 					const struct spi_buf_set *rx_bufs)
 {
 	return mss_qspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, false,
-				       NULL);
+				   NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -536,10 +538,11 @@ static int mss_qspi_transceive_async(const struct device *dev,
 				     const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     struct k_poll_signal *async)
+				     spi_callback_t cb,
+				     void *userdata)
 {
 	return mss_qspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, true,
-				       async);
+				   cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 

@@ -400,6 +400,8 @@ device.
      - Sets UART device used by console driver
    * - zephyr,display
      - Sets the default display controller
+   * - zephyr,keyboard-scan
+     - Sets the default keyboard scan controller
    * - zephyr,dtcm
      - Data Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,entropy
@@ -410,6 +412,10 @@ device.
    * - zephyr,flash-controller
      - The node corresponding to the flash controller device for
        the ``zephyr,flash`` node
+   * - zephyr,gdbstub-uart
+     - Sets UART device used by the :ref:`gdbstub` subsystem
+   * - zephyr,ieee802154
+     - Used by the networking subsystem to set the IEEE 802.15.4 device
    * - zephyr,ipc
      - Used by the OpenAMP subsystem to specify the inter-process communication
        (IPC) device
@@ -421,6 +427,8 @@ device.
      - Instruction Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,ocm
      - On-chip memory node on Xilinx Zynq-7000 and ZynqMP SoCs
+   * - zephyr,osdp-uart
+     - Sets UART device used by OSDP subsystem
    * - zephyr,ot-uart
      - Used by the OpenThread to specify UART device for Spinel protocol
    * - zephyr,pcie-controller

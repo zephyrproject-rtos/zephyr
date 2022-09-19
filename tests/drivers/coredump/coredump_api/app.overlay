@@ -7,14 +7,12 @@
 / {
 	coredump_device0: coredump-device0 {
 		compatible = "zephyr,coredump";
-		label = "coredump_device_0";
 		coredump-type = "COREDUMP_TYPE_MEMCPY";
 		status = "okay";
 	};
 
 	coredump_devicecb: coredump-device-cb {
 		compatible = "zephyr,coredump";
-		label = "coredump_device_cb";
 		coredump-type = "COREDUMP_TYPE_CALLBACK";
 		status = "okay";
 		memory-regions = <0x0 0x4>;

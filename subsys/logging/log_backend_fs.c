@@ -263,6 +263,7 @@ static int allocate_new_file(struct fs_file_t *file)
 	int curr_file_num;
 	struct fs_dirent ent;
 	char fname[MAX_PATH_LEN];
+	off_t file_size;
 
 	assert(file);
 
@@ -339,14 +340,33 @@ static int allocate_new_file(struct fs_file_t *file)
 
 		curr_file_num = newest;
 
-		if (file_ctr >= 1) {
-			curr_file_num++;
-			if (curr_file_num > MAX_FILE_NUMERAL) {
-				curr_file_num = 0;
-			}
+		/* Is there space left in the newest file? */
+		snprintf(fname, sizeof(fname), "%s/%s%04d", CONFIG_LOG_BACKEND_FS_DIR,
+			 CONFIG_LOG_BACKEND_FS_FILE_PREFIX, curr_file_num);
+		rc = fs_open(file, fname, FS_O_CREATE | FS_O_WRITE | FS_O_APPEND);
+		if (rc < 0) {
+			goto out;
 		}
-
-		backend_state = BACKEND_FS_OK;
+		file_size = fs_tell(file);
+		if (file_size < CONFIG_LOG_BACKEND_FS_FILE_SIZE) {
+			/* There is space left to log to the latest file, no need to create
+			 * a new one or delete old ones at this point.
+			 */
+			if (file_ctr == 0) {
+				++file_ctr;
+			}
+			backend_state = BACKEND_FS_OK;
+			goto out;
+		} else {
+			fs_close(file);
+			if (file_ctr >= 1) {
+				curr_file_num++;
+				if (curr_file_num > MAX_FILE_NUMERAL) {
+					curr_file_num = 0;
+				}
+			}
+			backend_state = BACKEND_FS_OK;
+		}
 	} else {
 		fs_close(file);
 

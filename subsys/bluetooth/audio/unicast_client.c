@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
@@ -42,6 +42,7 @@ static const struct bt_uuid *src_uuid = BT_UUID_PACS_SRC;
 static const struct bt_uuid *pacs_context_uuid = BT_UUID_PACS_SUPPORTED_CONTEXT;
 static const struct bt_uuid *pacs_snk_loc_uuid = BT_UUID_PACS_SNK_LOC;
 static const struct bt_uuid *pacs_src_loc_uuid = BT_UUID_PACS_SRC_LOC;
+static const struct bt_uuid *pacs_avail_ctx_uuid = BT_UUID_PACS_AVAILABLE_CONTEXT;
 static const struct bt_uuid *ase_snk_uuid = BT_UUID_ASCS_ASE_SNK;
 static const struct bt_uuid *ase_src_uuid = BT_UUID_ASCS_ASE_SRC;
 static const struct bt_uuid *cp_uuid = BT_UUID_ASCS_ASE_CP;
@@ -54,6 +55,7 @@ static struct bt_audio_iso audio_isos[CONFIG_BT_AUDIO_UNICAST_CLIENT_GROUP_COUNT
 static struct bt_gatt_subscribe_params cp_subscribe[CONFIG_BT_MAX_CONN];
 static struct bt_gatt_subscribe_params snk_loc_subscribe[CONFIG_BT_MAX_CONN];
 static struct bt_gatt_subscribe_params src_loc_subscribe[CONFIG_BT_MAX_CONN];
+static struct bt_gatt_subscribe_params avail_ctx_subscribe[CONFIG_BT_MAX_CONN];
 /* TODO: We should be able to reduce the number of discover params for CCCD
  * discovery, but requires additional work if it is to support an arbitrary
  * number of EATT bearers, as control point and location CCCD discovery
@@ -62,6 +64,7 @@ static struct bt_gatt_subscribe_params src_loc_subscribe[CONFIG_BT_MAX_CONN];
  */
 static struct bt_gatt_discover_params cp_disc[CONFIG_BT_MAX_CONN];
 static struct bt_gatt_discover_params loc_cc_disc[CONFIG_BT_MAX_CONN];
+static struct bt_gatt_discover_params avail_ctx_cc_disc[CONFIG_BT_MAX_CONN];
 
 static const struct bt_audio_unicast_client_cb *unicast_client_cbs;
 
@@ -139,10 +142,12 @@ static void unicast_client_ep_iso_connected(struct bt_iso_chan *chan)
 	struct bt_audio_stream *stream;
 	struct bt_audio_ep *ep;
 
-	if (sink_stream->iso == chan) {
+	if (sink_stream != NULL && sink_stream->iso == chan) {
 		stream = sink_stream;
-	} else {
+	} else if (source_stream != NULL && source_stream->iso == chan) {
 		stream = source_stream;
+	} else {
+		stream = NULL;
 	}
 
 	if (stream == NULL) {
@@ -175,10 +180,12 @@ static void unicast_client_ep_iso_disconnected(struct bt_iso_chan *chan,
 	struct bt_audio_stream *stream;
 	struct bt_audio_ep *ep;
 
-	if (sink_stream->iso == chan) {
+	if (sink_stream != NULL && sink_stream->iso == chan) {
 		stream = sink_stream;
-	} else {
+	} else if (source_stream != NULL && source_stream->iso == chan) {
 		stream = source_stream;
+	} else {
+		stream = NULL;
 	}
 
 	if (stream == NULL) {
@@ -263,12 +270,16 @@ void bt_unicast_client_stream_bind_audio_iso(struct bt_audio_stream *stream,
 		 */
 		audio_iso->sink_stream = stream;
 		qos->rx = &audio_iso->sink_io_qos;
+		qos->rx->path = &audio_iso->sink_path;
+		qos->rx->path->cc = audio_iso->sink_path_cc;
 	} else if (dir == BT_AUDIO_DIR_SINK) {
 		/* If the endpoint is a sink, then we need to
 		 * configure our TX parameters
 		 */
 		audio_iso->source_stream = stream;
 		qos->tx = &audio_iso->source_io_qos;
+		qos->tx->path = &audio_iso->source_path;
+		qos->tx->path->cc = audio_iso->source_path_cc;
 	} else {
 		__ASSERT(false, "Invalid dir: %u", dir);
 	}
@@ -308,7 +319,7 @@ static void unicast_client_ep_init(struct bt_audio_ep *ep, uint16_t handle,
 	BT_DBG("ep %p dir 0x%02x handle 0x%04x", ep, dir, handle);
 
 	(void)memset(ep, 0, sizeof(*ep));
-	ep->handle = handle;
+	ep->client.handle = handle;
 	ep->status.id = 0U;
 	ep->dir = dir;
 }
@@ -324,8 +335,8 @@ static struct bt_audio_ep *unicast_client_ep_find(struct bt_conn *conn,
 	for (i = 0; i < ARRAY_SIZE(snks[index]); i++) {
 		struct bt_audio_ep *ep = &snks[index][i];
 
-		if ((handle && ep->handle == handle) ||
-		    (!handle && ep->handle)) {
+		if ((handle && ep->client.handle == handle) ||
+		    (!handle && ep->client.handle)) {
 			return ep;
 		}
 	}
@@ -333,8 +344,8 @@ static struct bt_audio_ep *unicast_client_ep_find(struct bt_conn *conn,
 	for (i = 0; i < ARRAY_SIZE(srcs[index]); i++) {
 		struct bt_audio_ep *ep = &srcs[index][i];
 
-		if ((handle && ep->handle == handle) ||
-		    (!handle && ep->handle)) {
+		if ((handle && ep->client.handle == handle) ||
+		    (!handle && ep->client.handle)) {
 			return ep;
 		}
 	}
@@ -424,7 +435,7 @@ static struct bt_audio_ep *unicast_client_ep_new(struct bt_conn *conn,
 	for (i = 0; i < size; i++) {
 		struct bt_audio_ep *ep = &cache[i];
 
-		if (!ep->handle) {
+		if (!ep->client.handle) {
 			unicast_client_ep_init(ep, handle, dir);
 			return ep;
 		}
@@ -468,25 +479,31 @@ static void unicast_client_ep_idle_state(struct bt_audio_ep *ep,
 	bt_audio_stream_reset(stream);
 }
 
-static void unicast_client_ep_qos_reset(struct bt_audio_ep *ep)
+static void unicast_client_ep_qos_update(struct bt_audio_ep *ep,
+					 const struct bt_ascs_ase_status_qos *qos)
 {
+	struct bt_iso_chan_io_qos *iso_io_qos;
+
 	BT_DBG("ep %p dir %u audio_iso %p", ep, ep->dir, ep->iso);
 
 	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
 		/* If the endpoint is a source, then we need to
 		 * reset our RX parameters
 		 */
-		ep->iso->iso_qos.rx = memset(&ep->iso->sink_io_qos, 0,
-					     sizeof(ep->iso->sink_io_qos));
+		iso_io_qos = ep->iso->iso_qos.rx;
 	} else if (ep->dir == BT_AUDIO_DIR_SINK) {
 		/* If the endpoint is a sink, then we need to
 		 * reset our TX parameters
 		 */
-		ep->iso->iso_qos.tx = memset(&ep->iso->source_io_qos, 0,
-					     sizeof(ep->iso->source_io_qos));
+		iso_io_qos = ep->iso->iso_qos.tx;
 	} else {
 		__ASSERT(false, "Invalid ep->dir: %u", ep->dir);
+		return;
 	}
+
+	iso_io_qos->phy = qos->phy;
+	iso_io_qos->sdu = sys_le16_to_cpu(qos->sdu);
+	iso_io_qos->rtn = qos->rtn;
 }
 
 static void unicast_client_ep_config_state(struct bt_audio_ep *ep,
@@ -574,8 +591,8 @@ static void unicast_client_ep_qos_state(struct bt_audio_ep *ep,
 
 	qos = net_buf_simple_pull_mem(buf, sizeof(*qos));
 
-	/* Reset any existing QoS configuration */
-	unicast_client_ep_qos_reset(ep);
+	/* Update existing QoS configuration */
+	unicast_client_ep_qos_update(ep, qos);
 
 	ep->cig_id = qos->cig_id;
 	ep->cis_id = qos->cis_id;
@@ -599,6 +616,24 @@ static void unicast_client_ep_qos_state(struct bt_audio_ep *ep,
 	/* Disconnect ISO if connected */
 	if (stream->iso->state == BT_ISO_STATE_CONNECTED) {
 		bt_audio_stream_disconnect(stream);
+	} else {
+		/* We setup the data path here, as this is the earliest where
+		 * we have the ISO <-> EP coupling completed (due to setting
+		 * the CIS ID in the QoS procedure).
+		 */
+		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+			/* If the endpoint is a source, then we need to
+			 * configure our RX parameters
+			 */
+			bt_audio_codec_to_iso_path(&ep->iso->sink_path,
+						   stream->codec);
+		} else {
+			/* If the endpoint is a sink, then we need to
+			 * configure our TX parameters
+			 */
+			bt_audio_codec_to_iso_path(&ep->iso->source_path,
+						   stream->codec);
+		}
 	}
 
 	/* Notify upper layer */
@@ -738,7 +773,7 @@ static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
 	old_state = ep->status.state;
 	ep->status = *status;
 
-	BT_DBG("ep %p handle 0x%04x id 0x%02x state %s -> %s", ep, ep->handle,
+	BT_DBG("ep %p handle 0x%04x id 0x%02x state %s -> %s", ep, ep->client.handle,
 	       status->id, bt_audio_ep_state_str(old_state),
 	       bt_audio_ep_state_str(status->state));
 
@@ -1136,13 +1171,13 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 static int unicast_client_ep_subscribe(struct bt_conn *conn,
 				       struct bt_audio_ep *ep)
 {
-	BT_DBG("ep %p handle 0x%02x", ep, ep->handle);
+	BT_DBG("ep %p handle 0x%02x", ep, ep->client.handle);
 
 	if (ep->subscribe.value_handle) {
 		return 0;
 	}
 
-	ep->subscribe.value_handle = ep->handle;
+	ep->subscribe.value_handle = ep->client.handle;
 	ep->subscribe.ccc_handle = 0x0000;
 	ep->subscribe.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	ep->subscribe.disc_params = &ep->discover;
@@ -1178,16 +1213,16 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 	for (i = 0; i < ARRAY_SIZE(snks[index]); i++) {
 		struct bt_audio_ep *ep = &snks[index][i];
 
-		if (ep->handle) {
-			ep->cp_handle = handle;
+		if (ep->client.handle) {
+			ep->client.cp_handle = handle;
 		}
 	}
 
 	for (i = 0; i < ARRAY_SIZE(srcs[index]); i++) {
 		struct bt_audio_ep *ep = &srcs[index][i];
 
-		if (ep->handle) {
-			ep->cp_handle = handle;
+		if (ep->client.handle) {
+			ep->client.cp_handle = handle;
 		}
 	}
 }
@@ -1482,7 +1517,7 @@ int bt_unicast_client_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
 {
 	BT_DBG("conn %p ep %p buf %p len %u", conn, ep, buf, buf->len);
 
-	return bt_gatt_write_without_response(conn, ep->cp_handle,
+	return bt_gatt_write_without_response(conn, ep->client.cp_handle,
 					      buf->data, buf->len, false);
 }
 
@@ -1908,6 +1943,190 @@ static int unicast_client_ase_discover(struct bt_conn *conn,
 	return bt_gatt_read(conn, &params->read);
 }
 
+static uint8_t unicast_client_pacs_avail_ctx_read_func(struct bt_conn *conn,
+						       uint8_t err,
+						       struct bt_gatt_read_params *read,
+						       const void *data,
+						       uint16_t length)
+{
+	struct bt_audio_discover_params *params;
+	struct bt_pacs_context context;
+	struct net_buf_simple buf;
+
+	params = CONTAINER_OF(read, struct bt_audio_discover_params, read);
+
+	BT_DBG("conn %p err 0x%02x len %u", conn, err, length);
+
+	if (err || data == NULL || length != sizeof(context)) {
+		BT_DBG("Could not read available context: %d, %p, %u",
+		       err, data, length);
+
+		params->func(conn, NULL, NULL, params);
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	net_buf_simple_init_with_data(&buf, (void *)data, length);
+	context.snk = net_buf_simple_pull_le16(&buf);
+	context.src = net_buf_simple_pull_le16(&buf);
+
+	BT_DBG("sink context %u, source context %u", context.snk, context.src);
+
+	if (unicast_client_cbs != NULL &&
+	    unicast_client_cbs->available_contexts != NULL) {
+		unicast_client_cbs->available_contexts(conn, context.snk,
+						       context.src);
+	}
+
+	/* Read ASE instances */
+	if (unicast_client_ase_discover(conn, params) < 0) {
+		BT_ERR("Unable to read ASE");
+
+		params->func(conn, NULL, NULL, params);
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
+static uint8_t unicast_client_pacs_avail_ctx_notify_cb(struct bt_conn *conn,
+						      struct bt_gatt_subscribe_params *params,
+						      const void *data,
+						      uint16_t length)
+{
+	struct bt_pacs_context context;
+	struct net_buf_simple buf;
+
+	BT_DBG("conn %p len %u", conn, length);
+
+	if (!data) {
+		BT_DBG("Unsubscribed");
+		params->value_handle = 0x0000;
+		return BT_GATT_ITER_STOP;
+	}
+
+	/* Terminate early if there's no callbacks */
+	if (unicast_client_cbs == NULL ||
+	    unicast_client_cbs->available_contexts == NULL) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	net_buf_simple_init_with_data(&buf, (void *)data, length);
+
+	if (buf.len != sizeof(context)) {
+		BT_ERR("Avail_ctx notification incorrect size: %u", length);
+		return BT_GATT_ITER_STOP;
+	}
+
+	net_buf_simple_init_with_data(&buf, (void *)data, length);
+	context.snk = net_buf_simple_pull_le16(&buf);
+	context.src = net_buf_simple_pull_le16(&buf);
+
+	BT_DBG("sink context %u, source context %u", context.snk, context.src);
+
+	if (unicast_client_cbs != NULL &&
+	    unicast_client_cbs->available_contexts != NULL) {
+		unicast_client_cbs->available_contexts(conn, context.snk,
+						       context.src);
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static int unicast_client_pacs_avail_ctx_read(struct bt_conn *conn,
+					      struct bt_audio_discover_params *params,
+					      uint16_t handle)
+{
+	BT_DBG("conn %p params %p", conn, params);
+
+	params->read.func = unicast_client_pacs_avail_ctx_read_func;
+	params->read.handle_count = 1U;
+	params->read.single.handle = handle;
+	params->read.single.offset = 0U;
+
+	return bt_gatt_read(conn, &params->read);
+}
+
+static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
+							 const struct bt_gatt_attr *attr,
+							 struct bt_gatt_discover_params *discover)
+{
+	struct bt_audio_discover_params *params;
+	uint8_t index = bt_conn_index(conn);
+	const struct bt_gatt_chrc *chrc;
+	int err;
+
+	params = CONTAINER_OF(discover, struct bt_audio_discover_params,
+			      discover);
+
+	if (!attr) {
+		/* If available_ctx is not found, we terminate the discovery as
+		 * the characteristic is mandatory
+		 */
+
+		params->func(conn, NULL, NULL, params);
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	chrc = attr->user_data;
+
+	BT_DBG("conn %p attr %p handle 0x%04x", conn, attr, chrc->value_handle);
+
+	if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
+		struct bt_gatt_subscribe_params *sub_params;
+
+		sub_params = &avail_ctx_subscribe[index];
+
+		if (sub_params->value_handle == 0) {
+			BT_DBG("Subscribing to handle %u", chrc->value_handle);
+			sub_params->value_handle = chrc->value_handle;
+			sub_params->ccc_handle = 0x0000; /* auto discover ccc */
+			sub_params->end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+			sub_params->disc_params = &avail_ctx_cc_disc[index];
+			sub_params->notify = unicast_client_pacs_avail_ctx_notify_cb;
+			sub_params->value = BT_GATT_CCC_NOTIFY;
+
+			err = bt_gatt_subscribe(conn, sub_params);
+			if (err != 0 && err != -EALREADY) {
+				BT_ERR("Failed to subscribe to avail_ctx: %d", err);
+			}
+		} /* else already subscribed */
+	} else {
+		BT_DBG("Invalid chrc->properties: %u", chrc->properties);
+		/* If the characteristic is not subscribable we terminate the
+		 * discovery as BT_GATT_CHRC_NOTIFY is mandatory
+		 */
+		params->func(conn, NULL, NULL, params);
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	err = unicast_client_pacs_avail_ctx_read(conn, params,
+						 chrc->value_handle);
+	if (err != 0) {
+		BT_DBG("Failed to read PACS avail_ctx: %d", err);
+		params->err = err;
+
+		params->func(conn, NULL, NULL, params);
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
+static int unicast_client_pacs_avail_ctx_discover(struct bt_conn *conn,
+						  struct bt_audio_discover_params *params)
+{
+	BT_DBG("conn %p params %p", conn, params);
+
+	params->discover.uuid = pacs_avail_ctx_uuid;
+	params->discover.func = unicast_client_pacs_avail_ctx_discover_cb;
+	params->discover.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	params->discover.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+	params->discover.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+
+	return bt_gatt_discover(conn, &params->discover);
+}
+
 static uint8_t unicast_client_pacs_location_read_func(struct bt_conn *conn,
 						      uint8_t err,
 						      struct bt_gatt_read_params *read,
@@ -1941,9 +2160,9 @@ static uint8_t unicast_client_pacs_location_read_func(struct bt_conn *conn,
 					     (enum bt_audio_location)location);
 	}
 
-	/* Read ASE instances */
-	if (unicast_client_ase_discover(conn, params) < 0) {
-		BT_ERR("Unable to read ASE");
+	/* Read available contexts */
+	if (unicast_client_pacs_avail_ctx_discover(conn, params) < 0) {
+		BT_ERR("Unable to read available contexts");
 
 		params->func(conn, NULL, NULL, params);
 	}
@@ -2030,12 +2249,11 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 			      discover);
 
 	if (!attr) {
-		/* If location is not found, we just continue reading the ASEs,
-		 * as location is optional.
+		/* If location is not found, we just continue reading the
+		 * available contexts, as location is optional.
 		 */
-
-		if (unicast_client_ase_discover(conn, params) < 0) {
-			BT_ERR("Unable to read ASE");
+		if (unicast_client_pacs_avail_ctx_discover(conn, params) < 0) {
+			BT_ERR("Unable to read available contexts");
 
 			params->func(conn, NULL, NULL, params);
 		}
@@ -2064,7 +2282,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 		sub_params->value = BT_GATT_CCC_NOTIFY;
 
 		err = bt_gatt_subscribe(conn, sub_params);
-		if (err != 0) {
+		if (err != 0 && err != -EALREADY) {
 			BT_ERR("Failed to subscribe to location: %d", err);
 		}
 	}

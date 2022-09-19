@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /**
  * @brief Try to shorten a filename by removing the current directory
@@ -30,7 +30,6 @@ const char *ztest_relative_filename(const char *file)
 void z_ztest_run_all(const void *state)
 {
 	ztest_run_test_suites(state);
-	ztest_verify_all_test_suites_ran();
 }
 
 /**

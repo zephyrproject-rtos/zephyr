@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define TEST_NODE            DT_GPIO_CTLR(DT_ALIAS(led0), gpios)
 #define TEST_PIN             DT_GPIO_PIN(DT_ALIAS(led0), gpios)

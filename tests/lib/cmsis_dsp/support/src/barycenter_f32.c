@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -15,7 +15,7 @@
 
 #define ABS_ERROR_THRESH	(1e-3)
 
-void test_arm_barycenter_f32(void)
+ZTEST(support_barycenter_f32, test_arm_barycenter_f32)
 {
 	int test_index;
 	const size_t length = ARRAY_SIZE(ref_barycenter);
@@ -58,11 +58,4 @@ void test_arm_barycenter_f32(void)
 	free(output_buf);
 }
 
-void test_support_barycenter_f32(void)
-{
-	ztest_test_suite(support_barycenter_f32,
-		ztest_unit_test(test_arm_barycenter_f32)
-		);
-
-	ztest_run_test_suite(support_barycenter_f32);
-}
+ZTEST_SUITE(support_barycenter_f32, NULL, NULL, NULL, NULL, NULL);

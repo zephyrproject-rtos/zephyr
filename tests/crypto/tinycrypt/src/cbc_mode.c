@@ -38,12 +38,12 @@
 
 #include <tinycrypt/cbc_mode.h>
 #include <tinycrypt/constants.h>
-#include "test_utils.h"
+#include <zephyr/test_utils.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /*
  * NIST test vectors from SP 800-38a:
@@ -101,7 +101,7 @@ const uint8_t ciphertext[80] = {
 /*
  * NIST SP 800-38a CBC Test for encryption and decryption.
  */
-void test_cbc_sp_800_38a_encrypt_decrypt(void)
+ZTEST(tinycrypt, test_cbc_sp_800_38a_encrypt_decrypt)
 {
 
 	TC_START("Performing AES128 tests:");

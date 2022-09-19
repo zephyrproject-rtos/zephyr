@@ -270,8 +270,11 @@ static int gpio_rv32m1_init(const struct device *dev)
 	int ret;
 
 	if (config->clock_dev) {
-		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
 
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
 		if (ret < 0) {
 			return ret;
 		}

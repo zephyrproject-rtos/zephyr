@@ -6,6 +6,6 @@
 config SPI_MCHP_QSPI
 	bool "Microchip Polarfire SOC QSPI driver"
 	default y
-	depends on SOC_MPFS
+	depends on DT_HAS_MICROCHIP_MPFS_QSPI_ENABLED
 	help
 	  Enable support for the Polarfire SOC QSPI driver.

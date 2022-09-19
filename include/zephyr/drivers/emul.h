@@ -21,10 +21,11 @@ extern "C" {
 struct emul;
 
 /* #includes required after forward-declaration of struct emul later defined in this header. */
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/espi_emul.h>
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/drivers/spi_emul.h>
-#include <zephyr/device.h>
 
 /**
  * The types of supported buses.
@@ -89,8 +90,12 @@ struct emul {
 extern const struct emul __emul_list_start[];
 extern const struct emul __emul_list_end[];
 
-/* Use the devicetree node identifier as a unique name. */
-#define EMUL_REG_NAME(node_id) (_CONCAT(__emulreg_, node_id))
+/**
+ * @brief Use the devicetree node identifier as a unique name.
+ *
+ * @param node_id A devicetree node identifier
+ */
+#define EMUL_DT_NAME_GET(node_id) (_CONCAT(__emulreg_, node_id))
 
 /* Get a unique identifier based on the given _dev_node_id's reg property and
  * the bus its on. Intended for use in other internal macros when declaring {bus}_emul
@@ -104,28 +109,27 @@ extern const struct emul __emul_list_end[];
 		    (COND_CODE_1(DT_ON_BUS(_dev_node_id, espi), (_espi),                           \
 				 (COND_CODE_1(DT_ON_BUS(_dev_node_id, spi), (_spi), (-EINVAL))))))
 /**
- * Define a new emulator
+ * @brief Define a new emulator
  *
  * This adds a new struct emul to the linker list of emulations. This is
  * typically used in your emulator's DT_INST_FOREACH_STATUS_OKAY() clause.
  *
- * @param init_ptr function to call to initialise the emulator (see emul_init
- *	typedef)
  * @param node_id Node ID of the driver to emulate (e.g. DT_DRV_INST(n)); the node_id *MUST* have a
- * corresponding DEVICE_DT_DEFINE().
- * @param cfg_ptr emulator-specific configuration data
+ *        corresponding DEVICE_DT_DEFINE().
+ * @param init_fn function to call to initialise the emulator (see emul_init typedef)
  * @param data_ptr emulator-specific data
+ * @param cfg_ptr emulator-specific configuration data
  * @param bus_api emulator-specific bus api
  */
-#define EMUL_DEFINE(init_ptr, node_id, cfg_ptr, data_ptr, bus_api)                                 \
+#define EMUL_DT_DEFINE(node_id, init_fn, data_ptr, cfg_ptr, bus_api)                               \
 	static struct Z_EMUL_BUS(node_id, i2c_emul, espi_emul, spi_emul)                           \
 		Z_EMUL_REG_BUS_IDENTIFIER(node_id) = {                                             \
 			.api = bus_api,                                                            \
 			.Z_EMUL_BUS(node_id, addr, chipsel, chipsel) = DT_REG_ADDR(node_id),       \
 	};                                                                                         \
-	static struct emul EMUL_REG_NAME(node_id) __attribute__((__section__(".emulators")))       \
+	const struct emul EMUL_DT_NAME_GET(node_id) __attribute__((__section__(".emulators")))     \
 	__used = {                                                                                 \
-		.init = (init_ptr),                                                                \
+		.init = (init_fn),                                                                 \
 		.dev = DEVICE_DT_GET(node_id),                                                     \
 		.cfg = (cfg_ptr),                                                                  \
 		.data = (data_ptr),                                                                \
@@ -134,6 +138,36 @@ extern const struct emul __emul_list_end[];
 		.bus = {.Z_EMUL_BUS(node_id, i2c, espi, spi) =                                     \
 				&(Z_EMUL_REG_BUS_IDENTIFIER(node_id))},                            \
 	};
+
+#define Z_MAYBE_EMUL_DECLARE_INTERNAL(node_id) extern const struct emul EMUL_DT_NAME_GET(node_id);
+
+DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_EMUL_DECLARE_INTERNAL);
+
+/**
+ * @brief Like EMUL_DT_DEFINE(), but uses an instance of a DT_DRV_COMPAT compatible instead of a
+ *        node identifier.
+ *
+ * @param inst instance number. The @p node_id argument to EMUL_DT_DEFINE is set to
+ *             <tt>DT_DRV_INST(inst)</tt>.
+ * @param ... other parameters as expected by EMUL_DT_DEFINE.
+ */
+#define EMUL_DT_INST_DEFINE(inst, ...) EMUL_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Get a <tt>const struct emul*</tt> from a devicetree node identifier
+ *
+ * @details Returns a pointer to an emulator object created from a devicetree
+ * node, if any device was allocated by an emulator implementation.
+ *
+ * If no such device was allocated, this will fail at linker time. If you get an
+ * error that looks like <tt>undefined reference to __device_dts_ord_<N></tt>,
+ * that is what happened. Check to make sure your emulator implementation is
+ * being compiled, usually by enabling the Kconfig options it requires.
+ *
+ * @param node_id A devicetree node identifier
+ * @return A pointer to the emul object created for that node
+ */
+#define EMUL_DT_GET(node_id) (&EMUL_DT_NAME_GET(node_id))
 
 /**
  * Set up a list of emulators
@@ -147,7 +181,7 @@ int emul_init_for_bus(const struct device *dev);
 /**
  * @brief Retrieve the emul structure for an emulator by name
  *
- * @details Emulator objects are created via the EMUL_DEFINE() macro and placed in memory by the
+ * @details Emulator objects are created via the EMUL_DT_DEFINE() macro and placed in memory by the
  * linker. If the emulator structure is needed for custom API calls, it can be retrieved by the name
  * that the emulator exposes to the system (this is the devicetree node's label by default).
  *

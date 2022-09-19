@@ -112,6 +112,18 @@
 		};
 	};
 
+	spi1_default: spi1_default {
+		group0 {
+			pinmux = <SPI1_PCS0_PTE4>,
+				<SPI1_SCK_PTE2>,
+				<SPI1_SOUT_PTE3>,
+				<SPI1_SIN_PTE1>;
+			drive-strength = "low";
+			slew-rate = "fast";
+	    };
+	};
+
+
 	uart0_default: uart0_default {
 		group0 {
 			pinmux = <UART0_RX_PTB16>,

@@ -5,12 +5,6 @@ if SHIELD_LS013B7DH03
 
 if DISPLAY
 
-config SPI
-	default y
-
-config LS0XX
-	default y
-
 if LVGL
 
 config LV_Z_VDB_SIZE

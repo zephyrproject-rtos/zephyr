@@ -5,6 +5,7 @@
 
 config SPI_LITESPI
 	bool "LiteX SPI controller driver"
-	depends on SOC_RISCV32_LITEX_VEXRISCV
+	default y
+	depends on DT_HAS_LITEX_SPI_ENABLED
 	help
 	  Enable the SPI peripherals on LiteX

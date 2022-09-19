@@ -5,6 +5,8 @@
 
 menuconfig GPIO_STMPE1600
 	bool "STMPE1600 I2C-based GPIO chip"
+	default y
+	depends on DT_HAS_ST_STMPE1600_ENABLED
 	depends on I2C
 	help
 	  Enable driver for STMPE1600 I2C-based GPIO chip.

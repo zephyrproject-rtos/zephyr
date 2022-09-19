@@ -11,8 +11,6 @@ And a highly integrated embedded controller with system functions.
 It is suitable for mobile system applications.
 
 .. figure:: it81302_board.jpg
-     :width: 550px
-     :height: 452px
      :align: center
      :alt: IT81302 EVB
 
@@ -87,14 +85,12 @@ Wiring
 #. Connect your Download Board to your host computer using the USB cable.
 
    .. image:: ite_Downloadboard_setup.jpg
-        :width: 600px
         :align: center
         :alt: ITE Download Board Connected
 
 #. Connect your Download Board to J145 on the it8xxx2_evb board.
 
    .. image:: it8xxx2_evb_setup.jpg
-        :width: 600px
         :align: center
         :alt: ITE Download Board Connected
 
@@ -160,20 +156,17 @@ to the it8xxx2 board flash.
    Second, turn on the it8xxx2_evb board switch.
    Then, configure your winflash tool like below.
 
-    .. figure:: WinFlashTool_P2.png
-          :width: 600px
+    .. figure:: WinFlashTool_P2.jpg
           :align: center
 
-    .. figure:: WinFlashTool_P4.png
-          :width: 600px
+    .. figure:: WinFlashTool_P4.jpg
           :align: center
 
 #. Using winflash tool flash zephyr.bin into your ITE board.
    First, click ``Load`` button and select your zephyr.bin file.
    Second, click ``run`` to flash the iamge into board.
 
-    .. figure:: WinFlashTool_P3.png
-          :width: 600px
+    .. figure:: WinFlashTool_P3.jpg
           :align: center
 
 #. At this point, you have flashed your image into ITE board and
@@ -183,8 +176,7 @@ to the it8xxx2 board flash.
    For example, open device manager to find the USB Serial Port(COM4) and use your
    terminal program to connect it(Speed: 115200).
 
-    .. figure:: WinFlashTool_P1.png
-          :width: 600px
+    .. figure:: WinFlashTool_P1.jpg
           :align: center
 
 #. Turn on the it8xxx2_evb board switch, you should see ``"Hello World! it8xxx2_evb"``

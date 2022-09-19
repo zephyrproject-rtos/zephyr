@@ -35,7 +35,8 @@
 #include <zephyr/mgmt/mcumgr/serial.h>
 #endif
 
-static const struct device *uart_console_dev;
+static const struct device *const uart_console_dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 #ifdef CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS
 
@@ -589,8 +590,6 @@ static int uart_console_init(const struct device *arg)
 
 	ARG_UNUSED(arg);
 
-	/* Claim console device */
-	uart_console_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	if (!device_is_ready(uart_console_dev)) {
 		return -ENODEV;
 	}

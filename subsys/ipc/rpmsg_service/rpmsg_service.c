@@ -8,7 +8,7 @@
 
 #include "rpmsg_backend.h"
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 

@@ -466,13 +466,13 @@ Drivers and Sensors
 * CAN
 
   * Renamed ``zephyr,can-primary`` chosen property to ``zephyr,canbus``.
-  * Added :c:macro:`CAN_ERROR_WARNING` CAN controller state.
+  * Added :c:macro:`CAN_STATE_ERROR_WARNING` CAN controller state.
   * Added Atmel SAM Bosch M_CAN CAN-FD driver.
   * Added NXP LPCXpresso Bosch M_CAN CAN-FD driver.
   * Added ST STM32H7 Bosch M_CAN CAN-FD driver.
   * Rework transmission error handling the NXP FlexCAN driver to automatically
     retry transmission in case or arbitration lost or missing acknowledge and
-    to fail early in :c:func:`can_send` if in :c:macro:`CAN_BUS_OFF` state.
+    to fail early in :c:func:`can_send` if in :c:macro:`CAN_STATE_BUS_OFF`.
   * Added support for disabling automatic retransmissions ("one-shot" mode") to
     the ST STM32 bxCAN driver.
   * Converted the emulated CAN loopback driver to be configured through

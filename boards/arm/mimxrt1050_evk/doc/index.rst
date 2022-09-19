@@ -20,8 +20,7 @@ interface, SPDIF, and I2S audio interface.
 The following document refers to the discontinued MIMXRT1050-EVK board. For the
 MIMXRT1050-EVKB board, refer to `Board Revisions`_ section.
 
-.. image:: ./mimxrt1050_evk.jpg
-   :width: 720px
+.. image:: mimxrt1050_evk.jpg
    :align: center
    :alt: MIMXRT1050-EVK
 
@@ -89,8 +88,12 @@ these references:
 Supported Features
 ==================
 
-The mimxrt1050_evk board configuration supports the following hardware
-features:
+The mimxrt1050_evk board configuration supports the hardware features listed
+below.  For additional features not yet supported, please also refer to the
+:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
+already supported, which can also be re-used on this mimxrt1050_evk board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -119,6 +122,10 @@ features:
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

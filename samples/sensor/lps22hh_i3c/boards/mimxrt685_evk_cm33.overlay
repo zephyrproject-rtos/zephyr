@@ -1,0 +1,24 @@
+&i3c0 {
+	status = "okay";
+
+	/*
+	 * There might be other connected I2C devices
+	 * (for example, if using Arduino shield) which
+	 * cannot tolerate high clock speed. So slow
+	 * down the clock.
+	 */
+	i2c-scl-hz = <400000>;
+	i3c-scl-hz = <400000>;
+	i3c-od-scl-hz = <400000>;
+
+	clk-divider = <12>;
+	clk-divider-slow = <1>;
+	clk-divider-tc = <1>;
+
+	lps22hh0: lps22hh@5d0000020800b30000 {
+		compatible = "st,lps22hh";
+		reg = <0x5d 0x0208 0x00b30000>;
+
+		status = "okay";
+	};
+};

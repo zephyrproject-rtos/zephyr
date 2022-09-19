@@ -52,27 +52,17 @@ extern "C" {
 /**
  * @brief Maximum data length code for CAN-FD.
  */
-#define CANFD_MAX_DLC   CONFIG_CANFD_MAX_DLC
+#define CANFD_MAX_DLC   15U
 
 /**
  * @cond INTERNAL_HIDDEN
  * Internally calculated maximum data length
  */
-#ifndef CONFIG_CANFD_MAX_DLC
+#ifndef CONFIG_CAN_FD_MODE
 #define CAN_MAX_DLEN    8U
 #else
-#if CONFIG_CANFD_MAX_DLC <= 8
-#define CAN_MAX_DLEN    CONFIG_CANFD_MAX_DLC
-#elif CONFIG_CANFD_MAX_DLC <= 12
-#define CAN_MAX_DLEN    (CONFIG_CANFD_MAX_DLC + (CONFIG_CANFD_MAX_DLC - 8U) * 4U)
-#elif CONFIG_CANFD_MAX_DLC == 13
-#define CAN_MAX_DLEN    32U
-#elif CONFIG_CANFD_MAX_DLC == 14
-#define CAN_MAX_DLEN    48U
-#elif CONFIG_CANFD_MAX_DLC == 15
 #define CAN_MAX_DLEN    64U
-#endif
-#endif /* CONFIG_CANFD_MAX_DLC */
+#endif /* CONFIG_CAN_FD_MODE */
 
 /** @endcond */
 
@@ -116,17 +106,19 @@ extern "C" {
 typedef uint32_t can_mode_t;
 
 /**
- * @brief Defines the state of the CAN bus
+ * @brief Defines the state of the CAN controller
  */
 enum can_state {
 	/** Error-active state (RX/TX error count < 96). */
-	CAN_ERROR_ACTIVE,
+	CAN_STATE_ERROR_ACTIVE,
 	/** Error-warning state (RX/TX error count < 128). */
-	CAN_ERROR_WARNING,
+	CAN_STATE_ERROR_WARNING,
 	/** Error-passive state (RX/TX error count < 256). */
-	CAN_ERROR_PASSIVE,
+	CAN_STATE_ERROR_PASSIVE,
 	/** Bus-off state (RX/TX error count >= 256). */
-	CAN_BUS_OFF,
+	CAN_STATE_BUS_OFF,
+	/** CAN controller is stopped and does not participate in CAN communication. */
+	CAN_STATE_STOPPED,
 };
 
 /**
@@ -153,7 +145,7 @@ enum can_rtr {
 /**
  * @brief CAN frame structure
  */
-struct zcan_frame {
+struct can_frame {
 	/** Standard (11-bit) or extended (29-bit) CAN identifier. */
 	uint32_t id      : 29;
 	/** Frame is in the CAN-FD frame format if set to true. */
@@ -194,7 +186,7 @@ struct zcan_frame {
 /**
  * @brief CAN filter structure
  */
-struct zcan_filter {
+struct can_filter {
 	/** CAN identifier to match. */
 	uint32_t id           : 29;
 	/** @cond INTERNAL_HIDDEN */
@@ -293,7 +285,7 @@ typedef void (*can_tx_callback_t)(const struct device *dev, int error, void *use
  * @param frame     Received frame.
  * @param user_data User data provided when the filter was added.
  */
-typedef void (*can_rx_callback_t)(const struct device *dev, struct zcan_frame *frame,
+typedef void (*can_rx_callback_t)(const struct device *dev, struct can_frame *frame,
 				  void *user_data);
 
 /**
@@ -336,6 +328,18 @@ typedef int (*can_set_timing_data_t)(const struct device *dev,
 typedef int (*can_get_capabilities_t)(const struct device *dev, can_mode_t *cap);
 
 /**
+ * @brief Callback API upon starting CAN controller
+ * See @a can_start() for argument description
+ */
+typedef int (*can_start_t)(const struct device *dev);
+
+/**
+ * @brief Callback API upon stopping CAN controller
+ * See @a can_stop() for argument description
+ */
+typedef int (*can_stop_t)(const struct device *dev);
+
+/**
  * @brief Callback API upon setting CAN controller mode
  * See @a can_set_mode() for argument description
  */
@@ -346,7 +350,7 @@ typedef int (*can_set_mode_t)(const struct device *dev, can_mode_t mode);
  * See @a can_send() for argument description
  */
 typedef int (*can_send_t)(const struct device *dev,
-			  const struct zcan_frame *frame,
+			  const struct can_frame *frame,
 			  k_timeout_t timeout, can_tx_callback_t callback,
 			  void *user_data);
 
@@ -357,7 +361,7 @@ typedef int (*can_send_t)(const struct device *dev,
 typedef int (*can_add_rx_filter_t)(const struct device *dev,
 				   can_rx_callback_t callback,
 				   void *user_data,
-				   const struct zcan_filter *filter);
+				   const struct can_filter *filter);
 
 /**
  * @brief Callback API upon removing an RX filter
@@ -406,6 +410,8 @@ typedef int (*can_get_max_bitrate_t)(const struct device *dev, uint32_t *max_bit
 
 __subsystem struct can_driver_api {
 	can_get_capabilities_t get_capabilities;
+	can_start_t start;
+	can_stop_t stop;
 	can_set_mode_t set_mode;
 	can_set_timing_t set_timing;
 	can_send_t send;
@@ -733,7 +739,8 @@ static inline const struct can_timing *z_impl_can_get_timing_max(const struct de
  * @param sample_pnt Sampling point in permill of the entire bit time.
  *
  * @retval 0 or positive sample point error on success.
- * @retval -EINVAL if there is no solution for the desired values.
+ * @retval -EINVAL if the requested bitrate or sample point is out of range.
+ * @retval -ENOTSUP if the requested bitrate is not supported.
  * @retval -EIO if @a can_get_core_clock() is not available.
  */
 __syscall int can_calc_timing(const struct device *dev, struct can_timing *res,
@@ -802,7 +809,8 @@ static inline const struct can_timing *z_impl_can_get_timing_data_max(const stru
  * @param sample_pnt Sampling point for the data phase in permille of the entire bit time.
  *
  * @retval 0 or positive sample point error on success.
- * @retval -EINVAL if there is no solution for the desired values.
+ * @retval -EINVAL if the requested bitrate or sample point is out of range.
+ * @retval -ENOTSUP if the requested bitrate is not supported.
  * @retval -EIO if @a can_get_core_clock() is not available.
  */
 __syscall int can_calc_timing_data(const struct device *dev, struct can_timing *res,
@@ -822,6 +830,7 @@ __syscall int can_calc_timing_data(const struct device *dev, struct can_timing *
  * @param timing_data Bus timings for data phase
  *
  * @retval 0 If successful.
+ * @retval -EBUSY if the CAN controller is not in stopped state.
  * @retval -EIO General input/output error, failed to configure device.
  */
 __syscall int can_set_timing_data(const struct device *dev,
@@ -858,8 +867,11 @@ static inline int z_impl_can_set_timing_data(const struct device *dev,
  * @param bitrate_data Desired data phase bitrate.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP bitrate not supported by CAN controller/transceiver combination
- * @retval -EINVAL bitrate/sample point cannot be met.
+ * @retval -EBUSY if the CAN controller is not in stopped state.
+ * @retval -EINVAL if the requested bitrate is out of range.
+ * @retval -ENOTSUP if the requested bitrate not supported by the CAN controller/transceiver
+ *                  combination.
+ * @retval -ERANGE if the resulting sample point is off by more than +/- 5%.
  * @retval -EIO General input/output error, failed to set bitrate.
  */
 __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data);
@@ -899,6 +911,7 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
  * @param timing      Bus timings.
  *
  * @retval 0 If successful.
+ * @retval -EBUSY if the CAN controller is not in stopped state.
  * @retval -EIO General input/output error, failed to configure device.
  */
 __syscall int can_set_timing(const struct device *dev,
@@ -935,12 +948,60 @@ static inline int z_impl_can_get_capabilities(const struct device *dev, can_mode
 }
 
 /**
+ * @brief Start the CAN controller
+ *
+ * Bring the CAN controller out of `CAN_STATE_STOPPED`. This will reset the RX/TX error counters,
+ * enable the CAN controller to participate in CAN communication, and enable the CAN tranceiver, if
+ * supported.
+ *
+ * @see can_stop()
+ * @see can_transceiver_enable()
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @retval 0 if successful.
+ * @retval -EALREADY if the device is already started.
+ * @retval -EIO General input/output error, failed to start device.
+ */
+__syscall int can_start(const struct device *dev);
+
+static inline int z_impl_can_start(const struct device *dev)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	return api->start(dev);
+}
+
+/**
+ * @brief Stop the CAN controller
+ *
+ * Bring the CAN controller into `CAN_STATE_STOPPED`. This will disallow the CAN controller from
+ * participating in CAN communication and disable the CAN transceiver, if supported.
+ *
+ * @see can_start()
+ * @see can_transceiver_disable()
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @retval 0 if successful.
+ * @retval -EALREADY if the device is already stopped.
+ * @retval -EIO General input/output error, failed to stop device.
+ */
+__syscall int can_stop(const struct device *dev);
+
+static inline int z_impl_can_stop(const struct device *dev)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	return api->stop(dev);
+}
+
+/**
  * @brief Set the CAN controller to the given operation mode
  *
  * @param dev  Pointer to the device structure for the driver instance.
  * @param mode Operation mode.
  *
  * @retval 0 If successful.
+ * @retval -EBUSY if the CAN controller is not in stopped state.
  * @retval -EIO General input/output error, failed to configure device.
  */
 __syscall int can_set_mode(const struct device *dev, can_mode_t mode);
@@ -970,8 +1031,11 @@ static inline int z_impl_can_set_mode(const struct device *dev, can_mode_t mode)
  * @param bitrate      Desired arbitration phase bitrate.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP bitrate not supported by CAN controller/transceiver combination
- * @retval -EINVAL bitrate/sample point cannot be met.
+ * @retval -EBUSY if the CAN controller is not in stopped state.
+ * @retval -EINVAL if the requested bitrate is out of range.
+ * @retval -ENOTSUP if the requested bitrate not supported by the CAN controller/transceiver
+ *                  combination.
+ * @retval -ERANGE if the resulting sample point is off by more than +/- 5%.
  * @retval -EIO General input/output error, failed to set bitrate.
  */
 __syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
@@ -1019,18 +1083,19 @@ __syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
  *
  * @retval 0 if successful.
  * @retval -EINVAL if an invalid parameter was passed to the function.
- * @retval -ENETDOWN if the CAN controller is in bus-off state.
+ * @retval -ENETDOWN if the CAN controller is in stopped state.
+ * @retval -ENETUNREACH if the CAN controller is in bus-off state.
  * @retval -EBUSY if CAN bus arbitration was lost (only applicable if automatic
  *                retransmissions are disabled).
  * @retval -EIO if a general transmit error occurred (e.g. missing ACK if
  *              automatic retransmissions are disabled).
  * @retval -EAGAIN on timeout.
  */
-__syscall int can_send(const struct device *dev, const struct zcan_frame *frame,
+__syscall int can_send(const struct device *dev, const struct can_frame *frame,
 		       k_timeout_t timeout, can_tx_callback_t callback,
 		       void *user_data);
 
-static inline int z_impl_can_send(const struct device *dev, const struct zcan_frame *frame,
+static inline int z_impl_can_send(const struct device *dev, const struct can_frame *frame,
 				  k_timeout_t timeout, can_tx_callback_t callback,
 				  void *user_data)
 {
@@ -1063,13 +1128,13 @@ static inline int z_impl_can_send(const struct device *dev, const struct zcan_fr
  * @param callback  This function is called by the CAN controller driver whenever
  *                  a frame matching the filter is received.
  * @param user_data User data to pass to callback function.
- * @param filter    Pointer to a @a zcan_filter structure defining the filter.
+ * @param filter    Pointer to a @a can_filter structure defining the filter.
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
  */
 static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
-				    void *user_data, const struct zcan_filter *filter)
+				    void *user_data, const struct can_filter *filter)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
@@ -1087,7 +1152,7 @@ static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t 
  * @param max_frames Maximum number of CAN frames that can be queued.
  */
 #define CAN_MSGQ_DEFINE(name, max_frames) \
-	K_MSGQ_DEFINE(name, sizeof(struct zcan_frame), max_frames, 4)
+	K_MSGQ_DEFINE(name, sizeof(struct can_frame), max_frames, 4)
 
 /**
  * @brief Wrapper function for adding a message queue for a given filter
@@ -1105,13 +1170,13 @@ static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t 
  *
  * @param dev    Pointer to the device structure for the driver instance.
  * @param msgq   Pointer to the already initialized @a k_msgq struct.
- * @param filter Pointer to a @a zcan_filter structure defining the filter.
+ * @param filter Pointer to a @a can_filter structure defining the filter.
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
  */
 __syscall int can_add_rx_filter_msgq(const struct device *dev, struct k_msgq *msgq,
-				     const struct zcan_filter *filter);
+				     const struct can_filter *filter);
 
 /**
  * @brief Remove a CAN RX filter
@@ -1200,6 +1265,7 @@ static inline int z_impl_can_get_state(const struct device *dev, enum can_state 
  * @param timeout Timeout for waiting for the recovery or ``K_FOREVER``.
  *
  * @retval 0 on success.
+ * @retval -ENETDOWN if the CAN controller is in stopped state.
  * @retval -EAGAIN on timeout.
  */
 #if !defined(CONFIG_CAN_AUTO_BUS_OFF_RECOVERY) || defined(__DOXYGEN__)
@@ -1283,133 +1349,6 @@ static inline uint8_t can_bytes_to_dlc(uint8_t num_bytes)
 	       num_bytes <= 32 ? 13 :
 	       num_bytes <= 48 ? 14 :
 	       15;
-}
-
-/** @} */
-
-/**
- * @name Linux SocketCAN compatibility
- *
- * The following structures and functions provide compatibility with the CAN
- * frame and CAN filter formats used by Linux SocketCAN.
- *
- * @{
- */
-
-/**
- * CAN Identifier structure for Linux SocketCAN compatibility.
- *
- * The fields in this type are:
- *
- * @code{.text}
- *
- * +------+--------------------------------------------------------------+
- * | Bits | Description                                                  |
- * +======+==============================================================+
- * | 0-28 | CAN identifier (11/29 bit)                                   |
- * +------+--------------------------------------------------------------+
- * |  29  | Error message frame flag (0 = data frame, 1 = error message) |
- * +------+--------------------------------------------------------------+
- * |  30  | Remote transmission request flag (1 = RTR frame)             |
- * +------+--------------------------------------------------------------+
- * |  31  | Frame format flag (0 = standard 11 bit, 1 = extended 29 bit) |
- * +------+--------------------------------------------------------------+
- *
- * @endcode
- */
-typedef uint32_t canid_t;
-
-/**
- * @brief CAN frame for Linux SocketCAN compatibility.
- */
-struct can_frame {
-	/** 32-bit CAN ID + EFF/RTR/ERR flags. */
-	canid_t can_id;
-
-	/** The data length code (DLC). */
-	uint8_t can_dlc;
-
-	/** @cond INTERNAL_HIDDEN */
-	uint8_t pad;   /* padding. */
-	uint8_t res0;  /* reserved/padding. */
-	uint8_t res1;  /* reserved/padding. */
-	/** @endcond */
-
-	/** The payload data. */
-	uint8_t data[CAN_MAX_DLEN];
-};
-
-/**
- * @brief CAN filter for Linux SocketCAN compatibility.
- *
- * A filter is considered a match when `received_can_id & mask == can_id & can_mask`.
- */
-struct can_filter {
-	/** The CAN identifier to match. */
-	canid_t can_id;
-	/** The mask applied to @a can_id for matching. */
-	canid_t can_mask;
-};
-
-/**
- * @brief Translate a @a can_frame struct to a @a zcan_frame struct.
- *
- * @param frame  Pointer to can_frame struct.
- * @param zframe Pointer to zcan_frame struct.
- */
-static inline void can_copy_frame_to_zframe(const struct can_frame *frame,
-					    struct zcan_frame *zframe)
-{
-	zframe->id_type = (frame->can_id & BIT(31)) >> 31;
-	zframe->rtr = (frame->can_id & BIT(30)) >> 30;
-	zframe->id = frame->can_id & BIT_MASK(29);
-	zframe->dlc = frame->can_dlc;
-	memcpy(zframe->data, frame->data, sizeof(zframe->data));
-}
-
-/**
- * @brief Translate a @a zcan_frame struct to a @a can_frame struct.
- *
- * @param zframe Pointer to zcan_frame struct.
- * @param frame  Pointer to can_frame struct.
- */
-static inline void can_copy_zframe_to_frame(const struct zcan_frame *zframe,
-					    struct can_frame *frame)
-{
-	frame->can_id = (zframe->id_type << 31) | (zframe->rtr << 30) |	zframe->id;
-	frame->can_dlc = zframe->dlc;
-	memcpy(frame->data, zframe->data, sizeof(frame->data));
-}
-
-/**
- * @brief Translate a @a can_filter struct to a @a zcan_filter struct.
- *
- * @param filter  Pointer to can_filter struct.
- * @param zfilter Pointer to zcan_filter struct.
- */
-static inline void can_copy_filter_to_zfilter(const struct can_filter *filter,
-					      struct zcan_filter *zfilter)
-{
-	zfilter->id_type = (filter->can_id & BIT(31)) >> 31;
-	zfilter->rtr = (filter->can_id & BIT(30)) >> 30;
-	zfilter->id = filter->can_id & BIT_MASK(29);
-	zfilter->rtr_mask = (filter->can_mask & BIT(30)) >> 30;
-	zfilter->id_mask = filter->can_mask & BIT_MASK(29);
-}
-
-/**
- * @brief Translate a @a zcan_filter struct to a @a can_filter struct.
- *
- * @param zfilter Pointer to zcan_filter struct.
- * @param filter  Pointer to can_filter struct.
- */
-static inline void can_copy_zfilter_to_filter(const struct zcan_filter *zfilter,
-					      struct can_filter *filter)
-{
-	filter->can_id = (zfilter->id_type << 31) |
-		(zfilter->rtr << 30) | zfilter->id;
-	filter->can_mask = (zfilter->rtr_mask << 30) |
-		(zfilter->id_type << 31) | zfilter->id_mask;
 }
 
 /** @} */

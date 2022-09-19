@@ -1,0 +1,42 @@
+description: Renesas SmartBond(tm) UART
+
+compatible: "renesas,smartbond-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    periph-clock-config:
+      type: int
+      description: Peripheral clock register configuration (COM domain)
+      required: true
+
+    current-speed:
+      description: |
+        Initial baud rate setting for UART. Only a fixed set of baud
+        rates are selectable on these devices.
+      enum:
+        - 1200
+        - 2400
+        - 4800
+        - 9600
+        - 14400
+        - 19200
+        - 28800
+        - 38400
+        - 57600
+        - 115200
+        - 230400
+        - 460800
+        - 921600
+        - 1000000
+
+    hw-flow-control-supported:
+      type: boolean
+      required: false
+      description: Set to indicate RTS/CTS flow control is supported.

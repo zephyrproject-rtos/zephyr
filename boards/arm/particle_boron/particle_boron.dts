@@ -49,7 +49,6 @@
 	pinctrl-names = "default", "sleep";
 	sara_r4 {
 		compatible = "u-blox,sara-r4";
-		label = "ublox-sara-r4";
 		status = "okay";
 
 		mdm-power-gpios = <&gpio0 16 0>;

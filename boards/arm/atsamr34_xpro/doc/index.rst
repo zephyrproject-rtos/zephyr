@@ -17,8 +17,7 @@ including both a SAML21 die, and a Semtech SX1276 LoRa radio die.
 
 This board is also referred to as DM320111.
 
-.. image:: img/atsamr34-xpro.png
-     :width: 500px
+.. image:: img/atsamr34-xpro.jpg
      :align: center
      :alt: ATSAMR34-XPRO
 
@@ -103,8 +102,7 @@ controllers are responsible for pin muxing, input/output, pull-up, etc.
 For mode details please refer to `SAM R34 Family Datasheet`_ and the `SAM R34
 Xplained Pro Schematic`_.
 
-.. image:: img/atsamr34-xpro-pinout.png
-     :width: 500px
+.. image:: img/atsamr34-xpro-pinout.jpg
      :align: center
      :alt: ATSAMR34-XPRO-pinout
 

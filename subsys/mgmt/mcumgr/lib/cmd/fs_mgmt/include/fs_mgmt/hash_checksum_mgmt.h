@@ -8,7 +8,7 @@
 #ifndef H_HASH_CHECKSUM_MGMT_
 #define H_HASH_CHECKSUM_MGMT_
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/fs/fs.h>
 
 #ifdef __cplusplus
@@ -26,7 +26,7 @@ extern "C" {
  * @return 0 on success, negative error code on failure.
  */
 typedef int (*hash_checksum_mgmt_handler_fn)(struct fs_file_t *file,
-					     uint8_t *output, uint32_t *out_len,
+					     uint8_t *output, size_t *out_len,
 					     size_t len);
 
 /**

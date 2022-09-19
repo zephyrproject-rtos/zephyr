@@ -6,22 +6,25 @@
 
 #include "img.h"
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/littlefs.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <lvgl.h>
 
 #define IMG_FILE_PATH "/mnt/img.bin"
+
+#define LVGL_PARTITION		storage_partition
+#define LVGL_PARTITION_ID	FIXED_PARTITION_ID(LVGL_PARTITION)
 
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
 
 static struct fs_mount_t mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &cstorage,
-	.storage_dev = (void *)FLASH_AREA_ID(storage),
+	.storage_dev = (void *)LVGL_PARTITION_ID,
 	.mnt_point = "/mnt"
 };
 

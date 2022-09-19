@@ -15,9 +15,7 @@ Overview
   via 440pin connector on bottom side.
 
 .. figure:: img/rcar_h3_salvatorx.jpg
-   :width: 460px
    :align: center
-   :height: 288px
    :alt: R-Car Salvator-X kit
 
 More information about the board can be found at `Renesas R-Car Development Support website`_.
@@ -29,9 +27,7 @@ Hardware capabilities for the H3 Salvator-X for can be found on the `eLinux H3 S
 of the board.
 
 .. figure:: img/rcar_h3_features.jpg
-   :width: 286px
    :align: center
-   :height: 280px
    :alt: R-Car Salvator-X features
 
 .. note:: Zephyr will be booted on the CR7 processor provided for RTOS purpose.

@@ -60,12 +60,13 @@ config NET_BUF_POOL_USAGE
 endif # NET_BUF
 
 config NETWORKING
-	bool "Link layer and IP networking support"
+	bool "Link layer and networking (including IP)"
 	select NET_BUF
 	select POLL
 	select ENTROPY_GENERATOR
 	help
-	  This option enabled generic link layer and IP networking support.
+	  This option enables generic link layer and networking support
+	  and is the basis for higher level protocols (e.g. IP protocols).
 
 if NETWORKING
 

@@ -110,6 +110,8 @@ void posix_irq_handler(void)
 		vector_to_irq(irq_nbr, &may_swap);
 		currently_running_irq = last_running_irq;
 
+		hw_irq_ctrl_reeval_level_irq(irq_nbr);
+
 		hw_irq_ctrl_set_cur_prio(last_current_running_prio);
 	}
 

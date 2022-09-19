@@ -25,6 +25,7 @@ static const struct dma_driver_api intel_adsp_hda_dma_link_in_api = {
 #define INTEL_ADSP_HDA_DMA_LINK_IN_INIT(inst)                                                      \
 	static const struct intel_adsp_hda_dma_cfg intel_adsp_hda_dma##inst##_config = {           \
 		.base = DT_INST_REG_ADDR(inst),                                                    \
+		.regblock_size  = DT_INST_REG_SIZE(inst),					   \
 		.dma_channels = DT_INST_PROP(inst, dma_channels),                                  \
 		.direction = PERIPHERAL_TO_MEMORY						   \
 	};                                                                                         \

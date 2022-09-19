@@ -8,7 +8,7 @@ menuconfig LM77
 	default y
 	depends on DT_HAS_LM77_ENABLED
 	default $(dt_compat_enabled,lm77)
-	depends on I2C
+	select I2C
 	help
 	  Enable driver for the LM77 digital temperature sensor with 2-wire
 	  interface.

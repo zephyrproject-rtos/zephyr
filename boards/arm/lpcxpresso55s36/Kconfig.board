@@ -1,0 +1,9 @@
+# LPCXpresso55S36 board
+
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LPCXPRESSO55S36
+	bool "NXP LPCXPRESSO-55S36"
+	depends on SOC_SERIES_LPC55XXX
+	select SOC_PART_NUMBER_LPC55S36JBD100

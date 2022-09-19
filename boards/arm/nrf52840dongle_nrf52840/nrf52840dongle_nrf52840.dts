@@ -22,6 +22,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -156,6 +157,10 @@
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 /* Include flash partition table.

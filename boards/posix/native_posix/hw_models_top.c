@@ -138,39 +138,36 @@ void hwm_find_next_timer(void)
 }
 
 /**
- * Entry point for the HW models
- * The HW models execute in an infinite loop until terminated
+ * Execute the next scheduled HW event/timer
  */
-void hwm_main_loop(void)
+void hwm_one_event(void)
 {
-	while (1) {
-		hwm_sleep_until_next_timer();
+	hwm_sleep_until_next_timer();
 
-		switch (next_timer_index) { /* LCOV_EXCL_BR_LINE */
-		case HWTIMER:
-			hwtimer_timer_reached();
-			break;
-		case IRQCNT:
-			hw_irq_ctrl_timer_triggered();
-			break;
-		case HW_COUNTER:
-			hw_counter_triggered();
-			break;
+	switch (next_timer_index) { /* LCOV_EXCL_BR_LINE */
+	case HWTIMER:
+		hwtimer_timer_reached();
+		break;
+	case IRQCNT:
+		hw_irq_ctrl_timer_triggered();
+		break;
+	case HW_COUNTER:
+		hw_counter_triggered();
+		break;
 #ifdef CONFIG_HAS_SDL
-		case SDLEVENTTIMER:
-			sdl_handle_events();
-			break;
+	case SDLEVENTTIMER:
+		sdl_handle_events();
+		break;
 #endif
-		default:
-			/* LCOV_EXCL_START */
-			posix_print_error_and_exit(
-					"next_timer_index corrupted\n");
-			break;
-			/* LCOV_EXCL_STOP */
-		}
-
-		hwm_find_next_timer();
+	default:
+		/* LCOV_EXCL_START */
+		posix_print_error_and_exit(
+					   "next_timer_index corrupted\n");
+		break;
+		/* LCOV_EXCL_STOP */
 	}
+
+	hwm_find_next_timer();
 }
 
 /**

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/sys/printk.h>
 
@@ -33,7 +33,7 @@ static const char *tag(void)
 	return buf;
 }
 
-static void test_starve(void)
+ZTEST(starve_fn, test_starve)
 {
 	static struct k_timer tmr;
 	static struct k_spinlock lock;
@@ -99,8 +99,4 @@ static void test_starve(void)
 		 tag(), iters);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(starve_fn, ztest_unit_test(test_starve));
-	ztest_run_test_suite(starve_fn);
-}
+ZTEST_SUITE(starve_fn, NULL, NULL, NULL, NULL, NULL);

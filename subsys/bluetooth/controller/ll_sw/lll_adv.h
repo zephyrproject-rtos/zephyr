@@ -98,8 +98,6 @@ struct lll_adv_sync {
 	uint8_t  chm_last;
 	uint16_t chm_instant;
 
-	uint32_t ticks_offset;
-
 	struct lll_adv_pdu data;
 
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
@@ -129,10 +127,11 @@ struct lll_adv_aux {
 	 */
 	uint16_t data_chan_counter;
 
-	/* Temporary stored use by primary channel PDU event to fill the
+	/* Store used by primary channel PDU event to fill the
 	 * auxiliary offset to this auxiliary PDU event.
 	 */
-	uint32_t ticks_offset;
+	uint32_t ticks_pri_pdu_offset;
+	uint32_t us_pri_pdu_offset;
 
 	struct lll_adv_pdu data;
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)

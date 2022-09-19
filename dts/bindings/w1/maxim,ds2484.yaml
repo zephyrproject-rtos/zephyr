@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Caspar Friedrich <c.s.w.friedrich@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: DS4284 Single-Channel 1-Wire Master
+
+compatible: "maxim,ds2484"
+
+include: [i2c-device.yaml, w1-master.yaml]
+
+properties:
+  slpz-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      Enable sleep mode, only available on DS4284. Active low.

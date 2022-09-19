@@ -9,13 +9,13 @@
 #ifndef _MASTER_H
 #define _MASTER_H
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <stdio.h>
 
 #include "receiver.h"
 
-#include <timestamp.h>
+#include <zephyr/timestamp.h>
 
 #include <string.h>
 

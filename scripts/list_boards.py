@@ -9,8 +9,6 @@ import itertools
 from pathlib import Path
 from typing import NamedTuple
 
-ZEPHYR_BASE = Path(__file__).resolve().parents[1]
-
 #
 # This is shared code between the build system's 'boards' target
 # and the 'west boards' extension command. If you change it, make
@@ -41,14 +39,14 @@ def find_arch2board_set(args):
     arches = sorted(find_arches(args))
     ret = defaultdict(set)
 
-    for root in itertools.chain([ZEPHYR_BASE], args.board_roots):
+    for root in args.board_roots:
         for arch, boards in find_arch2board_set_in(root, arches).items():
             ret[arch] |= boards
 
     return ret
 
 def find_arches(args):
-    arch_set = find_arches_in(ZEPHYR_BASE)
+    arch_set = set()
 
     for root in args.arch_roots:
         arch_set |= find_arches_in(root)
@@ -99,12 +97,10 @@ def add_args(parser):
     # flags
     parser.add_argument("--arch-root", dest='arch_roots', default=[],
                         type=Path, action='append',
-                        help='''add an architecture root (ZEPHYR_BASE is
-                        always present), may be given more than once''')
+                        help='add an architecture root, may be given more than once')
     parser.add_argument("--board-root", dest='board_roots', default=[],
                         type=Path, action='append',
-                        help='''add a board root (ZEPHYR_BASE is always
-                        present), may be given more than once''')
+                        help='add a board root, may be given more than once')
 
 def dump_boards(arch2boards):
     for arch, boards in arch2boards.items():

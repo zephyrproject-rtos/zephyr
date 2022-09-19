@@ -71,9 +71,7 @@ import kconfiglib
 def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
     """Load Kconfig"""
     with TemporaryDirectory() as td:
-        projects = zephyr_module.west_projects()
-        projects = [p.posixpath for p in projects["projects"]] if projects else None
-        modules = zephyr_module.parse_modules(ZEPHYR_BASE, projects)
+        modules = zephyr_module.parse_modules(ZEPHYR_BASE)
 
         # generate Kconfig.modules file
         kconfig = ""
@@ -253,7 +251,10 @@ def kconfig_build_resources(app: Sphinx) -> None:
         kconfig, module_paths = kconfig_load(app)
         db = list()
 
-        for sc in chain(kconfig.unique_defined_syms, kconfig.unique_choices):
+        for sc in sorted(
+            chain(kconfig.unique_defined_syms, kconfig.unique_choices),
+            key=lambda sc: sc.name if sc.name else "",
+        ):
             # skip nameless symbols
             if not sc.name:
                 continue

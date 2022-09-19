@@ -6,7 +6,7 @@
 
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 
 /**

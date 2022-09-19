@@ -12,7 +12,6 @@ The board comes with 3 different USB connector options: USB Type-C plug,
 USB Type-C socket and USB Type-A plug.
 
 .. image:: img/serpente.jpg
-     :width: 640px
      :align: center
      :alt: Serpente Boards
 

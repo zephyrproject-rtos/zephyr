@@ -9,4 +9,4 @@ project(pinctrl_api)
 zephyr_include_directories(src)
 zephyr_include_directories(../common)
 
-target_sources(app PRIVATE src/main.c src/pinctrl_test.c ../common/test_device.c)
+target_sources(app PRIVATE src/main.c ../common/test_device.c)

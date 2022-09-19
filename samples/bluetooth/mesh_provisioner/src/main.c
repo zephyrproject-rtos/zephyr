@@ -5,11 +5,12 @@
  */
 
 #include <zephyr/sys/printk.h>
-
 #include <zephyr/settings/settings.h>
-
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
+#include <zephyr/drivers/gpio.h>
+
+#define SW0_NODE	DT_ALIAS(sw0)
 
 static const uint16_t net_idx;
 static const uint16_t app_idx;
@@ -19,6 +20,9 @@ static uint8_t node_uuid[16];
 
 K_SEM_DEFINE(sem_unprov_beacon, 0, 1);
 K_SEM_DEFINE(sem_node_added, 0, 1);
+#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+K_SEM_DEFINE(sem_button_pressed, 0, 1);
+#endif
 
 static struct bt_mesh_cfg_cli cfg_cli = {
 };
@@ -97,17 +101,16 @@ static void configure_self(struct bt_mesh_cdb_node *self)
 	}
 
 	/* Add Application Key */
-	err = bt_mesh_cfg_app_key_add(self->net_idx, self->addr, self->net_idx,
-				      app_idx, key->keys[0].app_key, &status);
+	err = bt_mesh_cfg_cli_app_key_add(self->net_idx, self->addr, self->net_idx, app_idx,
+					  key->keys[0].app_key, &status);
 	if (err || status) {
 		printk("Failed to add app-key (err %d, status %d)\n", err,
 		       status);
 		return;
 	}
 
-	err = bt_mesh_cfg_mod_app_bind(self->net_idx, self->addr, self->addr,
-				       app_idx, BT_MESH_MODEL_ID_HEALTH_CLI,
-				       &status);
+	err = bt_mesh_cfg_cli_mod_app_bind(self->net_idx, self->addr, self->addr, app_idx,
+					   BT_MESH_MODEL_ID_HEALTH_CLI, &status);
 	if (err || status) {
 		printk("Failed to bind app-key (err %d, status %d)\n", err,
 		       status);
@@ -141,15 +144,15 @@ static void configure_node(struct bt_mesh_cdb_node *node)
 	}
 
 	/* Add Application Key */
-	err = bt_mesh_cfg_app_key_add(net_idx, node->addr, net_idx, app_idx,
-				      key->keys[0].app_key, &status);
+	err = bt_mesh_cfg_cli_app_key_add(net_idx, node->addr, net_idx, app_idx,
+					  key->keys[0].app_key, &status);
 	if (err || status) {
 		printk("Failed to add app-key (err %d status %d)\n", err, status);
 		return;
 	}
 
 	/* Get the node's composition data and bind all models to the appkey */
-	err = bt_mesh_cfg_comp_data_get(net_idx, node->addr, 0, &status, &buf);
+	err = bt_mesh_cfg_cli_comp_data_get(net_idx, node->addr, 0, &status, &buf);
 	if (err || status) {
 		printk("Failed to get Composition data (err %d, status: %d)\n",
 		       err, status);
@@ -176,9 +179,8 @@ static void configure_node(struct bt_mesh_cdb_node *node)
 			printk("Binding AppKey to model 0x%03x:%04x\n",
 			       elem_addr, id);
 
-			err = bt_mesh_cfg_mod_app_bind(net_idx, node->addr,
-						       elem_addr, app_idx, id,
-						       &status);
+			err = bt_mesh_cfg_cli_mod_app_bind(net_idx, node->addr, elem_addr, app_idx,
+							   id, &status);
 			if (err || status) {
 				printk("Failed (err: %d, status: %d)\n", err,
 				       status);
@@ -192,10 +194,8 @@ static void configure_node(struct bt_mesh_cdb_node *node)
 			printk("Binding AppKey to model 0x%03x:%04x:%04x\n",
 			       elem_addr, id.company, id.id);
 
-			err = bt_mesh_cfg_mod_app_bind_vnd(net_idx, node->addr,
-							   elem_addr, app_idx,
-							   id.id, id.company,
-							   &status);
+			err = bt_mesh_cfg_cli_mod_app_bind_vnd(net_idx, node->addr, elem_addr,
+							       app_idx, id.id, id.company, &status);
 			if (err || status) {
 				printk("Failed (err: %d, status: %d)\n", err,
 				       status);
@@ -294,6 +294,40 @@ static uint8_t check_unconfigured(struct bt_mesh_cdb_node *node, void *data)
 	return BT_MESH_CDB_ITER_CONTINUE;
 }
 
+#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, {0});
+static struct gpio_callback button_cb_data;
+
+static void button_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+{
+	k_sem_give(&sem_button_pressed);
+}
+
+static void button_init(void)
+{
+	int ret;
+
+	if (!device_is_ready(button.port)) {
+		printk("Error: button device %s is not ready\n", button.port->name);
+		return;
+	}
+	ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
+	if (ret != 0) {
+		printk("Error %d: failed to configure %s pin %d\n", ret, button.port->name,
+		       button.pin);
+		return;
+	}
+	ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret != 0) {
+		printk("Error %d: failed to configure interrupt on %s pin %d\n", ret,
+		       button.port->name, button.pin);
+		return;
+	}
+	gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin));
+	gpio_add_callback(button.port, &button_cb_data);
+}
+#endif
+
 void main(void)
 {
 	char uuid_hex_str[32 + 1];
@@ -311,6 +345,10 @@ void main(void)
 	printk("Bluetooth initialized\n");
 	bt_ready();
 
+#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+	button_init();
+#endif
+
 	while (1) {
 		k_sem_reset(&sem_unprov_beacon);
 		k_sem_reset(&sem_node_added);
@@ -323,6 +361,16 @@ void main(void)
 		}
 
 		bin2hex(node_uuid, 16, uuid_hex_str, sizeof(uuid_hex_str));
+
+#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+		k_sem_reset(&sem_button_pressed);
+		printk("Device %s detected, press button 1 to provision.\n", uuid_hex_str);
+		err = k_sem_take(&sem_button_pressed, K_SECONDS(30));
+		if (err == -EAGAIN) {
+			printk("Timed out, button 1 wasn't pressed in time.\n");
+			continue;
+		}
+#endif
 
 		printk("Provisioning %s\n", uuid_hex_str);
 		err = bt_mesh_provision_adv(node_uuid, net_idx, 0, 0);

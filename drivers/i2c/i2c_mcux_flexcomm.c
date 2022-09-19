@@ -335,6 +335,11 @@ static int mcux_flexcomm_init(const struct device *dev)
 
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Get the clock frequency */
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {

@@ -63,7 +63,7 @@ struct ec_host_cmd_handler {
 };
 
 /**
- * @def EC_HOST_CMD_HANDLER
+ *
  * @brief Statically define and register a host command handler.
  *
  * Helper macro to statically define and register a host command handler that
@@ -88,7 +88,7 @@ struct ec_host_cmd_handler {
 	}
 
 /**
- * @def EC_HOST_CMD_HANDLER_UNBOUND
+ *
  * @brief Statically define and register a host command handler without sizes.
  *
  * Helper macro to statically define and register a host command handler whose

@@ -1,12 +1,10 @@
 # Copyright (c) 2021, NXP
 # SPDX -License-Identifier: Apache-2.0
 
-DT_COMPAT_PMIC_REG := regulator-pmic
-
 config REGULATOR_PMIC
 	bool "PMIC Regulator Driver"
-	depends on $(dt_compat_enabled,$(DT_COMPAT_PMIC_REG))
-	default $(dt_compat_enabled,$(DT_COMPAT_PMIC_REG))
+	default y
+	depends on DT_HAS_REGULATOR_PMIC_ENABLED
 	select I2C
 	help
 	  Enable the pmic regulator driver

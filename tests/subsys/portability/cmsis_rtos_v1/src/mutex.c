@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <cmsis_os.h>
 
@@ -46,7 +46,7 @@ void test_max_mutex(void)
 	}
 }
 
-void test_mutex(void)
+ZTEST(cmsis_mutex, test_mutex)
 {
 	osMutexId mutex_id = 0;
 	osStatus status;
@@ -96,10 +96,10 @@ void tThread_entry_lock_timeout(void const *arg)
 	 * other thread. Try with and without timeout.
 	 */
 	status = osMutexWait((osMutexId)arg, 0);
-	zassert_true(status == osErrorResource, NULL);
+	zassert_true(status == osErrorResource);
 
 	status = osMutexWait((osMutexId)arg, TIMEOUT - 100);
-	zassert_true(status == osErrorTimeoutResource, NULL);
+	zassert_true(status == osErrorTimeoutResource);
 
 	/* At this point, mutex is held by the other thread.
 	 * Trying to release it here should fail.
@@ -116,13 +116,13 @@ void tThread_entry_lock_timeout(void const *arg)
 	 * and release it.
 	 */
 	status = osMutexWait((osMutexId)arg, TIMEOUT);
-	zassert_true(status == osOK, NULL);
+	zassert_true(status == osOK);
 	osMutexRelease((osMutexId)arg);
 }
 
 osThreadDef(tThread_entry_lock_timeout, osPriorityNormal, 1, 0);
 
-void test_mutex_lock_timeout(void)
+ZTEST(cmsis_mutex, test_mutex_lock_timeout)
 {
 	osThreadId id;
 	osMutexId mutex_id;
@@ -146,3 +146,4 @@ void test_mutex_lock_timeout(void)
 
 	osMutexDelete(mutex_id);
 }
+ZTEST_SUITE(cmsis_mutex, NULL, NULL, NULL, NULL, NULL);

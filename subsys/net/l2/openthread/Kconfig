@@ -265,6 +265,12 @@ config OPENTHREAD_NUM_MESSAGE_BUFFERS
 	help
 	  "The number of message buffers in the buffer pool."
 
+config OPENTHREAD_MESSAGE_BUFFER_SIZE
+	int "The size of a message buffer in bytes"
+	default 128
+	help
+	  "The size of a message buffer in bytes"
+
 config OPENTHREAD_MAX_STATECHANGE_HANDLERS
 	int "The maximum number of state-changed callback handlers"
 	default 2

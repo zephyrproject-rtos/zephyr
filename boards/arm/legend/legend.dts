@@ -20,6 +20,7 @@
 
 	aliases {
 		watchdog0 = &iwdg;
+		spi-flash0 = &spi_nor;
 	};
 
 	board_id: brd-id {
@@ -63,7 +64,6 @@
 
 	led_strip_spi: b1414@0 {
 		compatible = "everlight,b1414", "worldsemi,ws2812-spi";
-		label = "B1414";
 
 		/* SPI */
 		reg = <0>; /* ignored, but necessary for SPI bindings */
@@ -90,7 +90,6 @@
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <8000000>;
-		label = "SPI_FLASH_0";
 		size = <1048576>;
 		/*
 		 * Main flash source

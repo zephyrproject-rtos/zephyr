@@ -168,13 +168,13 @@ struct lwm2m_ctx {
 	 */
 	bool use_dtls;
 
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	/**
 	 * Flag to indicate that the socket connection is suspended.
 	 * With queue mode, this will tell if there is a need to reconnect.
 	 */
 	bool connection_suspended;
 
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	/**
 	 * Flag to indicate that the client is buffering Notifications and Send messages.
 	 * True value buffer Notifications and Send messages.
@@ -644,6 +644,21 @@ int lwm2m_engine_create_obj_inst(const char *pathstr);
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_engine_delete_obj_inst(const char *pathstr);
+
+/**
+ * @brief Locks the registry for this thread.
+ *
+ * Use this function before writing to multiple resources. This halts the
+ * lwm2m main thread until all the write-operations are finished.
+ *
+ */
+void lwm2m_registry_lock(void);
+
+/**
+ * @brief Unlocks the registry previously locked by lwm2m_registry_lock().
+ *
+ */
+void lwm2m_registry_unlock(void);
 
 /**
  * @brief Set resource (instance) value (opaque buffer)
@@ -1186,6 +1201,19 @@ int lwm2m_update_device_service_period(uint32_t period_ms);
 bool lwm2m_engine_path_is_observed(const char *pathstr);
 
 /**
+ * @brief Stop the LwM2M engine
+ *
+ * LwM2M clients normally do not need to call this function as it is called
+ * within lwm2m_rd_client. However, if the client does not use the RD
+ * client implementation, it will need to be called manually.
+ *
+ * @param[in] client_ctx LwM2M context
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_stop(struct lwm2m_ctx *client_ctx);
+
+/**
  * @brief Start the LwM2M engine
  *
  * LwM2M clients normally do not need to call this function as it is called
@@ -1229,6 +1257,7 @@ enum lwm2m_rd_client_event {
 	LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE,
 	LWM2M_RD_CLIENT_EVENT_DISCONNECT,
 	LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF,
+	LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED,
 	LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR,
 };
 
@@ -1283,6 +1312,29 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
  */
 int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 			  lwm2m_ctx_event_cb_t event_cb, bool deregister);
+
+/**
+ * @brief Suspend the LwM2M engine Thread
+ *
+ * Suspend LwM2M engine. Use case could be when network connection is down.
+ * LwM2M Engine indicate before it suspend by
+ * LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED event.
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_pause(void);
+
+/**
+ * @brief Resume the LwM2M engine thread
+ *
+ * Resume suspended LwM2M engine. After successful resume call engine will do
+ * full registration or registration update based on suspended time.
+ * Event's LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE or WM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE
+ * indicate that client is connected to server.
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_resume(void);
 
 /**
  * @brief Trigger a Registration Update of the LwM2M RD Client

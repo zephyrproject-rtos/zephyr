@@ -97,6 +97,50 @@ void config_pll_sysclock(void)
 
 #endif /* defined(STM32_PLL_ENABLED) */
 
+#if defined(STM32_PLL2_ENABLED)
+
+/**
+ * @brief Set up pll2 configuration
+ */
+__unused
+void config_pll2(void)
+{
+	uint32_t pll_mul, pll_div;
+
+	/*
+	 * PLL2MUL on SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+	 * 8  -> LL_RCC_PLL2_MUL_8  -> 0x00000600
+	 * 9  -> LL_RCC_PLL2_MUL_9  -> 0x00000700
+	 * ...
+	 * 14 -> LL_RCC_PLL2_MUL_14 -> 0x00000C00
+	 * 16 -> LL_RCC_PLL2_MUL_16 -> 0x00000E00
+	 * 20 -> LL_RCC_PLL2_MUL_20 -> 0x00000F00
+	 */
+	if (STM32_PLL2_MULTIPLIER == 20) {
+		pll_mul = RCC_CFGR2_PLL2MUL20;
+	} else {
+		pll_mul = ((STM32_PLL2_MULTIPLIER - 2) << RCC_CFGR2_PLL2MUL_Pos);
+	}
+
+	/*
+	 * SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+	 * 1  -> LL_RCC_HSE_PREDIV2_DIV_1  -> 0x00000000
+	 * 2  -> LL_RCC_HSE_PREDIV2_DIV_2  -> 0x00000010
+	 * ...
+	 * 16 -> LL_RCC_HSE_PREDIV2_DIV_16 -> 0x000000F0
+	 */
+	pll_div = ((STM32_PLL2_PREDIV - 1) << RCC_CFGR2_PREDIV2_Pos);
+
+	/* Check PLL2 source */
+	if (!IS_ENABLED(STM32_PLL2_SRC_HSE)) {
+		__ASSERT(0, "Invalid source");
+	}
+
+	LL_RCC_PLL_ConfigDomain_PLL2(pll_div, pll_mul);
+}
+
+#endif /* defined(STM32_PLL2_ENABLED) */
+
 /**
  * @brief Activate default clocks
  */

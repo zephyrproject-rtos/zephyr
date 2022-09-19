@@ -5,6 +5,8 @@
 
 config FT800
 	bool "FT800 Embedded Video Engine driver"
-	depends on SPI
+	default y
+	depends on DT_HAS_FTDI_FT800_ENABLED
+	select SPI
 	help
 	  Enable driver for FT800 controller.

@@ -54,16 +54,20 @@ typedef struct {
 	bt_addr_t a;
 } bt_addr_le_t;
 
+/* Global Bluetooth address constants defined in bluetooth/common/addr.c */
+extern const bt_addr_t bt_addr_any;
+extern const bt_addr_t bt_addr_none;
+extern const bt_addr_le_t bt_addr_le_any;
+extern const bt_addr_le_t bt_addr_le_none;
+
 /** Bluetooth device "any" address, not a valid address */
-#define BT_ADDR_ANY     ((bt_addr_t[]) { { { 0, 0, 0, 0, 0, 0 } } })
+#define BT_ADDR_ANY     (&bt_addr_any)
 /** Bluetooth device "none" address, not a valid address */
-#define BT_ADDR_NONE    ((bt_addr_t[]) { { \
-			 { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } } })
+#define BT_ADDR_NONE    (&bt_addr_none)
 /** Bluetooth LE device "any" address, not a valid address */
-#define BT_ADDR_LE_ANY  ((bt_addr_le_t[]) { { 0, { { 0, 0, 0, 0, 0, 0 } } } })
+#define BT_ADDR_LE_ANY  (&bt_addr_le_any)
 /** Bluetooth LE device "none" address, not a valid address */
-#define BT_ADDR_LE_NONE ((bt_addr_le_t[]) { { 0, \
-			 { { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } } } })
+#define BT_ADDR_LE_NONE (&bt_addr_le_none)
 
 /** @brief Compare Bluetooth device addresses.
  *
@@ -164,8 +168,7 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 	return BT_ADDR_IS_STATIC(&addr->a);
 }
 
-/** @def BT_ADDR_STR_LEN
- *
+/**
  *  @brief Recommended length of user string buffer for Bluetooth address
  *
  *  @details The recommended length guarantee the output of address
@@ -174,8 +177,7 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
  */
 #define BT_ADDR_STR_LEN 18
 
-/** @def BT_ADDR_LE_STR_LEN
- *
+/**
  *  @brief Recommended length of user string buffer for Bluetooth LE address
  *
  *  @details The recommended length guarantee the output of address

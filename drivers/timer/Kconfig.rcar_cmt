@@ -6,7 +6,7 @@
 config RCAR_CMT_TIMER
 	bool "Renesas RCar cmt timer"
 	default y
-	depends on SOC_SERIES_RCAR_GEN3
+	depends on DT_HAS_RENESAS_RCAR_CMT_ENABLED
 	help
 	  This module implements a kernel device driver for the Renesas RCAR
 	  platform provides the standard "system clock driver" interfaces.

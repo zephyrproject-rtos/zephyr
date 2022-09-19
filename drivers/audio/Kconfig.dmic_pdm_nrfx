@@ -3,8 +3,8 @@
 
 config AUDIO_DMIC_NRFX_PDM
 	bool "nRF PDM nrfx driver"
-	depends on HAS_HW_NRF_PDM
 	default y
+	depends on DT_HAS_NORDIC_NRF_PDM_ENABLED
 	select NRFX_PDM
 	help
 	  Enable support for nrfx PDM driver for nRF MCU series.

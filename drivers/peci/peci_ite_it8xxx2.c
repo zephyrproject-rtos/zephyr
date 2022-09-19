@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ite_peci_it8xxx2
+#define DT_DRV_COMPAT ite_it8xxx2_peci
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>

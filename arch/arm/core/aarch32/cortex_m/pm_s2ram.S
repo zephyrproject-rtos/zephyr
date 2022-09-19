@@ -27,7 +27,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	 *
 	 * r0: address of the system_off function
 	 */
-	push	{r4-r12, r14}
+	push	{r4-r12, lr}
 	ldr	r1, =_cpu_context
 
 	mrs	r2, msp
@@ -71,9 +71,25 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	str	r2, [r1]
 
 	/*
-	 * Call the system_off function passed as parameter
+	 * Call the system_off function passed as parameter. This should never
+	 * return.
 	 */
-	bx	r0
+	blx	r0
+
+	/*
+	 * The system_off function returns here only when the powering off was
+	 * not successful (in r0 the return value).
+	 */
+
+	/*
+	 * Reset the marker
+	 */
+	ldr	r1, =marker
+	mov	r2, #0x0
+	str	r2, [r1]
+
+	pop	{r4-r12, lr}
+	bx	lr
 
 GTEXT(arch_pm_s2ram_resume)
 SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
@@ -134,7 +150,7 @@ resume:
 	msr	control, r1
 	isb
 
-	pop	{r4-r12, r14}
+	pop	{r4-r12, lr}
 
 	/*
 	 * Set the return value and return

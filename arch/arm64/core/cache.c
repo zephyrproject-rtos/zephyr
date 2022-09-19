@@ -206,3 +206,13 @@ int arch_dcache_all(int op)
 
 	return 0;
 }
+
+int arch_icache_range(void *addr, size_t size, int op)
+{
+	return -ENOTSUP;
+}
+
+int arch_icache_all(int op)
+{
+	return -ENOTSUP;
+}

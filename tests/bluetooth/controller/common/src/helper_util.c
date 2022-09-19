@@ -341,6 +341,10 @@ void event_done(struct ll_conn *conn)
 	zassert_equal(*evt_active, 1, "Called outside an active event");
 	*evt_active = 0;
 
+	/* Notify all conotrol procedures that wait with Host notifications for instant to be on
+	 * air. This is done here because UT does not maintain actual connection events.
+	 */
+	ull_cp_tx_ntf(conn);
 
 	while ((rx = (struct node_rx_pdu *)sys_slist_get(&lt_tx_q))) {
 		ull_cp_rx(conn, rx);

@@ -10,7 +10,7 @@
 #include <string.h>
 
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include "../spinel_base/spinel.h"
 #include "nrf_802154_spinel_log.h"
@@ -68,7 +68,6 @@ nrf_802154_spinel_notify_buff_t *nrf_802154_spinel_response_notifier_property_aw
 	uint32_t timeout)
 {
 	nrf_802154_spinel_notify_buff_t *result = NULL;
-	int ret;
 
 	k_timeout_t k_timeout;
 
@@ -86,11 +85,6 @@ nrf_802154_spinel_notify_buff_t *nrf_802154_spinel_response_notifier_property_aw
 		LOG_ERR("No response within timeout %u", timeout);
 	}
 
-	ret = k_mutex_unlock(&await_mutex);
-	assert(ret == 0);
-	(void)ret;
-	LOG_DBG("Unlocking response notifier");
-
 	return result;
 }
 
@@ -98,13 +92,20 @@ void nrf_802154_spinel_response_notifier_free(nrf_802154_spinel_notify_buff_t *p
 {
 	struct spinel_notify_buff_internal *p_notify_buff_free;
 
+	int ret;
 	p_notify_buff_free = CONTAINER_OF(p_notify,
 					  struct spinel_notify_buff_internal,
 					  buff);
 
 	assert(p_notify_buff_free == &notify_buff);
 
+	LOG_DBG("Unlocking response notifier");
+
 	p_notify_buff_free->free = true;
+
+	ret = k_mutex_unlock(&await_mutex);
+	assert(ret == 0);
+	(void)ret;
 }
 
 void nrf_802154_spinel_response_notifier_property_notify(spinel_prop_key_t property,

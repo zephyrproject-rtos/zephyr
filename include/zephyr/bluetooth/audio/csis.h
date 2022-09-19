@@ -62,6 +62,16 @@ extern "C" {
 /** Client is already owner of the lock */
 #define BT_CSIS_ERROR_LOCK_ALREADY_GRANTED      0x84
 
+/**
+ * @brief Helper to declare bt_data array including RSI
+ *
+ * This macro is mainly for creating an array of struct bt_data
+ * elements which is then passed to e.g. @ref bt_le_ext_adv_start().
+ *
+ * @param _rsi Pointer to the RSI value
+ */
+#define BT_CSIS_DATA_RSI(_rsi) BT_DATA(BT_DATA_CSIS_RSI, _rsi, BT_CSIS_RSI_SIZE)
+
 /** @brief Opaque Coordinated Set Identification Service instance. */
 struct bt_csis;
 
@@ -93,15 +103,6 @@ struct bt_csis_cb {
 	 * @return A BT_CSIS_READ_SIRK_REQ_RSP_* response code.
 	 */
 	uint8_t (*sirk_read_req)(struct bt_conn *conn, struct bt_csis *csis);
-
-	/**
-	 * @brief Callback whenever the RSI changes.
-	 *
-	 * If this callback is not set, the stack will handle advertising of the RSI.
-	 *
-	 * @param rsi Pointer to the new 6-octet RSI data to be advertised.
-	 */
-	void (*rsi_changed)(const uint8_t rsi[BT_CSIS_RSI_SIZE]);
 };
 
 /** Register structure for Coordinated Set Identification Service */
@@ -190,16 +191,16 @@ int bt_csis_register(const struct bt_csis_register_param *param,
 void bt_csis_print_sirk(const struct bt_csis *csis);
 
 /**
- * @brief Starts advertising the Resolvable Set Identifier value.
+ * @brief Generate the Resolvable Set Identifier (RSI) value.
  *
- * This cannot be used with other connectable advertising sets.
+ * This will generate RSI for given @p csis instance.
  *
  * @param csis          Pointer to the Coordinated Set Identification Service.
- * @param enable	If true start advertising, if false stop advertising
+ * @param rsi           Pointer to the 6-octet newly generated RSI data.
  *
  * @return int		0 if on success, errno on error.
  */
-int bt_csis_advertise(struct bt_csis *csis, bool enable);
+int bt_csis_generate_rsi(const struct bt_csis *csis, uint8_t rsi[BT_CSIS_RSI_SIZE]);
 
 /**
  * @brief Locks a specific Coordinated Set Identification Service instance on the server.

@@ -4,7 +4,7 @@
 config COUNTER_NATIVE_POSIX
 	bool "Counter on COUNTER_0"
 	default y
-	depends on BOARD_NATIVE_POSIX
+	depends on DT_HAS_ZEPHYR_NATIVE_POSIX_COUNTER_ENABLED
 
 config COUNTER_NATIVE_POSIX_FREQUENCY
 	int "native_posix counter frequency in Hz"

@@ -125,10 +125,10 @@ static int out_func(int c, void *ctx)
 
 static int cr_out_func(int c, void *ctx)
 {
-	out_func(c, ctx);
 	if (c == '\n') {
 		out_func((int)'\r', ctx);
 	}
+	out_func(c, ctx);
 
 	return 0;
 }
@@ -390,7 +390,7 @@ static void hexdump_line_print(const struct log_output *output,
 		}
 
 		if (i < length) {
-			char c = (char)data[i];
+			unsigned char c = (unsigned char)data[i];
 
 			print_formatted(output, "%c",
 			      isprint((int)c) ? c : '.');
@@ -429,7 +429,7 @@ static uint32_t prefix_print(const struct log_output *output,
 	bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
 	bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
 	bool level_on = flags & LOG_OUTPUT_FLAG_LEVEL;
-	const char *tag = z_log_get_tag();
+	const char *tag = IS_ENABLED(CONFIG_LOG) ? z_log_get_tag() : NULL;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
 	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
@@ -491,16 +491,22 @@ void log_output_process(const struct log_output *output,
 {
 	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
 	uint32_t prefix_offset;
+	cbprintf_cb cb;
 
 	if (!raw_string) {
 		prefix_offset = prefix_print(output, flags, 0, timestamp, domain, source, level);
+		cb = out_func;
 	} else {
 		prefix_offset = 0;
+		/* source set to 1 indicates raw string and contrary to printk
+		 * case it should not append anything to the output (printk is
+		 * appending <CR> to the new line character).
+		 */
+		cb = ((uintptr_t)source == 1) ? out_func : cr_out_func;
 	}
 
 	if (package) {
-		int err = cbpprintf(raw_string ? cr_out_func :  out_func,
-				    (void *)output, (void *)package);
+		int err = cbpprintf(cb, (void *)output, (void *)package);
 
 		(void)err;
 		__ASSERT_NO_MSG(err >= 0);

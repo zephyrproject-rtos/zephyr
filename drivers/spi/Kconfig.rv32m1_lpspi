@@ -5,6 +5,8 @@
 
 config SPI_RV32M1_LPSPI
 	bool "RV32M1 LPSPI driver"
-	depends on HAS_RV32M1_LPSPI && CLOCK_CONTROL
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_LPSPI_ENABLED
+	depends on CLOCK_CONTROL
 	help
 	  Enable the RV32M1 LPSPI driver.

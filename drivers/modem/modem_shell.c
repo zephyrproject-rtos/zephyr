@@ -12,7 +12,7 @@
 
 #define LOG_MODULE_NAME modem_shell
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/device.h>

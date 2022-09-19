@@ -8,7 +8,4 @@ if BOARD_ATSAMR21_XPRO
 config BOARD
 	default "atsamr21_xpro"
 
-config IEEE802154_RF2XX
-	default IEEE802154
-
 endif # BOARD_ATSAMR21_XPRO

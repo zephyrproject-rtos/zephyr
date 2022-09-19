@@ -27,52 +27,44 @@
 		ddr_code: code@10000000 {
 			compatible = "nxp,imx-code-bus";
 			reg = <0x10000000 0xfff0000>;
-			label = "DDR CODE";
 		};
 
 		ddr_sys: memory@80000000 {
 			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x80000000 0x60000000>;
-			label = "DDR SYSTEM";
 		};
 
 		tcml_code: code@1fff8000 {
 			compatible = "nxp,imx-itcm";
 			reg = <0x1fff8000 DT_SIZE_K(32)>;
-			label = "TCML CODE";
 		};
 
 		tcmu_sys: memory@20000000 {
 			compatible = "nxp,imx-dtcm";
 			reg = <0x20000000 DT_SIZE_K(32)>;
-			label = "TCMU SYSTEM";
 		};
 
 		ocram_code: code@900000 {
 			compatible = "nxp,imx-code-bus";
 			reg = <0x00900000 DT_SIZE_K(128)>;
-			label = "OCRAM CODE";
 		};
 
 		ocram_sys: memory@20200000 {
 			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x20200000 DT_SIZE_K(128)>;
-			label = "OCRAM SYSTEM";
 		};
 
 		ocram_s_code: code@20180000 {
 			compatible = "nxp,imx-code-bus";
 			reg = <0x20180000 DT_SIZE_K(32)>;
-			label = "OCRAM_S CODE";
 		};
 
 		ocram_s_sys: memory@180000 {
 			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x00180000 DT_SIZE_K(32)>;
-			label = "OCRAM_S SYSTEM";
 		};
 
 		gpio1: gpio@30200000 {
@@ -83,7 +75,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -97,7 +88,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -111,7 +101,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -125,7 +114,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -139,7 +127,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "GPIO_5";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -153,7 +140,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "GPIO_6";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -163,7 +149,6 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x30260000 0x10000>;
 			interrupts = <76 0>, <77 0>;
-			label = "GPIO_7";
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
@@ -184,7 +169,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "UART_1";
 			status = "disabled";
 		};
 
@@ -196,7 +180,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "UART_2";
 			status = "disabled";
 		};
 
@@ -208,7 +191,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "UART_3";
 			status = "disabled";
 		};
 
@@ -220,7 +202,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "UART_4";
 			status = "disabled";
 		};
 
@@ -232,7 +213,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "UART_5";
 			status = "disabled";
 		};
 
@@ -244,7 +224,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "UART_6";
 			status = "disabled";
 		};
 
@@ -256,7 +235,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "UART_7";
 			status = "disabled";
 		};
 
@@ -266,7 +244,6 @@
 			interrupts = <97 0>;
 			rdc = <RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)>;
-			label = "MU_B";
 			status = "disabled";
 		};
 
@@ -291,7 +268,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "I2C_1";
 			status = "disabled";
 		};
 
@@ -306,7 +282,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "I2C_2";
 			status = "disabled";
 		};
 
@@ -321,7 +296,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "I2C_3";
 			status = "disabled";
 		};
 
@@ -336,7 +310,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "I2C_4";
 			status = "disabled";
 		};
 
@@ -349,7 +322,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "PWM_1";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -363,7 +335,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "PWM_2";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -377,7 +348,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "PWM_3";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -391,7 +361,6 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
-			label = "PWM_4";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};

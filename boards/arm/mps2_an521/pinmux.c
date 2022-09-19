@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/sys/sys_io.h>
-#include <gpio/gpio_cmsdk_ahb.h>
+#include <zephyr/drivers/gpio/gpio_cmsdk_ahb.h>
 
 /**
  * @brief Pinmux driver for ARM MPS2 AN521 Board

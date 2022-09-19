@@ -57,3 +57,7 @@
 &mailbox0 {
 	status = "okay";
 };
+
+&mma8652fc {
+	status = "disabled";
+};

@@ -13,13 +13,13 @@
 
 #ifndef _TIMESTAMP_H_
 #define _TIMESTAMP_H_
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <limits.h>
 #if defined(__GNUC__)
-#include <test_asm_inline_gcc.h>
+#include <zephyr/test_asm_inline_gcc.h>
 #else
-#include <test_asm_inline_other.h>
+#include <zephyr/test_asm_inline_other.h>
 #endif
 
 

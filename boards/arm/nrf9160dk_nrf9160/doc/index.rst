@@ -26,8 +26,7 @@ Cortex-M33F CPU with ARMv8-M Security Extension and the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 * :abbr:`IDAU (Implementation Defined Attribution Unit)`
 
-.. figure:: img/nrf9160dk_nrf9160.png
-     :width: 711px
+.. figure:: img/nrf9160dk_nrf9160.jpg
      :align: center
      :alt: nRF9160 DK
 

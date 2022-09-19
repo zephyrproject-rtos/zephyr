@@ -1,9 +1,6 @@
 # Copyright (c) 2021 Nordic Semiconductor (ASA)
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ZEPHYR_IPC_OPENAMP_STATIC_VRINGS := zephyr,ipc-openamp-static-vrings
-DT_COMPAT_ZEPHYR_IPC_ICMSG := zephyr,ipc-icmsg
-
 config IPC_SERVICE_REG_BACKEND_PRIORITY
 	int "Initialization priority of modules registering IPC backend"
 	default 46
@@ -12,16 +9,18 @@ config IPC_SERVICE_REG_BACKEND_PRIORITY
 
 config IPC_SERVICE_BACKEND_RPMSG
 	bool "OpenAMP RPMSG backend with static VRINGs"
+	default y
 	depends on MBOX
-	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_IPC_OPENAMP_STATIC_VRINGS))
+	depends on DT_HAS_ZEPHYR_IPC_OPENAMP_STATIC_VRINGS_ENABLED
 	select IPC_SERVICE_RPMSG
 	select IPC_SERVICE_STATIC_VRINGS
 	select OPENAMP
 
 config IPC_SERVICE_BACKEND_ICMSG
 	bool "ICMSG backend with SPSC packet buffer"
+	default y
 	depends on MBOX
-	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_IPC_ICMSG))
+	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ENABLED
 	select SPSC_PBUF
 	select SPSC_PBUF_USE_CACHE
 	help

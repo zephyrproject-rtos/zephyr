@@ -73,6 +73,16 @@ static inline void arch_switch(void *switch_to, void **switched_from)
 	z_arc_switch(switch_to, switched_from);
 }
 
+#if !defined(CONFIG_MULTITHREADING)
+extern FUNC_NORETURN void z_arc_switch_to_main_no_multithreading(
+	k_thread_entry_t main_func, void *p1, void *p2, void *p3);
+
+#define ARCH_SWITCH_TO_MAIN_NO_MULTITHREADING \
+	z_arc_switch_to_main_no_multithreading
+
+#endif /* !CONFIG_MULTITHREADING */
+
+
 #ifdef __cplusplus
 }
 #endif

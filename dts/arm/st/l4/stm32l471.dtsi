@@ -16,7 +16,6 @@
 				#gpio-cells = <2>;
 				reg = <0x48000c00 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000008>;
-				label = "GPIOD";
 			};
 
 			gpioe: gpio@48001000 {
@@ -25,7 +24,6 @@
 				#gpio-cells = <2>;
 				reg = <0x48001000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
-				label = "GPIOE";
 			};
 
 			gpiof: gpio@48001400 {
@@ -34,7 +32,6 @@
 				#gpio-cells = <2>;
 				reg = <0x48001400 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000020>;
-				label = "GPIOF";
 			};
 
 			gpiog: gpio@48001800 {
@@ -43,7 +40,6 @@
 				#gpio-cells = <2>;
 				reg = <0x48001800 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>;
-				label = "GPIOG";
 			};
 		};
 
@@ -53,7 +49,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
 			interrupts = <39 0>;
 			status = "disabled";
-			label = "UART_3";
 		};
 
 		uart4: serial@40004c00 {
@@ -62,7 +57,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
 			interrupts = <52 0>;
 			status = "disabled";
-			label = "UART_4";
 		};
 
 		uart5: serial@40005000 {
@@ -71,7 +65,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
 			interrupts = <53 0>;
 			status = "disabled";
-			label = "UART_5";
 		};
 
 		i2c2: i2c@40005800 {
@@ -84,7 +77,6 @@
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
-			label= "I2C_2";
 		};
 
 		spi2: spi@40003800 {
@@ -95,7 +87,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <36 5>;
 			status = "disabled";
-			label = "SPI_2";
 		};
 
 		spi3: spi@40003c00 {
@@ -106,7 +97,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
 			interrupts = <51 5>;
 			status = "disabled";
-			label = "SPI_3";
 		};
 
 		timers3: timers@40000400 {
@@ -117,19 +107,16 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_3";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_3";
 				#pwm-cells = <3>;
 			};
 
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
-				label = "COUNTER_3";
 			};
 		};
 
@@ -141,19 +128,16 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_4";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_4";
 				#pwm-cells = <3>;
 			};
 
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
-				label = "COUNTER_4";
 			};
 		};
 
@@ -165,19 +149,16 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_5";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_5";
 				#pwm-cells = <3>;
 			};
 
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
-				label = "COUNTER_5";
 			};
 		};
 
@@ -189,12 +170,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_7";
 
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
-				label = "COUNTER_7";
 			};
 		};
 
@@ -206,12 +185,10 @@
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_8";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_8";
 				#pwm-cells = <3>;
 			};
 		};
@@ -224,19 +201,16 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_17";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_17";
 				#pwm-cells = <3>;
 			};
 
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
-				label = "COUNTER_17";
 			};
 		};
 
@@ -247,7 +221,6 @@
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>; //RCC_APB1ENR1_CAN1EN
 			status = "disabled";
-			label = "CAN_1";
 			sjw = <1>;
 			sample-point = <875>;
 		};
@@ -258,7 +231,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>;
 			interrupts = <49 0>;
 			status = "disabled";
-			label = "SDMMC_1";
 		};
 
 		dac1: dac@40007400 {
@@ -266,7 +238,6 @@
 			reg = <0x40007400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
 			status = "disabled";
-			label = "DAC_1";
 			#io-channel-cells = <1>;
 		};
 
@@ -281,7 +252,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
 			interrupts = <47 0>;
 			status = "disabled";
-			label = "ADC_3";
 			#io-channel-cells = <1>;
 			has-temp-channel;
 		};

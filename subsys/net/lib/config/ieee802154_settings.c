@@ -9,7 +9,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 
 #include <zephyr/net/net_if.h>
@@ -33,10 +33,9 @@ int z_net_config_ieee802154_setup(void)
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
 	struct net_if *iface;
-	const struct device *dev;
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154));
 
-	dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
-	if (!dev) {
+	if (!device_is_ready(dev)) {
 		return -ENODEV;
 	}
 

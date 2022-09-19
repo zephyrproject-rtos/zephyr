@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/sys/sflist.h>
 
 static sys_sflist_t test_list;
@@ -178,7 +178,7 @@ static inline bool verify_tail_head(sys_sflist_t *list,
  * sys_sflist_remove(), sys_sflist_get(), sys_sflist_get_not_empty(),
  * sys_sflist_append_list(), sys_sflist_merge_list()
  */
-void test_sflist(void)
+ZTEST(dlist_api, test_sflist)
 {
 	sys_sflist_init(&test_list);
 

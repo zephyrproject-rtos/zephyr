@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -16,7 +16,7 @@
 #define SNR_ERROR_THRESH	((float64_t)300)
 #define REL_ERROR_THRESH	(1.0e-14)
 
-static void test_arm_entropy_f64(void)
+ZTEST(statistics_f64, test_arm_entropy_f64)
 {
 	size_t index;
 	size_t length = in_entropy_dim[0];
@@ -51,7 +51,7 @@ static void test_arm_entropy_f64(void)
 	free(output);
 }
 
-static void test_arm_kullback_leibler_f64(void)
+ZTEST(statistics_f64, test_arm_kullback_leibler_f64)
 {
 	size_t index;
 	size_t length = in_kl_dim[0];
@@ -90,12 +90,4 @@ static void test_arm_kullback_leibler_f64(void)
 	free(output);
 }
 
-void test_statistics_f64(void)
-{
-	ztest_test_suite(statistics_f64,
-		ztest_unit_test(test_arm_entropy_f64),
-		ztest_unit_test(test_arm_kullback_leibler_f64)
-		);
-
-	ztest_run_test_suite(statistics_f64);
-}
+ZTEST_SUITE(statistics_f64, NULL, NULL, NULL, NULL, NULL);

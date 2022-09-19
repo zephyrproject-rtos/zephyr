@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
 
 #include <zephyr/types.h>
@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include "ipv4.h"
 #include "ipv6.h"
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)

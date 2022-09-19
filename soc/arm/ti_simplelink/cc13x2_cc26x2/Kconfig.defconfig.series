@@ -22,45 +22,17 @@ config SYS_CLOCK_TICKS_PER_SEC
 config NUM_IRQS
 	default 38
 
-config CC13X2_CC26X2_RTC_TIMER
-	default y
-
-config GPIO_CC13XX_CC26XX
-	default y
-	depends on GPIO
-
-config ENTROPY_CC13XX_CC26XX_RNG
-	default y
-	depends on ENTROPY_GENERATOR
-
-config UART_CC13XX_CC26XX
-	default y
-	depends on SERIAL
-
-config I2C_CC13XX_CC26XX
-	default y
-	depends on I2C
-
-config SPI_CC13XX_CC26XX
-	default y
-	depends on SPI
-
 if IEEE802154
 
 config IEEE802154_CC13XX_CC26XX
-	default y
 	# required for linking with PowerCC26X2_config in
 	# soc/arm/ti_simplelink/cc13x2_cc26x2/power.c
 	select PM
 
 config IEEE802154_CC13XX_CC26XX_SUB_GHZ
-	default y
 	# required for linking with PowerCC26X2_config in
 	# soc/arm/ti_simplelink/cc13x2_cc26x2/power.c
 	select PM
-
-config NET_CONFIG_IEEE802154_DEV_NAME
-	default IEEE802154_CC13XX_CC26XX_DRV_NAME
 
 endif # IEEE802154
 

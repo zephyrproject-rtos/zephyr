@@ -15,8 +15,7 @@ low-power operation, a standard-based form factor with expansion board
 options and a built-in debug interface for flash programming and run-control.
 
 
-.. image:: ./frdm_kl25z.jpg
-   :width: 272px
+.. image:: frdm_kl25z.jpg
    :align: center
    :alt: FRDM-KL25Z
 

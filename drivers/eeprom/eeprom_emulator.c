@@ -59,7 +59,7 @@
 
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/flash.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #define LOG_LEVEL CONFIG_EEPROM_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eeprom_emulator);

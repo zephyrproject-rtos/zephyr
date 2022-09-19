@@ -9,9 +9,11 @@ import argparse
 import socket
 import struct
 import hashlib
+from urllib.parse import urlparse
 
 RET = 0
 HOST = None
+PORT = 0
 PORT_LOG = 9999
 PORT_REQ = PORT_LOG + 1
 BUF_SIZE = 4096
@@ -96,9 +98,10 @@ class cavstool_client():
         log.info(f"Start to monitor log output...")
         while True:
             # Receive data from the server and print out
-            receive_log = str(self.sock.recv(BUF_SIZE).strip(), "utf-8")
+            receive_log = str(self.sock.recv(BUF_SIZE), "utf-8").replace('\x00','')
             if receive_log:
-                print(f"{receive_log}")
+                sys.stdout.write(f"{receive_log}")
+                sys.stdout.flush()
                 time.sleep(0.1)
 
     def __del__(self):
@@ -110,14 +113,14 @@ def main():
         log.info("Monitor process")
 
         try:
-            client = cavstool_client(HOST, PORT_LOG, args)
+            client = cavstool_client(HOST, PORT, args)
             client.send_cmd(CMD_LOG_START)
         except KeyboardInterrupt:
             pass
 
     else:
         log.info("Uploading process")
-        client = cavstool_client(HOST, PORT_REQ, args)
+        client = cavstool_client(HOST, PORT, args)
         client.send_cmd(CMD_DOWNLOAD)
 
 ap = argparse.ArgumentParser(description="DSP loader/logger client tool")
@@ -127,13 +130,37 @@ ap.add_argument("-l", "--log-only", action="store_true",
                 help="Don't load firmware, just show log output")
 ap.add_argument("-s", "--server-addr", default="localhost",
                 help="Specify the adsp server address")
+ap.add_argument("-p", "--log-port", type=int,
+                help="Specify the PORT that connected to log server")
+ap.add_argument("-r", "--req-port", type=int,
+                help="Specify the PORT that connected to request server")
 ap.add_argument("fw_file", nargs="?", help="Firmware file")
 args = ap.parse_args()
 
 if args.quiet:
     log.setLevel(logging.WARN)
 
-HOST = args.server_addr
+if args.log_port:
+    PORT_LOG = args.log_port
+
+if args.req_port:
+    PORT_REQ = args.req_port
+
+if args.server_addr:
+    url = urlparse("//" + args.server_addr)
+
+    if url.hostname:
+        HOST = url.hostname
+
+    if url.port:
+        PORT = int(url.port)
+    else:
+        if args.log_only:
+            PORT = PORT_LOG
+        else:
+            PORT = PORT_REQ
+
+log.info(f"REMOTE HOST: {HOST} PORT: {PORT}")
 
 if __name__ == "__main__":
     main()

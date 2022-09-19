@@ -13,9 +13,6 @@ if NETWORKING
 config NET_L2_ETHERNET
 	default y
 
-config ETH_SAM_GMAC
-	default y if NET_L2_ETHERNET
-
 endif # NETWORKING
 
 endif # BOARD_ATSAME54_XPRO

@@ -5,6 +5,8 @@
 
 config PECI_ITE_IT8XXX2
 	bool "ITE IT8XXX2 PECI driver"
-	depends on SOC_IT8XXX2
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_PECI_ENABLED
+	select PECI_INTERRUPT_DRIVEN
 	help
 	  Enable the ITE IT8XXX2 PECI IO driver.

@@ -7,7 +7,7 @@
 #ifndef H_HASH_CHECKSUM_SHA256_
 #define H_HASH_CHECKSUM_SHA256_
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

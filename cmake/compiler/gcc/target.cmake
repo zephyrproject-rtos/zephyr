@@ -58,9 +58,7 @@ if("${ARCH}" STREQUAL "arm")
 elseif("${ARCH}" STREQUAL "arm64")
   include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arm64.cmake)
 elseif("${ARCH}" STREQUAL "arc")
-  list(APPEND TOOLCHAIN_C_FLAGS
-    -mcpu=${GCC_M_CPU}
-    )
+  include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arc.cmake)
 elseif("${ARCH}" STREQUAL "riscv")
   include(${CMAKE_CURRENT_LIST_DIR}/target_riscv.cmake)
 elseif("${ARCH}" STREQUAL "x86")

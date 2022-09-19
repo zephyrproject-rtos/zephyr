@@ -25,12 +25,6 @@
 #include <zephyr/drivers/dma.h>
 
 #include "dma_intel_adsp_hda.h"
-
-/* Define low level driver required values */
-#define HDA_HOST_IN_BASE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_in), reg, 0)
-#define HDA_HOST_OUT_BASE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_out), reg, 0)
-#define HDA_STREAM_COUNT DT_PROP(DT_NODELABEL(hda_host_out), dma_channels)
-#define HDA_REGBLOCK_SIZE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_out), reg, 1)
 #include <intel_adsp_hda.h>
 
 int intel_adsp_hda_dma_host_in_config(const struct device *dev,
@@ -52,15 +46,16 @@ int intel_adsp_hda_dma_host_in_config(const struct device *dev,
 
 	blk_cfg = dma_cfg->head_block;
 	buf = (uint8_t *)(uintptr_t)(blk_cfg->source_address);
-	res = intel_adsp_hda_set_buffer(cfg->base, channel, buf,
+	res = intel_adsp_hda_set_buffer(cfg->base, cfg->regblock_size, channel, buf,
 				  blk_cfg->block_size);
 
 	if (res == 0) {
-		*DGMBS(cfg->base, channel) = blk_cfg->block_size & HDA_ALIGN_MASK;
+		*DGMBS(cfg->base, cfg->regblock_size, channel) =
+			blk_cfg->block_size & HDA_ALIGN_MASK;
 
 		if (dma_cfg->source_data_size <= 3) {
 			/* set the sample container set bit to 16bits */
-			*DGCS(cfg->base, channel) |= DGCS_SCS;
+			*DGCS(cfg->base, cfg->regblock_size, channel) |= DGCS_SCS;
 		}
 	}
 
@@ -88,15 +83,16 @@ int intel_adsp_hda_dma_host_out_config(const struct device *dev,
 	blk_cfg = dma_cfg->head_block;
 	buf = (uint8_t *)(uintptr_t)(blk_cfg->dest_address);
 
-	res = intel_adsp_hda_set_buffer(cfg->base, channel, buf,
+	res = intel_adsp_hda_set_buffer(cfg->base, cfg->regblock_size, channel, buf,
 				  blk_cfg->block_size);
 
 	if (res == 0) {
-		*DGMBS(cfg->base, channel) = blk_cfg->block_size & HDA_ALIGN_MASK;
+		*DGMBS(cfg->base, cfg->regblock_size, channel) =
+			blk_cfg->block_size & HDA_ALIGN_MASK;
 
 		if (dma_cfg->dest_data_size <= 3) {
 			/* set the sample container set bit to 16bits */
-			*DGCS(cfg->base, channel) |= DGCS_SCS;
+			*DGCS(cfg->base, cfg->regblock_size, channel) |= DGCS_SCS;
 		}
 	}
 
@@ -122,12 +118,12 @@ int intel_adsp_hda_dma_link_in_config(const struct device *dev,
 
 	blk_cfg = dma_cfg->head_block;
 	buf = (uint8_t *)(uintptr_t)(blk_cfg->source_address);
-	res = intel_adsp_hda_set_buffer(cfg->base, channel, buf,
+	res = intel_adsp_hda_set_buffer(cfg->base, cfg->regblock_size, channel, buf,
 				  blk_cfg->block_size);
 
 	if (res == 0 && dma_cfg->source_data_size <= 3) {
 		/* set the sample container set bit to 16bits */
-		*DGCS(cfg->base, channel) |= DGCS_SCS;
+		*DGCS(cfg->base, cfg->regblock_size, channel) |= DGCS_SCS;
 	}
 
 	return res;
@@ -154,12 +150,12 @@ int intel_adsp_hda_dma_link_out_config(const struct device *dev,
 	blk_cfg = dma_cfg->head_block;
 	buf = (uint8_t *)(uintptr_t)(blk_cfg->dest_address);
 
-	res = intel_adsp_hda_set_buffer(cfg->base, channel, buf,
+	res = intel_adsp_hda_set_buffer(cfg->base, cfg->regblock_size, channel, buf,
 				  blk_cfg->block_size);
 
 	if (res == 0 && dma_cfg->dest_data_size <= 3) {
 		/* set the sample container set bit to 16bits */
-		*DGCS(cfg->base, channel) |= DGCS_SCS;
+		*DGCS(cfg->base, cfg->regblock_size, channel) |= DGCS_SCS;
 	}
 
 	return res;
@@ -173,7 +169,7 @@ int intel_adsp_hda_dma_link_reload(const struct device *dev, uint32_t channel,
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
-	intel_adsp_hda_link_commit(cfg->base, channel, size);
+	intel_adsp_hda_link_commit(cfg->base, cfg->regblock_size, channel, size);
 
 	return 0;
 }
@@ -185,7 +181,7 @@ int intel_adsp_hda_dma_host_reload(const struct device *dev, uint32_t channel,
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
-	intel_adsp_hda_host_commit(cfg->base, channel, size);
+	intel_adsp_hda_host_commit(cfg->base, cfg->regblock_size, channel, size);
 
 	return 0;
 }
@@ -197,13 +193,13 @@ int intel_adsp_hda_dma_status(const struct device *dev, uint32_t channel,
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
-	uint32_t unused = intel_adsp_hda_unused(cfg->base, channel);
-	uint32_t used = *DGBS(cfg->base, channel) - unused;
+	uint32_t unused = intel_adsp_hda_unused(cfg->base, cfg->regblock_size, channel);
+	uint32_t used = *DGBS(cfg->base, cfg->regblock_size, channel) - unused;
 
 	stat->dir = cfg->direction;
-	stat->busy = *DGCS(cfg->base, channel) & DGCS_GBUSY;
-	stat->write_position = *DGBWP(cfg->base, channel);
-	stat->read_position = *DGBRP(cfg->base, channel);
+	stat->busy = *DGCS(cfg->base, cfg->regblock_size, channel) & DGCS_GBUSY;
+	stat->write_position = *DGBWP(cfg->base, cfg->regblock_size, channel);
+	stat->read_position = *DGBRP(cfg->base, cfg->regblock_size, channel);
 	stat->pending_length = used;
 	stat->free = unused;
 
@@ -233,7 +229,7 @@ int intel_adsp_hda_dma_start(const struct device *dev, uint32_t channel)
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
-	intel_adsp_hda_enable(cfg->base, channel);
+	intel_adsp_hda_enable(cfg->base, cfg->regblock_size, channel);
 
 	return 0;
 }
@@ -244,7 +240,7 @@ int intel_adsp_hda_dma_stop(const struct device *dev, uint32_t channel)
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
-	intel_adsp_hda_disable(cfg->base, channel);
+	intel_adsp_hda_disable(cfg->base, cfg->regblock_size, channel);
 
 	return 0;
 }
@@ -255,7 +251,7 @@ int intel_adsp_hda_dma_init(const struct device *dev)
 	const struct intel_adsp_hda_dma_cfg *const cfg = dev->config;
 
 	for (uint32_t i = 0; i < cfg->dma_channels; i++) {
-		intel_adsp_hda_init(cfg->base, i);
+		intel_adsp_hda_init(cfg->base, cfg->regblock_size, i);
 	}
 
 	data->ctx.dma_channels = cfg->dma_channels;

@@ -4,20 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	aliases {
-		watchdog0 = &wwdg;
-	};
-};
-
 &rcc {
 	apb1-prescaler = <4>;
-};
-
-&wwdg {
-	status = "okay";
-};
-
-&iwdg {
-	status = "disabled";
 };

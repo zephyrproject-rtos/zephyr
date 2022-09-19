@@ -687,7 +687,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 			return r;
 		}
 
-		if ((resource + 1) && (resource + 1)->path) {
+		if ((resource + 1)->path) {
 			r = append_u8(response, (uint8_t) ',');
 			if (!r) {
 				return -ENOMEM;

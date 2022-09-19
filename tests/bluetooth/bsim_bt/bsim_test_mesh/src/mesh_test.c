@@ -202,22 +202,19 @@ static void bt_mesh_device_provision_and_configure(void)
 
 	/* Self configure */
 
-	err = bt_mesh_cfg_app_key_add(0, cfg->addr, 0, 0, test_app_key,
-				      &status);
+	err = bt_mesh_cfg_cli_app_key_add(0, cfg->addr, 0, 0, test_app_key, &status);
 	if (err || status) {
 		FAIL("AppKey add failed (err %d, status %u)", err, status);
 		return;
 	}
 
-	err = bt_mesh_cfg_mod_app_bind(0, cfg->addr, cfg->addr, 0, TEST_MOD_ID,
-				       &status);
+	err = bt_mesh_cfg_cli_mod_app_bind(0, cfg->addr, cfg->addr, 0, TEST_MOD_ID, &status);
 	if (err || status) {
 		FAIL("Mod app bind failed (err %d, status %u)", err, status);
 		return;
 	}
 
-	err = bt_mesh_cfg_net_transmit_set(0, cfg->addr,
-					   BT_MESH_TRANSMIT(2, 20), &status);
+	err = bt_mesh_cfg_cli_net_transmit_set(0, cfg->addr, BT_MESH_TRANSMIT(2, 20), &status);
 	if (err || status != BT_MESH_TRANSMIT(2, 20)) {
 		FAIL("Net transmit set failed (err %d, status %u)", err,
 		     status);

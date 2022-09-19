@@ -4,7 +4,7 @@ west-commands:
     commands:
       - name: completion
         class: Completion
-        help: display shell completion scripts
+        help: output shell completion scripts
   - file: scripts/west_commands/boards.py
     commands:
       - name: boards
@@ -46,3 +46,8 @@ west-commands:
       - name: spdx
         class: ZephyrSpdx
         help: create SPDX bill of materials
+  - file: scripts/west_commands/blobs.py
+    commands:
+      - name: blobs
+        class: Blobs
+        help: work with binary blobs

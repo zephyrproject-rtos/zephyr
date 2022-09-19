@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/pwm.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include "test_pwm_loopback.h"
 

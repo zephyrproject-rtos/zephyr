@@ -37,9 +37,7 @@ Here are some highlights of the STM32F072-EVAL board:
 
 
 .. image:: img/stm32f072_eval.jpg
-     :width: 540px
      :align: center
-     :height: 549px
      :alt: STM32F072-EVAL
 
 More information about the board can be found at the `STM32F072-EVAL website`_.

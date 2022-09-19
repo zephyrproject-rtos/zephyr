@@ -28,14 +28,21 @@ static int wifi_connect(uint32_t mgmt_request, struct net_if *iface,
 
 	LOG_HEXDUMP_DBG(params->ssid, params->ssid_length, "ssid");
 	LOG_HEXDUMP_DBG(params->psk, params->psk_length, "psk");
+	if (params->sae_password) {
+		LOG_HEXDUMP_DBG(params->sae_password, params->sae_password_length, "sae");
+	}
 	NET_DBG("ch %u sec %u", params->channel, params->security);
 
-	if ((params->security > WIFI_SECURITY_TYPE_PSK) ||
+	if ((params->security > WIFI_SECURITY_TYPE_MAX) ||
 	    (params->ssid_length > WIFI_SSID_MAX_LEN) ||
 	    (params->ssid_length == 0U) ||
-	    ((params->security == WIFI_SECURITY_TYPE_PSK) &&
+	    ((params->security == WIFI_SECURITY_TYPE_PSK ||
+		  params->security == WIFI_SECURITY_TYPE_PSK_SHA256) &&
 	     ((params->psk_length < 8) || (params->psk_length > 64) ||
 	      (params->psk_length == 0U) || !params->psk)) ||
+	    ((params->security == WIFI_SECURITY_TYPE_SAE) &&
+	      ((params->psk_length == 0U) || !params->psk) &&
+		  ((params->sae_password_length == 0U) || !params->sae_password)) ||
 	    ((params->channel != WIFI_CHANNEL_ANY) &&
 	     (params->channel > WIFI_CHANNEL_MAX)) ||
 	    !params->ssid) {
@@ -157,3 +164,67 @@ static int wifi_ap_disable(uint32_t mgmt_request, struct net_if *iface,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_DISABLE, wifi_ap_disable);
+
+static int wifi_iface_status(uint32_t mgmt_request, struct net_if *iface,
+			  void *data, size_t len)
+{
+	int ret;
+	const struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api =
+		(struct net_wifi_mgmt_offload *) dev->api;
+	struct wifi_iface_status *status = data;
+
+	if (off_api == NULL || off_api->iface_status == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!data || len != sizeof(*status)) {
+		return -EINVAL;
+	}
+
+	ret = off_api->iface_status(dev, status);
+
+	if (ret) {
+		return ret;
+	}
+
+	return 0;
+}
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_IFACE_STATUS, wifi_iface_status);
+
+void wifi_mgmt_raise_iface_status_event(struct net_if *iface,
+		struct wifi_iface_status *iface_status)
+{
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_IFACE_STATUS,
+					iface, iface_status,
+					sizeof(struct wifi_iface_status));
+}
+
+#ifdef CONFIG_NET_STATISTICS_WIFI
+static int wifi_iface_stats(uint32_t mgmt_request, struct net_if *iface,
+			  void *data, size_t len)
+{
+	int ret;
+	const struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api =
+		(struct net_wifi_mgmt_offload *) dev->api;
+	struct net_stats_wifi *stats = data;
+
+	if (off_api == NULL || off_api->get_stats == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!data || len != sizeof(*stats)) {
+		return -EINVAL;
+	}
+
+	ret = off_api->get_stats(dev, stats);
+
+	if (ret) {
+		return ret;
+	}
+
+	return 0;
+}
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_WIFI, wifi_iface_stats);
+#endif /* CONFIG_NET_STATISTICS_WIFI */

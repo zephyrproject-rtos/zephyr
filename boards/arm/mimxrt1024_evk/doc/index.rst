@@ -11,8 +11,7 @@ high-performance feature set in low-cost LQFP packages, further simplifying
 board design and layout for customers. The i.MX RT1024 runs on the Arm®
 Cortex®-M7 core at 500 MHz.
 
-.. image:: ./mimxrt1024_evk.jpg
-   :width: 720px
+.. image:: mimxrt1024_evk.jpg
    :align: center
    :alt: MIMXRT1024-EVK
 
@@ -25,7 +24,7 @@ Hardware
 - Memory
 
   - 256 Mbit SDRAM
-  - 64 Mbit QSPI Flash
+  - 32 Mbit QSPI Flash
   - TF socket for SD card
 
 - Connectivity
@@ -68,8 +67,12 @@ these references:
 Supported Features
 ==================
 
-The mimxrt1024_evk board configuration supports the following hardware
-features:
+The mimxrt1024_evk board configuration supports the hardware features listed
+below.  For additional features not yet supported, please also refer to the
+:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
+already supported, which can also be re-used on this mimxrt1024_evk board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -102,6 +105,10 @@ features:
 | GPT       | on-chip    | gpt                                 |
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB                                 |
++-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

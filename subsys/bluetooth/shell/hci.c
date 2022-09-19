@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define STACKSIZE 1024
 
@@ -154,7 +154,7 @@ ZTEST(k_float_disable, test_k_float_disable_syscall)
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #else
-#include <interrupt_util.h>
+#include <zephyr/interrupt_util.h>
 #endif
 
 struct k_thread sup_fp_thread;

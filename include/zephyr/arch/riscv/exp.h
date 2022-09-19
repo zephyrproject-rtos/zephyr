@@ -50,36 +50,36 @@ struct soc_esf {
 #endif
 
 struct __esf {
-	ulong_t ra;		/* return address */
+	unsigned long ra;		/* return address */
 
-	ulong_t t0;		/* Caller-saved temporary register */
-	ulong_t t1;		/* Caller-saved temporary register */
-	ulong_t t2;		/* Caller-saved temporary register */
+	unsigned long t0;		/* Caller-saved temporary register */
+	unsigned long t1;		/* Caller-saved temporary register */
+	unsigned long t2;		/* Caller-saved temporary register */
 #if !defined(CONFIG_RISCV_ISA_RV32E)
-	ulong_t t3;		/* Caller-saved temporary register */
-	ulong_t t4;		/* Caller-saved temporary register */
-	ulong_t t5;		/* Caller-saved temporary register */
-	ulong_t t6;		/* Caller-saved temporary register */
+	unsigned long t3;		/* Caller-saved temporary register */
+	unsigned long t4;		/* Caller-saved temporary register */
+	unsigned long t5;		/* Caller-saved temporary register */
+	unsigned long t6;		/* Caller-saved temporary register */
 #endif /* !CONFIG_RISCV_ISA_RV32E */
 
-	ulong_t a0;		/* function argument/return value */
-	ulong_t a1;		/* function argument */
-	ulong_t a2;		/* function argument */
-	ulong_t a3;		/* function argument */
-	ulong_t a4;		/* function argument */
-	ulong_t a5;		/* function argument */
+	unsigned long a0;		/* function argument/return value */
+	unsigned long a1;		/* function argument */
+	unsigned long a2;		/* function argument */
+	unsigned long a3;		/* function argument */
+	unsigned long a4;		/* function argument */
+	unsigned long a5;		/* function argument */
 #if !defined(CONFIG_RISCV_ISA_RV32E)
-	ulong_t a6;		/* function argument */
-	ulong_t a7;		/* function argument */
+	unsigned long a6;		/* function argument */
+	unsigned long a7;		/* function argument */
 #endif /* !CONFIG_RISCV_ISA_RV32E */
 
-	ulong_t mepc;		/* machine exception program counter */
-	ulong_t mstatus;	/* machine status register */
+	unsigned long mepc;		/* machine exception program counter */
+	unsigned long mstatus;	/* machine status register */
 
-	ulong_t s0;		/* callee-saved s0 */
+	unsigned long s0;		/* callee-saved s0 */
 
 #ifdef CONFIG_USERSPACE
-	ulong_t sp;		/* preserved (user or kernel) stack pointer */
+	unsigned long sp;		/* preserved (user or kernel) stack pointer */
 #endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)

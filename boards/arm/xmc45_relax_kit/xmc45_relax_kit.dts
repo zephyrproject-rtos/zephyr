@@ -9,11 +9,27 @@
 /dts-v1/;
 
 #include <infineon/xmc4500_F100x1024.dtsi>
+#include "xmc45_relax_kit-pinctrl.dtsi"
 
 / {
 	model = "Infineon XMC4500 Relax Kit";
 	compatible = "infineon,xm4500-relax-kit", "infineon,xmc4500",
 						"infineon,xmc4xxx";
+
+	aliases {
+		led0 = &led1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/* leds are labelled LED1 and LED2 in the relax kit documentation */
+		led1: led1 {
+			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+		};
+		led2: led2 {
+			gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
 
 	chosen {
 		zephyr,sram = &dsram1;
@@ -30,6 +46,12 @@
 &usic1ch1 {
 	compatible = "infineon,xmc4xxx-uart";
 	current-speed = <115200>;
-	label = "UART_0";
+	pinctrl-0 = <&uart_tx_p0_1_u1c1 &uart_rx_p0_0_u1c1>;
+	pinctrl-names = "default";
+	input-src = "DX0D";
+	status = "okay";
+};
+
+&gpio1 {
 	status = "okay";
 };

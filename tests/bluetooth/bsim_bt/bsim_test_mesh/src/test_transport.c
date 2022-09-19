@@ -177,13 +177,13 @@ static void test_tx_unknown_app(void)
 
 	bt_mesh_test_setup();
 
-	ASSERT_OK(bt_mesh_cfg_app_key_add(0, cfg->addr, 0, 1, app_key, &status),
+	ASSERT_OK(bt_mesh_cfg_cli_app_key_add(0, cfg->addr, 0, 1, app_key, &status),
 		  "Failed adding additional appkey");
 	if (status) {
 		FAIL("App key add status: 0x%02x", status);
 	}
 
-	ASSERT_OK(bt_mesh_cfg_mod_app_bind(0, cfg->addr, cfg->addr, 1,
+	ASSERT_OK(bt_mesh_cfg_cli_mod_app_bind(0, cfg->addr, cfg->addr, 1,
 					   TEST_MOD_ID, &status),
 		  "Failed binding additional appkey");
 	if (status) {
@@ -214,7 +214,7 @@ static void test_tx_loopback_group(void)
 
 	bt_mesh_test_setup();
 
-	err = bt_mesh_cfg_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
+	err = bt_mesh_cfg_cli_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
 				      TEST_MOD_ID, &status);
 	ASSERT_OK(err || status, "Mod sub add failed (err %d, status %u)",
 		  err, status);
@@ -384,7 +384,7 @@ static void test_rx_group(void)
 
 	bt_mesh_test_setup();
 
-	err = bt_mesh_cfg_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
+	err = bt_mesh_cfg_cli_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
 				      TEST_MOD_ID, &status);
 	ASSERT_OK(err || status, "Mod sub add failed (err %d, status %u)",
 		  err, status);
@@ -408,7 +408,7 @@ static void test_rx_va(void)
 
 	bt_mesh_test_setup();
 
-	err = bt_mesh_cfg_mod_sub_va_add(0, cfg->addr, cfg->addr, test_va_uuid,
+	err = bt_mesh_cfg_cli_mod_sub_va_add(0, cfg->addr, cfg->addr, test_va_uuid,
 					 TEST_MOD_ID, &virtual_addr, &status);
 	ASSERT_OK(err || status, "Sub add failed (err %d, status %u)", err,
 		  status);
@@ -462,7 +462,7 @@ static void test_rx_seg_concurrent(void)
 	bt_mesh_test_setup();
 
 	/* Subscribe to group addr */
-	err = bt_mesh_cfg_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
+	err = bt_mesh_cfg_cli_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
 				      TEST_MOD_ID, &status);
 	ASSERT_OK(err || status, "Mod sub add failed (err %d, status %u)",
 		  err, status);

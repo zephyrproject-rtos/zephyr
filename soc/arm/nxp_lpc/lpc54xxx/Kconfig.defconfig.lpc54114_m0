@@ -15,12 +15,4 @@ config PINMUX_MCUX_LPC
 config GPIO
 	default n
 
-config GPIO_MCUX_LPC
-	default n
-	depends on GPIO
-
-config UART_MCUX_FLEXCOMM
-	default n
-	depends on SERIAL
-
 endif # SOC_LPC54114_M0

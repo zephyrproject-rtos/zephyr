@@ -3,8 +3,11 @@ common:
     tags: drivers watchdog
 tests:
   drivers.watchdog:
-    filter: not (CONFIG_WDT_SAM or dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog"))
-    platform_exclude: mec15xxevb_assy6853 mimxrt685_evk_cm33 mimxrt595_evk_cm33
+    filter: >
+      not (CONFIG_WDT_SAM or dt_compat_enabled("st,stm32-window-watchdog")
+       or dt_compat_enabled("st,stm32-watchdog") or CONFIG_SOC_FAMILY_LPC or
+       CONFIG_SOC_SERIES_IMX_RT6XX or CONFIG_SOC_SERIES_IMX_RT5XX)
+    platform_exclude: mec15xxevb_assy6853
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"

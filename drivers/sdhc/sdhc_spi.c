@@ -151,6 +151,27 @@ static int sdhc_spi_init_card(const struct device *dev)
 	return ret;
 }
 
+/* Checks if SPI SD card is sending busy signal */
+static int sdhc_spi_card_busy(const struct device *dev)
+{
+	const struct sdhc_spi_config *config = dev->config;
+	struct sdhc_spi_data *data = dev->data;
+	int ret;
+	uint8_t response;
+
+
+	ret = sdhc_spi_rx(config->spi_dev, data->spi_cfg, &response, 1);
+	if (ret) {
+		return -EIO;
+	}
+
+	if (response == 0xFF) {
+		return 0;
+	} else
+		return 1;
+
+}
+
 /* Waits for SPI SD card to stop sending busy signal */
 static int sdhc_spi_wait_unbusy(const struct device *dev,
 	int timeout_ms,
@@ -732,6 +753,7 @@ static struct sdhc_driver_api sdhc_spi_api = {
 	.get_host_props = sdhc_spi_get_host_props,
 	.get_card_present = sdhc_spi_get_card_present,
 	.reset = sdhc_spi_reset,
+	.card_busy = sdhc_spi_card_busy,
 };
 
 

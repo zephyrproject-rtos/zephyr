@@ -1,30 +1,29 @@
 sample:
   name: Watchdog Driver Sample
+common:
+  tags: drivers watchdog
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Watchdog sample application"
+      - "Feeding watchdog..."
+      - "Waiting for reset..."
+      - "Watchdog sample application"
+  depends_on: watchdog
 tests:
   sample.drivers.watchdog:
-    tags: drivers
-    harness: console
-    harness_config:
-        type: multi_line
-        ordered: true
-        regex:
-            - "Watchdog sample application"
-            - "Feeding watchdog..."
-            - "Waiting for reset..."
-            - "Watchdog sample application"
-    depends_on: watchdog
-    filter: not dt_compat_enabled("st,stm32-window-watchdog")
-  sample.drivers.watchdog.stm32wwdg:
-    tags: drivers
-    harness: console
-    harness_config:
-        type: multi_line
-        ordered: true
-        regex:
-            - "Watchdog sample application"
-            - "Feeding watchdog..."
-            - "Waiting for reset..."
-            - "Watchdog sample application"
-    tags: drivers watchdog
+    filter: not CONFIG_SOC_FAMILY_STM32
+  sample.drivers.watchdog.stm32_wwdg:
+    extra_args: DTC_OVERLAY_FILE=boards/stm32_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")
-    depends_on: watchdog
+    platform_allow: b_u585i_iot02a nucleo_f091rc nucleo_f103rb nucleo_f207zg nucleo_f429zi
+        nucleo_f746zg nucleo_g071rb nucleo_g474re nucleo_h743zi nucleo_l073rz nucleo_l152re
+        nucleo_wb55rg nucleo_wl55jc stm32f3_disco stm32l562e_dk disco_l475_iot1
+  sample.drivers.watchdog.stm32_iwdg:
+    extra_args: DTC_OVERLAY_FILE=boards/stm32_iwdg.overlay
+    filter: dt_compat_enabled("st,stm32-watchdog")
+    platform_allow: b_u585i_iot02a nucleo_f091rc nucleo_f103rb nucleo_f207zg nucleo_f429zi
+        nucleo_f746zg nucleo_g071rb nucleo_g474re nucleo_h743zi nucleo_l073rz nucleo_l152re
+        nucleo_wb55rg nucleo_wl55jc stm32f3_disco stm32l562e_dk disco_l475_iot1

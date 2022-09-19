@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <stdio.h>
@@ -106,7 +106,7 @@ static void trigger_handler(const struct device *dev,
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ANY(microchip_mcp9808);
+	const struct device *const dev = DEVICE_DT_GET_ANY(microchip_mcp9808);
 	int rc;
 
 	if (dev == NULL) {

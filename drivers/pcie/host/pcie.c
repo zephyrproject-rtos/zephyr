@@ -60,12 +60,12 @@ uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
 	uint32_t data;
 
 	data = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
-	if (data & PCIE_CONF_CMDSTAT_CAPS) {
+	if ((data & PCIE_CONF_CMDSTAT_CAPS) != 0U) {
 		data = pcie_conf_read(bdf, PCIE_CONF_CAPPTR);
 		reg = PCIE_CONF_CAPPTR_FIRST(data);
 	}
 
-	while (reg) {
+	while (reg != 0U) {
 		data = pcie_conf_read(bdf, reg);
 
 		if (PCIE_CONF_CAP_ID(data) == cap_id) {
@@ -83,7 +83,7 @@ uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
 	unsigned int reg = PCIE_CONF_EXT_CAPPTR; /* Start at end of the PCI configuration space */
 	uint32_t data;
 
-	while (reg) {
+	while (reg != 0U) {
 		data = pcie_conf_read(bdf, reg);
 		if (!data || data == 0xffffffffU) {
 			return 0;

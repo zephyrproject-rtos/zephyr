@@ -26,8 +26,7 @@ nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/EVK-NINA-B3.png
-     :width: 600px
+.. figure:: img/EVK-NINA-B3.jpg
      :align: center
      :alt: EVK-NINA-B3
 
@@ -302,7 +301,7 @@ more than one UART for connecting peripheral devices:
 
    In the overlay file above, pin P0.16 is used for RX and P0.14 is used for TX
 
-2. Use the UART1 as ``device_get_binding("UART_1")``
+2. Use the UART1 as ``DEVICE_DT_GET(DT_NODELABEL(uart1))``
 
 Overlay file naming
 ===================

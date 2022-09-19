@@ -5,7 +5,7 @@
  */
 
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel_version.h>
 #include <zephyr/sys/speculation.h>
 #include "version.h"

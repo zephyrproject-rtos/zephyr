@@ -15,7 +15,7 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/led/lp503x.h>
 #include <zephyr/device.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define LOG_LEVEL CONFIG_LED_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -235,7 +235,7 @@ const uint8_t color_mapping_##led_node_id[] =			\
 
 #define LED_INFO(led_node_id)					\
 {								\
-	.label		= DT_LABEL(led_node_id),		\
+	.label		= DT_PROP(led_node_id, label),		\
 	.index		= DT_PROP(led_node_id, index),		\
 	.num_colors	=					\
 		DT_PROP_LEN(led_node_id, color_mapping),	\

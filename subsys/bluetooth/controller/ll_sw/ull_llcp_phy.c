@@ -58,6 +58,7 @@ enum {
 	LP_PU_STATE_WAIT_TX_ACK_PHY_UPDATE_IND,
 	LP_PU_STATE_WAIT_RX_PHY_UPDATE_IND,
 	LP_PU_STATE_WAIT_INSTANT,
+	LP_PU_STATE_WAIT_INSTANT_ON_AIR,
 	LP_PU_STATE_WAIT_NTF,
 };
 
@@ -74,6 +75,9 @@ enum {
 
 	/* Ack received */
 	LP_PU_EVT_ACK,
+
+	/* Ready to notify host */
+	LP_PU_EVT_NTF,
 
 	/* Reject response received */
 	LP_PU_EVT_REJECT,
@@ -92,6 +96,7 @@ enum {
 	RP_PU_STATE_WAIT_TX_ACK_PHY_UPDATE_IND,
 	RP_PU_STATE_WAIT_RX_PHY_UPDATE_IND,
 	RP_PU_STATE_WAIT_INSTANT,
+	RP_PU_STATE_WAIT_INSTANT_ON_AIR,
 	RP_PU_STATE_WAIT_NTF,
 };
 
@@ -108,6 +113,9 @@ enum {
 
 	/* Indication received */
 	RP_PU_EVT_PHY_UPDATE_IND,
+
+	/* Ready to notify host */
+	RP_PU_EVT_NTF,
 };
 
 /* Hardcoded instant delta +6 */
@@ -293,7 +301,9 @@ static uint8_t pu_update_eff_times(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	if ((eff_tx_time > lll->dle.eff.max_tx_time) ||
-	    (eff_rx_time > lll->dle.eff.max_rx_time)) {
+	    (lll->dle.eff.max_tx_time > max_tx_time) ||
+	    (eff_rx_time > lll->dle.eff.max_rx_time) ||
+	    (lll->dle.eff.max_rx_time > max_rx_time)) {
 		lll->dle.eff.max_tx_time = eff_tx_time;
 		lll->dle.eff.max_rx_time = eff_rx_time;
 		return 1U;
@@ -443,7 +453,7 @@ static void pu_dle_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 }
 #endif
 
-static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_pu_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt)
 {
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 #define NTF_DLE (ctx->data.pu.ntf_dle)
@@ -451,11 +461,6 @@ static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 #define NTF_DLE 0
 #endif
 	uint8_t ntf_count = ctx->data.pu.ntf_pu + NTF_DLE;
-	/* when complete reset timing restrictions - idempotent
-	 * (so no problem if we need to wait for NTF buffer)
-	 */
-
-	pu_reset_timing_restrict(conn);
 
 	/* if we need to send both PHY and DLE notification, but we
 	 * do not have 2 buffers available we serialize the sending
@@ -487,6 +492,28 @@ static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 		ctx->state = LP_PU_STATE_IDLE;
 		llcp_rr_set_paused_cmd(conn, PROC_NONE);
 	}
+}
+
+static void lp_pu_complete_after_inst_on_air(struct ll_conn *conn, struct proc_ctx *ctx,
+					     uint8_t evt, void *param)
+{
+	/* When complete reset timing restrictions - idempotent
+	 * (so no problem if we need to wait for NTF buffer)
+	 */
+	pu_reset_timing_restrict(conn);
+
+	/* Wait for instant on air to send notification */
+	ctx->state = LP_PU_STATE_WAIT_INSTANT_ON_AIR;
+}
+
+static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+{
+	/* when complete reset timing restrictions - idempotent
+	 * (so no problem if we need to wait for NTF buffer)
+	 */
+	pu_reset_timing_restrict(conn);
+
+	lp_pu_tx_ntf(conn, ctx, evt);
 }
 
 static void lp_pu_send_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
@@ -701,6 +728,18 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 		ctx->data.pu.ntf_pu = 1;
 		lp_pu_complete(conn, ctx, evt, param);
 		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
+		break;
+	case LP_PU_EVT_UNKNOWN:
+		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+		/* Unsupported in peer, so disable locally for this connection
+		 * Peer does not accept PHY UPDATE, so disable non 1M phys on current connection
+		 */
+		feature_unmask_features(conn, LL_FEAT_BIT_PHY_2M | LL_FEAT_BIT_PHY_CODED);
+		ctx->data.pu.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+		ctx->data.pu.ntf_pu = 1;
+		lp_pu_complete(conn, ctx, evt, param);
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
+		break;
 	default:
 		/* Ignore other evts */
 		break;
@@ -721,7 +760,7 @@ static void lp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		ctx->data.pu.ntf_pu = (phy_changed || ctx->data.pu.host_initiated);
-		lp_pu_complete(conn, ctx, evt, param);
+		lp_pu_complete_after_inst_on_air(conn, ctx, evt, param);
 	}
 }
 
@@ -738,11 +777,23 @@ static void lp_pu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, ui
 	}
 }
 
+static void lp_pu_st_wait_instant_on_air(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt)
+{
+	switch (evt) {
+	case LP_PU_EVT_NTF:
+		lp_pu_tx_ntf(conn, ctx, evt);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
 static void lp_pu_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_PU_EVT_RUN:
-		lp_pu_complete(conn, ctx, evt, param);
+		lp_pu_tx_ntf(conn, ctx, evt);
 		break;
 	default:
 		/* Ignore other evts */
@@ -780,6 +831,9 @@ static void lp_pu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 #endif /* CONFIG_BT_PERIPHERAL */
 	case LP_PU_STATE_WAIT_INSTANT:
 		lp_pu_st_wait_instant(conn, ctx, evt, param);
+		break;
+	case LP_PU_STATE_WAIT_INSTANT_ON_AIR:
+		lp_pu_st_wait_instant_on_air(conn, ctx, evt);
 		break;
 	case LP_PU_STATE_WAIT_NTF:
 		lp_pu_st_wait_ntf(conn, ctx, evt, param);
@@ -836,6 +890,10 @@ void llcp_lp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 	lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_ACK, param);
 }
 
+void llcp_lp_pu_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_NTF, NULL);
+}
 /*
  * LLCP Remote Procedure PHY Update FSM
  */
@@ -878,18 +936,38 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	llcp_rr_prt_restart(conn);
 }
 
+static void rp_pu_complete_finalize(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	llcp_rr_set_paused_cmd(conn, PROC_NONE);
+	llcp_rr_complete(conn);
+	ctx->state = RP_PU_STATE_IDLE;
+}
+
 static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
+	/* when complete reset timing restrictions - idempotent
+	 * (so no problem if we need to wait for NTF buffer)
+	 */
+	pu_reset_timing_restrict(conn);
+
+	/* For remote initiated PHY update Host is notified only if a PHY changes */
+	if (ctx->data.pu.ntf_pu) {
+		/* Notification may be send after instant is on air */
+		ctx->state = RP_PU_STATE_WAIT_INSTANT_ON_AIR;
+	} else {
+		rp_pu_complete_finalize(conn, ctx);
+	}
+}
+
+void rp_pu_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+{
+
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 #define NTF_DLE (ctx->data.pu.ntf_dle)
 #else
 #define NTF_DLE 0
 #endif
 	uint8_t ntf_count = ctx->data.pu.ntf_pu + NTF_DLE;
-	/* when complete reset timing restrictions - idempotent
-	 * (so no problem if we need to wait for NTF buffer)
-	 */
-	pu_reset_timing_restrict(conn);
 
 	/* if we need to send both PHY and DLE notification, but we
 	 * do not have 2 buffers available we serialize the sending
@@ -917,9 +995,7 @@ static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 			pu_dle_ntf(conn, ctx);
 		}
 #endif
-		llcp_rr_set_paused_cmd(conn, PROC_NONE);
-		llcp_rr_complete(conn);
-		ctx->state = RP_PU_STATE_IDLE;
+		rp_pu_complete_finalize(conn, ctx);
 	}
 }
 
@@ -1134,11 +1210,24 @@ static void rp_pu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, ui
 	}
 }
 
+static void rp_pu_st_wait_instant_on_air(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					 void *param)
+{
+	switch (evt) {
+	case RP_PU_EVT_NTF:
+		rp_pu_tx_ntf(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
 static void rp_pu_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_PU_EVT_RUN:
-		rp_pu_complete(conn, ctx, evt, param);
+		rp_pu_tx_ntf(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -1176,6 +1265,9 @@ static void rp_pu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 #endif /* CONFIG_BT_CENTRAL */
 	case RP_PU_STATE_WAIT_INSTANT:
 		rp_pu_st_wait_instant(conn, ctx, evt, param);
+		break;
+	case RP_PU_STATE_WAIT_INSTANT_ON_AIR:
+		rp_pu_st_wait_instant_on_air(conn, ctx, evt, param);
 		break;
 	case RP_PU_STATE_WAIT_NTF:
 		rp_pu_st_wait_ntf(conn, ctx, evt, param);
@@ -1222,4 +1314,9 @@ void llcp_rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 void llcp_rp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	rp_pu_execute_fsm(conn, ctx, RP_PU_EVT_ACK, param);
+}
+
+void llcp_rp_pu_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	rp_pu_execute_fsm(conn, ctx, RP_PU_EVT_NTF, NULL);
 }

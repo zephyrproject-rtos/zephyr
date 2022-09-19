@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
@@ -27,6 +27,7 @@
 #define LOG_MODULE_NAME bt_pacs
 #include "common/log.h"
 
+#include "audio_internal.h"
 #include "pacs_internal.h"
 #include "unicast_server.h"
 
@@ -306,25 +307,25 @@ static ssize_t snk_loc_write(struct bt_conn *conn,
 	}
 
 	if (len != sizeof(location)) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	if (pacs_cb == NULL ||
 	    pacs_cb->write_location == NULL) {
 		BT_WARN("No callback for write_location");
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	location = (enum bt_audio_location)sys_get_le32(data);
 	if (location > BT_AUDIO_LOCATION_MASK || location == 0) {
 		BT_DBG("Invalid location value: 0x%08X", location);
-		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	err = pacs_cb->write_location(conn, BT_AUDIO_DIR_SINK, location);
 	if (err != 0) {
 		BT_DBG("write_location returned %d", err);
-		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	return len;
@@ -389,7 +390,7 @@ static ssize_t src_loc_read(struct bt_conn *conn,
 				 &location_32_le, sizeof(location_32_le));
 }
 
-#if defined(BT_PAC_SRC_LOC_WRITEABLE)
+#if defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
 static ssize_t src_loc_write(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, const void *data,
 			     uint16_t len, uint16_t offset, uint8_t flags)
@@ -402,30 +403,30 @@ static ssize_t src_loc_write(struct bt_conn *conn,
 	}
 
 	if (len != sizeof(location)) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	if (pacs_cb == NULL ||
 	    pacs_cb->write_location == NULL) {
 		BT_WARN("No callback for write_location");
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	location = (enum bt_audio_location)sys_get_le32(data);
 	if (location > BT_AUDIO_LOCATION_MASK || location == 0) {
 		BT_DBG("Invalid location value: 0x%08X", location);
-		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	err = pacs_cb->write_location(conn, BT_AUDIO_DIR_SOURCE, location);
 	if (err != 0) {
 		BT_DBG("write_location returned %d", err);
-		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	return len;
 }
-#endif /* BT_PAC_SRC_LOC_WRITEABLE */
+#endif /* CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
 
 static void src_loc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
@@ -437,63 +438,53 @@ static void src_loc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 BT_GATT_SERVICE_DEFINE(pacs_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_PACS),
 #if defined(CONFIG_BT_PAC_SNK)
-	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SNK,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_READ_ENCRYPT,
-			       snk_read, NULL, NULL),
-	BT_GATT_CCC(snk_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+	BT_AUDIO_CHRC(BT_UUID_PACS_SNK,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      snk_read, NULL, NULL),
+	BT_AUDIO_CCC(snk_cfg_changed),
 #if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE)
-	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SNK_LOC,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
-			       BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_READ_ENCRYPT |
-			       BT_GATT_PERM_WRITE_ENCRYPT,
-			       snk_loc_read, snk_loc_write, NULL),
+	BT_AUDIO_CHRC(BT_UUID_PACS_SNK_LOC,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT,
+		      snk_loc_read, snk_loc_write, NULL),
 #elif defined(CONFIG_BT_PAC_SNK_LOC)
-	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SNK_LOC,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_READ_ENCRYPT,
-			       snk_loc_read, NULL, NULL),
+	BT_AUDIO_CHRC(BT_UUID_PACS_SNK_LOC,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      snk_loc_read, NULL, NULL),
 #endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE */
-	BT_GATT_CCC(snk_loc_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+	BT_AUDIO_CCC(snk_loc_cfg_changed),
 #endif /* CONFIG_BT_PAC_SNK */
 #if defined(CONFIG_BT_PAC_SRC)
-	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SRC,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_READ_ENCRYPT,
-			       src_read, NULL, NULL),
-	BT_GATT_CCC(src_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+	BT_AUDIO_CHRC(BT_UUID_PACS_SRC,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      src_read, NULL, NULL),
+	BT_AUDIO_CCC(src_cfg_changed),
 #if defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
-	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SRC_LOC,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
-			       BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_READ_ENCRYPT |
-			       BT_GATT_PERM_WRITE_ENCRYPT,
-			       src_loc_read, src_loc_write, NULL),
+	BT_AUDIO_CHRC(BT_UUID_PACS_SRC_LOC,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT,
+		      src_loc_read, src_loc_write, NULL),
 #elif defined(CONFIG_BT_PAC_SRC_LOC)
-	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SRC_LOC,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_READ_ENCRYPT,
-			       src_loc_read, NULL, NULL),
+	BT_AUDIO_CHRC(BT_UUID_PACS_SRC_LOC,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      src_loc_read, NULL, NULL),
 #endif /* CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
-	BT_GATT_CCC(src_loc_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+	BT_AUDIO_CCC(src_loc_cfg_changed),
 #endif /* CONFIG_BT_PAC_SRC */
-	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_AVAILABLE_CONTEXT,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_READ_ENCRYPT,
-			       available_contexts_read, NULL, NULL),
-	BT_GATT_CCC(available_context_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
-	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SUPPORTED_CONTEXT,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_READ_ENCRYPT,
-			       supported_context_read, NULL, NULL),
-	BT_GATT_CCC(supported_context_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
+	BT_AUDIO_CHRC(BT_UUID_PACS_AVAILABLE_CONTEXT,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      available_contexts_read, NULL, NULL),
+	BT_AUDIO_CCC(available_context_cfg_changed),
+	BT_AUDIO_CHRC(BT_UUID_PACS_SUPPORTED_CONTEXT,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      supported_context_read, NULL, NULL),
+	BT_AUDIO_CCC(supported_context_cfg_changed)
 );
 
 static struct k_work_delayable *bt_pacs_get_work(enum bt_audio_dir dir)

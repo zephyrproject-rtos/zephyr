@@ -12,7 +12,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>

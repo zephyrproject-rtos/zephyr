@@ -6,8 +6,8 @@
  */
 
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 
 
 #define STACKSIZE       (2048 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -112,7 +112,7 @@ static struct k_thread alt_thread_data;
  */
 ZTEST_USER(stackprot, test_stackprot)
 {
-	zassert_true(ret == TC_PASS, NULL);
+	zassert_true(ret == TC_PASS);
 	print_loop(__func__);
 }
 

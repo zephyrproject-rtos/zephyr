@@ -10,7 +10,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -61,7 +61,8 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 	/* We're only interested in connectable events */
 	if (type != BT_GAP_ADV_TYPE_ADV_IND &&
-	    type != BT_GAP_ADV_TYPE_ADV_DIRECT_IND) {
+	    type != BT_GAP_ADV_TYPE_ADV_DIRECT_IND &&
+	    type != BT_GAP_ADV_TYPE_EXT_ADV) {
 		return;
 	}
 

@@ -319,24 +319,21 @@ static void common_configure(uint16_t addr)
 	uint16_t model_ids[] = {TEST_MODEL_ID_1, TEST_MODEL_ID_2,
 			TEST_MODEL_ID_3, TEST_MODEL_ID_4, TEST_MODEL_ID_5};
 
-	err = bt_mesh_cfg_app_key_add(0, addr, 0, 0, app_key,
-				      &status);
+	err = bt_mesh_cfg_cli_app_key_add(0, addr, 0, 0, app_key, &status);
 	if (err || status) {
 		FAIL("AppKey add failed (err %d, status %u)", err, status);
 		return;
 	}
 
 	for (int i = 0; i < ARRAY_SIZE(model_ids); i++) {
-		err = bt_mesh_cfg_mod_app_bind(0, addr, addr, 0, model_ids[i],
-					       &status);
+		err = bt_mesh_cfg_cli_mod_app_bind(0, addr, addr, 0, model_ids[i], &status);
 		if (err || status) {
 			FAIL("Model %#4x bind failed (err %d, status %u)",
 					model_ids[i], err, status);
 			return;
 		}
 
-		err = bt_mesh_cfg_mod_app_bind(0, addr, addr + 1, 0, model_ids[i],
-					       &status);
+		err = bt_mesh_cfg_cli_mod_app_bind(0, addr, addr + 1, 0, model_ids[i], &status);
 		if (err || status) {
 			FAIL("Model %#4x bind failed (err %d, status %u)",
 					model_ids[i], err, status);
@@ -344,8 +341,7 @@ static void common_configure(uint16_t addr)
 		}
 	}
 
-	err = bt_mesh_cfg_net_transmit_set(0, addr,
-					   BT_MESH_TRANSMIT(2, 20), &status);
+	err = bt_mesh_cfg_cli_net_transmit_set(0, addr, BT_MESH_TRANSMIT(2, 20), &status);
 	if (err || status != BT_MESH_TRANSMIT(2, 20)) {
 		FAIL("Net transmit set failed (err %d, status %u)", err,
 		     status);
@@ -358,7 +354,7 @@ static void subscription_configure(uint16_t addr)
 	uint8_t status;
 	int err;
 
-	err = bt_mesh_cfg_mod_sub_add(0, addr, addr, GROUP_ADDR, TEST_MODEL_ID_2, &status);
+	err = bt_mesh_cfg_cli_mod_sub_add(0, addr, addr, GROUP_ADDR, TEST_MODEL_ID_2, &status);
 
 	if (err || status) {
 		FAIL("Model %#4x subscription configuration failed (err %d, status %u)",
@@ -475,7 +471,7 @@ static void test_sub_capacity_ext_model(void)
 	 * in the extension linked list.
 	 */
 	for (i = 0; i < 5 * CONFIG_BT_MESH_MODEL_GROUP_COUNT; i++) {
-		ASSERT_OK(bt_mesh_cfg_mod_sub_add(0, UNICAST_ADDR2, UNICAST_ADDR2,
+		ASSERT_OK(bt_mesh_cfg_cli_mod_sub_add(0, UNICAST_ADDR2, UNICAST_ADDR2,
 			GROUP_ADDR + i, TEST_MODEL_ID_2, &status),
 			"Can't deliver subscription on address %#4x", GROUP_ADDR + i);
 
@@ -486,7 +482,7 @@ static void test_sub_capacity_ext_model(void)
 			TEST_MODEL_ID_3, TEST_MODEL_ID_4, TEST_MODEL_ID_5};
 
 	for (int j = 0; j < ARRAY_SIZE(model_ids); j++) {
-		ASSERT_OK(bt_mesh_cfg_mod_sub_add(0, UNICAST_ADDR2, UNICAST_ADDR2,
+		ASSERT_OK(bt_mesh_cfg_cli_mod_sub_add(0, UNICAST_ADDR2, UNICAST_ADDR2,
 			GROUP_ADDR + i, model_ids[j], &status),
 			"Can't deliver subscription on address %#4x", GROUP_ADDR + i);
 
@@ -498,7 +494,7 @@ static void test_sub_capacity_ext_model(void)
 
 static void pub_param_set(uint8_t period, uint8_t transmit)
 {
-	struct bt_mesh_cfg_mod_pub pub_params = {
+	struct bt_mesh_cfg_cli_mod_pub pub_params = {
 		.addr = UNICAST_ADDR2,
 		.uuid = NULL,
 		.cred_flag = false,
@@ -510,8 +506,8 @@ static void pub_param_set(uint8_t period, uint8_t transmit)
 	uint8_t status;
 	int err;
 
-	err = bt_mesh_cfg_mod_pub_set(0, UNICAST_ADDR1, UNICAST_ADDR1, TEST_MODEL_ID_1,
-				      &pub_params, &status);
+	err = bt_mesh_cfg_cli_mod_pub_set(0, UNICAST_ADDR1, UNICAST_ADDR1, TEST_MODEL_ID_1,
+					  &pub_params, &status);
 	if (err || status) {
 		FAIL("Mod pub set failed (err %d, status %u)", err, status);
 	}
@@ -666,7 +662,7 @@ static void test_tx_transmit(void)
 	 * least possible time, which is 50ms. This will let the access layer publish a message
 	 * with 50ms retransmission interval.
 	 */
-	err = bt_mesh_cfg_net_transmit_set(0, UNICAST_ADDR1,
+	err = bt_mesh_cfg_cli_net_transmit_set(0, UNICAST_ADDR1,
 				BT_MESH_TRANSMIT(0, CONFIG_BT_MESH_NETWORK_TRANSMIT_INTERVAL),
 				&status);
 	if (err || status != BT_MESH_TRANSMIT(0, CONFIG_BT_MESH_NETWORK_TRANSMIT_INTERVAL)) {

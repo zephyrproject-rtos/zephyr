@@ -26,7 +26,7 @@ enum bt_audio_capability_framing {
 	BT_AUDIO_CAPABILITY_UNFRAMED_NOT_SUPPORTED = 0x01,
 };
 
-/** @def BT_AUDIO_CAPABILITY_PREF
+/**
  *  @brief Helper to declare elements of @ref bt_audio_capability_pref
  *
  *  @param _framing Framing Support

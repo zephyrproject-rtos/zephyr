@@ -172,6 +172,10 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&die_temp {
+	status = "okay";
+};
+
 &mac {
 	status = "okay";
 	pinctrl-0 = <&eth_mdc_pc1

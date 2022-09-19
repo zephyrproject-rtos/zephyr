@@ -12,6 +12,7 @@
 #include <ctype.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/device.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 
@@ -25,7 +26,7 @@ static void fa_cb(const struct flash_area *fa, void *user_data)
 
 	shell_print(shell, "%-4d %-8d %-20s  0x%-10x 0x%-12x",
 		    fa->fa_id, fa->fa_device_id, fa->fa_dev->name,
-		    fa->fa_off, fa->fa_size);
+		    (uint32_t) fa->fa_off, fa->fa_size);
 }
 
 static int cmd_flash_map_list(const struct shell *shell, size_t argc,

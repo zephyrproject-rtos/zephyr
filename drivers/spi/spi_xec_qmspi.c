@@ -522,7 +522,7 @@ static int qmspi_transceive(const struct device *dev,
 	uint32_t descr, last_didx;
 	int err;
 
-	spi_context_lock(&data->ctx, false, NULL, config);
+	spi_context_lock(&data->ctx, false, NULL, NULL, config);
 
 	err = qmspi_configure(dev, config);
 	if (err != 0) {

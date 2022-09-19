@@ -7,8 +7,12 @@
 #define DT_DRV_COMPAT gd_gd32_adc
 
 #include <errno.h>
+
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/gd32.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/devicetree.h>
 
 #include <gd32_adc.h>
@@ -97,10 +101,11 @@ static const uint32_t table_samp_time[] = {
 
 struct adc_gd32_config {
 	uint32_t reg;
-	uint32_t rcu_periph_clock;
 #ifdef CONFIG_SOC_SERIES_GD32F3X0
 	uint32_t rcu_clock_source;
 #endif
+	uint16_t clkid;
+	struct reset_dt_spec reset;
 	uint8_t channels;
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t irq_num;
@@ -346,7 +351,10 @@ static int adc_gd32_init(const struct device *dev)
 	rcu_adc_clock_config(cfg->rcu_clock_source);
 #endif
 
-	rcu_periph_clock_enable(cfg->rcu_periph_clock);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
+			       (clock_control_subsys_t *)&cfg->clkid);
+
+	(void)reset_line_toggle_dt(&cfg->reset);
 
 #if defined(CONFIG_SOC_SERIES_GD32F403) || \
 	defined(CONFIG_SOC_SERIES_GD32VF103) || \
@@ -372,7 +380,7 @@ static int adc_gd32_init(const struct device *dev)
 }
 
 #define HANDLE_SHARED_IRQ(n, active_irq)							\
-	static const struct device *dev_##n = DEVICE_DT_INST_GET(n);				\
+	static const struct device *const dev_##n = DEVICE_DT_INST_GET(n);			\
 	const struct adc_gd32_config *cfg_##n = dev_##n->config;				\
 												\
 	if ((cfg_##n->irq_num == active_irq) &&							\
@@ -431,7 +439,7 @@ static void adc_gd32_global_irq_cfg(void)
 
 #ifdef CONFIG_SOC_SERIES_GD32F3X0
 #define ADC_CLOCK_SOURCE(n)									\
-	.rcu_clock_source = DT_INST_PROP(n, rcu_periph_clock)
+	.rcu_clock_source = DT_INST_PROP(n, rcu_clock_source)
 #else
 #define ADC_CLOCK_SOURCE(n)
 #endif
@@ -445,7 +453,8 @@ static void adc_gd32_global_irq_cfg(void)
 	};											\
 	const static struct adc_gd32_config adc_gd32_config_##n = {				\
 		.reg = DT_INST_REG_ADDR(n),							\
-		.rcu_periph_clock = DT_INST_PROP(n, rcu_periph_clock),				\
+		.clkid = DT_INST_CLOCKS_CELL(n, id),						\
+		.reset = RESET_DT_SPEC_INST_GET(n),						\
 		.channels = DT_INST_PROP(n, channels),						\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\
 		.irq_num = DT_INST_IRQN(n),							\

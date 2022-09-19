@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/printk.h>
@@ -13,7 +13,7 @@ void main(void)
 {
 	struct sensor_value val;
 	int rc;
-	const struct device *dev = DEVICE_DT_GET_ONE(st_stm32_vbat);
+	const struct device *const dev = DEVICE_DT_GET_ONE(st_stm32_vbat);
 
 	if (!device_is_ready(dev)) {
 		printk("VBAT sensor is not ready\n");

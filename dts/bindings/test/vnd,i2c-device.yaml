@@ -5,4 +5,12 @@ description: Test I2C device
 
 compatible: "vnd,i2c-device"
 
-include: i2c-device.yaml
+include:
+  - name: i2c-device.yaml
+    property-blocklist:
+      - label
+
+properties:
+    label:
+        type: string
+        required: false

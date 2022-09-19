@@ -616,8 +616,7 @@ struct bt_mesh_lpn_cb {
 	void (*polled)(uint16_t net_idx, uint16_t friend_addr, bool retry);
 };
 
-/** @def BT_MESH_LPN_CB_DEFINE
- *
+/**
  *  @brief Register a callback structure for Friendship events.
  *
  *  @param _name Name of callback structure.
@@ -666,8 +665,7 @@ struct bt_mesh_friend_cb {
 	void (*polled)(uint16_t net_idx, uint16_t lpn_addr);
 };
 
-/** @def BT_MESH_FRIEND_CB_DEFINE
- *
+/**
  *  @brief Register a callback structure for Friendship events.
  *
  *  Registers a callback structure that will be called whenever Friendship

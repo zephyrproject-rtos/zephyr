@@ -1,0 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing the emul.h API.
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+&i2c0 {
+	test_bmi: bmi@68 {
+		compatible = "bosch,bmi160";
+		reg = <0x68>;
+		status = "okay";
+	};
+};

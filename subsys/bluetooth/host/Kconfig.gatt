@@ -146,6 +146,14 @@ config BT_GATT_ENFORCE_CHANGE_UNAWARE
 
 endif # BT_GATT_CACHING
 
+config BT_GATT_ENFORCE_SUBSCRIPTION
+	bool "GATT Enforce characteristic subscription"
+	default y
+	help
+	  When enabled, this option will make the server block sending
+	  notifications and indications to a device which has not subscribed to
+	  the supplied characteristic.
+
 config BT_GATT_CLIENT
 	bool "GATT client support"
 	help

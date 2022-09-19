@@ -1,0 +1,12 @@
+# ESP32 RTC Timer configuration
+
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_RTC_ESP32
+	bool "ESP32 Counter driver based on the RTC Timer"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_RTC_TIMER_ENABLED
+	help
+	  Enables the Counter driver API based on Espressif's RTC
+	  Timer for ESP32 series devices.

@@ -5,7 +5,8 @@
 
 config GPIO_NEORV32
 	bool "NEORV32 GPIO driver"
-	default $(dt_compat_enabled,neorv32-gpio)
-	depends on SOC_SERIES_NEORV32 && SYSCON
+	default y
+	depends on DT_HAS_NEORV32_GPIO_ENABLED
+	depends on SYSCON
 	help
 	  Enable NEORV32 GPIO driver.

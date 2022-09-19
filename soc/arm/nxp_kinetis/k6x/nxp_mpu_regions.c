@@ -41,7 +41,8 @@ static const struct nxp_mpu_region mpu_regions[] = {
 	/* Region 3 */
 	MPU_REGION_ENTRY("FLASH_0",
 			 CONFIG_FLASH_BASE_ADDRESS,
-			 0x07FFFFFF,
+			 (CONFIG_FLASH_BASE_ADDRESS +
+				(CONFIG_FLASH_SIZE * 1024) - 1),
 			 REGION_FLASH_ATTR),
 	/* Region 4 */
 	MPU_REGION_ENTRY("RAM_U_0",

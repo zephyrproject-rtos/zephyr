@@ -7,7 +7,7 @@
 
 #define DT_DRV_COMPAT nxp_imx_usdhc
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/sd/sd_spec.h>
@@ -785,6 +785,10 @@ static int imx_usdhc_init(const struct device *dev)
 		.TransferComplete = transfer_complete_cb,
 	};
 
+	if (!device_is_ready(cfg->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 #ifdef CONFIG_PINCTRL
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);

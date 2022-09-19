@@ -1,19 +1,28 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdio.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/reboot.h>
 #include <string.h>
 
 #include <zephyr/settings/settings.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/drivers/flash.h>
+
+#define TEST_PARTITION		storage_partition
+#define CODE_PARTITION		slot0_partition
+
+#define TEST_PARTITION_ID	FIXED_PARTITION_ID(TEST_PARTITION)
+
+#define CODE_PARTITION_NODE	DT_NODELABEL(CODE_PARTITION)
+#define CODE_PARTITION_ID	FIXED_PARTITION_ID(CODE_PARTITION)
+#define CODE_PARTITION_EXISTS	FIXED_PARTITION_EXISTS(CODE_PARTITION)
 
 static uint32_t val32;
 
@@ -24,12 +33,16 @@ static uint32_t val32;
 #endif
 
 /* leverage that this area has to be embedded flash part */
-#if FLASH_AREA_LABEL_EXISTS(image_0)
+#if CODE_PARTITION_EXISTS
+#if DT_NODE_HAS_PROP(DT_GPARENT(CODE_PARTITION_NODE), write_block_size)
 #define FLASH_WRITE_BLOCK_SIZE \
-	DT_PROP(DT_CHOSEN(zephyr_flash), write_block_size)
+	DT_PROP(DT_GPARENT(CODE_PARTITION_NODE), write_block_size)
 static const volatile __attribute__((section(".rodata")))
 __aligned(FLASH_WRITE_BLOCK_SIZE)
 uint8_t prepared_mark[FLASH_WRITE_BLOCK_SIZE] = {ERASED_VAL};
+#else
+#error "Test not prepared to run from flash with no write-block-size property in DTS"
+#endif
 #endif
 
 static int c1_set(const char *name, size_t len, settings_read_cb read_cb,
@@ -61,7 +74,7 @@ static struct settings_handler c1_settings = {
 	.h_export = c1_export,
 };
 
-void test_init(void)
+ZTEST(fcb_initialization, test_init)
 {
 	int err;
 	uint32_t prev_int;
@@ -82,7 +95,7 @@ void test_init(void)
 
 void test_prepare_storage(void)
 {
-#if FLASH_AREA_LABEL_EXISTS(image_0)
+#if CODE_PARTITION_EXISTS
 /* This procedure uses mark which is stored inside SoC embedded program
  * flash. It will not work on devices on which read/write to them is not
  * possible.
@@ -94,13 +107,13 @@ void test_prepare_storage(void)
 
 	if (prepared_mark[0] == ERASED_VAL) {
 		TC_PRINT("First run: erasing the storage\r\n");
-		err = flash_area_open(FLASH_AREA_ID(storage), &fa);
+		err = flash_area_open(TEST_PARTITION_ID, &fa);
 		zassert_true(err == 0, "Can't open storage flash area");
 
 		err = flash_area_erase(fa, 0, fa->fa_size);
 		zassert_true(err == 0, "Can't erase storage flash area");
 
-		err = flash_area_open(FLASH_AREA_ID(image_0), &fa);
+		err = flash_area_open(CODE_PARTITION_ID, &fa);
 		zassert_true(err == 0, "Can't open storage flash area");
 
 		dev = flash_area_get_device(fa);
@@ -117,7 +130,7 @@ void test_prepare_storage(void)
 #endif
 }
 
-void test_init_setup(void)
+void *test_init_setup(void)
 {
 	int err;
 
@@ -139,18 +152,7 @@ void test_init_setup(void)
 		k_sleep(K_MSEC(250));
 		sys_reboot(SYS_REBOOT_COLD);
 	}
+	return NULL;
 }
 
-void test_main(void)
-{
-	/* Bellow call is not used as a test setup intentionally.    */
-	/* It causes device reboot at the first device run after it */
-	/* was flashed. */
-	test_init_setup();
-
-	ztest_test_suite(test_initialization,
-			 ztest_unit_test(test_init)
-			);
-
-	ztest_run_test_suite(test_initialization);
-}
+ZTEST_SUITE(fcb_initialization, NULL, test_init_setup, NULL, NULL, NULL);

@@ -51,7 +51,6 @@
 			reg = <0x40031000 0x1000>;
 			interrupts = <49 5>;
 			status = "disabled";
-			label = "GPIOTE_1";
 		};
 	};
 };

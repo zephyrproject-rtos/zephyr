@@ -209,7 +209,7 @@
  */
 #define STRUCT_SECTION_ITERABLE(struct_type, name) \
 	Z_DECL_ALIGN(struct struct_type) name \
-	__in_section(_##struct_type, static, name) __used
+	__in_section(_##struct_type, static, name) __used __noasan
 
 /**
  * @brief Defines an alternate data type iterable section.
@@ -221,7 +221,7 @@
  */
 #define STRUCT_SECTION_ITERABLE_ALTERNATE(out_type, struct_type, name) \
 	Z_DECL_ALIGN(struct struct_type) name \
-	__in_section(_##out_type, static, name) __used
+	__in_section(_##out_type, static, name) __used __noasan
 
 /**
  * @brief Iterate over a specified iterable section.

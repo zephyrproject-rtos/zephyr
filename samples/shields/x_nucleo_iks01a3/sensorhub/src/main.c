@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <stdio.h>
@@ -179,8 +179,8 @@ void main(void)
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
-	const struct device *lis2dw12 = DEVICE_DT_GET_ONE(st_lis2dw12);
-	const struct device *lsm6dso = DEVICE_DT_GET_ONE(st_lsm6dso);
+	const struct device *const lis2dw12 = DEVICE_DT_GET_ONE(st_lis2dw12);
+	const struct device *const lsm6dso = DEVICE_DT_GET_ONE(st_lsm6dso);
 	int cnt = 1;
 
 	if (!device_is_ready(lis2dw12)) {

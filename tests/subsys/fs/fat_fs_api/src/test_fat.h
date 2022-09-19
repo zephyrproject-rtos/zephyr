@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 #include <zephyr/fs/fs.h>
 
 #define FATFS_MNTP	"/NAND:"
@@ -30,4 +30,3 @@ void test_fat_file(void);
 void test_fat_dir(void);
 void test_fat_fs(void);
 void test_fat_rename(void);
-void test_fat_mount_rd_only(void);

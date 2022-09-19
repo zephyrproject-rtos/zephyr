@@ -10,7 +10,6 @@ supported:
   - adc
   - ble
   - i2c
-  - ieee802154
   - pwm
   - serial
   - spi

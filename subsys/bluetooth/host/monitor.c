@@ -11,7 +11,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/uart_pipe.h>
@@ -141,7 +141,8 @@ static void poll_out(char c)
 	monitor_send(&c, sizeof(c));
 }
 #elif defined(CONFIG_BT_DEBUG_MONITOR_UART)
-static const struct device *monitor_dev;
+static const struct device *const monitor_dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_mon_uart));
 
 static void poll_out(char c)
 {
@@ -219,7 +220,7 @@ void bt_monitor_send(uint16_t opcode, const void *data, size_t len)
 	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
 
-void bt_monitor_new_index(uint8_t type, uint8_t bus, bt_addr_t *addr,
+void bt_monitor_new_index(uint8_t type, uint8_t bus, const bt_addr_t *addr,
 			  const char *name)
 {
 	struct bt_monitor_new_index pkt;
@@ -376,8 +377,6 @@ static int bt_monitor_init(const struct device *d)
 				  RTT_BUFFER_NAME, rtt_up_buf, RTT_BUF_SIZE,
 				  SEGGER_RTT_MODE_NO_BLOCK_SKIP);
 #elif defined(CONFIG_BT_DEBUG_MONITOR_UART)
-	monitor_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_mon_uart));
-
 	__ASSERT_NO_MSG(device_is_ready(monitor_dev));
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)

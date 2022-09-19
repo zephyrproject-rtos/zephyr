@@ -12,8 +12,8 @@
 #include "tfm_platform_api.h"
 #include "tfm_ioctl_api.h"
 
-#if defined(GPIO_PIN_CNF_MCUSEL_Msk)
-void soc_secure_gpio_pin_mcu_select(uint32_t pin_number, nrf_gpio_pin_mcusel_t mcu)
+#if NRF_GPIO_HAS_SEL
+void soc_secure_gpio_pin_mcu_select(uint32_t pin_number, nrf_gpio_pin_sel_t mcu)
 {
 	uint32_t result;
 	enum tfm_platform_err_t err;
@@ -22,7 +22,7 @@ void soc_secure_gpio_pin_mcu_select(uint32_t pin_number, nrf_gpio_pin_mcusel_t m
 	__ASSERT(err == TFM_PLATFORM_ERR_SUCCESS, "TFM platform error (%d)", err);
 	__ASSERT(result == 0, "GPIO service error (%d)", result);
 }
-#endif /* defined(GPIO_PIN_CNF_MCUSEL_Msk) */
+#endif /* NRF_GPIO_HAS_SEL */
 
 int soc_secure_mem_read(void *dst, void *src, size_t len)
 {

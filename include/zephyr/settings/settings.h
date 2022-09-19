@@ -440,6 +440,13 @@ struct settings_store_itf {
 	 * Parameters:
 	 *  - cs - Corresponding backend handler node
 	 */
+
+	/**< Get pointer to the storage instance used by the backend.
+	 *
+	 * Parameters:
+	 *  - cs - Corresponding backend handler node
+	 */
+	void *(*csi_storage_get)(struct settings_store *cs);
 };
 
 /**
@@ -585,6 +592,18 @@ int settings_runtime_commit(const char *name);
 
 #endif /* CONFIG_SETTINGS_RUNTIME */
 
+/**
+ * Get the storage instance used by zephyr.
+ *
+ * The type of storage object instance depends on the settings backend used.
+ * It might pointer to: `struct nvs_fs`, `struct fcb` or string witch file name
+ * depends on settings backend type used.
+ *
+ * @retval Pointer to which reference to the storage object can be stored.
+ *
+ * @retval 0 on success, negative error code on failure.
+ */
+int settings_storage_get(void **storage);
 
 #ifdef __cplusplus
 }

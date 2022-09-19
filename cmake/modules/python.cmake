@@ -11,7 +11,7 @@ if (WIN32)
   set(ENV{PYTHONIOENCODING} "utf-8")
 endif()
 
-set(PYTHON_MINIMUM_REQUIRED 3.6)
+set(PYTHON_MINIMUM_REQUIRED 3.8)
 
 # We are using foreach here, instead of find_program(PYTHON_EXECUTABLE_SYSTEM_DEFAULT "python" "python3")
 # cause just using find_program directly could result in a python2.7 as python, and not finding a valid python3.

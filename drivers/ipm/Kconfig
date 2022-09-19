@@ -8,68 +8,6 @@ menuconfig IPM
 
 if IPM
 
-config IPM_MCUX
-	bool "MCUX IPM driver"
-	depends on HAS_MCUX
-	help
-	  Driver for MCUX mailbox
-
-config IPM_IMX
-	bool "IMX IPM driver"
-	depends on HAS_IMX_HAL
-	help
-	  Driver for NXP i.MX messaging unit
-
-config IPM_IMX_REV2
-	bool "IMX IPM driver (rev 2)"
-	depends on HAS_MCUX
-	depends on !IPM_IMX
-	help
-	  Rev 2 driver for NXP i.MX messaging unit (MCUX-based)
-
-choice
-	prompt "IMX IPM max data size"
-	default IPM_IMX_MAX_DATA_SIZE_16
-	depends on IPM_IMX || IPM_IMX_REV2
-	help
-	  Select maximum message size for NXP i.MX messaging unit.
-
-config IPM_IMX_MAX_DATA_SIZE_4
-	bool "4 bytes"
-	help
-	  There will be four message types with ids 0, 1, 2 or 3
-	  and a maximum size of 4 bytes each.
-
-config IPM_IMX_MAX_DATA_SIZE_8
-	bool "8 bytes"
-	help
-	  There will be two message types with ids 0 or 1
-	  and a maximum size of 8 bytes each.
-
-config IPM_IMX_MAX_DATA_SIZE_16
-	bool "16 bytes"
-	help
-	  There will be a single message type with id 0
-	  and a maximum size of 16 bytes.
-
-endchoice
-
-config IPM_IMX_MAX_DATA_SIZE
-	int
-	range 4 16
-	default 4 if IPM_IMX_MAX_DATA_SIZE_4
-	default 8 if IPM_IMX_MAX_DATA_SIZE_8
-	default 16 if IPM_IMX_MAX_DATA_SIZE_16
-	depends on IPM_IMX || IPM_IMX_REV2
-
-config IPM_IMX_MAX_ID_VAL
-	int
-	range 0 3
-	default 3 if IPM_IMX_MAX_DATA_SIZE_4
-	default 1 if IPM_IMX_MAX_DATA_SIZE_8
-	default 0 if IPM_IMX_MAX_DATA_SIZE_16
-	depends on IPM_IMX || IPM_IMX_REV2
-
 config IPM_MHU
 	bool "IPM MHU driver"
 	help
@@ -90,94 +28,16 @@ config IPM_NRF_SINGLE_INSTANCE
 	  a single instance, instead of one per IPC
 	  message channel.
 
+config ESP32_SOFT_IPM
+	bool "ESP32 Software IPM driver"
+	depends on ESP32_NETWORK_CORE || SOC_ESP32_NET
+	help
+	  Interprocessor driver for ESP32 when using AMP.
+
 source "drivers/ipm/Kconfig.nrfx"
-
-config IPM_STM32_IPCC
-	bool "STM32 IPCC controller"
-	select USE_STM32_LL_IPCC
-	help
-	  Driver for stm32 IPCC mailboxes
-
-config IPM_STM32_IPCC_PROCID
-	int "STM32 IPCC Processor ID"
-	default 2
-	range 1 2
-	depends on IPM_STM32_IPCC
-	help
-	  use to define the Processor ID for IPCC access
-
-config IPM_CAVS_IDC
-	bool "CAVS DSP Intra-DSP Communication (IDC) driver"
-	depends on IPM && CAVS_ICTL
-	default y if MP_NUM_CPUS > 1 && SMP
-	help
-	  Driver for the Intra-DSP Communication (IDC) channel for
-	  cross SoC communications.
-
-config IPM_STM32_HSEM
-	bool "STM32 HSEM controller"
-	depends on STM32H7_DUAL_CORE
-	help
-	  Driver for stm32 HSEM mailbox
-
-config IPM_STM32_HSEM_CPU
-	int "HSEM CPU ID"
-	default 1 if "$(dt_nodelabel_enabled,cpu0)"
-	default 2 if "$(dt_nodelabel_enabled,cpu1)"
-	range 1 2
-	depends on IPM_STM32_HSEM
-	help
-	  use to define the CPU ID used by HSEM
-
-config IPM_CALLBACK_ASYNC
-	bool "Deliver callbacks asynchronously"
-	default y if IPM_CAVS_HOST
-	help
-	  When selected, the driver supports "asynchronous" command
-	  delivery.  Commands will stay active after the ISR returns,
-	  until the application expressly "completes" the command
-	  later.
-
-config IPM_CAVS_HOST
-	bool "cAVS DSP/host communication"
-	select CAVS_IPC
-	help
-	  Driver for host/DSP communication on intel_adsp devices
-
-if IPM_CAVS_HOST
-
-config IPM_CAVS_HOST_INBOX_OFFSET
-	hex "Byte offset of cAVS inbox window"
-	depends on CAVS_IPC
-	default 0x6000
-	help
-	  Location of the host-writable inbox window within the
-	  HP_SRAM_RESERVE region.  This location must be synchronized
-	  with host driver and SOF source code (must match
-	  SRAM_INBOX_BASE).  Be careful.
-
-config IPM_CAVS_HOST_OUTBOX_OFFSET
-	hex "Byte offset of cAVS outbox memory"
-	depends on CAVS_IPC
-	default 0x1000
-	help
-	  Location of the "outbox" region for SOF IPC3/4 message
-	  within the pre-existing window 0 (this is not the same as
-	  the HP_SRAM_RESERVE region used for INBOX_OFFSET).  This
-	  location must be synchronized with host driver and SOF
-	  source code (where it must equal SRAM_SW_REG_SIZE).  Be
-	  careful.
-
-config IPM_CAVS_HOST_REGWORD
-	bool "Store first 4 bytes in IPC register"
-	depends on CAVS_IPC
-	depends on !SOC_SERIES_INTEL_CAVS_V15
-	help
-	  Protocol variant.  When true, the first four bytes of a
-	  message are passed in the cAVS IDR/TDR register pair instead
-	  of in the SRAM window.  Only available on cAVS 1.8+.
-
-endif # IPM_CAVS_HOST
+source "drivers/ipm/Kconfig.imx"
+source "drivers/ipm/Kconfig.stm32"
+source "drivers/ipm/Kconfig.intel_adsp"
 
 module = IPM
 module-str = ipm

@@ -62,7 +62,9 @@
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
 	STR r58, sp, ___callee_saved_stack_t_r58_OFFSET
+#ifndef CONFIG_64BIT
 	STR r59, sp, ___callee_saved_stack_t_r59_OFFSET
+#endif /* !CONFIG_64BIT */
 #endif
 
 #ifdef CONFIG_FPU_SHARING
@@ -98,7 +100,9 @@
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
 	LDR r58, sp, ___callee_saved_stack_t_r58_OFFSET
+#ifndef CONFIG_64BIT
 	LDR r59, sp, ___callee_saved_stack_t_r59_OFFSET
+#endif /* !CONFIG_64BIT */
 #endif
 
 #ifdef CONFIG_FPU_SHARING

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 
 /*
  * precision timing tests in an emulation environment are not reliable.
@@ -65,7 +65,7 @@
 ZTEST_USER(sleep, test_usleep)
 {
 	int retries = 0;
-	int64_t elapsed_ms;
+	int64_t elapsed_ms = 0;
 
 	while (retries < RETRIES) {
 		int64_t start_ms;

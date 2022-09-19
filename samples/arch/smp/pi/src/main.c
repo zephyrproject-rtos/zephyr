@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 
 /* Amount of execution threads to create and run */
@@ -17,8 +17,7 @@
 #define DIGITS_NUM	240
 
 #define LENGTH		((DIGITS_NUM / 4) * 14)
-#define STACK_SIZE	((LENGTH * sizeof(int) + 512) + \
-			 CONFIG_TEST_EXTRA_STACK_SIZE)
+#define STACK_SIZE	((LENGTH * sizeof(int) + 1024))
 
 #ifdef CONFIG_SMP
 #define CORES_NUM	CONFIG_MP_NUM_CPUS

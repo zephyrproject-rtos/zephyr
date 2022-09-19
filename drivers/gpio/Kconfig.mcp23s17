@@ -5,6 +5,8 @@
 
 menuconfig GPIO_MCP23S17
 	bool "MCP23S17 SPI-based GPIO chip"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP23S17_ENABLED
 	depends on SPI
 	help
 	  Enable driver for MCP23S17 SPI-based GPIO chip.

@@ -176,7 +176,7 @@ static void adc_it8xxx2_get_sample(const struct device *dev)
 
 static void adc_poll_valid_data(void)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	int valid = 0;
 
 	/*
@@ -205,7 +205,7 @@ static void adc_poll_valid_data(void)
 static void adc_enable_measurement(uint32_t ch)
 {
 	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct adc_it8xxx2_data *data = dev->data;
 
 	if (ch <= CHIP_ADC_CH7) {

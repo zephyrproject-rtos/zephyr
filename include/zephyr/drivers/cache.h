@@ -9,6 +9,8 @@
 
 #include <zephyr/cache.h>
 
+#if defined(CONFIG_DCACHE)
+
 /**
  * @brief Enable d-cache
  *
@@ -22,20 +24,6 @@ void cache_data_enable(void);
  * Disable the d-cache.
  */
 void cache_data_disable(void);
-
-/**
- * @brief Enable i-cache
- *
- * Enable the i-cache.
- */
-void cache_instr_enable(void);
-
-/**
- * @brief Disable i-cache
- *
- * Disable the i-cache.
- */
-void cache_instr_disable(void);
 
 /**
  *
@@ -70,6 +58,36 @@ int cache_data_all(int op);
  */
 int cache_data_range(void *addr, size_t size, int op);
 
+#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
+/**
+ *
+ * @brief Get the i-cache line size.
+ *
+ * The API is provided to get the i-cache line size.
+ *
+ * @return size of the i-cache line or 0 if the i-cache is not enabled.
+ */
+size_t cache_data_line_size_get(void);
+
+#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT */
+
+#endif /* CONFIG_DCACHE */
+
+#if defined(CONFIG_ICACHE)
+/**
+ * @brief Enable i-cache
+ *
+ * Enable the i-cache.
+ */
+void cache_instr_enable(void);
+
+/**
+ * @brief Disable i-cache
+ *
+ * Disable the i-cache.
+ */
+void cache_instr_disable(void);
+
 /**
  *
  * @brief Write-back / Invalidate / Write-back + Invalidate all i-cache
@@ -103,19 +121,6 @@ int cache_instr_all(int op);
  */
 int cache_instr_range(void *addr, size_t size, int op);
 
-#ifdef CONFIG_DCACHE_LINE_SIZE_DETECT
-/**
- *
- * @brief Get the i-cache line size.
- *
- * The API is provided to get the i-cache line size.
- *
- * @return size of the i-cache line or 0 if the i-cache is not enabled.
- */
-size_t cache_data_line_size_get(void);
-
-#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT */
-
 #ifdef CONFIG_ICACHE_LINE_SIZE_DETECT
 /**
  *
@@ -128,5 +133,7 @@ size_t cache_data_line_size_get(void);
 size_t cache_instr_line_size_get(void);
 
 #endif /* CONFIG_ICACHE_LINE_SIZE_DETECT */
+
+#endif /* CONFIG_ICACHE */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CACHE_H_ */

@@ -23,8 +23,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
-        os: [ubuntu-latest]
+        python-version: [3.8, 3.9, '3.10']
+        os: [ubuntu-20.04]
     steps:
     - name: checkout
       uses: actions/checkout@v2
@@ -42,7 +42,7 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}
     - name: install-packages
       run: |
-        pip3 install pytest colorama pyyaml ply mock pykwalify
+        pip3 install -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt
     - name: Run pytest
       env:
         ZEPHYR_BASE: ./

@@ -14,19 +14,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 if SERIAL
 
-config UART_PL011
-	default y
-
 config UART_INTERRUPT_DRIVEN
 	default y
 
 endif # SERIAL
-
-if GPIO
-
-config GPIO_EOS_S3
-	default y
-
-endif # GPIO
 
 endif # SOC_EOS_S3

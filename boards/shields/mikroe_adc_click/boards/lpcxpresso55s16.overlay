@@ -14,7 +14,6 @@
 		compatible = "microchip,mcp3204";
 		reg = <0x1>;
 		spi-max-frequency = <100000>;
-		label = "MCP3204";
 		#io-channel-cells = <1>;
 	};
 };

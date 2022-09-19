@@ -7,10 +7,10 @@
 /* Tests that gmtime matches gmtime_r */
 
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "timeutil_test.h"
 
-void test_gmtime(void)
+ZTEST(timeutil_api, test_gmtime)
 {
 	struct tm tm = {
 		/* Initialize an unset field */

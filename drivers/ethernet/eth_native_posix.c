@@ -722,7 +722,7 @@ static const struct ptp_clock_driver_api api = {
 #define PTP_INIT_FUNC(x, _)						\
 	static int ptp_init_##x(const struct device *port)			\
 	{								\
-		const struct device *eth_dev = DEVICE_GET(eth_native_posix_##x); \
+		const struct device *const eth_dev = DEVICE_GET(eth_native_posix_##x); \
 		struct eth_context *context = eth_dev->data;	\
 		struct ptp_context *ptp_context = port->data;	\
 									\

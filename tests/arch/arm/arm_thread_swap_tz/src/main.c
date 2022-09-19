@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <psa/crypto.h>
 #include <zephyr/kernel.h>
 
@@ -89,7 +89,7 @@ ZTEST(thread_swap_tz, test_thread_swap_tz)
 	main_thread = (struct k_thread *)curr;
 
 	status = psa_crypto_init();
-	zassert_equal(PSA_SUCCESS, status, NULL);
+	zassert_equal(PSA_SUCCESS, status);
 
 	/* Calculate correct hash. */
 	do_hash(dummy_digest_correct);

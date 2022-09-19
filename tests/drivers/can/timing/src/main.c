@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/drivers/can.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <strings.h>
 
 /**
@@ -38,7 +38,10 @@ struct can_timing_test {
  */
 static const struct can_timing_test can_timing_tests[] = {
 	/** Standard bitrates. */
+#ifndef CONFIG_CAN_ESP32_TWAI
+	/* ESP32 TWAI does not support bitrates below 25kbit/s */
 	{   20000, 875, false },
+#endif /* CONFIG_CAN_ESP32_TWAI */
 	{   50000, 875, false },
 	{  125000, 875, false },
 	{  250000, 875, false },
@@ -216,9 +219,9 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 /**
  * @brief Test all CAN timing values
  */
-void test_timing(void)
+ZTEST_USER(can_timing, test_timing)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(can_timing_tests); i++) {
@@ -230,9 +233,9 @@ void test_timing(void)
  * @brief Test all CAN timing values for the data phase.
  */
 #ifdef CONFIG_CAN_FD_MODE
-void test_timing_data(void)
+ZTEST_USER(can_timing, test_timing_data)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(can_timing_data_tests); i++) {
@@ -240,7 +243,7 @@ void test_timing_data(void)
 	}
 }
 #else /* CONFIG_CAN_FD_MODE */
-void test_timing_data(void)
+ZTEST_USER(can_timing, test_timing_data)
 {
 	ztest_test_skip();
 }
@@ -249,9 +252,9 @@ void test_timing_data(void)
 /**
  * @brief Test that the minimum timing values can be set.
  */
-void test_set_timing_min(void)
+ZTEST_USER(can_timing, test_set_timing_min)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int err;
 
 	err = can_set_timing(dev, can_get_timing_min(dev));
@@ -266,9 +269,9 @@ void test_set_timing_min(void)
 /**
  * @brief Test that the maximum timing values can be set.
  */
-void test_set_timing_max(void)
+ZTEST_USER(can_timing, test_set_timing_max)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int err;
 
 	err = can_set_timing(dev, can_get_timing_max(dev));
@@ -280,9 +283,9 @@ void test_set_timing_max(void)
 	}
 }
 
-void test_main(void)
+void *can_timing_setup(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	uint32_t core_clock;
 	int err;
 
@@ -295,10 +298,7 @@ void test_main(void)
 
 	k_object_access_grant(dev, k_current_get());
 
-	ztest_test_suite(can_timing_tests,
-			 ztest_user_unit_test(test_set_timing_min),
-			 ztest_user_unit_test(test_set_timing_max),
-			 ztest_user_unit_test(test_timing),
-			 ztest_user_unit_test(test_timing_data));
-	ztest_run_test_suite(can_timing_tests);
+	return NULL;
 }
+
+ZTEST_SUITE(can_timing, NULL, can_timing_setup, NULL, NULL, NULL);

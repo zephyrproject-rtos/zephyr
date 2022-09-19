@@ -6,7 +6,6 @@
 &arduino_i2c {
 	expander1: stmpe1600@42 {
 		compatible = "st,stmpe1600";
-		label = "EXPANDER1";
 		reg = <0x42>;
 		ngpios = <16>;
 		gpio-controller;
@@ -14,7 +13,6 @@
 	};
 	expander2: stmpe1600@43 {
 		compatible = "st,stmpe1600";
-		label = "EXPANDER2";
 		reg = <0x43>;
 		ngpios = <16>;
 		gpio-controller;
@@ -24,7 +22,6 @@
 	/* Center sensor soldered on the shield */
 	vl53l0x_c: vl53l0x@30 {
 		compatible = "st,vl53l0x";
-		label = "VL53L0X_C";
 		reg = <0x30>;
 		xshut-gpios = <&expander1 15 0>;
 	};
@@ -32,13 +29,11 @@
 	/* Satellites optional sensors */
 	vl53l0x_l: vl53l0x@31 {
 		compatible = "st,vl53l0x";
-		label = "VL53L0X_L";
 		reg = <0x31>;
 		xshut-gpios = <&expander2 14 0>;
 	};
 	vl53l0x_r: vl53l0x@32 {
 		compatible = "st,vl53l0x";
-		label = "VL53L0X_R";
 		reg = <0x32>;
 		xshut-gpios = <&expander2 15 0>;
 	};

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/drivers/gpio.h>
@@ -34,7 +34,7 @@ void new_message_callback(const struct device *dev, void *user_data,
 
 void main(void)
 {
-	const struct device *ipm = DEVICE_DT_GET(DT_NODELABEL(mailbox));
+	const struct device *const ipm = DEVICE_DT_GET(DT_NODELABEL(mailbox));
 
 	printk("STM32 h7_dual_core application\n");
 

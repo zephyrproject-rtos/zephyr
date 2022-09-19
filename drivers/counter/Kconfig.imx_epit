@@ -5,6 +5,7 @@
 
 config COUNTER_IMX_EPIT
 	bool "IMX EPIT driver"
-	depends on HAS_IMX_EPIT
+	default y
+	depends on DT_HAS_NXP_IMX_EPIT_ENABLED
 	help
 	  Enable the IMX EPIT driver.

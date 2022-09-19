@@ -14,7 +14,7 @@
 #include <zephyr/stats/stats.h>
 #include <stdlib.h>
 #include <string.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
 #include "img_mgmt/img_mgmt.h"

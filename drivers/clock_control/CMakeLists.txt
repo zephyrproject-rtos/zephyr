@@ -3,8 +3,9 @@
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_BEETLE              beetle_clock_control.c)
-zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_CAVS                clock_control_cavs.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_ADSP                clock_control_adsp.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_ESP32               clock_control_esp32.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_GD32                clock_control_gd32.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_LITEX               clock_control_litex.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_LPC11U6X            clock_control_lpc11u6x.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCHP_XEC            clock_control_mchp_xec.c)
@@ -54,3 +55,5 @@ if(CONFIG_CLOCK_CONTROL_RCAR_CPG_MSSR)
   zephyr_library_sources(clock_control_renesas_cpg_mssr.c)
   zephyr_library_sources_ifdef(CONFIG_SOC_R8A77951 clock_control_r8a7795_cpg_mssr.c)
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AST10X0 clock_control_ast10x0.c)

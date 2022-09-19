@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/console/console.h>
 
 static const char prompt[] = "Start typing characters to see them echoed back\r\n";

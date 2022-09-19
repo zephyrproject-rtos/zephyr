@@ -54,7 +54,7 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg);
  */
 static void cleanup_context(void)
 {
-	lwm2m_engine_context_close(&context.firmware_ctx);
+	lwm2m_engine_stop(&context.firmware_ctx);
 
 	k_sem_give(&lwm2m_pull_sem);
 }

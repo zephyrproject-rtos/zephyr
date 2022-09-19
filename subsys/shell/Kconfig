@@ -84,7 +84,7 @@ config SHELL_DEFAULT_TERMINAL_HEIGHT
 config SHELL_ARGC_MAX
 	int "Maximum arguments in shell command"
 	range 3 255
-	default 12
+	default 20
 	help
 	  Maximum number of arguments that can build a command.
 
@@ -228,6 +228,7 @@ config SHELL_LOG_BACKEND
 	bool "Shell log backend"
 	depends on LOG && !LOG_MODE_MINIMAL
 	select MPSC_PBUF
+	select LOG_OUTPUT
 	default y if LOG
 	help
 	  When enabled, backend will use the shell for logging.
@@ -236,6 +237,14 @@ config SHELL_LOG_BACKEND
 	  Disabling log output to a specific shell backend can be achieved
 	  using the shell backend's LOG_LEVEL option
 	  (e.g. CONFIG_SHELL_TELNET_INIT_LOG_LEVEL_NONE=y).
+
+config SHELL_LOG_FORMAT_TIMESTAMP
+	bool "Format timestamp"
+	default y
+	depends on SHELL_LOG_BACKEND
+	help
+	  Enable timestamp formatting.
+
 
 source "subsys/shell/modules/Kconfig"
 

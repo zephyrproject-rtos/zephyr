@@ -8,7 +8,7 @@
 #include "settings_test.h"
 #include <errno.h>
 
-void test_config_getset_unknown(void)
+ZTEST(settings_config, test_config_getset_unknown)
 {
 	char name[80];
 	char tmp[64];

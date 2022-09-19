@@ -66,6 +66,12 @@ static struct bt_csis_cb csis_cbs = {
 
 static void bt_ready(int err)
 {
+	uint8_t rsi[BT_CSIS_RSI_SIZE];
+	struct bt_data ad[] = {
+		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+		BT_CSIS_DATA_RSI(rsi),
+	};
+
 	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
@@ -73,12 +79,25 @@ static void bt_ready(int err)
 
 	printk("Audio Server: Bluetooth initialized\n");
 
-	err = bt_csis_advertise(csis, true);
+	param.cb = &csis_cbs;
+
+	err = bt_csis_register(&param, &csis);
+	if (err != 0) {
+		FAIL("Could not register CSIS (err %d)\n", err);
+		return;
+	}
+
+	err = bt_csis_generate_rsi(csis, rsi);
+	if (err != 0) {
+		FAIL("Failed to generate RSI (err %d)\n", err);
+		return;
+	}
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 	}
 }
-
 
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
@@ -96,14 +115,6 @@ static void test_main(void)
 		return;
 	}
 
-	param.cb = &csis_cbs;
-
-	err = bt_csis_register(&param, &csis);
-	if (err != 0) {
-		FAIL("Could not register CSIS: %d", err);
-		return;
-	}
-
 	bt_conn_cb_register(&conn_callbacks);
 }
 
@@ -115,14 +126,6 @@ static void test_force_release(void)
 
 	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-
-	param.cb = &csis_cbs;
-
-	err = bt_csis_register(&param, &csis);
-	if (err != 0) {
-		FAIL("Could not register CSIS: %d", err);
 		return;
 	}
 

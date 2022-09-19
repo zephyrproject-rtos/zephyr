@@ -5,7 +5,7 @@
  */
 #define DT_DRV_COMPAT microchip_mcp4725
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/dac.h>
 #include <zephyr/logging/log.h>

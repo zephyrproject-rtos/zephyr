@@ -5,6 +5,8 @@
 
 menuconfig ETH_E1000
 	bool "Intel(R) PRO/1000 Gigabit Ethernet driver"
+	default y
+	depends on DT_HAS_INTEL_E1000_ENABLED
 	depends on PCIE
 	help
 	  Enable Intel(R) PRO/1000 Gigabit Ethernet driver.

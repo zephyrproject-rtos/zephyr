@@ -47,13 +47,18 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, dev_id=True, erase=True)
+        return RunnerCaps(commands={'flash'}, dev_id=True, erase=True,
+                          tool_opt=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
         return '''Device identifier. Use it to select the J-Link Serial Number
                   of the device connected over USB. '*' matches one or more
                   characters/digits'''
+
+    @classmethod
+    def tool_opt_help(cls) -> str:
+        return 'Additional options for nrfjprog, e.g. "--recover"'
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -68,9 +73,6 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                             action=partial(depr_action,
                                            replacement='-i/--dev-id'),
                             help='Deprecated: use -i/--dev-id instead')
-        parser.add_argument('--tool-opt', default=[], action='append',
-                            help='''Additional options for nrfjprog,
-                            e.g. "--recover"''')
         parser.add_argument('--force', required=False,
                             action='store_true',
                             help='Flash even if the result cannot be guaranteed.')

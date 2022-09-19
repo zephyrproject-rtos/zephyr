@@ -20,7 +20,6 @@
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1038 20>;
 			dmas = <&edma0 1 58>, <&edma0 2 59>;
 			dma-names = "rx", "tx";
-			label = "LPUART_0";
 			status = "disabled";
 		};
 
@@ -32,7 +31,6 @@
 			    "rx-warning", "wake-up";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1030 4>;
 			clk-source = <1>;
-			label = "CAN_1";
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";

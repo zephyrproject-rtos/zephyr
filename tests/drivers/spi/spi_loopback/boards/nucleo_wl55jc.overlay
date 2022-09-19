@@ -8,6 +8,16 @@
 	dmas = <&dmamux1 11 8 0x20440
 		&dmamux1 1 7 0x20480>;
 	dma-names = "tx", "rx";
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
 };
 
 &dma1 {

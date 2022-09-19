@@ -18,7 +18,6 @@
 			compatible = "atmel,sam0-tc32";
 			reg = <0x42002000 0x20>;
 			interrupts = <13 0>;
-			label = "TIMER_0";
 			clocks = <&gclk 0x13>, <&pm 0x20 8>;
 			clock-names = "GCLK", "PM";
 		};
@@ -27,7 +26,6 @@
 			compatible = "atmel,sam0-tc32";
 			reg = <0x42002800 0x20>;
 			interrupts = <15 0>;
-			label = "TIMER_2";
 			clocks = <&gclk 0x14>, <&pm 0x20 10>;
 			clock-names = "GCLK", "PM";
 		};
@@ -36,7 +34,6 @@
 			compatible = "atmel,sam0-tc32";
 			reg = <0x42003800 0x20>;
 			interrupts = <19 0>;
-			label = "TIMER_6";
 			clocks = <&gclk 0x16>, <&pm 0x20 14>;
 			clock-names = "GCLK", "PM";
 		};

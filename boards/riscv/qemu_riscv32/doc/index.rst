@@ -8,13 +8,6 @@ Overview
 
 The RISCV32 QEMU board configuration is used to emulate the RISCV32 architecture.
 
-.. figure:: qemu_riscv32.png
-   :width: 600px
-   :align: center
-   :alt: Qemu
-
-   Qemu (Credit: qemu.org)
-
 Programming and Debugging
 *************************
 

@@ -51,8 +51,10 @@ static const struct z_exc_handle exceptions[] = {
  */
 static bool z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
 {
-	const struct k_thread *thread = _current;
 	uint32_t guard_end, guard_start;
+
+#if defined(CONFIG_MULTITHREADING)
+	const struct k_thread *thread = _current;
 
 	if (!thread) {
 		/* TODO: Under what circumstances could we get here ? */
@@ -86,6 +88,7 @@ static bool z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
 		guard_end = thread->stack_info.start;
 		guard_start = guard_end - Z_ARC_STACK_GUARD_SIZE;
 	}
+#endif /* CONFIG_MULTITHREADING */
 
 	 /* treat any MPU exceptions within the guard region as a stack
 	  * overflow.As some instrustions

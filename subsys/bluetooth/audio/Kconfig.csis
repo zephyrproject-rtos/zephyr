@@ -31,7 +31,6 @@ config BT_CSIS_TEST_SAMPLE_DATA
 config BT_CSIS_ENC_SIRK_SUPPORT
 	bool "Support for encrypted SIRK"
 	default y
-	select BT_SMP_SC_PAIR_ONLY
 	help
 	  Enables support encrypting the SIRK.
 
@@ -92,7 +91,6 @@ config BT_CSIS_CLIENT_MAX_CSIS_INSTANCES
 config BT_CSIS_CLIENT_ENC_SIRK_SUPPORT
 	bool "Support for encrypted SIRK"
 	default y
-	select BT_SMP_SC_PAIR_ONLY
 	help
 	  Enables support encrypting the SIRK.
 

@@ -18,8 +18,7 @@ at:
 
 
 
-.. image:: ./mm_swiftio.jpg
-   :width: 720px
+.. image:: mm_swiftio.jpg
    :align: center
    :alt: SwiftIO Board
 

@@ -54,8 +54,9 @@ pended writer to fill the ring buffer.
     Flushing does not in practice allocate or use additional buffers.
 
 .. note::
-    The kernel does NOT allow for an ISR to send or receive data to/from a
-    pipe or flush even if it does not attempt to wait for space/data.
+    The kernel does allow for an ISR to flush a pipe from an ISR. It also
+    allows it to send/receive data to/from one provided it does not attempt
+    to wait for space/data.
 
 Implementation
 **************
@@ -219,7 +220,10 @@ Suggested uses
 Use a pipe to send streams of data between threads.
 
 .. note::
-    A pipe can be used to transfer long streams of data if desired. However it is often preferable to send pointers to large data items to avoid copying the data.
+    A pipe can be used to transfer long streams of data if desired. However it
+    is often preferable to send pointers to large data items to avoid copying
+    the data. Copying large data items will negatively impact interrupt latency
+    as a spinlock is held while copying that data.
 
 
 Configuration Options
@@ -227,7 +231,7 @@ Configuration Options
 
 Related configuration options:
 
-* None.
+* CONFIG_PIPES
 
 API Reference
 *************

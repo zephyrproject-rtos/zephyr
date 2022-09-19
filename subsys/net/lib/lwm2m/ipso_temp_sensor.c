@@ -79,14 +79,14 @@ static struct lwm2m_engine_res_inst
 static void update_min_measured(uint16_t obj_inst_id, int index)
 {
 	min_measured_value[index] = sensor_value[index];
-	NOTIFY_OBSERVER(IPSO_OBJECT_TEMP_SENSOR_ID, obj_inst_id,
+	lwm2m_notify_observer(IPSO_OBJECT_TEMP_SENSOR_ID, obj_inst_id,
 			MIN_MEASURED_VALUE_RID);
 }
 
 static void update_max_measured(uint16_t obj_inst_id, int index)
 {
 	max_measured_value[index] = sensor_value[index];
-	NOTIFY_OBSERVER(IPSO_OBJECT_TEMP_SENSOR_ID, obj_inst_id,
+	lwm2m_notify_observer(IPSO_OBJECT_TEMP_SENSOR_ID, obj_inst_id,
 			MAX_MEASURED_VALUE_RID);
 }
 

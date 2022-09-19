@@ -5,7 +5,8 @@
 
 config TIMER_DTMR_CMSDK_APB
 	bool "ARM CMSDK (Cortex-M System Design Kit) DTMR Timer driver"
-	depends on SOC_FAMILY_ARM
+	default y
+	depends on DT_HAS_ARM_CMSDK_DTIMER_ENABLED
 	help
 	  The dualtimer (DTMR) present in the platform is used as a timer.
 	  This option enables the support for the timer.

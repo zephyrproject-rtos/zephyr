@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_SUBSYS_SD_SDMMC_PRIV_H_
 #define ZEPHYR_SUBSYS_SD_SDMMC_PRIV_H_
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sd/sd.h>
 
 int sdmmc_card_init(struct sd_card *card);

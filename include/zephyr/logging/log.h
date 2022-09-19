@@ -79,7 +79,17 @@ extern "C" {
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
-#define LOG_PRINTK(...) Z_LOG_PRINTK(__VA_ARGS__)
+#define LOG_PRINTK(...) Z_LOG_PRINTK(0, __VA_ARGS__)
+
+/**
+ * @brief Unconditionally print raw log message.
+ *
+ * Provided string is printed as is without appending any characters (e.g., color or newline).
+ *
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_RAW(...) Z_LOG_PRINTK(1, __VA_ARGS__)
 
 /**
  * @brief Writes an ERROR level message associated with the instance to the log.
@@ -322,7 +332,7 @@ void z_log_vprintk(const char *fmt, va_list ap);
 /**
  * @brief Create module-specific state and register the module with Logger.
  *
- * This macro normally must be used after including <logging/log.h> to
+ * This macro normally must be used after including <zephyr/logging/log.h> to
  * complete the initialization of the module.
  *
  * Module registration can be skipped in two cases:

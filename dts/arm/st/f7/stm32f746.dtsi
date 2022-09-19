@@ -16,7 +16,6 @@
 			interrupt-names = "ltdc", "ltdc_err";
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x04000000>;
 			status = "disabled";
-			label = "LTDC";
 		};
 	};
 };

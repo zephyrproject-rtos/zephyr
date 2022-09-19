@@ -5,7 +5,8 @@
 
 config ENTROPY_TELINK_B91_TRNG
 	bool "Telink B91 Entropy driver"
-	depends on SOC_RISCV_TELINK_B91
+	default y
+	depends on DT_HAS_TELINK_B91_TRNG_ENABLED
 	select ENTROPY_HAS_DRIVER
 	help
 	  Enable the B91 Entropy driver.

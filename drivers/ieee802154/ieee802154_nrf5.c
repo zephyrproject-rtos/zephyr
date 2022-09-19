@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nordic_nrf_ieee802154
+
 #define LOG_MODULE_NAME ieee802154_nrf5
 #if defined(CONFIG_IEEE802154_DRIVER_LOG_LEVEL)
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
@@ -1172,7 +1174,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 #if defined(CONFIG_NET_L2_IEEE802154)
 #define L2 IEEE802154_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(IEEE802154_L2)
-#define MTU 125
+#define MTU IEEE802154_MTU
 #elif defined(CONFIG_NET_L2_OPENTHREAD)
 #define L2 OPENTHREAD_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
@@ -1184,14 +1186,11 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 #endif
 
 #if defined(CONFIG_NET_L2_PHY_IEEE802154)
-NET_DEVICE_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
-		nrf5_init, NULL, &nrf5_data, &nrf5_radio_cfg,
-		CONFIG_IEEE802154_NRF5_INIT_PRIO,
-		&nrf5_radio_api, L2,
-		L2_CTX_TYPE, MTU);
+NET_DEVICE_DT_INST_DEFINE(0, nrf5_init, NULL, &nrf5_data, &nrf5_radio_cfg,
+			  CONFIG_IEEE802154_NRF5_INIT_PRIO, &nrf5_radio_api, L2,
+			  L2_CTX_TYPE, MTU);
 #else
-DEVICE_DEFINE(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
-		nrf5_init, NULL, &nrf5_data, &nrf5_radio_cfg,
-		POST_KERNEL, CONFIG_IEEE802154_NRF5_INIT_PRIO,
-		&nrf5_radio_api);
+DEVICE_DT_INST_DEFINE(0, nrf5_init, NULL, &nrf5_data, &nrf5_radio_cfg,
+		      POST_KERNEL, CONFIG_IEEE802154_NRF5_INIT_PRIO,
+		      &nrf5_radio_api);
 #endif

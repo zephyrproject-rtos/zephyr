@@ -47,7 +47,6 @@
 	soc {
 		nvmctrl: nvmctrl@41004000  {
 			compatible = "atmel,sam0-nvmctrl";
-			label = "FLASH_CTRL";
 			reg = <0x41004000 0x22>;
 			interrupts = <4 0>;
 			lock-regions = <16>;
@@ -57,7 +56,6 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				label = "FLASH_0";
 				reg = <0 0x40000>;
 				write-block-size = <4>;
 			};
@@ -86,7 +84,6 @@
 			compatible = "atmel,sam0-dmac";
 			reg = <0x44000400 0x400>;
 			interrupts = <5 0>;
-			label = "DMA_0";
 			#dma-cells = <2>;
 		};
 
@@ -94,62 +91,53 @@
 			compatible = "atmel,sam0-eic";
 			reg = <0x40002400 0x24>;
 			interrupts = <3 0>;
-			label = "EIC";
 		};
 
 		wdog: watchdog@40001c00 {
 			compatible = "atmel,sam0-watchdog";
 			reg = <0x40001c00 0x0c>;
 			interrupts = <1 0>;
-			label = "WATCHDOG_0";
 		};
 
 		sercom0: sercom@42000000 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42000000 0x40>;
 			status = "disabled";
-			label = "SERCOM0";
 		};
 
 		sercom1: sercom@42000400 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42000400 0x40>;
 			status = "disabled";
-			label = "SERCOM1";
 		};
 
 		sercom2: sercom@42000800 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42000800 0x40>;
 			status = "disabled";
-			label = "SERCOM2";
 		};
 
 		sercom3: sercom@42000c00 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42000C00 0x40>;
 			status = "disabled";
-			label = "SERCOM3";
 		};
 
 		sercom4: sercom@42001000 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42001000 0x40>;
 			status = "disabled";
-			label = "SERCOM4";
 		};
 
 		sercom5: sercom@43000400 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x43000400 0x40>;
 			status = "disabled";
-			label = "SERCOM5";
 		};
 
 		tc4: tc@43000800 {
 			compatible = "atmel,sam0-tc32";
 			reg = <0x43000800 0x34>;
-			label = "TIMER_4";
 		};
 
 		pinctrl: pinctrl@40002800 {
@@ -161,7 +149,6 @@
 			porta: gpio@40002800 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x40002800 0x80>;
-				label = "PORTA";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -171,7 +158,6 @@
 			portb: gpio@40002880 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x40002880 0x80>;
-				label = "PORTB";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -184,13 +170,11 @@
 			interrupts = <2 0>;
 			clock-generator = <0>;
 			status = "disabled";
-			label = "RTC";
 		};
 
 		adc: adc@43000c00 {
 			compatible = "atmel,sam0-adc";
 			reg = <0x43000c00 0x30>;
-			label = "ADC_0";
 
 			/*
 			 * 16 MHz max, so clock it with the
@@ -205,7 +189,6 @@
 			compatible = "atmel,sam0-dac";
 			status = "disabled";
 			reg = <0x42003000 0x1a>;
-			label = "DAC_0";
 			#io-channel-cells = <0>;
 		};
 
@@ -214,7 +197,6 @@
 			reg = <0x42003800 0x24>;
 			peripheral-id = <0>;
 			interrupts = <27 0>;
-			label = "ENTROPY_0";
 		};
 	};
 };

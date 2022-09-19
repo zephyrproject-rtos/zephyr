@@ -5,8 +5,8 @@
 
 config ADC_NRFX_ADC
 	bool "nRF ADC nrfx driver"
-	depends on HAS_HW_NRF_ADC
 	default y
+	depends on DT_HAS_NORDIC_NRF_ADC_ENABLED
 	select NRFX_ADC
 	select ADC_CONFIGURABLE_INPUTS
 	help
@@ -24,8 +24,8 @@ config ADC_NRFX_ADC_CHANNEL_COUNT
 
 config ADC_NRFX_SAADC
 	bool "nRF SAADC nrfx driver"
-	depends on HAS_HW_NRF_SAADC
 	default y
+	depends on DT_HAS_NORDIC_NRF_SAADC_ENABLED
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enable support for nrfx SAADC driver.

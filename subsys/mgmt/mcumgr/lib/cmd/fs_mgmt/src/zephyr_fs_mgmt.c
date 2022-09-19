@@ -6,8 +6,8 @@
 
 #include <zephyr/fs/fs.h>
 #include <errno.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include <mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 #include <fs_mgmt/fs_mgmt_impl.h>
 
 int

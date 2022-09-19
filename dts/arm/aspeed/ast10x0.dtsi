@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
+#include <zephyr/dt-bindings/clock/ast10x0_clock.h>
 
 / {
 	cpus {
@@ -27,14 +28,18 @@
 		syscon: syscon@7e6e2000 {
 			compatible = "syscon";
 			reg = <0x7e6e2000 0x1000>;
+			sysclk: sysclk {
+				compatible = "aspeed,ast10x0-clock";
+				#clock-cells = <1>;
+			};
 		};
 
 		uart5: serial@7e784000 {
 			compatible = "ns16550";
 			reg = <0x7e784000 0x1000>;
 			interrupts = <8 0>;
+			clocks = <&sysclk ASPEED_CLK_UART5>;
 			status = "disabled";
-			label = "UART_5";
 			reg-shift = <2>;
 		};
 	};

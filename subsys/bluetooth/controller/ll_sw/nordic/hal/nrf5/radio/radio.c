@@ -1050,11 +1050,7 @@ void radio_tmr_tifs_set(uint32_t tifs)
 
 uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 {
-	if ((!(remainder / 1000000UL)) || (remainder & 0x80000000)) {
-		ticks_start--;
-		remainder += 30517578UL;
-	}
-	remainder /= 1000000UL;
+	hal_ticker_remove_jitter(&ticks_start, &remainder);
 
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 	EVENT_TIMER->MODE = 0;

@@ -96,6 +96,11 @@ if(CONFIG_HAS_RPI_PICO)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_PWM
           ${rp2_common_dir}/hardware_pwm/include)
 
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_ADC
+          ${rp2_common_dir}/hardware_adc/adc.c)
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_ADC
+          ${rp2_common_dir}/hardware_adc/include)
+
   # Some flash driver functions must be executed from the RAM.
   # Originally pico-sdk places them in the RW data section, so this
   # implementation does the same.

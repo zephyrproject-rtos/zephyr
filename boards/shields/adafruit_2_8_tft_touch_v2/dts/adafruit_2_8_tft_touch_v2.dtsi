@@ -9,6 +9,7 @@
 / {
 	chosen {
 		zephyr,display = &ili9340;
+		zephyr,keyboard-scan = &touch_controller;
 	};
 };
 
@@ -20,7 +21,6 @@
 
 	ili9340: ili9340@0 {
 		compatible = "ilitek,ili9340";
-		label = "ILI9340";
 		spi-max-frequency = <15151515>;
 		reg = <0>;
 		cmd-data-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
@@ -36,7 +36,7 @@
 		ngamctrl = [00 0e 14 03 11 07 31 c1 48 08 0f 0c 31 36 0f];
 	};
 
-	sdhc0: sdhc@1 {
+	adafruit_2_8_tft_touch_v2_sdhc: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		status = "okay";
@@ -52,7 +52,6 @@
 	touch_controller: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		label = "FT5336";
 		/* Uncomment if IRQ line is available (requires to solder jumper) */
 		/* int-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>; */ /* D7 */
 	};

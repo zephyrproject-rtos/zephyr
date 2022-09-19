@@ -63,7 +63,6 @@
 				"ev_enable",
 				"txempty",
 				"rxfull";
-			label = "uart0";
 			status = "disabled";
 		};
 		spi0: spi@e0002000 {
@@ -80,7 +79,6 @@
 				"miso",
 				"cs",
 				"loopback";
-			label = "spi0";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -110,7 +108,6 @@
 				"ev_enable",
 				"uptime_latch",
 				"uptime_cycles";
-			label = "timer0";
 			status = "disabled";
 		};
 		eth0: ethernet@e0009800 {
@@ -148,7 +145,6 @@
 				"tx_ev_pending",
 				"tx_ev_enable",
 				"buffers";
-			label = "eth0";
 			status = "disabled";
 		};
 		dna0: dna@e0003800 {
@@ -160,14 +156,12 @@
 			hence 8 registers. */
 			reg = <0xe0003800 0x20>;
 			reg-names = "mem";
-			label = "dna0";
 			status = "disabled";
 		};
 		i2c0: i2c@e0005000 {
 			compatible = "litex,i2c";
 			reg = <0xe0005000 0x4 0xe0005004 0x4>;
 			reg-names = "write", "read";
-			label = "i2c0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -177,7 +171,6 @@
 			reg = <0xe0005800 0x4>;
 			reg-names = "control";
 			ngpios = <4>;
-			label = "gpio_out";
 			port-is-output;
 			status = "disabled";
 			gpio-controller;
@@ -198,7 +191,6 @@
 				"irq_pend",
 				"irq_en";
 			ngpios = <4>;
-			label = "gpio_in";
 			status = "disabled";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -207,14 +199,12 @@
 			compatible = "litex,prbs";
 			reg = <0xe0006800 0x4>;
 			reg-names = "status";
-			label = "prbs0";
 			status = "disabled";
 		};
 		pwm0: pwm@e0007000 {
 			compatible = "litex,pwm";
 			reg = <0xe0007000 0x4 0xe0007004 0x10 0xe0007014 0x10>;
 			reg-names = "enable", "width", "period";
-			label = "pwm0";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -239,7 +229,6 @@
 				"rx_conf",
 				"fifo";
 			fifo_depth = <256>;
-			label = "i2s_rx";
 			status = "disabled";
 		};
 		i2s_tx: i2s_tx@e000b000 {
@@ -263,7 +252,6 @@
 				"tx_conf",
 				"fifo";
 			fifo_depth = <256>;
-			label = "i2s_tx";
 			status = "disabled";
 		};
 		clock-outputs {
@@ -298,7 +286,6 @@
 		};
 		clock0: clock@e0004800 {
 			compatible = "litex,clk";
-			label = "clock0";
 			reg = <0xe0004800 0x4
 				0xe0004804 0x4
 				0xe0004808 0x4
