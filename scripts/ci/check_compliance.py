@@ -29,6 +29,8 @@ from west.manifest import ManifestProject
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from get_maintainer import Maintainers, MaintainersError
+import list_boards
+import list_hardware
 
 logger = None
 
@@ -273,10 +275,10 @@ class KconfigCheck(ComplianceTest):
     doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
     path_hint = "<zephyr-base>"
 
-    def run(self, full=True, no_modules=False):
+    def run(self, full=True, no_modules=False, filename="Kconfig", hwm=None):
         self.no_modules = no_modules
 
-        kconf = self.parse_kconfig()
+        kconf = self.parse_kconfig(filename=filename, hwm=hwm)
 
         self.check_top_menu_not_too_long(kconf)
         self.check_no_pointless_menuconfigs(kconf)
@@ -346,8 +348,97 @@ class KconfigCheck(ComplianceTest):
         except subprocess.CalledProcessError as ex:
             self.error(ex.output.decode("utf-8"))
 
+    def get_v1_model_syms(self, kconfig_v1_file, kconfig_v1_syms_file):
+        """
+        Generate a symbol define Kconfig file.
+        This function creates a file with all Kconfig symbol definitions from
+        old boards model so that those symbols will not appear as undefined
+        symbols in hardware model v2.
 
-    def parse_kconfig(self):
+        This is needed to complete Kconfig compliance tests.
+        """
+        os.environ['HWM_SCHEME'] = 'v1'
+        # 'kconfiglib' is global
+        # pylint: disable=undefined-variable
+
+        try:
+            kconf_v1 = kconfiglib.Kconfig(filename=kconfig_v1_file, warn=False)
+        except kconfiglib.KconfigError as e:
+            self.failure(str(e))
+            raise EndTest
+
+        with open(kconfig_v1_syms_file, 'w') as fp_kconfig_v1_syms_file:
+            for s in kconf_v1.defined_syms:
+                if s.type != kconfiglib.UNKNOWN:
+                    fp_kconfig_v1_syms_file.write('config ' + s.name)
+                    fp_kconfig_v1_syms_file.write('\n\t' + kconfiglib.TYPE_TO_STR[s.type])
+                    fp_kconfig_v1_syms_file.write('\n\n')
+
+    def get_v2_model(self, kconfig_dir):
+        """
+        Get lists of v2 boards and SoCs and put them in a file that is parsed by
+        Kconfig
+
+        This is needed to complete Kconfig sanity tests.
+        """
+        os.environ['HWM_SCHEME'] = 'v2'
+        kconfig_file = os.path.join(kconfig_dir, 'boards', 'Kconfig')
+        kconfig_boards_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.boards')
+        kconfig_defconfig_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.defconfig')
+
+        root_args = argparse.Namespace(**{'board_roots': [Path(ZEPHYR_BASE)],
+                                          'soc_roots': [Path(ZEPHYR_BASE)], 'board': None})
+        v2_boards = list_boards.find_v2_boards(root_args)
+
+        with open(kconfig_defconfig_file, 'w') as fp:
+            for board in v2_boards:
+                fp.write('osource "' + os.path.join(board.dir, 'Kconfig.defconfig') + '"\n')
+
+        with open(kconfig_boards_file, 'w') as fp:
+            for board in v2_boards:
+                board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", board.name).upper()
+                fp.write('config  ' + board_str + '\n')
+                fp.write('\t bool\n')
+                for identifier in list_boards.board_v2_identifiers(board):
+                    board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", identifier).upper()
+                    fp.write('config  ' + board_str + '\n')
+                    fp.write('\t bool\n')
+                fp.write('source "' + os.path.join(board.dir, 'Kconfig.') + board.name + '"\n\n')
+
+        with open(kconfig_file, 'w') as fp:
+            fp.write('osource "' + os.path.join(kconfig_dir, 'boards', 'Kconfig.syms.v1') + '"\n')
+            for board in v2_boards:
+                fp.write('osource "' + os.path.join(board.dir, 'Kconfig') + '"\n')
+
+        kconfig_defconfig_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.defconfig')
+        kconfig_soc_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.soc')
+        kconfig_file = os.path.join(kconfig_dir, 'soc', 'Kconfig')
+
+        root_args = argparse.Namespace(**{'soc_roots': [Path(ZEPHYR_BASE)]})
+        v2_systems = list_hardware.find_v2_systems(root_args)
+
+        with open(kconfig_defconfig_file, 'w') as fp:
+            for soc in v2_systems.get_socs():
+                fp.write('source "' + os.path.join(soc.folder, 'Kconfig.defconfig') + '"\n')
+
+        with open(kconfig_soc_file, 'w') as fp:
+            for soc in v2_systems.get_socs():
+                fp.write('source "' + os.path.join(soc.folder, 'Kconfig.soc') + '"\n\n')
+
+        with open(kconfig_file, 'w') as fp:
+            for soc in v2_systems.get_socs():
+                fp.write('source "' + os.path.join(soc.folder, 'Kconfig') + '"\n')
+
+        kconfig_file = os.path.join(kconfig_dir, 'arch', 'Kconfig')
+
+        root_args = argparse.Namespace(**{'arch_roots': [Path(ZEPHYR_BASE)], 'arch': None})
+        v2_archs = list_hardware.find_v2_archs(root_args)
+
+        with open(kconfig_file, 'w') as fp:
+            for arch in v2_archs['archs']:
+                fp.write('source "' + os.path.join(arch['path'], 'Kconfig') + '"\n')
+
+    def parse_kconfig(self, filename="Kconfig", hwm=None):
         """
         Returns a kconfiglib.Kconfig object for the Kconfig files. We reuse
         this object for all tests to avoid having to reparse for each test.
@@ -372,8 +463,8 @@ class KconfigCheck(ComplianceTest):
         # Parse the entire Kconfig tree, to make sure we see all symbols
         os.environ["SOC_DIR"] = "soc/"
         os.environ["ARCH_DIR"] = "arch/"
-        os.environ["BOARD_DIR"] = "boards/*/*"
-        os.environ["ARCH"] = "*"
+        os.environ["BOARD"] = "boards"
+        os.environ["ARCH"] = "[!v][!2]*"
         os.environ["KCONFIG_BINARY_DIR"] = kconfiglib_dir
         os.environ['DEVICETREE_CONF'] = "dummy"
         os.environ['TOOLCHAIN_HAS_NEWLIB'] = "y"
@@ -387,6 +478,28 @@ class KconfigCheck(ComplianceTest):
         # For Kconfig.dts support
         self.get_kconfig_dts(os.path.join(kconfiglib_dir, "Kconfig.dts"))
 
+        # To make compliance work with old hw model and HWMv2 simultaneously.
+        kconfiglib_boards_dir = os.path.join(kconfiglib_dir, 'boards')
+        os.makedirs(kconfiglib_boards_dir, exist_ok=True)
+        os.makedirs(os.path.join(kconfiglib_dir, 'soc'), exist_ok=True)
+        os.makedirs(os.path.join(kconfiglib_dir, 'arch'), exist_ok=True)
+
+        if hwm is None or hwm == "v1":
+            v1_file = os.path.join(kconfiglib_dir, "Kconfig.v1")
+            v1_syms_file = os.path.join(kconfiglib_boards_dir, 'Kconfig.syms.v1')
+            with open(v1_file, 'w') as fp:
+                fp.write('source "boards/[!v][!2]*/*/Kconfig.defconfig"\n')
+                fp.write('osource "soc/[!v][!2]*/*/Kconfig.defconfig"\n')
+                fp.write('source "boards/Kconfig"\n')
+                fp.write('source "soc/Kconfig"\n')
+
+            os.environ["BOARD_DIR"] = "boards/[!v][!2]*/*"
+            self.get_v1_model_syms(v1_file, v1_syms_file)
+
+        if hwm is None or hwm == "v2":
+            os.environ["BOARD_DIR"] = kconfiglib_boards_dir
+            self.get_v2_model(kconfiglib_dir)
+
         # Tells Kconfiglib to generate warnings for all references to undefined
         # symbols within Kconfig files
         os.environ["KCONFIG_WARN_UNDEF"] = "y"
@@ -396,7 +509,7 @@ class KconfigCheck(ComplianceTest):
             # them: so some warnings might get printed
             # twice. "warn_to_stderr=False" could unfortunately cause
             # some (other) warnings to never be printed.
-            return kconfiglib.Kconfig()
+            return kconfiglib.Kconfig(filename=filename)
         except kconfiglib.KconfigError as e:
             self.failure(str(e))
             raise EndTest
@@ -427,7 +540,6 @@ class KconfigCheck(ComplianceTest):
         # and tests
         return set([sym.name for sym in kconf_syms]
                    + re.findall(regex, grep_stdout, re.MULTILINE))
-
 
     def check_top_menu_not_too_long(self, kconf):
         """
@@ -753,6 +865,23 @@ class KconfigBasicNoModulesCheck(KconfigCheck):
     path_hint = "<zephyr-base>"
     def run(self):
         super().run(full=False, no_modules=True)
+
+
+class KconfigHWMv2Check(KconfigCheck, ComplianceTest):
+    """
+    This runs the Kconfig test for board and SoC v2 scheme.
+    This check ensures that all symbols inside the v2 scheme is also defined
+    within the same tree.
+    This ensures the board and SoC trees are fully self-contained and reusable.
+    """
+    name = "KconfigHWMv2"
+    doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
+
+    def run(self):
+        # Use dedicated Kconfig board / soc v2 scheme file.
+        # This file sources only v2 scheme tree.
+        kconfig_file = os.path.join(os.path.dirname(__file__), "Kconfig.board.v2")
+        super().run(full=False, hwm="v2", filename=kconfig_file)
 
 
 class Nits(ComplianceTest):
