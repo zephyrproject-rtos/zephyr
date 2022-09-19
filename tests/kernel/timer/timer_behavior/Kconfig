@@ -20,3 +20,9 @@ config TIMER_TEST_MAX_STDDEV
 config TIMER_TEST_MAX_DRIFT
 	int "Maximum drift in microseconds allowed (should be about 1 period allowance)"
 	default 1000
+
+config TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT
+	int "Maximum drift percentage for the timer period"
+	default 10
+	help
+	  A value of 10 means 10%.
