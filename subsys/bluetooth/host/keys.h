@@ -8,7 +8,7 @@
 
 /** @cond INTERNAL_HIDDEN */
 
-enum {
+enum bt_keys_type {
 	BT_KEYS_PERIPH_LTK     = BIT(0),
 	BT_KEYS_IRK            = BIT(1),
 	BT_KEYS_LTK            = BIT(2),
@@ -83,7 +83,8 @@ struct bt_keys {
  * @param func Callback function to be called when a matched record is found.
  * @param data User data to be passed to the callback function.
  */
-void bt_keys_foreach_type(int type, void (*func)(struct bt_keys *keys, void *data), void *data);
+void bt_keys_foreach_type(enum bt_keys_type type, void (*func)(struct bt_keys *keys, void *data),
+			  void *data);
 
 /**
  * @brief Get the key slot reference for an ID and address pair.
@@ -120,7 +121,7 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr);
  * @return A valid reference pointer to the key slot if process succeeded.
  *         Otherwise, a NULL value is returned.
  */
-struct bt_keys *bt_keys_get_type(int type, uint8_t id, const bt_addr_le_t *addr);
+struct bt_keys *bt_keys_get_type(enum bt_keys_type type, uint8_t id, const bt_addr_le_t *addr);
 
 /**
  * @brief Find key identified by type, ID and address
@@ -132,7 +133,7 @@ struct bt_keys *bt_keys_get_type(int type, uint8_t id, const bt_addr_le_t *addr)
  * @return A valid reference pointer to the key slot if it exists.
  *         Otherwise, a NULL value is returned.
  */
-struct bt_keys *bt_keys_find(int type, uint8_t id, const bt_addr_le_t *addr);
+struct bt_keys *bt_keys_find(enum bt_keys_type type, uint8_t id, const bt_addr_le_t *addr);
 
 /**
  * @brief Find key reference by trying to resolve an RPA using IRK
@@ -160,7 +161,7 @@ struct bt_keys *bt_keys_find_addr(uint8_t id, const bt_addr_le_t *addr);
  * @param keys Key reference.
  * @param type Key type to be added.
  */
-void bt_keys_add_type(struct bt_keys *keys, int type);
+void bt_keys_add_type(struct bt_keys *keys, enum bt_keys_type type);
 
 /**
  * @brief Clear a key contents
