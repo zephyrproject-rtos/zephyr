@@ -153,9 +153,11 @@ static int adc_sam0_channel_setup(const struct device *dev,
 	case ADC_REF_EXTERNAL0:
 		refctrl = ADC_REFCTRL_REFSEL_AREFA;
 		break;
+#ifdef ADC_REFCTRL_REFSEL_AREFB
 	case ADC_REF_EXTERNAL1:
 		refctrl = ADC_REFCTRL_REFSEL_AREFB;
 		break;
+#endif
 	default:
 		LOG_ERR("Selected reference is not valid");
 		return -EINVAL;
@@ -450,7 +452,7 @@ static int adc_sam0_init(const struct device *dev)
 #ifdef MCLK
 	GCLK->PCHCTRL[cfg->gclk_id].reg = cfg->gclk_mask | GCLK_PCHCTRL_CHEN;
 
-	MCLK->APBDMASK.reg |= cfg->mclk_mask;
+	MCLK_ADC |= cfg->mclk_mask;
 #else
 	PM->APBCMASK.bit.ADC_ = 1;
 
