@@ -372,7 +372,6 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 	uint32_t ticks_slot_abs = 0U;
 	uint32_t ticks_anchor_prev;
 	uint32_t ticks_to_expire;
-	uint8_t ticker_id_other;
 	uint8_t ticker_id_prev;
 	uint32_t ticks_anchor;
 	uint8_t offset_index;
@@ -406,7 +405,7 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 		ticks_slot_abs += HAL_TICKER_US_TO_TICKS(EVENT_TIES_US);
 	}
 
-	ticker_id = ticker_id_prev = ticker_id_other = TICKER_NULL;
+	ticker_id = ticker_id_prev = TICKER_NULL;
 	ticks_to_expire = ticks_to_expire_prev = ticks_anchor =
 		ticks_anchor_prev = offset_index = offset = 0U;
 	ticks_slot_abs_prev = 0U;
@@ -467,15 +466,17 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 			 * conn role, hence do not consider this free space
 			 * and any further as free slot for offset,
 			 */
-			ticker_id_other = ticker_id;
+			uint32_t ticks_slot_margin = HAL_TICKER_US_TO_TICKS(EVENT_TIES_US);
+			uint32_t offset = ticks_to_expire_prev + ticks_to_expire + 
+				ticks_slot_margin;
+			sys_put_le16(offset, (win_offset + (sizeof(uint16_t) * offset_index)));
+			
+			offset_index++;
+			ticks_anchor_prev = ticks_anchor;
+			ticker_id_prev = ticker_id;
+			ticks_to_expire_prev = ticks_to_expire;
+			ticks_slot_abs_prev += ticks_to_expire;
 			continue;
-		}
-
-		/* TODO: handle scanner; for now we exit with as much we
-		 * where able to fill (offsets).
-		 */
-		if (ticker_id_other != TICKER_NULL) {
-			break;
 		}
 
 		conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
