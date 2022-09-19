@@ -191,6 +191,9 @@ Drivers and Sensors
 
 * EEPROM
 
+  * Added Microchip XEC (MEC172x) on-chip EEPROM driver. See the
+    :dtcompatible:`microchip,xec-eeprom` devicetree binding for more information.
+
 * Entropy
 
 * Ethernet
