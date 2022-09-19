@@ -30,6 +30,10 @@
 
 #define NET_MAX_RS_COUNT 3
 
+#define NET_IPV6_DSCP_MASK 0xFC
+#define NET_IPV6_DSCP_OFFSET 2
+#define NET_IPV6_ECN_MASK 0x03
+
 /**
  * @brief Bitmaps for IPv6 extension header processing
  *
@@ -494,5 +498,54 @@ void net_ipv6_mld_init(void);
 #define net_ipv6_init(...)
 #define net_ipv6_nbr_init(...)
 #endif
+
+/**
+ * @brief Decode DSCP value from TC field.
+ *
+ * @param tc TC field value from the IPv6 header.
+ *
+ * @return Decoded DSCP value.
+ */
+static inline uint8_t net_ipv6_get_dscp(uint8_t tc)
+{
+	return (tc & NET_IPV6_DSCP_MASK) >> NET_IPV6_DSCP_OFFSET;
+}
+
+/**
+ * @brief Encode DSCP value into TC field.
+ *
+ * @param tc A pointer to the TC field.
+ * @param dscp DSCP value to set.
+ */
+static inline void net_ipv6_set_dscp(uint8_t *tc, uint8_t dscp)
+{
+	*tc &= ~NET_IPV6_DSCP_MASK;
+	*tc |= (dscp << NET_IPV6_DSCP_OFFSET) & NET_IPV6_DSCP_MASK;
+}
+
+/**
+ * @brief Decode ECN value from TC field.
+ *
+ * @param tc TC field value from the IPv6 header.
+ *
+ * @return Decoded ECN value.
+ */
+static inline uint8_t net_ipv6_get_ecn(uint8_t tc)
+{
+	return tc & NET_IPV6_ECN_MASK;
+}
+
+/**
+ * @brief Encode ECN value into TC field.
+ *
+ * @param tc A pointer to the TC field.
+ * @param ecn ECN value to set.
+ */
+static inline void net_ipv6_set_ecn(uint8_t *tc, uint8_t ecn)
+{
+	*tc &= ~NET_IPV6_ECN_MASK;
+	*tc |= ecn & NET_IPV6_ECN_MASK;
+}
+
 
 #endif /* __IPV6_H */

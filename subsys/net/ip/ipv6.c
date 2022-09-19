@@ -56,14 +56,20 @@ int net_ipv6_create(struct net_pkt *pkt,
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct net_ipv6_hdr *ipv6_hdr;
+	uint8_t tc = 0;
 
 	ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
 	if (!ipv6_hdr) {
 		return -ENOBUFS;
 	}
 
-	ipv6_hdr->vtc     = 0x60;
-	ipv6_hdr->tcflow  = 0U;
+	if (IS_ENABLED(CONFIG_NET_IP_DSCP_ECN)) {
+		net_ipv6_set_dscp(&tc, net_pkt_ip_dscp(pkt));
+		net_ipv6_set_ecn(&tc, net_pkt_ip_ecn(pkt));
+	}
+
+	ipv6_hdr->vtc     = 0x60 | ((tc >> 4) & 0x0F);
+	ipv6_hdr->tcflow  = (tc << 4) & 0xF0;
 	ipv6_hdr->flow    = 0U;
 	ipv6_hdr->len     = 0U;
 	ipv6_hdr->nexthdr = 0U;
@@ -496,6 +502,15 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 			NET_DBG("DROP: invalid scope multicast packet");
 			goto drop;
 		}
+	}
+
+	/* Reconstruct TC field. */
+
+	if (IS_ENABLED(CONFIG_NET_IP_DSCP_ECN)) {
+		uint8_t tc = ((hdr->vtc << 4) & 0xF0) | ((hdr->tcflow >> 4) & 0x0F);
+
+		net_pkt_set_ip_dscp(pkt, net_ipv6_get_dscp(tc));
+		net_pkt_set_ip_ecn(pkt, net_ipv6_get_ecn(tc));
 	}
 
 	/* Check extension headers */
