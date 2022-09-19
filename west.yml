@@ -120,7 +120,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 1ec8dd99aa4ac3e8632d2aa28a7438049bb27102
+      revision: 9dcaa761258cfdfecaacc5a9f0af92f6535d74a3
       path: modules/hal/silabs
       groups:
         - hal
