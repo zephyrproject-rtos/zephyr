@@ -1906,6 +1906,8 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 			bt_keys_store(conn->le.keys);
 		}
 
+		BT_INFO("pairing_complete, conn %d, bonded %d", bt_conn_index(conn), bond_flag);
+
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
 						  next, node) {
 			if (listener->pairing_complete) {
@@ -1914,6 +1916,9 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 		}
 	} else {
 		enum bt_security_err security_err = security_err_get(status);
+
+		BT_WARN("pairing_failed, conn %d, bt_security_err %d", bt_conn_index(conn),
+			security_err);
 
 		/* Clear the key pool entry in case of pairing failure if the
 		 * keys already existed before the pairing procedure or the
@@ -3936,7 +3941,7 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 	struct bt_smp_ident_addr_info *req = (void *)buf->data;
 	uint8_t err;
 
-	BT_DBG("identity %s", bt_addr_le_str(&req->addr));
+	BT_INFO("identity, conn %d, %s", bt_conn_index(conn), bt_addr_le_str(&req->addr));
 
 	if (!bt_addr_le_is_identity(&req->addr)) {
 		BT_ERR("Invalid identity %s", bt_addr_le_str(&req->addr));

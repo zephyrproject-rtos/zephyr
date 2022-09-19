@@ -1149,6 +1149,10 @@ void bt_conn_unref(struct bt_conn *conn)
 
 	__ASSERT(old > 0, "Conn reference counter is 0");
 
+	if (old == 1) {
+		BT_INFO("conn %d recycled", bt_conn_index(conn));
+	}
+
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->type == BT_CONN_TYPE_LE &&
 	    atomic_get(&conn->ref) == 0) {
 		bt_le_adv_resume();
@@ -1336,6 +1340,14 @@ static void notify_connected(struct bt_conn *conn)
 {
 	struct bt_conn_cb *cb;
 
+	if (conn->err) {
+		BT_WARN("connect failed, conn %d, dst %s, error %d", bt_conn_index(conn),
+			bt_addr_le_str(bt_conn_get_dst(conn)), conn->err);
+	} else {
+		BT_INFO("connected, conn %d, dst %s", bt_conn_index(conn),
+			bt_addr_le_str(bt_conn_get_dst(conn)));
+	}
+
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->connected) {
 			cb->connected(conn, conn->err);
@@ -1352,6 +1364,8 @@ static void notify_connected(struct bt_conn *conn)
 static void notify_disconnected(struct bt_conn *conn)
 {
 	struct bt_conn_cb *cb;
+
+	BT_INFO("disconnected, conn %d", bt_conn_index(conn));
 
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->disconnected) {
