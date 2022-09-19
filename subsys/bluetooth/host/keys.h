@@ -47,6 +47,11 @@ struct bt_irk {
 	bt_addr_t               rpa;
 };
 
+static inline bool bt_irk_eq(struct bt_irk const *a, struct bt_irk const *b)
+{
+	return (memcmp(a->val, b->val, sizeof(a->val)) == 0);
+}
+
 struct bt_csrk {
 	uint8_t                    val[16];
 	uint32_t                   cnt;
