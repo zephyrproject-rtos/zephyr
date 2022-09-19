@@ -23,7 +23,7 @@ extern const struct device __device_end[];
 extern const struct device __device_SMP_start[];
 #endif
 
-static const struct device *levels[] = {
+static const struct device *const levels[] = {
 	__device_PRE_KERNEL_1_start,
 	__device_PRE_KERNEL_2_start,
 	__device_POST_KERNEL_start,

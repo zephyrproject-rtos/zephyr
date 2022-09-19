@@ -732,6 +732,13 @@ struct gatt_eatt_connect_cmd {
 
 #define GATT_READ_MULTIPLE_VAR		0x20
 
+#define GATT_NOTIFY_MULTIPLE		0x21
+struct gatt_cfg_notify_mult_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint16_t cnt;
+	uint16_t attr_id[];
+} __packed;
 /* GATT events */
 #define GATT_EV_NOTIFICATION		0x80
 struct gatt_notification_ev {

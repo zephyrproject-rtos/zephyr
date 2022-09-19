@@ -312,6 +312,27 @@ void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 	rr_check_done(conn, ctx);
 }
 
+void llcp_rr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	case PROC_DATA_LENGTH_UPDATE:
+		/* llcp_rp_comm_tx_ntf(conn, ctx); */
+		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#ifdef CONFIG_BT_CTLR_PHY
+	case PROC_PHY_UPDATE:
+		llcp_rp_pu_tx_ntf(conn, ctx);
+		break;
+#endif /* CONFIG_BT_CTLR_PHY */
+	default:
+		/* Ignore other procedures */
+		break;
+	}
+
+	rr_check_done(conn, ctx);
+}
+
 static void rr_act_run(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;

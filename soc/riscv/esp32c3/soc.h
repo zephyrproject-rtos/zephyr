@@ -12,7 +12,7 @@
 #include <rom/spi_flash.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <esp_clk.h>
+#include "esp32c3/clk.h"
 #endif
 
 /* IRQ numbers */
@@ -28,8 +28,6 @@
 #define SOC_MCAUSE_IRQ_MASK (1 << 31)
 /* Exception code Mask */
 #define SOC_MCAUSE_EXP_MASK 0x7FFFFFFF
-/* SOC-Specific EXIT ISR command */
-#define SOC_ERET mret
 
 #ifndef _ASMLANGUAGE
 

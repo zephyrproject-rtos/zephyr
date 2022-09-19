@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <cmsis_os2.h>
 
@@ -65,7 +65,7 @@ const osSemaphoreAttr_t sema_attr = {
 	0U
 };
 
-void test_semaphore(void)
+ZTEST(cmsis_semaphore, test_semaphore)
 {
 	osThreadId_t id;
 	osStatus_t status;
@@ -83,7 +83,7 @@ void test_semaphore(void)
 	id = osThreadNew(thread_sema, semaphore_id, &thread_attr);
 	zassert_true(id != NULL, "Thread creation failed");
 
-	zassert_true(osSemaphoreGetCount(semaphore_id) == 1, NULL);
+	zassert_true(osSemaphoreGetCount(semaphore_id) == 1);
 
 	/* Acquire invalid semaphore */
 	zassert_equal(osSemaphoreAcquire(dummy_sem_id, osWaitForever),
@@ -92,7 +92,7 @@ void test_semaphore(void)
 	status = osSemaphoreAcquire(semaphore_id, osWaitForever);
 	zassert_true(status == osOK, "Semaphore wait failure");
 
-	zassert_true(osSemaphoreGetCount(semaphore_id) == 0, NULL);
+	zassert_true(osSemaphoreGetCount(semaphore_id) == 0);
 
 	/* wait for spawn thread to take action */
 	osDelay(TIMEOUT_TICKS);
@@ -114,3 +114,4 @@ void test_semaphore(void)
 	status = osSemaphoreDelete(semaphore_id);
 	zassert_true(status == osOK, "semaphore delete failure");
 }
+ZTEST_SUITE(cmsis_semaphore, NULL, NULL, NULL, NULL, NULL);

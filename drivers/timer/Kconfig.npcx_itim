@@ -6,7 +6,7 @@
 config NPCX_ITIM_TIMER
 	bool "Nuvoton NPCX series internal 64/32-bit timers"
 	default y
-	depends on SOC_FAMILY_NPCX
+	depends on DT_HAS_NUVOTON_NPCX_ITIM_TIMER_ENABLED
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help

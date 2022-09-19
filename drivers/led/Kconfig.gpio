@@ -3,6 +3,7 @@
 
 config LED_GPIO
 	bool "GPIO LED driver"
-	depends on GPIO && $(dt_compat_enabled,gpio-leds)
+	default y
+	depends on GPIO && DT_HAS_GPIO_LEDS_ENABLED
 	help
 	  Enable driver for GPIO LEDs.

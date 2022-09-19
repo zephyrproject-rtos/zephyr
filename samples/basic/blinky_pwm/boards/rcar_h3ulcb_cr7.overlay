@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2022 IoT.bzh
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+    pwmleds {
+        compatible = "pwm-leds";
+        pwm_led_0: pwm_led_0 {
+            pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+            label = "PWM LED 0";
+        };
+    };
+
+    aliases {
+        pwm-led0 = &pwm_led_0;
+        pwm-0 = &pwm0;
+    };
+
+};
+
+&pwm0 {
+    status = "okay";
+};

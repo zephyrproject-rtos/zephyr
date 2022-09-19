@@ -9,8 +9,8 @@
  *
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 #include <string.h>
 #include <getopt.h>
 

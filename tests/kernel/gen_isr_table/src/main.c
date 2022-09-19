@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq.h>
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <zephyr/sw_isr_table.h>
-#include <interrupt_util.h>
+#include <zephyr/interrupt_util.h>
 
 extern uint32_t _irq_vector_table[];
 

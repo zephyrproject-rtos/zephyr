@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT ti_tlc5971
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/led_strip.h>
 #include <zephyr/drivers/led_strip/tlc5971.h>

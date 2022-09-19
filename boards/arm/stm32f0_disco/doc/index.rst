@@ -12,8 +12,6 @@ comprehensive STM32 software HAL library and various packaged software
 examples.
 
 .. image:: img/stm32f0_disco.jpg
-     :width: 350px
-     :height: 404px
      :align: center
      :alt: STM32F0DISCOVERY
 

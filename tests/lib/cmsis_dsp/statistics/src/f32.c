@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -33,9 +33,9 @@ static void test_arm_max_f32(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_max_f32, 3, in_com1, 0, 3);
-DEFINE_TEST_VARIANT3(arm_max_f32, 8, in_com1, 1, 8);
-DEFINE_TEST_VARIANT3(arm_max_f32, 11, in_com1, 2, 11);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_max_f32, 3, in_com1, 0, 3);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_max_f32, 8, in_com1, 1, 8);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_max_f32, 11, in_com1, 2, 11);
 
 static void test_arm_max_no_idx_f32(
 	const uint32_t *input1, int ref_index, size_t length)
@@ -50,9 +50,9 @@ static void test_arm_max_no_idx_f32(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_max_no_idx_f32, 3, in_com1, 0, 3);
-DEFINE_TEST_VARIANT3(arm_max_no_idx_f32, 8, in_com1, 1, 8);
-DEFINE_TEST_VARIANT3(arm_max_no_idx_f32, 11, in_com1, 2, 11);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_max_no_idx_f32, 3, in_com1, 0, 3);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_max_no_idx_f32, 8, in_com1, 1, 8);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_max_no_idx_f32, 11, in_com1, 2, 11);
 
 static void test_arm_min_f32(
 	const uint32_t *input1, int ref_index, size_t length)
@@ -71,9 +71,9 @@ static void test_arm_min_f32(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_min_f32, 3, in_com1, 0, 3);
-DEFINE_TEST_VARIANT3(arm_min_f32, 8, in_com1, 1, 8);
-DEFINE_TEST_VARIANT3(arm_min_f32, 11, in_com1, 2, 11);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_min_f32, 3, in_com1, 0, 3);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_min_f32, 8, in_com1, 1, 8);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_min_f32, 11, in_com1, 2, 11);
 
 static void test_arm_absmax_f32(
 	const uint32_t *input1, int ref_index, size_t length)
@@ -92,9 +92,9 @@ static void test_arm_absmax_f32(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_absmax_f32, 3, in_absminmax, 0, 3);
-DEFINE_TEST_VARIANT3(arm_absmax_f32, 8, in_absminmax, 1, 8);
-DEFINE_TEST_VARIANT3(arm_absmax_f32, 11, in_absminmax, 2, 11);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_absmax_f32, 3, in_absminmax, 0, 3);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_absmax_f32, 8, in_absminmax, 1, 8);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_absmax_f32, 11, in_absminmax, 2, 11);
 
 static void test_arm_absmin_f32(
 	const uint32_t *input1, int ref_index, size_t length)
@@ -113,9 +113,9 @@ static void test_arm_absmin_f32(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_absmin_f32, 3, in_absminmax, 0, 3);
-DEFINE_TEST_VARIANT3(arm_absmin_f32, 8, in_absminmax, 1, 8);
-DEFINE_TEST_VARIANT3(arm_absmin_f32, 11, in_absminmax, 2, 11);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_absmin_f32, 3, in_absminmax, 0, 3);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_absmin_f32, 8, in_absminmax, 1, 8);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_absmin_f32, 11, in_absminmax, 2, 11);
 
 static void test_arm_mean_f32(
 	const uint32_t *input1, int ref_index, size_t length)
@@ -146,9 +146,9 @@ static void test_arm_mean_f32(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_mean_f32, 3, in_com2, 0, 3);
-DEFINE_TEST_VARIANT3(arm_mean_f32, 8, in_com2, 1, 8);
-DEFINE_TEST_VARIANT3(arm_mean_f32, 11, in_com2, 2, 11);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_mean_f32, 3, in_com2, 0, 3);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_mean_f32, 8, in_com2, 1, 8);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_mean_f32, 11, in_com2, 2, 11);
 
 static void test_arm_power_f32(
 	const uint32_t *input1, int ref_index, size_t length)
@@ -179,9 +179,9 @@ static void test_arm_power_f32(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_power_f32, 3, in_com1, 0, 3);
-DEFINE_TEST_VARIANT3(arm_power_f32, 8, in_com1, 1, 8);
-DEFINE_TEST_VARIANT3(arm_power_f32, 11, in_com1, 2, 11);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_power_f32, 3, in_com1, 0, 3);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_power_f32, 8, in_com1, 1, 8);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_power_f32, 11, in_com1, 2, 11);
 
 static void test_arm_rms_f32(
 	const uint32_t *input1, int ref_index, size_t length)
@@ -212,9 +212,9 @@ static void test_arm_rms_f32(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_rms_f32, 3, in_com1, 0, 3);
-DEFINE_TEST_VARIANT3(arm_rms_f32, 8, in_com1, 1, 8);
-DEFINE_TEST_VARIANT3(arm_rms_f32, 11, in_com1, 2, 11);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_rms_f32, 3, in_com1, 0, 3);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_rms_f32, 8, in_com1, 1, 8);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_rms_f32, 11, in_com1, 2, 11);
 
 static void test_arm_std_f32(
 	const uint32_t *input1, int ref_index, size_t length)
@@ -245,9 +245,9 @@ static void test_arm_std_f32(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_std_f32, 3, in_com1, 0, 3);
-DEFINE_TEST_VARIANT3(arm_std_f32, 8, in_com1, 1, 8);
-DEFINE_TEST_VARIANT3(arm_std_f32, 11, in_com1, 2, 11);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_std_f32, 3, in_com1, 0, 3);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_std_f32, 8, in_com1, 1, 8);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_std_f32, 11, in_com1, 2, 11);
 
 static void test_arm_var_f32(
 	const uint32_t *input1, int ref_index, size_t length)
@@ -278,11 +278,11 @@ static void test_arm_var_f32(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_var_f32, 3, in_com1, 0, 3);
-DEFINE_TEST_VARIANT3(arm_var_f32, 8, in_com1, 1, 8);
-DEFINE_TEST_VARIANT3(arm_var_f32, 11, in_com1, 2, 11);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_var_f32, 3, in_com1, 0, 3);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_var_f32, 8, in_com1, 1, 8);
+DEFINE_TEST_VARIANT3(statistics_f32, arm_var_f32, 11, in_com1, 2, 11);
 
-static void test_arm_entropy_f32(void)
+ZTEST(statistics_f32, test_arm_entropy_f32)
 {
 	size_t index;
 	size_t length = in_entropy_dim[0];
@@ -317,7 +317,7 @@ static void test_arm_entropy_f32(void)
 	free(output);
 }
 
-static void test_arm_logsumexp_f32(void)
+ZTEST(statistics_f32, test_arm_logsumexp_f32)
 {
 	size_t index;
 	size_t length = in_logsumexp_dim[0];
@@ -352,7 +352,7 @@ static void test_arm_logsumexp_f32(void)
 	free(output);
 }
 
-static void test_arm_kullback_leibler_f32(void)
+ZTEST(statistics_f32, test_arm_kullback_leibler_f32)
 {
 	size_t index;
 	size_t length = in_kl_dim[0];
@@ -391,7 +391,7 @@ static void test_arm_kullback_leibler_f32(void)
 	free(output);
 }
 
-static void test_arm_logsumexp_dot_prod_f32(void)
+ZTEST(statistics_f32, test_arm_logsumexp_dot_prod_f32)
 {
 	size_t index;
 	size_t length = in_logsumexp_dp_dim[0];
@@ -436,44 +436,4 @@ static void test_arm_logsumexp_dot_prod_f32(void)
 	free(tmp);
 }
 
-void test_statistics_f32(void)
-{
-	ztest_test_suite(statistics_f32,
-		ztest_unit_test(test_arm_max_f32_3),
-		ztest_unit_test(test_arm_max_f32_8),
-		ztest_unit_test(test_arm_max_f32_11),
-		ztest_unit_test(test_arm_min_f32_3),
-		ztest_unit_test(test_arm_min_f32_8),
-		ztest_unit_test(test_arm_min_f32_11),
-		ztest_unit_test(test_arm_absmax_f32_3),
-		ztest_unit_test(test_arm_absmax_f32_8),
-		ztest_unit_test(test_arm_absmax_f32_11),
-		ztest_unit_test(test_arm_absmin_f32_3),
-		ztest_unit_test(test_arm_absmin_f32_8),
-		ztest_unit_test(test_arm_absmin_f32_11),
-		ztest_unit_test(test_arm_mean_f32_3),
-		ztest_unit_test(test_arm_mean_f32_8),
-		ztest_unit_test(test_arm_mean_f32_11),
-		ztest_unit_test(test_arm_power_f32_3),
-		ztest_unit_test(test_arm_power_f32_8),
-		ztest_unit_test(test_arm_power_f32_11),
-		ztest_unit_test(test_arm_rms_f32_3),
-		ztest_unit_test(test_arm_rms_f32_8),
-		ztest_unit_test(test_arm_rms_f32_11),
-		ztest_unit_test(test_arm_std_f32_3),
-		ztest_unit_test(test_arm_std_f32_8),
-		ztest_unit_test(test_arm_std_f32_11),
-		ztest_unit_test(test_arm_var_f32_3),
-		ztest_unit_test(test_arm_var_f32_8),
-		ztest_unit_test(test_arm_var_f32_11),
-		ztest_unit_test(test_arm_entropy_f32),
-		ztest_unit_test(test_arm_logsumexp_f32),
-		ztest_unit_test(test_arm_kullback_leibler_f32),
-		ztest_unit_test(test_arm_logsumexp_dot_prod_f32),
-		ztest_unit_test(test_arm_max_no_idx_f32_3),
-		ztest_unit_test(test_arm_max_no_idx_f32_8),
-		ztest_unit_test(test_arm_max_no_idx_f32_11)
-		);
-
-	ztest_run_test_suite(statistics_f32);
-}
+ZTEST_SUITE(statistics_f32, NULL, NULL, NULL, NULL, NULL);

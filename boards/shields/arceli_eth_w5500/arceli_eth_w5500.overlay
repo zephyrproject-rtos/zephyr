@@ -11,6 +11,5 @@
 		spi-max-frequency = <80000000>;
 		int-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
 		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
-		label = "w5500";
 	};
 };

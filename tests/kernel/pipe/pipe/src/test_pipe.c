@@ -5,7 +5,7 @@
  */
 
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /**
  * @brief Define and initialize test_pipe at compile time

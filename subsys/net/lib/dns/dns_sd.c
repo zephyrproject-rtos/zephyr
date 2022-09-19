@@ -16,7 +16,7 @@
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/dns_sd.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include "dns_pack.h"
 #include "dns_sd.h"

@@ -8,7 +8,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 LOG_MODULE_REGISTER(dummy_sensor, LOG_LEVEL_DBG);
 static struct dummy_sensor_data dummy_data;
@@ -80,8 +80,8 @@ static int dummy_sensor_init(const struct device *dev)
 	const struct device *i2c = device_get_binding(config->i2c_name);
 
 	/* Bus and address should be configured. */
-	zassert_equal(strcmp(config->i2c_name, "dummy I2C"), 0, NULL);
-	zassert_equal(config->i2c_address, 123, NULL);
+	zassert_equal(strcmp(config->i2c_name, "dummy I2C"), 0);
+	zassert_equal(config->i2c_address, 123);
 
 	if (i2c != NULL) {
 		LOG_ERR("Should be Null for %s device!", config->i2c_name);

@@ -15,7 +15,6 @@
 				#gpio-cells = <2>;
 				reg = <0x50001000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000010>;
-				label = "GPIOE";
 			};
 		};
 
@@ -29,7 +28,6 @@
 			interrupts = <24 0>;
 			interrupt-names = "combined";
 			status = "disabled";
-			label= "I2C_2";
 		};
 
 		i2c3: i2c@40007800 {
@@ -42,7 +40,6 @@
 			interrupts = <21 0>;
 			interrupt-names = "combined";
 			status = "disabled";
-			label= "I2C_3";
 		};
 
 		spi2: spi@40003800 {
@@ -53,7 +50,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <26 3>;
 			status = "disabled";
-			label = "SPI_2";
 		};
 
 		timers3: timers@40000400 {
@@ -64,12 +60,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_3";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_3";
 				#pwm-cells = <3>;
 			};
 		};
@@ -82,7 +76,6 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_6";
 		};
 
 		timers7: timers@40001400 {
@@ -93,7 +86,6 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_7";
 		};
 
 		timers22: timers@40011400 {
@@ -104,12 +96,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_22";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_22";
 				#pwm-cells = <3>;
 			};
 		};
@@ -120,7 +110,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>;
 			interrupts = <27 0>;
 			status = "disabled";
-			label = "UART_1";
 		};
 
 		usart4: serial@40004c00 {
@@ -129,7 +118,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
 			interrupts = <14 0>;
 			status = "disabled";
-			label = "UART_4";
 		};
 
 		usart5: serial@40005000 {
@@ -138,7 +126,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
 			interrupts = <14 0>;
 			status = "disabled";
-			label = "UART_5";
 		};
 
 		eeprom: eeprom@8080000{

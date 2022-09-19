@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(wpan_serial, CONFIG_USB_DEVICE_LOG_LEVEL);
 
 #include <zephyr/drivers/uart.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/random/rand32.h>
 
@@ -56,11 +56,13 @@ static uint8_t slip_buf[1 + 2 * CONFIG_NET_BUF_DATA_SIZE];
 
 /* ieee802.15.4 device */
 static struct ieee802154_radio_api *radio_api;
-static const struct device *ieee802154_dev;
+static const struct device *const ieee802154_dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154));
 uint8_t mac_addr[8];
 
 /* UART device */
-static const struct device *uart_dev;
+static const struct device *const uart_dev =
+	DEVICE_DT_GET_ONE(zephyr_cdc_acm_uart);
 
 /* SLIP state machine */
 static uint8_t slip_state = STATE_OK;
@@ -456,9 +458,8 @@ static bool init_ieee802154(void)
 {
 	LOG_INF("Initialize ieee802.15.4");
 
-	ieee802154_dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
-	if (!ieee802154_dev) {
-		LOG_ERR("Cannot get ieee 802.15.4 device");
+	if (!device_is_ready(ieee802154_dev)) {
+		LOG_ERR("IEEE 802.15.4 device not ready");
 		return false;
 	}
 
@@ -527,14 +528,12 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface, struct net_pk
 
 void main(void)
 {
-	const struct device *dev;
 	uint32_t baudrate, dtr = 0U;
 	int ret;
 
 	LOG_INF("Starting wpan_serial application");
 
-	dev = DEVICE_DT_GET_ONE(zephyr_cdc_acm_uart);
-	if (!device_is_ready(dev)) {
+	if (!device_is_ready(uart_dev)) {
 		LOG_ERR("CDC ACM device not ready");
 		return;
 	}
@@ -548,7 +547,7 @@ void main(void)
 	LOG_DBG("Wait for DTR");
 
 	while (1) {
-		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(uart_dev, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		} else {
@@ -557,11 +556,9 @@ void main(void)
 		}
 	}
 
-	uart_dev = dev;
-
 	LOG_DBG("DTR set, continue");
 
-	ret = uart_line_ctrl_get(dev, UART_LINE_CTRL_BAUD_RATE, &baudrate);
+	ret = uart_line_ctrl_get(uart_dev, UART_LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret) {
 		LOG_WRN("Failed to get baudrate, ret code %d", ret);
 	} else {
@@ -585,8 +582,8 @@ void main(void)
 		return;
 	}
 
-	uart_irq_callback_set(dev, interrupt_handler);
+	uart_irq_callback_set(uart_dev, interrupt_handler);
 
 	/* Enable rx interrupts */
-	uart_irq_rx_enable(dev);
+	uart_irq_rx_enable(uart_dev);
 }

@@ -46,6 +46,11 @@ static int mcux_mcan_init(const struct device *dev)
 	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
 	int err;
 
+	if (!device_is_ready(mcux_config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 #ifdef CONFIG_PINCTRL
 	err = pinctrl_apply_state(mcux_config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
@@ -72,6 +77,8 @@ static int mcux_mcan_init(const struct device *dev)
 
 static const struct can_driver_api mcux_mcan_driver_api = {
 	.get_capabilities = can_mcan_get_capabilities,
+	.start = can_mcan_start,
+	.stop = can_mcan_stop,
 	.set_mode = can_mcan_set_mode,
 	.set_timing = can_mcan_set_timing,
 	.send = can_mcan_send,

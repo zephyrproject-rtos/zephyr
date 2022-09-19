@@ -108,7 +108,7 @@ void z_arm_init_arch_hw_at_boot(void)
 		NVIC->ICPR[i] = 0xFFFFFFFF;
 	}
 
-#if defined(CONFIG_CPU_CORTEX_M_HAS_CACHE)
+#if defined(CONFIG_DCACHE)
 	/* Reset D-Cache settings. If the D-Cache was enabled,
 	 * SCB_DisableDCache() takes care of cleaning and invalidating it.
 	 * If it was already disabled, just call SCB_InvalidateDCache() to
@@ -119,9 +119,12 @@ void z_arm_init_arch_hw_at_boot(void)
 	} else {
 		SCB_InvalidateDCache();
 	}
+#endif /* CONFIG_DCACHE */
+
+#if defined(CONFIG_ICACHE)
 	/* Reset I-Cache settings. */
 	SCB_DisableICache();
-#endif /* CONFIG_CPU_CORTEX_M_HAS_CACHE */
+#endif /* CONFIG_ICACHE */
 
 	/* Restore Interrupts */
 	__enable_irq();

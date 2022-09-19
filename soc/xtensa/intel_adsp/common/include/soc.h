@@ -42,14 +42,9 @@
 
 #define CAVS_ICTL_INT_CPU_OFFSET(x)		(0x40 * x)
 
-#define IOAPIC_EDGE				0
-#define IOAPIC_HIGH				0
-
 #define SSP_MN_DIV_SIZE				(8)
 #define SSP_MN_DIV_BASE(x)			\
 	(0x00078D00 + ((x) * SSP_MN_DIV_SIZE))
-
-#define PDM_BASE				DMIC_BASE
 
 /* DSP Wall Clock Timers (0 and 1) */
 #define DSP_WCT_IRQ(x) \
@@ -60,10 +55,6 @@
 
 
 extern void soc_trace_init(void);
-extern void z_soc_irq_init(void);
-extern void z_soc_irq_enable(uint32_t irq);
-extern void z_soc_irq_disable(uint32_t irq);
-extern int z_soc_irq_is_enabled(unsigned int irq);
 
 extern void z_soc_mp_asm_entry(void);
 extern void soc_mp_startup(uint32_t cpu);

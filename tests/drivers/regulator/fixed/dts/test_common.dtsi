@@ -10,7 +10,6 @@
 			"regulator-fixed-sync",
 #endif
 			"regulator-fixed";
-		label = "REG";
 		regulator-name = "test";
 #ifdef APP_DTS_REGULATOR_ALWAYS_ON
 		regulator-always-on;

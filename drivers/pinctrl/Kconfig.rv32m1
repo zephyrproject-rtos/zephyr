@@ -1,11 +1,9 @@
 # Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_OPENISA_RV32M1_PINCTRL := openisa,rv32m1-pinctrl
-
 config PINCTRL_RV32M1
 	bool "RV32M1 pin controller driver"
-	depends on SOC_OPENISA_RV32M1_RISCV32
-	default $(dt_compat_enabled,$(DT_COMPAT_OPENISA_RV32M1_PINCTRL))
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_PINMUX_ENABLED
 	help
 	  Enable the RV32M1 pin controller driver.

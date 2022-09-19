@@ -380,7 +380,7 @@ typedef struct {
 #define Z_PINCTRL_STATE_PIN_CHILD_GROUP_INIT(node_id, prop, idx)	\
 	FOR_EACH_FIXED_ARG(Z_PINCTRL_STATE_PIN_CHILD_GROUP_PIN_INIT, (), node_id, \
 		UTIL_CAT(UTIL_CAT(MIO_GROUP_,				\
-				  DT_CAT6(node_id, _P_, prop, _IDX_, idx, _UPPER_TOKEN)), _PINS))
+				  DT_STRING_UPPER_TOKEN_BY_IDX(node_id, prop, idx)), _PINS))
 
 /* Reverse order of arguments to adapt between FOR_EACH_FIXED_ARG() and DT_FOREACH_PROP_ELEM() */
 #define Z_PINCTRL_STATE_PIN_CHILD_GROUP_PIN_INIT(pin, node_id)		\
@@ -388,7 +388,7 @@ typedef struct {
 
 /* Process pin using MIOx macros defines above */
 #define Z_PINCTRL_STATE_PIN_CHILD_PIN_INIT(node_id, prop, idx)		\
-	Z_PINCTRL_STATE_PIN_INIT(node_id, DT_CAT6(node_id, _P_, prop, _IDX_, idx, _UPPER_TOKEN))
+	Z_PINCTRL_STATE_PIN_INIT(node_id, DT_STRING_UPPER_TOKEN_BY_IDX(node_id, prop, idx))
 
 /* Process pin functions and special functions (CD, WP) */
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, pin)				\

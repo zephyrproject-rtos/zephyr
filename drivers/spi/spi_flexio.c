@@ -77,7 +77,7 @@ static void spi_mcux_flexio_transfer_next_packet(const struct device *dev) {
         /* nothing left to rx or tx, we're done! */
         LOG_DBG("FlexIO SPI nothing left to transfer, complete");
         spi_context_cs_control(&data->ctx, false);
-        spi_context_complete(&data->ctx, 0);
+        spi_context_complete(&data->ctx, dev, 0);
         return;
     }
 
@@ -259,7 +259,7 @@ static int transceive(const struct device *dev,
     struct spi_flexio_data *data = dev->data;
     int ret;
 
-    spi_context_lock(&data->ctx, false, NULL, spi_cfg);
+    spi_context_lock(&data->ctx, false, NULL, NULL, spi_cfg);
 
     ret = spi_flexio_configure(dev, spi_cfg);
     if (ret) {

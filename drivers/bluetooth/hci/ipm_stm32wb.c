@@ -63,14 +63,14 @@ struct aci_set_ble_addr {
 	uint8_t value[6];
 } __packed;
 
+#ifdef CONFIG_BT_HCI_HOST
 #define ACI_WRITE_SET_TX_POWER_LEVEL       BT_OP(BT_OGF_VS, 0xFC0F)
 #define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
 #define ACI_HAL_STACK_RESET		   BT_OP(BT_OGF_VS, 0xFC3B)
 
 #define HCI_CONFIG_DATA_PUBADDR_OFFSET		0
-#define HCI_CONFIG_DATA_RANDOM_ADDRESS_OFFSET	0x2E
-
 static bt_addr_t bd_addr_udn;
+#endif /* CONFIG_BT_HCI_HOST */
 
 /* Rx thread definitions */
 K_FIFO_DEFINE(ipm_rx_events_fifo);
@@ -428,6 +428,7 @@ static void start_ble_rf(void)
 	LL_RCC_SetCLK48ClockSource(LL_RCC_CLK48_CLKSOURCE_HSI48);
 }
 
+#ifdef CONFIG_BT_HCI_HOST
 bt_addr_t *bt_get_ble_addr(void)
 {
 	bt_addr_t *bd_addr;
@@ -501,13 +502,6 @@ static int bt_ipm_ble_init(void)
 	struct net_buf *buf, *rsp;
 	int err;
 
-	/* Send HCI_RESET */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, &rsp);
-	if (err) {
-		return err;
-	}
-	/* TDB: Something to do on reset complete? */
-	net_buf_unref(rsp);
 	err = bt_ipm_set_addr();
 	if (err) {
 		BT_ERR("Can't set BLE UID addr");
@@ -530,6 +524,7 @@ static int bt_ipm_ble_init(void)
 
 	return 0;
 }
+#endif /* CONFIG_BT_HCI_HOST */
 
 static int c2_reset(void)
 {
@@ -576,16 +571,19 @@ static int bt_ipm_open(void)
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 
+#ifdef CONFIG_BT_HCI_HOST
 	err = bt_ipm_ble_init();
 	if (err) {
 		return err;
 	}
+#endif /* CONFIG_BT_HCI_HOST */
 
 	BT_DBG("IPM Channel Open Completed");
 
 	return 0;
 }
 
+#ifdef CONFIG_BT_HCI_HOST
 static int bt_ipm_close(void)
 {
 	int err;
@@ -610,13 +608,15 @@ static int bt_ipm_close(void)
 
 	return err;
 }
+#endif /* CONFIG_BT_HCI_HOST */
 
 static const struct bt_hci_driver drv = {
 	.name           = "BT IPM",
 	.bus            = BT_HCI_DRIVER_BUS_IPM,
-	.quirks         = BT_QUIRK_NO_RESET,
 	.open           = bt_ipm_open,
+#ifdef CONFIG_BT_HCI_HOST
 	.close          = bt_ipm_close,
+#endif
 	.send           = bt_ipm_send,
 };
 

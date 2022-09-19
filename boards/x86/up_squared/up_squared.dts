@@ -30,3 +30,7 @@
 		zephyr,bt-mon-uart = &uart1;
 	};
 };
+
+&hpet {
+	status = "disabled";
+};

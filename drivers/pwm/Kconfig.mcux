@@ -5,6 +5,7 @@
 
 config PWM_MCUX
 	bool "MCUX PWM driver"
-	depends on HAS_MCUX_PWM
+	default y
+	depends on DT_HAS_NXP_IMX_PWM_ENABLED
 	help
 	  Enable mcux pwm driver.

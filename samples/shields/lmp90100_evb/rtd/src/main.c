@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/adc.h>
 #include <stdio.h>
@@ -42,7 +42,7 @@ static double rtd_temperature(int nom, double resistance)
 
 void main(void)
 {
-	const struct device *lmp90100 = DEVICE_DT_GET_ONE(ti_lmp90100);
+	const struct device *const lmp90100 = DEVICE_DT_GET_ONE(ti_lmp90100);
 	double resistance;
 	int32_t buffer;
 	int err;

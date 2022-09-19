@@ -11,8 +11,4 @@ config COUNTER_SAM0_TC32
 	bool
 	default y if BOARD_ATSAMD20_XPRO
 
-config COUNTER_ESP32
-	bool
-	default y if SOC_ESP32 || SOC_ESP32S2
-
 source "Kconfig.zephyr"

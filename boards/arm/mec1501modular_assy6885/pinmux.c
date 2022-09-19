@@ -130,42 +130,42 @@ static int board_pinmux_init(const struct device *dev)
 	struct pinmux_ports_t pinmux_ports;
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_000_036), okay)
-	const struct device *porta = DEVICE_DT_GET(DT_NODELABEL(pinmux_000_036));
+	const struct device *const porta = DEVICE_DT_GET(DT_NODELABEL(pinmux_000_036));
 
 	__ASSERT_NO_MSG(device_is_ready(porta));
 
 	pinmux_ports.porta = porta;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_040_076), okay)
-	const struct device *portb = DEVICE_DT_GET(DT_NODELABEL(pinmux_040_076));
+	const struct device *const portb = DEVICE_DT_GET(DT_NODELABEL(pinmux_040_076));
 
 	__ASSERT_NO_MSG(device_is_ready(portb));
 
 	pinmux_ports.portb = portb;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_100_136), okay)
-	const struct device *portc = DEVICE_DT_GET(DT_NODELABEL(pinmux_100_136));
+	const struct device *const portc = DEVICE_DT_GET(DT_NODELABEL(pinmux_100_136));
 
 	__ASSERT_NO_MSG(device_is_ready(portc));
 
 	pinmux_ports.portc = portc;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_140_176), okay)
-	const struct device *portd = DEVICE_DT_GET(DT_NODELABEL(pinmux_140_176));
+	const struct device *const portd = DEVICE_DT_GET(DT_NODELABEL(pinmux_140_176));
 
 	__ASSERT_NO_MSG(device_is_ready(portd));
 
 	pinmux_ports.portd = portd;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_200_236), okay)
-	const struct device *porte = DEVICE_DT_GET(DT_NODELABEL(pinmux_200_236));
+	const struct device *const porte = DEVICE_DT_GET(DT_NODELABEL(pinmux_200_236));
 
 	__ASSERT_NO_MSG(device_is_ready(porte));
 
 	pinmux_ports.porte = porte;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_240_276), okay)
-	const struct device *portf = DEVICE_DT_GET(DT_NODELABEL(pinmux_240_276));
+	const struct device *const portf = DEVICE_DT_GET(DT_NODELABEL(pinmux_240_276));
 
 	__ASSERT_NO_MSG(device_is_ready(portf));
 

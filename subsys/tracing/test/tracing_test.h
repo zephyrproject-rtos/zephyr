@@ -412,7 +412,8 @@
 #define sys_port_trace_k_mem_slab_free_exit(slab) sys_trace_k_mem_slab_free_exit(slab, mem)
 
 #define sys_port_trace_k_timer_init(timer) sys_trace_k_timer_init(timer, expiry_fn, stop_fn)
-#define sys_port_trace_k_timer_start(timer) sys_trace_k_timer_start(timer, duration, period)
+#define sys_port_trace_k_timer_start(timer, duration, period)					   \
+	sys_trace_k_timer_start(timer, duration, period)
 #define sys_port_trace_k_timer_stop(timer) sys_trace_k_timer_stop(timer)
 #define sys_port_trace_k_timer_status_sync_enter(timer)
 #define sys_port_trace_k_timer_status_sync_blocking(timer, timeout)                                \
@@ -421,10 +422,10 @@
 	sys_trace_k_timer_status_sync_exit(timer, result)
 
 #define sys_port_trace_k_event_init(event) sys_trace_k_event_init(event)
-#define sys_port_trace_k_event_post_enter(event, events, accumulate)   \
-	sys_trace_k_event_post_enter(event, events, accumulate)
-#define sys_port_trace_k_event_post_exit(event, events, accumulate)   \
-	sys_trace_k_event_post_exit(event, events, accumulate)
+#define sys_port_trace_k_event_post_enter(event, events, events_mask)   \
+	sys_trace_k_event_post_enter(event, events, events_mask)
+#define sys_port_trace_k_event_post_exit(event, events, events_mask)   \
+	sys_trace_k_event_post_exit(event, events, events_mask)
 #define sys_port_trace_k_event_wait_enter(event, events, options, timeout)   \
 	sys_trace_k_event_wait_enter(event, events, options, timeout)
 #define sys_port_trace_k_event_wait_blocking(event, events, options, timeout) \

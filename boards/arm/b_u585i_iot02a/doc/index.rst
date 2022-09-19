@@ -36,9 +36,7 @@ some highlights of the B_U585I_IOT02A Discovery kit:
 
 
 .. image:: img/b-u585i-iot02a.jpg
-     :width: 426px
      :align: center
-     :height: 33px
      :alt: B_U585I_IOT02A Discovery kit
 
 More information about the board can be found at the `B U585I IOT02A Discovery kit website`_.
@@ -190,6 +188,9 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | usb_device                          |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -255,6 +256,8 @@ Default Zephyr Peripheral Mapping:
 - DAC1 CH1 : PA4 (STMOD+1)
 - ADC1_IN15 : PB0
 - USB OTG : PA11/PA12
+- PWM4 : CN14 PB6
+- PWM3 : CN4 PE4
 
 System Clock
 ------------

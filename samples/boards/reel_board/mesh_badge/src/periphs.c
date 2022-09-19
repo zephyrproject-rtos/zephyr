@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include "board.h"
@@ -12,7 +12,7 @@
 
 #include <zephyr/bluetooth/mesh.h>
 
-static const struct device *dev_info[] = {
+static const struct device *const dev_info[] = {
 	DEVICE_DT_GET_ONE(ti_hdc1010),
 	DEVICE_DT_GET_ONE(nxp_mma8652fc),
 	DEVICE_DT_GET_ONE(avago_apds9960),

@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flashcontroller0 {
+	reg = <0x00000000 DT_SIZE_K(4096)>;
+};
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_K(4096)>;
+	partitions {
+		compatible = "fixed-partitions";
+
+		littlefs_dev: partition@0 {
+			label = "littlefs_dev";
+			reg = <0x00000000 0x00010000>;
+		};
+	};
+};

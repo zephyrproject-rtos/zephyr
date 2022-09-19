@@ -48,10 +48,9 @@ the :kconfig:option:`CONFIG_GDBSTUB_SERIAL_BACKEND` option.
 
 Since serial backend utilizes UART devices to send and receive GDB commands,
 
-* If there are spare UART devices on the board, set
-  :kconfig:option:`CONFIG_GDBSTUB_SERIAL_BACKEND_NAME` to the spare UART device
-  so that :c:func:`printk` and log messages are not being printed to
-  the same UART device used for GDB.
+* If there are spare UART devices on the board, set ``zephyr,gdbstub-uart``
+  property of the chosen node to the spare UART device so that :c:func:`printk`
+  and log messages are not being printed to the same UART device used for GDB.
 
 * For boards with only one UART device, :c:func:`printk` and logging
   must be disabled if they are also using the same UART device for output.

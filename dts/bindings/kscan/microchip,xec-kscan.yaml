@@ -36,11 +36,3 @@ properties:
       type: array
       required: true
       description: ADC PCR register index and bit position
-
-girq-cells:
-    - girqnum
-    - bitpos
-
-pcr-cells:
-    - regidx
-    - bitpos

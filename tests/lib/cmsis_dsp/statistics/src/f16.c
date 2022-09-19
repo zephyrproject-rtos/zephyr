@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math_f16.h>
 #include "../../common/test_common.h"
@@ -49,9 +49,9 @@ static void test_arm_max_f16(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_max_f16, 7, in_com1, 0, 7);
-DEFINE_TEST_VARIANT3(arm_max_f16, 16, in_com1, 1, 16);
-DEFINE_TEST_VARIANT3(arm_max_f16, 23, in_com1, 2, 23);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_max_f16, 7, in_com1, 0, 7);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_max_f16, 16, in_com1, 1, 16);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_max_f16, 23, in_com1, 2, 23);
 
 static void test_arm_max_no_idx_f16(
 	const uint16_t *input1, int ref_index, size_t length)
@@ -66,9 +66,9 @@ static void test_arm_max_no_idx_f16(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_max_no_idx_f16, 7, in_com1, 0, 7);
-DEFINE_TEST_VARIANT3(arm_max_no_idx_f16, 16, in_com1, 1, 16);
-DEFINE_TEST_VARIANT3(arm_max_no_idx_f16, 23, in_com1, 2, 23);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_max_no_idx_f16, 7, in_com1, 0, 7);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_max_no_idx_f16, 16, in_com1, 1, 16);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_max_no_idx_f16, 23, in_com1, 2, 23);
 
 static void test_arm_min_f16(
 	const uint16_t *input1, int ref_index, size_t length)
@@ -87,9 +87,9 @@ static void test_arm_min_f16(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_min_f16, 7, in_com1, 0, 7);
-DEFINE_TEST_VARIANT3(arm_min_f16, 16, in_com1, 1, 16);
-DEFINE_TEST_VARIANT3(arm_min_f16, 23, in_com1, 2, 23);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_min_f16, 7, in_com1, 0, 7);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_min_f16, 16, in_com1, 1, 16);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_min_f16, 23, in_com1, 2, 23);
 
 static void test_arm_absmax_f16(
 	const uint16_t *input1, int ref_index, size_t length)
@@ -108,9 +108,9 @@ static void test_arm_absmax_f16(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_absmax_f16, 7, in_absminmax, 0, 7);
-DEFINE_TEST_VARIANT3(arm_absmax_f16, 16, in_absminmax, 1, 16);
-DEFINE_TEST_VARIANT3(arm_absmax_f16, 23, in_absminmax, 2, 23);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_absmax_f16, 7, in_absminmax, 0, 7);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_absmax_f16, 16, in_absminmax, 1, 16);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_absmax_f16, 23, in_absminmax, 2, 23);
 
 static void test_arm_absmin_f16(
 	const uint16_t *input1, int ref_index, size_t length)
@@ -129,9 +129,9 @@ static void test_arm_absmin_f16(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_absmin_f16, 7, in_absminmax, 0, 7);
-DEFINE_TEST_VARIANT3(arm_absmin_f16, 16, in_absminmax, 1, 16);
-DEFINE_TEST_VARIANT3(arm_absmin_f16, 23, in_absminmax, 2, 23);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_absmin_f16, 7, in_absminmax, 0, 7);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_absmin_f16, 16, in_absminmax, 1, 16);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_absmin_f16, 23, in_absminmax, 2, 23);
 
 static void test_arm_mean_f16(
 	const uint16_t *input1, int ref_index, size_t length)
@@ -162,9 +162,9 @@ static void test_arm_mean_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_mean_f16, 7, in_com2, 0, 7);
-DEFINE_TEST_VARIANT3(arm_mean_f16, 16, in_com2, 1, 16);
-DEFINE_TEST_VARIANT3(arm_mean_f16, 23, in_com2, 2, 23);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_mean_f16, 7, in_com2, 0, 7);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_mean_f16, 16, in_com2, 1, 16);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_mean_f16, 23, in_com2, 2, 23);
 
 static void test_arm_power_f16(
 	const uint16_t *input1, int ref_index, size_t length)
@@ -195,9 +195,9 @@ static void test_arm_power_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_power_f16, 7, in_com1, 0, 7);
-DEFINE_TEST_VARIANT3(arm_power_f16, 16, in_com1, 1, 16);
-DEFINE_TEST_VARIANT3(arm_power_f16, 23, in_com1, 2, 23);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_power_f16, 7, in_com1, 0, 7);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_power_f16, 16, in_com1, 1, 16);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_power_f16, 23, in_com1, 2, 23);
 
 static void test_arm_rms_f16(
 	const uint16_t *input1, int ref_index, size_t length)
@@ -228,9 +228,9 @@ static void test_arm_rms_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_rms_f16, 7, in_com1, 0, 7);
-DEFINE_TEST_VARIANT3(arm_rms_f16, 16, in_com1, 1, 16);
-DEFINE_TEST_VARIANT3(arm_rms_f16, 23, in_com1, 2, 23);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_rms_f16, 7, in_com1, 0, 7);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_rms_f16, 16, in_com1, 1, 16);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_rms_f16, 23, in_com1, 2, 23);
 
 static void test_arm_std_f16(
 	const uint16_t *input1, int ref_index, size_t length)
@@ -261,9 +261,9 @@ static void test_arm_std_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_std_f16, 7, in_com1, 0, 7);
-DEFINE_TEST_VARIANT3(arm_std_f16, 16, in_com1, 1, 16);
-DEFINE_TEST_VARIANT3(arm_std_f16, 23, in_com1, 2, 23);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_std_f16, 7, in_com1, 0, 7);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_std_f16, 16, in_com1, 1, 16);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_std_f16, 23, in_com1, 2, 23);
 
 static void test_arm_var_f16(
 	const uint16_t *input1, int ref_index, size_t length)
@@ -294,11 +294,11 @@ static void test_arm_var_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_var_f16, 7, in_com1, 0, 7);
-DEFINE_TEST_VARIANT3(arm_var_f16, 16, in_com1, 1, 16);
-DEFINE_TEST_VARIANT3(arm_var_f16, 23, in_com1, 2, 23);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_var_f16, 7, in_com1, 0, 7);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_var_f16, 16, in_com1, 1, 16);
+DEFINE_TEST_VARIANT3(statistics_f16, arm_var_f16, 23, in_com1, 2, 23);
 
-static void test_arm_entropy_f16(void)
+ZTEST(statistics_f16, test_arm_entropy_f16)
 {
 	size_t index;
 	size_t length = in_entropy_dim[0];
@@ -333,7 +333,7 @@ static void test_arm_entropy_f16(void)
 	free(output);
 }
 
-static void test_arm_logsumexp_f16(void)
+ZTEST(statistics_f16, test_arm_logsumexp_f16)
 {
 	size_t index;
 	size_t length = in_logsumexp_dim[0];
@@ -368,7 +368,7 @@ static void test_arm_logsumexp_f16(void)
 	free(output);
 }
 
-static void test_arm_kullback_leibler_f16(void)
+ZTEST(statistics_f16, test_arm_kullback_leibler_f16)
 {
 	size_t index;
 	size_t length = in_kl_dim[0];
@@ -408,7 +408,7 @@ static void test_arm_kullback_leibler_f16(void)
 	free(output);
 }
 
-static void test_arm_logsumexp_dot_prod_f16(void)
+ZTEST(statistics_f16, test_arm_logsumexp_dot_prod_f16)
 {
 	size_t index;
 	size_t length = in_logsumexp_dp_dim[0];
@@ -453,44 +453,4 @@ static void test_arm_logsumexp_dot_prod_f16(void)
 	free(tmp);
 }
 
-void test_statistics_f16(void)
-{
-	ztest_test_suite(statistics_f16,
-		ztest_unit_test(test_arm_max_f16_7),
-		ztest_unit_test(test_arm_max_f16_16),
-		ztest_unit_test(test_arm_max_f16_23),
-		ztest_unit_test(test_arm_min_f16_7),
-		ztest_unit_test(test_arm_min_f16_16),
-		ztest_unit_test(test_arm_min_f16_23),
-		ztest_unit_test(test_arm_absmax_f16_7),
-		ztest_unit_test(test_arm_absmax_f16_16),
-		ztest_unit_test(test_arm_absmax_f16_23),
-		ztest_unit_test(test_arm_absmin_f16_7),
-		ztest_unit_test(test_arm_absmin_f16_16),
-		ztest_unit_test(test_arm_absmin_f16_23),
-		ztest_unit_test(test_arm_mean_f16_7),
-		ztest_unit_test(test_arm_mean_f16_16),
-		ztest_unit_test(test_arm_mean_f16_23),
-		ztest_unit_test(test_arm_power_f16_7),
-		ztest_unit_test(test_arm_power_f16_16),
-		ztest_unit_test(test_arm_power_f16_23),
-		ztest_unit_test(test_arm_rms_f16_7),
-		ztest_unit_test(test_arm_rms_f16_16),
-		ztest_unit_test(test_arm_rms_f16_23),
-		ztest_unit_test(test_arm_std_f16_7),
-		ztest_unit_test(test_arm_std_f16_16),
-		ztest_unit_test(test_arm_std_f16_23),
-		ztest_unit_test(test_arm_var_f16_7),
-		ztest_unit_test(test_arm_var_f16_16),
-		ztest_unit_test(test_arm_var_f16_23),
-		ztest_unit_test(test_arm_entropy_f16),
-		ztest_unit_test(test_arm_logsumexp_f16),
-		ztest_unit_test(test_arm_kullback_leibler_f16),
-		ztest_unit_test(test_arm_logsumexp_dot_prod_f16),
-		ztest_unit_test(test_arm_max_no_idx_f16_7),
-		ztest_unit_test(test_arm_max_no_idx_f16_16),
-		ztest_unit_test(test_arm_max_no_idx_f16_23)
-		);
-
-	ztest_run_test_suite(statistics_f16);
-}
+ZTEST_SUITE(statistics_f16, NULL, NULL, NULL, NULL, NULL);

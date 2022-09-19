@@ -11,4 +11,7 @@ config BOARD
 config BT_CTLR
 	default BT
 
+config I2C
+	default SENSOR
+
 endif # BOARD_BLUECLOVER_PLT_DEMO_V2_NRF52832

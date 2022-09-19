@@ -131,7 +131,7 @@ static void prepare(void *param)
 
 	/* Accumulate window widening */
 	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   (p->lazy + 1);
+					   (p->lazy + 1U);
 	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
 		lll->window_widening_prepare_us = lll->window_widening_max_us;
 	}
@@ -256,12 +256,12 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	event_counter = lll->event_counter + lll->skip_event;
 
 	/* Reset accumulated latencies */
-	lll->skip_prepare = 0;
+	lll->skip_prepare = 0U;
 
 	chan_idx = data_channel_calc(lll);
 
 	/* Update event counter to next value */
-	lll->event_counter = (event_counter + 1);
+	lll->event_counter = (event_counter + 1U);
 
 	err = prepare_cb_common(p, chan_idx);
 	if (err) {
@@ -320,16 +320,17 @@ static int prepare_cb(struct lll_prepare_param *p)
 	event_counter = lll->event_counter + lll->skip_event;
 
 	/* Reset accumulated latencies */
-	lll->skip_prepare = 0;
+	lll->skip_prepare = 0U;
 
 	chan_idx = data_channel_calc(lll);
 
 	/* Update event counter to next value */
-	lll->event_counter = (event_counter + 1);
+	lll->event_counter = (event_counter + 1U);
 
 	err = prepare_cb_common(p, chan_idx);
 	if (err) {
 		DEBUG_RADIO_START_O(1);
+
 		return 0;
 	}
 
@@ -467,15 +468,60 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 	/* Different radio event overlap */
 	if (next != curr) {
+		struct lll_scan_aux *lll_aux;
 		struct lll_scan *lll;
 
 		lll = ull_scan_lll_is_valid_get(next);
-		if (!lll) {
-			/* Abort current event as next event is not a scan
-			 * event.
+		if (lll) {
+			/* Do not abort current periodic sync event as next
+			 * event is a scan event.
+			 */
+			return 0;
+		}
+
+		lll_aux = ull_scan_aux_lll_is_valid_get(next);
+		if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX) &&
+		    lll_aux) {
+			/* Do not abort current periodic sync event as next
+			 * event is a scan aux event.
+			 */
+			return 0;
+		}
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
+		struct lll_sync *lll_sync_next;
+		struct lll_sync *lll_sync_curr;
+
+		lll_sync_next = ull_sync_lll_is_valid_get(next);
+		if (!lll_sync_next) {
+			/* Abort current event as next event is not a
+			 * scan and not a scan aux event.
 			 */
 			return -ECANCELED;
 		}
+
+		lll_sync_curr = curr;
+		if (lll_sync_curr->abort_count < lll_sync_next->abort_count) {
+			if (lll_sync_curr->abort_count < UINT8_MAX) {
+				lll_sync_curr->abort_count++;
+			}
+
+			/* Abort current event as next event has higher abort
+			 * count.
+			 */
+			return -ECANCELED;
+		}
+
+		if (lll_sync_next->abort_count < UINT8_MAX) {
+			lll_sync_next->abort_count++;
+		}
+
+#else /* !CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
+		/* Abort current event as next event is not a
+		 * scan and not a scan aux event.
+		 */
+		return -ECANCELED;
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
 	}
 
 	/* Do not abort if current periodic sync event overlaps next interval
@@ -486,6 +532,7 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
+	struct event_done_extra *e;
 	struct lll_sync *lll;
 	int err;
 
@@ -509,7 +556,21 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	/* Accumulate the latency as event is aborted while being in pipeline */
 	lll = prepare_param->param;
-	lll->skip_prepare += (prepare_param->lazy + 1);
+	lll->skip_prepare += (prepare_param->lazy + 1U);
+
+	/* Extra done event, to check sync lost */
+	e = ull_event_done_extra_get();
+	LL_ASSERT(e);
+
+	e->type = EVENT_DONE_EXTRA_TYPE_SYNC;
+	e->trx_cnt = 0U;
+	e->crc_valid = 0U;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
+	defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+	e->sync_term = 0U;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING &&
+	* CONFIG_BT_CTLR_CTEINLINE_SUPPORT
+	*/
 
 	lll_done(param);
 }
@@ -532,7 +593,7 @@ static void isr_aux_setup(void *param)
 	node_rx = param;
 	ftr = &node_rx->hdr.rx_ftr;
 	aux_ptr = ftr->aux_ptr;
-	phy_aux = BIT(aux_ptr->phy);
+	phy_aux = BIT(PDU_ADV_AUX_PTR_PHY_GET(aux_ptr));
 	ftr->aux_phy = phy_aux;
 
 	lll = ftr->param;
@@ -545,7 +606,7 @@ static void isr_aux_setup(void *param)
 	}
 
 	/* Calculate the aux offset from start of the scan window */
-	aux_offset_us = (uint32_t) aux_ptr->offs * window_size_us;
+	aux_offset_us = (uint32_t) PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) * window_size_us;
 
 	/* Calculate the window widening that needs to be deducted */
 	if (aux_ptr->ca) {
@@ -572,7 +633,8 @@ static void isr_aux_setup(void *param)
 
 	if (cfg->is_enabled && is_max_cte_reached(cfg->max_cte_count, cfg->cte_count)) {
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
-					  aux_ptr->chan_idx, CTE_INFO_IN_PAYLOAD, aux_ptr->phy);
+					  aux_ptr->chan_idx, CTE_INFO_IN_PAYLOAD,
+					  PDU_ADV_AUX_PTR_PHY_GET(aux_ptr));
 	}
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 	radio_switch_complete_and_disable();
@@ -644,8 +706,17 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 		 * - allocating an extra node_rx for periodic report incomplete
 		 * - a buffer for receiving data in a connection
 		 * - a buffer for receiving empty PDU
+		 *
+		 * If this is a reception of chained PDU, node_type is
+		 * NODE_RX_TYPE_EXT_AUX_REPORT, then there is no need to reserve
+		 * again a node_rx for periodic report incomplete.
 		 */
-		node_rx = ull_pdu_rx_alloc_peek(4);
+		if (node_type != NODE_RX_TYPE_EXT_AUX_REPORT) {
+			node_rx = ull_pdu_rx_alloc_peek(4);
+		} else {
+			node_rx = ull_pdu_rx_alloc_peek(3);
+		}
+
 		if (node_rx) {
 			struct node_rx_ftr *ftr;
 			struct pdu_adv *pdu;
@@ -997,6 +1068,14 @@ static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_
 		/* Reset window widening, as anchor point sync-ed */
 		lll->window_widening_event_us = 0U;
 		lll->window_size_event_us = 0U;
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
+		/* Reset LLL abort count as LLL event is gracefully done and
+		 * was not aborted by any other event when current event could
+		 * have been using unreserved time space.
+		 */
+		lll->abort_count = 0U;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
 	}
 
 	lll_isr_cleanup(lll);

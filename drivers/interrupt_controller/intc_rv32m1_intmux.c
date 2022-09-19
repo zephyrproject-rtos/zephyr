@@ -106,7 +106,7 @@ static int rv32m1_intmux_get_line_state(const struct device *dev,
 
 static void rv32m1_intmux_isr(const void *arg)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	const struct rv32m1_intmux_config *config = dev->config;
 	INTMUX_Type *regs = DEV_REGS(dev);
 	uint32_t channel = POINTER_TO_UINT(arg);
@@ -153,6 +153,10 @@ static int rv32m1_intmux_init(const struct device *dev)
 	const struct rv32m1_intmux_config *config = dev->config;
 	INTMUX_Type *regs = DEV_REGS(dev);
 	size_t i;
+
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
 
 	/* Enable INTMUX clock. */
 	clock_control_on(config->clock_dev, config->clock_subsys);

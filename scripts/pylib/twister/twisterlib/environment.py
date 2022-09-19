@@ -18,6 +18,7 @@ logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
 from twisterlib.error import TwisterRuntimeError
+from twisterlib.log_helper import log_command
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -367,9 +368,9 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         help="Delete artifacts of passing tests.")
 
     test_xor_generator.add_argument(
-        "-N", "--ninja", action="store_true", default="--make" not in sys.argv,
-        help="Use the Ninja generator with CMake. (This is the default)",
-        required="--short-build-path" in sys.argv)
+        "-N", "--ninja", action="store_true",
+        default=not any(a in sys.argv for a in ("-k", "--make")),
+        help="Use the Ninja generator with CMake. (This is the default)")
 
     test_xor_generator.add_argument(
         "-k", "--make", action="store_true",
@@ -602,6 +603,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     options = parser.parse_args(args)
 
     # Very early error handling
+    if options.short_build_path and not options.ninja:
+        logger.error("--short-build-path requires Ninja to be enabled")
+        sys.exit(1)
+
     if options.device_serial_pty and os.name == "nt":  # OS is Windows
         logger.error("--device-serial-pty is not supported on Windows OS")
         sys.exit(1)
@@ -701,19 +706,20 @@ class TwisterEnv:
 
     @staticmethod
     def run_cmake_script(args=[]):
+        script = os.fspath(args[0])
 
-        logger.debug("Running cmake script %s" % (args[0]))
+        logger.debug("Running cmake script %s", script)
 
         cmake_args = ["-D{}".format(a.replace('"', '')) for a in args[1:]]
-        cmake_args.extend(['-P', args[0]])
+        cmake_args.extend(['-P', script])
 
-        logger.debug("Calling cmake with arguments: {}".format(cmake_args))
         cmake = shutil.which('cmake')
         if not cmake:
             msg = "Unable to find `cmake` in path"
             logger.error(msg)
             raise Exception(msg)
         cmd = [cmake] + cmake_args
+        log_command(logger, "Calling cmake", cmd)
 
         kwargs = dict()
         kwargs['stdout'] = subprocess.PIPE
@@ -742,7 +748,7 @@ class TwisterEnv:
         return results
 
     def get_toolchain(self):
-        toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/modules/verify-toolchain.cmake')
+        toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/verify-toolchain.cmake')
         result = self.run_cmake_script([toolchain_script, "FORMAT=json"])
 
         try:

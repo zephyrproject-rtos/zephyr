@@ -4,8 +4,6 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(cmsis_dsp_filtering)
 
-target_sources(app PRIVATE src/main.c)
-
 if(CONFIG_CMSIS_DSP_TEST_FILTERING_BIQUAD)
   target_sources(app PRIVATE
     src/biquad_q15.c

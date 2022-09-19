@@ -8,6 +8,6 @@ config HAS_DTS
 
 menu "Devicetree Info"
 
-source "$(KCONFIG_BINARY_DIR)/Kconfig.dts"
+osource "$(KCONFIG_BINARY_DIR)/Kconfig.dts"
 
 endmenu

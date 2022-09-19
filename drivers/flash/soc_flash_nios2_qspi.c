@@ -9,6 +9,8 @@
  * Nios-II QSPI Controller HAL driver.
  */
 
+#define DT_DRV_COMPAT altr_nios2_qspi_nor
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <string.h>
@@ -520,8 +522,10 @@ struct flash_nios2_qspi_config flash_cfg = {
 	}
 };
 
-DEVICE_DEFINE(flash_nios2_qspi,
-		CONFIG_SOC_FLASH_NIOS2_QSPI_DEV_NAME,
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
+	"only one 'altr,nios2-qspi-nor' compatible node may be present");
+
+DEVICE_DT_INST_DEFINE(0,
 		flash_nios2_qspi_init, NULL, &flash_cfg, NULL,
 		POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
 		&flash_nios2_qspi_api);

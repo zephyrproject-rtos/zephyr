@@ -5,12 +5,6 @@ if SHIELD_ADAFRUIT_WINC1500
 
 if NETWORKING
 
-config SPI
-	default y
-
-config WIFI_WINC1500
-	default y
-
 config WIFI
 	default y
 

@@ -19,6 +19,7 @@ struct intel_adsp_hda_dma_data {
 
 struct intel_adsp_hda_dma_cfg {
 	uint32_t base;
+	uint32_t regblock_size;
 	uint32_t dma_channels;
 	enum dma_channel_direction direction;
 };

@@ -5,6 +5,7 @@
 
 config GPIO_TELINK_B91
 	bool "Telink B91 GPIO driver"
-	depends on SOC_RISCV_TELINK_B91
+	default y
+	depends on DT_HAS_TELINK_B91_GPIO_ENABLED
 	help
 	  Enable the B91 GPIO driver.

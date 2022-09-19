@@ -13,8 +13,7 @@ with additional expansion ports around the Arduino footprint, along
 with a PMod/host interface port and MikroElektronika Click module
 site.
 
-.. image:: ./lpcxpresso55S16.jpg
-   :width: 720px
+.. image:: lpcxpresso55S16.jpg
    :align: center
    :alt: LPCXpresso55S16
 
@@ -49,8 +48,12 @@ For more information about the LPC55S16 SoC and LPCXPresso55S16 board, see:
 Supported Features
 ==================
 
-The lpcxpresso55s16 board configuration supports the following
-hardware features:
+The lpcxpresso55s16 board configuration supports the hardware features listed
+below.  For additional features not yet supported, please also refer to the
+:ref:`lpcxpresso55s69` , which is the superset board in NXP's LPC55xx series.
+NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+Zephyr.  Therefore, the lpcxpresso55s69 board may have additional features
+already supported, which can also be re-used on this lpcxpresso55s16 board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -74,6 +77,11 @@ hardware features:
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
 | CAN       | on-chip    | canbus                              |
++-----------+------------+-------------------------------------+
+| RNG       | on-chip    | entropy;                            |
+|           |            | random                              |
++-----------+------------+-------------------------------------+
+| IAP       | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.

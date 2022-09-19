@@ -14,7 +14,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
@@ -26,7 +26,7 @@
 #include <zephyr/bluetooth/gatt.h>
 
 #ifdef CONFIG_TEMP_NRF5
-static const struct device *temp_dev = DEVICE_DT_GET_ANY(nordic_nrf_temp);
+static const struct device *const temp_dev = DEVICE_DT_GET_ANY(nordic_nrf_temp);
 #else
 static const struct device *temp_dev;
 #endif

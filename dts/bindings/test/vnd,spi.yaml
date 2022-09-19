@@ -5,4 +5,12 @@ description: Test SPI node
 
 compatible: "vnd,spi"
 
-include: [spi-controller.yaml, base.yaml]
+include:
+  - name: spi-controller.yaml
+    property-blocklist:
+      - label
+
+properties:
+    label:
+        type: string
+        required: false

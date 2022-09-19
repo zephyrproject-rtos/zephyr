@@ -41,7 +41,6 @@ nRF5340 SoC provides support for the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/nrf5340dk.jpg
-     :width: 711px
      :align: center
      :alt: nRF5340 DK
 

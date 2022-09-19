@@ -25,9 +25,6 @@
 /* Exception code of environment call from M-mode */
 #define SOC_MCAUSE_ECALL_EXP         11
 
-/* SOC-Specific EXIT ISR command */
-#define SOC_ERET                     mret
-
 #ifndef _ASMLANGUAGE
 
 #if CONFIG_ITE_IT8XXX2_INTC

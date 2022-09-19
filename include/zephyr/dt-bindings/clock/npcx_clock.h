@@ -17,6 +17,7 @@
 #define NPCX_CLOCK_BUS_APB3        7
 #define NPCX_CLOCK_BUS_APB4        8
 #define NPCX_CLOCK_BUS_AHB6        9
+#define NPCX_CLOCK_BUS_FMCLK       10
 
 /* clock enable/disable references */
 #define NPCX_PWDWN_CTL1            0

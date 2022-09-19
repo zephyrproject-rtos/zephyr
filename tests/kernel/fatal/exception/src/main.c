@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
-#include <tc_util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/irq_offload.h>
 #include <kswap.h>
@@ -79,9 +79,12 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 	__asm__ volatile ("trap");
 #elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
+#elif defined(CONFIG_RISCV)
+	/* Illegal instruction on RISCV. */
+	__asm__ volatile (".word 0x77777777");
 #else
-	/* Triggers usage fault on ARM, illegal instruction on RISCV
-	 * and xtensa, TLB exception (instruction fetch) on MIPS.
+	/* Triggers usage fault on ARM, illegal instruction on
+	 * xtensa, TLB exception (instruction fetch) on MIPS.
 	 */
 	{
 		volatile long illegal = 0;
@@ -181,10 +184,21 @@ __no_optimization void blow_up_stack(void)
 #else
 /* stack sentinel doesn't catch it in time before it trashes the entire kernel
  */
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Winfinite-recursion"
+#endif
+
 __no_optimization int stack_smasher(int val)
 {
 	return stack_smasher(val * 2) + stack_smasher(val * 3);
 }
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 void blow_up_stack(void)
 {

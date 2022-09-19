@@ -34,7 +34,7 @@ const void *x86_irq_args[NR_IRQ_VECTORS];
 #include <zephyr/device.h>
 #include <zephyr/drivers/interrupt_controller/intel_vtd.h>
 
-static const struct device *vtd = DEVICE_DT_GET_ONE(intel_vt_d);
+static const struct device *const vtd = DEVICE_DT_GET_ONE(intel_vt_d);
 
 #endif /* CONFIG_INTEL_VTD_ICTL */
 

@@ -12,7 +12,7 @@
 #include <cavs-idc.h>
 #include <adsp_shim.h>
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 #include <ace_v1x-regs.h>
 #endif
 
@@ -27,7 +27,7 @@
 
 #define COMPARATOR_IDX  0 /* 0 or 1 */
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 #define TIMER_IRQ MTL_IRQ_TO_ZEPHYR(MTL_INTL_TTS)
 #else
 #define TIMER_IRQ DSP_WCT_IRQ(COMPARATOR_IDX)
@@ -42,11 +42,11 @@
 BUILD_ASSERT(MIN_DELAY < CYC_PER_TICK);
 BUILD_ASSERT(COMPARATOR_IDX >= 0 && COMPARATOR_IDX <= 1);
 
-#define WCTCS      (SHIM_DSPWCTS)
-#define COUNTER_HI (SHIM_DSPWCH)
-#define COUNTER_LO (SHIM_DSPWCL)
-#define COMPARE_HI (SHIM_COMPARE_HI(COMPARATOR_IDX))
-#define COMPARE_LO (SHIM_COMPARE_LO(COMPARATOR_IDX))
+#define WCTCS      (ADSP_SHIM_DSPWCTS)
+#define COUNTER_HI (ADSP_SHIM_DSPWCH)
+#define COUNTER_LO (ADSP_SHIM_DSPWCL)
+#define COMPARE_HI (ADSP_SHIM_COMPARE_HI(COMPARATOR_IDX))
+#define COMPARE_LO (ADSP_SHIM_COMPARE_LO(COMPARATOR_IDX))
 
 
 static struct k_spinlock lock;
@@ -189,9 +189,9 @@ static void irq_init(void)
 	 * (for per-core control) above the interrupt controller.
 	 * Drivers need to do that part.
 	 */
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 	MTL_DINT[cpu].ie[MTL_INTL_TTS] |= BIT(COMPARATOR_IDX + 1);
-	*WCTCS |= SHIM_DSPWCTCS_TTIE(COMPARATOR_IDX);
+	*WCTCS |= ADSP_SHIM_DSPWCTCS_TTIE(COMPARATOR_IDX);
 #else
 	CAVS_INTCTRL[cpu].l2.clear = CAVS_L2_DWCT0;
 #endif

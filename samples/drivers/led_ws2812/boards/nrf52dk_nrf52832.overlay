@@ -12,7 +12,6 @@
 	compatible = "nordic,nrf-spim";
 	led_strip: ws2812@0 {
 		compatible = "worldsemi,ws2812-spi";
-		label = "WS2812";
 
 		/* SPI */
 		reg = <0>; /* ignored, but necessary for SPI bindings */

@@ -18,9 +18,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_npcx, LOG_LEVEL_ERR);
 
-/* GPIO module instances declarations */
-static const struct device *gpio_devs[];
-static int gpio_devs_count;
+/* GPIO module instances */
+#define NPCX_GPIO_DEV(inst) DEVICE_DT_INST_GET(inst),
+static const struct device *const gpio_devs[] = {
+	DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEV)
+};
 
 /* Driver config */
 struct gpio_npcx_config {
@@ -49,7 +51,7 @@ struct gpio_npcx_data {
 /* Platform specific GPIO functions */
 const struct device *npcx_get_gpio_dev(int port)
 {
-	if (port >= gpio_devs_count) {
+	if (port >= ARRAY_SIZE(gpio_devs)) {
 		return NULL;
 	}
 
@@ -415,11 +417,3 @@ int gpio_npcx_init(const struct device *dev)
 			    &gpio_npcx_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEVICE_INIT)
-
-/* GPIO module instances */
-#define NPCX_GPIO_DEV(inst) DEVICE_DT_INST_GET(inst),
-static const struct device *gpio_devs[] = {
-	DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEV)
-};
-
-static int gpio_devs_count = ARRAY_SIZE(gpio_devs);

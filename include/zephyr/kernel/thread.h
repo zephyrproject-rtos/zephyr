@@ -39,6 +39,20 @@ struct __thread_entry {
 };
 #endif
 
+struct k_thread;
+
+/*
+ * This _pipe_desc structure is used by the pipes kernel module when
+ * CONFIG_PIPES has been selected.
+ */
+
+struct _pipe_desc {
+	sys_dnode_t      node;
+	unsigned char   *buffer;         /* Position in src/dest buffer */
+	size_t           bytes_to_xfer;  /* # bytes left to transfer */
+	struct k_thread *thread;         /* Back pointer to pended thread */
+};
+
 /* can be used for creating 'dummy' threads, e.g. for pending on objects */
 struct _thread_base {
 
@@ -209,7 +223,7 @@ typedef struct k_thread_runtime_stats {
 	uint64_t idle_cycles;
 #endif
 
-#if __cplusplus && !defined(CONFIG_SCHED_THREAD_USAGE) &&                                          \
+#if defined(__cplusplus) && !defined(CONFIG_SCHED_THREAD_USAGE) &&                                 \
 	!defined(CONFIG_SCHED_THREAD_USAGE_ANALYSIS) && !defined(CONFIG_SCHED_THREAD_USAGE_ALL)
 	/* If none of the above Kconfig values are defined, this struct will have a size 0 in C
 	 * which is not allowed in C++ (it'll have a size 1). To prevent this, we add a 1 byte dummy
@@ -318,6 +332,11 @@ struct k_thread {
 #ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
 	/** Paging statistics */
 	struct k_mem_paging_stats_t paging_stats;
+#endif
+
+#ifdef CONFIG_PIPES
+	/** Pipe descriptor used with blocking k_pipe operations */
+	struct _pipe_desc pipe_desc;
 #endif
 
 	/** arch-specifics: must always be at the end */

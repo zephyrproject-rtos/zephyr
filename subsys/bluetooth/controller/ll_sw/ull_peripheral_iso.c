@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -113,7 +113,7 @@ uint8_t ll_cis_reject(uint16_t handle, uint8_t reason)
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	status = BT_HCI_ERR_CMD_DISALLOWED;
 #else
-	struct ll_conn *acl_conn = ll_cis_reply_ok(handle, &status);
+	struct ll_conn *acl_conn = ll_cis_get_acl_awaiting_reply(handle, &status);
 
 	if (acl_conn) {
 		/* Accept request */
@@ -194,6 +194,10 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->group = cig;
 	cis->teardown = 0;
 	cis->released_cb = NULL;
+	cis->c_max_sdu = (uint16_t)(req->c_max_sdu_packed[1] & 0x0F) << 8 |
+				    req->c_max_sdu_packed[0];
+	cis->p_max_sdu = (uint16_t)(req->p_max_sdu[1] & 0x0F) << 8 |
+				    req->p_max_sdu[0];
 
 	cis->lll.handle = 0xFFFF;
 	cis->lll.acl_handle = acl->lll.handle;
@@ -335,6 +339,9 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	err = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
 			     0, &mfy);
 	LL_ASSERT(!err);
+
+	/* Handle ISO Transmit Test for this CIG */
+	ull_conn_iso_transmit_test_cig_interval(cig->lll.handle, ticks_at_expire);
 }
 
 static void ticker_op_cb(uint32_t status, void *param)

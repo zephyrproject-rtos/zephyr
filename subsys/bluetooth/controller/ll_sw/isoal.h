@@ -431,6 +431,8 @@ void isoal_source_enable(isoal_source_handle_t hdl);
 
 void isoal_source_disable(isoal_source_handle_t hdl);
 
+struct isoal_source *isoal_source_get(isoal_source_handle_t hdl);
+
 void isoal_source_destroy(isoal_source_handle_t hdl);
 
 isoal_status_t isoal_tx_sdu_fragment(isoal_source_handle_t source_hdl,

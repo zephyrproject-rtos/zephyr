@@ -243,6 +243,22 @@ void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 	lr_check_done(conn, ctx);
 }
 
+void llcp_lr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_PHY)
+	case PROC_PHY_UPDATE:
+		llcp_lp_pu_tx_ntf(conn, ctx);
+		break;
+#endif /* CONFIG_BT_CTLR_PHY */
+	default:
+		/* Ignore other procedures */
+		break;
+	}
+
+	lr_check_done(conn, ctx);
+}
+
 static void lr_act_run(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;

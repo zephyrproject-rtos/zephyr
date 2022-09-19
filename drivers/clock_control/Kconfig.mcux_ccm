@@ -5,6 +5,7 @@
 
 config CLOCK_CONTROL_MCUX_CCM
 	bool "MCUX CCM driver"
-	depends on HAS_MCUX_CCM
+	default y
+	depends on DT_HAS_NXP_IMX_CCM_ENABLED
 	help
 	  Enable support for mcux ccm driver.

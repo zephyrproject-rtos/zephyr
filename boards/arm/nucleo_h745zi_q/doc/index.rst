@@ -46,9 +46,7 @@ Key Features
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
 
 .. image:: img/nucleo_h745zi_q.jpg
-   :width: 720px
    :align: center
-   :height: 560px
    :alt: Nucleo H745ZI-Q
 
 More information about the board can be found at the `Nucleo H745ZI-Q website`_.

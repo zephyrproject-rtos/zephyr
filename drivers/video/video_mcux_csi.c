@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_imx_csi
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <fsl_csi.h>
 

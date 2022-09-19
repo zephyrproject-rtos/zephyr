@@ -37,7 +37,6 @@
 		compatible ="jedec,spi-nor";
 		/*  4194304 bits = 512K Bytes */
 		size = <0x400000>;
-		label = "W25Q40";
 		reg = <0>;
 		spi-max-frequency = <50000000>;
 		status = "okay";

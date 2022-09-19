@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
 #include <stdlib.h>
@@ -45,7 +45,7 @@ static char *us_time_to_str(char *dest, uint64_t time)
 /**
  * @brief Test native_posix real time control
  */
-static void test_realtime(void)
+ZTEST(native_realtime, test_realtime)
 {
 	extern uint64_t get_host_us_time(void);
 	uint64_t time;
@@ -143,7 +143,7 @@ static void test_realtime(void)
 /**
  * @brief Test native_posix RTC offset functionality
  */
-static void test_rtc_offset(void)
+ZTEST(native_realtime,  test_rtc_offset)
 {
 	int offset = 567;
 	uint64_t start_rtc_time[2];
@@ -164,12 +164,4 @@ static void test_rtc_offset(void)
 	zassert_true(diff == offset, "Offsetting RTC failed\n");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(native_realtime_tests,
-		ztest_unit_test(test_realtime),
-		ztest_unit_test(test_rtc_offset)
-	);
-
-	ztest_run_test_suite(native_realtime_tests);
-}
+ZTEST_SUITE(native_realtime, NULL, NULL, NULL, NULL, NULL);

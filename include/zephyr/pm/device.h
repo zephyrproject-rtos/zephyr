@@ -190,7 +190,7 @@ struct pm_device {
  *
  * @param dev_name Device name.
  */
-#define Z_PM_DEVICE_NAME(dev_name) _CONCAT(__pm_device__, dev_name)
+#define Z_PM_DEVICE_NAME(dev_name) _CONCAT(__pm_device_, dev_name)
 
 /**
  * @brief Define device PM slot.
@@ -205,7 +205,7 @@ struct pm_device {
  */
 #define Z_PM_DEVICE_DEFINE_SLOT(dev_name)				\
 	static const Z_DECL_ALIGN(struct device *)			\
-	_CONCAT(Z_PM_DEVICE_NAME(dev_name), _slot) __used		\
+	_CONCAT(__pm_slot_, dev_name) __used				\
 	__attribute__((__section__(".z_pm_device_slots")))
 
 #ifdef CONFIG_PM_DEVICE

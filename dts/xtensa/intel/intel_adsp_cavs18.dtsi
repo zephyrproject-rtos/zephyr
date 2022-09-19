@@ -1,0 +1,135 @@
+/*
+ * Copyright (c) 2019 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/intel/intel_adsp_cavs.dtsi>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <0>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <1>;
+		};
+
+		cpu2: cpu@2 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <2>;
+		};
+
+		cpu3: cpu@3 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <3>;
+		};
+	};
+
+	sram0: memory@be000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xbe000000 DT_SIZE_K(3008)>;
+	};
+
+	sram1: memory@be800000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xbe800000 DT_SIZE_K(64)>;
+	};
+
+	clkctl: clkctl {
+		compatible = "intel,adsp-shim-clkctl";
+		adsp-clkctl-clk-lpro = <0>;
+		adsp-clkctl-clk-hpro = <1>;
+		adsp-clkctl-freq-enc = <0x20000002 0x80000006>;
+		adsp-clkctl-freq-mask = <0x20000000 0x80000000>;
+		adsp-clkctl-freq-default = <1>;
+		adsp-clkctl-freq-lowest = <0>;
+	};
+
+	soc {
+		shim: shim@71f00 {
+			compatible = "intel,adsp-shim";
+			reg = <0x71f00 0x100>;
+		};
+
+		win: win@71a00 {
+			compatible = "intel,cavs-win";
+			reg = <0x71a00 0x20>;
+		};
+
+		l2lm: l2lm@71d00 {
+			compatible = "intel,cavs-l2lm";
+			reg = <0x71d00 0x20>;
+		};
+
+		core_intc: core_intc@0 {
+			compatible = "cdns,xtensa-core-intc";
+			reg = <0x00 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+		adsp_host_ipc: cavs_host_ipc@71e00 {
+			compatible = "intel,adsp-host-ipc";
+			reg = <0x71e00 0x30>;
+			interrupts = <7 0 0>;
+			interrupt-parent = <&cavs_intc0>;
+		};
+
+		cavs_intc0: cavs@78800  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78800 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <6 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		cavs_intc1: cavs@78810  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78810 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <0xA 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		cavs_intc2: cavs@78820  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78820 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <0XD 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		cavs_intc3: cavs@78830  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78830 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <0x10 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		adsp_idc: idc@1200 {
+			compatible = "intel,adsp-idc";
+			reg = <0x1200 0x80>;
+			interrupts = <8 0 0>;
+			interrupt-parent = <&cavs_intc0>;
+		};
+	};
+};

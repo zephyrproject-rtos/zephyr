@@ -404,6 +404,11 @@ static int mcux_ftm_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &data->clock_freq)) {
 		LOG_ERR("Could not get clock frequency");

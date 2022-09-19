@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <skeleton.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -56,6 +59,14 @@
 			reg = <0x80000000 0x800000>;
 		};
 
+		clint: clint@2000000 {
+			compatible = "sifive,clint0";
+			interrupts-extended = <&hlic0 3 &hlic0 7
+					       &hlic1 3 &hlic1 7>;
+			interrupt-names = "soft0", "timer0", "soft1", "timer1";
+			reg = <0x2000000 0x10000>;
+		};
+
 		plic: interrupt-controller@c000000 {
 			compatible = "sifive,plic-1.0.0";
 			#interrupt-cells = <2>;
@@ -78,7 +89,6 @@
 			current-speed = <115200>;
 			interrupt-parent = <&plic>;
 			interrupts = <90 1>;
-			label = "UART_0";
 			reg-shift = <2>;
 			status = "disabled";
 		};
@@ -91,8 +101,46 @@
 			interrupt-parent = <&plic>;
 			interrupts = <85 1>;
 			status = "disabled";
-			label = "QSPI_0";
 			clock-frequency = <150000000>;
+		};
+
+		gpio0: gpio@20120000 {
+			compatible = "microchip,mpfs-gpio";
+			reg = <0x20120000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <51 1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio1: gpio@20121000 {
+			compatible = "microchip,mpfs-gpio";
+			reg = <0x20121000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <52 1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio2: gpio@20122000 {
+			compatible = "microchip,mpfs-gpio";
+			reg = <0x20122000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <53 1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
 		};
 	};
 };

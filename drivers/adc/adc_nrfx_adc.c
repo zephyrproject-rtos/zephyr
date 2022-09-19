@@ -253,7 +253,7 @@ static int adc_nrfx_read_async(const struct device *dev,
 
 static void event_handler(const nrfx_adc_evt_t *p_event)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 
 	if (p_event->type == NRFX_ADC_EVT_DONE) {
 		adc_context_on_sampling_done(&m_data.ctx, dev);

@@ -34,7 +34,6 @@
 			compatible = "snps,creg-gpio";
 			reg = <0xf0000014 0x4>;
 			ngpios = <6>;
-			label = "CREG_GPIO";
 			bit_per_gpio = <1>;
 			off_val = <0>;
 			on_val = <1>;

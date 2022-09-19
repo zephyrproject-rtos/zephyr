@@ -12,3 +12,4 @@ supported:
   - pwm
   - spi
   - adc
+  - gpio

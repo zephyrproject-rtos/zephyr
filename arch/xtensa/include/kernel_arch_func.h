@@ -34,6 +34,11 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	 * regions due to boot firmware
 	 */
 	z_xtensa_cache_flush_inv_all();
+
+	/* Our cache top stash location might have junk in it from a
+	 * pre-boot environment.  Must be zero or valid!
+	 */
+	XTENSA_WSR(ZSR_FLUSH_STR, 0);
 #endif
 
 	cpu0->nested = 0;
@@ -45,7 +50,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	 * per-CPU thing and having it stored in a SR already is a big
 	 * win.
 	 */
-	WSR(ZSR_CPU_STR, cpu0);
+	XTENSA_WSR(ZSR_CPU_STR, cpu0);
 
 #ifdef CONFIG_INIT_STACKS
 	memset(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]), 0xAA,
@@ -74,6 +79,10 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 	size_t nstack = new_thread->stack_info.start;
 	size_t nsz    = new_thread->stack_info.size;
 	size_t nsp    = (size_t) new_thread->switch_handle;
+
+	int zero = 0;
+
+	__asm__ volatile("wsr %0, " ZSR_FLUSH_STR :: "r"(zero));
 
 	if (old_switch_handle != NULL) {
 		int32_t a0save;

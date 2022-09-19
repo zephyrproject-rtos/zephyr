@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
-#define NSEC_PER_MSEC (uint64_t)(NSEC_PER_USEC * USEC_PER_MSEC)
 /**
  * @brief Test delay during boot
  * @defgroup kernel_init_tests Init

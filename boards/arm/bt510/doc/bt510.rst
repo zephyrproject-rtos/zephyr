@@ -25,14 +25,12 @@ The sensor has the following features:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/bt510.jpg
-     :width: 250px
      :align: center
      :alt: Sentrius BT510 Sensor, front view
 
      Sentrius BT510 Sensor, front view
 
 .. figure:: img/bt510_back.jpg
-     :width: 250px
      :align: center
      :alt: Sentrius BT510 Sensor, rear view
 
@@ -176,8 +174,7 @@ board, on the programming board set SW6 to the supply out position and SW5 to th
 position, ensure there is a jumper on J35 and that SW1 is in the debug position, then
 connect the BT510 to the board using the Tag-Connect cable via J3:
 
-.. figure:: img/bt510_prog.png
-     :width: 630px
+.. figure:: img/bt510_prog.jpg
      :align: center
      :alt: Sentrius BT510 Sensor connected to programming board
 

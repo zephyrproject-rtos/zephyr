@@ -183,6 +183,11 @@ static int pwm_npcx_init(const struct device *dev)
 	NPCX_REG_WORD_ACCESS_CHECK(inst->PRSC, 0xA55A);
 
 
+	if (!device_is_ready(clk_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Turn on device clock first and get source clock freq. */
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
 							&config->clk_cfg);

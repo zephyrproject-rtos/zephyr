@@ -1,0 +1,5 @@
+&arduino_serial {
+	w1: w1 {
+		compatible = "zephyr,w1-serial";
+	};
+};

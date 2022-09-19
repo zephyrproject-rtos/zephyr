@@ -10,9 +10,9 @@
 
 static int rv32m1_vega_board_init(const struct device *dev)
 {
-	const struct device *gpiob = DEVICE_DT_GET(DT_NODELABEL(gpiob));
-	const struct device *gpioc = DEVICE_DT_GET(DT_NODELABEL(gpioc));
-	const struct device *gpiod = DEVICE_DT_GET(DT_NODELABEL(gpiod));
+	const struct device *const gpiob = DEVICE_DT_GET(DT_NODELABEL(gpiob));
+	const struct device *const gpioc = DEVICE_DT_GET(DT_NODELABEL(gpioc));
+	const struct device *const gpiod = DEVICE_DT_GET(DT_NODELABEL(gpiod));
 
 	ARG_UNUSED(dev);
 

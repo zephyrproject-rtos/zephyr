@@ -66,6 +66,14 @@ static ALWAYS_INLINE void sys_write32(uint32_t data, mem_addr_t addr)
 	*(volatile uint32_t *)addr = data;
 }
 
+static ALWAYS_INLINE uint64_t sys_read64(mem_addr_t addr)
+{
+	uint64_t val = *(volatile uint64_t *)addr;
+
+	__DMB();
+	return val;
+}
+
 #ifdef __cplusplus
 }
 #endif

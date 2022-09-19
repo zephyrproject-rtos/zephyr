@@ -7,10 +7,11 @@
  */
 
 
+#include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/counter.h>
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 
 #if defined(CONFIG_BOARD_FRDM_K64F)
 
@@ -37,8 +38,9 @@
 #define SAMPLE_INTERVAL_US (10000U)
 
 #define BUFFER_SIZE 24
-static ZTEST_BMEM int16_t m_sample_buffer[BUFFER_SIZE];
-static ZTEST_BMEM int16_t m_sample_buffer2[2][BUFFER_SIZE];
+#define ALIGNMENT DMA_BUF_ALIGNMENT(DT_NODELABEL(test_dma))
+static ZTEST_BMEM __aligned(ALIGNMENT) int16_t m_sample_buffer[BUFFER_SIZE];
+static ZTEST_BMEM __aligned(ALIGNMENT) int16_t m_sample_buffer2[2][BUFFER_SIZE];
 static int current_buf_inx;
 
 static const struct adc_channel_cfg m_1st_channel_cfg = {
@@ -64,7 +66,7 @@ static const struct adc_channel_cfg m_2nd_channel_cfg = {
 
 const struct device *get_adc_device(void)
 {
-	const struct device *dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+	const struct device *const dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
 	if (!device_is_ready(dev)) {
 		printk("ADC device is not ready\n");
@@ -76,7 +78,7 @@ const struct device *get_adc_device(void)
 
 const struct device *get_count_device(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
 
 	if (!device_is_ready(dev)) {
 		printk("count device is not ready\n");
@@ -89,7 +91,7 @@ const struct device *get_count_device(void)
 static void init_pit(void)
 {
 	int err;
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
 	struct counter_top_cfg top_cfg = { .callback = NULL,
 					   .user_data = NULL,
 					   .flags = 0 };
@@ -103,18 +105,10 @@ static void init_pit(void)
 		      dev->name, err);
 }
 
-static void stop_pit(void)
-{
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
-
-	zassert_true(device_is_ready(dev), "Counter device is not ready");
-	counter_stop(dev);
-}
-
 static const struct device *init_adc(void)
 {
 	int ret;
-	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+	const struct device *const adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
 	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
 
@@ -196,9 +190,9 @@ static int test_task_one_channel(void)
 	return TC_PASS;
 }
 
-void test_adc_sample_one_channel(void)
+ZTEST_USER(adc_dma, test_adc_sample_one_channel)
 {
-	zassert_true(test_task_one_channel() == TC_PASS, NULL);
+	zassert_true(test_task_one_channel() == TC_PASS);
 }
 
 /*
@@ -230,10 +224,10 @@ static int test_task_two_channels(void)
 }
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
 
-void test_adc_sample_two_channels(void)
+ZTEST_USER(adc_dma, test_adc_sample_two_channels)
 {
 #if defined(ADC_2ND_CHANNEL_ID)
-	zassert_true(test_task_two_channels() == TC_PASS, NULL);
+	zassert_true(test_task_two_channels() == TC_PASS);
 #else
 	ztest_test_skip();
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
@@ -280,10 +274,10 @@ static int test_task_asynchronous_call(void)
 }
 #endif /* defined(CONFIG_ADC_ASYNC) */
 
-void test_adc_asynchronous_call(void)
+ZTEST_USER(adc_dma, test_adc_asynchronous_call)
 {
 #if defined(CONFIG_ADC_ASYNC)
-	zassert_true(test_task_asynchronous_call() == TC_PASS, NULL);
+	zassert_true(test_task_asynchronous_call() == TC_PASS);
 #else
 	ztest_test_skip();
 #endif /* defined(CONFIG_ADC_ASYNC) */
@@ -346,9 +340,9 @@ static int test_task_with_interval(void)
 	return TC_PASS;
 }
 
-void test_adc_sample_with_interval(void)
+ZTEST(adc_dma, test_adc_sample_with_interval)
 {
-	zassert_true(test_task_with_interval() == TC_PASS, NULL);
+	zassert_true(test_task_with_interval() == TC_PASS);
 }
 
 /*
@@ -432,9 +426,9 @@ static int test_task_repeated_samplings(void)
 	return TC_PASS;
 }
 
-void test_adc_repeated_samplings(void)
+ZTEST(adc_dma, test_adc_repeated_samplings)
 {
-	zassert_true(test_task_repeated_samplings() == TC_PASS, NULL);
+	zassert_true(test_task_repeated_samplings() == TC_PASS);
 }
 
 /*
@@ -477,7 +471,7 @@ static int test_task_invalid_request(void)
 	return TC_PASS;
 }
 
-void test_adc_invalid_request(void)
+ZTEST_USER(adc_dma, test_adc_invalid_request)
 {
-	zassert_true(test_task_invalid_request() == TC_PASS, NULL);
+	zassert_true(test_task_invalid_request() == TC_PASS);
 }

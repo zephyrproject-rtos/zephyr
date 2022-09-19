@@ -13,18 +13,7 @@
 
 MEMORY
 {
-	ROM_INIT (rx)  : ORIGIN = DT_REG_ADDR(DT_CHOSEN(zephyr_flash)), LENGTH = DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
 	RAM_ILM  (rwx) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(ram_ilm)), LENGTH = DT_REG_SIZE(DT_NODELABEL(ram_ilm))
-}
-
-SECTIONS
-{
-	SECTION_PROLOGUE(vector,,)
-	{
-		. = CONFIG_ROM_START_OFFSET;
-		. = ALIGN(4);
-		KEEP(*(.init.*))
-	} GROUP_LINK_IN(ROM_INIT)
 }
 
 #include <zephyr/arch/riscv/common/linker.ld>

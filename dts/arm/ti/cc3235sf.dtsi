@@ -18,7 +18,6 @@
 
 	flash1: flash@1000000 {
 		compatible = "soc-nv-flash";
-		label = "FLASH_1";
 		reg = <0x01000000 DT_SIZE_K(1024)>;
 	};
 };

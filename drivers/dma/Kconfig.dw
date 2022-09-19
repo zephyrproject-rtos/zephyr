@@ -5,6 +5,8 @@
 
 config DMA_DW
 	bool "DesignWare DMA driver"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_DMA_ENABLED
 	help
 	  DesignWare DMA driver.
 

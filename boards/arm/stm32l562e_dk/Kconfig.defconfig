@@ -8,10 +8,9 @@ if BOARD_STM32L562E_DK
 config BOARD
 	default "stm32l562e_dk"
 
-choice STM32_LPTIM_CLOCK
-	default STM32_LPTIM_CLOCK_LSE
-	depends on STM32_LPTIM_TIMER
-endchoice
+# LPTIM clocked by LSE, force tick freq to 4096 for tick accuracy
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if STM32_LPTIM_TIMER
 
 if BT
 

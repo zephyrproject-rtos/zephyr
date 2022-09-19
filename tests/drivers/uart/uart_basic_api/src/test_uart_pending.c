@@ -93,7 +93,7 @@ static void uart_pending_callback(const struct device *dev, void *user_data)
 
 static int test_pending(void)
 {
-	const struct device *uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	const struct device *const uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(uart_dev)) {
 		TC_PRINT("UART device not ready\n");
@@ -141,7 +141,14 @@ static int test_pending(void)
 	}
 }
 
+#if CONFIG_SHELL
 void test_uart_pending(void)
+#else
+ZTEST(uart_basic_api_pending, test_uart_pending)
+#endif
 {
-	zassert_true(test_pending() == TC_PASS, NULL);
+#ifndef CONFIG_UART_INTERRUPT_DRIVEN
+	ztest_test_skip();
+#endif
+	zassert_true(test_pending() == TC_PASS);
 }

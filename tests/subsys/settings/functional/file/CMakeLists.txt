@@ -6,6 +6,7 @@ project(functional_file)
 
 FILE(GLOB app_sources ../src/*.c)
 target_sources(app PRIVATE ${app_sources})
+target_sources(app PRIVATE settings_test_fs.c)
 zephyr_include_directories(
 	${ZEPHYR_BASE}/subsys/settings/include
 	${ZEPHYR_BASE}/subsys/settings/src

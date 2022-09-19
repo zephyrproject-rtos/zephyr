@@ -8,9 +8,7 @@
  */
 #include <soc_common.h>
 
-/* lib-c hooks required RAM defined variables */
-#define RISCV_RAM_BASE               CONFIG_SRAM_BASE_ADDRESS
-#define RISCV_RAM_SIZE               KB(CONFIG_SRAM_SIZE)
+#define __soc_ram_code __attribute__((section(".__ram_code")))
 
 /*
  * This define gets the total number of USBPD ports available on the

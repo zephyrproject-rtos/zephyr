@@ -15,9 +15,9 @@
  * it guarantee that ALL functionality provided is working correctly.
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <limits.h>
 #include <sys/types.h>
@@ -31,7 +31,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <time.h>
-#include <ztest_error_hook.h>
+#include <zephyr/ztest_error_hook.h>
 #ifdef CONFIG_PICOLIBC
 #include <unistd.h>
 #endif
@@ -73,7 +73,7 @@ volatile long long_one = 1L;
 ZTEST(test_c_lib, test_limits)
 {
 
-	zassert_true((long_max + long_one == LONG_MIN), NULL);
+	zassert_true((long_max + long_one == LONG_MIN));
 }
 
 static ssize_t foobar(void)
@@ -83,7 +83,7 @@ static ssize_t foobar(void)
 
 ZTEST(test_c_lib, test_ssize_t)
 {
-	zassert_true(foobar() < 0, NULL);
+	zassert_true(foobar() < 0);
 }
 
 /**
@@ -135,7 +135,7 @@ volatile uint32_t unsigned_int = 0xffffff00;
  */
 ZTEST(test_c_lib, test_stdint)
 {
-	zassert_true((unsigned_int + unsigned_byte + 1u == 0U), NULL);
+	zassert_true((unsigned_int + unsigned_byte + 1u == 0U));
 
 #if (UINT8_C(1) == 1)			\
 	&& (INT8_C(-1) == -1)		\
@@ -147,7 +147,7 @@ ZTEST(test_c_lib, test_stdint)
 	&& (INT64_C(-8) == -8)		\
 	&& (UINTMAX_C(11) == 11)	\
 	&& (INTMAX_C(-11) == -11)
-	zassert_true(true, NULL);
+	zassert_true(true);
 #else
 	zassert_true(false, "const int expr values ...");
 #endif

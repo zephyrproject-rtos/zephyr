@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
 #include <zephyr/drivers/gpio.h>
@@ -19,6 +19,10 @@
 
 #define WHOAMI_REG      0x0F
 #define WHOAMI_ALT_REG  0x4F
+
+#ifdef CONFIG_LP3943
+static const struct device *const ledc = DEVICE_DT_GET_ONE(ti_lp3943);
+#endif
 
 static inline float out_ev(struct sensor_value *val)
 {
@@ -112,9 +116,6 @@ void main(void)
 	int i, on = 1;
 
 #ifdef CONFIG_LP3943
-	static const struct device *ledc;
-
-	ledc = DEVICE_DT_GET_ONE(ti_lp3943);
 	if (!device_is_ready(ledc)) {
 		printk("%s: device not ready.\n", ledc->name);
 		return;
@@ -154,7 +155,7 @@ void main(void)
 	printk("ArgonKey test!!\n");
 
 #ifdef CONFIG_LPS22HB
-	const struct device *baro_dev = DEVICE_DT_GET_ONE(st_lps22hb_press);
+	const struct device *const baro_dev = DEVICE_DT_GET_ONE(st_lps22hb_press);
 
 	if (!device_is_ready(baro_dev)) {
 		printk("%s: device not ready.\n", baro_dev->name);
@@ -163,7 +164,7 @@ void main(void)
 #endif
 
 #ifdef CONFIG_HTS221
-	const struct device *hum_dev = DEVICE_DT_GET_ONE(st_hts221);
+	const struct device *const hum_dev = DEVICE_DT_GET_ONE(st_hts221);
 
 	if (!device_is_ready(hum_dev)) {
 		printk("%s: device not ready.\n", hum_dev->name);
@@ -172,7 +173,7 @@ void main(void)
 #endif
 
 #ifdef CONFIG_LSM6DSL
-	const struct device *accel_dev = DEVICE_DT_GET_ONE(st_lsm6dsl);
+	const struct device *const accel_dev = DEVICE_DT_GET_ONE(st_lsm6dsl);
 
 	if (!device_is_ready(accel_dev)) {
 		printk("%s: device not ready.\n", accel_dev->name);
@@ -236,7 +237,7 @@ void main(void)
 #endif
 
 #ifdef CONFIG_VL53L0X
-	const struct device *tof_dev = DEVICE_DT_GET_ONE(st_vl53l0x);
+	const struct device *const tof_dev = DEVICE_DT_GET_ONE(st_vl53l0x);
 
 	if (!device_is_ready(tof_dev)) {
 		printk("%s: device not ready.\n", tof_dev->name);

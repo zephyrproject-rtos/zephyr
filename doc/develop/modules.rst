@@ -32,6 +32,9 @@ Zephyr depends on several categories of modules, including but not limited to:
 - File Systems
 - Inter-Process Communication (IPC) libraries
 
+Additionally, in some cases modules (particularly vendor HALs) can contain
+references to optional :ref:`binary blobs <bin-blobs>`.
+
 This page summarizes a list of policies and best practices which aim at
 better organizing the workflow in Zephyr modules.
 
@@ -55,6 +58,8 @@ Module Repositories
      Existing module repositories that do not conform to the above convention
      do not need to be renamed to comply with the above convention.
 
+* Module repositories names should be explicitly set in the :file:`zephyr/module.yml` file.
+
 * Modules should use "zephyr" as the default name for the repository main
   branch. Branches for specific purposes, for example, a module branch for
   an LTS Zephyr version, shall have names starting with the 'zephyr\_' prefix.
@@ -68,6 +73,10 @@ Module Repositories
      branch mirroring the master branch of the external repository. It
      is not recommended as this may generate confusion around the module's
      main branch, which should be 'zephyr'.
+
+* Modules should expose all provided header files with an include pathname
+  beginning with the module-name.  (E.g., mcuboot should expose its
+  ``bootutil/bootutil.h`` as "mcuboot/bootutil/bootutil.h".)
 
 .. _modules_synchronization:
 
@@ -99,7 +108,7 @@ changes that are to be brought into the module repository.
      Force-pushing to a module's main branch is not allowed.
 
 Allowed practices
----------------------
+-----------------
 
 The following practices conform to the above requirements and should be
 followed in all modules repositories. It is up to the module code owner
@@ -204,6 +213,7 @@ such updates in Zephyr and the module **owner**. In particular:
   have not been caught by Zephyr pull request CI runs.
 
 
+.. _modules_changes:
 
 Contributing changes to modules
 ===============================
@@ -410,6 +420,7 @@ See :ref:`west-basics` for more on west workspaces.
 Finally, you can also specify the list of modules yourself in various ways, or
 not use modules at all if your application doesn't need them.
 
+.. _module-yml:
 
 Module yaml file description
 ****************************
@@ -423,7 +434,9 @@ Module name
 Each Zephyr module is given a name by which it can be referred to in the build
 system.
 
-The name may be specified in the :file:`zephyr/module.yml` file:
+The name should be specified in the :file:`zephyr/module.yml` file. This will
+ensure the module name is not changeable through user-defined directory names
+or ``west`` manifest files:
 
 .. code-block:: yaml
 
@@ -737,8 +750,6 @@ requires the following folder structure:
    ├── modules
    └── soc
 
-
-
 Twister (Test Runner)
 =====================
 
@@ -761,6 +772,37 @@ are maintained in the module. For example:
     boards:
       - boards
 
+.. _modules-bin-blobs:
+
+Binary Blobs
+============
+
+Zephyr supports fetching and using :ref:`binary blobs <bin-blobs>`, and their
+metadata is contained entirely in :file:`zephyr/module.yml`. This is because
+a binary blob must always be associated with a Zephyr module, and thus the
+blob metadata belongs in the module's description itself.
+
+Binary blobs are fetched using :ref:`west blobs <west-blobs>`.  If ``west`` is
+:ref:`not used <modules_without_west>`, they must be downloaded and
+verified manually.
+
+The ``blobs`` section in :file:`zephyr/module.yml` consists of a sequence of
+maps, each of which has the following entries:
+
+- ``path``: The path to the binary blob, relative to the :file:`zephyr/blobs/`
+  folder in the module repository
+- ``sha256``: `SHA-256 <https://en.wikipedia.org/wiki/SHA-2>`_ checksum of the
+  binary blob file
+- ``type``: The :ref:`type of binary blob <bin-blobs-types>`. Currently limited
+  to ``img`` or ``lib``
+- ``version``: A version string
+- ``license-path``: Path to the license file for this blob, relative to the root
+  of the module repository
+- ``url``: URL that identifies the location the blob will be fetched from, as
+  well as the fetching scheme to use
+- ``description``: Human-readable description of the binary blob
+- ``doc-url``: A URL pointing to the location of the official documentation for
+  this blob
 
 Module Inclusion
 ================

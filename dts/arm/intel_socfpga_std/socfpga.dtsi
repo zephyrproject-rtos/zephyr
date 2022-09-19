@@ -44,7 +44,6 @@
 		interrupt-controller;
 		reg = <0xfffed000 0x1000>,
 			  <0xfffec100 0x100>;
-		label = "intc";
 	};
 
 	soc {
@@ -59,7 +58,6 @@
 			compatible = "arm,pl330-cache";
 			reg = <0xfffef000 0x1000>;
 			interrupts = <0 38 0x04 IRQ_DEFAULT_PRIORITY>;
-			label = "L2";
 			status= "okay";
 		};
 
@@ -92,7 +90,6 @@
 		sysmgr: sysmgr@ffd08000 {
 			compatible = "altr,sys-mgr", "syscon";
 			reg = <0xffd08000 0x4000>;
-			label = "sysmgr";
 			status = "okay";
 		};
 		ocram: sram@ffff0000 {
@@ -124,7 +121,6 @@
 			reg-shift = <2>;
 			clock-frequency = <100000000>;
 			dma-names = "tx", "rx";
-			label = "UART_0";
 		};
 
 		uart1: serial1@ffc03000 {
@@ -134,7 +130,6 @@
 			reg-shift = <2>;
 			clock-frequency = <100000000>;
 			dma-names = "tx", "rx";
-			label = "UART_1";
 		};
 
 		gmac0: ethernet@ff700000 {
@@ -144,7 +139,6 @@
 			interrupts = <0 115 4 IRQ_DEFAULT_PRIORITY>;
 			local-mac-address = [00 00 00 00 00 00];
 			status = "disabled";
-			label = "ETH_0";
 		};
 
 		gmac1: ethernet@ff702000 {
@@ -154,7 +148,6 @@
 			interrupts = <0 120 4 IRQ_DEFAULT_PRIORITY>;
 			local-mac-address = [00 00 00 00 00 00];
 			status = "okay";
-			label = "ETH_1";
 		};
 
 		gpio0: gpio@ff708000 {
@@ -164,7 +157,6 @@
 			reg = <0xff708000 0x1000>;
 			interrupts = <0 164 4 IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
-			label = "GPIO_0";
 			ngpios = <29>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -177,7 +169,6 @@
 			reg = <0xff709000 0x1000>;
 			interrupts = <0 165 4 IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
-			label = "GPIO_1";
 			ngpios = <29>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -190,7 +181,6 @@
 			reg = <0xff70a000 0x1000>;
 			interrupts = <0 166 4 IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
-			label = "GPIO_2";
 			ngpios = <27>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -205,7 +195,6 @@
 			interrupts = <0 158 0x4 IRQ_DEFAULT_PRIORITY>;
 			interrupt-parent = <&intc>;
 			status = "okay";
-			label = "I2C_0";
 		};
 
 		i2c1: i2c@ffc05000 {
@@ -215,7 +204,6 @@
 			reg = <0xffc05000 0x1000>;
 			interrupts = <0 159 0x4 IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
-			label = "I2C_1";
 		};
 
 		i2c2: i2c@ffc06000 {
@@ -225,7 +213,6 @@
 			reg = <0xffc06000 0x1000>;
 			interrupts = <0 160 0x4 IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
-			label = "I2C_2";
 		};
 
 		i2c3: i2c@ffc07000 {
@@ -235,7 +222,6 @@
 			reg = <0xffc07000 0x1000>;
 			interrupts = <0 161 0x4 IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
-			label = "I2C_3";
 		};
 
 		usb0: usb@ffb30000 {
@@ -244,7 +230,6 @@
 			interrupts = <0 127 4 IRQ_DEFAULT_PRIORITY>;
 			interrupt-parent = <&intc>;
 			num-bidir-endpoints = <16>;
-			label = "USB_0";
 			status = "disabled";
 			};
 
@@ -254,7 +239,6 @@
 			interrupts = <0 128 4 IRQ_DEFAULT_PRIORITY>;
 			interrupt-parent = <&intc>;
 			num-bidir-endpoints = <16>;
-			label = "USB_1";
 			status = "okay";
 			};
 
@@ -265,7 +249,6 @@
 			reg = <0xfff00000 0x1000>;
 			interrupts = <0 154 4 IRQ_DEFAULT_PRIORITY>;
 			clock-frequency = <200000000>;
-			label = "SPI_0";
 			status = "okay";
 		};
 
@@ -276,7 +259,6 @@
 			reg = <0xfff01000 0x1000>;
 			interrupts = <0 155 4 IRQ_DEFAULT_PRIORITY>;
 			clock-frequency = <200000000>;
-			label = "SPI_1";
 			status = "disabled";
 		};
 	};

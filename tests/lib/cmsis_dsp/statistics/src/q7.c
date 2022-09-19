@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -34,10 +34,10 @@ static void test_arm_max_q7(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_max_q7, 15, in_com1, 0, 15);
-DEFINE_TEST_VARIANT3(arm_max_q7, 32, in_com1, 1, 32);
-DEFINE_TEST_VARIANT3(arm_max_q7, 47, in_com1, 2, 47);
-DEFINE_TEST_VARIANT3(arm_max_q7, max, in_max_maxidx, 3, 280);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_max_q7, 15, in_com1, 0, 15);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_max_q7, 32, in_com1, 1, 32);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_max_q7, 47, in_com1, 2, 47);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_max_q7, max, in_max_maxidx, 3, 280);
 
 static void test_arm_min_q7(
 	const q7_t *input1, int ref_index, size_t length)
@@ -56,10 +56,10 @@ static void test_arm_min_q7(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_min_q7, 15, in_com1, 0, 15);
-DEFINE_TEST_VARIANT3(arm_min_q7, 32, in_com1, 1, 32);
-DEFINE_TEST_VARIANT3(arm_min_q7, 47, in_com1, 2, 47);
-DEFINE_TEST_VARIANT3(arm_min_q7, max, in_min_maxidx, 3, 280);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_min_q7, 15, in_com1, 0, 15);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_min_q7, 32, in_com1, 1, 32);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_min_q7, 47, in_com1, 2, 47);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_min_q7, max, in_min_maxidx, 3, 280);
 
 static void test_arm_absmax_q7(
 	const q7_t *input1, int ref_index, size_t length)
@@ -78,10 +78,10 @@ static void test_arm_absmax_q7(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_absmax_q7, 15, in_absminmax, 0, 15);
-DEFINE_TEST_VARIANT3(arm_absmax_q7, 32, in_absminmax, 1, 32);
-DEFINE_TEST_VARIANT3(arm_absmax_q7, 47, in_absminmax, 2, 47);
-DEFINE_TEST_VARIANT3(arm_absmax_q7, max, in_absmax_maxidx, 3, 280);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_absmax_q7, 15, in_absminmax, 0, 15);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_absmax_q7, 32, in_absminmax, 1, 32);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_absmax_q7, 47, in_absminmax, 2, 47);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_absmax_q7, max, in_absmax_maxidx, 3, 280);
 
 static void test_arm_absmin_q7(
 	const q7_t *input1, int ref_index, size_t length)
@@ -100,10 +100,10 @@ static void test_arm_absmin_q7(
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
-DEFINE_TEST_VARIANT3(arm_absmin_q7, 15, in_absminmax, 0, 15);
-DEFINE_TEST_VARIANT3(arm_absmin_q7, 32, in_absminmax, 1, 32);
-DEFINE_TEST_VARIANT3(arm_absmin_q7, 47, in_absminmax, 2, 47);
-DEFINE_TEST_VARIANT3(arm_absmin_q7, max, in_absmin_maxidx, 3, 280);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_absmin_q7, 15, in_absminmax, 0, 15);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_absmin_q7, 32, in_absminmax, 1, 32);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_absmin_q7, 47, in_absminmax, 2, 47);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_absmin_q7, max, in_absmin_maxidx, 3, 280);
 
 static void test_arm_mean_q7(
 	const q7_t *input1, int ref_index, size_t length)
@@ -134,9 +134,9 @@ static void test_arm_mean_q7(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_mean_q7, 15, in_com2, 0, 15);
-DEFINE_TEST_VARIANT3(arm_mean_q7, 32, in_com2, 1, 32);
-DEFINE_TEST_VARIANT3(arm_mean_q7, 47, in_com2, 2, 47);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_mean_q7, 15, in_com2, 0, 15);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_mean_q7, 32, in_com2, 1, 32);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_mean_q7, 47, in_com2, 2, 47);
 
 static void test_arm_power_q7(
 	const q7_t *input1, int ref_index, size_t length)
@@ -167,36 +167,8 @@ static void test_arm_power_q7(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_power_q7, 15, in_com1, 0, 15);
-DEFINE_TEST_VARIANT3(arm_power_q7, 32, in_com1, 1, 32);
-DEFINE_TEST_VARIANT3(arm_power_q7, 47, in_com1, 2, 47);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_power_q7, 15, in_com1, 0, 15);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_power_q7, 32, in_com1, 1, 32);
+DEFINE_TEST_VARIANT3(statistics_q7, arm_power_q7, 47, in_com1, 2, 47);
 
-void test_statistics_q7(void)
-{
-	ztest_test_suite(statistics_q7,
-		ztest_unit_test(test_arm_max_q7_15),
-		ztest_unit_test(test_arm_max_q7_32),
-		ztest_unit_test(test_arm_max_q7_47),
-		ztest_unit_test(test_arm_max_q7_max),
-		ztest_unit_test(test_arm_min_q7_15),
-		ztest_unit_test(test_arm_min_q7_32),
-		ztest_unit_test(test_arm_min_q7_47),
-		ztest_unit_test(test_arm_min_q7_max),
-		ztest_unit_test(test_arm_absmax_q7_15),
-		ztest_unit_test(test_arm_absmax_q7_32),
-		ztest_unit_test(test_arm_absmax_q7_47),
-		ztest_unit_test(test_arm_absmax_q7_max),
-		ztest_unit_test(test_arm_absmin_q7_15),
-		ztest_unit_test(test_arm_absmin_q7_32),
-		ztest_unit_test(test_arm_absmin_q7_47),
-		ztest_unit_test(test_arm_absmin_q7_max),
-		ztest_unit_test(test_arm_mean_q7_15),
-		ztest_unit_test(test_arm_mean_q7_32),
-		ztest_unit_test(test_arm_mean_q7_47),
-		ztest_unit_test(test_arm_power_q7_15),
-		ztest_unit_test(test_arm_power_q7_32),
-		ztest_unit_test(test_arm_power_q7_47)
-		);
-
-	ztest_run_test_suite(statistics_q7);
-}
+ZTEST_SUITE(statistics_q7, NULL, NULL, NULL, NULL, NULL);

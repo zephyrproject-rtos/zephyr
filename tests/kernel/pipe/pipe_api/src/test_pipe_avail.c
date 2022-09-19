@@ -10,7 +10,7 @@
  * @{
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 static ZTEST_DMEM unsigned char __aligned(4) data[] = "abcdefgh";
 static struct k_pipe pipe = {

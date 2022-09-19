@@ -304,7 +304,7 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 			    DEVICE_DT_INST_GET(n), 0);			\
 									\
 		irq_enable(DT_INST_IRQN(n));				\
-	} while (0)
+	} while (false)
 
 #define GPIO_PORT_BASE_ADDR(n) DT_REG_ADDR(DT_INST_PHANDLE(n, nxp_kinetis_port))
 

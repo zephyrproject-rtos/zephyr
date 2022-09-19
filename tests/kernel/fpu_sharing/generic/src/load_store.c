@@ -35,7 +35,7 @@
  * x87 FPU registers are being saved/restored.
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/debug/gcov.h>
 
 #if defined(CONFIG_X86)
@@ -184,7 +184,7 @@ static void load_store_low(void)
 		}
 
 		/* Terminate if a test error has been reported */
-		zassert_false(error, NULL);
+		zassert_false(error);
 
 		/*
 		 * After every 1000 iterations (arbitrarily chosen), explicitly

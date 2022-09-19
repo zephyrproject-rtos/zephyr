@@ -8,7 +8,8 @@ menuconfig LSM6DSL
 	bool "LSM6DSL I2C/SPI accelerometer and gyroscope Chip"
 	default y
 	depends on DT_HAS_ST_LSM6DSL_ENABLED
-	depends on I2C || SPI
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSL),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSL),spi)
 	help
 	  Enable driver for LSM6DSL accelerometer and gyroscope
 	  sensor.

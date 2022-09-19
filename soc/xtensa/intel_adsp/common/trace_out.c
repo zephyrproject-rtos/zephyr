@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <adsp_memory.h>
 #include <zephyr/sys/winstream.h>

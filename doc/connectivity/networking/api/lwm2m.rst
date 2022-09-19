@@ -239,7 +239,8 @@ The Zephyr LwM2M library implements the following items:
   Device, Firmware Update, etc.
 * Extended IPSO objects such as Light Control, Temperature Sensor, and Timer
 
-The library currently implements up to `LwM2M specification 1.0.2`_.
+By default, the library implements `LwM2M specification 1.0.2`_ and can be set to
+`LwM2M specification 1.1.1`_ with a Kconfig option.
 
 For more information about LwM2M visit `OMA Specworks LwM2M`_.
 
@@ -410,6 +411,24 @@ value of 1 is ok here).
 
 For a more detailed LwM2M client sample see: :ref:`lwm2m-client-sample`.
 
+Multi-thread usage
+******************
+Writing a value to a resource can be done using functions like lwm2m_engine_set_u8. When writing
+to multiple resources, the function lwm2m_registry_lock will ensure that the
+client halts until all writing operations are finished:
+
+.. code-block:: c
+
+  lwm2m_registry_lock();
+  lwm2m_engine_set_u32("1/0/1", 60);
+  lwm2m_engine_set_u8("5/0/3", 0);
+  lwm2m_engine_set_float("3303/0/5700", &value);
+  lwm2m_registry_unlock();
+
+This is especially useful if the server is composite-observing the resources being
+written to. Locking will then ensure that the client only updates and sends notifications
+to the server after all operations are done, resulting in fewer messages in general.
+
 LwM2M engine and application events
 ***********************************
 
@@ -517,3 +536,6 @@ API Reference
 
 .. _LwM2M specification 1.0.2:
    http://openmobilealliance.org/release/LightweightM2M/V1_0_2-20180209-A/OMA-TS-LightweightM2M-V1_0_2-20180209-A.pdf
+
+.. _LwM2M specification 1.1.1:
+   http://openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/

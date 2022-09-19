@@ -1,0 +1,16 @@
+# Copyright (c) 2020 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: GT9xx / GT9xxx capacitive touch panels
+
+compatible: "goodix,gt911"
+
+include: [kscan.yaml, i2c-device.yaml]
+
+properties:
+    irq-gpios:
+      type: phandle-array
+      required: false
+    reset-gpios:
+      type: phandle-array
+      required: false

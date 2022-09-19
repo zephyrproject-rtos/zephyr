@@ -7,9 +7,6 @@ config BOARD
 	default "esp_wrover_kit"
 	depends on BOARD_ESP_WROVER_KIT
 
-config ENTROPY_ESP32_RNG
-	default y if ENTROPY_GENERATOR
-
 if BT
 
 config HEAP_MEM_POOL_SIZE
@@ -23,10 +20,6 @@ choice BT_HCI_BUS_TYPE
 endchoice
 
 endif # BT
-
-# enable SPI when enabling display drivers (for ILI9341)
-config SPI
-	default y if DISPLAY
 
 config DISK_DRIVER_SDMMC
 	default y

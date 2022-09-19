@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2022, Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		eeprom-0 = &eeprom;
+	};
+};
+
+&eeprom {
+	status = "okay";
+
+	pinctrl-0 = <&eeprom_cs_gpio116
+		      &eeprom_clk_gpio117
+		      &eeprom_mosi_gpio074
+		      &eeprom_miso_gpio075>;
+	pinctrl-names = "default";
+};

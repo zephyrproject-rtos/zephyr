@@ -21,23 +21,21 @@ properties:
     pinctrl-names:
       required: true
 
-    sda-pin:
-      type: int
+    scl-gpios:
+      type: phandle-array
       required: false
       description: |
-        SDA pin information is only required if
-        the target SoC does not have support in
-        hardware for clearing the I2C bus in case
-        of communication failure
+        GPIO to which the I2C SCL signal is routed. This is only required
+        if the target SoC does not have support in hardware for clearing
+        the I2C bus in case of a communication failure
 
-    scl-pin:
-      type: int
+    sda-gpios:
+      type: phandle-array
       required: false
       description: |
-        SCL pin information is only required if
-        the target SoC does not have support in
-        hardware for clearing the I2C bus in case
-        of communication failure
+        GPIO to which the I2C SDA signal is routed. This is only required
+        if the target SoC does not have support in hardware for clearing
+        the I2C bus in case of a communication failure
 
     tx-lsb:
       type: boolean

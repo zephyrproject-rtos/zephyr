@@ -7,10 +7,6 @@ if SHIELD_MIKROE_WIFI_BT_CLICK || \
 
 if NETWORKING
 
-config WIFI_ESP_AT
-	default y
-	depends on WIFI
-
 choice WIFI_ESP_AT_VERSION
 	default WIFI_ESP_AT_VERSION_2_0
 	depends on WIFI_ESP_AT

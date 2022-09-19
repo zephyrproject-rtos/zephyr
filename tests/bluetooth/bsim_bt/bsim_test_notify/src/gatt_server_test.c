@@ -100,6 +100,7 @@ BT_GATT_SERVICE_DEFINE(test_svc, BT_GATT_PRIMARY_SERVICE(TEST_SERVICE_UUID),
 		       BT_GATT_CHARACTERISTIC(TEST_CHRC_UUID,
 					      BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_READ,
 					      BT_GATT_PERM_READ, read_test_chrc, NULL, NULL),
+		       BT_GATT_CUD("Short test_svc format description", BT_GATT_PERM_READ),
 		       BT_GATT_CCC(short_subscribe, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 		       BT_GATT_CHARACTERISTIC(TEST_LONG_CHRC_UUID,
 					      BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_READ,
@@ -115,7 +116,7 @@ static void notification_sent(struct bt_conn *conn, void *user_data)
 	printk("Sent notification #%u with length %d\n", num_notifications_sent++, *length);
 }
 
-static inline void short_notify(void)
+static void short_notify(enum bt_att_chan_opt opt)
 {
 	static size_t length = CHRC_SIZE;
 	static struct bt_gatt_notify_params params = {
@@ -128,6 +129,8 @@ static inline void short_notify(void)
 	};
 	int err;
 
+	params.chan_opt = opt;
+
 	do {
 		err = bt_gatt_notify_cb(g_conn, &params);
 
@@ -139,11 +142,11 @@ static inline void short_notify(void)
 	} while (err);
 }
 
-static inline void long_notify(void)
+static void long_notify(enum bt_att_chan_opt opt)
 {
 	static size_t length = LONG_CHRC_SIZE;
 	static struct bt_gatt_notify_params params = {
-		.attr = &attr_test_svc[4],
+		.attr = &attr_test_svc[5],
 		.data = long_chrc_data,
 		.len = LONG_CHRC_SIZE,
 		.func = notification_sent,
@@ -151,6 +154,8 @@ static inline void long_notify(void)
 		.uuid = NULL,
 	};
 	int err;
+
+	params.chan_opt = opt;
 
 	do {
 		err = bt_gatt_notify_cb(g_conn, &params);
@@ -163,7 +168,7 @@ static inline void long_notify(void)
 	} while (err);
 }
 
-static void test_main(void)
+static void setup(void)
 {
 	int err;
 	const struct bt_data ad[] = {
@@ -195,10 +200,63 @@ static void test_main(void)
 
 	WAIT_FOR_FLAG(flag_short_subscribe);
 	WAIT_FOR_FLAG(flag_long_subscribe);
+}
+
+static void test_main_none(void)
+{
+	setup();
 
 	for (int i = 0; i < NOTIFICATION_COUNT / 2; i++) {
-		short_notify();
-		long_notify();
+		short_notify(BT_ATT_CHAN_OPT_NONE);
+		long_notify(BT_ATT_CHAN_OPT_NONE);
+	}
+
+	while (num_notifications_sent < NOTIFICATION_COUNT) {
+		k_sleep(K_MSEC(100));
+	}
+
+	PASS("GATT server passed\n");
+}
+
+static void test_main_enhanced(void)
+{
+	setup();
+
+	for (int i = 0; i < NOTIFICATION_COUNT / 2; i++) {
+		short_notify(BT_ATT_CHAN_OPT_ENHANCED_ONLY);
+		long_notify(BT_ATT_CHAN_OPT_ENHANCED_ONLY);
+	}
+
+	while (num_notifications_sent < NOTIFICATION_COUNT) {
+		k_sleep(K_MSEC(100));
+	}
+
+	PASS("GATT server passed\n");
+}
+
+static void test_main_unenhanced(void)
+{
+	setup();
+
+	for (int i = 0; i < NOTIFICATION_COUNT / 2; i++) {
+		short_notify(BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
+		long_notify(BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
+	}
+
+	while (num_notifications_sent < NOTIFICATION_COUNT) {
+		k_sleep(K_MSEC(100));
+	}
+
+	PASS("GATT server passed\n");
+}
+
+static void test_main_mixed(void)
+{
+	setup();
+
+	for (int i = 0; i < NOTIFICATION_COUNT / 2; i++) {
+		short_notify(BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
+		long_notify(BT_ATT_CHAN_OPT_ENHANCED_ONLY);
 	}
 
 	while (num_notifications_sent < NOTIFICATION_COUNT) {
@@ -210,10 +268,28 @@ static void test_main(void)
 
 static const struct bst_test_instance test_gatt_server[] = {
 	{
-		.test_id = "gatt_server",
+		.test_id = "gatt_server_none",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_main,
+		.test_main_f = test_main_none,
+	},
+	{
+		.test_id = "gatt_server_unenhanced",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_unenhanced,
+	},
+	{
+		.test_id = "gatt_server_enhanced",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_enhanced,
+	},
+	{
+		.test_id = "gatt_server_mixed",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_mixed,
 	},
 	BSTEST_END_MARKER,
 };

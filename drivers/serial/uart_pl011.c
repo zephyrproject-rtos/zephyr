@@ -467,7 +467,7 @@ void pl011_isr(const struct device *dev)
 #else
 #define PL011_CONFIG_PORT(n)								\
 	static struct pl011_config pl011_cfg_port_##n = {				\
-		.uart = (volatile struct pl011_regs *)DT_INST_REG_ADDR(n),		\
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
 		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),	\
 	};
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

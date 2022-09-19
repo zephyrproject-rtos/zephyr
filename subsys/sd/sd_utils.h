@@ -11,7 +11,7 @@
 #ifndef ZEPHYR_SUBSYS_SD_UTILS_H_
 #define ZEPHYR_SUBSYS_SD_UTILS_H_
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sd/sd.h>
 
 #ifdef __cplusplus

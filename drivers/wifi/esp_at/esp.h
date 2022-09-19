@@ -408,7 +408,7 @@ static inline enum net_sock_type esp_socket_type(struct esp_socket *sock)
 
 static inline enum net_ip_protocol esp_socket_ip_proto(struct esp_socket *sock)
 {
-	return net_context_get_ip_proto(sock->context);
+	return net_context_get_proto(sock->context);
 }
 
 static inline int esp_cmd_send(struct esp_data *data,

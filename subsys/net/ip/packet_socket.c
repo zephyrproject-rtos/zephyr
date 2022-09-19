@@ -43,9 +43,9 @@ enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint8_t proto)
 
 	net_pkt_set_family(pkt, orig_family);
 
-	if (net_verdict != NET_DROP) {
-		return net_verdict;
-	} else {
+	if (net_verdict == NET_DROP) {
 		return NET_CONTINUE;
+	} else {
+		return net_verdict;
 	}
 }

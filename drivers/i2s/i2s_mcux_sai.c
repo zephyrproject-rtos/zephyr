@@ -452,7 +452,7 @@ static void get_mclk_rate(const struct device *dev, uint32_t *mclk)
 	clock_control_subsys_t clk_sub_sys = dev_cfg->clk_sub_sys;
 	uint32_t rate = 0;
 
-	if (ccm_dev != NULL) {
+	if (device_is_ready(ccm_dev)) {
 		clock_control_get_rate(ccm_dev, clk_sub_sys, &rate);
 	} else {
 		LOG_ERR("CCM driver is not installed");

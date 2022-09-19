@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/arch/arm/aarch32/mpu/arm_mpu.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <string.h>
 
 extern const struct arm_mpu_config mpu_config;

@@ -148,6 +148,7 @@ config NRF53_SYNC_RTC_INIT_PRIORITY
 	  nRF53 Synchronized RTC initialization priority.
 
 config NRF_RTC_TIMER_USER_CHAN_COUNT
+	default 3 if NRF_802154_RADIO_DRIVER
 	default 1
 
 config NRF53_SYNC_RTC_LOG_TIMESTAMP

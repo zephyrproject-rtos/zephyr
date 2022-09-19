@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define STACK_LEN 4
@@ -40,8 +40,8 @@ static void tstack_pop(struct k_stack *pstack)
 
 	for (int i = STACK_LEN - 1; i >= 0; i--) {
 		/**TESTPOINT: stack pop*/
-		zassert_false(k_stack_pop(pstack, &rx_data, K_NO_WAIT), NULL);
-		zassert_equal(rx_data, data[i], NULL);
+		zassert_false(k_stack_pop(pstack, &rx_data, K_NO_WAIT));
+		zassert_equal(rx_data, data[i]);
 	}
 }
 

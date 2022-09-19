@@ -15,7 +15,6 @@ config BT_BASS
 	select BT_OBSERVER
 	select BT_EXT_ADV
 	select BT_PER_ADV_SYNC
-	select BT_SMP_SC_PAIR_ONLY
 	select BT_ISO_SYNC_RECEIVER
 	help
 	  This option enables support for the Broadcast Audio Scan Service.

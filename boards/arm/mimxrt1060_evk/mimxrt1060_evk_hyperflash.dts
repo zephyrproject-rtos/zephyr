@@ -29,7 +29,6 @@
 	s26ks512s0: s26ks512s@0 {
 		compatible = "nxp,imx-flexspi-hyperflash";
 		size = <DT_SIZE_M(64*8)>;
-		label = "S26KS512S";
 		reg = <0>;
 		spi-max-frequency = <166000000>;
 		word-addressable;

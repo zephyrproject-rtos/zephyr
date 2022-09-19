@@ -12,8 +12,7 @@ architecture. The board includes a high-performance onboard debug probe, audio
 subsystem and accelerometer, with several options for adding off-the-shelf
 add-on boards for networking, sensors, displays, and other interfaces.
 
-.. image:: ./LPC55S28-EVK.png
-   :width: 720px
+.. image:: LPC55S28-EVK.jpg
    :align: center
    :alt: LPCXpresso55S28
 
@@ -49,8 +48,12 @@ For more information about the LPC55S28 SoC and LPCXPresso55S28 board, see:
 Supported Features
 ==================
 
-The lpcxpresso55s28 board configuration supports the following
-hardware features:
+The lpcxpresso55s28 board configuration supports the hardware features listed
+below.  For additional features not yet supported, please also refer to the
+:ref:`lpcxpresso55s69` , which is the superset board in NXP's LPC55xx series.
+NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+Zephyr.  Therefore, the lpcxpresso55s69 board may have additional features
+already supported, which can also be re-used on this lpcxpresso55s28 board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -74,6 +77,11 @@ hardware features:
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
+| RNG       | on-chip    | entropy;                            |
+|           |            | random                              |
++-----------+------------+-------------------------------------+
+| IAP       | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.

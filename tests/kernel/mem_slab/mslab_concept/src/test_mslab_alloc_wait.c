@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "test_mslab.h"
 
 #define THREAD_NUM 3
@@ -29,7 +29,7 @@ void tmslab_alloc_wait_timeout(void *p1, void *p2, void *p3)
 
 void tmslab_alloc_wait_ok(void *p1, void *p2, void *p3)
 {
-	zassert_true(k_mem_slab_alloc(&mslab1, &block_ok, TIMEOUT) == 0, NULL);
+	zassert_true(k_mem_slab_alloc(&mslab1, &block_ok, TIMEOUT) == 0);
 	k_sem_give(&sync_sema);
 }
 
@@ -48,7 +48,7 @@ void tmslab_alloc_wait_ok(void *p1, void *p2, void *p3)
  * @see k_mem_slab_alloc()
  * @see k_mem_slab_free()
  */
-void test_mslab_alloc_wait_prio(void)
+ZTEST(mslab_concept, test_mslab_alloc_wait_prio)
 {
 	void *block[BLK_NUM];
 	k_tid_t tid[THREAD_NUM];

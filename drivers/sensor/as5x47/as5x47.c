@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT ams_as5x47
 
-#include <devicetree.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #error "AS5x47 driver enabled without any devices"

@@ -6,7 +6,6 @@
 
 zephyr_library()
 zephyr_library_sources(pinmux.c)
-zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 
 if(CONFIG_SOC_MPS2_AN521_CPU1 AND NOT CONFIG_OPENAMP)
 # Building a firmware image for CPU1: this requires a binary

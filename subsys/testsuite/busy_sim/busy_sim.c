@@ -6,7 +6,7 @@
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/gpio.h>
-#include "busy_sim.h"
+#include <zephyr/busy_sim.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/random/rand32.h>
 
@@ -46,7 +46,7 @@ static const struct busy_sim_config sim_config = {
 };
 
 static struct busy_sim_data sim_data;
-static const struct device *busy_sim_dev = DEVICE_DT_GET_ONE(vnd_busy_sim);
+static const struct device *const busy_sim_dev = DEVICE_DT_GET_ONE(vnd_busy_sim);
 
 static void rng_pool_work_handler(struct k_work *work)
 {

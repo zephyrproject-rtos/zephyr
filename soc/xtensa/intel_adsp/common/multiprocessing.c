@@ -108,7 +108,7 @@ __imr void z_mp_entry(void)
 	 * isn't using yet.  Manual inspection of generated code says
 	 * we're safe, but really we need a better solution here.
 	 */
-	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
 		z_xtensa_cache_flush_inv_all();
 	}
 

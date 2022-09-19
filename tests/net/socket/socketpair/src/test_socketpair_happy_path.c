@@ -14,7 +14,7 @@ LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/sys/util.h>
 #include <zephyr/posix/unistd.h>
 
-#include <ztest_assert.h>
+#include <zephyr/ztest_assert.h>
 
 #undef read
 #define read(fd, buf, len) zsock_recv(fd, buf, len, 0)
@@ -163,7 +163,7 @@ static void happy_path(
 	zassert_equal(res, 0, "close failed");
 }
 
-void test_socketpair_AF_LOCAL__SOCK_STREAM__0(void)
+ZTEST_USER(net_socketpair, test_socketpair_AF_LOCAL__SOCK_STREAM__0)
 {
 	happy_path(
 		AF_LOCAL, "AF_LOCAL",
@@ -172,7 +172,7 @@ void test_socketpair_AF_LOCAL__SOCK_STREAM__0(void)
 	);
 }
 
-void test_socketpair_AF_UNIX__SOCK_STREAM__0(void)
+ZTEST_USER(net_socketpair, test_socketpair_AF_UNIX__SOCK_STREAM__0)
 {
 	happy_path(
 		AF_UNIX, "AF_UNIX",

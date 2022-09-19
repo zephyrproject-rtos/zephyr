@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/coredump.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /* Test will verify that these values are present in the core dump */
 #define TEST_MEMORY_VALUE_0 0xabababab
@@ -64,8 +64,8 @@ ZTEST_SUITE(coredump_tests, NULL, coredump_tests_suite_setup, NULL, NULL, NULL);
 
 ZTEST(coredump_tests, test_register_memory)
 {
-	const struct device *coredump_dev = DEVICE_DT_GET(DT_NODELABEL(coredump_device0));
-	const struct device *coredump_cb_dev = DEVICE_DT_GET(DT_NODELABEL(coredump_devicecb));
+	const struct device *const coredump_dev = DEVICE_DT_GET(DT_NODELABEL(coredump_device0));
+	const struct device *const coredump_cb_dev = DEVICE_DT_GET(DT_NODELABEL(coredump_devicecb));
 
 	zassert_not_null(coredump_dev, "Cannot get coredump device");
 

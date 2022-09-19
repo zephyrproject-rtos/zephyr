@@ -41,9 +41,7 @@ and high-speed connectivity features. Important board features include:
 - Supported by a wide choice of integrated development environments
 
 .. image:: img/stm32f769i_disco.jpg
-     :width: 500px
      :align: center
-     :height: 260px
      :alt: STM32F769I-DISCO
 
 More information about the board can be found at the `32F769I-DISCO website`_.

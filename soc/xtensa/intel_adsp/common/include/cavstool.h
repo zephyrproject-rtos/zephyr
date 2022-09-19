@@ -7,7 +7,7 @@
 
 /* The cavstool.py script that launched us listens for a very simple
  * set of IPC commands to help test.  Pass one of the following values
- * as the "data" argument to cavs_ipc_send_message(CAVS_HOST_DEV, ...):
+ * as the "data" argument to intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, ...):
  */
 enum cavstool_cmd {
 	/* The host takes no action, but signals DONE to complete the message */

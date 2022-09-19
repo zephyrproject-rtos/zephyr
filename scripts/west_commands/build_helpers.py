@@ -16,6 +16,7 @@ from pathlib import Path
 from west import log
 from west.configuration import config
 from west.util import escapes_directory
+from domains import Domains
 
 DEFAULT_BUILD_DIR = 'build'
 '''Name of the default Zephyr build directory.'''
@@ -133,3 +134,19 @@ def is_zephyr_build(path):
     log.dbg(f'{path} is NOT a valid zephyr build directory',
             level=log.VERBOSE_EXTREME)
     return False
+
+
+def load_domains(path):
+    '''Load domains from a domains.yaml.
+
+    If domains.yaml is not found, then a single 'app' domain referring to the
+    top-level build folder is created and returned.
+    '''
+    domains_file = Path(path) / 'domains.yaml'
+
+    if not domains_file.is_file():
+        return Domains.from_data({'default': 'app',
+                                  'build_dir': path,
+                                  'domains': [{'name': 'app', 'build_dir': path}]})
+
+    return Domains.from_file(domains_file)

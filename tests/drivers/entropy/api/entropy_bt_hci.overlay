@@ -12,7 +12,6 @@
 
 	rng_hci: entropy_bt_hci {
 		compatible = "zephyr,bt-hci-entropy";
-		label = "bt_hci_entropy";
 		status = "okay";
 	};
 };

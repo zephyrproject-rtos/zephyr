@@ -158,6 +158,21 @@ int settings_save(void)
 	return rc;
 }
 
+int settings_storage_get(void **storage)
+{
+	struct settings_store *cs = settings_save_dst;
+
+	if (!cs) {
+		return -ENOENT;
+	}
+
+	if (cs->cs_itf->csi_storage_get) {
+		*storage = cs->cs_itf->csi_storage_get(cs);
+	}
+
+	return 0;
+}
+
 void settings_store_init(void)
 {
 	sys_slist_init(&settings_load_srcs);

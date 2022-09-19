@@ -157,9 +157,9 @@ static int test_rmdir(void)
 
 void test_fat_dir(void)
 {
-	zassert_true(test_mkdir() == TC_PASS, NULL);
-	zassert_true(test_lsdir(FATFS_MNTP) == TC_PASS, NULL);
-	zassert_true(test_lsdir(TEST_DIR) == TC_PASS, NULL);
-	zassert_true(test_rmdir() == TC_PASS, NULL);
-	zassert_true(test_lsdir(FATFS_MNTP) == TC_PASS, NULL);
+	zassert_true(test_mkdir() == TC_PASS);
+	zassert_true(test_lsdir(FATFS_MNTP) == TC_PASS);
+	zassert_true(test_lsdir(TEST_DIR) == TC_PASS);
+	zassert_true(test_rmdir() == TC_PASS);
+	zassert_true(test_lsdir(FATFS_MNTP) == TC_PASS);
 }

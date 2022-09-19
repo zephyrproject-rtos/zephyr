@@ -5,7 +5,7 @@
  */
 
 #include "mock_backend.h"
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_backend_std.h>
 #include <stdlib.h>

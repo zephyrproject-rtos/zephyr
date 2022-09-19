@@ -398,7 +398,7 @@ static int dma_sam0_get_status(const struct device *dev, uint32_t channel,
 			    DT_INST_IRQ_BY_IDX(0, n, priority),		 \
 			    dma_sam0_isr, DEVICE_DT_INST_GET(0), 0);	 \
 		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		 \
-	} while (0)
+	} while (false)
 
 static int dma_sam0_init(const struct device *dev)
 {

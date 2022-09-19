@@ -4,7 +4,7 @@
 config PLIC
 	bool "Platform Level Interrupt Controller (PLIC)"
 	default y
-	depends on RISCV_HAS_PLIC
+	depends on DT_HAS_SIFIVE_PLIC_1_0_0_ENABLED
 	select MULTI_LEVEL_INTERRUPTS
 	select 2ND_LEVEL_INTERRUPTS
 	help

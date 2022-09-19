@@ -125,23 +125,40 @@ void ull_adv_aux_offset_get(struct ll_adv_set *adv);
 #define ULL_ADV_PDU_HDR_FIELD_AD_DATA   BIT(9)
 
 /* helper defined for field offsets in the hdr_set_clear interfaces */
-#define ULL_ADV_HDR_DATA_LEN_OFFSET      0
-#define ULL_ADV_HDR_DATA_LEN_SIZE        1
-#define ULL_ADV_HDR_DATA_ACAD_PTR_OFFSET 1
-#define ULL_ADV_HDR_DATA_ACAD_PTR_SIZE   (sizeof(uint8_t *))
-#define ULL_ADV_HDR_DATA_DATA_PTR_OFFSET 1
-#define ULL_ADV_HDR_DATA_DATA_PTR_SIZE   (sizeof(uint8_t *))
+#define ULL_ADV_HDR_DATA_LEN_OFFSET          0
+#define ULL_ADV_HDR_DATA_LEN_SIZE            1
+#define ULL_ADV_HDR_DATA_CTE_INFO_OFFSET     0
+#define ULL_ADV_HDR_DATA_CTE_INFO_SIZE       (sizeof(struct pdu_cte_info))
+#define ULL_ADV_HDR_DATA_ADI_PTR_OFFSET      1
+#define ULL_ADV_HDR_DATA_ADI_PTR_SIZE        (sizeof(uint8_t *))
+#define ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET  1
+#define ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE    (sizeof(uint8_t *))
+#define ULL_ADV_HDR_DATA_ACAD_PTR_OFFSET     1
+#define ULL_ADV_HDR_DATA_ACAD_PTR_SIZE       (sizeof(uint8_t *))
+#define ULL_ADV_HDR_DATA_DATA_PTR_OFFSET     1
+#define ULL_ADV_HDR_DATA_DATA_PTR_SIZE       (sizeof(uint8_t *))
 
 /* helper function to set/clear common extended header format fields */
 uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 				  uint16_t sec_hdr_add_fields,
 				  uint16_t sec_hdr_rem_fields,
 				  void *value,
-				  struct pdu_adv_adi *adi,
-				  uint8_t *pri_idx);
+				  uint8_t *pri_idx, uint8_t *sec_idx);
+
+/* helper function to set/clear common extended header format fields for
+ * auxiliary PDU
+ */
+uint8_t ull_adv_aux_pdu_set_clear(struct ll_adv_set *adv,
+				  struct pdu_adv *pdu_prev,
+				  struct pdu_adv *pdu,
+				  uint16_t hdr_add_fields,
+				  uint16_t hdr_rem_fields,
+				  void *hdr_data);
 
 /* helper to initialize extended advertising PDU */
-void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags);
+void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags,
+			   uint8_t phy_s, uint8_t phy_flags,
+			   struct pdu_cte_info *cte_info);
 
 /* helper to add cte_info field to extended advertising header */
 uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_info *cte_info);
@@ -191,6 +208,12 @@ void ull_adv_aux_ptr_fill(struct pdu_adv_aux_ptr *aux_ptr, uint32_t offs_us,
 /* helper function to handle adv aux done events */
 void ull_adv_aux_done(struct node_rx_event_done *done);
 
+/* helper function to duplicate chain PDUs */
+void ull_adv_aux_chain_pdu_duplicate(struct pdu_adv *pdu_prev,
+				     struct pdu_adv *pdu,
+				     struct pdu_adv_aux_ptr *aux_ptr,
+				     uint8_t phy_s, uint8_t phy_flags,
+				     uint32_t mafs_us);
 int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
 int ull_adv_sync_reset_finalize(void);

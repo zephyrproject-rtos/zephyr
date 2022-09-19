@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
@@ -70,7 +70,7 @@ static int read_bytes(const struct device *i2c_dev, uint16_t addr,
 
 void main(void)
 {
-	const struct device *i2c_dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+	const struct device *const i2c_dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
 	uint8_t cmp_data[16];
 	uint8_t data[16];
 	int i, ret;

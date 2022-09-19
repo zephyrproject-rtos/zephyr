@@ -45,6 +45,7 @@ config LOAPIC_SPURIOUS_VECTOR_ID
 config IOAPIC
 	bool "IO-APIC"
 	default y
+	depends on DT_HAS_INTEL_IOAPIC_ENABLED
 	help
 	  This option signifies that the target has an IO-APIC device. This
 	  capability allows IO-APIC-dependent code to be included.

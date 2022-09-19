@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/rtio/rtio_spsc.h>

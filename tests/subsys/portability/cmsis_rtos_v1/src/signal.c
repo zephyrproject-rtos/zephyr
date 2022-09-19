@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <cmsis_os.h>
 
@@ -69,7 +69,7 @@ void test_multiple_signal_flags(void const *thread_id)
 osThreadDef(Thread_1, osPriorityHigh, 3, 0);
 osThreadDef(Thread_2, osPriorityHigh, 1, 0);
 
-void test_signal_events_no_wait(void)
+ZTEST(cmsis_signal, test_signal_events_no_wait)
 {
 	osThreadId id1;
 	osEvent evt;
@@ -89,7 +89,7 @@ void test_signal_events_no_wait(void)
 	osThreadTerminate(id1);
 }
 
-void test_signal_events_timeout(void)
+ZTEST(cmsis_signal, test_signal_events_timeout)
 {
 	osThreadId id1;
 	int signals;
@@ -112,7 +112,7 @@ void test_signal_events_timeout(void)
 	osThreadTerminate(id1);
 }
 
-void test_signal_events_signalled(void)
+ZTEST(cmsis_signal, test_signal_events_signalled)
 {
 	osThreadId id1, id2;
 	osEvent evt;
@@ -181,7 +181,7 @@ void test_signal_from_isr(void const *thread_id)
 
 osThreadDef(test_signal_from_isr, osPriorityHigh, 1, 0);
 
-void test_signal_events_isr(void)
+ZTEST(cmsis_signal, test_signal_events_isr)
 {
 	osThreadId id;
 	osEvent evt;
@@ -194,3 +194,4 @@ void test_signal_events_isr(void)
 	zassert_equal((evt.value.signals & ISR_SIGNAL),
 		       ISR_SIGNAL, "unexpected signal wait value");
 }
+ZTEST_SUITE(cmsis_signal, NULL, NULL, NULL, NULL, NULL);

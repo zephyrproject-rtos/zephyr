@@ -137,7 +137,6 @@
 
 	n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		label = "N25Q128A1";
 		reg = <0>;
 		qspi-max-frequency = <72000000>;
 		size = <DT_SIZE_M(16*8)>;

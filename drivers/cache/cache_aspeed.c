@@ -49,7 +49,7 @@
 
 static void aspeed_cache_init(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uint32_t start_bit, end_bit, max_bit;
 
 	/* set all cache areas to no-cache by default */
@@ -112,7 +112,7 @@ void cache_data_enable(void)
 
 void cache_data_disable(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 
 	syscon_write_reg(dev, CACHE_FUNC_CTRL_REG, 0);
 }
@@ -124,14 +124,14 @@ void cache_instr_enable(void)
 
 void cache_instr_disable(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 
 	syscon_write_reg(dev, CACHE_FUNC_CTRL_REG, 0);
 }
 
 int cache_data_all(int op)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uint32_t ctrl;
 	unsigned int key = 0;
 
@@ -162,7 +162,7 @@ int cache_data_all(int op)
 int cache_data_range(void *addr, size_t size, int op)
 {
 	uint32_t aligned_addr, i, n;
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	unsigned int key = 0;
 
 	ARG_UNUSED(op);
@@ -196,7 +196,7 @@ int cache_data_range(void *addr, size_t size, int op)
 
 int cache_instr_all(int op)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uint32_t ctrl;
 	unsigned int key = 0;
 
@@ -227,7 +227,7 @@ int cache_instr_all(int op)
 int cache_instr_range(void *addr, size_t size, int op)
 {
 	uint32_t aligned_addr, i, n;
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	unsigned int key = 0;
 
 	ARG_UNUSED(op);
@@ -262,7 +262,7 @@ int cache_instr_range(void *addr, size_t size, int op)
 #ifdef CONFIG_DCACHE_LINE_SIZE_DETECT
 size_t cache_data_line_size_get(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uint32_t ctrl;
 
 	syscon_read_reg(dev, CACHE_FUNC_CTRL_REG, &ctrl);
@@ -274,7 +274,7 @@ size_t cache_data_line_size_get(void)
 #ifdef CONFIG_ICACHE_LINE_SIZE_DETECT
 size_t cache_instr_line_size_get(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uint32_t ctrl;
 
 	syscon_read_reg(dev, CACHE_FUNC_CTRL_REG, &ctrl);

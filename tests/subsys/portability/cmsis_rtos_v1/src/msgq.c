@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <cmsis_os.h>
 
@@ -82,7 +82,7 @@ void message_recv(void)
 	zassert_true(evt.status == osEventMessage, "osMessageGet failure");
 
 	data = evt.value.v;
-	zassert_equal(data, MESSAGE1, NULL);
+	zassert_equal(data, MESSAGE1);
 
 	/* Wait for queue to get filled */
 	osDelay(TIMEOUT);
@@ -94,7 +94,7 @@ void message_recv(void)
 				"osMessageGet failure");
 
 		data = evt.value.v;
-		zassert_equal(data, i, NULL);
+		zassert_equal(data, i);
 	}
 
 	/* Receive the next message */
@@ -102,12 +102,12 @@ void message_recv(void)
 	zassert_true(evt.status == osEventMessage, "osMessageGet failure");
 
 	data = evt.value.v;
-	zassert_equal(data, MESSAGE2, NULL);
+	zassert_equal(data, MESSAGE2);
 }
 
 osThreadDef(send_msg_thread, osPriorityNormal, 1, 0);
 
-void test_messageq(void)
+ZTEST(cmsis_msgq, test_messageq)
 {
 	osThreadId tid;
 
@@ -119,3 +119,4 @@ void test_messageq(void)
 
 	message_recv();
 }
+ZTEST_SUITE(cmsis_msgq, NULL, NULL, NULL, NULL, NULL);

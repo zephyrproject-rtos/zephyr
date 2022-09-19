@@ -62,7 +62,7 @@
 
 #include <tinycrypt/ecc_dh.h>
 #include <tinycrypt/ecc.h>
-#include <test_utils.h>
+#include <zephyr/test_utils.h>
 
 /*
  * Convert hex string to zero-padded nanoECC scalar

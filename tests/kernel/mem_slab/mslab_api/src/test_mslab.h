@@ -14,5 +14,6 @@
 #define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 extern void tmslab_alloc_free(void *data);
+extern void *mslab_setup(void);
 
 #endif /*__TEST_MSLAB_H__*/

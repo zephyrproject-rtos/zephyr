@@ -12,12 +12,13 @@ import subprocess
 import json
 import logging
 import sys
+from pathlib import Path
 from git import Repo
 
 if "ZEPHYR_BASE" not in os.environ:
     exit("$ZEPHYR_BASE environment variable undefined.")
 
-repository_path = os.environ['ZEPHYR_BASE']
+repository_path = Path(os.environ['ZEPHYR_BASE'])
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
 sys.path.append(os.path.join(repository_path, 'scripts'))
@@ -92,15 +93,19 @@ class Filters:
         self.tag_options = []
         self.pull_request = pull_request
         self.platforms = platforms
-
+        self.default_run = False
 
     def process(self):
         self.find_tags()
-        self.find_excludes()
         self.find_tests()
         if not self.platforms:
             self.find_archs()
             self.find_boards()
+
+        if self.default_run:
+            self.find_excludes(skip=["tests/*", "boards/*/*/*"])
+        else:
+            self.find_excludes()
 
     def get_plan(self, options, integration=False):
         fname = "_test_plan_partial.json"
@@ -161,7 +166,7 @@ class Filters:
                 boards.add(p.group(1))
 
         # Limit search to $ZEPHYR_BASE since this is where the changed files are
-        lb_args = argparse.Namespace(**{ 'arch_roots': [], 'board_roots': [] })
+        lb_args = argparse.Namespace(**{ 'arch_roots': [repository_path], 'board_roots': [repository_path] })
         known_boards = list_boards.find_boards(lb_args)
         for b in boards:
             name_re = re.compile(b)
@@ -171,7 +176,8 @@ class Filters:
 
         _options = []
         if len(all_boards) > 20:
-            logging.warning(f"{len(boards)} boards changed, this looks like a global change, skipping test handling")
+            logging.warning(f"{len(boards)} boards changed, this looks like a global change, skipping test handling, revert to default.")
+            self.default_run = True
             return
 
         for board in all_boards:
@@ -200,7 +206,8 @@ class Filters:
             _options.extend(["-T", t ])
 
         if len(tests) > 20:
-            logging.warning(f"{len(tests)} tests changed, this looks like a global change, skipping test handling")
+            logging.warning(f"{len(tests)} tests changed, this looks like a global change, skipping test handling, revert to default")
+            self.default_run = True
             return
 
         if _options:
@@ -251,7 +258,7 @@ class Filters:
         if exclude_tags:
             logging.info(f'Potential tag based filters...')
 
-    def find_excludes(self):
+    def find_excludes(self, skip=[]):
         with open("scripts/ci/twister_ignore.txt", "r") as twister_ignore:
             ignores = twister_ignore.read().splitlines()
             ignores = filter(lambda x: not x.startswith("#"), ignores)
@@ -260,6 +267,8 @@ class Filters:
         files = list(filter(lambda x: x, self.modified_files))
 
         for pattern in ignores:
+            if pattern in skip:
+                continue
             if pattern:
                 found.update(fnmatch.filter(files, pattern))
 

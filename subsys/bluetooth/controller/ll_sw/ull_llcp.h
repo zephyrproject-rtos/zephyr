@@ -61,6 +61,11 @@ void ull_cp_run(struct ll_conn *conn);
 void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx);
 
 /**
+ * @brief Handle TX procedures notifications towards Host.
+ */
+void ull_cp_tx_ntf(struct ll_conn *conn);
+
+/**
  * @brief Handle received LL Control PDU.
  */
 void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx);

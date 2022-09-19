@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <cmsis_os.h>
 
@@ -27,7 +27,7 @@ void thread1(void const *argument)
 
 	/* This thread starts off at a high priority (same as thread2) */
 	thread_yield_check++;
-	zassert_equal(thread_yield_check, 1, NULL);
+	zassert_equal(thread_yield_check, 1);
 
 	/* Yield to thread2 which is of same priority */
 	status = osThreadYield();
@@ -36,7 +36,7 @@ void thread1(void const *argument)
 	/* thread_yield_check should now be 2 as it was incremented
 	 * in thread2.
 	 */
-	zassert_equal(thread_yield_check, 2, NULL);
+	zassert_equal(thread_yield_check, 2);
 }
 
 void thread2(void const *argument)
@@ -97,7 +97,7 @@ osThreadDef(thread1, osPriorityHigh, 1, STACKSZ);
 osThreadDef(thread2, osPriorityHigh, 1, STACKSZ);
 osThreadDef(thread3, osPriorityNormal, 1, STACKSZ);
 
-void test_thread_prio(void)
+ZTEST(thread_apis, test_thread_prio)
 {
 	osStatus status;
 	osThreadId id3;
@@ -128,7 +128,7 @@ void test_thread_prio(void)
 	thread3_state = 0;
 }
 
-void test_thread_apis(void)
+ZTEST(thread_apis, test_thread_apis)
 {
 	osThreadId id1;
 	osThreadId id2;
@@ -143,3 +143,4 @@ void test_thread_apis(void)
 		osDelay(100);
 	} while (thread_yield_check != 2);
 }
+ZTEST_SUITE(thread_apis, NULL, NULL, NULL, NULL, NULL);

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <zephyr/kernel_structs.h>
@@ -65,7 +65,7 @@ static int curr_cpu(void)
 }
 
 /**
- * @brief Tests for SMP
+ * @brief SMP
  * @defgroup kernel_smp_tests SMP Tests
  * @ingroup all_tests
  * @{
@@ -73,15 +73,15 @@ static int curr_cpu(void)
  */
 
 /**
- * @defgroup kernel_smp_integration_tests SMP Tests
- * @ingroup all_tests
+ * @defgroup kernel_smp_integration_tests SMP Integration Tests
+ * @ingroup kernel_smp_tests
  * @{
  * @}
  */
 
 /**
- * @defgroup kernel_smp_module_tests SMP Tests
- * @ingroup all_tests
+ * @defgroup kernel_smp_module_tests SMP Module Tests
+ * @ingroup kernel_smp_tests
  * @{
  * @}
  */
@@ -119,6 +119,14 @@ ZTEST(smp, test_smp_coop_threads)
 {
 	int i, ok = 1;
 
+	if (!IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
+		/* The spawned thread enters an infinite loop, so it can't be
+		 * successfully aborted via an IPI.  Just skip in that
+		 * configuration.
+		 */
+		ztest_test_skip();
+	}
+
 	k_tid_t tid = k_thread_create(&t2, t2_stack, T2_STACK_SIZE, t2_fn,
 				      NULL, NULL, NULL,
 				      K_PRIO_COOP(2), 0, K_NO_WAIT);
@@ -144,6 +152,7 @@ ZTEST(smp, test_smp_coop_threads)
 	}
 
 	k_thread_abort(tid);
+	k_thread_join(tid, K_FOREVER);
 	zassert_true(ok, "SMP test failed");
 }
 
@@ -184,6 +193,7 @@ ZTEST(smp, test_cpu_id_threads)
 	k_sem_take(&cpuid_sema, K_FOREVER);
 
 	k_thread_abort(tid);
+	k_thread_join(tid, K_FOREVER);
 }
 
 static void thread_entry(void *p1, void *p2, void *p3)
@@ -244,6 +254,10 @@ static void abort_threads(int num)
 {
 	for (int i = 0; i < num; i++) {
 		k_thread_abort(tinfo[i].tid);
+	}
+
+	for (int i = 0; i < num; i++) {
+		k_thread_join(tinfo[i].tid, K_FOREVER);
 	}
 }
 
@@ -535,22 +549,32 @@ static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
  *
  * @see arch_curr_cpu()
  */
+static int _cpu_id;
 ZTEST(smp, test_get_cpu)
 {
 	k_tid_t thread_id;
 
+	if (!IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
+		/* The spawned thread enters an infinite loop, so it can't be
+		 * successfully aborted via an IPI.  Just skip in that
+		 * configuration.
+		 */
+		ztest_test_skip();
+	}
+
 	/* get current cpu number */
-	int cpu_id = arch_curr_cpu()->id;
+	_cpu_id = arch_curr_cpu()->id;
 
 	thread_id = k_thread_create(&t2, t2_stack, T2_STACK_SIZE,
 				      (k_thread_entry_t)thread_get_cpu_entry,
-				      &cpu_id, NULL, NULL,
+				      &_cpu_id, NULL, NULL,
 				      K_PRIO_COOP(2),
 				      K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_busy_wait(DELAY_US);
 
 	k_thread_abort(thread_id);
+	k_thread_join(thread_id, K_FOREVER);
 }
 
 #ifdef CONFIG_TRACE_SCHED_IPI
@@ -607,6 +631,7 @@ void z_trace_sched_ipi(void)
  *
  * @see arch_sched_ipi()
  */
+#ifdef CONFIG_SCHED_IPI_SUPPORTED
 ZTEST(smp, test_smp_ipi)
 {
 #ifndef CONFIG_TRACE_SCHED_IPI
@@ -632,8 +657,9 @@ ZTEST(smp, test_smp_ipi)
 				sched_ipi_has_called);
 	}
 }
+#endif
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
 	static int trigger;
 
@@ -712,7 +738,7 @@ ZTEST(smp, test_workq_on_smp)
 	k_busy_wait(DELAY_US);
 
 	/* check work have finished */
-	zassert_equal(k_work_busy_get(&work), 0, NULL);
+	zassert_equal(k_work_busy_get(&work), 0);
 
 	main_thread_id = curr_cpu();
 
@@ -1005,8 +1031,10 @@ ZTEST(smp, test_smp_switch_torture)
 	k_sleep(K_MSEC(SLEEP_MS_LONG));
 
 	k_thread_abort(&t2);
+	k_thread_join(&t2, K_FOREVER);
 	for (uintptr_t i = 0; i < THREADS_NUM; i++) {
 		k_thread_abort(&tthread[i]);
+		k_thread_join(&tthread[i], K_FOREVER);
 	}
 }
 

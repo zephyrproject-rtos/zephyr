@@ -23,6 +23,11 @@
 		zephyr,shell-uart = &uart0;
 	};
 
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -31,6 +36,24 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0>;
+		};
+
+		cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x100>;
+		};
+
+		cpu@200 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x200>;
+		};
+
+		cpu@300 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x300>;
 		};
 	};
 
@@ -79,7 +102,6 @@
 			status = "disabled";
 			interrupts = <GIC_SPI 5 0 IRQ_TYPE_LEVEL>;
 			interrupt-names = "irq_5";
-			label = "UART_0";
 			clocks = <&uartclk>;
 		};
 
@@ -89,7 +111,6 @@
 			status = "disabled";
 			interrupts = <GIC_SPI 6 0 IRQ_TYPE_LEVEL>;
 			interrupt-names = "irq_6";
-			label = "UART_1";
 			clocks = <&uartclk>;
 		};
 
@@ -99,7 +120,6 @@
 			status = "disabled";
 			interrupts = <GIC_SPI 7 0 IRQ_TYPE_LEVEL>;
 			interrupt-names = "irq_7";
-			label = "UART_2";
 			clocks = <&uartclk>;
 		};
 
@@ -109,7 +129,6 @@
 			status = "disabled";
 			interrupts = <GIC_SPI 8 0 IRQ_TYPE_LEVEL>;
 			interrupt-names = "irq_8";
-			label = "UART_3";
 			clocks = <&uartclk>;
 		};
 

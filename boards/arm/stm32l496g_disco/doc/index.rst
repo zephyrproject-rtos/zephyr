@@ -42,9 +42,7 @@ some highlights of the STM32L496G Discovery board:
 - 4 direction-joystick with selection
 
 .. image:: img/stm32l496g_disco.jpg
-     :width: 450px
      :align: center
-     :height: 394px
      :alt: STM32L496G Discovery
 
 More information about the board can be found at the `STM32L496G Discovery website`_.

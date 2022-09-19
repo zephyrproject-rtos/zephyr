@@ -21,8 +21,6 @@ The STM32 Nucleo board comes with the STM32 comprehensive software HAL library t
 with various packaged software examples.
 
 .. image:: img/nucleo_f103rb.jpg
-   :width: 500px
-   :height: 367px
    :align: center
    :alt: Nucleo F103RB
 
@@ -97,6 +95,12 @@ The Zephyr nucleo_f103rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | Direct Memory Access                |
 +-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
+| RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -113,10 +117,8 @@ capable except for analog inputs.
 
 Board connectors:
 -----------------
-.. image:: img/nucleo_f103rb_connectors.png
-   :width: 800px
+.. image:: img/nucleo_f103rb_connectors.jpg
    :align: center
-   :height: 619px
    :alt: Nucleo F103RB connectors
 
 Default Zephyr Peripheral Mapping:

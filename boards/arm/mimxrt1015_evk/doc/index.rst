@@ -11,8 +11,7 @@ high-performance feature set in low-cost LQFP packages, further simplifying
 board design and layout for customers. The i.MX RT1015 runs on the Arm®
 Cortex®-M7 core at 500 MHz.
 
-.. image:: ./mimxrt1015_evk.jpg
-   :width: 720px
+.. image:: mimxrt1015_evk.jpg
    :align: center
    :alt: MIMXRT1015-EVK
 
@@ -55,8 +54,12 @@ these references:
 Supported Features
 ==================
 
-The mimxrt1015_evk board configuration supports the following hardware
-features:
+The mimxrt1015_evk board configuration supports the hardware features listed
+below.  For additional features not yet supported, please also refer to the
+:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
+already supported, which can also be re-used on this mimxrt1015_evk board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -79,6 +82,8 @@ features:
 | ADC       | on-chip    | ADC                                 |
 +-----------+------------+-------------------------------------+
 | GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

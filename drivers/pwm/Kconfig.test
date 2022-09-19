@@ -2,9 +2,8 @@
 # Organisation (CSIRO) ABN 41 687 119 230.
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_VND_PWM := vnd,pwm
-
 # Hidden option for turning on the dummy driver for vnd,pwm devices
 # used in testing.
 config PWM_TEST
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_VND_PWM))
+	def_bool DT_HAS_VND_PWM_ENABLED
+	depends on DT_HAS_VND_PWM_ENABLED

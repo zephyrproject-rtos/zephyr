@@ -11,7 +11,7 @@
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/conn.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>

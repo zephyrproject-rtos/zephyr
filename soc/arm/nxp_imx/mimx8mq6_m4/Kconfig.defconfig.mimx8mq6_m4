@@ -13,13 +13,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 266000000
 
-if CLOCK_CONTROL
-
-config CLOCK_CONTROL_MCUX_CCM
-	default y if HAS_MCUX_CCM
-
-endif # CLOCK_CONTROL
-
 if PINMUX
 
 config PINMUX_MCUX
@@ -30,12 +23,5 @@ endif # PINMUX
 config PINCTRL_IMX
 	default y if HAS_MCUX_IOMUXC
 	depends on PINCTRL
-
-if SERIAL
-
-config UART_MCUX_IUART
-	default y
-
-endif # SERIAL
 
 endif # SOC_MIMX8MQ6

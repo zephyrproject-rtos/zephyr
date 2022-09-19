@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/syscall_handler.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "test_syscalls.h"
 
 #define DB_VAL 0xDEADBEEF

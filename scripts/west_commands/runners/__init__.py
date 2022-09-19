@@ -31,6 +31,7 @@ _names = [
     'dediprog',
     'dfu',
     'esp32',
+    'ezflashcli',
     'gd32isp',
     'hifive1',
     'intel_adsp',

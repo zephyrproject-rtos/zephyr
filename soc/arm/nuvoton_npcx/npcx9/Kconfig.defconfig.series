@@ -14,45 +14,9 @@ config NUM_IRQS
 config CORTEX_M_SYSTICK
 	default !NPCX_ITIM_TIMER
 
-config CLOCK_CONTROL_NPCX
-	default y
-	depends on CLOCK_CONTROL
-
-config UART_NPCX
-	default y
-	depends on SERIAL
-
-config GPIO_NPCX
-	default y
-	depends on GPIO
-
-config PWM_NPCX
-	default y
-	depends on PWM
-
-config ADC_NPCX
-	default y
-	depends on ADC
-
-config WDT_NPCX
-	default y
-	depends on WATCHDOG
-
 config ESPI_NPCX
 	default y
 	depends on ESPI
-
-config I2C_NPCX
-	default y
-	depends on I2C
-
-config TACH_NPCX
-	default y
-	depends on SENSOR
-
-config SPI_NPCX_FIU
-	default y
-	depends on SPI
 
 source "soc/arm/nuvoton_npcx/npcx9/Kconfig.defconfig.npcx9*"
 

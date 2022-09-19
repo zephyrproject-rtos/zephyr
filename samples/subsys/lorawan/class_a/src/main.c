@@ -8,7 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/lorawan/lorawan.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 /* Customize based on network configuration */
 #define LORAWAN_DEV_EUI			{ 0xDD, 0xEE, 0xAA, 0xDD, 0xBB, 0xEE,\

@@ -3,5 +3,5 @@
 # used by ci/check_compliance
 python-magic
 python-magic-bin; sys_platform == "win32"
-junitparser<2
+junitparser>=2
 pylint

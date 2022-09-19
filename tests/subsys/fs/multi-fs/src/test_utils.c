@@ -7,8 +7,11 @@
 #include <limits.h>
 #include <zephyr/device.h>
 #include <zephyr/fs/fs.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/storage/flash_map.h>
+
+#define TEST_PARTITION		storage_partition
+#define TEST_PARTITION_ID	FIXED_PARTITION_ID(TEST_PARTITION)
 
 int check_file_dir_exists(const char *fpath)
 {
@@ -25,7 +28,7 @@ void test_clear_flash(void)
 	int rc;
 	const struct flash_area *fap;
 
-	rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
+	rc = flash_area_open(TEST_PARTITION_ID, &fap);
 	zassert_equal(rc, 0, "Opening flash area for erase [%d]\n", rc);
 
 	rc = flash_area_erase(fap, 0, fap->fa_size);

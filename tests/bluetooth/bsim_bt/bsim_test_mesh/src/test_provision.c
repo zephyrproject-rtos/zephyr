@@ -269,6 +269,7 @@ static void oob_auth_set(int test_step)
 	prov.input_size = oob_auth_test_vector[test_step].input_size;
 	prov.input_actions = oob_auth_test_vector[test_step].input_actions;
 }
+
 static void oob_device(bool use_oob_pk)
 {
 	int err = 0;
@@ -394,7 +395,7 @@ static void test_device_pb_adv_reprovision(void)
 	for (int i = 0; i < PROV_REPROV_COUNT; i++) {
 		/* Keep a long timeout so the prov multi case has time to finish: */
 		LOG_INF("Dev prov loop #%d, waiting for prov ...\n", i);
-		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(5)));
+		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(10)));
 	}
 
 	PASS();
@@ -532,17 +533,17 @@ static void test_provisioner_pb_adv_reprovision(void)
 		uint8_t status;
 		size_t subs_count = 1;
 		uint16_t sub;
-		struct bt_mesh_cfg_mod_pub healthpub = { 0 };
+		struct bt_mesh_cfg_cli_mod_pub healthpub = { 0 };
 		struct bt_mesh_cdb_node *node;
 
 		/* Check that publication and subscription are reset after last iteration */
-		ASSERT_OK(bt_mesh_cfg_mod_sub_get(0, current_dev_addr, current_dev_addr,
+		ASSERT_OK(bt_mesh_cfg_cli_mod_sub_get(0, current_dev_addr, current_dev_addr,
 						  BT_MESH_MODEL_ID_HEALTH_SRV, &status, &sub,
 						  &subs_count));
 		ASSERT_EQUAL(0, status);
 		ASSERT_TRUE(subs_count == 0);
 
-		ASSERT_OK(bt_mesh_cfg_mod_pub_get(0, current_dev_addr, current_dev_addr,
+		ASSERT_OK(bt_mesh_cfg_cli_mod_pub_get(0, current_dev_addr, current_dev_addr,
 						  BT_MESH_MODEL_ID_HEALTH_SRV, &healthpub,
 						  &status));
 		ASSERT_EQUAL(0, status);
@@ -557,24 +558,32 @@ static void test_provisioner_pb_adv_reprovision(void)
 		healthpub.period = BT_MESH_PUB_PERIOD_10SEC(1);
 		healthpub.transmit = BT_MESH_TRANSMIT(3, 100);
 
-		ASSERT_OK(bt_mesh_cfg_app_key_add(0, current_dev_addr, 0, 0, test_app_key,
+		ASSERT_OK(bt_mesh_cfg_cli_app_key_add(0, current_dev_addr, 0, 0, test_app_key,
 						  &status));
 		ASSERT_EQUAL(0, status);
 
-		ASSERT_OK(bt_mesh_cfg_mod_app_bind(0, current_dev_addr, current_dev_addr, 0x0,
+		k_sleep(K_SECONDS(1));
+
+		ASSERT_OK(bt_mesh_cfg_cli_mod_app_bind(0, current_dev_addr, current_dev_addr, 0x0,
 						   BT_MESH_MODEL_ID_HEALTH_SRV, &status));
 		ASSERT_EQUAL(0, status);
 
-		ASSERT_OK(bt_mesh_cfg_mod_sub_add(0, current_dev_addr, current_dev_addr, 0xc000,
+		k_sleep(K_SECONDS(1));
+
+		ASSERT_OK(bt_mesh_cfg_cli_mod_sub_add(0, current_dev_addr, current_dev_addr, 0xc000,
 						  BT_MESH_MODEL_ID_HEALTH_SRV, &status));
 		ASSERT_EQUAL(0, status);
 
-		ASSERT_OK(bt_mesh_cfg_mod_pub_set(0, current_dev_addr, current_dev_addr,
+		k_sleep(K_SECONDS(1));
+
+		ASSERT_OK(bt_mesh_cfg_cli_mod_pub_set(0, current_dev_addr, current_dev_addr,
 						  BT_MESH_MODEL_ID_HEALTH_SRV, &healthpub,
 						  &status));
 		ASSERT_EQUAL(0, status);
 
-		ASSERT_OK(bt_mesh_cfg_node_reset(0, current_dev_addr, (bool *)&status));
+		k_sleep(K_SECONDS(1));
+
+		ASSERT_OK(bt_mesh_cfg_cli_node_reset(0, current_dev_addr, (bool *)&status));
 
 		node = bt_mesh_cdb_node_get(current_dev_addr);
 		bt_mesh_cdb_node_del(node, true);

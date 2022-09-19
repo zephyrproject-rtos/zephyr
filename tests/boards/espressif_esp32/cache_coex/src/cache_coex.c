@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/drivers/flash.h>
@@ -25,7 +25,7 @@
 #define STACKSIZE 1024
 #define PRIORITY 7
 
-static const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+static const struct device *const flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 static struct flash_pages_info page_info;
 static int *mem;
 uint8_t flash_fill_buff[FLASH_READBACK_LEN];
@@ -179,7 +179,7 @@ static bool check_psram(int value)
 	return true;
 }
 
-void psram_test(void)
+static void psram_test(void)
 {
 	uint32_t sleep_ms = 10;
 	int rand_val;
@@ -199,7 +199,7 @@ void psram_test(void)
 	}
 }
 
-void psram_init(void)
+static void psram_init(void)
 {
 	mem = k_malloc(SPIRAM_ALLOC_SIZE);
 	if (!mem) {
@@ -216,7 +216,7 @@ void psram_init(void)
 	psram_test();
 }
 
-void flash_test(void)
+static void flash_test(void)
 {
 	uint32_t sleep_ms = 15;
 
@@ -239,7 +239,7 @@ void flash_test(void)
 	}
 }
 
-void flash_init(void)
+static void flash_init(void)
 {
 	if (!device_is_ready(flash_dev)) {
 		TC_ERROR("flash controller not ready\n");
@@ -247,36 +247,32 @@ void flash_init(void)
 	flash_test();
 }
 
-void test_using_spiram(void)
+ZTEST(cache_coex, test_using_spiram)
 {
 	zassert_equal(true, coex_result.using_ext_ram, "external RAM is not being used");
 }
 
-void test_flash_integrity(void)
+ZTEST(cache_coex, test_flash_integrity)
 {
 	zassert_equal(FLASH_READBACK_LEN, coex_result.flash_cnt, "flash integrity test failed");
 }
 
-void test_ram_integrity(void)
+ZTEST(cache_coex, test_ram_integrity)
 {
 	zassert_equal(true, coex_result.psram_ok, "SPIRAM integrity test failed");
 }
 
-void test_main(void)
+void *cache_coex_setup(void)
 {
 	while (unfinished_tasks) {
 		k_usleep(1);
 	}
 
-	ztest_test_suite(cache_coex_test,
-			ztest_unit_test(test_using_spiram),
-			ztest_unit_test(test_flash_integrity),
-			ztest_unit_test(test_ram_integrity)
-	);
-
-	ztest_run_test_suite(cache_coex_test);
+	return NULL;
 }
 
 K_THREAD_DEFINE(psram_id, STACKSIZE, psram_init, NULL, NULL, NULL, PRIORITY, 0, 0);
 K_THREAD_DEFINE(flash_id, STACKSIZE, flash_init, NULL, NULL, NULL, PRIORITY, 0, 0);
 K_THREAD_DEFINE(buffer_id, STACKSIZE, buffer_fill, NULL, NULL, NULL, PRIORITY, 0, 0);
+
+ZTEST_SUITE(cache_coex, NULL, cache_coex_setup, NULL, NULL, NULL);

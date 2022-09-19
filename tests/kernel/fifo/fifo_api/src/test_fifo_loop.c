@@ -32,7 +32,7 @@ static void tfifo_get(struct k_fifo *pfifo)
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: fifo get*/
 		rx_data = k_fifo_get(pfifo, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data[i], NULL);
+		zassert_equal(rx_data, (void *)&data[i]);
 	}
 }
 

@@ -95,7 +95,12 @@ child-binding:
         type: boolean
         description: |
           Set the pin to analog mode. Sets DIGIMODE=0, and ASW=1. Only valid for
-          analog type pins.
+          analog type pins. Selects ASW0 on LPC55s3x family
+      nxp,analog-alt-mode:
+        type: boolean
+        description: |
+          Select the pin's alternate analog mode. Valid on LPC55s3x family SOCs
+          when DIGIMODE=0. Only valid for analog type pins. Sets ASW1.
       power-source:
         type: string
         enum:

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <stdio.h>
@@ -25,10 +25,10 @@ void main(void)
 {
 	struct sensor_value temp, hum, press;
 	struct sensor_value magn_xyz[3], accel_xyz[3];
-	const struct device *hts221 = DEVICE_DT_GET_ONE(st_hts221);
-	const struct device *lis3mdl = DEVICE_DT_GET_ONE(st_lis3mdl_magn);
-	const struct device *lsm6ds0 = DEVICE_DT_GET_ONE(st_lsm6ds0);
-	const struct device *lps25hb = DEVICE_DT_GET_ONE(st_lps25hb_press);
+	const struct device *const hts221 = DEVICE_DT_GET_ONE(st_hts221);
+	const struct device *const lis3mdl = DEVICE_DT_GET_ONE(st_lis3mdl_magn);
+	const struct device *const lsm6ds0 = DEVICE_DT_GET_ONE(st_lsm6ds0);
+	const struct device *const lps25hb = DEVICE_DT_GET_ONE(st_lps25hb_press);
 #if defined(CONFIG_LIS3MDL_TRIGGER)
 	struct sensor_trigger trig;
 	int cnt = 1;

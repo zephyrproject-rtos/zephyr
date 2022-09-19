@@ -61,7 +61,7 @@ struct gpio_mcux_lpc_data {
 	/* pin association with PINT id */
 	pint_pin_int_t pint_id[32];
 	/* ISR allocated in device tree to this port */
-	uint32_t isr_list[8];
+	uint32_t isr_list[INPUTMUX_PINTSEL_COUNT];
 	/* index to to table above */
 	uint32_t isr_list_idx;
 };
@@ -408,7 +408,7 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 			    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(n), 0);		\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));				\
 		data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(n, m, irq);	\
-	} while (0)
+	} while (false)
 
 #define GPIO_MCUX_LPC_IRQ(n, m)								\
 	COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, m), (GPIO_MCUX_LPC_IRQ_CONNECT(n, m)), ())

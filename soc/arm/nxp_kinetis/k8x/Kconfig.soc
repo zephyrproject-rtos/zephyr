@@ -69,12 +69,4 @@ config K8X_FLASH_CLOCK_DIVIDER
 	  This option specifies the divide value for the K8x flash clock from the
 	  system clock.
 
-config DMA_MCUX_EDMA
-	default y if HAS_MCUX_EDMA
-	depends on DMA
-
-config COUNTER_MCUX_PIT
-	default y if HAS_MCUX_PIT
-	depends on COUNTER
-
 endif # SOC_SERIES_KINETIS_K8X

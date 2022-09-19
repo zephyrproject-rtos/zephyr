@@ -179,19 +179,21 @@ parse_long_options(struct getopt_state *state, char * const *nargv,
 
 	current_argv = state->place;
 #ifdef GNU_COMPATIBLE
-	switch (dash_prefix) {
-	case D_PREFIX:
-		current_dash = "-";
-		break;
-	case DD_PREFIX:
-		current_dash = "--";
-		break;
-	case W_PREFIX:
-		current_dash = "-W ";
-		break;
-	default:
-		current_dash = "";
-		break;
+	if (PRINT_ERROR) {
+		switch (dash_prefix) {
+		case D_PREFIX:
+			current_dash = "-";
+			break;
+		case DD_PREFIX:
+			current_dash = "--";
+			break;
+		case W_PREFIX:
+			current_dash = "-W ";
+			break;
+		default:
+			current_dash = "";
+			break;
+		}
 	}
 #endif
 	match = -1;

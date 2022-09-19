@@ -10,8 +10,7 @@ The dual core i.MX RT1170 runs on the Cortex-M7 core at 1 GHz and on the Cortex-
 at 400 MHz. The i.MX RT1170 MCU offers support over a wide temperature range
 and is qualified for consumer, industrial and automotive markets.
 
-.. image:: ./mimxrt1170_evk.jpg
-   :width: 600px
+.. image:: mimxrt1170_evk.jpg
    :align: center
    :alt: MIMXRT1170-EVK
 
@@ -84,8 +83,11 @@ these references:
 Supported Features
 ==================
 
-The mimxrt1170_evk board configuration supports the following hardware
-features:
+NXP considers the MIMXRT1170-EVK as the superset board for the i.MX RT11xx
+family of MCUs.  This board is a focus for NXP's Full Platform Support for
+Zephyr, to better enable the entire RT11xx family.  NXP prioritizes enabling
+this board with new support for Zephyr features.  The mimxrt1170_evk board
+configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -128,6 +130,10 @@ features:
 | DISPLAY   | on-chip    | display                             |
 +-----------+------------+-------------------------------------+
 | ACMP      | on-chip    | analog comparator                   |
++-----------+------------+-------------------------------------+
+| CAAM RNG  | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

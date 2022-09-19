@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <cmsis_os2.h>
 
@@ -217,3 +217,15 @@ void test_event_flags_isr(void)
 	zassert_true(osEventFlagsDelete(evt_id) == osOK,
 		     "EventFlagsDelete failed");
 }
+ZTEST(cmsis_event_flags, test_event_flags)
+{
+	/*
+	 *These tests are order-dependent.
+	 *They have to be executed in order.
+	 *So put these tests in one ZTEST.
+	 */
+	test_event_flags_no_wait_timeout();
+	test_event_flags_signalled();
+	test_event_flags_isr();
+}
+ZTEST_SUITE(cmsis_event_flags, NULL, NULL, NULL, NULL, NULL);

@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#define MIPI_SYST_PCFG_PRINTF_ARGBUF_SIZE CONFIG_LOG_MIPI_SYST_ARGS_BUFFER_SIZE
+
 #if defined(CONFIG_MIPI_SYST_STP)
 /*
  * Structure generating STP protocol data

@@ -3,10 +3,10 @@
 
 config SOC_FLASH_CC13XX_CC26XX
 	bool "TI SimpleLink CC13xx/CC26xx flash controller driver"
-	depends on SOC_SERIES_CC13X2_CC26X2
+	default y
+	depends on DT_HAS_TI_CC13XX_CC26XX_FLASH_CONTROLLER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
-	default y
 	help
 	  Enables TI SimpleLink CC13xx/CC26xx flash controller driver.

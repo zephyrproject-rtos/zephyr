@@ -26,6 +26,8 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G flash_mcux_f
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_NOR flash_mcux_flexspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH flash_mcux_flexspi_hyperflash.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_ESP32 flash_esp32.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SMARTBOND flash_smartbond.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_CAD_QSPI_NOR flash_cadence_qspi_nor.c flash_cadence_qspi_nor_ll.c)
 
 if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
   dt_chosen(chosen_flash PROPERTY "zephyr,flash")
@@ -57,6 +59,14 @@ if(CONFIG_SOC_FLASH_STM32)
     zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32G4X flash_stm32g4x.c)
     zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32U5X flash_stm32l5_u5.c)
   endif()
+endif()
+
+if(CONFIG_SOC_FLASH_GD32)
+  zephyr_library_sources(flash_gd32.c)
+
+  zephyr_library_sources_ifdef(CONFIG_GD32_NV_FLASH_V1 flash_gd32_v1.c)
+  zephyr_library_sources_ifdef(CONFIG_GD32_NV_FLASH_V2 flash_gd32_v2.c)
+  zephyr_library_sources_ifdef(CONFIG_GD32_NV_FLASH_V3 flash_gd32_v3.c)
 endif()
 
 zephyr_library_include_directories_ifdef(

@@ -18,19 +18,22 @@ config ARCV2_INTERRUPT_UNIT
 
 config SWERV_PIC
 	bool "SweRV EH1 Programmable Interrupt Controller (PIC)"
+	default y
+	depends on DT_HAS_SWERV_PIC_ENABLED
 	help
 	  Programmable Interrupt Controller for the SweRV EH1 RISC-V CPU.
 
 config VEXRISCV_LITEX_IRQ
 	bool "VexRiscv LiteX Interrupt controller"
-	depends on SOC_RISCV32_LITEX_VEXRISCV
+	default y
+	depends on DT_HAS_VEXRISCV_INTC0_ENABLED
 	help
 	  IRQ implementation for LiteX VexRiscv
 
 config LEON_IRQMP
 	bool "GRLIB IRQMP interrupt controller"
 	default y
-	depends on SOC_SPARC_LEON
+	depends on DT_HAS_GAISLER_IRQMP_ENABLED
 	help
 	  GRLIB IRQMP and IRQAMP
 

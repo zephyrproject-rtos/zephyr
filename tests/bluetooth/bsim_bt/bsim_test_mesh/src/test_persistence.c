@@ -98,7 +98,7 @@ static uint8_t test_mod_data[] = { 0xfa, 0xff, 0xf4, 0x43 };
 static uint8_t vnd_test_mod_data[] = { 0xad, 0xdf, 0x14, 0x53, 0x54, 0x1f };
 
 struct access_cfg {
-	struct bt_mesh_cfg_mod_pub pub_params;
+	struct bt_mesh_cfg_cli_mod_pub pub_params;
 
 	size_t appkeys_count;
 	uint16_t appkeys[CONFIG_BT_MESH_MODEL_KEY_COUNT];
@@ -288,8 +288,8 @@ static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr, u
 	k_sem_give(&prov_sem);
 }
 
-static void check_mod_pub_params(const struct bt_mesh_cfg_mod_pub *expected,
-				 const struct bt_mesh_cfg_mod_pub *got)
+static void check_mod_pub_params(const struct bt_mesh_cfg_cli_mod_pub *expected,
+				 const struct bt_mesh_cfg_cli_mod_pub *got)
 {
 	ASSERT_EQUAL(expected->addr, got->addr);
 	ASSERT_EQUAL(expected->app_idx, got->app_idx);
@@ -408,7 +408,7 @@ static void provisioner_setup(void)
 	memcpy(subnet->keys[0].net_key, test_netkey, 16);
 	bt_mesh_cdb_subnet_store(subnet);
 
-	err = bt_mesh_cfg_net_key_add(0, TEST_PROV_ADDR, test_netkey_idx, test_netkey, &status);
+	err = bt_mesh_cfg_cli_net_key_add(0, TEST_PROV_ADDR, test_netkey_idx, test_netkey, &status);
 	if (err || status) {
 		FAIL("Failed to add test_netkey (err: %d, status: %d)", err, status);
 	}
@@ -471,7 +471,7 @@ static void test_provisioning_data_load(void)
 	/* send TTL Get to verify Tx/Rx path works with loaded config */
 	uint8_t ttl;
 
-	err = bt_mesh_cfg_ttl_get(test_netkey_idx, TEST_ADDR, &ttl);
+	err = bt_mesh_cfg_cli_ttl_get(test_netkey_idx, TEST_ADDR, &ttl);
 	if (err) {
 		FAIL("Failed to read ttl value");
 	}
@@ -493,7 +493,7 @@ static void node_configure(void)
 	int err;
 	uint8_t status;
 	uint16_t va;
-	struct bt_mesh_cfg_mod_pub pub_params;
+	struct bt_mesh_cfg_cli_mod_pub pub_params;
 
 	struct test_appkey_t test_appkeys[] = {
 		{ .idx = TEST_APPKEY_0_IDX, .key = TEST_APPKEY_0_KEY },
@@ -501,7 +501,7 @@ static void node_configure(void)
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(test_appkeys); i++) {
-		err = bt_mesh_cfg_app_key_add(test_netkey_idx, TEST_ADDR, test_netkey_idx,
+		err = bt_mesh_cfg_cli_app_key_add(test_netkey_idx, TEST_ADDR, test_netkey_idx,
 					      test_appkeys[i].idx, test_appkeys[i].key, &status);
 		if (err || status) {
 			FAIL("AppKey add failed (err %d, status %u, i %d)", err, status, i);
@@ -510,29 +510,29 @@ static void node_configure(void)
 
 	/* SIG model. */
 	for (size_t i = 0; i < ARRAY_SIZE(test_appkeys); i++) {
-		err = bt_mesh_cfg_mod_app_bind(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+		err = bt_mesh_cfg_cli_mod_app_bind(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 					       test_appkeys[i].idx, TEST_MOD_ID, &status);
 		if (err || status) {
 			FAIL("Mod app bind failed (err %d, status %u, i %d)", err, status, i);
 		}
 	}
 
-	err = bt_mesh_cfg_mod_sub_add(test_netkey_idx, TEST_ADDR, TEST_ADDR, TEST_GROUP_0,
+	err = bt_mesh_cfg_cli_mod_sub_add(test_netkey_idx, TEST_ADDR, TEST_ADDR, TEST_GROUP_0,
 				      TEST_MOD_ID, &status);
 	if (err || status) {
 		FAIL("Mod sub add failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_cfg_mod_sub_va_add(test_netkey_idx, TEST_ADDR, TEST_ADDR, TEST_VA_0_UUID,
+	err = bt_mesh_cfg_cli_mod_sub_va_add(test_netkey_idx, TEST_ADDR, TEST_ADDR, TEST_VA_0_UUID,
 					 TEST_MOD_ID, &va, &status);
 	if (err || status) {
 		FAIL("Mod sub add failed (err %d, status %u)", err, status);
 	}
 	ASSERT_EQUAL(TEST_VA_0_ADDR, va);
 
-	memcpy(&pub_params, &(struct bt_mesh_cfg_mod_pub)TEST_MOD_PUB_PARAMS,
-	       sizeof(struct bt_mesh_cfg_mod_pub));
-	err = bt_mesh_cfg_mod_pub_set(test_netkey_idx, TEST_ADDR, TEST_ADDR, TEST_MOD_ID,
+	memcpy(&pub_params, &(struct bt_mesh_cfg_cli_mod_pub)TEST_MOD_PUB_PARAMS,
+	       sizeof(struct bt_mesh_cfg_cli_mod_pub));
+	err = bt_mesh_cfg_cli_mod_pub_set(test_netkey_idx, TEST_ADDR, TEST_ADDR, TEST_MOD_ID,
 				      &pub_params, &status);
 	if (err || status) {
 		FAIL("Mod pub set failed (err %d, status %u)", err, status);
@@ -546,7 +546,7 @@ static void node_configure(void)
 
 	/* Vendor model. */
 	for (size_t i = 0; i < ARRAY_SIZE(test_appkeys); i++) {
-		err = bt_mesh_cfg_mod_app_bind_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+		err = bt_mesh_cfg_cli_mod_app_bind_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 						   test_appkeys[i].idx, TEST_VND_MOD_ID,
 						   TEST_VND_COMPANY_ID, &status);
 		if (err || status) {
@@ -554,26 +554,27 @@ static void node_configure(void)
 		}
 	}
 
-	err = bt_mesh_cfg_mod_sub_add_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+	err = bt_mesh_cfg_cli_mod_sub_add_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 					  TEST_GROUP_0, TEST_VND_MOD_ID,
 					  TEST_VND_COMPANY_ID, &status);
 	if (err || status) {
 		FAIL("Mod sub add failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_cfg_mod_sub_va_add_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR, TEST_VA_0_UUID,
-					     TEST_VND_MOD_ID,
-					     TEST_VND_COMPANY_ID, &va, &status);
+	err = bt_mesh_cfg_cli_mod_sub_va_add_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+						 TEST_VA_0_UUID, TEST_VND_MOD_ID,
+						 TEST_VND_COMPANY_ID, &va, &status);
 	if (err || status) {
 		FAIL("Mod sub add failed (err %d, status %u)", err, status);
 	}
 
 	ASSERT_EQUAL(TEST_VA_0_ADDR, va);
 
-	memcpy(&pub_params, &(struct bt_mesh_cfg_mod_pub)TEST_VND_MOD_PUB_PARAMS,
-	       sizeof(struct bt_mesh_cfg_mod_pub));
-	err = bt_mesh_cfg_mod_pub_set_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR, TEST_VND_MOD_ID,
-					  TEST_VND_COMPANY_ID, &pub_params, &status);
+	memcpy(&pub_params, &(struct bt_mesh_cfg_cli_mod_pub)TEST_VND_MOD_PUB_PARAMS,
+	       sizeof(struct bt_mesh_cfg_cli_mod_pub));
+	err = bt_mesh_cfg_cli_mod_pub_set_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+					      TEST_VND_MOD_ID, TEST_VND_COMPANY_ID, &pub_params,
+					      &status);
 	if (err || status) {
 		FAIL("Mod pub set failed (err %d, status %u)", err, status);
 	}
@@ -615,11 +616,11 @@ static void node_configuration_check(const struct access_cfg (*cfg)[2])
 		bool vnd = m == 1;
 
 		if (!vnd) {
-			err = bt_mesh_cfg_mod_app_get(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+			err = bt_mesh_cfg_cli_mod_app_get(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 						      TEST_MOD_ID, &status, appkeys,
 						      &appkeys_count);
 		} else {
-			err = bt_mesh_cfg_mod_app_get_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+			err = bt_mesh_cfg_cli_mod_app_get_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 							  TEST_VND_MOD_ID, TEST_VND_COMPANY_ID,
 							  &status, appkeys, &appkeys_count);
 		}
@@ -633,10 +634,10 @@ static void node_configuration_check(const struct access_cfg (*cfg)[2])
 		}
 
 		if (!vnd) {
-			err = bt_mesh_cfg_mod_sub_get(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+			err = bt_mesh_cfg_cli_mod_sub_get(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 						      TEST_MOD_ID, &status, subs, &subs_count);
 		} else {
-			err = bt_mesh_cfg_mod_sub_get_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+			err = bt_mesh_cfg_cli_mod_sub_get_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 							  TEST_VND_MOD_ID, TEST_VND_COMPANY_ID,
 							  &status, subs, &subs_count);
 		}
@@ -649,13 +650,13 @@ static void node_configuration_check(const struct access_cfg (*cfg)[2])
 			ASSERT_EQUAL((*cfg)[m].subs[i], subs[i]);
 		}
 
-		struct bt_mesh_cfg_mod_pub pub_params = {};
+		struct bt_mesh_cfg_cli_mod_pub pub_params = {};
 
 		if (!vnd) {
-			err = bt_mesh_cfg_mod_pub_get(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+			err = bt_mesh_cfg_cli_mod_pub_get(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 						      TEST_MOD_ID, &pub_params, &status);
 		} else {
-			err = bt_mesh_cfg_mod_pub_get_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+			err = bt_mesh_cfg_cli_mod_pub_get_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 							  TEST_VND_MOD_ID, TEST_VND_COMPANY_ID,
 							  &pub_params, &status);
 		}
@@ -696,13 +697,13 @@ static void test_access_sub_overwrite(void)
 		FAIL("Device should boot up as already provisioned");
 	}
 
-	err = bt_mesh_cfg_mod_sub_overwrite(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+	err = bt_mesh_cfg_cli_mod_sub_overwrite(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 					    TEST_GROUP_0, TEST_MOD_ID, &status);
 	if (err || status) {
 		FAIL("Mod sub overwrite failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_cfg_mod_sub_va_overwrite_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+	err = bt_mesh_cfg_cli_mod_sub_va_overwrite_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 						   TEST_VA_0_UUID, TEST_VND_MOD_ID,
 						   TEST_VND_COMPANY_ID, &va, &status);
 	if (err || status) {
@@ -719,7 +720,7 @@ static void test_access_data_remove(void)
 {
 	int err;
 	uint8_t status;
-	struct bt_mesh_cfg_mod_pub pub_params;
+	struct bt_mesh_cfg_cli_mod_pub pub_params;
 
 	/* In this test stack should boot as provisioned */
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
@@ -735,23 +736,23 @@ static void test_access_data_remove(void)
 
 	/* SIG Model. */
 	for (size_t i = 0; i < ARRAY_SIZE(test_appkeys); i++) {
-		err = bt_mesh_cfg_mod_app_unbind(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+		err = bt_mesh_cfg_cli_mod_app_unbind(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 						 test_appkeys[i].idx, TEST_MOD_ID, &status);
 		if (err || status) {
 			FAIL("Mod app bind failed (err %d, status %u, i %d)", err, status, i);
 		}
 	}
 
-	err = bt_mesh_cfg_mod_sub_del_all(test_netkey_idx, TEST_ADDR, TEST_ADDR, TEST_MOD_ID,
+	err = bt_mesh_cfg_cli_mod_sub_del_all(test_netkey_idx, TEST_ADDR, TEST_ADDR, TEST_MOD_ID,
 					  &status);
 	if (err || status) {
 		FAIL("Mod sub del all failed (err %d, status %u)", err, status);
 	}
 
-	memcpy(&pub_params, &(struct bt_mesh_cfg_mod_pub)TEST_MOD_PUB_PARAMS,
-	       sizeof(struct bt_mesh_cfg_mod_pub));
+	memcpy(&pub_params, &(struct bt_mesh_cfg_cli_mod_pub)TEST_MOD_PUB_PARAMS,
+	       sizeof(struct bt_mesh_cfg_cli_mod_pub));
 	pub_params.addr = BT_MESH_ADDR_UNASSIGNED;
-	err = bt_mesh_cfg_mod_pub_set(test_netkey_idx, TEST_ADDR, TEST_ADDR, TEST_MOD_ID,
+	err = bt_mesh_cfg_cli_mod_pub_set(test_netkey_idx, TEST_ADDR, TEST_ADDR, TEST_MOD_ID,
 				      &pub_params, &status);
 	if (err || status) {
 		FAIL("Mod pub set failed (err %d, status %u)", err, status);
@@ -764,7 +765,7 @@ static void test_access_data_remove(void)
 
 	/* Vendor model. */
 	for (size_t i = 0; i < ARRAY_SIZE(test_appkeys); i++) {
-		err = bt_mesh_cfg_mod_app_unbind_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+		err = bt_mesh_cfg_cli_mod_app_unbind_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 						     test_appkeys[i].idx, TEST_VND_MOD_ID,
 						     TEST_VND_COMPANY_ID, &status);
 		if (err || status) {
@@ -772,19 +773,20 @@ static void test_access_data_remove(void)
 		}
 	}
 
-	err = bt_mesh_cfg_mod_sub_del_all_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+	err = bt_mesh_cfg_cli_mod_sub_del_all_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 					      TEST_VND_MOD_ID, TEST_VND_COMPANY_ID,
 					      &status);
 	if (err || status) {
 		FAIL("Mod sub del all failed (err %d, status %u)", err, status);
 	}
 
-	memcpy(&pub_params, &(struct bt_mesh_cfg_mod_pub)TEST_VND_MOD_PUB_PARAMS,
-	       sizeof(struct bt_mesh_cfg_mod_pub));
+	memcpy(&pub_params, &(struct bt_mesh_cfg_cli_mod_pub)TEST_VND_MOD_PUB_PARAMS,
+	       sizeof(struct bt_mesh_cfg_cli_mod_pub));
 	pub_params.addr = BT_MESH_ADDR_UNASSIGNED;
 	pub_params.uuid = NULL;
-	err = bt_mesh_cfg_mod_pub_set_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR, TEST_VND_MOD_ID,
-					  TEST_VND_COMPANY_ID, &pub_params, &status);
+	err = bt_mesh_cfg_cli_mod_pub_set_vnd(test_netkey_idx, TEST_ADDR, TEST_ADDR,
+					      TEST_VND_MOD_ID, TEST_VND_COMPANY_ID, &pub_params,
+					      &status);
 	if (err || status) {
 		FAIL("Mod pub set failed (err %d, status %u)", err, status);
 	}
@@ -815,38 +817,38 @@ static void test_cfg_save(void)
 		FAIL("Mesh setup failed. Settings should not be loaded.");
 	}
 
-	err = bt_mesh_cfg_beacon_set(test_netkey_idx, TEST_ADDR,
+	err = bt_mesh_cfg_cli_beacon_set(test_netkey_idx, TEST_ADDR,
 				     current_stack_cfg->beacon, &status);
 	if (err || status != current_stack_cfg->beacon) {
 		FAIL("Beacon set failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_cfg_ttl_set(test_netkey_idx, TEST_ADDR,
+	err = bt_mesh_cfg_cli_ttl_set(test_netkey_idx, TEST_ADDR,
 				  current_stack_cfg->ttl, &status);
 	if (err || status != current_stack_cfg->ttl) {
 		FAIL("TTL set failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_cfg_gatt_proxy_set(test_netkey_idx, TEST_ADDR,
+	err = bt_mesh_cfg_cli_gatt_proxy_set(test_netkey_idx, TEST_ADDR,
 					 current_stack_cfg->gatt_proxy, &status);
 	if (err || status != current_stack_cfg->gatt_proxy) {
 		FAIL("GATT Proxy set failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_cfg_friend_set(test_netkey_idx, TEST_ADDR,
+	err = bt_mesh_cfg_cli_friend_set(test_netkey_idx, TEST_ADDR,
 				     current_stack_cfg->friend, &status);
 	if (err || status != current_stack_cfg->friend) {
 		FAIL("Friend set failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_cfg_net_transmit_set(test_netkey_idx, TEST_ADDR,
+	err = bt_mesh_cfg_cli_net_transmit_set(test_netkey_idx, TEST_ADDR,
 					   current_stack_cfg->net_transmit,
 					   &transmit);
 	if (err || transmit != current_stack_cfg->net_transmit) {
 		FAIL("Net transmit set failed (err %d, transmit %x)", err, transmit);
 	}
 
-	err = bt_mesh_cfg_relay_set(test_netkey_idx, TEST_ADDR,
+	err = bt_mesh_cfg_cli_relay_set(test_netkey_idx, TEST_ADDR,
 				    current_stack_cfg->relay.state,
 				    current_stack_cfg->relay.transmit,
 				    &status, &transmit);
@@ -876,32 +878,32 @@ static void test_cfg_load(void)
 		FAIL("Device should boot up as already provisioned");
 	}
 
-	err = bt_mesh_cfg_beacon_get(test_netkey_idx, TEST_ADDR, &status);
+	err = bt_mesh_cfg_cli_beacon_get(test_netkey_idx, TEST_ADDR, &status);
 	if (err || status != current_stack_cfg->beacon) {
 		FAIL("Beacon get failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_cfg_ttl_get(test_netkey_idx, TEST_ADDR, &status);
+	err = bt_mesh_cfg_cli_ttl_get(test_netkey_idx, TEST_ADDR, &status);
 	if (err || status != current_stack_cfg->ttl) {
 		FAIL("TTL get failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_cfg_gatt_proxy_get(test_netkey_idx, TEST_ADDR, &status);
+	err = bt_mesh_cfg_cli_gatt_proxy_get(test_netkey_idx, TEST_ADDR, &status);
 	if (err || status != current_stack_cfg->gatt_proxy) {
 		FAIL("GATT Proxy get failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_cfg_friend_get(test_netkey_idx, TEST_ADDR, &status);
+	err = bt_mesh_cfg_cli_friend_get(test_netkey_idx, TEST_ADDR, &status);
 	if (err || status != current_stack_cfg->friend) {
 		FAIL("Friend get failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_cfg_net_transmit_get(test_netkey_idx, TEST_ADDR, &status);
+	err = bt_mesh_cfg_cli_net_transmit_get(test_netkey_idx, TEST_ADDR, &status);
 	if (err || status != current_stack_cfg->net_transmit) {
 		FAIL("Net transmit get failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_cfg_relay_get(test_netkey_idx, TEST_ADDR, &status, &transmit);
+	err = bt_mesh_cfg_cli_relay_get(test_netkey_idx, TEST_ADDR, &status, &transmit);
 	if (err || status != current_stack_cfg->relay.state ||
 	    transmit != current_stack_cfg->relay.transmit) {
 		FAIL("Relay get failed (err %d, state %u, transmit %x)", err, status, transmit);
@@ -976,7 +978,7 @@ static void test_reprovisioning_provisioner(void)
 	/* Let the remote device store configuration. */
 	k_sleep(K_SECONDS(CONFIG_BT_MESH_STORE_TIMEOUT * 2));
 
-	err = bt_mesh_cfg_node_reset(test_netkey_idx, TEST_ADDR, &status);
+	err = bt_mesh_cfg_cli_node_reset(test_netkey_idx, TEST_ADDR, &status);
 	if (err || !status) {
 		FAIL("Reset failed (err %d, status: %d)", err, status);
 	}

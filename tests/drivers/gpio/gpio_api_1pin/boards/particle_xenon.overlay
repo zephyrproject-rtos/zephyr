@@ -24,7 +24,6 @@
 	sx1509b: sx1509b@3e {
 		compatible = "semtech,sx1509b";
 		reg = <0x3e>;
-		label = "IOX";
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <16>;

@@ -239,7 +239,7 @@ extern "C" {
  * @return 1 if the "dmas" property has index "idx", 0 otherwise
  */
 #define DT_DMAS_HAS_IDX(node_id, idx) \
-	IS_ENABLED(DT_CAT(node_id, _P_dmas_IDX_##idx##_EXISTS))
+	IS_ENABLED(DT_CAT4(node_id, _P_dmas_IDX_, idx, _EXISTS))
 
 /**
  * @brief Is index "idx" valid for a DT_DRV_COMPAT instance's dmas property?

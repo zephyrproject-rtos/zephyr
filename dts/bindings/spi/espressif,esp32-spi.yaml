@@ -55,3 +55,14 @@ properties:
       type: boolean
       required: false
       description: Make CS positive during a transaction instead of negative
+
+    use-iomux:
+      type: boolean
+      required: false
+      description: |
+        Some pins are allowed to bypass the GPIO Matrix and use the IO_MUX
+        routing mechanism instead, this avoids extra routing latency and makes
+        possible the use of operating frequencies higher than 20 MHz.
+
+        Refer to SoC's Technical Reference Manual to check which pins are
+        allowed to use this routing path.

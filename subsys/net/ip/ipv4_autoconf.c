@@ -333,6 +333,10 @@ void net_ipv4_autoconf_start(struct net_if *iface)
 	/* Initialize interface and start probing */
 	struct net_if_config *cfg;
 
+	if (!net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		return;
+	}
+
 	cfg = net_if_get_config(iface);
 	if (!cfg) {
 		return;

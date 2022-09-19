@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <kernel_internal.h>
 #include <zephyr/irq_offload.h>
 #include <zephyr/sys/multi_heap.h>
@@ -12,6 +12,17 @@
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define OVERFLOW_SIZE    SIZE_MAX
+
+#define NMEMB   8
+#define SIZE    16
+#define BOUNDS  (NMEMB * SIZE)
+
+#define N_MULTI_HEAPS 4
+#define MHEAP_BYTES 128
+
+static struct sys_multi_heap multi_heap;
+static char heap_mem[N_MULTI_HEAPS][MHEAP_BYTES];
+static struct sys_heap mheaps[N_MULTI_HEAPS];
 
 K_SEM_DEFINE(thread_sem, 0, 1);
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
@@ -54,7 +65,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
  *
  * @see k_malloc()
  */
-void test_mheap_malloc_free(void)
+ZTEST(mheap_api, test_mheap_malloc_free)
 {
 	void *block[2 * BLK_NUM_MAX], *block_fail;
 	int nb;
@@ -90,10 +101,6 @@ void test_mheap_malloc_free(void)
 	zassert_is_null(block_fail, NULL);
 }
 
-#define NMEMB   8
-#define SIZE    16
-#define BOUNDS  (NMEMB * SIZE)
-
 /**
  * @brief Test to demonstrate k_calloc() API functionality.
  *
@@ -109,7 +116,7 @@ void test_mheap_malloc_free(void)
  *
  * @see k_calloc()
  */
-void test_mheap_calloc(void)
+ZTEST(mheap_api, test_mheap_calloc)
 {
 	char *mem;
 
@@ -126,14 +133,14 @@ void test_mheap_calloc(void)
 
 	/* Memory should be zeroed and not crash us if we read/write to it */
 	for (int i = 0; i < BOUNDS; i++) {
-		zassert_equal(mem[i], 0, NULL);
+		zassert_equal(mem[i], 0);
 		mem[i] = 1;
 	}
 
 	k_free(mem);
 }
 
-void test_k_aligned_alloc(void)
+ZTEST(mheap_api, test_k_aligned_alloc)
 {
 	void *r;
 
@@ -175,7 +182,7 @@ void test_k_aligned_alloc(void)
  *
  * @see k_thread_system_pool_assign(), z_thread_malloc(), k_free()
  */
-void test_sys_heap_mem_pool_assign(void)
+ZTEST(mheap_api, test_sys_heap_mem_pool_assign)
 {
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		return;
@@ -204,7 +211,7 @@ void test_sys_heap_mem_pool_assign(void)
  *
  * @see z_thread_malloc(), k_free()
  */
-void test_malloc_in_isr(void)
+ZTEST(mheap_api, test_malloc_in_isr)
 {
 	if (!IS_ENABLED(CONFIG_IRQ_OFFLOAD)) {
 		return;
@@ -223,7 +230,7 @@ void test_malloc_in_isr(void)
  *
  * @see z_thread_malloc()
  */
-void test_malloc_in_thread(void)
+ZTEST(mheap_api, test_malloc_in_thread)
 {
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		return;
@@ -238,13 +245,6 @@ void test_malloc_in_thread(void)
 	k_thread_abort(tid);
 }
 
-#define N_MULTI_HEAPS 4
-#define MHEAP_BYTES 128
-
-static struct sys_multi_heap multi_heap;
-static char heap_mem[N_MULTI_HEAPS][MHEAP_BYTES];
-static struct sys_heap mheaps[N_MULTI_HEAPS];
-
 void *multi_heap_choice(struct sys_multi_heap *mheap, void *cfg,
 			size_t align, size_t size)
 {
@@ -253,7 +253,7 @@ void *multi_heap_choice(struct sys_multi_heap *mheap, void *cfg,
 	return sys_heap_aligned_alloc(h, align, size);
 }
 
-void test_multi_heap(void)
+ZTEST(mheap_api, test_multi_heap)
 {
 	char *blocks[N_MULTI_HEAPS];
 

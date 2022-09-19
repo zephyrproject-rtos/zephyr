@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/printk.h>
@@ -12,7 +12,7 @@
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_ALIAS(magn0));
+	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(magn0));
 	struct sensor_value value_x, value_y, value_z;
 	int ret;
 

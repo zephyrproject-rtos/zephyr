@@ -43,6 +43,7 @@
 		led0 = &green_led_0;
 		led1 = &green_led_1;
 		sw0 = &user_button;
+		accel0 = &lsm6dsl;
 	};
 };
 
@@ -94,12 +95,11 @@
 	status = "okay";
 
 	/* ST Microelectronics LSM6DSL accel/gyro sensor */
-	lsm6dsl@1 {
+	lsm6dsl: lsm6dsl@1 {
 		compatible = "st,lsm6dsl";
 		reg = <1>;
 		spi-max-frequency = <1000000>;
 		irq-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
-		label = "LSM6DSL_SPI";
 	};
 };
 
@@ -115,7 +115,6 @@
 	mp34dt05@0 {
 		compatible = "st,mpxxdtyy";
 		reg = <0>;
-		label = "MP34DT05";
 	};
 };
 
@@ -135,20 +134,17 @@
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
-		label = "HTS221";
 		drdy-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
 	};
 
 	lps22hb-press@5d {
 		compatible = "st,lps22hb-press";
 		reg = <0x5d>;
-		label = "LPS22HB";
 	};
 
 	vl53l0x@29 {
 		compatible = "st,vl53l0x";
 		reg = <0x29>;
-		label = "VL53L0X";
 	};
 };
 
@@ -161,7 +157,6 @@
 	lp3943@60 {
 		compatible = "ti,lp3943";
 		reg = <0x60>;
-		label = "LP3943";
 	};
 };
 

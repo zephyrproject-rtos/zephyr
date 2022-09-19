@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/mipi_dsi.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /**
  * @addtogroup t_mipi_dsi_driver
@@ -14,12 +14,12 @@
  * @}
  */
 
-static const struct device *mipi_dev = DEVICE_DT_GET(DT_ALIAS(mipi_dsi));
+static const struct device *const mipi_dev = DEVICE_DT_GET(DT_ALIAS(mipi_dsi));
 
 /**
  * Test the MIPI generic APIs to test read and write API functionality
  */
-static void test_generic(void)
+ZTEST(mipi_dsi_api, test_generic)
 {
 	uint8_t rx_buf[2];
 	uint8_t param[2];
@@ -48,7 +48,7 @@ static void test_generic(void)
 /**
  * Test the MIPI DCS APIs to test read and write API functionality
  */
-static void test_dcs(void)
+ZTEST(mipi_dsi_api, test_dcs)
 {
 	uint8_t rx_buf[2];
 	uint8_t param[2];
@@ -74,14 +74,11 @@ static void test_dcs(void)
 	}
 }
 
-void test_main(void)
+static void *mipi_dsi_setup(void)
 {
 	__ASSERT_NO_MSG(device_is_ready(mipi_dev));
 
-	ztest_test_suite(mipi_dsi_api_tests,
-			ztest_unit_test(test_generic),
-			ztest_unit_test(test_dcs)
-			);
-
-	ztest_run_test_suite(mipi_dsi_api_tests);
+	return NULL;
 }
+
+ZTEST_SUITE(mipi_dsi_api, NULL, mipi_dsi_setup, NULL, NULL, NULL);

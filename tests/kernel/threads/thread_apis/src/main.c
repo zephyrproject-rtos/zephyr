@@ -13,39 +13,12 @@
  * @}
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <string.h>
 #include <ksched.h>
-
-extern void test_threads_spawn_params(void);
-extern void test_threads_spawn_priority(void);
-extern void test_threads_spawn_delay(void);
-extern void test_threads_spawn_forever(void);
-extern void test_thread_start(void);
-extern void test_thread_start_user(void);
-extern void test_threads_suspend_resume_cooperative(void);
-extern void test_threads_suspend_resume_preemptible(void);
-extern void test_threads_abort_self(void);
-extern void test_threads_abort_others(void);
-extern void test_threads_abort_repeat(void);
-extern void test_essential_thread_operation(void);
-extern void test_threads_priority_set(void);
-extern void test_delayed_thread_abort(void);
-extern void test_k_thread_foreach(void);
-extern void test_k_thread_foreach_unlocked(void);
-extern void test_k_thread_foreach_null_cb(void);
-extern void test_k_thread_foreach_unlocked_null_cb(void);
-extern void test_k_thread_state_str(void);
-extern void test_threads_cpu_mask(void);
-extern void test_threads_suspend_timeout(void);
-extern void test_resume_unsuspend_thread(void);
-extern void test_threads_suspend(void);
-extern void test_abort_from_isr(void);
-extern void test_abort_from_isr_not_self(void);
-extern void test_essential_thread_abort(void);
 
 struct k_thread tdata;
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -65,16 +38,16 @@ static ZTEST_DMEM int tp = 10;
  * @ingroup kernel_thread_tests
  * @brief Verify main thread
  */
-void test_systhreads_main(void)
+ZTEST(threads_lifecycle, test_systhreads_main)
 {
-	zassert_true(main_prio == CONFIG_MAIN_THREAD_PRIORITY, NULL);
+	zassert_true(main_prio == CONFIG_MAIN_THREAD_PRIORITY);
 }
 
 /**
  * @ingroup kernel_thread_tests
  * @brief Verify idle thread
  */
-void test_systhreads_idle(void)
+ZTEST(threads_lifecycle, test_systhreads_idle)
 {
 	k_msleep(100);
 	/** TESTPOINT: check working thread priority should */
@@ -92,7 +65,7 @@ static void customdata_entry(void *p1, void *p2, void *p3)
 		/* relinquish cpu for a while */
 		k_msleep(50);
 		/** TESTPOINT: custom data comparison */
-		zassert_equal(data, (long)k_thread_custom_data_get(), NULL);
+		zassert_equal(data, (long)k_thread_custom_data_get());
 		data++;
 	}
 }
@@ -103,7 +76,7 @@ static void customdata_entry(void *p1, void *p2, void *p3)
  *
  * @see k_thread_custom_data_get(), k_thread_custom_data_set()
  */
-void test_customdata_get_set_coop(void)
+ZTEST(threads_lifecycle_1cpu, test_customdata_get_set_coop)
 {
 	k_tid_t tid = k_thread_create(&tdata_custom, tstack_custom, STACK_SIZE,
 				      customdata_entry, NULL, NULL, NULL,
@@ -125,7 +98,7 @@ static void thread_name_entry(void *p1, void *p2, void *p3)
  * @brief test thread name get/set from supervisor thread
  * @see k_thread_name_get(), k_thread_name_copy(), k_thread_name_set()
  */
-void test_thread_name_get_set(void)
+ZTEST(threads_lifecycle, test_thread_name_get_set)
 {
 	int ret;
 	const char *thread_name;
@@ -166,7 +139,7 @@ struct k_sem sem;
  * @brief test thread name get/set from user thread
  * @see k_thread_name_copy(), k_thread_name_set()
  */
-void test_thread_name_user_get_set(void)
+ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
 {
 #ifdef CONFIG_USERSPACE
 	int ret;
@@ -235,7 +208,7 @@ void test_thread_name_user_get_set(void)
  * @brief test thread custom data get/set from preempt thread
  * @see k_thread_custom_data_get(), k_thread_custom_data_set()
  */
-void test_customdata_get_set_preempt(void)
+ZTEST_USER(threads_lifecycle_1cpu, test_customdata_get_set_preempt)
 {
 	/** TESTPOINT: custom data of preempt thread */
 	k_tid_t tid = k_thread_create(&tdata_custom, tstack_custom, STACK_SIZE,
@@ -279,7 +252,7 @@ static void enter_user_mode_entry(void *p1, void *p2, void *p3)
 				 k_current_get(), NULL, NULL);
 }
 
-void test_user_mode(void)
+ZTEST_USER(threads_lifecycle, test_user_mode)
 {
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			      enter_user_mode_entry, NULL, NULL,
@@ -336,7 +309,7 @@ void do_join_from_isr(const void *arg)
 {
 	int *ret = (int *)arg;
 
-	zassert_true(k_is_in_isr(), NULL);
+	zassert_true(k_is_in_isr());
 	printk("isr: joining join_thread\n");
 	*ret = k_thread_join(&join_thread, K_NO_WAIT);
 	printk("isr: k_thread_join() returned with %d\n", *ret);
@@ -413,7 +386,7 @@ static inline int join_scenario(enum control_method m)
 	return join_scenario_interval(m, NULL);
 }
 
-void test_thread_join(void)
+ZTEST_USER(threads_lifecycle, test_thread_join)
 {
 	int64_t interval;
 
@@ -436,7 +409,7 @@ void test_thread_join(void)
 
 }
 
-void test_thread_join_isr(void)
+ZTEST(threads_lifecycle, test_thread_join_isr)
 {
 	zassert_equal(join_scenario(ISR_RUNNING), -EBUSY, "failed isr running");
 	zassert_equal(join_scenario(ISR_ALREADY_EXIT), 0, "failed isr exited");
@@ -468,7 +441,7 @@ void deadlock2_entry(void *p1, void *p2, void *p3)
 	zassert_equal(ret, 0, "couldn't join deadlock2_thread");
 }
 
-void test_thread_join_deadlock(void)
+ZTEST_USER(threads_lifecycle, test_thread_join_deadlock)
 {
 	/* Deadlock scenarios */
 	zassert_equal(k_thread_join(k_current_get(), K_FOREVER), -EDEADLK,
@@ -497,7 +470,7 @@ static void user_start_thread(void *p1, void *p2, void *p3)
 {
 	/* do nothing */
 }
-void test_thread_timeout_remaining_expires(void)
+ZTEST_USER(threads_lifecycle, test_thread_timeout_remaining_expires)
 {
 	k_ticks_t r, e, r1, ticks, expected_expires_ticks;
 
@@ -513,22 +486,23 @@ void test_thread_timeout_remaining_expires(void)
 	e = k_thread_timeout_expires_ticks(tid);
 	TC_PRINT("thread_expires_ticks: %d, expect: %d\n", (int)e,
 		(int)expected_expires_ticks);
-	zassert_true(e >= expected_expires_ticks, NULL);
+	zassert_true(e >= expected_expires_ticks);
 
 	k_msleep(10);
 	r = k_thread_timeout_remaining_ticks(tid);
-	zassert_true(r < ticks, NULL);
+	zassert_true(r < ticks);
 	r1 = r;
 
 	k_msleep(10);
 	r = k_thread_timeout_remaining_ticks(tid);
-	zassert_true(r < r1, NULL);
+	zassert_true(r < r1);
 
 	k_thread_abort(tid);
 }
 
 static void foreach_callback(const struct k_thread *thread, void *user_data)
 {
+
 	k_thread_runtime_stats_t stats;
 	int ret;
 
@@ -538,9 +512,9 @@ static void foreach_callback(const struct k_thread *thread, void *user_data)
 
 	/* Check NULL parameters */
 	ret = k_thread_runtime_stats_get(NULL, &stats);
-	zassert_true(ret == -EINVAL, NULL);
+	zassert_true(ret == -EINVAL);
 	ret = k_thread_runtime_stats_get((k_tid_t)thread, NULL);
-	zassert_true(ret == -EINVAL, NULL);
+	zassert_true(ret == -EINVAL);
 
 	k_thread_runtime_stats_get((k_tid_t)thread, &stats);
 	((k_thread_runtime_stats_t *)user_data)->execution_cycles +=
@@ -551,23 +525,25 @@ static void foreach_callback(const struct k_thread *thread, void *user_data)
  * k_thread_runtime_stats_t to see that all time is reflected in the
  * total.
  */
-void test_thread_runtime_stats_get(void)
+ZTEST(threads_lifecycle, test_thread_runtime_stats_get)
 {
 	k_thread_runtime_stats_t stats, stats_all;
 	int ret;
 
 	stats.execution_cycles = 0;
+
 	k_thread_foreach(foreach_callback, &stats);
 
 	/* Check NULL parameters */
 	ret = k_thread_runtime_stats_all_get(NULL);
-	zassert_true(ret == -EINVAL, NULL);
+	zassert_true(ret == -EINVAL);
 
 	k_thread_runtime_stats_all_get(&stats_all);
-	zassert_true(stats.execution_cycles <= stats_all.execution_cycles, NULL);
+
+	zassert_true(stats.execution_cycles <= stats_all.execution_cycles);
 }
 
-void test_k_busy_wait(void)
+ZTEST(threads_lifecycle, test_k_busy_wait)
 {
 	uint64_t cycles, dt;
 	k_thread_runtime_stats_t test_stats;
@@ -583,7 +559,7 @@ void test_k_busy_wait(void)
 	 * their cycle rate)
 	 */
 	dt = test_stats.execution_cycles - cycles;
-	zassert_true(dt < k_ms_to_cyc_ceil64(10), NULL);
+	zassert_true(dt < k_ms_to_cyc_ceil64(10));
 
 	cycles = test_stats.execution_cycles;
 	k_busy_wait(100);
@@ -591,7 +567,7 @@ void test_k_busy_wait(void)
 
 	/* execution_cycles increases correctly */
 	dt = test_stats.execution_cycles - cycles;
-	zassert_true(dt >= k_us_to_cyc_floor64(100), NULL);
+	zassert_true(dt >= k_us_to_cyc_floor64(100));
 }
 
 static void tp_entry(void *p1, void *p2, void *p3)
@@ -599,7 +575,7 @@ static void tp_entry(void *p1, void *p2, void *p3)
 	tp = 100;
 }
 
-void test_k_busy_wait_user(void)
+ZTEST_USER(threads_lifecycle_1cpu, test_k_busy_wait_user)
 {
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
@@ -609,11 +585,11 @@ void test_k_busy_wait_user(void)
 	/* this is a 1cpu test case, the new thread has no chance to be
 	 * scheduled and value of tp not changed
 	 */
-	zassert_false(tp == 100, NULL);
+	zassert_false(tp == 100);
 
 	/* give up cpu, the new thread will change value of tp to 100 */
 	k_msleep(100);
-	zassert_true(tp == 100, NULL);
+	zassert_true(tp == 100);
 	k_thread_abort(tid);
 }
 
@@ -638,7 +614,7 @@ int small_stack(size_t *space)
  * is smaller than that in small_stack() because the former function has a
  * large local variable
  */
-void test_k_thread_stack_space_get_user(void)
+ZTEST_USER(threads_lifecycle, test_k_thread_stack_space_get_user)
 {
 	size_t a, b;
 
@@ -649,10 +625,10 @@ void test_k_thread_stack_space_get_user(void)
 	 * but it is not the case in native_posix, qemu_leon3 and
 	 * qemu_cortex_a53. Relax check condition here
 	 */
-	zassert_true(b <= a, NULL);
+	zassert_true(b <= a);
 }
 
-void test_main(void)
+void *thread_test_setup(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, tstack,
 			      &tdata_custom, tstack_custom,
@@ -667,49 +643,9 @@ void test_main(void)
 		sizeof(unreadable_string));
 #endif
 
-	ztest_test_suite(threads_lifecycle,
-			 ztest_unit_test(test_thread_runtime_stats_get),
-			 ztest_user_unit_test(test_k_thread_stack_space_get_user),
-			 ztest_user_unit_test(test_threads_spawn_params),
-			 ztest_unit_test(test_threads_spawn_priority),
-			 ztest_user_unit_test(test_threads_spawn_delay),
-			 ztest_unit_test(test_threads_spawn_forever),
-			 ztest_user_unit_test(test_thread_start_user),
-			 ztest_unit_test(test_thread_start),
-			 ztest_1cpu_unit_test(test_threads_suspend_resume_cooperative),
-			 ztest_user_unit_test(test_threads_suspend_resume_preemptible),
-			 ztest_unit_test(test_threads_priority_set),
-			 ztest_user_unit_test(test_threads_abort_self),
-			 ztest_user_unit_test(test_threads_abort_others),
-			 ztest_1cpu_unit_test(test_threads_abort_repeat),
-			 ztest_1cpu_unit_test(test_delayed_thread_abort),
-			 ztest_unit_test(test_essential_thread_operation),
-			 ztest_unit_test(test_essential_thread_abort),
-			 ztest_unit_test(test_systhreads_main),
-			 ztest_unit_test(test_systhreads_idle),
-			 ztest_1cpu_unit_test(test_customdata_get_set_coop),
-			 ztest_1cpu_user_unit_test(test_customdata_get_set_preempt),
-			 ztest_1cpu_unit_test(test_k_thread_foreach),
-			 ztest_1cpu_unit_test(test_k_thread_foreach_unlocked),
-			 ztest_1cpu_unit_test(test_k_thread_foreach_null_cb),
-			 ztest_1cpu_unit_test(test_k_thread_foreach_unlocked_null_cb),
-			 ztest_1cpu_unit_test(test_k_thread_state_str),
-			 ztest_unit_test(test_thread_name_get_set),
-			 ztest_user_unit_test(test_thread_name_user_get_set),
-			 ztest_unit_test(test_user_mode),
-			 ztest_1cpu_unit_test(test_threads_cpu_mask),
-			 ztest_unit_test(test_threads_suspend_timeout),
-			 ztest_unit_test(test_resume_unsuspend_thread),
-			 ztest_unit_test(test_threads_suspend),
-			 ztest_user_unit_test(test_thread_join),
-			 ztest_unit_test(test_thread_join_isr),
-			 ztest_user_unit_test(test_thread_join_deadlock),
-			 ztest_unit_test(test_abort_from_isr),
-			 ztest_unit_test(test_abort_from_isr_not_self),
-			 ztest_user_unit_test(test_thread_timeout_remaining_expires),
-			 ztest_unit_test(test_k_busy_wait),
-			 ztest_1cpu_user_unit_test(test_k_busy_wait_user)
-			 );
-
-	ztest_run_test_suite(threads_lifecycle);
+	return NULL;
 }
+
+ZTEST_SUITE(threads_lifecycle, NULL, thread_test_setup, NULL, NULL, NULL);
+ZTEST_SUITE(threads_lifecycle_1cpu, NULL, thread_test_setup,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

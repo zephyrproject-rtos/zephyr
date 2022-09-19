@@ -54,7 +54,7 @@ static int cmd_battery(const struct shell *shell, size_t argc, char **argv)
 	struct sensor_value temp, volt, current, i_desired, charge_remain;
 	struct sensor_value charge, v_desired, v_design, cap, nom_cap;
 	struct sensor_value full, empty;
-	const struct device *dev = DEVICE_DT_GET(DT_ALIAS(battery));
+	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(battery));
 	bool allowed;
 	int err;
 

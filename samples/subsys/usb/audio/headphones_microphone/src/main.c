@@ -9,14 +9,14 @@
  * @brief Sample app for Audio class
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/class/usb_audio.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
-static const struct device *mic_dev;
+static const struct device *const mic_dev = DEVICE_DT_GET_ONE(usb_audio_mic);
 
 static void data_received(const struct device *dev,
 			  struct net_buf *buffer,
@@ -65,11 +65,10 @@ static const struct usb_audio_ops mic_ops = {
 
 void main(void)
 {
-	const struct device *hp_dev = DEVICE_DT_GET_ONE(usb_audio_hp);
+	const struct device *const hp_dev = DEVICE_DT_GET_ONE(usb_audio_hp);
 	int ret;
 
 	LOG_INF("Entered %s", __func__);
-	mic_dev = DEVICE_DT_GET_ONE(usb_audio_mic);
 
 	if (!device_is_ready(hp_dev)) {
 		LOG_ERR("Device USB Headphones is not ready");

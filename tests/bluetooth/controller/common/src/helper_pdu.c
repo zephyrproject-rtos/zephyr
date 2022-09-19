@@ -518,7 +518,7 @@ void helper_pdu_verify_feature_req(const char *file, uint32_t line, struct pdu_d
 {
 	struct pdu_data_llctrl_feature_req *feature_req = param;
 
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_FEATURE_REQ,
 		      "Wrong opcode.\nCalled at %s:%d\n", file, line);
 
@@ -535,8 +535,8 @@ void helper_pdu_verify_peripheral_feature_req(const char *file, uint32_t line, s
 {
 	struct pdu_data_llctrl_feature_req *feature_req = param;
 
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG);
 
 	for (int counter = 0; counter < 8; counter++) {
 		uint8_t expected_value = feature_req->features[counter];
@@ -551,7 +551,7 @@ void helper_pdu_verify_feature_rsp(const char *file, uint32_t line, struct pdu_d
 {
 	struct pdu_data_llctrl_feature_rsp *feature_rsp = param;
 
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_FEATURE_RSP,
 		      "Response: %d Expected: %d\n", pdu->llctrl.opcode,
 		      PDU_DATA_LLCTRL_TYPE_FEATURE_RSP);

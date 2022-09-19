@@ -40,4 +40,8 @@
 
 #define MCUX_BUS_CLK			28
 
+#define MCUX_SDIF_CLK			29
+
+#define MCUX_I3C_CLK			30
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */

@@ -12,8 +12,8 @@
 #define UART_NODE1 DT_ALIAS(single_line_uart1)
 #define UART_NODE2 DT_ALIAS(single_line_uart2)
 
-const struct device *sl_uart1 = DEVICE_DT_GET(UART_NODE1);
-const struct device *sl_uart2 = DEVICE_DT_GET(UART_NODE2);
+const struct device *const sl_uart1 = DEVICE_DT_GET(UART_NODE1);
+const struct device *const sl_uart2 = DEVICE_DT_GET(UART_NODE2);
 
 void main(void)
 {

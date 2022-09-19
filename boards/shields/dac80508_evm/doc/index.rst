@@ -9,8 +9,7 @@ Overview
 The Texas Instruments DAC80508 Evaluation Module (EVM) is a
 DAC development module for the TI DAC80508 series.
 
-.. figure:: ./dac80508evm-board-photo.jpg
-   :width: 640px
+.. figure:: dac80508evm-board-photo.jpg
    :align: center
    :alt: DAC80508 EVM
 
@@ -25,8 +24,7 @@ The SPI connector pins on the DAC80508 EVM can be connected to the
 Arduino headers of the development board using jumper wires.
 In addition, 5V must be connected to the DAC80508 EVM's TP6(VDD).
 
-.. figure:: ./dac80508evm_connected.jpg
-   :width: 640px
+.. figure:: dac80508evm_connected.jpg
    :align: center
    :alt: DAC80508 EVM + STM32F746G_DISCO
 

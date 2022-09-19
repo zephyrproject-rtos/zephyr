@@ -308,6 +308,11 @@ static int sys_clock_driver_init(const struct device *dev)
 	uint32_t sys_tmr_rate;
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 
+	if (!device_is_ready(clk_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Turn on all itim module clocks used for counting */
 	for (int i = 0; i < ARRAY_SIZE(itim_clk_cfg); i++) {
 		ret = clock_control_on(clk_dev, (clock_control_subsys_t *)

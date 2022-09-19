@@ -23,7 +23,7 @@ config BASE64
 
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
-	default y if SMP && MP_NUM_CPUS > 1
+	default y if SMP && MP_NUM_CPUS > 1 && !(EFI_CONSOLE && LOG)
 	help
 	  When true, a spinlock will be taken around the output from a
 	  single printk() call, preventing the output data from

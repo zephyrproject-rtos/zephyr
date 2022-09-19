@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# Todo: deprecate CLANG_ROOT_DIR
 set_ifndef(LLVM_TOOLCHAIN_PATH "$ENV{CLANG_ROOT_DIR}")
-set_ifndef(LLVM_TOOLCHAIN_PATH "$ENV{LLVM_TOOLCHAIN_PATH}")
+zephyr_get(LLVM_TOOLCHAIN_PATH)
+
 if(LLVM_TOOLCHAIN_PATH)
   set(TOOLCHAIN_HOME ${LLVM_TOOLCHAIN_PATH}/bin/)
 endif()

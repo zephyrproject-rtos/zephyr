@@ -28,8 +28,6 @@ Here are some highlights of the Nucleo F303RE board:
 - Two push-buttons: USER and RESET
 
 .. image:: img/nucleo_f303re.jpg
-   :width: 500px
-   :height: 367px
    :align: center
    :alt: Nucleo F303RE
 
@@ -77,7 +75,7 @@ More information about the STM32F303RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f302r8 board configuration supports the following hardware
+The Zephyr nucleo_f303re board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -94,6 +92,10 @@ features:
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -108,10 +110,8 @@ responsible for pin muxing, input/output, pull-up, etc.
 
 Board connectors:
 -----------------
-.. image:: img/nucleo_connectors.png
-   :width: 800px
+.. image:: img/nucleo_connectors.jpg
    :align: center
-   :height: 619px
    :alt: Nucleo F303RE connectors
 
 Default Zephyr Peripheral Mapping:

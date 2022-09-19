@@ -1,0 +1,11 @@
+# LPCXpresso51U68 board
+
+# Copyright (c) 2021 metraTec GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LPCXPRESSO51U68
+
+config BOARD
+	default "lpcxpresso51u68"
+
+endif # BOARD_LPCXPRESSO51U68

@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_ip.h>

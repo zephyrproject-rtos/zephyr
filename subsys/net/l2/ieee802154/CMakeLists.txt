@@ -12,8 +12,13 @@ zephyr_library_sources(
   )
 
 zephyr_library_sources_ifdef(
+  CONFIG_NET_6LO
+  ieee802154_6lo.c
+  )
+
+zephyr_library_sources_ifdef(
   CONFIG_NET_L2_IEEE802154_FRAGMENT
-  ieee802154_fragment.c
+  ieee802154_6lo_fragment.c
   )
 
 zephyr_library_sources_ifdef(

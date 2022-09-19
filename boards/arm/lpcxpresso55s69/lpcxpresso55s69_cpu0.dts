@@ -28,6 +28,8 @@
 		pwm-led0 = &red_pwm_led;
 		red-pwm-led = &red_pwm_led;
 		sdhc0 = &sdhc0;
+		accel0 = &mma8652fc;
+		sdhc0 = &sdif;
 	};
 
 	chosen {
@@ -107,20 +109,21 @@
 	status = "okay";
 };
 
+&sdif {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sdif_default>;
+	pinctrl-names = "default";
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
+};
+
 &hs_lspi {
 	status = "okay";
 	dmas = <&dma0 2>, <&dma0 3>;
 	dma-names = "rx", "tx";
 	cs-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
-	sdhc0: sdhc0@0 {
-		reg = <0>;
-		compatible = "zephyr,sdhc-spi-slot";
-		spi-max-frequency = <25000000>;
-		mmc {
-			compatible = "zephyr,sdmmc-disk";
-			status = "okay";
-		};
-	};
 };
 
 &wwdt0 {
@@ -178,7 +181,6 @@ zephyr_udc0: &usbhs {
 i2s0: &flexcomm6 {
 	status = "okay";
 	compatible = "nxp,lpc-i2s";
-	label = "I2S_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	dmas = <&dma0 16>;
@@ -189,7 +191,6 @@ i2s0: &flexcomm6 {
 i2s1: &flexcomm7 {
 	status = "okay";
 	compatible = "nxp,lpc-i2s";
-	label = "I2S_1";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	dmas = <&dma0 19>;

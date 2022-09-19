@@ -12,10 +12,6 @@ if LVGL
 config LV_Z_POINTER_KSCAN
 	bool
 
-config LV_Z_POINTER_KSCAN_DEV_NAME
-	string
-	default "KSCAN"
-
 config LV_Z_POINTER_KSCAN_MSGQ_COUNT
 	int
 	default 10

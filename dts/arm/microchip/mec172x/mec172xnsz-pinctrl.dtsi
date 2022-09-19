@@ -641,6 +641,24 @@
 		pinmux = < MCHP_XEC_PINMUX(076, MCHP_GPIO) >;
 	};
 
+	/* EEPROM */
+	/omit-if-no-ref/ eeprom_cs_gpio116: eeprom_cs_gpio116 {
+		pinmux = < MCHP_XEC_PINMUX(0116, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ eeprom_clk_gpio117: gpspi_clk_gpio117 {
+		pinmux = < MCHP_XEC_PINMUX(0117, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ eeprom_mosi_gpio074: eeprom_mosi_gpio074 {
+		pinmux = < MCHP_XEC_PINMUX(074, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ eeprom_miso_gpio075: eeprom_miso_gpio075 {
+		pinmux = < MCHP_XEC_PINMUX(075, MCHP_AF2) >;
+	};
+
+
 	/* PECI */
 	/omit-if-no-ref/ peci_dat_gpio042: peci_dat_gpio042 {
 		pinmux = < MCHP_XEC_PINMUX(042, MCHP_AF1) >;

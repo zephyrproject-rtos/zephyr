@@ -1,12 +1,10 @@
 # Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ATMEL_SAM0_I2C := atmel,sam0-i2c
-
 menuconfig I2C_SAM0
 	bool "SAM0 series I2C SERCOM driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ATMEL_SAM0_I2C))
-	depends on SOC_FAMILY_SAM0
+	default y
+	depends on DT_HAS_ATMEL_SAM0_I2C_ENABLED
 	help
 	  Enable the SAM0 series SERCOM I2C driver.
 

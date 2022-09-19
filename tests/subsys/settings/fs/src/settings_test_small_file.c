@@ -11,7 +11,7 @@
 #define CF_MFG_TEST_STR "\x0D\x00myfoo/mybar=\x01"
 #define CF_RUNNING_TEST_STR "\x0D\x00myfoo/mybar=\x08"
 
-void test_config_small_file(void)
+ZTEST(settings_config_fs, test_config_small_file)
 {
 	int rc;
 	struct settings_file cf_mfg;

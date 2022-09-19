@@ -465,6 +465,8 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 
 	/* Reset the endpoint */
 	usb_dc_ep_reset(ep_idx);
+	/* Initialize the endpoint FIFO */
+	usb_dc_ep_fifo_reset(ep_idx);
 
 	/* Map the endpoint type */
 	switch (cfg->ep_type) {

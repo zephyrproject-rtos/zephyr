@@ -24,16 +24,6 @@ endchoice
 
 endif # FXOS8700
 
-if DISPLAY
-
-config SSD16XX
-	default y
-
-config SPI
-	default y
-
-endif # DISPLAY
-
 if LVGL
 
 choice LV_COLOR_DEPTH

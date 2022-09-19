@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154_fake_driver, LOG_LEVEL_DBG);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/net/net_core.h>
 #include "net_private.h"
@@ -132,4 +132,4 @@ NET_DEVICE_INIT(fake, "fake_ieee802154",
 		fake_init, NULL, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&fake_radio_api, IEEE802154_L2,
-		NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);
+		NET_L2_GET_CTX_TYPE(IEEE802154_L2), IEEE802154_MTU);

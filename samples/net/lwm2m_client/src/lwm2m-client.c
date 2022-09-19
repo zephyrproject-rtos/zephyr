@@ -12,7 +12,7 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/drivers/hwinfo.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/net/lwm2m.h>
@@ -464,6 +464,10 @@ static void rd_client_event(struct lwm2m_ctx *client,
 
 	case LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF:
 		LOG_DBG("Queue mode RX window closed");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED:
+		LOG_DBG("LwM2M engine suspended");
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR:

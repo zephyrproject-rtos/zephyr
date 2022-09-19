@@ -3,7 +3,8 @@
 
 config ADC_TELINK_B91
 	bool "Telink Semiconductor B91 ADC driver"
-	depends on SOC_RISCV_TELINK_B91
+	default y
+	depends on DT_HAS_TELINK_B91_ADC_ENABLED
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enables Telink B91 ADC driver.

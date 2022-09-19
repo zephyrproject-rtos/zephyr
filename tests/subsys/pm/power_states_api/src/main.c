@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 #include <zephyr/pm/pm.h>
 
 /* Last state has not declared a minimum residency, so it should be
@@ -18,7 +18,7 @@ static enum pm_state states[] = {PM_STATE_SUSPEND_TO_IDLE,
 static enum pm_state wrong_states[] = {PM_STATE_SUSPEND_TO_DISK,
 		PM_STATE_SUSPEND_TO_RAM, PM_STATE_SUSPEND_TO_RAM};
 
-void test_power_states(void)
+ZTEST(power_states_1cpu, test_power_states)
 {
 	enum pm_state dts_states[] =
 		PM_STATE_LIST_FROM_DT_CPU(DT_NODELABEL(power_states));
@@ -38,9 +38,5 @@ void test_power_states(void)
 		     "Invalid pm-states array");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(power_states_test,
-			 ztest_1cpu_unit_test(test_power_states));
-	ztest_run_test_suite(power_states_test);
-}
+ZTEST_SUITE(power_states_1cpu, NULL, NULL, ztest_simple_1cpu_before,
+			ztest_simple_1cpu_after, NULL);

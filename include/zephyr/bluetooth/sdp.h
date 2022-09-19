@@ -298,22 +298,22 @@ struct bt_sdp_record {
  * ---------------------------------------------------    ------------------
  */
 
-/** @def BT_SDP_ARRAY_8
+/**
  *  @brief Declare an array of 8-bit elements in an attribute.
  */
 #define BT_SDP_ARRAY_8(...) ((uint8_t[]) {__VA_ARGS__})
 
-/** @def BT_SDP_ARRAY_16
+/**
  *  @brief Declare an array of 16-bit elements in an attribute.
  */
 #define BT_SDP_ARRAY_16(...) ((uint16_t[]) {__VA_ARGS__})
 
-/** @def BT_SDP_ARRAY_32
+/**
  *  @brief Declare an array of 32-bit elements in an attribute.
  */
 #define BT_SDP_ARRAY_32(...) ((uint32_t[]) {__VA_ARGS__})
 
-/** @def BT_SDP_TYPE_SIZE
+/**
  *  @brief Declare a fixed-size data element header.
  *
  *  @param _type Data element header containing type and size descriptors.
@@ -322,7 +322,7 @@ struct bt_sdp_record {
 			.data_size = BIT(_type & BT_SDP_SIZE_DESC_MASK), \
 			.total_size = BIT(_type & BT_SDP_SIZE_DESC_MASK) + 1
 
-/** @def BT_SDP_TYPE_SIZE_VAR
+/**
  *  @brief Declare a variable-size data element header.
  *
  *  @param _type Data element header containing type and size descriptors.
@@ -333,13 +333,13 @@ struct bt_sdp_record {
 			.total_size = BIT((_type & BT_SDP_SIZE_DESC_MASK) - \
 					  BT_SDP_SIZE_INDEX_OFFSET) + _size + 1
 
-/** @def BT_SDP_DATA_ELEM_LIST
+/**
  *  @brief Declare a list of data elements.
  */
 #define BT_SDP_DATA_ELEM_LIST(...) ((struct bt_sdp_data_elem[]) {__VA_ARGS__})
 
 
-/** @def BT_SDP_NEW_SERVICE
+/**
  *  @brief SDP New Service Record Declaration Macro.
  *
  *  Helper macro to declare a new service record.
@@ -378,7 +378,7 @@ struct bt_sdp_record {
 }
 
 
-/** @def BT_SDP_LIST
+/**
  *  @brief Generic SDP List Attribute Declaration Macro.
  *
  *  Helper macro to declare a list attribute.
@@ -392,7 +392,7 @@ struct bt_sdp_record {
 	_att_id, { _type_size, _data_elem_seq } \
 }
 
-/** @def BT_SDP_SERVICE_ID
+/**
  *  @brief SDP Service ID Attribute Declaration Macro.
  *
  *  Helper macro to declare a service ID attribute.
@@ -405,7 +405,7 @@ struct bt_sdp_record {
 	{ BT_SDP_TYPE_SIZE(BT_SDP_UUID16), &((struct bt_uuid_16) _uuid) } \
 }
 
-/** @def BT_SDP_SERVICE_NAME
+/**
  *  @brief SDP Name Attribute Declaration Macro.
  *
  *  Helper macro to declare a service name attribute.
@@ -418,7 +418,7 @@ struct bt_sdp_record {
 	{ BT_SDP_TYPE_SIZE_VAR(BT_SDP_TEXT_STR8, (sizeof(_name)-1)), _name } \
 }
 
-/** @def BT_SDP_SUPPORTED_FEATURES
+/**
  *  @brief SDP Supported Features Attribute Declaration Macro.
  *
  *  Helper macro to declare supported features of a profile/protocol.
@@ -431,7 +431,7 @@ struct bt_sdp_record {
 	{ BT_SDP_TYPE_SIZE(BT_SDP_UINT16), BT_SDP_ARRAY_16(_features) } \
 }
 
-/** @def BT_SDP_RECORD
+/**
  *  @brief SDP Service Declaration Macro.
  *
  *  Helper macro to declare a service.

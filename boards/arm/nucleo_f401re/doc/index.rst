@@ -25,10 +25,8 @@ some highlights of the Nucleo F401RE board:
 - Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
 - Two push-buttons: USER and RESET
 
-.. image:: img/nucleo_f401re.png
-   :width: 720px
+.. image:: img/nucleo_f401re.jpg
    :align: center
-   :height: 720px
    :alt: Nucleo F401RE
 
 More information about the board can be found at the `Nucleo F401RE website`_.
@@ -87,6 +85,8 @@ The Zephyr nucleo_401re board configuration supports the following hardware feat
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | System Window Watchdog              |
 +-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -102,15 +102,11 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo_f401re_arduino.png
-   :width: 720px
+.. image:: img/nucleo_f401re_arduino.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F401RE Arduino connectors
-.. image:: img/nucleo_f401re_morpho.png
-   :width: 720px
+.. image:: img/nucleo_f401re_morpho.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F401RE Morpho connectors
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.

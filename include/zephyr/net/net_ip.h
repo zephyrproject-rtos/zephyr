@@ -300,6 +300,9 @@ struct cmsghdr {
 #define PACKET_LOOPBACK     5
 #define PACKET_FASTROUTE    6
 
+/* ARP protocol HARDWARE identifiers. */
+#define ARPHRD_ETHER 1
+
 /* Note: These macros are defined in a specific order.
  * The largest sockaddr size is the last one.
  */
@@ -728,7 +731,6 @@ static inline bool net_ipv4_is_ll_addr(const struct in_addr *addr)
 }
 
 /**
- *  @def net_ipaddr_copy
  *  @brief Copy an IPv4 or IPv6 address
  *
  *  @param dest Destination IP address.

@@ -59,8 +59,15 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intc_miwu, LOG_LEVEL_ERR);
 
-/* MIWU module instances forward declaration */
-static const struct device *miwu_devs[];
+/* MIWU module instances */
+#define NPCX_MIWU_DEV(inst) DEVICE_DT_INST_GET(inst),
+
+static const struct device *const miwu_devs[] = {
+	DT_INST_FOREACH_STATUS_OKAY(NPCX_MIWU_DEV)
+};
+
+BUILD_ASSERT(ARRAY_SIZE(miwu_devs) == NPCX_MIWU_TABLE_COUNT,
+		"Size of miwu_devs array must equal to NPCX_MIWU_TABLE_COUNT");
 
 /* Driver config */
 struct intc_miwu_config {
@@ -390,13 +397,3 @@ int npcx_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set)
 	NPCX_MIWU_INIT_FUNC_IMPL(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_MIWU_INIT)
-
-/* MIWU module instances */
-#define NPCX_MIWU_DEV(inst) DEVICE_DT_INST_GET(inst),
-
-static const struct device *miwu_devs[] = {
-	DT_INST_FOREACH_STATUS_OKAY(NPCX_MIWU_DEV)
-};
-
-BUILD_ASSERT(ARRAY_SIZE(miwu_devs) == NPCX_MIWU_TABLE_COUNT,
-		"Size of miwu_devs array must equal to NPCX_MIWU_TABLE_COUNT");

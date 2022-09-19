@@ -31,11 +31,3 @@ properties:
       type: array
       required: true
       description: PCR sleep register index and bit position
-
-girq-cells:
-    - girqnum
-    - bitpos
-
-pcr-cells:
-    - regidx
-    - bitpos

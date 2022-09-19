@@ -36,3 +36,10 @@ properties:
       description: |
         Delay in nanoseconds inserted between transfers when chip select is
         deasserted. If not set, no additional delay is inserted.
+
+    def-char:
+      type: int
+      required: false
+      description: |
+          Default character clocked out when the TX buffer pointer is NULL.
+          Applies to SPI master and slave configurations.

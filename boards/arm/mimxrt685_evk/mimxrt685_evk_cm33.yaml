@@ -24,6 +24,7 @@ supported:
   - gpio
   - hwinfo
   - i2c
+  - i3c
   - i2s
   - sdhc
   - spi

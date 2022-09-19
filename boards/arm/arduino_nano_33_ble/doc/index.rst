@@ -11,8 +11,7 @@ nRF52840 ARM Cortex-M4F CPU. Arduino sells 2 variants of the board, the
 plain `BLE`_ type and the `BLE Sense`_ type. The "Sense" variant is distinguished by
 the inclusion of more sensors, but otherwise both variants are the same.
 
-.. image:: img/arduino_nano_33_ble_sense.png
-     :width: 500px
+.. image:: img/arduino_nano_33_ble_sense.jpg
      :align: center
      :alt: Arduino Nano 33 BLE (Sense variant)
 

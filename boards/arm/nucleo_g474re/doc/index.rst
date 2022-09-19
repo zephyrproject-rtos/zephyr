@@ -22,9 +22,7 @@ some highlights of the Nucleo G474RE board:
 - Two push-buttons: RESET and USER
 
 .. image:: img/nucleo_g474re.jpg
-  :width: 426px
   :align: center
-  :height: 256px
   :alt: Nucleo G474RE
 
 More information about the board can be found at the `Nucleo G474RE website`_.
@@ -126,6 +124,8 @@ The Zephyr nucleo_g474re board configuration supports the following hardware fea
 | COUNTER   | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/smf.h>
 
 /*
@@ -219,7 +219,7 @@ static const struct smf_state test_states[] = {
 	[STATE_D] = SMF_CREATE_STATE(state_d_entry, state_d_run, state_d_exit),
 };
 
-void test_smf_flat(void)
+ZTEST(smf_tests, test_smf_flat)
 {
 	/* A) Test transitions */
 

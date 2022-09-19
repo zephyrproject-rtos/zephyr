@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -104,9 +104,11 @@ static void test_op2(int op, const q31_t *ref, size_t length)
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(op2, arm_mat_add_q31, OP2_ADD,
+DEFINE_TEST_VARIANT3(matrix_unary_q31,
+	op2, arm_mat_add_q31, OP2_ADD,
 	ref_add, ARRAY_SIZE(ref_add));
-DEFINE_TEST_VARIANT3(op2, arm_mat_sub_q31, OP2_SUB,
+DEFINE_TEST_VARIANT3(matrix_unary_q31,
+	op2, arm_mat_sub_q31, OP2_SUB,
 	ref_sub, ARRAY_SIZE(ref_sub));
 
 static void test_op1(int op, const q31_t *ref, size_t length, bool transpose)
@@ -180,9 +182,11 @@ static void test_op1(int op, const q31_t *ref, size_t length, bool transpose)
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(op1, arm_mat_scale_q31, OP1_SCALE,
+DEFINE_TEST_VARIANT4(matrix_unary_q31,
+	op1, arm_mat_scale_q31, OP1_SCALE,
 	ref_scale, ARRAY_SIZE(ref_scale), false);
-DEFINE_TEST_VARIANT4(op1, arm_mat_trans_q31, OP1_TRANS,
+DEFINE_TEST_VARIANT4(matrix_unary_q31,
+	op1, arm_mat_trans_q31, OP1_TRANS,
 	ref_trans, ARRAY_SIZE(ref_trans), true);
 
 static void test_op2v(int op, const q31_t *ref, size_t length)
@@ -250,7 +254,8 @@ static void test_op2v(int op, const q31_t *ref, size_t length)
 	free(output_buf);
 }
 
-DEFINE_TEST_VARIANT3(op2v, arm_mat_vec_mult_q31, OP2V_VEC_MULT,
+DEFINE_TEST_VARIANT3(matrix_unary_q31,
+	op2v, arm_mat_vec_mult_q31, OP2V_VEC_MULT,
 	ref_vec_mult, ARRAY_SIZE(ref_vec_mult));
 
 static void test_op1c(int op, const q31_t *ref, size_t length, bool transpose)
@@ -321,19 +326,8 @@ static void test_op1c(int op, const q31_t *ref, size_t length, bool transpose)
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(op1c, arm_mat_cmplx_trans_q31, OP1C_CMPLX_TRANS,
+DEFINE_TEST_VARIANT4(matrix_unary_q31,
+	op1c, arm_mat_cmplx_trans_q31, OP1C_CMPLX_TRANS,
 	ref_cmplx_trans, ARRAY_SIZE(ref_cmplx_trans) / 2, true);
 
-void test_matrix_unary_q31(void)
-{
-	ztest_test_suite(matrix_unary_q31,
-		ztest_unit_test(test_op2_arm_mat_add_q31),
-		ztest_unit_test(test_op2_arm_mat_sub_q31),
-		ztest_unit_test(test_op1_arm_mat_scale_q31),
-		ztest_unit_test(test_op1_arm_mat_trans_q31),
-		ztest_unit_test(test_op2v_arm_mat_vec_mult_q31),
-		ztest_unit_test(test_op1c_arm_mat_cmplx_trans_q31)
-		);
-
-	ztest_run_test_suite(matrix_unary_q31);
-}
+ZTEST_SUITE(matrix_unary_q31, NULL, NULL, NULL, NULL, NULL);

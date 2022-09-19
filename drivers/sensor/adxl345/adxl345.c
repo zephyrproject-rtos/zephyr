@@ -133,8 +133,8 @@ static void adxl345_accel_convert(struct sensor_value *val, int16_t sample)
 		sample |= ADXL345_COMPLEMENT;
 	}
 
-	val->val1 = (sample * 1000) / 32;
-	val->val2 = 0;
+	val->val1 = ((sample * SENSOR_G) / 32) / 1000000;
+	val->val2 = ((sample * SENSOR_G) / 32) % 1000000;
 }
 
 static int adxl345_sample_fetch(const struct device *dev,

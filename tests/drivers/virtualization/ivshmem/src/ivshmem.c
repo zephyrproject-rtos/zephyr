@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/drivers/virtualization/ivshmem.h>
 
-void test_ivshmem_plain(void)
+ZTEST(ivshmem, test_ivshmem_plain)
 {
 	const struct device *ivshmem;
 	uintptr_t mem;
@@ -19,8 +19,8 @@ void test_ivshmem_plain(void)
 	uint16_t vectors;
 	int ret;
 
-	ivshmem = device_get_binding(CONFIG_IVSHMEM_DEV_NAME);
-	zassert_not_null(ivshmem, "Could not get ivshmem device");
+	ivshmem = DEVICE_DT_GET_ONE(qemu_ivshmem);
+	zassert_true(device_is_ready(ivshmem), "ivshmem device is not ready");
 
 	size = ivshmem_get_mem(ivshmem, &mem);
 	zassert_not_equal(size, 0, "Size cannot not be 0");
@@ -48,26 +48,19 @@ void test_ivshmem_plain(void)
 		      "registering handlers should not be supported");
 }
 
-#ifdef CONFIG_USERSPACE
-void test_is_usermode(void)
+static void test_is_usermode(void)
 {
 	zassert_true(k_is_user_context(), "thread left in kernel mode");
 }
 
-void test_quit_kernel(void)
+ZTEST(ivshmem, test_quit_kernel)
 {
+#ifdef CONFIG_USERSPACE
 	k_thread_user_mode_enter((k_thread_entry_t)test_is_usermode,
 				 NULL, NULL, NULL);
-}
 #else
-void test_quit_kernel(void)
-{ }
-#endif /* CONFIG_USERSPACE */
-
-void test_main(void)
-{
-	ztest_test_suite(test_ivshmem,
-			 ztest_unit_test(test_quit_kernel),
-			 ztest_unit_test(test_ivshmem_plain));
-	ztest_run_test_suite(test_ivshmem);
+	ztest_test_skip();
+#endif
 }
+
+ZTEST_SUITE(ivshmem, NULL, NULL, NULL, NULL, NULL);

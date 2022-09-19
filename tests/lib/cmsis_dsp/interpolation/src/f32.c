@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -137,27 +137,16 @@ static void test_arm_spline(
 	free(coeff);
 }
 
-DEFINE_TEST_VARIANT7(arm_spline, square_20,
+DEFINE_TEST_VARIANT7(interpolation_f32, arm_spline, square_20,
 	in_spline_squ_x, in_spline_squ_y, in_spline_squ_xq, ref_spline_squ, 20,
 	4, ARM_SPLINE_PARABOLIC_RUNOUT);
 
-DEFINE_TEST_VARIANT7(arm_spline, sine_33,
+DEFINE_TEST_VARIANT7(interpolation_f32, arm_spline, sine_33,
 	in_spline_sin_x, in_spline_sin_y, in_spline_sin_xq, ref_spline_sin, 33,
 	9, ARM_SPLINE_NATURAL);
 
-DEFINE_TEST_VARIANT7(arm_spline, ramp_30,
+DEFINE_TEST_VARIANT7(interpolation_f32, arm_spline, ramp_30,
 	in_spline_ram_x, in_spline_ram_y, in_spline_ram_xq, ref_spline_ram, 30,
 	3, ARM_SPLINE_PARABOLIC_RUNOUT);
 
-void test_interpolation_f32(void)
-{
-	ztest_test_suite(interpolation_f32,
-		ztest_unit_test(test_arm_linear_interp_f32),
-		ztest_unit_test(test_arm_bilinear_interp_f32),
-		ztest_unit_test(test_arm_spline_square_20),
-		ztest_unit_test(test_arm_spline_sine_33),
-		ztest_unit_test(test_arm_spline_ramp_30)
-		);
-
-	ztest_run_test_suite(interpolation_f32);
-}
+ZTEST_SUITE(interpolation_f32, NULL, NULL, NULL, NULL, NULL);

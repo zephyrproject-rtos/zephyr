@@ -5,6 +5,7 @@
 
 config GPIO_STM32
 	bool "GPIO Driver for STM32 family of MCUs"
-	depends on SOC_FAMILY_STM32
+	default y
+	depends on DT_HAS_ST_STM32_GPIO_ENABLED
 	help
 	  Enable GPIO driver for STM32 line of MCUs

@@ -7,7 +7,7 @@
 
 /* Sample app for USB DFU class driver. */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/usb/usb_device.h>
 LOG_MODULE_REGISTER(main);

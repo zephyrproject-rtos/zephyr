@@ -2,10 +2,6 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 if(BOARD STREQUAL unit_testing)
-
-  # Use the new ztest API
-  set(CONFIG_ZTEST_NEW_API TRUE CACHE BOOL "" FORCE)
-
   # Add the sources
   list(APPEND SOURCES src/main.c)
 

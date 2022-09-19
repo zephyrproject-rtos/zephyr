@@ -5,7 +5,8 @@
 
 config I2C_NPCX
 	bool "Nuvoton NPCX embedded controller (EC) I2C driver"
-	depends on SOC_FAMILY_NPCX
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_I2C_PORT_ENABLED
 	help
 	  This option enables the I2C driver for NPCX family of
 	  processors.

@@ -10,7 +10,6 @@
 
 	modbus0 {
 		compatible = "zephyr,modbus-serial";
-		label = "MODBUS0";
 		status = "okay";
 	};
 };

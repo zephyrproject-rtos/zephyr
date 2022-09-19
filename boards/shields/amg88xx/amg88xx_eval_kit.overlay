@@ -10,7 +10,6 @@
 	amg88xx@68 {
 		compatible = "panasonic,amg88xx";
 		reg = <0x68>;
-		label = "AMG88XX";
 		/* Pin D6 from Arduino Connector */
 		int-gpios = <&arduino_header 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";

@@ -5,4 +5,15 @@ description: GPIO expander via I2C
 
 compatible: "vnd,gpio-expander"
 
-include: ["vnd,gpio-expander-common.yaml", i2c-device.yaml]
+include:
+  - name: "vnd,gpio-expander-common.yaml"
+    property-blocklist:
+      - label
+  - name: i2c-device.yaml
+    property-blocklist:
+      - label
+
+properties:
+    label:
+        type: string
+        required: false

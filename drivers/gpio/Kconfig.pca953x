@@ -4,12 +4,10 @@
 # Copyright (c) 2021 Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_TI_TCA9538 := ti,tca9538
-
 menuconfig GPIO_PCA953X
 	bool "PCA953X I2C GPIO chip"
-	default $(dt_compat_enabled,$(DT_COMPAT_TI_TCA9538))
+	default y
+	depends on DT_HAS_TI_TCA9538_ENABLED
 	depends on I2C
 	help
 	  Enable driver for PCA953X I2C GPIO chip.

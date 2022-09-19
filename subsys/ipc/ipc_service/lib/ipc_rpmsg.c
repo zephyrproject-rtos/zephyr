@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ipc/ipc_rpmsg.h>
 
 static void rpmsg_service_unbind(struct rpmsg_endpoint *ep)

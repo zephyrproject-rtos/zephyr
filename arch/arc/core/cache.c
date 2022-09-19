@@ -139,6 +139,21 @@ int arch_dcache_range(void *addr, size_t size, int op)
 	return 0;
 }
 
+int arch_icache_range(void *addr, size_t size, int op)
+{
+	return -ENOTSUP;
+}
+
+int arch_dcache_all(int op)
+{
+	return -ENOTSUP;
+}
+
+int arch_icache_all(int op)
+{
+	return -ENOTSUP;
+}
+
 #if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
 static void init_dcache_line_size(void)
 {

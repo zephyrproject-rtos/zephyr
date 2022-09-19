@@ -6,7 +6,7 @@
 config RV32M1_LPTMR_TIMER
 	bool "RV32M1 LPTMR system timer driver"
 	default y
-	depends on SOC_OPENISA_RV32M1_RISCV32
+	depends on DT_HAS_OPENISA_RV32M1_LPTMR_ENABLED
 	depends on RV32M1_INTMUX
 	help
 	  This module implements a kernel device driver for using the LPTMR

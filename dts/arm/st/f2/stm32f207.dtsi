@@ -11,7 +11,6 @@
 		mac: ethernet@40028000 {
 			compatible = "st,stm32-ethernet";
 			reg = <0x40028000 0x8000>;
-			label = "ETH_0";
 			interrupts = <61 0>;
 			clock-names = "stmmaceth", "mac-clk-tx",
 				      "mac-clk-rx", "mac-clk-ptp";

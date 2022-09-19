@@ -22,6 +22,5 @@
 		/* Errata B7/1 specifies min 8Mhz, 20MHz max according to RM */
 		spi-max-frequency = <10000000>;
 		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;	/* INT */
-		label = "ETH_CLICK";
 	};
 };

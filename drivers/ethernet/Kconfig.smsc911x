@@ -3,6 +3,8 @@
 
 menuconfig ETH_SMSC911X
 	bool "SMSC911x/9220 Ethernet driver"
+	default y
+	depends on DT_HAS_SMSC_LAN9220_ENABLED
 	help
 	  Enable driver for SMSC/LAN911x/9220 family of chips.
 

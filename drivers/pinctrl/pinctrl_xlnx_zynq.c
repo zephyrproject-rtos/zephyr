@@ -22,7 +22,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 #define SD0_WP_CD_SEL_OFFSET 0x0130
 #define SD1_WP_CD_SEL_OFFSET 0x0134
 
-static const struct device *slcr = DEVICE_DT_GET(DT_INST_PHANDLE(0, syscon));
+static const struct device *const slcr = DEVICE_DT_GET(DT_INST_PHANDLE(0, syscon));
 static mm_reg_t base = DT_INST_REG_ADDR(0);
 K_SEM_DEFINE(pinctrl_lock, 1, 1);
 

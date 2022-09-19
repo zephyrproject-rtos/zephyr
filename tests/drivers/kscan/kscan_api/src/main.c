@@ -5,15 +5,6 @@
  */
 
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
-void test_init_callback(void);
-void test_control_callback(void);
-
-void test_main(void)
-{
-	ztest_test_suite(kscan_basic_test,
-			 ztest_unit_test(test_init_callback),
-			 ztest_unit_test(test_control_callback));
-	ztest_run_test_suite(kscan_basic_test);
-}
+ZTEST_SUITE(kscan_basic, NULL, NULL, NULL, NULL, NULL);

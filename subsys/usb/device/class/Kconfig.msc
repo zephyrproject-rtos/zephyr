@@ -45,6 +45,7 @@ config MASS_STORAGE_BULK_EP_MPS
 
 config MASS_STORAGE_STACK_SIZE
 	int "Set stack size for mass storage thread"
+	default 786 if SD_STACK
 	default 512
 	help
 	  Stack size for mass storage disk operations thread

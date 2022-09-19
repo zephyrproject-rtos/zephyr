@@ -14,9 +14,6 @@ menuconfig UART_RTT
 
 if UART_RTT
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_SEGGER_RTT_UART  := segger,rtt-uart
-
 config UART_RTT_0
 	def_bool $(dt_nodelabel_enabled_with_compat,rtt0,$(DT_COMPAT_SEGGER_RTT_UART))
 	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 1 && SEGGER_RTT_MAX_NUM_DOWN_BUFFERS >= 1
