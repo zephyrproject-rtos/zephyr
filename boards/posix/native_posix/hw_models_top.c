@@ -21,7 +21,6 @@
 #include "hw_counter.h"
 #include <zephyr/arch/posix/posix_soc_if.h>
 #include "posix_arch_internal.h"
-#include "sdl_events.h"
 #include <zephyr/sys/util.h>
 
 
@@ -32,17 +31,11 @@ static uint64_t end_of_time = NEVER; /* When will this device stop */
 extern uint64_t hw_timer_timer; /* When should this timer_model be called */
 extern uint64_t irq_ctrl_timer;
 extern uint64_t hw_counter_timer;
-#ifdef CONFIG_HAS_SDL
-extern uint64_t sdl_event_timer;
-#endif
 
 static enum {
 	HWTIMER = 0,
 	IRQCNT,
 	HW_COUNTER,
-#ifdef CONFIG_HAS_SDL
-	SDLEVENTTIMER,
-#endif
 	NUMBER_OF_TIMERS,
 	NONE
 } next_timer_index = NONE;
@@ -51,9 +44,6 @@ static uint64_t *Timer_list[NUMBER_OF_TIMERS] = {
 	&hw_timer_timer,
 	&irq_ctrl_timer,
 	&hw_counter_timer,
-#ifdef CONFIG_HAS_SDL
-	&sdl_event_timer,
-#endif
 };
 
 static uint64_t next_timer_time;
@@ -154,11 +144,6 @@ void hwm_one_event(void)
 	case HW_COUNTER:
 		hw_counter_triggered();
 		break;
-#ifdef CONFIG_HAS_SDL
-	case SDLEVENTTIMER:
-		sdl_handle_events();
-		break;
-#endif
 	default:
 		/* LCOV_EXCL_START */
 		posix_print_error_and_exit(
