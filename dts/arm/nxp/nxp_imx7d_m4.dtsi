@@ -379,22 +379,22 @@
  */
 
 &gpio1 {
-	pinmux = <&mx7d_pad_gpio1_io08__gpio1_io8>,
-	<&mx7d_pad_gpio1_io09__gpio1_io9>,
-	<&mx7d_pad_gpio1_io10__gpio1_io10>,
-	<&mx7d_pad_gpio1_io11__gpio1_io11>,
-	<&mx7d_pad_gpio1_io12__gpio1_io12>,
-	<&mx7d_pad_gpio1_io13__gpio1_io13>,
-	<&mx7d_pad_gpio1_io14__gpio1_io14>,
-	<&mx7d_pad_gpio1_io15__gpio1_io15>,
-	<&mx7d_pad_lpsr_gpio1_io00__gpio1_io0>,
+	pinmux = <&mx7d_pad_lpsr_gpio1_io00__gpio1_io0>,
 	<&mx7d_pad_lpsr_gpio1_io01__gpio1_io1>,
 	<&mx7d_pad_lpsr_gpio1_io02__gpio1_io2>,
 	<&mx7d_pad_lpsr_gpio1_io03__gpio1_io3>,
 	<&mx7d_pad_lpsr_gpio1_io04__gpio1_io4>,
 	<&mx7d_pad_lpsr_gpio1_io05__gpio1_io5>,
 	<&mx7d_pad_lpsr_gpio1_io06__gpio1_io6>,
-	<&mx7d_pad_lpsr_gpio1_io07__gpio1_io7>;
+	<&mx7d_pad_lpsr_gpio1_io07__gpio1_io7>,
+	<&mx7d_pad_gpio1_io08__gpio1_io8>,
+	<&mx7d_pad_gpio1_io09__gpio1_io9>,
+	<&mx7d_pad_gpio1_io10__gpio1_io10>,
+	<&mx7d_pad_gpio1_io11__gpio1_io11>,
+	<&mx7d_pad_gpio1_io12__gpio1_io12>,
+	<&mx7d_pad_gpio1_io13__gpio1_io13>,
+	<&mx7d_pad_gpio1_io14__gpio1_io14>,
+	<&mx7d_pad_gpio1_io15__gpio1_io15>;
 };
 
 &gpio2 {
