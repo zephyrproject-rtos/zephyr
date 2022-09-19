@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2022 Fraunhofer AICOS
+#
+
+description: NXP PCF85263A I2C RTC and Stop-watch
+
+compatible: "nxp,pcf85263a"
+
+include: i2c-device.yaml
+
+properties:
+  inta-gpios:
+    type: phandle-array
+
+  ts-gpios:
+    type: phandle-array

@@ -1,0 +1,44 @@
+#
+# Copyright (c) 2022 Fraunhofer AICOS
+#
+
+config COUNTER_NXP_PCF85263A
+	bool "NXP PCF85263A RTC/Stop-watch"
+	depends on I2C
+	help
+	  Enable counter driver based on NXP PCF85263A I2C device.
+
+choice
+	prompt "PCF85263A INTA pin mode"
+
+config NXP_PCF85263A_INTA_CLK_OUT
+	bool "CLK output mode"
+
+config NXP_PCF85263A_INTA_BATT_OUT
+	bool "Battery mode indication"
+
+config NXP_PCF85263A_INTA_INT_OUT
+	bool "Interrupt (INTA) output"
+
+config NXP_PCF85263A_INTA_HIZ
+	bool "Hi-Z"
+
+endchoice
+
+
+choice
+	prompt "PCF85263A TS pin mode"
+
+config NXP_PCF85263A_TS_DISABLED
+	bool "Disabled"
+
+config NXP_PCF85263A_TS_INTB_OUT
+	bool "Interrupt (INTB) output"
+
+config NXP_PCF85263A_TS_CLK_OUT
+	bool "Clock output"
+
+config NXP_PCF85263A_TS_INPUT
+	bool "Input mode"
+
+endchoice
