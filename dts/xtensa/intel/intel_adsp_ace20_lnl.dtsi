@@ -66,6 +66,12 @@
 		reg = <0xa0020000 DT_SIZE_K(2816)>;
 	};
 
+	sram0virtual: virtualmemory@a0020000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xa0020000 DT_SIZE_K(8192)>;
+	};
+
 	sram1: memory@a0000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
@@ -95,6 +101,11 @@
 		reg = <0xA1000000 DT_SIZE_M(16)>;
 		block-size = <0x1000>;
 		zephyr,memory-region = "IMR1";
+	};
+
+	shim: shim@71f00 {
+		compatible = "intel,adsp-shim";
+		reg = <0x71f00 0x100>;
 	};
 
 	soc {
@@ -150,6 +161,17 @@
 			reg = <0x72008 0x0064>;
 		};
 
+		tts: tts@72000 {
+			compatible = "intel,adsp-tts";
+			reg = <0x72000 0x70>;
+			status = "okay";
+		};
+
+		timer: timer {
+			compatible = "intel,adsp-timer";
+			syscon = <&tts>;
+		};
+
 		lps: lps@71ac0 {
 			compatible = "intel,adsp-lps";
 			reg = <0x00071ac0 0x100>;
@@ -160,11 +182,32 @@
 			reg = <0x28000 0x1000>;
 		};
 
-		win: win@70200 {
-			compatible = "intel,cavs-win";
-			reg = <0x70200 0x30>;
+		mem_window0: mem_window@70200 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x70200 0x8>;
+			offset = <0x4000>;
+			memory = <&sram0>;
+			initialize;
+			read-only;
+		};
+		mem_window1: mem_window@70208 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x70208 0x8>;
+			memory = <&sram0>;
 		};
 
+		mem_window2: mem_window@70210 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x70210 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window3: mem_window@70218 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x70218 0x8>;
+			memory = <&sram0>;
+			read-only;
+		};
 		tlb: tlb@17e000 {
 			compatible = "intel,adsp-tlb";
 			reg = <0x17e000 0x1000>;
@@ -207,22 +250,6 @@
 			dma-channels = <11>;
 			dma-buf-alignment = <128>;
 			status = "okay";
-		};
-
-		dmic0: dai-dmic@10000 {
-			compatible = "intel,dai-dmic";
-			reg = <0x10100 0x8000>;
-			shim = <0xcc0 0x10>;
-			interrupts = <0x08 0 0>;
-			interrupt-parent = <&ace_intc>;
-		};
-
-		dmic1: dai-dmic@10001 {
-			compatible = "intel,dai-dmic";
-			reg = <0x10100 0x8000>;
-			shim = <0xcc0 0x10>;
-			interrupts = <0x08 0 0>;
-			interrupt-parent = <&ace_intc>;
 		};
 
 		ssp0:ssp@28100 {
