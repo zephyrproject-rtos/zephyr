@@ -43,6 +43,7 @@ struct bt_ltk {
 
 struct bt_irk {
 	uint8_t                    val[16];
+	/* Cache for `bt_keys_find_irk`. Not reliable as "current RPA"! */
 	bt_addr_t               rpa;
 };
 
