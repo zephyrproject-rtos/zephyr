@@ -64,15 +64,6 @@ extern "C" {
 
 #define BOOT_IMG_VER_STRLEN_MAX 25  /* 255.255.65535.4294967295\0 */
 
-/* Trailer: */
-#ifndef BOOT_MAX_ALIGN
-#define BOOT_MAX_ALIGN		8
-#endif
-
-#ifndef BOOT_MAGIC_SZ
-#define BOOT_MAGIC_SZ		16
-#endif
-
 #define BOOT_TRAILER_IMG_STATUS_OFFS(bank_area) ((bank_area)->fa_size -\
 						  BOOT_MAGIC_SZ -\
 						  BOOT_MAX_ALIGN * 2)
