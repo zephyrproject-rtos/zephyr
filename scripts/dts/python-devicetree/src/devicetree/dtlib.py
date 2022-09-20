@@ -863,6 +863,8 @@ class DT:
 
         self._lineno: int = 1
 
+        self._parse_header()
+        self._parse_memreserves()
         self._parse_dt()
 
         self._register_phandles()
@@ -871,11 +873,45 @@ class DT:
         self._remove_unreferenced()
         self._register_labels()
 
+    def _parse_header(self):
+        # Parses /dts-v1/ (expected) and /plugin/ (unsupported) at the start of
+        # files. There may be multiple /dts-v1/ at the start of a file.
+
+        has_dts_v1 = False
+
+        while self._peek_token().id == _T.DTS_V1:
+            has_dts_v1 = True
+            self._next_token()
+            self._expect_token(";")
+            # /plugin/ always comes after /dts-v1/
+            if self._peek_token().id == _T.PLUGIN:
+                self._parse_error("/plugin/ is not supported")
+
+        if not has_dts_v1:
+            self._parse_error("expected '/dts-v1/;' at start of file")
+
+    def _parse_memreserves(self):
+        # Parses /memreserve/, which appears after /dts-v1/
+
+        while True:
+            # Labels before /memreserve/
+            labels = []
+            while self._peek_token().id == _T.LABEL:
+                _append_no_dup(labels, self._next_token().val)
+
+            if self._peek_token().id == _T.MEMRESERVE:
+                self._next_token()
+                self.memreserves.append(
+                    (labels, self._eval_prim(), self._eval_prim()))
+                self._expect_token(";")
+            elif labels:
+                self._parse_error("expected /memreserve/ after labels at "
+                                  "beginning of file")
+            else:
+                return
+
     def _parse_dt(self):
         # Top-level parsing loop
-
-        self._parse_header()
-        self._parse_memreserves()
 
         while True:
             tok = self._next_token()
@@ -922,43 +958,6 @@ class DT:
 
             else:
                 self._parse_error("expected '/' or label reference (&foo)")
-
-    def _parse_header(self):
-        # Parses /dts-v1/ (expected) and /plugin/ (unsupported) at the start of
-        # files. There may be multiple /dts-v1/ at the start of a file.
-
-        has_dts_v1 = False
-
-        while self._peek_token().id == _T.DTS_V1:
-            has_dts_v1 = True
-            self._next_token()
-            self._expect_token(";")
-            # /plugin/ always comes after /dts-v1/
-            if self._peek_token().id == _T.PLUGIN:
-                self._parse_error("/plugin/ is not supported")
-
-        if not has_dts_v1:
-            self._parse_error("expected '/dts-v1/;' at start of file")
-
-    def _parse_memreserves(self):
-        # Parses /memreserve/, which appears after /dts-v1/
-
-        while True:
-            # Labels before /memreserve/
-            labels = []
-            while self._peek_token().id == _T.LABEL:
-                _append_no_dup(labels, self._next_token().val)
-
-            if self._peek_token().id == _T.MEMRESERVE:
-                self._next_token()
-                self.memreserves.append(
-                    (labels, self._eval_prim(), self._eval_prim()))
-                self._expect_token(";")
-            elif labels:
-                self._parse_error("expected /memreserve/ after labels at "
-                                  "beginning of file")
-            else:
-                return
 
     def _parse_node(self, node):
         # Parses the '{ ... };' part of 'node-name { ... };'. Returns the new
