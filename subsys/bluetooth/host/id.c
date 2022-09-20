@@ -1055,7 +1055,7 @@ static int id_find(const bt_addr_le_t *addr)
 	uint8_t id;
 
 	for (id = 0U; id < bt_dev.id_count; id++) {
-		if (!bt_addr_le_cmp(addr, &bt_dev.id_addr[id])) {
+		if (bt_addr_le_eq(addr, &bt_dev.id_addr[id])) {
 			return id;
 		}
 	}
@@ -1224,7 +1224,7 @@ int bt_id_delete(uint8_t id)
 		return -EINVAL;
 	}
 
-	if (!bt_addr_le_cmp(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
+	if (bt_addr_le_eq(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
 		return -EALREADY;
 	}
 
