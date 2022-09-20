@@ -495,6 +495,30 @@ You can debug an application in the usual way. Here is an example for the :ref:`
    :board: esp32_ethernet_kit
    :goals: debug
 
+
+Enabling Ethernet
+-----------------
+
+Enable Ethernet MAC, PHY and MDIO; add these to your device tree overlay::
+
+    &eth {
+        status = "okay";
+    };
+
+    &phy {
+        status = "okay";
+    };
+
+    &mdio {
+        status = "okay";
+    };
+
+Enable Ethernet in KConfig::
+
+    CONFIG_ETH_ESP32=y
+    CONFIG_NETWORKING=y
+    CONFIG_NET_L2_ETHERNET=y
+
 Board Init
 -----------------
 
