@@ -2365,6 +2365,15 @@ West:
   labels:
     - manifest-hal_ti
 
+"West project: hal_wurthelektronik":
+  status: maintained
+  maintainers:
+    - mah-eiSmart
+  files:
+    - modules/Kconfig.wurthelektronik
+  labels:
+    - manifest-hal_wurthelektronik
+
 "West project: hal_xtensa":
   status: maintained
   maintainers:
