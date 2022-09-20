@@ -86,6 +86,10 @@ list(APPEND zephyr_cmake_modules "\${pre_dt_board}")
 # DTS should be close to kconfig because CONFIG_ variables from
 # kconfig and dts should be available at the same time.
 list(APPEND zephyr_cmake_modules dts)
+
+# Device must be placed after dts as it depends output from DTS.
+list(APPEND zephyr_cmake_modules device)
+
 list(APPEND zephyr_cmake_modules kconfig)
 list(APPEND zephyr_cmake_modules soc)
 

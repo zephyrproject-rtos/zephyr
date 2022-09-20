@@ -26,6 +26,8 @@
  * @{
  */
 
+#include <device_generated.h>
+
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/sections.h>
@@ -922,6 +924,169 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		     Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long"); \
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
 		(&DEVICE_NAME_GET(dev_name)), level, prio)
+
+/**
+ * @brief Device properties APIs
+ * @defgroup device_properties_apis Device properties APIs
+ *
+ * @details Device properties are defined in properties YAML files. From these
+ * properties, the macros used by the following device properties APIs are
+ * generated.
+ *
+ * @{
+ */
+
+/**
+ * @def DEVICE_DT_API_SUPPORTED
+ *
+ * @brief Test if device supports API.
+ *
+ * @param node_id Devicetree node identifier to test.
+ *
+ * @param api_type API type to test for.
+ */
+#define DEVICE_DT_API_SUPPORTED(node_id, api_type)                                  \
+	IS_ENABLED(_CONCAT(_CONCAT(_CONCAT(_CONCAT(DEVICE_, node_id), _API_),           \
+		api_type), _EXISTS))
+
+/**
+ * @def DEVICE_DT_INST_API_SUPPORTED
+ *
+ * @brief Test if device supports API
+ *
+ * @param inst Compatible instance id of device to test
+ *
+ * @param api_type API type to test for
+ */
+#define DEVICE_DT_INST_API_SUPPORTED(inst, api_type) \
+	DEVICE_DT_API_SUPPORTED(DT_DRV_INST(inst), api_type)
+
+/**
+ * @def DEVICE_DT_API_SUPPORTED_ANY
+ *
+ * @brief Test if any enabled device supports provided API
+ *
+ * @param api_type API type to test for
+ */
+#define DEVICE_DT_API_SUPPORTED_ANY(api_type) \
+	IS_ENABLED(_CONCAT(_CONCAT(DEVICE_DT_API_, api_type), _FOREACH_EXISTS))
+
+/**
+ * @def DEVICE_DT_API_FOREACH
+ *
+ * @brief Invoke fn macro for each node which implements the provided
+ * API type. The fn macro must take a single argument, which is the
+ * node identifier.
+ *
+ * @param fn Macro which is invoked for each node which supports provided API type.
+ *
+ * @param api_type API type which specifies which nodes to invoke fn macro for.
+ */
+#define DEVICE_DT_API_FOREACH(fn, api_type)                                         \
+	COND_CODE_1(                                                                    \
+		IS_ENABLED(_CONCAT(_CONCAT(DEVICE_DT_API_, api_type), _FOREACH_EXISTS)),    \
+		(_CONCAT(_CONCAT(DEVICE_DT_API_, api_type), _FOREACH)(fn)),                 \
+		())
+
+/**
+ * @def DEVICE_DT_API_FOREACH_VARGS
+ *
+ * @brief Invoke fn macro for each node which implements the provided
+ * API type. The fn macro must take multiple arguments, the first argument
+ * is the node identifier.
+ *
+ * @param fn Macro which is invoked for each node which supports provided API type.
+ *
+ * @param api_type API type which specifies which nodes to invoke fn macro for.
+ *
+ * @param ... Additional arguments to pass to fn macro.
+ */
+#define DEVICE_DT_API_FOREACH_VARGS(fn, api_type, ...)                              \
+	COND_CODE_1(                                                                    \
+		IS_ENABLED(_CONCAT(_CONCAT(DEVICE_DT_API_, api_type), _FOREACH_EXISTS)),    \
+		(_CONCAT(_CONCAT(DEVICE_DT_API_, api_type), _FOREACH_VARGS)                 \
+			(fn, __VA_ARGS__)),                                                     \
+		())
+
+/**
+ * @def DEVICE_DT_PROPERTY
+ *
+ * @brief Get a device property using a node identifier
+ *
+ * @details Device properties are defined in properties files. An example which
+ * defines the property vendor which will expand to "dummy" follows:
+ *
+ *   properties:
+ *     vendor:
+ *       value: "dummy"
+ *
+ * The properties files are tied to device nodes using the compatible property. To
+ * fetch the vendor property at compile time for a node, use the following macro:
+ *
+ *   DEVICE_DT_PROPERTY(node_id, vendor)
+ *
+ * @param node_id Devicetree node identifier to test.
+ *
+ * @param property Property to fetch.
+ */
+#define DEVICE_DT_PROPERTY(node_id, property) \
+	_CONCAT(_CONCAT(_CONCAT(DEVICE_, node_id), _PROPERTY_), property)
+
+/**
+ * @def DEVICE_DT_INST_PROPERTY
+ *
+ * @brief Get a device property using a compatible instance index
+ *
+ * @details See DEVICE_DT_PROPERTY() for details.
+ *
+ * @param inst Compatible instance index of the device
+ *
+ * @param property Property to fetch.
+ */
+#define DEVICE_DT_INST_PROPERTY(inst, property) \
+	DEVICE_DT_PROPERTY(DT_DRV_INST(inst), property)
+
+/**
+ * @def DEVICE_DT_PROPERTY_OR
+ *
+ * @brief Get a device property using a node identifier with fallback to default
+ * value if the device property doesn't exist.
+ *
+ * @details See DEVICE_DT_PROPERTY() for details.
+ *
+ * @param node_id Devicetree node identifier to test.
+ *
+ * @param property Property to fetch.
+ *
+ * @param default_value Default value used if device property doesn't exist.
+ */
+#define DEVICE_DT_PROPERTY_OR(node_id, property, default_value)                     \
+	COND_CODE_1(                                                                    \
+		IS_ENABLED(_CONCAT(_CONCAT(_CONCAT(DEVICE_DT_, node_id), _PROPERTY_),       \
+			property)),                                                             \
+		(_CONCAT(_CONCAT(_CONCAT(DEVICE_, node_id), _PROPERTY_), property)),        \
+		(default_value))
+
+/**
+ * @def DEVICE_DT_INST_PROPERTY_OR
+ *
+ * @brief Get a device property using a compatible instance index with fallback to
+ * default value if the device property doesn't exist.
+ *
+ * @details See DEVICE_DT_PROPERTY() for details.
+ *
+ * @param inst Compatible instance index of the device
+ *
+ * @param property Property to fetch.
+ *
+ * @param or Default value used if device property doesn't exist.
+ */
+#define DEVICE_DT_INST_PROPERTY_OR(inst, property, default_value) \
+	DEVICE_DT_PROPERTY_OR(DT_DRV_INST(inst), property, default_value)
+
+/**
+ * @}
+ */
 
 #if CONFIG_HAS_DTS
 /*
