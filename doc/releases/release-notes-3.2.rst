@@ -188,6 +188,13 @@ Architectures
 
 * Xtensa
 
+  * Macros ``RSR`` and ``WSR`` have been renamed to :c:macro:`XTENSA_RSR`
+    and :c:macro:`XTENSA_WSR` to give them proper namespace.
+  * Fixed a rounding error in timing function when coverting from cycles
+    to nanoseconds.
+  * Fixed the calculation of average "cycles to nanoseconds" to actually
+    return nanoseconds instead of cycles.
+
 Bluetooth
 *********
 
