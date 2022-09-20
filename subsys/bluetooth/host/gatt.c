@@ -314,7 +314,7 @@ static struct gatt_sc_cfg *find_sc_cfg(uint8_t id, const bt_addr_le_t *addr)
 
 	for (size_t i = 0; i < ARRAY_SIZE(sc_cfg); i++) {
 		if (id == sc_cfg[i].id &&
-		    !bt_addr_le_cmp(&sc_cfg[i].peer, addr)) {
+		    bt_addr_le_eq(&sc_cfg[i].peer, addr)) {
 			return &sc_cfg[i];
 		}
 	}
@@ -555,7 +555,7 @@ static struct gatt_cf_cfg *find_cf_cfg(struct bt_conn *conn)
 		struct gatt_cf_cfg *cfg = &cf_cfg[i];
 
 		if (!conn) {
-			if (!bt_addr_le_cmp(&cfg->peer, BT_ADDR_LE_ANY)) {
+			if (bt_addr_le_eq(&cfg->peer, BT_ADDR_LE_ANY)) {
 				return cfg;
 			}
 		} else if (bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer)) {
@@ -1396,7 +1396,7 @@ static void db_changed(void)
 	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
 		struct gatt_cf_cfg *cfg = &cf_cfg[i];
 
-		if (!bt_addr_le_cmp(&cfg->peer, BT_ADDR_LE_ANY)) {
+		if (bt_addr_le_eq(&cfg->peer, BT_ADDR_LE_ANY)) {
 			continue;
 		}
 
@@ -1886,7 +1886,7 @@ static struct bt_gatt_ccc_cfg *find_ccc_cfg(const struct bt_conn *conn,
 						    &cfg->peer)) {
 				return cfg;
 			}
-		} else if (!bt_addr_le_cmp(&cfg->peer, BT_ADDR_LE_ANY)) {
+		} else if (bt_addr_le_eq(&cfg->peer, BT_ADDR_LE_ANY)) {
 			return cfg;
 		}
 	}
@@ -2471,7 +2471,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			struct gatt_sc_cfg *cfg = &sc_cfg[i];
 			struct bt_conn *conn;
 
-			if (!bt_addr_le_cmp(&cfg->peer, BT_ADDR_LE_ANY)) {
+			if (bt_addr_le_eq(&cfg->peer, BT_ADDR_LE_ANY)) {
 				continue;
 			}
 
@@ -3238,7 +3238,7 @@ static struct gatt_sub *gatt_sub_find(struct bt_conn *conn)
 		struct gatt_sub *sub = &subscriptions[i];
 
 		if (!conn) {
-			if (!bt_addr_le_cmp(&sub->peer, BT_ADDR_LE_ANY)) {
+			if (bt_addr_le_eq(&sub->peer, BT_ADDR_LE_ANY)) {
 				return sub;
 			}
 		} else if (bt_conn_is_peer_addr_le(conn, sub->id, &sub->peer)) {
@@ -3271,7 +3271,7 @@ static struct gatt_sub *gatt_sub_find_by_addr(uint8_t id,
 	for (int i = 0; i < ARRAY_SIZE(subscriptions); i++) {
 		struct gatt_sub *sub = &subscriptions[i];
 
-		if (id == sub->id && !bt_addr_le_cmp(&sub->peer, addr)) {
+		if (id == sub->id && bt_addr_le_eq(&sub->peer, addr)) {
 			return sub;
 		}
 	}
@@ -5256,7 +5256,7 @@ static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct _bt_gatt_ccc *ccc,
 {
 	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
 		if (id == ccc->cfg[i].id &&
-		    !bt_addr_le_cmp(&ccc->cfg[i].peer, addr)) {
+		    bt_addr_le_eq(&ccc->cfg[i].peer, addr)) {
 			return &ccc->cfg[i];
 		}
 	}
@@ -5607,7 +5607,7 @@ static struct gatt_cf_cfg *find_cf_cfg_by_addr(uint8_t id,
 
 		for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
 			if (id == cf_cfg[i].id &&
-			    !bt_addr_le_cmp(addr, &cf_cfg[i].peer)) {
+			    bt_addr_le_eq(addr, &cf_cfg[i].peer)) {
 				return &cf_cfg[i];
 			}
 		}
@@ -5996,7 +5996,7 @@ static struct gatt_sub *find_gatt_sub(uint8_t id, const bt_addr_le_t *addr)
 		struct gatt_sub *sub = &subscriptions[i];
 
 		if (id == sub->id &&
-		    !bt_addr_le_cmp(addr, &sub->peer)) {
+		    bt_addr_le_eq(addr, &sub->peer)) {
 			return sub;
 		}
 	}

@@ -1200,7 +1200,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 			bt_addr_le_copy(&per_addr, info->addr);
 		} else {
 			if ((per_sid == info->sid) &&
-			    !bt_addr_le_cmp(&per_addr, info->addr)) {
+			    bt_addr_le_eq(&per_addr, info->addr)) {
 				per_adv_evt_cnt_actual++;
 
 				printk("per_adv_evt_cnt_actual %u\n",

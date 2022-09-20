@@ -2180,7 +2180,7 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
 	}
 
 	/* Check against conn dst address as it may be the identity address */
-	if (!bt_addr_le_cmp(peer, &conn->le.dst)) {
+	if (bt_addr_le_eq(peer, &conn->le.dst)) {
 		return true;
 	}
 

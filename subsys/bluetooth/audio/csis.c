@@ -48,11 +48,11 @@ static bool is_last_client_to_write(const struct bt_csis *csis,
 				    const struct bt_conn *conn)
 {
 	if (conn != NULL) {
-		return !bt_addr_le_cmp(bt_conn_get_dst(conn),
-				       &csis->srv.lock_client_addr);
+		return bt_addr_le_eq(bt_conn_get_dst(conn),
+				     &csis->srv.lock_client_addr);
 	} else {
-		return !bt_addr_le_cmp(&server_dummy_addr,
-				       &csis->srv.lock_client_addr);
+		return bt_addr_le_eq(&server_dummy_addr,
+				     &csis->srv.lock_client_addr);
 	}
 }
 
