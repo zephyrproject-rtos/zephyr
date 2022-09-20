@@ -106,10 +106,8 @@ struct can_sja1000_data {
 	can_state_change_callback_t state_change_cb;
 	void *state_change_cb_data;
 	struct k_sem tx_idle;
-	struct k_sem tx_done;
 	can_tx_callback_t tx_callback;
 	void *tx_user_data;
-	int tx_status;
 	uint32_t sjw;
 	void *custom;
 };
