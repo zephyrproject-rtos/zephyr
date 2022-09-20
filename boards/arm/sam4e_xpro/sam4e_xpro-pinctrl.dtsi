@@ -69,7 +69,7 @@
 				 <PA24A_USART1_RTS>;
 			bias-pull-up;
 		};
-		group1 {
+		group2 {
 			pinmux = <PA22A_USART1_TXD>,
 				 <PA25A_USART1_CTS>;
 		};
