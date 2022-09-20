@@ -375,7 +375,7 @@ static void oob_data_request(struct bt_conn *conn,
 		}
 
 		if (oobd_local &&
-		    bt_addr_le_cmp(info.le.local, &oob_sc_local.addr)) {
+		    !bt_addr_le_eq(info.le.local, &oob_sc_local.addr)) {
 			bt_addr_le_to_str(info.le.local, addr, sizeof(addr));
 			LOG_DBG("No OOB data available for local %s",
 				addr);
@@ -725,7 +725,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 		 * Advertisement, but if not if send stored event and ignore
 		 * this one
 		 */
-		if (bt_addr_le_cmp(addr, &a)) {
+		if (!bt_addr_le_eq(addr, &a)) {
 			LOG_INF("Address does not match, skipping");
 			goto done;
 		}
