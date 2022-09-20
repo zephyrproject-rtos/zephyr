@@ -82,8 +82,7 @@ static void notify_client(struct bt_conn *conn, void *data)
 		pend_notify = &csis->srv.pend_notify[i];
 
 		if (pend_notify->pending &&
-		    bt_addr_le_cmp(bt_conn_get_dst(conn),
-				   &pend_notify->addr) == 0) {
+		    bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
 			pend_notify->pending = false;
 			break;
 		}
@@ -108,8 +107,7 @@ static void notify_clients(struct bt_csis *csis,
 
 		if (pend_notify->active) {
 			if (excluded_client != NULL &&
-			    bt_addr_le_cmp(bt_conn_get_dst(excluded_client),
-					   &pend_notify->addr) == 0) {
+			    bt_addr_le_eq(bt_conn_get_dst(excluded_client), &pend_notify->addr)) {
 				continue;
 			}
 
@@ -453,8 +451,7 @@ static void csis_security_changed(struct bt_conn *conn, bt_security_t level,
 			pend_notify = &csis->srv.pend_notify[j];
 
 			if (pend_notify->pending &&
-			    bt_addr_le_cmp(bt_conn_get_dst(conn),
-					   &pend_notify->addr) == 0) {
+			    bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
 				notify_lock_value(csis, conn);
 				pend_notify->pending = false;
 				break;
@@ -487,8 +484,7 @@ static void handle_csis_disconnect(struct bt_csis *csis, struct bt_conn *conn)
 
 		pend_notify = &csis->srv.pend_notify[i];
 
-		if (bt_addr_le_cmp(bt_conn_get_dst(conn),
-				   &pend_notify->addr) == 0) {
+		if (bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
 			(void)memset(pend_notify, 0, sizeof(*pend_notify));
 			break;
 		}
@@ -515,8 +511,7 @@ static void handle_csis_auth_complete(struct bt_csis *csis,
 		pend_notify = &csis->srv.pend_notify[i];
 
 		if (pend_notify->active &&
-		    bt_addr_le_cmp(bt_conn_get_dst(conn),
-				   &pend_notify->addr) == 0) {
+		    bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 			pend_notify->age = csis->srv.age_counter++;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
@@ -601,7 +596,7 @@ static void csis_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 			pend_notify = &csis->srv.pend_notify[j];
 
 			if (pend_notify->active &&
-			    bt_addr_le_cmp(peer, &pend_notify->addr) == 0) {
+			    bt_addr_le_eq(peer, &pend_notify->addr)) {
 				(void)memset(pend_notify, 0,
 					     sizeof(*pend_notify));
 				break;

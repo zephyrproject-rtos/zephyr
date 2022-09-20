@@ -32,7 +32,7 @@ static struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN];
 static bool is_discovered(const bt_addr_le_t *addr)
 {
 	for (int i = 0; i < members_found; i++) {
-		if (bt_addr_le_cmp(addr, &addr_found[i]) == 0) {
+		if (bt_addr_le_eq(addr, &addr_found[i])) {
 			return true;
 		}
 	}
@@ -65,8 +65,7 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 	}
 
 	for (uint8_t i = 0; i < members_found; i++) {
-		if (bt_addr_le_cmp(bt_conn_get_dst(conn),
-				   &addr_found[i]) == 0) {
+		if (bt_addr_le_eq(bt_conn_get_dst(conn), &addr_found[i])) {
 			set_members[i].conn = conn;
 			shell_print(ctx_shell, "Member[%u] connected", i);
 			return;

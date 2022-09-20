@@ -84,7 +84,7 @@ static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
 	bt_conn_get_info(conn, &info);
 
 	for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
-		if (bt_addr_le_cmp(info.le.dst, &cars[i].addr) == 0) {
+		if (bt_addr_le_eq(info.le.dst, &cars[i].addr)) {
 			cars[i].supported = supported;
 			break;
 		}
@@ -590,7 +590,7 @@ static void start_directed_advertising(const uint8_t *data, uint16_t len)
 #if defined(CONFIG_BT_PRIVACY)
 		/* check if peer supports Central Address Resolution */
 		for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
-			if (bt_addr_le_cmp(peer, &cars[i].addr) == 0) {
+			if (bt_addr_le_eq(peer, &cars[i].addr)) {
 				if (cars[i].supported) {
 					adv_param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
 				}
