@@ -917,6 +917,12 @@ static void l2cap_chan_tx_process(struct k_work *work)
 		if (sent < 0) {
 			if (sent == -EAGAIN) {
 				ch->tx_buf = buf;
+				/* If we don't reschedule, and the app doesn't nudge l2cap (e.g. by
+				 * sending another SDU), the channel will be stuck in limbo. To
+				 * prevent this, we attempt to re-schedule the work item for every
+				 * channel on every connection when an SDU has successfully been
+				 * sent.
+				 */
 			} else {
 				net_buf_unref(buf);
 			}
@@ -1847,6 +1853,17 @@ static void l2cap_chan_tx_resume(struct bt_l2cap_le_chan *ch)
 	k_work_submit(&ch->tx_work);
 }
 
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+static void resume_all_channels(struct bt_conn *conn, void *data)
+{
+	struct bt_l2cap_chan *chan;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
+	}
+}
+#endif
+
 static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	struct l2cap_tx_meta_data *data = user_data;
@@ -1881,7 +1898,15 @@ static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 		cb(conn, cb_user_data, 0);
 	}
 
+	/* Resume the current channel */
 	l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
+
+	if (IS_ENABLED(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)) {
+		/* Resume all other channels in case one might be stuck.
+		 * The current channel has already been given priority.
+		 */
+		bt_conn_foreach(BT_CONN_TYPE_LE, resume_all_channels, NULL);
+	}
 }
 
 static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data, int err)
