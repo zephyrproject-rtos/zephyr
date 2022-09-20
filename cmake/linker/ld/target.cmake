@@ -67,7 +67,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
     if("${SPARSE}" STREQUAL "y")
-      set(ld_command ${REAL_CC})
+      set(ld_command ${SPARSE_REAL_COMPILER})
     else()
       set(ld_command ${CMAKE_C_COMPILER})
     endif()
