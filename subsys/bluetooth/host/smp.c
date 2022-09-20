@@ -3944,7 +3944,7 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_INVALID_PARAMS;
 	}
 
-	if (bt_addr_le_cmp(&conn->le.dst, &req->addr) != 0) {
+	if (!bt_addr_le_eq(&conn->le.dst, &req->addr)) {
 		struct bt_keys *keys = bt_keys_find_addr(conn->id, &req->addr);
 
 		if (keys) {
