@@ -249,6 +249,7 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t, bool with_short_addr)
 
 static bool test_dgram_packet_sending(struct sockaddr_ll *pkt_sll, uint32_t security_level)
 {
+	/* tests should be run sequentially, so no need for context locking */
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	int fd;
 	struct sockaddr_ll socket_sll = {0};
@@ -351,6 +352,7 @@ out:
 
 static bool test_raw_packet_sending(void)
 {
+	/* tests should be run sequentially, so no need for context locking */
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	int fd;
 	struct sockaddr_ll socket_sll = {0};

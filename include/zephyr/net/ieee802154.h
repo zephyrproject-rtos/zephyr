@@ -62,7 +62,6 @@ struct ieee802154_context {
 	enum net_l2_flags flags;
 	uint16_t pan_id; /* in CPU byte order */
 	uint16_t channel;
-	struct k_sem ack_lock;
 	/* short address:
 	 *   0 == not associated,
 	 *   0xfffe == associated but no short address assigned
@@ -72,11 +71,9 @@ struct ieee802154_context {
 	uint8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH]; /* in little endian */
 	struct net_linkaddr_storage linkaddr; /* in big endian */
 #ifdef CONFIG_NET_L2_IEEE802154_MGMT
-	struct ieee802154_req_params *scan_ctx;
-	union {
-		struct k_sem res_lock;
-		struct k_sem req_lock;
-	};
+	struct ieee802154_req_params *scan_ctx; /* guarded by scan_ctx_lock */
+	struct k_sem scan_ctx_lock;
+
 	uint8_t coord_ext_addr[IEEE802154_MAX_ADDR_LENGTH]; /* in little endian */
 	uint16_t coord_short_addr; /* in CPU byte order */
 #endif
@@ -85,11 +82,16 @@ struct ieee802154_context {
 #endif
 	int16_t tx_power;
 	uint8_t sequence;
-	uint8_t ack_seq;
-	uint8_t ack_received	: 1;
-	uint8_t ack_requested	: 1;
-	uint8_t associated		: 1;
-	uint8_t _unused		: 5;
+
+	uint8_t ack_seq;	   /* guarded by ack_lock */
+	uint8_t ack_received : 1;  /* guarded by ack_lock */
+	uint8_t ack_requested : 1; /* guarded by ack_lock */
+	uint8_t _unused : 6;
+	struct k_sem ack_lock;
+
+	struct k_sem ctx_lock; /* guards all mutable context attributes unless
+				* otherwise mentioned on attribute level
+				*/
 };
 
 #define IEEE802154_L2_CTX_TYPE	struct ieee802154_context

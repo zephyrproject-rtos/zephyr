@@ -142,8 +142,9 @@ static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
  */
 static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_mhr *mhr)
 {
-	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_address_field_plain *dst_plain = &mhr->dst_addr->plain;
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	bool ret = false;
 
 	/*
 	 * Apply filtering requirements from chapter 6.7.2 of the IEEE
@@ -155,6 +156,8 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 		/* also, macImplicitBroadcast is not implemented */
 		return false;
 	}
+
+	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
 	/*
 	 * c. If a destination PAN ID is included in the frame, it shall match
@@ -175,7 +178,7 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 		if (!(dst_plain->addr.short_addr == IEEE802154_BROADCAST_ADDRESS ||
 		      dst_plain->addr.short_addr == sys_cpu_to_le16(ctx->short_addr))) {
 			LOG_DBG("Frame dst address (short) does not match!");
-			return false;
+			goto out;
 		}
 
 	} else if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_EXTENDED) {
@@ -188,11 +191,14 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 		if (memcmp(dst_plain->addr.ext_addr, ctx->ext_addr,
 				IEEE802154_EXT_ADDR_LENGTH) != 0) {
 			LOG_DBG("Frame dst address (ext) does not match!");
-			return false;
+			goto out;
 		}
 	}
+	ret = true;
 
-	return true;
+out:
+	k_sem_give(&ctx->ctx_lock);
+	return ret;
 }
 
 static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pkt)
@@ -279,10 +285,12 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		if (!context) {
 			return -EINVAL;
 		}
+
 		switch (net_context_get_type(context)) {
 		case SOCK_RAW:
 			send_raw = true;
 			break;
+
 #if defined(CONFIG_NET_SOCKETS_PACKET_DGRAM)
 		case SOCK_DGRAM: {
 			struct sockaddr_ll *dst_addr = (struct sockaddr_ll *)&context->remote;
@@ -380,9 +388,14 @@ static int ieee802154_enable(struct net_if *iface, bool state)
 
 	NET_DBG("iface %p %s", iface, state ? "up" : "down");
 
+	k_sem_take(&ctx->ctx_lock, K_FOREVER);
+
 	if (ctx->channel == IEEE802154_NO_CHANNEL) {
+		k_sem_give(&ctx->ctx_lock);
 		return -ENETDOWN;
 	}
+
+	k_sem_give(&ctx->ctx_lock);
 
 	if (state) {
 		return ieee802154_start(iface);
@@ -391,10 +404,13 @@ static int ieee802154_enable(struct net_if *iface, bool state)
 	return ieee802154_stop(iface);
 }
 
-enum net_l2_flags ieee802154_flags(struct net_if *iface)
+static enum net_l2_flags ieee802154_flags(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
+	/* No need for locking as these flags are set once
+	 * during L2 initialization and then never changed.
+	 */
 	return ctx->flags;
 }
 
@@ -408,6 +424,11 @@ void ieee802154_init(struct net_if *iface)
 
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
 
+	k_sem_init(&ctx->ctx_lock, 1, 1);
+
+	/* no need to lock the context here as it has
+	 * not been published yet.
+	 */
 	ctx->channel = IEEE802154_NO_CHANNEL;
 	ctx->flags = NET_L2_MULTICAST;
 
