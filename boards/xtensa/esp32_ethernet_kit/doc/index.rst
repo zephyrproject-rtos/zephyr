@@ -495,6 +495,12 @@ You can debug an application in the usual way. Here is an example for the :ref:`
    :board: esp32_ethernet_kit
    :goals: debug
 
+Board Init
+-----------------
+
+RESET_N (GPIO5) is automatically set high to enable the Ethernet PHY
+during board initialization (board_init.c)
+
 Related Documents
 -----------------
 
