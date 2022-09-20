@@ -1885,6 +1885,48 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 		}
 
 		break;
+
+	case IPPROTO_IP:
+		switch (optname) {
+		case IP_TOS:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_DSCP_ECN,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+		}
+
+		break;
+
+	case IPPROTO_IPV6:
+		switch (optname) {
+		case IPV6_TCLASS:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_DSCP_ECN,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+		}
+
+		break;
 	}
 
 	errno = ENOPROTOOPT;
@@ -2138,6 +2180,27 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		}
 		break;
 
+	case IPPROTO_IP:
+		switch (optname) {
+		case IP_TOS:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_DSCP_ECN,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+		}
+
+		break;
+
 	case IPPROTO_IPV6:
 		switch (optname) {
 		case IPV6_V6ONLY:
@@ -2145,7 +2208,24 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 * existing apps.
 			 */
 			return 0;
+
+		case IPV6_TCLASS:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_DSCP_ECN,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
 		}
+
 		break;
 	}
 
