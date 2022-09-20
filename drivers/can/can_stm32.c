@@ -56,11 +56,7 @@ static struct k_mutex filter_mutex;
 
 static void can_stm32_signal_tx_complete(const struct device *dev, struct can_stm32_mailbox *mb)
 {
-	if (mb->tx_callback) {
-		mb->tx_callback(dev, mb->error, mb->callback_arg);
-	} else  {
-		k_sem_give(&mb->tx_int_sem);
-	}
+	mb->tx_callback(dev, mb->error, mb->callback_arg);
 }
 
 static void can_stm32_rx_fifo_pop(CAN_FIFOMailBox_TypeDef *mbox, struct can_frame *frame)
@@ -561,9 +557,6 @@ static int can_stm32_init(const struct device *dev)
 	k_mutex_init(&filter_mutex);
 	k_mutex_init(&data->inst_mutex);
 	k_sem_init(&data->tx_int_sem, 0, 1);
-	k_sem_init(&data->mb0.tx_int_sem, 0, 1);
-	k_sem_init(&data->mb1.tx_int_sem, 0, 1);
-	k_sem_init(&data->mb2.tx_int_sem, 0, 1);
 
 	if (cfg->phy != NULL) {
 		if (!device_is_ready(cfg->phy)) {
@@ -741,6 +734,7 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 		    "standard" : "extended"
 		    , frame->rtr == CAN_DATAFRAME ? "no" : "yes");
 
+	__ASSERT_NO_MSG(callback != NULL);
 	__ASSERT(frame->dlc == 0U || frame->data != NULL, "Dataptr is null");
 
 	if (frame->dlc > CAN_MAX_DLC) {
@@ -784,7 +778,6 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 
 	mb->tx_callback = callback;
 	mb->callback_arg = user_data;
-	k_sem_reset(&mb->tx_int_sem);
 
 	/* mailbox identifier register setup */
 	mailbox->TIR &= CAN_TI0R_TXRQ;
@@ -808,11 +801,6 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 
 	mailbox->TIR |= CAN_TI0R_TXRQ;
 	k_mutex_unlock(&data->inst_mutex);
-
-	if (callback == NULL) {
-		k_sem_take(&mb->tx_int_sem, K_FOREVER);
-		return mb->error;
-	}
 
 	return 0;
 }
