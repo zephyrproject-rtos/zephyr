@@ -1874,12 +1874,17 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 			break;
 		}
+
+		break;
+
 	case IPPROTO_TCP:
 		switch (optname) {
 		case TCP_NODELAY:
 			ret = net_tcp_get_option(ctx, TCP_OPT_NODELAY, optval, optlen);
 			return ret;
 		}
+
+		break;
 	}
 
 	errno = ENOPROTOOPT;
