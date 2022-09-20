@@ -29,3 +29,6 @@ CONFIG_CLOCK_CONTROL=y
 
 # For Misc Register Map
 CONFIG_SYSCON=y
+
+# Reset Manager
+CONFIG_RESET=y
