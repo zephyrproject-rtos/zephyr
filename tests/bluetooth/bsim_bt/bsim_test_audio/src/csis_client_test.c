@@ -132,7 +132,7 @@ static bool csis_client_oap_cb(const struct bt_csis_client_set_info *set_info,
 static bool is_discovered(const bt_addr_le_t *addr)
 {
 	for (int i = 0; i < members_found; i++) {
-		if (bt_addr_le_cmp(addr, &addr_found[i]) == 0) {
+		if (bt_addr_le_eq(addr, &addr_found[i])) {
 			return true;
 		}
 	}

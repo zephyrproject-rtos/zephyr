@@ -991,7 +991,7 @@ static uint8_t convert_to_id_on_match(const struct bt_gatt_attr *attr,
 	 * same as the device's private address
 	 */
 	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
-		if (bt_addr_le_cmp(&ccc->cfg[i].peer, match->private_addr) == 0) {
+		if (bt_addr_le_eq(&ccc->cfg[i].peer, match->private_addr)) {
 			bt_addr_le_copy(&ccc->cfg[i].peer, match->id_addr);
 		}
 	}
