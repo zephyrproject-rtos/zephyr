@@ -170,7 +170,6 @@ struct can_mcan_data {
 	struct k_mutex inst_mutex;
 	struct k_sem tx_sem;
 	struct k_mutex tx_mtx;
-	struct k_sem tx_fin_sem[NUM_TX_BUF_ELEMENTS];
 	can_tx_callback_t tx_fin_cb[NUM_TX_BUF_ELEMENTS];
 	void *tx_fin_cb_arg[NUM_TX_BUF_ELEMENTS];
 	can_rx_callback_t rx_cb_std[NUM_STD_FILTER_DATA];
