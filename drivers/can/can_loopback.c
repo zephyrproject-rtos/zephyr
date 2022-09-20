@@ -22,7 +22,6 @@ struct can_loopback_frame {
 	struct can_frame frame;
 	can_tx_callback_t cb;
 	void *cb_arg;
-	struct k_sem *tx_compl;
 };
 
 struct can_loopback_filter {
@@ -82,12 +81,7 @@ static void tx_thread(void *arg1, void *arg2, void *arg3)
 		}
 
 		k_mutex_unlock(&data->mtx);
-
-		if (!frame.cb) {
-			k_sem_give(frame.tx_compl);
-		} else {
-			frame.cb(dev, 0, frame.cb_arg);
-		}
+		frame.cb(dev, 0, frame.cb_arg);
 	}
 }
 
@@ -99,8 +93,9 @@ static int can_loopback_send(const struct device *dev,
 	struct can_loopback_data *data = dev->data;
 	struct can_loopback_frame loopback_frame;
 	uint8_t max_dlc = CAN_MAX_DLC;
-	struct k_sem tx_sem;
 	int ret;
+
+	__ASSERT_NO_MSG(callback != NULL);
 
 	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s",
 		frame->dlc, dev->name, frame->id,
@@ -130,17 +125,8 @@ static int can_loopback_send(const struct device *dev,
 	loopback_frame.frame = *frame;
 	loopback_frame.cb = callback;
 	loopback_frame.cb_arg = user_data;
-	loopback_frame.tx_compl = &tx_sem;
-
-	if (!callback) {
-		k_sem_init(&tx_sem, 0, 1);
-	}
 
 	ret = k_msgq_put(&data->tx_msgq, &loopback_frame, timeout);
-
-	if (!callback) {
-		k_sem_take(&tx_sem, K_FOREVER);
-	}
 
 	return  ret ? -EAGAIN : 0;
 }
