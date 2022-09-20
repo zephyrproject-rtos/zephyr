@@ -337,7 +337,15 @@ Drivers and Sensors
 
 * I2C
 
+  * Terminology updated to latest i2c specification removing master/slave
+    terminology and replacing with controller/target terminology.
+  * Asynchronous APIs added for requesting i2c transactions without
+    waiting for the completion of them.
+  * Added NXP LPI2C driver asynchronous i2c implementation with sample
+    showing usage with a FRDM-K64F board.
   * STM32: support for second target address was added.
+  * Kconfig depends on improvements with device tree statuses
+  * Improved ITE I2C support with FIFO and command queue mode
 
 * I2S
 
