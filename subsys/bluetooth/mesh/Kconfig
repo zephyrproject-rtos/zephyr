@@ -349,7 +349,7 @@ config BT_MESH_ADV_BUF_COUNT
 	help
 	  Number of advertising buffers available for sending local messages.
 	  This should be chosen based on the number of local messages that the node
-	  can send at concurrently.
+	  can send simultaneously.
 
 choice BT_MESH_ADV
 	prompt "Advertiser mode"
