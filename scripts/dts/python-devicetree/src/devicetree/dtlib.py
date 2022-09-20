@@ -90,8 +90,14 @@ class Node:
         Node constructor. Not meant to be called directly by clients.
         """
         self.name = name
+        self.props: Dict[str, 'Property'] = collections.OrderedDict()
+        self.nodes: Dict[str, 'Node'] = collections.OrderedDict()
+        self.labels: List[str] = []
         self.parent = parent
         self.dt = dt
+
+        self._omit_if_no_ref = False
+        self._is_referenced = False
 
         if name.count("@") > 1:
             dt._parse_error("multiple '@' in node name")
@@ -100,12 +106,6 @@ class Node:
                 if char not in _nodename_chars:
                     dt._parse_error(f"{self.path}: bad character '{char}' "
                                     "in node name")
-
-        self.props: Dict[str, 'Property'] = collections.OrderedDict()
-        self.nodes: Dict[str, 'Node'] = collections.OrderedDict()
-        self.labels: List[str] = []
-        self._omit_if_no_ref = False
-        self._is_referenced = False
 
     @property
     def unit_addr(self) -> str:
