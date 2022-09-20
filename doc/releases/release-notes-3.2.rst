@@ -202,6 +202,7 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * Atmel SAML21, SAMR34, SAMR35.
   * renesas_smartbond da1469x SoC series
 
 * Removed support for these SoC series:
@@ -212,6 +213,8 @@ Boards & SoC Support
 
 * Added support for these ARM boards:
 
+  * Atmel atsaml21_xpro
+  * Atmel atsamr34_xpro
   * da1469x_dk_pro
 
 * Added support for these ARM64 boards:
@@ -223,6 +226,9 @@ Boards & SoC Support
 * Added support for these RISC-V boards:
 
 * Made these changes in other boards:
+
+  * sam_e70_xplained: Uses EEPROM devicetree bindings for Ethernet MAC
+  * sam_v71_xult: Uses EEPROM devicetree bindings for Ethernet MAC
 
 * Added support for these following shields:
 
@@ -279,8 +285,11 @@ Drivers and Sensors
 
 * Ethernet
 
+  * Atmel gmac: Add EEPROM devicetree bindings for MAC address.
+
 * Flash
 
+  * Atmel eefc: Fix support for Cortex-M4 variants.
   * Added flash driver for Renesas Smartbond platform
 
 * GPIO
@@ -298,6 +307,8 @@ Drivers and Sensors
 * IEEE 802.15.4
 
   * All IEEE 802.15.4 drivers have been converted to Devicetree-based drivers.
+  * Atmel AT86RF2xx: Add Power Table on devicetree.
+  * Atmel AT86RF2xx: Add support to RF212/212B Sub-Giga devices.
 
 * Interrupt Controller
 
@@ -452,6 +463,7 @@ HALs
 ****
 
 * Atmel
+  * sam: Fix incorrect CIDR values for revision b silicon of SAMV71 devices.
 
 * Espressif
 
