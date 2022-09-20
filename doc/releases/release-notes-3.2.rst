@@ -253,6 +253,7 @@ Boards & SoC Support
   * renesas_smartbond da1469x SoC series
   * GigaDevice GD32E50X
   * GigaDevice GD32F470
+  * NXP i.MX8MN, LPC55S36, LPC51U68
 
 * Removed support for these SoC series:
 
@@ -275,6 +276,7 @@ Boards & SoC Support
   * GigaDevice GD32F450V-START
   * GigaDevice GD32F450Z-EVAL
   * GigaDevice GD32F470I-EVAL
+  * NXP lpcxpresso51u68, RT1060 EVKB
 
 * Added support for these ARM64 boards:
 
@@ -321,6 +323,7 @@ Drivers and Sensors
   * The Zephyr network CAN bus driver, which provides raw L2 access to the CAN bus via a CAN
     controller driver, has been moved to :zephyr_file:`drivers/net/canbus.c` and can now be enabled
     using :kconfig:option:`CONFIG_NET_CANBUS`.
+  * Added CAN support for NXP LPC55S36.
 
 * Clock control
 
@@ -333,6 +336,7 @@ Drivers and Sensors
 
   * STM32: RTC : Now supports STM32U5 and STM32F1 series.
   * STM32: Timer : Now supports STM32L4 series.
+  * Added counter support using CTimer for NXP MIMXRT595.
 
 * Crypto
 
@@ -353,6 +357,7 @@ Drivers and Sensors
   * cAVS drivers renamed with the broader Intel ADSP naming
   * Kconfig depends on improvements with device tree statuses
   * Added driver for GigaDevice GD32 SoCs
+  * Added DMA support for NXP MIMXRT595
 
 * EEPROM
 
@@ -366,6 +371,7 @@ Drivers and Sensors
 * Ethernet
 
   * Atmel gmac: Add EEPROM devicetree bindings for MAC address.
+  * Performance improvements on the NXP MCUX Ethernet Driver.
 
 * Flash
 
@@ -373,6 +379,8 @@ Drivers and Sensors
   * Added flash driver for Renesas Smartbond platform
   * STM32: Added OSPI NOR-flash driver. Supports STM32H7 and STM32U5. Supports DMA.
   * Added driver for GigaDevice GD32 SoCs
+  * Added Flash support for NXP LPCXpresso55S36.
+  * Added Flash support for NXP MIMXRT595 EVK.
 
 * GPIO
 
@@ -393,6 +401,8 @@ Drivers and Sensors
   * Improved ITE I2C support with FIFO and command queue mode
   * Improve gd32 driver stability (remove repeated START, use STOP + START conditions instead)
   * Fixed gd32 driver incorrect Fast-mode config
+  * Add bus recovery support to the NXP MCUX LPI2C driver.
+  * Enable I2C support on NXP MIMXRT595 EVK.
 
 * I2S
 
@@ -414,6 +424,9 @@ Drivers and Sensors
   * Kconfig is split into smaller, vendor oriented files.
   * Support for Intel S1000 in cAVS IDC driver has been removed as the board
     ``intel_s1000_crb`` has been removed.
+
+* KSCAN
+  * Enable the touch panel on the NXP MIMXRT1170 EVK.
 
 * LED
 
@@ -454,8 +467,12 @@ Drivers and Sensors
 * PWM
 
   * Added PWM driver for Renesas R-Car platform
+  * Added PWM support for NXP LPC55S36
 
 * Power Domain
+
+  * Enabled access to the PMIC on NXP MXRT595 EVK.
+  * Added soft off mode to the RT10xx Power Management.
 
 * Reset
 
@@ -502,12 +519,16 @@ Drivers and Sensors
 * SPI
 
   * Add interrupt-driven mode support for gd32 driver
+  * Enable SPI support on NXP MIMXRT595 EVK.
 
 * Timer
 
   * STM32 LPTIM based timer should now be configured using device tree.
 
 * USB
+
+  * Restructured the NXP MCUX USB driver.
+  * Added USB support for NXP MXRT595.
 
 * W1
 
@@ -521,6 +542,7 @@ Drivers and Sensors
 * Watchdog
 
   * Added support for Raspberry Pi Pico watchdog.
+  * Added watchdog support on NXP MIMXRT595 EVK.
 
 * WiFi
 
@@ -769,6 +791,11 @@ HALs
   * gd32f4xx: upgraded to v3.0.0
 
 * NXP
+
+  * Updated the NXP MCUX SDK to version 2.12
+  * Updated the USB middleware to version 2.12
+  * Removed all binary Blobs for power management libraries
+  * Removed all binary archive files
 
 * Nordic
 
