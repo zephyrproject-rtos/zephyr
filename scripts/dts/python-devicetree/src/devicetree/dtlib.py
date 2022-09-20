@@ -305,7 +305,7 @@ class Property:
         self._markers: List[List] = []
 
     @property
-    def type(self) -> int:
+    def type(self) -> Type:
         """
         See the class docstring.
         """
