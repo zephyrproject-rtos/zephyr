@@ -234,10 +234,14 @@ Boards & SoC Support
 
   * Atmel SAML21, SAMR34, SAMR35.
   * renesas_smartbond da1469x SoC series
+  * GigaDevice GD32E50X
+  * GigaDevice GD32F470
 
 * Removed support for these SoC series:
 
 * Made these changes in other SoC series:
+
+  * gigadevice: Enable SEGGER RTT
 
 * Changes for ARC boards:
 
@@ -248,6 +252,12 @@ Boards & SoC Support
   * da1469x_dk_pro
   * ST STM32F7508-DK Discovery Kit
   * WeAct Studio Black Pill V3.0
+  * GigaDevice GD32E507Z-EVAL
+  * GigaDevice GD32E507V-START
+  * GigaDevice GD32F407V-START
+  * GigaDevice GD32F450V-START
+  * GigaDevice GD32F450Z-EVAL
+  * GigaDevice GD32F470I-EVAL
 
 * Added support for these ARM64 boards:
 
@@ -275,6 +285,7 @@ Drivers and Sensors
 * ADC
 
   * STM32: Now supports Vbat monitoring channel and STM32U5 series.
+  * Added driver for GigaDevice GD32 SoCs
 
 * Audio
 
@@ -298,8 +309,7 @@ Drivers and Sensors
 * Clock control
 
   * STM32: PLL_P, PLL_Q, PLL_R outputs can now be used as domain clock.
-
-* Clock Control
+  * Added driver for GigaDevice GD32 SoCs (peripheral clocks configuration only)
 
 * Coredump
 
@@ -326,6 +336,7 @@ Drivers and Sensors
   * STM32: Now supports stm32u5 series.
   * cAVS drivers renamed with the broader Intel ADSP naming
   * Kconfig depends on improvements with device tree statuses
+  * Added driver for GigaDevice GD32 SoCs
 
 * EEPROM
 
@@ -345,6 +356,7 @@ Drivers and Sensors
   * Atmel eefc: Fix support for Cortex-M4 variants.
   * Added flash driver for Renesas Smartbond platform
   * STM32: Added OSPI NOR-flash driver. Supports STM32H7 and STM32U5. Supports DMA.
+  * Added driver for GigaDevice GD32 SoCs
 
 * GPIO
 
@@ -363,6 +375,8 @@ Drivers and Sensors
   * STM32: support for second target address was added.
   * Kconfig depends on improvements with device tree statuses
   * Improved ITE I2C support with FIFO and command queue mode
+  * Improve gd32 driver stability (remove repeated START, use STOP + START conditions instead)
+  * Fixed gd32 driver incorrect Fast-mode config
 
 * I2S
 
@@ -425,6 +439,8 @@ Drivers and Sensors
 
 * Reset
 
+  * Added driver for GigaDevice GD32 SoCs
+
 * SDHC
 
   * Added SDHC driver for NXP LPCXpresso platform
@@ -464,6 +480,8 @@ Drivers and Sensors
     control API to enable UART clock.
 
 * SPI
+
+  * Add interrupt-driven mode support for gd32 driver
 
 * Timer
 
@@ -606,6 +624,10 @@ HALs
 * Espressif
 
 * GigaDevice
+
+  * Added support for gd32e50x
+  * gd32e10x: upgraded to v1.3.0
+  * gd32f4xx: upgraded to v3.0.0
 
 * NXP
 
