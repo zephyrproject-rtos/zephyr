@@ -894,6 +894,10 @@ int net_context_create_ipv4_new(struct net_context *context,
 	}
 
 	net_pkt_set_ipv4_ttl(pkt, net_context_get_ipv4_ttl(context));
+#if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
+	net_pkt_set_ip_dscp(pkt, net_ipv4_get_dscp(context->options.dscp_ecn));
+	net_pkt_set_ip_ecn(pkt, net_ipv4_get_ecn(context->options.dscp_ecn));
+#endif
 
 	return net_ipv4_create(pkt, src, dst);
 }
@@ -920,6 +924,10 @@ int net_context_create_ipv6_new(struct net_context *context,
 
 	net_pkt_set_ipv6_hop_limit(pkt,
 				   net_context_get_ipv6_hop_limit(context));
+#if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
+	net_pkt_set_ip_dscp(pkt, net_ipv6_get_dscp(context->options.dscp_ecn));
+	net_pkt_set_ip_ecn(pkt, net_ipv6_get_ecn(context->options.dscp_ecn));
+#endif
 
 	return net_ipv6_create(pkt, src, dst);
 }
@@ -1259,6 +1267,22 @@ static int get_context_sndbuf(struct net_context *context,
 	if (len) {
 		*len = sizeof(int);
 	}
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_dscp_ecn(struct net_context *context,
+				void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
+	*((int *)value) = context->options.dscp_ecn;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
 	return 0;
 #else
 	return -ENOTSUP;
@@ -2286,6 +2310,28 @@ static int set_context_sndbuf(struct net_context *context,
 #endif
 }
 
+static int set_context_dscp_ecn(struct net_context *context,
+				const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
+	int dscp_ecn = *((int *)value);
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if ((dscp_ecn < 0) || (dscp_ecn > UINT8_MAX)) {
+		return -EINVAL;
+	}
+
+	context->options.dscp_ecn = (uint8_t)dscp_ecn;
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -2321,6 +2367,9 @@ int net_context_set_option(struct net_context *context,
 		break;
 	case NET_OPT_SNDBUF:
 		ret = set_context_sndbuf(context, value, len);
+		break;
+	case NET_OPT_DSCP_ECN:
+		ret = set_context_dscp_ecn(context, value, len);
 		break;
 	}
 
@@ -2364,6 +2413,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_SNDBUF:
 		ret = get_context_sndbuf(context, value, len);
+		break;
+	case NET_OPT_DSCP_ECN:
+		ret = get_context_dscp_ecn(context, value, len);
 		break;
 	}
 
