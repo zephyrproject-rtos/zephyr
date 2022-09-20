@@ -11,6 +11,7 @@
 #define DT_DRV_COMPAT st_lsm6dso
 
 #include <zephyr/drivers/sensor.h>
+#include <drivers/sensor/lsm6dso.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -268,6 +269,162 @@ static int lsm6dso_gyro_config(const struct device *dev,
 	return 0;
 }
 
+static int lsm6dso_activity_inactivity_config(const struct device *dev,
+			       enum sensor_channel chan,
+			       enum sensor_attribute attr,
+			       const struct sensor_value *val)
+{
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lsm6dso_tap_cfg2_t reg;
+	int32_t ret;
+
+	switch (attr) {
+	case SENSOR_ATTR_ACTIVITY_INACTIVITY_WAKE_THS:
+
+		if (lsm6dso_wkup_threshold_set(ctx, val->val1) < 0) {
+			LOG_ERR("Failed to set WKUP THS");
+			return -EIO;
+		}
+		break;
+
+	case SENSOR_ATTR_ACTIVITY_INACTIVITY_WAKE_DUR:
+
+		if (lsm6dso_wkup_dur_set(ctx, val->val1) < 0) {
+			LOG_ERR("Failed to set WKUP DUR");
+			return -EIO;
+		}
+		break;
+
+	case SENSOR_ATTR_ACTIVITY_INACTIVITY_SLEEP_DUR:
+
+		if (lsm6dso_act_sleep_dur_set(ctx, val->val1) < 0) {
+			LOG_ERR("Failed to set SLEEP DUR");
+			return -EIO;
+		}
+		break;
+
+	case SENSOR_ATTR_ACTIVITY_INACTIVITY_SLEEP_FUNC:
+
+		/* Enable and set the GYRO activity/inactivity (sleep) function. */
+		if (lsm6dso_act_mode_set(ctx, (lsm6dso_inact_en_t)val->val1) < 0) {
+			LOG_ERR("Failed to set INACT_EN bits");
+			return -EIO;
+		}
+
+		break;
+
+	case SENSOR_ATTR_ACTIVITY_INACTIVITY_ENABLE_BASIC_INT:
+
+		/* Enable basic interrupts (6D/4D, free-fall, wake-up, tap, inactivity). */
+		ret = lsm6dso_read_reg(ctx, LSM6DSO_TAP_CFG2, (uint8_t *)&reg, 1);
+		if (ret == 0) {
+			reg.interrupts_enable = val->val1;
+			ret = lsm6dso_write_reg(ctx, LSM6DSO_TAP_CFG2, (uint8_t*)&reg, 1);
+			if (ret < 0) {
+				LOG_ERR("Failed to set INTERRTUPT EN BIT");
+				return -EIO;
+			}
+		} else {
+			LOG_ERR("Failed to get INTERRTUPT EN BIT");
+			return -EIO;
+		}
+
+		break;
+
+	default:
+		LOG_ERR("Activity/Inactivity attribute not supported.");
+		return -ENOTSUP;
+
+	}
+
+	return 0;
+}
+
+static int lsm6dso_tilt_config(const struct device *dev,
+			       enum sensor_channel chan,
+			       enum sensor_attribute attr,
+			       const struct sensor_value *val)
+{
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lsm6dso_pin_int1_route_t pin_int1_route;
+	lsm6dso_pin_int2_route_t pin_int2_route;
+	lsm6dso_emb_sens_t emb_sens;
+
+
+	if (lsm6dso_embedded_sens_get(ctx, &emb_sens) < 0) {
+		LOG_ERR("Failed to get embedded sens");
+		return -EIO;
+	}
+
+	emb_sens.tilt = PROPERTY_ENABLE;
+
+	/* Set TILT ENABLE */
+	if (lsm6dso_embedded_sens_set(ctx, &emb_sens) < 0) {
+		LOG_ERR("Failed to set TILT EN");
+		return -EIO;
+	}
+
+	switch (attr) {
+	case SENSOR_ATTR_TILT_ON_INT_1:
+
+		if (lsm6dso_pin_int1_route_get(ctx, &pin_int1_route) < 0) {
+			LOG_ERR("Failed to get the INT route");
+			return -EIO;
+		}
+
+		pin_int1_route.tilt = (val->val1) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+
+		if (lsm6dso_pin_int1_route_set(ctx, pin_int1_route) < 0) {
+			LOG_ERR("Failed to set the INT route");
+			return -EIO;
+		}
+		break;
+
+	case SENSOR_ATTR_ONLY_TILT_ON_INT_1:
+
+		if (lsm6dso_pin_int1_route_get(ctx, &pin_int1_route) < 0) {
+			LOG_ERR("Failed to get the INT route");
+			return -EIO;
+		}
+
+		pin_int1_route.tilt = (val->val1) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+
+		if (lsm6dso_pin_int1_route_set(ctx, pin_int1_route) < 0) {
+			LOG_ERR("Failed to set the INT route");
+			return -EIO;
+		}
+
+		if (lsm6dso_all_on_int1_set(ctx, 0) < 0) {
+			LOG_ERR("Failed to reset all on int1");
+			return -EIO;
+		}
+		break;
+
+	case SENSOR_ATTR_TILT_ON_INT_2:
+
+		if (lsm6dso_pin_int2_route_get(ctx, NULL, &pin_int2_route) < 0) {
+			LOG_ERR("Failed to get the INT route");
+			return -EIO;
+		}
+
+		pin_int2_route.tilt = (val->val1) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+
+		if (lsm6dso_pin_int2_route_set(ctx, NULL, pin_int2_route) < 0) {
+			LOG_ERR("Failed to set the INT route");
+			return -EIO;
+		}
+		break;
+
+	default:
+		LOG_WRN("Tilt attribute not supported.");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int lsm6dso_attr_set(const struct device *dev,
 			    enum sensor_channel chan,
 			    enum sensor_attribute attr,
@@ -293,6 +450,10 @@ static int lsm6dso_attr_set(const struct device *dev,
 
 		return lsm6dso_shub_config(dev, chan, attr, val);
 #endif /* CONFIG_LSM6DSO_SENSORHUB */
+	case SENSOR_CHAN_TILT:
+		return lsm6dso_tilt_config(dev, chan, attr, val);
+	case SENSOR_CHAN_ACTIVITY_INACTIVITY:
+		return lsm6dso_activity_inactivity_config(dev, chan, attr, val);
 	default:
 		LOG_WRN("attr_set() not supported on this channel.");
 		return -ENOTSUP;
