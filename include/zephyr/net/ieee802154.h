@@ -42,6 +42,8 @@ extern "C" {
 
 /* See IEEE 802.15.4-2006, section 7.2.1.4 */
 #define IEEE802154_BROADCAST_ADDRESS 0xFFFF
+#define IEEE802154_NO_SHORT_ADDRESS_ASSIGNED 0xFFFE
+#define IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED 0x0000
 #define IEEE802154_BROADCAST_PAN_ID  0xFFFF
 
 struct ieee802154_security_ctx {
@@ -61,19 +63,22 @@ struct ieee802154_context {
 	uint16_t pan_id; /* in CPU byte order */
 	uint16_t channel;
 	struct k_sem ack_lock;
+	/* short address:
+	 *   0 == not associated,
+	 *   0xfffe == associated but no short address assigned
+	 * see section 7.4.2
+	 */
 	uint16_t short_addr; /* in CPU byte order */
 	uint8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH]; /* in little endian */
+	struct net_linkaddr_storage linkaddr; /* in big endian */
 #ifdef CONFIG_NET_L2_IEEE802154_MGMT
 	struct ieee802154_req_params *scan_ctx;
 	union {
 		struct k_sem res_lock;
 		struct k_sem req_lock;
 	};
-	union {
-		uint8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH]; /* in little endian */
-		uint16_t short_addr; /* in CPU byte order */
-	} coord;
-	uint8_t coord_addr_len;
+	uint8_t coord_ext_addr[IEEE802154_MAX_ADDR_LENGTH]; /* in little endian */
+	uint16_t coord_short_addr; /* in CPU byte order */
 #endif
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	struct ieee802154_security_ctx sec_ctx;
