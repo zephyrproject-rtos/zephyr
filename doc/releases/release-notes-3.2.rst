@@ -266,6 +266,9 @@ Drivers and Sensors
 
 * Disk
 
+  * Added support for DMA transfers when using STM32 SD host controller
+  * Added support for SD host controller present on STM32L5X family
+
 * DMA
 
 * EEPROM
