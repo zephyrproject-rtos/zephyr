@@ -32,4 +32,11 @@
 		};
 	};
 
+	mdio_default: mdio_default {
+		group1 {
+			pinmux = <SMI_MDC_GPIO23>,
+				 <SMI_MDIO_GPIO18>;
+		};
+	};
+
 };
