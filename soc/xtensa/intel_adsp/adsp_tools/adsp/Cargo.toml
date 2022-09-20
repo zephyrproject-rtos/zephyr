@@ -1,0 +1,13 @@
+[package]
+name = "adsp"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log  = "0.4"
+env_logger = "0.9.0"
+memmap2 = "0.5"
+regex = "1.6"
+adsp_regmap = { version = "0.1", path = "../adsp_regmap" }

@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+  "adsp_loader",
+  "adsp_logger",
+  "adsp",
+  "adsp_regmap",
+]

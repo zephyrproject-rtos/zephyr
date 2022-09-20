@@ -1,0 +1,82 @@
+---
+block/DSP:
+  description: DSP Control Registers
+  items:
+    - name: ADSPCS
+      description: ADSPCS
+      byte_offset: 0x0004
+      fieldset: ADSPCS
+    - name: HIPCTDR
+      description: Host IPC 
+      byte_offset: 0x00C0
+      fieldset: HIPCTDR
+    - name: HIPCTDA
+      description: Host IPC
+      byte_offset: 0x00C4
+      fieldset: HIPCTDA
+    - name: HIPCTDD
+      description: Host IPC
+      byte_offset: 0x00C8
+    - name: HIPCIDR
+      description: Host IPC
+      byte_offset: 0x00D0
+      fieldset: HIPCIDR
+    - name: HIPCIDA
+      description: Host IPC
+      byte_offset: 0x00D4
+      fieldset: HIPCIDA
+    - name: HIPCIDD
+      description: Host IPC
+      byte_offset: 0x00D8
+fieldset/ADSPCS:
+  description: ADSPCS
+  fields:
+    - name: CRST
+      bit_offset: 0
+      bit_size: 8
+    - name: CSTALL
+      bit_offset: 8
+      bit_size: 8
+    - name: SPA
+      bit_offset: 16
+      bit_size: 8
+    - name: CPA
+      bit_offset: 24
+      bit_size: 8
+fieldset/HIPCTDR:
+  description: HIPCTDR
+  fields:
+    - name: MSG
+      bit_offset: 0
+      bit_size: 31
+    - name: BUSY
+      bit_offset: 31
+      bit_size: 1
+fieldset/HIPCTDA:
+  description: HIPCTDA
+  fields:
+    - name: MSG
+      bit_offset: 0
+      bit_size: 31
+    - name: DONE
+      bit_offset: 31
+      bit_size: 1
+fieldset/HIPCIDR:
+  description: HIPCIDR
+  fields:
+    - name: MSG
+      bit_offset: 0
+      bit_size: 31
+    - name: BUSY
+      bit_offset: 31
+      bit_size: 1
+fieldset/HIPCIDA:
+  description: HIPCIDA
+  fields:
+    - name: MSG
+      bit_offset: 0
+      bit_size: 31
+    - name: DONE
+      bit_offset: 31
+      bit_size: 1
+    

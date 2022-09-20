@@ -1,0 +1,229 @@
+---
+block/HDA:
+  description: HDA Audio
+  items:
+    - name: GCAP
+      description: Global Capabilities
+      byte_offset: 0
+      fieldset: GCAP
+      access: Read
+    - name: VMIN
+      description: Minor Version
+      byte_offset: 2
+    - name: VMAJ
+      description: Major Version
+      byte_offset: 2
+    - name: GCTL
+      description: Global Control
+      byte_offset: 8
+      fieldset: GCTL
+    - name: SDCTL
+      description: Stream Control
+      byte_offset: 0x80
+      fieldset: SDCTL
+      bit_size: 24
+      array:
+        len: 16
+        stride: 0x20
+    - name: SDSTS
+      description: Stream Status
+      byte_offset: 0x83
+      bit_size: 8
+      fieldset: SDSTS
+      array:
+        len: 16
+        stride: 0x20
+    - name: SDLPIB
+      description: Link Position in Buffer
+      byte_offset: 0x84
+      access: Read
+      array:
+        len: 16
+        stride: 0x20
+    - name: SDCBL
+      description: Stream Cyclic Buffer Length
+      byte_offset: 0x88
+      array:
+        len: 16
+        stride: 0x20
+    - name: SDLVI
+      description: Stream Last Valid Index
+      byte_offset: 0x8C
+      bit_size: 8
+      array:
+        len: 16
+        stride: 0x20
+    - name: SDFIFOS
+      description: Stream FIFO Size
+      byte_offset: 0x90
+      bit_size: 16
+      access: Read
+      array:
+        len: 16
+        stride: 0x20
+    - name: SDFMT
+      description: Stream Format
+      byte_offset: 0x92
+      bit_size: 16
+      array:
+        len: 16
+        stride: 0x20
+    - name: SDBDPL
+      description: Stream Buffer Descriptor List Lower Address
+      byte_offset: 0x98
+      array:
+        len: 16
+        stride: 0x20
+    - name: SDBDPU
+      description: Stream Buffer Descriptor List Uppder Address
+      byte_offset: 0x9C
+      array:
+        len: 16
+        stride: 0x20
+    - name: SPBFCTL
+      description: Software Position Base FIFO Control
+      byte_offset: 0x704
+      fieldset: SPBFCTL
+    - name: SPIB
+      description: Software Position in Buffer
+      byte_offset: 0x708
+      array:
+        len: 16
+        stride: 0x08
+    - name: PPCH
+      description: Processing Pipe Capabilities
+      byte_offset: 0x800
+    - name: PPCTL
+      description: Processing Pipe Control
+      byte_offset: 0x804
+      fieldset: PPCTL
+    - name: PPSTS
+      description: Processing Pipe Status
+      byte_offset: 0x808
+      fieldset: PPSTS
+fieldset/GCAP:
+  description: Global Capabilities
+  fields:
+    - name: W640K
+      description: 64 bit address supported
+      bit_offset: 0
+      bit_size: 1
+    - name: NSDO
+      description: Number of serial data out signals
+      bit_offset: 1
+      bit_size: 2
+    - name: BSS
+      description: Number of Bidirectional Streams Supported
+      bit_offset: 3
+      bit_size: 5
+    - name: ISS
+      description: Number of Input Streams Supported
+      bit_offset: 8
+      bit_size: 4
+    - name: OSS
+      description: Number of Output Streams Supported
+      bit_offset: 12
+      bit_size: 4
+fieldset/GCTL:
+  description: Global Control
+  fields:
+    - name: CRST
+      description: Controller Reset
+      bit_offset: 0
+      bit_size: 1
+    - name: FCNTRL
+      description: Flush Control
+      bit_offset: 1
+      bit_size: 1
+    - name: UNSOL
+      description: Unsolicited Response Enable
+      bit_offset: 8
+      bit_size: 1
+fieldset/SDCTL:
+  description: Stream Control
+  fields:
+    - name: SRST
+      descripton: Stream Reset
+      bit_offset: 0
+      bit_size: 1
+    - name: RUN
+      description: Stream Run
+      bit_offset: 1
+      bit_size: 1
+    - name: IOCE
+      description: Interrupt On Completion Enable
+      bit_offset: 2
+      bit_size: 1
+    - name: FEIE
+      description: FIFO ERror Interrupt Enable
+      bit_offset: 3
+      bit_size: 1
+    - name: DEIE
+      description: Descriptor Error Interrupt Enable
+      bit_offset: 4
+      bit_size: 1
+    - name: STRIPE
+      description: Stripe Control
+      bit_offset: 16
+      bit_size: 2
+    - name: TP
+      description: Traffic Priority
+      bit_offset: 18
+      bit_size: 1
+    - name: DIR
+      description: Bidrectional Direction Control
+      bit_offset: 19
+      bit_size: 1
+    - name: STRM
+      description: Stream Number
+      bit_offset: 20
+      bit_size: 4
+fieldset/SDSTS:
+  description: Stream Status
+  fields:
+    - name: BCIS
+      description: Buffer Completion Interrupt Status
+      bit_offset: 2
+      bit_size: 1
+    - name: FIFOE
+      description: FIFO Error
+      bit_offset: 3
+      bit_size: 1
+    - name: DESE
+      description: Description Error
+      bit_offset: 4
+      bit_size: 1
+    - name: FIFORDY
+      description: FIFO Ready
+      bit_offset: 5
+      bit_size: 1 
+fieldset/PPCTL:
+  description: Processing Pipe Control
+  fields:
+    - name: GPROCEN
+      description: ADSP Enabled
+      bit_offset: 30
+      bit_size: 1
+    - name: PROCEN
+      description: Route Stream to ADSP
+      bit_offset: 0
+      bit_size: 1
+      array:
+        len: 16
+        stride: 1
+fieldset/PPSTS:
+  description: Processing Pipe Status
+  fields:
+    - name: PIS
+      description: Processing Interrupt Status
+      bit_offset: 31
+      bit_size: 1
+fieldset/SPBFCTL:
+  description: Software Position Based FIFO Control
+  fields:
+    - name: SPIBE
+      bit_offset: 0
+      bit_size: 1
+      array:
+        len: 16
+        stride: 1

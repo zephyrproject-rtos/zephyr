@@ -1,0 +1,8 @@
+[target.x86_64-unknown-linux-gnu]
+runner = "./.cargo/remote_runner.sh"
+
+[profile.release]
+strip = true
+lto = true
+opt-level = "z"
+

@@ -1,0 +1,12 @@
+[package]
+name = "adsp_regmap"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+chiptool = { git = "https://github.com/embassy-rs/chiptool" }
+serde_yaml = "0.8"
+proc-macro2 = "1.0"
+regex = "1.5"
