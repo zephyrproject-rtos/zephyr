@@ -2258,12 +2258,19 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 				    struct net_buf *buf, uint16_t credits)
 {
 	struct bt_l2cap_le_credits *ev;
+	uint16_t old_credits;
 
 	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
 
 	/* Cap the number of credits given */
 	if (credits > chan->rx.init_credits) {
 		credits = chan->rx.init_credits;
+	}
+
+	/* Don't send back more than the initial amount. */
+	old_credits = atomic_get(&chan->rx.credits);
+	if (credits + old_credits > chan->rx.init_credits) {
+		credits = chan->rx.init_credits - old_credits;
 	}
 
 	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_LE_CREDITS, get_ident(),
@@ -2297,6 +2304,8 @@ static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan,
 	/* Restore enough credits to complete the sdu */
 	credits = ((chan->_sdu_len - net_buf_frags_len(buf)) +
 		   (chan->rx.mps - 1)) / chan->rx.mps;
+
+	BT_DBG("cred %d old %d", credits, (int)old_credits);
 
 	if (credits < old_credits) {
 		return;
