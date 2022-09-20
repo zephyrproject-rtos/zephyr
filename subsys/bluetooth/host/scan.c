@@ -892,7 +892,7 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 	    (!atomic_test_bit(pending_per_adv_sync->flags,
 			      BT_PER_ADV_SYNC_SYNCING_USE_LIST) &&
 	     ((pending_per_adv_sync->sid != evt->sid) ||
-	      bt_addr_le_cmp(&pending_per_adv_sync->addr, &evt->adv_addr)))) {
+	      !bt_addr_le_eq(&pending_per_adv_sync->addr, &evt->adv_addr)))) {
 		BT_ERR("Unexpected per adv sync established event");
 		/* Request terminate of pending periodic advertising in controller */
 		per_adv_sync_terminate(sys_le16_to_cpu(evt->handle));

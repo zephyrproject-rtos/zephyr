@@ -1065,7 +1065,7 @@ static int id_find(const bt_addr_le_t *addr)
 
 static int id_create(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 {
-	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+	if (addr && !bt_addr_le_eq(addr, BT_ADDR_LE_ANY)) {
 		bt_addr_le_copy(&bt_dev.id_addr[id], addr);
 	} else {
 		bt_addr_le_t new_addr;
@@ -1123,7 +1123,7 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 {
 	int new_id, err;
 
-	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+	if (addr && !bt_addr_le_eq(addr, BT_ADDR_LE_ANY)) {
 		if (addr->type != BT_ADDR_LE_RANDOM ||
 		    !BT_ADDR_IS_STATIC(&addr->a)) {
 			BT_ERR("Only static random identity address supported");
@@ -1147,7 +1147,7 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
 		uint8_t zero_irk[16] = { 0 };
 
-		if (!(addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY))) {
+		if (!(addr && !bt_addr_le_eq(addr, BT_ADDR_LE_ANY))) {
 			return -EINVAL;
 		}
 
@@ -1170,7 +1170,7 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 {
 	int err;
 
-	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+	if (addr && !bt_addr_le_eq(addr, BT_ADDR_LE_ANY)) {
 		if (addr->type != BT_ADDR_LE_RANDOM ||
 		    !BT_ADDR_IS_STATIC(&addr->a)) {
 			BT_ERR("Only static random identity address supported");
@@ -1203,7 +1203,7 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CONN) &&
-	    bt_addr_le_cmp(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
+	    !bt_addr_le_eq(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
 		err = bt_unpair(id, NULL);
 		if (err) {
 			return err;

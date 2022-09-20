@@ -580,7 +580,7 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-		if (bt_addr_le_cmp(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
+		if (!bt_addr_le_eq(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
 			BT_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
@@ -653,7 +653,7 @@ static int bt_le_create_conn_legacy(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-		if (bt_addr_le_cmp(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
+		if (!bt_addr_le_eq(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
 			BT_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
