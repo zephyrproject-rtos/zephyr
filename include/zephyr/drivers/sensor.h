@@ -21,6 +21,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/rtio/rtio.h>
 #include <errno.h>
 
 #ifdef __cplusplus
@@ -318,6 +319,10 @@ enum sensor_attribute {
 	 *  to the new sampling frequency.
 	 */
 	SENSOR_ATTR_FF_DUR,
+	/** FIFO watermark attribute */
+	SENSOR_ATTR_FIFO_WATERMARK,
+	/** FIFO enable/disable fifo related interrupts */
+	SENSOR_ATTR_FIFO_INTERRUPT,
 	/**
 	 * Number of all common sensor attributes.
 	 */
@@ -394,12 +399,48 @@ typedef int (*sensor_channel_get_t)(const struct device *dev,
 				    enum sensor_channel chan,
 				    struct sensor_value *val);
 
+#ifdef CONFIG_RTIO
+
+/**
+ * @type sensor_fifo_iodev_t
+ * @brief Callback API for obtaining a reference to a sensors FIFO iodev.
+ */
+typedef int (*sensor_fifo_iodev_t)(const struct device *dev, struct rtio_iodev **iodev_sqe);
+
+/**
+ * @type sensor_fifo_read_t
+ * @brief Callback API for immediately triggering a FIFO read.
+ */
+typedef int (*sensor_fifo_read_t)(const struct device *dev);
+
+/**
+ * @type sensor_fifo_start_t
+ * @brief Callback API to start FIFO streaming.
+ */
+typedef int (*sensor_fifo_start_t)(const struct device *dev);
+
+/**
+ * @type sensor_fifo_stop_t
+ * @brief Callback API to stop FIFO streaming.
+ */
+typedef int (*sensor_fifo_stop_t)(const struct device *dev);
+
+
+#endif /* CONFIG_RTIO */
+
 __subsystem struct sensor_driver_api {
 	sensor_attr_set_t attr_set;
 	sensor_attr_get_t attr_get;
 	sensor_trigger_set_t trigger_set;
 	sensor_sample_fetch_t sample_fetch;
 	sensor_channel_get_t channel_get;
+
+#ifdef CONFIG_RTIO
+	sensor_fifo_iodev_t fifo_iodev;
+	sensor_fifo_read_t fifo_read;
+	sensor_fifo_start_t fifo_start;
+	sensor_fifo_stop_t fifo_stop;
+#endif /* CONFIG_RTIO */
 };
 
 /**
@@ -596,6 +637,70 @@ static inline int z_impl_sensor_channel_get(const struct device *dev,
 		(const struct sensor_driver_api *)dev->api;
 
 	return api->channel_get(dev, chan, val);
+}
+
+/**
+ * @brief Submit a request for the fifo stream (iodev) for this sensor.
+ */
+static inline int sensor_fifo_iodev(const struct device *dev, struct rtio_iodev **iodev)
+{
+#ifdef CONFIG_RTIO
+
+	const struct sensor_driver_api *api =
+		(const struct sensor_driver_api *)dev->api;
+
+	return api->fifo_iodev(dev, iodev);
+#else
+	return -ENOSYS;
+#endif
+}
+
+/**
+ * @brief Checkin a rtio_iodev pointer for this sensor, only one per device.
+ */
+static inline int sensor_fifo_read(const struct device *dev)
+{
+#ifdef CONFIG_RTIO
+
+	const struct sensor_driver_api *api =
+		(const struct sensor_driver_api *)dev->api;
+
+	return api->fifo_read(dev);
+#else
+	return -ENOSYS;
+#endif
+}
+
+/**
+ * @brief Start streaming the fifo for this sensor.
+ */
+static inline int sensor_fifo_start(const struct device *dev)
+{
+#ifdef CONFIG_RTIO
+
+	const struct sensor_driver_api *api =
+		(const struct sensor_driver_api *)dev->api;
+
+	return api->fifo_start(dev);
+#else
+	return -ENOSYS;
+#endif
+}
+
+/**
+ * @brief Stop streaming the fifo for this sensor.
+ */
+static inline int sensor_fifo_stop(const struct device *dev)
+{
+#ifdef CONFIG_RTIO
+
+	const struct sensor_driver_api *api =
+		(const struct sensor_driver_api *)dev->api;
+
+	return api->fifo_stop(dev);
+#else
+	return -ENOSYS;
+#endif
 }
 
 /**
