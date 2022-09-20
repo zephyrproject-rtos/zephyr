@@ -329,7 +329,7 @@
 		interrupts = <32 0>;
 		status = "disabled";
 		rtc_1khz: rtc_1khz {
-			compatible = "nxp,lpc-rtc-1khz";
+			compatible = "nxp,lpc-wakeup-timer";
 			clocks = <&clkctl0 MCUX_OSC32K_CLK>;
 			status = "disabled";
 			#clock-cells = <0>;

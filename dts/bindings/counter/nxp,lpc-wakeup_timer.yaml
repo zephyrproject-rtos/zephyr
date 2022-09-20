@@ -6,7 +6,7 @@
 description: NXP The High-resolution/Wake-up Timer (WAKE) 
     which is clocked at a 1 kHz rate 
 
-compatible: "nxp,lpc-rtc-1khz"
+compatible: "nxp,lpc-wakeup-timer"
 
 include: [base.yaml, pinctrl-device.yaml]
 

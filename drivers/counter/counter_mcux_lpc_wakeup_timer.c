@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_lpc_rtc_1khz
+#define DT_DRV_COMPAT nxp_lpc_wakeup_timer
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
@@ -19,7 +19,7 @@
 #include <zephyr/logging/log.h>
 
 
-LOG_MODULE_REGISTER(mcux_rtc_1khz, CONFIG_COUNTER_LOG_LEVEL);
+LOG_MODULE_REGISTER(mcux_wakeup_timer, CONFIG_COUNTER_LOG_LEVEL);
 
 #define RTC_1KHZ_INIT_PRIORITY 51
 #if CONFIG_COUNTER_INIT_PRIORITY >= RTC_1KHZ_INIT_PRIORITY
@@ -35,14 +35,14 @@ LOG_MODULE_REGISTER(mcux_rtc_1khz, CONFIG_COUNTER_LOG_LEVEL);
  * Count and interrupts funciton may be added in the future.
  */
 
-struct mcux_lpc_rtc_data {
+struct mcux_lpc_wakeup_timer_data {
 	counter_alarm_callback_t alarm_callback;
 	counter_top_callback_t top_callback;
 	void *alarm_user_data;
 	void *top_user_data;
 };
 
-struct mcux_lpc_rtc_config {
+struct mcux_lpc_wakeup_timer_config {
 	struct counter_config_info info;
 	RTC_Type *base;
 
@@ -60,11 +60,11 @@ struct mcux_lpc_rtc_config {
 #endif
 };
 
-static int mcux_lpc_rtc_start(const struct device *dev)
+static int mcux_lpc_wakeup_timer_start(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
-	const struct mcux_lpc_rtc_config *config =
-		CONTAINER_OF(info, struct mcux_lpc_rtc_config, info);
+	const struct mcux_lpc_wakeup_timer_config *config =
+		CONTAINER_OF(info, struct mcux_lpc_wakeup_timer_config, info);
 
 	RTC_EnableWakeupTimer(config->base, true);
 
@@ -83,11 +83,11 @@ static int mcux_lpc_rtc_start(const struct device *dev)
 	return 0;
 }
 
-static int mcux_lpc_rtc_stop(const struct device *dev)
+static int mcux_lpc_wakeup_timer_stop(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
-	const struct mcux_lpc_rtc_config *config =
-		CONTAINER_OF(info, struct mcux_lpc_rtc_config, info);
+	const struct mcux_lpc_wakeup_timer_config *config =
+		CONTAINER_OF(info, struct mcux_lpc_wakeup_timer_config, info);
 
 	RTC_EnableWakeupTimer(config->base, false);
 
@@ -97,11 +97,11 @@ static int mcux_lpc_rtc_stop(const struct device *dev)
 	return 0;
 }
 
-static int mcux_lpc_rtc_init(const struct device *dev)
+static int mcux_lpc_wakeup_timer_init(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
-	const struct mcux_lpc_rtc_config *config =
-		CONTAINER_OF(info, struct mcux_lpc_rtc_config, info);
+	const struct mcux_lpc_wakeup_timer_config *config =
+		CONTAINER_OF(info, struct mcux_lpc_wakeup_timer_config, info);
 
 	/* RTC has been initialized in 1Hz main RTC timer */
 
@@ -129,14 +129,14 @@ static int mcux_lpc_rtc_init(const struct device *dev)
 #endif
 
 	/* When warm reset, enable bit is not cleared. So disable 1kHz timer first! */
-	mcux_lpc_rtc_stop(dev);
+	mcux_lpc_wakeup_timer_stop(dev);
 
 	return 0;
 }
 
-static const struct counter_driver_api mcux_rtc_driver_api = {
-	.start = mcux_lpc_rtc_start,
-	.stop = mcux_lpc_rtc_stop,
+static const struct counter_driver_api mcux_wakeup_timer_driver_api = {
+	.start = mcux_lpc_wakeup_timer_start,
+	.stop = mcux_lpc_wakeup_timer_stop,
 	.get_value = NULL,
 	.set_alarm = NULL,
 	.cancel_alarm = NULL,
@@ -173,11 +173,11 @@ static const struct counter_driver_api mcux_rtc_driver_api = {
 	#define RTC_FLEXIO_LOW_FREQ_CONFIG
 #endif
 
-static struct mcux_lpc_rtc_data mcux_lpc_rtc_data;
+static struct mcux_lpc_wakeup_timer_data mcux_lpc_wakeup_timer_data;
 
 #define COUNTER_LPC_RTC_DEVICE(id)										\
 	RTC_PINCTRL_DEFINE(id)												\
-	static const struct mcux_lpc_rtc_config mcux_lpc_rtc_config##id = { \
+	static const struct mcux_lpc_wakeup_timer_config mcux_lpc_wakeup_timer_config##id = { \
 		.base = (RTC_Type *)DT_REG_ADDR(DT_PARENT(DT_DRV_INST(id))),						\
 		.info = {														\
 			.max_top_value = UINT16_MAX,								\
@@ -189,9 +189,9 @@ static struct mcux_lpc_rtc_data mcux_lpc_rtc_data;
 		RTC_FLEXIO_LOW_FREQ_CONFIG										\
 		RTC_PINCTRL_INIT(id)											\
 	};																	\
-	DEVICE_DT_INST_DEFINE(id, mcux_lpc_rtc_init,						\
-			NULL, &mcux_lpc_rtc_data, &mcux_lpc_rtc_config##id,			\
+	DEVICE_DT_INST_DEFINE(id, mcux_lpc_wakeup_timer_init,						\
+			NULL, &mcux_lpc_wakeup_timer_data, &mcux_lpc_wakeup_timer_config##id,			\
 			POST_KERNEL, RTC_1KHZ_INIT_PRIORITY,						\
-			&mcux_rtc_driver_api);
+			&mcux_wakeup_timer_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_LPC_RTC_DEVICE)
