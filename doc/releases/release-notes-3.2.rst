@@ -453,6 +453,15 @@ Drivers and Sensors
 
   * Added serial driver for Renesas Smartbond platform
   * The STM32 driver now allows to use serial device as stop mode wake up source.
+  * Added check for clock control device readiness during configuration
+    for various drivers.
+  * Various fixes on ``lpuart``.
+  * Added a workaround on bytes dropping on ``nrfx_uarte``.
+  * Fixed compilation error on ``uart_pl011`` when interrupt is diabled.
+  * Added power management support on ``stm32``.
+  * ``xlnx_ps`` has moved to using ``DEVICE_MMIO`` API.
+  * ``gd32`` now supports using reset API to reset hardware and clock
+    control API to enable UART clock.
 
 * SPI
 
