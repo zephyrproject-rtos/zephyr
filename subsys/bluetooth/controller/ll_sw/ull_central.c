@@ -454,13 +454,19 @@ conn_is_valid:
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-	/* TODO(thoh-ot): Not entirely sure this is correct */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	ull_dle_max_time_get(conn, &max_rx_time, &max_tx_time);
-#else /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	conn->lll.dle.eff.max_tx_time = MAX(conn->lll.dle.eff.max_tx_time,
+					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy));
+	conn->lll.dle.eff.max_rx_time = MAX(conn->lll.dle.eff.max_rx_time,
+					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy));
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+	max_tx_time = conn_lll->dle.eff.max_tx_time;
+	max_rx_time = conn_lll->dle.eff.max_rx_time;
+#else /* !CONFIG_BT_CTLR_DATA_LENGTH */
 	max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 	max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	conn->ull.ticks_slot =
