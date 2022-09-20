@@ -307,6 +307,8 @@ Drivers and Sensors
 * DMA
 
   * STM32: Now supports stm32u5 series.
+  * cAVS drivers renamed with the broader Intel ADSP naming
+  * Kconfig depends on improvements with device tree statuses
 
 * EEPROM
 
