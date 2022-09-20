@@ -813,7 +813,7 @@ static void connect(const uint8_t *data, uint16_t len)
 	uint8_t status;
 	int err;
 
-	if (bt_addr_le_cmp(addr, BT_ADDR_LE_ANY) != 0) {
+	if (!bt_addr_le_eq(addr, BT_ADDR_LE_ANY)) {
 		struct bt_conn *conn;
 
 		err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
