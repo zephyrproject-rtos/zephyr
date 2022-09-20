@@ -17,7 +17,6 @@
 #define MCP2515_FRAME_LEN               13
 
 struct mcp2515_tx_cb {
-	struct k_sem sem;
 	can_tx_callback_t cb;
 	void *cb_arg;
 };
