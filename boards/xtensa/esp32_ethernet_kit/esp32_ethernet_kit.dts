@@ -114,3 +114,17 @@
 		};
 	};
 };
+
+&eth {
+	phy: phy {
+		compatible = "ethernet-phy";
+		status = "disabled";
+		address = <1>;
+		mdio = <&mdio>;
+	};
+};
+
+&mdio {
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+};
