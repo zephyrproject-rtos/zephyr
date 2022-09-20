@@ -42,6 +42,14 @@
 		status = "disabled";
 	};
 
+	eth: eth {
+		compatible = "espressif,esp32-eth";
+		interrupts = <ETH_MAC_INTR_SOURCE>;
+		interrupt-parent = <&intc>;
+		clocks = <&rtc ESP32_EMAC_MODULE>;
+		status = "disabled";
+	};
+
 	mdio: mdio {
 		compatible = "espressif,esp32-mdio";
 		protocol = "clause 22";
