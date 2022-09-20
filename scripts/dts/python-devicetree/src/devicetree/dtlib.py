@@ -88,6 +88,8 @@ class Node:
         """
         Node constructor. Not meant to be called directly by clients.
         """
+        # Remember to update DT.__deepcopy__() if you change this.
+
         self.name = name
         self.props: Dict[str, 'Property'] = {}
         self.nodes: Dict[str, 'Node'] = {}
@@ -282,6 +284,8 @@ class Property:
     #
 
     def __init__(self, node: Node, name: str):
+        # Remember to update DT.__deepcopy__() if you change this.
+
         if "@" in name:
             node.dt._parse_error("'@' is only allowed in node names")
 
@@ -716,14 +720,15 @@ class DT:
     # Public interface
     #
 
-    def __init__(self, filename: str, include_path: Iterable[str] = (),
+    def __init__(self, filename: Optional[str], include_path: Iterable[str] = (),
                  force: bool = False):
         """
         Parses a DTS file to create a DT instance. Raises OSError if 'filename'
         can't be opened, and DTError for any parse errors.
 
         filename:
-          Path to the .dts file to parse.
+          Path to the .dts file to parse. (If None, an empty devicetree
+          is created; this is unlikely to be what you want.)
 
         include_path:
           An iterable (e.g. list or tuple) containing paths to search for
@@ -734,6 +739,8 @@ class DT:
           Try not to raise DTError even if the input tree has errors.
           For experimental use; results not guaranteed.
         """
+        # Remember to update __deepcopy__() if you change this.
+
         self._root: Optional[Node] = None
         self.alias2node: Dict[str, Node] = {}
         self.label2node: Dict[str, Node] = {}
@@ -745,7 +752,8 @@ class DT:
 
         self._force = force
 
-        self._parse_file(filename, include_path)
+        if filename is not None:
+            self._parse_file(filename, include_path)
 
     @property
     def root(self) -> Node:
@@ -843,6 +851,102 @@ class DT:
             return f"DT(filename='{self.filename}', " \
                 f"include_path={self._include_path})"
         return super().__repr__()
+
+    def __deepcopy__(self, memo):
+        """
+        Implements support for the standard library copy.deepcopy()
+        function on DT instances.
+        """
+
+        # We need a new DT, obviously. Make a new, empty one.
+        ret = DT(None, (), self._force)
+
+        # Now allocate new Node objects for every node in self, to use
+        # in the new DT. Set their parents to None for now and leave
+        # them without any properties. We will recursively initialize
+        # copies of parents before copies of children next.
+        path2node_copy = {
+            node.path: Node(node.name, None, ret)
+            for node in self.node_iter()
+        }
+
+        # Point each copy of a node to the copy of its parent and set up
+        # copies of each property.
+        #
+        # Share data when possible. For example, Property.value has
+        # type 'bytes', which is immutable. We therefore don't need a
+        # copy and can just point to the original data.
+
+        for node in self.node_iter():
+            node_copy = path2node_copy[node.path]
+
+            parent = node.parent
+            if parent is not None:
+                node_copy.parent = path2node_copy[parent.path]
+
+            prop_name2prop_copy = {
+                prop.name: Property(node_copy, prop.name)
+                for prop in node.props.values()
+            }
+            for prop_name, prop_copy in prop_name2prop_copy.items():
+                prop = node.props[prop_name]
+                prop_copy.value = prop.value
+                prop_copy.labels = prop.labels[:]
+                prop_copy.offset_labels = prop.offset_labels.copy()
+                prop_copy._label_offset_lst = prop._label_offset_lst[:]
+                prop_copy._markers = [marker[:] for marker in prop._markers]
+            node_copy.props = prop_name2prop_copy
+
+            node_copy.nodes = {
+                child_name: path2node_copy[child_node.path]
+                for child_name, child_node in node.nodes.items()
+            }
+
+            node_copy.labels = node.labels[:]
+
+            node_copy._omit_if_no_ref = node._omit_if_no_ref
+            node_copy._is_referenced = node._is_referenced
+
+        # The copied nodes and properties are initialized, so
+        # we can finish initializing the copied DT object now.
+
+        ret._root = path2node_copy['/']
+
+        def copy_node_lookup_table(attr_name):
+            original = getattr(self, attr_name)
+            copy = {
+                key: path2node_copy[original[key].path]
+                for key in original
+            }
+            setattr(ret, attr_name, copy)
+
+        copy_node_lookup_table('alias2node')
+        copy_node_lookup_table('label2node')
+        copy_node_lookup_table('phandle2node')
+
+        ret_label2prop = {}
+        for label, prop in self.label2prop.items():
+            node_copy = path2node_copy[prop.node.path]
+            prop_copy = node_copy.props[prop.name]
+            ret_label2prop[label] = prop_copy
+        ret.label2prop = ret_label2prop
+
+        ret_label2prop_offset = {}
+        for label, prop_offset in self.label2prop_offset.items():
+            prop, offset = prop_offset
+            node_copy = path2node_copy[prop.node.path]
+            prop_copy = node_copy.props[prop.name]
+            ret_label2prop_offset[label] = (prop_copy, offset)
+        ret.label2prop_offset = ret_label2prop_offset
+
+        ret.memreserves = [
+            (set(memreserve[0]), memreserve[1], memreserve[2])
+            for memreserve in self.memreserves
+        ]
+
+        ret.filename = self.filename
+
+        return ret
 
     #
     # Parsing
