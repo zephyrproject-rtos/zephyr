@@ -32,7 +32,6 @@ struct can_npl_data {
 	struct can_filter_context filters[CONFIG_CAN_MAX_FILTER];
 	struct k_mutex filter_mutex;
 	struct k_sem tx_idle;
-	struct k_sem tx_done;
 	can_tx_callback_t tx_callback;
 	void *tx_user_data;
 	bool loopback;
@@ -95,12 +94,7 @@ static void rx_thread(void *arg1, void *arg2, void *arg3)
 			count = linux_socketcan_read_data(data->dev_fd, (void *)(&sframe),
 							   sizeof(sframe), &msg_confirm);
 			if (msg_confirm) {
-				if (data->tx_callback != NULL) {
-					data->tx_callback(dev, 0, data->tx_user_data);
-				} else {
-					k_sem_give(&data->tx_done);
-				}
-
+				data->tx_callback(dev, 0, data->tx_user_data);
 				k_sem_give(&data->tx_idle);
 
 				if (!data->loopback) {
@@ -142,6 +136,8 @@ static int can_npl_send(const struct device *dev, const struct can_frame *frame,
 				  "standard" : "extended",
 		frame->rtr == CAN_DATAFRAME ? "" : ", RTR frame");
 
+	__ASSERT_NO_MSG(callback != NULL);
+
 #ifdef CONFIG_CAN_FD_MODE
 	if (data->mode_fd && frame->fd == 1) {
 		max_dlc = CANFD_MAX_DLC;
@@ -175,10 +171,6 @@ static int can_npl_send(const struct device *dev, const struct can_frame *frame,
 	ret = linux_socketcan_write_data(data->dev_fd, &sframe, mtu);
 	if (ret < 0) {
 		LOG_ERR("Cannot send CAN data len %d (%d)", sframe.len, -errno);
-	}
-
-	if (callback == NULL) {
-		k_sem_take(&data->tx_done, K_FOREVER);
 	}
 
 	return 0;
@@ -455,7 +447,6 @@ static int can_npl_init(const struct device *dev)
 
 	k_mutex_init(&data->filter_mutex);
 	k_sem_init(&data->tx_idle, 1, 1);
-	k_sem_init(&data->tx_done, 0, 1);
 
 	data->dev_fd = linux_socketcan_iface_open(cfg->if_name);
 	if (data->dev_fd < 0) {
