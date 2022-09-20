@@ -114,7 +114,7 @@
 				 <PB3C_USART0_RTS>;
 			bias-pull-up;
 		};
-		group1 {
+		group2 {
 			pinmux = <PB1C_USART0_TXD>,
 				 <PB2C_USART0_CTS>;
 		};
@@ -131,7 +131,7 @@
 				 <PA24A_USART1_RTS>;
 			bias-pull-up;
 		};
-		group1 {
+		group2 {
 			pinmux = <PB4D_USART1_TXD>,
 				 <PA25A_USART1_CTS>;
 		};
@@ -148,7 +148,7 @@
 				 <PD18B_USART2_RTS>;
 			bias-pull-up;
 		};
-		group1 {
+		group2 {
 			pinmux = <PD16B_USART2_TXD>,
 				 <PD19B_USART2_CTS>;
 		};
