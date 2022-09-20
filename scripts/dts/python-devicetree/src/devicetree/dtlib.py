@@ -287,13 +287,14 @@ class Property:
             node.dt._parse_error("'@' is only allowed in node names")
 
         self.name = name
-        self.node = node
         self.value = b""
         self.labels: List[str] = []
-        self._label_offset_lst: List[Tuple[str, int]] = []
         # We have to wait to set this until later, when we've got
         # the entire tree.
         self.offset_labels: Dict[str, int] = {}
+        self.node: Node = node
+
+        self._label_offset_lst: List[Tuple[str, int]] = []
 
         # A list of [offset, label, type] lists (sorted by offset),
         # giving the locations of references within the value. 'type'
@@ -302,6 +303,48 @@ class Property:
         # _MarkerType.LABEL, for a label on/within data. Node paths
         # and phandles need to be patched in after parsing.
         self._markers: List[List] = []
+
+    @property
+    def type(self) -> int:
+        """
+        See the class docstring.
+        """
+        # Data labels (e.g. 'foo = label: <3>') are irrelevant, so filter them
+        # out
+        types = [marker[1] for marker in self._markers
+                 if marker[1] != _MarkerType.LABEL]
+
+        if not types:
+            return Type.EMPTY
+
+        if types == [_MarkerType.UINT8]:
+            return Type.BYTES
+
+        if types == [_MarkerType.UINT32]:
+            return Type.NUM if len(self.value) == 4 else Type.NUMS
+
+        # Treat 'foo = <1 2 3>, <4 5>, ...' as Type.NUMS too
+        if set(types) == {_MarkerType.UINT32}:
+            return Type.NUMS
+
+        if set(types) == {_MarkerType.STRING}:
+            return Type.STRING if len(types) == 1 else Type.STRINGS
+
+        if types == [_MarkerType.PATH]:
+            return Type.PATH
+
+        if types == [_MarkerType.UINT32, _MarkerType.PHANDLE] and \
+                len(self.value) == 4:
+            return Type.PHANDLE
+
+        if set(types) == {_MarkerType.UINT32, _MarkerType.PHANDLE}:
+            if len(self.value) == 4*types.count(_MarkerType.PHANDLE):
+                # Array with just phandles in it
+                return Type.PHANDLES
+            # Array with both phandles and numbers
+            return Type.PHANDLES_AND_NUMS
+
+        return Type.COMPOUND
 
     def to_num(self, signed=False) -> int:
         """
@@ -495,48 +538,6 @@ class Property:
                  f'"{path}"')
 
         return ret  # The separate 'return' appeases the type checker.
-
-    @property
-    def type(self) -> int:
-        """
-        See the class docstring.
-        """
-        # Data labels (e.g. 'foo = label: <3>') are irrelevant, so filter them
-        # out
-        types = [marker[1] for marker in self._markers
-                 if marker[1] != _MarkerType.LABEL]
-
-        if not types:
-            return Type.EMPTY
-
-        if types == [_MarkerType.UINT8]:
-            return Type.BYTES
-
-        if types == [_MarkerType.UINT32]:
-            return Type.NUM if len(self.value) == 4 else Type.NUMS
-
-        # Treat 'foo = <1 2 3>, <4 5>, ...' as Type.NUMS too
-        if set(types) == {_MarkerType.UINT32}:
-            return Type.NUMS
-
-        if set(types) == {_MarkerType.STRING}:
-            return Type.STRING if len(types) == 1 else Type.STRINGS
-
-        if types == [_MarkerType.PATH]:
-            return Type.PATH
-
-        if types == [_MarkerType.UINT32, _MarkerType.PHANDLE] and \
-                len(self.value) == 4:
-            return Type.PHANDLE
-
-        if set(types) == {_MarkerType.UINT32, _MarkerType.PHANDLE}:
-            if len(self.value) == 4*types.count(_MarkerType.PHANDLE):
-                # Array with just phandles in it
-                return Type.PHANDLES
-            # Array with both phandles and numbers
-            return Type.PHANDLES_AND_NUMS
-
-        return Type.COMPOUND
 
     def __str__(self):
         s = "".join(label + ": " for label in self.labels) + self.name
