@@ -49,7 +49,7 @@ static bool fragmented_advertisers_equal(const struct fragmented_advertiser *a,
 					 const bt_addr_le_t *addr, uint8_t sid)
 {
 	/* Two advertisers are equal if they are the same adv set from the same device */
-	return a->sid == sid && bt_addr_le_cmp(&a->addr, addr) == 0;
+	return a->sid == sid && bt_addr_le_eq(&a->addr, addr);
 }
 
 /* Sets the address and sid of the advertiser to be reassembled. */

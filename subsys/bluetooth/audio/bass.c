@@ -338,7 +338,7 @@ static struct bass_recv_state_internal *bass_lookup_pa_sync(struct bt_le_per_adv
 static struct bass_recv_state_internal *bass_lookup_addr(const bt_addr_le_t *addr)
 {
 	for (int i = 0; i < ARRAY_SIZE(bass_inst.recv_states); i++) {
-		if (bt_addr_le_cmp(&bass_inst.recv_states[i].state.addr, addr) == 0) {
+		if (bt_addr_le_eq(&bass_inst.recv_states[i].state.addr, addr)) {
 			return &bass_inst.recv_states[i];
 		}
 	}
