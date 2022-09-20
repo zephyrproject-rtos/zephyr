@@ -2296,6 +2296,14 @@ West:
   labels:
     - manifest-hal_quicklogic
 
+"West project: hal_renesas":
+  status: maintained
+  maintainers:
+    - andrzej-kaczmarek
+  files: []
+  labels:
+    - manifest-hal_renesas
+
 "West project: hal_rpi_pico":
   status: maintained
   maintainers:
