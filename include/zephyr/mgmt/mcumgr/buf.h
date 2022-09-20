@@ -40,22 +40,4 @@ struct net_buf *mcumgr_buf_alloc(void);
  */
 void mcumgr_buf_free(struct net_buf *nb);
 
-/**
- * @brief Initializes a CBOR writer with the specified net_buf.
- *
- * @param cnw                   The writer to initialize.
- * @param nb                    The net_buf that the writer will write to.
- */
-void cbor_nb_writer_init(struct cbor_nb_writer *cnw,
-			 struct net_buf *nb);
-
-/**
- * @brief Initializes a CBOR reader with the specified net_buf.
- *
- * @param cnr                   The reader to initialize.
- * @param nb                    The net_buf that the reader will read from.
- */
-void cbor_nb_reader_init(struct cbor_nb_reader *cnr,
-			 struct net_buf *nb);
-
 #endif

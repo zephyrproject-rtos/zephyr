@@ -14,9 +14,32 @@
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include "mgmt/mgmt.h"
 #include <zcbor_common.h>
+#include <zcbor_decode.h>
 #include <zcbor_encode.h>
 #include "smp/smp.h"
 #include "../../../smp_internal.h"
+
+static void
+cbor_nb_reader_init(struct cbor_nb_reader *cnr,
+		    struct net_buf *nb)
+{
+	/* Skip the mgmt_hdr */
+	void *new_ptr = net_buf_pull(nb, sizeof(struct mgmt_hdr));
+
+	cnr->nb = nb;
+	zcbor_new_decode_state(cnr->zs, ARRAY_SIZE(cnr->zs), new_ptr,
+			       cnr->nb->len, 1);
+}
+
+static void
+cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
+{
+	net_buf_reset(nb);
+	cnw->nb = nb;
+	cnw->nb->len = sizeof(struct mgmt_hdr);
+	zcbor_new_encode_state(cnw->zs, 2, nb->data + sizeof(struct mgmt_hdr),
+			       net_buf_tailroom(nb), 0);
+}
 
 /**
  * Converts a request opcode to its corresponding response opcode.
