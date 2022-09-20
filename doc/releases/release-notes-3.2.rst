@@ -159,9 +159,18 @@ Architectures
 
 * ARM
 
-  * AARCH32
+* ARM64
 
-  * AARCH64
+  * :c:func:`arch_mem_map` now supports :c:enumerator:`K_MEM_PERM_USER`.
+  * Added :kconfig:option:`CONFIG_WAIT_AT_RESET_VECTOR` to spin at reset vector
+    allowing a debugger to be attached.
+  * Implemented erratum 822227 "Using unsupported 16K translation granules
+    might cause Cortex-A57 to incorrectly trigger a domain fault".
+  * Enabled single-threaded support for some platforms.
+  * IRQ stack is now initialized when :kconfig:option:`CONFIG_INIT_STACKS` is set.
+  * Fixed issue when cache API are used from userspace.
+  * Fixed issue about the way IPI are delivered.
+  * TF-A (TrustedFirmware-A) is now shipped as module
 
 * Posix
 
@@ -215,6 +224,8 @@ Boards & SoC Support
   * da1469x_dk_pro
 
 * Added support for these ARM64 boards:
+
+  * i.MX8M Nano LPDDR4 EVK board
 
 * Removed support for these ARM boards:
 
@@ -434,6 +445,17 @@ Libraries / Subsystems
     since it uses this feature.
   * Added :c:macro:`LOG_RAW` for logging strings without additional formatting.
     It is similar to :c:macro:`LOG_PRINTK` but do not append ``<cr>`` when new line is found.
+
+* IPC
+
+  * Introduced a 'zephyr,buffer-size' DT property to set the sizes for TX and
+    RX buffers per created instance.
+  * Set WQ priority back to PRIO_PREEMPT to fix an issue that was starving the scheduler.
+  * ``icmsg_buf`` library was renamed to ``spsc_pbuf``.
+  * Added cache handling support to ``spsc_pbuf``.
+  * Fixed an issue where the TX virtqueue was misaligned by 2 bytes due to the
+    way the virtqueue start address is calculated
+  * Added :c:func:`ipc_service_deregister_endpoint` function to deregister endpoints.
 
 * LoRaWAN
 
