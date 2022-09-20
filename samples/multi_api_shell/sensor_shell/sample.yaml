@@ -1,0 +1,7 @@
+sample:
+  description: Simple dummy shell
+  name: Multi API sensor shell
+
+tests:
+  sample.multi_api_shell.sensor_shell:
+    platform_allow: b_u585i_iot02a

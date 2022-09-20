@@ -1,0 +1,10 @@
+include: "sensor-device.yaml"
+
+compatible: "st,lis2dh"
+
+properties:
+  vendor:
+    value: "STMicroelectronics"
+
+  model:
+    value: "LIS2DH"

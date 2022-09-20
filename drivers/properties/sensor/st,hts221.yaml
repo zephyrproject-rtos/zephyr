@@ -1,0 +1,10 @@
+include: "sensor-device.yaml"
+
+compatible: "st,hts221"
+
+properties:
+  vendor:
+    value: "STMicroelectronics"
+
+  model:
+    value: "HTS221"

@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2022 Trackunit A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c2 {
+	lis2dh@0b {
+		compatible = "st,lis2dh";
+		reg = <0x0b>;
+	};
+
+	bme280@0c {
+		compatible = "bosch,bme280";
+		reg = <0x0c>;
+	};
+};
