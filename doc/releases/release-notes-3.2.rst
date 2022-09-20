@@ -406,6 +406,11 @@ Drivers and Sensors
 
 * PECI
 
+  * Added PECI driver for Nuvoton NPCX family.
+  * Devicetree binding for ITE it8xxx2 PECI driver has changed from
+    ``ite,peci-it8xxx2`` to :dtcompatible:`ite,it8xxx2-peci` so that this aligns
+    with other ITE devices.
+
 * Pinmux
 
 * Pin control
