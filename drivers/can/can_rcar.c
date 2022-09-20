@@ -185,7 +185,6 @@ struct can_rcar_cfg {
 };
 
 struct can_rcar_tx_cb {
-	struct k_sem sem;
 	can_tx_callback_t cb;
 	void *cb_arg;
 };
@@ -231,11 +230,7 @@ static void can_rcar_tx_done(const struct device *dev)
 	}
 
 	data->tx_unsent--;
-	if (tx_cb->cb != NULL) {
-		tx_cb->cb(dev, 0, tx_cb->cb_arg);
-	} else {
-		k_sem_give(&tx_cb->sem);
-	}
+	tx_cb->cb(dev, 0, tx_cb->cb_arg);
 	k_sem_give(&data->tx_sem);
 }
 
@@ -864,6 +859,7 @@ static int can_rcar_send(const struct device *dev, const struct can_frame *frame
 		"standard" : "extended"
 		, frame->rtr == CAN_DATAFRAME ? "no" : "yes");
 
+	__ASSERT_NO_MSG(callback != NULL);
 	__ASSERT(frame->dlc == 0U || frame->data != NULL, "Dataptr is null");
 
 	if (frame->dlc > CAN_MAX_DLC) {
@@ -885,8 +881,6 @@ static int can_rcar_send(const struct device *dev, const struct can_frame *frame
 	tx_cb = &data->tx_cb[data->tx_head];
 	tx_cb->cb = callback;
 	tx_cb->cb_arg = user_data;
-
-	k_sem_reset(&tx_cb->sem);
 
 	data->tx_head++;
 	if (data->tx_head >= RCAR_CAN_FIFO_DEPTH) {
@@ -921,9 +915,6 @@ static int can_rcar_send(const struct device *dev, const struct can_frame *frame
 	sys_write8(0xff, config->reg_addr + RCAR_CAN_TFPCR);
 
 	k_mutex_unlock(&data->inst_mutex);
-	if (callback == NULL) {
-		k_sem_take(&tx_cb->sem, K_FOREVER);
-	}
 
 	return 0;
 }
@@ -986,14 +977,10 @@ static int can_rcar_init(const struct device *dev)
 	struct can_timing timing;
 	int ret;
 	uint16_t ctlr;
-	uint8_t idx;
 
 	k_mutex_init(&data->inst_mutex);
 	k_mutex_init(&data->rx_mutex);
 	k_sem_init(&data->tx_sem, RCAR_CAN_FIFO_DEPTH, RCAR_CAN_FIFO_DEPTH);
-	for (idx = 0; idx < RCAR_CAN_FIFO_DEPTH; idx++) {
-		k_sem_init(&data->tx_cb[idx].sem, 0, 1);
-	}
 
 	data->tx_head = 0;
 	data->tx_tail = 0;
