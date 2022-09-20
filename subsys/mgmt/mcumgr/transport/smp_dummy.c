@@ -24,7 +24,7 @@
 #include <zephyr/mgmt/mcumgr/serial.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
-#include <mgmt/mcumgr/smp_dummy.h>
+#include <zephyr/mgmt/mcumgr/smp_dummy.h>
 #include "../smp_internal.h"
 
 BUILD_ASSERT(CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE != 0,
