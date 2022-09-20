@@ -399,6 +399,11 @@ Drivers and Sensors
 
 * PCIE
 
+  * Added a ``dump`` subcommand to the ``pcie`` shell command to print out
+    the first 16 configuration space registers.
+  * Added a ``ls`` subcommand to the ``pcie`` shell command to list
+    devices.
+
 * PECI
 
 * Pinmux
