@@ -1699,13 +1699,20 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	bt_l2cap_chan_del(&chan->chan);
 }
 
-static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf)
+static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf, struct bt_l2cap_le_chan *ch)
 {
 	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 	struct net_buf *seg;
 
-	/* Try to use original pool if possible */
-	seg = net_buf_alloc(pool, K_NO_WAIT);
+	/* Use the dedicated segment callback if registered */
+	if (ch->chan.ops->alloc_seg) {
+		seg = ch->chan.ops->alloc_seg(&ch->chan);
+		__ASSERT_NO_MSG(seg);
+	} else {
+		/* Try to use original pool if possible */
+		seg = net_buf_alloc(pool, K_NO_WAIT);
+	}
+
 	if (seg) {
 		net_buf_reserve(seg, BT_L2CAP_CHAN_SEND_RESERVE);
 		return seg;
@@ -1742,7 +1749,8 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 	}
 
 segment:
-	seg = l2cap_alloc_seg(buf);
+	seg = l2cap_alloc_seg(buf, ch);
+
 	if (!seg) {
 		return NULL;
 	}

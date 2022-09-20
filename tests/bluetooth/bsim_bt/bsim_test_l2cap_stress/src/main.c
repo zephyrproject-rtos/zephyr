@@ -21,11 +21,15 @@ CREATE_FLAG(flag_l2cap_connected);
 #define INIT_CREDITS	10
 #define SDU_NUM		20
 #define SDU_LEN		1230
+#define NUM_SEGMENTS	30
 
 /* Only one SDU per link will be transmitted at a time */
-/* FIXME: decrease size */
 NET_BUF_POOL_DEFINE(sdu_tx_pool,
-		    100, BT_L2CAP_BUF_SIZE(SDU_LEN),
+		    CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(SDU_LEN),
+		    8, NULL);
+
+NET_BUF_POOL_DEFINE(segment_pool,
+		    NUM_SEGMENTS, BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 		    8, NULL);
 
 /* Only one SDU per link will be received at a time */
@@ -64,6 +68,15 @@ int l2cap_chan_send(struct bt_l2cap_chan *chan, uint8_t *data, size_t len)
 
 	LOG_DBG("sent %d len %d", ret, len);
 	return ret;
+}
+
+struct net_buf *alloc_seg_cb(struct bt_l2cap_chan *chan)
+{
+	struct net_buf *buf = net_buf_alloc(&segment_pool, K_NO_WAIT);
+
+	ASSERT(buf, "Ran out of segment buffers");
+
+	return buf;
 }
 
 struct net_buf *alloc_buf_cb(struct bt_l2cap_chan *chan)
@@ -137,6 +150,7 @@ static struct bt_l2cap_chan_ops ops = {
 	.connected = l2cap_chan_connected_cb,
 	.disconnected = l2cap_chan_disconnected_cb,
 	.alloc_buf = alloc_buf_cb,
+	.alloc_seg = alloc_seg_cb,
 	.recv = recv_cb,
 	.sent = sent_cb,
 };
