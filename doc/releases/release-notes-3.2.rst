@@ -72,6 +72,12 @@ Changes in this release
     allow distinguishing between an out of range bitrate/sample point, an unsupported bitrate, and a
     resulting sample point outside the guard limit.
 
+* Memory Management Drivers
+
+  * Added :c:func:`sys_mm_drv_update_page_flags` and
+    :c:func:`sys_mm_drv_update_region_flags` to update flags associated
+    with memory pages and regions.
+
 Removed APIs in this release
 ============================
 
