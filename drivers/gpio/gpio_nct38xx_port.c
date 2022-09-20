@@ -70,7 +70,7 @@ static int gpio_nct38xx_pin_config(const struct device *dev, gpio_pin_t pin, gpi
 		}
 
 		new_reg = reg | mask;
-		/* NCT3807 bit3 should be set to 0 */
+		/* NCT3807 bit3 must be set to 0 */
 		new_reg &= config->pinmux_mask;
 
 		ret = nct38xx_reg_update(config->nct38xx_dev, NCT38XX_REG_MUX_CONTROL, reg,
@@ -131,8 +131,8 @@ static int gpio_nct38xx_pin_config(const struct device *dev, gpio_pin_t pin, gpi
 
 	/* Configure pin as output, if requested 0:input 1:output */
 	if (flags & GPIO_OUTPUT) {
-		nct38xx_reg_read_byte(config->nct38xx_dev, NCT38XX_REG_GPIO_DIR(config->gpio_port),
-				      &reg);
+		ret = nct38xx_reg_read_byte(config->nct38xx_dev,
+					    NCT38XX_REG_GPIO_DIR(config->gpio_port), &reg);
 		if (ret < 0) {
 			goto done;
 		}
