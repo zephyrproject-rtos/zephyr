@@ -1430,7 +1430,7 @@ static void gatt_unregister_ccc(struct _bt_gatt_ccc *ccc)
 	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
 		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
 
-		if (bt_addr_le_cmp(&cfg->peer, BT_ADDR_LE_ANY)) {
+		if (!bt_addr_le_eq(&cfg->peer, BT_ADDR_LE_ANY)) {
 			struct bt_conn *conn;
 			bool store = true;
 

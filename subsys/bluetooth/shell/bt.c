@@ -2983,7 +2983,7 @@ static void auth_pairing_oob_data_request(struct bt_conn *conn,
 						  : NULL;
 
 		if (oobd_remote &&
-		    bt_addr_le_cmp(info.le.remote, &oob_remote.addr)) {
+		    !bt_addr_le_eq(info.le.remote, &oob_remote.addr)) {
 			bt_addr_le_to_str(info.le.remote, addr, sizeof(addr));
 			shell_print(ctx_shell,
 				    "No OOB data available for remote %s",
@@ -2993,7 +2993,7 @@ static void auth_pairing_oob_data_request(struct bt_conn *conn,
 		}
 
 		if (oobd_local &&
-		    bt_addr_le_cmp(info.le.local, &oob_local.addr)) {
+		    !bt_addr_le_eq(info.le.local, &oob_local.addr)) {
 			bt_addr_le_to_str(info.le.local, addr, sizeof(addr));
 			shell_print(ctx_shell,
 				    "No OOB data available for local %s",

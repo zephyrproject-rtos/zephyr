@@ -1522,7 +1522,7 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 	bt_addr_copy(&addr.a, &conn->br.dst);
 	addr.type = BT_ADDR_LE_PUBLIC;
 
-	if (bt_addr_le_cmp(&addr, &req->addr)) {
+	if (!bt_addr_le_eq(&addr, &req->addr)) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
