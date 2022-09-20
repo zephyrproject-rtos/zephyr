@@ -144,6 +144,38 @@ static void ieee_addr_hexdump(uint8_t *addr, uint8_t length)
 	printk("%02x\n", *addr);
 }
 
+static int set_up_short_addr(struct net_if *iface, struct ieee802154_context *ctx)
+{
+	uint16_t short_addr = 0x5678;
+
+	int ret = net_mgmt(NET_REQUEST_IEEE802154_SET_SHORT_ADDR, iface, &short_addr,
+			   sizeof(short_addr));
+	if (ret) {
+		NET_ERR("*** Failed to set short address\n");
+	}
+
+	return ret;
+}
+
+static int tear_down_short_addr(struct net_if *iface, struct ieee802154_context *ctx)
+{
+	uint16_t short_addr;
+
+	if (ctx->linkaddr.len != IEEE802154_SHORT_ADDR_LENGTH) {
+		/* nothing to do */
+		return 0;
+	}
+
+	short_addr = IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED;
+	int ret = net_mgmt(NET_REQUEST_IEEE802154_SET_SHORT_ADDR, iface, &short_addr,
+			   sizeof(short_addr));
+	if (ret) {
+		NET_ERR("*** Failed to unset short address\n");
+	}
+
+	return ret;
+}
+
 static bool test_packet_parsing(struct ieee802154_pkt_test *t)
 {
 	struct ieee802154_mpdu mpdu;
@@ -170,16 +202,26 @@ static bool test_packet_parsing(struct ieee802154_pkt_test *t)
 	return true;
 }
 
-static bool test_ns_sending(struct ieee802154_pkt_test *t)
+static bool test_ns_sending(struct ieee802154_pkt_test *t, bool with_short_addr)
 {
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_mpdu mpdu;
 
 	NET_INFO("- Sending NS packet\n");
 
+	if (with_short_addr) {
+		if (set_up_short_addr(iface, ctx)) {
+			return false;
+		}
+	}
+
 	if (net_ipv6_send_ns(iface, NULL, &t->src, &t->dst, &t->dst, false)) {
 		NET_ERR("*** Could not create IPv6 NS packet\n");
+		tear_down_short_addr(iface, ctx);
 		return false;
 	}
+
+	tear_down_short_addr(iface, ctx);
 
 	k_yield();
 	k_sem_take(&driver_lock, K_SECONDS(1));
@@ -234,9 +276,23 @@ static bool test_dgram_packet_sending(struct sockaddr_ll *pkt_sll, uint32_t secu
 		goto release_sec_ctx;
 	}
 
+	/* In case we have a short destination address
+	 * we simulate an associated device.
+	 */
+	/* TODO: support short addresses with encryption (requires neighbour cache) */
+	bool bind_short_address = pkt_sll->sll_halen == IEEE802154_SHORT_ADDR_LENGTH &&
+				  security_level == IEEE802154_SECURITY_LEVEL_NONE;
+
+	if (bind_short_address) {
+		if (set_up_short_addr(iface, ctx)) {
+			goto release_fd;
+		}
+	}
+
 	socket_sll.sll_ifindex = net_if_get_by_iface(iface);
 	socket_sll.sll_family = AF_PACKET;
 	socket_sll.sll_protocol = ETH_P_IEEE802154;
+
 	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
 		NET_ERR("*** Failed to bind packet socket : %d\n", errno);
 		goto release_fd;
@@ -264,11 +320,9 @@ static bool test_dgram_packet_sending(struct sockaddr_ll *pkt_sll, uint32_t secu
 		goto release_frag;
 	}
 
-	uint8_t lladdr_be[IEEE802154_EXT_ADDR_LENGTH];
+	net_pkt_lladdr_src(current_pkt)->addr = net_if_get_link_addr(iface)->addr;
+	net_pkt_lladdr_src(current_pkt)->len = net_if_get_link_addr(iface)->len;
 
-	sys_memcpy_swap(lladdr_be, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
-	net_pkt_lladdr_src(current_pkt)->addr = lladdr_be;
-	net_pkt_lladdr_src(current_pkt)->len = IEEE802154_MAX_ADDR_LENGTH;
 	if (!ieee802154_decipher_data_frame(iface, current_pkt, &mpdu)) {
 		NET_ERR("*** Cannot decipher/authenticate packet\n");
 		goto release_frag;
@@ -285,6 +339,7 @@ release_frag:
 	net_pkt_frag_unref(current_pkt->frags);
 	current_pkt->frags = NULL;
 release_fd:
+	tear_down_short_addr(iface, ctx);
 	close(fd);
 release_sec_ctx:
 	cipher_free_session(ctx->sec_ctx.enc.device, &ctx->sec_ctx.enc);
@@ -315,6 +370,7 @@ static bool test_raw_packet_sending(void)
 	socket_sll.sll_ifindex = net_if_get_by_iface(iface);
 	socket_sll.sll_family = AF_PACKET;
 	socket_sll.sll_protocol = ETH_P_IEEE802154;
+
 	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
 		NET_ERR("*** Failed to bind packet socket : %d\n", errno);
 		goto release_fd;
@@ -503,7 +559,16 @@ ZTEST(ieee802154_l2, test_sending_ns_pkt)
 {
 	bool ret;
 
-	ret = test_ns_sending(&test_ns_pkt);
+	ret = test_ns_sending(&test_ns_pkt, false);
+
+	zassert_true(ret, "NS sent");
+}
+
+ZTEST(ieee802154_l2, test_sending_ns_pkt_with_short_addr)
+{
+	bool ret;
+
+	ret = test_ns_sending(&test_ns_pkt, true);
 
 	zassert_true(ret, "NS sent");
 }
@@ -552,6 +617,7 @@ ZTEST(ieee802154_l2, test_sending_broadcast_dgram_pkt)
 		.sll_halen = sizeof(dst_short_addr),
 		.sll_protocol = htons(ETH_P_IEEE802154),
 	};
+
 	memcpy(pkt_sll.sll_addr, &dst_short_addr, sizeof(dst_short_addr));
 
 	ret = test_dgram_packet_sending(&pkt_sll, IEEE802154_SECURITY_LEVEL_NONE);
@@ -567,6 +633,7 @@ ZTEST(ieee802154_l2, test_sending_authenticated_dgram_pkt)
 		.sll_halen = sizeof(dst_short_addr),
 		.sll_protocol = htons(ETH_P_IEEE802154),
 	};
+
 	memcpy(pkt_sll.sll_addr, &dst_short_addr, sizeof(dst_short_addr));
 
 	ret = test_dgram_packet_sending(&pkt_sll, IEEE802154_SECURITY_LEVEL_MIC_128);
@@ -582,6 +649,7 @@ ZTEST(ieee802154_l2, test_sending_encrypted_and_authenticated_dgram_pkt)
 		.sll_halen = sizeof(dst_ext_addr),
 		.sll_protocol = htons(ETH_P_IEEE802154),
 	};
+
 	memcpy(pkt_sll.sll_addr, dst_ext_addr, sizeof(dst_ext_addr));
 
 	ret = test_dgram_packet_sending(&pkt_sll, IEEE802154_SECURITY_LEVEL_ENC_MIC_128);

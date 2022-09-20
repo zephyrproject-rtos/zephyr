@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_linkaddr.h>
 
 #ifdef CONFIG_NET_6LO
 #include "ieee802154_6lo.h"
@@ -402,14 +403,26 @@ NET_L2_INIT(IEEE802154_L2, ieee802154_recv, ieee802154_send, ieee802154_enable, 
 void ieee802154_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	const uint8_t *mac = net_if_get_link_addr(iface)->addr; /* in big endian */
+	const uint8_t *eui64_be = net_if_get_link_addr(iface)->addr;
 	int16_t tx_power = CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER;
-	uint8_t long_addr[8]; /* in little endian */
 
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
 
 	ctx->channel = IEEE802154_NO_CHANNEL;
 	ctx->flags = NET_L2_MULTICAST;
+
+	ctx->short_addr = IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED;
+	sys_memcpy_swap(ctx->ext_addr, eui64_be, IEEE802154_EXT_ADDR_LENGTH);
+
+	/* We switch to a link address store that we
+	 * own so that we can write user defined short
+	 * or extended addresses w/o mutating internal
+	 * driver storage.
+	 */
+	ctx->linkaddr.type = NET_LINK_IEEE802154;
+	ctx->linkaddr.len = IEEE802154_EXT_ADDR_LENGTH;
+	memcpy(ctx->linkaddr.addr, eui64_be, IEEE802154_EXT_ADDR_LENGTH);
+	net_if_set_link_addr(iface, ctx->linkaddr.addr, ctx->linkaddr.len, ctx->linkaddr.type);
 
 	if (IS_ENABLED(CONFIG_IEEE802154_NET_IF_NO_AUTO_START)) {
 		LOG_DBG("Interface auto start disabled.");
@@ -424,8 +437,7 @@ void ieee802154_init(struct net_if *iface)
 	}
 #endif
 
-	sys_memcpy_swap(long_addr, mac, 8);
-	memcpy(ctx->ext_addr, long_addr, 8);
+	sys_memcpy_swap(ctx->ext_addr, eui64_be, IEEE802154_EXT_ADDR_LENGTH);
 	ieee802154_filter_ieee_addr(iface, ctx->ext_addr);
 
 	if (!ieee802154_set_tx_power(iface, tx_power)) {

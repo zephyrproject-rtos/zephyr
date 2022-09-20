@@ -450,7 +450,7 @@ uint8_t ieee802154_compute_header_and_authtag_size(struct net_if *iface, struct 
 	hdr_len += broadcast ? IEEE802154_SHORT_ADDR_LENGTH : dst->len;
 
 	/* Source Address - see data_addr_to_fs_settings() */
-	hdr_len += broadcast ? IEEE802154_EXT_ADDR_LENGTH : (src->addr ? src->len : dst->len);
+	hdr_len += src->addr ? src->len : dst->len;
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	if (broadcast) {
@@ -931,10 +931,6 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 		return false;
 	}
 
-	/* TODO: handle src short address
-	 * This will require to look up in nbr cache with short addr
-	 * in order to get the extended address related to it
-	 */
 	if (level >= IEEE802154_SECURITY_LEVEL_ENC) {
 		level -= 4U;
 	}
@@ -944,7 +940,16 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	uint8_t payload_len = net_pkt_get_len(pkt) - hdr_len - tag_size;
 	uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
 
-	sys_memcpy_swap(ext_addr_le, net_pkt_lladdr_src(pkt)->addr, IEEE802154_EXT_ADDR_LENGTH);
+	/* TODO: Handle src short address.
+	 * This will require to look up in nbr cache with short addr
+	 * in order to get the extended address related to it.
+	 */
+	if (net_pkt_lladdr_src(pkt)->len != IEEE802154_EXT_ADDR_LENGTH) {
+		NET_ERR("Decrypting packages with short source addresses is not supported.");
+		goto out;
+	}
+
+	sys_memcpy_swap(ext_addr_le, net_pkt_lladdr_src(pkt)->addr, net_pkt_lladdr_src(pkt)->len);
 	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_data(pkt), hdr_len, payload_len,
 				     tag_size, ext_addr_le,
 				     sys_le32_to_cpu(mpdu->mhr.aux_sec->frame_counter))) {

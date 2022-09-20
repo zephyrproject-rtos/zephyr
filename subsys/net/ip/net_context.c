@@ -757,23 +757,10 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ll_addr->sll_ifindex;
 		net_sll_ptr(&context->local)->sll_protocol =
 			ll_addr->sll_protocol;
-		if (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&
-		    ll_addr->sll_protocol == ETH_P_IEEE802154 &&
-		    ll_addr->sll_halen > 0) {
-			if (ll_addr->sll_halen !=
-			    IEEE802154_SHORT_ADDR_LENGTH) {
-				return -EINVAL;
-			}
-			net_sll_ptr(&context->local)->sll_addr =
-				ll_addr->sll_addr;
-			net_sll_ptr(&context->local)->sll_halen =
-				ll_addr->sll_halen;
-		} else {
-			net_sll_ptr(&context->local)->sll_addr =
-				net_if_get_link_addr(iface)->addr;
-			net_sll_ptr(&context->local)->sll_halen =
-				net_if_get_link_addr(iface)->len;
-		}
+		net_sll_ptr(&context->local)->sll_addr =
+			net_if_get_link_addr(iface)->addr;
+		net_sll_ptr(&context->local)->sll_halen =
+			net_if_get_link_addr(iface)->len;
 
 		NET_DBG("Context %p bind to type 0x%04x iface[%d] %p addr %s",
 			context, htons(net_context_get_proto(context)),
