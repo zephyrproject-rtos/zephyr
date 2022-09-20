@@ -348,10 +348,6 @@ int can_mcan_init(const struct device *dev)
 	k_mutex_init(&data->tx_mtx);
 	k_sem_init(&data->tx_sem, NUM_TX_BUF_ELEMENTS, NUM_TX_BUF_ELEMENTS);
 
-	for (int i = 0; i < ARRAY_SIZE(data->tx_fin_sem); ++i) {
-		k_sem_init(&data->tx_fin_sem[i], 0, 1);
-	}
-
 	if (cfg->phy != NULL) {
 		if (!device_is_ready(cfg->phy)) {
 			LOG_ERR("CAN transceiver not ready");
@@ -558,11 +554,7 @@ static void can_mcan_tc_event_handler(const struct device *dev)
 		k_sem_give(&data->tx_sem);
 
 		tx_cb = data->tx_fin_cb[tx_idx];
-		if (tx_cb == NULL) {
-			k_sem_give(&data->tx_fin_sem[tx_idx]);
-		} else {
-			tx_cb(dev, 0, data->tx_fin_cb_arg[tx_idx]);
-		}
+		tx_cb(dev, 0, data->tx_fin_cb_arg[tx_idx]);
 	}
 }
 
@@ -814,6 +806,8 @@ int can_mcan_send(const struct device *dev,
 		frame->fd == CAN_DATAFRAME ? "" : "FD frame",
 		frame->brs == CAN_DATAFRAME ? "" : "BRS");
 
+	__ASSERT_NO_MSG(callback != NULL);
+
 	if (data_length > sizeof(frame->data)) {
 		LOG_ERR("data length (%zu) > max frame data length (%zu)",
 			data_length, sizeof(frame->data));
@@ -869,11 +863,6 @@ int can_mcan_send(const struct device *dev,
 	can->txbar = (1U << put_idx);
 
 	k_mutex_unlock(&data->tx_mtx);
-
-	if (callback == NULL) {
-		LOG_DBG("Waiting for TX complete");
-		k_sem_take(&data->tx_fin_sem[put_idx], K_FOREVER);
-	}
 
 	return 0;
 }
