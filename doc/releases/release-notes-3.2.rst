@@ -145,6 +145,10 @@ New APIs in this release
   * Added :c:enumerator:`CAN_MODE_3_SAMPLES` for enabling CAN controller triple-sampling receive
     mode.
 
+* I3C
+
+  * Added a set of new API for I3C controllers.
+
 * W1
 
   * Introduced the :ref:`W1 api<w1_api>`, used to interact with 1-Wire masters.
@@ -350,6 +354,9 @@ Drivers and Sensors
 * I2S
 
 * I3C
+
+  * Added a driver to support the NXP MCUX I3C hardware acting as the primary controller
+    on the bus (tested using RT685).
 
 * IEEE 802.15.4
 
