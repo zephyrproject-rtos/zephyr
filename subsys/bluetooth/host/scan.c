@@ -1380,7 +1380,7 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *ad
 			continue;
 		}
 
-		if (!bt_addr_le_cmp(&sync->addr, adv_addr) && sync->sid == sid) {
+		if (bt_addr_le_eq(&sync->addr, adv_addr) && sync->sid == sid) {
 			return sync;
 		}
 	}

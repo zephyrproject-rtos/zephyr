@@ -425,7 +425,7 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 	}
 
 	if (param->id >= bt_dev.id_count ||
-	    !bt_addr_le_cmp(&bt_dev.id_addr[param->id], BT_ADDR_LE_ANY)) {
+	    bt_addr_le_eq(&bt_dev.id_addr[param->id], BT_ADDR_LE_ANY)) {
 		return false;
 	}
 
@@ -896,7 +896,7 @@ static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 
 	bt_dev.adv_conn_id = adv->id;
 
-	if (!bt_addr_le_cmp(&adv->target_addr, BT_ADDR_LE_ANY)) {
+	if (bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY)) {
 		/* Undirected advertising */
 		conn = bt_conn_add_le(adv->id, BT_ADDR_LE_NONE);
 		if (!conn) {
@@ -926,7 +926,7 @@ static void le_adv_stop_free_conn(const struct bt_le_ext_adv *adv, uint8_t statu
 {
 	struct bt_conn *conn;
 
-	if (!bt_addr_le_cmp(&adv->target_addr, BT_ADDR_LE_ANY)) {
+	if (bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY)) {
 		conn = bt_conn_lookup_state_le(adv->id, BT_ADDR_LE_NONE,
 					       BT_CONN_CONNECTING_ADV);
 	} else {

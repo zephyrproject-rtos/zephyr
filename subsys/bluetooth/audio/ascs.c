@@ -943,7 +943,7 @@ static struct bt_ascs *ascs_new(struct bt_conn *conn)
 
 	for (i = 0; i < CONFIG_BT_MAX_CONN; i++) {
 		if (!sessions[i].conn &&
-		    !bt_addr_le_cmp(&sessions[i].peer, BT_ADDR_LE_ANY)) {
+		    bt_addr_le_eq(&sessions[i].peer, BT_ADDR_LE_ANY)) {
 			struct bt_ascs *ascs = &sessions[i];
 
 			memset(ascs->ases, 0, sizeof(ascs->ases));
