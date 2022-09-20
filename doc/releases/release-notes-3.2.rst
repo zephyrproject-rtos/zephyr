@@ -335,6 +335,10 @@ Drivers and Sensors
 
 * SDHC
 
+  * Added SDHC driver for NXP LPCXpresso platform
+  * Added support for card busy signal in SDHC SPI driver, to support
+    the :ref:`File System API <file_system_api>`
+
 * Sensor
 
 * Serial
