@@ -8,6 +8,28 @@ menuconfig DISPLAY_JDI
 
 if DISPLAY_JDI
 
+choice JDI_CLOCK_GEN_MODE
+	prompt "Clock generation method"
+	default JDI_CLOCK_GEN_SPI_DMA_REQUEST
+	help
+	  Specify the type of the clock generation method.
 
+config JDI_CLOCK_GEN_SPI_DMA_REQUEST
+	bool "Use DMA Request of SPI to generate clock"
+	select SPI_MCUX_FLEXCOMM_DMA
+	help
+	  It may happen that the SHIFTBUF data is overwritten by the
+	  new data before the current SHIFTBUF data has been sent.
+
+config JDI_CLOCK_GEN_CTIMER_TRIGGER
+	bool "Use CTimer trigger to generate clock"
+	help
+	  Using the CTIMER trigger method can control the timing more finely,
+	  and avoid the SHIFTBUF being overwritten by new data before it has
+	  finished shifting the data. 
+	  Notice: the first clock pattern can't send via DMA and the CS pin
+	  of the SPI cannot be configured in the device tree.
+
+endchoice
 
 endif # DISPLAY_JDI

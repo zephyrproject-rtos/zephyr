@@ -165,12 +165,6 @@ struct timer_match_config {
  *      b. When SHIFTER Clock come, SHIFTER0 send data to FLEXIO_D4 ~ FLEXIOD11
  */
 
-void pixel_data_m0_alarm_callback(const struct device *dev,
-                     uint8_t chan_id, uint32_t ticks,
-                     void *user_data)
-{
-    printk("\nchan_id %d ticks %d alarm callback\n", chan_id, ticks);	
-}
 const struct timer_match_config pixel_data_m0_dma_match_config = {
     .chan_id = 0,		/* use match channel 0 to trigger dma */
     .match_config = {
@@ -449,9 +443,10 @@ struct jdi_config {
     const struct pinctrl_dev_config *pincfg;
     const struct device *vcom_clock;
     const struct device *input_clock;
+    const SPI_Type *spi_base;
     const struct gpio_dt_spec backlight_gpio;
     const struct device *timer_dev[JDI_MAX_TIMER_NUM];
-    const CTIMER_Type* ctimer_base[JDI_MAX_TIMER_NUM];
+    const CTIMER_Type *ctimer_base[JDI_MAX_TIMER_NUM];
     const struct jdi_gpio_config jdi_gpios[JDI_MAX_GPIO_NUM];
 };
 
@@ -478,6 +473,9 @@ struct frame_dma_data {
     uint32_t rgb_baseline_dma_data_word_count;
     uint32_t jdi_enb_disable;
     uint32_t jdi_enb_disable_status;
+#if defined(CONFIG_JDI_CLOCK_GEN_CTIMER_TRIGGER)
+    struct k_sem trigger_clock_sem;
+#endif
 };
 
 struct jdi_data {
@@ -489,7 +487,12 @@ struct jdi_data {
 static void counter_dma_callback(const struct device *dev, void *user_data,
                    uint32_t chan_id, int status)
 {
-    printk("\nJDI callback, chan_id %d\n", chan_id);
+    LOG_DBG("\nJDI callback, chan_id %d\n", chan_id);
+#if defined(CONFIG_JDI_CLOCK_GEN_CTIMER_TRIGGER)
+    struct jdi_data *dev_data = (struct jdi_data *)user_data;
+
+    k_sem_give(&dev_data->frame.trigger_clock_sem);
+#endif
 }
 
 /**
@@ -505,6 +508,7 @@ static const struct spi_config spi_cfg = {
     .slave = 0,
 };
 
+#if defined(CONFIG_JDI_CLOCK_GEN_SPI_DMA_REQUEST)
 /* Fixed output value of MOSI for capture by ctimer */
 static const uint8_t clkgen_pattern = 0x80;
 
@@ -544,6 +548,127 @@ static int jdi_flexio_clock_send(const struct device *dev)
 
     return ret;
 }
+#elif defined(CONFIG_JDI_CLOCK_GEN_CTIMER_TRIGGER)
+/* Fixed output value of MOSI for capture by ctimer */
+static const uint32_t clkgen_pattern = 
+        SPI_FIFOWR_TXDATA(0x0080)	|	// data to send
+		SPI_FIFOWR_EOT(0)			|	// not EOT
+		SPI_FIFOWR_EOF(0)			|	// not EOF
+		SPI_FIFOWR_RXIGNORE(1)		|	// ignore Rx data
+		SPI_FIFOWR_LEN(8-1);			// 8 bit data
+
+/**
+ * @brief Configure DMA, which will write data to SPI FIFOWR when 
+ *        receiving trigger input to send CLK and MOSI
+ * 
+ * @param dev is JDI display device
+ * @return int 0 on success else negative errno code.
+ */
+static int jdi_pixel_clock_m1_dma_config(const struct device *dev)
+{
+    const struct jdi_config *config = dev->config;
+    struct jdi_data *dev_data = dev->data;
+    struct frame_dma_data *frame = &dev_data->frame;
+
+    uint32_t transfer_bytes = frame->dma_data_clock_count / CHAR_BIT;
+
+    const struct mcux_counter_dma_cfg pixel_clock_m1_priv_dma_cfg = {
+        .mcux_dma_cfg = {
+            .channel_trigger = {
+                .type = kDMA_RisingEdgeTrigger,			// hw trigger, rising edge.
+                .burst = kDMA_EdgeBurstTransfer1,		// burst transfer, burst size. Burst transfor 1 * dest_data_size bytes at a time. Trigger to transmit all data at once
+                                                        // Assign value from end address to start address
+                .wrap = kDMA_NoWrap,					// destination burst wrap.  the destination address range for each burst will be the same
+            },
+            .disable_int = false,
+        },
+    };
+
+    const struct counter_dma_cfg pixel_clock_m1_dma_config = {
+        .channel_direction = MEMORY_TO_MEMORY,
+        .channel_priority = 3, 					// priority = 3
+        .source_data_size = sizeof(uint32_t), 	// 32-bit transfers
+        .dest_data_size = sizeof(uint32_t),		// 32-bit transfers
+        .source_burst_length = 0,				// burst size = 0
+        .dest_burst_length = 1,					// burst size = 1
+        .src_addr = (uint32_t)&clkgen_pattern,
+        .dest_addr = (uint32_t)&config->spi_base->FIFOWR,   /* Write to FIFOWR of SPI to send to CTIMER and FLEXIO */
+        .length = (transfer_bytes - 1) * sizeof(uint32_t),  /* bytes num. So need to multiply by source_data_size,
+                                                             * the transfer count is reduced by 1 because the first
+                                                             * write when sending a frame is done by sw
+                                                             */
+        .source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+        .dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+        .callback = counter_dma_callback,
+        .user_data = dev->data,
+        .priv_config = (void *)&(pixel_clock_m1_priv_dma_cfg),
+    };
+    return counter_set_dma_cfg(config->timer_dev[PIXEL_DATA_TIMER], pixel_clock_m1_dma_match_config.chan_id, (struct counter_dma_cfg *)&pixel_clock_m1_dma_config);
+}
+
+/**
+ * @brief Send the first SPI output CLK to FLEXIO to shift data to JDI,
+ *        and output MOSI data to CTIMER capture to trigger prepare JDI
+ *        signal data.
+ * 
+ * Notice: the first clock pattern can't send via DMA and the CS pin
+	      of the SPI cannot be configured in the device tree.
+ * 
+ * @param dev is JDI display device
+ * @return int 0 on success else negative errno code.
+ */
+static int jdi_flexio_start_clock_send(const struct device *dev)
+{
+    const struct jdi_config *config = dev->config;
+
+    struct spi_buf tx_buf = {
+        .buf = (uint8_t *)&clkgen_pattern,
+        .len = 1,
+    };
+
+    struct spi_buf_set tx = {
+        .buffers = (const struct spi_buf *)&tx_buf,
+        .count = 1,
+    };
+
+    int ret = spi_write(config->input_clock, &spi_cfg, &tx);
+    if (ret) {
+        LOG_ERR("%s fail %d\n", __FUNCTION__, ret);
+    }
+
+    return ret;
+}
+
+static const uint32_t end_clkgen_pattern = 
+        SPI_FIFOWR_TXDATA(0x0000)	|	// data to send
+		SPI_FIFOWR_EOT(0)			|	// not EOT
+		SPI_FIFOWR_EOF(0)			|	// not EOF
+		SPI_FIFOWR_RXIGNORE(0)		|	// do not ignore Rx
+		SPI_FIFOWR_LEN(8-1);			// 8 bit data
+
+static int jdi_flexio_end_clock_send(const struct device *dev)
+{
+    const struct jdi_config *config = dev->config;
+
+    struct spi_buf tx_buf = {
+        .buf = (uint8_t *)&end_clkgen_pattern,
+        .len = 1,
+    };
+
+    struct spi_buf_set tx = {
+        .buffers = (const struct spi_buf *)&tx_buf,
+        .count = 1,
+    };
+
+    int ret = spi_write(config->input_clock, &spi_cfg, &tx);
+    if (ret) {
+        LOG_ERR("%s fail %d\n", __FUNCTION__, ret);
+    }
+
+    return ret;
+}
+
+#endif
 
 /**
  * @brief When PIXEL_DATA_TIMER capture input signal, transfer RGB/HST/VCK data
@@ -560,12 +685,10 @@ static int jdi_flexio_clock_send(const struct device *dev)
  * @param dev is JDI display device
  * @return int 0 on success else negative errno code.
  */
-int jdi_pixel_data_m0_dma_config(const struct device *dev)
+static int jdi_pixel_data_m0_dma_config(const struct device *dev)
 {
     const struct jdi_config *config = dev->config;
     struct jdi_data *dev_data = dev->data;
-
-    // dev_data->frame.dma_data_word_count = 1024;
 
     const struct mcux_counter_dma_cfg pixel_data_m0_priv_dma_cfg = {
         .mcux_dma_cfg = {
@@ -575,7 +698,7 @@ int jdi_pixel_data_m0_dma_config(const struct device *dev)
                                                         // Assign value from end address to start address
                 .wrap = kDMA_DstWrap,					// destination burst wrap.  the destination address range for each burst will be the same
             },
-            .disable_int = false,
+            .disable_int = true,
         },
     };
 
@@ -591,19 +714,11 @@ int jdi_pixel_data_m0_dma_config(const struct device *dev)
         .length = dev_data->frame.dma_data_word_count * sizeof(uint32_t),  // bytes num. So need to multiply by source_data_size
         .source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
         .dest_addr_adj = DMA_ADDR_ADJ_INCREMENT,
-        .callback = counter_dma_callback,
+        .callback = NULL,
         .user_data = dev->data,
         .priv_config = (void *)&(pixel_data_m0_priv_dma_cfg),
     };
-    printk("dma data size %d\n", dev_data->frame.dma_data_word_count);
-    // printk("rgb data %08x %08x %08x %08x %08x %08x %08x %08x\n", dev_data->frame.dma_data[dev_data->frame.rgb_baseline_dma_data_word_count], 
-    //                         dev_data->frame.dma_data[dev_data->frame.rgb_baseline_dma_data_word_count + 1],
-    //                         dev_data->frame.dma_data[dev_data->frame.rgb_baseline_dma_data_word_count + 2],
-    //                         dev_data->frame.dma_data[dev_data->frame.rgb_baseline_dma_data_word_count + 3],
-    //                         dev_data->frame.dma_data[dev_data->frame.rgb_baseline_dma_data_word_count + 4],
-    //                         dev_data->frame.dma_data[dev_data->frame.rgb_baseline_dma_data_word_count + 5],
-    //                         dev_data->frame.dma_data[dev_data->frame.rgb_baseline_dma_data_word_count + 6],
-    //                         dev_data->frame.dma_data[dev_data->frame.rgb_baseline_dma_data_word_count + 7]);
+
     return counter_set_dma_cfg(config->timer_dev[PIXEL_DATA_TIMER], pixel_data_m0_dma_match_config.chan_id, (struct counter_dma_cfg *)&pixel_data_m0_dma_config);
 
 }
@@ -616,7 +731,7 @@ int jdi_pixel_data_m0_dma_config(const struct device *dev)
  * @param dev is JDI display device
  * @return int 0 on success else negative errno code.
  */
-int jdi_xrst_vst_m0_dma_config(const struct device *dev)
+static int jdi_xrst_vst_m0_dma_config(const struct device *dev)
 {
     const struct jdi_config *config = dev->config;
 
@@ -662,7 +777,7 @@ int jdi_xrst_vst_m0_dma_config(const struct device *dev)
  * @param dev is JDI display device
  * @return int 0 on success else negative errno code.
  */
-int jdi_xrst_vst_m1_dma_config(const struct device *dev)
+static int jdi_xrst_vst_m1_dma_config(const struct device *dev)
 {
     const struct jdi_config *config = dev->config;
 
@@ -709,7 +824,7 @@ int jdi_xrst_vst_m1_dma_config(const struct device *dev)
  * @param dev is JDI display device
  * @return int 0 on success else negative errno code.
  */
-int jdi_enb_m0_dma_config(const struct device *dev)
+static int jdi_enb_m0_dma_config(const struct device *dev)
 {
     const struct jdi_config *config = dev->config;
 
@@ -807,8 +922,6 @@ void jdi_dma_data_add_jdi_last_enb(struct frame_dma_data *frame, uint32_t jdi_en
 
     uint32_t *pnt_data_dma_lpb;
     uint32_t *pnt_data_dma_spb;
-    // uint32_t *pnt_image_pixel0123;
-    // uint32_t *pnt_image_pixel4567;
 
     uint32_t dma_word_count_loc = frame->dma_data_word_count;
 
@@ -1171,7 +1284,18 @@ void jdi_send_frame(const struct device *dev)
 
 	counter_start(config->timer_dev[ENB_DATA_TIMER]);
 
+#if defined(CONFIG_JDI_CLOCK_GEN_SPI_DMA_REQUEST)
     jdi_flexio_clock_send(dev);
+#elif defined(CONFIG_JDI_CLOCK_GEN_CTIMER_TRIGGER)
+    jdi_pixel_clock_m1_dma_config(dev);
+
+    jdi_flexio_start_clock_send(dev);
+
+    k_sem_take(&dev_data->frame.trigger_clock_sem, K_FOREVER);
+
+    jdi_flexio_end_clock_send(dev);
+#endif
+
 	return;
 }
 
@@ -1291,11 +1415,7 @@ static int jdi_write(const struct device *dev, const uint16_t x,
     jdi_send_frame(dev);
 
     k_sem_give(&dev_data->sem);
-    uint8_t channel = 34;
-    LOG_DBG("DMA channel %d CFG %08x\n", channel, DMA0->CHANNEL[channel].CFG);
-    LOG_DBG("DMA channel %d XFERCFG %08x\n", channel, DMA0->CHANNEL[channel].XFERCFG);
     
-    // printk("\n\n\n\n\n");
     return 0;
 }
 
@@ -1931,6 +2051,9 @@ static int jdi_init(const struct device *dev)
     }
 
     k_sem_init(&dev_data->sem, 0, 1);
+#if defined(CONFIG_JDI_CLOCK_GEN_CTIMER_TRIGGER)
+    k_sem_init(&dev_data->frame.trigger_clock_sem, 0, 1);
+#endif
     k_sem_give(&dev_data->sem);
 
     return 0;
@@ -1962,6 +2085,11 @@ static const struct display_driver_api flexio_jdi_api = {
         COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(id, name), 		\
             (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, name))),	\
             (NULL))
+
+#define JDI_CLOCK_REG_ADDR_CONFIG(id, name)				\
+        COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(id, name), 		\
+            (DT_REG_ADDR_BY_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(id, name), 0)),	\
+            (0))
 
 #define JDI_TIMER_DEV_CONFIG(id, name)				\
         COND_CODE_1(DT_INST_PROP_HAS_NAME(id, timers, name), 		\
@@ -2015,6 +2143,7 @@ static const struct display_driver_api flexio_jdi_api = {
         .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
         .vcom_clock = JDI_CLOCK_CONFIG(id, vcom),	\
         .input_clock = JDI_CLOCK_CONFIG(id, input_clock),	\
+        .spi_base = (SPI_Type *)JDI_CLOCK_REG_ADDR_CONFIG(id, input_clock), \
         .backlight_gpio = BACKLIGHT_GPIO_INIT(id),	\
         JDI_TIMERS_CONFIG(id)				        \
         JDI_GPIOS_CONFIG(id)                        \
