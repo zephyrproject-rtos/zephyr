@@ -155,11 +155,19 @@ Kernel
 Architectures
 *************
 
+* ARC
+
 * ARM
 
   * AARCH32
 
   * AARCH64
+
+* Posix
+
+* RISC-V
+
+* x86
 
 * Xtensa
 
@@ -224,6 +232,8 @@ Drivers and Sensors
 
 * ADC
 
+* Audio
+
 * CAN
 
   * A driver for bridging from :ref:`native_posix` to Linux SocketCAN has been added.
@@ -240,9 +250,19 @@ Drivers and Sensors
     controller driver, has been moved to :zephyr_file:`drivers/net/canbus.c` and can now be enabled
     using :kconfig:option:`CONFIG_NET_CANBUS`.
 
+* Clock Control
+
+* Coredump
+
 * Counter
 
+* Crypto
+
 * DAC
+
+* DAI
+
+* Display
 
 * Disk
 
@@ -255,6 +275,8 @@ Drivers and Sensors
 
 * Entropy
 
+* ESPI
+
 * Ethernet
 
 * Flash
@@ -265,9 +287,13 @@ Drivers and Sensors
 
   * Added GPIO driver for Renesas Smartbond platform
 
+* HWINFO
+
 * I2C
 
 * I2S
+
+* I3C
 
 * IEEE 802.15.4
 
@@ -275,9 +301,25 @@ Drivers and Sensors
 
 * Interrupt Controller
 
+* IPM
+
+* LED
+
+* LoRa
+
 * MBOX
 
 * MEMC
+
+* MM
+
+* Modem
+
+* PCIE
+
+* PECI
+
+* Pinmux
 
 * Pin control
 
@@ -286,6 +328,12 @@ Drivers and Sensors
 * PWM
 
   * Added PWM driver for Renesas R-Car platform
+
+* Power Domain
+
+* Reset
+
+* SDHC
 
 * Sensor
 
@@ -299,9 +347,13 @@ Drivers and Sensors
 
 * USB
 
+* W1
+
 * Watchdog
 
   * Added support for Raspberry Pi Pico watchdog.
+
+* WiFi
 
 Networking
 **********
@@ -328,6 +380,18 @@ Devicetree
 
 Libraries / Subsystems
 **********************
+
+* Console
+
+* C Library
+
+* C++ Subsystem
+
+* Emul
+
+* Filesystem
+
+* IPC
 
 * Management
 
@@ -364,8 +428,56 @@ Libraries / Subsystems
   * Added :c:macro:`LOG_RAW` for logging strings without additional formatting.
     It is similar to :c:macro:`LOG_PRINTK` but do not append ``<cr>`` when new line is found.
 
+* LoRaWAN
+
+* Modbus
+
+* Power management
+
+* RTIO
+
+* SD Subsystem
+
+* Settings
+
+* Shell
+
+* Storage
+
+* Testsuite
+
+* Tracing
+
 HALs
 ****
+
+* Atmel
+
+* Espressif
+
+* GigaDevice
+
+* NXP
+
+* Nordic
+
+* RPi Pico
+
+* Renesas
+
+* ST
+
+* STM32
+
+* Silabs
+
+* TI
+
+* Telink
+
+* Wurth Elektronik
+
+* Xtensa
 
 MCUboot
 *******
