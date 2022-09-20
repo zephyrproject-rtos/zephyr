@@ -897,6 +897,8 @@ Libraries / Subsystems
 
   * SDMMC STM32: Now compatible with STM32L5 series. Added DMA support for DMA-V1
     compatible devices.
+  * Added support for handling the :c:macro:`DISK_IOCTL_CTRL_SYNC` ioctl call.
+    this enables the filesystem api :c:func:`fs_sync`.
 
 * Settings
 
