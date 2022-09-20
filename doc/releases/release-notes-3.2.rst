@@ -375,6 +375,10 @@ Drivers and Sensors
 
 * IPM
 
+  * Kconfig is split into smaller, vendor oriented files.
+  * Support for Intel S1000 in cAVS IDC driver has been removed as the board
+    ``intel_s1000_crb`` has been removed.
+
 * LED
 
 * LoRa
