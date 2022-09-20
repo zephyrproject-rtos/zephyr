@@ -21,7 +21,7 @@ import string
 import sys
 import textwrap
 from typing import Any, Dict, Iterable, List, \
-    NamedTuple, NoReturn, Optional, Tuple, Union
+    NamedTuple, NoReturn, Optional, Set, Tuple, Union
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 
@@ -734,32 +734,18 @@ class DT:
           Try not to raise DTError even if the input tree has errors.
           For experimental use; results not guaranteed.
         """
+        self._root: Optional[Node] = None
+        self.alias2node: Dict[str, Node] = {}
+        self.label2node: Dict[str, Node] = {}
+        self.label2prop: Dict[str, Property] = {}
+        self.label2prop_offset: Dict[str, Tuple[Property, int]] = {}
+        self.phandle2node: Dict[int, Node] = {}
+        self.memreserves: List[Tuple[Set[str], int, int]] = []
         self.filename = filename
-        self._include_path = list(include_path)
+
         self._force = force
 
-        with open(filename, encoding="utf-8") as f:
-            self._file_contents = f.read()
-
-        self._tok_i = self._tok_end_i = 0
-        self._filestack: List[_FileStackElt] = []
-
-        self.alias2node: Dict[str, Node] = {}
-
-        self._lexer_state: int = _DEFAULT
-        self._saved_token: Optional[_Token] = None
-
-        self._lineno: int = 1
-
-        self._root: Optional[Node] = None
-
-        self._parse_dt()
-
-        self._register_phandles()
-        self._fixup_props()
-        self._register_aliases()
-        self._remove_unreferenced()
-        self._register_labels()
+        self._parse_file(filename, include_path)
 
     @property
     def root(self) -> Node:
@@ -853,12 +839,36 @@ class DT:
         Returns some information about the DT instance. Called automatically if
         the DT instance is evaluated.
         """
-        return f"DT(filename='{self.filename}', " \
-            f"include_path={self._include_path})"
+        if self.filename:
+            return f"DT(filename='{self.filename}', " \
+                f"include_path={self._include_path})"
+        return super().__repr__()
 
     #
     # Parsing
     #
+
+    def _parse_file(self, filename, include_path):
+        self._include_path = list(include_path)
+
+        with open(filename, encoding="utf-8") as f:
+            self._file_contents = f.read()
+
+        self._tok_i = self._tok_end_i = 0
+        self._filestack: List[_FileStackElt] = []
+
+        self._lexer_state: int = _DEFAULT
+        self._saved_token: Optional[_Token] = None
+
+        self._lineno: int = 1
+
+        self._parse_dt()
+
+        self._register_phandles()
+        self._fixup_props()
+        self._register_aliases()
+        self._remove_unreferenced()
+        self._register_labels()
 
     def _parse_dt(self):
         # Top-level parsing loop
@@ -932,7 +942,6 @@ class DT:
     def _parse_memreserves(self):
         # Parses /memreserve/, which appears after /dts-v1/
 
-        self.memreserves = []
         while True:
             # Labels before /memreserve/
             labels = []
@@ -1580,7 +1589,6 @@ class DT:
         # that set. Also checks the format of the phandles and does misc.
         # sanity checking.
 
-        self.phandle2node = {}
         for node in self.node_iter():
             phandle = node.props.get("phandle")
             if phandle:
@@ -1721,10 +1729,6 @@ class DT:
         # label2prop, and label2prop_offset
 
         label2things = collections.defaultdict(set)
-
-        self.label2node = {}
-        self.label2prop = {}
-        self.label2prop_offset = {}
 
         # Register all labels and the nodes/props they point to in label2things
         for node in self.node_iter():
