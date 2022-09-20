@@ -535,6 +535,11 @@ Libraries / Subsystems
 
 * RTIO
 
+  * Initial version of an asynchronous task and executor API for I/O similar inspired
+    by Linux's very successful io_uring.
+  * Provides a simple linear and limited concurrency executor, simple task queuing,
+    and the ability to poll for task completions.
+
 * SD Subsystem
 
   * SDMMC STM32: Added DMA support and now compatible with STM32L5 series.
