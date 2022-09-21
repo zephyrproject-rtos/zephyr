@@ -5,7 +5,7 @@ description: Microchip XEC QMSPI controller
 
 compatible: "microchip,xec-qmspi"
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -15,6 +15,12 @@ properties:
       type: int
       required: true
       description: SPI Port 0 or 1.
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
 
     rxdma:
       type: int
