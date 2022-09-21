@@ -25,7 +25,6 @@
 struct can_stm32_mailbox {
 	can_tx_callback_t tx_callback;
 	void *callback_arg;
-	int error;
 };
 
 struct can_stm32_data {
