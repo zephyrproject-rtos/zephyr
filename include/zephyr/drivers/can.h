@@ -978,7 +978,8 @@ static inline int z_impl_can_start(const struct device *dev)
  * @brief Stop the CAN controller
  *
  * Bring the CAN controller into `CAN_STATE_STOPPED`. This will disallow the CAN controller from
- * participating in CAN communication and disable the CAN transceiver, if supported.
+ * participating in CAN communication, abort any pending CAN frame transmissions, and disable the
+ * CAN transceiver, if supported.
  *
  * @see can_start()
  * @see can_transceiver_disable()
