@@ -26,6 +26,7 @@ zephyr_library_sources_ifdef(CONFIG_PWM_MCUX_PWT 	pwm_mcux_pwt.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_GECKO		pwm_gecko.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_GD32		pwm_gd32.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_RCAR		pwm_rcar.c)
+zephyr_library_sources_ifdef(CONFIG_PWM_PCA9685 	pwm_pca9685.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_TEST		pwm_test.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_RPI_PICO	pwm_rpi_pico.c)
 
