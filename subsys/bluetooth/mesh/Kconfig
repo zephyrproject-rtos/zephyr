@@ -887,6 +887,19 @@ config BT_MESH_SHELL
 	  Activate shell module that provides Bluetooth mesh commands to
 	  the console.
 
+if BT_MESH_SHELL
+
+config BT_MESH_SHELL_HEALTH_SRV_INSTANCE
+	bool "Support for Shell Health Server model instance"
+	help
+	  This option enables Health Server model instance in the
+	  Bluetooth mesh shell module together with fault controlling
+	  shell commands. To use the model instance, add bt_mesh_shell_health_srv
+	  to the device composition data. Use BT_MESH_SHELL_HEALTH_PUB_DEFINE to
+	  instantiate publication context.
+
+endif # BT_MESH_SHELL
+
 config BT_MESH_MODEL_EXTENSIONS
 	bool "Support for Model extensions"
 	help
