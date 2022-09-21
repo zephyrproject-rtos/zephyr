@@ -47,6 +47,9 @@
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
 #include "ull_internal.h"
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ull_llcp_internal.h"
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 #include "ull_sched_internal.h"
 #include "ull_chan_internal.h"
 #include "ull_conn_internal.h"
@@ -200,7 +203,7 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #define CONN_TX_CTRL_BUFFERS (4 * CONFIG_BT_CTLR_LLCP_CONN)
 #else /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
-#define CONN_TX_CTRL_BUFFERS 0
+#define CONN_TX_CTRL_BUFFERS LLCP_TX_CTRL_BUF_COUNT
 #endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 #define CONN_TX_CTRL_BUF_SIZE MROUND(offsetof(struct node_tx, pdu) + \
 				     offsetof(struct pdu_data, llctrl) + \
@@ -213,6 +216,10 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
 /* CIS Establishment procedure state values */
 #define CIS_REQUEST_AWAIT_HOST 2
 
+/*
+ * TODO: when the legacy LLCP is removed we can replace 'CONN_TX_CTRL_BUFFERS'
+ * with 'LLCP_TX_CTRL_BUF_COUNT'
+ */
 static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONN_DATA_BUFFERS);
 static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx),
 		    (CONN_DATA_BUFFERS +
