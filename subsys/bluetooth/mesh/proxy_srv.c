@@ -632,6 +632,7 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 		}
 	} else {
 		bt_mesh_proxy_beacon_send(sub);
+		bt_mesh_adv_gatt_update();
 	}
 }
 
