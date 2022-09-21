@@ -45,7 +45,7 @@ class Node:
       integer.
 
     props:
-      A collections.OrderedDict that maps the properties defined on the node to
+      A dict that maps the properties defined on the node to
       their values. 'props' is indexed by property name (a string), and values
       are Property objects.
 
@@ -61,8 +61,7 @@ class Node:
       stored in big-endian format.
 
     nodes:
-      A collections.OrderedDict containing the subnodes of the node, indexed by
-      name.
+      A dict containing the subnodes of the node, indexed by name.
 
     labels:
       A list with all labels pointing to the node, in the same order as the
@@ -90,8 +89,8 @@ class Node:
         Node constructor. Not meant to be called directly by clients.
         """
         self.name = name
-        self.props: Dict[str, 'Property'] = collections.OrderedDict()
-        self.nodes: Dict[str, 'Node'] = collections.OrderedDict()
+        self.props: Dict[str, 'Property'] = {}
+        self.nodes: Dict[str, 'Node'] = {}
         self.labels: List[str] = []
         self.parent = parent
         self.dt = dt
