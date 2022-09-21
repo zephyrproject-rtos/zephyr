@@ -257,12 +257,15 @@ int can_mcan_stop(const struct device *dev)
 	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_reg *can = cfg->can;
+	can_tx_callback_t tx_cb;
+	uint32_t tx_idx;
 	int ret;
 
 	if (!data->started) {
 		return -EALREADY;
 	}
 
+	/* CAN transmissions are automatically stopped when entering init mode */
 	ret = can_enter_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret != 0) {
 		LOG_ERR("Failed to enter init mode");
@@ -280,6 +283,16 @@ int can_mcan_stop(const struct device *dev)
 	can_mcan_enable_configuration_change(dev);
 
 	data->started = false;
+
+	for (tx_idx = 0; tx_idx < ARRAY_SIZE(data->tx_fin_cb); tx_idx++) {
+		tx_cb = data->tx_fin_cb[tx_idx];
+
+		if (tx_cb != NULL) {
+			data->tx_fin_cb[tx_idx] = NULL;
+			tx_cb(dev, -ENETDOWN, data->tx_fin_cb_arg[tx_idx]);
+			k_sem_give(&data->tx_sem);
+		}
+	}
 
 	return 0;
 }
@@ -554,6 +567,7 @@ static void can_mcan_tc_event_handler(const struct device *dev)
 		k_sem_give(&data->tx_sem);
 
 		tx_cb = data->tx_fin_cb[tx_idx];
+		data->tx_fin_cb[tx_idx] = NULL;
 		tx_cb(dev, 0, data->tx_fin_cb_arg[tx_idx]);
 	}
 }
