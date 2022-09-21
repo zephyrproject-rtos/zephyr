@@ -203,7 +203,7 @@ static const struct pwm_driver_api xlnx_axi_timer_driver_api = {
 			    NULL, NULL,					\
 			    &xlnx_axi_timer_config_##n,			\
 			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_PWM_INIT_PRIORITY,			\
 			    &xlnx_axi_timer_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(XLNX_AXI_TIMER_INIT);
