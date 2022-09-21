@@ -4,8 +4,6 @@
 # Common fields for STM32 UART peripherals.
 description: STM32 UART-BASE
 
-compatible: "st,stm32-uart-base"
-
 include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
