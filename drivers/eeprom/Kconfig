@@ -124,4 +124,12 @@ config EEPROM_FAKE
 	help
 	  Enable support for the FFF-based fake EEPROM driver.
 
+config EEPROM_SMBUS
+	bool "Generic SMBus EEPROM driver"
+	default y
+	depends on DT_HAS_ZEPHYR_SMBUS_EEPROM_ENABLED
+	select SMBUS
+	help
+	  Enable Generic SMBus EEPROM driver.
+
 endif # EEPROM
