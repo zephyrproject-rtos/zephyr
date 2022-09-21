@@ -1020,15 +1020,21 @@ void bt_conn_cb_register(struct bt_conn_cb *cb);
  */
 void bt_set_bondable(bool enable);
 
-/** @brief Allow/disallow remote OOB data to be used for pairing.
+/** @brief Allow/disallow remote LE SC OOB data to be used for pairing.
  *
- *  Set/clear the OOB data flag for SMP Pairing Request/Response data.
- *  The initial value of this flag depends on BT_OOB_DATA_PRESENT Kconfig
- *  setting.
+ *  Set/clear the OOB data flag for LE SC SMP Pairing Request/Response data.
  *
- *  @param enable Value allowing/disallowing remote OOB data.
+ *  @param enable Value allowing/disallowing remote LE SC OOB data.
  */
-void bt_set_oob_data_flag(bool enable);
+void bt_le_oob_set_sc_flag(bool enable);
+
+/** @brief Allow/disallow remote legacy OOB data to be used for pairing.
+ *
+ *  Set/clear the OOB data flag for legacy SMP Pairing Request/Response data.
+ *
+ *  @param enable Value allowing/disallowing remote legacy OOB data.
+ */
+void bt_le_oob_set_legacy_flag(bool enable);
 
 /** @brief Set OOB Temporary Key to be used for pairing
  *

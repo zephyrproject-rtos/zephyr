@@ -113,6 +113,10 @@ Deprecated in this release
 Stable API changes in this release
 ==================================
 
+* Removed `bt_set_oob_data_flag` and replaced it with two new API calls:
+  * :c:func:`bt_le_oob_set_sc_flag` for setting/clearing OOB flag in SC pairing
+  * :c:func:`bt_le_oob_set_legacy_flag` for setting/clearing OOB flag in legacy paring
+
 New APIs in this release
 ========================
 

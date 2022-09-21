@@ -719,7 +719,7 @@ static void bt_ready(int err)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
-		bt_set_oob_data_flag(true);
+		bt_le_oob_set_legacy_flag(true);
 	}
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -2834,7 +2834,7 @@ static int cmd_oob_remote(const struct shell *sh, size_t argc,
 			sizeof(oob_remote.le_sc_data.r));
 		hex2bin(argv[4], strlen(argv[4]), oob_remote.le_sc_data.c,
 			sizeof(oob_remote.le_sc_data.c));
-		bt_set_oob_data_flag(true);
+		bt_le_oob_set_sc_flag(true);
 	} else {
 		shell_help(sh);
 		return -ENOEXEC;
@@ -2846,7 +2846,7 @@ static int cmd_oob_remote(const struct shell *sh, size_t argc,
 static int cmd_oob_clear(const struct shell *sh, size_t argc, char *argv[])
 {
 	memset(&oob_remote, 0, sizeof(oob_remote));
-	bt_set_oob_data_flag(false);
+	bt_le_oob_set_sc_flag(false);
 
 	return 0;
 }
