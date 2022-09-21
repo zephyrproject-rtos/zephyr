@@ -239,6 +239,8 @@ Boards & SoC Support
 
 * Added support for these following shields:
 
+  * ARCELI W5500 ETH
+  * Panasonic Grid-EYE (AMG88xx)
 
 Drivers and Sensors
 *******************
