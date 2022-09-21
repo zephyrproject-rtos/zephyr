@@ -22,7 +22,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	riscv_cpu_init[cpu_num].fn = fn;
 	riscv_cpu_init[cpu_num].arg = arg;
 
-	riscv_cpu_sp = Z_THREAD_STACK_BUFFER(stack) + sz;
+	riscv_cpu_sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
 	riscv_cpu_wake_flag = cpu_num;
 
 	while (riscv_cpu_wake_flag != 0U) {
