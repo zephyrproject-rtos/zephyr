@@ -403,7 +403,12 @@ static void adv_disable_rpa(struct bt_le_ext_adv *adv, void *data)
 	/* Disable advertising sets to prepare them for RPA update. */
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED) &&
 	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
-		bt_le_adv_set_enable_ext(adv, false, NULL);
+		int err;
+
+		err = bt_le_adv_set_enable_ext(adv, false, NULL);
+		if (err) {
+			BT_ERR("Failed to disable advertising (err %d)", err);
+		}
 
 		adv_disabled[adv_index] = true;
 	}
@@ -432,7 +437,10 @@ static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
 				err);
 		}
 
-		bt_le_adv_set_enable_ext(adv, true, NULL);
+		err = bt_le_adv_set_enable_ext(adv, true, NULL);
+		if (err) {
+			BT_ERR("Failed to enable advertising (err %d)", err);
+		}
 	}
 }
 #endif /* defined(CONFIG_BT_EXT_ADV) && defined(CONFIG_BT_PRIVACY) */
