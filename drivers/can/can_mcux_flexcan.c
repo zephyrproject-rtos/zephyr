@@ -220,10 +220,29 @@ static int mcux_flexcan_stop(const struct device *dev)
 {
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
+	can_tx_callback_t function;
+	void *arg;
+	int alloc;
 	int err;
 
 	if (!data->started) {
 		return -EALREADY;
+	}
+
+	data->started = false;
+
+	/* Abort any pending TX frames before entering freeze mode */
+	for (alloc = 0; alloc < MCUX_FLEXCAN_MAX_TX; alloc++) {
+		function = data->tx_cbs[alloc].function;
+		arg = data->tx_cbs[alloc].arg;
+
+		if (atomic_test_and_clear_bit(data->tx_allocs, alloc)) {
+			FLEXCAN_TransferAbortSend(config->base, &data->handle,
+						ALLOC_IDX_TO_TXMB_IDX(alloc));
+
+			function(dev, -ENETDOWN, arg);
+			k_sem_give(&data->tx_allocs_sem);
+		}
 	}
 
 	FLEXCAN_EnterFreezeMode(config->base);
@@ -235,8 +254,6 @@ static int mcux_flexcan_stop(const struct device *dev)
 			return err;
 		}
 	}
-
-	data->started = false;
 
 	return 0;
 }
