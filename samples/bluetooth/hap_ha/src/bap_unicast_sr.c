@@ -35,6 +35,9 @@ static struct bt_audio_source {
 } source_streams[CONFIG_BT_ASCS_ASE_SRC_COUNT];
 static size_t configured_source_stream_count;
 
+static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02,
+								   10, 20000, 40000, 20000, 40000);
+
 static uint32_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
 {
 	for (size_t i = 0U; i < configured_source_stream_count; i++) {
@@ -98,7 +101,7 @@ static void print_codec(const struct bt_codec *codec)
 	}
 }
 
-static void print_qos(struct bt_codec_qos *qos)
+static void print_qos(const struct bt_codec_qos *qos)
 {
 	printk("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u "
 	       "rtn %u latency %u pd %u\n",
@@ -170,37 +173,49 @@ static void audio_timer_timeout(struct k_work *work)
 	}
 }
 
-static struct bt_audio_stream *lc3_config(struct bt_conn *conn, struct bt_audio_ep *ep,
-					  enum bt_audio_dir dir, struct bt_audio_capability *cap,
-					  struct bt_codec *codec)
+static struct bt_audio_stream *stream_alloc(void)
 {
-	printk("ASE Codec Config: conn %p ep %p dir %u, cap %p\n",
-	       conn, ep, dir, cap);
-
-	print_codec(codec);
-
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
 		struct bt_audio_stream *stream = &streams[i];
 
 		if (!stream->conn) {
-			printk("ASE Codec Config stream %p\n", stream);
-			if (dir == BT_AUDIO_DIR_SOURCE) {
-				source_streams[configured_source_stream_count++].stream = stream;
-			}
-
 			return stream;
 		}
 	}
 
-	printk("No streams available\n");
-
 	return NULL;
 }
 
-static int lc3_reconfig(struct bt_audio_stream *stream, struct bt_audio_capability *cap,
-			struct bt_codec *codec)
+static int lc3_config(struct bt_conn *conn, const struct bt_audio_ep *ep, enum bt_audio_dir dir,
+		      const struct bt_codec *codec, struct bt_audio_stream **stream,
+		      struct bt_codec_qos_pref *const pref)
 {
-	printk("ASE Codec Reconfig: stream %p cap %p\n", stream, cap);
+	printk("ASE Codec Config: conn %p ep %p dir %u\n", conn, ep, dir);
+
+	print_codec(codec);
+
+	*stream = stream_alloc();
+	if (*stream == NULL) {
+		printk("No streams available\n");
+
+		return -ENOMEM;
+	}
+
+	printk("ASE Codec Config stream %p\n", *stream);
+
+	if (dir == BT_AUDIO_DIR_SOURCE) {
+		source_streams[configured_source_stream_count++].stream = *stream;
+	}
+
+	*pref = qos_pref;
+
+	return 0;
+}
+
+static int lc3_reconfig(struct bt_audio_stream *stream, enum bt_audio_dir dir,
+			const struct bt_codec *codec, struct bt_codec_qos_pref *const pref)
+{
+	printk("ASE Codec Reconfig: stream %p\n", stream);
 
 	print_codec(codec);
 
@@ -208,7 +223,7 @@ static int lc3_reconfig(struct bt_audio_stream *stream, struct bt_audio_capabili
 	return -ENOEXEC;
 }
 
-static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
+static int lc3_qos(struct bt_audio_stream *stream, const struct bt_codec_qos *qos)
 {
 	printk("QoS: stream %p qos %p\n", stream, qos);
 
@@ -217,7 +232,7 @@ static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 	return 0;
 }
 
-static int lc3_enable(struct bt_audio_stream *stream, struct bt_codec_data *meta,
+static int lc3_enable(struct bt_audio_stream *stream, const struct bt_codec_data *meta,
 		      size_t meta_count)
 {
 	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
@@ -291,7 +306,7 @@ static bool valid_metadata_type(uint8_t type, uint8_t len)
 	}
 }
 
-static int lc3_metadata(struct bt_audio_stream *stream, struct bt_codec_data *meta,
+static int lc3_metadata(struct bt_audio_stream *stream, const struct bt_codec_data *meta,
 			size_t meta_count)
 {
 	printk("Metadata: stream %p meta_count %u\n", stream, meta_count);
@@ -328,7 +343,7 @@ static int lc3_release(struct bt_audio_stream *stream)
 	return 0;
 }
 
-static struct bt_audio_capability_ops lc3_ops = {
+static const struct bt_audio_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
 	.reconfig = lc3_reconfig,
 	.qos = lc3_qos,
@@ -399,28 +414,20 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 static struct bt_audio_capability caps[] = {
 	{
 		.dir = BT_AUDIO_DIR_SINK,
-		.pref = BT_AUDIO_CAPABILITY_PREF(
-				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
-				BT_GAP_LE_PHY_2M, 0x02, 10, 20000, 40000,
-				20000, 40000),
 		.codec = &lc3_codec,
-		.ops = &lc3_ops,
 	},
 #if defined(CONFIG_BT_ASCS_ASE_SRC)
 	{
 		.dir = BT_AUDIO_DIR_SOURCE,
-		.pref = BT_AUDIO_CAPABILITY_PREF(
-				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
-				BT_GAP_LE_PHY_2M, 0x02, 10, 20000, 40000,
-				20000, 40000),
 		.codec = &lc3_codec,
-		.ops = &lc3_ops,
 	}
 #endif /* CONFIG_BT_ASCS_ASE_SRC */
 };
 
 int bap_unicast_sr_init(void)
 {
+	bt_audio_unicast_server_register_cb(&unicast_server_cb);
+
 	for (size_t i = 0; i < ARRAY_SIZE(caps); i++) {
 		bt_audio_capability_register(&caps[i]);
 	}
