@@ -635,7 +635,7 @@ struct _static_thread_data {
 
 #define Z_THREAD_INITIALIZER(thread, stack, stack_size,           \
 			    entry, p1, p2, p3,                   \
-			    prio, options, delay, abort, tname)  \
+			    prio, options, delay, tname)         \
 	{                                                        \
 	.init_thread = (thread),				 \
 	.init_stack = (stack),					 \
@@ -647,7 +647,6 @@ struct _static_thread_data {
 	.init_prio = (prio),                                     \
 	.init_options = (options),                               \
 	.init_delay = (delay),                                   \
-	.init_abort = (abort),                                   \
 	.init_name = STRINGIFY(tname),                           \
 	}
 
@@ -693,7 +692,7 @@ struct _static_thread_data {
 		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
 				    _k_thread_stack_##name, stack_size,  \
 				entry, p1, p2, p3, prio, options, delay, \
-				NULL, name);				 	 \
+				name);					 \
 	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**

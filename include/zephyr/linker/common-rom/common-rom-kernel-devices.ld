@@ -68,6 +68,8 @@
 
 	ITERABLE_SECTION_ROM(k_p4wq_initparam, 4)
 
+	ITERABLE_SECTION_ROM(_static_thread_data, 4)
+
 #if defined(CONFIG_PCIE)
 	SECTION_DATA_PROLOGUE(irq_alloc,,)
 	{
