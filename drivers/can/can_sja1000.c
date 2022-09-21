@@ -89,6 +89,20 @@ static inline void can_sja1000_clear_errors(const struct device *dev)
 	(void)can_sja1000_read_reg(dev, CAN_SJA1000_ECC);
 }
 
+static void can_sja1000_tx_done(const struct device *dev, int status)
+{
+	struct can_sja1000_data *data = dev->data;
+	can_tx_callback_t callback = data->tx_callback;
+	void *user_data = data->tx_user_data;
+
+	if (callback != NULL) {
+		data->tx_callback = NULL;
+		callback(dev, status, user_data);
+	}
+
+	k_sem_give(&data->tx_idle);
+}
+
 int can_sja1000_set_timing(const struct device *dev, const struct can_timing *timing)
 {
 	struct can_sja1000_data *data = dev->data;
@@ -187,6 +201,7 @@ int can_sja1000_stop(const struct device *dev)
 		return -EALREADY;
 	}
 
+	/* Entering reset mode aborts current transmission, if any */
 	err = can_sja1000_enter_reset_mode(dev);
 	if (err != 0) {
 		return err;
@@ -201,6 +216,8 @@ int can_sja1000_stop(const struct device *dev)
 	}
 
 	data->started = false;
+
+	can_sja1000_tx_done(dev, -ENETDOWN);
 
 	return 0;
 }
@@ -562,18 +579,6 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 		can_sja1000_write_reg(dev, CAN_SJA1000_CMR, CAN_SJA1000_CMR_RRB);
 		sr = can_sja1000_read_reg(dev, CAN_SJA1000_SR);
 	} while ((sr & CAN_SJA1000_SR_RBS) != 0);
-}
-
-static void can_sja1000_tx_done(const struct device *dev, int status)
-{
-	struct can_sja1000_data *data = dev->data;
-	can_tx_callback_t callback = data->tx_callback;
-	void *user_data = data->tx_user_data;
-
-	data->tx_callback = NULL;
-	callback(dev, status, user_data);
-
-	k_sem_give(&data->tx_idle);
 }
 
 static void can_sja1000_handle_transmit_irq(const struct device *dev)
