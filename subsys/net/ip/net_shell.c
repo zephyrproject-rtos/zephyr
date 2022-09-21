@@ -4104,7 +4104,11 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 	}
 
 	errno = 0;
-	res = strtol(str, &endptr, 10);
+	if (strncmp(str, "0x", 2) == 0) {
+		res = strtol(str, &endptr, 16);
+	} else {
+		res = strtol(str, &endptr, 10);
+	}
 
 	if (errno || (endptr == str)) {
 		return -1;
