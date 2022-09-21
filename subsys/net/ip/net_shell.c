@@ -4066,6 +4066,7 @@ static int ping_ipv4(const struct shell *shell,
 						   &ipv4_target,
 						   sys_rand32_get(),
 						   i,
+						   0,
 						   &time_stamp,
 						   sizeof(time_stamp));
 		if (ret) {
