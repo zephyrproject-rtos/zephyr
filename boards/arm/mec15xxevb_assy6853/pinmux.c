@@ -140,40 +140,6 @@ static int board_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portd, MCHP_GPIO_146, MCHP_GPIO_CTRL_MUX_F2);
 #endif
 
-#ifdef CONFIG_SPI_XEC_QMSPI
-#if DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_qmspi), okay)
-	mchp_pcr_periph_slp_ctrl(PCR_QMSPI, MCHP_PCR_SLEEP_DIS);
-
-#if DT_PROP(DT_INST(0, microchip_xec_qmspi), port_sel) == 0
-	/* Port 0: Shared SPI pins. Shared has two chip selects */
-#if DT_PROP(DT_INST(0, microchip_xec_qmspi), chip_select) == 0
-	pinmux_pin_set(portb, MCHP_GPIO_055, MCHP_GPIO_CTRL_MUX_F2);
-#else
-	pinmux_pin_set(porta, MCHP_GPIO_002, MCHP_GPIO_CTRL_MUX_F2);
-#endif
-	pinmux_pin_set(portb, MCHP_GPIO_056, MCHP_GPIO_CTRL_MUX_F2);
-	pinmux_pin_set(porte, MCHP_GPIO_223, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(porte, MCHP_GPIO_224, MCHP_GPIO_CTRL_MUX_F2);
-#if DT_PROP(DT_INST(0, microchip_xec_qmspi), lines) == 4
-	pinmux_pin_set(porte, MCHP_GPIO_227, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(porta, MCHP_GPIO_016, MCHP_GPIO_CTRL_MUX_F2);
-#endif
-
-#else
-	/* Port 1: Private SPI pins. Only one chip select */
-	pinmux_pin_set(portc, MCHP_GPIO_124, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(portc, MCHP_GPIO_125, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(portc, MCHP_GPIO_121, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(portc, MCHP_GPIO_122, MCHP_GPIO_CTRL_MUX_F1);
-#if DT_PROP(DT_INST(0, microchip_xec_qmspi), lines) == 4
-	pinmux_pin_set(portc, MCHP_GPIO_123, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(portc, MCHP_GPIO_126, MCHP_GPIO_CTRL_MUX_F1);
-#endif
-#endif /* DT_PROP(DT_INST(0, microchip_xec_qmspi), port_sel) == 0 */
-
-#endif /* DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_qmspi), okay) */
-#endif /* CONFIG_SPI_XEC_QMSPI */
-
 #ifdef CONFIG_SOC_MEC1501_TEST_CLK_OUT
 	/*
 	 * Deep sleep testing: Enable TEST_CLK_OUT on GPIO_060 function 2.
