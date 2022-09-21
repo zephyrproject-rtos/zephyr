@@ -1,0 +1,23 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bosch BMA400 triaxial acceleration sensor.  See more info at:
+  https://www.bosch-sensortec.com/products/motion-sensors/accelerometers/bma400.html
+
+compatible: "bosch,bma400"
+
+include: i2c-device.yaml
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      Mapping for INT1 pin.
+
+  int2-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      Mapping for INT2 pin.

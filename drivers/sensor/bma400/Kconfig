@@ -1,0 +1,102 @@
+# BMA400 Three Axis Accelerometer configuration options
+
+# Copyright (c) 2022 Elektronikutvecklingsbyrån EUB AB
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMA400
+	bool "BMA400 Three Axis Accelerometer Family"
+	depends on I2C
+	help
+	  Enable driver for BMA400 I2C-based triaxial accelerometer sensor
+	  family.
+
+if BMA400
+
+choice
+	prompt "Trigger mode"
+	default BMA400_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config BMA400_TRIGGER_NONE
+	bool "No trigger"
+
+config BMA400_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select BMA400_TRIGGER
+
+config BMA400_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select BMA400_TRIGGER
+
+endchoice
+
+config BMA400_TRIGGER
+	bool
+
+config BMA400_THREAD_PRIORITY
+	int "Thread priority"
+	depends on BMA400_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config BMA400_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on BMA400_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+choice
+	prompt "Acceleration measurement range"
+	default BMA400_RANGE_2G
+	help
+	  Measurement range for acceleration values.
+
+config BMA400_RANGE_2G
+	bool "+/-2g"
+
+config BMA400_RANGE_4G
+	bool "+/-4g"
+
+config BMA400_RANGE_8G
+	bool "+/-8g"
+
+config BMA400_RANGE_16G
+	bool "+/-16g"
+
+endchoice
+
+choice
+	prompt "Acceleration sample rate"
+	default BMA400_ODR_100
+	help
+	  Measurement range for acceleration values.
+
+config BMA400_ODR_12_5
+	bool "12.5 Hz"
+
+config BMA400_ODR_25
+	bool "25 Hz"
+
+config BMA400_ODR_50
+	bool "50 Hz"
+
+config BMA400_ODR_100
+	bool "100 Hz"
+
+config BMA400_ODR_200
+	bool "200 Hz"
+
+config BMA400_ODR_400
+	bool "400 Hz"
+
+config BMA400_ODR_800
+	bool "800 Hz"
+
+endchoice
+
+endif # BMA400
