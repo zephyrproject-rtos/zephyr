@@ -3957,6 +3957,7 @@ static int ping_ipv6(const struct shell *shell,
 						   &ipv6_target,
 						   sys_rand32_get(),
 						   i,
+						   0,
 						   &time_stamp,
 						   sizeof(time_stamp));
 		if (ret) {
