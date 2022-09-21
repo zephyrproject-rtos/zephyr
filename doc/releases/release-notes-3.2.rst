@@ -222,6 +222,8 @@ Boards & SoC Support
 * Added support for these ARM boards:
 
   * da1469x_dk_pro
+  * ST STM32F7508-DK Discovery Kit
+  * WeAct Studio Black Pill V3.0
 
 * Added support for these ARM64 boards:
 
@@ -243,6 +245,8 @@ Drivers and Sensors
 
 * ADC
 
+  * STM32: Now supports Vbat monitoring channel and STM32U5 series.
+
 * Audio
 
 * CAN
@@ -260,12 +264,20 @@ Drivers and Sensors
   * The Zephyr network CAN bus driver, which provides raw L2 access to the CAN bus via a CAN
     controller driver, has been moved to :zephyr_file:`drivers/net/canbus.c` and can now be enabled
     using :kconfig:option:`CONFIG_NET_CANBUS`.
+  * STM32: Now supports dual CAN instances.
+
+* Clock control
+
+  * STM32: PLL_P, PLL_Q, PLL_R outputs can now be used as domain clock.
 
 * Clock Control
 
 * Coredump
 
 * Counter
+
+  * STM32: RTC : Now supports STM32U5 and STM32F1 series.
+  * STM32: Timer : Now supports STM32L4 series.
 
 * Crypto
 
@@ -282,6 +294,8 @@ Drivers and Sensors
 
 * DMA
 
+  * STM32: Now supports stm32u5 series.
+
 * EEPROM
 
   * Added Microchip XEC (MEC172x) on-chip EEPROM driver. See the
@@ -296,6 +310,7 @@ Drivers and Sensors
 * Flash
 
   * Added flash driver for Renesas Smartbond platform
+  * STM32: Added OSPI NOR-flash driver. Supports STM32H7 and STM32U5. Supports DMA.
 
 * GPIO
 
@@ -304,6 +319,8 @@ Drivers and Sensors
 * HWINFO
 
 * I2C
+
+  * STM32: support for second target address was added.
 
 * I2S
 
@@ -358,10 +375,13 @@ Drivers and Sensors
 * Serial
 
   * Added serial driver for Renesas Smartbond platform
+  * The STM32 driver now allows to use serial device as stop mode wake up source.
 
 * SPI
 
 * Timer
+
+  * STM32 LPTIM based timer should now be configured using device tree.
 
 * USB
 
@@ -467,6 +487,8 @@ Libraries / Subsystems
 
 * SD Subsystem
 
+  * SDMMC STM32: Added DMA support and now compatible with STM32L5 series.
+
 * Settings
 
 * Shell
@@ -497,6 +519,13 @@ HALs
 * ST
 
 * STM32
+
+  * stm32cube: update stm32f7 to cube version V1.17.0
+  * stm32cube: update stm32g0 to cube version V1.6.1
+  * stm32cube: update stm32g4 to cube version V1.5.1
+  * stm32cube: update stm32l4 to cube version V1.17.2
+  * stm32cube: update stm32u5 to cube version V1.1.1
+  * stm32cube: update stm32wb to cube version V1.14.0
 
 * Silabs
 
