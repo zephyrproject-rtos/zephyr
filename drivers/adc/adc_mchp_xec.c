@@ -11,6 +11,7 @@
 LOG_MODULE_REGISTER(adc_mchp_xec);
 
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <errno.h>
 
@@ -27,6 +28,10 @@ LOG_MODULE_REGISTER(adc_mchp_xec);
 #define XEC_ADC_CTRL_START_REPEAT		BIT(2)
 #define XEC_ADC_CTRL_START_SINGLE		BIT(1)
 #define XEC_ADC_CTRL_ACTIVATE			BIT(0)
+
+struct adc_xec_config {
+	const struct pinctrl_dev_config *pcfg;
+};
 
 struct adc_xec_data {
 	struct adc_context ctx;
@@ -285,8 +290,16 @@ struct adc_driver_api adc_xec_api = {
 
 static int adc_xec_init(const struct device *dev)
 {
+	const struct adc_xec_config *const cfg = dev->config;
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
 	struct adc_xec_data *data = dev->data;
+	int ret;
+
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret != 0) {
+		LOG_ERR("XEC ADC pinctrl setup failed (%d)", ret);
+		return ret;
+	}
 
 	adc_regs->config_reg = XEC_ADC_CFG_CLK_VAL(DT_INST_PROP(0, clktime));
 
@@ -308,6 +321,12 @@ static int adc_xec_init(const struct device *dev)
 	return 0;
 }
 
+PINCTRL_DT_INST_DEFINE(0);
+
+static struct adc_xec_config adc_xec_dev_cfg_0 = {
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+};
+
 static struct adc_xec_data adc_xec_dev_data_0 = {
 	ADC_CONTEXT_INIT_TIMER(adc_xec_dev_data_0, ctx),
 	ADC_CONTEXT_INIT_LOCK(adc_xec_dev_data_0, ctx),
@@ -315,6 +334,6 @@ static struct adc_xec_data adc_xec_dev_data_0 = {
 };
 
 DEVICE_DT_INST_DEFINE(0, adc_xec_init, NULL,
-		    &adc_xec_dev_data_0, NULL,
+		    &adc_xec_dev_data_0, &adc_xec_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_ADC_INIT_PRIORITY,
 		    &adc_xec_api);

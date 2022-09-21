@@ -84,6 +84,10 @@
 
 &adc0 {
 	status = "okay";
+	pinctrl-0 = <&adc04_gpio204 &adc05_gpio205
+		     &adc06_gpio206 &adc07_gpio207
+		     &vref2_adc_gpio067 >;
+	pinctrl-names = "default";
 };
 
 &i2c_smb_0 {
