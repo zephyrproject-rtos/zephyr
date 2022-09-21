@@ -16,6 +16,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart1;
 		zephyr,flash = &flash0;
+		zephyr,keyboard-scan = &kscan0;
 	};
 
 	aliases {
@@ -29,6 +30,8 @@
 		peci-0 = &peci0;
 		/* For samples/drivers/spi_flash */
 		spi-flash0 = &int_flash;
+		/* For kscan test suites */
+		kscan0 = &kscan0;
 	};
 
 	pwmleds {
@@ -113,4 +116,27 @@
 	status = "okay";
 	pinctrl-0 = <&peci_dat_gp81>;
 	pinctrl-names = "default";
+};
+
+&kscan0 {
+	/* Demonstrate a 6 x 8 keyboard matrix on evb */
+	pinctrl-0 = <&ksi0_gp31 /* KSI0 PIN31 */
+		     &ksi1_gp30 /* KSI1 PIN30 */
+		     &ksi2_gp27 /* KSI2 PIN27 */
+		     &ksi3_gp26 /* KSI3 PIN26 */
+		     &ksi4_gp25 /* KSI4 PIN25 */
+		     &ksi5_gp24 /* KSI5 PIN24 */
+		     &ksi6_gp23 /* KSI6 PIN23 */
+		     &ksi7_gp22 /* KSI7 PIN22 */
+		     &kso00_gp21 /* KSO00 PIN21 */
+		     &kso01_gp20 /* KSO01 PIN20 */
+		     &kso02_gp17 /* KSO02 PIN17 */
+		     &kso03_gp16 /* KSO03 PIN16 */
+		     &kso04_gp15 /* KSO04 PIN15 */
+		     &kso05_gp14 /* KSO05 PIN14 */
+		     >;
+	pinctrl-names = "default";
+	row-size = <8>;
+	col-size = <6>;
+	status = "okay";
 };
