@@ -264,7 +264,7 @@ class Property:
       labels appear, but with duplicates removed.
 
       'label_1: label2: x = ...' gives 'labels' the value
-      {"label_1", "label_2"}.
+      ["label_1", "label_2"].
 
     offset_labels:
       A dictionary that maps any labels within the property's value to their
