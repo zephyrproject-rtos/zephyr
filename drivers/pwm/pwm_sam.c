@@ -122,7 +122,7 @@ static const struct pwm_driver_api sam_pwm_driver_api = {
 			    &sam_pwm_init, NULL,			\
 			    NULL, &sam_pwm_config_##inst,		\
 			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_PWM_INIT_PRIORITY,			\
 			    &sam_pwm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SAM_INST_INIT)
