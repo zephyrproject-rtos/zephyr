@@ -507,6 +507,11 @@ Drivers and Sensors
 
 * ESPI
 
+  * eSPI emulator initialization improvements.
+  * Nuvoton: Enabled platform specific Virtual Wire GPIO.
+  * Microchip: Added XEC (MEC152x) overcurrent platform-specific virtual wires.
+  * Nuvoton: Added driver flash channel operations support.
+
 * Ethernet
 
   * Atmel gmac: Add EEPROM devicetree bindings for MAC address.
