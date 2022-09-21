@@ -331,7 +331,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	start_rec.vecbase = vecbase;
 	start_rec.alive = 0;
 
-	z_mp_stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
+	z_mp_stack_top = Z_KERNEL_STACK_BUFFER(stack) + sz;
 
 	/* Pre-2.x cAVS delivers the IDC to ROM code, so unmask it */
 	CAVS_INTCTRL[cpu_num].l2.clear = CAVS_L2_IDC;
