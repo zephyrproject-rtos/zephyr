@@ -295,7 +295,9 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 		return 0;
 	}
 
-	if (adv == bt_le_adv_lookup_legacy() && adv->id == BT_ID_DEFAULT) {
+	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) &&
+	    (adv == bt_le_adv_lookup_legacy()) && (adv->id == BT_ID_DEFAULT)) {
 		/* Make sure that a Legacy advertiser using default ID has same
 		 * RPA address as scanner roles.
 		 */
