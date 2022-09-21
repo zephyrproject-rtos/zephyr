@@ -173,6 +173,19 @@ Architectures
 
 * ARM
 
+  * Improved HardFault handling on Cortex-M.
+  * Enabled automatic placement of the IRQ vector table.
+  * Enabled S2RAM for Cortex-M, hooking up the provided API functions.
+  * Added icache and dcache maintenance functions, and switched to the new
+    Kconfig symbols (:kconfig:option:`CPU_HAS_DCACHE` and
+    :kconfig:option:`CPU_HAS_ICACHE`).
+  * Added data/instr. sync barriers after writing to ``SCTLR`` to disable MPU.
+  * Use ``spsr_cxsf`` instead of unpredictable ``spsr_hyp`` on Cortex-R52.
+  * Removes ``-Wstringop-overread`` warning with GCC 12.
+  * Fixed handling of system off failure.
+  * Fixed issue with incorrect ``ssf`` under bad syscall.
+  * Fixed region check issue with mmu.
+
 * ARM64
 
   * :c:func:`arch_mem_map` now supports :c:enumerator:`K_MEM_PERM_USER`.
