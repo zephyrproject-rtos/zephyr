@@ -35,6 +35,12 @@ LOG_MODULE_REGISTER(can_mcp2515, CONFIG_CAN_LOG_LEVEL);
 #error You must either set a sampling-point or timings (phase-seg* and prop-seg)
 #endif
 
+/* Timeout for changing mode */
+#define MCP2515_MODE_CHANGE_TIMEOUT_USEC 1000
+#define MCP2515_MODE_CHANGE_RETRIES      100
+#define MCP2515_MODE_CHANGE_DELAY	    \
+	K_USEC(MCP2515_MODE_CHANGE_TIMEOUT_USEC / MCP2515_MODE_CHANGE_RETRIES)
+
 static int mcp2515_cmd_soft_reset(const struct device *dev)
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
@@ -271,6 +277,7 @@ static void mcp2515_convert_mcp2515frame_to_canframe(const uint8_t *source,
 
 const int mcp2515_set_mode_int(const struct device *dev, uint8_t mcp2515_mode)
 {
+	int retries = MCP2515_MODE_CHANGE_RETRIES;
 	uint8_t canstat;
 
 	mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_CANCTRL,
@@ -278,13 +285,34 @@ const int mcp2515_set_mode_int(const struct device *dev, uint8_t mcp2515_mode)
 			       mcp2515_mode << MCP2515_CANCTRL_MODE_POS);
 	mcp2515_cmd_read_reg(dev, MCP2515_ADDR_CANSTAT, &canstat, 1);
 
-	if (((canstat & MCP2515_CANSTAT_MODE_MASK) >> MCP2515_CANSTAT_MODE_POS)
-	    != mcp2515_mode) {
-		LOG_ERR("Failed to set MCP2515 operation mode");
-		return -EIO;
+	while (((canstat & MCP2515_CANSTAT_MODE_MASK) >> MCP2515_CANSTAT_MODE_POS)
+		!= mcp2515_mode) {
+		if (--retries < 0) {
+			LOG_ERR("Timeout trying to set MCP2515 operation mode");
+			return -EIO;
+		}
+
+		k_sleep(MCP2515_MODE_CHANGE_DELAY);
+		mcp2515_cmd_read_reg(dev, MCP2515_ADDR_CANSTAT, &canstat, 1);
 	}
 
 	return 0;
+}
+
+static void mcp2515_tx_done(const struct device *dev, uint8_t tx_idx, int status)
+{
+	struct mcp2515_data *dev_data = dev->data;
+	can_tx_callback_t callback = dev_data->tx_cb[tx_idx].cb;
+
+	if (callback != NULL) {
+		callback(dev, status, dev_data->tx_cb[tx_idx].cb_arg);
+		dev_data->tx_cb[tx_idx].cb = NULL;
+
+		k_mutex_lock(&dev_data->mutex, K_FOREVER);
+		dev_data->tx_busy_map &= ~BIT(tx_idx);
+		k_mutex_unlock(&dev_data->mutex);
+		k_sem_give(&dev_data->tx_sem);
+	}
 }
 
 static int mcp2515_get_core_clock(const struct device *dev, uint32_t *rate)
@@ -457,12 +485,25 @@ static int mcp2515_stop(const struct device *dev)
 	const struct mcp2515_config *dev_cfg = dev->config;
 	struct mcp2515_data *dev_data = dev->data;
 	int ret;
+	int i;
 
 	if (!dev_data->started) {
 		return -EALREADY;
 	}
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
+
+	/* Abort any pending transmissions before entering configuration mode */
+	mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_TXB0CTRL,
+			       MCP2515_TXBNCTRL_TXREQ_MASK, 0);
+#if MCP2515_TX_CNT == 2
+	mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_TXB1CTRL,
+			       MCP2515_TXBNCTRL_TXREQ_MASK, 0);
+#endif /*  MCP2515_TX_CNT == 2 */
+#if MCP2515_TX_CNT == 3
+	mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_TXB2CTRL,
+			       MCP2515_TXBNCTRL_TXREQ_MASK, 0);
+#endif /* MCP2515_TX_CNT == 3 */
 
 	ret = mcp2515_set_mode_int(dev, MCP2515_MODE_CONFIGURATION);
 	if (ret < 0) {
@@ -474,6 +515,10 @@ static int mcp2515_stop(const struct device *dev)
 	dev_data->started = false;
 
 	k_mutex_unlock(&dev_data->mutex);
+
+	for (i = 0; i < MCP2515_TX_CNT; i++) {
+		mcp2515_tx_done(dev, i, -ENETDOWN);
+	}
 
 	if (dev_cfg->phy != NULL) {
 		ret = can_transceiver_disable(dev_cfg->phy);
@@ -678,19 +723,6 @@ static void mcp2515_rx(const struct device *dev, uint8_t rx_idx)
 	mcp2515_rx_filter(dev, &frame);
 }
 
-static void mcp2515_tx_done(const struct device *dev, uint8_t tx_idx)
-{
-	struct mcp2515_data *dev_data = dev->data;
-
-	dev_data->tx_cb[tx_idx].cb(dev, 0, dev_data->tx_cb[tx_idx].cb_arg);
-	dev_data->tx_cb[tx_idx].cb = NULL;
-
-	k_mutex_lock(&dev_data->mutex, K_FOREVER);
-	dev_data->tx_busy_map &= ~BIT(tx_idx);
-	k_mutex_unlock(&dev_data->mutex);
-	k_sem_give(&dev_data->tx_sem);
-}
-
 static int mcp2515_get_state(const struct device *dev, enum can_state *state,
 			     struct can_bus_err_cnt *err_cnt)
 {
@@ -805,15 +837,15 @@ static void mcp2515_handle_interrupts(const struct device *dev)
 		}
 
 		if (canintf & MCP2515_CANINTF_TX0IF) {
-			mcp2515_tx_done(dev, 0);
+			mcp2515_tx_done(dev, 0, 0);
 		}
 
 		if (canintf & MCP2515_CANINTF_TX1IF) {
-			mcp2515_tx_done(dev, 1);
+			mcp2515_tx_done(dev, 1, 0);
 		}
 
 		if (canintf & MCP2515_CANINTF_TX2IF) {
-			mcp2515_tx_done(dev, 2);
+			mcp2515_tx_done(dev, 2, 0);
 		}
 
 		if (canintf & MCP2515_CANINTF_ERRIF) {
