@@ -464,18 +464,32 @@ Documentation:
     - carlescufi
   collaborators:
     - nashif
-    - utzig
-    - gmarull
   files:
-    - doc/
-    - doc/_static/
-    - doc/_templates/
-    - doc/_doxygen/
-    - doc/_scripts/
+    - doc/contribute/
+    - doc/develop/
+    - doc/introduction/
+    - doc/project/
+    - doc/releases/
+    - doc/security/
     - README.rst
-    - doc/Makefile
   labels:
     - "area: Documentation"
+
+Documentation Infrastructure:
+  status: maintained
+  maintainers:
+    - gmarull
+  collaborators:
+    - carlescufi
+    - nashif
+  files:
+    - doc/_*/
+    - doc/CMakeLists.txt
+    - doc/conf.py
+    - doc/Makefile
+    - doc/zephyr.doxyfile.in
+  labels:
+    - "area: Documentation Infrastructure"
 
 "Drivers: ADC":
   status: maintained
