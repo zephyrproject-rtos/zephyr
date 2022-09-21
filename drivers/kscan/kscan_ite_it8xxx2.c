@@ -447,7 +447,7 @@ static int kscan_it8xxx2_init(const struct device *dev)
 	 *   Bit[2] = 1b: Enable the internal pull-up of KSO pin
 	 *
 	 * NOTE: Set input temporarily for gpio_pin_configure(), after that
-	 *       pinmux_pin_set() set to alternate function immediately.
+	 *       pinctrl_apply_state() set to alternate function immediately.
 	 */
 	gpio_pin_configure_dt(&config->kso16_gpios, GPIO_INPUT);
 	gpio_pin_configure_dt(&config->kso17_gpios, GPIO_INPUT);
