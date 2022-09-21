@@ -49,6 +49,7 @@ static const uint8_t default_key[16] = {
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 };
 
+#if defined(CONFIG_BT_MESH_SHELL_HEALTH_SRV_INSTANCE)
 static uint8_t cur_faults[BT_MESH_SHELL_CUR_FAULTS_MAX];
 static uint8_t reg_faults[BT_MESH_SHELL_CUR_FAULTS_MAX * 2];
 
@@ -138,9 +139,12 @@ static const struct bt_mesh_health_srv_cb health_srv_cb = {
 	.attn_on = attention_on,
 	.attn_off = attention_off,
 };
+#endif /* CONFIG_BT_MESH_SHELL_HEALTH_SRV_INSTANCE */
 
 struct bt_mesh_health_srv bt_mesh_shell_health_srv = {
+#if defined(CONFIG_BT_MESH_SHELL_HEALTH_SRV_INSTANCE)
 	.cb = &health_srv_cb,
+#endif
 };
 
 #if defined(CONFIG_BT_MESH_HEALTH_CLI)
@@ -850,6 +854,7 @@ static int cmd_provision_local(const struct shell *sh, size_t argc, char *argv[]
 	return 0;
 }
 
+#if defined(CONFIG_BT_MESH_SHELL_HEALTH_SRV_INSTANCE)
 static struct bt_mesh_elem *primary_element(void)
 {
 	const struct bt_mesh_comp *comp = bt_mesh_comp_get();
@@ -956,6 +961,7 @@ static int cmd_del_fault(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_MESH_SHELL_HEALTH_SRV_INSTANCE */
 
 #if defined(CONFIG_BT_MESH_CDB)
 static int cmd_cdb_create(const struct shell *sh, size_t argc,
@@ -1414,11 +1420,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(prov_cmds,
 #endif
 	SHELL_SUBCMD_SET_END);
 
+#if defined(CONFIG_BT_MESH_SHELL_HEALTH_SRV_INSTANCE)
 SHELL_STATIC_SUBCMD_SET_CREATE(health_srv_cmds,
 	/* Health Server Model Operations */
 	SHELL_CMD_ARG(add-fault, NULL, "<Fault ID>", cmd_add_fault, 2, 0),
 	SHELL_CMD_ARG(del-fault, NULL, "[Fault ID]", cmd_del_fault, 1, 1),
 	SHELL_SUBCMD_SET_END);
+#endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(test_cmds,
 	/* Commands which access internal APIs, for testing only */
@@ -1429,8 +1437,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(test_cmds,
 	SHELL_CMD_ARG(iv-update-test, NULL, "<Val: off, on>", cmd_iv_update_test, 2, 0),
 #endif
 	SHELL_CMD_ARG(rpl-clear, NULL, NULL, cmd_rpl_clear, 1, 0),
-
+#if defined(CONFIG_BT_MESH_SHELL_HEALTH_SRV_INSTANCE)
 	SHELL_CMD(health-srv, &health_srv_cmds, "Health Server test", bt_mesh_shell_mdl_cmds_help),
+#endif
 	SHELL_SUBCMD_SET_END);
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY) || defined(CONFIG_BT_MESH_PROXY_CLIENT)
