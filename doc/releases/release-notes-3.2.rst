@@ -639,8 +639,13 @@ HALs
 MCUboot
 *******
 
-Trusted Firmware-m
+Trusted Firmware-M
 ******************
+
+* Allow enabling FPU in the application when TF-M is enabled.
+* Added option to exclude non-secure TF-M application from build.
+* Relocated ``mergehex.py`` to ``scripts/build``.
+* Added option for custom reset handlers.
 
 Documentation
 *************
