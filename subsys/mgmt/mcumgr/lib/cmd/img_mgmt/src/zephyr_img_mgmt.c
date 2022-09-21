@@ -142,7 +142,7 @@ zephyr_img_mgmt_flash_area_id(int slot)
 		break;
 #endif
 
-#if FIXED_PARTITION_EXISTS(slot3_partition)
+#if FIXED_PARTITION_EXISTS(SLOT3_PARTITION)
 	case 3:
 		fa_id = FIXED_PARTITION_ID(SLOT3_PARTITION);
 		break;
