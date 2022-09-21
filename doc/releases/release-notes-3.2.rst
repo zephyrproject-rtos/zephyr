@@ -385,6 +385,22 @@ Drivers and Sensors
 
 * Sensor
 
+  * Converted drivers to use Kconfig 'select' instead of 'depends on' for I2C,
+    SPI, and GPIO dependencies.
+  * Converted drivers to use I2C, SPI, and GPIO dt_spec helpers.
+  * Added multi-instance support to various drivers.
+  * Added DS18B20 1-wire temperature sensor driver.
+  * Added Würth Elektronik WSEN-HIDS driver.
+  * Fixed unit conversion in the ADXL345 driver.
+  * Fixed TTE and TTF time units in the MAX17055 driver.
+  * Removed MPU9150 passthrough support from the AK8975 driver.
+  * Changed the FXOS8700 driver default mode from accel-only to hybrid.
+  * Enhanced the ADXL345 driver to support SPI.
+  * Enhanced the BQ274XX driver to support the data ready interrupt trigger.
+  * Enhanced the INA237 driver to support triggered mode.
+  * Enhanced the LPS22HH driver to support being on an I3C bus.
+  * Enhanced the MAX17055 driver to support VFOCV.
+
 * Serial
 
   * Added serial driver for Renesas Smartbond platform
