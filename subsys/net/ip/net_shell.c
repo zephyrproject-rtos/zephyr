@@ -3912,6 +3912,7 @@ static int ping_ipv6(const struct shell *shell,
 		     char *host,
 		     unsigned int count,
 		     unsigned int interval,
+		     uint8_t tos,
 		     int iface_idx)
 {
 	struct net_if *iface = net_if_get_by_index(iface_idx);
@@ -3957,7 +3958,7 @@ static int ping_ipv6(const struct shell *shell,
 						   &ipv6_target,
 						   sys_rand32_get(),
 						   i,
-						   0,
+						   tos,
 						   &time_stamp,
 						   sizeof(time_stamp));
 		if (ret) {
@@ -4042,6 +4043,7 @@ static int ping_ipv4(const struct shell *shell,
 		     char *host,
 		     unsigned int count,
 		     unsigned int interval,
+		     uint8_t tos,
 		     int iface_idx)
 {
 	struct in_addr ipv4_target;
@@ -4067,7 +4069,7 @@ static int ping_ipv4(const struct shell *shell,
 						   &ipv4_target,
 						   sys_rand32_get(),
 						   i,
-						   0,
+						   tos,
 						   &time_stamp,
 						   sizeof(time_stamp));
 		if (ret) {
@@ -4127,6 +4129,7 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 	int count = 3;
 	int interval = 1000;
 	int iface_idx = -1;
+	int tos = 0;
 
 	for (size_t i = 1; i < argc; ++i) {
 
@@ -4161,6 +4164,15 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 				return -ENOEXEC;
 			}
 			break;
+
+		case 'Q':
+			tos = parse_arg(&i, argc, argv);
+			if (tos < 0 || tos > UINT8_MAX) {
+				PR_WARNING("Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+
+			break;
 		default:
 			PR_WARNING("Unrecognized argument: %s\n", argv[i]);
 			return -ENOEXEC;
@@ -4175,7 +4187,7 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 	shell_for_ping = shell;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		ret = ping_ipv6(shell, host, count, interval, iface_idx);
+		ret = ping_ipv6(shell, host, count, interval, tos, iface_idx);
 		if (!ret) {
 			goto wait_reply;
 		} else if (ret == -EIO) {
@@ -4185,7 +4197,7 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		ret = ping_ipv4(shell, host, count, interval, iface_idx);
+		ret = ping_ipv4(shell, host, count, interval, tos, iface_idx);
 		if (ret) {
 			if (ret == -EIO || ret == -ENETUNREACH) {
 				PR_WARNING("Cannot send IPv4 ping\n");
@@ -5975,7 +5987,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_vlan,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ping,
 	SHELL_CMD(--help, NULL,
-		  "'net ping [-c count] [-i interval ms] [-I <iface index>] <host>' "
+		  "'net ping [-c count] [-i interval ms] [-I <iface index>] "
+		  "[-Q tos] <host>' "
 		  "Send ICMPv4 or ICMPv6 Echo-Request to a network host.",
 		  cmd_net_ping),
 	SHELL_SUBCMD_SET_END
