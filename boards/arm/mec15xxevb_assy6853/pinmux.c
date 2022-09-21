@@ -140,27 +140,6 @@ static int board_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portd, MCHP_GPIO_146, MCHP_GPIO_CTRL_MUX_F2);
 #endif
 
-#ifdef CONFIG_ADC_XEC
-	/* Disable sleep for ADC block */
-	mchp_pcr_periph_slp_ctrl(PCR_ADC, MCHP_PCR_SLEEP_DIS);
-
-	/* ADC pin muxes, ADC00 - ADC07 */
-	/* Note, by default ETM is enabled ADC00-ADC03 are not available */
-#ifndef CONFIG_SOC_MEC1501_DEBUG_AND_ETM_TRACING
-	pinmux_pin_set(porte, MCHP_GPIO_200, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(porte, MCHP_GPIO_201, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(porte, MCHP_GPIO_202, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(porte, MCHP_GPIO_203, MCHP_GPIO_CTRL_MUX_F1);
-#endif
-	pinmux_pin_set(porte, MCHP_GPIO_204, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(porte, MCHP_GPIO_205, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(porte, MCHP_GPIO_206, MCHP_GPIO_CTRL_MUX_F1);
-	pinmux_pin_set(porte, MCHP_GPIO_207, MCHP_GPIO_CTRL_MUX_F1);
-
-	/* VREF2_ADC */
-	pinmux_pin_set(portb, MCHP_GPIO_067, MCHP_GPIO_CTRL_MUX_F1);
-#endif /* CONFIG_ADC_XEC */
-
 #ifdef CONFIG_SPI_XEC_QMSPI
 #if DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_qmspi), okay)
 	mchp_pcr_periph_slp_ctrl(PCR_QMSPI, MCHP_PCR_SLEEP_DIS);
