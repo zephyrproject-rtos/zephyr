@@ -1,9 +1,16 @@
 # Copyright (c) 2020 Seagate Technology LLC
 # SPDX-License-Identifier: Apache-2.0
 
-config LED_PWM
+menuconfig LED_PWM
 	bool "PWM LED driver"
 	default y
 	depends on PWM && DT_HAS_PWM_LEDS_ENABLED
 	help
 	  Enable driver for PWM LEDs.
+
+config LED_PWM_PERCEIVED_BRIGHTNESS_CTRL
+	bool "Perceived brightness control"
+	default y
+	depends on LED_PWM
+	help
+	  Control LED PWM brightness for perceived brightness.

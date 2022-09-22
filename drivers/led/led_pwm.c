@@ -52,11 +52,32 @@ static int led_pwm_blink(const struct device *dev, uint32_t led,
 	return pwm_set_dt(dt_led, PWM_USEC(period_usec), PWM_USEC(pulse_usec));
 }
 
+/*
+ * Convert perceived percent to hardware PWM pulse count.
+ *
+ * This follows the CIELAB color space lightness calculation using the
+ * cube root of the relative luminance, see:
+ *	https://en.wikipedia.org/wiki/CIELAB_color_space.
+ *
+ * Here the perceived brightness (%) is proportional to the cube root
+ * of the LED PWM duty cycle.
+ */
+static uint32_t perceived_brightness_control(uint32_t period, uint8_t perceived_pc)
+{
+	uint64_t pulse = (uint32_t)perceived_pc * perceived_pc * perceived_pc;
+
+	pulse *= period;
+	pulse /= 100 * 100 * 100;
+
+	return pulse;
+}
+
 static int led_pwm_set_brightness(const struct device *dev,
 				  uint32_t led, uint8_t value)
 {
 	const struct led_pwm_config *config = dev->config;
 	const struct pwm_dt_spec *dt_led;
+	uint32_t pulse;
 
 	if (led >= config->num_leds || value > 100) {
 		return -EINVAL;
@@ -64,8 +85,13 @@ static int led_pwm_set_brightness(const struct device *dev,
 
 	dt_led = &config->led[led];
 
-	return pwm_set_pulse_dt(&config->led[led],
-				dt_led->period * value / 100);
+	if (IS_ENABLED(CONFIG_LED_PWM_PERCEIVED_BRIGHTNESS_CTRL)) {
+		pulse = perceived_brightness_control(dt_led->period, value);
+	} else {
+		pulse = dt_led->period * value / 100;
+	}
+
+	return pwm_set_pulse_dt(dt_led, pulse);
 }
 
 static int led_pwm_on(const struct device *dev, uint32_t led)
