@@ -19,4 +19,38 @@ config XTENSA_UNCACHED_REGION
 
 endif # XTENSA_RPO_CACHE
 
+
+# Default options for testing
+if ZTEST
+
+config DMA
+	default y
+
+config LOG
+	default y
+
+config LOG_PRINTK
+	default y
+
+choice LOG_MODE
+	default LOG_MODE_IMMEDIATE
+endchoice
+
+config LOG_BACKEND_ADSP
+	default n
+
+config LOG_BACKEND_ADSP_HDA
+	default y
+
+config LOG_BACKEND_ADSP_HDA_SIZE
+	default 8192
+
+config LOG_BACKEND_ADSP_HDA_CAVSTOOL
+	default y
+
+config LOG_BACKEND_ADSP_HDA_PADDING
+	default y
+
+endif # ZTEST
+
 endif # SOC_FAMILY_INTEL_ADSP

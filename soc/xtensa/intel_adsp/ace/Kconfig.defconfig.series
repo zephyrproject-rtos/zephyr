@@ -58,7 +58,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 config DYNAMIC_INTERRUPTS
 	default y
 
-if LOG
+if LOG && !ZTEST
 
 config LOG_BACKEND_ADSP
 	default y
