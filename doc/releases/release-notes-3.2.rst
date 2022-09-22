@@ -252,43 +252,60 @@ Boards & SoC Support
 * Added support for these SoC series:
 
   * Atmel SAML21, SAMR34, SAMR35.
-  * renesas_smartbond da1469x SoC series
   * GigaDevice GD32E50X
   * GigaDevice GD32F470
   * NXP i.MX8MN, LPC55S36, LPC51U68
-
-* Removed support for these SoC series:
+  * renesas_smartbond da1469x SoC series
 
 * Made these changes in other SoC series:
 
   * gigadevice: Enable SEGGER RTT
 
-* Changes for ARC boards:
-
 * Added support for these ARM boards:
 
+  * Arduino MKR Zero
   * Atmel atsaml21_xpro
   * Atmel atsamr34_xpro
-  * da1469x_dk_pro
-  * ST STM32F7508-DK Discovery Kit
-  * WeAct Studio Black Pill V3.0
-  * GigaDevice GD32E507Z-EVAL
+  * Blues Wireless Swan
+  * Digilent Zybo
+  * EBYTE E73-TBB
   * GigaDevice GD32E507V-START
+  * GigaDevice GD32E507Z-EVAL
   * GigaDevice GD32F407V-START
   * GigaDevice GD32F450V-START
   * GigaDevice GD32F450Z-EVAL
   * GigaDevice GD32F470I-EVAL
   * NXP lpcxpresso51u68, RT1060 EVKB
+  * NXP lpcxpresso55s36
+  * Olimex LoRa STM32WL DevKit
+  * PAN1770 Evaluation Board
+  * PAN1780 Evaluation Board
+  * PAN1781 Evaluation Board
+  * PAN1782 Evaluation Board
+  * ST STM32F7508-DK Discovery Kit
+  * TDK RoboKit 1
+  * WeAct Studio Black Pill V1.2
+  * WeAct Studio Black Pill V3.0
+  * XIAO BLE
+  * da1469x_dk_pro
 
 * Added support for these ARM64 boards:
 
-  * i.MX8M Nano LPDDR4 EVK board
-
-* Removed support for these ARM boards:
-
-* Removed support for these X86 boards:
+  * i.MX8M Nano LPDDR4 EVK board series
 
 * Added support for these RISC-V boards:
+
+  * ICE-V Wireless
+  * RISCV32E Emulation (QEMU)
+
+* Added support for these Xtensa boards:
+
+  * ESP32-NET
+  * intel_adsp_ace15_mtpm
+
+* Removed support for these Xtensa boards:
+
+  * Intel S1000
 
 * Made these changes in other boards:
 
@@ -298,6 +315,7 @@ Boards & SoC Support
 * Added support for these following shields:
 
   * ARCELI W5500 ETH
+  * MAX7219 LED display driver shield
   * Panasonic Grid-EYE (AMG88xx)
 
 Drivers and Sensors
