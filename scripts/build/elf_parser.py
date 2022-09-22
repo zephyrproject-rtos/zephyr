@@ -115,11 +115,11 @@ class ZephyrElf:
     """
     Represents information about devices in an elf file.
     """
-    def __init__(self, kernel, edt, device_start_symbol):
+    def __init__(self, kernel, edt):
         self.elf = ELFFile(open(kernel, "rb"))
         self.edt = edt
         self.devices = []
-        self.ld_consts = self._symbols_find_value(set([device_start_symbol, *Device.required_ld_consts, *DevicePM.required_ld_consts]))
+        self.ld_consts = self._symbols_find_value(set([*Device.required_ld_consts, *DevicePM.required_ld_consts]))
         self._device_parse_and_link()
 
     @property

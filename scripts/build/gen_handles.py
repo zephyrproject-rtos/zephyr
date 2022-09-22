@@ -57,10 +57,6 @@ def parse_args():
                         help="Path to current Zephyr base. If this argument \
                         is not provided the environment will be checked for \
                         the ZEPHYR_BASE environment variable.")
-    parser.add_argument("-s", "--start-symbol", required=True,
-                        help="Symbol name of the section which contains the \
-                        devices. The symbol name must point to the first \
-                        device in that section.")
 
     args = parser.parse_args()
 
@@ -116,7 +112,7 @@ def main():
     with open(edtser, 'rb') as f:
         edt = pickle.load(f)
 
-    parsed_elf = ZephyrElf(args.kernel, edt, args.start_symbol)
+    parsed_elf = ZephyrElf(args.kernel, edt)
 
     if args.output_graphviz:
         # Try and output the dependency tree
