@@ -134,6 +134,10 @@ Deprecated in this release
 * Bluetooth mesh Configuration Client API prefixed with ``bt_mesh_cfg_``
   is deprecated in favor of a new API with prefix ``bt_mesh_cfg_cli_``.
 
+* Pinmux API is now officially deprecated in favor of the pin control API.
+  Its removal is scheduled for the 3.4 release. Refer to :ref:`pinctrl-guide`
+  for more details on pin control.
+
 Stable API changes in this release
 ==================================
 
@@ -438,11 +442,15 @@ Drivers and Sensors
     ``ite,peci-it8xxx2`` to :dtcompatible:`ite,it8xxx2-peci` so that this aligns
     with other ITE devices.
 
-* Pinmux
-
 * Pin control
 
-  * Added pin control driver for Renesas Smartbond platform
+  * Added driver for Infineon XMC4XXX
+  * Added driver for Renesas Smartbond platform
+  * Added driver for Xilinx Zynq-7000
+  * Added support for PSL pads in NPCX driver
+  * MEC15XX driver now supports both MEC15XX and MEC17XX
+  * nRF driver now supports disconnecting a pin by using ``NRF_PSEL_DISCONNECT``
+  * nRF driver will use S0D1 drive mode for TWI/TWIM pins by default
 
 * PWM
 
