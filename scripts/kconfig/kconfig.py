@@ -13,6 +13,13 @@ import argparse
 import os
 import sys
 import textwrap
+import pickle
+from pathlib import Path
+ZEPHYR_BASE = str(Path(__file__).resolve().parents[2])
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
+                                "python-devicetree", "src"))
+
+from devicetree import edtlib
 
 # Zephyr doesn't use tristate symbols. They're supported here just to make the
 # script a bit more generic.
@@ -95,6 +102,15 @@ def main():
 
     # Write the list of parsed Kconfig files to a file
     write_kconfig_filenames(kconf, args.kconfig_list_out)
+
+    EDT_PICKLE = os.environ.get("EDT_PICKLE")
+
+    # The "if" handles a missing dts.
+    if EDT_PICKLE is not None and os.path.isfile(EDT_PICKLE):
+        with open(EDT_PICKLE, 'rb') as f:
+            edt = pickle.load(f)
+    else:
+        edt = None
 
 
 def check_no_promptless_assign(kconf):
