@@ -6,7 +6,7 @@
 #include <intel_adsp_ipc.h>
 #include <adsp_ipc_regs.h>
 
-
+__attribute__((optimize("-O0")))
 void intel_adsp_ipc_set_message_handler(const struct device *dev,
 	intel_adsp_ipc_handler_t fn, void *arg)
 {
@@ -17,10 +17,11 @@ void intel_adsp_ipc_set_message_handler(const struct device *dev,
 	devdata->handler_arg = arg;
 	k_spin_unlock(&devdata->lock, key);
 }
-
+__attribute__((optimize("-O0")))
 void intel_adsp_ipc_set_done_handler(const struct device *dev,
 	intel_adsp_ipc_done_t fn, void *arg)
 {
+
 	struct intel_adsp_ipc_data *devdata = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&devdata->lock);
 
@@ -28,7 +29,7 @@ void intel_adsp_ipc_set_done_handler(const struct device *dev,
 	devdata->done_arg = arg;
 	k_spin_unlock(&devdata->lock, key);
 }
-
+__attribute__((optimize("-O0")))
 void z_intel_adsp_ipc_isr(const void *devarg)
 {
 	const struct device *dev = devarg;
@@ -50,7 +51,7 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 
 		regs->tdr = INTEL_ADSP_IPC_BUSY;
 		if (done && !IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
 			regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
 #else
 			regs->tda = INTEL_ADSP_IPC_DONE;
@@ -76,7 +77,7 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 
 	k_spin_unlock(&devdata->lock, key);
 }
-
+__attribute__((optimize("-O0")))
 int intel_adsp_ipc_init(const struct device *dev)
 {
 	struct intel_adsp_ipc_data *devdata = dev->data;
@@ -92,7 +93,7 @@ int intel_adsp_ipc_init(const struct device *dev)
 		config->regs->idd = INTEL_ADSP_IPC_DONE;
 	} else {
 		config->regs->ida = INTEL_ADSP_IPC_DONE;
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
 		config->regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
 #else
 		config->regs->tda = INTEL_ADSP_IPC_DONE;
@@ -101,25 +102,25 @@ int intel_adsp_ipc_init(const struct device *dev)
 	config->regs->ctl |= (INTEL_ADSP_IPC_CTL_IDIE | INTEL_ADSP_IPC_CTL_TBIE);
 	return 0;
 }
-
+__attribute__((optimize("-O0")))
 void intel_adsp_ipc_complete(const struct device *dev)
 {
 	const struct intel_adsp_ipc_config *config = dev->config;
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
 	config->regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
 #else
 	config->regs->tda = INTEL_ADSP_IPC_DONE;
 #endif
 }
-
+__attribute__((optimize("-O0")))
 bool intel_adsp_ipc_is_complete(const struct device *dev)
 {
 	const struct intel_adsp_ipc_config *config = dev->config;
 
 	return (config->regs->idr & INTEL_ADSP_IPC_BUSY) == 0;
 }
-
+__attribute__((optimize("-O0")))
 bool intel_adsp_ipc_send_message(const struct device *dev,
 			   uint32_t data, uint32_t ext_data)
 {
@@ -138,7 +139,7 @@ bool intel_adsp_ipc_send_message(const struct device *dev,
 	k_spin_unlock(&devdata->lock, key);
 	return true;
 }
-
+__attribute__((optimize("-O0")))
 bool intel_adsp_ipc_send_message_sync(const struct device *dev,
 				uint32_t data, uint32_t ext_data,
 				k_timeout_t timeout)
