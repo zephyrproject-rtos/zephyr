@@ -33,6 +33,14 @@ static int cmd_reset(const struct shell *sh, size_t argc, char *argv[])
 		return 0;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_MESH_CDB)) {
+		struct bt_mesh_cdb_node *node = bt_mesh_cdb_node_get(bt_mesh_shell_target_ctx.dst);
+
+		if (node) {
+			bt_mesh_cdb_node_del(node, true);
+		}
+	}
+
 	shell_print(sh, "Remote node reset complete");
 
 	return 0;
