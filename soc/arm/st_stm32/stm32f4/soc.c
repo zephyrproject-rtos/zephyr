@@ -32,7 +32,9 @@ static int st_stm32f4_init(const struct device *arg)
 
 	/* Enable ART Flash cache accelerator for both instruction and data */
 	LL_FLASH_EnableInstCache();
-	LL_FLASH_EnableDataCache();
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		LL_FLASH_EnableDataCache();
+	}
 
 	key = irq_lock();
 
