@@ -754,6 +754,16 @@ Libraries / Subsystems
 
 * Power management
 
+* POSIX
+
+  * Make ``tz`` non-const in ``gettimeofday()`` for conformance to spec.
+  * Fix pthread descriptor resource leak. Previously only pthreads with state
+    ``PTHREAD_TERMINATED`` could be reused. However, ``pthread_join()`` sets
+    the state to ``PTHREAD_EXITED``. Consider both states as candidates in
+    ``pthread_create()``.
+  * Add ``perror()`` implementation
+  * Use consistent timebase in ``sem_timedwait()``
+
 * RTIO
 
   * Initial version of an asynchronous task and executor API for I/O similar inspired
