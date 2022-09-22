@@ -7,15 +7,22 @@
 #ifndef ZEPHYR_LOG_BACKEND_ADSP_HDA_H_
 #define ZEPHYR_LOG_BACKEND_ADSP_HDA_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /**
- *@brief HDA logger requires a hook for IPC messages
+ * @brief HDA logger requires a hook for IPC messages
  *
  * When the log is flushed and written with DMA an IPC message should
- * be sent to inform the host. This hook function pointer allows for that
+ * be sent to inform the host. This hook function pointer allows for that.
+ *
+ * @note This function should not return until done.
+ *
+ * @param written Number of bytes that have been written to the HDA channel
+ *                since last called.
+ * @retval true if the bytes were notified successfully, false otherwise
  */
-typedef void(*adsp_hda_log_hook_t)(uint32_t written);
+typedef bool(*adsp_hda_log_hook_t)(uint32_t written);
 
 /**
  * @brief Initialize the Intel ADSP HDA logger

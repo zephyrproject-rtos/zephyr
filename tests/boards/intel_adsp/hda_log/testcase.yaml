@@ -6,6 +6,14 @@ common:
         - "TEST:([0-9]){6,7}"
         - "Timeout flush working if shown"
 tests:
+  boards.intel_adsp.hda_log.simple:
+    platform_allow: intel_adsp_cavs15 intel_adsp_cavs18 intel_adsp_cavs20 intel_adsp_cavs25
+    timeout: 120
+    extra_configs:
+    - CONFIG_HDA_LOG_TEST_THREADS=1
+    - CONFIG_HDA_LOG_TEST_ITERATIONS=32768
+    - CONFIG_HDA_LOG_TEST_TIMER=n
+    - CONFIG_HDA_LOG_TEST_PANIC=n
   boards.intel_adsp.hda_log:
     platform_allow: intel_adsp_cavs15 intel_adsp_cavs18 intel_adsp_cavs20 intel_adsp_cavs25
     timeout: 120
@@ -19,3 +27,8 @@ tests:
     timeout: 120
     extra_configs:
       - CONFIG_MP_NUM_CPUS=1
+  boards.intel_adsp.hda_log.deferred:
+    platform_allow: intel_adsp_cavs15 intel_adsp_cavs18 intel_adsp_cavs20 intel_adsp_cavs25
+    timeout: 120
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y

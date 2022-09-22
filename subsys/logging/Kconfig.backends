@@ -356,11 +356,11 @@ config LOG_BACKEND_ADSP_HDA_SIZE
 	  Sets the ring buffer size cAVS HDA uses for logging. Effectively
 	  determines how many log messages may be written to in a period of time.
 	  The period of time is decided by how often to inform the hardware of
-	  writes to the buffer.
+	  writes to the buffer. Must be power of two.
 
 config LOG_BACKEND_ADSP_HDA_FLUSH_TIME
 	int "Time in milliseconds to periodically flush writes to hardware"
-	range 1 10000
+	range 200 60000
 	default 500
 	help
 	    The Intel ADSP HDA backend periodically writes out its buffer contents

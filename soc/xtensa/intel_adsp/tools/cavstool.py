@@ -82,7 +82,7 @@ class HDAStream:
         self.reset()
 
     def config(self, buf_len: int):
-        log.info(f"Configuring stream {self.stream_id}")
+        log.info(f"Configuring stream {self.stream_id} with buffer len {buf_len}")
         self.buf_len = buf_len
         log.info("Allocating huge page and setting up buffers")
         self.mem, self.hugef, self.buf_list_addr, self.pos_buf_addr, self.n_bufs = self.setup_buf(buf_len)
@@ -530,12 +530,18 @@ async def ipc_delay_done():
     dsp.HIPCTDA = 1<<31
 
 ipc_timestamp = 0
+hda_log_str = None
 
 # Super-simple command language, driven by the test code on the DSP
-def ipc_command(data, ext_data):
+async def ipc_command(data, ext_data):
+    global hda_log_str
     send_msg = False
     done = True
     log.debug ("ipc data %d, ext_data %x", data, ext_data)
+    if not cavs15:
+        log.debug("ACKing Interrupt")
+        dsp.HIPCTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
+
     if data == 0: # noop, with synchronous DONE
         pass
     elif data == 1: # async command: signal DONE after a delay (on 1.8+)
@@ -566,13 +572,16 @@ def ipc_command(data, ext_data):
             hda_streams[stream_id] = hda_str
     elif data == 7: # HDA CONFIG
         stream_id = ext_data & 0xFF
-        buf_len = ext_data >> 8 & 0xFFFF
+        buf_len = (ext_data >> 8) & 0xFFFFFF
         hda_str = hda_streams[stream_id]
         hda_str.config(buf_len)
     elif data == 8: # HDA START
         stream_id = ext_data & 0xFF
+        is_log = ext_data >> 8 & 0xFF
         hda_streams[stream_id].start()
         hda_streams[stream_id].mem.seek(0)
+        if is_log:
+            hda_log_str = hda_streams[stream_id]
 
     elif data == 9: # HDA STOP
         stream_id = ext_data & 0xFF
@@ -607,7 +616,7 @@ def ipc_command(data, ext_data):
         if pos + buf_len >= hda_str.buf_len*2:
             read_lens[0] = hda_str.buf_len*2 - pos
             read_lens[1] = buf_len - read_lens[0]
-        log.debug(f"HDA LOG PRINT STREAM {stream_id} LEN {buf_len}, POS {pos}, SPIB {hda_str.hda.SPIB}, CBL {hda_str.regs.CBL}, READ_LENS {read_lens}")
+        log.debug(f"HDA LOG PRINT STREAM {stream_id} LEN {buf_len}, POS {pos}, DPIB {hda_str.dbg0.DPIB} SPIB {hda_str.hda.SPIB}, CBL {hda_str.regs.CBL}, READ_LENS {read_lens}")
         # validate the read lens
         assert (read_lens[0] + pos) <= (hda_str.buf_len*2)
         assert read_lens[0] % 128 == 0
@@ -621,7 +630,6 @@ def ipc_command(data, ext_data):
             hda_msg1 = buf_data1.decode("utf-8", "replace")
             sys.stdout.write(hda_msg1)
         pos = hda_str.mem.tell()
-        sys.stdout.flush()
         while hda_str.hda.SPIB != pos:
             hda_str.hda.SPIB = pos
         log.debug(f"HDA LOG PRINT DONE STREAM {stream_id} LEN {buf_len}, POS {pos}, SPIB {hda_str.hda.SPIB}, CBL {hda_str.regs.CBL}, READ_LENS {read_lens}")
@@ -637,10 +645,11 @@ def ipc_command(data, ext_data):
 
             return
 
-    log.debug("ACKing Interrupt")
-    dsp.HIPCTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
+    if cavs15:
+        log.debug("ACKing Interrupt")
+        dsp.HIPCTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
 
-    time.sleep(0.05) # Needed or the command below won't send!
+    await asyncio.sleep(0.05) # Needed or the command below won't send!
 
     if done and not cavs15:
         log.debug("Signaling DONE")
@@ -652,7 +661,7 @@ def ipc_command(data, ext_data):
         # the chances the DSP gets an IPC DONE bit set.
         # Without it slot machine odds are in play
         while (dsp.HIPCTDA & (1 << 31)) and retries > 0:
-            time.sleep(0.001)
+            await asyncio.sleep(0.001)
             retries -= 1
         if retries == 0:
             log.warning("Failed to fully signal IPC DONE")
@@ -662,6 +671,59 @@ def ipc_command(data, ext_data):
         dsp.HIPCIDD = ext_data
         dsp.HIPCIDR = (1<<31) | ext_data
 
+async def winstream_poll():
+    last_seq = 0
+    while True:
+        (last_seq, output) = winstream_read(last_seq)
+        if output:
+            sys.stdout.write(output)
+        else:
+            await asyncio.sleep(0.01)
+
+async def hda_log_poll():
+    while True:
+        await asyncio.sleep(0.05)
+        if hda_log_str is None:
+            continue
+        dma_pos = hda_log_str.dbg0.DPIB
+        pos = hda_log_str.mem.tell()
+        if dma_pos == pos:
+            continue
+        read_lens = [dma_pos - pos, 0]
+        if pos > dma_pos:
+            read_lens[0] = hda_log_str.buf_len*2 - pos
+            read_lens[1] = dma_pos
+        log.debug(f"HDA LOG PRINT STREAM {hda_log_str.stream_id} POS {pos}, DPIB {hda_log_str.dbg0.DPIB} SPIB {hda_log_str.hda.SPIB}, CBL {hda_log_str.regs.CBL}, READ_LENS {read_lens}")
+        # validate the read lens
+        assert (read_lens[0] + pos) <= (hda_log_str.buf_len*2)
+        assert read_lens[0] % 128 == 0
+        assert read_lens[1] % 128 == 0
+        buf_data0 = hda_log_str.mem.read(read_lens[0])
+        hda_msg0 = buf_data0.decode("utf-8", "replace")
+        sys.stdout.write(hda_msg0)
+        if read_lens[1] != 0:
+            hda_log_str.mem.seek(0)
+            buf_data1 = hda_log_str.mem.read(read_lens[1])
+            hda_msg1 = buf_data1.decode("utf-8", "replace")
+            sys.stdout.write(hda_msg1)
+        pos = hda_log_str.mem.tell()
+        while hda_log_str.hda.SPIB != pos:
+            hda_log_str.hda.SPIB = pos
+        log.debug(f"HDA LOG PRINT DONE STREAM {hda_log_str.stream_id} POS {pos}, SPIB {hda_log_str.hda.SPIB}, CBL {hda_log_str.regs.CBL}, READ_LENS {read_lens}")
+
+async def ipc_poll():
+    while True:
+        if dsp.HIPCIDA & 0x80000000:
+            dsp.HIPCIDA = 1<<31 # must ACK any DONE interrupts that arrive!
+        if dsp.HIPCTDR & 0x80000000:
+            await ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
+        else:
+            await asyncio.sleep(0.01)
+
+async def stdout_flush():
+    while True:
+        await asyncio.sleep(1)
+        sys.stdout.flush()
 
 async def main():
     #TODO this bit me, remove the globals, write a little FirmwareLoader class or something to contain.
@@ -690,18 +752,15 @@ async def main():
 
     hda_streams = dict()
 
-    last_seq = 0
-    while start_output is True:
-        await asyncio.sleep(0.03)
-        (last_seq, output) = winstream_read(last_seq)
-        if output:
-            sys.stdout.write(output)
-            sys.stdout.flush()
-        if not args.log_only:
-            if dsp.HIPCIDA & 0x80000000:
-                dsp.HIPCIDA = 1<<31 # must ACK any DONE interrupts that arrive!
-            if dsp.HIPCTDR & 0x80000000:
-                ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
+    if args.log_only:
+        await asyncio.gather(winstream_poll(), stdout_flush())
+    else:
+        await asyncio.gather(
+            winstream_poll(),
+            hda_log_poll(),
+            ipc_poll(),
+            stdout_flush()
+        )
 
 
 ap = argparse.ArgumentParser(description="DSP loader/logger tool")
