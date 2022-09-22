@@ -421,6 +421,10 @@ Drivers and Sensors
 
 * Interrupt Controller
 
+  * Added support for ACE V1X.
+  * Fixed an addressing issue on GICv3 controllers.
+  * Removed support for ``intel_s1000_crb``.
+
 * IPM
 
   * Kconfig is split into smaller, vendor oriented files.
@@ -437,6 +441,8 @@ Drivers and Sensors
 * MBOX
 
 * MEMC
+
+  * Added support for Atmel SAM SMC/EBI.
 
 * MM
 
@@ -475,6 +481,7 @@ Drivers and Sensors
 
   * Enabled access to the PMIC on NXP MXRT595 EVK.
   * Added soft off mode to the RT10xx Power Management.
+  * Added support for power gating for Intel ADSP devices.
 
 * Reset
 
