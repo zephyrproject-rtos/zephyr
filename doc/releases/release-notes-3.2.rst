@@ -127,9 +127,9 @@ Deprecated in this release
   Related Kconfig :kconfig:option:`CONFIG_STM32_LPTIM_CLOCK` option is now
   deprecated.
 
-* 'label' property from devicetree as a base property.  The property is still
-   valid for specific bindings to specify like :dtcompatible:`gpio-leds` and
-   :dtcompatible:`fixed-partitions`.
+* ``label`` property from devicetree as a base property. The property is still
+  valid for specific bindings to specify like :dtcompatible:`gpio-leds` and
+  :dtcompatible:`fixed-partitions`.
 
 * Bluetooth mesh Configuration Client API prefixed with ``bt_mesh_cfg_``
   is deprecated in favor of a new API with prefix ``bt_mesh_cfg_cli_``.
@@ -652,6 +652,7 @@ HALs
 ****
 
 * Atmel
+
   * sam: Fix incorrect CIDR values for revision b silicon of SAMV71 devices.
 
 * Espressif
