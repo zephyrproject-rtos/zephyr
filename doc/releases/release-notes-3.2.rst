@@ -527,10 +527,92 @@ Drivers and Sensors
 Networking
 **********
 
-* ``CONFIG_NET_CONFIG_IEEE802154_DEV_NAME`` has been removed in favor of
-  using a Devicetree choice given by ``zephyr,ieee802154``.
+* CoAP:
 
-* Added new Wi-Fi offload APIs for retrieving status and statistics.
+  * Replaced constant CoAP retransmission count and acknowledgment random factor
+    with configurable :kconfig:option:`CONFIG_COAP_ACK_RANDOM_PERCENT` and
+    :kconfig:option:`CONFIG_COAP_MAX_RETRANSMIT`.
+  * Updated :c:func:`coap_packet_parse` and :c:func:`coap_handle_request` to
+    return different error code based on the reason of parsing error.
+
+* Ethernet:
+
+  * Added EAPoL and IEEE802154 Ethernet protocol types.
+
+* HTTP:
+
+  * Improved API documentation.
+
+* LwM2M:
+
+  * Moved LwM2M 1.1 support out of experimental.
+  * Refactored SenML-JSON and JSON econder/decoder to use Zephyr's JSON library
+    internally.
+  * Extended LwM2M shell module with the following commands: ``exec``, ``read``,
+    ``write``, ``start``, ``stop``, ``update``, ``pause``, ``resume``.
+  * Refactored LwM2M engine module into smaller sub-modules: LwM2M registry,
+    LwM2M observation, LwM2M message handling.
+  * Added an implementation of the LwM2M Access Control object (object ID 2).
+  * Added support for LwM2M engine pause/resume.
+  * Improved API documentation of the LwM2M engine.
+  * Improved thread safety of the LwM2M library.
+  * Added :c:func:`lwm2m_registry_lock` and :c:func:`lwm2m_registry_unlock`
+    functions, which allow to update multiple resources w/o sending a
+    notification for every update.
+  * Multiple minor fixes/improvements.
+
+* Misc:
+
+  * ``CONFIG_NET_CONFIG_IEEE802154_DEV_NAME`` has been removed in favor of
+    using a Devicetree choice given by ``zephyr,ieee802154``.
+  * Fixed net_pkt leak with shallow clone.
+  * Fixed websocket build with :kconfig:option:`CONFIG_POSIX_API`.
+  * Extracted zperf shell commands into a library.
+  * Added support for building and using IEEE 802.15.4 L2 without IP support.
+  * General clean up of inbound packet handling.
+  * Added support for restarting DHCP w/o randomized delay.
+  * Fixed a bug, where only one packet could be queued on a pending ARP
+    request.
+
+* OpenThread:
+
+  * Moved OpenThread glue code into ``modules`` directory.
+  * Fixed OpenThread build with :kconfig:option:`CONFIG_NET_MGMT_EVENT_INFO`
+    disabled.
+  * Fixed mbed TLS configuration for Service Registration Protocol (SRP)
+    OpenThread feature.
+  * Added Kconfig option to enable Thread 1.3 support
+    (:kconfig:option:`CONFIG_OPENTHREAD_THREAD_VERSION_1_3`).
+  * Updated :c:func:`otPlatSettingsSet` according to new API documentation.
+  * Added new Kconfig options:
+
+    * :kconfig:option:`CONFIG_OPENTHREAD_MESSAGE_BUFFER_SIZE`
+    * :kconfig:option:`CONFIG_OPENTHREAD_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS`
+
+* Sockets:
+
+  * Fixed filling of the address structure provided in :c:func:`recvfrom` for
+    packet socket.
+  * Fixed a potential deadlock in TCP :c:func:`send` call.
+  * Added support for raw 802.15.4 packet socket.
+
+* TCP:
+
+  * Added support for Nagle's algorithm.
+  * Added "Silly Window Syndrome" avoidance.
+  * Fixed MSS calculation.
+  * Avoid unnecessary packet cloning on the RX path.
+  * Implemented randomized retransmission timeouts and exponential backoff.
+  * Fixed out-of-order data processing.
+  * Implemented fast retransmit algorithm.
+  * Multiple minor fixes/improvements.
+
+* Wi-Fi
+
+  * Added support for using offloaded wifi_mgmt API with native network stack.
+  * Extended Wi-Fi headers with additional Wi-Fi parameters (security, bands,
+    modes).
+  * Added new Wi-Fi management APIs for retrieving status and statistics.
 
 USB
 ***
