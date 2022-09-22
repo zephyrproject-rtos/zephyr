@@ -279,17 +279,16 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 	}
 
 	rc = img_mgmt_impl_erase_slot(slot);
-
 	if (rc != 0) {
 		img_mgmt_dfu_stopped();
+		return rc;
 	}
 
-	if (rc == 0) {
-		ok = zcbor_tstr_put_lit(zse, "rc")      &&
-		     zcbor_int32_put(zse, 0);
+	if (zcbor_tstr_put_lit(zse, "rc") && zcbor_int32_put(zse, 0)) {
+		return MGMT_ERR_EOK;
 	}
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+	return MGMT_ERR_EMSGSIZE;
 }
 
 static int
