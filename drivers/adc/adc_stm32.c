@@ -95,6 +95,7 @@ static const uint32_t table_resolution[] = {
 	defined(STM32F3X_ADC_V2_5)
 	RES(12),
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	RES(6),
 	RES(8),
 	RES(10),
 	RES(12),
@@ -707,17 +708,20 @@ static int start_read(const struct device *dev,
 		resolution = table_resolution[0];
 		break;
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	case 8:
+	case 6:
 		resolution = table_resolution[0];
 		break;
-	case 10:
+	case 8:
 		resolution = table_resolution[1];
 		break;
-	case 12:
+	case 10:
 		resolution = table_resolution[2];
 		break;
-	case 14:
+	case 12:
 		resolution = table_resolution[3];
+		break;
+	case 14:
+		resolution = table_resolution[4];
 		break;
 #elif !defined(CONFIG_SOC_SERIES_STM32H7X)
 	case 6:
