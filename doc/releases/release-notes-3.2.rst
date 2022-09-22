@@ -555,6 +555,18 @@ Libraries / Subsystems
 
 * C Library
 
+  * Added Picolibc as a Zephyr module. Picolibc module is a footprint-optimized
+    full C standard library implementation that is configurable at the build
+    time.
+  * C library heap initialization call has been moved from the ``APPLICATION``
+    phase to the ``POST_KERNEL`` phase to allow calling the libc dynamic memory
+    management functions (e.g. ``malloc()``) during the application
+    initialization phase.
+  * Added ``strerror()`` and ``strerror_r()`` functions to the minimal libc.
+  * Removed architecture-specific ``off_t`` type definition in the minimal
+    libc. ``off_t`` is now defined as ``intptr_t`` regardless of the selected
+    architecture.
+
 * C++ Subsystem
 
 * Emul
