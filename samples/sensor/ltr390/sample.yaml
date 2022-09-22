@@ -1,0 +1,12 @@
+sample:
+  name: LTR390 Sensor Sample
+tests:
+  sample.sensor.ltr390:
+    harness: sensor
+    tags: sensors
+    depends_on: i2c
+    filter: dt_compat_enabled("liteon,ltr390")
+    platform_allow: nucleo_f411re
+    integration_platforms:
+      - nucleo_f411re
+      - nrf52840dk_nrf52840

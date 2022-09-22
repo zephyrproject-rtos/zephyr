@@ -630,3 +630,13 @@ test_i2c_max31875: max31875@53 {
 	compatible = "maxim,max31875";
 	reg = <0x53>;
 };
+
+test_i2c_ltr390: ltr390@53 {
+	compatible = "liteon,ltr390";
+	reg = <0x53>;
+	resolution = <2>;
+	rate = <2>;
+	gain = <1>;
+	int-gpios = <&test_gpio 0 0>;
+	int_persist = <1>;
+};

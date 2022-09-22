@@ -177,6 +177,9 @@ enum sensor_channel {
 	/** Desired charging current in mA */
 	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
 
+	/** Ultraviolet Index (UVI) */
+	SENSOR_CHAN_UVI,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 

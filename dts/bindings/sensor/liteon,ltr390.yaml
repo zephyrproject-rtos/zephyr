@@ -1,0 +1,92 @@
+# Copyright (c) 2022 Luke Holt
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Liteon LTR390 I2C ambient light sensor and ultraviolet light sensor. See
+    https://optoelectronics.liteon.com/upload/download/DS86-2015-0004/LTR-390UV_Final_%20DS_V1%201.pdf
+
+compatible: "liteon,ltr390"
+
+include: i2c-device.yaml
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The alert pin defaults to active low when produced by the
+        sensor, and is open-drain. A pull-up may be appropriate. The
+        property value should ensure the flags properly describe the
+        signal that is presented to the driver.
+
+    resolution:
+      type: int
+      required: false
+      default: 2
+      description: |
+        Sensor measurement resolution. Power-up default is 2 (18 Bit).
+      enum:
+        - 0 # 20 Bit, Conversion time = 400ms
+        - 1 # 19 Bit, Conversion time = 200ms
+        - 2 # 18 Bit, Conversion time = 100ms (default)
+        - 3 # 17 Bit, Conversion time = 50ms
+        - 4 # 16 Bit, Conversion time = 25ms
+        - 5 # 13 Bit, Conversion time = 12.5ms
+
+    rate:
+      type: int
+      required: false
+      default: 2
+      description: |
+        Rate (in ms) at which the sensor takes measurements. If the rate is smaller than
+        the time it takes to convert the measurement (resolution times), the rate
+        will be lower than programmed. It will be the maximum allowed speed
+        according to the resolution setting. Power-up default is a 2 (rate of 100ms).
+      enum:
+        - 0 # 25ms
+        - 1 # 50ms
+        - 2 # 100ms (default)
+        - 3 # 200ms
+        - 4 # 500ms
+        - 5 # 1000ms
+        - 6 # 2000ms
+
+    gain:
+      type: int
+      required: false
+      default: 1
+      description: |
+        Measurement gain range setting.
+        Power-up default is 1 (gain of 3).
+      enum:
+        - 0 # Gain Range: 1
+        - 1 # Gain Range: 3 (default)
+        - 2 # Gain Range: 6
+        - 3 # Gain Range: 9
+        - 4 # Gain Range: 18
+
+    int_persist:
+      type: int
+      required: false
+      default: 1
+      description: |
+        Number of consecutive measurements taken outside of the set
+        threshold before an interrupt is asserted.
+        Power-up default is 1. Maximum is 16.
+      enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16

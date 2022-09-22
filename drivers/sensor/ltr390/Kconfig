@@ -1,0 +1,50 @@
+# LTR390 temperature sensor configuration options
+
+# Copyright (c) 2022 Luke Holt
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_LITEON_LTR390 := liteon,ltr390
+
+menuconfig LTR390
+	bool "Liteon LTR390 I2C ambient light sensor and ultraviolet light sensor"
+	default y
+	depends on DT_HAS_LITEON_LTR390_ENABLED
+	select I2C
+	help
+	  Enable I2C driver for Liteon LTR390 ambient light sensor and ultraviolet light sensor.
+
+if LTR390
+
+choice
+	prompt "LTR390 trigger mode"
+	default LTR390_TRIGGER_NONE
+
+config LTR390_TRIGGER_NONE
+	bool "No trigger"
+
+config LTR390_TRIGGER_GLOBAL_THREAD
+	depends on GPIO
+	select LTR390_TRIGGER
+	bool "Use global thread"
+
+config LTR390_TRIGGER_OWN_THREAD
+	depends on GPIO
+	select LTR390_TRIGGER
+	bool "Use own thread"
+
+endchoice
+
+config LTR390_TRIGGER
+	bool
+
+config LTR390_THREAD_STACK_SIZE
+	int "Sensor delayed work thread stack size"
+	depends on LTR390_TRIGGER_OWN_THREAD
+	default 1024
+
+config LTR390_THREAD_PRIORITY
+	int "LTR390 thread priority"
+	depends on LTR390_TRIGGER_OWN_THREAD
+	default 10
+
+endif # LTR390
