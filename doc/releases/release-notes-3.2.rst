@@ -605,6 +605,24 @@ Libraries / Subsystems
     type, from :c:func:`zephyr_smp_transport_out_fn` type callback as it has
     not been used, and the ``nb`` parameter, of :c:struct:`net_buf` type,
     can carry additional transport information when needed.
+  * A dummy SMP transport has been added which allows for testing MCUMGR
+    functionality and commands/responses.
+  * An issue with the UART/shell transports whereby large packets would wrongly
+    be split up with multiple start-of-frame headers instead of only one has been
+    fixed.
+  * SMP now runs in its own dedicated work queue which prevents issues running in
+    the system workqueue with some transports, e.g. Bluetooth, which previously
+    caused a deadlock if buffers could not be allocated.
+  * Bluetooth transport will now reduce the size of packets that are sent if they
+    are too large for the remote device instead of failing to send them, if the
+    remote device cannot accept a notification of 20 bytes then the attempt is
+    aborted.
+  * Unaligned memory access problems for CPUs that do not support it in MCUMGR
+    headers has been fixed.
+  * Groups in MCUMGR now use kernel slist entries rather than the custom MCUMGR
+    structs for storage.
+  * Levels of function redirection which were previously used to support multiple
+    OS's have been reduced to simplify code and reduce output size.
 
 * Cbprintf and logging
 
