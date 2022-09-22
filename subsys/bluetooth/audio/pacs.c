@@ -109,23 +109,6 @@ static void get_pac_records(struct bt_conn *conn, enum bt_audio_dir dir,
 	}
 }
 
-static ssize_t pac_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			void *buf, uint16_t len, uint16_t offset)
-{
-	enum bt_audio_dir dir;
-
-	if (!bt_uuid_cmp(attr->uuid, BT_UUID_PACS_SNK)) {
-		dir = BT_AUDIO_DIR_SINK;
-	} else {
-		dir = BT_AUDIO_DIR_SOURCE;
-	}
-
-	get_pac_records(conn, dir, &read_buf);
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
-				 read_buf.len);
-}
-
 static void available_context_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	BT_DBG("attr %p value 0x%04x", attr, value);
@@ -257,7 +240,10 @@ static ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	BT_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len,
 	       offset);
 
-	return pac_read(conn, attr, buf, len, offset);
+	get_pac_records(conn, BT_AUDIO_DIR_SINK, &read_buf);
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
+				 read_buf.len);
 }
 
 static void snk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -353,7 +339,10 @@ static ssize_t src_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	BT_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len,
 	       offset);
 
-	return pac_read(conn, attr, buf, len, offset);
+	get_pac_records(conn, BT_AUDIO_DIR_SOURCE, &read_buf);
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
+				 read_buf.len);
 }
 
 static void src_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
