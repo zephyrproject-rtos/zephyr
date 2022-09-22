@@ -61,6 +61,12 @@ def compat2kconfig(compat):
     printfile(f'')
     printfile(f'config DT_HAS_{compat_ident}_ENABLED')
     printfile(f'\tdef_bool $(dt_compat_enabled,$(DT_COMPAT_{compat_ident}))')
+    printfile(f'')
+    printfile(f'if DT_HAS_{compat_ident}_ENABLED')
+    printfile(f'config DT_{compat_ident}')
+    printfile(f'\tstring')
+    printfile(f'\tdefault "{compat}"')
+    printfile(f'endif')
 
 def main():
     global kconfig_file
