@@ -178,15 +178,15 @@ extern "C" {
 #define Z_CBPRINTF_ARG_SIZE(v) z_cbprintf_cxx_arg_size(v)
 #else
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
-	__auto_type _v = (v) + 0; \
+	__auto_type __v = (v) + 0; \
 	/* Static code analysis may complain about unused variable. */ \
-	(void)_v; \
-	size_t _arg_size = _Generic((v), \
+	(void)__v; \
+	size_t __arg_size = _Generic((v), \
 		float : sizeof(double), \
 		default : \
-			sizeof((_v)) \
+			sizeof((__v)) \
 		); \
-	_arg_size; \
+	__arg_size; \
 })
 #endif
 
