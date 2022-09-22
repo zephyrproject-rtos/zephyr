@@ -276,14 +276,50 @@ config TFM_MCUBOOT_DATA_SHARING
 
 endif # TFM_BL2
 
-config TFM_IPC
-	bool "IPC" if TFM_PROFILE_TYPE_NOT_SET
-	default y if (TFM_PROFILE_TYPE_MEDIUM || TFM_PROFILE_TYPE_LARGE)
+choice TFM_MODEL
+	prompt "TF-M Firmware Framework model"
+	default TFM_IPC
 	help
-	  When enabled, this option signifies that the TF-M build supports
-	  the PSA API (IPC mode) instead of the secure library mode. When
-	  TF-M Profile option is supplied, do not allow manual setting of
-	  the IPC mode, as it is determined by the profile setting.
+	  The Firmware Framework M (FF-M) provides different programming models
+	  for Secure Partitions.
+
+config TFM_LIBRARY
+	bool "Library Model"
+	help
+	  Use the library model instead of PSA API.
+
+	  The library model conforms to the PSA Firmware Framework for M (FF-M)
+	  v1.0.
+
+	  NOTE: The Library Model will be removed and replaced by the SFN model.
+
+config TFM_IPC
+	bool "IPC Model"
+	help
+	  Use the IPC Model as the SPM backend for the PSA API.
+	  The IPC model supports the IPC and SFN Partition models, and
+	  isolation levels 1, 2 and 3.
+
+	  In this model each Secure Partition processes signals in any order,
+	  and can defer responding to a message while continuing to process
+	  other signals.
+
+	  The IPC model conforms to the PSA Firmware Framework for M (FF-M)
+	  v1.1.
+
+config TFM_SFN
+	bool "SFN model"
+	help
+	  Use the SFN Model as the SPM backend for the PSA API.
+	  The SFN model supports the SFN Partition model, and isolation level 1.
+
+	  In this model each Secure Partition is made up of a collection of
+	  callback functions which implement secure services.
+
+	  The SFN model conforms to the PSA Firmware Framework for M (FF-M)
+	  v1.1.
+
+endchoice # TFM_MODEL
 
 config TFM_REGRESSION_S
 	bool "TF-M Secure Regression tests"
