@@ -7,9 +7,7 @@
 #
 
 config BT_ASCS
-	bool "Audio Stream Control Service Support"
-	help
-	  This option enables support for Audio Stream Control Service.
+	def_bool BT_AUDIO_UNICAST_SERVER
 
 if BT_ASCS
 config BT_ASCS_ASE_SNK_COUNT

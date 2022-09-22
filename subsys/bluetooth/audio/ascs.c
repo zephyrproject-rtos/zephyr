@@ -33,8 +33,6 @@
 #include "pacs_internal.h"
 #include "cap_internal.h"
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
-
 #define ASE_ID(_ase) ase->ep.status.id
 #define ASE_DIR(_id) \
 	(_id > CONFIG_BT_ASCS_ASE_SNK_COUNT ? BT_AUDIO_DIR_SOURCE : BT_AUDIO_DIR_SINK)
@@ -2350,5 +2348,3 @@ BT_GATT_SERVICE_DEFINE(ascs_svc,
 		      NULL, ascs_cp_write, NULL),
 	BT_AUDIO_CCC(ascs_cp_cfg_changed),
 );
-
-#endif /* BT_AUDIO_UNICAST_SERVER */
