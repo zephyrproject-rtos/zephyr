@@ -457,8 +457,8 @@ static int setup_upload_sockets(const struct shell *sh,
 				struct sockaddr_in6 *ipv6,
 				struct sockaddr_in *ipv4,
 				int port,
-				bool is_udp,
-				char *argv0)
+				int tos,
+				bool is_udp)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		*sock6 = zsock_socket(AF_INET6,
@@ -469,6 +469,16 @@ static int setup_upload_sockets(const struct shell *sh,
 				      "Cannot create IPv6 network socket (%d)\n",
 				      errno);
 			return -ENOEXEC;
+		}
+
+		if (tos >= 0) {
+			if (zsock_setsockopt(*sock6, IPPROTO_IPV6, IPV6_TCLASS,
+					     &tos, sizeof(tos)) != 0) {
+				shell_fprintf(
+					sh, SHELL_WARNING,
+					"Failed to set IPV6_TCLASS socket option. "
+					"Please enable CONFIG_NET_CONTEXT_DSCP_ECN.\n");
+			}
 		}
 
 		ipv6->sin6_port = htons(port);
@@ -484,6 +494,16 @@ static int setup_upload_sockets(const struct shell *sh,
 				      "Cannot create IPv4 network socket (%d)\n",
 				      errno);
 			return -ENOEXEC;
+		}
+
+		if (tos >= 0) {
+			if (zsock_setsockopt(*sock4, IPPROTO_IP, IP_TOS,
+					     &tos, sizeof(tos)) != 0) {
+				shell_fprintf(
+					sh, SHELL_WARNING,
+					"Failed to set IP_TOS socket option. "
+					"Please enable CONFIG_NET_CONTEXT_DSCP_ECN.\n");
+			}
 		}
 
 		ipv4->sin_port = htons(port);
@@ -507,7 +527,6 @@ static int execute_upload(const struct shell *sh,
 			  struct sockaddr_in *ipv4,
 			  bool is_udp,
 			  int port,
-			  char *argv0,
 			  unsigned int duration_in_ms,
 			  unsigned int packet_size,
 			  unsigned int rate_in_kbps)
@@ -647,6 +666,35 @@ out:
 	return 0;
 }
 
+static int parse_arg(size_t *i, size_t argc, char *argv[])
+{
+	int res = -1;
+	const char *str = argv[*i] + 2;
+	char *endptr;
+
+	if (*str == 0) {
+		if (*i + 1 >= argc) {
+			return -1;
+		}
+
+		*i += 1;
+		str = argv[*i];
+	}
+
+	errno = 0;
+	if (strncmp(str, "0x", 2) == 0) {
+		res = strtol(str, &endptr, 16);
+	} else {
+		res = strtol(str, &endptr, 10);
+	}
+
+	if (errno || (endptr == str)) {
+		return -1;
+	}
+
+	return res;
+}
+
 static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			     char *argv[], enum net_ip_protocol proto)
 {
@@ -659,8 +707,38 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	uint16_t port;
 	bool is_udp;
 	int start = 0;
+	size_t opt_cnt = 0;
+	int tos = 0;
 
 	is_udp = proto == IPPROTO_UDP;
+
+	/* Parse options */
+	for (size_t i = 1; i < argc; ++i) {
+		if (*argv[i] != '-') {
+			break;
+		}
+
+		switch (argv[i][1]) {
+		case 'S':
+			tos = parse_arg(&i, argc, argv);
+			if (tos < 0 || tos > UINT8_MAX) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+
+			break;
+		default:
+			shell_fprintf(sh, SHELL_WARNING,
+				      "Unrecognized argument: %s\n", argv[i]);
+			return -ENOEXEC;
+		}
+
+		opt_cnt += 2;
+	}
+
+	start += opt_cnt;
+	argc -= opt_cnt;
 
 	if (argc < 2) {
 		shell_fprintf(sh, SHELL_WARNING,
@@ -747,7 +825,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	}
 
 	if (setup_upload_sockets(sh, &sock6, &sock4, family, &in6_addr_my,
-				 &in4_addr_my, port, is_udp, argv[start]) < 0) {
+				 &in4_addr_my, port, tos, is_udp) < 0) {
 		return -ENOEXEC;
 	}
 
@@ -773,7 +851,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	}
 
 	return execute_upload(sh, sock6, sock4, family, &ipv6, &ipv4,
-			      is_udp, port, argv[start], duration_in_ms,
+			      is_udp, port, duration_in_ms,
 			      packet_size, rate_in_kbps);
 }
 
@@ -800,8 +878,38 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 	sa_family_t family;
 	uint8_t is_udp;
 	int start = 0;
+	size_t opt_cnt = 0;
+	int tos = -1;
 
 	is_udp = proto == IPPROTO_UDP;
+
+	/* Parse options */
+	for (size_t i = 1; i < argc; ++i) {
+		if (*argv[i] != '-') {
+			break;
+		}
+
+		switch (argv[i][1]) {
+		case 'S':
+			tos = parse_arg(&i, argc, argv);
+			if (tos < 0 || tos > UINT8_MAX) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+
+			break;
+		default:
+			shell_fprintf(sh, SHELL_WARNING,
+				      "Unrecognized argument: %s\n", argv[i]);
+			return -ENOEXEC;
+		}
+
+		opt_cnt += 2;
+	}
+
+	start += opt_cnt;
+	argc -= opt_cnt;
 
 	if (argc < 2) {
 		shell_fprintf(sh, SHELL_WARNING,
@@ -867,7 +975,7 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 	}
 
 	if (setup_upload_sockets(sh, &sock6, &sock4, family, &in6_addr_my,
-				 &in4_addr_my, port, is_udp, argv[start]) < 0) {
+				 &in4_addr_my, port, tos, is_udp) < 0) {
 		return -ENOEXEC;
 	}
 
@@ -893,7 +1001,7 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 	}
 
 	return execute_upload(sh, sock6, sock4, family, &in6_addr_dst,
-			      &in4_addr_dst, is_udp, port, argv[start],
+			      &in4_addr_dst, is_udp, port,
 			      duration_in_ms, packet_size, rate_in_kbps);
 }
 
@@ -1068,7 +1176,8 @@ static void zperf_init(const struct shell *sh)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 	SHELL_CMD(upload, NULL,
-		  "<dest ip> <dest port> <duration> <packet size>[K]\n"
+		  "[<options>] <dest ip> <dest port> <duration> <packet size>[K]\n"
+		  "<options>     command options (optional): [-S tos]\n"
 		  "<dest ip>     IP destination\n"
 		  "<dest port>   port destination\n"
 		  "<duration>    of the test in seconds\n"
@@ -1078,7 +1187,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 		  "Example: tcp upload 2001:db8::2\n",
 		  cmd_tcp_upload),
 	SHELL_CMD(upload2, NULL,
-		  "v6|v4 <duration> <packet size>[K] <baud rate>[K|M]\n"
+		  "[<options>] v6|v4 <duration> <packet size>[K] <baud rate>[K|M]\n"
+		  "<options>     command options (optional): [-S tos]\n"
 		  "<v6|v4>:      Use either IPv6 or IPv4\n"
 		  "<duration>    Duration of the test in seconds\n"
 		  "<packet size> Size of the packet in byte or kilobyte "
@@ -1104,8 +1214,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 	SHELL_CMD(upload, NULL,
-		  "<dest ip> [<dest port> <duration> <packet size>[K] "
+		  "[<options>] <dest ip> [<dest port> <duration> <packet size>[K] "
 							"<baud rate>[K|M]]\n"
+		  "<options>     command options (optional): [-S tos]\n"
 		  "<dest ip>     IP destination\n"
 		  "<dest port>   port destination\n"
 		  "<duration>    of the test in seconds\n"
@@ -1116,7 +1227,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "Example: udp upload 2001:db8::2\n",
 		  cmd_udp_upload),
 	SHELL_CMD(upload2, NULL,
-		  "v6|v4 [<duration> <packet size>[K] <baud rate>[K|M]]\n"
+		  "[<options>] v6|v4 [<duration> <packet size>[K] <baud rate>[K|M]]\n"
+		  "<options>     command options (optional): [-S tos]\n"
 		  "<v6|v4>:      Use either IPv6 or IPv4\n"
 		  "<duration>    Duration of the test in seconds\n"
 		  "<packet size> Size of the packet in byte or kilobyte "
