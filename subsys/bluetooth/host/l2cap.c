@@ -76,7 +76,7 @@ struct l2cap_tx_meta {
 	struct l2cap_tx_meta_data *data;
 };
 
-static struct l2cap_tx_meta_data l2cap_tx_meta_data[CONFIG_BT_CONN_TX_MAX];
+static struct l2cap_tx_meta_data l2cap_tx_meta_data_storage[CONFIG_BT_CONN_TX_MAX];
 K_FIFO_DEFINE(free_l2cap_tx_meta_data);
 
 static struct l2cap_tx_meta_data *alloc_tx_meta_data(void)
@@ -2706,8 +2706,8 @@ void bt_l2cap_init(void)
 	}
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	for (size_t i = 0; i < ARRAY_SIZE(l2cap_tx_meta_data); i++) {
-		k_fifo_put(&free_l2cap_tx_meta_data, &l2cap_tx_meta_data[i]);
+	for (size_t i = 0; i < ARRAY_SIZE(l2cap_tx_meta_data_storage); i++) {
+		k_fifo_put(&free_l2cap_tx_meta_data, &l2cap_tx_meta_data_storage[i]);
 	}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 }
