@@ -219,7 +219,7 @@ static inline void line_control_defaults_set(const struct device *dev)
  *
  * @return 0
  */
-static int uart_stellaris_init(const struct device *dev)
+int uart_stellaris_init(const struct device *dev)
 {
 	struct uart_stellaris_dev_data_t *data = dev->data;
 	const struct uart_stellaris_config *config = dev->config;

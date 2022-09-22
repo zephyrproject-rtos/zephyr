@@ -24,7 +24,7 @@ static const struct device *devlist_end;
 
 static device_handle_t init_order[10];
 
-static int dev_init(const struct device *dev)
+int dev_init(const struct device *dev)
 {
 	static uint8_t init_idx;
 

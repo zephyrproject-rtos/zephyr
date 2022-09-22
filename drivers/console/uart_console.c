@@ -585,7 +585,7 @@ static void uart_console_hook_install(void)
  *
  * @return 0 if successful, otherwise failed.
  */
-static int uart_console_init(const struct device *arg)
+int uart_console_init(const struct device *arg)
 {
 
 	ARG_UNUSED(arg);

@@ -30,7 +30,7 @@
  * @return 0
  */
 
-static int ti_lm3s6965_init(const struct device *arg)
+int ti_lm3s6965_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

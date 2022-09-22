@@ -266,7 +266,7 @@ void sys_clock_disable(void)
 	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
