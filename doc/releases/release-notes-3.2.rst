@@ -45,6 +45,10 @@ Changes in this release
   changes are required by applications other than replacing ``#include
   <zephyr/zephyr.h>`` with ``#include <zephyr/kernel.h>``.
 
+* Bluetooth: Applications where :kconfig:option:`CONFIG_BT_EATT` is enabled
+  must set the :c:member:`chan_opt` field on the GATT parameter structs.
+  To keep the old behavior use :c:enumerator:`BT_ATT_CHAN_OPT_NONE`.
+
 * CAN
 
   * The Zephyr SocketCAN definitions have been moved from :zephyr_file:`include/zephyr/drivers/can.h`
@@ -225,26 +229,98 @@ Bluetooth
 
 * Audio
 
+  * Implemented central security establishment when required
+  * Added additional security level options to the connection call
+  * Switched the unicast client and server to bidirectional CIS if available
+  * Added a new RSI advertising callback for CSIS
+  * Added multiple improvements to context handling, including public functions
+    to get contexts
+  * Added ordered access procedure for the CSIS client, as well as storing
+    active members by rank
+  * Added support for Write Preset Name in HAS
+  * Added support for using PACS for the broadcast sink role
+  * Cleaned up the MICP implementation, including renaming several structures
+    and functions
+  * Implemented the CAP Acceptor role
+  * Added ASCS Metadata verification support
+  * Started exposing broadcast sink advertising data to the application
+  * Added support for unicast server start, reconfigure, release, disable and
+    metadata
+  * Added support for multi-CIS
+  * Implemented HAS client support for preset switching
+  * Added support for setting vendor-specific non-HCI data paths for audio
+    streams
+
 * Direction Finding
+
+  * Added support for selectable IQ samples conversion to 8-bit
+  * Added support for VS IQ sample reports in ``int16_t`` format
 
 * Host
 
-  * Added a new callback :c:func:`rpa_expired` in the struct :c:struct:`bt_le_ext_adv_cb`
-    to enable synchronization of the advertising payload updates with the Resolvable Private
-    Address (RPA) rotations when the :kconfig:option:`CONFIG_BT_PRIVACY` is enabled.
-  * Added a new :c:func:`bt_le_set_rpa_timeout()` API call to dynamically change the
-    the Resolvable Private Address (RPA) timeout when the :kconfig:option:`CONFIG_BT_RPA_TIMEOUT_DYNAMIC`
-    is enabled.
-  * Added :c:func:`bt_conn_auth_cb_overlay` to overlay authentication callbacks for a Bluetooth LE connection.
-  * Removed ``CONFIG_BT_HCI_ECC_STACK_SIZE``.
-    The Bluetooth long workqueue (:kconfig:option:`CONFIG_BT_LONG_WQ`) is used for processing ECC commands instead of the dedicated thread.
-  * :c:func:`bt_conn_get_security` and `bt_conn_enc_key_size` now take a ``const struct bt_conn*`` argument.
+  * Added support for LE Secure Connections permission checking
+  * Added support for Multiple Variable Length Read procedure without EATT
+  * Added a new callback :c:func:`rpa_expired` in the struct
+    :c:struct:`bt_le_ext_adv_cb` to enable synchronization of the advertising
+    payload updates with the Resolvable Private Address (RPA) rotations when
+    the :kconfig:option:`CONFIG_BT_PRIVACY` is enabled
+  * Added a new :c:func:`bt_le_set_rpa_timeout()` API call to dynamically change
+    the the Resolvable Private Address (RPA) timeout when the
+    :kconfig:option:`CONFIG_BT_RPA_TIMEOUT_DYNAMIC` is enabled
+  * Added :c:func:`bt_conn_auth_cb_overlay` to overlay authentication callbacks
+    for a Bluetooth LE connection
+  * Removed ``CONFIG_BT_HCI_ECC_STACK_SIZE``. A new Bluetooth long workqueue
+    (:kconfig:option:`CONFIG_BT_LONG_WQ`) is used for processing ECC commands
+    instead of the former dedicated thread
+  * :c:func:`bt_conn_get_security` and :c:func:`bt_conn_enc_key_size` now take
+    a ``const struct bt_conn*`` argument
+  * The handling of GATT multiple notifications has been rewritten, and is now
+    only to be used as a low-level API
+  * Added support for GATT CCCs in arbitrary locations as a client
+  * Extended the ``bt_conn_info`` structure with security information
+  * Added a new :kconfig:option:`CONFIG_BT_PRIVACY_RANDOMIZE_IR` that prevents
+    the Host from using Controller-provided identity roots
+  * Added support for GATT over EATT
+  * Implemented the Immediate Alert Client
 
 * Mesh
 
+  * Added support for selectable RPL backends
+  * Changed the way segmented messages are sent, avoiding bulk transmission
+  * Added an async config client API
+  * Added model publish support to the Health Client
+  * Moved relayed messages to a separate buffer pool
+  * Reduced delay of sending segment acknowledge message. Set
+    :kconfig:option:`CONFIG_BT_MESH_SEG_ACK_PER_SEGMENT_TIMEOUT` to 100 to get
+    the previous timing.
+  * Restructured shell commands
+
 * Controller
 
+  * Made the new LLCP implementation the default one. Enable
+    :kconfig:option:`CONFIG_BT_LL_SW_LLCP_LEGACY` to revert back to the legacy
+    implementation
+  * Marked Extended Advertising as stable, no longer experimental
+  * Added deinit() infrastructure in order to properly support disabling
+    Bluetooth support, including the controller
+  * Implemented the Peripheral CIS Create procedure
+  * Implemented the CIS Terminate procedure
+  * Added support for Periodic Advertising ADI
+  * Implemented support for Extended Scan Response Data fragment operations
+  * Enable back-to-back PDU chaining for AD data
+  * Added a new :kconfig:option:`CONFIG_BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX`
+    for allowing periodic sync event skipping
+  * Added a new :kconfig:option:`CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN` for
+    minimal time resevation
+  * Implemented ISO Test Mode HCI commands
+  * Added support for multiple BIS sync selection within a BIG
+  * Implement flushing pending ISO TX PDUs when a BIG event is terminated
+  * Added a new :kconfig:option:`CONFIG_BT_CTLR_ADV_DATA_CHAIN` to enable
+    experimental Advertising Data chaining support
+
 * HCI Driver
+
+  * Added a new Telink B91 HCI driver
 
 Boards & SoC Support
 ********************
