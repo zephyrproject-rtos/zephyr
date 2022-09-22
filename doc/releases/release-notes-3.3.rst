@@ -128,6 +128,8 @@ Drivers and Sensors
 
 * Flash
 
+  * NRF: Added CONFIG_SOC_FLASH_NRF_TIMEOUT_MULTIPLIER to allow tweaking the timeout of flash operations.
+
 * GPIO
 
 * I2C
