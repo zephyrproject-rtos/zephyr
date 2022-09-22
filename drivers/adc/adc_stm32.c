@@ -809,7 +809,15 @@ static int start_read(const struct device *dev,
 	while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
 	}
 	LL_ADC_ClearFlag_CCRDY(adc);
-
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (adc != ADC4) {
+		LL_ADC_REG_SetSequencerRanks(adc, table_rank[0], channel);
+		LL_ADC_REG_SetSequencerLength(adc, table_seq_len[0]);
+	} else {
+		LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_FIXED);
+		LL_ADC_REG_SetSequencerLength(adc,
+					      BIT(__LL_ADC_CHANNEL_TO_DECIMAL_NB(channel)));
+	}
 #else
 	LL_ADC_REG_SetSequencerRanks(adc, table_rank[0], channel);
 	LL_ADC_REG_SetSequencerLength(adc, table_seq_len[0]);
