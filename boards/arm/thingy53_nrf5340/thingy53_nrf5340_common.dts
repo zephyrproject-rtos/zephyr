@@ -198,7 +198,6 @@
 		status = "disabled";
 		spi-max-frequency = <8000000>;
 		reg = <1>;
-		int1-gpios = <&gpio0 23 0>;
 	};
 
 	nrf_radio_fem_spi: fem_spi@2 {
