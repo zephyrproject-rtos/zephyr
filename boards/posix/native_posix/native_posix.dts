@@ -188,7 +188,7 @@
 	};
 
 	can_loopback0: can_loopback0 {
-		status = "disabled";
+		status = "okay";
 		compatible = "zephyr,can-loopback";
 		sjw = <1>;
 		sample-point = <875>;
