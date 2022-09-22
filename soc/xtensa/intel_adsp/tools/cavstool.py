@@ -91,8 +91,10 @@ class HDAStream:
         self.regs.CTL = ((self.stream_id & 0xFF) << 20) | (1 << 18) # must be set to something other than 0?
         self.regs.BDPU = (self.buf_list_addr >> 32) & 0xffffffff
         self.regs.BDPL = self.buf_list_addr & 0xffffffff
-        self.regs.CBL = buf_len
+        self.regs.CBL = buf_len*2
         self.regs.LVI = self.n_bufs - 1
+        self.hda.SPBFCTL |= (1 << self.stream_id) # configure to use SPIB
+        self.hda.SPIB = 0 # start at zero, up to CBL
         self.mem.seek(0)
         self.debug()
         log.info(f"Configured stream {self.stream_id}")
@@ -103,7 +105,6 @@ class HDAStream:
         log.info(f"Writing data to stream {self.stream_id}, len {bufl}, SPBFCTL {self.hda.SPBFCTL:x}, SPIB {self.hda.SPIB}")
         self.mem[0:bufl] = data[0:bufl]
         self.mem[bufl:bufl+bufl] = data[0:bufl]
-        self.hda.SPBFCTL |= (1 << self.stream_id)
         self.hda.SPIB += bufl
         log.info(f"Wrote data to stream {self.stream_id}, SPBFCTL {self.hda.SPBFCTL:x}, SPIB {self.hda.SPIB}")
 
@@ -606,6 +607,7 @@ def ipc_command(data, ext_data):
         if pos + buf_len >= hda_str.buf_len*2:
             read_lens[0] = hda_str.buf_len*2 - pos
             read_lens[1] = buf_len - read_lens[0]
+        log.debug(f"HDA LOG PRINT STREAM {stream_id} LEN {buf_len}, POS {pos}, SPIB {hda_str.hda.SPIB}, CBL {hda_str.regs.CBL}, READ_LENS {read_lens}")
         # validate the read lens
         assert (read_lens[0] + pos) <= (hda_str.buf_len*2)
         assert read_lens[0] % 128 == 0
@@ -620,6 +622,9 @@ def ipc_command(data, ext_data):
             sys.stdout.write(hda_msg1)
         pos = hda_str.mem.tell()
         sys.stdout.flush()
+        while hda_str.hda.SPIB != pos:
+            hda_str.hda.SPIB = pos
+        log.debug(f"HDA LOG PRINT DONE STREAM {stream_id} LEN {buf_len}, POS {pos}, SPIB {hda_str.hda.SPIB}, CBL {hda_str.regs.CBL}, READ_LENS {read_lens}")
     else:
         log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
         if not fw_is_alive():
@@ -632,15 +637,31 @@ def ipc_command(data, ext_data):
 
             return
 
+    log.debug("ACKing Interrupt")
     dsp.HIPCTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
-    if cavs18:
-        time.sleep(0.01) # Needed on 1.8, or the command below won't send!
+
+    time.sleep(0.05) # Needed or the command below won't send!
 
     if done and not cavs15:
+        log.debug("Signaling DONE")
+        retries = 1000
         dsp.HIPCTDA = 1<<31 # Signal done
+        # The hardware clears the DONE bit once the message
+        # has been sent and the DSP has received it
+        # Waiting for this to show seems to greatly improve
+        # the chances the DSP gets an IPC DONE bit set.
+        # Without it slot machine odds are in play
+        while (dsp.HIPCTDA & (1 << 31)) and retries > 0:
+            time.sleep(0.001)
+            retries -= 1
+        if retries == 0:
+            log.warning("Failed to fully signal IPC DONE")
+        log.debug("Signaled IPC DONE")
+
     if send_msg:
         dsp.HIPCIDD = ext_data
         dsp.HIPCIDR = (1<<31) | ext_data
+
 
 async def main():
     #TODO this bit me, remove the globals, write a little FirmwareLoader class or something to contain.
