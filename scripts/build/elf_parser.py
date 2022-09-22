@@ -118,8 +118,9 @@ class ZephyrElf:
     def __init__(self, kernel, edt):
         self.elf = ELFFile(open(kernel, "rb"))
         self.edt = edt
-        self.devices = {}
         self.ld_consts = self._symbols_find_value(set([*Device.required_ld_consts, *DevicePM.required_ld_consts]))
+        self.functions = self._functions_find()
+        self.devices = {}
         self._device_parse_and_link()
 
     @property
@@ -175,6 +176,16 @@ class ZephyrElf:
                     for prefix in prefix_dict:
                         if sym.name.startswith(prefix):
                             prefix_dict[prefix](sym)
+
+    def _functions_find(self):
+        functions = {}
+        for section in self.elf.iter_sections():
+            if isinstance(section, SymbolTableSection):
+                for sym in section.iter_symbols():
+                    if sym.entry.st_info.type != 'STT_FUNC':
+                        continue
+                    functions[sym.entry.st_value] = sym
+        return functions
 
     def _link_devices(self, devices):
         # Compute the dependency graph induced from the full graph restricted to the
