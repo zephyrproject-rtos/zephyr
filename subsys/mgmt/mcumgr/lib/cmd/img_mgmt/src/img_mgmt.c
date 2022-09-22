@@ -284,10 +284,8 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 		img_mgmt_dfu_stopped();
 	}
 
-	if (rc == 0) {
-		ok = zcbor_tstr_put_lit(zse, "rc")      &&
-		     zcbor_int32_put(zse, 0);
-	}
+	ok = zcbor_tstr_put_lit(zse, "rc")      &&
+	     zcbor_int32_put(zse, rc);
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
