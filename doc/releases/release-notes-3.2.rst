@@ -861,6 +861,10 @@ Documentation
 Tests and Samples
 *****************
 
+* A large number of tests have been reworked to use the new ztest API, see
+  :ref:`test-framework` for more details. This should be used for newly
+  introduce tests as well.
+
 Issue Related Items
 *******************
 
