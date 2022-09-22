@@ -145,6 +145,7 @@
  */
 #define CREATE_OBJ_LEVEL(object, level)				\
 		__##object##_##level##_start = .;		\
+		KEEP(*(SORT(.z_##object##_##level*)));			\
 		KEEP(*(SORT(.z_##object##_##level[0-9]_*)));		\
 		KEEP(*(SORT(.z_##object##_##level[1-9][0-9]_*)));
 

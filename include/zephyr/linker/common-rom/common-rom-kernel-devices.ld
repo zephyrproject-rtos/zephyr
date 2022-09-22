@@ -1,5 +1,18 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#ifndef LINKER_INIT_ENTRIES_PASS1
+	/* Discard the initial init entries after the first pass, as the final
+	 * ordering is in new sections.
+	 */
+    	/DISCARD/ : {
+		*(.z_init_PRE_KERNEL_1[0-9]*)
+		*(.z_init_PRE_KERNEL_2[0-9]*)
+		*(.z_init_POST_KERNEL[0-9]*)
+		*(.z_init_APPLICATION[0-9]*)
+		*(.z_init_SMP[0-9]*)
+	}
+#endif /* !LINKER_INIT_ENTRIES_PASS1 */
+
 	SECTION_PROLOGUE(initlevel,,)
 	{
 		/*

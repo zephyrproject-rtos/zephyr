@@ -863,6 +863,21 @@ if(CONFIG_HAS_DTS)
   list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "LINKER_DEVICE_HANDLES_PASS1")
 endif()
 
+# gen_init_arrays.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by gen_init_arrays.py
+add_custom_command(
+  OUTPUT init_entry_arrays.c
+  COMMAND
+  ${PYTHON_EXECUTABLE}
+  ${ZEPHYR_BASE}/scripts/build/gen_init_arrays.py
+  --output-source init_entry_arrays.c
+  --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
+  --zephyr-base ${ZEPHYR_BASE}
+  VERBATIM
+  DEPENDS ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+  )
+set_property(GLOBAL APPEND PROPERTY GENERATED_APP_SOURCE_FILES init_entry_arrays.c)
+list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "LINKER_INIT_ENTRIES_PASS1")
+
 if(CONFIG_CODE_DATA_RELOCATION)
   # @Intent: Linker script to relocate .text, data and .bss sections
   toolchain_ld_relocation()
