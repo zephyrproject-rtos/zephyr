@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 Intel Corporation
+
+mainmenu "HDA Log test parameters"
+
+config HDA_LOG_TEST_THREADS
+	int "Number of threads to spawn and log with"
+	default 5
+
+config HDA_LOG_TEST_ITERATIONS
+	int "Number of iterations each thread calls LOG in a loop"
+	default 1024
+
+config HDA_LOG_TEST_TIMER
+	bool "Concurrent to the threads log in a timer isr"
+	default y
+
+config HDA_LOG_TEST_PANIC
+	bool "Test a call to log_panic()"
+	default y
+	depends on !LOG_MODE_DEFERRED
+
+source "Kconfig.zephyr"

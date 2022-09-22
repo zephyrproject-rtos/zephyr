@@ -9,6 +9,13 @@ common:
       - "TEST:([0-9]){6,7}"
       - "Timeout flush working if shown"
 tests:
+  boards.intel_adsp.hda_log.simple:
+    timeout: 120
+    extra_configs:
+      - CONFIG_HDA_LOG_TEST_THREADS=1
+      - CONFIG_HDA_LOG_TEST_ITERATIONS=1024
+      - CONFIG_HDA_LOG_TEST_TIMER=n
+      - CONFIG_HDA_LOG_TEST_PANIC=n
   boards.intel_adsp.hda_log:
     timeout: 120
   boards.intel_adsp.hda_log.printk:
@@ -19,3 +26,7 @@ tests:
     timeout: 120
     extra_configs:
       - CONFIG_MP_MAX_NUM_CPUS=1
+  boards.intel_adsp.hda_log.deferred:
+    timeout: 120
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
