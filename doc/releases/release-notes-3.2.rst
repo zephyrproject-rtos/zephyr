@@ -773,7 +773,8 @@ Libraries / Subsystems
 
 * SD Subsystem
 
-  * SDMMC STM32: Added DMA support and now compatible with STM32L5 series.
+  * SDMMC STM32: Now compatible with STM32L5 series. Added DMA support for DMA-V1
+    compatible devices.
 
 * Settings
 
