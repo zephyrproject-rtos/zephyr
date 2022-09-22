@@ -23,6 +23,15 @@ if(CONFIG_SETTINGS)
   src/test_persistence.c
   src/test_replay_cache.c
  )
+elseif(CONFIG_BT_MESH_GATT_PROXY)
+ target_sources(app PRIVATE
+  src/test_advertiser.c
+ )
+elseif(CONFIG_BT_CTLR_LOW_LAT)
+ target_sources(app PRIVATE
+  src/test_friendship.c
+  src/test_transport.c
+ )
 else()
  target_sources(app PRIVATE
   src/test_transport.c
