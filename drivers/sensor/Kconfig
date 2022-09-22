@@ -243,6 +243,8 @@ source "drivers/sensor/vcnl4040/Kconfig"
 
 source "drivers/sensor/vl53l0x/Kconfig"
 
+source "drivers/sensor/vl6180x/Kconfig"
+
 source "drivers/sensor/nxp_kinetis_temp/Kconfig"
 
 source "drivers/sensor/wsen_hids/Kconfig"

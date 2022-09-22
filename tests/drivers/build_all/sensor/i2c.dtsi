@@ -398,6 +398,12 @@ test_i2c_vl53l0x: vl53l0x@3e {
 	xshut-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_vl6180: vl6180@3e {
+	compatible = "st,vl6180";
+	reg = <0x3e>;
+	xshut-gpios = <&test_gpio 0 0>;
+};
+
 test_i2c_hdc: hdc@3f {
 	compatible = "ti,hdc";
 	reg = <0x3f>;

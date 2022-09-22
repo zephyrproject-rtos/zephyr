@@ -1,0 +1,7 @@
+sample:
+  name: Sample for MEMS sensors VL6180X
+tests:
+  sample.sensor.vl6180x:
+    build_only: true
+    depends_on: i2c vl6180x
+    tags: sensors
