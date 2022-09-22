@@ -106,6 +106,8 @@ Removed APIs in this release
 * Removed support for configuring the CAN-FD maximum DLC value via Kconfig
   ``CONFIG_CANFD_MAX_DLC``.
 
+* Removed deprecated civetweb module and the associated support code and samples.
+
 Deprecated in this release
 ==========================
 
