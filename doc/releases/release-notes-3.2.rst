@@ -569,6 +569,12 @@ Libraries / Subsystems
 
 * C++ Subsystem
 
+  * Added ``std::ptrdiff_t``, ``std::size_t``, ``std::max_align_t`` and
+    ``std::nullptr_t`` type definitions to the C++ subsystem ``cstddef``
+    header.
+  * Renamed global constructor list symbols to prevent the native POSIX host
+    runtime from executing the constructors before Zephyr loads.
+
 * Emul
 
 * Filesystem
