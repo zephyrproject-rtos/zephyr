@@ -311,7 +311,7 @@ Drivers and Sensors
   * A driver for bridging from :ref:`native_posix` to Linux SocketCAN has been added.
   * A driver for the Espressif ESP32 TWAI has been added. See the
     :dtcompatible:`espressif,esp32-twai` devicetree binding for more information.
-  * The STM32 CAN-FD CAN driver clock configurion has been moved from Kconfig to :ref:`devicetree
+  * The STM32 CAN-FD CAN driver clock configuration has been moved from Kconfig to :ref:`devicetree
     <dt-guide>`. See the :dtcompatible:`st,stm32-fdcan` devicetree binding for more information.
   * The filter handling of STM32 bxCAN driver has been simplified and made more reliable.
   * The STM32 bxCAN driver now supports dual intances.
@@ -321,7 +321,6 @@ Drivers and Sensors
   * The Zephyr network CAN bus driver, which provides raw L2 access to the CAN bus via a CAN
     controller driver, has been moved to :zephyr_file:`drivers/net/canbus.c` and can now be enabled
     using :kconfig:option:`CONFIG_NET_CANBUS`.
-  * STM32: Now supports dual CAN instances.
 
 * Clock control
 
