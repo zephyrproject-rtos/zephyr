@@ -54,8 +54,12 @@ zephyr_img_mgmt_slot_to_image(int slot)
 
 /**
  * Determines if the specified area of flash is completely unwritten.
+ *
+ * @param	fa	pointer to flash area to scan
+ *
+ * @return	0 when not empty, 1 when empty, negative errno code on error.
  */
-static int img_mgmt_flash_check_empty_inner(const struct flash_area *fa, bool *out_empty)
+static int img_mgmt_flash_check_empty_inner(const struct flash_area *fa)
 {
 	uint32_t data[16];
 	off_t addr;
@@ -80,37 +84,38 @@ static int img_mgmt_flash_check_empty_inner(const struct flash_area *fa, bool *o
 		}
 
 		rc = flash_area_read(fa, addr, data, bytes_to_read);
-		if (rc != 0) {
-			return MGMT_ERR_EUNKNOWN;
+		if (rc < 0) {
+			return rc;
 		}
 
 		for (i = 0; i < bytes_to_read / 4; i++) {
 			if (data[i] != erased_val_32) {
-				*out_empty = false;
 				return 0;
 			}
 		}
 	}
 
-	*out_empty = true;
-
-	return 0;
+	return 1;
 }
 
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
-static int img_mgmt_flash_check_empty(uint8_t fa_id, bool *out_empty)
+/* Check if area is empty
+ *
+ * @param	fa_id	ID of flash area to scan.
+ *
+ * @return	0 when not empty, 1 when empty, negative errno code on error.
+ */
+static int img_mgmt_flash_check_empty(uint8_t fa_id)
 {
 	const struct flash_area *fa;
 	int rc;
 
 	rc = flash_area_open(fa_id, &fa);
-	if (rc != 0) {
-		return MGMT_ERR_EUNKNOWN;
+	if (rc == 0) {
+		rc = img_mgmt_flash_check_empty_inner(fa);
+
+		flash_area_close(fa);
 	}
-
-	rc = img_mgmt_flash_check_empty_inner(fa, out_empty);
-
-	flash_area_close(fa);
 
 	return rc;
 }
@@ -259,7 +264,6 @@ img_mgmt_impl_erase_slot(int slot)
 	const struct flash_area *fa;
 	int rc;
 	int area_id = zephyr_img_mgmt_flash_area_id(slot);
-	bool empty;
 
 	if (area_id < 0) {
 		return MGMT_ERR_EUNKNOWN;
@@ -267,19 +271,19 @@ img_mgmt_impl_erase_slot(int slot)
 
 	rc = flash_area_open(area_id, &fa);
 
-	if (rc != 0) {
+	if (rc < 0) {
 		return MGMT_ERR_EUNKNOWN;
 	}
 
-	rc = img_mgmt_flash_check_empty_inner(fa, &empty);
+	rc = img_mgmt_flash_check_empty_inner(fa);
 
-	if (!empty && rc == 0) {
+	if (rc == 0) {
 		rc = flash_area_erase(fa, 0, fa->fa_size);
 	}
 
 	flash_area_close(fa);
 
-	return (rc == 0 ? MGMT_ERR_EOK : MGMT_ERR_EUNKNOWN);
+	return (rc >= 0 ? MGMT_ERR_EOK : MGMT_ERR_EUNKNOWN);
 }
 
 int
@@ -529,9 +533,6 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 	const struct image_header *hdr;
 	struct image_version cur_ver;
 	int rc;
-#ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
-	bool empty;
-#endif
 
 	memset(action, 0, sizeof(*action));
 
@@ -625,12 +626,12 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 		}
 
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
-		rc = img_mgmt_flash_check_empty(action->area_id, &empty);
-		if (rc) {
+		rc = img_mgmt_flash_check_empty(action->area_id);
+		if (rc < 0) {
 			return MGMT_ERR_EUNKNOWN;
 		}
 
-		action->erase = !empty;
+		action->erase = (rc == 0);
 #endif
 	} else {
 		/* Continuation of upload. */
