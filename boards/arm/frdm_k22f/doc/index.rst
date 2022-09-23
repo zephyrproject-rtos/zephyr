@@ -289,7 +289,7 @@ should see the following message in the terminal:
    https://www.nxp.com/docs/en/reference-manual/K22P121M120SF7RM.pdf
 
 .. _OpenSDA DAPLink FRDM-K22F Firmware:
-   http://www.nxp.com/assets/downloads/data/en/ide-debug-compile-build-tools/OpenSDAv2.2_DAPLink_frdmk22f_rev0242.zip
+   https://www.nxp.com/downloads/en/snippets-boot-code-headers-monitors/k20dx_frdmk22f_if_crc_legacy_0x8000.bin
 
 .. _DAPLink Bootloader Update:
    https://os.mbed.com/blog/entry/DAPLink-bootloader-update/
