@@ -248,7 +248,7 @@ should see the following message in the terminal:
    https://os.mbed.com/blog/entry/DAPLink-bootloader-update/
 
 .. _OpenSDA DAPLink FRDM-K82F Firmware:
-   https://www.nxp.com/assets/downloads/data/en/snippets-boot-code-headers-monitors/k20dx_frdmk82f_if_crc_legacy_0x8000.bin
+   https://www.nxp.com/downloads/en/snippets-boot-code-headers-monitors/k20dx_frdmk82f_if_crc_legacy_0x8000.bin
 
 .. _OpenSDA J-Link Firmware for FRDM-K82F:
    https://www.segger.com/downloads/jlink/OpenSDA_FRDM-K82F
