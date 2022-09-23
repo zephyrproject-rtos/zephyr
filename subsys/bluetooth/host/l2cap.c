@@ -2190,7 +2190,7 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		}
 		__fallthrough;
 	default:
-		BT_WARN("Unknown L2CAP PDU code 0x%02x", hdr->code);
+		BT_WARN("Rejecting unknown L2CAP PDU code 0x%02x", hdr->code);
 		l2cap_send_reject(chan->conn, hdr->ident,
 				  BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
 		break;
