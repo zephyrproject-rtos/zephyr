@@ -223,14 +223,19 @@
 #define SHIM_CLKCTL_I2SFDCGB(x)		BIT(20 + x)
 #define SHIM_CLKCTL_I2SEFDCGB(x)	BIT(18 + x)
 
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
 /** \brief Offset of MCLK Divider Control Register. */
+#define MN_MDIVCTRL 0x100
+
+/** \brief Offset of MCLK Divider x Ratio Register. */
+#define MN_MDIVR(x) (0x180 + (x) * 0x4)
+#else
 #define MN_MDIVCTRL 0x0
+#define MN_MDIVR(x) (0x80 + (x) * 0x4)
+#endif
 
 /** \brief Enables the output of MCLK Divider. */
 #define MN_MDIVCTRL_M_DIV_ENABLE(x) BIT(x)
-
-/** \brief Offset of MCLK Divider x Ratio Register. */
-#define MN_MDIVR(x) (0x80 + (x) * 0x4)
 
 /** \brief Bits for setting MCLK source clock. */
 #define MCDSS(x)	DAI_INTEL_SSP_SET_BITS(17, 16, x)
