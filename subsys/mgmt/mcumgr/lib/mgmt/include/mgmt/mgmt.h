@@ -9,7 +9,6 @@
 
 #include <inttypes.h>
 #include <zephyr/sys/slist.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 
 #ifdef __cplusplus
 extern "C" {

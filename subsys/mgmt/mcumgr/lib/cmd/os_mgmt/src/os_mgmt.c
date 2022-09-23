@@ -16,9 +16,9 @@
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 
 #include "mgmt/mgmt.h"
+#include <smp/smp.h>
 #include "os_mgmt/os_mgmt.h"
 #include "os_mgmt/os_mgmt_impl.h"
 

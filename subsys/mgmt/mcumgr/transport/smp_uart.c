@@ -12,9 +12,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/net/buf.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/drivers/console/uart_mcumgr.h>
 #include "mgmt/mgmt.h"
+#include "smp/smp.h"
 #include <zephyr/mgmt/mcumgr/serial.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include "../smp_internal.h"
