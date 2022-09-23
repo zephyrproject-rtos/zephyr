@@ -21,7 +21,7 @@
  * @{
  */
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -429,7 +429,7 @@ static inline int z_impl_sdhc_get_host_props(const struct device *dev,
  * @}
  */
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 }
 #endif
 
