@@ -14,7 +14,6 @@ struct reset_intel_config {
 	DEVICE_MMIO_ROM;
 	uint8_t reg_width;
 	uint8_t active_low;
-	uintptr_t base_address;
 };
 
 struct reset_intel_soc_data {
@@ -24,7 +23,7 @@ struct reset_intel_soc_data {
 static int reset_intel_soc_read_register(const struct device *dev, uint16_t offset, uint32_t *value)
 {
 	const struct reset_intel_config *config = (const struct reset_intel_config *)dev->config;
-	mem_addr_t base_address = config->base_address;
+	uintptr_t base_address = DEVICE_MMIO_GET(dev);
 
 	switch (config->reg_width) {
 	case 1:
@@ -46,7 +45,7 @@ static int reset_intel_soc_read_register(const struct device *dev, uint16_t offs
 static int reset_intel_soc_write_register(const struct device *dev, uint16_t offset, uint32_t value)
 {
 	const struct reset_intel_config *config = (const struct reset_intel_config *)dev->config;
-	mem_addr_t base_address = config->base_address;
+	uintptr_t base_address = DEVICE_MMIO_GET(dev);
 
 	switch (config->reg_width) {
 	case 1:
@@ -68,10 +67,10 @@ static int reset_intel_soc_write_register(const struct device *dev, uint16_t off
 static int reset_intel_soc_status(const struct device *dev, uint32_t id, uint8_t *status)
 {
 	const struct reset_intel_config *config = (const struct reset_intel_config *)dev->config;
-	uint16_t offset;
-	uint32_t value;
-	uint8_t regbit;
-	int ret;
+	uint16_t offset = 0;
+	uint32_t value = 0;
+	uint8_t regbit = 0;
+	int ret = 0;
 
 	offset = id / (config->reg_width * CHAR_BIT);
 	offset = offset * (config->reg_width);
@@ -89,10 +88,10 @@ static int reset_intel_soc_status(const struct device *dev, uint32_t id, uint8_t
 static int reset_intel_soc_update(const struct device *dev, uint32_t id, uint8_t assert)
 {
 	const struct reset_intel_config *config = (const struct reset_intel_config *)dev->config;
-	uint16_t offset;
-	uint32_t value;
-	uint8_t regbit;
-	int ret;
+	uint16_t offset = 0;
+	uint32_t value = 0;
+	uint8_t regbit = 0;
+	int ret = 0;
 
 	offset = id / (config->reg_width * CHAR_BIT);
 	regbit = id % (config->reg_width * CHAR_BIT);
@@ -122,7 +121,7 @@ static int reset_intel_soc_line_deassert(const struct device *dev, uint32_t id)
 
 static int reset_intel_soc_line_toggle(const struct device *dev, uint32_t id)
 {
-	int ret;
+	int ret = 0;
 
 	ret = reset_intel_soc_line_assert(dev, id);
 	if (ret) {
@@ -152,7 +151,6 @@ static const struct reset_driver_api reset_intel_soc_driver_api = {
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(_inst)),			\
 		.reg_width = DT_INST_PROP_OR(_inst, reg_width, 4),		\
 		.active_low = DT_INST_PROP_OR(_inst, active_low, 0),		\
-		.base_address = DT_INST_REG_ADDR(_inst),			\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(_inst,						\
