@@ -1,6 +1,6 @@
 identifier: nsim_hs5x
 name: HS5x nSIM simulator
-type: mcu
+type: sim
 simulation: nsim
 arch: arc
 toolchain:

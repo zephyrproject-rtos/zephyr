@@ -1,6 +1,6 @@
 identifier: nsim_hs5x_smp
 name: Multi-core HS5x nSIM simulator
-type: mcu
+type: sim
 simulation: mdb-nsim
 arch: arc
 toolchain:
