@@ -74,6 +74,7 @@ typedef int32_t (*mgmt_cb)(uint32_t event, int32_t rc, bool *abort_more, void *d
 enum mgmt_cb_groups {
 	MGMT_EVT_GRP_ALL			= 0,
 	MGMT_EVT_GRP_SMP,
+	MGMT_EVT_GRP_OS,
 	MGMT_EVT_GRP_IMG,
 	MGMT_EVT_GRP_FS,
 
@@ -137,6 +138,17 @@ enum img_mgmt_group_events {
 
 	/** Used to enable all img_mgmt_group events. */
 	MGMT_EVT_OP_IMG_MGMT_ALL		= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_IMG),
+};
+
+/**
+ * MGMT event opcodes for operating system management group.
+ */
+enum os_mgmt_group_events {
+	/** Callback when a reset command has been received. */
+	MGMT_EVT_OP_OS_MGMT_RESET		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 0),
+
+	/** Used to enable all os_mgmt_group events. */
+	MGMT_EVT_OP_OS_MGMT_ALL			= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_OS),
 };
 
 /**
