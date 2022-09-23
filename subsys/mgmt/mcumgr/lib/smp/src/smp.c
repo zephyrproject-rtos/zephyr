@@ -10,7 +10,6 @@
 #include <string.h>
 
 #include <zephyr/net/buf.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include "mgmt/mgmt.h"
 #include <zcbor_common.h>

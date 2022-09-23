@@ -17,10 +17,10 @@
 #include <zephyr/bluetooth/gatt.h>
 
 #include <zephyr/mgmt/mcumgr/smp_bt.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include <mgmt/mgmt.h>
+#include "smp/smp.h"
 #include "../smp_internal.h"
 #include "../smp_reassembly.h"
 

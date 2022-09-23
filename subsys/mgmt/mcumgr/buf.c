@@ -7,7 +7,6 @@
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net/buf.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include <mgmt/mgmt.h>
 
 NET_BUF_POOL_DEFINE(pkt_pool, CONFIG_MCUMGR_BUF_COUNT, CONFIG_MCUMGR_BUF_SIZE,

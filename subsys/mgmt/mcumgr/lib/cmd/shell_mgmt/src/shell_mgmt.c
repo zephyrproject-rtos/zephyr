@@ -7,11 +7,11 @@
 #include <zephyr/sys/util.h>
 #include <string.h>
 #include <stdio.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
-#include "mgmt/mgmt.h"
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
+#include "mgmt/mgmt.h"
+#include <smp/smp.h>
 #include "shell_mgmt/shell_mgmt.h"
 #include "shell_mgmt/shell_mgmt_config.h"
 #include <zephyr/shell/shell_dummy.h>

@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
 #include <bootutil/bootutil_public.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/dfu/flash_img.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include <mgmt/mgmt.h>
 #include <img_mgmt/img_mgmt.h>
 #include <img_mgmt/image.h>
