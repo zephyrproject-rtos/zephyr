@@ -115,6 +115,7 @@ static void gatt_discover(void)
 	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+	discover_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	err = bt_gatt_discover(g_conn, &discover_params);
 	if (err != 0) {
@@ -162,7 +163,8 @@ static void gatt_subscribe(void)
 	subscribe_params.ccc_handle = 0;
 	subscribe_params.disc_params = &disc_params,
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
-	subscribe_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
+	subscribe_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+	subscribe_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	printk("Subscribing: val %x\n", chrc_handle);
 	err = bt_gatt_subscribe(g_conn, &subscribe_params);
