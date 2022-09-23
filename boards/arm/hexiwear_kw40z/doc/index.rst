@@ -173,7 +173,7 @@ you should see the following message in the terminal:
    https://www.nxp.com/docs/en/data-sheet/MKW40Z160.pdf
 
 .. _KW40Z Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/MKW40Z160RM.pdf
+   https://www.nxp.com/webapp/Download?colCode=MKW40Z160RM
 
 .. _Segger RTT:
    https://www.segger.com/products/debug-probes/j-link/technology/about-real-time-transfer/

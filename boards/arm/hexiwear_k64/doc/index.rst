@@ -303,7 +303,7 @@ will then see a plot of the heart rate data that updates once per second.
 
 
 .. _Hexiwear Website:
-   https://www.nxp.com/support/developer-resources/nxp-designs/hexiwear-complete-iot-development-solution:HEXIWEAR?&tid=vanHEXIWEAR
+   https://www.mikroe.com/hexiwear
 
 .. _Hexiwear Fact Sheet:
    https://www.nxp.com/docs/en/fact-sheet/HEXIWEAR-FS.pdf

@@ -230,7 +230,7 @@ should see the following message in the terminal:
    https://www.nxp.com/design/development-boards/lpcxpresso-boards/development-board-for-the-lpc553x-family-of-mcus:LPCXpresso55S36
 
 .. _LPCXpresso55S36 User Manual:
-   https://www.nxp.com/docs/en/user-guide/LPC55S36-EVKUM.pdf
+   https://www.nxp.com/docs/en/user-manual/LPCXpresso55S36UM.pdf
 
 .. _LPCXpresso55S36 Development Board Design Files:
    https://www.nxp.com/webapp/Download?colCode=LPCXPRESSO5536_EVK-DESIGN-FILES

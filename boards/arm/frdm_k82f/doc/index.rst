@@ -230,7 +230,7 @@ should see the following message in the terminal:
    https://www.nxp.com/design/development-boards/freedom-development-boards/mcu-boards/freedom-development-platform-for-kinetis-k82-k81-and-k80-mcus:FRDM-K82F
 
 .. _FRDM-K82F User Guide:
-   https://www.nxp.com/docs/en/user-guide/FRDMK82FUG.pdf
+   https://www.nxp.com/webapp/Download?colCode=FRDMK82FUG
 
 .. _FRDM-K82F Schematics:
    https://www.nxp.com/downloads/en/schematics/FRDM-K82F-SCH.pdf
@@ -242,7 +242,7 @@ should see the following message in the terminal:
    https://www.nxp.com/docs/en/data-sheet/K82P121M150SF5.pdf
 
 .. _K82F Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/K82P121M150SF5RM.pdf
+   https://www.nxp.com/webapp/Download?colCode=K82P121M150SF5RM
 
 .. _DAPLink Bootloader Update:
    https://os.mbed.com/blog/entry/DAPLink-bootloader-update/

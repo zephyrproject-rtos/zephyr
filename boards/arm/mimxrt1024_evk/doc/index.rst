@@ -264,10 +264,10 @@ should see the following message in the terminal:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1024-evaluation-kit:MIMXRT1024-EVK
 
 .. _MIMXRT1024-EVK User Guide:
-   https://www.nxp.com.cn/docs/en/user-guide/MIMXRT1024EVKHUG.pdf
+   https://www.nxp.com/webapp/Download?colCode=MIMXRT1024EVKHUG
 
 .. _MIMXRT1024-EVK Design Files:
-   https://www.nxp.com/webapp/sps/download/preDownload.jsp?render=true
+   https://www.nxp.com/webapp/Download?colCode=MIMXRT1024-EVK-Design-Files
 
 .. _i.MX RT1024 Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/i-mx-rt-crossover-mcus/i-mx-rt1024-crossover-processor-with-arm-cortex-m7-core:i.MX-RT1024
@@ -276,4 +276,4 @@ should see the following message in the terminal:
    https://www.nxp.com.cn/docs/en/data-sheet/IMXRT1024CEC.pdf
 
 .. _i.MX RT1024 Reference Manual:
-   https://www.nxp.com.cn/docs/en/reference-manual/IMXRT1024RM.pdf
+   https://www.nxp.com/webapp/Download?colCode=IMXRT1024RM
