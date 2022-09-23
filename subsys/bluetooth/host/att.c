@@ -3206,7 +3206,7 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 		}
 
 		if (quota == ATT_CHAN_MAX) {
-			BT_WARN("Maximum number of channels reached: %d", quota);
+			BT_DBG("Maximum number of channels reached: %d", quota);
 			return NULL;
 		}
 	}
@@ -3257,7 +3257,11 @@ static void att_enhanced_connection_work_handler(struct k_work *work)
 	const struct bt_att *att = CONTAINER_OF(dwork, struct bt_att, eatt.connection_work);
 	const int err = bt_eatt_connect(att->conn, att->eatt.chans_to_connect);
 
-	if (err < 0) {
+	if (err == -ENOMEM) {
+		BT_DBG("Failed to connect %d EATT channels, central has probably "
+		       "already established some.",
+		       att->eatt.chans_to_connect);
+	} else if (err < 0) {
 		BT_WARN("Failed to connect %d EATT channels (err: %d)",
 			att->eatt.chans_to_connect, err);
 	}
