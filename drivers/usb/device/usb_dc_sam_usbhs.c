@@ -348,7 +348,7 @@ int usb_dc_attach(void)
 int usb_dc_detach(void)
 {
 	/* Detach the device */
-	USBHS->USBHS_DEVCTRL &= ~USBHS_DEVCTRL_DETACH;
+	USBHS->USBHS_DEVCTRL |= USBHS_DEVCTRL_DETACH;
 
 	/* Disable the USB clock */
 	usb_dc_disable_clock();
