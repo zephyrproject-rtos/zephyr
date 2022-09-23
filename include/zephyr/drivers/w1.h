@@ -110,7 +110,7 @@ __syscall int w1_change_bus_lock(const struct device *dev, bool lock);
 
 static inline int z_impl_w1_change_bus_lock(const struct device *dev, bool lock)
 {
-	struct w1_master_data *ctrl_data = dev->data;
+	struct w1_master_data *ctrl_data = (struct w1_master_data *)dev->data;
 
 	if (lock) {
 		return k_mutex_lock(&ctrl_data->bus_lock, K_FOREVER);
