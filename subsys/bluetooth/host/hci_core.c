@@ -4020,7 +4020,7 @@ void bt_data_parse(struct net_buf_simple *ad,
 		}
 
 		if (len > ad->len) {
-			BT_WARN("Malformed data");
+			BT_WARN("malformed advertising data");
 			return;
 		}
 
