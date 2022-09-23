@@ -299,7 +299,9 @@ Bluetooth
 
   * Made the new LLCP implementation the default one. Enable
     :kconfig:option:`CONFIG_BT_LL_SW_LLCP_LEGACY` to revert back to the legacy
-    implementation
+    implementation. :kconfig:option:`CONFIG_BT_LL_SW_LLCP_LEGACY` is marked
+    deprecated in favor of the new :kconfig:option:`CONFIG_BT_LL_SW_LLCP`, which
+    is the default now
   * Marked Extended Advertising as stable, no longer experimental
   * Added deinit() infrastructure in order to properly support disabling
     Bluetooth support, including the controller
