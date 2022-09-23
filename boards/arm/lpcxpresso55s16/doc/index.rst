@@ -223,7 +223,7 @@ should see the following message in the terminal:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/lpc5500-cortex-m33/lpc551x-s1x-baseline-arm-cortex-m33-based-microcontroller-family:LPC551X-S1X
 
 .. _LPC55S16 Datasheet:
-    https://www.nxp.com/docs/en/nxp/data-sheets/LPC55S1x_PDS.pdf
+    https://www.nxp.com/docs/en/nxp/data-sheets/LPC55S1x_LPC551x_DS.pdf
 
 .. _LPC55S16 User Manual:
    https://www.nxp.com/webapp/Download?colCode=UM11295
@@ -232,7 +232,7 @@ should see the following message in the terminal:
    https://www.nxp.com/design/development-boards/lpcxpresso-boards/lpcxpresso55s16-development-board:LPC55S16-EVK
 
 .. _LPCXpresso55S16 User Manual:
-   https://www.nxp.com/docs/en/user-guide/UMLPCXPRESSO55S16.pdf
+   https://www.nxp.com/webapp/Download?colCode=UMLPCXPRESSO55S16
 
 .. _LPCXpresso55S16 Development Board Design Files:
-   https://www.nxp.com/downloads/en/design-support/LPCXPRESSSO55S16-DESIGN-FILES.zip
+   https://www.nxp.com/webapp/Download?colCode=LPCXPRESSSO55S16-DESIGN-FILES

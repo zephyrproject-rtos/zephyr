@@ -204,7 +204,7 @@ see the following message in the terminal:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT1010EVKHUG
 
 .. _MIMXRT1010-EVK Design Files:
-   https://www.nxp.com/downloads/en/printed-circuit-boards/IMXRT1010-EVK-DESIGN-FILES.7z
+   https://www.nxp.com/webapp/Download?colCode=IMXRT1010-EVK-DESIGN-FILES
 
 .. _i.MX RT1010 Website:
    https://www.nxp.com/imxrt1010

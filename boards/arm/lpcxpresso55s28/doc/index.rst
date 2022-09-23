@@ -198,7 +198,7 @@ should see the following message in the terminal:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/lpc5500-cortex-m33/lpc552x-s2x-mainstream-arm-cortex-m33-based-microcontroller-family:LPC552x-S2x
 
 .. _LPC55S28 Datasheet:
-   https://www.nxp.com/docs/en/data-sheet/LPC55S2X-LPC552X.pdf
+   https://www.nxp.com/docs/en/nxp/data-sheets/LPC55S2x_LPC552x_DS.pdf
 
 .. _LPC55S28 User Manual:
    https://www.nxp.com/webapp/Download?colCode=UM11126
