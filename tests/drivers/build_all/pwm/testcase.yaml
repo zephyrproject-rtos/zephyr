@@ -43,6 +43,10 @@ tests:
   drivers.pwm.nrf.build:
     platform_allow: nrf52840dk_nrf52840
     tags: pwm_nrfx
+  drivers.pwm.pca9685.build:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=adafruit_pca9685
+    tags: pwm_pca9685
   drivers.pwm.sam0.tcc.build:
     platform_allow: atsame54_xpro
     tags: pwm_sam0_tcc
