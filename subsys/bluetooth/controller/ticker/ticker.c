@@ -956,8 +956,7 @@ void ticker_worker(void *param)
 	 */
 	uint8_t slot_reserved = 0;
 
-	if ((instance->ticker_id_slot_previous != TICKER_NULL) &&
-	    (instance->ticks_slot_previous > ticks_elapsed)) {
+	if (instance->ticks_slot_previous > ticks_elapsed) {
 		/* This node intersects reserved slot */
 		slot_reserved = 1;
 	}
@@ -1933,8 +1932,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 		}
 
 		/* Check for intersection with already active node */
-		if (instance->ticker_id_slot_previous != TICKER_NULL &&
-			instance->ticks_slot_previous > ticks_elapsed) {
+		if (instance->ticks_slot_previous > ticks_elapsed) {
 			/* Active node intersects - window starts after end of
 			 * active slot
 			 */
