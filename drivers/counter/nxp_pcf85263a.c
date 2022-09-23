@@ -77,6 +77,7 @@ struct nxp_pcf85263a_data {
 };
 
 struct nxp_pcf85263a_config {
+	struct counter_config_info generic;
 	const struct i2c_dt_spec i2c;
 	const struct gpio_dt_spec inta_gpio;
 	const struct gpio_dt_spec ts_gpio;
@@ -127,9 +128,11 @@ static int configure_ts_pin(const struct device *dev)
 }
 
 #if defined(CONFIG_NXP_PCF85263A_INTA_INT_OUT) || defined(CONFIG_NXP_PCF85263A_TS_INTB_OUT)
-static void nxp_pcf85263a_int_callback(const struct device *port, struct gpio_callback *cb, uint32_t pin)
+static void nxp_pcf85263a_int_callback(const struct device *port, struct gpio_callback *cb,
+	uint32_t pin)
 {
 	struct nxp_pcf85263a_data *data = CONTAINER_OF(cb, struct nxp_pcf85263a_data, int_cb);
+
 	k_work_submit(&data->interrupt_worker);
 }
 
@@ -139,7 +142,8 @@ static void nxp_pcf85263a_interrupt_worker(struct k_work *work)
 		work, struct nxp_pcf85263a_data, interrupt_worker);
 	const struct nxp_pcf85263a_config *cfg = (struct nxp_pcf85263a_config *)data->dev->config;
 	uint8_t flags;
-	uint64_t time = 0;
+	uint64_t val = 0;
+
 	i2c_reg_read_byte_dt(&cfg->i2c, PCF85263A_REG_FLAGS, &flags);
 	nxp_pcf85263a_get_value(data->dev, &val);
 	if (flags & PCF85263A_FLAGS_ALARM1) {
@@ -170,10 +174,10 @@ int nxp_pcf85263a_init(const struct device *dev)
 	}
 
 	rc = i2c_reg_read_byte_dt(&cfg->i2c, PCF85263A_REG_CTRL_FUNCTION, &read_byte);
-	if(rc < 0)
+	if (rc < 0)
 		return rc;
 
-	if(read_byte & PCF85263A_CTRL_FUNCTION_STOPWATCH_MODE){
+	if (read_byte & PCF85263A_CTRL_FUNCTION_STOPWATCH_MODE) {
 		data->mode = NXP_PCF85263A_MODE_STOPWATCH;
 	} else {
 		data->mode = NXP_PCF85263A_MODE_RTC;
@@ -228,9 +232,9 @@ int nxp_pcf85263a_get_value(const struct device *dev, uint64_t *value)
 	uint8_t time_registers[8];
 	static struct tm time = { 0 };
 
-	if(data->mode == NXP_PCF85263A_MODE_RTC){
+	if (data->mode == NXP_PCF85263A_MODE_RTC) {
 		len = 8;
-	}else{
+	} else {
 		len = 6;
 	}
 
@@ -239,7 +243,7 @@ int nxp_pcf85263a_get_value(const struct device *dev, uint64_t *value)
 		return rc;
 	};
 
-	if(data->mode == NXP_PCF85263A_MODE_RTC){
+	if (data->mode == NXP_PCF85263A_MODE_RTC) {
 		time.tm_sec  = bcd2bin(time_registers[1]  & 0x7F);
 		time.tm_min  = bcd2bin(time_registers[2]  & 0x7F);
 		time.tm_hour = bcd2bin(time_registers[3]  & 0x3F);
@@ -248,7 +252,7 @@ int nxp_pcf85263a_get_value(const struct device *dev, uint64_t *value)
 		time.tm_mon  = bcd2bin(time_registers[6]  & 0x1F) - 1;
 		time.tm_year = bcd2bin(time_registers[7]) + 70;
 		*value = timeutil_timegm(&time);
-	}else{
+	} else {
 		/* TODO: Implement stop-watch bcd2bin translation */
 		LOG_ERR("Stop-watch mode is not implemented.");
 		return -ENOSYS;
@@ -281,6 +285,7 @@ static int nxp_pcf85263a_clear_prescaler(const struct device *dev)
 {
 	int rc = 0;
 	const struct nxp_pcf85263a_config *cfg = dev->config;
+
 	rc = i2c_reg_write_byte_dt(&cfg->i2c, PCF85263A_REG_RESET, 0xA4);
 
 	return rc;
@@ -293,20 +298,20 @@ int nxp_pcf85263a_set_value(const struct device *dev, uint64_t value)
 	const struct nxp_pcf85263a_config *cfg = dev->config;
 	uint8_t len = 0;
 	uint8_t time_registers[8];
-	struct tm tm;
+	struct tm calendar_time;
 
-	if(data->mode == NXP_PCF85263A_MODE_RTC){
+	if (data->mode == NXP_PCF85263A_MODE_RTC) {
 		len = 8;
-		(void)gmtime_r((time_t *)&value, &tm);
+		(void)gmtime_r((time_t *)&value, &calendar_time);
 		time_registers[0] = 0;
-		time_registers[1] = bin2bcd(tm.tm_sec);
-		time_registers[2] = bin2bcd(tm.tm_min);
-		time_registers[3] = bin2bcd(tm.tm_hour);
-		time_registers[4] = bin2bcd(tm.tm_mday);
-		time_registers[5] = bin2bcd(tm.tm_wday);
-		time_registers[6] = bin2bcd(tm.tm_mon + 1);
-		time_registers[7] = bin2bcd(tm.tm_year-70);
-	}else{
+		time_registers[1] = bin2bcd(calendar_time.tm_sec);
+		time_registers[2] = bin2bcd(calendar_time.tm_min);
+		time_registers[3] = bin2bcd(calendar_time.tm_hour);
+		time_registers[4] = bin2bcd(calendar_time.tm_mday);
+		time_registers[5] = bin2bcd(calendar_time.tm_wday);
+		time_registers[6] = bin2bcd(calendar_time.tm_mon + 1);
+		time_registers[7] = bin2bcd(calendar_time.tm_year-70);
+	} else {
 		len = 6;
 		/* TODO: Implement stop-watch bin2bcd translation */
 		LOG_ERR("Stop-watch mode is not implemented.");
@@ -331,16 +336,17 @@ int nxp_pcf85263a_set_value(const struct device *dev, uint64_t value)
 	return rc;
 }
 
-int nxp_pcf85263a_set_alarm(const struct device *dev, uint8_t id, const struct nxp_pcf85263a_alarm_cfg *alarm_cfg)
+int nxp_pcf85263a_set_alarm(const struct device *dev, uint8_t id,
+	const struct nxp_pcf85263a_alarm_cfg *alarm_cfg)
 {
 	int rc = 0;
 	struct nxp_pcf85263a_data *data = dev->data;
 	const struct nxp_pcf85263a_config *cfg = dev->config;
 	uint8_t addr, len;
-	struct tm tm;
+	struct tm calendar_time;
 	uint8_t time_registers[5];
 
-	if(id == 1){
+	if (id == 1) {
 		addr = PCF85263A_REG_ALARM1;
 		len = 5;
 		rc = i2c_reg_update_byte_dt(&cfg->i2c, PCF85263A_REG_ALARM_ENABLES,
@@ -362,22 +368,16 @@ int nxp_pcf85263a_set_alarm(const struct device *dev, uint8_t id, const struct n
 
 	(void)gmtime_r(&alarm_cfg->time, &tm);
 
-	if(id == 1 && (tm.tm_wday != 0 || tm.tm_year != 0))
-		LOG_WRN("Alarm channel 1 can only be set with day, month, hour, minutes and seconds. Other time elements (such as year and weekday) will be ignored.");
-
-	if(id == 2 && (tm.tm_year != 0 || tm.tm_mon != 0 || tm.tm_mday != 0 || tm.tm_sec != 0))
-		LOG_WRN("Alarm channel 2 can only be set with weekday, hour and minutes. Other time elements (such as day, month, year and seconds) will be ignored.");
-
-	if(id == 1){
-		time_registers[0] = bin2bcd(tm.tm_sec);
-		time_registers[1] = bin2bcd(tm.tm_min);
-		time_registers[2] = bin2bcd(tm.tm_hour);
-		time_registers[3] = bin2bcd(tm.tm_mday);
-		time_registers[4] = bin2bcd(tm.tm_mon+1);
-	} else if(id == 2){
-		time_registers[0] = bin2bcd(tm.tm_min);
-		time_registers[1] = bin2bcd(tm.tm_hour);
-		time_registers[2] = bin2bcd(tm.tm_wday);
+	if (id == 1) {
+		time_registers[0] = bin2bcd(calendar_time.tm_sec);
+		time_registers[1] = bin2bcd(calendar_time.tm_min);
+		time_registers[2] = bin2bcd(calendar_time.tm_hour);
+		time_registers[3] = bin2bcd(calendar_time.tm_mday);
+		time_registers[4] = bin2bcd(calendar_time.tm_mon+1);
+	} else if (id == 2) {
+		time_registers[0] = bin2bcd(calendar_time.tm_min);
+		time_registers[1] = bin2bcd(calendar_time.tm_hour);
+		time_registers[2] = bin2bcd(calendar_time.tm_wday);
 	}
 
 	rc = i2c_burst_write_dt(&cfg->i2c, addr, time_registers, len);
@@ -389,8 +389,8 @@ int nxp_pcf85263a_set_alarm(const struct device *dev, uint8_t id, const struct n
 	data->alarm_user_data[id-1] = alarm_cfg->user_data;
 
 	#if CONFIG_NXP_PCF85263A_INTA_INT_OUT
-		if(alarm_cfg->flags & PCF85263A_ALARM_FLAGS_USE_INTA){
-			if(cfg->inta_gpio.port == NULL){
+		if (alarm_cfg->flags & PCF85263A_ALARM_FLAGS_USE_INTA) {
+			if (cfg->inta_gpio.port == NULL) {
 				LOG_ERR("INTA pin not found.");
 				return -EINVAL;
 			}
@@ -415,13 +415,14 @@ int nxp_pcf85263a_set_alarm(const struct device *dev, uint8_t id, const struct n
 				return rc;
 		}
 	#elif CONFIG_NXP_PCF85263A_TS_INTB_OUT
-		if(alarm_cfg->flags & PCF85263A_ALARM_FLAGS_USE_INTB){
-			if(cfg->ts_gpio.port == NULL){
+		if (alarm_cfg->flags & PCF85263A_ALARM_FLAGS_USE_INTB) {
+			if (cfg->ts_gpio.port == NULL) {
 				LOG_ERR("TS pin not found.");
 				return -EINVAL;
 			}
-			rc = gpio_pin_interrupt_configure_dt(&cfg->ts_gpio, GPIO_INT_EDGE_TO_ACTIVE);
-			if(rc < 0)
+			rc = gpio_pin_interrupt_configure_dt(&cfg->ts_gpio,
+				GPIO_INT_EDGE_TO_ACTIVE);
+			if (rc < 0)
 				return rc;
 			gpio_init_callback(&data->int_cb, nxp_pcf85263a_int_callback,
 				BIT(cfg->ts_gpio.pin));
@@ -442,11 +443,13 @@ int nxp_pcf85263a_set_alarm(const struct device *dev, uint8_t id, const struct n
 	#warning "NXP_PXF85263A: No interrupt pin (INTA or INTB) configured."
 	#endif
 
-	if(id == 1){
-		i2c_reg_update_byte_dt(&cfg->i2c, PCF85263A_REG_ALARM_ENABLES, PCF85263A_ALARM_ENABLE_ALARM1, 0x0F);
+	if (id == 1) {
+		i2c_reg_update_byte_dt(&cfg->i2c, PCF85263A_REG_ALARM_ENABLES,
+			PCF85263A_ALARM_ENABLE_ALARM1, 0x0F);
 	}
-	if(id == 2){
-		i2c_reg_update_byte_dt(&cfg->i2c, PCF85263A_REG_ALARM_ENABLES, PCF85263A_ALARM_ENABLE_ALARM2, 0x70);
+	if (id == 2) {
+		i2c_reg_update_byte_dt(&cfg->i2c, PCF85263A_REG_ALARM_ENABLES,
+			PCF85263A_ALARM_ENABLE_ALARM2, 0x70);
 	}
 
 	return rc;
@@ -474,19 +477,80 @@ int nxp_pcf85263a_cancel_alarm(const struct device *dev, uint8_t id)
 	return rc;
 }
 
-static const struct counter_driver_api pcf85263a_api;
+static inline int pcf85263a_counter_start(const struct device *dev)
+{
+	return nxp_pcf85263a_start(dev);
+}
 
-#define INST_DT_PCF85263A(index)                                                    	\
+static inline int pcf85263a_counter_stop(const struct device *dev)
+{
+	return nxp_pcf85263a_stop(dev);
+}
+
+static int pcf85263a_counter_get_value(const struct device *dev, uint32_t *ticks)
+{
+	int rc = 0;
+	uint64_t value;
+
+	rc = nxp_pcf85263a_get_value(dev, &value);
+	if (rc == 0)
+		*ticks = (uint32_t)value;
+	return rc;
+}
+
+static int pcf85263a_counter_set_alarm(const struct device *dev,
+				 uint8_t id,
+				 const struct counter_alarm_cfg *alarm_cfg)
+{
+	int rc = 0;
+	const struct nxp_pcf85263a_config *dev_cfg = dev->config;
+	struct nxp_pcf85263a_alarm_cfg nxp_cfg;
+
+	nxp_cfg.time = (time_t)alarm_cfg->ticks;
+	nxp_cfg.callback = (counter_alarm_callback_t)alarm_cfg->callback;
+	nxp_cfg.user_data = alarm_cfg->user_data;
+
+	if (device_is_ready(dev_cfg->inta_gpio.port)) {
+		nxp_cfg.flags = PCF85263A_ALARM_FLAGS_USE_INTA;
+	} else if (device_is_ready(dev_cfg->ts_gpio.port)) {
+		nxp_cfg.flags = PCF85263A_ALARM_FLAGS_USE_INTB;
+	}
+
+	rc = nxp_pcf85263a_set_alarm(dev, id, &nxp_cfg);
+
+	return rc;
+}
+
+static inline int pcf85263a_counter_cancel_alarm(const struct device *dev, uint8_t id)
+{
+	return nxp_pcf85263a_cancel_alarm(dev, id);
+}
+
+static const struct counter_driver_api pcf85263a_api = {
+	.start = pcf85263a_counter_start,
+	.stop = pcf85263a_counter_stop,
+	.get_value = pcf85263a_counter_get_value,
+	.set_alarm = pcf85263a_counter_set_alarm,
+	.cancel_alarm = pcf85263a_counter_cancel_alarm,
+};
+
+#define INST_DT_PCF85263A(index)							\
 											\
-	static struct nxp_pcf85263a_data pcf85263a_data_##index;                        \
+	static struct nxp_pcf85263a_data pcf85263a_data_##index;			\
 											\
-	static const struct nxp_pcf85263a_config pcf85263a_config_##index = {           \
+	static const struct nxp_pcf85263a_config pcf85263a_config_##index = {		\
+		.generic = {								\
+			.max_top_value = UINT32_MAX,					\
+			.freq = 1,							\
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,				\
+			.channels = 2,							\
+		},									\
 		.i2c = I2C_DT_SPEC_INST_GET(index),					\
 		.inta_gpio = GPIO_DT_SPEC_INST_GET_OR(index, inta_gpios, {0}),		\
 		.ts_gpio = GPIO_DT_SPEC_INST_GET_OR(index, ts_gpios, {0}),		\
-	};                                                                              \
+	};										\
 											\
-	DEVICE_DT_INST_DEFINE(index, nxp_pcf85263a_init, NULL, &pcf85263a_data_##index,	\
+	DEVICE_DT_INST_DEFINE(index, nxp_pcf85263a_init, NULL, &pcf85263a_data_##index, \
 		&pcf85263a_config_##index, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,	\
 		&pcf85263a_api);
 
