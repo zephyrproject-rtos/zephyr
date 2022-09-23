@@ -1409,7 +1409,9 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 			uint32_t ticks_at_yield;
 			uint32_t ticks_used;
 
-			instance->ticker_id_slot_previous = TICKER_NULL;
+			if (user_op->op != TICKER_USER_OP_TYPE_YIELD_ABS) {
+				instance->ticker_id_slot_previous = TICKER_NULL;
+			}
 
 			if ((user_op->op == TICKER_USER_OP_TYPE_YIELD_ABS) ||
 			    (user_op->op == TICKER_USER_OP_TYPE_STOP_ABS)) {
