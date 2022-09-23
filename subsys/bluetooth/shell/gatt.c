@@ -121,7 +121,6 @@ static int cmd_exchange_mtu(const struct shell *sh,
 }
 
 static struct bt_gatt_discover_params discover_params;
-static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
 static void print_chrc_props(const struct shell *sh, uint8_t properties)
 {
@@ -214,6 +213,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
+	static struct bt_uuid_16 uuid;
 
 	if (!default_conn) {
 		shell_error(sh, "Not connected");
@@ -232,6 +232,7 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 
 	if (argc > 1) {
 		/* Only set the UUID if the value is valid (non zero) */
+		uuid.uuid.type = BT_UUID_TYPE_16;
 		uuid.val = strtoul(argv[1], NULL, 16);
 		if (uuid.val) {
 			discover_params.uuid = &uuid.uuid;
@@ -365,6 +366,7 @@ static int cmd_mread(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_read_uuid(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
+	static struct bt_uuid_16 uuid;
 
 	if (!default_conn) {
 		shell_error(sh, "Not connected");
@@ -383,6 +385,7 @@ static int cmd_read_uuid(const struct shell *sh, size_t argc, char *argv[])
 	SET_CHAN_OPT_ANY(read_params);
 
 	if (argc > 1) {
+		uuid.uuid.type = BT_UUID_TYPE_16;
 		uuid.val = strtoul(argv[1], NULL, 16);
 		if (uuid.val) {
 			read_params.by_uuid.uuid = &uuid.uuid;
