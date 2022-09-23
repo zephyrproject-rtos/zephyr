@@ -232,7 +232,7 @@ should see the following message in the terminal:
    https://os.mbed.com/blog/entry/DAPLink-bootloader-update/
 
 .. _OpenSDA DAPLink FRDM-KL25Z Firmware:
-   https://www.nxp.com/assets/downloads/data/en/ide-debug-compile-build-tools/OpenSDAv2.2_DAPLink_frdmkl25z_rev0242.zip
+   https://www.nxp.com/downloads/en/ide-debug-compile-build-tools/OpenSDAv2.2_DAPLink_frdmkl25z_rev0242.zip
 
 .. _OpenSDA J-Link FRDM-KL25Z Firmware:
    https://www.segger.com/downloads/jlink/OpenSDA_FRDM-KL25Z
