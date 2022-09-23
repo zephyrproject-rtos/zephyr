@@ -92,3 +92,8 @@ properties:
   mbox-names:
     type: string-array
     description: Provided names of mailbox / IPM channel specifiers
+
+  resets:
+    type: phandle-array
+    required: false
+    description: get reset line value
