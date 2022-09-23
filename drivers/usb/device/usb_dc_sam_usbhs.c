@@ -244,6 +244,16 @@ static void usb_dc_isr(void)
 		/* Acknowledge the interrupt */
 		USBHS->USBHS_DEVICR = USBHS_DEVICR_EORSTC;
 
+		if (!usb_dc_ep_is_configured(0) && dev_data.ep_data[0].mps) {
+			/* Restore EP0 configuration to previously set mps */
+			struct usb_dc_ep_cfg_data cfg = {
+				.ep_addr = 0,
+				.ep_mps = dev_data.ep_data[0].mps,
+				.ep_type = USB_DC_EP_CONTROL,
+			};
+			usb_dc_ep_configure(&cfg);
+			usb_dc_ep_enable(0);
+		}
 		if (usb_dc_ep_is_enabled(0)) {
 			/* The device clears some of the configuration of EP0
 			 * when it receives the EORST.  Re-enable interrupts.
