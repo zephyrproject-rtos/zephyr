@@ -37,6 +37,14 @@
 	};
 
 	soc {
+		pinctrl: pinctrl@40000030 {
+			compatible = "nuvoton,numicro-pinctrl";
+			reg = <0x40000030 0x40
+			       0x40000080 0x20>;
+			reg-names = "mfp", "mfos";
+			status = "okay";
+		};
+
 		gpioa: gpio@40004000 {
 			compatible = "nuvoton,numicro-gpio";
 			reg = <0x40004000 0x40>;
