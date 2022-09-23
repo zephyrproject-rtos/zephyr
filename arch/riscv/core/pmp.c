@@ -319,9 +319,10 @@ void z_riscv_pmp_init(void)
 #ifdef CONFIG_PMP_STACK_GUARD
 	/*
 	 * Set the stack guard for this CPU's IRQ stack by making the bottom
-	 * addresses inaccessible. This will never change so we do it here.
+	 * addresses inaccessible. This will never change so we do it here
+	 * and lock it too.
 	 */
-	set_pmp_entry(&index, PMP_NONE,
+	set_pmp_entry(&index, PMP_NONE | PMP_L,
 		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
@@ -330,6 +331,15 @@ void z_riscv_pmp_init(void)
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
 #ifdef CONFIG_SMP
+#ifdef CONFIG_PMP_STACK_GUARD
+	/*
+	 * The IRQ stack guard area is different for each CPU.
+	 * Make sure TOR entry sharing won't be attempted with it by
+	 * remembering a bogus address for those entries.
+	 */
+	pmp_addr[index - 1] = -1L;
+#endif
+
 	/* Make sure secondary CPUs produced the same values */
 	if (global_pmp_end_index != 0) {
 		__ASSERT(global_pmp_end_index == index, "");
