@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/byteorder.h>
 #include <string.h>
 
 #include "mgmt/mgmt.h"
-#include <zephyr/mgmt/mcumgr/buf.h>
-#include <zcbor_encode.h>
-#include <zcbor_common.h>
+#include "smp/smp.h"
 
 static mgmt_on_evt_cb evt_cb;
 static sys_slist_t mgmt_group_list =

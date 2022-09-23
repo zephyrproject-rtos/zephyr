@@ -8,11 +8,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/net/buf.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
-#include "mgmt/mgmt.h"
-#include "smp/smp.h"
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include "smp_reassembly.h"
+#include "mgmt/mgmt.h"
+#include "smp/smp.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);

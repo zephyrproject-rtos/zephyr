@@ -13,9 +13,9 @@
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include "zcbor_bulk/zcbor_bulk_priv.h"
 #include "mgmt/mgmt.h"
+#include "smp/smp.h"
 
 #include "img_mgmt/image.h"
 #include "img_mgmt/img_mgmt.h"

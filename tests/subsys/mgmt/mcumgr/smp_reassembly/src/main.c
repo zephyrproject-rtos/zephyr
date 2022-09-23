@@ -8,8 +8,8 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include <mgmt/mgmt.h>
+#include <smp/smp.h>
 #include "../../../../../../subsys/mgmt/mcumgr/smp_reassembly.h"
 
 static struct smp_transport smpt;
