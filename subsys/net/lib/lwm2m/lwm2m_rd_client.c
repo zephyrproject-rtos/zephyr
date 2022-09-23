@@ -1398,11 +1398,17 @@ int lwm2m_rd_client_resume(void)
 
 	LOG_INF("Resume Client state");
 	lwm2m_close_socket(client.ctx);
+	if (suspended_client_state == ENGINE_UPDATE_SENT) {
+		/* Set back to Registration done for enable trigger Update */
+		suspended_client_state = ENGINE_REGISTRATION_DONE;
+	}
+	/* Clear Possible pending RD Client message */
+	lwm2m_reset_message(lwm2m_get_ongoing_rd_msg(), true);
+
 	client.engine_state = suspended_client_state;
 
-	if (!sm_is_registered() ||
-	    (sm_is_registered() &&
-	     (client.lifetime <= (k_uptime_get() - client.last_update) / 1000))) {
+	if (!client.last_update ||
+	    (client.lifetime <= (k_uptime_get() - client.last_update) / 1000)) {
 		client.engine_state = ENGINE_DO_REGISTRATION;
 	} else {
 		lwm2m_rd_client_connection_resume(client.ctx);
