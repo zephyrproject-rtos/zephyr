@@ -160,4 +160,6 @@ source "drivers/gpio/Kconfig.npm6001"
 
 source "drivers/gpio/Kconfig.rt1718s"
 
+source "drivers/gpio/Kconfig.numicro"
+
 endif # GPIO
