@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -506,8 +507,11 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 end:
 
 	img_mgmt_upload_log(req.off == 0, g_img_mgmt_state.off == g_img_mgmt_state.size, rc);
-	mgmt_evt(MGMT_EVT_OP_CMD_STATUS, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ID_UPLOAD,
-			 &cmd_status_arg);
+
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
+	(void)mgmt_callback_notify(MGMT_EVT_OP_CMD_STATUS, MGMT_GROUP_ID_IMAGE,
+				   IMG_MGMT_ID_UPLOAD, &cmd_status_arg, false);
+#endif
 
 	if (rc != 0) {
 		img_mgmt_dfu_stopped();
