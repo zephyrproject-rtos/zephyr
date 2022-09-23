@@ -81,8 +81,9 @@ choice BT_LL_SW_LLCP_IMPL
 	  Select the Bluetooth Low Energy Software Link Layer Control Procedure implementation.
 
 config BT_LL_SW_LLCP_LEGACY
-	bool "Legacy implementation"
+	bool "Legacy implementation (DEPRECATED)"
 	depends on !BT_CTLR_DF_CONN_CTE_RX && !BT_CTLR_DF_CONN_CTE_TX
+	select DEPRECATED
 	help
 	  Use the Bluetooth Low Energy Software Link Layer Legacy Control Procedure implementation.
 
