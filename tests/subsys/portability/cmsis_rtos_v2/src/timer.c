@@ -39,7 +39,7 @@ void Timer2_Callback(void *arg)
 		 Tmr, num_periods_executed);
 }
 
-void test_timer(void)
+ZTEST(cmsis_timer, test_timer)
 {
 	osTimerId_t id1;
 	osTimerId_t id2;
@@ -107,3 +107,4 @@ void test_timer(void)
 	status = osTimerDelete(id2);
 	zassert_true(status == osOK, "error deleting periodic timer");
 }
+ZTEST_SUITE(cmsis_timer, NULL, NULL, NULL, NULL, NULL);

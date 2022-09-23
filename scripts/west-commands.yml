@@ -4,7 +4,7 @@ west-commands:
     commands:
       - name: completion
         class: Completion
-        help: display shell completion scripts
+        help: output shell completion scripts
   - file: scripts/west_commands/boards.py
     commands:
       - name: boards

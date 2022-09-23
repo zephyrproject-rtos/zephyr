@@ -2213,8 +2213,8 @@ static const struct eth_sam_dev_cfg eth0_config = {
 	.periph_id = DT_INST_PROP_OR(0, peripheral_id, 0),
 #endif
 	.config_func = eth0_irq_config,
-#if DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(0), phy))
-	.phy_dev = DEVICE_DT_GET(DT_CHILD(DT_DRV_INST(0), phy))
+#if DT_NODE_EXISTS(DT_INST_CHILD(0, phy))
+	.phy_dev = DEVICE_DT_GET(DT_INST_CHILD(0, phy))
 #else
 #error "No PHY driver specified"
 #endif

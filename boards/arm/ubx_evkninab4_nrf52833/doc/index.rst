@@ -26,7 +26,7 @@ and has support for the following features:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/EVK-NINA-B406_Top_web.png
+.. figure:: img/EVK-NINA-B406_Top_web.jpg
 
     EVK NINA-B4
 

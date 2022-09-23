@@ -7,7 +7,7 @@
 #ifndef __TEST_SCHED_H__
 #define __TEST_SCHED_H__
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #define MAX_NUM_THREAD 10

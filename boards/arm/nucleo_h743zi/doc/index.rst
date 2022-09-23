@@ -45,9 +45,7 @@ Key Features
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
 
 .. image:: img/nucleo_h743zi.jpg
-   :width: 720px
    :align: center
-   :height: 720px
    :alt: Nucleo H743ZI
 
 More information about the board can be found at the `Nucleo H743ZI website`_.
@@ -128,6 +126,8 @@ features:
 | USB         | on-chip    | usb_device                          |
 +-------------+------------+-------------------------------------+
 | CAN/CANFD   | on-chip    | canbus                              |
++-------------+------------+-------------------------------------+
+| die-temp    | on-chip    | die temperature sensor              |
 +-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.

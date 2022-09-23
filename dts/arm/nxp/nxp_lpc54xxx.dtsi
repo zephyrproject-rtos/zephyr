@@ -89,6 +89,7 @@
 			reg = <0x4009c000 0x18>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "disabled";
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_K(256)>;

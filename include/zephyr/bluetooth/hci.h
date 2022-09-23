@@ -2008,6 +2008,10 @@ struct bt_hci_rp_le_remove_iso_path {
 	uint16_t handle;
 } __packed;
 
+#define BT_HCI_ISO_TEST_ZERO_SIZE_SDU     0
+#define BT_HCI_ISO_TEST_VARIABLE_SIZE_SDU 1
+#define BT_HCI_ISO_TEST_MAX_SIZE_SDU      2
+
 #define BT_HCI_OP_LE_ISO_TRANSMIT_TEST          BT_OP(BT_OGF_LE, 0x0070)
 struct bt_hci_cp_le_iso_transmit_test {
 	uint16_t handle;

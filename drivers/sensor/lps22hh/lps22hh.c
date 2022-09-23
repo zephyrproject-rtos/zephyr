@@ -155,9 +155,24 @@ static const struct sensor_driver_api lps22hh_driver_api = {
 static int lps22hh_init_chip(const struct device *dev)
 {
 	const struct lps22hh_config * const cfg = dev->config;
+	struct lps22hh_data *data = dev->data;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t chip_id;
 	int ret;
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	if (cfg->i3c.bus != NULL) {
+		/*
+		 * Need to grab the pointer to the I3C device descriptor
+		 * before we can talk to the sensor.
+		 */
+		data->i3c_dev = i3c_device_find(cfg->i3c.bus, &cfg->i3c.dev_id);
+		if (data->i3c_dev == NULL) {
+			LOG_ERR("Cannot find I3C device descriptor");
+			return -ENODEV;
+		}
+	}
+#endif
 
 	if (lps22hh_device_id_get(ctx, &chip_id) < 0) {
 		LOG_ERR("%s: Not able to read dev id", dev->name);
@@ -170,6 +185,30 @@ static int lps22hh_init_chip(const struct device *dev)
 	}
 
 	LOG_DBG("%s: chip id 0x%x", dev->name, chip_id);
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	if (cfg->i3c.bus != NULL) {
+		/*
+		 * Enabling I3C and disabling I2C are required
+		 * for I3C IBI to work, or else the sensor will not
+		 * send any IBIs.
+		 */
+
+		ret = lps22hh_i3c_interface_set(ctx, LPS22HH_I3C_ENABLE);
+		if (ret < 0) {
+			LOG_ERR("Cannot enable I3C interface");
+			return ret;
+		}
+
+		ret = lps22hh_i2c_interface_set(ctx, LPS22HH_I2C_DISABLE);
+		if (ret < 0) {
+			LOG_ERR("Cannot disable I2C interface");
+			return ret;
+		}
+	}
+#else
+	ARG_UNUSED(data);
+#endif
 
 	/* set sensor default odr */
 	LOG_DBG("%s: odr: %d", dev->name, cfg->odr);
@@ -267,6 +306,33 @@ static int lps22hh_init(const struct device *dev)
 	}
 
 /*
+ * Instantiation macros used when a device is on an I#C bus.
+ */
+
+#define LPS22HH_CONFIG_I3C(inst)					\
+	{								\
+		.ctx = {						\
+			.read_reg =					\
+			   (stmdev_read_ptr) stmemsc_i3c_read,		\
+			.write_reg =					\
+			   (stmdev_write_ptr) stmemsc_i3c_write,	\
+			.handle =					\
+			   (void *)&lps22hh_config_##inst.stmemsc_cfg,	\
+		},							\
+		.stmemsc_cfg = {					\
+			.i3c = &lps22hh_data_##inst.i3c_dev,		\
+		},							\
+		.odr = DT_INST_PROP(inst, odr),				\
+		.i3c.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
+		.i3c.dev_id = I3C_DEVICE_ID_DT_INST(inst),		\
+	}
+
+#define LPS22HH_CONFIG_I3C_OR_I2C(inst)					\
+	COND_CODE_0(DT_INST_PROP_BY_IDX(inst, reg, 1),			\
+		    (LPS22HH_CONFIG_I2C(inst)),				\
+		    (LPS22HH_CONFIG_I3C(inst)))
+
+/*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
@@ -276,7 +342,9 @@ static int lps22hh_init(const struct device *dev)
 	static const struct lps22hh_config lps22hh_config_##inst =		\
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),					\
 		    (LPS22HH_CONFIG_SPI(inst)),					\
-		    (LPS22HH_CONFIG_I2C(inst)));				\
+		    (COND_CODE_1(DT_INST_ON_BUS(inst, i3c),			\
+				 (LPS22HH_CONFIG_I3C_OR_I2C(inst)),		\
+				 (LPS22HH_CONFIG_I2C(inst)))));			\
 	DEVICE_DT_INST_DEFINE(inst, lps22hh_init, NULL, &lps22hh_data_##inst,	\
 			      &lps22hh_config_##inst, POST_KERNEL,		\
 			      CONFIG_SENSOR_INIT_PRIORITY, &lps22hh_driver_api);

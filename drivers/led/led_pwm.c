@@ -15,7 +15,7 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/math_extras.h>
 
 #include <zephyr/logging/log.h>
@@ -131,12 +131,10 @@ static const struct led_driver_api led_pwm_api = {
 	.set_brightness	= led_pwm_set_brightness,
 };
 
-#define PWM_DT_SPEC_GET_AND_COMMA(node_id) PWM_DT_SPEC_GET(node_id),
-
 #define LED_PWM_DEVICE(id)					\
 								\
 static const struct pwm_dt_spec led_pwm_##id[] = {		\
-	DT_INST_FOREACH_CHILD(id, PWM_DT_SPEC_GET_AND_COMMA)	\
+	DT_INST_FOREACH_CHILD_SEP(id, PWM_DT_SPEC_GET, (,))	\
 };								\
 								\
 static const struct led_pwm_config led_pwm_config_##id = {	\

@@ -22,10 +22,6 @@ config KINETIS_FLASH_CONFIG_FOPT
 config GPIO
 	default y
 
-config USB_KINETIS
-	default y
-	depends on USB_DEVICE_DRIVER
-
 source "soc/arm/nxp_kinetis/k8x/Kconfig.defconfig.mk*"
 
 endif # SOC_SERIES_KINETIS_K8X

@@ -8,3 +8,7 @@ if (NOT CONFIG_COVERAGE_GCOV)
 endif()
 
 check_set_linker_property(TARGET linker APPEND PROPERTY gprof -pg)
+
+# GCC 11 by default emits DWARF version 5 which cannot be parsed by
+# pyelftools. Can be removed once pyelftools supports v5.
+add_link_options(-gdwarf-4)

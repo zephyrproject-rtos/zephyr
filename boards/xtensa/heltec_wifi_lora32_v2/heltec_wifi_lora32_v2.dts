@@ -76,6 +76,10 @@
 	status = "okay";
 };
 
+&trng0 {
+	status = "okay";
+};
+
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
@@ -124,5 +128,5 @@
 	};
 };
 
-/* Required by OLED samples */
+/* Required by the ssd1306_128x64 shield which enables the OLED display */
 arduino_i2c: &i2c0 {};

@@ -21,8 +21,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define FIRMWARE_VERSION_MAJOR 1
 #define FIRMWARE_VERSION_MINOR 0
 
-#if defined(LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT_MULTIPLE)
-#define MAX_INSTANCE_COUNT LWM2M_FIRMWARE_UPDATE_OBJ_INSTANCE_COUNT
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT_MULTIPLE)
+#define MAX_INSTANCE_COUNT CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_INSTANCE_COUNT
 #else
 #define MAX_INSTANCE_COUNT 1
 #endif
@@ -99,16 +99,24 @@ void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state)
 	bool error = false;
 	char path[LWM2M_MAX_PATH_STR_LEN];
 
+	snprintk(path, sizeof(path), "%" PRIu16 "/%" PRIu16 "/%" PRIu16,
+		LWM2M_OBJECT_FIRMWARE_ID, obj_inst_id, FIRMWARE_UPDATE_RESULT_ID);
+
 	/* Check LWM2M SPEC appendix E.6.1 */
 	switch (state) {
 	case STATE_DOWNLOADING:
-		if (update_state[obj_inst_id] != STATE_IDLE) {
+		if (update_state[obj_inst_id] == STATE_IDLE) {
+			lwm2m_engine_set_u8(path, RESULT_DEFAULT);
+		} else {
 			error = true;
 		}
 		break;
 	case STATE_DOWNLOADED:
-		if (update_state[obj_inst_id] != STATE_DOWNLOADING &&
-		    update_state[obj_inst_id] != STATE_UPDATING) {
+		if (update_state[obj_inst_id] == STATE_DOWNLOADING) {
+			lwm2m_engine_set_u8(path, RESULT_DEFAULT);
+		} else if (update_state[obj_inst_id] == STATE_UPDATING) {
+			lwm2m_engine_set_u8(path, RESULT_UPDATE_FAILED);
+		} else {
 			error = true;
 		}
 		break;

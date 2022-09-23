@@ -7,7 +7,7 @@
 #ifndef TEST_GPIO_API_H_
 #define TEST_GPIO_API_H_
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/ztest.h>
 

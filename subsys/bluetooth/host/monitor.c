@@ -11,7 +11,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/uart_pipe.h>
@@ -220,7 +220,7 @@ void bt_monitor_send(uint16_t opcode, const void *data, size_t len)
 	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
 
-void bt_monitor_new_index(uint8_t type, uint8_t bus, bt_addr_t *addr,
+void bt_monitor_new_index(uint8_t type, uint8_t bus, const bt_addr_t *addr,
 			  const char *name)
 {
 	struct bt_monitor_new_index pkt;

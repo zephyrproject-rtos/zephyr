@@ -143,6 +143,20 @@ static const struct test_result {
 		.result = -1,
 		.error = EPROTONOSUPPORT,
 	},
+	{
+		/* 16 */
+		.test_case.family = AF_PACKET,
+		.test_case.type = SOCK_RAW,
+		.test_case.proto = ETH_P_IEEE802154,
+		.result = 0,
+	},
+	{
+		/* 17 */
+		.test_case.family = AF_PACKET,
+		.test_case.type = SOCK_DGRAM,
+		.test_case.proto = ETH_P_IEEE802154,
+		.result = 0,
+	},
 };
 
 static int current_test;
@@ -187,11 +201,12 @@ static bool is_tls(int family, int type, int proto)
 
 static bool is_packet(int family, int type, int proto)
 {
-	if (type != SOCK_RAW || proto != ETH_P_ALL) {
-		return false;
+	if (((type == SOCK_RAW) && (proto == ETH_P_ALL || proto == ETH_P_IEEE802154)) ||
+	    ((type == SOCK_DGRAM) && (proto > 0))) {
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 static bool is_can(int family, int type, int proto)

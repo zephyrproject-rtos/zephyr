@@ -9,12 +9,13 @@
  */
 
 #include <zephyr/types.h>
+#include <zephyr/drivers/gpio.h>
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
@@ -61,6 +62,7 @@ static uint8_t report_map[] = {
 	0x05, 0x01, /* Usage Page (Generic Desktop Ctrls) */
 	0x09, 0x02, /* Usage (Mouse) */
 	0xA1, 0x01, /* Collection (Application) */
+	0x85, 0x01, /*	 Report Id (1) */
 	0x09, 0x01, /*   Usage (Pointer) */
 	0xA1, 0x00, /*   Collection (Physical) */
 	0x05, 0x09, /*     Usage Page (Button) */
@@ -162,4 +164,34 @@ BT_GATT_SERVICE_DEFINE(hog_svc,
 
 void hog_init(void)
 {
+}
+
+#define SW0_NODE DT_ALIAS(sw0)
+
+void hog_button_loop(void)
+{
+#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+	const struct gpio_dt_spec sw0 = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
+
+	gpio_pin_configure_dt(&sw0, GPIO_INPUT);
+
+	for (;;) {
+		if (simulate_input) {
+			/* HID Report:
+			 * Byte 0: buttons (lower 3 bits)
+			 * Byte 1: X axis (int8)
+			 * Byte 2: Y axis (int8)
+			 */
+			int8_t report[3] = {0, 0, 0};
+
+			if (gpio_pin_get_dt(&sw0)) {
+				report[0] |= BIT(0);
+			}
+
+			bt_gatt_notify(NULL, &hog_svc.attrs[5],
+				       report, sizeof(report));
+		}
+		k_sleep(K_MSEC(100));
+	}
+#endif
 }

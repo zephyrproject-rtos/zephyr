@@ -1,0 +1,7 @@
+sample:
+  name: Bluetooth Central Object transfer client
+tests:
+  sample.bluetooth.central_otc:
+    harness: bluetooth
+    platform_allow: nrf21540dk_nrf52840 nrf52840dk_nrf52840 nrf52833dk_nrf52833
+    tags: bluetooth

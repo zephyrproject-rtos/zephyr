@@ -16,29 +16,35 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <0>;
-			cpu-power-states = <&off>;
+			cpu-power-states = <&d0i3 &d3>;
 		};
 
 		cpu1: cpu@1 {
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <1>;
-			cpu-power-states = <&off>;
+			cpu-power-states = <&d0i3 &d3>;
 		};
 
 		cpu2: cpu@2 {
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <2>;
-			cpu-power-states = <&off>;
+			cpu-power-states = <&d0i3 &d3>;
 		};
 	};
 
 	power-states {
+		d0i3: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <200>;
+			exit-latency-us = <100>;
+		};
 		/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
 		 * The procedure is triggered by IPC from the HOST (SET_DX).
 		 */
-		off: off {
+		d3: off {
 			compatible = "zephyr,power-state";
 			power-state-name = "soft-off";
 			min-residency-us = <2147483647>;
@@ -91,6 +97,21 @@
 			#interrupt-cells = <3>;
 		};
 
+		adsp_host_ipc: ace_host_ipc@73000 {
+			compatible = "intel,adsp-host-ipc";
+			status = "okay";
+			reg = <0x73000 0x30>;
+			interrupts = <0 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
+		adsp_idc: ace_idc@70400 {
+			compatible = "intel,adsp-idc";
+			reg = <0x70400 0x0400>;
+			interrupts = <24 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
 		/* This is actually an array of per-core designware
 		 * controllers, but the special setup and extra
 		 * masking layer makes it easier for MTL to handle
@@ -106,8 +127,23 @@
 			interrupt-parent = <&core_intc>;
 		};
 
+		ace_timestamp: ace_timestamp@72040 {
+			compatible = "intel,ace-timestamp";
+			reg = <0x72040 0x0032>;
+		};
+
+		ace_art_counter: ace_art_counter@72058 {
+			compatible = "intel,ace-art-counter";
+			reg = <0x72058 0x0064>;
+		};
+
+		ace_rtc_counter: ace_rtc_counter@72008 {
+			compatible = "intel,ace-rtc-counter";
+			reg = <0x72008 0x0064>;
+		};
+
 		shim: shim@71f00 {
-			compatible = "intel,cavs-shim";
+			compatible = "intel,adsp-shim";
 			reg = <0x71f00 0x100>;
 		};
 
@@ -127,8 +163,11 @@
 		};
 
 		tlb: tlb@17e000 {
-			compatible = "intel,adsp-tlb";
+			compatible = "intel,adsp-mtl-tlb";
 			reg = <0x17e000 0x1000>;
+			paddr-size = <12>;
+			exec-bit-idx = <14>;
+			write-bit-idx= <15>;
 		};
 
 		lpgpdma0: dma@7c000 {

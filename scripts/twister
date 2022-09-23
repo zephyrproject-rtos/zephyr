@@ -406,6 +406,6 @@ if __name__ == "__main__":
     finally:
         if (os.name != "nt") and os.isatty(1):
             # (OS is not Windows) and (stdout is interactive)
-            os.system("stty sane")
+            os.system("stty sane <&1")
 
     sys.exit(ret)

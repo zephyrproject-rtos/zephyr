@@ -20,7 +20,6 @@ LiteX VexRiscv SoC implementation generated for the
 <https://store.digilentinc.com/arty-a7-artix-7-fpga-development-board-for-makers-and-hobbyists>`_.
 
 .. image:: img/litex_vexriscv.jpg
-   :width: 650px
    :align: center
    :alt: LiteX VexRiscv on Digilent Arty 35T Board
 

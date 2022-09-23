@@ -71,7 +71,7 @@ ZTEST(events_api, test_k_event_init)
 	thread = z_waitq_head(&event.wait_q);
 
 	zassert_is_null(thread, NULL);
-	zassert_true(event.events == 0, NULL);
+	zassert_true(event.events == 0);
 }
 
 static void receive_existing_events(void)
@@ -189,8 +189,8 @@ static void test_receive_existing_events(void)
 
 	k_sem_give(&sync_sem);
 	rv = k_sem_take(&receiver_sem, LONG_TIMEOUT);
-	zassert_true(rv == 0, NULL);
-	zassert_true(test_events == 0, NULL);
+	zassert_true(rv == 0);
+	zassert_true(test_events == 0);
 
 	/*
 	 * Sync point 1-2.
@@ -199,8 +199,8 @@ static void test_receive_existing_events(void)
 
 	k_sem_give(&sync_sem);
 	rv = k_sem_take(&receiver_sem, LONG_TIMEOUT);
-	zassert_true(rv == 0, NULL);
-	zassert_true(test_events == 0, NULL);
+	zassert_true(rv == 0);
+	zassert_true(test_events == 0);
 
 	/*
 	 * Sync point 1-3.
@@ -209,8 +209,8 @@ static void test_receive_existing_events(void)
 
 	k_sem_give(&sync_sem);
 	rv = k_sem_take(&receiver_sem, LONG_TIMEOUT);
-	zassert_true(rv == 0, NULL);
-	zassert_true(test_events == 0, NULL);
+	zassert_true(rv == 0);
+	zassert_true(test_events == 0);
 
 	/*
 	 * Sync point 1-4.
@@ -219,8 +219,8 @@ static void test_receive_existing_events(void)
 
 	k_sem_give(&sync_sem);
 	rv = k_sem_take(&receiver_sem, LONG_TIMEOUT);
-	zassert_true(rv == 0, NULL);
-	zassert_true(test_events == 0, NULL);
+	zassert_true(rv == 0);
+	zassert_true(test_events == 0);
 
 	/*
 	 * Sync point 1-5.
@@ -229,8 +229,8 @@ static void test_receive_existing_events(void)
 
 	k_sem_give(&sync_sem);
 	rv = k_sem_take(&receiver_sem, LONG_TIMEOUT);
-	zassert_true(rv == 0, NULL);
-	zassert_true(test_events == 0x234, NULL);
+	zassert_true(rv == 0);
+	zassert_true(test_events == 0x234);
 
 	/*
 	 * Sync point 1-6.
@@ -239,8 +239,8 @@ static void test_receive_existing_events(void)
 
 	k_sem_give(&sync_sem);
 	rv = k_sem_take(&receiver_sem, LONG_TIMEOUT);
-	zassert_true(rv == 0, NULL);
-	zassert_true(test_events == 0x1234, NULL);
+	zassert_true(rv == 0);
+	zassert_true(test_events == 0x1234);
 }
 
 /**
@@ -261,9 +261,9 @@ static void test_reset_on_wait(void)
 	k_sleep(DELAY);           /* Give receiver thread time to run */
 	k_event_post(&test_event, 0x123);
 	rv = k_sem_take(&receiver_sem, LONG_TIMEOUT);
-	zassert_true(rv == 0, NULL);
-	zassert_true(test_events == 0, NULL);
-	zassert_true(test_event.events == 0x123, NULL);
+	zassert_true(rv == 0);
+	zassert_true(test_events == 0);
+	zassert_true(test_event.events == 0x123);
 
 	/*
 	 * Sync point 2-2. Reset events before receive.
@@ -274,9 +274,9 @@ static void test_reset_on_wait(void)
 	k_sleep(DELAY);
 	k_event_post(&test_event, 0x248);
 	rv = k_sem_take(&receiver_sem, LONG_TIMEOUT);
-	zassert_true(rv == 0, NULL);
-	zassert_true(test_events == 0, NULL);
-	zassert_true(test_event.events == 0x248, NULL);
+	zassert_true(rv == 0);
+	zassert_true(test_events == 0);
+	zassert_true(test_event.events == 0x248);
 
 	/*
 	 * Sync point 2-3. Reset events before receive.
@@ -287,9 +287,9 @@ static void test_reset_on_wait(void)
 	k_sleep(DELAY);
 	k_event_post(&test_event, 0x248021);
 	rv = k_sem_take(&receiver_sem, LONG_TIMEOUT);
-	zassert_true(rv == 0, NULL);
-	zassert_true(test_events == 0x248001, NULL);
-	zassert_true(test_event.events  == 0x248021, NULL);
+	zassert_true(rv == 0);
+	zassert_true(test_events == 0x248001);
+	zassert_true(test_event.events  == 0x248021);
 
 	/*
 	 * Sync point 2-4. Reset events before receive.
@@ -300,9 +300,9 @@ static void test_reset_on_wait(void)
 	k_sleep(DELAY);
 	k_event_post(&test_event, 0x123456);
 	rv = k_sem_take(&receiver_sem, LONG_TIMEOUT);
-	zassert_true(rv == 0, NULL);
-	zassert_true(test_events == 0x123450, NULL);
-	zassert_true(test_event.events  == 0x123456, NULL);
+	zassert_true(rv == 0);
+	zassert_true(test_events == 0x123450);
+	zassert_true(test_event.events  == 0x123456);
 
 	k_event_set(&test_event, 0x0);  /* Reset events */
 	k_sem_give(&sync_sem);
@@ -326,7 +326,7 @@ void test_wake_multiple_threads(void)
 
 	events = k_event_wait_all(&test_event, 0x333, false, SHORT_TIMEOUT);
 
-	zassert_true(events == 0x333, NULL);
+	zassert_true(events == 0x333);
 }
 
 /**
@@ -344,7 +344,7 @@ ZTEST(events_api, test_event_deliver)
 
 	k_event_init(&event);
 
-	zassert_true(event.events == 0, NULL);
+	zassert_true(event.events == 0);
 
 	/*
 	 * Verify k_event_post()  and k_event_set() update the
@@ -353,15 +353,15 @@ ZTEST(events_api, test_event_deliver)
 
 	events = 0xAAAA;
 	k_event_post(&event, events);
-	zassert_true(event.events == events, NULL);
+	zassert_true(event.events == events);
 
 	events |= 0x55555ABC;
 	k_event_post(&event, events);
-	zassert_true(event.events == events, NULL);
+	zassert_true(event.events == events);
 
 	events = 0xAAAA0000;
 	k_event_set(&event, events);
-	zassert_true(event.events == events, NULL);
+	zassert_true(event.events == events);
 
 	/*
 	 * Verify k_event_set_masked() update the events
@@ -369,25 +369,25 @@ ZTEST(events_api, test_event_deliver)
 	 */
 	events = 0x33333333;
 	k_event_set(&event, events);
-	zassert_true(event.events == events, NULL);
+	zassert_true(event.events == events);
 
 	events_mask = 0x11111111;
 	k_event_set_masked(&event, 0, events_mask);
-	zassert_true(event.events == 0x22222222, NULL);
+	zassert_true(event.events == 0x22222222);
 
 	events_mask = 0x22222222;
 	k_event_set_masked(&event, 0, events_mask);
-	zassert_true(event.events == 0, NULL);
+	zassert_true(event.events == 0);
 
 	events = 0x22222222;
 	events_mask = 0x22222222;
 	k_event_set_masked(&event, events, events_mask);
-	zassert_true(event.events == events, NULL);
+	zassert_true(event.events == events);
 
 	events = 0x11111111;
 	events_mask = 0x33333333;
 	k_event_set_masked(&event, events, events_mask);
-	zassert_true(event.events == events, NULL);
+	zassert_true(event.events == events);
 
 }
 

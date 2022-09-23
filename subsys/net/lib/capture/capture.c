@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_capture, CONFIG_NET_CAPTURE_LOG_LEVEL);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/net/net_core.h>

@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_TESTSUITE_INCLUDE_TC_UTIL_H_
 #define ZEPHYR_TESTSUITE_INCLUDE_TC_UTIL_H_
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <string.h>
 #ifdef CONFIG_SHELL

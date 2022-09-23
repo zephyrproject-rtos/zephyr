@@ -26,7 +26,6 @@ the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/nrf52dk_nrf52832.jpg
-     :width: 442px
      :align: center
      :alt: nRF52 DK
 

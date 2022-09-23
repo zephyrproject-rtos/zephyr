@@ -401,7 +401,7 @@ static void spi_pl022_async_xfer(const struct device *dev)
 			chunk_len = spi_context_max_continuous_chunk(ctx);
 		} else {
 			/* All data is processed, complete the process */
-			spi_context_complete(ctx, 0);
+			spi_context_complete(ctx, dev, 0);
 			return;
 		}
 	}
@@ -452,7 +452,7 @@ static void spi_pl022_isr(const struct device *dev)
 
 	if (mis & SSP_MIS_MASK_RORMIS) {
 		SSP_WRITE_REG(SSP_IMSC(cfg->reg), 0);
-		spi_context_complete(ctx, -EIO);
+		spi_context_complete(ctx, dev, -EIO);
 	} else {
 		spi_pl022_async_xfer(dev);
 	}
@@ -470,6 +470,7 @@ static void spi_pl022_xfer(const struct device *dev)
 	const void *txbuf = data->ctx.tx_buf;
 	void *rxbuf = data->ctx.rx_buf;
 	uint32_t txrx;
+	size_t fifo_cnt = 0;
 
 	data->tx_count = 0;
 	data->rx_count = 0;
@@ -483,7 +484,8 @@ static void spi_pl022_xfer(const struct device *dev)
 
 	while (data->rx_count < chunk_len || data->tx_count < chunk_len) {
 		/* Fill up fifo with available TX data */
-		while (SSP_TX_FIFO_NOT_FULL(cfg->reg) && data->tx_count < chunk_len) {
+		while (SSP_TX_FIFO_NOT_FULL(cfg->reg) && data->tx_count < chunk_len &&
+		       fifo_cnt < SSP_FIFO_DEPTH) {
 			/* Send 0 in the case of read only operation */
 			txrx = 0;
 
@@ -492,8 +494,12 @@ static void spi_pl022_xfer(const struct device *dev)
 			}
 			SSP_WRITE_REG(SSP_DR(cfg->reg), txrx);
 			data->tx_count++;
+			fifo_cnt++;
 		}
-		while (SSP_RX_FIFO_NOT_EMPTY(cfg->reg) && data->rx_count < chunk_len) {
+		while (data->rx_count < chunk_len && fifo_cnt > 0) {
+			if (!SSP_RX_FIFO_NOT_EMPTY(cfg->reg))
+				continue;
+
 			txrx = SSP_READ_REG(SSP_DR(cfg->reg));
 
 			/* Discard received data if rx buffer not assigned */
@@ -501,6 +507,7 @@ static void spi_pl022_xfer(const struct device *dev)
 				((uint8_t *)rxbuf)[data->rx_count] = (uint8_t)txrx;
 			}
 			data->rx_count++;
+			fifo_cnt--;
 		}
 	}
 }
@@ -511,13 +518,14 @@ static int spi_pl022_transceive_impl(const struct device *dev,
 				     const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     struct k_poll_signal *async)
+				     spi_callback_t cb,
+				     void *userdata)
 {
 	struct spi_pl022_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int ret;
 
-	spi_context_lock(&data->ctx, (async ? true : false), async, config);
+	spi_context_lock(&data->ctx, (cb ? true : false), cb, userdata, config);
 
 	ret = spi_pl022_configure(dev, config);
 	if (ret < 0) {
@@ -539,7 +547,7 @@ static int spi_pl022_transceive_impl(const struct device *dev,
 	} while (spi_pl022_transfer_ongoing(data));
 
 #ifdef CONFIG_SPI_ASYNC
-	spi_context_complete(&data->ctx, ret);
+	spi_context_complete(&data->ctx, dev, ret);
 #endif
 #endif
 
@@ -558,7 +566,7 @@ static int spi_pl022_transceive(const struct device *dev,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs)
 {
-	return spi_pl022_transceive_impl(dev, config, tx_bufs, rx_bufs, NULL);
+	return spi_pl022_transceive_impl(dev, config, tx_bufs, rx_bufs, NULL, NULL);
 }
 
 #if IS_ENABLED(CONFIG_SPI_ASYNC)
@@ -567,9 +575,10 @@ static int spi_pl022_transceive_async(const struct device *dev,
 				      const struct spi_config *config,
 				      const struct spi_buf_set *tx_bufs,
 				      const struct spi_buf_set *rx_bufs,
-				      struct k_poll_signal *async)
+				      spi_callback_t cb,
+				      void *userdata)
 {
-	return spi_pl022_transceive_impl(dev, config, tx_bufs, rx_bufs, async);
+	return spi_pl022_transceive_impl(dev, config, tx_bufs, rx_bufs, cb, userdata);
 }
 
 #endif

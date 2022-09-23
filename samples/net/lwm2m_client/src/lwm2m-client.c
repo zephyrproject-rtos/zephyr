@@ -12,7 +12,7 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/drivers/hwinfo.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/net/lwm2m.h>

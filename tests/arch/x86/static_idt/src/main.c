@@ -10,7 +10,7 @@
  *  Ensures interrupt and exception stubs are installed correctly.
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/tc_util.h>
 #include <zephyr/arch/x86/ia32/segmentation.h>

@@ -15,12 +15,12 @@
 		#address-cells = <0x1>;
 		#size-cells = <0x1>;
 
-		test_gpio_0: gpio@0 {
+		test_gpio_0: gpio@ffff {
 			gpio-controller;
 			#gpio-cells = <0x2>;
 			compatible = "vnd,gpio-device";
 			status = "okay";
-			reg = <0x0 0x1000>;
+			reg = <0xffff 0x1000>;
 		};
 
 		test_i2c: i2c@11112222 {

@@ -20,7 +20,7 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 #if DT_HAS_CHOSEN(zephyr_settings_partition)
 #define SETTINGS_PARTITION DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
 #else
-#define SETTINGS_PARTITION FLASH_AREA_ID(storage)
+#define SETTINGS_PARTITION FIXED_PARTITION_ID(storage_partition)
 #endif
 
 #define SETTINGS_FCB_VERS		1

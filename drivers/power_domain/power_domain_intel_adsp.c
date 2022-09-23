@@ -8,7 +8,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(power_domain_intel_adsp, LOG_LEVEL_INF);
 
 #define PWRCTL_OFFSET 0xD0

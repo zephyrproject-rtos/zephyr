@@ -26,7 +26,6 @@ The CPU provides support for the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/nrf21540dk_nrf52840.jpg
-     :width: 442px
      :align: center
      :alt: nRF21540 DK
 

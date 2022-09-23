@@ -228,6 +228,7 @@ Bluetooth Mesh:
     - jhedberg
     - LingaoM
     - alxelax
+    - Andrewpini
   files:
     - subsys/bluetooth/mesh/
     - include/zephyr/bluetooth/mesh/
@@ -418,9 +419,9 @@ Devicetree:
     - dts/bindings/
     - dts/common/
     - tests/lib/devicetree/
-    - dts/bindings/test/
     - doc/build/dts/
     - include/zephyr/devicetree/
+    - scripts/kconfig/kconfigfunctions.py
   labels:
     - "area: Devicetree"
 
@@ -463,19 +464,32 @@ Documentation:
     - carlescufi
   collaborators:
     - nashif
-    - utzig
-    - mbolivar-nordic
-    - gmarull
   files:
-    - doc/
-    - doc/_static/
-    - doc/_templates/
-    - doc/_doxygen/
-    - doc/_scripts/
+    - doc/contribute/
+    - doc/develop/
+    - doc/introduction/
+    - doc/project/
+    - doc/releases/
+    - doc/security/
     - README.rst
-    - doc/Makefile
   labels:
     - "area: Documentation"
+
+Documentation Infrastructure:
+  status: maintained
+  maintainers:
+    - gmarull
+  collaborators:
+    - carlescufi
+    - nashif
+  files:
+    - doc/_*/
+    - doc/CMakeLists.txt
+    - doc/conf.py
+    - doc/Makefile
+    - doc/zephyr.doxyfile.in
+  labels:
+    - "area: Documentation Infrastructure"
 
 "Drivers: ADC":
   status: maintained
@@ -592,6 +606,7 @@ Documentation:
     - dts/bindings/crypto/
     - include/zephyr/crypto/
     - samples/drivers/crypto/
+    - tests/crypto/
   labels:
     - "area: Crypto / RNG"
 
@@ -678,7 +693,10 @@ Documentation:
   files:
     - drivers/espi/
     - include/zephyr/drivers/espi.h
+    - include/zephyr/dt-bindings/espi/
     - samples/drivers/espi/
+    - dts/bindings/espi/
+    - doc/hardware/peripherals/espi.rst
   labels:
     - "area: eSPI"
 
@@ -690,6 +708,9 @@ Documentation:
     - pfalcon
   files:
     - drivers/ethernet/
+    - include/zephyr/dt-bindings/ethernet/
+    - tests/drivers/build_all/ethernet/
+    - dts/bindings/ethernet/
   labels:
     - "area: Ethernet"
 
@@ -741,9 +762,11 @@ Documentation:
     - teburd
   files:
     - drivers/i2c/
+    - include/zephyr/drivers/i2c/
     - dts/bindings/i2c/
     - include/zephyr/drivers/i2c.h
     - tests/drivers/i2c/
+    - doc/hardware/peripherals/i2c.rst
   labels:
     - "area: I2C"
 
@@ -759,6 +782,18 @@ Documentation:
     - tests/drivers/i2s/
   labels:
     - "area: I2S"
+
+"Drivers: I3C":
+  status: maintained
+  maintainers:
+    - dcpleung
+  files:
+    - drivers/i3c/
+    - dts/bindings/i3c/
+    - include/zephyr/drivers/i3c.h
+    - include/zephyr/drivers/i3c/
+  labels:
+    - "area: I3C"
 
 "Drivers: IEEE 802.15.4":
   status: maintained
@@ -783,11 +818,15 @@ Documentation:
     - "area: Interrupt Controller"
 
 "Drivers: IPM":
-  status: maintained
+  status: odd fixes
   collaborators:
     - dcpleung
   files:
     - drivers/ipm/
+    - samples/drivers/ipm/
+    - dts/bindings/ipm/
+    - tests/drivers/ipm/
+    - doc/hardware/peripherals/ipm.rst
   description: >-
     Inter-processor mailboxes
   labels:
@@ -804,8 +843,11 @@ Documentation:
     - drivers/kscan/
     - include/zephyr/drivers/kscan.h
     - samples/drivers/espi/
+    - samples/drivers/kscan/
     - tests/drivers/kscan/
     - tests/drivers/espi/
+    - dts/bindings/kscan/
+    - doc/hardware/peripherals/kscan.rst
   labels:
     - "area: Kscan"
 
@@ -1303,6 +1345,7 @@ MCU Manager:
     - subsys/mgmt/mcumgr/
     - include/zephyr/mgmt/mcumgr/
     - samples/subsys/mgmt/mcumgr/
+    - tests/subsys/mgmt/mcumgr/
   labels:
     - "area: mcumgr"
 
@@ -1519,6 +1562,7 @@ Power management:
     - mengxianglinx
     - gmarull
     - teburd
+    - yinfangw
   files:
     - include/zephyr/pm/
     - samples/subsys/pm/
@@ -1530,11 +1574,10 @@ Power management:
 RISCV arch:
   status: maintained
   maintainers:
+    - fkokosinski
     - kgugala
-    - pgielda
     - tgorochowik
   collaborators:
-    - fkokosinski
     - mgielda
     - katsuster
     - edersondisouza
@@ -1674,11 +1717,9 @@ Nuvoton NPCX Platforms:
   maintainers:
     - MulinChao
     - ChiHuaL
-    - WealianLiao
   collaborators:
     - MulinChao
     - ChiHuaL
-    - WealianLiao
     - sjg20
     - keith-zephyr
     - jackrosenthal
@@ -2232,9 +2273,7 @@ West:
 "West project: hal_nuvoton":
   status: maintained
   maintainers:
-    - MulinChao
-    - ChiHuaL
-    - WealianLiao
+    - ssekar15
   files:
     - modules/Kconfig.nuvoton
   labels:
@@ -2266,10 +2305,18 @@ West:
 "West project: hal_quicklogic":
   status: odd fixes
   collaborators:
-    - kowalewskijan
+    - fkokosinski
   files: []
   labels:
     - manifest-hal_quicklogic
+
+"West project: hal_renesas":
+  status: maintained
+  maintainers:
+    - andrzej-kaczmarek
+  files: []
+  labels:
+    - manifest-hal_renesas
 
 "West project: hal_rpi_pico":
   status: maintained
@@ -2331,6 +2378,15 @@ West:
   files: []
   labels:
     - manifest-hal_ti
+
+"West project: hal_wurthelektronik":
+  status: maintained
+  maintainers:
+    - mah-eiSmart
+  files:
+    - modules/Kconfig.wurthelektronik
+  labels:
+    - manifest-hal_wurthelektronik
 
 "West project: hal_xtensa":
   status: maintained
@@ -2572,6 +2628,18 @@ West:
   labels:
     - manifest-tf-m-tests
 
+"West project: trusted-firmware-a":
+  status: maintained
+  maintainers:
+    - povergoing
+    - sgrrzhf
+  collaborators:
+    - carlocaione
+  files:
+    - modules/trusted-firmware-a/
+  labels:
+    - manifest-trusted-firmware-a
+
 "West project: psa-arch-tests":
   status: maintained
   maintainers:
@@ -2705,3 +2773,16 @@ Random:
     - include/zephyr/random/
   labels:
     - "area: Random"
+
+# This area is to be converted to a subarea
+Testing with Renode:
+  status: maintained
+  collaborators:
+    - mateusz-holenko
+    - fkokosinski
+  files:
+    - cmake/emu/renode.cmake
+    - boards/*/*/support/*.repl
+    - boards/*/*/support/*.resc
+  labels:
+    - "area: Renode"

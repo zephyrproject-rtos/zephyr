@@ -17,8 +17,8 @@
 #define ETH_STM32_HAL_FRAME_SIZE_MAX (ETH_STM32_HAL_MTU + 18)
 
 /* Definition of the Ethernet driver buffers size and count */
-#define ETH_RX_BUF_SIZE	ETH_MAX_PACKET_SIZE /* buffer size for receive */
-#define ETH_TX_BUF_SIZE	ETH_MAX_PACKET_SIZE /* buffer size for transmit */
+#define ETH_STM32_RX_BUF_SIZE	ETH_MAX_PACKET_SIZE /* buffer size for receive */
+#define ETH_STM32_TX_BUF_SIZE	ETH_MAX_PACKET_SIZE /* buffer size for transmit */
 
 /* Device constant configuration parameters */
 struct eth_stm32_hal_dev_cfg {

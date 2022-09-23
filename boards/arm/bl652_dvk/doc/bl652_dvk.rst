@@ -32,14 +32,12 @@ Available BL652 DVK part numbers:
 * DVK-BL652-SC
 
 .. figure:: img/bl652_dvk.jpg
-     :width: 500px
      :align: center
      :alt: BL652 DVK
 
      BL652 DVK Board
 
 .. figure:: img/BL652-SA_DVK_BoxContents.jpg
-     :width: 500px
      :align: center
      :alt: BL652-SA DVK Box Contents
 

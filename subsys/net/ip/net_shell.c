@@ -13,7 +13,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/random/rand32.h>
@@ -347,7 +347,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #if defined(CONFIG_NET_VLAN)
 	struct ethernet_context *eth_ctx;
 #endif
-#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_IP)
 	struct net_if_addr *unicast;
 	struct net_if_mcast_addr *mcast;
 #endif
@@ -356,7 +356,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	int ret;
 #endif
 	const char *extra;
-#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_IP)
 	int i, count;
 #endif
 
@@ -1388,8 +1388,8 @@ static void context_cb(struct net_context *context, void *user_data)
 	   net_context_get_type(context) == SOCK_DGRAM ? 'D' :
 	   (net_context_get_type(context) == SOCK_STREAM ? 'S' :
 	    (net_context_get_type(context) == SOCK_RAW ? 'R' : ' ')),
-	   net_context_get_ip_proto(context) == IPPROTO_UDP ? 'U' :
-	   (net_context_get_ip_proto(context) == IPPROTO_TCP ? 'T' : ' '),
+	   net_context_get_proto(context) == IPPROTO_UDP ? 'U' :
+	   (net_context_get_proto(context) == IPPROTO_TCP ? 'T' : ' '),
 	   addr_local, addr_remote);
 
 	(*count)++;
@@ -3670,7 +3670,7 @@ static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 	PR("%p\t%d\t%u\tTX\n",
 	       tx, tx->num_blocks, k_mem_slab_num_free_get(tx));
 
-	PR("%p\t%d\t%ld\tRX DATA (%s)\n	", rx_data, rx_data->buf_count,
+	PR("%p\t%d\t%ld\tRX DATA (%s)\n", rx_data, rx_data->buf_count,
 	   atomic_get(&rx_data->avail_count), rx_data->name);
 
 	PR("%p\t%d\t%ld\tTX DATA (%s)\n", tx_data, tx_data->buf_count,
@@ -3835,7 +3835,7 @@ static int cmd_net_nbr(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_IP)
 
 K_SEM_DEFINE(ping_timeout, 0, 1);
 static const struct shell *shell_for_ping;
@@ -4108,7 +4108,7 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 
 	return res;
 }
-#endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
+#endif /* CONFIG_NET_IP */
 
 static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 {

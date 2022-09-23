@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"

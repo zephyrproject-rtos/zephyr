@@ -26,14 +26,15 @@
 #include <zephyr/fs/nvs.h>
 #include "nvs_priv.h"
 
-#define TEST_NVS_FLASH_AREA		storage
-#define TEST_NVS_FLASH_OFFSET		FLASH_AREA_OFFSET(TEST_NVS_FLASH_AREA)
-#define TEST_NVS_FLASH_DEV_NODE	\
-	DT_MTD_FROM_FIXED_PARTITION(DT_NODE_BY_FIXED_PARTITION_LABEL(TEST_NVS_FLASH_AREA))
+#define TEST_NVS_FLASH_AREA		storage_partition
+#define TEST_NVS_FLASH_AREA_OFFSET	FIXED_PARTITION_OFFSET(TEST_NVS_FLASH_AREA)
+#define TEST_NVS_FLASH_AREA_ID		FIXED_PARTITION_ID(TEST_NVS_FLASH_AREA)
+#define TEST_NVS_FLASH_AREA_DEV \
+	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(TEST_NVS_FLASH_AREA)))
 #define TEST_DATA_ID			1
 #define TEST_SECTOR_COUNT		5U
 
-static const struct device *const flash_dev = DEVICE_DT_GET(TEST_NVS_FLASH_DEV_NODE);
+static const struct device *const flash_dev = TEST_NVS_FLASH_AREA_DEV;
 
 struct nvs_fixture {
 	struct nvs_fs fs;
@@ -50,10 +51,10 @@ static void *setup(void)
 
 	__ASSERT_NO_MSG(device_is_ready(flash_dev));
 
-	err = flash_area_open(FLASH_AREA_ID(TEST_NVS_FLASH_AREA), &fa);
+	err = flash_area_open(TEST_NVS_FLASH_AREA_ID, &fa);
 	zassert_true(err == 0, "flash_area_open() fail: %d", err);
 
-	fixture.fs.offset = TEST_NVS_FLASH_OFFSET;
+	fixture.fs.offset = TEST_NVS_FLASH_AREA_OFFSET;
 	err = flash_get_page_info_by_offs(flash_area_get_device(fa), fixture.fs.offset,
 					  &info);
 	zassert_true(err == 0,  "Unable to get page info: %d", err);

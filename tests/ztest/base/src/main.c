@@ -14,11 +14,11 @@ ZTEST(framework_tests, test_empty_test)
 
 ZTEST(framework_tests, test_assert_tests)
 {
-	zassert_true(1, NULL);
-	zassert_false(0, NULL);
+	zassert_true(1);
+	zassert_false(0);
 	zassert_is_null(NULL, NULL);
 	zassert_not_null("foo", NULL);
-	zassert_equal(1, 1, NULL);
+	zassert_equal(1, 1);
 	zassert_equal_ptr(NULL, NULL, NULL);
 }
 
@@ -136,7 +136,7 @@ static void rule_test_teardown(void *data)
 	 */
 	zassert_equal(fixture->state, RULE_STATE_AFTER_EACH, "Unexpected state");
 #ifdef CONFIG_ZTEST_SHUFFLE
-	zassert_equal(fixture->run_count, CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT, NULL);
+	zassert_equal(fixture->run_count, CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT);
 #endif
 }
 
@@ -154,7 +154,7 @@ ZTEST_F(rules_tests, test_rules_before_after)
 
 static void *fail_in_setup_setup(void)
 {
-	zassert_true(false, NULL);
+	zassert_true(false);
 	return NULL;
 }
 
@@ -162,7 +162,7 @@ ZTEST_EXPECT_FAIL(fail_in_setup, test_should_never_run);
 ZTEST(fail_in_setup, test_should_never_run)
 {
 	/* The following should pass, but the setup function will cause it to fail */
-	zassert_true(true, NULL);
+	zassert_true(true);
 }
 
 ZTEST_SUITE(fail_in_setup, NULL, fail_in_setup_setup, NULL, NULL, NULL);

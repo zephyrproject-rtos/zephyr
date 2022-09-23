@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -139,6 +139,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	lll->ctrl = 0U;
 	lll->cssn_curr = 0U;
 	lll->cssn_next = 0U;
+	lll->term_reason = 0U;
 
 	/* TODO: Implement usage of MSE to limit listening to subevents */
 
@@ -149,6 +150,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 
 		stream = (void *)sync_iso_stream_acquire();
 		stream->big_handle = big_handle;
+		stream->bis_index = bis[i];
 		stream->dp = NULL;
 		lll->stream_handle[i] = sync_iso_stream_handle_get(stream);
 	}
@@ -278,6 +280,11 @@ struct lll_sync_iso_stream *ull_sync_iso_stream_get(uint16_t handle)
 	}
 
 	return &stream_pool[handle];
+}
+
+struct lll_sync_iso_stream *ull_sync_iso_lll_stream_get(uint16_t handle)
+{
+	return ull_sync_iso_stream_get(handle);
 }
 
 void ull_sync_iso_stream_release(struct ll_sync_iso_set *sync_iso)
@@ -510,7 +517,11 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 
 	/* Events elapsed used in timeout checks below */
 	latency_event = lll->latency_event;
-	elapsed_event = latency_event + 1U;
+	if (lll->latency_prepare) {
+		elapsed_event = latency_event + lll->latency_prepare;
+	} else {
+		elapsed_event = latency_event + 1U;
+	}
 
 	/* Sync drift compensation and new skip calculation
 	 */

@@ -12,7 +12,7 @@
  * intended.
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #include <stdio.h>

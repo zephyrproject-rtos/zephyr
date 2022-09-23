@@ -12,7 +12,7 @@
 
 LOG_MODULE_REGISTER(test, CONFIG_LOG_DEFAULT_LEVEL);
 
-static void test_dt_spec(void)
+ZTEST(spi_dt_spec, test_dt_spec)
 {
 	const struct spi_dt_spec spi_cs =
 		SPI_DT_SPEC_GET(DT_NODELABEL(test_spi_dev_cs), 0, 0);
@@ -35,10 +35,4 @@ static void test_dt_spec(void)
 	zassert_is_null(spi_no_cs.config.cs, "");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(spi_dt_spec,
-			 ztest_unit_test(test_dt_spec)
-			);
-	ztest_run_test_suite(spi_dt_spec);
-}
+ZTEST_SUITE(spi_dt_spec, NULL, NULL, NULL, NULL, NULL);

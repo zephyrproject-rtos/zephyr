@@ -36,7 +36,8 @@
 	ngpios = <13>;
 };
 
-&soc {
+&pinctrl {
+	reg = <0x48028000 0x600>;
 
 	gpio3: gpio@48028300 {
 		compatible = "infineon,xmc4xxx-gpio";

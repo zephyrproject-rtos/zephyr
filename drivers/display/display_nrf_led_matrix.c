@@ -509,7 +509,7 @@ static int instance_init(const struct device *dev)
 	}
 
 	nrf_timer_bit_width_set(dev_config->timer, NRF_TIMER_BIT_WIDTH_16);
-	nrf_timer_frequency_set(dev_config->timer, TIMER_CLK_CONFIG);
+	nrf_timer_prescaler_set(dev_config->timer, TIMER_CLK_CONFIG);
 	nrf_timer_cc_set(dev_config->timer, 0, PIXEL_PERIOD);
 	nrf_timer_shorts_set(dev_config->timer,
 			     NRF_TIMER_SHORT_COMPARE0_STOP_MASK |

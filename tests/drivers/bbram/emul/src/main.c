@@ -18,8 +18,8 @@ ZTEST(bbram, test_get_size)
 
 	zassert_true(device_is_ready(dev), "Device is not ready");
 
-	zassert_ok(bbram_get_size(dev, &size), NULL);
-	zassert_equal(size, BBRAM_SIZE, NULL);
+	zassert_ok(bbram_get_size(dev, &size));
+	zassert_equal(size, BBRAM_SIZE);
 }
 
 ZTEST(bbram, test_bbram_out_of_bounds)
@@ -27,12 +27,12 @@ ZTEST(bbram, test_bbram_out_of_bounds)
 	const struct device *const dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 	uint8_t buffer[BBRAM_SIZE];
 
-	zassert_equal(bbram_read(dev, 0, 0, buffer), -EFAULT, NULL);
-	zassert_equal(bbram_read(dev, 0, BBRAM_SIZE + 1, buffer), -EFAULT, NULL);
-	zassert_equal(bbram_read(dev, BBRAM_SIZE - 1, 2, buffer), -EFAULT, NULL);
-	zassert_equal(bbram_write(dev, 0, 0, buffer), -EFAULT, NULL);
-	zassert_equal(bbram_write(dev, 0, BBRAM_SIZE + 1, buffer), -EFAULT, NULL);
-	zassert_equal(bbram_write(dev, BBRAM_SIZE - 1, 2, buffer), -EFAULT, NULL);
+	zassert_equal(bbram_read(dev, 0, 0, buffer), -EFAULT);
+	zassert_equal(bbram_read(dev, 0, BBRAM_SIZE + 1, buffer), -EFAULT);
+	zassert_equal(bbram_read(dev, BBRAM_SIZE - 1, 2, buffer), -EFAULT);
+	zassert_equal(bbram_write(dev, 0, 0, buffer), -EFAULT);
+	zassert_equal(bbram_write(dev, 0, BBRAM_SIZE + 1, buffer), -EFAULT);
+	zassert_equal(bbram_write(dev, BBRAM_SIZE - 1, 2, buffer), -EFAULT);
 }
 
 ZTEST(bbram, test_read_write)
@@ -45,8 +45,8 @@ ZTEST(bbram, test_read_write)
 		expected[i] = i;
 	}
 	/* Set and verify content. */
-	zassert_ok(bbram_write(dev, 0, BBRAM_SIZE, expected), NULL);
-	zassert_ok(bbram_read(dev, 0, BBRAM_SIZE, buffer), NULL);
+	zassert_ok(bbram_write(dev, 0, BBRAM_SIZE, expected));
+	zassert_ok(bbram_read(dev, 0, BBRAM_SIZE, buffer));
 	zassert_mem_equal(buffer, expected, BBRAM_SIZE, NULL);
 }
 
@@ -54,30 +54,30 @@ ZTEST(bbram, test_set_invalid)
 {
 	const struct device *const dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 
-	zassert_equal(bbram_check_invalid(dev), 0, NULL);
-	zassert_ok(bbram_emul_set_invalid(dev, true), NULL);
-	zassert_equal(bbram_check_invalid(dev), 1, NULL);
-	zassert_equal(bbram_check_invalid(dev), 0, NULL);
+	zassert_equal(bbram_check_invalid(dev), 0);
+	zassert_ok(bbram_emul_set_invalid(dev, true));
+	zassert_equal(bbram_check_invalid(dev), 1);
+	zassert_equal(bbram_check_invalid(dev), 0);
 }
 
 ZTEST(bbram, test_set_standby)
 {
 	const struct device *const dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 
-	zassert_equal(bbram_check_standby_power(dev), 0, NULL);
-	zassert_ok(bbram_emul_set_standby_power_state(dev, true), NULL);
-	zassert_equal(bbram_check_standby_power(dev), 1, NULL);
-	zassert_equal(bbram_check_standby_power(dev), 0, NULL);
+	zassert_equal(bbram_check_standby_power(dev), 0);
+	zassert_ok(bbram_emul_set_standby_power_state(dev, true));
+	zassert_equal(bbram_check_standby_power(dev), 1);
+	zassert_equal(bbram_check_standby_power(dev), 0);
 }
 
 ZTEST(bbram, test_set_power)
 {
 	const struct device *const dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 
-	zassert_equal(bbram_check_power(dev), 0, NULL);
-	zassert_ok(bbram_emul_set_power_state(dev, true), NULL);
-	zassert_equal(bbram_check_power(dev), 1, NULL);
-	zassert_equal(bbram_check_power(dev), 0, NULL);
+	zassert_equal(bbram_check_power(dev), 0);
+	zassert_ok(bbram_emul_set_power_state(dev, true));
+	zassert_equal(bbram_check_power(dev), 1);
+	zassert_equal(bbram_check_power(dev), 0);
 }
 
 ZTEST(bbram, test_reset_invalid_on_read)
@@ -85,9 +85,9 @@ ZTEST(bbram, test_reset_invalid_on_read)
 	const struct device *const dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 	uint8_t buffer[BBRAM_SIZE];
 
-	zassert_ok(bbram_emul_set_invalid(dev, true), NULL);
-	zassert_equal(bbram_read(dev, 0, BBRAM_SIZE, buffer), -EFAULT, NULL);
-	zassert_equal(bbram_check_invalid(dev), 0, NULL);
+	zassert_ok(bbram_emul_set_invalid(dev, true));
+	zassert_equal(bbram_read(dev, 0, BBRAM_SIZE, buffer), -EFAULT);
+	zassert_equal(bbram_check_invalid(dev), 0);
 }
 
 ZTEST(bbram, test_reset_invalid_on_write)
@@ -95,9 +95,9 @@ ZTEST(bbram, test_reset_invalid_on_write)
 	const struct device *const dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 	uint8_t buffer[BBRAM_SIZE];
 
-	zassert_ok(bbram_emul_set_invalid(dev, true), NULL);
-	zassert_equal(bbram_write(dev, 0, BBRAM_SIZE, buffer), -EFAULT, NULL);
-	zassert_equal(bbram_check_invalid(dev), 0, NULL);
+	zassert_ok(bbram_emul_set_invalid(dev, true));
+	zassert_equal(bbram_write(dev, 0, BBRAM_SIZE, buffer), -EFAULT);
+	zassert_equal(bbram_check_invalid(dev), 0);
 }
 
 static void before(void *data)

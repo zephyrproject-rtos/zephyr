@@ -7,7 +7,7 @@ menuconfig GPIO_SX1509B
 	bool "SX1509B I2C GPIO chip"
 	default y
 	depends on DT_HAS_SEMTECH_SX1509B_ENABLED
-	depends on I2C
+	select I2C
 	help
 	  Enable driver for SX1509B I2C GPIO chip.
 

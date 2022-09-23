@@ -28,10 +28,10 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
+	};
 
-		otgfs_phy: otgfs_phy {
-			compatible = "usb-nop-xceiv";
-			#phy-cells = <0>;
-		};
+	otgfs_phy: otgfs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 };

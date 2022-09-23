@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2022, Teslabs Engineering S.L.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/gigadevice/gd32f4xx/gd32f450xk.dtsi>
+#include "gd32f450v_start-pinctrl.dtsi"
+
+/ {
+	model = "GigaDevice GD32F450V-START";
+	compatible = "gd,gd32f450v-start";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led1 {
+			gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_key: user_key {
+			label = "USER_KEY";
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led: pwm_led {
+			pwms = <&pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		sw0 = &user_key;
+		pwm-led0 = &pwm_led;
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&usart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+};
+
+&timer2 {
+	status = "okay";
+	prescaler = <256>;
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&pwm2_default>;
+		pinctrl-names = "default";
+	};
+};

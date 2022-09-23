@@ -74,20 +74,19 @@ static void test_check_pattern32(off_t start, uint32_t (*pattern_gen)(void),
 /* Get access to the device and erase it ready for testing*/
 static void test_init(void)
 {
-	int rc;
-
 	zassert_true(device_is_ready(flash_dev),
 		     "Simulated flash device not ready");
+}
+
+ZTEST(flash_sim_api, test_read)
+{
+	off_t i;
+	int rc;
 
 	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 			 FLASH_SIMULATOR_FLASH_SIZE);
 	zassert_equal(0, rc, "flash_erase should succeed");
-}
 
-static void test_read(void)
-{
-	off_t i;
-	int rc;
 
 	rc = flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 			test_read_buf, sizeof(test_read_buf));
@@ -106,6 +105,11 @@ static void test_write_read(void)
 	off_t off;
 	uint32_t val32 = 0, r_val32;
 	int rc;
+
+	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
+			 FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_erase should succeed");
+
 
 	for (off = 0; off < TEST_SIM_FLASH_SIZE; off += 4) {
 		rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET +
@@ -160,7 +164,14 @@ static void test_erase(void)
 			     FLASH_SIMULATOR_ERASE_UNIT*2);
 }
 
-static void test_out_of_bounds(void)
+ZTEST(flash_sim_api, test_write_read_erase)
+{
+	test_write_read();
+	test_erase();
+}
+
+
+ZTEST(flash_sim_api, test_out_of_bounds)
 {
 	int rc;
 	uint8_t data[8] = {0};
@@ -216,7 +227,7 @@ static void test_out_of_bounds(void)
 	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 }
 
-static void test_align(void)
+ZTEST(flash_sim_api, test_align)
 {
 	int rc;
 	uint8_t data[4] = {0};
@@ -244,7 +255,7 @@ static void test_align(void)
 	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 }
 
-static void test_double_write(void)
+ZTEST(flash_sim_api, test_double_write)
 {
 	int rc;
 	/* Test checks behaviour of write when attempting to double write
@@ -268,7 +279,7 @@ static void test_double_write(void)
 	zassert_equal(-EIO, rc, "Unexpected error code (%d)", rc);
 }
 
-static void test_get_erase_value(void)
+ZTEST(flash_sim_api, test_get_erase_value)
 {
 	const struct flash_parameters *fp = flash_get_parameters(flash_dev);
 
@@ -279,7 +290,7 @@ static void test_get_erase_value(void)
 
 #include <zephyr/drivers/flash/flash_simulator.h>
 
-static void test_get_mock(void)
+ZTEST(flash_sim_api, test_get_mock)
 {
 #ifdef CONFIG_ARCH_POSIX
 	ztest_test_skip();
@@ -297,18 +308,11 @@ static void test_get_mock(void)
 #endif
 }
 
-void test_main(void)
+void *flash_sim_setup(void)
 {
-	ztest_test_suite(flash_sim_api,
-			 ztest_unit_test(test_init),
-			 ztest_unit_test(test_read),
-			 ztest_unit_test(test_write_read),
-			 ztest_unit_test(test_erase),
-			 ztest_unit_test(test_out_of_bounds),
-			 ztest_unit_test(test_align),
-			 ztest_unit_test(test_get_erase_value),
-			 ztest_unit_test(test_double_write),
-			 ztest_unit_test(test_get_mock));
+	test_init();
 
-	ztest_run_test_suite(flash_sim_api);
+	return NULL;
 }
+
+ZTEST_SUITE(flash_sim_api, NULL, flash_sim_setup, NULL, NULL, NULL);

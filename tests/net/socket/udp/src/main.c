@@ -151,7 +151,7 @@ static void comm_sendto_recvfrom(int client_sock,
 	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
 }
 
-void test_v4_sendto_recvfrom(void)
+ZTEST(net_socket_udp, test_02_v4_sendto_recvfrom)
 {
 	int rv;
 	int client_sock;
@@ -182,7 +182,7 @@ void test_v4_sendto_recvfrom(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_v6_sendto_recvfrom(void)
+ZTEST(net_socket_udp, test_03_v6_sendto_recvfrom)
 {
 	int rv;
 	int client_sock;
@@ -212,7 +212,7 @@ void test_v6_sendto_recvfrom(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_v4_bind_sendto(void)
+ZTEST(net_socket_udp, test_04_v4_bind_sendto)
 {
 	int rv;
 	int client_sock;
@@ -246,7 +246,7 @@ void test_v4_bind_sendto(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_v6_bind_sendto(void)
+ZTEST(net_socket_udp, test_05_v6_bind_sendto)
 {
 	int rv;
 	int client_sock;
@@ -280,7 +280,7 @@ void test_v6_bind_sendto(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_send_recv_2_sock(void)
+ZTEST(net_socket_udp, test_01_send_recv_2_sock)
 {
 	int sock1, sock2;
 	struct sockaddr_in bind_addr, conn_addr;
@@ -317,7 +317,7 @@ void test_send_recv_2_sock(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_so_priority(void)
+ZTEST(net_socket_udp, test_07_so_priority)
 {
 	struct sockaddr_in bind_addr4;
 	struct sockaddr_in6 bind_addr6;
@@ -415,7 +415,7 @@ static void comm_sendmsg_recvfrom(int client_sock,
 	}
 }
 
-void test_v4_sendmsg_recvfrom(void)
+ZTEST_USER(net_socket_udp, test_12_v4_sendmsg_recvfrom)
 {
 	int rv;
 	int client_sock;
@@ -476,7 +476,7 @@ void test_v4_sendmsg_recvfrom(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_v4_sendmsg_recvfrom_no_aux_data(void)
+ZTEST_USER(net_socket_udp, test_13_v4_sendmsg_recvfrom_no_aux_data)
 {
 	int rv;
 	int client_sock;
@@ -524,7 +524,7 @@ void test_v4_sendmsg_recvfrom_no_aux_data(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_v6_sendmsg_recvfrom(void)
+ZTEST_USER(net_socket_udp, test_14_v6_sendmsg_recvfrom)
 {
 	int rv;
 	int client_sock;
@@ -584,7 +584,7 @@ void test_v6_sendmsg_recvfrom(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_v4_sendmsg_recvfrom_connected(void)
+ZTEST_USER(net_socket_udp, test_15_v4_sendmsg_recvfrom_connected)
 {
 	int rv;
 	int client_sock;
@@ -647,7 +647,7 @@ void test_v4_sendmsg_recvfrom_connected(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_v6_sendmsg_recvfrom_connected(void)
+ZTEST_USER(net_socket_udp, test_06_v6_sendmsg_recvfrom_connected)
 {
 	int rv;
 	int client_sock;
@@ -709,7 +709,7 @@ void test_v6_sendmsg_recvfrom_connected(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_so_type(void)
+ZTEST(net_socket_udp, test_06_so_type)
 {
 	struct sockaddr_in bind_addr4;
 	struct sockaddr_in6 bind_addr6;
@@ -738,7 +738,7 @@ void test_so_type(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_so_txtime(void)
+ZTEST(net_socket_udp, test_08_so_txtime)
 {
 	struct sockaddr_in bind_addr4;
 	struct sockaddr_in6 bind_addr6;
@@ -787,7 +787,7 @@ void test_so_txtime(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_so_rcvtimeo(void)
+ZTEST(net_socket_udp, test_09_so_rcvtimeo)
 {
 	struct sockaddr_in bind_addr4;
 	struct sockaddr_in6 bind_addr6;
@@ -850,7 +850,7 @@ void test_so_rcvtimeo(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_so_sndtimeo(void)
+ZTEST(net_socket_udp, test_10_so_sndtimeo)
 {
 	struct sockaddr_in bind_addr4;
 	struct sockaddr_in6 bind_addr6;
@@ -887,7 +887,7 @@ void test_so_sndtimeo(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_so_protocol(void)
+ZTEST(net_socket_udp, test_11_so_protocol)
 {
 	struct sockaddr_in bind_addr4;
 	struct sockaddr_in6 bind_addr6;
@@ -1035,7 +1035,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 }
 
-static void test_setup_eth(void)
+ZTEST(net_socket_udp, test_17_setup_eth)
 {
 	struct net_if_addr *ifaddr;
 	int ret;
@@ -1064,7 +1064,7 @@ static void test_setup_eth(void)
 			 true, NET_IPV6_NBR_STATE_REACHABLE);
 }
 
-void test_v6_sendmsg_with_txtime(void)
+ZTEST_USER(net_socket_udp, test_18_v6_sendmsg_with_txtime)
 {
 	int rv;
 	int client_sock;
@@ -1183,7 +1183,7 @@ void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_v4_msg_trunc(void)
+ZTEST(net_socket_udp, test_19_v4_msg_trunc)
 {
 	int client_sock;
 	int server_sock;
@@ -1200,7 +1200,7 @@ void test_v4_msg_trunc(void)
 		       (struct sockaddr *)&server_addr, sizeof(server_addr));
 }
 
-void test_v6_msg_trunc(void)
+ZTEST(net_socket_udp, test_20_v6_msg_trunc)
 {
 	int client_sock;
 	int server_sock;
@@ -1273,7 +1273,7 @@ static void test_dgram_fragmented(int sock_c, int sock_s,
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_v4_dgram_overflow(void)
+ZTEST(net_socket_udp, test_21_v4_dgram_overflow)
 {
 	int client_sock;
 	int server_sock;
@@ -1291,7 +1291,7 @@ void test_v4_dgram_overflow(void)
 			    test_str_all_tx_bufs, NET_ETH_MTU + 1);
 }
 
-void test_v6_dgram_fragmented_or_overflow(void)
+ZTEST(net_socket_udp, test_22_v6_dgram_fragmented_or_overflow)
 {
 	int client_sock;
 	int server_sock;
@@ -1316,7 +1316,7 @@ void test_v6_dgram_fragmented_or_overflow(void)
 	}
 }
 
-void test_v6_dgram_overflow(void)
+ZTEST(net_socket_udp, test_23_v6_dgram_overflow)
 {
 	int client_sock;
 	int server_sock;
@@ -1334,41 +1334,4 @@ void test_v6_dgram_overflow(void)
 			    BUF_AND_SIZE(test_str_all_tx_bufs));
 }
 
-void test_main(void)
-{
-	k_thread_system_pool_assign(k_current_get());
-
-	ztest_test_suite(socket_udp,
-			 ztest_unit_test(test_send_recv_2_sock),
-			 ztest_unit_test(test_v4_sendto_recvfrom),
-			 ztest_unit_test(test_v6_sendto_recvfrom),
-			 ztest_unit_test(test_v4_bind_sendto),
-			 ztest_unit_test(test_v6_bind_sendto),
-			 ztest_unit_test(test_so_type),
-			 ztest_unit_test(test_so_priority),
-			 ztest_unit_test(test_so_txtime),
-			 ztest_unit_test(test_so_rcvtimeo),
-			 ztest_unit_test(test_so_sndtimeo),
-			 ztest_unit_test(test_so_protocol),
-			 ztest_unit_test(test_v4_sendmsg_recvfrom),
-			 ztest_user_unit_test(test_v4_sendmsg_recvfrom),
-			 ztest_unit_test(test_v4_sendmsg_recvfrom_no_aux_data),
-			 ztest_user_unit_test(test_v4_sendmsg_recvfrom_no_aux_data),
-			 ztest_unit_test(test_v6_sendmsg_recvfrom),
-			 ztest_user_unit_test(test_v6_sendmsg_recvfrom),
-			 ztest_unit_test(test_v4_sendmsg_recvfrom_connected),
-			 ztest_user_unit_test(test_v4_sendmsg_recvfrom_connected),
-			 ztest_unit_test(test_v6_sendmsg_recvfrom_connected),
-			 ztest_user_unit_test(test_v6_sendmsg_recvfrom_connected),
-			 ztest_unit_test(test_setup_eth),
-			 ztest_unit_test(test_v6_sendmsg_with_txtime),
-			 ztest_user_unit_test(test_v6_sendmsg_with_txtime),
-			 ztest_unit_test(test_v4_msg_trunc),
-			 ztest_unit_test(test_v6_msg_trunc),
-			 ztest_unit_test(test_v4_dgram_overflow),
-			 ztest_unit_test(test_v6_dgram_fragmented_or_overflow),
-			 ztest_unit_test(test_v6_dgram_overflow)
-		);
-
-	ztest_run_test_suite(socket_udp);
-}
+ZTEST_SUITE(net_socket_udp, NULL, NULL, NULL, NULL, NULL);

@@ -46,17 +46,9 @@ struct spi_buf_set tx_bufs, rx_bufs;
 struct spi_buf txb[MAX_TX_BUF], rxb;
 struct spi_config spi_cfg_single, spi_cfg_dual, spi_cfg_quad;
 
-/**
- * @brief Test spi device
- * @details
- * - Find spi device
- * - Read flash jedec id
- */
-void test_spi_device(void)
-{
-	uint32_t jedec_id;
-	int ret;
 
+static void spi_single_init(void)
+{
 	/* configure spi as single mode */
 	spi_cfg_single.frequency = TEST_FREQ_HZ;
 	spi_cfg_single.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
@@ -65,6 +57,18 @@ void test_spi_device(void)
 	spi_cfg_single.cs = NULL;
 
 	zassert_true(device_is_ready(spi_dev), "SPI controller device is not ready");
+}
+
+/**
+ * @brief Test spi device
+ * @details
+ * - Find spi device
+ * - Read flash jedec id
+ */
+ZTEST_USER(spi, test_spi_device)
+{
+	uint32_t jedec_id;
+	int ret;
 
 	/* read jedec id */
 	memset(safbuf, 0, TEST_BUF_SIZE);
@@ -98,7 +102,7 @@ void test_spi_device(void)
  * - erase data in flash device
  * - read register1 and wait for erase operation completed
  */
-void test_spi_sector_erase(void)
+ZTEST_USER(spi_sec_erase, test_spi_sector_erase)
 {
 	int ret;
 
@@ -174,7 +178,7 @@ void test_spi_sector_erase(void)
  * - flash write enable
  * - write data into flash using spi api
  */
-void test_spi_single_write(void)
+static void test_spi_single_write(void)
 {
 	int ret;
 
@@ -225,7 +229,7 @@ void test_spi_single_write(void)
  * - read data using spi single mode
  * - check read buffer data whether correct
  */
-void test_spi_single_read(void)
+ZTEST_USER(spi, test_spi_single_read)
 {
 	int ret;
 	uint8_t cnt = 0;
@@ -271,6 +275,17 @@ void test_spi_single_read(void)
 			"Buffer read data is different to write data");
 }
 
+static void spi_dual_init(void)
+{
+	/* configure spi dual mode */
+	spi_cfg_dual.frequency = TEST_FREQ_HZ;
+	spi_cfg_dual.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
+		| SPI_WORD_SET(8) | SPI_LINES_DUAL;
+	spi_cfg_dual.slave = 0;
+	spi_cfg_dual.cs = NULL;
+
+	zassert_true(device_is_ready(spi_dev), "SPI controller device is not ready");
+}
 
 /**
  * @brief Read data from flash using spi dual mode
@@ -278,18 +293,13 @@ void test_spi_single_read(void)
  * - read data using spi dual mode
  * - check read buffer data whether correct
  */
-void test_spi_dual_read(void)
+ZTEST_USER(spi, test_spi_dual_read)
 {
 	int ret;
 	uint8_t cnt = 0;
 	uint16_t spi_opcode;
 
-	/* configure spi dual mode */
-	spi_cfg_dual.frequency = TEST_FREQ_HZ;
-	spi_cfg_dual.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
-		| SPI_WORD_SET(8) | SPI_LINES_DUAL;
-	spi_cfg_dual.slave = 0;
-	spi_cfg_dual.cs = NULL;
+	spi_dual_init();
 
 	spi_opcode = SPI_DUAL_FAST_READ_DATA;
 
@@ -351,7 +361,7 @@ void test_spi_dual_read(void)
  * - check and make sure spi quad mode is enabled
  * - write data using spi quad mode
  */
-void test_spi_quad_write(void)
+static void test_spi_quad_write(void)
 {
 	int ret;
 	uint8_t spi_status2;
@@ -527,7 +537,7 @@ void test_spi_quad_write(void)
  * - read data using spi quad mode
  * - check read buffer data whether correct
  */
-void test_spi_quad_read(void)
+ZTEST_USER(spi_quad, test_spi_quad_read)
 {
 	int ret;
 	uint8_t cnt = 0;
@@ -593,7 +603,7 @@ void test_spi_quad_read(void)
  * - read data using spi octal quad mode
  * - check read buffer data whether correct
  */
-void test_spi_octal_read(void)
+ZTEST_USER(spi_quad, test_spi_octal_read)
 {
 	int ret;
 
@@ -653,17 +663,40 @@ void test_spi_octal_read(void)
 	zassert_true(ret == 0, "Spi release failure: error %d", ret);
 }
 
-void test_main(void)
+
+void *spi_setup(void)
 {
-	ztest_test_suite(test_spi,
-			ztest_user_unit_test(test_spi_device),
-			ztest_user_unit_test(test_spi_sector_erase),
-			ztest_user_unit_test(test_spi_single_write),
-			ztest_user_unit_test(test_spi_single_read),
-			ztest_user_unit_test(test_spi_dual_read),
-			ztest_user_unit_test(test_spi_quad_write),
-			ztest_user_unit_test(test_spi_quad_read),
-			ztest_user_unit_test(test_spi_octal_read)
-			);
-	ztest_run_test_suite(test_spi);
+	spi_single_init();
+
+	return NULL;
 }
+
+void *spi_single_setup(void)
+{
+	spi_single_init();
+
+	/* The writing test goes
+	 * first berfore testing
+	 * the reading.
+	 */
+	test_spi_single_write();
+
+	return NULL;
+}
+
+void *spi_quad_setup(void)
+{
+	spi_dual_init();
+
+	/* The writing test goes
+	 * first berfore testing
+	 * the reading.
+	 */
+	test_spi_quad_write();
+
+	return NULL;
+}
+
+ZTEST_SUITE(spi, NULL, spi_single_setup, NULL, NULL, NULL);
+ZTEST_SUITE(spi_quad, NULL, spi_quad_setup, NULL, NULL, NULL);
+ZTEST_SUITE(spi_sector_erase, NULL, spi_setup, NULL, NULL, NULL);

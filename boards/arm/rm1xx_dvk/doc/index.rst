@@ -28,15 +28,13 @@ This development kit has the following features:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/RM186-DVK.png
-     :width: 500px
+.. figure:: img/RM186-DVK.jpg
      :align: center
      :alt: RM1xx development kit (DVK)
 
      RM1xx development kit (DVK) (Credit: Laird Connectivity)
 
 .. figure:: img/RM186-SM.jpg
-     :width: 185px
      :align: center
      :alt: RM1xx module
 

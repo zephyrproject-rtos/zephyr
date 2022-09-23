@@ -9,8 +9,7 @@ Overview
 The PAN1782 Evaluation Board is a development tool for the PAN1782 module
 which is based on the nRF52833 chipset from Nordic Semiconductor.
 
-.. figure:: pan1782_evaluation_board.png
-     :width: 400px
+.. figure:: pan1782_evaluation_board.jpg
      :align: center
      :alt: PAN1782 Evaluation Board
 

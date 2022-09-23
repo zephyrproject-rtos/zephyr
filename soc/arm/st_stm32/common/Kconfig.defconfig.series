@@ -33,21 +33,6 @@ config PINMUX_STM32
 	default y
 	depends on PINMUX
 
-config I2S_STM32
-	default y
-	depends on I2S
-
-config USB_DC_STM32
-	default y
-	depends on USB_DEVICE_DRIVER
-
-if DMA
-
-config DMA_STM32
-	default y
-
-endif # DMA
-
 config MEMC_STM32
 	default y
 	depends on MEMC

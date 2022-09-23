@@ -6,8 +6,7 @@ Actinius Icarus
 Overview
 ********
 
-.. figure:: img/Icarus_front.png
-     :width: 450px
+.. figure:: img/Icarus_front.jpg
      :align: center
      :alt: Icarus IoT Dev Board
 
@@ -42,8 +41,7 @@ Hardware
 
 The detailed information about the on-board hardware can be found at the `Icarus Product Website`_.
 
-.. figure:: img/Icarus_pinouts.png
-     :width: 450px
+.. figure:: img/Icarus_pinouts.jpg
      :align: center
      :alt: Icarus IoT Dev Board w/ Pinouts
 

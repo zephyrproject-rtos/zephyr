@@ -16,9 +16,6 @@ config ITE_IT8XXX2_INTC
 config RISCV_GP
 	default y
 
-config ITE_IT8XXX2_TIMER
-	default y
-
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
 

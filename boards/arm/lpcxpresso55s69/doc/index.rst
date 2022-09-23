@@ -12,8 +12,7 @@ architecture. The board includes a high performance onboard debug probe, audio
 subsystem, and accelerometer, with several options for adding off-the-shelf
 add-on boards for networking, sensors, displays, and other interfaces.
 
-.. image:: ./lpcxpresso55s69.jpg
-   :width: 720px
+.. image:: lpcxpresso55s69.jpg
    :align: center
    :alt: LPCXPRESSO55S69
 
@@ -48,8 +47,11 @@ For more information about the LPC55S69 SoC and LPCXPRESSO55S69 board, see:
 Supported Features
 ==================
 
-The lpcxpresso55s69 board configuration supports the following hardware
-features:
+NXP considers the LPCXpresso55S69 as the superset board for the LPC55xx
+series of MCUs.  This board is a focus for NXP's Full Platform Support for
+Zephyr, to better enable the entire LPC55xx series.  NXP prioritizes enabling
+this board with new support for Zephyr features.  The lpcxpresso55s69 board
+configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -90,6 +92,10 @@ features:
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | entropy;                            |
 |           |            | random                              |
++-----------+------------+-------------------------------------+
+| IAP       | on-chip    | flash programming                   |
++-----------+------------+-------------------------------------+
+| SDIF      | on-chip    | sdhc                                |
 +-----------+------------+-------------------------------------+
 
 Targets available
@@ -159,6 +165,20 @@ functionality of a pin.
 | PIO1_13 | I2S             | I2S DATAIN                 |
 +---------+-----------------+----------------------------+
 | PIO0_15 | SCT0_OUT2       | PWM                        |
++---------+-----------------+----------------------------+
+| PIO0_24 | SD0_D0          | SDHC                       |
++---------+-----------------+----------------------------+
+| PIO0_25 | SD0_D1          | SDHC                       |
++---------+-----------------+----------------------------+
+| PIO0_31 | SD0_D2          | SDHC                       |
++---------+-----------------+----------------------------+
+| PIO0_7  | SD0_CLK         | SDHC                       |
++---------+-----------------+----------------------------+
+| PIO0_8  | SD0_CMD         | SDHC                       |
++---------+-----------------+----------------------------+
+| PIO0_9  | SD0_POW_EN      | SDHC                       |
++---------+-----------------+----------------------------+
+| PIO1_0  | SD0_D3          | SDHC                       |
 +---------+-----------------+----------------------------+
 
 Memory mappings

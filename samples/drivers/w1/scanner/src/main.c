@@ -8,7 +8,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/w1.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 

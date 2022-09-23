@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(ipsp);
 /* Preventing log module registration in net_core.h */
 #define NET_LOG_ENABLED	0
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
 #include <errno.h>
 #include <stdio.h>

@@ -25,7 +25,7 @@
 #endif
 
 #define _BSD_SOURCE
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <stdlib.h>
 #include <errno.h>

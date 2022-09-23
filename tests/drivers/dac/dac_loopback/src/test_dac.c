@@ -14,7 +14,7 @@
 
 #include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/adc.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 /*
@@ -234,7 +234,9 @@ static int test_task_loopback(void)
 	return TC_PASS;
 }
 
-void test_dac_loopback(void)
+ZTEST(dac_loopback, test_dac_loopback)
 {
-	zassert_true(test_task_loopback() == TC_PASS, NULL);
+	zassert_true(test_task_loopback() == TC_PASS);
 }
+
+ZTEST_SUITE(dac_loopback, NULL, NULL, NULL, NULL, NULL);

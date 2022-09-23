@@ -146,4 +146,6 @@ source "drivers/gpio/Kconfig.mchp_mss"
 
 source "drivers/gpio/Kconfig.xmc4xxx"
 
+source "drivers/gpio/Kconfig.smartbond"
+
 endif # GPIO

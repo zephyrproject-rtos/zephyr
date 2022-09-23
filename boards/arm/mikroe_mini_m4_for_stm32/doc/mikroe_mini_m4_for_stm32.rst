@@ -50,7 +50,6 @@ The board can be flashed by using STLinkV2 with the following connections.
 +------------------+---------------------+
 
 .. image:: img/st-linkv2.jpg
-   :width: 720px
    :align: center
    :alt: ST-Link/V2
 

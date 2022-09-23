@@ -109,3 +109,6 @@ set_property(TARGET asm PROPERTY required)
 
 # Compiler flag for disabling pointer arithmetic warnings
 set_compiler_property(PROPERTY warning_no_pointer_arithmetic)
+
+# Compiler flags for disabling position independent code / executable
+set_compiler_property(PROPERTY no_position_independent)

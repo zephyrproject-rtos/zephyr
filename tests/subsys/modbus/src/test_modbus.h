@@ -47,7 +47,9 @@ void test_holding_reg(void);
 void test_diagnostic(void);
 void test_client_disable(void);
 
-int client_raw_cb(const int iface, const struct modbus_adu *adu);
-int server_raw_cb(const int iface, const struct modbus_adu *adu);
+int client_raw_cb(const int iface, const struct modbus_adu *adu,
+		void *user_data);
+int server_raw_cb(const int iface, const struct modbus_adu *adu,
+		void *user_data);
 
 #endif /* __TEST_MODBUS_H__ */

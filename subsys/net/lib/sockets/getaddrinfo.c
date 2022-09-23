@@ -20,8 +20,7 @@ LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/socket_offload.h>
 #include <zephyr/syscall_handler.h>
 
-#if defined(CONFIG_DNS_RESOLVER) || \
-	defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_DNS_RESOLVER) || defined(CONFIG_NET_IP)
 #define ANY_RESOLVER
 
 #if defined(CONFIG_DNS_RESOLVER_AI_MAX_ENTRIES)
@@ -320,7 +319,7 @@ out:
 
 #endif /* defined(CONFIG_DNS_RESOLVER) */
 
-#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_IP)
 static int try_resolve_literal_addr(const char *host, const char *service,
 				    const struct zsock_addrinfo *hints,
 				    struct zsock_addrinfo *res)
@@ -396,7 +395,7 @@ static int try_resolve_literal_addr(const char *host, const char *service,
 
 	return 0;
 }
-#endif /* defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4) */
+#endif /* CONFIG_NET_IP */
 
 int zsock_getaddrinfo(const char *host, const char *service,
 		      const struct zsock_addrinfo *hints,
@@ -415,7 +414,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
 	}
 #endif
 
-#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_IP)
 	/* Resolve literal address even if DNS is not available */
 	if (ret) {
 		ret = try_resolve_literal_addr(host, service, hints, *res);

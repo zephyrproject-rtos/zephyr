@@ -8,7 +8,7 @@
  * @file Sample app to demonstrate PWM-based servomotor control
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/pwm.h>

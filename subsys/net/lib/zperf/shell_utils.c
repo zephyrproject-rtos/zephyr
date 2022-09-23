@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include "shell_utils.h"
 

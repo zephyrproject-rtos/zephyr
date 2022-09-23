@@ -20,9 +20,18 @@
  * @{
  * @}
  */
+
+/**
+ * @brief Device Model
+ * @defgroup device_model Device Model
+ * @{
+ * @}
+ */
+
 /**
  * @brief Device Model APIs
- * @defgroup device_model Device Model APIs
+ * @defgroup device_model_api Device Model APIs
+ * @ingroup device_model
  * @{
  */
 

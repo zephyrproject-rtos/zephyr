@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 static void swap64(uint64_t *a, uint64_t *b)
 {

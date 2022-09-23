@@ -423,6 +423,9 @@ void *isotp_implementation_setup(void)
 	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	zassert_equal(ret, 0, "Configuring loopback mode failed (%d)", ret);
 
+	ret = can_start(can_dev);
+	zassert_equal(ret, 0, "Failed to start CAN controller [%d]", ret);
+
 	return NULL;
 }
 

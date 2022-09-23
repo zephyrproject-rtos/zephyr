@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include <mgmt/mgmt.h>
 #include <smp/smp.h>
+#include "smp_internal.h"
 
 void zephyr_smp_reassembly_init(struct zephyr_smp_transport *zst)
 {

@@ -144,4 +144,11 @@ config HWINFO_GECKO
 	help
 	  Enable Silabs GECKO hwinfo driver.
 
+config HWINFO_ANDES
+	bool "Andes system ID"
+	default y
+	depends on SOC_SERIES_RISCV_ANDES_V5
+	help
+	  Enable Andes hwinfo driver
+
 endif

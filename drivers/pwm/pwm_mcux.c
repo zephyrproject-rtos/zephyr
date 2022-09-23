@@ -26,6 +26,8 @@ struct pwm_mcux_config {
 	clock_control_subsys_t clock_subsys;
 	pwm_clock_prescale_t prescale;
 	pwm_mode_t mode;
+	bool run_wait;
+	bool run_debug;
 	const struct pinctrl_dev_config *pincfg;
 };
 
@@ -41,15 +43,11 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	const struct pwm_mcux_config *config = dev->config;
 	struct pwm_mcux_data *data = dev->data;
 	uint8_t duty_cycle;
+	pwm_level_select_t level;
 
 	if (channel >= CHANNEL_COUNT) {
 		LOG_ERR("Invalid channel");
 		return -EINVAL;
-	}
-
-	if (flags) {
-		/* PWM polarity not supported (yet?) */
-		return -ENOTSUP;
 	}
 
 	if (period_cycles == 0) {
@@ -67,8 +65,15 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 
 	duty_cycle = 100 * pulse_cycles / period_cycles;
 
+	if (flags & PWM_POLARITY_INVERTED) {
+		level = kPWM_LowTrue;
+	} else {
+		level = kPWM_HighTrue;
+	}
+
 	/* FIXME: Force re-setup even for duty-cycle update */
-	if (period_cycles != data->period_cycles[channel]) {
+	if (period_cycles != data->period_cycles[channel]
+	    || level != data->channel[channel].level) {
 		uint32_t clock_freq;
 		uint32_t pwm_freq;
 		status_t status;
@@ -92,6 +97,7 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		PWM_StopTimer(config->base, 1U << config->index);
 
 		data->channel[channel].dutyCyclePercent = duty_cycle;
+		data->channel[channel].level = level;
 
 		status = PWM_SetupPwm(config->base, config->index,
 				      &data->channel[0], CHANNEL_COUNT,
@@ -151,6 +157,8 @@ static int pwm_mcux_init(const struct device *dev)
 	pwm_config.prescale = config->prescale;
 	pwm_config.reloadLogic = kPWM_ReloadPwmFullCycle;
 	pwm_config.clockSource = kPWM_BusClock;
+	pwm_config.enableDebugMode = config->run_debug;
+	pwm_config.enableWait = config->run_wait;
 
 	status = PWM_Init(config->base, config->index, &pwm_config);
 	if (status != kStatus_Success) {
@@ -187,6 +195,8 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 		.prescale = kPWM_Prescale_Divide_128,			  \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.run_wait = DT_INST_PROP(n, run_in_wait),		  \
+		.run_debug = DT_INST_PROP(n, run_in_debug),		  \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		  \
 	};								  \
 									  \

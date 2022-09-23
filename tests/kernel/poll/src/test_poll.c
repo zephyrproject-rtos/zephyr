@@ -100,11 +100,11 @@ ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
 	 * implementation
 	 */
 
-	zassert_equal(k_poll(events, INT_MAX, K_NO_WAIT), -EINVAL, NULL);
-	zassert_equal(k_poll(events, 4096, K_NO_WAIT), -ENOMEM, NULL);
+	zassert_equal(k_poll(events, INT_MAX, K_NO_WAIT), -EINVAL);
+	zassert_equal(k_poll(events, 4096, K_NO_WAIT), -ENOMEM);
 
 	/* Allow zero events */
-	zassert_equal(k_poll(events, 0, K_NO_WAIT), -EAGAIN, NULL);
+	zassert_equal(k_poll(events, 0, K_NO_WAIT), -EAGAIN);
 
 	struct k_poll_event bad_events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
@@ -126,9 +126,9 @@ ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
 #endif /* CONFIG_USERSPACE */
 
 	/* test polling events that are already ready */
-	zassert_false(k_fifo_alloc_put(&no_wait_fifo, &msg), NULL);
+	zassert_false(k_fifo_alloc_put(&no_wait_fifo, &msg));
 	k_poll_signal_raise(&no_wait_signal, SIGNAL_RESULT);
-	zassert_false(k_msgq_put(mq, msgq_msg, K_NO_WAIT), NULL);
+	zassert_false(k_msgq_put(mq, msgq_msg, K_NO_WAIT));
 
 	zassert_equal(k_poll(events, ARRAY_SIZE(events), K_NO_WAIT), 0, "");
 
@@ -149,7 +149,7 @@ ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
 	zassert_equal(events[3].state, K_POLL_STATE_NOT_READY, "");
 
 	zassert_equal(events[4].state, K_POLL_STATE_MSGQ_DATA_AVAILABLE, "");
-	zassert_false(k_msgq_get(mq, msgq_recv_buf, K_NO_WAIT), NULL);
+	zassert_false(k_msgq_get(mq, msgq_recv_buf, K_NO_WAIT));
 	zassert_false(memcmp(msgq_msg, msgq_recv_buf, MSGQ_MSG_SIZE), "");
 
 	/* verify events are not ready anymore (user has to clear them first) */
@@ -785,7 +785,7 @@ ZTEST(poll_api_1cpu, test_poll_zero_events)
 	k_poll_event_init(&event, K_POLL_TYPE_SEM_AVAILABLE,
 			  K_POLL_MODE_NOTIFY_ONLY, &zero_events_sem);
 
-	zassert_equal(k_poll(&event, 0, K_MSEC(50)), -EAGAIN, NULL);
+	zassert_equal(k_poll(&event, 0, K_MSEC(50)), -EAGAIN);
 }
 
 /* subthread entry */

@@ -323,7 +323,7 @@ static void test_time32_overflow(void)
 		      "final errno state bad");
 }
 
-void test_s64(void)
+ZTEST(timeutil_api, test_s64)
 {
 	if (sizeof(time_t) < 8U) {
 		test_time32_errno_clear();

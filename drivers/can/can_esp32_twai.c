@@ -97,6 +97,8 @@ static int can_esp32_twai_init(const struct device *dev)
 
 const struct can_driver_api can_esp32_twai_driver_api = {
 	.get_capabilities = can_sja1000_get_capabilities,
+	.start = can_sja1000_start,
+	.stop = can_sja1000_stop,
 	.set_mode = can_sja1000_set_mode,
 	.set_timing = can_sja1000_set_timing,
 	.send = can_sja1000_send,

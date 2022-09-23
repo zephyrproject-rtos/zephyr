@@ -28,9 +28,8 @@ set_compiler_property(PROPERTY optimization_size  -Os)
 # GCC Option standard warning base in Zephyr
 check_set_compiler_property(PROPERTY warning_base
     -Wall
-    -Wformat
-    -Wformat-security
-    -Wno-format-zero-length
+    "SHELL:-Wformat -Wformat-security"
+    "SHELL:-Wformat -Wno-format-zero-length"
     -Wno-main
 )
 
@@ -192,3 +191,9 @@ endif()
 
 # Compiler flag for disabling pointer arithmetic warnings
 set_compiler_property(PROPERTY warning_no_pointer_arithmetic "-Wno-pointer-arith")
+
+#Compiler flags for disabling position independent code / executable
+set_compiler_property(PROPERTY no_position_independent
+                      -fno-pic
+                      -fno-pie
+)

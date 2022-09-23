@@ -672,7 +672,7 @@ static int qmspi_transceive(const struct device *dev,
 	size_t nb = 0;
 	int err = 0;
 
-	spi_context_lock(&qdata->ctx, false, NULL, config);
+	spi_context_lock(&qdata->ctx, false, NULL, NULL, config);
 
 	err = qmspi_configure(dev, config);
 	if (err != 0) {
@@ -942,11 +942,12 @@ static int qmspi_transceive_async(const struct device *dev,
 				  const struct spi_config *config,
 				  const struct spi_buf_set *tx_bufs,
 				  const struct spi_buf_set *rx_bufs,
-				  struct k_poll_signal *async)
+				  spi_callback_t cb,
+				  void *userdata)
 {
 	struct spi_qmspi_data *data = dev->data;
 
-	spi_context_lock(&data->ctx, true, async, config);
+	spi_context_lock(&data->ctx, true, cb, userdata, config);
 
 	int ret = qmspi_configure(dev, config);
 
@@ -1021,7 +1022,7 @@ void qmspi_xec_isr(const struct device *dev)
 		data->qstatus |= BIT(7);
 		xstatus = (int)qstatus;
 		spi_context_cs_control(&data->ctx, false);
-		spi_context_complete(&data->ctx, xstatus);
+		spi_context_complete(&data->ctx, dev, xstatus);
 	}
 
 	if (data->xfr_flags & BIT(0)) { /* is TX ? */
@@ -1066,7 +1067,7 @@ void qmspi_xec_isr(const struct device *dev)
 		spi_context_cs_control(&data->ctx, false);
 	}
 
-	spi_context_complete(&data->ctx, xstatus);
+	spi_context_complete(&data->ctx, dev, xstatus);
 
 	data->in_isr = 0;
 #endif

@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/ztest.h>
 
@@ -27,7 +27,7 @@ ZTEST(no_multithreading, test_k_busy_wait)
 
 	int64_t diff = k_uptime_get() - now;
 
-	zassert_within(diff, 10, 2, NULL);
+	zassert_within(diff, 10, 2);
 }
 
 static void timeout_handler(struct k_timer *timer)

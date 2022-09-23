@@ -19,21 +19,15 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/toolchain.h>
 
-#define IEEE802154_MTU		     127
-#define IEEE802154_MIN_LENGTH	     3
-/*
- * See IEEE 802.15.4-2006, section 7.2.1.4 - all further references
- * refer to IEEE 802.15.4-2006 unless otherwise specified.
+/* All specification references in this file refer to IEEE 802.15.4-2006
+ * unless otherwise noted.
  */
-#define IEEE802154_BROADCAST_ADDRESS 0xFFFF
-#define IEEE802154_BROADCAST_PAN_ID  0xFFFF
+
+#define IEEE802154_MIN_LENGTH	     3
 /* ACK packet size is the minimum size, see section 7.2.2.3 */
 #define IEEE802154_ACK_PKT_LENGTH    IEEE802154_MIN_LENGTH
-#define IEEE802154_MFR_LENGTH	     2
 
 #define IEEE802154_FCF_SEQ_LENGTH     3
-#define IEEE802154_EXT_ADDR_LENGTH    8
-#define IEEE802154_SHORT_ADDR_LENGTH  2
 #define IEEE802154_SIMPLE_ADDR_LENGTH 1
 #define IEEE802154_PAN_ID_LENGTH      2
 
@@ -481,10 +475,11 @@ struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(uint8_t *buf, uint8_t **p_
 
 bool ieee802154_validate_frame(uint8_t *buf, uint8_t length, struct ieee802154_mpdu *mpdu);
 
-uint8_t ieee802154_compute_header_and_authtag_size(struct net_if *iface, struct net_linkaddr *dst);
+uint8_t ieee802154_compute_header_and_authtag_size(struct net_if *iface, struct net_linkaddr *dst,
+						   struct net_linkaddr *src);
 
 bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_linkaddr *dst,
-				  struct net_buf *frag, uint8_t hdr_size);
+				  struct net_linkaddr *src, struct net_buf *buf, uint8_t hdr_len);
 
 struct net_pkt *ieee802154_create_mac_cmd_frame(struct net_if *iface, enum ieee802154_cfi type,
 						struct ieee802154_frame_params *params);

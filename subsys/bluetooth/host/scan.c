@@ -907,8 +907,8 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 			struct bt_le_per_adv_sync_term_info term_info;
 
 			/* Terminate the pending PA sync and notify app */
-			term_info.addr = &pending_per_adv_sync->addr;
-			term_info.sid = pending_per_adv_sync->sid;
+			term_info.addr = &evt->adv_addr;
+			term_info.sid = evt->sid;
 			term_info.reason = unexpected_evt ? BT_HCI_ERR_UNSPECIFIED : evt->status;
 
 			/* Deleting before callback, so the caller will be able

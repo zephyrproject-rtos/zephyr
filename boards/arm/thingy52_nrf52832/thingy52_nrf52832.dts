@@ -76,6 +76,7 @@
 		regulator-name = "vdd-pwr-ctrl";
 		enable-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
+		startup-delay-us = <1000>;
 	};
 
 	spk_pwr: spk-pwr-ctrl {
@@ -88,18 +89,21 @@
 		compatible = "regulator-fixed";
 		regulator-name = "mpu-pwr-ctrl";
 		enable-gpios = <&sx1509b 8 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
 	};
 
 	mic_pwr: mic-pwr-ctrl {
 		compatible = "regulator-fixed";
 		regulator-name = "mic-pwr-ctrl";
 		enable-gpios = <&sx1509b 9 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
 	};
 
 	ccs_pwr: ccs-pwr-ctrl {
 		compatible = "regulator-fixed";
 		regulator-name = "ccs-pwr-ctrl";
 		enable-gpios = <&sx1509b 10 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
 	};
 };
 

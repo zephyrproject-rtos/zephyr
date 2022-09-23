@@ -9,8 +9,7 @@ Overview
 The nRF9160 innblue22 is a cellular IoT sensor development board, which
 is based on the nRF9160 SiP, and features NB-IoT and LTE-M connectivity.
 
-.. figure:: img/nrf9160_innblue22.png
-	 :width: 1024px
+.. figure:: img/nrf9160_innblue22.jpg
 	 :align: center
 	 :alt: nRF9160 innblue22
 

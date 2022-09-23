@@ -15,7 +15,7 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/led/lp503x.h>
 #include <zephyr/device.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define LOG_LEVEL CONFIG_LED_LOG_LEVEL
 #include <zephyr/logging/log.h>

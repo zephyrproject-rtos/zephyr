@@ -11,7 +11,6 @@ The ICE-V Wireless is a combined ESP32C3 and iCE40 FPGA board.
 See the `ICE-V Wireless Github Project`_ for details.
 
 .. figure:: img/icev_wireless.jpg
-   :width: 400px
    :align: center
    :alt: ICE-V Wireless
 
@@ -74,7 +73,6 @@ the iCE40 FPGA. Note that several of the iCE40 pins brought out to the PMOD
 connectors are capable of operating as differential pairs.
 
 .. figure:: img/icev_wireless_back.jpg
-   :width: 400px
    :align: center
    :alt: ICE-V Wireless (Back)
 
@@ -88,7 +86,6 @@ For PMOD details, please refer to the `PMOD Specification`_ and the image
 below.
 
 .. figure:: img/icev_wireless_pinout.jpg
-   :width: 400px
    :align: center
    :alt: ICE-V Wireless Pinout
 

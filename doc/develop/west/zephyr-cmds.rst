@@ -27,6 +27,23 @@ Additional help about the formatting options can be found by running::
 
   west boards -h
 
+.. _west-completion:
+
+Shell completion scripts: ``west completion``
+*********************************************
+
+The ``completion`` extension command outputs shell completion scripts that can
+then be used directly to enable shell completion for the supported shells.
+
+It currently supports the following shells:
+
+- bash
+- zsh
+
+Additional instructions are available in the command's help::
+
+  west help completion
+
 .. _west-zephyr-export:
 
 Installing CMake packages: ``west zephyr-export``

@@ -12,6 +12,12 @@ tests:
   drivers.w1.ds2484:
     depends_on: arduino_i2c
     extra_args: DTC_OVERLAY_FILE=ds2484.overlay
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nucleo_g0b1re nrf52840dk_nrf52840
     harness_config:
       fixture: w1_ds2484_idle
+  drivers.w1.ds2485:
+    depends_on: arduino_i2c
+    extra_args: DTC_OVERLAY_FILE=ds2485.overlay
+    platform_allow: nucleo_g0b1re nrf52840dk_nrf52840
+    harness_config:
+      fixture: w1_ds2485_idle

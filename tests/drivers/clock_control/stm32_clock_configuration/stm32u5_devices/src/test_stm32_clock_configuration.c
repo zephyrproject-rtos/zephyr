@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(test);
 #define DT_NO_CLOCK 0xFFFFU
 
 /* Not device related, but keep it to ensure core clock config is correct */
-static void test_sysclk_freq(void)
+ZTEST(stm32u5_devices_clocks, test_sysclk_freq)
 {
 	uint32_t soc_sys_clk_freq;
 
@@ -33,7 +33,7 @@ static void test_sysclk_freq(void)
 			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, soc_sys_clk_freq);
 }
 
-static void test_spi_clk_config(void)
+ZTEST(stm32u5_devices_clocks, test_spi_clk_config)
 {
 	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_NODELABEL(spi1));
 
@@ -108,12 +108,4 @@ static void test_spi_clk_config(void)
 	/* Test clock_off(domain clk) */
 	/* Not supported today */
 }
-
-void test_main(void)
-{
-	ztest_test_suite(test_stm32u5_devices_clocks,
-		ztest_unit_test(test_sysclk_freq),
-		ztest_unit_test(test_spi_clk_config)
-			 );
-	ztest_run_test_suite(test_stm32u5_devices_clocks);
-}
+ZTEST_SUITE(stm32u5_devices_clocks, NULL, NULL, NULL, NULL, NULL);

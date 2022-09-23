@@ -47,14 +47,4 @@ config BT_HCI_VS_EXT
 
 endif # BT
 
-if WIFI
-
-config SPI
-	default y
-
-config WIFI_ESWIFI
-	default y
-
-endif # WIFI
-
 endif # BOARD_B_L4S5I_IOT01A

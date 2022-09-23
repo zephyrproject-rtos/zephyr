@@ -9,8 +9,7 @@
 
 extern void test_mbedtls(void);
 
-/**test case main entry*/
-void test_main(void)
+void *mbedtls_fn_setup(void)
 {
 #ifdef CONFIG_USERSPACE
 	int ret = k_mem_domain_add_partition(&k_mem_domain_default,
@@ -20,7 +19,8 @@ void test_main(void)
 		k_oops();
 	}
 #endif
-	ztest_test_suite(test_mbedtls_fn,
-		ztest_user_unit_test(test_mbedtls));
-	ztest_run_test_suite(test_mbedtls_fn);
+
+	return NULL;
 }
+
+ZTEST_SUITE(mbedtls_fn, NULL, mbedtls_fn_setup, NULL, NULL, NULL);

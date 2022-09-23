@@ -7,7 +7,7 @@
 
 #include "settings_test.h"
 
-void test_config_commit(void)
+ZTEST(settings_config, test_config_commit)
 {
 	char name[80];
 	int rc;

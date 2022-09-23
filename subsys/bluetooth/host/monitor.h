@@ -97,7 +97,7 @@ static inline uint8_t bt_monitor_opcode(struct net_buf *buf)
 
 void bt_monitor_send(uint16_t opcode, const void *data, size_t len);
 
-void bt_monitor_new_index(uint8_t type, uint8_t bus, bt_addr_t *addr,
+void bt_monitor_new_index(uint8_t type, uint8_t bus, const bt_addr_t *addr,
 			  const char *name);
 
 #else /* !CONFIG_BT_MONITOR */

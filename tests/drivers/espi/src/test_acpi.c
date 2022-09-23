@@ -8,7 +8,7 @@
 #include <zephyr/drivers/espi_emul.h>
 #include <zephyr/ztest.h>
 
-static void test_acpi_shared_memory(void)
+ZTEST(espi, test_acpi_shared_memory)
 {
 	const struct device *const espi_dev = DEVICE_DT_GET(DT_NODELABEL(espi0));
 	struct espi_cfg cfg = {
@@ -18,7 +18,7 @@ static void test_acpi_shared_memory(void)
 
 	zassert_true(device_is_ready(espi_dev), "Device is not ready");
 
-	zassert_ok(espi_config(espi_dev, &cfg), NULL);
+	zassert_ok(espi_config(espi_dev, &cfg));
 
 	host_shm = emul_espi_host_get_acpi_shm(espi_dev);
 	zassert_not_equal(host_shm, 0, NULL);
@@ -27,12 +27,7 @@ static void test_acpi_shared_memory(void)
 					 (uint32_t *)&peripheral_shm),
 		   NULL);
 
-	zassert_equal(host_shm, peripheral_shm, NULL);
+	zassert_equal(host_shm, peripheral_shm);
 }
 
-ztest_test_suite(acpi, ztest_unit_test(test_acpi_shared_memory));
-
-void test_main(void)
-{
-	ztest_run_test_suite(acpi);
-}
+ZTEST_SUITE(espi, NULL, NULL, NULL, NULL, NULL);

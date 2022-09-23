@@ -19,8 +19,7 @@ and K82 MCUs.
   running an open source bootloader, offers options for serial communication,
   flash programming, and run-control debugging
 
-.. image:: ./frdm_k82f.jpg
-   :width: 720px
+.. image:: frdm_k82f.jpg
    :align: center
    :alt: FRDM-K82F
 
@@ -59,7 +58,12 @@ For more information about the K82F SoC and FRDM-K82F board:
 Supported Features
 ==================
 
-The frdm_k82f board configuration supports the following hardware features:
+The frdm_k82f board configuration supports the hardware features listed
+below.  For additional features not yet supported, please also refer to the
+:ref:`frdm_k64f`, which is the superset board in NXP's Kinetis K series.
+NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+Zephyr.  Therefore, the frdm_k64f board may have additional features
+already supported, which can also be re-used on this frdm_k82f board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -97,6 +101,8 @@ The frdm_k82f board configuration supports the following hardware features:
 | WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
+| FTFA      | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -242,7 +248,7 @@ should see the following message in the terminal:
    https://os.mbed.com/blog/entry/DAPLink-bootloader-update/
 
 .. _OpenSDA DAPLink FRDM-K82F Firmware:
-   https://www.nxp.com/assets/downloads/data/en/snippets-boot-code-headers-monitors/k20dx_frdmk82f_if_crc_legacy_0x8000.bin
+   https://www.nxp.com/downloads/en/snippets-boot-code-headers-monitors/k20dx_frdmk82f_if_crc_legacy_0x8000.bin
 
 .. _OpenSDA J-Link Firmware for FRDM-K82F:
    https://www.segger.com/downloads/jlink/OpenSDA_FRDM-K82F

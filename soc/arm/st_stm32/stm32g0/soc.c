@@ -52,16 +52,16 @@ static void stm32g0_disable_dead_battery(void)
 #endif /* SYSCFG_CFGR1_UCPD2_STROBE */
 
 	for (int n = 0; n < ARRAY_SIZE(addr_inst); n++) {
-#if defined(SYSCFG_CFGR1_UCPD1_STROBE)
+#if defined(SYSCFG_CFGR1_UCPD1_STROBE) && defined(UCPD1_BASE)
 		if (addr_inst[n] == UCPD1_BASE) {
 			strobe &= ~LL_SYSCFG_UCPD1_STROBE;
 		}
-#endif /* SYSCFG_CFGR1_UCPD1_STROBE */
-#if defined(SYSCFG_CFGR1_UCPD2_STROBE)
+#endif /* SYSCFG_CFGR1_UCPD1_STROBE && UCPD1_BASE */
+#if defined(SYSCFG_CFGR1_UCPD2_STROBE) && defined(UCPD2_BASE)
 		if (addr_inst[n] == UCPD2_BASE) {
 			strobe &= ~LL_SYSCFG_UCPD2_STROBE;
 		}
-#endif /* SYSCFG_CFGR1_UCPD2_STROBE */
+#endif /* SYSCFG_CFGR1_UCPD2_STROBE && UCPD2_BASE */
 	}
 
 	if (strobe != 0) {

@@ -208,6 +208,10 @@ zephyr_udc0: &usb {
 	status = "okay";
 };
 
+&die_temp {
+	status = "okay";
+};
+
 &dac1 {
 	status = "okay";
 	/* dac output pins(pa4,pa5,pa6) might conflict with spi1 pins */

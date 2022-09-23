@@ -64,8 +64,9 @@ if(NOT (REVISION_SEPARATOR_INDEX EQUAL -1))
   string(SUBSTRING ${BOARD} 0 ${REVISION_SEPARATOR_INDEX} BOARD)
 endif()
 
-if(DEFINED ENV{ZEPHYR_BOARD_ALIASES})
-  include($ENV{ZEPHYR_BOARD_ALIASES})
+zephyr_get(ZEPHYR_BOARD_ALIASES)
+if(DEFINED ZEPHYR_BOARD_ALIASES)
+  include(${ZEPHYR_BOARD_ALIASES})
   if(${BOARD}_BOARD_ALIAS)
     set(BOARD_ALIAS ${BOARD} CACHE STRING "Board alias, provided by user")
     set(BOARD ${${BOARD}_BOARD_ALIAS})
@@ -102,6 +103,12 @@ Hints:
     if(BOARD_HIDDEN_DIR)
       message("Board alias ${BOARD_ALIAS} is hiding the real board of same name")
     endif()
+  endif()
+  if(BOARD_DIR AND NOT EXISTS ${BOARD_DIR}/${BOARD}_defconfig)
+    message(WARNING "BOARD_DIR: ${BOARD_DIR} has been moved or deleted. "
+                    "Trying to find new location."
+    )
+    set(BOARD_DIR BOARD_DIR-NOTFOUND CACHE PATH "Path to a file." FORCE)
   endif()
   find_path(BOARD_DIR
     NAMES ${BOARD}_defconfig

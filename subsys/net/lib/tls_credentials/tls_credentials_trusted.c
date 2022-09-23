@@ -5,9 +5,9 @@
  */
 #include <string.h>
 
-#include <init.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 #include <psa/protected_storage.h>
 

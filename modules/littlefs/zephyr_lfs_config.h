@@ -46,22 +46,22 @@ extern "C"
 /* Logging functions when using LittleFS with Zephyr. */
 #ifndef LFS_TRACE
 #ifdef LFS_YES_TRACE
-#define LFS_TRACE(fmt, ...) LOG_DBG("%s:%d:trace: " fmt, __FILE__, __LINE__, __VA_ARGS__)
+#define LFS_TRACE(fmt, ...) LOG_DBG("%s:%d:trace: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
 #else
 #define LFS_TRACE(...)
 #endif
 #endif
 
 #ifndef LFS_DEBUG
-#define LFS_DEBUG(fmt, ...) LOG_DBG("%s:%d: " fmt, __FILE__, __LINE__, __VA_ARGS__)
+#define LFS_DEBUG(fmt, ...) LOG_DBG("%s:%d: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #ifndef LFS_WARN
-#define LFS_WARN(fmt, ...) LOG_WRN("%s:%d: " fmt, __FILE__, __LINE__, __VA_ARGS__)
+#define LFS_WARN(fmt, ...) LOG_WRN("%s:%d: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #ifndef LFS_ERROR
-#define LFS_ERROR(fmt, ...) LOG_ERR("%s:%d: " fmt, __FILE__, __LINE__, __VA_ARGS__)
+#define LFS_ERROR(fmt, ...) LOG_ERR("%s:%d: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
 #endif
 
 /* Runtime assertions */

@@ -17,3 +17,7 @@
 };
 
 #include "nxp_lpc55S1x_common.dtsi"
+
+&iap {
+	status = "okay";
+};

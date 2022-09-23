@@ -121,7 +121,7 @@ static void spi_litespi_xfer(const struct device *dev,
 			ctx->rx_buf[i] = read_data;
 		}
 	}
-	spi_context_complete(ctx, 0);
+	spi_context_complete(ctx, dev, 0);
 }
 
 /* API Functions */

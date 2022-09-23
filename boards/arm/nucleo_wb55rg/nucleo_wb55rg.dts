@@ -85,6 +85,10 @@
 	};
 };
 
+&die_temp {
+	status = "okay";
+};
+
 &clk_hse {
 	status = "okay";
 };

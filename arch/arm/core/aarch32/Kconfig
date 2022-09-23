@@ -22,6 +22,7 @@ config CPU_CORTEX_M
 	select ARCH_HAS_TIMING_FUNCTIONS if CPU_CORTEX_M_HAS_DWT
 	select ARCH_SUPPORTS_ARCH_HW_INIT
 	select ARCH_HAS_SUSPEND_TO_RAM
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	imply XIP
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
@@ -34,6 +35,7 @@ config CPU_AARCH32_CORTEX_R
 	select HAS_FLASH_LOAD_OFFSET
 	select ARCH_HAS_USERSPACE if ARM_MPU
 	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	help
 	  This option signifies the use of a CPU of the Cortex-R family.
 

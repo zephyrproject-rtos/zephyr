@@ -6,7 +6,7 @@
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/adc/adc_emul.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #define ADC_DEVICE_NODE		DT_INST(0, zephyr_adc_emul)

@@ -77,7 +77,7 @@ static int net_canbus_setsockopt(const struct device *dev, void *obj, int level,
 		return -1;
 	}
 
-	net_context_set_filter_id(ctx, ret);
+	net_context_set_can_filter_id(ctx, ret);
 
 	return 0;
 }

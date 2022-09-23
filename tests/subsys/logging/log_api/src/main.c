@@ -68,7 +68,7 @@ static void flush_log(void)
 {
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
 		while (log_data_pending()) {
-			k_msleep(100);
+			k_msleep(10);
 		}
 		k_msleep(100);
 	} else {
@@ -83,7 +83,9 @@ static void log_setup(bool backend2_enable)
 	zassert_false(in_panic, "Logger in panic state.");
 
 	log_core_init();
-	log_init();
+	if (!IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		log_init();
+	}
 
 	zassert_equal(0, log_set_timestamp_func(timestamp_get, 0),
 		      "Expects successful timestamp function setting.");
@@ -125,7 +127,7 @@ static void process_and_validate(bool backend2_enable, bool panic)
 	mock_log_frontend_validate(panic);
 
 	if (NO_BACKENDS) {
-		zassert_equal(log_backend_count_get(), 0, NULL);
+		zassert_equal(log_backend_count_get(), 0);
 		return;
 	}
 
@@ -691,6 +693,29 @@ ZTEST(test_log_api, test_log_printk)
 	printk("test %d", 101);
 
 	process_and_validate(false, true);
+}
+
+ZTEST(test_log_api, test_log_printk_vs_raw)
+{
+	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
+
+	log_setup(false);
+
+	mock_log_frontend_record(0, LOG_LEVEL_INTERNAL_RAW_STRING, "test 100\n");
+	mock_log_backend_record(&backend1, 0,
+				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				exp_timestamp++, "test 100\n");
+	LOG_PRINTK("test %d\n", 100);
+
+
+	mock_log_frontend_record(1, LOG_LEVEL_INTERNAL_RAW_STRING, "test 100\n");
+	mock_log_backend_record(&backend1, 1,
+				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				exp_timestamp++, "test 100\n");
+	LOG_RAW("test %d\n", 100);
+
+
+	process_and_validate(false, false);
 }
 
 ZTEST(test_log_api, test_log_arg_evaluation)

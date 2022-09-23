@@ -14,11 +14,18 @@ include(kconfig)
 #   SOURCES: list of source files, default main.c
 #   INCLUDE: list of additional include paths relative to ZEPHYR_BASE
 
-separate_arguments(  EXTRA_CFLAGS_AS_LIST UNIX_COMMAND ${EXTRA_CFLAGS})
-separate_arguments(  EXTRA_AFLAGS_AS_LIST UNIX_COMMAND ${EXTRA_AFLAGS})
-separate_arguments(EXTRA_CPPFLAGS_AS_LIST UNIX_COMMAND ${EXTRA_CPPFLAGS})
-separate_arguments(EXTRA_CXXFLAGS_AS_LIST UNIX_COMMAND ${EXTRA_CXXFLAGS})
-separate_arguments(EXTRA_LDFLAGS_AS_LIST UNIX_COMMAND  ${EXTRA_LDFLAGS})
+foreach(extra_flags EXTRA_CPPFLAGS EXTRA_LDFLAGS EXTRA_CFLAGS EXTRA_CXXFLAGS EXTRA_AFLAGS)
+  list(LENGTH ${extra_flags} flags_length)
+  if(flags_length LESS_EQUAL 1)
+    # A length of zero means no argument.
+    # A length of one means a single argument or a space separated list was provided.
+    # In both cases, it is safe to do a separate_arguments on the argument.
+    separate_arguments(${extra_flags}_AS_LIST UNIX_COMMAND ${${extra_flags}})
+  else()
+    # Already a proper list, no conversion needed.
+    set(${extra_flags}_AS_LIST "${${extra_flags}}")
+  endif()
+endforeach()
 
 set(ENV_ZEPHYR_BASE $ENV{ZEPHYR_BASE})
 # This add support for old style boilerplate include.
@@ -31,10 +38,12 @@ if(NOT SOURCES)
 endif()
 
 add_executable(testbinary ${SOURCES})
+add_library(test_interface INTERFACE)
+target_link_libraries(testbinary PRIVATE test_interface)
 
 set(KOBJ_TYPES_H_TARGET kobj_types_h_target)
 include(${ZEPHYR_BASE}/cmake/kobj.cmake)
-add_dependencies(testbinary ${KOBJ_TYPES_H_TARGET})
+add_dependencies(test_interface ${KOBJ_TYPES_H_TARGET})
 gen_kobj(KOBJ_GEN_DIR)
 
 list(APPEND INCLUDE
@@ -60,7 +69,7 @@ endif(M64_MODE)
 
 endif()
 
-target_compile_options(testbinary PRIVATE
+target_compile_options(test_interface INTERFACE
   -imacros ${AUTOCONF_H}
   -Wall
   -I ${KOBJ_GEN_DIR}
@@ -79,7 +88,7 @@ target_link_libraries(testbinary PRIVATE
   )
 
 if(COVERAGE)
-  target_compile_options(testbinary PRIVATE
+  target_compile_options(test_interface INTERFACE
     -fno-default-inline
     -fno-inline
     -fprofile-arcs
@@ -109,10 +118,10 @@ else()
       )
 endif()
 
-target_compile_definitions(testbinary PRIVATE ZTEST_UNITTEST)
+target_compile_definitions(test_interface INTERFACE ZTEST_UNITTEST)
 
 foreach(inc ${INCLUDE})
-  target_include_directories(testbinary PRIVATE ${ZEPHYR_BASE}/${inc})
+  target_include_directories(test_interface INTERFACE ${ZEPHYR_BASE}/${inc})
 endforeach()
 
 find_program(VALGRIND_PROGRAM valgrind)

@@ -11,6 +11,7 @@
 
 #define HDR_LEN sizeof(uint32_t)
 #define TLEN(len) ROUND_UP(HDR_LEN + len, sizeof(uint32_t))
+#define STRESS_TIMEOUT_MS ((CONFIG_SYS_CLOCK_TICKS_PER_SEC < 10000) ? 1000 : 15000)
 
 /* The buffer size itself would be 199 bytes.
  * 212 - sizeof(struct spsc_pbuf) - 1 = 199.
@@ -38,28 +39,28 @@ static void test_spsc_pbuf_flags(uint32_t flags)
 	memset(memory_area, 0, sizeof(memory_area));
 	ib = spsc_pbuf_init(memory_area, sizeof(memory_area), flags);
 	zassert_equal_ptr(ib, memory_area, NULL);
-	zassert_equal(spsc_pbuf_capacity(ib), capacity, NULL);
+	zassert_equal(spsc_pbuf_capacity(ib), capacity);
 
 	/* Try writing invalid value. */
 	rlen = spsc_pbuf_write(ib, rbuf, 0);
-	zassert_equal(rlen, -EINVAL, NULL);
+	zassert_equal(rlen, -EINVAL);
 	rlen = spsc_pbuf_write(ib, rbuf, SPSC_PBUF_MAX_LEN);
-	zassert_equal(rlen, -EINVAL, NULL);
+	zassert_equal(rlen, -EINVAL);
 
 	/* Try to write more than buffer can store. */
 	rlen = spsc_pbuf_write(ib, rbuf, sizeof(rbuf));
-	zassert_equal(rlen, -ENOMEM, NULL);
+	zassert_equal(rlen, -ENOMEM);
 
 	/* Read empty buffer. */
 	rlen = spsc_pbuf_read(ib, rbuf, sizeof(rbuf));
-	zassert_equal(rlen, 0, NULL);
+	zassert_equal(rlen, 0);
 
 	/* Single write and read. */
 	wlen = spsc_pbuf_write(ib, message, sizeof(message));
-	zassert_equal(wlen, sizeof(message), NULL);
+	zassert_equal(wlen, sizeof(message));
 
 	rlen = spsc_pbuf_read(ib, rbuf, sizeof(rbuf));
-	zassert_equal(rlen, sizeof(message), NULL);
+	zassert_equal(rlen, sizeof(message));
 
 	ib = spsc_pbuf_init(memory_area, sizeof(memory_area), flags);
 	zassert_equal_ptr(ib, memory_area, NULL);
@@ -68,38 +69,38 @@ static void test_spsc_pbuf_flags(uint32_t flags)
 
 	for (int i = 0; i < repeat; i++) {
 		wlen = spsc_pbuf_write(ib, message, sizeof(message));
-		zassert_equal(wlen, sizeof(message), NULL);
+		zassert_equal(wlen, sizeof(message));
 	}
 
 	wlen = spsc_pbuf_write(ib, message, sizeof(message));
-	zassert_equal(wlen, -ENOMEM, NULL);
+	zassert_equal(wlen, -ENOMEM);
 
 	/* Test reading with buf == NULL, should return len of the next message to read. */
 	rlen = spsc_pbuf_read(ib, NULL, 0);
-	zassert_equal(rlen, sizeof(message), NULL);
+	zassert_equal(rlen, sizeof(message));
 
 	/* Read with len == 0 and correct buf pointer. */
 	rlen = spsc_pbuf_read(ib, rbuf, 0);
-	zassert_equal(rlen, -ENOMEM, NULL);
+	zassert_equal(rlen, -ENOMEM);
 
 	/* Read whole data from the buffer. */
 	for (size_t i = 0; i < repeat; i++) {
 		wlen = spsc_pbuf_read(ib, rbuf, sizeof(rbuf));
-		zassert_equal(wlen, sizeof(message), NULL);
+		zassert_equal(wlen, sizeof(message));
 	}
 
 	/* Buffer is empty */
 	rlen = spsc_pbuf_read(ib, NULL, 0);
-	zassert_equal(rlen, 0, NULL);
+	zassert_equal(rlen, 0);
 
 	/* Write message that would be wrapped around. */
 	wlen = spsc_pbuf_write(ib, message, sizeof(message));
-	zassert_equal(wlen, sizeof(message), NULL);
+	zassert_equal(wlen, sizeof(message));
 
 	/* Read wrapped message. */
 	rlen = spsc_pbuf_read(ib, rbuf, sizeof(rbuf));
-	zassert_equal(rlen, sizeof(message), NULL);
-	zassert_equal(message[0], 'a', NULL);
+	zassert_equal(rlen, sizeof(message));
+	zassert_equal(message[0], 'a');
 }
 
 ZTEST(test_spsc_pbuf, test_spsc_pbuf_ut)
@@ -284,13 +285,13 @@ ZTEST(test_spsc_pbuf, test_0cpy_corner1)
 	zassert_equal(len2, exp_len2, "got %d, exp: %d", len2, exp_len2);
 
 	len = spsc_pbuf_claim(pb, &buf);
-	zassert_equal(len1, len, NULL);
+	zassert_equal(len1, len);
 	spsc_pbuf_free(pb, len);
 
 	spsc_pbuf_commit(pb, len2);
 
 	len = spsc_pbuf_claim(pb, &buf);
-	zassert_equal(len2, len, NULL);
+	zassert_equal(len2, len);
 	spsc_pbuf_free(pb, len);
 }
 
@@ -305,7 +306,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_corner2)
 	pb = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 	capacity = spsc_pbuf_capacity(pb);
 
-	/* Commit 5 byte packet. */
+	/* Commit 16 byte packet. */
 	len1 = 16;
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 
@@ -349,10 +350,10 @@ ZTEST(test_spsc_pbuf, test_largest_alloc)
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 	PACKET_CONSUME(pb, len1, 0);
 
-	len2 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint32_t) - 10;
+	len2 = capacity - TLEN(len1) - TLEN(10);
 	PACKET_WRITE(pb, len2, len2, 1, len2);
 
-	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN, 0, 1, 8);
+	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN, 0, 1, 12);
 
 	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN - 1, 0, 1, 12);
 
@@ -363,7 +364,7 @@ ZTEST(test_spsc_pbuf, test_largest_alloc)
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 	PACKET_CONSUME(pb, len1, 0);
 
-	len2 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint16_t) - 8;
+	len2 = capacity - TLEN(len1) - TLEN(12);
 	PACKET_WRITE(pb, len2, len2, 1, len2);
 
 	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN - 1, 0, 1, 12);
@@ -380,7 +381,7 @@ ZTEST(test_spsc_pbuf, test_utilization)
 	pb = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 
 	if (!IS_ENABLED(CONFIG_SPSC_PBUF_UTILIZATION)) {
-		zassert_equal(spsc_pbuf_get_utilization(pb), -ENOTSUP, NULL);
+		zassert_equal(spsc_pbuf_get_utilization(pb), -ENOTSUP);
 		return;
 	}
 	capacity = spsc_pbuf_capacity(pb);
@@ -388,17 +389,17 @@ ZTEST(test_spsc_pbuf, test_utilization)
 	len1 = 10;
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 	u = spsc_pbuf_get_utilization(pb);
-	zassert_equal(u, 0, NULL);
+	zassert_equal(u, 0);
 
 	PACKET_CONSUME(pb, len1, 0);
 	u = spsc_pbuf_get_utilization(pb);
-	zassert_equal(u, TLEN(len1), NULL);
+	zassert_equal(u, TLEN(len1));
 
 	len2 = 11;
 	PACKET_WRITE(pb, len2, len2, 1, len2);
 	PACKET_CONSUME(pb, len2, 1);
 	u = spsc_pbuf_get_utilization(pb);
-	zassert_equal(u, TLEN(len2), NULL);
+	zassert_equal(u, TLEN(len2));
 
 	len3 = capacity - TLEN(len1) - TLEN(len2);
 	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN, len3, 2, len3);
@@ -407,7 +408,7 @@ ZTEST(test_spsc_pbuf, test_utilization)
 	u = spsc_pbuf_get_utilization(pb);
 	int exp_u = TLEN(len3);
 
-	zassert_equal(u, exp_u, NULL);
+	zassert_equal(u, exp_u);
 }
 
 struct stress_data {
@@ -415,6 +416,7 @@ struct stress_data {
 	uint32_t capacity;
 	uint32_t write_cnt;
 	uint32_t read_cnt;
+	uint32_t wr_err;
 };
 
 bool stress_read(void *user_data, uint32_t cnt, bool last, int prio)
@@ -422,19 +424,21 @@ bool stress_read(void *user_data, uint32_t cnt, bool last, int prio)
 	struct stress_data *ctx = (struct stress_data *)user_data;
 	char buf[128];
 	int len;
+	int rpt = (sys_rand32_get() & 3) + 1;
 
-	len = spsc_pbuf_read(ctx->pbuf, buf, (uint16_t)sizeof(buf));
+	for (int i = 0; i < rpt; i++) {
+		len = spsc_pbuf_read(ctx->pbuf, buf, (uint16_t)sizeof(buf));
+		if (len == 0) {
+			return true;
+		}
 
-	if (len == 0) {
-		return true;
+		if (len < 0) {
+			zassert_true(false, "Unexpected error: %d, cnt:%d", len, ctx->read_cnt);
+		}
+
+		check_buffer(buf, len, ctx->read_cnt);
+		ctx->read_cnt++;
 	}
-
-	if (len < 0) {
-		zassert_true(false, "Unexpected error: %d, cnt:%d", len, ctx->read_cnt);
-	}
-
-	check_buffer(buf, len, ctx->read_cnt);
-	ctx->read_cnt++;
 
 	return true;
 }
@@ -444,36 +448,41 @@ bool stress_write(void *user_data, uint32_t cnt, bool last, int prio)
 	struct stress_data *ctx = (struct stress_data *)user_data;
 	char buf[128];
 	uint16_t len = 1 + (sys_rand32_get() % (ctx->capacity / 4));
+	int rpt = (sys_rand32_get() & 1) + 1;
 
 	zassert_true(len < sizeof(buf), "len:%d %d", len, ctx->capacity);
 
-	memset(buf, (uint8_t)ctx->write_cnt, len);
-	if (spsc_pbuf_write(ctx->pbuf, buf, len) == 0) {
-		ctx->write_cnt++;
+	for (int i = 0; i < rpt; i++) {
+		memset(buf, (uint8_t)ctx->write_cnt, len);
+		if (spsc_pbuf_write(ctx->pbuf, buf, len) == len) {
+			ctx->write_cnt++;
+		} else {
+			ctx->wr_err++;
+		}
 	}
 
 	return true;
 }
 
-
-
 ZTEST(test_spsc_pbuf, test_stress)
 {
 	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
-	static struct stress_data ctx;
+	static struct stress_data ctx = {};
 	uint32_t repeat = 0;
 
-	ctx.write_cnt = 0;
-	ctx.read_cnt = 0;
 	ctx.pbuf = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 	ctx.capacity = spsc_pbuf_capacity(ctx.pbuf);
 
-	ztress_set_timeout(K_MSEC(5000));
-	ZTRESS_EXECUTE(ZTRESS_THREAD(stress_read, &ctx, repeat, 0, Z_TIMEOUT_TICKS(4)),
-		       ZTRESS_THREAD(stress_write, &ctx, repeat, 1000, Z_TIMEOUT_TICKS(4)));
+	ztress_set_timeout(K_MSEC(STRESS_TIMEOUT_MS));
+	TC_PRINT("Reading from an interrupt, writing from a thread\n");
+	ZTRESS_EXECUTE(ZTRESS_TIMER(stress_read, &ctx, repeat, Z_TIMEOUT_TICKS(4)),
+		       ZTRESS_THREAD(stress_write, &ctx, repeat, 2000, Z_TIMEOUT_TICKS(4)));
+	TC_PRINT("Writes:%d failures: %d\n", ctx.write_cnt, ctx.wr_err);
 
-	ZTRESS_EXECUTE(ZTRESS_THREAD(stress_write, &ctx, repeat, 0, Z_TIMEOUT_TICKS(4)),
+	TC_PRINT("Writing from an interrupt, reading from a thread\n");
+	ZTRESS_EXECUTE(ZTRESS_TIMER(stress_write, &ctx, repeat, Z_TIMEOUT_TICKS(4)),
 		       ZTRESS_THREAD(stress_read, &ctx, repeat, 1000, Z_TIMEOUT_TICKS(4)));
+	TC_PRINT("Writes:%d failures: %d\n", ctx.write_cnt, ctx.wr_err);
 }
 
 bool stress_claim_free(void *user_data, uint32_t cnt, bool last, int prio)
@@ -481,18 +490,21 @@ bool stress_claim_free(void *user_data, uint32_t cnt, bool last, int prio)
 	struct stress_data *ctx = (struct stress_data *)user_data;
 	char *buf;
 	uint16_t len;
+	int rpt = sys_rand32_get() % 0x3;
 
-	len = spsc_pbuf_claim(ctx->pbuf, &buf);
+	for (int i = 0; i < rpt; i++) {
+		len = spsc_pbuf_claim(ctx->pbuf, &buf);
 
-	if (len == 0) {
-		return true;
+		if (len == 0) {
+			return true;
+		}
+
+		check_buffer(buf, len, ctx->read_cnt);
+
+		spsc_pbuf_free(ctx->pbuf, len);
+
+		ctx->read_cnt++;
 	}
-
-	check_buffer(buf, len, ctx->read_cnt);
-
-	spsc_pbuf_free(ctx->pbuf, len);
-
-	ctx->read_cnt++;
 
 	return true;
 }
@@ -500,20 +512,24 @@ bool stress_claim_free(void *user_data, uint32_t cnt, bool last, int prio)
 bool stress_alloc_commit(void *user_data, uint32_t cnt, bool last, int prio)
 {
 	struct stress_data *ctx = (struct stress_data *)user_data;
-	uint16_t len = 1 + (sys_rand32_get() % (ctx->capacity / 4));
+	uint32_t rnd = sys_rand32_get();
+	uint16_t len = 1 + (rnd % (ctx->capacity / 4));
+	int rpt = rnd % 0x3;
 	char *buf;
 	int err;
 
-	err = spsc_pbuf_alloc(ctx->pbuf, len, &buf);
-	zassert_true(err >= 0, NULL);
-	if (err != len) {
-		return true;
+	for (int i = 0; i < rpt; i++) {
+		err = spsc_pbuf_alloc(ctx->pbuf, len, &buf);
+		zassert_true(err >= 0);
+		if (err != len) {
+			return true;
+		}
+
+		memset(buf, (uint8_t)ctx->write_cnt, len);
+
+		spsc_pbuf_commit(ctx->pbuf, len);
+		ctx->write_cnt++;
 	}
-
-	memset(buf, (uint8_t)ctx->write_cnt, len);
-
-	spsc_pbuf_commit(ctx->pbuf, len);
-	ctx->write_cnt++;
 
 	return true;
 }
@@ -529,7 +545,7 @@ ZTEST(test_spsc_pbuf, test_stress_0cpy)
 	ctx.pbuf = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 	ctx.capacity = spsc_pbuf_capacity(ctx.pbuf);
 
-	ztress_set_timeout(K_MSEC(5000));
+	ztress_set_timeout(K_MSEC(STRESS_TIMEOUT_MS));
 	ZTRESS_EXECUTE(ZTRESS_THREAD(stress_claim_free, &ctx, repeat, 0, Z_TIMEOUT_TICKS(4)),
 		       ZTRESS_THREAD(stress_alloc_commit, &ctx, repeat, 1000, Z_TIMEOUT_TICKS(4)));
 

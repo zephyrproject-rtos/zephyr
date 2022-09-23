@@ -9,13 +9,6 @@ Overview
 The QEMU board configuration is used to emulate the Xtensa architecture. This board
 configuration provides support for the Xtensa simulation environment.
 
-.. figure:: qemu_xtensa.png
-   :width: 600px
-   :align: center
-   :alt: Qemu
-
-   Qemu (Credit: qemu.org)
-
 Programming and Debugging
 *************************
 

@@ -77,4 +77,7 @@ source "drivers/adc/Kconfig.ads1x1x"
 source "drivers/adc/Kconfig.gd32"
 
 source "drivers/adc/Kconfig.ads1119"
+
+source "drivers/adc/Kconfig.rpi_pico"
+
 endif # ADC

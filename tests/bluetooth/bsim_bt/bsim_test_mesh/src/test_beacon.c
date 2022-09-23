@@ -595,7 +595,7 @@ static void test_rx_kr_old_key(void)
 	bt_mesh_test_setup();
 	bt_mesh_iv_update_test(true);
 
-	err = bt_mesh_cfg_net_key_update(0, cfg->addr, 0, test_net_key_secondary, &status);
+	err = bt_mesh_cfg_cli_net_key_update(0, cfg->addr, 0, test_net_key_secondary, &status);
 	if (err || status) {
 		FAIL("Net Key update failed (err %d, status %u)", err, status);
 	}
@@ -777,14 +777,14 @@ static void test_rx_multiple_netkeys(void)
 	 * Refresh procedure.
 	 */
 	for (size_t i = 0; i < ARRAY_SIZE(net_key_pairs); i++) {
-		err = bt_mesh_cfg_net_key_add(0, cfg->addr, i + 1, net_key_pairs[i].primary,
+		err = bt_mesh_cfg_cli_net_key_add(0, cfg->addr, i + 1, net_key_pairs[i].primary,
 					      &status);
 		if (err || status) {
 			FAIL("Net Key add failed (err %d, status %u)", err, status);
 		}
 
-		err = bt_mesh_cfg_net_key_update(0, cfg->addr, i + 1, net_key_pairs[i].secondary,
-						 &status);
+		err = bt_mesh_cfg_cli_net_key_update(0, cfg->addr, i + 1,
+						     net_key_pairs[i].secondary, &status);
 		if (err || status) {
 			FAIL("Net Key update failed (err %d, status %u)", err, status);
 		}

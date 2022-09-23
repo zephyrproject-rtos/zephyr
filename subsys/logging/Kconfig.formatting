@@ -21,15 +21,10 @@ config LOG_FUNC_NAME_PREFIX_DBG
 
 endmenu
 
-config LOG_OUTPUT
-	bool "Formatter helper"
-	help
-	  Module which provides formatting of log messages to a human-readable
-	  strings.
-
 menuconfig LOG_MIPI_SYST_ENABLE
 	bool "MIPI SyS-T format output"
 	select MIPI_SYST_LIB
+	select LOG_OUTPUT
 	help
 	  Enable MIPI SyS-T format output for the logger system.
 
@@ -153,7 +148,7 @@ config LOG_BACKEND_FORMAT_TIMESTAMP
 	bool "Timestamp formatting in the backend"
 	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
 	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM || LOG_BACKEND_FS \
-	           || LOG_BACKEND_ADSP || LOG_BACKEND_ADSP_HDA
+	           || LOG_BACKEND_ADSP || LOG_BACKEND_ADSP_HDA || LOG_BACKEND_ADSP_MTRACE
 	default y
 	help
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.

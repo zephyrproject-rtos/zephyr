@@ -406,7 +406,7 @@ static int close_socket(struct net_context *ctx)
 		return -ENOTSUP;
 	}
 
-	api->close(dev, net_context_get_filter_id(ctx));
+	api->close(dev, net_context_get_can_filter_id(ctx));
 
 	return 0;
 }

@@ -11,7 +11,7 @@
  * context switch.
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/timing/timing.h>
 #include <stdlib.h>
 #include <zephyr/timestamp.h>

@@ -5,7 +5,7 @@
  *
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <strings.h>
 #include <errno.h>

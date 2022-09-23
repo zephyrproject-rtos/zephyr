@@ -7,7 +7,7 @@
 
 #include <string.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
@@ -1409,8 +1409,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 				ticks_anchor + ticks_slot +
 				HAL_TICKER_US_TO_TICKS(
 					MAX(EVENT_MAFS_US,
-					    EVENT_OVERHEAD_START_US) -
-					EVENT_OVERHEAD_START_US +
+					    EVENT_OVERHEAD_START_US) +
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 
 			ticks_slot_overhead_aux =
@@ -1450,8 +1449,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 					ticks_anchor_aux + ticks_slot_aux +
 					HAL_TICKER_US_TO_TICKS(
 						MAX(EVENT_MAFS_US,
-						    EVENT_OVERHEAD_START_US) -
-						EVENT_OVERHEAD_START_US +
+						    EVENT_OVERHEAD_START_US) +
 						(EVENT_TICKER_RES_MARGIN_US << 1));
 
 				ret = ull_adv_sync_start(adv, sync,
@@ -1768,7 +1766,7 @@ uint8_t ull_adv_data_set(struct ll_adv_set *adv, uint8_t len,
 	uint8_t idx;
 
 	/* Check invalid AD Data length */
-	if (len > PDU_AC_DATA_SIZE_MAX) {
+	if (len > PDU_AC_LEG_DATA_SIZE_MAX) {
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
@@ -1842,7 +1840,7 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 	struct pdu_adv *pdu;
 	uint8_t idx;
 
-	if (len > PDU_AC_DATA_SIZE_MAX) {
+	if (len > PDU_AC_LEG_DATA_SIZE_MAX) {
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 

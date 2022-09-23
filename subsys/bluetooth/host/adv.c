@@ -269,11 +269,11 @@ void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 }
 
-static struct bt_le_ext_adv *adv_new_legacy(void)
+static struct bt_le_ext_adv *adv_get_legacy(void)
 {
 #if defined(CONFIG_BT_EXT_ADV)
 	if (bt_dev.adv) {
-		return NULL;
+		return bt_dev.adv;
 	}
 
 	bt_dev.adv = adv_new();
@@ -1335,7 +1335,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len)
 {
-	struct bt_le_ext_adv *adv = adv_new_legacy();
+	struct bt_le_ext_adv *adv = adv_get_legacy();
 	int err;
 
 	if (!adv) {

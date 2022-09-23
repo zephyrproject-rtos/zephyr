@@ -7,7 +7,7 @@
 
 #define DT_DRV_COMPAT nxp_imx_usdhc
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/sd/sd_spec.h>

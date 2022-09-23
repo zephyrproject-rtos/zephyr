@@ -12,8 +12,7 @@ It was developed as an expansion component for the reel board.
 See :ref:`reel_board` documentation for more information about
 link board family and how to connect it to the reel board.
 
-.. image:: ./img/link_board_eth.png
-     :width: 720px
+.. image:: img/link_board_eth.jpg
      :align: center
      :alt: link board ETH
 

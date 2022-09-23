@@ -756,7 +756,7 @@ void net_pkt_frag_insert(struct net_pkt *pkt, struct net_buf *frag)
 	pkt->frags = frag;
 }
 
-bool net_pkt_compact(struct net_pkt *pkt)
+void net_pkt_compact(struct net_pkt *pkt)
 {
 	struct net_buf *frag, *prev;
 
@@ -812,8 +812,6 @@ bool net_pkt_compact(struct net_pkt *pkt)
 		prev = frag;
 		frag = frag->frags;
 	}
-
-	return true;
 }
 
 void net_pkt_get_info(struct k_mem_slab **rx,

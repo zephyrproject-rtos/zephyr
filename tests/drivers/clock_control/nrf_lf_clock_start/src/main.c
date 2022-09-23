@@ -22,7 +22,7 @@ static void xtal_check(bool on, nrf_clock_lfclk_t type)
 		zassert_true(is_running, "Clock should be on");
 	} else {
 		zassert_true(on, "Clock should be on");
-		zassert_equal(type, NRF_CLOCK_LFCLK_Xtal, NULL);
+		zassert_equal(type, NRF_CLOCK_LFCLK_Xtal);
 	}
 }
 
@@ -32,7 +32,7 @@ static void rc_check(bool on, nrf_clock_lfclk_t type)
 		zassert_false(on, "Clock should be off");
 	} else {
 		zassert_true(on, "Clock should be on");
-		zassert_equal(type, NRF_CLOCK_LFCLK_RC, NULL);
+		zassert_equal(type, NRF_CLOCK_LFCLK_RC);
 	}
 }
 
@@ -45,11 +45,11 @@ static void synth_check(bool on, nrf_clock_lfclk_t type)
 
 	if (!IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT)) {
 		zassert_true(on, "Clock should be on");
-		zassert_equal(type, NRF_CLOCK_LFCLK_Synth, NULL);
+		zassert_equal(type, NRF_CLOCK_LFCLK_Synth);
 	}
 }
 
-void test_clock_check(void)
+ZTEST(nrf_lf_clock_start, test_clock_check)
 {
 	bool xtal;
 
@@ -66,7 +66,7 @@ void test_clock_check(void)
 	}
 }
 
-void test_wait_in_thread(void)
+ZTEST(nrf_lf_clock_start, test_wait_in_thread)
 {
 	nrf_clock_lfclk_t t;
 	bool o;
@@ -78,16 +78,16 @@ void test_wait_in_thread(void)
 
 	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_AVAILABLE);
 	o = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &t);
-	zassert_false((t == NRF_CLOCK_LFCLK_Xtal) && o, NULL);
+	zassert_false((t == NRF_CLOCK_LFCLK_Xtal) && o);
 	k_busy_wait(35);
-	zassert_true(k_cycle_get_32() > 0, NULL);
+	zassert_true(k_cycle_get_32() > 0);
 
 	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_STABLE);
 	o = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &t);
-	zassert_true((t == NRF_CLOCK_LFCLK_Xtal) && o, NULL);
+	zassert_true((t == NRF_CLOCK_LFCLK_Xtal) && o);
 }
 
-void test_main(void)
+void *test_init(void)
 {
 	/* Do clock state read as early as possible. When RC is already running
 	 * and XTAL has been started then LFSRCSTAT register content might be
@@ -111,10 +111,6 @@ void test_main(void)
 	TC_PRINT("SYSTEM_CLOCK_WAIT_FOR_STABILITY=%c\n",
 		 IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_STABILITY) ?
 		 'y' : 'n');
-
-	ztest_test_suite(test_nrf_lf_clock_start,
-		ztest_unit_test(test_clock_check),
-		ztest_unit_test(test_wait_in_thread)
-			);
-	ztest_run_test_suite(test_nrf_lf_clock_start);
+	return NULL;
 }
+ZTEST_SUITE(nrf_lf_clock_start, NULL, test_init, NULL, NULL, NULL);

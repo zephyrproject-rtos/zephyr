@@ -97,6 +97,11 @@ LOG_MODULE_REGISTER(i2c_npcx, LOG_LEVEL_ERR);
 /* Valid bit fields in SMBST register */
 #define NPCX_VALID_SMBST_MASK ~(BIT(NPCX_SMBST_XMIT) | BIT(NPCX_SMBST_MASTER))
 
+/* The delay for the I2C bus recovery bitbang in ~100K Hz */
+#define I2C_RECOVER_BUS_DELAY_US 5
+#define I2C_RECOVER_SCL_RETRY    10
+#define I2C_RECOVER_SDA_RETRY    3
+
 /* Supported I2C bus frequency */
 enum npcx_i2c_freq {
 	NPCX_I2C_BUS_SPEED_100KHZ,
@@ -239,6 +244,35 @@ static inline void i2c_ctrl_norm_free_scl(const struct device *dev)
 	 * slave device.
 	 */
 	inst->SMBCTL3 |= BIT(NPCX_SMBCTL3_SCL_LVL) | BIT(NPCX_SMBCTL3_SDA_LVL);
+	/* Disable writing to them */
+	inst->SMBCTL4 &= ~BIT(NPCX_SMBCTL4_LVL_WE);
+}
+
+/* I2C controller inline functions access registers in 'Normal' bank */
+static inline void i2c_ctrl_norm_stall_sda(const struct device *dev)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
+
+	/* Enable writing to SCL_LVL/SDA_LVL bit in SMBnCTL3 */
+	inst->SMBCTL4 |= BIT(NPCX_SMBCTL4_LVL_WE);
+	/* Force SDA bus to low and keep SCL floating */
+	inst->SMBCTL3 = (inst->SMBCTL3 & ~BIT(NPCX_SMBCTL3_SDA_LVL))
+						| BIT(NPCX_SMBCTL3_SCL_LVL);
+	/* Disable writing to them */
+	inst->SMBCTL4 &= ~BIT(NPCX_SMBCTL4_LVL_WE);
+}
+
+static inline void i2c_ctrl_norm_free_sda(const struct device *dev)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
+
+	/* Enable writing to SCL_LVL/SDA_LVL bit in SMBnCTL3 */
+	inst->SMBCTL4 |= BIT(NPCX_SMBCTL4_LVL_WE);
+	/*
+	 * Release SDA bus. Then it might be still driven by module itself or
+	 * slave device.
+	 */
+	inst->SMBCTL3 |= BIT(NPCX_SMBCTL3_SDA_LVL) | BIT(NPCX_SMBCTL3_SCL_LVL);
 	/* Disable writing to them */
 	inst->SMBCTL4 &= ~BIT(NPCX_SMBCTL4_LVL_WE);
 }
@@ -394,18 +428,27 @@ static int i2c_ctrl_wait_stop_completed(const struct device *dev, int timeout)
 	}
 }
 
+static bool i2c_ctrl_is_scl_sda_both_high(const struct device *dev)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
+
+	if (IS_BIT_SET(inst->SMBCTL3, NPCX_SMBCTL3_SCL_LVL) &&
+	    IS_BIT_SET(inst->SMBCTL3, NPCX_SMBCTL3_SDA_LVL)) {
+		return true;
+	}
+
+	return false;
+}
+
 static int i2c_ctrl_wait_idle_completed(const struct device *dev, int timeout)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
-
 	if (timeout <= 0) {
 		return -EINVAL;
 	}
 
 	do {
 		/* Wait for both SCL & SDA lines are high */
-		if (IS_BIT_SET(inst_fifo->SMBCTL3, NPCX_SMBCTL3_SCL_LVL)
-		  && IS_BIT_SET(inst_fifo->SMBCTL3, NPCX_SMBCTL3_SDA_LVL)) {
+		if (i2c_ctrl_is_scl_sda_both_high(dev)) {
 			break;
 		}
 		k_msleep(1);
@@ -820,6 +863,81 @@ int npcx_i2c_ctrl_get_speed(const struct device *i2c_dev, uint32_t *speed)
 	return 0;
 }
 
+int npcx_i2c_ctrl_recover_bus(const struct device *dev)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
+	int ret = 0;
+
+	i2c_ctrl_bank_sel(dev, NPCX_I2C_BANK_NORMAL);
+
+	/*
+	 * When the SCL is low, wait for a while in case of the clock is stalled
+	 * by a I2C target.
+	 */
+	if (!IS_BIT_SET(inst->SMBCTL3, NPCX_SMBCTL3_SCL_LVL)) {
+		for (int i = 0;; i++) {
+			if (i >= I2C_RECOVER_SCL_RETRY) {
+				ret = -EBUSY;
+				goto recover_exit;
+			}
+			k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
+			if (IS_BIT_SET(inst->SMBCTL3, NPCX_SMBCTL3_SCL_LVL)) {
+				break;
+			}
+		}
+	}
+
+	if (IS_BIT_SET(inst->SMBCTL3, NPCX_SMBCTL3_SDA_LVL)) {
+		goto recover_exit;
+	}
+
+	for (int i = 0; i < I2C_RECOVER_SDA_RETRY; i++) {
+		/* Drive the clock high. */
+		i2c_ctrl_norm_free_scl(dev);
+		k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
+
+		/*
+		 * Toggle SCL to generate 9 clocks. If the I2C target releases the SDA, we can stop
+		 * toggle the SCL and issue a STOP.
+		 */
+		for (int j = 0; j < 9; j++) {
+			if (IS_BIT_SET(inst->SMBCTL3, NPCX_SMBCTL3_SDA_LVL)) {
+				break;
+			}
+
+			i2c_ctrl_norm_stall_scl(dev);
+			k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
+			i2c_ctrl_norm_free_scl(dev);
+			k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
+		}
+
+		/* Drive the SDA line to issue STOP. */
+		i2c_ctrl_norm_stall_sda(dev);
+		k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
+		i2c_ctrl_norm_free_sda(dev);
+		k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
+
+		if (i2c_ctrl_is_scl_sda_both_high(dev)) {
+			ret = 0;
+			goto recover_exit;
+		}
+	}
+
+	if (!IS_BIT_SET(inst->SMBCTL3, NPCX_SMBCTL3_SDA_LVL)) {
+		LOG_ERR("Recover SDA fail");
+		ret = -EBUSY;
+	}
+	if (!IS_BIT_SET(inst->SMBCTL3, NPCX_SMBCTL3_SCL_LVL)) {
+		LOG_ERR("Recover SCL fail");
+		ret = -EBUSY;
+	}
+
+recover_exit:
+	i2c_ctrl_bank_sel(dev, NPCX_I2C_BANK_FIFO);
+
+	return ret;
+}
+
 int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 			      uint8_t num_msgs, uint16_t addr, int port)
 {
@@ -836,8 +954,14 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 	/* Does bus need recovery? */
 	if (data->oper_state != NPCX_I2C_WRITE_SUSPEND &&
 			data->oper_state != NPCX_I2C_READ_SUSPEND) {
-		if (i2c_ctrl_bus_busy(i2c_dev) ||
+		if (i2c_ctrl_bus_busy(i2c_dev) || !i2c_ctrl_is_scl_sda_both_high(i2c_dev) ||
 		    data->oper_state == NPCX_I2C_ERROR_RECOVERY) {
+			ret = npcx_i2c_ctrl_recover_bus(i2c_dev);
+			if (ret != 0) {
+				LOG_ERR("Recover Bus failed");
+				goto out;
+			}
+
 			ret = i2c_ctrl_recovery(i2c_dev);
 			/* Recovery failed, return it immediately */
 			if (ret) {

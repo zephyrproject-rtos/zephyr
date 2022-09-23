@@ -9,7 +9,7 @@
  */
 
 #include <zephyr/device.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <zephyr/crypto/crypto.h>
 

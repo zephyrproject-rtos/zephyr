@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci.h>
@@ -247,11 +247,17 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	ull_df_sync_cfg_init(&lll_sync->df_cfg);
+	LL_ASSERT(!lll_sync->node_cte_incomplete);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 	/* Initialise ULL and LLL headers */
 	ull_hdr_init(&sync->ull);
 	lll_hdr_init(lll_sync, sync);
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
+	/* Initialise LLL abort count */
+	lll_sync->abort_count = 0U;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
 
 	/* Enable scanner to create sync */
 	scan->periodic.sync = sync;
@@ -326,7 +332,7 @@ uint8_t ll_sync_create_cancel(void **rx)
 	sync->is_stop = 1U;
 	cpu_dmb();
 
-	if (sync->timeout_reload != 0) {
+	if (sync->timeout_reload != 0U) {
 		uint16_t sync_handle = ull_sync_handle_get(sync);
 
 		LL_ASSERT(sync_handle <= UINT8_MAX);
@@ -529,6 +535,19 @@ struct ll_sync_set *ull_sync_is_valid_get(struct ll_sync_set *sync)
 	return sync;
 }
 
+struct lll_sync *ull_sync_lll_is_valid_get(struct lll_sync *lll)
+{
+	struct ll_sync_set *sync;
+
+	sync = HDR_LLL2ULL(lll);
+	sync = ull_sync_is_valid_get(sync);
+	if (sync) {
+		return &sync->lll;
+	}
+
+	return NULL;
+}
+
 uint16_t ull_sync_handle_get(struct ll_sync_set *sync)
 {
 	return mem_index_get(sync, ll_sync_pool, sizeof(struct ll_sync_set));
@@ -541,6 +560,26 @@ uint16_t ull_sync_lll_handle_get(struct lll_sync *lll)
 
 void ull_sync_release(struct ll_sync_set *sync)
 {
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	struct lll_sync *lll = &sync->lll;
+
+	if (lll->node_cte_incomplete) {
+		const uint8_t release_cnt = 1U;
+		struct node_rx_hdr *node_hdr;
+		memq_link_t *link;
+
+		node_hdr = &lll->node_cte_incomplete->hdr;
+		link = node_hdr->link;
+
+		ll_rx_link_release(link);
+		ull_iq_report_link_inc_quota(release_cnt);
+		ull_df_iq_report_mem_release(node_hdr);
+		ull_df_rx_iq_report_alloc(release_cnt);
+
+		lll->node_cte_incomplete = NULL;
+	}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
 	/* Mark the sync context as sync create cancelled */
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)) {
 		sync->timeout = 0U;
@@ -704,6 +743,10 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		lll->window_size_event_us = OFFS_UNIT_30_US;
 	}
 
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	lll->node_cte_incomplete = NULL;
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
 	/* Set the state to sync create */
 	scan->periodic.state = LL_SYNC_STATE_CREATED;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
@@ -761,7 +804,8 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	sync->ull.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
-				       PDU_AC_MAX_US(0U, lll->phy) +
+				       PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE,
+						     lll->phy) +
 				       EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
@@ -964,7 +1008,11 @@ void ull_sync_done(struct node_rx_event_done *done)
 
 		/* Events elapsed used in timeout checks below */
 		skip_event = lll->skip_event;
-		elapsed_event = skip_event + 1;
+		if (lll->skip_prepare) {
+			elapsed_event = skip_event + lll->skip_prepare;
+		} else {
+			elapsed_event = skip_event + 1U;
+		}
 
 		/* Sync drift compensation and new skip calculation */
 		ticks_drift_plus = 0U;

@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
@@ -194,6 +194,18 @@ static int hci_le_setup_iso_data_path(const struct bt_conn *iso, uint8_t dir,
 	uint8_t *cc;
 	int err;
 
+	__ASSERT(dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR ||
+		 dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST,
+		 "invalid ISO data path dir: %u", dir);
+
+	if ((path->cc == NULL && path->cc_len != 0) ||
+	    (path->cc != NULL && path->cc_len == 0)) {
+		BT_DBG("Invalid ISO data path CC: %p %u",
+		       path->cc, path->cc_len);
+
+		return -EINVAL;
+	}
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SETUP_ISO_PATH, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
@@ -238,7 +250,9 @@ static void bt_iso_chan_add(struct bt_conn *iso, struct bt_iso_chan *chan)
 static int bt_iso_setup_data_path(struct bt_iso_chan *chan)
 {
 	int err;
-	struct bt_iso_chan_path default_hci_path = { .pid = BT_ISO_DATA_PATH_HCI };
+	struct bt_iso_chan_path default_hci_path = { .pid = BT_ISO_DATA_PATH_HCI,
+						     .format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+						     .cc_len = 0x00 };
 	struct bt_iso_chan_path *out_path = NULL;
 	struct bt_iso_chan_path *in_path = NULL;
 	struct bt_iso_chan_io_qos *tx_qos;
@@ -722,24 +736,6 @@ static uint16_t iso_chan_max_data_len(const struct bt_iso_chan *chan,
 
 	/* Update the max_data_len to take the max_controller_data_len into account */
 	max_data_len = MIN(max_data_len, max_controller_data_len);
-
-	/* Since this returns the maximum ISO data length size, we have to take
-	 * the header size into account, as that also needs to be inserted into
-	 * the SDU
-	 */
-	if (ts == BT_ISO_TIMESTAMP_NONE) {
-		if (max_data_len > BT_HCI_ISO_DATA_HDR_SIZE) {
-			max_data_len -= BT_HCI_ISO_DATA_HDR_SIZE;
-		} else {
-			max_data_len = 0U;
-		}
-	} else {
-		if (max_data_len > BT_HCI_ISO_TS_DATA_HDR_SIZE) {
-			max_data_len -= BT_HCI_ISO_TS_DATA_HDR_SIZE;
-		} else {
-			max_data_len = 0U;
-		}
-	}
 
 	return max_data_len;
 }

@@ -14,9 +14,6 @@
 extern "C" {
 #endif
 
-/* 32 bits on ILP32 builds, 64 bits on LP64 builds */
-typedef unsigned long       ulong_t;
-
 /*
  * A type with strong alignment requirements, similar to C11 max_align_t. It can
  * be used to force alignment of data structures allocated on the stack or as

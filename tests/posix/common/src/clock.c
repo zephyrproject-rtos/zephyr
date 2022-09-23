@@ -21,7 +21,7 @@ ZTEST(posix_apis, test_posix_clock)
 	/* TESTPOINT: Pass invalid clock type */
 	zassert_equal(clock_gettime(CLOCK_INVALID, &ts), -1,
 			NULL);
-	zassert_equal(errno, EINVAL, NULL);
+	zassert_equal(errno, EINVAL);
 
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	/* 2 Sec Delay */
@@ -66,7 +66,7 @@ ZTEST(posix_apis, test_posix_realtime)
 	/* TESTPOINT: Pass invalid clock type */
 	zassert_equal(clock_settime(CLOCK_INVALID, &nts), -1,
 			NULL);
-	zassert_equal(errno, EINVAL, NULL);
+	zassert_equal(errno, EINVAL);
 
 	ret = clock_settime(CLOCK_MONOTONIC, &nts);
 	zassert_not_equal(ret, 0, "Should not be able to set monotonic time");
@@ -110,10 +110,10 @@ ZTEST(posix_apis, test_posix_realtime)
 
 	/* Validate gettimeofday API */
 	ret = gettimeofday(&tv, NULL);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
 	ret = clock_gettime(CLOCK_REALTIME, &rts);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
 	/* TESTPOINT: Check if time obtained from
 	 * gettimeofday is same or more than obtained

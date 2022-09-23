@@ -13,7 +13,7 @@
 LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
 #include <stdio.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <stdlib.h>
 #include <zephyr/fs/nvs.h>
@@ -52,12 +52,12 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
 #define HTTP_HEADER_CONTENT_TYPE_JSON "application/json;charset=UTF-8"
 
-#define SLOT1_LABEL image_1
-#define SLOT1_SIZE FLASH_AREA_SIZE(SLOT1_LABEL)
+#define SLOT1_LABEL slot1_partition
+#define SLOT1_SIZE FIXED_PARTITION_SIZE(SLOT1_LABEL)
 
-#define STORAGE_LABEL storage
-#define STORAGE_DEV FLASH_AREA_DEVICE(STORAGE_LABEL)
-#define STORAGE_OFFSET FLASH_AREA_OFFSET(STORAGE_LABEL)
+#define STORAGE_LABEL storage_partition
+#define STORAGE_DEV FIXED_PARTITION_DEVICE(STORAGE_LABEL)
+#define STORAGE_OFFSET FIXED_PARTITION_OFFSET(STORAGE_LABEL)
 
 #if ((CONFIG_HAWKBIT_POLL_INTERVAL > 1) && (CONFIG_HAWKBIT_POLL_INTERVAL < 43200))
 static uint32_t poll_sleep = (CONFIG_HAWKBIT_POLL_INTERVAL * 60 * MSEC_PER_SEC);
@@ -384,6 +384,8 @@ static int hawkbit_find_cancelAction_base(struct hawkbit_ctl_res *res, char *can
 		return 0;
 	}
 
+	LOG_DBG("_links.%s.href=%s", "cancelAction", href);
+
 	helper = strstr(href, "cancelAction/");
 	if (!helper) {
 		/* A badly formatted cancel base is a server error */
@@ -435,6 +437,8 @@ static int hawkbit_find_deployment_base(struct hawkbit_ctl_res *res, char *deplo
 		*deployment_base = '\0';
 		return 0;
 	}
+
+	LOG_DBG("_links.%s.href=%s", "deploymentBase", href);
 
 	helper = strstr(href, "deploymentBase/");
 	if (!helper) {
@@ -541,14 +545,6 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res, int32_t *json_a
 	return 0;
 }
 
-static void hawkbit_dump_base(struct hawkbit_ctl_res *r)
-{
-	LOG_DBG("config.polling.sleep=%s", r->config.polling.sleep);
-	LOG_DBG("_links.deploymentBase.href=%s", r->_links.deploymentBase.href);
-	LOG_DBG("_links.configData.href=%s", r->_links.configData.href);
-	LOG_DBG("_links.cancelAction.href=%s", r->_links.cancelAction.href);
-}
-
 static void hawkbit_dump_deployment(struct hawkbit_dep_res *d)
 {
 	struct hawkbit_dep_res_chunk *c = &d->deployment.chunks[0];
@@ -612,7 +608,7 @@ int hawkbit_init(void)
 		}
 
 		LOG_DBG("Marked image as OK");
-		ret = boot_erase_img_bank(FLASH_AREA_ID(SLOT1_LABEL));
+		ret = boot_erase_img_bank(FIXED_PARTITION_ID(SLOT1_LABEL));
 		if (ret) {
 			LOG_ERR("Failed to erase second slot: %d", ret);
 			return ret;
@@ -1026,9 +1022,9 @@ enum hawkbit_response hawkbit_probe(void)
 	if (hawkbit_results.base.config.polling.sleep) {
 		/* Update the sleep time. */
 		hawkbit_update_sleep(&hawkbit_results.base);
+		LOG_DBG("config.polling.sleep=%s", hawkbit_results.base.config.polling.sleep);
 	}
 
-	hawkbit_dump_base(&hawkbit_results.base);
 
 	if (hawkbit_results.base._links.cancelAction.href) {
 		ret = hawkbit_find_cancelAction_base(&hawkbit_results.base, cancel_base);
@@ -1051,6 +1047,8 @@ enum hawkbit_response hawkbit_probe(void)
 	}
 
 	if (hawkbit_results.base._links.configData.href) {
+		LOG_DBG("_links.%s.href=%s", "configData",
+			hawkbit_results.base._links.configData.href);
 		memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 		hb_context.dl.http_content_size = 0;
 		hb_context.url_buffer_size = URL_BUFFER_SIZE;
@@ -1163,7 +1161,7 @@ enum hawkbit_response hawkbit_probe(void)
 	/* Verify the hash of the stored firmware */
 	fic.match = hb_context.dl.file_hash;
 	fic.clen = hb_context.dl.downloaded_size;
-	if (flash_img_check(&hb_context.flash_ctx, &fic, FLASH_AREA_ID(SLOT1_LABEL))) {
+	if (flash_img_check(&hb_context.flash_ctx, &fic, FIXED_PARTITION_ID(SLOT1_LABEL))) {
 		LOG_ERR("Firmware - flash validation has failed");
 		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
 		goto cleanup;

@@ -12,7 +12,7 @@
 #include <rom/spi_flash.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <esp_clk.h>
+#include "esp32c3/clk.h"
 #endif
 
 /* IRQ numbers */

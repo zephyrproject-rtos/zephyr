@@ -4,6 +4,7 @@ type: mcu
 simulation: mdb-nsim
 arch: arc
 toolchain:
+  - zephyr
   - arcmwdt
   - cross-compile
 testing:

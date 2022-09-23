@@ -577,12 +577,12 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 	/* Token lengths 9-15 are reserved. */
 	tkl = cpkt->data[0] & 0x0f;
 	if (tkl > 8) {
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	cpkt->hdr_len = BASIC_HEADER_SIZE + tkl;
 	if (cpkt->hdr_len > len) {
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (cpkt->hdr_len == len) {
@@ -601,7 +601,7 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 		ret = parse_option(cpkt->data, offset, &offset, cpkt->max_len,
 				   &delta, &opt_len, option);
 		if (ret < 0) {
-			return ret;
+			return -EILSEQ;
 		} else if (ret == 0) {
 			break;
 		}
@@ -819,26 +819,33 @@ static bool uri_path_eq(const struct coap_packet *cpkt,
 	return true;
 }
 
-static coap_method_t method_from_code(const struct coap_resource *resource,
-				      uint8_t code)
+static int method_from_code(const struct coap_resource *resource,
+			    uint8_t code, coap_method_t *method)
 {
 	switch (code) {
 	case COAP_METHOD_GET:
-		return resource->get;
+		*method = resource->get;
+		return 0;
 	case COAP_METHOD_POST:
-		return resource->post;
+		*method = resource->post;
+		return 0;
 	case COAP_METHOD_PUT:
-		return resource->put;
+		*method = resource->put;
+		return 0;
 	case COAP_METHOD_DELETE:
-		return resource->del;
+		*method = resource->del;
+		return 0;
 	case COAP_METHOD_FETCH:
-		return resource->fetch;
+		*method = resource->fetch;
+		return 0;
 	case COAP_METHOD_PATCH:
-		return resource->patch;
+		*method = resource->patch;
+		return 0;
 	case COAP_METHOD_IPATCH:
-		return resource->ipatch;
+		*method = resource->ipatch;
+		return 0;
 	default:
-		return NULL;
+		return -EINVAL;
 	}
 }
 
@@ -871,7 +878,10 @@ int coap_handle_request(struct coap_packet *cpkt,
 		}
 
 		code = coap_header_get_code(cpkt);
-		method = method_from_code(resource, code);
+		if (method_from_code(resource, code, &method) < 0) {
+			return -ENOTSUP;
+		}
+
 		if (!method) {
 			return -EPERM;
 		}

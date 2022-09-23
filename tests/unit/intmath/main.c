@@ -71,7 +71,7 @@ ROLLOVER_CHECK(int, 2147483647, -2147483648);
  * @details Test multiplication and division of two
  * integers
  */
-void test_intmath(void)
+ZTEST(intmath, test_intmath)
 {
 	/*
 	 * Declaring volatile so the compiler doesn't try to optimize any
@@ -99,13 +99,4 @@ void test_intmath(void)
  * @}
  */
 
-
-
-void test_main(void)
-{
-	ztest_test_suite(intmath,
-			 ztest_unit_test(test_intmath)
-			 );
-
-	ztest_run_test_suite(intmath);
-}
+ZTEST_SUITE(intmath, NULL, NULL, NULL, NULL, NULL);

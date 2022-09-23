@@ -148,5 +148,5 @@ static int test_sg(void)
 /* export test cases */
 ZTEST(dma_m2m_sg, test_dma_m2m_sg)
 {
-	zassert_true((test_sg() == TC_PASS), NULL);
+	zassert_true((test_sg() == TC_PASS));
 }

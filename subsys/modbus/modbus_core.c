@@ -53,7 +53,7 @@ static struct modbus_serial_config modbus_serial_cfg[] = {
 
 #define DEFINE_MODBUS_RAW_ADU(x, _) {				\
 		.iface_name = "RAW_"#x,				\
-		.raw_tx_cb = NULL,				\
+		.rawcb.raw_tx_cb = NULL,				\
 		.mode = MODBUS_MODE_RAW,			\
 	}
 

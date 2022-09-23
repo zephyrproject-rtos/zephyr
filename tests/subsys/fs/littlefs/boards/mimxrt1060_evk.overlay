@@ -10,27 +10,27 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		partition@0 {
+		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
-		partition@10000 {
+		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_M(3)>;
 		};
-		partition@310000 {
+		large_partition: partition@310000 {
 			label = "large";
 			reg = <0x00310000 DT_SIZE_M(3)>;
 		};
-		partition@610000 {
+		scratch_partition: partition@610000 {
 			label = "image-scratch";
 			reg = <0x00610000 DT_SIZE_K(128)>;
 		};
-		partition@630000 {
+		small_partition: partition@630000 {
 			label = "small";
 			reg = <0x00630000 DT_SIZE_K(64)>;
 		};
-		partition@640000 {
+		medium_partition: partition@640000 {
 			label = "medium";
 			reg = <0x00640000 DT_SIZE_K(960)>;
 		};

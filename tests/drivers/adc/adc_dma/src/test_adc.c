@@ -7,9 +7,10 @@
  */
 
 
+#include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/counter.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #if defined(CONFIG_BOARD_FRDM_K64F)
@@ -37,8 +38,9 @@
 #define SAMPLE_INTERVAL_US (10000U)
 
 #define BUFFER_SIZE 24
-static ZTEST_BMEM int16_t m_sample_buffer[BUFFER_SIZE];
-static ZTEST_BMEM int16_t m_sample_buffer2[2][BUFFER_SIZE];
+#define ALIGNMENT DMA_BUF_ALIGNMENT(DT_NODELABEL(test_dma))
+static ZTEST_BMEM __aligned(ALIGNMENT) int16_t m_sample_buffer[BUFFER_SIZE];
+static ZTEST_BMEM __aligned(ALIGNMENT) int16_t m_sample_buffer2[2][BUFFER_SIZE];
 static int current_buf_inx;
 
 static const struct adc_channel_cfg m_1st_channel_cfg = {
@@ -190,7 +192,7 @@ static int test_task_one_channel(void)
 
 ZTEST_USER(adc_dma, test_adc_sample_one_channel)
 {
-	zassert_true(test_task_one_channel() == TC_PASS, NULL);
+	zassert_true(test_task_one_channel() == TC_PASS);
 }
 
 /*
@@ -225,7 +227,7 @@ static int test_task_two_channels(void)
 ZTEST_USER(adc_dma, test_adc_sample_two_channels)
 {
 #if defined(ADC_2ND_CHANNEL_ID)
-	zassert_true(test_task_two_channels() == TC_PASS, NULL);
+	zassert_true(test_task_two_channels() == TC_PASS);
 #else
 	ztest_test_skip();
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
@@ -275,7 +277,7 @@ static int test_task_asynchronous_call(void)
 ZTEST_USER(adc_dma, test_adc_asynchronous_call)
 {
 #if defined(CONFIG_ADC_ASYNC)
-	zassert_true(test_task_asynchronous_call() == TC_PASS, NULL);
+	zassert_true(test_task_asynchronous_call() == TC_PASS);
 #else
 	ztest_test_skip();
 #endif /* defined(CONFIG_ADC_ASYNC) */
@@ -340,7 +342,7 @@ static int test_task_with_interval(void)
 
 ZTEST(adc_dma, test_adc_sample_with_interval)
 {
-	zassert_true(test_task_with_interval() == TC_PASS, NULL);
+	zassert_true(test_task_with_interval() == TC_PASS);
 }
 
 /*
@@ -426,7 +428,7 @@ static int test_task_repeated_samplings(void)
 
 ZTEST(adc_dma, test_adc_repeated_samplings)
 {
-	zassert_true(test_task_repeated_samplings() == TC_PASS, NULL);
+	zassert_true(test_task_repeated_samplings() == TC_PASS);
 }
 
 /*
@@ -471,5 +473,5 @@ static int test_task_invalid_request(void)
 
 ZTEST_USER(adc_dma, test_adc_invalid_request)
 {
-	zassert_true(test_task_invalid_request() == TC_PASS, NULL);
+	zassert_true(test_task_invalid_request() == TC_PASS);
 }

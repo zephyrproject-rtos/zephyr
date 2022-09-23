@@ -169,7 +169,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	aux_ptr = (void *)pri_dptr;
 
 	/* Abort if no aux_ptr filled */
-	if (unlikely(!pri_hdr->aux_ptr || !aux_ptr->offs)) {
+	if (unlikely(!pri_hdr->aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr))) {
 		radio_isr_set(lll_isr_early_abort, lll);
 		radio_disable();
 

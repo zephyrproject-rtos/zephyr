@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define STACKSIZE       2048
 #define THREAD_COUNT	64

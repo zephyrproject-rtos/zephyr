@@ -44,7 +44,7 @@ typedef struct esf z_arch_esf_t;
 #include <zephyr/sys/printk.h>
 #define PRINT printk
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_mock.h>

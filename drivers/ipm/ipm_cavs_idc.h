@@ -7,11 +7,14 @@
 #ifndef ZEPHYR_DRIVERS_IPM_IPM_CAVS_IDC_H_
 #define ZEPHYR_DRIVERS_IPM_IPM_CAVS_IDC_H_
 
+#define DT_DRV_COMPAT intel_adsp_idc
+#include <intel_adsp_ipc_devtree.h>
+
 /* Redeclaration of the earlier IDC register API for platforms being
  * held back on this driver.
  */
 # ifndef IPC_DSP_BASE
-# define IPC_DSP_BASE(core)    (DT_REG_ADDR(DT_NODELABEL(idc)) + 0x80 * (core))
+# define IPC_DSP_BASE(core)    (INTEL_ADSP_IDC_REG_ADDRESS + 0x80 * (core))
 # endif
 #define IPC_IDCTFC(x)         (x * 0x10)
 #define IPC_IDCTFC_BUSY       BIT(31)

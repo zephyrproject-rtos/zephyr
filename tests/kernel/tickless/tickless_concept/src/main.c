@@ -53,9 +53,9 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 		t, SLICE_SIZE, SLICE_SIZE_LIMIT);
 
 	/**TESTPOINT: verify slicing scheduler behaves as expected*/
-	zassert_true(t >= SLICE_SIZE, NULL);
+	zassert_true(t >= SLICE_SIZE);
 	/*less than one tick delay*/
-	zassert_true(t <= SLICE_SIZE_LIMIT, NULL);
+	zassert_true(t <= SLICE_SIZE_LIMIT);
 
 	/*keep the current thread busy for more than one slice*/
 	k_busy_wait(1000 * SLEEP_TICKLESS);
@@ -84,7 +84,7 @@ ZTEST(tickless_concept, test_tickless_sysclock)
 	t1 = k_uptime_get_32();
 	TC_PRINT("time %d, %d\n", t0, t1);
 	/**TESTPOINT: verify system clock recovery after exiting tickless idle*/
-	zassert_true((t1 - t0) >= SLEEP_TICKLESS, NULL);
+	zassert_true((t1 - t0) >= SLEEP_TICKLESS);
 
 	ALIGN_MS_BOUNDARY();
 	t0 = k_uptime_get_32();
@@ -92,7 +92,7 @@ ZTEST(tickless_concept, test_tickless_sysclock)
 	t1 = k_uptime_get_32();
 	TC_PRINT("time %d, %d\n", t0, t1);
 	/**TESTPOINT: verify system clock recovery after exiting tickful idle*/
-	zassert_true((t1 - t0) >= SLEEP_TICKFUL, NULL);
+	zassert_true((t1 - t0) >= SLEEP_TICKFUL);
 }
 
 /**

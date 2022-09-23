@@ -141,7 +141,7 @@ void test_phy_update_central_loc(void)
 
 	/* Initiate an PHY Update Procedure */
 	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, HOST_INITIATED);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -245,7 +245,7 @@ void test_phy_update_central_loc_invalid(void)
 
 	/* Initiate an PHY Update Procedure */
 	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, HOST_INITIATED);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -296,7 +296,7 @@ void test_phy_update_central_loc_unsupp_feat(void)
 
 	/* Initiate an PHY Update Procedure */
 	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, HOST_INITIATED);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -443,7 +443,7 @@ void test_phy_update_periph_loc(void)
 
 	/* Initiate an PHY Update Procedure */
 	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, HOST_INITIATED);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -610,6 +610,57 @@ void test_phy_update_periph_rem(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
+void test_phy_update_periph_loc_unsupp_feat(void)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
+
+	struct pdu_data_llctrl_unknown_rsp unknown_rsp = { .type = PDU_DATA_LLCTRL_TYPE_PHY_REQ };
+
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE };
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate an PHY Update Procedure */
+	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, HOST_INITIATED);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* There should be one host notification */
+	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", ctx_buffers_free());
+}
+
 void test_phy_update_periph_rem_invalid(void)
 {
 	struct node_tx *tx;
@@ -698,7 +749,7 @@ void test_phy_update_central_loc_collision(void)
 
 	/* Initiate an PHY Update Procedure */
 	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, HOST_INITIATED);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/*** ***/
 
@@ -875,7 +926,7 @@ void test_phy_update_central_rem_collision(void)
 
 	/* Initiate an PHY Update Procedure */
 	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, HOST_INITIATED);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/*** ***/
 
@@ -1042,7 +1093,7 @@ void test_phy_update_periph_loc_collision(void)
 
 	/* Initiate an PHY Update Procedure */
 	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, HOST_INITIATED);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -1158,7 +1209,7 @@ void test_phy_update_central_loc_no_act_change(void)
 
 	/* Initiate an PHY Update Procedure */
 	err = ull_cp_phy_update(&conn, PHY_1M, PREFER_S8_CODING, PHY_1M, HOST_INITIATED);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -1306,7 +1357,7 @@ void test_phy_update_periph_loc_no_actual_change(void)
 
 	/* Initiate an PHY Update Procedure */
 	err = ull_cp_phy_update(&conn, PHY_1M, PREFER_S8_CODING, PHY_1M, HOST_INITIATED);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -1425,6 +1476,8 @@ void test_main(void)
 					       unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_central_rem, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_periph_loc, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_periph_loc_unsupp_feat, setup,
+					       unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_periph_rem, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_periph_rem_invalid, setup,
 					       unit_test_noop),

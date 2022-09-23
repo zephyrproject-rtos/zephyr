@@ -10,6 +10,10 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
 
+#define SLOT1_PARTITION		slot1_partition
+#define SLOT1_PARTITION_ID	FIXED_PARTITION_ID(SLOT1_PARTITION)
+#define SLOT1_PARTITION_DEV	FIXED_PARTITION_DEVICE(SLOT1_PARTITION)
+
 extern int flash_map_entries;
 struct flash_sector fs_sectors[256];
 
@@ -19,9 +23,9 @@ ZTEST(flash_map, test_flash_area_disabled_device)
 	int rc;
 
 	/* Test that attempting to open a disabled flash area fails */
-	rc = flash_area_open(FLASH_AREA_ID(disabled_a), &fa);
+	rc = flash_area_open(FIXED_PARTITION_ID(disabled_a), &fa);
 	zassert_equal(rc, -ENODEV, "Open did not fail");
-	rc = flash_area_open(FLASH_AREA_ID(disabled_b), &fa);
+	rc = flash_area_open(FIXED_PARTITION_ID(disabled_b), &fa);
 	zassert_equal(rc, -ENODEV, "Open did not fail");
 }
 
@@ -38,16 +42,16 @@ ZTEST(flash_map, test_flash_area_get_sectors)
 	uint8_t wd[256];
 	uint8_t rd[256];
 	const struct device *flash_dev;
-	const struct device *flash_dev_a = FLASH_AREA_DEVICE(image_1);
+	const struct device *flash_dev_a = SLOT1_PARTITION_DEV;
 
-	rc = flash_area_open(FLASH_AREA_ID(image_1), &fa);
+	rc = flash_area_open(SLOT1_PARTITION_ID, &fa);
 	zassert_true(rc == 0, "flash_area_open() fail");
 
 	/* First erase the area so it's ready for use. */
 	flash_dev = flash_area_get_device(fa);
 
 	/* Device obtained by label should match the one from fa object */
-	zassert_equal(flash_dev, flash_dev_a, "Device for image_1 do not match");
+	zassert_equal(flash_dev, flash_dev_a, "Device for slot1_partition do not match");
 
 	rc = flash_erase(flash_dev, fa->fa_off, fa->fa_size);
 	zassert_true(rc == 0, "flash area erase fail");
@@ -55,8 +59,7 @@ ZTEST(flash_map, test_flash_area_get_sectors)
 	(void)memset(wd, 0xa5, sizeof(wd));
 
 	sec_cnt = ARRAY_SIZE(fs_sectors);
-	rc = flash_area_get_sectors(FLASH_AREA_ID(image_1), &sec_cnt,
-				    fs_sectors);
+	rc = flash_area_get_sectors(SLOT1_PARTITION_ID, &sec_cnt, fs_sectors);
 	zassert_true(rc == 0, "flash_area_get_sectors failed");
 
 	/* write stuff to beginning of every sector */
@@ -128,7 +131,7 @@ ZTEST(flash_map, test_flash_area_check_int_sha256)
 	uint8_t buffer[16];
 	int rc;
 
-	rc = flash_area_open(FLASH_AREA_ID(image_1), &fa);
+	rc = flash_area_open(SLOT1_PARTITION_ID, &fa);
 	zassert_true(rc == 0, "flash_area_open() fail, error %d\n", rc);
 	rc = flash_area_erase(fa, 0, fa->fa_size);
 	zassert_true(rc == 0, "Flash erase failure (%d), error %d\n", rc);
@@ -174,7 +177,7 @@ ZTEST(flash_map, test_flash_area_erased_val)
 	uint8_t val;
 	int rc;
 
-	rc = flash_area_open(FLASH_AREA_ID(image_1), &fa);
+	rc = flash_area_open(SLOT1_PARTITION_ID, &fa);
 	zassert_true(rc == 0, "flash_area_open() fail");
 
 	val = flash_area_erased_val(fa);

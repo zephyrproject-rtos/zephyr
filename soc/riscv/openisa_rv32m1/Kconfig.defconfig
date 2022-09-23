@@ -93,9 +93,6 @@ config 2ND_LVL_INTR_07_OFFSET
 	int
 	default 31
 
-config RV32M1_INTMUX
-	default y
-
 config RV32M1_INTMUX_CHANNEL_0
 	default y
 

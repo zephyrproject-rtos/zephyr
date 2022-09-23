@@ -171,3 +171,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
 };
+
+&systick {
+	status = "okay";
+};

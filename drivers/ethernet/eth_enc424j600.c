@@ -9,7 +9,7 @@
 
 #define DT_DRV_COMPAT microchip_enc424j600
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <string.h>
 #include <errno.h>

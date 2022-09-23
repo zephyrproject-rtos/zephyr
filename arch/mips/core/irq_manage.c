@@ -17,7 +17,7 @@ uint32_t mips_cp0_status_int_mask;
 
 FUNC_NORETURN void z_irq_spurious(const void *unused)
 {
-	ulong_t cause;
+	unsigned long cause;
 
 	ARG_UNUSED(unused);
 	cause = (read_c0_cause() & CAUSE_EXP_MASK) >> CAUSE_EXP_SHIFT;

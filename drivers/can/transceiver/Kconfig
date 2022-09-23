@@ -13,8 +13,9 @@ config CAN_TRANSCEIVER_INIT_PRIORITY
 
 config CAN_TRANSCEIVER_GPIO
 	bool "GPIO controlled CAN transceiver"
+	default y
+	depends on DT_HAS_CAN_TRANSCEIVER_GPIO_ENABLED
 	depends on GPIO
-	default $(dt_compat_enabled,can-transceiver-gpio)
 	help
 	  Enable support for GPIO controlled CAN transceivers.
 

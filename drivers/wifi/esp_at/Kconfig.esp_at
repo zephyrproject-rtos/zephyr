@@ -3,6 +3,8 @@
 
 menuconfig WIFI_ESP_AT
 	bool "Espressif AT Command support"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP_AT_ENABLED
 	select MODEM
 	select MODEM_CONTEXT
 	select MODEM_CMD_HANDLER

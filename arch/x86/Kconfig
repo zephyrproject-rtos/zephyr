@@ -299,24 +299,6 @@ config MULTIBOOT_MEMMAP
 	help
 	  Use the multiboot memory map if the loader provides one.
 
-config MULTIBOOT_FRAMEBUF
-	bool "Multiboot framebuffer support"
-	select DISPLAY
-	select FRAMEBUF_DISPLAY
-	select MULTIBOOT_INFO
-
-if MULTIBOOT_FRAMEBUF
-
-config MULTIBOOT_FRAMEBUF_X
-	int "Multiboot framebuffer X pixels"
-	default 640
-
-config MULTIBOOT_FRAMEBUF_Y
-	int "Multiboot framebuffer Y pixels"
-	default 480
-
-endif # MULTIBOOT_FRAMEBUF
-
 endif # MULTIBOOT
 
 config EXCEPTION_DEBUG

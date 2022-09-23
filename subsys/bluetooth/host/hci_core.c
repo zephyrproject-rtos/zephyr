@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -3180,7 +3180,7 @@ static void bt_dev_show_info(void)
 
 	if (IS_ENABLED(CONFIG_BT_SMP) &&
 	    IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
-		bt_keys_foreach(BT_KEYS_ALL, bt_keys_show_sniffer_info, NULL);
+		bt_keys_foreach_type(BT_KEYS_ALL, bt_keys_show_sniffer_info, NULL);
 	}
 
 	BT_INFO("HCI: version %s (0x%02x) revision 0x%04x, manufacturer 0x%04x",
@@ -3764,6 +3764,9 @@ int bt_disable(void)
 
 	/* Some functions rely on checking this bitfield */
 	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
+
+	/* If random address was set up - clear it */
+	bt_addr_le_copy(&bt_dev.random_addr, BT_ADDR_LE_ANY);
 
 	/* Abort TX thread */
 	k_thread_abort(&tx_thread_data);

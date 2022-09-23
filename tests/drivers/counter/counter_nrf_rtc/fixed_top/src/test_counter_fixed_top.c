@@ -52,7 +52,7 @@ static void test_all_instances(counter_test_func_t func)
 	}
 }
 
-void test_set_custom_top_value_fails_on_instance(const struct device *dev)
+static void test_set_custom_top_value_fails_on_instance(const struct device *dev)
 {
 	int err;
 	struct counter_top_cfg top_cfg = {
@@ -66,7 +66,7 @@ void test_set_custom_top_value_fails_on_instance(const struct device *dev)
 	zassert_true(err != 0, "%s: Expected error code", dev->name);
 }
 
-void test_set_custom_top_value_fails(void)
+ZTEST(counter, test_set_custom_top_value_fails)
 {
 	test_all_instances(test_set_custom_top_value_fails_on_instance);
 }
@@ -76,7 +76,7 @@ static void top_handler(const struct device *dev, void *user_data)
 	top_cnt++;
 }
 
-void test_top_handler_on_instance(const struct device *dev)
+static void test_top_handler_on_instance(const struct device *dev)
 {
 	uint32_t tmp_top_cnt;
 	int err;
@@ -104,16 +104,9 @@ void test_top_handler_on_instance(const struct device *dev)
 	zassert_equal(tmp_top_cnt, 1, "%s: Expected top handler", dev->name);
 }
 
-void test_top_handler(void)
+ZTEST(counter, test_top_handler)
 {
 	test_all_instances(test_top_handler_on_instance);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_counter,
-		ztest_unit_test(test_set_custom_top_value_fails),
-		ztest_unit_test(test_top_handler)
-			 );
-	ztest_run_test_suite(test_counter);
-}
+ZTEST_SUITE(counter, NULL, NULL, NULL, NULL, NULL);

@@ -71,6 +71,11 @@
 #define PACKAGE_FLAGS 0
 #endif
 
+#ifdef CONFIG_LOG
+#undef CONFIG_LOG
+#define CONFIG_LOG 0
+#endif
+
 #include <zephyr/sys/cbprintf.h>
 #include "../../../lib/os/cbprintf.c"
 
@@ -225,7 +230,7 @@ static int rawprf(const char *format, ...)
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)
 	    && !IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
-		zassert_equal(rv, 0, NULL);
+		zassert_equal(rv, 0);
 		rv = outbuf.idx;
 	}
 	return rv;
@@ -248,11 +253,11 @@ static int rawprf(const char *format, ...)
 		CBPRINTF_STATIC_PACKAGE(&package[PKG_ALIGN_OFFSET], _len - 1, \
 					st_pkg_rv, PKG_ALIGN_OFFSET, \
 					PACKAGE_FLAGS, _fmt, __VA_ARGS__); \
-		zassert_equal(st_pkg_rv, -ENOSPC, NULL); \
+		zassert_equal(st_pkg_rv, -ENOSPC); \
 		CBPRINTF_STATIC_PACKAGE(&package[PKG_ALIGN_OFFSET], _len, \
 					st_pkg_rv, PKG_ALIGN_OFFSET, \
 					PACKAGE_FLAGS, _fmt, __VA_ARGS__); \
-		zassert_equal(st_pkg_rv, _len, NULL); \
+		zassert_equal(st_pkg_rv, _len); \
 		rv = cbpprintf(out, &package_buf, &package[PKG_ALIGN_OFFSET]); \
 		if (rv >= 0) { \
 			sp_buf = _buf; \
@@ -357,7 +362,7 @@ static inline bool prf_check(const char *expected,
 	zassert_true(prf_check(expected, rv, __FILE__, __LINE__), \
 		     NULL)
 
-static void test_pct(void)
+ZTEST(prf, test_pct)
 {
 	int rc;
 
@@ -366,7 +371,7 @@ static void test_pct(void)
 	PRF_CHECK("/%/a/", rc);
 }
 
-static void test_c(void)
+ZTEST(prf, test_c)
 {
 	int rc;
 
@@ -379,15 +384,15 @@ static void test_c(void)
 	size_t spaces = 255;
 
 	zassert_equal(rc, 258, "len %d", rc);
-	zassert_equal(*bp, '/', NULL);
+	zassert_equal(*bp, '/');
 	++bp;
 	while (spaces-- > 0) {
-		zassert_equal(*bp, ' ', NULL);
+		zassert_equal(*bp, ' ');
 		++bp;
 	}
-	zassert_equal(*bp, 'a', NULL);
+	zassert_equal(*bp, 'a');
 	++bp;
-	zassert_equal(*bp, '/', NULL);
+	zassert_equal(*bp, '/');
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
 		TC_PRINT("short test for nano\n");
@@ -402,7 +407,7 @@ static void test_c(void)
 	}
 }
 
-static void test_s(void)
+ZTEST(prf, test_s)
 {
 	const char *s = "123";
 	static wchar_t ws[] = L"abc";
@@ -430,21 +435,21 @@ static void test_s(void)
 	}
 }
 
-static void test_v_c(void)
+ZTEST(prf, test_v_c)
 {
 	int rc;
 
 	reset_out();
 	buf[1] = 'b';
 	rc = rawprf("%c", 'a');
-	zassert_equal(rc, 1, NULL);
-	zassert_equal(buf[0], 'a', NULL);
+	zassert_equal(rc, 1);
+	zassert_equal(buf[0], 'a');
 	if (!ENABLED_USE_LIBC) {
 		zassert_equal(buf[1], 'b', "wth %x", buf[1]);
 	}
 }
 
-static void test_d_length(void)
+ZTEST(prf, test_d_length)
 {
 	int min = -1234567890;
 	int max = 1876543210;
@@ -524,10 +529,10 @@ static void test_d_length(void)
 	reset_out();
 	rc = rawprf("/%Ld/", max);
 	zassert_equal(rc, 5, "len %d", rc);
-	zassert_equal(strncmp("/%Ld/", buf, rc), 0, NULL);
+	zassert_equal(strncmp("/%Ld/", buf, rc), 0);
 }
 
-static void test_d_flags(void)
+ZTEST(prf, test_d_flags)
 {
 	int sv = 123;
 	int rc;
@@ -573,7 +578,7 @@ static void test_d_flags(void)
 			      buf, rc), 0, NULL);
 }
 
-static void test_x_length(void)
+ZTEST(prf, test_x_length)
 {
 	unsigned int min = 0x4c3c2c1c;
 	unsigned int max = 0x4d3d2d1d;
@@ -638,7 +643,7 @@ static void test_x_length(void)
 	}
 }
 
-static void test_x_flags(void)
+ZTEST(prf, test_x_flags)
 {
 	unsigned int sv = 0x123;
 	int rc;
@@ -663,10 +668,10 @@ static void test_x_flags(void)
 	reset_out();
 	rc = rawprf("/%+x/% x/", sv, sv);
 	zassert_equal(rc, 9, "rc %d", rc);
-	zassert_equal(strncmp("/123/123/", buf, rc), 0, NULL);
+	zassert_equal(strncmp("/123/123/", buf, rc), 0);
 }
 
-static void test_o(void)
+ZTEST(prf, test_o)
 {
 	unsigned int v = 01234567;
 	int rc;
@@ -682,7 +687,7 @@ static void test_o(void)
 	PRF_CHECK("01234567", rc);
 }
 
-static void test_fp_value(void)
+ZTEST(prf, test_fp_value)
 {
 	if (!IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
 		TC_PRINT("skipping unsupported feature\n");
@@ -875,7 +880,7 @@ static void test_fp_value(void)
 	PRF_CHECK("8.98846567431158e+307", rc);
 }
 
-static void test_fp_length(void)
+ZTEST(prf, test_fp_length)
 {
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
 		TC_PRINT("skipped test for nano\n");
@@ -913,10 +918,10 @@ static void test_fp_length(void)
 	reset_out();
 	rc = rawprf("/%hf/", dv);
 	zassert_equal(rc, 5, "len %d", rc);
-	zassert_equal(strncmp("/%hf/", buf, rc), 0, NULL);
+	zassert_equal(strncmp("/%hf/", buf, rc), 0);
 }
 
-static void test_fp_flags(void)
+ZTEST(prf, test_fp_flags)
 {
 	if (!IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
 		TC_PRINT("skipping unsupported feature\n");
@@ -944,12 +949,12 @@ static void test_fp_flags(void)
 	PRF_CHECK("/23/23.0000/23/23./", rc);
 
 	rc = prf(NULL, "% .380f", 0x1p-400);
-	zassert_equal(rc, 383, NULL);
-	zassert_equal(strncmp(buf, " 0.000", 6), 0, NULL);
-	zassert_equal(strncmp(&buf[119], "00003872", 8), 0, NULL);
+	zassert_equal(rc, 383);
+	zassert_equal(strncmp(buf, " 0.000", 6), 0);
+	zassert_equal(strncmp(&buf[119], "00003872", 8), 0);
 }
 
-static void test_star_width(void)
+ZTEST(prf, test_star_width)
 {
 	int rc;
 
@@ -960,7 +965,7 @@ static void test_star_width(void)
 	PRF_CHECK("/  a/a  /", rc);
 }
 
-static void test_star_precision(void)
+ZTEST(prf, test_star_precision)
 {
 	int rc;
 
@@ -989,7 +994,7 @@ static void test_star_precision(void)
 	}
 }
 
-static void test_n(void)
+ZTEST(prf, test_n)
 {
 	if (!IS_ENABLED(CONFIG_CBPRINTF_N_SPECIFIER)) {
 		TC_PRINT("skipping unsupported feature\n");
@@ -1012,35 +1017,35 @@ static void test_n(void)
 
 	rc = prf(NULL, "12345%n", &l);
 	zassert_equal(l, rc, "%d != %d", l, rc);
-	zassert_equal(rc, 5, NULL);
+	zassert_equal(rc, 5);
 
 
 	rc = prf(NULL, "12345%hn", &l_h);
-	zassert_equal(l_h, rc, NULL);
+	zassert_equal(l_h, rc);
 
 	rc = prf(NULL, "12345%hhn", &l_hh);
-	zassert_equal(l_hh, rc, NULL);
+	zassert_equal(l_hh, rc);
 
 	rc = prf(NULL, "12345%ln", &l_l);
-	zassert_equal(l_l, rc, NULL);
+	zassert_equal(l_l, rc);
 
 	rc = prf(NULL, "12345%lln", &l_ll);
-	zassert_equal(l_ll, rc, NULL);
+	zassert_equal(l_ll, rc);
 
 	rc = prf(NULL, "12345%jn", &l_j);
-	zassert_equal(l_j, rc, NULL);
+	zassert_equal(l_j, rc);
 
 	rc = prf(NULL, "12345%zn", &l_z);
-	zassert_equal(l_z, rc, NULL);
+	zassert_equal(l_z, rc);
 
 	rc = prf(NULL, "12345%tn", &l_t);
-	zassert_equal(l_t, rc, NULL);
+	zassert_equal(l_t, rc);
 }
 
 #define EXPECTED_1ARG(_t) (IS_ENABLED(CONFIG_CBPRINTF_NANO) \
 			   ? 1U : (sizeof(_t) / sizeof(int)))
 
-static void test_p(void)
+ZTEST(prf, test_p)
 {
 	if (ENABLED_USE_LIBC) {
 		TC_PRINT("skipping on libc\n");
@@ -1058,28 +1063,28 @@ static void test_p(void)
 
 	reset_out();
 	rc = rawprf("/%12p/", ptr);
-	zassert_equal(rc, 14, NULL);
-	zassert_equal(strncmp("/    0xcafe21/", buf, rc), 0, NULL);
+	zassert_equal(rc, 14);
+	zassert_equal(strncmp("/    0xcafe21/", buf, rc), 0);
 
 	reset_out();
 	rc = rawprf("/%12p/", NULL);
-	zassert_equal(rc, 14, NULL);
-	zassert_equal(strncmp("/       (nil)/", buf, rc), 0, NULL);
+	zassert_equal(rc, 14);
+	zassert_equal(strncmp("/       (nil)/", buf, rc), 0);
 
 	reset_out();
 	rc = rawprf("/%-12p/", ptr);
-	zassert_equal(rc, 14, NULL);
-	zassert_equal(strncmp("/0xcafe21    /", buf, rc), 0, NULL);
+	zassert_equal(rc, 14);
+	zassert_equal(strncmp("/0xcafe21    /", buf, rc), 0);
 
 	reset_out();
 	rc = rawprf("/%-12p/", NULL);
-	zassert_equal(rc, 14, NULL);
-	zassert_equal(strncmp("/(nil)       /", buf, rc), 0, NULL);
+	zassert_equal(rc, 14);
+	zassert_equal(strncmp("/(nil)       /", buf, rc), 0);
 
 	reset_out();
 	rc = rawprf("/%.8p/", ptr);
-	zassert_equal(rc, 12, NULL);
-	zassert_equal(strncmp("/0x00cafe21/", buf, rc), 0, NULL);
+	zassert_equal(rc, 12);
+	zassert_equal(strncmp("/0x00cafe21/", buf, rc), 0);
 }
 
 static int out_counter(int c,
@@ -1097,7 +1102,7 @@ static int out_e42(int c,
 	return -42;
 }
 
-static void test_libc_substs(void)
+ZTEST(prf, test_libc_substs)
 {
 	if (!IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
 		TC_PRINT("not enabled\n");
@@ -1113,23 +1118,23 @@ static void test_libc_substs(void)
 	lbuf[len] = full_flag;
 
 	rc = snprintfcb(lbuf, len, "%06d", 1);
-	zassert_equal(rc, 6, NULL);
-	zassert_equal(strncmp("000001", lbuf, rc), 0, NULL);
-	zassert_equal(lbuf[7], full_flag, NULL);
+	zassert_equal(rc, 6);
+	zassert_equal(strncmp("000001", lbuf, rc), 0);
+	zassert_equal(lbuf[7], full_flag);
 
 	rc = snprintfcb(lbuf, len, "%07d", 1);
-	zassert_equal(rc, 7, NULL);
-	zassert_equal(strncmp("000000", lbuf, rc), 0, NULL);
-	zassert_equal(lbuf[7], full_flag, NULL);
+	zassert_equal(rc, 7);
+	zassert_equal(strncmp("000000", lbuf, rc), 0);
+	zassert_equal(lbuf[7], full_flag);
 
 	rc = snprintfcb(lbuf, len, "%020d", 1);
 	zassert_equal(rc, 20, "rc %d", rc);
-	zassert_equal(lbuf[7], full_flag, NULL);
-	zassert_equal(strncmp("000000", lbuf, rc), 0, NULL);
+	zassert_equal(lbuf[7], full_flag);
+	zassert_equal(strncmp("000000", lbuf, rc), 0);
 
 	rc = cbprintf(out_counter, &count, "%020d", 1);
 	zassert_equal(rc, 20, "rc %d", rc);
-	zassert_equal(count, 20, NULL);
+	zassert_equal(count, 20);
 
 	if (!IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
 		rc = cbprintf(out_e42, NULL, "%020d", 1);
@@ -1137,7 +1142,7 @@ static void test_libc_substs(void)
 	}
 }
 
-static void test_cbprintf_package(void)
+ZTEST(prf, test_cbprintf_package)
 {
 	if (!ENABLED_USE_PACKAGED) {
 		TC_PRINT("disabled\n");
@@ -1149,7 +1154,7 @@ static void test_cbprintf_package(void)
 
 	/* Verify we can calculate length without storing */
 	rc = cbprintf_package(NULL, PKG_ALIGN_OFFSET, PACKAGE_FLAGS, fmt, 3);
-	zassert_true(rc > sizeof(int), NULL);
+	zassert_true(rc > sizeof(int));
 
 	/* Capture the base package information for future tests. */
 	size_t len = rc;
@@ -1160,19 +1165,19 @@ static void test_cbprintf_package(void)
 	 * unaligned. Same alignment offset was used for space calculation.
 	 */
 	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, PACKAGE_FLAGS, fmt, 3);
-	zassert_equal(rc, len, NULL);
+	zassert_equal(rc, len);
 
 	/* Verify we get an error if can't store */
 	len -= 1;
 	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, PACKAGE_FLAGS, fmt, 3);
-	zassert_equal(rc, -ENOSPC, NULL);
+	zassert_equal(rc, -ENOSPC);
 }
 
 /* Test using @ref CBPRINTF_PACKAGE_ADD_STRING_IDXS flag.
  * Note that only static packaging is tested here because ro string detection
  * does not work on host testing.
  */
-static void test_cbprintf_package_rw_string_indexes(void)
+ZTEST(prf, test_cbprintf_package_rw_string_indexes)
 {
 	if (!ENABLED_USE_PACKAGED) {
 		TC_PRINT("disabled\n");
@@ -1198,7 +1203,7 @@ static void test_cbprintf_package_rw_string_indexes(void)
 	/* package with string indexes will contain two more bytes holding indexes
 	 * of string parameter locations.
 	 */
-	zassert_equal(len0 + 2, len1, NULL);
+	zassert_equal(len0 + 2, len1);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package0[len0];
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package1[len1];
@@ -1214,19 +1219,19 @@ static void test_cbprintf_package_rw_string_indexes(void)
 	union cbprintf_package_hdr *desc1 = (union cbprintf_package_hdr *)package1;
 
 	/* Compare descriptor content. Second package has one ro string index. */
-	zassert_equal(desc0->desc.ro_str_cnt, 0, NULL);
-	zassert_equal(desc1->desc.ro_str_cnt, 2, NULL);
-	zassert_equal(len0 + 2, len1, NULL);
+	zassert_equal(desc0->desc.ro_str_cnt, 0);
+	zassert_equal(desc1->desc.ro_str_cnt, 2);
+	zassert_equal(len0 + 2, len1);
 
 	int *p = (int *)package1;
 
 	str_idx = package1[len0];
 	addr = *(char **)&p[str_idx];
-	zassert_equal(addr, test_str, NULL);
+	zassert_equal(addr, test_str);
 
 	str_idx = package1[len0 + 1];
 	addr = *(char **)&p[str_idx];
-	zassert_equal(addr, test_str1, NULL);
+	zassert_equal(addr, test_str1);
 }
 
 static int fsc_package_cb(int c, void *ctx)
@@ -1240,7 +1245,7 @@ static int fsc_package_cb(int c, void *ctx)
 }
 
 /* Test for validating conversion to fully self-contained package. */
-static void test_cbprintf_fsc_package(void)
+ZTEST(prf, test_cbprintf_fsc_package)
 {
 	if (!ENABLED_USE_PACKAGED) {
 		TC_PRINT("disabled\n");
@@ -1268,7 +1273,7 @@ static void test_cbprintf_fsc_package(void)
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
 
-	zassert_true(len > 0, NULL);
+	zassert_true(len > 0);
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len];
 
 	CBPRINTF_STATIC_PACKAGE(package, sizeof(package), len, 0,
@@ -1280,15 +1285,15 @@ static void test_cbprintf_fsc_package(void)
 
 	int exp_len = len + (int)strlen(test_str) + 1 + (int)strlen(test_str1) + 1;
 
-	zassert_equal(exp_len, fsc_len, NULL);
+	zassert_equal(exp_len, fsc_len);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) fsc_package[fsc_len];
 
 	err = cbprintf_fsc_package(package, len, fsc_package, fsc_len - 1);
-	zassert_equal(err, -ENOSPC, NULL);
+	zassert_equal(err, -ENOSPC);
 
 	err = cbprintf_fsc_package(package, len, fsc_package, fsc_len);
-	zassert_equal(err, fsc_len, NULL);
+	zassert_equal(err, fsc_len);
 
 	/* Now overwrite a char in original string, confirm that fsc package
 	 * contains string without that change because ro string is copied into
@@ -1301,17 +1306,17 @@ static void test_cbprintf_fsc_package(void)
 	cbpprintf(fsc_package_cb, &pout, package);
 	*pout = '\0';
 
-	zassert_equal(strcmp(out_str, exp_str1), 0, NULL);
-	zassert_true(strcmp(exp_str0, exp_str1) != 0, NULL);
+	zassert_equal(strcmp(out_str, exp_str1), 0);
+	zassert_true(strcmp(exp_str0, exp_str1) != 0);
 
 	/* FSC package contains original content. */
 	pout = out_str;
 	cbpprintf(fsc_package_cb, &pout, fsc_package);
 	*pout = '\0';
-	zassert_equal(strcmp(out_str, exp_str0), 0, NULL);
+	zassert_equal(strcmp(out_str, exp_str0), 0);
 }
 
-static void test_cbpprintf(void)
+ZTEST(prf, test_cbpprintf)
 {
 	if (!ENABLED_USE_PACKAGED) {
 		TC_PRINT("disabled\n");
@@ -1326,15 +1331,14 @@ static void test_cbpprintf(void)
 	 */
 	reset_out();
 	rc = cbpprintf(out, &outbuf, NULL);
-	zassert_equal(rc, -EINVAL, NULL);
+	zassert_equal(rc, -EINVAL);
 }
 
-static void test_nop(void)
+ZTEST(prf, test_nop)
 {
 }
 
-/*test case main entry*/
-void test_main(void)
+static void *cbprintf_setup(void)
 {
 	if (sizeof(int) == 4) {
 		pfx_str += 8U;
@@ -1388,29 +1392,7 @@ void test_main(void)
 	printf("package alignment offset = %zu\n", PKG_ALIGN_OFFSET);
 #endif
 
-	ztest_test_suite(test_prf,
-			 ztest_unit_test(test_pct),
-			 ztest_unit_test(test_v_c),
-			 ztest_unit_test(test_c),
-			 ztest_unit_test(test_s),
-			 ztest_unit_test(test_d_length),
-			 ztest_unit_test(test_d_flags),
-			 ztest_unit_test(test_x_length),
-			 ztest_unit_test(test_x_flags),
-			 ztest_unit_test(test_o),
-			 ztest_unit_test(test_fp_value),
-			 ztest_unit_test(test_fp_length),
-			 ztest_unit_test(test_fp_flags),
-			 ztest_unit_test(test_star_width),
-			 ztest_unit_test(test_star_precision),
-			 ztest_unit_test(test_n),
-			 ztest_unit_test(test_p),
-			 ztest_unit_test(test_libc_substs),
-			 ztest_unit_test(test_cbprintf_package),
-			 ztest_unit_test(test_cbpprintf),
-			 ztest_unit_test(test_cbprintf_package_rw_string_indexes),
-			 ztest_unit_test(test_cbprintf_fsc_package),
-			 ztest_unit_test(test_nop)
-			 );
-	ztest_run_test_suite(test_prf);
+	return NULL;
 }
+
+ZTEST_SUITE(prf, NULL, cbprintf_setup, NULL, NULL, NULL);

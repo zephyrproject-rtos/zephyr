@@ -174,3 +174,7 @@
 &edma0 {
 	status = "okay";
 };
+
+&systick {
+	status = "okay";
+};

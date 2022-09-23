@@ -136,7 +136,7 @@
 			dma-names = "tx", "rx";
 		};
 
-		lpuart12: uart@40098000 {
+		lpuart12: uart@40c28000 {
 			dmas = <&edma_lpsr0 23 30>, <&edma_lpsr0 24 31>;
 			dma-names = "tx", "rx";
 		};

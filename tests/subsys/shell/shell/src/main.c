@@ -9,7 +9,7 @@
  *
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #include <zephyr/shell/shell.h>
@@ -23,9 +23,10 @@ static char dynamic_cmd_buffer[][MAX_CMD_SYNTAX_LEN] = {
 
 static void test_shell_execute_cmd(const char *cmd, int result)
 {
+	const struct shell *sh = shell_backend_dummy_get_ptr();
 	int ret;
 
-	ret = shell_execute_cmd(NULL, cmd);
+	ret = shell_execute_cmd(sh, cmd);
 
 	TC_PRINT("shell_execute_cmd(%s): %d\n", cmd, ret);
 
@@ -421,13 +422,14 @@ SHELL_CMD_REGISTER(dummy, NULL, NULL, cmd_dummy);
 
 ZTEST(shell, test_max_argc)
 {
-	BUILD_ASSERT(CONFIG_SHELL_ARGC_MAX == 12,
+	BUILD_ASSERT(CONFIG_SHELL_ARGC_MAX == 20,
 		     "Unexpected test configuration.");
 
-	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11", 0);
-	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12", -ENOEXEC);
+	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19", 0);
+	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
+			       " 16 17 18 19 20",
+			       -ENOEXEC);
 }
-
 
 static int cmd_handler_dict_1(const struct shell *sh, size_t argc, char **argv, void *data)
 {
@@ -489,8 +491,12 @@ ZTEST(shell, test_section_cmd)
 
 static void *shell_setup(void)
 {
-	/* Let the shell backend initialize. */
-	k_msleep(20);
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+
+	/* Wait for the initialization of the shell dummy backend. */
+	WAIT_FOR(shell_ready(sh), 20000, k_msleep(1));
+	zassert_true(shell_ready(sh), "timed out waiting for dummy shell backend");
+
 	return NULL;
 }
 

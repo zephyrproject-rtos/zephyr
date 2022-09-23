@@ -224,44 +224,44 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_state_str)
 
 	tid->base.thread_state = 0;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "") == 0, NULL);
+	zassert_true(strcmp(str, "") == 0);
 
 	tid->base.thread_state = _THREAD_DUMMY;
 
 	str = k_thread_state_str(tid, NULL, sizeof(state_str));
-	zassert_true(strcmp(str, "") == 0, NULL);
+	zassert_true(strcmp(str, "") == 0);
 
 	str = k_thread_state_str(tid, state_str, 0);
-	zassert_true(strcmp(str, "") == 0, NULL);
+	zassert_true(strcmp(str, "") == 0);
 
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "dummy") == 0, NULL);
+	zassert_true(strcmp(str, "dummy") == 0);
 
 	tid->base.thread_state = _THREAD_PENDING;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "pending") == 0, NULL);
+	zassert_true(strcmp(str, "pending") == 0);
 
 	tid->base.thread_state = _THREAD_PRESTART;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "prestart") == 0, NULL);
+	zassert_true(strcmp(str, "prestart") == 0);
 
 	tid->base.thread_state = _THREAD_DEAD;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "dead") == 0, NULL);
+	zassert_true(strcmp(str, "dead") == 0);
 
 	tid->base.thread_state = _THREAD_SUSPENDED;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "suspended") == 0, NULL);
+	zassert_true(strcmp(str, "suspended") == 0);
 
 	tid->base.thread_state = _THREAD_ABORTING;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "aborting") == 0, NULL);
+	zassert_true(strcmp(str, "aborting") == 0);
 
 	tid->base.thread_state = _THREAD_QUEUED;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "queued") == 0, NULL);
+	zassert_true(strcmp(str, "queued") == 0);
 
 	tid->base.thread_state = _THREAD_PENDING | _THREAD_SUSPENDED;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "pending+suspended") == 0, NULL);
+	zassert_true(strcmp(str, "pending+suspended") == 0);
 }

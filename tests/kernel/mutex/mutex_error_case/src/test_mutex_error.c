@@ -42,7 +42,7 @@ void ztest_post_fatal_error_hook(unsigned int reason,
 
 {
 	/* check if expected error */
-	zassert_equal(reason, K_ERR_KERNEL_OOPS, NULL);
+	zassert_equal(reason, K_ERR_KERNEL_OOPS);
 }
 
 static void tThread_entry_negative(void *p1, void *p2, void *p3)

@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define DT_DRV_COMPAT st_stm32_ethernet
 
 #include <sys/types.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth.h>
 #include <zephyr/drivers/clock_control.h>

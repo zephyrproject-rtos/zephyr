@@ -26,7 +26,6 @@ Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/nrf52840dk_nrf52840.jpg
-     :width: 442px
      :align: center
      :alt: nRF52840 DK
 

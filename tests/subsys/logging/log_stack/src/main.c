@@ -50,13 +50,13 @@ ZTEST_SUITE(test_log_stack, NULL, NULL, NULL, NULL, after);
 	\
 	k_msleep(100); \
 	err = k_thread_stack_space_get(k_current_get(), &unused); \
-	zassert_equal(err, 0, NULL); \
+	zassert_equal(err, 0); \
 	__DEBRACKET log_msg; \
 	\
 	k_msleep(100); \
 	\
 	err = k_thread_stack_space_get(k_current_get(), &unused2); \
-	zassert_equal(err, 0, NULL); \
+	zassert_equal(err, 0); \
 	\
 	usage = unused - unused2; \
 	PRINT("Stack increase due to log usage: %zu\n", usage); \
@@ -106,12 +106,12 @@ ZTEST_SUITE(test_log_stack, NULL, NULL, NULL, NULL, after);
 
 #if !defined(CONFIG_LOG_MODE_IMMEDIATE) && !defined(CONFIG_NO_OPTIMIZATIONS)
 #define SIMPLE_USAGE 72
-#define HEXDUMP_USAGE 48
+#define HEXDUMP_USAGE 68
 #define MORE_ARGS_USAGE 88
 #elif defined(CONFIG_LOG_MODE_IMMEDIATE) && !defined(CONFIG_NO_OPTIMIZATIONS)
-#define SIMPLE_USAGE 420
-#define HEXDUMP_USAGE 416
-#define MORE_ARGS_USAGE 456
+#define SIMPLE_USAGE 448
+#define HEXDUMP_USAGE 444
+#define MORE_ARGS_USAGE 484
 #elif !defined(CONFIG_LOG_MODE_IMMEDIATE) && defined(CONFIG_NO_OPTIMIZATIONS)
 #define SIMPLE_USAGE 256
 #define HEXDUMP_USAGE 240

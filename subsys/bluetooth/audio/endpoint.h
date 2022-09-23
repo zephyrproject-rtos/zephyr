@@ -36,6 +36,15 @@ struct bt_audio_iso {
 	struct bt_iso_chan_qos iso_qos;
 	struct bt_iso_chan_io_qos sink_io_qos;
 	struct bt_iso_chan_io_qos source_io_qos;
+	struct bt_iso_chan_path sink_path;
+	/* TODO: The sink/source path CC will basically be a duplicate of
+	 * bt_codec.data, but since struct bt_codec stores the information as an
+	 * array of bt_codec_data, and ISO expect a uint8_t array, we need to
+	 * duplicate the data. This should be optimized.
+	 */
+	uint8_t sink_path_cc[CONFIG_BT_CODEC_MAX_DATA_COUNT * CONFIG_BT_CODEC_MAX_DATA_LEN];
+	struct bt_iso_chan_path	source_path;
+	uint8_t source_path_cc[CONFIG_BT_CODEC_MAX_DATA_COUNT * CONFIG_BT_CODEC_MAX_DATA_LEN];
 	struct bt_audio_stream *sink_stream;
 	struct bt_audio_stream *source_stream;
 };

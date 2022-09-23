@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
@@ -434,6 +434,34 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * \
 			  (RX_CNT + BT_CTLR_MAX_CONNECTABLE + \
 			   BT_CTLR_ADV_SET + BT_CTLR_SCAN_SYNC_SET))
+
+/* Macros for encoding number of completed packets.
+ *
+ * If the pointer is numerically below 0x100, the pointer is treated as either
+ * data or control PDU.
+ *
+ * NOTE: For any architecture which would map RAM below address 0x100, this will
+ * not work.
+ */
+#define IS_NODE_TX_PTR(_p) ((uint32_t)(_p) & ~0xFFUL)
+#define IS_NODE_TX_DATA(_p) ((uint32_t)(_p) == 0x01UL)
+#define IS_NODE_TX_CTRL(_p) ((uint32_t)(_p) == 0x02UL)
+#define NODE_TX_DATA_SET(_p) ((_p) = (void *)0x01UL)
+#define NODE_TX_CTRL_SET(_p) ((_p) = (void *)0x012UL)
+
+/* Macros for encoding number of ISO SDU fragments in the enqueued TX node
+ * pointer. This is needed to ensure only a single release of the node and link
+ * in tx_cmplt_get, even when called several times. At all times, the number of
+ * fragments must be available for HCI complete-counting.
+ *
+ * If the pointer is numerically below 0x100, the pointer is treated as a one
+ * byte fragments count.
+ *
+ * NOTE: For any architecture which would map RAM below address 0x100, this will
+ * not work.
+ */
+#define NODE_TX_FRAGMENTS_GET(_p) ((uint32_t)(_p) & 0xFFUL)
+#define NODE_TX_FRAGMENTS_SET(_p, _cmplt) ((_p) = (void *)(uint32_t)(_cmplt))
 
 static struct {
 	void *free;
@@ -937,6 +965,19 @@ ll_rx_get_again:
 #endif /* CONFIG_BT_CONN ||
 	* (CONFIG_BT_OBSERVER && CONFIG_BT_CTLR_ADV_EXT)
 	*/
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+			} else if (rx->type == NODE_RX_TYPE_IQ_SAMPLE_REPORT_LLL_RELEASE) {
+				const uint8_t report_cnt = 1U;
+
+				(void)memq_dequeue(memq_ll_rx.tail, &memq_ll_rx.head, NULL);
+				ll_rx_link_release(link);
+				ull_iq_report_link_inc_quota(report_cnt);
+				ull_df_iq_report_mem_release(rx);
+				ull_df_rx_iq_report_alloc(report_cnt);
+
+				goto ll_rx_get_again;
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 			} else if (rx->type == NODE_RX_TYPE_SYNC_CHM_COMPLETE) {
@@ -1645,14 +1686,14 @@ void ll_rx_release(void *node_rx)
 
 void ll_rx_put(memq_link_t *link, void *rx)
 {
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
 	struct node_rx_hdr *rx_hdr = rx;
 
 	/* Serialize Tx ack with Rx enqueue by storing reference to
 	 * last element index in Tx ack FIFO.
 	 */
 	rx_hdr->ack_last = mfifo_tx_ack.l;
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 
 	/* Enqueue the Rx object */
 	memq_enqueue(link, rx, &memq_ll_rx.tail);
@@ -2462,10 +2503,12 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 {
 	struct lll_tx *tx;
 	uint8_t cmplt;
+	uint8_t next;
 
+	next = *first;
 	tx = mfifo_dequeue_iter_get(mfifo_tx_ack.m, mfifo_tx_ack.s,
 				    mfifo_tx_ack.n, mfifo_tx_ack.f, last,
-				    first);
+				    &next);
 	if (!tx) {
 		return 0;
 	}
@@ -2478,24 +2521,61 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 	defined(CONFIG_BT_CTLR_CONN_ISO)
 		} else if (IS_CIS_HANDLE(tx->handle) ||
 			   IS_ADV_ISO_HANDLE(tx->handle)) {
-			struct node_tx_iso *tx_node_iso;
-			struct pdu_data *p;
+			struct node_tx_iso *tx_node;
+			uint8_t sdu_fragments;
 
-			tx_node_iso = tx->node;
-			p = (void *)tx_node_iso->pdu;
+			/* NOTE: tx_cmplt_get() is permitted to be called
+			 *       multiple times before the tx_ack queue which is
+			 *       associated with Rx queue is changed by the
+			 *       dequeue of Rx node.
+			 *
+			 *       Tx node is released early without waiting for
+			 *       any dependency on Rx queue. Released Tx node
+			 *       reference is overloaded to store the Tx
+			 *       fragments count.
+			 *
+			 *       A hack is used here that depends on the fact
+			 *       that memory addresses have a value greater than
+			 *       0xFF, to determined if a node Tx has been
+			 *       released in a prior iteration of this function.
+			 */
 
-			if (IS_ADV_ISO_HANDLE(tx->handle)) {
-				/* FIXME: ADV_ISO shall be updated to use ISOAL for
-				 * TX. Until then, assume 1 node equals 1 fragment.
+			/* We must count each SDU HCI fragment */
+			tx_node = tx->node;
+			if (IS_NODE_TX_PTR(tx_node)) {
+				if (IS_ADV_ISO_HANDLE(tx->handle)) {
+					/* FIXME: ADV_ISO shall be updated to
+					 * use ISOAL for TX. Until then, assume
+					 * 1 node equals 1 fragment.
+					 */
+					sdu_fragments = 1U;
+				} else {
+					/* We count each SDU fragment completed
+					 * by this PDU.
+					 */
+					sdu_fragments = tx_node->sdu_fragments;
+				}
+
+				/* Replace node reference with fragments
+				 * count
 				 */
-				cmplt += 1;
+				NODE_TX_FRAGMENTS_SET(tx->node, sdu_fragments);
+
+				/* Release node as its a reference and not
+				 * fragments count.
+				 */
+				ll_iso_link_tx_release(tx_node->link);
+				ll_iso_tx_mem_release(tx_node);
 			} else {
-				/* We count each SDU fragment completed by this PDU */
-				cmplt += tx_node_iso->sdu_fragments;
+				/* Get SDU fragments count from the encoded
+				 * node reference value.
+				 */
+				sdu_fragments = NODE_TX_FRAGMENTS_GET(tx_node);
 			}
 
-			ll_iso_link_tx_release(tx_node_iso->link);
-			ll_iso_tx_mem_release(tx_node_iso);
+			/* Accumulate the tx acknowledgements */
+			cmplt += sdu_fragments;
+
 			goto next_ack;
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
@@ -2504,21 +2584,40 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 			struct node_tx *tx_node;
 			struct pdu_data *p;
 
+			/* NOTE: tx_cmplt_get() is permitted to be called
+			 *       multiple times before the tx_ack queue which is
+			 *       associated with Rx queue is changed by the
+			 *       dequeue of Rx node.
+			 *
+			 *       Tx node is released early without waiting for
+			 *       any dependency on Rx queue. Released Tx node
+			 *       reference is overloaded to store whether
+			 *       packet with data or control was released.
+			 *
+			 *       A hack is used here that depends on the fact
+			 *       that memory addresses have a value greater than
+			 *       0xFF, to determined if a node Tx has been
+			 *       released in a prior iteration of this function.
+			 */
 			tx_node = tx->node;
 			p = (void *)tx_node->pdu;
-			if (!tx_node || (tx_node == (void *)1) ||
-			    (((uint32_t)tx_node & ~3) &&
+			if (!tx_node ||
+			    (IS_NODE_TX_PTR(tx_node) &&
 			     (p->ll_id == PDU_DATA_LLID_DATA_START ||
-			      p->ll_id == PDU_DATA_LLID_DATA_CONTINUE))) {
+			      p->ll_id == PDU_DATA_LLID_DATA_CONTINUE)) ||
+			    (!IS_NODE_TX_PTR(tx_node) &&
+			     IS_NODE_TX_DATA(tx_node))) {
 				/* data packet, hence count num cmplt */
-				tx->node = (void *)1;
+				NODE_TX_DATA_SET(tx->node);
 				cmplt++;
 			} else {
-				/* ctrl packet or flushed, hence dont count num cmplt */
-				tx->node = (void *)2;
+				/* ctrl packet or flushed, hence dont count num
+				 * cmplt
+				 */
+				NODE_TX_CTRL_SET(tx->node);
 			}
 
-			if (((uint32_t)tx_node & ~3)) {
+			if (IS_NODE_TX_PTR(tx_node)) {
 				ll_tx_mem_release(tx_node);
 			}
 #endif /* CONFIG_BT_CONN */
@@ -2530,9 +2629,10 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 next_ack:
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
+		*first = next;
 		tx = mfifo_dequeue_iter_get(mfifo_tx_ack.m, mfifo_tx_ack.s,
 					    mfifo_tx_ack.n, mfifo_tx_ack.f,
-					    last, first);
+					    last, &next);
 	} while (tx && tx->handle == *handle);
 
 	return cmplt;
@@ -2654,6 +2754,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
 	case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
 	case NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT:
+	case NODE_RX_TYPE_IQ_SAMPLE_REPORT_LLL_RELEASE:
 	{
 		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 		ll_rx_put(link, rx);

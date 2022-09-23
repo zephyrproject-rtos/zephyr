@@ -5,7 +5,8 @@
 
 config MCHP_XEC_RTOS_TIMER
 	bool "Microchip XEC series RTOS timer"
-	depends on SOC_FAMILY_MEC
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_RTOS_TIMER_ENABLED
 	select TICKLESS_CAPABLE
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	help

@@ -64,7 +64,7 @@ static void tIsr_entry_put(const void *p)
 	for (i = 0U; i < LIST_LEN; i++) {
 		k_fifo_put((struct k_fifo *)p, (void *)&data_isr[i]);
 	}
-	zassert_false(k_fifo_is_empty((struct k_fifo *)p), NULL);
+	zassert_false(k_fifo_is_empty((struct k_fifo *)p));
 }
 
 static void tIsr_entry_get(const void *p)
@@ -75,9 +75,9 @@ static void tIsr_entry_get(const void *p)
 	/* Get items from fifo */
 	for (i = 0U; i < LIST_LEN; i++) {
 		rx_data = k_fifo_get((struct k_fifo *)p, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_isr[i], NULL);
+		zassert_equal(rx_data, (void *)&data_isr[i]);
 	}
-	zassert_true(k_fifo_is_empty((struct k_fifo *)p), NULL);
+	zassert_true(k_fifo_is_empty((struct k_fifo *)p));
 }
 
 static void thread_entry_fn_single(void *p1, void *p2, void *p3)
@@ -88,7 +88,7 @@ static void thread_entry_fn_single(void *p1, void *p2, void *p3)
 	/* Get items from fifo */
 	for (i = 0U; i < LIST_LEN; i++) {
 		rx_data = k_fifo_get((struct k_fifo *)p1, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data1[i], NULL);
+		zassert_equal(rx_data, (void *)&data1[i]);
 	}
 
 	/* Put items into fifo */
@@ -108,7 +108,7 @@ static void thread_entry_fn_dual(void *p1, void *p2, void *p3)
 	for (i = 0U; i < LIST_LEN; i++) {
 		/* Get items from fifo2 */
 		rx_data = k_fifo_get((struct k_fifo *)p2, K_FOREVER);
-		zassert_equal(rx_data, (void *)&data2[i], NULL);
+		zassert_equal(rx_data, (void *)&data2[i]);
 
 		/* Put items into fifo1 */
 		k_fifo_put((struct k_fifo *)p1, (void *)&data1[i]);
@@ -164,7 +164,7 @@ ZTEST(fifo_usage, test_single_fifo_play)
 	/* Get items from fifo */
 	for (i = 0U; i < LIST_LEN; i++) {
 		rx_data = k_fifo_get(&fifo1, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data2[i], NULL);
+		zassert_equal(rx_data, (void *)&data2[i]);
 	}
 
 	/* Clear the spawn thread to avoid side effect */
@@ -195,7 +195,7 @@ ZTEST(fifo_usage, test_dual_fifo_play)
 
 		/* Get item from fifo */
 		rx_data = k_fifo_get(&fifo1, K_FOREVER);
-		zassert_equal(rx_data, (void *)&data1[i], NULL);
+		zassert_equal(rx_data, (void *)&data1[i]);
 	}
 
 	/* Clear the spawn thread to avoid side effect */

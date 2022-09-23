@@ -23,7 +23,6 @@ Semiconductor nRF51422 ARM Cortex-M0 CPU and the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/nrf51dk_nrf51422.jpg
-     :width: 442px
      :align: center
      :alt: nRF51 DK
 

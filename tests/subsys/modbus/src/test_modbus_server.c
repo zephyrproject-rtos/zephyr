@@ -271,7 +271,7 @@ void test_server_setup_raw(void)
 
 	server_iface = modbus_iface_get_by_name(iface_name);
 	server_param.mode = MODBUS_MODE_RAW;
-	server_param.raw_tx_cb = server_raw_cb;
+	server_param.rawcb.raw_tx_cb = server_raw_cb;
 
 	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
 		err = modbus_init_server(server_iface, server_param);

@@ -13,9 +13,16 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <soc.h>
+#include <zephyr/drivers/syscon.h>
 
 #if DT_NODE_EXISTS(DT_INST(0, andestech_l2c))
+
+/* SMU Configuration Register offset */
+#define SMU_SYSTEMCFG		0x08
+
+/* Register bitmask */
+#define SMU_SYSTEMCFG_L2C	BIT(8)
+
 /*
  * L2C Register Base Address
  */
@@ -55,7 +62,7 @@
 
 static void andes_v5_l2c_enable(void)
 {
-	ulong_t mcache_ctl;
+	unsigned long mcache_ctl;
 	volatile uint64_t *l2c_ctrl =
 		INT_TO_POINTER(ANDES_V5_L2C_BASE + L2C_CTRL);
 
@@ -81,17 +88,19 @@ static void andes_v5_l2c_enable(void)
 
 static int andes_v5_l2c_init(const struct device *dev)
 {
+	uint32_t system_cfg;
+	const struct device *const syscon_dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+
 	ARG_UNUSED(dev);
 
-#ifdef SMU_BASE
-	volatile uint32_t *system_cfg =
-		INT_TO_POINTER(SMU_BASE + SMU_SYSTEMCFG);
+	if (device_is_ready(syscon_dev)) {
+		syscon_read_reg(syscon_dev, SMU_SYSTEMCFG, &system_cfg);
 
-	if (!(*system_cfg & SMU_SYSTEMCFG_L2C)) {
-		/* This SoC doesn't have L2 cache */
-		return -ENODEV;
+		if (!(system_cfg & SMU_SYSTEMCFG_L2C)) {
+			/* This SoC doesn't have L2 cache */
+			return -ENODEV;
+		}
 	}
-#endif /* SMU_BASE */
 
 	andes_v5_l2c_enable();
 	return 0;

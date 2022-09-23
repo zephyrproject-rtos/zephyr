@@ -16,8 +16,7 @@ i.MX RT500 MCUs provides up to 5MB of on-chip SRAM and several high-bandwidth in
 to access off-chip flash, including an Octal/Quad SPI interface with an on-the-fly
 decryption engine.
 
-.. image:: ./mimxrt595_evk.png
-   :width: 720px
+.. image:: mimxrt595_evk.jpg
    :align: center
    :alt: MIMXRT595-EVK
 
@@ -57,8 +56,13 @@ these references:
 Supported Features
 ==================
 
-The mimxrt595_evk board configuration supports the following hardware
-features:
+NXP considers the MIMXRT595-EVK as a superset board for the i.MX RT5xx
+family of MCUs.  This board is a focus for NXP's Full Platform Support for
+Zephyr, to better enable the entire RT5xx family.  NXP prioritizes enabling
+this board with new support for Zephyr features.  The mimxrt595_evk board
+configuration supports the hardware features below.  Another very similar
+board is the :ref:`mimxrt685_evk`, and that board may have additional features
+already supported, which can also be re-used on this mimxrt595_evk board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -90,6 +94,8 @@ features:
 | TRNG      | on-chip    | entropy                             |
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

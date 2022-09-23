@@ -500,6 +500,13 @@ test_i2c_iis2iclx: iis2iclx@6a {
 	int-pin = <1>;
 };
 
+test_i2c_wsen_hids: wsen_hids@5f {
+	compatible = "we,wsen-hids";
+	reg = <0x5f>;
+	drdy-gpios = <&test_gpio 0 0>;
+	odr = "1";
+};
+
 test_i2c_itds: itds@18 {
 	compatible = "we,wsen-itds";
 	reg = <0x18>;

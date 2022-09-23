@@ -22,6 +22,8 @@
 
 include_guard(GLOBAL)
 
+find_package(TargetTools)
+
 # As this module is not intended for direct loading, but should be loaded through
 # find_package(Zephyr) then it won't be loading any Zephyr CMake modules by itself.
 

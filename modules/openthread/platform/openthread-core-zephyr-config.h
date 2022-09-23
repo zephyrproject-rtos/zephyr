@@ -424,4 +424,16 @@
 #define OPENTHREAD_CONFIG_MESSAGE_BUFFER_SIZE CONFIG_OPENTHREAD_MESSAGE_BUFFER_SIZE
 #endif
 
+/**
+ * @def OPENTHREAD_CONFIG_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS
+ *
+ * Enable to stay awake between fragments while transmitting a large packet,
+ * and to stay awake after receiving a packet with frame pending set to true.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS
+#define OPENTHREAD_CONFIG_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS                                         \
+	CONFIG_OPENTHREAD_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS
+#endif
+
 #endif  /* OPENTHREAD_CORE_ZEPHYR_CONFIG_H_ */

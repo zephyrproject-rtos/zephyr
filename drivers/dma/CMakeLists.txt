@@ -3,6 +3,7 @@
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_DMA_SAM_XDMAC	dma_sam_xdmac.c)
+zephyr_library_sources_ifdef(CONFIG_DMA_STM32U5	dma_stm32u5.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_STM32		dma_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_STM32_V1	dma_stm32_v1.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_STM32_V2	dma_stm32_v2.c)

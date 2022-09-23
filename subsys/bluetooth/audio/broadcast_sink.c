@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
@@ -346,8 +346,7 @@ static bool net_buf_decode_codec_ltv(struct net_buf_simple *buf,
 }
 
 static bool net_buf_decode_bis_data(struct net_buf_simple *buf,
-				    struct bt_audio_base_bis_data *bis,
-				    bool codec_data_already_found)
+				    struct bt_audio_base_bis_data *bis)
 {
 	uint8_t len;
 
@@ -373,19 +372,6 @@ static bool net_buf_decode_bis_data(struct net_buf_simple *buf,
 	if (len > 0) {
 		struct net_buf_simple ltv_buf;
 		void *ltv_data;
-
-		if (codec_data_already_found) {
-			/* Codec config can either be specific to each
-			 *  BIS or for all, but not both
-			 */
-			BT_DBG("BASE contains both codec config data and BIS "
-			       "codec config data. Aborting.");
-			return false;
-		}
-
-		/* TODO: Support codec configuration data per bis */
-		BT_WARN("BIS specific codec config data of length %u "
-			"was found but is not supported yet", len);
 
 		/* Use an extra net_buf_simple to be able to decode until it
 		 * is empty (len = 0)
@@ -496,8 +482,7 @@ static bool net_buf_decode_subgroup(struct net_buf_simple *buf,
 	}
 
 	for (int i = 0; i < subgroup->bis_count; i++) {
-		if (!net_buf_decode_bis_data(buf, &subgroup->bis_data[i],
-					     codec->data_count > 0)) {
+		if (!net_buf_decode_bis_data(buf, &subgroup->bis_data[i])) {
 			BT_DBG("Failed to decode BIS data for bis %d", i);
 			return false;
 		}
@@ -951,9 +936,12 @@ static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
 	 * but the `rx` and `qos` pointers need to be set. This should be fixed.
 	 */
 	stream->iso->qos->rx = &sink_chan_io_qos;
+	stream->iso->qos->rx->path = &ep->iso->sink_path;
+	stream->iso->qos->rx->path->cc = ep->iso->sink_path_cc;
 	stream->iso->qos->tx = NULL;
 	stream->qos = &codec_qos;
 	bt_audio_codec_qos_to_iso_qos(stream->iso->qos->rx, &codec_qos);
+	bt_audio_codec_to_iso_path(stream->iso->qos->rx->path, codec);
 
 	return 0;
 }

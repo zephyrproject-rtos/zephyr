@@ -618,7 +618,7 @@ static int select_writer(struct lwm2m_output_context *out, uint16_t accept)
 
 	default:
 		LOG_WRN("Unknown content type %u", accept);
-		return -ENOMSG;
+		return -ECANCELED;
 	}
 
 	return 0;
@@ -2100,6 +2100,8 @@ error:
 		msg->code = COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT;
 	} else if (r == -EACCES) {
 		msg->code = COAP_RESPONSE_CODE_UNAUTHORIZED;
+	} else if (r == -ECANCELED) {
+		msg->code = COAP_RESPONSE_CODE_NOT_ACCEPTABLE;
 	} else {
 		/* Failed to handle the request */
 		msg->code = COAP_RESPONSE_CODE_INTERNAL_ERROR;
@@ -2252,8 +2254,10 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 
 		client_ctx->processed_req = msg;
 
+		lwm2m_registry_lock();
 		/* process the response to this request */
 		r = udp_request_handler(&response, msg);
+		lwm2m_registry_unlock();
 		if (r < 0) {
 			return;
 		}

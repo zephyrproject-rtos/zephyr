@@ -343,7 +343,7 @@ static void test_populate_nbr_cache(void)
 
 	recipient = my_iface;
 
-	zassert_true(net_test_send_ns(peer_iface, &peer_addr), NULL);
+	zassert_true(net_test_send_ns(peer_iface, &peer_addr));
 
 	nbr = net_ipv6_nbr_add(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
 			       &peer_addr,
@@ -352,7 +352,7 @@ static void test_populate_nbr_cache(void)
 			       NET_IPV6_NBR_STATE_REACHABLE);
 	zassert_not_null(nbr, "Cannot add peer to neighbor cache");
 
-	zassert_true(net_test_send_ns(peer_iface, &peer_addr_alt), NULL);
+	zassert_true(net_test_send_ns(peer_iface, &peer_addr_alt));
 
 	nbr = net_ipv6_nbr_add(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
 			       &peer_addr_alt,
@@ -369,7 +369,7 @@ static void test_populate_nbr_cache(void)
 
 	data_failure = false;
 
-	zassert_true(net_test_nbr_lookup_ok(my_iface, &peer_addr), NULL);
+	zassert_true(net_test_nbr_lookup_ok(my_iface, &peer_addr));
 }
 
 static void test_route_add(void)

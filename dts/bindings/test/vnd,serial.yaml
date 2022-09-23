@@ -11,3 +11,8 @@ properties:
     baud-rate:
       type: int
       required: false
+
+    buffer-size:
+      type: int
+      required: false
+      description: "Size of buffer to capture output data or to queue input data."

@@ -54,8 +54,8 @@ void test_api_init(void)
 
 	ull_llcp_init(&conn);
 
-	zassert_true(lr_is_disconnected(&conn), NULL);
-	zassert_true(rr_is_disconnected(&conn), NULL);
+	zassert_true(lr_is_disconnected(&conn));
+	zassert_true(rr_is_disconnected(&conn));
 }
 
 extern void test_int_mem_proc_ctx(void);
@@ -72,8 +72,8 @@ void test_api_connect(void)
 	ull_llcp_init(&conn);
 
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
-	zassert_true(lr_is_idle(&conn), NULL);
-	zassert_true(rr_is_idle(&conn), NULL);
+	zassert_true(lr_is_idle(&conn));
+	zassert_true(rr_is_idle(&conn));
 }
 
 void test_api_disconnect(void)
@@ -83,16 +83,16 @@ void test_api_disconnect(void)
 	ull_llcp_init(&conn);
 
 	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
-	zassert_true(lr_is_disconnected(&conn), NULL);
-	zassert_true(rr_is_disconnected(&conn), NULL);
+	zassert_true(lr_is_disconnected(&conn));
+	zassert_true(rr_is_disconnected(&conn));
 
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
-	zassert_true(lr_is_idle(&conn), NULL);
-	zassert_true(rr_is_idle(&conn), NULL);
+	zassert_true(lr_is_idle(&conn));
+	zassert_true(rr_is_idle(&conn));
 
 	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
-	zassert_true(lr_is_disconnected(&conn), NULL);
-	zassert_true(rr_is_disconnected(&conn), NULL);
+	zassert_true(lr_is_disconnected(&conn));
+	zassert_true(rr_is_disconnected(&conn));
 }
 
 void test_int_disconnect_loc(void)
@@ -113,13 +113,13 @@ void test_int_disconnect_loc(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt(), NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 
 	err = ull_cp_version_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt() - 1, NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt() - 1);
 
 	event_prepare(&conn);
 	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
@@ -132,7 +132,7 @@ void test_int_disconnect_loc(void)
 	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt(), NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 
 	ut_rx_q_is_empty();
 
@@ -143,7 +143,7 @@ void test_int_disconnect_loc(void)
 	event_done(&conn);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt(), NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 
 	/*
 	 * all buffers should still be empty
@@ -171,7 +171,7 @@ void test_int_disconnect_rem(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt(), NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 	/* Prepare */
 	event_prepare(&conn);
 
@@ -179,7 +179,7 @@ void test_int_disconnect_rem(void)
 	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt(), NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 
 	/* Disconnect before we reply */
 
@@ -195,7 +195,7 @@ void test_int_disconnect_rem(void)
 	event_done(&conn);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt(), NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt());
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();

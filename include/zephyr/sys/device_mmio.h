@@ -20,7 +20,7 @@
 
 /**
  * @defgroup device-mmio Device memory-mapped IO management
- * @ingroup device-model
+ * @ingroup device_model
  * @{
  */
 

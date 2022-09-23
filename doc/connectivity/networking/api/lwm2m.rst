@@ -411,6 +411,24 @@ value of 1 is ok here).
 
 For a more detailed LwM2M client sample see: :ref:`lwm2m-client-sample`.
 
+Multi-thread usage
+******************
+Writing a value to a resource can be done using functions like lwm2m_engine_set_u8. When writing
+to multiple resources, the function lwm2m_registry_lock will ensure that the
+client halts until all writing operations are finished:
+
+.. code-block:: c
+
+  lwm2m_registry_lock();
+  lwm2m_engine_set_u32("1/0/1", 60);
+  lwm2m_engine_set_u8("5/0/3", 0);
+  lwm2m_engine_set_float("3303/0/5700", &value);
+  lwm2m_registry_unlock();
+
+This is especially useful if the server is composite-observing the resources being
+written to. Locking will then ensure that the client only updates and sends notifications
+to the server after all operations are done, resulting in fewer messages in general.
+
 LwM2M engine and application events
 ***********************************
 

@@ -23,16 +23,16 @@ static void test_prepare(void)
 	struct fs_file_t fs;
 
 	fs_file_t_init(&fs);
-	zassert_equal(fs_mount(&fatfs_mnt), 0, NULL);
+	zassert_equal(fs_mount(&fatfs_mnt), 0);
 	zassert_equal(fs_open(&fs, "/NAND:/testfile.txt", FS_O_CREATE),
 		      0, NULL);
-	zassert_equal(fs_close(&fs), 0, NULL);
-	zassert_equal(fs_unmount(&fatfs_mnt), 0, NULL);
+	zassert_equal(fs_close(&fs), 0);
+	zassert_equal(fs_unmount(&fatfs_mnt), 0);
 }
 
 static void test_unmount(void)
 {
-	zassert_true(fs_unmount(&fatfs_mnt) >= 0, NULL);
+	zassert_true(fs_unmount(&fatfs_mnt) >= 0);
 }
 
 static void test_ops_on_rd(void)

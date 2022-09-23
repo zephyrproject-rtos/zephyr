@@ -13,8 +13,7 @@ with additional expansion ports around the Arduino footprint, along
 with a PMod/host interface port and MikroElektronika Click module
 site.
 
-.. image:: ./lpcxpresso55S36.jpg
-   :width: 720px
+.. image:: lpcxpresso55S36.jpg
    :align: center
    :alt: LPCXpresso55S36
 
@@ -48,7 +47,13 @@ For more information about the LPC55S36 SoC and LPCXPresso55S36 board, see:
 Supported Features
 ==================
 
-The Zephyr configuration for the LPC55S36 board (lpcxpresso55s36) is as follows:
+NXP considers the LPCXpresso55S36 as a superset board for the LPC55(S)3x
+family of MCUs.  This board is a focus for NXP's Full Platform Support for
+Zephyr, to better enable the entire LPC55(S)3x family.  NXP prioritizes enabling
+this board with new support for Zephyr features.  The lpcxpresso55s36 board
+configuration supports the hardware features below.  Another similar superset
+board is the :ref:`lpcxpresso55s69`, and that board may have additional features
+already supported, which can also be re-used on this lpcxpresso55s36 board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -66,6 +71,10 @@ The Zephyr configuration for the LPC55S36 board (lpcxpresso55s36) is as follows:
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
 | CAN       | on-chip    | canbus                              |
++-----------+------------+-------------------------------------+
+| IAP       | on-chip    | flash                               |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.
@@ -97,6 +106,31 @@ the functionality of a pin.
 +---------+-----------------+----------------------------+
 | PIO1_18 | GPIO            | Wakeup SW1                 |
 +---------+-----------------+----------------------------+
+| PIO1_20 | FLEXPPWM0_PWM0_A| pwm                        |
++---------+-----------------+----------------------------+
+| PIO1_17 | FLEXPPWM0_PWM0_B| pwm                        |
++---------+-----------------+----------------------------+
+| PIO1_6  | FLEXPPWM0_PWM1_A| pwm                        |
++---------+-----------------+----------------------------+
+| PIO1_22 | FLEXPPWM0_PWM1_B| pwm                        |
++---------+-----------------+----------------------------+
+| PIO1_8  | FLEXPPWM0_PWM2_A| pwm                        |
++---------+-----------------+----------------------------+
+| PIO1_4  | FLEXPPWM0_PWM2_B| pwm                        |
++---------+-----------------+----------------------------+
+| PIO1_21 | FLEXPPWM1_PWM0_A| pwm                        |
++---------+-----------------+----------------------------+
+| PIO0_3  | FLEXPPWM1_PWM0_B| pwm                        |
++---------+-----------------+----------------------------+
+| PIO1_23 | FLEXPPWM1_PWM1_A| pwm                        |
++---------+-----------------+----------------------------+
+| PIO0_21 | FLEXPPWM1_PWM1_B| pwm                        |
++---------+-----------------+----------------------------+
+| PIO1_25 | FLEXPPWM1_PWM2_A| pwm                        |
++---------+-----------------+----------------------------+
+| PIO0_31 | FLEXPPWM1_PWM2_B| pwm                        |
++---------+-----------------+----------------------------+
+
 
 System Clock
 ============

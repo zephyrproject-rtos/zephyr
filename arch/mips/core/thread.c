@@ -27,15 +27,15 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 				);
 
 	/* Setup the initial stack frame */
-	stack_init->a0 = (ulong_t)entry;
-	stack_init->a1 = (ulong_t)p1;
-	stack_init->a2 = (ulong_t)p2;
-	stack_init->a3 = (ulong_t)p3;
+	stack_init->a0 = (unsigned long)entry;
+	stack_init->a1 = (unsigned long)p1;
+	stack_init->a2 = (unsigned long)p2;
+	stack_init->a3 = (unsigned long)p3;
 
 	stack_init->status = CP0_STATUS_DEF_RESTORE
 			| mips_cp0_status_int_mask;
 
-	stack_init->epc = (ulong_t)z_thread_entry;
+	stack_init->epc = (unsigned long)z_thread_entry;
 
-	thread->callee_saved.sp = (ulong_t)stack_init;
+	thread->callee_saved.sp = (unsigned long)stack_init;
 }

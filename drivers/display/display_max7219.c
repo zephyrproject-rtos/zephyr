@@ -29,7 +29,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 LOG_MODULE_REGISTER(max7219, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define MAX7219_SEGMENTS_PER_DIGIT 8

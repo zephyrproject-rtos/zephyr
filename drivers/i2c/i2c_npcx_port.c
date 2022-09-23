@@ -122,6 +122,26 @@ static int i2c_npcx_port_transfer(const struct device *dev,
 
 	return ret;
 }
+static int i2c_npcx_port_recover_bus(const struct device *dev)
+{
+	const struct i2c_npcx_port_config *const config = dev->config;
+	int ret;
+
+	if (config->i2c_ctrl == NULL) {
+		LOG_ERR("Cannot find i2c controller on port%02x!", config->port);
+		return -EIO;
+	}
+
+	/* Lock mutex of i2c/smb controller */
+	npcx_i2c_ctrl_mutex_lock(config->i2c_ctrl);
+
+	ret = npcx_i2c_ctrl_recover_bus(config->i2c_ctrl);
+
+	/* Unlock mutex of i2c/smb controller */
+	npcx_i2c_ctrl_mutex_unlock(config->i2c_ctrl);
+
+	return ret;
+}
 
 /* I2C driver registration */
 static int i2c_npcx_port_init(const struct device *dev)
@@ -152,6 +172,7 @@ static const struct i2c_driver_api i2c_port_npcx_driver_api = {
 	.configure = i2c_npcx_port_configure,
 	.get_config = i2c_npcx_port_get_config,
 	.transfer = i2c_npcx_port_transfer,
+	.recover_bus = i2c_npcx_port_recover_bus,
 };
 
 /* I2C port init macro functions */

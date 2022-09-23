@@ -38,7 +38,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	/* Our cache top stash location might have junk in it from a
 	 * pre-boot environment.  Must be zero or valid!
 	 */
-	WSR(ZSR_FLUSH_STR, 0);
+	XTENSA_WSR(ZSR_FLUSH_STR, 0);
 #endif
 
 	cpu0->nested = 0;
@@ -50,7 +50,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	 * per-CPU thing and having it stored in a SR already is a big
 	 * win.
 	 */
-	WSR(ZSR_CPU_STR, cpu0);
+	XTENSA_WSR(ZSR_CPU_STR, cpu0);
 
 #ifdef CONFIG_INIT_STACKS
 	memset(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]), 0xAA,

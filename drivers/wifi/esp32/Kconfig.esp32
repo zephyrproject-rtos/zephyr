@@ -2,8 +2,16 @@
 
 menuconfig WIFI_ESP32
 	bool "ESP32 SoC WiFi support"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_WIFI_ENABLED
 	depends on !SMP
 	select THREAD_CUSTOM_DATA
+	select NET_L2_WIFI_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+	select MBEDTLS
+	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	select MBEDTLS_ECP_ALL_ENABLED
 	help
 	  Enable ESP32 SoC WiFi support. Only supported in single
 	  core mode because the network stack is not aware of SMP
@@ -21,14 +29,15 @@ config ESP32_WIFI_PASSWORD
 	help
 	  WiFi password (WPA or WPA2) for the example to use.
 
-config ESP32_WIFI_STA_AUTO
-	bool "Automatically connect to configured WiFi SSID"
+config ESP32_WIFI_STA_AUTO_DHCPV4
+	bool "Automatically starts DHCP4 negotiation"
+	depends on NET_DHCPV4
+	depends on NET_IPV4
 	help
-	  WiFi driver will automatically connect to SSID.
+	  WiFi driver will automatically initiate DHCPV4 negotiation when connected.
 
 config ESP32_WIFI_STA_RECONNECT
 	bool "WiFi connection retry"
-	default y
 	help
 	  Set auto WiFI reconnection when disconnected.
 

@@ -25,8 +25,6 @@ Here are some highlights of the Nucleo F303K8 board:
 - One push-buttons: RESET
 
 .. image:: img/nucleo_f303k8.jpg
-   :width: 500px
-   :height: 367px
    :align: center
    :alt: Nucleo F303K8
 
@@ -109,10 +107,8 @@ for input/output, pull-up, etc.
 
 Board connectors:
 -----------------
-.. image:: img/nucleo_f303k8_pinout.png
-   :width: 800px
+.. image:: img/nucleo_f303k8_pinout.jpg
    :align: center
-   :height: 619px
    :alt: Nucleo F303K8 connectors
 
 Default Zephyr Peripheral Mapping:

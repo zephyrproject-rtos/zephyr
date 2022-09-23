@@ -22,9 +22,7 @@ some highlights of the Nucleo L432KC board:
 - One push-button: RESET
 
 .. image:: img/nucleo_l432kc.jpg
-  :width: 250px
   :align: center
-  :height: 188px
   :alt: Nucleo L432KC
 
 More information about the board can be found at the `Nucleo L432KC website`_.
@@ -135,10 +133,8 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo_l432kc_arduino_nano.png
-   :width: 960px
+.. image:: img/nucleo_l432kc_arduino_nano.jpg
    :align: center
-   :height: 720px
    :alt: Nucleo L432KC Arduino connectors
 
 For mode details please refer to `STM32 Nucleo-32 board User Manual`_.

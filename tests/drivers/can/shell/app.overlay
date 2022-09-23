@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2022 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	fake_can: fake_can {
+		compatible = "test-fake-can";
+		status = "okay";
+		sjw = <1>;
+		sample-point = <875>;
+		bus-speed = <125000>;
+		sample-point = <875>;
+		sjw-data = <1>;
+		bus-speed-data = <1000000>;
+		sample-point-data = <750>;
+	};
+};

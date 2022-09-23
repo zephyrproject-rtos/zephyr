@@ -7,7 +7,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/w1_sensor.h>
 #include <zephyr/drivers/w1.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #define W1_MASTER  DT_NODELABEL(w1_0)

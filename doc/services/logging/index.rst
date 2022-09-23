@@ -467,8 +467,8 @@ backends.
 Logging strings
 ===============
 
-String arguments are handled by :ref:`cbprintf_packaging` thus no special action
-is required. Strings which are in read write memory are appended to the log message.
+String arguments are handled by :ref:`cbprintf_packaging`. See
+:ref:`cbprintf_packaging_limitations` for limitations and recommendations.
 
 Logging backends
 ================
@@ -582,12 +582,12 @@ The are following recommendations:
   cost of slight increase in memory footprint.
 * Compiler with C11 ``_Generic`` keyword support is recommended. Logging
   performance is significantly degraded without it. See :ref:`cbprintf_packaging`.
-* When C11 ``_Generic`` is used, it is recommended to cast pointer to ``const char *``
-  when it is used with ``%s`` format specifier and it points to a constant string.
-* When C11 ``_Generic`` is used, it is recommended to cast pointer to ``char *``
-  when it is used with ``%s`` format specifier and it points to a transient string.
-* When C11 ``_Generic`` is used, it is recommended to cast character pointer to
-  non character pointer (e.g., ``void *``) when it is used with ``%p`` format specifier.
+* It is recommended to cast pointer to ``const char *`` when it is used with ``%s``
+  format specifier and it points to a constant string.
+* It is recommended to cast pointer to ``char *`` when it is used with ``%s``
+  format specifier and it points to a transient string.
+* It is recommended to cast character pointer to non character pointer
+  (e.g., ``void *``) when it is used with ``%p`` format specifier.
 
 .. code-block:: c
 

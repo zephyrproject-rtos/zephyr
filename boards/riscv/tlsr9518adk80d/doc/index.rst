@@ -13,7 +13,6 @@ rate, Enhanced data rate, LE, Indoor positioning and BLE Mesh),
 Zigbee 3.0, Homekit, 6LoWPAN, Thread and 2.4 Ghz proprietary.
 
 .. figure:: img/tlsr9518adk80d.jpg
-     :width: 400px
      :align: center
      :alt: TLSR9518ADK80D
 
@@ -28,7 +27,6 @@ stereo audio codec, 14 bit AUX ADC, analog and digital Microphone input, PWM, fl
 and other peripheral blocks required for advanced IoT, hearable, and wearable devices.
 
 .. figure:: img/tlsr9518_block_diagram.jpg
-     :width: 400px
      :align: center
      :alt: TLSR9518ADK80D_SOC
 

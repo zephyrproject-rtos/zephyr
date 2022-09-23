@@ -167,6 +167,12 @@
 #define STM32_PLL_MULTIPLIER	DT_PROP(DT_NODELABEL(pll), mul)
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll2), st_stm32f105_pll2_clock, okay)
+#define STM32_PLL2_ENABLED	1
+#define STM32_PLL2_MULTIPLIER	DT_PROP(DT_NODELABEL(pll2), mul)
+#define STM32_PLL2_PREDIV	DT_PROP(DT_NODELABEL(pll2), prediv)
+#endif
+
 /** PLL/PLL1 clock source */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pll), okay) && \
 	DT_NODE_HAS_PROP(DT_NODELABEL(pll), clocks)

@@ -15,6 +15,9 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#define STORAGE_PARTITION	storage_partition
+#define STORAGE_PARTITION_ID	FIXED_PARTITION_ID(STORAGE_PARTITION)
+
 /* FAT */
 #ifdef CONFIG_FAT_FILESYSTEM_ELM
 #include <ff.h>
@@ -36,7 +39,7 @@ FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(lfs_data);
 static struct fs_mount_t littlefs_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &lfs_data,
-	.storage_dev = (void *)FLASH_AREA_ID(storage),
+	.storage_dev = (void *)STORAGE_PARTITION_ID,
 };
 #endif
 

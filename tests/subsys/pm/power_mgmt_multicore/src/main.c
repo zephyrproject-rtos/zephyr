@@ -35,17 +35,17 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 	switch (state_testing[_current_cpu->id]) {
 	case PM_STATE_ACTIVE:
-		zassert_equal(PM_STATE_ACTIVE, state, NULL);
+		zassert_equal(PM_STATE_ACTIVE, state);
 		break;
 	case  PM_STATE_RUNTIME_IDLE:
-		zassert_equal(PM_STATE_RUNTIME_IDLE, state, NULL);
+		zassert_equal(PM_STATE_RUNTIME_IDLE, state);
 		break;
 	case  PM_STATE_SUSPEND_TO_IDLE:
-		zassert_equal(PM_STATE_SUSPEND_TO_IDLE, state, NULL);
+		zassert_equal(PM_STATE_SUSPEND_TO_IDLE, state);
 		break;
 	case  PM_STATE_STANDBY:
-		zassert_equal(_current_cpu->id, 1U, NULL);
-		zassert_equal(PM_STATE_STANDBY, state, NULL);
+		zassert_equal(_current_cpu->id, 1U);
+		zassert_equal(PM_STATE_STANDBY, state);
 		break;
 	default:
 		zassert_unreachable(NULL);

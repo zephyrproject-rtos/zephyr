@@ -17,7 +17,6 @@ The GR716-MINI development board provides:
 * Miniature 80 pin mezzanine connector (bottom side)
 
 .. figure:: gr716a_mini.jpg
-   :width: 543px
    :align: center
    :alt: GR716-MINI Development Board
 

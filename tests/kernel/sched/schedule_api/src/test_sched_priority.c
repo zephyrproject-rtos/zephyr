@@ -59,10 +59,10 @@ ZTEST(threads_scheduling, test_priority_cooperative)
 				      thread_entry, NULL, NULL, NULL,
 				      spawn_prio, 0, K_NO_WAIT);
 	/* checkpoint: current thread shouldn't preempted by higher thread */
-	zassert_true(last_prio == k_thread_priority_get(k_current_get()), NULL);
+	zassert_true(last_prio == k_thread_priority_get(k_current_get()));
 	k_sleep(K_MSEC(100));
 	/* checkpoint: spawned thread get executed */
-	zassert_true(last_prio == spawn_prio, NULL);
+	zassert_true(last_prio == spawn_prio);
 	k_thread_abort(tid);
 
 	/* restore environment */
@@ -94,7 +94,7 @@ ZTEST(threads_scheduling, test_priority_preemptible)
 				      thread_entry, NULL, NULL, NULL,
 				      spawn_prio, 0, K_NO_WAIT);
 	/* checkpoint: thread is preempted by higher thread */
-	zassert_true(last_prio == spawn_prio, NULL);
+	zassert_true(last_prio == spawn_prio);
 
 	k_sleep(K_MSEC(100));
 	k_thread_abort(tid);
@@ -104,7 +104,7 @@ ZTEST(threads_scheduling, test_priority_preemptible)
 			      thread_entry, NULL, NULL, NULL,
 			      spawn_prio, 0, K_NO_WAIT);
 	/* checkpoint: thread is not preempted by lower thread */
-	zassert_false(last_prio == spawn_prio, NULL);
+	zassert_false(last_prio == spawn_prio);
 	k_thread_abort(tid);
 
 	/* restore environment */

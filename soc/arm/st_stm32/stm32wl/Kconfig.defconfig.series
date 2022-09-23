@@ -10,7 +10,4 @@ source "soc/arm/st_stm32/stm32wl/Kconfig.defconfig.stm32wl*"
 config SOC_SERIES
 	default "stm32wl"
 
-config STM32_LPTIM_TIMER
-	default y if PM
-
 endif # SOC_SERIES_STM32WLX

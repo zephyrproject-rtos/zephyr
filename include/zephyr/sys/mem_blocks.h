@@ -29,6 +29,7 @@ extern "C" {
 
 /**
  * @defgroup mem_blocks_apis Memory Blocks APIs
+ * @ingroup memory_management
  * @{
  */
 

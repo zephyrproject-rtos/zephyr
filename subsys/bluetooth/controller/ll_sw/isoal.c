@@ -9,7 +9,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 
@@ -1058,6 +1058,11 @@ void isoal_source_disable(isoal_source_handle_t hdl)
 {
 	/* Atomically disable */
 	isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_DISABLED;
+}
+
+struct isoal_source *isoal_source_get(isoal_source_handle_t hdl)
+{
+	return &isoal_global.source_state[hdl];
 }
 
 /**

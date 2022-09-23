@@ -129,7 +129,7 @@ config BT_RX_STACK_SIZE
 	default 2200 if BT_MESH
 	default 2048 if BT_AUDIO
 	default 2200 if BT_SETTINGS
-	default 1024
+	default 1200
 	help
 	  Size of the receiving thread stack. This is the context from
 	  which all event callbacks to the application occur. The

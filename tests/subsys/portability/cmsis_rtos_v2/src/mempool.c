@@ -101,7 +101,7 @@ static void mempool_common_tests(osMemoryPoolId_t mp_id,
  *
  * @see osMemoryPoolNew(), osMemoryPoolAlloc(), osMemoryPoolFree(),
  */
-void test_mempool_dynamic(void)
+ZTEST(cmsis_mempool, test_mempool_dynamic)
 {
 	osMemoryPoolId_t mp_id;
 
@@ -117,7 +117,7 @@ void test_mempool_dynamic(void)
  *
  * @see osMemoryPoolNew(), osMemoryPoolAlloc(), osMemoryPoolFree(),
  */
-void test_mempool(void)
+ZTEST(cmsis_mempool, test_mempool)
 {
 	osMemoryPoolId_t mp_id;
 
@@ -132,3 +132,4 @@ void test_mempool(void)
 
 	mempool_common_tests(mp_id, mp_attrs.name);
 }
+ZTEST_SUITE(cmsis_mempool, NULL, NULL, NULL, NULL, NULL);

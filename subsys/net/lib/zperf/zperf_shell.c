@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 
 #include <zephyr/net/net_ip.h>

@@ -12,12 +12,13 @@ import subprocess
 import json
 import logging
 import sys
+from pathlib import Path
 from git import Repo
 
 if "ZEPHYR_BASE" not in os.environ:
     exit("$ZEPHYR_BASE environment variable undefined.")
 
-repository_path = os.environ['ZEPHYR_BASE']
+repository_path = Path(os.environ['ZEPHYR_BASE'])
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
 sys.path.append(os.path.join(repository_path, 'scripts'))
@@ -165,7 +166,7 @@ class Filters:
                 boards.add(p.group(1))
 
         # Limit search to $ZEPHYR_BASE since this is where the changed files are
-        lb_args = argparse.Namespace(**{ 'arch_roots': [], 'board_roots': [] })
+        lb_args = argparse.Namespace(**{ 'arch_roots': [repository_path], 'board_roots': [repository_path] })
         known_boards = list_boards.find_boards(lb_args)
         for b in boards:
             name_re = re.compile(b)

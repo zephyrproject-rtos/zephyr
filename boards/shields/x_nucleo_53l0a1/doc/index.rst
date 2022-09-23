@@ -19,8 +19,7 @@ Two VL53L0X satellites can be connected using the two 10 pin connectors.
 The expansion board is compatible with the STM32 Nucleo board family,
 and with the Arduino UNO R3 connector layout.
 
-.. figure:: ./x_nucleo_53l0a1.jpg
-   :width: 371px
+.. figure:: x_nucleo_53l0a1.jpg
    :align: center
    :alt: X-NUCLEO-53L0A1
 

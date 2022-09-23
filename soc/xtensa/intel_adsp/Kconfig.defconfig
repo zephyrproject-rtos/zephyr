@@ -3,24 +3,20 @@
 # Copyright (c) 2020 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+if SOC_FAMILY_INTEL_ADSP
 source "soc/xtensa/intel_adsp/*/Kconfig.defconfig.series"
 
-# Lower priority defaults come AFTER the series-specific ones set above
 
+config XTENSA_RPO_CACHE
+	def_bool y
+
+if XTENSA_RPO_CACHE
 config XTENSA_CACHED_REGION
 	default 5
 
 config XTENSA_UNCACHED_REGION
 	default 4
 
-if INTEL_ADSP_CAVS
+endif # XTENSA_RPO_CACHE
 
-config DMA_INTEL_ADSP_GPDMA
-	default y
-	depends on DMA
-
-config XTENSA_CCOUNT_HZ
-	default 400000000 if SOC_INTEL_CAVS_V25
-	default 200000000
-
-endif # INTEL_ADSP_CAVS
+endif # SOC_FAMILY_INTEL_ADSP

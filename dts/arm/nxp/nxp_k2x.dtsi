@@ -117,6 +117,7 @@
 			reg = <0x40020000 0x18>;
 			interrupts = <18 0>, <19 0>;
 			interrupt-names = "command-complete", "read-collision";
+			status = "okay";
 
 			#address-cells = <1>;
 			#size-cells = <1>;

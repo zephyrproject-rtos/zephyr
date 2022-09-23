@@ -40,18 +40,6 @@
 #define DAI_INTEL_SSP_PLATFORM_DEFAULT_DELAY	12
 #define DAI_INTEL_SSP_DEFAULT_TRY_TIMES		8
 
-#if CONFIG_SOC_INTEL_CAVS_V15
-/** \brief Number of 'base' SSP ports available */
-#define DAI_INTEL_SSP_NUM_BASE			4
-/** \brief Number of 'extended' SSP ports available */
-#define DAI_INTEL_SSP_NUM_EXT			2
-#else
-/** \brief Number of 'base' SSP ports available */
-#define DAI_INTEL_SSP_NUM_BASE			6
-/** \brief Number of 'extended' SSP ports available */
-#define DAI_INTEL_SSP_NUM_EXT			0
-#endif
-
 /** \brief Number of SSP MCLKs available */
 #define DAI_INTEL_SSP_NUM_MCLK			2
 
@@ -288,7 +276,8 @@ struct dai_intel_ssp_mn {
 	int mclk_source_clock;
 
 #if CONFIG_INTEL_MN
-	enum bclk_source bclk_sources[(DAI_INTEL_SSP_NUM_BASE + DAI_INTEL_SSP_NUM_EXT)];
+	enum bclk_source bclk_sources[(CONFIG_DAI_INTEL_SSP_NUM_BASE +
+				       CONFIG_DAI_INTEL_SSP_NUM_EXT)];
 	int bclk_source_mn_clock;
 #endif
 

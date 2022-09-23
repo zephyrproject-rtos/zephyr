@@ -46,6 +46,8 @@ description: |
     As shown, pin configurations are organized in groups within each child node.
     Each group can specify a list of pin function selections in the 'psels'
     property. The NRF_PSEL macro is used to specify a pin function selection.
+    If a pin needs to be explicitly disconnected, there is also the
+    NRF_PSEL_DISCONNECTED macro.
     Available pin functions can be found in the
     include/zephyr/dt-bindings/pinctrl/nrf-pinctrl.h header file.
 
@@ -98,7 +100,8 @@ child-binding:
         description: |
           An array of pins sharing the same group properties. The pins should
           be defined using the NRF_PSEL utility macro that encodes the port,
-          pin and function.
+          pin and function. NRF_PSEL_DISCONNECTED is also available to explicitly
+          disconnect a pin.
 
       nordic,drive-mode:
         type: int

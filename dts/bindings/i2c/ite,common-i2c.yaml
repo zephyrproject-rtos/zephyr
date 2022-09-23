@@ -15,7 +15,20 @@ properties:
     port-num:
       type: int
       required: true
+      enum:
+            - 0
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
       description: Ordinal identifying the port
+        0 = SMB_CHANNEL_A,
+        1 = SMB_CHANNEL_B,
+        2 = SMB_CHANNEL_C,
+        3 = I2C_CHANNEL_D,
+        4 = I2C_CHANNEL_E,
+        5 = I2C_CHANNEL_F,
 
     scl-gpios:
       type: phandle-array

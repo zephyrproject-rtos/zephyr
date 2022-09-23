@@ -1405,7 +1405,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 		    (ETH_MCUX_NONE))
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-#define PTP_INST_NODEID(n) DT_CHILD(DT_DRV_INST(n), ptp)
+#define PTP_INST_NODEID(n) DT_INST_CHILD(n, ptp)
 
 #define ETH_MCUX_IRQ_PTP_INIT(n)							\
 	do {										\

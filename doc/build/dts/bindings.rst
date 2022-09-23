@@ -415,7 +415,7 @@ this:
        - <item2>
        ...
        - <itemN>
-     const: <string | int>
+     const: <string | int | array | uint8-array | string-array>
 
 Required properties
 +++++++++++++++++++
@@ -624,6 +624,15 @@ children of any node matching this binding appear on this type of bus.
 
 This in turn influences the way ``on-bus:`` is used to match bindings for the
 child nodes.
+
+For a single bus supporting multiple protocols, e.g. I3C and I2C, the ``bus:``
+in the binding can have a list as value:
+
+.. code-block:: YAML
+
+   compatible: "manufacturer,i3c-controller"
+   bus: [i3c, i2c]
+   # ...
 
 .. _dt-bindings-on-bus:
 

@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/clock/renesas_cpg_mssr.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	cpus {
@@ -65,6 +66,13 @@
 		pfc: pin-controller@e6060000 {
 			compatible = "renesas,rcar-pfc";
 			reg = <0xe6060000 0x50c>;
+		};
+
+		pwm0: pwm@e6e30000 {
+			compatible = "renesas,pwm-rcar";
+			reg = <0xe6e30000 0x8>;
+			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		cmt0: timer@e60f0500 {

@@ -7,7 +7,7 @@
 
 
 #include <zephyr/drivers/adc.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #if defined(CONFIG_SHIELD_MIKROE_ADC_CLICK)
@@ -190,14 +190,11 @@
 	defined(CONFIG_BOARD_NUCLEO_F103RB) || \
 	defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
 	defined(CONFIG_BOARD_STM32F3_DISCO) || \
-	defined(CONFIG_BOARD_STM32L562E_DK) || \
-	defined(CONFIG_BOARD_NUCLEO_L552ZE_Q) || \
 	defined(CONFIG_BOARD_NUCLEO_F401RE) || \
 	defined(CONFIG_BOARD_NUCLEO_F429ZI) || \
 	defined(CONFIG_BOARD_NUCLEO_F746ZG) || \
 	defined(CONFIG_BOARD_NUCLEO_G071RB) || \
 	defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
-	defined(CONFIG_BOARD_NUCLEO_WB55RG) || \
 	defined(CONFIG_BOARD_NUCLEO_WL55JC) || \
 	defined(CONFIG_BOARD_NUCLEO_L152RE) || \
 	defined(CONFIG_BOARD_OLIMEX_STM32_H103) || \
@@ -218,6 +215,9 @@
 
 #elif defined(CONFIG_BOARD_NUCLEO_F302R8) || \
 	defined(CONFIG_BOARD_NUCLEO_G474RE) || \
+	defined(CONFIG_BOARD_NUCLEO_WB55RG) || \
+	defined(CONFIG_BOARD_STM32L562E_DK) || \
+	defined(CONFIG_BOARD_NUCLEO_L552ZE_Q) || \
 	defined(CONFIG_BOARD_NUCLEO_L412RB_P)
 #define ADC_DEVICE_NODE         DT_INST(0, st_stm32_adc)
 #define ADC_RESOLUTION		12
@@ -353,6 +353,15 @@
 #define ADC_1ST_CHANNEL_ID	0
 #define ADC_2ND_CHANNEL_ID  1
 
+#elif defined(CONFIG_BOARD_RPI_PICO)
+#define ADC_DEVICE_NODE		DT_INST(0, raspberrypi_pico_adc)
+#define ADC_RESOLUTION		12
+#define ADC_GAIN		ADC_GAIN_1
+#define ADC_REFERENCE		ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID	0
+#define ADC_2ND_CHANNEL_ID	1
+
 #elif defined(CONFIG_BOARD_NATIVE_POSIX)
 #define ADC_DEVICE_NODE		DT_INST(0, zephyr_adc_emul)
 #define ADC_RESOLUTION		10
@@ -483,7 +492,7 @@ static int test_task_one_channel(void)
 
 ZTEST_USER(adc_basic, test_adc_sample_one_channel)
 {
-	zassert_true(test_task_one_channel() == TC_PASS, NULL);
+	zassert_true(test_task_one_channel() == TC_PASS);
 }
 
 /*
@@ -519,7 +528,7 @@ static int test_task_two_channels(void)
 ZTEST_USER(adc_basic, test_adc_sample_two_channels)
 {
 #if defined(ADC_2ND_CHANNEL_ID)
-	zassert_true(test_task_two_channels() == TC_PASS, NULL);
+	zassert_true(test_task_two_channels() == TC_PASS);
 #else
 	ztest_test_skip();
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
@@ -571,7 +580,7 @@ static int test_task_asynchronous_call(void)
 ZTEST_USER(adc_basic, test_adc_asynchronous_call)
 {
 #if defined(CONFIG_ADC_ASYNC)
-	zassert_true(test_task_asynchronous_call() == TC_PASS, NULL);
+	zassert_true(test_task_asynchronous_call() == TC_PASS);
 #else
 	ztest_test_skip();
 #endif /* defined(CONFIG_ADC_ASYNC) */
@@ -633,7 +642,7 @@ static int test_task_with_interval(void)
 
 ZTEST(adc_basic, test_adc_sample_with_interval)
 {
-	zassert_true(test_task_with_interval() == TC_PASS, NULL);
+	zassert_true(test_task_with_interval() == TC_PASS);
 }
 
 /*
@@ -718,7 +727,7 @@ static int test_task_repeated_samplings(void)
 
 ZTEST(adc_basic, test_adc_repeated_samplings)
 {
-	zassert_true(test_task_repeated_samplings() == TC_PASS, NULL);
+	zassert_true(test_task_repeated_samplings() == TC_PASS);
 }
 
 /*
@@ -763,5 +772,5 @@ static int test_task_invalid_request(void)
 
 ZTEST_USER(adc_basic, test_adc_invalid_request)
 {
-	zassert_true(test_task_invalid_request() == TC_PASS, NULL);
+	zassert_true(test_task_invalid_request() == TC_PASS);
 }

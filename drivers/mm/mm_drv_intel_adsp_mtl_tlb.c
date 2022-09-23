@@ -20,7 +20,7 @@
  * are untouched.
  */
 
-#define DT_DRV_COMPAT intel_adsp_tlb
+#define DT_DRV_COMPAT intel_adsp_mtl_tlb
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
@@ -34,6 +34,7 @@
 
 #include <soc.h>
 #include <adsp_memory.h>
+#include <ace_v1x-regs.h>
 
 #include "mm_drv_common.h"
 
@@ -46,12 +47,9 @@ DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
  * Number of significant bits in the page index (defines the size of
  * the table)
  */
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
-# include <ace_v1x-regs.h>
-# define TLB_PADDR_SIZE 12
-# define TLB_EXEC_BIT   BIT(14)
-# define TLB_WRITE_BIT  BIT(15)
-#endif
+#define TLB_PADDR_SIZE DT_INST_PROP(0, paddr_size)
+#define TLB_EXEC_BIT   BIT(DT_INST_PROP(0, exec_bit_idx))
+#define TLB_WRITE_BIT  BIT(DT_INST_PROP(0, write_bit_idx))
 
 #define TLB_ENTRY_NUM (1 << TLB_PADDR_SIZE)
 #define TLB_PADDR_MASK ((1 << TLB_PADDR_SIZE) - 1)
@@ -146,7 +144,7 @@ static uint32_t get_hpsram_bank_idx(uintptr_t pa)
  */
 static uint16_t flags_to_tlb_perms(uint32_t flags)
 {
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
+#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
 	uint16_t perms = 0;
 
 	if ((flags & SYS_MM_MEM_PERM_RW) == SYS_MM_MEM_PERM_RW) {
@@ -163,7 +161,7 @@ static uint16_t flags_to_tlb_perms(uint32_t flags)
 #endif
 }
 
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
+#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
 /**
  * Convert TLB entry permission bits to the SYS_MM_MEM_PERM_* flags.
  *
@@ -188,7 +186,7 @@ static uint16_t tlb_perms_to_flags(uint16_t perms)
 
 static int sys_mm_drv_hpsram_pwr(uint32_t bank_idx, bool enable, bool non_blocking)
 {
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
+#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
 	if (bank_idx > mtl_hpsram_get_bank_count()) {
 		return -1;
 	}
@@ -469,7 +467,7 @@ int sys_mm_drv_page_flag_get(void *virt, uint32_t *flags)
 	ARG_UNUSED(virt);
 	int ret = 0;
 
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
+#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
 	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
 	uint16_t ent;
 

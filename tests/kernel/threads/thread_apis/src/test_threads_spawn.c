@@ -17,15 +17,15 @@ static ZTEST_BMEM int spawn_prio;
 static void thread_entry_params(void *p1, void *p2, void *p3)
 {
 	/* checkpoint: check parameter 1, 2, 3 */
-	zassert_equal(p1, tp1, NULL);
-	zassert_equal(POINTER_TO_INT(p2), tp2, NULL);
-	zassert_equal(p3, tp3, NULL);
+	zassert_equal(p1, tp1);
+	zassert_equal(POINTER_TO_INT(p2), tp2);
+	zassert_equal(p3, tp3);
 }
 
 static void thread_entry_priority(void *p1, void *p2, void *p3)
 {
 	/* checkpoint: check priority */
-	zassert_equal(k_thread_priority_get(k_current_get()), spawn_prio, NULL);
+	zassert_equal(k_thread_priority_get(k_current_get()), spawn_prio);
 }
 
 static void thread_entry_delay(void *p1, void *p2, void *p3)
@@ -89,10 +89,10 @@ ZTEST_USER(threads_lifecycle, test_threads_spawn_delay)
 	/* 100 < 120 ensure spawn thread not start */
 	k_msleep(100);
 	/* checkpoint: check spawn thread not execute */
-	zassert_true(tp2 == 10, NULL);
+	zassert_true(tp2 == 10);
 	/* checkpoint: check spawn thread executed */
 	k_msleep(100);
-	zassert_true(tp2 == 100, NULL);
+	zassert_true(tp2 == 100);
 }
 
 /**
@@ -119,11 +119,11 @@ ZTEST(threads_lifecycle, test_threads_spawn_forever)
 				      K_USER, K_FOREVER);
 	k_yield();
 	/* checkpoint: check spawn thread not execute */
-	zassert_true(tp2 == 10, NULL);
+	zassert_true(tp2 == 10);
 	/* checkpoint: check spawn thread executed */
 	k_thread_start(tid);
 	k_yield();
-	zassert_true(tp2 == 100, NULL);
+	zassert_true(tp2 == 100);
 	k_thread_abort(tid);
 }
 
@@ -146,7 +146,7 @@ ZTEST(threads_lifecycle, test_thread_start)
 
 	k_thread_start(tid);
 	k_yield();
-	zassert_true(tp2 == 100, NULL);
+	zassert_true(tp2 == 100);
 
 	/* checkpoint: k_thread_start() should not start the
 	 * terminated thread
@@ -155,7 +155,7 @@ ZTEST(threads_lifecycle, test_thread_start)
 	tp2 = 50;
 	k_thread_start(tid);
 	k_yield();
-	zassert_false(tp2 == 100, NULL);
+	zassert_false(tp2 == 100);
 }
 
 static void user_start_thread(void *p1, void *p2, void *p3)
@@ -173,6 +173,6 @@ ZTEST_USER(threads_lifecycle, test_thread_start_user)
 
 	k_thread_start(tid);
 	k_msleep(100);
-	zassert_true(tp2 == 100, NULL);
+	zassert_true(tp2 == 100);
 	k_thread_abort(tid);
 }

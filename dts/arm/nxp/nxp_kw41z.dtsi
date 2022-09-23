@@ -85,6 +85,7 @@
 			compatible = "nxp,kinetis-ftfa";
 			reg = <0x40020000 0x2c>;
 			interrupts = <5 0>;
+			status = "okay";
 
 			#address-cells = <1>;
 			#size-cells = <1>;

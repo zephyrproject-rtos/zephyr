@@ -117,6 +117,8 @@ enum can_state {
 	CAN_STATE_ERROR_PASSIVE,
 	/** Bus-off state (RX/TX error count >= 256). */
 	CAN_STATE_BUS_OFF,
+	/** CAN controller is stopped and does not participate in CAN communication. */
+	CAN_STATE_STOPPED,
 };
 
 /**
@@ -326,6 +328,18 @@ typedef int (*can_set_timing_data_t)(const struct device *dev,
 typedef int (*can_get_capabilities_t)(const struct device *dev, can_mode_t *cap);
 
 /**
+ * @brief Callback API upon starting CAN controller
+ * See @a can_start() for argument description
+ */
+typedef int (*can_start_t)(const struct device *dev);
+
+/**
+ * @brief Callback API upon stopping CAN controller
+ * See @a can_stop() for argument description
+ */
+typedef int (*can_stop_t)(const struct device *dev);
+
+/**
  * @brief Callback API upon setting CAN controller mode
  * See @a can_set_mode() for argument description
  */
@@ -334,6 +348,9 @@ typedef int (*can_set_mode_t)(const struct device *dev, can_mode_t mode);
 /**
  * @brief Callback API upon sending a CAN frame
  * See @a can_send() for argument description
+ *
+ * @note From a driver perspective `callback` will never be `NULL` as a default callback will be
+ * provided if none is provided by the caller. This allows for simplifying the driver handling.
  */
 typedef int (*can_send_t)(const struct device *dev,
 			  const struct can_frame *frame,
@@ -396,6 +413,8 @@ typedef int (*can_get_max_bitrate_t)(const struct device *dev, uint32_t *max_bit
 
 __subsystem struct can_driver_api {
 	can_get_capabilities_t get_capabilities;
+	can_start_t start;
+	can_stop_t stop;
 	can_set_mode_t set_mode;
 	can_set_timing_t set_timing;
 	can_send_t send;
@@ -814,6 +833,7 @@ __syscall int can_calc_timing_data(const struct device *dev, struct can_timing *
  * @param timing_data Bus timings for data phase
  *
  * @retval 0 If successful.
+ * @retval -EBUSY if the CAN controller is not in stopped state.
  * @retval -EIO General input/output error, failed to configure device.
  */
 __syscall int can_set_timing_data(const struct device *dev,
@@ -850,6 +870,7 @@ static inline int z_impl_can_set_timing_data(const struct device *dev,
  * @param bitrate_data Desired data phase bitrate.
  *
  * @retval 0 If successful.
+ * @retval -EBUSY if the CAN controller is not in stopped state.
  * @retval -EINVAL if the requested bitrate is out of range.
  * @retval -ENOTSUP if the requested bitrate not supported by the CAN controller/transceiver
  *                  combination.
@@ -893,6 +914,7 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
  * @param timing      Bus timings.
  *
  * @retval 0 If successful.
+ * @retval -EBUSY if the CAN controller is not in stopped state.
  * @retval -EIO General input/output error, failed to configure device.
  */
 __syscall int can_set_timing(const struct device *dev,
@@ -929,12 +951,61 @@ static inline int z_impl_can_get_capabilities(const struct device *dev, can_mode
 }
 
 /**
+ * @brief Start the CAN controller
+ *
+ * Bring the CAN controller out of `CAN_STATE_STOPPED`. This will reset the RX/TX error counters,
+ * enable the CAN controller to participate in CAN communication, and enable the CAN tranceiver, if
+ * supported.
+ *
+ * @see can_stop()
+ * @see can_transceiver_enable()
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @retval 0 if successful.
+ * @retval -EALREADY if the device is already started.
+ * @retval -EIO General input/output error, failed to start device.
+ */
+__syscall int can_start(const struct device *dev);
+
+static inline int z_impl_can_start(const struct device *dev)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	return api->start(dev);
+}
+
+/**
+ * @brief Stop the CAN controller
+ *
+ * Bring the CAN controller into `CAN_STATE_STOPPED`. This will disallow the CAN controller from
+ * participating in CAN communication, abort any pending CAN frame transmissions, and disable the
+ * CAN transceiver, if supported.
+ *
+ * @see can_start()
+ * @see can_transceiver_disable()
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @retval 0 if successful.
+ * @retval -EALREADY if the device is already stopped.
+ * @retval -EIO General input/output error, failed to stop device.
+ */
+__syscall int can_stop(const struct device *dev);
+
+static inline int z_impl_can_stop(const struct device *dev)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	return api->stop(dev);
+}
+
+/**
  * @brief Set the CAN controller to the given operation mode
  *
  * @param dev  Pointer to the device structure for the driver instance.
  * @param mode Operation mode.
  *
  * @retval 0 If successful.
+ * @retval -EBUSY if the CAN controller is not in stopped state.
  * @retval -EIO General input/output error, failed to configure device.
  */
 __syscall int can_set_mode(const struct device *dev, can_mode_t mode);
@@ -964,6 +1035,7 @@ static inline int z_impl_can_set_mode(const struct device *dev, can_mode_t mode)
  * @param bitrate      Desired arbitration phase bitrate.
  *
  * @retval 0 If successful.
+ * @retval -EBUSY if the CAN controller is not in stopped state.
  * @retval -EINVAL if the requested bitrate is out of range.
  * @retval -ENOTSUP if the requested bitrate not supported by the CAN controller/transceiver
  *                  combination.
@@ -1015,6 +1087,7 @@ __syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
  *
  * @retval 0 if successful.
  * @retval -EINVAL if an invalid parameter was passed to the function.
+ * @retval -ENETDOWN if the CAN controller is in stopped state.
  * @retval -ENETUNREACH if the CAN controller is in bus-off state.
  * @retval -EBUSY if CAN bus arbitration was lost (only applicable if automatic
  *                retransmissions are disabled).
@@ -1025,15 +1098,6 @@ __syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
 __syscall int can_send(const struct device *dev, const struct can_frame *frame,
 		       k_timeout_t timeout, can_tx_callback_t callback,
 		       void *user_data);
-
-static inline int z_impl_can_send(const struct device *dev, const struct can_frame *frame,
-				  k_timeout_t timeout, can_tx_callback_t callback,
-				  void *user_data)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
-
-	return api->send(dev, frame, timeout, callback, user_data);
-}
 
 /** @} */
 
@@ -1063,6 +1127,7 @@ static inline int z_impl_can_send(const struct device *dev, const struct can_fra
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
+ * @retval -ENOTSUP if the requested filter type is not supported.
  */
 static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 				    void *user_data, const struct can_filter *filter)
@@ -1105,6 +1170,7 @@ static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t 
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
+ * @retval -ENOTSUP if the requested filter type is not supported.
  */
 __syscall int can_add_rx_filter_msgq(const struct device *dev, struct k_msgq *msgq,
 				     const struct can_filter *filter);
@@ -1196,6 +1262,7 @@ static inline int z_impl_can_get_state(const struct device *dev, enum can_state 
  * @param timeout Timeout for waiting for the recovery or ``K_FOREVER``.
  *
  * @retval 0 on success.
+ * @retval -ENETDOWN if the CAN controller is in stopped state.
  * @retval -EAGAIN on timeout.
  */
 #if !defined(CONFIG_CAN_AUTO_BUS_OFF_RECOVERY) || defined(__DOXYGEN__)

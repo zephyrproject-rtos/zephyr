@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
@@ -142,10 +142,12 @@ static void unicast_client_ep_iso_connected(struct bt_iso_chan *chan)
 	struct bt_audio_stream *stream;
 	struct bt_audio_ep *ep;
 
-	if (sink_stream->iso == chan) {
+	if (sink_stream != NULL && sink_stream->iso == chan) {
 		stream = sink_stream;
-	} else {
+	} else if (source_stream != NULL && source_stream->iso == chan) {
 		stream = source_stream;
+	} else {
+		stream = NULL;
 	}
 
 	if (stream == NULL) {
@@ -178,10 +180,12 @@ static void unicast_client_ep_iso_disconnected(struct bt_iso_chan *chan,
 	struct bt_audio_stream *stream;
 	struct bt_audio_ep *ep;
 
-	if (sink_stream->iso == chan) {
+	if (sink_stream != NULL && sink_stream->iso == chan) {
 		stream = sink_stream;
-	} else {
+	} else if (source_stream != NULL && source_stream->iso == chan) {
 		stream = source_stream;
+	} else {
+		stream = NULL;
 	}
 
 	if (stream == NULL) {
@@ -266,12 +270,16 @@ void bt_unicast_client_stream_bind_audio_iso(struct bt_audio_stream *stream,
 		 */
 		audio_iso->sink_stream = stream;
 		qos->rx = &audio_iso->sink_io_qos;
+		qos->rx->path = &audio_iso->sink_path;
+		qos->rx->path->cc = audio_iso->sink_path_cc;
 	} else if (dir == BT_AUDIO_DIR_SINK) {
 		/* If the endpoint is a sink, then we need to
 		 * configure our TX parameters
 		 */
 		audio_iso->source_stream = stream;
 		qos->tx = &audio_iso->source_io_qos;
+		qos->tx->path = &audio_iso->source_path;
+		qos->tx->path->cc = audio_iso->source_path_cc;
 	} else {
 		__ASSERT(false, "Invalid dir: %u", dir);
 	}
@@ -608,6 +616,24 @@ static void unicast_client_ep_qos_state(struct bt_audio_ep *ep,
 	/* Disconnect ISO if connected */
 	if (stream->iso->state == BT_ISO_STATE_CONNECTED) {
 		bt_audio_stream_disconnect(stream);
+	} else {
+		/* We setup the data path here, as this is the earliest where
+		 * we have the ISO <-> EP coupling completed (due to setting
+		 * the CIS ID in the QoS procedure).
+		 */
+		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+			/* If the endpoint is a source, then we need to
+			 * configure our RX parameters
+			 */
+			bt_audio_codec_to_iso_path(&ep->iso->sink_path,
+						   stream->codec);
+		} else {
+			/* If the endpoint is a sink, then we need to
+			 * configure our TX parameters
+			 */
+			bt_audio_codec_to_iso_path(&ep->iso->source_path,
+						   stream->codec);
+		}
 	}
 
 	/* Notify upper layer */
@@ -1969,7 +1995,6 @@ static uint8_t unicast_client_pacs_avail_ctx_notify_cb(struct bt_conn *conn,
 {
 	struct bt_pacs_context context;
 	struct net_buf_simple buf;
-	enum bt_audio_dir dir;
 
 	BT_DBG("conn %p len %u", conn, length);
 
@@ -1990,16 +2015,6 @@ static uint8_t unicast_client_pacs_avail_ctx_notify_cb(struct bt_conn *conn,
 	if (buf.len != sizeof(context)) {
 		BT_ERR("Avail_ctx notification incorrect size: %u", length);
 		return BT_GATT_ITER_STOP;
-	}
-
-	if (PART_OF_ARRAY(snk_loc_subscribe, params)) {
-		dir = BT_AUDIO_DIR_SINK;
-	} else if (PART_OF_ARRAY(src_loc_subscribe, params)) {
-		dir = BT_AUDIO_DIR_SOURCE;
-	} else {
-		BT_ERR("Invalid notification");
-
-		return BT_GATT_ITER_CONTINUE;
 	}
 
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
@@ -2072,7 +2087,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 
 			err = bt_gatt_subscribe(conn, sub_params);
-			if (err != 0) {
+			if (err != 0 && err != -EALREADY) {
 				BT_ERR("Failed to subscribe to avail_ctx: %d", err);
 			}
 		} /* else already subscribed */
@@ -2267,7 +2282,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 		sub_params->value = BT_GATT_CCC_NOTIFY;
 
 		err = bt_gatt_subscribe(conn, sub_params);
-		if (err != 0) {
+		if (err != 0 && err != -EALREADY) {
 			BT_ERR("Failed to subscribe to location: %d", err);
 		}
 	}

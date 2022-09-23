@@ -35,7 +35,7 @@
  * header file.
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>

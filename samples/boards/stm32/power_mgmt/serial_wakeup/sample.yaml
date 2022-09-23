@@ -7,7 +7,6 @@ tests:
     harness_config:
       type: multi_line
       regex:
-        - "Device ready"
         - "Device is wakeup capable"
         - "Wakeup source enable ok"
         - "Wakeup source enabled"
@@ -15,3 +14,4 @@ tests:
       - nucleo_wb55rg
     filter: dt_compat_enabled("zephyr,power-state")
     extra_args: "CONFIG_DEBUG=y"
+    platform_allow: nucleo_wb55rg

@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/linker/devicetree_regions.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 /** Buffer size. */

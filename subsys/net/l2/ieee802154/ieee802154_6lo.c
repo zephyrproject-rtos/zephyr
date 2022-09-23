@@ -48,11 +48,11 @@ enum net_verdict ieee802154_6lo_decode_pkt(struct net_if *iface, struct net_pkt 
 #endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
 }
 
-bool ieee802154_6lo_encode_pkt(struct net_if *iface, struct net_pkt *pkt,
-			       struct ieee802154_6lo_fragment_ctx *f_ctx, uint8_t ll_hdr_len)
+int ieee802154_6lo_encode_pkt(struct net_if *iface, struct net_pkt *pkt,
+			      struct ieee802154_6lo_fragment_ctx *f_ctx, uint8_t ll_hdr_len)
 {
 	if (net_pkt_family(pkt) != AF_INET6) {
-		return -EINVAL;
+		return 0;
 	}
 
 	/* hdr_diff will hold the hdr size difference on success */
@@ -68,8 +68,8 @@ bool ieee802154_6lo_encode_pkt(struct net_if *iface, struct net_pkt *pkt,
 	if (requires_fragmentation) {
 		ieee802154_6lo_fragment_ctx_init(f_ctx, pkt, hdr_diff, true);
 	}
-	return requires_fragmentation;
+	return requires_fragmentation ? 1 : 0;
 #else
-	return false;
+	return 0;
 #endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
 }

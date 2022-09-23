@@ -63,7 +63,7 @@ Current supported displays
 | GDEH0154D67  |                 | ssd16xx      |                              |
 +--------------+-----------------+--------------+------------------------------+
 | Good Display | WFT0420CZ15     | UC8176 /     | waveshare_epaper_gdew042t2   |
-| GDEW042T2    |                 | gd7965       |                              |
+| GDEW042T2    |                 | gd7965       | waveshare_epaper_gdew042t2-p |
 +--------------+-----------------+--------------+------------------------------+
 
 

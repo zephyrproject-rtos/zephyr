@@ -29,7 +29,7 @@ void tmslab_alloc_wait_timeout(void *p1, void *p2, void *p3)
 
 void tmslab_alloc_wait_ok(void *p1, void *p2, void *p3)
 {
-	zassert_true(k_mem_slab_alloc(&mslab1, &block_ok, TIMEOUT) == 0, NULL);
+	zassert_true(k_mem_slab_alloc(&mslab1, &block_ok, TIMEOUT) == 0);
 	k_sem_give(&sync_sema);
 }
 

@@ -15,7 +15,6 @@ ram: 64
 flash: 352
 supported:
   - gpio
-  - pinmux
   - i2c
   - adc
   - pwm

@@ -371,8 +371,10 @@ struct net_if_ip {
  * @brief IP and other configuration related data for network interface.
  */
 struct net_if_config {
+#if defined(CONFIG_NET_IP)
 	/** IP address configuration setting */
 	struct net_if_ip ip;
+#endif
 
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 	struct net_if_dhcpv4 dhcpv4;
@@ -631,7 +633,7 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt);
  *
  * @param iface Network interface
  *
- * @return True if IP offlining is active, false otherwise.
+ * @return True if IP offloading is active, false otherwise.
  */
 static inline bool net_if_is_ip_offloaded(struct net_if *iface)
 {
@@ -2250,6 +2252,12 @@ struct net_if_api {
 	void (*init)(struct net_if *iface);
 };
 
+#if defined(CONFIG_NET_IP)
+#define NET_IF_IP_INIT .ip = {},
+#else
+#define NET_IF_IP_INIT
+#endif
+
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 #define NET_IF_DHCPV4_INIT .dhcpv4.state = NET_DHCPV4_DISABLED,
 #else
@@ -2258,8 +2266,7 @@ struct net_if_api {
 
 #define NET_IF_CONFIG_INIT				\
 	.config = {					\
-		.ip = {					\
-		},					\
+		NET_IF_IP_INIT				\
 		NET_IF_DHCPV4_INIT			\
 	}
 
@@ -2365,7 +2372,7 @@ struct net_if_api {
 #define NET_DEVICE_DT_DEFINE(node_id, init_fn, pm_action_cb, data, cfg,	\
 			   prio, api, l2, l2_ctx_type, mtu)		\
 	Z_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
-			  DT_PROP_OR(node_id, label, ""), init_fn,	\
+			  DEVICE_DT_NAME(node_id), init_fn,		\
 			  pm_action_cb, data, cfg, prio, api, l2,	\
 			  l2_ctx_type, mtu)
 
@@ -2449,7 +2456,7 @@ struct net_if_api {
 				      api, l2, l2_ctx_type, mtu)	\
 	Z_NET_DEVICE_INIT_INSTANCE(node_id,				\
 				   Z_DEVICE_DT_DEV_NAME(node_id),	\
-				   DT_PROP_OR(node_id, label, ""),	\
+				   DEVICE_DT_NAME(node_id),		\
 				   instance, init_fn,			\
 				   pm_action_cb, data, cfg, prio, api,	\
 				   l2, l2_ctx_type, mtu)
@@ -2521,7 +2528,7 @@ struct net_if_api {
 #define NET_DEVICE_DT_OFFLOAD_DEFINE(node_id, init_fn, pm_action_cb,	\
 				   data, cfg, prio, api, mtu)		\
 	Z_NET_DEVICE_OFFLOAD_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id), \
-				  DT_PROP_OR(node_id, label, ""),	\
+				  DEVICE_DT_NAME(node_id),		\
 				  init_fn, pm_action_cb, data, cfg,	\
 				  prio, api, mtu)
 

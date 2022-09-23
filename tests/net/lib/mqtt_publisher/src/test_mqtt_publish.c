@@ -296,22 +296,22 @@ static int test_disconnect(void)
 
 void test_mqtt_connect(void)
 {
-	zassert_true(test_connect() == TC_PASS, NULL);
+	zassert_true(test_connect() == TC_PASS);
 }
 
 void test_mqtt_pingreq(void)
 {
-	zassert_true(test_pingreq() == TC_PASS, NULL);
+	zassert_true(test_pingreq() == TC_PASS);
 }
 
 void test_mqtt_publish(void)
 {
-	zassert_true(test_publish(MQTT_QOS_0_AT_MOST_ONCE) == TC_PASS, NULL);
-	zassert_true(test_publish(MQTT_QOS_1_AT_LEAST_ONCE) == TC_PASS, NULL);
-	zassert_true(test_publish(MQTT_QOS_2_EXACTLY_ONCE) == TC_PASS, NULL);
+	zassert_true(test_publish(MQTT_QOS_0_AT_MOST_ONCE) == TC_PASS);
+	zassert_true(test_publish(MQTT_QOS_1_AT_LEAST_ONCE) == TC_PASS);
+	zassert_true(test_publish(MQTT_QOS_2_EXACTLY_ONCE) == TC_PASS);
 }
 
 void test_mqtt_disconnect(void)
 {
-	zassert_true(test_disconnect() == TC_PASS, NULL);
+	zassert_true(test_disconnect() == TC_PASS);
 }

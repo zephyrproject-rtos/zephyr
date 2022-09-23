@@ -33,9 +33,7 @@ some highlights of the STM32F4DISCOVERY board:
 - CS43L22 audio DAC with integrated class D speaker driver
 
 .. image:: img/stm32f4_disco.jpg
-     :width: 350px
      :align: center
-     :height: 550px
      :alt: STM32F4DISCOVERY
 
 More information about the board can be found at the `STM32F4DISCOVERY website`_.

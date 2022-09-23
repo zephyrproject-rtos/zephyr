@@ -11,7 +11,6 @@
 #include <zephyr/drivers/clock_control.h>
 #include <errno.h>
 #include <fsl_uart.h>
-#include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
 
 struct mcux_iuart_config {

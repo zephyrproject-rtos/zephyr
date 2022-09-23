@@ -289,7 +289,8 @@ void test_client_setup_raw(void)
 
 	client_iface = modbus_iface_get_by_name(iface_name);
 	client_param.mode = MODBUS_MODE_RAW;
-	client_param.raw_tx_cb = client_raw_cb;
+	client_param.rawcb.raw_tx_cb = client_raw_cb;
+	client_param.rawcb.user_data = NULL;
 
 	err = modbus_init_client(client_iface, client_param);
 	zassert_equal(err, 0, "Failed to configure RAW client");

@@ -30,7 +30,6 @@ processor, a set of environmental sensors, a pushbutton, and two RGB LEDs.
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/thingy52_nrf52832.jpg
-     :width: 442px
      :align: center
      :alt: nRF52 Thingy:52
 

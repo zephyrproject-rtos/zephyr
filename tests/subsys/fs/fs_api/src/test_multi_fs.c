@@ -123,7 +123,7 @@ static int test_fs_external(void)
  *@{
  */
 
-void test_fs_register(void)
+ZTEST(fs_api_register_mount, test_fs_register)
 {
 	zassert_true(test_fs_init() == 0, "Failed to register filesystems");
 	zassert_true(test_fs_readmount() == 0, "Failed to readmount");

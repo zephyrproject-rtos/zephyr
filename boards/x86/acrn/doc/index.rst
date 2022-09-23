@@ -13,11 +13,10 @@ and safety capability can be assured without influence from other
 VMs. The following figure from ACRN's official documentation shows
 how a hybrid scenario works:
 
-.. figure:: ACRN-Hybrid.png
+.. figure:: ACRN-Hybrid.jpg
     :align: center
     :alt: ACRN Hybrid User Scenario
     :figclass: align-center
-    :width: 80%
 
     ACRN Hybrid User Scenario
 

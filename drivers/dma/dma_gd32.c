@@ -7,7 +7,10 @@
 #define DT_DRV_COMPAT gd_gd32_dma
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/gd32.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 
 #include <gd32_dma.h>
@@ -53,7 +56,10 @@ LOG_MODULE_REGISTER(dma_gd32, CONFIG_DMA_LOG_LEVEL);
 struct dma_gd32_config {
 	uint32_t reg;
 	uint32_t channels;
-	uint32_t rcu_periph_clock;
+	uint16_t clkid;
+#ifdef CONFIG_SOC_SERIES_GD32F4XX
+	struct reset_dt_spec reset;
+#endif
 	void (*irq_configure)(void);
 };
 
@@ -584,7 +590,12 @@ static int dma_gd32_init(const struct device *dev)
 {
 	const struct dma_gd32_config *cfg = dev->config;
 
-	rcu_periph_clock_enable(cfg->rcu_periph_clock);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
+			       (clock_control_subsys_t *)&cfg->clkid);
+
+#ifdef CONFIG_SOC_SERIES_GD32F4XX
+	(void)reset_line_toggle_dt(&cfg->reset);
+#endif
 
 	for (uint32_t i = 0; i < cfg->channels; i++) {
 		gd32_dma_interrupt_disable(cfg->reg, i,
@@ -653,7 +664,9 @@ static const struct dma_driver_api dma_gd32_driver_api = {
 	}                                                                      \
 	static const struct dma_gd32_config dma_gd32##inst##_config = {        \
 		.reg = DT_INST_REG_ADDR(inst),                                 \
-		.rcu_periph_clock = DT_INST_PROP(inst, rcu_periph_clock),      \
+		.clkid = DT_INST_CLOCKS_CELL(inst, id),                        \
+		IF_ENABLED(CONFIG_SOC_SERIES_GD32F4XX,                         \
+			   (.reset = RESET_DT_SPEC_INST_GET(inst),))           \
 		.channels = DT_INST_PROP(inst, dma_channels),                  \
 		.irq_configure = dma_gd32##inst##_irq_configure,               \
 	};                                                                     \

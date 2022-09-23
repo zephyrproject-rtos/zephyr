@@ -16,17 +16,13 @@ import subprocess
 import threading
 import select
 import re
+import psutil
 from twisterlib.environment import ZEPHYR_BASE
 
 try:
     import serial
 except ImportError:
     print("Install pyserial python module with pip to use --device-testing option.")
-
-try:
-    import psutil
-except ImportError:
-    print("Install psutil python module with pip to run in Qemu.")
 
 try:
     import pty
@@ -286,7 +282,7 @@ class BinaryHandler(Handler):
         # FIXME: This is needed when killing the simulator, the console is
         # garbled and needs to be reset. Did not find a better way to do that.
         if sys.stdout.isatty():
-            subprocess.call(["stty", "sane"])
+            subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
         if harness.is_pytest:
             harness.pytest_run(self.log)
@@ -338,6 +334,19 @@ class DeviceHandler(Handler):
             harness.capture_coverage = True
 
         ser.flush()
+
+        # turns out the ser.flush() is not enough to clear serial leftover from last case
+        # explicitly readline() can do it reliably
+        old_timeout = ser.timeout
+        # wait for 1s if no serial output
+        ser.timeout = 1
+        # or read 1000 lines at most
+        # if the leftovers are more than 1000 lines, user should realize that once
+        # saw the caught ones and fix it.
+        leftover_lines = ser.readlines(1000)
+        for line in leftover_lines:
+            logger.debug(f"leftover log of previous test: {line}")
+        ser.timeout = old_timeout
 
         while ser.isOpen():
             readable, _, _ = select.select(readlist, [], [], self.timeout)
@@ -839,7 +848,7 @@ class QEMUHandler(Handler):
         logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
         self.thread.start()
         if sys.stdout.isatty():
-            subprocess.call(["stty", "sane"])
+            subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
         logger.debug("Running %s (%s)" % (self.name, self.type_str))
         command = [self.generator_cmd]

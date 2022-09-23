@@ -11,8 +11,4 @@ config SOC
 config GPIO
 	default y
 
-config USB_KINETIS
-	default y
-	depends on USB_DEVICE_DRIVER
-
 endif # SOC_MK22F12

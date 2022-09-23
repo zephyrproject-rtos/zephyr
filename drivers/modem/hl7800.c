@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_MODEM_LOG_LEVEL);
 #include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -6046,7 +6046,9 @@ done:
 static int hl7800_init(const struct device *dev)
 {
 	int i, ret = 0;
-
+	struct k_work_queue_config cfg = {
+		.name = "hl7800_workq",
+	};
 	ARG_UNUSED(dev);
 
 	LOG_DBG("HL7800 Init");
@@ -6079,7 +6081,7 @@ static int hl7800_init(const struct device *dev)
 	/* initialize the work queue */
 	k_work_queue_start(&hl7800_workq, hl7800_workq_stack,
 			   K_THREAD_STACK_SIZEOF(hl7800_workq_stack),
-			   WORKQ_PRIORITY, NULL);
+			   WORKQ_PRIORITY, &cfg);
 
 	/* init work tasks */
 	k_work_init_delayable(&ictx.rssi_query_work, hl7800_rssi_query_work);

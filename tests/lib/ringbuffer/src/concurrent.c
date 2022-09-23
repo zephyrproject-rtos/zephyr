@@ -35,7 +35,7 @@ static void data_write(uint32_t *input)
 	sys_mutex_lock(&mutex, K_FOREVER);
 	int ret = ring_buf_item_put(&ringbuf, TYPE, VALUE,
 				   input, LENGTH);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 	sys_mutex_unlock(&mutex);
 }
 
@@ -49,14 +49,14 @@ static void data_read(uint32_t *output)
 	ret = ring_buf_item_get(&ringbuf, &type, &value, output, &size32);
 	sys_mutex_unlock(&mutex);
 
-	zassert_equal(ret, 0, NULL);
-	zassert_equal(type, TYPE, NULL);
-	zassert_equal(value, VALUE, NULL);
-	zassert_equal(size32, LENGTH, NULL);
+	zassert_equal(ret, 0);
+	zassert_equal(type, TYPE);
+	zassert_equal(value, VALUE);
+	zassert_equal(size32, LENGTH);
 	if (output[0] == 1) {
-		zassert_equal(memcmp(output, databuffer1, size32), 0, NULL);
+		zassert_equal(memcmp(output, databuffer1, size32), 0);
 	} else {
-		zassert_equal(memcmp(output, databuffer2, size32), 0, NULL);
+		zassert_equal(memcmp(output, databuffer2, size32), 0);
 	}
 }
 
@@ -129,7 +129,7 @@ static bool consume_cpy(void *user_data, uint32_t iter_cnt, bool last, int prio)
 
 	len = ring_buf_get(&ringbuf, buf, sizeof(buf));
 	for (int i = 0; i < len; i++) {
-		zassert_equal(buf[i], (uint8_t)cnt, NULL);
+		zassert_equal(buf[i], (uint8_t)cnt);
 		cnt++;
 	}
 
@@ -169,11 +169,11 @@ static bool consume_item(void *user_data, uint32_t cnt, bool last, int prio)
 
 	err = ring_buf_item_get(&ringbuf, &type, &value, data, &size32);
 	if (err == 0) {
-		zassert_equal(value, VALUE, NULL);
-		zassert_equal(type, (uint16_t)pcnt, NULL);
+		zassert_equal(value, VALUE);
+		zassert_equal(type, (uint16_t)pcnt);
 		pcnt++;
 	} else if (err == -EMSGSIZE) {
-		zassert_true(false, NULL);
+		zassert_true(false);
 	}
 
 	return true;
@@ -248,7 +248,7 @@ static bool consume(void *user_data, uint32_t iter_cnt, bool last, int prio)
 
 	int err = ring_buf_get_finish(&ringbuf, len);
 
-	zassert_equal(err, 0, NULL);
+	zassert_equal(err, 0);
 
 	return true;
 }

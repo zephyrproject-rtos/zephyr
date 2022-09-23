@@ -632,14 +632,14 @@ static void test_lpn_group(void)
 
 	bt_mesh_test_setup();
 
-	err = bt_mesh_cfg_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
+	err = bt_mesh_cfg_cli_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
 				      TEST_MOD_ID, &status);
 	if (err || status) {
 		FAIL("Group addr add failed with err %d status 0x%x", err,
 		     status);
 	}
 
-	err = bt_mesh_cfg_mod_sub_va_add(0, cfg->addr, cfg->addr, test_va_uuid,
+	err = bt_mesh_cfg_cli_mod_sub_va_add(0, cfg->addr, cfg->addr, test_va_uuid,
 					 TEST_MOD_ID, &vaddr, &status);
 	if (err || status) {
 		FAIL("VA addr add failed with err %d status 0x%x", err, status);
@@ -696,7 +696,7 @@ static void test_lpn_group(void)
 	/* Add a new group addr, then receive on it to ensure that the friend
 	 * has added it to the subscription list.
 	 */
-	err = bt_mesh_cfg_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR + 1,
+	err = bt_mesh_cfg_cli_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR + 1,
 				      TEST_MOD_ID, &status);
 	if (err || status) {
 		FAIL("Group addr add failed with err %d status 0x%x", err,
@@ -731,14 +731,14 @@ static void test_lpn_loopback(void)
 
 	bt_mesh_test_setup();
 
-	err = bt_mesh_cfg_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
+	err = bt_mesh_cfg_cli_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
 				      TEST_MOD_ID, &status);
 	if (err || status) {
 		FAIL("Group addr add failed with err %d status 0x%x", err,
 		     status);
 	}
 
-	err = bt_mesh_cfg_mod_sub_va_add(0, cfg->addr, cfg->addr, test_va_uuid,
+	err = bt_mesh_cfg_cli_mod_sub_va_add(0, cfg->addr, cfg->addr, test_va_uuid,
 					 TEST_MOD_ID, &vaddr, &status);
 	if (err || status) {
 		FAIL("VA addr add failed with err %d status 0x%x", err, status);

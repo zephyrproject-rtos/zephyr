@@ -63,5 +63,6 @@
 			dma-names = "tx", "rx";
 			status = "disabled";
 		};
+
 	};
 };

@@ -38,11 +38,11 @@ There are three types of configuration file:
 
    - All platforms: the default is :file:`.westconfig` in the user's home
      directory.
-   - Linux note: if the environment variable :envvar:`XDG_CONFIG_HOME` is set,
+   - Linux note: if the environment variable ``XDG_CONFIG_HOME`` is set,
      then :file:`$XDG_CONFIG_HOME/west/config` is used.
    - Windows note: the following environment variables are tested to find the
-     home directory: :envvar:`%HOME%`, then :envvar:`%USERPROFILE%`, then a
-     combination of :envvar:`%HOMEDRIVE%` and :envvar:`%HOMEPATH%`.
+     home directory: ``%HOME%``, then ``%USERPROFILE%``, then a
+     combination of ``%HOMEDRIVE%`` and ``%HOMEPATH%``.
 
 3. **Local**: Settings in this file affect west's behavior for the
    current :term:`west workspace`. The file is :file:`.west/config`, relative

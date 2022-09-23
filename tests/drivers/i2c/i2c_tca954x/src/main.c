@@ -29,7 +29,7 @@
  * This test verifies various assert macros provided by ztest.
  *
  */
-static void test_tca954x(void)
+ZTEST(i2c_tca954x, test_tca954x)
 {
 	uint8_t buff[1];
 
@@ -43,11 +43,4 @@ static void test_tca954x(void)
 	i2c_read(i2c1, buff, 1, 0x42);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(framework_tests,
-			 ztest_unit_test(test_tca954x)
-			 );
-
-	ztest_run_test_suite(framework_tests);
-}
+ZTEST_SUITE(i2c_tca954x, NULL, NULL, NULL, NULL, NULL);

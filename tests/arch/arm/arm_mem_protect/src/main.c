@@ -3,7 +3,7 @@
  * Copyright (c) 2021 Lexmark International, Inc.
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/syscall_handler.h>
 #include <zephyr/ztest.h>
 

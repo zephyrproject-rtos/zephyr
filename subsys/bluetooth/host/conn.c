@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -1119,6 +1119,8 @@ void bt_conn_foreach(int type, void (*func)(struct bt_conn *conn, void *data),
 struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 {
 	atomic_val_t old;
+
+	__ASSERT_NO_MSG(conn);
 
 	/* Reference counter must be checked to avoid incrementing ref from
 	 * zero, then we should return NULL instead.

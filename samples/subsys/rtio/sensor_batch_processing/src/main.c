@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/rtio/rtio_executor_simple.h>
 #include <zephyr/logging/log.h>

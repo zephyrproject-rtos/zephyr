@@ -71,15 +71,13 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		return ret;
 	}
 
-#if defined(CONFIG_NET_IPV6_FRAGMENT)
 	/* If the packet is routed back to us when we have reassembled
 	 * an IPv6 packet, then do not pass it to L2 as the packet does
 	 * not have link layer headers in it.
 	 */
-	if (net_pkt_ipv6_fragment_start(pkt)) {
+	if (IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT) && net_pkt_ipv6_fragment_start(pkt)) {
 		locally_routed = true;
 	}
-#endif
 
 	/* If there is no data, then drop the packet. */
 	if (!pkt->frags) {
@@ -109,44 +107,45 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	 */
 	net_pkt_cursor_init(pkt);
 
-#if defined(CONFIG_NET_SOCKETS_PACKET_DGRAM)
-	/* Consecutive call will forward packets to SOCK_DGRAM packet sockets
-	 * (after L2 removed header).
-	 */
-	ret = net_packet_socket_input(pkt, ETH_P_ALL);
-	if (ret != NET_CONTINUE) {
-		return ret;
-	}
-#endif
-
-	/* L2 processed, now we can pass IPPROTO_RAW to packet socket: */
-	ret = net_packet_socket_input(pkt, IPPROTO_RAW);
-	if (ret != NET_CONTINUE) {
-		return ret;
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM)) {
+		/* Consecutive call will forward packets to SOCK_DGRAM packet sockets
+		 * (after L2 removed header).
+		 */
+		ret = net_packet_socket_input(pkt, ETH_P_ALL);
+		if (ret != NET_CONTINUE) {
+			return ret;
+		}
 	}
 
-	ret = net_canbus_socket_input(pkt);
-	if (ret != NET_CONTINUE) {
-		return ret;
+	uint8_t family = net_pkt_family(pkt);
+
+	if (IS_ENABLED(CONFIG_NET_IP) && (family == AF_INET || family == AF_INET6 ||
+					  family == AF_UNSPEC || family == AF_PACKET)) {
+		/* L2 processed, now we can pass IPPROTO_RAW to packet socket:
+		 */
+		ret = net_packet_socket_input(pkt, IPPROTO_RAW);
+		if (ret != NET_CONTINUE) {
+			return ret;
+		}
+
+		/* IP version and header length. */
+		uint8_t vtc_vhl = NET_IPV6_HDR(pkt)->vtc & 0xf0;
+
+		if (IS_ENABLED(CONFIG_NET_IPV6) && vtc_vhl == 0x60) {
+			return net_ipv6_input(pkt, is_loopback);
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) && vtc_vhl == 0x40) {
+			return net_ipv4_input(pkt);
+		}
+
+		NET_DBG("Unknown IP family packet (0x%x)", NET_IPV6_HDR(pkt)->vtc & 0xf0);
+		net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
+		net_stats_update_ip_errors_vhlerr(net_pkt_iface(pkt));
+		return NET_DROP;
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
+		return net_canbus_socket_input(pkt);
 	}
 
-	/* IP version and header length. */
-	switch (NET_IPV6_HDR(pkt)->vtc & 0xf0) {
-#if defined(CONFIG_NET_IPV6)
-	case 0x60:
-		return net_ipv6_input(pkt, is_loopback);
-#endif
-#if defined(CONFIG_NET_IPV4)
-	case 0x40:
-		return net_ipv4_input(pkt);
-#endif
-	}
-
-	NET_DBG("Unknown IP family packet (0x%x)",
-		NET_IPV6_HDR(pkt)->vtc & 0xf0);
-	net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
-	net_stats_update_ip_errors_vhlerr(net_pkt_iface(pkt));
-
+	NET_DBG("Unknown protocol family packet (0x%x)", family);
 	return NET_DROP;
 }
 
@@ -206,14 +205,15 @@ static void init_rx_queues(void)
 /* If loopback driver is enabled, then direct packets to it so the address
  * check is not needed.
  */
-#if defined(CONFIG_NET_IP_ADDR_CHECK) && !defined(CONFIG_NET_LOOPBACK)
+#if defined(CONFIG_NET_IP) && defined(CONFIG_NET_IP_ADDR_CHECK) && !defined(CONFIG_NET_LOOPBACK)
 /* Check if the IPv{4|6} addresses are proper. As this can be expensive,
  * make this optional.
  */
 static inline int check_ip_addr(struct net_pkt *pkt)
 {
-#if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6) {
+	uint8_t family = net_pkt_family(pkt);
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		if (net_ipv6_addr_cmp((struct in6_addr *)NET_IPV6_HDR(pkt)->dst,
 				      net_ipv6_unspecified_address())) {
 			NET_DBG("IPv6 dst address missing");
@@ -260,11 +260,7 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 			NET_DBG("IPv6 loopback src address");
 			return -EADDRNOTAVAIL;
 		}
-	} else
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(pkt) == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		if (net_ipv4_addr_cmp((struct in_addr *)NET_IPV4_HDR(pkt)->dst,
 				      net_ipv4_unspecified_address())) {
 			NET_DBG("IPv4 dst address missing");
@@ -299,11 +295,6 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 			NET_DBG("IPv4 loopback src address");
 			return -EADDRNOTAVAIL;
 		}
-	} else
-#endif /* CONFIG_NET_IPV4 */
-
-	{
-		;
 	}
 
 	return 0;

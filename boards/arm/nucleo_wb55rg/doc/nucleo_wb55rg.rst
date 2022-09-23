@@ -30,9 +30,7 @@ Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
   mass storage, virtual COM port and debug port
 
 .. image:: img/nucleowb55rg.jpg
-   :width: 670px
    :align: center
-   :height: 339px
    :alt: Nucleo WB55RG
 
 More information about the board can be found at the `Nucleo WB55RG website`_.
@@ -172,6 +170,8 @@ The Zephyr nucleo_wb55rg board configuration supports the following hardware fea
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
 | RADIO     | on-chip    | Bluetooth Low Energy                |
++-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.

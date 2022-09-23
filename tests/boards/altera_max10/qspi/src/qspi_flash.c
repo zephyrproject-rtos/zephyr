@@ -14,7 +14,7 @@
 #define FLASH_SECTOR_SIZE		65536
 #define TEST_DATA_LEN			4
 
-void test_qspi_flash(void)
+ZTEST(nios2_qspi, test_qspi_flash)
 {
 	const struct device *flash_dev;
 	uint32_t i, offset, rd_val, wr_val;
@@ -71,9 +71,4 @@ void test_qspi_flash(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(nios2_qspi_test_suite,
-			ztest_unit_test(test_qspi_flash));
-	ztest_run_test_suite(nios2_qspi_test_suite);
-}
+ZTEST_SUITE(nios2_qspi, NULL, NULL, NULL, NULL, NULL);

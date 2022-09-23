@@ -27,7 +27,7 @@
 
 #if CONFIG_USB_DC_NXP_LPCIP3511
 #include "usb_phy.h"
-#include "usb_dc_mcux.h"
+#include "usb.h"
 #endif
 
 
@@ -279,6 +279,11 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 	DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
+
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(i3c0), nxp_mcux_i3c, okay))
+	CLOCK_AttachClk(kFFRO_to_I3C_CLK);
+	CLOCK_AttachClk(kLPOSC_to_I3C_TC_CLK);
+#endif
 
 #endif /* CONFIG_SOC_MIMXRT685S_CM33 */
 }

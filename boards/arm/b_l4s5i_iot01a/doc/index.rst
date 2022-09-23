@@ -41,9 +41,7 @@ some highlights of the B_L4S5I_IOT01A Discovery kit:
 
 
 .. image:: img/b-l4s5i_iot01a.jpg
-     :width: 450px
      :align: center
-     :height: 394px
      :alt: B_L4S5I_IOT01A Discovery kit
 
 More information about the board can be found at the `B L4S5I IOT01A Discovery kit website`_.

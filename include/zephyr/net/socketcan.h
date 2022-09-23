@@ -39,11 +39,20 @@ enum {
 	CAN_RAW_FILTER = 1,
 };
 
-/* SocketCAN max data payload length */
+/* SocketCAN MTU size compatible with Linux */
+#ifdef CONFIG_CAN_FD_MODE
+#define SOCKETCAN_MAX_DLEN 64U
+#define CANFD_MTU (sizeof(struct socketcan_frame))
+#define CAN_MTU (CANFD_MTU - 56U)
+#else /* CONFIG_CAN_FD_MODE */
 #define SOCKETCAN_MAX_DLEN 8U
+#define CAN_MTU (sizeof(struct socketcan_frame))
+#endif /* !CONFIG_CAN_FD_MODE */
 
-/* SocketCAN MTU size */
-#define CAN_MTU sizeof(struct socketcan_frame)
+/* CAN-FD specific flags from Linux Kernel (include/uapi/linux/can.h) */
+#define CANFD_BRS 0x01 /* bit rate switch (second bitrate for payload data) */
+#define CANFD_ESI 0x02 /* error state indicator of the transmitting node */
+#define CANFD_FDF 0x04 /* mark CAN FD for dual use of struct canfd_frame */
 
 /**
  * struct sockaddr_can - The sockaddr structure for CAN sockets
@@ -92,12 +101,11 @@ typedef uint32_t socketcan_id_t;
 struct socketcan_frame {
 	/** 32-bit CAN ID + EFF/RTR/ERR flags. */
 	socketcan_id_t can_id;
-
-	/** The data length code (DLC). */
-	uint8_t can_dlc;
-
+	/** Frame payload length in bytes. */
+	uint8_t len;
+	/** Additional flags for CAN FD. */
+	uint8_t flags;
 	/** @cond INTERNAL_HIDDEN */
-	uint8_t pad;   /* padding. */
 	uint8_t res0;  /* reserved/padding. */
 	uint8_t res1;  /* reserved/padding. */
 	/** @endcond */

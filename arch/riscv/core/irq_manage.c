@@ -11,7 +11,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 FUNC_NORETURN void z_irq_spurious(const void *unused)
 {
-	ulong_t mcause;
+	unsigned long mcause;
 
 	ARG_UNUSED(unused);
 

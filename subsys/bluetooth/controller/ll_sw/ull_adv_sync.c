@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
@@ -163,10 +163,45 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 	}
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
-	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, 0, 0, NULL);
-	if (err) {
-		return err;
-	}
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
+	/* Duplicate chain PDUs */
+	do {
+		struct pdu_adv *pdu_chain;
+
+#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
+		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
+						 0U, 0U, NULL);
+		if (err) {
+			return err;
+		}
+
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
+		pdu_prev = lll_adv_pdu_linked_next_get(pdu_prev);
+		pdu_chain = lll_adv_pdu_linked_next_get(pdu);
+
+		/* Allocate new chain PDU if required */
+		if (pdu_prev) {
+			/* Prior PDU chain allocation valid */
+			if (pdu_chain) {
+				pdu = pdu_chain;
+
+				continue;
+			}
+
+			/* Get a new chain PDU */
+			pdu_chain = lll_adv_pdu_alloc_pdu_adv();
+			if (!pdu_chain) {
+				return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+			}
+
+			/* Link the chain PDU to parent PDU */
+			lll_adv_pdu_linked_append(pdu_chain, pdu);
+
+			/* continue back to update the new PDU */
+			pdu = pdu_chain;
+		}
+	} while (pdu_prev);
+#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
 
 	lll_adv_sync_data_enqueue(lll_sync, ter_idx);
 
@@ -466,22 +501,21 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		struct pdu_adv_ext_hdr *hdr_chain;
 		struct pdu_adv_aux_ptr *aux_ptr;
 		struct pdu_adv *pdu_chain_prev;
-		struct pdu_adv_ext_hdr *hdr;
+		struct pdu_adv_ext_hdr hdr;
 		struct pdu_adv *pdu_chain;
 		uint8_t *dptr_chain;
 		uint32_t offs_us;
 		uint16_t ter_len;
 		uint8_t *dptr;
 
-		/* Get reference to aux ptr in superior PDU */
-		(void)memcpy(&aux_ptr,
-			     &hdr_data[ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET],
-			     sizeof(aux_ptr));
-
 		/* Get reference to flags in superior PDU */
 		com_hdr = &pdu->adv_ext_ind;
-		hdr = (void *)&com_hdr->ext_hdr_adv_data[0];
-		dptr = (void *)hdr;
+		if (com_hdr->ext_hdr_len) {
+			hdr = com_hdr->ext_hdr;
+		} else {
+			*(uint8_t *)&hdr = 0U;
+		}
+		dptr = com_hdr->ext_hdr.data;
 
 		/* Allocate new PDU */
 		pdu_chain = lll_adv_pdu_alloc_pdu_adv();
@@ -509,14 +543,11 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		 */
 
 		/* ADI flag, mandatory if superior PDU has it */
-		if (hdr->adi) {
+		if (hdr.adi) {
 			hdr_chain->adi = 1U;
 		}
 
 		/* Proceed to next byte if any flags present */
-		if (*dptr) {
-			dptr++;
-		}
 		if (*dptr_chain) {
 			dptr_chain++;
 		}
@@ -536,10 +567,11 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 			dptr_chain += sizeof(struct pdu_adv_adi);
 		}
 
-		/* Finish Common ExtAdv Payload header */
+		/* non-connectable non-scannable chain pdu */
 		com_hdr_chain->adv_mode = 0;
-		com_hdr_chain->ext_hdr_len =
-			dptr_chain - &com_hdr_chain->ext_hdr_adv_data[0];
+
+		/* Calc current chain PDU len */
+		ter_len = ull_adv_aux_hdr_len_calc(com_hdr_chain, &dptr_chain);
 
 		/* Prefix overflowed data to chain PDU and reduce the AD data in
 		 * in the current PDU.
@@ -583,19 +615,34 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 			len = ad_len_chain;
 		}
 
-		/* PDU length so far */
-		ter_len = dptr_chain - &pdu_chain->payload[0];
-
 		/* Check AdvData overflow */
-		if ((ter_len + len) > PDU_AC_PAYLOAD_SIZE_MAX) {
+		if ((ter_len + ad_len_overflow + len) >
+		    PDU_AC_PAYLOAD_SIZE_MAX) {
+			/* NOTE: latest PDU was not consumed by LLL and
+			 * as ull_adv_sync_pdu_alloc() has reverted back
+			 * the double buffer with the first PDU, and
+			 * returned the latest PDU as the new PDU, we
+			 * need to enqueue back the new PDU which is
+			 * infact the latest PDU.
+			 */
+			if (pdu_prev == pdu) {
+				lll_adv_sync_data_enqueue(lll_sync, ter_idx);
+			}
+
 			return BT_HCI_ERR_PACKET_TOO_LONG;
 		}
+
+		/* Fill the chain PDU length */
+		ull_adv_aux_hdr_len_fill(com_hdr_chain, ter_len);
+		pdu_chain->len = ter_len + ad_len_overflow + len;
 
 		/* Fill AD Data in chain PDU */
 		(void)memcpy(dptr_chain, data, len);
 
-		/* Fill the chain PDU length */
-		pdu_chain->len = ter_len + len;
+		/* Get reference to aux ptr in superior PDU */
+		(void)memcpy(&aux_ptr,
+			     &hdr_data[ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET],
+			     sizeof(aux_ptr));
 
 		/* Fill the aux offset in the previous AUX_SYNC_IND PDU */
 		offs_us = PDU_AC_US(pdu->len, adv->lll.phy_s,
@@ -739,7 +786,10 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
+		/* Update ADI while duplicating chain PDUs */
 		do {
+			struct pdu_adv *pdu_chain;
+
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
 			err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev,
 							 pdu, hdr_add_fields,
@@ -751,9 +801,29 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
 			pdu_prev = lll_adv_pdu_linked_next_get(pdu_prev);
-			pdu = lll_adv_pdu_linked_next_get(pdu);
+			pdu_chain = lll_adv_pdu_linked_next_get(pdu);
 
-			LL_ASSERT((pdu_prev && pdu) || (!pdu_prev && !pdu));
+			/* Allocate new chain PDU if required */
+			if (pdu_prev) {
+				/* Prior PDU chain allocation valid */
+				if (pdu_chain) {
+					pdu = pdu_chain;
+
+					continue;
+				}
+
+				/* Get a new chain PDU */
+				pdu_chain = lll_adv_pdu_alloc_pdu_adv();
+				if (!pdu_chain) {
+					return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+				}
+
+				/* Link the chain PDU to parent PDU */
+				lll_adv_pdu_linked_append(pdu_chain, pdu);
+
+				/* continue back to update the new PDU */
+				pdu = pdu_chain;
+			}
 		} while (pdu_prev);
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
 	}
@@ -818,7 +888,6 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 				HAL_TICKER_US_TO_TICKS(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
-					EVENT_OVERHEAD_START_US +
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 		}
 

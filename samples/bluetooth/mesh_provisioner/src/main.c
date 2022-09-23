@@ -101,17 +101,16 @@ static void configure_self(struct bt_mesh_cdb_node *self)
 	}
 
 	/* Add Application Key */
-	err = bt_mesh_cfg_app_key_add(self->net_idx, self->addr, self->net_idx,
-				      app_idx, key->keys[0].app_key, &status);
+	err = bt_mesh_cfg_cli_app_key_add(self->net_idx, self->addr, self->net_idx, app_idx,
+					  key->keys[0].app_key, &status);
 	if (err || status) {
 		printk("Failed to add app-key (err %d, status %d)\n", err,
 		       status);
 		return;
 	}
 
-	err = bt_mesh_cfg_mod_app_bind(self->net_idx, self->addr, self->addr,
-				       app_idx, BT_MESH_MODEL_ID_HEALTH_CLI,
-				       &status);
+	err = bt_mesh_cfg_cli_mod_app_bind(self->net_idx, self->addr, self->addr, app_idx,
+					   BT_MESH_MODEL_ID_HEALTH_CLI, &status);
 	if (err || status) {
 		printk("Failed to bind app-key (err %d, status %d)\n", err,
 		       status);
@@ -145,15 +144,15 @@ static void configure_node(struct bt_mesh_cdb_node *node)
 	}
 
 	/* Add Application Key */
-	err = bt_mesh_cfg_app_key_add(net_idx, node->addr, net_idx, app_idx,
-				      key->keys[0].app_key, &status);
+	err = bt_mesh_cfg_cli_app_key_add(net_idx, node->addr, net_idx, app_idx,
+					  key->keys[0].app_key, &status);
 	if (err || status) {
 		printk("Failed to add app-key (err %d status %d)\n", err, status);
 		return;
 	}
 
 	/* Get the node's composition data and bind all models to the appkey */
-	err = bt_mesh_cfg_comp_data_get(net_idx, node->addr, 0, &status, &buf);
+	err = bt_mesh_cfg_cli_comp_data_get(net_idx, node->addr, 0, &status, &buf);
 	if (err || status) {
 		printk("Failed to get Composition data (err %d, status: %d)\n",
 		       err, status);
@@ -180,9 +179,8 @@ static void configure_node(struct bt_mesh_cdb_node *node)
 			printk("Binding AppKey to model 0x%03x:%04x\n",
 			       elem_addr, id);
 
-			err = bt_mesh_cfg_mod_app_bind(net_idx, node->addr,
-						       elem_addr, app_idx, id,
-						       &status);
+			err = bt_mesh_cfg_cli_mod_app_bind(net_idx, node->addr, elem_addr, app_idx,
+							   id, &status);
 			if (err || status) {
 				printk("Failed (err: %d, status: %d)\n", err,
 				       status);
@@ -196,10 +194,8 @@ static void configure_node(struct bt_mesh_cdb_node *node)
 			printk("Binding AppKey to model 0x%03x:%04x:%04x\n",
 			       elem_addr, id.company, id.id);
 
-			err = bt_mesh_cfg_mod_app_bind_vnd(net_idx, node->addr,
-							   elem_addr, app_idx,
-							   id.id, id.company,
-							   &status);
+			err = bt_mesh_cfg_cli_mod_app_bind_vnd(net_idx, node->addr, elem_addr,
+							       app_idx, id.id, id.company, &status);
 			if (err || status) {
 				printk("Failed (err: %d, status: %d)\n", err,
 				       status);

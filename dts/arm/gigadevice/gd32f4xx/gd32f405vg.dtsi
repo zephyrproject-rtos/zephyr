@@ -9,15 +9,13 @@
 
 / {
 	soc {
-		flash-controller@40023c00 {
-			flash0: flash@8000000 {
-				reg = <0x08000000 DT_SIZE_K(1024)>;
-			};
-		};
-
 		sram1: memory@2001c000 {
 			compatible = "mmio-sram";
 			reg = <0x2001c000 DT_SIZE_K(16)>;
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(1024)>;
 };

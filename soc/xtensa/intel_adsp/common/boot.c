@@ -42,12 +42,7 @@
 #define MANIFEST_SEGMENT_COUNT	3
 
 /* FIXME: Use Kconfig or some other means */
-#if defined(CONFIG_SOC_INTEL_CAVS_V15)
-#define PLATFORM_DISABLE_L2CACHE_AT_BOOT
-#endif
-
-/* FIXME: Use Kconfig or some other means */
-#if !defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
+#if !defined(CONFIG_SOC_SERIES_INTEL_ACE)
 #define RESET_MEMORY_HOLE
 #endif
 
@@ -145,6 +140,9 @@ __imr void win_setup(void)
 	CAVS_WIN[0].dmwba = (HP_SRAM_WIN0_BASE | CAVS_DMWBA_READONLY
 			     | CAVS_DMWBA_ENABLE);
 
+	CAVS_WIN[2].dmwlo = HP_SRAM_WIN2_SIZE | 0x7;
+	CAVS_WIN[2].dmwba = (HP_SRAM_WIN2_BASE | CAVS_DMWBA_ENABLE);
+
 	CAVS_WIN[3].dmwlo = HP_SRAM_WIN3_SIZE | 0x7;
 	CAVS_WIN[3].dmwba = (HP_SRAM_WIN3_BASE | CAVS_DMWBA_READONLY
 			     | CAVS_DMWBA_ENABLE);
@@ -158,9 +156,8 @@ __imr void boot_core0(void)
 {
 	cpu_early_init();
 
-#ifdef PLATFORM_DISABLE_L2CACHE_AT_BOOT
-		/* FIXME: L2 cache control PCFG register */
-		*(uint32_t *)0x1508 = 0;
+#ifdef CONFIG_ADSP_DISABLE_L2CACHE_AT_BOOT
+	ADSP_L2PCFG_REG = 0;
 #endif
 
 #ifdef RESET_MEMORY_HOLE

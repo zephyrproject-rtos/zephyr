@@ -100,15 +100,14 @@ struct can_sja1000_data {
 	ATOMIC_DEFINE(rx_allocs, CONFIG_CAN_MAX_FILTER);
 	struct can_sja1000_rx_filter filters[CONFIG_CAN_MAX_FILTER];
 	struct k_mutex mod_lock;
+	bool started;
 	can_mode_t mode;
 	enum can_state state;
 	can_state_change_callback_t state_change_cb;
 	void *state_change_cb_data;
 	struct k_sem tx_idle;
-	struct k_sem tx_done;
 	can_tx_callback_t tx_callback;
 	void *tx_user_data;
-	int tx_status;
 	uint32_t sjw;
 	void *custom;
 };
@@ -121,6 +120,10 @@ struct can_sja1000_data {
 int can_sja1000_set_timing(const struct device *dev, const struct can_timing *timing);
 
 int can_sja1000_get_capabilities(const struct device *dev, can_mode_t *cap);
+
+int can_sja1000_start(const struct device *dev);
+
+int can_sja1000_stop(const struct device *dev);
 
 int can_sja1000_set_mode(const struct device *dev, can_mode_t mode);
 

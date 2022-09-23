@@ -225,7 +225,7 @@ up from where it was before restart.
 
 .. code-block:: c
 
-    #include <zephyr/zephyr.h>
+    #include <zephyr/kernel.h>
     #include <zephyr/sys/reboot.h>
     #include <zephyr/settings/settings.h>
     #include <zephyr/sys/printk.h>

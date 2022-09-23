@@ -9,7 +9,7 @@
  *
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #include <zephyr/shell/shell_history.h>

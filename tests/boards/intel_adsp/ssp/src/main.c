@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/printk.h>
@@ -383,7 +383,7 @@ ZTEST(adsp_ssp, test_adsp_ssp_config_set)
 
 	ret = dai_config_set(dev_dai_ssp, &config, &ssp_config);
 
-	zassert_equal(ret, TC_PASS, NULL);
+	zassert_equal(ret, TC_PASS);
 }
 
 static void test_adsp_ssp_probe(void)
@@ -392,7 +392,7 @@ static void test_adsp_ssp_probe(void)
 
 	ret = dai_probe(dev_dai_ssp);
 
-	zassert_equal(ret, TC_PASS, NULL);
+	zassert_equal(ret, TC_PASS);
 }
 
 static void *adsp_ssp_setup(void)

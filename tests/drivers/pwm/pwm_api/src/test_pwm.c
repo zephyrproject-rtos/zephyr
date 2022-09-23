@@ -26,7 +26,7 @@
 #include <zephyr/device.h>
 #include <inttypes.h>
 #include <zephyr/drivers/pwm.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(pwm_0), okay)
