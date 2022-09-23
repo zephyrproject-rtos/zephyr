@@ -123,6 +123,7 @@ struct lwm2m_rd_client_info {
 
 	bool trigger_update : 1;
 	bool update_objects : 1;
+	bool close_socket : 1;
 } client;
 
 /* Allocate some data for queries and updates. Make sure it's large enough to
@@ -516,6 +517,9 @@ static void do_update_timeout_cb(struct lwm2m_message *msg)
 {
 	LOG_WRN("Registration Update Timeout");
 
+	if (client.ctx->sock_fd > -1) {
+		client.close_socket = true;
+	}
 	/* Re-do registration */
 	sm_handle_timeout_state(msg, ENGINE_DO_REGISTRATION);
 }
@@ -662,6 +666,7 @@ static int sm_do_init(void)
 	client.lifetime = 0U;
 	client.retries = 0U;
 	client.last_update = 0U;
+	client.close_socket = false;
 
 	/* Do bootstrap or registration */
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
@@ -983,7 +988,13 @@ static int sm_do_registration(void)
 	} else {
 		/* clear out existing connection data */
 		if (client.ctx->sock_fd > -1) {
-			lwm2m_engine_context_close(client.ctx);
+			if (client.close_socket) {
+				/* Clear old socket connection */
+				client.close_socket = false;
+				lwm2m_engine_stop(client.ctx);
+			} else {
+				lwm2m_engine_context_close(client.ctx);
+			}
 		}
 
 		client.ctx->bootstrap_mode = false;
