@@ -12,7 +12,7 @@
 
 #define SW0_NODE	DT_ALIAS(sw0)
 
-static const uint16_t net_idx;
+static const uint16_t prov_net_idx;
 static const uint16_t app_idx;
 static uint16_t self_addr = 1, node_addr;
 static const uint8_t dev_uuid[16] = { 0xdd, 0xdd };
@@ -73,7 +73,7 @@ static void setup_cdb(void)
 {
 	struct bt_mesh_cdb_app_key *key;
 
-	key = bt_mesh_cdb_app_key_alloc(net_idx, app_idx);
+	key = bt_mesh_cdb_app_key_alloc(prov_net_idx, app_idx);
 	if (key == NULL) {
 		printk("Failed to allocate app-key 0x%04x\n", app_idx);
 		return;
@@ -144,7 +144,7 @@ static void configure_node(struct bt_mesh_cdb_node *node)
 	}
 
 	/* Add Application Key */
-	err = bt_mesh_cfg_cli_app_key_add(net_idx, node->addr, net_idx, app_idx,
+	err = bt_mesh_cfg_cli_app_key_add(prov_net_idx, node->addr, prov_net_idx, app_idx,
 					  key->keys[0].app_key, &status);
 	if (err || status) {
 		printk("Failed to add app-key (err %d status %d)\n", err, status);
@@ -152,7 +152,7 @@ static void configure_node(struct bt_mesh_cdb_node *node)
 	}
 
 	/* Get the node's composition data and bind all models to the appkey */
-	err = bt_mesh_cfg_cli_comp_data_get(net_idx, node->addr, 0, &status, &buf);
+	err = bt_mesh_cfg_cli_comp_data_get(prov_net_idx, node->addr, 0, &status, &buf);
 	if (err || status) {
 		printk("Failed to get Composition data (err %d, status: %d)\n",
 		       err, status);
@@ -179,8 +179,8 @@ static void configure_node(struct bt_mesh_cdb_node *node)
 			printk("Binding AppKey to model 0x%03x:%04x\n",
 			       elem_addr, id);
 
-			err = bt_mesh_cfg_cli_mod_app_bind(net_idx, node->addr, elem_addr, app_idx,
-							   id, &status);
+			err = bt_mesh_cfg_cli_mod_app_bind(prov_net_idx, node->addr, elem_addr,
+					app_idx, id, &status);
 			if (err || status) {
 				printk("Failed (err: %d, status: %d)\n", err,
 				       status);
@@ -194,7 +194,7 @@ static void configure_node(struct bt_mesh_cdb_node *node)
 			printk("Binding AppKey to model 0x%03x:%04x:%04x\n",
 			       elem_addr, id.company, id.id);
 
-			err = bt_mesh_cfg_cli_mod_app_bind_vnd(net_idx, node->addr, elem_addr,
+			err = bt_mesh_cfg_cli_mod_app_bind_vnd(prov_net_idx, node->addr, elem_addr,
 							       app_idx, id.id, id.company, &status);
 			if (err || status) {
 				printk("Failed (err: %d, status: %d)\n", err,
@@ -373,7 +373,7 @@ void main(void)
 #endif
 
 		printk("Provisioning %s\n", uuid_hex_str);
-		err = bt_mesh_provision_adv(node_uuid, net_idx, 0, 0);
+		err = bt_mesh_provision_adv(node_uuid, prov_net_idx, 0, 0);
 		if (err < 0) {
 			printk("Provisioning failed (err %d)\n", err);
 			continue;
