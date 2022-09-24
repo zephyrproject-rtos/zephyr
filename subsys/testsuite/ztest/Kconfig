@@ -22,6 +22,13 @@ config ZTEST_STACK_SIZE
 	default 2048 if COVERAGE_GCOV
 	default 1024
 
+config ZTEST_TEST_DELAY_MS
+	int "Delay between tests in milliseconds"
+	default 0
+	help
+	  Add a delay between between tests to manage output on the console on
+	  systems that can't handle the rapid output rate.
+
 config ZTEST_FAIL_FAST
 	bool "Abort on first failing test"
 	help
