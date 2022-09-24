@@ -509,6 +509,9 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 {
 	int ret = TC_PASS;
 
+#if CONFIG_ZTEST_TEST_DELAY_MS > 0
+	k_busy_wait(CONFIG_ZTEST_TEST_DELAY_MS * USEC_PER_MSEC);
+#endif
 	TC_START(test->name);
 
 	phase = TEST_PHASE_BEFORE;
