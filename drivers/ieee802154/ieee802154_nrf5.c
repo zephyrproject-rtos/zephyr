@@ -379,8 +379,8 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 		ack_len = nrf5_radio->ack_frame.psdu[0] - NRF5_FCS_LENGTH;
 	}
 
-	ack_pkt = net_pkt_alloc_with_buffer(nrf5_radio->iface, ack_len,
-					    AF_UNSPEC, 0, K_NO_WAIT);
+	ack_pkt = net_pkt_rx_alloc_with_buffer(nrf5_radio->iface, ack_len,
+					       AF_UNSPEC, 0, K_NO_WAIT);
 	if (!ack_pkt) {
 		LOG_ERR("No free packet available.");
 		err = -ENOMEM;
