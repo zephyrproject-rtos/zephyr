@@ -1,0 +1,31 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_SWO
+	bool "Serial Wire Output (SWO) backend"
+	depends on HAS_SWO
+	select LOG_OUTPUT
+	help
+	  When enabled, backend will use SWO for logging.
+
+if LOG_BACKEND_SWO
+config LOG_BACKEND_SWO_FREQ_HZ
+	int "Set SWO output frequency"
+	default 0
+	help
+	  Set SWO output frequency. Value 0 will select maximum frequency
+	  supported by the given MCU. Not all debug probes support high
+	  frequency SWO operation. In this case the frequency has to be set
+	  manually.
+
+	  SWO value defined by this option will be configured at boot. Most SWO
+	  viewer programs will configure SWO frequency when attached to the
+	  debug probe. Such configuration will persist only until the device
+	  reset. To ensure flawless operation the frequency configured here and
+	  by the SWO viewer program has to match.
+
+backend = SWO
+backend-str = swo
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_SWO

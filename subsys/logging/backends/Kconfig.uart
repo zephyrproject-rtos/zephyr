@@ -1,0 +1,51 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_UART
+	bool "UART backend"
+	depends on UART_CONSOLE
+	default y if !SHELL_BACKEND_SERIAL
+	select LOG_OUTPUT
+	help
+	  When enabled backend is using UART to output logs.
+
+if LOG_BACKEND_UART
+
+config LOG_BACKEND_UART_ASYNC
+	bool "Use UART Asynchronous API"
+	depends on UART_ASYNC_API
+	depends on !LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX
+
+config LOG_BACKEND_UART_BUFFER_SIZE
+	int "Number of bytes to buffer in RAM before flushing"
+	default 32 if LOG_BACKEND_UART_ASYNC
+	default 1
+	help
+	  Sets the number of bytes which can be buffered in RAM before log_output_flush
+	  is automatically called on the backend.
+
+backend = UART
+backend-str = uart
+source "subsys/logging/Kconfig.template.log_format_config"
+
+if LOG_BACKEND_UART_OUTPUT_DICTIONARY
+
+choice
+	prompt "Dictionary mode output format"
+	default LOG_BACKEND_UART_OUTPUT_DICTIONARY_BIN
+
+config LOG_BACKEND_UART_OUTPUT_DICTIONARY_BIN
+	bool "Dictionary (binary)"
+	help
+	  Dictionary-based logging output in binary.
+
+config LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX
+	bool "Dictionary (hexadecimal)"
+	help
+	  Dictionary-based logging output in hexadecimal. Supported only for UART backend.
+
+endchoice
+
+endif # LOG_BACKEND_UART_OUTPUT_DICTIONARY
+
+endif # LOG_BACKEND_UART

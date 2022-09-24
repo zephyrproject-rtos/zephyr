@@ -1,0 +1,52 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_ADSP_HDA
+	bool "Intel ADSP HDA backend"
+	depends on SOC_FAMILY_INTEL_ADSP && DMA && DMA_INTEL_ADSP_HDA_HOST_OUT
+	select LOG_OUTPUT
+	help
+	  Provide a logging backend which writes to a buffer and
+	  periodically flushes to hardware using ringbuffer like
+	  semantics provided by DMA_INTEL_ADSP_HDA.
+
+if LOG_BACKEND_ADSP_HDA
+
+backend = ADSP_HDA
+backend-str = adsp_hda
+source "subsys/logging/Kconfig.template.log_format_config"
+
+config LOG_BACKEND_ADSP_HDA_SIZE
+	int "Size of ring buffer"
+	range 128 8192
+	default 4096
+	help
+	  Sets the ring buffer size cAVS HDA uses for logging. Effectively
+	  determines how many log messages may be written to in a period of time.
+	  The period of time is decided by how often to inform the hardware of
+	  writes to the buffer.
+
+config LOG_BACKEND_ADSP_HDA_FLUSH_TIME
+	int "Time in milliseconds to periodically flush writes to hardware"
+	range 1 10000
+	default 500
+	help
+	    The Intel ADSP HDA backend periodically writes out its buffer contents
+	    to hardware by informing the DMA hardware the contents of the ring
+	    buffer.
+
+config LOG_BACKEND_ADSP_HDA_CAVSTOOL
+	bool "Log backend is to be used with cavstool"
+	help
+		Use cavstool understood IPC messages to inform setup and logging of
+		HDA messages.
+
+config LOG_BACKEND_ADSP_HDA_PADDING
+	bool "Log backend should pad the buffer with \0 characters when flushing"
+	help
+		HDA requires transfers be 128 byte aligned such that a partial message may
+		never make it across unless padded with \0 characters to the next 128 byte
+		aligned address. This may or may not work depending on the log format
+		being used but should certainly work with text based logging.
+
+endif # LOG_BACKEND_ADSP_HDA
