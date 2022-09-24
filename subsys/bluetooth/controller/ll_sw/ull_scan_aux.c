@@ -737,7 +737,7 @@ ull_scan_aux_rx_flush:
 			ll_rx_sched();
 
 			sync = HDR_LLL2ULL(sync_lll);
-			if (unlikely(sync->is_stop)) {
+			if (unlikely(sync->is_stop && sync_lll->lll_aux)) {
 				return;
 			}
 		}
