@@ -43,17 +43,23 @@ struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(uint8_t *buf, uint8_t **p_
 	dbg_print_fs(fs);
 
 	/** Basic FC checks */
-	if (fs->fc.frame_type >= IEEE802154_FRAME_TYPE_RESERVED ||
+	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_RESERVED ||
 	    fs->fc.frame_version >= IEEE802154_VERSION_RESERVED) {
 		return NULL;
 	}
 
-	/** Only for versions 2003/2006 */
-	if (fs->fc.frame_version < IEEE802154_VERSION_802154 &&
-	    (fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_RESERVED ||
-	     fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_RESERVED ||
-	     fs->fc.frame_type >= IEEE802154_FRAME_TYPE_LLDN)) {
-		return NULL;
+	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_MULTIPURPOSE) {
+		if (fs->fc.frame_version != 0) {
+			return NULL;
+		}
+	} else {
+		/** Only for versions 2003/2006 */
+		if (fs->fc.frame_version < IEEE802154_VERSION_802154 &&
+		    (fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_RESERVED ||
+		     fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_RESERVED ||
+		     fs->fc.frame_type >= IEEE802154_FRAME_TYPE_RESERVED)) {
+			return NULL;
+		}
 	}
 
 	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON &&
