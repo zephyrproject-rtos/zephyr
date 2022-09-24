@@ -27,15 +27,46 @@ import expr_parser
 
 class ExecutionCounter(object):
     def __init__(self, total=0):
+        '''
+        Most of the stats are at test instance level
+        Except that "_cases" and "_skipped_cases" are for cases of ALL test instances
+
+        total complete = done + skipped_filter
+        total = yaml test scenarios * applicable platforms
+        complete perctenage = (done + skipped_filter) / total
+        pass rate = passed / (total - skipped_configs)
+        '''
+        # instances that go through the pipeline
+        # updated by report_out()
         self._done = Value('i', 0)
+
+        # instances that actually executed and passed
+        # updated by report_out()
         self._passed = Value('i', 0)
+
+        # static filter + runtime filter + build skipped
+        # updated by update_counting_before_pipeline() and report_out()
         self._skipped_configs = Value('i', 0)
+
+        # cmake filter + build skipped
+        # updated by report_out()
         self._skipped_runtime = Value('i', 0)
+
+        # staic filtered at yaml parsing time
+        # updated by update_counting_before_pipeline()
         self._skipped_filter = Value('i', 0)
+
+        # updated by update_counting_before_pipeline() and report_out()
         self._skipped_cases = Value('i', 0)
+
+        # updated by report_out() in pipeline
         self._error = Value('i', 0)
         self._failed = Value('i', 0)
+
+        # initialized to number of test instances
         self._total = Value('i', total)
+
+        # updated in update_counting_after_pipeline()
         self._cases = Value('i', 0)
         self.lock = Lock()
 
