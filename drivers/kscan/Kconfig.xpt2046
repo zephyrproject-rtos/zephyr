@@ -1,0 +1,20 @@
+# Copyright (c) 2022 SenCai(1065402494@qq.com)
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig KSCAN_XPT2046
+	bool "XPT2046 touch screen controller driver"
+	depends on DT_HAS_XPT_XPT2046_ENABLED
+	select SPI
+	help
+	  Enable driver for multiple resistance touch panel controllers.
+	  This driver should support TSC2046, ADS784x and AK4182. 
+
+if KSCAN_XPT2046
+
+config KSCAN_XPT2046_PERIOD
+	int "Sample period"
+	default 10
+	help
+	  Sample period in milliseconds when in polling mode.
+
+endif # KSCAN_XPT2046

@@ -1,0 +1,43 @@
+# Copyright (c) 2022 SenCai(1065402494@qq.com)
+# SPDX-License-Identifier: Apache-2.0
+
+description: XPT2046 touch screen controller
+
+compatible: "xpt,xpt2046"
+
+include: [kscan.yaml, spi-device.yaml, touchscreen.yaml]
+
+properties:
+    pendown-gpios:
+      type: phandle-array
+      required: true
+      description: GPIO handle describing the pin the !PENIRQ
+                  line is connected to. act
+
+    touchscreen-size-x:
+      required: true
+      description: horizontal resolution of touchscreen(in pixels, u16)
+
+    touchscreen-size-y:
+      required: true
+      description: vertical resolution of touchscreen(in pixels, u16)
+
+    x-min:
+      type: int
+      required: true
+      description: Minimum value on the X axis (u16).
+
+    x-max:
+      type: int
+      required: true
+      description: maximum value on the X axis (u16).
+
+    y-min:
+      type: int
+      required: true
+      description: Minimum value on the Y axis (u16).
+
+    y-max:
+      type: int
+      required: true
+      description: maximum value on the Y axis (u16).
