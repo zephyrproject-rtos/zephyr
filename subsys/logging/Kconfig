@@ -24,7 +24,7 @@ rsource "Kconfig.formatting"
 
 if !LOG_FRONTEND_ONLY
 
-rsource "Kconfig.backends"
+rsource "backends/Kconfig"
 
 endif # !LOG_FRONTEND_ONLY
 
