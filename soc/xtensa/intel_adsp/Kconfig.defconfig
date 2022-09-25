@@ -10,6 +10,13 @@ source "soc/xtensa/intel_adsp/*/Kconfig.defconfig.series"
 config XTENSA_RPO_CACHE
 	def_bool y
 
+# console can't handle the amount of data coming from many tests, so introduce
+# a delay beween testcases.
+if ZTEST
+config ZTEST_TEST_DELAY_MS
+	default 100
+endif
+
 if XTENSA_RPO_CACHE
 config XTENSA_CACHED_REGION
 	default 5
