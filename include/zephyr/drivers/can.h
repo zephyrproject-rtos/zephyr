@@ -319,7 +319,7 @@ typedef int (*can_set_timing_t)(const struct device *dev,
 				const struct can_timing *timing);
 
 /**
- * @brief Callback API upon setting CAN bus timing for the data phase.
+ * @brief Optional callback API upon setting CAN-FD bus timing for the data phase.
  * See @a can_set_timing_data() for argument description
  */
 typedef int (*can_set_timing_data_t)(const struct device *dev,
@@ -759,7 +759,7 @@ __syscall int can_calc_timing(const struct device *dev, struct can_timing *res,
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @return Pointer to the minimum supported timing parameter values, or NULL if
- *         CAN-FD is not supported.
+ *         CAN-FD support is not implemented by the driver.
  */
 __syscall const struct can_timing *can_get_timing_data_min(const struct device *dev);
 
@@ -783,7 +783,7 @@ static inline const struct can_timing *z_impl_can_get_timing_data_min(const stru
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @return Pointer to the maximum supported timing parameter values, or NULL if
- *         CAN-FD is not supported.
+ *         CAN-FD support is not implemented by the driver.
  */
 __syscall const struct can_timing *can_get_timing_data_max(const struct device *dev);
 
@@ -834,6 +834,7 @@ __syscall int can_calc_timing_data(const struct device *dev, struct can_timing *
  * @retval 0 If successful.
  * @retval -EBUSY if the CAN controller is not in stopped state.
  * @retval -EIO General input/output error, failed to configure device.
+ * @retval -ENOSYS if CAN-FD support is not implemented by the driver.
  */
 __syscall int can_set_timing_data(const struct device *dev,
 				  const struct can_timing *timing_data);
@@ -843,6 +844,10 @@ static inline int z_impl_can_set_timing_data(const struct device *dev,
 					     const struct can_timing *timing_data)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	if (api->set_timing_data == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->set_timing_data(dev, timing_data);
 }
