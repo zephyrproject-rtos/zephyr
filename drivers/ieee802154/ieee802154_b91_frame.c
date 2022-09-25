@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
+#include <zephyr/toolchain/common.h>
 
 
 /* frame control field byte 0 */
@@ -119,7 +120,7 @@ struct ieee802154_frame {
  * fcf should be valid and contains at lest 2 bytes
  */
 static bool
-inline ieee802154_frame_has_dest_panid(const uint8_t fcf[2])
+ALWAYS_INLINE ieee802154_frame_has_dest_panid(const uint8_t fcf[2])
 {
 	bool result = true;
 	const uint8_t frame_ver_t = (fcf[1] & IEEE802154_FRAME_FCF_VER_MASK) >>
@@ -169,7 +170,7 @@ inline ieee802154_frame_has_dest_panid(const uint8_t fcf[2])
  * frame should be valid
  */
 static bool
-inline ieee802154_frame_panid_compression(const struct ieee802154_frame *frame)
+ALWAYS_INLINE ieee802154_frame_panid_compression(const struct ieee802154_frame *frame)
 {
 	bool result = false;
 
@@ -211,7 +212,7 @@ inline ieee802154_frame_panid_compression(const struct ieee802154_frame *frame)
  * buf & frame should be valid
  */
 static void
-inline b91_ieee802154_frame_parse(const uint8_t *buf, size_t bul_len,
+ALWAYS_INLINE b91_ieee802154_frame_parse(const uint8_t *buf, size_t bul_len,
 	struct ieee802154_frame *frame)
 {
 	size_t pos = 0; /* current buffer position */
@@ -463,7 +464,7 @@ inline b91_ieee802154_frame_parse(const uint8_t *buf, size_t bul_len,
  * frame & buf should be valid
  */
 static bool
-inline b91_ieee802154_frame_build(const struct ieee802154_frame *frame,
+ALWAYS_INLINE b91_ieee802154_frame_build(const struct ieee802154_frame *frame,
 	uint8_t *buf, size_t bul_len, size_t *o_len)
 {
 	bool result = false;

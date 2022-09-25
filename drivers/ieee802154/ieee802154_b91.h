@@ -36,6 +36,8 @@
 #define B91_RSSI_TO_LQI_MIN                 (-87)
 #define B91_CCA_TIME_MAX_US                 (200)
 #define B91_LOGIC_CHANNEL_TO_PHYSICAL(p)    (((p) - 10) * 5)
+#define B91_ACK_IE_MAX_SIZE					(16)
+
 
 /* TX power lookup table */
 #define B91_TX_POWER_MIN                    (-30)
@@ -92,9 +94,22 @@ struct b91_src_match_table {
 		bool ext;
 		uint8_t addr[MAX(IEEE802154_FRAME_LENGTH_ADDR_EXT,
 			IEEE802154_FRAME_LENGTH_ADDR_SHORT)];
-	} item[CONFIG_OPENTHREAD_MAX_CHILDREN];
+	} item[2 * CONFIG_OPENTHREAD_MAX_CHILDREN];
 };
 #endif /* CONFIG_OPENTHREAD_FTD */
+
+#ifdef CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
+/* radio source match table type */
+struct b91_enh_ack_table {
+	struct {
+		bool valid;
+		uint8_t addr_short[IEEE802154_FRAME_LENGTH_ADDR_SHORT];
+		uint8_t addr_ext[IEEE802154_FRAME_LENGTH_ADDR_EXT];
+		uint16_t ie_header_len;
+		uint8_t ie_header[B91_ACK_IE_MAX_SIZE];
+	} item[CONFIG_OPENTHREAD_MAX_CHILDREN];
+};
+#endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 
 /* data structure */
 struct b91_data {
@@ -112,7 +127,12 @@ struct b91_data {
 	uint16_t current_channel;
 	int16_t current_dbm;
 	volatile bool ack_sending;
+#ifdef CONFIG_OPENTHREAD_FTD
 	struct b91_src_match_table *src_match_table;
+#endif /* CONFIG_OPENTHREAD_FTD */
+#ifdef CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
+	struct b91_enh_ack_table *enh_ack_table;
+#endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 #ifdef CONFIG_PM_DEVICE
 	atomic_t current_pm_lock;
 #endif /* CONFIG_PM_DEVICE */

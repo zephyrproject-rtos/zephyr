@@ -39,11 +39,19 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 static struct b91_src_match_table src_match_table;
 #endif /* CONFIG_OPENTHREAD_FTD */
 
+#ifdef CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
+/* B91 radio source match table structure */
+static struct b91_enh_ack_table enh_ack_table;
+#endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
+
 /* B91 data structure */
 static struct  b91_data data = {
 #ifdef CONFIG_OPENTHREAD_FTD
-	.src_match_table = &src_match_table
+	.src_match_table = &src_match_table,
 #endif /* CONFIG_OPENTHREAD_FTD */
+#ifdef CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
+	.enh_ack_table = &enh_ack_table,
+#endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 };
 
 #ifdef CONFIG_OPENTHREAD_FTD
@@ -56,12 +64,12 @@ static void b91_src_match_table_clean(struct b91_src_match_table *table)
 
 /* Search in radio search match table */
 static bool
-inline b91_src_match_table_search(
+ALWAYS_INLINE b91_src_match_table_search(
 	const struct b91_src_match_table *table, const uint8_t *addr, bool ext)
 {
 	bool result = false;
 
-	for (size_t i = 0; i < CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
+	for (size_t i = 0; i < 2 * CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
 		if (table->item[i].valid && table->item[i].ext == ext &&
 			!memcmp(table->item[i].addr, addr,
 				ext ? IEEE802154_FRAME_LENGTH_ADDR_EXT :
@@ -79,13 +87,13 @@ static void b91_src_match_table_add(
 	struct b91_src_match_table *table, const uint8_t *addr, bool ext)
 {
 	if (!b91_src_match_table_search(table, addr, ext)) {
-		for (size_t i = 0; i < CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
+		for (size_t i = 0; i < 2 * CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
 			if (!table->item[i].valid) {
-				table->item[i].valid = true;
 				table->item[i].ext = ext;
 				memcpy(table->item[i].addr, addr,
 					ext ? IEEE802154_FRAME_LENGTH_ADDR_EXT :
 					IEEE802154_FRAME_LENGTH_ADDR_SHORT);
+				table->item[i].valid = true;
 				break;
 			}
 		}
@@ -96,7 +104,7 @@ static void b91_src_match_table_add(
 static void b91_src_match_table_remove(
 	struct b91_src_match_table *table, const uint8_t *addr, bool ext)
 {
-	for (size_t i = 0; i < CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
+	for (size_t i = 0; i < 2 * CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
 		if (table->item[i].valid && table->item[i].ext == ext &&
 			!memcmp(table->item[i].addr, addr,
 				ext ? IEEE802154_FRAME_LENGTH_ADDR_EXT :
@@ -114,7 +122,7 @@ static void b91_src_match_table_remove(
 /* Remove all entries from radio search match table */
 static void b91_src_match_table_remove_group(struct b91_src_match_table *table, bool ext)
 {
-	for (size_t i = 0; i < CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
+	for (size_t i = 0; i < 2 * CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
 		if (table->item[i].valid && table->item[i].ext == ext) {
 			table->item[i].valid = false;
 			table->item[i].ext = false;
@@ -128,10 +136,10 @@ static void b91_src_match_table_remove_group(struct b91_src_match_table *table, 
 /*
  * Check frame possible require to set pending bit
  * data request command or data
- * buffer should be valid
+ * frame should be valid
  */
 static bool
-inline b91_require_pending_bit(const struct ieee802154_frame *frame)
+ALWAYS_INLINE b91_require_pending_bit(const struct ieee802154_frame *frame)
 {
 	bool result = false;
 
@@ -148,6 +156,87 @@ inline b91_require_pending_bit(const struct ieee802154_frame *frame)
 }
 
 #endif /* CONFIG_OPENTHREAD_FTD */
+
+#ifdef CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
+
+/* clean radio search match table */
+static void b91_enh_ack_table_clean(struct b91_enh_ack_table *table)
+{
+	memset(table, 0, sizeof(struct b91_enh_ack_table));
+}
+
+/* Search in enhanced ack table */
+static int
+ALWAYS_INLINE b91_enh_ack_table_search(
+	const struct b91_enh_ack_table *table, const uint8_t *addr_short, const uint8_t *addr_ext)
+{
+	int result = -1;
+
+	for (size_t i = 0; i < CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
+		if (table->item[i].valid &&
+			(!memcmp(table->item[i].addr_short, addr_short,
+				IEEE802154_FRAME_LENGTH_ADDR_SHORT) ||
+			!memcmp(table->item[i].addr_ext, addr_ext,
+				IEEE802154_FRAME_LENGTH_ADDR_EXT))) {
+			result = i;
+			break;
+		}
+	}
+
+	return result;
+}
+
+/* Add to enhanced ack table */
+static void b91_enh_ack_table_add(
+	struct b91_enh_ack_table *table, const uint8_t *addr_short, const uint8_t *addr_ext,
+	uint16_t ie_header_len, const uint8_t *ie_header)
+{
+	int idx = b91_enh_ack_table_search(table, addr_short, addr_ext);
+
+	if (idx == -1) {
+		for (size_t i = 0; i < CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
+			if (!table->item[i].valid) {
+				idx = i;
+				memcpy(table->item[idx].addr_short, addr_short,
+					IEEE802154_FRAME_LENGTH_ADDR_SHORT);
+				memcpy(table->item[idx].addr_ext, addr_ext,
+					IEEE802154_FRAME_LENGTH_ADDR_EXT);
+				table->item[idx].valid = true;
+				break;
+			}
+		}
+	}
+	if (idx != -1) {
+		table->item[idx].ie_header_len = ie_header_len;
+		memcpy(table->item[idx].ie_header, ie_header,
+			ie_header_len);
+	}
+}
+
+/* Remove from enhanced ack table */
+static void b91_enh_ack_table_remove(
+	struct b91_enh_ack_table *table, const uint8_t *addr_short, const uint8_t *addr_ext)
+{
+	for (size_t i = 0; i < CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
+		if (table->item[i].valid &&
+			!memcmp(table->item[i].addr_short, addr_short,
+				IEEE802154_FRAME_LENGTH_ADDR_SHORT) &&
+			!memcmp(table->item[i].addr_ext, addr_ext,
+				IEEE802154_FRAME_LENGTH_ADDR_EXT)) {
+			table->item[i].valid = false;
+			memset(table->item[i].addr_short, 0,
+				IEEE802154_FRAME_LENGTH_ADDR_SHORT);
+			memset(table->item[i].addr_ext, 0,
+				IEEE802154_FRAME_LENGTH_ADDR_EXT);
+			table->item[i].ie_header_len = 0;
+			memset(table->item[i].ie_header, 0,
+				B91_ACK_IE_MAX_SIZE);
+			break;
+		}
+	}
+}
+
+#endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 
 /* Disable power management by device */
 static void b91_disable_pm(const struct device *dev)
@@ -209,7 +298,7 @@ static int b91_set_ieee_addr(const uint8_t *ieee_addr)
 
 /* Filter PAN ID, short address and IEEE address */
 static bool
-inline b91_run_filter(const struct ieee802154_frame *frame)
+ALWAYS_INLINE b91_run_filter(const struct ieee802154_frame *frame)
 {
 	bool result = false;
 
@@ -246,7 +335,7 @@ inline b91_run_filter(const struct ieee802154_frame *frame)
 }
 
 /* Get MAC address */
-static inline uint8_t *b91_get_mac(const struct device *dev)
+static ALWAYS_INLINE uint8_t *b91_get_mac(const struct device *dev)
 {
 	struct b91_data *b91 = dev->data;
 
@@ -282,7 +371,7 @@ static inline uint8_t *b91_get_mac(const struct device *dev)
 
 /* Convert RSSI to LQI */
 static uint8_t
-inline b91_convert_rssi_to_lqi(int8_t rssi)
+ALWAYS_INLINE b91_convert_rssi_to_lqi(int8_t rssi)
 {
 	uint32_t lqi32 = 0;
 
@@ -304,7 +393,7 @@ inline b91_convert_rssi_to_lqi(int8_t rssi)
 
 /* Update RSSI and LQI parameters */
 static void
-inline b91_update_rssi_and_lqi(struct net_pkt *pkt)
+ALWAYS_INLINE b91_update_rssi_and_lqi(struct net_pkt *pkt)
 {
 	int8_t rssi;
 	uint8_t lqi;
@@ -319,7 +408,7 @@ inline b91_update_rssi_and_lqi(struct net_pkt *pkt)
 
 /* Prepare TX buffer */
 static void
-inline b91_set_tx_payload(uint8_t *payload, uint8_t payload_len)
+ALWAYS_INLINE b91_set_tx_payload(uint8_t *payload, uint8_t payload_len)
 {
 	unsigned char rf_data_len;
 	unsigned int rf_tx_dma_len;
@@ -336,7 +425,7 @@ inline b91_set_tx_payload(uint8_t *payload, uint8_t payload_len)
 
 /* Handle acknowledge packet */
 static void
-inline b91_handle_ack(const void *buf, size_t buf_len)
+ALWAYS_INLINE b91_handle_ack(const void *buf, size_t buf_len)
 {
 	struct net_pkt *ack_pkt = net_pkt_rx_alloc_with_buffer(
 		data.iface, buf_len, AF_UNSPEC, 0, K_NO_WAIT);
@@ -365,7 +454,7 @@ inline b91_handle_ack(const void *buf, size_t buf_len)
 
 /* Send acknowledge packet */
 static void
-inline b91_send_ack(const struct ieee802154_frame *frame)
+ALWAYS_INLINE b91_send_ack(const struct ieee802154_frame *frame)
 {
 	uint8_t ack_buf[64];
 	size_t ack_len;
@@ -383,9 +472,7 @@ inline b91_send_ack(const struct ieee802154_frame *frame)
 }
 
 /* RX IRQ handler */
-static void
-__attribute__((section(".ram_code")))
-b91_rf_rx_isr(void)
+static void ALWAYS_INLINE b91_rf_rx_isr(void)
 {
 	int status = -EINVAL;
 	struct net_pkt *pkt = NULL;
@@ -440,7 +527,36 @@ b91_rf_rx_isr(void)
 					}
 				}
 			}
-#endif
+#endif /* CONFIG_OPENTHREAD_FTD */
+#if CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
+			int idx = -1;
+
+			if (frame.general.ver == IEEE802154_FRAME_FCF_VER_2015) {
+				idx = b91_enh_ack_table_search(data.enh_ack_table,
+					frame.src_addr_ext ? NULL : frame.src_addr,
+					frame.src_addr_ext ? frame.src_addr : NULL);
+			}
+			const struct ieee802154_frame ack_frame = {
+				.general = {
+					.valid = true,
+					.ver = idx == -1 ? IEEE802154_FRAME_FCF_VER_2003 :
+						IEEE802154_FRAME_FCF_VER_2015,
+					.type = IEEE802154_FRAME_FCF_TYPE_ACK,
+					.fp_bit = frame_pending
+				},
+				.sn = frame.sn,
+				.dst_panid = idx == -1 ? NULL :
+					(frame.src_panid ? frame.src_panid : frame.dst_panid),
+				.dst_addr = idx == -1 ? NULL :
+					frame.src_addr,
+				.dst_addr_ext = idx == -1 ? false :
+					frame.src_addr_ext,
+				.ie_header = idx == -1 ? NULL :
+					data.enh_ack_table->item[idx].ie_header,
+				.ie_header_len = idx == -1 ? 0 :
+					data.enh_ack_table->item[idx].ie_header_len
+			};
+#else
 			const struct ieee802154_frame ack_frame = {
 				.general = {
 					.valid = true,
@@ -450,6 +566,7 @@ b91_rf_rx_isr(void)
 				},
 				.sn = frame.sn
 			};
+#endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 			b91_send_ack(&ack_frame);
 		}
 		pkt = net_pkt_rx_alloc_with_buffer(data.iface, length, AF_UNSPEC, 0, K_NO_WAIT);
@@ -476,7 +593,7 @@ b91_rf_rx_isr(void)
 }
 
 /* TX IRQ handler */
-static void b91_rf_tx_isr(void)
+static ALWAYS_INLINE void b91_rf_tx_isr(void)
 {
 	/* clear irq status */
 	rf_clr_irq_status(FLD_RF_IRQ_TX);
@@ -492,7 +609,7 @@ static void b91_rf_tx_isr(void)
 }
 
 /* IRQ handler */
-static void b91_rf_isr(void)
+static void __GENERIC_SECTION(.ram_code) b91_rf_isr(void)
 {
 	if (rf_get_irq_status(FLD_RF_IRQ_RX)) {
 		b91_rf_rx_isr();
@@ -536,7 +653,9 @@ static int b91_init(const struct device *dev)
 #ifdef CONFIG_OPENTHREAD_FTD
 	b91_src_match_table_clean(b91->src_match_table);
 #endif /* CONFIG_OPENTHREAD_FTD */
-
+#ifdef CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
+	b91_enh_ack_table_clean(b91->enh_ack_table);
+#endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 	return 0;
 }
 
@@ -767,7 +886,6 @@ static int b91_configure(const struct device *dev,
 		}
 		break;
 	case IEEE802154_CONFIG_ACK_FPB:
-		riscv_plic_irq_disable(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
 		if (config->ack_fpb.addr) {
 			if (config->ack_fpb.enabled) {
 				b91_src_match_table_add(b91->src_match_table,
@@ -782,9 +900,29 @@ static int b91_configure(const struct device *dev,
 		} else {
 			result = -ENOTSUP;
 		}
-		riscv_plic_irq_enable(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
 		break;
 #endif /* CONFIG_OPENTHREAD_FTD */
+#ifdef CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
+	case IEEE802154_CONFIG_ENH_ACK_HEADER_IE:
+		{
+			uint8_t short_addr[IEEE802154_FRAME_LENGTH_ADDR_SHORT];
+			uint8_t ext_addr[IEEE802154_FRAME_LENGTH_ADDR_EXT];
+
+			sys_put_le16(config->ack_ie.short_addr, short_addr);
+			sys_memcpy_swap(ext_addr, config->ack_ie.ext_addr,
+				IEEE802154_FRAME_LENGTH_ADDR_EXT);
+			if (config->ack_ie.data_len > 0) {
+				b91_enh_ack_table_add(b91->enh_ack_table,
+					short_addr, ext_addr,
+					config->ack_ie.data_len, config->ack_ie.data);
+			} else {
+				b91_enh_ack_table_remove(b91->enh_ack_table,
+					short_addr, ext_addr);
+			}
+		}
+		break;
+#endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
+
 	default:
 		result = -ENOTSUP;
 		break;
