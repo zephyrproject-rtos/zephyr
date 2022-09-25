@@ -404,13 +404,13 @@ typedef void(*can_set_state_change_callback_t)(const struct device *dev,
 typedef int (*can_get_core_clock_t)(const struct device *dev, uint32_t *rate);
 
 /**
- * @brief Callback API upon getting the maximum number of concurrent CAN RX filters
+ * @brief Optional callback API upon getting the maximum number of concurrent CAN RX filters
  * See @a can_get_max_filters() for argument description
  */
 typedef int (*can_get_max_filters_t)(const struct device *dev, enum can_ide id_type);
 
 /**
- * @brief Callback API upon getting the maximum supported bitrate
+ * @brief Optional callback API upon getting the maximum supported bitrate
  * See @a can_get_max_bitrate() for argument description
  */
 typedef int (*can_get_max_bitrate_t)(const struct device *dev, uint32_t *max_bitrate);
