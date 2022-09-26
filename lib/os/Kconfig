@@ -38,6 +38,13 @@ config MPSC_PBUF
 	  storing variable length packets in a circular way and operate directly
 	  on the buffer memory.
 
+config ONOFF
+	bool "On-Off Manager"
+	help
+	  An on-off manager supports an arbitrary number of clients of a
+	  service which has a binary state.  Example applications are power
+	  rails, clocks, and binary device power management.
+
 config SPSC_PBUF
 	bool "Single producer, single consumer packet buffer"
 	help
