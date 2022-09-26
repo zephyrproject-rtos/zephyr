@@ -424,6 +424,9 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_reset(const struct shell *sh, size_t argc, char *argv[])
 {
+#if defined(CONFIG_BT_MESH_CDB)
+	bt_mesh_cdb_clear();
+# endif
 	bt_mesh_reset();
 	shell_print(sh, "Local node reset complete");
 
