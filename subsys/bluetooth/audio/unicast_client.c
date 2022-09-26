@@ -1686,10 +1686,6 @@ int bt_unicast_client_start(struct bt_audio_stream *stream)
 	 * Central Establishment procedure.
 	 */
 	err = bt_audio_stream_connect(stream);
-	if (!err) {
-		return 0;
-	}
-
 	if (err && err != -EALREADY) {
 		BT_DBG("bt_audio_stream_connect failed: %d", err);
 		return err;
