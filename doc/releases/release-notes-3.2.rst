@@ -929,6 +929,8 @@ HALs
   * stm32cube: update stm32l4 to cube version V1.17.2
   * stm32cube: update stm32u5 to cube version V1.1.1
   * stm32cube: update stm32wb to cube version V1.14.0
+  * pinctrl: some pin definitions did not contain the "_c" suffix, used by pins
+    with analog switch on certain H7 devices
 
 * Silabs
 
