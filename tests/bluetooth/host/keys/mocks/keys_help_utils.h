@@ -22,10 +22,3 @@ uint32_t bt_keys_get_aging_counter_val(void);
 void clear_key_pool(void);
 int fill_key_pool_by_id_addr(const struct id_addr_pair src[], int size, struct bt_keys *refs[]);
 bool check_key_pool_is_empty(void);
-
-/* Repeat test entries */
-#define REGISTER_SETUP_TEARDOWN(i, ...) \
-	ztest_unit_test_setup_teardown(__VA_ARGS__, unit_test_setup, unit_test_noop)
-
-#define ztest_unit_test_setup(fn, setup) \
-	ztest_unit_test_setup_teardown(fn, setup, unit_test_noop)

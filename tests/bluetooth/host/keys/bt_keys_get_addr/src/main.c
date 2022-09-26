@@ -10,7 +10,6 @@
 #include "mocks/conn.h"
 #include "mocks/hci_core.h"
 #include "mocks/keys_help_utils.h"
-#include "host_mocks/assert.h"
 #include "host_mocks/print_utils.h"
 #include "testing_common_defs.h"
 
@@ -167,7 +166,6 @@ static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixt
 		zassume_true(all_startup_checks_executed == true, NULL);
 	}
 
-	ASSERT_FFF_FAKES_LIST(RESET_FAKE);
 	CONN_FFF_FAKES_LIST(RESET_FAKE);
 	HCI_CORE_FFF_FAKES_LIST(RESET_FAKE);
 }
