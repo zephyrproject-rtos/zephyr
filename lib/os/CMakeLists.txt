@@ -12,7 +12,6 @@ zephyr_sources(
   dec.c
   fdtable.c
   hex.c
-  notify.c
   printk.c
   rb.c
   sem.c
@@ -25,6 +24,7 @@ zephyr_sources(
   )
 
 zephyr_sources_ifdef(CONFIG_ONOFF onoff.c)
+zephyr_sources_ifdef(CONFIG_NOTIFY notify.c)
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
