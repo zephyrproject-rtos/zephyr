@@ -48,10 +48,11 @@ except subprocess.CalledProcessError as e:
 canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
 canonical_topdir = os.path.realpath(topdir)
 
-def parse_arguments(args):
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+def add_parse_arguments(parser = None):
+    if parser is None:
+        parser = argparse.ArgumentParser(
+            description=__doc__,
+            formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.fromfile_prefix_chars = "+"
 
     case_select = parser.add_argument_group("Test case selection",
@@ -637,7 +638,12 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument("extra_test_args", nargs=argparse.REMAINDER,
         help="Additional args following a '--' are passed to the test binary")
 
-    options = parser.parse_args(args)
+    return parser
+
+
+def parse_arguments(parser, args, options = None):
+    if options is None:
+        options = parser.parse_args(args)
 
     # Very early error handling
     if options.short_build_path and not options.ninja:
