@@ -354,7 +354,9 @@ static void ascs_iso_sent(struct bt_iso_chan *chan)
 	struct bt_audio_stream *stream = audio_iso->source_stream;
 	struct bt_audio_stream_ops *ops = stream->ops;
 
-	BT_DBG("stream %p ep %p", stream, stream->ep);
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+		BT_DBG("stream %p ep %p", stream, stream->ep);
+	}
 
 	if (ops != NULL && ops->sent != NULL) {
 		ops->sent(stream);
