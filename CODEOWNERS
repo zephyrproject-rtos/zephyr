@@ -389,6 +389,7 @@
 /drivers/regulator/regulator_shell.c      @danieldegrasse
 /drivers/reset/                           @andrei-edward-popa
 /drivers/reset/reset_intel_socfpga.c      @nbalabak
+/drivers/reset/Kconfig.intel_socfpga      @nbalabak
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
@@ -583,6 +584,7 @@
 /dts/bindings/smbus/                      @finikorg
 /dts/bindings/sip_svc/                    @maheshraotm
 /dts/bindings/cpu/intel,niosv.yaml        @sweeaun
+/dts/bindings/reset/intel,socfpga-reset.yaml    @nbalabak
 /dts/common/                              @galak
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
 /include/zephyr/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
