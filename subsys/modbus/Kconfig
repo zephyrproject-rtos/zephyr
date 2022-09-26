@@ -3,6 +3,7 @@
 
 menuconfig MODBUS
 	bool "Modbus support"
+	select CRC
 
 if MODBUS
 
