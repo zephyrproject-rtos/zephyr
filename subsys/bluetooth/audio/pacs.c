@@ -40,16 +40,17 @@ static const struct bt_audio_pacs_cb *pacs_cb;
 static void pac_data_add(struct net_buf_simple *buf, uint8_t num,
 			 struct bt_codec_data *data)
 {
-	struct bt_pac_codec_capability *cc;
-	int i;
-
-	for (i = 0; i < num; i++) {
+	for (uint8_t i = 0; i < num; i++) {
+		struct bt_pac_codec_capability *cc;
 		struct bt_data *d = &data[i].data;
 
 		cc = net_buf_simple_add(buf, sizeof(*cc));
 		cc->len = d->data_len + sizeof(cc->type);
 		cc->type = d->type;
 		net_buf_simple_add_mem(buf, d->data, d->data_len);
+
+		BT_DBG("  %u: type %u: %s",
+		       i, d->type, bt_hex(d->data, d->data_len));
 	}
 }
 
@@ -88,6 +89,7 @@ static void get_pac_records(struct bt_conn *conn, enum bt_audio_dir dir,
 		pac->codec.vid = sys_cpu_to_le16(codec.vid);
 		pac->cc_len = buf->len;
 
+		BT_DBG("Parsing codec config data");
 		pac_data_add(buf, codec.data_count, codec.data);
 
 		/* Buffer size shall never be below PAC len since we are just
@@ -99,6 +101,7 @@ static void get_pac_records(struct bt_conn *conn, enum bt_audio_dir dir,
 
 		meta = net_buf_simple_add(buf, sizeof(*meta));
 		meta->len = buf->len;
+		BT_DBG("Parsing metadata");
 		pac_data_add(buf, codec.meta_count, codec.meta);
 		meta->len = buf->len - meta->len;
 
