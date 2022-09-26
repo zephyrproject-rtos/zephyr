@@ -165,7 +165,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	params->ssid_length = strlen(params->ssid);
 
 	/* Channel (optional) */
-	if ((idx < argc) && (strlen(argv[idx]) <= 2)) {
+	if ((idx < argc) && (strlen(argv[idx]) <= 3)) {
 		params->channel = strtol(argv[idx], &endptr, 10);
 		if (*endptr != '\0') {
 			return -EINVAL;
