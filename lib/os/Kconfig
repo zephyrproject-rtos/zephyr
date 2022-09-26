@@ -16,6 +16,11 @@ config RING_BUFFER
 	  buffers manage their own buffer memory and can store arbitrary data.
 	  For optimal performance, use buffer sizes that are a power of 2.
 
+config NOTIFY
+	bool "Asynchronous Notifications"
+	help
+	  Use this API to support async transactions.
+
 config BASE64
 	bool "Base64 encoding and decoding"
 	help
@@ -40,6 +45,7 @@ config MPSC_PBUF
 
 config ONOFF
 	bool "On-Off Manager"
+	select NOTIFY
 	help
 	  An on-off manager supports an arbitrary number of clients of a
 	  service which has a binary state.  Example applications are power
