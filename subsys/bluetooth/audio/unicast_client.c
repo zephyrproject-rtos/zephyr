@@ -126,7 +126,9 @@ static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 
 	ops = stream->ops;
 
-	BT_DBG("stream %p", stream);
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+		BT_DBG("stream %p ep %p", stream, stream->ep);
+	}
 
 	if (ops != NULL && ops->sent != NULL) {
 		ops->sent(stream);
