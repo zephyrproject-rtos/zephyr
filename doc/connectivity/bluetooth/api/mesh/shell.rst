@@ -132,7 +132,7 @@ General configuration
 ``mesh reset-local``
 --------------------
 
-	Reset the local mesh node to its initial unprovisioned state.
+	Reset the local mesh node to its initial unprovisioned state. This command will also clear the Configuration Database (CDB) if present.
 
 Target
 ======
