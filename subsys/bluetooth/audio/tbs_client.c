@@ -1547,121 +1547,106 @@ static void discover_next_instance(struct bt_conn *conn, uint8_t index)
 	}
 }
 
+static void primary_discover_complete(struct bt_tbs_server_inst *server, struct bt_conn *conn)
+{
+	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS)) {
+		server->gtbs_found = server->tbs_insts[GTBS_INDEX].gtbs;
+		BT_DBG("Discover complete, found %u instances (GTBS%s found)",
+		       server->inst_cnt, server->gtbs_found ? "" : " not");
+	} else {
+		BT_DBG("Discover complete, found %u instances", server->inst_cnt);
+	}
+
+	if (server->inst_cnt != 0) {
+		discover_next_instance(conn, 0);
+	} else if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) && server->gtbs_found) {
+		discover_next_instance(conn, GTBS_INDEX);
+	} else {
+		server->current_inst = NULL;
+		if (tbs_client_cbs != NULL && tbs_client_cbs->discover != NULL) {
+			tbs_client_cbs->discover(conn, 0, 0, false);
+		}
+	}
+}
+
 /**
  * @brief This will discover all characteristics on the server, retrieving the
  * handles of the writeable characteristics and subscribing to all notify and
  * indicate characteristics.
  */
-static uint8_t primary_discover_func(struct bt_conn *conn,
-				     const struct bt_gatt_attr *attr,
-				     struct bt_gatt_discover_params *params)
+static uint8_t primary_discover_tbs(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				    struct bt_gatt_discover_params *params)
 {
 	const uint8_t conn_index = bt_conn_index(conn);
 	struct bt_tbs_server_inst *srv_inst = &srv_insts[conn_index];
+	const struct bt_gatt_service_val *prim_service;
 
-	/*
-	 * TODO: Since we know the ranges of each instance, we could do
-	 * discover of more than just prim_service->start and
-	 * prim_service->end_handle, so that we can detect multiple instances
-	 * faster
-	 */
-
-	if (attr == NULL || srv_inst->inst_cnt == BT_TBS_INSTANCE_MAX_CNT) {
-		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) &&
-		    bt_uuid_cmp(params->uuid, BT_UUID_GTBS) == 0) {
-			int err;
-			/* Didn't find GTBS; look for TBS */
-			params->uuid = tbs_uuid;
-			params->start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
-
-			err = bt_gatt_discover(conn, params);
-			if (err != 0) {
-				BT_DBG("Discover failed (err %d)", err);
-				srv_inst->current_inst = NULL;
-				if (tbs_client_cbs != NULL &&
-				    tbs_client_cbs->discover != NULL) {
-					tbs_client_cbs->discover(conn, err, 0,
-								 false);
-				}
-			}
-
-			return BT_GATT_ITER_STOP;
-		}
-
-		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS)) {
-			srv_inst->gtbs_found = srv_inst->tbs_insts[GTBS_INDEX].gtbs;
-			BT_DBG("Discover complete, found %u instances "
-			       "(GTBS%s found)",
-				srv_inst->inst_cnt,
-				srv_inst->gtbs_found ? "" : " not");
-		} else {
-			BT_DBG("Discover complete, found %u instances",
-			       srv_inst->inst_cnt);
-		}
-
-		if (srv_inst->inst_cnt != 0) {
-			discover_next_instance(conn, 0);
-		} else if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) &&
-			   srv_inst->gtbs_found) {
-			discover_next_instance(conn, GTBS_INDEX);
-		} else {
-			srv_inst->current_inst = NULL;
-			if (tbs_client_cbs != NULL &&
-			    tbs_client_cbs->discover != NULL) {
-				tbs_client_cbs->discover(conn, 0,
-							 srv_inst->inst_cnt,
-							 srv_inst->gtbs_found);
-			}
-		}
+	if (attr == NULL) {
+		primary_discover_complete(srv_inst, conn);
 
 		return BT_GATT_ITER_STOP;
 	}
 
 	BT_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
 
-	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
-		const struct bt_gatt_service_val *prim_service;
+	prim_service = (struct bt_gatt_service_val *)attr->user_data;
 
-		prim_service = (struct bt_gatt_service_val *)attr->user_data;
-		params->start_handle = attr->handle + 1;
+	srv_inst->current_inst = &srv_inst->tbs_insts[srv_inst->inst_cnt];
+	srv_inst->current_inst->index = srv_inst->inst_cnt;
+	srv_inst->current_inst->gtbs = false;
+	srv_inst->current_inst->start_handle = attr->handle + 1;
+	srv_inst->current_inst->end_handle = prim_service->end_handle;
 
-		srv_inst->current_inst = &srv_inst->tbs_insts[srv_inst->inst_cnt];
-		srv_inst->current_inst->index = srv_inst->inst_cnt;
+	srv_inst->inst_cnt++;
+	if (srv_inst->inst_cnt == CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES) {
+		primary_discover_complete(srv_inst, conn);
 
-		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) &&
-		    bt_uuid_cmp(params->uuid, BT_UUID_GTBS) == 0) {
-			int err;
-
-			/* GTBS is placed as the "last" instance */
-			srv_inst->current_inst = &srv_inst->tbs_insts[GTBS_INDEX];
-			srv_inst->current_inst->index = GTBS_INDEX;
-			srv_inst->current_inst->gtbs = true;
-			srv_inst->current_inst->start_handle = attr->handle + 1;
-			srv_inst->current_inst->end_handle = prim_service->end_handle;
-
-			params->uuid = tbs_uuid;
-			params->start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
-
-			err = bt_gatt_discover(conn, params);
-			if (err != 0) {
-				BT_DBG("Discover failed (err %d)", err);
-				srv_inst->current_inst = NULL;
-				if (tbs_client_cbs != NULL &&
-				    tbs_client_cbs->discover != NULL) {
-					tbs_client_cbs->discover(conn, err, 0,
-								 false);
-				}
-			}
-
-			return BT_GATT_ITER_STOP;
-		}
-
-		srv_inst->current_inst->start_handle = attr->handle + 1;
-		srv_inst->current_inst->end_handle = prim_service->end_handle;
-		srv_inst->inst_cnt++;
+		return BT_GATT_ITER_STOP;
 	}
 
 	return BT_GATT_ITER_CONTINUE;
+}
+
+static uint8_t primary_discover_gtbs(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				     struct bt_gatt_discover_params *params)
+{
+	const uint8_t conn_index = bt_conn_index(conn);
+	struct bt_tbs_server_inst *srv_inst = &srv_insts[conn_index];
+	int err;
+
+	if (attr != NULL) {
+		const struct bt_gatt_service_val *prim_service;
+
+		BT_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
+
+		prim_service = (struct bt_gatt_service_val *)attr->user_data;
+
+		/* GTBS is placed as the "last" instance */
+		srv_inst->current_inst = &srv_inst->tbs_insts[GTBS_INDEX];
+		srv_inst->current_inst->index = GTBS_INDEX;
+		srv_inst->current_inst->gtbs = true;
+		srv_inst->current_inst->start_handle = attr->handle + 1;
+		srv_inst->current_inst->end_handle = prim_service->end_handle;
+	}
+
+	if (CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES == 0) {
+		primary_discover_complete(srv_inst, conn);
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	params->uuid = tbs_uuid;
+	params->func = primary_discover_tbs;
+	params->start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+
+	err = bt_gatt_discover(conn, params);
+	if (err != 0) {
+		BT_DBG("Discover failed (err %d)", err);
+
+		primary_discover_complete(srv_inst, conn);
+	}
+
+	return BT_GATT_ITER_STOP;
 }
 
 /****************************** PUBLIC API ******************************/
@@ -2327,10 +2312,11 @@ int bt_tbs_client_discover(struct bt_conn *conn, bool subscribe)
 	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS)) {
 		BT_DBG("Discovering GTBS");
 		srv_inst->discover_params.uuid = gtbs_uuid;
+		srv_inst->discover_params.func = primary_discover_gtbs;
 	} else {
 		srv_inst->discover_params.uuid = tbs_uuid;
+		srv_inst->discover_params.func = primary_discover_tbs;
 	}
-	srv_inst->discover_params.func = primary_discover_func;
 	srv_inst->discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	srv_inst->discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	srv_inst->discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
