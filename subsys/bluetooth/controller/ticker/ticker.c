@@ -2425,8 +2425,9 @@ static inline void ticker_job_list_inquire(struct ticker_instance *instance)
  *
  * @internal
  */
-static inline void ticker_job_compare_update(struct ticker_instance *instance,
-					     uint8_t ticker_id_old_head)
+static inline uint8_t
+ticker_job_compare_update(struct ticker_instance *instance,
+			  uint8_t ticker_id_old_head)
 {
 	struct ticker_node *ticker;
 	uint32_t ticks_to_expire;
@@ -2443,7 +2444,8 @@ static inline void ticker_job_compare_update(struct ticker_instance *instance,
 
 			instance->ticks_current = cntr_cnt_get();
 		}
-		return;
+
+		return 0U;
 	}
 
 	/* Check if this is the first update. If so, start the counter */
@@ -2459,6 +2461,9 @@ static inline void ticker_job_compare_update(struct ticker_instance *instance,
 
 	ticker = &instance->nodes[instance->ticker_id_head];
 	ticks_to_expire = ticker->ticks_to_expire;
+	if (!ticks_to_expire) {
+		return 1U;
+	}
 
 	/* Iterate few times, if required, to ensure that compare is
 	 * correctly set to a future value. This is required in case
@@ -2485,6 +2490,8 @@ static inline void ticker_job_compare_update(struct ticker_instance *instance,
 	} while ((ticker_ticks_diff_get(ctr_post, ctr) +
 		  HAL_TICKER_CNTR_CMP_OFFSET_MIN) >
 		  ticker_ticks_diff_get(cc, ctr));
+
+	return 0U;
 }
 
 /**
@@ -2506,6 +2513,7 @@ void ticker_job(void *param)
 	struct ticker_instance *instance = param;
 	uint8_t flag_compare_update;
 	uint8_t ticker_id_old_head;
+	uint8_t compare_trigger;
 	uint32_t ticks_previous;
 	uint32_t ticks_elapsed;
 	uint8_t flag_elapsed;
@@ -2607,14 +2615,17 @@ void ticker_job(void *param)
 
 	/* update compare if head changed */
 	if (flag_compare_update) {
-		ticker_job_compare_update(instance, ticker_id_old_head);
+		compare_trigger = ticker_job_compare_update(instance,
+							    ticker_id_old_head);
+	} else {
+		compare_trigger = 0U;
 	}
 
 	/* Permit worker to run */
 	instance->job_guard = 0U;
 
 	/* trigger worker if deferred */
-	if (instance->worker_trigger) {
+	if (instance->worker_trigger || compare_trigger) {
 		instance->sched_cb(TICKER_CALL_ID_JOB, TICKER_CALL_ID_WORKER, 1,
 				   instance);
 	}
