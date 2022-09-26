@@ -196,7 +196,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/"))
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 
 from twisterlib.testplan import TestPlan
-from twisterlib.environment import TwisterEnv, parse_arguments
+from twisterlib.environment import TwisterEnv, add_parse_arguments, parse_arguments
 from twisterlib.reports import Reporting
 from twisterlib.hardwaremap import HardwareMap
 from twisterlib.coverage import run_coverage
@@ -241,10 +241,8 @@ def setup_logging(outdir, log_file, verbose, timestamps):
 def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
 
-def main():
+def main(options):
     start_time = time.time()
-
-    options = parse_arguments(sys.argv[1:])
 
     # Configure color output
     color_strip = False if options.force_color else None
@@ -413,7 +411,9 @@ def main():
 if __name__ == "__main__":
     ret = 0
     try:
-        ret = main()
+        parser = add_parse_arguments()
+        options = parse_arguments(parser, sys.argv[1:])
+        ret = main(options)
     finally:
         if (os.name != "nt") and os.isatty(1):
             # (OS is not Windows) and (stdout is interactive)
