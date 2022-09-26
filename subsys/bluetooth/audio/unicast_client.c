@@ -2523,7 +2523,8 @@ fail:
 	return BT_GATT_ITER_STOP;
 }
 
-static void unicast_client_pac_reset(struct bt_conn *conn)
+static void unicast_client_pac_reset(struct bt_conn *conn,
+				     enum bt_audio_dir dir)
 {
 	int index = bt_conn_index(conn);
 	int i;
@@ -2531,7 +2532,7 @@ static void unicast_client_pac_reset(struct bt_conn *conn)
 	for (i = 0; i < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT; i++) {
 		struct unicast_client_pac *pac = &pac_cache[index][i];
 
-		if (!PAC_DIR_UNUSED(pac->dir)) {
+		if (pac->dir == dir) {
 			(void)memset(pac, 0, sizeof(*pac));
 		}
 	}
@@ -2542,7 +2543,8 @@ static void unicast_client_disconnected(struct bt_conn *conn, uint8_t reason)
 	BT_DBG("conn %p reason 0x%02x", conn, reason);
 
 	unicast_client_ep_reset(conn);
-	unicast_client_pac_reset(conn);
+	unicast_client_pac_reset(conn, BT_AUDIO_DIR_SINK);
+	unicast_client_pac_reset(conn, BT_AUDIO_DIR_SOURCE);
 }
 
 static struct bt_conn_cb conn_cbs = {
@@ -2588,6 +2590,9 @@ int bt_audio_discover(struct bt_conn *conn,
 		bt_conn_cb_register(&conn_cbs);
 		conn_cb_registered = true;
 	}
+
+	/* Reset existing data for the specified type */
+	unicast_client_pac_reset(conn, params->dir);
 
 	params->num_caps = 0u;
 	params->num_eps = 0u;
