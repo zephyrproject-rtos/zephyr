@@ -262,7 +262,6 @@
 /drivers/entropy/*b91*                    @andy-liu-telink
 /drivers/entropy/*bt_hci*                 @JordanYates
 /drivers/entropy/*rv32m1*                 @dleach02
-/drivers/entropy/*gecko*                  @chrta
 /drivers/entropy/*litex*                  @mateusz-holenko @kgugala @pgielda
 /drivers/espi/                            @albertofloyd @franciscomunoz @sjvasanth1
 /drivers/ethernet/                        @tbursztyka @pfalcon
@@ -490,11 +489,8 @@
 /dts/arm/rpi_pico/                        @yonsch
 /dts/arm/silabs/efm32_pg_1b.dtsi          @rdmeneze
 /dts/arm/silabs/efm32gg11b*               @oanerer
-/dts/arm/silabs/efm32_jg_pg*              @chrta
 /dts/arm/silabs/efr32bg13p*               @mnkp
 /dts/arm/silabs/efr32xg13p*               @mnkp
-/dts/arm/silabs/efm32jg12b*               @chrta
-/dts/arm/silabs/efm32pg12b*               @chrta
 /dts/arm/silabs/efm32pg1b*                @rdmeneze
 /dts/arm/silabs/efr32mg21*                @l-alfred
 /dts/arm/silabs/efr32fg13*                @yonsch
