@@ -624,12 +624,13 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 	if (IS_CIS_HANDLE(handle)) {
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 		cis = ll_iso_stream_connected_get(handle);
+		/* Disallow if CIS is not connected */
 		if (!cis) {
-			return BT_HCI_ERR_UNKNOWN_CONN_ID;
+			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
 		conn = ll_connected_get(cis->lll.acl_handle);
-		/* Is conn still connected? */
+		/* Disallow if ACL has disconnected */
 		if (!conn) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
