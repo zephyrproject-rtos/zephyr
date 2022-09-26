@@ -17,21 +17,21 @@
 
 / {
 	aliases {
-		accel0 = &iis2dlpc_19;
-		accel1 = &ism330dhcx_6b;
+		accel0 = &iis2dlpc_19_x_nucleo_iks02a1_shub;
+		accel1 = &ism330dhcx_6b_x_nucleo_iks02a1_shub;
 	};
 };
 
 &arduino_i2c {
 
-	iis2dlpc_19: iis2dlpc@19 {
+	iis2dlpc_19_x_nucleo_iks02a1_shub: iis2dlpc@19 {
 		compatible = "st,iis2dlpc";
 		reg = <0x19>;
 		drdy-gpios =  <&arduino_header 4 GPIO_ACTIVE_HIGH>; /* A4 - INT2 */
 		drdy-int =  <2>;
 	};
 
-	ism330dhcx_6b: ism330dhcx@6b {
+	ism330dhcx_6b_x_nucleo_iks02a1_shub: ism330dhcx@6b {
 		compatible = "st,ism330dhcx";
 		reg = <0x6b>;
 		drdy-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 - INT2 */
