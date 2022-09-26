@@ -27,12 +27,12 @@ struct uart_numicro_data {
 static int uart_numicro_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_numicro_config *config = dev->config;
-	uint32_t count;
 
-	count = UART_Read(config->uart, c, 1);
-	if (!count) {
+	if ((config->uart->FIFOSTS & UART_FIFOSTS_RXEMPTY_Msk) != 0) {
 		return -1;
 	}
+
+	*c = (uint8_t)config->uart->DAT;
 
 	return 0;
 }
