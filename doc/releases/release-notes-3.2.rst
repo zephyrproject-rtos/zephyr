@@ -445,6 +445,7 @@ Drivers and Sensors
   * STM32: RTC : Now supports STM32U5 and STM32F1 series.
   * STM32: Timer : Now supports STM32L4 series.
   * Added counter support using CTimer for NXP MIMXRT595.
+  * ESP32: Added support to Pulse Counter Mode (PCNT)
 
 * Crypto
 
@@ -538,9 +539,12 @@ Drivers and Sensors
     ``intel_s1000_crb`` has been removed.
 
 * KSCAN
+
   * Enable the touch panel on the NXP MIMXRT1170 EVK.
 
 * LED
+
+  * Updated LED PWM support for ESP32 boards
 
 * LoRa
 
@@ -582,6 +586,7 @@ Drivers and Sensors
 
   * Added PWM driver for Renesas R-Car platform
   * Added PWM support for NXP LPC55S36
+  * Added MCPWM support for ESP32 boards
 
 * Power Domain
 
@@ -660,6 +665,8 @@ Drivers and Sensors
   * Added watchdog support on NXP MIMXRT595 EVK.
 
 * WiFi
+
+  * Added ESP32 WiFi integration to Wi-Fi API management.
 
 Networking
 **********
@@ -909,6 +916,10 @@ HALs
   * sam: Fix incorrect CIDR values for revision b silicon of SAMV71 devices.
 
 * Espressif
+
+  * Updated Espressif HAL with esp-idf 4.4.1 updates
+  * Added support to binary blobs implementation
+  * Fixed ESP32-C3 wifi issues
 
 * GigaDevice
 
