@@ -119,8 +119,14 @@ struct mtl_dint {
 #define MTL_DINT ((volatile struct mtl_dint *)DXHIPCIE_REG)
 
 /* Convert between IRQ_CONNECT() numbers and MTL_INTL_* interrupts */
-#define MTL_IRQ_TO_ZEPHYR(n)   (XCHAL_NUM_INTERRUPTS + (n))
-#define MTL_IRQ_FROM_ZEPHYR(n) ((n) - XCHAL_NUM_INTERRUPTS)
+#define ACE_IRQ_NUM_SHIFT 8
+#define ACE_IRQ_NUM_MASK 0xFFU
+
+#define MTL_IRQ_FROM_ZEPHYR(_irq) \
+	(((_irq >> ACE_IRQ_NUM_SHIFT) & ACE_IRQ_NUM_MASK) - 1)
+
+#define MTL_IRQ_TO_ZEPHYR(_irq) \
+	((((_irq + 1) & ACE_IRQ_NUM_MASK) << ACE_IRQ_NUM_SHIFT) + ACE_INTC_IRQ)
 
 /* MTL also has per-core instantiations of a Synopsys interrupt
  * controller.  These inputs (with the same indices as MTL_INTL_*
