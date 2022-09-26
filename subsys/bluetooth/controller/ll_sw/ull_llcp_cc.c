@@ -140,14 +140,17 @@ static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 
 static void llcp_rp_cc_tx_rsp(struct ll_conn *conn, struct proc_ctx *ctx)
 {
-	struct node_tx *tx;
+	uint16_t delay_conn_events;
+	uint16_t conn_event_count;
 	struct pdu_data *pdu;
+	struct node_tx *tx;
 
 	/* Allocate tx node */
 	tx = llcp_tx_alloc(conn, ctx);
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
+	conn_event_count = ctx->data.cis_create.conn_event_count;
 
 	/* Postpone if instant is in this or next connection event. This would handle obsolete value
 	 * due to retransmission, as well as incorrect behavior by central.
@@ -156,6 +159,29 @@ static void llcp_rp_cc_tx_rsp(struct ll_conn *conn, struct proc_ctx *ctx)
 	 */
 	ctx->data.cis_create.conn_event_count = MAX(ctx->data.cis_create.conn_event_count,
 						    ull_conn_event_counter(conn) + 2);
+
+	delay_conn_events = ctx->data.cis_create.conn_event_count - conn_event_count;
+
+	/* If instant is postponed, calculate the offset to add to CIS_Offset_Min and
+	 * CIS_Offset_Max.
+	 *
+	 * BT Core v5.3, Vol 6, Part B, section 5.1.15:
+	 * Two windows are equivalent if they have the same width and the difference between their
+	 * start times is an integer multiple of ISO_Interval for the CIS.
+	 *
+	 * The offset shall compensate for the relation between ISO- and connection interval. The
+	 * offset translates to what is additionally needed to move the window by an integer number
+	 * of ISO intervals. I.e.:
+	 *   offset = (delayed * CONN_interval) MOD ISO_interval
+	 */
+	if (delay_conn_events) {
+		uint32_t conn_interval_us  = conn->lll.interval * CONN_INT_UNIT_US;
+		uint32_t iso_interval_us   = ctx->data.cis_create.iso_interval * ISO_INT_UNIT_US;
+		uint32_t offset_us = (delay_conn_events * conn_interval_us) % iso_interval_us;
+
+		ctx->data.cis_create.cis_offset_min += offset_us;
+		ctx->data.cis_create.cis_offset_max += offset_us;
+	}
 
 	llcp_pdu_encode_cis_rsp(ctx, pdu);
 	ctx->tx_opcode = pdu->llctrl.opcode;

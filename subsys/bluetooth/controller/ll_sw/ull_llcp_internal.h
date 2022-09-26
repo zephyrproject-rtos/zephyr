@@ -258,6 +258,7 @@ struct proc_ctx {
 			uint8_t  cig_id;
 			uint8_t  cis_id;
 			uint16_t conn_event_count;
+			uint16_t iso_interval;
 			uint32_t cis_offset_min;
 			uint32_t cis_offset_max;
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -281,7 +282,6 @@ struct proc_ctx {
 			uint8_t  c_bn;
 			uint8_t  c_ft;
 			uint8_t  p_ft;
-			uint16_t iso_interval;
 			uint8_t  aa[4];
 #endif /* defined(CONFIG_BT_CENTRAL) */
 		} cis_create;

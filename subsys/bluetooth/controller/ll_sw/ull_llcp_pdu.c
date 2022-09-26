@@ -775,6 +775,7 @@ void llcp_pdu_decode_cis_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	ctx->data.cis_create.cis_offset_max = sys_get_le24(pdu->llctrl.cis_req.cis_offset_max);
 	ctx->data.cis_create.conn_event_count =
 		sys_le16_to_cpu(pdu->llctrl.cis_req.conn_event_count);
+	ctx->data.cis_create.iso_interval = sys_le16_to_cpu(pdu->llctrl.cis_req.iso_interval);
 	/* The remainder of the req is decoded by ull_peripheral_iso_acquire, so
 	 *  no need to do it here too
 	ctx->data.cis_create.c_phy	= pdu->llctrl.cis_req.c_phy;
@@ -792,7 +793,6 @@ void llcp_pdu_decode_cis_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	ctx->data.cis_create.c_bn	= pdu->llctrl.cis_req.c_bn;
 	ctx->data.cis_create.c_ft	= pdu->llctrl.cis_req.c_ft;
 	ctx->data.cis_create.p_ft	= pdu->llctrl.cis_req.p_ft;
-	ctx->data.cis_create.iso_interval = sys_le16_to_cpu(pdu->llctrl.cis_req.iso_interval);
 	*/
 }
 
