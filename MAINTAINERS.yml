@@ -1756,8 +1756,6 @@ Nuvoton Numicro Platforms:
 
 SiLabs Platforms:
   status: odd fixes
-  collaborators:
-    - chrta
   files:
     - soc/arm/silabs_*/
     - boards/arm/ef*/
@@ -2339,7 +2337,6 @@ West:
   collaborators:
     - yonsch
     - mnkp
-    - chrta
   files:
     - modules/Kconfig.silabs
   labels:
