@@ -351,7 +351,7 @@ static int enable_regulator(const struct device *dev, struct onoff_client *cli)
 	en_val = config->enable_inverted ? 0 : config->enable_val;
 	rc = regulator_modify_register(dev, config->enable_reg,
 			config->enable_mask, en_val);
-	if (rc) {
+	if (rc != 0) {
 		return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
 	}
 	return onoff_sync_finalize(&data->srv, key, cli, rc, true);
@@ -370,15 +370,13 @@ static int disable_regulator(const struct device *dev)
 	if (rc == 0) {
 		rc = -EINVAL;
 		return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
+	} else if (rc == 1) {
+		/* Disable regulator */
+		dis_val = config->enable_inverted ? config->enable_val : 0;
+		rc = regulator_modify_register(dev, config->enable_reg,
+				config->enable_mask, dis_val);
 	}
-	dis_val = config->enable_inverted ? config->enable_val : 0;
-	rc = regulator_modify_register(dev, config->enable_reg,
-			config->enable_mask, dis_val);
-	if (rc) {
-		/* Error writing configs */
-		return onoff_sync_finalize(&data->srv, key, NULL, rc, true);
-	}
-	return onoff_sync_finalize(&data->srv, key, NULL, rc, true);
+	return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
 }
 
 static int pmic_reg_init(const struct device *dev)
