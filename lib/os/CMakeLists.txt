@@ -14,7 +14,6 @@ zephyr_sources(
   hex.c
   notify.c
   printk.c
-  onoff.c
   rb.c
   sem.c
   thread_entry.c
@@ -24,6 +23,8 @@ zephyr_sources(
   bitarray.c
   multi_heap.c
   )
+
+zephyr_sources_ifdef(CONFIG_ONOFF onoff.c)
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
