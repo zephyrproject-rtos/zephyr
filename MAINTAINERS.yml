@@ -241,7 +241,6 @@ Bluetooth Audio:
   status: maintained
   maintainers:
     - Thalley
-    - asbjornsabo
   collaborators:
     - Vudentz
     - jhedberg
@@ -249,6 +248,7 @@ Bluetooth Audio:
     - MariuszSkamra
     - rymanluk
     - sjanc
+    - asbjornsabo
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
