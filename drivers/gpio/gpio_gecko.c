@@ -294,7 +294,7 @@ static int gpio_gecko_pin_interrupt_configure(const struct device *dev,
 			falling_edge = false;
 		} /* default is GPIO_INT_TRIG_BOTH */
 
-		GPIO_IntConfig(config->gpio_index, pin,
+		GPIO_ExtIntConfig(config->gpio_index, pin, pin,
 			       rising_edge, falling_edge, true);
 	}
 
