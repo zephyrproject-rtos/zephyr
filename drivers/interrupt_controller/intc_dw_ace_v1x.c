@@ -54,18 +54,27 @@
  *   enabled always.
  */
 
-#define IS_DW(irq) ((irq) >= XCHAL_NUM_INTERRUPTS)
+static inline bool is_dw_irq(uint32_t irq)
+{
+	if (((irq & XTENSA_IRQ_NUM_MASK) == ACE_INTC_IRQ)
+	    && ((irq & ~XTENSA_IRQ_NUM_MASK) != 0)) {
+		return true;
+	}
+
+	return false;
+}
 
 void dw_ace_v1x_irq_enable(const struct device *dev, uint32_t irq)
 {
 	ARG_UNUSED(dev);
 
-	if (IS_DW(irq)) {
+	if (is_dw_irq(irq)) {
 		for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 			ACE_INTC[i].inten |= BIT(MTL_IRQ_FROM_ZEPHYR(irq));
+			ACE_INTC[i].intmask &= ~BIT(MTL_IRQ_FROM_ZEPHYR(irq));
 		}
-	} else {
-		z_xtensa_irq_enable(irq);
+	} else if ((irq & ~XTENSA_IRQ_NUM_MASK) == 0U) {
+		z_xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
 	}
 }
 
@@ -73,12 +82,13 @@ void dw_ace_v1x_irq_disable(const struct device *dev, uint32_t irq)
 {
 	ARG_UNUSED(dev);
 
-	if (IS_DW(irq)) {
+	if (is_dw_irq(irq)) {
 		for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 			ACE_INTC[i].inten &= ~BIT(MTL_IRQ_FROM_ZEPHYR(irq));
+			ACE_INTC[i].intmask |= BIT(MTL_IRQ_FROM_ZEPHYR(irq));
 		}
-	} else {
-		z_xtensa_irq_disable(irq);
+	} else if ((irq & ~XTENSA_IRQ_NUM_MASK) == 0U) {
+		z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
 	}
 }
 
@@ -86,11 +96,13 @@ int dw_ace_v1x_irq_is_enabled(const struct device *dev, unsigned int irq)
 {
 	ARG_UNUSED(dev);
 
-	if (IS_DW(irq)) {
+	if (is_dw_irq(irq)) {
 		return ACE_INTC[0].inten & BIT(MTL_IRQ_FROM_ZEPHYR(irq));
-	} else {
-		return z_xtensa_irq_is_enabled(irq);
+	} else if ((irq & ~XTENSA_IRQ_NUM_MASK) == 0U) {
+		return z_xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
 	}
+
+	return false;
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
@@ -116,7 +128,8 @@ static void dwint_isr(const void *arg)
 
 	while (fs) {
 		uint32_t bit = find_lsb_set(fs) - 1;
-		struct _isr_table_entry *ent = &_sw_isr_table[MTL_IRQ_TO_ZEPHYR(bit)];
+		uint32_t offset = CONFIG_2ND_LVL_ISR_TBL_OFFSET + bit;
+		struct _isr_table_entry *ent = &_sw_isr_table[offset];
 
 		fs &= ~BIT(bit);
 		ent->isr(ent->arg);
