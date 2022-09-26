@@ -154,11 +154,28 @@ bool intel_adsp_ipc_send_message_sync(const struct device *dev,
 }
 
 #if DT_NODE_EXISTS(INTEL_ADSP_IPC_HOST_DTNODE)
+
+#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
+#include <ace_v1x-regs.h>
+
+static inline void ace_ipc_intc_unmask(void)
+{
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		MTL_DINT[i].ie[MTL_INTL_HIPC] = BIT(0);
+	}
+}
+#else
+static inline void ace_ipc_intc_unmask(void) {}
+#endif
+
 static int dt_init(const struct device *dev)
 {
 	IRQ_CONNECT(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE), 0, z_intel_adsp_ipc_isr,
 		INTEL_ADSP_IPC_HOST_DEV, 0);
 	irq_enable(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE));
+
+	ace_ipc_intc_unmask();
+
 	return intel_adsp_ipc_init(dev);
 }
 
