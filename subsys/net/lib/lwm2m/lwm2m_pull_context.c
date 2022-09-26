@@ -323,7 +323,7 @@ static void firmware_transfer(void)
 	int ret;
 	char *server_addr;
 
-	ret = k_sem_take(&lwm2m_pull_sem, K_NO_WAIT);
+	ret = k_sem_take(&lwm2m_pull_sem, K_FOREVER);
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	server_addr = CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR;
