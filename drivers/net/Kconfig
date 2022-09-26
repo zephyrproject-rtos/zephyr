@@ -14,6 +14,7 @@ menuconfig NET_PPP
 	depends on NET_L2_PPP
 	depends on NET_NATIVE
 	select RING_BUFFER
+	select CRC
 	select UART_MUX if GSM_MUX
 
 if NET_PPP
