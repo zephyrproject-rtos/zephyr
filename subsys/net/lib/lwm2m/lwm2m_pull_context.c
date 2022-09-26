@@ -30,6 +30,8 @@ static K_SEM_DEFINE(lwm2m_pull_sem, 1, 1);
 static char proxy_uri[LWM2M_PACKAGE_URI_LEN];
 #endif
 
+static void do_transmit_timeout_cb(struct lwm2m_message *msg);
+
 static struct firmware_pull_context {
 	uint8_t obj_inst_id;
 	char uri[LWM2M_PACKAGE_URI_LEN];
@@ -41,17 +43,51 @@ static struct firmware_pull_context {
 	struct coap_block_context block_ctx;
 } context;
 
+static enum service_state {
+	NOT_STARTED,
+	IDLE,
+	STOPPING,
+} pull_service_state;
 
-static void do_transmit_timeout_cb(struct lwm2m_message *msg);
+static void pull_service(struct k_work *work)
+{
+	ARG_UNUSED(work);
+	switch (pull_service_state) {
+	case NOT_STARTED:
+		pull_service_state = IDLE;
+		/* Set a long 5s time for a service that does not do anything*/
+		/* Will be set to smaller, when there is time to clena up */
+		lwm2m_engine_update_service_period(pull_service, 5000);
+		break;
+	case IDLE:
+		/* Nothing to do */
+		break;
+	case STOPPING:
+		/* Clean up the current socket context */
+		lwm2m_engine_stop(&context.firmware_ctx);
+		lwm2m_engine_update_service_period(pull_service, 5000);
+		pull_service_state = IDLE;
+		k_sem_give(&lwm2m_pull_sem);
+		break;
+	}
+}
+
+static int start_service(void)
+{
+	if (pull_service_state != NOT_STARTED) {
+		return 0;
+	}
+
+	return lwm2m_engine_add_service(pull_service, 1);
+}
 
 /**
  * Close all open connections and release the context semaphore
  */
 static void cleanup_context(void)
 {
-	lwm2m_engine_stop(&context.firmware_ctx);
-
-	k_sem_give(&lwm2m_pull_sem);
+	pull_service_state = STOPPING;
+	lwm2m_engine_update_service_period(pull_service, 1);
 }
 
 static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint8_t tkl,
@@ -377,6 +413,12 @@ int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k
 	if (!req.write_cb || !req.result_cb) {
 		LOG_DBG("Context failed sanity check. Verify initialization!");
 		return -EINVAL;
+	}
+
+	ret = start_service();
+	if (ret) {
+		LOG_ERR("Failed to start the pull-service");
+		return ret;
 	}
 
 	/* Check if we are not in the middle of downloading */
