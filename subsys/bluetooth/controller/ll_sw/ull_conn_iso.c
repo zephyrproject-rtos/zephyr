@@ -159,8 +159,10 @@ struct ll_conn_iso_stream *ll_iso_stream_connected_get(uint16_t handle)
 	}
 
 	cis = ll_conn_iso_stream_get(handle);
-	if ((cis->group == NULL) || (cis->lll.handle != handle)) {
-		/* CIS does not belong to a group or has inconsistent handle */
+	if ((cis->group == NULL) || (cis->lll.handle != handle) || !cis->established) {
+		/* CIS does not belong to a group, has inconsistent handle or is
+		 * not yet established.
+		 */
 		return NULL;
 	}
 
