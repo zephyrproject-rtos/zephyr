@@ -75,7 +75,7 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 
 	if (conn != NULL) {
 		__ASSERT(stream->conn == NULL || stream->conn == conn,
-			 "stream->conn already attached");
+			 "stream->conn %p already attached", stream->conn);
 		stream->conn = bt_conn_ref(conn);
 	}
 	stream->codec = codec;
@@ -334,6 +334,11 @@ int bt_audio_stream_config(struct bt_conn *conn,
 	CHECKIF(conn == NULL || stream == NULL || codec == NULL) {
 		BT_DBG("NULL value(s) supplied)");
 		return -EINVAL;
+	}
+
+	if (stream->conn != NULL) {
+		BT_DBG("Stream already configured for conn %p", stream->conn);
+		return -EALREADY;
 	}
 
 	role = conn->role;
