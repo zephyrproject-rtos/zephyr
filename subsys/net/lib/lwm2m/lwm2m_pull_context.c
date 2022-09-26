@@ -23,10 +23,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static K_SEM_DEFINE(lwm2m_pull_sem, 1, 1);
 
-#define NETWORK_INIT_TIMEOUT K_SECONDS(10)
-#define NETWORK_CONNECT_TIMEOUT K_SECONDS(10)
-#define PACKET_TRANSFER_RETRY_MAX 3
-
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 #define COAP2COAP_PROXY_URI_PATH "coap2coap"
 #define COAP2HTTP_PROXY_URI_PATH "coap2http"
@@ -45,7 +41,6 @@ static struct firmware_pull_context {
 	struct coap_block_context block_ctx;
 } context;
 
-static int n_retry;
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg);
 
@@ -317,29 +312,10 @@ error:
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 {
-	int ret;
-
-	if (n_retry < PACKET_TRANSFER_RETRY_MAX) {
-		/* retry block */
-		LOG_WRN("TIMEOUT - Sending a retry packet!");
-
-		ret = transfer_request(&context.block_ctx, msg->token, msg->tkl,
-				       do_firmware_transfer_reply_cb);
-		if (ret < 0) {
-			/* abort retries / transfer */
-			n_retry = PACKET_TRANSFER_RETRY_MAX;
-			context.result_cb(context.obj_inst_id, ret);
-			cleanup_context();
-			return;
-		}
-
-		n_retry++;
-	} else {
-		LOG_ERR("TIMEOUT - Too many retry packet attempts! "
-			"Aborting firmware download.");
-		context.result_cb(context.obj_inst_id, -ENOMSG);
-		cleanup_context();
-	}
+	LOG_ERR("TIMEOUT - Too many retry packet attempts! "
+		"Aborting firmware download.");
+	context.result_cb(context.obj_inst_id, -ENOMSG);
+	cleanup_context();
 }
 
 static void firmware_transfer(void)
@@ -421,7 +397,6 @@ int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k
 	(void)memset(&context.block_ctx, 0, sizeof(struct coap_block_context));
 	context.firmware_ctx.sock_fd = -1;
 
-	n_retry = 0;
 	firmware_transfer();
 
 	return 0;
