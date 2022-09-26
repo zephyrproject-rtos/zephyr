@@ -205,12 +205,19 @@ enum {
 #define POW_2_20		BIT(20)
 #define POW_2_19_MINUS_1	BIT_MASK(19)
 
+/* Immutable arrays need to be in RAM if we're using TWI with EasyDMA */
+#if defined(CONFIG_NRFX_TWIM)
+#define DPS310_DMA_VAR
+#else
+#define DPS310_DMA_VAR const
+#endif
+
 /* Needed because the values are referenced by pointer. */
-static const uint8_t REG_ADDR_MEAS_CFG = IFX_DPS310_REG_ADDR_MEAS_CFG;
-static const uint8_t REG_ADDR_CALIB_COEFF_0 = IFX_DPS310_REG_ADDR_COEF_0;
-static const uint8_t REG_ADDR_TMP_B2 = IFX_DPS310_REG_ADDR_TMP_B2;
-static const uint8_t REG_ADDR_PSR_B2 = IFX_DPS310_REG_ADDR_PSR_B2;
-static const uint8_t REG_ADDR_COEF_SRCE = IFX_DPS310_REG_ADDR_COEF_SRCE;
+DPS310_DMA_VAR static uint8_t REG_ADDR_MEAS_CFG = IFX_DPS310_REG_ADDR_MEAS_CFG;
+DPS310_DMA_VAR static uint8_t REG_ADDR_CALIB_COEFF_0 = IFX_DPS310_REG_ADDR_COEF_0;
+DPS310_DMA_VAR static uint8_t REG_ADDR_TMP_B2 = IFX_DPS310_REG_ADDR_TMP_B2;
+DPS310_DMA_VAR static uint8_t REG_ADDR_PSR_B2 = IFX_DPS310_REG_ADDR_PSR_B2;
+DPS310_DMA_VAR static uint8_t REG_ADDR_COEF_SRCE = IFX_DPS310_REG_ADDR_COEF_SRCE;
 
 /* calibration coefficients */
 struct dps310_cal_coeff {
@@ -316,7 +323,7 @@ static bool dps310_trigger_temperature(const struct device *dev)
 	const struct dps310_cfg *config = dev->config;
 
 	/* command to start temperature measurement */
-	static const uint8_t tmp_meas_cmd[] = {
+	DPS310_DMA_VAR static uint8_t tmp_meas_cmd[] = {
 		IFX_DPS310_REG_ADDR_MEAS_CFG,
 		IFX_DPS310_MODE_COMMAND_TEMPERATURE
 	};
@@ -345,7 +352,7 @@ static bool dps310_trigger_pressure(const struct device *dev)
 	const struct dps310_cfg *config = dev->config;
 
 	/* command to start pressure measurement */
-	static const uint8_t psr_meas_cmd[] = {
+	DPS310_DMA_VAR static uint8_t psr_meas_cmd[] = {
 		IFX_DPS310_REG_ADDR_MEAS_CFG,
 		IFX_DPS310_MODE_COMMAND_PRESSURE
 	};
@@ -378,7 +385,7 @@ static void dps310_hw_bug_fix(const struct device *dev)
 	const struct dps310_cfg *config = dev->config;
 
 	/* setup the necessary 5 sequences to fix the hw bug */
-	static const uint8_t hw_bug_fix_sequence[HW_BUG_FIX_SEQUENCE_LEN][2] = {
+	DPS310_DMA_VAR static uint8_t hw_bug_fix_sequence[HW_BUG_FIX_SEQUENCE_LEN][2] = {
 		/*
 		 * First write valid signature on 0x0e and 0x0f
 		 * to unlock address 0x62
