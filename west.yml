@@ -57,7 +57,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: 1d237f2e2f262751975b6da6e03af569b2b49b2b
+      revision: 43c73d862a78cd5a18a6e24b58cf6980016dbe9e
       path: modules/hal/atmel
       groups:
         - hal
