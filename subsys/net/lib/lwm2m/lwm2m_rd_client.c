@@ -137,13 +137,20 @@ static enum sm_engine_state suspended_client_state;
 static struct lwm2m_message *rd_get_message(void)
 {
 	if (client.rd_message.ctx) {
-		return NULL;
+		/* Free old message */
+		lwm2m_reset_message(&client.rd_message, true);
 	}
 
 	client.rd_message.ctx = client.ctx;
 	return &client.rd_message;
 
 }
+
+static void rd_client_message_free(void)
+{
+	lwm2m_reset_message(lwm2m_get_ongoing_rd_msg(), true);
+}
+
 
 struct lwm2m_message *lwm2m_get_ongoing_rd_msg(void)
 {
@@ -1200,6 +1207,7 @@ static void lwm2m_rd_client_service(struct k_work *work)
 			if (client.ctx->sock_fd > -1) {
 				lwm2m_engine_stop(client.ctx);
 			}
+			rd_client_message_free();
 			break;
 
 		case ENGINE_INIT:
@@ -1332,6 +1340,7 @@ int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 	}
 
 	client.ctx->event_cb = event_cb;
+	rd_client_message_free();
 
 	if (sm_is_registered() && deregister) {
 		set_sm_state(ENGINE_DEREGISTER);
@@ -1403,7 +1412,7 @@ int lwm2m_rd_client_resume(void)
 		suspended_client_state = ENGINE_REGISTRATION_DONE;
 	}
 	/* Clear Possible pending RD Client message */
-	lwm2m_reset_message(lwm2m_get_ongoing_rd_msg(), true);
+	rd_client_message_free();
 
 	client.engine_state = suspended_client_state;
 
