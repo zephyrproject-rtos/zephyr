@@ -652,6 +652,7 @@ static int b91_init(const struct device *dev)
 	data.current_dbm = 0x7FFF;
 #ifdef CONFIG_OPENTHREAD_FTD
 	b91_src_match_table_clean(b91->src_match_table);
+	b91->src_match_table->enabled = true;
 #endif /* CONFIG_OPENTHREAD_FTD */
 #ifdef CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
 	b91_enh_ack_table_clean(b91->enh_ack_table);
