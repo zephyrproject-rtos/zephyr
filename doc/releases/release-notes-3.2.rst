@@ -957,6 +957,11 @@ HALs
 
 * TI
 
+  * simplelink: cc13x2_cc26x2: include ADC driverlib sources
+  * simplelink: cc13x2_cc26x2: include flash driverlib sources
+  * cc13x2: kconfig conditions for P variant support & custom RF hwattrs
+  * cc13x2_cc26x2: update to TI SimpleLink SDK 4.40.04.04
+
 * Telink
 
 * Wurth Elektronik
