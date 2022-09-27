@@ -76,6 +76,7 @@ enum {
 	SHELL_ADV_OPT_CONNECTABLE,
 	SHELL_ADV_OPT_DISCOVERABLE,
 	SHELL_ADV_OPT_EXT_ADV,
+	SHELL_ADV_OPT_APPEARANCE,
 
 	SHELL_ADV_OPT_NUM,
 };
@@ -1190,6 +1191,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 		       const atomic_t *adv_opt)
 {
 	const bool discoverable = atomic_test_bit(adv_opt, SHELL_ADV_OPT_DISCOVERABLE);
+	const bool appearance = atomic_test_bit(adv_opt, SHELL_ADV_OPT_APPEARANCE);
 	const bool adv_ext = atomic_test_bit(adv_opt, SHELL_ADV_OPT_EXT_ADV);
 	static uint8_t ad_flags;
 	size_t ad_len = 0;
@@ -1213,6 +1215,18 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 		data_array[ad_len].type = BT_DATA_FLAGS;
 		data_array[ad_len].data_len = sizeof(ad_flags);
 		data_array[ad_len].data = &ad_flags;
+		ad_len++;
+	}
+
+	if (appearance) {
+		const uint16_t appearance = bt_get_appearance();
+		static uint8_t appearance_data[sizeof(appearance)];
+
+		__ASSERT(data_array_size > ad_len, "No space for appearance");
+		sys_put_le16(appearance, appearance_data);
+		data_array[ad_len].type = BT_DATA_GAP_APPEARANCE;
+		data_array[ad_len].data_len = sizeof(appearance_data);
+		data_array[ad_len].data = appearance_data;
 		ad_len++;
 	}
 
@@ -1248,8 +1262,9 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_le_adv_param param = {};
-	struct bt_data ad[2];
+	struct bt_data ad[3];
 	bool discoverable = true;
+	bool appearance = false;
 	size_t ad_len;
 	int err;
 
@@ -1286,6 +1301,8 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 			discoverable = true;
 		} else if (!strcmp(arg, "non_discov")) {
 			discoverable = false;
+		} else if (!strcmp(arg, "appearance")) {
+			appearance = true;
 		} else if (!strcmp(arg, "fal")) {
 			param.options |= BT_LE_ADV_OPT_FILTER_SCAN_REQ;
 			param.options |= BT_LE_ADV_OPT_FILTER_CONN;
@@ -1317,6 +1334,7 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 	atomic_set_bit_to(adv_opt, SHELL_ADV_OPT_CONNECTABLE,
 			  (param.options & BT_LE_ADV_OPT_CONNECTABLE) > 0);
 	atomic_set_bit_to(adv_opt, SHELL_ADV_OPT_DISCOVERABLE, discoverable);
+	atomic_set_bit_to(adv_opt, SHELL_ADV_OPT_APPEARANCE, appearance);
 
 	ad_len = ad_init(ad, ARRAY_SIZE(ad), adv_opt);
 	if (ad_len < 0) {
@@ -1535,9 +1553,10 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
 	static uint8_t hex_data[1650];
+	bool appearance = false;
 	struct bt_data *data;
-	struct bt_data ad[8];
-	struct bt_data sd[8];
+	struct bt_data ad[9];
+	struct bt_data sd[9];
 	size_t hex_data_len;
 	size_t ad_len;
 	size_t sd_len = 0;
@@ -1569,6 +1588,8 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 			discoverable = true;
 		} else if (!strcmp(arg, "non_discov")) {
 			discoverable = false;
+		} else if (!strcmp(arg, "appearance")) {
+			appearance = true;
 		} else if (!strcmp(arg, "scan-response")) {
 			if (data == sd) {
 				shell_print(sh, "Failed to set advertising data: "
@@ -1599,6 +1620,8 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	atomic_set_bit_to(adv_set_opt[selected_adv], SHELL_ADV_OPT_DISCOVERABLE, discoverable);
+	atomic_set_bit_to(adv_set_opt[selected_adv], SHELL_ADV_OPT_APPEARANCE,
+			  appearance);
 
 	ad_len = ad_init(ad, ARRAY_SIZE(ad), adv_set_opt[selected_adv]);
 	if (ad_len < 0) {
@@ -3501,7 +3524,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(advertise, NULL,
 		      "<type: off, on, scan, nconn> [mode: discov, non_discov] "
 		      "[filter-accept-list: fal, fal-scan, fal-conn] [identity] [no-name] "
-		      "[one-time] [name-ad]"
+		      "[one-time] [name-ad] [appearance] "
 		      "[disable-37] [disable-38] [disable-39]",
 		      cmd_advertise, 2, 8),
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -3513,8 +3536,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(adv-create, NULL, EXT_ADV_PARAM, cmd_adv_create, 2, 11),
 	SHELL_CMD_ARG(adv-param, NULL, EXT_ADV_PARAM, cmd_adv_param, 2, 11),
 	SHELL_CMD_ARG(adv-data, NULL, "<data> [scan-response <data>] "
-				      "<type: discov, hex>", cmd_adv_data,
-		      1, 16),
+				      "<type: discov, hex> [appearance] ",
+		      cmd_adv_data, 1, 16),
 	SHELL_CMD_ARG(adv-start, NULL,
 		"[timeout <timeout>] [num-events <num events>]",
 		cmd_adv_start, 1, 4),
