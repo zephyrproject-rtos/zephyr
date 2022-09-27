@@ -181,6 +181,7 @@
 		#gpio-cells=<2>;
 		status = "disabled";
 		ngpios = <24>;   /* 0..23 */
+		resets = <&reset RSTMGR_GPIO0_RSTLINE>;
 	};
 
 	gpio1: gpio@ffc03300 {
@@ -191,6 +192,7 @@
 		#gpio-cells=<2>;
 		status = "disabled";
 		ngpios = <24>;   /* 24..47 */
+		resets = <&reset RSTMGR_GPIO1_RSTLINE>;
 	};
 
 	reset: reset-controller@ffd11000 {

@@ -14,6 +14,9 @@ properties:
     label:
       required: true
 
+    resets:
+      required: true
+
     "#gpio-cells":
       const: 2
 

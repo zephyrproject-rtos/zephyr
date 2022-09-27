@@ -18,11 +18,11 @@
 
 #include <errno.h>
 #include <device.h>
-#include <drivers/gpio.h>
 #include <soc.h>
 #include <zephyr.h>
+#include <drivers/gpio.h>
+#include <drivers/reset.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
-#include <socfpga_reset_manager.h>
 #include "gpio_intel_socfpga.h"
 
 #define DEV_CFG(_dev) ((struct gpio_intel_socfpga_config *const)(_dev)->config)
@@ -32,6 +32,8 @@ struct gpio_intel_socfpga_config {
 	const int port_pin_mask;
 	const int gpio_port;
 	uint32_t ngpios;
+	char *reset_drv;
+	uint32_t reset_line;
 };
 
 struct gpio_intel_socfpga_data {
@@ -154,17 +156,15 @@ static int gpio_init(const struct device *dev)
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
 	struct gpio_intel_socfpga_config *const cfg = DEV_CFG(dev);
-	uint32_t offset;
+	const struct device *reset_dev;
 
-	if (cfg->gpio_port == 0) {
-		offset = RSTMGR_PER1MODRST_GPIO0;
-	} else {
-		offset = RSTMGR_PER1MODRST_GPIO1;
+	reset_dev = device_get_binding(cfg->reset_drv);
+	if (!reset_dev) {
+		return -ENODEV;
 	}
 
-	sys_set_bits(SOCFPGA_RSTMGR_REG_BASE + SOCFPGA_RSTMGR_PER1MODRST, offset);
-
-	sys_clear_bits(SOCFPGA_RSTMGR_REG_BASE + SOCFPGA_RSTMGR_PER1MODRST, offset);
+	reset_line_assert(reset_dev, cfg->reset_line);
+	reset_line_deassert(reset_dev, cfg->reset_line);
 
 	return 0;
 }
@@ -181,17 +181,19 @@ static const struct gpio_driver_api gpio_socfpga_driver_api = {
 };
 
 #define CREATE_GPIO_DEVICE(_inst)						\
-	static struct gpio_intel_socfpga_data gpio_data_##_inst;	\
-	static struct gpio_intel_socfpga_config gpio_config_##_inst = {	\
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(_inst)),	\
+	static struct gpio_intel_socfpga_data gpio_data_##_inst;		\
+	static struct gpio_intel_socfpga_config gpio_config_##_inst = {		\
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(_inst)),			\
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_inst),	\
 		.gpio_port = _inst,						\
-		.ngpios = DT_INST_PROP(_inst, ngpios)				\
+		.ngpios = DT_INST_PROP(_inst, ngpios),				\
+		.reset_drv = DT_LABEL(DT_INST_PHANDLE(_inst, resets)), 	\
+		.reset_line = DT_INST_PHA_BY_IDX(_inst, resets, 0, id) 	\
 	};									\
 	DEVICE_DT_INST_DEFINE(_inst,						\
 			gpio_init,						\
 			NULL,							\
-			&gpio_data_##_inst,	\
+			&gpio_data_##_inst,					\
 			&gpio_config_##_inst,					\
 			PRE_KERNEL_1,						\
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
