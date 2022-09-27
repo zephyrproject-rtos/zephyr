@@ -114,5 +114,6 @@ uint32_t get_mpu_clk(void);
 uint32_t get_wdt_clk(void);
 uint32_t get_uart_clk(void);
 uint32_t get_mmc_clk(void);
+uint32_t get_timer_clk(void);
 
 #endif
