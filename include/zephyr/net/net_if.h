@@ -160,8 +160,9 @@ struct net_if_router {
 	uint8_t _unused : 5;
 };
 
+/** Network interface flags. */
 enum net_if_flag {
-	/** Interface is up/ready to receive and transmit */
+	/** Interface is admin up. */
 	NET_IF_UP,
 
 	/** Interface is pointopoint */
@@ -193,11 +194,31 @@ enum net_if_flag {
 	/** Interface supports IPv6 */
 	NET_IF_IPV6,
 
+	/** Interface up and running (ready to receive and transmit). */
+	NET_IF_RUNNING,
+
+	/** Driver signals L1 is up. */
+	NET_IF_LOWER_UP,
+
+	/** Driver signals dormant. */
+	NET_IF_DORMANT,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
 /** @endcond */
 };
+
+/** Network interface operational status (RFC 2863). */
+enum net_if_oper_state {
+	NET_IF_OPER_UNKNOWN,
+	NET_IF_OPER_NOTPRESENT,
+	NET_IF_OPER_DOWN,
+	NET_IF_OPER_LOWERLAYERDOWN,
+	NET_IF_OPER_TESTING,
+	NET_IF_OPER_DORMANT,
+	NET_IF_OPER_UP,
+} __packed;
 
 #if defined(CONFIG_NET_OFFLOAD)
 struct net_offload;
@@ -468,6 +489,9 @@ struct net_if_dev {
 	 */
 	net_socket_create_t socket_offload;
 #endif /* CONFIG_NET_SOCKETS_OFFLOAD */
+
+	/** RFC 2863 operational status */
+	enum net_if_oper_state oper_state;
 };
 
 /**
@@ -574,6 +598,40 @@ static inline bool net_if_flag_is_set(struct net_if *iface,
 	}
 
 	return atomic_test_bit(iface->if_dev->flags, value);
+}
+
+/**
+ * @brief Set an operational state on an interface
+ *
+ * @param iface Pointer to network interface
+ * @param oper_state Operational state to set
+ *
+ * @return The new operational state of an interface
+ */
+static inline enum net_if_oper_state net_if_oper_state_set(
+	struct net_if *iface, enum net_if_oper_state oper_state)
+{
+	NET_ASSERT(iface);
+
+	if (oper_state >= NET_IF_OPER_UNKNOWN && oper_state <= NET_IF_OPER_UP) {
+		iface->if_dev->oper_state = oper_state;
+	}
+
+	return iface->if_dev->oper_state;
+}
+
+/**
+ * @brief Get an operational state of an interface
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return Operational state of an interface
+ */
+static inline enum net_if_oper_state net_if_oper_state(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	return iface->if_dev->oper_state;
 }
 
 /**
@@ -2091,7 +2149,7 @@ void net_if_foreach(net_if_cb_t cb, void *user_data);
 int net_if_up(struct net_if *iface);
 
 /**
- * @brief Check if interface is up.
+ * @brief Check if interface is is up and running.
  *
  * @param iface Pointer to network interface
  *
@@ -2101,7 +2159,8 @@ static inline bool net_if_is_up(struct net_if *iface)
 {
 	NET_ASSERT(iface);
 
-	return net_if_flag_is_set(iface, NET_IF_UP);
+	return net_if_flag_is_set(iface, NET_IF_UP) &&
+	       net_if_flag_is_set(iface, NET_IF_RUNNING);
 }
 
 /**
@@ -2112,6 +2171,90 @@ static inline bool net_if_is_up(struct net_if *iface)
  * @return 0 on success
  */
 int net_if_down(struct net_if *iface);
+
+/**
+ * @brief Check if interface was brought up by the administrator.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface is admin up, false otherwise.
+ */
+static inline bool net_if_is_admin_up(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	return net_if_flag_is_set(iface, NET_IF_UP);
+}
+
+/**
+ * @brief Underlying network device has detected the carrier (cable connected).
+ *
+ * @details The function should be used by the respective network device driver
+ *          or L2 implementation to update its state on a network interface.
+ *
+ * @param iface Pointer to network interface
+ */
+void net_if_carrier_on(struct net_if *iface);
+
+/**
+ * @brief Underlying network device has lost the carrier (cable disconnected).
+ *
+ * @details The function should be used by the respective network device driver
+ *          or L2 implementation to update its state on a network interface.
+ *
+ * @param iface Pointer to network interface
+ */
+void net_if_carrier_off(struct net_if *iface);
+
+/**
+ * @brief Check if carrier is present on network device.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if carrier is present, false otherwise.
+ */
+static inline bool net_if_is_carrier_ok(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	return net_if_flag_is_set(iface, NET_IF_LOWER_UP);
+}
+
+/**
+ * @brief Mark interface as dormant. Dormant state indicates that the interface
+ *        is not ready to pass packets yet, but is waiting for some event
+ *        (for example Wi-Fi network association).
+ *
+ * @details The function should be used by the respective network device driver
+ *          or L2 implementation to update its state on a network interface.
+ *
+ * @param iface Pointer to network interface
+ */
+void net_if_dormant_on(struct net_if *iface);
+
+/**
+ * @brief Mark interface as not dormant.
+ *
+ * @details The function should be used by the respective network device driver
+ *          or L2 implementation to update its state on a network interface.
+ *
+ * @param iface Pointer to network interface
+ */
+void net_if_dormant_off(struct net_if *iface);
+
+/**
+ * @brief Check if the interface is dormant.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface is dormant, false otherwise.
+ */
+static inline bool net_if_is_dormant(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	return net_if_flag_is_set(iface, NET_IF_DORMANT);
+}
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_NATIVE)
 /**
