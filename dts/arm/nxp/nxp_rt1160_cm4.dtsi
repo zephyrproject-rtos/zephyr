@@ -554,3 +554,8 @@
 		<&iomuxc_gpio_ad_31_gpio9_io30>,
 		<&iomuxc_gpio_ad_32_gpio9_io31>;
 };
+
+/* CAAM currently does not work on M4 because of cache API issues */
+&caam {
+	status = "disabled";
+};
