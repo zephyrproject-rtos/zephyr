@@ -1141,6 +1141,7 @@ static void pa_sync_lost(struct bt_audio_broadcast_sink *sink)
 	if (default_sink == sink) {
 		default_sink = NULL;
 		sink_syncable = false;
+		(void)memset(&received_base, 0, sizeof(received_base));
 	}
 }
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
