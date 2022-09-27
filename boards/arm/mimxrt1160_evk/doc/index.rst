@@ -270,7 +270,7 @@ should see the following message in the terminal:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1160-evaluation-kit:MIMXRT1160-EVK
 
 .. _MIMXRT1160-EVK Board Hardware User's Guide:
-   https://www.nxp.com/docs/en/user-guide/UM11617.pdf
+   https://www.nxp.com/webapp/Download?colCode=UM11617
 
 .. _i.MX RT1160 Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/i-mx-rt-crossover-mcus/i-mx-rt1160-crossover-mcu-family-high-performance-mcu-with-arm-cortex-m7-and-cortex-m4-cores:i.MX-RT1160

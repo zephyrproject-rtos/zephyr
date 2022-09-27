@@ -60,6 +60,20 @@ set(CMAKE_SYSTEM_PROCESSOR ${ARCH})
 #   explicitly to specify the target system version.
 set(CMAKE_SYSTEM_VERSION ${PROJECT_VERSION})
 
+# https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_BYTE_ORDER.html
+#   Byte order of <LANG> compiler target architecture, if known.
+#
+# Zephyr Kconfig defines BIG_ENDIAN according to arch, SoC, Board, so propagate
+# this setting to allow users to read the standard CMake variable or use
+# 'test_big_endian()' function.
+if(CONFIG_BIG_ENDIAN)
+  set(CMAKE_C_BYTE_ORDER   BIG_ENDIAN)
+  set(CMAKE_CXX_BYTE_ORDER BIG_ENDIAN)
+else()
+  set(CMAKE_C_BYTE_ORDER   LITTLE_ENDIAN)
+  set(CMAKE_CXX_BYTE_ORDER LITTLE_ENDIAN)
+endif()
+
 # We are not building dynamically loadable libraries
 set(BUILD_SHARED_LIBS OFF)
 

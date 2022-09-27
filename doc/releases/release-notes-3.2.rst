@@ -299,7 +299,9 @@ Bluetooth
 
   * Made the new LLCP implementation the default one. Enable
     :kconfig:option:`CONFIG_BT_LL_SW_LLCP_LEGACY` to revert back to the legacy
-    implementation
+    implementation. :kconfig:option:`CONFIG_BT_LL_SW_LLCP_LEGACY` is marked
+    deprecated in favor of the new :kconfig:option:`CONFIG_BT_LL_SW_LLCP`, which
+    is the default now
   * Marked Extended Advertising as stable, no longer experimental
   * Added deinit() infrastructure in order to properly support disabling
     Bluetooth support, including the controller
@@ -927,6 +929,8 @@ HALs
   * stm32cube: update stm32l4 to cube version V1.17.2
   * stm32cube: update stm32u5 to cube version V1.1.1
   * stm32cube: update stm32wb to cube version V1.14.0
+  * pinctrl: some pin definitions did not contain the "_c" suffix, used by pins
+    with analog switch on certain H7 devices
 
 * Silabs
 

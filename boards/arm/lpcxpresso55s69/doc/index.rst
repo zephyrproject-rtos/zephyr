@@ -378,7 +378,7 @@ should see the following message in the terminal:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/lpc-cortex-m-mcus/lpc5500-cortex-m33/high-efficiency-arm-cortex-m33-based-microcontroller-family:LPC55S6x
 
 .. _LPC55S69 Datasheet:
-   https://www.nxp.com/docs/en/data-sheet/LPC55S6x.pdf
+   https://www.nxp.com/docs/en/nxp/data-sheets/LPC55S6x_DS.pdf
 
 .. _LPC55S69 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=UM11126

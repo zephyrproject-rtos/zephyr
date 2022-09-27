@@ -1,9 +1,8 @@
 common:
   filter: CONFIG_ARCH_HAS_TIMING_FUNCTIONS
+  platform_type:
+    - mcu
+    - native
 tests:
   arch.common.timing:
-    filter: CONFIG_MP_NUM_CPUS == 1 and not CONFIG_QEMU_TARGET
-  arch.common.timing.smp:
-    filter: CONFIG_MP_NUM_CPUS > 1 and not CONFIG_QEMU_TARGET
-    extra_configs:
-      - CONFIG_SCHED_CPU_MASK=y
+    tags: timing arch
