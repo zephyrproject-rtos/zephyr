@@ -521,10 +521,20 @@ Drivers and Sensors
 
   * Atmel eefc: Fix support for Cortex-M4 variants.
   * Added flash driver for Renesas Smartbond platform
-  * STM32: Added OSPI NOR-flash driver. Supports STM32H7 and STM32U5. Supports DMA.
+  * Added support for STM32H7 and STM32U5 in the STM32 OSPI driver.
+  * Added DMA transfer support in the STM32 OSPI driver.
   * Added driver for GigaDevice GD32 SoCs
   * Added Flash support for NXP LPCXpresso55S36.
   * Added Flash support for NXP MIMXRT595 EVK.
+  * Added on-chip flash driver for TI CC13xx/CC26xx.
+  * Fixed flash to flash write for Telink B91.
+  * Fixed DMA priority configuration in the stm32 QSPI driver.
+  * Drivers are enabled by default based on their devicetree hardware declarations.
+  * Fixed write from unaligned source for STM32G0x.
+  * Added Flash support for Renesas Smartbond platform.
+  * Added Flash support for Cadence QSPI NOR FLASH.
+  * Fixed usage fault on nRF driver (along with BLE) due to possible incorrect handling of the ticker stop operation.
+
 
 * GPIO
 
