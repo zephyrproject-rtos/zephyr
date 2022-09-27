@@ -28,10 +28,14 @@
 #define DEV_CFG(_dev) ((struct gpio_intel_socfpga_config *const)(_dev)->config)
 
 struct gpio_intel_socfpga_config {
+	DEVICE_MMIO_ROM;
 	const int port_pin_mask;
 	const int gpio_port;
-	uint32_t reg_base;
 	uint32_t ngpios;
+};
+
+struct gpio_intel_socfpga_data {
+	DEVICE_MMIO_RAM;
 };
 
 static bool pmux_gpio_pin_is_valid(int port, uint32_t pin_mask,
@@ -80,7 +84,7 @@ static int gpio_socfpga_configure(const struct device *dev,
 	struct gpio_intel_socfpga_config *const cfg = DEV_CFG(dev);
 	const int port_pin_mask = cfg->port_pin_mask;
 	const int gpio_port = cfg->gpio_port;
-	uint32_t reg_base = cfg->reg_base;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t ngpios = cfg->ngpios;
 	uint32_t addr;
 
@@ -101,8 +105,7 @@ static int gpio_socfpga_configure(const struct device *dev,
 
 static int gpio_socfpga_port_get_raw(const struct device *dev, uint32_t *value)
 {
-	struct gpio_intel_socfpga_config *const cfg = DEV_CFG(dev);
-	uint32_t reg_base = cfg->reg_base;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t addr;
 
 	addr = reg_base + GPIO_EXT_PORTA_OFFSET;
@@ -117,7 +120,7 @@ static int gpio_socfpga_port_set_bits_raw(const struct device *dev, gpio_port_pi
 	struct gpio_intel_socfpga_config *const cfg = DEV_CFG(dev);
 	const int port_pin_mask = cfg->port_pin_mask;
 	const int gpio_port = cfg->gpio_port;
-	uint32_t reg_base = cfg->reg_base;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t ngpios = cfg->ngpios;
 
 	if (!pmux_gpio_pin_is_valid(gpio_port, mask, port_pin_mask, ngpios)) {
@@ -134,7 +137,7 @@ static int gpio_socfpga_port_clear_bits_raw(const struct device *dev, gpio_port_
 	struct gpio_intel_socfpga_config *const cfg = DEV_CFG(dev);
 	const int port_pin_mask = cfg->port_pin_mask;
 	const int gpio_port = cfg->gpio_port;
-	uint32_t reg_base = cfg->reg_base;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t ngpios = cfg->ngpios;
 
 	if (!pmux_gpio_pin_is_valid(gpio_port, mask, port_pin_mask, ngpios)) {
@@ -148,6 +151,8 @@ static int gpio_socfpga_port_clear_bits_raw(const struct device *dev, gpio_port_
 
 static int gpio_init(const struct device *dev)
 {
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
 	struct gpio_intel_socfpga_config *const cfg = DEV_CFG(dev);
 	uint32_t offset;
 
@@ -176,16 +181,17 @@ static const struct gpio_driver_api gpio_socfpga_driver_api = {
 };
 
 #define CREATE_GPIO_DEVICE(_inst)						\
-	static struct gpio_intel_socfpga_config gpio_config_##_inst = {		\
+	static struct gpio_intel_socfpga_data gpio_data_##_inst;	\
+	static struct gpio_intel_socfpga_config gpio_config_##_inst = {	\
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(_inst)),	\
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_inst),	\
 		.gpio_port = _inst,						\
-		.reg_base = DT_INST_REG_ADDR(_inst),				\
 		.ngpios = DT_INST_PROP(_inst, ngpios)				\
 	};									\
 	DEVICE_DT_INST_DEFINE(_inst,						\
 			gpio_init,						\
 			NULL,							\
-			NULL,							\
+			&gpio_data_##_inst,	\
 			&gpio_config_##_inst,					\
 			PRE_KERNEL_1,						\
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
