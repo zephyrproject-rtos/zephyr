@@ -736,13 +736,6 @@ static int start_read(const struct device *dev,
 		LL_ADC_SetChannelPreselection(adc, channel);
 	}
 #endif
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
-	/*
-	 * Each channel in the sequence must be previously enabled in PCSEL.
-	 * This register controls the analog switch integrated in the IO level.
-	 */
-	LL_ADC_SetChannelPreselection(adc, channel);
-#endif
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	LL_ADC_REG_SetSequencerChannels(adc, channel);
