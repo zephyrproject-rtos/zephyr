@@ -411,18 +411,20 @@ int engine_trigger_bootstrap(void)
 {
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	k_mutex_lock(&client.mutex, K_FOREVER);
-	if (!sm_is_registered()) {
+
+	if (client.use_bootstrap) {
 		/* Bootstrap is not possible to trig */
-		LOG_WRN("Cannot trigger bootstrap from state %u", client.engine_state);
+		LOG_WRN("Bootstrap process ongoing");
 		k_mutex_unlock(&client.mutex);
 		return -EPERM;
 	}
-
 	LOG_INF("Server Initiated Bootstrap");
+	/* Free ongoing possible message */
+	rd_client_message_free();
 	client.use_bootstrap = true;
+	client.trigger_update = false;
 	client.engine_state = ENGINE_INIT;
 	k_mutex_unlock(&client.mutex);
-
 	return 0;
 #else
 	return -EPERM;
