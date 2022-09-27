@@ -1,0 +1,582 @@
+/dts-v1/;
+
+/ {
+	#address-cells = < 0x1 >;
+	#size-cells = < 0x1 >;
+	model = "Nordic nRF52840 DK NRF52840";
+	compatible = "nordic,nrf52840-dk-nrf52840";
+	chosen {
+		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flash_controller;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &boot_partition;
+	};
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		pwm-led0 = &pwm_led0;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
+		sw3 = &button3;
+		bootloader-led0 = &led0;
+	};
+	soc {
+		#address-cells = < 0x1 >;
+		#size-cells = < 0x1 >;
+		compatible = "nordic,nRF52840-QIAA", "nordic,nRF52840", "nordic,nRF52", "simple-bus";
+		interrupt-parent = < &nvic >;
+		ranges;
+		nvic: interrupt-controller@e000e100 {
+			#address-cells = < 0x1 >;
+			compatible = "arm,v7m-nvic";
+			reg = < 0xe000e100 0xc00 >;
+			interrupt-controller;
+			#interrupt-cells = < 0x2 >;
+			arm,num-irq-priority-bits = < 0x3 >;
+			phandle = < 0x1 >;
+		};
+		systick: timer@e000e010 {
+			compatible = "arm,armv7m-systick";
+			reg = < 0xe000e010 0x10 >;
+			status = "disabled";
+		};
+		ficr: ficr@10000000 {
+			compatible = "nordic,nrf-ficr";
+			reg = < 0x10000000 0x1000 >;
+			status = "okay";
+		};
+		uicr: uicr@10001000 {
+			compatible = "nordic,nrf-uicr";
+			reg = < 0x10001000 0x1000 >;
+			status = "okay";
+		};
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = < 0x20000000 0x40000 >;
+		};
+		clock: clock@40000000 {
+			compatible = "nordic,nrf-clock";
+			reg = < 0x40000000 0x1000 >;
+			interrupts = < 0x0 0x1 >;
+			status = "okay";
+			label = "CLOCK";
+		};
+		radio: radio@40001000 {
+			compatible = "nordic,nrf-radio";
+			reg = < 0x40001000 0x1000 >;
+			interrupts = < 0x1 0x1 >;
+			status = "okay";
+		};
+		uart0: uart@40002000 {
+			reg = < 0x40002000 0x1000 >;
+			interrupts = < 0x2 0x1 >;
+			status = "okay";
+			label = "UART_0";
+			compatible = "nordic,nrf-uarte";
+			current-speed = < 0x1c200 >;
+			tx-pin = < 0x6 >;
+			rx-pin = < 0x8 >;
+			rx-pull-up;
+			rts-pin = < 0x5 >;
+			cts-pin = < 0x7 >;
+			cts-pull-up;
+		};
+		i2c0: arduino_i2c: i2c@40003000 {
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			reg = < 0x40003000 0x1000 >;
+			clock-frequency = < 0x186a0 >;
+			interrupts = < 0x3 0x1 >;
+			status = "okay";
+			label = "I2C_0";
+			compatible = "nordic,nrf-twi";
+			sda-pin = < 0x1a >;
+			scl-pin = < 0x1b >;
+		};
+		spi0: spi@40003000 {
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			reg = < 0x40003000 0x1000 >;
+			interrupts = < 0x3 0x1 >;
+			status = "disabled";
+			label = "SPI_0";
+			compatible = "nordic,nrf-spi";
+			sck-pin = < 0x1b >;
+			mosi-pin = < 0x1a >;
+			miso-pin = < 0x1d >;
+		};
+		i2c1: i2c@40004000 {
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			reg = < 0x40004000 0x1000 >;
+			clock-frequency = < 0x186a0 >;
+			interrupts = < 0x4 0x1 >;
+			status = "disabled";
+			label = "I2C_1";
+			compatible = "nordic,nrf-twi";
+			sda-pin = < 0x1e >;
+			scl-pin = < 0x1f >;
+		};
+		spi1: spi@40004000 {
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			reg = < 0x40004000 0x1000 >;
+			interrupts = < 0x4 0x1 >;
+			status = "okay";
+			label = "SPI_1";
+			compatible = "nordic,nrf-spi";
+			sck-pin = < 0x1f >;
+			mosi-pin = < 0x1e >;
+			miso-pin = < 0x28 >;
+		};
+		gpiote: gpiote@40006000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = < 0x40006000 0x1000 >;
+			interrupts = < 0x6 0x5 >;
+			status = "okay";
+			label = "GPIOTE_0";
+		};
+		adc: adc@40007000 {
+			compatible = "nordic,nrf-saadc";
+			reg = < 0x40007000 0x1000 >;
+			interrupts = < 0x7 0x1 >;
+			status = "okay";
+			label = "ADC_0";
+			#io-channel-cells = < 0x1 >;
+			phandle = < 0x7 >;
+		};
+		timer0: timer@40008000 {
+			compatible = "nordic,nrf-timer";
+			status = "okay";
+			reg = < 0x40008000 0x1000 >;
+			cc-num = < 0x4 >;
+			interrupts = < 0x8 0x1 >;
+			prescaler = < 0x0 >;
+			label = "TIMER_0";
+		};
+		timer1: timer@40009000 {
+			compatible = "nordic,nrf-timer";
+			status = "okay";
+			reg = < 0x40009000 0x1000 >;
+			cc-num = < 0x4 >;
+			interrupts = < 0x9 0x1 >;
+			prescaler = < 0x0 >;
+			label = "TIMER_1";
+		};
+		timer2: timer@4000a000 {
+			compatible = "nordic,nrf-timer";
+			status = "okay";
+			reg = < 0x4000a000 0x1000 >;
+			cc-num = < 0x4 >;
+			interrupts = < 0xa 0x1 >;
+			prescaler = < 0x0 >;
+			label = "TIMER_2";
+			phandle = < 0x3 >;
+		};
+		rtc0: rtc@4000b000 {
+			compatible = "nordic,nrf-rtc";
+			reg = < 0x4000b000 0x1000 >;
+			cc-num = < 0x3 >;
+			interrupts = < 0xb 0x1 >;
+			status = "okay";
+			clock-frequency = < 0x8000 >;
+			prescaler = < 0x1 >;
+			label = "RTC_0";
+		};
+		temp: temp@4000c000 {
+			compatible = "nordic,nrf-temp";
+			reg = < 0x4000c000 0x1000 >;
+			interrupts = < 0xc 0x1 >;
+			status = "okay";
+			label = "TEMP_0";
+		};
+		rng: random@4000d000 {
+			compatible = "nordic,nrf-rng";
+			reg = < 0x4000d000 0x1000 >;
+			interrupts = < 0xd 0x1 >;
+			status = "okay";
+			label = "RNG";
+		};
+		ecb: ecb@4000e000 {
+			compatible = "nordic,nrf-ecb";
+			reg = < 0x4000e000 0x1000 >;
+			interrupts = < 0xe 0x1 >;
+			status = "okay";
+			label = "ECB";
+		};
+		wdt: wdt0: watchdog@40010000 {
+			compatible = "nordic,nrf-watchdog";
+			reg = < 0x40010000 0x1000 >;
+			interrupts = < 0x10 0x1 >;
+			status = "okay";
+			label = "WDT";
+		};
+		rtc1: rtc@40011000 {
+			compatible = "nordic,nrf-rtc";
+			reg = < 0x40011000 0x1000 >;
+			cc-num = < 0x4 >;
+			interrupts = < 0x11 0x1 >;
+			status = "okay";
+			clock-frequency = < 0x8000 >;
+			prescaler = < 0x1 >;
+			label = "RTC_1";
+		};
+		qdec: qdec@40012000 {
+			compatible = "nordic,nrf-qdec";
+			reg = < 0x40012000 0x1000 >;
+			interrupts = < 0x12 0x1 >;
+			status = "disabled";
+			label = "QDEC";
+		};
+		egu0: egu@40014000 {
+			compatible = "nordic,nrf-egu";
+			reg = < 0x40014000 0x1000 >;
+			interrupts = < 0x14 0x1 >;
+			status = "okay";
+		};
+		egu1: egu@40015000 {
+			compatible = "nordic,nrf-egu";
+			reg = < 0x40015000 0x1000 >;
+			interrupts = < 0x15 0x1 >;
+			status = "okay";
+		};
+		egu2: egu@40016000 {
+			compatible = "nordic,nrf-egu";
+			reg = < 0x40016000 0x1000 >;
+			interrupts = < 0x16 0x1 >;
+			status = "okay";
+		};
+		egu3: egu@40017000 {
+			compatible = "nordic,nrf-egu";
+			reg = < 0x40017000 0x1000 >;
+			interrupts = < 0x17 0x1 >;
+			status = "okay";
+		};
+		egu4: egu@40018000 {
+			compatible = "nordic,nrf-egu";
+			reg = < 0x40018000 0x1000 >;
+			interrupts = < 0x18 0x1 >;
+			status = "okay";
+		};
+		egu5: egu@40019000 {
+			compatible = "nordic,nrf-egu";
+			reg = < 0x40019000 0x1000 >;
+			interrupts = < 0x19 0x1 >;
+			status = "okay";
+		};
+		timer3: timer@4001a000 {
+			compatible = "nordic,nrf-timer";
+			status = "okay";
+			reg = < 0x4001a000 0x1000 >;
+			cc-num = < 0x6 >;
+			interrupts = < 0x1a 0x1 >;
+			prescaler = < 0x0 >;
+			label = "TIMER_3";
+		};
+		timer4: timer@4001b000 {
+			compatible = "nordic,nrf-timer";
+			status = "okay";
+			reg = < 0x4001b000 0x1000 >;
+			cc-num = < 0x6 >;
+			interrupts = < 0x1b 0x1 >;
+			prescaler = < 0x0 >;
+			label = "TIMER_4";
+		};
+		pwm0: pwm@4001c000 {
+			compatible = "nordic,nrf-pwm";
+			reg = < 0x4001c000 0x1000 >;
+			interrupts = < 0x1c 0x1 >;
+			status = "okay";
+			label = "PWM_0";
+			#pwm-cells = < 0x1 >;
+			ch0-pin = < 0xd >;
+			ch0-inverted;
+			phandle = < 0x5 >;
+		};
+		pdm0: pdm@4001d000 {
+			compatible = "nordic,nrf-pdm";
+			reg = < 0x4001d000 0x1000 >;
+			interrupts = < 0x1d 0x1 >;
+			status = "disabled";
+			label = "PDM_0";
+		};
+		flash_controller: flash-controller@4001e000 {
+			compatible = "nordic,nrf52-flash-controller";
+			reg = < 0x4001e000 0x1000 >;
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x1 >;
+			label = "NRF_FLASH_DRV_NAME";
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				label = "NRF_FLASH";
+				erase-block-size = < 0x1000 >;
+				write-block-size = < 0x4 >;
+				reg = < 0x0 0x100000 >;
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = < 0x1 >;
+					#size-cells = < 0x1 >;
+					boot_partition: partition@0 {
+						label = "mcuboot";
+						reg = < 0x0 0xc000 >;
+					};
+					slot0_partition: partition@c000 {
+						label = "image-0";
+						reg = < 0xc000 0x67000 >;
+					};
+					slot1_partition: partition@73000 {
+						label = "image-1";
+						reg = < 0x73000 0x67000 >;
+					};
+					scratch_partition: partition@da000 {
+						label = "image-scratch";
+						reg = < 0xda000 0x1e000 >;
+					};
+					storage_partition: partition@f8000 {
+						label = "storage";
+						reg = < 0xf8000 0x8000 >;
+					};
+				};
+			};
+		};
+		pwm1: pwm@40021000 {
+			compatible = "nordic,nrf-pwm";
+			reg = < 0x40021000 0x1000 >;
+			interrupts = < 0x21 0x1 >;
+			status = "disabled";
+			label = "PWM_1";
+			#pwm-cells = < 0x1 >;
+		};
+		pwm2: pwm@40022000 {
+			compatible = "nordic,nrf-pwm";
+			reg = < 0x40022000 0x1000 >;
+			interrupts = < 0x22 0x1 >;
+			status = "disabled";
+			label = "PWM_2";
+			#pwm-cells = < 0x1 >;
+		};
+		spi2: spi@40023000 {
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			reg = < 0x40023000 0x1000 >;
+			interrupts = < 0x23 0x1 >;
+			status = "disabled";
+			label = "SPI_2";
+			compatible = "nordic,nrf-spi";
+			sck-pin = < 0x13 >;
+			mosi-pin = < 0x14 >;
+			miso-pin = < 0x15 >;
+		};
+		rtc2: rtc@40024000 {
+			compatible = "nordic,nrf-rtc";
+			reg = < 0x40024000 0x1000 >;
+			cc-num = < 0x4 >;
+			interrupts = < 0x24 0x1 >;
+			status = "okay";
+			clock-frequency = < 0x8000 >;
+			prescaler = < 0x1 >;
+			label = "RTC_2";
+		};
+		i2s0: i2s@40025000 {
+			compatible = "nordic,nrf-i2s";
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			reg = < 0x40025000 0x1000 >;
+			interrupts = < 0x25 0x1 >;
+			status = "disabled";
+			label = "I2S_0";
+		};
+		usbd: zephyr_udc0: usbd@40027000 {
+			compatible = "nordic,nrf-usbd";
+			reg = < 0x40027000 0x1000 >;
+			interrupts = < 0x27 0x1 >;
+			num-bidir-endpoints = < 0x1 >;
+			num-in-endpoints = < 0x7 >;
+			num-out-endpoints = < 0x7 >;
+			num-isoin-endpoints = < 0x1 >;
+			num-isoout-endpoints = < 0x1 >;
+			status = "okay";
+			label = "USBD";
+		};
+		uart1: arduino_serial: uart@40028000 {
+			compatible = "nordic,nrf-uarte";
+			reg = < 0x40028000 0x1000 >;
+			interrupts = < 0x28 0x1 >;
+			status = "okay";
+			label = "UART_1";
+			current-speed = < 0x1c200 >;
+			rx-pin = < 0x21 >;
+			rx-pull-up;
+			tx-pin = < 0x22 >;
+		};
+		qspi: qspi@40029000 {
+			compatible = "nordic,nrf-qspi";
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			reg = < 0x40029000 0x1000 >;
+			interrupts = < 0x29 0x1 >;
+			status = "okay";
+			label = "QSPI";
+			sck-pin = < 0x13 >;
+			io-pins = < 0x14 >, < 0x15 >, < 0x16 >, < 0x17 >;
+			csn-pins = < 0x11 >;
+			mx25r64: mx25r6435f@0 {
+				compatible = "nordic,qspi-nor";
+				reg = < 0x0 >;
+				writeoc = "pp4io";
+				readoc = "read4io";
+				sck-frequency = < 0x7a1200 >;
+				label = "MX25R64";
+				jedec-id = [ C2 28 17 ];
+				sfdp-bfp = [ E5 20 F1 FF FF FF FF 03 44 EB 08 6B 08 3B 04 BB EE FF FF FF FF FF 00 FF FF FF 00 FF 0C 20 0F 52 10 D8 00 FF 23 72 F5 00 82 ED 04 CC 44 83 68 44 30 B0 30 B0 F7 C4 D5 5C 00 BE 29 FF F0 D0 FF FF ];
+				size = < 0x4000000 >;
+				has-dpd;
+				t-enter-dpd = < 0x2710 >;
+				t-exit-dpd = < 0x88b8 >;
+			};
+		};
+		pwm3: pwm@4002d000 {
+			compatible = "nordic,nrf-pwm";
+			reg = < 0x4002d000 0x1000 >;
+			interrupts = < 0x2d 0x1 >;
+			status = "disabled";
+			label = "PWM_3";
+			#pwm-cells = < 0x1 >;
+		};
+		spi3: arduino_spi: spi@4002f000 {
+			compatible = "nordic,nrf-spim";
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			reg = < 0x4002f000 0x1000 >;
+			interrupts = < 0x2f 0x1 >;
+			status = "okay";
+			label = "SPI_3";
+			sck-pin = < 0x2f >;
+			miso-pin = < 0x2e >;
+			mosi-pin = < 0x2d >;
+			cs-gpios = < &arduino_header 0x10 0x1 >;
+		};
+		gpio0: gpio@50000000 {
+			compatible = "nordic,nrf-gpio";
+			gpio-controller;
+			reg = < 0x50000000 0x200 0x50000500 0x300 >;
+			#gpio-cells = < 0x2 >;
+			label = "GPIO_0";
+			status = "okay";
+			port = < 0x0 >;
+			phandle = < 0x4 >;
+		};
+		gpio1: gpio@50000300 {
+			compatible = "nordic,nrf-gpio";
+			gpio-controller;
+			reg = < 0x50000300 0x200 0x50000800 0x300 >;
+			#gpio-cells = < 0x2 >;
+			ngpios = < 0x10 >;
+			label = "GPIO_1";
+			status = "okay";
+			port = < 0x1 >;
+			phandle = < 0x6 >;
+		};
+		cryptocell: crypto@5002a000 {
+			compatible = "nordic,nrf-cc310";
+			reg = < 0x5002a000 0x1000 >;
+			label = "CRYPTOCELL";
+			status = "okay";
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x1 >;
+			cryptocell310: crypto@5002b000 {
+				compatible = "arm,cryptocell-310";
+				reg = < 0x5002b000 0x1000 >;
+				interrupts = < 0x2a 0x1 >;
+				label = "CRYPTOCELL310";
+			};
+		};
+	};
+	cpus {
+		#address-cells = < 0x1 >;
+		#size-cells = < 0x0 >;
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = < 0x0 >;
+			swo-ref-frequency = < 0x1e84800 >;
+		};
+	};
+	sw_pwm: sw-pwm {
+		compatible = "nordic,nrf-sw-pwm";
+		status = "disabled";
+		label = "SW_PWM";
+		generator = < &timer2 >;
+		channel-count = < 0x3 >;
+		clock-prescaler = < 0x0 >;
+		ppi-base = < 0x0 >;
+		gpiote-base = < 0x0 >;
+		#pwm-cells = < 0x1 >;
+	};
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = < &gpio0 0xd 0x1 >;
+			label = "Green LED 0";
+		};
+		led1: led_1 {
+			gpios = < &gpio0 0xe 0x1 >;
+			label = "Green LED 1";
+		};
+		led2: led_2 {
+			gpios = < &gpio0 0xf 0x1 >;
+			label = "Green LED 2";
+		};
+		led3: led_3 {
+			gpios = < &gpio0 0x10 0x1 >;
+			label = "Green LED 3";
+		};
+	};
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = < &pwm0 0xd >;
+		};
+	};
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = < &gpio0 0xb 0x11 >;
+			label = "Push button switch 0";
+		};
+		button1: button_1 {
+			gpios = < &gpio0 0xc 0x11 >;
+			label = "Push button switch 1";
+		};
+		button2: button_2 {
+			gpios = < &gpio0 0x18 0x11 >;
+			label = "Push button switch 2";
+		};
+		button3: button_3 {
+			gpios = < &gpio0 0x19 0x11 >;
+			label = "Push button switch 3";
+		};
+	};
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = < 0x2 >;
+		gpio-map-mask = < 0xffffffff 0xffffffc0 >;
+		gpio-map-pass-thru = < 0x0 0x3f >;
+		gpio-map = < 0x0 0x0 &gpio0 0x3 0x0 >, < 0x1 0x0 &gpio0 0x4 0x0 >, < 0x2 0x0 &gpio0 0x1c 0x0 >, < 0x3 0x0 &gpio0 0x1d 0x0 >, < 0x4 0x0 &gpio0 0x1e 0x0 >, < 0x5 0x0 &gpio0 0x1f 0x0 >, < 0x6 0x0 &gpio1 0x1 0x0 >, < 0x7 0x0 &gpio1 0x2 0x0 >, < 0x8 0x0 &gpio1 0x3 0x0 >, < 0x9 0x0 &gpio1 0x4 0x0 >, < 0xa 0x0 &gpio1 0x5 0x0 >, < 0xb 0x0 &gpio1 0x6 0x0 >, < 0xc 0x0 &gpio1 0x7 0x0 >, < 0xd 0x0 &gpio1 0x8 0x0 >, < 0xe 0x0 &gpio1 0xa 0x0 >, < 0xf 0x0 &gpio1 0xb 0x0 >, < 0x10 0x0 &gpio1 0xc 0x0 >, < 0x11 0x0 &gpio1 0xd 0x0 >, < 0x12 0x0 &gpio1 0xe 0x0 >, < 0x13 0x0 &gpio1 0xf 0x0 >, < 0x14 0x0 &gpio0 0x1a 0x0 >, < 0x15 0x0 &gpio0 0x1b 0x0 >;
+		phandle = < 0x2 >;
+	};
+	arduino_adc: analog-connector {
+		compatible = "arduino,uno-adc";
+		#io-channel-cells = < 0x1 >;
+		io-channel-map = < 0x0 &adc 0x1 >, < 0x1 &adc 0x2 >, < 0x2 &adc 0x4 >, < 0x3 &adc 0x5 >, < 0x4 &adc 0x6 >, < 0x5 &adc 0x7 >;
+	};
+};

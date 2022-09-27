@@ -1,0 +1,54 @@
+# Available runners configured by board.cmake.
+runners:
+- nrfjprog
+- jlink
+- pyocd
+- openocd
+
+# Default flash runner if --runner is not given.
+flash-runner: nrfjprog
+
+# Default debug runner if --runner is not given.
+debug-runner: jlink
+
+# Common runner configuration values.
+config:
+  board_dir: /home/smithy/repos/zephyrproject/zephyr/boards/arm/nrf52840dk_nrf52840
+  # Build outputs:
+  elf_file: zephyr.elf
+  hex_file: zephyr.hex
+  bin_file: zephyr.bin
+  # Host tools:
+  gdb: /opt/zephyr-sdk-0.13.2/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb
+  openocd: /opt/zephyr-sdk-0.13.2/sysroots/x86_64-pokysdk-linux/usr/bin/openocd
+  openocd_search:
+    - /opt/zephyr-sdk-0.13.2/sysroots/x86_64-pokysdk-linux/usr/share/openocd/scripts
+
+# Runner specific arguments
+args:
+  nrfjprog:
+    - --erase
+  jlink:
+    - --dt-flash=y
+    - --device=nrf52
+    - --speed=4000
+  pyocd:
+    - --dt-flash=y
+    - --target=nrf52840
+    - --frequency=4000000
+    - --flash-opt=-e=chip
+    - --flash-opt=-e=chip
+    - --flash-opt=-e=chip
+  openocd:
+    - --cmd-load
+    - flash write_image erase
+    - --cmd-verify
+    - verify_image
+    - --cmd-pre-init
+    - set WORKAREASIZE 0x4000
+    - --cmd-pre-init
+    - source [find interface/jlink.cfg]
+    - --cmd-pre-init
+    - transport select swd
+    - --cmd-pre-init
+    - source [find target/nrf52.cfg]
