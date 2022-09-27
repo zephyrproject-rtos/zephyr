@@ -495,16 +495,18 @@ Drivers and Sensors
 * Clock control
 
   * STM32: PLL_P, PLL_Q, PLL_R outputs can now be used as domain clock.
-  * Added driver for GigaDevice GD32 SoCs (peripheral clocks configuration only)
+  * Added driver for GigaDevice GD32 SoCs (peripheral clocks configuration only).
+  * Documented behavior when clock is not on.
 
 * Coredump
 
 * Counter
 
+  * Added :c:func:`counter_get_value_64` function.
   * STM32: RTC : Now supports STM32U5 and STM32F1 series.
   * STM32: Timer : Now supports STM32L4 series.
   * Added counter support using CTimer for NXP MIMXRT595.
-  * ESP32: Added support to Pulse Counter Mode (PCNT)
+  * ESP32: Added support to Pulse Counter Mode (PCNT) and RTC.
 
 * Crypto
 
@@ -1338,6 +1340,13 @@ Libraries / Subsystems
   * Renamed global constructor list symbols to prevent the native POSIX host
     runtime from executing the constructors before Zephyr loads.
 
+* Cbprintf
+
+  * Updated cbprintf static packaging to interpret ``unsigned char *`` as a pointer
+    to a string. See :ref:`cbprintf_packaging_limitations` for more details about
+    how to efficienty use strings. Change mainly applies to the ``logging`` subsystem
+    since it uses this feature.
+
 * Emul
 
   * Added :c:macro:`EMUL_DT_DEFINE` and :c:macro:`EMUL_DT_INST_DEFINE` to mirror
@@ -1412,14 +1421,14 @@ Libraries / Subsystems
   * MCUMGR img_mgmt image upload over-riding/hiding of result codes has been
     fixed.
 
-* Cbprintf and logging
+* Logging
 
-  * Updated cbprintf static packaging to interpret ``unsigned char *`` as a pointer
-    to a string. See :ref:`cbprintf_packaging_limitations` for more details about
-    how to efficienty use strings. Change mainly applies to the ``logging`` subsystem
-    since it uses this feature.
+  * Removed legacy (v1) implementation and removed any references to the logging
+    v2.
   * Added :c:macro:`LOG_RAW` for logging strings without additional formatting.
     It is similar to :c:macro:`LOG_PRINTK` but do not append ``<cr>`` when new line is found.
+  * Improvements in the ADSP backend.
+  * File system backend: Only delete old files if necessary.
 
 * IPC
 
