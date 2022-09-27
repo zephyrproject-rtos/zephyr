@@ -813,7 +813,7 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_audio_stream_qos(default_conn, default_unicast_group);
 	if (err) {
-		shell_error(sh, "Unable to setup QoS");
+		shell_error(sh, "Unable to setup QoS: %d", err);
 		return -ENOEXEC;
 	}
 
