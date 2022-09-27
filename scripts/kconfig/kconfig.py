@@ -24,7 +24,7 @@ from devicetree import edtlib
 # Zephyr doesn't use tristate symbols. They're supported here just to make the
 # script a bit more generic.
 from kconfiglib import Kconfig, split_expr, expr_value, expr_str, BOOL, \
-                       TRISTATE, TRI_TO_STR, AND, OR
+                       TRISTATE, TRI_TO_STR, AND, OR, STRING, TYPE_TO_STR, Symbol
 
 
 def main():
@@ -111,6 +111,63 @@ def main():
             edt = pickle.load(f)
     else:
         edt = None
+
+    SYM_TO_TYPE = {
+       "FLASH_HAS_DRIVER_ENABLED": "api",
+       "SERIAL_HAS_DRIVER": "api",
+       "ENTROPY_HAS_DRIVER": "api",
+       "SERIAL_SUPPORT_INTERRUPT": "feature",
+       "SERIAL_SUPPORT_ASYNC": "feature",
+    }
+
+    if edt:
+        for compat in edt.compat2okay.keys():
+           device_sym = compat2symbol(kconf, compat)
+
+           if device_sym:
+#           print("C: %s" % compat)
+#           print("N: %s" % device_sym.name)
+#           print(device_sym)
+#           for r in device_sym.referenced:
+#              if isinstance(r, Symbol) and r != kconf.y:
+#                 print("R: %s" % r.name)
+             for (sym, cond) in device_sym.selects:
+#              print("S: %s" % sym.name)
+                  if sym.name in SYM_TO_TYPE:
+                     print('dts compatible: "%s"     Kconfig Symbol: %s' % (compat, device_sym.name))
+                     print("%s - %s" % (SYM_TO_TYPE[sym.name], sym.name))
+                     print("")
+
+def compat2symbol(kconf, compat):
+    dt_sym = None
+    for sym in kconf.syms.values():
+       if sym.type == STRING and sym.str_value == compat:
+           dt_sym = sym
+
+    if dt_sym == None:
+#       print("error found no symbol matching %s" % compat)
+       return None
+
+    dt_has_sym = None
+    for r in dt_sym.referenced:
+       if isinstance(r, Symbol):
+          if "DT_HAS_" in r.name:
+             dt_has_sym = r
+
+    if dt_has_sym == None:
+       print("error found no symbol matching %s" % compat)
+
+    device_sym = None
+    for sym in kconf.syms.values():
+        if sym == dt_sym:
+           continue
+        for r in sym.referenced:
+           if isinstance(r, Symbol) and r == dt_has_sym:
+              if device_sym:
+                 print("ERROR - only expect one device symbol to match")
+              device_sym = sym
+
+    return device_sym
 
 
 def check_no_promptless_assign(kconf):
