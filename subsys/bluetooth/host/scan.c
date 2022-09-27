@@ -870,11 +870,13 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 	if (pending_per_adv_sync) {
 		atomic_clear_bit(pending_per_adv_sync->flags,
 				 BT_PER_ADV_SYNC_SYNCING);
+#if 0
 		err = bt_le_scan_update(false);
 
 		if (err) {
 			BT_ERR("Could not update scan (%d)", err);
 		}
+#endif
 	}
 
 	if (evt->status == BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
@@ -1474,6 +1476,7 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 
 	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCING);
 
+#if 0
 	/* Syncing requires that scan is enabled. If the caller doesn't enable
 	 * scan first, we enable it here, and disable it once the sync has been
 	 * established. We don't need to use any callbacks since we rely on
@@ -1487,6 +1490,7 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 			return err;
 		}
 	}
+#endif
 
 	*out_sync = per_adv_sync;
 	bt_addr_le_copy(&per_adv_sync->addr, &param->addr);
