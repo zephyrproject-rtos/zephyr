@@ -138,11 +138,8 @@ static int gpio_esp32_config(const struct device *dev,
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 			int rtcio_num = rtc_io_num_map[io_pin];
 
-			if (rtc_io_desc[rtcio_num].pulldown) {
+			if (rtc_io_desc[rtcio_num].pullup) {
 				rtcio_hal_pullup_disable(rtcio_num);
-			} else {
-				ret = -ENOTSUP;
-				goto end;
 			}
 #else
 			ret = -ENOTSUP;
@@ -187,9 +184,6 @@ static int gpio_esp32_config(const struct device *dev,
 
 			if (rtc_io_desc[rtcio_num].pulldown) {
 				rtcio_hal_pulldown_disable(rtcio_num);
-			} else {
-				ret = -ENOTSUP;
-				goto end;
 			}
 #else
 			ret = -ENOTSUP;
