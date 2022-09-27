@@ -225,6 +225,11 @@ static void sync_cb(struct bt_le_per_adv_sync *sync,
 		   k_uptime_get_32(),
 	       bt_le_per_adv_sync_get_index(sync), le_addr,
 	       info->interval, info->interval * 5 / 4, phy2str(info->phy));
+
+	if (sync == syncForList) {
+		syncForList = NULL;
+	}
+
 #ifdef USE_PER_ADV_LIST
 	uint8_t device_index = findTagIndexInSyncedListByAddr(info->addr, NULL);
 	if (device_index == LIST_INDEX_NONE) {
@@ -697,13 +702,24 @@ static void check_restart_scanning_syncing(void)
     }
 	if (numSynced >= NUM_SYNC_TO_RESTART_SCAN) {
 		LOG_WRN("RESTARTING SCAN AND SYNC...");
+
+#ifdef USE_PER_ADV_LIST
+		if (syncForList) {
+			ret = bt_le_per_adv_sync_delete(syncForList);
+			__ASSERT_NO_MSG(!ret);
+		}
+#endif
 		scan_disable();
-		ret = bt_le_per_adv_list_clear();
 		cancel_all_synced();
 		memset(sync_devices, 0, sizeof(sync_devices));
+		ret = bt_le_per_adv_list_clear();
 		__ASSERT_NO_MSG(ret == 0);
 		k_msleep(200);
 		scan_enable();
+#ifdef USE_PER_ADV_LIST
+		restart_per_adv_list_syncing();
+#endif
+
 		LOG_WRN("RESTARTED!");
 	}
 }
