@@ -106,11 +106,11 @@ class Issues:
             pass
 
     def issues_since(self, date, state="closed"):
-        self.list_issues("%s/issues?state=%s&since=%s" %
+        self.list_issues("%s/issues?per_page=100&state=%s&since=%s" %
                          (self.github_url, state, date))
 
     def pull_requests(self, base='v1.14-branch', state='closed'):
-        self.list_issues("%s/pulls?state=%s&base=%s" %
+        self.list_issues("%s/pulls?per_page=100&state=%s&base=%s" %
                          (self.github_url, state, base))
 
 
