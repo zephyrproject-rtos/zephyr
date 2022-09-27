@@ -1713,7 +1713,6 @@ Known Issues
 - :github:`41822` - BLE IPSP sample cannot handle large ICMPv6 Echo Request
 - :github:`41823` - Bluetooth: Controller: llcp: Remote request are dropped due to lack of free proc_ctx
 - :github:`42030` - can: "bosch,m-can-base": Warning "missing or empty reg/ranges property"
-- :github:`42653` - [ 2.7.1] STM32 Hangs sending TCP packets
 - :github:`43099` - CMake: ARCH roots issue
 - :github:`43249` - MBEDTLS_ECP_C not build when MBEDTLS_USE_PSA_CRYPTO
 - :github:`43308` - driver: serial: stm32: uart will lost data when use dma mode[async mode]
@@ -1802,7 +1801,6 @@ Known Issues
 - :github:`50084` - drivers: nrf_802154: nrf_802154_trx.c - assertion fault when enabling Segger SystemView tracing
 - :github:`50095` - ARC revision Kconfigs wrongly mixed with board name
 - :github:`50149` - tests: drivers: flash fails on nucleo_l152re because of wrong erase flash size
-- :github:`50193` - Impossible to connect with a peripheral with BLE and zephyr 2.7.99, BT_HCI_ERR_UNKNOWN_CONN_ID error
 - :github:`50196` - LSM6DSO interrupt handler not being called
 - :github:`50256` - I2C on SAMC21 sends out stop condition incorrectly
 - :github:`50306` - Not able to flash stm32h735g_disco - TARGET: stm32h7x.cpu0 - Not halted
@@ -1822,7 +1820,6 @@ Known Issues
 - :github:`50570` - samples/drivers/can/counter fails in twister for native_posix
 - :github:`50587` - Regression in Link Layer Control Procedure (LLCP)
 - :github:`50590` - openocd: Can't flash on various STM32 boards
-- :github:`50596` - Documentation: Broken links in the previous release documentation
 - :github:`50598` - UDP over IPSP not working on nRF52840
 - :github:`50614` - Zephyr if got the ip is "10.xxx.xxx.xxx" when join in the switchboard, then the device may can not visit the outer net, also unable to Ping.
 - :github:`50620` - fifo test fails with CONFIG_CMAKE_LINKER_GENERATOR enabled on qemu_cortex_a9
@@ -1844,7 +1841,6 @@ Known Issues
 - :github:`50801` - JSON parser fails on multidimensional arrays
 - :github:`50812` - MCUmgr udp sample fails with shell - BUS FAULT
 - :github:`50841` - high SRAM usage with picolibc on nRF platforms
-- :github:`50844` - zcbor module apis which are used for mcu boot functionality are not building in cpp file against v3.1.0
 
 Addressed issues
 ================
@@ -1852,7 +1848,6 @@ Addressed issues
 * :github:`50861` - Intel ADSP HDA and GPDMA Bugs
 * :github:`50843` - tests: kernel: timer: timer_behavior: kernel.timer.timer - SRAM overflow on nrf5340dk_nrf5340_cpunet and nrf52dk_nrf52832
 * :github:`50841` - high SRAM usage with picolibc on some userspace platforms
-* :github:`50837` - > I think the CI build failures are unrelated to the changes, but will need to be resolved as well. Maybe @nandojve can help out here?
 * :github:`50774` - ESP32 GPIO34 IRQ not working
 * :github:`50771` - mcan driver has tx and rx error counts swapped
 * :github:`50754` - MCUboot update breaks compilation for boards without CONFIG_WATCHDOG=y
@@ -1863,10 +1858,7 @@ Addressed issues
 * :github:`50681` - gpio: ite: gpio_ite_configure() neither supporting nor throwing error when gpio is configured with GPIO_DISCONNECTED flag
 * :github:`50656` - Wrong definition of bank size for intel memory management driver.
 * :github:`50654` - Some files are being ALWAYS built, without them being used
-* :github:`50653` - Contributor nomination of Stine Åkredalen
 * :github:`50635` - hal: stm32: valid pins were removed in the last version
-* :github:`50634` - nominate me as zephyr contributor
-* :github:`50632` - nominate me as zephyr contributor
 * :github:`50631` - Please Add __heapstats() to stdlib.h
 * :github:`50621` - The history of the multi API / MFD discussions 2022 July - Sep
 * :github:`50619` - tests/kernel/timer/starve fails to run on devices
@@ -1882,10 +1874,7 @@ Addressed issues
 * :github:`50522` - mgmt: mcumgr: img_mgmt: Failure of erase returns nothing
 * :github:`50520` - Bluetooth: bsim eatt_notif test fails with assertion in some environments
 * :github:`50502` - iMX 7D GPIO Pinmux Array Has Incorrect Ordering
-* :github:`50498` - [backport v2.7-branch] backport of #50493 failed
 * :github:`50482` - mcumgr: img_mgmt: zephyr_img_mgmt_flash_area_id has wrong slot3 ID
-* :github:`50472` - [backport v3.0-branch] backport of #50459 failed
-* :github:`50471` - [backport v2.7-branch] backport of #50459 failed
 * :github:`50468` - Incorrect Z_THREAD_STACK_BUFFER in arch_start_cpu for Xtensa
 * :github:`50467` - Possible memory corruption on ARC when userspace is enabled
 * :github:`50465` - Possible memory corruption on RISCV when userspace is enabled
@@ -1907,9 +1896,6 @@ Addressed issues
 * :github:`50330` - Fail to find GICv3 Redistributor base address for Cortex-R52 running in a cluster different than 0
 * :github:`50327` - JLink needs flashloader for MIMXRT1060-EVK
 * :github:`50317` - boards/arm/thingy53_nrf5340: lack of mcuboot's gpio aliases
-* :github:`50309` - [backport v3.0-branch] backport of #50301 failed
-* :github:`50308` - [backport v2.7-auditable-branch] backport of #50301 failed
-* :github:`50307` - [backport v2.7-branch] backport of #50301 failed
 * :github:`50306` - Not able to flash stm32h735g_disco - TARGET: stm32h7x.cpu0 - Not halted
 * :github:`50299` - CI fails building stm32u5  tests/subsys/pm/device_runtime_api
 * :github:`50297` - mcumgr: fs_mgmt: hash/checksum: Build warnings on native_posix_64
@@ -1926,7 +1912,6 @@ Addressed issues
 * :github:`50232` - gpio_shell: Not functional anymore following DT label cleanup and deprecation
 * :github:`50226` - MPU FAULT: Stacking error with lvgl on lv_timer_handler()
 * :github:`50224` - tests/kernel/tickless/tickless_concept: Failed on STM32
-* :github:`50221` - tests: debug: test case subsys/debug/coredump failed on acrn_ehl_crb on branch v2.7
 * :github:`50219` - Kernel tests failing on qemu_riscv32_smp
 * :github:`50218` - rcar_h3ulcb: can: failed to run RTR test cases
 * :github:`50214` - Missing human readable names in names file od deive structure
@@ -1934,7 +1919,6 @@ Addressed issues
 * :github:`50192` - nrf_qspi_nor driver might crash if power management is enabled
 * :github:`50191` - nrf_qspi_nor-driver leaves CS pin to undefined state when pinctrl is enabled
 * :github:`50172` - QSPI NAND Flash driver question
-* :github:`50167` - zephyr ,52832, hci_uart Qemu emulator
 * :github:`50165` - boards: riscv: ite: No flash and RAM stats are shown whenever building ITE board
 * :github:`50158` - Drivers: gpio: stm32u5 portG not working
 * :github:`50152` - SMT32: incorrect internal temperature value
@@ -2015,7 +1999,6 @@ Addressed issues
 * :github:`49662` - hello world+ mcuboot is not working
 * :github:`49661` - mcumgr: bt transport runs in system workqueue thread and can cause resource deadlock
 * :github:`49659` - logging: LOG_* appends 0x0D to 0x0A
-* :github:`49658` - v3.1-branch: some cases failed with build warnings after upgrading zephyr sdk to 0.15.0.
 * :github:`49648` - tests/subsys/logging/log_switch_format, log_syst build failures on CAVS
 * :github:`49637` - CMSIS-DSP tests broken with SDK 0.15.0
 * :github:`49631` - arch: arm: FP stack warning with GCC 12 and ``CONFIG_FPU=y``
@@ -2036,8 +2019,6 @@ Addressed issues
 * :github:`49578` - [RFC] Deprecate <zephyr/zephyr.h>
 * :github:`49576` - tests: kernel: timer: timer_behavior: kernel.timer.timer fails
 * :github:`49572` - Reproducable builds with MCUboot signing
-* :github:`49569` - Backport cmake string cache fix to v2.7 branch
-* :github:`49564` - Newer versions of pylink are not supported in latest zephyr 2.7 release
 * :github:`49542` - sdk: it8xxx2_evb cannot build the hello_world sample after zephyr SDK upgrade to 0.15.0
 * :github:`49540` - Bluetooth: Host: sync termination callback parameters not populated correctly when using per. adv. list feature.
 * :github:`49531` - LE Audio: Broadcast Sink not supporting general and specific BIS codec configurations in the BASE
@@ -2046,7 +2027,6 @@ Addressed issues
 * :github:`49493` - Bluetooth: ISO: samples/bluetooth/broadcast_audio_source error -122
 * :github:`49491` - arch.interrupt test fails on ARM64 QEMU targets when compiled with GCC 12
 * :github:`49482` - stm32g0 interrupts for usart3,4,5,6 all set to 29
-* :github:`49479` - v2.7: openthread/coprocessor building gives fatal error: logging/log.h: No such file or directory
 * :github:`49471` - stm32: dietemp node generates warning
 * :github:`49465` - Bluetooth: Controller: Periodic adv. sync. degraded performance on latest main branch
 * :github:`49463` - STM32G0B0 errors out on stm32g0_disable_dead_battery function in soc.c
@@ -2057,16 +2037,13 @@ Addressed issues
 * :github:`49439` - test-ci: lpcxpresso54114_m4: libraries.devicetree.devices.requires test failure
 * :github:`49410` - Bluetooth: Scan responses with info about periodic adv. sometimes stops being reported
 * :github:`49406` - flash_stm32_ospi: OSPI wr in OPI/STR mode is for 32bit address only
-* :github:`49387` - Question about the IPM api: max_id_val_get and max_data_size_get
 * :github:`49360` - west boards doesn't print boards from modules
 * :github:`49359` - nrf5*: crash when Bluetooth advertisements and flash write/erase are used simultaneously
-* :github:`49354` - release: zephyr v2.7.3 LTS
 * :github:`49350` - RFC: Add arch aligned memory Kconfig option
 * :github:`49342` - Zephyr hci_usb sample cannot use LE coded phy
 * :github:`49331` - device if got the ip is "10.4.239.xxx" when join in the switchboard, then the device can not visit the outer net.
 * :github:`49329` - twister: frdm_k64f: test string mismatch
 * :github:`49315` - loopback socket send from shell hangs
-* :github:`49310` - [2.7] update release notes for v2.7.3
 * :github:`49305` - Can't read and write to the Nor Flash at address 0x402a8000 on RT1060
 * :github:`49268` - tests: samples/boards/stm32/power_mgmt/serial_wakeup failed on mec15xxevb_assy6853 (and several stm32 boards)
 * :github:`49263` - ztest: tracing backend works incorrectly when new ZTEST enabled.
@@ -2087,10 +2064,8 @@ Addressed issues
 * :github:`49154` - SDMMC driver with STM32 U575
 * :github:`49145` - tests: kernel: fifo: fifo_timeout: kernel.fifo.timeout fails on nrf5340dk_nrf5340_cpuapp
 * :github:`49142` - Bluetooth: Audio: MCC subscribe failure
-* :github:`49139` - [v2.7-branch] can't run west or DT tests on windows / py 3.6
 * :github:`49136` - L2CAP ecred test cases failed.
 * :github:`49134` - STM32G070RBT6 can not build with zephyr 3.1.99
-* :github:`49124` - Self triage nomination Bjarki Arge Andreasen
 * :github:`49119` - ARC: west: mdb runner: fix folder where MDB is run
 * :github:`49116` - cmake cached BOARD_DIR variable does not get overwritten
 * :github:`49106` - Add cherryusb as a module
@@ -2098,10 +2073,8 @@ Addressed issues
 * :github:`49102` - hawkbit - dns name randomly not resolved
 * :github:`49100` - STM b_u585i_iot02a  NOR flash and OSPI_SPI_MODE, erase failed
 * :github:`49086` - twister: frdm_k64f: twister process blocks after the flash error occurs
-* :github:`49079` - Upll clock
 * :github:`49074` - GD32: Use clocks instead rcu-periph-clock property
 * :github:`49073` - SOC_FLASH_LPC vs SOC_FLASH_MCUX
-* :github:`49071` - [v2.7] DTLS handshake time out after migration zephyr 2.7.x
 * :github:`49066` - Mcumgr img_mgmt_impl_upload_inspect() can cause unaligned memory access hard fault.
 * :github:`49057` - USB Mass Storage Sample crashes due to overflow of Mass Storage Stack
 * :github:`49056` - STM b_u585i_iot02a MCUboot crash
@@ -2215,14 +2188,8 @@ Addressed issues
 * :github:`48290` - ESP32 ble no work while enable CONFIG_SETTINGS
 * :github:`48282` - BT_H4 overriding BT_SPI=y causing build to fail - HCI Host only build SPI bus
 * :github:`48281` - Fix github permissions for user "alevkoy"
-* :github:`48271` - [v2.7-branch] net: Possible net_pkt leak in ipv6 multicast forwarding
-* :github:`48270` - [v3.0-branch] net: Possible net_pkt leak in ipv6 multicast forwarding
-* :github:`48269` - [v3.1-branch] net: Possible net_pkt leak in ipv6 multicast forwarding
 * :github:`48267` - No model in devicetree_unfixed.h :
-* :github:`48263` - [v3.1-branch] net: net_bufs are leaked when net_pkt_shallow_clone() is used
 * :github:`48253` - Only the first failing test is aborted and marked failed
-* :github:`48251` - [v3.1-branch] boards: nucleo_wb55rg: documentation BLE binary compatibility issue
-* :github:`48249` - [v2.7-branch] boards: nucleo_wb55rg: documentation BLE binary compatibility issue
 * :github:`48223` - base64.c encode returns wrong count of output bytes
 * :github:`48220` - adxl345: sensor value calculation should be wrong
 * :github:`48216` - Running gPTP sample application on SAMe54 Xplained pro(Supports IEEE 802.1 AS gPTP clock) , PDelay Response Receipt Timeout
@@ -2251,12 +2218,8 @@ Addressed issues
 * :github:`47987` - test: samples/boards/mec15xxevb_assy6853/power_management failed after commit 5f60164a0fc
 * :github:`47986` - Rework of STM32 bxCAN driver filter handling required
 * :github:`47985` - ARC wrong .debug_frame
-* :github:`47973` - [backport v2.7-branch] backport of #40410 failed
-* :github:`47972` - [backport v2.7-branch] backport of #39531 failed
 * :github:`47970` - Flash: SFDP parameter address is not correct
 * :github:`47966` - TCP: Zero window probe packet incorrect
-* :github:`47956` - [backport v3.0-branch] backport of #47903 failed
-* :github:`47955` - [backport v2.7-branch] backport of #47903 failed
 * :github:`47948` - _kernel.threads' always points to NULL(0x0000'0000)
 * :github:`47942` - Mutex priority inheritance when thread holds multiple mutexes
 * :github:`47933` - tests: subsys: logging: log_switch_format: logging.log_switch_format - test_log_switch_format_success_case - Assertion failed
@@ -2343,7 +2306,6 @@ Addressed issues
 * :github:`47204` - CAN filter with RTR mask causes infinite loop in MCAN driver on filtered message arrival
 * :github:`47197` - BLE latency decreasing and increasing over time (possibly GPIO issue)
 * :github:`47146` - STM32F103:  USB clock prescaler isn't set during USB initialisation
-* :github:`47134` - [backport v3.0-branch] backport of #46195 failed
 * :github:`47127` - twister : frdm_k64f ：Non-existent tests appear and fail on tests/lib/cmsis_dsp/transform
 * :github:`47126` - New ztest API: build failure on qemu_cortex_m3 when CONFIG_CMAKE_LINKER_GENERATOR=y
 * :github:`47119` - ADC_DT_SPEC_GET not working for channels >= 10
@@ -2360,13 +2322,11 @@ Addressed issues
 * :github:`47061` - pipes: Usage between task and ISR results in corrupted pipe state
 * :github:`47054` - it8xxx2_evb: flash fail in daily test
 * :github:`47051` - drivers: usb: stm32: usb_write size on bulk transfer problematic
-* :github:`47049` - [backport v2.7-branch] backport of #46699 failed
 * :github:`47046` - samples/net/sockets/packet: Bus fault
 * :github:`47030` - drivers: gpio: nrfx: return -ENOTSUP rather than -EIO for misconfigurations
 * :github:`47025` - mimxrt1050_evk: reset cause
 * :github:`47021` - Integrate Würth Elektronik Sensors SDK code for use in sensor drivers
 * :github:`47010` - ACRN: failed to run the test case tests/drivers/coredump/coredump_api
-* :github:`46994` - [v2.7] Incorrect Xtensa toolchain path resolution
 * :github:`46988` - samples: net: openthread: coprocessor: RCP is missing required capabilities: tx-security tx-timing
 * :github:`46985` - uOSCORE/uEDHOC integration as a Zephyr module
 * :github:`46962` - Regression in apds9960 driver
@@ -2447,7 +2407,6 @@ Addressed issues
 * :github:`46444` - Proposal to integrate Cadence QSPI driver from Trusted Firmware-A
 * :github:`46434` - ESP32-C3 UART1 broken since introduction of pinctrl
 * :github:`46426` - Intel CAVS: Assertion failures on tests/boards/intel_adsp/smoke
-* :github:`46424` - Triage role for bbilas
 * :github:`46422` - SDK version 14.2 increases image size significantly
 * :github:`46414` - mcuboot: rt1060: confirmed image causes usage fault
 * :github:`46413` - No multicast reception on IMX1064
@@ -2474,7 +2433,6 @@ Addressed issues
 * :github:`46324` - it8xxx2_evb: tests/kernel/sched/schedule_api fail due to k_sleep(K_MSEC(100)) not correct
 * :github:`46322` - Time units in shtcx sensor
 * :github:`46312` - sample: bluetooth: ipsp - TCP not running over IPSP
-* :github:`46304` - [backport v3.1-branch] backport of #45941 failed
 * :github:`46286` - python-devicetree tox run fails
 * :github:`46285` - nrf_qspi_nor: Inconsistent state of HOLD and WP for QSPI command execution causes hang on startup for some flash chips
 * :github:`46284` - ring buffer in item mode crashes
@@ -2502,8 +2460,6 @@ Addressed issues
 * :github:`46117` - Kernel events can’t be manipulated without race conditions
 * :github:`46100` - lib: posix: support for perror()
 * :github:`46099` - libc: minimal: add strerror() function
-* :github:`46089` - [backport v3.0-branch] backport of #44102 failed
-* :github:`46088` - [backport v2.7-branch] backport of #44102 failed
 * :github:`46075` - BT HCI Raw on STM32WB55RG
 * :github:`46072` - subsys/hawkBit: Debug log error in hawkbit example "CONFIG_LOG_STRDUP_MAX_STRING"
 * :github:`46066` - TF-M: Unable to trigger NMI interrupt from non-secure
@@ -2572,11 +2528,9 @@ Addressed issues
 * :github:`44925` - intel_adsp_cavs25: multiple tests failed after running tests/boards/intel_adsp
 * :github:`44898` - mgmt/mcumgr: Fragmentation of responses may cause mcumgr to drop successfully processed response
 * :github:`44861` - WiFi support for STM32 boards
-* :github:`44854` - [backport v2.7-branch] backport of #44787 failed
 * :github:`44830` - Unable to set compiler warnings on app exclusively
 * :github:`44824` - mgmt/mcumgr/lib: Use slist in group registration to unify with Zephyr code
 * :github:`44725` - drivers: can: stm32: can_add_rx_filter() does not respect CONFIG_CAN_MAX_FILTER
-* :github:`44623` - [backport v2.7-branch] backport of #44532 failed
 * :github:`44622` - Microbit v2 board dts file for lsm303agr int line
 * :github:`44579` - MCC: Discovery cannot complete with success
 * :github:`44573` - Do we have complete RNDIS stack available for STM32 controller in zephyr ?
@@ -2611,10 +2565,8 @@ Addressed issues
 * :github:`43655` - esp32c3: Connection fail loop
 * :github:`43646` - mgmt/mcumgr/lib: OS taskstat may give shorter list than expected
 * :github:`43515` - reel_board: failed to run tests/kernel/workq/work randomly
-* :github:`43479` - [backport v2.7-branch] backport of #43385 failed
 * :github:`43450` - twister: platform names from quarantine file are not verified
 * :github:`43435` - Bluetooth: controller: llcp: failing EBQ and Harmony tests
-* :github:`43390` - gPTP broken in Zephyr 3.0
 * :github:`43335` - Automatic Automated Backports?
 * :github:`43246` - Bluetooth: Host: Deadlock with Mesh and Ext Adv on native_posix
 * :github:`43245` - GitHub settings: Update topics
@@ -2639,7 +2591,6 @@ Addressed issues
 * :github:`42420` - mgmt/mcumgr/lib: Async image erase command with status check
 * :github:`42356` - Repo size - board documentation - large PNGs
 * :github:`42341` - LE Audio: CSIS Ordered Access procedure use rank
-* :github:`42327` - question: increased power consumption after updating from zephyr 2.4 to zephyr 2.7 on nrf52840
 * :github:`42324` - mgmt/mcumgr/lib: Move to direct use of net_buf
 * :github:`42277` - Zephyr Docs on West need to be updated to include SBOM generation
 * :github:`42208` - tests/subsys/logging/log_api/ fails qemu_leon3 if ptr_in_rodata() is enabled for SPARC
@@ -2676,7 +2627,6 @@ Addressed issues
 * :github:`40389` - Inconsistent use of CMake / environment variables
 * :github:`40309` - Multi-image support for MCUboot
 * :github:`40146` - On the status of DT-defined regions and MPU
-* :github:`39902` - Backport bt6x0 board rename to bt610 to 2.7 LTS branch
 * :github:`39888` - STM32L4: usb-hid: regression in hal 1.17.0
 * :github:`39491` - Add a hal module for Nuclei RISC-V core (NMSIS)
 * :github:`39486` - Improve emulator APIs for testing
