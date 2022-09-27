@@ -409,6 +409,8 @@ static int hawkbit_find_cancelAction_base(struct hawkbit_ctl_res *res,
 		return 0;
 	}
 
+	LOG_DBG("_links.%s.href=%s", "cancelAction", href);
+
 	helper = strstr(href, "cancelAction/");
 	if (!helper) {
 		/* A badly formatted cancel base is a server error */
@@ -461,6 +463,8 @@ static int hawkbit_find_deployment_base(struct hawkbit_ctl_res *res,
 		*deployment_base = '\0';
 		return 0;
 	}
+
+	LOG_DBG("_links.%s.href=%s", "deploymentBase", href);
 
 	helper = strstr(href, "deploymentBase/");
 	if (!helper) {
@@ -568,17 +572,6 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 	strncpy(download_http, helper, DOWNLOAD_HTTP_SIZE);
 	*file_size = size;
 	return 0;
-}
-
-static void hawkbit_dump_base(struct hawkbit_ctl_res *r)
-{
-	LOG_DBG("config.polling.sleep=%s", log_strdup(r->config.polling.sleep));
-	LOG_DBG("_links.deploymentBase.href=%s",
-		log_strdup(r->_links.deploymentBase.href));
-	LOG_DBG("_links.configData.href=%s",
-		log_strdup(r->_links.configData.href));
-	LOG_DBG("_links.cancelAction.href=%s",
-		log_strdup(r->_links.cancelAction.href));
 }
 
 static void hawkbit_dump_deployment(struct hawkbit_dep_res *d)
@@ -1089,9 +1082,9 @@ enum hawkbit_response hawkbit_probe(void)
 	if (hawkbit_results.base.config.polling.sleep) {
 		/* Update the sleep time. */
 		hawkbit_update_sleep(&hawkbit_results.base);
+		LOG_DBG("config.polling.sleep=%s", hawkbit_results.base.config.polling.sleep);
 	}
 
-	hawkbit_dump_base(&hawkbit_results.base);
 
 	if (hawkbit_results.base._links.cancelAction.href) {
 		ret = hawkbit_find_cancelAction_base(&hawkbit_results.base,
@@ -1118,6 +1111,8 @@ enum hawkbit_response hawkbit_probe(void)
 	}
 
 	if (hawkbit_results.base._links.configData.href) {
+		LOG_DBG("_links.%s.href=%s", "configData",
+			hawkbit_results.base._links.configData.href);
 		memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 		hb_context.dl.http_content_size = 0;
 		hb_context.url_buffer_size = URL_BUFFER_SIZE;
