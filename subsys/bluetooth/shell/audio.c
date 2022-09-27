@@ -1009,12 +1009,16 @@ static uint32_t accepted_broadcast_id;
 static struct bt_audio_base received_base;
 static bool sink_syncable;
 
-static bool scan_recv(const struct bt_le_scan_recv_info *info,
-		      struct net_buf_simple *ad,
-		      uint32_t broadcast_id)
+static bool broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
+				struct net_buf_simple *ad,
+				uint32_t broadcast_id)
 {
-	shell_print(ctx_shell, "Found broadcaster with ID 0x%06X",
-		    broadcast_id);
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+
+	shell_print(ctx_shell, "Found broadcaster with ID 0x%06X and addr %s",
+		    broadcast_id, le_addr);
 
 	if (broadcast_id == accepted_broadcast_id) {
 		shell_print(ctx_shell, "PA syncing to broadcaster");
@@ -1135,7 +1139,7 @@ static void pa_sync_lost(struct bt_audio_broadcast_sink *sink)
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 static struct bt_audio_broadcast_sink_cb sink_cbs = {
-	.scan_recv = scan_recv,
+	.scan_recv = broadcast_scan_recv,
 	.pa_synced = pa_synced,
 	.base_recv = base_recv,
 	.syncable = syncable,
