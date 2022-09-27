@@ -32,10 +32,6 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
 * CVE-2022-2741: Under embargo until 2022-10-14
 
-
-Known issues
-************
-
 API Changes
 ***********
 
@@ -1696,8 +1692,162 @@ Tests and Samples
 Issue Related Items
 *******************
 
-These GitHub issues were addressed since the previous 3.1.0 tagged
-release:
+Known Issues
+============
+
+- :github:`22049` - Bluetooth: IRK handling issue when using multiple local identities
+- :github:`25917` - Bluetooth: Deadlock with TX of ACL data and HCI commands (command blocked by data)
+- :github:`30348` - XIP can't be enabled with ARC MWDT toolchain
+- :github:`31298` - tests/kernel/gen_isr_table failed on hsdk and nsim_hs_smp sometimes
+- :github:`33747` - gptp does not work well on NXP rt series platform
+- :github:`34269` - LOG_MODE_MINIMAL BUILD error
+- :github:`37193` - mcumgr: Probably incorrect error handling with udp backend
+- :github:`37731` - Bluetooth: hci samples: Unable to allocate command buffer
+- :github:`38041` - Logging-related tests fails on qemu_arc_hs6x
+- :github:`38880` - ARC: ARCv2: qemu_arc_em / qemu_arc_hs don't work with XIP disabled
+- :github:`38947` - Issue with SMP commands sent over the UART
+- :github:`39598` - use of __noinit with ecc memory hangs system
+- :github:`40023` - Build fails for ``native_posix`` board when using C++ <atomic> header
+- :github:`41606` - stm32u5: Re-implement VCO input and EPOD configuration
+- :github:`41622` - Infinite mutual recursion when SMP and ATOMIC_OPERATIONS_C are set
+- :github:`41822` - BLE IPSP sample cannot handle large ICMPv6 Echo Request
+- :github:`41823` - Bluetooth: Controller: llcp: Remote request are dropped due to lack of free proc_ctx
+- :github:`42030` - can: "bosch,m-can-base": Warning "missing or empty reg/ranges property"
+- :github:`42653` - [ 2.7.1] STM32 Hangs sending TCP packets
+- :github:`43099` - CMake: ARCH roots issue
+- :github:`43249` - MBEDTLS_ECP_C not build when MBEDTLS_USE_PSA_CRYPTO
+- :github:`43308` - driver: serial: stm32: uart will lost data when use dma mode[async mode]
+- :github:`43555` - Variables not properly initialized when using data relocation with SDRAM
+- :github:`43562` - Setting and/or documentation of Timer and counter use/requirements for Nordic Bluetooth driver
+- :github:`43836` - stm32: g0b1: RTT doesn't work properly after stop mode
+- :github:`44339` - Bluetooth:controller: Implement support for Advanced Scheduling in refactored LLCP
+- :github:`44377` - ISO Broadcast/Receive sample not working with coded PHY
+- :github:`44410` - drivers: modem: shell: ``modem send`` doesn't honor line ending in modem cmd handler
+- :github:`44948` - cmsis_dsp: transofrm: error during building cf64.fpu and rf64.fpu for mps2_an521_remote
+- :github:`45218` - rddrone_fmuk66: I2C configuration incorrect
+- :github:`45241` - (Probably) unnecessary branches in several modules
+- :github:`45323` - Bluetooth: controller: llcp: Implement handling of delayed notifications in refactored LLCP
+- :github:`45427` - Bluetooth: Controller: LLCP: Data structure for communication between the ISR and the thread
+- :github:`45814` - Armclang build fails due to missing source file
+- :github:`46073` - IPSP (IPv6 over BLE) example stop working after a short time
+- :github:`46121` - Bluetooth: Controller: hci: Wrong periodic advertising report data status
+- :github:`46126` - pm_device causes assertion error in sched.c with lis2dh
+- :github:`46401` - ARM64: Relax 4K MMU mapping alignment
+- :github:`46596` - STM32F74X RMII interface does not work
+- :github:`46598` - Logging with RTT backend on STM32WB strange behavier
+- :github:`46844` - Timer drivers likely have off-by-one in rapidly-presented timeouts
+- :github:`46846` - lib: libc: newlib: strerror_r non-functional
+- :github:`46986` - Logging (deferred v2) with a lot of output causes MPU fault
+- :github:`47014` - can: iso-tp: implementation test failed with twister on nucleo_g474re
+- :github:`47092` - driver: nrf: uarte: new dirver breaks our implementation for uart.
+- :github:`47120` - shell uart: busy wait for DTR in ISR
+- :github:`47477` - qemu_leon3: tests/kernel/fpu_sharing/generic/ failed when migrating to new ztest API
+- :github:`47500` - twister: cmake: Failure of "--build-only -M" combined with "--test-only" for --device-testing
+- :github:`47607` - Settings with FCB backend does not pass test on stm32h743
+- :github:`47732` - Flash map does not fare well with MCU who do bank swaps
+- :github:`47817` - samples/modules/nanopb/sample.modules.nanopb fails with protobuf > 3.19.0
+- :github:`47908` - tests/kernel/mem_protect/stack_random works unreliably and sporadically fails
+- :github:`47988` - JSON parser not consistent on extra data
+- :github:`48018` - ztest: static threads are not re-launched for repeated test suite execution.
+- :github:`48037` - Grove LCD Sample Not Working
+- :github:`48094` - pre-commit scripts fail when there is a space in zephyr_base
+- :github:`48102` - JSON parses uses recursion (breaks rule 17.2)
+- :github:`48147` - ztest: before/after functions may run on different threads, which may cause potential issues.
+- :github:`48287` - malloc_prepare ASSERT happens when enabling newlib libc with demand paging
+- :github:`48299` - SHT3XD_CMD_WRITE_TH_LOW_SET should be SHT3XD_CMD_WRITE_TH_LOW_CLEAR
+- :github:`48304` - bt_disable() does not work properly on nRF52
+- :github:`48390` - [Intel Cavs] Boot failures on low optimization levels
+- :github:`48394` - vsnprintfcb writes to ``*str`` if it is NULL
+- :github:`48468` - GSM Mux does not transmit all queued data when uart_fifo_fill is called
+- :github:`48473` - Setting CONFIG_GSM_MUX_INITIATOR=n results in a compile error
+- :github:`48505` - BLE stack can get stuck in connected state despite connection failure
+- :github:`48520` - clang-format: #include reorder due to default: SortIncludesOptions != SI_Never
+- :github:`48603` - LoRa driver asynchronous receive callback clears data before the callback.
+- :github:`48608` - boards: mps2_an385: Unstable system timer
+- :github:`48625` - GSM_PPP api keeps sending commands to muxed AT channel
+- :github:`48726` - net: tests/net/ieee802154/l2/net.ieee802154.l2 failed on reel board
+- :github:`48841` - Bluetooth: df: Assert in lower link layer when requesting CTE from peer periodically with 7.5ms connection interval
+- :github:`48850` - Bluetooth: LLCP: possible access to released control procedure context
+- :github:`48857` - samples: Bluetooth: Buffer size mismatch in samples/bluetooth/hci_usb for nRF5340
+- :github:`48953` - 'intel,sha' is missing binding and usage
+- :github:`48954` - several NXP devicetree bindings are missing
+- :github:`48992` - qemu_leon3: tests/posix/common/portability.posix.common fails
+- :github:`49021` - uart async api does not provide all received data
+- :github:`49032` - espi saf testing disabled
+- :github:`49069` - log: cdc_acm: hard fault message does not output
+- :github:`49148` - Asynchronous UART API triggers Zephyr assertion on STM32WB55
+- :github:`49210` - BL5340 board cannot build bluetooth applications
+- :github:`49213` - logging.add.log_user test fails when compiled with GCC 12
+- :github:`49266` - Bluetooth: Host doesn't seem to handle INCOMPLETE per adv reports
+- :github:`49313` - nRF51822 sometimes hard fault on connect
+- :github:`49338` - Antenna switching for Bluetooth direction finding with the nRF5340
+- :github:`49373` - BLE scanning - BT RX thread hangs on.
+- :github:`49390` - shell_rtt thread can starve other threads of the same priority
+- :github:`49484` - CONFIG_BOOTLOADER_SRAM_SIZE should not be defined by default
+- :github:`49492` - kernel.poll test fails on qemu_arc_hs6x when compiled with GCC 12
+- :github:`49494` - testing.ztest.ztress test fails on qemu_cortex_r5 when compiled with GCC 12
+- :github:`49584` - STM32WB55 Failed read remote feature, remote version and LE set PHY
+- :github:`49588` - Json parser is incorrect with undefined parameter
+- :github:`49611` - ehl_crb: Failed to run timer testcases
+- :github:`49614` - acrn_ehl_crb: The testcase tests/kernel/sched/schedule_api failed to run.
+- :github:`49656` - acrn_ehl_crb: testcases tests/kernel/smp failed to run on v2.7-branch
+- :github:`49746` - twister: extra test results
+- :github:`49811` - DHCP cannot obtain IP, when CONFIG_NET_VLAN is enabled
+- :github:`49816` - ISOTP receive fails for multiple binds with same CAN ID but different extended ID
+- :github:`49889` - ctf trace: unknown event id when parsing samples/tracing result on reel board
+- :github:`49917` - http_client_req() sometimes hangs when peer disconnects
+- :github:`49963` - Random crash on the L475 due to work->handler set to NULL
+- :github:`49996` - tests: drivers: clock_control: nrf_lf_clock_start and nrf_onoff_and_bt fails
+- :github:`50028` - flash_stm32_ospi Write enable failed when building with TF-M
+- :github:`50084` - drivers: nrf_802154: nrf_802154_trx.c - assertion fault when enabling Segger SystemView tracing
+- :github:`50095` - ARC revision Kconfigs wrongly mixed with board name
+- :github:`50149` - tests: drivers: flash fails on nucleo_l152re because of wrong erase flash size
+- :github:`50193` - Impossible to connect with a peripheral with BLE and zephyr 2.7.99, BT_HCI_ERR_UNKNOWN_CONN_ID error
+- :github:`50196` - LSM6DSO interrupt handler not being called
+- :github:`50256` - I2C on SAMC21 sends out stop condition incorrectly
+- :github:`50306` - Not able to flash stm32h735g_disco - TARGET: stm32h7x.cpu0 - Not halted
+- :github:`50345` - Network traffic occurs before Bluetooth NET L2 (IPSP) link setup complete
+- :github:`50354` - ztest_new: _zassert_base : return without post processing
+- :github:`50404` - Intel CAVS: tests/subsys/logging/log_immediate failed.
+- :github:`50427` - Bluetooth: host: central connection context leak
+- :github:`50446` - MCUX CAAM is disabled temporarily
+- :github:`50452` - mec172xevb_assy6906: The testcase tests/lib/cmsis_dsp/matrix failed to run.
+- :github:`50501` - STM32 SPI does not work properly with async + interrupts
+- :github:`50506` - nxp,mcux-usbd devicetree binding issues
+- :github:`50515` - Non-existing test cases reported as "Skipped" with reason  “No results captured, testsuite misconfiguration?” in test report
+- :github:`50546` - drivers: can: rcar: likely inconsistent behavior when calling can_stop() with pending transmissions
+- :github:`50554` - Test uart async failed on Nucleo F429ZI
+- :github:`50565` - Fatal error after ``west flash`` for nucleo_l053r8
+- :github:`50567` - Passed test cases are reported as "Skipped" because of incomplete test log
+- :github:`50570` - samples/drivers/can/counter fails in twister for native_posix
+- :github:`50587` - Regression in Link Layer Control Procedure (LLCP)
+- :github:`50590` - openocd: Can't flash on various STM32 boards
+- :github:`50596` - Documentation: Broken links in the previous release documentation
+- :github:`50598` - UDP over IPSP not working on nRF52840
+- :github:`50614` - Zephyr if got the ip is "10.xxx.xxx.xxx" when join in the switchboard, then the device may can not visit the outer net, also unable to Ping.
+- :github:`50620` - fifo test fails with CONFIG_CMAKE_LINKER_GENERATOR enabled on qemu_cortex_a9
+- :github:`50652` - RAM Loading on i.MXRT1160_evk
+- :github:`50655` - STM32WB55 Bus Fault when connecting then disconnecting then connecting then disconnecting then connecting
+- :github:`50658` - BLE stack notifications blocks host side for too long
+- :github:`50709` - tests: arch: arm: arm_thread_swap fails on stm32g0 or stm32l0
+- :github:`50732` - net: tests/net/ieee802154/l2/net.ieee802154.l2 failed on reel_board due to build failure
+- :github:`50735` - Intel CAVS18: tests/boards/intel_adsp/hda_log/boards.intel_adsp.hda_log.printk failed
+- :github:`50746` - Stale kernel memory pool API references
+- :github:`50766` - Zephyr build system doesn't setup CMake host environment correctly
+- :github:`50776` - CAN Drivers allow sending FD frames without device being set to FD mode
+- :github:`50777` - LE Audio: Receiver start ready command shall only be sent by the receiver
+- :github:`50778` - LE Audio: Audio shell: Unicast server cannot execute commands for the default_stream
+- :github:`50780` - LE Audio: Bidirectional handling of 2 audio streams as the unicast server when streams are configured separately not working as intended
+- :github:`50781` - LE Audio: mpl init causes warnings when adding objects
+- :github:`50783` - LE Audio: Reject ISO data if the stream is not in the streaming state
+- :github:`50789` - west: runners: blackmagicprobe: Doesn't work on windows due to wrong path separator
+- :github:`50801` - JSON parser fails on multidimensional arrays
+- :github:`50812` - MCUmgr udp sample fails with shell - BUS FAULT
+- :github:`50841` - high SRAM usage with picolibc on nRF platforms
+- :github:`50844` - zcbor module apis which are used for mcu boot functionality are not building in cpp file against v3.1.0
+
+Addressed issues
+================
 
 * :github:`50861` - Intel ADSP HDA and GPDMA Bugs
 * :github:`50843` - tests: kernel: timer: timer_behavior: kernel.timer.timer - SRAM overflow on nrf5340dk_nrf5340_cpunet and nrf52dk_nrf52832
