@@ -1281,6 +1281,20 @@ function(zephyr_linker_sources location)
   endforeach()
 endfunction(zephyr_linker_sources)
 
+function(zephyr_library_relocate location)
+  set(options NOCOPY)
+  cmake_parse_arguments(CODE_REL "${options}" "" "" ${ARGN})
+  if(NOT CODE_REL_NOCOPY)
+    set(copy_flag COPY)
+  else()
+    set(copy_flag NOCOPY)
+  endif()
+  # Set current library relocation property. This will be picked up
+  # in the root CMakeLists.txt file to relocate all sources added to
+  # this library
+  set_property(TARGET ${ZEPHYR_CURRENT_LIBRARY}
+    PROPERTY PROPERTY_CODE_RELOCATION_TARGET "${location}:${copy_flag}")
+endfunction()
 
 # Helper function for CONFIG_CODE_DATA_RELOCATION
 # Call this function with 2 arguments file and then memory location.

@@ -91,6 +91,8 @@ set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
+define_property(GLOBAL PROPERTY PROPERTY_CODE_RELOCATION_TARGET
+  BRIEF_DOCS "Code relocation target location" FULL_DOCS " ")
 
 # "zephyr_interface" is a source-less library that encapsulates all the global
 # compiler options needed by all source files. All zephyr libraries,
@@ -814,6 +816,21 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
       set_property(TARGET ${zephyr_lib} PROPERTY EXCLUDE_FROM_ALL TRUE)
       list(REMOVE_ITEM ZEPHYR_LIBS_PROPERTY ${zephyr_lib})
       continue()
+    endif()
+    # In order to allow zephyr_library_relocate to be called prior to adding
+    # library sources, we must parse and generate relocation information
+    # once all libraries have been defined
+    get_property(relocation_target TARGET ${zephyr_lib} PROPERTY
+      PROPERTY_CODE_RELOCATION_TARGET)
+    if(NOT "${relocation_target}" STREQUAL "")
+      get_property(lib_source_dir TARGET ${zephyr_lib} PROPERTY SOURCE_DIR)
+      foreach(file ${source_list})
+        if(NOT IS_ABSOLUTE ${file})
+          set(file ${lib_source_dir}/${file})
+        endif()
+        set_property(TARGET code_data_relocation_target APPEND PROPERTY
+          COMPILE_DEFINITIONS "${relocation_target}:${file}")
+      endforeach()
     endif()
   endif()
 
