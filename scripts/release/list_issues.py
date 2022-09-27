@@ -162,7 +162,7 @@ set the env. variable GITHUB_TOKEN please and retry.""")
                 if 'pull_request' not in issue:
                     # * :github:`8193` - STM32 config BUILD_OUTPUT_HEX fail
                     f.write("* :github:`{}` - {}\n".format(
-                        issue['number'], issue['title']))
+                        issue['number'], issue['title'].strip()))
                     count = count + 1
     elif args.issues_in_pulls:
         i.pull_requests(base=args.issues_in_pulls)
@@ -211,7 +211,7 @@ set the env. variable GITHUB_TOKEN please and retry.""")
                     if item:
                         # * :github:`8193` - STM32 config BUILD_OUTPUT_HEX fail
                         f.write("* :github:`{}` - {}\n".format(
-                                item['number'], item['title']))
+                                item['number'], item['title'].strip()))
 
 
 if __name__ == '__main__':
