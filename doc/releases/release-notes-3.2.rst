@@ -406,6 +406,19 @@ Boards & SoC Support
   * MAX7219 LED display driver shield
   * Panasonic Grid-EYE (AMG88xx)
 
+Build system and infrastructure
+*******************************
+
+* Introduced sysbuild, a new higher-level build system layer that enables
+  combining multiple build systems together. It can be used to generate multiple
+  images from a single build system invocation while maintaining a link between
+  those different applications/images via a shared Kconfig layer
+* Introduced support for binary blobs in west, via a new ``west blobs`` command
+  that allows users to list, fetch and delete binary blobs from their
+  filesystem. Vendors can thus now integrate binary blobs, be it images or
+  libraries, with upstream Zephyr
+* Removed deprecated ``GCCARMEMB_TOOLCHAIN_PATH`` setting
+
 Drivers and Sensors
 *******************
 
@@ -760,11 +773,6 @@ Networking
 
 USB
 ***
-
-Build System
-************
-
-* Removed deprecated ``GCCARMEMB_TOOLCHAIN_PATH`` setting
 
 Devicetree
 **********
