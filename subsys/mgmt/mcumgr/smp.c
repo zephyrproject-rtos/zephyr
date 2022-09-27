@@ -47,7 +47,6 @@ static const struct k_work_queue_config smp_work_queue_config = {
  */
 void *zephyr_smp_alloc_rsp(const void *req, void *arg)
 {
-	const struct net_buf_pool *pool;
 	const struct net_buf *req_nb;
 	struct net_buf *rsp_nb;
 	struct zephyr_smp_transport *zst = arg;
@@ -62,7 +61,6 @@ void *zephyr_smp_alloc_rsp(const void *req, void *arg)
 	if (zst->zst_ud_copy) {
 		zst->zst_ud_copy(rsp_nb, req_nb);
 	} else {
-		pool = net_buf_pool_get(req_nb->pool_id);
 		memcpy(net_buf_user_data(rsp_nb),
 		       net_buf_user_data((void *)req_nb),
 		       req_nb->user_data_size);
