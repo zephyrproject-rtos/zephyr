@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: soburi
+      url-base: https://github.com/soburi
 
   #
   # Please add items below based on alphabetical order
@@ -157,6 +159,12 @@ manifest:
     - name: libmetal
       revision: 2f586b4f1276fb075ee145421bdf6cbe5403aa41
       path: modules/hal/libmetal
+      groups:
+        - hal
+    - name: hal_wch
+      revision: a2d01f443796a312e5fba05a7c018c0c012e5795
+      path: modules/hal/wch
+      remote: soburi
       groups:
         - hal
     - name: liblc3
