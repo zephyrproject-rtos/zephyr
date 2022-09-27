@@ -191,6 +191,17 @@ Architectures
 
 * ARC
 
+  * Added support of non-multithreading mode for all UP ARC targets
+  * Added extra compile-time checks of :kconfig:option:`CONFIG_ISR_STACK_SIZE`
+    and :kconfig:option:`CONFIG_ARC_EXCEPTION_STACK_SIZE` value
+  * Added support of generation symbol file for ARC MWDT toolchain variant
+  * Added ARC MWDT toolchain version check
+  * Added support for GCC mcpu option tuning for ARC targets on SoC level
+  * Switched ARCv3 64bit targets for usage of new linker output format value
+  * Added ARCv3 64bit accumulator reg save / restore, cleanup it for ARCv3
+    32bit targets
+  * Fixed SMP race in ASM ARC interrupt handling code
+
 * ARM
 
   * Improved HardFault handling on Cortex-M.
@@ -348,6 +359,12 @@ Boards & SoC Support
 * Made these changes in other SoC series:
 
   * gigadevice: Enable SEGGER RTT
+
+* Changes for ARC boards:
+
+  * Added support for qemu_arc_hs5x board (ARCv3, 32bit, UP, HS5x)
+  * Simplified multi-runner setup for SMP nSIM ARC platforms
+  * Fixed mdb execution folder for mdb-based west runners (mdb-nsim and mdb-hw)
 
 * Added support for these ARM boards:
 
