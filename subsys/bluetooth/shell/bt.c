@@ -1186,21 +1186,6 @@ static int cmd_scan_filter_clear_addr(const struct shell *sh, size_t argc,
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_BROADCASTER)
-static void ad_mode_parse(const struct shell *sh, size_t argc, char *argv[], bool *discov)
-{
-	for (size_t argn = 0; argn < argc; argn++) {
-		const char *arg = argv[argn];
-
-		if (!strcmp(arg, "discov")) {
-			*discov = true;
-			break;
-		} else if (!strcmp(arg, "non_discov")) {
-			*discov = false;
-			break;
-		}
-	}
-}
-
 static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 		       const atomic_t *adv_opt)
 {
@@ -1294,23 +1279,13 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 		goto fail;
 	}
 
-	ad_mode_parse(sh, argc - 2, &argv[2], &discoverable);
-
-	atomic_clear(adv_opt);
-	atomic_set_bit_to(adv_opt, SHELL_ADV_OPT_CONNECTABLE,
-			  (param.options & BT_LE_ADV_OPT_CONNECTABLE) > 0);
-	atomic_set_bit_to(adv_opt, SHELL_ADV_OPT_DISCOVERABLE, discoverable);
-
-	ad_len = ad_init(ad, ARRAY_SIZE(ad), adv_opt);
-	if (ad_len < 0) {
-		return -ENOEXEC;
-	}
-
 	for (size_t argn = 2; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
-		if (!strcmp(arg, "discov") || !strcmp(arg, "non_discov")) {
-			/* Skip */
+		if (!strcmp(arg, "discov")) {
+			discoverable = true;
+		} else if (!strcmp(arg, "non_discov")) {
+			discoverable = false;
 		} else if (!strcmp(arg, "fal")) {
 			param.options |= BT_LE_ADV_OPT_FILTER_SCAN_REQ;
 			param.options |= BT_LE_ADV_OPT_FILTER_CONN;
@@ -1336,6 +1311,16 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 		} else {
 			goto fail;
 		}
+	}
+
+	atomic_clear(adv_opt);
+	atomic_set_bit_to(adv_opt, SHELL_ADV_OPT_CONNECTABLE,
+			  (param.options & BT_LE_ADV_OPT_CONNECTABLE) > 0);
+	atomic_set_bit_to(adv_opt, SHELL_ADV_OPT_DISCOVERABLE, discoverable);
+
+	ad_len = ad_init(ad, ARRAY_SIZE(ad), adv_opt);
+	if (ad_len < 0) {
+		return -ENOEXEC;
 	}
 
 	err = bt_le_adv_start(&param, ad_len > 0 ? ad : NULL, ad_len, NULL, 0);
@@ -1568,15 +1553,6 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	data = ad;
 	data_len = &ad_len;
 
-	ad_mode_parse(sh, argc - 1, &argv[1], &discoverable);
-
-	atomic_set_bit_to(adv_set_opt[selected_adv], SHELL_ADV_OPT_DISCOVERABLE, discoverable);
-
-	ad_len = ad_init(ad, ARRAY_SIZE(ad), adv_set_opt[selected_adv]);
-	if (ad_len < 0) {
-		return -ENOEXEC;
-	}
-
 	for (size_t argn = 1; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
@@ -1590,7 +1566,9 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		if (!strcmp(arg, "discov")) {
-			/* Skip */
+			discoverable = true;
+		} else if (!strcmp(arg, "non_discov")) {
+			discoverable = false;
 		} else if (!strcmp(arg, "scan-response")) {
 			if (data == sd) {
 				shell_print(sh, "Failed to set advertising data: "
@@ -1618,6 +1596,13 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 			(*data_len)++;
 			hex_data_len += len;
 		}
+	}
+
+	atomic_set_bit_to(adv_set_opt[selected_adv], SHELL_ADV_OPT_DISCOVERABLE, discoverable);
+
+	ad_len = ad_init(ad, ARRAY_SIZE(ad), adv_set_opt[selected_adv]);
+	if (ad_len < 0) {
+		return -ENOEXEC;
 	}
 
 	err = bt_le_ext_adv_set_data(adv, ad_len > 0 ? ad : NULL, ad_len,
