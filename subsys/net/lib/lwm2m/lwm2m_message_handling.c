@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/init.h>
 #include <zephyr/net/http_parser_url.h>
 #include <zephyr/net/lwm2m.h>
+#include <zephyr/net/lwm2m_path.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/printk.h>
@@ -537,12 +538,7 @@ int lwm2m_register_payload_handler(struct lwm2m_message *msg)
 		 * needed to report object version.
 		 */
 		if (obj->instance_count == 0U || lwm2m_engine_shall_report_obj_version(obj)) {
-			struct lwm2m_obj_path path = {
-				.obj_id = obj->obj_id,
-				.level = LWM2M_PATH_LEVEL_OBJECT,
-			};
-
-			ret = engine_put_corelink(&msg->out, &path);
+			ret = engine_put_corelink(&msg->out, &LWM2M_OBJ(obj->obj_id));
 			if (ret < 0) {
 				return ret;
 			}
@@ -554,13 +550,9 @@ int lwm2m_register_payload_handler(struct lwm2m_message *msg)
 
 		SYS_SLIST_FOR_EACH_CONTAINER(engine_obj_inst_list, obj_inst, node) {
 			if (obj_inst->obj->obj_id == obj->obj_id) {
-				struct lwm2m_obj_path path = {
-					.obj_id = obj_inst->obj->obj_id,
-					.obj_inst_id = obj_inst->obj_inst_id,
-					.level = LWM2M_PATH_LEVEL_OBJECT_INST,
-				};
-
-				ret = engine_put_corelink(&msg->out, &path);
+				ret = engine_put_corelink(
+					&msg->out,
+					&LWM2M_OBJ(obj_inst->obj->obj_id, obj_inst->obj_inst_id));
 				if (ret < 0) {
 					return ret;
 				}
@@ -1380,14 +1372,9 @@ static int lwm2m_discover_add_res(struct lwm2m_message *msg, struct lwm2m_engine
 				  struct lwm2m_engine_res *res)
 {
 	int ret;
-	struct lwm2m_obj_path path = {
-		.obj_id = obj_inst->obj->obj_id,
-		.obj_inst_id = obj_inst->obj_inst_id,
-		.res_id = res->res_id,
-		.level = LWM2M_PATH_LEVEL_RESOURCE,
-	};
 
-	ret = engine_put_corelink(&msg->out, &path);
+	ret = engine_put_corelink(
+		&msg->out, &LWM2M_OBJ(obj_inst->obj->obj_id, obj_inst->obj_inst_id, res->res_id));
 	if (ret < 0) {
 		return ret;
 	}
@@ -1402,15 +1389,9 @@ static int lwm2m_discover_add_res(struct lwm2m_message *msg, struct lwm2m_engine
 				continue;
 			}
 
-			path = (struct lwm2m_obj_path){
-				.obj_id = obj_inst->obj->obj_id,
-				.obj_inst_id = obj_inst->obj_inst_id,
-				.res_id = res->res_id,
-				.res_inst_id = res_inst->res_inst_id,
-				.level = LWM2M_PATH_LEVEL_RESOURCE_INST,
-			};
-
-			ret = engine_put_corelink(&msg->out, &path);
+			ret = engine_put_corelink(
+				&msg->out, &LWM2M_OBJ(obj_inst->obj->obj_id, obj_inst->obj_inst_id,
+						      res->res_id, res_inst->res_inst_id));
 			if (ret < 0) {
 				return ret;
 			}
@@ -1477,12 +1458,7 @@ int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap)
 		if ((is_bootstrap &&
 		     (obj->instance_count == 0U || lwm2m_engine_shall_report_obj_version(obj))) ||
 		    (!is_bootstrap && msg->path.level == LWM2M_PATH_LEVEL_OBJECT)) {
-			struct lwm2m_obj_path path = {
-				.obj_id = obj->obj_id,
-				.level = LWM2M_PATH_LEVEL_OBJECT,
-			};
-
-			ret = engine_put_corelink(&msg->out, &path);
+			ret = engine_put_corelink(&msg->out, &LWM2M_OBJ(obj->obj_id));
 			if (ret < 0) {
 				return ret;
 			}
@@ -1509,13 +1485,9 @@ int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap)
 			 * provided.
 			 */
 			if (msg->path.level <= LWM2M_PATH_LEVEL_OBJECT_INST) {
-				struct lwm2m_obj_path path = {
-					.obj_id = obj_inst->obj->obj_id,
-					.obj_inst_id = obj_inst->obj_inst_id,
-					.level = LWM2M_PATH_LEVEL_OBJECT_INST,
-				};
-
-				ret = engine_put_corelink(&msg->out, &path);
+				ret = engine_put_corelink(
+					&msg->out,
+					&LWM2M_OBJ(obj_inst->obj->obj_id, obj_inst->obj_inst_id));
 				if (ret < 0) {
 					return ret;
 				}
