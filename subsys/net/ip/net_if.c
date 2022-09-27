@@ -422,6 +422,9 @@ static inline void init_iface(struct net_if *iface)
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	net_if_flag_set(iface, NET_IF_IPV6);
 #endif
+
+	net_if_flag_test_and_set(iface, NET_IF_LOWER_UP);
+
 	net_virtual_init(iface);
 
 	NET_DBG("On iface %p", iface);
@@ -4023,6 +4026,115 @@ static inline bool is_iface_offloaded(struct net_if *iface)
 		net_if_is_socket_offloaded(iface));
 }
 
+static void notify_iface_up(struct net_if *iface)
+{
+	net_if_flag_set(iface, NET_IF_RUNNING);
+	net_mgmt_event_notify(NET_EVENT_IF_UP, iface);
+
+	/* If the interface is only having point-to-point traffic then we do
+	 * not need to run DAD etc for it.
+	 */
+	if (!is_iface_offloaded(iface) &&
+	    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
+		iface_ipv6_start(iface);
+		net_ipv4_autoconf_start(iface);
+	}
+}
+
+static void notify_iface_down(struct net_if *iface)
+{
+	net_if_flag_clear(iface, NET_IF_RUNNING);
+	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
+
+	if (!is_iface_offloaded(iface) &&
+	    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
+		net_ipv4_autoconf_reset(iface);
+	}
+}
+
+static inline const char *net_if_oper_state2str(enum net_if_oper_state state)
+{
+#if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
+	switch (state) {
+	case NET_IF_OPER_UNKNOWN:
+		return "UNKNOWN";
+	case NET_IF_OPER_NOTPRESENT:
+		return "NOTPRESENT";
+	case NET_IF_OPER_DOWN:
+		return "DOWN";
+	case NET_IF_OPER_LOWERLAYERDOWN:
+		return "LOWERLAYERDOWN";
+	case NET_IF_OPER_TESTING:
+		return "TESTING";
+	case NET_IF_OPER_DORMANT:
+		return "DORMANT";
+	case NET_IF_OPER_UP:
+		return "UP";
+	default:
+		break;
+	}
+
+	return "<invalid>";
+#else
+	ARG_UNUSED(state);
+
+	return "";
+#endif /* CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG */
+}
+
+static void update_operational_state(struct net_if *iface)
+{
+	enum net_if_oper_state prev_state = iface->if_dev->oper_state;
+	enum net_if_oper_state new_state = NET_IF_OPER_UNKNOWN;
+
+	if (!net_if_is_admin_up(iface)) {
+		new_state = NET_IF_OPER_DOWN;
+		goto exit;
+	}
+
+	if (!net_if_is_carrier_ok(iface)) {
+#if defined(CONFIG_NET_L2_VIRTUAL)
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
+			new_state = NET_IF_OPER_LOWERLAYERDOWN;
+		} else
+#endif /* CONFIG_NET_L2_VIRTUAL */
+		{
+			new_state = NET_IF_OPER_DOWN;
+		}
+
+		goto exit;
+	}
+
+	if (net_if_is_dormant(iface)) {
+		new_state = NET_IF_OPER_DORMANT;
+		goto exit;
+	}
+
+	new_state = NET_IF_OPER_UP;
+
+exit:
+	if (net_if_oper_state_set(iface, new_state) != new_state) {
+		NET_ERR("Failed to update oper state to %d", new_state);
+		return;
+	}
+
+	NET_DBG("iface %p, oper state %s admin %s carrier %s dormant %s",
+		iface, net_if_oper_state2str(net_if_oper_state(iface)),
+		net_if_is_admin_up(iface) ? "UP" : "DOWN",
+		net_if_is_carrier_ok(iface) ? "ON" : "OFF",
+		net_if_is_dormant(iface) ? "ON" : "OFF");
+
+	if (net_if_oper_state(iface) == NET_IF_OPER_UP) {
+		if (prev_state != NET_IF_OPER_UP) {
+			notify_iface_up(iface);
+		}
+	} else {
+		if (prev_state == NET_IF_OPER_UP) {
+			notify_iface_down(iface);
+		}
+	}
+}
+
 int net_if_up(struct net_if *iface)
 {
 	int status = 0;
@@ -4037,8 +4149,7 @@ int net_if_up(struct net_if *iface)
 	}
 
 	if (is_iface_offloaded(iface)) {
-		net_if_flag_set(iface, NET_IF_UP);
-		goto notify;
+		goto done;
 	}
 
 	/* If the L2 does not support enable just set the flag */
@@ -4052,7 +4163,6 @@ int net_if_up(struct net_if *iface)
 		goto out;
 	}
 
-done:
 	/* In many places it's assumed that link address was set with
 	 * net_if_set_link_addr(). Better check that now.
 	 */
@@ -4066,19 +4176,10 @@ done:
 		NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
 	}
 
+done:
 	net_if_flag_set(iface, NET_IF_UP);
-
-	/* If the interface is only having point-to-point traffic then we do
-	 * not need to run DAD etc for it.
-	 */
-	if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
-		iface_ipv6_start(iface);
-
-		net_ipv4_autoconf_start(iface);
-	}
-
-notify:
-	net_mgmt_event_notify(NET_EVENT_IF_UP, iface);
+	net_mgmt_event_notify(NET_EVENT_IF_ADMIN_UP, iface);
+	update_operational_state(iface);
 
 out:
 	k_mutex_unlock(&lock);
@@ -4094,8 +4195,6 @@ void net_if_carrier_down(struct net_if *iface)
 
 	net_if_flag_clear(iface, NET_IF_UP);
 
-	net_ipv4_autoconf_reset(iface);
-
 	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
 
 	k_mutex_unlock(&lock);
@@ -4108,6 +4207,11 @@ int net_if_down(struct net_if *iface)
 	NET_DBG("iface %p", iface);
 
 	k_mutex_lock(&lock, K_FOREVER);
+
+	if (!net_if_flag_is_set(iface, NET_IF_UP)) {
+		status = -EALREADY;
+		goto out;
+	}
 
 	leave_mcast_all(iface);
 	leave_ipv4_mcast_all(iface);
@@ -4131,13 +4235,65 @@ int net_if_down(struct net_if *iface)
 
 done:
 	net_if_flag_clear(iface, NET_IF_UP);
-
-	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
+	net_mgmt_event_notify(NET_EVENT_IF_ADMIN_DOWN, iface);
+	update_operational_state(iface);
 
 out:
 	k_mutex_unlock(&lock);
 
 	return status;
+}
+
+void net_if_carrier_on(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (!net_if_flag_test_and_set(iface, NET_IF_LOWER_UP)) {
+		update_operational_state(iface);
+	}
+
+	k_mutex_unlock(&lock);
+}
+
+void net_if_carrier_off(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (net_if_flag_test_and_clear(iface, NET_IF_LOWER_UP)) {
+		update_operational_state(iface);
+	}
+
+	k_mutex_unlock(&lock);
+}
+
+void net_if_dormant_on(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (!net_if_flag_test_and_set(iface, NET_IF_DORMANT)) {
+		update_operational_state(iface);
+	}
+
+	k_mutex_unlock(&lock);
+}
+
+void net_if_dormant_off(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (net_if_flag_test_and_clear(iface, NET_IF_DORMANT)) {
+		update_operational_state(iface);
+	}
+
+	k_mutex_unlock(&lock);
 }
 
 static int promisc_mode_set(struct net_if *iface, bool enable)
