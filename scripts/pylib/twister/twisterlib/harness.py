@@ -152,11 +152,11 @@ class Console(Harness):
 
         self.process_test(line)
 
-        tc = self.instance.get_case_or_create(self.id)
-        if self.state == "passed":
-            tc.status = "passed"
-        else:
-            tc.status = "failed"
+        for tc in self.instance.testcases:
+            if self.state == "passed":
+                tc.status = "passed"
+            else:
+                tc.status = "failed"
 
 class Pytest(Harness):
     def configure(self, instance):
