@@ -34,7 +34,7 @@ be on 5v.
 References
 **********
 
- - TH02: http://www.datasheetspdf.com/mobile/748107/TH02.html
+ - TH02 (Si7005): https://www.silabs.com/documents/public/data-sheets/Si7005.pdf
 
 
 .. _Grove LCD Module: http://wiki.seeed.cc/Grove-LCD_RGB_Backlight/
