@@ -905,24 +905,26 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 /* Like DEVICE_DEFINE but takes a node_id AND a dev_name, and trailing
  * dependency handles that come from outside devicetree.
  */
-#define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_device,\
-			data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr, ...)	\
-	Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)		\
-	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
-	const Z_DECL_ALIGN(struct device) DEVICE_NAME_GET(dev_name)	\
-	Z_DEVICE_SECTION(level, prio) __used = {			\
-		.name = drv_name,					\
-		.config = (cfg_ptr),					\
-		.api = (api_ptr),					\
-		.state = (state_ptr),					\
-		.data = (data_ptr),					\
-		IF_ENABLED(CONFIG_PM_DEVICE, (.pm = pm_device,))	\
-		Z_DEVICE_DEFINE_INIT(node_id, dev_name)			\
-	};								\
-	BUILD_ASSERT(sizeof(Z_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN, \
-		     Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long"); \
-	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
-		(&DEVICE_NAME_GET(dev_name)), level, prio)
+#define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_device,       \
+			data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr,    \
+			...)                                                   \
+	Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)                    \
+	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                     \
+	const Z_DECL_ALIGN(struct device) DEVICE_NAME_GET(dev_name)            \
+		Z_DEVICE_SECTION(level, prio) __used = {                       \
+			.name = drv_name,                                      \
+			.config = (cfg_ptr),                                   \
+			.api = (api_ptr),                                      \
+			.state = (state_ptr),                                  \
+			.data = (data_ptr),                                    \
+			IF_ENABLED(CONFIG_PM_DEVICE, (.pm = pm_device, ))      \
+			Z_DEVICE_DEFINE_INIT(node_id, dev_name)                \
+		};                                                             \
+	BUILD_ASSERT(                                                          \
+		sizeof(Z_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN,        \
+		       Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long");    \
+	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,                \
+			    (&DEVICE_NAME_GET(dev_name)), level, prio)
 
 #if CONFIG_HAS_DTS
 /*
