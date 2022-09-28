@@ -359,6 +359,10 @@ Boards & SoC Support
 * Made these changes in other SoC series:
 
   * gigadevice: Enable SEGGER RTT
+  * Raspberry Pi Pico: Added ADC support
+  * Raspberry Pi Pico: Added PWM support
+  * Raspberry Pi Pico: Added SPI support
+  * Raspberry Pi Pico: Added watchdog support
 
 * Changes for ARC boards:
 
@@ -416,6 +420,7 @@ Boards & SoC Support
 
   * sam_e70_xplained: Uses EEPROM devicetree bindings for Ethernet MAC
   * sam_v71_xult: Uses EEPROM devicetree bindings for Ethernet MAC
+  * rpi_pico: Added west runner configurations for Picoprobe, Jlink and Blackmagicprobe
 
 * Added support for these following shields:
 
@@ -443,6 +448,7 @@ Drivers and Sensors
 
   * STM32: Now supports Vbat monitoring channel and STM32U5 series.
   * Added driver for GigaDevice GD32 SoCs
+  * Raspberry Pi Pico: Added ADC support for the Pico series.
 
 * Audio
 
@@ -630,6 +636,7 @@ Drivers and Sensors
 * PWM
 
   * Added PWM driver for Renesas R-Car platform
+  * Added PWM driver for Raspberry Pi Pico series
   * Added PWM support for NXP LPC55S36
   * Added MCPWM support for ESP32 boards
 
@@ -685,6 +692,7 @@ Drivers and Sensors
 
   * Add interrupt-driven mode support for gd32 driver
   * Enable SPI support on NXP MIMXRT595 EVK.
+  * PL022: Added SPI driver for the PL022 peripheral.
 
 * Timer
 
@@ -1441,6 +1449,8 @@ HALs
 * Nordic
 
 * RPi Pico
+
+  * Renamed ``adc_read`` to ``pico_adc_read``, to avoid name collision with Zephyr's API
 
 * Renesas
 
