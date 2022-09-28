@@ -154,12 +154,41 @@ __weak bool ll_data_path_configured(uint8_t data_path_dir,
 uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 			    uint32_t *timestamp, uint32_t *offset)
 {
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+
+	if (IS_CIS_HANDLE(handle)) {
+		struct ll_iso_datapath *dp = NULL;
+		struct ll_conn_iso_stream *cis;
+
+		cis = ll_conn_iso_stream_get(handle);
+
+		if (cis) {
+			dp = cis->hdr.datapath_in;
+		}
+
+		if (dp &&
+			isoal_tx_get_sync_info(dp->source_hdl, seq,
+					timestamp, offset) == ISOAL_STATUS_OK) {
+			return BT_HCI_ERR_SUCCESS;
+		}
+
+		return BT_HCI_ERR_CMD_DISALLOWED;
+
+	} else if (IS_ADV_ISO_HANDLE(handle)) {
+		/* FIXME: Do something similar to connected */
+
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	return BT_HCI_ERR_UNKNOWN_CONN_ID;
+#else
 	ARG_UNUSED(handle);
 	ARG_UNUSED(seq);
 	ARG_UNUSED(timestamp);
 	ARG_UNUSED(offset);
 
 	return BT_HCI_ERR_CMD_DISALLOWED;
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 }
 
 /* Must be implemented by vendor */
@@ -951,9 +980,9 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 
 		/* Configure SDU similarly to one delivered via HCI */
 		sdu.dbuf = tx_buffer;
-		sdu.cig_ref_point = cig->cig_ref_point;
+		sdu.grp_ref_point = cig->cig_ref_point;
 		sdu.target_event = cis->lll.event_count +
-				   (cis->lll.tx.flush_timeout > 1U ? 0U : 1U);
+					(cis->lll.tx.flush_timeout > 1U ? 0U : 1U);
 		sdu.iso_sdu_length = remaining_tx;
 
 		/* Send all SDU fragments */

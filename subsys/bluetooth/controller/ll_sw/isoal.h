@@ -157,7 +157,7 @@ struct isoal_sdu_tx {
 	/** Time stamp from HCI or vendor specific path (us) */
 	uint32_t time_stamp;
 	/** CIG Reference of target event (us, compensated for drift) */
-	uint32_t cig_ref_point;
+	uint32_t grp_ref_point;
 	/** Target Event of SDU */
 	uint64_t target_event:39;
 };
@@ -335,6 +335,8 @@ struct isoal_source_session {
 
 	struct isoal_source_config param;
 	isoal_sdu_cnt_t            seqn;
+	uint32_t                   tx_time_stamp;
+	uint32_t                   tx_time_offset;
 	uint16_t                   handle;
 	uint16_t                   iso_interval;
 	uint8_t                    framed;
@@ -441,3 +443,8 @@ isoal_status_t isoal_tx_sdu_fragment(isoal_source_handle_t source_hdl,
 
 void isoal_tx_pdu_release(isoal_source_handle_t source_hdl,
 			  struct node_tx_iso *node_tx);
+
+isoal_status_t isoal_tx_get_sync_info(isoal_source_handle_t source_hdl,
+				      uint16_t *seq,
+				      uint32_t *timestamp,
+				      uint32_t *offset);
