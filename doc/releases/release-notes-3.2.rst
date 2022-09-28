@@ -1430,6 +1430,9 @@ Libraries / Subsystems
 
 * Settings
 
+  * Added API function :c:func:`settings_storage_get` which allows to get
+    the storage instance used by the settings backed to store its records.
+
 * Shell
 
 * Storage
