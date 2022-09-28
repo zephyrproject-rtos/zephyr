@@ -77,7 +77,6 @@ struct k_fifo;
 struct k_lifo;
 struct k_stack;
 struct k_mem_slab;
-struct k_mem_pool;
 struct k_timer;
 struct k_poll_event;
 struct k_poll_signal;
@@ -5263,8 +5262,7 @@ extern void *k_malloc(size_t size);
  * @brief Free memory allocated from heap.
  *
  * This routine provides traditional free() semantics. The memory being
- * returned must have been allocated from the heap memory pool or
- * k_mem_pool_malloc().
+ * returned must have been allocated from the heap memory pool.
  *
  * If @a ptr is NULL, no operation is performed.
  *
