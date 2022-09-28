@@ -188,8 +188,8 @@ implements support for. Here is an example devicetree fragment:
            current-speed = <115200>;
    };
 
-Example usage, assuming serial@40001000 is the only enabled node
-with compatible "vnd,serial":
+Example usage, assuming ``serial@40001000`` is the only enabled node
+with compatible ``vnd,serial``:
 
 .. code-block:: c
 
