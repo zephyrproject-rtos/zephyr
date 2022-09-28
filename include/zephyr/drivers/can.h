@@ -561,7 +561,7 @@ struct can_device_state {
  */
 #define Z_CAN_DEVICE_STATE_DEFINE(node_id, dev_name)			\
 	static struct can_device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
+	__attribute__((__section__(".z_devstate")))
 
 /**
  * @brief Define a CAN device init wrapper function
