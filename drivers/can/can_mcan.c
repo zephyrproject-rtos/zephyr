@@ -841,6 +841,16 @@ int can_mcan_send(const struct device *dev,
 		return -ENETUNREACH;
 	}
 
+	if (frame->fd && (can->cccr & CAN_MCAN_CCCR_FDOE) == 0) {
+		LOG_ERR("fd flag set without fd mode enabled.");
+		return -EINVAL;
+	}
+
+	if (frame->brs && (can->cccr & CAN_MCAN_CCCR_BRSE) == 0) {
+		LOG_ERR("brs flag set without fd brs mode enabled.");
+		return -EINVAL;
+	}
+
 	ret = k_sem_take(&data->tx_sem, timeout);
 	if (ret != 0) {
 		return -EAGAIN;
