@@ -1287,6 +1287,10 @@ Libraries / Subsystems
 
 * Filesystem
 
+  * Added cash used to reduce the NVS data lookup time, see
+    :kconfig:option:`CONFIG_NVS_LOOKUP_CACHE` option.
+  * Changing mkfs options to create FAT32 on larger storage when FAT16 fails.
+
 * IPC
 
 * Management
