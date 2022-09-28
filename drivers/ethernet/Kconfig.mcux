@@ -110,4 +110,30 @@ config ETH_MCUX_PTP_CLOCK_INIT_PRIO
 
 endif # PTP_CLOCK_MCUX
 
+
+# Add relocation options for networking code
+if NET_CODE_RELOCATE
+
+if CPU_CORTEX_M7
+
+# Relocate code to ITCM for M7 cores
+
+choice NET_CODE_RAM
+	default NET_CODE_RAM_ITCM
+
+config NET_CODE_RAM_ITCM
+	bool "ITCM"
+	help
+	  Relocate networking subsystem code to ITCM
+
+endchoice
+
+config NET_CODE_RAM_NAME
+	string
+	default "ITCM" if NET_CODE_RAM_ITCM
+
+endif # CPU_CORTEX_M7
+
+endif # NET_CODE_RELOCATE
+
 endif # ETH_MCUX
