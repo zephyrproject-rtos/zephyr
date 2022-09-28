@@ -70,6 +70,38 @@ config NETWORKING
 
 if NETWORKING
 
+config NET_CODE_RELOCATE
+	bool "Relocate network subsystem code into RAM"
+	select CODE_DATA_RELOCATION
+	help
+	  Relocate networking subsystem code into RAM using zephyr_code_relocate
+	  macro. This may enable significant performance gains on some
+	  platforms, depending on the speed of their RAM versus FLASH region.
+if NET_CODE_RELOCATE
+
+choice NET_CODE_RAM
+	prompt "Location to relocate networking code to in RAM"
+	default NET_CODE_RAM_SRAM
+	help
+	  Location to relocated networking code to. Defaults to SRAM unless
+	  the platform selects a higher performance RAM region
+
+config NET_CODE_RAM_SRAM
+	bool "SRAM"
+	select CODE_DATA_RELOCATION_SRAM
+	help
+	  Relocate networking subsystem code to SRAM
+
+endchoice
+
+config NET_CODE_RAM_NAME
+	string
+	default "SRAM" if NET_CODE_RAM_SRAM
+	help
+	  Hidden option for RAM bank to relocate networking code into
+
+endif # NET_CODE_RELOCATE
+
 # Such option should not be configured manually but by device drivers
 # which supports PM properly.
 config NET_POWER_MANAGEMENT

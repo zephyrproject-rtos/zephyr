@@ -13,6 +13,10 @@ zephyr_library_sources(
   utils.c
   )
 
+if(CONFIG_NET_CODE_RELOCATE)
+  zephyr_library_relocate("${CONFIG_NET_CODE_RAM_NAME}_TEXT")
+endif()
+
 if(CONFIG_NET_OFFLOAD)
 zephyr_library_sources(net_context.c net_pkt.c net_tc.c)
 endif()
