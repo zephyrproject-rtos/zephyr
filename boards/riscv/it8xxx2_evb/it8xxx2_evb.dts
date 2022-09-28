@@ -6,7 +6,7 @@
 /dts-v1/;
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <ite/it8xxx2.dtsi>
+#include <ite/it81xx2.dtsi>
 #include <ite/it8xxx2-pinctrl-map.dtsi>
 
 / {
