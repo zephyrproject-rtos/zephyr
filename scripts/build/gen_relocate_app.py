@@ -45,7 +45,7 @@ from elftools.elf.sections import SymbolTableSection
 
 
 PRINT_TEMPLATE = """
-                KEEP(*({0}))
+                *({0})
 """
 
 SECTION_LOAD_MEMORY_SEQ = """
@@ -495,7 +495,6 @@ def main():
             mem_type = mem_type.split("|", 1)[0]
             code_generation = generate_memcpy_code(mem_type,
                                                list_of_sections, code_generation)
-
     dump_header_file(args.output_code, code_generation)
 
 
