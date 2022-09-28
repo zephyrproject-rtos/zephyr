@@ -16,7 +16,7 @@ More information can be found on:
 
 - `Sipeed Longan website <https://longan.sipeed.com/en/>`_
 - `GD32VF103 datasheet <https://www.gigadevice.com/datasheet/gd32vf103xxxx-datasheet/>`_
-- `GD32VF103 user manual <http://www.gd32mcu.com/data/documents/shujushouce/GD32VF103_User_Manual_EN_V1.2.pdf>`_
+- `GD32VF103 user manual <https://www.gd32mcu.com/data/documents/userManual/GD32VF103_User_Manual_Rev1.4.pdf>`_
 - `Nuclei website <https://www.nucleisys.com/download.php>`_
 - `Nuclei Bumblebee core documents <https://github.com/nucleisys/Bumblebee_Core_Doc>`_
 - `Nuclei ISA Spec <https://doc.nucleisys.com/nuclei_spec/>`_
