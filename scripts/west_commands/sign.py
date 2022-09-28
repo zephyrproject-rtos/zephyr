@@ -111,6 +111,8 @@ class Sign(Forceable):
                            help='''path to the tool itself, if needed''')
         group.add_argument('-D', '--tool-data', default=None,
                            help='''path to tool data/configuration directory, if needed''')
+        group.add_argument('-c', '--use-code-partition', action='store_true', default=False,
+                           help='''use zephyr,code-partition chosen DT node insead of default''')
         group.add_argument('tool_args', nargs='*', metavar='tool_opt',
                            help='extra option(s) to pass to the signing tool')
 
@@ -217,8 +219,8 @@ class ImgtoolSigner(Signer):
         vtoff = self.get_cfg(command, build_conf, 'CONFIG_ROM_START_OFFSET')
         # Flash device write alignment and the partition's slot size
         # come from devicetree:
-        flash = self.edt_flash_node(b, args.quiet)
-        align, addr, size = self.edt_flash_params(flash)
+        flash, partitions = self.edt_flash_node(command, b, args.quiet)
+        align, addr, size = self.edt_flash_params(flash, partitions)
 
         if not build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
             log.wrn("CONFIG_BOOTLOADER_MCUBOOT is not set to y in "
@@ -311,12 +313,17 @@ class ImgtoolSigner(Signer):
             return None
 
     @staticmethod
-    def edt_flash_node(b, quiet=False):
+    def edt_flash_node(command, b, quiet=False):
         # Get the EDT Node corresponding to the zephyr,flash chosen DT
         # node; 'b' is the build directory as a pathlib object.
 
         # Ensure the build directory has a compiled DTS file
         # where we expect it to be.
+
+        # Return partitions schema, default schema is ('image-0', 'image-1')
+        # but can be overwritten by flag `--use-code-partition`
+        # to use DT chosen partition instead of default one.
+        args = command.args
         dts = b / 'zephyr' / 'zephyr.dts'
         if not quiet:
             log.dbg('DTS file:', dts, level=log.VERBOSE_VERY)
@@ -335,20 +342,28 @@ class ImgtoolSigner(Signer):
             log.die('devicetree has no chosen zephyr,flash node;',
                     "can't infer flash write block or image-0 slot sizes")
 
-        return flash
+        if args.use_code_partition:
+            if not edt.chosen_node('zephyr,code-partition'):
+                log.die("devicetree has no zephyr,code-partition node")
+
+            partitions = (edt.chosen_node('zephyr,code-partition').label, )
+        else:
+            partitions = ('image-0', 'image-1')
+
+        return flash, partitions
 
     @staticmethod
-    def edt_flash_params(flash):
+    def edt_flash_params(flash, partition_names):
         # Get the flash device's write alignment and offset from the
         # image-0 partition and the size from image-1 partition, out of the
         # build directory's devicetree. image-1 partition size is used,
         # when available, because in swap-move mode it can be one sector
         # smaller. When not available, fallback to image-0 (single image dfu).
 
+        # The partition names: image-0 and image-1 are default ones,
+        # can be overwritten by `args.use_code_partition`.
         # The node must have a "partitions" child node, which in turn
-        # must have child node labeled "image-0" and may have a child node
-        # named "image-1". By convention, the slots for consumption by
-        # imgtool are linked into these partitions.
+        # must have at least child node named partition_names[0].
         if 'partitions' not in flash.children:
             log.die("DT zephyr,flash chosen node has no partitions,",
                     "can't find partitions for MCUboot slots")
@@ -356,12 +371,12 @@ class ImgtoolSigner(Signer):
         partitions = flash.children['partitions']
         images = {
             node.label: node for node in partitions.children.values()
-            if node.label in set(['image-0', 'image-1'])
+            if node.label in set(partition_names)
         }
 
-        if 'image-0' not in images:
-            log.die("DT zephyr,flash chosen node has no image-0 partition,",
-                    "can't determine its address")
+        if partition_names[0] not in images:
+            log.die(f"DT zephyr,flash chosen node has no {partition_names[0]}",
+                    "partition, can't determine its address")
 
         # Die on missing or zero alignment or slot_size.
         if "write-block-size" not in flash.props:
@@ -374,13 +389,16 @@ class ImgtoolSigner(Signer):
 
         # The partitions node, and its subnode, must provide
         # the size of image-1 or image-0 partition via the regs property.
-        image_key = 'image-1' if 'image-1' in images else 'image-0'
+        if (len(partition_names) > 1) and (partition_names[1] in images):
+            image_key = partition_names[1]
+        else:
+            image_key = partition_names[0]
         if not images[image_key].regs:
             log.die(f'{image_key} flash partition has no regs property;',
                     "can't determine size of image")
 
         # always use addr of image-0, which is where images are run
-        addr = images['image-0'].regs[0].addr
+        addr = images[partition_names[0]].regs[0].addr
 
         size = images[image_key].regs[0].size
         if size == 0:
