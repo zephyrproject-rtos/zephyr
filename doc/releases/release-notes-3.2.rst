@@ -1285,6 +1285,11 @@ Libraries / Subsystems
 
 * Emul
 
+  * Added :c:macro:`EMUL_DT_DEFINE` and :c:macro:`EMUL_DT_INST_DEFINE` to mirror
+    :c:macro:`DEVICE_DT_DEFINE` and :c:macro:`DEVICE_DT_INST_DEFINE` respectively.
+  * Added :c:macro:`EMUL_DT_GET` to mirror :c:macro:`DEVICE_DT_GET`.
+  * Removed the need to manually register emulators in their init function (automatically done).
+
 * Filesystem
 
   * Added cash used to reduce the NVS data lookup time, see
@@ -1394,6 +1399,17 @@ Libraries / Subsystems
 * Storage
 
 * Testsuite
+
+  * Added Kconfig support to ``unit_testing`` platform.
+  * Migrate tests to use :kconfig:option:`CONFIG_ZTEST_NEW_API`
+  * Add ztest options for shuffling tests/suites via:
+
+    * :kconfig:option:`CONFIG_ZTEST_SHUFFLE`
+    * :kconfig:option:`CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT`
+    * :kconfig:option:`CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT`
+
+  * Add ztest native_posix command line arguments for running specific tests/suites using
+    ``--test suite_name:*`` or ``--test suite_name::test_name`` command line arguments.
 
 * Tracing
 
