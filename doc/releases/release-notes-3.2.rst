@@ -242,8 +242,8 @@ Architectures
   * Enabled automatic placement of the IRQ vector table.
   * Enabled S2RAM for Cortex-M, hooking up the provided API functions.
   * Added icache and dcache maintenance functions, and switched to the new
-    Kconfig symbols (:kconfig:option:`CPU_HAS_DCACHE` and
-    :kconfig:option:`CPU_HAS_ICACHE`).
+    Kconfig symbols (:kconfig:option:`CONFIG_CPU_HAS_DCACHE` and
+    :kconfig:option:`CONFIG_CPU_HAS_ICACHE`).
   * Added data/instr. sync barriers after writing to ``SCTLR`` to disable MPU.
   * Use ``spsr_cxsf`` instead of unpredictable ``spsr_hyp`` on Cortex-R52.
   * Removes ``-Wstringop-overread`` warning with GCC 12.
@@ -271,7 +271,7 @@ Architectures
   * Introduced support for RV32E.
   * Reduced callee-saved registers for RV32E.
   * Introduced Zicsr, Zifencei and BitManip as separate extensions.
-  * Introduced :kconfig:option:`CONFIG_ALWAYS_SWITCH_THROUGH_ECALL` for
+  * Introduced :kconfig:option:`CONFIG_RISCV_ALWAYS_SWITCH_THROUGH_ECALL` for
     plaforms that require every ``mret`` to be balanced by ``ecall``.
   * IRQ vector table is now used for vectored mode.
   * Disabled :kconfig:option:`CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE` for CLIC.
@@ -293,7 +293,7 @@ Architectures
 
   * Macros ``RSR`` and ``WSR`` have been renamed to :c:macro:`XTENSA_RSR`
     and :c:macro:`XTENSA_WSR` to give them proper namespace.
-  * Fixed a rounding error in timing function when coverting from cycles
+  * Fixed a rounding error in timing function when converting from cycles
     to nanoseconds.
   * Fixed the calculation of average "cycles to nanoseconds" to actually
     return nanoseconds instead of cycles.
@@ -351,7 +351,7 @@ Bluetooth
   * The handling of GATT multiple notifications has been rewritten, and is now
     only to be used as a low-level API
   * Added support for GATT CCCs in arbitrary locations as a client
-  * Extended the ``bt_conn_info`` structure with security information
+  * Extended the :c:struct:`bt_conn_info` structure with security information
   * Added a new :kconfig:option:`CONFIG_BT_PRIVACY_RANDOMIZE_IR` that prevents
     the Host from using Controller-provided identity roots
   * Added support for GATT over EATT
@@ -387,7 +387,7 @@ Bluetooth
   * Added a new :kconfig:option:`CONFIG_BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX`
     for allowing periodic sync event skipping
   * Added a new :kconfig:option:`CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN` for
-    minimal time resevation
+    minimal time reservation
   * Implemented ISO Test Mode HCI commands
   * Added support for multiple BIS sync selection within a BIG
   * Implement flushing pending ISO TX PDUs when a BIG event is terminated
@@ -623,7 +623,6 @@ Drivers and Sensors
   * Added Flash support for Cadence QSPI NOR FLASH.
   * Fixed usage fault on nRF driver (along with BLE) due to possible incorrect handling of the ticker stop operation.
 
-
 * GPIO
 
   * Added GPIO driver for Renesas Smartbond platform
@@ -675,7 +674,7 @@ Drivers and Sensors
 
 * KSCAN
 
-  * Enable the touch panel on the NXP MIMXRT1170 EVK.
+  * Enabled the touch panel on the NXP MIMXRT1170 EVK.
 
 * LED
 
@@ -840,7 +839,7 @@ Networking
 * LwM2M:
 
   * Moved LwM2M 1.1 support out of experimental.
-  * Refactored SenML-JSON and JSON econder/decoder to use Zephyr's JSON library
+  * Refactored SenML-JSON and JSON encoder/decoder to use Zephyr's JSON library
     internally.
   * Extended LwM2M shell module with the following commands: ``exec``, ``read``,
     ``write``, ``start``, ``stop``, ``update``, ``pause``, ``resume``.
@@ -1079,10 +1078,9 @@ Devicetree
     * :dtcompatible:`arm,armv8m-itm`
     * :dtcompatible:`arm,armv8m-systick`
     * :dtcompatible:`arm,beetle-syscon`
-    * :dtcompatible:`arm,itm`
     * :dtcompatible:`arm,pl022`
     * :dtcompatible:`aspeed,ast10x0-clock`
-    * :dtcompatible:`atmel,24mac402`
+    * :dtcompatible:`atmel,at24mac402`
     * :dtcompatible:`atmel,ataes132a`
     * :dtcompatible:`atmel,sam-smc`
     * :dtcompatible:`atmel,sam4l-flashcalw-controller`
@@ -1097,7 +1095,7 @@ Devicetree
     * :dtcompatible:`espressif,esp32-twai`
     * :dtcompatible:`espressif,esp32-usb-serial`
     * :dtcompatible:`espressif,esp32-wifi`
-    * :dtcompatible:`gd,gd32-adac`
+    * :dtcompatible:`gd,gd32-adc`
     * :dtcompatible:`gd,gd32-cctl`
     * :dtcompatible:`gd,gd32-dma`
     * :dtcompatible:`gd,gd32-flash-controller`
@@ -1160,9 +1158,9 @@ Devicetree
     * :dtcompatible:`renesas,smartbond-pinctrl`
     * :dtcompatible:`renesas,smartbond-uart`
     * :dtcompatible:`sifive,clint0`
-    * :dtcompatible:`sifive,e24.yaml` (formerly ``riscv,sifive-e24``)
-    * :dtcompatible:`sifive,e31.yaml` (formerly ``riscv,sifive-e31``)
-    * :dtcompatible:`sifive,e51.yaml` (formerly ``riscv,sifive-e51``)
+    * :dtcompatible:`sifive,e24` (formerly ``riscv,sifive-e24``)
+    * :dtcompatible:`sifive,e31` (formerly ``riscv,sifive-e31``)
+    * :dtcompatible:`sifive,e51` (formerly ``riscv,sifive-e51``)
     * :dtcompatible:`sifive,s7` (formerly ``riscv,sifive-s7``)
     * :dtcompatible:`silabs,gecko-semailbox`
     * :dtcompatible:`snps,arc-iot-sysconf`
@@ -1258,7 +1256,7 @@ Devicetree
 
       * :dtcompatible:`intel,adsp-tlb`:
         new ``paddr-size``, ``exec-bit-idx``, ``write-bit-idx`` properties
-      * :dtcompatible:`intel,cavs-shim-clkctl`: new ``wovcro-supported`` property
+      * :dtcompatible:`intel,adsp-shim-clkctl`: new ``wovcro-supported`` property
       * Removed ``intel,dmic`` binding
       * Removed ``intel,s1000-pinmux`` binding
 
@@ -1349,7 +1347,7 @@ Devicetree
       ``border-waveform`` properties are now optional.
     * ``riscv,clint0`` removed; all in-tree users were converted to
       ``sifive,clint0`` or derived bindings
-    * :dtcompatible:`worldsemi,ws2812`: SPI bindings have new ``spi-cpol``,
+    * :dtcompatible:`worldsemi,ws2812-spi`: SPI bindings have new ``spi-cpol``,
       ``spi-cpha`` properties
     * :dtcompatible:`ns16550`: ``reg-shift`` is now required
     * Removed ``reserved-memory`` binding
@@ -1485,7 +1483,8 @@ Libraries / Subsystems
 
   * Introduced a 'zephyr,buffer-size' DT property to set the sizes for TX and
     RX buffers per created instance.
-  * Set WQ priority back to PRIO_PREEMPT to fix an issue that was starving the scheduler.
+  * Set WQ priority back to ``PRIO_PREEMPT`` to fix an issue that was starving
+    the scheduler.
   * ``icmsg_buf`` library was renamed to ``spsc_pbuf``.
   * Added cache handling support to ``spsc_pbuf``.
   * Fixed an issue where the TX virtqueue was misaligned by 2 bytes due to the
@@ -1512,19 +1511,19 @@ Libraries / Subsystems
 
 * POSIX
 
-  * Make ``tz`` non-const in ``gettimeofday()`` for conformance to spec.
-  * Fix pthread descriptor resource leak. Previously only pthreads with state
+  * Made ``tz`` non-const in ``gettimeofday()`` for conformance to spec.
+  * Fixed pthread descriptor resource leak. Previously only pthreads with state
     ``PTHREAD_TERMINATED`` could be reused. However, ``pthread_join()`` sets
     the state to ``PTHREAD_EXITED``. Consider both states as candidates in
     ``pthread_create()``.
-  * Add ``perror()`` implementation
-  * Use consistent timebase in ``sem_timedwait()``
+  * Added ``perror()`` implementation
+  * Used consistent timebase in ``sem_timedwait()``
 
 * RTIO
 
   * Initial version of an asynchronous task and executor API for I/O similar inspired
     by Linux's very successful io_uring.
-  * Provides a simple linear and limited concurrency executor, simple task queuing,
+  * Provided a simple linear and limited concurrency executor, simple task queuing,
     and the ability to poll for task completions.
 
 * SD Subsystem
@@ -1558,14 +1557,14 @@ Libraries / Subsystems
 * Testsuite
 
   * Added Kconfig support to ``unit_testing`` platform.
-  * Migrate tests to use :kconfig:option:`CONFIG_ZTEST_NEW_API`
-  * Add ztest options for shuffling tests/suites via:
+  * Migrated tests to use :kconfig:option:`CONFIG_ZTEST_NEW_API`
+  * Added ztest options for shuffling tests/suites via:
 
     * :kconfig:option:`CONFIG_ZTEST_SHUFFLE`
     * :kconfig:option:`CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT`
     * :kconfig:option:`CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT`
 
-  * Add ztest native_posix command line arguments for running specific tests/suites using
+  * Added ztest native_posix command line arguments for running specific tests/suites using
     ``--test suite_name:*`` or ``--test suite_name::test_name`` command line arguments.
 
 * Tracing
@@ -1581,7 +1580,7 @@ HALs
 
 * Atmel
 
-  * sam: Fix incorrect CIDR values for revision b silicon of SAMV71 devices.
+  * sam: Fixed incorrect CIDR values for revision b silicon of SAMV71 devices.
 
 * Espressif
 
@@ -1671,7 +1670,7 @@ MCUboot
 Trusted Firmware-M
 ******************
 
-* Allow enabling FPU in the application when TF-M is enabled.
+* Allowed enabling FPU in the application when TF-M is enabled.
 * Added option to exclude non-secure TF-M application from build.
 * Relocated ``mergehex.py`` to ``scripts/build``.
 * Added option for custom reset handlers.
@@ -1887,7 +1886,7 @@ Addressed issues
 * :github:`50394` - RT685 flash chip size is incorrect
 * :github:`50386` - Twister "FLASH overflow" does not account for imgtool trailer.
 * :github:`50374` - CI failure in v3.1.0-rc2 full run
-* :github:`50368` - esp32: counter driver not working with absoulte value
+* :github:`50368` - esp32: counter driver not working with absolute value
 * :github:`50344` - bl5340_dvk_cpuapp: undefined reference to ``__device_dts_ord_14``
 * :github:`50343` - uninitialized variable in kernel.workqueue test
 * :github:`50342` - mcuboot: BOOT_MAX_ALIGN is redefined
@@ -1951,7 +1950,7 @@ Addressed issues
 * :github:`49982` - SD: f_sync will always fail using the sdhc_spi driver
 * :github:`49970` - strange behavior in the spi_flash example
 * :github:`49960` - LoRaWAN Code won't linking when config with CN470 region
-* :github:`49956` - ``NRF_DRIVE_S0D1`` option is not always overriden in the ``nordic,nrf-twi`` and ``nordic,nrf-twim`` nodes
+* :github:`49956` - ``NRF_DRIVE_S0D1`` option is not always overridden in the ``nordic,nrf-twi`` and ``nordic,nrf-twim`` nodes
 * :github:`49953` - stm32 gpio_basic_api test fail with CONFIG_ZTEST_NEW_API
 * :github:`49939` - stm32 adc driver_api test fails on stm32wb55 and stm32l5
 * :github:`49938` - drivers/modem/gsm_ppp.c:  unnecessary modem_cmd_handler_tx_lock when CONFIG_GSM_MUX disabled
@@ -2123,7 +2122,7 @@ Addressed issues
 * :github:`48808` - Pinctl api breaks NXP imx6sx
 * :github:`48806` - Bluetooth: controller: conformance test instability
 * :github:`48804` - LE Audio: Add HAP sample to Zephyr footprint tracking
-* :github:`48801` - test: driver: wdt: wdt cases fails in LPC platfrom randonly
+* :github:`48801` - test: driver: wdt: wdt cases fails in LPC platform randonly
 * :github:`48799` - Why is the command input incomplete?
 * :github:`48780` - boards: bus devices label names should include address on bus
 * :github:`48779` - net.socket.select: failed (qemu/mps2_an385)
@@ -2428,7 +2427,7 @@ Addressed issues
 * :github:`46345` - get_maintainer.py incorrectly invoked by Github?
 * :github:`46341` - Zephyr scheduler lock: add selective locking up to a given priority ceiling
 * :github:`46335` - For ESP32, initialization of static object during declaration with derived class type doesn't work.
-* :github:`46326` - Async UART for STM32 U5 suppport
+* :github:`46326` - Async UART for STM32 U5 support
 * :github:`46325` - ESP32 strcmp error while enable MCUBOOT and NEWLIB_LIBC
 * :github:`46324` - it8xxx2_evb: tests/kernel/sched/schedule_api fail due to k_sleep(K_MSEC(100)) not correct
 * :github:`46322` - Time units in shtcx sensor
@@ -2485,7 +2484,7 @@ Addressed issues
 * :github:`45827` - bluetooth: bluetooth host: Adding the same device to resolving list
 * :github:`45807` - CivetWeb doesn't build for CC3232SF
 * :github:`45802` - Some tests reported as PASSED (device) but they were only build
-* :github:`45774` - drivers: gpio: pca9555: Driver is writting to output port despite all pins been configured as input
+* :github:`45774` - drivers: gpio: pca9555: Driver is writing to output port despite all pins been configured as input
 * :github:`45760` - Running twister on new board files
 * :github:`45741` - LE Audio: Allow unique ``bt_codec_qos`` for each unicast stream
 * :github:`45678` - Lorawan: Devnonce has already been used
@@ -2596,7 +2595,7 @@ Addressed issues
 * :github:`42208` - tests/subsys/logging/log_api/ fails qemu_leon3 if ptr_in_rodata() is enabled for SPARC
 * :github:`42197` - Bluetooth: Controller: llcp: No disconnect if remote does not response for initiated control procedure
 * :github:`42134` - TLS handshake error using DTLS on updatehub
-* :github:`42102` - doc: searches for sys_reboot() are inconsistant
+* :github:`42102` - doc: searches for sys_reboot() are inconsistent
 * :github:`41954` - Bluetooth: Controller: BIS: Event timing calculations
 * :github:`41922` - Bluetooth: Controller: ISOAL: TX: Implement SDU Fragmentation into Unframed PDUs
 * :github:`41880` - Strict test ordering in new ztest API
@@ -2700,7 +2699,7 @@ Addressed issues
 * :github:`23032` - Need help to enable Sub-GHz for ieee802154_cc13xx_cc26xx
 * :github:`22208` - gpio: clean up debounce configuration
 * :github:`22079` - Add reception channel information to advertise_report
-* :github:`21980` - Doesnt Install on Raspberry Pi
+* :github:`21980` - Doesn't Install on Raspberry Pi
 * :github:`21234` - drivers: usb_dc_sam0: usb detach and reattach does not work
 * :github:`19979` - Implement Cortex-R floating-point support
 * :github:`19244` - BLE throughput of DFU by Mcumgr is too slow
