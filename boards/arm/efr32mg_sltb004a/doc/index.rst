@@ -202,7 +202,7 @@ the following message:
    https://www.silabs.com/documents/public/user-guides/ug309-sltb004a-user-guide.pdf
 
 .. _EFR32MG-SLTB004A Schematics:
-   https://www.silabs.com/documents/public/schematic-files/TBSense2-BRD4166A-D00-schematic.pdf
+   https://www.silabs.com/documents/public/schematic-files/BRD4166A-D00-schematic.pdf
 
 .. _EFR32MG Website:
    https://www.silabs.com/products/wireless/mesh-networking/efr32mg-mighty-gecko-zigbee-thread-soc
