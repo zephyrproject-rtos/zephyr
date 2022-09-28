@@ -77,7 +77,8 @@ already supported, which can also be re-used on this mimxrt685_evk board:
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | OctalSPI Flash                      |
 +-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling                 |
+| USART     | on-chip    | serial port-polling;                |
+|           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+

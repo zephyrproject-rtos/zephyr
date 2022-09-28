@@ -68,7 +68,8 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling                 |
+| USART     | on-chip    | serial port-polling;                |
+|           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 | WWDT      | on-chip    | windowed watchdog timer             |
 +-----------+------------+-------------------------------------+

@@ -70,7 +70,8 @@ already supported, which can also be re-used on this lpcxpresso55s28 board:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling                 |
+| USART     | on-chip    | serial port-polling;                |
+|           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 | WWDT      | on-chip    | windowed watchdog timer             |
 +-----------+------------+-------------------------------------+

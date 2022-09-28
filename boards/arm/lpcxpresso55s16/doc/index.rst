@@ -70,7 +70,8 @@ already supported, which can also be re-used on this lpcxpresso55s16 board:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port                         |
+| USART     | on-chip    | serial port-polling;                |
+|           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 | SENSOR    | off-chip   | fxos8700 trigger                    |
 +-----------+------------+-------------------------------------+
