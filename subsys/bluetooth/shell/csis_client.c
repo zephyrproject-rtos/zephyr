@@ -97,6 +97,10 @@ static void csis_discover_cb(struct bt_conn *conn,
 	shell_print(ctx_shell, "Found %zu sets on member[%u]",
 		    set_count, conn_index);
 
+	for (size_t i = 0U; i < set_count; i++) {
+		shell_print(ctx_shell, "CSIS[%zu]: %p", i, &member->insts[i]);
+	}
+
 	set_members[conn_index] = member;
 }
 
@@ -244,8 +248,10 @@ static int cmd_csis_client_init(const struct shell *sh, size_t argc,
 static int cmd_csis_client_discover(const struct shell *sh, size_t argc,
 				    char *argv[])
 {
-	int err;
+	char addr[BT_ADDR_LE_STR_LEN];
 	long member_index = 0;
+	struct bt_conn *conn;
+	int err;
 
 	if (argc > 1) {
 		member_index = strtol(argv[1], NULL, 0);
@@ -261,8 +267,12 @@ static int cmd_csis_client_discover(const struct shell *sh, size_t argc,
 		ctx_shell = sh;
 	}
 
-	shell_print(sh, "Discovering for member[%u]", (uint8_t)member_index);
-	err = bt_csis_client_discover(conns[member_index]);
+	conn = conns[member_index];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	shell_print(sh, "Discovering for member[%u] (%s)",
+		    (uint8_t)member_index, addr);
+	err = bt_csis_client_discover(conn);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
