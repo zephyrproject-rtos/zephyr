@@ -544,6 +544,13 @@ Drivers and Sensors
 
 * DAI
 
+* DFU
+
+  * Fixed fetch of the flash write block size from incorect device by
+    ``flash_img``.
+  * Fixed possible build failure in the image manager for mcuboot on
+    redefinitions of :c:macro:`BOOT_MAX_ALIGN` and :c:macro:`BOOT_MAGIC_SZ`.
+
 * Display
 
   * Renamed EPD controller driver GD7965 to UC81xx.
