@@ -39,4 +39,4 @@ Zephyr project.
 
 
 [TSC Project Roles]: <https://docs.zephyrproject.org/latest/project/project_roles.html>
-[GitHub Permission Level]: <https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-permission-levels-for-an-organization>
+[GitHub Permission Level]: <https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-roles-for-an-organization>
