@@ -1554,6 +1554,11 @@ Libraries / Subsystems
 
 * Storage
 
+  * :c:func:`flash_area_open` returns error if area's flash device is unreachable.
+  * ``flash_area`` components were reworked so build-time reference to the flash
+    device is used instead of its name with runtime driver buinding.
+  * Added ``FIXED_PARTITION_`` macros that move flash_map to use DTS node labels.
+
 * Testsuite
 
   * Added Kconfig support to ``unit_testing`` platform.
