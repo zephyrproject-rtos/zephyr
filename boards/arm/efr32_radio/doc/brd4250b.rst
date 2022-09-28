@@ -101,7 +101,7 @@ Reset the board and you should see the following message in the terminal:
 
 
 .. _EFR32FG1 Website:
-   https://www.silabs.com/products/wireless/proprietary/efr32-flex-gecko-2-4-ghz-sub-ghz
+   https://www.silabs.com/wireless/proprietary/efr32fg1-series-1-sub-ghz-2-4-ghz-socs
 
 .. _EFR32FG1 Datasheet:
    https://www.silabs.com/documents/public/data-sheets/efr32fg1-datasheet.pdf
@@ -119,4 +119,4 @@ Reset the board and you should see the following message in the terminal:
    https://www.silabs.com/documents/public/reference-manuals/brd4250b-rm.pdf
 
 .. _EFR32FG1-BRD4250B Schematics:
-   https://www.silabs.com/documents/public/schematic-files/efr32fg1-brd4250b-b02-schematic.pdf
+   https://www.silabs.com/documents/public/schematic-files/BRD4250B-B02-schematic.pdf
