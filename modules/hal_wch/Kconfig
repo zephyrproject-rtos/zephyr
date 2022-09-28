@@ -1,0 +1,276 @@
+# Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_WCH_MODULE
+	bool
+
+config HAS_CH32_HAL
+	bool
+
+config USE_GD32_COMPAT
+	bool
+
+if HAS_CH32_HAL
+
+config USE_CH32_ADC
+	bool
+	help
+	  Enable CH32 Analog-to-Digital Converter (ADC) HAL module driver
+
+config USE_CH32_BKP
+	bool
+	help
+	  Enable CH32 Backup Registers (BKP) HAL module driver
+
+config USE_CH32_CAN
+	bool
+	help
+	  Enable CH32 Controller Area Network (CAN) HAL module driver
+
+config USE_CH32_CRC
+	bool
+	help
+	  Enable CH32 Cyclic redundancy check calculation unit (CRC) HAL
+	  module driver
+
+config USE_CH32_DAC
+	bool
+	help
+	  Enable CH32 Digital-to-Analog Converter (DAC) HAL module driver
+
+config USE_CH32_DBGMCU
+	bool
+	help
+	  Enable CH32 Debug (DBG) HAL module driver
+
+config USE_CH32_DVP
+	bool
+	help
+	  Enable CH32 Digital Video Port (DVP) HAL module driver
+
+config USE_CH32_DMA
+	bool
+	help
+	  Enable CH32 Direct Memory Access controller (DMA) HAL module driver
+
+config USE_CH32_ETH
+	bool
+	help
+	  Enable CH32 Ethernet (ETH) HAL module driver
+
+config USE_CH32_EXTI
+	bool
+	help
+	  Enable CH32 Interrupt/Event controller (EXTI) HAL module driver
+
+config USE_CH32_FSMC
+	bool
+	help
+	  Enable CH32 Flexible Static Memory Controller (FSMC) HAL module driver
+
+config USE_CH32_FLASH
+	bool
+	help
+	  Enable CH32 Flash Memory Controller HAL module driver
+
+config USE_CH32_IWDG
+	bool
+	help
+	  Enable CH32 Independent Watchdog (IWDG) HAL module driver
+
+config USE_CH32_GPIO
+	bool
+	default y
+	help
+	  Enable CH32 General-purpose and Alternate-Function I/Os
+	  (GPIO and AFIO) HAL module driver
+
+config USE_CH32_I2C
+	bool
+	help
+	  Enable CH32 Inter-Integrated Circuit Interface (I2C) HAL module driver
+
+config USE_CH32_MISC
+	bool
+	help
+	  Enable CH32 System Utilities (MISC) HAL module driver
+
+config USE_CH32_OPA
+	bool
+	help
+	  Enable CH32 Operational amplifier (OPA) HAL module driver
+
+config USE_CH32_PWR
+	bool
+	help
+	  Enable CH32 Power Control (PWR) HAL module driver
+
+config USE_CH32_RCC
+	bool
+	default y
+	help
+	  Enable CH32 Reset and Clock Control (RCC) HAL module driver
+
+config USE_CH32_RNG
+	bool
+	help
+	  Enable CH32 Random Number Generator (RNG) HAL module driver
+
+config USE_CH32_RTC
+	bool
+	help
+	  Enable CH32 Real-Time Clock (RTC) HAL module driver
+
+config USE_CH32_SDIO
+	bool
+	help
+	  Enable CH32 Secure Digital Input/Output interface (SDIO) HAL module
+	  driver
+
+config USE_CH32_SPI
+	bool
+	help
+	  Enable CH32 Serial Peripheral Interface(SPI) HAL module driver
+
+config USE_CH32_TIM
+	bool
+	help
+	  Enable CH32 Timer (TIM) HAL module driver
+
+config USE_CH32_USART
+	bool
+	help
+	  Enable CH32 Universal Synchronous/Asynchronous Receiver/Transmitter
+	  (USART) HAL module driver
+
+config USE_CH32_WWDG
+	bool
+	help
+	  Enable CH32 Window Watchdog (WWDG) HAL module driver
+
+config USE_GD32_ADC
+	depends on USE_GD32_COMPAT
+	select USE_CH32_ADC
+	bool
+
+config USE_GD32_BKP
+	depends on USE_GD32_COMPAT
+	select USE_CH32_BKP
+	bool
+
+config USE_GD32_CAN
+	depends on USE_GD32_COMPAT
+	select USE_CH32_CAN
+	bool
+
+config USE_GD32_CRC
+	depends on USE_GD32_COMPAT
+	select USE_CH32_CRC
+	bool
+
+config USE_GD32_DAC
+	depends on USE_GD32_COMPAT
+	select USE_CH32_DAC
+	bool
+
+config USE_GD32_DBG
+	depends on USE_GD32_COMPAT
+	select USE_CH32_DBGMCU
+	bool
+
+config USE_GD32_DCI
+	depends on USE_GD32_COMPAT
+	select USE_CH32_DVP
+	bool
+
+config USE_GD32_DMA
+	depends on USE_GD32_COMPAT
+	select USE_CH32_DMA
+	bool
+
+config USE_GD32_ENET
+	depends on USE_GD32_COMPAT
+	select USE_CH32_ETH
+	bool
+
+config USE_GD32_EXMC
+	depends on USE_GD32_COMPAT
+	select USE_CH32_FSMC
+	bool
+
+config USE_GD32_EXTI
+	depends on USE_GD32_COMPAT
+	select USE_CH32_EXTI
+	bool
+
+config USE_GD32_FMC
+	depends on USE_GD32_COMPAT
+	select USE_CH32_FLASH
+	bool
+
+config USE_GD32_FWDGT
+	depends on USE_GD32_COMPAT
+	select USE_CH32_IWDG
+	bool
+
+config USE_GD32_GPIO
+	depends on USE_GD32_COMPAT
+	select USE_CH32_GPIO
+	bool
+
+config USE_GD32_I2C
+	depends on USE_GD32_COMPAT
+	select USE_CH32_I2C
+	bool
+
+config USE_GD32_MISC
+	depends on USE_GD32_COMPAT
+	select USE_CH32_MISC
+	bool
+
+config USE_GD32_PMU
+	depends on USE_GD32_COMPAT
+	select USE_CH32_PWR
+	bool
+
+config USE_GD32_RCU
+	depends on USE_GD32_COMPAT
+	select USE_CH32_RCC
+	bool
+
+config USE_GD32_RTC
+	depends on USE_GD32_COMPAT
+	select USE_CH32_RTC
+	bool
+
+config USE_GD32_SDIO
+	depends on USE_GD32_COMPAT
+	select USE_CH32_SDIO
+	bool
+
+config USE_GD32_SPI
+	depends on USE_GD32_COMPAT
+	select USE_CH32_SPI
+	bool
+
+config USE_GD32_TIMER
+	depends on USE_GD32_COMPAT
+	select USE_CH32_TIM
+	bool
+
+config USE_GD32_TRNG
+	depends on USE_GD32_COMPAT
+	select USE_CH32_RNG
+	bool
+
+config USE_GD32_USART
+	depends on USE_GD32_COMPAT
+	select USE_CH32_USART
+	bool
+
+config USE_GD32_WWDGT
+	depends on USE_GD32_COMPAT
+	select USE_CH32_WWDG
+	bool
+
+endif # HAS_CH32_HAL

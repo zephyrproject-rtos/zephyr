@@ -62,6 +62,9 @@ comment "hal_gigadevice module not available."
 comment "hal_nordic module not available."
 	depends on !ZEPHYR_HAL_NORDIC_MODULE
 
+comment "hal_wch module not available."
+	depends on !ZEPHYR_HAL_WCH_MODULE
+
 comment "liblc3 module not available."
 	depends on !ZEPHYR_LIBLC3_MODULE
 
