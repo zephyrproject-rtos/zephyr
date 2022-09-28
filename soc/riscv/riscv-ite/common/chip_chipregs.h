@@ -534,6 +534,13 @@
 #define GPCR_PORT_PIN_MODE_PULLUP   BIT(2)
 #define GPCR_PORT_PIN_MODE_PULLDOWN BIT(1)
 
+/*
+ * If both PULLUP and PULLDOWN are set to 1b, the corresponding port would be
+ * configured as tri-state.
+ */
+#define GPCR_PORT_PIN_MODE_TRISTATE	(GPCR_PORT_PIN_MODE_INPUT | \
+					 GPCR_PORT_PIN_MODE_PULLUP | \
+					 GPCR_PORT_PIN_MODE_PULLDOWN)
 
 /*
  * IT8XXX2 register structure size/offset checking macro function to mitigate
