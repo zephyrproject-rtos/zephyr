@@ -66,6 +66,9 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
 {
 	int64_t now, end = sys_clock_timeout_end_calc(timeout);
 	void *ret = NULL;
+
+	end = K_TIMEOUT_EQ(timeout, K_FOREVER) ? INT64_MAX : end;
+
 	k_spinlock_key_t key = k_spin_lock(&h->lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, aligned_alloc, h, timeout);
