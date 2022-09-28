@@ -319,8 +319,8 @@ path.
 
 There are two options: the onboard debug circuit can be updated with Segger
 J-Link firmware, or :ref:`jlink-external-debug-probe` can be attached to the
-EVK. See `Using J-Link with MIMXRT1060-EVK or MIMXRT1064-EVK`_ for more
-details.
+EVK. See `Using J-Link with MIMXRT1060-EVK or MIMXRT1064-EVK`_ or
+`Using J-Link with MIMXRT1060-EVKB`_ for more details.
 
 Configuring a Console
 =====================
@@ -437,3 +437,6 @@ connected to the EVK properly. See :ref:`Using J-Link RT1060` for more details.
 
 .. _Using J-Link with MIMXRT1060-EVK or MIMXRT1064-EVK:
    https://community.nxp.com/t5/i-MX-RT-Knowledge-Base/Using-J-Link-with-MIMXRT1060-EVK-or-MIMXRT1064-EVK/ta-p/1281149
+
+.. _Using J-Link with MIMXRT1060-EVKB:
+   https://community.nxp.com/t5/i-MX-RT-Knowledge-Base/Using-J-Link-with-MIMXRT1060-EVKB/ta-p/1452717
