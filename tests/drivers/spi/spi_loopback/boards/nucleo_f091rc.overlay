@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+	dmas = <&dma2 4 3 0x440
+		&dma2 3 3 0x480>;
+	dma-names = "tx", "rx";
+};
+
+&spi1 {
+	status = "okay";
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};
+
+&dma2 {
+	status = "okay";
+};
