@@ -147,8 +147,6 @@ extern struct k_pipe PIPE_BIGBUFF;
 
 extern struct k_mem_slab MAP1;
 
-extern struct k_mem_pool DEMOPOOL;
-
 
 
 /* PRINT_STRING
