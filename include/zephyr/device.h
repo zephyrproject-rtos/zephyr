@@ -924,7 +924,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		.api = (api_ptr),					\
 		.state = (state_ptr),					\
 		.data = (data_ptr),					\
-		COND_CODE_1(CONFIG_PM_DEVICE, (.pm = pm_device,), ())	\
+		IF_ENABLED(CONFIG_PM_DEVICE, (.pm = pm_device,))	\
 		Z_DEVICE_DEFINE_INIT(node_id, dev_name)			\
 	};								\
 	BUILD_ASSERT(sizeof(Z_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN, \
