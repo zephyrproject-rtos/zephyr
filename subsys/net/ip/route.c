@@ -235,10 +235,6 @@ static struct net_nbr *nbr_nexthop_get(struct net_if *iface,
 		return NULL;
 	}
 
-	NET_ASSERT(nbr->idx != NET_NBR_LLADDR_UNKNOWN,
-		   "Nexthop %s not in neighbor cache!",
-		   net_sprint_ipv6_addr(addr));
-
 	net_nbr_ref(nbr);
 
 	NET_DBG("[%d] nbr %p iface %p IPv6 %s",
@@ -367,14 +363,12 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 		goto exit;
 	}
 
-	nexthop_lladdr = net_nbr_get_lladdr(nbr_nexthop->idx);
-
-	NET_ASSERT(nexthop_lladdr);
-
-	NET_DBG("Nexthop %s lladdr is %s",
-		net_sprint_ipv6_addr(nexthop),
-		net_sprint_ll_addr(nexthop_lladdr->addr,
-					      nexthop_lladdr->len));
+	if (nbr_nexthop && nbr_nexthop->idx != NET_NBR_LLADDR_UNKNOWN) {
+		nexthop_lladdr = net_nbr_get_lladdr(nbr_nexthop->idx);
+		NET_ASSERT(nexthop_lladdr);
+		NET_DBG("Nexthop %s lladdr is %s", net_sprint_ipv6_addr(nexthop),
+			net_sprint_ll_addr(nexthop_lladdr->addr, nexthop_lladdr->len));
+	}
 
 	route = net_route_lookup(iface, addr);
 	if (route) {
@@ -751,12 +745,6 @@ struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route, node) {
 		struct in6_addr *addr;
-
-		NET_ASSERT(nexthop_route->nbr->idx != NET_NBR_LLADDR_UNKNOWN);
-
-		if (nexthop_route->nbr->idx == NET_NBR_LLADDR_UNKNOWN) {
-			continue;
-		}
 
 		ipv6_nbr_data = net_ipv6_nbr_data(nexthop_route->nbr);
 		if (ipv6_nbr_data) {
