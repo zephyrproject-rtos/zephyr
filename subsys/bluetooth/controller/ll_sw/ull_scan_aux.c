@@ -716,13 +716,26 @@ ull_scan_aux_rx_flush:
 		 * immediately since we are in sync context.
 		 */
 		if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || aux->rx_last) {
-			/* If scan is being disabled, rx has already been
-			 * enqueued before coming here, ull_scan_aux_rx_flush.
-			 * Do not add it, to avoid duplicate report generation,
-			 * release and probable infinite loop processing the
-			 * list.
+			/* If scan is being disabled, rx could already be
+			 * enqueued before coming here to ull_scan_aux_rx_flush.
+			 * Check if rx not the last in the list of received PDUs
+			 * then add it, else do not add it, to avoid duplicate
+			 * report generation, release and probable infinite loop
+			 * processing of the list.
 			 */
 			if (unlikely(scan->is_stop)) {
+				/* Add the node rx to aux context list of node
+				 * rx if not already added when coming here to
+				 * ull_scan_aux_rx_flush. This is handling a
+				 * race condition where in the last PDU in
+				 * chain is received and at the same time scan
+				 * is being disabled.
+				 */
+				if (aux->rx_last != rx) {
+					aux->rx_last->rx_ftr.extra = rx;
+					aux->rx_last = rx;
+				}
+
 				return;
 			}
 
