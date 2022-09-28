@@ -896,8 +896,16 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 			(DT_SUPPORTS_DEP_ORDS(node_id)), ())		\
 		};
 
-#define Z_DEVICE_DEFINE_INIT(node_id, dev_name)				\
-	.handles = Z_DEVICE_HANDLE_NAME(node_id, dev_name),
+#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, handles_)      \
+	{                                                                      \
+		.name = name_,                                                 \
+		.data = (data_),                                               \
+		.config = (config_),                                           \
+		.api = (api_),                                                 \
+		.state = (state_),                                             \
+		.handles = (handles_),                                         \
+		IF_ENABLED(CONFIG_PM_DEVICE, (.pm = (pm_),))                   \
+	}
 
 #define Z_DEVICE_SECTION(level, prio)					       \
 	__attribute__((__section__(".z_device_" #level STRINGIFY(prio) "_")))
@@ -911,15 +919,9 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)                    \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                     \
 	const Z_DECL_ALIGN(struct device) DEVICE_NAME_GET(dev_name)            \
-		Z_DEVICE_SECTION(level, prio) __used = {                       \
-			.name = drv_name,                                      \
-			.config = (cfg_ptr),                                   \
-			.api = (api_ptr),                                      \
-			.state = (state_ptr),                                  \
-			.data = (data_ptr),                                    \
-			IF_ENABLED(CONFIG_PM_DEVICE, (.pm = pm_device, ))      \
-			Z_DEVICE_DEFINE_INIT(node_id, dev_name)                \
-		};                                                             \
+		Z_DEVICE_SECTION(level, prio) __used = Z_DEVICE_INIT(          \
+			drv_name, pm_device, data_ptr, cfg_ptr, api_ptr,       \
+			state_ptr, Z_DEVICE_HANDLE_NAME(node_id, dev_name));   \
 	BUILD_ASSERT(                                                          \
 		sizeof(Z_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN,        \
 		       Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long");    \
