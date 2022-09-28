@@ -5840,6 +5840,12 @@ void bt_smp_update_keys(struct bt_conn *conn)
 				     sizeof(conn->le.keys->ltk.rand));
 			(void)memset(conn->le.keys->ltk.ediv, 0,
 				     sizeof(conn->le.keys->ltk.ediv));
+		} else if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
+			uint8_t ltk[16];
+
+			sys_memcpy_swap(ltk, smp->tk, conn->le.keys->enc_size);
+			BT_INFO("SC LTK: 0x%s (No bonding)",
+				bt_hex(ltk, conn->le.keys->enc_size));
 		}
 	} else {
 		conn->le.keys->flags &= ~BT_KEYS_SC;
