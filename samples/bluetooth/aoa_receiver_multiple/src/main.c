@@ -382,6 +382,8 @@ static void cte_recv_cb(struct bt_le_per_adv_sync *sync,
 
 	sync_devices[device_index].num_cte++;
 }
+static int num_legacy = 0;
+static int num_ext = 0;
 
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 			  struct net_buf_simple *buf)
@@ -396,8 +398,13 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	bt_data_parse(buf, data_cb, name);
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	if (info->interval) {
+		num_ext++;
+	} else {
+		num_legacy++;
+	}
 
-	if (no_spam_counter % 500 == 0) {
+	if (no_spam_counter % 100 == 0) {
 		printk("Scan is running...\n");
 	}
 	no_spam_counter++;
@@ -405,6 +412,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	if (info->interval) {
 		LOG_DBG("Interval: %d", info->interval);
 	}
+	return; // Skip syncing, seems reproducable anyway
 
 	if (info->interval && !is_syncing) {
 		// Do not try to sync with device we already synced with.
@@ -649,9 +657,11 @@ static void print_stats_readable(void)
 		}
 		sync_devices[i].num_cte = 0;
 	}
-	printk("%s\nQueued: %d Synced: %d Num err: %d/%d\n", debugBuf, numQueued, numSynced, num_cte_err, num_cte_ok);
+	printk("%s\nQueued: %d Synced: %d Num err: %d/%d legacy: %d, ext: %d\n", debugBuf, numQueued, numSynced, num_cte_err, num_cte_ok, num_legacy, num_ext);
 	num_cte_err = 0;
 	num_cte_ok = 0;
+	num_legacy = 0;
+	num_ext = 0;
 }
 
 static void cancel_all_synced(void)
