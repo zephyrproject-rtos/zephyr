@@ -26,12 +26,11 @@
  * point is at half of the full scale voltage.
  */
 
-#if defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
-	defined(CONFIG_BOARD_NUCLEO_L152RE) || \
+#if defined(CONFIG_BOARD_NUCLEO_L152RE) || \
 	defined(CONFIG_BOARD_STM32F3_DISCO) || \
-	defined(CONFIG_BOARD_STM32L562E_DK) || \
 	defined(CONFIG_BOARD_NUCLEO_L552ZE_Q) || \
 	defined(CONFIG_BOARD_NUCLEO_WL55JC) || \
+	defined(CONFIG_BOARD_NUCLEO_G474RE) || \
 	defined(CONFIG_BOARD_RONOTH_LODEV)
 
 /*
@@ -50,10 +49,31 @@
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 
-#elif defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
+#elif defined(CONFIG_BOARD_STM32L562E_DK)
+
+/*
+ * DAC output on PA4 (Arduino A2 pin of disco board)
+ * ADC input read from PC4 (Arduino A4 pin of disco board)
+ */
+
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac1)
+#define DAC_CHANNEL_ID		1
+#define DAC_RESOLUTION		12
+
+#define ADC_DEVICE_NODE		DT_NODELABEL(adc1)
+#define ADC_CHANNEL_ID		13
+#define ADC_RESOLUTION		12
+#define ADC_GAIN		ADC_GAIN_1
+#define ADC_REFERENCE		ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+
+#elif defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
+	defined(CONFIG_BOARD_NUCLEO_F091RC) || \
+	defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
 	defined(CONFIG_BOARD_NUCLEO_F429ZI) || \
 	defined(CONFIG_BOARD_NUCLEO_F746ZG) || \
 	defined(CONFIG_BOARD_NUCLEO_G071RB)
+
 /*
  * DAC output on PA4
  * ADC input read from PA0
