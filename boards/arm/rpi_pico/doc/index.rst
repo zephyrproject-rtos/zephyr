@@ -79,6 +79,33 @@ hardware features:
      - :kconfig:option:`CONFIG_PWM`
      - :dtcompatible:`raspberrypi,pico-pwm`
 
+Pin Mapping
+===========
+
+The peripherals of the RP2040 SoC can be routed to various pins on the board.
+The configuration of these routes can be modified through DTS. Please refer to
+the datasheet to see the possible routings for each peripheral.
+
+Default Zephyr Peripheral Mapping:
+----------------------------------
+
+.. rst-class:: rst-columns
+
+- UART0_TX : P0
+- UART0_RX : P1
+- I2C0_SDA : P4
+- I2C0_SCL : P5
+- I2C1_SDA : P14
+- I2C1_SCL : P15
+- SPI0_RX : P16
+- SPI0_CSN : P17
+- SPI0_SCK : P18
+- SPI0_TX : P19
+- ADC_CH0 : P26
+- ADC_CH1 : P27
+- ADC_CH2 : P28
+- ADC_CH3 : P29
+
 Programming and Debugging
 *************************
 
