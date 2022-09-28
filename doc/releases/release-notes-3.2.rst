@@ -1485,30 +1485,30 @@ HALs
 MCUboot
 *******
 
-  * Added initial support for leveraging the RAM-LOAD mode with the zephyr-rtos port.
-  * Added the MCUboot status callback support.
-    See :kconfig:option:`CONFIG_MCUBOOT_ACTION_HOOKS`.
-  * Edited includes to have the ``zephyr/`` prefix.
-  * Edited the DFU detection's GPIO-pin configuration to be done through DTS using the ``mcuboot-button0`` pin alias.
-  * Edited the LED usage to prefer DTS' ``mcuboot-led0`` alias over the ``bootloader-led0`` alias.
-  * Removed :c:func:`device_get_binding()` usage in favor of :c:func:`DEVICE_DT_GET()`.
-  * Added support for generic `watchdog0` alias.
-  * Enabled watchdog feed by default.
-  * Dropped the :kconfig:option:`CONFIG_BOOT_IMAGE_ACCESS_HOOKS_FILE` option.
-    The inclusion of the Hooks implementation file is now up to the project's customization.
-  * Switched zephyr port from using ``FLASH_AREA_`` macros to ``FIXED_PARTITION_`` macros.
-  * Made flash_map_backend.h compatible with a C++ compiler
-  * Allowed to get the flash write alignment based on the ``zephyr,flash`` DT chosen node property
+* Added initial support for leveraging the RAM-LOAD mode with the zephyr-rtos port.
+* Added the MCUboot status callback support.
+  See :kconfig:option:`CONFIG_MCUBOOT_ACTION_HOOKS`.
+* Edited includes to have the ``zephyr/`` prefix.
+* Edited the DFU detection's GPIO-pin configuration to be done through DTS using the ``mcuboot-button0`` pin alias.
+* Edited the LED usage to prefer DTS' ``mcuboot-led0`` alias over the ``bootloader-led0`` alias.
+* Removed :c:func:`device_get_binding()` usage in favor of :c:func:`DEVICE_DT_GET()`.
+* Added support for generic `watchdog0` alias.
+* Enabled watchdog feed by default.
+* Dropped the :kconfig:option:`CONFIG_BOOT_IMAGE_ACCESS_HOOKS_FILE` option.
+  The inclusion of the Hooks implementation file is now up to the project's customization.
+* Switched zephyr port from using ``FLASH_AREA_`` macros to ``FIXED_PARTITION_`` macros.
+* Made flash_map_backend.h compatible with a C++ compiler
+* Allowed to get the flash write alignment based on the ``zephyr,flash`` DT chosen node property
 
- * boot_serial:
+* boot_serial:
 
-    * Upgraded from cddl-gen v0.1.0 to zcbor v0.4.0.
-    * Refactored and optimized the code, mainly in what affects the progressive erase implementation.
-    * Fixed a compilation issue with the echo command code.
+  * Upgraded from cddl-gen v0.1.0 to zcbor v0.4.0.
+  * Refactored and optimized the code, mainly in what affects the progressive erase implementation.
+  * Fixed a compilation issue with the echo command code.
 
-  * imgtool:
+* imgtool:
 
-    * Added support for providing a signature through a third party.
+  * Added support for providing a signature through a third party.
 
 Trusted Firmware-M
 ******************
