@@ -5,6 +5,7 @@
  */
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
 	dmas = <&dmamux1 5 30 0x440>,
 		<&dmamux1 4 29 0x480>;
 	dma-names = "tx", "rx";
