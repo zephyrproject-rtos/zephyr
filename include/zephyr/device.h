@@ -899,6 +899,9 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 #define Z_DEVICE_DEFINE_INIT(node_id, dev_name)				\
 	.handles = Z_DEVICE_HANDLE_NAME(node_id, dev_name),
 
+#define Z_DEVICE_SECTION(level, prio)					       \
+	__attribute__((__section__(".z_device_" #level STRINGIFY(prio) "_")))
+
 /* Like DEVICE_DEFINE but takes a node_id AND a dev_name, and trailing
  * dependency handles that come from outside devicetree.
  */
@@ -906,9 +909,8 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 			data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr, ...)	\
 	Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)		\
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
-		const Z_DECL_ALIGN(struct device)			\
-		DEVICE_NAME_GET(dev_name) __used			\
-	__attribute__((__section__(".z_device_" #level STRINGIFY(prio)"_"))) = { \
+	const Z_DECL_ALIGN(struct device) DEVICE_NAME_GET(dev_name)	\
+	Z_DEVICE_SECTION(level, prio) __used = {			\
 		.name = drv_name,					\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\
