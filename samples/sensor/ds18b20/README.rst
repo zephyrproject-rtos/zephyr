@@ -10,7 +10,7 @@ This sample shows how to use the Zephyr :ref:`sensor_api` API driver for the
 `Maxim DS18B20`_ temperature sensor.
 
 .. _Maxim DS18B20:
-   https://www.maximintegrated.com/en/products/sensors/DS18B20.html`
+   https://www.maximintegrated.com/en/products/sensors/DS18B20.html
 
 The sample periodically reads temperature data from the
 first available DS18B20 device discovered in the system. The sample checks the
