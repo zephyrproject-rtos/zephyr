@@ -830,12 +830,6 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
 	__attribute__((__section__(".z_devstate")));
 
-/* Construct objects that are referenced from struct device. These
- * include power management and dependency handles.
- */
-#define Z_DEVICE_DEFINE_PRE(node_id, dev_name, ...)			\
-	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)
-
 /* Initial build provides a record that associates the device object
  * with its devicetree ordinal, and provides the dependency ordinals.
  * These are provided as weak definitions (to prevent the reference
@@ -916,7 +910,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_device,       \
 			data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr,    \
 			...)                                                   \
-	Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)                    \
+	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)                \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                     \
 	const Z_DECL_ALIGN(struct device) DEVICE_NAME_GET(dev_name)            \
 		Z_DEVICE_SECTION(level, prio) __used = Z_DEVICE_INIT(          \
