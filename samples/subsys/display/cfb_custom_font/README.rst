@@ -13,7 +13,7 @@ a PNG image, and then uses the generated header (``cfb_font_dice.h``)
 to show the font elements on the display of a supported board.
 
 The source code for this sample application can be found at:
-:zephyr_file:`samples/display/cfb_custom_font`.
+:zephyr_file:`samples/subsys/display/cfb_custom_font`.
 
 Building and Running
 ********************
