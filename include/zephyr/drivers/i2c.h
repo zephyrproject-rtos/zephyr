@@ -459,7 +459,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  */
 #define Z_I2C_DEVICE_STATE_DEFINE(node_id, dev_name)	\
 	static struct i2c_device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
+	__attribute__((__section__(".z_devstate")))
 
 /**
  * @brief Define an i2c device init wrapper function

@@ -837,7 +837,7 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 #if defined(CONFIG_NET_VLAN)
 #define Z_ETH_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,	\
 			      pm_action_cb, data, cfg, prio, api, mtu)	\
-	Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
+	Z_DEVICE_STATE_DEFINE(node_id, dev_name);			\
 	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
 			pm_action_cb, data, cfg, POST_KERNEL,		\
 			prio, api, &Z_DEVICE_STATE_NAME(dev_name));	\

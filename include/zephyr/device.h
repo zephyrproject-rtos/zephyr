@@ -161,7 +161,7 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_device,		\
 		      data_ptr, cfg_ptr, level, prio, api_ptr)		\
-	Z_DEVICE_STATE_DEFINE(DT_INVALID_NODE, dev_name) \
+	Z_DEVICE_STATE_DEFINE(DT_INVALID_NODE, dev_name);		\
 	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_name, drv_name, init_fn,	\
 			pm_device,					\
 			data_ptr, cfg_ptr, level, prio, api_ptr,	\
@@ -225,7 +225,7 @@ typedef int16_t device_handle_t;
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
 			 data_ptr, cfg_ptr, level, prio,		\
 			 api_ptr, ...)					\
-	Z_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)) \
+	Z_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id));	\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
 			DEVICE_DT_NAME(node_id), init_fn,		\
 			pm_device,					\
@@ -828,7 +828,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  */
 #define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
 	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
+	__attribute__((__section__(".z_devstate")))
 
 /* Initial build provides a record that associates the device object
  * with its devicetree ordinal, and provides the dependency ordinals.
