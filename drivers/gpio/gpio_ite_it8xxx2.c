@@ -14,6 +14,7 @@
 #include <string.h>
 #include <zephyr/logging/log.h>
 #include "gpio_utils.h"
+LOG_MODULE_REGISTER(gpio_it8xxx2, LOG_LEVEL_ERR);
 
 #define DT_DRV_COMPAT ite_it8xxx2_gpio
 
@@ -364,6 +365,26 @@ static int gpio_ite_configure(const struct device *dev,
 	if (((flags & GPIO_SINGLE_ENDED) != 0) &&
 	    ((flags & GPIO_LINE_OPEN_DRAIN) == 0)) {
 		return -ENOTSUP;
+	}
+
+	if (flags == GPIO_DISCONNECTED) {
+		*reg_gpcr = GPCR_PORT_PIN_MODE_TRISTATE;
+		/*
+		 * Since not all GPIOs can be to configured as tri-state,
+		 * prompt error if pin doesn't support the flag.
+		 */
+		if (*reg_gpcr != GPCR_PORT_PIN_MODE_TRISTATE) {
+			/* Go back to default setting (input) */
+			*reg_gpcr = GPCR_PORT_PIN_MODE_INPUT;
+			LOG_ERR("Cannot config GPIO-%c%d as tri-state",
+				(gpio_config->index + 'A'), pin);
+			return -ENOTSUP;
+		}
+		/*
+		 * The following configuration isn't necessary because the pin
+		 * was configured as disconnected.
+		 */
+		return 0;
 	}
 
 	/*
