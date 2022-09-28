@@ -180,6 +180,9 @@ static void spi_sam_finish(Spi *regs)
 /* Fast path that transmits a buf */
 static void spi_sam_fast_tx(Spi *regs, const struct spi_buf *tx_buf)
 {
+	struct k_spinlock lock;
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
 	const uint8_t *p = tx_buf->buf;
 	const uint8_t *pend = (uint8_t *)tx_buf->buf + tx_buf->len;
 	uint8_t ch;
@@ -194,11 +197,16 @@ static void spi_sam_fast_tx(Spi *regs, const struct spi_buf *tx_buf)
 	}
 
 	spi_sam_finish(regs);
+
+	k_spin_unlock(&lock, key);
 }
 
 /* Fast path that reads into a buf */
 static void spi_sam_fast_rx(Spi *regs, const struct spi_buf *rx_buf)
 {
+	struct k_spinlock lock;
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
 	uint8_t *rx = rx_buf->buf;
 	int len = rx_buf->len;
 
@@ -234,6 +242,8 @@ static void spi_sam_fast_rx(Spi *regs, const struct spi_buf *rx_buf)
 	*rx = (uint8_t)regs->SPI_RDR;
 
 	spi_sam_finish(regs);
+
+	k_spin_unlock(&lock, key);
 }
 
 #ifdef CONFIG_SPI_SAM_DMA
@@ -383,6 +393,9 @@ static void spi_sam_fast_txrx(Spi *regs,
 			      const struct spi_buf *tx_buf,
 			      const struct spi_buf *rx_buf)
 {
+	struct k_spinlock lock;
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
 	const uint8_t *tx = tx_buf->buf;
 	const uint8_t *txend = (uint8_t *)tx_buf->buf + tx_buf->len;
 	uint8_t *rx = rx_buf->buf;
@@ -431,6 +444,8 @@ static void spi_sam_fast_txrx(Spi *regs,
 	*rx = (uint8_t)regs->SPI_RDR;
 
 	spi_sam_finish(regs);
+
+	k_spin_unlock(&lock, key);
 }
 
 static inline void spi_sam_rx(const struct device *dev,
