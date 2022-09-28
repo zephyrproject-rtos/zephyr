@@ -10,7 +10,7 @@ The WeAct Black Pill V1.2 Board is an extremely low cost and bare-bones
 development board featuring the STM32F401CC, see `STM32F401CC website`_.
 This is the 48-pin variant of the STM32F401x series,
 see `STM32F401x reference manual`_. More info about the board available
-`here <stm32-base-board-page>`_ and on `WeAct Github`_.
+`here <stm32-base-board-page_>`_ and on `WeAct Github`_.
 
 .. image:: img/blackpill-v3.jpg
       :align: center
