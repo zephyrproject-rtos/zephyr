@@ -21,7 +21,7 @@ memory with the ability for a VM to generate an interruption on another, and
 thus to be interrupted as well itself (ivshmem-doorbell).
 
 Please refer to the official `Qemu ivshmem documentation
-<https://www.qemu.org/docs/master/system/ivshmem.html>`_ for more information.
+<https://www.qemu.org/docs/master/system/devices/ivshmem.html>`_ for more information.
 
 Support
 *******
