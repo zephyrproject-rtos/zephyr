@@ -1314,7 +1314,7 @@ Libraries / Subsystems
   * MCUMGR taskstat runtime field support has been added, if
     :kconfig:option:`CONFIG_OS_MGMT_TASKSTAT` is enabled, which will report the
     number of CPU cycles have been spent executing the thread.
-  * MCUMgr transport API drops ``zst`` parameter, of :c:struct:`zephyr_smp_transport`
+  * MCUMGR transport API drops ``zst`` parameter, of :c:struct:`zephyr_smp_transport`
     type, from :c:func:`zephyr_smp_transport_out_fn` type callback as it has
     not been used, and the ``nb`` parameter, of :c:struct:`net_buf` type,
     can carry additional transport information when needed.
@@ -1336,6 +1336,21 @@ Libraries / Subsystems
     structs for storage.
   * Levels of function redirection which were previously used to support multiple
     OS's have been reduced to simplify code and reduce output size.
+  * Bluetooth SMP debug output format specifier has been fixed to avoid a build
+    warning on native_posix platforms.
+  * Issue with :c:func:`img_mgmt_dfu_stopped` being wrongly called on success
+    has been fixed.
+  * Issue with MCUMGR img_mgmt image erase wrongly returning success during an
+    error condition has been fixed.
+  * Unused MCUMGR header files such as mcumgr_util.h have been removed.
+  * Verbose error response reporting has been fixed and is now present when
+    enabled.
+  * Internal SMP functions have been removed from the public smp.h header file
+    and moved to smp_internal.h
+  * Kconfig files have been split up and moved to directories containing the
+    systems they influence.
+  * MCUMGR img_mgmt image upload over-riding/hiding of result codes has been
+    fixed.
 
 * Cbprintf and logging
 
@@ -1502,6 +1517,8 @@ Tests and Samples
 * A large number of tests have been reworked to use the new ztest API, see
   :ref:`test-framework` for more details. This should be used for newly
   introduce tests as well.
+* smp_svr Bluetooth overlay (overlay-bt) has been reworked to increase
+  throughput and enable packet reassembly.
 
 Issue Related Items
 *******************
