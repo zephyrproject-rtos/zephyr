@@ -652,15 +652,16 @@ static isoal_status_t ll_iso_test_sdu_alloc(const struct isoal_sink *sink_ctx,
  * further in the data path. This injected implementation performs statistics on
  * the SDU and then discards it.
  */
-static isoal_status_t ll_iso_test_sdu_emit(const struct isoal_sink *sink_ctx,
-					   const struct isoal_sdu_produced *valid_sdu)
+static isoal_status_t ll_iso_test_sdu_emit(const struct isoal_sink             *sink_ctx,
+					   const struct isoal_emitted_sdu_frag *sdu_frag,
+					   const struct isoal_emitted_sdu      *sdu)
 {
 	isoal_status_t status;
 	struct net_buf *buf;
 	uint16_t handle;
 
 	handle = sink_ctx->session.handle;
-	buf = (struct net_buf *)valid_sdu->contents.dbuf;
+	buf = (struct net_buf *)sdu_frag->sdu.contents.dbuf;
 
 	if (IS_CIS_HANDLE(handle)) {
 		struct ll_conn_iso_stream *cis;
@@ -685,7 +686,7 @@ static isoal_status_t ll_iso_test_sdu_emit(const struct isoal_sink *sink_ctx,
 			sdu_counter = 0U;
 		}
 
-		switch (valid_sdu->status) {
+		switch (sdu_frag->sdu.status) {
 		case ISOAL_SDU_STATUS_VALID:
 			if (framed && cis->hdr.test_mode.rx_sdu_counter == 0U) {
 				/* BT 5.3, Vol 6, Part B, section 7.2:
