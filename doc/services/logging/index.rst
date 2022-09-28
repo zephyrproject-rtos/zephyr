@@ -294,12 +294,18 @@ level must be set using :c:macro:`LOG_LEVEL_SET`.
 Controlling the logging
 =======================
 
-Logging can be controlled using API defined in
-:zephyr_file:`include/zephyr/logging/log_ctrl.h`. Logger must be initialized before it can be
-used. Optionally, user can provide function which returns timestamp value. If
-not provided, :c:macro:`k_cycle_get_32` is used for timestamping.
+By default, logging processing in deferred mode is handled internally by the
+dedicated task which starts automatically. However, it might not be available
+if multithreading is disabled. It can also be disabled by unsetting
+:kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`. In that case, logging can
+be controlled using API defined in :zephyr_file:`include/zephyr/logging/log_ctrl.h`.
+Logging must be initialized before it can be used. Optionally, user can provide
+function which returns timestamp value. If not provided, :c:macro:`k_cycle_get`
+or :c:macro:`k_cycle_get_32` is used for timestamping.
 :c:func:`log_process` function is used to trigger processing of one log
 message (if pending). Function returns true if there is more messages pending.
+However, it is recommended to use macro wrappers (:c:macro:`LOG_INIT` and
+:c:macro:`LOG_PROCESS`) which handles case when logging is disabled.
 
 Following snippet shows how logging can be processed in simple forever loop.
 
@@ -309,20 +315,20 @@ Following snippet shows how logging can be processed in simple forever loop.
 
    void main(void)
    {
-   	log_init();
+   	LOG_INIT();
+   	/* If multithreading is enabled provide thread id to the logging. */
+   	log_thread_set(k_current_get());
 
    	while (1) {
-   		if (log_process() == false) {
+   		if (LOG_PROCESS() == false) {
    			/* sleep */
    		}
    	}
    }
 
-If logs are processed from a thread then it is possible to enable a feature
-which will wake up processing thread when certain amount of log messages are
-buffered (see :kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`). It is also
-possible to enable internal logging thread (see :kconfig:option:`CONFIG_LOG_PROCESS_THREAD`).
-In that case, logging thread is initialized and log messages are processed implicitly.
+If logs are processed from a thread (user or internal) then it is possible to enable
+a feature which will wake up processing thread when certain amount of log messages are
+buffered (see :kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`).
 
 .. _logging_panic:
 
