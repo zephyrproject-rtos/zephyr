@@ -4015,6 +4015,14 @@ void net_if_foreach(net_if_cb_t cb, void *user_data)
 	}
 }
 
+static inline bool is_iface_offloaded(struct net_if *iface)
+{
+	return (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+		net_if_is_ip_offloaded(iface)) ||
+	       (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD) &&
+		net_if_is_socket_offloaded(iface));
+}
+
 int net_if_up(struct net_if *iface)
 {
 	int status = 0;
@@ -4028,10 +4036,7 @@ int net_if_up(struct net_if *iface)
 		goto out;
 	}
 
-	if ((IS_ENABLED(CONFIG_NET_OFFLOAD) &&
-	     net_if_is_ip_offloaded(iface)) ||
-	    (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD) &&
-	     net_if_is_socket_offloaded(iface))) {
+	if (is_iface_offloaded(iface)) {
 		net_if_flag_set(iface, NET_IF_UP);
 		goto notify;
 	}
@@ -4107,7 +4112,7 @@ int net_if_down(struct net_if *iface)
 	leave_mcast_all(iface);
 	leave_ipv4_mcast_all(iface);
 
-	if (net_if_is_ip_offloaded(iface)) {
+	if (is_iface_offloaded(iface)) {
 		goto done;
 	}
 
