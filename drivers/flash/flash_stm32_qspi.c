@@ -30,6 +30,7 @@
 #endif
 
 #define STM32_QSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
+#define STM32_QSPI_RESET_CMD DT_INST_NODE_HAS_PROP(0, reset_cmd)
 
 #include <stm32_ll_dma.h>
 
@@ -1054,6 +1055,31 @@ static void flash_stm32_qspi_gpio_reset(const struct device *dev)
 }
 #endif
 
+#if STM32_QSPI_RESET_CMD
+static int flash_stm32_qspi_send_reset(const struct device *dev)
+{
+	QSPI_CommandTypeDef cmd = {
+		.Instruction = SPI_NOR_CMD_RESET_EN,
+		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+	};
+	int ret;
+
+	ret = qspi_send_cmd(dev, &cmd);
+	if (ret != 0) {
+		LOG_ERR("%d: Failed to send RESET_EN", ret);
+		return ret;
+	}
+
+	cmd.Instruction = SPI_NOR_CMD_RESET_MEM;
+	ret = qspi_send_cmd(dev, &cmd);
+	if (ret != 0) {
+		LOG_ERR("%d: Failed to send RESET_MEM", ret);
+		return ret;
+	}
+	return 0;
+}
+#endif
+
 static int flash_stm32_qspi_init(const struct device *dev)
 {
 	const struct flash_stm32_qspi_config *dev_cfg = dev->config;
@@ -1176,6 +1202,11 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 	/* Run IRQ init */
 	dev_cfg->irq_config(dev);
+
+#if STM32_QSPI_RESET_CMD
+	flash_stm32_qspi_send_reset(dev);
+	k_busy_wait(DT_INST_PROP(0, reset_cmd_wait));
+#endif
 
 	/* Run NOR init */
 	const uint8_t decl_nph = 2;
