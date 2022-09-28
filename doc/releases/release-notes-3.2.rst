@@ -595,9 +595,17 @@ Drivers and Sensors
 
 * LED
 
-  * Updated LED PWM support for ESP32 boards
+  * Added support for using multiple instances of LP5562 LED module.
+  * Devicetree usage cleanups.
+  * i2c_dt_spec migration.
+  * Updated LED PWM support for ESP32 boards.
 
 * LoRa
+
+  * Added support for setting the sync-word and iq-inverted modes in LoRa modems.
+  * Removed ``REQUIRES_FULL_LIBC`` library dependency from LoRa drivers. This
+    results in considerable flash memory savings.
+  * Devicetree usage cleanups.
 
 * MBOX
 
@@ -1381,6 +1389,11 @@ Libraries / Subsystems
   * Added :c:func:`ipc_service_deregister_endpoint` function to deregister endpoints.
 
 * LoRaWAN
+
+  * Added Class-C support.
+  * Upgraded the loramac-node repository to v4.6.0.
+  * Moved the ``REQUIRES_FULL_LIBC`` library dependency from LoRa to LoRaWAN.
+  * Fixed the async reception in SX127x modems.
 
 * Modbus
 
