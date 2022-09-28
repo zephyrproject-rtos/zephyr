@@ -528,45 +528,39 @@ static void ALWAYS_INLINE b91_rf_rx_isr(void)
 				}
 			}
 #endif /* CONFIG_OPENTHREAD_FTD */
+			bool enh_ack = (frame.general.ver == IEEE802154_FRAME_FCF_VER_2015);
+			uint8_t *ack_ie_header = NULL;
+			size_t ack_ie_header_len = 0;
 #if CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
-			int idx = -1;
-
-			if (frame.general.ver == IEEE802154_FRAME_FCF_VER_2015) {
-				idx = b91_enh_ack_table_search(data.enh_ack_table,
+			if (enh_ack) {
+				int idx = b91_enh_ack_table_search(data.enh_ack_table,
 					frame.src_addr_ext ? NULL : frame.src_addr,
 					frame.src_addr_ext ? frame.src_addr : NULL);
+				if (idx >= 0) {
+					ack_ie_header =
+						data.enh_ack_table->item[idx].ie_header;
+					ack_ie_header_len =
+						data.enh_ack_table->item[idx].ie_header_len;
+				}
 			}
+#endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 			const struct ieee802154_frame ack_frame = {
 				.general = {
 					.valid = true,
-					.ver = idx == -1 ? IEEE802154_FRAME_FCF_VER_2003 :
-						IEEE802154_FRAME_FCF_VER_2015,
+					.ver = enh_ack ? IEEE802154_FRAME_FCF_VER_2015 :
+						IEEE802154_FRAME_FCF_VER_2003,
 					.type = IEEE802154_FRAME_FCF_TYPE_ACK,
 					.fp_bit = frame_pending
 				},
 				.sn = frame.sn,
-				.dst_panid = idx == -1 ? NULL :
-					(frame.src_panid ? frame.src_panid : frame.dst_panid),
-				.dst_addr = idx == -1 ? NULL :
-					frame.src_addr,
-				.dst_addr_ext = idx == -1 ? false :
-					frame.src_addr_ext,
-				.ie_header = idx == -1 ? NULL :
-					data.enh_ack_table->item[idx].ie_header,
-				.ie_header_len = idx == -1 ? 0 :
-					data.enh_ack_table->item[idx].ie_header_len
+				.dst_panid = enh_ack ?
+					(frame.src_panid ? frame.src_panid : frame.dst_panid) :
+					NULL,
+				.dst_addr = enh_ack ? frame.src_addr : NULL,
+				.dst_addr_ext = enh_ack ? frame.src_addr_ext : false,
+				.ie_header = ack_ie_header,
+				.ie_header_len = ack_ie_header_len
 			};
-#else
-			const struct ieee802154_frame ack_frame = {
-				.general = {
-					.valid = true,
-					.ver = IEEE802154_FRAME_FCF_VER_2003,
-					.type = IEEE802154_FRAME_FCF_TYPE_ACK,
-					.fp_bit = frame_pending
-				},
-				.sn = frame.sn
-			};
-#endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 			b91_send_ack(&ack_frame);
 		}
 		pkt = net_pkt_rx_alloc_with_buffer(data.iface, length, AF_UNSPEC, 0, K_NO_WAIT);
@@ -925,6 +919,7 @@ static int b91_configure(const struct device *dev,
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
 
 	default:
+		LOG_WRN("Unhandled cfg %d", type);
 		result = -ENOTSUP;
 		break;
 	}
