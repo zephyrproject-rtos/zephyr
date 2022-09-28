@@ -119,16 +119,6 @@ typedef int16_t device_handle_t;
 #define Z_DEVICE_STATE_NAME(dev_name) _CONCAT(__devstate_, dev_name)
 
 /**
- * @brief Utility macro to define and initialize the device state.
- *
- * @param node_id Devicetree node id of the device.
- * @param dev_name Device name.
- */
-#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
-
-/**
  * @brief Create a device object and set it up for boot time initialization.
  *
  * @details This macro defines a <tt>struct device</tt> that is
