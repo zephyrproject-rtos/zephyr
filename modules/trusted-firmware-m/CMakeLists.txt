@@ -156,6 +156,7 @@ if (CONFIG_BUILD_WITH_TFM)
   set(PLATFORM_NS_FILE ${TFM_BINARY_DIR}/platform/libplatform_ns.a)
   set(TFM_GENERATED_INCLUDES ${TFM_BINARY_DIR}/generated/interface/include)
   set(TFM_INTERFACE_SOURCE_DIR ${TFM_BINARY_DIR}/install/interface/src)
+  string(TOUPPER ${TFM_CMAKE_BUILD_TYPE} TFM_CMAKE_BUILD_TYPE_UPPER)
 
   if (TFM_PSA_TEST_SUITE)
     set(PSA_TEST_VAL_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/val/val_nspe.a)
@@ -281,6 +282,9 @@ if (CONFIG_BUILD_WITH_TFM)
       -DTFM_TOOLCHAIN_FILE=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/${TFM_TOOLCHAIN_FILE}
       -DCROSS_COMPILE=${TFM_TOOLCHAIN_PATH}/${TFM_TOOLCHAIN_PREFIX}
       -DCMAKE_BUILD_TYPE=${TFM_CMAKE_BUILD_TYPE}
+      # Force DRARF version 4 due to lack of support for version 5 in
+      # pyelftools, remove once support is added
+      -DCMAKE_C_FLAGS_${TFM_CMAKE_BUILD_TYPE_UPPER}=${CMAKE_C_FLAGS_${TFM_CMAKE_BUILD_TYPE_UPPER}}\ -gdwarf-4
       -DTFM_PLATFORM=${CONFIG_TFM_BOARD}
       -DCONFIG_TFM_BUILD_LOG_QUIET=ON
       ${TFM_CMAKE_ARGS}
