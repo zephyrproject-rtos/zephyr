@@ -114,6 +114,12 @@
 	status = "okay";
 };
 
+&adc4 {
+	pinctrl-0 = <&adc4_in18_pb0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &iwdg {
 	status = "okay";
 };
