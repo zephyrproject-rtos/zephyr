@@ -2240,6 +2240,16 @@ static inline int init_reset(void)
 	return 0;
 }
 
+uint8_t link_free_count_get(void)
+{
+	return mem_free_count_get(mem_link_rx.pool);
+}
+
+uint8_t rx_free_count_get(void)
+{
+	return mem_free_count_get(mem_pdu_rx.pool);
+}
+
 static void perform_lll_reset(void *param)
 {
 	int err;

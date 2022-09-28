@@ -538,6 +538,8 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	return 0;
 }
 
+uint16_t no_abort = 0;
+
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
 	struct lll_scan *lll = curr;
@@ -593,6 +595,9 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		 */
 		radio_isr_set(isr_done_cleanup, lll);
 	} else if (lll->state || lll->is_aux_sched) {
+		if (lll->state) {
+			no_abort++;
+		}
 		/* Do not abort scan response reception or LLL scheduled
 		 * auxiliary PDU scan.
 		 */
@@ -1489,6 +1494,8 @@ static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp)
 			&srsp->scan_rsp.addr[0], BDADDR_SIZE) == 0));
 }
 
+uint16_t no_bufs = 0;
+
 static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 			      uint8_t irkmatch_ok, uint8_t rl_idx,
 			      uint8_t rssi_ready, uint8_t phy_flags_rx,
@@ -1499,6 +1506,7 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 
 	node_rx = ull_pdu_rx_alloc_peek(3);
 	if (!node_rx) {
+		no_bufs++;
 		return -ENOBUFS;
 	}
 	ull_pdu_rx_alloc();

@@ -410,7 +410,16 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	}
 
 	if (no_spam_counter % 100 == 0) {
-		printk("Scan is running...\n");
+		extern uint8_t reassembling_advertiser_state_get(void);
+		extern uint8_t rx_free_count_get(void);
+		extern uint8_t link_free_count_get(void);
+		extern uint8_t aux_free_count_get(void);
+
+		printk("Scan is running, reassemb state %u...\n",
+		       reassembling_advertiser_state_get());
+		LOG_WRN("FREE Rx: %u, Link: %u, Aux: %u",
+			rx_free_count_get(), link_free_count_get(),
+			aux_free_count_get());
 	}
 	no_spam_counter++;
 
@@ -662,11 +671,28 @@ static void print_stats_readable(void)
 		}
 		sync_devices[i].num_cte = 0;
 	}
-	printk("%s\nQueued: %d Synced: %d Num err: %d/%d legacy: %d, ext: %d\n", debugBuf, numQueued, numSynced, num_cte_err, num_cte_ok, num_legacy, num_ext);
+	extern uint16_t ext_reports;
+	extern uint16_t no_bufs;
+	extern uint16_t no_abort;
+
+	printk("%s\nQueued: %d Synced: %d Num err: %d/%d legacy: %d, ext: %d reports: %u, no_bufs: %u no_abort: %u\n",
+		debugBuf, numQueued, numSynced, num_cte_err, num_cte_ok, num_legacy, num_ext, ext_reports, no_bufs, no_abort);
 	num_cte_err = 0;
 	num_cte_ok = 0;
 	num_legacy = 0;
 	num_ext = 0;
+
+	ext_reports = 0;
+	no_bufs = 0;
+	no_abort = 0;
+
+	extern uint8_t rx_free_count_get(void);
+	extern uint8_t link_free_count_get(void);
+	extern uint8_t aux_free_count_get(void);
+
+	LOG_WRN("FREE Rx: %u, Link: %u, Aux: %u",
+		rx_free_count_get(), link_free_count_get(),
+		aux_free_count_get());
 }
 
 static void cancel_all_synced(void)
@@ -701,6 +727,10 @@ static void check_restart_scanning_syncing(void)
 		}
     }
 	if (numSynced >= NUM_SYNC_TO_RESTART_SCAN) {
+		extern uint8_t rx_free_count_get(void);
+		extern uint8_t link_free_count_get(void);
+		extern uint8_t aux_free_count_get(void);
+
 		LOG_WRN("RESTARTING SCAN AND SYNC...");
 
 #ifdef USE_PER_ADV_LIST
@@ -715,6 +745,9 @@ static void check_restart_scanning_syncing(void)
 		ret = bt_le_per_adv_list_clear();
 		__ASSERT_NO_MSG(ret == 0);
 		k_msleep(200);
+		LOG_WRN("FREE Rx: %u, Link: %u, Aux: %u",
+			rx_free_count_get(), link_free_count_get(),
+			aux_free_count_get());
 		scan_enable();
 #ifdef USE_PER_ADV_LIST
 		restart_per_adv_list_syncing();

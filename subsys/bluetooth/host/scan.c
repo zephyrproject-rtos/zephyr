@@ -575,9 +575,18 @@ static void create_ext_adv_info(struct bt_hci_evt_le_ext_advertising_info const 
 	scan_info->adv_props = get_adv_props_extended(evt->evt_type);
 }
 
+uint8_t reassembling_advertiser_state_get(void)
+{
+	return reassembling_advertiser.state;
+}
+
+uint16_t ext_reports = 0;
+
 void bt_hci_le_adv_ext_report(struct net_buf *buf)
 {
 	uint8_t num_reports = net_buf_pull_u8(buf);
+
+	ext_reports++;
 
 	BT_DBG("Adv number of reports %u", num_reports);
 

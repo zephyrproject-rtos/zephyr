@@ -1046,6 +1046,11 @@ static int init_reset(void)
 	return 0;
 }
 
+uint8_t aux_free_count_get(void)
+{
+	return mem_free_count_get(scan_aux_free);
+}
+
 static inline struct ll_scan_aux_set *aux_acquire(void)
 {
 	return mem_acquire(&scan_aux_free);
