@@ -290,11 +290,11 @@ added immediately before a heading, so the text that's displayed is the
 heading text itself. You can change the text that's displayed as the
 link writing this as::
 
-   Refer to the `show this text instead <internal-linking>`_ page
+   Refer to the `show this text instead <internal-linking_>`_ page
 
 which renders as,
 
-   Refer to the `show this text instead <internal-linking>`_ page
+   Refer to the `show this text instead <internal-linking_>`_ page
 
 
 External Cross-Reference Linking
