@@ -9,7 +9,7 @@ Overview
 .. note::
 
    The terminology used in Zephyr I2C APIs follows that of the
-   `NXP I2C Bus Specification Rev 7.0 <i2c-specification>`_. These changed
+   `NXP I2C Bus Specification Rev 7.0 <i2c-specification_>`_. These changed
    from previous revisions as of its release October 1, 2021.
 
 `I2C <i2c-specification>`_ (Inter-Integrated Circuit, pronounced "eye
