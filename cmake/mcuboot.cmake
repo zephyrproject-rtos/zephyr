@@ -104,6 +104,11 @@ function(zephyr_mcuboot_tasks)
   set(confirmed_args)
   set(encrypted_args)
 
+  if(CONFIG_USE_DT_CODE_PARTITION)
+    list(APPEND unconfirmed_args "--use-code-partition")
+    list(APPEND confirmed_args "--use-code-partition")
+  endif()
+
   # Set up .bin outputs.
   if(CONFIG_BUILD_OUTPUT_BIN)
     list(APPEND unconfirmed_args --bin --sbin ${output}.signed.bin)
