@@ -2328,8 +2328,11 @@ West:
     - manifest-hal_rpi_pico
 
 "West project: hal_silabs":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - fkokosinski
   collaborators:
+    - sateeshkotapati
     - yonsch
     - mnkp
     - chrta
