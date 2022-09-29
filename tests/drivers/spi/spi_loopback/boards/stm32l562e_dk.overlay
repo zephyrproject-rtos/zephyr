@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&spi1 {
-	dmas = <&dmamux1 0 12 0x440
-		&dmamux1 7 11 0x480>;
+&spi3 {
+	dmas = <&dmamux1 0 16 0x440
+		&dmamux1 7 15 0x480>;
 	dma-names = "tx", "rx";
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
