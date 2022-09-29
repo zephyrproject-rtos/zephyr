@@ -411,6 +411,11 @@ struct isoal_source {
 
 	/* State for PDU production */
 	struct isoal_pdu_production pdu_production;
+
+	/* Context Control */
+	uint64_t timeout_event_count:39;
+	uint64_t timeout_trigger:1;
+	uint64_t context_active:1;
 };
 
 isoal_status_t isoal_init(void);
@@ -489,3 +494,6 @@ isoal_status_t isoal_tx_get_sync_info(isoal_source_handle_t source_hdl,
 				      uint16_t *seq,
 				      uint32_t *timestamp,
 				      uint32_t *offset);
+
+void isoal_tx_event_prepare(isoal_source_handle_t source_hdl,
+			    uint64_t event_number);
