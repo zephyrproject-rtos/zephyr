@@ -147,6 +147,21 @@ IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, adc_vchs_ctrl[0].VCHCTL, 0x60);
 IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, adc_vchs_ctrl[2].VCHDATM, 0x67);
 IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, ADCDVSTS2, 0x6c);
 
+/* Watchdog register structure check */
+IT8XXX2_REG_SIZE_CHECK(wdt_it8xxx2_regs, 0x0f);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ETWCFG, 0x01);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET1PSR, 0x02);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET1CNTLHR, 0x03);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET1CNTLLR, 0x04);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ETWCTRL, 0x05);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, EWDCNTLR, 0x06);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, EWDKEYR, 0x07);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, EWDCNTHR, 0x09);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET2PSR, 0x0a);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET2CNTLHR, 0x0b);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET2CNTLLR, 0x0c);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET2CNTLH2R, 0x0e);
+
 /* SPISC register structure check */
 IT8XXX2_REG_SIZE_CHECK(spisc_it8xxx2_regs, 0x28);
 IT8XXX2_REG_OFFSET_CHECK(spisc_it8xxx2_regs, SPISC_IMR, 0x04);
