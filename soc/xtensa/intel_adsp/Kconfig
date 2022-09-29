@@ -51,6 +51,14 @@ config ADSP_WIN0_OFFSET
 	  "firmware status register" at boot) within the reserved
 	  region at the start of HP-SRAM.
 
+config ADSP_WIN1_OFFSET
+	int "Byte offset of host window one"
+	default 24576
+	help
+	  Offset of the first host shared memory window (used for the
+	  inbox/downlink mailbox) within the reserved
+	  region at the start of HP-SRAM.
+
 config ADSP_WIN2_OFFSET
 	int "Byte offset of host window two"
 	default 32768
