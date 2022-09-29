@@ -329,4 +329,4 @@ References
 * `Quartus II Scripting Reference Manual <https://www.altera.com/content/dam/altera-www/global/en_US/pdfs/literature/manual/tclscriptrefmnl.pdf>`_
 
 
-.. _Altera Lite Distribution: http://dl.altera.com/?edition=lite
+.. _Altera Lite Distribution: https://www.intel.com/content/www/us/en/collections/products/fpga/software/downloads.html
