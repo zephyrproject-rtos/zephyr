@@ -457,7 +457,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 /**
  * @brief Define a statically allocated and section assigned i2c device state
  */
-#define Z_I2C_DEVICE_STATE_DEFINE(node_id, dev_id)			\
+#define Z_I2C_DEVICE_STATE_DEFINE(dev_id)				\
 	static struct i2c_device_state Z_DEVICE_STATE_NAME(dev_id)	\
 	__attribute__((__section__(".z_devstate")))
 
@@ -509,7 +509,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  */
 #define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			     prio, api, ...)				\
-	Z_I2C_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)); \
+	Z_I2C_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_NAME(node_id));	\
 	Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_NAME(node_id), init_fn)		\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
 			DEVICE_DT_NAME(node_id),			\

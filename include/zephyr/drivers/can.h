@@ -559,7 +559,7 @@ struct can_device_state {
 /**
  * @brief Define a statically allocated and section assigned CAN device state
  */
-#define Z_CAN_DEVICE_STATE_DEFINE(node_id, dev_id)			\
+#define Z_CAN_DEVICE_STATE_DEFINE(dev_id)				\
 	static struct can_device_state Z_DEVICE_STATE_NAME(dev_id)	\
 	__attribute__((__section__(".z_devstate")))
 
@@ -604,7 +604,7 @@ struct can_device_state {
  */
 #define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			     prio, api, ...)				\
-	Z_CAN_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)); \
+	Z_CAN_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_NAME(node_id));	\
 	Z_CAN_INIT_FN(Z_DEVICE_DT_DEV_NAME(node_id), init_fn)		\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
