@@ -457,8 +457,8 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 /**
  * @brief Define a statically allocated and section assigned i2c device state
  */
-#define Z_I2C_DEVICE_STATE_DEFINE(node_id, dev_name)	\
-	static struct i2c_device_state Z_DEVICE_STATE_NAME(dev_name)	\
+#define Z_I2C_DEVICE_STATE_DEFINE(node_id, dev_id)			\
+	static struct i2c_device_state Z_DEVICE_STATE_NAME(dev_id)	\
 	__attribute__((__section__(".z_devstate")))
 
 /**
@@ -467,8 +467,8 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  * This does device instance specific initialization of common data (such as stats)
  * and calls the given init_fn
  */
-#define Z_I2C_INIT_FN(dev_name, init_fn)					\
-	static inline int UTIL_CAT(dev_name, _init)(const struct device *dev) \
+#define Z_I2C_INIT_FN(dev_id, init_fn)					\
+	static inline int UTIL_CAT(dev_id, _init)(const struct device *dev) \
 	{								\
 		struct i2c_device_state *state =			\
 			CONTAINER_OF(dev->state, struct i2c_device_state, devstate); \
