@@ -127,7 +127,7 @@ void radio_tmr_status_reset(void);
 void radio_tmr_tifs_set(uint32_t tifs);
 uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder);
 uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick);
-void radio_tmr_start_us(uint8_t trx, uint32_t us);
+uint32_t radio_tmr_start_us(uint8_t trx, uint32_t us);
 uint32_t radio_tmr_start_now(uint8_t trx);
 uint32_t radio_tmr_start_get(void);
 void radio_tmr_stop(void);
