@@ -154,7 +154,7 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DEFINE(dev_id, name, init_fn, pm, data, config, level, prio,    \
 		      api)                                                     \
-	Z_DEVICE_STATE_DEFINE(DT_INVALID_NODE, dev_id);                        \
+	Z_DEVICE_STATE_DEFINE(dev_id);                                         \
 	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, name, init_fn, pm, data,      \
 			config, level, prio, api,                              \
 			&Z_DEVICE_STATE_NAME(dev_id))
@@ -216,7 +216,7 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio, api, \
 			 ...)                                                  \
-	Z_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id));         \
+	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_NAME(node_id));                  \
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),                \
 			DEVICE_DT_NAME(node_id), init_fn, pm, data, config,    \
 			level, prio, api,                                      \
@@ -807,10 +807,9 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 /**
  * @brief Utility macro to define and initialize the device state.
  *
- * @param node_id Devicetree node id of the device.
  * @param dev_id Device identifier.
  */
-#define Z_DEVICE_STATE_DEFINE(node_id, dev_id)			\
+#define Z_DEVICE_STATE_DEFINE(dev_id)				\
 	static struct device_state Z_DEVICE_STATE_NAME(dev_id)	\
 	__attribute__((__section__(".z_devstate")))
 
