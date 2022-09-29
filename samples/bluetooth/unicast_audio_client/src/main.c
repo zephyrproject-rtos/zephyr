@@ -909,15 +909,36 @@ static int configure_streams(void)
 static int create_group(void)
 {
 	struct bt_audio_unicast_group_param params[ARRAY_SIZE(streams)];
+	size_t stream_count = 0;
 	int err;
 
-	for (size_t i = 0U; i < configured_stream_count; i++) {
-		params[i].stream = &streams[i];
-		params[i].qos = &codec_configuration.qos;
-		params[i].dir = stream_dir(params[i].stream);
+	for (size_t i = 0; i < ARRAY_SIZE(sinks); i++) {
+		struct bt_audio_ep *ep = sinks[i].ep;
+
+		if (ep == NULL) {
+			continue;
+		}
+
+		params[stream_count].stream = &streams[stream_count];
+		params[stream_count].qos = &codec_configuration.qos;
+		params[stream_count].dir = BT_AUDIO_DIR_SINK;
+		stream_count++;
 	}
 
-	err = bt_audio_unicast_group_create(params, configured_stream_count,
+	for (size_t i = 0; i < ARRAY_SIZE(sources); i++) {
+		struct bt_audio_ep *ep = sources[i];
+
+		if (ep == NULL) {
+			continue;
+		}
+
+		params[stream_count].stream = &streams[stream_count];
+		params[stream_count].qos = &codec_configuration.qos;
+		params[stream_count].dir = BT_AUDIO_DIR_SOURCE;
+		stream_count++;
+	}
+
+	err = bt_audio_unicast_group_create(params, stream_count,
 					    &unicast_group);
 	if (err != 0) {
 		printk("Could not create unicast group (err %d)\n", err);
@@ -1065,13 +1086,6 @@ void main(void)
 		}
 		printk("Sources discovered\n");
 
-		printk("Configuring streams\n");
-		err = configure_streams();
-		if (err != 0) {
-			return;
-		}
-		printk("Stream configured\n");
-
 		printk("Creating unicast group\n");
 		err = create_group();
 		if (err != 0) {
@@ -1079,6 +1093,13 @@ void main(void)
 		}
 		printk("Unicast group created\n");
 
+
+		printk("Configuring streams\n");
+		err = configure_streams();
+		if (err != 0) {
+			return;
+		}
+		printk("Stream configured\n");
 		printk("Setting stream QoS\n");
 		err = set_stream_qos();
 		if (err != 0) {
