@@ -1011,7 +1011,7 @@ void z_thread_mark_switched_in(void)
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	struct k_thread *thread;
 
-	thread = k_current_get();
+	thread = z_current_get();
 #ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
 	thread->rt_stats.last_switched_in = timing_counter_get();
 #else
@@ -1033,7 +1033,7 @@ void z_thread_mark_switched_out(void)
 	uint64_t diff;
 	struct k_thread *thread;
 
-	thread = k_current_get();
+	thread = z_current_get();
 
 	if (unlikely(thread->rt_stats.last_switched_in == 0)) {
 		/* Has not run before */
