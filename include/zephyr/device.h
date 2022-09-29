@@ -952,6 +952,30 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 /**
  * @brief Define a struct device
  *
+ * @param node_id Devicetree node id for the device (DT_INVALID_NODE if a
+ *                software device).
+ * @param dev_id Device identifier (used to name the defined struct device).
+ * @param name Name of the device.
+ * @param pm Reference to struct pm_device associated with the device.
+ *           (optional).
+ * @param data Reference to device data.
+ * @param config Reference to device config.
+ * @param level Initialization level.
+ * @param prio Initialization priority.
+ * @param api Reference to device API.
+ * @param ... Optional dependencies, manually specified.
+ */
+#define Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
+			     prio, api, state, handles)                        \
+	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                     \
+	const Z_DECL_ALIGN(struct device) DEVICE_NAME_GET(dev_id)              \
+		Z_DEVICE_SECTION(level, prio) __used =                         \
+			Z_DEVICE_INIT(name, pm, data, config, api, state,      \
+				      handles)
+
+/**
+ * @brief Define a struct device and all other required objects.
+ *
  * This is the common macro used to define struct device objects. It can be
  * used to define both Devicetree and software devices.
  *
@@ -976,12 +1000,10 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
                                                                                \
 	Z_DEVICE_HANDLES_DEFINE(node_id, dev_id, __VA_ARGS__);                 \
                                                                                \
-	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                     \
-	const Z_DECL_ALIGN(struct device) DEVICE_NAME_GET(dev_id)              \
-		Z_DEVICE_SECTION(level, prio) __used =                         \
-			Z_DEVICE_INIT(name, pm, data, config, api, state,      \
-				      Z_DEVICE_HANDLE_NAME(node_id, dev_id));  \
-                                                                               \
+	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
+			     prio, api, state,                                 \
+			     Z_DEVICE_HANDLE_NAME(node_id, dev_id));           \
+			                                                       \
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_id), init_fn,                  \
 			    (&DEVICE_NAME_GET(dev_id)), level, prio)
 
