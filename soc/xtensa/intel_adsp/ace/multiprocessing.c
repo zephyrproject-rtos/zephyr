@@ -63,11 +63,13 @@ void soc_start_core(int cpu_num)
 	DFDSPBRCP.capctl[cpu_num].ctl |= DFDSPBRCP_CTL_SPA;
 
 	/* Waiting for power up */
-	while (~(DFDSPBRCP.capctl[cpu_num].ctl & DFDSPBRCP_CTL_CPA) && --retry) {
+	while (((DFDSPBRCP.capctl[cpu_num].ctl & DFDSPBRCP_CTL_CPA) != DFDSPBRCP_CTL_CPA) &&
+	       (retry > 0)) {
 		k_busy_wait(HW_STATE_CHECK_DELAY);
+		retry--;
 	}
 
-	if (!retry) {
+	if (retry == 0) {
 		__ASSERT(false, "%s secondary core has not powered up", __func__);
 	}
 }
@@ -118,10 +120,13 @@ int soc_adsp_halt_cpu(int id)
 	DFDSPBRCP.capctl[id].ctl &= ~DFDSPBRCP_CTL_SPA;
 
 	/* Waiting for power off */
-	while (DFDSPBRCP.capctl[id].ctl & DFDSPBRCP_CTL_CPA && --retry)
+	while (((DFDSPBRCP.capctl[id].ctl & DFDSPBRCP_CTL_CPA) == DFDSPBRCP_CTL_CPA) &&
+	       (retry > 0)) {
 		k_busy_wait(HW_STATE_CHECK_DELAY);
+		retry--;
+	}
 
-	if (!retry) {
+	if (retry == 0) {
 		__ASSERT(false, "%s secondary core has not powered down", __func__);
 		return -EINVAL;
 	}
