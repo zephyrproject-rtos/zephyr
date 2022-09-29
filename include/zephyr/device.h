@@ -116,7 +116,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
  * The ordinal used in this name can be mapped to the path by
  * examining zephyr/include/generated/devicetree_generated.h.
  */
-#define Z_DEVICE_DT_DEV_NAME(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
+#define Z_DEVICE_DT_DEV_ID(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
 
 /**
  * @brief Create a device object and set it up for boot time initialization.
@@ -223,11 +223,11 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
  */
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio, api, \
 			 ...)                                                  \
-	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_NAME(node_id));                  \
-	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),                \
+	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));                    \
+	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),                  \
 			DEVICE_DT_NAME(node_id), init_fn, pm, data, config,    \
 			level, prio, api,                                      \
-			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)),   \
+			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),     \
 			__VA_ARGS__)
 
 /**
@@ -257,7 +257,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
  *
  * @return The name of the device object as a C identifier
  */
-#define DEVICE_DT_NAME_GET(node_id) DEVICE_NAME_GET(Z_DEVICE_DT_DEV_NAME(node_id))
+#define DEVICE_DT_NAME_GET(node_id) DEVICE_NAME_GET(Z_DEVICE_DT_DEV_ID(node_id))
 
 /**
  * @brief Get a <tt>const struct device*</tt> from a devicetree node

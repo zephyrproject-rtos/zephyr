@@ -604,13 +604,13 @@ struct can_device_state {
  */
 #define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			     prio, api, ...)				\
-	Z_CAN_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_NAME(node_id));	\
-	Z_CAN_INIT_FN(Z_DEVICE_DT_DEV_NAME(node_id), init_fn)		\
-	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
+	Z_CAN_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));		\
+	Z_CAN_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)		\
+	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
-			&UTIL_CAT(Z_DEVICE_DT_DEV_NAME(node_id), _init), \
+			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
 			pm, data, config, level, prio, api,		\
-			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)).devstate), \
+			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
 			__VA_ARGS__)
 
 #else /* CONFIG_CAN_STATS */
