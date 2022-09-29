@@ -824,14 +824,10 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @brief Synthesize the name of the object that holds device ordinal and
  * dependency data.
  *
- * @param node_id Devicetree node id of the device.
  * @param dev_id Device identifier.
  */
-#define Z_DEVICE_HANDLES_NAME(node_id, dev_id)				\
-	_CONCAT(__devicehdl_,						\
-		COND_CODE_1(DT_NODE_EXISTS(node_id),			\
-			    (node_id),					\
-			    (dev_id)))
+#define Z_DEVICE_HANDLES_NAME(dev_id)                                          \
+	_CONCAT(__devicehdl_, dev_id)
 
 /**
  * @brief Expand extra handles with a comma in between.
@@ -884,10 +880,9 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  */
 #define Z_DEVICE_HANDLES_DEFINE(node_id, dev_id, ...)                          \
 	extern Z_DEVICE_HANDLES_CONST device_handle_t                          \
-		Z_DEVICE_HANDLES_NAME(node_id, dev_id)[];                      \
+		Z_DEVICE_HANDLES_NAME(dev_id)[];                               \
 	Z_DEVICE_HANDLES_CONST Z_DECL_ALIGN(device_handle_t)                   \
-	Z_DEVICE_HANDLES_SECTION __weak                                        \
-	Z_DEVICE_HANDLES_NAME(node_id, dev_id)[] = {                           \
+	Z_DEVICE_HANDLES_SECTION __weak Z_DEVICE_HANDLES_NAME(dev_id)[] = {    \
 		COND_CODE_1(DT_NODE_EXISTS(node_id),                           \
 			    (DT_DEP_ORD(node_id),                              \
 			     DT_REQUIRES_DEP_ORDS(node_id)),                   \
@@ -1014,8 +1009,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	Z_DEVICE_HANDLES_DEFINE(node_id, dev_id, __VA_ARGS__);                 \
                                                                                \
 	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
-			     prio, api, state,                                 \
-			     Z_DEVICE_HANDLES_NAME(node_id, dev_id));          \
+			     prio, api, state, Z_DEVICE_HANDLES_NAME(dev_id)); \
 			                                                       \
 	Z_DEVICE_INIT_ENTRY_DEFINE(dev_id, init_fn, level, prio)
 
