@@ -165,14 +165,19 @@ static void llcp_rp_cc_tx_rsp(struct ll_conn *conn, struct proc_ctx *ctx)
 	 * start times is an integer multiple of ISO_Interval for the CIS.
 	 *
 	 * The offset shall compensate for the relation between ISO- and connection interval. The
-	 * offset translates to what is additionally needed to move the window by an integer number
-	 * of ISO intervals. I.e.:
-	 *   offset = (delayed * CONN_interval) MOD ISO_interval
+	 * offset translates to what is additionally needed to move the window up to an integer
+	 * number of ISO intervals.
 	 */
 	if (delay_conn_events) {
-		uint32_t conn_interval_us  = conn->lll.interval * CONN_INT_UNIT_US;
-		uint32_t iso_interval_us   = ctx->data.cis_create.iso_interval * ISO_INT_UNIT_US;
-		uint32_t offset_us = (delay_conn_events * conn_interval_us) % iso_interval_us;
+		uint32_t conn_interval_us = conn->lll.interval * CONN_INT_UNIT_US;
+		uint32_t iso_interval_us  = ctx->data.cis_create.iso_interval * ISO_INT_UNIT_US;
+		uint8_t  iso_intervals;
+		uint32_t offset_us;
+
+		iso_intervals = DIV_ROUND_UP(delay_conn_events * conn_interval_us,
+					     iso_interval_us);
+		offset_us = (iso_intervals * iso_interval_us) -
+			    (delay_conn_events * conn_interval_us);
 
 		ctx->data.cis_create.cis_offset_min += offset_us;
 		ctx->data.cis_create.cis_offset_max += offset_us;
