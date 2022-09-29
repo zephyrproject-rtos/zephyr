@@ -412,11 +412,9 @@ Devicetree:
   status: maintained
   maintainers:
     - mbolivar-nordic
-  collaborators:
     - galak
   files:
     - scripts/dts/
-    - dts/bindings/
     - dts/common/
     - tests/lib/devicetree/
     - doc/build/dts/
@@ -424,6 +422,15 @@ Devicetree:
     - scripts/kconfig/kconfigfunctions.py
   labels:
     - "area: Devicetree"
+
+Devicetree Bindings:
+  status: maintained
+  maintainers:
+    - galak
+  files:
+    - dts/bindings/
+  labels:
+    - "area: Devicetree Binding"
 
 Disk:
   status: maintained
