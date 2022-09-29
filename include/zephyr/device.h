@@ -890,6 +890,10 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 			(DT_SUPPORTS_DEP_ORDS(node_id)), ())		\
 		}
 
+#define Z_DEVICE_NAME_CHECK(name)                                              \
+	BUILD_ASSERT(sizeof(Z_STRINGIFY(name)) <= Z_DEVICE_MAX_NAME_LEN,       \
+		     Z_STRINGIFY(DEVICE_NAME_GET(name)) " too long")
+
 #define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, handles_)      \
 	{                                                                      \
 		.name = name_,                                                 \
@@ -916,9 +920,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		Z_DEVICE_SECTION(level, prio) __used = Z_DEVICE_INIT(          \
 			drv_name, pm_device, data_ptr, cfg_ptr, api_ptr,       \
 			state_ptr, Z_DEVICE_HANDLE_NAME(node_id, dev_name));   \
-	BUILD_ASSERT(                                                          \
-		sizeof(Z_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN,        \
-		       Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long");    \
+	Z_DEVICE_NAME_CHECK(drv_name);                                         \
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,                \
 			    (&DEVICE_NAME_GET(dev_name)), level, prio)
 
