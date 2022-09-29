@@ -2270,42 +2270,42 @@ struct net_if_api {
 		NET_IF_DHCPV4_INIT			\
 	}
 
-#define NET_IF_GET_NAME(dev_name, sfx) __net_if_##dev_name##_##sfx
-#define NET_IF_DEV_GET_NAME(dev_name, sfx) __net_if_dev_##dev_name##_##sfx
+#define NET_IF_GET_NAME(dev_id, sfx) __net_if_##dev_id##_##sfx
+#define NET_IF_DEV_GET_NAME(dev_id, sfx) __net_if_dev_##dev_id##_##sfx
 
-#define NET_IF_GET(dev_name, sfx)					\
-	((struct net_if *)&NET_IF_GET_NAME(dev_name, sfx))
+#define NET_IF_GET(dev_id, sfx)						\
+	((struct net_if *)&NET_IF_GET_NAME(dev_id, sfx))
 
-#define NET_IF_INIT(dev_name, sfx, _l2, _mtu, _num_configs)		\
+#define NET_IF_INIT(dev_id, sfx, _l2, _mtu, _num_configs)		\
 	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
-				NET_IF_DEV_GET_NAME(dev_name, sfx)) = { \
-		.dev = &(DEVICE_NAME_GET(dev_name)),			\
+				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
+		.dev = &(DEVICE_NAME_GET(dev_id)),			\
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
-		.l2_data = &(NET_L2_GET_DATA(dev_name, sfx)),		\
+		.l2_data = &(NET_L2_GET_DATA(dev_id, sfx)),		\
 		.mtu = _mtu,						\
 	};								\
 	static Z_DECL_ALIGN(struct net_if)				\
-		       NET_IF_GET_NAME(dev_name, sfx)[_num_configs]	\
-		       __used __in_section(_net_if, static,             \
-					   dev_name) = {                \
+		       NET_IF_GET_NAME(dev_id, sfx)[_num_configs]	\
+		       __used __in_section(_net_if, static,		\
+					   dev_id) = {			\
 		[0 ... (_num_configs - 1)] = {				\
-			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
+			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
 			NET_IF_CONFIG_INIT				\
 		}							\
 	}
 
-#define NET_IF_OFFLOAD_INIT(dev_name, sfx, _mtu)			\
+#define NET_IF_OFFLOAD_INIT(dev_id, sfx, _mtu)				\
 	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
-				NET_IF_DEV_GET_NAME(dev_name, sfx)) = {	\
-		.dev = &(DEVICE_NAME_GET(dev_name)),			\
+				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
+		.dev = &(DEVICE_NAME_GET(dev_id)),			\
 		.mtu = _mtu,						\
 	};								\
 	static Z_DECL_ALIGN(struct net_if)				\
-		NET_IF_GET_NAME(dev_name, sfx)[NET_IF_MAX_CONFIGS]	\
-		       __used __in_section(_net_if, static,             \
-					   dev_name) = {                \
+		NET_IF_GET_NAME(dev_id, sfx)[NET_IF_MAX_CONFIGS]	\
+		       __used __in_section(_net_if, static,		\
+					   dev_id) = {			\
 		[0 ... (NET_IF_MAX_CONFIGS - 1)] = {			\
-			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
+			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
 			NET_IF_CONFIG_INIT				\
 		}							\
 	}
@@ -2314,21 +2314,21 @@ struct net_if_api {
 
 /* Network device initialization macros */
 
-#define Z_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,		\
-			pm_action_cb, data, cfg, prio, api, l2,	\
+#define Z_NET_DEVICE_INIT(node_id, dev_id, drv_name, init_fn,		\
+			pm_action_cb, data, cfg, prio, api, l2,		\
 			l2_ctx_type, mtu)				\
-	Z_DEVICE_STATE_DEFINE(node_id, dev_name);			\
-	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
+	Z_DEVICE_STATE_DEFINE(node_id, dev_id);				\
+	Z_DEVICE_DEFINE(node_id, dev_id, drv_name, init_fn,		\
 			pm_action_cb, data,				\
 			cfg, POST_KERNEL, prio, api,			\
-			&Z_DEVICE_STATE_NAME(dev_name));		\
-	NET_L2_DATA_INIT(dev_name, 0, l2_ctx_type);			\
-	NET_IF_INIT(dev_name, 0, l2, mtu, NET_IF_MAX_CONFIGS)
+			&Z_DEVICE_STATE_NAME(dev_id));			\
+	NET_L2_DATA_INIT(dev_id, 0, l2_ctx_type);			\
+	NET_IF_INIT(dev_id, 0, l2, mtu, NET_IF_MAX_CONFIGS)
 
 /**
  * @brief Create a network interface and bind it to network device.
  *
- * @param dev_name Network device name.
+ * @param dev_id Network device id.
  * @param drv_name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
@@ -2344,11 +2344,11 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_action_cb,	\
+#define NET_DEVICE_INIT(dev_id, drv_name, init_fn, pm_action_cb,	\
 			data, cfg, prio, api, l2,			\
 			l2_ctx_type, mtu)				\
-	Z_NET_DEVICE_INIT(DT_INVALID_NODE, dev_name, drv_name, init_fn,	\
-			pm_action_cb, data, cfg, prio, api, l2,	\
+	Z_NET_DEVICE_INIT(DT_INVALID_NODE, dev_id, drv_name, init_fn,	\
+			pm_action_cb, data, cfg, prio, api, l2,		\
 			l2_ctx_type, mtu)
 
 /**
@@ -2387,16 +2387,16 @@ struct net_if_api {
 #define NET_DEVICE_DT_INST_DEFINE(inst, ...) \
 	NET_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
-#define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_name, drv_name,		\
+#define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, drv_name,		\
 				   instance, init_fn, pm_action_cb,	\
 				   data, cfg, prio, api, l2,		\
 				   l2_ctx_type, mtu)			\
-	Z_DEVICE_STATE_DEFINE(node_id, dev_name);			\
-	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
+	Z_DEVICE_STATE_DEFINE(node_id, dev_id);				\
+	Z_DEVICE_DEFINE(node_id, dev_id, drv_name, init_fn,		\
 			pm_action_cb, data, cfg, POST_KERNEL,		\
-			prio, api, &Z_DEVICE_STATE_NAME(dev_name));	\
-	NET_L2_DATA_INIT(dev_name, instance, l2_ctx_type);		\
-	NET_IF_INIT(dev_name, instance, l2, mtu, NET_IF_MAX_CONFIGS)
+			prio, api, &Z_DEVICE_STATE_NAME(dev_id));	\
+	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
+	NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)
 
 /**
  * @brief Create multiple network interfaces and bind them to network device.
@@ -2404,7 +2404,7 @@ struct net_if_api {
  * use this macro below and provide a different instance suffix each time
  * (0, 1, 2, ... or a, b, c ... whatever works for you)
  *
- * @param dev_name Network device name.
+ * @param dev_id Network device id.
  * @param drv_name The name this instance of the driver exposes to
  * the system.
  * @param instance Instance identifier.
@@ -2421,10 +2421,10 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_INIT_INSTANCE(dev_name, drv_name, instance, init_fn,	\
-				 pm_action_cb, data, cfg, prio,	\
+#define NET_DEVICE_INIT_INSTANCE(dev_id, drv_name, instance, init_fn,	\
+				 pm_action_cb, data, cfg, prio,		\
 				 api, l2, l2_ctx_type, mtu)		\
-	Z_NET_DEVICE_INIT_INSTANCE(DT_INVALID_NODE, dev_name, drv_name,	\
+	Z_NET_DEVICE_INIT_INSTANCE(DT_INVALID_NODE, dev_id, drv_name,	\
 				   instance, init_fn, pm_action_cb,	\
 				   data, cfg, prio, api, l2,		\
 				   l2_ctx_type, mtu)
@@ -2473,21 +2473,21 @@ struct net_if_api {
 #define NET_DEVICE_DT_INST_DEFINE_INSTANCE(inst, ...) \
 	NET_DEVICE_DT_DEFINE_INSTANCE(DT_DRV_INST(inst), __VA_ARGS__)
 
-#define Z_NET_DEVICE_OFFLOAD_INIT(node_id, dev_name, drv_name, init_fn,	\
+#define Z_NET_DEVICE_OFFLOAD_INIT(node_id, dev_id, drv_name, init_fn,	\
 				  pm_action_cb, data, cfg, prio,	\
 				  api, mtu)				\
-	Z_DEVICE_STATE_DEFINE(node_id, dev_name);			\
-	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
+	Z_DEVICE_STATE_DEFINE(node_id, dev_id);				\
+	Z_DEVICE_DEFINE(node_id, dev_id, drv_name, init_fn,		\
 		pm_action_cb, data, cfg, POST_KERNEL, prio, api,	\
-		&Z_DEVICE_STATE_NAME(dev_name));			\
-	NET_IF_OFFLOAD_INIT(dev_name, 0, mtu)
+		&Z_DEVICE_STATE_NAME(dev_id));				\
+	NET_IF_OFFLOAD_INIT(dev_id, 0, mtu)
 
 /**
  * @brief Create a offloaded network interface and bind it to network device.
  * The offloaded network interface is implemented by a device vendor HAL or
  * similar.
  *
- * @param dev_name Network device name.
+ * @param dev_id Network device id.
  * @param drv_name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
@@ -2501,10 +2501,10 @@ struct net_if_api {
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_OFFLOAD_INIT(dev_name, drv_name, init_fn,		\
+#define NET_DEVICE_OFFLOAD_INIT(dev_id, drv_name, init_fn,		\
 				pm_action_cb, data, cfg, prio, api, mtu)\
-	Z_NET_DEVICE_OFFLOAD_INIT(DT_INVALID_NODE, dev_name, drv_name,	\
-				init_fn, pm_action_cb, data, cfg, prio,\
+	Z_NET_DEVICE_OFFLOAD_INIT(DT_INVALID_NODE, dev_id, drv_name,	\
+				init_fn, pm_action_cb, data, cfg, prio,	\
 				api, mtu)
 
 /**

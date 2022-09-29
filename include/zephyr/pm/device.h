@@ -188,9 +188,9 @@ struct pm_device {
 /**
  * Get the name of device PM resources.
  *
- * @param dev_name Device name.
+ * @param dev_id Device id.
  */
-#define Z_PM_DEVICE_NAME(dev_name) _CONCAT(__pm_device_, dev_name)
+#define Z_PM_DEVICE_NAME(dev_id) _CONCAT(__pm_device_, dev_id)
 
 /**
  * @brief Define device PM slot.
@@ -201,11 +201,11 @@ struct pm_device {
  * is used internally by the PM subsystem to keep track of suspended devices
  * during system power transitions.
  *
- * @param dev_name Device name.
+ * @param dev_id Device id.
  */
-#define Z_PM_DEVICE_DEFINE_SLOT(dev_name)				\
+#define Z_PM_DEVICE_DEFINE_SLOT(dev_id)					\
 	static const Z_DECL_ALIGN(struct device *)			\
-	_CONCAT(__pm_slot_, dev_name) __used				\
+	_CONCAT(__pm_slot_, dev_id) __used				\
 	__attribute__((__section__(".z_pm_device_slots")))
 
 #ifdef CONFIG_PM_DEVICE
@@ -213,25 +213,25 @@ struct pm_device {
  * Define device PM resources for the given node identifier.
  *
  * @param node_id Node identifier (DT_INVALID_NODE if not a DT device).
- * @param dev_name Device name.
+ * @param dev_id Device id.
  * @param pm_action_cb PM control callback.
  */
-#define Z_PM_DEVICE_DEFINE(node_id, dev_name, pm_action_cb)		\
-	Z_PM_DEVICE_DEFINE_SLOT(dev_name);				\
-	static struct pm_device Z_PM_DEVICE_NAME(dev_name) =		\
-	Z_PM_DEVICE_INIT(Z_PM_DEVICE_NAME(dev_name), node_id,		\
+#define Z_PM_DEVICE_DEFINE(node_id, dev_id, pm_action_cb)		\
+	Z_PM_DEVICE_DEFINE_SLOT(dev_id);				\
+	static struct pm_device Z_PM_DEVICE_NAME(dev_id) =		\
+	Z_PM_DEVICE_INIT(Z_PM_DEVICE_NAME(dev_id), node_id,		\
 			 pm_action_cb)
 
 /**
  * Get a reference to the device PM resources.
  *
- * @param dev_name Device name.
+ * @param dev_id Device id.
  */
-#define Z_PM_DEVICE_GET(dev_name) (&Z_PM_DEVICE_NAME(dev_name))
+#define Z_PM_DEVICE_GET(dev_id) (&Z_PM_DEVICE_NAME(dev_id))
 
 #else
-#define Z_PM_DEVICE_DEFINE(node_id, dev_name, pm_action_cb)
-#define Z_PM_DEVICE_GET(dev_name) NULL
+#define Z_PM_DEVICE_DEFINE(node_id, dev_id, pm_action_cb)
+#define Z_PM_DEVICE_GET(dev_id) NULL
 #endif /* CONFIG_PM_DEVICE */
 
 /** @endcond */
@@ -241,13 +241,13 @@ struct pm_device {
  *
  * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE} is not enabled.
  *
- * @param dev_name Device name.
+ * @param dev_id Device id.
  * @param pm_action_cb PM control callback.
  *
  * @see #PM_DEVICE_DT_DEFINE, #PM_DEVICE_DT_INST_DEFINE
  */
-#define PM_DEVICE_DEFINE(dev_name, pm_action_cb) \
-	Z_PM_DEVICE_DEFINE(DT_INVALID_NODE, dev_name, pm_action_cb)
+#define PM_DEVICE_DEFINE(dev_id, pm_action_cb) \
+	Z_PM_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, pm_action_cb)
 
 /**
  * Define device PM resources for the given node identifier.
@@ -281,13 +281,13 @@ struct pm_device {
 /**
  * @brief Obtain a reference to the device PM resources for the given device.
  *
- * @param dev_name Device name.
+ * @param dev_id Device id.
  *
  * @return Reference to the device PM resources (NULL if device
  * @kconfig{CONFIG_PM_DEVICE} is disabled).
  */
-#define PM_DEVICE_GET(dev_name) \
-	Z_PM_DEVICE_GET(dev_name)
+#define PM_DEVICE_GET(dev_id) \
+	Z_PM_DEVICE_GET(dev_id)
 
 /**
  * @brief Obtain a reference to the device PM resources for the given node.
