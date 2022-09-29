@@ -5,6 +5,19 @@
 Zephyr 3.2.0 (Working Draft)
 ############################
 
+We are pleased to announce the release of Zephyr version 3.2.0.
+
+Major enhancements with this release include:
+
+* Introduced :ref:`sysbuild`.
+* Added support for :ref:`bin-blobs` (also see :ref:`west-blobs`).
+* Added support for Picolibc (see :kconfig:option:`CONFIG_PICOLIBC`).
+* Converted all supported boards from ``pinmux`` to :ref:`pinctrl-guide`.
+* Initial support for :ref:`i3c_api` controllers.
+* Support for :ref:`W1 api<w1_api>`.
+* Improved access to Devicetree compatibles from Kconfig (new generated
+  ``DTS_HAS_..._ENABLED`` configs).
+
 The following sections provide detailed lists of changes by component.
 
 Security Vulnerability Related
