@@ -20,7 +20,9 @@ config STATS_NAMES
 
 config STATS_SHELL
 	bool "Statistics Shell Command"
+	default y
 	depends on STATS && SHELL
+	imply STATS_NAMES
 	help
 	  Include a full name string for each statistic in the build.  If this
 	  setting is disabled, statistics are assigned generic names of the
