@@ -1432,6 +1432,8 @@ Libraries / Subsystems
 
 * Modbus
 
+  * Added user data entry for ADU callback
+
 * Power management
 
   * Allow multiple subscribers to latency changes in the policy manager.
