@@ -869,7 +869,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * `gen_handles.py` must be updated.
  */
 BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
-#define Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, ...)			\
+#define Z_DEVICE_HANDLES_DEFINE(node_id, dev_name, ...)			\
 	extern Z_DEVICE_HANDLES_CONST device_handle_t			\
 		Z_DEVICE_HANDLE_NAME(node_id, dev_name)[];		\
 	Z_DEVICE_HANDLES_CONST device_handle_t				\
@@ -910,7 +910,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_device,       \
 			data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr,    \
 			...)                                                   \
-	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__);               \
+	Z_DEVICE_HANDLES_DEFINE(node_id, dev_name, __VA_ARGS__);               \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                     \
 	const Z_DECL_ALIGN(struct device) DEVICE_NAME_GET(dev_name)            \
 		Z_DEVICE_SECTION(level, prio) __used = Z_DEVICE_INIT(          \
