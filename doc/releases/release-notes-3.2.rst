@@ -751,6 +751,7 @@ Drivers and Sensors
 
   * Restructured the NXP MCUX USB driver.
   * Added USB support for NXP MXRT595.
+  * Fixed detach behavior in nRF USBD and Atmel SAM drivers
 
 * W1
 
@@ -862,6 +863,9 @@ Networking
 
 USB
 ***
+
+  * Minor bug fixes and improvements in class implementations CDC ACM, DFU, and MSC.
+    Otherwise no significant changes.
 
 Devicetree
 **********
