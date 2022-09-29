@@ -1650,6 +1650,9 @@ void ll_rx_mem_release(void **node_rx)
 				conn->lll.link_tx_free = link;
 
 				ll_conn_release(conn);
+			} else if (IS_CIS_HANDLE(rx_free->handle)) {
+				ll_rx_link_quota_inc();
+				ll_rx_release(rx_free);
 			}
 		}
 		break;
