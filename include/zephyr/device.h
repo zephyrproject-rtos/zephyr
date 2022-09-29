@@ -882,24 +882,22 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * space and resulting in aggregate size changes relative to pass2
  * when all objects will be in the same input section.
  */
-#define Z_DEVICE_HANDLES_DEFINE(node_id, dev_id, ...)			\
-	extern Z_DEVICE_HANDLES_CONST device_handle_t			\
-		Z_DEVICE_HANDLES_NAME(node_id, dev_id)[];		\
-	Z_DEVICE_HANDLES_CONST Z_DECL_ALIGN(device_handle_t)		\
-	Z_DEVICE_HANDLES_SECTION __weak					\
-	Z_DEVICE_HANDLES_NAME(node_id, dev_id)[] = {			\
-	COND_CODE_1(DT_NODE_EXISTS(node_id), (				\
-			DT_DEP_ORD(node_id),				\
-			DT_REQUIRES_DEP_ORDS(node_id)			\
-		), (							\
-			DEVICE_HANDLE_NULL,				\
-		))							\
-			DEVICE_HANDLE_SEP,				\
-			Z_DEVICE_EXTRA_HANDLES(__VA_ARGS__)		\
-			DEVICE_HANDLE_SEP,				\
-	COND_CODE_1(DT_NODE_EXISTS(node_id),				\
-			(DT_SUPPORTS_DEP_ORDS(node_id)), ())		\
-		}
+#define Z_DEVICE_HANDLES_DEFINE(node_id, dev_id, ...)                          \
+	extern Z_DEVICE_HANDLES_CONST device_handle_t                          \
+		Z_DEVICE_HANDLES_NAME(node_id, dev_id)[];                      \
+	Z_DEVICE_HANDLES_CONST Z_DECL_ALIGN(device_handle_t)                   \
+	Z_DEVICE_HANDLES_SECTION __weak                                        \
+	Z_DEVICE_HANDLES_NAME(node_id, dev_id)[] = {                           \
+		COND_CODE_1(DT_NODE_EXISTS(node_id),                           \
+			    (DT_DEP_ORD(node_id),                              \
+			     DT_REQUIRES_DEP_ORDS(node_id)),                   \
+			    (DEVICE_HANDLE_NULL,))                             \
+		DEVICE_HANDLE_SEP,                                             \
+		Z_DEVICE_EXTRA_HANDLES(__VA_ARGS__)                            \
+		DEVICE_HANDLE_SEP,                                             \
+		COND_CODE_1(DT_NODE_EXISTS(node_id),                           \
+			    (DT_SUPPORTS_DEP_ORDS(node_id)), ())               \
+	}
 
 /**
  * @brief Maximum device name length.
