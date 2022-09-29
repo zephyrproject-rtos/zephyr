@@ -262,13 +262,13 @@ Check if your SoC is listed in `pyOCD Supported Devices`_.
    https://www.segger.com/downloads/supported-devices.php
 
 .. _Getting OpenOCD:
-   http://openocd.org/getting-openocd/
+   https://openocd.org/pages/getting-openocd.html
 
 .. _OpenOCD Supported Devices:
-   https://github.com/zephyrproject-rtos/openocd/tree/master/tcl/target
+   https://github.com/zephyrproject-rtos/openocd/tree/latest/tcl/target
 
 .. _pyOCD Supported Devices:
-   https://github.com/mbedmicro/pyOCD/tree/master/pyocd/target/builtin
+   https://github.com/pyocd/pyOCD/tree/main/pyocd/target/builtin
 
 .. _OpenOCD Windows:
     http://gnutoolchains.com/arm-eabi/openocd/
