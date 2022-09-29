@@ -129,6 +129,8 @@ SECTIONS {
 
 	GROUP_START(RAMABLE_REGION)
 
+	__ram_reg_start = . ;
+
 #include <app_data_alignment.ld>
 
 /* Located in generated directory. This file is populated by the
@@ -146,6 +148,8 @@ SECTIONS {
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif /* CONFIG_USERSPACE */
+
+	__pre_bss = . ;
 
 	SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),) {
 		MPU_MIN_SIZE_ALIGN
