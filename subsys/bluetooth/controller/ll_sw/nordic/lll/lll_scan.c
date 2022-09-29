@@ -845,6 +845,7 @@ static void isr_common_done(void *param)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	lll->is_adv_ind = 0U;
+	lll->is_aux_sched = 0U;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	/* setup tIFS switching */
