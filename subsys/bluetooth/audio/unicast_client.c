@@ -518,7 +518,7 @@ static void unicast_client_ep_config_state(struct bt_audio_ep *ep,
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		BT_ERR("No stream active for endpoint");
+		BT_WARN("No stream active for endpoint");
 		return;
 	}
 
