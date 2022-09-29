@@ -234,6 +234,25 @@ Architectures
 
 * RISC-V
 
+  * Introduced support for RV32E.
+  * Reduced callee-saved registers for RV32E.
+  * Introduced Zicsr, Zifencei and BitManip as separate extensions.
+  * Introduced :kconfig:option:`CONFIG_ALWAYS_SWITCH_THROUGH_ECALL` for
+    plaforms that require every ``mret`` to be balanced by ``ecall``.
+  * IRQ vector table is now used for vectored mode.
+  * Disabled :kconfig:option:`CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE` for CLIC.
+  * ``STRINGIFY`` macro is now used for CSR helpers.
+  * :kconfig:option:`CONFIG_CODE_DATA_RELOCATION` is now supported.
+  * PLIC and CLIC are now decoupled.
+  * ``jedec,spi-nor`` is no longer required to be ``okay`` by the RISC-V arch
+    linker script.
+  * Removed usage of ``SOC_ERET``.
+  * Removed usage of ``ulong_t``.
+  * Added new TLS-based :c:func:`arch_is_user_context` implementation.
+  * Fixed PMP for builds with SMP enabled.
+  * Fixed the per-thread m-mode/u-mode entry array.
+  * :c:func:`semihost_exec` function is now aligned at 16-byte boundary.
+
 * x86
 
 * Xtensa
