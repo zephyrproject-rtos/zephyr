@@ -125,8 +125,6 @@ static void k_event_post_internal(struct k_event *event, uint32_t events,
 			thread->next_event_link = head;
 			head = thread;
 		}
-
-
 	}
 
 	if (head != NULL) {

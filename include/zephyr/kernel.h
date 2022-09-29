@@ -2123,7 +2123,7 @@ __syscall void k_event_post(struct k_event *event, uint32_t events);
  * events tracked by the event object.
  *
  * @param event Address of the event object
- * @param events Set of events to post to @a event
+ * @param events Set of events to set in @a event
  */
 __syscall void k_event_set(struct k_event *event, uint32_t events);
 
@@ -2136,7 +2136,7 @@ __syscall void k_event_set(struct k_event *event, uint32_t events);
  * allows specific event bits to be set and cleared as determined by the mask.
  *
  * @param event Address of the event object
- * @param events Set of events to post to @a event
+ * @param events Set of events to set/clear in @a event
  * @param events_mask Mask to be applied to @a events
  */
 __syscall void k_event_set_masked(struct k_event *event, uint32_t events,
@@ -2167,7 +2167,7 @@ __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
 				bool reset, k_timeout_t timeout);
 
 /**
- * @brief Wait for any of the specified events
+ * @brief Wait for all of the specified events
  *
  * This routine waits on event object @a event until all of the specified
  * events have been delivered to the event object, or the maximum wait time
