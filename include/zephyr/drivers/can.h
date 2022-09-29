@@ -559,8 +559,8 @@ struct can_device_state {
 /**
  * @brief Define a statically allocated and section assigned CAN device state
  */
-#define Z_CAN_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	static struct can_device_state Z_DEVICE_STATE_NAME(dev_name)	\
+#define Z_CAN_DEVICE_STATE_DEFINE(node_id, dev_id)			\
+	static struct can_device_state Z_DEVICE_STATE_NAME(dev_id)	\
 	__attribute__((__section__(".z_devstate")))
 
 /**
@@ -569,8 +569,8 @@ struct can_device_state {
  * This does device instance specific initialization of common data (such as stats)
  * and calls the given init_fn
  */
-#define Z_CAN_INIT_FN(dev_name, init_fn)				\
-	static inline int UTIL_CAT(dev_name, _init)(const struct device *dev) \
+#define Z_CAN_INIT_FN(dev_id, init_fn)					\
+	static inline int UTIL_CAT(dev_id, _init)(const struct device *dev) \
 	{								\
 		struct can_device_state *state =			\
 			CONTAINER_OF(dev->state, struct can_device_state, devstate); \

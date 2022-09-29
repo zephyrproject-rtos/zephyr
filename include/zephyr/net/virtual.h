@@ -273,10 +273,10 @@ net_virtual_get_iface_capabilities(struct net_if *iface)
 	return virt->get_capabilities(iface);
 }
 
-#define Z_NET_VIRTUAL_INTERFACE_INIT(node_id, dev_name, drv_name,	\
-				     init_fn, pm_action_cb, data, cfg, \
+#define Z_NET_VIRTUAL_INTERFACE_INIT(node_id, dev_id, drv_name,		\
+				     init_fn, pm_action_cb, data, cfg,	\
 				     prio, api, mtu)			\
-	Z_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,		\
+	Z_NET_DEVICE_INIT(node_id, dev_id, drv_name, init_fn,		\
 			  pm_action_cb, data, cfg, prio, api,		\
 			  VIRTUAL_L2, NET_L2_GET_CTX_TYPE(VIRTUAL_L2),	\
 			  mtu)
@@ -288,7 +288,7 @@ net_virtual_get_iface_capabilities(struct net_if *iface)
  *        The attaching is done automatically when setting up tunneling
  *        when peer IP address is set in IP tunneling driver.
  *
- * @param dev_name Network device name.
+ * @param dev_id Network device id.
  * @param drv_name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
@@ -303,10 +303,10 @@ net_virtual_get_iface_capabilities(struct net_if *iface)
  * @param mtu Maximum transfer unit in bytes for this network interface.
  * This is the default value and its value can be tweaked at runtime.
  */
-#define NET_VIRTUAL_INTERFACE_INIT(dev_name, drv_name, init_fn,		\
+#define NET_VIRTUAL_INTERFACE_INIT(dev_id, drv_name, init_fn,		\
 				   pm_action_cb,			\
 				   data, cfg, prio, api, mtu)		\
-	Z_NET_VIRTUAL_INTERFACE_INIT(DT_INVALID_NODE, dev_name,		\
+	Z_NET_VIRTUAL_INTERFACE_INIT(DT_INVALID_NODE, dev_id,		\
 				     drv_name, init_fn, pm_action_cb,	\
 				     data, cfg, prio, api, mtu)
 
