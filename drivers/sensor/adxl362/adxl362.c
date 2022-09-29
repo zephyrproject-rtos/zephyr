@@ -324,7 +324,7 @@ static int adxl362_attr_set(const struct device *dev,
 	{
 		uint16_t timeout = val->val1;
 
-		return adxl362_set_reg(dev, (timeout & 0x7FF), ADXL362_REG_TIME_INACT_L, 2);
+		return adxl362_set_reg(dev, timeout, ADXL362_REG_TIME_INACT_L, 2);
 	}
 	default:
 		/* Do nothing */
