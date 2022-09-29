@@ -28,6 +28,17 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+/* Given the minimum payload, this defines the minimum number of bytes that
+ * should be  remaining in a TX PDU such that it would make inserting a new
+ * segment worthwhile during the segmentation process.
+ * [Payload (min) + Segmentation Header + Time Offset]
+ */
+#define ISOAL_TX_SEGMENT_MIN_SIZE         (CONFIG_BT_CTLR_ISO_TX_SEG_PLAYLOAD_MIN +                \
+					   PDU_ISO_SEG_HDR_SIZE +                                  \
+					   PDU_ISO_SEG_TIMEOFFSET_SIZE)
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
 /** Allocation state */
 typedef uint8_t isoal_alloc_state_t;
 #define ISOAL_ALLOC_STATE_FREE            ((isoal_alloc_state_t) 0x00)
@@ -1106,6 +1117,21 @@ static isoal_status_t isoal_source_allocate(isoal_source_handle_t *hdl)
  */
 static void isoal_source_deallocate(isoal_source_handle_t hdl)
 {
+	struct isoal_pdu_production *pp;
+	struct isoal_source *source;
+
+	source = &isoal_global.source_state[hdl];
+	pp = &source->pdu_production;
+
+	if (pp->pdu_available > 0) {
+		/* There is a pending PDU that should be released */
+		if (source && source->session.pdu_release) {
+			source->session.pdu_release(pp->pdu.contents.handle,
+						    source->session.handle,
+						    ISOAL_STATUS_ERR_PDU_EMIT);
+		}
+	}
+
 	isoal_global.source_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
 	(void)memset(&isoal_global.source_state[hdl], 0, sizeof(struct isoal_source));
 }
@@ -1884,18 +1910,11 @@ static isoal_status_t isoal_tx_framed_produce(struct isoal_source *source,
 		/* LLID is fixed for framed PDUs */
 		ll_id = PDU_BIS_LLID_FRAMED;
 
-		/* NOTE: Ideally even if the end of the SDU is reached, the PDU
-		 * should not be emitted as long as there is space left. If the
-		 * PDU is not released, it might require a flush timeout to
-		 * trigger the release as receiving an SDU per SDU interval is
-		 * not guaranteed. As there is no trigger for this in the
-		 * ISO-AL, the PDU is released. This does mean that the
-		 * bandwidth of this implementation will be less that the ideal
-		 * supported by framed PDUs. Ideally ISOAL_SEGMENT_MIN_SIZE
-		 * should be used to assess if there is sufficient usable space
-		 * left in the PDU.
+		/* If there isn't sufficient usable space then release the
+		 * PDU when the end of the SDU is reached, instead of waiting
+		 * for the next SDU.
 		 */
-		bool release_pdu = end_of_sdu;
+		bool release_pdu = end_of_sdu && (pp->pdu_available <= ISOAL_TX_SEGMENT_MIN_SIZE);
 		const isoal_status_t err_emit = isoal_tx_try_emit_pdu(source, release_pdu, ll_id);
 
 		err |= err_emit;
@@ -1918,6 +1937,41 @@ static isoal_status_t isoal_tx_framed_produce(struct isoal_source *source,
 	return err;
 }
 
+/**
+ * @brief  Handle preparation of the given source before commencing TX on the
+ *         specified event (only for framed sources)
+ * @param  source_hdl   Handle of source to prepare
+ * @param  event_count  Event number source should be prepared for
+ * @return              Status of operation
+ */
+static isoal_status_t isoal_tx_framed_event_prepare_handle(isoal_source_handle_t source_hdl,
+							   uint64_t event_count)
+{
+	struct isoal_source_session *session;
+	struct isoal_pdu_production *pp;
+	struct isoal_source *source;
+	uint64_t last_event_payload;
+	isoal_status_t err;
+
+	err = ISOAL_STATUS_OK;
+
+	source = &isoal_global.source_state[source_hdl];
+	session = &source->session;
+	pp = &source->pdu_production;
+	last_event_payload = (session->burst_number * (event_count + 1)) - 1;
+
+	if (pp->pdu_available > 0 &&
+		pp->payload_number <= last_event_payload) {
+		/* Pending PDU that should be released for framed TX */
+		err = isoal_tx_try_emit_pdu(source, true, PDU_BIS_LLID_FRAMED);
+	}
+
+	if (pp->payload_number < last_event_payload + 1) {
+		pp->payload_number = last_event_payload + 1;
+	}
+
+	return err;
+}
 
 /**
  * @brief Deep copy a SDU, fragment into PDU(s)
@@ -1930,11 +1984,18 @@ static isoal_status_t isoal_tx_framed_produce(struct isoal_source *source,
 isoal_status_t isoal_tx_sdu_fragment(isoal_source_handle_t source_hdl,
 				     struct isoal_sdu_tx *tx_sdu)
 {
+	struct isoal_source_session *session;
 	struct isoal_source *source;
 	isoal_status_t err;
 
 	source = &isoal_global.source_state[source_hdl];
+	session = &source->session;
 	err = ISOAL_STATUS_ERR_PDU_ALLOC;
+
+	/* Set source context active to mutually exclude ISO Event prepare
+	 * kick.
+	 */
+	source->context_active = true;
 
 	if (source->pdu_production.mode != ISOAL_PRODUCTION_MODE_DISABLED) {
 		/* BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
@@ -1951,6 +2012,16 @@ isoal_status_t isoal_tx_sdu_fragment(isoal_source_handle_t source_hdl,
 			err = isoal_tx_framed_produce(source, tx_sdu);
 		} else {
 			err = isoal_tx_unframed_produce(source, tx_sdu);
+		}
+	}
+
+	source->context_active = false;
+
+	if (source->timeout_trigger) {
+		source->timeout_trigger = false;
+		if (session->framed) {
+			isoal_tx_framed_event_prepare_handle(source_hdl,
+						source->timeout_event_count);
 		}
 	}
 
@@ -2001,6 +2072,37 @@ isoal_status_t isoal_tx_get_sync_info(isoal_source_handle_t source_hdl,
 	}
 
 	return ISOAL_STATUS_ERR_UNSPECIFIED;
+}
+
+/**
+ * @brief  Incoming prepare request before commencing TX for the specified
+ *         event
+ * @param  source_hdl   Handle of source to prepare
+ * @param  event_count  Event number source should be prepared for
+ * @return              Status of operation
+ */
+void isoal_tx_event_prepare(isoal_source_handle_t source_hdl,
+			    uint64_t event_count)
+{
+	struct isoal_source_session *session;
+	struct isoal_source *source;
+
+	source = &isoal_global.source_state[source_hdl];
+	session = &source->session;
+
+	/* Store prepare timeout information and check if fragmentation context
+	 * is active.
+	 */
+	source->timeout_event_count = event_count;
+	source->timeout_trigger = true;
+	if (source->context_active) {
+		return;
+	}
+	source->timeout_trigger = false;
+
+	if (session->framed) {
+		isoal_tx_framed_event_prepare_handle(source_hdl, event_count);
+	}
 }
 
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
