@@ -800,6 +800,8 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @}
  */
 
+/** @cond INTERNAL_HIDDEN */
+
 /* Synthesize a unique name for the device state associated with
  * dev_name.
  */
@@ -943,6 +945,8 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
 #endif /* CONFIG_HAS_DTS */
+
+/** @endcond */
 
 #ifdef __cplusplus
 }
