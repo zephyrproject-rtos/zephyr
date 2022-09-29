@@ -974,6 +974,18 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 				      handles)
 
 /**
+ * @brief Define the init entry for a device.
+ *
+ * @param dev_id Device identifier.
+ * @param init_fn Device init function.
+ * @param level Initialization level.
+ * @param prio Initialization priority.
+ */
+#define Z_DEVICE_INIT_ENTRY_DEFINE(dev_id, init_fn, level, prio)               \
+	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_id), init_fn,                  \
+			    (&DEVICE_NAME_GET(dev_id)), level, prio)
+
+/**
  * @brief Define a struct device and all other required objects.
  *
  * This is the common macro used to define struct device objects. It can be
@@ -1004,8 +1016,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 			     prio, api, state,                                 \
 			     Z_DEVICE_HANDLE_NAME(node_id, dev_id));           \
 			                                                       \
-	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_id), init_fn,                  \
-			    (&DEVICE_NAME_GET(dev_id)), level, prio)
+	Z_DEVICE_INIT_ENTRY_DEFINE(dev_id, init_fn, level, prio)
 
 #if defined(CONFIG_HAS_DTS) || defined(__DOXYGEN__)
 /**
