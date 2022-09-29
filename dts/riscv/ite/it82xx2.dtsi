@@ -15,6 +15,14 @@
 			interrupt-controller;
 			reg = <0x00f03f00 0x0100>;
 		};
+
+		twd0: watchdog@f01f80 {
+			compatible = "ite,it8xxx2-watchdog";
+			reg = <0x00f01f80 0x000f>;
+			interrupts = <IT8XXX2_IRQ_TIMER1 IRQ_TYPE_EDGE_RISING   /* Warning timer */
+				      IT8XXX2_IRQ_TIMER2 IRQ_TYPE_EDGE_RISING>; /* One shot timer */
+			interrupt-parent = <&intc>;
+		};
 	};
 };
 

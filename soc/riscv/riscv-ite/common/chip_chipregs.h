@@ -334,26 +334,6 @@ struct wdt_it8xxx2_regs {
 	volatile uint8_t reserved3;
 	/* 0x00E: External Timer2 Counter High Byte2 */
 	volatile uint8_t ET2CNTLH2R;
-	/* 0x00F~0x03F: Reserved4 */
-	volatile uint8_t reserved4[49];
-	/* 0x040: External Timer1 Counter Observation Low Byte */
-	volatile uint8_t ET1CNTOLR;
-	/* 0x041: External Timer1 Counter Observation High Byte */
-	volatile uint8_t ET1CNTOHR;
-	/* 0x042~0x043: Reserved5 */
-	volatile uint8_t reserved5[2];
-	/* 0x044: External Timer1 Counter Observation Low Byte */
-	volatile uint8_t ET2CNTOLR;
-	/* 0x045: External Timer1 Counter Observation High Byte */
-	volatile uint8_t ET2CNTOHR;
-	/* 0x046: External Timer1 Counter Observation High Byte2 */
-	volatile uint8_t ET2CNTOH2R;
-	/* 0x047~0x05F: Reserved6 */
-	volatile uint8_t reserved6[25];
-	/* 0x060: External WDT Counter Observation Low Byte */
-	volatile uint8_t EWDCNTOLR;
-	/* 0x061: External WDT Counter Observation High Byte */
-	volatile uint8_t EWDCNTOHR;
 };
 #endif /* !__ASSEMBLER__ */
 
