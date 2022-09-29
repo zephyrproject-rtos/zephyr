@@ -106,7 +106,7 @@ static int sntp_recv_response(struct sntp_ctx *sntp, uint32_t timeout,
 	int status;
 	int rcvd;
 
-	status = poll(sntp->sock.fds, sntp->sock.nfds, timeout);
+	status = zsock_poll(sntp->sock.fds, sntp->sock.nfds, timeout);
 	if (status < 0) {
 		NET_ERR("Error in poll:%d", errno);
 		return -errno;
@@ -116,7 +116,7 @@ static int sntp_recv_response(struct sntp_ctx *sntp, uint32_t timeout,
 		return -ETIMEDOUT;
 	}
 
-	rcvd = recv(sntp->sock.fd, (uint8_t *)&buf, sizeof(buf), 0);
+	rcvd = zsock_recv(sntp->sock.fd, (uint8_t *)&buf, sizeof(buf), 0);
 	if (rcvd < 0) {
 		return -errno;
 	}
@@ -150,15 +150,15 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 
 	memset(ctx, 0, sizeof(struct sntp_ctx));
 
-	ctx->sock.fd = socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	ctx->sock.fd = zsock_socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (ctx->sock.fd < 0) {
 		NET_ERR("Failed to create UDP socket %d", errno);
 		return -errno;
 	}
 
-	ret = connect(ctx->sock.fd, addr, addr_len);
+	ret = zsock_connect(ctx->sock.fd, addr, addr_len);
 	if (ret < 0) {
-		(void)close(ctx->sock.fd);
+		(void)zsock_close(ctx->sock.fd);
 		NET_ERR("Cannot connect to UDP remote : %d", errno);
 		return -errno;
 	}
@@ -186,7 +186,7 @@ int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *time)
 	ctx->expected_orig_ts = get_uptime_in_sec() + OFFSET_1970_JAN_1;
 	tx_pkt.tx_tm_s = htonl(ctx->expected_orig_ts);
 
-	ret = send(ctx->sock.fd, (uint8_t *)&tx_pkt, sizeof(tx_pkt), 0);
+	ret = zsock_send(ctx->sock.fd, (uint8_t *)&tx_pkt, sizeof(tx_pkt), 0);
 	if (ret < 0) {
 		NET_ERR("Failed to send over UDP socket %d", ret);
 		return ret;
@@ -198,6 +198,6 @@ int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *time)
 void sntp_close(struct sntp_ctx *ctx)
 {
 	if (ctx) {
-		(void)close(ctx->sock.fd);
+		(void)zsock_close(ctx->sock.fd);
 	}
 }
