@@ -260,7 +260,7 @@ struct pm_device {
  * @see #PM_DEVICE_DT_INST_DEFINE, #PM_DEVICE_DEFINE
  */
 #define PM_DEVICE_DT_DEFINE(node_id, pm_action_cb)			\
-	Z_PM_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
+	Z_PM_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),	\
 			   pm_action_cb)
 
 /**
@@ -275,7 +275,7 @@ struct pm_device {
  */
 #define PM_DEVICE_DT_INST_DEFINE(idx, pm_action_cb)			\
 	Z_PM_DEVICE_DEFINE(DT_DRV_INST(idx),				\
-			   Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(idx)),	\
+			   Z_DEVICE_DT_DEV_ID(DT_DRV_INST(idx)),	\
 			   pm_action_cb)
 
 /**
@@ -298,7 +298,7 @@ struct pm_device {
  * @kconfig{CONFIG_PM_DEVICE} is disabled).
  */
 #define PM_DEVICE_DT_GET(node_id) \
-	PM_DEVICE_GET(Z_DEVICE_DT_DEV_NAME(node_id))
+	PM_DEVICE_GET(Z_DEVICE_DT_DEV_ID(node_id))
 
 /**
  * @brief Obtain a reference to the device PM resources for the given instance.
