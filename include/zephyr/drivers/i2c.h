@@ -509,13 +509,13 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  */
 #define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			     prio, api, ...)				\
-	Z_I2C_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_NAME(node_id));	\
-	Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_NAME(node_id), init_fn)		\
-	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
+	Z_I2C_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));		\
+	Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)		\
+	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
-			&UTIL_CAT(Z_DEVICE_DT_DEV_NAME(node_id), _init), \
+			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
 			pm_device, data, config, level, prio, api,	\
-			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)).devstate), \
+			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
 			__VA_ARGS__)
 
 #else /* CONFIG_I2C_STATS */
