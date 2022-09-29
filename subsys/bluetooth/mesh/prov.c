@@ -431,11 +431,11 @@ void bt_mesh_prov_complete(uint16_t net_idx, uint16_t addr)
 void bt_mesh_prov_reset(void)
 {
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV)) {
-		pb_adv_reset();
+		bt_mesh_pb_adv_reset();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		pb_gatt_reset();
+		bt_mesh_pb_gatt_reset();
 	}
 
 	bt_mesh_prov_reset_state(NULL);
@@ -455,11 +455,11 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 	bt_mesh_prov = prov_info;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV)) {
-		pb_adv_init();
+		bt_mesh_pb_adv_init();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		pb_gatt_init();
+		bt_mesh_pb_gatt_init();
 	}
 
 	return bt_mesh_prov_reset_state(NULL);

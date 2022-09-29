@@ -53,7 +53,7 @@ static void link_closed(enum prov_bearer_link_status status)
 
 	reset_state();
 
-	cb->link_closed(&pb_gatt, cb_data, status);
+	cb->link_closed(&bt_mesh_pb_gatt, cb_data, status);
 }
 
 static void protocol_timeout(struct k_work *work)
@@ -94,7 +94,7 @@ int bt_mesh_pb_gatt_recv(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
 
-	link.cb->recv(&pb_gatt, link.cb_data, buf);
+	link.cb->recv(&bt_mesh_pb_gatt, link.cb_data, buf);
 
 	return 0;
 }
@@ -110,7 +110,7 @@ int bt_mesh_pb_gatt_start(struct bt_conn *conn)
 	link.conn = bt_conn_ref(conn);
 	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
 
-	link.cb->link_opened(&pb_gatt, link.cb_data);
+	link.cb->link_opened(&bt_mesh_pb_gatt, link.cb_data);
 
 	return 0;
 }
@@ -153,7 +153,7 @@ int bt_mesh_pb_gatt_cli_open(struct bt_conn *conn)
 		return -ENOTCONN;
 	}
 
-	link.cb->link_opened(&pb_gatt, link.cb_data);
+	link.cb->link_opened(&bt_mesh_pb_gatt, link.cb_data);
 
 	return 0;
 }
@@ -226,17 +226,17 @@ static void clear_tx(void)
 	/* No action */
 }
 
-void pb_gatt_init(void)
+void bt_mesh_pb_gatt_init(void)
 {
 	k_work_init_delayable(&link.prot_timer, protocol_timeout);
 }
 
-void pb_gatt_reset(void)
+void bt_mesh_pb_gatt_reset(void)
 {
 	reset_state();
 }
 
-const struct prov_bearer pb_gatt = {
+const struct prov_bearer bt_mesh_pb_gatt = {
 	.type = BT_MESH_PROV_GATT,
 #if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
 	.link_open = prov_link_open,
