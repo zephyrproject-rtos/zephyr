@@ -62,6 +62,13 @@ extern "C" {
  */
 typedef int16_t device_handle_t;
 
+/*
+ * The build assert will fail if device_handle_t changes size, which
+ * means the alignment directives in the linker scripts and in
+ * `gen_handles.py` must be updated.
+ */
+BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
+
 /** @brief Flag value used in lists of device handles to separate
  * distinct groups.
  *
@@ -870,12 +877,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * files, which will be retained in subsequent links both wasting
  * space and resulting in aggregate size changes relative to pass2
  * when all objects will be in the same input section.
- *
- * The build assert will fail if device_handle_t changes size, which
- * means the alignment directives in the linker scripts and in
- * `gen_handles.py` must be updated.
  */
-BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 #define Z_DEVICE_HANDLES_DEFINE(node_id, dev_id, ...)			\
 	extern Z_DEVICE_HANDLES_CONST device_handle_t			\
 		Z_DEVICE_HANDLE_NAME(node_id, dev_id)[];		\
