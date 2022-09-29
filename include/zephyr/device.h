@@ -914,13 +914,16 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_device,       \
 			data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr,    \
 			...)                                                   \
+	Z_DEVICE_NAME_CHECK(drv_name);                                         \
+                                                                               \
 	Z_DEVICE_HANDLES_DEFINE(node_id, dev_name, __VA_ARGS__);               \
+                                                                               \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                     \
 	const Z_DECL_ALIGN(struct device) DEVICE_NAME_GET(dev_name)            \
 		Z_DEVICE_SECTION(level, prio) __used = Z_DEVICE_INIT(          \
 			drv_name, pm_device, data_ptr, cfg_ptr, api_ptr,       \
 			state_ptr, Z_DEVICE_HANDLE_NAME(node_id, dev_name));   \
-	Z_DEVICE_NAME_CHECK(drv_name);                                         \
+                                                                               \
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,                \
 			    (&DEVICE_NAME_GET(dev_name)), level, prio)
 
