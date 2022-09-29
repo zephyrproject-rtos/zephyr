@@ -1404,6 +1404,11 @@ Libraries / Subsystems
 
 * Power management
 
+  * Allow multiple subscribers to latency changes in the policy manager.
+  * Added new API to implement suspend-to-RAM (S2RAM). Select
+    :kconfig:option:`CONFIG_PM_S2RAM` to enable this feature.
+  * Added :c:func:`pm_device_is_powered` to query a device power state.
+
 * POSIX
 
   * Make ``tz`` non-const in ``gettimeofday()`` for conformance to spec.
