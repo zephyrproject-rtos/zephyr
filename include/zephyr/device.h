@@ -881,8 +881,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 #define Z_DEVICE_HANDLES_DEFINE(node_id, dev_id, ...)			\
 	extern Z_DEVICE_HANDLES_CONST device_handle_t			\
 		Z_DEVICE_HANDLE_NAME(node_id, dev_id)[];		\
-	Z_DEVICE_HANDLES_CONST device_handle_t				\
-	__aligned(sizeof(device_handle_t))				\
+	Z_DEVICE_HANDLES_CONST Z_DECL_ALIGN(device_handle_t)		\
 	__attribute__((__weak__,					\
 		       __section__(".__device_handles_pass1")))		\
 	Z_DEVICE_HANDLE_NAME(node_id, dev_id)[] = {			\
