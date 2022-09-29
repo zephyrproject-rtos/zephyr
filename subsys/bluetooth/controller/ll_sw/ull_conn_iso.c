@@ -542,6 +542,7 @@ static int init_reset(void)
 		cis = ll_conn_iso_stream_get(handle);
 		cis->cis_id = 0;
 		cis->group  = NULL;
+		cis->lll.link_tx_free = NULL;
 	}
 
 	conn_accept_timeout = CONN_ACCEPT_TIMEOUT_DEFAULT;
@@ -961,6 +962,11 @@ static void cis_tx_lll_flush(void *param)
 		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
 				    (void **)&tx);
 	}
+
+	LL_ASSERT(!lll->link_tx_free);
+	link = memq_deinit(&lll->memq_tx.head, &lll->memq_tx.tail);
+	LL_ASSERT(link);
+	lll->link_tx_free = link;
 
 	/* Resume CIS teardown in ULL_HIGH context */
 	mfys[cig->lll.handle].param = &cig->lll;
