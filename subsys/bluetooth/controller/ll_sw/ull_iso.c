@@ -916,7 +916,9 @@ static isoal_status_t ll_iso_test_pdu_release(struct node_tx_iso *node_tx,
 					      const isoal_status_t status)
 {
 	/* Release back to memory pool */
-	ll_iso_link_tx_release(node_tx->link);
+	if (node_tx->link) {
+		ll_iso_link_tx_release(node_tx->link);
+	}
 	ll_iso_tx_mem_release(node_tx);
 
 	return ISOAL_STATUS_OK;
@@ -1292,6 +1294,30 @@ void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 		LL_ASSERT(0);
 	}
 }
+
+void ull_iso_lll_event_prepare(uint16_t handle, uint64_t event_count)
+{
+	if (IS_CIS_HANDLE(handle)) {
+		struct ll_iso_datapath *dp = NULL;
+		struct ll_conn_iso_stream *cis;
+
+		cis = ll_iso_stream_connected_get(handle);
+
+		if (cis) {
+			dp  = cis->hdr.datapath_in;
+		}
+
+		if (dp) {
+			isoal_tx_event_prepare(dp->source_hdl, event_count);
+		}
+	} else if (IS_ADV_ISO_HANDLE(handle)) {
+		/* Send event deadline trigger to ISO-AL.
+		 * TODO: Can be unified with CIS implementation.
+		 */
+	} else {
+		LL_ASSERT(0);
+	}
+}
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
@@ -1542,6 +1568,8 @@ static isoal_status_t ll_iso_pdu_alloc(struct isoal_pdu_buffer *pdu_buffer)
 		return ISOAL_STATUS_ERR_PDU_ALLOC;
 	}
 
+	node_tx->link = NULL;
+
 	/* node_tx handle will be required to emit the PDU later */
 	pdu_buffer->handle = (void *)node_tx;
 	pdu_buffer->pdu    = (void *)node_tx->pdu;
@@ -1625,7 +1653,9 @@ static isoal_status_t ll_iso_pdu_release(struct node_tx_iso *node_tx,
 		ll_rx_sched();
 	} else {
 		/* Release back to memory pool */
-		ll_iso_link_tx_release(node_tx->link);
+		if (node_tx->link) {
+			ll_iso_link_tx_release(node_tx->link);
+		}
 		ll_iso_tx_mem_release(node_tx);
 	}
 
