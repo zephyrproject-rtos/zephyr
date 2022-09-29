@@ -981,27 +981,33 @@ NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, CONFIG_BT_L2CAP_TX_MTU);
 static void ase_process(struct k_work *work)
 {
 	struct bt_ascs_ase *ase = CONTAINER_OF(work, struct bt_ascs_ase, work);
+	struct bt_audio_ep *ep = &ase->ep;
+	const struct bt_audio_iso *audio_iso = ep->iso;
+	struct bt_audio_stream *stream = ep->stream;
+	const uint8_t ep_state = ep->status.state;
+	struct bt_conn *conn = ase->ascs->conn;
 
-	BT_DBG("ase %p, ep %p, ep.stream %p", ase, &ase->ep, ase->ep.stream);
+	BT_DBG("ase %p, ep %p, ep.stream %p", ase, ep, stream);
 
-	if (ase->ascs->conn != NULL &&
-	    ase->ascs->conn->state == BT_CONN_CONNECTED) {
-		ascs_ep_get_status(&ase->ep, &ase_buf);
+	if (conn != NULL && conn->state == BT_CONN_CONNECTED) {
+		ascs_ep_get_status(ep, &ase_buf);
 
-		bt_gatt_notify(ase->ascs->conn, ase->ep.server.attr,
+		bt_gatt_notify(conn, ep->server.attr,
 			       ase_buf.data, ase_buf.len);
 	}
 
-	if (ase->ep.status.state == BT_AUDIO_EP_STATE_RELEASING) {
-		struct bt_audio_stream *stream = ase->ep.stream;
+	/* Stream shall be NULL in the idle state, and non-NULL otherwise */
+	__ASSERT(ep_state == BT_AUDIO_EP_STATE_IDLE ?
+			stream == NULL : stream != NULL,
+		 "stream is NULL");
 
-		__ASSERT(stream, "stream is NULL");
+	if (ep_state == BT_AUDIO_EP_STATE_RELEASING) {
 
-		if (ase->ep.iso == NULL ||
-		    ase->ep.iso->iso_chan.state == BT_ISO_STATE_DISCONNECTED) {
-			ascs_ep_unbind_audio_iso(&ase->ep);
+		if (audio_iso == NULL ||
+		    audio_iso->iso_chan.state == BT_ISO_STATE_DISCONNECTED) {
+			ascs_ep_unbind_audio_iso(ep);
 			bt_audio_stream_detach(stream);
-			ascs_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_IDLE);
+			ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_IDLE);
 		} else {
 			/* Either the client or the server may disconnect the
 			 * CISes when entering the releasing state.
@@ -1012,6 +1018,15 @@ static void ase_process(struct k_work *work)
 				BT_ERR("Failed to disconnect stream %p: %d",
 				       stream, err);
 			}
+		}
+	} else if (ep_state == BT_AUDIO_EP_STATE_ENABLING) {
+		/* SINK ASEs can autonomously go into the streaming state if
+		 * the CIS is connected
+		 */
+		if (ep->dir == BT_AUDIO_DIR_SINK &&
+		    audio_iso != NULL &&
+		    audio_iso->iso_chan.state == BT_ISO_STATE_CONNECTED) {
+			ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 		}
 	}
 }
@@ -1948,16 +1963,6 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 	}
 
 	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_ENABLING);
-
-
-	if (ep->dir == BT_AUDIO_DIR_SINK) {
-		/* SINK ASEs can autonomously go into the streaming state if
-		 * the CIS is connected
-		 */
-		/* TODO: Verify that CIS is connected and set ep state to
-		 * BT_AUDIO_EP_STATE_STREAMING
-		 */
-	}
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_ENABLE_OP);
 
