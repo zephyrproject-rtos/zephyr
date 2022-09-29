@@ -132,12 +132,9 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* Reject first, intermediate, last operation and len > 191 bytes if
-	 * chain PDUs unsupported.
-	 */
+	/* Reject len > 191 bytes if chain PDUs unsupported */
 	if (!IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK) &&
-	    ((op < BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) ||
-	     (len > PDU_AC_EXT_AD_DATA_LEN_MAX))) {
+	    (len > PDU_AC_EXT_AD_DATA_LEN_MAX)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -149,8 +146,9 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	 * set new data.
 	 */
 	val_ptr = hdr_data;
-	if (op == BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG ||
-	    op == BT_HCI_LE_EXT_ADV_OP_LAST_FRAG ||
+	if ((IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK) && (
+	     op == BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG ||
+	     op == BT_HCI_LE_EXT_ADV_OP_LAST_FRAG)) ||
 	    op == BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA) {
 		*val_ptr++ = 0U;
 		(void)memset((void *)val_ptr, 0U,
@@ -160,7 +158,9 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		(void)memcpy(val_ptr, &data, sizeof(data));
 	}
 
-	if (!IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK) ||
+	if ((!IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK) &&
+	     (op == BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA ||
+	      op == BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG)) ||
 	    (op == BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA)) {
 		err = ull_adv_aux_hdr_set_clear(adv,
 						ULL_ADV_PDU_HDR_FIELD_AD_DATA,
@@ -176,16 +176,13 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		/* local variables not used due to overflow being 0 */
 		pdu_prev = NULL;
 		pdu = NULL;
-#endif /* CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
-	} else if (!IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK) ||
-		   (op == BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG ||
-		    op == BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA)) {
+	} else if (op == BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG ||
+		    op == BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) {
 		/* Add AD Data and remove any prior presence of Aux Ptr */
 		err = ull_adv_aux_hdr_set_clear(adv,
 						ULL_ADV_PDU_HDR_FIELD_AD_DATA,
 						ULL_ADV_PDU_HDR_FIELD_AUX_PTR,
 						hdr_data, &pri_idx, &sec_idx);
-#if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK)
 		if (err == BT_HCI_ERR_PACKET_TOO_LONG) {
 			ad_len_overflow =
 				hdr_data[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET +
@@ -382,8 +379,17 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			/* No AD data in chain PDU */
 			ad_len_chain = 0U;
 		}
-#endif /* CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
 	}
+#else /* !CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
+	} else {
+		/* Append new fragment */
+		err = ull_adv_aux_hdr_set_clear(adv,
+						ULL_ADV_PDU_HDR_FIELD_AD_DATA_APPEND,
+						0U, hdr_data, &pri_idx,
+						&sec_idx);
+	}
+#endif /* !CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
+
 	if (err) {
 		return err;
 	}
@@ -626,7 +632,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 
 	lll_adv_aux_data_enqueue(adv->lll.aux, sec_idx);
 
-	if (op == BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG ||
+	if (!IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK) ||
+	    op == BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG ||
 	    op == BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA ||
 	    op == BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA) {
 		lll_adv_data_enqueue(&adv->lll, pri_idx);
@@ -727,8 +734,9 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	 * set new data.
 	 */
 	val_ptr = hdr_data;
-	if (op == BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG ||
-	    op == BT_HCI_LE_EXT_ADV_OP_LAST_FRAG ||
+	if ((IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK) && (
+	     op == BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG ||
+	     op == BT_HCI_LE_EXT_ADV_OP_LAST_FRAG)) ||
 	    op == BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA) {
 		*val_ptr++ = 0U;
 		(void)memset((void *)val_ptr, 0U,
@@ -805,13 +813,24 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				     sizeof(struct pdu_adv_adi *));
 		}
 
-		/* Add AD Data and remove any prior presence of Aux Ptr */
-		hdr_add_fields |= ULL_ADV_PDU_HDR_FIELD_ADVA |
-				  ULL_ADV_PDU_HDR_FIELD_AD_DATA;
-		err = ull_adv_aux_pdu_set_clear(adv, sr_pdu_prev, sr_pdu,
+		if (op == BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG ||
+		    op == BT_HCI_LE_EXT_ADV_OP_LAST_FRAG) {
+			/* Append fragment to existing data */
+			hdr_add_fields |= ULL_ADV_PDU_HDR_FIELD_ADVA |
+					  ULL_ADV_PDU_HDR_FIELD_AD_DATA_APPEND;
+			err = ull_adv_aux_pdu_set_clear(adv, sr_pdu_prev, sr_pdu,
+							hdr_add_fields,
+							0,
+							hdr_data);
+		} else {
+			/* Add AD Data and remove any prior presence of Aux Ptr */
+			hdr_add_fields |= ULL_ADV_PDU_HDR_FIELD_ADVA |
+					  ULL_ADV_PDU_HDR_FIELD_AD_DATA;
+			err = ull_adv_aux_pdu_set_clear(adv, sr_pdu_prev, sr_pdu,
 						hdr_add_fields,
 						ULL_ADV_PDU_HDR_FIELD_AUX_PTR,
 						hdr_data);
+		}
 #if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK)
 		if (err == BT_HCI_ERR_PACKET_TOO_LONG) {
 			uint8_t ad_len_offset;
@@ -1192,7 +1211,10 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 #endif /* CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
 
 sr_data_set_did_update:
-	if ((op == BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG) ||
+	if ((!IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK) &&
+	     (op == BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG ||
+	      op == BT_HCI_LE_EXT_ADV_OP_LAST_FRAG)) ||
+	    (op == BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG) ||
 	    (op == BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA)) {
 		/* NOTE: No update to primary channel PDU time reservation  */
 
@@ -1398,6 +1420,8 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	struct pdu_adv_aux_ptr *aux_ptr;
 	uint8_t pri_len, sec_len_prev;
 	struct lll_adv_aux *lll_aux;
+	uint8_t *ad_fragment = NULL;
+	uint8_t ad_fragment_len = 0;
 	struct ll_adv_aux_set *aux;
 	struct pdu_adv_adi *adi;
 	struct lll_adv *lll;
@@ -1727,6 +1751,16 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 			ad_len = ad_len_prev;
 			ad_data = sec_dptr_prev;
 		}
+	} else if (sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA_APPEND) {
+		/* Calc the previous AD data length in auxiliary PDU */
+		ad_len = sec_pdu_prev->len - sec_len_prev;
+		ad_data = sec_dptr_prev;
+
+		/* Append the new ad data fragment */
+		ad_fragment_len = *(uint8_t *)hdr_data;
+		hdr_data = (uint8_t *)hdr_data + sizeof(ad_fragment_len);
+		(void)memcpy(&ad_fragment, hdr_data, sizeof(ad_fragment));
+		hdr_data = (uint8_t *)hdr_data + sizeof(ad_fragment);
 	} else if (!(sec_hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA)) {
 		/* Calc the previous AD data length in auxiliary PDU */
 		ad_len = sec_pdu_prev->len - sec_len_prev;
@@ -1737,13 +1771,13 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	}
 
 	/* Check Max Advertising Data Length */
-	if (ad_len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
+	if (ad_len + ad_fragment_len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
 	/* Check AdvData overflow */
 	/* TODO: need aux_chain_ind support */
-	if ((sec_len + ad_len) > PDU_AC_PAYLOAD_SIZE_MAX) {
+	if ((sec_len + ad_len + ad_fragment_len) > PDU_AC_PAYLOAD_SIZE_MAX) {
 		/* return excess length */
 		*(uint8_t *)hdr_data = sec_len + ad_len -
 				       PDU_AC_PAYLOAD_SIZE_MAX;
@@ -1767,7 +1801,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 	/* set the secondary PDU len */
 	ull_adv_aux_hdr_len_fill(sec_com_hdr, sec_len);
-	sec_pdu->len = sec_len + ad_len;
+	sec_pdu->len = sec_len + ad_len + ad_fragment_len;
 
 	/* Start filling pri and sec PDU payload based on flags from here
 	 * ==============================================================
@@ -1776,6 +1810,10 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	/* No AdvData in primary channel PDU */
 	/* Fill AdvData in secondary PDU */
 	(void)memmove(sec_dptr, ad_data, ad_len);
+
+	if (ad_fragment) {
+		(void)memcpy(sec_dptr + ad_len, ad_fragment, ad_fragment_len);
+	}
 
 	/* Early exit if no flags set */
 	if (!sec_com_hdr->ext_hdr_len) {
@@ -1941,6 +1979,8 @@ uint8_t ull_adv_aux_pdu_set_clear(struct ll_adv_set *adv,
 	struct pdu_adv_com_ext_adv *com_hdr, *com_hdr_prev;
 	struct pdu_adv_ext_hdr hdr = { 0 }, hdr_prev = { 0 };
 	struct pdu_adv_aux_ptr *aux_ptr, *aux_ptr_prev;
+	uint8_t *ad_fragment = NULL;
+	uint8_t ad_fragment_len = 0;
 	uint8_t *dptr, *dptr_prev;
 	struct pdu_adv_adi *adi;
 	uint8_t acad_len_prev;
@@ -2184,6 +2224,15 @@ uint8_t ull_adv_aux_pdu_set_clear(struct ll_adv_set *adv,
 			ad_len = ad_len_prev;
 			ad_data = dptr_prev;
 		}
+	} else if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA_APPEND) {
+		ad_len = pdu_prev->len - len_prev;
+		ad_data = dptr_prev;
+
+		/* Append the new ad data fragment */
+		ad_fragment_len = *(uint8_t *)hdr_data;
+		hdr_data = (uint8_t *)hdr_data + sizeof(ad_fragment_len);
+		(void)memcpy(&ad_fragment, hdr_data, sizeof(ad_fragment));
+		hdr_data = (uint8_t *)hdr_data + sizeof(ad_fragment);
 	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA)) {
 		ad_len = pdu_prev->len - len_prev;
 		ad_data = dptr_prev;
@@ -2193,12 +2242,12 @@ uint8_t ull_adv_aux_pdu_set_clear(struct ll_adv_set *adv,
 	}
 
 	/* Check Max Advertising Data Length */
-	if (ad_len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
+	if (ad_len + ad_fragment_len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
 	/* Check AdvData overflow */
-	if ((len + ad_len) > PDU_AC_PAYLOAD_SIZE_MAX) {
+	if ((len + ad_len + ad_fragment_len) > PDU_AC_PAYLOAD_SIZE_MAX) {
 		/* return excess length */
 		*(uint8_t *)hdr_data = len + ad_len -
 				       PDU_AC_PAYLOAD_SIZE_MAX;
@@ -2211,7 +2260,7 @@ uint8_t ull_adv_aux_pdu_set_clear(struct ll_adv_set *adv,
 
 	/* set the tertiary extended header and PDU length */
 	ull_adv_aux_hdr_len_fill(com_hdr, len);
-	pdu->len = len + ad_len;
+	pdu->len = len + ad_len + ad_fragment_len;
 
 	/* Start filling tertiary PDU payload based on flags from here
 	 * ==============================================================
@@ -2219,6 +2268,10 @@ uint8_t ull_adv_aux_pdu_set_clear(struct ll_adv_set *adv,
 
 	/* Fill AdvData in tertiary PDU */
 	(void)memmove(dptr, ad_data, ad_len);
+
+	if (ad_fragment) {
+		(void)memcpy(dptr + ad_len, ad_fragment, ad_fragment_len);
+	}
 
 	/* Early exit if no flags set */
 	if (!com_hdr->ext_hdr_len) {
