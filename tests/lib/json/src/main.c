@@ -255,14 +255,39 @@ ZTEST(lib_json_test, test_json_limits)
 		     "Integer limits not decoded correctly");
 }
 
+ZTEST(lib_json_test, test_json_encoding_array_array)
+{
+	struct obj_array_array obj_array_array_ts = {
+		.objects_array = {
+			[0] = { { .name = "Sim\303\263n Bol\303\255var", .height = 168 } },
+			[1] = { { .name = "Pel\303\251",                 .height = 173 } },
+			[2] = { { .name = "Usain Bolt",                  .height = 195 } },
+		},
+		.objects_array_len = 3,
+	};
+	char encoded[] = "{\"objects_array\":["
+		"{\"name\":\"Sim\303\263n Bol\303\255var\",\"height\":168},"
+		"{\"name\":\"Pel\303\251\",\"height\":173},"
+		"{\"name\":\"Usain Bolt\",\"height\":195}"
+		"]}";
+	char buffer[sizeof(encoded)];
+	int ret;
+
+	ret = json_obj_encode_buf(array_array_descr, ARRAY_SIZE(array_array_descr),
+				  &obj_array_array_ts, buffer, sizeof(buffer));
+	zassert_equal(ret, 0, "Encoding array returned error");
+	zassert_true(!strcmp(buffer, encoded),
+		     "Encoded array of objects is not consistent");
+}
+
 ZTEST(lib_json_test, test_json_decoding_array_array)
 {
 	int ret;
 	struct obj_array_array obj_array_array_ts;
 	char encoded[] = "{\"objects_array\":["
-			  "[{\"height\":168,\"name\":\"Sim\303\263n Bol\303\255var\"}],"
-			  "[{\"height\":173,\"name\":\"Pel\303\251\"}],"
-			  "[{\"height\":195,\"name\":\"Usain Bolt\"}]]"
+			  "{\"height\":168,\"name\":\"Sim\303\263n Bol\303\255var\"},"
+			  "{\"height\":173,\"name\":\"Pel\303\251\"},"
+			  "{\"height\":195,\"name\":\"Usain Bolt\"}]"
 			  "}";
 
 	ret = json_obj_parse(encoded, sizeof(encoded),
