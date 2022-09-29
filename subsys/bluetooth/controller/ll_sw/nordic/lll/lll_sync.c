@@ -654,6 +654,7 @@ static void isr_aux_setup(void *param)
 	uint32_t aux_offset_us;
 	uint32_t aux_start_us;
 	struct lll_sync *lll;
+	uint32_t start_us;
 	uint8_t phy_aux;
 	uint32_t hcto;
 
@@ -736,13 +737,15 @@ static void isr_aux_setup(void *param)
 	aux_start_us -= lll_radio_rx_ready_delay_get(phy_aux, PHY_FLAGS_S8);
 	aux_start_us -= window_widening_us;
 	aux_start_us -= EVENT_JITTER_US;
-	radio_tmr_start_us(0, aux_start_us);
+
+	start_us = radio_tmr_start_us(0, aux_start_us);
 
 	/* Setup header complete timeout */
-	hcto = ftr->radio_end_us + aux_offset_us;
-	hcto += window_size_us;
-	hcto += window_widening_us;
+	hcto = start_us;
 	hcto += EVENT_JITTER_US;
+	hcto += window_widening_us;
+	hcto += lll_radio_rx_ready_delay_get(phy_aux, PHY_FLAGS_S8);
+	hcto += window_size_us;
 	hcto += radio_rx_chain_delay_get(phy_aux, PHY_FLAGS_S8);
 	hcto += addr_us_get(phy_aux);
 	radio_tmr_hcto_configure(hcto);
@@ -758,7 +761,7 @@ static void isr_aux_setup(void *param)
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 
-	radio_gpio_pa_lna_enable(aux_start_us +
+	radio_gpio_pa_lna_enable(start_us +
 				 radio_rx_ready_delay_get(phy_aux,
 							  PHY_FLAGS_S8) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);

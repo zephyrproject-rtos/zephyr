@@ -840,7 +840,7 @@ isr_rx_next_subevent:
 		hcto -= (EVENT_CLOCK_JITTER_US << 1);
 
 		start_us = hcto;
-		radio_tmr_start_us(0U, start_us);
+		hcto = radio_tmr_start_us(0U, start_us);
 
 		/* Add 4 us + 4 us + (4 us * subevents so far), as radio
 		 * was setup to listen 4 us early and subevents could have
@@ -858,7 +858,7 @@ isr_rx_next_subevent:
 		hcto += radio_tmr_ready_restore();
 
 		start_us = hcto;
-		radio_tmr_start_us(0U, start_us);
+		hcto = radio_tmr_start_us(0U, start_us);
 
 		hcto += ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
 			  lll->window_widening_event_us) << 1) +

@@ -1141,10 +1141,8 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick)
 	return remainder_us;
 }
 
-void radio_tmr_start_us(uint8_t trx, uint32_t us)
+uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 {
-	nrf_timer_cc_set(EVENT_TIMER, 0, us);
-
 	hal_radio_enable_on_tick_ppi_config_and_enable(trx);
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
@@ -1166,11 +1164,31 @@ void radio_tmr_start_us(uint8_t trx, uint32_t us)
 	hal_sw_switch_timer_clear_ppi_config();
 #endif /* CONFIG_SOC_SERIES_NRF53X */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+	/* start_us could be the current count in the timer */
+	uint32_t now_us = start_us;
+
+	/* Setup PPI while determining the latency in doing so */
+	do {
+		/* Set start to be, now plus the determined latency */
+		start_us = (now_us << 1) - start_us;
+
+		/* Setup compare event with min. 1 us offset */
+		EVENT_TIMER->EVENTS_COMPARE[0] = 0U;
+		nrf_timer_cc_set(EVENT_TIMER, 0, start_us + 1U);
+
+		/* Capture the current time */
+		nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CAPTURE1);
+
+		now_us = EVENT_TIMER->CC[1];
+	} while ((now_us > start_us) && (EVENT_TIMER->EVENTS_COMPARE[0] == 0U));
+
+	return start_us + 1U;
 }
 
 uint32_t radio_tmr_start_now(uint8_t trx)
 {
-	uint32_t now, start;
+	uint32_t start_us;
 
 	hal_radio_enable_on_tick_ppi_config_and_enable(trx);
 
@@ -1193,25 +1211,12 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 
 	/* Capture the current time */
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CAPTURE1);
-	now = EVENT_TIMER->CC[1];
-	start = now;
+	start_us = EVENT_TIMER->CC[1];
 
-	/* Setup PPI while determining the latency in doing so */
-	do {
-		/* Set start to be, now plus the determined latency */
-		start = (now << 1) - start;
+	/* Setup radio start at current time */
+	start_us = radio_tmr_start_us(trx, start_us);
 
-		/* Setup compare event with min. 1 us offset */
-		EVENT_TIMER->EVENTS_COMPARE[0] = 0U;
-		nrf_timer_cc_set(EVENT_TIMER, 0, start + 1);
-
-		/* Capture the current time */
-		nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CAPTURE1);
-
-		now = EVENT_TIMER->CC[1];
-	} while ((now > start) && (EVENT_TIMER->EVENTS_COMPARE[0] == 0U));
-
-	return start + 1;
+	return start_us;
 }
 
 uint32_t radio_tmr_start_get(void)
