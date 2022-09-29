@@ -716,6 +716,56 @@ unlock:
 	return ret;
 }
 
+/* Implementation of SMBus Block Process Call */
+static int pch_smbus_block_pcall(const struct device *dev,
+				 uint16_t periph_addr, uint8_t command,
+				 uint8_t send_count, uint8_t *send_buf,
+				 uint8_t *recv_count, uint8_t *recv_buf)
+{
+	struct pch_data *data = dev->data;
+	int ret;
+
+	LOG_DBG("dev %p addr 0x%02x command 0x%02x",
+		dev, periph_addr, command);
+
+	k_mutex_lock(&data->mutex, K_FOREVER);
+
+	ret = pch_smbus_block_start(dev, periph_addr, SMBUS_MSG_WRITE, command,
+				    send_count, send_buf, SMBUS_CMD_BLOCK_PROC);
+	if (ret < 0) {
+		goto unlock;
+	}
+
+	/* Wait for completion from ISR */
+	ret = k_sem_take(&data->completion_sync, K_MSEC(30));
+	if (ret != 0) {
+		LOG_ERR("SMBus Block Process Call timed out");
+		ret = -ETIMEDOUT;
+		goto unlock;
+	}
+
+	ret = pch_check_status(dev);
+	if (ret < 0) {
+		goto unlock;
+	}
+
+	*recv_count = pch_reg_read(dev, PCH_SMBUS_HD0);
+	if (*recv_count == 0 ||
+	    *recv_count + send_count > SMBUS_BLOCK_BYTES_MAX) {
+		ret = -ENODATA;
+		goto unlock;
+	}
+
+	for (int i = 0; i < *recv_count; i++) {
+		recv_buf[i] = pch_reg_read(dev, PCH_SMBUS_HBD);
+	}
+
+unlock:
+	k_mutex_unlock(&data->mutex);
+
+	return ret;
+}
+
 static const struct smbus_driver_api funcs = {
 	.configure = pch_configure,
 	.get_config = pch_get_config,
@@ -729,6 +779,7 @@ static const struct smbus_driver_api funcs = {
 	.smbus_pcall = pch_smbus_pcall,
 	.smbus_block_write = pch_smbus_block_write,
 	.smbus_block_read = pch_smbus_block_read,
+	.smbus_block_pcall = pch_smbus_block_pcall,
 };
 
 static void smbus_isr(const struct device *dev)
