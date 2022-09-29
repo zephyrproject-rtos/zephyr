@@ -516,6 +516,11 @@ Drivers and Sensors
 
 * Entropy
 
+  * Update drivers to use devicetree Kconfig symbol.
+  * gecko: Add driver using Secure Element module of EFR3.
+  * Added entropy driver for MCUX CAAM.
+  * stm32: Check if clock device is ready before accessing.
+
 * ESPI
 
   * eSPI emulator initialization improvements.
