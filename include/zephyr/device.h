@@ -79,8 +79,6 @@ typedef int16_t device_handle_t;
 /** @brief Flag value used to identify an unknown device. */
 #define DEVICE_HANDLE_NULL 0
 
-#define Z_DEVICE_MAX_NAME_LEN	48
-
 /**
  * @brief Expands to the name of a global device object.
  *
@@ -889,6 +887,8 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	COND_CODE_1(DT_NODE_EXISTS(node_id),				\
 			(DT_SUPPORTS_DEP_ORDS(node_id)), ())		\
 		}
+
+#define Z_DEVICE_MAX_NAME_LEN	48
 
 #define Z_DEVICE_NAME_CHECK(name)                                              \
 	BUILD_ASSERT(sizeof(Z_STRINGIFY(name)) <= Z_DEVICE_MAX_NAME_LEN,       \
