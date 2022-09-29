@@ -841,6 +841,10 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 #define Z_DEVICE_EXTRA_HANDLES(...)				\
 	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
 
+/** @brief Linker section were device handles are placed. */
+#define Z_DEVICE_HANDLES_SECTION                                              \
+	__attribute__((__section__(".__device_handles_pass1")))
+
 /**
  * @brief Define device handles.
  *
@@ -882,7 +886,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	extern Z_DEVICE_HANDLES_CONST device_handle_t			\
 		Z_DEVICE_HANDLE_NAME(node_id, dev_id)[];		\
 	Z_DEVICE_HANDLES_CONST Z_DECL_ALIGN(device_handle_t)		\
-	__attribute__((__section__(".__device_handles_pass1"))) __weak	\
+	Z_DEVICE_HANDLES_SECTION __weak					\
 	Z_DEVICE_HANDLE_NAME(node_id, dev_id)[] = {			\
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (				\
 			DT_DEP_ORD(node_id),				\
