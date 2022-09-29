@@ -1,6 +1,6 @@
 common:
   tags: lorawan
-  platform_allow: 96b_wistrio nucleo_wl55jc
+  depends_on: lora
   harness: console
   harness_config:
     type: one_line
