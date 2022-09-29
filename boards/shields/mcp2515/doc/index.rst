@@ -244,7 +244,7 @@ example:
    https://www.dfrobot.com/product-1444.html
 
 .. _DFRobot CAN BUS Shield V2.0 schematic:
-   https://github.com/DFRobot/CAN_BUS/blob/master/DFR0370%20CAN%20BUS%20sheild(V2.0).pdf
+   https://github.com/DFRobot/DFRobot_MCP2515/blob/master/resources/doc/DFR0370%20CAN%20BUS%20sheild(V2.0).pdf
 
 .. _MCP2515:
    https://www.microchip.com/en-us/product/MCP2515
