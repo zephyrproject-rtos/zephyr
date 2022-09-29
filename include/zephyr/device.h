@@ -113,11 +113,6 @@ typedef int16_t device_handle_t;
  */
 #define Z_DEVICE_DT_DEV_NAME(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
 
-/* Synthesize a unique name for the device state associated with
- * dev_name.
- */
-#define Z_DEVICE_STATE_NAME(dev_name) _CONCAT(__devstate_, dev_name)
-
 /**
  * @brief Create a device object and set it up for boot time initialization.
  *
@@ -807,6 +802,21 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @}
  */
 
+/* Synthesize a unique name for the device state associated with
+ * dev_name.
+ */
+#define Z_DEVICE_STATE_NAME(dev_name) _CONCAT(__devstate_, dev_name)
+
+/*
+ * Utility macro to define and initialize the device state.
+ *
+ * @param node_id Devicetree node id of the device.
+ * @param dev_name Device name.
+ */
+#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
+	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
+	__attribute__((__section__(".z_devstate")))
+
 /* Synthesize the name of the object that holds device ordinal and
  * dependency data. If the object doesn't come from a devicetree
  * node, use dev_name.
@@ -819,16 +829,6 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 
 #define Z_DEVICE_EXTRA_HANDLES(...)				\
 	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
-
-/*
- * Utility macro to define and initialize the device state.
- *
- * @param node_id Devicetree node id of the device.
- * @param dev_name Device name.
- */
-#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")))
 
 /* Initial build provides a record that associates the device object
  * with its devicetree ordinal, and provides the dependency ordinals.
