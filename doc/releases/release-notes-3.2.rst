@@ -485,6 +485,11 @@ Drivers and Sensors
 
 * Crypto
 
+  * Added Intel ADSP sha driver.
+  * stm32: Check if clock device is ready before accessing clock control
+    devices.
+  * ataes132a: Convert to devicetree.
+
 * DAC
 
 * DAI
