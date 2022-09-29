@@ -64,6 +64,17 @@ static ZTEST_BMEM enum ztest_status test_status = ZTEST_STATUS_OK;
 
 extern ZTEST_DMEM const struct ztest_arch_api ztest_api;
 
+static ZTEST_BMEM int expects_failed;
+
+/**
+ * @brief Function used by zexpect_* api to mark test as failed but continue the execution
+ * 	  of the test.
+ */
+void ztest_test_fail_later(void)
+{
+	expects_failed++;
+}
+
 void end_report(void)
 {
 	if (test_status) {
@@ -247,6 +258,10 @@ static int get_final_test_result(const struct ztest_unit_test *test, int ret)
 		}
 	}
 
+	if (expects_failed > 0) {
+		ret = TC_FAIL;
+	}
+
 	if (expected_result == ZTEST_EXPECTED_RESULT_FAIL) {
 		/* Expected a failure:
 		 * - If we got a failure, return TC_PASS
@@ -360,6 +375,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 
 	TC_START(test->name);
 	phase = TEST_PHASE_BEFORE;
+	expects_failed = 0;
 
 	if (test_result == ZTEST_RESULT_SUITE_FAIL) {
 		ret = TC_FAIL;
@@ -515,6 +531,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	TC_START(test->name);
 
 	phase = TEST_PHASE_BEFORE;
+	expects_failed = 0;
 
 	/* If the suite's setup function marked us as skipped, don't bother
 	 * running the tests.

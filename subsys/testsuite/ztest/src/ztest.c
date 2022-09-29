@@ -34,6 +34,17 @@ ZTEST_DMEM enum {
 
 static ZTEST_BMEM int test_status;
 
+static ZTEST_BMEM int expects_failed;
+
+/**
+ * @brief Function used by zexpect_* api to mark test as failed but continue the execution
+ * 	  of the test.
+ */
+void ztest_test_fail_later(void)
+{
+	expects_failed++;
+}
+
 /**
  * @brief Try to shorten a filename by removing the current directory
  *
@@ -274,6 +285,7 @@ static int run_test(struct unit_test *test)
 
 	TC_START(test->name);
 	get_start_time_cyc();
+	expects_failed = 0;
 
 	if (setjmp(test_fail)) {
 		ret = TC_FAIL;
@@ -293,6 +305,11 @@ static int run_test(struct unit_test *test)
 	run_test_functions(test);
 out:
 	ret |= cleanup_test(test);
+
+	if (expects_failed > 0) {
+		ret = TC_FAIL;
+	}
+
 	get_test_duration_ms();
 
 	if (skip) {

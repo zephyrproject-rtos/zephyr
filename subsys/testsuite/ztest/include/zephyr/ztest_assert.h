@@ -20,11 +20,67 @@
 
 #include <zephyr/ztest.h>
 
+/**
+ * Helper macros used to set appropriate format string in print functions
+ */
+#ifdef __cplusplus
+template < class T > constexpr const char *_VAR_PRINT_FMT(const T v)
+{
+	return "0x%X";
+}
+template < > constexpr const char *_VAR_PRINT_FMT(const uint8_t v)
+{
+	return "%u";
+}
+template < > constexpr const char *_VAR_PRINT_FMT(const uint16_t v)
+{
+	return "%u";
+}
+template < > constexpr const char *_VAR_PRINT_FMT(const uint32_t v)
+{
+	return "%u";
+}
+template < > constexpr const char *_VAR_PRINT_FMT(const int8_t v)
+{
+	return "%d";
+}
+template < > constexpr const char *_VAR_PRINT_FMT(const int16_t v)
+{
+	return "%d";
+}
+template < > constexpr const char *_VAR_PRINT_FMT(const int32_t v)
+{
+	return "%d";
+}
+template < > constexpr const char *_VAR_PRINT_FMT(const char *v)
+{
+	return "%s";
+}
+template < > constexpr const char *_VAR_PRINT_FMT(void *v)
+{
+	return "%p";
+}
+#else
+#define _VAR_PRINT_FMT(v)                                                                          \
+	(_Generic((v), \
+	uint8_t : "%u", \
+	uint16_t : "%u", \
+	uint32_t : "%u", \
+	int8_t : "%d", \
+	int16_t : "%d", \
+	int32_t : "%d", \
+	char * : "%s", \
+	void * : "%p", \
+	default : "0x%X" \
+	))
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 const char *ztest_relative_filename(const char *file);
+void ztest_test_fail_later(void);
 void ztest_test_fail(void);
 void ztest_test_skip(void);
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 0
@@ -185,6 +241,56 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
 
 #define zassume(cond, default_msg, ...)                                                            \
 	_zassume_va(cond, default_msg, COND_CODE_1(__VA_OPT__(1), (__VA_ARGS__), (NULL)))
+
+#define _ZEXPECT_MSG(default_msg, ...)                                                             \
+	if (__VA_OPT__(1 ||) 0)                                                                    \
+		printk("  Expected (" default_msg "): "##__VA_ARGS__);                             \
+	else                                                                                       \
+		printk("  Expected " default_msg);
+
+#define _ZEXPECT_1(a, exp, act, ...)                                                               \
+	do {                                                                                       \
+		if (!(a)) {                                                                        \
+			printk("Expectation failed at %s:%d\n", ztest_relative_filename(__FILE__), \
+			       __LINE__);                                                          \
+			printk("  Expected \"%s\" to be %s\n", #a, #exp);                          \
+			printk("  Actual value: %s\n", #act);                                      \
+			ztest_test_fail_later();                                                   \
+		}                                                                                  \
+	} while (0)
+
+#define _ZEXPECT_2(a, b, op, ...)                                                                  \
+	do {                                                                                       \
+		if (!((a)op(b))) {                                                                 \
+			printk("Expectation failed at %s:%d\n", ztest_relative_filename(__FILE__), \
+			       __LINE__);                                                          \
+			printk("  Expected to: " #a " " #op " " #b "\n");                          \
+			printk("  Actual values:\n\t%s = ", #a);                                   \
+			printk(_VAR_PRINT_FMT(a), a);                                              \
+			printk("\n\t%s = ", #b);                                                   \
+			printk(_VAR_PRINT_FMT(b), b);                                              \
+			printk("\n");                                                              \
+			ztest_test_fail_later();                                                   \
+		}                                                                                  \
+	} while (0)
+
+#define _ZEXPECT_3(a, b, c, op_b, op_c, ...)                                                       \
+	do {                                                                                       \
+		if (!((a)op_b(b)) || !((a)op_c(c))) {                                              \
+			printk("Expectation failed at %s:%d\n", ztest_relative_filename(__FILE__), \
+			       __LINE__);                                                          \
+			printk("  Expected to: " #a " " #op_b " " #b " && " #a " " #op_c " " #c    \
+			       "\n");                                                              \
+			printk("  Actual values:\n\t%s = ", #a);                                   \
+			printk(_VAR_PRINT_FMT(a), a);                                              \
+			printk("\n\t%s = ", #b);                                                   \
+			printk(_VAR_PRINT_FMT(b), b);                                              \
+			printk("\n\t%s = ", #c);                                                   \
+			printk(_VAR_PRINT_FMT(c), c);                                              \
+			printk("\n");                                                              \
+			ztest_test_fail_later();                                                   \
+		}                                                                                  \
+	} while (0)
 
 /**
  * @brief Assert that this function call won't be reached
@@ -470,6 +576,100 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
  */
 #define zassume_mem_equal__(buf, exp, size, ...)                                                   \
 	zassume(memcmp(buf, exp, size) == 0, #buf " not equal to " #exp, ##__VA_ARGS__)
+
+/**
+ * @}
+ */
+
+/**
+ * @defgroup ztest_expect Ztest expectations macros
+ * @ingroup ztest
+ *
+ * This module provides expectations when using Ztest.
+ *
+ * @{
+ */
+
+/**
+ * @brief Expect that @a cond is true, otherwise mark test as failed, but continue its execution.
+ * @param cond Condition that is checked.
+ * @param ... Optional message and variables to print if the expect fails.
+ */
+#define zexpect_true(cond, ...) _ZEXPECT_1(cond, true, false, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a cond is false, otherwise mark test as failed, but continue its execution.
+ * @param cond Condition that is checked.
+ * @param ... Optional message and variables to print if the expect fails.
+ */
+#define zexpect_false(cond, ...) _ZEXPECT_1(!(cond), false, true, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a cond is 0 (success), otherwise mark test as failed,
+ * 	  but continue its execution.
+ * @param cond Condition that is checked.
+ * @param ... Optional message and variables to print if the expect fails.
+ */
+#define zexpect_ok(cond, ...) _ZEXPECT_2(cond, 0, ==, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a ptr is NULL, otherwise mark test as failed, but continue its execution.
+ * @param ptr Pointer that is checked.
+ * @param ... Optional message and variables to print if the expect fails.
+ */
+#define zexpect_is_null(ptr, ...) _ZEXPECT_2(ptr, NULL, ==, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a ptr is not a NULL, otherwise mark test as failed,
+ * 	  but continue its execution.
+ * @param ptr Pointer that is checked.
+ * @param ... Optional message and variables to print if the expect fails.
+ */
+#define zexpect_not_null(ptr, ...) _ZEXPECT_2(ptr, NULL, !=, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a a is equal to the @a b, otherwise mark test as failed,
+ * 	  but continue its execution.
+ * @param a,b Arguments that are compared against each other
+ * @param ... Optional message and variables to print if the expect fails.
+ */
+#define zexpect_equal(a, b, ...) _ZEXPECT_2(a, b, ==, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a a is not equal to the @a b, otherwise mark test as failed,
+ * 	  but continue its execution.
+ * @param a,b Arguments that are compared against each other
+ * @param ... Optional message and variables to print if the expect fails.
+ */
+#define zexpect_not_equal(a, b, ...) _ZEXPECT_2(a, b, !=, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a a points to the same address as @a b, otherwise mark test as failed,
+ * 	  but continue its execution.
+ * @param a,b Pointers that are compared against each other
+ * @param ... Optional message and variables to print if the expect fails.
+ */
+#define zexpect_equal_ptr(a, b, ...) _ZEXPECT_2((void *)(a), (void *)(b), ==, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a a value is within <b-d, b+d>, otherwise mark test as failed,
+ * 	  but continue its execution.
+ * @param a Argument compared against other ones
+ * @param b Center value of range
+ * @param d Delta subtracted and added to the @a b to create the range.
+ * @param ... Optional message and variables to print if the expect fails.
+ */
+#define zexpect_within(a, b, d, ...) _ZEXPECT_3(a, (b) - (d), (b) + (d), >=, <=, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a a value is within <l, u>, otherwise mark test as failed,
+ * 	  but continue its execution.
+ * @param a Argument compared against other ones
+ * @param l Lower range
+ * @param u Upper range
+ * @param ... Optional message and variables to print if the expect fails.
+ */
+#define zexpect_between_inclusive(a, l, u, ...) _ZEXPECT_3(a, l, u, >=, <=, ##__VA_ARGS__)
 
 /**
  * @}
