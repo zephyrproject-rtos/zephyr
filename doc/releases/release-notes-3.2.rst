@@ -521,6 +521,12 @@ Drivers and Sensors
 
 * Display
 
+  * Renamed EPD controller driver GD7965 to UC81xx.
+  * Improved support for different controllers in ssd16xx and uc81xx drivers.
+  * Added basic read support for ssd16xx compatible EPD controllers.
+  * Revised intel_multibootfb driver
+  * Added MAX7219 display controller driver
+
 * Disk
 
   * Added support for DMA transfers when using STM32 SD host controller
