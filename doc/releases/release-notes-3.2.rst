@@ -449,6 +449,10 @@ Drivers and Sensors
   * STM32: Now supports Vbat monitoring channel and STM32U5 series.
   * Added driver for GigaDevice GD32 SoCs
   * Raspberry Pi Pico: Added ADC support for the Pico series.
+  * Added :c:struct:`adc_dt_spec` related helpers for sequence initialization,
+    setting up channels, and converting raw values to millivolts.
+  * Fixed :c:macro:`ADC_DT_SPEC_GET` and related macros to properly handle
+    channel identifiers >= 10.
 
 * Audio
 
@@ -576,6 +580,8 @@ Drivers and Sensors
 
 * I2S
 
+  * Removed the Intel S1000 I2S driver.
+
 * I3C
 
   * Added a driver to support the NXP MCUX I3C hardware acting as the primary controller
@@ -657,6 +663,10 @@ Drivers and Sensors
   * Added PWM driver for Raspberry Pi Pico series
   * Added PWM support for NXP LPC55S36
   * Added MCPWM support for ESP32 boards
+  * Fixed the nRF PWM driver to properly handle cases where PWM generation is
+    used for some channels while some others are set to a constant level (active
+    or inactive), e.g. when the LED driver API is used to turn off a PWM driven
+    LED while another one (within the same PWM instance) is blinking.
 
 * Power Domain
 
@@ -1494,6 +1504,8 @@ HALs
   * Removed all binary archive files
 
 * Nordic
+
+  * Updated nrfx to version 2.9.0
 
 * RPi Pico
 
