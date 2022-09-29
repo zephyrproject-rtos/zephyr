@@ -15,7 +15,7 @@ if BT_ASCS
 config BT_ASCS_ASE_SNK_COUNT
 	int "Number of Audio Stream Endpoint Sink Characteristics"
 	default 2
-	range 0 2
+	range 0 255
 	help
 	  An ASE Sink characteristic represents the state of an ASE, which is
 	  coupled to a single direction of a unicast Audio Stream.
@@ -23,7 +23,7 @@ config BT_ASCS_ASE_SNK_COUNT
 config BT_ASCS_ASE_SRC_COUNT
 	int "Number of Audio Stream Endpoint Source Characteristics"
 	default 2
-	range 0 2
+	range 0 255
 	help
 	  An ASE Source characteristic represents the state of an ASE, which is
 	  coupled to a single direction of a unicast Audio Stream.
