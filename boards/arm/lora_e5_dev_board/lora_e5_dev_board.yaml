@@ -16,3 +16,4 @@ supported:
   - spi
   - uart
   - watchdog
+  - lora
