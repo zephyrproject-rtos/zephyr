@@ -1,6 +1,7 @@
 tests:
   kernel.timer.timer:
     tags: kernel timer
+    min_ram: 16
     platform_type:
       - mcu
     # Really want to exclude renode not the physical boards, but no good
