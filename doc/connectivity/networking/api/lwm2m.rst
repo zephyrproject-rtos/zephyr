@@ -302,8 +302,8 @@ events, setup a callback function:
 			LOG_DBG("Registration complete");
 			break;
 
-		case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE:
-			LOG_DBG("Registration update failure!");
+		case LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT:
+			LOG_DBG("Registration timeout!");
 			break;
 
 		case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE:
@@ -472,7 +472,7 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
    * - 4
      - REGISTRATION_FAILURE
      - Registration to LwM2M server failed.
-       Occurs if there is a timeout or failure in the registration.
+       Occurs if there is a failure in the registration.
      - Retry registration
    * - 5
      - REGISTRATION_COMPLETE
@@ -481,10 +481,10 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
        or when session resumption is used.
      - No actions needed
    * - 6
-     - REG_UPDATE_FAILURE
-     - Registration update failed.
-       Occurs if there is a timeout during registration update.
-       NOTE: If registration update fails without a timeout,
+     - REG_TIMEOUT
+     - Registration or registration update timeout.
+       Occurs if there is a timeout during registration.
+       NOTE: If registration fails without a timeout,
        a full registration is triggered automatically and
        no registration update failure event is generated.
      - No actions needed, client proceeds to re-registration automatically.
