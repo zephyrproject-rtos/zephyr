@@ -54,6 +54,13 @@ config SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	  This option should be selected by drivers implementing support for
 	  sys_clock_disable() API.
 
+config SYSTEM_CLOCK_LOCK_FREE_COUNT
+	bool
+	help
+	  This option should be selected by drivers implementing a lock free
+	  cycle count accessor. This is needed for instrumenting spin lock
+	  hold times.
+
 source "drivers/timer/Kconfig.altera_avalon"
 source "drivers/timer/Kconfig.apic"
 source "drivers/timer/Kconfig.arcv2"

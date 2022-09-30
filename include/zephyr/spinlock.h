@@ -14,6 +14,7 @@
 
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/time_units.h>
 #include <stdbool.h>
 #include <zephyr/arch/cpu.h>
 
@@ -49,7 +50,12 @@ struct k_spinlock {
 	 * ID in the bottom two bits.
 	 */
 	uintptr_t thread_cpu;
-#endif
+#ifdef CONFIG_SPIN_LOCK_TIME_LIMIT
+	/* Stores the time (in cycles) when a lock was taken
+	 */
+	uint32_t lock_time;
+#endif /* CONFIG_SPIN_LOCK_TIME_LIMIT */
+#endif /* CONFIG_SPIN_VALIDATE */
 
 #if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_SMP) && \
 	!defined(CONFIG_SPIN_VALIDATE)
@@ -152,7 +158,10 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 
 #ifdef CONFIG_SPIN_VALIDATE
 	z_spin_lock_set_owner(l);
-#endif
+#if defined(CONFIG_SPIN_LOCK_TIME_LIMIT) && (CONFIG_SPIN_LOCK_TIME_LIMIT != 0)
+	l->lock_time = sys_clock_cycle_get_32();
+#endif /* CONFIG_SPIN_LOCK_TIME_LIMIT */
+#endif/* CONFIG_SPIN_VALIDATE */
 	return k;
 }
 
@@ -183,7 +192,15 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 	ARG_UNUSED(l);
 #ifdef CONFIG_SPIN_VALIDATE
 	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
-#endif
+
+#if defined(CONFIG_SPIN_LOCK_TIME_LIMIT) && (CONFIG_SPIN_LOCK_TIME_LIMIT != 0)
+	uint32_t delta = sys_clock_cycle_get_32() - l->lock_time;
+
+	__ASSERT(delta < CONFIG_SPIN_LOCK_TIME_LIMIT,
+		 "Spin lock %p held %u cycles, longer than limit of %u cycles",
+		 l, delta, CONFIG_SPIN_LOCK_TIME_LIMIT);
+#endif /* CONFIG_SPIN_LOCK_TIME_LIMIT */
+#endif /* CONFIG_SPIN_VALIDATE */
 
 #ifdef CONFIG_SMP
 	/* Strictly we don't need atomic_clear() here (which is an
