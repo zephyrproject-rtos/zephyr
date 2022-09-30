@@ -1500,6 +1500,13 @@ Libraries / Subsystems
 
 * Shell
 
+  * Added new API function checking shell readiness: :c:func:`shell_ready`.
+  * Added option to control formatting of the logging timestamp.
+  * Added missing asserts to the shell api functions.
+  * MQTT backend: bug fix to handle negative return value of the wait function.
+  * A new ``backends`` command that lists the name and number of active shell backends.
+  * Fixed handling mandatory args with optional raw arg.
+
 * Storage
 
 * Testsuite
@@ -1628,6 +1635,7 @@ Tests and Samples
   introduce tests as well.
 * smp_svr Bluetooth overlay (overlay-bt) has been reworked to increase
   throughput and enable packet reassembly.
+* Added test for the new shell API function: :c:func:`shell_ready`.
 
 Issue Related Items
 *******************
