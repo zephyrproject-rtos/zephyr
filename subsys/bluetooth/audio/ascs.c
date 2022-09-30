@@ -438,10 +438,10 @@ static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		struct bt_ascs_ase *ase;
 		struct bt_ascs *ascs;
 
-		ascs = ascs_find(chan->iso->iso.acl);
+		ascs = ascs_find(stream->conn);
 		if (ascs == NULL) {
 			BT_WARN("Could find ASCS based on ISO %p with ACL %p",
-				chan, chan->iso->iso.acl);
+				chan, stream->conn);
 			return;
 		}
 
