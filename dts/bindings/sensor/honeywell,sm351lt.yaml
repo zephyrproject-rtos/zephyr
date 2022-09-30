@@ -5,7 +5,7 @@ description: SM351LT magnetoresistive sensor
 
 compatible: "honeywell,sm351lt"
 
-include: base.yaml
+include: sensor-device.yaml
 
 properties:
    gpios:
