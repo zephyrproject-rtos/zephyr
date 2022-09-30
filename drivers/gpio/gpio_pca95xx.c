@@ -28,6 +28,14 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_pca95xx);
 
+#if CONFIG_LITTLE_ENDIAN
+#define LOW_BYTE_LE16_IDX	0
+#define HIGH_BYTE_LE16_IDX	1
+#else
+#define LOW_BYTE_LE16_IDX	1
+#define HIGH_BYTE_LE16_IDX	0
+#endif
+
 /* Register definitions */
 #define REG_INPUT_PORT0			0x00
 #define REG_INPUT_PORT1			0x01
@@ -36,7 +44,7 @@ LOG_MODULE_REGISTER(gpio_pca95xx);
 #define REG_POL_INV_PORT0		0x04
 #define REG_POL_INV_PORT1		0x05
 #define REG_CONF_PORT0			0x06
-#define REG_CONG_PORT1			0x07
+#define REG_CONF_PORT1			0x07
 #define REG_OUT_DRV_STRENGTH_PORT0_L	0x40
 #define REG_OUT_DRV_STRENGTH_PORT0_H	0x41
 #define REG_OUT_DRV_STRENGTH_PORT1_L	0x42
@@ -108,6 +116,37 @@ struct gpio_pca95xx_drv_data {
 #endif
 };
 
+static int read_port_reg(const struct device *dev, uint8_t reg, uint8_t pin,
+			 uint16_t *cache, uint16_t *buf)
+{
+	const struct gpio_pca95xx_config * const config = dev->config;
+	uint8_t b_buf;
+	int ret;
+
+	if (pin >= 8)
+		reg++;
+
+	ret = i2c_reg_read_byte_dt(&config->bus, reg, &b_buf);
+	if (ret != 0) {
+		LOG_ERR("PCA95XX[0x%X]: error reading register 0x%X (%d)",
+			config->bus.addr, reg, ret);
+		return ret;
+	}
+
+	if (pin < 8) {
+		((uint8_t *)cache)[LOW_BYTE_LE16_IDX] = b_buf;
+	} else {
+		((uint8_t *)cache)[HIGH_BYTE_LE16_IDX] = b_buf;
+	}
+
+	*buf = *cache;
+
+	LOG_DBG("PCA95XX[0x%X]: Read: REG[0x%X] = 0x%X",
+		config->bus.addr, reg, b_buf);
+
+	return 0;
+}
+
 /**
  * @brief Read both port 0 and port 1 registers of certain register function.
  *
@@ -143,6 +182,36 @@ static int read_port_regs(const struct device *dev, uint8_t reg,
 		config->bus.addr, reg, (*buf & 0xFF), (reg + 1), (*buf >> 8));
 
 	return 0;
+}
+
+
+static int write_port_reg(const struct device *dev, uint8_t reg, uint8_t pin,
+			  uint16_t *cache, uint16_t value)
+{
+	const struct gpio_pca95xx_config * const config = dev->config;
+	uint8_t buf[2];
+	int ret;
+
+	if (pin < 8) {
+		buf[1] = value;
+	} else {
+		buf[1] = value >> 8;
+		reg++;
+	}
+	buf[0] = reg;
+
+	LOG_DBG("PCA95XX[0x%X]: Write: REG[0x%X] = 0x%X", config->bus.addr,
+			reg, buf[1]);
+
+	ret = i2c_write_dt(&config->bus, buf, sizeof(buf));
+	if (ret == 0) {
+		*cache = value;
+	} else {
+		LOG_ERR("PCA95XX[0x%X]: error writing to register 0x%X "
+			"(%d)", config->bus.addr, reg, ret);
+	}
+
+	return ret;
 }
 
 /**
@@ -182,6 +251,16 @@ static int write_port_regs(const struct device *dev, uint8_t reg,
 	return ret;
 }
 
+static inline int update_input_reg(const struct device *dev, uint8_t pin,
+				   uint16_t *buf)
+{
+	struct gpio_pca95xx_drv_data * const drv_data =
+		(struct gpio_pca95xx_drv_data * const)dev->data;
+
+	return read_port_reg(dev, REG_INPUT_PORT0, pin,
+			     &drv_data->reg_cache.input, buf);
+}
+
 static inline int update_input_regs(const struct device *dev, uint16_t *buf)
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
@@ -189,6 +268,16 @@ static inline int update_input_regs(const struct device *dev, uint16_t *buf)
 
 	return read_port_regs(dev, REG_INPUT_PORT0,
 			      &drv_data->reg_cache.input, buf);
+}
+
+static inline int update_output_reg(const struct device *dev, uint8_t pin,
+				    uint16_t value)
+{
+	struct gpio_pca95xx_drv_data * const drv_data =
+		(struct gpio_pca95xx_drv_data * const)dev->data;
+
+	return write_port_reg(dev, REG_OUTPUT_PORT0, pin,
+			      &drv_data->reg_cache.output, value);
 }
 
 static inline int update_output_regs(const struct device *dev, uint16_t value)
@@ -200,43 +289,45 @@ static inline int update_output_regs(const struct device *dev, uint16_t value)
 			       &drv_data->reg_cache.output, value);
 }
 
-static inline int update_direction_regs(const struct device *dev,
+static inline int update_direction_reg(const struct device *dev, uint8_t pin,
 					uint16_t value)
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->data;
 
-	return write_port_regs(dev, REG_CONF_PORT0,
-			       &drv_data->reg_cache.dir, value);
+	return write_port_reg(dev, REG_CONF_PORT0, pin,
+			      &drv_data->reg_cache.dir, value);
 }
 
-static inline int update_pul_sel_regs(const struct device *dev,
-				      uint16_t value)
+static inline int update_pul_sel_reg(const struct device *dev, uint8_t pin,
+					uint16_t value)
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->data;
 
-	return write_port_regs(dev, REG_PUD_SEL_PORT0,
-			       &drv_data->reg_cache.pud_sel, value);
+	return write_port_reg(dev, REG_PUD_SEL_PORT0, pin,
+			      &drv_data->reg_cache.pud_sel, value);
 }
 
-static inline int update_pul_en_regs(const struct device *dev, uint16_t value)
+static inline int update_pul_en_reg(const struct device *dev, uint8_t pin,
+					uint8_t value)
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->data;
 
-	return write_port_regs(dev, REG_PUD_EN_PORT0,
-			       &drv_data->reg_cache.pud_en, value);
+	return write_port_reg(dev, REG_PUD_EN_PORT0, pin,
+			      &drv_data->reg_cache.pud_en, value);
 }
 
 #ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
-static inline int update_int_mask_regs(const struct device *dev, uint16_t value)
+static inline int update_int_mask_reg(const struct device *dev, uint8_t pin,
+					uint16_t value)
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->data;
 
-	return write_port_regs(dev, REG_INT_MASK_PORT0,
-			       &drv_data->reg_cache.int_mask, value);
+	return write_port_reg(dev, REG_INT_MASK_PORT0, pin,
+			      &drv_data->reg_cache.int_mask, value);
 }
 #endif /* CONFIG_GPIO_PCA95XX_INTERRUPT */
 
@@ -264,7 +355,7 @@ static int setup_pin_dir(const struct device *dev, uint32_t pin, int flags)
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
 			reg_out &= ~BIT(pin);
 		}
-		ret = update_output_regs(dev, reg_out);
+		ret = update_output_reg(dev, pin, reg_out);
 		if (ret != 0) {
 			return ret;
 		}
@@ -273,7 +364,7 @@ static int setup_pin_dir(const struct device *dev, uint32_t pin, int flags)
 		reg_dir |= BIT(pin);
 	}
 
-	ret = update_direction_regs(dev, reg_dir);
+	ret = update_direction_reg(dev, pin, reg_dir);
 
 	return ret;
 }
@@ -319,7 +410,7 @@ static int setup_pin_pullupdown(const struct device *dev, uint32_t pin,
 		/* pull down == 0, pull up == 1 */
 		WRITE_BIT(reg_pud, pin, (flags & GPIO_PULL_UP) != 0U);
 
-		ret = update_pul_sel_regs(dev, reg_pud);
+		ret = update_pul_sel_reg(dev, pin, reg_pud);
 		if (ret) {
 			return ret;
 		}
@@ -331,7 +422,7 @@ static int setup_pin_pullupdown(const struct device *dev, uint32_t pin,
 	WRITE_BIT(reg_pud, pin,
 		  (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U);
 
-	ret = update_pul_en_regs(dev, reg_pud);
+	ret = update_pul_en_reg(dev, pin, reg_pud);
 
 	return ret;
 }
@@ -394,8 +485,7 @@ done:
 	return ret;
 }
 
-static int gpio_pca95xx_port_get_raw(const struct device *dev,
-				     uint32_t *value)
+static int gpio_pca95xx_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->data;
@@ -587,7 +677,7 @@ static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
 		reg_out = drv_data->reg_cache.int_mask;
 		WRITE_BIT(reg_out, pin, (mode == GPIO_INT_MODE_DISABLED));
 
-		ret = update_int_mask_regs(dev, reg_out);
+		ret = update_int_mask_reg(dev, pin, reg_out);
 		if (ret != 0) {
 			LOG_ERR("PCA95XX[0x%X]: failed to update int mask (%d)",
 				config->bus.addr, ret);
