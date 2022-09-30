@@ -956,7 +956,7 @@ static void eth_iface_init(struct net_if *iface)
 
 	ethernet_init(iface);
 
-	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	net_if_carrier_off(iface);
 
 	if (is_first_init) {
 		const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
