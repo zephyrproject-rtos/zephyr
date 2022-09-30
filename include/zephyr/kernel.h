@@ -2143,6 +2143,16 @@ __syscall void k_event_set_masked(struct k_event *event, uint32_t events,
 				  uint32_t events_mask);
 
 /**
+ * @brief Clear the events in an event object
+ *
+ * This routine clears (resets) the specified events stored in an event object.
+ *
+ * @param event Address of the event object
+ * @param events Set of events to clear in @a event
+ */
+__syscall void k_event_clear(struct k_event *event, uint32_t events);
+
+/**
  * @brief Wait for any of the specified events
  *
  * This routine waits on event object @a event until any of the specified
