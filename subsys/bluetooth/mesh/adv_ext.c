@@ -321,6 +321,9 @@ void bt_mesh_adv_buf_relay_ready(void)
 			return;
 		}
 	}
+
+	/* Attempt to use the main adv set for the sending of relay messages. */
+	(void)schedule_send(&adv_main);
 }
 
 void bt_mesh_adv_init(void)
