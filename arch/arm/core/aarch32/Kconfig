@@ -23,6 +23,7 @@ config CPU_CORTEX_M
 	select ARCH_SUPPORTS_ARCH_HW_INIT
 	select ARCH_HAS_SUSPEND_TO_RAM
 	select ARCH_HAS_CODE_DATA_RELOCATION
+	imply CACHE_MANAGEMENT
 	imply XIP
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.

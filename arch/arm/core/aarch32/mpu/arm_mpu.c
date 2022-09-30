@@ -10,6 +10,7 @@
 #include "arm_core_mpu_dev.h"
 #include <zephyr/linker/linker-defs.h>
 #include <kernel_arch_data.h>
+#include <zephyr/cache.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -342,15 +343,12 @@ int z_arm_mpu_init(void)
 
 	arm_core_mpu_disable();
 
-#if defined(CONFIG_NOCACHE_MEMORY)
+#if defined(CONFIG_NOCACHE_MEMORY) && \
+	!defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
 	/* Clean and invalidate data cache if it is enabled and
 	 * that was not already done at boot
 	 */
-#if !defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
-	if (SCB->CCR & SCB_CCR_DC_Msk) {
-		SCB_CleanInvalidateDCache();
-	}
-#endif
+	sys_cache_data_all(K_CACHE_INVD);
 #endif /* CONFIG_NOCACHE_MEMORY */
 
 	/* Architecture-specific configuration */
