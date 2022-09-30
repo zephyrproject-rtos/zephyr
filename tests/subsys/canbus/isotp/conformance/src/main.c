@@ -233,9 +233,7 @@ static void send_frame_series(struct frame_desired *frames, size_t length,
 {
 	int i, ret;
 	struct can_frame frame = {
-		.id_type = (id > 0x7FF) ? CAN_EXTENDED_IDENTIFIER :
-			CAN_STANDARD_IDENTIFIER,
-		.rtr = CAN_DATAFRAME,
+		.flags = (id > 0x7FF) ? CAN_FRAME_IDE :	0,
 		.id = id
 	};
 	struct frame_desired *desired = frames;
@@ -283,12 +281,9 @@ static int add_rx_msgq(uint32_t id, uint32_t mask)
 {
 	int filter_id;
 	struct can_filter filter = {
-		.id_type = (id > 0x7FF) ? CAN_EXTENDED_IDENTIFIER :
-			CAN_STANDARD_IDENTIFIER,
-		.rtr = CAN_DATAFRAME,
+		.flags = CAN_FILTER_DATA | ((id > 0x7FF) ? CAN_FILTER_IDE : 0),
 		.id = id,
-		.rtr_mask = 1,
-		.id_mask = mask
+		.mask = mask
 	};
 
 	filter_id = can_add_rx_filter_msgq(can_dev, &frame_msgq, &filter);

@@ -129,12 +129,12 @@ static inline int z_vrfy_can_set_bitrate_data(const struct device *dev,
 
 #endif /* CONFIG_CAN_FD_MODE */
 
-static inline int z_vrfy_can_get_max_filters(const struct device *dev, enum can_ide id_type)
+static inline int z_vrfy_can_get_max_filters(const struct device *dev, bool ide)
 {
 	/* Optional API function */
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
-	return z_impl_can_get_max_filters(dev, id_type);
+	return z_impl_can_get_max_filters(dev, ide);
 }
 #include <syscalls/can_get_max_filters_mrsh.c>
 
