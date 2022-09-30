@@ -136,6 +136,7 @@ struct b91_data {
 #ifdef CONFIG_PM_DEVICE
 	atomic_t current_pm_lock;
 #endif /* CONFIG_PM_DEVICE */
+	ieee802154_event_cb_t event_handler;
 };
 
 #endif
