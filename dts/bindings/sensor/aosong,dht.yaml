@@ -13,7 +13,7 @@ description: |
 
 compatible: "aosong,dht"
 
-include: base.yaml
+include: sensor-device.yaml
 
 properties:
   dio-gpios:
