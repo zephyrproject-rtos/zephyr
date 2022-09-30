@@ -5,7 +5,7 @@ description: Maxim 1-Wire temperature sensor
 
 compatible: "maxim,ds18b20"
 
-include: w1-slave.yaml
+include: [sensor-device.yaml, w1-slave.yaml]
 
 properties:
     resolution:
