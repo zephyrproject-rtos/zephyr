@@ -7,7 +7,7 @@ description: MPU-6000 motion tracking device
 # support SPI so stick with I2C variant.
 compatible: "invensense,mpu6050"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     int-gpios:
