@@ -46,7 +46,9 @@ struct gpio_gd32_config {
 	struct gpio_driver_config common;
 	uint32_t reg;
 	uint16_t clkid;
+#ifdef CONFIG_GD32_EXTI
 	uint16_t clkid_exti;
+#endif
 	struct reset_dt_spec reset;
 };
 
@@ -55,6 +57,7 @@ struct gpio_gd32_data {
 	sys_slist_t callbacks;
 };
 
+#ifdef CONFIG_GD32_EXTI
 /**
  * @brief EXTI ISR callback.
  *
@@ -125,6 +128,7 @@ static int gpio_gd32_configure_extiss(const struct device *port,
 
 	return 0;
 }
+#endif
 
 static inline int gpio_gd32_configure(const struct device *port, gpio_pin_t pin,
 				      gpio_flags_t flags)
@@ -286,6 +290,7 @@ static int gpio_gd32_pin_interrupt_configure(const struct device *port,
 					     enum gpio_int_mode mode,
 					     enum gpio_int_trig trig)
 {
+#ifdef CONFIG_GD32_EXTI
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		gd32_exti_disable(pin);
 		(void)gd32_exti_configure(pin, NULL, NULL);
@@ -321,6 +326,7 @@ static int gpio_gd32_pin_interrupt_configure(const struct device *port,
 	} else {
 		return -ENOTSUP;
 	}
+#endif
 
 	return 0;
 }
@@ -350,8 +356,10 @@ static int gpio_gd32_init(const struct device *port)
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
 			       (clock_control_subsys_t *)&config->clkid);
+#ifdef CONFIG_GD32_EXTI
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
 			       (clock_control_subsys_t *)&config->clkid_exti);
+#endif
 
 	(void)reset_line_toggle_dt(&config->reset);
 
@@ -365,9 +373,10 @@ static int gpio_gd32_init(const struct device *port)
 		},							       \
 		.reg = DT_INST_REG_ADDR(n),				       \
 		.clkid = DT_INST_CLOCKS_CELL(n, id),			       \
-		COND_CODE_1(DT_NODE_HAS_STATUS(SYSCFG_NODE, okay),	       \
+		IF_ENABLED(CONFIG_GD32_EXTI,				       \
+			(COND_CODE_1(DT_NODE_HAS_STATUS(SYSCFG_NODE, okay),    \
 			    (.clkid_exti = DT_CLOCKS_CELL(SYSCFG_NODE, id),),  \
-			    (.clkid_exti = DT_CLOCKS_CELL(AFIO_NODE, id),))    \
+			    (.clkid_exti = DT_CLOCKS_CELL(AFIO_NODE, id),))))  \
 		.reset = RESET_DT_SPEC_INST_GET(n),			       \
 	};								       \
 									       \
