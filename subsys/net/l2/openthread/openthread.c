@@ -181,6 +181,22 @@ static void ot_state_changed_handler(uint32_t flags, void *context)
 		otThreadDeviceRoleToString(otThreadGetDeviceRole(ot_context->instance))
 		);
 
+	if (flags & OT_CHANGED_THREAD_ROLE) {
+		switch (otThreadGetDeviceRole(ot_context->instance)) {
+		case OT_DEVICE_ROLE_CHILD:
+		case OT_DEVICE_ROLE_ROUTER:
+		case OT_DEVICE_ROLE_LEADER:
+			net_if_dormant_off(ot_context->iface);
+			break;
+
+		case OT_DEVICE_ROLE_DISABLED:
+		case OT_DEVICE_ROLE_DETACHED:
+		default:
+			net_if_dormant_on(ot_context->iface);
+			break;
+		}
+	}
+
 	if (flags & OT_CHANGED_IP6_ADDRESS_REMOVED) {
 		NET_DBG("Ipv6 address removed");
 		rm_ipv6_addr_from_zephyr(ot_context);
@@ -446,6 +462,7 @@ int openthread_start(struct openthread_context *ot_context)
 	}
 
 exit:
+
 	openthread_api_mutex_unlock(ot_context);
 
 	return error == OT_ERROR_NONE ? 0 : -EIO;
@@ -515,6 +532,8 @@ static int openthread_init(struct net_if *iface)
 			&ip6_addr_cb, ipv6_addr_event_handler,
 			NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_MADDR_ADD);
 		net_mgmt_add_event_callback(&ip6_addr_cb);
+
+		net_if_dormant_on(iface);
 	}
 
 	openthread_api_mutex_unlock(ot_context);
