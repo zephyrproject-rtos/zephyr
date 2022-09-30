@@ -2314,13 +2314,11 @@ struct net_if_api {
 
 /* Network device initialization macros */
 
-#define Z_NET_DEVICE_INIT(node_id, dev_id, drv_name, init_fn,		\
-			pm_action_cb, data, cfg, prio, api, l2,		\
-			l2_ctx_type, mtu)				\
+#define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
+			  config, prio, api, l2, l2_ctx_type, mtu)	\
 	Z_DEVICE_STATE_DEFINE(node_id, dev_id);				\
-	Z_DEVICE_DEFINE(node_id, dev_id, drv_name, init_fn,		\
-			pm_action_cb, data,				\
-			cfg, POST_KERNEL, prio, api,			\
+	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
+			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
 	NET_L2_DATA_INIT(dev_id, 0, l2_ctx_type);			\
 	NET_IF_INIT(dev_id, 0, l2, mtu, NET_IF_MAX_CONFIGS)
@@ -2329,13 +2327,13 @@ struct net_if_api {
  * @brief Create a network interface and bind it to network device.
  *
  * @param dev_id Network device id.
- * @param drv_name The name this instance of the driver exposes to
+ * @param name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
+ * @param pm Pointer to PM action callback.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
@@ -2344,12 +2342,10 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_INIT(dev_id, drv_name, init_fn, pm_action_cb,	\
-			data, cfg, prio, api, l2,			\
-			l2_ctx_type, mtu)				\
-	Z_NET_DEVICE_INIT(DT_INVALID_NODE, dev_id, drv_name, init_fn,	\
-			pm_action_cb, data, cfg, prio, api, l2,		\
-			l2_ctx_type, mtu)
+#define NET_DEVICE_INIT(dev_id, name, init_fn, pm, data, config, prio,	\
+			api, l2, l2_ctx_type, mtu)			\
+	Z_NET_DEVICE_INIT(DT_INVALID_NODE, dev_id, name, init_fn, pm,	\
+			  data, config, prio, api, l2, l2_ctx_type, mtu)
 
 /**
  * @brief Like NET_DEVICE_INIT but taking metadata from a devicetree node.
@@ -2357,10 +2353,10 @@ struct net_if_api {
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
+ * @param pm Pointer to PM action callback.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
@@ -2369,12 +2365,11 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_DT_DEFINE(node_id, init_fn, pm_action_cb, data, cfg,	\
-			   prio, api, l2, l2_ctx_type, mtu)		\
+#define NET_DEVICE_DT_DEFINE(node_id, init_fn, pm, data,		\
+			     config, prio, api, l2, l2_ctx_type, mtu)	\
 	Z_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
-			  DEVICE_DT_NAME(node_id), init_fn,		\
-			  pm_action_cb, data, cfg, prio, api, l2,	\
-			  l2_ctx_type, mtu)
+			  DEVICE_DT_NAME(node_id), init_fn, pm, data,	\
+			  config, prio, api, l2, l2_ctx_type, mtu)
 
 /**
  * @brief Like NET_DEVICE_DT_DEFINE for an instance of a DT_DRV_COMPAT compatible
@@ -2387,14 +2382,13 @@ struct net_if_api {
 #define NET_DEVICE_DT_INST_DEFINE(inst, ...) \
 	NET_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
-#define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, drv_name,		\
-				   instance, init_fn, pm_action_cb,	\
-				   data, cfg, prio, api, l2,		\
-				   l2_ctx_type, mtu)			\
+#define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
+				   init_fn, pm, data, config, prio,	\
+				   api, l2, l2_ctx_type, mtu)		\
 	Z_DEVICE_STATE_DEFINE(node_id, dev_id);				\
-	Z_DEVICE_DEFINE(node_id, dev_id, drv_name, init_fn,		\
-			pm_action_cb, data, cfg, POST_KERNEL,		\
-			prio, api, &Z_DEVICE_STATE_NAME(dev_id));	\
+	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
+			config,	POST_KERNEL, prio, api,			\
+			&Z_DEVICE_STATE_NAME(dev_id));			\
 	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
 	NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)
 
@@ -2405,14 +2399,14 @@ struct net_if_api {
  * (0, 1, 2, ... or a, b, c ... whatever works for you)
  *
  * @param dev_id Network device id.
- * @param drv_name The name this instance of the driver exposes to
+ * @param name The name this instance of the driver exposes to
  * the system.
  * @param instance Instance identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
+ * @param pm Pointer to PM action callback.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
@@ -2421,13 +2415,12 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_INIT_INSTANCE(dev_id, drv_name, instance, init_fn,	\
-				 pm_action_cb, data, cfg, prio,		\
-				 api, l2, l2_ctx_type, mtu)		\
-	Z_NET_DEVICE_INIT_INSTANCE(DT_INVALID_NODE, dev_id, drv_name,	\
-				   instance, init_fn, pm_action_cb,	\
-				   data, cfg, prio, api, l2,		\
-				   l2_ctx_type, mtu)
+#define NET_DEVICE_INIT_INSTANCE(dev_id, name, instance, init_fn, pm,	\
+				 data, config, prio, api, l2,		\
+				 l2_ctx_type, mtu)			\
+	Z_NET_DEVICE_INIT_INSTANCE(DT_INVALID_NODE, dev_id, name,	\
+				   instance, init_fn, pm, data, config,	\
+				   prio, api, l2, l2_ctx_type, mtu)
 
 /**
  * @brief Like NET_DEVICE_OFFLOAD_INIT but taking metadata from a devicetree.
@@ -2439,10 +2432,10 @@ struct net_if_api {
  * @param node_id The devicetree node identifier.
  * @param instance Instance identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
+ * @param pm Pointer to PM action callback.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
@@ -2451,15 +2444,14 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_DT_DEFINE_INSTANCE(node_id, instance, init_fn,	\
-				      pm_action_cb, data, cfg, prio,	\
-				      api, l2, l2_ctx_type, mtu)	\
+#define NET_DEVICE_DT_DEFINE_INSTANCE(node_id, instance, init_fn, pm,	\
+				      data, config, prio, api, l2,	\
+				      l2_ctx_type, mtu)			\
 	Z_NET_DEVICE_INIT_INSTANCE(node_id,				\
 				   Z_DEVICE_DT_DEV_NAME(node_id),	\
-				   DEVICE_DT_NAME(node_id),		\
-				   instance, init_fn,			\
-				   pm_action_cb, data, cfg, prio, api,	\
-				   l2, l2_ctx_type, mtu)
+				   DEVICE_DT_NAME(node_id), instance,	\
+				   init_fn, pm, data, config, prio,	\
+				   api,	l2, l2_ctx_type, mtu)
 
 /**
  * @brief Like NET_DEVICE_DT_DEFINE_INSTANCE for an instance of a DT_DRV_COMPAT
@@ -2473,13 +2465,12 @@ struct net_if_api {
 #define NET_DEVICE_DT_INST_DEFINE_INSTANCE(inst, ...) \
 	NET_DEVICE_DT_DEFINE_INSTANCE(DT_DRV_INST(inst), __VA_ARGS__)
 
-#define Z_NET_DEVICE_OFFLOAD_INIT(node_id, dev_id, drv_name, init_fn,	\
-				  pm_action_cb, data, cfg, prio,	\
-				  api, mtu)				\
+#define Z_NET_DEVICE_OFFLOAD_INIT(node_id, dev_id, name, init_fn, pm,	\
+				  data, config, prio, api, mtu)		\
 	Z_DEVICE_STATE_DEFINE(node_id, dev_id);				\
-	Z_DEVICE_DEFINE(node_id, dev_id, drv_name, init_fn,		\
-		pm_action_cb, data, cfg, POST_KERNEL, prio, api,	\
-		&Z_DEVICE_STATE_NAME(dev_id));				\
+	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
+			config, POST_KERNEL, prio, api,			\
+			&Z_DEVICE_STATE_NAME(dev_id));			\
 	NET_IF_OFFLOAD_INIT(dev_id, 0, mtu)
 
 /**
@@ -2488,24 +2479,24 @@ struct net_if_api {
  * similar.
  *
  * @param dev_id Network device id.
- * @param drv_name The name this instance of the driver exposes to
+ * @param name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
+ * @param pm Pointer to PM action callback.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_OFFLOAD_INIT(dev_id, drv_name, init_fn,		\
-				pm_action_cb, data, cfg, prio, api, mtu)\
-	Z_NET_DEVICE_OFFLOAD_INIT(DT_INVALID_NODE, dev_id, drv_name,	\
-				init_fn, pm_action_cb, data, cfg, prio,	\
-				api, mtu)
+#define NET_DEVICE_OFFLOAD_INIT(dev_id, name, init_fn, pm, data,	\
+				config,	prio, api, mtu)			\
+	Z_NET_DEVICE_OFFLOAD_INIT(DT_INVALID_NODE, dev_id, name,	\
+				  init_fn, pm, data, config, prio, api,	\
+				  mtu)
 
 /**
  * @brief Like NET_DEVICE_OFFLOAD_INIT but taking metadata from a devicetree
@@ -2515,22 +2506,21 @@ struct net_if_api {
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
+ * @param pm Pointer to PM action callback.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_DT_OFFLOAD_DEFINE(node_id, init_fn, pm_action_cb,	\
-				   data, cfg, prio, api, mtu)		\
+#define NET_DEVICE_DT_OFFLOAD_DEFINE(node_id, init_fn, pm, data,	\
+				     config, prio, api, mtu)		\
 	Z_NET_DEVICE_OFFLOAD_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id), \
-				  DEVICE_DT_NAME(node_id),		\
-				  init_fn, pm_action_cb, data, cfg,	\
-				  prio, api, mtu)
+				  DEVICE_DT_NAME(node_id), init_fn, pm, \
+				  data, config,	prio, api, mtu)
 
 /**
  * @brief Like NET_DEVICE_DT_OFFLOAD_DEFINE for an instance of a DT_DRV_COMPAT
