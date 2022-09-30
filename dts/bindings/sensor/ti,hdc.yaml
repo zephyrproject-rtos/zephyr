@@ -5,7 +5,7 @@ description: Texas Instruments temperature and humidity sensor (e.g. HDC1008)
 
 compatible: "ti,hdc"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     drdy-gpios:

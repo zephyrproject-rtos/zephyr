@@ -5,7 +5,7 @@ description: Texas Instruments FDC2X1X capacitive sensor
 
 compatible: "ti,fdc2x1x"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     sd-gpios:
