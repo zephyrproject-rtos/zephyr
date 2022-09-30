@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "zephyr/ztest_test_new.h"
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/spinlock.h>
@@ -116,6 +117,31 @@ ZTEST(spinlock, test_spinlock_release_error)
 
 	set_assert_valid(true);
 	k_spin_release(&mylock);
+
+	ztest_test_fail();
+}
+
+/**
+ * @brief Test unlocking spinlock held over the time limit
+ *
+ * @details Validate unlocking spinlock held past the time limit will trigger
+ * assertion.
+ *
+ * @ingroup kernel_spinlock_tests
+ *
+ * @see k_spin_unlock()
+ */
+ZTEST(spinlock, test_spinlock_lock_time_limit)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_SPIN_LOCK_TIME_LIMIT);
+
+	key = k_spin_lock(&lock);
+
+	for (volatile int i = 0; i < 100000; i++) {
+	}
+
+	set_assert_valid(true);
+	k_spin_unlock(&lock, key);
 
 	ztest_test_fail();
 }
