@@ -225,16 +225,16 @@ Architectures
 
 * ARC
 
-  * Added support of non-multithreading mode for all UP ARC targets
+  * Added support of non-multithreading mode for all UP ARC targets.
   * Added extra compile-time checks of :kconfig:option:`CONFIG_ISR_STACK_SIZE`
-    and :kconfig:option:`CONFIG_ARC_EXCEPTION_STACK_SIZE` value
-  * Added support of generation symbol file for ARC MWDT toolchain variant
-  * Added ARC MWDT toolchain version check
-  * Added support for GCC mcpu option tuning for ARC targets on SoC level
-  * Switched ARCv3 64bit targets for usage of new linker output format value
+    and :kconfig:option:`CONFIG_ARC_EXCEPTION_STACK_SIZE` value.
+  * Added support of generation symbol file for ARC MWDT toolchain variant.
+  * Added ARC MWDT toolchain version check.
+  * Added support for GCC mcpu option tuning for ARC targets on SoC level.
+  * Switched ARCv3 64bit targets for usage of new linker output format value.
   * Added ARCv3 64bit accumulator reg save / restore, cleanup it for ARCv3
-    32bit targets
-  * Fixed SMP race in ASM ARC interrupt handling code
+    32bit targets.
+  * Fixed SMP race in ASM ARC interrupt handling code.
 
 * ARM
 
@@ -262,7 +262,7 @@ Architectures
   * IRQ stack is now initialized when :kconfig:option:`CONFIG_INIT_STACKS` is set.
   * Fixed issue when cache API are used from userspace.
   * Fixed issue about the way IPI are delivered.
-  * TF-A (TrustedFirmware-A) is now shipped as module
+  * TF-A (TrustedFirmware-A) is now shipped as module.
 
 * RISC-V
 
@@ -299,71 +299,71 @@ Bluetooth
 
 * Audio
 
-  * Implemented central security establishment when required
-  * Added additional security level options to the connection call
-  * Switched the unicast client and server to bidirectional CIS if available
-  * Added a new RSI advertising callback for CSIS
+  * Implemented central security establishment when required.
+  * Added additional security level options to the connection call.
+  * Switched the unicast client and server to bidirectional CIS if available.
+  * Added a new RSI advertising callback for CSIS.
   * Added multiple improvements to context handling, including public functions
-    to get contexts
+    to get contexts.
   * Added ordered access procedure for the CSIS client, as well as storing
-    active members by rank
-  * Added support for Write Preset Name in HAS
-  * Added support for using PACS for the broadcast sink role
+    active members by rank.
+  * Added support for Write Preset Name in HAS.
+  * Added support for using PACS for the broadcast sink role.
   * Cleaned up the MICP implementation, including renaming several structures
-    and functions
-  * Implemented the CAP Acceptor role
-  * Added ASCS Metadata verification support
-  * Started exposing broadcast sink advertising data to the application
+    and functions.
+  * Implemented the CAP Acceptor role.
+  * Added ASCS Metadata verification support.
+  * Started exposing broadcast sink advertising data to the application.
   * Added support for unicast server start, reconfigure, release, disable and
-    metadata
-  * Added support for multi-CIS
-  * Implemented HAS client support for preset switching
+    metadata.
+  * Added support for multi-CIS.
+  * Implemented HAS client support for preset switching.
   * Added support for setting vendor-specific non-HCI data paths for audio
-    streams
+    streams.
 
 * Direction Finding
 
-  * Added support for selectable IQ samples conversion to 8-bit
-  * Added support for VS IQ sample reports in ``int16_t`` format
+  * Added support for selectable IQ samples conversion to 8-bit.
+  * Added support for VS IQ sample reports in ``int16_t`` format.
 
 * Host
 
-  * Added support for LE Secure Connections permission checking
-  * Added support for Multiple Variable Length Read procedure without EATT
+  * Added support for LE Secure Connections permission checking.
+  * Added support for Multiple Variable Length Read procedure without EATT.
   * Added a new callback :c:func:`rpa_expired` in the struct
     :c:struct:`bt_le_ext_adv_cb` to enable synchronization of the advertising
     payload updates with the Resolvable Private Address (RPA) rotations when
-    the :kconfig:option:`CONFIG_BT_PRIVACY` is enabled
+    the :kconfig:option:`CONFIG_BT_PRIVACY` is enabled.
   * Added a new :c:func:`bt_le_set_rpa_timeout()` API call to dynamically change
     the the Resolvable Private Address (RPA) timeout when the
-    :kconfig:option:`CONFIG_BT_RPA_TIMEOUT_DYNAMIC` is enabled
+    :kconfig:option:`CONFIG_BT_RPA_TIMEOUT_DYNAMIC` is enabled.
   * Added :c:func:`bt_conn_auth_cb_overlay` to overlay authentication callbacks
-    for a Bluetooth LE connection
+    for a Bluetooth LE connection.
   * Removed ``CONFIG_BT_HCI_ECC_STACK_SIZE``. A new Bluetooth long workqueue
     (:kconfig:option:`CONFIG_BT_LONG_WQ`) is used for processing ECC commands
-    instead of the former dedicated thread
+    instead of the former dedicated thread.
   * :c:func:`bt_conn_get_security` and :c:func:`bt_conn_enc_key_size` now take
-    a ``const struct bt_conn*`` argument
+    a ``const struct bt_conn*`` argument.
   * The handling of GATT multiple notifications has been rewritten, and is now
-    only to be used as a low-level API
-  * Added support for GATT CCCs in arbitrary locations as a client
-  * Extended the :c:struct:`bt_conn_info` structure with security information
+    only to be used as a low-level API.
+  * Added support for GATT CCCs in arbitrary locations as a client.
+  * Extended the :c:struct:`bt_conn_info` structure with security information.
   * Added a new :kconfig:option:`CONFIG_BT_PRIVACY_RANDOMIZE_IR` that prevents
-    the Host from using Controller-provided identity roots
-  * Added support for GATT over EATT
-  * Implemented the Immediate Alert Client
+    the Host from using Controller-provided identity roots.
+  * Added support for GATT over EATT.
+  * Implemented the Immediate Alert Client.
 
 * Mesh
 
-  * Added support for selectable RPL backends
-  * Changed the way segmented messages are sent, avoiding bulk transmission
-  * Added an async config client API
-  * Added model publish support to the Health Client
-  * Moved relayed messages to a separate buffer pool
+  * Added support for selectable RPL backends.
+  * Changed the way segmented messages are sent, avoiding bulk transmission.
+  * Added an async config client API.
+  * Added model publish support to the Health Client.
+  * Moved relayed messages to a separate buffer pool.
   * Reduced delay of sending segment acknowledge message. Set
     :kconfig:option:`CONFIG_BT_MESH_SEG_ACK_PER_SEGMENT_TIMEOUT` to 100 to get
     the previous timing.
-  * Restructured shell commands
+  * Restructured shell commands.
 
 * Controller
 
@@ -371,35 +371,35 @@ Bluetooth
     :kconfig:option:`CONFIG_BT_LL_SW_LLCP_LEGACY` to revert back to the legacy
     implementation. :kconfig:option:`CONFIG_BT_LL_SW_LLCP_LEGACY` is marked
     deprecated in favor of the new :kconfig:option:`CONFIG_BT_LL_SW_LLCP`, which
-    is the default now
-  * Marked Extended Advertising as stable, no longer experimental
+    is the default now.
+  * Marked Extended Advertising as stable, no longer experimental.
   * Added deinit() infrastructure in order to properly support disabling
-    Bluetooth support, including the controller
-  * Implemented the Peripheral CIS Create procedure
-  * Implemented the CIS Terminate procedure
-  * Added support for Periodic Advertising ADI
-  * Implemented support for Extended Scan Response Data fragment operations
-  * Enable back-to-back PDU chaining for AD data
+    Bluetooth support, including the controller.
+  * Implemented the Peripheral CIS Create procedure.
+  * Implemented the CIS Terminate procedure.
+  * Added support for Periodic Advertising ADI.
+  * Implemented support for Extended Scan Response Data fragment operations.
+  * Enable back-to-back PDU chaining for AD data.
   * Added a new :kconfig:option:`CONFIG_BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX`
-    for allowing periodic sync event skipping
+    for allowing periodic sync event skipping.
   * Added a new :kconfig:option:`CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN` for
-    minimal time reservation
-  * Implemented ISO Test Mode HCI commands
-  * Added support for multiple BIS sync selection within a BIG
-  * Implement flushing pending ISO TX PDUs when a BIG event is terminated
+    minimal time reservation.
+  * Implemented ISO Test Mode HCI commands.
+  * Added support for multiple BIS sync selection within a BIG.
+  * Implement flushing pending ISO TX PDUs when a BIG event is terminated.
   * Added a new :kconfig:option:`CONFIG_BT_CTLR_ADV_DATA_CHAIN` to enable
-    experimental Advertising Data chaining support
+    experimental Advertising Data chaining support.
 
 * HCI Driver
 
-  * Added a new Telink B91 HCI driver
+  * Added a new Telink B91 HCI driver.
 
 Boards & SoC Support
 ********************
 
 * Added support for these SoC series:
 
-  * Atmel SAML21, SAMR34, SAMR35.
+  * Atmel SAML21, SAMR34, SAMR35
   * GigaDevice GD32E50X
   * GigaDevice GD32F470
   * NXP i.MX8MN, LPC55S36, LPC51U68
@@ -483,12 +483,12 @@ Build system and infrastructure
 * Introduced sysbuild, a new higher-level build system layer that enables
   combining multiple build systems together. It can be used to generate multiple
   images from a single build system invocation while maintaining a link between
-  those different applications/images via a shared Kconfig layer
+  those different applications/images via a shared Kconfig layer.
 * Introduced support for binary blobs in west, via a new ``west blobs`` command
   that allows users to list, fetch and delete binary blobs from their
   filesystem. Vendors can thus now integrate binary blobs, be it images or
-  libraries, with upstream Zephyr
-* Removed deprecated ``GCCARMEMB_TOOLCHAIN_PATH`` setting
+  libraries, with upstream Zephyr.
+* Removed deprecated ``GCCARMEMB_TOOLCHAIN_PATH`` setting.
 
 Drivers and Sensors
 *******************
@@ -496,7 +496,7 @@ Drivers and Sensors
 * ADC
 
   * STM32: Now supports Vbat monitoring channel and STM32U5 series.
-  * Added driver for GigaDevice GD32 SoCs
+  * Added driver for GigaDevice GD32 SoCs.
   * Raspberry Pi Pico: Added ADC support for the Pico series.
   * Added :c:struct:`adc_dt_spec` related helpers for sequence initialization,
     setting up channels, and converting raw values to millivolts.
@@ -553,21 +553,21 @@ Drivers and Sensors
   * Renamed EPD controller driver GD7965 to UC81xx.
   * Improved support for different controllers in ssd16xx and uc81xx drivers.
   * Added basic read support for ssd16xx compatible EPD controllers.
-  * Revised intel_multibootfb driver
-  * Added MAX7219 display controller driver
+  * Revised intel_multibootfb driver.
+  * Added MAX7219 display controller driver.
 
 * Disk
 
-  * Added support for DMA transfers when using STM32 SD host controller
-  * Added support for SD host controller present on STM32L5X family
+  * Added support for DMA transfers when using STM32 SD host controller.
+  * Added support for SD host controller present on STM32L5X family.
 
 * DMA
 
   * STM32: Now supports stm32u5 series.
-  * cAVS drivers renamed with the broader Intel ADSP naming
-  * Kconfig depends on improvements with device tree statuses
-  * Added driver for GigaDevice GD32 SoCs
-  * Added DMA support for NXP MIMXRT595
+  * cAVS drivers renamed with the broader Intel ADSP naming.
+  * Kconfig depends on improvements with device tree statuses.
+  * Added driver for GigaDevice GD32 SoCs.
+  * Added DMA support for NXP MIMXRT595.
 
 * EEPROM
 
@@ -613,7 +613,7 @@ Drivers and Sensors
 
 * GPIO
 
-  * Added GPIO driver for Renesas Smartbond platform
+  * Added GPIO driver for Renesas Smartbond platform.
 
 * I2C
 
@@ -624,10 +624,10 @@ Drivers and Sensors
   * Added NXP LPI2C driver asynchronous i2c implementation with sample
     showing usage with a FRDM-K64F board.
   * STM32: support for second target address was added.
-  * Kconfig depends on improvements with device tree statuses
-  * Improved ITE I2C support with FIFO and command queue mode
-  * Improve gd32 driver stability (remove repeated START, use STOP + START conditions instead)
-  * Fixed gd32 driver incorrect Fast-mode config
+  * Kconfig depends on improvements with device tree statuses.
+  * Improved ITE I2C support with FIFO and command queue mode.
+  * Improve gd32 driver stability (remove repeated START, use STOP + START conditions instead).
+  * Fixed gd32 driver incorrect Fast-mode config.
   * Add bus recovery support to the NXP MCUX LPI2C driver.
   * Enable I2C support on NXP MIMXRT595 EVK.
 
@@ -696,20 +696,20 @@ Drivers and Sensors
 
 * Pin control
 
-  * Added driver for Infineon XMC4XXX
-  * Added driver for Renesas Smartbond platform
-  * Added driver for Xilinx Zynq-7000
-  * Added support for PSL pads in NPCX driver
-  * MEC15XX driver now supports both MEC15XX and MEC17XX
-  * nRF driver now supports disconnecting a pin by using ``NRF_PSEL_DISCONNECT``
-  * nRF driver will use S0D1 drive mode for TWI/TWIM pins by default
+  * Added driver for Infineon XMC4XXX.
+  * Added driver for Renesas Smartbond platform.
+  * Added driver for Xilinx Zynq-7000.
+  * Added support for PSL pads in NPCX driver.
+  * MEC15XX driver now supports both MEC15XX and MEC17XX.
+  * nRF driver now supports disconnecting a pin by using ``NRF_PSEL_DISCONNECT``.
+  * nRF driver will use S0D1 drive mode for TWI/TWIM pins by default.
 
 * PWM
 
-  * Added PWM driver for Renesas R-Car platform
-  * Added PWM driver for Raspberry Pi Pico series
-  * Added PWM support for NXP LPC55S36
-  * Added MCPWM support for ESP32 boards
+  * Added PWM driver for Renesas R-Car platform.
+  * Added PWM driver for Raspberry Pi Pico series.
+  * Added PWM support for NXP LPC55S36.
+  * Added MCPWM support for ESP32 boards.
   * Fixed the nRF PWM driver to properly handle cases where PWM generation is
     used for some channels while some others are set to a constant level (active
     or inactive), e.g. when the LED driver API is used to turn off a PWM driven
@@ -723,13 +723,13 @@ Drivers and Sensors
 
 * Reset
 
-  * Added driver for GigaDevice GD32 SoCs
+  * Added driver for GigaDevice GD32 SoCs.
 
 * SDHC
 
-  * Added SDHC driver for NXP LPCXpresso platform
+  * Added SDHC driver for NXP LPCXpresso platform.
   * Added support for card busy signal in SDHC SPI driver, to support
-    the :ref:`File System API <file_system_api>`
+    the :ref:`File System API <file_system_api>`.
 
 * Sensor
 
@@ -751,7 +751,7 @@ Drivers and Sensors
 
 * Serial
 
-  * Added serial driver for Renesas Smartbond platform
+  * Added serial driver for Renesas Smartbond platform.
   * The STM32 driver now allows to use serial device as stop mode wake up source.
   * Added check for clock control device readiness during configuration
     for various drivers.
@@ -765,7 +765,7 @@ Drivers and Sensors
 
 * SPI
 
-  * Add interrupt-driven mode support for gd32 driver
+  * Add interrupt-driven mode support for gd32 driver.
   * Enable SPI support on NXP MIMXRT595 EVK.
   * PL022: Added SPI driver for the PL022 peripheral.
 
@@ -777,7 +777,7 @@ Drivers and Sensors
 
   * Restructured the NXP MCUX USB driver.
   * Added USB support for NXP MXRT595.
-  * Fixed detach behavior in nRF USBD and Atmel SAM drivers
+  * Fixed detach behavior in nRF USBD and Atmel SAM drivers.
 
 * W1
 
@@ -1018,8 +1018,8 @@ Devicetree
      * ``DT_LABEL(node_id)``: use ``DT_PROP(node_id, label)`` instead. This is
        part of the general deprecation of the label property described at the
        top of this section.
-     * ``DT_INST_LABEL(inst)``: use ``DT_INST_PROP(inst, label)`` instead
-     * ``DT_BUS_LABEL(node_id)``: use ``DT_PROP(DT_BUS(node_id), label))`` instead
+     * ``DT_INST_LABEL(inst)``: use ``DT_INST_PROP(inst, label)`` instead.
+     * ``DT_BUS_LABEL(node_id)``: use ``DT_PROP(DT_BUS(node_id), label))`` instead.
      * ``DT_INST_BUS_LABEL(node_id)``: use ```DT_PROP(DT_INST_BUS(inst),
        label)`` instead. Similar advice applies for the rest of the following
        deprecated macros: if you need to access a devicetree node's label
@@ -1183,25 +1183,25 @@ Devicetree
     * Analog Devices parts:
 
       * :dtcompatible:`adi,adxl372`: new properties as part of a general conversion
-        of the associated upstream driver to support multiple instances
-      * :dtcompatible:`adi,adxl362`: new ``wakeup-mode``, ``autosleep`` properties
+        of the associated upstream driver to support multiple instances.
+      * :dtcompatible:`adi,adxl362`: new ``wakeup-mode``, ``autosleep`` properties.
 
     * Atmel SoCs:
 
       * :dtcompatible:`atmel,rf2xx`: new ``channel-page``, ``tx-pwr-table``,
-        ``tx-pwr-min``, ``tx-pwr-max`` properties
-      * GMAC: new ``mac-eeprom`` property
+        ``tx-pwr-min``, ``tx-pwr-max`` properties.
+      * GMAC: new ``mac-eeprom`` property.
 
     * Espressif SoCs:
 
       * :dtcompatible:`espressif,esp32-i2c`: the ``sda-pin`` and ``scl-pin``
-        properties are now ``scl-gpios`` and ``sda-gpios``
+        properties are now ``scl-gpios`` and ``sda-gpios``.
       * :dtcompatible:`espressif,esp32-ledc`: device configuration moved to
-        devicetree via a new child binding
-      * :dtcompatible:`espressif,esp32-pinctrl`: this now uses pin groups
-      * :dtcompatible:`espressif,esp32-spi`: new ``use-iomux`` property
+        devicetree via a new child binding.
+      * :dtcompatible:`espressif,esp32-pinctrl`: this now uses pin groups.
+      * :dtcompatible:`espressif,esp32-spi`: new ``use-iomux`` property.
       * :dtcompatible:`espressif,esp32-usb-serial`: removed ``peripheral``
-        property
+        property.
 
     * GigaDevice SoCs:
 
@@ -1235,22 +1235,22 @@ Devicetree
     * Intel SoCs:
 
       * :dtcompatible:`intel,adsp-tlb`:
-        new ``paddr-size``, ``exec-bit-idx``, ``write-bit-idx`` properties
-      * :dtcompatible:`intel,adsp-shim-clkctl`: new ``wovcro-supported`` property
-      * Removed ``intel,dmic`` binding
-      * Removed ``intel,s1000-pinmux`` binding
+        new ``paddr-size``, ``exec-bit-idx``, ``write-bit-idx`` properties.
+      * :dtcompatible:`intel,adsp-shim-clkctl`: new ``wovcro-supported`` property.
+      * Removed ``intel,dmic`` binding.
+      * Removed ``intel,s1000-pinmux`` binding.
 
     * Nordic SoCs:
 
       * :dtcompatible:`nordic,nrf-pinctrl`: ``NRF_PSEL_DISCONNECTED`` can be used
-        to disconnect a pin
+        to disconnect a pin.
       * :dtcompatible:`nordic,nrf-spim`: new ``rx-delay-supported``,
-        ``rx-delay`` properties
+        ``rx-delay`` properties.
       * :dtcompatible:`nordic,nrf-spim`, :dtcompatible:`nordic,nrf-spi`: new
          ``overrun-character``, ``max-frequency``, ``memory-region``,
-         ``memory-region-names`` properties
+         ``memory-region-names`` properties.
       * :dtcompatible:`nordic,nrf-uarte`: new ``memory-region``,
-        ``memory-region-names`` properties
+        ``memory-region-names`` properties.
       * Various bindings have had ``foo-pin`` properties deprecated. For
         example, :dtcompatible:`nordic,nrf-qspi` has a deprecated ``sck-pin``
         property. Uses of such properties should be replaced with pinctrl
@@ -1258,46 +1258,46 @@ Devicetree
 
     * Nuvoton SoCs:
 
-      * :dtcompatible:`nuvoton,npcx-leakage-io`: new ``lvol-maps`` property
+      * :dtcompatible:`nuvoton,npcx-leakage-io`: new ``lvol-maps`` property.
       * :dtcompatible:`nuvoton,npcx-scfg`: removed ``io_port``, ``io_bit``
-        cells in ``lvol_cells`` specifiers
+        cells in ``lvol_cells`` specifiers.
       * Removed: ``nuvoton,npcx-lvolctrl-def``, ``nuvoton,npcx-psl-out``,
-        ``nuvoton,npcx-pslctrl-conf``, ``nuvoton,npcx-pslctrl-def``
-      * Added pinctrl support for PSL (Power Switch Logic) pads
+        ``nuvoton,npcx-pslctrl-conf``, ``nuvoton,npcx-pslctrl-def``.
+      * Added pinctrl support for PSL (Power Switch Logic) pads.
 
     * NXP SoCs:
 
-      * :dtcompatible:`nxp,imx-pwm`: new ``run-in-wait``, ``run-in-debug`` properties
-      * :dtcompatible:`nxp,lpc-spi`: new ``def-char`` property
-      * :dtcompatible:`nxp,lpc-iocon-pinctrl`: new ``nxp,analog-alt-mode`` property
-      * removed deprecated ``nxp,lpc-iap`` binding
+      * :dtcompatible:`nxp,imx-pwm`: new ``run-in-wait``, ``run-in-debug`` properties.
+      * :dtcompatible:`nxp,lpc-spi`: new ``def-char`` property.
+      * :dtcompatible:`nxp,lpc-iocon-pinctrl`: new ``nxp,analog-alt-mode`` property.
+      * removed deprecated ``nxp,lpc-iap`` binding.
       * :dtcompatible:`nxp,imx-csi`: new ``sensor`` property replacing the
-        ``sensor-label`` property
-      * :dtcompatible:`nxp,imx-lpi2c`: new ``scl-gpios``, ``sda-gpios`` properties
+        ``sensor-label`` property.
+      * :dtcompatible:`nxp,imx-lpi2c`: new ``scl-gpios``, ``sda-gpios`` properties.
 
     * STM32 SoCs:
 
-      * :dtcompatible:`st,stm32-adc`: new ``has-vbat-channel`` property
-      * :dtcompatible:`st,stm32-can`: removed ``one-shot`` property
-      * :dtcompatible:`st,stm32-fdcan`: new ``clocks``, ``clk-divider`` properties
-      * :dtcompatible:`st,stm32-ospi`: new ``dmas``, ``dma-names`` properties
+      * :dtcompatible:`st,stm32-adc`: new ``has-vbat-channel`` property.
+      * :dtcompatible:`st,stm32-can`: removed ``one-shot`` property.
+      * :dtcompatible:`st,stm32-fdcan`: new ``clocks``, ``clk-divider`` properties.
+      * :dtcompatible:`st,stm32-ospi`: new ``dmas``, ``dma-names`` properties.
       * :dtcompatible:`st,stm32-ospi-nor`: new ``four-byte-opcodes``,
         ``writeoc`` properties; new enum values ``2`` and ``4`` in
-        ``spi-bus-width`` property
-      * :dtcompatible:`st,stm32-pwm`: removed deprecated ``st,prescaler`` property
-      * :dtcompatible:`st,stm32-rng`: new ``nist-config`` property
+        ``spi-bus-width`` property.
+      * :dtcompatible:`st,stm32-pwm`: removed deprecated ``st,prescaler`` property.
+      * :dtcompatible:`st,stm32-rng`: new ``nist-config`` property.
       * :dtcompatible:`st,stm32-sdmmc`: new ``dmas``, ``dma-names``,
-        ``bus-width`` properties
+        ``bus-width`` properties.
       * :dtcompatible:`st,stm32-temp-cal`: new ``ts-cal-resolution`` property;
-        removed ``ts-cal-offset`` property
-      * :dtcompatible:`st,stm32u5-pll-clock`: new ``div-p`` property
-      * temperature sensor bindings no longer have a ``ts-voltage-mv`` property
-      * UART bindings: new ``wakeup-line`` properties
+        removed ``ts-cal-offset`` property.
+      * :dtcompatible:`st,stm32u5-pll-clock`: new ``div-p`` property.
+      * temperature sensor bindings no longer have a ``ts-voltage-mv`` property.
+      * UART bindings: new ``wakeup-line`` properties.
 
     * Texas Instruments parts:
 
-      * :dtcompatible:`ti,ina237`: new ``alert-config``, ``irq-gpios`` properties
-      * :dtcompatible:`ti,bq274xx`: new ``zephyr,lazy-load`` property
+      * :dtcompatible:`ti,ina237`: new ``alert-config``, ``irq-gpios`` properties.
+      * :dtcompatible:`ti,bq274xx`: new ``zephyr,lazy-load`` property.
 
     * Ultrachip UC81xx displays:
 
@@ -1313,29 +1313,29 @@ Devicetree
 
     * Zephyr-specific bindings:
 
-      * :dtcompatible:`zephyr,bt-hci-spi`: new ``reset-assert-duration-ms`` property
-      * removed ``zephyr,ipm-console`` binding
+      * :dtcompatible:`zephyr,bt-hci-spi`: new ``reset-assert-duration-ms`` property.
+      * removed ``zephyr,ipm-console`` binding.
       * :dtcompatible:`zephyr,ipc-openamp-static-vrings`: new
-        ``zephyr,buffer-size`` property
-      * :dtcompatible:`zephyr,memory-region`: new ``PPB`` and ``IO`` region support
+        ``zephyr,buffer-size`` property.
+      * :dtcompatible:`zephyr,memory-region`: new ``PPB`` and ``IO`` region support.
 
-    * :dtcompatible:`infineon,xmc4xxx-uart`: new ``input-src`` property
-    * WSEN-HIDS sensors: new ``drdy-gpios``, ``odr`` properties
-    * :dtcompatible:`sitronix,st7789v`: ``cmd-data-gpios`` is now optional
+    * :dtcompatible:`infineon,xmc4xxx-uart`: new ``input-src`` property.
+    * WSEN-HIDS sensors: new ``drdy-gpios``, ``odr`` properties.
+    * :dtcompatible:`sitronix,st7789v`: ``cmd-data-gpios`` is now optional.
     * :dtcompatible:`solomon,ssd16xxfb`: new ``dummy-line``,
       ``gate-line-width`` properties. The ``gdv``, ``sdv``, ``vcom``, and
       ``border-waveform`` properties are now optional.
     * ``riscv,clint0`` removed; all in-tree users were converted to
-      ``sifive,clint0`` or derived bindings
+      ``sifive,clint0`` or derived bindings.
     * :dtcompatible:`worldsemi,ws2812-spi`: SPI bindings have new ``spi-cpol``,
-      ``spi-cpha`` properties
-    * :dtcompatible:`ns16550`: ``reg-shift`` is now required
-    * Removed ``reserved-memory`` binding
+      ``spi-cpha`` properties.
+    * :dtcompatible:`ns16550`: ``reg-shift`` is now required.
+    * Removed ``reserved-memory`` binding.
 
 * Implementation details
 
   * The generated devicetree header file placed in the build directory was
-    renamed from ``devicetree_unfixed.h`` to ``devicetree_generated.h``
+    renamed from ``devicetree_unfixed.h`` to ``devicetree_generated.h``.
 
   * The generated ``device_extern.h`` has been replaced using
     ``DT_FOREACH_STATUS_OKAY_NODE``. See `commit
@@ -1397,7 +1397,7 @@ Libraries / Subsystems
     execution result codes are instead returned in the ``ret``
     variable instead, see :ref:`mcumgr_smp_group_9` for updated
     information. Legacy bahaviour can be restored by enabling
-    :kconfig:option:`CONFIG_MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE`
+    :kconfig:option:`CONFIG_MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE`.
   * MCUMGR img_mgmt erase command now accepts an optional slot number
     to select which image will be erased, using the ``slot`` input
     (will default to slot 1 if not provided).
@@ -1476,7 +1476,7 @@ Libraries / Subsystems
 
 * Modbus
 
-  * Added user data entry for ADU callback
+  * Added user data entry for ADU callback.
 
 * Power management
 
@@ -1492,8 +1492,8 @@ Libraries / Subsystems
     ``PTHREAD_TERMINATED`` could be reused. However, ``pthread_join()`` sets
     the state to ``PTHREAD_EXITED``. Consider both states as candidates in
     ``pthread_create()``.
-  * Added ``perror()`` implementation
-  * Used consistent timebase in ``sem_timedwait()``
+  * Added ``perror()`` implementation.
+  * Used consistent timebase in ``sem_timedwait()``.
 
 * RTIO
 
@@ -1533,7 +1533,7 @@ Libraries / Subsystems
 * Testsuite
 
   * Added Kconfig support to ``unit_testing`` platform.
-  * Migrated tests to use :kconfig:option:`CONFIG_ZTEST_NEW_API`
+  * Migrated tests to use :kconfig:option:`CONFIG_ZTEST_NEW_API`.
   * Added ztest options for shuffling tests/suites via:
 
     * :kconfig:option:`CONFIG_ZTEST_SHUFFLE`
@@ -1558,48 +1558,48 @@ HALs
 
 * Espressif
 
-  * Updated Espressif HAL with esp-idf 4.4.1 updates
-  * Added support to binary blobs implementation
-  * Fixed ESP32-C3 wifi issues
+  * Updated Espressif HAL with esp-idf 4.4.1 updates.
+  * Added support to binary blobs implementation.
+  * Fixed ESP32-C3 wifi issues.
 
 * GigaDevice
 
-  * Added support for gd32e50x
-  * gd32e10x: upgraded to v1.3.0
-  * gd32f4xx: upgraded to v3.0.0
+  * Added support for gd32e50x.
+  * gd32e10x: upgraded to v1.3.0.
+  * gd32f4xx: upgraded to v3.0.0.
 
 * NXP
 
-  * Updated the NXP MCUX SDK to version 2.12
-  * Updated the USB middleware to version 2.12
-  * Removed all binary Blobs for power management libraries
-  * Removed all binary archive files
+  * Updated the NXP MCUX SDK to version 2.12.
+  * Updated the USB middleware to version 2.12.
+  * Removed all binary Blobs for power management libraries.
+  * Removed all binary archive files.
 
 * Nordic
 
-  * Updated nrfx to version 2.9.0
+  * Updated nrfx to version 2.9.0.
 
 * RPi Pico
 
-  * Renamed ``adc_read`` to ``pico_adc_read``, to avoid name collision with Zephyr's API
+  * Renamed ``adc_read`` to ``pico_adc_read``, to avoid name collision with Zephyr's API.
 
 * STM32
 
-  * stm32cube: update stm32f7 to cube version V1.17.0
-  * stm32cube: update stm32g0 to cube version V1.6.1
-  * stm32cube: update stm32g4 to cube version V1.5.1
-  * stm32cube: update stm32l4 to cube version V1.17.2
-  * stm32cube: update stm32u5 to cube version V1.1.1
-  * stm32cube: update stm32wb to cube version V1.14.0
+  * stm32cube: update stm32f7 to cube version V1.17.0.
+  * stm32cube: update stm32g0 to cube version V1.6.1.
+  * stm32cube: update stm32g4 to cube version V1.5.1.
+  * stm32cube: update stm32l4 to cube version V1.17.2.
+  * stm32cube: update stm32u5 to cube version V1.1.1.
+  * stm32cube: update stm32wb to cube version V1.14.0.
   * pinctrl: some pin definitions did not contain the "_c" suffix, used by pins
-    with analog switch on certain H7 devices
+    with analog switch on certain H7 devices.
 
 * TI
 
-  * simplelink: cc13x2_cc26x2: include ADC driverlib sources
-  * simplelink: cc13x2_cc26x2: include flash driverlib sources
-  * cc13x2: kconfig conditions for P variant support & custom RF hwattrs
-  * cc13x2_cc26x2: update to TI SimpleLink SDK 4.40.04.04
+  * simplelink: cc13x2_cc26x2: include ADC driverlib sources.
+  * simplelink: cc13x2_cc26x2: include flash driverlib sources.
+  * cc13x2: kconfig conditions for P variant support & custom RF hwattrs.
+  * cc13x2_cc26x2: update to TI SimpleLink SDK 4.40.04.04.
 
 MCUboot
 *******
@@ -1616,8 +1616,8 @@ MCUboot
 * Dropped the :kconfig:option:`CONFIG_BOOT_IMAGE_ACCESS_HOOKS_FILE` option.
   The inclusion of the Hooks implementation file is now up to the project's customization.
 * Switched zephyr port from using ``FLASH_AREA_`` macros to ``FIXED_PARTITION_`` macros.
-* Made flash_map_backend.h compatible with a C++ compiler
-* Allowed to get the flash write alignment based on the ``zephyr,flash`` DT chosen node property
+* Made flash_map_backend.h compatible with a C++ compiler.
+* Allowed to get the flash write alignment based on the ``zephyr,flash`` DT chosen node property.
 
 * boot_serial:
 
