@@ -5,7 +5,7 @@ description: WSEN-ITDS 3-axis accel sensor
 
 compatible: "we,wsen-itds"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     int-gpios:
