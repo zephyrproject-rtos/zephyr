@@ -7,4 +7,4 @@ description: |
 
 compatible: "bosch,bme680"
 
-include: spi-device.yaml
+include: [sensor-device.yaml, spi-device.yaml]
