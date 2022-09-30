@@ -19,6 +19,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/capabilities.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_ASCS)
 #define LOG_MODULE_NAME bt_ascs
@@ -1246,14 +1247,21 @@ static int ascs_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
 			     uint16_t vid, struct net_buf_simple *buf,
 			     uint8_t len, struct bt_codec *codec)
 {
+	struct bt_audio_capability *cap;
+	sys_slist_t *capabilities;
 	struct net_buf_simple ad;
 
 	if (ep == NULL && codec == NULL) {
 		return -EINVAL;
 	}
 
-	BT_DBG("ep %p codec id 0x%02x cid 0x%04x vid 0x%04x len %u", ep, id,
-	       cid, vid, len);
+	BT_DBG("ep %p dir %u codec id 0x%02x cid 0x%04x vid 0x%04x len %u",
+	       ep, ep->dir, id, cid, vid, len);
+
+	capabilities = bt_audio_capability_get(ep->dir);
+	if (capabilities == NULL) {
+		return -ENOENT;
+	}
 
 	if (codec == NULL) {
 		codec = &ep->codec;
@@ -1263,6 +1271,13 @@ static int ascs_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
 	codec->cid = cid;
 	codec->vid = vid;
 	codec->data_count = 0;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(capabilities, cap, _node) {
+		if (codec->id == cap->codec->id) {
+			codec->path_id = cap->codec->path_id;
+			break;
+		}
+	}
 
 	if (len == 0) {
 		return 0;
