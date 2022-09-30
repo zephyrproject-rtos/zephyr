@@ -18,6 +18,7 @@
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <fsl_flexspi_nor_boot.h>
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
+#include <zephyr/cache.h>
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"
 #include "usb.h"
@@ -624,36 +625,9 @@ static int imxrt_init(const struct device *arg)
 #if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1166_CM4)
 	/* Initialize Cache */
 	/* Enable Code Bus Cache */
-	if (0U == (LMEM->PCCCR & LMEM_PCCCR_ENCACHE_MASK)) {
-		/*
-		 * set command to invalidate all ways,
-		 * and write GO bit to initiate command
-		 */
-		LMEM->PCCCR |= LMEM_PCCCR_INVW1_MASK
-			| LMEM_PCCCR_INVW0_MASK | LMEM_PCCCR_GO_MASK;
-		/* Wait until the command completes */
-		while ((LMEM->PCCCR & LMEM_PCCCR_GO_MASK) != 0U) {
-		}
-		/* Enable cache, enable write buffer */
-		LMEM->PCCCR |= (LMEM_PCCCR_ENWRBUF_MASK
-				| LMEM_PCCCR_ENCACHE_MASK);
-	}
-
+	cache_instr_enable();
 	/* Enable System Bus Cache */
-	if (0U == (LMEM->PSCCR & LMEM_PSCCR_ENCACHE_MASK)) {
-		/*
-		 * set command to invalidate all ways,
-		 * and write GO bit to initiate command
-		 */
-		LMEM->PSCCR |= LMEM_PSCCR_INVW1_MASK
-			| LMEM_PSCCR_INVW0_MASK | LMEM_PSCCR_GO_MASK;
-		/* Wait until the command completes */
-		while ((LMEM->PSCCR & LMEM_PSCCR_GO_MASK) != 0U) {
-		}
-		/* Enable cache, enable write buffer */
-		LMEM->PSCCR |= (LMEM_PSCCR_ENWRBUF_MASK
-				| LMEM_PSCCR_ENCACHE_MASK);
-	}
+	cache_data_enable();
 #endif
 
 	/* Initialize system clock */

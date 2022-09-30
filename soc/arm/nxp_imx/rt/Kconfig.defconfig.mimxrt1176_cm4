@@ -17,4 +17,8 @@ config GPIO
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 400000000 if CORTEX_M_SYSTICK
 
+choice CACHE_TYPE
+	default HAS_EXTERNAL_CACHE
+endchoice
+
 endif # SOC_MIMXRT1170_CM4

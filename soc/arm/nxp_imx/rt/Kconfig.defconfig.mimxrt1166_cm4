@@ -14,4 +14,8 @@ config NUM_IRQS
 config GPIO
 	default y
 
+choice CACHE_TYPE
+	default HAS_EXTERNAL_CACHE
+endchoice
+
 endif # SOC_MIMXRT1166_CM4
