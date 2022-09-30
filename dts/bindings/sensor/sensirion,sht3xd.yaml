@@ -5,7 +5,7 @@ description: Sensirion Humidity SHT3x-DIS humidity and temperature sensor
 
 compatible: "sensirion,sht3xd"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     alert-gpios:
