@@ -5,4 +5,4 @@ description: TE Connectivity MS5837 digital pressure sensor
 
 compatible: "meas,ms5837"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
