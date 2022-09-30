@@ -67,7 +67,7 @@ description: |
 
 compatible: "espressif,esp32-pcnt"
 
-include: [base.yaml, pinctrl-device.yaml]
+include: [sensor-device.yaml, pinctrl-device.yaml]
 
 child-binding:
   description: PCNT Unit configuration.
