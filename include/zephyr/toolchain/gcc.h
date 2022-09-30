@@ -14,6 +14,15 @@
  * Macros to abstract compiler capabilities for GCC toolchain.
  */
 
+/*
+ * gcc.h is included indirectly from devicetree.h and uses autoconf.h.
+ * Non-zephyr builds such as external bootloaders and secure
+ * root-of-trust images need to include devicetree.h but may not be
+ * using gcc's -include autoconf.h so we add a redundant explicit
+ * include here as well.
+ */
+#include <autoconf.h>
+
 #define GCC_VERSION \
 	((__GNUC__ * 10000) + (__GNUC_MINOR__ * 100) + __GNUC_PATCHLEVEL__)
 
