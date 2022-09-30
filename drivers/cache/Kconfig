@@ -18,3 +18,4 @@ config CACHE_HAS_DRIVER
 endif # CACHE
 
 source "drivers/cache/Kconfig.aspeed"
+source "drivers/cache/Kconfig.kinetis"
