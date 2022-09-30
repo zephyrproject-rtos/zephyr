@@ -5,7 +5,7 @@ description: ADXL362 3-axis SPI accelerometer
 
 compatible: "adi,adxl362"
 
-include: spi-device.yaml
+include: [sensor-device.yaml, spi-device.yaml]
 
 properties:
     int1-gpios:
