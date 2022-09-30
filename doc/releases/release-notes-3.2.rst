@@ -264,8 +264,6 @@ Architectures
   * Fixed issue about the way IPI are delivered.
   * TF-A (TrustedFirmware-A) is now shipped as module
 
-* Posix
-
 * RISC-V
 
   * Introduced support for RV32E.
@@ -286,8 +284,6 @@ Architectures
   * Fixed PMP for builds with SMP enabled.
   * Fixed the per-thread m-mode/u-mode entry array.
   * :c:func:`semihost_exec` function is now aligned at 16-byte boundary.
-
-* x86
 
 * Xtensa
 
@@ -507,8 +503,6 @@ Drivers and Sensors
   * Fixed :c:macro:`ADC_DT_SPEC_GET` and related macros to properly handle
     channel identifiers >= 10.
 
-* Audio
-
 * CAN
 
   * A driver for bridging from :ref:`native_posix` to Linux SocketCAN has been added.
@@ -532,8 +526,6 @@ Drivers and Sensors
   * Added driver for GigaDevice GD32 SoCs (peripheral clocks configuration only).
   * Documented behavior when clock is not on.
 
-* Coredump
-
 * Counter
 
   * Added :c:func:`counter_get_value_64` function.
@@ -548,10 +540,6 @@ Drivers and Sensors
   * stm32: Check if clock device is ready before accessing clock control
     devices.
   * ataes132a: Convert to devicetree.
-
-* DAC
-
-* DAI
 
 * DFU
 
@@ -627,8 +615,6 @@ Drivers and Sensors
 
   * Added GPIO driver for Renesas Smartbond platform
 
-* HWINFO
-
 * I2C
 
   * Terminology updated to latest i2c specification removing master/slave
@@ -690,15 +676,9 @@ Drivers and Sensors
     results in considerable flash memory savings.
   * Devicetree usage cleanups.
 
-* MBOX
-
 * MEMC
 
   * Added support for Atmel SAM SMC/EBI.
-
-* MM
-
-* Modem
 
 * PCIE
 
@@ -1365,8 +1345,6 @@ Devicetree
 Libraries / Subsystems
 **********************
 
-* Console
-
 * C Library
 
   * Added Picolibc as a Zephyr module. Picolibc module is a footprint-optimized
@@ -1408,8 +1386,6 @@ Libraries / Subsystems
   * Added cash used to reduce the NVS data lookup time, see
     :kconfig:option:`CONFIG_NVS_LOOKUP_CACHE` option.
   * Changing mkfs options to create FAT32 on larger storage when FAT16 fails.
-
-* IPC
 
 * Management
 
@@ -1567,8 +1543,6 @@ Libraries / Subsystems
   * Added ztest native_posix command line arguments for running specific tests/suites using
     ``--test suite_name:*`` or ``--test suite_name::test_name`` command line arguments.
 
-* Tracing
-
 * Storage
 
   * Flash Map API deprecates usage of :c:macro:`FLASH_AREA_` macros and replaces
@@ -1609,10 +1583,6 @@ HALs
 
   * Renamed ``adc_read`` to ``pico_adc_read``, to avoid name collision with Zephyr's API
 
-* Renesas
-
-* ST
-
 * STM32
 
   * stm32cube: update stm32f7 to cube version V1.17.0
@@ -1624,20 +1594,12 @@ HALs
   * pinctrl: some pin definitions did not contain the "_c" suffix, used by pins
     with analog switch on certain H7 devices
 
-* Silabs
-
 * TI
 
   * simplelink: cc13x2_cc26x2: include ADC driverlib sources
   * simplelink: cc13x2_cc26x2: include flash driverlib sources
   * cc13x2: kconfig conditions for P variant support & custom RF hwattrs
   * cc13x2_cc26x2: update to TI SimpleLink SDK 4.40.04.04
-
-* Telink
-
-* Wurth Elektronik
-
-* Xtensa
 
 MCUboot
 *******
