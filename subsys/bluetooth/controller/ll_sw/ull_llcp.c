@@ -60,14 +60,14 @@ sys_slist_t tx_buffer_wait_list;
 static uint8_t common_tx_buffer_alloc;
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
-static uint8_t buffer_mem_tx[TX_CTRL_BUF_SIZE * LLCP_TX_CTRL_BUF_COUNT];
+static uint8_t MALIGN(4) buffer_mem_tx[TX_CTRL_BUF_SIZE * LLCP_TX_CTRL_BUF_COUNT];
 static struct llcp_mem_pool mem_tx = { .pool = buffer_mem_tx };
 
-static uint8_t buffer_mem_local_ctx[PROC_CTX_BUF_SIZE *
+static uint8_t MALIGN(4) buffer_mem_local_ctx[PROC_CTX_BUF_SIZE *
 				    CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM];
 static struct llcp_mem_pool mem_local_ctx = { .pool = buffer_mem_local_ctx };
 
-static uint8_t buffer_mem_remote_ctx[PROC_CTX_BUF_SIZE *
+static uint8_t MALIGN(4) buffer_mem_remote_ctx[PROC_CTX_BUF_SIZE *
 				     CONFIG_BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM];
 static struct llcp_mem_pool mem_remote_ctx = { .pool = buffer_mem_remote_ctx };
 
