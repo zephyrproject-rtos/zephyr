@@ -61,11 +61,9 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 	const struct can_filter filter = {
-		.id_type = CAN_EXTENDED_IDENTIFIER,
-		.rtr = CAN_DATAFRAME,
+		.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
 		.id = COUNTER_MSG_ID,
-		.rtr_mask = 1,
-		.id_mask = CAN_EXT_ID_MASK
+		.mask = CAN_EXT_ID_MASK
 	};
 	struct can_frame frame;
 	int filter_id;
@@ -192,21 +190,17 @@ void state_change_callback(const struct device *dev, enum can_state state,
 void main(void)
 {
 	const struct can_filter change_led_filter = {
-		.id_type = CAN_STANDARD_IDENTIFIER,
-		.rtr = CAN_DATAFRAME,
+		.flags = CAN_FILTER_DATA,
 		.id = LED_MSG_ID,
-		.rtr_mask = 1,
-		.id_mask = CAN_STD_ID_MASK
+		.mask = CAN_STD_ID_MASK
 	};
 	struct can_frame change_led_frame = {
-		.id_type = CAN_STANDARD_IDENTIFIER,
-		.rtr = CAN_DATAFRAME,
+		.flags = 0,
 		.id = LED_MSG_ID,
 		.dlc = 1
 	};
 	struct can_frame counter_frame = {
-		.id_type = CAN_EXTENDED_IDENTIFIER,
-		.rtr = CAN_DATAFRAME,
+		.flags = CAN_FRAME_IDE,
 		.id = COUNTER_MSG_ID,
 		.dlc = 2
 	};

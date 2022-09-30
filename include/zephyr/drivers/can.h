@@ -126,45 +126,39 @@ enum can_state {
 };
 
 /**
- * @brief Defines if the CAN frame has a standard (11-bit) or extended (29-bit)
- * CAN identifier
+ * @name CAN frame flags
+ * @anchor CAN_FRAME_FLAGS
+ *
+ * @{
  */
-enum can_ide {
-	/** Standard (11-bit) CAN identifier. */
-	CAN_STANDARD_IDENTIFIER,
-	/** Extended (29-bit) CAN identifier. */
-	CAN_EXTENDED_IDENTIFIER
-};
 
-/**
- * @brief Defines if the CAN frame is a data frame or a Remote Transmission Request (RTR) frame
- */
-enum can_rtr {
-	/** Data frame. */
-	CAN_DATAFRAME,
-	/** Remote Transmission Request (RTR) frame. */
-	CAN_REMOTEREQUEST
-};
+/** Frame uses extended (29-bit) CAN ID */
+#define CAN_FRAME_IDE BIT(0)
+
+/** Frame is a Remote Transmission Request (RTR) */
+#define CAN_FRAME_RTR BIT(1)
+
+/** Frame uses CAN-FD format (FDF) */
+#define CAN_FRAME_FDF BIT(2)
+
+/** Frame uses CAN-FD Baud Rate Switch (BRS). Only valid in combination with ``CAN_FRAME_FDF``. */
+#define CAN_FRAME_BRS BIT(3)
+
+/** @} */
 
 /**
  * @brief CAN frame structure
  */
 struct can_frame {
 	/** Standard (11-bit) or extended (29-bit) CAN identifier. */
-	uint32_t id      : 29;
-	/** Frame is in the CAN-FD frame format if set to true. */
-	uint32_t fd      : 1;
-	/** Remote Transmission Request (RTR) flag. Use @a can_rtr enum for assignment. */
-	uint32_t rtr     : 1;
-	/** CAN identifier type (standard or extended). Use @a can_ide enum for assignment. */
-	uint32_t id_type : 1;
+	uint32_t id  : 29;
+	/** @cond INTERNAL_HIDDEN */
+	uint8_t res0 : 3; /* reserved/padding. */
+	/** @endcond */
 	/** Data Length Code (DLC) indicating data length in bytes. */
 	uint8_t dlc;
-	/** Baud Rate Switch (BRS). Only valid for CAN-FD. */
-	uint8_t brs : 1;
-	/** @cond INTERNAL_HIDDEN */
-	uint8_t res : 7; /* reserved/padding. */
-	/** @endcond */
+	/** Flags. @see @ref CAN_FRAME_FLAGS. */
+	uint8_t flags;
 #if defined(CONFIG_CAN_RX_TIMESTAMP) || defined(__DOXYGEN__)
 	/** Captured value of the free-running timer in the CAN controller when
 	 * this frame was received. The timer is incremented every bit time and
@@ -176,8 +170,7 @@ struct can_frame {
 	uint16_t timestamp;
 #else
 	/** @cond INTERNAL_HIDDEN */
-	uint8_t res0;  /* reserved/padding. */
-	uint8_t res1;  /* reserved/padding. */
+	uint16_t res1;  /* reserved/padding. */
 	/** @endcond */
 #endif
 	/** The frame payload data. */
@@ -188,33 +181,38 @@ struct can_frame {
 };
 
 /**
+ * @name CAN filter flags
+ * @anchor CAN_FILTER_FLAGS
+ *
+ * @{
+ */
+
+/** Filter matches frames with extended (29-bit) CAN IDs */
+#define CAN_FILTER_IDE  BIT(0)
+
+/** Filter matches Remote Transmission Request (RTR) frames */
+#define CAN_FILTER_RTR  BIT(1)
+
+/** Filter matches data frames */
+#define CAN_FILTER_DATA BIT(2)
+
+/** @} */
+
+/**
  * @brief CAN filter structure
  */
 struct can_filter {
 	/** CAN identifier to match. */
 	uint32_t id           : 29;
 	/** @cond INTERNAL_HIDDEN */
-	uint32_t res0         : 1;
+	uint32_t res0         : 3;
 	/** @endcond */
-	/** Match data frame or Remote Transmission Request (RTR) frame. */
-	uint32_t rtr          : 1;
-	/** Standard or extended CAN identifier. Use @a can_ide enum for assignment. */
-	uint32_t id_type      : 1;
 	/** CAN identifier matching mask. If a bit in this mask is 0, the value
 	 * of the corresponding bit in the ``id`` field is ignored by the filter.
 	 */
-	uint32_t id_mask      : 29;
-	/** @cond INTERNAL_HIDDEN */
-	uint32_t res1         : 1;
-	/** @endcond */
-	/** Data frame/Remote Transmission Request (RTR) bit matching mask. If
-	 * this bit is 0, the value of the ``rtr`` field is ignored by the
-	 * filter.
-	 */
-	uint32_t rtr_mask     : 1;
-	/** @cond INTERNAL_HIDDEN */
-	uint32_t res2         : 1;
-	/** @endcond */
+	uint32_t mask         : 29;
+	/** Flags. @see @ref CAN_FILTER_FLAGS. */
+	uint8_t flags         : 3;
 };
 
 /**
@@ -407,7 +405,7 @@ typedef int (*can_get_core_clock_t)(const struct device *dev, uint32_t *rate);
  * @brief Optional callback API upon getting the maximum number of concurrent CAN RX filters
  * See @a can_get_max_filters() for argument description
  */
-typedef int (*can_get_max_filters_t)(const struct device *dev, enum can_ide id_type);
+typedef int (*can_get_max_filters_t)(const struct device *dev, bool ide);
 
 /**
  * @brief Optional callback API upon getting the maximum supported bitrate
@@ -1091,6 +1089,7 @@ __syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
  *
  * @retval 0 if successful.
  * @retval -EINVAL if an invalid parameter was passed to the function.
+ * @retval -ENOTSUP if an unsupported parameter was passed to the function.
  * @retval -ENETDOWN if the CAN controller is in stopped state.
  * @retval -ENETUNREACH if the CAN controller is in bus-off state.
  * @retval -EBUSY if CAN bus arbitration was lost (only applicable if automatic
@@ -1131,12 +1130,17 @@ __syscall int can_send(const struct device *dev, const struct can_frame *frame,
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
+ * @retval -EINVAL if the requested filter type is invalid.
  * @retval -ENOTSUP if the requested filter type is not supported.
  */
 static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 				    void *user_data, const struct can_filter *filter)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	if (filter == NULL || (filter->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) == 0) {
+		return -EINVAL;
+	}
 
 	return api->add_rx_filter(dev, callback, user_data, filter);
 }
@@ -1203,15 +1207,16 @@ static inline void z_impl_can_remove_rx_filter(const struct device *dev, int fil
  * Get the maximum number of concurrent RX filters for the CAN controller.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param id_type CAN identifier type (standard or extended).
+ * @param ide Get the maximum standard (11-bit) CAN ID filters if false, or extended (29-bit) CAN ID
+ *            filters if true.
  *
  * @retval Positive number of maximum concurrent filters.
  * @retval -EIO General input/output error.
  * @retval -ENOSYS If this function is not implemented by the driver.
  */
-__syscall int can_get_max_filters(const struct device *dev, enum can_ide id_type);
+__syscall int can_get_max_filters(const struct device *dev, bool ide);
 
-static inline int z_impl_can_get_max_filters(const struct device *dev, enum can_ide id_type)
+static inline int z_impl_can_get_max_filters(const struct device *dev, bool ide)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
@@ -1219,7 +1224,7 @@ static inline int z_impl_can_get_max_filters(const struct device *dev, enum can_
 		return -ENOSYS;
 	}
 
-	return api->get_max_filters(dev, id_type);
+	return api->get_max_filters(dev, ide);
 }
 
 /** @} */

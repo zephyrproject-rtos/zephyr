@@ -21,12 +21,6 @@ LOG_MODULE_REGISTER(can_mcan, CONFIG_CAN_LOG_LEVEL);
 #define CAN_INIT_TIMEOUT (100)
 #define CAN_DIV_CEIL(val, div) (((val) + (div) - 1) / (div))
 
-#ifdef CONFIG_CAN_FD_MODE
-#define MCAN_MAX_DLC CANFD_MAX_DLC
-#else
-#define MCAN_MAX_DLC CAN_MAX_DLC
-#endif
-
 static void memcpy32_volatile(volatile void *dst_, const volatile void *src_,
 			      size_t len)
 {
@@ -618,7 +612,7 @@ static void can_mcan_get_message(const struct device *dev,
 {
 	struct can_mcan_data *data = dev->data;
 	uint32_t get_idx, filt_idx;
-	struct can_frame frame;
+	struct can_frame frame = {0};
 	can_rx_callback_t cb;
 	int data_length;
 	void *cb_arg;
@@ -636,18 +630,20 @@ static void can_mcan_get_message(const struct device *dev,
 		memcpy32_volatile(&hdr, &fifo[get_idx].hdr,
 				  sizeof(struct can_mcan_rx_fifo_hdr));
 
-		if (hdr.xtd) {
-			frame.id = hdr.ext_id;
-		} else {
-			frame.id = hdr.std_id;
-		}
-		frame.fd = hdr.fdf;
-		frame.rtr = hdr.rtr ? CAN_REMOTEREQUEST :
-				      CAN_DATAFRAME;
-		frame.id_type = hdr.xtd ? CAN_EXTENDED_IDENTIFIER :
-					  CAN_STANDARD_IDENTIFIER;
 		frame.dlc = hdr.dlc;
-		frame.brs = hdr.brs;
+
+		if (hdr.rtr != 0) {
+			frame.flags |= CAN_FRAME_RTR;
+		}
+
+		if (hdr.fdf != 0) {
+			frame.flags |= CAN_FRAME_FDF;
+		}
+
+		if (hdr.brs != 0) {
+			frame.flags |= CAN_FRAME_BRS;
+		}
+
 #if defined(CONFIG_CAN_RX_TIMESTAMP)
 		frame.timestamp = hdr.rxts;
 #endif
@@ -655,39 +651,42 @@ static void can_mcan_get_message(const struct device *dev,
 		filt_idx = hdr.fidx;
 
 		if (hdr.xtd != 0) {
+			frame.id = hdr.ext_id;
+			frame.flags |= CAN_FRAME_IDE;
 			rtr_filter_mask = (data->ext_filt_rtr_mask & BIT(filt_idx)) != 0;
 			rtr_filter = (data->ext_filt_rtr & BIT(filt_idx)) != 0;
 		} else {
+			frame.id = hdr.std_id;
 			rtr_filter_mask = (data->std_filt_rtr_mask & BIT(filt_idx)) != 0;
 			rtr_filter = (data->std_filt_rtr & BIT(filt_idx)) != 0;
 		}
 
-		if (rtr_filter_mask && (rtr_filter != frame.rtr)) {
-			/* RTR bit does not match filter RTR mask and bit, drop frame */
+		if (rtr_filter_mask && (rtr_filter != ((frame.flags & CAN_FRAME_RTR) != 0))) {
+			/* RTR bit does not match filter RTR mask, drop frame */
 			*fifo_ack_reg = get_idx;
 			continue;
 		}
 
 		data_length = can_dlc_to_bytes(frame.dlc);
 		if (data_length <= sizeof(frame.data)) {
-			/* data needs to be written in 32 bit blocks!*/
+			/* Data needs to be written in 32 bit blocks! */
 			sys_cache_data_range((void *)fifo[get_idx].data_32,
 					     ROUND_UP(data_length, sizeof(uint32_t)),
 					     K_CACHE_INVD);
 			memcpy32_volatile(frame.data_32, fifo[get_idx].data_32,
 					  ROUND_UP(data_length, sizeof(uint32_t)));
 
-			if (frame.id_type == CAN_STANDARD_IDENTIFIER) {
-				LOG_DBG("Frame on filter %d, ID: 0x%x",
-					filt_idx, frame.id);
-				cb = data->rx_cb_std[filt_idx];
-				cb_arg = data->cb_arg_std[filt_idx];
-			} else {
+			if ((frame.flags & CAN_FRAME_IDE) != 0) {
 				LOG_DBG("Frame on filter %d, ID: 0x%x",
 					filt_idx + NUM_STD_FILTER_DATA,
 					frame.id);
 				cb = data->rx_cb_ext[filt_idx];
 				cb_arg = data->cb_arg_ext[filt_idx];
+			} else {
+				LOG_DBG("Frame on filter %d, ID: 0x%x",
+					filt_idx, frame.id);
+				cb = data->rx_cb_std[filt_idx];
+				cb_arg = data->cb_arg_std[filt_idx];
 			}
 
 			if (cb) {
@@ -798,15 +797,18 @@ int can_mcan_send(const struct device *dev,
 	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
 	size_t data_length = can_dlc_to_bytes(frame->dlc);
 	struct can_mcan_tx_buffer_hdr tx_hdr = {
-		.rtr = frame->rtr  == CAN_REMOTEREQUEST,
-		.xtd = frame->id_type == CAN_EXTENDED_IDENTIFIER,
-		.esi = 0,
+		.rtr = (frame->flags & CAN_FRAME_RTR) != 0 ? 1U : 0U,
+		.xtd = (frame->flags & CAN_FRAME_IDE) != 0 ? 1U : 0U,
+		.esi = 0U,
 		.dlc = frame->dlc,
 #ifdef CONFIG_CAN_FD_MODE
-		.brs = frame->brs == true,
-#endif
-		.fdf = frame->fd,
-		.efc = 1,
+		.fdf = (frame->flags & CAN_FRAME_FDF) != 0 ? 1U : 0U,
+		.brs = (frame->flags & CAN_FRAME_BRS) != 0 ? 1U : 0U,
+#else /* CONFIG_CAN_FD_MODE */
+		.fdf = 0U,
+		.brs = 0U,
+#endif /* !CONFIG_CAN_FD_MODE */
+		.efc = 1U,
 	};
 	uint32_t put_idx;
 	int ret;
@@ -814,13 +816,35 @@ int can_mcan_send(const struct device *dev,
 
 	LOG_DBG("Sending %d bytes. Id: 0x%x, ID type: %s %s %s %s",
 		data_length, frame->id,
-		frame->id_type == CAN_STANDARD_IDENTIFIER ?
-				  "standard" : "extended",
-		frame->rtr == CAN_DATAFRAME ? "" : "RTR",
-		frame->fd == CAN_DATAFRAME ? "" : "FD frame",
-		frame->brs == CAN_DATAFRAME ? "" : "BRS");
+		(frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
+		(frame->flags & CAN_FRAME_RTR) != 0 ? "RTR" : "",
+		(frame->flags & CAN_FRAME_FDF) != 0 ? "FD frame" : "",
+		(frame->flags & CAN_FRAME_BRS) != 0 ? "BRS" : "");
 
 	__ASSERT_NO_MSG(callback != NULL);
+
+#ifdef CONFIG_CAN_FD_MODE
+	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR |
+		CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0) {
+		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		return -ENOTSUP;
+	}
+
+	if ((frame->flags & CAN_FRAME_FDF) != 0 && (can->cccr & CAN_MCAN_CCCR_FDOE) == 0) {
+		LOG_ERR("CAN-FD format not supported in non-FD mode");
+		return -ENOTSUP;
+	}
+
+	if ((frame->flags & CAN_FRAME_BRS) != 0 && (can->cccr & CAN_MCAN_CCCR_BRSE) == 0) {
+		LOG_ERR("CAN-FD BRS not supported in non-FD mode");
+		return -ENOTSUP;
+	}
+#else /* CONFIG_CAN_FD_MODE */
+	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
+		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		return -ENOTSUP;
+	}
+#endif /* !CONFIG_CAN_FD_MODE */
 
 	if (data_length > sizeof(frame->data)) {
 		LOG_ERR("data length (%zu) > max frame data length (%zu)",
@@ -828,9 +852,16 @@ int can_mcan_send(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (frame->fd != 1 && frame->dlc > MCAN_MAX_DLC) {
-		LOG_ERR("DLC of %d without fd flag set.", frame->dlc);
-		return -EINVAL;
+	if ((frame->flags & CAN_FRAME_FDF) != 0) {
+		if (frame->dlc > CANFD_MAX_DLC) {
+			LOG_ERR("DLC of %d for CAN-FD format frame", frame->dlc);
+			return -EINVAL;
+		}
+	} else {
+		if (frame->dlc > CAN_MAX_DLC) {
+			LOG_ERR("DLC of %d for non-FD format frame", frame->dlc);
+			return -EINVAL;
+		}
 	}
 
 	if (!data->started) {
@@ -858,10 +889,10 @@ int can_mcan_send(const struct device *dev,
 	mm.cnt = data->mm.cnt++;
 	tx_hdr.mm = mm;
 
-	if (frame->id_type == CAN_STANDARD_IDENTIFIER) {
-		tx_hdr.std_id = frame->id & CAN_STD_ID_MASK;
-	} else {
+	if ((frame->flags & CAN_FRAME_IDE) != 0) {
 		tx_hdr.ext_id = frame->id;
+	} else {
+		tx_hdr.std_id = frame->id & CAN_STD_ID_MASK;
 	}
 
 	memcpy32_volatile(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof(tx_hdr));
@@ -892,14 +923,14 @@ static int can_mcan_get_free_std(volatile struct can_mcan_std_filter *filters)
 	return -ENOSPC;
 }
 
-int can_mcan_get_max_filters(const struct device *dev, enum can_ide id_type)
+int can_mcan_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(dev);
 
-	if (id_type == CAN_STANDARD_IDENTIFIER) {
-		return NUM_STD_FILTER_DATA;
-	} else {
+	if (ide) {
 		return NUM_EXT_FILTER_DATA;
+	} else {
+		return NUM_STD_FILTER_DATA;
 	}
 }
 
@@ -916,10 +947,15 @@ int can_mcan_add_rx_filter_std(const struct device *dev,
 	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
 	struct can_mcan_std_filter filter_element = {
 		.id1 = filter->id,
-		.id2 = filter->id_mask,
+		.id2 = filter->mask,
 		.sft = CAN_MCAN_SFT_MASKED
 	};
 	int filter_id;
+
+	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0) {
+		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+		return -ENOTSUP;
+	}
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 	filter_id = can_mcan_get_free_std(msg_ram->std_filt);
@@ -943,13 +979,14 @@ int can_mcan_add_rx_filter_std(const struct device *dev,
 
 	LOG_DBG("Attached std filter at %d", filter_id);
 
-	if (filter->rtr) {
+	if ((filter->flags & CAN_FILTER_RTR) != 0) {
 		data->std_filt_rtr |= (1U << filter_id);
 	} else {
 		data->std_filt_rtr &= ~(1U << filter_id);
 	}
 
-	if (filter->rtr_mask) {
+	if ((filter->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) !=
+		(CAN_FILTER_DATA | CAN_FILTER_RTR)) {
 		data->std_filt_rtr_mask |= (1U << filter_id);
 	} else {
 		data->std_filt_rtr_mask &= ~(1U << filter_id);
@@ -979,7 +1016,7 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev,
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
 	struct can_mcan_ext_filter filter_element = {
-		.id2 = filter->id_mask,
+		.id2 = filter->mask,
 		.id1 = filter->id,
 		.eft = CAN_MCAN_EFT_MASKED
 	};
@@ -1007,13 +1044,14 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev,
 
 	LOG_DBG("Attached ext filter at %d", filter_id);
 
-	if (filter->rtr) {
+	if ((filter->flags & CAN_FILTER_RTR) != 0) {
 		data->ext_filt_rtr |= (1U << filter_id);
 	} else {
 		data->ext_filt_rtr &= ~(1U << filter_id);
 	}
 
-	if (filter->rtr_mask) {
+	if ((filter->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) !=
+		(CAN_FILTER_DATA | CAN_FILTER_RTR)) {
 		data->ext_filt_rtr_mask |= (1U << filter_id);
 	} else {
 		data->ext_filt_rtr_mask &= ~(1U << filter_id);
@@ -1035,13 +1073,13 @@ int can_mcan_add_rx_filter(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (filter->id_type == CAN_STANDARD_IDENTIFIER) {
-		filter_id = can_mcan_add_rx_filter_std(dev, callback, user_data, filter);
-	} else {
+	if ((filter->flags & CAN_FILTER_IDE) != 0) {
 		filter_id = can_mcan_add_rx_filter_ext(dev, callback, user_data, filter);
 		if (filter_id >= 0) {
 			filter_id += NUM_STD_FILTER_DATA;
 		}
+	} else {
+		filter_id = can_mcan_add_rx_filter_std(dev, callback, user_data, filter);
 	}
 
 	return filter_id;

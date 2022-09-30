@@ -68,15 +68,19 @@ static void can_stm32_signal_tx_complete(const struct device *dev, struct can_st
 
 static void can_stm32_rx_fifo_pop(CAN_FIFOMailBox_TypeDef *mbox, struct can_frame *frame)
 {
+	memset(frame, 0, sizeof(*frame));
+
 	if (mbox->RIR & CAN_RI0R_IDE) {
 		frame->id = mbox->RIR >> CAN_RI0R_EXID_Pos;
-		frame->id_type = CAN_EXTENDED_IDENTIFIER;
+		frame->flags |= CAN_FRAME_IDE;
 	} else {
-		frame->id =  mbox->RIR >> CAN_RI0R_STID_Pos;
-		frame->id_type = CAN_STANDARD_IDENTIFIER;
+		frame->id = mbox->RIR >> CAN_RI0R_STID_Pos;
 	}
 
-	frame->rtr = mbox->RIR & CAN_RI0R_RTR ? CAN_REMOTEREQUEST : CAN_DATAFRAME;
+	if ((mbox->RIR & CAN_RI0R_RTR) != 0) {
+		frame->flags |= CAN_FRAME_RTR;
+	}
+
 	frame->dlc = mbox->RDTR & (CAN_RDT0R_DLC >> CAN_RDT0R_DLC_Pos);
 	frame->data_32[0] = mbox->RDLR;
 	frame->data_32[1] = mbox->RDHR;
@@ -544,14 +548,14 @@ static int can_stm32_get_max_bitrate(const struct device *dev, uint32_t *max_bit
 	return 0;
 }
 
-static int can_stm32_get_max_filters(const struct device *dev, enum can_ide id_type)
+static int can_stm32_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(dev);
 
-	if (id_type == CAN_STANDARD_IDENTIFIER) {
-		return CONFIG_CAN_MAX_STD_ID_FILTER;
-	} else {
+	if (ide) {
 		return CONFIG_CAN_MAX_EXT_ID_FILTER;
+	} else {
+		return CONFIG_CAN_MAX_STD_ID_FILTER;
 	}
 }
 
@@ -741,9 +745,8 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 		    "Remote Frame: %s"
 		    , frame->dlc, dev->name
 		    , frame->id
-		    , frame->id_type == CAN_STANDARD_IDENTIFIER ?
-		    "standard" : "extended"
-		    , frame->rtr == CAN_DATAFRAME ? "no" : "yes");
+		    , (frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard"
+		    , (frame->flags & CAN_FRAME_RTR) != 0 ? "yes" : "no");
 
 	__ASSERT_NO_MSG(callback != NULL);
 	__ASSERT(frame->dlc == 0U || frame->data != NULL, "Dataptr is null");
@@ -751,6 +754,11 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 	if (frame->dlc > CAN_MAX_DLC) {
 		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
 		return -EINVAL;
+	}
+
+	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
+		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		return -ENOTSUP;
 	}
 
 	if (!data->started) {
@@ -793,14 +801,14 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 	/* mailbox identifier register setup */
 	mailbox->TIR &= CAN_TI0R_TXRQ;
 
-	if (frame->id_type == CAN_STANDARD_IDENTIFIER) {
-		mailbox->TIR |= (frame->id << CAN_TI0R_STID_Pos);
-	} else {
+	if ((frame->flags & CAN_FRAME_IDE) != 0) {
 		mailbox->TIR |= (frame->id << CAN_TI0R_EXID_Pos)
 				| CAN_TI0R_IDE;
+	} else {
+		mailbox->TIR |= (frame->id << CAN_TI0R_STID_Pos);
 	}
 
-	if (frame->rtr == CAN_REMOTEREQUEST) {
+	if ((frame->flags & CAN_FRAME_RTR) != 0) {
 		mailbox->TIR |= CAN_TI1R_RTR;
 	}
 
@@ -817,10 +825,12 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 }
 
 static void can_stm32_set_filter_bank(int filter_id, CAN_FilterRegister_TypeDef *filter_reg,
-				      enum can_ide type, uint32_t id, uint32_t mask)
+				      bool ide, uint32_t id, uint32_t mask)
 {
-	switch (type) {
-	case CAN_STANDARD_IDENTIFIER:
+	if (ide) {
+		filter_reg->FR1 = id;
+		filter_reg->FR2 = mask;
+	} else {
 		if ((filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER) % 2 == 0) {
 			/* even std filter id: first 1/2 bank */
 			filter_reg->FR1 = id | (mask << 16);
@@ -828,40 +838,41 @@ static void can_stm32_set_filter_bank(int filter_id, CAN_FilterRegister_TypeDef 
 			/* uneven std filter id: first 1/2 bank */
 			filter_reg->FR2 = id | (mask << 16);
 		}
-		break;
-	case CAN_EXTENDED_IDENTIFIER:
-		filter_reg->FR1 = id;
-		filter_reg->FR2 = mask;
-		break;
 	}
 }
 
 static inline uint32_t can_stm32_filter_to_std_mask(const struct can_filter *filter)
 {
-	return  (filter->id_mask  << CAN_STM32_FIRX_STD_ID_POS) |
-		(filter->rtr_mask << CAN_STM32_FIRX_STD_RTR_POS) |
-		(1U               << CAN_STM32_FIRX_STD_IDE_POS);
+	uint32_t rtr_mask = (filter->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) !=
+		(CAN_FILTER_DATA | CAN_FILTER_RTR) ? 1U : 0U;
+
+	return  (filter->mask << CAN_STM32_FIRX_STD_ID_POS) |
+		(rtr_mask << CAN_STM32_FIRX_STD_RTR_POS) |
+		(1U << CAN_STM32_FIRX_STD_IDE_POS);
 }
 
 static inline uint32_t can_stm32_filter_to_ext_mask(const struct can_filter *filter)
 {
-	return  (filter->id_mask  << CAN_STM32_FIRX_EXT_EXT_ID_POS) |
-		(filter->rtr_mask << CAN_STM32_FIRX_EXT_RTR_POS) |
-		(1U               << CAN_STM32_FIRX_EXT_IDE_POS);
+	uint32_t rtr_mask = (filter->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) !=
+		(CAN_FILTER_DATA | CAN_FILTER_RTR) ? 1U : 0U;
+
+	return  (filter->mask << CAN_STM32_FIRX_EXT_EXT_ID_POS) |
+		(rtr_mask << CAN_STM32_FIRX_EXT_RTR_POS) |
+		(1U << CAN_STM32_FIRX_EXT_IDE_POS);
 }
 
 static inline uint32_t can_stm32_filter_to_std_id(const struct can_filter *filter)
 {
 	return  (filter->id  << CAN_STM32_FIRX_STD_ID_POS) |
-		(filter->rtr << CAN_STM32_FIRX_STD_RTR_POS);
-
+		(((filter->flags & CAN_FILTER_RTR) != 0) ? (1U << CAN_STM32_FIRX_STD_RTR_POS) : 0U);
 }
 
 static inline uint32_t can_stm32_filter_to_ext_id(const struct can_filter *filter)
 {
-	return  (filter->id  << CAN_STM32_FIRX_EXT_EXT_ID_POS) |
-		(filter->rtr << CAN_STM32_FIRX_EXT_RTR_POS) |
-		(1U          << CAN_STM32_FIRX_EXT_IDE_POS);
+	return  (filter->id << CAN_STM32_FIRX_EXT_EXT_ID_POS) |
+		(((filter->flags & CAN_FILTER_RTR) != 0) ?
+		(1U << CAN_STM32_FIRX_EXT_RTR_POS) : 0U) |
+		(1U << CAN_STM32_FIRX_EXT_IDE_POS);
 }
 
 static inline int can_stm32_set_filter(const struct device *dev, const struct can_filter *filter)
@@ -880,17 +891,7 @@ static inline int can_stm32_set_filter(const struct device *dev, const struct ca
 		bank_offset = CAN_STM32_NUM_FILTER_BANKS;
 	}
 
-	if (filter->id_type == CAN_STANDARD_IDENTIFIER) {
-		for (int i = 0; i < CONFIG_CAN_MAX_STD_ID_FILTER; i++) {
-			if (data->rx_cb_std[i] == NULL) {
-				id = can_stm32_filter_to_std_id(filter);
-				mask = can_stm32_filter_to_std_mask(filter);
-				filter_id = CONFIG_CAN_MAX_EXT_ID_FILTER + i;
-				bank_num = bank_offset + CONFIG_CAN_MAX_EXT_ID_FILTER + i / 2;
-				break;
-			}
-		}
-	} else {
+	if ((filter->flags & CAN_FILTER_IDE) != 0) {
 		for (int i = 0; i < CONFIG_CAN_MAX_EXT_ID_FILTER; i++) {
 			if (data->rx_cb_ext[i] == NULL) {
 				id = can_stm32_filter_to_ext_id(filter);
@@ -900,17 +901,28 @@ static inline int can_stm32_set_filter(const struct device *dev, const struct ca
 				break;
 			}
 		}
+	} else {
+		for (int i = 0; i < CONFIG_CAN_MAX_STD_ID_FILTER; i++) {
+			if (data->rx_cb_std[i] == NULL) {
+				id = can_stm32_filter_to_std_id(filter);
+				mask = can_stm32_filter_to_std_mask(filter);
+				filter_id = CONFIG_CAN_MAX_EXT_ID_FILTER + i;
+				bank_num = bank_offset + CONFIG_CAN_MAX_EXT_ID_FILTER + i / 2;
+				break;
+			}
+		}
 	}
 
 	if (filter_id != -ENOSPC) {
 		LOG_DBG("Adding filter_id %d, CAN ID: 0x%x, mask: 0x%x",
-			filter_id, filter->id, filter->id_mask);
+			filter_id, filter->id, filter->mask);
 
 		/* set the filter init mode */
 		can->FMR |= CAN_FMR_FINIT;
 
 		can_stm32_set_filter_bank(filter_id, &can->sFilterRegister[bank_num],
-					  filter->id_type, id, mask);
+					  (filter->flags & CAN_FILTER_IDE) != 0,
+					  id, mask);
 
 		can->FA1R |= 1U << bank_num;
 		can->FMR &= ~(CAN_FMR_FINIT);
@@ -940,17 +952,22 @@ static int can_stm32_add_rx_filter(const struct device *dev, can_rx_callback_t c
 	struct can_stm32_data *data = dev->data;
 	int filter_id;
 
+	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0) {
+		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+		return -ENOTSUP;
+	}
+
 	k_mutex_lock(&filter_mutex, K_FOREVER);
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
 	filter_id = can_stm32_set_filter(dev, filter);
 	if (filter_id >= 0) {
-		if (filter->id_type == CAN_STANDARD_IDENTIFIER) {
-			data->rx_cb_std[filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER] = cb;
-			data->cb_arg_std[filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER] = cb_arg;
-		} else {
+		if ((filter->flags & CAN_FILTER_IDE) != 0) {
 			data->rx_cb_ext[filter_id] = cb;
 			data->cb_arg_ext[filter_id] = cb_arg;
+		} else {
+			data->rx_cb_std[filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER] = cb;
+			data->cb_arg_std[filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER] = cb_arg;
 		}
 	}
 
@@ -965,7 +982,7 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
 	CAN_TypeDef *can = cfg->master_can;
-	enum can_ide filter_type;
+	bool ide;
 	int bank_offset = 0;
 	int bank_num;
 	bool bank_unused;
@@ -980,7 +997,7 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	}
 
 	if (filter_id < CONFIG_CAN_MAX_EXT_ID_FILTER) {
-		filter_type = CAN_EXTENDED_IDENTIFIER;
+		ide = true;
 		bank_num = bank_offset + filter_id;
 
 		data->rx_cb_ext[filter_id] = NULL;
@@ -990,7 +1007,7 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	} else {
 		int filter_index = filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER;
 
-		filter_type = CAN_STANDARD_IDENTIFIER;
+		ide = false;
 		bank_num = bank_offset + CONFIG_CAN_MAX_EXT_ID_FILTER +
 			  (filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER) / 2;
 
@@ -1006,12 +1023,12 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 		}
 	}
 
-	LOG_DBG("Removing filter_id %d, type %d", filter_id, (uint32_t)filter_type);
+	LOG_DBG("Removing filter_id %d, ide %d", filter_id, ide);
 
 	can->FMR |= CAN_FMR_FINIT;
 
 	can_stm32_set_filter_bank(filter_id, &can->sFilterRegister[bank_num],
-				  filter_type, 0, 0xFFFFFFFF);
+				  ide, 0, 0xFFFFFFFF);
 
 	if (bank_unused) {
 		can->FA1R &= ~(1U << bank_num);

@@ -146,7 +146,7 @@ int can_sja1000_get_state(const struct device *dev, enum can_state *state,
 void can_sja1000_set_state_change_callback(const struct device *dev,
 					   can_state_change_callback_t callback, void *user_data);
 
-int can_sja1000_get_max_filters(const struct device *dev, enum can_ide id_type);
+int can_sja1000_get_max_filters(const struct device *dev, bool ide);
 
 int can_sja1000_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
 

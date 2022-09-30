@@ -389,23 +389,20 @@ static void can_rcar_rx_isr(const struct device *dev)
 {
 	const struct can_rcar_cfg *config = dev->config;
 	struct can_rcar_data *data = dev->data;
-	struct can_frame frame;
+	struct can_frame frame = {0};
 	uint32_t val;
 	int i;
 
 	val = sys_read32(config->reg_addr + RCAR_CAN_MB_60);
 	if (val & RCAR_CAN_MB_IDE) {
-		frame.id_type = CAN_EXTENDED_IDENTIFIER;
+		frame.flags |= CAN_FRAME_IDE;
 		frame.id = val & RCAR_CAN_MB_EID_MASK;
 	} else {
-		frame.id_type = CAN_STANDARD_IDENTIFIER;
 		frame.id = (val & RCAR_CAN_MB_SID_MASK) >> RCAR_CAN_MB_SID_SHIFT;
 	}
 
 	if (val & RCAR_CAN_MB_RTR) {
-		frame.rtr = CAN_REMOTEREQUEST;
-	} else {
-		frame.rtr = CAN_DATAFRAME;
+		frame.flags |= CAN_FRAME_RTR;
 	}
 
 	frame.dlc = sys_read16(config->reg_addr +
@@ -856,9 +853,9 @@ static int can_rcar_send(const struct device *dev, const struct can_frame *frame
 		"Remote Frame: %s"
 		, frame->dlc, dev->name
 		, frame->id
-		, frame->id_type == CAN_STANDARD_IDENTIFIER ?
-		"standard" : "extended"
-		, frame->rtr == CAN_DATAFRAME ? "no" : "yes");
+		, (frame->flags & CAN_FRAME_IDE) != 0 ?
+		"extended" : "standard"
+		, (frame->flags & CAN_FRAME_RTR) != 0 ? "yes" : "no");
 
 	__ASSERT_NO_MSG(callback != NULL);
 	__ASSERT(frame->dlc == 0U || frame->data != NULL, "Dataptr is null");
@@ -867,6 +864,11 @@ static int can_rcar_send(const struct device *dev, const struct can_frame *frame
 		LOG_ERR("DLC of %d exceeds maximum (%d)",
 			frame->dlc, CAN_MAX_DLC);
 		return -EINVAL;
+	}
+
+	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
+		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		return -ENOTSUP;
 	}
 
 	if (!data->started) {
@@ -888,13 +890,13 @@ static int can_rcar_send(const struct device *dev, const struct can_frame *frame
 		data->tx_head = 0;
 	}
 
-	if (frame->id_type == CAN_STANDARD_IDENTIFIER) {
-		identifier = frame->id << RCAR_CAN_MB_SID_SHIFT;
-	} else {
+	if ((frame->flags & CAN_FRAME_IDE) != 0) {
 		identifier = frame->id | RCAR_CAN_MB_IDE;
+	} else {
+		identifier = frame->id << RCAR_CAN_MB_SID_SHIFT;
 	}
 
-	if (frame->rtr == CAN_REMOTEREQUEST) {
+	if ((frame->flags & CAN_FRAME_RTR) != 0) {
 		identifier |= RCAR_CAN_MB_RTR;
 	}
 
@@ -947,7 +949,8 @@ static int can_rcar_add_rx_filter(const struct device *dev, can_rx_callback_t cb
 	struct can_rcar_data *data = dev->data;
 	int filter_id;
 
-	if (filter->rtr == CAN_REMOTEREQUEST) {
+	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA)) != 0) {
+		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
 
@@ -1121,9 +1124,9 @@ static int can_rcar_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
-static int can_rcar_get_max_filters(const struct device *dev, enum can_ide id_type)
+static int can_rcar_get_max_filters(const struct device *dev, bool ide)
 {
-	ARG_UNUSED(id_type);
+	ARG_UNUSED(ide);
 
 	return CONFIG_CAN_RCAR_MAX_FILTER;
 }

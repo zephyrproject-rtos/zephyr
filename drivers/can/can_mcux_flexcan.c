@@ -135,9 +135,9 @@ static int mcux_flexcan_get_core_clock(const struct device *dev, uint32_t *rate)
 	return clock_control_get_rate(config->clock_dev, config->clock_subsys, rate);
 }
 
-static int mcux_flexcan_get_max_filters(const struct device *dev, enum can_ide id_type)
+static int mcux_flexcan_get_max_filters(const struct device *dev, bool ide)
 {
-	ARG_UNUSED(id_type);
+	ARG_UNUSED(ide);
 
 	return CONFIG_CAN_MAX_FILTER;
 }
@@ -313,18 +313,20 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 static void mcux_flexcan_from_can_frame(const struct can_frame *src,
 					flexcan_frame_t *dest)
 {
-	if (src->id_type == CAN_STANDARD_IDENTIFIER) {
-		dest->format = kFLEXCAN_FrameFormatStandard;
-		dest->id = FLEXCAN_ID_STD(src->id);
-	} else {
+	memset(dest, 0, sizeof(*dest));
+
+	if ((src->flags & CAN_FRAME_IDE) != 0) {
 		dest->format = kFLEXCAN_FrameFormatExtend;
 		dest->id = FLEXCAN_ID_EXT(src->id);
+	} else {
+		dest->format = kFLEXCAN_FrameFormatStandard;
+		dest->id = FLEXCAN_ID_STD(src->id);
 	}
 
-	if (src->rtr == CAN_DATAFRAME) {
-		dest->type = kFLEXCAN_FrameTypeData;
-	} else {
+	if ((src->flags & CAN_FRAME_RTR) != 0) {
 		dest->type = kFLEXCAN_FrameTypeRemote;
+	} else {
+		dest->type = kFLEXCAN_FrameTypeData;
 	}
 
 	dest->length = src->dlc;
@@ -335,18 +337,17 @@ static void mcux_flexcan_from_can_frame(const struct can_frame *src,
 static void mcux_flexcan_to_can_frame(const flexcan_frame_t *src,
 				      struct can_frame *dest)
 {
+	memset(dest, 0, sizeof(*dest));
+
 	if (src->format == kFLEXCAN_FrameFormatStandard) {
-		dest->id_type = CAN_STANDARD_IDENTIFIER;
 		dest->id = FLEXCAN_ID_TO_CAN_ID_STD(src->id);
 	} else {
-		dest->id_type = CAN_EXTENDED_IDENTIFIER;
+		dest->flags |= CAN_FRAME_IDE;
 		dest->id = FLEXCAN_ID_TO_CAN_ID_EXT(src->id);
 	}
 
-	if (src->type == kFLEXCAN_FrameTypeData) {
-		dest->rtr = CAN_DATAFRAME;
-	} else {
-		dest->rtr = CAN_REMOTEREQUEST;
+	if (src->type == kFLEXCAN_FrameTypeRemote) {
+		dest->flags |= CAN_FRAME_RTR;
 	}
 
 	dest->dlc = src->length;
@@ -361,20 +362,24 @@ static void mcux_flexcan_can_filter_to_mbconfig(const struct can_filter *src,
 						flexcan_rx_mb_config_t *dest,
 						uint32_t *mask)
 {
-	if (src->id_type == CAN_STANDARD_IDENTIFIER) {
-		dest->format = kFLEXCAN_FrameFormatStandard;
-		dest->id = FLEXCAN_ID_STD(src->id);
-		*mask = FLEXCAN_RX_MB_STD_MASK(src->id_mask, src->rtr_mask, 1);
-	} else {
+	static const uint32_t ide_mask = 1U;
+	uint32_t rtr_mask = (src->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) !=
+		(CAN_FILTER_DATA | CAN_FILTER_RTR) ? 1U : 0U;
+
+	if ((src->flags & CAN_FILTER_IDE) != 0) {
 		dest->format = kFLEXCAN_FrameFormatExtend;
 		dest->id = FLEXCAN_ID_EXT(src->id);
-		*mask = FLEXCAN_RX_MB_EXT_MASK(src->id_mask, src->rtr_mask, 1);
+		*mask = FLEXCAN_RX_MB_EXT_MASK(src->mask, rtr_mask, ide_mask);
+	} else {
+		dest->format = kFLEXCAN_FrameFormatStandard;
+		dest->id = FLEXCAN_ID_STD(src->id);
+		*mask = FLEXCAN_RX_MB_STD_MASK(src->mask, rtr_mask, ide_mask);
 	}
 
-	if ((src->rtr & src->rtr_mask) == CAN_DATAFRAME) {
-		dest->type = kFLEXCAN_FrameTypeData;
-	} else {
+	if ((src->flags & CAN_FILTER_RTR) != 0) {
 		dest->type = kFLEXCAN_FrameTypeRemote;
+	} else {
+		dest->type = kFLEXCAN_FrameTypeData;
 	}
 }
 
@@ -431,6 +436,11 @@ static int mcux_flexcan_send(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
+		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		return -ENOTSUP;
+	}
+
 	if (!data->started) {
 		return -ENETDOWN;
 	}
@@ -480,6 +490,11 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 	int i;
 
 	__ASSERT_NO_MSG(callback);
+
+	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0) {
+		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+		return -ENOTSUP;
+	}
 
 	k_mutex_lock(&data->rx_mutex, K_FOREVER);
 

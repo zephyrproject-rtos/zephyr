@@ -45,7 +45,7 @@ DEFINE_FAKE_VALUE_FUNC(int, fake_can_get_state, const struct device *, enum can_
 DEFINE_FAKE_VOID_FUNC(fake_can_set_state_change_callback, const struct device *,
 		      can_state_change_callback_t, void *);
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_can_get_max_filters, const struct device *, enum can_ide);
+DEFINE_FAKE_VALUE_FUNC(int, fake_can_get_max_filters, const struct device *, bool);
 
 #ifdef CONFIG_ZTEST_NEW_API
 static void fake_can_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
