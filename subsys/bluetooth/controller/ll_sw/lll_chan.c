@@ -144,15 +144,9 @@ uint8_t lll_chan_iso_subevent(uint16_t chan_id, uint8_t *chan_map,
 		x = 0;
 	}
 
-	chan_idx = ((((uint32_t)prn_subevent_se * x) >> 16) +
-		    d + *remap_idx) % chan_count;
-
-	if ((chan_map[chan_idx >> 3] & (1 << (chan_idx % 8))) == 0U) {
-		*remap_idx = chan_idx;
-		chan_idx = chan_sel_remap(chan_map, *remap_idx);
-	} else {
-		*remap_idx = chan_idx;
-	}
+	*remap_idx = ((((uint32_t)prn_subevent_se * x) >> 16) +
+		d + *remap_idx) % chan_count;
+	chan_idx = chan_sel_remap(chan_map, *remap_idx);
 
 	return chan_idx;
 }
