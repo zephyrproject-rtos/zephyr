@@ -181,6 +181,7 @@
 				interrupts = <34 0>;
 				#pwm-cells = <2>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+				nxp,prescaler = <128>;
 				status = "disabled";
 			};
 
@@ -190,6 +191,7 @@
 				interrupts = <35 0>;
 				#pwm-cells = <2>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+				nxp,prescaler = <128>;
 				status = "disabled";
 			};
 
@@ -199,6 +201,7 @@
 				interrupts = <36 0>;
 				#pwm-cells = <2>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+				nxp,prescaler = <128>;
 				status = "disabled";
 			};
 
@@ -208,6 +211,7 @@
 				interrupts = <37 0>;
 				#pwm-cells = <2>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+				nxp,prescaler = <128>;
 				status = "disabled";
 			};
 		};
