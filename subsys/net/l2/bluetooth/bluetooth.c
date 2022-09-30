@@ -195,8 +195,8 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 	net_ipv6_nbr_add(conn->iface, &in6, &ll, false,
 			 NET_IPV6_NBR_STATE_STATIC);
 
-	/* Set iface up */
-	net_if_up(conn->iface);
+	/* Leave dormant state (iface goes up if set to admin up) */
+	net_if_dormant_off(conn->iface);
 }
 
 static void ipsp_disconnected(struct bt_l2cap_chan *chan)
@@ -205,8 +205,8 @@ static void ipsp_disconnected(struct bt_l2cap_chan *chan)
 
 	NET_DBG("Channel %p disconnected", chan);
 
-	/* Set iface down */
-	net_if_carrier_down(conn->iface);
+	/* Enter dormant state (iface goes down) */
+	net_if_dormant_on(conn->iface);
 
 #if defined(CONFIG_NET_L2_BT_MGMT)
 	if (chan->conn != default_conn) {
@@ -301,7 +301,7 @@ static void bt_iface_init(struct net_if *iface)
 
 	conn->iface = iface;
 
-	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	net_if_dormant_on(iface);
 
 #if defined(CONFIG_NET_L2_BT_ZEP1656)
 	/* Workaround Linux bug, see:
