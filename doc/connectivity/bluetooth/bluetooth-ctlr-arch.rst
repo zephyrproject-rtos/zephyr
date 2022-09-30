@@ -192,83 +192,129 @@ Nordic Semiconductor
 The Nordic Semiconductor Bluetooth Low Energy Controller implementation
 requires the following hardware peripherals.
 
-#. Clock
+.. list-table:: SoC Peripheral Use
+   :header-rows: 1
+   :widths: 15 15 15 10 50
 
-   * A Low Frequency Clock (LFCLOCK) or sleep clock, for low power consumption
-     between Bluetooth radio events
-   * A High Frequency Clock (HFCLOCK) or active clock, for high precision
-     packet timing and software based transceiver state switching with
-     inter-frame space (tIFS) timing inside Bluetooth radio events
+   * - Resource
+     - nRF Peripheral
+     - # instances
+     - Zephyr Driver Accessible
+     - Description
+   * - Clock
+     - NRF_CLOCK
+     - 1
+     - Yes
+     - * A Low Frequency Clock (LFCLOCK) or sleep clock, for low power
+         consumption between Bluetooth radio events
+       * A High Frequency Clock (HFCLOCK) or active clock, for high precision
+         packet timing and software based transceiver state switching with
+         inter-frame space (tIFS) timing inside Bluetooth radio events
+   * - RTC [a]_
+     - NRF_RTC0
+     - 1
+     - **No**
+     - * Uses 2 capture/compare registers
+   * - Timer
+     - NRF_TIMER0 or NRF_TIMER4 [1]_, and NRF_TIMER1 [0]_
+     - 2 or 1 [1]_
+     - **No**
+     - * 2 instances, one each for packet timing and tIFS software switching,
+         respectively
+       * 7 capture/compare registers (3 mandatory, 1 optional for ISR profiling,
+         4 for single timer tIFS switching) on first instance
+       * 4 capture/compare registers for second instance, if single tIFS timer
+         is not used.
+   * - PPI [b]_
+     - NRF_PPI
+     - 21 channels (20 [2]_), and 2 channel groups [3]_
+     - Yes [4]_
+     - * Used for radio mode switching to achieve tIFS timings, for PA/LNA
+         control
+   * - DPPI [c]_
+     - NRF_DPPI
+     -  20 channels, and 2 channel groups [3]_
+     - Yes [4]_
+     - * Used for radio mode switching to achieve tIFS timings, for PA/LNA
+         control
+   * - SWI [d]_
+     - NRF_SWI4 and NRF_SWI5, or NRF_SWI2 and NRF_SWI3 [5]_
+     - 2
+     - **No**
+     - * 2 instances, for Lower Link Layer and Upper Link Layer Low priority
+         execution context
+   * - Radio
+     - NRF_RADIO
+     - 1
+     - **No**
+     - * 2.4 GHz radio transceiver with multiple radio standards such as 1 Mbps,
+         2 Mbps and Coded PHY S2/S8 Long Range Bluetooth Low Energy technology
+   * - RNG [e]_
+     - NRF_RNG
+     - 1
+     - Yes
+     -
+   * - ECB [f]_
+     - NRF_ECB
+     - 1
+     - **No**
+     -
+   * - CBC-CCM [g]_
+     - NRF_CCM
+     - 1
+     - **No**
+     -
+   * - AAR [h]_
+     - NRF_AAR
+     - 1
+     - **No**
+     -
+   * - GPIO [i]_
+     - NRF_GPIO
+     - 2 GPIO pins for PA and LNA, 1 each
+     - Yes
+     - * Additionally, 10 Debug GPIO pins (optional)
+   * - GPIOTE [j]_
+     - NRF_GPIOTE
+     - 1
+     - Yes
+     - * Used for PA/LNA
+   * - TEMP [k]_
+     - NRF_TEMP
+     - 1
+     - Yes
+     - * For RC sourced LFCLOCK calibration
+   * - UART [l]_
+     - NRF_UART0
+     - 1
+     - Yes
+     - * For HCI interface in Controller only builds
+   * - IPC [m]_
+     - NRF_IPC [5]_
+     - 1
+     - Yes
+     - * For HCI interface in Controller only builds
 
-#. Real Time Counter (RTC)
 
-   * 1 instance
-   * 2 capture/compare registers
+.. [a] Real Time Counter (RTC)
+.. [b] Programmable Peripheral Interconnect (PPI)
+.. [c] Distributed Programmable Peripheral Interconnect (DPPI)
+.. [d] Software Interrupt (SWI)
+.. [e] Random Number Generator (RNG)
+.. [f] AES Electronic Codebook Mode Encryption (ECB)
+.. [g] Cipher Block Chaining (CBC) - Message Authentication Code with Counter
+       Mode encryption (CCM)
+.. [h] Accelerated Address Resolver (AAR)
+.. [i] General Purpose Input Output (GPIO)
+.. [j] GPIO tasks and events (GPIOTE)
+.. [k] Temperature sensor (TEMP)
+.. [l] Universal Asynchronous Receiver Transmiter (UART)
+.. [m] Interprocess Communication peripheral (IPC)
 
-#. Timer
 
-   * 2 instances, one each for packet timing and tIFS software switching,
-     respectively
-   * 7 capture/compare registers (3 mandatory, 1 optional for ISR profiling, 4
-     for single timer tIFS switching) on first instance
-   * 4 capture/compare registers for second instance, if single tIFS timer is
-     not used.
-
-#. Programmable Peripheral Interconnect (PPI)
-
-   * 21 channels (20 channels when not using pre-defined channels)
-   * 2 channel groups for software-based tIFS switching
-
-#. Distributed Programmable Peripheral Interconnect (DPPI)
-
-   * 20 channels
-   * 2 channel groups for s/w tIFS switching
-
-#. Software Interrupt (SWI)
-
-   * 3 instances, for Lower Link Layer, Upper Link Layer High priority, and
-     Upper Link Layer Low priority execution
-
-#. Radio
-
-   * 2.4 GHz radio transceiver with multiple radio standards such as 1 Mbps, 2
-     Mbps and Long Range Bluetooth Low Energy technology
-
-#. Random Number Generator (RNG)
-
-   * 1 instance
-
-#. AES electronic codebook mode encryption (ECB)
-
-   * 1 instance
-
-#. Cipher Block Chaining - Message Authentication Code with Counter Mode
-   encryption (CCM)
-
-   * 1 instance
-
-#. Accelerated address resolver (AAR)
-
-   * 1 instance
-
-#. GPIO
-
-   * 2 GPIO pins for PA and LNA, 1 each.
-   * 10 Debug GPIO pins (optional)
-
-#. GPIO tasks and events (GPIOTE)
-
-   * 1 instance
-   * 1 channel for PA/LNA
-
-#. Temperature sensor (TEMP)
-
-   * For RC calibration
-
-#. Interprocess Communication peripheral (IPC)
-
-   * For HCI interface
-
-#. UART
-
-   * For HCI interface
+.. [0] :kconfig:option:`CONFIG_BT_CTLR_TIFS_HW` ``=n``
+.. [1] :kconfig:option:`CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER` ``=y``
+.. [2] When not using pre-defined PPI channels
+.. [3] For software-based tIFS switching
+.. [4] Drivers that use nRFx interfaces
+.. [5] For nRF53x Series
