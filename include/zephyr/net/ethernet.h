@@ -860,8 +860,8 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * @param name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param pm Pointer to PM action callback.
- * Can be NULL if not implemented.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
  * @param data Pointer to the device's private data.
  * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
@@ -881,8 +881,8 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm Pointer to PM action callback.
- * Can be NULL if not implemented.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
  * @param data Pointer to the device's private data.
  * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
