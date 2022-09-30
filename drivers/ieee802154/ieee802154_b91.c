@@ -267,44 +267,49 @@ static void b91_enable_pm(const struct device *dev)
 }
 
 /* Set filter PAN ID */
-static int b91_set_pan_id(uint16_t pan_id)
+static int b91_set_pan_id(const struct device *dev, uint16_t pan_id)
 {
+	struct b91_data *b91 = dev->data;
 	uint8_t pan_id_le[IEEE802154_FRAME_LENGTH_PANID];
 
 	sys_put_le16(pan_id, pan_id_le);
-	memcpy(data.filter_pan_id, pan_id_le, IEEE802154_FRAME_LENGTH_PANID);
+	memcpy(b91->filter_pan_id, pan_id_le, IEEE802154_FRAME_LENGTH_PANID);
 
 	return 0;
 }
 
 /* Set filter short address */
-static int b91_set_short_addr(uint16_t short_addr)
+static int b91_set_short_addr(const struct device *dev, uint16_t short_addr)
 {
+	struct b91_data *b91 = dev->data;
 	uint8_t short_addr_le[IEEE802154_FRAME_LENGTH_ADDR_SHORT];
 
 	sys_put_le16(short_addr, short_addr_le);
-	memcpy(data.filter_short_addr, short_addr_le, IEEE802154_FRAME_LENGTH_ADDR_SHORT);
+	memcpy(b91->filter_short_addr, short_addr_le, IEEE802154_FRAME_LENGTH_ADDR_SHORT);
 
 	return 0;
 }
 
 /* Set filter IEEE address */
-static int b91_set_ieee_addr(const uint8_t *ieee_addr)
+static int b91_set_ieee_addr(const struct device *dev, const uint8_t *ieee_addr)
 {
-	memcpy(data.filter_ieee_addr, ieee_addr, IEEE802154_FRAME_LENGTH_ADDR_EXT);
+	struct b91_data *b91 = dev->data;
+
+	memcpy(b91->filter_ieee_addr, ieee_addr, IEEE802154_FRAME_LENGTH_ADDR_EXT);
 
 	return 0;
 }
 
 /* Filter PAN ID, short address and IEEE address */
 static bool
-ALWAYS_INLINE b91_run_filter(const struct ieee802154_frame *frame)
+ALWAYS_INLINE b91_run_filter(const struct device *dev, const struct ieee802154_frame *frame)
 {
+	struct b91_data *b91 = dev->data;
 	bool result = false;
 
 	do {
 		if (frame->dst_panid != NULL) {
-			if (memcmp(frame->dst_panid, data.filter_pan_id,
+			if (memcmp(frame->dst_panid, b91->filter_pan_id,
 					IEEE802154_FRAME_LENGTH_PANID) != 0 &&
 				memcmp(frame->dst_panid, B91_BROADCAST_ADDRESS,
 					IEEE802154_FRAME_LENGTH_PANID) != 0) {
@@ -313,16 +318,16 @@ ALWAYS_INLINE b91_run_filter(const struct ieee802154_frame *frame)
 		}
 		if (frame->dst_addr != NULL) {
 			if (frame->dst_addr_ext) {
-				if ((net_if_get_link_addr(data.iface)->len !=
+				if ((net_if_get_link_addr(b91->iface)->len !=
 						IEEE802154_FRAME_LENGTH_ADDR_EXT) ||
-					memcmp(frame->dst_addr, data.filter_ieee_addr,
+					memcmp(frame->dst_addr, b91->filter_ieee_addr,
 						IEEE802154_FRAME_LENGTH_ADDR_EXT) != 0) {
 					break;
 				}
 			} else {
 				if (memcmp(frame->dst_addr, B91_BROADCAST_ADDRESS,
 						IEEE802154_FRAME_LENGTH_ADDR_SHORT) != 0 &&
-					memcmp(frame->dst_addr, data.filter_short_addr,
+					memcmp(frame->dst_addr, b91->filter_short_addr,
 						IEEE802154_FRAME_LENGTH_ADDR_SHORT) != 0) {
 					break;
 				}
@@ -393,13 +398,14 @@ ALWAYS_INLINE b91_convert_rssi_to_lqi(int8_t rssi)
 
 /* Update RSSI and LQI parameters */
 static void
-ALWAYS_INLINE b91_update_rssi_and_lqi(struct net_pkt *pkt)
+ALWAYS_INLINE b91_update_rssi_and_lqi(const struct device *dev, struct net_pkt *pkt)
 {
+	struct b91_data *b91 = dev->data;
 	int8_t rssi;
 	uint8_t lqi;
 
-	rssi = ((signed char)(data.rx_buffer
-			      [data.rx_buffer[B91_LENGTH_OFFSET] + B91_RSSI_OFFSET])) - 110;
+	rssi = ((signed char)(b91->rx_buffer
+			      [b91->rx_buffer[B91_LENGTH_OFFSET] + B91_RSSI_OFFSET])) - 110;
 	lqi = b91_convert_rssi_to_lqi(rssi);
 
 	net_pkt_set_ieee802154_lqi(pkt, lqi);
@@ -408,27 +414,29 @@ ALWAYS_INLINE b91_update_rssi_and_lqi(struct net_pkt *pkt)
 
 /* Prepare TX buffer */
 static void
-ALWAYS_INLINE b91_set_tx_payload(uint8_t *payload, uint8_t payload_len)
+ALWAYS_INLINE b91_set_tx_payload(const struct device *dev, uint8_t *payload, uint8_t payload_len)
 {
+	struct b91_data *b91 = dev->data;
 	unsigned char rf_data_len;
 	unsigned int rf_tx_dma_len;
 
 	rf_data_len = payload_len + 1;
 	rf_tx_dma_len = rf_tx_packet_dma_len(rf_data_len);
-	data.tx_buffer[0] = rf_tx_dma_len & 0xff;
-	data.tx_buffer[1] = (rf_tx_dma_len >> 8) & 0xff;
-	data.tx_buffer[2] = (rf_tx_dma_len >> 16) & 0xff;
-	data.tx_buffer[3] = (rf_tx_dma_len >> 24) & 0xff;
-	data.tx_buffer[4] = payload_len + 2;
-	memcpy(data.tx_buffer + B91_PAYLOAD_OFFSET, payload, payload_len);
+	b91->tx_buffer[0] = rf_tx_dma_len & 0xff;
+	b91->tx_buffer[1] = (rf_tx_dma_len >> 8) & 0xff;
+	b91->tx_buffer[2] = (rf_tx_dma_len >> 16) & 0xff;
+	b91->tx_buffer[3] = (rf_tx_dma_len >> 24) & 0xff;
+	b91->tx_buffer[4] = payload_len + 2;
+	memcpy(b91->tx_buffer + B91_PAYLOAD_OFFSET, payload, payload_len);
 }
 
 /* Handle acknowledge packet */
 static void
-ALWAYS_INLINE b91_handle_ack(const void *buf, size_t buf_len)
+ALWAYS_INLINE b91_handle_ack(const struct device *dev, const void *buf, size_t buf_len)
 {
+	struct b91_data *b91 = dev->data;
 	struct net_pkt *ack_pkt = net_pkt_rx_alloc_with_buffer(
-		data.iface, buf_len, AF_UNSPEC, 0, K_NO_WAIT);
+		b91->iface, buf_len, AF_UNSPEC, 0, K_NO_WAIT);
 
 	do {
 		if (!ack_pkt) {
@@ -439,12 +447,12 @@ ALWAYS_INLINE b91_handle_ack(const void *buf, size_t buf_len)
 			LOG_ERR("Failed to write to a packet.");
 			break;
 		}
-		b91_update_rssi_and_lqi(ack_pkt);
+		b91_update_rssi_and_lqi(dev, ack_pkt);
 		net_pkt_cursor_init(ack_pkt);
-		if (ieee802154_radio_handle_ack(data.iface, ack_pkt) != NET_OK) {
+		if (ieee802154_radio_handle_ack(b91->iface, ack_pkt) != NET_OK) {
 			LOG_INF("ACK packet not handled - releasing.");
 		}
-		k_sem_give(&data.ack_wait);
+		k_sem_give(&b91->ack_wait);
 	} while (0);
 
 	if (ack_pkt) {
@@ -454,26 +462,28 @@ ALWAYS_INLINE b91_handle_ack(const void *buf, size_t buf_len)
 
 /* Send acknowledge packet */
 static void
-ALWAYS_INLINE b91_send_ack(const struct ieee802154_frame *frame)
+ALWAYS_INLINE b91_send_ack(const struct device *dev, const struct ieee802154_frame *frame)
 {
+	struct b91_data *b91 = dev->data;
 	uint8_t ack_buf[64];
 	size_t ack_len;
 
 	if (b91_ieee802154_frame_build(frame, ack_buf, sizeof(ack_buf), &ack_len)) {
-		data.ack_sending = true;
-		k_sem_reset(&data.tx_wait);
-		b91_set_tx_payload(ack_buf, ack_len);
+		b91->ack_sending = true;
+		k_sem_reset(&b91->tx_wait);
+		b91_set_tx_payload(dev, ack_buf, ack_len);
 		rf_set_txmode();
 		delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
-		rf_tx_pkt(data.tx_buffer);
+		rf_tx_pkt(b91->tx_buffer);
 	} else {
 		LOG_ERR("Failed to create ACK.");
 	}
 }
 
 /* RX IRQ handler */
-static void ALWAYS_INLINE b91_rf_rx_isr(void)
+static void ALWAYS_INLINE b91_rf_rx_isr(const struct device *dev)
 {
+	struct b91_data *b91 = dev->data;
 	int status = -EINVAL;
 	struct net_pkt *pkt = NULL;
 
@@ -481,16 +491,30 @@ static void ALWAYS_INLINE b91_rf_rx_isr(void)
 	rf_clr_irq_status(FLD_RF_IRQ_RX);
 
 	do {
-		if (!rf_zigbee_packet_crc_ok(data.rx_buffer)) {
+		if (!rf_zigbee_packet_crc_ok(b91->rx_buffer)) {
+			if (b91->event_handler) {
+				enum ieee802154_rx_fail_reason reason =
+					IEEE802154_RX_FAIL_INVALID_FCS;
+
+				b91->event_handler(dev, IEEE802154_EVENT_RX_FAILED,
+					(void *)&reason);
+			}
 			break;
 		}
-		uint8_t length = data.rx_buffer[B91_LENGTH_OFFSET];
+		uint8_t length = b91->rx_buffer[B91_LENGTH_OFFSET];
 
 		if ((length < B91_PAYLOAD_MIN) || (length > B91_PAYLOAD_MAX)) {
 			LOG_ERR("Invalid length.\n");
+			if (b91->event_handler) {
+				enum ieee802154_rx_fail_reason reason =
+					IEEE802154_RX_FAIL_NOT_RECEIVED;
+
+				b91->event_handler(dev, IEEE802154_EVENT_RX_FAILED,
+					(void *)&reason);
+			}
 			break;
 		}
-		uint8_t *payload = (data.rx_buffer + B91_PAYLOAD_OFFSET);
+		uint8_t *payload = (b91->rx_buffer + B91_PAYLOAD_OFFSET);
 		struct ieee802154_frame frame;
 
 		if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) ||
@@ -502,16 +526,30 @@ static void ALWAYS_INLINE b91_rf_rx_isr(void)
 		}
 		if (!frame.general.valid) {
 			LOG_ERR("Invalid frame\n");
-			break;
-		}
-		if (frame.general.type == IEEE802154_FRAME_FCF_TYPE_ACK) {
-			if (data.ack_handler_en) {
-				b91_handle_ack(payload, length);
+			if (b91->event_handler) {
+				enum ieee802154_rx_fail_reason reason =
+					IEEE802154_RX_FAIL_NOT_RECEIVED;
+
+				b91->event_handler(dev, IEEE802154_EVENT_RX_FAILED,
+					(void *)&reason);
 			}
 			break;
 		}
-		if (!b91_run_filter(&frame)) {
+		if (frame.general.type == IEEE802154_FRAME_FCF_TYPE_ACK) {
+			if (b91->ack_handler_en) {
+				b91_handle_ack(dev, payload, length);
+			}
+			break;
+		}
+		if (!b91_run_filter(dev, &frame)) {
 			LOG_DBG("Packet received is not addressed to me.");
+			if (b91->event_handler) {
+				enum ieee802154_rx_fail_reason reason =
+					IEEE802154_RX_FAIL_ADDR_FILTERED;
+
+				b91->event_handler(dev, IEEE802154_EVENT_RX_FAILED,
+					(void *)&reason);
+			}
 			break;
 		}
 		bool frame_pending = false;
@@ -520,8 +558,8 @@ static void ALWAYS_INLINE b91_rf_rx_isr(void)
 #ifdef CONFIG_OPENTHREAD_FTD
 			if (b91_require_pending_bit(&frame)) {
 				if (frame.src_addr) {
-					if (!data.src_match_table->enabled ||
-						b91_src_match_table_search(data.src_match_table,
+					if (!b91->src_match_table->enabled ||
+						b91_src_match_table_search(b91->src_match_table,
 							frame.src_addr, frame.src_addr_ext)) {
 						frame_pending = true;
 					}
@@ -533,14 +571,14 @@ static void ALWAYS_INLINE b91_rf_rx_isr(void)
 			size_t ack_ie_header_len = 0;
 #if CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
 			if (enh_ack) {
-				int idx = b91_enh_ack_table_search(data.enh_ack_table,
+				int idx = b91_enh_ack_table_search(b91->enh_ack_table,
 					frame.src_addr_ext ? NULL : frame.src_addr,
 					frame.src_addr_ext ? frame.src_addr : NULL);
 				if (idx >= 0) {
 					ack_ie_header =
-						data.enh_ack_table->item[idx].ie_header;
+						b91->enh_ack_table->item[idx].ie_header;
 					ack_ie_header_len =
-						data.enh_ack_table->item[idx].ie_header_len;
+						b91->enh_ack_table->item[idx].ie_header_len;
 				}
 			}
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
@@ -561,22 +599,43 @@ static void ALWAYS_INLINE b91_rf_rx_isr(void)
 				.ie_header = ack_ie_header,
 				.ie_header_len = ack_ie_header_len
 			};
-			b91_send_ack(&ack_frame);
+			b91_send_ack(dev, &ack_frame);
 		}
-		pkt = net_pkt_rx_alloc_with_buffer(data.iface, length, AF_UNSPEC, 0, K_NO_WAIT);
+		pkt = net_pkt_rx_alloc_with_buffer(b91->iface, length, AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No pkt available.");
+			if (b91->event_handler) {
+				enum ieee802154_rx_fail_reason reason =
+					IEEE802154_RX_FAIL_OTHER;
+
+				b91->event_handler(dev, IEEE802154_EVENT_RX_FAILED,
+					(void *)&reason);
+			}
 			break;
 		}
 		net_pkt_set_ieee802154_ack_fpb(pkt, frame_pending);
 		if (net_pkt_write(pkt, payload, length)) {
 			LOG_ERR("Failed to write to a packet.");
+			if (b91->event_handler) {
+				enum ieee802154_rx_fail_reason reason =
+					IEEE802154_RX_FAIL_OTHER;
+
+				b91->event_handler(dev, IEEE802154_EVENT_RX_FAILED,
+					(void *)&reason);
+			}
 			break;
 		}
-		b91_update_rssi_and_lqi(pkt);
-		status = net_recv_data(data.iface, pkt);
+		b91_update_rssi_and_lqi(dev, pkt);
+		status = net_recv_data(b91->iface, pkt);
 		if (status < 0) {
 			LOG_ERR("RCV Packet dropped by NET stack: %d", status);
+			if (b91->event_handler) {
+				enum ieee802154_rx_fail_reason reason =
+					IEEE802154_RX_FAIL_OTHER;
+
+				b91->event_handler(dev, IEEE802154_EVENT_RX_FAILED,
+					(void *)&reason);
+			}
 		}
 	} while (0);
 
@@ -587,28 +646,30 @@ static void ALWAYS_INLINE b91_rf_rx_isr(void)
 }
 
 /* TX IRQ handler */
-static ALWAYS_INLINE void b91_rf_tx_isr(void)
+static ALWAYS_INLINE void b91_rf_tx_isr(const struct device *dev)
 {
+	struct b91_data *b91 = dev->data;
+
 	/* clear irq status */
 	rf_clr_irq_status(FLD_RF_IRQ_TX);
 
 	/* ack sent */
-	data.ack_sending = false;
+	b91->ack_sending = false;
 
 	/* release tx semaphore */
-	k_sem_give(&data.tx_wait);
+	k_sem_give(&b91->tx_wait);
 
 	/* set to rx mode */
 	rf_set_rxmode();
 }
 
 /* IRQ handler */
-static void __GENERIC_SECTION(.ram_code) b91_rf_isr(void)
+static void __GENERIC_SECTION(.ram_code) b91_rf_isr(const struct device *dev)
 {
 	if (rf_get_irq_status(FLD_RF_IRQ_RX)) {
-		b91_rf_rx_isr();
+		b91_rf_rx_isr(dev);
 	} else if (rf_get_irq_status(FLD_RF_IRQ_TX)) {
-		b91_rf_tx_isr();
+		b91_rf_tx_isr(dev);
 	} else {
 		rf_clr_irq_status(FLD_RF_IRQ_ALL);
 	}
@@ -627,23 +688,24 @@ static int b91_init(const struct device *dev)
 	rf_mode_init();
 	rf_set_zigbee_250K_mode();
 	rf_set_tx_dma(1, B91_TRX_LENGTH);
-	rf_set_rx_dma(data.rx_buffer, 0, B91_TRX_LENGTH);
+	rf_set_rx_dma(b91->rx_buffer, 0, B91_TRX_LENGTH);
 	rf_set_txmode();
 	rf_set_rxmode();
 
 	/* init IRQs */
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), b91_rf_isr, 0, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), b91_rf_isr,
+		DEVICE_DT_INST_GET(0), 0);
 	riscv_plic_irq_enable(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
 	riscv_plic_set_priority(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET,
-				DT_INST_IRQ(0, priority));
+		DT_INST_IRQ(0, priority));
 	rf_set_irq_mask(FLD_RF_IRQ_RX | FLD_RF_IRQ_TX);
 
 	/* init data variables */
-	data.is_started = true;
-	data.ack_handler_en = false;
-	data.ack_sending = false;
-	data.current_channel = 0xFFFF;
-	data.current_dbm = 0x7FFF;
+	b91->is_started = true;
+	b91->ack_handler_en = false;
+	b91->ack_sending = false;
+	b91->current_channel = 0xFFFF;
+	b91->current_dbm = 0x7FFF;
 #ifdef CONFIG_OPENTHREAD_FTD
 	b91_src_match_table_clean(b91->src_match_table);
 	b91->src_match_table->enabled = true;
@@ -651,6 +713,7 @@ static int b91_init(const struct device *dev)
 #ifdef CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT
 	b91_enh_ack_table_clean(b91->enh_ack_table);
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
+	b91->event_handler = NULL;
 	return 0;
 }
 
@@ -696,14 +759,14 @@ static int b91_cca(const struct device *dev)
 /* API implementation: set_channel */
 static int b91_set_channel(const struct device *dev, uint16_t channel)
 {
-	ARG_UNUSED(dev);
+	struct b91_data *b91 = dev->data;
 
 	if (channel < 11 || channel > 26) {
 		return -EINVAL;
 	}
 
-	if (data.current_channel != channel) {
-		data.current_channel = channel;
+	if (b91->current_channel != channel) {
+		b91->current_channel = channel;
 		rf_set_chn(B91_LOGIC_CHANNEL_TO_PHYSICAL(channel));
 		rf_set_txmode();
 		rf_set_rxmode();
@@ -723,11 +786,11 @@ static int b91_filter(const struct device *dev,
 	}
 
 	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
-		return b91_set_ieee_addr(filter->ieee_addr);
+		return b91_set_ieee_addr(dev, filter->ieee_addr);
 	} else if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
-		return b91_set_short_addr(filter->short_addr);
+		return b91_set_short_addr(dev, filter->short_addr);
 	} else if (type == IEEE802154_FILTER_TYPE_PAN_ID) {
-		return b91_set_pan_id(filter->pan_id);
+		return b91_set_pan_id(dev, filter->pan_id);
 	}
 
 	return -ENOTSUP;
@@ -736,7 +799,7 @@ static int b91_filter(const struct device *dev,
 /* API implementation: set_txpower */
 static int b91_set_txpower(const struct device *dev, int16_t dbm)
 {
-	ARG_UNUSED(dev);
+	struct b91_data *b91 = dev->data;
 
 	/* check for supported Min/Max range */
 	if (dbm < B91_TX_POWER_MIN) {
@@ -745,8 +808,8 @@ static int b91_set_txpower(const struct device *dev, int16_t dbm)
 		dbm = B91_TX_POWER_MAX;
 	}
 
-	if (data.current_dbm != dbm) {
-		data.current_dbm = dbm;
+	if (b91->current_dbm != dbm) {
+		b91->current_dbm = dbm;
 		/* set TX power */
 		rf_set_power_level(b91_tx_pwr_lt[dbm - B91_TX_POWER_MIN]);
 	}
@@ -757,14 +820,16 @@ static int b91_set_txpower(const struct device *dev, int16_t dbm)
 /* API implementation: start */
 static int b91_start(const struct device *dev)
 {
+	struct b91_data *b91 = dev->data;
+
 	b91_disable_pm(dev);
 	/* check if RF is already started */
-	if (!data.is_started) {
+	if (!b91->is_started) {
 		rf_set_txmode();
 		rf_set_rxmode();
 		delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
 		riscv_plic_irq_enable(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
-		data.is_started = true;
+		b91->is_started = true;
 	}
 
 	return 0;
@@ -773,17 +838,22 @@ static int b91_start(const struct device *dev)
 /* API implementation: stop */
 static int b91_stop(const struct device *dev)
 {
+	struct b91_data *b91 = dev->data;
+
 	/* check if RF is already stopped */
-	if (data.is_started) {
-		if (data.ack_sending) {
-			if (k_sem_take(&data.tx_wait, K_MSEC(B91_TX_WAIT_TIME_MS)) != 0) {
-				data.ack_sending = false;
+	if (b91->is_started) {
+		if (b91->ack_sending) {
+			if (k_sem_take(&b91->tx_wait, K_MSEC(B91_TX_WAIT_TIME_MS)) != 0) {
+				b91->ack_sending = false;
 			}
 		}
 		riscv_plic_irq_disable(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
 		rf_set_tx_rx_off();
 		delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
-		data.is_started = false;
+		b91->is_started = false;
+		if (b91->event_handler) {
+			b91->event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
+		}
 	}
 	b91_enable_pm(dev);
 
@@ -807,15 +877,15 @@ static int b91_tx(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (data.ack_sending) {
-		if (k_sem_take(&data.tx_wait, K_MSEC(B91_TX_WAIT_TIME_MS)) != 0) {
-			data.ack_sending = false;
+	if (b91->ack_sending) {
+		if (k_sem_take(&b91->tx_wait, K_MSEC(B91_TX_WAIT_TIME_MS)) != 0) {
+			b91->ack_sending = false;
 			rf_set_rxmode();
 		}
 	}
 
 	/* prepare tx buffer */
-	b91_set_tx_payload(frag->data, frag->len);
+	b91_set_tx_payload(dev, frag->data, frag->len);
 
 	/* reset semaphores */
 	k_sem_reset(&b91->tx_wait);
@@ -824,10 +894,13 @@ static int b91_tx(const struct device *dev,
 	/* start transmission */
 	rf_set_txmode();
 	delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
-	rf_tx_pkt(data.tx_buffer);
+	rf_tx_pkt(b91->tx_buffer);
+	if (b91->event_handler) {
+		b91->event_handler(dev, IEEE802154_EVENT_TX_STARTED, (void *)frag);
+	}
 
 	/* wait for tx done */
-	if (k_sem_take(&data.tx_wait, K_MSEC(B91_TX_WAIT_TIME_MS)) != 0) {
+	if (k_sem_take(&b91->tx_wait, K_MSEC(B91_TX_WAIT_TIME_MS)) != 0) {
 		rf_set_rxmode();
 		status = -EIO;
 	}
@@ -835,11 +908,11 @@ static int b91_tx(const struct device *dev,
 	/* wait for ACK if requested */
 	if (!status && (frag->data[0] & IEEE802154_FRAME_FCF_ACK_REQ_MASK) ==
 		IEEE802154_FRAME_FCF_ACK_REQ_ON) {
-		data.ack_handler_en = true;
+		b91->ack_handler_en = true;
 		if (k_sem_take(&b91->ack_wait, K_MSEC(B91_ACK_WAIT_TIME_MS)) != 0) {
 			status = -ENOMSG;
 		}
-		data.ack_handler_en = false;
+		b91->ack_handler_en = false;
 	}
 
 	return status;
@@ -863,12 +936,7 @@ static int b91_configure(const struct device *dev,
 			 enum ieee802154_config_type type,
 			 const struct ieee802154_config *config)
 {
-#ifdef CONFIG_OPENTHREAD_FTD
 	struct b91_data *b91 = dev->data;
-#else
-	ARG_UNUSED(dev);
-	ARG_UNUSED(config);
-#endif /* CONFIG_OPENTHREAD_FTD */
 	int result = 0;
 
 	switch (type) {
@@ -917,7 +985,9 @@ static int b91_configure(const struct device *dev,
 		}
 		break;
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
-
+	case IEEE802154_CONFIG_EVENT_HANDLER:
+		b91->event_handler = config->event_handler;
+		break;
 	default:
 		LOG_WRN("Unhandled cfg %d", type);
 		result = -ENOTSUP;
@@ -965,15 +1035,15 @@ static struct ieee802154_radio_api b91_radio_api = {
 #ifdef CONFIG_PM_DEVICE
 static int ieee802154_b91_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	ARG_UNUSED(dev);
+	struct b91_data *b91 = dev->data;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		/* restart radio */
 		rf_mode_init();
 		rf_set_zigbee_250K_mode();
-		rf_set_chn(B91_LOGIC_CHANNEL_TO_PHYSICAL(data.current_channel));
-		rf_set_power_level(b91_tx_pwr_lt[data.current_dbm - B91_TX_POWER_MIN]);
+		rf_set_chn(B91_LOGIC_CHANNEL_TO_PHYSICAL(b91->current_channel));
+		rf_set_power_level(b91_tx_pwr_lt[b91->current_dbm - B91_TX_POWER_MIN]);
 		rf_set_txmode();
 		rf_set_rxmode();
 		break;
