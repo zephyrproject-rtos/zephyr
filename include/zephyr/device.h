@@ -124,7 +124,7 @@ typedef int16_t device_handle_t;
  * @param dev_id A unique token which is used in the name of the
  * global device structure as a C identifier.
  *
- * @param drv_name A string name for the device, which will be stored
+ * @param name A string name for the device, which will be stored
  * in the device structure's @p name field. This name can be used to
  * look up the device with device_get_binding(). This must be less
  * than Z_DEVICE_MAX_NAME_LEN characters (including terminating NUL)
@@ -133,15 +133,15 @@ typedef int16_t device_handle_t;
  * @param init_fn Pointer to the device's initialization function,
  * which will be run by the kernel during system initialization.
  *
- * @param pm_device Pointer to the device's power management
+ * @param pm Pointer to the device's power management
  * resources, a <tt>struct pm_device</tt>, which will be stored in the
  * device structure's @p pm field. Use NULL if the device does not use
  * PM.
  *
- * @param data_ptr Pointer to the device's private mutable data, which
+ * @param data Pointer to the device's private mutable data, which
  * will be stored in the device structure's @p data field.
  *
- * @param cfg_ptr Pointer to the device's private constant data, which
+ * @param config Pointer to the device's private constant data, which
  * will be stored in the device structure's @p config field.
  *
  * @param level The device's initialization level. See SYS_INIT() for
@@ -150,13 +150,13 @@ typedef int16_t device_handle_t;
  * @param prio The device's priority within its initialization level.
  * See SYS_INIT() for details.
  *
- * @param api_ptr Pointer to the device's API structure. Can be NULL.
+ * @param api Pointer to the device's API structure. Can be NULL.
  */
-#define DEVICE_DEFINE(dev_id, drv_name, init_fn, pm_device, data_ptr, cfg_ptr, \
-		      level, prio, api_ptr)                                    \
+#define DEVICE_DEFINE(dev_id, name, init_fn, pm, data, config, level, prio,    \
+		      api)                                                     \
 	Z_DEVICE_STATE_DEFINE(DT_INVALID_NODE, dev_id);                        \
-	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, drv_name, init_fn, pm_device, \
-			data_ptr, cfg_ptr, level, prio, api_ptr,               \
+	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, name, init_fn, pm, data,      \
+			config, level, prio, api,                              \
 			&Z_DEVICE_STATE_NAME(dev_id))
 
 /**
@@ -195,15 +195,15 @@ typedef int16_t device_handle_t;
  * @param init_fn Pointer to the device's initialization function,
  * which will be run by the kernel during system initialization.
  *
- * @param pm_device Pointer to the device's power management
+ * @param pm Pointer to the device's power management
  * resources, a <tt>struct pm_device</tt>, which will be stored in the
  * device structure's @p pm field. Use NULL if the device does not use
  * PM.
  *
- * @param data_ptr Pointer to the device's private mutable data, which
+ * @param data Pointer to the device's private mutable data, which
  * will be stored in the device structure's @p data field.
  *
- * @param cfg_ptr Pointer to the device's private constant data, which
+ * @param config Pointer to the device's private constant data, which
  * will be stored in the device structure's @p config field.
  *
  * @param level The device's initialization level. See SYS_INIT() for
@@ -212,14 +212,14 @@ typedef int16_t device_handle_t;
  * @param prio The device's priority within its initialization level.
  * See SYS_INIT() for details.
  *
- * @param api_ptr Pointer to the device's API structure. Can be NULL.
+ * @param api Pointer to the device's API structure. Can be NULL.
  */
-#define DEVICE_DT_DEFINE(node_id, init_fn, pm_device, data_ptr, cfg_ptr, level,\
-			 prio, api_ptr, ...)                                   \
+#define DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio, api, \
+			 ...)                                                  \
 	Z_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id));         \
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),                \
-			DEVICE_DT_NAME(node_id), init_fn, pm_device, data_ptr, \
-			cfg_ptr, level, prio, api_ptr,                         \
+			DEVICE_DT_NAME(node_id), init_fn, pm, data, config,    \
+			level, prio, api,                                      \
 			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)),   \
 			__VA_ARGS__)
 
@@ -958,21 +958,20 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
  * @param node_id Devicetree node id for the device (DT_INVALID_NODE if a
  *                software device).
  * @param dev_id Device identifier (used to name the defined struct device).
- * @param drv_name Name of the device.
+ * @param name Name of the device.
  * @param init_fn Device init function.
- * @param pm_device Reference to struct pm_device associated with the device.
+ * @param pm Reference to struct pm_device associated with the device.
  *           (optional).
- * @param data_ptr Reference to device data.
- * @param cfg_ptr Reference to device config.
+ * @param data Reference to device data.
+ * @param config Reference to device config.
  * @param level Initialization level.
  * @param prio Initialization priority.
- * @param api_ptr Reference to device API.
- * @param state_ptr Reference to device state.
+ * @param api Reference to device API.
+ * @param state Reference to device state.
  * @param ... Optional dependencies, manually specified.
  */
-#define Z_DEVICE_DEFINE(node_id, dev_id, drv_name, init_fn, pm_device,         \
-			data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr,    \
-			...)                                                   \
+#define Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data, config,      \
+			level, prio, api, state, ...)                          \
 	Z_DEVICE_NAME_CHECK(name);                                             \
                                                                                \
 	Z_DEVICE_HANDLES_DEFINE(node_id, dev_id, __VA_ARGS__);                 \

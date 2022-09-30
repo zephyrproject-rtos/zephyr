@@ -491,11 +491,11 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  *
  * @param init_fn Name of the init function of the driver.
  *
- * @param pm_device PM device resources reference (NULL if device does not use PM).
+ * @param pm PM device resources reference (NULL if device does not use PM).
  *
- * @param data_ptr Pointer to the device's private data.
+ * @param data Pointer to the device's private data.
  *
- * @param cfg_ptr The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  *
  * @param level The initialization level. See SYS_INIT() for
@@ -504,20 +504,17 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  * @param prio Priority within the selected initialization level. See
  * SYS_INIT() for details.
  *
- * @param api_ptr Provides an initial pointer to the API function struct
+ * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
  */
-#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, ...)				\
+#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
+			     prio, api, ...)				\
 	Z_I2C_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)); \
 	Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_NAME(node_id), init_fn)		\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
 			&UTIL_CAT(Z_DEVICE_DT_DEV_NAME(node_id), _init), \
-			pm_device,					\
-			data_ptr, cfg_ptr, level, prio,			\
-			api_ptr,					\
+			pm_device, data, config, level, prio, api,	\
 			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)).devstate), \
 			__VA_ARGS__)
 
@@ -531,12 +528,10 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 	ARG_UNUSED(num_msgs);
 }
 
-#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, ...)				\
-	DEVICE_DT_DEFINE(node_id, &init_fn, pm_device,			\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, __VA_ARGS__)
+#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
+			     prio, api, ...)				\
+	DEVICE_DT_DEFINE(node_id, &init_fn, pm, data, config, level,	\
+			 prio, api, __VA_ARGS__)
 
 #endif /* CONFIG_I2C_STATS */
 
