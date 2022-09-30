@@ -82,7 +82,9 @@ extern "C" {
 /* The built-in function used below for type checking in C is not
  * supported by GNU C++.
  */
+#ifndef ARRAY_SIZE
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+#endif
 
 #else /* __cplusplus */
 
@@ -96,6 +98,7 @@ extern "C" {
 		!__builtin_types_compatible_p(__typeof__(array), \
 					      __typeof__(&(array)[0])))
 
+#ifndef ARRAY_SIZE
 /**
  * @brief Number of elements in the given @p array
  *
@@ -107,6 +110,7 @@ extern "C" {
  */
 #define ARRAY_SIZE(array) \
 	((size_t) (IS_ARRAY(array) + (sizeof(array) / sizeof((array)[0]))))
+#endif
 
 #endif /* __cplusplus */
 
