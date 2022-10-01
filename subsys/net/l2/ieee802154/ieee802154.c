@@ -384,9 +384,9 @@ NET_L2_INIT(IEEE802154_L2, ieee802154_recv, ieee802154_send, ieee802154_enable, 
 void ieee802154_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	const uint8_t *mac = net_if_get_link_addr(iface)->addr;
+	const uint8_t *mac = net_if_get_link_addr(iface)->addr; /* in big endian */
 	int16_t tx_power = CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER;
-	uint8_t long_addr[8];
+	uint8_t long_addr[8]; /* in little endian */
 
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
 
