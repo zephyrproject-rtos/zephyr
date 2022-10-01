@@ -940,9 +940,10 @@ static int nrf5_configure(const struct device *dev,
 		sys_put_le16(config->ack_ie.short_addr, short_addr_le);
 		/**
 		 * The extended address field passed to this function starts
-		 * with the leftmost octet and ends with the rightmost octet.
+		 * with the most significant octet and ends with the least
+		 * significant octet (i.e. big endian byte order).
 		 * The IEEE 802.15.4 transmission order mandates this order to be
-		 * reversed in a transmitted frame.
+		 * reversed (i.e. little endian byte order) in a transmitted frame.
 		 *
 		 * The nrf_802154_ack_data_set expects extended address in transmission
 		 * order.
