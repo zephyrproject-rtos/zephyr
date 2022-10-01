@@ -179,7 +179,7 @@ Reset the board and you should see the following message in the terminal:
    https://www.silabs.com/documents/public/user-guides/ug385-brd4180a-user-guide.pdf
 
 .. _WSTK Main Board BRD4001A Schematics:
-   https://www.silabs.com/documents/public/schematic-files/WSTK-Main-BRD4001A-A01-schematic.pdf
+   https://www.silabs.com/documents/public/schematic-files/BRD4001A-A01-schematic.pdf
 
 .. _J-Link:
    https://www.segger.com/jlink-debug-probes.html

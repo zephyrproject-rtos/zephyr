@@ -225,7 +225,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		df_rx_params = dbuf_latest_get(&df_rx_cfg->hdr, NULL);
 
 		if (df_rx_params->is_enabled == true) {
-			lll_df_conf_cte_rx_enable(df_rx_params->slot_durations,
+			(void)lll_df_conf_cte_rx_enable(df_rx_params->slot_durations,
 						  df_rx_params->ant_sw_len, df_rx_params->ant_ids,
 						  data_chan_use, CTE_INFO_IN_S1_BYTE, lll->phy_rx);
 			lll->df_rx_cfg.chan = data_chan_use;

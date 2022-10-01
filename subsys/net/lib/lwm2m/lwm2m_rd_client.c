@@ -123,6 +123,7 @@ struct lwm2m_rd_client_info {
 
 	bool trigger_update : 1;
 	bool update_objects : 1;
+	bool close_socket : 1;
 } client;
 
 /* Allocate some data for queries and updates. Make sure it's large enough to
@@ -516,6 +517,9 @@ static void do_update_timeout_cb(struct lwm2m_message *msg)
 {
 	LOG_WRN("Registration Update Timeout");
 
+	if (client.ctx->sock_fd > -1) {
+		client.close_socket = true;
+	}
 	/* Re-do registration */
 	sm_handle_timeout_state(msg, ENGINE_DO_REGISTRATION);
 }
@@ -662,6 +666,7 @@ static int sm_do_init(void)
 	client.lifetime = 0U;
 	client.retries = 0U;
 	client.last_update = 0U;
+	client.close_socket = false;
 
 	/* Do bootstrap or registration */
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
@@ -983,7 +988,13 @@ static int sm_do_registration(void)
 	} else {
 		/* clear out existing connection data */
 		if (client.ctx->sock_fd > -1) {
-			lwm2m_engine_context_close(client.ctx);
+			if (client.close_socket) {
+				/* Clear old socket connection */
+				client.close_socket = false;
+				lwm2m_engine_stop(client.ctx);
+			} else {
+				lwm2m_engine_context_close(client.ctx);
+			}
 		}
 
 		client.ctx->bootstrap_mode = false;
@@ -1387,11 +1398,17 @@ int lwm2m_rd_client_resume(void)
 
 	LOG_INF("Resume Client state");
 	lwm2m_close_socket(client.ctx);
+	if (suspended_client_state == ENGINE_UPDATE_SENT) {
+		/* Set back to Registration done for enable trigger Update */
+		suspended_client_state = ENGINE_REGISTRATION_DONE;
+	}
+	/* Clear Possible pending RD Client message */
+	lwm2m_reset_message(lwm2m_get_ongoing_rd_msg(), true);
+
 	client.engine_state = suspended_client_state;
 
-	if (!sm_is_registered() ||
-	    (sm_is_registered() &&
-	     (client.lifetime <= (k_uptime_get() - client.last_update) / 1000))) {
+	if (!client.last_update ||
+	    (client.lifetime <= (k_uptime_get() - client.last_update) / 1000)) {
 		client.engine_state = ENGINE_DO_REGISTRATION;
 	} else {
 		lwm2m_rd_client_connection_resume(client.ctx);

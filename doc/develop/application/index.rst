@@ -1360,7 +1360,7 @@ Create a Debugger Configuration
 
    - In the Main tab:
 
-     - Project: my_zephyr_app@build
+     - Project: ``my_zephyr_app@build``
      - C/C++ Application: :file:`zephyr/zephyr.elf`
 
    - In the Debugger tab:

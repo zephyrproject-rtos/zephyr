@@ -96,8 +96,6 @@ SECTIONS
     . = ALIGN(4);
     Z_LINK_ITERABLE_GC_ALLOWED(k_mem_slab);
     . = ALIGN(4);
-    Z_LINK_ITERABLE_GC_ALLOWED(k_mem_pool);
-    . = ALIGN(4);
     Z_LINK_ITERABLE_GC_ALLOWED(k_heap);
     . = ALIGN(4);
     Z_LINK_ITERABLE_GC_ALLOWED(k_mutex);

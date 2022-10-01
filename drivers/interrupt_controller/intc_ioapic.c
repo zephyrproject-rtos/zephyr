@@ -438,7 +438,7 @@ static uint32_t __IoApicGet(int32_t offset)
 
 	key = irq_lock();
 
-	*((volatile uint32_t *) (IOAPIC_REG + IOAPIC_IND)) = (char)offset;
+	*((volatile uint32_t *) (IOAPIC_REG + IOAPIC_IND)) = (unsigned char)offset;
 	value = *((volatile uint32_t *)(IOAPIC_REG + IOAPIC_DATA));
 
 	irq_unlock(key);
@@ -463,7 +463,7 @@ static void __IoApicSet(int32_t offset, uint32_t value)
 
 	key = irq_lock();
 
-	*(volatile uint32_t *)(IOAPIC_REG + IOAPIC_IND) = (char)offset;
+	*(volatile uint32_t *)(IOAPIC_REG + IOAPIC_IND) = (unsigned char)offset;
 	*((volatile uint32_t *)(IOAPIC_REG + IOAPIC_DATA)) = value;
 
 	irq_unlock(key);

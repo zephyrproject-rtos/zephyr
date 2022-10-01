@@ -160,6 +160,7 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("3.2.0", "/3.2.0/"),
         ("3.1.0", "/3.1.0/"),
         ("3.0.0", "/3.0.0/"),
         ("2.7.0", "/2.7.0/"),
@@ -199,6 +200,12 @@ latex_elements = {
 latex_logo = str(ZEPHYR_BASE / "doc" / "_static" / "images" / "logo-latex.pdf")
 latex_documents = [
     ("index-tex", "zephyr.tex", "Zephyr Project Documentation", author, "manual"),
+]
+
+# -- Options for linkcheck ------------------------------------------------
+
+linkcheck_ignore = [
+    r"https://github.com/zephyrproject-rtos/zephyr/issues/.*"
 ]
 
 # -- Options for zephyr.doxyrunner plugin ---------------------------------
@@ -300,7 +307,6 @@ graphviz_dot_args = [
 # -- Linkcheck options ----------------------------------------------------
 
 extlinks = {
-    "jira": ("https://jira.zephyrproject.org/browse/%s", "JIRA #%s"),
     "github": ("https://github.com/zephyrproject-rtos/zephyr/issues/%s", "GitHub #%s"),
 }
 

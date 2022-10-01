@@ -89,6 +89,20 @@ static inline void can_sja1000_clear_errors(const struct device *dev)
 	(void)can_sja1000_read_reg(dev, CAN_SJA1000_ECC);
 }
 
+static void can_sja1000_tx_done(const struct device *dev, int status)
+{
+	struct can_sja1000_data *data = dev->data;
+	can_tx_callback_t callback = data->tx_callback;
+	void *user_data = data->tx_user_data;
+
+	if (callback != NULL) {
+		data->tx_callback = NULL;
+		callback(dev, status, user_data);
+	}
+
+	k_sem_give(&data->tx_idle);
+}
+
 int can_sja1000_set_timing(const struct device *dev, const struct can_timing *timing)
 {
 	struct can_sja1000_data *data = dev->data;
@@ -187,6 +201,7 @@ int can_sja1000_stop(const struct device *dev)
 		return -EALREADY;
 	}
 
+	/* Entering reset mode aborts current transmission, if any */
 	err = can_sja1000_enter_reset_mode(dev);
 	if (err != 0) {
 		return err;
@@ -201,6 +216,8 @@ int can_sja1000_stop(const struct device *dev)
 	}
 
 	data->started = false;
+
+	can_sja1000_tx_done(dev, -ENETDOWN);
 
 	return 0;
 }
@@ -356,6 +373,8 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 	uint8_t cmr;
 	uint8_t sr;
 
+	__ASSERT_NO_MSG(callback != NULL);
+
 	if (frame->dlc > CAN_MAX_DLC) {
 		LOG_ERR("TX frame DLC %u exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
 		return -EINVAL;
@@ -396,11 +415,6 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 	}
 
 	can_sja1000_write_reg(dev, CAN_SJA1000_CMR, cmr);
-
-	if (callback == NULL) {
-		k_sem_take(&data->tx_done, K_FOREVER);
-		return data->tx_status;
-	}
 
 	return 0;
 }
@@ -567,23 +581,6 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 	} while ((sr & CAN_SJA1000_SR_RBS) != 0);
 }
 
-static void can_sja1000_tx_done(const struct device *dev, int status)
-{
-	struct can_sja1000_data *data = dev->data;
-	can_tx_callback_t callback = data->tx_callback;
-	void *user_data = data->tx_user_data;
-
-	if (callback != NULL) {
-		data->tx_callback = NULL;
-		callback(dev, status, user_data);
-	} else {
-		data->tx_status = status;
-		k_sem_give(&data->tx_done);
-	}
-
-	k_sem_give(&data->tx_idle);
-}
-
 static void can_sja1000_handle_transmit_irq(const struct device *dev)
 {
 	int status = 0;
@@ -683,7 +680,6 @@ int can_sja1000_init(const struct device *dev)
 
 	k_mutex_init(&data->mod_lock);
 	k_sem_init(&data->tx_idle, 1, 1);
-	k_sem_init(&data->tx_done, 0, 1);
 
 	data->state = CAN_STATE_ERROR_ACTIVE;
 

@@ -664,36 +664,6 @@ static int eps_ctx_init(void)
 	return 0;
 }
 
-static void eps_ctx_uninit(void)
-{
-	struct nrf_usbd_ep_ctx *ep_ctx;
-	uint32_t i;
-
-	for (i = 0U; i < CFG_EPIN_CNT; i++) {
-		ep_ctx = in_endpoint_ctx(i);
-		__ASSERT_NO_MSG(ep_ctx);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
-	}
-
-	for (i = 0U; i < CFG_EPOUT_CNT; i++) {
-		ep_ctx = out_endpoint_ctx(i);
-		__ASSERT_NO_MSG(ep_ctx);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
-	}
-
-	if (CFG_EP_ISOIN_CNT) {
-		ep_ctx = in_endpoint_ctx(NRF_USBD_EPIN(8));
-		__ASSERT_NO_MSG(ep_ctx);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
-	}
-
-	if (CFG_EP_ISOOUT_CNT) {
-		ep_ctx = out_endpoint_ctx(NRF_USBD_EPOUT(8));
-		__ASSERT_NO_MSG(ep_ctx);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
-	}
-}
-
 static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 {
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
@@ -1348,7 +1318,6 @@ int usb_dc_detach(void)
 	k_mutex_lock(&ctx->drv_lock, K_FOREVER);
 
 	usbd_evt_flush();
-	eps_ctx_uninit();
 
 	if (nrfx_usbd_is_enabled()) {
 		nrfx_usbd_disable();

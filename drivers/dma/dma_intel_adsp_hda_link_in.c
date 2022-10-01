@@ -18,6 +18,7 @@ static const struct dma_driver_api intel_adsp_hda_dma_link_in_api = {
 	.reload = intel_adsp_hda_dma_link_reload,
 	.start = intel_adsp_hda_dma_start,
 	.stop = intel_adsp_hda_dma_stop,
+	.suspend = intel_adsp_hda_dma_stop,
 	.get_status = intel_adsp_hda_dma_status,
 	.chan_filter = intel_adsp_hda_dma_chan_filter,
 };

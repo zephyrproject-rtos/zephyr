@@ -310,8 +310,8 @@ Release Notes
 
 The following is a list of TODO items:
 
-* :jira:`GH-2647`: Zephyr needs i-cache API (all targets)
-* :jira:`GH-2230`: Zephyr ARC port doesn't yet support nested regular interrupts.
+* ``GH-2647``: Zephyr needs i-cache API (all targets)
+* ``GH-2230``: Zephyr ARC port doesn't yet support nested regular interrupts.
 * pinmux driver: Possibly it can be written to configure PMods too.
 
 References

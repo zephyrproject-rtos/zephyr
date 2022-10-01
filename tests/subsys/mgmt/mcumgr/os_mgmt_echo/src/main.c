@@ -7,7 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/net/buf.h>
 #include <mgmt/mgmt.h>
-#include <mgmt/mcumgr/smp_dummy.h>
+#include <zephyr/mgmt/mcumgr/smp_dummy.h>
 #include <os_mgmt/os_mgmt.h>
 
 #define SMP_RESPONSE_WAIT_TIME 3

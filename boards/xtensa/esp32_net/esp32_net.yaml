@@ -8,7 +8,6 @@ supported:
   - gpio
   - i2c
   - uart
-  - pinmux
 testing:
   ignore_tags:
     - net

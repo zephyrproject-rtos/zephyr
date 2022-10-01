@@ -99,4 +99,4 @@ References
 **********
 
 1.`Programmer’s Reference Manual for ARC HS
-   <https://www.synopsys.com/dw/doc.php/ds/cc/programmers-reference-manual-ARC-HS.pdf>`_
+   <https://www.synopsys.com/dw/doc.php/iip/dwc_arc_hs4xd/latest/doc/ARC_V2_PublicProgrammers_Reference.pdf>`_

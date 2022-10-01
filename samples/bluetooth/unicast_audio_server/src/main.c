@@ -496,12 +496,21 @@ static void stream_recv(struct bt_audio_stream *stream,
 
 #endif
 
+static void stream_stopped(struct bt_audio_stream *stream)
+{
+	printk("Audio Stream %p stopped\n", stream);
+
+	/* Stop send timer */
+	k_work_cancel_delayable(&audio_send_work);
+}
+
 static struct bt_audio_stream_ops stream_ops = {
 #if defined(CONFIG_LIBLC3)
-	.recv = stream_recv_lc3_codec
+	.recv = stream_recv_lc3_codec,
 #else
-	.recv = stream_recv
+	.recv = stream_recv,
 #endif
+	.stopped = stream_stopped,
 };
 
 static void connected(struct bt_conn *conn, uint8_t err)

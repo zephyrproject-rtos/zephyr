@@ -165,7 +165,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	params->ssid_length = strlen(params->ssid);
 
 	/* Channel (optional) */
-	if ((idx < argc) && (strlen(argv[idx]) <= 2)) {
+	if ((idx < argc) && (strlen(argv[idx]) <= 3)) {
 		params->channel = strtol(argv[idx], &endptr, 10);
 		if (*endptr != '\0') {
 			return -EINVAL;
@@ -218,7 +218,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
-	static struct wifi_connect_req_params cnx_params;
+	struct wifi_connect_req_params cnx_params = { 0 };
 
 	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
 		shell_help(sh);

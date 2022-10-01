@@ -2998,6 +2998,20 @@ static void att_chan_attach(struct bt_att *att, struct bt_att_chan *chan)
 	sys_slist_prepend(&att->chans, &chan->node);
 }
 
+#if defined(CONFIG_BT_EATT)
+static void cap_eatt_mtu(struct bt_l2cap_le_chan *le_chan)
+{
+	if (le_chan->tx.mtu > le_chan->rx.mtu) {
+		BT_DBG("chan %p (0x%04x): saturating TX MTU to ATT buffer size (%d)",
+		       le_chan, le_chan->tx.cid, CONFIG_BT_L2CAP_TX_MTU);
+	}
+
+	le_chan->tx.mps = MIN(le_chan->tx.mps,
+			      BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU));
+	le_chan->tx.mtu = MIN(le_chan->tx.mtu, CONFIG_BT_L2CAP_TX_MTU);
+}
+#endif
+
 static void bt_att_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
@@ -3007,7 +3021,12 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 
 	atomic_set_bit(att_chan->flags, ATT_CONNECTED);
 
-	if (!atomic_test_bit(att_chan->flags, ATT_ENHANCED)) {
+	if (0) {
+#if defined(CONFIG_BT_EATT)
+	} else if (atomic_test_bit(att_chan->flags, ATT_ENHANCED)) {
+		cap_eatt_mtu(le_chan);
+#endif
+	} else {
 		le_chan->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
 		le_chan->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
 	}
@@ -3176,6 +3195,8 @@ static void bt_att_reconfigured(struct bt_l2cap_chan *l2cap_chan)
 	struct bt_att_chan *att_chan = ATT_CHAN(l2cap_chan);
 
 	BT_DBG("chan %p", att_chan);
+
+	cap_eatt_mtu(BT_L2CAP_LE_CHAN(l2cap_chan));
 
 	att_chan_mtu_updated(att_chan);
 }

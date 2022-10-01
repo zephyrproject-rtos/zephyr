@@ -241,7 +241,6 @@ Bluetooth Audio:
   status: maintained
   maintainers:
     - Thalley
-    - asbjornsabo
   collaborators:
     - Vudentz
     - jhedberg
@@ -249,6 +248,7 @@ Bluetooth Audio:
     - MariuszSkamra
     - rymanluk
     - sjanc
+    - asbjornsabo
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
@@ -412,11 +412,9 @@ Devicetree:
   status: maintained
   maintainers:
     - mbolivar-nordic
-  collaborators:
     - galak
   files:
     - scripts/dts/
-    - dts/bindings/
     - dts/common/
     - tests/lib/devicetree/
     - doc/build/dts/
@@ -424,6 +422,15 @@ Devicetree:
     - scripts/kconfig/kconfigfunctions.py
   labels:
     - "area: Devicetree"
+
+Devicetree Bindings:
+  status: maintained
+  maintainers:
+    - galak
+  files:
+    - dts/bindings/
+  labels:
+    - "area: Devicetree Binding"
 
 Disk:
   status: maintained
@@ -464,18 +471,32 @@ Documentation:
     - carlescufi
   collaborators:
     - nashif
-    - utzig
-    - gmarull
   files:
-    - doc/
-    - doc/_static/
-    - doc/_templates/
-    - doc/_doxygen/
-    - doc/_scripts/
+    - doc/contribute/
+    - doc/develop/
+    - doc/introduction/
+    - doc/project/
+    - doc/releases/
+    - doc/security/
     - README.rst
-    - doc/Makefile
   labels:
     - "area: Documentation"
+
+Documentation Infrastructure:
+  status: maintained
+  maintainers:
+    - gmarull
+  collaborators:
+    - carlescufi
+    - nashif
+  files:
+    - doc/_*/
+    - doc/CMakeLists.txt
+    - doc/conf.py
+    - doc/Makefile
+    - doc/zephyr.doxyfile.in
+  labels:
+    - "area: Documentation Infrastructure"
 
 "Drivers: ADC":
   status: maintained
@@ -1548,6 +1569,7 @@ Power management:
     - mengxianglinx
     - gmarull
     - teburd
+    - yinfangw
   files:
     - include/zephyr/pm/
     - samples/subsys/pm/
@@ -1559,11 +1581,10 @@ Power management:
 RISCV arch:
   status: maintained
   maintainers:
+    - fkokosinski
     - kgugala
-    - pgielda
     - tgorochowik
   collaborators:
-    - fkokosinski
     - mgielda
     - katsuster
     - edersondisouza
@@ -2296,6 +2317,14 @@ West:
   labels:
     - manifest-hal_quicklogic
 
+"West project: hal_renesas":
+  status: maintained
+  maintainers:
+    - andrzej-kaczmarek
+  files: []
+  labels:
+    - manifest-hal_renesas
+
 "West project: hal_rpi_pico":
   status: maintained
   maintainers:
@@ -2356,6 +2385,15 @@ West:
   files: []
   labels:
     - manifest-hal_ti
+
+"West project: hal_wurthelektronik":
+  status: maintained
+  maintainers:
+    - mah-eiSmart
+  files:
+    - modules/Kconfig.wurthelektronik
+  labels:
+    - manifest-hal_wurthelektronik
 
 "West project: hal_xtensa":
   status: maintained

@@ -169,7 +169,8 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 	}
 }
 
-void bt_keys_foreach_type(int type, void (*func)(struct bt_keys *keys, void *data), void *data)
+void bt_keys_foreach_type(enum bt_keys_type type, void (*func)(struct bt_keys *keys, void *data),
+			  void *data)
 {
 	int i;
 
@@ -182,7 +183,7 @@ void bt_keys_foreach_type(int type, void (*func)(struct bt_keys *keys, void *dat
 	}
 }
 
-struct bt_keys *bt_keys_find(int type, uint8_t id, const bt_addr_le_t *addr)
+struct bt_keys *bt_keys_find(enum bt_keys_type type, uint8_t id, const bt_addr_le_t *addr)
 {
 	int i;
 
@@ -200,7 +201,7 @@ struct bt_keys *bt_keys_find(int type, uint8_t id, const bt_addr_le_t *addr)
 	return NULL;
 }
 
-struct bt_keys *bt_keys_get_type(int type, uint8_t id, const bt_addr_le_t *addr)
+struct bt_keys *bt_keys_get_type(enum bt_keys_type type, uint8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
 
@@ -292,7 +293,7 @@ struct bt_keys *bt_keys_find_addr(uint8_t id, const bt_addr_le_t *addr)
 	return NULL;
 }
 
-void bt_keys_add_type(struct bt_keys *keys, int type)
+void bt_keys_add_type(struct bt_keys *keys, enum bt_keys_type type)
 {
 	__ASSERT_NO_MSG(keys != NULL);
 
@@ -537,3 +538,17 @@ void bt_keys_show_sniffer_info(struct bt_keys *keys, void *data)
 	}
 }
 #endif /* defined(CONFIG_BT_LOG_SNIFFER_INFO) */
+
+#ifdef ZTEST_UNITTEST
+struct bt_keys *bt_keys_get_key_pool(void)
+{
+	return key_pool;
+}
+
+#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+uint32_t bt_keys_get_aging_counter_val(void)
+{
+	return aging_counter_val;
+}
+#endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
+#endif /* ZTEST_UNITTEST */

@@ -257,12 +257,15 @@ int can_mcan_stop(const struct device *dev)
 	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_reg *can = cfg->can;
+	can_tx_callback_t tx_cb;
+	uint32_t tx_idx;
 	int ret;
 
 	if (!data->started) {
 		return -EALREADY;
 	}
 
+	/* CAN transmissions are automatically stopped when entering init mode */
 	ret = can_enter_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret != 0) {
 		LOG_ERR("Failed to enter init mode");
@@ -280,6 +283,16 @@ int can_mcan_stop(const struct device *dev)
 	can_mcan_enable_configuration_change(dev);
 
 	data->started = false;
+
+	for (tx_idx = 0; tx_idx < ARRAY_SIZE(data->tx_fin_cb); tx_idx++) {
+		tx_cb = data->tx_fin_cb[tx_idx];
+
+		if (tx_cb != NULL) {
+			data->tx_fin_cb[tx_idx] = NULL;
+			tx_cb(dev, -ENETDOWN, data->tx_fin_cb_arg[tx_idx]);
+			k_sem_give(&data->tx_sem);
+		}
+	}
 
 	return 0;
 }
@@ -347,10 +360,6 @@ int can_mcan_init(const struct device *dev)
 	k_mutex_init(&data->inst_mutex);
 	k_mutex_init(&data->tx_mtx);
 	k_sem_init(&data->tx_sem, NUM_TX_BUF_ELEMENTS, NUM_TX_BUF_ELEMENTS);
-
-	for (int i = 0; i < ARRAY_SIZE(data->tx_fin_sem); ++i) {
-		k_sem_init(&data->tx_fin_sem[i], 0, 1);
-	}
 
 	if (cfg->phy != NULL) {
 		if (!device_is_ready(cfg->phy)) {
@@ -558,11 +567,8 @@ static void can_mcan_tc_event_handler(const struct device *dev)
 		k_sem_give(&data->tx_sem);
 
 		tx_cb = data->tx_fin_cb[tx_idx];
-		if (tx_cb == NULL) {
-			k_sem_give(&data->tx_fin_sem[tx_idx]);
-		} else {
-			tx_cb(dev, 0, data->tx_fin_cb_arg[tx_idx]);
-		}
+		data->tx_fin_cb[tx_idx] = NULL;
+		tx_cb(dev, 0, data->tx_fin_cb_arg[tx_idx]);
 	}
 }
 
@@ -755,10 +761,10 @@ int can_mcan_get_state(const struct device *dev, enum can_state *state,
 	}
 
 	if (err_cnt != NULL) {
-		err_cnt->rx_err_cnt = (can->ecr & CAN_MCAN_ECR_TEC_MSK) <<
+		err_cnt->tx_err_cnt = (can->ecr & CAN_MCAN_ECR_TEC_MSK) <<
 				      CAN_MCAN_ECR_TEC_POS;
 
-		err_cnt->tx_err_cnt = (can->ecr & CAN_MCAN_ECR_REC_MSK) <<
+		err_cnt->rx_err_cnt = (can->ecr & CAN_MCAN_ECR_REC_MSK) <<
 				      CAN_MCAN_ECR_REC_POS;
 	}
 
@@ -813,6 +819,8 @@ int can_mcan_send(const struct device *dev,
 		frame->rtr == CAN_DATAFRAME ? "" : "RTR",
 		frame->fd == CAN_DATAFRAME ? "" : "FD frame",
 		frame->brs == CAN_DATAFRAME ? "" : "BRS");
+
+	__ASSERT_NO_MSG(callback != NULL);
 
 	if (data_length > sizeof(frame->data)) {
 		LOG_ERR("data length (%zu) > max frame data length (%zu)",
@@ -869,11 +877,6 @@ int can_mcan_send(const struct device *dev,
 	can->txbar = (1U << put_idx);
 
 	k_mutex_unlock(&data->tx_mtx);
-
-	if (callback == NULL) {
-		LOG_DBG("Waiting for TX complete");
-		k_sem_take(&data->tx_fin_sem[put_idx], K_FOREVER);
-	}
 
 	return 0;
 }

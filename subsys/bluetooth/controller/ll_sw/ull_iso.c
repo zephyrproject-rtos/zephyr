@@ -316,7 +316,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	if (handle < BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
-	stream_handle = handle - BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE;
+	stream_handle = LL_BIS_SYNC_IDX_FROM_HANDLE(handle);
 
 	stream = ull_sync_iso_stream_get(stream_handle);
 	if (!stream || stream->dp) {
@@ -563,7 +563,7 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 	if (handle < BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
-	stream_handle = handle - BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE;
+	stream_handle = LL_BIS_SYNC_IDX_FROM_HANDLE(handle);
 
 	stream = ull_sync_iso_stream_get(stream_handle);
 	if (!stream) {
@@ -1090,8 +1090,10 @@ uint8_t ll_iso_transmit_test(uint16_t handle, uint8_t payload_type)
 
 	} else if (IS_ADV_ISO_HANDLE(handle)) {
 		struct lll_adv_iso_stream *stream;
+		uint16_t stream_handle;
 
-		stream = ull_adv_iso_stream_get(handle);
+		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
+		stream = ull_adv_iso_stream_get(stream_handle);
 		if (!stream) {
 			return BT_HCI_ERR_UNKNOWN_CONN_ID;
 		}
@@ -1192,6 +1194,7 @@ int ll_iso_tx_mem_enqueue(uint16_t handle, void *node_tx, void *link)
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO) &&
 		   IS_ADV_ISO_HANDLE(handle)) {
 		struct lll_adv_iso_stream *stream;
+		uint16_t stream_handle;
 
 		/* FIXME: When hci_iso_handle uses ISOAL, link is provided and
 		 * this code should be removed.
@@ -1199,7 +1202,8 @@ int ll_iso_tx_mem_enqueue(uint16_t handle, void *node_tx, void *link)
 		link = mem_acquire(&mem_link_iso_tx.free);
 		LL_ASSERT(link);
 
-		stream = ull_adv_iso_stream_get(handle);
+		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
+		stream = ull_adv_iso_stream_get(stream_handle);
 		memq_enqueue(link, node_tx, &stream->memq_tx.tail);
 
 	} else {

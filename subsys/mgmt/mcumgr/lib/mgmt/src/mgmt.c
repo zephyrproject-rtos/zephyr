@@ -65,25 +65,6 @@ mgmt_register_group(struct mgmt_group *group)
 	sys_slist_append(&mgmt_group_list, &group->node);
 }
 
-int
-mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int errcode)
-{
-	bool ok;
-	zcbor_state_t *zse = ctxt->cnbe->zs;
-
-	zcbor_tstr_put_lit(zse, "rc");
-	ok = zcbor_int32_put(zse, errcode);
-
-#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
-	if (ok && MGMT_CTXT_RC_RSN(ctxt) != NULL) {
-		ok = zcbor_tstr_put_lit(zse, "rsn")			&&
-		     zcbor_tstr_put_term(zse, MGMT_CTXT_RC_RSN(ctxt));
-	}
-#endif
-
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
-}
-
 void
 mgmt_ntoh_hdr(struct mgmt_hdr *hdr)
 {

@@ -54,12 +54,14 @@ LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
  */
 static struct k_mutex filter_mutex;
 
-static void can_stm32_signal_tx_complete(const struct device *dev, struct can_stm32_mailbox *mb)
+static void can_stm32_signal_tx_complete(const struct device *dev, struct can_stm32_mailbox *mb,
+					 int status)
 {
-	if (mb->tx_callback) {
-		mb->tx_callback(dev, mb->error, mb->callback_arg);
-	} else  {
-		k_sem_give(&mb->tx_int_sem);
+	can_tx_callback_t callback = mb->tx_callback;
+
+	if (callback != NULL) {
+		callback(dev, status, mb->callback_arg);
+		mb->tx_callback = NULL;
 	}
 }
 
@@ -210,43 +212,41 @@ static inline void can_stm32_tx_isr_handler(const struct device *dev)
 	const struct can_stm32_config *cfg = dev->config;
 	CAN_TypeDef *can = cfg->can;
 	uint32_t bus_off;
+	int status;
 
 	bus_off = can->ESR & CAN_ESR_BOFF;
 
 	if ((can->TSR & CAN_TSR_RQCP0) | bus_off) {
-		data->mb0.error =
-				can->TSR & CAN_TSR_TXOK0 ? 0  :
-				can->TSR & CAN_TSR_TERR0 ? -EIO :
-				can->TSR & CAN_TSR_ALST0 ? -EBUSY :
-						 bus_off ? -ENETUNREACH :
-							   -EIO;
+		status = can->TSR & CAN_TSR_TXOK0 ? 0  :
+			 can->TSR & CAN_TSR_TERR0 ? -EIO :
+			 can->TSR & CAN_TSR_ALST0 ? -EBUSY :
+					  bus_off ? -ENETUNREACH :
+						    -EIO;
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP0;
-		can_stm32_signal_tx_complete(dev, &data->mb0);
+		can_stm32_signal_tx_complete(dev, &data->mb0, status);
 	}
 
 	if ((can->TSR & CAN_TSR_RQCP1) | bus_off) {
-		data->mb1.error =
-				can->TSR & CAN_TSR_TXOK1 ? 0  :
-				can->TSR & CAN_TSR_TERR1 ? -EIO :
-				can->TSR & CAN_TSR_ALST1 ? -EBUSY :
-				bus_off                  ? -ENETUNREACH :
-							   -EIO;
+		status = can->TSR & CAN_TSR_TXOK1 ? 0  :
+			 can->TSR & CAN_TSR_TERR1 ? -EIO :
+			 can->TSR & CAN_TSR_ALST1 ? -EBUSY :
+			 bus_off                  ? -ENETUNREACH :
+						    -EIO;
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP1;
-		can_stm32_signal_tx_complete(dev, &data->mb1);
+		can_stm32_signal_tx_complete(dev, &data->mb1, status);
 	}
 
 	if ((can->TSR & CAN_TSR_RQCP2) | bus_off) {
-		data->mb2.error =
-				can->TSR & CAN_TSR_TXOK2 ? 0  :
-				can->TSR & CAN_TSR_TERR2 ? -EIO :
-				can->TSR & CAN_TSR_ALST2 ? -EBUSY :
-				bus_off                  ? -ENETUNREACH :
-							   -EIO;
+		status = can->TSR & CAN_TSR_TXOK2 ? 0  :
+			 can->TSR & CAN_TSR_TERR2 ? -EIO :
+			 can->TSR & CAN_TSR_ALST2 ? -EBUSY :
+			 bus_off                  ? -ENETUNREACH :
+						    -EIO;
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP2;
-		can_stm32_signal_tx_complete(dev, &data->mb2);
+		can_stm32_signal_tx_complete(dev, &data->mb2, status);
 	}
 
 	if (can->TSR & CAN_TSR_TME) {
@@ -419,6 +419,12 @@ static int can_stm32_stop(const struct device *dev)
 		goto unlock;
 	}
 
+	/* Abort any pending transmissions */
+	can_stm32_signal_tx_complete(dev, &data->mb0, -ENETDOWN);
+	can_stm32_signal_tx_complete(dev, &data->mb1, -ENETDOWN);
+	can_stm32_signal_tx_complete(dev, &data->mb2, -ENETDOWN);
+	can->TSR |= CAN_TSR_ABRQ2 | CAN_TSR_ABRQ1 | CAN_TSR_ABRQ0;
+
 	if (cfg->phy != NULL) {
 		ret = can_transceiver_disable(cfg->phy);
 		if (ret != 0) {
@@ -561,9 +567,6 @@ static int can_stm32_init(const struct device *dev)
 	k_mutex_init(&filter_mutex);
 	k_mutex_init(&data->inst_mutex);
 	k_sem_init(&data->tx_int_sem, 0, 1);
-	k_sem_init(&data->mb0.tx_int_sem, 0, 1);
-	k_sem_init(&data->mb1.tx_int_sem, 0, 1);
-	k_sem_init(&data->mb2.tx_int_sem, 0, 1);
 
 	if (cfg->phy != NULL) {
 		if (!device_is_ready(cfg->phy)) {
@@ -741,6 +744,7 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 		    "standard" : "extended"
 		    , frame->rtr == CAN_DATAFRAME ? "no" : "yes");
 
+	__ASSERT_NO_MSG(callback != NULL);
 	__ASSERT(frame->dlc == 0U || frame->data != NULL, "Dataptr is null");
 
 	if (frame->dlc > CAN_MAX_DLC) {
@@ -784,7 +788,6 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 
 	mb->tx_callback = callback;
 	mb->callback_arg = user_data;
-	k_sem_reset(&mb->tx_int_sem);
 
 	/* mailbox identifier register setup */
 	mailbox->TIR &= CAN_TI0R_TXRQ;
@@ -808,11 +811,6 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 
 	mailbox->TIR |= CAN_TI0R_TXRQ;
 	k_mutex_unlock(&data->inst_mutex);
-
-	if (callback == NULL) {
-		k_sem_take(&mb->tx_int_sem, K_FOREVER);
-		return mb->error;
-	}
 
 	return 0;
 }

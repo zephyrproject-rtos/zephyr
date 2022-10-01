@@ -512,9 +512,9 @@
 			status = "disabled";
 		};
 
-		lpuart12: uart@40098000 {
+		lpuart12: uart@40c28000 {
 			compatible = "nxp,kinetis-lpuart";
-			reg = <0x40098000 0x4000>;
+			reg = <0x40c28000 0x4000>;
 			interrupts = <31 0>;
 			clocks = <&ccm IMX_CCM_LPUART12_CLK 0x80 14>;
 			status = "disabled";

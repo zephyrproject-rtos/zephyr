@@ -211,7 +211,7 @@ scripting, missing authentication, and missing authorization. See the
 
 .. _CWE/SANS top 25: http://cwe.mitre.org/top25/
 
-.. _OWASP Top 10: https://www.owasp.org/index.php/Category:OWASP_Top_Ten_Project
+.. _OWASP Top 10: https://owasp.org/www-project-top-ten/
 
 Zephyr Security Subcommittee
 ============================

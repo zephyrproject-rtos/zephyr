@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/storage/flash_map.h>
+#include <bootutil/bootutil_public.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/drivers/flash.h>
 

@@ -7,12 +7,19 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_
 #define ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_
 
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/sys/util.h>
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <zephyr/drivers/spi.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#include <zephyr/drivers/i2c.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 /*
  * ADXL372 registers definition
@@ -278,10 +285,22 @@ struct adxl372_xyz_accel_data {
 	int16_t z;
 };
 
+struct adxl372_transfer_function {
+	int (*read_reg_multiple)(const struct device *dev, uint8_t reg_addr,
+				 uint8_t *value, uint16_t len);
+	int (*write_reg)(const struct device *dev, uint8_t reg_addr,
+			 uint8_t value);
+	int (*read_reg)(const struct device *dev, uint8_t reg_addr,
+			uint8_t *value);
+	int (*write_reg_mask)(const struct device *dev, uint8_t reg_addr,
+			      uint32_t mask, uint8_t value);
+};
+
 struct adxl372_data {
 	struct adxl372_xyz_accel_data sample;
+	const struct adxl372_transfer_function *hw_tf;
 	struct adxl372_fifo_config fifo_config;
-
+	enum adxl372_act_proc_mode act_proc_mode;
 #ifdef CONFIG_ADXL372_TRIGGER
 	struct gpio_callback gpio_cb;
 
@@ -302,15 +321,21 @@ struct adxl372_data {
 };
 
 struct adxl372_dev_config {
-#ifdef CONFIG_ADXL372_I2C
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	struct i2c_dt_spec i2c;
 #endif
-#ifdef CONFIG_ADXL372_SPI
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_dt_spec spi;
-#endif /* CONFIG_ADXL372_SPI */
+#endif
+	int (*bus_init)(const struct device *dev);
 #ifdef CONFIG_ADXL372_TRIGGER
 	struct gpio_dt_spec interrupt;
 #endif
+
+	enum adxl372_bandwidth bw;
+	enum adxl372_hpf_corner hpf;
+	enum adxl372_odr odr;
+
 	bool max_peak_detect_mode;
 
 	/* Device Settings */
@@ -321,11 +346,7 @@ struct adxl372_dev_config {
 	struct adxl372_activity_threshold inactivity_th;
 	struct adxl372_fifo_config fifo_config;
 
-	enum adxl372_bandwidth bw;
-	enum adxl372_hpf_corner hpf;
-	enum adxl372_odr odr;
 	enum adxl372_wakeup_rate wur;
-	enum adxl372_act_proc_mode act_proc_mode;
 	enum adxl372_instant_on_th_mode	th_mode;
 	enum adxl372_filter_settle filter_settle;
 	enum adxl372_op_mode op_mode;
@@ -335,6 +356,9 @@ struct adxl372_dev_config {
 	uint8_t int1_config;
 	uint8_t int2_config;
 };
+
+int adxl372_spi_init(const struct device *dev);
+int adxl372_i2c_init(const struct device *dev);
 
 #ifdef CONFIG_ADXL372_TRIGGER
 int adxl372_get_status(const struct device *dev,

@@ -23,8 +23,8 @@ Zephyr will then include the toolchain cmake files located in the
 
 Here <toolchain name> is the same as the name provided in
 :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`
-See the zephyr files :zephyr_file:`cmake/generic_toolchain.cmake` and
-:zephyr_file:`cmake/target_toolchain.cmake` for more details on what your
+See the zephyr files :zephyr_file:`cmake/modules/FindHostTools.cmake` and
+:zephyr_file:`cmake/modules/FindTargetTools.cmake` for more details on what your
 :file:`generic.cmake` and :file:`target.cmake` files should contain.
 
 You can also set ``ZEPHYR_TOOLCHAIN_VARIANT`` and ``TOOLCHAIN_ROOT`` as CMake

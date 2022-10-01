@@ -185,6 +185,23 @@ static inline int intel_adsp_hda_set_buffer(uint32_t base,
 }
 
 /**
+ * @brief Get the buffer size
+ *
+ * @param hda Stream set to work with
+ * @param regblock_size Register block size
+ * @param sid Stream ID
+ *
+ * @retval buf_size Buffer size in bytes
+ */
+static inline uint32_t intel_adsp_hda_get_buffer_size(uint32_t base,
+					    uint32_t regblock_size,
+					    uint32_t sid)
+{
+
+	return *DGBS(base, regblock_size, sid);
+}
+
+/**
  * @brief Enable the stream
  *
  * @param hda HDA stream set

@@ -1,0 +1,59 @@
+# Copyright (c) 2022 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+    odr:
+      type: int
+      required: false
+      default: 0
+      description: |
+            Accelerometer sampling frequency (ODR). Default is power on reset value.
+              0 # 400Hz
+              1 # 800Hz
+              2 # 1600Hz
+              3 # 3200Hz
+              4 # 6400Hz
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+
+    bw:
+      type: int
+      required: false
+      default: 12
+      description: |
+            Low-Pass (Antialiasing) Filter corner frequency. Default is power on reset value.
+              0 # 200Hz
+              1 # 400Hz
+              2 # 800Hz
+              3 # 1600Hz
+              4 # 3200Hz
+              12 # Disabled
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 12
+
+    hpf:
+      type: int
+      required: false
+      default: 4
+      description: |
+            High-Pass Filter corner frequency. Default is power on reset value.
+              0 # ODR/210
+              1 # ODR/411
+              2 # ODR/812
+              3 # ODR/1616
+              4 # Disabled
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4

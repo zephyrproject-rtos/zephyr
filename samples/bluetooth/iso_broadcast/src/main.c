@@ -16,8 +16,8 @@
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
-static K_SEM_DEFINE(sem_big_cmplt, 0, 1);
-static K_SEM_DEFINE(sem_big_term, 0, 1);
+static K_SEM_DEFINE(sem_big_cmplt, 0, BIS_ISO_CHAN_COUNT);
+static K_SEM_DEFINE(sem_big_term, 0, BIS_ISO_CHAN_COUNT);
 
 #define INITIAL_TIMEOUT_COUNTER (BIG_TERMINATE_TIMEOUT_US / BIG_SDU_INTERVAL_US)
 
@@ -128,13 +128,15 @@ void main(void)
 		return;
 	}
 
-	printk("Waiting for BIG complete...");
-	err = k_sem_take(&sem_big_cmplt, K_FOREVER);
-	if (err) {
-		printk("failed (err %d)\n", err);
-		return;
+	for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT; chan++) {
+		printk("Waiting for BIG complete chan %u...\n", chan);
+		err = k_sem_take(&sem_big_cmplt, K_FOREVER);
+		if (err) {
+			printk("failed (err %d)\n", err);
+			return;
+		}
+		printk("BIG create complete chan %u.\n", chan);
 	}
-	printk("done.\n");
 
 	while (true) {
 		int ret;
@@ -184,13 +186,18 @@ void main(void)
 			}
 			printk("done.\n");
 
-			printk("Waiting for BIG terminate complete...");
-			err = k_sem_take(&sem_big_term, K_FOREVER);
-			if (err) {
-				printk("failed (err %d)\n", err);
-				return;
+			for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT;
+			     chan++) {
+				printk("Waiting for BIG terminate complete"
+				       " chan %u...\n", chan);
+				err = k_sem_take(&sem_big_term, K_FOREVER);
+				if (err) {
+					printk("failed (err %d)\n", err);
+					return;
+				}
+				printk("BIG terminate complete chan %u.\n",
+				       chan);
 			}
-			printk("done.\n");
 
 			printk("Create BIG...");
 			err = bt_iso_big_create(adv, &big_create_param, &big);
@@ -200,13 +207,17 @@ void main(void)
 			}
 			printk("done.\n");
 
-			printk("Waiting for BIG complete...");
-			err = k_sem_take(&sem_big_cmplt, K_FOREVER);
-			if (err) {
-				printk("failed (err %d)\n", err);
-				return;
+			for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT;
+			     chan++) {
+				printk("Waiting for BIG complete chan %u...\n",
+				       chan);
+				err = k_sem_take(&sem_big_cmplt, K_FOREVER);
+				if (err) {
+					printk("failed (err %d)\n", err);
+					return;
+				}
+				printk("BIG create complete chan %u.\n", chan);
 			}
-			printk("done.\n");
 		}
 	}
 }

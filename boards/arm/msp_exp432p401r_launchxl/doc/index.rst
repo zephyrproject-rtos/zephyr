@@ -26,7 +26,7 @@ Features:
 * Backchannel UART through USB to PC
 
 Details on the MSP-EXP432P401R LaunchXL development board can be found in the
-`MSP-EXP432P401R LaunchXL User's Guide`_.
+MSP-EXP432P401R LaunchXL User's Guide.
 
 Supported Features
 ==================
@@ -49,7 +49,7 @@ The MSP-EXP432P401R LaunchXL development board configuration supports the follow
 | UART      | on-chip    | serial port           |
 +-----------+------------+-----------------------+
 
-More details about the supported peripherals are available in `MSP432P4XX TRM`_
+More details about the supported peripherals are available in MSP432P4XX TRM
 Other hardware features are not currently supported by the Zephyr kernel.
 
 Building and Flashing
@@ -93,9 +93,9 @@ Debugging
 =========
 
 MSP-EXP432P401R LaunchXL board supports debugging primarily using `CCS IDE`_. More information
-on debugging using CCS can be found in `CCS Debug Handbook`_.
+on debugging using CCS can be found in CCS Debug Handbook.
 
-Launchpad also supports debugging using GDB. See section 3.3 of `GCC ARM Toolchain Guide`_.
+Launchpad also supports debugging using GDB. See section 3.3 of GCC ARM Toolchain Guide.
 
 References
 **********
@@ -109,20 +109,8 @@ TI MSP432P401R Product Page:
 TI MSP432 SDK:
    http://www.ti.com/tool/SIMPLELINK-MSP432-SDK
 
-.. _MSP-EXP432P401R LaunchXL User's Guide:
-   http://www.ti.com/lit/ug/slau597c/slau597c.pdf
-
-.. _MSP432P4XX TRM:
-   http://www.ti.com/lit/ug/slau356f/slau356f.pdf
-
 .. _UniFlash:
    http://processors.wiki.ti.com/index.php/UniFlash_v4_Quick_Guide#Command_Line_Interface
 
 .. _CCS IDE:
    http://www.ti.com/tool/ccstudio
-
-.. _CCS Debug Handbook:
-   http://processors.wiki.ti.com/index.php/Debug_Handbook_for_CCS#Cortex_M3.2FM4.2FTiva.2FMSP432
-
-.. _GCC ARM Toolchain Guide:
-   http://www.ti.com/lit/ug/slau688b/slau688b.pdf

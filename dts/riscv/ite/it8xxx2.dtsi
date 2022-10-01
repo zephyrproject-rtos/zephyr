@@ -934,10 +934,11 @@
 			interrupts = <IT8XXX2_IRQ_SMB_A IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-			port-num = <0>;
+			port-num = <SMB_CHANNEL_A>;
 			scl-gpios = <&gpiob 3 0>;
 			sda-gpios = <&gpiob 4 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBA>;
+			fifo-enable;   /* FIFO1 */
 		};
 
 		i2c1: i2c@f01c80 {
@@ -945,14 +946,15 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00f01c80 0x0040   /* Base address */
-					0 0x0001>; /* Not supported */
+			       0x00f01c0f 0x0001>; /* MSTFCTRL2 */
 			interrupts = <IT8XXX2_IRQ_SMB_B IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-			port-num = <1>;
+			port-num = <SMB_CHANNEL_B>;
 			scl-gpios = <&gpioc 1 0>;
 			sda-gpios = <&gpioc 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBB>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
 		};
 
 		i2c2: i2c@f01cc0 {
@@ -964,10 +966,11 @@
 			interrupts = <IT8XXX2_IRQ_SMB_C IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-			port-num = <2>;
+			port-num = <SMB_CHANNEL_C>;
 			scl-gpios = <&gpiof 6 0>;
 			sda-gpios = <&gpiof 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBC>;
+			fifo-enable;   /* FIFO2 */
 		};
 
 		i2c3: i2c@f03680 {
@@ -978,7 +981,7 @@
 			interrupts = <IT8XXX2_IRQ_SMB_D IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-			port-num = <3>;
+			port-num = <I2C_CHANNEL_D>;
 			scl-gpios = <&gpioh 1 0>;
 			sda-gpios = <&gpioh 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBD>;
@@ -992,7 +995,7 @@
 			interrupts = <IT8XXX2_IRQ_SMB_E IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-			port-num = <4>;
+			port-num = <I2C_CHANNEL_E>;
 			scl-gpios = <&gpioe 0 0>;
 			sda-gpios = <&gpioe 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBE>;
@@ -1006,7 +1009,7 @@
 			interrupts = <IT8XXX2_IRQ_SMB_F IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-			port-num = <5>;
+			port-num = <I2C_CHANNEL_F>;
 			scl-gpios = <&gpioa 4 0>;
 			sda-gpios = <&gpioa 5 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBF>;

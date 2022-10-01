@@ -2270,3 +2270,37 @@ def test_dangling_alias():
 };
 ''', force=True)
     assert dt.get_node('/aliases').props['foo'].to_string() == '/missing'
+
+def test_duplicate_nodes():
+    # Duplicate node names in the same {} block are an error in dtc,
+    # so we want to reproduce the same behavior. But we also need to
+    # make sure that doesn't break overlays modifying the same node.
+
+    verify_error_endswith("""
+/dts-v1/;
+
+/ {
+	foo {};
+	foo {};
+};
+""", "/foo: duplicate node name")
+
+    verify_parse("""
+/dts-v1/;
+
+/ {
+	foo { prop = <3>; };
+};
+/ {
+	foo { prop = <4>; };
+};
+""",
+"""
+/dts-v1/;
+
+/ {
+	foo {
+		prop = < 0x4 >;
+	};
+};
+""")
