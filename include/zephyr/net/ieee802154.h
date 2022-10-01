@@ -59,7 +59,6 @@ struct ieee802154_security_ctx {
 
 /* This not meant to be used by any code but 802.15.4 L2 stack */
 struct ieee802154_context {
-	enum net_l2_flags flags;
 	uint16_t pan_id; /* in CPU byte order */
 	uint16_t channel;
 	/* short address:
@@ -70,6 +69,9 @@ struct ieee802154_context {
 	uint16_t short_addr; /* in CPU byte order */
 	uint8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH]; /* in little endian */
 	struct net_linkaddr_storage linkaddr; /* in big endian */
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+	struct ieee802154_security_ctx sec_ctx;
+#endif
 #ifdef CONFIG_NET_L2_IEEE802154_MGMT
 	struct ieee802154_req_params *scan_ctx; /* guarded by scan_ctx_lock */
 	struct k_sem scan_ctx_lock;
@@ -77,10 +79,8 @@ struct ieee802154_context {
 	uint8_t coord_ext_addr[IEEE802154_MAX_ADDR_LENGTH]; /* in little endian */
 	uint16_t coord_short_addr; /* in CPU byte order */
 #endif
-#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
-	struct ieee802154_security_ctx sec_ctx;
-#endif
 	int16_t tx_power;
+	enum net_l2_flags flags;
 	uint8_t sequence;
 
 	uint8_t ack_seq;	   /* guarded by ack_lock */
