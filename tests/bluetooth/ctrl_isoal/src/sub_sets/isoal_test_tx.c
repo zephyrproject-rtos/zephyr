@@ -239,10 +239,10 @@ static isoal_status_t custom_source_pdu_emit_test(struct node_tx_iso *node_tx,
 		      _ll_id,                                                                      \
 		      source_pdu_emit_test_handler_fake.arg1_##_typ.ll_id);                        \
 	zassert_equal(_length,                                                                     \
-		      source_pdu_emit_test_handler_fake.arg1_##_typ.length,                        \
+		      source_pdu_emit_test_handler_fake.arg1_##_typ.len,                           \
 		      "\t\t%u != %u",                                                              \
 		      _length,                                                                     \
-		      source_pdu_emit_test_handler_fake.arg1_##_typ.length);                       \
+		      source_pdu_emit_test_handler_fake.arg1_##_typ.len);                          \
 	zassert_equal(bt_iso_handle(_handle),                                                      \
 		      source_pdu_emit_test_fake.arg1_##_typ,                                       \
 		      "\t\t%08x != %08x",                                                          \
@@ -3010,7 +3010,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_1_pdu_maxPDU)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -3029,7 +3029,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_1_pdu_maxPDU)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[2], pdu_buffer,
 					   pdu_hdr_loc,
@@ -3157,7 +3157,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_1_pdu_bufSize)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -3176,7 +3176,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_1_pdu_bufSize)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[2], pdu_buffer,
 					   pdu_hdr_loc,
@@ -3297,7 +3297,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -3315,7 +3315,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 					   (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[1] = seg_hdr[0];
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[2], pdu_buffer,
 					   pdu_hdr_loc,
@@ -3334,7 +3334,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 	seg_hdr[2].sc = 1;
 	seg_hdr[2].cmplt = 0;
 	seg_hdr[2].timeoffset = 0;
-	seg_hdr[2].length = 0;
+	seg_hdr[2].len = 0;
 	pdu_hdr_loc = 0;
 	sdu_read_loc += (pdu_write_size - pdu_write_loc);
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE;
@@ -3352,7 +3352,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 					   (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[3] = seg_hdr[2];
-	seg_hdr[3].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[3].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[5], pdu_buffer,
 					   pdu_hdr_loc,
@@ -3371,7 +3371,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 	seg_hdr[4].sc = 1;
 	seg_hdr[4].cmplt = 0;
 	seg_hdr[4].timeoffset = 0;
-	seg_hdr[4].length = 0;
+	seg_hdr[4].len = 0;
 	pdu_hdr_loc = 0;
 	sdu_read_loc += (pdu_write_size - pdu_write_loc);
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE;
@@ -3391,7 +3391,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 
 	seg_hdr[5] = seg_hdr[4];
 	seg_hdr[5].cmplt = 1;
-	seg_hdr[5].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[5].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[8], pdu_buffer,
 					   pdu_hdr_loc,
@@ -3511,7 +3511,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_1_pdu)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -3530,7 +3530,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_1_pdu)
 					   (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[1] = seg_hdr[0];
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[2], pdu_buffer,
 					   pdu_hdr_loc,
@@ -3577,7 +3577,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_1_pdu)
 					   &testdata[sdu_read_loc],
 					   (pdu_write_size - pdu_write_loc));
 
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[4], pdu_buffer,
 					   pdu_hdr_loc,
@@ -3624,7 +3624,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_1_pdu)
 					   (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[6], pdu_buffer,
 					   pdu_hdr_loc,
@@ -3750,7 +3750,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_2_pdu)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -3769,7 +3769,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_2_pdu)
 					   (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[1] = seg_hdr[0];
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[2], pdu_buffer[0],
 					   pdu_hdr_loc,
@@ -3813,7 +3813,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_2_pdu)
 					   &testdata[sdu_read_loc],
 					   (pdu_write_size - pdu_write_loc));
 
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[4], pdu_buffer[0],
 					   pdu_hdr_loc,
@@ -3832,7 +3832,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_2_pdu)
 	seg_hdr[2].sc = 1;
 	seg_hdr[2].cmplt = 0;
 	seg_hdr[2].timeoffset = 0;
-	seg_hdr[2].length = 0;
+	seg_hdr[2].len = 0;
 	sdu_read_loc = (pdu_write_size - pdu_write_loc) + testdata_indx;
 	pdu_write_size = testdata_size - testdata_indx - (pdu_write_size - pdu_write_loc) +
 		PDU_ISO_SEG_HDR_SIZE;
@@ -3851,7 +3851,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_2_pdu)
 					   (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[3] = seg_hdr[2];
-	seg_hdr[3].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[3].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[7], pdu_buffer[1],
 					   pdu_hdr_loc,
@@ -3898,7 +3898,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_2_pdu)
 					   (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[3].cmplt = 1;
-	seg_hdr[3].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[3].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[9], pdu_buffer[1],
 					   pdu_hdr_loc,
@@ -4026,7 +4026,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -4045,7 +4045,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 					   (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[1] = seg_hdr[0];
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[2], pdu_buffer[0],
 					   pdu_hdr_loc,
@@ -4089,7 +4089,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 
 	/* PDU should not be allocated */
 
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[4], pdu_buffer[0],
 					   pdu_hdr_loc,
@@ -4108,7 +4108,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 	seg_hdr[2].sc = 1;
 	seg_hdr[2].cmplt = 0;
 	seg_hdr[2].timeoffset = 0;
-	seg_hdr[2].length = 0;
+	seg_hdr[2].len = 0;
 	sdu_read_loc = (pdu_write_size - pdu_write_loc) + testdata_indx;
 	pdu_write_size = testdata_size - testdata_indx - (pdu_write_size - pdu_write_loc) +
 		PDU_ISO_SEG_HDR_SIZE;
@@ -4127,7 +4127,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 					   (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[3] = seg_hdr[2];
-	seg_hdr[3].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[3].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[7], pdu_buffer[1],
 					   pdu_hdr_loc,
@@ -4173,7 +4173,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 					   (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[3].cmplt = 1;
-	seg_hdr[3].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[3].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[9], pdu_buffer[1],
 					   pdu_hdr_loc,
@@ -4222,7 +4222,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -4241,7 +4241,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 					    (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[1] = seg_hdr[0];
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[12], pdu_buffer[0],
 					    pdu_hdr_loc,
@@ -4285,7 +4285,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 					    &testdata[sdu_read_loc],
 					    (pdu_write_size - pdu_write_loc));
 
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[14], pdu_buffer[0],
 					    pdu_hdr_loc,
@@ -4304,7 +4304,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 	seg_hdr[2].sc = 1;
 	seg_hdr[2].cmplt = 0;
 	seg_hdr[2].timeoffset = 0;
-	seg_hdr[2].length = 0;
+	seg_hdr[2].len = 0;
 	sdu_read_loc = (pdu_write_size - pdu_write_loc) + testdata_indx;
 	pdu_write_size = testdata_size - testdata_indx - (pdu_write_size - pdu_write_loc) +
 		PDU_ISO_SEG_HDR_SIZE;
@@ -4323,7 +4323,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 					    (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[3] = seg_hdr[2];
-	seg_hdr[3].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[3].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[17], pdu_buffer[1],
 					    pdu_hdr_loc,
@@ -4369,7 +4369,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 					    (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[3].cmplt = 1;
-	seg_hdr[3].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[3].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[19], pdu_buffer[1],
 					    pdu_hdr_loc,
@@ -4505,7 +4505,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_refPoint2)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -4524,7 +4524,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_refPoint2)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[2], pdu_buffer,
 					   pdu_hdr_loc,
@@ -4574,7 +4574,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_refPoint2)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -4593,7 +4593,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_refPoint2)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[5], pdu_buffer,
 					   pdu_hdr_loc,
@@ -4719,7 +4719,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_1_pdu_refPoint3)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -4738,7 +4738,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_1_pdu_refPoint3)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[2], pdu_buffer,
 					   pdu_hdr_loc,
@@ -4862,7 +4862,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_ts_wrap1)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = 101;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -4881,7 +4881,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_ts_wrap1)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[2], pdu_buffer,
 					   pdu_hdr_loc,
@@ -4931,7 +4931,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_ts_wrap1)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -4950,7 +4950,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_ts_wrap1)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[5], pdu_buffer,
 					   pdu_hdr_loc,
@@ -5065,7 +5065,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_zero_sdu_1_frag_1_pdu_maxPDU)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -5079,7 +5079,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_zero_sdu_1_frag_1_pdu_maxPDU)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[1], pdu_buffer,
 					   pdu_hdr_loc,
@@ -5209,7 +5209,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_pdu_alloc_err)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -5329,7 +5329,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_pdu_emit_err)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -5348,7 +5348,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_pdu_emit_err)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[2], pdu_buffer,
 					   pdu_hdr_loc,
@@ -5467,7 +5467,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_pdu_timeout)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -5486,7 +5486,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_pdu_timeout)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[2], pdu_buffer,
 					   pdu_hdr_loc,
@@ -5529,7 +5529,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_pdu_timeout)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 10 + PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_write_loc = pdu_hdr_loc + PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = testdata_indx;
@@ -5550,7 +5550,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_pdu_timeout)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[5], pdu_buffer,
 					   pdu_hdr_loc,
@@ -5595,7 +5595,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_pdu_timeout)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = testdata_indx;
@@ -5615,7 +5615,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_pdu_timeout)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[8], pdu_buffer,
 					   pdu_hdr_loc,
@@ -5737,7 +5737,7 @@ ZTEST(test_tx_framed_ebq, test_tx_framed_cis_fra_per_bv07c)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -5756,7 +5756,7 @@ ZTEST(test_tx_framed_ebq, test_tx_framed_cis_fra_per_bv07c)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[2], pdu_buffer,
 					   pdu_hdr_loc,
@@ -5794,7 +5794,7 @@ ZTEST(test_tx_framed_ebq, test_tx_framed_cis_fra_per_bv07c)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 10 + PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_write_loc = pdu_hdr_loc + PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = testdata_indx;
@@ -5815,7 +5815,7 @@ ZTEST(test_tx_framed_ebq, test_tx_framed_cis_fra_per_bv07c)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[5], pdu_buffer,
 					   pdu_hdr_loc,
@@ -5866,7 +5866,7 @@ ZTEST(test_tx_framed_ebq, test_tx_framed_cis_fra_per_bv07c)
 	seg_hdr[0].sc = 0;
 	seg_hdr[0].cmplt = 0;
 	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].length = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = testdata_indx;
@@ -5886,7 +5886,7 @@ ZTEST(test_tx_framed_ebq, test_tx_framed_cis_fra_per_bv07c)
 
 	seg_hdr[1] = seg_hdr[0];
 	seg_hdr[1].cmplt = 1;
-	seg_hdr[1].length += (pdu_write_size - pdu_write_loc);
+	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[8], pdu_buffer,
 					   pdu_hdr_loc,
