@@ -541,7 +541,7 @@ static void payload_set(uint8_t type, uint8_t len, uint8_t cte_len, uint8_t cte_
 	struct pdu_dtm *pdu = radio_pkt_scratch_get();
 
 	pdu->type = type;
-	pdu->length = len;
+	pdu->len = len;
 
 #if defined(CONFIG_BT_CTLR_DF_CTE_TX)
 	pdu->cp = cte_len ? 1U : 0U;
