@@ -46,7 +46,7 @@ enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 	if (mpdu->mhr.fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
 		ctx->scan_ctx->len = IEEE802154_SHORT_ADDR_LENGTH;
 		ctx->scan_ctx->short_addr =
-			mpdu->mhr.src_addr->plain.addr.short_addr;
+			sys_le16_to_cpu(mpdu->mhr.src_addr->plain.addr.short_addr);
 	} else {
 		ctx->scan_ctx->len = IEEE802154_EXT_ADDR_LENGTH;
 		sys_memcpy_swap(ctx->scan_ctx->addr,
@@ -320,7 +320,9 @@ static int ieee802154_disassociate(uint32_t mgmt_request, struct net_if *iface,
 	if (params.dst.len == IEEE802154_SHORT_ADDR_LENGTH) {
 		params.dst.short_addr = ctx->coord.short_addr;
 	} else {
-		params.dst.ext_addr = ctx->coord.ext_addr;
+		params.dst.len = IEEE802154_EXT_ADDR_LENGTH;
+		sys_memcpy_swap(params.dst.ext_addr, ctx->coord_ext_addr,
+				IEEE802154_EXT_ADDR_LENGTH);
 	}
 
 	params.pan_id = ctx->pan_id;
@@ -413,8 +415,11 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 			return -EINVAL;
 		}
 
-		if (memcmp(ctx->ext_addr, data, IEEE802154_EXT_ADDR_LENGTH)) {
-			memcpy(ctx->ext_addr, data, IEEE802154_EXT_ADDR_LENGTH);
+		uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
+
+		sys_memcpy_swap(ext_addr_le, data, IEEE802154_EXT_ADDR_LENGTH);
+		if (memcmp(ctx->ext_addr, ext_addr_le, IEEE802154_EXT_ADDR_LENGTH)) {
+			memcpy(ctx->ext_addr, ext_addr_le, IEEE802154_EXT_ADDR_LENGTH);
 			ieee802154_filter_ieee_addr(iface, ctx->ext_addr);
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_SHORT_ADDR) {
@@ -472,7 +477,7 @@ static int ieee802154_get_parameters(uint32_t mgmt_request,
 			return -EINVAL;
 		}
 
-		memcpy(data, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
+		sys_memcpy_swap(data, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_SHORT_ADDR) {
 		*value = ctx->short_addr;
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_TX_POWER) {

@@ -264,7 +264,10 @@ static bool test_dgram_packet_sending(struct sockaddr_ll *pkt_sll, uint32_t secu
 		goto release_frag;
 	}
 
-	net_pkt_lladdr_src(current_pkt)->addr = ctx->ext_addr;
+	uint8_t lladdr_be[IEEE802154_EXT_ADDR_LENGTH];
+
+	sys_memcpy_swap(lladdr_be, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
+	net_pkt_lladdr_src(current_pkt)->addr = lladdr_be;
 	net_pkt_lladdr_src(current_pkt)->len = IEEE802154_MAX_ADDR_LENGTH;
 	if (!ieee802154_decipher_data_frame(iface, current_pkt, &mpdu)) {
 		NET_ERR("*** Cannot decipher/authenticate packet\n");
