@@ -992,7 +992,9 @@ struct pdu_iso {
 	uint8_t hdr_other:6;
 	uint8_t ll_id:2;
 #endif /* CONFIG_LITTLE_ENDIAN */
-	uint8_t length;
+
+	uint8_t len;
+
 	uint8_t payload[0];
 } __packed;
 
@@ -1006,17 +1008,17 @@ struct pdu_iso_sdu_sh {
 	uint8_t cmplt:1;
 	uint8_t rfu:6;
 
-	uint8_t length;
+	uint8_t len;
 	/* Note, timeoffset only available in first segment of sdu */
 	uint32_t timeoffset:24;
 	uint32_t payload:8;
-
 #else
 	uint8_t rfu:6;
 	uint8_t cmplt:1;
 	uint8_t sc:1;
 
-	uint8_t length;
+	uint8_t len;
+
 	/* Note, timeoffset only available in first segment of sdu */
 	uint32_t payload:8;
 	uint32_t timeoffset:24;
@@ -1050,7 +1052,9 @@ struct pdu_cis {
 	uint8_t nesn:1;
 	uint8_t ll_id:2;
 #endif /* CONFIG_LITTLE_ENDIAN */
-	uint8_t length;
+
+	uint8_t len;
+
 	uint8_t payload[0];
 } __packed;
 
@@ -1102,7 +1106,9 @@ struct pdu_bis {
 	uint8_t cssn:3;
 	uint8_t ll_id:2;
 #endif /* CONFIG_LITTLE_ENDIAN */
+
 	uint8_t len;
+
 	union {
 		uint8_t payload[0];
 		struct pdu_big_ctrl ctrl;
@@ -1187,7 +1193,9 @@ struct pdu_dtm {
 	uint8_t rfu0:1;
 	uint8_t type:4;
 #endif /* CONFIG_LITTLE_ENDIAN */
-	uint8_t length;
+
+	uint8_t len;
+
 #if defined(CONFIG_BT_CTLR_DF_CTE_TX)
 	union {
 		uint8_t resv; /* TODO: remove nRF specific code */

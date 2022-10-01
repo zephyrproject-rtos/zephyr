@@ -663,7 +663,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	/* If status is not ISOAL_PDU_STATUS_VALID, length and LLID cannot be trusted */
 	llid = pdu_meta->pdu->ll_id;
 	pdu_err = (pdu_meta->meta->status != ISOAL_PDU_STATUS_VALID);
-	length = pdu_meta->pdu->length;
+	length = pdu_meta->pdu->len;
 	/* A zero length PDU with LLID 0b01 (PDU_BIS_LLID_START_CONTINUE) would be a padding PDU.
 	 * However if there are errors in the PDU, it could be an incorrectly receive non-padding
 	 * PDU. Therefore only consider a PDU with errors as padding if received after the end
@@ -861,7 +861,7 @@ static isoal_sdu_status_t isoal_check_seg_header(struct pdu_iso_sdu_sh *seg_hdr,
 	}
 
 	if (pdu_size_remaining >= PDU_ISO_SEG_HDR_SIZE &&
-		pdu_size_remaining >= PDU_ISO_SEG_HDR_SIZE + seg_hdr->length) {
+		pdu_size_remaining >= PDU_ISO_SEG_HDR_SIZE + seg_hdr->len) {
 
 		/* Valid if there is sufficient data for the segment header and
 		 * there is sufficient data for the required length of the
@@ -911,7 +911,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 	err = ISOAL_STATUS_OK;
 	next_state = ISOAL_START;
 	pdu_err = (pdu_meta->meta->status != ISOAL_PDU_STATUS_VALID);
-	pdu_padding = (pdu_meta->pdu->length == 0);
+	pdu_padding = (pdu_meta->pdu->len == 0);
 
 	if (sp->fsm == ISOAL_START) {
 		seq_err = false;
@@ -919,12 +919,12 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 		seq_err = (meta->payload_number != (sp->prev_pdu_id + 1));
 	}
 
-	end_of_pdu = ((uint8_t *) pdu_meta->pdu->payload) + pdu_meta->pdu->length - 1;
+	end_of_pdu = ((uint8_t *) pdu_meta->pdu->payload) + pdu_meta->pdu->len - 1;
 	seg_hdr = (pdu_err || seq_err || pdu_padding) ? NULL :
 			(struct pdu_iso_sdu_sh *) pdu_meta->pdu->payload;
 
 	seg_err = false;
-	if (seg_hdr && isoal_check_seg_header(seg_hdr, pdu_meta->pdu->length) ==
+	if (seg_hdr && isoal_check_seg_header(seg_hdr, pdu_meta->pdu->len) ==
 								ISOAL_SDU_STATUS_LOST_DATA) {
 		seg_err = true;
 		seg_hdr = NULL;
@@ -1037,7 +1037,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 			 */
 			uint8_t offset = ((uint8_t *) seg_hdr) + PDU_ISO_SEG_HDR_SIZE -
 					 pdu_meta->pdu->payload;
-			uint8_t length = seg_hdr->length;
+			uint8_t length = seg_hdr->len;
 
 			if (!sc) {
 				/* time_offset included in header, don't copy offset field to SDU */
@@ -1057,7 +1057,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 
 		/* Find next segment header, set to null if past end of PDU */
 		seg_hdr = (struct pdu_iso_sdu_sh *) (((uint8_t *) seg_hdr) +
-						     seg_hdr->length + PDU_ISO_SEG_HDR_SIZE);
+						     seg_hdr->len + PDU_ISO_SEG_HDR_SIZE);
 
 		if (((uint8_t *) seg_hdr) > end_of_pdu) {
 			seg_hdr = NULL;
@@ -1434,7 +1434,7 @@ static isoal_status_t isoal_tx_pdu_emit(const struct isoal_source *source_ctx,
 	/* Set PDU LLID */
 	produced_pdu->contents.pdu->ll_id = pdu_ll_id;
 	/* Set PDU length */
-	produced_pdu->contents.pdu->length = (uint8_t)payload_size;
+	produced_pdu->contents.pdu->len = (uint8_t)payload_size;
 
 	/* Attempt to enqueue the node towards the LL */
 	status = source_ctx->session.pdu_emit(node_tx, handle);
@@ -1771,7 +1771,7 @@ static isoal_status_t isoal_insert_seg_header_timeoffset(struct isoal_source *so
 
 	seg_hdr.sc = sc;
 	seg_hdr.cmplt = cmplt;
-	seg_hdr.length = sc ? 0 : PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	seg_hdr.len = sc ? 0 : PDU_ISO_SEG_TIMEOFFSET_SIZE;
 
 	if (!sc) {
 		seg_hdr.timeoffset = time_offset;
@@ -1779,7 +1779,7 @@ static isoal_status_t isoal_insert_seg_header_timeoffset(struct isoal_source *so
 
 	/* Store header */
 	pp->seg_hdr_sc = seg_hdr.sc;
-	pp->seg_hdr_length = seg_hdr.length;
+	pp->seg_hdr_length = seg_hdr.len;
 
 	/* Save location of last segmentation header so that it can be updated
 	 * as data is written.
@@ -1822,7 +1822,7 @@ static isoal_status_t isoal_update_seg_header_cmplt_length(struct isoal_source *
 	/* Update the complete flag and length */
 	seg_hdr.cmplt = cmplt;
 	pp->seg_hdr_length += add_length;
-	seg_hdr.length = pp->seg_hdr_length;
+	seg_hdr.len = pp->seg_hdr_length;
 
 
 	/* Re-write the segmentation header at the same location */

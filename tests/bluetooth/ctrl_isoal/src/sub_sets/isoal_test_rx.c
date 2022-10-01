@@ -9881,7 +9881,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seg_err1)
 				sdu_timeoffset, &rx_pdu_meta_buf.pdu_meta);
 
 	/* Set an invalid length and incomplete header */
-	rx_pdu_meta_buf.pdu_meta.pdu->length = 3;
+	rx_pdu_meta_buf.pdu_meta.pdu->len = 3;
 
 	/* Set callback function return values */
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[0]);
@@ -10173,7 +10173,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seg_err2)
 				sdu_timeoffset, &rx_pdu_meta_buf.pdu_meta);
 
 	/* Set an invalid length */
-	rx_pdu_meta_buf.pdu_meta.pdu->length -= 5;
+	rx_pdu_meta_buf.pdu_meta.pdu->len -= 5;
 
 	/* Set callback function return values */
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[1]);
