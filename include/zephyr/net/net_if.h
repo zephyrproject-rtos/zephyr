@@ -499,6 +499,30 @@ struct net_if {
 };
 
 /**
+ * @brief Lock net_if access. Call this method before any non-atomic
+ *        read access to one or more writable net_if attributes.
+ *
+ *        MUST be followed by net_if_unlock().
+ */
+#ifdef CONFIG_NET_RAW_MODE
+static inline void net_if_lock(void) {}
+#else
+void net_if_lock(void);
+#endif
+
+/**
+ * @brief Unlock net_if access. Call this method after any non-atomic
+ *        read access to writable net_if attributes.
+ *
+ *        See net_if_lock().
+ */
+#ifdef CONFIG_NET_RAW_MODE
+static inline void net_if_unlock(void) {}
+#else
+void net_if_unlock(void);
+#endif
+
+/**
  * @brief Set a value in network interface flags
  *
  * @param iface Pointer to network interface

@@ -296,8 +296,10 @@ static inline void net_pkt_set_iface(struct net_pkt *pkt, struct net_if *iface)
 	 * that the address type is properly set and is not forgotten.
 	 */
 	if (iface) {
+		net_if_lock();
 		pkt->lladdr_src.type = net_if_get_link_addr(iface)->type;
 		pkt->lladdr_dst.type = net_if_get_link_addr(iface)->type;
+		net_if_unlock();
 	}
 }
 

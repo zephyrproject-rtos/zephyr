@@ -169,6 +169,16 @@ struct net_if *z_vrfy_net_if_get_by_index(int index)
 #include <syscalls/net_if_get_by_index_mrsh.c>
 #endif
 
+inline void net_if_lock(void)
+{
+	k_mutex_lock(&lock, K_FOREVER);
+}
+
+inline void net_if_unlock(void)
+{
+	k_mutex_unlock(&lock);
+}
+
 static inline void net_context_send_cb(struct net_context *context,
 				       int status)
 {
