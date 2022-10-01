@@ -124,6 +124,15 @@ static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
 		addr->len = 0U;
 		addr->addr = NULL;
 	}
+
+	/* Swap address byte order in place from little to big endian.
+	 * This is ok as the ll address field comes from the header
+	 * part of the packet buffer which will not be directly accessible
+	 * once the packet reaches the upper layers.
+	 */
+	if (addr->len > 0) {
+		sys_mem_swap(addr->addr, addr->len);
+	}
 }
 
 /**
@@ -163,7 +172,7 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 		 * address.
 		 */
 		if (!(dst_plain->addr.short_addr == IEEE802154_BROADCAST_ADDRESS ||
-		      dst_plain->addr.short_addr == ctx->short_addr)) {
+		      dst_plain->addr.short_addr == sys_cpu_to_le16(ctx->short_addr))) {
 			LOG_DBG("Frame dst address (short) does not match!");
 			return false;
 		}

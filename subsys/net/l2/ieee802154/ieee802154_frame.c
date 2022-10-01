@@ -249,6 +249,7 @@ static inline bool validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr, u
 
 	/* This should be set only when comp == 0 */
 	if (dst_brdcst_chk) {
+		/* broadcast address is symmetric so no need to swap byte order */
 		if (mhr->dst_addr->plain.addr.short_addr != IEEE802154_BROADCAST_ADDRESS) {
 			return false;
 		}
@@ -535,7 +536,7 @@ static inline enum ieee802154_addressing_mode get_dst_addr_mode(struct net_linka
 
 	if (dst->len == IEEE802154_SHORT_ADDR_LENGTH) {
 		uint16_t short_addr = ntohs(*(uint16_t *)(dst->addr));
-		*broadcast = (short_addr == 0xffff);
+		*broadcast = (short_addr == IEEE802154_BROADCAST_ADDRESS);
 		return IEEE802154_ADDR_MODE_SHORT;
 	} else {
 		*broadcast = false;
@@ -674,6 +675,20 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 	params.pan_id = ctx->pan_id;
 	if (src->addr && src->len == IEEE802154_SHORT_ADDR_LENGTH) {
 		params.short_addr = ntohs(*(uint16_t *)(src->addr));
+		if (ctx->short_addr != params.short_addr) {
+			return false;
+		}
+	} else {
+		if (src->len != IEEE802154_EXT_ADDR_LENGTH) {
+			return false;
+		}
+
+		uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
+
+		sys_memcpy_swap(ext_addr_le, src->addr, IEEE802154_EXT_ADDR_LENGTH);
+		if (memcmp(ctx->ext_addr, ext_addr_le, src->len)) {
+			return false;
+		}
 	}
 
 	broadcast = data_addr_to_fs_settings(dst, fs, &params);
@@ -767,7 +782,7 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi, struct ieee802154
 		break;
 	case IEEE802154_CFI_DATA_REQUEST:
 		fs->fc.ar = 1U;
-		/* TODO: src/dst addr mode: see 5.3.4 */
+		/* TODO: src/dst addr mode: see section 7.3.4 */
 
 		break;
 	case IEEE802154_CFI_ORPHAN_NOTIFICATION:
@@ -782,7 +797,7 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi, struct ieee802154
 		break;
 	case IEEE802154_CFI_COORDINATOR_REALIGNEMENT:
 		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
-		/* Todo: ar and dst addr mode: see 5.3.8 */
+		/* TODO: ar and dst addr mode: see section 7.3.8 */
 
 		break;
 	case IEEE802154_CFI_GTS_REQUEST:
@@ -927,9 +942,11 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	uint8_t tag_size = level_2_tag_size[level];
 	uint8_t hdr_len = (uint8_t *)mpdu->payload - net_pkt_data(pkt);
 	uint8_t payload_len = net_pkt_get_len(pkt) - hdr_len - tag_size;
+	uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
 
+	sys_memcpy_swap(ext_addr_le, net_pkt_lladdr_src(pkt)->addr, IEEE802154_EXT_ADDR_LENGTH);
 	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_data(pkt), hdr_len, payload_len,
-				     tag_size, net_pkt_lladdr_src(pkt)->addr,
+				     tag_size, ext_addr_le,
 				     sys_le32_to_cpu(mpdu->mhr.aux_sec->frame_counter))) {
 		NET_ERR("Could not decipher the frame");
 		return false;
