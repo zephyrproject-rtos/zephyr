@@ -646,3 +646,8 @@ test_i2c_as5600: as5600@64 {
 	compatible = "ams,as5600";
 	reg = <0x64>;
 };
+
+test_i2c_htu21d: htu21d@40 {
+	compatible = "meas,htu21d";
+	reg = <0x40>;
+};

@@ -1,0 +1,12 @@
+# HTU21D humidity and temperature sensor configuration options
+
+# Copyright (c) 2022 Gaël PORTAY
+# SPDX-License-Identifier: Apache-2.0
+
+config HTU21D
+	bool "HTU21D sensor"
+	default y
+	depends on DT_HAS_MEAS_HTU21D_ENABLED
+	select I2C
+	help
+	  Enable driver for HTU21D I2C-based humidity and temperature sensor.
