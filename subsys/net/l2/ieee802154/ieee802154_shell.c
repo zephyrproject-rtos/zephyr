@@ -60,6 +60,13 @@ static int cmd_ieee802154_ack(const struct shell *shell,
 	return 0;
 }
 
+/**
+ * Parse a string representing an extended address in ASCII HEX
+ * format into a big endian binary representation of the address.
+ *
+ * @param addr Extended address as a string.
+ * @param ext_addr Extended address in big endian byte ordering.
+ */
 static inline void parse_extended_address(char *addr, uint8_t *ext_addr)
 {
 	net_bytes_from_str(ext_addr, IEEE802154_EXT_ADDR_LENGTH, addr);
@@ -401,7 +408,7 @@ static int cmd_ieee802154_set_ext_addr(const struct shell *shell,
 				       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	uint8_t addr[IEEE802154_EXT_ADDR_LENGTH];
+	uint8_t addr[IEEE802154_EXT_ADDR_LENGTH]; /* in big endian */
 
 	if (argc < 2) {
 		shell_help(shell);
@@ -440,7 +447,7 @@ static int cmd_ieee802154_get_ext_addr(const struct shell *shell,
 				       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	uint8_t addr[IEEE802154_EXT_ADDR_LENGTH];
+	uint8_t addr[IEEE802154_EXT_ADDR_LENGTH]; /* in big endian */
 
 	if (!iface) {
 		shell_fprintf(shell, SHELL_INFO,
@@ -476,7 +483,7 @@ static int cmd_ieee802154_set_short_addr(const struct shell *shell,
 					 size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	uint16_t short_addr;
+	uint16_t short_addr; /* in CPU byte order */
 
 	if (argc < 2) {
 		shell_help(shell);
@@ -509,7 +516,7 @@ static int cmd_ieee802154_get_short_addr(const struct shell *shell,
 					 size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	uint16_t short_addr;
+	uint16_t short_addr; /* in CPU byte order */
 
 	if (!iface) {
 		shell_fprintf(shell, SHELL_INFO,
