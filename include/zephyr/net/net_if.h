@@ -543,6 +543,22 @@ static inline void net_if_flag_clear(struct net_if *iface,
 }
 
 /**
+ * @brief Test and clear a value in network interface flags
+ *
+ * @param iface Pointer to network interface
+ * @param value Flag value
+ *
+ * @return true if the bit was set, false if it wasn't.
+ */
+static inline bool net_if_flag_test_and_clear(struct net_if *iface,
+					      enum net_if_flag value)
+{
+	NET_ASSERT(iface);
+
+	return atomic_test_and_clear_bit(iface->if_dev->flags, value);
+}
+
+/**
  * @brief Check if a value in network interface flags is set
  *
  * @param iface Pointer to network interface
