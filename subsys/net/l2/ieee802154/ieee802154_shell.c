@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(net_ieee802154_shell, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include "ieee802154_frame.h"
 
-#define MAX_EXT_ADDR_STR_LEN sizeof("xx:xx:xx:xx:xx:xx:xx:xx")
+#define EXT_ADDR_STR_LEN sizeof("xx:xx:xx:xx:xx:xx:xx:xx")
 
 struct ieee802154_req_params params;
 static struct net_mgmt_event_callback scan_cb;
@@ -76,7 +76,7 @@ static int cmd_ieee802154_associate(const struct shell *shell,
 				    size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	char ext_addr[MAX_EXT_ADDR_STR_LEN];
+	char ext_addr[EXT_ADDR_STR_LEN];
 
 	if (argc < 3) {
 		shell_help(shell);
@@ -90,9 +90,9 @@ static int cmd_ieee802154_associate(const struct shell *shell,
 	}
 
 	params.pan_id = atoi(argv[1]);
-	strncpy(ext_addr, argv[2], MAX_EXT_ADDR_STR_LEN - 1);
+	strncpy(ext_addr, argv[2], EXT_ADDR_STR_LEN - 1);
 
-	if (strlen(ext_addr) == MAX_EXT_ADDR_STR_LEN) {
+	if (strlen(ext_addr) == EXT_ADDR_STR_LEN) {
 		parse_extended_address(ext_addr, params.addr);
 		params.len = IEEE802154_EXT_ADDR_LENGTH;
 	} else {
@@ -182,7 +182,7 @@ static inline char *print_coordinator_address(char *buf, int buf_len)
 
 		pos += snprintk(buf + pos, buf_len - pos, "(extended) ");
 
-		for (i = IEEE802154_EXT_ADDR_LENGTH - 1; i > -1; i--) {
+		for (i = 0; i < IEEE802154_EXT_ADDR_LENGTH; i++) {
 			pos += snprintk(buf + pos, buf_len - pos,
 					"%02X:", params.addr[i]);
 		}
@@ -421,9 +421,9 @@ static int cmd_ieee802154_set_ext_addr(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (strlen(argv[1]) != MAX_EXT_ADDR_STR_LEN) {
+	if (strlen(argv[1]) != EXT_ADDR_STR_LEN) {
 		shell_fprintf(shell, SHELL_INFO,
-			      "%zd characters needed\n", MAX_EXT_ADDR_STR_LEN);
+			      "%zd characters needed\n", EXT_ADDR_STR_LEN);
 		return -ENOEXEC;
 	}
 
@@ -461,16 +461,16 @@ static int cmd_ieee802154_get_ext_addr(const struct shell *shell,
 			      "Could not get extended address\n");
 		return -ENOEXEC;
 	} else {
-		static char ext_addr[MAX_EXT_ADDR_STR_LEN];
-		int i, j;
+		static char ext_addr[EXT_ADDR_STR_LEN];
+		int i, pos = 0;
 
-		for (j = 0, i = IEEE802154_EXT_ADDR_LENGTH - 1; i > -1; i--) {
-			snprintf(&ext_addr[j], 4, "%02X:", addr[i]);
-
-			j += 3;
+		for (i = 0; i < IEEE802154_EXT_ADDR_LENGTH; i++) {
+			pos += snprintk(ext_addr + pos,
+					IEEE802154_EXT_ADDR_LENGTH - pos,
+					"%02X:", addr[i]);
 		}
 
-		ext_addr[MAX_EXT_ADDR_STR_LEN - 1] = '\0';
+		ext_addr[EXT_ADDR_STR_LEN - 1] = '\0';
 
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "Extended address: %s\n", ext_addr);
