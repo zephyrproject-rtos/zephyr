@@ -11,6 +11,8 @@
 #include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/linker/sections.h>
 
+#include <adsp_interrupt.h>
+
 
 #define SSP_MN_DIV_SIZE				(8)
 #define SSP_MN_DIV_BASE(x)			\

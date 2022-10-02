@@ -34,7 +34,6 @@
 
 #include <soc.h>
 #include <adsp_memory.h>
-#include <ace_v1x-regs.h>
 
 #include "mm_drv_common.h"
 
