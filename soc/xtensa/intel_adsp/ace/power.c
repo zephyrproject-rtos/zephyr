@@ -8,8 +8,7 @@
 #include <cpu_init.h>
 
 #include <xtensa/corebits.h>
-
-#include <ace_v1x-regs.h>
+#include <adsp_boot.h>
 
 #define LPSRAM_MAGIC_VALUE      0x13579BDF
 #define LPSCTL_BATTR_MASK       GENMASK(16, 12)
