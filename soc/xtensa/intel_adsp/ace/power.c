@@ -9,6 +9,7 @@
 
 #include <xtensa/corebits.h>
 #include <adsp_boot.h>
+#include <adsp_power.h>
 
 #define LPSRAM_MAGIC_VALUE      0x13579BDF
 #define LPSCTL_BATTR_MASK       GENMASK(16, 12)
