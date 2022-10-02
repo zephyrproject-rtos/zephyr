@@ -281,6 +281,7 @@ Build system:
     - stephanosio
   collaborators:
     - alexanderwachter
+    - cfriedt
   files:
     - subsys/cpp/
     - tests/subsys/cpp/
