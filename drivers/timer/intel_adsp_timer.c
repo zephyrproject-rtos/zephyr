@@ -15,10 +15,6 @@
 
 #define DT_DRV_COMPAT intel_adsp_timer
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-#include <ace_v1x-regs.h>
-#endif
-
 /**
  * @file
  * @brief Intel Audio DSP Wall Clock Timer driver

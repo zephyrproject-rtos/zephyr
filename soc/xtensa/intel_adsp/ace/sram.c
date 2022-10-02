@@ -12,8 +12,6 @@
 #include <adsp_memory.h>
 #include <cpu_init.h>
 #include "manifest.h"
-#include <ace_v1x-regs.h>
-
 
 #define DELAY_COUNT			256
 
