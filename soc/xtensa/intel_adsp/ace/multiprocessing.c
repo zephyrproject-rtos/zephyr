@@ -8,7 +8,8 @@
 #include <zephyr/sys/check.h>
 
 #include <soc.h>
-#include <ace_v1x-regs.h>
+#include <adsp_boot.h>
+#include <adsp_power.h>
 #include <adsp_ipc_regs.h>
 #include <adsp_memory.h>
 #include <adsp_interrupt.h>
