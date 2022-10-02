@@ -63,7 +63,7 @@
 /* These registers are for the L2 memory control and status. */
 #define DFL2MM_REG 0x71d00
 
-struct mtl_l2mm {
+struct ace_l2mm {
 	uint32_t l2mcap;
 	uint32_t l2mpat;
 	uint32_t l2mecap;
@@ -75,10 +75,10 @@ struct mtl_l2mm {
 	uint32_t l2ucmrpdptr;
 };
 
-#define MTL_L2MM ((volatile struct mtl_l2mm *)DFL2MM_REG)
+#define ACE_L2MM ((volatile struct ace_l2mm *)DFL2MM_REG)
 
 /* DfL2MCAP */
-struct mtl_l2mcap {
+struct ace_l2mcap {
 	uint32_t l2hss  : 8;
 	uint32_t l2uss  : 4;
 	uint32_t l2hsbs : 4;
@@ -89,19 +89,19 @@ struct mtl_l2mcap {
 	uint32_t rsvd32 : 1;
 };
 
-#define MTL_L2MCAP ((volatile struct mtl_l2mcap *)DFL2MM_REG)
+#define ACE_L2MCAP ((volatile struct ace_l2mcap *)DFL2MM_REG)
 
-static inline uint32_t mtl_hpsram_get_bank_count(void)
+static inline uint32_t ace_hpsram_get_bank_count(void)
 {
-	return MTL_L2MCAP->l2hss;
+	return ACE_L2MCAP->l2hss;
 }
 
-static inline uint32_t mtl_lpsram_get_bank_count(void)
+static inline uint32_t ace_lpsram_get_bank_count(void)
 {
-	return MTL_L2MCAP->l2uss;
+	return ACE_L2MCAP->l2uss;
 }
 
-struct mtl_hpsram_regs {
+struct ace_hpsram_regs {
 	/** @brief power gating control */
 	uint8_t HSxPGCTL;
 	/** @brief retention mode control */
@@ -117,7 +117,7 @@ struct mtl_hpsram_regs {
 #define L2HSBPM_REG					0x17A800
 #define L2HSBPM_REG_SIZE			0x0008
 
-#define HPSRAM_REGS(block_idx)		((volatile struct mtl_hpsram_regs *const) \
+#define HPSRAM_REGS(block_idx)		((volatile struct ace_hpsram_regs *const) \
 	(L2HSBPM_REG + L2HSBPM_REG_SIZE * (block_idx)))
 
 #endif /* ZEPHYR_SOC_INTEL_ADSP_MEMORY_H_ */
