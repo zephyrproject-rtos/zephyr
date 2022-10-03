@@ -416,6 +416,9 @@ static inline void cmd_calibrate(uint32_t *result)
 #define VERTEX2II(x, y, handle, cell) FT8XX_VERTEX2II(x, y, handle, cell)
 
 
+
+
+
 #if defined(CONFIG_FT800)
 /** Main parts of FT800 memory map */
 enum ft8xx_memory_map_t {

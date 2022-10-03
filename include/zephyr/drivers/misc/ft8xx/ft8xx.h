@@ -18,6 +18,16 @@
 extern "C" {
 #endif
 
+
+enum ft8xx_chip_types {
+	FT8xx_CHIP_ID_FT800 = 0x0800100,
+	FT8xx_CHIP_ID_FT810 = 0x0810100,
+	FT8xx_CHIP_ID_FT811 = 0x0811100,
+	FT8xx_CHIP_ID_FT812 = 0x0812100,
+	FT8xx_CHIP_ID_FT813 = 0x0813100,
+}
+
+
 /**
  * @brief FT8xx driver public APIs
  * @defgroup ft8xx_interface FT8xx driver APIs
