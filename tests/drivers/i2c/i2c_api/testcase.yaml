@@ -2,5 +2,4 @@ tests:
   drivers.i2c.api:
     depends_on: i2c
     tags: drivers i2c
-    harness: sensor
-    filter: dt_alias_exists("accel-0")
+    filter: dt_alias_exists("gy271")
