@@ -318,8 +318,6 @@ static const struct pwm_driver_api mcux_pwt_driver_api = {
 	.disable_capture = mcux_pwt_disable_capture,
 };
 
-#define TO_PWT_PRESCALE_DIVIDE(val) _DO_CONCAT(kPWT_Prescale_Divide_, val)
-
 #define PWT_DEVICE(n) \
 	static void mcux_pwt_config_func_##n(const struct device *dev);	\
 									\
@@ -332,7 +330,7 @@ static const struct pwm_driver_api mcux_pwt_driver_api = {
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
 		.pwt_clock_source = kPWT_BusClock,			\
 		.prescale =						\
-		TO_PWT_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),	\
+		_CONCAT(kPWT_Prescale_Divide_, DT_INST_PROP(n, prescaler)),\
 		.irq_config_func = mcux_pwt_config_func_##n,		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
