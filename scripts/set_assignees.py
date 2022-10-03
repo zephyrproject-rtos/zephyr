@@ -101,7 +101,6 @@ def process_pr(gh, maintainer_file, number):
         maintainer = maintainers[0]
 
         if len(ac) > 1 and list(ac.values())[0] == list(ac.values())[1]:
-            log("++ Platform/Drivers takes precedence over subsystem...")
             for aa in ac:
                 if 'Documentation' in aa:
                     log("++ With multiple areas of same weight including docs, take something else other than Documentation as the maintainer")
@@ -111,6 +110,7 @@ def process_pr(gh, maintainer_file, number):
                             len(maintainers) > 1):
                             maintainer = maintainers[1]
                 elif 'Platform' in aa:
+                    log("++ Platform takes precedence over subsystem...")
                     log(f"Set maintainer of area {aa}")
                     for a in all_areas:
                         if a.name == aa:
