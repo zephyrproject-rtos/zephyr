@@ -150,9 +150,6 @@ static const struct counter_driver_api mcux_lptmr_driver_api = {
 	.get_top_value = mcux_lptmr_get_top_value,
 };
 
-#define TO_LPTMR_CLK_SEL(val) _DO_CONCAT(kLPTMR_PrescalerClock_, val)
-#define TO_LPTMR_PIN_SEL(val) _DO_CONCAT(kLPTMR_PinSelectInput_, val)
-
 /* Prescaler mapping */
 #define LPTMR_PRESCALER_2     kLPTMR_Prescale_Glitch_0
 #define LPTMR_PRESCALER_4     kLPTMR_Prescale_Glitch_1
@@ -170,7 +167,6 @@ static const struct counter_driver_api mcux_lptmr_driver_api = {
 #define LPTMR_PRESCALER_16384 kLPTMR_Prescale_Glitch_13
 #define LPTMR_PRESCALER_32768 kLPTMR_Prescale_Glitch_14
 #define LPTMR_PRESCALER_65536 kLPTMR_Prescale_Glitch_15
-#define TO_LPTMR_PRESCALER(val) _DO_CONCAT(LPTMR_PRESCALER_, val)
 
 /* Glitch filter mapping */
 #define LPTMR_GLITCH_2     kLPTMR_Prescale_Glitch_1
@@ -188,7 +184,6 @@ static const struct counter_driver_api mcux_lptmr_driver_api = {
 #define LPTMR_GLITCH_8192  kLPTMR_Prescale_Glitch_13
 #define LPTMR_GLITCH_16384 kLPTMR_Prescale_Glitch_14
 #define LPTMR_GLITCH_32768 kLPTMR_Prescale_Glitch_15
-#define TO_LPTMR_GLITCH(val) _DO_CONCAT(LPTMR_GLITCH_, val)
 
 /*
  * This driver is single-instance. If the devicetree contains multiple
@@ -211,22 +206,22 @@ static struct mcux_lptmr_config mcux_lptmr_config_0 = {
 		.channels = 0,
 	},
 	.base = (LPTMR_Type *)DT_INST_REG_ADDR(0),
-	.clk_source = TO_LPTMR_CLK_SEL(DT_INST_PROP(0, clk_source)),
+	.clk_source = _CONCAT(kLPTMR_PrescalerClock_, DT_INST_PROP(0, clk_source),
 #if DT_INST_NODE_HAS_PROP(0, input_pin)
 #if DT_INST_PROP(0, prescaler) == 1
 	.bypass_prescaler_glitch = true,
 #else
-	.prescaler_glitch = TO_LPTMR_GLITCH(DT_INST_PROP(0, prescaler)),
+	.prescaler_glitch = _CONCAT(LPTMR_GLITCH_, DT_INST_PROP(0, prescaler),
 #endif
 	.mode = kLPTMR_TimerModePulseCounter,
-	.pin = TO_LPTMR_PIN_SEL(DT_INST_PROP(0, input_pin)),
+	.pin = _CONCAT(kLPTMR_PinSelectInput_, DT_INST_PROP(0, input_pin),
 	.polarity = DT_INST_PROP(0, active_low),
 #else /* !DT_INST_NODE_HAS_PROP(0, input_pin) */
 	.mode = kLPTMR_TimerModeTimeCounter,
 #if DT_INST_PROP(0, prescaler) == 1
 	.bypass_prescaler_glitch = true,
 #else
-	.prescaler_glitch = TO_LPTMR_PRESCALER(DT_INST_PROP(0, prescaler)),
+	.prescaler_glitch = _CONCAT(LPTMR_PRESCALER_, DT_INST_PROP(0, prescaler),
 #endif
 #endif /* !DT_INST_NODE_HAS_PROP(0, input_pin) */
 	.irq_config_func = mcux_lptmr_irq_config_0,
