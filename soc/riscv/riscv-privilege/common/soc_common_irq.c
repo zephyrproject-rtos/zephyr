@@ -13,8 +13,31 @@
 
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
+#include <zephyr/drivers/interrupt_controller/wch_pfic.h>
 
-#if defined(CONFIG_RISCV_HAS_CLIC)
+#if defined(CONFIG_WCH_PFIC)
+
+void arch_irq_enable(unsigned int irq)
+{
+	wch_pfic_irq_enable(irq);
+}
+
+void arch_irq_disable(unsigned int irq)
+{
+	wch_pfic_irq_disable(irq);
+}
+
+int arch_irq_is_enabled(unsigned int irq)
+{
+	return wch_pfic_irq_is_enabled(irq);
+}
+
+void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+{
+	wch_pfic_irq_priority_set(irq, prio, flags);
+}
+
+#elif defined(CONFIG_RISCV_HAS_CLIC)
 
 void arch_irq_enable(unsigned int irq)
 {
