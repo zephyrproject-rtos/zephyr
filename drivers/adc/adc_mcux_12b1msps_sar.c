@@ -274,7 +274,6 @@ static const struct adc_driver_api mcux_12b1msps_sar_adc_driver_api = {
 	BUILD_ASSERT(val >= min && val <= max, str)
 #define ASSERT_RT_ADC_CLK_DIV_VALID(val, str) \
 	BUILD_ASSERT(val == 1 || val == 2 || val == 4 || val == 8, str)
-#define TO_RT_ADC_CLOCK_DIV(val) _DO_CONCAT(kADC_ClockDriver, val)
 
 #define ACD_MCUX_12B1MSPS_SAR_INIT(n)						       \
 	static void mcux_12b1msps_sar_adc_config_func_##n(const struct device *dev);     \
@@ -289,7 +288,7 @@ static const struct adc_driver_api mcux_12b1msps_sar_adc_driver_api = {
 		.base = (ADC_Type *)DT_INST_REG_ADDR(n),		       \
 		.clock_src = kADC_ClockSourceAD,			       \
 		.clock_drv =						       \
-			TO_RT_ADC_CLOCK_DIV(DT_INST_PROP(n, clk_divider)),     \
+			_CONCAT(kADC_ClockDriver, DT_INST_PROP(n, clk_divider)),     \
 		.ref_src = kADC_ReferenceVoltageSourceAlt0,		       \
 		.sample_period_mode = DT_INST_PROP(n, sample_period_mode),     \
 		.irq_config_func = mcux_12b1msps_sar_adc_config_func_##n,	\

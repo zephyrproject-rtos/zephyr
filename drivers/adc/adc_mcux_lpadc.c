@@ -391,19 +391,13 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 	MUX_A(CM_ADCASYNCCLKSEL, val)
 #endif
 
-#define TO_LPADC_REFERENCE_VOLTAGE(val) \
-	_DO_CONCAT(kLPADC_ReferenceVoltageAlt, val)
-
 #if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS)\
 	&& FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
 #define TO_LPADC_CALIBRATION_AVERAGE(val) \
-	_DO_CONCAT(kLPADC_ConversionAverage, val)
+	_CONCAT(kLPADC_ConversionAverage, val)
 #else
 #define TO_LPADC_CALIBRATION_AVERAGE(val) 0
 #endif
-
-#define TO_LPADC_POWER_LEVEL(val) \
-	_DO_CONCAT(kLPADC_PowerLevelAlt, val)
 
 #if CONFIG_PINCTRL
 #define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
@@ -433,10 +427,10 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 		.clock_source = TO_LPADC_CLOCK_SOURCE(DT_INST_PROP(n, clk_source)),	\
 		.clock_div = DT_INST_PROP(n, clk_divider),					\
 		.voltage_ref =												\
-			TO_LPADC_REFERENCE_VOLTAGE(DT_INST_PROP(n, voltage_ref)),	\
+			_CONCAT(kLPADC_ReferenceVoltageAlt, DT_INST_PROP(n, voltage_ref)),	\
 		.calibration_average =										\
 			TO_LPADC_CALIBRATION_AVERAGE(DT_INST_PROP(n, calibration_average)),	\
-		.power_level = TO_LPADC_POWER_LEVEL(DT_INST_PROP(n, power_level)),	\
+		.power_level = _CONCAT(kLPADC_PowerLevelAlt, DT_INST_PROP(n, power_level)),	\
 		.offset_a = DT_INST_PROP(n, offset_value_a),	\
 		.offset_a = DT_INST_PROP(n, offset_value_b),	\
 		.irq_config_func = mcux_lpadc_config_func_##n,				\

@@ -258,8 +258,6 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 	BUILD_ASSERT(val >= min && val <= max, str)
 #define ASSERT_ADC12_CLK_DIV_VALID(val, str) \
 	BUILD_ASSERT(val == 1 || val == 2 || val == 4 || val == 8, str)
-#define TO_ADC12_CLOCK_SRC(val) _DO_CONCAT(kADC12_ClockSourceAlt, val)
-#define TO_ADC12_CLOCK_DIV(val) _DO_CONCAT(kADC12_ClockDivider, val)
 
 #define ADC12_REF_SRC(n)						\
 	COND_CODE_1(DT_INST_PROP(0, alternate_voltage_reference),	\
@@ -279,9 +277,9 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 			    "Invalid sample time");			\
 	static const struct mcux_adc12_config mcux_adc12_config_##n = {	\
 		.base = (ADC_Type *)DT_INST_REG_ADDR(n),		\
-		.clock_src = TO_ADC12_CLOCK_SRC(DT_INST_PROP(n, clk_source)),\
+		.clock_src = _CONCAT(kADC12_ClockSourceAlt, DT_INST_PROP(n, clk_source)),\
 		.clock_div =						\
-			TO_ADC12_CLOCK_DIV(DT_INST_PROP(n, clk_divider)),\
+			_CONCAT(kADC12_ClockDivider, DT_INST_PROP(n, clk_divider)),\
 		.ref_src = ADC12_REF_SRC(n),				\
 		.sample_clk_count = DT_INST_PROP(n, sample_time),	\
 		.irq_config_func = mcux_adc12_config_func_##n,		\
