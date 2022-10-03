@@ -334,13 +334,34 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	uint32_t ret;
 	uint8_t sca;
 
-	if (acad_len < (PDU_BIG_INFO_CLEARTEXT_SIZE +
-			PDU_ADV_DATA_HEADER_SIZE)) {
+	while (acad_len) {
+		const uint8_t hdr_len = acad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
+
+		if ((hdr_len >= PDU_ADV_DATA_HEADER_TYPE_SIZE) &&
+		    (acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] ==
+		     BT_DATA_BIG_INFO)) {
+			break;
+		}
+
+		if (acad_len < (hdr_len + PDU_ADV_DATA_HEADER_LEN_SIZE)) {
+			return;
+		}
+
+		acad_len -= hdr_len + PDU_ADV_DATA_HEADER_LEN_SIZE;
+		acad += hdr_len + PDU_ADV_DATA_HEADER_LEN_SIZE;
+	}
+
+	if ((acad_len < (PDU_BIG_INFO_CLEARTEXT_SIZE +
+			 PDU_ADV_DATA_HEADER_SIZE)) ||
+	    ((acad[PDU_ADV_DATA_HEADER_LEN_OFFSET] !=
+	      (PDU_ADV_DATA_HEADER_TYPE_SIZE + PDU_BIG_INFO_CLEARTEXT_SIZE)) &&
+	     (acad[PDU_ADV_DATA_HEADER_LEN_OFFSET] !=
+	      (PDU_ADV_DATA_HEADER_TYPE_SIZE + PDU_BIG_INFO_ENCRYPTED_SIZE)))) {
 		return;
 	}
 
-	/* FIXME: Parse and find the BIGInfo */
-	bi_size = acad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
+	bi_size = acad[PDU_ADV_DATA_HEADER_LEN_OFFSET] -
+		  PDU_ADV_DATA_HEADER_TYPE_SIZE;
 	bi = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
 
 	lll = &sync_iso->lll;
