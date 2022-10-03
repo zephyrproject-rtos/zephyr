@@ -420,14 +420,8 @@ steps:
             $ git tag -s -m "Zephyr 1.11.0" v1.11.0
             $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0
 
-            # This is the tag that will represent the release on GitHub, so that
-            # the file you can download is named ``zephyr-v1.11.0.zip`` and not
-            # just ``v1.11.0.zip``
-            $ git tag -s -m "Zephyr 1.11.0" zephyr-v1.11.0
-            $ git push git@github.com:zephyrproject-rtos/zephyr.git zephyr-v1.11.0
-
-        #. Find the new ``zephyr-v1.11.0`` tag at the top of the releases page
-           and edit the release with the ``Edit tag`` button with the following:
+        #. Find the new ``v1.11.0`` tag at the top of the releases page and
+           edit the release with the ``Edit tag`` button with the following:
 
             * Name it ``Zephyr 1.11.0``
             * Copy the overview of ``docs/releases/release-notes-1.11.rst``
@@ -449,8 +443,8 @@ cycle you can do the following:
 #. Look for the last release before the current one and find the day it was
    tagged::
 
-    $ git show -s --format=%ci zephyr-v1.10.0
-    tag zephyr-v1.10.0
+    $ git show -s --format=%ci v1.10.0
+    tag v1.10.0
     Tagger: Kumar Gala <kumar.gala@linaro.org>
 
     Zephyr 1.10.0
