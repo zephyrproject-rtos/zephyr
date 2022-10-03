@@ -32,7 +32,6 @@
 static const struct shell *ctx_shell;
 
 struct bt_mesh_shell_target bt_mesh_shell_target_ctx = {
-	.local = BT_MESH_ADDR_UNASSIGNED,
 	.dst = BT_MESH_ADDR_UNASSIGNED,
 };
 
@@ -202,6 +201,138 @@ struct bt_mesh_health_cli bt_mesh_shell_health_cli = {
 };
 #endif /* CONFIG_BT_MESH_HEALTH_CLI */
 
+static int cmd_input_num(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	uint32_t val;
+
+	val = shell_strtoul(argv[1], 10, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
+
+	err = bt_mesh_input_number(val);
+	if (err) {
+		shell_error(sh, "Numeric input failed (err %d)", err);
+	}
+
+	return 0;
+}
+
+static int cmd_input_str(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = bt_mesh_input_string(argv[1]);
+
+	if (err) {
+		shell_error(sh, "String input failed (err %d)", err);
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+static int cmd_remote_pub_key_set(const struct shell *sh, size_t argc, char *argv[])
+{
+	size_t len;
+	uint8_t pub_key[64];
+	int err = 0;
+
+	len = hex2bin(argv[1], strlen(argv[1]), pub_key, sizeof(pub_key));
+	if (len < 1) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return -EINVAL;
+	}
+
+	err = bt_mesh_prov_remote_pub_key_set(pub_key);
+
+	if (err) {
+		shell_error(sh, "Setting remote pub key failed (err %d)", err);
+	}
+
+	return 0;
+}
+
+static int cmd_auth_method_set_input(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	bt_mesh_input_action_t action = shell_strtoul(argv[1], 10, &err);
+	uint8_t size = shell_strtoul(argv[2], 10, &err);
+
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
+
+	err = bt_mesh_auth_method_set_input(action, size);
+	if (err) {
+		shell_error(sh, "Setting input OOB authentication action failed (err %d)", err);
+	}
+	return 0;
+}
+
+static int cmd_auth_method_set_output(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	bt_mesh_output_action_t action = shell_strtoul(argv[1], 10, &err);
+	uint8_t size = shell_strtoul(argv[2], 10, &err);
+
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
+
+	err = bt_mesh_auth_method_set_output(action, size);
+	if (err) {
+		shell_error(sh, "Setting output OOB authentication action failed (err %d)", err);
+	}
+	return 0;
+}
+
+static int cmd_auth_method_set_static(const struct shell *sh, size_t argc, char *argv[])
+{
+	size_t len;
+	uint8_t static_val[16];
+	int err = 0;
+
+	len = hex2bin(argv[1], strlen(argv[1]), static_val, sizeof(static_val));
+	if (len < 1) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return -EINVAL;
+	}
+
+	err = bt_mesh_auth_method_set_static(static_val, len);
+	if (err) {
+		shell_error(sh, "Setting static OOB authentication failed (err %d)", err);
+	}
+	return 0;
+}
+
+static int cmd_auth_method_set_none(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = bt_mesh_auth_method_set_none();
+
+	if (err) {
+		shell_error(sh, "Disabling authentication failed (err %d)", err);
+	}
+	return 0;
+}
+#endif /* CONFIG_BT_MESH_PROVISIONER */
+
+static const char *bearer2str(bt_mesh_prov_bearer_t bearer)
+{
+	switch (bearer) {
+	case BT_MESH_PROV_ADV:
+		return "PB-ADV";
+	case BT_MESH_PROV_GATT:
+		return "PB-GATT";
+	default:
+		return "unknown";
+	}
+}
+
+#if defined(CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE)
+
 static uint8_t dev_uuid[16] = { 0xdd, 0xdd };
 
 static void prov_complete(uint16_t net_idx, uint16_t addr)
@@ -210,7 +341,6 @@ static void prov_complete(uint16_t net_idx, uint16_t addr)
 	shell_print_ctx("Local node provisioned, net_idx 0x%04x address "
 			"0x%04x", net_idx, addr);
 
-	bt_mesh_shell_target_ctx.local = addr;
 	bt_mesh_shell_target_ctx.net_idx = net_idx,
 	bt_mesh_shell_target_ctx.dst = addr;
 }
@@ -238,73 +368,33 @@ static void prov_reset(void)
 
 static int output_number(bt_mesh_output_action_t action, uint32_t number)
 {
-	shell_print_ctx("OOB Number: %u", number);
+	switch (action) {
+	case BT_MESH_BLINK:
+		shell_print_ctx("OOB blink Number: %u", number);
+		break;
+	case BT_MESH_BEEP:
+		shell_print_ctx("OOB beep Number: %u", number);
+		break;
+	case BT_MESH_VIBRATE:
+		shell_print_ctx("OOB vibrate Number: %u", number);
+		break;
+	case BT_MESH_DISPLAY_NUMBER:
+		shell_print_ctx("OOB display Number: %u", number);
+		break;
+	default:
+		if (ctx_shell != NULL) {
+			shell_error(ctx_shell, "Unknown Output action %u (number %u) requested!",
+				    action, number);
+		}
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
 static int output_string(const char *str)
 {
 	shell_print_ctx("OOB String: %s", str);
-	return 0;
-}
-
-static bt_mesh_input_action_t input_act;
-static uint8_t input_size;
-
-static int cmd_input_num(const struct shell *sh, size_t argc, char *argv[])
-{
-	int err = 0;
-	uint32_t val;
-
-	if (input_act != BT_MESH_ENTER_NUMBER) {
-		shell_print(sh, "A number hasn't been requested!");
-		return 0;
-	}
-
-	if (strlen(argv[1]) < input_size) {
-		shell_print(sh, "Too short input (%u digits required)",
-			    input_size);
-		return 0;
-	}
-
-	val = shell_strtoul(argv[1], 10, &err);
-	if (err) {
-		shell_warn(sh, "Unable to parse input string argument");
-		return err;
-	}
-
-	err = bt_mesh_input_number(val);
-	if (err) {
-		shell_error(sh, "Numeric input failed (err %d)", err);
-		return 0;
-	}
-
-	input_act = BT_MESH_NO_INPUT;
-	return 0;
-}
-
-static int cmd_input_str(const struct shell *sh, size_t argc, char *argv[])
-{
-	int err;
-
-	if (input_act != BT_MESH_ENTER_STRING) {
-		shell_print(sh, "A string hasn't been requested!");
-		return 0;
-	}
-
-	if (strlen(argv[1]) < input_size) {
-		shell_print(sh, "Too short input (%u characters required)",
-		       input_size);
-		return 0;
-	}
-
-	err = bt_mesh_input_string(argv[1]);
-	if (err) {
-		shell_error(sh, "String input failed (err %d)", err);
-		return 0;
-	}
-
-	input_act = BT_MESH_NO_INPUT;
 	return 0;
 }
 
@@ -318,6 +408,12 @@ static int input(bt_mesh_input_action_t act, uint8_t size)
 	case BT_MESH_ENTER_STRING:
 		shell_print_ctx("Enter a string (max %u chars) with: Input-str <str>", size);
 		break;
+	case BT_MESH_TWIST:
+		shell_print_ctx("\"Twist\" a number (max %u digits) with: Input-num <num>", size);
+		break;
+	case BT_MESH_PUSH:
+		shell_print_ctx("\"Push\" a number (max %u digits) with: Input-num <num>", size);
+		break;
 	default:
 		if (ctx_shell != NULL) {
 			shell_error(ctx_shell, "Unknown Input action %u (size %u) requested!", act,
@@ -326,21 +422,7 @@ static int input(bt_mesh_input_action_t act, uint8_t size)
 		return -EINVAL;
 	}
 
-	input_act = act;
-	input_size = size;
 	return 0;
-}
-
-static const char *bearer2str(bt_mesh_prov_bearer_t bearer)
-{
-	switch (bearer) {
-	case BT_MESH_PROV_ADV:
-		return "PB-ADV";
-	case BT_MESH_PROV_GATT:
-		return "PB-GATT";
-	default:
-		return "unknown";
-	}
 }
 
 static void link_open(bt_mesh_prov_bearer_t bearer)
@@ -365,11 +447,13 @@ struct bt_mesh_prov bt_mesh_shell_prov = {
 	.static_val = NULL,
 	.static_val_len = 0,
 	.output_size = 6,
-	.output_actions = (BT_MESH_DISPLAY_NUMBER | BT_MESH_DISPLAY_STRING),
+	.output_actions = (BT_MESH_BLINK | BT_MESH_BEEP | BT_MESH_VIBRATE | BT_MESH_DISPLAY_NUMBER |
+			   BT_MESH_DISPLAY_STRING),
 	.output_number = output_number,
 	.output_string = output_string,
 	.input_size = 6,
-	.input_actions = (BT_MESH_ENTER_NUMBER | BT_MESH_ENTER_STRING),
+	.input_actions =
+		(BT_MESH_ENTER_NUMBER | BT_MESH_ENTER_STRING | BT_MESH_TWIST | BT_MESH_PUSH),
 	.input = input,
 	.input_complete = prov_input_complete,
 };
@@ -404,6 +488,15 @@ static int cmd_uuid(const struct shell *sh, size_t argc, char *argv[])
 	uint8_t uuid[16];
 	size_t len;
 
+	if (argc < 2) {
+		char uuid_hex_str[32 + 1];
+
+		bin2hex(dev_uuid, 16, uuid_hex_str, sizeof(uuid_hex_str));
+
+		shell_print_ctx("Device UUID: %s", uuid_hex_str);
+		return 0;
+	}
+
 	len = hex2bin(argv[1], strlen(argv[1]), uuid, sizeof(uuid));
 	if (len < 1) {
 		return -EINVAL;
@@ -416,6 +509,7 @@ static int cmd_uuid(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE */
 
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -542,7 +636,7 @@ static int cmd_net_send(const struct shell *sh, size_t argc, char *argv[])
 	};
 	struct bt_mesh_net_tx tx = {
 		.ctx = &ctx,
-		.src = bt_mesh_shell_target_ctx.local,
+		.src = bt_mesh_primary_addr(),
 	};
 
 	size_t len;
@@ -605,6 +699,7 @@ static int cmd_rpl_clear(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE)
 static void print_unprovisioned_beacon(uint8_t uuid[16],
 				       bt_mesh_prov_oob_info_t oob_info,
 				       uint32_t *uri_hash)
@@ -617,8 +712,11 @@ static void print_unprovisioned_beacon(uint8_t uuid[16],
 			uuid_hex_str, oob_info,
 			(uri_hash == NULL ? 0 : *uri_hash));
 }
+#endif
 
 #if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+
+#if defined(CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE)
 static void pb_gatt_unprovisioned(uint8_t uuid[16],
 				  bt_mesh_prov_oob_info_t oob_info)
 {
@@ -628,6 +726,7 @@ static void pb_gatt_unprovisioned(uint8_t uuid[16],
 
 	shell_print_ctx("PB-GATT UUID %s, OOB Info 0x%04x", uuid_hex_str, oob_info);
 }
+#endif /* CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE */
 
 static int cmd_provision_gatt(const struct shell *sh, size_t argc,
 			      char *argv[])
@@ -701,6 +800,7 @@ static int cmd_proxy_disconnect(const struct shell *sh, size_t argc,
 }
 #endif
 
+#if defined(CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE)
 static int cmd_beacon_listen(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
@@ -724,6 +824,7 @@ static int cmd_beacon_listen(const struct shell *sh, size_t argc,
 
 	return 0;
 }
+#endif /* CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE */
 
 #if defined(CONFIG_BT_MESH_PROV_DEVICE)
 static int cmd_pb(bt_mesh_prov_bearer_t bearer, const struct shell *sh,
@@ -1306,14 +1407,14 @@ static int cmd_dst(const struct shell *sh, size_t argc, char *argv[])
 
 	if (argc < 2) {
 		shell_print(sh, "Destination address: 0x%04x%s", bt_mesh_shell_target_ctx.dst,
-			    bt_mesh_shell_target_ctx.dst == bt_mesh_shell_target_ctx.local
+			    bt_mesh_shell_target_ctx.dst == bt_mesh_primary_addr()
 				    ? " (local)"
 				    : "");
 		return 0;
 	}
 
 	if (!strcmp(argv[1], "local")) {
-		bt_mesh_shell_target_ctx.dst = bt_mesh_shell_target_ctx.local;
+		bt_mesh_shell_target_ctx.dst = bt_mesh_primary_addr();
 	} else {
 		bt_mesh_shell_target_ctx.dst = shell_strtoul(argv[1], 0, &err);
 		if (err) {
@@ -1323,7 +1424,7 @@ static int cmd_dst(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	shell_print(sh, "Destination address set to 0x%04x%s", bt_mesh_shell_target_ctx.dst,
-		    bt_mesh_shell_target_ctx.dst == bt_mesh_shell_target_ctx.local ? " (local)"
+		    bt_mesh_shell_target_ctx.dst == bt_mesh_primary_addr() ? " (local)"
 										   : "");
 	return 0;
 }
@@ -1386,14 +1487,27 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cdb_cmds,
 	SHELL_SUBCMD_SET_END);
 #endif
 
-SHELL_STATIC_SUBCMD_SET_CREATE(prov_cmds,
-	SHELL_CMD_ARG(uuid, NULL, "<UUID: 1-16 hex values>", cmd_uuid, 2, 0),
-	SHELL_CMD_ARG(input-num, NULL, "<Number>", cmd_input_num, 2, 0),
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+SHELL_STATIC_SUBCMD_SET_CREATE(auth_cmds,
+	SHELL_CMD_ARG(input, NULL, "<Action> <Size>",
+		      cmd_auth_method_set_input, 3, 0),
+	SHELL_CMD_ARG(output, NULL, "<Action> <Size>",
+		      cmd_auth_method_set_output, 3, 0),
+	SHELL_CMD_ARG(static, NULL, "<Value>", cmd_auth_method_set_static, 2,
+		      0),
+	SHELL_CMD_ARG(none, NULL, NULL, cmd_auth_method_set_none, 2, 0),
+	SHELL_SUBCMD_SET_END);
+#endif
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	prov_cmds, SHELL_CMD_ARG(input-num, NULL, "<Number>", cmd_input_num, 2, 0),
 	SHELL_CMD_ARG(input-str, NULL, "<String>", cmd_input_str, 2, 0),
+	SHELL_CMD_ARG(local, NULL, "<NetKeyIndex> <Addr> [IVIndex]", cmd_provision_local, 3, 1),
+#if defined(CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE)
 	SHELL_CMD_ARG(static-oob, NULL, "[Val: 1-16 hex values]", cmd_static_oob, 2, 1),
-	SHELL_CMD_ARG(local, NULL, "<NetKeyIndex> <Addr> [IVIndex]", cmd_provision_local,
-		      3, 1),
+	SHELL_CMD_ARG(uuid, NULL, "[UUID: 1-16 hex values]", cmd_uuid, 1, 1),
 	SHELL_CMD_ARG(beacon-listen, NULL, "<Val: off, on>", cmd_beacon_listen, 2, 0),
+#endif
 
 /* Provisioning operations */
 #if defined(CONFIG_BT_MESH_PROV_DEVICE)
@@ -1406,6 +1520,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(prov_cmds,
 #endif /* CONFIG_BT_MESH_PROV_DEVICE */
 
 #if defined(CONFIG_BT_MESH_PROVISIONER)
+	SHELL_CMD(auth-method, &auth_cmds, "Authentication methods", bt_mesh_shell_mdl_cmds_help),
+	SHELL_CMD_ARG(remote-pub-key, NULL, "<PubKey>", cmd_remote_pub_key_set, 2, 0),
 	SHELL_CMD_ARG(remote-adv, NULL,
 		      "<UUID> <NetKeyIndex> <Addr> "
 		      "<AttentionDuration>",
