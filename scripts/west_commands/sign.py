@@ -55,10 +55,16 @@ imgtool, this creates zephyr.signed.bin and zephyr.signed.hex
 files which are ready for use by your bootloader.
 
 The image header size, alignment, and slot sizes are determined from
-the build directory using .config and the device tree. A default
-version number of 0.0.0+0 is used (which can be overridden by passing
-"--version x.y.z+w" after "--key"). As shown above, extra arguments
-after a '--' are passed to imgtool directly.
+the build directory using .config and the device tree.
+
+The image version number will be taken from (in order of precedence):
+
+   The "--version x.y.z+w" value passed as an argument to the imgtool
+   The applications top-level CMake project version number
+   A default version of 0.0.0+0
+
+The "--version" argument for imgtool must be passed after the "--key"
+argument.
 
 rimage
 ------
@@ -247,13 +253,24 @@ class ImgtoolSigner(Signer):
             log.inf('partition size: {0} (0x{0:x})'.format(size))
             log.inf('rom start offset: {0} (0x{0:x})'.format(vtoff))
 
+        # Attempt to get version information from CMake project.
+        cache = CMakeCache.from_build_dir(build_dir)
+        ver_major = cache.get("CMAKE_PROJECT_VERSION_MAJOR", 0)
+        ver_minor = cache.get("CMAKE_PROJECT_VERSION_MINOR", 0)
+        ver_patch = cache.get("CMAKE_PROJECT_VERSION_PATCH", 0)
+        ver_tweak = cache.get("CMAKE_PROJECT_VERSION_TWEAK")
+        version = f'{ver_major}.{ver_minor}.{ver_patch}'
+
+        if ver_tweak:
+            version = f"{version}+{ver_tweak}"
+
         # Base sign command.
         #
         # We provide a default --version in case the user is just
         # messing around and doesn't want to set one. It will be
         # overridden if there is a --version in args.tool_args.
         sign_base = imgtool + ['sign',
-                               '--version', '0.0.0+0',
+                               '--version', version,
                                '--align', str(align),
                                '--header-size', str(vtoff),
                                '--slot-size', str(size)]
