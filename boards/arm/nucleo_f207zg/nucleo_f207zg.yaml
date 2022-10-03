@@ -18,6 +18,7 @@ supported:
   - usb_device
   - watchdog
   - counter
+  - nvs
   - adc
   - dac
   - backup_sram
