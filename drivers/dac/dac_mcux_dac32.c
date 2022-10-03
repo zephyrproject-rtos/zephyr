@@ -101,9 +101,6 @@ static const struct dac_driver_api mcux_dac32_driver_api = {
 	.write_value = mcux_dac32_write_value,
 };
 
-#define TO_DAC32_VREF_SRC(val) \
-	_DO_CONCAT(kDAC32_ReferenceVoltageSourceVref, val)
-
 #define MCUX_DAC32_INIT(n) \
 	static struct mcux_dac32_data mcux_dac32_data_##n;		\
 									\
@@ -112,7 +109,7 @@ static const struct dac_driver_api mcux_dac32_driver_api = {
 	static const struct mcux_dac32_config mcux_dac32_config_##n = {	\
 		.base = (DAC_Type *)DT_INST_REG_ADDR(n),		\
 		.reference =						\
-		TO_DAC32_VREF_SRC(DT_INST_PROP(n, voltage_reference)),	\
+		_CONCAT(kDAC32_ReferenceVoltageSourceVref, DT_INST_PROP(n, voltage_reference)),	\
 		.buffered = DT_INST_PROP(n, buffered),			\
 		.low_power = DT_INST_PROP(n, low_power_mode),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
