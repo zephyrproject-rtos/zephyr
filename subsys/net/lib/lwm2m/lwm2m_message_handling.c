@@ -2930,7 +2930,9 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 	}
 
 	/* Write requested path data */
+	lwm2m_registry_lock();
 	ret = do_send_op(msg, content_format, &lwm2m_path_list);
+	lwm2m_registry_unlock();
 	if (ret < 0) {
 		LOG_ERR("Send (err:%d)", ret);
 		goto cleanup;
