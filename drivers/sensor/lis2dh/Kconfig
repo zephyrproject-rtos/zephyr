@@ -141,6 +141,9 @@ config LIS2DH_ODR_9_LOW
 
 endchoice
 
+config LIS2DH_ACCEL_HP_FILTERS
+	bool "Set High Pass filters for AOI functions on interrupt lines"
+
 config LIS2DH_BLOCK_DATA_UPDATE
 	bool "Output registers not updated until MSB and LSB read"
 

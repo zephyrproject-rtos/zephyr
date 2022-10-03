@@ -290,6 +290,10 @@ static int lis2dh_acc_config(const struct device *dev,
 	case SENSOR_ATTR_SLOPE_DUR:
 		return lis2dh_acc_slope_config(dev, attr, val);
 #endif
+#ifdef CONFIG_LIS2DH_ACCEL_HP_FILTERS
+	case SENSOR_ATTR_CONFIGURATION:
+		return lis2dh_acc_hp_filter_set(dev, val->val1);
+#endif
 	default:
 		LOG_DBG("Accel attribute not supported.");
 		return -ENOTSUP;
