@@ -1221,6 +1221,20 @@ Release Notes:
   labels:
     - "area: Sensors"
 
+"Drivers: SMBus":
+  status: maintained
+  maintainers:
+    - finikorg
+  files:
+    - drivers/smbus/
+    - dts/bindings/smbus/
+    - include/zephyr/drivers/smbus.h
+    - samples/drivers/smbus/
+    - tests/drivers/smbus/
+    - doc/hardware/peripherals/smbus.rst
+  labels:
+    - "area: SMBus"
+
 "Drivers: SPI":
   status: maintained
   maintainers:
