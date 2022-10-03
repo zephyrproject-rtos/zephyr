@@ -184,9 +184,6 @@ static const struct wdt_driver_api mcux_wdog32_api = {
 	.feed = mcux_wdog32_feed,
 };
 
-#define TO_WDOG32_CLK_SRC(val) _DO_CONCAT(kWDOG32_ClockSource, val)
-#define TO_WDOG32_CLK_DIV(val) _DO_CONCAT(kWDOG32_ClockPrescalerDivide, val)
-
 static void mcux_wdog32_config_func_0(const struct device *dev);
 
 static const struct mcux_wdog32_config mcux_wdog32_config_0 = {
@@ -198,10 +195,8 @@ static const struct mcux_wdog32_config mcux_wdog32_config_0 = {
 	.clock_subsys = (clock_control_subsys_t)
 		DT_INST_CLOCKS_CELL(0, name),
 #endif /* DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
-	.clk_source =
-		TO_WDOG32_CLK_SRC(DT_INST_PROP(0, clk_source)),
-	.clk_divider =
-		TO_WDOG32_CLK_DIV(DT_INST_PROP(0, clk_divider)),
+	.clk_source = _CONCAT(kWDOG32_ClockSource, DT_INST_PROP(0, clk_source)),
+	.clk_divider = _CONCAT(kWDOG32_ClockPrescalerDivide, DT_INST_PROP(0, clk_divider)),
 	.irq_config_func = mcux_wdog32_config_func_0,
 };
 
