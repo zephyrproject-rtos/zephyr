@@ -430,8 +430,9 @@ steps:
            and edit the release with the ``Edit tag`` button with the following:
 
             * Name it ``Zephyr 1.11.0``
-            * Copy the full content of ``docs/releases/release-notes-1.11.rst``
-              into the release notes textbox
+            * Copy the overview of ``docs/releases/release-notes-1.11.rst``
+              into the release notes textbox and link to the full release notes
+              file on docs.zephyrproject.org.
 
         #. Send an email to the mailing lists (``announce`` and ``devel``) with a link
            to the release
