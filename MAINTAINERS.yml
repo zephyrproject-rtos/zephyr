@@ -499,6 +499,16 @@ Documentation Infrastructure:
   labels:
     - "area: Documentation Infrastructure"
 
+Release Notes:
+  status: maintained
+  maintainers:
+    - laurenmurphyx64
+    - stephanosio
+  files:
+    - doc/releases/release-notes-*
+  labels:
+    - "Release Notes"
+
 "Drivers: ADC":
   status: maintained
   maintainers:
