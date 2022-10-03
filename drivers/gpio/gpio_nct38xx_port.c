@@ -146,6 +146,78 @@ done:
 	return ret;
 }
 
+#ifdef CONFIG_GPIO_GET_CONFIG
+int gpio_nct38xx_pin_get_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t *flags)
+{
+	const struct gpio_nct38xx_port_config *const config = dev->config;
+	struct gpio_nct38xx_port_data *const data = dev->data;
+	uint32_t mask = BIT(pin);
+	uint8_t reg;
+	int ret;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	if (config->gpio_port == 0) {
+		if (mask & (~config->common.port_pin_mask)) {
+			ret = -ENOTSUP;
+			goto done;
+		}
+
+		ret = nct38xx_reg_read_byte(config->nct38xx_dev, NCT38XX_REG_MUX_CONTROL, &reg);
+		if (ret < 0) {
+			goto done;
+		}
+
+		if ((mask & config->pinmux_mask) && (mask & (~reg))) {
+			*flags = GPIO_DISCONNECTED;
+			goto done;
+		}
+	}
+
+	ret = nct38xx_reg_read_byte(config->nct38xx_dev, NCT38XX_REG_GPIO_DIR(config->gpio_port),
+				    &reg);
+	if (ret < 0) {
+		goto done;
+	}
+
+	if (reg & mask) {
+		/* Output */
+		*flags = GPIO_OUTPUT;
+
+		/* 0 - push-pull, 1 - open-drain */
+		ret = nct38xx_reg_read_byte(config->nct38xx_dev,
+					    NCT38XX_REG_GPIO_OD_SEL(config->gpio_port), &reg);
+		if (ret < 0) {
+			goto done;
+		}
+
+		if (mask & reg) {
+			*flags |= GPIO_OPEN_DRAIN;
+		}
+
+		/* Output value */
+		ret = nct38xx_reg_read_byte(config->nct38xx_dev,
+					    NCT38XX_REG_GPIO_DATA_OUT(config->gpio_port), &reg);
+		if (ret < 0) {
+			goto done;
+		}
+
+		if (mask & reg) {
+			*flags |= GPIO_OUTPUT_HIGH;
+		} else {
+			*flags |= GPIO_OUTPUT_LOW;
+		}
+	} else {
+		/* Input */
+		*flags = GPIO_INPUT;
+	}
+
+done:
+	k_sem_give(&data->lock);
+	return ret;
+}
+#endif /* CONFIG_GPIO_GET_CONFIG */
+
 static int gpio_nct38xx_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct gpio_nct38xx_port_config *const config = dev->config;
@@ -381,6 +453,50 @@ static int gpio_nct38xx_manage_callback(const struct device *dev, struct gpio_ca
 	return gpio_manage_callback(&data->cb_list_gpio, callback, set);
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_nct38xx_port_get_direction(const struct device *dev, gpio_port_pins_t mask,
+					   gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	const struct gpio_nct38xx_port_config *const config = dev->config;
+	struct gpio_nct38xx_port_data *const data = dev->data;
+	uint8_t dir_reg;
+	int ret;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	if (config->gpio_port == 0) {
+		uint8_t enabled_gpios;
+		/* Remove the disabled GPIOs from the mask */
+		ret = nct38xx_reg_read_byte(config->nct38xx_dev, NCT38XX_REG_MUX_CONTROL,
+					    &enabled_gpios);
+		mask &= (enabled_gpios & config->common.port_pin_mask);
+
+		if (ret < 0) {
+			goto done;
+		}
+	}
+
+	/* Read direction register, 0 - input, 1 - output */
+	ret = nct38xx_reg_read_byte(config->nct38xx_dev, NCT38XX_REG_GPIO_DIR(config->gpio_port),
+				    &dir_reg);
+	if (ret < 0) {
+		goto done;
+	}
+
+	if (inputs) {
+		*inputs = mask & (~dir_reg);
+	}
+
+	if (outputs) {
+		*outputs = mask & dir_reg;
+	}
+
+done:
+	k_sem_give(&data->lock);
+	return ret;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 int gpio_nct38xx_dispatch_port_isr(const struct device *dev)
 {
 	const struct gpio_nct38xx_port_config *const config = dev->config;
@@ -430,6 +546,9 @@ int gpio_nct38xx_dispatch_port_isr(const struct device *dev)
 
 static const struct gpio_driver_api gpio_nct38xx_driver = {
 	.pin_configure = gpio_nct38xx_pin_config,
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_nct38xx_pin_get_config,
+#endif /* CONFIG_GPIO_GET_CONFIG */
 	.port_get_raw = gpio_nct38xx_port_get_raw,
 	.port_set_masked_raw = gpio_nct38xx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_nct38xx_port_set_bits_raw,
@@ -437,6 +556,9 @@ static const struct gpio_driver_api gpio_nct38xx_driver = {
 	.port_toggle_bits = gpio_nct38xx_port_toggle_bits,
 	.pin_interrupt_configure = gpio_nct38xx_pin_interrupt_configure,
 	.manage_callback = gpio_nct38xx_manage_callback,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_nct38xx_port_get_direction,
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
 static int gpio_nct38xx_port_init(const struct device *dev)
