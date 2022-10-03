@@ -58,7 +58,7 @@ acquired. As an example, this means that when :c:func:`k_poll` returns and
 the poll event states that the semaphore is available, the caller of
 :c:func:`k_poll()` must then invoke :c:func:`k_sem_take` to take
 ownership of the semaphore. If the semaphore is contested, there is no
-guarantee that it will be still available when :c:func:`k_sem_give` is
+guarantee that it will be still available when :c:func:`k_sem_take` is
 called.
 
 Implementation
