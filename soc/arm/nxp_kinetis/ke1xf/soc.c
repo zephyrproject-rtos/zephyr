@@ -22,10 +22,7 @@
 	BUILD_ASSERT(val == 0 || val == 1 || val == 2 || val == 4 ||	\
 		     val == 8 || val == 16 || val == 2 || val == 64, str)
 
-#define TO_SYS_CLK_DIV(val) _DO_CONCAT(kSCG_SysClkDivBy, val)
-
 #define kSCG_AsyncClkDivBy0 kSCG_AsyncClkDisable
-#define TO_ASYNC_CLK_DIV(val) _DO_CONCAT(kSCG_AsyncClkDivBy, val)
 
 #define SCG_CLOCK_NODE(name) DT_CHILD(DT_INST(0, nxp_kinetis_scg), name)
 #define SCG_CLOCK_DIV(name) DT_PROP(SCG_CLOCK_NODE(name), clock_div)
@@ -45,9 +42,9 @@ ASSERT_WITHIN_RANGE(SCG_CLOCK_DIV(core_clk), 1, 16,
 		    "Invalid SCG core clock divider value");
 #endif
 static const scg_sys_clk_config_t scg_sys_clk_config = {
-	.divSlow = TO_SYS_CLK_DIV(SCG_CLOCK_DIV(slow_clk)),
-	.divBus  = TO_SYS_CLK_DIV(SCG_CLOCK_DIV(bus_clk)),
-	.divCore = TO_SYS_CLK_DIV(SCG_CLOCK_DIV(core_clk)),
+	.divSlow = _CONCAT(kSCG_SysClkDivBy, SCG_CLOCK_DIV(slow_clk)),
+	.divBus  = _CONCAT(kSCG_SysClkDivBy, SCG_CLOCK_DIV(bus_clk)),
+	.divCore = _CONCAT(kSCG_SysClkDivBy, SCG_CLOCK_DIV(core_clk)),
 #if DT_SAME_NODE(DT_CLOCKS_CTLR(SCG_CLOCK_NODE(core_clk)), SCG_CLOCK_NODE(sosc_clk))
 	.src     = kSCG_SysClkSrcSysOsc,
 #elif DT_SAME_NODE(DT_CLOCKS_CTLR(SCG_CLOCK_NODE(core_clk)), SCG_CLOCK_NODE(sirc_clk))
@@ -71,8 +68,8 @@ static const scg_sosc_config_t scg_sosc_config = {
 	.freq        = DT_PROP(SCG_CLOCK_NODE(sosc_clk), clock_frequency),
 	.monitorMode = kSCG_SysOscMonitorDisable,
 	.enableMode  = kSCG_SysOscEnable | kSCG_SysOscEnableInLowPower,
-	.div1        = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(soscdiv1_clk)),
-	.div2        = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(soscdiv2_clk)),
+	.div1        = _CONCAT(kSCG_AsyncClkDivBy, SCG_CLOCK_DIV(soscdiv1_clk)),
+	.div2        = _CONCAT(kSCG_AsyncClkDivBy, SCG_CLOCK_DIV(soscdiv2_clk)),
 	.workMode    = DT_PROP(DT_INST(0, nxp_kinetis_scg), sosc_mode)
 };
 #endif /* DT_NODE_HAS_PROP(DT_INST(0, nxp_kinetis_scg), sosc_freq) */
@@ -84,8 +81,8 @@ ASSERT_ASYNC_CLK_DIV_VALID(SCG_CLOCK_DIV(sircdiv2_clk),
 		       "Invalid SCG SIRC divider 2 value");
 static const scg_sirc_config_t scg_sirc_config = {
 	.enableMode = kSCG_SircEnable | kSCG_SircEnableInLowPower,
-	.div1       = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(sircdiv1_clk)),
-	.div2       = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(sircdiv2_clk)),
+	.div1       = _CONCAT(kSCG_AsyncClkDivBy, SCG_CLOCK_DIV(sircdiv1_clk)),
+	.div2       = _CONCAT(kSCG_AsyncClkDivBy, SCG_CLOCK_DIV(sircdiv2_clk)),
 #if MHZ(2) == DT_PROP(SCG_CLOCK_NODE(sirc_clk), clock_frequency)
 	.range      = kSCG_SircRangeLow
 #elif MHZ(8) == DT_PROP(SCG_CLOCK_NODE(sirc_clk), clock_frequency)
@@ -102,8 +99,8 @@ ASSERT_ASYNC_CLK_DIV_VALID(SCG_CLOCK_DIV(fircdiv2_clk),
 		       "Invalid SCG FIRC divider 2 value");
 static const scg_firc_config_t scg_firc_config = {
 	.enableMode = kSCG_FircEnable,
-	.div1       = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(fircdiv1_clk)),
-	.div2       = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(fircdiv2_clk)),
+	.div1       = _CONCAT(kSCG_AsyncClkDivBy, SCG_CLOCK_DIV(fircdiv1_clk)),
+	.div2       = _CONCAT(kSCG_AsyncClkDivBy, SCG_CLOCK_DIV(fircdiv2_clk)),
 #if MHZ(48) == DT_PROP(SCG_CLOCK_NODE(firc_clk), clock_frequency)
 	.range      = kSCG_FircRange48M,
 #elif MHZ(52) == DT_PROP(SCG_CLOCK_NODE(firc_clk), clock_frequency)
@@ -132,8 +129,8 @@ ASSERT_WITHIN_RANGE(SCG_CLOCK_MULT(pll), 16, 47,
 static const scg_spll_config_t scg_spll_config = {
 	.enableMode  = kSCG_SysPllEnable,
 	.monitorMode = kSCG_SysPllMonitorDisable,
-	.div1        = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(splldiv1_clk)),
-	.div2        = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(splldiv2_clk)),
+	.div1        = _CONCAT(kSCG_AsyncClkDivBy, SCG_CLOCK_DIV(splldiv1_clk)),
+	.div2        = _CONCAT(kSCG_AsyncClkDivBy, SCG_CLOCK_DIV(splldiv2_clk)),
 #if DT_SAME_NODE(DT_CLOCKS_CTLR(SCG_CLOCK_NODE(pll)), SCG_CLOCK_NODE(sosc_clk))
 	.src         = kSCG_SysPllSrcSysOsc,
 #elif DT_SAME_NODE(DT_CLOCKS_CTLR(SCG_CLOCK_NODE(pll)), SCG_CLOCK_NODE(firc_clk))
