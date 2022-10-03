@@ -30,15 +30,11 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 #define LPTMR_PRESCALER_16384 kLPTMR_Prescale_Glitch_13
 #define LPTMR_PRESCALER_32768 kLPTMR_Prescale_Glitch_14
 #define LPTMR_PRESCALER_65536 kLPTMR_Prescale_Glitch_15
-#define TO_LPTMR_PRESCALER(val) _DO_CONCAT(LPTMR_PRESCALER_, val)
-
-/* Prescaler clock mapping */
-#define TO_LPTMR_CLK_SEL(val) _DO_CONCAT(kLPTMR_PrescalerClock_, val)
 
 /* Devicetree properties */
 #define LPTMR_BASE ((LPTMR_Type *)(DT_INST_REG_ADDR(0)))
-#define LPTMR_CLK_SOURCE TO_LPTMR_CLK_SEL(DT_INST_PROP(0, clk_source));
-#define LPTMR_PRESCALER TO_LPTMR_PRESCALER(DT_INST_PROP(0, prescaler));
+#define LPTMR_CLK_SOURCE _CONCAT(kLPTMR_PrescalerClock_, DT_INST_PROP(0, clk_source));
+#define LPTMR_PRESCALER _CONCAT(LPTMR_PRESCALER_, DT_INST_PROP(0, prescaler));
 #define LPTMR_BYPASS_PRESCALER DT_INST_PROP(0, prescaler) == 1
 #define LPTMR_IRQN DT_INST_IRQN(0)
 #define LPTMR_IRQ_PRIORITY DT_INST_IRQ(0, priority)
