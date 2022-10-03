@@ -172,11 +172,11 @@ extern "C" {
  * is used to disable it.  Once the following graphics objects are drawn, they
  * are attached with the tag value successfully. When the graphics objects
  * attached with the tag value are touched, the register
- * @ref FT800_REG_TOUCH_TAG or @ref FT810_REG_TOUCH_TAG will be updated with the
+ * @ref FT800_REG_TOUCH_TAG or @ref ft81x_REG_TOUCH_TAG will be updated with the
  * tag value of the graphics object being touched. If there is no @ref FT8XX_TAG
  * commands in one display list, all the graphics objects rendered by the
  * display list will report tag value as 255 in @ref FT800_REG_TOUCH_TAG or
- * @ref FT810_REG_TOUCH_TAG when they were touched.
+ * @ref ft81x_REG_TOUCH_TAG when they were touched.
  *
  * @param s Tag value 1-255
  */
