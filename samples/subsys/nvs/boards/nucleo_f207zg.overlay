@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &storage_partition;
+
+&flash0 {
+	partitions {
+		/* Set 2 sectors of 16KB at the sector 2 */
+		storage_partition: partition@08000 {
+			label = "storage";
+			reg = <0x000008000 DT_SIZE_K(32)>;
+		};
+	};
+};
