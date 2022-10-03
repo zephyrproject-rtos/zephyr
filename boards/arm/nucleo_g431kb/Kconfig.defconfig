@@ -1,0 +1,14 @@
+# STM32G431KB Nucleo board configuration
+# Copyright (c) 2022 Mariana Ucker <mariana@freedom.ind.br>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_G431KB
+
+config BOARD
+	default "nucleo_g431kb"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_NUCLEO_G431KB
