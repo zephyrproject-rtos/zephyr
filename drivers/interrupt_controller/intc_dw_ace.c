@@ -78,7 +78,7 @@ static inline bool is_dw_irq(uint32_t irq)
 	return false;
 }
 
-void dw_ace_v1x_irq_enable(const struct device *dev, uint32_t irq)
+void dw_ace_irq_enable(const struct device *dev, uint32_t irq)
 {
 	ARG_UNUSED(dev);
 
@@ -92,7 +92,7 @@ void dw_ace_v1x_irq_enable(const struct device *dev, uint32_t irq)
 	}
 }
 
-void dw_ace_v1x_irq_disable(const struct device *dev, uint32_t irq)
+void dw_ace_irq_disable(const struct device *dev, uint32_t irq)
 {
 	ARG_UNUSED(dev);
 
@@ -106,7 +106,7 @@ void dw_ace_v1x_irq_disable(const struct device *dev, uint32_t irq)
 	}
 }
 
-int dw_ace_v1x_irq_is_enabled(const struct device *dev, unsigned int irq)
+int dw_ace_irq_is_enabled(const struct device *dev, unsigned int irq)
 {
 	ARG_UNUSED(dev);
 
@@ -120,7 +120,7 @@ int dw_ace_v1x_irq_is_enabled(const struct device *dev, unsigned int irq)
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-int dw_ace_v1x_irq_connect_dynamic(const struct device *dev, unsigned int irq,
+int dw_ace_irq_connect_dynamic(const struct device *dev, unsigned int irq,
 				   unsigned int priority,
 				   void (*routine)(const void *parameter),
 				   const void *parameter, uint32_t flags)
@@ -150,7 +150,7 @@ static void dwint_isr(const void *arg)
 	}
 }
 
-static int dw_ace_v1x_init(const struct device *dev)
+static int dw_ace_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -161,14 +161,14 @@ static int dw_ace_v1x_init(const struct device *dev)
 }
 
 static const struct dw_ace_v1_ictl_driver_api dw_ictl_ace_v1x_apis = {
-	.intr_enable = dw_ace_v1x_irq_enable,
-	.intr_disable = dw_ace_v1x_irq_disable,
-	.intr_is_enabled = dw_ace_v1x_irq_is_enabled,
+	.intr_enable = dw_ace_irq_enable,
+	.intr_disable = dw_ace_irq_disable,
+	.intr_is_enabled = dw_ace_irq_is_enabled,
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-	.intr_connect_dynamic = dw_ace_v1x_irq_connect_dynamic,
+	.intr_connect_dynamic = dw_ace_irq_connect_dynamic,
 #endif
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(ace_intc), dw_ace_v1x_init, NULL, NULL, NULL,
+DEVICE_DT_DEFINE(DT_NODELABEL(ace_intc), dw_ace_init, NULL, NULL, NULL,
 		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		 &dw_ictl_ace_v1x_apis);
