@@ -21,7 +21,10 @@
 #include <zephyr/net/buf.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_vs.h>
-#include <zephyr/device.h>
+
+
+/* Opaque type representing a Zephyr device. */
+struct device;
 
 #ifdef __cplusplus
 extern "C" {
