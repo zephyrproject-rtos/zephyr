@@ -6,7 +6,7 @@
 
 / {
 	chosen {
-		zephyr,bt-uart = &arduino_serial_frdm_kw41z;
+		zephyr,bt-uart = &arduino_serial;
 	};
 };
 
