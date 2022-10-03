@@ -1740,12 +1740,6 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	err = bt_enable(NULL);
-	if (err && err != -EALREADY) {
-		shell_error(sh, "Bluetooth init failed (err %d)", err);
-		return err;
-	}
-
 	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER)) {
 		bt_audio_unicast_server_register_cb(&unicast_server_cb);
 	}
