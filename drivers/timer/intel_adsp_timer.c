@@ -7,7 +7,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/drivers/interrupt_controller/dw_ace_v1x.h>
+#include <zephyr/drivers/interrupt_controller/dw_ace.h>
 
 #include <cavs-idc.h>
 #include <adsp_shim.h>

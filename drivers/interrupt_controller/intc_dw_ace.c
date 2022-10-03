@@ -10,7 +10,7 @@
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 #include <zephyr/sw_isr_table.h>
 #endif
-#include <zephyr/drivers/interrupt_controller/dw_ace_v1x.h>
+#include <zephyr/drivers/interrupt_controller/dw_ace.h>
 #include <soc.h>
 #include <adsp_interrupt.h>
 #include "intc_dw.h"

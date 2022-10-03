@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_DW_ACE_V1X_H
-#define ZEPHYR_INCLUDE_DRIVERS_DW_ACE_V1X_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DW_ACE_H
+#define ZEPHYR_INCLUDE_DRIVERS_DW_ACE_H
 
 #include <zephyr/device.h>
 
@@ -25,4 +25,4 @@ struct dw_ace_v1_ictl_driver_api {
 #endif
 };
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_DW_ACE_V1X_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DW_ACE_H */

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/interrupt_controller/dw_ace_v1x.h>
+#include <zephyr/drivers/interrupt_controller/dw_ace.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(ace_v1x_soc, CONFIG_SOC_LOG_LEVEL);
