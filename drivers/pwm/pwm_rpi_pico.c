@@ -113,7 +113,7 @@ static int pwm_rpi_set_cycles(const struct device *dev, uint32_t ch, uint32_t pe
 	pwm_rpi_set_channel_polarity(dev, slice, pico_channel,
 				     (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED);
 	pwm_set_wrap(slice, period_cycles);
-	pwm_set_chan_level(slice, ch, pulse_cycles);
+	pwm_set_chan_level(slice, pico_channel, pulse_cycles);
 
 	return 0;
 };
