@@ -22,6 +22,11 @@
 #define TEST_BITRATE_2 250000
 
 /**
+ * Test sample points in per mille.
+ */
+#define TEST_SAMPLE_POINT 875
+
+/**
  * @brief Test timeouts.
  */
 #define TEST_SEND_TIMEOUT    K_MSEC(100)
@@ -649,7 +654,14 @@ void send_receive_rtr(const struct can_filter *data_filter,
 	int filter_id;
 	int err;
 
-	filter_id = add_rx_msgq(can_dev, rtr_filter);
+	filter_id = can_add_rx_filter_msgq(can_dev, &can_msgq, rtr_filter);
+	if (filter_id == -ENOTSUP) {
+		/* Not all CAN controller drivers support remote transmission requests */
+		ztest_test_skip();
+	}
+
+	zassert_not_equal(filter_id, -ENOSPC, "no filters available");
+	zassert_true(filter_id >= 0, "negative filter number");
 
 	/* Verify that RTR filter does not match data frame */
 	send_test_frame(can_dev, data_frame);
@@ -744,8 +756,14 @@ ZTEST_USER(can_api, test_set_bitrate_too_high)
 	zassert_equal(err, 0, "failed to get max bitrate (err %d)", err);
 	zassert_not_equal(max, 0, "max bitrate is 0");
 
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
 	err = can_set_bitrate(can_dev, max + 1);
 	zassert_equal(err, -ENOTSUP, "too high bitrate accepted");
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 }
 
 /**
@@ -755,8 +773,14 @@ ZTEST_USER(can_api, test_set_bitrate)
 {
 	int err;
 
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
 	err = can_set_bitrate(can_dev, TEST_BITRATE_1);
 	zassert_equal(err, 0, "failed to set bitrate");
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 }
 
 /**
@@ -1020,6 +1044,9 @@ ZTEST_USER(can_api, test_send_invalid_dlc)
 	zassert_equal(err, -EINVAL, "sent a frame with an invalid DLC");
 }
 
+/**
+ * @brief Test CAN controller bus recovery.
+ */
 ZTEST_USER(can_api, test_recover)
 {
 	int err;
@@ -1033,6 +1060,9 @@ ZTEST_USER(can_api, test_recover)
 	zassert_equal(err, 0, "failed to recover (err %d)", err);
 }
 
+/**
+ * @brief Test retrieving the state of the CAN controller.
+ */
 ZTEST_USER(can_api, test_get_state)
 {
 	struct can_bus_err_cnt err_cnt;
@@ -1052,9 +1082,13 @@ ZTEST_USER(can_api, test_get_state)
 	zassert_equal(err, 0, "failed to get CAN state + error counters (err %d)", err);
 }
 
+/**
+ * @brief Test that CAN RX filters are preserved through CAN controller mode changes.
+ */
 ZTEST_USER(can_api, test_filters_preserved_through_mode_change)
 {
 	struct can_frame frame;
+	enum can_state state;
 	int filter_id;
 	int err;
 
@@ -1065,11 +1099,21 @@ ZTEST_USER(can_api, test_filters_preserved_through_mode_change)
 	zassert_equal(err, 0, "receive timeout");
 	assert_frame_equal(&frame, &test_std_frame_1, 0);
 
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_get_state(can_dev, &state, NULL);
+	zassert_equal(err, 0, "failed to get CAN state (err %d)", err);
+	zassert_equal(state, CAN_STATE_STOPPED, "CAN controller not stopped");
+
 	err = can_set_mode(can_dev, CAN_MODE_NORMAL);
 	zassert_equal(err, 0, "failed to set normal mode (err %d)", err);
 
 	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 
 	send_test_frame(can_dev, &test_std_frame_1);
 
@@ -1080,9 +1124,13 @@ ZTEST_USER(can_api, test_filters_preserved_through_mode_change)
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
+/**
+ * @brief Test that CAN RX filters are preserved through CAN controller bitrate changes.
+ */
 ZTEST_USER(can_api, test_filters_preserved_through_bitrate_change)
 {
 	struct can_frame frame;
+	enum can_state state;
 	int filter_id;
 	int err;
 
@@ -1093,11 +1141,21 @@ ZTEST_USER(can_api, test_filters_preserved_through_bitrate_change)
 	zassert_equal(err, 0, "receive timeout");
 	assert_frame_equal(&frame, &test_std_frame_1, 0);
 
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_get_state(can_dev, &state, NULL);
+	zassert_equal(err, 0, "failed to get CAN state (err %d)", err);
+	zassert_equal(state, CAN_STATE_STOPPED, "CAN controller not stopped");
+
 	err = can_set_bitrate(can_dev, TEST_BITRATE_2);
 	zassert_equal(err, 0, "failed to set bitrate");
 
 	err = can_set_bitrate(can_dev, TEST_BITRATE_1);
 	zassert_equal(err, 0, "failed to set bitrate");
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 
 	send_test_frame(can_dev, &test_std_frame_1);
 
@@ -1106,6 +1164,140 @@ ZTEST_USER(can_api, test_filters_preserved_through_bitrate_change)
 	assert_frame_equal(&frame, &test_std_frame_1, 0);
 
 	can_remove_rx_filter(can_dev, filter_id);
+}
+
+/**
+ * @brief Test that CAN RX filters can be added while CAN controller is stopped.
+ */
+ZTEST_USER(can_api, test_filters_added_while_stopped)
+{
+	struct can_frame frame;
+	int filter_id;
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+
+	send_test_frame(can_dev, &test_std_frame_1);
+
+	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, 0, "receive timeout");
+	assert_frame_equal(&frame, &test_std_frame_1, 0);
+
+	can_remove_rx_filter(can_dev, filter_id);
+}
+
+/**
+ * @brief Test stopping is not allowed while stopped.
+ */
+ZTEST_USER(can_api, test_stop_while_stopped)
+{
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_stop(can_dev);
+	zassert_not_equal(err, 0, "stopped CAN controller while stopped");
+	zassert_equal(err, -EALREADY, "wrong error return code (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test starting is not allowed while started.
+ */
+ZTEST_USER(can_api, test_start_while_started)
+{
+	int err;
+
+	err = can_start(can_dev);
+	zassert_not_equal(err, 0, "started CAN controller while started");
+	zassert_equal(err, -EALREADY, "wrong error return code (err %d)", err);
+}
+
+/**
+ * @brief Test recover is not allowed while started.
+ */
+ZTEST_USER(can_api, test_recover_while_stopped)
+{
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_recover(can_dev, K_NO_WAIT);
+	zassert_not_equal(err, 0, "recovered bus while stopped");
+	zassert_equal(err, -ENETDOWN, "wrong error return code (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test sending is not allowed while stopped.
+ */
+ZTEST_USER(can_api, test_send_while_stopped)
+{
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_send(can_dev, &test_std_frame_1, TEST_SEND_TIMEOUT, NULL, NULL);
+	zassert_not_equal(err, 0, "sent a frame in stopped state");
+	zassert_equal(err, -ENETDOWN, "wrong error return code (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test setting bitrate is not allowed while started.
+ */
+ZTEST_USER(can_api, test_set_bitrate_while_started)
+{
+	int err;
+
+	err = can_set_bitrate(can_dev, TEST_BITRATE_2);
+	zassert_not_equal(err, 0, "changed bitrate while started");
+	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
+}
+
+/**
+ * @brief Test setting timing is not allowed while started.
+ */
+ZTEST_USER(can_api, test_set_timing_while_started)
+{
+	struct can_timing timing;
+	int err;
+
+	timing.sjw = CAN_SJW_NO_CHANGE;
+
+	err = can_calc_timing(can_dev, &timing, TEST_BITRATE_1, TEST_SAMPLE_POINT);
+	zassert_ok(err, "failed to calculate timing (err %d)", err);
+
+	err = can_set_timing(can_dev, &timing);
+	zassert_not_equal(err, 0, "changed timing while started");
+	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
+}
+
+/**
+ * @brief Test setting mode is not allowed while started.
+ */
+ZTEST_USER(can_api, test_set_mode_while_started)
+{
+	int err;
+
+	err = can_set_mode(can_dev, CAN_MODE_NORMAL);
+	zassert_not_equal(err, 0, "changed mode while started");
+	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
 }
 
 void *can_api_setup(void)
@@ -1122,6 +1314,9 @@ void *can_api_setup(void)
 
 	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set loopback mode (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 
 	return NULL;
 }

@@ -819,26 +819,33 @@ static bool uri_path_eq(const struct coap_packet *cpkt,
 	return true;
 }
 
-static coap_method_t method_from_code(const struct coap_resource *resource,
-				      uint8_t code)
+static int method_from_code(const struct coap_resource *resource,
+			    uint8_t code, coap_method_t *method)
 {
 	switch (code) {
 	case COAP_METHOD_GET:
-		return resource->get;
+		*method = resource->get;
+		return 0;
 	case COAP_METHOD_POST:
-		return resource->post;
+		*method = resource->post;
+		return 0;
 	case COAP_METHOD_PUT:
-		return resource->put;
+		*method = resource->put;
+		return 0;
 	case COAP_METHOD_DELETE:
-		return resource->del;
+		*method = resource->del;
+		return 0;
 	case COAP_METHOD_FETCH:
-		return resource->fetch;
+		*method = resource->fetch;
+		return 0;
 	case COAP_METHOD_PATCH:
-		return resource->patch;
+		*method = resource->patch;
+		return 0;
 	case COAP_METHOD_IPATCH:
-		return resource->ipatch;
+		*method = resource->ipatch;
+		return 0;
 	default:
-		return NULL;
+		return -EINVAL;
 	}
 }
 
@@ -871,7 +878,10 @@ int coap_handle_request(struct coap_packet *cpkt,
 		}
 
 		code = coap_header_get_code(cpkt);
-		method = method_from_code(resource, code);
+		if (method_from_code(resource, code, &method) < 0) {
+			return -ENOTSUP;
+		}
+
 		if (!method) {
 			return -EPERM;
 		}

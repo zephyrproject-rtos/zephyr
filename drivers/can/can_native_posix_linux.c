@@ -32,13 +32,13 @@ struct can_npl_data {
 	struct can_filter_context filters[CONFIG_CAN_MAX_FILTER];
 	struct k_mutex filter_mutex;
 	struct k_sem tx_idle;
-	struct k_sem tx_done;
 	can_tx_callback_t tx_callback;
 	void *tx_user_data;
 	bool loopback;
 	bool mode_fd;
 	int dev_fd; /* Linux socket file descriptor */
 	struct k_thread rx_thread;
+	bool started;
 
 	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 };
@@ -94,19 +94,14 @@ static void rx_thread(void *arg1, void *arg2, void *arg3)
 			count = linux_socketcan_read_data(data->dev_fd, (void *)(&sframe),
 							   sizeof(sframe), &msg_confirm);
 			if (msg_confirm) {
-				if (data->tx_callback != NULL) {
-					data->tx_callback(dev, 0, data->tx_user_data);
-				} else {
-					k_sem_give(&data->tx_done);
-				}
-
+				data->tx_callback(dev, 0, data->tx_user_data);
 				k_sem_give(&data->tx_idle);
 
 				if (!data->loopback) {
 					continue;
 				}
 			}
-			if (count <= 0) {
+			if ((count <= 0) || !data->started) {
 				break;
 			}
 
@@ -141,6 +136,8 @@ static int can_npl_send(const struct device *dev, const struct can_frame *frame,
 				  "standard" : "extended",
 		frame->rtr == CAN_DATAFRAME ? "" : ", RTR frame");
 
+	__ASSERT_NO_MSG(callback != NULL);
+
 #ifdef CONFIG_CAN_FD_MODE
 	if (data->mode_fd && frame->fd == 1) {
 		max_dlc = CANFD_MAX_DLC;
@@ -158,6 +155,10 @@ static int can_npl_send(const struct device *dev, const struct can_frame *frame,
 		return -EIO;
 	}
 
+	if (!data->started) {
+		return -ENETDOWN;
+	}
+
 	socketcan_from_can_frame(frame, &sframe);
 
 	if (k_sem_take(&data->tx_idle, timeout) != 0) {
@@ -170,10 +171,6 @@ static int can_npl_send(const struct device *dev, const struct can_frame *frame,
 	ret = linux_socketcan_write_data(data->dev_fd, &sframe, mtu);
 	if (ret < 0) {
 		LOG_ERR("Cannot send CAN data len %d (%d)", sframe.len, -errno);
-	}
-
-	if (callback == NULL) {
-		k_sem_take(&data->tx_done, K_FOREVER);
 	}
 
 	return 0;
@@ -250,6 +247,32 @@ static int can_npl_get_capabilities(const struct device *dev, can_mode_t *cap)
 	return 0;
 }
 
+static int can_npl_start(const struct device *dev)
+{
+	struct can_npl_data *data = dev->data;
+
+	if (data->started) {
+		return -EALREADY;
+	}
+
+	data->started = true;
+
+	return 0;
+}
+
+static int can_npl_stop(const struct device *dev)
+{
+	struct can_npl_data *data = dev->data;
+
+	if (!data->started) {
+		return -EALREADY;
+	}
+
+	data->started = false;
+
+	return 0;
+}
+
 static int can_npl_set_mode(const struct device *dev, can_mode_t mode)
 {
 	struct can_npl_data *data = dev->data;
@@ -266,6 +289,10 @@ static int can_npl_set_mode(const struct device *dev, can_mode_t mode)
 	}
 #endif /* CONFIG_CAN_FD_MODE */
 
+	if (data->started) {
+		return -EBUSY;
+	}
+
 	/* loopback is handled internally in rx_thread */
 	data->loopback = (mode & CAN_MODE_LOOPBACK) != 0;
 
@@ -277,8 +304,13 @@ static int can_npl_set_mode(const struct device *dev, can_mode_t mode)
 
 static int can_npl_set_timing(const struct device *dev, const struct can_timing *timing)
 {
-	ARG_UNUSED(dev);
+	struct can_npl_data *data = dev->data;
+
 	ARG_UNUSED(timing);
+
+	if (data->started) {
+		return -EBUSY;
+	}
 
 	return 0;
 }
@@ -286,8 +318,13 @@ static int can_npl_set_timing(const struct device *dev, const struct can_timing 
 #ifdef CONFIG_CAN_FD_MODE
 static int can_npl_set_timing_data(const struct device *dev, const struct can_timing *timing)
 {
-	ARG_UNUSED(dev);
+	struct can_npl_data *data = dev->data;
+
 	ARG_UNUSED(timing);
+
+	if (data->started) {
+		return -EBUSY;
+	}
 
 	return 0;
 }
@@ -296,11 +333,15 @@ static int can_npl_set_timing_data(const struct device *dev, const struct can_ti
 static int can_npl_get_state(const struct device *dev, enum can_state *state,
 			     struct can_bus_err_cnt *err_cnt)
 {
-	ARG_UNUSED(dev);
+	struct can_npl_data *data = dev->data;
 
 	if (state != NULL) {
-		/* SocketCAN does not forward error frames by default */
-		*state = CAN_STATE_ERROR_ACTIVE;
+		if (!data->started) {
+			*state = CAN_STATE_STOPPED;
+		} else {
+			/* SocketCAN does not forward error frames by default */
+			*state = CAN_STATE_ERROR_ACTIVE;
+		}
 	}
 
 	if (err_cnt) {
@@ -314,8 +355,13 @@ static int can_npl_get_state(const struct device *dev, enum can_state *state,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 static int can_npl_recover(const struct device *dev, k_timeout_t timeout)
 {
-	ARG_UNUSED(dev);
+	struct can_npl_data *data = dev->data;
+
 	ARG_UNUSED(timeout);
+
+	if (!data->started) {
+		return -ENETDOWN;
+	}
 
 	return 0;
 }
@@ -346,6 +392,8 @@ static int can_npl_get_max_filters(const struct device *dev, enum can_ide id_typ
 }
 
 static const struct can_driver_api can_npl_driver_api = {
+	.start = can_npl_start,
+	.stop = can_npl_stop,
 	.get_capabilities = can_npl_get_capabilities,
 	.set_mode = can_npl_set_mode,
 	.set_timing = can_npl_set_timing,
@@ -399,7 +447,6 @@ static int can_npl_init(const struct device *dev)
 
 	k_mutex_init(&data->filter_mutex);
 	k_sem_init(&data->tx_idle, 1, 1);
-	k_sem_init(&data->tx_done, 0, 1);
 
 	data->dev_fd = linux_socketcan_iface_open(cfg->if_name);
 	if (data->dev_fd < 0) {

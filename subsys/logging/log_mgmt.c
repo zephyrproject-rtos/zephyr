@@ -104,12 +104,10 @@ uint32_t z_impl_log_filter_set(struct log_backend const *const backend,
 		uint32_t *filters = z_log_dynamic_filters_get(source_id);
 
 		if (backend == NULL) {
-			struct log_backend const *iter_backend;
 			uint32_t max = 0U;
 			uint32_t current;
 
-			for (int i = 0; i < log_backend_count_get(); i++) {
-				iter_backend = log_backend_get(i);
+			STRUCT_SECTION_FOREACH(log_backend, iter_backend) {
 				current = log_filter_set(iter_backend,
 							 domain_id,
 							 source_id, level);
@@ -174,14 +172,12 @@ static void backend_filter_set(struct log_backend const *const backend,
 
 const struct log_backend *log_backend_get_by_name(const char *backend_name)
 {
-	const struct log_backend *ptr = __log_backends_start;
-
-	while (ptr < __log_backends_end) {
-		if (strcmp(backend_name, ptr->name) == 0) {
-			return ptr;
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
+		if (strcmp(backend_name, backend->name) == 0) {
+			return backend;
 		}
-		ptr++;
 	}
+
 	return NULL;
 }
 

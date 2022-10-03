@@ -646,6 +646,21 @@ int lwm2m_engine_create_obj_inst(const char *pathstr);
 int lwm2m_engine_delete_obj_inst(const char *pathstr);
 
 /**
+ * @brief Locks the registry for this thread.
+ *
+ * Use this function before writing to multiple resources. This halts the
+ * lwm2m main thread until all the write-operations are finished.
+ *
+ */
+void lwm2m_registry_lock(void);
+
+/**
+ * @brief Unlocks the registry previously locked by lwm2m_registry_lock().
+ *
+ */
+void lwm2m_registry_unlock(void);
+
+/**
  * @brief Set resource (instance) value (opaque buffer)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
@@ -1237,7 +1252,7 @@ enum lwm2m_rd_client_event {
 	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_TRANSFER_COMPLETE,
 	LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE,
 	LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE,
-	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE,
+	LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT,
 	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE,
 	LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE,
 	LWM2M_RD_CLIENT_EVENT_DISCONNECT,
@@ -1245,6 +1260,12 @@ enum lwm2m_rd_client_event {
 	LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED,
 	LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR,
 };
+
+/**
+ *	Define for old event name keeping backward compatibility.
+ */
+#define LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE                                                   \
+	LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT __DEPRECATED_MACRO
 
 /*
  * LwM2M RD client flags, used to configure LwM2M session.

@@ -381,28 +381,28 @@ serial port:
 
 
 .. _V2M Musca B1 Website:
-   https://developer.arm.com/products/system-design/development-boards/iot-test-chips-and-boards/musca-b-test-chip-board
+   https://developer.arm.com/Tools%20and%20Software/Musca-B1%20Test%20Chip%20Board
 
 .. _Musca B1 Technical Reference Manual (TRM):
-   http://infocenter.arm.com/help/topic/com.arm.doc.101312_0000_00_en/arm_musca_b1_test_chip_and_board_technical_reference_manual_101312_0000_00_en.pdf
+   https://developer.arm.com/documentation/101312/latest/
 
 .. _DAPLink Website:
    https://github.com/ARMmbed/DAPLink
 
 .. _Cortex M33 Generic User Guide:
-   http://infocenter.arm.com/help/topic/com.arm.doc.100235_0004_00_en/arm_cortex_m33_dgug_100235_0004_00_en.pdf
+   https://developer.arm.com/documentation/100235/latest/
 
 .. _Trusted Firmware M Guide:
-   https://git.trustedfirmware.org/trusted-firmware-m.git/about/docs/user_guides/tfm_build_instruction.md
+   https://tf-m-user-guide.trustedfirmware.org/building/tfm_build_instruction.html
 
 .. _Corelink SSE-200 Subsystem:
-   https://developer.arm.com/products/system-design/subsystems/corelink-sse-200-subsystem
+   https://developer.arm.com/documentation/dto0051/latest/subsystem-overview/about-the-sse-200
 
 .. _Srecord Manual:
    http://srecord.sourceforge.net/man/man1/srec_cat.html
 
 .. _IDAU:
-   https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
+   https://developer.arm.com/documentation/100690/latest/Attribution-units--SAU-and-IDAU-
 
 .. _AMBA®:
    https://developer.arm.com/products/architecture/system-architectures/amba

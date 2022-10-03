@@ -1,0 +1,47 @@
+# Copyright (c) 2022 Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel ADSP clock controlling related constants.
+
+compatible: "intel,adsp-shim-clkctl"
+
+properties:
+    adsp-clkctl-clk-wovcro:
+        type: int
+        required: false
+        description: Index of WOVCRO clock encoding in the encoding array (if wovcro-supported is true).
+
+    adsp-clkctl-clk-lpro:
+        type: int
+        required: false
+        description: Index of LPRO clock encoding in the encoding array.
+
+    adsp-clkctl-clk-hpro:
+        type: int
+        required: false
+        description: Index of HPRO clock encoding in the encoding array.
+
+    adsp-clkctl-freq-enc:
+        type: array
+        required: true
+        description: Array that encodes what is needed to enable each clock.
+
+    adsp-clkctl-freq-mask:
+        type: array
+        required: false
+        description: Array that encodes needed masks to enable each clock.
+
+    adsp-clkctl-freq-default:
+        type: int
+        required: true
+        description: Index for the default clock.
+
+    adsp-clkctl-freq-lowest:
+        type: int
+        required: true
+        description: Index for the lowest frequency clock.
+
+    wovcro-supported:
+        type: boolean
+        description: |
+          If WoV clock ring oscillator is supported.

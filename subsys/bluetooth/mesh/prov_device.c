@@ -611,12 +611,12 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
 	    (bearers & BT_MESH_PROV_ADV)) {
-		pb_adv.link_accept(bt_mesh_prov_bearer_cb_get(), NULL);
+		bt_mesh_pb_adv.link_accept(bt_mesh_prov_bearer_cb_get(), NULL);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
 	    (bearers & BT_MESH_PROV_GATT)) {
-		pb_gatt.link_accept(bt_mesh_prov_bearer_cb_get(), NULL);
+		bt_mesh_pb_gatt.link_accept(bt_mesh_prov_bearer_cb_get(), NULL);
 	}
 
 	bt_mesh_prov_link.role = &role_device;

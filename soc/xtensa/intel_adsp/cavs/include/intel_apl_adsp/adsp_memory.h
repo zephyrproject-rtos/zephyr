@@ -8,7 +8,7 @@
 
 
 #include <zephyr/devicetree.h>
-#include <cavs-vectors.h>
+#include <adsp-vectors.h>
 
 #define L2_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram0)))
 #define L2_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram0)))

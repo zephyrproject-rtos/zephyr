@@ -302,8 +302,8 @@ events, setup a callback function:
 			LOG_DBG("Registration complete");
 			break;
 
-		case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE:
-			LOG_DBG("Registration update failure!");
+		case LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT:
+			LOG_DBG("Registration timeout!");
 			break;
 
 		case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE:
@@ -411,6 +411,24 @@ value of 1 is ok here).
 
 For a more detailed LwM2M client sample see: :ref:`lwm2m-client-sample`.
 
+Multi-thread usage
+******************
+Writing a value to a resource can be done using functions like lwm2m_engine_set_u8. When writing
+to multiple resources, the function lwm2m_registry_lock will ensure that the
+client halts until all writing operations are finished:
+
+.. code-block:: c
+
+  lwm2m_registry_lock();
+  lwm2m_engine_set_u32("1/0/1", 60);
+  lwm2m_engine_set_u8("5/0/3", 0);
+  lwm2m_engine_set_float("3303/0/5700", &value);
+  lwm2m_registry_unlock();
+
+This is especially useful if the server is composite-observing the resources being
+written to. Locking will then ensure that the client only updates and sends notifications
+to the server after all operations are done, resulting in fewer messages in general.
+
 LwM2M engine and application events
 ***********************************
 
@@ -454,7 +472,7 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
    * - 4
      - REGISTRATION_FAILURE
      - Registration to LwM2M server failed.
-       Occurs if there is a timeout or failure in the registration.
+       Occurs if there is a failure in the registration.
      - Retry registration
    * - 5
      - REGISTRATION_COMPLETE
@@ -463,10 +481,10 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
        or when session resumption is used.
      - No actions needed
    * - 6
-     - REG_UPDATE_FAILURE
-     - Registration update failed.
-       Occurs if there is a timeout during registration update.
-       NOTE: If registration update fails without a timeout,
+     - REG_TIMEOUT
+     - Registration or registration update timeout.
+       Occurs if there is a timeout during registration.
+       NOTE: If registration fails without a timeout,
        a full registration is triggered automatically and
        no registration update failure event is generated.
      - No actions needed, client proceeds to re-registration automatically.

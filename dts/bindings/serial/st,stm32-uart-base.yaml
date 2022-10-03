@@ -4,8 +4,6 @@
 # Common fields for STM32 UART peripherals.
 description: STM32 UART-BASE
 
-compatible: "st,stm32-uart-base"
-
 include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
@@ -46,3 +44,13 @@ properties:
 
     pinctrl-names:
       required: true
+
+    wakeup-line:
+      type: int
+      required: false
+      description: |
+        EXTI line number matching the device wakeup interrupt mask register.
+        This property is required on stm32 devices where the wakeup interrupt signal could be
+        configured masked at boot (sm32wl55 for instance), preventing the device to wakeup
+        the core from stop mode(s).
+        Valid range: 0 - 31

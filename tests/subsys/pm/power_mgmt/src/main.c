@@ -337,7 +337,7 @@ ZTEST(power_management_1cpu, test_power_state_trans)
  *
  * @details
  *  - device driver notify its power state change by pm_device_runtime_get and
- *    pm_device_runtime_put_asyncpm_notifier_register
+ *    pm_device_runtime_put_async
  *  - system inform device system power state change through device interface
  *    pm_action_cb
  *
@@ -439,12 +439,6 @@ static void *power_management_1cpu_setup(void)
 	device_dummy = device_get_binding(DUMMY_DRIVER_NAME);
 	api = (struct dummy_driver_api *)device_dummy->api;
 	return NULL;
-}
-
-ZTEST(power_management_1cpu, test_power)
-{
-
-
 }
 
 ZTEST_SUITE(power_management_1cpu, NULL, power_management_1cpu_setup,

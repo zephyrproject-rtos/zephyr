@@ -192,7 +192,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* TODO: parameters to ULL if only accessed by ULL */
 	lll_adv_iso = &adv_iso->lll;
 	lll_adv_iso->handle = big_handle;
-	lll_adv_iso->max_pdu = LL_BIS_OCTETS_TX_MAX;
+	lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX, max_sdu);
 	lll_adv_iso->phy = phy;
 	lll_adv_iso->phy_flags = PHY_FLAGS_S8;
 
@@ -794,9 +794,17 @@ static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t latency_pdu,
 	reserve = latency_packing + ctrl_spacing +
 		  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	if (reserve < latency_pdu) {
-		return ((latency_pdu - reserve) / (lll->sub_interval * lll->bn *
-						   lll->num_bis)) *
-			lll->bn;
+		uint8_t ptc;
+
+		/* Possible maximum Pre-transmission Subevents per BIS */
+		ptc = ((latency_pdu - reserve) / (lll->sub_interval * lll->bn *
+						  lll->num_bis)) *
+		      lll->bn;
+
+		/* Retrict to a maximum Pre-Transmission Subevents per BIS */
+		ptc = MIN(ptc, 1U);
+
+		return ptc;
 	}
 
 	return 0U;
@@ -850,7 +858,12 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	/* Find the slot after Periodic Advertisings events */
 	err = ull_sched_adv_aux_sync_free_slot_get(TICKER_USER_ID_THREAD,
 						   ticks_slot, &ticks_anchor);
-	if (err) {
+	if (!err) {
+		ticks_anchor += HAL_TICKER_US_TO_TICKS(
+					MAX(EVENT_MAFS_US,
+					    EVENT_OVERHEAD_START_US) +
+					(EVENT_TICKER_RES_MARGIN_US << 1));
+	} else {
 		ticks_anchor = ticker_ticks_now_get();
 	}
 
@@ -1232,7 +1245,7 @@ static void tx_lll_flush(void *param)
 		uint16_t handle;
 
 		stream_handle = lll->stream_handle[num_bis];
-		handle = stream_handle + BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
+		handle = LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle);
 		stream = ull_adv_iso_stream_get(stream_handle);
 
 		link = memq_dequeue(stream->memq_tx.tail, &stream->memq_tx.head,

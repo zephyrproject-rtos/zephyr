@@ -117,6 +117,8 @@ char *state_to_str(enum can_state state)
 		return "error-passive";
 	case CAN_STATE_BUS_OFF:
 		return "bus-off";
+	case CAN_STATE_STOPPED:
+		return "stopped";
 	default:
 		return "unknown";
 	}
@@ -225,6 +227,11 @@ void main(void)
 		return;
 	}
 #endif
+	ret = can_start(can_dev);
+	if (ret != 0) {
+		printk("Error starting CAN controller [%d]", ret);
+		return;
+	}
 
 	if (led.port != NULL) {
 		if (!device_is_ready(led.port)) {

@@ -72,10 +72,19 @@ smp_build_err_rsp(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
 	zcbor_state_t *zsp = nbw->zs;
 	bool ok;
 
-	ok = zcbor_map_start_encode(zsp, 1)		&&
+	ok = zcbor_map_start_encode(zsp, 2)		&&
 	     zcbor_tstr_put_lit(zsp, "rc")		&&
-	     zcbor_int32_put(zsp, status)		&&
-	     zcbor_map_end_encode(zsp, 1);
+	     zcbor_int32_put(zsp, status);
+
+#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
+	if (ok && rc_rsn != NULL) {
+		ok = zcbor_tstr_put_lit(zsp, "rsn")			&&
+		     zcbor_tstr_put_term(zsp, rc_rsn);
+	}
+#else
+	ARG_UNUSED(rc_rsn);
+#endif
+	ok &= zcbor_map_end_encode(zsp, 2);
 
 	if (!ok) {
 		return MGMT_ERR_EMSGSIZE;

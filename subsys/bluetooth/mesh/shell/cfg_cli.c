@@ -557,7 +557,7 @@ static int cmd_app_key_add(const struct shell *sh, size_t argc, char *argv[])
 		size_t len;
 
 		len = hex2bin(argv[3], strlen(argv[3]), key_val, sizeof(key_val));
-		(void)memset(key_val, 0, sizeof(key_val) - len);
+		(void)memset(key_val + len, 0, sizeof(key_val) - len);
 	} else {
 		memcpy(key_val, default_key, sizeof(key_val));
 	}

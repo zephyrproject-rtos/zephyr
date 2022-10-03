@@ -45,6 +45,12 @@ config SOC_DCDC_NRF53X_HV
 	help
 	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
 
+config SOC_NRF_GPIO_FORWARDER_FOR_NRF5340
+	bool
+	depends on NRF_SOC_SECURE_SUPPORTED
+	help
+	  hidden option for including the nRF GPIO pin forwarding
+
 if !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
 
 config SOC_ENABLE_LFXO
@@ -94,6 +100,7 @@ config SOC_HFXO_CAP_EXTERNAL
 
 config SOC_HFXO_CAP_INTERNAL
 	bool "Use internal load capacitors"
+	depends on NRF_SOC_SECURE_SUPPORTED
 
 endchoice
 

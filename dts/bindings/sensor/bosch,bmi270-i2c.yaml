@@ -1,10 +1,7 @@
 # Copyright (c) 2021, Bosch Sensortec GmbH
+# Copyright (c) 2022, Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
-
-description: |
-    The BMI270 is an inertial measurment unit. See more info at:
-    https://www.bosch-sensortec.com/products/motion-sensors/imus/bmi270.html
 
 compatible: "bosch,bmi270"
 
-include: i2c-device.yaml
+include: [i2c-device.yaml, "bosch,bmi270.yaml"]

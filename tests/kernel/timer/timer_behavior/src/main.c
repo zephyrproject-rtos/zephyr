@@ -133,17 +133,30 @@ ZTEST(timer_behavior, test_periodic_behavior)
 	double expected_time_us =
 		(double)CONFIG_TIMER_TEST_PERIOD * (double)CONFIG_TIMER_TEST_SAMPLES;
 	double actual_time_us = cycles_to_us((double)periodic_end - (double)periodic_start);
-	double time_diff_us = actual_time_us - expected_time_us;
 
 	/* While this could be non-integer, the mean should be very close to it over time */
 	double expected_period =
 		((double)CONFIG_TIMER_TEST_PERIOD * (double)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) /
 		1000000.0;
+	/*
+	 * Expected period drift(us) due to round up/down errors during the
+	 * conversion between ticks, cycles and delay.
+	 */
+	k_timeout_t actual_timeout = K_USEC(CONFIG_TIMER_TEST_PERIOD);
+	uint64_t cyc_per_tick = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+		/ CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	double expected_period_drift = ((double)actual_timeout.ticks * cyc_per_tick
+		- expected_period) / CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * 1000000;
+	double expected_time_drift_us = expected_period_drift
+		* CONFIG_TIMER_TEST_SAMPLES;
+	double time_diff_us = actual_time_us - expected_time_us
+		- expected_time_drift_us;
 
 	TC_PRINT("timer clock rate %d, kernel tick rate %d, expected period %d us, samples %d, "
-		 "period %f cycles\n",
-		 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, CONFIG_SYS_CLOCK_TICKS_PER_SEC,
-		 CONFIG_TIMER_TEST_PERIOD, CONFIG_TIMER_TEST_SAMPLES, expected_period);
+		"period %f cycles, expected period drift %f us\n",
+		CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, CONFIG_SYS_CLOCK_TICKS_PER_SEC,
+		CONFIG_TIMER_TEST_PERIOD, CONFIG_TIMER_TEST_SAMPLES, expected_period,
+		expected_period_drift);
 	TC_PRINT("statistics samples %d, rollovers %u, mean %f us, variance %f us, stddev %f us, "
 		 "min %f us, max %f us\n",
 		 CONFIG_TIMER_TEST_SAMPLES - periodic_rollovers, periodic_rollovers, mean_us,
@@ -152,19 +165,26 @@ ZTEST(timer_behavior, test_periodic_behavior)
 		 "%f cycles, min %llu cycles, max %llu cycles\n",
 		 CONFIG_TIMER_TEST_SAMPLES - periodic_rollovers, periodic_rollovers, mean_cyc,
 		 variance_cyc, stddev_cyc, min_cyc, max_cyc);
-	TC_PRINT("timer start cycle %llu, end cycle %llu, total time %f, expected time %f, "
-		 "difference %f\n",
-		 periodic_start, periodic_end, actual_time_us, expected_time_us, time_diff_us);
+	TC_PRINT("timer start cycle %llu, end cycle %llu, total time %f, "
+		"expected time %f, expected time drift %f, difference %f\n",
+		periodic_start, periodic_end, actual_time_us, expected_time_us,
+		expected_time_drift_us, time_diff_us);
 
 	/* Validate the maximum/minimum timer period is off by no more than 10% */
 	double test_period = (double)CONFIG_TIMER_TEST_PERIOD;
-	double min_us_bound = test_period - 0.10 * test_period;
-	double max_us_bound = test_period + 0.10 * test_period;
+	double period_max_drift_percentage =
+		(double)CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT / 100;
+	double min_us_bound = test_period - period_max_drift_percentage * test_period
+		+ expected_period_drift;
+	double max_us_bound = test_period + period_max_drift_percentage * test_period
+		+ expected_period_drift;
 
 	zassert_true(min_us >= min_us_bound,
-		     "Shortest timer period too short (off by more than 10%)");
+		"Shortest timer period too short (off by more than expected %d%)",
+		CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT);
 	zassert_true(max_us <= max_us_bound,
-		     "Longest timer period too long (off by more than 10%)");
+		"Longest timer period too long (off by more than expected %d%)",
+		CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT);
 
 	/* Validate the timer deviation (precision/jitter of the timer) is within a configurable
 	 * bound

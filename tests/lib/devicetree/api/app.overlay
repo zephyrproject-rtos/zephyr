@@ -222,6 +222,27 @@
 			};
 		};
 
+		test_i3c: i3c@88889999 {
+			#address-cells = < 3 >;
+			#size-cells = < 0 >;
+			compatible = "vnd,i3c";
+			reg = < 0x88889999 0x1000 >;
+			label = "TEST_I3C_CTLR";
+			status = "okay";
+
+			test-i3c-dev@420000ABCD12345678 {
+				compatible = "vnd,i3c-device";
+				label = "TEST_I3C_DEV_42";
+				reg = < 0x42 0xABCD 0x12345678 >;
+			};
+
+			test-i3c-i2c-dev@380000000000000050 {
+				compatible = "vnd,i3c-i2c-device";
+				label = "TEST_I3C_I2C_DEV_38";
+				reg = < 0x38 0x0 0x50 >;
+			};
+		};
+
 		test_mbox: mbox {
 			compatible = "vnd,mbox";
 			#mbox-cells = <1>;

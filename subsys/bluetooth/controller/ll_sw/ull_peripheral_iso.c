@@ -49,6 +49,12 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 {
 	struct ll_conn *acl_conn = NULL;
 
+	if (!IS_CIS_HANDLE(handle) || ll_conn_iso_stream_get(handle)->group == NULL) {
+		BT_ERR("Unknown CIS handle %u", handle);
+		*error = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		return NULL;
+	}
+
 	for (int h = 0; h < CONFIG_BT_MAX_CONN; h++) {
 		struct ll_conn *conn = ll_conn_get(h);
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
@@ -66,7 +72,7 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 
 	if (!acl_conn) {
 		BT_ERR("No connection found for handle %u", handle);
-		*error = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		*error = BT_HCI_ERR_CMD_DISALLOWED;
 		return NULL;
 	}
 
@@ -307,6 +313,8 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 			leading_event_count = MAX(leading_event_count,
 						cis->lll.event_count);
+
+			ull_iso_lll_event_prepare(cis->lll.handle, cis->lll.event_count);
 		}
 
 		/* Latch datapath validity entering event */

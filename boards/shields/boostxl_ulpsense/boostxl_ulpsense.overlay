@@ -6,13 +6,13 @@
 
 / {
 	aliases {
-		accel0 = &adxl362_0;
+		accel0 = &adxl362_0_boostxl_ulpsense;
 	};
 };
 
 &boosterpack_spi {
 
-	adxl362_0: adxl362@0 {
+	adxl362_0_boostxl_ulpsense: adxl362@0 {
 		compatible = "adi,adxl362";
 		reg = <0>;
 		spi-max-frequency = <8000000>;

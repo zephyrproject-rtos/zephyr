@@ -399,13 +399,18 @@ GROUP_END(DTCM)
  */
 #ifdef CONFIG_XIP
 /* Must be last in romable region */
-SECTION_PROLOGUE(.last_section,(NOLOAD),)
+SECTION_PROLOGUE(.last_section,,)
 {
+#ifdef CONFIG_LINKER_LAST_SECTION_ID
+  /* Fill last section with a word to ensure location counter and actual rom
+   * region data usage match. */
+  LONG(CONFIG_LINKER_LAST_SECTION_ID_PATTERN)
+#endif
 } GROUP_LINK_IN(ROMABLE_REGION)
 
 /* To provide the image size as a const expression,
  * calculate this value here. */
-__rom_region_end = LOADADDR(.last_section);
+__rom_region_end = LOADADDR(.last_section) + SIZEOF(.last_section);
 __rom_region_size = __rom_region_end - __rom_region_start;
 #endif
 

@@ -19,16 +19,6 @@ menuconfig WIFI_ESP32
 
 if WIFI_ESP32
 
-config ESP32_WIFI_SSID
-	string "SSID of WiFi network"
-	help
-	  SSID (network name) for the application to connect to.
-
-config ESP32_WIFI_PASSWORD
-	string "Password (WPA or WPA2) of WiFi network"
-	help
-	  WiFi password (WPA or WPA2) for the example to use.
-
 config ESP32_WIFI_STA_AUTO_DHCPV4
 	bool "Automatically starts DHCP4 negotiation"
 	depends on NET_DHCPV4

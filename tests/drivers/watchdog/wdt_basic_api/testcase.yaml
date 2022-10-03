@@ -6,7 +6,8 @@ tests:
     filter: >
       not (CONFIG_WDT_SAM or dt_compat_enabled("st,stm32-window-watchdog")
        or dt_compat_enabled("st,stm32-watchdog") or CONFIG_SOC_FAMILY_LPC or
-       CONFIG_SOC_SERIES_IMX_RT6XX or CONFIG_SOC_SERIES_IMX_RT5XX)
+       CONFIG_SOC_SERIES_IMX_RT6XX or CONFIG_SOC_SERIES_IMX_RT5XX or
+       CONFIG_SOC_FAMILY_GD32 or SOC_SERIES_GD32VF103)
     platform_exclude: mec15xxevb_assy6853
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
@@ -33,3 +34,15 @@ tests:
     platform_allow: nrf52840dk_nrf52840
     extra_args: OVERLAY_CONFIG="boards/nrf52840dk_nrf52840_counter.conf"
       DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840_counter.overlay"
+  drivers.watchdog.gd32fwdgt:
+    filter: dt_compat_enabled("gd,gd32-fwdgt")
+    extra_args: DTC_OVERLAY_FILE="boards/gd32_fwdgt.overlay"
+    platform_allow: gd32e103v_eval gd32e507v_start gd32f350r_eval gd32f403z_eval
+        gd32f450i_eval gd32f450z_eval gd32f470i_eval gd32vf103c_starter gd32vf103v_eval
+        longan_nano
+  drivers.watchdog.gd32wwdgt:
+    filter: dt_compat_enabled("gd,gd32-wwdgt")
+    extra_args: DTC_OVERLAY_FILE="boards/gd32_wwdgt.overlay"
+    platform_allow: gd32e103v_eval gd32e507v_start gd32f350r_eval gd32f403z_eval
+        gd32f450i_eval gd32f450z_eval gd32f470i_eval gd32vf103c_starter
+        gd32vf103v_eval longan_nano

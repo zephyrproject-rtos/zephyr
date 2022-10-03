@@ -228,6 +228,7 @@ Bluetooth Mesh:
     - jhedberg
     - LingaoM
     - alxelax
+    - Andrewpini
   files:
     - subsys/bluetooth/mesh/
     - include/zephyr/bluetooth/mesh/
@@ -240,7 +241,6 @@ Bluetooth Audio:
   status: maintained
   maintainers:
     - Thalley
-    - asbjornsabo
   collaborators:
     - Vudentz
     - jhedberg
@@ -248,6 +248,7 @@ Bluetooth Audio:
     - MariuszSkamra
     - rymanluk
     - sjanc
+    - asbjornsabo
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
@@ -280,6 +281,7 @@ Build system:
     - stephanosio
   collaborators:
     - alexanderwachter
+    - cfriedt
   files:
     - subsys/cpp/
     - tests/subsys/cpp/
@@ -411,11 +413,9 @@ Devicetree:
   status: maintained
   maintainers:
     - mbolivar-nordic
-  collaborators:
     - galak
   files:
     - scripts/dts/
-    - dts/bindings/
     - dts/common/
     - tests/lib/devicetree/
     - doc/build/dts/
@@ -423,6 +423,15 @@ Devicetree:
     - scripts/kconfig/kconfigfunctions.py
   labels:
     - "area: Devicetree"
+
+Devicetree Bindings:
+  status: maintained
+  maintainers:
+    - galak
+  files:
+    - dts/bindings/
+  labels:
+    - "area: Devicetree Binding"
 
 Disk:
   status: maintained
@@ -463,18 +472,32 @@ Documentation:
     - carlescufi
   collaborators:
     - nashif
-    - utzig
-    - gmarull
   files:
-    - doc/
-    - doc/_static/
-    - doc/_templates/
-    - doc/_doxygen/
-    - doc/_scripts/
+    - doc/contribute/
+    - doc/develop/
+    - doc/introduction/
+    - doc/project/
+    - doc/releases/
+    - doc/security/
     - README.rst
-    - doc/Makefile
   labels:
     - "area: Documentation"
+
+Documentation Infrastructure:
+  status: maintained
+  maintainers:
+    - gmarull
+  collaborators:
+    - carlescufi
+    - nashif
+  files:
+    - doc/_*/
+    - doc/CMakeLists.txt
+    - doc/conf.py
+    - doc/Makefile
+    - doc/zephyr.doxyfile.in
+  labels:
+    - "area: Documentation Infrastructure"
 
 "Drivers: ADC":
   status: maintained
@@ -767,6 +790,18 @@ Documentation:
     - tests/drivers/i2s/
   labels:
     - "area: I2S"
+
+"Drivers: I3C":
+  status: maintained
+  maintainers:
+    - dcpleung
+  files:
+    - drivers/i3c/
+    - dts/bindings/i3c/
+    - include/zephyr/drivers/i3c.h
+    - include/zephyr/drivers/i3c/
+  labels:
+    - "area: I3C"
 
 "Drivers: IEEE 802.15.4":
   status: maintained
@@ -1251,6 +1286,7 @@ Laird Connectivity platforms:
     - boards/arm/bt510/
     - boards/arm/bt610/
     - boards/arm/pinnacle_100_dvk/
+    - boards/arm/mg100/
   labels:
     - "platform: Laird Connectivity"
 
@@ -1318,6 +1354,7 @@ MCU Manager:
     - subsys/mgmt/mcumgr/
     - include/zephyr/mgmt/mcumgr/
     - samples/subsys/mgmt/mcumgr/
+    - tests/subsys/mgmt/mcumgr/
   labels:
     - "area: mcumgr"
 
@@ -1534,6 +1571,7 @@ Power management:
     - mengxianglinx
     - gmarull
     - teburd
+    - yinfangw
   files:
     - include/zephyr/pm/
     - samples/subsys/pm/
@@ -1545,11 +1583,10 @@ Power management:
 RISCV arch:
   status: maintained
   maintainers:
+    - fkokosinski
     - kgugala
-    - pgielda
     - tgorochowik
   collaborators:
-    - fkokosinski
     - mgielda
     - katsuster
     - edersondisouza
@@ -1721,8 +1758,6 @@ Nuvoton Numicro Platforms:
 
 SiLabs Platforms:
   status: odd fixes
-  collaborators:
-    - chrta
   files:
     - soc/arm/silabs_*/
     - boards/arm/ef*/
@@ -2282,6 +2317,14 @@ West:
   labels:
     - manifest-hal_quicklogic
 
+"West project: hal_renesas":
+  status: maintained
+  maintainers:
+    - andrzej-kaczmarek
+  files: []
+  labels:
+    - manifest-hal_renesas
+
 "West project: hal_rpi_pico":
   status: maintained
   maintainers:
@@ -2296,7 +2339,6 @@ West:
   collaborators:
     - yonsch
     - mnkp
-    - chrta
   files:
     - modules/Kconfig.silabs
   labels:
@@ -2342,6 +2384,15 @@ West:
   files: []
   labels:
     - manifest-hal_ti
+
+"West project: hal_wurthelektronik":
+  status: maintained
+  maintainers:
+    - mah-eiSmart
+  files:
+    - modules/Kconfig.wurthelektronik
+  labels:
+    - manifest-hal_wurthelektronik
 
 "West project: hal_xtensa":
   status: maintained
@@ -2521,7 +2572,6 @@ West:
     - marc-hb
   files:
     - modules/Kconfig.sof
-    - samples/modules/sof/
   labels:
     - manifest-sof
 

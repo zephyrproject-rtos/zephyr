@@ -29,16 +29,6 @@ const struct img_mgmt_dfu_callbacks_t *img_mgmt_dfu_callbacks_fn;
 
 struct img_mgmt_state g_img_mgmt_state;
 
-#if SIZE_MAX == UINT32_MAX
-#define zcbor_size_decode	zcbor_uint32_decode
-#define zcbor_size_put		zcbor_uint32_put
-#elif SIZE_MAX == UINT64_MAX
-#define zcbor_size_decode	zcbor_uint64_decode
-#define zcbor_size_put		zcbor_uint64_put
-#else
-#error "Unsupported size_t encoding"
-#endif
-
 #ifdef CONFIG_IMG_MGMT_VERBOSE_ERR
 const char *img_mgmt_err_str_app_reject = "app reject";
 const char *img_mgmt_err_str_hdr_malformed = "header malformed";
@@ -289,15 +279,16 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 	}
 
 	rc = img_mgmt_impl_erase_slot(slot);
-
 	if (rc != 0) {
 		img_mgmt_dfu_stopped();
+		return rc;
 	}
 
-	ok = zcbor_tstr_put_lit(zse, "rc")	&&
-	     zcbor_int32_put(zse, rc);
+	if (zcbor_tstr_put_lit(zse, "rc") && zcbor_int32_put(zse, 0)) {
+		return MGMT_ERR_EOK;
+	}
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+	return MGMT_ERR_EMSGSIZE;
 }
 
 static int

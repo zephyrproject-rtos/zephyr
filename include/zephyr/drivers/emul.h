@@ -95,7 +95,7 @@ extern const struct emul __emul_list_end[];
  *
  * @param node_id A devicetree node identifier
  */
-#define EMUL_DT_NAME_GET(node_id) (_CONCAT(__emulreg_, node_id))
+#define EMUL_DT_NAME_GET(node_id) _CONCAT(__emulreg_, node_id)
 
 /* Get a unique identifier based on the given _dev_node_id's reg property and
  * the bus its on. Intended for use in other internal macros when declaring {bus}_emul

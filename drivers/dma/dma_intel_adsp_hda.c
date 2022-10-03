@@ -117,11 +117,11 @@ int intel_adsp_hda_dma_link_in_config(const struct device *dev,
 		 "PERIPHERAL_TO_MEMORY");
 
 	blk_cfg = dma_cfg->head_block;
-	buf = (uint8_t *)(uintptr_t)(blk_cfg->source_address);
+	buf = (uint8_t *)(uintptr_t)(blk_cfg->dest_address);
 	res = intel_adsp_hda_set_buffer(cfg->base, cfg->regblock_size, channel, buf,
 				  blk_cfg->block_size);
 
-	if (res == 0 && dma_cfg->source_data_size <= 3) {
+	if (res == 0 && dma_cfg->dest_data_size <= 3) {
 		/* set the sample container set bit to 16bits */
 		*DGCS(cfg->base, cfg->regblock_size, channel) |= DGCS_SCS;
 	}
@@ -148,12 +148,12 @@ int intel_adsp_hda_dma_link_out_config(const struct device *dev,
 		 "MEMORY_TO_PERIPHERAL");
 
 	blk_cfg = dma_cfg->head_block;
-	buf = (uint8_t *)(uintptr_t)(blk_cfg->dest_address);
+	buf = (uint8_t *)(uintptr_t)(blk_cfg->source_address);
 
 	res = intel_adsp_hda_set_buffer(cfg->base, cfg->regblock_size, channel, buf,
 				  blk_cfg->block_size);
 
-	if (res == 0 && dma_cfg->dest_data_size <= 3) {
+	if (res == 0 && dma_cfg->source_data_size <= 3) {
 		/* set the sample container set bit to 16bits */
 		*DGCS(cfg->base, cfg->regblock_size, channel) |= DGCS_SCS;
 	}
@@ -226,10 +226,15 @@ bool intel_adsp_hda_dma_chan_filter(const struct device *dev, int channel, void 
 int intel_adsp_hda_dma_start(const struct device *dev, uint32_t channel)
 {
 	const struct intel_adsp_hda_dma_cfg *const cfg = dev->config;
+	uint32_t size;
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
 	intel_adsp_hda_enable(cfg->base, cfg->regblock_size, channel);
+	if (cfg->direction == MEMORY_TO_PERIPHERAL) {
+		size = intel_adsp_hda_get_buffer_size(cfg->base, cfg->regblock_size, channel);
+		intel_adsp_hda_link_commit(cfg->base, cfg->regblock_size, channel, size);
+	}
 
 	return 0;
 }

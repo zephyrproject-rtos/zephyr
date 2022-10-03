@@ -79,13 +79,36 @@ static inline int can_sja1000_leave_reset_mode(const struct device *dev)
 	return 0;
 }
 
+static inline void can_sja1000_clear_errors(const struct device *dev)
+{
+	/* Clear error counters */
+	can_sja1000_write_reg(dev, CAN_SJA1000_RXERR, 0);
+	can_sja1000_write_reg(dev, CAN_SJA1000_TXERR, 0);
+
+	/* Clear error capture */
+	(void)can_sja1000_read_reg(dev, CAN_SJA1000_ECC);
+}
+
+static void can_sja1000_tx_done(const struct device *dev, int status)
+{
+	struct can_sja1000_data *data = dev->data;
+	can_tx_callback_t callback = data->tx_callback;
+	void *user_data = data->tx_user_data;
+
+	if (callback != NULL) {
+		data->tx_callback = NULL;
+		callback(dev, status, user_data);
+	}
+
+	k_sem_give(&data->tx_idle);
+}
+
 int can_sja1000_set_timing(const struct device *dev, const struct can_timing *timing)
 {
 	struct can_sja1000_data *data = dev->data;
 	uint8_t btr0;
 	uint8_t btr1;
 	uint8_t sjw;
-	int err;
 
 	__ASSERT_NO_MSG(timing->sjw == CAN_SJW_NO_CHANGE || (timing->sjw >= 1 && timing->sjw <= 4));
 	__ASSERT_NO_MSG(timing->prop_seg == 0);
@@ -93,12 +116,11 @@ int can_sja1000_set_timing(const struct device *dev, const struct can_timing *ti
 	__ASSERT_NO_MSG(timing->phase_seg2 >= 1 && timing->phase_seg2 <= 8);
 	__ASSERT_NO_MSG(timing->prescaler >= 1 && timing->prescaler <= 64);
 
-	k_mutex_lock(&data->mod_lock, K_FOREVER);
-
-	err = can_sja1000_enter_reset_mode(dev);
-	if (err != 0) {
-		goto unlock;
+	if (data->started) {
+		return -EBUSY;
 	}
+
+	k_mutex_lock(&data->mod_lock, K_FOREVER);
 
 	if (timing->sjw == CAN_SJW_NO_CHANGE) {
 		sjw = data->sjw;
@@ -119,15 +141,9 @@ int can_sja1000_set_timing(const struct device *dev, const struct can_timing *ti
 	can_sja1000_write_reg(dev, CAN_SJA1000_BTR0, btr0);
 	can_sja1000_write_reg(dev, CAN_SJA1000_BTR1, btr1);
 
-	err = can_sja1000_leave_reset_mode(dev);
-	if (err != 0) {
-		goto unlock;
-	}
-
-unlock:
 	k_mutex_unlock(&data->mod_lock);
 
-	return err;
+	return 0;
 }
 
 int can_sja1000_get_capabilities(const struct device *dev, can_mode_t *cap)
@@ -140,18 +156,14 @@ int can_sja1000_get_capabilities(const struct device *dev, can_mode_t *cap)
 	return 0;
 }
 
-int can_sja1000_set_mode(const struct device *dev, can_mode_t mode)
+int can_sja1000_start(const struct device *dev)
 {
 	const struct can_sja1000_config *config = dev->config;
 	struct can_sja1000_data *data = dev->data;
-	uint8_t btr1;
-	uint8_t mod;
 	int err;
 
-	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT |
-		      CAN_MODE_3_SAMPLES)) != 0) {
-		LOG_ERR("unsupported mode: 0x%08x", mode);
-		return -ENOTSUP;
+	if (data->started) {
+		return -EALREADY;
 	}
 
 	if (config->phy != NULL) {
@@ -162,12 +174,72 @@ int can_sja1000_set_mode(const struct device *dev, can_mode_t mode)
 		}
 	}
 
-	k_mutex_lock(&data->mod_lock, K_FOREVER);
+	can_sja1000_clear_errors(dev);
 
+	err = can_sja1000_leave_reset_mode(dev);
+	if (err != 0) {
+		if (config->phy != NULL) {
+			/* Attempt to disable the CAN transceiver in case of error */
+			(void)can_transceiver_disable(config->phy);
+		}
+
+		return err;
+	}
+
+	data->started = true;
+
+	return 0;
+}
+
+int can_sja1000_stop(const struct device *dev)
+{
+	const struct can_sja1000_config *config = dev->config;
+	struct can_sja1000_data *data = dev->data;
+	int err;
+
+	if (!data->started) {
+		return -EALREADY;
+	}
+
+	/* Entering reset mode aborts current transmission, if any */
 	err = can_sja1000_enter_reset_mode(dev);
 	if (err != 0) {
-		goto unlock;
+		return err;
 	}
+
+	if (config->phy != NULL) {
+		err = can_transceiver_disable(config->phy);
+		if (err != 0) {
+			LOG_ERR("failed to disable CAN transceiver (err %d)", err);
+			return err;
+		}
+	}
+
+	data->started = false;
+
+	can_sja1000_tx_done(dev, -ENETDOWN);
+
+	return 0;
+}
+
+int can_sja1000_set_mode(const struct device *dev, can_mode_t mode)
+{
+	const struct can_sja1000_config *config = dev->config;
+	struct can_sja1000_data *data = dev->data;
+	uint8_t btr1;
+	uint8_t mod;
+
+	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT |
+		      CAN_MODE_3_SAMPLES)) != 0) {
+		LOG_ERR("unsupported mode: 0x%08x", mode);
+		return -ENOTSUP;
+	}
+
+	if (data->started) {
+		return -EBUSY;
+	}
+
+	k_mutex_lock(&data->mod_lock, K_FOREVER);
 
 	mod = can_sja1000_read_reg(dev, CAN_SJA1000_MOD);
 	mod |= CAN_SJA1000_MOD_AFM;
@@ -195,16 +267,11 @@ int can_sja1000_set_mode(const struct device *dev, can_mode_t mode)
 	can_sja1000_write_reg(dev, CAN_SJA1000_MOD, mod);
 	can_sja1000_write_reg(dev, CAN_SJA1000_BTR1, btr1);
 
-	err = can_sja1000_leave_reset_mode(dev);
-	if (err != 0) {
-		goto unlock;
-	}
-
 	data->mode = mode;
-unlock:
+
 	k_mutex_unlock(&data->mod_lock);
 
-	return err;
+	return 0;
 }
 
 static void can_sja1000_read_frame(const struct device *dev, struct can_frame *frame)
@@ -306,9 +373,15 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 	uint8_t cmr;
 	uint8_t sr;
 
+	__ASSERT_NO_MSG(callback != NULL);
+
 	if (frame->dlc > CAN_MAX_DLC) {
 		LOG_ERR("TX frame DLC %u exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
 		return -EINVAL;
+	}
+
+	if (!data->started) {
+		return -ENETDOWN;
 	}
 
 	if (data->state == CAN_STATE_BUS_OFF) {
@@ -342,11 +415,6 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 	}
 
 	can_sja1000_write_reg(dev, CAN_SJA1000_CMR, cmr);
-
-	if (callback == NULL) {
-		k_sem_take(&data->tx_done, K_FOREVER);
-		return data->tx_status;
-	}
 
 	return 0;
 }
@@ -398,6 +466,10 @@ int can_sja1000_recover(const struct device *dev, k_timeout_t timeout)
 	uint8_t sr;
 	int err;
 
+	if (!data->started) {
+		return -ENETDOWN;
+	}
+
 	sr = can_sja1000_read_reg(dev, CAN_SJA1000_SR);
 	if ((sr & CAN_SJA1000_SR_BS) == 0) {
 		return 0;
@@ -439,7 +511,11 @@ int can_sja1000_get_state(const struct device *dev, enum can_state *state,
 	struct can_sja1000_data *data = dev->data;
 
 	if (state != NULL) {
-		*state = data->state;
+		if (!data->started) {
+			*state = CAN_STATE_STOPPED;
+		} else {
+			*state = data->state;
+		}
 	}
 
 	if (err_cnt != NULL) {
@@ -505,23 +581,6 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 	} while ((sr & CAN_SJA1000_SR_RBS) != 0);
 }
 
-static void can_sja1000_tx_done(const struct device *dev, int status)
-{
-	struct can_sja1000_data *data = dev->data;
-	can_tx_callback_t callback = data->tx_callback;
-	void *user_data = data->tx_user_data;
-
-	if (callback != NULL) {
-		data->tx_callback = NULL;
-		callback(dev, status, user_data);
-	} else {
-		data->tx_status = status;
-		k_sem_give(&data->tx_done);
-	}
-
-	k_sem_give(&data->tx_idle);
-}
-
 static void can_sja1000_handle_transmit_irq(const struct device *dev)
 {
 	int status = 0;
@@ -546,11 +605,8 @@ static void can_sja1000_handle_error_warning_irq(const struct device *dev)
 		data->state = CAN_STATE_BUS_OFF;
 		can_sja1000_tx_done(dev, -ENETUNREACH);
 #ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-		/* Recover bus now unless interrupted in the middle of a MOD register change. */
-		err = k_mutex_lock(&data->mod_lock, K_NO_WAIT);
-		if (err == 0) {
+		if (data->started) {
 			(void)can_sja1000_leave_reset_mode(dev);
-			k_mutex_unlock(&data->mod_lock);
 		}
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 	} else if ((sr & CAN_SJA1000_SR_ES) != 0) {
@@ -624,7 +680,6 @@ int can_sja1000_init(const struct device *dev)
 
 	k_mutex_init(&data->mod_lock);
 	k_sem_init(&data->tx_idle, 1, 1);
-	k_sem_init(&data->tx_done, 0, 1);
 
 	data->state = CAN_STATE_ERROR_ACTIVE;
 
@@ -683,17 +738,13 @@ int can_sja1000_init(const struct device *dev)
 	/* Set output control */
 	can_sja1000_write_reg(dev, CAN_SJA1000_OCR, config->ocr);
 
-	/* Clear error counters */
-	can_sja1000_write_reg(dev, CAN_SJA1000_RXERR, 0);
-	can_sja1000_write_reg(dev, CAN_SJA1000_TXERR, 0);
-
-	/* Clear error capture */
-	(void)can_sja1000_read_reg(dev, CAN_SJA1000_ECC);
+	/* Clear error counters and error capture */
+	can_sja1000_clear_errors(dev);
 
 	/* Set error warning limit */
 	can_sja1000_write_reg(dev, CAN_SJA1000_EWLR, 96);
 
-	/* Enter normal mode */
+	/* Set normal mode */
 	data->mode = CAN_MODE_NORMAL;
 	err = can_sja1000_set_mode(dev, CAN_MODE_NORMAL);
 	if (err != 0) {

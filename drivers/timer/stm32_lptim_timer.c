@@ -74,6 +74,17 @@ static bool autoreload_ready = true;
 
 static struct k_spinlock lock;
 
+/* For tick accuracy, a specific tick to freq ratio is expected */
+/* This check assumes LSI@32KHz or LSE@32768Hz */
+#if !defined(CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE)
+#if (((DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(0), 1, bus) == STM32_SRC_LSI) &&	\
+		(CONFIG_SYS_CLOCK_TICKS_PER_SEC != 4000)) ||			\
+	((DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(0), 1, bus) == STM32_SRC_LSE) &&	\
+		(CONFIG_SYS_CLOCK_TICKS_PER_SEC != 4096)))
+#warning Advised tick freq is 4096 for LSE / 4000 for LSI
+#endif
+#endif /* !CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE */
+
 static void lptim_irq_handler(const struct device *unused)
 {
 
@@ -302,15 +313,6 @@ static int sys_clock_driver_init(const struct device *dev)
 #elif defined(LL_APB3_GRP1_PERIPH_LPTIM1)
 	LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN);
 #endif
-
-	/* For tick accuracy, a specific tick to freq ratio is expected */
-	/* This check assumes LSI@32KHz or LSE@32768Hz */
-	if (((lptim_clk[1].bus == STM32_SRC_LSI) &&
-	      (CONFIG_SYS_CLOCK_TICKS_PER_SEC != 4000)) ||
-	    ((lptim_clk[1].bus == STM32_SRC_LSE) &&
-	      (CONFIG_SYS_CLOCK_TICKS_PER_SEC != 4096))) {
-		return -ENOTSUP;
-	}
 
 	/* Enable LPTIM clock source */
 	err = clock_control_configure(clk_ctrl,

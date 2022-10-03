@@ -5,7 +5,7 @@
 &arduino_spi {
 	status = "okay";
 
-	eth_w5500: eth_w5500@0 {
+	eth_w5500_arceli_eth_w5500: eth_w5500@0 {
 		compatible = "wiznet,w5500";
 		reg = <0x0>;
 		spi-max-frequency = <80000000>;

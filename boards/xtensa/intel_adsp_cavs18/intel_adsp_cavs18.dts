@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <intel/intel_cavs18.dtsi>
+#include <intel/intel_adsp_cavs18.dtsi>
 
 / {
 	model = "intel_adsp_cavs18";

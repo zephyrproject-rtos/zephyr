@@ -85,5 +85,4 @@ References
 **********
 
 - `LPD8806 datasheet <https://cdn-shop.adafruit.com/datasheets/lpd8806+english.pdf>`_
-- `RGB LED strips: an overview <http://nut-bolt.nl/2012/rgb-led-strips/>`_
 - `74AHCT125 datasheet <https://cdn-shop.adafruit.com/datasheets/74AHC125.pdf>`_

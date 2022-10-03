@@ -62,7 +62,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 2cb20ac6c5b25f3c91b35e7997451db47030b7cb
+      revision: f3e7e90a61cbbdd27d5f25f975e2810b68c0e850
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -73,7 +73,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 4af06965f57ba1e7d170e6a97d24c33785543a8c
+      revision: 5b0c7700a7be049e02835dfa0950d378aac39e67
       path: modules/hal/infineon
       groups:
         - hal
@@ -93,7 +93,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 5fb81c9d0a2da9cf889587f35990edbe9c6f137d
+      revision: 708c95825b0d5279620935a1356299fff5dfbc6e
       path: modules/hal/nxp
       groups:
         - hal
@@ -129,7 +129,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 5b1610c3cf46589d50e2634ba240b7b38bc59c53
+      revision: 642e199c59828137dc6b1c7044a289d4269886d1
       path: modules/hal/stm32
       groups:
         - hal
@@ -168,7 +168,7 @@ manifest:
         - fs
       revision: ca583fd297ceb48bced3c2548600dc615d67af24
     - name: loramac-node
-      revision: 0257b50905695192d095667b1c3abb80346db1a1
+      revision: ce57712f3e426bbbb13acaec97b45369f716f43a
       path: modules/lib/loramac-node
     - name: lvgl
       revision: af95bdfcf6784edd958ea08139c713e2d3dee7af
@@ -182,7 +182,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 21e56a1bd033af263e808940779a1adaf4d5465e
+      revision: 13f63976bca672ee018f9d55f1e31f02f4135b64
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -215,7 +215,7 @@ manifest:
       groups:
         - debug
     - name: sof
-      revision: fed466c264ad078c66f7bff9218ba1d3fa0eb201
+      revision: 87de994f49b37e385e748e47b769140df43451cf
       path: modules/audio/sof
     - name: tflite-micro
       revision: 9156d050927012da87079064db59d07f03b8baf6
@@ -235,7 +235,7 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: 4c984817d861512edaeca27b83308e9b9915a98a
+      revision: 231235f26f5295ac4faf8c5617dbb9779869d821
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
@@ -262,7 +262,7 @@ manifest:
       path: modules/lib/zcbor
     - name: zscilib
       path: modules/lib/zscilib
-      revision: a54986aa98db4082ac56b582843bb5b5435208a6
+      revision: ca070ddabdaf67175a2da901d0bd62e8899371c5
 
   group-filter:
     - -ci

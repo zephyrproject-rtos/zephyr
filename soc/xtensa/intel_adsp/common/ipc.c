@@ -50,7 +50,11 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 
 		regs->tdr = INTEL_ADSP_IPC_BUSY;
 		if (done && !IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+			regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
+#else
 			regs->tda = INTEL_ADSP_IPC_DONE;
+#endif
 		}
 	}
 
@@ -88,7 +92,11 @@ int intel_adsp_ipc_init(const struct device *dev)
 		config->regs->idd = INTEL_ADSP_IPC_DONE;
 	} else {
 		config->regs->ida = INTEL_ADSP_IPC_DONE;
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+		config->regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
+#else
 		config->regs->tda = INTEL_ADSP_IPC_DONE;
+#endif
 	}
 	config->regs->ctl |= (INTEL_ADSP_IPC_CTL_IDIE | INTEL_ADSP_IPC_CTL_TBIE);
 	return 0;
@@ -98,7 +106,11 @@ void intel_adsp_ipc_complete(const struct device *dev)
 {
 	const struct intel_adsp_ipc_config *config = dev->config;
 
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	config->regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
+#else
 	config->regs->tda = INTEL_ADSP_IPC_DONE;
+#endif
 }
 
 bool intel_adsp_ipc_is_complete(const struct device *dev)
@@ -142,11 +154,28 @@ bool intel_adsp_ipc_send_message_sync(const struct device *dev,
 }
 
 #if DT_NODE_EXISTS(INTEL_ADSP_IPC_HOST_DTNODE)
+
+#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
+#include <ace_v1x-regs.h>
+
+static inline void ace_ipc_intc_unmask(void)
+{
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		MTL_DINT[i].ie[MTL_INTL_HIPC] = BIT(0);
+	}
+}
+#else
+static inline void ace_ipc_intc_unmask(void) {}
+#endif
+
 static int dt_init(const struct device *dev)
 {
 	IRQ_CONNECT(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE), 0, z_intel_adsp_ipc_isr,
 		INTEL_ADSP_IPC_HOST_DEV, 0);
 	irq_enable(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE));
+
+	ace_ipc_intc_unmask();
+
 	return intel_adsp_ipc_init(dev);
 }
 

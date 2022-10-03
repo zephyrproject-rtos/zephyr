@@ -22,6 +22,8 @@
 
 #define PA_RETRY_COUNT 6
 
+#define BIS_ISO_CHAN_COUNT 2
+
 static bool         per_adv_found;
 static bool         per_adv_lost;
 static bt_addr_le_t per_addr;
@@ -32,8 +34,8 @@ static K_SEM_DEFINE(sem_per_adv, 0, 1);
 static K_SEM_DEFINE(sem_per_sync, 0, 1);
 static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
 static K_SEM_DEFINE(sem_per_big_info, 0, 1);
-static K_SEM_DEFINE(sem_big_sync, 0, 1);
-static K_SEM_DEFINE(sem_big_sync_lost, 0, 1);
+static K_SEM_DEFINE(sem_big_sync, 0, BIS_ISO_CHAN_COUNT);
+static K_SEM_DEFINE(sem_big_sync_lost, 0, BIS_ISO_CHAN_COUNT);
 
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
@@ -204,8 +206,6 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 	.biginfo = biginfo_cb,
 };
 
-#define BIS_ISO_CHAN_COUNT 2
-
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		struct net_buf *buf)
 {
@@ -247,19 +247,19 @@ static struct bt_iso_chan_ops iso_ops = {
 
 static struct bt_iso_chan_io_qos iso_rx_qos[BIS_ISO_CHAN_COUNT];
 
-static struct bt_iso_chan_qos bis_iso_qos[BIS_ISO_CHAN_COUNT] = {
+static struct bt_iso_chan_qos bis_iso_qos[] = {
 	{ .rx = &iso_rx_qos[0], },
 	{ .rx = &iso_rx_qos[1], },
 };
 
-static struct bt_iso_chan bis_iso_chan[BIS_ISO_CHAN_COUNT] = {
+static struct bt_iso_chan bis_iso_chan[] = {
 	{ .ops = &iso_ops,
 	  .qos = &bis_iso_qos[0], },
 	{ .ops = &iso_ops,
 	  .qos = &bis_iso_qos[1], },
 };
 
-static struct bt_iso_chan *bis[BIS_ISO_CHAN_COUNT] = {
+static struct bt_iso_chan *bis[] = {
 	&bis_iso_chan[0],
 	&bis_iso_chan[1],
 };
@@ -409,8 +409,14 @@ big_sync_create:
 		}
 		printk("success.\n");
 
-		printk("Waiting for BIG sync...\n");
-		err = k_sem_take(&sem_big_sync, TIMEOUT_SYNC_CREATE);
+		for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT; chan++) {
+			printk("Waiting for BIG sync chan %u...\n", chan);
+			err = k_sem_take(&sem_big_sync, TIMEOUT_SYNC_CREATE);
+			if (err) {
+				break;
+			}
+			printk("BIG sync chan %u successful.\n", chan);
+		}
 		if (err) {
 			printk("failed (err %d)\n", err);
 
@@ -439,11 +445,14 @@ big_sync_create:
 		gpio_pin_set_dt(&led_gpio, (int)led_is_on);
 #endif /* HAS_LED */
 
-		printk("Waiting for BIG sync lost...\n");
-		err = k_sem_take(&sem_big_sync_lost, K_FOREVER);
-		if (err) {
-			printk("failed (err %d)\n", err);
-			return;
+		for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT; chan++) {
+			printk("Waiting for BIG sync lost chan %u...\n", chan);
+			err = k_sem_take(&sem_big_sync_lost, K_FOREVER);
+			if (err) {
+				printk("failed (err %d)\n", err);
+				return;
+			}
+			printk("BIG sync lost chan %u.\n", chan);
 		}
 		printk("BIG sync lost.\n");
 

@@ -158,7 +158,7 @@ int bt_unicast_server_disable(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_unicast_server_release(struct bt_audio_stream *stream, bool cache)
+int bt_unicast_server_release(struct bt_audio_stream *stream)
 {
 	int err;
 
@@ -172,15 +172,10 @@ int bt_unicast_server_release(struct bt_audio_stream *stream, bool cache)
 		return err;
 	}
 
-	if (cache) {
-		ascs_ep_set_state(stream->ep,
-				  BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
-	} else {
-		/* ase_process will set the state to IDLE after sending the
-		 * notification, finalizing the release
-		 */
-		ascs_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_RELEASING);
-	}
+	/* ase_process will set the state to IDLE after sending the
+	 * notification, finalizing the release
+	 */
+	ascs_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_RELEASING);
 
 	return 0;
 }

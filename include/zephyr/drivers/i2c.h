@@ -76,6 +76,34 @@ struct i2c_dt_spec {
 };
 
 /**
+ * @brief Structure initializer for i2c_dt_spec from devicetree (on I3C bus)
+ *
+ * This helper macro expands to a static initializer for a <tt>struct
+ * i2c_dt_spec</tt> by reading the relevant bus and address data from
+ * the devicetree.
+ *
+ * @param node_id Devicetree node identifier for the I2C device whose
+ *                struct i2c_dt_spec to create an initializer for
+ */
+#define I2C_DT_SPEC_GET_ON_I3C(node_id)					\
+	.bus = DEVICE_DT_GET(DT_BUS(node_id)),				\
+	.addr = DT_PROP_BY_IDX(node_id, reg, 0)
+
+/**
+ * @brief Structure initializer for i2c_dt_spec from devicetree (on I2C bus)
+ *
+ * This helper macro expands to a static initializer for a <tt>struct
+ * i2c_dt_spec</tt> by reading the relevant bus and address data from
+ * the devicetree.
+ *
+ * @param node_id Devicetree node identifier for the I2C device whose
+ *                struct i2c_dt_spec to create an initializer for
+ */
+#define I2C_DT_SPEC_GET_ON_I2C(node_id)					\
+	.bus = DEVICE_DT_GET(DT_BUS(node_id)),				\
+	.addr = DT_REG_ADDR(node_id)
+
+/**
  * @brief Structure initializer for i2c_dt_spec from devicetree
  *
  * This helper macro expands to a static initializer for a <tt>struct
@@ -85,10 +113,11 @@ struct i2c_dt_spec {
  * @param node_id Devicetree node identifier for the I2C device whose
  *                struct i2c_dt_spec to create an initializer for
  */
-#define I2C_DT_SPEC_GET(node_id)		     \
-	{							     \
-		.bus = DEVICE_DT_GET(DT_BUS(node_id)),		     \
-		.addr = DT_REG_ADDR(node_id) \
+#define I2C_DT_SPEC_GET(node_id)					\
+	{								\
+		COND_CODE_1(DT_ON_BUS(node_id, i3c),			\
+			    (I2C_DT_SPEC_GET_ON_I3C(node_id)),		\
+			    (I2C_DT_SPEC_GET_ON_I2C(node_id)))		\
 	}
 
 /**

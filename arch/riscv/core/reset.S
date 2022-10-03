@@ -8,6 +8,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
+#include <offsets.h>
 #include "asm_macros.inc"
 
 /* exports */
@@ -66,7 +67,7 @@ boot_first_core:
 #ifdef CONFIG_INIT_STACKS
 	/* Pre-populate all bytes in z_interrupt_stacks with 0xAA */
 	la t0, z_interrupt_stacks
-	li t1, CONFIG_ISR_STACK_SIZE
+	li t1, __z_interrupt_stack_SIZEOF
 	add t1, t1, t0
 
 	/* Populate z_interrupt_stacks with 0xaaaaaaaa */
@@ -79,10 +80,10 @@ aa_loop:
 
 	/*
 	 * Initially, setup stack pointer to
-	 * z_interrupt_stacks + CONFIG_ISR_STACK_SIZE
+	 * z_interrupt_stacks + __z_interrupt_stack_SIZEOF
 	 */
 	la sp, z_interrupt_stacks
-	li t0, CONFIG_ISR_STACK_SIZE
+	li t0, __z_interrupt_stack_SIZEOF
 	add sp, sp, t0
 
 #ifdef CONFIG_WDOG_INIT

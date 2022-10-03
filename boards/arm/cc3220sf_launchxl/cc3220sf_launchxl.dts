@@ -3,6 +3,7 @@
 /dts-v1/;
 
 #include <ti/cc3220sf.dtsi>
+#include "boosterpack_connector.dtsi"
 
 / {
 	model = "TI CC3220SF LaunchXL";
@@ -63,6 +64,21 @@
 	status = "okay";
 };
 
+&gpioa0 {
+	status = "okay";
+};
+
+&gpioa1 {
+	status = "okay";
+};
+
+&gpioa2 {
+	status = "okay";
+};
+
+&gpioa3 {
+	status = "okay";
+};
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;

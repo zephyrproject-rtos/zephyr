@@ -10,7 +10,7 @@
 	status = "okay";
 
 	/* LPCXpresso55S16 uses SSEL1 for mikroBUS SPI */
-	mcp3204: mcp3204@1 {
+	mcp3204_mikroe_adc_click: mcp3204@1 {
 		compatible = "microchip,mcp3204";
 		reg = <0x1>;
 		spi-max-frequency = <100000>;

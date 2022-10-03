@@ -292,7 +292,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 			/* Assign a hardware handshake interface (0-15) to the
 			 * destination of the channel
 			 */
-			chan_data->cfg_hi |= DW_CFGH_DST_PER(cfg->dma_slot);
+			chan_data->cfg_hi |= DW_CFGH_DST(cfg->dma_slot);
 			break;
 		case PERIPHERAL_TO_MEMORY:
 			lli_desc->ctrl_lo |= DW_CTLL_FC_P2M | DW_CTLL_SRC_FIX |
@@ -311,7 +311,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 			/* Assign a hardware handshake interface (0-15) to the
 			 * source of the channel
 			 */
-			chan_data->cfg_hi |= DW_CFGH_SRC_PER(cfg->dma_slot);
+			chan_data->cfg_hi |= DW_CFGH_SRC(cfg->dma_slot);
 			break;
 		default:
 			LOG_ERR("%s: dma %s channel %d invalid direction %d",

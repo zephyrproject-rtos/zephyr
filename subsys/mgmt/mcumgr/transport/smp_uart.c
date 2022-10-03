@@ -19,6 +19,8 @@
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include "../smp_internal.h"
 
+BUILD_ASSERT(CONFIG_MCUMGR_SMP_UART_MTU != 0, "CONFIG_MCUMGR_SMP_UART_MTU must be > 0");
+
 struct device;
 
 static void smp_uart_process_rx_queue(struct k_work *work);
@@ -77,8 +79,7 @@ static uint16_t smp_uart_get_mtu(const struct net_buf *nb)
 	return CONFIG_MCUMGR_SMP_UART_MTU;
 }
 
-static int smp_uart_tx_pkt(struct zephyr_smp_transport *zst,
-			   struct net_buf *nb)
+static int smp_uart_tx_pkt(struct net_buf *nb)
 {
 	int rc;
 

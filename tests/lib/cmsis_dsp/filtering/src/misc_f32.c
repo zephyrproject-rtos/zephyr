@@ -49,7 +49,7 @@ static void test_arm_correlate_f32(
 }
 
 #define DEFINE_CORRELATE_TEST(a, b) \
-	DEFINE_TEST_VARIANT4( \
+	DEFINE_TEST_VARIANT4(filtering_misc_f32, \
 		arm_correlate_f32, a##_##b, a, b, \
 		ref_correlate_##a##_##b, ARRAY_SIZE(ref_correlate_##a##_##b))
 
@@ -124,7 +124,7 @@ static void test_arm_conv_f32(
 }
 
 #define DEFINE_CONV_TEST(a, b) \
-	DEFINE_TEST_VARIANT4( \
+	DEFINE_TEST_VARIANT4(filtering_misc_f32, \
 		arm_conv_f32, a##_##b, a, b, \
 		ref_conv_##a##_##b, ARRAY_SIZE(ref_conv_##a##_##b))
 
@@ -218,7 +218,7 @@ static void test_arm_conv_partial_f32(
 #endif /* CONFIG_CMSIS_DSP_TEST_FILTERING_MISC_CONV_PARTIAL */
 
 #define DEFINE_CONV_PARTIAL_TEST(a, b, c) \
-	DEFINE_TEST_VARIANT5( \
+	DEFINE_TEST_VARIANT5(filtering_misc_f32, \
 		arm_conv_partial_f32, a##_##b##_##c, a, b, c, \
 		ref_conv_partial_##a##_##b##_##c, \
 		ARRAY_SIZE(ref_conv_partial_##a##_##b##_##c))
@@ -263,7 +263,7 @@ static void test_arm_levinson_durbin_f32(
 }
 
 #define DEFINE_LEVINSON_DURBIN_TEST(a, b) \
-	DEFINE_TEST_VARIANT5( \
+	DEFINE_TEST_VARIANT5(filtering_misc_f32, \
 		arm_levinson_durbin_f32, a##_##b, a, b, \
 		in_levinson_durbin_##a##_##b, \
 		ref_levinson_durbin_##a##_##b, \
@@ -273,96 +273,4 @@ DEFINE_LEVINSON_DURBIN_TEST(3, 0);
 DEFINE_LEVINSON_DURBIN_TEST(8, 1);
 DEFINE_LEVINSON_DURBIN_TEST(11, 2);
 
-void test_filtering_misc_f32(void)
-{
-	ztest_test_suite(filtering_misc_f32,
-		ztest_unit_test(test_arm_correlate_f32_4_1),
-		ztest_unit_test(test_arm_correlate_f32_4_2),
-		ztest_unit_test(test_arm_correlate_f32_4_3),
-		ztest_unit_test(test_arm_correlate_f32_4_8),
-		ztest_unit_test(test_arm_correlate_f32_4_11),
-		ztest_unit_test(test_arm_correlate_f32_5_1),
-		ztest_unit_test(test_arm_correlate_f32_5_2),
-		ztest_unit_test(test_arm_correlate_f32_5_3),
-		ztest_unit_test(test_arm_correlate_f32_5_8),
-		ztest_unit_test(test_arm_correlate_f32_5_11),
-		ztest_unit_test(test_arm_correlate_f32_6_1),
-		ztest_unit_test(test_arm_correlate_f32_6_2),
-		ztest_unit_test(test_arm_correlate_f32_6_3),
-		ztest_unit_test(test_arm_correlate_f32_6_8),
-		ztest_unit_test(test_arm_correlate_f32_6_11),
-		ztest_unit_test(test_arm_correlate_f32_9_1),
-		ztest_unit_test(test_arm_correlate_f32_9_2),
-		ztest_unit_test(test_arm_correlate_f32_9_3),
-		ztest_unit_test(test_arm_correlate_f32_9_8),
-		ztest_unit_test(test_arm_correlate_f32_9_11),
-		ztest_unit_test(test_arm_correlate_f32_10_1),
-		ztest_unit_test(test_arm_correlate_f32_10_2),
-		ztest_unit_test(test_arm_correlate_f32_10_3),
-		ztest_unit_test(test_arm_correlate_f32_10_8),
-		ztest_unit_test(test_arm_correlate_f32_10_11),
-		ztest_unit_test(test_arm_correlate_f32_11_1),
-		ztest_unit_test(test_arm_correlate_f32_11_2),
-		ztest_unit_test(test_arm_correlate_f32_11_3),
-		ztest_unit_test(test_arm_correlate_f32_11_8),
-		ztest_unit_test(test_arm_correlate_f32_11_11),
-		ztest_unit_test(test_arm_correlate_f32_12_1),
-		ztest_unit_test(test_arm_correlate_f32_12_2),
-		ztest_unit_test(test_arm_correlate_f32_12_3),
-		ztest_unit_test(test_arm_correlate_f32_12_8),
-		ztest_unit_test(test_arm_correlate_f32_12_11),
-		ztest_unit_test(test_arm_correlate_f32_13_1),
-		ztest_unit_test(test_arm_correlate_f32_13_2),
-		ztest_unit_test(test_arm_correlate_f32_13_3),
-		ztest_unit_test(test_arm_correlate_f32_13_8),
-		ztest_unit_test(test_arm_correlate_f32_13_11),
-		ztest_unit_test(test_arm_conv_f32_4_1),
-		ztest_unit_test(test_arm_conv_f32_4_2),
-		ztest_unit_test(test_arm_conv_f32_4_3),
-		ztest_unit_test(test_arm_conv_f32_4_8),
-		ztest_unit_test(test_arm_conv_f32_4_11),
-		ztest_unit_test(test_arm_conv_f32_5_1),
-		ztest_unit_test(test_arm_conv_f32_5_2),
-		ztest_unit_test(test_arm_conv_f32_5_3),
-		ztest_unit_test(test_arm_conv_f32_5_8),
-		ztest_unit_test(test_arm_conv_f32_5_11),
-		ztest_unit_test(test_arm_conv_f32_6_1),
-		ztest_unit_test(test_arm_conv_f32_6_2),
-		ztest_unit_test(test_arm_conv_f32_6_3),
-		ztest_unit_test(test_arm_conv_f32_6_8),
-		ztest_unit_test(test_arm_conv_f32_6_11),
-		ztest_unit_test(test_arm_conv_f32_9_1),
-		ztest_unit_test(test_arm_conv_f32_9_2),
-		ztest_unit_test(test_arm_conv_f32_9_3),
-		ztest_unit_test(test_arm_conv_f32_9_8),
-		ztest_unit_test(test_arm_conv_f32_9_11),
-		ztest_unit_test(test_arm_conv_f32_10_1),
-		ztest_unit_test(test_arm_conv_f32_10_2),
-		ztest_unit_test(test_arm_conv_f32_10_3),
-		ztest_unit_test(test_arm_conv_f32_10_8),
-		ztest_unit_test(test_arm_conv_f32_10_11),
-		ztest_unit_test(test_arm_conv_f32_11_1),
-		ztest_unit_test(test_arm_conv_f32_11_2),
-		ztest_unit_test(test_arm_conv_f32_11_3),
-		ztest_unit_test(test_arm_conv_f32_11_8),
-		ztest_unit_test(test_arm_conv_f32_11_11),
-		ztest_unit_test(test_arm_conv_f32_12_1),
-		ztest_unit_test(test_arm_conv_f32_12_2),
-		ztest_unit_test(test_arm_conv_f32_12_3),
-		ztest_unit_test(test_arm_conv_f32_12_8),
-		ztest_unit_test(test_arm_conv_f32_12_11),
-		ztest_unit_test(test_arm_conv_f32_13_1),
-		ztest_unit_test(test_arm_conv_f32_13_2),
-		ztest_unit_test(test_arm_conv_f32_13_3),
-		ztest_unit_test(test_arm_conv_f32_13_8),
-		ztest_unit_test(test_arm_conv_f32_13_11),
-		ztest_unit_test(test_arm_conv_partial_f32_3_6_8),
-		ztest_unit_test(test_arm_conv_partial_f32_9_6_8),
-		ztest_unit_test(test_arm_conv_partial_f32_7_6_8),
-		ztest_unit_test(test_arm_levinson_durbin_f32_3_0),
-		ztest_unit_test(test_arm_levinson_durbin_f32_8_1),
-		ztest_unit_test(test_arm_levinson_durbin_f32_11_2)
-		);
-
-	ztest_run_test_suite(filtering_misc_f32);
-}
+ZTEST_SUITE(filtering_misc_f32, NULL, NULL, NULL, NULL, NULL);

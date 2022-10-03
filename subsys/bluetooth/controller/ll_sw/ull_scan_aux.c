@@ -36,6 +36,7 @@
 #include "ull_scan_internal.h"
 #include "ull_sync_internal.h"
 #include "ull_sync_iso_internal.h"
+#include "ull_df_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_scan_aux
@@ -697,7 +698,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 				      ticks_slot_overhead),
 				     ticker_cb, aux, ticker_op_cb, aux);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
+		  (ticker_status == TICKER_STATUS_BUSY) ||
+		  ((ticker_status == TICKER_STATUS_FAILURE) &&
+		   IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT)));
 
 	return;
 
@@ -713,13 +716,26 @@ ull_scan_aux_rx_flush:
 		 * immediately since we are in sync context.
 		 */
 		if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || aux->rx_last) {
-			/* If scan is being disabled, rx has already been
-			 * enqueued before coming here, ull_scan_aux_rx_flush.
-			 * Do not add it, to avoid duplicate report generation,
-			 * release and probable infinite loop processing the
-			 * list.
+			/* If scan is being disabled, rx could already be
+			 * enqueued before coming here to ull_scan_aux_rx_flush.
+			 * Check if rx not the last in the list of received PDUs
+			 * then add it, else do not add it, to avoid duplicate
+			 * report generation, release and probable infinite loop
+			 * processing of the list.
 			 */
 			if (unlikely(scan->is_stop)) {
+				/* Add the node rx to aux context list of node
+				 * rx if not already added when coming here to
+				 * ull_scan_aux_rx_flush. This is handling a
+				 * race condition where in the last PDU in
+				 * chain is received and at the same time scan
+				 * is being disabled.
+				 */
+				if (aux->rx_last != rx) {
+					aux->rx_last->rx_ftr.extra = rx;
+					aux->rx_last = rx;
+				}
+
 				return;
 			}
 
@@ -734,7 +750,7 @@ ull_scan_aux_rx_flush:
 			ll_rx_sched();
 
 			sync = HDR_LLL2ULL(sync_lll);
-			if (unlikely(sync->is_stop)) {
+			if (unlikely(sync->is_stop && sync_lll->lll_aux)) {
 				return;
 			}
 		}

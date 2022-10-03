@@ -515,6 +515,16 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_FMCLK NPCX_PWDWN_CTL4 5>;
 			status = "disabled";
 		};
+
+		kscan0: kscan@400a3000 {
+			compatible = "nuvoton,npcx-kscan";
+			reg = <0x400a3000 0x2000>;
+			interrupts = <49 4>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL1 0>;
+			wui-maps = <&wui_io31 &wui_io30 &wui_io27 &wui_io26
+				    &wui_io25 &wui_io24 &wui_io23 &wui_io22>;
+			status = "disabled";
+		};
 	};
 
 	soc-if {

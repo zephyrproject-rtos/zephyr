@@ -203,6 +203,24 @@ struct ipc_ept_cfg {
  */
 int ipc_service_open_instance(const struct device *instance);
 
+/** @brief Close an instance
+ *
+ *  Function to be used to close an instance. All endpoints must be
+ *  deregistered using ipc_service_deregister_endpoint before this
+ *  is called.
+ *
+ *  @param[in] instance Instance to close.
+ *
+ *  @retval -EINVAL when instance configuration is invalid.
+ *  @retval -EIO when no backend is registered.
+ *  @retval -EALREADY when the instance is not already opened.
+ *  @retval -EBUSY when an endpoint exists that hasn't been
+ *           deregistered
+ *
+ *  @retval 0 on success or when not implemented on the backend (not needed).
+ *  @retval other errno codes depending on the implementation of the backend.
+ */
+int ipc_service_close_instance(const struct device *instance);
 
 /** @brief Register IPC endpoint onto an instance.
  *

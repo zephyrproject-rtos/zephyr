@@ -106,6 +106,26 @@ ZTEST(util_cxx, test_mixing_GET_ARG_and_FOR_EACH) {
 	run_mixing_GET_ARG_and_FOR_EACH();
 }
 
+ZTEST(util_cxx, test_IS_ARRAY_ELEMENT)
+{
+	run_IS_ARRAY_ELEMENT();
+}
+
+ZTEST(util_cxx, test_ARRAY_INDEX)
+{
+	run_ARRAY_INDEX();
+}
+
+ZTEST(util_cxx, test_PART_OF_ARRAY)
+{
+	run_PART_OF_ARRAY();
+}
+
+ZTEST(util_cxx, test_ARRAY_INDEX_FLOOR)
+{
+	run_ARRAY_INDEX_FLOOR();
+}
+
 ZTEST_SUITE(util_cxx, NULL, NULL, NULL, NULL, NULL);
 
 #if __cplusplus
@@ -202,6 +222,26 @@ ZTEST(util_cc, test_GET_ARGS_LESS_N) {
 
 ZTEST(util_cc, test_mixing_GET_ARG_and_FOR_EACH) {
 	run_mixing_GET_ARG_and_FOR_EACH();
+}
+
+ZTEST(util_cc, test_IS_ARRAY_ELEMENT)
+{
+	run_IS_ARRAY_ELEMENT();
+}
+
+ZTEST(util_cc, test_ARRAY_INDEX)
+{
+	run_ARRAY_INDEX();
+}
+
+ZTEST(util_cc, test_PART_OF_ARRAY)
+{
+	run_PART_OF_ARRAY();
+}
+
+ZTEST(util_cc, test_ARRAY_INDEX_FLOOR)
+{
+	run_ARRAY_INDEX_FLOOR();
 }
 
 ZTEST_SUITE(util_cc, NULL, NULL, NULL, NULL, NULL);

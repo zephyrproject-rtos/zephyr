@@ -645,7 +645,7 @@ void sys_trace_k_thread_info(struct k_thread *thread);
 	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_RUNTIME_ENABLE,		       \
 				 (uint32_t)(uintptr_t)dev)
 #define sys_port_trace_pm_device_runtime_enable_exit(dev, ret)		       \
-	SEGGER_SYSVIEW_RecordEndCall(TID_PM_DEVICE_RUNTIME_ENABLE,	       \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_ENABLE,	       \
 				     (uint32_t)ret)
 #define sys_port_trace_pm_device_runtime_disable_enter(dev)		       \
 	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_RUNTIME_DISABLE,		       \

@@ -64,6 +64,16 @@ struct lll_sync {
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	struct lll_df_sync df_cfg;
+	/* Member stores one additional IQ report rx node for notification of insufficient
+	 * resources to sample all CTEs in currently pending synchronization event.
+	 * The member is temporary storage used between prepare of an event and IQ data report
+	 * generation.
+	 */
+	struct node_rx_iq_report *node_cte_incomplete;
+	/* Member sotres information if there were insufficient IQ report rx nodes for all CTEs
+	 * in pending synchronization event.
+	 */
+	bool is_cte_incomplete;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 };
 

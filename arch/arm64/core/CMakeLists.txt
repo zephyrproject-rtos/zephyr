@@ -44,4 +44,13 @@ endif ()
 
 zephyr_cc_option_ifdef(CONFIG_USERSPACE -mno-outline-atomics)
 
+# GCC may generate ldp/stp instructions with the Advanced SIMD Qn registers for
+# consecutive 32-byte loads and stores. Saving and restoring the Advanced SIMD
+# context is very expensive, and it is preferable to keep it turned off by not
+# emitting these instructions for better context switching performance.
+
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+  zephyr_cc_option(-moverride=tune=no_ldp_stp_qregs)
+endif()
+
 add_subdirectory_ifdef(CONFIG_SOC_XENVM xen)

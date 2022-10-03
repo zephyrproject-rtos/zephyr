@@ -21,13 +21,11 @@ struct net_buf;
  *
  * The supplied net_buf is always consumed, regardless of return code.
  *
- * @param zst                   The transport to send via.
  * @param nb                    The net_buf to transmit.
  *
  * @return                      0 on success, MGMT_ERR_[...] code on failure.
  */
-typedef int zephyr_smp_transport_out_fn(struct zephyr_smp_transport *zst,
-					struct net_buf *nb);
+typedef int zephyr_smp_transport_out_fn(struct net_buf *nb);
 
 /** @typedef zephyr_smp_transport_get_mtu_fn
  * @brief SMP MTU query function for Zephyr.

@@ -28,6 +28,17 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+/* Given the minimum payload, this defines the minimum number of bytes that
+ * should be  remaining in a TX PDU such that it would make inserting a new
+ * segment worthwhile during the segmentation process.
+ * [Payload (min) + Segmentation Header + Time Offset]
+ */
+#define ISOAL_TX_SEGMENT_MIN_SIZE         (CONFIG_BT_CTLR_ISO_TX_SEG_PLAYLOAD_MIN +                \
+					   PDU_ISO_SEG_HDR_SIZE +                                  \
+					   PDU_ISO_SEG_TIMEOFFSET_SIZE)
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
 /** Allocation state */
 typedef uint8_t isoal_alloc_state_t;
 #define ISOAL_ALLOC_STATE_FREE            ((isoal_alloc_state_t) 0x00)
@@ -45,7 +56,6 @@ struct
 	struct isoal_source source_state[CONFIG_BT_CTLR_ISOAL_SOURCES];
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 } isoal_global;
-
 
 /**
  * @brief Internal reset
@@ -110,6 +120,7 @@ static isoal_status_t isoal_sink_allocate(isoal_sink_handle_t *hdl)
 static void isoal_sink_deallocate(isoal_sink_handle_t hdl)
 {
 	isoal_global.sink_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
+	(void)memset(&isoal_global.sink_state[hdl], 0, sizeof(struct isoal_sink));
 }
 
 /**
@@ -122,8 +133,8 @@ static void isoal_sink_deallocate(isoal_sink_handle_t hdl)
  * @param flush_timeout[in]     Flush timeout
  * @param sdu_interval[in]      SDU interval
  * @param iso_interval[in]      ISO interval
- * @param stream_sync_delay[in] CIS sync delay
- * @param group_sync_delay[in]  CIG sync delay
+ * @param stream_sync_delay[in] CIS / BIS sync delay
+ * @param group_sync_delay[in]  CIG / BIG sync delay
  * @param sdu_alloc[in]         Callback of SDU allocator
  * @param sdu_emit[in]          Callback of SDU emitter
  * @param sdu_write[in]         Callback of SDU byte writer
@@ -164,6 +175,7 @@ isoal_status_t isoal_sink_create(
 
 	session->handle = handle;
 	session->framed = framed;
+	session->sdu_interval = sdu_interval;
 
 	/* Todo: Next section computing various constants, should potentially be a
 	 * function in itself as a number of the dependencies could be changed while
@@ -327,6 +339,127 @@ static isoal_status_t isoal_rx_allocate_sdu(struct isoal_sink *sink,
 	return err;
 }
 
+/**
+ * @brief  Depending of whether the configuration is enabled, this will either
+ *         buffer and collate information for the SDU across all fragments
+ *         before emitting the batch of fragments, or immediately release the
+ *         fragment.
+ * @param  sink       Point to the sink context structure
+ * @param  end_of_sdu Indicates if this is the end fragment of an SDU or forced
+ *                    release on an error
+ * @return            Status of operation
+ */
+static isoal_status_t isoal_rx_buffered_emit_sdu(struct isoal_sink *sink, bool end_of_sdu)
+{
+	struct isoal_emitted_sdu_frag sdu_frag;
+	struct isoal_emitted_sdu sdu_status;
+	struct isoal_sink_session *session;
+	struct isoal_sdu_production *sp;
+	struct isoal_sdu_produced *sdu;
+	bool emit_sdu_current;
+	isoal_status_t err;
+
+	err = ISOAL_STATUS_OK;
+	session = &sink->session;
+	sp = &sink->sdu_production;
+	sdu = &sp->sdu;
+
+	/* Initialize current SDU fragment buffer */
+	sdu_frag.sdu_state = sp->sdu_state;
+	sdu_frag.sdu_frag_size = sp->sdu_written;
+	sdu_frag.sdu = *sdu;
+
+	sdu_status.total_sdu_size = sdu_frag.sdu_frag_size;
+	sdu_status.collated_status = sdu_frag.sdu.status;
+	emit_sdu_current = true;
+
+#if defined(ISOAL_BUFFER_RX_SDUS_ENABLE)
+	uint16_t next_write_indx;
+	bool sdu_list_empty;
+	bool emit_sdu_list;
+	bool sdu_list_max;
+	bool sdu_list_err;
+
+	next_write_indx = sp->sdu_list.next_write_indx;
+	sdu_list_max = (next_write_indx >= CONFIG_BT_CTLR_ISO_RX_SDU_BUFFERS);
+	sdu_list_empty = (next_write_indx == 0);
+
+	/* There is an error in the sequence of SDUs if the current SDU fragment
+	 * is not an end fragment and either the list at capacity or the current
+	 * fragment is not a continuation (i.e. it is a start of a new SDU).
+	 */
+	sdu_list_err = !end_of_sdu &&
+		(sdu_list_max ||
+		(!sdu_list_empty && sdu_frag.sdu_state != BT_ISO_CONT));
+
+	/* Release the current fragment if it is the end of the SDU or if it is
+	 * not the starting fragment of a multi-fragment SDU.
+	 */
+	emit_sdu_current = end_of_sdu || (sdu_list_empty && sdu_frag.sdu_state != BT_ISO_START);
+
+	/* Flush the buffered SDUs if this is an end fragment either on account
+	 * of reaching the end of the SDU or on account of an error or if
+	 * there is an error in the sequence of buffered fragments.
+	 */
+	emit_sdu_list = emit_sdu_current || sdu_list_err;
+
+	/* Total size is cleared if the current fragment is not being emitted
+	 * or if there is an error in the sequence of fragments.
+	 */
+	if (!emit_sdu_current || sdu_list_err) {
+		sdu_status.total_sdu_size = 0;
+		sdu_status.collated_status = (sdu_list_err ? ISOAL_SDU_STATUS_LOST_DATA :
+						ISOAL_SDU_STATUS_VALID);
+	}
+
+	if (emit_sdu_list && next_write_indx > 0) {
+		if (!sdu_list_err) {
+			/* Collated information is not reliable if there is an
+			 * error in the sequence of the fragments.
+			 */
+			for (uint8_t i = 0; i < next_write_indx; i++) {
+				sdu_status.total_sdu_size +=
+					sp->sdu_list.list[i].sdu_frag_size;
+				if (sp->sdu_list.list[i].sdu.status == ISOAL_SDU_STATUS_LOST_DATA ||
+					sdu_status.collated_status == ISOAL_SDU_STATUS_LOST_DATA) {
+					sdu_status.collated_status = ISOAL_SDU_STATUS_LOST_DATA;
+				} else {
+					sdu_status.collated_status |=
+						sp->sdu_list.list[i].sdu.status;
+				}
+			}
+		}
+
+		for (uint8_t i = 0; i < next_write_indx; i++) {
+			err |= session->sdu_emit(sink, &sp->sdu_list.list[i],
+						&sdu_status);
+		}
+
+		next_write_indx = sp->sdu_list.next_write_indx  = 0;
+	}
+#endif /* ISOAL_BUFFER_RX_SDUS_ENABLE */
+
+	if (emit_sdu_current) {
+		if (sdu_frag.sdu_state == BT_ISO_SINGLE) {
+			sdu_status.total_sdu_size = sdu_frag.sdu_frag_size;
+			sdu_status.collated_status = sdu_frag.sdu.status;
+		}
+
+		err |= session->sdu_emit(sink, &sdu_frag, &sdu_status);
+
+#if defined(ISOAL_BUFFER_RX_SDUS_ENABLE)
+	} else if (next_write_indx < CONFIG_BT_CTLR_ISO_RX_SDU_BUFFERS) {
+		sp->sdu_list.list[next_write_indx++] = sdu_frag;
+		sp->sdu_list.next_write_indx = next_write_indx;
+#endif /* ISOAL_BUFFER_RX_SDUS_ENABLE */
+	} else {
+		/* Unreachable */
+		LL_ASSERT(0);
+	}
+
+	return err;
+}
+
 static isoal_status_t isoal_rx_try_emit_sdu(struct isoal_sink *sink, bool end_of_sdu)
 {
 	struct isoal_sdu_production *sp;
@@ -368,9 +501,8 @@ static isoal_status_t isoal_rx_try_emit_sdu(struct isoal_sink *sink, bool end_of
 			break;
 		}
 		sdu->status = sp->sdu_status;
-		struct isoal_sink_session *session = &sink->session;
 
-		err = session->sdu_emit(sink, sdu);
+		err = isoal_rx_buffered_emit_sdu(sink, end_of_sdu);
 		sp->sdu_allocated = false;
 
 		/* update next state */
@@ -653,6 +785,29 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	return err;
 }
 
+/* Check a given segment for errors */
+static isoal_sdu_status_t isoal_check_seg_header(struct pdu_iso_sdu_sh *seg_hdr,
+						   uint8_t pdu_size_remaining)
+{
+	if (!seg_hdr) {
+		/* Segment header is null */
+		return ISOAL_SDU_STATUS_ERRORS;
+	}
+
+	if (pdu_size_remaining >= PDU_ISO_SEG_HDR_SIZE &&
+		pdu_size_remaining >= PDU_ISO_SEG_HDR_SIZE + seg_hdr->length) {
+
+		/* Valid if there is sufficient data for the segment header and
+		 * there is sufficient data for the required length of the
+		 * segment
+		 */
+		return ISOAL_SDU_STATUS_VALID;
+	}
+
+	/* Data is missing from the PDU */
+	return ISOAL_SDU_STATUS_LOST_DATA;
+}
+
 /**
  * @brief Consume a framed PDU: Copy contents into SDU(s) and emit to a sink
  * @details Destination sink may have an already partially built SDU
@@ -680,6 +835,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 	bool pdu_padding;
 	bool pdu_err;
 	bool seq_err;
+	bool seg_err;
 
 	sp = &sink->sdu_production;
 	session = &sink->session;
@@ -698,52 +854,13 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 	}
 
 	end_of_pdu = ((uint8_t *) pdu_meta->pdu->payload) + pdu_meta->pdu->length - 1;
-	seg_hdr = (struct pdu_iso_sdu_sh *) pdu_meta->pdu->payload;
+	seg_hdr = (pdu_err || seq_err || pdu_padding) ? NULL :
+			(struct pdu_iso_sdu_sh *) pdu_meta->pdu->payload;
 
-	if (pdu_err || seq_err) {
-		/* When one or more ISO Data PDUs are not received, the receiving device may
-		 * discard all SDUs affected by the missing PDUs. Any partially received SDU
-		 * may also be discarded.
-		 */
-		next_state = ISOAL_ERR_SPOOL;
-
-		/* This maps directly to the HCI ISO Data packet Packet_Status_Flag by way of the
-		 * sdu_status in the SDU emitted.
-		 * BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
-		 * 5.4.5 HCI ISO Data packets : Table 5.2 :
-		 * Packet_Status_Flag (in packets sent by the Controller)
-		 *   0b00  Valid data. The complete SDU was received correctly.
-		 *   0b01  Possibly invalid data. The contents of the ISO_SDU_Fragment may contain
-		 *         errors or part of the SDU may be missing. This is reported as "data with
-		 *         possible errors".
-		 *   0b10  Part(s) of the SDU were not received correctly. This is reported as
-		 *         "lost data".
-		 */
-		if (seq_err) {
-			sp->sdu_status |= ISOAL_SDU_STATUS_LOST_DATA;
-		} else if (pdu_err) {
-			sp->sdu_status |= meta->status;
-		}
-
-		if (sp->fsm == ISOAL_START) {
-			/* Sequence number shall be incremented even if an error
-			 * occurs at the beginning.
-			 */
-			session->seqn++;
-		}
-
-		/* Flush current SDU with error if any */
-		err |= isoal_rx_append_to_sdu(sink, pdu_meta, 0, 0, true, false);
-
-		/* Skip searching this PDU */
-		seg_hdr = NULL;
-
-		/* Update next state */
-		sink->sdu_production.fsm = next_state;
-	}
-
-	if (pdu_padding) {
-		/* Skip searching this PDU */
+	seg_err = false;
+	if (seg_hdr && isoal_check_seg_header(seg_hdr, pdu_meta->pdu->length) ==
+								ISOAL_SDU_STATUS_LOST_DATA) {
+		seg_err = true;
 		seg_hdr = NULL;
 	}
 
@@ -878,7 +995,65 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 
 		if (((uint8_t *) seg_hdr) > end_of_pdu) {
 			seg_hdr = NULL;
+		} else if (isoal_check_seg_header(seg_hdr,
+				(uint8_t)(end_of_pdu + 1 - ((uint8_t *) seg_hdr))) ==
+								ISOAL_SDU_STATUS_LOST_DATA) {
+			seg_err = true;
+			seg_hdr = NULL;
 		}
+	}
+
+	if (pdu_err || seq_err || seg_err) {
+		/* When one or more ISO Data PDUs are not received, the receiving device may
+		 * discard all SDUs affected by the missing PDUs. Any partially received SDU
+		 * may also be discarded.
+		 */
+		next_state = ISOAL_ERR_SPOOL;
+
+		/* This maps directly to the HCI ISO Data packet Packet_Status_Flag by way of the
+		 * sdu_status in the SDU emitted.
+		 * BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
+		 * 5.4.5 HCI ISO Data packets : Table 5.2 :
+		 * Packet_Status_Flag (in packets sent by the Controller)
+		 *   0b00  Valid data. The complete SDU was received correctly.
+		 *   0b01  Possibly invalid data. The contents of the ISO_SDU_Fragment may contain
+		 *         errors or part of the SDU may be missing. This is reported as "data with
+		 *         possible errors".
+		 *   0b10  Part(s) of the SDU were not received correctly. This is reported as
+		 *         "lost data".
+		 */
+		if (seq_err || seg_err) {
+			sp->sdu_status |= ISOAL_SDU_STATUS_LOST_DATA;
+		} else if (pdu_err) {
+			sp->sdu_status |= meta->status;
+		}
+
+		if (sp->fsm == ISOAL_START) {
+			/* Sequence number should be incremented if an error
+			 * occurs at the beginning.
+			 */
+			session->seqn++;
+
+			if (sdu->timestamp == 0) {
+				/* Last timestamp is not valid so set an
+				 * approximate timestamp
+				 */
+				anchorpoint = meta->timestamp;
+				latency = session->latency_framed;
+				timestamp = anchorpoint + latency;
+
+				sdu->timestamp = timestamp;
+			} else {
+				/* Advance the timestamp by an SDU interval */
+				sdu->timestamp += session->sdu_interval;
+			}
+		}
+
+		/* Flush current SDU with error if any */
+		err |= isoal_rx_append_to_sdu(sink, pdu_meta, 0, 0, true, false);
+
+		/* Update next state */
+		sink->sdu_production.fsm = next_state;
 	}
 
 	sp->prev_pdu_id = meta->payload_number;
@@ -942,7 +1117,40 @@ static isoal_status_t isoal_source_allocate(isoal_source_handle_t *hdl)
  */
 static void isoal_source_deallocate(isoal_source_handle_t hdl)
 {
+	struct isoal_pdu_production *pp;
+	struct isoal_source *source;
+
+	source = &isoal_global.source_state[hdl];
+	pp = &source->pdu_production;
+
+	if (pp->pdu_available > 0) {
+		/* There is a pending PDU that should be released */
+		if (source && source->session.pdu_release) {
+			source->session.pdu_release(pp->pdu.contents.handle,
+						    source->session.handle,
+						    ISOAL_STATUS_ERR_PDU_EMIT);
+		}
+	}
+
 	isoal_global.source_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
+	(void)memset(&isoal_global.source_state[hdl], 0, sizeof(struct isoal_source));
+}
+
+/**
+ * @brief      Check if a provided handle is valid
+ * @param[in]  hdl Input handle for validation
+ * @return         Handle valid / not valid
+ */
+static isoal_status_t isoal_check_source_hdl_valid(isoal_source_handle_t hdl)
+{
+	if (hdl < CONFIG_BT_CTLR_ISOAL_SOURCES &&
+		isoal_global.source_allocated[hdl] == ISOAL_ALLOC_STATE_TAKEN) {
+		return ISOAL_STATUS_OK;
+	}
+
+	BT_ERR("Invalid source handle (0x%02x)", hdl);
+
+	return ISOAL_STATUS_ERR_UNSPECIFIED;
 }
 
 /**
@@ -956,8 +1164,8 @@ static void isoal_source_deallocate(isoal_source_handle_t hdl)
  * @param max_octets[in]        Maximum PDU size (Max_PDU_C_To_P / Max_PDU_P_To_C)
  * @param sdu_interval[in]      SDU interval
  * @param iso_interval[in]      ISO interval
- * @param stream_sync_delay[in] CIS sync delay
- * @param group_sync_delay[in]  CIG sync delay
+ * @param stream_sync_delay[in] CIS / BIS sync delay
+ * @param group_sync_delay[in]  CIG / BIG sync delay
  * @param pdu_alloc[in]         Callback of PDU allocator
  * @param pdu_write[in]         Callback of PDU byte writer
  * @param pdu_emit[in]          Callback of PDU emitter
@@ -1249,6 +1457,10 @@ static isoal_status_t isoal_tx_unframed_produce(struct isoal_source *source,
 
 	if (tx_sdu->sdu_state == BT_ISO_START ||
 		tx_sdu->sdu_state == BT_ISO_SINGLE) {
+		/* Initialize to info provided in SDU */
+		uint32_t actual_grp_ref_point = tx_sdu->grp_ref_point;
+		uint64_t actual_event = tx_sdu->target_event;
+
 		/* Start of a new SDU */
 
 		/* Update sequence number for received SDU
@@ -1275,6 +1487,33 @@ static isoal_status_t isoal_tx_unframed_produce(struct isoal_source *source,
 		 */
 		pp->payload_number = MAX(pp->payload_number,
 			(tx_sdu->target_event * session->burst_number));
+
+		/* Get actual event for this payload number */
+		actual_event = pp->payload_number / session->burst_number;
+
+		/* Get group reference point for this PDU based on the actual
+		 * event being set. This might introduce some errors as the
+		 * group refernce point for future events could drift. However
+		 * as the time offset calculation requires an absolute value,
+		 * this seems to be the best candidate. As the actual group
+		 * refereence point is 32-bits, it is expected that advancing
+		 * the reference point will cause it to wrap around.
+		 */
+		if (actual_event > tx_sdu->target_event) {
+			actual_grp_ref_point = (uint32_t)(tx_sdu->grp_ref_point +
+				((actual_event - tx_sdu->target_event) * session->iso_interval *
+					ISO_INT_UNIT_US));
+		}
+
+		/* Store timing info for TX Sync command */
+		session->tx_time_stamp = actual_grp_ref_point;
+		/* BT Core V5.3 : Vol 4 HCI : Part E HCI Functional Spec:
+		 * 7.8.96 LE Read ISO TX Sync Command:
+		 * When the Connection_Handle identifies a CIS or BIS that is
+		 * transmitting unframed PDUs the value of Time_Offset returned
+		 * shall be zero
+		 * Relies on initialization value being 0.
+		 */
 
 		/* Reset PDU fragmentation count for this SDU */
 		pp->pdu_cnt = 0;
@@ -1520,7 +1759,7 @@ static isoal_status_t isoal_tx_framed_produce(struct isoal_source *source,
 		/* Start of a new SDU */
 
 		/* Initialize to info provided in SDU */
-		uint32_t actual_cig_ref_point = tx_sdu->cig_ref_point;
+		uint32_t actual_grp_ref_point = tx_sdu->grp_ref_point;
 		uint64_t actual_event = tx_sdu->target_event;
 
 		/* Update sequence number for received SDU
@@ -1554,38 +1793,43 @@ static isoal_status_t isoal_tx_framed_produce(struct isoal_source *source,
 		/* Get actual event for this payload number */
 		actual_event = pp->payload_number / session->burst_number;
 
-		/* Get cig reference point for this PDU based on the actual
-		 * event being set. This might introduce some errors as the cig
-		 * refernce point for future events could drift. However as the
-		 * time offset calculation requires an absolute value, this
-		 * seems to be the best candidate.
+		/* Get group reference point for this PDU based on the actual
+		 * event being set. This might introduce some errors as the
+		 * group refernce point for future events could drift. However
+		 * as the time offset calculation requires an absolute value,
+		 * this seems to be the best candidate.
 		 */
 		if (actual_event > tx_sdu->target_event) {
-			actual_cig_ref_point = tx_sdu->cig_ref_point +
+			actual_grp_ref_point = tx_sdu->grp_ref_point +
 				((actual_event - tx_sdu->target_event) * session->iso_interval *
 					ISO_INT_UNIT_US);
 		}
 
-		/* Check if time stamp on packet is later than the CIG reference
-		 * point and adjust targets. This could happen if the SDU has
-		 * been time-stampped at the controller when received via HCI.
+		/* Check if time stamp on packet is later than the group
+		 * reference point and adjust targets. This could happen if the
+		 * SDU has been time-stampped at the controller when received
+		 * via HCI.
 		 *
 		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
 		 * 3.1 Time_Offset in framed PDUs :
 		 * The Time_Offset shall be a positive value.
 		 */
-		if (actual_cig_ref_point <= tx_sdu->time_stamp) {
+		if (actual_grp_ref_point <= tx_sdu->time_stamp) {
 			/* Advance target to next event */
 			actual_event++;
-			actual_cig_ref_point += session->iso_interval * ISO_INT_UNIT_US;
+			actual_grp_ref_point += session->iso_interval * ISO_INT_UNIT_US;
 
 			/* Set payload number */
 			pp->payload_number = actual_event * session->burst_number;
 		}
 
 		/* Calculate the time offset */
-		LL_ASSERT(actual_cig_ref_point > tx_sdu->time_stamp);
-		time_offset = actual_cig_ref_point - tx_sdu->time_stamp;
+		LL_ASSERT(actual_grp_ref_point > tx_sdu->time_stamp);
+		time_offset = actual_grp_ref_point - tx_sdu->time_stamp;
+
+		/* Store timing info for TX Sync command */
+		session->tx_time_stamp = actual_grp_ref_point;
+		session->tx_time_offset = time_offset;
 
 		/* Reset PDU fragmentation count for this SDU */
 		pp->pdu_cnt = 0;
@@ -1666,18 +1910,11 @@ static isoal_status_t isoal_tx_framed_produce(struct isoal_source *source,
 		/* LLID is fixed for framed PDUs */
 		ll_id = PDU_BIS_LLID_FRAMED;
 
-		/* NOTE: Ideally even if the end of the SDU is reached, the PDU
-		 * should not be emitted as long as there is space left. If the
-		 * PDU is not released, it might require a flush timeout to
-		 * trigger the release as receiving an SDU per SDU interval is
-		 * not guaranteed. As there is no trigger for this in the
-		 * ISO-AL, the PDU is released. This does mean that the
-		 * bandwidth of this implementation will be less that the ideal
-		 * supported by framed PDUs. Ideally ISOAL_SEGMENT_MIN_SIZE
-		 * should be used to assess if there is sufficient usable space
-		 * left in the PDU.
+		/* If there isn't sufficient usable space then release the
+		 * PDU when the end of the SDU is reached, instead of waiting
+		 * for the next SDU.
 		 */
-		bool release_pdu = end_of_sdu;
+		bool release_pdu = end_of_sdu && (pp->pdu_available <= ISOAL_TX_SEGMENT_MIN_SIZE);
 		const isoal_status_t err_emit = isoal_tx_try_emit_pdu(source, release_pdu, ll_id);
 
 		err |= err_emit;
@@ -1700,6 +1937,41 @@ static isoal_status_t isoal_tx_framed_produce(struct isoal_source *source,
 	return err;
 }
 
+/**
+ * @brief  Handle preparation of the given source before commencing TX on the
+ *         specified event (only for framed sources)
+ * @param  source_hdl   Handle of source to prepare
+ * @param  event_count  Event number source should be prepared for
+ * @return              Status of operation
+ */
+static isoal_status_t isoal_tx_framed_event_prepare_handle(isoal_source_handle_t source_hdl,
+							   uint64_t event_count)
+{
+	struct isoal_source_session *session;
+	struct isoal_pdu_production *pp;
+	struct isoal_source *source;
+	uint64_t last_event_payload;
+	isoal_status_t err;
+
+	err = ISOAL_STATUS_OK;
+
+	source = &isoal_global.source_state[source_hdl];
+	session = &source->session;
+	pp = &source->pdu_production;
+	last_event_payload = (session->burst_number * (event_count + 1)) - 1;
+
+	if (pp->pdu_available > 0 &&
+		pp->payload_number <= last_event_payload) {
+		/* Pending PDU that should be released for framed TX */
+		err = isoal_tx_try_emit_pdu(source, true, PDU_BIS_LLID_FRAMED);
+	}
+
+	if (pp->payload_number < last_event_payload + 1) {
+		pp->payload_number = last_event_payload + 1;
+	}
+
+	return err;
+}
 
 /**
  * @brief Deep copy a SDU, fragment into PDU(s)
@@ -1712,11 +1984,18 @@ static isoal_status_t isoal_tx_framed_produce(struct isoal_source *source,
 isoal_status_t isoal_tx_sdu_fragment(isoal_source_handle_t source_hdl,
 				     struct isoal_sdu_tx *tx_sdu)
 {
+	struct isoal_source_session *session;
 	struct isoal_source *source;
 	isoal_status_t err;
 
 	source = &isoal_global.source_state[source_hdl];
+	session = &source->session;
 	err = ISOAL_STATUS_ERR_PDU_ALLOC;
+
+	/* Set source context active to mutually exclude ISO Event prepare
+	 * kick.
+	 */
+	source->context_active = true;
 
 	if (source->pdu_production.mode != ISOAL_PRODUCTION_MODE_DISABLED) {
 		/* BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
@@ -1736,6 +2015,16 @@ isoal_status_t isoal_tx_sdu_fragment(isoal_source_handle_t source_hdl,
 		}
 	}
 
+	source->context_active = false;
+
+	if (source->timeout_trigger) {
+		source->timeout_trigger = false;
+		if (session->framed) {
+			isoal_tx_framed_event_prepare_handle(source_hdl,
+						source->timeout_event_count);
+		}
+	}
+
 	return err;
 }
 
@@ -1749,4 +2038,71 @@ void isoal_tx_pdu_release(isoal_source_handle_t source_hdl,
 					    ISOAL_STATUS_OK);
 	}
 }
+
+/**
+ * @brief  Get information required for HCI_LE_Read_ISO_TX_Sync
+ * @param  source_hdl Source handle linked to handle provided in HCI message
+ * @param  seq        Packet Sequence number of last SDU
+ * @param  timestamp  CIG / BIG reference point of last SDU
+ * @param  offset     Time-offset (Framed) / 0 (Unframed) of last SDU
+ * @return            Operation status
+ */
+isoal_status_t isoal_tx_get_sync_info(isoal_source_handle_t source_hdl,
+				      uint16_t *seq,
+				      uint32_t *timestamp,
+				      uint32_t *offset)
+{
+	if (isoal_check_source_hdl_valid(source_hdl) == ISOAL_STATUS_OK) {
+		struct isoal_source_session *session;
+
+		session = &isoal_global.source_state[source_hdl].session;
+
+		/* BT Core V5.3 : Vol 4 HCI : Part E HCI Functional Spec:
+		 * 7.8.96 LE Read ISO TX Sync Command:
+		 * If the Host issues this command before an SDU had been transmitted by
+		 * the Controller, then Controller shall return the error code Command
+		 * Disallowed.
+		 */
+		if (session->seqn > 0) {
+			*seq = session->seqn;
+			*timestamp = session->tx_time_stamp;
+			*offset = session->tx_time_offset;
+			return ISOAL_STATUS_OK;
+		}
+	}
+
+	return ISOAL_STATUS_ERR_UNSPECIFIED;
+}
+
+/**
+ * @brief  Incoming prepare request before commencing TX for the specified
+ *         event
+ * @param  source_hdl   Handle of source to prepare
+ * @param  event_count  Event number source should be prepared for
+ * @return              Status of operation
+ */
+void isoal_tx_event_prepare(isoal_source_handle_t source_hdl,
+			    uint64_t event_count)
+{
+	struct isoal_source_session *session;
+	struct isoal_source *source;
+
+	source = &isoal_global.source_state[source_hdl];
+	session = &source->session;
+
+	/* Store prepare timeout information and check if fragmentation context
+	 * is active.
+	 */
+	source->timeout_event_count = event_count;
+	source->timeout_trigger = true;
+	if (source->context_active) {
+		return;
+	}
+	source->timeout_trigger = false;
+
+	if (session->framed) {
+		isoal_tx_framed_event_prepare_handle(source_hdl, event_count);
+	}
+}
+
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
