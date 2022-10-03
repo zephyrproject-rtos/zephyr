@@ -12,6 +12,8 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/controller.h>
 
+#include "hal/ccm.h"
+
 #include "util/util.h"
 #include "util/memq.h"
 #include "util/mem.h"

@@ -16,6 +16,7 @@
 #include "hal/ticker.h"
 
 #include "util/util.h"
+#include "util/mem.h"
 #include "util/memq.h"
 
 #include "pdu_df.h"
@@ -289,8 +290,6 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	phy = lll->phy;
 	radio_phy_set(phy, PHY_FLAGS_S8);
-	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, lll->max_pdu,
-			    RADIO_PKT_CONF_PHY(phy));
 	radio_aa_set(access_addr);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 	lll_chan_set(data_chan_use);
@@ -300,7 +299,35 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	 */
 	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
 	LL_ASSERT(node_rx);
-	radio_pkt_rx_set(node_rx->pdu);
+
+	/* Encryption */
+	if (lll->enc) {
+		uint64_t payload_count;
+		uint8_t pkt_flags;
+
+		payload_count = lll->payload_count - lll->bn;
+		lll->ccm_rx.counter = payload_count;
+
+		(void)memcpy(lll->ccm_rx.iv, lll->giv, 4U);
+		mem_xor_32(lll->ccm_rx.iv, lll->ccm_rx.iv, access_addr);
+
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_BIS,
+						 phy,
+						 RADIO_PKT_CONF_CTE_DISABLED);
+		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
+				    (lll->max_pdu + PDU_MIC_SIZE), pkt_flags);
+		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->ccm_rx, phy,
+						      node_rx->pdu));
+	} else {
+		uint8_t pkt_flags;
+
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_BIS,
+						 phy,
+						 RADIO_PKT_CONF_CTE_DISABLED);
+		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, lll->max_pdu,
+				    pkt_flags);
+		radio_pkt_rx_set(node_rx->pdu);
+	}
 
 	radio_switch_complete_and_disable();
 
@@ -558,6 +585,17 @@ static void isr_rx(void *param)
 		    !lll->payload[bis_idx][payload_index] &&
 		    ((payload_index >= lll->payload_tail) ||
 		     (payload_index < lll->payload_head))) {
+			if (lll->enc) {
+				uint32_t mic_failure;
+				uint32_t done;
+
+				done = radio_ccm_is_done();
+				LL_ASSERT(done);
+
+				mic_failure = !radio_ccm_mic_is_valid();
+				LL_ASSERT(!mic_failure);
+			}
+
 			ull_iso_pdu_rx_alloc();
 			isr_rx_iso_data_valid(lll, handle, node_rx);
 
@@ -919,7 +957,27 @@ isr_rx_next_subevent:
 	 */
 	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
 	LL_ASSERT(node_rx);
-	radio_pkt_rx_set(node_rx->pdu);
+
+	/* Encryption */
+	if (lll->enc) {
+		uint64_t payload_count;
+
+		payload_count = lll->payload_count - lll->bn;
+		if (bis) {
+			payload_count += (lll->bn_curr - 1U) +
+					 (lll->ptc_curr * lll->pto);
+		}
+
+		lll->ccm_rx.counter = payload_count;
+
+		(void)memcpy(lll->ccm_rx.iv, lll->giv, 4U);
+		mem_xor_32(lll->ccm_rx.iv, lll->ccm_rx.iv, access_addr);
+
+		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->ccm_rx, lll->phy,
+						      node_rx->pdu));
+	} else {
+		radio_pkt_rx_set(node_rx->pdu);
+	}
 
 	radio_switch_complete_and_disable();
 

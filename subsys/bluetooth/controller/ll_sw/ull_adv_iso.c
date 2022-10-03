@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
 #include <soc.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -43,7 +44,7 @@
 #include "ll.h"
 #include "ll_feat.h"
 
-#include <zephyr/bluetooth/hci.h>
+#include "bt_crypto.h"
 
 #include "hal/debug.h"
 
@@ -303,8 +304,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	res = util_saa_le32(lll_adv_iso->seed_access_addr, big_handle);
 	LL_ASSERT(!res);
 
-	lll_csrand_get(lll_adv_iso->base_crc_init,
-		       sizeof(lll_adv_iso->base_crc_init));
+	(void)lll_csrand_get(lll_adv_iso->base_crc_init,
+			     sizeof(lll_adv_iso->base_crc_init));
 	lll_adv_iso->data_chan_count =
 		ull_chan_map_get(lll_adv_iso->data_chan_map);
 	lll_adv_iso->latency_prepare = 0U;
@@ -400,6 +401,43 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	big_info->payload_count_framing[4] = lll_adv_iso->payload_count >> 32;
 	big_info->payload_count_framing[4] &= ~BIT(7);
 	big_info->payload_count_framing[4] |= ((framing & 0x01) << 7);
+
+	if (encryption) {
+		const uint8_t BIG1[16] = {0x31, 0x47, 0x49, 0x42, };
+		const uint8_t BIG2[4]  = {0x32, 0x47, 0x49, 0x42};
+		const uint8_t BIG3[4]  = {0x33, 0x47, 0x49, 0x42};
+		struct ccm *ccm_tx;
+		uint8_t igltk[16];
+		uint8_t gltk[16];
+		uint8_t gsk[16];
+
+		/* Fill GIV and GSKD */
+		(void)lll_csrand_get(lll_adv_iso->giv,
+				     sizeof(lll_adv_iso->giv));
+		(void)memcpy(big_info->giv, lll_adv_iso->giv,
+			     sizeof(big_info->giv));
+		(void)lll_csrand_get(big_info->gskd, sizeof(big_info->gskd));
+
+		/* Calculate GSK */
+		err = bt_crypto_h7(BIG1, bcode, igltk);
+		LL_ASSERT(!err);
+		err = bt_crypto_h6(igltk, BIG2, gltk);
+		LL_ASSERT(!err);
+		err = bt_crypto_h8(gltk, big_info->gskd, BIG3, gsk);
+		LL_ASSERT(!err);
+
+		/* Prepare the CCM parameters */
+		ccm_tx = &lll_adv_iso->ccm_tx;
+		ccm_tx->direction = 1U;
+		(void)memcpy(&ccm_tx->iv[4], &lll_adv_iso->giv[4], 4U);
+		(void)mem_rcopy(ccm_tx->key, gsk, sizeof(ccm_tx->key));
+
+		/* NOTE: counter is filled in LLL */
+
+		lll_adv_iso->enc = 1U;
+	} else {
+		lll_adv_iso->enc = 0U;
+	}
 
 	/* Associate the ISO instance with an Extended Advertising instance */
 	lll_adv_iso->adv = &adv->lll;
