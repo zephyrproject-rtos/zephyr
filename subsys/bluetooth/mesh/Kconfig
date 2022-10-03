@@ -898,6 +898,15 @@ config BT_MESH_SHELL_HEALTH_SRV_INSTANCE
 	  to the device composition data. Use BT_MESH_SHELL_HEALTH_PUB_DEFINE to
 	  instantiate publication context.
 
+config BT_MESH_SHELL_PROV_CTX_INSTANCE
+	bool "Support for Shell provisioning context instance"
+	help
+	  This option enables the provisioning context instance in the
+	  Bluetooth mesh shell module together with several provisioning
+	  commands and target utility features. To use the provisioning
+	  context instance, use bt_mesh_shell_prov in the
+	  initialization of mesh.
+
 endif # BT_MESH_SHELL
 
 config BT_MESH_MODEL_EXTENSIONS
