@@ -32,6 +32,14 @@
 	 (_odr <= 12) ? LIS2DW12_XL_ODR_12Hz5 : \
 	 ((31 - __builtin_clz(_odr / 25))) + 3)
 
+/* Return data rate in Hz for given register value */
+#define LIS2DW12_REG_TO_ODR(_reg) \
+	((_reg == 0) ? 0 : \
+	(_reg == 1) ? 1 : \
+	(_reg == 2) ? 12 : \
+	(_reg > 9) ? 1600 : \
+	(1 << (_reg - 3)) * 25)
+
 /* FS reg value from Full Scale */
 #define LIS2DW12_FS_TO_REG(_fs)	(30 - __builtin_clz(_fs))
 
@@ -67,6 +75,7 @@ struct lis2dw12_device_config {
 #endif
 	} stmemsc_cfg;
 	lis2dw12_mode_t pm;
+	uint16_t odr;
 	uint8_t range;
 	uint8_t bw_filt;
 	bool low_noise;
@@ -83,6 +92,10 @@ struct lis2dw12_device_config {
 	uint8_t tap_latency;
 	uint8_t tap_quiet;
 #endif /* CONFIG_LIS2DW12_TAP */
+#ifdef CONFIG_LIS2DW12_FREEFALL
+	uint8_t freefall_duration;
+	uint8_t freefall_threshold;
+#endif /* CONFIG_LIS2DW12_FREEFALL */
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 };
 
@@ -92,6 +105,8 @@ struct lis2dw12_data {
 
 	 /* save sensitivity */
 	uint16_t gain;
+	 /* output data rate */
+	uint16_t odr;
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	const struct device *dev;
@@ -105,6 +120,9 @@ struct lis2dw12_data {
 #ifdef CONFIG_LIS2DW12_THRESHOLD
 	sensor_trigger_handler_t threshold_handler;
 #endif /* CONFIG_LIS2DW12_THRESHOLD */
+#ifdef CONFIG_LIS2DW12_FREEFALL
+	sensor_trigger_handler_t freefall_handler;
+#endif /* CONFIG_LIS2DW12_FREEFALL */
 #if defined(CONFIG_LIS2DW12_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LIS2DW12_THREAD_STACK_SIZE);
 	struct k_thread thread;

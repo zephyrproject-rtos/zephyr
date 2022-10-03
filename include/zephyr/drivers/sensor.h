@@ -312,7 +312,12 @@ enum sensor_attribute {
 	SENSOR_ATTR_FEATURE_MASK,
 	/** Alert threshold or alert enable/disable */
 	SENSOR_ATTR_ALERT,
-
+	/** Free-fall duration represented in milliseconds.
+	 *  If the sampling frequency is changed during runtime,
+	 *  this attribute should be set to adjust freefall duration
+	 *  to the new sampling frequency.
+	 */
+	SENSOR_ATTR_FF_DUR,
 	/**
 	 * Number of all common sensor attributes.
 	 */
