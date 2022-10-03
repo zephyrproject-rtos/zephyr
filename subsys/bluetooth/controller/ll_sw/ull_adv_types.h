@@ -102,6 +102,7 @@ struct ll_adv_iso_set {
 	struct {
 		struct node_rx_hdr hdr;
 	} node_rx_complete;
+
 	struct {
 		struct node_rx_hdr hdr;
 		union {

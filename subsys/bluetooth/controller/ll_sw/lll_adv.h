@@ -76,6 +76,10 @@ struct lll_adv_iso {
 	uint8_t  ctrl_expire;
 	uint16_t ctrl_instant;
 
+	/* Encryption */
+	uint8_t giv[8];
+	struct ccm ccm_tx;
+
 	uint16_t stream_handle[BT_CTLR_ADV_ISO_STREAM_MAX];
 };
 

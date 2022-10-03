@@ -171,6 +171,7 @@ zephyr_library_sources_ifdef(
 zephyr_library_include_directories(
   .
   include
+  ../crypto
   )
 
 zephyr_library_compile_options_ifdef(

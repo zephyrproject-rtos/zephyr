@@ -721,6 +721,7 @@ config BT_CTLR_SYNC_ISO
 
 config BT_CTLR_BROADCAST_ISO
 	bool
+	select BT_CRYPTO if BT_LL_SW_SPLIT
 	default BT_CTLR_ADV_ISO || BT_CTLR_SYNC_ISO
 
 config BT_CTLR_ADV_ISO_SET
