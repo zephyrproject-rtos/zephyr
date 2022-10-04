@@ -70,16 +70,16 @@ struct init_entry {
 /**
  * @brief Construct a namespaced identifier for SYS_INIT instance
  *
- * @param _name Base unique name
+ * @param name Base unique name
  */
-#define Z_SYS_NAME(_name) _CONCAT(sys_init_, _name)
+#define Z_SYS_NAME(name) _CONCAT(sys_init_, name)
 
 /**
  * @brief Construct a namespaced identifier for a struct init_entry instance
  *
- * @param _entry_name Base unique name
+ * @param entry_name Base unique name
  */
-#define Z_INIT_ENTRY_NAME(_entry_name) _CONCAT(__init_, _entry_name)
+#define Z_INIT_ENTRY_NAME(entry_name) _CONCAT(__init_, entry_name)
 
 /**
  * @brief Init entry section.
@@ -97,20 +97,20 @@ struct init_entry {
  * configured by the kernel during system initialization. Note that init
  * entries will not be accessible from user mode.
  *
- * @param _entry_name Init entry name.
- * @param _init_fn Init function.
- * @param _device Device instance (optional).
- * @param _level Initialization level.
- * @param prio Initialization priority within @p _level.
+ * @param entry_name Init entry name.
+ * @param init_fn Init function.
+ * @param device Device instance (optional).
+ * @param level Initialization level.
+ * @param prio Initialization priority within @p level.
  *
  * @see SYS_INIT()
  */
-#define Z_INIT_ENTRY_DEFINE(_entry_name, _init_fn, _device, _level, _prio)	\
+#define Z_INIT_ENTRY_DEFINE(entry_name, init_fn, device, level, prio)	\
 	static const Z_DECL_ALIGN(struct init_entry)			\
-		Z_INIT_ENTRY_NAME(_entry_name) __used __noasan			\
-		Z_INIT_ENTRY_SECTION(_level, _prio) = { 			\
-		.init = (_init_fn),					\
-		.dev = (_device),					\
+		Z_INIT_ENTRY_NAME(entry_name) __used __noasan		\
+		Z_INIT_ENTRY_SECTION(level, prio) = { 			\
+		.init = (init_fn),					\
+		.dev = (device),					\
 	}
 
 /** @endcond */
@@ -121,18 +121,18 @@ struct init_entry {
  * The function will be called during system initialization according to the
  * given level and priority.
  *
- * @param _init_fn Initialization function.
- * @param _level Initialization level. Allowed tokens: `EARLY`, `PRE_KERNEL_1`,
+ * @param init_fn Initialization function.
+ * @param level Initialization level. Allowed tokens: `EARLY`, `PRE_KERNEL_1`,
  * `PRE_KERNEL_2`, `POST_KERNEL`, `APPLICATION` and `SMP` if
  * @kconfig{CONFIG_SMP} is enabled.
- * @param _prio Initialization priority within @p _level. Note that it must be a
+ * @param prio Initialization priority within @p _level. Note that it must be a
  * decimal integer literal without leading zeroes or sign (e.g. `32`), or an
  * equivalent symbolic name (e.g. `#define MY_INIT_PRIO 32`); symbolic
  * expressions are **not** permitted (e.g.
  * `CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5`).
  */
-#define SYS_INIT(_init_fn, _level, _prio)					\
-	SYS_INIT_NAMED(_init_fn, _init_fn, _level, _prio)
+#define SYS_INIT(init_fn, level, prio)					\
+	SYS_INIT_NAMED(init_fn, init_fn, level, prio)
 
 /**
  * @brief Register an initialization function (named).
@@ -140,15 +140,15 @@ struct init_entry {
  * @note This macro can be used for cases where the multiple init calls use the
  * same init function.
  *
- * @param _name Unique name for SYS_INIT entry.
- * @param _init_fn See SYS_INIT().
- * @param _level See SYS_INIT().
- * @param _prio See SYS_INIT().
+ * @param name Unique name for SYS_INIT entry.
+ * @param init_fn See SYS_INIT().
+ * @param level See SYS_INIT().
+ * @param prio See SYS_INIT().
  *
  * @see SYS_INIT()
  */
-#define SYS_INIT_NAMED(_name, _init_fn, _level, _prio)				\
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(_name), _init_fn, NULL, _level, _prio)
+#define SYS_INIT_NAMED(name, init_fn, level, prio)				\
+	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(name), init_fn, NULL, level, prio)
 
 /** @} */
 
