@@ -1,0 +1,14 @@
+identifier: google_twinkie_v2
+name: Goolge Twinkie PD Snooper
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 36
+flash: 128
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

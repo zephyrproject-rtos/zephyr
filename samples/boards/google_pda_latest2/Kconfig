@@ -1,0 +1,19 @@
+# Private config options for eSPI sample app
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config STM32_UCPD
+        bool "USBC TCPC device controller driver"
+        depends on SOC_FAMILY_STM32
+        default y
+	select USE_STM32_LL_BUS
+	select USE_STM32_LL_SYSTEM
+	select USE_STM32_LL_RCC
+	select USE_STM32_LL_DMA
+        select USE_STM32_LL_UCPD
+        help
+          Enable USBC TCPC support on the STM32 G0, G4, L5, and U5 family of
+          processors.
+
+source "Kconfig.zephyr"

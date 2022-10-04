@@ -1,0 +1,224 @@
+/*
+ * Copyright 2022 The Chromium OS Authors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/g0/stm32g0b1Xe.dtsi>
+#include <st/g0/stm32g0b1r(b-c-e)ixn-pinctrl.dtsi>
+
+/ {
+	model = "Google Twinkie V2";
+	compatible = "google,twinkie-v2";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,shell_uart = &cdc_acm_uart0;
+		zephyr,console = &cdc_acm_uart1;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led_0: led0 {
+			gpios = <&gpioc 8 GPIO_ACTIVE_LOW>;
+			label = "LED_RED";
+		};
+		green_led_1: led1 {
+			gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
+			label = "LED_GREEN";
+		};
+		blue_led_2: led2 {
+			gpios = <&gpiob 7 GPIO_ACTIVE_LOW>;
+			label = "LED_BLUE";
+		};
+	};
+
+        cc_config {
+		compatible = "gpio-leds";
+		cc1_en: cc1en {
+			gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+			label = "CC1_EN";
+		};
+
+		cc2_en: cc2en {
+			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
+			label = "CC2_EN";
+		};
+        };
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		dfu_detect: dfudetect {
+			label = "DFU DETECT";
+			gpios = <&gpioa 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+
+	cc1_buf: cc1buf {
+                compatible = "voltage-divider";
+		io-channels = <&adc1 1>;
+		output-ohms = <0>;
+                label = "CC1_BUF";
+	};
+
+	cc2_buf: cc2buf {
+                compatible = "voltage-divider";
+		io-channels = <&adc1 3>;
+		output-ohms = <0>;
+                label = "CC2_BUF";
+	};
+
+	vbus_v: vbusv {
+                compatible = "voltage-divider";
+		io-channels = <&adc1 15>;
+		output-ohms = <68000>;
+		full-ohms = <(2000000 + 68000)>;
+                label = "VBUS_V";
+	};
+
+	vbus_c: vbusc {
+                compatible = "voltage-divider";
+		io-channels = <&adc1 17>;
+		output-ohms = <49900>;
+		full-ohms = <(330000 + 49900)>;
+                label = "VBUS_C";
+	};
+
+	vcon_c: vconc {
+                compatible = "voltage-divider";
+		io-channels = <&adc1 18>;
+		output-ohms = <0>;
+                label = "VCON_C";
+	};
+
+
+	aliases {
+		led0 = &red_led_0;
+		led1 = &green_led_1;
+		led2 = &blue_led_2;
+		bootloader-led0 = &blue_led_2;
+		encc1 = &cc1_en;
+		encc2 = &cc2_en;
+                vcc1 = &cc1_buf;
+                vcc2 = &cc2_buf;
+                vbus = &vbus_v;
+                cbus = &vbus_c;
+                ccon = &vcon_c;
+	};
+};
+
+
+&adc1 {
+        pinctrl-0 = <&adc1_in1_pa1	/* CC1_BUF	 */
+		     &adc1_in3_pa3	/* CC2_BUF	 */
+		     &adc1_in15_pb11	/* VBUS_READ_BUF */
+		     &adc1_in17_pc4	/* CSA_VBUS	 */
+		     &adc1_in18_pc5	/* CSA_CC2	 */
+		    >;
+
+        pinctrl-names = "default";
+        status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <8>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(64)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* MCUboot partition, size 64Kb */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0x10000>;
+			read-only;
+		};
+
+		/* Primary application partition, size 224Kb */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x10000 0x38000>;
+		};
+
+		/* Secondary application partition, size 224Kb */
+		slot1_partition: partition@48000 {
+			label = "image-1";
+			reg = <0x48000 0x38000>;
+		};
+
+	};
+};
+
+&ucpd1 {
+	status = "okay";
+
+	/*
+	 * UCPD is fed directly from HSI which is @ 16MHz. The ucpd_clk goes to
+	 * a prescaler who's output feeds the 'half-bit' divider which is used
+	 * to generate clock for delay counters and BMC Rx/Tx blocks. The rx is
+	 * designed to work in freq ranges of 6 <--> 18 MHz, however recommended
+	 * range is 9 <--> 18 MHz.
+	 *
+	 *          +-------+ @ 16 MHz +-------+   @ ~600 kHz   +-----------+
+	 * HSI ---->| /psc  |--------->| /hbit |--------------->| trans_cnt |
+	 *          +-------+          +-------+   |            +-----------+
+	 *                                         |            +-----------+
+	 *                                         +----------->| ifrgap_cnt|
+	 *                                                      +-----------+
+	 * Requirements:
+	 *   1. hbit_clk ~= 600 kHz: 16 MHz / 600 kHz = 26.67
+	 *   2. tTransitionWindow - 12 to 20 uSec
+	 *   3. tInterframGap - uSec
+	 *
+	 * hbit_clk = HSI_clk / 27 = 592.6 kHz = 1.687 uSec period
+	 * tTransitionWindow = 1.687 uS * 8 = 13.5 uS
+	 * tInterFrameGap = 1.687 uS * 17 = 28.68 uS
+	 */
+	psc-ucpdclk = <1>;
+	hbitclkdiv = <27>;
+};
+
+zephyr_udc0: &usb {
+	/* Twinkie V2 Command Shell */
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "CDC_ACM_0";
+	};
+
+	/* Twinkie V2 Packet Logging */
+	cdc_acm_uart1: cdc_acm_uart1 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "CDC_ACM_1";
+	};
+
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};

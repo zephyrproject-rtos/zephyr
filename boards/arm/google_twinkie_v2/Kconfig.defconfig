@@ -1,0 +1,11 @@
+# Google Twinkie V2 board configuration
+
+# Copyright 2022 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_GOOGLE_TWINKIE_V2
+
+config BOARD
+	default "google_twinkie_v2"
+
+endif # BOARD_GOOGLE_TWINKIE_V2
