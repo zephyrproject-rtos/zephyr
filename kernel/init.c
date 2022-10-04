@@ -60,6 +60,17 @@ extern const struct init_entry __init_POST_KERNEL_start[];
 extern const struct init_entry __init_APPLICATION_start[];
 extern const struct init_entry __init_end[];
 
+enum init_level {
+	INIT_LEVEL_EARLY = 0,
+	INIT_LEVEL_PRE_KERNEL_1,
+	INIT_LEVEL_PRE_KERNEL_2,
+	INIT_LEVEL_POST_KERNEL,
+	INIT_LEVEL_APPLICATION,
+#ifdef CONFIG_SMP
+	INIT_LEVEL_SMP,
+#endif
+};
+
 #ifdef CONFIG_SMP
 extern const struct init_entry __init_SMP_start[];
 #endif
@@ -216,7 +227,7 @@ bool z_sys_post_kernel;
  *
  * @param level init level to run.
  */
-static void z_sys_init_run_level(int32_t level)
+static void z_sys_init_run_level(enum init_level level)
 {
 	static const struct init_entry *levels[] = {
 		__init_EARLY_start,
@@ -279,7 +290,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_MMU */
 	z_sys_post_kernel = true;
 
-	z_sys_init_run_level(_SYS_INIT_LEVEL_POST_KERNEL);
+	z_sys_init_run_level(INIT_LEVEL_POST_KERNEL);
 #if CONFIG_STACK_POINTER_RANDOM
 	z_stack_adjust_initialized = 1;
 #endif
@@ -291,7 +302,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 
 	/* Final init level before app starts */
-	z_sys_init_run_level(_SYS_INIT_LEVEL_APPLICATION);
+	z_sys_init_run_level(INIT_LEVEL_APPLICATION);
 
 	z_init_static_threads();
 
@@ -303,7 +314,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	if (!IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
 		z_smp_init();
 	}
-	z_sys_init_run_level(_SYS_INIT_LEVEL_SMP);
+	z_sys_init_run_level(INIT_LEVEL_SMP);
 #endif
 
 #ifdef CONFIG_MMU
@@ -489,7 +500,7 @@ FUNC_NORETURN void z_cstart(void)
 	gcov_static_init();
 
 	/* initialize early init calls */
-	z_sys_init_run_level(_SYS_INIT_LEVEL_EARLY);
+	z_sys_init_run_level(INIT_LEVEL_EARLY);
 
 	/* perform any architecture-specific initialization */
 	arch_kernel_init();
@@ -508,8 +519,8 @@ FUNC_NORETURN void z_cstart(void)
 	z_device_state_init();
 
 	/* perform basic hardware initialization */
-	z_sys_init_run_level(_SYS_INIT_LEVEL_PRE_KERNEL_1);
-	z_sys_init_run_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
+	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
+	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_2);
 
 #ifdef CONFIG_STACK_CANARIES
 	uintptr_t stack_guard;
