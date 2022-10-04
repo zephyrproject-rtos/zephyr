@@ -742,7 +742,7 @@ class ProjectBuilder(FilterBuilder):
 
         # merge overlay files into one variable
         def extract_overlays(args):
-            re_overlay = re.compile('OVERLAY_CONFIG=(.*)')
+            re_overlay = re.compile('^\s*OVERLAY_CONFIG=(.*)')
             other_args = []
             overlays = []
             for arg in args:
