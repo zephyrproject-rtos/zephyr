@@ -9,6 +9,7 @@
 
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/irq.h>
 #include <fsl_wdog.h>
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL

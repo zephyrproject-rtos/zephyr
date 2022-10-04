@@ -9,6 +9,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <errno.h>
 #include <zephyr/drivers/pwm.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <fsl_pwt.h>
 #include <fsl_clock.h>

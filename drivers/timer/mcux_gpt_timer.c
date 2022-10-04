@@ -12,7 +12,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/time_units.h>
-
+#include <zephyr/irq.h>
 
 
 /* GPT is a 32 bit counter, but we use a lower value to avoid integer overflow */

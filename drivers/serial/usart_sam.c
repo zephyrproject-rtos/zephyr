@@ -21,6 +21,7 @@
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/irq.h>
 
 /* Device constant configuration parameters */
 struct usart_sam_dev_cfg {

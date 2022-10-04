@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/irq.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
 #include "fsl_ostimer.h"
