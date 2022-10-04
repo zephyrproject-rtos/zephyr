@@ -240,31 +240,23 @@ static void discover_members_timer_handler(struct k_work *work)
 	}
 }
 
-static int cmd_csis_client_init(const struct shell *sh, size_t argc,
-				char *argv[])
-{
-	static bool initialized;
-
-	if (initialized) {
-		return -EALREADY;
-	}
-
-	k_work_init_delayable(&discover_members_timer,
-			      discover_members_timer_handler);
-	bt_le_scan_cb_register(&csis_client_scan_callbacks);
-	bt_csis_client_register_cb(&cbs);
-	bt_conn_cb_register(&conn_callbacks);
-
-	initialized = true;
-
-	return 0;
-}
-
 static int cmd_csis_client_discover(const struct shell *sh, size_t argc,
 				    char *argv[])
 {
+	static bool initialized;
 	int err;
 	long member_index = 0;
+
+	if (!initialized) {
+		k_work_init_delayable(&discover_members_timer,
+				      discover_members_timer_handler);
+		bt_le_scan_cb_register(&csis_client_scan_callbacks);
+		bt_csis_client_register_cb(&cbs);
+		bt_conn_cb_register(&conn_callbacks);
+		initialized = true;
+	}
+
+	initialized = true;
 
 	if (argc > 1) {
 		member_index = strtol(argv[1], NULL, 0);
@@ -491,9 +483,6 @@ static int cmd_csis_client(const struct shell *sh, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(csis_client_cmds,
-	SHELL_CMD_ARG(init, NULL,
-		      "Initialize CSIS_CLIENT",
-		      cmd_csis_client_init, 1, 1),
 	SHELL_CMD_ARG(discover, NULL,
 		      "Run discover for CSIS on peer device [member_index]",
 		      cmd_csis_client_discover, 1, 1),
