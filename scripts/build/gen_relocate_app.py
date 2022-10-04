@@ -464,24 +464,35 @@ def create_dict_wrt_mem():
 
     if args.input_rel_dict == '':
         sys.exit("Disable CONFIG_CODE_DATA_RELOCATION if no file needs relocation")
-    for line in args.input_rel_dict.split(';'):
+    for line in args.input_rel_dict.split('|'):
         if ':' not in line:
             continue
 
-        mem_region, phdr, copy_flag, file_name = parse_input_string(line)
+        mem_region, phdr, copy_flag, file_list = parse_input_string(line)
 
         # Handle any program header
         if phdr != '':
             phdrs[mem_region] = f':{phdr}'
 
-        file_name_list = glob.glob(file_name)
-        if not file_name_list:
-            warnings.warn("File: "+file_name+" Not found")
+        # Split file names by semicolons, to support generator expressions
+        file_glob_list = file_list.split(';')
+        file_name_list = []
+        # Use glob matching on each file in the list
+        for file_glob in file_glob_list:
+            glob_results = glob.glob(file_glob)
+            if not glob_results:
+                warnings.warn("File: "+file_glob+" Not found")
+                continue
+            elif len(glob_results) > 1:
+                warnings.warn("Regex in file lists is deprecated, please use file(GLOB) instead")
+            file_name_list.extend(glob_results)
+        if len(file_name_list) == 0:
+            warnings.warn("No files in string: "+file_list+" found")
             continue
         if mem_region == '':
             continue
         if args.verbose:
-            print("Memory region ", mem_region, " Selected for file:", file_name_list)
+            print("Memory region ", mem_region, " Selected for files:", file_name_list)
 
         mem_region = "|".join((mem_region, copy_flag))
 
