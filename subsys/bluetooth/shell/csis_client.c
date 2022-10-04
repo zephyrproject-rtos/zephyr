@@ -58,7 +58,7 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 
 	if (members_found == 0) {
 		shell_print(ctx_shell, "Assuming member[0] connected");
-		set_members[0].conn = conn;
+		set_members[0].conn = bt_conn_ref(conn);
 		bt_addr_le_copy(&addr_found[0], bt_conn_get_dst(conn));
 		members_found = 1;
 		return;
@@ -66,7 +66,7 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 
 	for (uint8_t i = 0; i < members_found; i++) {
 		if (bt_addr_le_eq(bt_conn_get_dst(conn), &addr_found[i])) {
-			set_members[i].conn = conn;
+			set_members[i].conn = bt_conn_ref(conn);
 			shell_print(ctx_shell, "Member[%u] connected", i);
 			return;
 		}
@@ -75,8 +75,27 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 		   bt_conn_index(conn));
 }
 
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Disconnected: %s (reason 0x%02x)\n", addr, reason);
+
+	for (uint8_t i = 0; i < members_found; i++) {
+		if (set_members[i].conn == conn) {
+			bt_conn_unref(set_members[i].conn);
+			set_members[i].conn = NULL;
+			members_found--;
+			break;
+		}
+	}
+}
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected_cb,
+	.disconnected = disconnected_cb,
 };
 
 static void csis_discover_cb(struct bt_csis_client_set_member *member, int err,
