@@ -468,6 +468,8 @@ endfunction()
 
 #
 # zephyr_library versions of normal CMake target_<func> functions
+# Note, paths passed to this function must be relative in order
+# to support the library relocation feature of zephyr_code_relocate
 #
 function(zephyr_library_sources source)
   target_sources(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${source} ${ARGN})
@@ -1283,22 +1285,85 @@ endfunction(zephyr_linker_sources)
 
 
 # Helper function for CONFIG_CODE_DATA_RELOCATION
-# Call this function with 2 arguments file and then memory location.
-# One optional [NOCOPY] flag can be used.
-function(zephyr_code_relocate file location)
+# This function may either be invoked with a list of files, or a library
+# name to relocate.
+#
+# The FILES directive will relocate a list of files (wildcards supported)
+# This directive will relocate file1. and file2.c to SRAM:
+# zephyr_code_relocate(FILES file1.c file2.c LOCATION SRAM)
+# Note, files can also be passed as a comma separated list to support using
+# cmake generator arguments
+#
+# The LIBRARY directive will relocate a library
+# This directive will relocate the target my_lib to SRAM:
+# zephyr_code_relocate(LIBRARY my_lib SRAM)
+#
+# The following optional arguments are supported:
+# - NOCOPY: this flag indicates that the file data does not need to be copied
+#   at boot time (For example, for flash XIP).
+# - PHDR [program_header]: add program header. Used on Xtensa platforms.
+function(zephyr_code_relocate)
   set(options NOCOPY)
-  cmake_parse_arguments(CODE_REL "${options}" "" "" ${ARGN})
-  if(NOT IS_ABSOLUTE ${file})
-    set(file ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+  set(single_args LIBRARY LOCATION PHDR)
+  set(multi_args FILES)
+  cmake_parse_arguments(CODE_REL "${options}" "${single_args}"
+    "${multi_args}" ${ARGN})
+  # Argument validation
+  if(CODE_REL_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "zephyr_code_relocate(${ARGV0} ...) "
+      "given unknown arguments: ${CODE_REL_UNPARSED_ARGUMENTS}")
+  endif()
+  if((NOT CODE_REL_FILES) AND (NOT CODE_REL_LIBRARY))
+    message(FATAL_ERROR
+      "zephyr_code_relocate() requires either FILES or LIBRARY be provided")
+  endif()
+  if(CODE_REL_FILES AND CODE_REL_LIBRARY)
+    message(FATAL_ERROR "zephyr_code_relocate() only accepts "
+      "one argument between FILES and LIBRARY")
+  endif()
+  if(NOT CODE_REL_LOCATION)
+    message(FATAL_ERROR "zephyr_code_relocate() requires a LOCATION argument")
+  endif()
+  if(CODE_REL_LIBRARY)
+    # Use cmake generator expression to convert library to file list
+    set(genex_src_dir "$<TARGET_PROPERTY:${CODE_REL_LIBRARY},SOURCE_DIR>")
+    set(genex_src_list "$<TARGET_PROPERTY:${CODE_REL_LIBRARY},SOURCES>")
+    set(file_list
+      "${genex_src_dir}/$<JOIN:${genex_src_list},$<SEMICOLON>${genex_src_dir}/>")
+  else()
+    # Check if CODE_REL_FILES is a generator expression, if so leave it
+    # untouched.
+    string(GENEX_STRIP "${CODE_REL_FILES}" no_genex)
+    if(CODE_REL_FILES STREQUAL no_genex)
+      # no generator expression in CODE_REL_FILES, check if list of files
+      # is absolute
+      foreach(file ${CODE_REL_FILES})
+        if(NOT IS_ABSOLUTE ${file})
+          set(file ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+        endif()
+        list(APPEND file_list ${file})
+      endforeach()
+    else()
+      # Generator expression is present in file list. Leave the list untouched.
+      set(file_list ${CODE_REL_FILES})
+    endif()
   endif()
   if(NOT CODE_REL_NOCOPY)
     set(copy_flag COPY)
   else()
     set(copy_flag NOCOPY)
   endif()
+  if(CODE_REL_PHDR)
+    set(CODE_REL_LOCATION "${CODE_REL_LOCATION}\ :${CODE_REL_PHDR}")
+  endif()
+  # We use the "|" character to separate code relocation directives instead
+  # of using CMake lists. This way, the ";" character can be reserved for
+  # generator expression file lists.
+  get_property(code_rel_str TARGET code_data_relocation_target
+    PROPERTY COMPILE_DEFINITIONS)
   set_property(TARGET code_data_relocation_target
-    APPEND PROPERTY COMPILE_DEFINITIONS
-    "${location}:${copy_flag}:${file}")
+    PROPERTY COMPILE_DEFINITIONS
+    "${code_rel_str}|${CODE_REL_LOCATION}:${copy_flag}:${file_list}")
 endfunction()
 
 # Usage:
