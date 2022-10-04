@@ -1377,6 +1377,9 @@ static int uart_stm32_async_tx_abort(const struct device *dev)
 		data->dma_tx.counter = tx_buffer_length - stat.pending_length;
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_dma)
+	dma_suspend(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
+#endif /* st_stm32u5_dma */
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
 	async_evt_tx_abort(data);
 
