@@ -52,6 +52,18 @@ static K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_idle_stacks,
 					  CONFIG_IDLE_STACK_SIZE);
 #endif /* CONFIG_MULTITHREADING */
 
+extern const struct init_entry __init_start[];
+extern const struct init_entry __init_EARLY_start[];
+extern const struct init_entry __init_PRE_KERNEL_1_start[];
+extern const struct init_entry __init_PRE_KERNEL_2_start[];
+extern const struct init_entry __init_POST_KERNEL_start[];
+extern const struct init_entry __init_APPLICATION_start[];
+extern const struct init_entry __init_end[];
+
+#ifdef CONFIG_SMP
+extern const struct init_entry __init_SMP_start[];
+#endif
+
 /*
  * storage space for the interrupt stack
  *
@@ -192,6 +204,55 @@ extern volatile uintptr_t __stack_chk_guard;
 
 __pinned_bss
 bool z_sys_post_kernel;
+
+/**
+ * @brief Execute all the init entry initialization functions at a given level
+ *
+ * @details Invokes the initialization routine for each init entry object
+ * created by the INIT_ENTRY_DEFINE() macro using the specified level.
+ * The linker script places the init entry objects in memory in the order
+ * they need to be invoked, with symbols indicating where one level leaves
+ * off and the next one begins.
+ *
+ * @param level init level to run.
+ */
+static void z_sys_init_run_level(int32_t level)
+{
+	static const struct init_entry *levels[] = {
+		__init_EARLY_start,
+		__init_PRE_KERNEL_1_start,
+		__init_PRE_KERNEL_2_start,
+		__init_POST_KERNEL_start,
+		__init_APPLICATION_start,
+#ifdef CONFIG_SMP
+		__init_SMP_start,
+#endif
+		/* End marker */
+		__init_end,
+	};
+	const struct init_entry *entry;
+
+	for (entry = levels[level]; entry < levels[level+1]; entry++) {
+		const struct device *dev = entry->dev;
+		int rc = entry->init(dev);
+
+		if (dev != NULL) {
+			/* Mark device initialized.  If initialization
+			 * failed, record the error condition.
+			 */
+			if (rc != 0) {
+				if (rc < 0) {
+					rc = -rc;
+				}
+				if (rc > UINT8_MAX) {
+					rc = UINT8_MAX;
+				}
+				dev->state->init_res = rc;
+			}
+			dev->state->initialized = true;
+		}
+	}
+}
 
 extern void boot_banner(void);
 

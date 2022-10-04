@@ -53,8 +53,6 @@ struct init_entry {
 	const struct device *dev;
 };
 
-void z_sys_init_run_level(int32_t level);
-
 /**
  * @brief Construct a namespaced identifier for SYS_INIT instance
  *
