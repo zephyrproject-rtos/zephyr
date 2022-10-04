@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/drivers/entropy.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 #include <soc.h>
 #include <hal/nrf_rng.h>

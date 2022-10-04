@@ -10,6 +10,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/ec_host_cmd_periph.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 
 #ifndef CONFIG_ARCH_POSIX

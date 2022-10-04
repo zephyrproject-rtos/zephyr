@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/kernel.h>
 
 #include "ssd1306_regs.h"
 #include <zephyr/display/cfb.h>

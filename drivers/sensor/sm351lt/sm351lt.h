@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
 
 #define SENSOR_ATTR_SM351LT_TRIGGER_TYPE SENSOR_ATTR_PRIV_START
 

@@ -6,6 +6,7 @@
 
 #include <errno.h>
 #include <zephyr/drivers/pwm.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <device_imx.h>
 #include <zephyr/drivers/pinctrl.h>

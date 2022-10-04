@@ -70,6 +70,7 @@
 #include <assert.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 
 #include <zephyr/logging/log.h>

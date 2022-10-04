@@ -8,6 +8,7 @@
  * Bus-specific functionality for BMI270s accessed via SPI.
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include "bmi270.h"
 

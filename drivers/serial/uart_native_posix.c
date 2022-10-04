@@ -18,6 +18,8 @@
 #include <poll.h>
 
 #include <zephyr/drivers/uart.h>
+#include <zephyr/kernel.h>
+
 #include "cmdline.h" /* native_posix command line options header */
 #include "soc.h"
 

@@ -12,6 +12,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <zephyr/sys/util.h>
 

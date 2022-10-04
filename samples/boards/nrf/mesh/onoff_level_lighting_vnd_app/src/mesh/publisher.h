@@ -8,6 +8,8 @@
 #ifndef _PUBLISHER_H
 #define _PUBLISHER_H
 
+#include <zephyr/kernel.h>
+
 /* Others */
 #define LEVEL_S0   -32768
 #define LEVEL_S25  -16384
