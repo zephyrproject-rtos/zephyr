@@ -8,6 +8,7 @@ menuconfig APIC_TIMER
 	depends on X86
 	depends on LOAPIC
 	select TICKLESS_CAPABLE
+	select SYSTEM_CLOCK_LOCK_FREE_COUNT
 	help
 	  Use the x86 local APIC in one-shot mode as the system time
 	  source.  NOTE: this probably isn't what you want except on
