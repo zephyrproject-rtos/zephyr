@@ -80,7 +80,7 @@ struct init_entry {
  * Each init entry is placed in a section with a name crafted so that it allows
  * linker scripts to sort them according to the specified level/priority.
  */
-#define Z_INIT_ENTRY_SECTION(level, prio) \
+#define Z_INIT_ENTRY_SECTION(level, prio)                                      \
 	__attribute__((__section__(".z_init_" #level STRINGIFY(prio)"_")))
 
 /**
@@ -98,12 +98,12 @@ struct init_entry {
  *
  * @see SYS_INIT()
  */
-#define Z_INIT_ENTRY_DEFINE(init_id, init_fn, device, level, prio)	\
-	static const Z_DECL_ALIGN(struct init_entry)			\
-		Z_INIT_ENTRY_NAME(init_id) __used __noasan		\
-		Z_INIT_ENTRY_SECTION(level, prio) = { 			\
-		.init = (init_fn),					\
-		.dev = (device),					\
+#define Z_INIT_ENTRY_DEFINE(init_id, init_fn, device, level, prio)             \
+	static const Z_DECL_ALIGN(struct init_entry)                           \
+		Z_INIT_ENTRY_SECTION(level, prio) __used __noasan              \
+		Z_INIT_ENTRY_NAME(init_id) = {                                 \
+			.init = (init_fn),                                     \
+			.dev = (device),                                       \
 	}
 
 /** @endcond */
@@ -124,7 +124,7 @@ struct init_entry {
  * expressions are **not** permitted (e.g.
  * `CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5`).
  */
-#define SYS_INIT(init_fn, level, prio)					\
+#define SYS_INIT(init_fn, level, prio)                                         \
 	SYS_INIT_NAMED(init_fn, init_fn, level, prio)
 
 /**
@@ -140,7 +140,7 @@ struct init_entry {
  *
  * @see SYS_INIT()
  */
-#define SYS_INIT_NAMED(name, init_fn, level, prio)				\
+#define SYS_INIT_NAMED(name, init_fn, level, prio)                             \
 	Z_INIT_ENTRY_DEFINE(name, init_fn, NULL, level, prio)
 
 /** @} */
