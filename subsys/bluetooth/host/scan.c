@@ -1345,6 +1345,15 @@ uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync)
 	return (uint8_t)index;
 }
 
+struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_index(uint8_t index)
+{
+	if (index >= ARRAY_SIZE(per_adv_sync_pool)) {
+		return NULL;
+	}
+
+	return &per_adv_sync_pool[index];
+}
+
 int bt_le_per_adv_sync_get_info(struct bt_le_per_adv_sync *per_adv_sync,
 				struct bt_le_per_adv_sync_info *info)
 {
