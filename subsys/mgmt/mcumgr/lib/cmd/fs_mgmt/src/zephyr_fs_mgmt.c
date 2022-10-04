@@ -77,19 +77,10 @@ fs_mgmt_impl_write(const char *path, size_t offset, const void *data,
 {
 	struct fs_file_t file;
 	int rc;
+	size_t file_size = 0;
 
-	/* Truncate the file before writing the first chunk.  This is done to
-	 * properly handle an overwrite of an existing file
-	 */
 	if (offset == 0) {
-		/* Try to truncate file; this will return -ENOENT if file
-		 * does not exist so ignore it. Fs may log error -2 here,
-		 * just ignore it.
-		 */
-		rc = fs_unlink(path);
-		if (rc < 0 && rc != -ENOENT) {
-			return rc;
-		}
+		rc = fs_mgmt_impl_filelen(path, &file_size);
 	}
 
 	fs_file_t_init(&file);
@@ -98,9 +89,35 @@ fs_mgmt_impl_write(const char *path, size_t offset, const void *data,
 		return MGMT_ERR_EUNKNOWN;
 	}
 
-	rc = fs_seek(&file, offset, FS_SEEK_SET);
-	if (rc != 0) {
-		goto done;
+	if (offset == 0 && file_size > 0) {
+		/* Offset is 0 and existing file exists with data, attempt to truncate the file
+		 * size to 0
+		 */
+		rc = fs_truncate(&file, 0);
+
+		if (rc == -ENOTSUP) {
+			/* Truncation not supported by filesystem, therefore close file, delete
+			 * it then re-open it
+			 */
+			fs_close(&file);
+
+			rc = fs_unlink(path);
+			if (rc < 0 && rc != -ENOENT) {
+				return rc;
+			}
+
+			rc = fs_open(&file, path, FS_O_CREATE | FS_O_WRITE);
+		}
+
+		if (rc < 0) {
+			/* Failed to truncate file */
+			return MGMT_ERR_EUNKNOWN;
+		}
+	} else if (offset > 0) {
+		rc = fs_seek(&file, offset, FS_SEEK_SET);
+		if (rc != 0) {
+			goto done;
+		}
 	}
 
 	rc = fs_write(&file, data, len);
