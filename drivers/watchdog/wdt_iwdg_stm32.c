@@ -11,6 +11,7 @@
 
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys_clock.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_iwdg.h>

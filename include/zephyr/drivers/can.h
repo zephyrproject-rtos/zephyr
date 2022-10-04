@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <string.h>
+#include <zephyr/sys_clock.h>
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
