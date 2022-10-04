@@ -338,7 +338,8 @@ enum sensor_attribute {
  * @param trigger The trigger
  */
 typedef void (*sensor_trigger_handler_t)(const struct device *dev,
-					 const struct sensor_trigger *trigger);
+					 const struct sensor_trigger *trigger,
+					 void *userdata);
 
 /**
  * @typedef sensor_attr_set_t
@@ -370,7 +371,8 @@ typedef int (*sensor_attr_get_t)(const struct device *dev,
  */
 typedef int (*sensor_trigger_set_t)(const struct device *dev,
 				    const struct sensor_trigger *trig,
-				    sensor_trigger_handler_t handler);
+				    sensor_trigger_handler_t handler,
+					void *userdata);
 /**
  * @typedef sensor_sample_fetch_t
  * @brief Callback API for fetching data from a sensor
@@ -480,7 +482,8 @@ static inline int z_impl_sensor_attr_get(const struct device *dev,
  */
 static inline int sensor_trigger_set(const struct device *dev,
 				     const struct sensor_trigger *trig,
-				     sensor_trigger_handler_t handler)
+				     sensor_trigger_handler_t handler,
+					 void *userdata)
 {
 	const struct sensor_driver_api *api =
 		(const struct sensor_driver_api *)dev->api;
@@ -489,7 +492,7 @@ static inline int sensor_trigger_set(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return api->trigger_set(dev, trig, handler);
+	return api->trigger_set(dev, trig, handler, userdata);
 }
 
 /**

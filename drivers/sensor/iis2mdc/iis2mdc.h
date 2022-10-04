@@ -58,6 +58,7 @@ struct iis2mdc_data {
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t handler_drdy;
+	void *handler_userdata;
 
 #if defined(CONFIG_IIS2MDC_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_IIS2MDC_THREAD_STACK_SIZE);
@@ -76,7 +77,8 @@ int iis2mdc_i2c_init(const struct device *dev);
 int iis2mdc_init_interrupt(const struct device *dev);
 int iis2mdc_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
-			  sensor_trigger_handler_t handler);
+			  sensor_trigger_handler_t handler,
+			  void *userdata);
 #endif /* CONFIG_IIS2MDC_TRIGGER */
 
 #endif /* __MAG_IIS2MDC_H */

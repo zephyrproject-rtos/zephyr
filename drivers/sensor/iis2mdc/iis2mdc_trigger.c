@@ -29,13 +29,15 @@ static int iis2mdc_enable_int(const struct device *dev, int enable)
 /* link external trigger to event data ready */
 int iis2mdc_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
-			  sensor_trigger_handler_t handler)
+			  sensor_trigger_handler_t handler,
+			  void *userdata)
 {
 	struct iis2mdc_data *iis2mdc = dev->data;
 	int16_t raw[3];
 
 	if (trig->chan == SENSOR_CHAN_MAGN_XYZ) {
 		iis2mdc->handler_drdy = handler;
+		iis2mdc->handler_userdata = userdata;
 		if (handler) {
 			/* fetch raw data sample: re-trigger lost interrupt */
 			iis2mdc_magnetic_raw_get(iis2mdc->ctx, raw);
@@ -59,7 +61,7 @@ static void iis2mdc_handle_interrupt(const struct device *dev)
 	};
 
 	if (iis2mdc->handler_drdy != NULL) {
-		iis2mdc->handler_drdy(dev, &drdy_trigger);
+		iis2mdc->handler_drdy(dev, &drdy_trigger, iis2mdc->handler_userdata);
 	}
 
 	gpio_pin_interrupt_configure_dt(&config->gpio_drdy,
