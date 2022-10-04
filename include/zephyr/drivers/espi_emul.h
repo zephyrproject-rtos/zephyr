@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/espi.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/types.h>
 
 /**
