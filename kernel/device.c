@@ -7,6 +7,7 @@
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/kobject.h>
 #include <zephyr/syscall_handler.h>
 
 extern const struct init_entry __init_start[];
