@@ -9,6 +9,7 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
 
 struct ina23x_trigger {
 	struct gpio_callback gpio_cb;

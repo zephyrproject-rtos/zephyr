@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <fsl_i2c.h>
 #include <fsl_clock.h>

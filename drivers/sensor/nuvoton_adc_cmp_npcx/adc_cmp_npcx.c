@@ -7,7 +7,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc/adc_npcx_threshold.h>
 #include <zephyr/drivers/sensor/adc_cmp_npcx.h>
-
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(adc_cmp_npcx, CONFIG_SENSOR_LOG_LEVEL);

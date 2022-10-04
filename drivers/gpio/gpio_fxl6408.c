@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
 #include "gpio_utils.h"
 #include <zephyr/logging/log.h>
 

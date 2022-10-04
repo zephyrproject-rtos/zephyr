@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/irq.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/sys/util.h>
 #include <altera_common.h>

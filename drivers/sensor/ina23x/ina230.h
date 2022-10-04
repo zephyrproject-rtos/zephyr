@@ -10,6 +10,7 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
 
 #define INA230_REG_CONFIG     0x00
 #define INA230_REG_SHUNT_VOLT 0x01
