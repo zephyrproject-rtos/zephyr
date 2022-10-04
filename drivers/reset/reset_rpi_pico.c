@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT raspberrypi_pico_reset
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/reset.h>
 

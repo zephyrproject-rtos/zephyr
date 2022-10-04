@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT intel_cavs_intc
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/irq_nextlevel.h>
 #include "intc_cavs.h"

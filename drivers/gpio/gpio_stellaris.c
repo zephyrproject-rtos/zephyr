@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT ti_stellaris_gpio
 
 #include <errno.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <soc.h>

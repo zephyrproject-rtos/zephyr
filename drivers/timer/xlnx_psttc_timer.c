@@ -7,6 +7,7 @@
 
 #define DT_DRV_COMPAT xlnx_ttcps
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <soc.h>
 #include <zephyr/drivers/timer/system_timer.h>

@@ -10,6 +10,7 @@
  * NOTE: This driver implements the GICv1 and GICv2 interfaces.
  */
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>

@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT sifive_pwm0
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/device.h>
