@@ -56,14 +56,6 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 
 	/* TODO: Handle RPAs */
 
-	if (members_found == 0) {
-		shell_print(ctx_shell, "Assuming member[0] connected");
-		set_members[0].conn = bt_conn_ref(conn);
-		bt_addr_le_copy(&addr_found[0], bt_conn_get_dst(conn));
-		members_found = 1;
-		return;
-	}
-
 	for (uint8_t i = 0; i < members_found; i++) {
 		if (bt_addr_le_eq(bt_conn_get_dst(conn), &addr_found[i])) {
 			set_members[i].conn = bt_conn_ref(conn);
@@ -108,6 +100,14 @@ static void csis_discover_cb(struct bt_csis_client_set_member *member, int err,
 
 	if (set_count == 0) {
 		shell_warn(ctx_shell, "Device has no sets");
+		return;
+	}
+
+	if (members_found == 0) {
+		shell_print(ctx_shell, "Member[0] connected");
+		set_members[0].conn = bt_conn_ref(member->conn);
+		bt_addr_le_copy(&addr_found[0], bt_conn_get_dst(member->conn));
+		members_found = 1;
 		return;
 	}
 
