@@ -311,6 +311,11 @@ Boards & SoC Support
 Build system and infrastructure
 *******************************
 
+* Code relocation
+
+  * ``zephyr_code_relocate`` API has changed to accept a list of files to
+    relocate and a location to place the files.
+
 Drivers and Sensors
 *******************
 
