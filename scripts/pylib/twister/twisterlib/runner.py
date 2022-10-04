@@ -783,8 +783,9 @@ class ProjectBuilder(FilterBuilder):
             args += instance.handler.args
 
         # merge overlay files into one variable
+        # overlays with prefixes won't be merged but pass to cmake as they are
         def extract_overlays(args):
-            re_overlay = re.compile('OVERLAY_CONFIG=(.*)')
+            re_overlay = re.compile(r'^\s*OVERLAY_CONFIG=(.*)')
             other_args = []
             overlays = []
             for arg in args:
