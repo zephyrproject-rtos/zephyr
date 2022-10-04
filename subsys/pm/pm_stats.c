@@ -8,7 +8,7 @@
 #include "pm_stats.h"
 
 #include <zephyr/init.h>
-#include <zephyr/kernel_structs.h>
+#include <zephyr/kernel.h>
 #include <zephyr/stats/stats.h>
 #include <zephyr/sys/printk.h>
 

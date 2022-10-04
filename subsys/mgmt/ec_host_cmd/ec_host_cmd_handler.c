@@ -7,6 +7,7 @@
 #include <zephyr/drivers/ec_host_cmd_periph.h>
 #include <zephyr/mgmt/ec_host_cmd.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 
 #if !DT_HAS_CHOSEN(zephyr_ec_host_interface)

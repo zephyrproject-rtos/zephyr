@@ -9,6 +9,7 @@
 
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>

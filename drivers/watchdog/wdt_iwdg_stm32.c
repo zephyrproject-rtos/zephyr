@@ -10,6 +10,7 @@
 #define DT_DRV_COMPAT st_stm32_watchdog
 
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_iwdg.h>

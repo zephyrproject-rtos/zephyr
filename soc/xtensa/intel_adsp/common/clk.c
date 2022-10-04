@@ -7,6 +7,7 @@
 #include <errno.h>
 
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 
 #include <adsp-clk.h>
 #include <adsp_shim.h>

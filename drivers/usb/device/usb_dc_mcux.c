@@ -13,6 +13,7 @@
 #include <zephyr/usb/usb_device.h>
 #include <soc.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include "usb.h"
 #include "usb_device.h"
 #include "usb_device_config.h"
