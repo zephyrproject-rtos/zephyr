@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT xlnx_xps_timer_1_00_a_pwm
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/sys/sys_io.h>
