@@ -13,6 +13,7 @@
 #define INCLUDE_ZEPHYR_DRIVERS_COREDUMP_H_
 
 #include <zephyr/device.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
