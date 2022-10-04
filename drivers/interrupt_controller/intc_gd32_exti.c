@@ -6,6 +6,8 @@
 
 #define DT_DRV_COMPAT gd_gd32_exti
 
+#include <errno.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/interrupt_controller/gd32_exti.h>
 #include <zephyr/sys/__assert.h>
