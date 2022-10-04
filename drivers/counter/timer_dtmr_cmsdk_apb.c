@@ -6,6 +6,8 @@
 
 #define DT_DRV_COMPAT arm_cmsdk_dtimer
 
+#include <limits.h>
+
 #include <zephyr/drivers/counter.h>
 #include <zephyr/device.h>
 #include <errno.h>

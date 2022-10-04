@@ -6,6 +6,8 @@
 
 #define DT_DRV_COMPAT nxp_os_timer
 
+#include <limits.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
