@@ -1,0 +1,8 @@
+# Copyright (c) 2023 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_IT82XX2_EVB
+
+config BOARD
+	default "it82xx2_evb"
+endif
