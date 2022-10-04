@@ -9,6 +9,8 @@
 
 #define DT_DRV_COMPAT intel_multiboot_framebuffer
 
+#include <errno.h>
+
 #include <zephyr/arch/x86/multiboot.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/display.h>

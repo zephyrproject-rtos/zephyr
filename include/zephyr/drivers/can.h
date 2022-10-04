@@ -8,6 +8,8 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CAN_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CAN_H_
 
+#include <errno.h>
+
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <string.h>
