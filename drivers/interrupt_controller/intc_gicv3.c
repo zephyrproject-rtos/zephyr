@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>

@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT neorv32_gpio
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/syscon.h>
