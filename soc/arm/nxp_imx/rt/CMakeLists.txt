@@ -31,10 +31,10 @@ endif()
 
 if (CONFIG_PM AND CONFIG_SOC_SERIES_IMX_RT10XX)
   zephyr_sources(power_rt10xx.c)
-  zephyr_code_relocate(power_rt10xx.c ITCM_TEXT)
+  zephyr_code_relocate(FILES power_rt10xx.c LOCATION ITCM_TEXT)
   if (CONFIG_SOC_MIMXRT1064)
     zephyr_sources(lpm_rt1064.c)
-    zephyr_code_relocate(lpm_rt1064.c ITCM_TEXT)
+    zephyr_code_relocate(FILES lpm_rt1064.c LOCATION ITCM_TEXT)
   endif()
 endif()
 
