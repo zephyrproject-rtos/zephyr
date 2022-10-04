@@ -77,9 +77,9 @@ struct init_entry {
 /**
  * @brief Construct a namespaced identifier for a struct init_entry instance
  *
- * @param entry_name Base unique name
+ * @param init_id Base unique name
  */
-#define Z_INIT_ENTRY_NAME(entry_name) _CONCAT(__init_, entry_name)
+#define Z_INIT_ENTRY_NAME(init_id) _CONCAT(__init_, init_id)
 
 /**
  * @brief Init entry section.
@@ -97,7 +97,7 @@ struct init_entry {
  * configured by the kernel during system initialization. Note that init
  * entries will not be accessible from user mode.
  *
- * @param entry_name Init entry name.
+ * @param init_id Init entry unique identifier.
  * @param init_fn Init function.
  * @param device Device instance (optional).
  * @param level Initialization level.
@@ -105,9 +105,9 @@ struct init_entry {
  *
  * @see SYS_INIT()
  */
-#define Z_INIT_ENTRY_DEFINE(entry_name, init_fn, device, level, prio)	\
+#define Z_INIT_ENTRY_DEFINE(init_id, init_fn, device, level, prio)	\
 	static const Z_DECL_ALIGN(struct init_entry)			\
-		Z_INIT_ENTRY_NAME(entry_name) __used __noasan		\
+		Z_INIT_ENTRY_NAME(init_id) __used __noasan		\
 		Z_INIT_ENTRY_SECTION(level, prio) = { 			\
 		.init = (init_fn),					\
 		.dev = (device),					\
