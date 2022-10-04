@@ -11,6 +11,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/irq.h>
 #include <zephyr/sys/sys_io.h>
 
 /* AXI UART Lite v2 registers offsets (See Xilinx PG142 for details) */

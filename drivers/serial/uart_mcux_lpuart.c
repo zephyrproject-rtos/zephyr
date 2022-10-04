@@ -13,6 +13,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/irq.h>
 #include <zephyr/pm/policy.h>
 #ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>

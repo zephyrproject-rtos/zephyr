@@ -12,7 +12,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
-
+#include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_xec, LOG_LEVEL_ERR);
 

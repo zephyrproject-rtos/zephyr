@@ -10,6 +10,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
+#include <zephyr/irq.h>
 
 #define DT_DRV_COMPAT renesas_rcar_cmt
 

@@ -10,6 +10,7 @@
 #include <zephyr/drivers/clock_control/gd32.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 
 #include <gd32_wwdgt.h>

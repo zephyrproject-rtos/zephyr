@@ -8,6 +8,7 @@
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
+#include <zephyr/irq.h>
 #include <zephyr/irq_nextlevel.h>
 #include "intc_cavs.h"
 

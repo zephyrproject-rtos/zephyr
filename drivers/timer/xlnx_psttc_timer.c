@@ -9,6 +9,7 @@
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include "xlnx_psttc_timer_priv.h"

@@ -18,6 +18,7 @@
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
 
 #include <soc.h>
 
