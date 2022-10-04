@@ -666,7 +666,7 @@ static struct net_stats_eth *eth_xlnx_gem_stats(const struct device *dev)
 {
 	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 
-	return &data->stats;
+	return &dev_data->stats;
 }
 #endif
 
