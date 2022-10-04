@@ -21,3 +21,19 @@ void expect_single_call_net_buf_unref(struct net_buf *buf);
  *   - net_buf_unref() isn't called at all
  */
 void expect_not_called_net_buf_unref(void);
+
+/*
+ *  Validate expected behaviour when net_buf_simple_add() is called
+ *
+ *  Expected behaviour:
+ *   - net_buf_simple_add() to be called once with correct parameters
+ */
+void expect_single_call_net_buf_simple_add(struct net_buf_simple *buf, size_t len);
+
+/*
+ *  Validate expected behaviour when net_buf_simple_add() isn't called
+ *
+ *  Expected behaviour:
+ *   - net_buf_simple_add() isn't called at all
+ */
+void expect_not_called_net_buf_simple_add(void);
