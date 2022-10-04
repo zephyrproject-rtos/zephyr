@@ -68,16 +68,9 @@ struct init_entry {
 /** @cond INTERNAL_HIDDEN */
 
 /**
- * @brief Construct a namespaced identifier for SYS_INIT instance
+ * @brief Obtain init entry name.
  *
- * @param name Base unique name
- */
-#define Z_SYS_NAME(name) _CONCAT(sys_init_, name)
-
-/**
- * @brief Construct a namespaced identifier for a struct init_entry instance
- *
- * @param init_id Base unique name
+ * @param init_id Init entry unique identifier.
  */
 #define Z_INIT_ENTRY_NAME(init_id) _CONCAT(__init_, init_id)
 
@@ -148,7 +141,7 @@ struct init_entry {
  * @see SYS_INIT()
  */
 #define SYS_INIT_NAMED(name, init_fn, level, prio)				\
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(name), init_fn, NULL, level, prio)
+	Z_INIT_ENTRY_DEFINE(name, init_fn, NULL, level, prio)
 
 /** @} */
 
