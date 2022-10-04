@@ -20,8 +20,8 @@
  *
  * @return 0 on success, negative errno otherwise.
  */
-static inline int espi_manage_callback(sys_slist_t *callbacks,
-				struct espi_callback *callback, bool set)
+static inline int espi_manage_callback(sys_slist_t *callbacks, struct espi_callback *callback,
+				       bool set)
 {
 	__ASSERT(callback, "No callback!");
 	__ASSERT(callback->handler, "No callback handler!");
@@ -50,8 +50,7 @@ static inline int espi_manage_callback(sys_slist_t *callbacks,
  * @param dev A pointer on the espi driver instance.
  * @param evt The details on the event that triggered the callback.
  */
-static inline void espi_send_callbacks(sys_slist_t *list,
-				       const struct device *dev,
+static inline void espi_send_callbacks(sys_slist_t *list, const struct device *dev,
 				       struct espi_event evt)
 {
 	struct espi_callback *cb, *tmp;
