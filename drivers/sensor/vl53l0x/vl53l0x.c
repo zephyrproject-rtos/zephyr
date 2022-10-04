@@ -274,9 +274,100 @@ static int vl53l0x_channel_get(const struct device *dev, enum sensor_channel cha
 	return 0;
 }
 
+static int vl53l0x_get_sampling_freq(const struct device *dev, struct sensor_value *val)
+{
+	uint32_t timing;
+	struct vl53l0x_data *drv_data = dev->data;
+	int ret = VL53L0X_GetMeasurementTimingBudgetMicroSeconds(&drv_data->vl53l0x, &timing);
+
+	if (ret) {
+		LOG_ERR("[%s] Unable to get measurement timing budget", dev->name);
+		return ret;
+	}
+	if (timing == 0) {
+		return -EINVAL;
+	}
+	val->val1 = USEC_PER_SEC / timing;
+	val->val2 = USEC_PER_SEC / (USEC_PER_SEC % timing) / timing;
+	return ret;
+}
+
+static int vl53l0x_set_sampling_freq(const struct device *dev, const struct sensor_value *val)
+{
+	struct vl53l0x_data *drv_data = dev->data;
+	uint64_t freq_microhertz = USEC_PER_SEC * val->val1 + val->val2;
+	uint64_t timing;
+	int r;
+
+	if (freq_microhertz == 0) {
+		return -EINVAL;
+	}
+
+	timing = USEC_PER_SEC * USEC_PER_SEC / freq_microhertz;
+
+	r = VL53L0X_SetMeasurementTimingBudgetMicroSeconds(&drv_data->vl53l0x, (uint32_t) timing);
+	if (r) {
+		LOG_ERR("[%s] Unable to set measurement timing budget", dev->name);
+		return r;
+	}
+	return r;
+}
+
+static int vl53l0x_attr_get(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, struct sensor_value *val)
+{
+	int r;
+	struct vl53l0x_data *drv_data = dev->data;
+
+	if (!vl53l0x_supports_chan(chan)) {
+		return -ENOTSUP;
+	}
+
+	if (!drv_data->started) {
+		r = vl53l0x_start(dev);
+		if (r) {
+			return r;
+		}
+	}
+
+	switch (attr) {
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		return vl53l0x_get_sampling_freq(dev, val);
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int vl53l0x_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
+{
+	int r;
+	struct vl53l0x_data *drv_data = dev->data;
+
+	if (!vl53l0x_supports_chan(chan)) {
+		return -ENOTSUP;
+	}
+
+	if (!drv_data->started) {
+		r = vl53l0x_start(dev);
+		if (r) {
+			return r;
+		}
+	}
+
+	switch (attr) {
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		return vl53l0x_set_sampling_freq(dev, val);
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static const struct sensor_driver_api vl53l0x_api_funcs = {
 	.sample_fetch = vl53l0x_sample_fetch,
 	.channel_get = vl53l0x_channel_get,
+	.attr_get = vl53l0x_attr_get,
+	.attr_set = vl53l0x_attr_set,
 };
 
 static int vl53l0x_init(const struct device *dev)
