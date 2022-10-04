@@ -18,7 +18,7 @@ the following devices:
 * FLASH
 * RADIO (Bluetooth Low Energy 5.0)
 
-.. figure:: img/nrf52_vbluno52.jpg
+.. figure:: img/nrf52_vbluno52.png
      :align: center
      :alt: nRF52 VBLUno52
 

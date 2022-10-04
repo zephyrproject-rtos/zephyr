@@ -63,7 +63,7 @@ static void test_ops_on_rd(void)
 	fs_close(&fs);
 }
 
-ZTEST(fat_fs_basic, test_fat_mount_rd_only)
+void test_fat_mount_rd_only(void)
 {
 	test_prepare();
 	test_ops_on_rd();

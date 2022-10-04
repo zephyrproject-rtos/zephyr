@@ -4,47 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/device.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
-
-/* andestech,machine-timer */
-#if DT_HAS_COMPAT_STATUS_OKAY(andestech_machine_timer)
-#define DT_DRV_COMPAT andestech_machine_timer
-
-#define MTIME_REG	DT_INST_REG_ADDR(0)
-#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 8)
-#define TIMER_IRQN	DT_INST_IRQN(0)
-/* neorv32-machine-timer */
-#elif DT_HAS_COMPAT_STATUS_OKAY(neorv32_machine_timer)
-#define DT_DRV_COMPAT neorv32_machine_timer
-
-#define MTIME_REG	DT_INST_REG_ADDR(0)
-#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 8)
-#define TIMER_IRQN	DT_INST_IRQN(0)
-/* nuclei,systimer */
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuclei_systimer)
-#define DT_DRV_COMPAT nuclei_systimer
-
-#define MTIME_REG	DT_INST_REG_ADDR(0)
-#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 8)
-#define TIMER_IRQN	DT_INST_IRQ_BY_IDX(0, 1, irq)
-/* sifive,clint0 */
-#elif DT_HAS_COMPAT_STATUS_OKAY(sifive_clint0)
-#define DT_DRV_COMPAT sifive_clint0
-
-#define MTIME_REG	(DT_INST_REG_ADDR(0) + 0xbff8U)
-#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 0x4000U)
-#define TIMER_IRQN	DT_INST_IRQ_BY_IDX(0, 1, irq)
-/* telink,machine-timer */
-#elif DT_HAS_COMPAT_STATUS_OKAY(telink_machine_timer)
-#define DT_DRV_COMPAT telink_machine_timer
-
-#define MTIME_REG	DT_INST_REG_ADDR(0)
-#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 8)
-#define TIMER_IRQN	DT_INST_IRQN(0)
-#endif
+#include <soc.h>
 
 #define CYC_PER_TICK ((uint32_t)((uint64_t) (sys_clock_hw_cycles_per_sec()			 \
 					     >> CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER) \
@@ -58,12 +21,12 @@
 static struct k_spinlock lock;
 static uint64_t last_count;
 #if defined(CONFIG_TEST)
-const int32_t z_sys_timer_irq_for_test = TIMER_IRQN;
+const int32_t z_sys_timer_irq_for_test = RISCV_MACHINE_TIMER_IRQ;
 #endif
 
 static uint64_t get_hart_mtimecmp(void)
 {
-	return MTIMECMP_REG + (_current_cpu->id * 8);
+	return RISCV_MTIMECMP_BASE + (_current_cpu->id * 8);
 }
 
 static void set_mtimecmp(uint64_t time)
@@ -88,9 +51,9 @@ static void set_mtimecmp(uint64_t time)
 static uint64_t mtime(void)
 {
 #ifdef CONFIG_64BIT
-	return *(volatile uint64_t *)MTIME_REG;
+	return *(volatile uint64_t *)RISCV_MTIME_BASE;
 #else
-	volatile uint32_t *r = (uint32_t *)MTIME_REG;
+	volatile uint32_t *r = (uint32_t *)RISCV_MTIME_BASE;
 	uint32_t lo, hi;
 
 	/* Likewise, must guard against rollover when reading */
@@ -193,10 +156,10 @@ static int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(TIMER_IRQN, 0, timer_isr, NULL, 0);
+	IRQ_CONNECT(RISCV_MACHINE_TIMER_IRQ, 0, timer_isr, NULL, 0);
 	last_count = mtime();
 	set_mtimecmp(last_count + CYC_PER_TICK);
-	irq_enable(TIMER_IRQN);
+	irq_enable(RISCV_MACHINE_TIMER_IRQ);
 	return 0;
 }
 
@@ -204,7 +167,7 @@ static int sys_clock_driver_init(const struct device *dev)
 void smp_timer_init(void)
 {
 	set_mtimecmp(last_count + CYC_PER_TICK);
-	irq_enable(TIMER_IRQN);
+	irq_enable(RISCV_MACHINE_TIMER_IRQ);
 }
 #endif
 

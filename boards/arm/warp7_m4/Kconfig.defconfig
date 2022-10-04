@@ -8,6 +8,9 @@ if BOARD_WARP7_M4
 config BOARD
 	default "warp7_m4"
 
+config I2C
+	default y if SENSOR
+
 config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER

@@ -18,6 +18,9 @@ properties:
     reg:
       required: true
 
+    label:
+      required: true
+
     "#gpio-cells":
       const: 2
 

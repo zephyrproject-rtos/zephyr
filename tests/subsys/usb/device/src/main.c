@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-#include <zephyr/tc_util.h>
+#include <ztest.h>
+#include <tc_util.h>
 
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usb_device.h>
@@ -91,18 +91,18 @@ USBD_DEFINE_CFG_DATA(device_config) = {
 	.endpoint = device_ep,
 };
 
-ZTEST(device_usb, test_usb_disable)
+static void test_usb_disable(void)
 {
 	zassert_equal(usb_disable(), TC_PASS, "usb_disable() failed");
 }
 
-ZTEST(device_usb, test_usb_deconfig)
+static void test_usb_deconfig(void)
 {
 	zassert_equal(usb_deconfig(), TC_PASS, "usb_deconfig() failed");
 }
 
 /* Test USB Device Controller API */
-ZTEST(device_usb, test_usb_dc_api)
+static void test_usb_dc_api(void)
 {
 	/* Control endpoints are configured */
 	zassert_equal(usb_dc_ep_mps(0x0), 64,
@@ -116,7 +116,7 @@ ZTEST(device_usb, test_usb_dc_api)
 }
 
 /* Test USB Device Controller API for invalid parameters */
-ZTEST(device_usb, test_usb_dc_api_invalid)
+static void test_usb_dc_api_invalid(void)
 {
 	uint32_t size;
 	uint8_t byte;
@@ -175,7 +175,7 @@ ZTEST(device_usb, test_usb_dc_api_invalid)
 			  "usb_dc_ep_mps(INVALID_EP)");
 }
 
-ZTEST(device_usb, test_usb_dc_api_read_write)
+static void test_usb_dc_api_read_write(void)
 {
 	uint32_t size;
 	uint8_t byte;
@@ -190,13 +190,24 @@ ZTEST(device_usb, test_usb_dc_api_read_write)
 }
 
 /* test case main entry */
-static void *device_usb_setup(void)
+void test_main(void)
 {
 	int ret;
 
 	ret = usb_enable(NULL);
-	zassume_true(ret == 0, "Failed to enable USB");
+	if (ret != 0) {
+		printk("Failed to enable USB\n");
+		return;
+	}
 
-	return NULL;
+	ztest_test_suite(test_device,
+			 /* Test API for not USB attached state */
+			 ztest_unit_test(test_usb_dc_api_invalid),
+			 ztest_unit_test(test_usb_dc_api),
+			 ztest_unit_test(test_usb_dc_api_read_write),
+			 ztest_unit_test(test_usb_dc_api_invalid),
+			 ztest_unit_test(test_usb_deconfig),
+			 ztest_unit_test(test_usb_disable));
+
+	ztest_run_test_suite(test_device);
 }
-ZTEST_SUITE(device_usb, NULL, device_usb_setup, NULL, NULL, NULL);

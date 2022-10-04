@@ -6,8 +6,8 @@
 
 menuconfig PWM_LITEX
 	bool "LiteX PWM driver"
-	default y
-	depends on DT_HAS_LITEX_PWM_ENABLED
+	depends on SOC_RISCV32_LITEX_VEXRISCV
+	depends on HAS_DTS
 	help
 	  Enable support for LiteX PWM driver
 

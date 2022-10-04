@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 extern void test_i2c_gy271(void);
 extern void test_i2c_burst_gy271(void);

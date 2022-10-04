@@ -23,8 +23,10 @@ This kit provides:
 - GPIOs exposed via screw terminals on the carrier board
 - Housing
 
-.. image:: img/dragino_lsn50.jpg
+.. image:: img/dragino_lsn50.png
+     :width: 531px
      :align: center
+     :height: 354px
      :alt: Dragino LSN50
 
 More information about the board can be found at the `Dragino LSN50 website`_.

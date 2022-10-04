@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/pm/pm.h>
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)

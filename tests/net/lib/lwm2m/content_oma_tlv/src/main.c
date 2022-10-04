@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include "lwm2m_util.h"
 #include "lwm2m_rw_oma_tlv.h"
@@ -54,19 +54,19 @@ static void context_reset(void)
 	test_path.level = LWM2M_PATH_LEVEL_RESOURCE;
 }
 
-static void test_prepare(void *dummy)
+static void test_prepare(void)
 {
 	context_reset();
 }
 
-static void test_prepare_nomem(void *dummy)
+static void test_prepare_nomem(void)
 {
 	context_reset();
 
 	test_packet.offset = sizeof(test_payload);
 }
 
-static void test_prepare_nodata(void *dummy)
+static void test_prepare_nodata(void)
 {
 	context_reset();
 
@@ -81,7 +81,7 @@ static void test_payload_set(const uint8_t *payload, size_t len)
 	test_in.offset = 1; /* Payload marker */
 }
 
-ZTEST(net_content_oma_tlv, test_put_s8)
+static void test_put_s8(void)
 {
 	int ret;
 	int i;
@@ -137,7 +137,7 @@ ZTEST(net_content_oma_tlv, test_put_s8)
 	}
 }
 
-ZTEST(net_content_oma_tlv_nomem, test_put_s8_nomem)
+static void test_put_s8_nomem(void)
 {
 	int ret;
 
@@ -145,7 +145,7 @@ ZTEST(net_content_oma_tlv_nomem, test_put_s8_nomem)
 	zassert_equal(ret, -ENOMEM, "Invalid error code returned");
 }
 
-ZTEST(net_content_oma_tlv, test_put_s16)
+static void test_put_s16(void)
 {
 	int ret;
 	int i;
@@ -203,7 +203,7 @@ ZTEST(net_content_oma_tlv, test_put_s16)
 	}
 }
 
-ZTEST(net_content_oma_tlv_nomem, test_put_s16_nomem)
+static void test_put_s16_nomem(void)
 {
 	int ret;
 
@@ -211,7 +211,7 @@ ZTEST(net_content_oma_tlv_nomem, test_put_s16_nomem)
 	zassert_equal(ret, -ENOMEM, "Invalid error code returned");
 }
 
-ZTEST(net_content_oma_tlv, test_put_s32)
+static void test_put_s32(void)
 {
 	int ret;
 	int i;
@@ -273,7 +273,7 @@ ZTEST(net_content_oma_tlv, test_put_s32)
 	}
 }
 
-ZTEST(net_content_oma_tlv_nomem, test_put_s32_nomem)
+static void test_put_s32_nomem(void)
 {
 	int ret;
 
@@ -281,7 +281,7 @@ ZTEST(net_content_oma_tlv_nomem, test_put_s32_nomem)
 	zassert_equal(ret, -ENOMEM, "Invalid error code returned");
 }
 
-ZTEST(net_content_oma_tlv, test_put_s64)
+static void test_put_s64(void)
 {
 	int ret;
 	int i;
@@ -353,7 +353,7 @@ ZTEST(net_content_oma_tlv, test_put_s64)
 	}
 }
 
-ZTEST(net_content_oma_tlv_nomem, test_put_s64_nomem)
+static void test_put_s64_nomem(void)
 {
 	int ret;
 
@@ -361,7 +361,7 @@ ZTEST(net_content_oma_tlv_nomem, test_put_s64_nomem)
 	zassert_equal(ret, -ENOMEM, "Invalid error code returned");
 }
 
-ZTEST(net_content_oma_tlv, test_put_string)
+static void test_put_string(void)
 {
 	int ret;
 	const char *test_string = "test_string";
@@ -387,7 +387,7 @@ ZTEST(net_content_oma_tlv, test_put_string)
 		      "Invalid packet offset");
 }
 
-ZTEST(net_content_oma_tlv_nomem, test_put_string_nomem)
+static void test_put_string_nomem(void)
 {
 	int ret;
 	const char *test_string = "test_string";
@@ -399,7 +399,8 @@ ZTEST(net_content_oma_tlv_nomem, test_put_string_nomem)
 }
 
 #define DOUBLE_CMP_EPSILON 0.000000001
-ZTEST(net_content_oma_tlv, test_put_float)
+
+static void test_put_float(void)
 {
 	int ret;
 	int i;
@@ -511,7 +512,7 @@ ZTEST(net_content_oma_tlv, test_put_float)
 	}
 }
 
-ZTEST(net_content_oma_tlv_nomem, test_put_float_nomem)
+static void test_put_float_nomem(void)
 {
 	int ret;
 	double value = 1.2;
@@ -520,7 +521,7 @@ ZTEST(net_content_oma_tlv_nomem, test_put_float_nomem)
 	zassert_equal(ret, -ENOMEM, "Invalid error code returned");
 }
 
-ZTEST(net_content_oma_tlv, test_put_bool)
+static void test_put_bool(void)
 {
 	int ret;
 	int i;
@@ -567,7 +568,7 @@ ZTEST(net_content_oma_tlv, test_put_bool)
 	}
 }
 
-ZTEST(net_content_oma_tlv_nomem, test_put_bool_nomem)
+static void test_put_bool_nomem(void)
 {
 	int ret;
 
@@ -575,7 +576,7 @@ ZTEST(net_content_oma_tlv_nomem, test_put_bool_nomem)
 	zassert_equal(ret, -ENOMEM, "Invalid error code returned");
 }
 
-ZTEST(net_content_oma_tlv, test_put_opaque)
+static void test_put_opaque(void)
 {
 	int ret;
 	const char *test_opaque = "test_opaque";
@@ -601,7 +602,7 @@ ZTEST(net_content_oma_tlv, test_put_opaque)
 		      "Invalid packet offset");
 }
 
-ZTEST(net_content_oma_tlv_nomem, test_put_opaque_nomem)
+static void test_put_opaque_nomem(void)
 {
 	int ret;
 	const char *test_opaque = "test_opaque";
@@ -612,7 +613,7 @@ ZTEST(net_content_oma_tlv_nomem, test_put_opaque_nomem)
 	zassert_equal(ret, -ENOMEM, "Invalid error code returned");
 }
 
-ZTEST(net_content_oma_tlv, test_put_objlnk)
+static void test_put_objlnk(void)
 {
 	int ret;
 	int i;
@@ -670,7 +671,7 @@ ZTEST(net_content_oma_tlv, test_put_objlnk)
 	}
 }
 
-ZTEST(net_content_oma_tlv_nomem, test_put_objlnk_nomem)
+static void test_put_objlnk_nomem(void)
 {
 	int ret;
 	struct lwm2m_objlnk value = { 0, 0 };
@@ -679,7 +680,7 @@ ZTEST(net_content_oma_tlv_nomem, test_put_objlnk_nomem)
 	zassert_equal(ret, -ENOMEM, "Invalid error code returned");
 }
 
-ZTEST(net_content_oma_tlv, test_get_s32)
+static void test_get_s32(void)
 {
 	int ret;
 	int i;
@@ -730,7 +731,7 @@ ZTEST(net_content_oma_tlv, test_get_s32)
 	}
 }
 
-ZTEST(net_content_oma_tlv_nodata, test_get_s32_nodata)
+static void test_get_s32_nodata(void)
 {
 	int ret;
 	int32_t value;
@@ -739,7 +740,7 @@ ZTEST(net_content_oma_tlv_nodata, test_get_s32_nodata)
 	zassert_equal(ret, -ENODATA, "Invalid error code returned");
 }
 
-ZTEST(net_content_oma_tlv, test_get_s64)
+static void test_get_s64(void)
 {
 	int ret;
 	int i;
@@ -801,7 +802,7 @@ ZTEST(net_content_oma_tlv, test_get_s64)
 	}
 }
 
-ZTEST(net_content_oma_tlv_nodata, test_get_s64_nodata)
+static void test_get_s64_nodata(void)
 {
 	int ret;
 	int64_t value;
@@ -810,7 +811,7 @@ ZTEST(net_content_oma_tlv_nodata, test_get_s64_nodata)
 	zassert_equal(ret, -ENODATA, "Invalid error code returned");
 }
 
-ZTEST(net_content_oma_tlv, test_get_string)
+static void test_get_string(void)
 {
 	int ret;
 	const char *test_string = "test_string";
@@ -826,6 +827,7 @@ ZTEST(net_content_oma_tlv, test_get_string)
 		.len = sizeof("test_string") - 1 + 3
 	};
 
+
 	test_payload_set(payload.data, payload.len);
 
 	ret = oma_tlv_reader.get_string(&test_in, buf, sizeof(buf));
@@ -836,7 +838,7 @@ ZTEST(net_content_oma_tlv, test_get_string)
 		      "Invalid packet offset");
 }
 
-ZTEST(net_content_oma_tlv_nodata, test_get_string_nodata)
+static void test_get_string_nodata(void)
 {
 	int ret;
 	uint8_t buf[16];
@@ -847,7 +849,7 @@ ZTEST(net_content_oma_tlv_nodata, test_get_string_nodata)
 
 #define DOUBLE_CMP_EPSILON 0.000000001
 
-ZTEST(net_content_oma_tlv, test_get_float)
+static void test_get_float(void)
 {
 	int ret;
 	int i;
@@ -936,7 +938,7 @@ ZTEST(net_content_oma_tlv, test_get_float)
 	}
 }
 
-ZTEST(net_content_oma_tlv_nodata, test_get_float_nodata)
+static void test_get_float_nodata(void)
 {
 	int ret;
 	double value;
@@ -945,7 +947,7 @@ ZTEST(net_content_oma_tlv_nodata, test_get_float_nodata)
 	zassert_equal(ret, -ENODATA, "Invalid error code returned");
 }
 
-ZTEST(net_content_oma_tlv, test_get_bool)
+static void test_get_bool(void)
 {
 	int ret;
 	int i;
@@ -982,7 +984,7 @@ ZTEST(net_content_oma_tlv, test_get_bool)
 	}
 }
 
-ZTEST(net_content_oma_tlv_nodata, test_get_bool_nodata)
+static void test_get_bool_nodata(void)
 {
 	int ret;
 	bool value;
@@ -991,7 +993,7 @@ ZTEST(net_content_oma_tlv_nodata, test_get_bool_nodata)
 	zassert_equal(ret, -ENODATA, "Invalid error code returned");
 }
 
-ZTEST(net_content_oma_tlv, test_get_opaque)
+static void test_get_opaque(void)
 {
 	int ret;
 	const char *test_opaque = "test_opaque";
@@ -1020,7 +1022,7 @@ ZTEST(net_content_oma_tlv, test_get_opaque)
 		      "Invalid packet offset");
 }
 
-ZTEST(net_content_oma_tlv_nodata, test_get_opaque_nodata)
+static void test_get_opaque_nodata(void)
 {
 	int ret;
 	uint8_t value[4];
@@ -1032,7 +1034,7 @@ ZTEST(net_content_oma_tlv_nodata, test_get_opaque_nodata)
 	zassert_equal(ret, -ENODATA, "Invalid error code returned %d");
 }
 
-ZTEST(net_content_oma_tlv, test_get_objlnk)
+static void test_get_objlnk(void)
 {
 	int ret;
 	int i;
@@ -1081,7 +1083,7 @@ ZTEST(net_content_oma_tlv, test_get_objlnk)
 	}
 }
 
-ZTEST(net_content_oma_tlv_nodata, test_get_objlnk_nodata)
+static void test_get_objlnk_nodata(void)
 {
 	int ret;
 	struct lwm2m_objlnk value;
@@ -1090,6 +1092,75 @@ ZTEST(net_content_oma_tlv_nodata, test_get_objlnk_nodata)
 	zassert_equal(ret, -ENODATA, "Invalid error code returned");
 }
 
-ZTEST_SUITE(net_content_oma_tlv, NULL, NULL, test_prepare, NULL, NULL);
-ZTEST_SUITE(net_content_oma_tlv_nomem, NULL, NULL, test_prepare_nomem, NULL, NULL);
-ZTEST_SUITE(net_content_oma_tlv_nodata, NULL, NULL, test_prepare_nodata, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(
+		lwm2m_content_plain_text,
+		ztest_unit_test_setup_teardown(
+			test_put_s8, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_s8_nomem, test_prepare_nomem, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_s16, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_s16_nomem, test_prepare_nomem, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_s32, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_s32_nomem, test_prepare_nomem, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_s64, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_s64_nomem, test_prepare_nomem, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_string, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_string_nomem, test_prepare_nomem, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_float, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_float_nomem, test_prepare_nomem, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_bool, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_bool_nomem, test_prepare_nomem, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_opaque, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_opaque_nomem, test_prepare_nomem, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_objlnk, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_objlnk_nomem, test_prepare_nomem, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_s32, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_s32_nodata, test_prepare_nodata, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_s64, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_s64_nodata, test_prepare_nodata, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_string, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_string_nodata, test_prepare_nodata, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_float, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_float_nodata, test_prepare_nodata, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_bool, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_bool_nodata, test_prepare_nodata, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_opaque, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_opaque_nodata, test_prepare_nodata, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_objlnk, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_get_objlnk_nodata, test_prepare_nodata, unit_test_noop)
+	);
+
+	ztest_run_test_suite(lwm2m_content_plain_text);
+}

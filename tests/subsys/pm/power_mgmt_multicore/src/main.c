@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/pm/pm.h>
 
 BUILD_ASSERT(CONFIG_MP_NUM_CPUS == 2, "Invalid number of cpus");
@@ -102,7 +102,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int ticks)
  *
  * @ingroup power_tests
  */
-ZTEST(pm_multicore, test_power_idle)
+void test_power_idle(void)
 {
 
 	for (uint8_t i = 0U; i < NUM_OF_ITERATIONS; i++) {
@@ -116,4 +116,9 @@ ZTEST(pm_multicore, test_power_idle)
 	}
 }
 
-ZTEST_SUITE(pm_multicore, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(pm_multicore_test,
+			 ztest_unit_test(test_power_idle));
+	ztest_run_test_suite(pm_multicore_test);
+}

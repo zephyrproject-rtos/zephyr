@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "serial_overlay.dtsi"
+
 &usart1_tx_pc4 {
 	/*
 	 * enable open-drain drive such that no external push-pull to

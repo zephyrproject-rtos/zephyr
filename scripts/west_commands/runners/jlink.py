@@ -17,7 +17,6 @@ import tempfile
 from runners.core import ZephyrBinaryRunner, RunnerCaps, depr_action
 
 try:
-    import pylink
     from pylink.library import Library
     MISSING_REQUIREMENTS = False
 except ImportError:
@@ -71,17 +70,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
-                          dev_id=True, flash_addr=True, erase=True,
-                          tool_opt=True)
+                          dev_id=True, flash_addr=True, erase=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
         return '''Device identifier. Use it to select the J-Link Serial Number
                   of the device connected over USB.'''
-
-    @classmethod
-    def tool_opt_help(cls) -> str:
-        return "Additional options for JLink Commander, e.g. '-autoconnect 1'"
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -107,6 +101,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--gdb-port', default=DEFAULT_JLINK_GDB_PORT,
                             help='pyocd gdb port, defaults to {}'.format(
                                 DEFAULT_JLINK_GDB_PORT))
+        parser.add_argument('--tool-opt', default=[], action='append',
+                            help='''Additional options for JLink Commander,
+                            e.g. \'-autoconnect 1\' ''')
         parser.add_argument('--commander', default=DEFAULT_JLINK_EXE,
                             help=f'''J-Link Commander, default is
                             {DEFAULT_JLINK_EXE}''')
@@ -151,23 +148,16 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         # to load the shared library distributed with the tools, which
         # provides an API call for getting the version.
         if not hasattr(self, '_jlink_version'):
-            # pylink 0.14.0/0.14.1 exposes JLink SDK DLL (libjlinkarm) in
-            # JLINK_SDK_STARTS_WITH, while other versions use JLINK_SDK_NAME
-            if pylink.__version__ in ('0.14.0', '0.14.1'):
-                sdk = Library.JLINK_SDK_STARTS_WITH
-            else:
-                sdk = Library.JLINK_SDK_NAME
-
             plat = sys.platform
             if plat.startswith('win32'):
                 libname = Library.get_appropriate_windows_sdk_name() + '.dll'
             elif plat.startswith('linux'):
-                libname = sdk + '.so'
+                libname = Library.JLINK_SDK_NAME + '.so'
             elif plat.startswith('darwin'):
-                libname = sdk + '.dylib'
+                libname = Library.JLINK_SDK_NAME + '.dylib'
             else:
                 self.logger.warning(f'unknown platform {plat}; assuming UNIX')
-                libname = sdk + '.so'
+                libname = Library.JLINK_SDK_NAME + '.so'
 
             lib = Library(dllpath=os.fspath(Path(self.commander).parent /
                                             libname))

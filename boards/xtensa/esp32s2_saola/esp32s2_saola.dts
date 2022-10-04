@@ -15,7 +15,6 @@
 
 	aliases {
 		i2c-0 = &i2c0;
-		watchdog0 = &wdt0;
 	};
 
 	chosen {

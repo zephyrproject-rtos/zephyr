@@ -11,7 +11,8 @@ Cortex-M4 at 240 MHz. The i.MX RT1160 MCU offers support over a wide
 temperature range and is qualified for consumer, industrial and automotive
 markets.
 
-.. image:: mimxrt1160_evk.jpg
+.. image:: ./mimxrt1160_evk.jpg
+   :width: 600px
    :align: center
    :alt: MIMXRT1160-EVK
 
@@ -117,10 +118,6 @@ features:
 | USB       | on-chip    | USB Device                          |
 +-----------+------------+-------------------------------------+
 | HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| CAAM RNG  | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

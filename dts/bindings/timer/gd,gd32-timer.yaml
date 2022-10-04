@@ -5,13 +5,10 @@ description: GigaDevice GD32 timer
 
 compatible: "gd,gd32-timer"
 
-include: [reset-device.yaml, base.yaml]
+include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  resets:
     required: true
 
   channels:
@@ -37,4 +34,9 @@ properties:
   rcu-periph-clock:
     type: int
     description: Reset Control Unit Peripheral Clock ID
+    required: true
+
+  rcu-periph-reset:
+    type: int
+    description: Reset Control Unit Peripheral Reset ID
     required: true

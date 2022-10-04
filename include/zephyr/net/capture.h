@@ -29,8 +29,6 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 struct net_if;
-struct net_pkt;
-struct device;
 
 struct net_capture_interface_api {
 	/** Cleanup the setup. This will also disable capturing. After this
@@ -49,7 +47,8 @@ struct net_capture_interface_api {
 	bool (*is_enabled)(const struct device *dev);
 
 	/** Send captured data */
-	int (*send)(const struct device *dev, struct net_if *iface, struct net_pkt *pkt);
+	int (*send)(const struct device *dev, struct net_if *iface,
+		    struct net_pkt *pkt);
 };
 
 /** @endcond */
@@ -69,8 +68,8 @@ struct net_capture_interface_api {
  *
  * @return 0 if ok, <0 if network packet capture setup failed
  */
-int net_capture_setup(const char *remote_addr, const char *my_local_addr, const char *peer_addr,
-		      const struct device **dev);
+int net_capture_setup(const char *remote_addr, const char *my_local_addr,
+		      const char *peer_addr, const struct device **dev);
 
 /**
  * @brief Cleanup network packet capturing support.
@@ -109,7 +108,8 @@ static inline int net_capture_cleanup(const struct device *dev)
  *
  * @return 0 if ok, <0 if network packet capture enable failed
  */
-static inline int net_capture_enable(const struct device *dev, struct net_if *iface)
+static inline int net_capture_enable(const struct device *dev,
+				     struct net_if *iface)
 {
 #if defined(CONFIG_NET_CAPTURE)
 	const struct net_capture_interface_api *api =
@@ -175,7 +175,8 @@ static inline int net_capture_disable(const struct device *dev)
  *
  * @return 0 if ok, <0 if network packet capture send failed
  */
-static inline int net_capture_send(const struct device *dev, struct net_if *iface,
+static inline int net_capture_send(const struct device *dev,
+				   struct net_if *iface,
 				   struct net_pkt *pkt)
 {
 #if defined(CONFIG_NET_CAPTURE)
@@ -227,7 +228,8 @@ struct net_capture_info {
  * @param info Information about capture device
  * @param user_data A valid pointer to user data or NULL
  */
-typedef void (*net_capture_cb_t)(struct net_capture_info *info, void *user_data);
+typedef void (*net_capture_cb_t)(struct net_capture_info *info,
+				 void *user_data);
 
 /**
  * @brief Go through all the capture devices in order to get

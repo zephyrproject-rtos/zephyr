@@ -5,10 +5,8 @@
  */
 
 #include <zephyr/device.h>
+
 #include <zephyr/logging/log.h>
-
-#include <soc.h>
-
 LOG_MODULE_REGISTER(thingy53_board_init);
 
 /* Initialization chain of Thingy:53 board requires some delays before on board sensors

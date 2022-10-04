@@ -9,7 +9,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/irq_offload.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <limits.h>
 
 #define TIMEOUT_MS 100

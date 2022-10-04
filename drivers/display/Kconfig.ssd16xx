@@ -5,8 +5,6 @@
 
 config SSD16XX
 	bool "SSD16XX compatible display controller driver"
-	default y
-	depends on DT_HAS_SOLOMON_SSD16XXFB_ENABLED
-	select SPI
+	depends on SPI
 	help
 	  Enable driver for SSD16XX compatible controller.

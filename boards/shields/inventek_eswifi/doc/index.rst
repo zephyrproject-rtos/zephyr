@@ -32,7 +32,8 @@ Otherwise, J17 2-3 will select USB-5V. More information can be found at
 .. note::
 	The Inventek's EVBs signals are 3.3V only.
 
-.. image:: ismart4343c-evb.jpg
+.. image:: ./ismart4343c-evb.jpg
+   :width: 350px
    :align: center
    :alt: ISMART4343C-EVB
 
@@ -52,7 +53,8 @@ available at header J26 pin 1 and shield configuration uses D7 to control that
 signal, user need do a wire connecting these two terminals.  On the below
 image is possible see suggested wiring connections.
 
-.. image:: ismart4343c-evb-wiring.jpg
+.. image:: ./ismart4343c-evb-wiring.jpg
+   :width: 800px
    :align: center
    :alt: ISMART4343C-EVB Wiring
 

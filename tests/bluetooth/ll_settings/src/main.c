@@ -8,7 +8,7 @@
 
 #include <zephyr/zephyr.h>
 #include <stddef.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include <zephyr/settings/settings.h>
 

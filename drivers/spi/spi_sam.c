@@ -370,7 +370,7 @@ static int spi_sam_transceive(const struct device *dev,
 	Spi *regs = cfg->regs;
 	int err;
 
-	spi_context_lock(&data->ctx, false, NULL, NULL, config);
+	spi_context_lock(&data->ctx, false, NULL, config);
 
 	err = spi_sam_configure(dev, config);
 	if (err != 0) {
@@ -414,10 +414,9 @@ static int spi_sam_transceive_async(const struct device *dev,
 				     const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     spi_callback_t cb,
-				     void *userdata)
+				     struct k_poll_signal *async)
 {
-	/* TODO: implement async transceive */
+	/* TODO: implement asyc transceive */
 	return -ENOTSUP;
 }
 #endif /* CONFIG_SPI_ASYNC */

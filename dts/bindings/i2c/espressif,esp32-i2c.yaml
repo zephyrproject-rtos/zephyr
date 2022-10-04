@@ -21,21 +21,23 @@ properties:
     pinctrl-names:
       required: true
 
-    scl-gpios:
-      type: phandle-array
+    sda-pin:
+      type: int
       required: false
       description: |
-        GPIO to which the I2C SCL signal is routed. This is only required
-        if the target SoC does not have support in hardware for clearing
-        the I2C bus in case of a communication failure
+        SDA pin information is only required if
+        the target SoC does not have support in
+        hardware for clearing the I2C bus in case
+        of communication failure
 
-    sda-gpios:
-      type: phandle-array
+    scl-pin:
+      type: int
       required: false
       description: |
-        GPIO to which the I2C SDA signal is routed. This is only required
-        if the target SoC does not have support in hardware for clearing
-        the I2C bus in case of a communication failure
+        SCL pin information is only required if
+        the target SoC does not have support in
+        hardware for clearing the I2C bus in case
+        of communication failure
 
     tx-lsb:
       type: boolean

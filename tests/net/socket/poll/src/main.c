@@ -8,7 +8,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
-#include <zephyr/ztest_assert.h>
+#include <ztest_assert.h>
 
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/fdtable.h>
@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 /* On QEMU, poll() which waits takes +10ms from the requested time. */
 #define FUZZ 10
 
-ZTEST(net_socket_poll, test_poll)
+void test_poll(void)
 {
 	int res;
 	int c_sock;
@@ -177,7 +177,7 @@ ZTEST(net_socket_poll, test_poll)
 
 #define TEST_SNDBUF_SIZE CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE
 
-ZTEST(net_socket_poll, test_pollout_tcp)
+static void test_pollout_tcp(void)
 {
 	int res;
 	int c_sock;
@@ -252,4 +252,11 @@ ZTEST(net_socket_poll, test_pollout_tcp)
 	zassert_equal(res, 0, "close failed");
 }
 
-ZTEST_SUITE(net_socket_poll, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(socket_poll,
+			 ztest_unit_test(test_poll),
+			 ztest_unit_test(test_pollout_tcp));
+
+	ztest_run_test_suite(socket_poll);
+}

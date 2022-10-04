@@ -5,8 +5,7 @@
 
 menuconfig I2S_MCUX_SAI
 	bool "NXP MCUX I2S controller driver"
-	default y
-	depends on DT_HAS_NXP_MCUX_I2S_ENABLED
+	depends on HAS_MCUX_I2S
 	select DMA
 	help
 	  Enable I2S support on the I.MX family of processors.

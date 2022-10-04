@@ -13,6 +13,9 @@ compatible: "microchip,mcp23sxx"
 include: [gpio-controller.yaml, spi-device.yaml]
 
 properties:
+    label:
+      required: true
+
     "#gpio-cells":
       const: 2
 

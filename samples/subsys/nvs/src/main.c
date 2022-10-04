@@ -74,14 +74,14 @@ void main(void)
 	/* define the nvs file system by settings with:
 	 *	sector_size equal to the pagesize,
 	 *	3 sectors
-	 *	starting at FLASH_AREA_OFFSET(STORAGE_NODE_LABEL)
+	 *	starting at FLASH_AREA_OFFSET(storage)
 	 */
 	fs.flash_device = FLASH_AREA_DEVICE(STORAGE_NODE_LABEL);
 	if (!device_is_ready(fs.flash_device)) {
 		printk("Flash device %s is not ready\n", fs.flash_device->name);
 		return;
 	}
-	fs.offset = FLASH_AREA_OFFSET(STORAGE_NODE_LABEL);
+	fs.offset = FLASH_AREA_OFFSET(storage);
 	rc = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
 	if (rc) {
 		printk("Unable to get page info\n");

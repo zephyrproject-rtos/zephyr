@@ -15,10 +15,10 @@
 
 LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
 
-#define PWM_NRFX_CH_POLARITY_MASK BIT(15)
-#define PWM_NRFX_CH_COMPARE_MASK  BIT_MASK(15)
-#define PWM_NRFX_CH_VALUE(compare_value, inverted) \
-	(compare_value | (inverted ? 0 : PWM_NRFX_CH_POLARITY_MASK))
+#define PWM_NRFX_CH_POLARITY_MASK          BIT(15)
+#define PWM_NRFX_CH_PULSE_CYCLES_MASK      BIT_MASK(15)
+#define PWM_NRFX_CH_VALUE(value, inverted) \
+	(value | (inverted ? 0 : PWM_NRFX_CH_POLARITY_MASK))
 
 struct pwm_nrfx_config {
 	nrfx_pwm_t pwm;
@@ -31,41 +31,36 @@ struct pwm_nrfx_config {
 
 struct pwm_nrfx_data {
 	uint32_t period_cycles;
-	uint16_t seq_values[NRF_PWM_CHANNEL_COUNT];
-	/* Bit mask indicating channels that need the PWM generation. */
-	uint8_t  pwm_needed;
+	uint16_t current[NRF_PWM_CHANNEL_COUNT];
+	uint16_t countertop;
 	uint8_t  prescaler;
 	uint8_t  initially_inverted;
-	bool     stop_requested;
 };
-/* Ensure the pwm_needed bit mask can accommodate all available channels. */
-#if (NRF_PWM_CHANNEL_COUNT > 8)
-#error "Current implementation supports maximum 8 channels."
-#endif
 
 
-static bool pwm_period_check_and_set(const struct device *dev,
-				     uint32_t channel, uint32_t period_cycles)
+static int pwm_period_check_and_set(const struct pwm_nrfx_config *config,
+				    struct pwm_nrfx_data *data,
+				    uint32_t channel,
+				    uint32_t period_cycles)
 {
-	const struct pwm_nrfx_config *config = dev->config;
-	struct pwm_nrfx_data *data = dev->data;
+	uint8_t i;
 	uint8_t prescaler;
 	uint32_t countertop;
 
-	/* If the currently configured period matches the requested one,
-	 * nothing more needs to be done.
+	/* If any other channel (other than the one being configured) is set up
+	 * with a non-zero pulse cycle, the period that is currently set cannot
+	 * be changed, as this would influence the output for this channel.
 	 */
-	if (period_cycles == data->period_cycles) {
-		return true;
-	}
-
-	/* If any other channel is driven by the PWM peripheral, the period
-	 * that is currently set cannot be changed, as this would influence
-	 * the output for that channel.
-	 */
-	if ((data->pwm_needed & ~BIT(channel)) != 0) {
-		LOG_ERR("Incompatible period.");
-		return false;
+	for (i = 0; i < NRF_PWM_CHANNEL_COUNT; ++i) {
+		if (i != channel) {
+			uint16_t channel_pulse_cycle =
+				data->current[i]
+				& PWM_NRFX_CH_PULSE_CYCLES_MASK;
+			if (channel_pulse_cycle > 0) {
+				LOG_ERR("Incompatible period.");
+				return -EINVAL;
+			}
+		}
 	}
 
 	/* Try to find a prescaler that will allow setting the requested period
@@ -77,12 +72,13 @@ static bool pwm_period_check_and_set(const struct device *dev,
 		if (countertop <= PWM_COUNTERTOP_COUNTERTOP_Msk) {
 			data->period_cycles = period_cycles;
 			data->prescaler     = prescaler;
+			data->countertop    = (uint16_t)countertop;
 
 			nrf_pwm_configure(config->pwm.p_registers,
 					  data->prescaler,
 					  config->initial_config.count_mode,
-					  (uint16_t)countertop);
-			return true;
+					  data->countertop);
+			return 0;
 		}
 
 		countertop >>= 1;
@@ -90,13 +86,36 @@ static bool pwm_period_check_and_set(const struct device *dev,
 	} while (prescaler <= PWM_PRESCALER_PRESCALER_Msk);
 
 	LOG_ERR("Prescaler for period_cycles %u not found.", period_cycles);
+	return -EINVAL;
+}
+
+static bool pwm_channel_is_active(uint8_t channel,
+				  const struct pwm_nrfx_data *data)
+{
+	uint16_t pulse_cycle =
+		data->current[channel] & PWM_NRFX_CH_PULSE_CYCLES_MASK;
+
+	return (pulse_cycle > 0 && pulse_cycle < data->countertop);
+}
+
+static bool any_other_channel_is_active(uint8_t channel,
+					const struct pwm_nrfx_data *data)
+{
+	uint8_t i;
+
+	for (i = 0; i < NRF_PWM_CHANNEL_COUNT; ++i) {
+		if (i != channel && pwm_channel_is_active(i, data)) {
+			return true;
+		}
+	}
+
 	return false;
 }
 
 static bool channel_psel_get(uint32_t channel, uint32_t *psel,
 			     const struct pwm_nrfx_config *config)
 {
-	*psel = nrf_pwm_pin_get(config->pwm.p_registers, (uint8_t)channel);
+	*psel = nrf_pwm_pin_get(config->pwm.p_registers, channel);
 
 	return (((*psel & PWM_PSEL_OUT_CONNECT_Msk) >> PWM_PSEL_OUT_CONNECT_Pos)
 		== PWM_PSEL_OUT_CONNECT_Connected);
@@ -113,14 +132,21 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 	 */
 	const struct pwm_nrfx_config *config = dev->config;
 	struct pwm_nrfx_data *data = dev->data;
-	uint16_t compare_value;
 	bool inverted = (flags & PWM_POLARITY_INVERTED);
-	bool needs_pwm = false;
+	bool was_stopped;
 
 	if (channel >= NRF_PWM_CHANNEL_COUNT) {
 		LOG_ERR("Invalid channel: %u.", channel);
 		return -EINVAL;
 	}
+
+	/* Check if nrfx_pwm_stop function was called in previous
+	 * pwm_nrfx_set_cycles call. Relying only on state returned by
+	 * nrfx_pwm_is_stopped may cause race condition if the
+	 * pwm_nrfx_set_cycles is called multiple times in quick succession.
+	 */
+	was_stopped = !pwm_channel_is_active(channel, data) &&
+		      !any_other_channel_is_active(channel, data);
 
 	/* If this PWM is in center-aligned mode, pulse and period lengths
 	 * are effectively doubled by the up-down count, so halve them here
@@ -131,86 +157,70 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 		pulse_cycles /= 2;
 	}
 
-	if (pulse_cycles == 0) {
-		/* Constantly inactive (duty 0%). */
-		compare_value = 0;
-	} else if (pulse_cycles >= period_cycles) {
-		/* Constantly active (duty 100%). */
-		/* This value is always greater than or equal to COUNTERTOP. */
-		compare_value = PWM_NRFX_CH_COMPARE_MASK;
-	} else {
-		/* PWM generation needed. Check if the requested period matches
-		 * the one that is currently set, or the PWM peripheral can be
-		 * reconfigured accordingly.
-		 */
-		if (!pwm_period_check_and_set(dev, channel, period_cycles)) {
-			return -EINVAL;
+	/* Check if period_cycles is either matching currently used, or
+	 * possible to use with our prescaler options.
+	 * Don't do anything if the period length happens to be zero.
+	 * In such case, the channel is treated as inactive.
+	 */
+	if (period_cycles != 0 && period_cycles != data->period_cycles) {
+		int ret = pwm_period_check_and_set(config, data, channel,
+						   period_cycles);
+		if (ret) {
+			return ret;
 		}
-
-		compare_value = (uint16_t)(pulse_cycles >> data->prescaler);
-		needs_pwm = true;
 	}
 
-	data->seq_values[channel] = PWM_NRFX_CH_VALUE(compare_value, inverted);
+	data->current[channel] =
+		PWM_NRFX_CH_VALUE(pulse_cycles >> data->prescaler, inverted);
 
 	LOG_DBG("channel %u, pulse %u, period %u, prescaler: %u.",
 		channel, pulse_cycles, period_cycles, data->prescaler);
 
-	/* If this channel does not need to be driven by the PWM peripheral
-	 * because its state is to be constant (duty 0% or 100%), set properly
+	/* If this channel turns out to not need to be driven by the PWM
+	 * peripheral (it is off or fully on - duty 0% or 100%), set properly
 	 * the GPIO configuration for its output pin. This will provide
 	 * the correct output state for this channel when the PWM peripheral
-	 * is stopped.
+	 * is disabled after all channels appear to be inactive.
 	 */
-	if (!needs_pwm) {
+	if (!pwm_channel_is_active(channel, data)) {
 		uint32_t psel;
 
 		if (channel_psel_get(channel, &psel, config)) {
-			uint32_t out_level = (pulse_cycles == 0) ? 0 : 1;
+			/* If pulse 0% and pin not inverted, set LOW.
+			 * If pulse 100% and pin inverted, set LOW.
+			 * If pulse 0% and pin inverted, set HIGH.
+			 * If pulse 100% and pin not inverted, set HIGH.
+			 */
+			bool pulse_0_and_not_inverted =
+				(pulse_cycles == 0U) && !inverted;
+			bool pulse_100_and_inverted =
+				(pulse_cycles == period_cycles) && inverted;
+			uint32_t value = (pulse_0_and_not_inverted ||
+					  pulse_100_and_inverted) ? 0 : 1;
 
-			if (inverted) {
-				out_level ^= 1;
-			}
-
-			nrf_gpio_pin_write(psel, out_level);
+			nrf_gpio_pin_write(psel, value);
 		}
 
-		data->pwm_needed &= ~BIT(channel);
+		if (!any_other_channel_is_active(channel, data)) {
+			nrfx_pwm_stop(&config->pwm, false);
+		}
 	} else {
-		data->pwm_needed |= BIT(channel);
-	}
-
-	/* If the PWM generation is not needed for any channel (all are set
-	 * to constant inactive or active state), stop the PWM peripheral.
-	 * Otherwise, request a playback of the defined sequence so that
-	 * the PWM peripheral loads `seq_values` into its internal compare
-	 * registers and drives its outputs accordingly.
-	 */
-	if (data->pwm_needed == 0) {
-		/* Don't wait here for the peripheral to actually stop. Instead,
-		 * ensure it is stopped before starting the next playback.
+		/* Since we are playing the sequence in a loop, the
+		 * sequence only has to be started when its not already
+		 * playing. The new channel values will be used
+		 * immediately when they are written into the seq array.
 		 */
-		nrfx_pwm_stop(&config->pwm, false);
-		data->stop_requested = true;
-	} else {
-		if (data->stop_requested) {
-			data->stop_requested = false;
-
-			/* After a stop is requested, the PWM peripheral stops
-			 * pulse generation at the end of the current period,
-			 * and till that moment, it ignores any start requests,
-			 * so ensure here that it is stopped.
+		if (was_stopped) {
+			/* Wait until PWM will be stopped and then start the
+			 * sequence.
 			 */
 			while (!nrfx_pwm_is_stopped(&config->pwm)) {
 			}
+			nrfx_pwm_simple_playback(&config->pwm,
+						 &config->seq,
+						 1,
+						 NRFX_PWM_FLAG_LOOP);
 		}
-
-		/* It is sufficient to play the sequence once without looping.
-		 * The PWM generation will continue with the loaded values
-		 * until another playback is requested (new values will be
-		 * loaded then) or the PWM peripheral is stopped.
-		 */
-		nrfx_pwm_simple_playback(&config->pwm, &config->seq, 1, 0);
 	}
 
 	return 0;
@@ -246,7 +256,7 @@ static int pwm_nrfx_init(const struct device *dev)
 	}
 
 	data->initially_inverted = 0;
-	for (size_t i = 0; i < ARRAY_SIZE(data->seq_values); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(data->current); i++) {
 		uint32_t psel;
 
 		if (channel_psel_get(i, &psel, config)) {
@@ -260,10 +270,10 @@ static int pwm_nrfx_init(const struct device *dev)
 	}
 #endif
 
-	for (size_t i = 0; i < ARRAY_SIZE(data->seq_values); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(data->current); i++) {
 		bool inverted = data->initially_inverted & BIT(i);
 
-		data->seq_values[i] = PWM_NRFX_CH_VALUE(0, inverted);
+		data->current[i] = PWM_NRFX_CH_VALUE(0, inverted);
 	}
 
 	nrfx_err_t result = nrfx_pwm_init(&config->pwm,
@@ -375,7 +385,7 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 			.load_mode = NRF_PWM_LOAD_INDIVIDUAL,		      \
 			.step_mode = NRF_PWM_STEP_TRIGGERED,		      \
 		},							      \
-		.seq.values.p_raw = pwm_nrfx_##idx##_data.seq_values,	      \
+		.seq.values.p_raw = pwm_nrfx_##idx##_data.current,	      \
 		.seq.length = NRF_PWM_CHANNEL_COUNT,			      \
 		IF_ENABLED(CONFIG_PINCTRL,				      \
 			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(PWM(idx)),))	      \

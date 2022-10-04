@@ -389,11 +389,10 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (!num_msgs) {
 		return 0;
 	}
-
-	k_sem_take(&data->lock, K_FOREVER);
-
 	data->num_msgs = num_msgs;
 	data->msgs = msgs;
+
+	k_sem_take(&data->lock, K_FOREVER);
 
 	for (; data->num_msgs > 0;) {
 		if (!data->msgs->len) {
@@ -781,7 +780,7 @@ static const struct i2c_driver_api i2c_sam0_driver_api = {
 			    i2c_sam0_isr,				\
 			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));		\
-	} while (false)
+	} while (0)
 
 #if DT_INST_IRQ_HAS_IDX(0, 3)
 #define I2C_SAM0_IRQ_HANDLER(n)						\

@@ -5,7 +5,7 @@
  */
 
 #include <stdlib.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/types.h>
 
 struct timer_data {
@@ -66,6 +66,8 @@ static struct k_timer status_sync_timer;
 static struct k_timer remain_timer;
 
 static ZTEST_BMEM struct timer_data tdata;
+
+extern void test_time_conversions(void);
 
 #define TIMER_ASSERT(exp, tmr)			 \
 	do {					 \
@@ -183,7 +185,7 @@ static void status_stop(struct k_timer *timer)
  * @see k_timer_init(), k_timer_start(), k_timer_stop(), k_uptime_get(),
  * k_busy_wait()
  */
-ZTEST_USER(timer_api, test_timer_duration_period)
+void test_timer_duration_period(void)
 {
 	init_timer_data();
 	/** TESTPOINT: init timer via k_timer_init */
@@ -213,7 +215,7 @@ ZTEST_USER(timer_api, test_timer_duration_period)
  * k_busy_wait()
  *
  */
-ZTEST_USER(timer_api, test_timer_restart)
+void test_timer_restart(void)
 {
 	init_timer_data();
 	k_timer_start(&status_anytime_timer, K_MSEC(DURATION),
@@ -247,7 +249,7 @@ ZTEST_USER(timer_api, test_timer_restart)
  * @see k_timer_init(), k_timer_start(), k_timer_stop(), k_uptime_get(),
  * k_busy_wait()
  */
-ZTEST_USER(timer_api, test_timer_period_0)
+void test_timer_period_0(void)
 {
 	init_timer_data();
 	/** TESTPOINT: set period 0 */
@@ -284,7 +286,7 @@ ZTEST_USER(timer_api, test_timer_period_0)
  * @see k_timer_init(), k_timer_start(), k_timer_stop(), k_uptime_get(),
  * k_busy_wait()
  */
-ZTEST_USER(timer_api, test_timer_period_k_forever)
+void test_timer_period_k_forever(void)
 {
 	init_timer_data();
 	/** TESTPOINT: set period 0 */
@@ -323,7 +325,7 @@ ZTEST_USER(timer_api, test_timer_period_k_forever)
  * @see k_timer_init(), k_timer_start(), k_timer_stop(), k_uptime_get(),
  * k_busy_wait()
  */
-ZTEST_USER(timer_api, test_timer_expirefn_null)
+void test_timer_expirefn_null(void)
 {
 	init_timer_data();
 	/** TESTPOINT: expire function NULL */
@@ -367,7 +369,7 @@ static void tick_sync(void)
  * @see k_timer_init(), k_timer_start(), k_timer_status_sync(),
  * k_timer_stop(), k_uptime_get(), k_uptime_delta()
  */
-ZTEST_USER(timer_api, test_timer_periodicity)
+void test_timer_periodicity(void)
 {
 	uint64_t period_ms = k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(PERIOD));
 	int64_t delta;
@@ -435,7 +437,7 @@ ZTEST_USER(timer_api, test_timer_periodicity)
  * @see k_timer_init(), k_timer_start(), k_timer_status_get(),
  * k_timer_remaining_get(), k_timer_stop()
  */
-ZTEST_USER(timer_api, test_timer_status_get)
+void test_timer_status_get(void)
 {
 	init_timer_data();
 	k_timer_start(&status_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
@@ -464,7 +466,7 @@ ZTEST_USER(timer_api, test_timer_status_get)
  * @see k_timer_init(), k_timer_start(), k_timer_status_get(),
  * k_timer_stop(), k_busy_wait()
  */
-ZTEST_USER(timer_api, test_timer_status_get_anytime)
+void test_timer_status_get_anytime(void)
 {
 	init_timer_data();
 	k_timer_start(&status_anytime_timer, K_MSEC(DURATION),
@@ -498,7 +500,7 @@ ZTEST_USER(timer_api, test_timer_status_get_anytime)
  * @see k_timer_init(), k_timer_start(), k_timer_status_sync(),
  * k_timer_stop()
  */
-ZTEST_USER(timer_api, test_timer_status_sync)
+void test_timer_status_sync(void)
 {
 	init_timer_data();
 	k_timer_start(&status_sync_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
@@ -538,7 +540,7 @@ ZTEST_USER(timer_api, test_timer_status_sync)
  * @see k_timer_start(), K_TIMER_DEFINE(), k_timer_stop()
  * k_uptime_get(), k_busy_wait()
  */
-ZTEST_USER(timer_api, test_timer_k_define)
+void test_timer_k_define(void)
 {
 	init_timer_data();
 	/** TESTPOINT: init timer via k_timer_init */
@@ -622,7 +624,7 @@ static void user_data_timer_handler(struct k_timer *timer)
  * @see K_TIMER_DEFINE(), k_timer_user_data_set(), k_timer_start(),
  * k_timer_user_data_get(), k_timer_stop()
  */
-ZTEST_USER(timer_api, test_timer_user_data)
+void test_timer_user_data(void)
 {
 	int ii;
 
@@ -675,7 +677,7 @@ ZTEST_USER(timer_api, test_timer_user_data)
  * k_timer_remaining_get()
  */
 
-ZTEST_USER(timer_api, test_timer_remaining)
+void test_timer_remaining(void)
 {
 	uint32_t dur_ticks = k_ms_to_ticks_ceil32(DURATION);
 	uint32_t target_rem_ticks = k_ms_to_ticks_ceil32(DURATION / 2);
@@ -728,7 +730,7 @@ ZTEST_USER(timer_api, test_timer_remaining)
 		     NULL);
 }
 
-ZTEST_USER(timer_api, test_timeout_abs)
+void test_timeout_abs(void)
 {
 #ifdef CONFIG_TIMEOUT_64BIT
 	const uint64_t exp_ms = 10000000;
@@ -781,7 +783,7 @@ ZTEST_USER(timer_api, test_timeout_abs)
 #endif
 }
 
-ZTEST_USER(timer_api, test_sleep_abs)
+void test_sleep_abs(void)
 {
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		/* k_sleep is not supported when multithreading is off. */
@@ -819,7 +821,7 @@ static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 	k_timer_init(timer, expiry_fn, stop_fn);
 }
 
-void *setup_timer_api(void)
+void test_main(void)
 {
 	timer_init(&duration_timer, duration_expire, duration_stop);
 	timer_init(&period0_timer, period0_expire, NULL);
@@ -836,7 +838,21 @@ void *setup_timer_api(void)
 			      &timer2, &timer3, &timer4);
 	}
 
-	return NULL;
+	ztest_test_suite(timer_api,
+			 ztest_unit_test(test_time_conversions),
+			 ztest_user_unit_test(test_timer_duration_period),
+			 ztest_user_unit_test(test_timer_restart),
+			 ztest_user_unit_test(test_timer_period_0),
+			 ztest_user_unit_test(test_timer_period_k_forever),
+			 ztest_user_unit_test(test_timer_expirefn_null),
+			 ztest_user_unit_test(test_timer_periodicity),
+			 ztest_user_unit_test(test_timer_status_get),
+			 ztest_user_unit_test(test_timer_status_get_anytime),
+			 ztest_user_unit_test(test_timer_status_sync),
+			 ztest_user_unit_test(test_timer_k_define),
+			 ztest_user_unit_test(test_timer_user_data),
+			 ztest_user_unit_test(test_timer_remaining),
+			 ztest_user_unit_test(test_timeout_abs),
+			 ztest_user_unit_test(test_sleep_abs));
+	ztest_run_test_suite(timer_api);
 }
-
-ZTEST_SUITE(timer_api, NULL, setup_timer_api, NULL, NULL, NULL);

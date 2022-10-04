@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "serial_overlay.dtsi"
+
 /* external connection of TX-pin to RX-pin needed */
 &pinctrl {
 	uart1_default: uart1_default {

@@ -22,7 +22,8 @@ capacitive buttons with haptic feedback.
 - Flexibility to let you add the sensors of your choice nearly 200 additional
   sensors through click boards.
 
-.. image:: hexiwear_k64.jpg
+.. image:: ./hexiwear_k64.jpg
+   :width: 442px
    :align: center
    :alt: Hexiwear
 
@@ -87,9 +88,6 @@ The hexiwear_k64 board configuration supports the following hardware features:
 |           |            | fxas21002 polling;                  |
 |           |            | fxas21002 trigger;                  |
 |           |            | max30101 polling                    |
-+-----------+------------+-------------------------------------+
-| RNGA      | on-chip    | entropy;                            |
-|           |            | random                              |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

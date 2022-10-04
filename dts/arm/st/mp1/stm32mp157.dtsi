@@ -62,6 +62,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000001>;
+				label = "GPIOA";
 			};
 
 			gpiob: gpio@50003000 {
@@ -70,6 +71,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000002>;
+				label = "GPIOB";
 			};
 
 			gpioc: gpio@50004000 {
@@ -78,6 +80,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000004>;
+				label = "GPIOC";
 			};
 
 			gpiod: gpio@50005000 {
@@ -86,6 +89,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000008>;
+				label = "GPIOD";
 			};
 
 			gpioe: gpio@50006000 {
@@ -94,6 +98,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000010>;
+				label = "GPIOE";
 			};
 
 			gpiof: gpio@50007000 {
@@ -102,6 +107,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000020>;
+				label = "GPIOF";
 			};
 
 			gpiog: gpio@50008000 {
@@ -110,6 +116,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000040>;
+				label = "GPIOG";
 			};
 
 			gpioh: gpio@50009000 {
@@ -118,6 +125,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000080>;
+				label = "GPIOH";
 			};
 
 			gpioi: gpio@5000a000 {
@@ -126,6 +134,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000100>;
+				label = "GPIOI";
 			};
 
 			gpioj: gpio@5000b000 {
@@ -134,6 +143,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000200>;
+				label = "GPIOJ";
 			};
 
 			gpiok: gpio@5000c000 {
@@ -142,6 +152,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000400>;
+				label = "GPIOK";
 			};
 		};
 
@@ -149,6 +160,7 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x4000a000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000800>;
+			label = "WWDG_1";
 			interrupts = <0 7>;
 			status = "disabled";
 		};
@@ -160,6 +172,7 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x100>;
 			interrupts = <35 5>;
+			label = "SPI_1";
 			status = "disabled";
 		};
 
@@ -170,6 +183,7 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x800>;
 			interrupts = <36 5>;
+			label = "SPI_2";
 			status = "disabled";
 		};
 
@@ -180,6 +194,7 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x1000>;
 			interrupts = <51 5>;
+			label = "SPI_3";
 			status = "disabled";
 		};
 
@@ -190,6 +205,7 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x200>;
 			interrupts = <84 5>;
+			label = "SPI_4";
 			status = "disabled";
 		};
 
@@ -200,6 +216,7 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x400>;
 			interrupts = <85 5>;
+			label = "SPI_5";
 			status = "disabled";
 		};
 
@@ -209,6 +226,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <38 0>;
 			status = "disabled";
+			label = "UART_2";
 		};
 
 		usart3: serial@4000f000 {
@@ -217,6 +235,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
 			interrupts = <39 0>;
 			status = "disabled";
+			label = "UART_3";
 		};
 
 		uart4: serial@40010000 {
@@ -225,6 +244,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00010000>;
 			interrupts = <52 0>;
 			status = "disabled";
+			label = "UART_4";
 		};
 
 		uart5: serial@40011000 {
@@ -233,6 +253,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>;
 			interrupts = <53 0>;
 			status = "disabled";
+			label = "UART_5";
 		};
 
 		usart6: serial@44003000 {
@@ -241,6 +262,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
 			interrupts = <71 0>;
 			status = "disabled";
+			label = "UART_6";
 		};
 
 		uart7: serial@40018000 {
@@ -249,6 +271,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
 			interrupts = <82 0>;
 			status = "disabled";
+			label = "UART_7";
 		};
 
 		uart8: serial@40019000 {
@@ -257,6 +280,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
 			interrupts = <83 0>;
 			status = "disabled";
+			label = "UART_8";
 		};
 
 		i2c5: i2c@40015000 {
@@ -269,6 +293,7 @@
 			interrupt-names = "event", "error";
 			interrupts = <107 0>, <108 0>;
 			status = "disabled";
+			label = "I2C_5";
 		};
 
 		mailbox: mailbox@4c001000 {
@@ -278,14 +303,16 @@
 			interrupts = <103 0>, <104 0>;
 			interrupt-names = "rxo", "txf";
 			status = "disabled";
+			label = "MAILBOX_0";
 		};
 
-		ltdc: display-controller@5a001000 {
+		ltdc: display-controller@5A001000 {
 			compatible = "st,stm32-ltdc";
-			reg = <0x5a001000 0x200>;
+			reg = <0x5A001000 0x200>;
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
 			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00000001>;
+			label = "LTDC";
 			status = "disabled";
 		};
 	};

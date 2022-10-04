@@ -247,8 +247,9 @@ do {                                                                    \
 
 #define ARG_UNUSED(x) (void)(x)
 
-#define likely(x)   (__builtin_expect((bool)!!(x), true) != 0L)
-#define unlikely(x) (__builtin_expect((bool)!!(x), false) != 0L)
+#define likely(x)   __builtin_expect((bool)!!(x), true)
+#define unlikely(x) __builtin_expect((bool)!!(x), false)
+
 #define popcount(x) __builtin_popcount(x)
 
 #ifndef __no_optimization
@@ -617,12 +618,6 @@ do {                                                                    \
  * @return true if x is a power of 2, false otherwise
  */
 #define Z_IS_POW2(x) (((x) != 0) && (((x) & ((x)-1)) == 0))
-
-#ifdef CONFIG_ASAN
-#define __noasan __attribute__((no_sanitize("address")))
-#else
-#define __noasan /**/
-#endif
 
 #endif /* !_LINKER */
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */

@@ -1,0 +1,10 @@
+# ARM V2M Beetle PINMUX configuration options
+
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config PINMUX_BEETLE
+	bool "ARM V2M Beetle Pin multiplexer driver"
+	depends on SOC_SERIES_BEETLE
+	help
+	  Enable driver for ARM V2M Beetle Pin multiplexer.

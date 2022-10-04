@@ -17,7 +17,6 @@ supported:
   - can
   - counter
   - dac
-  - dma
   - gpio
   - i2c
   - netif:eth

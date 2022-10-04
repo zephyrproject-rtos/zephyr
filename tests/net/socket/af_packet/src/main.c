@@ -9,7 +9,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <zephyr/sys/mutex.h>
-#include <zephyr/ztest_assert.h>
+#include <ztest_assert.h>
 
 #include <fcntl.h>
 #include <zephyr/net/socket.h>
@@ -215,7 +215,7 @@ static void __test_packet_sockets(int *sock1, int *sock2)
 #define IP_HDR_SIZE 20
 #define UDP_HDR_SIZE 8
 #define HDR_SIZE (IP_HDR_SIZE + UDP_HDR_SIZE)
-ZTEST(socket_packet, test_raw_packet_sockets)
+static void test_raw_packet_sockets(void)
 {
 	uint8_t data_to_send[] = { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 };
 	uint8_t data_to_receive[sizeof(data_to_send) + HDR_SIZE];
@@ -284,7 +284,7 @@ ZTEST(socket_packet, test_raw_packet_sockets)
 	close(sock4);
 }
 
-ZTEST(socket_packet, test_packet_sockets)
+static void test_packet_sockets(void)
 {
 	int sock1, sock2;
 
@@ -294,7 +294,7 @@ ZTEST(socket_packet, test_packet_sockets)
 	close(sock2);
 }
 
-ZTEST(socket_packet, test_packet_sockets_dgram)
+static void test_packet_sockets_dgram(void)
 {
 	uint8_t data_to_send[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	uint8_t data_to_receive[32];
@@ -391,7 +391,7 @@ ZTEST(socket_packet, test_packet_sockets_dgram)
 	close(sock2);
 }
 
-ZTEST(socket_packet, test_raw_and_dgram_socket_exchange)
+static void test_raw_and_dgram_socket_exchange(void)
 {
 	uint8_t data_to_send[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	uint8_t data_to_receive[32];
@@ -497,7 +497,7 @@ ZTEST(socket_packet, test_raw_and_dgram_socket_exchange)
 	close(sock2);
 }
 
-ZTEST(socket_packet, test_raw_and_dgram_socket_recv)
+static void test_raw_and_dgram_socket_recv(void)
 {
 	uint8_t data_to_send[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	uint8_t data_to_receive[32];
@@ -592,4 +592,13 @@ ZTEST(socket_packet, test_raw_and_dgram_socket_recv)
 	close(sock3);
 }
 
-ZTEST_SUITE(socket_packet, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(socket_packet,
+			 ztest_unit_test(test_packet_sockets),
+			 ztest_unit_test(test_raw_packet_sockets),
+			 ztest_unit_test(test_packet_sockets_dgram),
+			 ztest_unit_test(test_raw_and_dgram_socket_exchange),
+			 ztest_unit_test(test_raw_and_dgram_socket_recv));
+	ztest_run_test_suite(socket_packet);
+}

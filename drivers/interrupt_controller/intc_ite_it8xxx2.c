@@ -102,7 +102,7 @@ void ite_intc_isr_clear(unsigned int irq)
 	*isr = BIT(i);
 }
 
-void __soc_ram_code ite_intc_irq_enable(unsigned int irq)
+void ite_intc_irq_enable(unsigned int irq)
 {
 	uint32_t g, i;
 	volatile uint8_t *en;
@@ -120,7 +120,7 @@ void __soc_ram_code ite_intc_irq_enable(unsigned int irq)
 	irq_unlock(key);
 }
 
-void __soc_ram_code ite_intc_irq_disable(unsigned int irq)
+void ite_intc_irq_disable(unsigned int irq)
 {
 	uint32_t g, i;
 	volatile uint8_t *en;
@@ -168,7 +168,7 @@ void ite_intc_irq_polarity_set(unsigned int irq, unsigned int flags)
 	}
 }
 
-int __soc_ram_code ite_intc_irq_is_enable(unsigned int irq)
+int ite_intc_irq_is_enable(unsigned int irq)
 {
 	uint32_t g, i;
 	volatile uint8_t *en;
@@ -182,17 +182,17 @@ int __soc_ram_code ite_intc_irq_is_enable(unsigned int irq)
 	return IS_MASK_SET(*en, BIT(i));
 }
 
-uint8_t __soc_ram_code ite_intc_get_irq_num(void)
+uint8_t ite_intc_get_irq_num(void)
 {
 	return intc_irq;
 }
 
-bool __soc_ram_code ite_intc_no_irq(void)
+bool ite_intc_no_irq(void)
 {
 	return (IVECT == IVECT_OFFSET_WITH_IRQ);
 }
 
-uint8_t __soc_ram_code get_irq(void *arg)
+uint8_t get_irq(void *arg)
 {
 	ARG_UNUSED(arg);
 

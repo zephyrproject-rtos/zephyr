@@ -116,7 +116,7 @@ static int hts221_read_conversion_data(const struct device *dev)
 }
 
 static const struct sensor_driver_api hts221_driver_api = {
-#if CONFIG_HTS221_TRIGGER
+#if HTS221_TRIGGER_ENABLED
 	.trigger_set = hts221_trigger_set,
 #endif
 	.sample_fetch = hts221_sample_fetch,
@@ -185,7 +185,7 @@ int hts221_init(const struct device *dev)
 		return status;
 	}
 
-#if CONFIG_HTS221_TRIGGER
+#if HTS221_TRIGGER_ENABLED
 	status = hts221_init_interrupt(dev);
 	if (status < 0) {
 		LOG_ERR("Failed to initialize interrupt.");

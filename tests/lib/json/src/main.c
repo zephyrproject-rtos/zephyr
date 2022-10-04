@@ -6,7 +6,7 @@
 #include <string.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/data/json.h>
 
 struct test_nested {

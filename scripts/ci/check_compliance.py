@@ -18,19 +18,15 @@ import magic
 import shlex
 from pathlib import Path
 
+# '*' makes it italic
+EDIT_TIP = "\n\n*Tip: The bot edits this comment instead of posting a new " \
+           "one, so you can check the comment's history to see earlier " \
+           "messages.*"
+
 logger = None
 
 # This ends up as None when we're not running in a Zephyr tree
 ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
-if not ZEPHYR_BASE:
-    # Let the user run this script as ./scripts/ci/check_compliance.py without
-    #  making them set ZEPHYR_BASE.
-    ZEPHYR_BASE = str(Path(__file__).resolve().parents[2])
-
-    # Propagate this decision to child processes.
-    os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
-
-    print(f'ZEPHYR_BASE unset, using "{ZEPHYR_BASE}"')
 
 
 def git(*args, cwd=None):
@@ -122,9 +118,9 @@ class ComplianceTest:
         test code.
         """
         if self.case.result:
-            msg += "\n\nFailures before error: " + self.case.result[0]._elem.text
+            msg += "\n\nFailures before error: " + self.case.result._elem.text
 
-        self.case.result = [Error(msg, "error")]
+        self.case.result = Error(msg, "error")
 
         raise EndTest
 
@@ -140,9 +136,9 @@ class ComplianceTest:
         test code.
         """
         if self.case.result:
-            msg += "\n\nFailures before skip: " + self.case.result[0]._elem.text
+            msg += "\n\nFailures before skip: " + self.case.result._elem.text
 
-        self.case.result = [Skipped(msg, "skipped")]
+        self.case.result = Skipped(msg, "skipped")
 
         raise EndTest
 
@@ -153,11 +149,11 @@ class ComplianceTest:
         """
         if not self.case.result:
             # First reported failure
-            self.case.result = [Failure(self.name + " issues", "failure")]
-            self.case.result[0]._elem.text = msg.rstrip()
+            self.case.result = Failure(self.name + " issues", "failure")
+            self.case.result._elem.text = msg.rstrip()
         else:
             # If there are multiple Failures, concatenate their messages
-            self.case.result[0]._elem.text += "\n\n" + msg.rstrip()
+            self.case.result._elem.text += "\n\n" + msg.rstrip()
 
     def add_info(self, msg):
         """
@@ -274,26 +270,6 @@ class KconfigCheck(ComplianceTest):
                 ))
             fp_module_file.write(content)
 
-    def get_kconfig_dts(self, kconfig_dts_file):
-        """
-        Generate the Kconfig.dts using dts/bindings as the source.
-
-        This is needed to complete Kconfig compliance tests.
-
-        """
-        # Invoke the script directly using the Python executable since this is
-        # not a module nor a pip-installed Python utility
-        zephyr_drv_kconfig_path = os.path.join(ZEPHYR_BASE, "scripts", "dts",
-			                       "gen_driver_kconfig_dts.py")
-        binding_path = os.path.join(ZEPHYR_BASE, "dts", "bindings")
-        cmd = [sys.executable, zephyr_drv_kconfig_path,
-               '--kconfig-out', kconfig_dts_file, '--bindings', binding_path]
-        try:
-            _ = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as ex:
-            self.error(ex.output)
-
-
     def parse_kconfig(self):
         """
         Returns a kconfiglib.Kconfig object for the Kconfig files. We reuse
@@ -332,9 +308,6 @@ class KconfigCheck(ComplianceTest):
 
         # For multi repo support
         self.get_modules(os.path.join(tempfile.gettempdir(), "Kconfig.modules"))
-
-        # For Kconfig.dts support
-        self.get_kconfig_dts(os.path.join(tempfile.gettempdir(), "Kconfig.dts"))
 
         # Tells Kconfiglib to generate warnings for all references to undefined
         # symbols within Kconfig files
@@ -610,8 +583,6 @@ UNDEF_KCONFIG_WHITELIST = {
     "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
     "MODVERSIONS",        # Linux, in boards/xtensa/intel_adsp_cavs25/doc
     "SECURITY_LOADPIN",   # Linux, in boards/xtensa/intel_adsp_cavs25/doc
-    "ZEPHYR_TRY_MASS_ERASE", # MCUBoot setting described in sysbuild documentation
-    "ZTEST_FAIL_TEST_",  # regex in tests/ztest/fail/CMakeLists.txt
 }
 
 class KconfigBasicCheck(KconfigCheck, ComplianceTest):
@@ -721,7 +692,7 @@ class Codeowners(ComplianceTest):
             # the entire tree. 2. run the former always.
             return
 
-        logger.info("If this takes too long then cleanup and try again")
+        logging.info("If this takes too long then cleanup and try again")
         patrn2files = self.ls_owned_files(codeowners)
 
         # The way git finds Renames and Copies is not "exact science",
@@ -729,7 +700,7 @@ class Codeowners(ComplianceTest):
         # Addition instead.
         new_files = git("diff", "--name-only", "--diff-filter=ARC",
                         COMMIT_RANGE).splitlines()
-        logger.debug("New files %s", new_files)
+        logging.debug("New files %s", new_files)
 
         # Convert to pathlib.Path string representation (e.g.,
         # backslashes 'dir1\dir2\' on Windows) to be consistent
@@ -741,10 +712,10 @@ class Codeowners(ComplianceTest):
             f_is_owned = False
 
             for git_pat, owned in patrn2files.items():
-                logger.debug("Scanning %s for %s", git_pat, newf)
+                logging.debug("Scanning %s for %s", git_pat, newf)
 
                 if newf in owned:
-                    logger.info("%s matches new file %s", git_pat, newf)
+                    logging.info("%s matches new file %s", git_pat, newf)
                     f_is_owned = True
                     # Unlike github, we don't care about finding any
                     # more specific owner.
@@ -1002,6 +973,9 @@ class Identity(ComplianceTest):
 def init_logs(cli_arg):
     # Initializes logging
 
+    # TODO: there may be a shorter version thanks to:
+    # logging.basicConfig(...)
+
     global logger
 
     level = os.environ.get('LOG_LEVEL', "WARN")
@@ -1011,33 +985,39 @@ def init_logs(cli_arg):
 
     logger = logging.getLogger('')
     logger.addHandler(console)
-    logger.setLevel(cli_arg or level)
+    logger.setLevel(cli_arg if cli_arg else level)
 
-    logger.info("Log init completed, level=%s",
+    logging.info("Log init completed, level=%s",
                  logging.getLevelName(logger.getEffectiveLevel()))
 
 
 
 def parse_args():
-
-    default_range = 'HEAD~1..HEAD'
     parser = argparse.ArgumentParser(
         description="Check for coding style and documentation warnings.")
-    parser.add_argument('-c', '--commits', default=default_range,
-                        help=f'''Commit range in the form: a..[b], default is
-                        {default_range}''')
+    parser.add_argument('-c', '--commits', default="HEAD~1..",
+                        help='''Commit range in the form: a..[b], default is
+                        HEAD~1..HEAD''')
+    parser.add_argument('-r', '--repo', default=None,
+                        help="GitHub repository")
+    parser.add_argument('-p', '--pull-request', default=0, type=int,
+                        help="Pull request number")
+    parser.add_argument('-S', '--sha', default=None, help="Commit SHA")
     parser.add_argument('-o', '--output', default="compliance.xml",
                         help='''Name of outfile in JUnit format,
                         default is ./compliance.xml''')
+
     parser.add_argument('-l', '--list', action="store_true",
                         help="List all checks and exit")
-    parser.add_argument("-v", "--loglevel", choices=['DEBUG', 'INFO', 'WARNING',
-                                                     'ERROR', 'CRITICAL'],
-                        help="python logging level")
+
+    parser.add_argument("-v", "--loglevel", help="python logging level")
+
     parser.add_argument('-m', '--module', action="append", default=[],
                         help="Checks to run. All checks by default.")
+
     parser.add_argument('-e', '--exclude-module', action="append", default=[],
                         help="Do not run the specified checks")
+
     parser.add_argument('-j', '--previous-run', default=None,
                         help='''Pre-load JUnit results in XML format
                         from a previous run and combine with new results.''')
@@ -1058,8 +1038,6 @@ def _main(args):
     COMMIT_RANGE = args.commits
 
     init_logs(args.loglevel)
-
-    logger.info(f'Running tests on commit range {COMMIT_RANGE}')
 
     if args.list:
         for testcase in ComplianceTest.__subclasses__():
@@ -1118,8 +1096,8 @@ def _main(args):
 
     for case in suite:
         if case.result:
-            if case.result[0].type == 'skipped':
-                logging.warning("Skipped %s, %s", case.name, case.result[0].message)
+            if case.result.type == 'skipped':
+                logging.warning("Skipped %s, %s", case.name, case.result.message)
             else:
                 failed_cases.append(case)
         else:
@@ -1133,14 +1111,14 @@ def _main(args):
         for case in failed_cases:
             # not clear why junitxml doesn't clearly expose the most
             # important part of its underlying etree.Element
-            errmsg = case.result[0]._elem.text
+            errmsg = case.result._elem.text
             logging.error("Test %s failed: %s", case.name,
-                          errmsg.strip() if errmsg else case.result[0].message)
+                          errmsg.strip() if errmsg else case.result.message)
 
             with open(f"{case.name}.txt", "w") as f:
                 docs = name2doc.get(case.name)
                 f.write(f"{docs}\n\n")
-                f.write(errmsg.strip() if errmsg else case.result[0].message)
+                f.write(errmsg.strip() if errmsg else case.result.message)
 
     print("\nComplete results in " + args.output)
     return n_fails

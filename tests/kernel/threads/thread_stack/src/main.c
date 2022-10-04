@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/syscall_handler.h>
 #include <kernel_internal.h>
 
@@ -383,7 +383,7 @@ void scenario_entry(void *stack_obj, size_t obj_size, size_t reported_size,
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(userspace_thread_stack, test_stack_buffer)
+void test_stack_buffer(void)
 {
 	printk("Reserved space (thread stacks): %zu\n",
 	       K_THREAD_STACK_RESERVED);
@@ -455,7 +455,7 @@ void no_op_entry(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(userspace_thread_stack, test_idle_stack)
+void test_idle_stack(void)
 {
 	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
 		/* Stacks on coherence platforms aren't coherent, and
@@ -500,12 +500,14 @@ ZTEST(userspace_thread_stack, test_idle_stack)
 
 }
 
-void *thread_setup(void)
+void test_main(void)
 {
 	k_thread_system_pool_assign(k_current_get());
 
-	return NULL;
+	/* Run a thread that self-exits, triggering idle cleanup */
+	ztest_test_suite(userspace_thread_stack,
+			 ztest_1cpu_unit_test(test_stack_buffer),
+			 ztest_1cpu_unit_test(test_idle_stack)
+			 );
+	ztest_run_test_suite(userspace_thread_stack);
 }
-
-ZTEST_SUITE(userspace_thread_stack, NULL, thread_setup,
-		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

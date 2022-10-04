@@ -13,7 +13,8 @@ addition to a base ISA to tailor the processor for a particular application.
 
 For more information, see https://ip.cadence.com/ipportfolio/tensilica-ip/xtensa-customizable
 
-.. figure:: img/xt-sim.jpg
+.. figure:: img/xt-sim.png
+     :width: 612px
      :align: center
      :alt: Xtensa Xplorer (Eclipse base frontend for xt-sim)
 

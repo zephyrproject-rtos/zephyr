@@ -23,6 +23,7 @@ the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/we_ophelia1ev_nrf52805.jpg
+     :width: 2000px
      :align: center
      :alt: Ophelia-I EV
 

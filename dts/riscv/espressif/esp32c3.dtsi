@@ -35,11 +35,6 @@
 		status = "okay";
 	};
 
-	wifi: wifi {
-		compatible = "espressif,esp32-wifi";
-		status = "disabled";
-	};
-
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -57,6 +52,7 @@
 			#interrupt-cells = <1>;
 			interrupt-controller;
 			reg = <0x600c2000 0x198>;
+			label = "INTC_0";
 			status = "okay";
 		};
 
@@ -65,27 +61,22 @@
 			reg = <0x60023000 0x80>;
 			interrupts = <SYSTIMER_TARGET0_EDGE_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			label = "SYSTIMER_0";
 			status = "okay";
 		};
 
 		rtc: rtc@60008000 {
 			compatible = "espressif,esp32-rtc";
 			reg = <0x60008000 0x1000>;
+			label = "RTC";
 			xtal-freq = <ESP32_CLK_XTAL_40M>;
 			#clock-cells = <1>;
-			status = "okay";
-
-			rtc_timer: rtc_timer {
-				compatible = "espressif,esp32-rtc-timer";
-				slow-clk-freq = <ESP32_RTC_SLOW_CLK_FREQ_90K>;
-				interrupts = <RTC_CORE_INTR_SOURCE>;
-				interrupt-parent = <&intc>;
-				status = "okay";
-			};
+			status = "ok";
 		};
 
 		flash: flash-controller@60002000 {
 			compatible = "espressif,esp32-flash-controller";
+			label = "FLASH_CTRL";
 			reg = <0x60002000 0x1000>;
 
 			#address-cells = <1>;
@@ -93,6 +84,7 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
+				label = "FLASH_ESP32C3";
 				reg = <0 0x400000>;
 				erase-block-size = <4096>;
 				write-block-size = <4>;
@@ -106,6 +98,7 @@
 			reg = <0x60004000 0x800>;
 			interrupts = <GPIO_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			label = "GPIO_0";
 			ngpios = <32>;   /* 0..31 */
 		};
 
@@ -116,6 +109,7 @@
 			reg = <0x60013000 0x1000>;
 			interrupts = <I2C_EXT0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			label = "I2C_0";
 			clocks = <&rtc ESP32_I2C0_MODULE>;
 			status = "disabled";
 		};
@@ -123,6 +117,7 @@
 		uart0: uart@60000000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x60000000 0x400>;
+			label = "UART_0";
 			status = "disabled";
 			interrupts = <UART0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
@@ -132,6 +127,7 @@
 		uart1: uart@60010000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x60010000 0x400>;
+			label = "UART_1";
 			status = "disabled";
 			interrupts = <UART1_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
@@ -144,6 +140,7 @@
 			pwm-controller;
 			#pwm-cells = <3>;
 			reg = <0x60019000 0x1000>;
+			label = "LEDC_0";
 			clocks = <&rtc ESP32_LEDC_MODULE>;
 			status = "disabled";
 		};
@@ -151,6 +148,7 @@
 		usb_serial: uart@60043000 {
 			compatible = "espressif,esp32-usb-serial";
 			reg = <0x60043000 0x400>;
+			label = "USB_SERIAL";
 			status = "disabled";
 			interrupts = <USB_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
@@ -164,6 +162,7 @@
 			index = <0>;
 			interrupts = <TG0_T0_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			label = "TIMG0_T0";
 			status = "disabled";
 		};
 
@@ -174,12 +173,14 @@
 			index = <0>;
 			interrupts = <TG1_T0_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			label = "TIMG1_T0";
 			status = "disabled";
 		};
 
 		trng0: trng@3ff700b0 {
 			compatible = "espressif,esp32-trng";
 			reg = <0x3FF700B0 0x4>;
+			label = "TRNG_0";
 			status = "disabled";
 		};
 
@@ -188,6 +189,7 @@
 			reg = <0x60024000 DT_SIZE_K(4)>;
 			interrupts = <SPI2_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			label = "SPI_2";
 			clocks = <&rtc ESP32_SPI2_MODULE>;
 			status = "disabled";
 		};
@@ -198,6 +200,7 @@
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_TIMG0_MODULE>;
+			label = "WDT_0";
 			status = "disabled";
 		};
 
@@ -207,6 +210,7 @@
 			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_TIMG1_MODULE>;
+			label = "WDT_1";
 			status = "disabled";
 		};
 

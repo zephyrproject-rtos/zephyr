@@ -8,6 +8,9 @@ if BOARD_LPCXPRESSO55S16
 config BOARD
 	default "lpcxpresso55S16"
 
+config I2C
+	default y if SENSOR
+
 config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER

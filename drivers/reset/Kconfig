@@ -28,6 +28,5 @@ config RESET_INIT_PRIORITY
 comment "Reset Controller Drivers"
 
 rsource "Kconfig.rpi_pico"
-rsource "Kconfig.gd32"
 
 endif # RESET

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include "test_common.h"
 
@@ -21,7 +21,10 @@
 #error Rebuild with the SSE config option enabled
 #endif
 
-static void *generic_setup(void)
+extern void test_load_store(void);
+extern void test_pi(void);
+
+void test_main(void)
 {
 	/*
 	 * Enable round robin scheduling to allow both the low priority pi
@@ -31,7 +34,9 @@ static void *generic_setup(void)
 	 */
 	k_sched_time_slice_set(10, THREAD_LOW_PRIORITY);
 
-	return NULL;
+	/* Run the testsuite */
+	ztest_test_suite(fpu_sharing,
+			 ztest_unit_test(test_load_store),
+			 ztest_unit_test(test_pi));
+	ztest_run_test_suite(fpu_sharing);
 }
-
-ZTEST_SUITE(fpu_sharing_generic, NULL, generic_setup, NULL, NULL, NULL);

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/zephyr.h>
 
 #include <zephyr/toolchain.h>
@@ -43,17 +43,16 @@ struct sof_dai_ssp_params {
 	uint32_t bclk_delay;
 } __packed;
 
-static const struct device *const dev_dai_ssp =
-	DEVICE_DT_GET(DT_NODELABEL(ssp0));
-static const struct device *const dev_dma_dw =
-	DEVICE_DT_GET(DT_NODELABEL(lpgpdma0));
-
+static const struct device *dev_dai_ssp;
+static const struct device *dev_dma_dw;
 static struct dai_config config;
 static struct sof_dai_ssp_params ssp_config;
 
 #define BUF_SIZE 48
 #define XFER_SIZE BUF_SIZE * 4
 #define XFERS 2
+#define DMA_DEVICE_NAME "DMA_0"
+#define SSP_DEVICE_NAME "SSP_0"
 
 K_SEM_DEFINE(xfer_sem, 0, 1);
 
@@ -255,7 +254,7 @@ static int check_transmission(void)
 	return TC_PASS;
 }
 
-ZTEST(adsp_ssp, test_adsp_ssp_transfer)
+void test_adsp_ssp_transfer(void)
 {
 	const struct dai_properties *props;
 	static int chan_id_rx;
@@ -344,7 +343,7 @@ ZTEST(adsp_ssp, test_adsp_ssp_transfer)
 	check_transmission();
 }
 
-ZTEST(adsp_ssp, test_adsp_ssp_config_set)
+void test_adsp_ssp_config_set(void)
 {
 	int ret;
 
@@ -386,7 +385,7 @@ ZTEST(adsp_ssp, test_adsp_ssp_config_set)
 	zassert_equal(ret, TC_PASS, NULL);
 }
 
-static void test_adsp_ssp_probe(void)
+void test_adsp_ssp_probe(void)
 {
 	int ret;
 
@@ -395,16 +394,24 @@ static void test_adsp_ssp_probe(void)
 	zassert_equal(ret, TC_PASS, NULL);
 }
 
-static void *adsp_ssp_setup(void)
+void test_main(void)
 {
-	k_object_access_grant(dev_dai_ssp, k_current_get());
+	dev_dai_ssp = device_get_binding(SSP_DEVICE_NAME);
 
-	zassert_true(device_is_ready(dev_dai_ssp), "device SSP_0 is not ready");
-	zassert_true(device_is_ready(dev_dma_dw), "device DMA 0 is not ready");
+	if (dev_dai_ssp != NULL) {
+		k_object_access_grant(dev_dai_ssp, k_current_get());
+	}
 
-	test_adsp_ssp_probe();
+	zassert_not_null(dev_dai_ssp, "device SSP_0 not found");
 
-	return NULL;
+	dev_dma_dw = device_get_binding(DMA_DEVICE_NAME);
+
+	zassert_not_null(dev_dma_dw, "device DMA_0 not found");
+
+	ztest_test_suite(adsp_ssp,
+			 ztest_unit_test(test_adsp_ssp_probe),
+			 ztest_unit_test(test_adsp_ssp_config_set),
+			 ztest_unit_test(test_adsp_ssp_transfer));
+
+	ztest_run_test_suite(adsp_ssp);
 }
-
-ZTEST_SUITE(adsp_ssp, NULL, adsp_ssp_setup, NULL, NULL, NULL);

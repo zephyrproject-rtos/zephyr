@@ -243,7 +243,7 @@ static void xlnx_quadspi_start_tx(const struct device *dev)
 			xlnx_quadspi_write32(dev, spicr, SPICR_OFFSET);
 		}
 
-		spi_context_complete(ctx, dev, 0);
+		spi_context_complete(ctx, 0);
 		return;
 	}
 
@@ -301,7 +301,7 @@ static void xlnx_quadspi_start_tx(const struct device *dev)
 		xlnx_quadspi_write32(dev, spicr | SPICR_TX_FIFO_RESET,
 				     SPICR_OFFSET);
 
-		spi_context_complete(ctx, dev, -ENOTSUP);
+		spi_context_complete(ctx, -ENOTSUP);
 	}
 
 	if (!IS_ENABLED(CONFIG_SPI_SLAVE) || !spi_context_is_slave(ctx)) {
@@ -315,16 +315,14 @@ static int xlnx_quadspi_transceive(const struct device *dev,
 				   const struct spi_config *spi_cfg,
 				   const struct spi_buf_set *tx_bufs,
 				   const struct spi_buf_set *rx_bufs,
-				   bool async,
-				   spi_callback_t cb,
-				   void *userdata)
+				   bool async, struct k_poll_signal *signal)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
 	struct xlnx_quadspi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int ret;
 
-	spi_context_lock(ctx, async, cb, userdata, spi_cfg);
+	spi_context_lock(ctx, async, signal, spi_cfg);
 
 	ret = xlnx_quadspi_configure(dev, spi_cfg);
 	if (ret) {
@@ -351,7 +349,7 @@ static int xlnx_quadspi_transceive_blocking(const struct device *dev,
 					    const struct spi_buf_set *rx_bufs)
 {
 	return xlnx_quadspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, false,
-				       NULL, NULL);
+				       NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -359,11 +357,10 @@ static int xlnx_quadspi_transceive_async(const struct device *dev,
 					 const struct spi_config *spi_cfg,
 					 const struct spi_buf_set *tx_bufs,
 					 const struct spi_buf_set *rx_bufs,
-					 spi_callback_t cb,
-					 void *userdata)
+					 struct k_poll_signal *signal)
 {
 	return xlnx_quadspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, true,
-				       cb, userdata);
+				       signal);
 }
 #endif /* CONFIG_SPI_ASYNC */
 

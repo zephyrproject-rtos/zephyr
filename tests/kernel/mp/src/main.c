@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/tc_util.h>
-#include <zephyr/ztest.h>
+#include <tc_util.h>
+#include <ztest.h>
 #include <zephyr/kernel.h>
 
 #ifdef CONFIG_SMP
@@ -91,7 +91,7 @@ FUNC_NORETURN void cpu1_fn(void *arg)
  *
  * @see arch_start_cpu()
  */
-ZTEST(multiprocessing, test_mp_start)
+void test_mp_start(void)
 {
 	cpu_arg = 12345;
 
@@ -103,4 +103,9 @@ ZTEST(multiprocessing, test_mp_start)
 	zassert_true(cpu_running, "cpu1 didn't start");
 }
 
-ZTEST_SUITE(multiprocessing, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(multiprocessing,
+			 ztest_unit_test(test_mp_start));
+	ztest_run_test_suite(multiprocessing);
+}

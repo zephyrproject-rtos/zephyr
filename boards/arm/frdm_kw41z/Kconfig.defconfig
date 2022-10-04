@@ -17,6 +17,9 @@ config MCG_FRDIV
 config MCG_FCRDIV
 	default 0
 
+config I2C
+	default y if SENSOR
+
 config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER

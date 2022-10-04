@@ -15,7 +15,9 @@
 
 LOG_MODULE_REGISTER(main);
 
-const struct device *const kscan_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_keyboard_scan));
+#define TOUCH_CONTROLLER_NODE DT_ALIAS(kscan0)
+
+const struct device *kscan_dev = DEVICE_DT_GET(TOUCH_CONTROLLER_NODE);
 
 static void k_callback(const struct device *dev, uint32_t row, uint32_t col,
 		       bool pressed)

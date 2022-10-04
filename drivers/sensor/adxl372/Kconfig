@@ -5,10 +5,7 @@
 
 menuconfig ADXL372
 	bool "ADXL372 Three Axis High-g I2C/SPI accelerometer"
-	default y
-	depends on DT_HAS_ADI_ADXL372_ENABLED
-	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL372),i2c)
-	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL372),spi)
+	depends on I2C || SPI
 	help
 	  Enable driver for ADXL372 Three-Axis Digital Accelerometers.
 
@@ -16,8 +13,6 @@ if ADXL372
 
 choice ADXL372_BUS_TYPE
 	prompt "Interface type"
-	default ADXL372_I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL372),i2c)
-	default ADXL372_SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL372),spi)
 	help
 	  Select interface the digital interface type for the ADXL372
 
@@ -31,7 +26,7 @@ config ADXL372_SPI
 
 endchoice
 
-choice ADXL372_OP_MODE
+choice
 	prompt "Operating mode"
 	default ADXL372_PEAK_DETECT_MODE
 
@@ -52,7 +47,7 @@ config ADXL372_MEASUREMENT_MODE
 
 endchoice
 
-choice ADXL372_ODR_FREQ
+choice
 	prompt "Accelerometer sampling frequency (ODR)"
 	default ADXL372_ODR_6400HZ if ADXL372_PEAK_DETECT_MODE
 	default ADXL372_ODR_400HZ if ADXL372_MEASUREMENT_MODE
@@ -74,7 +69,7 @@ config ADXL372_ODR_6400HZ
 
 endchoice
 
-choice ADXL372_BW_FREQ
+choice
 	prompt "Low-Pass (Antialiasing) Filter corner frequency"
 	default ADXL372_BW_200HZ if ADXL372_ODR_400HZ
 	default ADXL372_BW_400HZ if ADXL372_ODR_800HZ
@@ -109,7 +104,7 @@ config ADXL372_BW_3200HZ
 
 endchoice
 
-choice ADXL372_HPF_CORNER
+choice
 	prompt "High-Pass Filter corner frequency"
 	default ADXL372_HPF_CORNER0
 	help
@@ -185,7 +180,7 @@ config ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE
 	  activity detection to be based not on an absolute threshold,
 	  but on a deviation from a reference point or orientation.
 
-choice ADXL372_TRIGGER_MODE
+choice
 	prompt "Trigger mode"
 	default ADXL372_TRIGGER_NONE
 	help

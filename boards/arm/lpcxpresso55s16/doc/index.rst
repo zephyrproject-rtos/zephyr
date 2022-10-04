@@ -13,7 +13,8 @@ with additional expansion ports around the Arduino footprint, along
 with a PMod/host interface port and MikroElektronika Click module
 site.
 
-.. image:: lpcxpresso55S16.jpg
+.. image:: ./lpcxpresso55S16.jpg
+   :width: 720px
    :align: center
    :alt: LPCXpresso55S16
 
@@ -73,11 +74,6 @@ hardware features:
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
 | CAN       | on-chip    | canbus                              |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | entropy;                            |
-|           |            | random                              |
-+-----------+------------+-------------------------------------+
-| IAP       | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.

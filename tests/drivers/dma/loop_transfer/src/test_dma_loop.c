@@ -25,7 +25,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 /* in millisecond */
 #define SLEEPTIME 250
@@ -67,6 +67,8 @@ static __aligned(32) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] __used
 static char tx_data[] = DATA;
 static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = { { 0 } };
 #endif
+
+#define DMA_DEVICE_NAME CONFIG_DMA_LOOP_TRANSFER_DRV_NAME
 
 volatile uint32_t transfer_count;
 volatile uint32_t done;
@@ -118,7 +120,8 @@ static int test_loop(void)
 	static int chan_id;
 
 	test_case_id = 0;
-	TC_PRINT("DMA memory to memory transfer started\n");
+	TC_PRINT("DMA memory to memory transfer started on %s\n",
+	       DMA_DEVICE_NAME);
 	TC_PRINT("Preparing DMA Controller\n");
 
 #if CONFIG_NOCACHE_MEMORY
@@ -128,9 +131,9 @@ static int test_loop(void)
 
 	memset(rx_data, 0, sizeof(rx_data));
 
-	dma = DEVICE_DT_GET(DT_NODELABEL(test_dma));
-	if (!device_is_ready(dma)) {
-		TC_PRINT("dma controller device is not ready\n");
+	dma = device_get_binding(DMA_DEVICE_NAME);
+	if (!dma) {
+		TC_PRINT("Cannot get dma controller\n");
 		return TC_FAIL;
 	}
 
@@ -205,7 +208,8 @@ static int test_loop_suspend_resume(void)
 	int res = 0;
 
 	test_case_id = 1;
-	TC_PRINT("DMA memory to memory transfer started\n");
+	TC_PRINT("DMA memory to memory transfer started on %s\n",
+	       DMA_DEVICE_NAME);
 	TC_PRINT("Preparing DMA Controller\n");
 
 #if CONFIG_NOCACHE_MEMORY
@@ -215,9 +219,9 @@ static int test_loop_suspend_resume(void)
 
 	memset(rx_data, 0, sizeof(rx_data));
 
-	dma = DEVICE_DT_GET(DT_NODELABEL(test_dma));
-	if (!device_is_ready(dma)) {
-		TC_PRINT("dma controller device is not ready\n");
+	dma = device_get_binding(DMA_DEVICE_NAME);
+	if (!dma) {
+		TC_PRINT("Cannot get dma controller\n");
 		return TC_FAIL;
 	}
 
@@ -271,7 +275,7 @@ static int test_loop_suspend_resume(void)
 		res = dma_suspend(dma, chan_id);
 		if (res == -ENOSYS) {
 			done = 1;
-			TC_PRINT("suspend not supported\n");
+			TC_PRINT("suspend not supported");
 			dma_stop(dma, chan_id);
 			return TC_PASS;
 		}
@@ -340,13 +344,13 @@ static int test_loop_suspend_resume(void)
 
 
 /* export test cases */
-ZTEST(dma_m2m_loop, test_dma_m2m_loop)
+void test_dma_m2m_loop(void)
 {
 	zassert_true((test_loop() == TC_PASS), NULL);
 }
 
 /* export test cases */
-ZTEST(dma_m2m_loop, test_dma_m2m_loop_suspend_resume)
+void test_dma_m2m_loop_suspend_resume(void)
 {
 	zassert_true((test_loop_suspend_resume() == TC_PASS), NULL);
 }

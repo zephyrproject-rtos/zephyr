@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
@@ -15,10 +15,16 @@
 #define TEST_SRAM1      DT_NODELABEL(test_sram1)
 #define TEST_SRAM2      DT_NODELABEL(test_sram2)
 
-ZTEST(devicetree_api_ext, test_linker_regions)
+static void test_linker_regions(void)
 {
 	zassert_true(!strcmp(LINKER_DT_NODE_REGION_NAME(TEST_SRAM1), "SRAM_REGION"), "");
 	zassert_true(!strcmp(LINKER_DT_NODE_REGION_NAME(TEST_SRAM2), "SRAM_REGION_2"), "");
 }
 
-ZTEST_SUITE(devicetree_api_ext, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(devicetree_api_ext,
+			 ztest_unit_test(test_linker_regions)
+			 );
+	ztest_run_test_suite(devicetree_api_ext);
+}

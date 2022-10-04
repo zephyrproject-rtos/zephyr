@@ -6,9 +6,7 @@
 
 config DAC_DACX3608
 	bool "TI DACX3608 DAC driver"
-	default y
-	select I2C
-	depends on DT_HAS_TI_DAC43608_ENABLED || DT_HAS_TI_DAC53608_ENABLED
+	depends on I2C
 	help
 	  Enable the driver for the TI DACX3608.
 

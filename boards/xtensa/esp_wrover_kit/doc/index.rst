@@ -31,8 +31,10 @@ Functionality Overview
 
 The block diagram below shows the main components of ESP-WROVER-KIT and their interconnections.
 
-.. image:: img/esp-wrover-kit-block-diagram.jpg
+.. image:: img/esp-wrover-kit-block-diagram.png
+     :width: 837px
      :align: center
+     :height: 415px
      :alt: ESP-WROVER-KIT
 
 Functional Description
@@ -41,7 +43,7 @@ Functional Description
 The following two figures and the table below describe the key components, interfaces, and controls
 of the ESP-WROVER-KIT board.
 
-.. figure:: img/esp-wrover-kit-v4.1-layout-front.jpg
+.. figure:: img/esp-wrover-kit-v4.1-layout-front.png
      :align: center
      :alt: esp wrover front
 
@@ -49,7 +51,7 @@ of the ESP-WROVER-KIT board.
 
 .. _esp wrover back:
 
-.. figure:: img/esp-wrover-kit-v4.1-layout-back.jpg
+.. figure:: img/esp-wrover-kit-v4.1-layout-back.png
      :align: center
      :alt: esp wrover back
 

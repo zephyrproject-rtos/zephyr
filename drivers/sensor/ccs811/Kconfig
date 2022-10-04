@@ -7,9 +7,7 @@
 
 menuconfig CCS811
 	bool "CCS811 Digital Gas Sensor"
-	default y
-	depends on DT_HAS_AMS_CCS811_ENABLED
-	select I2C
+	depends on I2C
 	help
 	  Enable driver for CCS811 Gas sensors.
 

@@ -21,5 +21,13 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 source "soc/arm/cypress/psoc6/Kconfig.defconfig.psoc*"
 
+config SPI_PSOC6
+	default y
+	depends on SPI
+
+config UART_PSOC6
+	default y
+	depends on SERIAL
+
 endif   # SOC_SERIES_PSOC62 || \
 	# SOC_SERIES_PSOC63

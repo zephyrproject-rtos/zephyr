@@ -5,8 +5,7 @@
 
 config ENTROPY_SAM_RNG
 	bool "Atmel SAM MCU Family True Random Number Generator (TRNG) Driver"
-	default y
-	depends on DT_HAS_ATMEL_SAM_TRNG_ENABLED
+	depends on SOC_FAMILY_SAM || SOC_FAMILY_SAM0
 	select ENTROPY_HAS_DRIVER
 	help
 	  Enable True Random Number Generator (TRNG) driver for Atmel SAM MCUs.

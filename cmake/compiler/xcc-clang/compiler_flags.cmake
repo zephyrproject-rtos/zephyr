@@ -12,6 +12,3 @@ if($ENV{XCC_NO_G_FLAG})
   # Clear the related flag(s) here so it won't cause issues.
   set_compiler_property(PROPERTY debug)
 endif()
-
-# Clang version used by Xtensa does not support -fno-pic and -fno-pie
-set_compiler_property(PROPERTY no_position_independent "")

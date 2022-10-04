@@ -20,7 +20,7 @@
  * @}
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 ZTEST_SUITE(fifo_api, NULL, NULL, NULL, NULL, NULL);
 

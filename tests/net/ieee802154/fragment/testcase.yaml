@@ -1,0 +1,6 @@
+common:
+  depends_on: ieee802154
+  min_ram: 48
+tests:
+  net.ieee802154.fragment:
+    tags: net ieee802154 fragment

@@ -8,7 +8,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 BUILD_ASSERT(__cplusplus == 201703);
 

@@ -140,8 +140,9 @@ struct event_handler {
 	.min_len = _min_len, \
 }
 
-static int handle_event_common(uint8_t event, struct net_buf *buf,
-			       const struct event_handler *handlers, size_t num_handlers)
+static inline void handle_event(uint8_t event, struct net_buf *buf,
+				const struct event_handler *handlers,
+				size_t num_handlers)
 {
 	size_t i;
 
@@ -155,41 +156,15 @@ static int handle_event_common(uint8_t event, struct net_buf *buf,
 		if (buf->len < handler->min_len) {
 			BT_ERR("Too small (%u bytes) event 0x%02x",
 			       buf->len, event);
-			return -EINVAL;
+			return;
 		}
 
 		handler->handler(buf);
-		return 0;
+		return;
 	}
 
-	return -EOPNOTSUPP;
-}
-
-static void handle_event(uint8_t event, struct net_buf *buf, const struct event_handler *handlers,
-			 size_t num_handlers)
-{
-	int err;
-
-	err = handle_event_common(event, buf, handlers, num_handlers);
-	if (err == -EOPNOTSUPP) {
-		BT_WARN("Unhandled event 0x%02x len %u: %s", event, buf->len,
-			bt_hex(buf->data, buf->len));
-	}
-
-	/* Other possible errors are handled by handle_event_common function */
-}
-
-static void handle_vs_event(uint8_t event, struct net_buf *buf,
-			    const struct event_handler *handlers, size_t num_handlers)
-{
-	int err;
-
-	err = handle_event_common(event, buf, handlers, num_handlers);
-	if (err == -EOPNOTSUPP) {
-		BT_WARN("Unhandled vendor-specific event: %s", bt_hex(buf->data, buf->len));
-	}
-
-	/* Other possible errors are handled by handle_event_common function */
+	BT_WARN("Unhandled event 0x%02x len %u: %s", event,
+		buf->len, bt_hex(buf->data, buf->len));
 }
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
@@ -200,7 +175,6 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 	uint16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
 	struct bt_conn *conn;
-	uint8_t index = acl(buf)->index;
 
 	net_buf_destroy(buf);
 
@@ -209,9 +183,10 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_index(index);
+	conn = bt_conn_lookup_index(acl(buf)->index);
 	if (!conn) {
-		BT_WARN("Unable to look up conn with index 0x%02x", index);
+		BT_WARN("Unable to look up conn with index 0x%02x",
+			acl(buf)->index);
 		return;
 	}
 
@@ -580,12 +555,13 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-		if (bt_addr_le_cmp(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
+#if defined(CONFIG_BT_SMP)
+		if (!bt_dev.le.rl_size ||
+		    bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
-			BT_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
 		}
-
+#endif
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
 		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	}
@@ -619,7 +595,7 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_EXT_CREATE_CONN, buf, NULL);
 }
 
-static int bt_le_create_conn_legacy(const struct bt_conn *conn)
+int bt_le_create_conn_legacy(const struct bt_conn *conn)
 {
 	struct bt_hci_cp_le_create_conn *cp;
 	struct bt_hci_cmd_state_set state;
@@ -653,12 +629,13 @@ static int bt_le_create_conn_legacy(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-		if (bt_addr_le_cmp(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
+#if defined(CONFIG_BT_SMP)
+		if (!bt_dev.le.rl_size ||
+		    bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
-			BT_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
 		}
-
+#endif
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
 		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	}
@@ -2154,18 +2131,6 @@ int bt_hci_register_vnd_evt_cb(bt_hci_vnd_evt_cb_t cb)
 }
 #endif /* CONFIG_BT_HCI_VS_EVT_USER */
 
-static const struct event_handler vs_events[] = {
-#if defined(CONFIG_BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES)
-	EVENT_HANDLER(BT_HCI_EVT_VS_LE_CONNECTIONLESS_IQ_REPORT,
-		      bt_hci_le_vs_df_connectionless_iq_report,
-		      sizeof(struct bt_hci_evt_vs_le_connectionless_iq_report)),
-#endif /* CONFIG_BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES */
-#if defined(CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES)
-	EVENT_HANDLER(BT_HCI_EVT_VS_LE_CONNECTION_IQ_REPORT, bt_hci_le_vs_df_connection_iq_report,
-		      sizeof(struct bt_hci_evt_vs_le_connection_iq_report)),
-#endif /* CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES */
-};
-
 static void hci_vendor_event(struct net_buf *buf)
 {
 	bool handled = false;
@@ -2182,14 +2147,10 @@ static void hci_vendor_event(struct net_buf *buf)
 	}
 #endif /* CONFIG_BT_HCI_VS_EVT_USER */
 
-	if (IS_ENABLED(CONFIG_BT_HCI_VS_EVT) && !handled) {
-		struct bt_hci_evt_vs *evt;
-
-		evt = net_buf_pull_mem(buf, sizeof(*evt));
-
-		BT_DBG("subevent 0x%02x", evt->subevent);
-
-		handle_vs_event(evt->subevent, buf, vs_events, ARRAY_SIZE(vs_events));
+	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT) && !handled) {
+		/* do nothing at present time */
+		BT_WARN("Unhandled vendor-specific event: %s",
+			bt_hex(buf->data, buf->len));
 	}
 }
 
@@ -3850,19 +3811,16 @@ uint16_t bt_get_appearance(void)
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 int bt_set_appearance(uint16_t appearance)
 {
-	if (bt_dev.appearance != appearance) {
-		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			int err = settings_save_one("bt/appearance", &appearance,
-					sizeof(appearance));
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		int err = settings_save_one("bt/appearance", &appearance, sizeof(appearance));
 
-			if (err) {
-				BT_ERR("Unable to save setting 'bt/appearance' (err %d).", err);
-				return err;
-			}
+		if (err) {
+			BT_ERR("Unable to save setting 'bt/appearance' (err %d).", err);
+			return err;
 		}
-
-		bt_dev.appearance = appearance;
 	}
+
+	bt_dev.appearance = appearance;
 
 	return 0;
 }

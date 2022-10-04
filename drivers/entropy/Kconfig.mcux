@@ -5,8 +5,7 @@
 
 config ENTROPY_MCUX_RNGA
 	bool "MCUX RNGA driver"
-	default y
-	depends on DT_HAS_NXP_KINETIS_RNGA_ENABLED
+	depends on HAS_MCUX_RNGA
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the random number generator accelerator (RNGA)
@@ -14,8 +13,7 @@ config ENTROPY_MCUX_RNGA
 
 config ENTROPY_MCUX_TRNG
 	bool "MCUX TRNG driver"
-	default y
-	depends on DT_HAS_NXP_KINETIS_TRNG_ENABLED
+	depends on HAS_MCUX_TRNG
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the true random number generator (TRNG)
@@ -23,21 +21,11 @@ config ENTROPY_MCUX_TRNG
 
 config ENTROPY_MCUX_RNG
 	bool "MCUX RNG driver"
-	default y
-	depends on DT_HAS_NXP_LPC_RNG_ENABLED
+	depends on HAS_MCUX_RNG
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the true random number generator (TRNG)
 	  driver based on the MCUX RNG driver on LPC Family.
-
-config ENTROPY_MCUX_CAAM
-	bool "MCUX CAAM driver"
-	default y
-	depends on DT_HAS_NXP_IMX_CAAM_ENABLED
-	select ENTROPY_HAS_DRIVER
-	help
-	  This option enables the CAAM driver based on the MCUX
-	  CAAM driver.
 
 #
 # Don't use use the MCUX TRNG as a random source as it is not designed

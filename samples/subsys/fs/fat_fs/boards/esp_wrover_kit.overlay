@@ -26,6 +26,7 @@
 		compatible = "zephyr,mmc-spi-slot";
 		reg = <0>;
 		status = "okay";
+		label = "SDHC";
 		spi-max-frequency = <400000>;
         };
 };

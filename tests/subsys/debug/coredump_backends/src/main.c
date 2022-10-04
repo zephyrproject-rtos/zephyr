@@ -7,9 +7,9 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/sys/printk.h>
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <assert.h>
-#include <zephyr/tc_util.h>
+#include <tc_util.h>
 
 #include <zephyr/debug/coredump.h>
 

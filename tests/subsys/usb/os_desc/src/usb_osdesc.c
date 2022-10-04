@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-#include <zephyr/tc_util.h>
+#include <ztest.h>
+#include <tc_util.h>
 
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usb_device.h>
@@ -126,17 +126,23 @@ static void test_handle_os_desc_feature(void)
 		     "Wrong data");
 }
 
-ZTEST(os_desc, test_osdesc_string)
+static void test_osdesc_string(void)
 {
 	test_register_osdesc();
 	test_handle_os_desc();
 }
 
-ZTEST(os_desc, test_osdesc_feature)
+static void test_osdesc_feature(void)
 {
 	test_register_osdesc();
 	test_handle_os_desc_feature();
 }
 
 /* test case main entry */
-ZTEST_SUITE(os_desc, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(test_osdesc,
+			 ztest_unit_test(test_osdesc_string),
+			 ztest_unit_test(test_osdesc_feature));
+	ztest_run_test_suite(test_osdesc);
+}

@@ -5,7 +5,6 @@
 
 config COUNTER_MCUX_PIT
 	bool "MCUX PIT driver"
-	default y
-	depends on DT_HAS_NXP_KINETIS_PIT_ENABLED
+	depends on HAS_MCUX_PIT
 	help
 	  Enable support for the MCUX Periodic Interrupt Timer (PIT).

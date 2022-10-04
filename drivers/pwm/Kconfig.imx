@@ -5,8 +5,6 @@
 
 menuconfig PWM_IMX
 	bool "i.MX PWM Driver"
-	default y
-	depends on DT_HAS_FSL_IMX27_PWM_ENABLED
 	help
 	  Enable support for i.MX pwm driver.
 

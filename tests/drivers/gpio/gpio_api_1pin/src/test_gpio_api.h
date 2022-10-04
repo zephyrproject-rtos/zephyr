@@ -9,7 +9,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #if DT_NODE_HAS_PROP(DT_ALIAS(led0), gpios)
 #define TEST_NODE            DT_GPIO_CTLR(DT_ALIAS(led0), gpios)
@@ -46,10 +46,8 @@ void test_gpio_int_edge_falling(void);
 void test_gpio_int_edge_both(void);
 void test_gpio_int_edge_to_active(void);
 void test_gpio_int_edge_to_inactive(void);
-void test_gpio_int_level_high_interrupt_count_1(void);
-void test_gpio_int_level_high_interrupt_count_5(void);
-void test_gpio_int_level_low_interrupt_count_1(void);
-void test_gpio_int_level_low_interrupt_count_5(void);
+void test_gpio_int_level_high(void);
+void test_gpio_int_level_low(void);
 void test_gpio_int_level_active(void);
 void test_gpio_int_level_inactive(void);
 

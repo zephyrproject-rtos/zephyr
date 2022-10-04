@@ -3,7 +3,7 @@
 
 description: ITE it8xxx2 PECI
 
-compatible: "ite,it8xxx2-peci"
+compatible: "ite,peci-it8xxx2"
 
 include: [peci.yaml, pinctrl-device.yaml]
 

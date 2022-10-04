@@ -16,10 +16,11 @@ vendor-specific and open-source tools, including the
 
 The ``litex_vexriscv`` board configuration in Zephyr is meant for the
 LiteX VexRiscv SoC implementation generated for the
-`Digilent Arty A7-35T or A7-100T Development Boards
+`Digilent Arty A7-35T Development Board
 <https://store.digilentinc.com/arty-a7-artix-7-fpga-development-board-for-makers-and-hobbyists>`_.
 
 .. image:: img/litex_vexriscv.jpg
+   :width: 650px
    :align: center
    :alt: LiteX VexRiscv on Digilent Arty 35T Board
 
@@ -41,6 +42,9 @@ that can be used to customize the design (JTAG, MMU, MUL/DIV extensions).
 The implementation is optimized for FPGA chips.
 More information about the project can be found on
 `VexRiscv's website <https://github.com/SpinalHDL/VexRiscv>`_.
+
+LiteX VexRiscv
+##############
 
 To run the ZephyrOS on the VexRiscv CPU, it is necessary to prepare the
 bitstream for the FPGA on a Digilent Arty A7-35 Board. This can be achieved
@@ -76,28 +80,18 @@ proceed with the following instruction:
       apt-get install build-essential bzip2 python3 python3-dev python3-pip
       ./install.sh
 
-#. Set up the Arty F4PGA environment:
+#. Generate the bitstream:
 
    .. code-block:: bash
 
       source ./init
-      export F4PGA_INSTALL_DIR=~/opt/f4pga
-      export FPGA_FAM="xc7"
-      export PATH="$F4PGA_INSTALL_DIR/$FPGA_FAM/install/bin:$PATH";
-      source "$F4PGA_INSTALL_DIR/$FPGA_FAM/conda/etc/profile.d/conda.sh"
+      export INSTALL_DIR="path/to/f4pga"
+      FPGA_FAM="xc7"
+      export PATH="$INSTALL_DIR/$FPGA_FAM/install/bin:$PATH";
+      source "$INSTALL_DIR/$FPGA_FAM/conda/etc/profile.d/conda.sh"
       conda activate $FPGA_FAM
+      ./make.py --board=arty --build --toolchain=symbiflow
 
-#. Generate the bitstream for the Arty 35T:
-
-   .. code-block:: bash
-
-      ./make.py --board=arty --variant=a7-35 --build --toolchain=symbiflow
-
-#. Generate the bitstream for the Arty 100T:
-
-   .. code-block:: bash
-
-      ./make.py --board=arty --variant=a7-100 --build --toolchain=symbiflow
 
 Official LiteX SoC builder
 ==========================
@@ -151,16 +145,11 @@ If you were generating bitstream with the official LiteX SoC builder you need to
 Booting
 =======
 
-To upload the bitstream you can use `xc3sprog <https://github.com/matrix-io/xc3sprog>`_ or
-`openFPGALoader <https://github.com/trabucayre/openFPGALoader>`_:
+To upload bitstream you can use `xc3sprog <https://github.com/matrix-io/xc3sprog>`_:
 
 .. code-block:: bash
 
    xc3sprog -c nexys4 digilent_arty.bit
-
-.. code-block:: bash
-
-   openFPGALoader -b arty_a7_100t digilent_arty.bit
 
 You can boot from a serial port using litex_term (replace `ttyUSBX` with your device) , e.g.:
 

@@ -7,5 +7,10 @@ compatible: "vnd,mbox"
 
 include: mailbox-controller.yaml
 
+properties:
+  label:
+    type: string
+    required: true
+
 mbox-cells:
   - channel

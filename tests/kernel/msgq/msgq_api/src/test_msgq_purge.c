@@ -55,7 +55,7 @@ static void purge_when_put(struct k_msgq *q)
  * @brief Test purge a message queue
  * @see k_msgq_init(), k_msgq_purge(), k_msgq_put()
  */
-ZTEST(msgq_api_1cpu, test_msgq_purge_when_put)
+void test_msgq_purge_when_put(void)
 {
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
 
@@ -67,7 +67,7 @@ ZTEST(msgq_api_1cpu, test_msgq_purge_when_put)
  * @brief Test purge a message queue
  * @see k_msgq_init(), k_msgq_purge(), k_msgq_put()
  */
-ZTEST_USER(msgq_api, test_msgq_user_purge_when_put)
+void test_msgq_user_purge_when_put(void)
 {
 	struct k_msgq *q;
 

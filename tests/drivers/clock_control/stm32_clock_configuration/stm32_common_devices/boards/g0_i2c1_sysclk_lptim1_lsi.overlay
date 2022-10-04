@@ -77,6 +77,5 @@
 };
 
 &adc1 {
-	/* Basic test only. Don't configure domain clock. */
 	status = "okay";
 };

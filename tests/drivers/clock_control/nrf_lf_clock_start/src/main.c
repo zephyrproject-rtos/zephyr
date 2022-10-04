@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <hal/nrf_clock.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 

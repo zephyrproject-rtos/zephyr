@@ -88,13 +88,14 @@ extern const struct ms5607_transfer_function ms5607_spi_transfer_function;
 #endif
 
 struct ms5607_config {
+	const struct device *bus;
 	const struct ms5607_transfer_function *tf;
 	union {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-		struct i2c_dt_spec i2c;
+		uint16_t i2c_addr;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-		struct spi_dt_spec spi;
+		struct spi_dt_spec spi_bus;
 #endif
 	} bus_cfg;
 };

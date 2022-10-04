@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include "test_sched.h"
 
 #ifdef CONFIG_TIMESLICING
@@ -124,7 +124,7 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-ZTEST(threads_scheduling, test_slice_reset)
+void test_slice_reset(void)
 {
 	uint32_t t32;
 	k_tid_t tid[NUM_THREAD];
@@ -199,7 +199,7 @@ ZTEST(threads_scheduling, test_slice_reset)
 }
 
 #else /* CONFIG_TIMESLICING */
-ZTEST(threads_scheduling, test_slice_reset)
+void test_slice_reset(void)
 {
 	ztest_test_skip();
 }

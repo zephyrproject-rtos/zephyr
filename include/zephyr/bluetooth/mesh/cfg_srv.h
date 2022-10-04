@@ -21,7 +21,8 @@
 extern "C" {
 #endif
 
-/**
+/** @def BT_MESH_MODEL_CFG_SRV
+ *
  *  @brief Generic Configuration Server model composition data entry.
  */
 #define BT_MESH_MODEL_CFG_SRV                                                  \

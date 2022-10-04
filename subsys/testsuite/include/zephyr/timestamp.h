@@ -17,9 +17,9 @@
 
 #include <limits.h>
 #if defined(__GNUC__)
-#include <zephyr/test_asm_inline_gcc.h>
+#include <test_asm_inline_gcc.h>
 #else
-#include <zephyr/test_asm_inline_other.h>
+#include <test_asm_inline_other.h>
 #endif
 
 

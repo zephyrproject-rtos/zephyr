@@ -28,6 +28,7 @@ This development kit has the following features:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/bl653_dvk.jpg
+     :width: 500px
      :align: center
      :alt: BL653 Development Kit
 

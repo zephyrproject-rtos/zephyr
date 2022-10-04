@@ -28,13 +28,13 @@ CMake user package registry.
 
       In Linux, the CMake user package registry is found in:
 
-      ``~/.cmake/packages/Zephyr``
+      ``~/.cmake/package/Zephyr``
 
    .. group-tab:: macOS
 
       In macOS, the CMake user package registry is found in:
 
-      ``~/.cmake/packages/Zephyr``
+      ``~/.cmake/package/Zephyr``
 
    .. group-tab:: Windows
 
@@ -55,7 +55,6 @@ Zephyr CMake package export (west)
 When installing Zephyr using :ref:`west <get_the_code>` then it is recommended
 to export Zephyr using ``west zephyr-export``.
 
-.. _zephyr_cmake_package_export:
 
 Zephyr CMake package export (without west)
 ******************************************
@@ -423,13 +422,16 @@ Zephyr CMake package source code
 ********************************
 
 The Zephyr CMake package source code in
-:zephyr_file:`share/zephyr-package/cmake` and
-:zephyr_file:`share/zephyrunittest-package/cmake` contains the CMake config
-package which is used by the CMake ``find_package`` function.
+``<PATH-TO-ZEPHYR>/share/zephyr-package/cmake`` contains the CMake config package
+which is used by CMake ``find_package`` function.
 
 It also contains code for exporting Zephyr as a CMake config package.
 
-The following is an overview of the files in these directories:
+The following is an overview of those files
+
+:file:`CMakeLists.txt`
+    The CMakeLists.txt file for the CMake build system which is responsible for
+    exporting Zephyr as a package to the CMake user package registry.
 
 :file:`ZephyrConfigVersion.cmake`
     The Zephyr package version file. This file is called by CMake to determine
@@ -455,8 +457,9 @@ The following is an overview of the files in these directories:
    Common file used for detection of Zephyr repository and workspace candidates.
    Used by ``ZephyrConfigVersion.cmake`` and ``ZephyrConfig.cmake`` for common code.
 
-:file:`zephyr_export.cmake`
-   See :ref:`zephyr_cmake_package_export`.
+:file:`pristine.cmake`
+   Pristine file for removing all files created by CMake during configure and generator time when
+   exporting Zephyr CMake package. Running pristine keeps all package related files mentioned above.
 
 .. _CMake package: https://cmake.org/cmake/help/latest/manual/cmake-packages.7.html
 .. _CMake user package registry: https://cmake.org/cmake/help/latest/manual/cmake-packages.7.html#user-package-registry

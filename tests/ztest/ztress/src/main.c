@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-#include <zephyr/ztress.h>
+#include <ztest.h>
+#include <ztress.h>
 
 volatile int ztress_dummy;
 

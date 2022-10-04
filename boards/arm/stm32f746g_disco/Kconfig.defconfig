@@ -29,6 +29,12 @@ endif # DISPLAY
 
 if KSCAN
 
+config I2C
+	default y
+
+config KSCAN_FT5336
+	default y
+
 config KSCAN_FT5336_INTERRUPT
 	default y
 

@@ -14,6 +14,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
 			interrupts = <93 0>;
 			status = "disabled";
+			label = "AES";
 		};
 	};
 };

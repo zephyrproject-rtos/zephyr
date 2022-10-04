@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-#include <zephyr/tc_util.h>
+#include <ztest.h>
+#include <tc_util.h>
 
 #include <zephyr/drivers/pcie/pcie.h>
 #include <ibecc.h>
@@ -95,9 +95,9 @@ static uint32_t mock_conf_read(pcie_bdf_t bdf, unsigned int reg)
 /* Include source code to test some static functions */
 #include "edac_ibecc.c"
 
-ZTEST(ibecc_cov, test_static_functions)
+static void test_static_functions(void)
 {
-	const struct device *const dev = DEVICE_DT_GET(DEVICE_NODE);
+	const struct device *dev = DEVICE_DT_GET(DEVICE_NODE);
 	struct ibecc_error error_data;
 	uint64_t log_data;
 	int ret;
@@ -134,7 +134,7 @@ ZTEST(ibecc_cov, test_static_functions)
 	ibecc_errcmd_setup(PCI_HOST_BRIDGE, false);
 }
 
-ZTEST(ibecc_cov, test_trigger_nmi_handler)
+static void test_trigger_nmi_handler(void)
 {
 	bool ret;
 
@@ -142,4 +142,11 @@ ZTEST(ibecc_cov, test_trigger_nmi_handler)
 	zassert_true(ret, "Test NMI handling");
 }
 
-ZTEST_SUITE(ibecc_cov, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(ibecc_cov,
+			 ztest_unit_test(test_static_functions),
+			 ztest_unit_test(test_trigger_nmi_handler)
+			);
+	ztest_run_test_suite(ibecc_cov);
+}

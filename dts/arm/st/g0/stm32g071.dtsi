@@ -16,6 +16,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
 			interrupts = <29 0>;
 			status = "disabled";
+			label = "UART_3";
 		};
 
 		usart4: serial@40004c00 {
@@ -24,6 +25,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
 			interrupts = <29 0>;
 			status = "disabled";
+			label = "UART_4";
 		};
 
 		dmamux1: dmamux@40020800 {
@@ -36,6 +38,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			interrupts = <8 0>;
 			status = "disabled";
+			label = "UCPD_1";
 		};
 
 		ucpd2: ucpd@4000a400 {
@@ -44,6 +47,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
 			interrupts = <8 0>;
 			status = "disabled";
+			label = "UCPD_2";
 		};
 	};
 };

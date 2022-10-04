@@ -3,7 +3,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 /* Experimentally 10ms is enough time to get the second CPU to run on
  * all known platforms.

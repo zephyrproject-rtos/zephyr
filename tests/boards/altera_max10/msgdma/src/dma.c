@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <soc.h>
 #include <kernel_arch_func.h>
 #include <zephyr/device.h>
@@ -38,7 +38,7 @@ static void dma_user_callback(const struct device *dma_dev, void *arg,
 	}
 }
 
-ZTEST(nios2_msgdma, test_msgdma)
+void test_msgdma(void)
 {
 	const struct device *dma;
 	static uint32_t chan_id;
@@ -98,4 +98,9 @@ ZTEST(nios2_msgdma, test_msgdma)
 
 }
 
-ZTEST_SUITE(nios2_msgdma, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(nios2_msgdma_test,
+			 ztest_unit_test(test_msgdma));
+	ztest_run_test_suite(nios2_msgdma_test);
+}

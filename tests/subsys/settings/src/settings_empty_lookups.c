@@ -7,7 +7,7 @@
 
 #include "settings_test.h"
 
-ZTEST(settings_config, test_config_empty_lookups)
+void test_config_empty_lookups(void)
 {
 	int rc;
 	char name[80];

@@ -8,7 +8,4 @@ source "soc/arm/gigadevice/*/Kconfig.defconfig.series"
 config PINCTRL
 	default y
 
-config RESET
-	default y
-
 endif # SOC_FAMILY_GD32

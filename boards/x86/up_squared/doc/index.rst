@@ -11,7 +11,8 @@ performance and low power consumption. It features the latest Intel |reg| Apollo
 Lake Celeron |trade| and Pentium |trade| Processors with only 4W of Scenario Design Power and
 a powerful and flexible Intel |reg| FPGA Altera MAX 10 onboard.
 
-.. figure:: img/up_squared.jpg
+.. figure:: img/up_squared.png
+   :width: 800px
    :align: center
    :alt: UP Squared
 

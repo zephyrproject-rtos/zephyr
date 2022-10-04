@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include "test_socketpair_thread.h"
 

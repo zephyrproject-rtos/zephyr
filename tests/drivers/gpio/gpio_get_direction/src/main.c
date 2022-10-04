@@ -6,7 +6,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #define TEST_NODE            DT_GPIO_CTLR(DT_ALIAS(led0), gpios)
 #define TEST_PIN             DT_GPIO_PIN(DT_ALIAS(led0), gpios)

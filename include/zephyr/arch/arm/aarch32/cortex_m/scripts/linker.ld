@@ -143,7 +143,6 @@ SECTIONS
 	 * after .gnu.linkonce.t.*
 	 */
 	*(.glue_7t) *(.glue_7) *(.vfp11_veneer) *(.v4_bx)
-	. = ALIGN(4);
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -208,8 +207,8 @@ SECTIONS
 #include <zephyr/linker/cplusplus-rom.ld>
 
 	__rodata_region_end = .;
-	MPU_ALIGN(__rodata_region_end - ADDR(rom_start));
-	__rom_region_end = __rom_region_start + . - ADDR(rom_start);
+	MPU_ALIGN(__rodata_region_end -__rom_region_start);
+	__rom_region_end = .;
 
     GROUP_END(ROMABLE_REGION)
 
@@ -357,7 +356,7 @@ SECTIONS
  */
 #include <snippets-noinit.ld>
 
-        } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+        } GROUP_LINK_IN(RAMABLE_REGION)
 #endif /* CONFIG_USERSPACE */
 
     /* Define linker symbols */

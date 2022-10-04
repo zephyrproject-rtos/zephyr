@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/irq_offload.h>
 #include <zephyr/debug/stack.h>
@@ -65,7 +65,7 @@ static void work_handler(struct k_work *w)
  *
  * @see k_thread_foreach(), log_stack_usage()
  */
-ZTEST(profiling_api, test_call_stacks_analyze_main)
+void test_call_stacks_analyze_main(void)
 {
 	TC_PRINT("from main thread:\n");
 	k_thread_foreach(tdata_dump_callback, NULL);
@@ -82,7 +82,7 @@ ZTEST(profiling_api, test_call_stacks_analyze_main)
  * @see k_thread_foreach(), pm_system_suspend(), pm_system_resume(),
  * log_stack_usage()
  */
-ZTEST(profiling_api_1cpu, test_call_stacks_analyze_idle)
+void test_call_stacks_analyze_idle(void)
 {
 	TC_PRINT("from idle thread:\n");
 	k_msleep(SLEEP_MS);
@@ -99,7 +99,7 @@ ZTEST(profiling_api_1cpu, test_call_stacks_analyze_idle)
  * @see k_thread_foreach(), k_work_init(), k_work_submit(),
  * log_stack_usage()
  */
-ZTEST(profiling_api_1cpu, test_call_stacks_analyze_workq)
+void test_call_stacks_analyze_workq(void)
 {
 	TC_PRINT("from workq:\n");
 	k_sem_init(&sync_sema, 0, NUM_OF_WORK);
@@ -112,7 +112,11 @@ ZTEST(profiling_api_1cpu, test_call_stacks_analyze_workq)
 
 /*TODO: add test case to capture the usage of interrupt call stack*/
 
-ZTEST_SUITE(profiling_api, NULL, NULL, NULL, NULL, NULL);
-
-ZTEST_SUITE(profiling_api_1cpu, NULL, NULL,
-		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
+void test_main(void)
+{
+	ztest_test_suite(profiling_api,
+			 ztest_unit_test(test_call_stacks_analyze_main),
+			 ztest_1cpu_unit_test(test_call_stacks_analyze_idle),
+			 ztest_1cpu_unit_test(test_call_stacks_analyze_workq));
+	ztest_run_test_suite(profiling_api);
+}

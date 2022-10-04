@@ -8,7 +8,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
-#include <zephyr/ztest_assert.h>
+#include <ztest_assert.h>
 
 #include <zephyr/net/socket.h>
 
@@ -23,12 +23,12 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define SERVER_PORT 4242
 #define CLIENT_PORT 9898
 
-/* Fudge factor added to expected timeouts, in milliseconds. */
-#define FUZZ 60
+/* On QEMU, poll() which waits takes +30ms from the requested time. */
+#define FUZZ 30
 
 #define TIMEOUT_MS 60
 
-ZTEST_USER(net_socket_select, test_fd_set)
+void test_fd_set(void)
 {
 	fd_set set;
 
@@ -63,7 +63,7 @@ ZTEST_USER(net_socket_select, test_fd_set)
 	zassert_equal(set.bitset[1], 0, "");
 }
 
-ZTEST_USER(net_socket_select, test_select)
+void test_select(void)
 {
 	int res;
 	int c_sock;
@@ -167,7 +167,7 @@ ZTEST_USER(net_socket_select, test_select)
 	zassert_equal(res, 0, "close failed");
 }
 
-static void *setup(void)
+void test_main(void)
 {
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
 		k_thread_priority_set(k_current_get(),
@@ -177,7 +177,10 @@ static void *setup(void)
 	}
 
 	k_thread_system_pool_assign(k_current_get());
-	return NULL;
-}
 
-ZTEST_SUITE(net_socket_select, NULL, setup, NULL, NULL, NULL);
+	ztest_test_suite(socket_select,
+			 ztest_user_unit_test(test_fd_set),
+			 ztest_user_unit_test(test_select));
+
+	ztest_run_test_suite(socket_select);
+}

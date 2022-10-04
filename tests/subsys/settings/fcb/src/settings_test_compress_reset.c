@@ -8,7 +8,7 @@
 #include "settings_test.h"
 #include "settings/settings_fcb.h"
 
-ZTEST(settings_config_fcb, test_config_compress_reset)
+void test_config_compress_reset(void)
 {
 	int rc;
 	struct settings_fcb cf;
@@ -16,8 +16,6 @@ ZTEST(settings_config_fcb, test_config_compress_reset)
 	int elems[4];
 	int i;
 
-	rc = settings_register(&c_test_handlers[1]);
-	zassert_true(rc == 0 || rc == -EEXIST, "settings_register fail");
 	config_wipe_srcs();
 	config_wipe_fcb(fcb_sectors, ARRAY_SIZE(fcb_sectors));
 
@@ -27,7 +25,6 @@ ZTEST(settings_config_fcb, test_config_compress_reset)
 
 	rc = settings_fcb_src(&cf);
 	zassert_true(rc == 0, "can't register FCB as configuration source");
-	settings_mount_fcb_backend(&cf);
 
 	rc = settings_fcb_dst(&cf);
 	zassert_true(rc == 0,
@@ -88,5 +85,4 @@ ZTEST(settings_config_fcb, test_config_compress_reset)
 		   "active sector should become free after garbage collection");
 
 	c2_var_count = 0;
-	settings_unregister(&c_test_handlers[1]);
 }

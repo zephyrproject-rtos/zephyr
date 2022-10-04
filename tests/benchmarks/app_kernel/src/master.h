@@ -15,7 +15,7 @@
 
 #include "receiver.h"
 
-#include <zephyr/timestamp.h>
+#include <timestamp.h>
 
 #include <string.h>
 

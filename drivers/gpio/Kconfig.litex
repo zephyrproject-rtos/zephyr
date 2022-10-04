@@ -5,7 +5,6 @@
 
 config GPIO_LITEX
 	bool "Litex GPIO driver"
-	default y
-	depends on DT_HAS_LITEX_GPIO_ENABLED
+	depends on SOC_RISCV32_LITEX_VEXRISCV
 	help
 	  Enable Litex GPIO driver.

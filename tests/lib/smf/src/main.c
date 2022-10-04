@@ -5,10 +5,21 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include <zephyr/smf.h>
 #include "test_lib_smf.h"
 
-
-ZTEST_SUITE(smf_tests, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	if (IS_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT)) {
+		ztest_test_suite(smf_tests,
+			ztest_unit_test(test_smf_hierarchical),
+			ztest_unit_test(test_smf_hierarchical_5_ancestors));
+		ztest_run_test_suite(smf_tests);
+	} else {
+		ztest_test_suite(smf_tests,
+			ztest_unit_test(test_smf_flat));
+		ztest_run_test_suite(smf_tests);
+	}
+}

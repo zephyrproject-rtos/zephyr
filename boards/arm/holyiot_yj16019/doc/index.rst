@@ -21,6 +21,7 @@ Semiconductor nRF52832 ARM Cortex-M4 CPU and the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/holyiot_yj16019_front.jpg
+     :width: 375px
      :align: center
      :alt: Holyiot YJ-16019
 
@@ -94,7 +95,8 @@ pads on the PCB (see image):
 * SWDIO = SDO
 * SWCLK = SCK
 
-.. figure:: img/holyiot_yj16019_pcb.jpg
+.. figure:: img/holyiot_yj16019_pcb.png
+     :width: 390px
      :align: center
      :alt: Holyiot YJ-16019 PCB
 

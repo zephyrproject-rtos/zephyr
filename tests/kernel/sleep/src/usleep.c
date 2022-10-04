@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/zephyr.h>
 
 /*
@@ -65,7 +65,7 @@
 ZTEST_USER(sleep, test_usleep)
 {
 	int retries = 0;
-	int64_t elapsed_ms = 0;
+	int64_t elapsed_ms;
 
 	while (retries < RETRIES) {
 		int64_t start_ms;

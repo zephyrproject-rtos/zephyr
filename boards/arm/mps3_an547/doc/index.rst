@@ -16,8 +16,10 @@ CPU and the following devices:
 - Cortex-M System Design Kit UART
 - Ethos-U55 NPU
 
-.. image:: img/mps3_an547.jpg
+.. image:: img/mps3_an547.png
+     :width: 666px
      :align: center
+     :height: 546px
      :alt: ARM MPS3 AN547
 
 This board configuration also supports using the `Corstone-300 FVP`_ to emulate

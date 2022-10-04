@@ -10,7 +10,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_dummy.h>
@@ -33,7 +33,7 @@ static void test_shell_execute_cmd(const char *cmd, int result)
 							cmd, ret, result);
 }
 
-ZTEST(shell_1cpu, test_cmd_help)
+static void test_cmd_help(void)
 {
 	test_shell_execute_cmd("help", 0);
 	test_shell_execute_cmd("help -h", 1);
@@ -42,7 +42,7 @@ ZTEST(shell_1cpu, test_cmd_help)
 	test_shell_execute_cmd("help dummy dummy", -EINVAL);
 }
 
-ZTEST(shell, test_cmd_clear)
+static void test_cmd_clear(void)
 {
 	test_shell_execute_cmd("clear", 0);
 	test_shell_execute_cmd("clear -h", 1);
@@ -51,7 +51,7 @@ ZTEST(shell, test_cmd_clear)
 	test_shell_execute_cmd("clear dummy dummy", -EINVAL);
 }
 
-ZTEST(shell, test_cmd_shell)
+static void test_cmd_shell(void)
 {
 	test_shell_execute_cmd("shell -h", 1);
 	test_shell_execute_cmd("shell --help", 1);
@@ -134,7 +134,7 @@ ZTEST(shell, test_cmd_shell)
 	test_shell_execute_cmd("shell stats show dummy dummy", -EINVAL);
 }
 
-ZTEST(shell, test_cmd_history)
+static void test_cmd_history(void)
 {
 	test_shell_execute_cmd("history", 0);
 	test_shell_execute_cmd("history -h", 1);
@@ -143,7 +143,7 @@ ZTEST(shell, test_cmd_history)
 	test_shell_execute_cmd("history dummy dummy", -EINVAL);
 }
 
-ZTEST(shell, test_cmd_resize)
+static void test_cmd_resize(void)
 {
 	test_shell_execute_cmd("resize -h", 1);
 	test_shell_execute_cmd("resize --help", 1);
@@ -158,7 +158,7 @@ ZTEST(shell, test_cmd_resize)
 	test_shell_execute_cmd("resize default dummy dummy", -EINVAL);
 }
 
-ZTEST(shell, test_shell_module)
+static void test_shell_module(void)
 {
 	test_shell_execute_cmd("test_shell_cmd", 0);
 	test_shell_execute_cmd("test_shell_cmd -h", 1);
@@ -171,7 +171,7 @@ ZTEST(shell, test_shell_module)
 }
 
 /* test wildcard and static subcommands */
-ZTEST(shell, test_shell_wildcards_static)
+static void test_shell_wildcards_static(void)
 {
 	test_shell_execute_cmd("test_wildcard", 0);
 	test_shell_execute_cmd("test_wildcard argument_1", 1);
@@ -185,7 +185,7 @@ ZTEST(shell, test_shell_wildcards_static)
 }
 
 /* test wildcard and dynamic subcommands */
-ZTEST(shell, test_shell_wildcards_dynamic)
+static void test_shell_wildcards_dynamic(void)
 {
 	test_shell_execute_cmd("test_dynamic", 0);
 	test_shell_execute_cmd("test_dynamic d*", 1);
@@ -280,7 +280,7 @@ static void unselect_cmd(void)
 	shell->ctx->selected_cmd = NULL;
 }
 
-ZTEST(shell, test_cmd_select)
+static void test_cmd_select(void)
 {
 	unselect_cmd();
 	test_shell_execute_cmd("select -h", 1);
@@ -295,7 +295,7 @@ ZTEST(shell, test_cmd_select)
 	test_shell_execute_cmd("on", -ENOEXEC);
 }
 
-ZTEST(shell, test_set_root_cmd)
+static void test_set_root_cmd(void)
 {
 	int err;
 
@@ -316,7 +316,7 @@ ZTEST(shell, test_set_root_cmd)
 	test_shell_execute_cmd("shell colors on", 0);
 }
 
-ZTEST(shell, test_shell_fprintf)
+static void test_shell_fprintf(void)
 {
 	static const char expect[] = "testing 1 2 3";
 	const struct shell *shell;
@@ -344,12 +344,12 @@ ZTEST(shell, test_shell_fprintf)
 }
 
 #define RAW_ARG "aaa \"\" bbb"
-#define CMD_MAND_1_OPT_RAW_NAME cmd_mand_1_opt_raw
+#define CMD_NAME test_cmd_raw_arg
 
-static int cmd_mand_1_opt_raw_handler(const struct shell *sh, size_t argc, char **argv)
+static int cmd_raw_arg(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 2) {
-		if (strcmp(argv[0], STRINGIFY(CMD_MAND_1_OPT_RAW_NAME))) {
+		if (strcmp(argv[0], STRINGIFY(CMD_NAME))) {
 			return -1;
 		}
 		if (strcmp(argv[1], RAW_ARG)) {
@@ -362,53 +362,14 @@ static int cmd_mand_1_opt_raw_handler(const struct shell *sh, size_t argc, char 
 	return 0;
 }
 
-SHELL_CMD_ARG_REGISTER(CMD_MAND_1_OPT_RAW_NAME, NULL, NULL, cmd_mand_1_opt_raw_handler, 1,
-		       SHELL_OPT_ARG_RAW);
+SHELL_CMD_ARG_REGISTER(CMD_NAME, NULL, NULL, cmd_raw_arg, 1, SHELL_OPT_ARG_RAW);
 
-ZTEST(shell, test_cmd_mand_1_opt_raw)
+static void test_raw_arg(void)
 {
-	test_shell_execute_cmd("cmd_mand_1_opt_raw aaa \"\" bbb", 0);
-	test_shell_execute_cmd("cmd_mand_1_opt_raw", 0);
-	test_shell_execute_cmd("select cmd_mand_1_opt_raw", 0);
+	test_shell_execute_cmd("test_cmd_raw_arg aaa \"\" bbb", 0);
+	test_shell_execute_cmd("test_cmd_raw_arg", 0);
+	test_shell_execute_cmd("select test_cmd_raw_arg", 0);
 	test_shell_execute_cmd("aaa \"\" bbb", 0);
-	shell_set_root_cmd(NULL);
-}
-
-#define CMD_MAND_2_OPT_RAW_NAME cmd_mand_2_opt_raw
-
-static int cmd_mand_2_opt_raw_handler(const struct shell *sh, size_t argc, char **argv)
-{
-	if (argc < 2 || argc > 3) {
-		return -1;
-	}
-
-	if (strcmp(argv[0], STRINGIFY(CMD_MAND_2_OPT_RAW_NAME))) {
-		return -1;
-	}
-
-	if (argc >= 2 && strcmp(argv[1], "mandatory")) {
-		return -1;
-	}
-
-	if (argc == 3 && strcmp(argv[2], RAW_ARG)) {
-		return -1;
-	}
-
-	return 0;
-}
-
-SHELL_CMD_ARG_REGISTER(CMD_MAND_2_OPT_RAW_NAME, NULL, NULL, cmd_mand_2_opt_raw_handler, 2,
-		       SHELL_OPT_ARG_RAW);
-
-ZTEST(shell, test_mand_2_opt_raw)
-{
-	test_shell_execute_cmd("cmd_mand_2_opt_raw", -EINVAL);
-	test_shell_execute_cmd("cmd_mand_2_opt_raw mandatory", 0);
-	test_shell_execute_cmd("cmd_mand_2_opt_raw mandatory aaa \"\" bbb", 0);
-	test_shell_execute_cmd("select cmd_mand_2_opt_raw", 0);
-	test_shell_execute_cmd("", -ENOEXEC);
-	test_shell_execute_cmd("mandatory", 0);
-	test_shell_execute_cmd("mandatory aaa \"\" bbb", 0);
 	shell_set_root_cmd(NULL);
 }
 
@@ -419,16 +380,15 @@ static int cmd_dummy(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_CMD_REGISTER(dummy, NULL, NULL, cmd_dummy);
 
-ZTEST(shell, test_max_argc)
+static void test_max_argc(void)
 {
-	BUILD_ASSERT(CONFIG_SHELL_ARGC_MAX == 20,
+	BUILD_ASSERT(CONFIG_SHELL_ARGC_MAX == 12,
 		     "Unexpected test configuration.");
 
-	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19", 0);
-	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
-			       " 16 17 18 19 20",
-			       -ENOEXEC);
+	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11", 0);
+	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12", -ENOEXEC);
 }
+
 
 static int cmd_handler_dict_1(const struct shell *sh, size_t argc, char **argv, void *data)
 {
@@ -450,7 +410,7 @@ SHELL_SUBCMD_DICT_SET_CREATE(dict2, cmd_handler_dict_2, (one, 1), (two, 2));
 SHELL_CMD_REGISTER(dict1, &dict1, NULL, NULL);
 SHELL_CMD_REGISTER(dict2, &dict2, NULL, NULL);
 
-ZTEST(shell, test_cmd_dict)
+static void test_cmd_dict(void)
 {
 	test_shell_execute_cmd("dict1 one", 1);
 	test_shell_execute_cmd("dict1 two", 2);
@@ -479,7 +439,7 @@ SHELL_SUBCMD_ADD((section_cmd), cmd1, &sub_section_cmd1, "help for cmd1", cmd1_h
 SHELL_CMD_REGISTER(section_cmd, &sub_section_cmd,
 		   "Demo command using section for subcommand registration", NULL);
 
-ZTEST(shell, test_section_cmd)
+static void test_section_cmd(void)
 {
 	test_shell_execute_cmd("section_cmd", SHELL_CMD_HELP_PRINTED);
 	test_shell_execute_cmd("section_cmd cmd1", 10);
@@ -488,14 +448,28 @@ ZTEST(shell, test_section_cmd)
 	test_shell_execute_cmd("section_cmd cmd1 sub_cmd2", -EINVAL);
 }
 
-static void *shell_setup(void)
+void test_main(void)
 {
+	ztest_test_suite(shell_test_suite,
+			ztest_1cpu_unit_test(test_cmd_help),
+			ztest_unit_test(test_cmd_clear),
+			ztest_unit_test(test_cmd_shell),
+			ztest_unit_test(test_cmd_history),
+			ztest_unit_test(test_cmd_select),
+			ztest_unit_test(test_cmd_resize),
+			ztest_unit_test(test_shell_module),
+			ztest_unit_test(test_shell_wildcards_static),
+			ztest_unit_test(test_shell_wildcards_dynamic),
+			ztest_unit_test(test_shell_fprintf),
+			ztest_unit_test(test_set_root_cmd),
+			ztest_unit_test(test_raw_arg),
+			ztest_unit_test(test_max_argc),
+			ztest_unit_test(test_cmd_dict),
+			ztest_unit_test(test_section_cmd)
+			);
+
 	/* Let the shell backend initialize. */
 	k_msleep(20);
-	return NULL;
+
+	ztest_run_test_suite(shell_test_suite);
 }
-
-ZTEST_SUITE(shell_1cpu, NULL, shell_setup, ztest_simple_1cpu_before,
-			ztest_simple_1cpu_after, NULL);
-
-ZTEST_SUITE(shell, NULL, shell_setup, NULL, NULL, NULL);

@@ -32,23 +32,11 @@ extern "C" {
 
 /* Driver interface mirrored in include/drivers/cache.h */
 
-#if defined(CONFIG_DCACHE)
-
 /* Enable d-cache */
 extern void cache_data_enable(void);
 
 /* Disable d-cache */
 extern void cache_data_disable(void);
-
-/* Write-back / Invalidate / Write-back + Invalidate all d-cache */
-extern int cache_data_all(int op);
-
-/* Write-back / Invalidate / Write-back + Invalidate d-cache lines */
-extern int cache_data_range(void *addr, size_t size, int op);
-
-#endif /* CONFIG_DCACHE */
-
-#if defined(CONFIG_ICACHE)
 
 /* Enable i-cache */
 extern void cache_instr_enable(void);
@@ -56,44 +44,39 @@ extern void cache_instr_enable(void);
 /* Disable i-cache */
 extern void cache_instr_disable(void);
 
+/* Write-back / Invalidate / Write-back + Invalidate all d-cache */
+extern int cache_data_all(int op);
+
+/* Write-back / Invalidate / Write-back + Invalidate d-cache lines */
+extern int cache_data_range(void *addr, size_t size, int op);
+
 /* Write-back / Invalidate / Write-back + Invalidate all i-cache */
 extern int cache_instr_all(int op);
 
 /* Write-back / Invalidate / Write-back + Invalidate i-cache lines */
 extern int cache_instr_range(void *addr, size_t size, int op);
 
-#endif /* CONFIG_ICACHE */
-
 #else
 
 /* Hooks into arch code */
 
-#if defined(CONFIG_DCACHE)
-
 #define cache_data_enable			arch_dcache_enable
 #define cache_data_disable			arch_dcache_disable
-#define cache_data_all(op)			arch_dcache_all(op)
-#define cache_data_range(addr, size, op)	arch_dcache_range(addr, size, op)
-#define cache_data_line_size_get		arch_dcache_line_size_get
-
-#endif /* CONFIG_DCACHE */
-
-#if defined(CONFIG_ICACHE)
-
 #define cache_instr_enable			arch_icache_enable
 #define cache_instr_disable			arch_icache_disable
+#define cache_data_all(op)			arch_dcache_all(op)
+#define cache_data_range(addr, size, op)	arch_dcache_range(addr, size, op)
 #define cache_instr_all(op)			arch_icache_all(op)
 #define cache_instr_range(addr, size, op)	arch_icache_range(addr, size, op)
+#define cache_data_line_size_get		arch_dcache_line_size_get
 #define cache_instr_line_size_get		arch_icache_line_size_get
 
-#endif /* CONFIG_ICACHE */
-
-#endif /* CONFIG_HAS_EXTERNAL_CACHE */
+#endif
 
 __syscall int sys_cache_data_all(int op);
 static inline int z_impl_sys_cache_data_all(int op)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+#if defined(CONFIG_CACHE_MANAGEMENT)
 	return cache_data_all(op);
 #endif
 	ARG_UNUSED(op);
@@ -104,7 +87,7 @@ static inline int z_impl_sys_cache_data_all(int op)
 __syscall int sys_cache_data_range(void *addr, size_t size, int op);
 static inline int z_impl_sys_cache_data_range(void *addr, size_t size, int op)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+#if defined(CONFIG_CACHE_MANAGEMENT)
 	return cache_data_range(addr, size, op);
 #endif
 	ARG_UNUSED(addr);
@@ -117,7 +100,7 @@ static inline int z_impl_sys_cache_data_range(void *addr, size_t size, int op)
 __syscall int sys_cache_instr_all(int op);
 static inline int z_impl_sys_cache_instr_all(int op)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
+#if defined(CONFIG_CACHE_MANAGEMENT)
 	return cache_instr_all(op);
 #endif
 	ARG_UNUSED(op);
@@ -128,7 +111,7 @@ static inline int z_impl_sys_cache_instr_all(int op)
 __syscall int sys_cache_instr_range(void *addr, size_t size, int op);
 static inline int z_impl_sys_cache_instr_range(void *addr, size_t size, int op)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
+#if defined(CONFIG_CACHE_MANAGEMENT)
 	return cache_instr_range(addr, size, op);
 #endif
 	ARG_UNUSED(addr);

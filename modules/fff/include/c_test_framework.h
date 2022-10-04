@@ -6,7 +6,7 @@
 #ifndef MODULES_FFF_TEST_INCLUDE_C_TEST_FRAMEWORK_H_
 #define MODULES_FFF_TEST_INCLUDE_C_TEST_FRAMEWORK_H_
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/sys/printk.h>
 
 void setup(void);

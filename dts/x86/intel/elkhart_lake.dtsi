@@ -30,6 +30,7 @@
 
 	ibecc: ibecc {
 	       compatible = "intel,ibecc";
+	       label = "ibecc";
 	       status = "okay";
 	};
 
@@ -41,6 +42,7 @@
 	};
 
 	pcie0 {
+		label = "PCIE_0";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "intel,pcie";
@@ -50,6 +52,7 @@
 			compatible = "ptm-root";
 
 			reg = <PCIE_BDF(0,0x1c,0) PCIE_ID(0x8086,0x4b38)>;
+			label = "PTM_ROOT_0";
 
 			status = "okay";
 		};
@@ -60,6 +63,7 @@
 			reg = <PCIE_BDF(0,0x1e,0) PCIE_ID(0x8086,0x4b28)>;
 			reg-shift = <2>;
 
+			label = "UART_0";
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -73,6 +77,7 @@
 			reg = <PCIE_BDF(0,0x1e,1) PCIE_ID(0x8086,0x4b29)>;
 			reg-shift = <2>;
 
+			label = "UART_1";
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -87,6 +92,7 @@
 			reg = <PCIE_BDF(0,0x19,2) PCIE_ID(0x8086,0x4b4d)>;
 			reg-shift = <2>;
 
+			label = "UART_2";
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -101,6 +107,7 @@
 			reg = <PCIE_BDF(0,0x11,0) PCIE_ID(0x8086,0x4b96)>;
 			reg-shift = <2>;
 
+			label = "UART_PSE_0";
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -115,6 +122,7 @@
 			reg = <PCIE_BDF(0,0x11,1) PCIE_ID(0x8086,0x4b97)>;
 			reg-shift = <2>;
 
+			label = "UART_PSE_1";
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -129,6 +137,7 @@
 			reg = <PCIE_BDF(0,0x11,2) PCIE_ID(0x8086,0x4b98)>;
 			reg-shift = <2>;
 
+			label = "UART_PSE_2";
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -143,6 +152,7 @@
 			reg = <PCIE_BDF(0,0x11,3) PCIE_ID(0x8086,0x4b99)>;
 			reg-shift = <2>;
 
+			label = "UART_PSE_3";
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -157,6 +167,7 @@
 			reg = <PCIE_BDF(0,0x11,4) PCIE_ID(0x8086,0x4b9a)>;
 			reg-shift = <2>;
 
+			label = "UART_PSE_4";
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -171,6 +182,7 @@
 			reg = <PCIE_BDF(0,0x11,5) PCIE_ID(0x8086,0x4b9b)>;
 			reg-shift = <2>;
 
+			label = "UART_PSE_5";
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -187,6 +199,7 @@
 			reg = <PCIE_BDF(0,0x15,0) PCIE_ID(0x8086,0x4b78)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_0";
 
 			status = "okay";
 		};
@@ -199,6 +212,7 @@
 			reg = <PCIE_BDF(0,0x15,1) PCIE_ID(0x8086,0x4b79)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_1";
 
 			status = "okay";
 		};
@@ -211,6 +225,7 @@
 			reg = <PCIE_BDF(0,0x15,2) PCIE_ID(0x8086,0x4b7a)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_2";
 
 			status = "okay";
 		};
@@ -223,6 +238,7 @@
 			reg = <PCIE_BDF(0,0x15,3) PCIE_ID(0x8086,0x4b7b)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_3";
 
 			status = "okay";
 		};
@@ -235,6 +251,7 @@
 			reg = <PCIE_BDF(0,0x19,0) PCIE_ID(0x8086,0x4b4b)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_4";
 
 			status = "okay";
 		};
@@ -247,6 +264,7 @@
 			reg = <PCIE_BDF(0,0x19,1) PCIE_ID(0x8086,0x4b4c)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_5";
 
 			status = "okay";
 		};
@@ -259,6 +277,7 @@
 			reg = <PCIE_BDF(0,0x10,0) PCIE_ID(0x8086,0x4b44)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_6";
 
 			status = "okay";
 		};
@@ -271,6 +290,7 @@
 			reg = <PCIE_BDF(0,0x10,1) PCIE_ID(0x8086,0x4b45)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_7";
 
 			status = "okay";
 		};
@@ -283,6 +303,7 @@
 			reg = <PCIE_BDF(0,0x1b,0) PCIE_ID(0x8086,0x4bb9)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_PSE_0";
 
 			status = "okay";
 		};
@@ -295,6 +316,7 @@
 			reg = <PCIE_BDF(0,0x1b,1) PCIE_ID(0x8086,0x4bba)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_PSE_1";
 
 			status = "okay";
 		};
@@ -307,6 +329,7 @@
 			reg = <PCIE_BDF(0,0x1b,2) PCIE_ID(0x8086,0x4bbb)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_PSE_2";
 
 			status = "okay";
 		};
@@ -319,6 +342,7 @@
 			reg = <PCIE_BDF(0,0x1b,3) PCIE_ID(0x8086,0x4bbc)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_PSE_3";
 
 			status = "okay";
 		};
@@ -331,6 +355,7 @@
 			reg = <PCIE_BDF(0,0x1b,4) PCIE_ID(0x8086,0x4bbd)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_PSE_4";
 
 			status = "okay";
 		};
@@ -343,6 +368,7 @@
 			reg = <PCIE_BDF(0,0x1b,5) PCIE_ID(0x8086,0x4bbe)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_PSE_5";
 
 			status = "okay";
 		};
@@ -355,6 +381,7 @@
 			reg = <PCIE_BDF(0,0x1b,6) PCIE_ID(0x8086,0x4bbf)>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			label = "I2C_PSE_6";
 
 			status = "okay";
 		};
@@ -369,6 +396,7 @@
 		vtd: vtd@fed91000 {
 			compatible = "intel,vt-d";
 
+			label = "VTD_0";
 			reg = <0xfed91000 0x1000>;
 
 			status = "okay";
@@ -381,6 +409,7 @@
 			reg = <0xfe040000 0x1000>;
 			reg-shift = <0>;
 
+			label = "UART_1_FIXED";
 			clock-frequency = <1843200>;
 			interrupts = <3 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -395,6 +424,7 @@
 			reg = <0xfe042000 0x1000>;
 			reg-shift = <0>;
 
+			label = "UART_2_FIXED";
 			clock-frequency = <1843200>;
 			interrupts = <4 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -409,6 +439,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_0_B";
 			group-index = <0x0>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -425,6 +456,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_0_T";
 			group-index = <0x1>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -441,6 +473,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_0_G";
 			group-index = <0x2>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -457,6 +490,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_1_V";
 			group-index = <0x0>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -473,6 +507,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_1_H";
 			group-index = <0x1>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -489,6 +524,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_1_D";
 			group-index = <0x2>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -505,6 +541,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_1_U";
 			group-index = <0x3>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -521,6 +558,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_1_vG";
 			group-index = <0x4>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -537,6 +575,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_3_S";
 			group-index = <0x1>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -553,6 +592,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_3_A";
 			group-index = <0x2>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -569,6 +609,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_3_vG";
 			group-index = <0x3>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -585,6 +626,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_4_C";
 			group-index = <0x0>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -601,6 +643,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_4_F";
 			group-index = <0x1>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -617,6 +660,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_4_E";
 			group-index = <0x3>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -633,6 +677,7 @@
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			label = "GPIO_COM_5_R";
 			group-index = <0x0>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -644,6 +689,7 @@
 		};
 
 		hpet: hpet@fed00000 {
+			label = "HPET";
 			compatible = "intel,hpet";
 			reg = <0xfed00000 0x400>;
 			interrupts = <2 IRQ_TYPE_FIXED_EDGE_RISING 4>;
@@ -653,6 +699,7 @@
 		};
 
 		counter: counter@70 {
+			label = "CMOS";
 			compatible = "motorola,mc146818";
 			reg = <0x70 0x0D 0x71 0x0D>;
 

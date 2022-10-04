@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/irq_offload.h>
 #include <zephyr/sys/ring_buffer.h>
 
@@ -91,7 +91,7 @@ extern void test_ringbuffer_item_stress(void);
  *
  * @see ring_buf_item_put, ring_buf_item_get
  */
-ZTEST(ringbuffer_api, test_ring_buffer_main)
+void test_ring_buffer_main(void)
 {
 	int ret, put_count, i;
 	uint32_t getdata[6];
@@ -216,7 +216,7 @@ static void tringbuf_get_discard(const void *p)
 }
 
 /*test cases*/
-ZTEST(ringbuffer_api, test_ringbuffer_init)
+void test_ringbuffer_init(void)
 {
 	/**TESTPOINT: init via ring_buf_item_init*/
 	ring_buf_item_init(&ringbuf, RINGBUFFER_SIZE, buffer);
@@ -224,13 +224,13 @@ ZTEST(ringbuffer_api, test_ringbuffer_init)
 	zassert_equal(ring_buf_item_space_get(&ringbuf), RINGBUFFER_SIZE, NULL);
 }
 
-ZTEST(ringbuffer_api, test_ringbuffer_declare_pow2)
+void test_ringbuffer_declare_pow2(void)
 {
 	zassert_true(ring_buf_is_empty(&ringbuf_pow2), NULL);
 	zassert_equal(ring_buf_item_space_get(&ringbuf_pow2), (1 << POW), NULL);
 }
 
-ZTEST(ringbuffer_api, test_ringbuffer_declare_size)
+void test_ringbuffer_declare_size(void)
 {
 	zassert_true(ring_buf_is_empty(&ringbuf_size), NULL);
 	zassert_equal(ring_buf_item_space_get(&ringbuf_size), RINGBUFFER_SIZE,
@@ -277,7 +277,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_declare_size)
  *
  * @see ring_buf_item_put, ring_buf_item_get
  */
-ZTEST(ringbuffer_api, test_ringbuffer_put_get_thread)
+void test_ringbuffer_put_get_thread(void)
 {
 	pbuf = &ringbuf;
 	for (int i = 0; i < 1000; i++) {
@@ -292,7 +292,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_put_get_thread)
 	}
 }
 
-ZTEST(ringbuffer_api, test_ringbuffer_put_get_isr)
+void test_ringbuffer_put_get_isr(void)
 {
 	pbuf = &ringbuf;
 	irq_offload(tringbuf_put, (const void *)0);
@@ -305,7 +305,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_put_get_isr)
 	zassert_true(ring_buf_is_empty(pbuf), NULL);
 }
 
-ZTEST(ringbuffer_api, test_ringbuffer_put_get_thread_isr)
+void test_ringbuffer_put_get_thread_isr(void)
 {
 	pbuf = &ringbuf;
 	tringbuf_put((const void *)0);
@@ -316,7 +316,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_put_get_thread_isr)
 	irq_offload(tringbuf_get, (const void *)2);
 }
 
-ZTEST(ringbuffer_api, test_ringbuffer_put_get_discard)
+void test_ringbuffer_put_get_discard(void)
 {
 	pbuf = &ringbuf;
 	tringbuf_put((const void *)0);
@@ -372,7 +372,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_put_get_discard)
  *
  * @see ring_buf_item_put, ring_buf_item_get
  */
-ZTEST(ringbuffer_api, test_ringbuffer_pow2_put_get_thread_isr)
+void test_ringbuffer_pow2_put_get_thread_isr(void)
 {
 	pbuf = &ringbuf_pow2;
 	tringbuf_put((const void *)0);
@@ -428,7 +428,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_pow2_put_get_thread_isr)
  *
  * @see ring_buf_item_put, ring_buf_item_get
  */
-ZTEST(ringbuffer_api, test_ringbuffer_size_put_get_thread_isr)
+void test_ringbuffer_size_put_get_thread_isr(void)
 {
 	pbuf = &ringbuf_size;
 	tringbuf_put((const void *)0);
@@ -479,7 +479,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_size_put_get_thread_isr)
  *
  * @see ring_buf_put, ring_buf_get
  */
-ZTEST(ringbuffer_api, test_ringbuffer_raw)
+void test_ringbuffer_raw(void)
 {
 	int i;
 	uint8_t inbuf[RINGBUFFER_SIZE];
@@ -539,7 +539,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_raw)
 	zassert_true(ring_buf_is_empty(&ringbuf_raw), NULL);
 }
 
-ZTEST(ringbuffer_api, test_ringbuffer_alloc_put)
+void test_ringbuffer_alloc_put(void)
 {
 	uint8_t outputbuf[RINGBUFFER_SIZE];
 	uint8_t inputbuf[] = {1, 2, 3, 4};
@@ -604,7 +604,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_alloc_put)
 	}
 }
 
-ZTEST(ringbuffer_api, test_byte_put_free)
+void test_byte_put_free(void)
 {
 	uint8_t indata[] = {1, 2, 3, 4, 5};
 	int err;
@@ -651,7 +651,7 @@ ZTEST(ringbuffer_api, test_byte_put_free)
 	}
 }
 
-ZTEST(ringbuffer_api, test_capacity)
+void test_capacity(void)
 {
 	uint32_t capacity;
 
@@ -662,7 +662,7 @@ ZTEST(ringbuffer_api, test_capacity)
 			"Unexpected capacity");
 }
 
-ZTEST(ringbuffer_api, test_size)
+void test_size(void)
 {
 	uint32_t size;
 	static uint8_t buf[RINGBUFFER_SIZE];
@@ -694,7 +694,7 @@ ZTEST(ringbuffer_api, test_size)
 		      size);
 }
 
-ZTEST(ringbuffer_api, test_peek)
+void test_peek(void)
 {
 	uint32_t size;
 	uint8_t byte = 0x42;
@@ -737,7 +737,7 @@ ZTEST(ringbuffer_api, test_peek)
 		      "content validation failed");
 }
 
-ZTEST(ringbuffer_api, test_reset)
+void test_reset(void)
 {
 	uint8_t indata[] = {1, 2, 3, 4, 5};
 	uint8_t outdata[RINGBUFFER_SIZE];
@@ -814,7 +814,7 @@ static uint32_t ringbuf_stored[RINGBUFFER_SIZE];
  *
  * @see ring_buf_item_put, ring_buf_item_get
  */
-ZTEST(ringbuffer_api, test_ringbuffer_array_perf)
+void test_ringbuffer_array_perf(void)
 {
 	struct ring_buf buf_ii;
 	uint32_t input[3] = {0xaa, 0xbb, 0xcc};
@@ -844,7 +844,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_array_perf)
 	}
 }
 
-ZTEST(ringbuffer_api, test_ringbuffer_partial_putting)
+void test_ringbuffer_partial_putting(void)
 {
 	uint8_t indata[RINGBUFFER_SIZE];
 	uint8_t outdata[RINGBUFFER_SIZE];
@@ -879,7 +879,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_partial_putting)
 	}
 }
 
-ZTEST(ringbuffer_api, test_ringbuffer_partial_getting)
+void test_ringbuffer_partial_getting(void)
 {
 	uint8_t indata[RINGBUFFER_SIZE];
 	uint8_t outdata[RINGBUFFER_SIZE];
@@ -913,7 +913,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_partial_getting)
 	}
 }
 
-ZTEST(ringbuffer_api, test_ringbuffer_equal_bufs)
+void test_ringbuffer_equal_bufs(void)
 {
 	struct ring_buf buf_ii;
 	uint8_t *data;
@@ -934,7 +934,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_equal_bufs)
 	}
 }
 
-ZTEST(ringbuffer_api, test_ringbuffer_performance)
+void test_ringbuffer_performance(void)
 {
 	uint8_t buf[16];
 	static struct ring_buf rbuf;
@@ -1000,4 +1000,35 @@ ZTEST(ringbuffer_api, test_ringbuffer_performance)
 }
 
 /*test case main entry*/
-ZTEST_SUITE(ringbuffer_api, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(test_ringbuffer_api,
+		       ztest_unit_test(test_ringbuffer_init),/*keep init first!*/
+		       ztest_unit_test(test_ringbuffer_declare_pow2),
+		       ztest_unit_test(test_ringbuffer_declare_size),
+		       ztest_unit_test(test_ringbuffer_put_get_thread),
+		       ztest_unit_test(test_ringbuffer_put_get_isr),
+		       ztest_unit_test(test_ringbuffer_put_get_thread_isr),
+		       ztest_unit_test(test_ringbuffer_put_get_discard),
+		       ztest_unit_test(test_ringbuffer_pow2_put_get_thread_isr),
+		       ztest_unit_test(test_ringbuffer_size_put_get_thread_isr),
+		       ztest_unit_test(test_ringbuffer_array_perf),
+		       ztest_unit_test(test_ringbuffer_partial_putting),
+		       ztest_unit_test(test_ringbuffer_partial_getting),
+		       ztest_unit_test(test_ring_buffer_main),
+		       ztest_unit_test(test_ringbuffer_raw),
+		       ztest_unit_test(test_ringbuffer_alloc_put),
+		       ztest_unit_test(test_byte_put_free),
+		       ztest_unit_test(test_ringbuffer_equal_bufs),
+		       ztest_unit_test(test_capacity),
+		       ztest_unit_test(test_size),
+		       ztest_unit_test(test_peek),
+		       ztest_unit_test(test_reset),
+		       ztest_unit_test(test_ringbuffer_performance),
+		       ztest_unit_test(test_ringbuffer_concurrent),
+		       ztest_unit_test(test_ringbuffer_zerocpy_stress),
+		       ztest_unit_test(test_ringbuffer_cpy_stress),
+		       ztest_unit_test(test_ringbuffer_item_stress)
+		);
+	ztest_run_test_suite(test_ringbuffer_api);
+}

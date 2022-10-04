@@ -13,7 +13,7 @@
  */
 
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <kernel_internal.h>
 #include <zephyr/random/rand32.h>
 

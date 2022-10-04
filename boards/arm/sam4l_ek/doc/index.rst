@@ -22,7 +22,8 @@ The kit is equipped with a rich set of peripherals that make the ATSAM4L-EK a
 perfect evaluation platform.  Download the `SAM4L-EK Online User Guide`_ for
 more details.
 
-.. image:: img/atmel-sam4l-ek-callouts.jpg
+.. image:: img/atmel-sam4l-ek-callouts.jpeg
+     :width: 500px
      :align: center
      :alt: SAM4L-EK
 

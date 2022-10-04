@@ -11,10 +11,10 @@
  */
 
 
-#include <zephyr/tc_util.h>
+#include <tc_util.h>
 #include <stdbool.h>
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
@@ -100,7 +100,7 @@ struct backend_cb backend_ctrl_blk;
 /** Test how many messages fits in the logging buffer in deferred mode. Test
  * serves as the comparison between logging versions.
  */
-ZTEST(test_log_benchmark, test_log_capacity)
+void test_log_capacity(void)
 {
 	int total_cnt = 0;
 
@@ -135,7 +135,7 @@ ZTEST(test_log_benchmark, test_log_capacity)
 			_msg_cnt, cyc); \
 } while (0)
 
-static void run_log_message_store_time_no_overwrite(void)
+void test_log_message_store_time_no_overwrite(void)
 {
 	uint32_t total_cyc = 0;
 	uint32_t total_msg = 0;
@@ -157,11 +157,6 @@ static void run_log_message_store_time_no_overwrite(void)
 		total_cyc / total_msg, total_us / total_msg);
 }
 
-ZTEST(test_log_benchmark, test_log_message_store_time_no_overwrite)
-{
-	run_log_message_store_time_no_overwrite();
-}
-
 #define TEST_LOG_MESSAGE_STORE_OVERFLOW(nargs, _msg_cnt, inc_time, inc_msg) do { \
 	int _dummy = 0; \
 	/* Saturate buffer. */ \
@@ -180,7 +175,7 @@ ZTEST(test_log_benchmark, test_log_message_store_time_no_overwrite)
 			_msg_cnt, cyc); \
 } while (0)
 
-ZTEST(test_log_benchmark, test_log_message_store_time_overwrite)
+void test_log_message_store_time_overwrite(void)
 {
 	uint32_t total_cyc = 0;
 	uint32_t total_msg = 0;
@@ -201,17 +196,17 @@ ZTEST(test_log_benchmark, test_log_message_store_time_overwrite)
 		total_cyc / total_msg, total_us / total_msg);
 }
 
-ZTEST_USER(test_log_benchmark, test_log_message_store_time_no_overwrite_from_user)
+void test_log_message_store_time_no_overwrite_from_user(void)
 {
 	if (!IS_ENABLED(CONFIG_USERSPACE)) {
 		printk("no userspace\n");
 		return;
 	}
 
-	run_log_message_store_time_no_overwrite();
+	test_log_message_store_time_no_overwrite();
 }
 
-ZTEST(test_log_benchmark, test_log_message_with_string)
+void test_log_message_with_string(void)
 {
 	test_helpers_log_setup();
 	char strbuf[] = "test string";
@@ -231,14 +226,18 @@ ZTEST(test_log_benchmark, test_log_message_with_string)
 }
 
 /*test case main entry*/
-static void *log_benchmark_setup(void)
+void test_main(void)
 {
 	PRINT("LOGGING MODE:%s\n", IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? "DEFERRED" : "IMMEDIATE");
 	PRINT("\tOVERWRITE: %d\n", IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW));
 	PRINT("\tBUFFER_SIZE: %d\n", CONFIG_LOG_BUFFER_SIZE);
 	PRINT("\tSPEED: %d", IS_ENABLED(CONFIG_LOG_SPEED));
-
-	return NULL;
+	ztest_test_suite(test_log_benchmark,
+			 ztest_unit_test(test_log_capacity),
+			 ztest_unit_test(test_log_message_store_time_no_overwrite),
+			 ztest_unit_test(test_log_message_store_time_overwrite),
+			 ztest_user_unit_test(test_log_message_store_time_no_overwrite_from_user),
+			 ztest_user_unit_test(test_log_message_with_string)
+			 );
+	ztest_run_test_suite(test_log_benchmark);
 }
-
-ZTEST_SUITE(test_log_benchmark, NULL, log_benchmark_setup, NULL, NULL, NULL);

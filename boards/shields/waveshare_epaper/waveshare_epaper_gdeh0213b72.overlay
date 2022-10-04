@@ -14,7 +14,8 @@
 
 &arduino_spi {
 	ssd16xx: ssd16xxfb@0 {
-		compatible = "gooddisplay,gdeh0213b72", "solomon,ssd1675a", "solomon,ssd16xxfb";
+		compatible = "solomon,ssd16xxfb", "gooddisplay,gdeh0213b72";
+		label = "SSD16XX";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <250>;
@@ -28,8 +29,6 @@
 		sdv = [41 a8 32];
 		vcom = <0x26>;
 		border-waveform = <0x03>;
-		dummy-line = <0x30>;
-		gate-line-width = <0x0a>;
 		lut-initial = [
 			80 60 40 00 00 00 00
 			10 60 20 00 00 00 00

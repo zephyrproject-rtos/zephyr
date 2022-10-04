@@ -20,24 +20,12 @@
 			compatible = "snps,arcem";
 			reg = <0>;
 		};
-	};
 
-	intc: arcv2-intc {
-		compatible = "snps,arcv2-intc";
-		interrupt-controller;
-		#interrupt-cells = <2>;
-	};
-
-	timer0: timer0 {
-		compatible = "snps,arc-timer";
-		interrupts = <16 1>;
-		interrupt-parent = <&intc>;
-	};
-
-	timer1: timer1 {
-		compatible = "snps,arc-timer";
-		interrupts = <17 1>;
-		interrupt-parent = <&intc>;
+		intc: arcv2-intc {
+			compatible = "snps,arcv2-intc";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
 	};
 
 	sysclk: system-clock {
@@ -64,6 +52,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xf0004000 0x1000>;
+			label = "I2C_0";
 			interrupt-parent = <&intc>;
 		};
 
@@ -73,6 +62,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xf0005000 0x1000>;
+			label = "I2C_1";
 			interrupt-parent = <&intc>;
 		};
 
@@ -80,6 +70,7 @@
 			compatible = "ns16550";
 			clock-frequency = <DT_APB_CLK_HZ>;
 			reg = <0xf0008000 0x1000>;
+			label = "UART_0";
 			interrupt-parent = <&intc>;
 			reg-shift = <2>;
 		};
@@ -88,6 +79,7 @@
 			compatible = "ns16550";
 			clock-frequency = <DT_APB_CLK_HZ>;
 			reg = <0xf0009000 0x1000>;
+			label = "UART_1";
 			interrupt-parent = <&intc>;
 			reg-shift = <2>;
 		};
@@ -96,6 +88,7 @@
 			compatible = "ns16550";
 			clock-frequency = <DT_APB_CLK_HZ>;
 			reg = <0xf000a000 0x1000>;
+			label = "UART_2";
 			interrupt-parent = <&intc>;
 			reg-shift = <2>;
 		};
@@ -104,6 +97,7 @@
 			compatible = "snps,designware-gpio";
 			reg = <0xf0002000 0xc>;
 			ngpios = <32>;
+			label = "GPIO_0";
 			interrupt-parent = <&intc>;
 
 			gpio-controller;
@@ -114,6 +108,7 @@
 			compatible = "snps,designware-gpio";
 			reg = <0xf000200c 0xc>;
 			ngpios = <9>;
+			label = "GPIO_1";
 			interrupt-parent = <&intc>;
 
 			gpio-controller;
@@ -124,6 +119,7 @@
 			compatible = "snps,designware-gpio";
 			reg = <0xF0002018 0xc>;
 			ngpios = <32>;
+			label = "GPIO_2";
 
 			interrupt-parent = <&intc>;
 
@@ -135,6 +131,7 @@
 			compatible = "snps,designware-gpio";
 			reg = <0xF0002024 0xc>;
 			ngpios = <12>;
+			label = "GPIO_3";
 
 			interrupt-parent = <&intc>;
 
@@ -145,6 +142,7 @@
 		spi0: spi@f0006000 {
 			compatible = "snps,designware-spi";
 			reg = <0xf0006000 0x1000>;
+			label = "SPI_0";
 			clocks = <&sysclk>;
 			interrupt-parent = <&intc>;
 
@@ -156,6 +154,7 @@
 		spi1: spi@f0007000 {
 			compatible = "snps,designware-spi";
 			reg = <0xf0007000 0x1000>;
+			label = "SPI_1";
 			clocks = <&sysclk>;
 			interrupt-parent = <&intc>;
 

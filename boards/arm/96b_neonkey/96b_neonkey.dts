@@ -106,6 +106,7 @@
 	lp3943@60 {
 		compatible = "ti,lp3943";
 		reg = <0x60>;
+		label = "LP3943";
 	};
 };
 

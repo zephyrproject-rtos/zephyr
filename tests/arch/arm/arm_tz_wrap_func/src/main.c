@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <aarch32/cortex_m/tz_ns.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 

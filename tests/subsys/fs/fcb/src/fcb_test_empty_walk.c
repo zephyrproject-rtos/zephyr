@@ -7,7 +7,7 @@
 
 #include "fcb_test.h"
 
-ZTEST(fcb_test_with_2sectors_set, test_fcb_empty_walk)
+void test_fcb_empty_walk(void)
 {
 	int rc;
 	struct fcb *fcb;

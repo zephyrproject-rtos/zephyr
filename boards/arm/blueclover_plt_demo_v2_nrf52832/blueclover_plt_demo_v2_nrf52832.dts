@@ -40,8 +40,6 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		pwm-buzzer = &pwm0;
-		watchdog0 = &wdt0;
-		accel0 = &bmi270;
 	};
 };
 
@@ -72,11 +70,13 @@
 	sht3xd@44 {
 		compatible = "sensirion,sht3xd";
 		reg = <0x44>;
+		label = "SHT3XD";
 	};
 
-	bmi270: bmi270@68 {
+	bmi270@68 {
 		compatible = "bosch,bmi270";
 		reg = <0x68>;
+		label = "BMI270";
 	};
 };
 
@@ -99,6 +99,7 @@
 		compatible = "apa,apa102";
 		reg = <0>;
 		spi-max-frequency = <5250000>;
+		label = "APA102";
 	};
 };
 

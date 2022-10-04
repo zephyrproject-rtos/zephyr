@@ -10,7 +10,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/device.h>
 
@@ -160,7 +160,7 @@ static void test_sector_write(uint8_t *wbuf, uint8_t *rbuf, uint32_t num_sectors
 }
 
 /* Test multiple reads in series, and reading from a variety of blocks */
-ZTEST(disk_driver, test_read)
+static void test_read(void)
 {
 	int rc, i;
 
@@ -188,7 +188,7 @@ ZTEST(disk_driver, test_read)
 /* test writing data, and then verifying it was written correctly.
  * WARNING: this test is destructive- it will overwrite data on the disk!
  */
-ZTEST(disk_driver, test_write)
+static void test_write(void)
 {
 	int rc, i;
 
@@ -207,11 +207,13 @@ ZTEST(disk_driver, test_write)
 }
 
 
-static void *disk_driver_setup(void)
+void test_main(void)
 {
-	test_setup();
+	ztest_test_suite(disk_driver_test,
+		ztest_unit_test(test_setup),
+		ztest_unit_test(test_read),
+		ztest_unit_test(test_write)
+	);
 
-	return NULL;
+	ztest_run_test_suite(disk_driver_test);
 }
-
-ZTEST_SUITE(disk_driver, NULL, disk_driver_setup, NULL, NULL, NULL);

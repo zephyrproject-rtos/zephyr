@@ -150,6 +150,11 @@ void clear_attrs(void *ref)
 
 static bool lwm2m_observer_path_compare(struct lwm2m_obj_path *o_p, struct lwm2m_obj_path *p)
 {
+	/* updated path is deeper than obs node, skip */
+	if (p->level > o_p->level) {
+		return false;
+	}
+
 	/* check obj id matched or not */
 	if (p->obj_id != o_p->obj_id) {
 		return false;
@@ -348,7 +353,7 @@ int lwm2m_notify_observer_path(struct lwm2m_obj_path *path)
 	int i;
 	struct lwm2m_ctx **sock_ctx = lwm2m_sock_ctx();
 
-	if (path->level < LWM2M_PATH_LEVEL_OBJECT) {
+	if (path->level < LWM2M_PATH_LEVEL_RESOURCE) {
 		return 0;
 	}
 

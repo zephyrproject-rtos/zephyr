@@ -9,8 +9,10 @@ Overview
 The OLIMEX-STM32-P405 board is based on the STMicroelectronics STM32F405RG ARM
 Cortex-M4 CPU.
 
-.. figure:: img/olimex_stm32_p405.jpg
+.. figure:: img/olimex_stm32_p405.png
+     :width: 540px
      :align: center
+     :height: 454px
      :alt: OLIMEX-STM32-P405
 
      OLIMEX-STM32-P405
@@ -47,8 +49,10 @@ Other hardware features have not been enabled yet for this board.
 Pin Mapping
 ===========
 
-.. figure:: img/olimex-stm32-p405-front.jpg
+.. figure:: img/olimex-stm32-p405-front.png
+     :width: 739px
      :align: center
+     :height: 530px
      :alt: OLIMEX-STM32-P405 connectors
 
      OLIMEX-STM32-P405 connectors

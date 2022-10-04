@@ -9,15 +9,11 @@ name: Bug Snapshot
 on:
   workflow_dispatch:
     branches: [ main ]
-  schedule:
-    # Run daily at 14:05
-    - cron: '5 14 * * *'
 
 jobs:
   make_bugs_pickle:
     name: Make bugs pickle
-    runs-on: ubuntu-20.04
-    if: github.repository_owner == 'zephyrproject-rtos'
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
@@ -50,15 +46,9 @@ jobs:
 
     - name: Upload to AWS S3
       run: |
-        REPOSITORY_NAME="${GITHUB_REPOSITORY#*/}"
-
         PUBLISH_BUCKET="builds.zephyrproject.org"
         PUBLISH_DOMAIN="builds.zephyrproject.io"
-        if [ "${{github.event_name}}" = "schedule" ]; then
-          PUBLISH_ROOT="${REPOSITORY_NAME}/bug-snapshot/daily"
-        else
-          PUBLISH_ROOT="${REPOSITORY_NAME}/bug-snapshot"
-        fi
+        PUBLISH_ROOT="${{ github.event.repository.name }}/bug-snapshot"
 
         PUBLISH_UPLOAD_URI="s3://${PUBLISH_BUCKET}/${PUBLISH_ROOT}/${BUGS_PICKLE_FILENAME}"
         PUBLISH_DOWNLOAD_URI="https://${PUBLISH_DOMAIN}/${PUBLISH_ROOT}/${BUGS_PICKLE_FILENAME}"

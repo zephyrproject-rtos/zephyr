@@ -10,7 +10,7 @@ gitlint
 junit2html
 
 # helper for developers - code formatter
-clang-format>=1.13x
+clang-format>=1.12x
 
 # Script used to build firmware images for NXP LPC MCUs.
 lpc_checksum
@@ -26,6 +26,3 @@ grpcio-tools
 
 # used by scripts/release/bug_bash.py for generating top ten bug squashers
 PyGithub
-
-# used to generate devicetree dependency graphs
-graphviz

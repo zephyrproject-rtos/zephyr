@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <string.h>
 #include <zephyr/fs/fs.h>
 #include "test_common.h"

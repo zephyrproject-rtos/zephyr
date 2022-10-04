@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 ZTEST_SUITE(test_pytest, NULL, NULL, NULL, NULL, NULL);
 

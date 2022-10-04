@@ -38,7 +38,7 @@ static void kobject_access_grant_user_part(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant(), k_thread_user_mode_enter()
  */
-ZTEST(mem_protect_kobj, test_kobject_access_grant)
+void test_kobject_access_grant(void)
 {
 	set_fault_valid(false);
 
@@ -63,7 +63,7 @@ ZTEST(mem_protect_kobj, test_kobject_access_grant)
  *
  * @see k_thread_access_grant()
  */
-ZTEST(mem_protect_kobj, test_kobject_access_grant_error)
+void test_kobject_access_grant_error(void)
 {
 	k_object_access_grant(NULL, k_current_get());
 }
@@ -78,7 +78,7 @@ ZTEST(mem_protect_kobj, test_kobject_access_grant_error)
  *
  * @see k_thread_access_grant()
  */
-ZTEST_USER(mem_protect_kobj, test_kobject_access_grant_error_user)
+void test_kobject_access_grant_error_user(void)
 {
 	struct k_queue *q;
 
@@ -109,7 +109,7 @@ ZTEST_USER(mem_protect_kobj, test_kobject_access_grant_error_user)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST_USER(mem_protect_kobj, test_kobject_access_grant_error_user_null)
+void test_kobject_access_grant_error_user_null(void)
 {
 	set_fault_valid(true);
 	/* a K_ERR_KERNEL_OOPS expected */
@@ -126,7 +126,7 @@ ZTEST_USER(mem_protect_kobj, test_kobject_access_grant_error_user_null)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST_USER(mem_protect_kobj, test_kobject_access_all_grant_error)
+void test_kobject_access_all_grant_error(void)
 {
 	set_fault_valid(true);
 	/* a K_ERR_KERNEL_OOPS expected */
@@ -155,7 +155,7 @@ static void syscall_invalid_kobject_user_part(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant()
  */
-ZTEST(mem_protect_kobj, test_syscall_invalid_kobject)
+void test_syscall_invalid_kobject(void)
 {
 	set_fault_valid(false);
 
@@ -186,7 +186,7 @@ static void thread_without_kobject_permission_user_part(void *p1, void *p2,
  *
  * @see k_thread_access_grant(), k_thread_user_mode_enter()
  */
-ZTEST(mem_protect_kobj, test_thread_without_kobject_permission)
+void test_thread_without_kobject_permission(void)
 {
 	set_fault_valid(false);
 
@@ -217,7 +217,7 @@ static void kobject_revoke_access_user_part(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant(), k_object_access_revoke()
  */
-ZTEST(mem_protect_kobj, test_kobject_revoke_access)
+void test_kobject_revoke_access(void)
 {
 	set_fault_valid(false);
 
@@ -264,7 +264,7 @@ static void kobject_grant_access_extra_entry(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant(), k_object_access_revoke()
  */
-ZTEST(mem_protect_kobj, test_kobject_grant_access_kobj)
+void test_kobject_grant_access_kobj(void)
 {
 	set_fault_valid(false);
 
@@ -310,7 +310,7 @@ static void grant_access_kobj_invalid_child(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant()
  */
-ZTEST(mem_protect_kobj, test_kobject_grant_access_kobj_invalid)
+void test_kobject_grant_access_kobj_invalid(void)
 {
 	set_fault_valid(false);
 
@@ -344,7 +344,7 @@ static void release_from_user_child(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant(), k_object_release()
  */
-ZTEST(mem_protect_kobj, test_kobject_release_from_user)
+void test_kobject_release_from_user(void)
 {
 	set_fault_valid(false);
 
@@ -370,7 +370,7 @@ ZTEST(mem_protect_kobj, test_kobject_release_from_user)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_kobject_invalid)
+void test_kobject_invalid(void)
 {
 	int dummy = 0;
 
@@ -399,7 +399,7 @@ static void access_all_grant_child_take(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_kobject_access_all_grant)
+void test_kobject_access_all_grant(void)
 {
 	set_fault_valid(false);
 
@@ -448,7 +448,7 @@ static void residual_permissions_child_fail(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant()
  */
-ZTEST(mem_protect_kobj, test_thread_has_residual_permissions)
+void test_thread_has_residual_permissions(void)
 {
 	set_fault_valid(false);
 
@@ -483,7 +483,7 @@ ZTEST(mem_protect_kobj, test_thread_has_residual_permissions)
  * @see k_object_access_grant(), k_object_access_revoke(),
  * z_object_find()
  */
-ZTEST(mem_protect_kobj, test_kobject_access_grant_to_invalid_thread)
+void test_kobject_access_grant_to_invalid_thread(void)
 {
 	static struct k_thread uninit_thread;
 
@@ -504,7 +504,7 @@ ZTEST(mem_protect_kobj, test_kobject_access_grant_to_invalid_thread)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST_USER(mem_protect_kobj, test_kobject_access_invalid_kobject)
+void test_kobject_access_invalid_kobject(void)
 {
 	set_fault_valid(true);
 
@@ -522,7 +522,7 @@ ZTEST_USER(mem_protect_kobj, test_kobject_access_invalid_kobject)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST_USER(mem_protect_kobj, test_access_kobject_without_init_access)
+void test_access_kobject_without_init_access(void)
 {
 	set_fault_valid(true);
 
@@ -547,7 +547,7 @@ static void without_init_with_access_child(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant()
  */
-ZTEST(mem_protect_kobj, test_access_kobject_without_init_with_access)
+void test_access_kobject_without_init_with_access(void)
 {
 	set_fault_valid(false);
 
@@ -590,7 +590,7 @@ static void reinitialize_thread_kobj_child(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_kobject_reinitialize_thread_kobj)
+void test_kobject_reinitialize_thread_kobj(void)
 {
 	set_fault_valid(false);
 
@@ -636,7 +636,7 @@ static void new_thread_from_user_child(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_create_new_thread_from_user)
+void test_create_new_thread_from_user(void)
 {
 	set_fault_valid(false);
 
@@ -686,7 +686,7 @@ static void new_user_thrd_child_with_in_use_stack(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_new_user_thread_with_in_use_stack_obj)
+void test_new_user_thread_with_in_use_stack_obj(void)
 {
 	set_fault_valid(false);
 
@@ -730,7 +730,7 @@ static void from_user_no_access_stack_child_entry(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_create_new_thread_from_user_no_access_stack)
+void test_create_new_thread_from_user_no_access_stack(void)
 {
 	set_fault_valid(false);
 
@@ -748,6 +748,7 @@ ZTEST(mem_protect_kobj, test_create_new_thread_from_user_no_access_stack)
 
 /****************************************************************************/
 /* object validation checks */
+#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 static void from_user_invalid_stacksize_extra(void *p1, void *p2, void *p3)
 {
 	zassert_unreachable("k_object validation failure in k thread create");
@@ -773,12 +774,8 @@ static void from_user_invalid_stacksize_child(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_create_new_thread_from_user_invalid_stacksize)
+void test_create_new_thread_from_user_invalid_stacksize(void)
 {
-#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-	ztest_test_skip();
-#endif
-
 	set_fault_valid(false);
 
 	k_thread_access_grant(&child_thread,
@@ -793,9 +790,16 @@ ZTEST(mem_protect_kobj, test_create_new_thread_from_user_invalid_stacksize)
 			0, K_USER, K_NO_WAIT);
 	k_thread_join(&child_thread, K_FOREVER);
 }
+#else
+void test_create_new_thread_from_user_invalid_stacksize(void)
+{
+	ztest_test_skip();
+}
+#endif
 
 /****************************************************************************/
 /* object validation checks */
+#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 static void user_huge_stacksize_extra(void *p1, void *p2, void *p3)
 {
 	zassert_unreachable("k_object validation failure in k thread create");
@@ -824,12 +828,8 @@ static void user_huge_stacksize_child(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  */
 
-ZTEST(mem_protect_kobj, test_create_new_thread_from_user_huge_stacksize)
+void test_create_new_thread_from_user_huge_stacksize(void)
 {
-#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-	ztest_test_skip();
-#endif
-
 	set_fault_valid(false);
 
 	k_thread_access_grant(&child_thread,
@@ -845,6 +845,12 @@ ZTEST(mem_protect_kobj, test_create_new_thread_from_user_huge_stacksize)
 
 	k_thread_join(&child_thread, K_FOREVER);
 }
+#else
+void test_create_new_thread_from_user_huge_stacksize(void)
+{
+	ztest_test_skip();
+}
+#endif
 
 /****************************************************************************/
 /* object validation checks */
@@ -876,7 +882,7 @@ static void supervisor_from_user_child(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_create_new_supervisor_thread_from_user)
+void test_create_new_supervisor_thread_from_user(void)
 {
 	set_fault_valid(false);
 
@@ -920,7 +926,7 @@ static void essential_thread_from_user_child(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_create_new_essential_thread_from_user)
+void test_create_new_essential_thread_from_user(void)
 {
 	set_fault_valid(false);
 
@@ -966,7 +972,7 @@ static void higher_prio_from_user_child(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  */
 
-ZTEST(mem_protect_kobj, test_create_new_higher_prio_thread_from_user)
+void test_create_new_higher_prio_thread_from_user(void)
 {
 	set_fault_valid(false);
 
@@ -1005,7 +1011,6 @@ static void invalid_prio_from_user_child(void *p1, void *p2, void *p3)
 
 	zassert_unreachable("k_object validation failure in k thread create");
 }
-
 /**
  * @brief Create a new thread whose priority is invalid.
  *
@@ -1013,7 +1018,8 @@ static void invalid_prio_from_user_child(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_create_new_invalid_prio_thread_from_user)
+
+void test_create_new_invalid_prio_thread_from_user(void)
 {
 	set_fault_valid(false);
 
@@ -1056,7 +1062,7 @@ static void thread_stack_init_objects(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_mark_thread_exit_uninitialized)
+void test_mark_thread_exit_uninitialized(void)
 {
 	set_fault_valid(false);
 
@@ -1105,7 +1111,7 @@ static void tThread_object_free_error(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_kobject_free_error)
+void test_kobject_free_error(void)
 {
 	uint32_t perm = K_INHERIT_PERMS;
 
@@ -1132,7 +1138,7 @@ ZTEST(mem_protect_kobj, test_kobject_free_error)
  *
  * @see k_object_alloc()
  */
-ZTEST_USER(mem_protect_kobj, test_kobject_init_error)
+void test_kobject_init_error(void)
 {
 	/* invalid kernel object allocation */
 	zassert_is_null(k_object_alloc(K_OBJ_ANY-1),
@@ -1155,7 +1161,7 @@ ZTEST_USER(mem_protect_kobj, test_kobject_init_error)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_kobj_create_out_of_memory)
+void test_kobj_create_out_of_memory(void)
 {
 	int ttype;
 	int max_obj = 0;
@@ -1198,7 +1204,7 @@ extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_thread_alloc_out_of_idx)
+void test_thread_alloc_out_of_idx(void)
 {
 #ifdef CONFIG_DYNAMIC_OBJECTS
 	struct k_thread *thread[MAX_THREAD_BITS];
@@ -1250,7 +1256,7 @@ ZTEST(mem_protect_kobj, test_thread_alloc_out_of_idx)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_alloc_kobjects)
+void test_alloc_kobjects(void)
 {
 	struct k_thread *t;
 	struct k_msgq *m;
@@ -1348,7 +1354,7 @@ static void entry_error_perm(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_kobject_perm_error)
+void test_kobject_perm_error(void)
 {
 	void *kobj[16];
 
@@ -1387,7 +1393,7 @@ extern const char *otype_to_str(enum k_objects otype);
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_kobj, test_all_kobjects_str)
+void test_all_kobjects_str(void)
 {
 	enum k_objects otype = K_OBJ_ANY;
 	const char *c;
@@ -1406,5 +1412,3 @@ ZTEST(mem_protect_kobj, test_all_kobjects_str)
 		otype++;
 	} while (otype <= K_OBJ_LAST);
 }
-
-ZTEST_SUITE(mem_protect_kobj, NULL, NULL, NULL, NULL, NULL);

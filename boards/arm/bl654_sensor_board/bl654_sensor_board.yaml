@@ -14,6 +14,7 @@ supported:
   - counter
   - gpio
   - i2c
+  - ieee802154
   - pwm
   - watchdog
   - netif:openthread

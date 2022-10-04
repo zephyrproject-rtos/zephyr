@@ -9,7 +9,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/drivers/pwm.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #define PWM_LOOPBACK_OUT_IDX 0
 #define PWM_LOOPBACK_IN_IDX  1

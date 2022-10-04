@@ -6,7 +6,7 @@
 
 #include <string.h>
 #include <zephyr/types.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include <stdio.h>
 #include <stdlib.h>

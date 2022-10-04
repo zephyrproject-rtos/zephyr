@@ -10,8 +10,7 @@ LOG_MODULE_REGISTER(net_socket_can_sample, LOG_LEVEL_DBG);
 #include <zephyr/zephyr.h>
 
 #include <zephyr/net/socket.h>
-#include <zephyr/net/socketcan.h>
-#include <zephyr/net/socketcan_utils.h>
+#include <zephyr/net/socket_can.h>
 
 #ifdef CONFIG_SAMPLE_SOCKETCAN_LOOPBACK_MODE
 #include <zephyr/drivers/can.h>
@@ -34,7 +33,7 @@ static struct k_thread rx_data;
 
 #define CLOSE_PERIOD 15
 
-static const struct can_filter zfilter = {
+static const struct zcan_filter zfilter = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.id = 0x1,
@@ -42,39 +41,39 @@ static const struct can_filter zfilter = {
 	.id_mask = CAN_STD_ID_MASK
 };
 
-static struct socketcan_filter sfilter;
+static struct can_filter filter;
 
 static void tx(int *can_fd)
 {
 	int fd = POINTER_TO_INT(can_fd);
-	struct can_frame zframe = {0};
-	struct socketcan_frame sframe = {0};
+	struct zcan_frame msg = {0};
+	struct can_frame frame = {0};
 	int ret, i;
 
-	zframe.dlc = 8U;
-	zframe.id_type = CAN_STANDARD_IDENTIFIER;
-	zframe.id = 0x1;
-	zframe.rtr = CAN_DATAFRAME;
+	msg.dlc = 8U;
+	msg.id_type = CAN_STANDARD_IDENTIFIER;
+	msg.id = 0x1;
+	msg.rtr = CAN_DATAFRAME;
 
-	for (i = 0; i < zframe.dlc; i++) {
-		zframe.data[i] = 0xF0 | i;
+	for (i = 0; i < msg.dlc; i++) {
+		msg.data[i] = 0xF0 | i;
 	}
 
-	socketcan_from_can_frame(&zframe, &sframe);
+	can_copy_zframe_to_frame(&msg, &frame);
 
 	LOG_DBG("Sending CAN data...");
 
 	while (1) {
-		ret = send(fd, &sframe, sizeof(sframe), 0);
+		ret = send(fd, &frame, sizeof(frame), 0);
 		if (ret < 0) {
-			LOG_ERR("Cannot send CAN frame (%d)", -errno);
+			LOG_ERR("Cannot send CAN message (%d)", -errno);
 		}
 
 		k_sleep(SLEEP_PERIOD);
 	}
 }
 
-static int create_socket(const struct socketcan_filter *sfilter)
+static int create_socket(const struct can_filter *filter)
 {
 	struct sockaddr_can can_addr;
 	int fd, ret;
@@ -96,21 +95,21 @@ static int create_socket(const struct socketcan_filter *sfilter)
 		return ret;
 	}
 
-	(void)setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, sfilter,
-			 sizeof(*sfilter));
+	(void)setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, filter,
+			 sizeof(*filter));
 
 	return fd;
 }
 
 static void rx(int *can_fd, int *do_close_period,
-	       const struct socketcan_filter *sfilter)
+	       const struct can_filter *filter)
 {
 	int close_period = POINTER_TO_INT(do_close_period);
 	int fd = POINTER_TO_INT(can_fd);
 	struct sockaddr_can can_addr;
 	socklen_t addr_len;
-	struct can_frame zframe;
-	struct socketcan_frame sframe;
+	struct zcan_frame msg;
+	struct can_frame frame;
 	int ret;
 
 	LOG_DBG("[%d] Waiting CAN data...", fd);
@@ -118,32 +117,32 @@ static void rx(int *can_fd, int *do_close_period,
 	while (1) {
 		uint8_t *data;
 
-		memset(&sframe, 0, sizeof(sframe));
+		memset(&frame, 0, sizeof(frame));
 		addr_len = sizeof(can_addr);
 
-		ret = recvfrom(fd, &sframe, sizeof(struct socketcan_frame),
+		ret = recvfrom(fd, &frame, sizeof(struct can_frame),
 			       0, (struct sockaddr *)&can_addr, &addr_len);
 		if (ret < 0) {
-			LOG_ERR("[%d] Cannot receive CAN frame (%d)", fd,
+			LOG_ERR("[%d] Cannot receive CAN message (%d)", fd,
 				-errno);
 			continue;
 		}
 
-		socketcan_to_can_frame(&sframe, &zframe);
+		can_copy_frame_to_zframe(&frame, &msg);
 
-		LOG_INF("[%d] CAN frame: type 0x%x RTR 0x%x EID 0x%x DLC 0x%x",
-			fd, zframe.id_type, zframe.rtr, zframe.id, zframe.dlc);
+		LOG_INF("[%d] CAN msg: type 0x%x RTR 0x%x EID 0x%x DLC 0x%x",
+			fd, msg.id_type, msg.rtr, msg.id, msg.dlc);
 
-		if (!zframe.rtr) {
-			if (zframe.dlc > 8) {
-				data = (uint8_t *)zframe.data_32;
+		if (!msg.rtr) {
+			if (msg.dlc > 8) {
+				data = (uint8_t *)msg.data_32;
 			} else {
-				data = zframe.data;
+				data = msg.data;
 			}
 
-			LOG_HEXDUMP_INF(data, zframe.dlc, "Data");
+			LOG_HEXDUMP_INF(data, msg.dlc, "Data");
 		} else {
-			LOG_INF("[%d] EXT Remote frame received", fd);
+			LOG_INF("[%d] EXT Remote message received", fd);
 		}
 
 		if (POINTER_TO_INT(do_close_period) > 0) {
@@ -153,7 +152,7 @@ static void rx(int *can_fd, int *do_close_period,
 
 				k_sleep(K_SECONDS(1));
 
-				fd = create_socket(sfilter);
+				fd = create_socket(filter);
 				if (fd < 0) {
 					LOG_ERR("Cannot get socket (%d)",
 						-errno);
@@ -173,7 +172,7 @@ static int setup_socket(void)
 	int fd, rx_fd;
 	int ret;
 
-	socketcan_from_can_filter(&zfilter, &sfilter);
+	can_copy_zfilter_to_filter(&zfilter, &filter);
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS_RAW));
 	if (!iface) {
@@ -202,8 +201,8 @@ static int setup_socket(void)
 		goto cleanup;
 	}
 
-	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &sfilter,
-			 sizeof(sfilter));
+	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &filter,
+			 sizeof(filter));
 	if (ret < 0) {
 		ret = -errno;
 		LOG_ERR("Cannot set CAN sockopt (%d)", ret);
@@ -229,14 +228,14 @@ static int setup_socket(void)
 	rx_fd = fd;
 
 #if CONFIG_NET_SOCKETS_CAN_RECEIVERS == 2
-	fd = create_socket(&sfilter);
+	fd = create_socket(&filter);
 	if (fd >= 0) {
 		rx_tid = k_thread_create(&rx_data, rx_stack,
 					 K_THREAD_STACK_SIZEOF(rx_stack),
 					 (k_thread_entry_t)rx,
 					 INT_TO_POINTER(fd),
 					 INT_TO_POINTER(CLOSE_PERIOD),
-					 &sfilter, PRIORITY, 0, K_NO_WAIT);
+					 &filter, PRIORITY, 0, K_NO_WAIT);
 		if (!rx_tid) {
 			ret = -ENOENT;
 			errno = -ret;

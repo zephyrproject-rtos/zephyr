@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include "tests_thread_apis.h"
 
@@ -42,7 +42,7 @@ void thread2_set_prio_test(void)
  *
  * @see k_thread_priority_set(), k_thread_priority_get()
  */
-ZTEST(threads_lifecycle, test_threads_priority_set)
+void test_threads_priority_set(void)
 {
 	int rv;
 	int prio = k_thread_priority_get(k_current_get());

@@ -34,11 +34,11 @@
 #include <tinycrypt/ctr_prng.h>
 #include <tinycrypt/aes.h>
 #include <tinycrypt/constants.h>
-#include <zephyr/test_utils.h>
+#include <test_utils.h>
 
 #include <stdio.h>
 #include <string.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #define MAX_EXPECTED_STRING	128
 #define MAX_BIN_SIZE		(MAX_EXPECTED_STRING / 2)

@@ -32,6 +32,7 @@
 			reg = <0x400fd000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			label = "FLASH_CTRL";
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
@@ -45,6 +46,7 @@
 			clocks = <&sysclk>;
 			interrupts = <5 3>;
 			status = "disabled";
+			label = "UART_0";
 		};
 
 		uart1: uart@4000d000 {
@@ -53,6 +55,7 @@
 			clocks = <&sysclk>;
 			interrupts = <6 3>;
 			status = "disabled";
+			label = "UART_1";
 		};
 
 		uart2: uart@4000e000 {
@@ -61,6 +64,7 @@
 			clocks = <&sysclk>;
 			interrupts = <33 3>;
 			status = "disabled";
+			label = "UART_2";
 		};
 
 		eth: ethernet@40048000 {
@@ -69,12 +73,14 @@
 			interrupts = <42 0>;
 			status = "disabled";
 			local-mac-address = [00 00 94 00 83 00];
+			label = "ETH";
 		};
 
 		gpio0: gpio@40004000 {
 			compatible = "ti,stellaris-gpio";
 			reg = <0x40004000 0x1000>;
 			interrupts = <0 3>;
+			label = "GPIO_A";
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <8>;
@@ -84,6 +90,7 @@
 			compatible = "ti,stellaris-gpio";
 			reg = <0x40005000 0x1000>;
 			interrupts = <1 3>;
+			label = "GPIO_B";
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <8>;
@@ -93,6 +100,7 @@
 			compatible = "ti,stellaris-gpio";
 			reg = <0x40006000 0x1000>;
 			interrupts = <2 3>;
+			label = "GPIO_C";
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <8>;
@@ -102,6 +110,7 @@
 			compatible = "ti,stellaris-gpio";
 			reg = <0x40007000 0x1000>;
 			interrupts = <3 3>;
+			label = "GPIO_D";
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <8>;
@@ -111,6 +120,7 @@
 			compatible = "ti,stellaris-gpio";
 			reg = <0x40024000 0x1000>;
 			interrupts = <4 3>;
+			label = "GPIO_E";
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <4>;
@@ -120,6 +130,7 @@
 			compatible = "ti,stellaris-gpio";
 			reg = <0x40025000 0x1000>;
 			interrupts = <30 3>;
+			label = "GPIO_F";
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <4>;
@@ -129,6 +140,7 @@
 			compatible = "ti,stellaris-gpio";
 			reg = <0x40026000 0x1000>;
 			interrupts = <31 3>;
+			label = "GPIO_G";
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <2>;

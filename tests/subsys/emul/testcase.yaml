@@ -1,4 +1,0 @@
-tests:
-  subsys.emul:
-    tags: devicetree
-    platform_allow: native_posix

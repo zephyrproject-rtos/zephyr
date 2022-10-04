@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/tc_util.h>
-#include <zephyr/ztest.h>
+#include <tc_util.h>
+#include <ztest.h>
 
 int test_frequency(void)
 {
@@ -48,7 +48,7 @@ int test_frequency(void)
  *
  * @see k_cycle_get_32(), sys_clock_hw_cycles_per_sec()
  */
-ZTEST(timer_fn, test_timer)
+void test_timer(void)
 {
 	volatile uint32_t t_last, t_now;
 	uint32_t i, errors;
@@ -82,4 +82,8 @@ ZTEST(timer_fn, test_timer)
 	zassert_false(test_frequency(), "test frequency failed");
 }
 
-ZTEST_SUITE(timer_fn, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(timer_fn, ztest_unit_test(test_timer));
+	ztest_run_test_suite(timer_fn);
+}

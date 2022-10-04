@@ -28,6 +28,7 @@ the following devices:
 * COUNTER
 
 .. figure:: img/nrf52840_papyr.jpg
+     :width: 442px
      :align: center
      :alt: Electronut Labs Papyr
 

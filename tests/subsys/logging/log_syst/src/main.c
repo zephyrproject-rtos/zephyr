@@ -17,9 +17,9 @@
 #include <zephyr/logging/log_backend_std.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log_output.h>
-#include <zephyr/tc_util.h>
+#include <tc_util.h>
 #include <stdbool.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <stdlib.h>
 
 /** Hex string corresponding to "Debug message example, %d, %d, %d", 1, 2, 3.
@@ -38,8 +38,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
  * @brief Testcase to validate that the mock backend would use the expected
  * processing function from the function pointer table format_table
  */
-ZTEST(log_syst, test_log_syst_format_table_selection)
+void test_log_syst_format_table_selection(void)
 {
+
 #ifdef CONFIG_LOG_MIPI_SYST_ENABLE
 	uint32_t test_log_type_syst = LOG_OUTPUT_SYST;
 
@@ -75,7 +76,7 @@ const char *module_id = "00";
 #endif
 
 /* Testcase to validate the SYST output of log data */
-ZTEST(log_syst, test_log_syst_data)
+void test_log_syst_data(void)
 {
 	LOG_DBG("Debug message example, %d", 1);
 
@@ -87,7 +88,7 @@ ZTEST(log_syst, test_log_syst_data)
 }
 
 /* Testcase to validate the SYST output of data with multiple arguments */
-ZTEST(log_syst, test_log_syst_data_multiple_args)
+void test_log_syst_data_multiple_args(void)
 {
 	LOG_DBG("Debug message example, %d, %d, %d", 1, 2, 3);
 
@@ -98,7 +99,7 @@ ZTEST(log_syst, test_log_syst_data_multiple_args)
 }
 
 /* Testcase to validate the SYST output of float data */
-ZTEST(log_syst, test_log_syst_float_data)
+void test_log_syst_float_data(void)
 {
 	LOG_DBG("Debug message example, %f", 1.223);
 
@@ -111,22 +112,30 @@ ZTEST(log_syst, test_log_syst_float_data)
 
 #else
 
-ZTEST(log_syst, test_log_syst_data)
+void test_log_syst_data(void)
 {
 	ztest_test_skip();
 }
 
-ZTEST(log_syst, test_log_syst_data_multiple_args)
+void test_log_syst_data_multiple_args(void)
 {
 	ztest_test_skip();
 }
 
-ZTEST(log_syst, test_log_syst_float_data)
+void test_log_syst_float_data(void)
 {
 	ztest_test_skip();
 }
 
 #endif
 /* test case main entry */
-
-ZTEST_SUITE(log_syst, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(test_log_syst,
+		ztest_unit_test(test_log_syst_format_table_selection),
+		ztest_unit_test(test_log_syst_data),
+		ztest_unit_test(test_log_syst_float_data),
+		ztest_unit_test(test_log_syst_data_multiple_args)
+		);
+	ztest_run_test_suite(test_log_syst);
+}

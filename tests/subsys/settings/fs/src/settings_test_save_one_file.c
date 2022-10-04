@@ -14,7 +14,7 @@ static int test_config_save_one_byte_value(const char *name, uint8_t val)
 }
 
 
-ZTEST(settings_config_fs, test_config_save_one_file)
+void test_config_save_one_file(void)
 {
 	int rc;
 	struct settings_file cf;

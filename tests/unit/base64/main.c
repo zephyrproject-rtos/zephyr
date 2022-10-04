@@ -60,7 +60,7 @@ static const unsigned char base64_test_enc5[] =
 	"JEhuVodiWr2/F9mixBcaAZTtjx4Rs9cJDLbpEG8i\n\r\ni"
 	"swcFdsn6MWwINP+Nwmw4AEPpVJevUEvRQbqVMVoLlw= ";
 
-ZTEST(lib_base64, test_base64_codec)
+static void test_base64_codec(void)
 {
 	size_t len;
 	int rc;
@@ -129,4 +129,10 @@ ZTEST(lib_base64, test_base64_codec)
 	zassert_equal(rc, -ENOMEM, "Error: dst NULL: decode test return value");
 }
 
-ZTEST_SUITE(lib_base64, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(lib_base64_test,
+			 ztest_unit_test(test_base64_codec));
+
+	ztest_run_test_suite(lib_base64_test);
+}

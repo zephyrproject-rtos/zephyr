@@ -4,6 +4,7 @@
  */
 
 #include <zephyr/init.h>
+#include <zephyr/drivers/pinmux.h>
 #include <fsl_common.h>
 #include <fsl_iocon.h>
 #include <soc.h>

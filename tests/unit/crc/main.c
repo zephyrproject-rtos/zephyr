@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/sys/crc.h>
 #include "../../../lib/os/crc8_sw.c"
 #include "../../../lib/os/crc16_sw.c"
@@ -12,7 +12,7 @@
 #include "../../../lib/os/crc32c_sw.c"
 #include "../../../lib/os/crc7_sw.c"
 
-ZTEST(crc, test_crc32c)
+void test_crc32c(void)
 {
 	uint8_t test1[] = { 'A' };
 	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
@@ -39,7 +39,7 @@ ZTEST(crc, test_crc32c)
 			0x7D4F9D21, NULL);
 }
 
-ZTEST(crc, test_crc32_ieee)
+void test_crc32_ieee(void)
 {
 	uint8_t test1[] = { 'A' };
 	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
@@ -50,7 +50,7 @@ ZTEST(crc, test_crc32_ieee)
 	zassert_equal(crc32_ieee(test3, sizeof(test3)), 0x20089AA4, NULL);
 }
 
-ZTEST(crc, test_crc16)
+void test_crc16(void)
 {
 	uint8_t test[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
@@ -68,7 +68,7 @@ ZTEST(crc, test_crc16)
 	zassert_equal(crc16(0x0589, 0x0, test, sizeof(test)), 0x007f, NULL);
 }
 
-ZTEST(crc, test_crc16_ansi)
+void test_crc16_ansi(void)
 {
 	uint8_t test[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
@@ -83,7 +83,7 @@ ZTEST(crc, test_crc16_ansi)
 	zassert_equal(crc16_reflect(0xA001, 0xffff, test, sizeof(test)), crc16_c, NULL);
 }
 
-ZTEST(crc, test_crc16_ccitt)
+void test_crc16_ccitt(void)
 {
 	uint8_t test0[] = { };
 	uint8_t test1[] = { 'A' };
@@ -115,7 +115,7 @@ ZTEST(crc, test_crc16_ccitt)
 	zassert_equal(crc16_ccitt(0, test3, sizeof(test3)), 0, NULL);
 }
 
-ZTEST(crc, test_crc16_ccitt_for_ppp)
+void test_crc16_ccitt_for_ppp(void)
 {
 	/* Example capture including FCS from
 	 * https://www.horo.ch/techno/ppp-fcs/examples_en.html
@@ -134,7 +134,7 @@ ZTEST(crc, test_crc16_ccitt_for_ppp)
 		      0x906e, NULL);
 }
 
-ZTEST(crc, test_crc16_itu_t)
+void test_crc16_itu_t(void)
 {
 	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
@@ -156,7 +156,7 @@ ZTEST(crc, test_crc16_itu_t)
 
 }
 
-ZTEST(crc, test_crc8_ccitt)
+void test_crc8_ccitt(void)
 {
 	uint8_t test0[] = { 0 };
 	uint8_t test1[] = { 'A' };
@@ -170,7 +170,7 @@ ZTEST(crc, test_crc8_ccitt)
 			   sizeof(test2)) == 0xFB, "pass", "fail");
 }
 
-ZTEST(crc, test_crc7_be)
+void test_crc7_be(void)
 {
 	uint8_t test0[] = { 0 };
 	uint8_t test1[] = { 'A' };
@@ -181,7 +181,7 @@ ZTEST(crc, test_crc7_be)
 	zassert_equal(crc7_be(0, test2, sizeof(test2)), 0xEA, NULL);
 }
 
-ZTEST(crc, test_crc8)
+void test_crc8(void)
 {
 	uint8_t fcs, expected;
 
@@ -261,4 +261,18 @@ ZTEST(crc, test_crc8)
 	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 }
 
-ZTEST_SUITE(crc, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(test_crc,
+			 ztest_unit_test(test_crc32c),
+			 ztest_unit_test(test_crc32_ieee),
+			 ztest_unit_test(test_crc16),
+			 ztest_unit_test(test_crc16_ansi),
+			 ztest_unit_test(test_crc16_ccitt),
+			 ztest_unit_test(test_crc16_ccitt_for_ppp),
+			 ztest_unit_test(test_crc16_itu_t),
+			 ztest_unit_test(test_crc8_ccitt),
+			 ztest_unit_test(test_crc7_be),
+			 ztest_unit_test(test_crc8));
+	ztest_run_test_suite(test_crc);
+}

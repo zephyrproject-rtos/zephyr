@@ -95,7 +95,7 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 		/* nothing left to rx or tx, we're done! */
 		LOG_DBG("spi transceive done");
 		spi_context_cs_control(&data->ctx, false);
-		spi_context_complete(&data->ctx, dev, 0);
+		spi_context_complete(&data->ctx, 0);
 		return 0;
 	}
 
@@ -632,11 +632,6 @@ static int spi_mcux_configure(const struct device *dev,
 	ctar_config->lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
 	ctar_config->betweenTransferDelayInNanoSec = config->transfer_delay;
 
-	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
@@ -675,8 +670,7 @@ static int transceive(const struct device *dev,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous,
-		      spi_callback_t cb,
-		      void *userdata)
+		      struct k_poll_signal *signal)
 {
 	struct spi_mcux_data *data = dev->data;
 	int ret;
@@ -685,7 +679,7 @@ static int transceive(const struct device *dev,
 	SPI_Type *base = config->base;
 #endif
 
-	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
+	spi_context_lock(&data->ctx, asynchronous, signal, spi_cfg);
 
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {
@@ -732,7 +726,7 @@ static int spi_mcux_transceive(const struct device *dev,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
 {
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -740,10 +734,9 @@ static int spi_mcux_transceive_async(const struct device *dev,
 				     const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     spi_callback_t cb,
-				     void *userdata)
+				     struct k_poll_signal *async)
 {
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, async);
 }
 #endif /* CONFIG_SPI_ASYNC */
 

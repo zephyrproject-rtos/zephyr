@@ -12,6 +12,7 @@
 		vsensor0: sensor@0 {
 			compatible = "vnd,sensor";
 			reg = <0>;
+			label = "SENSOR_0";
 			sample-period = <100>;
 			sample-size = <16>;
 			max-msgs = <8>;
@@ -21,6 +22,7 @@
 		vsensor1: sensor@1 {
 			compatible = "vnd,sensor";
 			reg = <1>;
+			label = "SENSOR_1";
 			sample-period = <120>;
 			sample-size = <16>;
 			max-msgs = <4>;

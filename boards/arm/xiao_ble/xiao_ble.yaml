@@ -15,6 +15,7 @@ supported:
   - gpio
   - i2c
   - i2s
+  - ieee802154
   - pwm
   - spi
   - usb_cdc

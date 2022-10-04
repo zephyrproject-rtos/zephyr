@@ -18,8 +18,8 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 
 #include <zephyr/net/coap.h>
 
-#include <zephyr/tc_util.h>
-#include <zephyr/ztest.h>
+#include <tc_util.h>
+#include <ztest.h>
 
 #include "net_private.h"
 
@@ -63,7 +63,7 @@ static struct sockaddr_in6 dummy_addr = {
 
 static uint8_t data_buf[2][COAP_BUF_SIZE];
 
-ZTEST(coap, test_build_empty_pdu)
+static void test_build_empty_pdu(void)
 {
 	uint8_t result_pdu[] = { 0x40, 0x01, 0x0, 0x0 };
 	struct coap_packet cpkt;
@@ -84,7 +84,7 @@ ZTEST(coap, test_build_empty_pdu)
 			  "Built packet doesn't match reference packet");
 }
 
-ZTEST(coap, test_build_simple_pdu)
+static void test_build_simple_pdu(void)
 {
 	uint8_t result_pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e',
 				 'n', 0xC0, 0xFF, 'p', 'a', 'y', 'l',
@@ -130,7 +130,7 @@ ZTEST(coap, test_build_simple_pdu)
 }
 
 /* No options, No payload */
-ZTEST(coap, test_parse_empty_pdu)
+static void test_parse_empty_pdu(void)
 {
 	uint8_t pdu[] = { 0x40, 0x01, 0, 0 };
 	struct coap_packet cpkt;
@@ -166,7 +166,7 @@ ZTEST(coap, test_parse_empty_pdu)
 }
 
 /* 1 option, No payload (No payload marker) */
-ZTEST(coap, test_parse_empty_pdu_1)
+static void test_parse_empty_pdu_1(void)
 {
 	uint8_t pdu[] = { 0x40, 0x01, 0, 0, 0x40};
 	struct coap_packet cpkt;
@@ -201,7 +201,7 @@ ZTEST(coap, test_parse_empty_pdu_1)
 	zassert_equal(id, 0U, "Packet id doesn't match reference");
 }
 
-ZTEST(coap, test_parse_simple_pdu)
+static void test_parse_simple_pdu(void)
 {
 	uint8_t pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y', 'l', 'o',
@@ -272,7 +272,7 @@ ZTEST(coap, test_parse_simple_pdu)
 		      "There shouldn't be any ETAG option in the packet");
 }
 
-ZTEST(coap, test_parse_malformed_opt)
+static void test_parse_malformed_opt(void)
 {
 	uint8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0xD0 };
@@ -286,7 +286,7 @@ ZTEST(coap, test_parse_malformed_opt)
 	zassert_not_equal(r, 0, "Should've failed to parse a packet");
 }
 
-ZTEST(coap, test_parse_malformed_opt_len)
+static void test_parse_malformed_opt_len(void)
 {
 	uint8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0xC1 };
@@ -300,7 +300,7 @@ ZTEST(coap, test_parse_malformed_opt_len)
 	zassert_not_equal(r, 0, "Should've failed to parse a packet");
 }
 
-ZTEST(coap, test_parse_malformed_opt_ext)
+static void test_parse_malformed_opt_ext(void)
 {
 	uint8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0xE0, 0x01 };
@@ -314,7 +314,7 @@ ZTEST(coap, test_parse_malformed_opt_ext)
 	zassert_not_equal(r, 0, "Should've failed to parse a packet");
 }
 
-ZTEST(coap, test_parse_malformed_opt_len_ext)
+static void test_parse_malformed_opt_len_ext(void)
 {
 	uint8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0xEE, 0x01, 0x02, 0x01};
@@ -329,7 +329,7 @@ ZTEST(coap, test_parse_malformed_opt_len_ext)
 }
 
 /* 1 option, No payload (with payload marker) */
-ZTEST(coap, test_parse_malformed_marker)
+static void test_parse_malformed_marker(void)
 {
 	uint8_t pdu[] = { 0x40, 0x01, 0, 0, 0x40, 0xFF};
 	struct coap_packet cpkt;
@@ -342,7 +342,7 @@ ZTEST(coap, test_parse_malformed_marker)
 	zassert_not_equal(r, 0, "Should've failed to parse a packet");
 }
 
-ZTEST(coap, test_parse_req_build_ack)
+static void test_parse_req_build_ack(void)
 {
 	uint8_t pdu[] = { 0x45, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y', 'l', 'o',
@@ -369,7 +369,7 @@ ZTEST(coap, test_parse_req_build_ack)
 			  "Built packet doesn't match reference packet");
 }
 
-ZTEST(coap, test_parse_req_build_empty_ack)
+static void test_parse_req_build_empty_ack(void)
 {
 	uint8_t pdu[] = { 0x45, 0xA5, 0xDE, 0xAD, 't', 'o', 'k', 'e', 'n',
 		       0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y', 'l', 'o',
@@ -396,7 +396,7 @@ ZTEST(coap, test_parse_req_build_empty_ack)
 			  "Built packet doesn't match reference packet");
 }
 
-ZTEST(coap, test_match_path_uri)
+static void test_match_path_uri(void)
 {
 	const char * const resource_path[] = {
 		"s",
@@ -558,7 +558,7 @@ static void verify_block1_response(struct coap_block_context *rsp_ctx,
 		      "rsp:%d, Couldn't packet total size", iter);
 }
 
-ZTEST(coap, test_block1_size)
+static void test_block1_size(void)
 {
 	struct coap_block_context req_ctx;
 	struct coap_block_context rsp_ctx;
@@ -700,7 +700,7 @@ static void verify_block2_response(struct coap_block_context *rsp_ctx,
 		      "rsp:%d, Couldn't packet total size", iter);
 }
 
-ZTEST(coap, test_block2_size)
+static void test_block2_size(void)
 {
 	struct coap_block_context req_ctx;
 	struct coap_block_context rsp_ctx;
@@ -725,7 +725,7 @@ ZTEST(coap, test_block2_size)
 	}
 }
 
-ZTEST(coap, test_retransmit_second_round)
+static void test_retransmit_second_round(void)
 {
 	struct coap_packet cpkt;
 	struct coap_packet rsp;
@@ -847,7 +847,7 @@ static int server_resource_1_get(struct coap_resource *resource,
 	return 0;
 }
 
-ZTEST(coap, test_observer_server)
+static void test_observer_server(void)
 {
 	uint8_t valid_request_pdu[] = {
 		0x45, 0x01, 0x12, 0x34,
@@ -904,7 +904,7 @@ static int resource_reply_cb(const struct coap_packet *response,
 	return 0;
 }
 
-ZTEST(coap, test_observer_client)
+static void test_observer_client(void)
 {
 	struct coap_packet req;
 	struct coap_packet rsp;
@@ -963,4 +963,27 @@ ZTEST(coap, test_observer_client)
 	zassert_not_null(reply, "Couldn't find a matching waiting reply");
 }
 
-ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(coap_tests,
+			 ztest_unit_test(test_build_empty_pdu),
+			 ztest_unit_test(test_build_simple_pdu),
+			 ztest_unit_test(test_parse_empty_pdu),
+			 ztest_unit_test(test_parse_empty_pdu_1),
+			 ztest_unit_test(test_parse_simple_pdu),
+			 ztest_unit_test(test_parse_malformed_opt),
+			 ztest_unit_test(test_parse_malformed_opt_len),
+			 ztest_unit_test(test_parse_malformed_opt_ext),
+			 ztest_unit_test(test_parse_malformed_opt_len_ext),
+			 ztest_unit_test(test_parse_malformed_marker),
+			 ztest_unit_test(test_parse_req_build_ack),
+			 ztest_unit_test(test_parse_req_build_empty_ack),
+			 ztest_unit_test(test_match_path_uri),
+			 ztest_unit_test(test_block1_size),
+			 ztest_unit_test(test_block2_size),
+			 ztest_unit_test(test_retransmit_second_round),
+			 ztest_unit_test(test_observer_server),
+			 ztest_unit_test(test_observer_client));
+
+	ztest_run_test_suite(coap_tests);
+}

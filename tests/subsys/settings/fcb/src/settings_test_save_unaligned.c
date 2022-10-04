@@ -7,13 +7,10 @@
 #include "settings_test.h"
 #include "settings/settings_fcb.h"
 
-ZTEST(settings_config_fcb, test_config_save_fcb_unaligned)
+void test_config_save_fcb_unaligned(void)
 {
 	int rc;
 	struct settings_fcb cf;
-
-	rc = settings_register(&c_test_handlers[0]);
-	zassert_true(rc == 0 || rc == -EEXIST, "settings_register fail");
 
 	config_wipe_srcs();
 	config_wipe_fcb(fcb_sectors, ARRAY_SIZE(fcb_sectors));
@@ -49,5 +46,4 @@ ZTEST(settings_config_fcb, test_config_save_fcb_unaligned)
 	val8_un = 15U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fcb write error");
-	settings_unregister(&c_test_handlers[0]);
 }

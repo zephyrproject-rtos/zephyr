@@ -69,7 +69,7 @@ static struct {
 	.fifo = Z_FIFO_INITIALIZER(tx.fifo),
 };
 
-static const struct device *const h4_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_uart));
+static const struct device *h4_dev;
 
 static inline void h4_get_type(void)
 {
@@ -558,8 +558,9 @@ static int bt_uart_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
+	h4_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_uart));
 	if (!device_is_ready(h4_dev)) {
-		return -ENODEV;
+		return -EINVAL;
 	}
 
 	bt_hci_driver_register(&drv);

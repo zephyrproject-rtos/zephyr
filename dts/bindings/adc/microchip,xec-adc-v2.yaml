@@ -34,5 +34,21 @@ properties:
     pinctrl-names:
       required: true
 
+    "#girq-cells":
+      type: int
+      const: 2
+
+    "#pcr-cells":
+      type: int
+      const: 2
+
 io-channel-cells:
     - input
+
+girq-cells:
+    - girqnum
+    - bitpos
+
+pcr-cells:
+    - regidx
+    - bitpos

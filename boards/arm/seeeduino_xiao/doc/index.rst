@@ -10,7 +10,8 @@ The Seeeduino XIAO is a tiny (20 mm x 17.5 mm) ARM development
 board with onboard LEDs, USB port, and range of I/O broken out
 onto 14 pins.
 
-.. image:: img/seeeduino_xiao.jpg
+.. image:: img/seeeduino_xiao.png
+     :width: 500px
      :align: center
      :alt: Seeeduino XIAO
 

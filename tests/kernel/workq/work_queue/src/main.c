@@ -16,8 +16,8 @@
 #define __DEPRECATED_MACRO
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
-#include <zephyr/tc_util.h>
+#include <ztest.h>
+#include <tc_util.h>
 #include <zephyr/sys/util.h>
 
 #define NUM_TEST_ITEMS          6
@@ -220,7 +220,7 @@ static void resubmit_work_handler(struct k_work *work)
  *
  * @see k_work_submit()
  */
-ZTEST(workqueue_triggered, test_resubmit)
+static void test_resubmit(void)
 {
 	TC_PRINT("Starting resubmit test\n");
 
@@ -327,7 +327,7 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
  * @see k_work_delayable_init(), k_work_schedule(),
  * k_work_cancel_delayable()
  */
-ZTEST(workqueue_delayed, test_delayed_cancel)
+static void test_delayed_cancel(void)
 {
 	TC_PRINT("Starting delayed cancel test\n");
 
@@ -348,7 +348,7 @@ ZTEST(workqueue_delayed, test_delayed_cancel)
 	reset_results();
 }
 
-ZTEST(workqueue_delayed, test_delayed_pending)
+static void test_delayed_pending(void)
 {
 	TC_PRINT("Starting delayed pending test\n");
 
@@ -386,7 +386,7 @@ ZTEST(workqueue_delayed, test_delayed_pending)
  *
  * @see k_work_init_delayable(), k_work_schedule()
  */
-ZTEST(workqueue_delayed, test_delayed)
+static void test_delayed(void)
 {
 	TC_PRINT("Starting delayed test\n");
 
@@ -483,7 +483,7 @@ static void test_triggered_trigger(void)
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
-ZTEST(workqueue_triggered, test_triggered)
+static void test_triggered(void)
 {
 	TC_PRINT("Starting triggered test\n");
 
@@ -514,7 +514,7 @@ ZTEST(workqueue_triggered, test_triggered)
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
-ZTEST(workqueue_triggered, test_already_triggered)
+static void test_already_triggered(void)
 {
 	TC_PRINT("Starting triggered test\n");
 
@@ -563,7 +563,7 @@ static void triggered_resubmit_work_handler(struct k_work *work)
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
-ZTEST(workqueue_triggered, test_triggered_resubmit)
+static void test_triggered_resubmit(void)
 {
 	int i;
 
@@ -607,7 +607,7 @@ ZTEST(workqueue_triggered, test_triggered_resubmit)
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
-ZTEST(workqueue_triggered, test_triggered_no_wait)
+static void test_triggered_no_wait(void)
 {
 	TC_PRINT("Starting triggered test\n");
 
@@ -638,7 +638,7 @@ ZTEST(workqueue_triggered, test_triggered_no_wait)
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
-ZTEST(workqueue_triggered, test_triggered_no_wait_expired)
+static void test_triggered_no_wait_expired(void)
 {
 	TC_PRINT("Starting triggered test\n");
 
@@ -666,7 +666,7 @@ ZTEST(workqueue_triggered, test_triggered_no_wait_expired)
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
-ZTEST(workqueue_triggered, test_triggered_wait)
+static void test_triggered_wait(void)
 {
 	TC_PRINT("Starting triggered test\n");
 
@@ -697,7 +697,7 @@ ZTEST(workqueue_triggered, test_triggered_wait)
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
-ZTEST(workqueue_triggered, test_triggered_wait_expired)
+static void test_triggered_wait_expired(void)
 {
 	TC_PRINT("Starting triggered test\n");
 
@@ -787,7 +787,7 @@ static void test_triggered_from_msgq_start(void)
  * @see k_work_poll_init(), k_work_poll_submit()
  *
  */
-ZTEST(workqueue_triggered, test_triggered_from_msgq)
+static void test_triggered_from_msgq(void)
 {
 	TC_PRINT("Starting triggered from msgq test\n");
 
@@ -807,7 +807,7 @@ ZTEST(workqueue_triggered, test_triggered_from_msgq)
  *
  * @see K_WORK_DELAYABLE_DEFINE()
  */
-ZTEST(workqueue_triggered, test_delayed_work_define)
+void test_delayed_work_define(void)
 {
 	struct k_work_delayable initialized_by_function = { 0 };
 
@@ -829,7 +829,7 @@ ZTEST(workqueue_triggered, test_delayed_work_define)
  *
  * @see k_work_poll_cancel()
  */
-ZTEST(workqueue_triggered, test_triggered_cancel)
+static void test_triggered_cancel(void)
 {
 	int ret;
 
@@ -854,16 +854,25 @@ ZTEST(workqueue_triggered, test_triggered_cancel)
 }
 
 /*test case main entry*/
-static void *workq_setup(void)
+void test_main(void)
 {
 	k_thread_priority_set(k_current_get(), 0);
-	test_sequence();
-
-	return NULL;
+	ztest_test_suite(workqueue,
+			 ztest_1cpu_unit_test(test_sequence),
+			 ztest_1cpu_unit_test(test_resubmit),
+			 ztest_1cpu_unit_test(test_delayed),
+			 ztest_1cpu_unit_test(test_delayed_cancel),
+			 ztest_1cpu_unit_test(test_delayed_pending),
+			 ztest_1cpu_unit_test(test_triggered),
+			 ztest_1cpu_unit_test(test_already_triggered),
+			 ztest_1cpu_unit_test(test_triggered_resubmit),
+			 ztest_1cpu_unit_test(test_triggered_no_wait),
+			 ztest_1cpu_unit_test(test_triggered_no_wait_expired),
+			 ztest_1cpu_unit_test(test_triggered_wait),
+			 ztest_1cpu_unit_test(test_triggered_wait_expired),
+			 ztest_1cpu_unit_test(test_triggered_from_msgq),
+			 ztest_1cpu_unit_test(test_delayed_work_define),
+			 ztest_1cpu_unit_test(test_triggered_cancel)
+			 );
+	ztest_run_test_suite(workqueue);
 }
-
-
-ZTEST_SUITE(workqueue_delayed, NULL, workq_setup, ztest_simple_1cpu_before,
-		 ztest_simple_1cpu_after, NULL);
-ZTEST_SUITE(workqueue_triggered, NULL, workq_setup, ztest_simple_1cpu_before,
-		 ztest_simple_1cpu_after, NULL);

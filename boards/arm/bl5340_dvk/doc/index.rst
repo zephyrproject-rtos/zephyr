@@ -43,7 +43,8 @@ This development kit has the following features:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/bl5340_dvk_top.jpg
+.. figure:: img/bl5340_dvk_top.png
+     :width: 340px
      :align: center
      :alt: BL5340 DVK
 

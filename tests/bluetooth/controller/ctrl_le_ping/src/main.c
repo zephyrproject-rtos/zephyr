@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/types.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include "kconfig.h"
 
 #include <zephyr/bluetooth/hci.h>

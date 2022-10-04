@@ -11,6 +11,10 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/common/sys_io.h>
 
+/* lib-c hooks required RAM defined variables */
+#define RISCV_RAM_BASE              DT_REG_ADDR(DT_INST(0, mmio_sram))
+#define RISCV_RAM_SIZE              DT_REG_SIZE(DT_INST(0, mmio_sram))
+
 #ifndef _ASMLANGUAGE
 /* CSR access helpers */
 

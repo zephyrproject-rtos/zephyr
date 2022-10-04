@@ -9,7 +9,7 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/random/rand32.h>
 
 #include <zephyr/net/ethernet.h>

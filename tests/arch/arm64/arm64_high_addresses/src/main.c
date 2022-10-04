@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 ZTEST_USER(arm64_high_addresses, test_arm64_high_addresses)
 {

@@ -9,6 +9,6 @@ common:
       regex:
         - "Hello World! (.*)"
 tests:
-  sample.lcd_cyclonev_socdk.helloworld:
+  sample.basic.helloworld:
     platform_allow: cyclonev_socdk
     tags: introduction

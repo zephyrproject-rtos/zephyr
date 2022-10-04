@@ -5,13 +5,10 @@ description: GigaDevice GD32 series DAC module
 
 compatible: "gd,gd32-dac"
 
-include: [dac-controller.yaml, reset-device.yaml, pinctrl-device.yaml]
+include: [dac-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
-      required: true
-
-    resets:
       required: true
 
     rcu-periph-clock:

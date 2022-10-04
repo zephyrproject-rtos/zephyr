@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/kernel.h>
 
 /* global values and data structures */
@@ -53,7 +53,7 @@ K_THREAD_STACK_DEFINE(test_loprio_stack, STACK_SIZE);
  * @see K_POLL_EVENT_INITIALIZER(), k_poll_signal_init(),
  * k_poll_signal_raise(), k_poll_signal_check()
  */
-ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
+void test_poll_no_wait(void)
 {
 	struct fifo_msg msg = { NULL, FIFO_MSG_VALUE }, *msg_ptr;
 	unsigned int signaled;
@@ -366,7 +366,7 @@ void check_results(struct k_poll_event *events, uint32_t event_type,
  *
  * @see k_poll_signal_init(), k_poll()
  */
-ZTEST(poll_api_1cpu, test_poll_wait)
+void test_poll_wait(void)
 {
 	const int main_low_prio = 10;
 
@@ -394,7 +394,7 @@ ZTEST(poll_api_1cpu, test_poll_wait)
 	 */
 	k_thread_priority_set(k_current_get(), main_low_prio);
 
-	k_tid_t tid1 = k_thread_create(&test_thread, test_stack,
+	k_thread_create(&test_thread, test_stack,
 			K_THREAD_STACK_SIZEOF(test_stack),
 			poll_wait_helper, (void *)(USE_FIFO | USE_MSGQ), wait_msgq_ptr, 0,
 			main_low_prio - 1, K_USER | K_INHERIT_PERMS,
@@ -433,7 +433,7 @@ ZTEST(poll_api_1cpu, test_poll_wait)
 	 */
 	k_thread_priority_set(k_current_get(), main_low_prio);
 
-	k_tid_t tid2 = k_thread_create(&test_thread, test_stack,
+	k_thread_create(&test_thread, test_stack,
 			K_THREAD_STACK_SIZEOF(test_stack),
 			poll_wait_helper,
 			0, 0, 0, main_low_prio - 1, 0, K_NO_WAIT);
@@ -453,7 +453,7 @@ ZTEST(poll_api_1cpu, test_poll_wait)
 	 * Wait for each event to be ready from a lower priority thread, one at
 	 * a time.
 	 */
-	k_tid_t tid3 = k_thread_create(&test_thread, test_stack,
+	k_thread_create(&test_thread, test_stack,
 			K_THREAD_STACK_SIZEOF(test_stack),
 			poll_wait_helper,
 			(void *)(USE_FIFO | USE_MSGQ), wait_msgq_ptr, 0, old_prio + 1,
@@ -497,9 +497,6 @@ ZTEST(poll_api_1cpu, test_poll_wait)
 	check_results(&wait_events[2], K_POLL_TYPE_SIGNAL, false);
 	check_results(&wait_events[4], K_POLL_TYPE_MSGQ_DATA_AVAILABLE, true);
 
-	k_thread_abort(tid1);
-	k_thread_abort(tid2);
-	k_thread_abort(tid3);
 }
 
 /* verify k_poll() that waits on object which gets cancellation */
@@ -555,7 +552,7 @@ void test_poll_cancel(bool is_main_low_prio)
 		k_thread_priority_set(k_current_get(), main_low_prio);
 	}
 
-	k_tid_t tid = k_thread_create(&test_thread, test_stack,
+	k_thread_create(&test_thread, test_stack,
 			K_THREAD_STACK_SIZEOF(test_stack),
 			poll_cancel_helper, (void *)1, 0, 0,
 			main_low_prio - 1, K_USER | K_INHERIT_PERMS,
@@ -584,16 +581,14 @@ void test_poll_cancel(bool is_main_low_prio)
 		zassert_equal(cancel_events[1].state,
 			      K_POLL_STATE_NOT_READY, "");
 	}
-
-	k_thread_abort(tid);
 }
 
-ZTEST(poll_api_1cpu, test_poll_cancel_main_low_prio)
+void test_poll_cancel_main_low_prio(void)
 {
 	test_poll_cancel(true);
 }
 
-ZTEST(poll_api_1cpu, test_poll_cancel_main_high_prio)
+void test_poll_cancel_main_high_prio(void)
 {
 	test_poll_cancel(false);
 }
@@ -644,7 +639,7 @@ static K_SEM_DEFINE(multi_ready_sem, 1, 1);
  *
  * @see K_POLL_EVENT_INITIALIZER(), k_poll(), k_poll_event_init()
  */
-ZTEST(poll_api, test_poll_multi)
+void test_poll_multi(void)
 {
 	int old_prio = k_thread_priority_get(k_current_get());
 	const int main_low_prio = 10;
@@ -661,7 +656,7 @@ ZTEST(poll_api, test_poll_multi)
 
 	k_thread_priority_set(k_current_get(), main_low_prio);
 
-	k_tid_t tid1 = k_thread_create(&test_thread, test_stack,
+	k_thread_create(&test_thread, test_stack,
 			K_THREAD_STACK_SIZEOF(test_stack),
 			multi, 0, 0, 0, main_low_prio - 1,
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
@@ -670,7 +665,7 @@ ZTEST(poll_api, test_poll_multi)
 	 * create additional thread to add multiple(more than one)
 	 * pending threads in events list to improve code coverage.
 	 */
-	k_tid_t tid2 = k_thread_create(&test_loprio_thread, test_loprio_stack,
+	k_thread_create(&test_loprio_thread, test_loprio_stack,
 			K_THREAD_STACK_SIZEOF(test_loprio_stack),
 			multi_lowprio, 0, 0, 0, main_low_prio + 1,
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
@@ -696,9 +691,6 @@ ZTEST(poll_api, test_poll_multi)
 	/* wait for polling threads to complete execution */
 	k_thread_priority_set(k_current_get(), old_prio);
 	k_sleep(K_MSEC(250));
-
-	k_thread_abort(tid1);
-	k_thread_abort(tid2);
 }
 
 static struct k_poll_signal signal;
@@ -729,7 +721,7 @@ static void threadstate(void *p1, void *p2, void *p3)
  * @see K_POLL_EVENT_INITIALIZER(), k_poll(), k_poll_signal_init(),
  * k_poll_signal_check(), k_poll_signal_raise()
  */
-ZTEST(poll_api_1cpu, test_poll_threadstate)
+void test_poll_threadstate(void)
 {
 	unsigned int signaled;
 	const int main_low_prio = 10;
@@ -747,7 +739,7 @@ ZTEST(poll_api_1cpu, test_poll_threadstate)
 	k_thread_priority_set(k_current_get(), main_low_prio);
 	k_tid_t ztest_tid = k_current_get();
 
-	k_tid_t tid = k_thread_create(&test_thread, test_stack,
+	k_thread_create(&test_thread, test_stack,
 			K_THREAD_STACK_SIZEOF(test_stack), threadstate,
 			ztest_tid, 0, 0, main_low_prio - 1, K_INHERIT_PERMS,
 			K_NO_WAIT);
@@ -763,11 +755,9 @@ ZTEST(poll_api_1cpu, test_poll_threadstate)
 	k_poll_signal_reset(&signal);
 	/* teardown */
 	k_thread_priority_set(k_current_get(), old_prio);
-
-	k_thread_abort(tid);
 }
 
-void poll_test_grant_access(void)
+void test_poll_grant_access(void)
 {
 	k_thread_access_grant(k_current_get(), &no_wait_sem, &no_wait_fifo,
 			      &no_wait_signal, &wait_sem, &wait_fifo,
@@ -776,7 +766,7 @@ void poll_test_grant_access(void)
 			      &test_stack, &multi_sem, &multi_reply);
 }
 
-ZTEST(poll_api_1cpu, test_poll_zero_events)
+void test_poll_zero_events(void)
 {
 	struct k_poll_event event;
 
@@ -804,7 +794,7 @@ void polling_event(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_poll_tests
  */
-ZTEST(poll_api_1cpu, test_detect_is_polling)
+void test_detect_is_polling(void)
 {
 	k_poll_signal_init(&test_signal);
 
@@ -815,7 +805,7 @@ ZTEST(poll_api_1cpu, test_detect_is_polling)
 				&test_signal),
 	};
 
-	k_tid_t tid = k_thread_create(&test_thread, test_stack,
+	k_thread_create(&test_thread, test_stack,
 		K_THREAD_STACK_SIZEOF(test_stack), polling_event,
 		events, NULL, NULL, K_PRIO_PREEMPT(0),
 		K_INHERIT_PERMS, K_NO_WAIT);
@@ -833,6 +823,4 @@ ZTEST(poll_api_1cpu, test_detect_is_polling)
 	zassert_true(ret == -EAGAIN, "thread expired failed\n");
 	zassert_true(events[0].poller->is_polling == false,
 		"the value of is_polling is invalid\n");
-
-	k_thread_abort(tid);
 }

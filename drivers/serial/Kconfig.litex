@@ -5,8 +5,7 @@
 
 config UART_LITEUART
 	bool "LiteUART serial driver"
-	default y
-	depends on DT_HAS_LITEX_UART0_ENABLED
+	depends on SOC_RISCV32_LITEX_VEXRISCV
 	select SERIAL_HAS_DRIVER
 	help
 	  This option enables LiteUART serial driver.

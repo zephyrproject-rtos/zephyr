@@ -35,14 +35,12 @@ ZTEST(framework_tests, test_assert_mem_equal)
 	zassert_mem_equal(actual, expected, sizeof(expected), NULL);
 }
 
-ZTEST_EXPECT_SKIP(framework_tests, test_skip_config);
 ZTEST(framework_tests, test_skip_config)
 {
 	Z_TEST_SKIP_IFDEF(CONFIG_BUGxxxxx);
 	ztest_test_fail();
 }
 
-ZTEST_EXPECT_SKIP(framework_tests, test_skip_no_config);
 ZTEST(framework_tests, test_skip_no_config)
 {
 	Z_TEST_SKIP_IFNDEF(CONFIG_BUGyyyyy);
@@ -151,18 +149,3 @@ ZTEST_F(rules_tests, test_rules_before_after)
 	fixture->state = RULE_STATE_TEST;
 	fixture->run_count++;
 }
-
-static void *fail_in_setup_setup(void)
-{
-	zassert_true(false, NULL);
-	return NULL;
-}
-
-ZTEST_EXPECT_FAIL(fail_in_setup, test_should_never_run);
-ZTEST(fail_in_setup, test_should_never_run)
-{
-	/* The following should pass, but the setup function will cause it to fail */
-	zassert_true(true, NULL);
-}
-
-ZTEST_SUITE(fail_in_setup, NULL, fail_in_setup_setup, NULL, NULL, NULL);

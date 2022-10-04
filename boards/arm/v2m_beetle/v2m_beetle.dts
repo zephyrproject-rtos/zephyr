@@ -51,6 +51,7 @@
 			compatible = "arm,cmsdk-timer";
 			reg = <0x40000000 0x1000>;
 			interrupts = <8 3>;
+			label = "TIMER_0";
 			clocks = <&syscon>;
 		};
 
@@ -58,6 +59,7 @@
 			compatible = "arm,cmsdk-timer";
 			reg = <0x40001000 0x1000>;
 			interrupts = <9 3>;
+			label = "TIMER_1";
 			clocks = <&syscon>;
 		};
 
@@ -65,6 +67,7 @@
 			compatible = "arm,cmsdk-dtimer";
 			reg = <0x40002000 0x1000>;
 			interrupts = <10 3>;
+			label = "DTIMER_0";
 			clocks = <&syscon>;
 		};
 
@@ -74,6 +77,7 @@
 			interrupts = <0 3>;
 			clocks = <&sysclk &syscon>;
 			current-speed = <115200>;
+			label = "UART_0";
 		};
 
 		uart1: uart@40005000 {
@@ -82,12 +86,14 @@
 			interrupts = <2 3>;
 			clocks = <&sysclk &syscon>;
 			current-speed = <115200>;
+			label = "UART_1";
 		};
 
 		wdog0: wdog@40008000 {
 			compatible = "arm,cmsdk-watchdog";
 			clocks = <&sysclk>;
 			reg = <0x40008000 0x1000>;
+			label = "WATCHDOG";
 		};
 
 		gpio0: gpio@40010000 {
@@ -96,6 +102,7 @@
 			interrupts = <6 3>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			label = "GPIO_0";
 			clocks = <&syscon>;
 		};
 
@@ -105,6 +112,7 @@
 			interrupts = <7 3>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			label = "GPIO_1";
 			clocks = <&syscon>;
 		};
 
@@ -114,6 +122,7 @@
 			interrupts = <42 3>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			label = "GPIO_2";
 			clocks = <&syscon>;
 		};
 
@@ -123,6 +132,7 @@
 			interrupts = <43 3>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			label = "GPIO_3";
 			clocks = <&syscon>;
 		};
 

@@ -250,7 +250,7 @@ static void put_full_entry(void *p1, void *p2, void *p3)
  * @brief Test thread to thread data passing via message queue
  * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
-ZTEST(msgq_api_1cpu, test_msgq_thread)
+void test_msgq_thread(void)
 {
 	int ret;
 
@@ -267,7 +267,7 @@ ZTEST(msgq_api_1cpu, test_msgq_thread)
  * @brief Test thread to thread data passing via message queue
  * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
-ZTEST(msgq_api, test_msgq_thread_overflow)
+void test_msgq_thread_overflow(void)
 {
 	int ret;
 
@@ -292,7 +292,7 @@ ZTEST(msgq_api, test_msgq_thread_overflow)
  * @brief Test user thread to kernel thread data passing via message queue
  * @see k_msgq_alloc_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
-ZTEST_USER(msgq_api, test_msgq_user_thread)
+void test_msgq_user_thread(void)
 {
 	struct k_msgq *q;
 	int ret;
@@ -310,7 +310,7 @@ ZTEST_USER(msgq_api, test_msgq_user_thread)
  * @brief Test thread to thread data passing via message queue
  * @see k_msgq_alloc_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
-ZTEST_USER(msgq_api, test_msgq_user_thread_overflow)
+void test_msgq_user_thread_overflow(void)
 {
 	struct k_msgq *q;
 	int ret;
@@ -329,7 +329,7 @@ ZTEST_USER(msgq_api, test_msgq_user_thread_overflow)
  * @brief Test thread to isr data passing via message queue
  * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
-ZTEST(msgq_api, test_msgq_isr)
+void test_msgq_isr(void)
 {
 	static struct k_msgq stack_msgq;
 
@@ -344,7 +344,7 @@ ZTEST(msgq_api, test_msgq_isr)
  * @brief Test pending writer in msgq
  * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
-ZTEST(msgq_api_1cpu, test_msgq_pend_thread)
+void test_msgq_pend_thread(void)
 {
 	int ret;
 
@@ -361,7 +361,7 @@ ZTEST(msgq_api_1cpu, test_msgq_pend_thread)
  * pool with various parameters
  * @see k_msgq_alloc_init(), k_msgq_cleanup()
  */
-ZTEST(msgq_api, test_msgq_alloc)
+void test_msgq_alloc(void)
 {
 	int ret;
 
@@ -390,7 +390,7 @@ ZTEST(msgq_api, test_msgq_alloc)
  *
  * @see k_msgq_get()
  */
-ZTEST(msgq_api_1cpu, test_msgq_empty)
+void test_msgq_empty(void)
 {
 	int pri = k_thread_priority_get(k_current_get()) - 1;
 	int ret;
@@ -430,7 +430,7 @@ ZTEST(msgq_api_1cpu, test_msgq_empty)
  *
  * @see k_msgq_put()
  */
-ZTEST(msgq_api_1cpu, test_msgq_full)
+void test_msgq_full(void)
 {
 	int pri = k_thread_priority_get(k_current_get()) - 1;
 	int ret;

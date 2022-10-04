@@ -11,6 +11,7 @@
 
 	dummy_dc: dummy_dc {
 		compatible = "zephyr,dummy-dc";
+		label = "DISPLAY";
 		height = <240>;
 		width = <320>;
 	};

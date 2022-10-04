@@ -27,6 +27,7 @@
 	soc {
 		msc: flash-controller@400c0000 {
 			compatible = "silabs,gecko-flash-controller";
+			label = "FLASH_CTRL";
 			reg = <0x400c0000 0x5c>;
 			interrupts = <15 0>;
 
@@ -35,6 +36,7 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
+				label = "FLASH_0";
 				write-block-size = <4>;
 				erase-block-size = <1024>;
 			};
@@ -47,6 +49,7 @@
 			interrupt-names = "rx", "tx";
 			peripheral-id = <0>;
 			status = "disabled";
+			label = "UART_0";
 		};
 
 		usart1: usart@4000c400 { /* USART1 */
@@ -56,6 +59,7 @@
 			interrupt-names = "rx", "tx";
 			peripheral-id = <1>;
 			status = "disabled";
+			label = "UART_1";
 		};
 
 		leuart0: leuart@40084000 { /* LEUART0 */
@@ -64,6 +68,7 @@
 			interrupts = <10 0>;
 			peripheral-id = <0>;
 			status = "disabled";
+			label = "LEUART_0";
 		};
 
 		i2c0: i2c@4000a000 {
@@ -73,6 +78,7 @@
 			#size-cells = <0>;
 			reg = <0x4000a000 0x400>;
 			interrupts = <5 0>;
+			label = "I2C_0";
 			status = "disabled";
 		};
 
@@ -81,6 +87,7 @@
 			reg = <0x40006100 0xf00>;
 			interrupts = <1 0 6 0>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
+			label = "GPIO";
 
 			ranges;
 			#address-cells = <1>;
@@ -90,6 +97,7 @@
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x40006000 0x24>;
 				peripheral-id = <0>;
+				label = "GPIO_A";
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -99,6 +107,7 @@
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x40006024 0x24>;
 				peripheral-id = <1>;
+				label = "GPIO_B";
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -108,6 +117,7 @@
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x40006048 0x24>;
 				peripheral-id = <2>;
+				label = "GPIO_C";
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -117,6 +127,7 @@
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x4000606c 0x24>;
 				peripheral-id = <3>;
+				label = "GPIO_D";
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -126,6 +137,7 @@
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x40006090 0x24>;
 				peripheral-id = <4>;
+				label = "GPIO_E";
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -135,6 +147,7 @@
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x400060b4 0x24>;
 				peripheral-id = <5>;
+				label = "GPIO_F";
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";

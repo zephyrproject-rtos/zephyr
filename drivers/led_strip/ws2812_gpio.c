@@ -75,7 +75,7 @@ struct ws2812_gpio_cfg {
 			DELAY_TxL			\
 			::				\
 			[r] "l" (base),		\
-			[p] "l" (pin)); } while (false)
+			[p] "l" (pin)); } while (0)
 
 /* Send out a 0 bit's pulse */
 #define ZERO_BIT(base, pin) do {			\
@@ -85,7 +85,7 @@ struct ws2812_gpio_cfg {
 			DELAY_TxL			\
 			::				\
 			[r] "l" (base),		\
-			[p] "l" (pin)); } while (false)
+			[p] "l" (pin)); } while (0)
 
 static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 {

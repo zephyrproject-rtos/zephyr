@@ -13,6 +13,7 @@
 &i2c0 {
 	motorctl: motor-controller@10 {
 		compatible = "motor-controller";
+		label = "MOTORCTL";
 		reg = <0x10>;
 	};
 };

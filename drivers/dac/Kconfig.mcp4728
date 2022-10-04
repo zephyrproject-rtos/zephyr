@@ -4,9 +4,7 @@
 
 config DAC_MCP4728
 	bool "Microchip MCP4728 DAC driver"
-	default y
-	select I2C
-	depends on DT_HAS_MICROCHIP_MCP4728_ENABLED
+	depends on I2C
 	help
 	  Enable driver for the Microchip MCP4728.
 

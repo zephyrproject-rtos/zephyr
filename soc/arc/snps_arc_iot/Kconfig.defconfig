@@ -34,6 +34,10 @@ config HARVARD
 config ARC_FIRQ
 	default y
 
+config UART_NS16550
+	default y
+	depends on SERIAL
+
 config UART_NS16550_ACCESS_IOPORT
 	default y
 

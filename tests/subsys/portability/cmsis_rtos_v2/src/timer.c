@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <cmsis_os2.h>
 
 #define ONESHOT_TIME_TICKS      100
-#define PERIOD_TICKS            MAX(50, k_ms_to_ticks_ceil32(10))
+#define PERIOD_TICKS            MAX(50, k_ms_to_ticks_ceil32(5))
 #define NUM_PERIODS             5
 
 uint32_t num_oneshots_executed;

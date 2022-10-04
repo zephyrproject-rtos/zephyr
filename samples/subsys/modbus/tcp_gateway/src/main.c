@@ -27,11 +27,9 @@ const static struct modbus_iface_param backend_param = {
 	},
 };
 
-#define MODBUS_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_modbus_serial)
-
 static int init_backend_iface(void)
 {
-	const char bend_name[] = {DEVICE_DT_NAME(MODBUS_NODE)};
+	const char bend_name[] = {DT_PROP(DT_INST(0, zephyr_modbus_serial), label)};
 
 	backend = modbus_iface_get_by_name(bend_name);
 	if (backend < 0) {

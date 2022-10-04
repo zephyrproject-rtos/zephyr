@@ -472,11 +472,7 @@ Memory Management
 
 If the target platform enables paging and requires drivers to memory-map
 their I/O regions, :kconfig:option:`CONFIG_MMU` needs to be enabled and the
-following API implemented:
-
-- :c:func:`arch_mem_map`
-- :c:func:`arch_mem_unmap`
-- :c:func:`arch_page_phys_get`
+:c:func:`arch_mem_map` API implemented.
 
 Stack Objects
 *************

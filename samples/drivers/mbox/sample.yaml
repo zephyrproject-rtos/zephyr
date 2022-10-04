@@ -6,4 +6,4 @@ tests:
         integration_platforms:
           - nrf5340dk_nrf5340_cpuapp
         tags: mbox
-        harness: remote
+        build_only: true

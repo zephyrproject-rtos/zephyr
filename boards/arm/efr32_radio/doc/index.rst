@@ -21,7 +21,8 @@ Support for EFR32 Radio boards is provided by one of the starter kits
 - `SLWSTK6061B Proprietary Wireless Starter Kit`_
 - `SLWSTK6006A Mighty Gecko Wireless Starter Kit`_
 
-.. figure:: efr32_slwstk6020b.jpg
+.. figure:: ./efr32_slwstk6020b.jpg
+   :width: 490px
    :align: center
    :alt: SLWSTK6020B Bluetooth SoC Starter Kit
 

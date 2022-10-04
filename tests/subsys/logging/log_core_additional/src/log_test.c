@@ -10,10 +10,10 @@
  *
  */
 
-#include <zephyr/tc_util.h>
+#include <tc_util.h>
 #include <stdbool.h>
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_backend_std.h>
 #include <zephyr/logging/log_ctrl.h>
@@ -129,7 +129,6 @@ struct backend_cb backend2_cb;
  * when install this timestamp function, timestamping frequency is set to
  * 2000000, means 2 timestamp/us
  */
-#ifndef CONFIG_USERSPACE
 static uint32_t stamp;
 static uint32_t timestamp_get(void)
 {
@@ -159,8 +158,6 @@ static void log_setup(bool backend2_enable)
 	}
 }
 
-#endif
-
 static bool log_test_process(void)
 {
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
@@ -181,8 +178,7 @@ static bool log_test_process(void)
  * @addtogroup logging
  */
 
-#ifndef CONFIG_USERSPACE
-ZTEST(test_log_core_additional, test_log_domain_id)
+void test_log_domain_id(void)
 {
 	log_setup(false);
 
@@ -206,7 +202,8 @@ ZTEST(test_log_core_additional, test_log_domain_id)
  *
  * @addtogroup logging
  */
-ZTEST(test_log_core_additional, test_log_sync)
+
+void test_log_sync(void)
 {
 	TC_PRINT("Logging synchronously\n");
 
@@ -230,7 +227,8 @@ ZTEST(test_log_core_additional, test_log_sync)
  *
  * @addtogroup logging
  */
-ZTEST(test_log_core_additional, test_log_early_logging)
+
+void test_log_early_logging(void)
 {
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		ztest_test_skip();
@@ -275,7 +273,8 @@ ZTEST(test_log_core_additional, test_log_early_logging)
  *
  * @addtogroup logging
  */
-ZTEST(test_log_core_additional, test_log_severity)
+
+void test_log_severity(void)
 {
 	log_setup(false);
 
@@ -303,7 +302,8 @@ ZTEST(test_log_core_additional, test_log_severity)
  *
  * @addtogroup logging
  */
-ZTEST(test_log_core_additional, test_log_timestamping)
+
+void test_log_timestamping(void)
 {
 	stamp = 0U;
 
@@ -354,7 +354,7 @@ ZTEST(test_log_core_additional, test_log_timestamping)
  */
 
 #define UART_BACKEND "log_backend_uart"
-ZTEST(test_log_core_additional, test_multiple_backends)
+void test_multiple_backends(void)
 {
 	TC_PRINT("Test multiple backends");
 	/* enable both backend1 and backend2 */
@@ -383,7 +383,7 @@ ZTEST(test_log_core_additional, test_multiple_backends)
  */
 
 #ifdef CONFIG_LOG_PROCESS_THREAD
-ZTEST(test_log_core_additional, test_log_thread)
+void test_log_thread(void)
 {
 	uint32_t slabs_free, used, max;
 
@@ -417,7 +417,7 @@ ZTEST(test_log_core_additional, test_log_thread)
 	zassert_equal(log_msg_mem_get_used(), 0, NULL);
 }
 #else
-ZTEST(test_log_core_additional, test_log_thread)
+void test_log_thread(void)
 {
 	ztest_test_skip();
 }
@@ -432,7 +432,7 @@ static void call_log_generic(const char *fmt, ...)
 	va_end(ap);
 }
 
-ZTEST(test_log_core_additional, test_log_generic)
+void test_log_generic(void)
 {
 	char *log_msg = "log user space";
 	int i = 100;
@@ -448,7 +448,7 @@ ZTEST(test_log_core_additional, test_log_generic)
 	}
 }
 
-ZTEST(test_log_core_additional, test_log_msg_create)
+void test_log_msg_create(void)
 {
 	log_setup(false);
 	if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
@@ -474,9 +474,7 @@ ZTEST(test_log_core_additional, test_log_msg_create)
 	}
 }
 
-#else
-
-ZTEST_USER(test_log_core_additional, test_log_msg_create_user)
+void test_log_msg_create_user(void)
 {
 	int mode;
 
@@ -498,9 +496,6 @@ ZTEST_USER(test_log_core_additional, test_log_msg_create_user)
 	while (log_test_process()) {
 	}
 }
-
-#endif /** CONFIG_USERSPACE **/
-
 /* The log process thread has the K_LOWEST_APPLICATION_THREAD_PRIO, adjust it
  * to a higher priority to increase the chances of being scheduled to handle
  * log message as soon as possible
@@ -512,12 +507,40 @@ void promote_log_thread(const struct k_thread *thread, void *user_data)
 	}
 }
 
-static void *test_log_core_additional_setup(void)
+extern void test_log_from_user(void);
+extern void test_log_hexdump_from_user(void);
+extern void test_log_generic_user(void);
+extern void test_log_filter_set(void);
+extern void test_log_panic(void);
+
+/*test case main entry*/
+void test_main(void)
 {
 #ifdef CONFIG_LOG_PROCESS_THREAD
 	k_thread_foreach(promote_log_thread, NULL);
 #endif
-	return NULL;
-}
 
-ZTEST_SUITE(test_log_core_additional, NULL, test_log_core_additional_setup, NULL, NULL, NULL);
+#ifdef CONFIG_USERSPACE
+	ztest_test_suite(test_log_core_additional,
+			 ztest_user_unit_test(test_log_from_user),
+			 ztest_user_unit_test(test_log_hexdump_from_user),
+			 ztest_user_unit_test(test_log_generic_user),
+			 ztest_user_unit_test(test_log_filter_set),
+			 ztest_user_unit_test(test_log_panic),
+			 ztest_user_unit_test(test_log_msg_create_user));
+	ztest_run_test_suite(test_log_core_additional);
+#else
+	ztest_test_suite(test_log_core_additional,
+			 ztest_unit_test(test_multiple_backends),
+			 ztest_unit_test(test_log_generic),
+			 ztest_unit_test(test_log_domain_id),
+			 ztest_unit_test(test_log_severity),
+			 ztest_unit_test(test_log_timestamping),
+			 ztest_unit_test(test_log_early_logging),
+			 ztest_unit_test(test_log_sync),
+			 ztest_unit_test(test_log_thread),
+			 ztest_unit_test(test_log_msg_create)
+			 );
+	ztest_run_test_suite(test_log_core_additional);
+#endif
+}

@@ -37,7 +37,7 @@ struct settings_nvs {
 	struct settings_store cf_store;
 	struct nvs_fs cf_nvs;
 	uint16_t last_name_id;
-	const struct device *flash_dev;
+	const char *flash_dev_name;
 };
 
 /* register nvs to be a source of settings */

@@ -32,7 +32,7 @@
  * All the Push and Pop operations happen in ISR Context.
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/irq_offload.h>
 
 #define STACK_SIZE	(1024 + CONFIG_TEST_EXTRA_STACK_SIZE)

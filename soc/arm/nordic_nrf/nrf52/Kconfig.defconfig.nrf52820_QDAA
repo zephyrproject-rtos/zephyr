@@ -13,4 +13,7 @@ config NUM_IRQS
 	int
 	default 40
 
+config IEEE802154_NRF5
+	default IEEE802154
+
 endif # SOC_NRF52820_QDAA

@@ -10,7 +10,6 @@
 
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/drivers/reset.h>
 #include <zephyr/sys/util_macro.h>
 
 #include <gd32_rcu.h>
@@ -40,8 +39,8 @@ struct pwm_gd32_config {
 	uint16_t prescaler;
 	/** RCU peripheral clock. */
 	uint32_t rcu_periph_clock;
-	/** Reset. */
-	struct reset_dt_spec reset;
+	/** RCU peripheral reset. */
+	uint32_t rcu_periph_reset;
 	/** pinctrl configurations. */
 	const struct pinctrl_dev_config *pcfg;
 };
@@ -235,7 +234,9 @@ static int pwm_gd32_init(const struct device *dev)
 
 	rcu_periph_clock_enable(config->rcu_periph_clock);
 
-	(void)reset_line_toggle_dt(&config->reset);
+	/* reset timer to its default state */
+	rcu_periph_reset_enable(config->rcu_periph_reset);
+	rcu_periph_reset_disable(config->rcu_periph_reset);
 
 	/* apply pin configuration */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -271,7 +272,8 @@ static int pwm_gd32_init(const struct device *dev)
 		.reg = DT_REG_ADDR(DT_INST_PARENT(i)),			       \
 		.rcu_periph_clock = DT_PROP(DT_INST_PARENT(i),		       \
 					    rcu_periph_clock),		       \
-		.reset = RESET_DT_SPEC_GET(DT_INST_PARENT(i)),		       \
+		.rcu_periph_reset = DT_PROP(DT_INST_PARENT(i),		       \
+					    rcu_periph_reset),		       \
 		.prescaler = DT_PROP(DT_INST_PARENT(i), prescaler),	       \
 		.channels = DT_PROP(DT_INST_PARENT(i), channels),	       \
 		.is_32bit = DT_PROP(DT_INST_PARENT(i), is_32bit),	       \

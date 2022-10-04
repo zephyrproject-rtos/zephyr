@@ -24,7 +24,7 @@ The features include the following:
 - Expansion port (I2C, GPIO, SPI)
 - Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
 
-.. figure:: img/odroid_go.jpg
+.. figure:: img/odroid_go.png
         :align: center
         :alt: ODROID-GO
 

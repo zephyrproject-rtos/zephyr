@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/types.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 bool k_is_in_isr(void)
 {

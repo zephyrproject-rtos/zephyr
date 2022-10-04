@@ -62,6 +62,7 @@
 &sercom2 {
 	status = "okay";
 	compatible = "atmel,sam0-spi";
+	label = "NINA_SPI";
 	dipo = <1>;
 	dopo = <3>;
 	#address-cells = <1>;
@@ -75,6 +76,7 @@
 	nina_w102@0 {
 		compatible = "u-blox,nina";
 		reg = <0>;
+		label = "NINA_W102";
 		spi-max-frequency = <8000000>;
 		ready-gpios = <&porta 28 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		reset-gpios = <&porta 8 GPIO_ACTIVE_LOW>;
@@ -94,6 +96,7 @@
 
 	nina_prog {
 		compatible = "espressif,esp-at";
+		label = "NINA_PROG";
 		reset-gpios = <&porta 8 GPIO_ACTIVE_LOW>;
 	};
 };
@@ -111,11 +114,13 @@
 	lsm6ds3@6a {
 		compatible = "st,lsm6ds3";
 		reg = <0x6a>;
+		label = "LSM6DS3";
 	};
 
 	atecc608a@15 {
 		compatible = "atmel,atecc608";
 		reg = <0x6a>;
+		label = "ATECC608A";
 	};
 };
 

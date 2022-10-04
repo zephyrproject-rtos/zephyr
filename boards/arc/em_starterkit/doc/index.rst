@@ -12,7 +12,8 @@ for the ARC EM Family of processors. The EM Family includes the EM4, EM6,
 EM5D, EM7D, EM9D, and EM11D cores. The Zephyr RTOS can be used with the
 EM Starter Kit.
 
-.. image:: em_starterkit.jpg
+.. image:: ./em_starterkit.jpg
+   :width: 442px
    :align: center
    :alt: DesignWare(R) ARC(R) EM Starter Kit (synopsys.com)
 

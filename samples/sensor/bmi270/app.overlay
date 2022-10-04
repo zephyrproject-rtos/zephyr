@@ -10,5 +10,6 @@
 	bmi270@68 {
 		compatible = "bosch,bmi270";
 		reg = <0x68>;
+		label = "BMI270";
 	};
 };

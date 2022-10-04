@@ -161,7 +161,7 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
 
-	bool inactive = (z_abort_timeout(&timer->timeout) != 0);
+	int inactive = z_abort_timeout(&timer->timeout) != 0;
 
 	if (inactive) {
 		return;

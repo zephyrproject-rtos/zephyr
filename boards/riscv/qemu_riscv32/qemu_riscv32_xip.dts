@@ -42,6 +42,7 @@
 	flash0: flash@0 {
 		compatible = "issi,is25lp128", "jedec,spi-nor";
 		size = <134217728>;
+		label = "FLASH0";
 		jedec-id = [96 60 18];
 		reg = <0>;
 		// Dummy entry

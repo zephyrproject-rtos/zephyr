@@ -15,8 +15,10 @@ CPU and the following devices:
 - Cortex-M System Design Kit GPIO
 - Cortex-M System Design Kit UART
 
-.. image:: img/v2m_musca_b1.jpg
+.. image:: img/v2m_musca_b1.png
+     :width: 435px
      :align: center
+     :height: 362px
      :alt: ARM V2M Musca B1
 
 More information about the board can be found at the `V2M Musca B1 Website`_.

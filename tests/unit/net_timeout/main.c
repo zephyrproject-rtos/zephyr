@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <string.h>
 #include <inttypes.h>
 #include <zephyr/net/net_timeout.h>
@@ -31,7 +31,7 @@ static void dump_nto(const struct net_timeout *nto)
 }
 #endif
 
-ZTEST(net_timeout, test_basics)
+static void test_basics(void)
 {
 	zassert_equal(NET_TIMEOUT_MAX_VALUE, INT32_MAX,
 		      "Max value not as expected");
@@ -43,7 +43,7 @@ ZTEST(net_timeout, test_basics)
 		      "Full-max constant is wrong");
 }
 
-ZTEST(net_timeout, test_set)
+static void test_set(void)
 {
 	struct net_timeout nto;
 	uint32_t now = 4;
@@ -108,7 +108,7 @@ ZTEST(net_timeout, test_set)
 	zassert_equal(nto.timer_timeout, NET_TIMEOUT_MAX_VALUE, NULL);
 }
 
-ZTEST(net_timeout, test_deadline)
+static void test_deadline(void)
 {
 	struct net_timeout nto;
 	uint64_t now = 1234;
@@ -147,7 +147,7 @@ ZTEST(net_timeout, test_deadline)
 		      NULL);
 }
 
-ZTEST(net_timeout, test_remaining)
+static void test_remaining(void)
 {
 	struct net_timeout nto;
 	uint32_t now = 4;
@@ -189,7 +189,7 @@ ZTEST(net_timeout, test_remaining)
 		      NULL);
 }
 
-ZTEST(net_timeout, test_evaluate_basic)
+static void test_evaluate_basic(void)
 {
 	struct net_timeout nto;
 	uint64_t now = 0;
@@ -296,7 +296,7 @@ ZTEST(net_timeout, test_evaluate_basic)
 		     NULL);
 }
 
-ZTEST(net_timeout, test_evaluate_whitebox)
+static void test_evaluate_whitebox(void)
 {
 	/* This explicitly tests the path where subtracting the excess elapsed
 	 * from the fractional timeout requires reducing the wrap count a
@@ -352,8 +352,22 @@ ZTEST(net_timeout, test_evaluate_whitebox)
 		      deadline, NULL);
 }
 
-ZTEST(net_timeout, test_nop)
+static void test_nop(void)
 {
 }
 
-ZTEST_SUITE(net_timeout, NULL, NULL, NULL, NULL, NULL);
+/*test case main entry*/
+void test_main(void)
+{
+
+	ztest_test_suite(test_net_timeout,
+			 ztest_unit_test(test_basics),
+			 ztest_unit_test(test_set),
+			 ztest_unit_test(test_deadline),
+			 ztest_unit_test(test_remaining),
+			 ztest_unit_test(test_evaluate_basic),
+			 ztest_unit_test(test_evaluate_whitebox),
+			 ztest_unit_test(test_nop)
+			 );
+	ztest_run_test_suite(test_net_timeout);
+}

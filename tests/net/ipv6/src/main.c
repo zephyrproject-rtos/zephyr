@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/linker/sections.h>
 #include <zephyr/random/rand32.h>
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
@@ -135,7 +135,6 @@ static uint32_t dad_time[3];
 static bool test_failed;
 static struct k_sem wait_data;
 static bool recv_cb_called;
-struct net_if_addr *ifaddr_record;
 
 #define WAIT_TIME 250
 #define WAIT_TIME_LONG MSEC_PER_SEC
@@ -325,139 +324,9 @@ NET_DEVICE_INIT(eth_ipv6_net_dummy, "eth_ipv6_net_dummy",
 		127);
 
 /**
- * @brief IPv6 add neighbor
+ * @brief IPv6 Init
  */
-static void add_neighbor(void)
-{
-	struct net_nbr *nbr;
-	struct net_linkaddr_storage llstorage;
-	struct net_linkaddr lladdr;
-
-	llstorage.addr[0] = 0x01;
-	llstorage.addr[1] = 0x02;
-	llstorage.addr[2] = 0x33;
-	llstorage.addr[3] = 0x44;
-	llstorage.addr[4] = 0x05;
-	llstorage.addr[5] = 0x06;
-
-	lladdr.len = 6U;
-	lladdr.addr = llstorage.addr;
-	lladdr.type = NET_LINK_ETHERNET;
-
-	nbr = net_ipv6_nbr_add(TEST_NET_IF, &peer_addr, &lladdr,
-			       false, NET_IPV6_NBR_STATE_REACHABLE);
-	zassert_not_null(nbr, "Cannot add peer %s to neighbor cache\n",
-			 net_sprint_ipv6_addr(&peer_addr));
-}
-
-static void rm_neighbor(void)
-{
-	struct net_linkaddr_storage llstorage;
-	struct net_linkaddr lladdr;
-
-	llstorage.addr[0] = 0x01;
-	llstorage.addr[1] = 0x02;
-	llstorage.addr[2] = 0x33;
-	llstorage.addr[3] = 0x44;
-	llstorage.addr[4] = 0x05;
-	llstorage.addr[5] = 0x06;
-
-	lladdr.len = 6U;
-	lladdr.addr = llstorage.addr;
-	lladdr.type = NET_LINK_ETHERNET;
-
-	net_ipv6_nbr_rm(TEST_NET_IF, &peer_addr);
-}
-
-/**
- * @brief IPv6 add more than max neighbors
- */
-static void add_max_neighbors(void)
-{
-	struct in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-					 0, 0, 0, 0, 0, 0, 0, 0x3 } } };
-	struct net_nbr *nbr;
-	struct net_linkaddr_storage llstorage;
-	struct net_linkaddr lladdr;
-	uint8_t i;
-
-	llstorage.addr[0] = 0x01;
-	llstorage.addr[1] = 0x02;
-	llstorage.addr[2] = 0x33;
-	llstorage.addr[3] = 0x44;
-	llstorage.addr[4] = 0x05;
-	llstorage.addr[5] = 0x07;
-
-	lladdr.len = 6U;
-	lladdr.addr = llstorage.addr;
-	lladdr.type = NET_LINK_ETHERNET;
-
-	for (i = 0U; i < CONFIG_NET_IPV6_MAX_NEIGHBORS + 1; i++) {
-		llstorage.addr[5] += i;
-		dst_addr.s6_addr[15] += i;
-		nbr = net_ipv6_nbr_add(TEST_NET_IF, &dst_addr,
-				       &lladdr, false,
-				       NET_IPV6_NBR_STATE_STALE);
-		zassert_not_null(nbr, "Cannot add peer %s to neighbor cache\n",
-				 net_sprint_ipv6_addr(&dst_addr));
-	}
-}
-
-static void rm_max_neighbors(void)
-{
-	struct in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-					 0, 0, 0, 0, 0, 0, 0, 0x3 } } };
-	struct net_linkaddr_storage llstorage;
-	struct net_linkaddr lladdr;
-	uint8_t i;
-
-	llstorage.addr[0] = 0x01;
-	llstorage.addr[1] = 0x02;
-	llstorage.addr[2] = 0x33;
-	llstorage.addr[3] = 0x44;
-	llstorage.addr[4] = 0x05;
-	llstorage.addr[5] = 0x07;
-
-	lladdr.len = 6U;
-	lladdr.addr = llstorage.addr;
-	lladdr.type = NET_LINK_ETHERNET;
-
-	for (i = 0U; i < CONFIG_NET_IPV6_MAX_NEIGHBORS + 1; i++) {
-		llstorage.addr[5] += i;
-		dst_addr.s6_addr[15] += i;
-		net_ipv6_nbr_rm(TEST_NET_IF, &dst_addr);
-	}
-}
-
-/**
- * @brief IPv6 neighbor lookup fail
- */
-static void nbr_lookup_fail(void)
-{
-	struct net_nbr *nbr;
-
-	nbr = net_ipv6_nbr_lookup(TEST_NET_IF, &peer_addr);
-	zassert_is_null(nbr, "Neighbor %s found in cache\n",
-			net_sprint_ipv6_addr(&peer_addr));
-
-}
-
-/**
- * @brief IPv6 neighbor lookup ok
- */
-static void nbr_lookup_ok(void)
-{
-	struct net_nbr *nbr;
-
-	nbr = net_ipv6_nbr_lookup(TEST_NET_IF, &peer_addr);
-	zassert_not_null(nbr, "Neighbor %s not found in cache\n",
-			 net_sprint_ipv6_addr(&peer_addr));
-}
-
-/**
- * @brief IPv6 setup
- */
-static void *ipv6_setup(void)
+static void test_init(void)
 {
 	struct net_if_addr *ifaddr = NULL, *ifaddr2;
 	struct net_if_mcast_addr *maddr;
@@ -488,7 +357,6 @@ static void *ipv6_setup(void)
 		ifaddr->address.family = AF_INET6;
 		ifaddr->addr_type = NET_ADDR_MANUAL;
 		ifaddr->addr_state = NET_ADDR_PREFERRED;
-		ifaddr_record = ifaddr;
 		net_ipaddr_copy(&ifaddr->address.in6_addr, &my_addr);
 		break;
 	}
@@ -505,34 +373,13 @@ static void *ipv6_setup(void)
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
 
-	nbr_lookup_fail();
-	add_neighbor();
-	add_max_neighbors();
-	nbr_lookup_ok();
-	k_sleep(K_MSEC(50));
-
-	return NULL;
-}
-
-
-static void ipv6_teardown(void *dummy)
-{
-	ARG_UNUSED(dummy);
-	struct net_if *iface = TEST_NET_IF;
-
-	rm_max_neighbors();
-	rm_neighbor();
-
-	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
-	net_if_ipv6_maddr_rm(iface, &mcast_addr);
-	ifaddr_record->is_used = false;
 }
 
 /**
  * @brief IPv6 compare prefix
  *
  */
-ZTEST(net_ipv6, test_cmp_prefix)
+static void test_cmp_prefix(void)
 {
 	bool st;
 
@@ -576,9 +423,94 @@ ZTEST(net_ipv6, test_cmp_prefix)
 }
 
 /**
+ * @brief IPv6 add neighbor
+ */
+static void test_add_neighbor(void)
+{
+	struct net_nbr *nbr;
+	struct net_linkaddr_storage llstorage;
+	struct net_linkaddr lladdr;
+
+	llstorage.addr[0] = 0x01;
+	llstorage.addr[1] = 0x02;
+	llstorage.addr[2] = 0x33;
+	llstorage.addr[3] = 0x44;
+	llstorage.addr[4] = 0x05;
+	llstorage.addr[5] = 0x06;
+
+	lladdr.len = 6U;
+	lladdr.addr = llstorage.addr;
+	lladdr.type = NET_LINK_ETHERNET;
+
+	nbr = net_ipv6_nbr_add(TEST_NET_IF, &peer_addr, &lladdr,
+			       false, NET_IPV6_NBR_STATE_REACHABLE);
+	zassert_not_null(nbr, "Cannot add peer %s to neighbor cache\n",
+			 net_sprint_ipv6_addr(&peer_addr));
+}
+
+/**
+ * @brief IPv6 add more than max neighbors
+ */
+static void test_add_max_neighbors(void)
+{
+	struct in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					 0, 0, 0, 0, 0, 0, 0, 0x3 } } };
+	struct net_nbr *nbr;
+	struct net_linkaddr_storage llstorage;
+	struct net_linkaddr lladdr;
+	uint8_t i;
+
+	llstorage.addr[0] = 0x01;
+	llstorage.addr[1] = 0x02;
+	llstorage.addr[2] = 0x33;
+	llstorage.addr[3] = 0x44;
+	llstorage.addr[4] = 0x05;
+	llstorage.addr[5] = 0x07;
+
+	lladdr.len = 6U;
+	lladdr.addr = llstorage.addr;
+	lladdr.type = NET_LINK_ETHERNET;
+
+	for (i = 0U; i < CONFIG_NET_IPV6_MAX_NEIGHBORS + 1; i++) {
+		llstorage.addr[5] += i;
+		dst_addr.s6_addr[15] += i;
+		nbr = net_ipv6_nbr_add(TEST_NET_IF, &dst_addr,
+				       &lladdr, false,
+				       NET_IPV6_NBR_STATE_STALE);
+		zassert_not_null(nbr, "Cannot add peer %s to neighbor cache\n",
+				 net_sprint_ipv6_addr(&dst_addr));
+	}
+}
+
+/**
+ * @brief IPv6 neighbor lookup fail
+ */
+static void test_nbr_lookup_fail(void)
+{
+	struct net_nbr *nbr;
+
+	nbr = net_ipv6_nbr_lookup(TEST_NET_IF, &peer_addr);
+	zassert_is_null(nbr, "Neighbor %s found in cache\n",
+			net_sprint_ipv6_addr(&peer_addr));
+
+}
+
+/**
+ * @brief IPv6 neighbor lookup ok
+ */
+static void test_nbr_lookup_ok(void)
+{
+	struct net_nbr *nbr;
+
+	nbr = net_ipv6_nbr_lookup(TEST_NET_IF, &peer_addr);
+	zassert_not_null(nbr, "Neighbor %s not found in cache\n",
+			 net_sprint_ipv6_addr(&peer_addr));
+}
+
+/**
  * @brief IPv6 send NS extra options
  */
-ZTEST(net_ipv6, test_send_ns_extra_options)
+static void test_send_ns_extra_options(void)
 {
 	struct net_pkt *pkt;
 	struct net_if *iface;
@@ -601,7 +533,7 @@ ZTEST(net_ipv6, test_send_ns_extra_options)
 /**
  * @brief IPv6 send NS no option
  */
-ZTEST(net_ipv6, test_send_ns_no_options)
+static void test_send_ns_no_options(void)
 {
 	struct net_pkt *pkt;
 	struct net_if *iface;
@@ -623,7 +555,7 @@ ZTEST(net_ipv6, test_send_ns_no_options)
 /**
  * @brief IPv6 prefix timeout
  */
-ZTEST(net_ipv6, test_prefix_timeout)
+static void test_prefix_timeout(void)
 {
 	struct net_if_ipv6_prefix *prefix;
 	struct in6_addr addr = { { { 0x20, 1, 0x0d, 0xb8, 42, 0, 0, 0,
@@ -644,7 +576,7 @@ ZTEST(net_ipv6, test_prefix_timeout)
 			net_sprint_ipv6_addr(&addr), len);
 }
 
-ZTEST(net_ipv6, test_prefix_timeout_long)
+static void test_prefix_timeout_long(void)
 {
 	struct net_if_ipv6_prefix *ifprefix;
 	struct in6_addr prefix = { { { 0x20, 1, 0x0d, 0xb8, 43, 0, 0, 0,
@@ -674,7 +606,7 @@ ZTEST(net_ipv6, test_prefix_timeout_long)
 		      net_sprint_ipv6_addr(&prefix), len);
 }
 
-static void rs_message(void)
+static void test_rs_message(void)
 {
 	struct net_if *iface;
 	int ret;
@@ -686,11 +618,9 @@ static void rs_message(void)
 	ret = net_ipv6_send_rs(iface);
 
 	zassert_equal(ret, 0, "RS sending failed (%d)", ret);
-
-	k_yield();
 }
 
-static void ra_message(void)
+static void test_ra_message(void)
 {
 	struct in6_addr addr = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0x2, 0x60,
 				     0x97, 0xff, 0xfe, 0x07, 0x69, 0xea } } };
@@ -724,16 +654,10 @@ static void ra_message(void)
 		      "Wrong preference set");
 }
 
-ZTEST(net_ipv6, test_rs_ra_message)
-{
-	rs_message();
-	ra_message();
-}
-
 /**
  * @brief IPv6 parse Hop-By-Hop Option
  */
-ZTEST(net_ipv6, test_hbho_message)
+static void test_hbho_message(void)
 {
 	struct net_pkt *pkt;
 	struct net_if *iface;
@@ -784,7 +708,7 @@ static const unsigned char ipv6_hbho_1[] = {
 /**
  * @brief IPv6 parse Hop-By-Hop Option
  */
-ZTEST(net_ipv6, test_hbho_message_1)
+static void test_hbho_message_1(void)
 {
 	struct net_pkt *pkt;
 	struct net_if *iface;
@@ -844,7 +768,7 @@ static const unsigned char ipv6_hbho_2[] = {
 /**
  * @brief IPv6 parse Hop-By-Hop Option
  */
-ZTEST(net_ipv6, test_hbho_message_2)
+static void test_hbho_message_2(void)
 {
 	struct net_pkt *pkt;
 	struct net_if *iface;
@@ -1007,7 +931,7 @@ static const unsigned char ipv6_hbho_3[] = {
 /**
  * @brief IPv6 parse Hop-By-Hop Option
  */
-ZTEST(net_ipv6, test_hbho_message_3)
+static void test_hbho_message_3(void)
 {
 	struct net_pkt *pkt;
 	struct net_if *iface;
@@ -1035,7 +959,7 @@ ZTEST(net_ipv6, test_hbho_message_3)
 /* Implemented in subsys/net/ip/net_if.c */
 extern void net_address_lifetime_timeout(void);
 
-ZTEST(net_ipv6, test_address_lifetime)
+static void test_address_lifetime(void)
 {
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				     0, 0, 0, 0, 0, 0, 0x20, 0x1 } } };
@@ -1102,7 +1026,7 @@ ZTEST(net_ipv6, test_address_lifetime)
 /**
  * @brief IPv6 change ll address
  */
-ZTEST(net_ipv6, test_change_ll_addr)
+static void test_change_ll_addr(void)
 {
 	static uint8_t new_mac[] = { 00, 01, 02, 03, 04, 05 };
 	struct net_linkaddr_storage *ll;
@@ -1150,16 +1074,9 @@ ZTEST(net_ipv6, test_change_ll_addr)
 
 	zassert_true(memcmp(ll->addr, ll_iface->addr, ll->len) != 0,
 		     "Wrong link address 2");
-
-	ll_iface->addr[0] = 0x00;
-	ll_iface->addr[1] = 0x00;
-	ll_iface->addr[2] = 0x5E;
-	ll_iface->addr[3] = 0x00;
-	ll_iface->addr[4] = 0x53;
-	ll_iface->addr[5] = sys_rand32_get();
 }
 
-ZTEST(net_ipv6, test_dad_timeout)
+static void test_dad_timeout(void)
 {
 #if defined(CONFIG_NET_IPV6_DAD)
 	struct in6_addr addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
@@ -1192,10 +1109,6 @@ ZTEST(net_ipv6, test_dad_timeout)
 	/* Check we have received three DAD queries */
 	zassert_true((dad_time[0] != 0U) && (dad_time[1] != 0U) &&
 			(dad_time[2] != 0U), "Did not get DAD reply");
-
-	net_if_ipv6_addr_rm(iface, &addr1);
-	net_if_ipv6_addr_rm(iface, &addr2);
-	net_if_ipv6_addr_rm(iface, &addr3);
 #endif
 }
 
@@ -1265,7 +1178,7 @@ static int send_msg(struct in6_addr *src, struct in6_addr *dst)
 	return net_send_data(pkt);
 }
 
-ZTEST(net_ipv6, test_src_localaddr_recv)
+static void test_src_localaddr_recv(void)
 {
 	struct in6_addr localaddr = { { { 0, 0, 0, 0, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
@@ -1278,7 +1191,7 @@ ZTEST(net_ipv6, test_src_localaddr_recv)
 		      "Local address packet was not dropped");
 }
 
-ZTEST(net_ipv6, test_dst_localaddr_recv)
+static void test_dst_localaddr_recv(void)
 {
 	struct in6_addr localaddr = { { { 0, 0, 0, 0, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
@@ -1291,7 +1204,7 @@ ZTEST(net_ipv6, test_dst_localaddr_recv)
 		      "Local address packet was not dropped");
 }
 
-ZTEST(net_ipv6, test_dst_iface_scope_mcast_recv)
+static void test_dst_iface_scope_mcast_recv(void)
 {
 	struct in6_addr mcast_iface = { { { 0xff, 0x01, 0, 0, 0, 0, 0, 0,
 					    0, 0, 0, 0, 0, 0, 0, 0 } } };
@@ -1304,7 +1217,7 @@ ZTEST(net_ipv6, test_dst_iface_scope_mcast_recv)
 		      "Interface scope multicast packet was not dropped");
 }
 
-ZTEST(net_ipv6, test_dst_zero_scope_mcast_recv)
+static void test_dst_zero_scope_mcast_recv(void)
 {
 	struct in6_addr mcast_zero = { { { 0xff, 0x00, 0, 0, 0, 0, 0, 0,
 					   0, 0, 0, 0, 0, 0, 0, 0 } } };
@@ -1317,7 +1230,7 @@ ZTEST(net_ipv6, test_dst_zero_scope_mcast_recv)
 		      "Zero scope multicast packet was not dropped");
 }
 
-ZTEST(net_ipv6, test_dst_site_scope_mcast_recv_drop)
+static void test_dst_site_scope_mcast_recv_drop(void)
 {
 	struct in6_addr mcast_site = { { { 0xff, 0x05, 0, 0, 0, 0, 0, 0,
 					   0, 0, 0, 0, 0, 0, 0, 0 } } };
@@ -1396,15 +1309,7 @@ static void join_group(struct in6_addr *mcast_addr)
 	zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
 }
 
-static void leave_group(struct in6_addr *mcast_addr)
-{
-	int ret;
-
-	ret = net_ipv6_mld_leave(TEST_NET_IF, mcast_addr);
-	zassert_equal(ret, 0, "Cannot leave IPv6 multicast group");
-}
-
-ZTEST(net_ipv6, test_dst_site_scope_mcast_recv_ok)
+static void test_dst_site_scope_mcast_recv_ok(void)
 {
 	struct in6_addr mcast_all_dhcp = { { { 0xff, 0x05, 0, 0, 0, 0, 0, 0,
 					    0, 0, 0, 0x01, 0, 0, 0, 0x03 } } };
@@ -1429,11 +1334,9 @@ ZTEST(net_ipv6, test_dst_site_scope_mcast_recv_ok)
 		      verdict);
 
 	net_context_put(ctx);
-
-	leave_group(&mcast_all_dhcp);
 }
 
-ZTEST(net_ipv6, test_dst_org_scope_mcast_recv)
+static void test_dst_org_scope_mcast_recv(void)
 {
 	struct in6_addr mcast_org = { { { 0xff, 0x08, 0, 0, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0 } } };
@@ -1446,7 +1349,7 @@ ZTEST(net_ipv6, test_dst_org_scope_mcast_recv)
 		      "Organisation scope multicast packet was not dropped");
 }
 
-ZTEST(net_ipv6, test_dst_iface_scope_mcast_send)
+static void test_dst_iface_scope_mcast_send(void)
 {
 	struct in6_addr mcast_iface = { { { 0xff, 0x01, 0, 0, 0, 0, 0, 0,
 					    0, 0, 0, 0, 0, 0, 0, 0 } } };
@@ -1481,11 +1384,9 @@ ZTEST(net_ipv6, test_dst_iface_scope_mcast_send)
 	recv_cb_called = false;
 
 	net_context_put(ctx);
-
-	net_if_ipv6_maddr_rm(TEST_NET_IF, &mcast_iface);
 }
 
-ZTEST(net_ipv6, test_dst_unknown_group_mcast_recv)
+static void test_dst_unknown_group_mcast_recv(void)
 {
 	struct in6_addr mcast_unknown_group = {
 		{ { 0xff, 0x02, 0, 0, 0, 0, 0, 0, 0x01, 0x02, 0x03, 0x04, 0x05,
@@ -1515,7 +1416,7 @@ ZTEST(net_ipv6, test_dst_unknown_group_mcast_recv)
 	net_context_put(ctx);
 }
 
-ZTEST(net_ipv6, test_y_dst_unjoined_group_mcast_recv)
+static void test_dst_unjoined_group_mcast_recv(void)
 {
 	struct in6_addr mcast_unjoined_group = {
 		{ { 0xff, 0x02, 0, 0, 0, 0, 0, 0, 0x42, 0x42, 0x42, 0x42, 0x42,
@@ -1537,8 +1438,6 @@ ZTEST(net_ipv6, test_y_dst_unjoined_group_mcast_recv)
 	/* add multicast address to interface but do not join the group yet */
 	maddr = net_if_ipv6_maddr_add(TEST_NET_IF, &mcast_unjoined_group);
 
-	net_if_ipv6_maddr_leave(maddr);
-
 	/* receive multicast on interface that did not join the group yet.
 	 * Expectation: packet should be dropped by first interface on IP
 	 * Layer and not be received in listening socket.
@@ -1557,12 +1456,10 @@ ZTEST(net_ipv6, test_y_dst_unjoined_group_mcast_recv)
 		      "Packet sent to joined multicast group was not "
 		      "received.");
 
-	net_if_ipv6_maddr_rm(TEST_NET_IF, &mcast_unjoined_group);
-
 	net_context_put(ctx);
 }
 
-ZTEST(net_ipv6, test_dst_is_other_iface_mcast_recv)
+static void test_dst_is_other_iface_mcast_recv(void)
 {
 	struct in6_addr mcast_iface2 = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0, 0x01,
 					     0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -1600,12 +1497,42 @@ ZTEST(net_ipv6, test_dst_is_other_iface_mcast_recv)
 		      "Packet sent to multicast group joined by second "
 		      "interface not dropped");
 
-	net_if_ipv6_maddr_leave(maddr);
-
-	net_if_ipv6_maddr_rm(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
-			     &mcast_iface2);
-
 	net_context_put(ctx);
 }
 
-ZTEST_SUITE(net_ipv6, NULL, ipv6_setup, NULL, NULL, ipv6_teardown);
+void test_main(void)
+{
+	ztest_test_suite(test_ipv6_fn,
+			 ztest_unit_test(test_init),
+			 ztest_unit_test(test_cmp_prefix),
+			 ztest_unit_test(test_nbr_lookup_fail),
+			 ztest_unit_test(test_add_neighbor),
+			 ztest_unit_test(test_add_max_neighbors),
+			 ztest_unit_test(test_nbr_lookup_ok),
+			 ztest_unit_test(test_send_ns_extra_options),
+			 ztest_unit_test(test_send_ns_no_options),
+			 ztest_unit_test(test_rs_message),
+			 ztest_unit_test(test_ra_message),
+			 ztest_unit_test(test_hbho_message),
+			 ztest_unit_test(test_hbho_message_1),
+			 ztest_unit_test(test_hbho_message_2),
+			 ztest_unit_test(test_hbho_message_3),
+			 ztest_unit_test(test_address_lifetime),
+			 ztest_unit_test(test_change_ll_addr),
+			 ztest_unit_test(test_prefix_timeout),
+			 ztest_unit_test(test_prefix_timeout_long),
+			 ztest_unit_test(test_dad_timeout),
+			 ztest_unit_test(test_src_localaddr_recv),
+			 ztest_unit_test(test_dst_localaddr_recv),
+			 ztest_unit_test(test_dst_iface_scope_mcast_recv),
+			 ztest_unit_test(test_dst_iface_scope_mcast_send),
+			 ztest_unit_test(test_dst_zero_scope_mcast_recv),
+			 ztest_unit_test(test_dst_site_scope_mcast_recv_drop),
+			 ztest_unit_test(test_dst_site_scope_mcast_recv_ok),
+			 ztest_unit_test(test_dst_org_scope_mcast_recv),
+			 ztest_unit_test(test_dst_unknown_group_mcast_recv),
+			 ztest_unit_test(test_dst_unjoined_group_mcast_recv),
+			 ztest_unit_test(test_dst_is_other_iface_mcast_recv)
+			 );
+	ztest_run_test_suite(test_ipv6_fn);
+}

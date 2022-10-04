@@ -3,9 +3,7 @@
 
 config PCA9633
 	bool "PCA9633 LED driver"
-	default y
-	depends on DT_HAS_NXP_PCA9633_ENABLED
-	select I2C
+	depends on I2C
 	help
 	  Enable LED driver for PCA9633.
 

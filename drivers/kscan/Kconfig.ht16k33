@@ -3,8 +3,7 @@
 
 config KSCAN_HT16K33
 	bool "HT16K33 keyscan driver"
-	default y
-	depends on DT_HAS_HOLTEK_HT16K33_KEYSCAN_ENABLED
+	depends on HT16K33_KEYSCAN
 	help
 	  Enable keyscan driver for HT16K33.
 

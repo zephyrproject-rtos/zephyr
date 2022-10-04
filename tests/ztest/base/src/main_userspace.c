@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 ZTEST_USER(framework_tests, test_userspace_is_user)
 {

@@ -44,7 +44,6 @@
 	aliases {
 		led3 = &back_led;
 		pwm-led3 = &back_pwm_led;
-		watchdog0 = &wdt0;
 	};
 };
 
@@ -57,7 +56,8 @@
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
 	ssd16xx: ssd16xxfb@0 {
-		compatible = "gooddisplay,gdeh0213b1", "solomon,ssd1673", "solomon,ssd16xxfb";
+		compatible = "solomon,ssd16xxfb", "gooddisplay,gdeh0213b1";
+		label = "SSD16XX";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <250>;
@@ -71,8 +71,6 @@
 		sdv = [19];
 		vcom = <0xa8>;
 		border-waveform = <0x71>;
-		dummy-line = <0x1a>;
-		gate-line-width = <0x08>;
 		lut-initial = [
 			22 55 AA 55 AA 55 AA 11
 			00 00 00 00 00 00 00 00

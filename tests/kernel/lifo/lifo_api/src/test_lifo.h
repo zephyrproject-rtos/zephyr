@@ -7,7 +7,7 @@
 #ifndef __TEST_LIFO_H__
 #define __TEST_LIFO_H__
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/irq_offload.h>
 
 typedef struct ldata {

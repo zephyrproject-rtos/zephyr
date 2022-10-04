@@ -56,6 +56,7 @@
 		vtemp25 = <716000>;
 		sensor-slope-cold = <1620>;
 		sensor-slope-hot = <1620>;
+		label = "TEMP0";
 		status = "disabled";
 	};
 
@@ -67,6 +68,7 @@
 		vtemp25 = <716000>;
 		sensor-slope-cold = <1620>;
 		sensor-slope-hot = <1620>;
+		label = "TEMP1";
 		status = "disabled";
 	};
 
@@ -89,6 +91,7 @@
 		mcg: clock-controller@40064000 {
 			compatible = "nxp,kinetis-mcg";
 			reg = <0x40064000 0xd>;
+			label = "MCG";
 			#clock-cells = <1>;
 		};
 
@@ -106,11 +109,13 @@
 			interrupt-names = "alarm", "seconds";
 			clock-frequency = <32768>;
 			prescaler = <32768>;
+			label = "RTC_0";
 		};
 
 		sim: sim@40047000 {
 			compatible = "nxp,kinetis-sim";
 			reg = <0x40047000 0x1060>;
+			label = "SIM";
 			#clock-cells = <3>;
 
 			core_clk {
@@ -144,16 +149,17 @@
 
 		ftfe: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfe";
+			label = "FLASH_CTRL";
 			reg = <0x40020000 0x18>;
 			interrupts = <18 0>, <19 0>;
 			interrupt-names = "command-complete", "read-collision";
-			status = "okay";
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
+				label = "MCUX_FLASH";
 				reg = <0 DT_SIZE_M(1)>;
 				erase-block-size = <4096>;
 				write-block-size = <8>;
@@ -168,6 +174,7 @@
 			reg = <0x40066000 0x1000>;
 			interrupts = <24 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 6>;
+			label = "I2C_0";
 			status = "disabled";
 		};
 
@@ -179,6 +186,7 @@
 			reg = <0x40067000 0x1000>;
 			interrupts = <25 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 7>;
+			label = "I2C_1";
 			status = "disabled";
 		};
 
@@ -190,6 +198,7 @@
 			reg = <0x400e6000 0x1000>;
 			interrupts = <74 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1028 6>;
+			label = "I2C_2";
 			status = "disabled";
 		};
 
@@ -199,6 +208,7 @@
 			interrupts = <31 0>, <32 0>;
 			interrupt-names = "status", "error";
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1034 10>;
+			label = "UART_0";
 
 			status = "disabled";
 		};
@@ -209,6 +219,7 @@
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "status", "error";
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1034 11>;
+			label = "UART_1";
 
 			status = "disabled";
 		};
@@ -219,6 +230,7 @@
 			interrupts = <35 0>, <36 0>;
 			interrupt-names = "status", "error";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 12>;
+			label = "UART_2";
 
 			status = "disabled";
 		};
@@ -229,6 +241,7 @@
 			interrupts = <37 0>, <38 0>;
 			interrupt-names = "status", "error";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 13>;
+			label = "UART_3";
 
 			status = "disabled";
 		};
@@ -239,6 +252,7 @@
 			interrupts = <66 0>, <67 0>;
 			interrupt-names = "status", "error";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1028 10>;
+			label = "UART_4";
 
 			status = "disabled";
 		};
@@ -249,6 +263,7 @@
 			interrupts = <68 0>, <69 0>;
 			interrupt-names = "status", "error";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1028 11>;
+			label = "UART_5";
 
 			status = "disabled";
 		};
@@ -288,6 +303,7 @@
 			status = "disabled";
 			reg = <0x400ff000 0x40>;
 			interrupts = <59 2>;
+			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&porta>;
@@ -298,6 +314,7 @@
 			status = "disabled";
 			reg = <0x400ff040 0x40>;
 			interrupts = <60 2>;
+			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&portb>;
@@ -308,6 +325,7 @@
 			status = "disabled";
 			reg = <0x400ff080 0x40>;
 			interrupts = <61 2>;
+			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&portc>;
@@ -318,6 +336,7 @@
 			status = "disabled";
 			reg = <0x400ff0c0 0x40>;
 			interrupts = <62 2>;
+			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&portd>;
@@ -328,6 +347,7 @@
 			status = "disabled";
 			reg = <0x400ff100 0x40>;
 			interrupts = <63 2>;
+			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&porte>;
@@ -337,6 +357,7 @@
 			compatible = "nxp,kinetis-dspi";
 			reg = <0x4002c000 0x88>;
 			interrupts = <26 3>;
+			label = "SPI_0";
 			dmas = <&edma0 0 14>, <&edma0 0 15>;
 			dma-names = "rx", "tx";
 			rx-fifo-size = <4>;
@@ -351,6 +372,7 @@
 			compatible = "nxp,kinetis-dspi";
 			reg = <0x4002d000 0x88>;
 			interrupts = <27 3>;
+			label = "SPI_1";
 			dmas = <&edma0 0 16>, <&edma0 0 16>;
 			dma-names = "rx", "tx";
 			rx-fifo-size = <1>;
@@ -366,6 +388,7 @@
 			compatible = "nxp,kinetis-dspi";
 			reg = <0x400ac000 0x88>;
 			interrupts = <65 3>;
+			label = "SPI_2";
 			dmas = <&edma0 0 38>, <&edma0 0 39>;
 			dma-names = "rx", "tx";
 			rx-fifo-size = <1>;
@@ -382,6 +405,7 @@
 			reg = <0x40052000 16>;
 			interrupts = <22 0>;
 			clocks = <&sim KINETIS_SIM_LPO_CLK 0 0>;
+			label = "WDT_0";
 		};
 
 		ftm0: ftm@40038000{
@@ -390,6 +414,7 @@
 			interrupts = <42 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			prescaler = <16>;
+			label = "FTM_0";
 			status = "disabled";
 		};
 
@@ -399,6 +424,7 @@
 			interrupts = <43 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			prescaler = <16>;
+			label = "FTM_1";
 			status = "disabled";
 		};
 
@@ -408,6 +434,7 @@
 			interrupts = <44 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			prescaler = <16>;
+			label = "FTM_2";
 			status = "disabled";
 		};
 
@@ -417,6 +444,7 @@
 			interrupts = <71 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			prescaler = <16>;
+			label = "FTM_3";
 			status = "disabled";
 		};
 
@@ -429,6 +457,7 @@
 			dma-names = "adc0";
 			clk-source = <0>;
 			interrupts = <39 0>;
+			label = "ADC_0";
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -442,6 +471,7 @@
 			dma-names = "adc1";
 			clk-source = <0>;
 			interrupts = <73 0>;
+			label = "ADC_1";
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -451,6 +481,7 @@
 			reg = <0x400cc000 0x1000>;
 			interrupts = <56 0>;
 			voltage-reference = <1>;
+			label = "DAC_0";
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -460,6 +491,7 @@
 			reg = <0x400cd000 0x1000>;
 			interrupts = <72 0>;
 			voltage-reference = <1>;
+			label = "DAC_1";
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -471,6 +503,7 @@
 			interrupt-names = "usb_otg";
 			num-bidir-endpoints = <16>;
 			status = "disabled";
+			label = "USBD";
 		};
 
 		enet: ethernet@400c0000 {
@@ -479,6 +512,7 @@
 			interrupts = <83 0>, <84 0>, <85 0>;
 			interrupt-names = "TX", "RX", "ERR";
 			status = "disabled";
+			label = "ETH_0";
 			phy-addr = <0>;
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0 0>;
 			ptp: ptp {
@@ -494,6 +528,7 @@
 			reg = <0x40029000 0x1000>;
 			status = "okay";
 			interrupts = <23 0>;
+			label = "RNGA";
 		};
 
 		flexcan0: can@40024000 {
@@ -503,6 +538,7 @@
 			interrupt-names = "mb-0-15", "bus-off", "error", "tx-warning", "rx-warning", "wake-up";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 4>;
 			clk-source = <1>;
+			label = "CAN_0";
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
@@ -524,6 +560,7 @@
 			clocks = <&sim KINETIS_SIM_DMA_CLK 0x1040 0x00000002>,
 				<&sim KINETIS_SIM_DMAMUX_CLK 0x103C 0x00000002>;
 			status = "disabled";
+			label = "DMA_0";
 		};
 
 		pit0: pit@40037000 {
@@ -535,6 +572,7 @@
 			pit-channel = <0>;
 			pit-period = <1000000>;
 			clock-frequency = <60000000>;
+			label = "PIT0";
 		};
 	};
 };

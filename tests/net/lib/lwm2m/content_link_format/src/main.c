@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include "lwm2m_engine.h"
 #include "lwm2m_rw_link_format.h"
@@ -109,19 +109,19 @@ static void context_reset(void)
 	test_formatter_data.request_level = LWM2M_PATH_LEVEL_OBJECT;
 }
 
-static void test_prepare(void *dummy)
+static void test_prepare(void)
 {
 	context_reset();
 }
 
-static void test_prepare_nomem(void *dummy)
+static void test_prepare_nomem(void)
 {
 	context_reset();
 
 	test_packet.offset = sizeof(test_payload);
 }
 
-ZTEST(net_content_link_format, test_put_begin_discovery)
+static void test_put_begin_discovery(void)
 {
 	int ret;
 	const char *expected_payload = "";
@@ -137,7 +137,7 @@ ZTEST(net_content_link_format, test_put_begin_discovery)
 			"Invalid packet offset");
 }
 
-ZTEST(net_content_link_format, test_put_begin_bs_discovery)
+static void test_put_begin_bs_discovery(void)
 {
 	int ret;
 	const char *expected_payload = "lwm2m=\"1.0\"";
@@ -153,7 +153,7 @@ ZTEST(net_content_link_format, test_put_begin_bs_discovery)
 			"Invalid packet offset");
 }
 
-ZTEST(net_content_link_format, test_put_begin_register)
+static void test_put_begin_register(void)
 {
 	int ret;
 	const char *expected_payload = "</>;rt=\"oma.lwm2m\";ct=11543";
@@ -169,7 +169,7 @@ ZTEST(net_content_link_format, test_put_begin_register)
 			"Invalid packet offset");
 }
 
-ZTEST(net_content_link_format_nomem, test_put_begin_nomem)
+static void test_put_begin_nomem(void)
 {
 	int ret;
 
@@ -185,7 +185,7 @@ struct test_case_corelink {
 	const char *expected_payload;
 };
 
-ZTEST(net_content_link_format, test_put_corelink_discovery)
+static void test_put_corelink_discovery(void)
 {
 	int ret;
 	int i;
@@ -243,7 +243,7 @@ ZTEST(net_content_link_format, test_put_corelink_discovery)
 	}
 }
 
-ZTEST(net_content_link_format, test_put_corelink_bs_discovery)
+static void test_put_corelink_bs_discovery(void)
 {
 	int ret;
 	int i;
@@ -270,6 +270,7 @@ ZTEST(net_content_link_format, test_put_corelink_bs_discovery)
 		},
 	};
 
+
 	for (i = 0; i < ARRAY_SIZE(test_case); i++) {
 		context_reset();
 
@@ -290,7 +291,7 @@ ZTEST(net_content_link_format, test_put_corelink_bs_discovery)
 	}
 }
 
-ZTEST(net_content_link_format, test_put_corelink_bs_discovery_ssid)
+static void test_put_corelink_bs_discovery_ssid(void)
 {
 	int ret;
 	int i;
@@ -325,7 +326,7 @@ ZTEST(net_content_link_format, test_put_corelink_bs_discovery_ssid)
 	}
 }
 
-ZTEST(net_content_link_format, test_put_corelink_register)
+static void test_put_corelink_register(void)
 {
 	int ret;
 	int i;
@@ -362,7 +363,8 @@ ZTEST(net_content_link_format, test_put_corelink_register)
 	}
 }
 
-ZTEST(net_content_link_format_nomem, test_put_corelink_nomem)
+
+static void test_put_corelink_nomem(void)
 {
 	int ret;
 
@@ -373,14 +375,36 @@ ZTEST(net_content_link_format_nomem, test_put_corelink_nomem)
 	zassert_equal(ret, -ENOMEM, "Invalid error code returned");
 }
 
-static void *obj_attr_init(void)
+void test_main(void)
 {
 	test_obj_init();
 	test_attr_init();
+
+	/* Initialize Security/Server objects with SSID. */
 	lwm2m_engine_set_u16("0/0/10", TEST_SSID);
 	lwm2m_engine_set_u16("1/0/0", TEST_SSID);
-	return NULL;
-}
 
-ZTEST_SUITE(net_content_link_format, NULL, obj_attr_init, test_prepare, NULL, NULL);
-ZTEST_SUITE(net_content_link_format_nomem, NULL, obj_attr_init, test_prepare_nomem, NULL, NULL);
+	ztest_test_suite(
+		lwm2m_content_link_format,
+		ztest_unit_test_setup_teardown(
+			test_put_begin_discovery, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_begin_bs_discovery, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_begin_register, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_begin_nomem, test_prepare_nomem, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_corelink_discovery, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_corelink_bs_discovery, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_corelink_bs_discovery_ssid, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_corelink_register, test_prepare, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_put_corelink_nomem, test_prepare_nomem, unit_test_noop)
+	);
+
+	ztest_run_test_suite(lwm2m_content_link_format);
+}

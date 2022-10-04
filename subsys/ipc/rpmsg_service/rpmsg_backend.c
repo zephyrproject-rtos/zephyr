@@ -50,13 +50,10 @@ struct k_work_q ipm_work_q;
 /* End of configuration defines */
 
 #if defined(CONFIG_RPMSG_SERVICE_DUAL_IPM_SUPPORT)
-static const struct device *const ipm_tx_handle =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc_tx));
-static const struct device *const ipm_rx_handle =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc_rx));
+static const struct device *ipm_tx_handle;
+static const struct device *ipm_rx_handle;
 #elif defined(CONFIG_RPMSG_SERVICE_SINGLE_IPM_SUPPORT)
-static const struct device *const ipm_handle =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
+static const struct device *ipm_handle;
 #endif
 
 static metal_phys_addr_t shm_physmap[] = { SHM_START_ADDR };
@@ -213,13 +210,16 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 
 	/* IPM setup */
 #if defined(CONFIG_RPMSG_SERVICE_DUAL_IPM_SUPPORT)
-	if (!device_is_ready(ipm_tx_handle)) {
-		LOG_ERR("IPM TX device is not ready");
+	ipm_tx_handle = device_get_binding(CONFIG_RPMSG_SERVICE_IPM_TX_NAME);
+	ipm_rx_handle = device_get_binding(CONFIG_RPMSG_SERVICE_IPM_RX_NAME);
+
+	if (!ipm_tx_handle) {
+		LOG_ERR("Could not get TX IPM device handle");
 		return -ENODEV;
 	}
 
-	if (!device_is_ready(ipm_rx_handle)) {
-		LOG_ERR("IPM RX device is not ready");
+	if (!ipm_rx_handle) {
+		LOG_ERR("Could not get RX IPM device handle");
 		return -ENODEV;
 	}
 
@@ -232,8 +232,10 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 	}
 
 #elif defined(CONFIG_RPMSG_SERVICE_SINGLE_IPM_SUPPORT)
-	if (!device_is_ready(ipm_handle)) {
-		LOG_ERR("IPM device is not ready");
+	ipm_handle = device_get_binding(CONFIG_RPMSG_SERVICE_IPM_NAME);
+
+	if (ipm_handle == NULL) {
+		LOG_ERR("Could not get IPM device handle");
 		return -ENODEV;
 	}
 

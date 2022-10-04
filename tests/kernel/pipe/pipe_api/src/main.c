@@ -11,7 +11,7 @@
  * @}
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 /* k objects */
 extern struct k_pipe pipe, kpipe, khalfpipe, put_get_pipe;

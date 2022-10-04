@@ -8,7 +8,7 @@
 #include <zephyr/types.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <ksched.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
@@ -31,10 +31,9 @@ static bool testing_device_lock;
 static const struct device *device_dummy;
 static struct dummy_driver_api *api;
 
-static const struct device *const device_a =
-	DEVICE_DT_GET(DT_INST(0, test_device_pm));
-static const struct device *const device_c =
-	DEVICE_DT_GET(DT_INST(2, test_device_pm));
+static const struct device *device_a;
+static const struct device *device_c;
+
 
 /*
  * According with the initialization level, devices A, B and C are
@@ -287,7 +286,7 @@ static void notify_pm_state_exit(enum pm_state state)
  *
  * @ingroup power_tests
  */
-ZTEST(power_management_1cpu, test_power_idle)
+void test_power_idle(void)
 {
 	TC_PRINT("give way to idle thread\n");
 	k_sleep(SLEEP_TIMEOUT);
@@ -312,7 +311,7 @@ static struct pm_notifier notifier = {
  *
  * @ingroup power_tests
  */
-ZTEST(power_management_1cpu, test_power_state_trans)
+void test_power_state_trans(void)
 {
 	int ret;
 
@@ -337,7 +336,7 @@ ZTEST(power_management_1cpu, test_power_state_trans)
  *
  * @details
  *  - device driver notify its power state change by pm_device_runtime_get and
- *    pm_device_runtime_put_asyncpm_notifier_register
+ *    pm_device_runtime_put_async
  *  - system inform device system power state change through device interface
  *    pm_action_cb
  *
@@ -346,7 +345,7 @@ ZTEST(power_management_1cpu, test_power_state_trans)
  *
  * @ingroup power_tests
  */
-ZTEST(power_management_1cpu, test_power_state_notification)
+void test_power_state_notification(void)
 {
 	int ret;
 	enum pm_device_state device_power_state;
@@ -371,13 +370,15 @@ ZTEST(power_management_1cpu, test_power_state_notification)
 	pm_device_state_get(device_dummy, &device_power_state);
 	zassert_equal(device_power_state, PM_DEVICE_STATE_SUSPENDED, NULL);
 	pm_notifier_unregister(&notifier);
-	testing_device_runtime = false;
 }
 
-ZTEST(power_management_1cpu, test_device_order)
+void test_device_order(void)
 {
-	zassert_true(device_is_ready(device_a), "device a not ready");
-	zassert_true(device_is_ready(device_c), "device c not ready");
+	device_a = DEVICE_DT_GET(DT_INST(0, test_device_pm));
+	zassert_not_null(device_a, "Failed to get device");
+
+	device_c = DEVICE_DT_GET(DT_INST(2, test_device_pm));
+	zassert_not_null(device_c, "Failed to get device");
 
 	testing_device_order = true;
 	enter_low_power = true;
@@ -390,7 +391,7 @@ ZTEST(power_management_1cpu, test_device_order)
 /**
  * @brief Test the device busy APIs.
  */
-ZTEST(power_management_1cpu, test_busy)
+void test_busy(void)
 {
 	bool busy;
 
@@ -414,7 +415,7 @@ ZTEST(power_management_1cpu, test_busy)
 	zassert_false(busy, NULL);
 }
 
-ZTEST(power_management_1cpu, test_device_state_lock)
+void test_device_state_lock(void)
 {
 	pm_device_state_lock(device_a);
 	zassert_true(pm_device_state_is_locked(device_a), NULL);
@@ -429,24 +430,18 @@ ZTEST(power_management_1cpu, test_device_state_lock)
 	testing_device_lock = false;
 }
 
-void power_management_1cpu_teardown(void *data)
-{
-	pm_notifier_unregister(&notifier);
-}
-
-static void *power_management_1cpu_setup(void)
+void test_main(void)
 {
 	device_dummy = device_get_binding(DUMMY_DRIVER_NAME);
 	api = (struct dummy_driver_api *)device_dummy->api;
-	return NULL;
+
+	ztest_test_suite(power_management_test,
+			 ztest_1cpu_unit_test(test_power_idle),
+			 ztest_1cpu_unit_test(test_power_state_trans),
+			 ztest_1cpu_unit_test(test_device_order),
+			 ztest_1cpu_unit_test(test_device_state_lock),
+			 ztest_1cpu_unit_test(test_power_state_notification),
+			 ztest_1cpu_unit_test(test_busy));
+	ztest_run_test_suite(power_management_test);
+	pm_notifier_unregister(&notifier);
 }
-
-ZTEST(power_management_1cpu, test_power)
-{
-
-
-}
-
-ZTEST_SUITE(power_management_1cpu, NULL, power_management_1cpu_setup,
-			ztest_simple_1cpu_before, ztest_simple_1cpu_after,
-			power_management_1cpu_teardown);

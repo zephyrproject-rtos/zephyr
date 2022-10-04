@@ -1,6 +1,6 @@
 tests:
   # section.subsection
-  sample.testing.ztest:
+  testing.ztest:
     build_only: true
     platform_allow: native_posix
     tags: testing

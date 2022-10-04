@@ -5,7 +5,7 @@
  */
 
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include "tests_thread_apis.h"
 
@@ -45,7 +45,7 @@ static void thread_entry_delay(void *p1, void *p2, void *p3)
  *
  * @see k_thread_create()
  */
-ZTEST_USER(threads_lifecycle, test_threads_spawn_params)
+void test_threads_spawn_params(void)
 {
 	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_params,
 			tp1, INT_TO_POINTER(tp2), tp3, 0,
@@ -62,7 +62,7 @@ ZTEST_USER(threads_lifecycle, test_threads_spawn_params)
  *
  * @see k_thread_create()
  */
-ZTEST(threads_lifecycle, test_threads_spawn_priority)
+void test_threads_spawn_priority(void)
 {
 	/* spawn thread with higher priority */
 	spawn_prio = k_thread_priority_get(k_current_get()) - 1;
@@ -80,7 +80,7 @@ ZTEST(threads_lifecycle, test_threads_spawn_priority)
  *
  * @see k_thread_create()
  */
-ZTEST_USER(threads_lifecycle, test_threads_spawn_delay)
+void test_threads_spawn_delay(void)
 {
 	/* spawn thread with higher priority */
 	tp2 = 10;
@@ -107,7 +107,7 @@ ZTEST_USER(threads_lifecycle, test_threads_spawn_delay)
  *
  * @see k_thread_create()
  */
-ZTEST(threads_lifecycle, test_threads_spawn_forever)
+void test_threads_spawn_forever(void)
 {
 	/* spawn thread with highest priority. It will run immediately once
 	 * started.
@@ -135,7 +135,7 @@ ZTEST(threads_lifecycle, test_threads_spawn_forever)
  *
  * @see k_thread_start()
  */
-ZTEST(threads_lifecycle, test_thread_start)
+void test_thread_start(void)
 {
 	tp2 = 5;
 
@@ -162,7 +162,7 @@ static void user_start_thread(void *p1, void *p2, void *p3)
 {
 	*(int *)p1 = 100;
 }
-ZTEST_USER(threads_lifecycle, test_thread_start_user)
+void test_thread_start_user(void)
 {
 	tp2 = 5;
 

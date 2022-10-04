@@ -25,7 +25,7 @@ and has support for the following features:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/EVK-ANNA-B112.jpg
+.. figure:: img/EVK-ANNA-B112.png
 
 	EVK ANNA-B1
 

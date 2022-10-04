@@ -13,7 +13,7 @@
 
 #include <zephyr/net/buf.h>
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #define TEST_TIMEOUT K_SECONDS(1)
 

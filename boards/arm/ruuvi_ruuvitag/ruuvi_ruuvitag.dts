@@ -28,8 +28,6 @@
 		led0 = &led0;
 		led1 = &led1;
 		sw0 = &button0;
-		watchdog0 = &wdt0;
-		accel0 = &lis2dh12;
 	};
 
 	leds {
@@ -86,6 +84,7 @@
 		compatible = "bosch,bme280";
 		reg = <0>;
 		spi-max-frequency = <10000000>;
+		label= "BME280";
 	};
 
 	lis2dh12: lis2dh12@1 {
@@ -93,6 +92,7 @@
 		reg = <1>;
 		spi-max-frequency = <10000000>;
 		irq-gpios =  <&gpio0 2 GPIO_ACTIVE_HIGH>, <&gpio0 6 GPIO_ACTIVE_HIGH>;
+		label = "LIS2DH12-ACCEL";
 	};
 };
 

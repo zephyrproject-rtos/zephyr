@@ -7,7 +7,7 @@
 
 #include "fcb_test.h"
 
-ZTEST(fcb_test_with_4sectors_set, test_fcb_last_of_n)
+void test_fcb_last_of_n(void)
 {
 	const uint8_t ENTRIES = 5U;
 	struct fcb *fcb;

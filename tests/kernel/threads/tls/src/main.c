@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/app_memory/app_memdomain.h>
@@ -183,23 +183,30 @@ static void start_tls_test(uint32_t thread_options)
 	zassert_true(passed, "Test failed");
 }
 
-ZTEST(thread_tls, test_tls)
+#ifdef CONFIG_USERSPACE
+void test_tls(void)
 {
-	if (IS_ENABLED(CONFIG_USERSPACE)) {
-		ztest_test_skip();
-	}
-
-	/* TLS test in supervisor mode */
-	start_tls_test(0);
+	ztest_test_skip();
 }
-
-ZTEST_USER(thread_tls, test_tls_userspace)
+void test_tls_userspace(void)
 {
 	/* TLS test in supervisor mode */
 	start_tls_test(K_USER | K_INHERIT_PERMS);
 }
+#else
+void test_tls(void)
+{
+	/* TLS test in supervisor mode */
+	start_tls_test(0);
+}
 
-void *thread_tls_setup(void)
+void test_tls_userspace(void)
+{
+	ztest_test_skip();
+}
+#endif
+
+void test_main(void)
 {
 #ifdef CONFIG_USERSPACE
 	int ret;
@@ -227,7 +234,9 @@ void *thread_tls_setup(void)
 	}
 #endif /* CONFIG_USERSPACE */
 
-	return NULL;
-}
+	ztest_test_suite(thread_tls,
+			 ztest_unit_test(test_tls),
+			 ztest_user_unit_test(test_tls_userspace));
+	ztest_run_test_suite(thread_tls);
 
-ZTEST_SUITE(thread_tls, NULL, thread_tls_setup, NULL, NULL, NULL);
+}

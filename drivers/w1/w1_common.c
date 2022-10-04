@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/device.h>
-#include <zephyr/sys/crc.h>
+#include <device.h>
+#include <sys/crc.h>
 #include <zephyr/types.h>
-#include <zephyr/drivers/w1.h>
+#include <drivers/w1.h>
 
 
 int z_impl_w1_read_block(const struct device *dev, uint8_t *buffer, size_t len)

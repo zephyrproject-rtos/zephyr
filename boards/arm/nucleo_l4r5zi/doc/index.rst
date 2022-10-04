@@ -27,7 +27,9 @@ some highlights of the Nucleo L4R5ZI board:
 - Two push-buttons: USER and RESET
 
 .. image:: img/nucleo_l4r5zi.jpg
+     :width: 250px
      :align: center
+     :height: 250px
      :alt: Nucleo L4R5ZI
 
 More information about the board can be found at the `Nucleo L4R5ZI website`_.
@@ -157,7 +159,9 @@ responsible for pin muxing, input/output, pull-up, etc.
 Available pins:
 ---------------
 .. image:: img/nucleo144_layout.jpg
+     :width: 720px
      :align: center
+     :height: 540px
      :alt: Nucleo L4R5ZI Arduino connectors
 
 For mode details please refer to `STM32 Nucleo-144 board User Manual`_.

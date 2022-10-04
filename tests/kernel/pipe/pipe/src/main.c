@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 extern struct k_pipe test_pipe;
 extern struct k_pipe small_pipe;

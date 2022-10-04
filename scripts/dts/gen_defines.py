@@ -102,8 +102,6 @@ def main():
     with open(args.header_out, "w", encoding="utf-8") as header_file:
         write_top_comment(edt)
 
-        write_utils()
-
         # populate all z_path_id first so any children references will
         # work correctly.
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
@@ -146,10 +144,36 @@ def main():
             write_vanilla_props(node)
 
         write_chosen(edt)
-        write_global_macros(edt)
+        write_global_compat_info(edt)
+
+        write_device_extern_header(args.device_header_out, edt)
 
     if args.edt_pickle_out:
         write_pickled_edt(edt, args.edt_pickle_out)
+
+
+def write_device_extern_header(device_header_out, edt):
+    # Generate header that will extern devicetree struct device's
+
+    with open(device_header_out, "w", encoding="utf-8") as dev_header_file:
+        print("#ifndef DEVICE_EXTERN_GEN_H", file=dev_header_file)
+        print("#define DEVICE_EXTERN_GEN_H", file=dev_header_file)
+        print("", file=dev_header_file)
+        print("#ifdef __cplusplus", file=dev_header_file)
+        print('extern "C" {', file=dev_header_file)
+        print("#endif", file=dev_header_file)
+        print("", file=dev_header_file)
+
+        for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
+            print(f"extern const struct device DEVICE_DT_NAME_GET(DT_{node.z_path_id}); /* dts_ord_{node.dep_ordinal} */",
+                  file=dev_header_file)
+
+        print("", file=dev_header_file)
+        print("#ifdef __cplusplus", file=dev_header_file)
+        print("}", file=dev_header_file)
+        print("#endif", file=dev_header_file)
+        print("", file=dev_header_file)
+        print("#endif /* DEVICE_EXTERN_GEN_H */", file=dev_header_file)
 
 
 def setup_edtlib_logging():
@@ -198,6 +222,8 @@ def parse_args():
     parser.add_argument("--dts-out", required=True,
                         help="path to write merged DTS source code to (e.g. "
                              "as a debugging aid)")
+    parser.add_argument("--device-header-out", required=True,
+                        help="path to write device struct extern header to")
     parser.add_argument("--edt-pickle-out",
                         help="path to write pickled edtlib.EDT object to")
     parser.add_argument("--vendor-prefixes", action='append', default=[],
@@ -239,13 +265,6 @@ followed by /chosen nodes.
 """
 
     out_comment(s, blank_before=False)
-
-
-def write_utils():
-    # Writes utility macros
-
-    out_comment("Used to remove brackets from around a single argument")
-    out_define("DT_DEBRACKET_INTERNAL(...)", "__VA_ARGS__")
 
 
 def write_node_comment(node):
@@ -515,39 +534,25 @@ def write_compatibles(node):
 def write_children(node):
     # Writes helper macros for dealing with node's children.
 
-    out_comment("Helper macros for child nodes of this node.")
-
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD(fn)",
             " ".join(f"fn(DT_{child.z_path_id})" for child in
                 node.children.values()))
 
-    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_SEP(fn, sep)",
-            " DT_DEBRACKET_INTERNAL sep ".join(f"fn(DT_{child.z_path_id})"
-            for child in node.children.values()))
-
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_VARGS(fn, ...)",
-            " ".join(f"fn(DT_{child.z_path_id}, __VA_ARGS__)"
-            for child in node.children.values()))
+            " ".join(f"fn(DT_{child.z_path_id}, __VA_ARGS__)" for child in
+                node.children.values()))
 
-    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_SEP_VARGS(fn, sep, ...)",
-            " DT_DEBRACKET_INTERNAL sep ".join(f"fn(DT_{child.z_path_id}, __VA_ARGS__)"
-            for child in node.children.values()))
+    functions = ''
+    functions_args = ''
+    for child in node.children.values():
+        if child.status == "okay":
+            functions = functions + f"fn(DT_{child.z_path_id}) "
+            functions_args = functions_args + f"fn(DT_{child.z_path_id}, " \
+                                                            "__VA_ARGS__) "
 
-    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY(fn)",
-            " ".join(f"fn(DT_{child.z_path_id})"
-            for child in node.children.values() if child.status == "okay"))
-
-    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY_SEP(fn, sep)",
-            " DT_DEBRACKET_INTERNAL sep ".join(f"fn(DT_{child.z_path_id})"
-            for child in node.children.values() if child.status == "okay"))
-
+    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY(fn)", functions)
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY_VARGS(fn, ...)",
-            " ".join(f"fn(DT_{child.z_path_id}, __VA_ARGS__)"
-            for child in node.children.values() if child.status == "okay"))
-
-    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(fn, sep, ...)",
-            " DT_DEBRACKET_INTERNAL sep ".join(f"fn(DT_{child.z_path_id}, __VA_ARGS__)"
-            for child in node.children.values() if child.status == "okay"))
+                                                                functions_args)
 
 
 def write_status(node):
@@ -643,9 +648,8 @@ def write_vanilla_props(node):
             for i, subval in enumerate(prop.val):
                 if isinstance(subval, str):
                     macro2val[macro + f"_IDX_{i}"] = quote_str(subval)
-                    subval_as_token = edtlib.str_as_token(subval)
-                    macro2val[macro + f"_IDX_{i}_STRING_TOKEN"] = subval_as_token
-                    macro2val[macro + f"_IDX_{i}_STRING_UPPER_TOKEN"] = subval_as_token.upper()
+                    macro2val[macro + f"_IDX_{i}_TOKEN"] = subval
+                    macro2val[macro + f"_IDX_{i}_UPPER_TOKEN"] = subval.upper()
                 else:
                     macro2val[macro + f"_IDX_{i}"] = subval
                 macro2val[macro + f"_IDX_{i}_EXISTS"] = 1
@@ -847,17 +851,9 @@ def write_chosen(edt):
         out_define(macro, value, width=max_len)
 
 
-def write_global_macros(edt):
-    # Global or tree-wide information, such as number of instances
-    # with status "okay" for each compatible, is printed here.
-
-
-    out_comment("Macros for iterating over all nodes and enabled nodes")
-    out_dt_define("FOREACH_HELPER(fn)",
-                  " ".join(f"fn(DT_{node.z_path_id})" for node in edt.nodes))
-    out_dt_define("FOREACH_OKAY_HELPER(fn)",
-                  " ".join(f"fn(DT_{node.z_path_id})" for node in edt.nodes
-                           if node.status == "okay"))
+def write_global_compat_info(edt):
+    # Tree-wide information related to each compatible, such as number
+    # of instances with status "okay", is printed here.
 
     n_okay_macros = {}
     for_each_macros = {}

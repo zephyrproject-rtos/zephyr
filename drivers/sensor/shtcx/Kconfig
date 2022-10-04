@@ -5,8 +5,6 @@
 
 config SHTCX
 	bool "SHTCX: SHTC1 and SHTC3 Temperature and Humidity Sensor"
-	default y
-	depends on DT_HAS_SENSIRION_SHTCX_ENABLED
-	select I2C
+	depends on I2C
 	help
 	  Enable driver for SHTC1 and SHTC3 temperature and humidity sensors.

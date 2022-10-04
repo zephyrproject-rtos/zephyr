@@ -17,7 +17,6 @@
 		i2c-0 = &i2c0;
 		led0 = &led0;
 		sw0 = &button0;
-		watchdog0 = &wdt0;
 	};
 
 	leds {
@@ -79,8 +78,8 @@
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-gpios = <&gpio0 4 GPIO_OPEN_DRAIN>;
-	scl-gpios = <&gpio0 15 GPIO_OPEN_DRAIN>;
+	sda-pin = <4>;
+	scl-pin = <15>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };

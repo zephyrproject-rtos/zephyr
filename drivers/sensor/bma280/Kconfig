@@ -5,9 +5,7 @@
 
 menuconfig BMA280
 	bool "BMA280 Three Axis Accelerometer Family"
-	default y
-	depends on DT_HAS_BOSCH_BMA280_ENABLED
-	select I2C
+	depends on I2C
 	help
 	  Enable driver for BMA280 I2C-based triaxial accelerometer sensor
 	  family.

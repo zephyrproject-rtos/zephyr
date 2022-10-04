@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include "test_sched.h"
 
 /* nrf 51 has lower ram, so creating less number of threads */
@@ -65,7 +65,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-ZTEST(threads_scheduling, test_priority_scheduling)
+void test_priority_scheduling(void)
 {
 	k_tid_t tid[NUM_THREAD];
 	int old_prio = k_thread_priority_get(k_current_get());

@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-#include <zephyr/interrupt_util.h>
+#include <ztest.h>
+#include <interrupt_util.h>
 
 /*
  * Run the nested interrupt test for the supported platforms only.

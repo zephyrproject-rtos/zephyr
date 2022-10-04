@@ -16,7 +16,7 @@
 #define __TEST_UART_H__
 
 #include <zephyr/drivers/uart.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 void test_uart_configure(void);
 void test_uart_config_get(void);

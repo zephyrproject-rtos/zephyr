@@ -22,7 +22,6 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -87,7 +86,6 @@
 		sw0 = &evb_sw1;
 		sw1 = &evb_sw2;
 		bootloader-led0 = &evb_led1;
-		watchdog0 = &wdt0;
 	};
 };
 
@@ -161,10 +159,6 @@ arduino_spi: &spi3 {
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
-};
-
-&ieee802154 {
-	status = "okay";
 };
 
 &flash0 {

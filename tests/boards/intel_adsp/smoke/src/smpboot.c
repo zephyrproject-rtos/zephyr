@@ -3,7 +3,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include "tests.h"
 
 /* Experimentally 10ms is enough time to get the second CPU to run on
@@ -39,7 +39,7 @@ static void thread_fn(void *a, void *b, void *c)
 /* Needless to say: since this is starting the SMP CPUs, it needs to
  * be the first test run!
  */
-ZTEST(intel_adsp_boot, test_1st_smp_boot_delay)
+void test_smp_boot_delay(void)
 {
 	if (CONFIG_MP_NUM_CPUS < 2) {
 		ztest_test_skip();
@@ -70,7 +70,7 @@ ZTEST(intel_adsp_boot, test_1st_smp_boot_delay)
 	}
 }
 
-ZTEST(intel_adsp_boot, test_3rd_post_boot_ipi)
+void test_post_boot_ipi(void)
 {
 	if (CONFIG_MP_NUM_CPUS < 2) {
 		ztest_test_skip();

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/zephyr.h>
 #include <zephyr/sys/printk.h>
 
@@ -19,7 +19,7 @@
  * In this basic case, only one k_busy_wait() or posix_cpu_hold executes
  * at a time
  */
-ZTEST(native_cpu_hold, test_cpu_hold_basic)
+static void test_cpu_hold_basic(void)
 {
 	uint32_t wait_times[] =  {1, 30, 0, 121, 10000};
 	uint64_t time2, time1 = posix_get_hw_cycle();
@@ -105,7 +105,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
  * probably give problems if the tick time is not a relatively even number
  * of microseconds
  */
-ZTEST(native_cpu_hold, test_cpu_hold_with_another_thread)
+static void test_cpu_hold_with_another_thread(void)
 {
 	uint64_t time2, time1;
 
@@ -211,7 +211,7 @@ static void np_timer_isr_test_replacement(const void *arg)
  * The kernel is configured as NOT-tickless, and the default tick period is
  * 10ms
  */
-ZTEST(native_cpu_hold, test_cpu_hold_with_interrupts)
+static void test_cpu_hold_with_interrupts(void)
 {
 #if defined(CONFIG_BOARD_NATIVE_POSIX)
 	/* So far we only have a test for native_posix.
@@ -289,4 +289,13 @@ ZTEST(native_cpu_hold, test_cpu_hold_with_interrupts)
 #endif /* defined(CONFIG_BOARD_NATIVE_POSIX) */
 }
 
-ZTEST_SUITE(native_cpu_hold, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(native_cpu_hold,
+		ztest_unit_test(test_cpu_hold_basic),
+		ztest_unit_test(test_cpu_hold_with_another_thread),
+		ztest_unit_test(test_cpu_hold_with_interrupts)
+	);
+
+	ztest_run_test_suite(native_cpu_hold);
+}

@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/dfu/flash_img.h>
 
-ZTEST(img_util, test_init_id)
+void test_init_id(void)
 {
 	struct flash_img_context ctx_no_id;
 	struct flash_img_context ctx_id;
@@ -33,7 +33,7 @@ ZTEST(img_util, test_init_id)
 		      "Partition ID is not set correctly");
 }
 
-ZTEST(img_util, test_collecting)
+void test_collecting(void)
 {
 	const struct flash_area *fa;
 	struct flash_img_context ctx;
@@ -108,7 +108,7 @@ ZTEST(img_util, test_collecting)
 #endif
 }
 
-ZTEST(img_util, test_check_flash)
+void test_check_flash(void)
 {
 	/* echo $'0123456789abcdef\nfedcba9876543201' > tst.sha
 	 * hexdump tst.sha
@@ -158,4 +158,12 @@ ZTEST(img_util, test_check_flash)
 	flash_area_close(ctx.flash_area);
 }
 
-ZTEST_SUITE(img_util, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(test_util,
+			ztest_unit_test(test_collecting),
+			ztest_unit_test(test_init_id),
+			ztest_unit_test(test_check_flash)
+			);
+	ztest_run_test_suite(test_util);
+}

@@ -5,31 +5,27 @@
 
 config ADC_MCUX_ADC12
 	bool "MCUX ADC12 driver"
-	default y
-	depends on DT_HAS_NXP_KINETIS_ADC12_ENABLED
+	depends on HAS_MCUX_ADC12
 	select PINCTRL
 	help
 	  Enable the MCUX ADC12 driver.
 
 config ADC_MCUX_ADC16
 	bool "MCUX ADC16 driver"
-	default y
-	depends on DT_HAS_NXP_KINETIS_ADC16_ENABLED
+	depends on HAS_MCUX_ADC16
 	select PINCTRL
 	help
 	  Enable the MCUX ADC16 driver.
 
 config ADC_MCUX_12B1MSPS_SAR
 	bool "MCUX 12B1MSPS SAR ADC driver"
-	default y
-	depends on DT_HAS_NXP_MCUX_12B1MSPS_SAR_ENABLED
+	depends on HAS_MCUX_12B1MSPS_SAR
 	help
 	  Enable the MCUX 12B1MSPS SAR ADC driver.
 
 config ADC_MCUX_LPADC
 	bool "MCUX LPADC driver"
-	default y
-	depends on DT_HAS_NXP_LPC_LPADC_ENABLED
+	depends on HAS_MCUX_LPADC
 	help
 	  Enable the MCUX LPADC driver.
 

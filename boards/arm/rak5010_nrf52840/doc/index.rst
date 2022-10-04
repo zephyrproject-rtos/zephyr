@@ -24,7 +24,8 @@ quick testing and prototyping tool for applications
 requiring NB-IoT connectivity. Application development
 supports the GCC environment.
 
-.. image:: img/rak5010-front-parts.jpg
+.. image:: img/rak5010-front-parts.jpeg
+     :width: 500px
      :align: center
      :alt: RAK5010-NRF52840
 

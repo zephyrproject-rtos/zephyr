@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include "tests_thread_apis.h"
 
@@ -51,7 +51,7 @@ static void threads_suspend_resume(int prio)
  *
  * @see k_thread_suspend(), k_thread_resume()
  */
-ZTEST(threads_lifecycle_1cpu, test_threads_suspend_resume_cooperative)
+void test_threads_suspend_resume_cooperative(void)
 {
 	threads_suspend_resume(-2);
 }
@@ -67,7 +67,7 @@ ZTEST(threads_lifecycle_1cpu, test_threads_suspend_resume_cooperative)
  *
  * @see k_thread_suspend(), k_thread_resume()
  */
-ZTEST_USER(threads_lifecycle, test_threads_suspend_resume_preemptible)
+void test_threads_suspend_resume_preemptible(void)
 {
 	threads_suspend_resume(1);
 }
@@ -89,7 +89,7 @@ void suspend_myself(void *arg0, void *arg1, void *arg2)
  * @brief Check that k_thread_suspend() is a schedule point when
  * called on the current thread.
  */
-ZTEST(threads_lifecycle, test_threads_suspend)
+void test_threads_suspend(void)
 {
 	after_suspend = false;
 
@@ -126,7 +126,7 @@ void sleep_suspended(void *arg0, void *arg1, void *arg2)
  * @details Suspended threads should not wake up unexpectedly if they
  * happened to have been sleeping when suspended.
  */
-ZTEST(threads_lifecycle, test_threads_suspend_timeout)
+void test_threads_suspend_timeout(void)
 {
 	after_suspend = false;
 
@@ -154,7 +154,7 @@ ZTEST(threads_lifecycle, test_threads_suspend_timeout)
  * @details Use k_thread_state_str() to get thread state.
  * Resume an unsuspend thread will not change the thread state.
  */
-ZTEST(threads_lifecycle, test_resume_unsuspend_thread)
+void test_resume_unsuspend_thread(void)
 {
 	char buffer[32];
 	const char *str;

@@ -22,6 +22,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
+#include <soc.h>
 #include <errno.h>
 #include <zephyr/sys/sys_io.h>
 

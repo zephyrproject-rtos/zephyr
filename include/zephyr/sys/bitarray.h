@@ -33,6 +33,8 @@ struct sys_bitarray {
 typedef struct sys_bitarray sys_bitarray_t;
 
 /**
+ * @def _SYS_BITARRAY_DEFINE
+ *
  * @brief Create a bitarray object.
  *
  * @param name Name of the bitarray object.
@@ -52,6 +54,8 @@ typedef struct sys_bitarray sys_bitarray_t;
 	}
 
 /**
+ * @def SYS_BITARRAY_DEFINE
+ *
  * @brief Create a bitarray object.
  *
  * @param name Name of the bitarray object.
@@ -61,6 +65,8 @@ typedef struct sys_bitarray sys_bitarray_t;
 	_SYS_BITARRAY_DEFINE(name, total_bits,)
 
 /**
+ * @def SYS_BITARRAY_DEFINE_STATIC
+ *
  * @brief Create a static bitarray object.
  *
  * @param name Name of the bitarray object.

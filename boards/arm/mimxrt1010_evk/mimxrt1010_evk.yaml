@@ -18,7 +18,6 @@ supported:
   - arduino_serial
   - i2c
   - counter
-  - dma
   - usb_device
   - spi
   - adc

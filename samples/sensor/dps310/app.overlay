@@ -13,5 +13,6 @@
 		status = "okay";
 		compatible = "infineon,dps310";
 		reg = <0x77>;
+		label = "DPS310";
 	};
 };

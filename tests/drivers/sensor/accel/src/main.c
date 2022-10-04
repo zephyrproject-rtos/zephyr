@@ -11,7 +11,7 @@
  * @}
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/drivers/sensor.h>
 
 /* There is no obvious way to pass this to tests, so use a global */

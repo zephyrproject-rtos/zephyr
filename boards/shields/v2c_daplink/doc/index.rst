@@ -10,7 +10,8 @@ The `ARM V2C-DAPLink for DesignStart FPGA`_ shield can be used to provide
 DAPLink debug access to the ARM DesignStart FPGA reference designs implemented
 on the :ref:`arty`.
 
-.. figure:: v2c_daplink.jpg
+.. figure:: ./v2c_daplink.png
+   :width: 600px
    :align: center
    :alt: V2C-DAPLink
 

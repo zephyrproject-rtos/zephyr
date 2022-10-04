@@ -16,8 +16,10 @@ and a +20 dBm power amplifier.  Refer to `AcSIP S76S Product Information Brief`_
 
 Zephyr applications may use the **ronoth_lodev** configuration to run on this board.
 
-.. figure:: img/lodev.jpg
+.. figure:: img/lodev.png
+     :width: 291px
      :align: center
+     :height: 217px
      :alt: Image of Ronoth LoDev open source development board containing S76S system on a chip
 
      Ronoth LoDev
@@ -53,7 +55,8 @@ PA9 and PA10 are unavailable for I/Os.
 
 A helpful silkscreen legend is provided on the board.
 
-.. figure:: img/pinout.jpg
+.. figure:: img/pinout.png
+     :width: 600px
      :align: center
      :alt: Ronoth LoDev sketch with pinout
 

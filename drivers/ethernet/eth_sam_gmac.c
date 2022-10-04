@@ -1787,19 +1787,20 @@ static int eth_initialize(const struct device *dev)
 	return retval;
 }
 
-#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
+#ifdef CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM
 static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 {
+	const struct device *dev;
 	uint32_t iaddr = CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS;
 	int ret;
-	const struct i2c_dt_spec i2c = I2C_DT_SPEC_GET(DT_INST_PHANDLE(0, mac_eeprom));
 
-	if (!device_is_ready(i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+	dev = device_get_binding(CONFIG_ETH_SAM_GMAC_MAC_I2C_DEV_NAME);
+	if (!dev) {
+		LOG_ERR("I2C: Device not found");
 		return;
 	}
 
-	ret = i2c_write_read_dt(&i2c,
+	ret = i2c_write_read(dev, CONFIG_ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS,
 			   &iaddr, CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE,
 			   mac_addr, 6);
 
@@ -1812,7 +1813,7 @@ static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 
 static void generate_mac(uint8_t mac_addr[6])
 {
-#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
+#if defined(CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM)
 	get_mac_addr_from_i2c_eeprom(mac_addr);
 #elif DT_INST_PROP(0, zephyr_random_mac_address)
 	gen_random_mac(mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
@@ -2460,7 +2461,7 @@ static const struct ptp_clock_driver_api ptp_api = {
 
 static int ptp_gmac_init(const struct device *port)
 {
-	const struct device *const eth_dev = DEVICE_DT_INST_GET(0);
+	const struct device *eth_dev = DEVICE_DT_INST_GET(0);
 	struct eth_sam_dev_data *dev_data = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 

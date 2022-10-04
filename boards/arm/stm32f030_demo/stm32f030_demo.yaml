@@ -11,4 +11,3 @@ flash: 16
 supported:
   - uart
   - gpio
-  - adc

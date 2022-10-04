@@ -6,9 +6,7 @@
 
 menuconfig ETH_W5500
 	bool "W5500 Ethernet Controller"
-	default y
-	depends on DT_HAS_WIZNET_W5500_ENABLED
-	select SPI
+	depends on SPI
 	help
 	  W5500 Stand-Alone Ethernet Controller
 	  with SPI Interface

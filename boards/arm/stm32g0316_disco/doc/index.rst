@@ -12,6 +12,7 @@ and allows the user to develop applications. It includes an on-board ST-LINK/V2-
 and program the embedded STM32 microcontroller.
 
 .. image:: img/stm32g0316_disco.jpg
+   :width: 670px
    :align: center
    :alt: STM32G0316-DISCO
 

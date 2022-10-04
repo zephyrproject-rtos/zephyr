@@ -6,7 +6,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/syscall_handler.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include "test_syscalls.h"
 
 #define DB_VAL 0xDEADBEEF

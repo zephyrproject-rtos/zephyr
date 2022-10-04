@@ -14,7 +14,8 @@ Each board is equipped with on-board JTAG for FPGA programming and debugging,
 LEDs, switches, buttons, DDR3 RAM, and QSPI flash for storing the FPGA
 bitstream.
 
-.. figure:: arty_a7-35.jpg
+.. figure:: ./arty_a7-35.png
+   :width: 500px
    :align: center
    :alt: Digilent Arty A7-35
 

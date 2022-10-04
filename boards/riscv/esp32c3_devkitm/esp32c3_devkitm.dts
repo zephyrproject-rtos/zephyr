@@ -23,7 +23,6 @@
 	aliases {
 		sw0 = &user_button1;
 		i2c-0 = &i2c0;
-		watchdog0 = &wdt0;
 	};
 
 	gpio_keys {
@@ -54,8 +53,8 @@
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	sda-gpios = <&gpio0 1 GPIO_OPEN_DRAIN>;
-	scl-gpios = <&gpio0 3 GPIO_OPEN_DRAIN>;
+	sda-pin = <1>;
+	scl-pin = <3>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };

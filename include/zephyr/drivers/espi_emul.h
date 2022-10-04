@@ -7,16 +7,16 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ESPI_SPI_EMUL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_ESPI_SPI_EMUL_H_
 
-#include <zephyr/device.h>
-#include <zephyr/drivers/emul.h>
-#include <zephyr/drivers/espi.h>
-#include <zephyr/types.h>
-
 /**
  * @file
  *
  * @brief Public APIs for the eSPI emulation drivers.
  */
+
+#include <zephyr/types.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/emul.h>
 
 /**
  * @brief eSPI Emulation Interface
@@ -37,39 +37,41 @@ struct espi_emul;
  * Passes eSPI virtual wires set request (virtual wire packet) to the emulator.
  * The emulator updates the state (level) of its virtual wire.
  *
- * @param target The device Emulator instance
+ * @param emul Emulator instance
  * @param vw The signal to be set.
  * @param level The level of signal requested LOW(0) or HIGH(1).
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-typedef int (*emul_espi_api_set_vw)(const struct emul *target, enum espi_vwire_signal vw,
+typedef int (*emul_espi_api_set_vw)(struct espi_emul *emul,
+				    enum espi_vwire_signal vw,
 				    uint8_t level);
 
 /**
  * Passes eSPI virtual wires get request (virtual wire packet) to the emulator.
  * The emulator returns the state (level) of its virtual wire.
  *
- * @param target The device Emulator instance
+ * @param emul Emulator instance
  * @param vw The signal to be get.
  * @param level The level of the signal to be get.
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-typedef int (*emul_espi_api_get_vw)(const struct emul *target, enum espi_vwire_signal vw,
+typedef int (*emul_espi_api_get_vw)(struct espi_emul *emul,
+				    enum espi_vwire_signal vw,
 				    uint8_t *level);
 
 #ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
 /**
  * Get the ACPI shared memory address owned by the emulator.
  *
- * @param target The device Emulator instance
+ * @param emul Emulator instance.
  *
  * @retval The address of the memory.
  */
-typedef uintptr_t (*emul_espi_api_get_acpi_shm)(const struct emul *target);
+typedef uintptr_t (*emul_espi_api_get_acpi_shm)(struct espi_emul *emul);
 #endif
 
 /**
@@ -80,10 +82,11 @@ typedef uintptr_t (*emul_espi_api_get_acpi_shm)(const struct emul *target);
  *
  * @param dev eSPI emulation controller device
  * @param chipsel Chip-select value
- * @return espi_emul to use
+ * @return emulator to use
  * @return NULL if not found
  */
-typedef struct espi_emul *(*emul_find_emul)(const struct device *dev, unsigned int chipsel);
+typedef struct espi_emul *(*emul_find_emul)(const struct device *dev,
+					    unsigned int chipsel);
 
 /**
  * Triggers an event on the emulator of eSPI controller side which causes
@@ -95,7 +98,8 @@ typedef struct espi_emul *(*emul_find_emul)(const struct device *dev, unsigned i
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-typedef int (*emul_trigger_event)(const struct device *dev, struct espi_event *evt);
+typedef int (*emul_trigger_event)(const struct device *dev,
+				  struct espi_event *evt);
 
 /** Definition of the eSPI device emulator API */
 struct emul_espi_device_api {
@@ -109,8 +113,8 @@ struct emul_espi_device_api {
 /** Node in a linked list of emulators for eSPI devices */
 struct espi_emul {
 	sys_snode_t node;
-	/** Target emulator - REQUIRED for all emulated bus nodes of any type */
-	const struct emul *target;
+	/** Parent emulator */
+	const struct emul *parent;
 	/** API provided for this device */
 	const struct emul_espi_device_api *api;
 	/** eSPI chip-select of the emulated device */
@@ -132,10 +136,12 @@ struct emul_espi_driver_api {
  * Register an emulated device on the controller
  *
  * @param dev Device that will use the emulator
+ * @param name User-friendly name for this emulator
  * @param emul eSPI emulator to use
  * @return 0 indicating success (always)
  */
-int espi_emul_register(const struct device *dev, struct espi_emul *emul);
+int espi_emul_register(const struct device *dev, const char *name,
+		       struct espi_emul *emul);
 
 /**
  * Sets the eSPI virtual wire on the host side, which will
@@ -148,7 +154,8 @@ int espi_emul_register(const struct device *dev, struct espi_emul *emul);
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-int emul_espi_host_send_vw(const struct device *espi_dev, enum espi_vwire_signal vw, uint8_t level);
+int emul_espi_host_send_vw(const struct device *espi_dev,
+			   enum espi_vwire_signal vw, uint8_t level);
 
 /**
  * Perform port80 write on the emulated host side, which will
@@ -172,6 +179,7 @@ int emul_espi_host_port80_write(const struct device *espi_dev, uint32_t data);
  */
 uintptr_t emul_espi_host_get_acpi_shm(const struct device *espi_dev);
 #endif
+
 
 #ifdef __cplusplus
 }

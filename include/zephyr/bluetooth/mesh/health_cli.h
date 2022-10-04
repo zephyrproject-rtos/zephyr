@@ -26,15 +26,6 @@ struct bt_mesh_health_cli {
 	/** Composition data model entry pointer. */
 	struct bt_mesh_model *model;
 
-	/** Publication structure instance */
-	struct bt_mesh_model_pub pub;
-
-	/** Publication buffer */
-	struct net_buf_simple pub_buf;
-
-	/** Publication data */
-	uint8_t pub_data[BT_MESH_MODEL_BUF_LEN(BT_MESH_MODEL_OP_2(0x80, 0x32), 3)];
-
 	/** @brief Optional callback for Health Period Status messages.
 	 *
 	 *  Handles received Health Period Status messages from a Health
@@ -101,14 +92,15 @@ struct bt_mesh_health_cli {
 	struct bt_mesh_msg_ack_ctx ack_ctx;
 };
 
-/**
+/** @def BT_MESH_MODEL_HEALTH_CLI
+ *
  *  @brief Generic Health Client model composition data entry.
  *
  *  @param cli_data Pointer to a @ref bt_mesh_health_cli instance.
  */
 #define BT_MESH_MODEL_HEALTH_CLI(cli_data)                                     \
 	BT_MESH_MODEL_CB(BT_MESH_MODEL_ID_HEALTH_CLI, bt_mesh_health_cli_op,   \
-			 &(cli_data)->pub, cli_data, &bt_mesh_health_cli_cb)
+			 NULL, cli_data, &bt_mesh_health_cli_cb)
 
 /** @brief Set Health client model instance to use for communication.
  *
@@ -116,7 +108,7 @@ struct bt_mesh_health_cli {
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-__deprecated int bt_mesh_health_cli_set(struct bt_mesh_model *model);
+int bt_mesh_health_cli_set(struct bt_mesh_model *model);
 
 /** @brief Get the registered fault state for the given Company ID.
  *
@@ -139,8 +131,9 @@ __deprecated int bt_mesh_health_cli_set(struct bt_mesh_model *model);
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-__deprecated int bt_mesh_health_fault_get(uint16_t addr, uint16_t app_idx, uint16_t cid,
-					  uint8_t *test_id, uint8_t *faults, size_t *fault_count);
+int bt_mesh_health_fault_get(uint16_t addr, uint16_t app_idx, uint16_t cid,
+			     uint8_t *test_id, uint8_t *faults,
+			     size_t *fault_count);
 
 /** @brief Clear the registered faults for the given Company ID.
  *
@@ -163,8 +156,9 @@ __deprecated int bt_mesh_health_fault_get(uint16_t addr, uint16_t app_idx, uint1
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-__deprecated int bt_mesh_health_fault_clear(uint16_t addr, uint16_t app_idx, uint16_t cid,
-					    uint8_t *test_id, uint8_t *faults, size_t *fault_count);
+int bt_mesh_health_fault_clear(uint16_t addr, uint16_t app_idx, uint16_t cid,
+			       uint8_t *test_id, uint8_t *faults,
+			       size_t *fault_count);
 
 /** @brief Clear the registered faults for the given Company ID (unacked).
  *
@@ -176,7 +170,8 @@ __deprecated int bt_mesh_health_fault_clear(uint16_t addr, uint16_t app_idx, uin
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-__deprecated int bt_mesh_health_fault_clear_unack(uint16_t addr, uint16_t app_idx, uint16_t cid);
+int bt_mesh_health_fault_clear_unack(uint16_t addr, uint16_t app_idx,
+				     uint16_t cid);
 
 /** @brief Invoke a self-test procedure for the given Company ID.
  *
@@ -196,8 +191,9 @@ __deprecated int bt_mesh_health_fault_clear_unack(uint16_t addr, uint16_t app_id
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-__deprecated int bt_mesh_health_fault_test(uint16_t addr, uint16_t app_idx, uint16_t cid,
-					   uint8_t test_id, uint8_t *faults, size_t *fault_count);
+int bt_mesh_health_fault_test(uint16_t addr, uint16_t app_idx, uint16_t cid,
+			      uint8_t test_id, uint8_t *faults,
+			      size_t *fault_count);
 
 /** @brief Invoke a self-test procedure for the given Company ID (unacked).
  *
@@ -208,8 +204,8 @@ __deprecated int bt_mesh_health_fault_test(uint16_t addr, uint16_t app_idx, uint
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-__deprecated int bt_mesh_health_fault_test_unack(uint16_t addr, uint16_t app_idx, uint16_t cid,
-						 uint8_t test_id);
+int bt_mesh_health_fault_test_unack(uint16_t addr, uint16_t app_idx,
+				    uint16_t cid, uint8_t test_id);
 
 /** @brief Get the target node's Health fast period divisor.
  *
@@ -234,7 +230,8 @@ __deprecated int bt_mesh_health_fault_test_unack(uint16_t addr, uint16_t app_idx
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-__deprecated int bt_mesh_health_period_get(uint16_t addr, uint16_t app_idx, uint8_t *divisor);
+int bt_mesh_health_period_get(uint16_t addr, uint16_t app_idx,
+			      uint8_t *divisor);
 
 /** @brief Set the target node's Health fast period divisor.
  *
@@ -260,8 +257,8 @@ __deprecated int bt_mesh_health_period_get(uint16_t addr, uint16_t app_idx, uint
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-__deprecated int bt_mesh_health_period_set(uint16_t addr, uint16_t app_idx, uint8_t divisor,
-					   uint8_t *updated_divisor);
+int bt_mesh_health_period_set(uint16_t addr, uint16_t app_idx, uint8_t divisor,
+			      uint8_t *updated_divisor);
 
 /** @brief Set the target node's Health fast period divisor (unacknowledged).
  *
@@ -273,7 +270,8 @@ __deprecated int bt_mesh_health_period_set(uint16_t addr, uint16_t app_idx, uint
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-__deprecated int bt_mesh_health_period_set_unack(uint16_t addr, uint16_t app_idx, uint8_t divisor);
+int bt_mesh_health_period_set_unack(uint16_t addr, uint16_t app_idx,
+				    uint8_t divisor);
 
 /** @brief Get the current attention timer value.
  *
@@ -290,7 +288,8 @@ __deprecated int bt_mesh_health_period_set_unack(uint16_t addr, uint16_t app_idx
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-__deprecated int bt_mesh_health_attention_get(uint16_t addr, uint16_t app_idx, uint8_t *attention);
+int bt_mesh_health_attention_get(uint16_t addr, uint16_t app_idx,
+				 uint8_t *attention);
 
 /** @brief Set the attention timer.
  *
@@ -309,8 +308,8 @@ __deprecated int bt_mesh_health_attention_get(uint16_t addr, uint16_t app_idx, u
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-__deprecated int bt_mesh_health_attention_set(uint16_t addr, uint16_t app_idx, uint8_t attention,
-					      uint8_t *updated_attention);
+int bt_mesh_health_attention_set(uint16_t addr, uint16_t app_idx,
+				 uint8_t attention, uint8_t *updated_attention);
 
 /** @brief Set the attention timer (unacknowledged).
  *
@@ -320,231 +319,8 @@ __deprecated int bt_mesh_health_attention_set(uint16_t addr, uint16_t app_idx, u
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-__deprecated int bt_mesh_health_attention_set_unack(uint16_t addr, uint16_t app_idx,
-						    uint8_t attention);
-
-/** @brief Get the registered fault state for the given Company ID.
- *
- *  This method can be used asynchronously by setting @p test_id
- *  and ( @p faults or @p fault_count ) as NULL This way the method
- *  will not wait for response and will return immediately after
- *  sending the command.
- *
- *  To process the response arguments of an async method, register
- *  the @c fault_status callback in @c bt_mesh_health_cli struct.
- *
- *  @see bt_mesh_health_faults
- *
- *  @param cli Client model to send on.
- *  @param ctx Message context, or NULL to use the configured publish
- *  parameters.
- *  @param cid         Company ID to get the registered faults of.
- *  @param test_id     Test ID response buffer.
- *  @param faults      Fault array response buffer.
- *  @param fault_count Fault count response buffer.
- *
- *  @return 0 on success, or (negative) error code on failure.
- */
-int bt_mesh_health_cli_fault_get(struct bt_mesh_health_cli *cli, struct bt_mesh_msg_ctx *ctx,
-				 uint16_t cid, uint8_t *test_id, uint8_t *faults,
-				 size_t *fault_count);
-
-/** @brief Clear the registered faults for the given Company ID.
- *
- *  This method can be used asynchronously by setting @p test_id
- *  and ( @p faults or @p fault_count ) as NULL This way the method
- *  will not wait for response and will return immediately after
- *  sending the command.
- *
- *  To process the response arguments of an async method, register
- *  the @c fault_status callback in @c bt_mesh_health_cli struct.
- *
- *  @see bt_mesh_health_faults
- *
- *  @param cli Client model to send on.
- *  @param ctx Message context, or NULL to use the configured publish
- *  parameters.
- *  @param cid         Company ID to clear the registered faults for.
- *  @param test_id     Test ID response buffer.
- *  @param faults      Fault array response buffer.
- *  @param fault_count Fault count response buffer.
- *
- *  @return 0 on success, or (negative) error code on failure.
- */
-int bt_mesh_health_cli_fault_clear(struct bt_mesh_health_cli *cli, struct bt_mesh_msg_ctx *ctx,
-				   uint16_t cid, uint8_t *test_id, uint8_t *faults,
-				   size_t *fault_count);
-
-/** @brief Clear the registered faults for the given Company ID (unacked).
- *
- *  @see bt_mesh_health_faults
- *
- *  @param cli Client model to send on.
- *  @param ctx Message context, or NULL to use the configured publish
- *  parameters.
- *  @param cid         Company ID to clear the registered faults for.
- *
- *  @return 0 on success, or (negative) error code on failure.
- */
-int bt_mesh_health_cli_fault_clear_unack(struct bt_mesh_health_cli *cli,
-					 struct bt_mesh_msg_ctx *ctx, uint16_t cid);
-
-/** @brief Invoke a self-test procedure for the given Company ID.
- *
- *  This method can be used asynchronously by setting @p faults
- *  or @p fault_count as NULL This way the method will not wait
- *  for response and will return immediately after sending the command.
- *
- *  To process the response arguments of an async method, register
- *  the @c fault_status callback in @c bt_mesh_health_cli struct.
- *
- *  @param cli Client model to send on.
- *  @param ctx Message context, or NULL to use the configured publish
- *  parameters.
- *  @param cid         Company ID to invoke the test for.
- *  @param test_id     Test ID response buffer.
- *  @param faults      Fault array response buffer.
- *  @param fault_count Fault count response buffer.
- *
- *  @return 0 on success, or (negative) error code on failure.
- */
-int bt_mesh_health_cli_fault_test(struct bt_mesh_health_cli *cli, struct bt_mesh_msg_ctx *ctx,
-				  uint16_t cid, uint8_t test_id, uint8_t *faults,
-				  size_t *fault_count);
-
-/** @brief Invoke a self-test procedure for the given Company ID (unacked).
- *
- *  @param cli Client model to send on.
- *  @param ctx Message context, or NULL to use the configured publish
- *  parameters.
- *  @param cid         Company ID to invoke the test for.
- *  @param test_id     Test ID response buffer.
- *
- *  @return 0 on success, or (negative) error code on failure.
- */
-int bt_mesh_health_cli_fault_test_unack(struct bt_mesh_health_cli *cli, struct bt_mesh_msg_ctx *ctx,
-					uint16_t cid, uint8_t test_id);
-
-/** @brief Get the target node's Health fast period divisor.
- *
- *  The health period divisor is used to increase the publish rate when a fault
- *  is registered. Normally, the Health server will publish with the period in
- *  the configured publish parameters. When a fault is registered, the publish
- *  period is divided by (1 << divisor). For example, if the target node's
- *  Health server is configured to publish with a period of 16 seconds, and the
- *  Health fast period divisor is 5, the Health server will publish with an
- *  interval of 500 ms when a fault is registered.
- *
- *  This method can be used asynchronously by setting @p divisor
- *  as NULL. This way the method will not wait for response and will
- *  return immediately after sending the command.
- *
- *  To process the response arguments of an async method, register
- *  the @c period_status callback in @c bt_mesh_health_cli struct.
- *
- *  @param cli Client model to send on.
- *  @param ctx Message context, or NULL to use the configured publish
- *  parameters.
- *  @param divisor Health period divisor response buffer.
- *
- *  @return 0 on success, or (negative) error code on failure.
- */
-int bt_mesh_health_cli_period_get(struct bt_mesh_health_cli *cli, struct bt_mesh_msg_ctx *ctx,
-				  uint8_t *divisor);
-
-/** @brief Set the target node's Health fast period divisor.
- *
- *  The health period divisor is used to increase the publish rate when a fault
- *  is registered. Normally, the Health server will publish with the period in
- *  the configured publish parameters. When a fault is registered, the publish
- *  period is divided by (1 << divisor). For example, if the target node's
- *  Health server is configured to publish with a period of 16 seconds, and the
- *  Health fast period divisor is 5, the Health server will publish with an
- *  interval of 500 ms when a fault is registered.
- *
- *  This method can be used asynchronously by setting @p updated_divisor
- *  as NULL. This way the method will not wait for response and will
- *  return immediately after sending the command.
- *
- *  To process the response arguments of an async method, register
- *  the @c period_status callback in @c bt_mesh_health_cli struct.
- *
- *  @param cli Client model to send on.
- *  @param ctx Message context, or NULL to use the configured publish
- *  parameters.
- *  @param divisor         New Health period divisor.
- *  @param updated_divisor Health period divisor response buffer.
- *
- *  @return 0 on success, or (negative) error code on failure.
- */
-int bt_mesh_health_cli_period_set(struct bt_mesh_health_cli *cli, struct bt_mesh_msg_ctx *ctx,
-				  uint8_t divisor, uint8_t *updated_divisor);
-
-/** @brief Set the target node's Health fast period divisor (unacknowledged).
- *
- *  This is an unacknowledged version of this API.
- *
- *  @param cli Client model to send on.
- *  @param ctx Message context, or NULL to use the configured publish
- *  parameters.
- *  @param divisor         New Health period divisor.
- *
- *  @return 0 on success, or (negative) error code on failure.
- */
-int bt_mesh_health_cli_period_set_unack(struct bt_mesh_health_cli *cli, struct bt_mesh_msg_ctx *ctx,
-					uint8_t divisor);
-
-/** @brief Get the current attention timer value.
- *
- *  This method can be used asynchronously by setting @p attention
- *  as NULL. This way the method will not wait for response and will
- *  return immediately after sending the command.
- *
- *  To process the response arguments of an async method, register
- *  the @c attention_status callback in @c bt_mesh_health_cli struct.
- *
- *  @param cli Client model to send on.
- *  @param ctx Message context, or NULL to use the configured publish
- *  parameters.
- *  @param attention Attention timer response buffer, measured in seconds.
- *
- *  @return 0 on success, or (negative) error code on failure.
- */
-int bt_mesh_health_cli_attention_get(struct bt_mesh_health_cli *cli, struct bt_mesh_msg_ctx *ctx,
-				     uint8_t *attention);
-
-/** @brief Set the attention timer.
- *
- *  This method can be used asynchronously by setting @p updated_attention
- *  as NULL. This way the method will not wait for response and will
- *  return immediately after sending the command.
- *
- *  To process the response arguments of an async method, register
- *  the @c attention_status callback in @c bt_mesh_health_cli struct.
- *
- *  @param cli Client model to send on.
- *  @param ctx Message context, or NULL to use the configured publish
- *  parameters.
- *  @param attention         New attention timer time, in seconds.
- *  @param updated_attention Attention timer response buffer, measured in
- *                           seconds.
- *
- *  @return 0 on success, or (negative) error code on failure.
- */
-int bt_mesh_health_cli_attention_set(struct bt_mesh_health_cli *cli, struct bt_mesh_msg_ctx *ctx,
-				     uint8_t attention, uint8_t *updated_attention);
-
-/** @brief Set the attention timer (unacknowledged).
- *
- *  @param cli Client model to send on.
- *  @param ctx Message context, or NULL to use the configured publish
- *  parameters.
- *  @param attention         New attention timer time, in seconds.
- *
- *  @return 0 on success, or (negative) error code on failure.
- */
-int bt_mesh_health_cli_attention_set_unack(struct bt_mesh_health_cli *cli,
-					   struct bt_mesh_msg_ctx *ctx, uint8_t attention);
+int bt_mesh_health_attention_set_unack(uint16_t addr, uint16_t app_idx,
+				       uint8_t attention);
 
 /** @brief Get the current transmission timeout value.
  *

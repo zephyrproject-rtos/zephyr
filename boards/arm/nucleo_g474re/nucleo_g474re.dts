@@ -49,7 +49,6 @@
 		led0 = &green_led;
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
-		watchdog0 = &iwdg;
 	};
 };
 
@@ -167,10 +166,6 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pa0>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&die_temp {
 	status = "okay";
 };
 

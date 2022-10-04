@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #define NSEC_PER_MSEC (uint64_t)(NSEC_PER_USEC * USEC_PER_MSEC)
 /**

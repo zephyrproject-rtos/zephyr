@@ -4,16 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/devicetree.h>
+#include "soc.h"
 #include "sysconf.h"
 
-/* default system clock */
-#define SYSCLK_DEFAULT_IOSC_HZ			MHZ(16)
 
 #define PLL_CLK_IN	(SYSCLK_DEFAULT_IOSC_HZ / 1000000)  /* PLL clock in */
 
 
-#define sysconf_reg_ptr ((sysconf_reg_t *)(DT_REG_ADDR(DT_NODELABEL(sysconf))))
+#define sysconf_reg_ptr ((sysconf_reg_t *)(BASE_ADDR_SYSCONFIG))
 
 
 typedef struct pll_conf {

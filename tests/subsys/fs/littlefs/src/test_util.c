@@ -7,7 +7,7 @@
 /* Tests of functions in testfs_util */
 
 #include <string.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include "testfs_tests.h"
 #include "testfs_util.h"
 
@@ -26,7 +26,7 @@ static inline struct testfs_path *reset_path()
 	return &path;
 }
 
-ZTEST(littlefs, test_util_path_init_base)
+void test_util_path_init_base(void)
 {
 	zassert_equal(testfs_path_init(&path, NULL, TESTFS_PATH_END),
 		      path.path,
@@ -48,7 +48,7 @@ ZTEST(littlefs, test_util_path_init_base)
 	}
 }
 
-ZTEST(littlefs, test_util_path_init_overrun)
+void test_util_path_init_overrun(void)
 {
 	char overrun[TESTFS_PATH_MAX + 2] = "/";
 	size_t overrun_max = sizeof(overrun) - 1;
@@ -74,7 +74,7 @@ ZTEST(littlefs, test_util_path_init_overrun)
 		      "missing overrun EOS");
 }
 
-ZTEST(littlefs, test_util_path_init_extended)
+void test_util_path_init_extended(void)
 {
 	zassert_equal(strcmp(testfs_path_init(&path, &mnt,
 					      ELT1,
@@ -92,7 +92,7 @@ ZTEST(littlefs, test_util_path_init_extended)
 		      "bad mnt init elt1 elt2");
 }
 
-ZTEST(littlefs, test_util_path_extend)
+void test_util_path_extend(void)
 {
 	zassert_equal(strcmp(testfs_path_extend(reset_path(),
 						TESTFS_PATH_END),
@@ -116,7 +116,7 @@ ZTEST(littlefs, test_util_path_extend)
 		      "elt1 elt2 extend failed");
 }
 
-ZTEST(littlefs, test_util_path_extend_up)
+void test_util_path_extend_up(void)
 {
 	zassert_equal(strcmp(testfs_path_extend(reset_path(),
 						ELT2,
@@ -143,7 +143,7 @@ ZTEST(littlefs, test_util_path_extend_up)
 		      "up from root failed");
 }
 
-ZTEST(littlefs, test_util_path_extend_overrun)
+void test_util_path_extend_overrun(void)
 {
 	char long_elt[TESTFS_PATH_MAX];
 

@@ -3,9 +3,7 @@
 
 menuconfig LIS3MDL
 	bool "LIS3MDL magnetometer"
-	default y
-	depends on DT_HAS_ST_LIS3MDL_MAGN_ENABLED
-	select I2C
+	depends on I2C
 	help
 	  Enable driver for LIS3MDL I2C-based magnetometer.
 

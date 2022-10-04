@@ -19,7 +19,6 @@
 		zephyr,shell-uart = &bl654_cdc_acm_uart;
 		zephyr,bt-c2h-uart = &bl654_cdc_acm_uart;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -43,7 +42,6 @@
 	aliases {
 		led0 = &led1;
 		led1pwm = &led1bluepwm;
-		watchdog0 = &wdt0;
 	};
 };
 
@@ -108,5 +106,6 @@ zephyr_udc0: &usbd {
 
 	bl654_cdc_acm_uart: bl654_cdc_acm_uart {
 		compatible = "zephyr,cdc-acm-uart";
+		label = "CDC_ACM_0";
 	};
 };

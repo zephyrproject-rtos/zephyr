@@ -16,7 +16,8 @@ The DFRobot CAN BUS shield supports the Microchip MCP2515 stand-alone CAN
 controller and JTA1050 high speed CAN transceiver. The shield has an Arduino
 Uno R3 compatible hardware interface.
 
-.. figure:: dfrobot_can_bus_v2_0.jpg
+.. figure:: ./dfrobot_can_bus_v2_0.jpg
+   :width: 720px
    :align: center
    :alt: DFRobot_CAN_BUS_V2_0_SHIELD
 
@@ -125,7 +126,8 @@ The Keyestudio CAN BUS shield supports the Microchip MCP2515 stand-alone CAN
 controller and MCP2551 high speed CAN transceiver. The shield has an Arduino
 Uno R3 compatible hardware interface.
 
-.. figure:: keyestudio_can_bus_ks0411.jpg
+.. figure:: ./keyestudio_can_bus_ks0411.png
+   :width: 559px
    :align: center
    :alt: Keyestudio CAN-BUS Shield (KS0411)
 

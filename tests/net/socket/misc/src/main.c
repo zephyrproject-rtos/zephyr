@@ -8,7 +8,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
-#include <zephyr/ztest_assert.h>
+#include <ztest_assert.h>
 #include <zephyr/sys/sem.h>
 
 #include <zephyr/net/socket.h>
@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include "../../socket_helpers.h"
 
-ZTEST_USER(socket_misc_test_suite, test_gethostname)
+void test_gethostname(void)
 {
 	static ZTEST_BMEM char buf[80];
 	int res;
@@ -27,7 +27,7 @@ ZTEST_USER(socket_misc_test_suite, test_gethostname)
 	zassert_equal(strcmp(buf, "ztest_hostname"), 0, "");
 }
 
-ZTEST_USER(socket_misc_test_suite, test_inet_pton)
+void test_inet_pton(void)
 {
 	int res;
 	uint8_t buf[32];
@@ -425,23 +425,17 @@ void test_ipv6_getpeername(void)
 	test_getpeername(AF_INET6);
 }
 
-static void *setup(void)
+void test_main(void)
 {
 	k_thread_system_pool_assign(k_current_get());
-	return NULL;
+
+	ztest_test_suite(socket_misc,
+			 ztest_user_unit_test(test_gethostname),
+			 ztest_user_unit_test(test_inet_pton),
+			 ztest_user_unit_test(test_ipv4_so_bindtodevice),
+			 ztest_user_unit_test(test_ipv6_so_bindtodevice),
+			 ztest_user_unit_test(test_ipv4_getpeername),
+			 ztest_user_unit_test(test_ipv6_getpeername));
+
+	ztest_run_test_suite(socket_misc);
 }
-
-
-ZTEST_USER(socket_misc_test_suite, test_ipv4)
-{
-	test_ipv4_so_bindtodevice();
-	test_ipv4_getpeername();
-}
-
-ZTEST_USER(socket_misc_test_suite, test_ipv6)
-{
-	test_ipv6_so_bindtodevice();
-	test_ipv6_getpeername();
-}
-
-ZTEST_SUITE(socket_misc_test_suite, NULL, setup, NULL, NULL, NULL);

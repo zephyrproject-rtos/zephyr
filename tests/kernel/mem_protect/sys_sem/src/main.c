@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/irq_offload.h>
 #include <zephyr/sys/sem.h>
 
@@ -33,43 +33,43 @@ struct k_thread multiple_tid[TOTAL_THREADS_WAITING];
 
 /******************************************************************************/
 /* Helper functions */
-static void isr_sem_give(const void *semaphore)
+void isr_sem_give(const void *semaphore)
 {
 	sys_sem_give((struct sys_sem *)semaphore);
 }
 
-static void isr_sem_take(const void *semaphore)
+void isr_sem_take(const void *semaphore)
 {
 	sys_sem_take((struct sys_sem *)semaphore, K_NO_WAIT);
 }
 
-static void sem_give_from_isr(void *semaphore)
+void sem_give_from_isr(void *semaphore)
 {
 	irq_offload(isr_sem_give, (const void *)semaphore);
 }
 
-static void sem_take_from_isr(void *semaphore)
+void sem_take_from_isr(void *semaphore)
 {
 	irq_offload(isr_sem_take, (const void *)semaphore);
 }
 
-static void sem_give_task(void *p1, void *p2, void *p3)
+void sem_give_task(void *p1, void *p2, void *p3)
 {
 	sys_sem_give(&simple_sem);
 }
 
-static void sem_take_timeout_forever_helper(void *p1, void *p2, void *p3)
+void sem_take_timeout_forever_helper(void *p1, void *p2, void *p3)
 {
 	k_sleep(K_MSEC(100));
 	sys_sem_give(&simple_sem);
 }
 
-static void sem_take_timeout_isr_helper(void *p1, void *p2, void *p3)
+void sem_take_timeout_isr_helper(void *p1, void *p2, void *p3)
 {
 	sem_give_from_isr(&simple_sem);
 }
 
-static void sem_take_multiple_low_prio_helper(void *p1, void *p2, void *p3)
+void sem_take_multiple_low_prio_helper(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 
@@ -82,7 +82,7 @@ static void sem_take_multiple_low_prio_helper(void *p1, void *p2, void *p3)
 	sys_sem_give(&low_prio_sem);
 }
 
-static void sem_take_multiple_mid_prio_helper(void *p1, void *p2, void *p3)
+void sem_take_multiple_mid_prio_helper(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 
@@ -95,7 +95,7 @@ static void sem_take_multiple_mid_prio_helper(void *p1, void *p2, void *p3)
 	sys_sem_give(&mid_prio_sem);
 }
 
-static void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
+void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 
@@ -108,7 +108,7 @@ static void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
 	sys_sem_give(&high_prio_sem);
 }
 
-static void sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
+void sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
 {
 	int ret_value;
 
@@ -126,7 +126,7 @@ static void sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
  */
 
 #ifdef CONFIG_USERSPACE
-ZTEST(sys_sem, test_basic_sem_test)
+void test_basic_sem_test(void)
 {
 	int32_t ret_value;
 
@@ -155,7 +155,7 @@ ZTEST(sys_sem, test_basic_sem_test)
 /**
  * @brief Test semaphore count when given by an ISR
  */
-ZTEST(sys_sem, test_simple_sem_from_isr)
+void test_simple_sem_from_isr(void)
 {
 	uint32_t signal_count;
 
@@ -175,7 +175,7 @@ ZTEST(sys_sem, test_simple_sem_from_isr)
 /**
  * @brief Test semaphore count when given by thread
  */
-ZTEST_USER(sys_sem, test_simple_sem_from_task)
+void test_simple_sem_from_task(void)
 {
 	uint32_t signal_count;
 
@@ -189,18 +189,16 @@ ZTEST_USER(sys_sem, test_simple_sem_from_task)
 			     "signal count mismatch Expected %d, got %d",
 			     (i + 1), signal_count);
 	}
+
 }
 
 /**
  * @brief Test if sys_sem_take() decreases semaphore count
  */
-ZTEST_USER(sys_sem, test_sem_take_no_wait)
+void test_sem_take_no_wait(void)
 {
 	uint32_t signal_count;
 	int32_t ret_value;
-
-	/* Initial condition */
-	sys_sem_init(&simple_sem, 5, SEM_MAX_VAL);
 
 	for (int i = 4; i >= 0; i--) {
 		ret_value = sys_sem_take(&simple_sem, K_NO_WAIT);
@@ -219,7 +217,7 @@ ZTEST_USER(sys_sem, test_sem_take_no_wait)
 /**
  * @brief Test sys_sem_take() when there is no semaphore to take
  */
-ZTEST_USER(sys_sem, test_sem_take_no_wait_fails)
+void test_sem_take_no_wait_fails(void)
 {
 	uint32_t signal_count;
 	int32_t ret_value;
@@ -259,7 +257,7 @@ void test_sem_take_timeout_fails(void)
 /**
  * @brief Test sys_sem_take() with timeout
  */
-ZTEST_USER(sys_sem, test_sem_take_timeout)
+void test_sem_take_timeout(void)
 {
 	int32_t ret_value;
 #ifdef CONFIG_USERSPACE
@@ -285,7 +283,7 @@ ZTEST_USER(sys_sem, test_sem_take_timeout)
 /**
  * @brief Test sys_sem_take() with forever timeout
  */
-ZTEST_USER(sys_sem_1cpu, test_sem_take_timeout_forever)
+void test_sem_take_timeout_forever(void)
 {
 	int32_t ret_value;
 #ifdef CONFIG_USERSPACE
@@ -311,7 +309,7 @@ ZTEST_USER(sys_sem_1cpu, test_sem_take_timeout_forever)
 /**
  * @brief Test sys_sem_take() with timeout in ISR context
  */
-ZTEST(sys_sem_1cpu, test_sem_take_timeout_isr)
+void test_sem_take_timeout_isr(void)
 {
 	int32_t ret_value;
 
@@ -331,7 +329,7 @@ ZTEST(sys_sem_1cpu, test_sem_take_timeout_isr)
 /**
  * @brief Test multiple semaphore take
  */
-ZTEST_USER(sys_sem_1cpu, test_sem_take_multiple)
+void test_sem_take_multiple(void)
 {
 	uint32_t signal_count;
 #ifdef CONFIG_USERSPACE
@@ -434,7 +432,7 @@ ZTEST_USER(sys_sem_1cpu, test_sem_take_multiple)
 /**
  * @brief Test semaphore give and take and its count from ISR
  */
-ZTEST(sys_sem, test_sem_give_take_from_isr)
+void test_sem_give_take_from_isr(void)
 {
 	uint32_t signal_count;
 
@@ -464,7 +462,7 @@ ZTEST(sys_sem, test_sem_give_take_from_isr)
 /**
  * @brief Test semaphore give limit count
  */
-ZTEST_USER(sys_sem, test_sem_give_limit)
+void test_sem_give_limit(void)
 {
 	int32_t ret_value;
 	uint32_t signal_count;
@@ -504,7 +502,7 @@ ZTEST_USER(sys_sem, test_sem_give_limit)
 /**
  * @brief Test multiple semaphore take and give with wait
  */
-ZTEST_USER(sys_sem_1cpu, test_sem_multiple_threads_wait)
+void test_sem_multiple_threads_wait(void)
 {
 	uint32_t signal_count;
 	int32_t ret_value;
@@ -568,8 +566,10 @@ ZTEST_USER(sys_sem_1cpu, test_sem_multiple_threads_wait)
  * @}
  */
 
-void *sys_sem_setup(void)
+/* ztest main entry*/
+void test_main(void)
 {
+#ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(),
 			      &stack_1, &stack_2, &stack_3,
 			      &sem_tid, &sem_tid_1, &sem_tid_2);
@@ -579,12 +579,36 @@ void *sys_sem_setup(void)
 			&multiple_tid[i], &multiple_stack[i]);
 	}
 
-	return NULL;
+	ztest_test_suite(test_sys_sem,
+			ztest_unit_test(test_basic_sem_test),
+			ztest_unit_test(test_simple_sem_from_isr),
+			ztest_1cpu_unit_test(test_sem_take_timeout_isr),
+			ztest_unit_test(test_sem_give_take_from_isr),
+			ztest_user_unit_test(test_simple_sem_from_task),
+			ztest_user_unit_test(test_sem_take_no_wait),
+			ztest_user_unit_test(test_sem_take_no_wait_fails),
+			ztest_1cpu_user_unit_test(test_sem_take_timeout_fails),
+			ztest_user_unit_test(test_sem_take_timeout),
+			ztest_1cpu_user_unit_test(test_sem_take_timeout_forever),
+			ztest_1cpu_user_unit_test(test_sem_take_multiple),
+			ztest_user_unit_test(test_sem_give_limit),
+			ztest_1cpu_user_unit_test(test_sem_multiple_threads_wait));
+	ztest_run_test_suite(test_sys_sem);
+#else
+	ztest_test_suite(test_sys_sem,
+			ztest_unit_test(test_simple_sem_from_isr),
+			ztest_1cpu_unit_test(test_sem_take_timeout_isr),
+			ztest_unit_test(test_sem_give_take_from_isr),
+			ztest_unit_test(test_simple_sem_from_task),
+			ztest_unit_test(test_sem_take_no_wait),
+			ztest_unit_test(test_sem_take_no_wait_fails),
+			ztest_1cpu_unit_test(test_sem_take_timeout_fails),
+			ztest_unit_test(test_sem_take_timeout),
+			ztest_1cpu_unit_test(test_sem_take_timeout_forever),
+			ztest_1cpu_unit_test(test_sem_take_multiple),
+			ztest_unit_test(test_sem_give_limit),
+			ztest_1cpu_unit_test(test_sem_multiple_threads_wait));
+	ztest_run_test_suite(test_sys_sem);
+#endif
 }
-
-ZTEST_SUITE(sys_sem, NULL, sys_sem_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(sys_sem_1cpu, NULL, sys_sem_setup, ztest_simple_1cpu_before,
-		ztest_simple_1cpu_after, NULL);
-
 /******************************************************************************/

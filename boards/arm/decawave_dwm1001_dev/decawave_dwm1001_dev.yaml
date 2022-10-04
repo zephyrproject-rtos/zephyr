@@ -11,3 +11,4 @@ flash: 512
 supported:
   - spi
   - i2c
+  - ieee802154

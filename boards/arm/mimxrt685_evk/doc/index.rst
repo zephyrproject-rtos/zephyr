@@ -17,7 +17,8 @@ The i.MX RT600 family provides up to 4.5MB of on-chip SRAM and several
 high-bandwidth interfaces to access off-chip flash, including an Octal/Quad SPI
 interface with an on-the-fly decryption engine.
 
-.. image:: mimxrt685_evk.jpg
+.. image:: ./mimxrt685_evk.jpg
+   :width: 720px
    :align: center
    :alt: MIMXRT685-EVK
 
@@ -97,10 +98,6 @@ features:
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | CTIMER    | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

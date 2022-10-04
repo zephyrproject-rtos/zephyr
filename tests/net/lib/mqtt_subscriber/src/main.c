@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 extern void test_mqtt_init(void);
 extern void test_mqtt_connect(void);

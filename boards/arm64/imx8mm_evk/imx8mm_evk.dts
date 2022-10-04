@@ -21,6 +21,7 @@
 	psci {
 		compatible = "arm,psci-0.2";
 		method = "smc";
+		label = "PSCI";
 	};
 
 	sram0: memory@40000000 {
@@ -30,6 +31,7 @@
 };
 
 &uart2 {
+	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";

@@ -20,7 +20,7 @@
  * @}
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 /* This test relies on these values being one larger than the one before */
 #define TEST_VAL_1  0x1

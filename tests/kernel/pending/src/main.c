@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/tc_util.h>
-#include <zephyr/ztest.h>
+#include <tc_util.h>
+#include <ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include <stdbool.h>
@@ -293,7 +293,7 @@ void task_low(void)
  *
  * @see k_sleep(), K_THREAD_DEFINE()
  */
-ZTEST(pending, test_pending_fifo)
+void test_pending_fifo(void)
 {
 	/*
 	 * Main thread(test_main) priority was 9 but ztest thread runs at
@@ -360,7 +360,7 @@ ZTEST(pending, test_pending_fifo)
 }
 
 
-ZTEST(pending, test_pending_lifo)
+void test_pending_lifo(void)
 {
 	/*
 	 * Main thread(test_main) priority was 9 but ztest thread runs at
@@ -427,7 +427,7 @@ ZTEST(pending, test_pending_lifo)
 
 }
 
-ZTEST(pending, test_pending_timer)
+void test_pending_timer(void)
 {
 	/*
 	 * Main thread(test_main) priority was 9 but ztest thread runs at
@@ -469,12 +469,18 @@ ZTEST(pending, test_pending_timer)
 /**
  * @}
  */
+void test_main(void)
+{
+	ztest_test_suite(pend,
+			ztest_1cpu_unit_test(test_pending_fifo),
+			ztest_1cpu_unit_test(test_pending_lifo),
+			ztest_1cpu_unit_test(test_pending_timer)
+			);
+	ztest_run_test_suite(pend);
+}
 
 K_THREAD_DEFINE(TASK_LOW, PREEM_STACKSIZE, task_low, NULL, NULL, NULL,
 		7, 0, 0);
 
 K_THREAD_DEFINE(TASK_HIGH, PREEM_STACKSIZE, task_high, NULL, NULL, NULL,
 		5, 0, 0);
-
-ZTEST_SUITE(pending, NULL, NULL,
-		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

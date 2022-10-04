@@ -26,7 +26,9 @@ Here some highlights of these boards:
 - One push-button: RESET
 
 .. image:: img/nucleo_l452re_p.jpg
+  :width: 363px
   :align: center
+  :height: 408px
   :alt: Nucleo L452RE-P
 
 The main difference between the ST Nucleo L452RE and the L452RE-P (note the missing
@@ -143,12 +145,16 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo_l452re_pinout.jpg
+.. image:: img/nucleo_l452re_pinout.png
+   :width: 496px
    :align: center
+   :height: 446px
    :alt: Nucleo L452RE Pinout
 
-.. image:: img/nucleo_l452re_p_pinout.jpg
+.. image:: img/nucleo_l452re_p_pinout.png
+   :width: 537px
    :align: center
+   :height: 446px
    :alt: Nucleo L452RE-P Pinout
 
 For more details please refer to `ST Nucleo L452RE User Manual`_ or

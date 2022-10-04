@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/drivers/timer/nrf_rtc_timer.h>
 #include <hal/nrf_rtc.h>
 #include <hal/nrf_timer.h>
@@ -31,7 +31,7 @@ static void init_zli_timer0(void)
 {
 	nrf_timer_mode_set(NRF_TIMER0, NRF_TIMER_MODE_TIMER);
 	nrf_timer_bit_width_set(NRF_TIMER0, NRF_TIMER_BIT_WIDTH_32);
-	nrf_timer_prescaler_set(NRF_TIMER0, NRF_TIMER_FREQ_1MHz);
+	nrf_timer_frequency_set(NRF_TIMER0, NRF_TIMER_FREQ_1MHz);
 	nrf_timer_cc_set(NRF_TIMER0, 0, 100);
 	nrf_timer_int_enable(NRF_TIMER0, NRF_TIMER_INT_COMPARE0_MASK);
 	nrf_timer_shorts_enable(NRF_TIMER0,
@@ -106,7 +106,7 @@ static void test_timeout(int32_t chan, k_timeout_t t, bool ext_window)
 }
 
 
-ZTEST(nrf_rtc_timer, test_basic)
+static void test_basic(void)
 {
 	int32_t chan = z_nrf_rtc_timer_chan_alloc();
 
@@ -135,7 +135,7 @@ ZTEST(nrf_rtc_timer, test_basic)
 	z_nrf_rtc_timer_chan_free(chan);
 }
 
-ZTEST(nrf_rtc_timer, test_z_nrf_rtc_timer_compare_evt_address_get)
+static void test_z_nrf_rtc_timer_compare_evt_address_get(void)
 {
 	uint32_t evt_addr;
 
@@ -144,7 +144,7 @@ ZTEST(nrf_rtc_timer, test_z_nrf_rtc_timer_compare_evt_address_get)
 			"Unexpected event addr:%x", evt_addr);
 }
 
-ZTEST(nrf_rtc_timer, test_int_disable_enabled)
+static void test_int_disable_enabled(void)
 {
 	uint64_t now = z_nrf_rtc_timer_read();
 	uint64_t t = 1000;
@@ -176,7 +176,7 @@ ZTEST(nrf_rtc_timer, test_int_disable_enabled)
 	z_nrf_rtc_timer_chan_free(chan);
 }
 
-ZTEST(nrf_rtc_timer, test_get_ticks)
+static void test_get_ticks(void)
 {
 	k_timeout_t t = K_MSEC(1);
 	uint64_t exp_ticks = z_nrf_rtc_timer_read() + t.ticks;
@@ -219,7 +219,7 @@ static void sched_handler(int32_t id, uint64_t expire_time, void *user_data)
 	    k_ticks_to_us_floor64(now - (rtc_ticks_now - expire_time));
 }
 
-ZTEST(nrf_rtc_timer, test_absolute_scheduling)
+static void test_absolute_scheduling(void)
 {
 	k_timeout_t t;
 	int64_t now_us = k_ticks_to_us_floor64(sys_clock_tick_get());
@@ -259,7 +259,7 @@ ZTEST(nrf_rtc_timer, test_absolute_scheduling)
 	z_nrf_rtc_timer_chan_free(chan);
 }
 
-ZTEST(nrf_rtc_timer, test_alloc_free)
+static void test_alloc_free(void)
 {
 	int32_t chan[CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT];
 	int32_t inv_ch;
@@ -277,7 +277,7 @@ ZTEST(nrf_rtc_timer, test_alloc_free)
 	}
 }
 
-ZTEST(nrf_rtc_timer, test_stress)
+static void test_stress(void)
 {
 	int x = 0;
 	uint32_t start = k_uptime_get_32();
@@ -304,7 +304,7 @@ ZTEST(nrf_rtc_timer, test_stress)
 	z_nrf_rtc_timer_chan_free(chan);
 }
 
-ZTEST(nrf_rtc_timer, test_resetting_cc)
+static void test_resetting_cc(void)
 {
 	uint32_t start = k_uptime_get_32();
 	uint32_t test_time = 1000;
@@ -359,7 +359,7 @@ static void overflow_sched_handler(int32_t id, uint64_t expire_time,
 /* This test is to be executed as the last, due to interference in overflow
  * counter, resulting in nRF RTC timer ticks and kernel ticks desynchronization.
  */
-ZTEST(nrf_rtc_timer, test_overflow)
+static void test_overflow(void)
 {
 	PRINT("RTC ticks before overflow injection: %u\r\n",
 	      (uint32_t)z_nrf_rtc_timer_read());
@@ -427,11 +427,20 @@ ZTEST(nrf_rtc_timer, test_overflow)
 	z_nrf_rtc_timer_chan_free(chan);
 }
 
-static void *rtc_timer_setup(void)
+void test_main(void)
 {
 	init_zli_timer0();
 
-	return NULL;
+	ztest_test_suite(test_nrf_rtc_timer,
+		ztest_unit_test(test_basic),
+		ztest_unit_test(test_z_nrf_rtc_timer_compare_evt_address_get),
+		ztest_unit_test(test_int_disable_enabled),
+		ztest_unit_test(test_get_ticks),
+		ztest_unit_test(test_absolute_scheduling),
+		ztest_unit_test(test_alloc_free),
+		ztest_unit_test(test_stress),
+		ztest_unit_test(test_resetting_cc),
+		ztest_unit_test(test_overflow)
+			 );
+	ztest_run_test_suite(test_nrf_rtc_timer);
 }
-
-ZTEST_SUITE(nrf_rtc_timer, NULL, rtc_timer_setup, NULL, NULL, NULL);

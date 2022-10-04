@@ -9,8 +9,10 @@ Overview
 The OLIMEXINO-STM32 board is based on the STMicroelectronics STM32F103RB ARM
 Cortex-M3 CPU.
 
-.. figure:: img/olimexino_stm32.jpg
+.. figure:: img/olimexino_stm32.png
+     :width: 540px
      :align: center
+     :height: 454px
      :alt: OLIMEXINO-STM32
 
      OLIMEXINO-STM32
@@ -54,8 +56,10 @@ Other hardware features have not been enabled yet for this board.
 Pin Mapping
 ===========
 
-.. figure:: img/olimexino-stm32-front.jpg
+.. figure:: img/olimexino-stm32-front.png
+     :width: 739px
      :align: center
+     :height: 530px
      :alt: OLIMEXINO-STM32 connectors
 
      OLIMEXINO-STM32 connectors

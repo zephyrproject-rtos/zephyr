@@ -64,7 +64,6 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		bootloader-led0 = &led0;
-		watchdog0 = &wdt0;
 	};
 };
 

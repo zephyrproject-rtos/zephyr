@@ -11,8 +11,10 @@ that match the SoC's pin names.
 For practical use, you'll need to add additional components
 and circuits using a breadboard, for example.
 
-.. image:: img/stm32f030_demo.jpg
+.. image:: img/stm32f030_demo.png
+   :width: 275px
    :align: center
+   :height: 484px
    :alt: STM32F030 DEMO BOARD
 
 More information about the board can be found at the `stm32-base.org website`_.
@@ -53,8 +55,6 @@ hardware features:
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr porting.

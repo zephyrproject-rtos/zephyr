@@ -1,6 +1,10 @@
 # Copyright (c) 2016-2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+# This file needs to be sourced first as it defines variables that are supposed
+# to be available for all Nordic related options.
+rsource "Kconfig.dt"
+
 config ZEPHYR_HAL_NORDIC_MODULE
 	bool
 

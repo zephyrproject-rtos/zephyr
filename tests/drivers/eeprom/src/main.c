@@ -4,15 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/device.h>
+#include <ztest.h>
+#include <ztest_test.h>
 #include <zephyr/drivers/eeprom.h>
-#include <zephyr/ztest.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/device.h>
 
 /* There is no obvious way to pass this to tests, so use a global */
 ZTEST_BMEM static const struct device *eeprom;
 
 /* Test retrieval of eeprom size */
-ZTEST_USER(eeprom, test_size)
+static void test_size(void)
 {
 	size_t size;
 
@@ -21,7 +23,7 @@ ZTEST_USER(eeprom, test_size)
 }
 
 /* Test write outside eeprom area */
-ZTEST_USER(eeprom, test_out_of_bounds)
+static void test_out_of_bounds(void)
 {
 	const uint8_t data[4] = { 0x01, 0x02, 0x03, 0x03 };
 	size_t size;
@@ -34,7 +36,7 @@ ZTEST_USER(eeprom, test_out_of_bounds)
 }
 
 /* Test write and rewrite */
-ZTEST_USER(eeprom, test_write_rewrite)
+static void test_write_rewrite(void)
 {
 	const uint8_t wr_buf1[4] = { 0xFF, 0xEE, 0xDD, 0xCC };
 	const uint8_t wr_buf2[sizeof(wr_buf1)] = { 0xAA, 0xBB, 0xCC, 0xDD };
@@ -75,7 +77,7 @@ ZTEST_USER(eeprom, test_write_rewrite)
 }
 
 /* Test write at fixed address */
-ZTEST_USER(eeprom, test_write_at_fixed_address)
+static void test_write_at_fixed_address(void)
 {
 	const uint8_t wr_buf1[4] = { 0xFF, 0xEE, 0xDD, 0xCC };
 	uint8_t rd_buf[sizeof(wr_buf1)];
@@ -98,7 +100,7 @@ ZTEST_USER(eeprom, test_write_at_fixed_address)
 }
 
 /* Test write one byte at a time */
-ZTEST_USER(eeprom, test_write_byte)
+static void test_write_byte(void)
 {
 	const uint8_t wr = 0x00;
 	uint8_t rd = 0xff;
@@ -116,7 +118,7 @@ ZTEST_USER(eeprom, test_write_byte)
 }
 
 /* Test write a pattern of bytes at increasing address */
-ZTEST_USER(eeprom, test_write_at_increasing_address)
+static void test_write_at_increasing_address(void)
 {
 	const uint8_t wr_buf1[8] = {0xEE, 0xDD, 0xCC, 0xBB, 0xFF, 0xEE, 0xDD,
 				    0xCC };
@@ -136,7 +138,7 @@ ZTEST_USER(eeprom, test_write_at_increasing_address)
 }
 
 /* Test writing zero length data */
-ZTEST_USER(eeprom, test_zero_length_write)
+static void test_zero_length_write(void)
 {
 	const uint8_t wr_buf1[4] = { 0x10, 0x20, 0x30, 0x40 };
 	const uint8_t wr_buf2[sizeof(wr_buf1)] = { 0xAA, 0xBB, 0xCC, 0xDD };
@@ -162,32 +164,50 @@ ZTEST_USER(eeprom, test_zero_length_write)
 	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
 }
 
-static void *eeprom_setup(void)
+/* Run all of our tests on EEPROM device with the given label */
+static void run_tests_on_eeprom(const struct device *eeprom_dev, const struct device *i2c)
 {
-	zassert_true(device_is_ready(eeprom), "EEPROM device not ready");
+	zassert_true(device_is_ready(eeprom_dev), "EEPROM device is NOT ready");
 
-	return NULL;
-}
+	k_object_access_grant(eeprom_dev, k_current_get());
+	eeprom = eeprom_dev;
+	/* if i2c is NULL, device_is_ready will report false */
+	if (device_is_ready(i2c)) {
+		/* If the test is using I2C, configure it */
+		k_object_access_grant(i2c, k_current_get());
+		i2c_configure(i2c, I2C_MODE_CONTROLLER |
+				I2C_SPEED_SET(I2C_SPEED_STANDARD));
+	}
 
-ZTEST_SUITE(eeprom, NULL, eeprom_setup, NULL, NULL, NULL);
-
-/* Run all of our tests on the given EEPROM device */
-static void run_tests_on_eeprom(const struct device *dev)
-{
-	eeprom = dev;
-
-	printk("Running tests on device \"%s\"\n", eeprom->name);
-	k_object_access_grant(eeprom, k_current_get());
-	ztest_run_all(NULL);
+	ztest_test_suite(eeprom_api,
+			 ztest_user_unit_test(test_size),
+			 ztest_user_unit_test(test_out_of_bounds),
+			 ztest_user_unit_test(test_write_rewrite),
+			 ztest_user_unit_test(test_write_at_fixed_address),
+			 ztest_user_unit_test(test_write_byte),
+			 ztest_user_unit_test(test_write_at_increasing_address),
+			 ztest_user_unit_test(test_zero_length_write));
+	ztest_run_test_suite(eeprom_api);
 }
 
 void test_main(void)
 {
-	run_tests_on_eeprom(DEVICE_DT_GET(DT_ALIAS(eeprom_0)));
+	const struct device *i2c_eeprom_0;
+#ifdef DT_N_ALIAS_eeprom_1
+	const struct device *i2c_eeprom_1;
+#endif
 
-#if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom_1), okay)
-	run_tests_on_eeprom(DEVICE_DT_GET(DT_ALIAS(eeprom_1)));
-#endif /* DT_NODE_HAS_STATUS(DT_ALIAS(eeprom_1), okay) */
+	i2c_eeprom_0 = COND_CODE_1(DT_NODE_EXISTS(DT_BUS(DT_ALIAS(eeprom_0))),
+			(DEVICE_DT_GET(DT_BUS(DT_ALIAS(eeprom_0)))), (NULL));
+#ifdef DT_N_ALIAS_eeprom_1
+	i2c_eeprom_1 = COND_CODE_1(DT_NODE_EXISTS(DT_BUS(DT_ALIAS(eeprom_1))),
+			(DEVICE_DT_GET(DT_BUS(DT_ALIAS(eeprom_1)))), (NULL));
+#endif
 
-	ztest_verify_all_test_suites_ran();
+	run_tests_on_eeprom(DEVICE_DT_GET(DT_ALIAS(eeprom_0)), i2c_eeprom_0);
+
+#ifdef DT_N_ALIAS_eeprom_1
+	run_tests_on_eeprom(DEVICE_DT_GET(DT_ALIAS(eeprom_1)), i2c_eeprom_1);
+#endif
+
 }

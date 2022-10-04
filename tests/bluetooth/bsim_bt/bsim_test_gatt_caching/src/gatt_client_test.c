@@ -165,7 +165,6 @@ static void gatt_discover(const struct bt_uuid *uuid, uint8_t type)
 	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	discover_params.type = type;
-	discover_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	UNSET_FLAG(flag_discover_complete);
 
@@ -183,7 +182,6 @@ static struct bt_gatt_read_params chan_1_read = {
 		.handle = 0, /* Will be set later */
 		.offset = 0,
 	},
-	.chan_opt = BT_ATT_CHAN_OPT_NONE,
 };
 static struct bt_gatt_read_params chan_2_read = {
 	.handle_count = 1,
@@ -191,7 +189,6 @@ static struct bt_gatt_read_params chan_2_read = {
 		.handle = 0, /* Will be set later */
 		.offset = 0,
 	},
-	.chan_opt = BT_ATT_CHAN_OPT_NONE,
 };
 static struct bt_gatt_read_params db_hash_read = {
 	.handle_count = 0,
@@ -200,7 +197,6 @@ static struct bt_gatt_read_params db_hash_read = {
 		.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
 		.uuid = BT_UUID_GATT_DB_HASH,
 	},
-	.chan_opt = BT_ATT_CHAN_OPT_NONE,
 };
 
 void expect_status(uint8_t err, uint8_t status)
@@ -299,7 +295,6 @@ static void enable_robust_caching(void)
 		.offset = 0,
 		.data = csf,
 		.length = sizeof(csf),
-		.chan_opt = BT_ATT_CHAN_OPT_NONE,
 	};
 	int err;
 

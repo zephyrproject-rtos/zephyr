@@ -44,11 +44,11 @@
 #include <tinycrypt/cmac_mode.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/aes.h>
-#include <zephyr/test_utils.h>
+#include <test_utils.h>
 
 #include <stdio.h>
 #include <string.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #define BUF_LEN 16
 

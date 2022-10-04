@@ -10,10 +10,10 @@
  *
  */
 
-#include <zephyr/tc_util.h>
+#include <tc_util.h>
 #include <stdbool.h>
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
@@ -22,8 +22,7 @@ LOG_MODULE_REGISTER(user);
 /* Interfaces tested in these cases have been tested in kernel space.
  * Test cases in this file run in user space to improve test coverage
  */
-#ifdef CONFIG_USERSPACE
-ZTEST_USER(test_log_core_additional, test_log_from_user)
+void test_log_from_user(void)
 {
 	uint32_t cnt0, cnt1;
 	int d = 0;
@@ -38,7 +37,7 @@ ZTEST_USER(test_log_core_additional, test_log_from_user)
 }
 
 /* test log_hexdump_from_user() from user space */
-ZTEST_USER(test_log_core_additional, test_log_hexdump_from_user)
+void test_log_hexdump_from_user(void)
 {
 	int32_t data = 128;
 
@@ -57,7 +56,7 @@ static void call_log_generic(uint32_t source_id, const char *fmt, ...)
 }
 
 /* test log_generic() from user space */
-ZTEST_USER(test_log_core_additional, test_log_generic_user)
+void test_log_generic_user(void)
 {
 	uint32_t source_id = 0;
 
@@ -67,13 +66,13 @@ ZTEST_USER(test_log_core_additional, test_log_generic_user)
 }
 
 /* test log_filter_set from user space */
-ZTEST_USER(test_log_core_additional, test_log_filter_set)
+void test_log_filter_set(void)
 {
 	log_filter_set(NULL, CONFIG_LOG_DOMAIN_ID, 0, LOG_LEVEL_WRN);
 }
 
 /* test log_panic() from user space */
-ZTEST_USER(test_log_core_additional, test_log_panic)
+void test_log_panic(void)
 {
 	int d = 100;
 
@@ -82,5 +81,3 @@ ZTEST_USER(test_log_core_additional, test_log_panic)
 
 	log_panic();
 }
-
-#endif /** CONFIG_USERSPACE **/

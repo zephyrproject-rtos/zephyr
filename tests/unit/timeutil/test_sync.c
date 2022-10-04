@@ -7,7 +7,7 @@
 /* Tests for the time_sync data structures */
 
 #include <string.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include "timeutil_test.h"
 
 static const struct timeutil_sync_config cfg1 = {
@@ -426,7 +426,7 @@ static void test_skew_to_ppb(void)
 		      "unexpected above limit: %.10g %d", skew, ppb);
 }
 
-ZTEST(timeutil_api, test_sync)
+void test_sync(void)
 {
 	test_state_update();
 	test_state_set_skew();

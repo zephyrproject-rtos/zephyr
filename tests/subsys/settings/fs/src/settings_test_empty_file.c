@@ -9,7 +9,7 @@
 #include "settings/settings_file.h"
 #include <zephyr/fs/fs.h>
 
-ZTEST(settings_config_fs, test_config_empty_file)
+void test_config_empty_file(void)
 {
 	int rc;
 	struct settings_file cf_mfg;
@@ -34,7 +34,7 @@ ZTEST(settings_config_fs, test_config_empty_file)
 	settings_load();
 
 	rc = fs_mkdir(TEST_CONFIG_DIR);
-	zassert_true(rc == 0 || rc == -EEXIST, "can't create directory");
+	zassert_true(rc == 0, "can't create directory");
 
 	rc = fsutil_write_file(TEST_CONFIG_DIR"/mfg", cf_mfg_test,
 			       0);

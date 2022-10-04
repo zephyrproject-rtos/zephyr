@@ -5,7 +5,6 @@
 
 config GPIO_EOS_S3
 	bool "EOS_S3 GPIO driver"
-	default y
-	depends on DT_HAS_QUICKLOGIC_EOS_S3_GPIO_ENABLED
+	depends on EOS_S3_HAL
 	help
 	  Enable the EOS S3 gpio driver.

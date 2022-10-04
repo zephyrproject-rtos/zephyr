@@ -43,13 +43,15 @@ Connections and IOs
 
 BLE nano v2 pinout
 
-.. image:: nrf52_blenano2.jpg
+.. image:: ./nrf52_blenano2.png
+   :width: 680px
    :align: center
    :alt: NANO2
 
 DAPLink board
 
 .. image:: dap.jpg
+   :width: 680px
    :align: center
    :alt: DAP
 

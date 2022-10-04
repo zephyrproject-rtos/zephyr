@@ -12,7 +12,8 @@ Zephyr was ported to run on the M4 core. In a later release, it will also
 communicate with the A7 core (running Linux) via RPmsg.
 
 
-.. image:: warp7_m4.jpg
+.. image:: ./warp7_m4.png
+   :width: 470px
    :align: center
    :alt: WaRP7-iMX7S
 

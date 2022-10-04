@@ -22,7 +22,8 @@ F-antenna which can be bypassed to test via SMA connection, multiple power
 supply options, push/capacitive touch buttons, switches, LEDs and integrated
 sensors.
 
-.. image:: frdm_kw41z.jpg
+.. image:: ./frdm_kw41z.jpg
+   :width: 720px
    :align: center
    :alt: FRDM-KW41Z
 
@@ -82,11 +83,7 @@ The frdm_kw41z board configuration supports the following hardware features:
 |           |            | fxos8700 trigger                    |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | tpm                                 |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FTFA      | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
++--------------------------------------------------------------+
 
 The default configuration can be found in the defconfig file:
 

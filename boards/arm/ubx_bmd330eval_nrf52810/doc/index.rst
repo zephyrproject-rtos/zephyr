@@ -26,7 +26,8 @@ the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/BMD-30-33-35-36-EVAL.jpg
+.. figure:: img/BMD-30-33-35-36-EVAL.png
+	:width: 593px
 	:align: center
 	:alt: BMD-300-EVAL
 
@@ -121,7 +122,8 @@ Push buttons
 External Connectors
 -------------------
 
-.. figure:: img/bmd-300-eval_pin_out.jpg
+.. figure:: img/bmd-300-eval_pin_out.png
+	:width: 659px
 	:align: center
 	:alt: BMD-300-EVAL pin-out
 

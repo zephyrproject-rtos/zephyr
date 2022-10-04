@@ -12,7 +12,8 @@ Zephyr was ported to run on the M4 core. In a later release, it will also
 communicate with the A7 core (running Linux) via RPmsg.
 
 
-.. image:: colibri_imx7d_m4.jpg
+.. image:: ./colibri_imx7d_m4.png
+   :width: 720px
    :align: center
    :alt: Colibri-iMX7
 

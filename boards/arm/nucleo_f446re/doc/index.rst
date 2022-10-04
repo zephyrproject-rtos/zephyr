@@ -25,8 +25,10 @@ some highlights of the Nucleo F446RE board:
 - Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
 - Two push-buttons: USER and RESET
 
-.. image:: img/nucleo_f446re.jpg
+.. image:: img/nucleo_f446re.png
+   :width: 720px
    :align: center
+   :height: 720px
    :alt: Nucleo F446RE
 
 More information about the board can be found at the `Nucleo F446RE website`_.
@@ -105,17 +107,25 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo_f446re_arduino_top_left.jpg
+.. image:: img/nucleo_f446re_arduino_top_left.png
+   :width: 720px
    :align: center
+   :height: 540px
    :alt: Nucleo F446RE Arduino connectors (top left)
-.. image:: img/nucleo_f446re_arduino_top_right.jpg
+.. image:: img/nucleo_f446re_arduino_top_right.png
+   :width: 720px
    :align: center
+   :height: 540px
    :alt: Nucleo F446RE Arduino connectors (top right)
-.. image:: img/nucleo_f446re_morpho_top_left.jpg
+.. image:: img/nucleo_f446re_morpho_top_left.png
+   :width: 720px
    :align: center
+   :height: 540px
    :alt: Nucleo F446RE Morpho connectors (top left)
-.. image:: img/nucleo_f446re_morpho_top_right.jpg
+.. image:: img/nucleo_f446re_morpho_top_right.png
+   :width: 720px
    :align: center
+   :height: 540px
    :alt: Nucleo F446RE Morpho connectors (top right)
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.

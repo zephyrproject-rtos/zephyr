@@ -7,7 +7,7 @@
 
 #include "fcb_test.h"
 
-ZTEST(fcb_test_with_2sectors_set, test_fcb_append_too_big)
+void (test_fcb_append_too_big(void))
 {
 		struct fcb *fcb;
 		int rc;

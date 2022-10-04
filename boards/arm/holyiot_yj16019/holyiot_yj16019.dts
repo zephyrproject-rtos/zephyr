@@ -38,7 +38,6 @@
 	aliases {
 		sw0 = &button0;
 		led0 = &led0;
-		watchdog0 = &wdt0;
 	};
 };
 

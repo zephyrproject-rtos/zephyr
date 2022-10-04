@@ -41,8 +41,10 @@ Zephyr OS is ported to run on the Cortex®-M7 core.
     - JTAG connector
     - MicroUSB for UART debug, two COM ports for A53 and one for M7
 
-.. image:: img/I.MX8MPLUS-PLUS-EVK-TOP.jpg
+.. image:: img/I.MX8MPLUS-PLUS-EVK-TOP.png
+   :width: 720px
    :align: center
+   :height: 405px
    :alt: MIMX8MP EVK
 
 More information about the board can be found at the

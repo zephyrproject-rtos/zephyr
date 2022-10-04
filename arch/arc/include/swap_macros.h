@@ -62,9 +62,7 @@
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
 	STR r58, sp, ___callee_saved_stack_t_r58_OFFSET
-#ifndef CONFIG_64BIT
 	STR r59, sp, ___callee_saved_stack_t_r59_OFFSET
-#endif /* !CONFIG_64BIT */
 #endif
 
 #ifdef CONFIG_FPU_SHARING
@@ -100,9 +98,7 @@
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
 	LDR r58, sp, ___callee_saved_stack_t_r58_OFFSET
-#ifndef CONFIG_64BIT
 	LDR r59, sp, ___callee_saved_stack_t_r59_OFFSET
-#endif /* !CONFIG_64BIT */
 #endif
 
 #ifdef CONFIG_FPU_SHARING
@@ -416,15 +412,12 @@
 .macro _store_old_thread_callee_regs
 
 	_save_callee_saved_regs
-	/* Save old thread into switch handle which is required by wait_for_switch.
-	 * NOTE: we shouldn't save anything related to old thread context after this point!
-	 * TODO: we should add SMP write-after-write data memory barrier here, as we want all
-	 * previous writes completed before setting switch_handle which is polled by other cores
-	 * in wait_for_switch in case of SMP. Though it's not likely that this issue
-	 * will reproduce in real world as there is some gap before reading switch_handle and
-	 * reading rest of the data we've stored before.
+#ifdef CONFIG_SMP
+	/* save old thread into switch handle which is required by
+	 * wait_for_switch
 	 */
 	STR r2, r2, ___thread_t_switch_handle_OFFSET
+#endif
 .endm
 
 /* macro to store old thread call regs  in interrupt*/

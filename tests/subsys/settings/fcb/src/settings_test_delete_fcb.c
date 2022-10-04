@@ -7,15 +7,12 @@
 #include "settings_test.h"
 #include "settings/settings_fcb.h"
 
-ZTEST(settings_config_fcb, test_config_delete_fcb)
+void test_config_delete_fcb(void)
 {
 	int rc;
 	struct settings_fcb cf;
 
-	rc = settings_register(&c_test_handlers[0]);
-	zassert_true(rc == 0 || rc == -EEXIST, "settings_register fail");
 	config_wipe_srcs();
-	config_wipe_fcb(fcb_sectors, ARRAY_SIZE(fcb_sectors));
 
 	cf.cf_fcb.f_magic = CONFIG_SETTINGS_FCB_MAGIC;
 	cf.cf_fcb.f_sectors = fcb_sectors;
@@ -46,5 +43,4 @@ ZTEST(settings_config_fcb, test_config_delete_fcb)
 	rc = settings_load();
 	zassert_true(rc == 0, "fcb redout error");
 	zassert_true(val8 == 0x55, "bad value read");
-	settings_unregister(&c_test_handlers[0]);
 }

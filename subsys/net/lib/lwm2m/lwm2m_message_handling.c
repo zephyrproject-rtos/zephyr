@@ -172,8 +172,9 @@ static void free_block_ctx(struct lwm2m_block_context *ctx)
 	ctx->tkl = 0U;
 }
 
-void lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
+int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 {
+	int sock_fd = client_ctx->sock_fd;
 	struct lwm2m_message *msg;
 	sys_snode_t *obs_node;
 	struct observe_node *obs;
@@ -195,20 +196,26 @@ void lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 	coap_pendings_clear(client_ctx->pendings, ARRAY_SIZE(client_ctx->pendings));
 	coap_replies_clear(client_ctx->replies, ARRAY_SIZE(client_ctx->replies));
 
-
-	client_ctx->connection_suspended = false;
 #if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+	client_ctx->connection_suspended = false;
 	client_ctx->buffer_client_messages = true;
 #endif
+	lwm2m_socket_del(client_ctx);
+	client_ctx->sock_fd = -1;
+	if (sock_fd >= 0) {
+		return close(sock_fd);
+	} else {
+		return 0;
+	}
 }
 
 void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 {
 	sys_slist_init(&client_ctx->pending_sends);
 	sys_slist_init(&client_ctx->observer);
-	client_ctx->connection_suspended = false;
 #if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	client_ctx->buffer_client_messages = true;
+	client_ctx->connection_suspended = false;
 	sys_slist_init(&client_ctx->queued_messages);
 #endif
 }
@@ -618,7 +625,7 @@ static int select_writer(struct lwm2m_output_context *out, uint16_t accept)
 
 	default:
 		LOG_WRN("Unknown content type %u", accept);
-		return -ECANCELED;
+		return -ENOMSG;
 	}
 
 	return 0;
@@ -959,7 +966,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 	res_inst->data_len = len;
 
 	if (LWM2M_HAS_PERM(obj_field, LWM2M_PERM_R)) {
-		lwm2m_notify_observer_path(&msg->path);
+		NOTIFY_OBSERVER_PATH(&msg->path);
 	}
 
 	return ret;
@@ -1025,20 +1032,8 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm
 						res->res_instances[i].res_inst_id, &data_len);
 		}
 
-		if (!data_ptr && data_len) {
+		if (!data_ptr || data_len == 0) {
 			return -ENOENT;
-		}
-
-		if (!data_len) {
-			if (obj_field->data_type != LWM2M_RES_TYPE_OPAQUE &&
-			    obj_field->data_type != LWM2M_RES_TYPE_STRING) {
-				return -ENOENT;
-			}
-			/* Only opaque and string types can be empty, and when
-			 * empty, we should not give pointer to potentially uninitialized
-			 * data to a content formatter. Give pointer to empty string instead.
-			 */
-			data_ptr = "";
 		}
 
 		switch (obj_field->data_type) {
@@ -2100,8 +2095,6 @@ error:
 		msg->code = COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT;
 	} else if (r == -EACCES) {
 		msg->code = COAP_RESPONSE_CODE_UNAUTHORIZED;
-	} else if (r == -ECANCELED) {
-		msg->code = COAP_RESPONSE_CODE_NOT_ACCEPTABLE;
 	} else {
 		/* Failed to handle the request */
 		msg->code = COAP_RESPONSE_CODE_INTERNAL_ERROR;

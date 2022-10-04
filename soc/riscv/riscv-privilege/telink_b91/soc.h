@@ -9,4 +9,8 @@
 
 #include <soc_common.h>
 
+/* Machine timer memory-mapped registers */
+#define RISCV_MTIME_BASE             0xE6000000
+#define RISCV_MTIMECMP_BASE          0xE6000008
+
 #endif /* RISCV_TELINK_B91_SOC_H */

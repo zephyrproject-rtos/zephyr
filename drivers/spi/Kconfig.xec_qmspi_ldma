@@ -6,6 +6,6 @@
 config SPI_XEC_QMSPI_LDMA
 	bool "Microchip XEC QMSPI LDMA driver"
 	default y
-	depends on DT_HAS_MICROCHIP_XEC_QMSPI_LDMA_ENABLED
+	depends on SOC_SERIES_MEC172X
 	help
 	  Enable support for the Microchip XEC QMSPI with local DMA driver.

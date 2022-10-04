@@ -8,7 +8,7 @@
 #include "settings_test.h"
 #include "settings/settings_fcb.h"
 
-ZTEST(settings_config_fcb, test_config_empty_fcb)
+void test_config_empty_fcb(void)
 {
 	int rc;
 	struct settings_fcb cf;

@@ -13,7 +13,6 @@ import collections
 from collections import OrderedDict
 from itertools import islice
 import logging
-import copy
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -30,7 +29,7 @@ from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.testinstance import TestInstance
 
 
-from zephyr_module import parse_modules
+from zephyr_module import west_projects, parse_modules
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -97,7 +96,7 @@ class TestPlan:
         sub_tests = self.options.sub_test
         if sub_tests:
             for subtest in sub_tests:
-                _subtests = self.get_testsuite(subtest)
+                _subtests = self.get_testcase(subtest)
                 for _subtest in _subtests:
                     self.run_individual_testsuite.append(_subtest.name)
 
@@ -226,7 +225,10 @@ class TestPlan:
 
     def handle_modules(self):
         # get all enabled west projects
-        modules_meta = parse_modules(ZEPHYR_BASE)
+        west_proj = west_projects()
+        modules_meta = parse_modules(ZEPHYR_BASE,
+                                    [p.posixpath for p in west_proj['projects']]
+                                    if west_proj else None, None)
         self.modules = [module.meta.get('name') for module in modules_meta]
 
 
@@ -364,34 +366,6 @@ class TestPlan:
                         self.platforms.append(platform)
                         if platform.default:
                             self.default_platforms.append(platform.name)
-                        # support board@revision
-                        # if there is already an existed <board>_<revision>.yaml, then use it to
-                        # load platform directly, otherwise, iterate the directory to
-                        # get all valid board revision based on each <board>_<revision>.conf.
-                        if not "@" in platform.name:
-                            tmp_dir = os.listdir(os.path.dirname(file))
-                            for item in tmp_dir:
-                                # Need to make sure the revision matches
-                                # the permitted patterns as described in
-                                # cmake/modules/extensions.cmake.
-                                revision_patterns = ["[A-Z]",
-                                                     "[0-9]+",
-                                                     "(0|[1-9][0-9]*)(_[0-9]+)*(_[0-9]+)*"]
-
-                                for pattern in revision_patterns:
-                                    result = re.match(f"{platform.name}_(?P<revision>{pattern})\\.conf", item)
-                                    if result:
-                                        revision = result.group("revision")
-                                        yaml_file = f"{platform.name}_{revision}.yaml"
-                                        if yaml_file not in tmp_dir:
-                                            platform_revision = copy.deepcopy(platform)
-                                            revision = revision.replace("_", ".")
-                                            platform_revision.name = f"{platform.name}@{revision}"
-                                            platform_revision.default = False
-                                            self.platforms.append(platform_revision)
-
-                                        break
-
 
                 except RuntimeError as e:
                     logger.error("E: %s: can't load: %s" % (file, e))
@@ -403,7 +377,7 @@ class TestPlan:
         testcases = []
         for _, ts in self.testsuites.items():
             for case in ts.testcases:
-                testcases.append(case.name)
+                testcases.append(case)
 
         return testcases
 
@@ -477,7 +451,6 @@ class TestPlan:
                 plat = self.platform_names
             else:
                 plat = quar_dict['platforms']
-                self.verify_platforms_existence(plat, "quarantine-list")
             comment = quar_dict.get('comment', "NA")
             quarantine_list.append([{".".join([p, s]): comment}
                                    for p in plat for s in quar_dict['scenarios']])
@@ -804,7 +777,7 @@ class TestPlan:
         results = []
         for _, ts in self.testsuites.items():
             for case in ts.testcases:
-                if case.name == identifier:
+                if case == identifier:
                     results.append(ts)
         return results
 
@@ -816,7 +789,7 @@ class TestPlan:
         """
         for platform in platform_names_to_verify:
             if platform in self.platform_names:
-                continue
+                break
             else:
                 logger.error(f"{log_info} - unrecognized platform - {platform}")
                 sys.exit(2)

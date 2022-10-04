@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-#include <zephyr/tc_util.h>
+#include <ztest.h>
+#include <tc_util.h>
 
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usb_device.h>
@@ -203,7 +203,7 @@ static void check_endpoint_allocation(struct usb_desc_header *head)
  */
 #define SYMBOL_SPAN(_ep, _sp) (int)(intptr_t)((uintptr_t)(_ep) - (uintptr_t)(_sp))
 
-ZTEST(desc_sections, test_desc_sections)
+static void test_desc_sections(void)
 {
 	struct usb_desc_header *head;
 
@@ -245,4 +245,9 @@ ZTEST(desc_sections, test_desc_sections)
 }
 
 /*test case main entry*/
-ZTEST_SUITE(desc_sections, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(test_desc,
+			 ztest_unit_test(test_desc_sections));
+	ztest_run_test_suite(test_desc);
+}

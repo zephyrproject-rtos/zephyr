@@ -5,9 +5,7 @@
 
 menuconfig ETH_ENC424J600
 	bool "ENC424J600C Ethernet Controller"
-	default y
-	depends on DT_HAS_MICROCHIP_ENC424J600_ENABLED
-	select SPI
+	depends on SPI
 	help
 	  ENC424J600C Stand-Alone Ethernet Controller
 	  with SPI Interface

@@ -11,10 +11,14 @@ with a wide range of connectivity support and configurations. There are
 multiple version of this board like ``stm32f103_mini``.
 
 .. image:: img/stm32f103_mini_yellow.jpg
+   :width: 500px
+   :height: 367px
    :align: center
    :alt: STM32F103 Mini Yellow
 
 .. image:: img/stm32f103_mini_blue.jpg
+   :width: 500px
+   :height: 367px
    :align: center
    :alt: STM32F103 Mini Blue
 
@@ -90,7 +94,9 @@ capable except for analog inputs.
 Board connectors:
 -----------------
 .. image:: img/stm32f103_mini_pin.jpg
+   :width: 800px
    :align: center
+   :height: 619px
    :alt: Nucleo F103RB connectors
 
 Default Zephyr Peripheral Mapping:

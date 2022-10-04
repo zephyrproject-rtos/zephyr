@@ -7,6 +7,9 @@ include: [gpio-controller.yaml, base.yaml]
 on-bus: lmp90xxx
 
 properties:
+    label:
+      required: true
+
     "#gpio-cells":
       const: 2
 

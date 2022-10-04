@@ -2,7 +2,6 @@
 
 zephyr_library()
 
-zephyr_library_sources(addr.c)
 zephyr_library_sources(dummy.c)
 zephyr_library_sources(log.c)
 

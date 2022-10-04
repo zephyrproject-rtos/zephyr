@@ -9,7 +9,8 @@ Overview
 The SAM4S Xplained evaluation kit is a development platform to evaluate the
 Atmel SAM4S series microcontrollers.
 
-.. image:: img/sam4s_xplained.jpg
+.. image:: img/sam4s_xplained.png
+     :width: 500px
      :align: center
      :alt: SAM4S Xplained
 
@@ -53,8 +54,6 @@ features:
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| SMC       | on-chip    | memc (PSRAM)                        |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.

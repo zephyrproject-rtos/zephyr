@@ -14,7 +14,7 @@
  *		_R : Is a file that contains the receiver task
  *			 of a benchmark function
  */
-#include <zephyr/tc_util.h>
+#include <tc_util.h>
 #include "master.h"
 
 char msg[MAX_MSG];

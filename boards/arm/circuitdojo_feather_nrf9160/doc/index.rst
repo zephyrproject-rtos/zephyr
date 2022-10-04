@@ -3,7 +3,8 @@
 nRF9160 Feather
 ###############
 
-.. figure:: img/circuitdojo_feather_nrf9160.jpg
+.. figure:: img/circuitdojo_feather_nrf9160.png
+     :width: 711px
      :align: center
      :alt: Circuit Dojo nRF9160 Feather
 
@@ -39,7 +40,8 @@ More information about the board can be found at the
 Hardware
 ********
 
-.. figure:: img/nrf9160-feather-v31-features.jpg
+.. figure:: img/nrf9160-feather-v31-features.png
+   :width: 711px
    :align: center
    :alt: nRF9160 Feather Features
 

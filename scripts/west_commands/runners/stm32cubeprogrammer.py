@@ -11,7 +11,6 @@ from pathlib import Path
 import platform
 import os
 import shlex
-import shutil
 from typing import List, Optional, ClassVar, Dict
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps, RunnerConfig
@@ -64,10 +63,6 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         """Obtain path of the STM32CubeProgrammer CLI tool."""
 
         if platform.system() == "Linux":
-            cmd = shutil.which("STM32_Programmer_CLI")
-            if cmd is not None:
-                return Path(cmd)
-
             return (
                 Path.home()
                 / "STMicroelectronics"
@@ -112,7 +107,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={"flash"}, erase=True, tool_opt=True)
+        return RunnerCaps(commands={"flash"}, erase=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -150,10 +145,12 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             required=False,
             help="Use ELF file when flashing instead of HEX file",
         )
-
-    @classmethod
-    def tool_opt_help(cls) -> str:
-        return "Additional options for STM32_Programmer_CLI"
+        parser.add_argument(
+            "--tool-opt",
+            default=[],
+            action="append",
+            help="Additional options for STM32_Programmer_CLI",
+        )
 
     @classmethod
     def do_create(

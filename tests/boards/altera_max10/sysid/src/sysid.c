@@ -5,11 +5,11 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include "altera_avalon_sysid.h"
 
-ZTEST(nios2_sysid, test_sysid)
+void test_sysid(void)
 {
 	int32_t sysid, status = TC_FAIL;
 
@@ -26,4 +26,9 @@ ZTEST(nios2_sysid, test_sysid)
 	zassert_equal(status, TC_PASS, "SysID test failed");
 }
 
-ZTEST_SUITE(nios2_sysid, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(nios2_sysid_test_suite,
+			ztest_unit_test(test_sysid));
+	ztest_run_test_suite(nios2_sysid_test_suite);
+}

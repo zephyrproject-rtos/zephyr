@@ -272,9 +272,7 @@ SECTION_FUNC(TEXT, _isr_demux)
 	PUSHR r30
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
 	PUSHR r58
-#ifndef CONFIG_64BIT
 	PUSHR r59
-#endif /* !CONFIG_64BIT */
 #endif
 
 #ifdef CONFIG_SCHED_THREAD_USAGE
@@ -312,9 +310,7 @@ irq_hint_handled:
 #endif
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
-#ifndef CONFIG_64BIT
 	POPR r59
-#endif /* !CONFIG_64BIT */
 	POPR r58
 #endif
 

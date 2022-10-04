@@ -512,7 +512,7 @@ do {							                \
 		    DT_INST_IRQ_BY_IDX(0, n, priority),			\
 		    gpio_lpc11u6x_isr, &gpio_lpc11u6x_shared, 0);	\
 	irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));			\
-} while (false)
+} while (0)
 
 static int gpio_lpc11u6x_init(const struct device *dev)
 {
@@ -523,10 +523,6 @@ static int gpio_lpc11u6x_init(const struct device *dev)
 	/* Initialize shared resources only once. */
 	if (gpio_ready) {
 		return 0;
-	}
-
-	if (!device_is_ready(config->shared->clock_dev)) {
-		return -ENODEV;
 	}
 
 	/* Enable GPIO and PINT clocks. */

@@ -7,6 +7,6 @@
  */
 
 #include <zephyr/types.h>
-#include <zephyr/bluetooth/conn.h>
+#include <bluetooth/conn.h>
 
 bool bt_cap_acceptor_ccid_exist(const struct bt_conn *conn, uint8_t ccid);

@@ -24,8 +24,8 @@
 #include <errno.h>
 
 #include <zephyr/sys/printk.h>
-#include <zephyr/tc_util.h>
-#include <zephyr/ztest.h>
+#include <tc_util.h>
+#include <ztest.h>
 
 static
 struct http_parser_settings settings_null = {
@@ -572,7 +572,7 @@ const struct url_test url_tests[] = {
 #endif
 };
 
-ZTEST(http_header_fields_fn, test_preserve_data)
+void test_preserve_data(void)
 {
 	struct http_parser parser = { 0 };
 	char my_data[] = "application-specific data";
@@ -584,7 +584,7 @@ ZTEST(http_header_fields_fn, test_preserve_data)
 	zassert_equal(parser.data, my_data, "test_preserve_data error");
 }
 
-ZTEST(http_header_fields_fn, test_parse_url)
+void test_parse_url(void)
 {
 	struct http_parser_url u;
 	const struct url_test *test;
@@ -616,7 +616,7 @@ ZTEST(http_header_fields_fn, test_parse_url)
 	}
 }
 
-ZTEST(http_header_fields_fn, test_method_str)
+void test_method_str(void)
 {
 	/**TESTPOINT: Check test_method_str function*/
 	zassert_false(strcmp("GET", http_method_str(HTTP_GET)),
@@ -625,7 +625,7 @@ ZTEST(http_header_fields_fn, test_method_str)
 			"http_method_str error");
 }
 
-ZTEST(http_header_fields_fn, test_header_nread_value)
+void test_header_nread_value(void)
 {
 	struct http_parser parser = { 0 };
 	const char *buf;
@@ -821,7 +821,7 @@ int test_header_cr_no_lf_error(int req)
 	return TC_FAIL;
 }
 
-ZTEST(http_header_fields_fn, test_http_header_fields)
+void test_http_header_fields(void)
 {
 	int rc;
 
@@ -877,4 +877,14 @@ ZTEST(http_header_fields_fn, test_http_header_fields)
 	zassert_false(rc, "test_invalid_header_field_content_error failed");
 }
 
-ZTEST_SUITE(http_header_fields_fn, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(test_http_header_fields_fn,
+		ztest_unit_test(test_preserve_data),
+		ztest_unit_test(test_parse_url),
+		ztest_unit_test(test_method_str),
+		ztest_unit_test(test_header_nread_value),
+		ztest_unit_test(test_http_header_fields)
+		);
+	ztest_run_test_suite(test_http_header_fields_fn);
+}

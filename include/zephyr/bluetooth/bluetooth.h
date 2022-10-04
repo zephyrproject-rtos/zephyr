@@ -37,6 +37,8 @@ extern "C" {
  */
 
 /**
+ * @def BT_ID_DEFAULT
+ *
  * Convenience macro for specifying the default identity. This helps
  * make the code more readable, especially when only one identity is
  * supported.
@@ -662,13 +664,6 @@ enum {
 	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
 	 */
 	BT_LE_PER_ADV_OPT_USE_TX_POWER = BIT(1),
-
-	/**
-	 * @brief Advertise with included AdvDataInfo (ADI).
-	 *
-	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
-	 */
-	BT_LE_PER_ADV_OPT_INCLUDE_ADI = BIT(2),
 };
 
 struct bt_le_per_adv_param {

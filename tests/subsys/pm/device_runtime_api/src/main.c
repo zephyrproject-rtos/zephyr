@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
@@ -32,7 +32,7 @@ static void get_runner(void *arg1, void *arg2, void *arg3)
 	zassert_equal(ret, 0, NULL);
 }
 
-void test_api_setup(void *data)
+static void test_api_setup(void)
 {
 	int ret;
 	enum pm_device_state state;
@@ -57,7 +57,7 @@ void test_api_setup(void *data)
 	zassert_equal(ret, 0, NULL);
 }
 
-static void test_api_teardown(void *data)
+static void test_api_teardown(void)
 {
 	int ret;
 	enum pm_device_state state;
@@ -86,7 +86,7 @@ static void test_api_teardown(void *data)
  * - get + asynchronous put until suspended
  * - get + asynchronous put + get (while suspend still ongoing)
  */
-ZTEST(device_runtime_api, test_api)
+static void test_api(void)
 {
 	int ret;
 	enum pm_device_state state;
@@ -225,9 +225,9 @@ static int pm_unsupported_init(const struct device *dev)
 DEVICE_DEFINE(pm_unsupported_device, "PM Unsupported", pm_unsupported_init,
 	      NULL, NULL, NULL, APPLICATION, 0, NULL);
 
-ZTEST(device_runtime_api, test_unsupported)
+static void test_unsupported(void)
 {
-	const struct device *const dev = DEVICE_GET(pm_unsupported_device);
+	const struct device *dev = DEVICE_GET(pm_unsupported_device);
 
 	zassert_false(pm_device_runtime_is_enabled(dev), "");
 	zassert_equal(pm_device_runtime_enable(dev), -ENOTSUP, "");
@@ -236,12 +236,15 @@ ZTEST(device_runtime_api, test_unsupported)
 	zassert_equal(pm_device_runtime_put(dev), -ENOTSUP, "");
 }
 
-void *device_runtime_api_setup(void)
+void test_main(void)
 {
 	dev = device_get_binding("test_driver");
 	zassert_not_null(dev, NULL);
-	return NULL;
-}
 
-ZTEST_SUITE(device_runtime_api, NULL, device_runtime_api_setup,
-			test_api_setup, test_api_teardown, NULL);
+	ztest_test_suite(device_runtime_api,
+			 ztest_unit_test_setup_teardown(test_api,
+							test_api_setup,
+							test_api_teardown),
+			 ztest_unit_test(test_unsupported));
+	ztest_run_test_suite(device_runtime_api);
+}

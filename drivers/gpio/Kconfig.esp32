@@ -5,7 +5,6 @@
 
 config GPIO_ESP32
 	bool "ESP32 GPIO"
-	default y
-	depends on DT_HAS_ESPRESSIF_ESP32_GPIO_ENABLED
+	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
 	help
 	  Enables the ESP32 GPIO driver

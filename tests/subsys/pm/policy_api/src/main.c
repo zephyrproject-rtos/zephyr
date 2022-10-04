@@ -7,14 +7,14 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys_clock.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #ifdef CONFIG_PM_POLICY_DEFAULT
 /**
  * @brief Test the behavior of pm_policy_next_state() when
  * CONFIG_PM_POLICY_DEFAULT=y.
  */
-ZTEST(policy_api, test_pm_policy_next_state_default)
+static void test_pm_policy_next_state_default(void)
 {
 	const struct pm_state_info *next;
 
@@ -61,7 +61,7 @@ ZTEST(policy_api, test_pm_policy_next_state_default)
  * @brief Test the behavior of pm_policy_next_state() when
  * states are allowed/disallowed and CONFIG_PM_POLICY_DEFAULT=y.
  */
-ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
+static void test_pm_policy_next_state_default_allowed(void)
 {
 	bool active;
 	const struct pm_state_info *next;
@@ -129,8 +129,8 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
 }
 
-/** Flag to indicate number of times callback has been called */
-static uint8_t latency_cb_call_cnt;
+/** Flag to indicate if latency callback has been called */
+static bool latency_cb_called;
 /** Flag to indicate expected latency */
 static int32_t expected_latency;
 
@@ -143,17 +143,16 @@ static void on_pm_policy_latency_changed(int32_t latency)
 
 	zassert_equal(latency, expected_latency, NULL);
 
-	latency_cb_call_cnt++;
+	latency_cb_called = true;
 }
 
 /**
  * @brief Test the behavior of pm_policy_next_state() when
  * latency requirements are imposed and CONFIG_PM_POLICY_DEFAULT=y.
  */
-ZTEST(policy_api, test_pm_policy_next_state_default_latency)
+static void test_pm_policy_next_state_default_latency(void)
 {
 	struct pm_policy_latency_request req1, req2;
-	struct pm_policy_latency_subscription sreq1, sreq2;
 	const struct pm_state_info *next;
 
 	/* add a latency requirement with a maximum value below the
@@ -212,50 +211,46 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM, NULL);
 
 	/* get notified when latency requirement changes */
-	pm_policy_latency_changed_subscribe(&sreq1, on_pm_policy_latency_changed);
-	pm_policy_latency_changed_subscribe(&sreq2, on_pm_policy_latency_changed);
+	pm_policy_latency_changed(on_pm_policy_latency_changed);
 
 	/* add new request (expected notification) */
-	latency_cb_call_cnt = 0;
+	latency_cb_called = false;
 	expected_latency = 10000;
 	pm_policy_latency_request_add(&req1, 10000);
-	zassert_equal(latency_cb_call_cnt, 2, NULL);
+	zassert_true(latency_cb_called, NULL);
 
-	/* update request (expected notification, but only sreq1) */
-	pm_policy_latency_changed_unsubscribe(&sreq2);
-
-	latency_cb_call_cnt = 0;
+	/* update request (expected notification) */
+	latency_cb_called = false;
 	expected_latency = 50000;
 	pm_policy_latency_request_update(&req1, 50000);
-	zassert_equal(latency_cb_call_cnt, 1, NULL);
+	zassert_true(latency_cb_called, NULL);
 
 	/* add a new request, with higher value (no notification, previous
 	 * prevails)
 	 */
-	latency_cb_call_cnt = 0;
+	latency_cb_called = false;
 	pm_policy_latency_request_add(&req2, 60000);
-	zassert_equal(latency_cb_call_cnt, 0, NULL);
+	zassert_false(latency_cb_called, NULL);
 
 	pm_policy_latency_request_remove(&req2);
-	zassert_equal(latency_cb_call_cnt, 0, NULL);
+	zassert_false(latency_cb_called, NULL);
 
 	/* remove first request, we no longer have latency requirements */
 	expected_latency = SYS_FOREVER_US;
 	pm_policy_latency_request_remove(&req1);
-	zassert_equal(latency_cb_call_cnt, 1, NULL);
+	zassert_true(latency_cb_called, NULL);
 }
 #else
-ZTEST(policy_api, test_pm_policy_next_state_default)
+static void test_pm_policy_next_state_default(void)
 {
 	ztest_test_skip();
 }
 
-ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
+static void test_pm_policy_next_state_default_allowed(void)
 {
 	ztest_test_skip();
 }
-
-ZTEST(policy_api, test_pm_policy_next_state_default_latency)
+static void test_pm_policy_next_state_default_latency(void)
 {
 	ztest_test_skip();
 }
@@ -276,7 +271,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
  * @brief Test that a custom policy can be implemented when
  * CONFIG_PM_POLICY_CUSTOM=y.
  */
-ZTEST(policy_api, test_pm_policy_next_state_custom)
+static void test_pm_policy_next_state_custom(void)
 {
 	const struct pm_state_info *next;
 
@@ -284,10 +279,18 @@ ZTEST(policy_api, test_pm_policy_next_state_custom)
 	zassert_equal(next->state, PM_STATE_SOFT_OFF, NULL);
 }
 #else
-ZTEST(policy_api, test_pm_policy_next_state_custom)
+static void test_pm_policy_next_state_custom(void)
 {
 	ztest_test_skip();
 }
 #endif /* CONFIG_PM_POLICY_CUSTOM */
 
-ZTEST_SUITE(policy_api, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(policy_api,
+			 ztest_unit_test(test_pm_policy_next_state_default),
+			 ztest_unit_test(test_pm_policy_next_state_default_allowed),
+			 ztest_unit_test(test_pm_policy_next_state_default_latency),
+			 ztest_unit_test(test_pm_policy_next_state_custom));
+	ztest_run_test_suite(policy_api);
+}

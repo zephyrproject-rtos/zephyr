@@ -16,6 +16,8 @@ Extension headers make it easy to connect a daughterboard or wrapping board for 
 application.
 
 .. image:: img/stm3210c_eval.jpg
+     :width: 660px
+     :height: 792px
      :align: center
      :alt: STM3210C-EVAL
 
@@ -93,7 +95,9 @@ capable except for analog inputs.
 
 Board connectors:
 -----------------
-.. image:: img/stm3210c_eval_connectors.jpg
+.. image:: img/stm3210c_eval_connectors.png
+     :width: 966px
+     :height: 1017px
      :align: center
      :alt: STM3210C_EVAL connectors
 

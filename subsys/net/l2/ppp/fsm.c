@@ -382,6 +382,7 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	struct ppp_packet ppp;
 	struct net_pkt *pkt = NULL;
 	int ret;
+	struct ppp_context *ctx = ppp_fsm_ctx(fsm);
 
 	if (!iface) {
 		if (!fsm) {
@@ -396,13 +397,10 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	}
 
 	switch (type) {
-	case PPP_CODE_REJ: {
-		struct ppp_context *ctx = ppp_fsm_ctx(fsm);
-
+	case PPP_CODE_REJ:
 		len = net_pkt_get_len(req_pkt);
 		len = MIN(len, ctx->lcp.my_options.mru);
 		break;
-	}
 
 	case PPP_CONFIGURE_ACK:
 	case PPP_CONFIGURE_NACK:

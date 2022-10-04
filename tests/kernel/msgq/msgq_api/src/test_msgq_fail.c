@@ -48,7 +48,7 @@ static void get_fail(struct k_msgq *q)
  * @brief Test returned error code during writing in msgq
  * @see k_msgq_init()
  */
-ZTEST(msgq_api_1cpu, test_msgq_put_fail)
+void test_msgq_put_fail(void)
 {
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
 	put_fail(&msgq);
@@ -59,7 +59,7 @@ ZTEST(msgq_api_1cpu, test_msgq_put_fail)
  * @brief Test returned error code during writing in msgq
  * @see k_msgq_alloc_init()
  */
-ZTEST_USER(msgq_api, test_msgq_user_put_fail)
+void test_msgq_user_put_fail(void)
 {
 	struct k_msgq *q;
 
@@ -74,7 +74,7 @@ ZTEST_USER(msgq_api, test_msgq_user_put_fail)
  * @brief Test returned error code during reading from msgq
  * @see k_msgq_init(), k_msgq_put()
  */
-ZTEST(msgq_api_1cpu, test_msgq_get_fail)
+void test_msgq_get_fail(void)
 {
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
 	get_fail(&msgq);
@@ -85,7 +85,7 @@ ZTEST(msgq_api_1cpu, test_msgq_get_fail)
  * @brief Test returned error code during reading from msgq
  * @see k_msgq_alloc_init(), k_msgq_get()
  */
-ZTEST_USER(msgq_api, test_msgq_user_get_fail)
+void test_msgq_user_get_fail(void)
 {
 	struct k_msgq *q;
 

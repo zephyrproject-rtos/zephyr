@@ -27,6 +27,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <26 3>;
 			status = "disabled";
+			label = "SPI_2";
 		};
 
 		/*
@@ -41,6 +42,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
 			interrupts = <29 0>;
 			status = "disabled";
+			label = "UART_3";
 		};
 
 		usart4: serial@40004c00 {
@@ -49,6 +51,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
 			interrupts = <29 0>;
 			status = "disabled";
+			label = "UART_4";
 		};
 
 		usart5: serial@40005000 {
@@ -57,6 +60,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
 			interrupts = <29 0>;
 			status = "disabled";
+			label = "UART_5";
 		};
 
 		usart6: serial@40011400 {
@@ -65,6 +69,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
 			interrupts = <29 0>;
 			status = "disabled";
+			label = "UART_6";
 		};
 	};
 };

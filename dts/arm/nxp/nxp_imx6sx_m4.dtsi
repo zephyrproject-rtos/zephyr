@@ -32,29 +32,34 @@
 	tcml:memory@1fff8000 {
 		compatible = "nxp,imx-itcm";
 		reg = <0x1fff8000 DT_SIZE_K(32)>;
+		label = "TCML";
 	};
 
 	tcmu:memory@20000000 {
 		compatible = "nxp,imx-dtcm";
 		reg = <0x20000000 DT_SIZE_K(32)>;
+		label = "TCMU";
 	};
 
 	ocram_s:memory@208f8000 {
 		device_type = "memory";
 		compatible = "nxp,imx-sys-bus";
 		reg = <0x208f8000 DT_SIZE_K(16)>;
+		label = "OCRAM_S";
 	};
 
 	ocram:memory@20900000 {
 		device_type = "memory";
 		compatible = "nxp,imx-sys-bus";
 		reg = <0x20900000 DT_SIZE_K(128)>;
+		label = "OCRAM";
 	};
 
 	ddr:memory@80000000 {
 		device_type = "memory";
 		compatible = "nxp,imx-sys-bus";
 		reg = <0x80000000 0x60000000>;
+		label = "DDR";
 	};
 
 	flash:memory@DT_FLASH_ADDR {
@@ -75,6 +80,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "UART_1";
 			status = "disabled";
 		};
 
@@ -86,6 +92,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "UART_2";
 			status = "disabled";
 		};
 
@@ -97,6 +104,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "UART_3";
 			status = "disabled";
 		};
 
@@ -108,6 +116,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "UART_4";
 			status = "disabled";
 		};
 
@@ -119,6 +128,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "UART_5";
 			status = "disabled";
 		};
 
@@ -130,6 +140,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "UART_6";
 			status = "disabled";
 		};
 
@@ -141,6 +152,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -154,6 +166,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -167,6 +180,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -180,6 +194,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -193,6 +208,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "GPIO_5";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -206,6 +222,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "GPIO_6";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -219,6 +236,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "GPIO_7";
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -232,6 +250,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "MU_B";
 			status = "disabled";
 		};
 
@@ -244,6 +263,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "EPIT_1";
 			status = "disabled";
 		};
 
@@ -267,6 +287,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "EPIT_2";
 			status = "disabled";
 		};
 
@@ -281,6 +302,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "I2C_1";
 			status = "disabled";
 		};
 
@@ -295,6 +317,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "I2C_2";
 			status = "disabled";
 		};
 
@@ -309,6 +332,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "I2C_3";
 			status = "disabled";
 		};
 
@@ -323,6 +347,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "I2C_4";
 			status = "disabled";
 		};
 
@@ -334,6 +359,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_1";
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -347,6 +373,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_2";
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -360,6 +387,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_3";
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -373,6 +401,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_4";
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -387,6 +416,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_5";
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -400,6 +430,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_6";
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -413,6 +444,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_7";
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -426,6 +458,7 @@
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_8";
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";

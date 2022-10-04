@@ -6,7 +6,6 @@ Bluetooth APIs
 .. toctree::
    :maxdepth: 1
 
-   att.rst
    audio.rst
    connection_mgmt.rst
    controller.rst

@@ -1,10 +1,11 @@
 # Copyright (c) 2021, Thomas Stranger
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_VND_SERIAL := vnd,serial
+
 # Hidden option to enable the vnd,serial dummy driver used in testing.
 config SERIAL_TEST
-	def_bool DT_HAS_VND_SERIAL_ENABLED
-	depends on DT_HAS_VND_SERIAL_ENABLED
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_VND_SERIAL))
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select SERIAL_SUPPORT_ASYNC

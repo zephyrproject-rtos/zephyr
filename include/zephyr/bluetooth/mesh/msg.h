@@ -29,14 +29,16 @@ extern "C" {
 /** Length of a long Mesh MIC. */
 #define BT_MESH_MIC_LONG 8
 
-/**
+/** @def BT_MESH_MODEL_OP_LEN
+ *
  *  @brief Helper to determine the length of an opcode.
  *
  *  @param _op Opcode.
  */
 #define BT_MESH_MODEL_OP_LEN(_op) ((_op) <= 0xff ? 1 : (_op) <= 0xffff ? 2 : 3)
 
-/**
+/** @def BT_MESH_MODEL_BUF_LEN
+ *
  *  @brief Helper for model message buffer length.
  *
  *  Returns the length of a Mesh model message buffer, including the opcode
@@ -48,7 +50,8 @@ extern "C" {
 #define BT_MESH_MODEL_BUF_LEN(_op, _payload_len)                               \
 	(BT_MESH_MODEL_OP_LEN(_op) + (_payload_len) + BT_MESH_MIC_SHORT)
 
-/**
+/** @def BT_MESH_MODEL_BUF_LEN_LONG_MIC
+ *
  *  @brief Helper for model message buffer length.
  *
  *  Returns the length of a Mesh model message buffer, including the opcode
@@ -60,7 +63,8 @@ extern "C" {
 #define BT_MESH_MODEL_BUF_LEN_LONG_MIC(_op, _payload_len)                      \
 	(BT_MESH_MODEL_OP_LEN(_op) + (_payload_len) + BT_MESH_MIC_LONG)
 
-/**
+/** @def BT_MESH_MODEL_BUF_DEFINE
+ *
  *  @brief Define a Mesh model message buffer using @ref NET_BUF_SIMPLE_DEFINE.
  *
  *  @param _buf         Buffer name.

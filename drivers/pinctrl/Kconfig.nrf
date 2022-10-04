@@ -3,8 +3,8 @@
 
 config PINCTRL_NRF
 	bool "nRF pin controller driver"
-	default y
-	depends on DT_HAS_NORDIC_NRF_PINCTRL_ENABLED
+	depends on SOC_FAMILY_NRF
 	select PINCTRL_STORE_REG
+	default y
 	help
 	  nRF pin controller driver

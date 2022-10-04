@@ -13,6 +13,7 @@ tests:
       type: multi_line
       ordered: true
       regex:
+        - "Found device \\S+"
         - "Testing LED \\d+"
         - "Turned on"
         - "Turned off"

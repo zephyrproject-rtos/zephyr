@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/init.h>
+#include <drivers/gpio.h>
+#include <init.h>
 
 static int board_swan_init(const struct device *dev)
 {

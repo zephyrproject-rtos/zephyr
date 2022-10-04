@@ -8,8 +8,7 @@
 
 from west.commands import WestCommand
 
-from run_common import add_parser_common, do_run_common, get_build_dir
-from build_helpers import load_domains
+from run_common import add_parser_common, do_run_common
 
 
 class Flash(WestCommand):
@@ -27,6 +26,4 @@ class Flash(WestCommand):
         return add_parser_common(self, parser_adder)
 
     def do_run(self, my_args, runner_args):
-        build_dir = get_build_dir(my_args)
-        domains = load_domains(build_dir).get_domains(my_args.domain)
-        do_run_common(self, my_args, runner_args, domains=domains)
+        do_run_common(self, my_args, runner_args)

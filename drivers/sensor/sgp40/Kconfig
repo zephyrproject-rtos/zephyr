@@ -5,8 +5,6 @@
 
 config SGP40
 	bool "SGP40 Multipixel Gas Sensor"
-	default y
-	depends on DT_HAS_SENSIRION_SGP40_ENABLED
-	select I2C
+	depends on I2C
 	help
 	  Enable driver for SGP40 Multipixel Gas Sensor.

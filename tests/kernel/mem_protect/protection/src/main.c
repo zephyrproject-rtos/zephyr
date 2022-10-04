@@ -8,7 +8,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>

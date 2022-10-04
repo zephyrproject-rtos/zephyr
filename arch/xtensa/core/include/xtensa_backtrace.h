@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_ARCH_XTENSA_CORE_INCLUDE_XTENSA_BACKTRACE_H_
-#define ZEPHYR_ARCH_XTENSA_CORE_INCLUDE_XTENSA_BACKTRACE_H_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,5 +94,3 @@ int z_xtensa_backtrace_print(int depth, int *interrupted_stack);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* ZEPHYR_ARCH_XTENSA_CORE_INCLUDE_XTENSA_BACKTRACE_H_ */

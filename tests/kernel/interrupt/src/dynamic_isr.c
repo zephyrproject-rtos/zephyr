@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-#include <zephyr/interrupt_util.h>
+#include <ztest.h>
+#include <interrupt_util.h>
 
 #define ISR_DYN_ARG	0xab249cfd
 

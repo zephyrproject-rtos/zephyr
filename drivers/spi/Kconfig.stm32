@@ -5,8 +5,7 @@
 
 menuconfig SPI_STM32
 	bool "STM32 MCU SPI controller driver"
-	default y
-	depends on DT_HAS_ST_STM32_SPI_ENABLED
+	depends on SOC_FAMILY_STM32
 	select USE_STM32_LL_SPI
 	help
 	  Enable SPI support on the STM32 family of processors.

@@ -307,7 +307,7 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 			    DEVICE_DT_INST_GET(n), 0); \
 \
 		irq_enable(DT_INST_IRQN(n)); \
-	} while (false)
+	} while (0)
 
 #define GPIO_LITEX_INIT(n) \
 	static int gpio_litex_port_init_##n(const struct device *dev); \

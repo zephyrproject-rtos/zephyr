@@ -4,16 +4,14 @@
  */
 
 const DB_FILE = 'kconfig.json';
-const RESULTS_PER_PAGE_OPTIONS = [10, 25, 50];
+const MAX_RESULTS = 10;
 
 /* search state */
 let db;
 let searchOffset;
-let maxResults = RESULTS_PER_PAGE_OPTIONS[0];
 
 /* elements */
 let input;
-let searchTools;
 let summaryText;
 let results;
 let navigation;
@@ -284,32 +282,20 @@ function doSearch() {
 
     /* nothing to search for */
     if (!input.value) {
+        summaryText.nodeValue = '';
         results.replaceChildren();
         navigation.style.visibility = 'hidden';
-        searchTools.style.visibility = 'hidden';
         return;
     }
 
     /* perform search */
-    const regexes = input.value.trim().split(/\s+/).map(
-        element => new RegExp(element.toLowerCase())
-    );
+    let pattern = new RegExp(input.value, 'i');
     let count = 0;
 
     const searchResults = db.filter(entry => {
-        let matches = 0;
-        const name = entry.name.toLowerCase();
-        const prompt = entry.prompt ? entry.prompt.toLowerCase() : "";
-
-        regexes.forEach(regex => {
-            if (name.search(regex) >= 0 || prompt.search(regex) >= 0) {
-                matches++;
-            }
-        });
-
-        if (matches === regexes.length) {
+        if (entry.name.match(pattern)) {
             count++;
-            if (count > searchOffset && count <= (searchOffset + maxResults)) {
+            if (count > searchOffset && count <= (searchOffset + MAX_RESULTS)) {
                 return true;
             }
         }
@@ -317,17 +303,16 @@ function doSearch() {
         return false;
     });
 
-    /* show results count and search tools */
+    /* show results count */
     summaryText.nodeValue = `${count} options match your search.`;
-    searchTools.style.visibility = 'visible';
 
     /* update navigation */
     navigation.style.visibility = 'visible';
-    navigationPrev.disabled = searchOffset - maxResults < 0;
-    navigationNext.disabled = searchOffset + maxResults > count;
+    navigationPrev.disabled = searchOffset - MAX_RESULTS < 0;
+    navigationNext.disabled = searchOffset + MAX_RESULTS > count;
 
-    const currentPage = Math.floor(searchOffset / maxResults) + 1;
-    const totalPages = Math.floor(count / maxResults) + 1;
+    const currentPage = Math.floor(searchOffset / MAX_RESULTS) + 1;
+    const totalPages = Math.floor(count / MAX_RESULTS) + 1;
     navigationPagesText.nodeValue = `Page ${currentPage} of ${totalPages}`;
 
     /* render Kconfig entries */
@@ -365,49 +350,13 @@ function setupKconfigSearch() {
     input.type = 'text';
     container.appendChild(input);
 
-    /* create search tools container */
-    searchTools = document.createElement('div');
-    searchTools.className = 'search-tools';
-    searchTools.style.visibility = 'hidden';
-    container.appendChild(searchTools);
-
     /* create search summary */
-    const searchSummaryContainer = document.createElement('div');
-    searchTools.appendChild(searchSummaryContainer);
-
     const searchSummary = document.createElement('p');
-    searchSummaryContainer.appendChild(searchSummary);
+    searchSummary.className = 'search-summary';
+    container.appendChild(searchSummary);
 
     summaryText = document.createTextNode('');
     searchSummary.appendChild(summaryText);
-
-    /* create results per page selector */
-    const resultsPerPageContainer = document.createElement('div');
-    resultsPerPageContainer.className = 'results-per-page-container';
-    searchTools.appendChild(resultsPerPageContainer);
-
-    const resultsPerPageTitle = document.createElement('span');
-    resultsPerPageTitle.className = 'results-per-page-title';
-    resultsPerPageContainer.appendChild(resultsPerPageTitle);
-
-    const resultsPerPageTitleText = document.createTextNode('Results per page:');
-    resultsPerPageTitle.appendChild(resultsPerPageTitleText);
-
-    const resultsPerPageSelect = document.createElement('select');
-    resultsPerPageSelect.onchange = (event) => {
-        maxResults = parseInt(event.target.value);
-        searchOffset = 0;
-        doSearch();
-    }
-    resultsPerPageContainer.appendChild(resultsPerPageSelect);
-
-    RESULTS_PER_PAGE_OPTIONS.forEach((value, index) => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.text = value;
-        option.selected = index === 0;
-        resultsPerPageSelect.appendChild(option);
-    });
 
     /* create search results container */
     results = document.createElement('div');
@@ -423,7 +372,7 @@ function setupKconfigSearch() {
     navigationPrev.className = 'btn';
     navigationPrev.disabled = true;
     navigationPrev.onclick = () => {
-        searchOffset -= maxResults;
+        searchOffset -= MAX_RESULTS;
         doSearch();
         window.scroll(0, 0);
     }
@@ -442,7 +391,7 @@ function setupKconfigSearch() {
     navigationNext.className = 'btn';
     navigationNext.disabled = true;
     navigationNext.onclick = () => {
-        searchOffset += maxResults;
+        searchOffset += MAX_RESULTS;
         doSearch();
         window.scroll(0, 0);
     }

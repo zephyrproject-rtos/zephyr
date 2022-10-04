@@ -50,14 +50,11 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define RESPONSE_BUFFER_SIZE 1100
 #define HAWKBIT_RECV_TIMEOUT (300 * MSEC_PER_SEC)
 
+#define SLOT1_SIZE FLASH_AREA_SIZE(image_1)
 #define HTTP_HEADER_CONTENT_TYPE_JSON "application/json;charset=UTF-8"
 
-#define SLOT1_LABEL image_1
-#define SLOT1_SIZE FLASH_AREA_SIZE(SLOT1_LABEL)
-
-#define STORAGE_LABEL storage
-#define STORAGE_DEV FLASH_AREA_DEVICE(STORAGE_LABEL)
-#define STORAGE_OFFSET FLASH_AREA_OFFSET(STORAGE_LABEL)
+#define STORAGE_NODE DT_NODE_BY_FIXED_PARTITION_LABEL(storage)
+#define FLASH_NODE DT_MTD_FROM_FIXED_PARTITION(STORAGE_NODE)
 
 #if ((CONFIG_HAWKBIT_POLL_INTERVAL > 1) && (CONFIG_HAWKBIT_POLL_INTERVAL < 43200))
 static uint32_t poll_sleep = (CONFIG_HAWKBIT_POLL_INTERVAL * 60 * MSEC_PER_SEC);
@@ -213,15 +210,13 @@ static bool start_http_client(void)
 	int protocol = IPPROTO_TCP;
 #endif
 
-	(void)memset(&hints, 0, sizeof(hints));
-
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		hints.ai_family = AF_INET6;
-		hints.ai_socktype = SOCK_STREAM;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		hints.ai_family = AF_INET;
-		hints.ai_socktype = SOCK_STREAM;
 	}
+
+	hints.ai_socktype = SOCK_STREAM;
 
 	while (resolve_attempts--) {
 		ret = getaddrinfo(CONFIG_HAWKBIT_SERVER, CONFIG_HAWKBIT_PORT, &hints, &addr);
@@ -577,13 +572,13 @@ int hawkbit_init(void)
 	struct flash_pages_info info;
 	int32_t action_id;
 
-	fs.flash_device = STORAGE_DEV;
+	fs.flash_device = DEVICE_DT_GET(FLASH_NODE);
 	if (!device_is_ready(fs.flash_device)) {
 		LOG_ERR("Flash device not ready");
 		return -ENODEV;
 	}
 
-	fs.offset = STORAGE_OFFSET;
+	fs.offset = FLASH_AREA_OFFSET(storage);
 	rc = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
 	if (rc) {
 		LOG_ERR("Unable to get storage page info: %d", rc);
@@ -612,7 +607,7 @@ int hawkbit_init(void)
 		}
 
 		LOG_DBG("Marked image as OK");
-		ret = boot_erase_img_bank(FLASH_AREA_ID(SLOT1_LABEL));
+		ret = boot_erase_img_bank(FLASH_AREA_ID(image_1));
 		if (ret) {
 			LOG_ERR("Failed to erase second slot: %d", ret);
 			return ret;
@@ -1163,7 +1158,7 @@ enum hawkbit_response hawkbit_probe(void)
 	/* Verify the hash of the stored firmware */
 	fic.match = hb_context.dl.file_hash;
 	fic.clen = hb_context.dl.downloaded_size;
-	if (flash_img_check(&hb_context.flash_ctx, &fic, FLASH_AREA_ID(SLOT1_LABEL))) {
+	if (flash_img_check(&hb_context.flash_ctx, &fic, FLASH_AREA_ID(image_1))) {
 		LOG_ERR("Firmware - flash validation has failed");
 		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
 		goto cleanup;

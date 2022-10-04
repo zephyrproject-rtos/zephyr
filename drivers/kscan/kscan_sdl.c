@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT zephyr_sdl_kscan
-
 #include <zephyr/drivers/kscan.h>
 #include <zephyr/logging/log.h>
 
@@ -108,7 +106,7 @@ static const struct kscan_driver_api sdl_driver_api = {
 
 static struct sdl_data sdl_data;
 
-DEVICE_DT_INST_DEFINE(0, sdl_init,
+DEVICE_DEFINE(sdl, CONFIG_SDL_POINTER_KSCAN_DEV_NAME, sdl_init,
 		    NULL, &sdl_data, NULL,
 		    POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,
 		    &sdl_driver_api);

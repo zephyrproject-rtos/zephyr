@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <zephyr/types.h>
-#include <zephyr/sys/mem_stats.h>
+#include <sys/mem_stats.h>
 
 #ifdef __cplusplus
 extern "C" {

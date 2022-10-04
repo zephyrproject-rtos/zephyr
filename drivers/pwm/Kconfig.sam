@@ -5,7 +5,6 @@
 
 config PWM_SAM
 	bool "Atmel SAM MCU Family PWM Driver"
-	default y
-	depends on DT_HAS_ATMEL_SAM_PWM_ENABLED
+	depends on SOC_FAMILY_SAM
 	help
 	  Enable PWM driver for Atmel SAM MCUs.

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/dfu/mcuboot.h>
 
@@ -15,7 +15,7 @@
 #define BOOT_MAGIC_VALUES {BOOT_MAGIC_VAL_W0, BOOT_MAGIC_VAL_W1,\
 			   BOOT_MAGIC_VAL_W2, BOOT_MAGIC_VAL_W3 }
 
-ZTEST(mcuboot_interface, test_bank_erase)
+void test_bank_erase(void)
 {
 	const struct flash_area *fa;
 	uint32_t temp;
@@ -48,7 +48,7 @@ ZTEST(mcuboot_interface, test_bank_erase)
 	}
 }
 
-ZTEST(mcuboot_interface, test_request_upgrade)
+void test_request_upgrade(void)
 {
 	const struct flash_area *fa;
 	const uint32_t expectation[6] = {
@@ -91,7 +91,7 @@ ZTEST(mcuboot_interface, test_request_upgrade)
 	zassert_equal(1, readout[0] & 0xff, "confirmation error");
 }
 
-ZTEST(mcuboot_interface, test_write_confirm)
+void test_write_confirm(void)
 {
 	const uint32_t img_magic[4] = BOOT_MAGIC_VALUES;
 	uint32_t readout[ARRAY_SIZE(img_magic)];
@@ -135,4 +135,11 @@ ZTEST(mcuboot_interface, test_write_confirm)
 	zassert_equal(1, readout[0] & 0xff, "confirmation error");
 }
 
-ZTEST_SUITE(mcuboot_interface, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(test_mcuboot_interface,
+			 ztest_unit_test(test_bank_erase),
+			 ztest_unit_test(test_request_upgrade),
+			 ztest_unit_test(test_write_confirm));
+	ztest_run_test_suite(test_mcuboot_interface);
+}

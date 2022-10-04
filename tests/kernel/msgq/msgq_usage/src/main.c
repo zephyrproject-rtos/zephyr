@@ -6,7 +6,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/irq_offload.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <limits.h>
 
 #define MSGQ_LEN (2)
@@ -259,7 +259,7 @@ static void start_client(void)
 				  0, K_NO_WAIT);
 }
 
-ZTEST(msgq_usage, test_msgq_usage)
+void test_msgq_usage(void)
 {
 	start_service_manager();
 	register_service();
@@ -284,4 +284,8 @@ ZTEST(msgq_usage, test_msgq_usage)
 	k_thread_abort(tservice_manager);
 }
 
-ZTEST_SUITE(msgq_usage, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(msgq_usage, ztest_unit_test(test_msgq_usage));
+	ztest_run_test_suite(msgq_usage);
+}

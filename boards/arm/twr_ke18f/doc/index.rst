@@ -11,7 +11,8 @@ MCU-based platforms. The onboard OpenSDAv2 serial and debug adapter,
 running an open source bootloader, offers options for serial
 communication, flash programming, and run-control debugging.
 
-.. figure:: TWR-KE18F-DEVICE.jpg
+.. figure:: ./TWR-KE18F-DEVICE.jpg
+   :width: 800px
    :align: center
    :alt: TWR-KE18F
 

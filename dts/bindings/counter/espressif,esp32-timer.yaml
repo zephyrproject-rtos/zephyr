@@ -23,6 +23,9 @@ description: |
 include: base.yaml
 
 properties:
+    label:
+      required: true
+
     group:
       description: |
         The Timer Group index to which a timer belongs.

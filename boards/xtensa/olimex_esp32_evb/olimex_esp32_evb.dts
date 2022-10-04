@@ -22,7 +22,6 @@
 
 	aliases {
 		sw0 = &button1;
-		watchdog0 = &wdt0;
 	};
 
 	gpio_keys {
@@ -37,6 +36,7 @@
 		compatible = "regulator-fixed";
 		enable-gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
 		regulator-name = "REL1";
+		label = "REL1";
 		startup-delay-us = <10000>;
 		off-on-delay-us = <5000>;
 	};
@@ -45,6 +45,7 @@
 		compatible = "regulator-fixed";
 		enable-gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		regulator-name = "REL2";
+		label = "REL2";
 		startup-delay-us = <10000>;
 		off-on-delay-us = <5000>;
 	};
@@ -79,8 +80,8 @@ uext_spi: &spi2 {};
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	sda-gpios = <&gpio0 16 GPIO_OPEN_DRAIN>;
-	scl-gpios = <&gpio0 13 GPIO_OPEN_DRAIN>;
+	sda-pin = <16>;
+	scl-pin = <13>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
@@ -91,17 +92,6 @@ uext_spi: &spi2 {};
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
-};
-
-&twai {
-	status = "okay";
-	pinctrl-0 = <&twai_default>;
-	pinctrl-names = "default";
-	bus-speed = <125000>;
-
-	can-transceiver {
-		max-bitrate = <1000000>;
-	};
 };
 
 &gpio0 {

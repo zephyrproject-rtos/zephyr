@@ -16,7 +16,8 @@ at:
 - `MadMachine Homepage`_
 - `SwiftIO API Reference`_
 
-.. image:: mm_feather.jpg
+.. image:: ./mm_feather.jpg
+   :width: 720px
    :align: center
    :alt: SwiftIO Feather Board
 

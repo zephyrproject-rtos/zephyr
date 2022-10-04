@@ -5,8 +5,7 @@
 
 config COUNTER_MCUX_CTIMER
 	bool "MCUX CTIMER driver"
-	default y
-	depends on DT_HAS_NXP_LPC_CTIMER_ENABLED
+	depends on HAS_MCUX_CTIMER
 	help
 	  Enable support for MCUX CTIMER driver.
 

@@ -233,7 +233,7 @@ static void spi_b91_txrx(const struct device *dev, uint32_t len)
 	};
 
 	/* context complete */
-	spi_context_complete(ctx, dev, 0);
+	spi_context_complete(ctx, 0);
 }
 
 /* Check for supported configuration */
@@ -393,7 +393,7 @@ static int spi_b91_transceive(const struct device *dev,
 	}
 
 	/* context setup */
-	spi_context_lock(&data->ctx, false, NULL, NULL, config);
+	spi_context_lock(&data->ctx, false, NULL, config);
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
 	/* if cs is defined: software cs control, set active true */
@@ -422,15 +422,13 @@ static int spi_b91_transceive_async(const struct device *dev,
 				    const struct spi_config *config,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs,
-				    spi_callback_t cb,
-				    void *userdata)
+				    struct k_poll_signal *async)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(config);
 	ARG_UNUSED(tx_bufs);
 	ARG_UNUSED(rx_bufs);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(userdata);
+	ARG_UNUSED(async);
 
 	return -ENOTSUP;
 }

@@ -41,6 +41,7 @@ typedef struct {
 typedef VL53L0X_Dev_t *VL53L0X_DEV;
 
 /**
+ * @def PALDevDataGet
  * @brief Get ST private structure @a VL53L0X_DevData_t data access
  *
  * @param Dev       Device Handle
@@ -52,6 +53,7 @@ typedef VL53L0X_Dev_t *VL53L0X_DEV;
 #define PALDevDataGet(Dev, field) (Dev->Data.field)
 
 /**
+ * @def PALDevDataSet(Dev, field, data)
  * @brief  Set ST private structure @a VL53L0X_DevData_t data field
  * @param Dev       Device Handle
  * @param field     ST structure field name

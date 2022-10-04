@@ -13,7 +13,8 @@ with additional expansion ports around the Arduino footprint, along
 with a PMod/host interface port and MikroElektronika Click module
 site.
 
-.. image:: lpcxpress55s06.jpg
+.. image:: ./lpcxpress55s06.png
+   :width: 720px
    :align: center
    :alt: LPCXpresso55S06
 
@@ -60,11 +61,6 @@ hardware features:
 | USART     | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | entropy;                            |
-|           |            | random                              |
-+-----------+------------+-------------------------------------+
-| IAP       | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.

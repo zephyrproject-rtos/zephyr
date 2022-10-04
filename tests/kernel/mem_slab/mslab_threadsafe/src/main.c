@@ -4,6 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
-ZTEST_SUITE(mslab_threadsafe, NULL, NULL, NULL, NULL, NULL);
+extern void test_mslab_threadsafe(void);
+
+/*test case main entry*/
+void test_main(void)
+{
+	ztest_test_suite(mslab_threadsafe,
+			 ztest_unit_test(test_mslab_threadsafe));
+	ztest_run_test_suite(mslab_threadsafe);
+}

@@ -10,7 +10,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/device.h>
 
 #include <zephyr/drivers/flash.h>
@@ -26,7 +26,7 @@
 #define FLASH_SIMULATOR_BASE_OFFSET DT_REG_ADDR(SOC_NV_FLASH_NODE)
 
 /* Test 'flash read' shell command */
-ZTEST(shell_flash, test_flash_read)
+static void test_flash_read(void)
 {
 	/* To keep the test simple, just compare against known data */
 	char *const lines[] = {
@@ -35,7 +35,7 @@ ZTEST(shell_flash, test_flash_read)
 		"00000020: 61 62 63                                         |abc              |",
 	};
 	const struct shell *shell = shell_backend_dummy_get_ptr();
-	const struct device *const flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+	const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 	const char *buf;
 	const int test_base = FLASH_SIMULATOR_BASE_OFFSET;
 	const int test_size = 0x24;  /* 32-alignment required */
@@ -68,11 +68,14 @@ ZTEST(shell_flash, test_flash_read)
 	}
 }
 
-static void *shell_setup(void)
+void test_main(void)
 {
 	/* Let the shell backend initialize. */
 	k_usleep(10);
-	return NULL;
-}
 
-ZTEST_SUITE(shell_flash, NULL, shell_setup, NULL, NULL, NULL);
+	ztest_test_suite(shell_flash_test_suite,
+			 ztest_unit_test(test_flash_read)
+			);
+
+	ztest_run_test_suite(shell_flash_test_suite);
+}

@@ -80,7 +80,7 @@ Pin Mapping
 
 Available pins:
 ---------------
-.. image:: img/Blackpill_Pinout.jpg
+.. image:: img/Blackpill_Pinout.png
       :align: center
       :alt: Black Pill V1.2 Pinout
 

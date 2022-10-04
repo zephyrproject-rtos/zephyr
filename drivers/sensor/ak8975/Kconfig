@@ -5,8 +5,6 @@
 
 config AK8975
 	bool "AK8975 Magnetometer"
-	default y
-	depends on DT_HAS_ASAHI_KASEI_AK8975_ENABLED
-	select I2C
+	depends on I2C
 	help
 	  Enable driver for AK8975 magnetometer.

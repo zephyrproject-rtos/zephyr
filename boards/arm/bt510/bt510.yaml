@@ -9,6 +9,7 @@ toolchain:
 supported:
   - adc
   - ble
+  - ieee802154
   - pwm
   - watchdog
   - i2c

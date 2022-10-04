@@ -11,29 +11,22 @@
 #ifndef ZEPHYR_DRIVERS_CAN_CAN_UTILS_H_
 #define ZEPHYR_DRIVERS_CAN_CAN_UTILS_H_
 
-/**
- * @brief Check if a CAN filter matches a CAN frame
- *
- * @param frame  CAN frame.
- * @param filter CAN filter.
- * @return true if the CAN filter matches the CAN frame, false otherwise
- */
-static inline bool can_utils_filter_match(const struct can_frame *frame,
-					  struct can_filter *filter)
+static inline uint8_t can_utils_filter_match(const struct zcan_frame *frame,
+					     struct zcan_filter *filter)
 {
 	if (frame->id_type != filter->id_type) {
-		return false;
+		return 0;
 	}
 
 	if ((frame->rtr ^ filter->rtr) & filter->rtr_mask) {
-		return false;
+		return 0;
 	}
 
 	if ((frame->id ^ filter->id) & filter->id_mask) {
-		return false;
+		return 0;
 	}
 
-	return true;
+	return 1;
 }
 
 #endif /* ZEPHYR_DRIVERS_CAN_CAN_UTILS_H_ */

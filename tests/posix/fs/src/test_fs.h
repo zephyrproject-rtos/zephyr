@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #define FATFS_MNTP	"/RAM:"
 #define TEST_FILE	FATFS_MNTP"/testfile.txt"

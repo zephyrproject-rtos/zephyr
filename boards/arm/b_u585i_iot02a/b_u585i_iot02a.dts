@@ -60,7 +60,3 @@
 
 	};
 };
-
-&gpdma1 {
-	status = "okay";
-};

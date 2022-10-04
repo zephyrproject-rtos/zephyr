@@ -5,8 +5,7 @@
 
 config GPIO_LPC11U6X
 	bool "LPC11U6x GPIO driver"
-	default y
-	depends on DT_HAS_NXP_LPC11U6X_GPIO_ENABLED
+	depends on SOC_SERIES_LPC11U6X
 	depends on CLOCK_CONTROL_LPC11U6X
 	depends on PINMUX_LPC11U6X
 	help

@@ -3,9 +3,7 @@
 
 config LP3943
 	bool "LP3943 LED driver"
-	default y
-	depends on DT_HAS_TI_LP3943_ENABLED
-	select I2C
+	depends on I2C
 	help
 	  Enable LED driver for LP3943.
 

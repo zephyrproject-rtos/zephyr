@@ -2,26 +2,24 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import re
 import os
 import time
 import subprocess
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
+from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 class SpiBurnBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for SPI_burn.'''
 
-    def __init__(self, cfg, addr, spiburn, iceman, timeout, gdb_port, gdb_ex, erase=False):
+    def __init__(self, cfg, addr, spiburn, iceman, timeout, erase=False):
         super().__init__(cfg)
 
+        self.bin = cfg.bin_file
         self.spiburn = spiburn
         self.iceman = iceman
         self.addr = addr
         self.timeout = int(timeout)
         self.erase = bool(erase)
-        self.gdb_port = gdb_port
-        self.gdb_ex = gdb_ex
 
     @classmethod
     def name(cls):
@@ -29,7 +27,7 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug'}, erase=True, flash_addr=True)
+        return RunnerCaps(commands={'flash'}, erase=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -38,8 +36,6 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--timeout', default=10,
                             help='ICEman connection establishing timeout in seconds')
         parser.add_argument('--telink-tools-path', help='path to Telink flash tools')
-        parser.add_argument('--gdb-port', default='1111', help='Port to connect for gdb-client')
-        parser.add_argument('--gdb-ex', default='', nargs='?', help='Additional gdb commands to run')
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -52,14 +48,7 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
             spiburn = 'SPI_burn'
             iceman  = 'ICEman'
 
-        # Get flash address offset
-        if args.dt_flash == 'y':
-            build_conf = BuildConfiguration(cfg.build_dir)
-            address = hex(cls.get_flash_address(args, build_conf) - build_conf['CONFIG_FLASH_BASE_ADDRESS'])
-        else:
-            address = args.addr
-
-        return SpiBurnBinaryRunner(cfg, address, spiburn, iceman, args.timeout, args.gdb_port, args.gdb_ex, args.erase)
+        return SpiBurnBinaryRunner(cfg, args.addr, spiburn, iceman, args.timeout, args.erase)
 
     def do_run(self, command, **kwargs):
 
@@ -70,19 +59,14 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
 
         if command == "flash":
             self._flash()
-
-        elif command == "debug":
-            self._debug()
-
         else:
             self.logger.error(f'{command} not supported!')
 
     def start_iceman(self):
 
         # Start ICEman as background process
-        self.ice_process = self.popen_ignore_int(["./ICEman", '-Z', 'v5', '-l', 'aice_sdp.cfg'],
-                                                            cwd=os.path.dirname(self.iceman_path),
-                                                            stdout=subprocess.PIPE)
+        cmd_ice_run = ["./ICEman", '-Z', 'v5', '-l', 'aice_sdp.cfg']
+        self.ice_process = subprocess.Popen(cmd_ice_run, stdout=subprocess.PIPE)
 
         # Wait till it ready or exit by timeout
         start = time.time()
@@ -99,13 +83,23 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
 
     def _flash(self):
 
+        origin_dir = os.getcwd()
+        iceman_dir = os.path.dirname(self.iceman_path)
+
         try:
 
-            # Start ICEman
+            # ICEman tool from Andestech is required to be run from its root dir,
+            # due to the tool looking for its config files in currently active dir.
+            # In attempt to run it from other dirs it returns with an error that
+            # required config file is missing
+
+            # Go into ICEman dir
+            os.chdir(iceman_dir)
+
             self.start_iceman()
 
             # Compose flash command
-            cmd_flash = [self.spiburn, '--addr', str(self.addr), '--image', self.cfg.bin_file]
+            cmd_flash = [self.spiburn, '--addr', str(self.addr), '--image', self.bin]
 
             if self.erase:
                 cmd_flash += ["--erase-all"]
@@ -116,21 +110,5 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
         finally:
             self.stop_iceman()
 
-    def _debug(self):
-
-        try:
-
-            # Start ICEman
-            self.start_iceman()
-
-            # format -ex commands
-            gdb_ex = re.split("(-ex) ", self.gdb_ex)[1::]
-
-            # Compose gdb command
-            client_cmd = [self.cfg.gdb, self.cfg.elf_file, '-ex', f'target remote :{self.gdb_port}'] + gdb_ex
-
-            # Run gdb
-            self.run_client(client_cmd)
-
-        finally:
-            self.stop_iceman()
+            # Restore origin dir
+            os.chdir(origin_dir)

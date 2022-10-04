@@ -10,7 +10,8 @@ The AST1030_EVB kit is a development platform to evaluate the
 Aspeed AST10x0 series SOCs. This board needs to be mated with
 part number AST1030.
 
-.. image:: ast1030_evb.jpg
+.. image:: ./ast1030_evb.png
+     :width: 800px
      :align: center
      :alt: AST1030 Evaluation Board
 

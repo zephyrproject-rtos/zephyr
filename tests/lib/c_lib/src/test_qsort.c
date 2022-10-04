@@ -7,7 +7,7 @@
 #define _GNU_SOURCE
 #include <stdbool.h>
 #include <stdlib.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 static int compare_ints(const void *a, const void *b)
 {

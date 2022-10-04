@@ -5,8 +5,7 @@
 
 config GPIO_CMSDK_AHB
 	bool "ARM CMSDK (Cortex-M System Design Kit) AHB GPIO Controllers"
-	default y
-	depends on DT_HAS_ARM_CMSDK_GPIO_ENABLED
+	depends on SOC_FAMILY_ARM
 	help
 	  Enable config options to support the ARM CMSDK GPIO controllers.
 

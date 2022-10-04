@@ -9,7 +9,7 @@
 #ifndef SYSKERNEK_H
 #define SYSKERNEK_H
 
-#include <zephyr/timestamp.h>
+#include <timestamp.h>
 
 #include <stdio.h>
 #include <zephyr/toolchain.h>

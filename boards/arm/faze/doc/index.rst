@@ -15,6 +15,7 @@ through I2C and GPIOs.
 This Zephyr port is running on the NXP LPC11U67 MCU.
 
 .. image:: firecuda-gaming-ssd.jpg
+   :width: 1000px
    :align: center
    :alt: Seagate FireCuda Gaming SSD
 

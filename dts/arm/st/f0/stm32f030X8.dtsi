@@ -26,6 +26,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <26 3>;
 			status = "disabled";
+			label = "SPI_2";
 		};
 	};
 };

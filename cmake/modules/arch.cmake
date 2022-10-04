@@ -26,10 +26,8 @@
 include_guard(GLOBAL)
 
 # 'ARCH_ROOT' is a prioritized list of directories where archs may be
-# found. It always includes ${ZEPHYR_BASE} at the lowest priority (except for unittesting).
-if(NOT unittest IN_LIST Zephyr_FIND_COMPONENTS)
-  list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
-endif()
+# found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
 
 cmake_path(GET BOARD_DIR PARENT_PATH board_arch_dir)
 cmake_path(GET board_arch_dir FILENAME ARCH)

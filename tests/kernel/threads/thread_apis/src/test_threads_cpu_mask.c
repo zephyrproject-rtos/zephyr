@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/kernel.h>
 
 #include "tests_thread_apis.h"
@@ -22,7 +22,7 @@ void child_fn(void *a, void *b, void *c)
 	child_has_run = true;
 }
 
-ZTEST(threads_lifecycle_1cpu, test_threads_cpu_mask)
+void test_threads_cpu_mask(void)
 {
 #ifdef CONFIG_SCHED_CPU_MASK
 	k_tid_t thread;

@@ -6,8 +6,6 @@
 
 SECTION_PROLOGUE(ztest,,)
 {
-	Z_LINK_ITERABLE(ztest_expected_result_entry);
-
 	Z_LINK_ITERABLE(ztest_suite_node);
 
 	Z_LINK_ITERABLE(ztest_unit_test);

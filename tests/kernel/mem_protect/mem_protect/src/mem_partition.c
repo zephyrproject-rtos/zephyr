@@ -22,7 +22,7 @@ static volatile K_APP_BMEM(ztest_mem_partition) int bss_var;
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST_USER(mem_protect_part, test_mem_part_assign_bss_vars_zero)
+void test_mem_part_assign_bss_vars_zero(void)
 {
 	/* The global variable var will be inside the bounds of
 	 * ztest_mem_partition and be initialized with 1356 at boot.
@@ -57,11 +57,9 @@ K_APP_BMEM(part_arch) uint8_t __aligned(MEM_REGION_ALLOC)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST(mem_protect_part, test_mem_part_auto_determ_size)
+void test_mem_part_auto_determ_size(void)
 {
 	zassert_true(part_arch.size == MEM_REGION_ALLOC, NULL);
 	zassert_true(part_arch.start == (uintptr_t)buf_arc,
 	   "Base address of memory partition not determined at build time");
 }
-
-ZTEST_SUITE(mem_protect_part, NULL, NULL, NULL, NULL, NULL);

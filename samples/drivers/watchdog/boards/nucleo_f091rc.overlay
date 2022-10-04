@@ -7,3 +7,11 @@
 &rcc {
 	apb1-prescaler = <4>;
 };
+
+&wwdg {
+	status = "okay";
+};
+
+&iwdg {
+	status = "disabled";
+};

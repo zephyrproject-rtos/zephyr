@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 /* Built-time math test.  Zephyr code depends on a standard C ABI with
  * 2's complement signed math.  As this isn't technically guaranteed
@@ -71,7 +71,7 @@ ROLLOVER_CHECK(int, 2147483647, -2147483648);
  * @details Test multiplication and division of two
  * integers
  */
-ZTEST(intmath, test_intmath)
+void test_intmath(void)
 {
 	/*
 	 * Declaring volatile so the compiler doesn't try to optimize any
@@ -99,4 +99,13 @@ ZTEST(intmath, test_intmath)
  * @}
  */
 
-ZTEST_SUITE(intmath, NULL, NULL, NULL, NULL, NULL);
+
+
+void test_main(void)
+{
+	ztest_test_suite(intmath,
+			 ztest_unit_test(test_intmath)
+			 );
+
+	ztest_run_test_suite(intmath);
+}

@@ -32,6 +32,7 @@
 
 	glcd: glcd@3e {
 		compatible = "seeed,grove-lcd-rgb";
+		label = "GLCD";
 		reg = <0x3e>;
 	};
 };

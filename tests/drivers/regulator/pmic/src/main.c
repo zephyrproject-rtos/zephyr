@@ -14,7 +14,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/regulator/consumer.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
 	!DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
@@ -110,19 +110,20 @@ static int adc_get_reading(const struct device *adc_dev)
 	return mv_value;
 }
 
-ZTEST(regulator_pmic, test_basic)
+static void test_basic(void)
 {
 	const struct device *reg_dev, *adc_dev;
 	int rc, adc_reading;
 
 	adc_dev = DEVICE_DT_GET(ADC_NODE);
-	reg_dev = DEVICE_DT_GET(DT_NODELABEL(test_regulator));
+	reg_dev = device_get_binding(CONFIG_TEST_PMIC_REGULATOR_NAME);
 
 	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
-	zassert_true(device_is_ready(reg_dev), "Regulator device is not ready");
+	zassert_not_null(reg_dev, "Could not get regulator device binding");
 
 	/* Configure ADC */
 	adc_channel_setup(adc_dev, &channel_cfg);
+
 
 	reset_client();
 
@@ -195,4 +196,10 @@ ZTEST(regulator_pmic, test_basic)
 		      "Regulator is on with no clients, ADC read %d mV", adc_reading);
 }
 
-ZTEST_SUITE(regulator_pmic, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(regulator_test,
+			 ztest_unit_test(test_basic)
+			 );
+	ztest_run_test_suite(regulator_test);
+}

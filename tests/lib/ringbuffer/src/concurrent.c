@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/ztest.h>
-#include <zephyr/ztress.h>
+#include <ztest.h>
+#include <ztress.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/mutex.h>
 #include <zephyr/random/rand32.h>
@@ -90,7 +90,7 @@ static bool user_handler(void *user_data, uint32_t iter_cnt, bool last, int prio
  *
  * @ingroup lib_ringbuffer_tests
  */
-ZTEST(ringbuffer_api, test_ringbuffer_concurrent)
+void test_ringbuffer_concurrent(void)
 {
 	ztress_set_timeout(K_MSEC(1000));
 	ZTRESS_EXECUTE(ZTRESS_THREAD(user_handler, (void *)0, 0, 0, Z_TIMEOUT_TICKS(20)),
@@ -296,7 +296,7 @@ void test_ringbuffer_stress(ztress_handler produce_handler,
 /* Zero-copy API. Test is validating single producer, single consumer from
  * different priorities.
  */
-ZTEST(ringbuffer_api, test_ringbuffer_zerocpy_stress)
+void test_ringbuffer_zerocpy_stress(void)
 {
 	test_ringbuffer_stress(produce, consume, false);
 }
@@ -304,7 +304,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_zerocpy_stress)
 /* Copy API. Test is validating single producer, single consumer from
  * different priorities.
  */
-ZTEST(ringbuffer_api, test_ringbuffer_cpy_stress)
+void test_ringbuffer_cpy_stress(void)
 {
 	test_ringbuffer_stress(produce_cpy, consume_cpy, false);
 }
@@ -312,7 +312,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_cpy_stress)
 /* Item API. Test is validating single producer, single consumer from
  * different priorities.
  */
-ZTEST(ringbuffer_api, test_ringbuffer_item_stress)
+void test_ringbuffer_item_stress(void)
 {
 	test_ringbuffer_stress(produce_item, consume_item, true);
 }

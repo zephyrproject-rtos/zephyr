@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #define TIMEOUT K_MSEC(100)
 #if !defined(CONFIG_BOARD_QEMU_X86)
@@ -411,7 +411,6 @@ static void tmbox(struct k_mbox *pmbox)
 	receiver_tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				       tmbox_entry, pmbox, NULL, NULL,
 				       K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
-
 	tmbox_put(pmbox);
 	k_sem_take(&end_sema, K_FOREVER);
 
@@ -420,18 +419,21 @@ static void tmbox(struct k_mbox *pmbox)
 }
 
 /*test cases*/
-ZTEST(mbox_api, test_mbox_kinit)
+void test_mbox_kinit(void)
 {
 	/**TESTPOINT: init via k_mbox_init*/
 	k_mbox_init(&mbox);
+	k_sem_init(&end_sema, 0, 1);
+	k_sem_init(&sync_sema, 0, 1);
 }
 
-ZTEST(mbox_api, test_mbox_kdefine)
+void test_mbox_kdefine(void)
 {
 	info_type = PUT_GET_NULL;
 	tmbox(&kmbox);
 }
 
+K_MBOX_DEFINE(send_mbox);
 static void thread_mbox_data_get_null(void *p1, void *p2, void *p3)
 {
 	struct k_mbox_msg get_msg = {0};
@@ -458,7 +460,7 @@ static void thread_mbox_data_get_null(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_mbox_api
  */
-ZTEST(mbox_api, test_mbox_data_get_null)
+void test_mbox_data_get_null(void)
 {
 	k_sem_reset(&end_sema);
 
@@ -517,7 +519,7 @@ static void thread_mbox_put_block_data(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_mbox_api
  */
-ZTEST(mbox_api, test_mbox_get_put_block_data)
+void test_mbox_get_put_block_data(void)
 {
 	struct k_mbox bdmbox;
 	/*test case setup*/
@@ -548,8 +550,6 @@ ZTEST(mbox_api, test_mbox_get_put_block_data)
 			     NULL);
 }
 
-static ZTEST_BMEM char __aligned(4) buffer[8];
-
 /**
  *
  * @brief Test mailbox enhance capabilities
@@ -563,7 +563,8 @@ static ZTEST_BMEM char __aligned(4) buffer[8];
  *
  * @see k_msgq_init() k_msgq_put() k_mbox_async_put() k_mbox_get()
  */
-ZTEST(mbox_api, test_enhance_capability)
+static ZTEST_BMEM char __aligned(4) buffer[8];
+void test_enhance_capability(void)
 {
 	info_type = ASYNC_PUT_GET_BUFFER;
 	struct k_msgq msgq;
@@ -588,7 +589,7 @@ ZTEST(mbox_api, test_enhance_capability)
  * - Verify the mailbox can be used
  *
  */
-ZTEST(mbox_api, test_define_multi_mbox)
+void test_define_multi_mbox(void)
 {
 	/**TESTPOINT: init via k_mbox_init*/
 	struct k_mbox mbox1, mbox2, mbox3;
@@ -604,102 +605,86 @@ ZTEST(mbox_api, test_define_multi_mbox)
 	tmbox(&mbox3);
 }
 
-ZTEST(mbox_api, test_mbox_put_get_null)
+void test_mbox_put_get_null(void)
 {
 	info_type = PUT_GET_NULL;
 	tmbox(&mbox);
 }
 
-ZTEST(mbox_api, test_mbox_put_get_buffer)
+void test_mbox_put_get_buffer(void)
 {
 	info_type = PUT_GET_BUFFER;
 	tmbox(&mbox);
 }
 
-ZTEST(mbox_api, test_mbox_async_put_get_buffer)
+void test_mbox_async_put_get_buffer(void)
 {
 	info_type = ASYNC_PUT_GET_BUFFER;
 	tmbox(&mbox);
 }
 
-ZTEST(mbox_api, test_mbox_async_put_get_block)
+void test_mbox_async_put_get_block(void)
 {
 	info_type = ASYNC_PUT_GET_BLOCK;
 	tmbox(&mbox);
 }
 
-ZTEST(mbox_api, test_mbox_target_source_thread_buffer)
+void test_mbox_target_source_thread_buffer(void)
 {
 	info_type = TARGET_SOURCE_THREAD_BUFFER;
 	tmbox(&mbox);
 }
 
-ZTEST(mbox_api, test_mbox_incorrect_receiver_tid)
+void test_mbox_incorrect_receiver_tid(void)
 {
 	info_type = INCORRECT_RECEIVER_TID;
 	tmbox(&mbox);
 }
 
-ZTEST(mbox_api, test_mbox_incorrect_transmit_tid)
+void test_mbox_incorrect_transmit_tid(void)
 {
 	info_type = INCORRECT_TRANSMIT_TID;
 	tmbox(&mbox);
 }
 
-ZTEST(mbox_api, test_mbox_timed_out_mbox_get)
+void test_mbox_timed_out_mbox_get(void)
 {
 	info_type = TIMED_OUT_MBOX_GET;
 	tmbox(&mbox);
 }
 
-ZTEST(mbox_api, test_mbox_msg_tid_mismatch)
+void test_mbox_msg_tid_mismatch(void)
 {
 	info_type = MSG_TID_MISMATCH;
 	tmbox(&mbox);
 }
 
-ZTEST(mbox_api, test_mbox_dispose_size_0_msg)
+void test_mbox_dispose_size_0_msg(void)
 {
 	info_type = DISPOSE_SIZE_0_MSG;
 	tmbox(&mbox);
 }
 
-ZTEST(mbox_api, test_mbox_async_put_to_waiting_get)
+void test_mbox_async_put_to_waiting_get(void)
 {
 	info_type = ASYNC_PUT_TO_WAITING_GET;
 	tmbox(&mbox);
 }
 
-ZTEST(mbox_api, test_mbox_get_waiting_put_incorrect_tid)
+void test_mbox_get_waiting_put_incorrect_tid(void)
 {
 	info_type = GET_WAITING_PUT_INCORRECT_TID;
 	tmbox(&mbox);
 }
 
-ZTEST(mbox_api, test_mbox_async_multiple_put)
+void test_mbox_async_multiple_put(void)
 {
 	info_type = ASYNC_MULTIPLE_PUT;
 	tmbox(&mbox);
 }
 
-ZTEST(mbox_api, test_mbox_multiple_waiting_get)
+void test_mbox_multiple_waiting_get(void)
 {
 	info_type = MULTIPLE_WAITING_GET;
 	tmbox(&mbox);
-
-	/* cleanup the sender threads */
-	for (int i = 0; i < 5 ; i++) {
-		k_thread_abort(&waiting_get_tid[i]);
-	}
 }
-
-void *setup_mbox_api(void)
-{
-	k_sem_init(&end_sema, 0, 1);
-	k_sem_init(&sync_sema, 0, 1);
-	k_mbox_init(&mbox);
-
-	return NULL;
-}
-
-ZTEST_SUITE(mbox_api, NULL, setup_mbox_api, NULL, NULL, NULL);

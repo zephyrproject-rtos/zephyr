@@ -28,7 +28,8 @@ Both support the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/bmd-345-eval_features.jpg
+.. figure:: img/bmd-345-eval_features.png
+     :width: 442px
      :align: center
      :alt: BMD 345 EVAL
 
@@ -143,7 +144,8 @@ Push buttons
 External Connectors
 -------------------
 
-.. figure:: img/bmd-345-eval_pin_out.jpg
+.. figure:: img/bmd-345-eval_pin_out.png
+     :width: 819px
      :align: center
      :alt: BMD-345-EVAL pin-out
 

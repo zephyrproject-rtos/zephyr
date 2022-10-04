@@ -17,11 +17,6 @@
 #include "c_certificates.h"
 #endif
 
-#if defined(CONFIG_MODEM_GSM_PPP)
-#define GSM_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_gsm_ppp)
-#define UART_NODE DT_BUS(GSM_NODE)
-#endif
-
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
@@ -143,7 +138,8 @@ void main(void)
 	}
 
 #elif defined(CONFIG_MODEM_GSM_PPP)
-	const struct device *const uart_dev = DEVICE_DT_GET(UART_NODE);
+	const struct device *uart_dev =
+		DEVICE_DT_GET(DT_BUS(DT_INST(0, zephyr_gsm_ppp)));
 
 	LOG_INF("APN '%s' UART '%s' device %p", CONFIG_MODEM_GSM_APN,
 		uart_dev->name, uart_dev);

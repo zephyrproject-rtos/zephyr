@@ -5,12 +5,14 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/device.h>
 
-static const struct device *const dev =
-	DEVICE_DT_GET(DT_NODELABEL(gpio0));
+#define DEV_NAME DT_NODELABEL(gpio0)
+
+
+static const struct device *dev;
 static uint8_t sleep_count;
 
 
@@ -74,14 +76,15 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	return NULL;
 }
 
-ZTEST(wakeup_device_1cpu, test_wakeup_device_api)
+void test_wakeup_device_api(void)
 {
 	bool ret = false;
 
-	zassert_true(device_is_ready(dev), "Device not ready");
+	dev = DEVICE_DT_GET(DEV_NAME);
+	zassert_not_null(dev, "Failed to get device");
 
 	ret = pm_device_wakeup_is_capable(dev);
-	zassert_true(ret, "Device not marked as capable");
+	zassert_true(ret, "Device marked as capable");
 
 	ret = pm_device_wakeup_enable(dev, true);
 	zassert_true(ret, "Could not enable wakeup source");
@@ -96,7 +99,7 @@ ZTEST(wakeup_device_1cpu, test_wakeup_device_api)
 	zassert_false(ret, "Wakeup source is enabled");
 }
 
-ZTEST(wakeup_device_1cpu, test_wakeup_device_system_pm)
+void test_wakeup_device_system_pm(void)
 {
 	/*
 	 * Trigger system PM. The policy manager will return
@@ -113,5 +116,11 @@ ZTEST(wakeup_device_1cpu, test_wakeup_device_system_pm)
 	k_sleep(K_SECONDS(1));
 }
 
-ZTEST_SUITE(wakeup_device_1cpu, NULL, NULL, ztest_simple_1cpu_before,
-			ztest_simple_1cpu_after, NULL);
+void test_main(void)
+{
+	ztest_test_suite(wakeup_device_test,
+			 ztest_1cpu_unit_test(test_wakeup_device_api),
+			 ztest_1cpu_unit_test(test_wakeup_device_system_pm)
+		);
+	ztest_run_test_suite(wakeup_device_test);
+}

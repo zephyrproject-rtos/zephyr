@@ -52,6 +52,7 @@
 	atecc508a@c0 {
 		compatible = "atmel,atecc508";
 		reg = <0xc0>;
+		label = "ATECC508A";
 	};
 
 };
@@ -89,6 +90,7 @@
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			status = "okay";
+			label = "SDMMC_0";
 		};
 	};
 };

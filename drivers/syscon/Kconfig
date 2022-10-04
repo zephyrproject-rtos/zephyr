@@ -22,10 +22,11 @@ module = SYSCON
 module-str = syscon
 source "subsys/logging/Kconfig.template.log_config"
 
+DT_COMPAT_SYSCON := syscon
+
 config SYSCON_GENERIC
 	bool "Generic SYSCON (System Controller) driver"
-	default y
-	depends on DT_HAS_SYSCON_ENABLED
+	default $(dt_compat_enabled,$(DT_COMPAT_SYSCON))
 	help
 	  Enable generic SYSCON (System Controller) driver
 

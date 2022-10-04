@@ -5,10 +5,10 @@
  */
 
 #include <stdlib.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/types.h>
 #include <zephyr/irq_offload.h>
-#include <zephyr/ztest_error_hook.h>
+#include <ztest_error_hook.h>
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define THREAD_TEST_PRIORITY 0
@@ -20,6 +20,7 @@ static struct k_timer mytimer, sync_timer;
 static struct k_thread tdata;
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 
+#ifdef CONFIG_USERSPACE
 static void thread_timer_start_null(void *p1, void *p2, void *p3)
 {
 	ztest_set_fault_valid(true);
@@ -39,13 +40,8 @@ static void thread_timer_start_null(void *p1, void *p2, void *p3)
  *
  * @see k_timer_start()
  */
-ZTEST_USER(timer_api_error, test_timer_start_null)
+void test_timer_start_null(void)
 {
-#ifndef CONFIG_USERSPACE
-	/* Skip on platforms with no userspace support */
-	ztest_test_skip();
-#endif
-
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			(k_thread_entry_t)thread_timer_start_null,
 			NULL, NULL, NULL,
@@ -54,7 +50,15 @@ ZTEST_USER(timer_api_error, test_timer_start_null)
 
 	k_thread_join(tid, K_FOREVER);
 }
+#else
+void test_timer_start_null(void)
+{
+	/* Skip on platforms with no userspace support */
+	ztest_test_skip();
+}
+#endif
 
+#ifdef CONFIG_USERSPACE
 static void thread_timer_stop_null(void *p1, void *p2, void *p3)
 {
 	ztest_set_fault_valid(true);
@@ -73,13 +77,8 @@ static void thread_timer_stop_null(void *p1, void *p2, void *p3)
  *
  * @see k_timer_stop()
  */
-ZTEST_USER(timer_api_error, test_timer_stop_null)
+void test_timer_stop_null(void)
 {
-#ifndef CONFIG_USERSPACE
-	/* Skip on platforms with no userspace support */
-	ztest_test_skip();
-#endif
-
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			(k_thread_entry_t)thread_timer_stop_null,
 			NULL, NULL, NULL,
@@ -88,7 +87,15 @@ ZTEST_USER(timer_api_error, test_timer_stop_null)
 
 	k_thread_join(tid, K_FOREVER);
 }
+#else
+void test_timer_stop_null(void)
+{
+	/* Skip on platforms with no userspace support */
+	ztest_test_skip();
+}
+#endif
 
+#ifdef CONFIG_USERSPACE
 static void thread_timer_status_get_null(void *p1, void *p2, void *p3)
 {
 	ztest_set_fault_valid(true);
@@ -107,13 +114,8 @@ static void thread_timer_status_get_null(void *p1, void *p2, void *p3)
  *
  * @see k_timer_status_get()
  */
-ZTEST_USER(timer_api_error, test_timer_status_get_null)
+void test_timer_status_get_null(void)
 {
-#ifndef CONFIG_USERSPACE
-	/* Skip on platforms with no userspace support */
-	ztest_test_skip();
-#endif
-
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			(k_thread_entry_t)thread_timer_status_get_null,
 			NULL, NULL, NULL,
@@ -122,7 +124,15 @@ ZTEST_USER(timer_api_error, test_timer_status_get_null)
 
 	k_thread_join(tid, K_FOREVER);
 }
+#else
+void test_timer_status_get_null(void)
+{
+	/* Skip on platforms with no userspace support */
+	ztest_test_skip();
+}
+#endif
 
+#ifdef CONFIG_USERSPACE
 static void thread_timer_status_sync_null(void *p1, void *p2, void *p3)
 {
 	ztest_set_fault_valid(true);
@@ -141,13 +151,8 @@ static void thread_timer_status_sync_null(void *p1, void *p2, void *p3)
  *
  * @see k_timer_status_sync()
  */
-ZTEST_USER(timer_api_error, test_timer_status_sync_null)
+void test_timer_status_sync_null(void)
 {
-#ifndef CONFIG_USERSPACE
-	/* Skip on platforms with no userspace support */
-	ztest_test_skip();
-#endif
-
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			(k_thread_entry_t)thread_timer_status_sync_null,
 			NULL, NULL, NULL,
@@ -156,7 +161,15 @@ ZTEST_USER(timer_api_error, test_timer_status_sync_null)
 
 	k_thread_join(tid, K_FOREVER);
 }
+#else
+void test_timer_status_sync_null(void)
+{
+	/* Skip on platforms with no userspace support */
+	ztest_test_skip();
+}
+#endif
 
+#ifdef CONFIG_USERSPACE
 static void thread_timer_remaining_ticks_null(void *p1, void *p2, void *p3)
 {
 	ztest_set_fault_valid(true);
@@ -175,13 +188,8 @@ static void thread_timer_remaining_ticks_null(void *p1, void *p2, void *p3)
  *
  * @see k_timer_remaining_ticks()
  */
-ZTEST_USER(timer_api_error, test_timer_remaining_ticks_null)
+void test_timer_remaining_ticks_null(void)
 {
-#ifndef CONFIG_USERSPACE
-	/* Skip on platforms with no userspace support */
-	ztest_test_skip();
-#endif
-
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			(k_thread_entry_t)thread_timer_remaining_ticks_null,
 			NULL, NULL, NULL,
@@ -190,7 +198,15 @@ ZTEST_USER(timer_api_error, test_timer_remaining_ticks_null)
 
 	k_thread_join(tid, K_FOREVER);
 }
+#else
+void test_timer_remaining_ticks_null(void)
+{
+	/* Skip on platforms with no userspace support */
+	ztest_test_skip();
+}
+#endif
 
+#ifdef CONFIG_USERSPACE
 static void thread_timer_expires_ticks_null(void *p1, void *p2, void *p3)
 {
 	ztest_set_fault_valid(true);
@@ -209,12 +225,8 @@ static void thread_timer_expires_ticks_null(void *p1, void *p2, void *p3)
  *
  * @see k_timer_expires_ticks()
  */
-ZTEST_USER(timer_api_error, test_timer_expires_ticks_null)
+void test_timer_expires_ticks_null(void)
 {
-#ifndef CONFIG_USERSPACE
-	/* Skip on platforms with no userspace support */
-	ztest_test_skip();
-#endif
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			(k_thread_entry_t)thread_timer_expires_ticks_null,
 			NULL, NULL, NULL,
@@ -223,7 +235,15 @@ ZTEST_USER(timer_api_error, test_timer_expires_ticks_null)
 
 	k_thread_join(tid, K_FOREVER);
 }
+#else
+void test_timer_expires_ticks_null(void)
+{
+	/* Skip on platforms with no userspace support */
+	ztest_test_skip();
+}
+#endif
 
+#ifdef CONFIG_USERSPACE
 static void thread_timer_user_data_get_null(void *p1, void *p2, void *p3)
 {
 	ztest_set_fault_valid(true);
@@ -242,12 +262,8 @@ static void thread_timer_user_data_get_null(void *p1, void *p2, void *p3)
  *
  * @see k_timer_user_data_get()
  */
-ZTEST_USER(timer_api_error, test_timer_user_data_get_null)
+void test_timer_user_data_get_null(void)
 {
-#ifndef CONFIG_USERSPACE
-	/* Skip on platforms with no userspace support */
-	ztest_test_skip();
-#endif
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			(k_thread_entry_t)thread_timer_user_data_get_null,
 			NULL, NULL, NULL,
@@ -256,7 +272,15 @@ ZTEST_USER(timer_api_error, test_timer_user_data_get_null)
 
 	k_thread_join(tid, K_FOREVER);
 }
+#else
+void test_timer_user_data_get_null(void)
+{
+	/* Skip on platforms with no userspace support */
+	ztest_test_skip();
+}
+#endif
 
+#ifdef CONFIG_USERSPACE
 static void thread_timer_user_data_set_null(void *p1, void *p2, void *p3)
 {
 	int user_data = 1;
@@ -277,13 +301,8 @@ static void thread_timer_user_data_set_null(void *p1, void *p2, void *p3)
  *
  * @see k_timer_user_data_set()
  */
-ZTEST_USER(timer_api_error, test_timer_user_data_set_null)
+void test_timer_user_data_set_null(void)
 {
-#ifndef CONFIG_USERSPACE
-	/* Skip on platforms with no userspace support */
-	ztest_test_skip();
-#endif
-
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			(k_thread_entry_t)thread_timer_user_data_set_null,
 			NULL, NULL, NULL,
@@ -292,6 +311,13 @@ ZTEST_USER(timer_api_error, test_timer_user_data_set_null)
 
 	k_thread_join(tid, K_FOREVER);
 }
+#else
+void test_timer_user_data_set_null(void)
+{
+	/* Skip on platforms with no userspace support */
+	ztest_test_skip();
+}
+#endif
 
 extern void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 			  k_timeout_t timeout);
@@ -300,7 +326,7 @@ static void test_timer_handle(struct _timeout *t)
 	/**do nothing here**/
 }
 
-ZTEST_USER(timer_api_error, test_timer_add_timeout)
+void test_timer_add_timeout(void)
 {
 	struct _timeout tm;
 	k_timeout_t timeout = K_FOREVER;
@@ -311,8 +337,7 @@ ZTEST_USER(timer_api_error, test_timer_add_timeout)
 
 extern uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout);
 extern void sys_clock_announce(int32_t ticks);
-
-ZTEST(timer_api_error, test_timeout_end_calc)
+void test_timeout_end_calc(void)
 {
 	int ret;
 	k_timeout_t timeout;
@@ -338,11 +363,19 @@ ZTEST(timer_api_error, test_timeout_end_calc)
  * @}
  */
 
-void *setup_timer_error_test(void)
+void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, &tstack, &mytimer, &sync_timer);
-
-	return NULL;
+	ztest_test_suite(timer_api_error,
+			 ztest_user_unit_test(test_timer_stop_null),
+			 ztest_user_unit_test(test_timer_status_get_null),
+			 ztest_user_unit_test(test_timer_status_sync_null),
+			 ztest_user_unit_test(test_timer_remaining_ticks_null),
+			 ztest_user_unit_test(test_timer_expires_ticks_null),
+			 ztest_user_unit_test(test_timer_user_data_get_null),
+			 ztest_user_unit_test(test_timer_user_data_set_null),
+			 ztest_user_unit_test(test_timer_add_timeout),
+			 ztest_unit_test(test_timeout_end_calc),
+			 ztest_user_unit_test(test_timer_start_null));
+	ztest_run_test_suite(timer_api_error);
 }
-
-ZTEST_SUITE(timer_api_error, NULL, setup_timer_error_test, NULL, NULL, NULL);

@@ -5,6 +5,10 @@ description: PWM LEDs parent node
 
 compatible: "pwm-leds"
 
+include:
+    - name: base.yaml
+      property-allowlist: [label]
+
 child-binding:
     description: PWM LED child node
     properties:

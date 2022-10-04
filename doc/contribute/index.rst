@@ -10,4 +10,3 @@ Contributing to Zephyr
    coding_guidelines/index.rst
    documentation/index.rst
    external.rst
-   bin_blobs.rst

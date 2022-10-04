@@ -25,6 +25,4 @@ source "drivers/memc/Kconfig.stm32"
 
 source "drivers/memc/Kconfig.mcux"
 
-source "drivers/memc/Kconfig.sam"
-
 endif

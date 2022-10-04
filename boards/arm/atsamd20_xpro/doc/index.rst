@@ -13,6 +13,7 @@ which provides a full debug interface without the need for additional
 hardware.
 
 .. image:: img/atsamd20_xpro.jpg
+     :width: 500px
      :align: center
      :alt: ATSAMD20-XPRO
 

@@ -5,8 +5,7 @@
 
 config ENTROPY_LITEX_RNG
 	bool "PRBS RNG driver"
-	default y
-	depends on DT_HAS_LITEX_PRBS_ENABLED
+	depends on SOC_RISCV32_LITEX_VEXRISCV
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the RNG module, which is an entropy number

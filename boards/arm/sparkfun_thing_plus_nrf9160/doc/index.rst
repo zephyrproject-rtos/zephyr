@@ -3,7 +3,8 @@
 nRF9160 Thing Plus
 ##################
 
-.. figure:: img/sparkfun_thing_plus_nrf9160.jpg
+.. figure:: img/sparkfun_thing_plus_nrf9160.jpeg
+     :width: 600px
      :align: center
      :alt: Sparkfun nRF9160 Thing Plus
 

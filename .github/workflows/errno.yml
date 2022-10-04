@@ -8,11 +8,11 @@ on:
 
 jobs:
   check-errno:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.2
+      image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.0
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.2
 
     steps:
       - name: Apply container owner mismatch workaround

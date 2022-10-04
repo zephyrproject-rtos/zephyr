@@ -5,8 +5,7 @@
 
 config DMA_MCUX_EDMA
 	bool "MCUX DMA driver"
-	default y
-	depends on DT_HAS_NXP_MCUX_EDMA_ENABLED
+	depends on HAS_MCUX_EDMA
 	imply NOCACHE_MEMORY if HAS_MCUX_CACHE
 	help
 	  DMA driver for MCUX series SoCs.

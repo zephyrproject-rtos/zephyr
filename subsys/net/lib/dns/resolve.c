@@ -743,8 +743,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 		goto finished;
 	}
 
-	if (ret < 0 || query_idx < 0 ||
-	    query_idx > CONFIG_DNS_NUM_CONCUR_QUERIES) {
+	if (ret < 0) {
 		goto quit;
 	}
 

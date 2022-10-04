@@ -26,6 +26,7 @@ the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/ebyte_e73_tbb_nrf52832.jpg
+     :width: 520
      :align: center
      :alt: EBYTE E73-TBB
 

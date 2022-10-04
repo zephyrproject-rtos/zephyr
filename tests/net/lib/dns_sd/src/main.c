@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include <zephyr/net/dns_sd.h>
 #include <zephyr/net/net_context.h>
@@ -136,7 +136,7 @@ static uint8_t *create_query(const struct dns_sd_rec *inst,
 }
 
 /** Test for @ref label_is_valid */
-ZTEST(dns_sd, test_label_is_valid)
+static void test_label_is_valid(void)
 {
 	zassert_equal(false, label_is_valid(NULL,
 					    DNS_LABEL_MIN_SIZE), "");
@@ -161,7 +161,7 @@ ZTEST(dns_sd, test_label_is_valid)
 }
 
 /** Test for @ref dns_sd_rec_is_valid */
-ZTEST(dns_sd, test_dns_sd_rec_is_valid)
+static void test_dns_sd_rec_is_valid(void)
 {
 	DNS_SD_REGISTER_TCP_SERVICE(name_min,
 				"x",
@@ -245,7 +245,7 @@ ZTEST(dns_sd, test_dns_sd_rec_is_valid)
 }
 
 /** Test for @ref creqte_query */
-ZTEST(dns_sd, test_create_query)
+static void test_create_query(void)
 {
 	size_t actual_query_size = -1;
 	uint8_t *actual_query = create_query(&nasxxxxxx,
@@ -267,7 +267,7 @@ ZTEST(dns_sd, test_create_query)
 }
 
 /** Test for @ref add_ptr_record */
-ZTEST(dns_sd, test_add_ptr_record)
+static void test_add_ptr_record(void)
 {
 	const uint32_t ttl = DNS_SD_PTR_TTL;
 	const uint32_t offset = sizeof(struct dns_header);
@@ -339,7 +339,7 @@ ZTEST(dns_sd, test_add_ptr_record)
 }
 
 /** Test for @ref add_txt_record */
-ZTEST(dns_sd, test_add_txt_record)
+static void test_add_txt_record(void)
 {
 	const uint32_t ttl = DNS_SD_TXT_TTL;
 	const uint32_t offset = 0;
@@ -377,7 +377,7 @@ ZTEST(dns_sd, test_add_txt_record)
 }
 
 /** Test for @ref add_srv_record */
-ZTEST(dns_sd, test_add_srv_record)
+static void test_add_srv_record(void)
 {
 	const uint32_t ttl = DNS_SD_SRV_TTL;
 	const uint32_t offset = 0;
@@ -433,7 +433,7 @@ ZTEST(dns_sd, test_add_srv_record)
 }
 
 /** Test for @ref add_a_record */
-ZTEST(dns_sd, test_add_a_record)
+static void test_add_a_record(void)
 {
 	const uint32_t ttl = DNS_SD_A_TTL;
 	const uint32_t offset = 0;
@@ -471,7 +471,7 @@ ZTEST(dns_sd, test_add_a_record)
 }
 
 /** Test for @ref add_aaaa_record */
-ZTEST(dns_sd, test_add_aaaa_record)
+static void test_add_aaaa_record(void)
 {
 	const uint32_t ttl = DNS_SD_AAAA_TTL;
 	const uint32_t offset = 0;
@@ -514,7 +514,7 @@ ZTEST(dns_sd, test_add_aaaa_record)
 }
 
 /** Test for @ref dns_sd_handle_ptr_query */
-ZTEST(dns_sd, test_dns_sd_handle_ptr_query)
+static void test_dns_sd_handle_ptr_query(void)
 {
 	struct in_addr addr = {
 		.s_addr = htonl(IP_ADDR(177, 5, 240, 13)),
@@ -575,7 +575,7 @@ ZTEST(dns_sd, test_dns_sd_handle_ptr_query)
 }
 
 /** Test for @ref dns_sd_handle_ptr_query */
-ZTEST(dns_sd, test_dns_sd_handle_service_type_enum)
+static void test_dns_sd_handle_service_type_enum(void)
 {
 	DNS_SD_REGISTER_TCP_SERVICE(chromecast,
 				"Chromecast-abcd",
@@ -627,7 +627,7 @@ ZTEST(dns_sd, test_dns_sd_handle_service_type_enum)
 }
 
 /** Test @ref dns_sd_rec_match */
-ZTEST(dns_sd, test_dns_sd_rec_match)
+static void test_dns_sd_rec_match(void)
 {
 	DNS_SD_REGISTER_TCP_SERVICE(record,
 				    "NGINX",
@@ -664,7 +664,7 @@ ZTEST(dns_sd, test_dns_sd_rec_match)
 }
 
 /** Test @ref setup_dst_addr */
-ZTEST(dns_sd, test_setup_dst_addr)
+static void test_setup_dst_addr(void)
 {
 	int ret;
 	struct net_if *iface;
@@ -734,7 +734,7 @@ ZTEST(dns_sd, test_setup_dst_addr)
 }
 
 /** test for @ref dns_sd_is_service_type_enumeration */
-ZTEST(dns_sd, test_is_service_type_enumeration)
+static void test_is_service_type_enumeration(void)
 {
 	static const struct dns_sd_rec filter_ok = {
 		.instance = "_services",
@@ -760,7 +760,7 @@ ZTEST(dns_sd, test_is_service_type_enumeration)
 	zassert_false(dns_sd_is_service_type_enumeration(&filter_nok), "");
 }
 
-ZTEST(dns_sd, test_extract_service_type_enumeration)
+static void test_extract_service_type_enumeration(void)
 {
 	static const uint8_t query[] = {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x09, 0x5f,
@@ -800,7 +800,7 @@ ZTEST(dns_sd, test_extract_service_type_enumeration)
 	zassert_true(dns_sd_is_service_type_enumeration(&record), "");
 }
 
-ZTEST(dns_sd, test_wildcard_comparison)
+static void test_wildcard_comparison(void)
 {
 	size_t n_matches = 0;
 	size_t n_records = 0;
@@ -831,4 +831,24 @@ ZTEST(dns_sd, test_wildcard_comparison)
 		"all records: n_records: %zu n_matches: %zu", n_records, n_matches);
 }
 
-ZTEST_SUITE(dns_sd, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(dns_sd_tests,
+			 ztest_unit_test(test_label_is_valid),
+			 ztest_unit_test(test_dns_sd_rec_is_valid),
+			 ztest_unit_test(test_create_query),
+			 ztest_unit_test(test_add_ptr_record),
+			 ztest_unit_test(test_add_txt_record),
+			 ztest_unit_test(test_add_srv_record),
+			 ztest_unit_test(test_add_a_record),
+			 ztest_unit_test(test_add_aaaa_record),
+			 ztest_unit_test(test_dns_sd_handle_ptr_query),
+			 ztest_unit_test(test_dns_sd_rec_match),
+			 ztest_unit_test(test_setup_dst_addr),
+			 ztest_unit_test(test_is_service_type_enumeration),
+			 ztest_unit_test(test_extract_service_type_enumeration),
+			 ztest_unit_test(test_wildcard_comparison),
+			 ztest_unit_test(test_dns_sd_handle_service_type_enum));
+
+	ztest_run_test_suite(dns_sd_tests);
+}

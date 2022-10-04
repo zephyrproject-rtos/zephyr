@@ -20,4 +20,7 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 0
 
+config I2C
+	default y if SENSOR
+
 endif # BOARD_FRDM_K22F

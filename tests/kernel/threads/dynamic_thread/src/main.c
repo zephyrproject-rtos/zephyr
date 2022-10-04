@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/irq_offload.h>
 #include <zephyr/debug/stack.h>
 
@@ -14,7 +14,6 @@ static K_THREAD_STACK_DEFINE(dyn_thread_stack, STACKSIZE);
 static K_SEM_DEFINE(start_sem, 0, 1);
 static K_SEM_DEFINE(end_sem, 0, 1);
 static ZTEST_BMEM struct k_thread *dyn_thread;
-static struct k_thread *dynamic_threads[CONFIG_MAX_THREAD_BYTES * 8];
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
@@ -70,6 +69,7 @@ static void create_dynamic_thread(void)
 
 static void permission_test(void)
 {
+	struct k_thread *dyn_thread;
 	k_tid_t tid;
 
 	dyn_thread = k_object_alloc(K_OBJ_THREAD);
@@ -113,18 +113,16 @@ static void permission_test(void)
  * not have permission to one of the semaphore. If permissions are cleared
  * correctly when thread is destroyed, the second should raise kernel oops.
  */
-ZTEST(thread_dynamic, test_dyn_thread_perms)
+static void test_dyn_thread_perms(void)
 {
-	if (!(IS_ENABLED(CONFIG_USERSPACE))) {
-		ztest_test_skip();
-	}
-
 	permission_test();
 
 	TC_PRINT("===== must have access denied on k_sem %p\n", &end_sem);
 }
 
-ZTEST(thread_dynamic, test_thread_index_management)
+static struct k_thread *dynamic_threads[CONFIG_MAX_THREAD_BYTES * 8];
+
+static void test_thread_index_management(void)
 {
 	int i, ctr = 0;
 
@@ -190,12 +188,8 @@ ZTEST(thread_dynamic, test_thread_index_management)
  * @details This is a simple test to create a user thread
  * dynamically via k_object_alloc() under a kernel thread.
  */
-ZTEST(thread_dynamic, test_kernel_create_dyn_user_thread)
+static void test_kernel_create_dyn_user_thread(void)
 {
-	if (!(IS_ENABLED(CONFIG_USERSPACE))) {
-		ztest_test_skip();
-	}
-
 	create_dynamic_thread();
 }
 
@@ -206,19 +200,23 @@ ZTEST(thread_dynamic, test_kernel_create_dyn_user_thread)
  * @details This is a simple test to create a user thread
  * dynamically via k_object_alloc() under a user thread.
  */
-ZTEST_USER(thread_dynamic, test_user_create_dyn_user_thread)
+static void test_user_create_dyn_user_thread(void)
 {
 	create_dynamic_thread();
 }
 
 /* test case main entry */
-void *thread_test_setup(void)
+void test_main(void)
 {
 	k_thread_system_pool_assign(k_current_get());
 
 	prep();
 
-	return NULL;
+	ztest_test_suite(thread_dynamic,
+			 ztest_unit_test(test_kernel_create_dyn_user_thread),
+			 ztest_user_unit_test(test_user_create_dyn_user_thread),
+			 ztest_unit_test(test_dyn_thread_perms),
+			 ztest_unit_test(test_thread_index_management)
+			 );
+	ztest_run_test_suite(thread_dynamic);
 }
-
-ZTEST_SUITE(thread_dynamic, NULL, thread_test_setup, NULL, NULL, NULL);

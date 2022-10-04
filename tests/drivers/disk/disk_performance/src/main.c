@@ -6,7 +6,7 @@
 
 
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/device.h>
 #include <zephyr/timing/timing.h>
@@ -111,7 +111,7 @@ static uint64_t read_helper(uint32_t num_blocks)
 	return (total_ns / SEQ_ITERATIONS);
 }
 
-ZTEST(disk_performance, test_sequential_read)
+static void test_sequential_read(void)
 {
 	uint64_t time_ns;
 
@@ -174,7 +174,7 @@ static uint64_t write_helper(uint32_t num_blocks)
 	return (total_ns / SEQ_ITERATIONS);
 }
 
-ZTEST(disk_performance, test_sequential_write)
+static void test_sequential_write(void)
 {
 	uint64_t time_ns;
 
@@ -196,7 +196,7 @@ ZTEST(disk_performance, test_sequential_write)
 		((BUF_SIZE) * (NSEC_PER_SEC / time_ns)) / 1024);
 }
 
-ZTEST(disk_performance, test_random_read)
+static void test_random_read(void)
 {
 	timing_t start_time, end_time;
 	uint64_t cycles, total_ns;
@@ -240,7 +240,8 @@ ZTEST(disk_performance, test_random_read)
 		/ total_ns);
 }
 
-ZTEST(disk_performance, test_random_write)
+
+static void test_random_write(void)
 {
 	timing_t start_time, end_time;
 	uint64_t cycles, total_ns;
@@ -298,11 +299,17 @@ ZTEST(disk_performance, test_random_write)
 	}
 }
 
-static void *disk_setup(void)
+
+
+void test_main(void)
 {
-	test_setup();
+	ztest_test_suite(disk_performance_test,
+		ztest_unit_test(test_setup),
+		ztest_unit_test(test_sequential_read),
+		ztest_unit_test(test_sequential_write),
+		ztest_unit_test(test_random_read),
+		ztest_unit_test(test_random_write)
+	);
 
-	return NULL;
+	ztest_run_test_suite(disk_performance_test);
 }
-
-ZTEST_SUITE(disk_performance, NULL, disk_setup, NULL, NULL, NULL);

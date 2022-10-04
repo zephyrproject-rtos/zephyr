@@ -18,8 +18,8 @@
 #include <zephyr/linker/sections.h>
 #include <errno.h>
 
-#include <zephyr/tc_util.h>
-#include <zephyr/ztest.h>
+#include <tc_util.h>
+#include <ztest.h>
 
 #define MBEDTLS_ALLOW_PRIVATE_ACCESS
 

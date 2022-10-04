@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/fs/littlefs.h>
 #include "testfs_tests.h"
 #include "testfs_lfs.h"
@@ -36,8 +36,7 @@ static void cleanup(struct fs_mount_t *mp)
 		      "Failed to clean partition");
 }
 
-ZTEST(littlefs, test_fs_open_flags_lfs)
-
+void test_fs_open_flags_lfs(void)
 {
 	/* Using smallest partition for this tests as they do not write
 	 * a lot of data, basically they just check flags.
@@ -45,7 +44,6 @@ ZTEST(littlefs, test_fs_open_flags_lfs)
 	struct fs_mount_t *mp = &testfs_small_mnt;
 
 	cleanup(mp);
-	mp->flags = 0;
 	mount(mp);
 
 	test_fs_open_flags();

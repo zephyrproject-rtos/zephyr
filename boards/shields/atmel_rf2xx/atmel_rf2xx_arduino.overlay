@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	chosen {
-		zephyr,ieee802154 = &ieee802154;
-	};
-};
-
 &arduino_spi {
 	status = "okay";
 
@@ -17,9 +11,10 @@
 	cs-gpios = <&arduino_header 16
 		    (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 
-	ieee802154: rf2xx@0 {
+	rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
+		label = "RF2XX_0";
 		spi-max-frequency = <6000000>;
 		/*  D2 */
 		irq-gpios = <&arduino_header 8

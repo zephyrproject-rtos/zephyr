@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/linker/sections.h>
 #include <zephyr/random/rand32.h>
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
@@ -418,7 +418,7 @@ static void test_address_setup(void)
 	test_failed = false;
 }
 
-ZTEST(net_vlan, test_vlan_tci)
+static void test_vlan_tci(void)
 {
 	struct net_pkt *pkt;
 	uint16_t tci;
@@ -712,7 +712,7 @@ static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
 	return true;
 }
 
-ZTEST(net_vlan, test_vlan_send_data)
+static void test_vlan_send_data(void)
 {
 	struct ethernet_context *eth_ctx; /* This is L2 context */
 	struct eth_context *ctx; /* This is interface context */
@@ -774,23 +774,18 @@ ZTEST(net_vlan, test_vlan_send_data)
 	net_context_unref(udp_v6_ctx);
 }
 
-static void *setup(void)
+void test_main(void)
 {
-	test_vlan_setup();
-	test_address_setup();
-	return NULL;
-}
+	ztest_test_suite(net_vlan_test,
+			 ztest_unit_test(test_vlan_setup),
+			 ztest_unit_test(test_address_setup),
+			 ztest_unit_test(test_vlan_tci),
+			 ztest_unit_test(test_vlan_enable),
+			 ztest_unit_test(test_vlan_disable),
+			 ztest_unit_test(test_vlan_enable_all),
+			 ztest_unit_test(test_vlan_disable_all),
+			 ztest_unit_test(test_vlan_send_data)
+			 );
 
-ZTEST(net_vlan, test_vlan_enable_disable)
-{
-	test_vlan_enable();
-	test_vlan_disable();
+	ztest_run_test_suite(net_vlan_test);
 }
-
-ZTEST(net_vlan, test_vlan_enable_disable_all)
-{
-	test_vlan_enable_all();
-	test_vlan_disable_all();
-}
-
-ZTEST_SUITE(net_vlan, NULL, setup, NULL, NULL, NULL);

@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <zephyr/ztest_assert.h>
+#include <ztest_assert.h>
 #include <fcntl.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
@@ -148,7 +148,7 @@ static void spawn_client_connect_thread(int sock, struct sockaddr *addr)
 	k_thread_start(&client_connect_thread);
 }
 
-ZTEST(net_socket_tls, test_so_type)
+void test_so_type(void)
 {
 	struct sockaddr_in bind_addr4;
 	struct sockaddr_in6 bind_addr6;
@@ -176,7 +176,7 @@ ZTEST(net_socket_tls, test_so_type)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
-ZTEST(net_socket_tls, test_so_protocol)
+void test_so_protocol(void)
 {
 	struct sockaddr_in bind_addr4;
 	struct sockaddr_in6 bind_addr6;
@@ -228,7 +228,7 @@ static void test_msg_waitall_tx_work_handler(struct k_work *work)
 	}
 }
 
-ZTEST(net_socket_tls, test_v4_msg_waitall)
+void test_v4_msg_waitall(void)
 {
 	struct test_msg_waitall_data test_data = {
 		.data = TEST_STR_SMALL,
@@ -306,7 +306,7 @@ ZTEST(net_socket_tls, test_v4_msg_waitall)
 	test_close(c_sock);
 }
 
-ZTEST(net_socket_tls, test_v6_msg_waitall)
+void test_v6_msg_waitall(void)
 {
 	struct test_msg_waitall_data test_data = {
 		.data = TEST_STR_SMALL,
@@ -452,7 +452,7 @@ void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
 	zassert_equal(rv, 0, "close failed");
 }
 
-ZTEST(net_socket_tls, test_v4_msg_trunc)
+void test_v4_msg_trunc(void)
 {
 	int client_sock;
 	int server_sock;
@@ -469,7 +469,7 @@ ZTEST(net_socket_tls, test_v4_msg_trunc)
 		       (struct sockaddr *)&server_addr, sizeof(server_addr));
 }
 
-ZTEST(net_socket_tls, test_v6_msg_trunc)
+void test_v6_msg_trunc(void)
 {
 	int client_sock;
 	int server_sock;
@@ -577,7 +577,7 @@ static void test_dtls_sendmsg(int sock_c, int sock_s, struct sockaddr *addr_c,
 	zassert_equal(rv, 0, "close failed");
 }
 
-ZTEST(net_socket_tls, test_v4_dtls_sendmsg)
+void test_v4_dtls_sendmsg(void)
 {
 	int client_sock;
 	int server_sock;
@@ -594,7 +594,7 @@ ZTEST(net_socket_tls, test_v4_dtls_sendmsg)
 			  (struct sockaddr *)&server_addr, sizeof(server_addr));
 }
 
-ZTEST(net_socket_tls, test_v6_dtls_sendmsg)
+void test_v6_dtls_sendmsg(void)
 {
 	int client_sock;
 	int server_sock;
@@ -611,4 +611,26 @@ ZTEST(net_socket_tls, test_v6_dtls_sendmsg)
 			  (struct sockaddr *)&server_addr, sizeof(server_addr));
 }
 
-ZTEST_SUITE(net_socket_tls, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
+		k_thread_priority_set(k_current_get(),
+				K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1));
+	} else {
+		k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(8));
+	}
+
+	ztest_test_suite(
+		socket_tls,
+		ztest_unit_test(test_so_type),
+		ztest_unit_test(test_so_protocol),
+		ztest_unit_test(test_v4_msg_waitall),
+		ztest_unit_test(test_v6_msg_waitall),
+		ztest_unit_test(test_v4_msg_trunc),
+		ztest_unit_test(test_v6_msg_trunc),
+		ztest_unit_test(test_v4_dtls_sendmsg),
+		ztest_unit_test(test_v6_dtls_sendmsg)
+		);
+
+	ztest_run_test_suite(socket_tls);
+}

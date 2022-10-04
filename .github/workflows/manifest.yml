@@ -6,7 +6,7 @@ on:
 
 jobs:
   contribs:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     name: Manifest
     steps:
       - name: Checkout the code

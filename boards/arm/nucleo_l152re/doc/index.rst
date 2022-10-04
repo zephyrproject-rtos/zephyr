@@ -21,6 +21,8 @@ The STM32 Nucleo board comes with the STM32 comprehensive software HAL library t
 with various packaged software examples.
 
 .. image:: img/nucleo_l152re.jpg
+   :width: 500px
+   :height: 367px
    :align: center
    :alt: NUCLEO-L152RE
 
@@ -98,8 +100,6 @@ The Zephyr nucleo_l152re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | Direct Memory Access                |
 +-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -116,8 +116,10 @@ capable except for analog inputs.
 
 Board connectors:
 -----------------
-.. image:: img/nucleo_l152re_connectors.jpg
+.. image:: img/nucleo_l152re_connectors.png
+   :width: 800px
    :align: center
+   :height: 619px
    :alt: Nucleo L152RE connectors
 
 Default Zephyr Peripheral Mapping:

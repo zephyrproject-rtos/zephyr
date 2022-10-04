@@ -18,6 +18,7 @@
 			interrupts = <24 0>;
 			interrupt-names = "combined";
 			status = "disabled";
+			label= "I2C_2";
 		};
 
 		spi2: spi@40003800 {
@@ -28,6 +29,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <26 3>;
 			status = "disabled";
+			label = "SPI_2";
 		};
 
 		usart1: serial@40013800 {
@@ -36,6 +38,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>;
 			interrupts = <27 0>;
 			status = "disabled";
+			label = "UART_1";
 		};
 
 		timers22: timers@40011400 {
@@ -46,10 +49,12 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+			label = "TIMERS_22";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
+				label = "PWM_22";
 				#pwm-cells = <3>;
 			};
 		};
@@ -62,6 +67,7 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+			label = "TIMERS_6";
 		};
 
 		eeprom: eeprom@8080000{

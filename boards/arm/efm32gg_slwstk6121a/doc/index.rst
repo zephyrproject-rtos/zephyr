@@ -10,7 +10,8 @@ The WGM160P Starter Kit SLWSTK6121A comes with the BRD4321A radio board.
 This radio boards contains a WGM160P module, which combines the WF200 Wi-Fi
 transceiver with an EFM32GG11 microcontroller.
 
-.. figure:: wgm160p-starter-kit.jpg
+.. figure:: ./wgm160p-starter-kit.jpg
+   :width: 300px
    :align: center
    :alt: SLWSTK6121A
 

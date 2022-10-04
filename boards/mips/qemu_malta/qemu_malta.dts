@@ -50,6 +50,7 @@
 		/* no matter for emulated port */
 		clock-frequency = <1843200>;
 		current-speed = <115200>;
+		label = "UART_2";
 		status = "okay";
 	};
 };

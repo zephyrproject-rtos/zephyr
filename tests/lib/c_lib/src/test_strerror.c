@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 ZTEST(test_c_lib, test_strerror)
 {

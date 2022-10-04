@@ -3,7 +3,5 @@
 
 config SPI_BITBANG
 	bool "Bitbang SPI controller driver"
-	default y
-	depends on DT_HAS_ZEPHYR_SPI_BITBANG_ENABLED
 	help
 	  Enable the Bitbang SPI controller

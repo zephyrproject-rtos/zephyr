@@ -13,6 +13,7 @@ supported:
   - ble
   - gpio
   - i2c
+  - ieee802154
   - pwm
   - spi
   - watchdog

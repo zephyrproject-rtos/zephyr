@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/drivers/flash.h>
@@ -61,7 +61,7 @@ static void _test_request_upgrade_n(uint8_t fa_id, int img_index, int confirmed)
 	}
 }
 
-ZTEST(mcuboot_multi, test_request_upgrade_multi)
+void test_request_upgrade_multi(void)
 {
 	_test_request_upgrade_n(FLASH_AREA_ID(image_1), 0, 0);
 	_test_request_upgrade_n(FLASH_AREA_ID(image_3), 1, 1);
@@ -115,10 +115,16 @@ static void _test_write_confirm_n(uint8_t fa_id, int img_index)
 	zassert_equal(1, readout[0] & 0xff, "confirmation error");
 }
 
-ZTEST(mcuboot_multi, test_write_confirm_multi)
+void test_write_confirm_multi(void)
 {
 	_test_write_confirm_n(FLASH_AREA_ID(image_0), 0);
 	_test_write_confirm_n(FLASH_AREA_ID(image_2), 1);
 }
 
-ZTEST_SUITE(mcuboot_multi, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(test_mcuboot_interface,
+			 ztest_unit_test(test_request_upgrade_multi),
+			 ztest_unit_test(test_write_confirm_multi));
+	ztest_run_test_suite(test_mcuboot_interface);
+}

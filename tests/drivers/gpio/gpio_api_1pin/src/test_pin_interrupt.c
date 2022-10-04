@@ -11,7 +11,6 @@
 
 struct gpio_callback gpio_cb;
 static int cb_count;
-static int cb_count_target;
 
 static void callback_edge(const struct device *port, struct gpio_callback *cb,
 			  gpio_port_pins_t pins)
@@ -30,12 +29,11 @@ static void callback_level(const struct device *port,
 	zassert_equal(pins, BIT(TEST_PIN),
 		     "Detected interrupt on an invalid pin");
 
+	ret = gpio_pin_interrupt_configure(port, TEST_PIN, GPIO_INT_DISABLE);
+	zassert_equal(ret, 0,
+		      "Failed to disable pin interrupt in the callback");
+
 	cb_count++;
-	if (cb_count % cb_count_target == 0) {
-		ret = gpio_pin_interrupt_configure(port, TEST_PIN, GPIO_INT_DISABLE);
-		zassert_equal(ret, 0,
-				  "Failed to disable pin interrupt in the callback");
-	}
 }
 
 static void pin_set_and_verify(const struct device *port, unsigned int pin,
@@ -121,7 +119,7 @@ void test_gpio_pin_interrupt_edge(unsigned int cfg_flags,
 }
 
 void test_gpio_pin_interrupt_level(unsigned int cfg_flags,
-				   unsigned int int_flags, unsigned int interrupt_calls)
+				   unsigned int int_flags)
 {
 	const struct device *port;
 	int cb_count_expected;
@@ -158,7 +156,6 @@ void test_gpio_pin_interrupt_level(unsigned int cfg_flags,
 
 	cb_count = 0;
 	cb_count_expected = 0;
-	cb_count_target = interrupt_calls;
 
 	gpio_init_callback(&gpio_cb, callback_level, BIT(TEST_PIN));
 	ret = gpio_add_callback(port, &gpio_cb);
@@ -177,7 +174,7 @@ void test_gpio_pin_interrupt_level(unsigned int cfg_flags,
 	for (int i = 0; i < 6; i++) {
 		pin_out_val = (pin_out_val != 0) ? 0 : 1;
 		pin_set_and_verify(port, TEST_PIN, pin_out_val, i);
-		cb_count_expected += interrupt_calls;
+		cb_count_expected++;
 		zassert_equal(cb_count, cb_count_expected,
 			      "Test point %d: Pin interrupt triggered invalid "
 			      "number of times on level %d", i, pin_out_val);
@@ -206,25 +203,25 @@ void test_gpio_pin_interrupt_level(unsigned int cfg_flags,
 }
 
 /** @brief Verify GPIO_INT_EDGE_RISING flag. */
-ZTEST(gpio_api_1pin_int, test_gpio_int_edge_rising)
+void test_gpio_int_edge_rising(void)
 {
 	test_gpio_pin_interrupt_edge(0, GPIO_INT_EDGE_RISING);
 }
 
 /** @brief Verify GPIO_INT_EDGE_FALLING flag. */
-ZTEST(gpio_api_1pin_int, test_gpio_int_edge_falling)
+void test_gpio_int_edge_falling(void)
 {
 	test_gpio_pin_interrupt_edge(0, GPIO_INT_EDGE_FALLING);
 }
 
 /** @brief Verify GPIO_INT_EDGE_BOTH flag. */
-ZTEST(gpio_api_1pin_int, test_gpio_int_edge_both)
+void test_gpio_int_edge_both(void)
 {
 	test_gpio_pin_interrupt_edge(0, GPIO_INT_EDGE_BOTH);
 }
 
 /** @brief Verify GPIO_INT_EDGE_TO_ACTIVE flag. */
-ZTEST(gpio_api_1pin_int, test_gpio_int_edge_to_active)
+void test_gpio_int_edge_to_active(void)
 {
 	TC_PRINT("Step 1: Configure pin as active high\n");
 	test_gpio_pin_interrupt_edge(GPIO_ACTIVE_HIGH, GPIO_INT_EDGE_TO_ACTIVE);
@@ -233,7 +230,7 @@ ZTEST(gpio_api_1pin_int, test_gpio_int_edge_to_active)
 }
 
 /** @brief Verify GPIO_INT_EDGE_TO_INACTIVE flag. */
-ZTEST(gpio_api_1pin_int, test_gpio_int_edge_to_inactive)
+void test_gpio_int_edge_to_inactive(void)
 {
 	TC_PRINT("Step 1: Configure pin as active high\n");
 	test_gpio_pin_interrupt_edge(GPIO_ACTIVE_HIGH, GPIO_INT_EDGE_TO_INACTIVE);
@@ -241,46 +238,32 @@ ZTEST(gpio_api_1pin_int, test_gpio_int_edge_to_inactive)
 	test_gpio_pin_interrupt_edge(GPIO_ACTIVE_LOW, GPIO_INT_EDGE_TO_INACTIVE);
 }
 
-/** @brief Verify GPIO_INT_LEVEL_HIGH flag with 1 interrupt call */
-ZTEST(gpio_api_1pin_int, test_gpio_int_level_high_interrupt_count_1)
+/** @brief Verify GPIO_INT_LEVEL_HIGH flag. */
+void test_gpio_int_level_high(void)
 {
-	test_gpio_pin_interrupt_level(0, GPIO_INT_LEVEL_HIGH, 1);
+	test_gpio_pin_interrupt_level(0, GPIO_INT_LEVEL_HIGH);
 }
 
-/** @brief Verify GPIO_INT_LEVEL_HIGH flag with 5 interrupt call */
-ZTEST(gpio_api_1pin_int, test_gpio_int_level_high_interrupt_count_5)
+/** @brief Verify GPIO_INT_LEVEL_LOW flag. */
+void test_gpio_int_level_low(void)
 {
-	test_gpio_pin_interrupt_level(0, GPIO_INT_LEVEL_HIGH, 5);
-}
-
-/** @brief Verify GPIO_INT_LEVEL_LOW flag with 1 interrupt call */
-ZTEST(gpio_api_1pin_int, test_gpio_int_level_low_interrupt_count_1)
-{
-	test_gpio_pin_interrupt_level(0, GPIO_INT_LEVEL_LOW, 1);
-}
-
-/** @brief Verify GPIO_INT_LEVEL_LOW flag with 5 interrupt call */
-ZTEST(gpio_api_1pin_int, test_gpio_int_level_low_interrupt_count_5)
-{
-	test_gpio_pin_interrupt_level(0, GPIO_INT_LEVEL_LOW, 5);
+	test_gpio_pin_interrupt_level(0, GPIO_INT_LEVEL_LOW);
 }
 
 /** @brief Verify GPIO_INT_LEVEL_ACTIVE flag. */
-ZTEST(gpio_api_1pin_int, test_gpio_int_level_active)
+void test_gpio_int_level_active(void)
 {
 	TC_PRINT("Step 1: Configure pin as active high\n");
-	test_gpio_pin_interrupt_level(GPIO_ACTIVE_HIGH, GPIO_INT_LEVEL_ACTIVE, 1);
+	test_gpio_pin_interrupt_level(GPIO_ACTIVE_HIGH, GPIO_INT_LEVEL_ACTIVE);
 	TC_PRINT("Step 2: Configure pin as active low\n");
-	test_gpio_pin_interrupt_level(GPIO_ACTIVE_LOW, GPIO_INT_LEVEL_ACTIVE, 1);
+	test_gpio_pin_interrupt_level(GPIO_ACTIVE_LOW, GPIO_INT_LEVEL_ACTIVE);
 }
 
 /** @brief Verify GPIO_INT_LEVEL_INACTIVE flag. */
-ZTEST(gpio_api_1pin_int, test_gpio_int_level_inactive)
+void test_gpio_int_level_inactive(void)
 {
 	TC_PRINT("Step 1: Configure pin as active high\n");
-	test_gpio_pin_interrupt_level(GPIO_ACTIVE_HIGH, GPIO_INT_LEVEL_INACTIVE, 1);
+	test_gpio_pin_interrupt_level(GPIO_ACTIVE_HIGH, GPIO_INT_LEVEL_INACTIVE);
 	TC_PRINT("Step 2: Configure pin as active low\n");
-	test_gpio_pin_interrupt_level(GPIO_ACTIVE_LOW, GPIO_INT_LEVEL_INACTIVE, 1);
+	test_gpio_pin_interrupt_level(GPIO_ACTIVE_LOW, GPIO_INT_LEVEL_INACTIVE);
 }
-
-ZTEST_SUITE(gpio_api_1pin_int, NULL, NULL, NULL, NULL, NULL);

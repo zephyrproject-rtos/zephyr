@@ -5,7 +5,7 @@
  */
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/drivers/entropy.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 /*
  * @addtogroup t_entropy_api
@@ -68,7 +68,7 @@ static int random_entropy(const struct device *dev, char *buffer, char num)
  */
 static int get_entropy(void)
 {
-	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 	uint8_t buffer[BUFFER_LENGTH] = { 0 };
 	int ret;
 
@@ -98,18 +98,18 @@ static int get_entropy(void)
 	return ret;
 }
 
-ZTEST(entropy_api, test_entropy_get_entropy)
+static void test_entropy_get_entropy(void)
 {
 	zassert_true(get_entropy() == TC_PASS, NULL);
 }
 
-void *entropy_api_setup(void)
+void test_main(void)
 {
 #ifdef CONFIG_BT
 	bt_enable(NULL);
 #endif /* CONFIG_BT */
 
-	return NULL;
+	ztest_test_suite(entropy_api,
+			 ztest_unit_test(test_entropy_get_entropy));
+	ztest_run_test_suite(entropy_api);
 }
-
-ZTEST_SUITE(entropy_api, NULL, entropy_api_setup, NULL, NULL, NULL);

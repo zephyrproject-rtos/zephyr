@@ -29,7 +29,7 @@ typedef void (*fsm_state)(void);
 
 static int64_t last_mode_change;
 
-static const struct device *const sensors[] = {
+static const struct device *sensors[] = {
 	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_l)),
 	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_c)),
 	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_r)),

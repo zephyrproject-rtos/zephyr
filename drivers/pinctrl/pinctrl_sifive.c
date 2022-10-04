@@ -8,8 +8,6 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/dt-bindings/pinctrl/sifive-pinctrl.h>
-
 #include <soc.h>
 
 #define PINCTRL_BASE_ADDR	DT_INST_REG_ADDR(0)

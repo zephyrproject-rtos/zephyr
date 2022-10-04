@@ -60,7 +60,7 @@ static inline void wait_for_switch(struct k_thread *thread)
  */
 static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 					  struct k_spinlock *lock,
-					  bool is_spinlock)
+					  int is_spinlock)
 {
 	ARG_UNUSED(lock);
 	struct k_thread *new_thread, *old_thread;
@@ -161,17 +161,17 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 static inline int z_swap_irqlock(unsigned int key)
 {
-	return do_swap(key, NULL, false);
+	return do_swap(key, NULL, 0);
 }
 
 static inline int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
 {
-	return do_swap(key.key, lock, true);
+	return do_swap(key.key, lock, 1);
 }
 
 static inline void z_swap_unlocked(void)
 {
-	(void) do_swap(arch_irq_lock(), NULL, true);
+	(void) do_swap(arch_irq_lock(), NULL, 1);
 }
 
 #else /* !CONFIG_USE_SWITCH */
@@ -230,10 +230,6 @@ static inline void z_dummy_thread_init(struct k_thread *dummy_thread)
 	k_thread_system_pool_assign(dummy_thread);
 #else
 	dummy_thread->resource_pool = NULL;
-#endif
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	dummy_thread->base.slice_ticks = 0;
 #endif
 
 	_current_cpu->current = dummy_thread;

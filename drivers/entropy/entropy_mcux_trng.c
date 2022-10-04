@@ -24,6 +24,8 @@ static int entropy_mcux_trng_get_entropy(const struct device *dev,
 	const struct mcux_entropy_config *config = dev->config;
 	status_t status;
 
+	ARG_UNUSED(dev);
+
 	status = TRNG_GetRandomData(config->base, buffer, length);
 	__ASSERT_NO_MSG(!status);
 
@@ -38,11 +40,21 @@ static struct mcux_entropy_config entropy_mcux_config = {
 	.base = (TRNG_Type *)DT_INST_REG_ADDR(0)
 };
 
+static int entropy_mcux_trng_init(const struct device *);
+
+DEVICE_DT_INST_DEFINE(0,
+		    entropy_mcux_trng_init, NULL, NULL,
+		    &entropy_mcux_config,
+		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
+		    &entropy_mcux_trng_api_funcs);
+
 static int entropy_mcux_trng_init(const struct device *dev)
 {
 	const struct mcux_entropy_config *config = dev->config;
 	trng_config_t conf;
 	status_t status;
+
+	ARG_UNUSED(dev);
 
 	status = TRNG_GetDefaultConfig(&conf);
 	__ASSERT_NO_MSG(!status);
@@ -52,9 +64,3 @@ static int entropy_mcux_trng_init(const struct device *dev)
 
 	return 0;
 }
-
-DEVICE_DT_INST_DEFINE(0,
-		    entropy_mcux_trng_init, NULL, NULL,
-		    &entropy_mcux_config,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		    &entropy_mcux_trng_api_funcs);

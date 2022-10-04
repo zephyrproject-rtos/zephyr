@@ -9,7 +9,8 @@ Overview
 The 96Boards Nitrogen hardware provides support for the Nordic Semiconductor
 nRF52832 ARM Cortex-M4F CPU.
 
-.. figure:: img/96b_nitrogen.jpg
+.. figure:: img/96b_nitrogen.png
+     :width: 487px
      :align: center
      :alt: 96Boards Nitrogen
 

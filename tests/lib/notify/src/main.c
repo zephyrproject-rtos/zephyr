@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/sys/notify.h>
 
 static uint32_t get_extflags(const struct sys_notify *anp)
@@ -45,7 +45,7 @@ ZTEST(sys_notify_api, test_spinwait)
 {
 	int rc;
 	int set_res = 423;
-	int res = 0;
+	int res;
 	sys_notify_generic_callback cb;
 	struct sys_notify notify;
 	uint32_t xflags = 0x1234;

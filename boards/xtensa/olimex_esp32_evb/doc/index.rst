@@ -15,7 +15,8 @@ The board can operate from a single LiPo backup battery as it has an internal
 LiPo battery charger. There is no step-up converter, so relays, CAN, and USB
 power does not work when running off battery.
 
-.. figure:: ESP32-EVB.jpg
+.. figure:: ./ESP32-EVB.jpg
+   :width: 540px
    :align: center
    :alt: ESP32-EVB
 
@@ -73,8 +74,6 @@ features:
 | TIMG      | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| TWAI      | on-chip    | CAN controller                      |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | uart                                |
 +-----------+------------+-------------------------------------+

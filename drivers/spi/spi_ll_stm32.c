@@ -413,7 +413,7 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	ll_func_disable_spi(spi);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-	spi_context_complete(&data->ctx, dev, status);
+	spi_context_complete(&data->ctx, status);
 #endif
 }
 
@@ -485,7 +485,7 @@ static int spi_stm32_configure(const struct device *dev,
 #endif
 }
 
-	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
+	if (IS_ENABLED(STM32_SPI_OPT_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					   (clock_control_subsys_t) &cfg->pclken[1], &clock) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclk[1])");
@@ -600,9 +600,7 @@ static int transceive(const struct device *dev,
 		      const struct spi_config *config,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
-		      bool asynchronous,
-		      spi_callback_t cb,
-		      void *userdata)
+		      bool asynchronous, struct k_poll_signal *signal)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
@@ -619,7 +617,7 @@ static int transceive(const struct device *dev,
 	}
 #endif
 
-	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
+	spi_context_lock(&data->ctx, asynchronous, signal, config);
 
 	ret = spi_stm32_configure(dev, config);
 	if (ret) {
@@ -701,9 +699,7 @@ static int transceive_dma(const struct device *dev,
 		      const struct spi_config *config,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
-		      bool asynchronous,
-		      spi_callback_t cb,
-		      void *userdata)
+		      bool asynchronous, struct k_poll_signal *signal)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
@@ -718,7 +714,7 @@ static int transceive_dma(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
+	spi_context_lock(&data->ctx, asynchronous, signal, config);
 
 	k_sem_reset(&data->status_sem);
 
@@ -823,10 +819,10 @@ static int spi_stm32_transceive(const struct device *dev,
 	if ((data->dma_tx.dma_dev != NULL)
 	 && (data->dma_rx.dma_dev != NULL)) {
 		return transceive_dma(dev, config, tx_bufs, rx_bufs,
-				      false, NULL, NULL);
+				      false, NULL);
 	}
 #endif /* CONFIG_SPI_STM32_DMA */
-	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
+	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -834,10 +830,9 @@ static int spi_stm32_transceive_async(const struct device *dev,
 				      const struct spi_config *config,
 				      const struct spi_buf_set *tx_bufs,
 				      const struct spi_buf_set *rx_bufs,
-				      spi_callback_t cb,
-				      void *userdata)
+				      struct k_poll_signal *async)
 {
-	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
+	return transceive(dev, config, tx_bufs, rx_bufs, true, async);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -867,11 +862,6 @@ static int spi_stm32_init(const struct device *dev)
 	const struct spi_stm32_config *cfg = dev->config;
 	int err;
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	err = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			       (clock_control_subsys_t) &cfg->pclken[0]);
 	if (err < 0) {
@@ -879,12 +869,12 @@ static int spi_stm32_init(const struct device *dev)
 		return err;
 	}
 
-	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
+	if (IS_ENABLED(STM32_SPI_OPT_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		err = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					      (clock_control_subsys_t) &cfg->pclken[1],
 					      NULL);
 		if (err < 0) {
-			LOG_ERR("Could not select SPI domain clock");
+			LOG_ERR("Could not select SPI source clock");
 			return err;
 		}
 	}

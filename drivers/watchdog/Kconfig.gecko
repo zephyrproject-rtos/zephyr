@@ -7,8 +7,7 @@
 
 config WDT_GECKO
 	bool "Gecko series Watchdog (WDOG) Driver"
-	default y
-	depends on DT_HAS_SILABS_GECKO_WDOG_ENABLED
+	depends on SOC_FAMILY_EXX32
 	select SOC_GECKO_WDOG
 	default y
 	help

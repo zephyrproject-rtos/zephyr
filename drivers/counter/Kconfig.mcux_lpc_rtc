@@ -3,7 +3,6 @@
 
 config COUNTER_MCUX_LPC_RTC
 	bool "MCUX LPC RTC driver"
-	default y
-	depends on DT_HAS_NXP_LPC_RTC_ENABLED
+	depends on HAS_MCUX_LPC_RTC
 	help
 	  Enable support for LPC rtc driver.

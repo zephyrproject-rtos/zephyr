@@ -25,11 +25,13 @@ MCU. The two chips are connected together using I2C.
 
 On all boards, the Zephyr port is running on the STM32F070 MCU.
 
-.. image:: img/firecuda_gaming_hard_drive.jpg
+.. image:: img/firecuda_gaming_hard_drive.png
+   :width: 550px
    :align: center
    :alt: Seagate FireCuda Gaming Hard Drive
 
-.. image:: img/firecuda_gaming_hub.jpg
+.. image:: img/firecuda_gaming_hub.png
+   :width: 550px
    :align: center
    :alt: Seagate FireCuda Gaming Hub
 

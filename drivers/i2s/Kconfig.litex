@@ -6,8 +6,7 @@
 
 menuconfig I2S_LITEX
 	bool "Litex I2S driver"
-	default y
-	depends on DT_HAS_LITEX_I2S_ENABLED
+	depends on SOC_RISCV32_LITEX_VEXRISCV
 	help
 		Enable Litex Inter Sound (I2S) bus driver.
 

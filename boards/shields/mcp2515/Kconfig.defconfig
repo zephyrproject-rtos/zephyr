@@ -11,6 +11,9 @@ config GPIO
 config SPI
 	default y
 
+config CAN_MCP2515
+	default y
+
 config CAN_INIT_PRIORITY
 	default 80
 

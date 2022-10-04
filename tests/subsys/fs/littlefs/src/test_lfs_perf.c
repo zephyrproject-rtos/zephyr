@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <zephyr/kernel.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include "testfs_tests.h"
 #include "testfs_lfs.h"
 #include <lfs.h>
@@ -223,7 +223,7 @@ static int small_8_1K_cust(void)
 	return custom_write_test("small 8x1K bigfile", &testfs_small_mnt, &cfg, 1024, 8);
 }
 
-ZTEST(littlefs, test_lfs_perf)
+void test_lfs_perf(void)
 {
 	k_sleep(K_MSEC(100));   /* flush log messages */
 	zassert_equal(write_read("small 8x1K dflt",

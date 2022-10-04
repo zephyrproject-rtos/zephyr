@@ -97,11 +97,13 @@ extern "C" {
  *
  *     pwm1: pwm-controller@... {
  *             compatible = "vnd,pwm";
+ *             label = "PWM_1";
  *             #pwm-cells = <2>;
  *     };
  *
  *     pwm2: pwm-controller@... {
  *             compatible = "vnd,pwm";
+ *             label = "PWM_2";
  *             #pwm-cells = <2>;
  *     };
  *
@@ -142,11 +144,13 @@ extern "C" {
  *
  *     pwm1: pwm-controller@... {
  *             compatible = "vnd,pwm";
+ *             label = "PWM_1";
  *             #pwm-cells = <2>;
  *     };
  *
  *     pwm2: pwm-controller@... {
  *             compatible = "vnd,pwm";
+ *             label = "PWM_2";
  *             #pwm-cells = <2>;
  *     };
  *

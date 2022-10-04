@@ -1245,6 +1245,7 @@ static int do_subscribe(struct bt_conn *conn, uint16_t handle,
 	/* With ccc_handle == 0 it will use auto discovery */
 	sub_params->ccc_handle = 0;
 	sub_params->end_handle = cur_mcs_inst->end_handle;
+	sub_params->value = BT_GATT_CCC_NOTIFY;
 	sub_params->value_handle = handle;
 	sub_params->notify = mcs_notify_handler;
 	sub_params->subscribe = subscribe_mcs_char_func;
@@ -1272,7 +1273,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 	 */
 
 	if (cur_mcs_inst->player_name_handle &&
-	    cur_mcs_inst->player_name_sub_params.value &&
 	    cur_mcs_inst->player_name_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->player_name_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->player_name_handle, sub_params);
@@ -1284,7 +1284,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 	}
 
 	if (cur_mcs_inst->track_changed_handle &&
-	    cur_mcs_inst->track_changed_sub_params.value &&
 	    cur_mcs_inst->track_changed_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->track_changed_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->track_changed_handle, sub_params);
@@ -1295,7 +1294,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		return false;
 	}
 	if (cur_mcs_inst->track_title_handle &&
-	    cur_mcs_inst->track_title_sub_params.value &&
 	    cur_mcs_inst->track_title_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->track_title_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->track_title_handle, sub_params);
@@ -1307,7 +1305,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 	}
 
 	if (cur_mcs_inst->track_duration_handle &&
-	    cur_mcs_inst->track_duration_sub_params.value &&
 	    cur_mcs_inst->track_duration_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->track_duration_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->track_duration_handle, sub_params);
@@ -1319,7 +1316,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 	}
 
 	if (cur_mcs_inst->track_position_handle &&
-	    cur_mcs_inst->track_position_sub_params.value &&
 	    cur_mcs_inst->track_position_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->track_position_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->track_position_handle, sub_params);
@@ -1331,7 +1327,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 	}
 
 	if (cur_mcs_inst->playback_speed_handle &&
-	    cur_mcs_inst->playback_speed_sub_params.value &&
 	    cur_mcs_inst->playback_speed_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->playback_speed_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->playback_speed_handle, sub_params);
@@ -1343,7 +1338,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 	}
 
 	if (cur_mcs_inst->seeking_speed_handle &&
-	    cur_mcs_inst->seeking_speed_sub_params.value &&
 	    cur_mcs_inst->seeking_speed_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->seeking_speed_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->seeking_speed_handle, sub_params);
@@ -1356,7 +1350,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 
 #ifdef CONFIG_BT_MCC_OTS
 	if (cur_mcs_inst->current_track_obj_id_handle &&
-	    cur_mcs_inst->current_track_obj_sub_params.value &&
 	    cur_mcs_inst->current_track_obj_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->current_track_obj_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->current_track_obj_id_handle, sub_params);
@@ -1368,7 +1361,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 	}
 
 	if (cur_mcs_inst->next_track_obj_id_handle &&
-	    cur_mcs_inst->next_track_obj_sub_params.value &&
 	    cur_mcs_inst->next_track_obj_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->next_track_obj_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->next_track_obj_id_handle, sub_params);
@@ -1380,7 +1372,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 	}
 
 	if (cur_mcs_inst->parent_group_obj_id_handle &&
-	    cur_mcs_inst->parent_group_obj_sub_params.value &&
 	    cur_mcs_inst->parent_group_obj_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->parent_group_obj_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->parent_group_obj_id_handle, sub_params);
@@ -1392,8 +1383,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 	}
 
 	if (cur_mcs_inst->current_group_obj_id_handle &&
-	    cur_mcs_inst->current_group_obj_sub_params.value &&
-	    cur_mcs_inst->current_group_obj_sub_params.disc_params == NULL) {
+	    cur_mcs_inst->parent_group_obj_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->current_group_obj_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->current_group_obj_id_handle, sub_params);
 		if (err) {
@@ -1406,7 +1396,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 #endif /* CONFIG_BT_MCC_OTS */
 
 	if (cur_mcs_inst->playing_order_handle &&
-	    cur_mcs_inst->playing_order_sub_params.value &&
 	    cur_mcs_inst->playing_order_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->playing_order_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->playing_order_handle, sub_params);
@@ -1418,7 +1407,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 	}
 
 	if (cur_mcs_inst->media_state_handle &&
-	    cur_mcs_inst->media_state_sub_params.value &&
 	    cur_mcs_inst->media_state_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->media_state_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->media_state_handle, sub_params);
@@ -1430,7 +1418,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 	}
 
 	if (cur_mcs_inst->cp_handle &&
-	    cur_mcs_inst->cp_sub_params.value &&
 	    cur_mcs_inst->cp_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->cp_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->cp_handle, sub_params);
@@ -1442,7 +1429,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 	}
 
 	if (cur_mcs_inst->opcodes_supported_handle &&
-	    cur_mcs_inst->opcodes_supported_sub_params.value &&
 	    cur_mcs_inst->opcodes_supported_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->opcodes_supported_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->opcodes_supported_handle, sub_params);
@@ -1455,7 +1441,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 
 #ifdef CONFIG_BT_MCC_OTS
 	if (cur_mcs_inst->scp_handle &&
-	    cur_mcs_inst->scp_sub_params.value &&
 	    cur_mcs_inst->scp_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->scp_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->scp_handle, sub_params);
@@ -1467,7 +1452,6 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 	}
 
 	if (cur_mcs_inst->search_results_obj_id_handle &&
-	    cur_mcs_inst->search_results_obj_sub_params.value &&
 	    cur_mcs_inst->search_results_obj_sub_params.disc_params == NULL) {
 		sub_params = &cur_mcs_inst->search_results_obj_sub_params;
 		err = do_subscribe(conn, cur_mcs_inst->search_results_obj_id_handle, sub_params);
@@ -1514,9 +1498,6 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			cur_mcs_inst->player_name_handle = chrc->value_handle;
 			/* Use discovery params pointer as subscription flag */
 			cur_mcs_inst->player_name_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->player_name_sub_params.value = BT_GATT_CCC_NOTIFY;
-			}
 #ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_ICON_OBJ_ID)) {
 			BT_DBG("Icon Object, UUID: %s", bt_uuid_str(chrc->uuid));
@@ -1529,44 +1510,26 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			BT_DBG("Track Changed, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->track_changed_handle = chrc->value_handle;
 			cur_mcs_inst->track_changed_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->track_changed_sub_params.value = BT_GATT_CCC_NOTIFY;
-			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_TITLE)) {
 			BT_DBG("Track Title, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->track_title_handle = chrc->value_handle;
 			cur_mcs_inst->track_title_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->track_title_sub_params.value = BT_GATT_CCC_NOTIFY;
-			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_DURATION)) {
 			BT_DBG("Track Duration, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->track_duration_handle = chrc->value_handle;
 			cur_mcs_inst->track_duration_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->track_duration_sub_params.value = BT_GATT_CCC_NOTIFY;
-			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_POSITION)) {
 			BT_DBG("Track Position, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->track_position_handle = chrc->value_handle;
 			cur_mcs_inst->track_position_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->track_position_sub_params.value = BT_GATT_CCC_NOTIFY;
-			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYBACK_SPEED)) {
 			BT_DBG("Playback Speed, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->playback_speed_handle = chrc->value_handle;
 			cur_mcs_inst->playback_speed_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->playback_speed_sub_params.value = BT_GATT_CCC_NOTIFY;
-			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEEKING_SPEED)) {
 			BT_DBG("Seeking Speed, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->seeking_speed_handle = chrc->value_handle;
 			cur_mcs_inst->seeking_speed_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->seeking_speed_sub_params.value = BT_GATT_CCC_NOTIFY;
-			}
 #ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID)) {
 			BT_DBG("Track Segments Object, UUID: %s", bt_uuid_str(chrc->uuid));
@@ -1575,41 +1538,23 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			BT_DBG("Current Track Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->current_track_obj_id_handle = chrc->value_handle;
 			cur_mcs_inst->current_track_obj_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->current_track_obj_sub_params.value =
-					BT_GATT_CCC_NOTIFY;
-			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_NEXT_TRACK_OBJ_ID)) {
 			BT_DBG("Next Track Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->next_track_obj_id_handle = chrc->value_handle;
 			cur_mcs_inst->next_track_obj_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->next_track_obj_sub_params.value = BT_GATT_CCC_NOTIFY;
-			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PARENT_GROUP_OBJ_ID)) {
 			BT_DBG("Parent Group Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->parent_group_obj_id_handle = chrc->value_handle;
 			cur_mcs_inst->parent_group_obj_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->parent_group_obj_sub_params.value =
-					BT_GATT_CCC_NOTIFY;
-			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_CURRENT_GROUP_OBJ_ID)) {
 			BT_DBG("Group Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->current_group_obj_id_handle = chrc->value_handle;
 			cur_mcs_inst->current_group_obj_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->current_group_obj_sub_params.value =
-					BT_GATT_CCC_NOTIFY;
-			}
 #endif /* CONFIG_BT_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYING_ORDER)) {
 			BT_DBG("Playing Order, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->playing_order_handle = chrc->value_handle;
 			cur_mcs_inst->playing_order_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->playing_order_sub_params.value = BT_GATT_CCC_NOTIFY;
-			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYING_ORDERS)) {
 			BT_DBG("Playing Orders supported, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->playing_orders_supported_handle = chrc->value_handle;
@@ -1617,41 +1562,24 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			BT_DBG("Media State, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->media_state_handle = chrc->value_handle;
 			cur_mcs_inst->media_state_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->media_state_sub_params.value = BT_GATT_CCC_NOTIFY;
-			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_MEDIA_CONTROL_POINT)) {
 			BT_DBG("Media Control Point, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->cp_handle = chrc->value_handle;
 			cur_mcs_inst->cp_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->cp_sub_params.value = BT_GATT_CCC_NOTIFY;
-			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_MEDIA_CONTROL_OPCODES)) {
 			BT_DBG("Media control opcodes supported, UUID: %s",
 			       bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->opcodes_supported_handle = chrc->value_handle;
 			cur_mcs_inst->opcodes_supported_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->opcodes_supported_sub_params.value =
-					BT_GATT_CCC_NOTIFY;
-			}
 #ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEARCH_CONTROL_POINT)) {
 			BT_DBG("Search control point, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->scp_handle = chrc->value_handle;
 			cur_mcs_inst->scp_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->scp_sub_params.value = BT_GATT_CCC_NOTIFY;
-			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID)) {
 			BT_DBG("Search Results object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->search_results_obj_id_handle = chrc->value_handle;
 			cur_mcs_inst->search_results_obj_sub_params.disc_params = NULL;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				cur_mcs_inst->search_results_obj_sub_params.value =
-					BT_GATT_CCC_NOTIFY;
-			}
 #endif /* CONFIG_BT_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_CCID)) {
 			BT_DBG("Content Control ID, UUID: %s", bt_uuid_str(chrc->uuid));
@@ -1807,7 +1735,7 @@ int bt_mcc_read_player_name(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -1836,7 +1764,7 @@ int bt_mcc_read_icon_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -1864,7 +1792,7 @@ int bt_mcc_read_icon_url(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -1891,7 +1819,7 @@ int bt_mcc_read_track_title(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -1918,7 +1846,7 @@ int bt_mcc_read_track_duration(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -1945,7 +1873,7 @@ int bt_mcc_read_track_position(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -1972,7 +1900,7 @@ int bt_mcc_set_track_position(struct bt_conn *conn, int32_t pos)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2005,7 +1933,7 @@ int bt_mcc_read_playback_speed(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2032,7 +1960,7 @@ int bt_mcc_set_playback_speed(struct bt_conn *conn, int8_t speed)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2065,7 +1993,7 @@ int bt_mcc_read_seeking_speed(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2093,7 +2021,7 @@ int bt_mcc_read_segments_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2120,7 +2048,7 @@ int bt_mcc_read_current_track_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2147,7 +2075,7 @@ int bt_mcc_set_current_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2183,7 +2111,7 @@ int bt_mcc_read_next_track_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2210,7 +2138,7 @@ int bt_mcc_set_next_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2246,7 +2174,7 @@ int bt_mcc_read_parent_group_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2273,7 +2201,7 @@ int bt_mcc_read_current_group_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2300,7 +2228,7 @@ int bt_mcc_set_current_group_obj_id(struct bt_conn *conn, uint64_t obj_id)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2337,7 +2265,7 @@ int bt_mcc_read_playing_order(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2364,7 +2292,7 @@ int bt_mcc_set_playing_order(struct bt_conn *conn, uint8_t order)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2397,7 +2325,7 @@ int bt_mcc_read_playing_orders_supported(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2424,7 +2352,7 @@ int bt_mcc_read_media_state(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2452,7 +2380,7 @@ int bt_mcc_send_cmd(struct bt_conn *conn, const struct mpl_cmd *cmd)
 	int err;
 	int length = sizeof(cmd->opcode);
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2490,7 +2418,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2518,7 +2446,7 @@ int bt_mcc_send_search(struct bt_conn *conn, const struct mpl_search *search)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2551,7 +2479,7 @@ int bt_mcc_read_search_results_obj_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2579,7 +2507,7 @@ int bt_mcc_read_content_control_id(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
@@ -2957,10 +2885,6 @@ int bt_mcc_otc_read_object_metadata(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
-		return -EINVAL;
-	}
-
 	err = bt_ots_client_read_object_metadata(&cur_mcs_inst->otc, conn,
 						 BT_OTS_METADATA_REQ_ALL);
 	if (err) {
@@ -2974,10 +2898,6 @@ int bt_mcc_otc_read_object_metadata(struct bt_conn *conn)
 int bt_mcc_otc_read_icon_object(struct bt_conn *conn)
 {
 	int err;
-
-	CHECKIF(!conn || !cur_mcs_inst) {
-		return -EINVAL;
-	}
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	cur_mcs_inst->otc.cb->obj_data_read = on_icon_content;
@@ -2994,9 +2914,6 @@ int bt_mcc_otc_read_track_segments_object(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
-		return -EINVAL;
-	}
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
@@ -3014,9 +2931,6 @@ int bt_mcc_otc_read_current_track_object(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
-		return -EINVAL;
-	}
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
@@ -3034,9 +2948,6 @@ int bt_mcc_otc_read_next_track_object(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
-		return -EINVAL;
-	}
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
@@ -3054,9 +2965,6 @@ int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
-		return -EINVAL;
-	}
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
@@ -3076,9 +2984,6 @@ int bt_mcc_otc_read_current_group_object(struct bt_conn *conn)
 {
 	int err;
 
-	CHECKIF(!conn || !cur_mcs_inst) {
-		return -EINVAL;
-	}
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */

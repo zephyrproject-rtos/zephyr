@@ -11,7 +11,7 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_output_dict.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 
 #define LOG_MODULE_NAME log_switch_format
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_ERR);
@@ -145,12 +145,13 @@ void test_log_switch_format_func_t_get(void)
 
 }
 
-ZTEST(log_switch_format, test_log_switch_format)
+void test_main(void)
 {
-	test_log_switch_format_success_case();
-	test_log_switch_format_set();
-	test_log_switch_format_set_all_active_backends();
-	test_log_switch_format_func_t_get();
+	ztest_test_suite(test_log_switch_format,
+		ztest_unit_test(test_log_switch_format_success_case),
+		ztest_unit_test(test_log_switch_format_set),
+		ztest_unit_test(test_log_switch_format_set_all_active_backends),
+		ztest_unit_test(test_log_switch_format_func_t_get)
+		);
+	ztest_run_test_suite(test_log_switch_format);
 }
-
-ZTEST_SUITE(log_switch_format, NULL, NULL, NULL, NULL, NULL);

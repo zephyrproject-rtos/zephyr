@@ -13,10 +13,10 @@
 #include <zephyr/logging/log_internal.h>
 #include <zephyr/logging/log_ctrl.h>
 
-#include <zephyr/tc_util.h>
+#include <tc_util.h>
 #include <stdbool.h>
 #include <zephyr/zephyr.h>
-#include <zephyr/ztest.h>
+#include <ztest.h>
 #include <zephyr/sys/cbprintf.h>
 
 #if CONFIG_NO_OPTIMIZATIONS
@@ -197,7 +197,7 @@ void validate_base_message_set(const struct log_source_const_data *source,
 			t, data, data_len, str);
 }
 
-ZTEST(log_msg, test_log_msg_0_args_msg)
+void test_log_msg_0_args_msg(void)
 {
 #undef TEST_MSG
 #define TEST_MSG "0 args"
@@ -225,7 +225,7 @@ ZTEST(log_msg, test_log_msg_0_args_msg)
 				   NULL, 0, TEST_MSG);
 }
 
-ZTEST(log_msg, test_log_msg_various_args)
+void test_log_msg_various_args(void)
 {
 #undef TEST_MSG
 #define TEST_MSG "%d %d %lld %p %lld %p"
@@ -259,7 +259,7 @@ ZTEST(log_msg, test_log_msg_various_args)
 				   NULL, 0, str);
 }
 
-ZTEST(log_msg, test_log_msg_only_data)
+void test_log_msg_only_data(void)
 {
 	static const uint8_t domain = 3;
 	static const uint8_t level = 2;
@@ -285,7 +285,7 @@ ZTEST(log_msg, test_log_msg_only_data)
 				   array, sizeof(array), NULL);
 }
 
-ZTEST(log_msg, test_log_msg_string_and_data)
+void test_log_msg_string_and_data(void)
 {
 #undef TEST_MSG
 #define TEST_MSG "test"
@@ -314,7 +314,7 @@ ZTEST(log_msg, test_log_msg_string_and_data)
 				   array, sizeof(array), TEST_MSG);
 }
 
-ZTEST(log_msg, test_log_msg_fp)
+void test_log_msg_fp(void)
 {
 	if (!(IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT) && IS_ENABLED(CONFIG_FPU))) {
 		return;
@@ -366,7 +366,7 @@ static void get_msg_validate_length(uint32_t exp_len)
 	z_log_msg_free(msg);
 }
 
-ZTEST(log_msg, test_mode_size_plain_string)
+void test_mode_size_plain_string(void)
 {
 	static const uint8_t domain = 3;
 	static const uint8_t level = 2;
@@ -398,7 +398,7 @@ ZTEST(log_msg, test_mode_size_plain_string)
 	get_msg_validate_length(exp_len);
 }
 
-ZTEST(log_msg, test_mode_size_data_only)
+void test_mode_size_data_only(void)
 {
 	static const uint8_t domain = 3;
 	static const uint8_t level = 2;
@@ -426,7 +426,7 @@ ZTEST(log_msg, test_mode_size_data_only)
 	get_msg_validate_length(exp_len);
 }
 
-ZTEST(log_msg, test_mode_size_plain_str_data)
+void test_mode_size_plain_str_data(void)
 {
 	static const uint8_t domain = 3;
 	static const uint8_t level = 2;
@@ -455,7 +455,7 @@ ZTEST(log_msg, test_mode_size_plain_str_data)
 	get_msg_validate_length(exp_len);
 }
 
-ZTEST(log_msg, test_mode_size_str_with_strings)
+void test_mode_size_str_with_strings(void)
 {
 	static const uint8_t domain = 3;
 	static const uint8_t level = 2;
@@ -492,7 +492,7 @@ ZTEST(log_msg, test_mode_size_str_with_strings)
 	get_msg_validate_length(exp_len);
 }
 
-ZTEST(log_msg, test_mode_size_str_with_2strings)
+void test_mode_size_str_with_2strings(void)
 {
 #undef TEST_STR
 #define TEST_STR "%s test %s"
@@ -540,7 +540,7 @@ static log_timestamp_t timestamp_get_inc(void)
 	return timestamp++;
 }
 
-ZTEST(log_msg, test_saturate)
+void test_saturate(void)
 {
 	if (IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW)) {
 		return;
@@ -581,4 +581,20 @@ ZTEST(log_msg, test_saturate)
 }
 
 /*test case main entry*/
-ZTEST_SUITE(log_msg, NULL, NULL, NULL, NULL, NULL);
+void test_main(void)
+{
+	ztest_test_suite(test_log_msg,
+		ztest_unit_test(test_log_msg_0_args_msg),
+		ztest_unit_test(test_log_msg_various_args),
+		ztest_unit_test(test_log_msg_only_data),
+		ztest_unit_test(test_log_msg_string_and_data),
+		ztest_unit_test(test_log_msg_fp),
+		ztest_unit_test(test_mode_size_plain_string),
+		ztest_unit_test(test_mode_size_data_only),
+		ztest_unit_test(test_mode_size_plain_str_data),
+		ztest_unit_test(test_mode_size_str_with_strings),
+		ztest_unit_test(test_mode_size_str_with_2strings),
+		ztest_unit_test(test_saturate)
+		);
+	ztest_run_test_suite(test_log_msg);
+}

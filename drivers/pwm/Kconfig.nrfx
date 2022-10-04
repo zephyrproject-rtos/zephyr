@@ -4,7 +4,10 @@
 config PWM_NRFX
 	bool "nRF PWM nrfx driver"
 	default y
-	depends on DT_HAS_NORDIC_NRF_PWM_ENABLED
+	depends on HAS_HW_NRF_PWM0 \
+		|| HAS_HW_NRF_PWM1 \
+		|| HAS_HW_NRF_PWM2 \
+		|| HAS_HW_NRF_PWM3
 	select NRFX_PWM0 if HAS_HW_NRF_PWM0
 	select NRFX_PWM1 if HAS_HW_NRF_PWM1
 	select NRFX_PWM2 if HAS_HW_NRF_PWM2

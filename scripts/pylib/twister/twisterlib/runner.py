@@ -18,8 +18,7 @@ from colorama import Fore
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
 from twisterlib.cmakecache import CMakeCache
-from twisterlib.environment import canonical_zephyr_base
-from twisterlib.log_helper import log_command
+from twisterlib.enviornment import canonical_zephyr_base
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -219,7 +218,7 @@ class CMake:
                     log.write(log_msg)
 
             if log_msg:
-                overflow_found = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|dram0_1_seg)' overflowed by", log_msg)
+                overflow_found = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM)' overflowed by", log_msg)
                 if overflow_found and not self.options.overflow_as_errors:
                     logger.debug("Test skipped due to {} Overflow".format(overflow_found[0]))
                     self.instance.status = "skipped"
@@ -235,7 +234,7 @@ class CMake:
 
         return results
 
-    def run_cmake(self, args=""):
+    def run_cmake(self, args=[]):
 
         if not self.options.disable_warnings_as_errors:
             ldflags = "-Wl,--fatal-warnings"
@@ -258,16 +257,17 @@ class CMake:
             f'-G{self.env.generator}'
         ]
 
+        args = ["-D{}".format(a.replace('"', '')) for a in args]
         cmake_args.extend(args)
 
         cmake_opts = ['-DBOARD={}'.format(self.platform.name)]
         cmake_args.extend(cmake_opts)
 
+
+        logger.debug("Calling cmake with arguments: {}".format(cmake_args))
         cmake = shutil.which('cmake')
         cmd = [cmake] + cmake_args
         kwargs = dict()
-
-        log_command(logger, "Calling cmake", cmd)
 
         if self.capture_output:
             kwargs['stdout'] = subprocess.PIPE
@@ -659,6 +659,7 @@ class ProjectBuilder(FilterBuilder):
 
         instance = self.instance
         args = self.testsuite.extra_args[:]
+        args += self.options.extra_args
 
         if instance.handler:
             args += instance.handler.args
@@ -688,9 +689,7 @@ class ProjectBuilder(FilterBuilder):
         if overlays:
             args.append("OVERLAY_CONFIG=\"%s\"" % (" ".join(overlays)))
 
-        args_expanded = ["-D{}".format(a.replace('"', '\"')) for a in self.options.extra_args]
-        args_expanded = args_expanded + ["-D{}".format(a.replace('"', '')) for a in args]
-        res = self.run_cmake(args_expanded)
+        res = self.run_cmake(args)
         return res
 
     def build(self):

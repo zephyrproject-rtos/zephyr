@@ -11,6 +11,7 @@ enabled sensor beacon platform capable of sending temperature, humidity,
 pressure, and motion information over Bluetooth Low Energy.
 
 .. figure:: img/ruuvitag.jpg
+     :width: 442px
      :align: center
      :alt: RUUVI RuuviTag
 
@@ -88,6 +89,7 @@ Pin descriptions
 ----------------
 
 .. figure:: img/pinout.jpg
+     :width: 442px
      :align: center
      :alt: RUUVI Pinout
 

@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(spi_dw);
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 
+#include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/pm/device.h>
@@ -81,7 +82,7 @@ out:
 	LOG_DBG("SPI transaction completed %s error",
 		    error ? "with" : "without");
 
-	spi_context_complete(&spi->ctx, dev, error);
+	spi_context_complete(&spi->ctx, error);
 }
 
 static void push_data(const struct device *dev)
@@ -338,8 +339,7 @@ static int transceive(const struct device *dev,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous,
-		      spi_callback_t cb,
-		      void *userdata)
+		      struct k_poll_signal *signal)
 {
 	const struct spi_dw_config *info = dev->config;
 	struct spi_dw_data *spi = dev->data;
@@ -347,7 +347,7 @@ static int transceive(const struct device *dev,
 	uint32_t reg_data;
 	int ret;
 
-	spi_context_lock(&spi->ctx, asynchronous, cb, userdata, config);
+	spi_context_lock(&spi->ctx, asynchronous, signal, config);
 
 #ifdef CONFIG_PM_DEVICE
 	if (!pm_device_is_busy(dev)) {
@@ -452,7 +452,7 @@ static int spi_dw_transceive(const struct device *dev,
 {
 	LOG_DBG("%p, %p, %p", dev, tx_bufs, rx_bufs);
 
-	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
+	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -460,12 +460,11 @@ static int spi_dw_transceive_async(const struct device *dev,
 				   const struct spi_config *config,
 				   const struct spi_buf_set *tx_bufs,
 				   const struct spi_buf_set *rx_bufs,
-				   spi_callback_t cb,
-				   void *userdata)
+				   struct k_poll_signal *async)
 {
-	LOG_DBG("%p, %p, %p, %p, %p", dev, tx_bufs, rx_bufs, cb, userdata);
+	LOG_DBG("%p, %p, %p, %p", dev, tx_bufs, rx_bufs, async);
 
-	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
+	return transceive(dev, config, tx_bufs, rx_bufs, true, async);
 }
 #endif /* CONFIG_SPI_ASYNC */
 

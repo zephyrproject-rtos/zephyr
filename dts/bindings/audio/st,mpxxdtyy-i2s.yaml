@@ -6,3 +6,7 @@ description: STMicroelectronics MPXXDTYY digital PDM microphone family
 compatible: "st,mpxxdtyy"
 
 include: i2s-device.yaml
+
+properties:
+    label:
+      required: true

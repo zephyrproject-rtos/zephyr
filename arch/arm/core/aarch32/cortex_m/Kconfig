@@ -68,8 +68,6 @@ config CPU_CORTEX_M55
 	select ARMV8_1_M_MAINLINE
 	select ARMV8_M_SE if CPU_HAS_TEE
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
-	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
 	help
 	  This option signifies the use of a Cortex-M55 CPU
 
@@ -78,8 +76,6 @@ config CPU_CORTEX_M7
 	select CPU_CORTEX_M
 	select ARMV7_M_ARMV8_M_MAINLINE
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
-	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
 	help
 	  This option signifies the use of a Cortex-M7 CPU
 
@@ -90,11 +86,18 @@ config CPU_CORTEX_M_HAS_SYSTICK
 	help
 	  This option is enabled when the CPU implements the SysTick timer.
 
+config CPU_CORTEX_M_HAS_CACHE
+	bool
+	depends on CPU_CORTEX_M7 || CPU_CORTEX_M55
+	help
+	  This option signifies that the CPU implements Data and Instruction
+	  Cache
+
 config DCACHE_LINE_SIZE
-	default 32
+	default 32 if CPU_CORTEX_M_HAS_CACHE
 
 config ICACHE_LINE_SIZE
-	default 32
+	default 32 if CPU_CORTEX_M_HAS_CACHE
 
 config CPU_CORTEX_M_HAS_DWT
 	bool

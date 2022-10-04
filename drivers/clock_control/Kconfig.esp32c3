@@ -1,0 +1,10 @@
+# ESP32C3 Clock Driver configuration options
+
+# Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_ESP32C3
+	bool "ESP32C3 Clock driver"
+	depends on SOC_ESP32C3
+	help
+	  Enable support for ESP32C3 clock driver.

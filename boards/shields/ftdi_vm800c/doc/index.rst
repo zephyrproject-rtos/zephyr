@@ -9,7 +9,8 @@ and demonstrate the functionality of the FT800 Embedded Video Engine, EVE. This
 module behaves as an SPI slave, and requires a SPI Master for proper
 microcontroller interfacing and system integration.
 
-.. image:: VM800C_top.jpg
+.. image:: ./VM800C_top.jpg
+   :width: 350px
    :align: center
    :alt: VM800C
 

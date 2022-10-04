@@ -38,7 +38,9 @@ some highlights of the Nucleo L412RB board:
   - Arm® Mbed Enabled |trade| compliant
 
 .. image:: img/nucleo_l412rb_p.jpg
+  :width: 1000px
   :align: center
+  :height: 742px
   :alt: Nucleo L412RB
 
 More information about the board can be found at the `Nucleo L412RB-P website`_.
@@ -172,8 +174,10 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo_l412rb_p_pinout.jpg
+.. image:: img/nucleo_l412rb_p_pinout.png
+   :width: 960px
    :align: center
+   :height: 720px
    :alt: Nucleo L412RB-P
 
 For mode details please refer to `ST Nucleo L412RB-P User Manual`_.
