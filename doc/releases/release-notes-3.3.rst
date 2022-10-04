@@ -282,6 +282,8 @@ Libraries / Subsystems
   * A MCUmgr img_mgmt bug whereby the state of an image upload could persist
     when it was no longer valid (e.g. after an image erase command) has been
     fixed.
+  * MCUmgr fs_mgmt command has been added that allows querying/listing the
+    supported hash/checksum types.
 
 * LwM2M
 
