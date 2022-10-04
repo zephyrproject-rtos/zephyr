@@ -70,6 +70,15 @@ void z_sys_init_run_level(int32_t level);
 #define Z_INIT_ENTRY_NAME(_entry_name) _CONCAT(__init_, _entry_name)
 
 /**
+ * @brief Init entry section.
+ *
+ * Each init entry is placed in a section with a name crafted so that it allows
+ * linker scripts to sort them according to the specified level/priority.
+ */
+#define Z_INIT_ENTRY_SECTION(level, prio) \
+	__attribute__((__section__(".z_init_" #level STRINGIFY(prio)"_")))
+
+/**
  * @brief Create an init entry object and set it up for boot time initialization
  *
  * @details This macro defines an init entry object that will be automatically
@@ -94,7 +103,7 @@ void z_sys_init_run_level(int32_t level);
 #define Z_INIT_ENTRY_DEFINE(_entry_name, _init_fn, _device, _level, _prio)	\
 	static const Z_DECL_ALIGN(struct init_entry)			\
 		Z_INIT_ENTRY_NAME(_entry_name) __used __noasan			\
-	__attribute__((__section__(".z_init_" #_level STRINGIFY(_prio)"_"))) = { \
+		Z_INIT_ENTRY_SECTION(_level, _prio) = { 			\
 		.init = (_init_fn),					\
 		.dev = (_device),					\
 	}
