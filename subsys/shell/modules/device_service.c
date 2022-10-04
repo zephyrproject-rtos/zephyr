@@ -23,6 +23,17 @@ extern const struct device __device_end[];
 extern const struct device __device_SMP_start[];
 #endif
 
+/* init levels, used as indices for levels array */
+enum init_level {
+	INIT_LEVEL_PRE_KERNEL_1 = 0,
+	INIT_LEVEL_PRE_KERNEL_2,
+	INIT_LEVEL_POST_KERNEL,
+	INIT_LEVEL_APPLICATION,
+#ifdef CONFIG_SMP
+	INIT_LEVEL_SMP,
+#endif
+};
+
 static const struct device *const levels[] = {
 	__device_PRE_KERNEL_1_start,
 	__device_PRE_KERNEL_2_start,
@@ -49,7 +60,8 @@ static const char *get_device_name(const struct device *dev,
 	return name;
 }
 
-static bool device_get_config_level(const struct shell *shell, int level)
+static bool device_get_config_level(const struct shell *shell,
+				    enum init_level level)
 {
 	const struct device *dev;
 	bool devices = false;
@@ -74,32 +86,32 @@ static int cmd_device_levels(const struct shell *shell,
 	bool ret;
 
 	shell_fprintf(shell, SHELL_NORMAL, "PRE KERNEL 1:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_PRE_KERNEL_1);
+	ret = device_get_config_level(shell, INIT_LEVEL_PRE_KERNEL_1);
 	if (ret == false) {
 		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "PRE KERNEL 2:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_PRE_KERNEL_2);
+	ret = device_get_config_level(shell, INIT_LEVEL_PRE_KERNEL_2);
 	if (ret == false) {
 		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "POST_KERNEL:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_POST_KERNEL);
+	ret = device_get_config_level(shell, INIT_LEVEL_POST_KERNEL);
 	if (ret == false) {
 		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "APPLICATION:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_APPLICATION);
+	ret = device_get_config_level(shell, INIT_LEVEL_APPLICATION);
 	if (ret == false) {
 		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
 	}
 
 #ifdef CONFIG_SMP
 	shell_fprintf(shell, SHELL_NORMAL, "SMP:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_SMP);
+	ret = device_get_config_level(shell, INIT_LEVEL_SMP);
 	if (ret == false) {
 		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
 	}

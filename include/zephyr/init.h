@@ -16,22 +16,6 @@
 extern "C" {
 #endif
 
-/*
- * System initialization levels. The PRE_KERNEL_1 and PRE_KERNEL_2 levels are
- * executed in the kernel's initialization context, which uses the interrupt
- * stack. The remaining levels are executed in the kernel's main task.
- */
-
-#define _SYS_INIT_LEVEL_EARLY		0
-#define _SYS_INIT_LEVEL_PRE_KERNEL_1	1
-#define _SYS_INIT_LEVEL_PRE_KERNEL_2	2
-#define _SYS_INIT_LEVEL_POST_KERNEL	3
-#define _SYS_INIT_LEVEL_APPLICATION	4
-
-#ifdef CONFIG_SMP
-#define _SYS_INIT_LEVEL_SMP		5
-#endif
-
 struct device;
 
 /**
