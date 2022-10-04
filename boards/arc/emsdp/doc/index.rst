@@ -47,6 +47,9 @@ The following table shows the hardware features supported for different core con
 For hardware feature details, refer to : `ARC EM Software Development Platform
 <https://embarc.org/project/arc-em-software-development-platform-sdp/>`__
 
+**NOTE:** the ARC EM SDP is FPGA based platform, so it could be flashed with different FPGA image
+versions. As of today Zephyr supports v1.2 ARC EM SDP platform package version. The FPGA images
+from older platform package versions have different memory map, and hence are not compatible.
 
 Programming and Debugging
 *************************

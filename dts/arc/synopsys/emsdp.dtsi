@@ -35,9 +35,9 @@
 		interrupt-parent = <&intc>;
 	};
 
-	iccm0: iccm@60000000 {
+	iccm0: iccm@10000000 {
 		compatible = "arc,iccm";
-		reg = <0x60000000 0x20000>;
+		reg = <0x10000000 0x20000>;
 	};
 
 	dccm0: dccm@80000000 {
@@ -46,9 +46,9 @@
 	};
 
 	/* this is (Pseudo SRAM), so treat it like mmio-sram */
-	sram0: memory@10000000 {
+	sram0: memory@40000000 {
 		compatible = "mmio-sram";
-		reg = <0x10000000 0x1000000>;
+		reg = <0x40000000 0x1000000>;
 	};
 
 
