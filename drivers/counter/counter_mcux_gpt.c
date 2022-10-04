@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/irq.h>
 #include <fsl_gpt.h>
 #include <zephyr/logging/log.h>
 

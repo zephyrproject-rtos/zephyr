@@ -20,6 +20,7 @@
  */
 
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL

@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>

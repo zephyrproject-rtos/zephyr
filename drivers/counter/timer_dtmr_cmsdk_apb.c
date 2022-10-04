@@ -10,8 +10,10 @@
 #include <zephyr/device.h>
 #include <errno.h>
 #include <zephyr/init.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <zephyr/drivers/clock_control/arm_clock_control.h>
+#include <zephyr/irq.h>
 
 #include "dualtimer_cmsdk_apb.h"
 

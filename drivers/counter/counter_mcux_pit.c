@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_kinetis_pit
 
 #include <zephyr/drivers/counter.h>
+#include <zephyr/irq.h>
 #include <fsl_pit.h>
 
 #define LOG_MODULE_NAME counter_pit

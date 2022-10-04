@@ -15,6 +15,7 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/irq.h>
 
 /** Watchdog control register first write keys */
 #define WDT_FIRST_KEY     0x55ul

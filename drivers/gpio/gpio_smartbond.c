@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
 
 #include <DA1469xAB.h>
 

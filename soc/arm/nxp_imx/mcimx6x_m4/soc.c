@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/init.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <zephyr/dt-bindings/rdc/imx_rdc.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>

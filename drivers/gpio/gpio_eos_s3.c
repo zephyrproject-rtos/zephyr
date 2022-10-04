@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <eoss3_hal_gpio.h>
 #include <eoss3_hal_pads.h>
