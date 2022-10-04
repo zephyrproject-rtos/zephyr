@@ -15,6 +15,8 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_H_
 #define ZEPHYR_INCLUDE_DRIVERS_GPIO_H_
 
+#include <errno.h>
+
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
 

@@ -6,6 +6,8 @@
 
 #define DT_DRV_COMPAT syscon
 
+#include <errno.h>
+
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/device.h>

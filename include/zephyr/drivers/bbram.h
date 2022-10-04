@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_BBRAM_H
 #define ZEPHYR_INCLUDE_DRIVERS_BBRAM_H
 
+#include <errno.h>
+
 #include <zephyr/device.h>
 
 #ifdef __cplusplus
