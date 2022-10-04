@@ -563,6 +563,32 @@ static int dma_stm32_start(const struct device *dev, uint32_t id)
 	return 0;
 }
 
+static int dma_stm32_suspend(const struct device *dev, uint32_t id)
+{
+	const struct dma_stm32_config *config = dev->config;
+	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+
+	/* Give channel from index 0 */
+	id = id - STM32_DMA_STREAM_OFFSET;
+
+	if (id >= config->max_streams) {
+		return -EINVAL;
+	}
+
+	/* Suspend the channel and wait for suspend Flag set */
+	LL_DMA_SuspendChannel(dma, dma_stm32_id_to_stream(id));
+	/* It's not enough to wait for the SUSPF bit with LL_DMA_IsActiveFlag_SUSP */
+	do {
+		k_msleep(1); /* A delay is needed (1ms is valid) */
+	} while (LL_DMA_IsActiveFlag_SUSP(dma, dma_stm32_id_to_stream(id)) != 1);
+
+	/* Reset the FIFO register and internal state */
+	LL_DMA_ResetChannel(dma, dma_stm32_id_to_stream(id));
+	/* The Channel is disabled and its suspend Flag is also reset */
+
+	return 0;
+}
+
 static int dma_stm32_stop(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
@@ -638,6 +664,7 @@ static const struct dma_driver_api dma_funcs = {
 	.start		 = dma_stm32_start,
 	.stop		 = dma_stm32_stop,
 	.get_status	 = dma_stm32_get_status,
+	.suspend	 = dma_stm32_suspend,
 };
 
 #define DMA_STM32_OFFSET_INIT(index)
