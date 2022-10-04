@@ -470,17 +470,6 @@ static int dma_stm32_configure(const struct device *dev,
 	index = find_lsb_set(config->dest_data_size) - 1;
 	DMA_InitStruct.DestDataWidth = table_m_size[index];
 
-	DMA_InitStruct.SrcBurstLength = 1;
-	DMA_InitStruct.DestBurstLength = 1;
-	DMA_InitStruct.TransferEventMode = LL_DMA_TCEM_BLK_TRANSFER;
-	DMA_InitStruct.SrcAllocatedPort = LL_DMA_SRC_ALLOCATED_PORT0;
-	DMA_InitStruct.DestAllocatedPort = LL_DMA_DEST_ALLOCATED_PORT0;
-	DMA_InitStruct.LinkAllocatedPort = LL_DMA_LINK_ALLOCATED_PORT1;
-	DMA_InitStruct.LinkStepMode = LL_DMA_LSM_FULL_EXECUTION;
-	DMA_InitStruct.TriggerMode = LL_DMA_TRIGM_BLK_TRANSFER;
-	DMA_InitStruct.TriggerPolarity = LL_DMA_TRIG_POLARITY_MASKED;
-	DMA_InitStruct.TriggerSelection = 0;
-
 	if (stream->source_periph) {
 		DMA_InitStruct.BlkDataLength = config->head_block->block_size /
 					config->source_data_size;
