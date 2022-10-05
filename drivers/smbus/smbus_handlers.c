@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/smbus.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/smbus.h>
 
 static inline int z_vrfy_smbus_configure(const struct device *dev,
 					 uint32_t dev_config)
@@ -142,3 +143,23 @@ static inline int z_vrfy_smbus_block_pcall(const struct device *dev,
 					rcv_count, rcv_buf);
 }
 #include <syscalls/smbus_block_pcall_mrsh.c>
+
+static inline int z_vrfy_smbus_manage_smbalert_cb(const struct device *dev,
+						  struct smbus_callback *cb,
+						  bool set)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SMBUS));
+
+	return z_impl_smbus_manage_smbalert_cb(dev, cb, set);
+}
+#include <syscalls/smbus_manage_smbalert_cb_mrsh.c>
+
+static inline int z_vrfy_smbus_manage_host_notify_cb(const struct device *dev,
+						     struct smbus_callback *cb,
+						     bool set)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SMBUS));
+
+	return z_impl_smbus_manage_host_notify_cb(dev, cb, set);
+}
+#include <syscalls/smbus_manage_host_notify_cb_mrsh.c>

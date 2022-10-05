@@ -209,6 +209,12 @@ extern "C" {
 /** Support Packet Error Code (PEC) checking */
 #define SMBUS_MODE_PEC			BIT(1)
 
+/** Support Host Notify functionality */
+#define SMBUS_MODE_HOST_NOTIFY		BIT(2)
+
+/** Support SMBALERT signal functionality */
+#define SMBUS_MODE_SMBALERT		BIT(3)
+
 /** @} */
 
 /**
@@ -246,6 +252,32 @@ enum smbus_direction {
 /** @cond INTERNAL_HIDDEN */
 #define SMBUS_MSG_RW_MASK		BIT(0)
 /** @endcond  */
+
+struct smbus_callback;
+
+typedef void (*smbus_callback_handler_t)(const struct device *dev,
+					 struct smbus_callback *cb,
+					 uint8_t addr);
+
+/**
+ * @brief SMBus callback structure
+ *
+ * Used to register a callback in the driver instance callback list.
+ * As many callbacks as needed can be added as long as each of them
+ * are unique pointers of struct smbus_callback.
+ *
+ * Note: Such struct should not be allocated on stack.
+ */
+struct smbus_callback {
+	/** This should be used in driver for a callback list management */
+	sys_snode_t node;
+
+	/** Actual callback function being called when relevant */
+	smbus_callback_handler_t handler;
+
+	/** Peripheral device address */
+	uint8_t addr;
+};
 
 /**
  * @brief Complete SMBus DT information
@@ -326,6 +358,12 @@ typedef int (*smbus_api_block_pcall_t)(const struct device *dev,
 				       uint16_t addr, uint8_t cmd,
 				       uint8_t send_count, uint8_t *send_buf,
 				       uint8_t *recv_count, uint8_t *recv_buf);
+typedef int (*smbus_api_manage_smbalert_cb_t)(const struct device *dev,
+					      struct smbus_callback *cb,
+					      bool set);
+typedef int (*smbus_api_manage_host_notify_cb_t)(const struct device *dev,
+						 struct smbus_callback *cb,
+						 bool set);
 
 __subsystem struct smbus_driver_api {
 	smbus_api_configure_t configure;
@@ -341,6 +379,8 @@ __subsystem struct smbus_driver_api {
 	smbus_api_block_write_t smbus_block_write;
 	smbus_api_block_read_t smbus_block_read;
 	smbus_api_block_pcall_t smbus_block_pcall;
+	smbus_api_manage_smbalert_cb_t smbus_manage_smbalert_cb;
+	smbus_api_manage_host_notify_cb_t smbus_manage_host_notify_cb;
 };
 
 /**
@@ -545,6 +585,64 @@ static inline int z_impl_smbus_get_config(const struct device *dev,
 	}
 
 	return api->get_config(dev, dev_config);
+}
+
+/**
+ * @brief Add SMBUSALERT callback for a SMBus host controller.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param cb Pointer to a callback structure.
+ * @param set A boolean indicating insertion or removal of the callback.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error, failed to configure device.
+ * @retval -ENOSYS If get config is not implemented
+ */
+__syscall int smbus_manage_smbalert_cb(const struct device *dev,
+				       struct smbus_callback *cb,
+				       bool set);
+
+static inline int z_impl_smbus_manage_smbalert_cb(const struct device *dev,
+						  struct smbus_callback *cb,
+						  bool set)
+{
+	const struct smbus_driver_api *api =
+		(const struct smbus_driver_api *)dev->api;
+
+	if (api->smbus_manage_smbalert_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->smbus_manage_smbalert_cb(dev, cb, set);
+}
+
+/**
+ * @brief Add Host Notify callback for a SMBus host controller.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param cb Pointer to a callback structure.
+ * @param set A boolean indicating insertion or removal of the callback.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error, failed to configure device.
+ * @retval -ENOSYS If get config is not implemented
+ */
+__syscall int smbus_manage_host_notify_cb(const struct device *dev,
+					  struct smbus_callback *cb,
+					  bool set);
+
+static inline int z_impl_smbus_manage_host_notify_cb(const struct device *dev,
+						     struct smbus_callback *cb,
+						     bool set)
+{
+	const struct smbus_driver_api *api =
+		(const struct smbus_driver_api *)dev->api;
+
+	if (api->smbus_manage_host_notify_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->smbus_manage_host_notify_cb(dev, cb, set);
 }
 
 /**
