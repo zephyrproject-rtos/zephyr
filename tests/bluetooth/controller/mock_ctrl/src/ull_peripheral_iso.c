@@ -39,6 +39,10 @@
 #include "ull_conn_iso_internal.h"
 #include "lll_peripheral_iso.h"
 
+void ull_peripheral_iso_release(uint16_t cis_handle)
+{
+}
+
 uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 				   struct pdu_data_llctrl_cis_req *req,
 				   uint16_t *cis_handle)

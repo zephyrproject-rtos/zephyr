@@ -8,6 +8,7 @@
 int ull_peripheral_iso_init(void);
 int ull_peripheral_iso_reset(void);
 
+void ull_peripheral_iso_release(uint16_t cis_handle);
 uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 				   struct pdu_data_llctrl_cis_req *req,
 				   uint16_t *cis_handle);
