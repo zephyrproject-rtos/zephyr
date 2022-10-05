@@ -12,6 +12,7 @@
  * hardware for the RT5XX platforms.
  */
 
+#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/irq.h>
