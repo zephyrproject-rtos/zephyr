@@ -89,6 +89,9 @@ list(APPEND zephyr_cmake_modules dts)
 list(APPEND zephyr_cmake_modules kconfig)
 list(APPEND zephyr_cmake_modules soc)
 
+# Generate VIF USBC policy XML file from device tree
+list(APPEND zephyr_cmake_modules vif)
+
 foreach(component ${SUB_COMPONENTS})
   if(NOT ${component} IN_LIST zephyr_cmake_modules)
     message(FATAL_ERROR
