@@ -7,8 +7,10 @@
 #define DT_DRV_COMPAT ite_it8xxx2_pinctrl_func
 
 #include <zephyr/drivers/pinctrl.h>
-
 #include <zephyr/logging/log.h>
+
+#include <chip_chipregs.h>
+
 LOG_MODULE_REGISTER(pinctrl_ite_it8xxx2, LOG_LEVEL_ERR);
 
 #define GPIO_IT8XXX2_REG_BASE \
