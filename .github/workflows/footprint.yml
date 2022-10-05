@@ -16,7 +16,7 @@ jobs:
     if: github.repository == 'zephyrproject-rtos/zephyr'
     needs: footprint-cancel
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.3
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.5
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false

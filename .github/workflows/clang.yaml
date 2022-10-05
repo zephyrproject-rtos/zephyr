@@ -14,7 +14,7 @@ jobs:
     runs-on: zephyr_runner
     needs: clang-build-prep
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.3
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.5
       options: '--entrypoint /bin/bash'
       volumes:
         - /home/runners/zephyrproject:/github/cache/zephyrproject
