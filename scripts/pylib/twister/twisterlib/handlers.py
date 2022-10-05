@@ -18,6 +18,8 @@ import select
 import re
 import psutil
 from twisterlib.environment import ZEPHYR_BASE
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
+from domains import Domains
 
 try:
     import serial
@@ -826,8 +828,21 @@ class QEMUHandler(Handler):
         # We pass this to QEMU which looks for fifos with .in and .out
         # suffixes.
 
+        if self.instance.testsuite.sysbuild:
+            # Load domain yaml to get default domain build directory
+            # Note: for targets using QEMU, we assume that the target will
+            # have added any additional images to the run target manually
+            domain_path = os.path.join(self.build_dir, "domains.yaml")
+            domains = Domains.from_file(domain_path)
+            logger.debug("Loaded sysbuild domain data from %s" % (domain_path))
+            build_dir = domains.get_default_domain().build_dir
+        else:
+            build_dir = self.build_dir
+
+        # QEMU fifo will use main build dir
         self.fifo_fn = os.path.join(self.instance.build_dir, "qemu-fifo")
-        self.pid_fn = os.path.join(self.instance.build_dir, "qemu.pid")
+        # PID file will be created in the main sysbuild app's build dir
+        self.pid_fn = os.path.join(build_dir, "qemu.pid")
 
         if os.path.exists(self.pid_fn):
             os.unlink(self.pid_fn)
@@ -852,7 +867,7 @@ class QEMUHandler(Handler):
 
         logger.debug("Running %s (%s)" % (self.name, self.type_str))
         command = [self.generator_cmd]
-        command += ["-C", self.build_dir, "run"]
+        command += ["-C", build_dir, "run"]
 
         is_timeout = False
         qemu_pid = None
