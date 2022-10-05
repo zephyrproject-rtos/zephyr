@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(DHT, CONFIG_SENSOR_LOG_LEVEL);
  *         -1 if duration exceeds DHT_SIGNAL_MAX_WAIT_DURATION
  */
 static int8_t dht_measure_signal_duration(const struct device *dev,
-	       	                   bool active)
+					  bool active)
 {
 	const struct dht_config *cfg = dev->config;
 	uint32_t elapsed_cycles;
