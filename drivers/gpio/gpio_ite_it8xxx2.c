@@ -16,6 +16,10 @@
 #include <string.h>
 #include <zephyr/logging/log.h>
 #include "gpio_utils.h"
+
+#include <chip_chipregs.h>
+#include <soc_common.h>
+
 LOG_MODULE_REGISTER(gpio_it8xxx2, LOG_LEVEL_ERR);
 
 #define DT_DRV_COMPAT ite_it8xxx2_gpio
