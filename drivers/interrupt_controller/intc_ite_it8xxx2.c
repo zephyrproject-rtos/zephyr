@@ -241,7 +241,7 @@ uint8_t __soc_ram_code get_irq(void *arg)
 	return intc_irq;
 }
 
-void ite_intc_init(void)
+void soc_interrupt_init(void)
 {
 	/* Ensure interrupts of soc are disabled at default */
 	for (int i = 0; i < ARRAY_SIZE(reg_enable); i++)
