@@ -28,6 +28,12 @@ Deprecated in this release
 
 Stable API changes in this release
 ==================================
+* System Utility Headers
+
+  * Prefixed :c:func:`MIN` and :c:func:`MAX` and :c:func:`ARRAY_SIZE` with `#undef` to prevent
+    accidential multiple definitions when dealing with third party libraries that bring their
+    own definitions.
+    This is a departure from previous behavior where include order of header files mattered.
 
 New APIs in this release
 ========================
