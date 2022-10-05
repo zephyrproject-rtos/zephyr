@@ -30,9 +30,16 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define PROV_MULTI_COUNT 3
 #define PROV_REPROV_COUNT 3
 #define WAIT_TIME 80 /*seconds*/
+#define IS_RPR_PRESENT  (CONFIG_BT_MESH_RPR_SRV && CONFIG_BT_MESH_RPR_CLI)
+
+/* Used to identify a device before provisioning it. */
+#define HAS_PB_REMOTE_SERVER BIT(0)
+#define UUID_FLAG_SET(uuid, flag) ((uuid)[7] |= (flag))
+#define UUID_FLAG_CHECK(uuid, flag) ((uuid)[7] & (flag))
 
 enum test_flags {
 	IS_PROVISIONER,
+	PROVISION_RPR_SRV,
 
 	TEST_FLAGS,
 };
@@ -66,7 +73,7 @@ static struct oob_auth_test_vector_s {
 	{NULL, 0, 0, 0, 7, BT_MESH_ENTER_STRING},
 };
 
-static ATOMIC_DEFINE(flags, TEST_FLAGS);
+static ATOMIC_DEFINE(test_flags, TEST_FLAGS);
 
 extern const struct bt_mesh_comp comp;
 extern const uint8_t test_net_key[16];
@@ -78,6 +85,39 @@ static uint16_t prov_addr = 0x0002;
 static uint16_t current_dev_addr;
 static const uint8_t dev_key[16] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
 static uint8_t dev_uuid[16] = { 0x6c, 0x69, 0x6e, 0x67, 0x61, 0x6f };
+
+#if IS_RPR_PRESENT
+/* Remote Provisioning models related variables. */
+static void rpr_scan_report(struct bt_mesh_rpr_cli *cli, const struct bt_mesh_rpr_node *srv,
+			    struct bt_mesh_rpr_unprov *unprov, struct net_buf_simple *adv_data);
+
+static struct bt_mesh_rpr_cli rpr_cli = {
+	.scan_report = rpr_scan_report,
+};
+
+static const struct bt_mesh_comp rpr_cli_comp = {
+	.elem =
+		(struct bt_mesh_elem[]){
+			BT_MESH_ELEM(1,
+				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
+						BT_MESH_MODEL_CFG_CLI(&(struct bt_mesh_cfg_cli){}),
+						BT_MESH_MODEL_RPR_CLI(&rpr_cli)),
+				     BT_MESH_MODEL_NONE),
+		},
+	.elem_count = 1,
+};
+
+static const struct bt_mesh_comp rpr_srv_comp = {
+	.elem =
+		(struct bt_mesh_elem[]){
+			BT_MESH_ELEM(1,
+				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
+						BT_MESH_MODEL_RPR_SRV),
+				     BT_MESH_MODEL_NONE),
+		},
+	.elem_count = 1,
+};
+#endif /* IS_RPR_PRESENT */
 
 /* Delayed work to avoid requesting OOB info before generation of this. */
 static struct k_work_delayable oob_timer;
@@ -107,7 +147,7 @@ static void test_provisioner_init(void)
 	 */
 	tm_set_phy_max_resync_offset(100000);
 
-	atomic_set_bit(flags, IS_PROVISIONER);
+	atomic_set_bit(test_flags, IS_PROVISIONER);
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	k_work_init_delayable(&oob_timer, delayed_input);
 }
@@ -123,7 +163,12 @@ static void unprovisioned_beacon(uint8_t uuid[16],
 				 bt_mesh_prov_oob_info_t oob_info,
 				 uint32_t *uri_hash)
 {
-	if (!atomic_test_bit(flags, IS_PROVISIONER)) {
+	if (!atomic_test_bit(test_flags, IS_PROVISIONER)) {
+		return;
+	}
+
+	if (atomic_test_bit(test_flags, PROVISION_RPR_SRV) &&
+	    !UUID_FLAG_CHECK(uuid, HAS_PB_REMOTE_SERVER)) {
 		return;
 	}
 
@@ -132,7 +177,7 @@ static void unprovisioned_beacon(uint8_t uuid[16],
 
 static void prov_complete(uint16_t net_idx, uint16_t addr)
 {
-	if (!atomic_test_bit(flags, IS_PROVISIONER)) {
+	if (!atomic_test_bit(test_flags, IS_PROVISIONER)) {
 		k_sem_give(&prov_sem);
 	}
 }
@@ -362,6 +407,69 @@ static void oob_provisioner(bool read_oob_pk, bool use_oob_pk)
 	bt_mesh_reset();
 }
 
+/** Configures the health server on a node at current_dev_addr address and sends node reset.
+ */
+static void node_configure_and_reset(void)
+{
+	uint8_t status;
+	size_t subs_count = 1;
+	uint16_t sub;
+	struct bt_mesh_cfg_cli_mod_pub healthpub = { 0 };
+	struct bt_mesh_cdb_node *node;
+
+	/* Check that publication and subscription are reset after last iteration */
+	ASSERT_OK(bt_mesh_cfg_cli_mod_sub_get(0, current_dev_addr, current_dev_addr,
+					  BT_MESH_MODEL_ID_HEALTH_SRV, &status, &sub,
+					  &subs_count));
+	ASSERT_EQUAL(0, status);
+	ASSERT_TRUE(subs_count == 0);
+
+	ASSERT_OK(bt_mesh_cfg_cli_mod_pub_get(0, current_dev_addr, current_dev_addr,
+					  BT_MESH_MODEL_ID_HEALTH_SRV, &healthpub,
+					  &status));
+	ASSERT_EQUAL(0, status);
+	ASSERT_TRUE(healthpub.addr == BT_MESH_ADDR_UNASSIGNED, "Pub not cleared");
+
+
+	/* Set pub and sub to check that they are reset */
+	healthpub.addr = 0xc001;
+	healthpub.app_idx = 0;
+	healthpub.cred_flag = false;
+	healthpub.ttl = 10;
+	healthpub.period = BT_MESH_PUB_PERIOD_10SEC(1);
+	healthpub.transmit = BT_MESH_TRANSMIT(3, 100);
+
+	ASSERT_OK(bt_mesh_cfg_cli_app_key_add(0, current_dev_addr, 0, 0, test_app_key,
+					  &status));
+	ASSERT_EQUAL(0, status);
+
+	k_sleep(K_SECONDS(1));
+
+	ASSERT_OK(bt_mesh_cfg_cli_mod_app_bind(0, current_dev_addr, current_dev_addr, 0x0,
+					   BT_MESH_MODEL_ID_HEALTH_SRV, &status));
+	ASSERT_EQUAL(0, status);
+
+	k_sleep(K_SECONDS(1));
+
+	ASSERT_OK(bt_mesh_cfg_cli_mod_sub_add(0, current_dev_addr, current_dev_addr, 0xc000,
+					  BT_MESH_MODEL_ID_HEALTH_SRV, &status));
+	ASSERT_EQUAL(0, status);
+
+	k_sleep(K_SECONDS(1));
+
+	ASSERT_OK(bt_mesh_cfg_cli_mod_pub_set(0, current_dev_addr, current_dev_addr,
+					  BT_MESH_MODEL_ID_HEALTH_SRV, &healthpub,
+					  &status));
+	ASSERT_EQUAL(0, status);
+
+	k_sleep(K_SECONDS(1));
+
+	ASSERT_OK(bt_mesh_cfg_cli_node_reset(0, current_dev_addr, (bool *)&status));
+
+	node = bt_mesh_cdb_node_get(current_dev_addr);
+	bt_mesh_cdb_node_del(node, true);
+}
+
 /** @brief Verify that this device pb-adv provision.
  */
 static void test_device_pb_adv_no_oob(void)
@@ -395,7 +503,7 @@ static void test_device_pb_adv_reprovision(void)
 	for (int i = 0; i < PROV_REPROV_COUNT; i++) {
 		/* Keep a long timeout so the prov multi case has time to finish: */
 		LOG_INF("Dev prov loop #%d, waiting for prov ...\n", i);
-		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(10)));
+		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
 	}
 
 	PASS();
@@ -530,59 +638,88 @@ static void test_provisioner_pb_adv_reprovision(void)
 		LOG_INF("Provisioner prov loop #%d, waiting for prov ...\n", i);
 		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
 
-		uint8_t status;
-		size_t subs_count = 1;
-		uint16_t sub;
-		struct bt_mesh_cfg_cli_mod_pub healthpub = { 0 };
-		struct bt_mesh_cdb_node *node;
-
-		/* Check that publication and subscription are reset after last iteration */
-		ASSERT_OK(bt_mesh_cfg_cli_mod_sub_get(0, current_dev_addr, current_dev_addr,
-						  BT_MESH_MODEL_ID_HEALTH_SRV, &status, &sub,
-						  &subs_count));
-		ASSERT_EQUAL(0, status);
-		ASSERT_TRUE(subs_count == 0);
-
-		ASSERT_OK(bt_mesh_cfg_cli_mod_pub_get(0, current_dev_addr, current_dev_addr,
-						  BT_MESH_MODEL_ID_HEALTH_SRV, &healthpub,
-						  &status));
-		ASSERT_EQUAL(0, status);
-		ASSERT_TRUE(healthpub.addr == BT_MESH_ADDR_UNASSIGNED, "Pub not cleared");
-
-
-		/* Set pub and sub to check that they are reset */
-		healthpub.addr = 0xc001;
-		healthpub.app_idx = 0;
-		healthpub.cred_flag = false;
-		healthpub.ttl = 10;
-		healthpub.period = BT_MESH_PUB_PERIOD_10SEC(1);
-		healthpub.transmit = BT_MESH_TRANSMIT(3, 100);
-
-		ASSERT_OK(bt_mesh_cfg_cli_app_key_add(0, current_dev_addr, 0, 0, test_app_key,
-						  &status));
-		ASSERT_EQUAL(0, status);
-
-		ASSERT_OK(bt_mesh_cfg_cli_mod_app_bind(0, current_dev_addr, current_dev_addr, 0x0,
-						   BT_MESH_MODEL_ID_HEALTH_SRV, &status));
-		ASSERT_EQUAL(0, status);
-
-		ASSERT_OK(bt_mesh_cfg_cli_mod_sub_add(0, current_dev_addr, current_dev_addr, 0xc000,
-						  BT_MESH_MODEL_ID_HEALTH_SRV, &status));
-		ASSERT_EQUAL(0, status);
-
-		ASSERT_OK(bt_mesh_cfg_cli_mod_pub_set(0, current_dev_addr, current_dev_addr,
-						  BT_MESH_MODEL_ID_HEALTH_SRV, &healthpub,
-						  &status));
-		ASSERT_EQUAL(0, status);
-
-		ASSERT_OK(bt_mesh_cfg_cli_node_reset(0, current_dev_addr, (bool *)&status));
-
-		node = bt_mesh_cdb_node_get(current_dev_addr);
-		bt_mesh_cdb_node_del(node, true);
+		node_configure_and_reset();
 	}
 
 	PASS();
 }
+
+#if IS_RPR_PRESENT
+static void rpr_scan_report(struct bt_mesh_rpr_cli *cli, const struct bt_mesh_rpr_node *srv,
+			    struct bt_mesh_rpr_unprov *unprov, struct net_buf_simple *adv_data)
+{
+	LOG_INF("Remote device discovered. Provisioning...");
+	ASSERT_OK(bt_mesh_provision_remote(cli, srv, unprov->uuid, 0, prov_addr));
+}
+
+/** @brief Verify that the provisioner can provision a device multiple times after resets using
+ * PB-Remote and RPR models.
+ */
+static void test_provisioner_pb_remote_client_reprovision(void)
+{
+	uint16_t pb_remote_server_addr;
+
+	k_sem_init(&prov_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, &rpr_cli_comp);
+
+	atomic_set_bit(test_flags, PROVISION_RPR_SRV);
+
+	ASSERT_OK(bt_mesh_cdb_create(test_net_key));
+
+	ASSERT_OK(bt_mesh_provision(test_net_key, 0, 0, 0, 0x0001, dev_key));
+
+	LOG_INF("Waiting for a device with RPR Server to be provisioned over PB-Adv...");
+	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(10)));
+	pb_remote_server_addr = current_dev_addr;
+
+	for (int i = 0; i < PROV_REPROV_COUNT; i++) {
+		struct bt_mesh_rpr_node srv = {
+			.addr = pb_remote_server_addr,
+			.net_idx = 0,
+			.ttl = 3,
+		};
+		struct bt_mesh_rpr_scan_status scan_status;
+
+		LOG_INF("Starting scanning for an unprov device...");
+		ASSERT_OK(bt_mesh_rpr_scan_start(&rpr_cli, &srv, NULL, 5, 1, &scan_status));
+		ASSERT_EQUAL(BT_MESH_RPR_SUCCESS, scan_status.status);
+		ASSERT_EQUAL(BT_MESH_RPR_SCAN_MULTI, scan_status.scan);
+		ASSERT_EQUAL(1, scan_status.max_devs);
+		ASSERT_EQUAL(5, scan_status.timeout);
+
+		LOG_INF("Provisioner prov loop #%d, waiting for prov ...\n", i);
+		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
+
+		node_configure_and_reset();
+	}
+
+	PASS();
+}
+
+/** @brief A device running a Remote Provisioning server that can be used to provision
+ * unprovisioned devices.
+ */
+static void test_device_pb_remote_server(void)
+{
+	k_sem_init(&prov_sem, 0, 1);
+
+	UUID_FLAG_SET(dev_uuid, HAS_PB_REMOTE_SERVER);
+
+	bt_mesh_device_setup(&prov, &rpr_srv_comp);
+
+	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_ADV));
+
+	LOG_INF("Mesh initialized\n");
+
+	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(10)));
+
+	LOG_INF("Enabling PB-Remote server");
+	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_REMOTE));
+
+	PASS();
+}
+#endif /* IS_RPR_PRESENT */
 
 #define TEST_CASE(role, name, description)                                     \
 	{                                                                      \
@@ -602,6 +739,10 @@ static const struct bst_test_instance test_connect[] = {
 		  "Device: pb-adv provisioning use oob public key"),
 	TEST_CASE(device, pb_adv_reprovision,
 		  "Device: pb-adv provisioning, reprovision"),
+#if IS_RPR_PRESENT
+	TEST_CASE(device, pb_remote_server,
+		  "Device: pb-adv provisioning, running pb-remote server"),
+#endif
 
 	TEST_CASE(provisioner, pb_adv_no_oob,
 		  "Provisioner: pb-adv provisioning use no-oob method"),
@@ -619,6 +760,11 @@ static const struct bst_test_instance test_connect[] = {
 		"Provisioner: pb-adv provisioning use oob authentication, ignore oob public key"),
 	TEST_CASE(provisioner, pb_adv_reprovision,
 		  "Provisioner: pb-adv provisioning, resetting and reprovisioning multiple times."),
+#if IS_RPR_PRESENT
+	TEST_CASE(provisioner, pb_remote_client_reprovision,
+		  "Provisioner: pb-remote client provisioning, resetting and reprovisioning "
+		  "multiple times."),
+#endif
 
 	BSTEST_END_MARKER
 };
