@@ -37,6 +37,7 @@ enum espi_io_mode {
 };
 
 /**
+ * @code
  *+----------------------------------------------------------------------+
  *|                                                                      |
  *|  eSPI host                           +-------------+                 |
@@ -82,7 +83,7 @@ enum espi_io_mode {
  *|       CH0         |     CH1      |      CH2      |    CH3             |
  *|   eSPI endpoint   |    VWIRE     |      OOB      |   Flash            |
  *+-----------------------------------------------------------------------+
- *
+ * @endcode
  */
 
 /**
@@ -480,6 +481,7 @@ __subsystem struct espi_driver_api {
  * will be used by eSPI master to determine minimum common capabilities with
  * eSPI slave then send via SET_CONFIGURATION command.
  *
+ * @code
  * +--------+   +---------+     +------+          +---------+   +---------+
  * |  eSPI  |   |  eSPI   |     | eSPI |          |  eSPI   |   |  eSPI   |
  * |  slave |   | driver  |     |  bus |          |  driver |   |  host   |
@@ -503,6 +505,7 @@ __subsystem struct espi_driver_api {
  *     |              |            |  accept           |             |
  *     |              |            +------------------>+             |
  *     +              +            +                   +             +
+ * @endcode
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param cfg the device runtime configuration for the eSPI controller.
@@ -871,6 +874,7 @@ static inline int z_impl_espi_flash_erase(const struct device *dev,
 /**
  * Callback model
  *
+ * @code
  *+-------+                  +-------------+   +------+     +---------+
  *|  App  |                  | eSPI driver |   |  HW  |     |eSPI Host|
  *+---+---+                  +-------+-----+   +---+--+     +----+----+
@@ -926,6 +930,7 @@ static inline int z_impl_espi_flash_erase(const struct device *dev,
  *    <------------------------------+             |             |
  *    | App executes                 |             |             |
  *    + power mgmt policy            |             |             |
+ * @endcode
  */
 
 /**

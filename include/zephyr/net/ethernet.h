@@ -835,47 +835,45 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 #endif
 
 #if defined(CONFIG_NET_VLAN)
-#define Z_ETH_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,	\
-			      pm_action_cb, data, cfg, prio, api, mtu)	\
-	Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
-			pm_action_cb, data, cfg, POST_KERNEL,		\
-			prio, api, &Z_DEVICE_STATE_NAME(dev_name));	\
-	NET_L2_DATA_INIT(dev_name, 0, NET_L2_GET_CTX_TYPE(ETHERNET_L2));\
-	NET_IF_INIT(dev_name, 0, ETHERNET_L2, mtu, NET_VLAN_MAX_COUNT)
+#define Z_ETH_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
+			      config, prio, api, mtu)			\
+	Z_DEVICE_STATE_DEFINE(dev_id);					\
+	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
+			config, POST_KERNEL, prio, api,			\
+			&Z_DEVICE_STATE_NAME(dev_id));			\
+	NET_L2_DATA_INIT(dev_id, 0, NET_L2_GET_CTX_TYPE(ETHERNET_L2));	\
+	NET_IF_INIT(dev_id, 0, ETHERNET_L2, mtu, NET_VLAN_MAX_COUNT)
 
 #else /* CONFIG_NET_VLAN */
 
-#define Z_ETH_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,	\
-			      pm_action_cb, data, cfg, prio, api, mtu)	\
-	Z_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,		\
-			  pm_action_cb, data, cfg, prio, api,		\
-			  ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),\
-			  mtu)
+#define Z_ETH_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
+			      config, prio, api, mtu)			\
+	Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
+			  config, prio, api, ETHERNET_L2,		\
+			  NET_L2_GET_CTX_TYPE(ETHERNET_L2), mtu)
 #endif /* CONFIG_NET_VLAN */
 
 /**
  * @brief Create an Ethernet network interface and bind it to network device.
  *
- * @param dev_name Network device name.
- * @param drv_name The name this instance of the driver exposes to
+ * @param dev_id Network device id.
+ * @param name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
- * Can be NULL if not implemented.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_action_cb,	\
-			    data, cfg, prio, api, mtu)			\
-	Z_ETH_NET_DEVICE_INIT(DT_INVALID_NODE, dev_name, drv_name,	\
-			      init_fn, pm_action_cb, data, cfg, prio,	\
-			      api, mtu)
+#define ETH_NET_DEVICE_INIT(dev_id, name, init_fn, pm, data, config,	\
+			    prio, api, mtu)				\
+	Z_ETH_NET_DEVICE_INIT(DT_INVALID_NODE, dev_id, name, init_fn,	\
+			      pm, data, config, prio, api, mtu)
 
 /**
  * @brief Like ETH_NET_DEVICE_INIT but taking metadata from a devicetree.
@@ -883,22 +881,21 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
- * Can be NULL if not implemented.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define ETH_NET_DEVICE_DT_DEFINE(node_id, init_fn, pm_action_cb, data,	\
-			       cfg, prio, api, mtu)			\
-	Z_ETH_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
-			      DEVICE_DT_NAME(node_id),			\
-			      init_fn, pm_action_cb, data, cfg, prio,	\
-			      api, mtu)
+#define ETH_NET_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config,	\
+				 prio, api, mtu)			\
+	Z_ETH_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_ID(node_id),	\
+			      DEVICE_DT_NAME(node_id), init_fn, pm,	\
+			      data, config, prio, api, mtu)
 
 /**
  * @brief Like ETH_NET_DEVICE_DT_DEFINE for an instance of a DT_DRV_COMPAT

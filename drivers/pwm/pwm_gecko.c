@@ -112,7 +112,7 @@ static int pwm_gecko_init(const struct device *dev)
 										\
 	DEVICE_DT_INST_DEFINE(index, &pwm_gecko_init, NULL, NULL,		\
 				&pwm_gecko_config_##index, POST_KERNEL,		\
-				CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+				CONFIG_PWM_INIT_PRIORITY,			\
 				&pwm_gecko_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_GECKO_INIT)

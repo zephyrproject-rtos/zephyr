@@ -559,9 +559,9 @@ struct can_device_state {
 /**
  * @brief Define a statically allocated and section assigned CAN device state
  */
-#define Z_CAN_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	static struct can_device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
+#define Z_CAN_DEVICE_STATE_DEFINE(dev_id)				\
+	static struct can_device_state Z_DEVICE_STATE_NAME(dev_id)	\
+	__attribute__((__section__(".z_devstate")))
 
 /**
  * @brief Define a CAN device init wrapper function
@@ -569,8 +569,8 @@ struct can_device_state {
  * This does device instance specific initialization of common data (such as stats)
  * and calls the given init_fn
  */
-#define Z_CAN_INIT_FN(dev_name, init_fn)				\
-	static inline int UTIL_CAT(dev_name, _init)(const struct device *dev) \
+#define Z_CAN_INIT_FN(dev_id, init_fn)					\
+	static inline int UTIL_CAT(dev_id, _init)(const struct device *dev) \
 	{								\
 		struct can_device_state *state =			\
 			CONTAINER_OF(dev->state, struct can_device_state, devstate); \
@@ -591,29 +591,26 @@ struct can_device_state {
  *
  * @param node_id   The devicetree node identifier.
  * @param init_fn   Name of the init function of the driver.
- * @param pm_device PM device resources reference (NULL if device does not use PM).
- * @param data_ptr  Pointer to the device's private data.
- * @param cfg_ptr   The address to the structure containing the configuration
+ * @param pm        PM device resources reference (NULL if device does not use PM).
+ * @param data      Pointer to the device's private data.
+ * @param config    The address to the structure containing the configuration
  *                  information for this instance of the driver.
  * @param level     The initialization level. See SYS_INIT() for
  *                  details.
  * @param prio      Priority within the selected initialization level. See
  *                  SYS_INIT() for details.
- * @param api_ptr   Provides an initial pointer to the API function struct
+ * @param api       Provides an initial pointer to the API function struct
  *                  used by the driver. Can be NULL.
  */
-#define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, ...)				\
-	Z_CAN_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)); \
-	Z_CAN_INIT_FN(Z_DEVICE_DT_DEV_NAME(node_id), init_fn)		\
-	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
+#define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
+			     prio, api, ...)				\
+	Z_CAN_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));		\
+	Z_CAN_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)		\
+	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
-			&UTIL_CAT(Z_DEVICE_DT_DEV_NAME(node_id), _init), \
-			pm_device,					\
-			data_ptr, cfg_ptr, level, prio,			\
-			api_ptr,					\
-			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)).devstate), \
+			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
+			pm, data, config, level, prio, api,		\
+			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
 			__VA_ARGS__)
 
 #else /* CONFIG_CAN_STATS */
@@ -625,12 +622,10 @@ struct can_device_state {
 #define CAN_STATS_FORM_ERROR_INC(dev_)
 #define CAN_STATS_ACK_ERROR_INC(dev_)
 
-#define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, ...)				\
-	DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, __VA_ARGS__)
+#define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
+			     prio, api, ...)				\
+	DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
+			 prio, api, __VA_ARGS__)
 
 #endif /* CONFIG_CAN_STATS */
 

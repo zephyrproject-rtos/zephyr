@@ -89,9 +89,6 @@ comment "loramac-node module not available."
 comment "CANopenNode module not available."
 	depends on !ZEPHYR_CANOPENNODE_MODULE
 
-comment "FFF module not available."
-	depends on !ZEPHYR_FFF_MODULE
-
 comment "zcbor module not available."
 	depends on !ZEPHYR_ZCBOR_MODULE
 

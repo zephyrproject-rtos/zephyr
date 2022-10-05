@@ -51,14 +51,14 @@ is waiting for is fulfilled. It is possible for more than one to be fulfilled
 when :c:func:`k_poll` returns, if they were fulfilled before
 :c:func:`k_poll` was called, or due to the preemptive multi-threading
 nature of the kernel. The caller must look at the state of all the poll events
-in the array to figured out which ones were fulfilled and what actions to take.
+in the array to figure out which ones were fulfilled and what actions to take.
 
 Currently, there is only one mode of operation available: the object is not
 acquired. As an example, this means that when :c:func:`k_poll` returns and
 the poll event states that the semaphore is available, the caller of
 :c:func:`k_poll()` must then invoke :c:func:`k_sem_take` to take
 ownership of the semaphore. If the semaphore is contested, there is no
-guarantee that it will be still available when :c:func:`k_sem_give` is
+guarantee that it will be still available when :c:func:`k_sem_take` is
 called.
 
 Implementation
@@ -72,7 +72,7 @@ of type :c:struct:`k_poll_event`. Each entry in the array represents one
 event a call to :c:func:`k_poll` will wait for its condition to be
 fulfilled.
 
-They can be initialized using either the runtime initializers
+Poll events can be initialized using either the runtime initializers
 :c:macro:`K_POLL_EVENT_INITIALIZER()` or :c:func:`k_poll_event_init`, or
 the static initializer :c:macro:`K_POLL_EVENT_STATIC_INITIALIZER()`. An object
 that matches the **type** specified must be passed to the initializers. The
@@ -255,16 +255,16 @@ If the signal is to be polled in a loop, *both* its event state and its
         }
     }
 
-Note that poll signals are not internally synchronized.  A k_poll call
+Note that poll signals are not internally synchronized. A :c:func:`k_poll` call
 that is passed a signal will return after any code in the system calls
 :c:func:`k_poll_signal_raise()`.  But if the signal is being
 externally managed and reset via :c:func:`k_poll_signal_init()`, it is
 possible that by the time the application checks, the event state may
 no longer be equal to :c:macro:`K_POLL_STATE_SIGNALED`, and a (naive)
 application will miss events.  Best practice is always to reset the
-signal only from within the thread invoking the k_poll() loop, or else
+signal only from within the thread invoking the :c:func:`k_poll` loop, or else
 to use some other event type which tracks event counts: semaphores and
-FIFOs more more error-proof in this sense because they can't "miss"
+FIFOs are more error-proof in this sense because they can't "miss"
 events, architecturally.
 
 Suggested Uses

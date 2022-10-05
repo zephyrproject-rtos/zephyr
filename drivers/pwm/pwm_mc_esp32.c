@@ -568,6 +568,6 @@ static const struct pwm_driver_api mcpwm_esp32_api = {
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, &mcpwm_esp32_init, NULL, &mcpwm_esp32_data_##idx,               \
 			      &mcpwm_esp32_config_##idx, POST_KERNEL,                              \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mcpwm_esp32_api);
+			      CONFIG_PWM_INIT_PRIORITY, &mcpwm_esp32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_MCPWM_INIT)

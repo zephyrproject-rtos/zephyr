@@ -14,6 +14,7 @@ import queue
 import time
 import multiprocessing
 import traceback
+import scl
 from colorama import Fore
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
@@ -285,7 +286,6 @@ class CMake:
         logger.debug("Running cmake on %s for %s" % (self.source_dir, self.platform.name))
         cmake_args = [
             f'-B{self.build_dir}',
-            f'-S{self.source_dir}',
             f'-DTC_RUNID={self.instance.run_id}',
             f'-DEXTRA_CFLAGS={cflags}',
             f'-DEXTRA_AFLAGS={aflags}',
@@ -293,6 +293,18 @@ class CMake:
             f'-DEXTRA_GEN_DEFINES_ARGS={gen_defines_args}',
             f'-G{self.env.generator}'
         ]
+
+        if self.testsuite.sysbuild:
+            logger.debug("Building %s using sysbuild" % (self.source_dir))
+            source_args = [
+                f'-S{canonical_zephyr_base}/share/sysbuild',
+                f'-DAPP_DIR={self.source_dir}'
+            ]
+        else:
+            source_args = [
+                f'-S{self.source_dir}'
+            ]
+        cmake_args.extend(source_args)
 
         cmake_args.extend(args)
 
@@ -351,8 +363,24 @@ class FilterBuilder(CMake):
         if self.platform.name == "unit_testing":
             return {}
 
-        cmake_cache_path = os.path.join(self.build_dir, "CMakeCache.txt")
-        defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
+        if self.testsuite.sysbuild:
+            # We must parse the domains.yaml file to determine the
+            # default sysbuild application
+            domain_path = os.path.join(self.build_dir, "domains.yaml")
+            domain_yaml = scl.yaml_load(domain_path)
+            logger.debug("Loaded sysbuild domain data from %s" % (domain_path))
+            default_domain = domain_yaml['default']
+            for domain in domain_yaml['domains']:
+                if domain['name'] == default_domain:
+                    domain_build = domain['build_dir']
+            cmake_cache_path = os.path.join(domain_build, "CMakeCache.txt")
+            defconfig_path = os.path.join(domain_build, "zephyr", ".config")
+            edt_pickle = os.path.join(domain_build, "zephyr", "edt.pickle")
+        else:
+            cmake_cache_path = os.path.join(self.build_dir, "CMakeCache.txt")
+            defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
+            edt_pickle = os.path.join(self.build_dir, "zephyr", "edt.pickle")
+
 
         with open(defconfig_path, "r") as fp:
             defconfig = {}
@@ -385,7 +413,21 @@ class FilterBuilder(CMake):
         filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
 
-        edt_pickle = os.path.join(self.build_dir, "zephyr", "edt.pickle")
+        if self.testsuite.sysbuild and self.env.options.device_testing:
+            # Verify that twister's arguments support sysbuild.
+            # Twister sysbuild flashing currently only works with west, so
+            # --west-flash must be passed. Additionally, erasing the DUT
+            # before each test with --west-flash=--erase will inherently not
+            # work with sysbuild.
+            if self.env.options.west_flash is None:
+                logger.warning("Sysbuild test will be skipped. " +
+                    "West must be used for flashing.")
+                return {os.path.join(self.platform.name, self.testsuite.name): True}
+            elif "--erase" in self.env.options.west_flash:
+                logger.warning("Sysbuild test will be skipped, " +
+                    "--erase is not supported with --west-flash")
+                return {os.path.join(self.platform.name, self.testsuite.name): True}
+
         if self.testsuite and self.testsuite.filter:
             try:
                 if os.path.exists(edt_pickle):

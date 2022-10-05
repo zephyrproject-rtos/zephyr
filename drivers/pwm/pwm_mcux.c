@@ -192,7 +192,7 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 		.base = (PWM_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),	  \
 		.index = DT_INST_PROP(n, index),			  \
 		.mode = kPWM_EdgeAligned,				  \
-		.prescale = kPWM_Prescale_Divide_128,			  \
+		.prescale = _CONCAT(kPWM_Prescale_Divide_, DT_INST_PROP(n, nxp_prescaler)),\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 		.run_wait = DT_INST_PROP(n, run_in_wait),		  \
@@ -205,7 +205,7 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 			    NULL,					  \
 			    &pwm_mcux_data_ ## n,			  \
 			    &pwm_mcux_config_ ## n,			  \
-			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,\
+			    POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,	  \
 			    &pwm_mcux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT_MCUX)

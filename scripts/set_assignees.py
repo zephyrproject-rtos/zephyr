@@ -93,19 +93,24 @@ def process_pr(gh, maintainer_file, number):
     log(f"Submitted by: {pr.user.login}")
     log(f"candidate maintainers: {sm}")
 
+    maintainer = "None"
+    maintainers = list(sm.keys())
+
     prop = 0
-    if sm:
-        maintainer = list(sm.keys())[0]
+    if maintainers:
+        maintainer = maintainers[0]
 
         if len(ac) > 1 and list(ac.values())[0] == list(ac.values())[1]:
-            log("++ Platform/Drivers takes precedence over subsystem...")
             for aa in ac:
                 if 'Documentation' in aa:
                     log("++ With multiple areas of same weight including docs, take something else other than Documentation as the maintainer")
                     for a in all_areas:
-                        if a.name == aa and a.maintainers[0] == maintainer:
-                            maintainer = list(sm.keys())[1]
+                        if (a.name == aa and
+                            a.maintainers and a.maintainers[0] == maintainer and
+                            len(maintainers) > 1):
+                            maintainer = maintainers[1]
                 elif 'Platform' in aa:
+                    log("++ Platform takes precedence over subsystem...")
                     log(f"Set maintainer of area {aa}")
                     for a in all_areas:
                         if a.name == aa:
@@ -129,8 +134,7 @@ def process_pr(gh, maintainer_file, number):
         prop = (maint[maintainer] / num_files) * 100
         if prop < 20:
             maintainer = "None"
-    else:
-        maintainer = "None"
+
     log(f"Picked maintainer: {maintainer} ({prop:.2f}% ownership)")
     log("+++++++++++++++++++++++++")
 

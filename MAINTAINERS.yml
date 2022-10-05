@@ -198,6 +198,7 @@ Bluetooth:
     - tests/bluetooth/controller/
     - tests/bluetooth/mesh_*/
     - tests/bluetooth/mesh/
+    - tests/bluetooth/shell/audio*
   labels:
     - "area: Bluetooth"
 
@@ -253,6 +254,7 @@ Bluetooth Audio:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
     - tests/bluetooth/bsim_bt/bsim_test_audio/
+    - tests/bluetooth/shell/audio*
   labels:
     - "area: Bluetooth Audio"
     - "area: Bluetooth"
@@ -498,6 +500,16 @@ Documentation Infrastructure:
     - doc/zephyr.doxyfile.in
   labels:
     - "area: Documentation Infrastructure"
+
+Release Notes:
+  status: maintained
+  maintainers:
+    - laurenmurphyx64
+    - stephanosio
+  files:
+    - doc/releases/release-notes-*
+  labels:
+    - "Release Notes"
 
 "Drivers: ADC":
   status: maintained

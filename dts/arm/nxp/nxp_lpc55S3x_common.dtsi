@@ -256,6 +256,7 @@
 			interrupts = <83 0>, <84 0>;
 			#pwm-cells = <2>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
 			status = "disabled";
 			run-in-wait;
 		};
@@ -267,6 +268,7 @@
 			interrupts = <85 0>, <86 0>;
 			#pwm-cells = <2>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
 			status = "disabled";
 			run-in-wait;
 		};
@@ -278,6 +280,7 @@
 			interrupts = <87 0>, <88 0>;
 			#pwm-cells = <2>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
 			status = "disabled";
 			run-in-wait;
 		};
@@ -289,6 +292,7 @@
 			interrupts = <89 0>, <90 0>;
 			#pwm-cells = <2>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
 			status = "disabled";
 			run-in-wait;
 		};
@@ -307,6 +311,7 @@
 			interrupts = <94 0>, <95 0>;
 			#pwm-cells = <2>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
 			status = "disabled";
 			run-in-wait;
 		};
@@ -318,6 +323,7 @@
 			interrupts = <96 0>, <97 0>;
 			#pwm-cells = <2>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
 			status = "disabled";
 			run-in-wait;
 		};
@@ -329,6 +335,7 @@
 			interrupts = <98 0>, <99 0>;
 			#pwm-cells = <2>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
 			status = "disabled";
 			run-in-wait;
 		};
@@ -340,6 +347,7 @@
 			interrupts = <100 0>, <101 0>;
 			#pwm-cells = <2>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			nxp,prescaler = <128>;
 			status = "disabled";
 			run-in-wait;
 		};

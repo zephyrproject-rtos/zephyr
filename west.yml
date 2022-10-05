@@ -46,11 +46,6 @@ manifest:
       path: modules/fs/fatfs
       groups:
         - fs
-    - name: fff
-      revision: 6ce5ba26486e93d5b7696a3e23f0585932c14b16
-      path: modules/lib/fff
-      groups:
-        - ci
     - name: hal_altera
       revision: 0d225ddd314379b32355a00fb669eacf911e750d
       path: modules/hal/altera
@@ -62,7 +57,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: f3e7e90a61cbbdd27d5f25f975e2810b68c0e850
+      revision: 8c7ee781ea4c4a010740f5231709ce7b21ad96d6
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -215,7 +210,7 @@ manifest:
       groups:
         - debug
     - name: sof
-      revision: 87de994f49b37e385e748e47b769140df43451cf
+      revision: 9b564ea205b9597d29971cac0b5dcd9312db84d4
       path: modules/audio/sof
     - name: tflite-micro
       revision: 9156d050927012da87079064db59d07f03b8baf6
@@ -263,9 +258,6 @@ manifest:
     - name: zscilib
       path: modules/lib/zscilib
       revision: ca070ddabdaf67175a2da901d0bd62e8899371c5
-
-  group-filter:
-    - -ci
 
   self:
     path: zephyr

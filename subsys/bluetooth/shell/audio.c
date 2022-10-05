@@ -1331,7 +1331,7 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 
 	bis_bitfield = 0;
 	for (int i = 1; i < argc; i++) {
-		unsigned long val = strtoul(argv[1], NULL, 16);
+		unsigned long val = strtoul(argv[i], NULL, 16);
 
 		if (val < 0x01 || val > 0x1F) {
 			shell_error(sh, "Invalid index: %ld", val);
@@ -1597,8 +1597,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 		      cmd_broadcast_scan, 2, 0),
 	SHELL_CMD_ARG(accept_broadcast, NULL, "0x<broadcast_id>",
 		      cmd_accept_broadcast, 2, 0),
-	SHELL_CMD_ARG(sync_broadcast, NULL, "0x<bis_bitfield>",
-		      cmd_sync_broadcast, 2, 0),
+	SHELL_CMD_ARG(sync_broadcast, NULL,
+		      "0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...]",
+		      cmd_sync_broadcast, 2,
+		      ARRAY_SIZE(broadcast_sink_streams) - 1),
 	SHELL_CMD_ARG(stop_broadcast_sink, NULL, "Stops broadcast sink",
 		      cmd_stop_broadcast_sink, 1, 0),
 	SHELL_CMD_ARG(term_broadcast_sink, NULL, "",

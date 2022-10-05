@@ -132,7 +132,7 @@ General configuration
 ``mesh reset-local``
 --------------------
 
-	Reset the local mesh node to its initial unprovisioned state.
+	Reset the local mesh node to its initial unprovisioned state. This command will also clear the Configuration Database (CDB) if present.
 
 Target
 ======
@@ -273,12 +273,12 @@ To allow a device to provision devices over GATT, the :kconfig:option:`CONFIG_BT
 	* ``addr``: First unicast address to assign to the unprovisioned device. The device will occupy as many addresses as it has elements, and all must be available.
 	* ``AttentionDuration``: The duration in seconds the unprovisioned device will identify itself for, if supported. See :ref:`bluetooth_mesh_models_health_srv_attention` for details.
 
-``mesh prov uuid <UUID: 1-16 hex values>``
+``mesh prov uuid [UUID: 1-16 hex values]``
 ------------------------------------------
 
-	Set the mesh node's UUID, used in the unprovisioned beacons.
+	Get or set the mesh node's UUID, used in the unprovisioned beacons.
 
-	* ``UUID``: New 128-bit UUID value. Any missing bytes will be zero.
+	* ``UUID``: If present, new 128-bit UUID value. Any missing bytes will be zero. If omitted, the current UUID will be printed. To enable this command, the :kconfig:option:`BT_MESH_SHELL_PROV_CTX_INSTANCE` option must be enabled.
 
 
 ``mesh prov input-num <number>``
@@ -300,7 +300,7 @@ To allow a device to provision devices over GATT, the :kconfig:option:`CONFIG_BT
 ``mesh prov static-oob [val: 1-16 hex values]``
 -----------------------------------------------
 
-	Set or clear the static OOB authentication value. The static OOB authentication value must be set before provisioning starts to have any effect. The static OOB value must be same on both participants in the provisioning.
+	Set or clear the static OOB authentication value. The static OOB authentication value must be set before provisioning starts to have any effect. The static OOB value must be same on both participants in the provisioning. To enable this command, the :kconfig:option:`BT_MESH_SHELL_PROV_CTX_INSTANCE` option must be enabled.
 
 	* ``val``: If present, indicates the new hexadecimal value of the static OOB. If omitted, the static OOB value is cleared.
 
@@ -318,9 +318,49 @@ To allow a device to provision devices over GATT, the :kconfig:option:`CONFIG_BT
 ``mesh prov beacon-listen <val: off, on>``
 ------------------------------------------
 
-	Enable or disable printing of incoming unprovisioned beacons. Allows a provisioner device to detect nearby unprovisioned devices and provision them.
+	Enable or disable printing of incoming unprovisioned beacons. Allows a provisioner device to detect nearby unprovisioned devices and provision them. To enable this command, the :kconfig:option:`BT_MESH_SHELL_PROV_CTX_INSTANCE` option must be enabled.
 
 	* ``val``: Whether to enable the unprovisioned beacon printing.
+
+``mesh prov remote-pub-key <PubKey>``
+--------------------------------------
+	Provide Device public key.
+
+	* ``PubKey`` - Device public key in big-endian.
+
+``mesh prov auth-method input <Action> <Size>``
+-----------------------------------------------
+	From the provisioner device, instruct the unprovisioned device to use the specified Input OOB authentication action.
+
+	* ``Action`` - Input action. Allowed values:
+		* ``0`` - No input action.
+		* ``1`` - Push action set.
+		* ``2`` - Twist action set.
+		* ``4`` - Enter number action set.
+		* ``8`` - Enter String action set.
+	* ``Size`` - Authentication size.
+
+``mesh prov auth-method output <Action> <Size>``
+------------------------------------------------
+	From the provisioner device, instruct the unprovisioned device to use the specified Output OOB authentication action.
+
+	* ``Action`` - Output action. Allowed values:
+		* ``0`` - No output action.
+		* ``1`` - Blink action set.
+		* ``2`` - Vibrate action set.
+		* ``4`` - Display number action set.
+		* ``8`` - Display String action set.
+	* ``Size`` - Authentication size.
+
+``mesh prov auth-method static <Value>``
+----------------------------------------
+	From the provisioner device, instruct the unprovisioned device to use static OOB authentication, and use the given static authentication value when provisioning.
+
+	* ``Value`` - Static OOB value.
+
+``mesh prov auth-method none <Value>``
+--------------------------------------
+	From the provisioner device, don't use any authentication when provisioning new devices. This is the default behavior.
 
 Proxy
 =====
@@ -359,7 +399,7 @@ Configuration Client
 
 The Configuration Client model is an optional mesh subsystem that can be enabled through the :kconfig:option:`CONFIG_BT_MESH_CFG_CLI` configuration option. This is implemented as a separate module (``mesh models cfg``) inside the ``mesh models`` subcommand list. This module will work on any instance of the Configuration Client model if the mentioned shell configuration options is enabled, and as long as the Configuration Client model is present in the model composition of the application. This shell module can be used for configuring itself and other nodes in the mesh network.
 
-The Configuration Client uses the general messages parameters set by ``mesh target dst`` and ``mesh target net`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, the Configuration Client model targets itself by default. When another node has been provisioned by the Bluetooth mesh shell, the Configuration Client model targets the new node. In most common use-cases the Configuration Client will be dependent on the provisioning features and the Configuration database to be fully functional. The Configuration Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned. The following steps is a example of how you can set up a device to start using the Configuration Client commands:
+The Configuration Client uses general message parameters set by ``mesh target dst`` and ``mesh target net`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, given that the :kconfig:option:`BT_MESH_SHELL_PROV_CTX_INSTANCE` option is enabled with the shell provisioning context initialized, the Configuration Client model targets itself by default. Similarly, when another node has been provisioned by the Bluetooth mesh shell, the Configuration Client model targets the new node. In most common use-cases, the Configuration Client is depending on the provisioning features and the Configuration database to be fully functional. The Configuration Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and the mesh nodes it provisioned. The following steps are an example of how you can set up a device to start using the Configuration Client commands:
 
 * Initialize the client node (``mesh init``).
 * Create the CDB (``mesh cdb create``).

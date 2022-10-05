@@ -30,26 +30,6 @@
 #endif
 #endif
 
-#ifdef CONFIG_RISCV_PMP
-#ifdef CONFIG_64BIT
-#define	RISCV_PMP_CFG_NUM	(CONFIG_PMP_SLOTS >> 3)
-#else
-#define	RISCV_PMP_CFG_NUM	(CONFIG_PMP_SLOTS >> 2)
-#endif
-#endif
-
-#ifdef CONFIG_PMP_STACK_GUARD
-/*
- * PMP entries:
- *   (1 for interrupt stack guard: None)
- *   4 for stacks guard: None
- *   1 for RAM: RW
- *   1 for other address space: RWX
- */
-#define PMP_REGION_NUM_FOR_STACK_GUARD	6
-#define PMP_CFG_CSR_NUM_FOR_STACK_GUARD	2
-#endif /* CONFIG_PMP_STACK_GUARD */
-
 /*
  * The following structure defines the list of registers that need to be
  * saved/restored when a context switch occurs.

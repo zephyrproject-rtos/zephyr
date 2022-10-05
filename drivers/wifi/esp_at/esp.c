@@ -1198,7 +1198,7 @@ static int esp_init(const struct device *dev)
 	k_thread_name_set(&esp_rx_thread, "esp_rx");
 
 	/* Retrieve associated network interface so asynchronous messages can be processed early */
-	data->net_iface = NET_IF_GET(Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(0)), 0);
+	data->net_iface = NET_IF_GET(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)), 0);
 
 	/* Reset the modem */
 	ret = esp_reset(dev);

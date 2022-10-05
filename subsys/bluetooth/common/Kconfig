@@ -300,6 +300,9 @@ config BT_DEBUG_LOG
 	bool "Normal printf-style to console"
 	select BT_DEBUG
 	select LOG
+	imply LOG_FUNC_NAME_PREFIX_INF
+	imply LOG_FUNC_NAME_PREFIX_WRN
+	imply LOG_FUNC_NAME_PREFIX_ERR
 	help
 	  This option enables Bluetooth debug going to standard
 	  serial console.

@@ -266,5 +266,23 @@
 
 			status = "okay";
 		};
+
+		dmic0: dmic0@10000 {
+			compatible = "intel,dai-dmic";
+			reg = <0x10000 0x8000>;
+			shim = <0x71E80>;
+			fifo = <0x0008>;
+			interrupts = <0x08 0 0>;
+			interrupt-parent = <&cavs_intc3>;
+		};
+
+		dmic1: dmic1@10000 {
+			compatible = "intel,dai-dmic";
+			reg = <0x10000 0x8000>;
+			shim = <0x71E80>;
+			fifo = <0x0108>;
+			interrupts = <0x09 0 0>;
+			interrupt-parent = <&cavs_intc3>;
+		};
 	};
 };

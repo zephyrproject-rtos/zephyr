@@ -1044,7 +1044,10 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		if ((indexes_bitfield & BIT(i)) != 0) {
 			struct bt_codec *codec = codec_from_base_by_index(&sink->base, i);
 
-			__ASSERT(codec != NULL, "Codec[%d] was NULL", i);
+			if (codec == NULL) {
+				BT_DBG("Index %d not found in BASE", i);
+				return -EINVAL;
+			}
 
 			codecs[stream_count++] = codec;
 

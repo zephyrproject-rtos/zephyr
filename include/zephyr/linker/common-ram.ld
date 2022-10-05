@@ -73,8 +73,6 @@
 		__log_dynamic_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	ITERABLE_SECTION_RAM(_static_thread_data, 4)
-
 #ifdef CONFIG_USERSPACE
 	/* All kernel objects within are assumed to be either completely
 	 * initialized at build time, or initialized automatically at runtime

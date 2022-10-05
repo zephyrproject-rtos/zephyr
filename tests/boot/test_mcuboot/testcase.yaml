@@ -1,0 +1,15 @@
+common:
+    sysbuild: True
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "I: Starting bootloader"
+        - "Launching primary slot application on (.*)"
+        - "Secondary application ready for swap, rebooting"
+        - "I: Starting swap using (.*)"
+        - "Swapped application booted on (.*)"
+tests:
+  boot.mcuboot:
+    tags: mcuboot
+    platform_allow: frdm_k64f mimxrt1060_evk

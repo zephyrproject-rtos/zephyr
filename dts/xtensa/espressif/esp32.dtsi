@@ -288,6 +288,8 @@
 			interrupts = <SPI2_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_HSPI_MODULE>;
+			dma-clk = <ESP32_SPI_DMA_MODULE>;
+			dma-host = <0>;
 			status = "disabled";
 		};
 
@@ -297,6 +299,8 @@
 			interrupts = <SPI3_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_VSPI_MODULE>;
+			dma-clk = <ESP32_SPI_DMA_MODULE>;
+			dma-host = <1>;
 			status = "disabled";
 		};
 

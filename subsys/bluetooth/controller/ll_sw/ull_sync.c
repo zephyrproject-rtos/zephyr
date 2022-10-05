@@ -338,10 +338,10 @@ uint8_t ll_sync_create_cancel(void **rx)
 		LL_ASSERT(sync_handle <= UINT8_MAX);
 
 		/* Sync is not established yet, so stop sync ticker */
-		int err = ull_ticker_stop_with_mark(
-			TICKER_ID_SCAN_SYNC_BASE + (uint8_t)sync_handle, sync, &sync->lll);
-
-		LL_ASSERT(err == 0 || err == -EALREADY);
+		const int err =
+			ull_ticker_stop_with_mark((TICKER_ID_SCAN_SYNC_BASE +
+						   (uint8_t)sync_handle),
+						  sync, &sync->lll);
 		if (err != 0 && err != -EALREADY) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
