@@ -3201,17 +3201,16 @@ static void iface_status_work_cb(struct k_work *work)
 	switch (ictx.network_state) {
 	case HL7800_HOME_NETWORK:
 	case HL7800_ROAMING:
-		if (ictx.iface && !net_if_is_up(ictx.iface)) {
+		if (ictx.iface) {
 			LOG_DBG("HL7800 iface UP");
-			net_if_up(ictx.iface);
+			net_if_carrier_on(ictx.iface);
 		}
 		break;
 	case HL7800_OUT_OF_COVERAGE:
 	default:
-		if (ictx.iface && net_if_is_up(ictx.iface) &&
-		    (ictx.low_power_mode != HL7800_LPM_PSM)) {
+		if (ictx.iface && (ictx.low_power_mode != HL7800_LPM_PSM)) {
 			LOG_DBG("HL7800 iface DOWN");
-			net_if_down(ictx.iface);
+			net_if_carrier_off(ictx.iface);
 		}
 		break;
 	}
@@ -4680,9 +4679,9 @@ static void mdm_vgpio_work_cb(struct k_work *item)
 				set_sleep_state(ictx.desired_sleep_level);
 			}
 		}
-		if (ictx.iface && ictx.initialized && net_if_is_up(ictx.iface) &&
+		if (ictx.iface && ictx.initialized &&
 		    ictx.low_power_mode != HL7800_LPM_PSM) {
-			net_if_down(ictx.iface);
+			net_if_carrier_off(ictx.iface);
 		}
 	}
 	hl7800_unlock();
@@ -5061,8 +5060,8 @@ static int modem_reset_and_configure(void)
 #endif
 
 	ictx.restarting = true;
-	if (ictx.iface && net_if_is_up(ictx.iface)) {
-		net_if_down(ictx.iface);
+	if (ictx.iface) {
+		net_if_carrier_off(ictx.iface);
 	}
 
 	hl7800_stop_rssi_work();
@@ -5436,8 +5435,8 @@ static int hl7800_power_off(void)
 		return ret;
 	}
 	/* bring the iface down */
-	if (ictx.iface && net_if_is_up(ictx.iface)) {
-		net_if_down(ictx.iface);
+	if (ictx.iface) {
+		net_if_carrier_off(ictx.iface);
 	}
 	LOG_INF("Modem powered off");
 	return ret;
@@ -6020,10 +6019,10 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 		goto err;
 	}
 
-	if (ictx.iface && net_if_is_up(ictx.iface)) {
+	if (ictx.iface) {
 		LOG_DBG("HL7800 iface DOWN");
 		hl7800_stop_rssi_work();
-		net_if_down(ictx.iface);
+		net_if_carrier_off(ictx.iface);
 		notify_all_tcp_sockets_closed();
 	}
 
@@ -6061,7 +6060,8 @@ static int hl7800_init(const struct device *dev)
 	if (ictx.iface == NULL) {
 		return -EIO;
 	}
-	net_if_flag_set(ictx.iface, NET_IF_NO_AUTO_START);
+
+	net_if_carrier_off(ictx.iface);
 
 	/* init sockets */
 	for (i = 0; i < MDM_MAX_SOCKETS; i++) {
