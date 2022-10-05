@@ -18,6 +18,7 @@ Building and Running
 Make sure you have the ESP32 DevKitC connected over USB port.
 
 .. code-block:: console
+
    west build -b esp32 tests/boards/espressif_esp32/cache_coex
    west flash --esp-device /dev/ttyUSB0
 
