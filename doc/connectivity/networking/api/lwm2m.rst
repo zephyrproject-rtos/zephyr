@@ -517,6 +517,57 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
        If the retry counter reaches its limits, this event will be triggered.
      - No actions needed, client will do a re-registrate automatically.
 
+.. _lwm2m_shell:
+
+LwM2M shell
+***********
+For testing the client it is possible to enable Zephyr's shell and LwM2M specific commands which
+support changing the state of the client. Operations supported are read, write and execute
+resources. Client start, stop, pause and resume are also available. The feature is enabled by
+selecting :kconfig:option:`CONFIG_LWM2M_SHELL`. The shell is meant for testing so productions
+systems should not enable it.
+
+One imaginable scenario, where to use the shell, would be executing client side actions over UART
+when a server side tests would require those. It is assumed that not all tests are able to trigger
+required actions from the server side.
+
+.. code-block:: console
+
+   uart:~$ lwm2m
+   lwm2m - LwM2M commands
+   Subcommands:
+   exec    :Execute a resource
+            exec PATH
+
+   read    :Read value from LwM2M resource
+            read PATH [OPTIONS]
+            -s   Read value as string (default)
+            -b   Read value as bool (1/0)
+            -uX  Read value as uintX_t
+            -sX  Read value as intX_t
+            -f   Read value as float
+
+   write   :Write into LwM2M resource
+            write PATH [OPTIONS] VALUE
+            -s   Value as string (default)
+            -b   Value as bool
+            -uX  Value as uintX_t
+            -sX  Value as intX_t
+            -f   Value as float
+
+   start   :Start the LwM2M RD (Registration / Discovery) Client
+            start EP_NAME [BOOTSTRAP FLAG]
+            -b   Set the bootstrap flag (default 0)
+
+   stop    :Stop the LwM2M RD (De-register) Client
+            stop [OPTIONS]
+            -f   Force close the connection
+
+   update  :Trigger Registration Update of the LwM2M RD Client
+
+   pause   :LwM2M engine thread pause
+   resume  :LwM2M engine thread resume
+
 
 .. _lwm2m_api_reference:
 

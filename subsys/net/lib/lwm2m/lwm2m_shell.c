@@ -28,19 +28,19 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	"Root-level operation is unsupported"
 #define LWM2M_HELP_EXEC "Execute a resource\nexec PATH\n"
 #define LWM2M_HELP_READ "Read value from LwM2M resource\nread PATH [OPTIONS]\n" \
-	"-s \tRead value as string(default)\n" \
+	"-s \tRead value as string (default)\n" \
 	"-b \tRead value as bool (1/0)\n" \
 	"-uX\tRead value as uintX_t\n" \
 	"-sX\tRead value as intX_t\n" \
 	"-f \tRead value as float\n"
 #define LWM2M_HELP_WRITE "Write into LwM2M resource\nwrite PATH [OPTIONS] VALUE\n" \
-	"-s \tValue as string(default)\n" \
+	"-s \tValue as string (default)\n" \
 	"-b \tValue as bool\n" \
 	"-uX\tValue as uintX_t\n" \
 	"-sX\tValue as intX_t\n" \
 	"-f \tValue as float\n"
 #define LWM2M_HELP_START "Start the LwM2M RD (Registration / Discovery) Client\n" \
-	"start EP_NAME [OPTIONS] [BOOTSTRAP FLAG]\n" \
+	"start EP_NAME [BOOTSTRAP FLAG]\n" \
 	"-b \tSet the bootstrap flag (default 0)\n"
 #define LWM2M_HELP_STOP "Stop the LwM2M RD (De-register) Client\nstop [OPTIONS]\n" \
 	"-f \tForce close the connection\n"
