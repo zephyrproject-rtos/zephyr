@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2023 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ite/it8xxx2.dtsi>
+
+/ {
+	soc {
+		intc: interrupt-controller@f03f00 {
+			compatible = "ite,it8xxx2-intc-v2";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg = <0x00f03f00 0x0100>;
+		};
+	};
+};
+
