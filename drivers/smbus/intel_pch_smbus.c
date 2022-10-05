@@ -21,6 +21,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intel_pch, CONFIG_SMBUS_LOG_LEVEL);
 
+#include <zephyr/drivers/smbus_utils.h>
 #include "intel_pch_smbus.h"
 
 /**
@@ -53,6 +54,21 @@ struct pch_data {
 
 	struct k_mutex mutex;
 	struct k_sem completion_sync;
+	const struct device *dev;
+
+	/* smbalert callback list */
+	sys_slist_t smbalert_cbs;
+	/* smbalert work */
+	struct k_work smb_alert_work;
+
+	/* Host Notify callback list */
+	sys_slist_t host_notify_cbs;
+	/* Host Notify work */
+	struct k_work host_notify_work;
+	/* Host Notify peripheral device address */
+	uint8_t notify_addr;
+	/* Host Notify data received */
+	uint16_t notify_data;
 };
 
 /**
@@ -87,11 +103,106 @@ static void pch_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
 #error Wrong PCH Register Access Mode
 #endif
 
+static void host_notify_work(struct k_work *work)
+{
+	struct pch_data *data = CONTAINER_OF(work, struct pch_data,
+					     host_notify_work);
+	const struct device *dev = data->dev;
+	uint8_t addr = data->notify_addr;
+
+	smbus_fire_callbacks(&data->host_notify_cbs, dev, addr);
+}
+
+static void smbalert_work(struct k_work *work)
+{
+	struct pch_data *data = CONTAINER_OF(work, struct pch_data,
+					     smb_alert_work);
+	const struct device *dev = data->dev;
+
+	/**
+	 * There might be several peripheral devices and the he highest
+	 * priority (lowest address) device wins arbitration, we need to
+	 * read them all.
+	 *
+	 * The format of the transaction is:
+	 *
+	 *  0                   1                   2
+	 *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0
+	 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 *  |S|  Alert Addr |R|A|   Address   |X|N|P|
+	 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 */
+	do {
+		uint8_t addr;
+		int ret;
+
+		ret = smbus_byte_read(dev, SMBUS_ADDRESS_ARA, &addr);
+		if (ret < 0) {
+			LOG_DBG("Cannot read peripheral address (anymore)");
+			return;
+		}
+
+		LOG_DBG("Read addr 0x%02x, ret %d", addr, ret);
+
+		smbus_fire_callbacks(&data->smbalert_cbs, dev, addr);
+	} while (true);
+}
+
+static int pch_smbus_manage_smbalert_cb(const struct device *dev,
+					struct smbus_callback *cb,
+					bool set)
+{
+	struct pch_data *data = dev->data;
+
+	LOG_DBG("dev %p cb %p set %d", dev, cb, set);
+
+	return smbus_manage_smbus_callback(&data->smbalert_cbs, cb, set);
+}
+
+static int pch_smbus_manage_host_notify_cb(const struct device *dev,
+					   struct smbus_callback *cb,
+					   bool set)
+{
+	struct pch_data *data = dev->data;
+
+	LOG_DBG("dev %p cb %p set %d", dev, cb, set);
+
+	return smbus_manage_smbus_callback(&data->host_notify_cbs, cb, set);
+}
+
 static int pch_configure(const struct device *dev, uint32_t config)
 {
 	struct pch_data *data = dev->data;
 
 	LOG_DBG("dev %p config 0x%x", dev, config);
+
+	if (config & SMBUS_MODE_HOST_NOTIFY) {
+		uint8_t status;
+
+		if (!IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY)) {
+			LOG_ERR("Error configuring Host Notify");
+			return -EINVAL;
+		}
+
+		/* Enable Host Notify interrupts */
+		status = pch_reg_read(dev, PCH_SMBUS_SCMD);
+		status |= PCH_SMBUS_SCMD_HNI_EN;
+		pch_reg_write(dev, PCH_SMBUS_SCMD, status);
+	}
+
+	if (config & SMBUS_MODE_SMBALERT) {
+		uint8_t status;
+
+		if (!IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_SMBALERT)) {
+			LOG_ERR("Error configuring SMBALERT");
+			return -EINVAL;
+		}
+
+		/* Disable SMBALERT_DIS */
+		status = pch_reg_read(dev, PCH_SMBUS_SCMD);
+		status &= ~PCH_SMBUS_SCMD_SMBALERT_DIS;
+		pch_reg_write(dev, PCH_SMBUS_SCMD, status);
+	}
 
 	/* Keep config for a moment */
 	data->config = config;
@@ -157,6 +268,17 @@ static int pch_smbus_init(const struct device *dev)
 	/* Initialize mutex and semaphore */
 	k_mutex_init(&data->mutex);
 	k_sem_init(&data->completion_sync, 0, 1);
+
+	data->dev = dev;
+
+	/* Initialize work structures */
+	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_SMBALERT)) {
+		k_work_init(&data->smb_alert_work, smbalert_work);
+	}
+
+	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY)) {
+		k_work_init(&data->host_notify_work, host_notify_work);
+	}
 
 	config->config_func(dev);
 
@@ -303,7 +425,7 @@ static int pch_smbus_start(const struct device *dev, uint16_t periph_addr,
 	uint8_t reg;
 	int ret;
 
-	LOG_DBG("addr %x rw %d command %x", periph_addr, rw, command);
+	LOG_DBG("addr 0x%02x rw %d command %x", periph_addr, rw, command);
 
 	/* Set TSA register */
 	reg = PCH_SMBUS_TSA_ADDR_SET(periph_addr);
@@ -780,6 +902,8 @@ static const struct smbus_driver_api funcs = {
 	.smbus_block_write = pch_smbus_block_write,
 	.smbus_block_read = pch_smbus_block_read,
 	.smbus_block_pcall = pch_smbus_block_pcall,
+	.smbus_manage_smbalert_cb = pch_smbus_manage_smbalert_cb,
+	.smbus_manage_host_notify_cb = pch_smbus_manage_host_notify_cb,
 };
 
 static void smbus_isr(const struct device *dev)
@@ -795,6 +919,34 @@ static void smbus_isr(const struct device *dev)
 		return;
 	}
 
+	/**
+	 * Handle first Host Notify since for that we need to read SSTS
+	 * register and for all other sources HSTS.
+	 *
+	 * Intel PCH implements Host Notify protocol in hardware.
+	 */
+	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY) &&
+	    data->config & SMBUS_MODE_HOST_NOTIFY) {
+		status = pch_reg_read(dev, PCH_SMBUS_SSTS);
+		if (status & PCH_SMBUS_SSTS_HNS) {
+			/* Notify address */
+			data->notify_addr =
+				pch_reg_read(dev, PCH_SMBUS_NDA) >> 1;
+
+			/* Notify data */
+			data->notify_data = pch_reg_read(dev, PCH_SMBUS_NDLB);
+			data->notify_data |=
+				pch_reg_read(dev, PCH_SMBUS_NDHB) << 8;
+
+			k_work_submit(&data->host_notify_work);
+
+			/* Clear Host Notify */
+			pch_reg_write(dev, PCH_SMBUS_SSTS, PCH_SMBUS_SSTS_HNS);
+
+			return;
+		}
+	}
+
 	status = pch_reg_read(dev, PCH_SMBUS_HSTS);
 
 	/* HSTS dump if logging is enabled */
@@ -802,6 +954,13 @@ static void smbus_isr(const struct device *dev)
 
 	if (status & PCH_SMBUS_HSTS_BYTE_DONE) {
 		LOG_WRN("BYTE_DONE interrupt is not used");
+	}
+
+	/* Handle SMBALERT# signal */
+	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_SMBALERT) &&
+	    data->config & SMBUS_MODE_SMBALERT &&
+	    status & PCH_SMBUS_HSTS_SMB_ALERT) {
+		k_work_submit(&data->smb_alert_work);
 	}
 
 	/* Clear IRQ sources */
