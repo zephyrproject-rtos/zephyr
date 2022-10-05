@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/spinlock.h>
 
 #include <adsp-clk.h>
 #include <adsp_shim.h>
