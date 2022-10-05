@@ -804,7 +804,7 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 	isb();
 
 	/* Invalidate all data caches before enable them */
-	sys_cache_data_all(K_CACHE_INVD);
+	sys_cache_data_invd_all();
 
 	/* Enable the MMU and data cache */
 	val = read_sctlr_el1();
