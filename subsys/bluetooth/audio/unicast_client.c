@@ -95,6 +95,19 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 		return;
 	}
 
+	/* Since 2 streams can share the same CIS, the CIS may be connected and
+	 * capable of transferring data, without the bt_audio_stream being in
+	 * the streaming state. In that case we simply ignore the data.
+	 */
+	if (stream->ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
+		if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+			BT_DBG("Stream %p is not in the streaming state: %u",
+			       stream, stream->ep->status.state);
+		}
+
+		return;
+	}
+
 	ops = stream->ops;
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
