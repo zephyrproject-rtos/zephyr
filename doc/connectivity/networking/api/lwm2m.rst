@@ -234,7 +234,7 @@ The Zephyr LwM2M library implements the following items:
 
 * engine to process networking events and core functions
 * RD client which performs BOOTSTRAP and REGISTRATION functions
-* TLV, JSON, and plain text formatting functions
+* SenML CBOR, SenML JSON, CBOR, TLV, JSON, and plain text formatting functions
 * LwM2M Technical Specification Enabler objects such as Security, Server,
   Device, Firmware Update, etc.
 * Extended IPSO objects such as Light Control, Temperature Sensor, and Timer
@@ -255,7 +255,7 @@ To use the LwM2M library, start by creating an LwM2M client context
 	/* LwM2M client context */
 	static struct lwm2m_ctx client;
 
-Create callback functions for LwM2M resource exuctions:
+Create callback functions for LwM2M resource executions:
 
 .. code-block:: c
 
