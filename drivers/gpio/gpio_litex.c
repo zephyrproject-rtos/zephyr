@@ -16,6 +16,8 @@
 #include <string.h>
 #include <zephyr/logging/log.h>
 
+#include <soc.h>
+
 #include "gpio_utils.h"
 
 #define SUPPORTED_FLAGS (GPIO_INPUT | GPIO_OUTPUT | \

@@ -13,6 +13,9 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/logging/log.h>
+
+#include <soc.h>
+
 LOG_MODULE_REGISTER(gpio_neorv32, CONFIG_GPIO_LOG_LEVEL);
 
 #include "gpio_utils.h"
