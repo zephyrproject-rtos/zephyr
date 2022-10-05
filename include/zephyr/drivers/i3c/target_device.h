@@ -106,6 +106,21 @@ struct i3c_target_config {
 	const struct i3c_target_callbacks *callbacks;
 };
 
+/**
+ * @brief Structure describing a data receive buffer in the target callbacks.
+ *
+ * Instances of this are passed to the write_buffer_request() and
+ * write_buffer_complete() functions to receive data to the buffer directly and
+ * update the actual data length received.
+ */
+struct i3c_target_buffer {
+	/** Target buffer address to receive incoming data */
+	uint8_t *buffer;
+
+	/** The actual data length written to the buffer */
+	size_t length;
+};
+
 struct i3c_target_callbacks {
 	/**
 	 * @brief Function called when a write to the device is initiated.
@@ -209,6 +224,44 @@ struct i3c_target_callbacks {
 	 * @return Ignored.
 	 */
 	int (*stop_cb)(struct i3c_target_config *config);
+
+	/**
+	 * @brief Function called when the controller requests a target buffer.
+	 *
+	 * This function is invoked by the controller to get a target buffer
+	 * required by the request size, so the controller writes the received
+	 * data to the buffer directly.
+	 *
+	 * @param config Configuration structure associated with the
+	 *               device to which the operation is addressed.
+	 *
+	 * @param target_buffer A pointer of the target buffer information
+	 *
+	 * @param request_size The requested buffer size
+	 *
+	 * @return 0 if data has been provided, or a negative error code.
+	 */
+	int (*write_buffer_requested_cb)(struct i3c_target_config *config,
+					 struct i3c_target_buffer *target_buffer,
+					 size_t request_size);
+
+	/**
+	 * @brief Function called after the controller completes writing data to
+	 * the buffer provided by write_buffer_requested_cb().
+	 *
+	 * This function is invoked by the controller to update actual data
+	 * length written to the buffer provided by write_buffer_requested_cb().
+	 *
+	 * @param config Configuration structure associated with the
+	 *               device to which the operation is addressed.
+	 *
+	 * @param target_buffer A pointer of the target buffer and actual data
+	 *                      length written to the buffer.
+	 *
+	 * @return 0 if the data is accepted, or a negative error code.
+	 */
+	int (*write_buffer_completed_cb)(struct i3c_target_config *config,
+					 struct i3c_target_buffer *target_buffer);
 };
 
 __subsystem struct i3c_target_driver_api {
