@@ -60,7 +60,6 @@ static struct bt_audio_broadcast_sink *default_sink;
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
 static struct bt_audio_stream *default_stream;
 static uint16_t seq_num;
-static bool connecting;
 
 struct named_lc3_preset {
 	const char *name;
@@ -659,8 +658,6 @@ static int lc3_release(struct bt_audio_stream *stream)
 		default_stream = NULL;
 	}
 
-	connecting = false;
-
 	return 0;
 }
 
@@ -1099,20 +1096,6 @@ static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 		shell_error(sh, "Unable to start Channel");
 		return -ENOEXEC;
 	}
-
-	return 0;
-}
-
-static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
-{
-	int err;
-
-	err = cmd_config(sh, argc, argv);
-	if (err) {
-		return err;
-	}
-
-	connecting = true;
 
 	return 0;
 }
@@ -1955,9 +1938,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 		      " [rtn]", cmd_qos, 1, 8),
 	SHELL_CMD_ARG(enable, NULL, NULL, cmd_enable, 1, 1),
 	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
-	SHELL_CMD_ARG(connect, NULL,
-		      "<direction: sink, source> <index>  [codec] [preset]",
-		      cmd_connect, 3, 2),
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
 	SHELL_CMD_ARG(preset, NULL, "[preset]", cmd_preset, 1, 1),
 	SHELL_CMD_ARG(metadata, NULL, "[context]", cmd_metadata, 1, 1),
