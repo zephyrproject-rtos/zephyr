@@ -1011,7 +1011,7 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 	struct named_lc3_preset *named_preset = NULL;
 
 	if (default_stream == NULL) {
-		shell_print(sh, "Not connected");
+		shell_print(sh, "No stream selected");
 		return -ENOEXEC;
 	}
 
@@ -1063,7 +1063,7 @@ static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (default_stream == NULL) {
-		shell_error(sh, "Not connected");
+		shell_error(sh, "No stream selected");
 		return -ENOEXEC;
 	}
 
@@ -1092,13 +1092,13 @@ static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (default_stream == NULL) {
-		shell_error(sh, "Not connected");
+		shell_error(sh, "No stream selected");
 		return -ENOEXEC;
 	}
 
 	err = bt_audio_stream_stop(default_stream);
 	if (err) {
-		shell_error(sh, "Unable to start Channel");
+		shell_error(sh, "Unable to stop Channel");
 		return -ENOEXEC;
 	}
 
@@ -1139,7 +1139,7 @@ static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (default_stream == NULL) {
-		shell_error(sh, "Not connected");
+		shell_error(sh, "No stream selected");
 		return -ENOEXEC;
 	}
 
@@ -1170,7 +1170,7 @@ static int cmd_start(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (default_stream == NULL) {
-		shell_error(sh, "Not connected");
+		shell_error(sh, "No stream selected");
 		return -ENOEXEC;
 	}
 
@@ -1188,7 +1188,7 @@ static int cmd_disable(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (default_stream == NULL) {
-		shell_error(sh, "Not connected");
+		shell_error(sh, "No stream selected");
 		return -ENOEXEC;
 	}
 
@@ -1247,7 +1247,7 @@ static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (default_stream == NULL) {
-		shell_print(sh, "Not connected");
+		shell_print(sh, "No stream selected");
 		return -ENOEXEC;
 	}
 
