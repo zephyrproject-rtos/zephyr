@@ -29,7 +29,7 @@ zephyr_library_link_libraries(INTEL_ADSP_COMMON)
 target_include_directories(INTEL_ADSP_COMMON INTERFACE include)
 target_link_libraries(INTEL_ADSP_COMMON INTERFACE intel_adsp_common)
 
-set(ELF_FIX ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/fix_elf_addrs.py)
+set(ELF_FIX ${PYTHON_EXECUTABLE} ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/fix_elf_addrs.py)
 set(KERNEL_REMAPPED ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_NAME}-remapped.elf)
 set(EXTMAN ${CMAKE_BINARY_DIR}/zephyr/extman.bin)
 
