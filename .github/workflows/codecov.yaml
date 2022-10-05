@@ -18,7 +18,7 @@ jobs:
     runs-on: zephyr_runner
     needs: codecov-prep
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.3
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.5
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
