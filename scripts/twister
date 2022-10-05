@@ -193,6 +193,7 @@ if not ZEPHYR_BASE:
     print(f'ZEPHYR_BASE unset, using "{ZEPHYR_BASE}"')
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/"))
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 
 from twisterlib.testplan import TestPlan
 from twisterlib.environment import TwisterEnv, parse_arguments
