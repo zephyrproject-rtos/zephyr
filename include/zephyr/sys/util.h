@@ -239,7 +239,6 @@ extern "C" {
 #define ceiling_fraction(numerator, divider) \
 	(((numerator) + ((divider) - 1)) / (divider))
 
-#ifndef MAX
 /**
  * @brief Obtain the maximum of two values.
  *
@@ -251,10 +250,9 @@ extern "C" {
  *
  * @returns Maximum value of @p a and @p b.
  */
+#undef MAX
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
-#endif
 
-#ifndef MIN
 /**
  * @brief Obtain the minimum of two values.
  *
@@ -266,8 +264,8 @@ extern "C" {
  *
  * @returns Minimum value of @p a and @p b.
  */
+#undef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#endif
 
 #ifndef CLAMP
 /**
