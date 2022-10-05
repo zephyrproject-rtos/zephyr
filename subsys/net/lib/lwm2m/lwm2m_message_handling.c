@@ -1091,7 +1091,7 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 			break;
 
 		case LWM2M_RES_TYPE_TIME:
-			ret = engine_put_time(&msg->out, &msg->path, buf.u32);
+			ret = engine_put_time(&msg->out, &msg->path, (int64_t)buf.u32);
 			break;
 
 		default:
