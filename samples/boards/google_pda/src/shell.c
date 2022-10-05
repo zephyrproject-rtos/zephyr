@@ -109,6 +109,8 @@ static int cmd_reset(const struct shell *shell, size_t argc, char**argv) {
 	reset_sniffer();
 	usb_dc_reset();
 
+	start_snooper(false);
+	start_snooper(true);
 	return 0;
 }
 

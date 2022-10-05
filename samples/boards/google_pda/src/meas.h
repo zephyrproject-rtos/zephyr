@@ -7,6 +7,5 @@ void meas_cbus(int32_t *c);
 void meas_vcc1(int32_t *v);
 void meas_vcc2(int32_t *v);
 void meas_ccon(int32_t *c);
-void meas_all(int32_t *buf);
 
 #endif
