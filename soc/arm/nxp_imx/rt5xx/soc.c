@@ -13,6 +13,7 @@
  */
 
 #include <zephyr/init.h>
+#include <zephyr/devicetree.h>
 #include <soc.h>
 #include "flash_clock_setup.h"
 #include "fsl_power.h"
