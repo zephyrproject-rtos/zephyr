@@ -164,7 +164,7 @@ struct ztress_context_data {
 	};										\
 	size_t cnt = ARRAY_SIZE(data1) - has_timer;					\
 	static struct ztress_context_data data[ARRAY_SIZE(data1)];                      \
-	for (int i = 0; i < ARRAY_SIZE(data1); i++) {                                    \
+	for (size_t i = 0; i < ARRAY_SIZE(data1); i++) {                                \
 		data[i] = data1[i];                                                     \
 	}	                                                                        \
 	int err = ztress_execute(has_timer ? &data[0] : NULL, &data[has_timer], cnt);	\
