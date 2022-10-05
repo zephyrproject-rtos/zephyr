@@ -364,6 +364,7 @@ static uint8_t ticker_by_slot_get(struct ticker_node *node, uint8_t ticker_id_he
 }
 #endif /* CONFIG_BT_TICKER_LOW_LAT */
 
+#if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET)
 /**
  * @brief Get next ticker with slot ticks or match
  *
@@ -480,6 +481,7 @@ static void ticker_by_next_slot_get(struct ticker_instance *instance,
 	*ticker_id_head = _ticker_id_head;
 	*ticks_to_expire = _ticks_to_expire;
 }
+#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET */
 
 #if !defined(CONFIG_BT_TICKER_LOW_LAT)
 /**
@@ -1378,7 +1380,8 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 					  uint8_t *insert_head)
 {
 	/* Handle update of ticker by re-inserting it back. */
-	if (user_op->op == TICKER_USER_OP_TYPE_UPDATE) {
+	if (IS_ENABLED(CONFIG_BT_TICKER_UPDATE) &&
+	    (user_op->op == TICKER_USER_OP_TYPE_UPDATE)) {
 		/* Remove ticker node from list */
 		ticker->ticks_to_expire = ticker_dequeue(instance, user_op->id);
 
@@ -2294,9 +2297,22 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 				}
 			}
 		}
+
+#if !defined(CONFIG_BT_TICKER_JOB_IDLE_GET) && \
+	!defined(CONFIG_BT_TICKER_NEXT_SLOT_GET) && \
+	!defined(CONFIG_BT_TICKER_PRIORITY_SET)
+		user->first = user_ops_first;
+#endif /* !CONFIG_BT_TICKER_JOB_IDLE_GET &&
+	* !CONFIG_BT_TICKER_NEXT_SLOT_GET &&
+	* !CONFIG_BT_TICKER_PRIORITY_SET
+	*/
+
 	}
 }
 
+#if defined(CONFIG_BT_TICKER_JOB_IDLE_GET) || \
+	defined(CONFIG_BT_TICKER_NEXT_SLOT_GET) || \
+	defined(CONFIG_BT_TICKER_PRIORITY_SET)
 /**
  * @brief Perform inquiry for specific user operation
  *
@@ -2312,6 +2328,7 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 
 	fp_op_func = NULL;
 	switch (uop->op) {
+#if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET)
 	case TICKER_USER_OP_TYPE_SLOT_GET:
 		ticker_by_next_slot_get(instance,
 					uop->params.slot_get.ticker_id,
@@ -2334,11 +2351,17 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 					NULL);
 #endif /* !CONFIG_BT_TICKER_LAZY_GET */
 		__fallthrough;
+#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET */
 
+#if defined(CONFIG_BT_TICKER_JOB_IDLE_GET) || \
+	defined(CONFIG_BT_TICKER_NEXT_SLOT_GET)
 	case TICKER_USER_OP_TYPE_IDLE_GET:
 		uop->status = TICKER_STATUS_SUCCESS;
 		fp_op_func = uop->fp_op_func;
 		break;
+#endif /* CONFIG_BT_TICKER_JOB_IDLE_GET ||
+	* CONFIG_BT_TICKER_NEXT_SLOT_GET
+	*/
 
 #if !defined(CONFIG_BT_TICKER_LOW_LAT) && \
 	!defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC) && \
@@ -2411,6 +2434,10 @@ static inline void ticker_job_list_inquire(struct ticker_instance *instance)
 		}
 	}
 }
+#endif /* CONFIG_BT_TICKER_JOB_IDLE_GET ||
+	* CONFIG_BT_TICKER_NEXT_SLOT_GET ||
+	* CONFIG_BT_TICKER_PRIORITY_SET
+	*/
 
 /**
  * @brief Update counter compare value (trigger)
@@ -2599,11 +2626,18 @@ void ticker_job(void *param)
 		flag_compare_update = 1U;
 	}
 
+#if defined(CONFIG_BT_TICKER_JOB_IDLE_GET) || \
+	defined(CONFIG_BT_TICKER_NEXT_SLOT_GET) || \
+	defined(CONFIG_BT_TICKER_PRIORITY_SET)
 	/* Process any list inquiries */
 	if (!pending) {
 		/* Handle inquiries */
 		ticker_job_list_inquire(instance);
 	}
+#endif /* CONFIG_BT_TICKER_JOB_IDLE_GET ||
+	* CONFIG_BT_TICKER_NEXT_SLOT_GET ||
+	* CONFIG_BT_TICKER_PRIORITY_SET
+	*/
 
 	/* update compare if head changed */
 	if (flag_compare_update) {
@@ -2851,6 +2885,7 @@ uint32_t ticker_start(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id
 	return user_op->status;
 }
 
+#if defined(CONFIG_BT_TICKER_UPDATE)
 /**
  * @brief Update a ticker node
  *
@@ -2947,6 +2982,7 @@ uint32_t ticker_update_ext(uint8_t instance_index, uint8_t user_id,
 
 	return user_op->status;
 }
+#endif /* CONFIG_BT_TICKER_UPDATE */
 
 /**
  * @brief Yield a ticker node with supplied absolute ticks reference
@@ -3110,6 +3146,7 @@ uint32_t ticker_stop_abs(uint8_t instance_index, uint8_t user_id,
 	return user_op->status;
 }
 
+#if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET)
 /**
  * @brief Get next ticker node slot
  *
@@ -3202,7 +3239,9 @@ uint32_t ticker_next_slot_get_ext(uint8_t instance_index, uint8_t user_id,
 
 	return user_op->status;
 }
+#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET */
 
+#if defined(CONFIG_BT_TICKER_JOB_IDLE_GET)
 /**
  * @brief Get a callback at the end of ticker job execution
  *
@@ -3254,6 +3293,7 @@ uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
 
 	return user_op->status;
 }
+#endif /* CONFIG_BT_TICKER_JOB_IDLE_GET */
 
 #if !defined(CONFIG_BT_TICKER_LOW_LAT) && \
 	!defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC) && \
