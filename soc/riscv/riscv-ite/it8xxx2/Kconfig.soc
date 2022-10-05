@@ -17,6 +17,10 @@ config SOC_IT8XXX2
 	select RISCV_ISA_EXT_M if !(SOC_IT81302_BX || SOC_IT81202_BX)
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_C
+	select FLASH
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select HAS_FLASH_LOAD_OFFSET
 
 endchoice
 

@@ -159,12 +159,12 @@ static void chip_configure_pll(const struct pll_config_t *pll)
 static int chip_change_pll(void)
 {
 
-	if (IS_ENABLED(CONFIG_ITE_IT8XXX2_INTC)) {
+	if (IS_ENABLED(CONFIG_HAS_ITE_INTC)) {
 		ite_intc_save_and_disable_interrupts();
 	}
 	/* configure PLL/CPU/flash clock */
 	chip_configure_pll(&pll_configuration[0]);
-	if (IS_ENABLED(CONFIG_ITE_IT8XXX2_INTC)) {
+	if (IS_ENABLED(CONFIG_HAS_ITE_INTC)) {
 		ite_intc_restore_interrupts();
 	}
 
@@ -265,11 +265,6 @@ void arch_cpu_idle(void)
 void arch_cpu_atomic_idle(unsigned int key)
 {
 	riscv_idle(CHIP_PLL_DOZE, key);
-}
-
-void soc_interrupt_init(void)
-{
-	ite_intc_init();
 }
 
 static int ite_it8xxx2_init(void)
