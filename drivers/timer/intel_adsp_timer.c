@@ -96,12 +96,12 @@ static void compare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	uint64_t curr;
-	uint32_t dticks;
+	uint64_t dticks;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	curr = count();
-	dticks = (uint32_t)((curr - last_count) / CYC_PER_TICK);
+	dticks = (curr - last_count) / CYC_PER_TICK;
 
 	/* Clear the triggered bit */
 	*WCTCS |= DSP_WCT_CS_TT(COMPARATOR_IDX);
@@ -119,7 +119,7 @@ static void compare_isr(const void *arg)
 
 	k_spin_unlock(&lock, key);
 
-	sys_clock_announce(dticks);
+	sys_clock_announce((int32_t)dticks);
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
@@ -160,10 +160,10 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ret = (count32() - (uint32_t)last_count) / CYC_PER_TICK;
+	uint64_t ret = (count() - last_count) / CYC_PER_TICK;
 
 	k_spin_unlock(&lock, key);
-	return ret;
+	return (uint32_t)ret;
 }
 
 uint32_t sys_clock_cycle_get_32(void)
