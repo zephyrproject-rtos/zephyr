@@ -1,4 +1,4 @@
-@Library("CI_LIB") _
+@Library("CI_LIB@v2.1-branch") _
 
 def pipeline = new ncs.sdk_zephyr.Main()
 
