@@ -19,7 +19,7 @@ zephyr_library_sources(
   vector_table.c
   )
 
-zephyr_library_sources_ifdef(CONFIG_CACHE_MANAGEMENT cache.c)
+zephyr_library_sources_ifdef(CONFIG_ARCH_CACHE cache.c)
 zephyr_library_sources_ifdef(CONFIG_ARC_FIRQ fast_irq.S)
 
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
