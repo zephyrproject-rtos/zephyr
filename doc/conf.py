@@ -261,6 +261,7 @@ vcs_link_version = f"v{version}" if is_release else "main"
 vcs_link_base_url = f"https://github.com/zephyrproject-rtos/zephyr/blob/{vcs_link_version}"
 vcs_link_prefixes = {
     "samples/.*": "",
+    "tests/.*": "",
     "boards/.*": "",
     ".*": "doc",
 }
@@ -283,6 +284,8 @@ external_content_contents = [
     (ZEPHYR_BASE, "boards/**/doc"),
     (ZEPHYR_BASE, "samples/**/*.rst"),
     (ZEPHYR_BASE, "samples/**/doc"),
+    (ZEPHYR_BASE, "tests/**/*.rst"),
+    (ZEPHYR_BASE, "tests/**/doc"),
 ]
 external_content_keep = [
     "reference/kconfig/*",

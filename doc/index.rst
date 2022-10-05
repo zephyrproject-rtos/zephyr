@@ -112,6 +112,7 @@ Sections
    project/index.rst
    security/index.rst
    samples/index.rst
+   tests/index.rst
    boards/index.rst
    releases/index.rst
 
