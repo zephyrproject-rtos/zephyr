@@ -62,6 +62,18 @@ config SMBUS_INTEL_PCH_ACCESS_MMIO
 
 endchoice
 
+config SMBUS_INTEL_PCH_HOST_NOTIFY
+	bool "SMBus Intel PCH Host Notify support"
+	default y
+	help
+	  Support Host Notify from peripheral devices.
+
+config SMBUS_INTEL_PCH_SMBALERT
+	bool "SMBus Intel PCH SMBALERT signal support"
+	default y
+	help
+	  Support SMBALERT signal from peripheral devices.
+
 endif # SMBUS_INTEL_PCH
 
 endif # SMBUS
