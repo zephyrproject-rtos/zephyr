@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include "zephyr/bluetooth/iso.h"
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/capabilities.h>
 
@@ -240,6 +241,7 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 				switch (old_state) {
 				case BT_AUDIO_EP_STATE_ENABLING:
 				case BT_AUDIO_EP_STATE_STREAMING:
+					ep->receiver_ready = false;
 					break;
 				default:
 					BT_ASSERT_MSG(false,
@@ -268,6 +270,7 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 			case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 			case BT_AUDIO_EP_STATE_ENABLING:
 			case BT_AUDIO_EP_STATE_STREAMING:
+				ep->receiver_ready = false;
 				break;
 			case BT_AUDIO_EP_STATE_DISABLING:
 				if (ep->dir == BT_AUDIO_DIR_SOURCE) {
@@ -477,6 +480,21 @@ static void ascs_iso_sent(struct bt_iso_chan *chan)
 	}
 }
 
+static int ase_stream_start(struct bt_audio_stream *stream)
+{
+	int err = 0;
+
+	if (unicast_server_cb != NULL && unicast_server_cb->start != NULL) {
+		err = unicast_server_cb->start(stream);
+	} else {
+		err = -ENOTSUP;
+	}
+
+	ascs_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_STREAMING);
+
+	return err;
+}
+
 static void ascs_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
@@ -485,6 +503,7 @@ static void ascs_iso_connected(struct bt_iso_chan *chan)
 	struct bt_audio_stream *sink_stream = audio_iso->sink_stream;
 	struct bt_audio_stream *stream;
 	struct bt_audio_ep *ep;
+	int err;
 
 	if (sink_stream != NULL && sink_stream->iso == chan) {
 		stream = sink_stream;
@@ -512,7 +531,14 @@ static void ascs_iso_connected(struct bt_iso_chan *chan)
 		return;
 	}
 
-	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
+	if (ep->dir == BT_AUDIO_DIR_SOURCE && !ep->receiver_ready) {
+		return;
+	}
+
+	err = ase_stream_start(stream);
+	if (err) {
+		BT_ERR("Could not start stream %d", err);
+	}
 }
 
 static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
@@ -2037,7 +2063,6 @@ static void ase_start(struct bt_ascs_ase *ase)
 {
 	struct bt_audio_stream *stream;
 	struct bt_audio_ep *ep;
-	int err;
 
 	BT_DBG("ase %p", ase);
 
@@ -2045,9 +2070,8 @@ static void ase_start(struct bt_ascs_ase *ase)
 
 	/* Valid for an ASE only if ASE_State field = 0x02 (QoS Configured) */
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
-		err = -EBADMSG;
 		BT_WARN("Invalid operation in state: %s", bt_audio_ep_state_str(ep->status.state));
-		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_START_OP, err,
+		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_START_OP, -EBADMSG,
 				      BT_ASCS_REASON_NONE);
 		return;
 	}
@@ -2065,21 +2089,20 @@ static void ase_start(struct bt_ascs_ase *ase)
 		return;
 	}
 
+	ep->receiver_ready = true;
+
 	stream = ep->stream;
-	if (unicast_server_cb != NULL && unicast_server_cb->start != NULL) {
-		err = unicast_server_cb->start(stream);
-	} else {
-		err = -ENOTSUP;
-	}
+	if (stream->iso->state == BT_ISO_STATE_CONNECTED) {
+		int err;
 
-	if (err) {
-		BT_ERR("Start failed: %d", err);
-		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_START_OP, err,
-				BT_ASCS_REASON_NONE);
-		return;
+		err = ase_stream_start(stream);
+		if (err) {
+			BT_ERR("Start failed: %d", err);
+			ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_START_OP, err,
+					BT_ASCS_REASON_NONE);
+			return;
+		}
 	}
-
-	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_START_OP);
 }
