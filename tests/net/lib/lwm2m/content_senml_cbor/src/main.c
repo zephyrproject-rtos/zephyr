@@ -907,7 +907,7 @@ ZTEST(net_content_senml_cbor_nomem, test_put_opaque_nomem)
 ZTEST(net_content_senml_cbor, test_put_time)
 {
 	int ret;
-	int64_t value = 1170111600;
+	time_t value = 1170111600;
 	struct test_payload_buffer expected_payload = {
 		.data = {
 			(0x04 << 5) | 1,
@@ -1480,7 +1480,7 @@ ZTEST(net_content_senml_cbor_nodata, test_get_opaque_nodata)
 ZTEST(net_content_senml_cbor, test_get_time)
 {
 	int ret;
-	int64_t expected_value = 1170111600;
+	time_t expected_value = 1170111600;
 	struct test_payload_buffer payload = {
 		.data = {
 			(0x04 << 5) | 1,

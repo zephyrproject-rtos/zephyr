@@ -549,6 +549,11 @@ static int put_s64(struct lwm2m_output_context *out,
 	return json_float_object_write(out, fd, len);
 }
 
+static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *path, time_t value)
+{
+	return put_s64(out, path, (int64_t) value);
+}
+
 static int put_string(struct lwm2m_output_context *out,
 		      struct lwm2m_obj_path *path, char *buf, size_t buflen)
 {
@@ -676,6 +681,17 @@ static int read_int(struct lwm2m_input_context *in, int64_t *value,
 static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 {
 	return read_int(in, value, true);
+}
+
+static int get_time(struct lwm2m_input_context *in, time_t *value)
+{
+	int64_t temp64;
+	int ret;
+
+	ret = read_int(in, &temp64, true);
+	*value = (time_t)temp64;
+
+	return ret;
 }
 
 static int get_s32(struct lwm2m_input_context *in, int32_t *value)
@@ -851,7 +867,7 @@ const struct lwm2m_writer json_writer = {
 	.put_s64 = put_s64,
 	.put_string = put_string,
 	.put_float = put_float,
-	.put_time = put_s64,
+	.put_time = put_time,
 	.put_bool = put_bool,
 	.put_objlnk = put_objlnk,
 };
@@ -860,7 +876,7 @@ const struct lwm2m_reader json_reader = {
 	.get_s32 = get_s32,
 	.get_s64 = get_s64,
 	.get_string = get_string,
-	.get_time = get_s64,
+	.get_time = get_time,
 	.get_float = get_float,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
