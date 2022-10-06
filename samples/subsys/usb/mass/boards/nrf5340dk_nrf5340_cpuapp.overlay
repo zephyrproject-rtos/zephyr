@@ -18,3 +18,11 @@
 		};
 	};
 };
+
+/ {
+	msc_disk0 {
+		compatible = "zephyr,disk";
+		storage-dev = <&storage_partition>;
+		disk-name = "NAND";
+	};
+};
