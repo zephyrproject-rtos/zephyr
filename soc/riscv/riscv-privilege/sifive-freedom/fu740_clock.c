@@ -6,6 +6,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/sys/util.h>
 
 #include "fu740_prci.h"
 
