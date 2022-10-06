@@ -37,3 +37,11 @@ set(ARMFVP_FLAGS
   -C bp.vis.disable_visualisation=1
   -C bp.vis.rate_limit-enable=0
   )
+
+if(CONFIG_ISA_THUMB2)
+  MATH(EXPR NUM_CPUS "${CONFIG_MP_NUM_CPUS}-1")
+  foreach(CPU RANGE ${NUM_CPUS})
+    # Initialize to take exceptions in T32 state after a reset
+    list(APPEND ARMFVP_FLAGS -C cluster0.cpu${CPU}.TEINIT=1)
+  endforeach()
+endif()
