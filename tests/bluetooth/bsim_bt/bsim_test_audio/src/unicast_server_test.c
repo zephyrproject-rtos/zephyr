@@ -233,7 +233,6 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 static void init(void)
 {
 	static struct bt_audio_capability caps = {
-		.dir = BT_AUDIO_DIR_SINK,
 		.codec = &lc3_codec,
 	};
 	int err;
@@ -248,7 +247,7 @@ static void init(void)
 
 	bt_audio_unicast_server_register_cb(&unicast_server_cb);
 
-	err = bt_audio_capability_register(&caps);
+	err = bt_audio_capability_register(BT_AUDIO_DIR_SINK, &caps);
 	if (err != 0) {
 		FAIL("Failed to register capabilities: %d", err);
 		return;

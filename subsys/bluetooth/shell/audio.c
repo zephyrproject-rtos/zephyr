@@ -470,17 +470,12 @@ static const struct bt_audio_unicast_server_cb unicast_server_cb = {
 	.release = lc3_release,
 };
 
-static struct bt_audio_capability caps[] = {
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
-	{
-		.dir = BT_AUDIO_DIR_SOURCE,
-		.codec = &lc3_codec,
-	},
-#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
-	{
-		.dir = BT_AUDIO_DIR_SINK,
-		.codec = &lc3_codec,
-	},
+static struct bt_audio_capability caps_sink = {
+	.codec = &lc3_codec,
+};
+
+static struct bt_audio_capability caps_source = {
+	.codec = &lc3_codec,
 };
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
@@ -1474,9 +1469,11 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER) ||
 	    IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SINK)) {
-		for (i = 0; i < ARRAY_SIZE(caps); i++) {
-			bt_audio_capability_register(&caps[i]);
-		}
+		bt_audio_capability_register(BT_AUDIO_DIR_SINK, &caps_sink);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER)) {
+		bt_audio_capability_register(BT_AUDIO_DIR_SOURCE, &caps_source);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO_CAPABILITY)) {
