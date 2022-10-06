@@ -567,39 +567,14 @@ static void ascs_iso_sent(struct bt_iso_chan *chan)
 	}
 }
 
-static int ase_stream_start(struct bt_audio_stream *stream)
-{
-	int err = 0;
-
-	if (unicast_server_cb != NULL && unicast_server_cb->start != NULL) {
-		err = unicast_server_cb->start(stream);
-	} else {
-		err = -ENOTSUP;
-	}
-
-	ascs_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_STREAMING);
-
-	return err;
-}
-
 static void ascs_ep_iso_connected(struct bt_audio_ep *ep)
 {
 	struct bt_audio_stream *stream;
-	int err;
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
 		LOG_DBG("ep %p not in enabling state: %s",
 		       ep, bt_audio_ep_state_str(ep->status.state));
 		return;
-	}
-
-	if (ep->dir == BT_AUDIO_DIR_SOURCE && !ep->receiver_ready) {
-		return;
-	} else if (ep->dir == BT_AUDIO_DIR_SINK) {
-		/* SINK ASEs can autonomously go into the streaming state if
-		 * the CIS is connected
-		 */
-		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 	}
 
 	stream = ep->stream;
@@ -608,9 +583,12 @@ static void ascs_ep_iso_connected(struct bt_audio_ep *ep)
 		return;
 	}
 
-	err = ase_stream_start(stream);
-	if (err) {
-		LOG_ERR("Could not start stream %d", err);
+	if (ep->dir == BT_AUDIO_DIR_SINK && ep->receiver_ready) {
+		/* Source ASEs shall be ISO connected first, and then receive
+		 * the receiver start ready command to enter the streaming
+		 * state
+		 */
+		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 	}
 }
 
@@ -2000,6 +1978,7 @@ static ssize_t ascs_enable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 static void ase_start(struct bt_ascs_ase *ase)
 {
 	struct bt_audio_ep *ep;
+	int err;
 
 	LOG_DBG("ase %p", ase);
 
@@ -2024,21 +2003,35 @@ static void ase_start(struct bt_ascs_ase *ase)
 		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_START_OP,
 				BT_ASCS_RSP_INVALID_DIR, BT_ASCS_REASON_NONE);
 		return;
+	} else if (ep->iso->chan.state != BT_ISO_STATE_CONNECTED) {
+		/* An ASE may not go into the streaming state unless the CIS
+		 * is connected
+		 */
+		LOG_WRN("Start failed: CIS not connected: %u",
+			ep->iso->chan.state);
+		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_START_OP,
+				BT_ASCS_RSP_INVALID_ASE_STATE,
+				BT_ASCS_REASON_NONE);
+		return;
+	}
+
+	if (unicast_server_cb != NULL && unicast_server_cb->start != NULL) {
+		err = unicast_server_cb->start(ep->stream);
+	} else {
+		err = -ENOTSUP;
+	}
+
+	if (err) {
+		LOG_ERR("Start failed: %d", err);
+		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_START_OP, err,
+				BT_ASCS_REASON_NONE);
+
+		return;
 	}
 
 	ep->receiver_ready = true;
 
-	if (ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
-		int err;
-
-		err = ase_stream_start(ep->stream);
-		if (err) {
-			LOG_ERR("Start failed: %d", err);
-			ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_START_OP, err,
-					BT_ASCS_REASON_NONE);
-			return;
-		}
-	}
+	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_START_OP);
 }

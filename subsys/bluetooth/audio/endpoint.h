@@ -44,7 +44,7 @@ struct bt_audio_ep {
 	struct bt_codec_qos_pref qos_pref;
 	struct bt_audio_iso *iso;
 
-	/* FIXME: Replace with metastate */
+	/* Used by the unicast server */
 	bool receiver_ready;
 
 	/* TODO: Create a union to reduce memory usage */
