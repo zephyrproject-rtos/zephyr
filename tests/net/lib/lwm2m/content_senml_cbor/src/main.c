@@ -65,7 +65,7 @@ static double test_float;
 static bool test_bool;
 static struct lwm2m_objlnk test_objlnk;
 static uint8_t test_opaque[TEST_OPAQUE_MAX_SIZE];
-static int64_t test_time;
+static time_t test_time;
 
 static struct lwm2m_engine_obj_inst *test_obj_create(uint16_t obj_inst_id)
 {
