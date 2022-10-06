@@ -16,7 +16,20 @@
 
 static void ipc_isr(void *arg)
 {
-	IDC[arch_proc_id()].agents[0].ipc.tdr = BIT(31); /* clear BUSY bit */
+	uint32_t cpu_id = arch_proc_id();
+
+	/*
+	 * Clearing the BUSY bits in both TDR and TDA are needed to
+	 * complete an IDC message. If we do only one (and not both),
+	 * the other side will not be able to send another IDC
+	 * message as the hardware still thinks you are processing
+	 * the IDC message (and thus will not send another one).
+	 * On TDR, it is to write one to clear, while on TDA, it is
+	 * to write zero to clear.
+	 */
+	IDC[cpu_id].agents[0].ipc.tdr = BIT(31);
+	IDC[cpu_id].agents[0].ipc.tda = 0;
+
 #ifdef CONFIG_SMP
 	void z_sched_ipi(void);
 	z_sched_ipi();
