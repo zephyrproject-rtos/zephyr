@@ -16,9 +16,6 @@ endchoice
 
 if DISK_DRIVERS
 
-config DISK_DRIVER_SDMMC
-	default y
-
 config IMX_USDHC_DAT3_PWR_TOGGLE
 	default y
 
