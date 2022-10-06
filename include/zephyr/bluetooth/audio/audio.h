@@ -1937,6 +1937,17 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream);
  *  This procedure is used by a unicast client or unicast server to make a
  *  stream start streaming.
  *
+ *  For the unicast client, this will connect the CIS for the stream before
+ *  sending the start command.
+ *
+ *  For the unicast server, this will put a @ref BT_AUDIO_DIR_SINK stream into
+ *  the streaming state if the CIS is connected (initialized by the unicast
+ *  client). If the CIS is not connected yet, the stream will go into the
+ *  streaming state as soon as the CIS is connected.
+ *  @ref BT_AUDIO_DIR_SOURCE streams will go into the streaming state when the
+ *  unicast client sends the Receiver Start Ready operation, which will trigger
+ *  the @ref bt_audio_unicast_server_cb.start() callback.
+ *
  *  This shall only be called for unicast streams.
  *  Broadcast sinks will always be started once synchronized, and broadcast
  *  source streams shall be started with bt_audio_broadcast_source_start().
