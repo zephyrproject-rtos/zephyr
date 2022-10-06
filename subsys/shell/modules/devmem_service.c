@@ -239,5 +239,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_devmem,
 
 SHELL_CMD_REGISTER(devmem, &sub_devmem,
 		   "Read/write physical memory\n"
-		   "devmem address [width [value]]",
+		   "Usage:\n"
+		   "Read memory at address with optional width:\n"
+		   "devmem address [width]\n"
+		   "Write memory at address with mandatory width and value:\n"
+		   "devmem address <width> <value>",
 		   cmd_devmem);
