@@ -560,7 +560,7 @@ saving RAM resources.
    :kconfig:option:`CONFIG_FS_MGMT_PATH_SIZE` sets the maximum PATH accepted for a file
    name. It might require tweaking for longer file names.
 
-Bootloader integration
+Bootloader Integration
 **********************
 
 The :ref:`dfu` subsystem integrates the management subsystem with the
@@ -572,3 +572,10 @@ information.
 
 .. _MCUmgr: https://github.com/apache/mynewt-mcumgr
 .. _MCUboot design: https://github.com/mcu-tools/mcuboot/blob/main/docs/design.md
+
+Discord channel
+***************
+
+Developers welcome!
+
+* Discord mcumgr channel: https://discord.com/invite/Ck7jw53nU2
