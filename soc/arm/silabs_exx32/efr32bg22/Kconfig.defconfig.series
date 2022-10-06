@@ -17,6 +17,7 @@ config NUM_IRQS
 
 config PM
 	select COUNTER
+	select UART_INTERRUPT_DRIVEN
 
 choice PM_POLICY
 	default PM_POLICY_CUSTOM
