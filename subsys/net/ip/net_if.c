@@ -4030,6 +4030,7 @@ static void notify_iface_up(struct net_if *iface)
 {
 	net_if_flag_set(iface, NET_IF_RUNNING);
 	net_mgmt_event_notify(NET_EVENT_IF_UP, iface);
+	net_virtual_enable(iface);
 
 	/* If the interface is only having point-to-point traffic then we do
 	 * not need to run DAD etc for it.
@@ -4045,6 +4046,7 @@ static void notify_iface_down(struct net_if *iface)
 {
 	net_if_flag_clear(iface, NET_IF_RUNNING);
 	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
+	net_virtual_disable(iface);
 
 	if (!is_iface_offloaded(iface) &&
 	    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
@@ -4230,8 +4232,6 @@ int net_if_down(struct net_if *iface)
 	if (status < 0) {
 		goto out;
 	}
-
-	net_virtual_disable(iface);
 
 done:
 	net_if_flag_clear(iface, NET_IF_UP);
