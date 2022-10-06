@@ -75,6 +75,22 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 		   MPERM_R | MPERM_W |
 		   MATTR_CACHE_OUTER_WB_WA | MATTR_CACHE_INNER_WB_WA},
 
+	/* If the exception vector was not relocated in
+	 * arch/arm/core/aarch32/prep_c.c, otherwise define an entry in
+	 * mmu_regions in the soc.
+	 */
+#if !defined CONFIG_ARM                                                        \
+	|| defined(CONFIG_CPU_CORTEX_M_HAS_VTOR)                               \
+	|| defined(CONFIG_AARCH32_ARMV8_R)                                     \
+	|| defined(CONFIG_CPU_AARCH32_CORTEX_A)                                \
+	|| !(defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0))          \
+		&& !(!defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0))
+	/* Mark exception vector cacheable, read only and executable */
+	{ .name  = "zephyr_vect",
+	  .start = (uint32_t)_vector_start,
+	  .end   = (uint32_t)_vector_end,
+	  .attrs = MT_STRONGLY_ORDERED | MPERM_R | MPERM_X},
+#endif
 	/* Mark text segment cacheable, read only and executable */
 	{ .name  = "zephyr_code",
 	  .start = (uint32_t)__text_region_start,

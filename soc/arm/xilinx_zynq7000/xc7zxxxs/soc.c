@@ -6,7 +6,6 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
-#include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 
@@ -24,10 +23,6 @@
 
 static const struct arm_mmu_region mmu_regions[] = {
 
-	MMU_REGION_FLAT_ENTRY("vectors",
-			      (uintptr_t)_vector_start,
-			      0x1000,
-			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
 	MMU_REGION_FLAT_ENTRY("mpcore",
 			      0xF8F00000,
 			      0x2000,
