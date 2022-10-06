@@ -15,4 +15,34 @@
 		/delete-node/ cpu@7;
 	};
 
+	soc {
+		stm0: stm@76200000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76200000 0x10000>;
+			interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		stm1: stm@76210000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76210000 0x10000>;
+			interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		stm2: stm@76020000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76020000 0x10000>;
+			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		stm3: stm@76030000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76030000 0x10000>;
+			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+	};
+
 };
