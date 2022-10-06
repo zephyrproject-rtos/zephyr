@@ -729,7 +729,7 @@ int can_sja1000_init(const struct device *dev)
 	}
 
 	/* Configure timing */
-	err = can_sja1000_set_timing(dev, &timing);
+	err = can_set_timing(dev, &timing);
 	if (err != 0) {
 		LOG_ERR("timing parameters cannot be met (err %d)", err);
 		return err;
