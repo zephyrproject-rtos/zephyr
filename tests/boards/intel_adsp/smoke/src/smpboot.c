@@ -12,7 +12,7 @@
 #define CPU_START_DELAY 10000
 
 /* IPIs happen  much faster than CPU startup */
-#define CPU_IPI_DELAY 100
+#define CPU_IPI_DELAY 250
 
 BUILD_ASSERT(CONFIG_SMP);
 BUILD_ASSERT(CONFIG_SMP_BOOT_DELAY);
