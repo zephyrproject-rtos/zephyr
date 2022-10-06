@@ -902,7 +902,7 @@ static void test_put_opaque_nomem(void)
 static void test_put_time(void)
 {
 	int ret;
-	int64_t value = 1170111600;
+	time_t value = 1170111600;
 	struct test_payload_buffer expected_payload = {
 		.data = {
 			(0x04 << 5) | 1,
@@ -1469,7 +1469,7 @@ static void test_get_opaque_nodata(void)
 static void test_get_time(void)
 {
 	int ret;
-	int64_t expected_value = 1170111600;
+	time_t expected_value = 1170111600;
 	struct test_payload_buffer payload = {
 		.data = {
 			(0x04 << 5) | 1,
