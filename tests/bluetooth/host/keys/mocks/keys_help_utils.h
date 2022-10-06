@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/addr.h>
+#include <zephyr/bluetooth/addr.h>
 
 /* BT (ID, Address) pair */
 struct id_addr_pair {
