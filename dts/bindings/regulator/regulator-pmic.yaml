@@ -7,6 +7,36 @@ include: regulator.yaml
 
 compatible: "regulator-pmic"
 
+properties:
+  regulator-initial-mode:
+      type: int
+      required: false
+      description: |
+        Initial operating mode of the regulator. Regulators modes can be
+        used for better power saving, or different voltage configurations,
+        and are hardware specific.
+  regulator-allowed-modes:
+      type: array
+      required: false
+      description: |
+        Array of operating modes that software may configure for the
+        regulator at runtime. The set of possible operating modes depends on
+        what the hardware supports.
+
+  modesel-reg:
+    type: int
+    required: false
+    description: |
+      Mode selection register. This register is used by the regulator driver
+      to select the target mode of the regulator
+
+  modesel-mask:
+    type: int
+    required: false
+    description: |
+      Mode selection mask. Applied to a mode selection when it is written
+      to the modesel-reg.
+
 child-binding:
   description: Voltage output of PMIC controller regulator
   properties:
