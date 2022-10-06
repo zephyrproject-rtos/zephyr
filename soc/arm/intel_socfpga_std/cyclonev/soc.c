@@ -35,11 +35,6 @@ void arch_reserved_pages_update(void)
 
 static const struct arm_mmu_region mmu_regions[] = {
 
-	MMU_REGION_FLAT_ENTRY("vectors",
-		0x00000000,
-		0x1000,
-		MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
-
 	MMU_REGION_FLAT_ENTRY("mpcore",
 		0xF8F00000,
 		0x2000,

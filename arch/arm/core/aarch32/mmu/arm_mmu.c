@@ -75,6 +75,12 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 		   MPERM_R | MPERM_W |
 		   MATTR_CACHE_OUTER_WB_WA | MATTR_CACHE_INNER_WB_WA},
 
+	/* Mark exception vector cacheable, read only and executable */
+	{ .name  = "zephyr_vect",
+	  .start = (uint32_t)_vector_start,
+	  .end   = (uint32_t)_vector_start + 0x1000,
+	  .attrs = MT_STRONGLY_ORDERED | MPERM_R | MPERM_X},
+
 	/* Mark text segment cacheable, read only and executable */
 	{ .name  = "zephyr_code",
 	  .start = (uint32_t)__text_region_start,
