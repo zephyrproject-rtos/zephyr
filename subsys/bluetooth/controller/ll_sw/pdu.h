@@ -524,6 +524,8 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND = 0x19,
 	PDU_DATA_LLCTRL_TYPE_CTE_REQ = 0x1A,
 	PDU_DATA_LLCTRL_TYPE_CTE_RSP = 0x1B,
+	PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_REQ = 0x1D,
+	PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_RSP = 0x1E,
 	PDU_DATA_LLCTRL_TYPE_CIS_REQ = 0x1F,
 	PDU_DATA_LLCTRL_TYPE_CIS_RSP = 0x20,
 	PDU_DATA_LLCTRL_TYPE_CIS_IND = 0x21,
@@ -697,6 +699,14 @@ struct pdu_data_llctrl_cte_rsp {
 	/* no members */
 } __packed;
 
+struct pdu_data_llctrl_clock_accuracy_req {
+	uint8_t sca;
+} __packed;
+
+struct pdu_data_llctrl_clock_accuracy_rsp {
+	uint8_t sca;
+} __packed;
+
 struct pdu_data_llctrl_cis_req {
 	uint8_t  cig_id;
 	uint8_t  cis_id;
@@ -787,6 +797,8 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_min_used_chans_ind min_used_chans_ind;
 		struct pdu_data_llctrl_cte_req cte_req;
 		struct pdu_data_llctrl_cte_rsp cte_rsp;
+		struct pdu_data_llctrl_clock_accuracy_req sca_req;
+		struct pdu_data_llctrl_clock_accuracy_rsp sca_rsp;
 		struct pdu_data_llctrl_cis_req cis_req;
 		struct pdu_data_llctrl_cis_rsp cis_rsp;
 		struct pdu_data_llctrl_cis_ind cis_ind;
