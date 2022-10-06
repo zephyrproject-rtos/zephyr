@@ -54,6 +54,8 @@ else()
   list(APPEND QEMU_FLAGS qemu${QEMU_INSTANCE}.pid)
 endif()
 
+# If running with sysbuild, we need to ensure this variable is populated
+zephyr_get(QEMU_PIPE)
 # Set up chardev for console.
 if(QEMU_PTY)
   # Redirect console to a pseudo-tty, used for running automated tests.
