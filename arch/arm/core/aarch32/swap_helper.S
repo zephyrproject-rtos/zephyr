@@ -125,7 +125,12 @@ out_fp_endif:
 	|| defined(CONFIG_ARMV7_A)
     /* Store rest of process context */
     cps #MODE_SYS
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+    mov ip, sp
+    stm r0, {r4-r11, ip}
+#else
     stm r0, {r4-r11, sp}
+#endif
     cps #MODE_SVC
 
 #if defined(CONFIG_FPU_SHARING)
@@ -399,7 +404,12 @@ _thread_irq_disabled:
 
     /* restore r4-r11 and sp for incoming thread */
     cps #MODE_SYS
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+    ldm r0, {r4-r11, ip}
+    mov sp, ip
+#else
     ldm r0, {r4-r11, sp}
+#endif
     cps #MODE_SVC
 
 #if defined(CONFIG_FPU_SHARING)
@@ -786,6 +796,9 @@ svc_system_thread:
     mrs r0, spsr
     tst r0, #0x20
 
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+    ittt eq
+#endif
     ldreq r1, [lr, #-4]
     biceq r1, #0xff000000
     beq demux
@@ -868,9 +881,17 @@ _do_syscall:
 
     /* If leaving thumb mode, set the return address to thumb mode */
     tst r1, #T_BIT
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+    it ne
+#endif
     orrne r8, #1
 
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+    /* Don't clear T bit if executing in Thumb state */
+    bic r1, #MODE_MASK
+#else
     bic r1, #(MODE_MASK | T_BIT)
+#endif
     orr r1, r1, #MODE_SYS
     str r1, [ip, #(FPU_SF_SIZE + ___basic_sf_t_xpsr_OFFSET)]
 

@@ -23,6 +23,10 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 	ldr pc, =z_arm_prefetch_abort    /* prefetch abort offset  0xc */
 	ldr pc, =z_arm_data_abort        /* data abort     offset 0x10 */
 	nop				 /*                offset 0x14 */
+#if CONFIG_ASSEMBLER_ISA_THUMB2
+	nop
+#endif
+
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 	ldr pc, =_isr_wrapper		 /* IRQ            offset 0x18 */
 #else

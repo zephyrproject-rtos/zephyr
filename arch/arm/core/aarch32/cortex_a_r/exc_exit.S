@@ -139,6 +139,9 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_int_exit)
 	ldr r1, [r3, #_kernel_offset_to_current]
 	ldr r0, [r3, #_kernel_offset_to_ready_q_cache]
 	cmp r0, r1
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+	it ne
+#endif
 	blne z_arm_pendsv
 __EXIT_INT:
 #endif /* CONFIG_PREEMPT_ENABLED */
@@ -260,6 +263,10 @@ __EXIT_EXC:
 	 * Restore r0-r3, r12, lr, lr_und and spsr_und from the exception stack
 	 * and return to the current thread.
 	 */
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+	ldmia sp, {r0-r3, r12, lr}
+#else
 	ldmia sp, {r0-r3, r12, lr}^
+#endif
 	add sp, #24
 	rfeia sp!

@@ -61,10 +61,14 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
     ldr r0, =HACTLR_INIT
     mcr p15, 4, r0, c1, c0, 1
 
-   /* Go to SVC mode */
     mrs r0, cpsr
+   /* Go to SVC mode */
     bic r0, #MODE_MASK
     orr r0, #MODE_SVC
+#if defined (CONFIG_ASSEMBLER_ISA_THUMB2)
+    /* Enable Thumb execution state */
+    orr r0, #T_BIT
+#endif
     msr spsr_cxsf, r0
 
     ldr r0, =EL1_Reset_Handler
@@ -201,27 +205,57 @@ EL1_Reset_Handler:
      */
 
     /* FIQ mode stack */
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+    mov r0, #(MODE_FIQ | I_BIT | F_BIT)
+    msr CPSR_c, r0
+#else
     msr CPSR_c, #(MODE_FIQ | I_BIT | F_BIT)
+#endif
     ldr sp, =(z_arm_fiq_stack + CONFIG_ARMV7_FIQ_STACK_SIZE)
 
     /* IRQ mode stack */
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+    mov r0,  #(MODE_IRQ | I_BIT | F_BIT)
+    msr CPSR_c, r0
+#else
     msr CPSR_c, #(MODE_IRQ | I_BIT | F_BIT)
+#endif
     ldr sp, =(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE)
 
     /* ABT mode stack */
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+    mov r0, #(MODE_ABT | I_BIT | F_BIT)
+    msr CPSR_c, r0
+#else
     msr CPSR_c, #(MODE_ABT | I_BIT | F_BIT)
+#endif
     ldr sp, =(z_arm_abort_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE)
 
     /* UND mode stack */
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+    mov r0, #(MODE_UND | I_BIT | F_BIT)
+    msr CPSR_c, r0
+#else
     msr CPSR_c, #(MODE_UND | I_BIT | F_BIT)
+#endif
     ldr sp, =(z_arm_undef_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE)
 
     /* SVC mode stack */
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+    mov r0, #(MODE_SVC | I_BIT | F_BIT)
+    msr CPSR_c, r0
+#else
     msr CPSR_c, #(MODE_SVC | I_BIT | F_BIT)
+#endif
     ldr sp, =(z_arm_svc_stack + CONFIG_ARMV7_SVC_STACK_SIZE)
 
     /* SYS mode stack */
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+    mov r0, #(MODE_SYS | I_BIT | F_BIT)
+    msr CPSR_c, r0
+#else
     msr CPSR_c, #(MODE_SYS | I_BIT | F_BIT)
+#endif
     ldr sp, =(z_arm_sys_stack + CONFIG_ARMV7_SYS_STACK_SIZE)
 
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
