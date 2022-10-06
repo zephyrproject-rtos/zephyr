@@ -237,8 +237,8 @@ static inline void net_virtual_init(struct net_if *iface)
 #endif
 
 /**
- * @brief Take virtual network interface down. This is called
- *        if the underlying interface is going down.
+ * @brief Update the carrier state of the virtual network interface.
+ *        This is called if the underlying interface is going down.
  *
  * @param iface Network interface
  */
@@ -246,6 +246,21 @@ static inline void net_virtual_init(struct net_if *iface)
 void net_virtual_disable(struct net_if *iface);
 #else
 static inline void net_virtual_disable(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
+
+/**
+ * @brief Update the carrier state of the virtual network interface.
+ *        This is called if the underlying interface is going up.
+ *
+ * @param iface Network interface
+ */
+#if defined(CONFIG_NET_L2_VIRTUAL)
+void net_virtual_enable(struct net_if *iface);
+#else
+static inline void net_virtual_enable(struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 }
