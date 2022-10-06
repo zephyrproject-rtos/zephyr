@@ -261,7 +261,7 @@ manifest:
       path: modules/lib/zcbor
     - name: zscilib
       path: modules/lib/zscilib
-      revision: ca070ddabdaf67175a2da901d0bd62e8899371c5
+      revision: 0035be5e6a45e4ab89755b176d305d7a877fc79c
 
   self:
     path: zephyr
