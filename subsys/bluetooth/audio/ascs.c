@@ -59,13 +59,13 @@ struct bt_ascs {
 	 */
 	struct bt_audio_iso isos[ASE_COUNT];
 	struct bt_gatt_notify_params params;
-	const struct bt_gatt_attr *control_point_attr;
 };
 
 static struct bt_ascs sessions[CONFIG_BT_MAX_CONN];
 
 static struct bt_ascs *ascs_find(struct bt_conn *conn);
 static struct bt_ascs_ase *ase_find(struct bt_ascs *ascs, uint8_t id);
+static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len);
 
 static void ase_status_changed(struct bt_audio_ep *ep, uint8_t old_state,
 			       uint8_t state)
@@ -858,16 +858,6 @@ static struct bt_conn_cb conn_cb = {
 	.disconnected = disconnected,
 };
 
-static uint8_t ascs_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle,
-			    void *user_data)
-{
-	struct bt_ascs *ascs = user_data;
-
-	ascs->control_point_attr = attr;
-
-	return BT_GATT_ITER_CONTINUE;
-}
-
 static struct bt_audio_iso *audio_iso_get_or_new(struct bt_ascs *ascs, uint8_t cig_id,
 						 uint8_t cis_id)
 {
@@ -916,16 +906,6 @@ static struct bt_ascs *ascs_new(struct bt_conn *conn)
 			if (!conn_cb_registered) {
 				bt_conn_cb_register(&conn_cb);
 				conn_cb_registered = true;
-			}
-
-			if (ascs->control_point_attr == NULL) {
-				bt_gatt_foreach_attr_type(0x0001, 0xffff,
-							  BT_UUID_ASCS_ASE_CP,
-							  NULL, 1,
-							  ascs_attr_cb, ascs);
-
-				__ASSERT(ascs->control_point_attr,
-					 "CP characteristic not found\n");
 			}
 
 			return ascs;
@@ -2451,7 +2431,7 @@ static ssize_t ascs_cp_write(struct bt_conn *conn,
 	}
 
 respond:
-	bt_gatt_notify(ascs->conn, ascs->control_point_attr, rsp_buf.data, rsp_buf.len);
+	control_point_notify(ascs->conn, rsp_buf.data, rsp_buf.len);
 
 	return len;
 }
@@ -2468,13 +2448,18 @@ respond:
 
 BT_GATT_SERVICE_DEFINE(ascs_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_ASCS),
-	LISTIFY(CONFIG_BT_ASCS_ASE_SNK_COUNT, BT_ASCS_ASE_SNK_DEFINE, (,)),
-	LISTIFY(CONFIG_BT_ASCS_ASE_SRC_COUNT, BT_ASCS_ASE_SRC_DEFINE, (,)),
 	BT_AUDIO_CHRC(BT_UUID_ASCS_ASE_CP,
 		      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY,
 		      BT_GATT_PERM_WRITE_ENCRYPT,
 		      NULL, ascs_cp_write, NULL),
 	BT_AUDIO_CCC(ascs_cp_cfg_changed),
+	LISTIFY(CONFIG_BT_ASCS_ASE_SNK_COUNT, BT_ASCS_ASE_SNK_DEFINE, (,)),
+	LISTIFY(CONFIG_BT_ASCS_ASE_SRC_COUNT, BT_ASCS_ASE_SRC_DEFINE, (,)),
 );
+
+static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len)
+{
+	return bt_gatt_notify_uuid(conn, BT_UUID_ASCS_ASE_CP, ascs_svc.attrs, data, len);
+}
 
 #endif /* BT_AUDIO_UNICAST_SERVER */
