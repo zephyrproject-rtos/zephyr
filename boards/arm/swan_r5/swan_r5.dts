@@ -38,7 +38,7 @@
 
 
 	zephyr,user {
-		no-pull-gpios = <&gpioe 6 GPIO_PUSH_PULL>;
+		dischrg-gpios = <&gpioe 6 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
 	};
 
 	supply-3v3 {
