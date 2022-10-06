@@ -308,32 +308,52 @@ static const struct regulator_driver_api api = {
 	.disable = disable_regulator
 };
 
-#define CONFIGURE_REGULATOR(id)									\
-	static uint32_t pmic_reg_##id##_cur_limits[] =						\
-		DT_INST_PROP_OR(id, current_levels, {});					\
-	static uint32_t pmic_reg_##id##_vol_range[] =						\
-		DT_INST_PROP(id, voltage_range);						\
-	static struct regulator_data pmic_reg_##id##_data;					\
-	static struct regulator_config pmic_reg_##id##_cfg = {					\
-		.vsel_mask = DT_INST_PROP(id, vsel_mask),					\
-		.vsel_reg = DT_INST_PROP(id, vsel_reg),						\
-		.num_voltages = DT_INST_PROP(id, num_voltages),					\
-		.num_current_levels = DT_INST_PROP(id, num_current_levels),			\
-		.enable_reg = DT_INST_PROP(id, enable_reg),					\
-		.enable_mask = DT_INST_PROP(id, enable_mask),					\
-		.enable_val = DT_INST_PROP(id, enable_val),					\
-		.min_uV = DT_INST_PROP(id, min_uv),						\
-		.max_uV = DT_INST_PROP(id, max_uv),						\
-		.ilim_reg = DT_INST_PROP_OR(id, ilim_reg, 0),					\
-		.ilim_mask = DT_INST_PROP_OR(id, ilim_mask, 0),					\
-		.enable_inverted = DT_INST_PROP(id, enable_inverted),				\
-		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(id)),					\
-		.voltage_array = pmic_reg_##id##_vol_range,					\
-		.current_array = pmic_reg_##id##_cur_limits,					\
+
+/*
+ * Each regulator output will be initialized as a separate device struct,
+ * and implement the regulator API. Since the DT binding is defined for the
+ * entire regulator, this macro will be called for each child node of the
+ * regulator device. This allows the regulator to have common DTS properties
+ * shared between each regulator output
+ */
+#define CONFIGURE_REGULATOR_OUTPUT(node, ord)							\
+	static uint32_t pmic_reg_##ord##_cur_limits[] =						\
+		DT_PROP_OR(node, current_levels, {});						\
+	static uint32_t pmic_reg_##ord##_vol_range[] =						\
+		DT_PROP(node, voltage_range);							\
+	static struct regulator_data pmic_reg_##ord##_data;					\
+	static struct regulator_config pmic_reg_##ord##_cfg = {					\
+		.vsel_mask = DT_PROP(node, vsel_mask),						\
+		.vsel_reg = DT_PROP(node, vsel_reg),						\
+		.num_voltages = DT_PROP(node, num_voltages),					\
+		.num_current_levels = DT_PROP(node, num_current_levels),			\
+		.enable_reg = DT_PROP(node, enable_reg),					\
+		.enable_mask = DT_PROP(node, enable_mask),					\
+		.enable_val = DT_PROP(node, enable_val),					\
+		.min_uV = DT_PROP(node, min_uv),						\
+		.max_uV = DT_PROP(node, max_uv),						\
+		.ilim_reg = DT_PROP_OR(node, ilim_reg, 0),					\
+		.ilim_mask = DT_PROP_OR(node, ilim_mask, 0),					\
+		.enable_inverted = DT_PROP(node, enable_inverted),				\
+		.i2c = I2C_DT_SPEC_GET(DT_PARENT(node)),					\
+		.voltage_array = pmic_reg_##ord##_vol_range,					\
+		.current_array = pmic_reg_##ord##_cur_limits,					\
 	};											\
-	DEVICE_DT_INST_DEFINE(id, pmic_reg_init, NULL,						\
-			      &pmic_reg_##id##_data, &pmic_reg_##id##_cfg,			\
+	DEVICE_DT_DEFINE(node, pmic_reg_init, NULL,						\
+			      &pmic_reg_##ord##_data,						\
+			      &pmic_reg_##ord##_cfg,						\
 			      POST_KERNEL, CONFIG_PMIC_REGULATOR_INIT_PRIORITY,			\
 			      &api);								\
+/* Intermediate macros to extract DT node ordinal
+ * (used as  a unique token for variable names)
+ */
+#define _CONFIGURE_REGULATOR_OUTPUT(node, ord)							\
+	CONFIGURE_REGULATOR_OUTPUT(node, ord)
+
+#define __CONFIGURE_REGULATOR_OUTPUT(node)							\
+	_CONFIGURE_REGULATOR_OUTPUT(node, DT_DEP_ORD(node))
+
+#define CONFIGURE_REGULATOR(id)									\
+	DT_INST_FOREACH_CHILD(id, __CONFIGURE_REGULATOR_OUTPUT)
 
 DT_INST_FOREACH_STATUS_OKAY(CONFIGURE_REGULATOR)

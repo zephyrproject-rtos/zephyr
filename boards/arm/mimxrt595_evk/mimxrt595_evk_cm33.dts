@@ -156,9 +156,9 @@ arduino_serial: &flexcomm12 {
 
 	pca9420: pca9420@61 {
 		reg = <0x61>;
+		compatible = "regulator-pmic";
 
 		pca9420_sw1: sw1_buck {
-			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_SW1_VOLTAGE_RANGE>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
 			num-voltages = <42>;
@@ -175,7 +175,6 @@ arduino_serial: &flexcomm12 {
 		};
 
 		pca9420_sw2: sw2_buck {
-			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_SW2_VOLTAGE_RANGE>;
 			num-voltages = <50>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
@@ -192,7 +191,6 @@ arduino_serial: &flexcomm12 {
 		};
 
 		pca9420_ldo1: ldo1_reg {
-			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_LDO1_VOLTAGE_RANGE>;
 			num-voltages = <9>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
@@ -209,7 +207,6 @@ arduino_serial: &flexcomm12 {
 		};
 
 		pca9420_ldo2: ldo2_reg {
-			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_LDO2_VOLTAGE_RANGE>;
 			num-voltages = <50>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
