@@ -598,3 +598,8 @@ struct node_rx_pu {
 	uint8_t tx;
 	uint8_t rx;
 };
+
+struct node_rx_sca {
+	uint8_t status;
+	uint8_t sca;
+};
