@@ -1061,13 +1061,11 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 		    DT_INST_IRQ_BY_NAME(0, kbc_ibf, priority),
 		    host_kbc_ibf_isr,
 		    NULL, 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, kbc_ibf, irq));
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, kbc_obe, irq),
 		    DT_INST_IRQ_BY_NAME(0, kbc_obe, priority),
 		    host_kbc_obe_isr,
 		    NULL, 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, kbc_obe, irq));
 #endif
 
 	/* Host PM channel (Host IO) sub-device interrupt installation */
@@ -1077,7 +1075,6 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 		    DT_INST_IRQ_BY_NAME(0, pmch_ibf, priority),
 		    host_pmch_ibf_isr,
 		    NULL, 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, pmch_ibf, irq));
 #endif
 
 	/* Host Port80 sub-device interrupt installation */
@@ -1086,7 +1083,6 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 		    DT_INST_IRQ_BY_NAME(0, p80_fifo, priority),
 		    host_port80_isr,
 		    NULL, 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, p80_fifo, irq));
 #endif
 
 	if (IS_ENABLED(CONFIG_PM)) {
