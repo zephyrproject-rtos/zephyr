@@ -243,7 +243,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	context = net_pkt_context(pkt);
 
-	if (net_if_flag_is_set(iface, NET_IF_UP)) {
+	if (net_if_flag_is_set(iface, NET_IF_LOWER_UP)) {
 		if (IS_ENABLED(CONFIG_NET_TCP) &&
 		    net_pkt_family(pkt) != AF_UNSPEC) {
 			net_pkt_set_queued(pkt, false);
@@ -445,7 +445,7 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	if (!net_if_flag_is_set(iface, NET_IF_UP) ||
+	if (!net_if_flag_is_set(iface, NET_IF_LOWER_UP) ||
 	    net_if_flag_is_set(iface, NET_IF_SUSPENDED)) {
 		/* Drop packet if interface is not up */
 		NET_WARN("iface %p is down", iface);
