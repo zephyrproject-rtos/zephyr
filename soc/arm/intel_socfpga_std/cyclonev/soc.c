@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
+#include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/util.h>
 #include <mmu.h>
 #include <zephyr/arch/arm/aarch32/mmu/arm_mmu.h>
@@ -36,7 +37,7 @@ void arch_reserved_pages_update(void)
 static const struct arm_mmu_region mmu_regions[] = {
 
 	MMU_REGION_FLAT_ENTRY("vectors",
-		0x00000000,
+		(uintptr_t)_vector_start,
 		0x1000,
 		MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
 

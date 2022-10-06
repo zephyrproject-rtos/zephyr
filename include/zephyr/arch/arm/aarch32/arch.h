@@ -40,8 +40,8 @@
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 #include <zephyr/arch/arm/aarch32/cortex_a_r/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_a_r/sys_io.h>
-#if defined(CONFIG_AARCH32_ARMV8_R)
 #include <zephyr/arch/arm/aarch32/cortex_a_r/lib_helpers.h>
+#if defined(CONFIG_AARCH32_ARMV8_R)
 #include <zephyr/arch/arm/aarch32/cortex_a_r/armv8_timer.h>
 #else
 #include <zephyr/arch/arm/aarch32/cortex_a_r/timer.h>

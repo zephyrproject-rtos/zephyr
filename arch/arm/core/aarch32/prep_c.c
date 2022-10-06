@@ -53,7 +53,7 @@ static inline void relocate_vector_table(void)
 	__ISB();
 }
 
-#elif defined(CONFIG_AARCH32_ARMV8_R)
+#elif defined(CONFIG_AARCH32_ARMV8_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 
 #define VECTOR_ADDRESS ((uintptr_t)_vector_start)
 
