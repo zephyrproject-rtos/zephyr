@@ -231,6 +231,7 @@ struct lwm2m_time_series_elem {
 		int16_t i16;
 		int32_t i32;
 		int64_t i64;
+		time_t time;
 		double f;
 		bool b;
 	};
@@ -812,6 +813,16 @@ int lwm2m_engine_set_float(const char *pathstr, const double *value);
 int lwm2m_engine_set_objlnk(const char *pathstr, const struct lwm2m_objlnk *value);
 
 /**
+ * @brief Set resource (instance) value (Time)
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
+ * @param[in] value Epoch timestamp
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_set_time(const char *pathstr, time_t value);
+
+/**
  * @brief Get resource (instance) value (opaque buffer)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
@@ -942,6 +953,16 @@ int lwm2m_engine_get_float(const char *pathstr, double *buf);
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_engine_get_objlnk(const char *pathstr, struct lwm2m_objlnk *buf);
+
+/**
+ * @brief Get resource (instance) value (Time)
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
+ * @param[out] buf time_t pointer to copy data
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_get_time(const char *pathstr, time_t *buf);
 
 
 /**
