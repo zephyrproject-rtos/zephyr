@@ -4189,19 +4189,6 @@ out:
 	return status;
 }
 
-void net_if_carrier_down(struct net_if *iface)
-{
-	NET_DBG("iface %p", iface);
-
-	k_mutex_lock(&lock, K_FOREVER);
-
-	net_if_flag_clear(iface, NET_IF_UP);
-
-	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
-
-	k_mutex_unlock(&lock);
-}
-
 int net_if_down(struct net_if *iface)
 {
 	int status = 0;

@@ -44,7 +44,6 @@
 
 extern void net_if_init(void);
 extern void net_if_post_init(void);
-extern void net_if_carrier_down(struct net_if *iface);
 extern void net_if_stats_reset(struct net_if *iface);
 extern void net_if_stats_reset_all(void);
 extern void net_process_rx_packet(struct net_pkt *pkt);
