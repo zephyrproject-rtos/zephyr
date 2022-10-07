@@ -15,9 +15,6 @@
 extern "C" {
 #endif
 
-/* MTU for newtmgr responses */
-#define MGMT_MAX_MTU		1024
-
 /** Opcodes; encoded in first byte of header. */
 #define MGMT_OP_READ		0
 #define MGMT_OP_READ_RSP	1
