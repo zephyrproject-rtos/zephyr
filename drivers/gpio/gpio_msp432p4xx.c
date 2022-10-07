@@ -24,6 +24,7 @@
 #include "gpio_utils.h"
 
 static const uint8_t pinTable[] = {
+	PIN_50, PIN_55, PIN_57, PIN_58, PIN_59, PIN_60, PIN_61, PIN_62
 
 };
 

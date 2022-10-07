@@ -3,8 +3,6 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
-#define EXC_GPIOA0  0  /* (INT_GPIOA0 - 16) = (16-16) */
-
 / {
 	cpus {
 		#address-cells = <1>;
