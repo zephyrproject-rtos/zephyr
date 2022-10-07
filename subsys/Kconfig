@@ -32,6 +32,8 @@ source "subsys/logging/Kconfig"
 
 source "subsys/lorawan/Kconfig"
 
+source "subsys/dsp/Kconfig"
+
 source "subsys/mgmt/Kconfig"
 
 source "subsys/modbus/Kconfig"

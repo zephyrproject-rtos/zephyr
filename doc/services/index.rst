@@ -10,6 +10,7 @@ OS Services
    crypto/index
    debugging/index.rst
    device_mgmt/index
+   dsp/index.rst
    file_system/index.rst
    formatted_output.rst
    ipc/index.rst

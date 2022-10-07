@@ -755,6 +755,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/debug/gdbstub.c                   @ceolin
 /subsys/dfu/                              @de-nordic @nordicjm
 /subsys/disk/                             @jfischer-no
+/subsys/dsp/                              @yperess
 /subsys/tracing/                          @nashif
 /subsys/debug/asan_hacks.c                @aescolar @daor-oti
 /subsys/demand_paging/                    @dcpleung @nashif
