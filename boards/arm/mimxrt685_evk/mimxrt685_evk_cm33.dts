@@ -231,7 +231,26 @@ i2s1: &flexcomm3 {
 	pca9420: pca9420@61 {
 		reg = <0x61>;
 		compatible = "regulator-pmic";
-
+		/*
+		 * This mode-reg setting will permit mode control by
+		 * pins, a feature of the PCA9240. If mode control via
+		 * I2C is desired, the following settings
+		 * should be used:
+		 * regulator-initial-mode = <PCA9420_MODECFG0_I2C>;
+		 * regulator-allowed-modes = <PCA9420_MODECFG0_I2C>,
+		 *			<PCA9420_MODECFG1_I2C>,
+		 *			<PCA9420_MODECFG2_I2C>,
+		 *			<PCA9420_MODECFG3_I2C>;
+		 * modesel-reg = <PCA9420_TOP_CNTL3>;
+		 * modesel-mask = <PCA9420_TOP_CNTL3_MODE_I2C_MASK>;
+		 */
+		regulator-allowed-modes = <PCA9420_MODECFG0_PIN>,
+					<PCA9420_MODECFG1_PIN>,
+					<PCA9420_MODECFG2_PIN>,
+					<PCA9420_MODECFG3_PIN>;
+		regulator-initial-mode = <PCA9420_MODECFG0_PIN>;
+		modesel-reg = <PCA9420_MODECFG_0_0>;
+		modesel-mask = <PCA9420_MODECFG_0_MODE_CTRL_SEL_MASK>;
 		pca9420_sw1: sw1_buck {
 			voltage-range = <PCA9420_SW1_VOLTAGE_RANGE>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
@@ -282,7 +301,7 @@ i2s1: &flexcomm3 {
 
 		pca9420_ldo2: ldo2_reg {
 			voltage-range = <PCA9420_LDO2_VOLTAGE_RANGE>;
-			num-voltages = <50>;
+			num-voltages = <51>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
 			ilim-reg = <PCA9420_TOP_CNTL0>;
 			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
