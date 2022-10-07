@@ -32,7 +32,7 @@ manifest:
       revision: fe0ab36e0fa7453a4c9b97bedac89709f45cf965
       path: modules/lib/chre
     - name: cmsis
-      revision: 093de61c2a7d12dc9253daf8692f61f793a9254a
+      revision: 74981bf893e8b10931464b9945e2143d99a3f0a3
       path: modules/hal/cmsis
       groups:
         - hal
