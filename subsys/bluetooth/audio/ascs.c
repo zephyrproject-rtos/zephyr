@@ -905,6 +905,26 @@ static struct bt_conn_cb conn_cb = {
 	.disconnected = disconnected,
 };
 
+static void audio_iso_init(struct bt_audio_iso *audio_iso)
+{
+	/* Setup points for both sink and source
+	 * This is due to the limitation in the ISO API where pointers like
+	 * the `qos->tx` shall be initialized before the CIS is connected if
+	 * ever want to use it for TX, and ditto for RX. They cannot be
+	 * initialized after the CIS has been connected
+	 */
+	audio_iso->iso_chan.ops = &ascs_iso_ops;
+	audio_iso->iso_chan.qos = &audio_iso->iso_qos;
+
+	audio_iso->iso_chan.qos->tx = &audio_iso->source_io_qos;
+	audio_iso->iso_chan.qos->tx->path = &audio_iso->source_path;
+	audio_iso->iso_chan.qos->tx->path->cc = audio_iso->source_path_cc;
+
+	audio_iso->iso_chan.qos->rx = &audio_iso->sink_io_qos;
+	audio_iso->iso_chan.qos->rx->path = &audio_iso->sink_path;
+	audio_iso->iso_chan.qos->rx->path->cc = audio_iso->sink_path_cc;
+}
+
 static struct bt_audio_iso *audio_iso_get_or_new(struct bt_ascs *ascs, uint8_t cig_id,
 						 uint8_t cis_id)
 {
@@ -932,6 +952,8 @@ static struct bt_audio_iso *audio_iso_get_or_new(struct bt_ascs *ascs, uint8_t c
 			return audio_iso;
 		}
 	}
+
+	audio_iso_init(free_audio_iso);
 
 	return free_audio_iso;
 }
@@ -1106,12 +1128,6 @@ static int ascs_ep_stream_bind_audio_iso(struct bt_audio_stream *stream,
 			BT_WARN("Bound with source_stream %p already", audio_iso->source_stream);
 			return -EADDRINUSE;
 		}
-
-		audio_iso->iso_chan.ops = &ascs_iso_ops;
-		audio_iso->iso_chan.qos = &audio_iso->iso_qos;
-		audio_iso->iso_chan.qos->tx = &audio_iso->source_io_qos;
-		audio_iso->iso_chan.qos->tx->path = &audio_iso->source_path;
-		audio_iso->iso_chan.qos->tx->path->cc = audio_iso->source_path_cc;
 	} else if (dir == BT_AUDIO_DIR_SINK) {
 		if (audio_iso->sink_stream == NULL) {
 			audio_iso->sink_stream = stream;
@@ -1119,12 +1135,6 @@ static int ascs_ep_stream_bind_audio_iso(struct bt_audio_stream *stream,
 			BT_WARN("Bound with sink_stream %p already", audio_iso->sink_stream);
 			return -EADDRINUSE;
 		}
-
-		audio_iso->iso_chan.ops = &ascs_iso_ops;
-		audio_iso->iso_chan.qos = &audio_iso->iso_qos;
-		audio_iso->iso_chan.qos->rx = &audio_iso->sink_io_qos;
-		audio_iso->iso_chan.qos->rx->path = &audio_iso->sink_path;
-		audio_iso->iso_chan.qos->rx->path->cc = audio_iso->sink_path_cc;
 	} else {
 		__ASSERT(false, "Invalid dir: %u", dir);
 	}
