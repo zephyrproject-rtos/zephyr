@@ -324,6 +324,17 @@ CMSIS API layer:
     - "area: CMSIS API Layer"
     - "area: Portability"
 
+DSP subsystem:
+  status: maintained
+  maintainers:
+    - stephanosio
+    - yperess
+  files:
+    - subsys/dsp/
+    - tests/subsys/dsp/
+  labels:
+    - "area: DSP"
+
 CMSIS-DSP integration:
   status: maintained
   maintainers:
@@ -334,7 +345,6 @@ CMSIS-DSP integration:
     - modules/Kconfig.cmsis_dsp
     - tests/benchmarks/cmsis_dsp/
     - tests/lib/cmsis_dsp/
-    - tests/subsys/dsp/
   labels:
     - "area: CMSIS-DSP"
 
