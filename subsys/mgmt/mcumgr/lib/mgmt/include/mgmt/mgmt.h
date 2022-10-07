@@ -61,23 +61,6 @@ extern "C" {
 #define MGMT_EVT_OP_CMD_STATUS	0x02
 #define MGMT_EVT_OP_CMD_DONE	0x03
 
-struct mgmt_hdr {
-#ifdef CONFIG_LITTLE_ENDIAN
-	uint8_t  nh_op:3;		/* MGMT_OP_[...] */
-	uint8_t  _res1:5;
-#else
-	uint8_t  _res1:5;
-	uint8_t  nh_op:3;		/* MGMT_OP_[...] */
-#endif
-	uint8_t  nh_flags;		/* Reserved for future flags */
-	uint16_t nh_len;		/* Length of the payload */
-	uint16_t nh_group;		/* MGMT_GROUP_ID_[...] */
-	uint8_t  nh_seq;		/* Sequence number */
-	uint8_t  nh_id;			/* Message ID within group */
-};
-
-#define nmgr_hdr mgmt_hdr
-
 /*
  * MGMT_EVT_OP_CMD_STATUS argument
  */
