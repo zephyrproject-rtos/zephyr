@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-struct mgmt_hdr {
+struct smp_hdr {
 #ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t  nh_op:3;		/* MGMT_OP_[...] */
 	uint8_t  _res1:5;

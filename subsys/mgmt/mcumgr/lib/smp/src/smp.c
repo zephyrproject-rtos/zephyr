@@ -24,8 +24,8 @@ static void
 cbor_nb_reader_init(struct cbor_nb_reader *cnr,
 		    struct net_buf *nb)
 {
-	/* Skip the mgmt_hdr */
-	void *new_ptr = net_buf_pull(nb, sizeof(struct mgmt_hdr));
+	/* Skip the smp_hdr */
+	void *new_ptr = net_buf_pull(nb, sizeof(struct smp_hdr));
 
 	cnr->nb = nb;
 	zcbor_new_decode_state(cnr->zs, ARRAY_SIZE(cnr->zs), new_ptr,
@@ -37,8 +37,8 @@ cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
 {
 	net_buf_reset(nb);
 	cnw->nb = nb;
-	cnw->nb->len = sizeof(struct mgmt_hdr);
-	zcbor_new_encode_state(cnw->zs, 2, nb->data + sizeof(struct mgmt_hdr),
+	cnw->nb->len = sizeof(struct smp_hdr);
+	zcbor_new_encode_state(cnw->zs, 2, nb->data + sizeof(struct smp_hdr),
 			       net_buf_tailroom(nb), 0);
 }
 
@@ -55,9 +55,9 @@ smp_rsp_op(uint8_t req_op)
 	}
 }
 
-static void smp_make_rsp_hdr(const struct mgmt_hdr *req_hdr, struct mgmt_hdr *rsp_hdr, size_t len)
+static void smp_make_rsp_hdr(const struct smp_hdr *req_hdr, struct smp_hdr *rsp_hdr, size_t len)
 {
-	*rsp_hdr = (struct mgmt_hdr) {
+	*rsp_hdr = (struct smp_hdr) {
 		.nh_len = sys_cpu_to_be16(req_hdr->nh_len),
 		.nh_flags = 0,
 		.nh_op = smp_rsp_op(req_hdr->nh_op),
@@ -67,7 +67,7 @@ static void smp_make_rsp_hdr(const struct mgmt_hdr *req_hdr, struct mgmt_hdr *rs
 	};
 }
 
-static int smp_read_hdr(const struct net_buf *nb, struct mgmt_hdr *dst_hdr)
+static int smp_read_hdr(const struct net_buf *nb, struct smp_hdr *dst_hdr)
 {
 	if (nb->len < sizeof(*dst_hdr)) {
 		return MGMT_ERR_EINVAL;
@@ -80,18 +80,16 @@ static int smp_read_hdr(const struct net_buf *nb, struct mgmt_hdr *dst_hdr)
 	return 0;
 }
 
-static inline int
-smp_write_hdr(struct smp_streamer *streamer, const struct mgmt_hdr *src_hdr)
+static inline int smp_write_hdr(struct smp_streamer *streamer, const struct smp_hdr *src_hdr)
 {
 	memcpy(streamer->writer->nb->data, src_hdr, sizeof(*src_hdr));
 	return 0;
 }
 
-static int
-smp_build_err_rsp(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr, int status,
-		  const char *rc_rsn)
+static int smp_build_err_rsp(struct smp_streamer *streamer, const struct smp_hdr *req_hdr,
+			     int status, const char *rc_rsn)
 {
-	struct mgmt_hdr rsp_hdr;
+	struct smp_hdr rsp_hdr;
 	struct cbor_nb_writer *nbw = streamer->writer;
 	zcbor_state_t *zsp = nbw->zs;
 	bool ok;
@@ -135,7 +133,7 @@ smp_build_err_rsp(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
  * @return A MGMT_ERR_[...] error code.
  */
 static int
-smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr,
+smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct smp_hdr *req_hdr,
 			  bool *handler_found)
 {
 	const struct mgmt_handler *handler;
@@ -192,11 +190,11 @@ smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr
  * @return A MGMT_ERR_[...] error code.
  */
 static int
-smp_handle_single_req(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
+smp_handle_single_req(struct smp_streamer *streamer, const struct smp_hdr *req_hdr,
 		      bool *handler_found, const char **rsn)
 {
 	struct mgmt_ctxt cbuf;
-	struct mgmt_hdr rsp_hdr;
+	struct smp_hdr rsp_hdr;
 	struct cbor_nb_writer *nbw = streamer->writer;
 	struct cbor_nb_reader *nbr = streamer->reader;
 	zcbor_state_t *zsp = nbw->zs;
@@ -233,7 +231,7 @@ smp_handle_single_req(struct smp_streamer *streamer, const struct mgmt_hdr *req_
  *			response.
  */
 static void
-smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
+smp_on_err(struct smp_streamer *streamer, const struct smp_hdr *req_hdr,
 		   void *req, void *rsp, int status, const char *rsn)
 {
 	int rc;
@@ -284,7 +282,7 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
 int
 smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 {
-	struct mgmt_hdr req_hdr;
+	struct smp_hdr req_hdr;
 	struct mgmt_evt_op_cmd_done_arg cmd_done_arg;
 	void *rsp;
 	struct net_buf *req = vreq;
