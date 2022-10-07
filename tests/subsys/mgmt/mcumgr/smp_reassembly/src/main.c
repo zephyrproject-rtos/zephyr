@@ -73,8 +73,7 @@ ZTEST(smp_reassembly, test_first)
 	/* This will normally be done by packet processing and should not be done by hand:
 	 * release the buffer to the pool
 	 */
-	mcumgr_buf_free(backup);
-
+	smp_packet_free(backup);
 }
 
 ZTEST(smp_reassembly, test_drops)
@@ -156,7 +155,7 @@ ZTEST(smp_reassembly, test_collection)
 	/* This will normally be done by packet processing and should not be done by hand:
 	 * release the buffer to the pool
 	 */
-	mcumgr_buf_free(backup);
+	smp_packet_free(backup);
 }
 
 ZTEST(smp_reassembly, test_no_packet_started)

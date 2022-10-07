@@ -244,7 +244,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	struct smp_bt_user_data *ud;
 	struct net_buf *nb;
 
-	nb = mcumgr_buf_alloc();
+	nb = smp_packet_alloc();
 	if (!nb) {
 		LOG_DBG("failed net_buf alloc for SMP packet");
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
@@ -253,7 +253,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	if (net_buf_tailroom(nb) < len) {
 		LOG_DBG("SMP packet len (%" PRIu16 ") > net_buf len (%zu)",
 			len, net_buf_tailroom(nb));
-		mcumgr_buf_free(nb);
+		smp_packet_free(nb);
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
@@ -474,7 +474,7 @@ cleanup:
 	}
 
 	smp_bt_ud_free(net_buf_user_data(nb));
-	mcumgr_buf_free(nb);
+	smp_packet_free(nb);
 
 	return rc;
 }
