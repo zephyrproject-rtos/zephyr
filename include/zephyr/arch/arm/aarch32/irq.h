@@ -16,7 +16,6 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_IRQ_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_IRQ_H_
 
-#include <zephyr/irq.h>
 #include <zephyr/sw_isr_table.h>
 #include <stdbool.h>
 
