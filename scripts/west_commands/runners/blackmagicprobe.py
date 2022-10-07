@@ -6,6 +6,7 @@
 # https://github.com/blacksphere/blackmagic/wiki
 
 import signal
+from pathlib import Path
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
@@ -15,7 +16,11 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, gdb_serial, connect_srst=False):
         super().__init__(cfg)
         self.gdb = [cfg.gdb] if cfg.gdb else None
-        self.elf_file = cfg.elf_file
+        # as_posix() because gdb doesn't recognize backslashes as path
+        # separators for the 'load' command we execute in bmp_flash().
+        #
+        # https://github.com/zephyrproject-rtos/zephyr/issues/50789
+        self.elf_file = Path(cfg.elf_file).as_posix()
         self.gdb_serial = gdb_serial
         if connect_srst:
             self.connect_srst_enable_arg = [
