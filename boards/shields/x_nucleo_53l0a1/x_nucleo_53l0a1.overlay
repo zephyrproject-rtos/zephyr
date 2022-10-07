@@ -23,6 +23,11 @@
 	vl53l0x_c_x_nucleo_53l0a1: vl53l0x@30 {
 		compatible = "st,vl53l0x";
 		reg = <0x30>;
+		/* NB: this is the default with solder drop U14 fitted
+		/* The following alternate solder drops are possible:
+		 * interrupt-gpios = <&arduino_header 4 0>;  // A4 / U17 fitted
+		 */
+		interrupt-gpios = <&arduino_header 2 0>;  // A2 / U14 fitted
 		xshut-gpios = <&expander1_x_nucleo_53l0a1 15 0>;
 	};
 
@@ -30,11 +35,21 @@
 	vl53l0x_l_x_nucleo_53l0a1: vl53l0x@31 {
 		compatible = "st,vl53l0x";
 		reg = <0x31>;
+		/* NB: By default no solder drop fitted
+		/* The following solder drops are possible:
+		 * interrupt-gpios = <&arduino_header 14 0>;  // D8 / U11 fitted
+		 * interrupt-gpios = <&arduino_header 15 0>;  // D9 / U10 fitted
+		 */
 		xshut-gpios = <&expander2_x_nucleo_53l0a1 14 0>;
 	};
 	vl53l0x_r_x_nucleo_53l0a1: vl53l0x@32 {
 		compatible = "st,vl53l0x";
 		reg = <0x32>;
+		/* NB: By default no solder drop fitted
+		/* The following solder drops are possible:
+		 * interrupt-gpios = <&arduino_header 8 0>;  // D2 / U18 fitted
+		 * interrupt-gpios = <&arduino_header 10 0>;  // D4 / U15 fitted
+		 */
 		xshut-gpios = <&expander2_x_nucleo_53l0a1 15 0>;
 	};
 };
