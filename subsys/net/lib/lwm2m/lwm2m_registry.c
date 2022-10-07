@@ -479,7 +479,7 @@ int lwm2m_engine_set_res_data(const char *pathstr, void *data_ptr, uint16_t data
 	return lwm2m_engine_set_res_buf(pathstr, data_ptr, data_len, data_len, data_flags);
 }
 
-static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
+static int lwm2m_engine_set(const char *pathstr, const void *value, uint16_t len)
 {
 	struct lwm2m_obj_path path;
 	struct lwm2m_engine_obj_inst *obj_inst;
@@ -557,7 +557,7 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 #if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 	if (res->validate_cb) {
 		ret = res->validate_cb(obj_inst->obj_inst_id, res->res_id, res_inst->res_inst_id,
-				       value, len, false, 0);
+				       (uint8_t *)value, len, false, 0);
 		if (ret < 0) {
 			k_mutex_unlock(&registry_lock);
 			return -EINVAL;
@@ -642,12 +642,12 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 	return ret;
 }
 
-int lwm2m_engine_set_opaque(const char *pathstr, char *data_ptr, uint16_t data_len)
+int lwm2m_engine_set_opaque(const char *pathstr, const char *data_ptr, uint16_t data_len)
 {
 	return lwm2m_engine_set(pathstr, data_ptr, data_len);
 }
 
-int lwm2m_engine_set_string(const char *pathstr, char *data_ptr)
+int lwm2m_engine_set_string(const char *pathstr, const char *data_ptr)
 {
 	return lwm2m_engine_set(pathstr, data_ptr, strlen(data_ptr));
 }
@@ -699,12 +699,12 @@ int lwm2m_engine_set_bool(const char *pathstr, bool value)
 	return lwm2m_engine_set(pathstr, &temp, 1);
 }
 
-int lwm2m_engine_set_float(const char *pathstr, double *value)
+int lwm2m_engine_set_float(const char *pathstr, const double *value)
 {
 	return lwm2m_engine_set(pathstr, value, sizeof(double));
 }
 
-int lwm2m_engine_set_objlnk(const char *pathstr, struct lwm2m_objlnk *value)
+int lwm2m_engine_set_objlnk(const char *pathstr, const struct lwm2m_objlnk *value)
 {
 	return lwm2m_engine_set(pathstr, value, sizeof(struct lwm2m_objlnk));
 }
