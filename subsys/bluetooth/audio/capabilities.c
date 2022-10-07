@@ -9,6 +9,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -121,7 +122,7 @@ static struct bt_audio_pacs_cb pacs_cb = {
 #endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
 };
 
-sys_slist_t *bt_audio_capability_get(enum bt_audio_dir dir)
+static sys_slist_t *bt_audio_capability_get(enum bt_audio_dir dir)
 {
 	switch (dir) {
 	case BT_AUDIO_DIR_SINK:
@@ -131,6 +132,29 @@ sys_slist_t *bt_audio_capability_get(enum bt_audio_dir dir)
 	}
 
 	return NULL;
+}
+
+void bt_audio_foreach_capability(enum bt_audio_dir dir, bt_audio_foreach_capability_func_t func,
+				 void *user_data)
+{
+	struct bt_audio_capability *cap;
+	sys_slist_t *lst;
+
+	CHECKIF(func == NULL) {
+		BT_ERR("func is NULL");
+		return;
+	}
+
+	lst = bt_audio_capability_get(dir);
+	if (!lst) {
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, _node) {
+		if (!func(cap, user_data)) {
+			break;
+		}
+	}
 }
 
 /* Register Audio Capability */
