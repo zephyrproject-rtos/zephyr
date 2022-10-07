@@ -1129,6 +1129,14 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 
+	if (data->rx_next_buffer) {
+		struct uart_event rx_next_buf_release_evt = {
+			.type = UART_RX_BUF_RELEASED,
+			.data.rx_buf.buf = data->rx_next_buffer,
+		};
+		async_user_callback(data, &rx_next_buf_release_evt);
+	}
+
 	data->rx_next_buffer = NULL;
 	data->rx_next_buffer_len = 0;
 
