@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+description: TI msp432p4xx GPIO node
+
+compatible: "ti,msp432p4xx-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
+  - pin
+  - flags

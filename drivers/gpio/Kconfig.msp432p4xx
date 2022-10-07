@@ -1,0 +1,10 @@
+# MSP432P4XX GPIO configuration options
+
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_MSP432PXX
+	bool "TI CC32XX GPIO driver"
+	default y
+	depends on DT_HAS_TI_MSP432P4XX_GPIO_ENABLED
+	help
+	  Enable the GPIO driver on TI SimpleLink MSP432P4XX boards
