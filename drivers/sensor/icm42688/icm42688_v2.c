@@ -26,6 +26,10 @@ LOG_MODULE_REGISTER(ICM42688, CONFIG_SENSOR_LOG_LEVEL);
 struct icm42688_sensor_data {
 	struct icm42688_dev_data dev_data;
 
+	struct k_mutex data_buffer_lock;
+	struct sensor_raw_data *data_buffer;
+	sensor_data_callback_t data_callback;
+
 	int16_t readings[7];
 };
 
@@ -47,81 +51,88 @@ int16_t raw_to_cpu(uint8_t byte_h, uint8_t byte_l)
  *
  * @NOTE No guarantee the samples are of the same sampling clock instant either here
  */
-static int icm42688_read_data(const struct device *dev, uint32_t sensor_type, void *sdata)
+static int icm42688_read_data(const struct device *dev, uint32_t *sensor_types,
+			      size_t type_list_count)
 {
 	int res;
 	struct icm42688_sensor_data *sens_data = dev->data;
 	struct icm42688_dev_data *ddata = &sens_data->dev_data;
+	int data_buffer_offset = 0;
 	
 	uint8_t data[14];
-	
+
+	k_mutex_lock(&sens_data->data_buffer_lock, K_FOREVER);
+	if (sens_data->data_buffer == NULL || sens_data->data_callback == NULL) {
+		LOG_ERR("Data or callback not set up");
+		res = -EINVAL;
+		goto out;
+	}
+
+	sens_data->data_buffer->header.base_timestamp = k_uptime_get() * USEC_PER_MSEC;
+	sens_data->data_buffer->header.reading_count = 0;
 	res = icm42688_read_all(dev,  data);
 	
 	if (res != 0 ) {
 		LOG_ERR("Error reading data from sensor");
 		goto out;
 	}
-	
-	
-	if (sensor_type == SENSOR_TYPE_ACCELEROMETER) {
-		struct sensor_three_axis_data *adata = sdata;
-		int32_t ms[3];
-		uint32_t ums[3];
 
-		icm42688_accel_ms(&ddata->cfg, raw_to_cpu(data[2], data[3]),  &ms[0], &ums[0]);
-		icm42688_accel_ms(&ddata->cfg, raw_to_cpu(data[4], data[5]),  &ms[1], &ums[1]);
-		icm42688_accel_ms(&ddata->cfg, raw_to_cpu(data[6], data[7]),  &ms[2], &ums[2]);
+	for (size_t i = 0; i < type_list_count; ++i) {
+		uint32_t sensor_type = sensor_types[i];
+		if (sensor_type == SENSOR_TYPE_ACCELEROMETER) {
+			uint16_t raw;
 
-		/* causes a shift overflow on the 1000000 value when doing INT_TO_FP()  */
+			if (data_buffer_offset + 6 > sens_data->data_buffer->header.reading_size) {
+				res = -ENOSR;
+				break;
+			}
 
-		/*
-		adata->readings[0].x = INT_TO_FP(ms[0]) + fp_div(INT_TO_FP(ums[0]), INT_TO_FP(1000000));
-		adata->readings[0].y = INT_TO_FP(ms[0]) + fp_div(INT_TO_FP(ums[0]), INT_TO_FP(1000000));
-		adata->readings[0].z = INT_TO_FP(ms[0]) + fp_div(INT_TO_FP(ums[0]), INT_TO_FP(1000000));
-		*/
-		
-		/* FP doesn't have enough precision in fixed point to deal with this math */
-		/* Float results in 0's which seems wrong */
-                /* Negatives don't work as the ms value + ums should be - if the sign of ms is negative. */
-		adata->readings[0].x = FLOAT_TO_FP((float)ms[0] + ((float)ums[0])/1000000.0f);
-		adata->readings[0].y = FLOAT_TO_FP((float)ms[1] + ((float)ums[1])/1000000.0f);
-		adata->readings[0].z = FLOAT_TO_FP((float)ms[2] + ((float)ums[2])/1000000.0f);
+			memcpy(sens_data->data_buffer->readings + data_buffer_offset, data + 2, 6);
+		} else if (sensor_type == SENSOR_TYPE_GYROSCOPE) {
+			struct sensor_three_axis_data *gdata = sdata;
+			int32_t rads[3];
+			uint32_t urads[3];
 
-	} else if (sensor_type == SENSOR_TYPE_GYROSCOPE) {
-		struct sensor_three_axis_data *gdata = sdata;
-		int32_t rads[3];
-		uint32_t urads[3];		
+			icm42688_gyro_rads(&ddata->cfg, raw_to_cpu(data[8], data[9]), &rads[0],
+					   &urads[0]);
+			icm42688_gyro_rads(&ddata->cfg, raw_to_cpu(data[10], data[11]), &rads[1],
+					   &urads[1]);
+			icm42688_gyro_rads(&ddata->cfg, raw_to_cpu(data[12], data[13]), &rads[2],
+					   &urads[2]);
 
-		icm42688_gyro_rads(&ddata->cfg, raw_to_cpu(data[8], data[9]),  &rads[0], &urads[0]);
-		icm42688_gyro_rads(&ddata->cfg, raw_to_cpu(data[10], data[11]),  &rads[1], &urads[1]);
-		icm42688_gyro_rads(&ddata->cfg, raw_to_cpu(data[12], data[13]),  &rads[2], &urads[2]);
+			/* causes a shift overflow on the 1000000 value when doing INT_TO_FP and CONFIG_FPU=n */
+			/*
+			gdata->readings[0].x = INT_TO_FP(rads[0]) + fp_div(INT_TO_FP(urads[0]),
+			INT_TO_FP(1000000)); gdata->readings[0].y = INT_TO_FP(rads[1]) +
+			fp_div(INT_TO_FP(urads[1]), INT_TO_FP(1000000)); gdata->readings[0].z =
+			INT_TO_FP(rads[2]) + fp_div(INT_TO_FP(urads[2]), INT_TO_FP(1000000));
+			*/
 
-		/* causes a shift overflow on the 1000000 value when doing INT_TO_FP and CONFIG_FPU=n */
-		/*
-		gdata->readings[0].x = INT_TO_FP(rads[0]) + fp_div(INT_TO_FP(urads[0]), INT_TO_FP(1000000));
-		gdata->readings[0].y = INT_TO_FP(rads[1]) + fp_div(INT_TO_FP(urads[1]), INT_TO_FP(1000000));
-		gdata->readings[0].z = INT_TO_FP(rads[2]) + fp_div(INT_TO_FP(urads[2]), INT_TO_FP(1000000));
-		*/
+			gdata->readings[0].x =
+				FLOAT_TO_FP((float)rads[0] + (float)rads[0] / 1000000.0f);
+			gdata->readings[0].y =
+				FLOAT_TO_FP((float)rads[1] + (float)rads[1] / 1000000.0f);
+			gdata->readings[0].z =
+				FLOAT_TO_FP((float)rads[2] + (float)rads[2] / 1000000.0f);
 
-		gdata->readings[0].x = FLOAT_TO_FP((float)rads[0] + (float)rads[0]/1000000.0f);
-		gdata->readings[0].y = FLOAT_TO_FP((float)rads[1] + (float)rads[1]/1000000.0f);
-		gdata->readings[0].z = FLOAT_TO_FP((float)rads[2] + (float)rads[2]/1000000.0f);
-		
-	} else if (sensor_type == SENSOR_TYPE_ACCELEROMETER_TEMPERATURE
-		|| sensor_type == SENSOR_TYPE_GYROSCOPE_TEMPERATURE) {
-		
-		struct sensor_float_data *tdata = sdata;
-		int32_t c;
-		uint32_t uc;
+		} else if (sensor_type == SENSOR_TYPE_ACCELEROMETER_TEMPERATURE ||
+			   sensor_type == SENSOR_TYPE_GYROSCOPE_TEMPERATURE) {
 
-		icm42688_temp_c(raw_to_cpu(data[0], data[1]), &c, &uc);
+			struct sensor_float_data *tdata = sdata;
+			int32_t c;
+			uint32_t uc;
 
-		tdata->readings[0].value = FLOAT_TO_FP((float)c + (float)uc/1000000.0f);
-	} else {
-		res = -ENOTSUP;
+			icm42688_temp_c(raw_to_cpu(data[0], data[1]), &c, &uc);
+
+			tdata->readings[0].value = FLOAT_TO_FP((float)c + (float)uc / 1000000.0f);
+		} else {
+			res = -ENOTSUP;
+			break;
+		}
 	}
 	
 out:
+	k_mutex_unlock(&sens_data->data_buffer_lock);
 	return res;
 }
 
@@ -576,16 +587,26 @@ out:
 	return res;
 }
 
-int icm42688_set_fifo_data_buffer(const struct device *dev, 
-				  struct sensor_raw_data *buffer)
+int icm42688_set_data_buffer(const struct device *dev, struct sensor_raw_data *buffer)
 {
-	return -ENOTSUP;
+	struct icm42688_sensor_data *data = dev->data;
+
+	k_mutex_lock(&data->data_buffer_lock, K_FOREVER);
+	data->data_buffer = buffer;
+	k_mutex_unlock(&data->data_buffer_lock);
+
+	return 0;
 }
 
-int icm42688_set_process_data_callback(const struct device *dev,
-				       sensor_process_data_callback_t callback)
+int icm42688_set_data_callback(const struct device *dev, sensor_data_callback_t callback)
 {
-	return -ENOTSUP;
+	struct icm42688_sensor_data *data = dev->data;
+
+	k_mutex_lock(&data->data_buffer_lock, K_FOREVER);
+	data->data_callback = callback;
+	k_mutex_unlock(&data->data_buffer_lock);
+
+	return 0;
 }
 
 int icm42688_flush_fifo(const struct device *dev)
@@ -690,6 +711,7 @@ static int icm42688_init(const struct device *dev)
 		LOG_ERR("could not initialize sensor");
 		return -EIO;
 	}
+	k_mutex_init(&data->data_buffer_lock);
 
 	// TODO interpret the config params from DT here using the X to Y conversions.
 	data->dev_data.cfg.accel_mode = ICM42688_ACCEL_LN;
@@ -709,14 +731,14 @@ static int icm42688_init(const struct device *dev)
 }
 
 static const struct sensor_driver_api_v2 icm42688_driver_api = {
+	.set_data_buffer = icm42688_set_data_buffer,
+	.set_data_callback = icm42688_set_data_callback,
 	.read_data = icm42688_read_data,
 	.get_scale = icm42688_get_scale,
 	.set_range = icm42688_set_range,
 	.get_bias = icm42688_get_bias,
 	.set_bias = icm42688_set_bias,
 #ifdef CONFIG_SENSOR_STREAMING_MODE
-	.set_fifo_data_buffer = icm42688_set_fifo_data_buffer,
-	.set_process_data_callback = icm42688_set_process_data_callback,
 	.flush_fifo = icm42688_flush_fifo,
 	.get_fifo_iterator_api = icm42688_get_fifo_iterator,
 	.get_sample_rate_available = icm42688_get_sample_rate_available,
