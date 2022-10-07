@@ -89,6 +89,14 @@ config CPU_HS3X
 	help
 	  If y, the SoC uses an ARC HS3x or HS4x CPU
 
+config CPU_HS4XD
+	bool
+	select CPU_ARCHS
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	help
+	  If y, the SoC uses an HS4xD CPU
+
 endif #ISA_ARCV2
 
 if ISA_ARCV3

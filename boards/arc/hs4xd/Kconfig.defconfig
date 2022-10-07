@@ -2,6 +2,9 @@
 
 if BOARD_HS4xD
 
+config BOARD
+	default "hs4xd"
+
 # TODO
 
 endif #BOARD_HS4xD
