@@ -401,7 +401,6 @@ steps:
         #. Find the new ``v1.11.0`` tag at the top of the releases page and
            edit the release with the ``Edit tag`` button with the following:
 
-            * Name it ``Zephyr 1.11.0``
             * Copy the overview of ``docs/releases/release-notes-1.11.rst``
               into the release notes textbox and link to the full release notes
               file on docs.zephyrproject.org.
