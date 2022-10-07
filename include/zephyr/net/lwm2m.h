@@ -689,7 +689,7 @@ void lwm2m_registry_unlock(void);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_opaque(const char *pathstr, char *data_ptr, uint16_t data_len);
+int lwm2m_engine_set_opaque(const char *pathstr, const char *data_ptr, uint16_t data_len);
 
 /**
  * @brief Set resource (instance) value (string)
@@ -699,7 +699,7 @@ int lwm2m_engine_set_opaque(const char *pathstr, char *data_ptr, uint16_t data_l
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_string(const char *pathstr, char *data_ptr);
+int lwm2m_engine_set_string(const char *pathstr, const char *data_ptr);
 
 /**
  * @brief Set resource (instance) value (u8)
@@ -799,7 +799,7 @@ int lwm2m_engine_set_bool(const char *pathstr, bool value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_float(const char *pathstr, double *value);
+int lwm2m_engine_set_float(const char *pathstr, const double *value);
 
 /**
  * @brief Set resource (instance) value (ObjLnk)
@@ -809,7 +809,7 @@ int lwm2m_engine_set_float(const char *pathstr, double *value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_objlnk(const char *pathstr, struct lwm2m_objlnk *value);
+int lwm2m_engine_set_objlnk(const char *pathstr, const struct lwm2m_objlnk *value);
 
 /**
  * @brief Get resource (instance) value (opaque buffer)
