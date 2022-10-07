@@ -11,3 +11,7 @@ properties:
     xshut-gpios:
       type: phandle-array
       required: false
+
+    interrupt-gpios:
+      type: phandle-array
+      required: false
