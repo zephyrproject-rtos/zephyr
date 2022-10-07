@@ -58,7 +58,14 @@ double cycles_to_us(double cycles)
 	return 1000000.0 * (cycles / (double)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 }
 
-ZTEST(timer_behavior, test_periodic_behavior)
+/**
+ * @brief Test a timers jitter and drift over time
+ *
+ * Named alpha_jitter_drift as this test requires ideally no
+ * clock counter roll overs while running on Arm and should be
+ * the first test in the suite to run
+ */
+ZTEST(timer_jitter_drift, test_jitter_drift)
 {
 	TC_PRINT("periodic timer behavior test\n");
 
@@ -200,4 +207,4 @@ ZTEST(timer_behavior, test_periodic_behavior)
 		     "Drift (in microseconds) outside expected bound");
 }
 
-ZTEST_SUITE(timer_behavior, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(timer_jitter_drift, NULL, NULL, NULL, NULL, NULL);
