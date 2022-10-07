@@ -60,6 +60,9 @@ class ExecutionCounter(object):
         # updated by update_counting_before_pipeline() and report_out()
         self._skipped_cases = Value('i', 0)
 
+        # updated by report_out()
+        self._skipped_tests = Value('i', 0)
+
         # updated by report_out() in pipeline
         self._error = Value('i', 0)
         self._failed = Value('i', 0)
@@ -83,6 +86,7 @@ class ExecutionCounter(object):
         logger.debug(f"Skipped test suites: {self.skipped_configs}")
         logger.debug(f"Skipped test suites (runtime): {self.skipped_runtime}")
         logger.debug(f"Skipped test suites (filter): {self.skipped_filter}")
+        logger.debug(f"Skipped test cases (ztest skip): {self.skipped_tests}")
         logger.debug(f"Errors: {self.error}")
         logger.debug("--------------------------------")
 
@@ -105,6 +109,16 @@ class ExecutionCounter(object):
     def skipped_cases(self, value):
         with self._skipped_cases.get_lock():
             self._skipped_cases.value = value
+
+    @property
+    def skipped_tests(self):
+        with self._skipped_tests.get_lock():
+            return self._skipped_tests.value
+
+    @skipped_tests.setter
+    def skipped_tests(self, value):
+        with self._skipped_tests.get_lock():
+            self._skipped_tests.value = value
 
     @property
     def error(self):
@@ -724,6 +738,8 @@ class ProjectBuilder(FilterBuilder):
                 # test cases skipped at the test case level
                 if case.status == 'skipped':
                     results.skipped_cases += 1
+                    if case.reason == 'ztest skip':
+                        results.skipped_tests += 1
         else:
             logger.debug(f"Unknown status = {instance.status}")
             status = Fore.YELLOW + "UNKNOWN" + Fore.RESET

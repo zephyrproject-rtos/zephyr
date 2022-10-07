@@ -398,7 +398,13 @@ def main():
                        )
 
     logger.info("Run completed")
-    if runner.results.failed or runner.results.error or (tplan.warnings and options.warnings_as_errors):
+
+    if (
+        runner.results.failed
+        or runner.results.error
+        or (tplan.warnings and options.warnings_as_errors)
+        or (options.fail_on_skip and runner.results.skipped_tests > 0)
+    ):
         return 1
 
     return 0
