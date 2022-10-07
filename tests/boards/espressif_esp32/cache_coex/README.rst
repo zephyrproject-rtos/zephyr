@@ -1,7 +1,7 @@
 .. _cache_coex_test:
 
 Espressif ESP32 PSRAM/SPI Flash co-existence test
-###########
+#################################################
 
 Overview
 ********
