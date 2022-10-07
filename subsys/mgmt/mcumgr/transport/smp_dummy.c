@@ -178,7 +178,7 @@ static int smp_dummy_tx_pkt_int(struct net_buf *nb)
 	int rc;
 
 	rc = mcumgr_dummy_tx_pkt(nb->data, nb->len, dummy_mcumgr_send_raw);
-	mcumgr_buf_free(nb);
+	smp_packet_free(nb);
 
 	return rc;
 }
@@ -279,7 +279,7 @@ void dummy_mcumgr_add_data(uint8_t *data, uint16_t data_size)
 static void mcumgr_dummy_free_rx_ctxt(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 {
 	if (rx_ctxt->nb != NULL) {
-		mcumgr_buf_free(rx_ctxt->nb);
+		smp_packet_free(rx_ctxt->nb);
 		rx_ctxt->nb = NULL;
 	}
 }
@@ -356,7 +356,7 @@ static struct net_buf *mcumgr_dummy_process_frag(
 	int rc;
 
 	if (rx_ctxt->nb == NULL) {
-		rx_ctxt->nb = mcumgr_buf_alloc();
+		rx_ctxt->nb = smp_packet_alloc();
 		if (rx_ctxt->nb == NULL) {
 			return NULL;
 		}
@@ -441,7 +441,7 @@ static struct net_buf *mcumgr_dummy_process_frag_outgoing(
 	int rc;
 
 	if (tx_ctxt->nb == NULL) {
-		tx_ctxt->nb = mcumgr_buf_alloc();
+		tx_ctxt->nb = smp_packet_alloc();
 		if (tx_ctxt->nb == NULL) {
 			return NULL;
 		}

@@ -20,7 +20,7 @@
 static void mcumgr_serial_free_rx_ctxt(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 {
 	if (rx_ctxt->nb != NULL) {
-		mcumgr_buf_free(rx_ctxt->nb);
+		smp_packet_free(rx_ctxt->nb);
 		rx_ctxt->nb = NULL;
 	}
 }
@@ -75,7 +75,7 @@ struct net_buf *mcumgr_serial_process_frag(
 	int rc;
 
 	if (rx_ctxt->nb == NULL) {
-		rx_ctxt->nb = mcumgr_buf_alloc();
+		rx_ctxt->nb = smp_packet_alloc();
 		if (rx_ctxt->nb == NULL) {
 			return NULL;
 		}

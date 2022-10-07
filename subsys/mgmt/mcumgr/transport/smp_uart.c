@@ -84,7 +84,7 @@ static int smp_uart_tx_pkt(struct net_buf *nb)
 	int rc;
 
 	rc = uart_mcumgr_send(nb->data, nb->len);
-	mcumgr_buf_free(nb);
+	smp_packet_free(nb);
 
 	return rc;
 }

@@ -183,7 +183,7 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 	int rc;
 
 	rc = mcumgr_serial_tx_pkt(nb->data, nb->len, smp_shell_tx_raw);
-	mcumgr_buf_free(nb);
+	smp_packet_free(nb);
 
 	return rc;
 }
