@@ -1264,13 +1264,32 @@ static bool ascs_codec_config_store(struct bt_data *data, void *user_data)
 	return true;
 }
 
+struct codec_lookup_id_data {
+	uint8_t id;
+	struct bt_codec *codec;
+};
+
+static bool codec_lookup_id(const struct bt_audio_capability *capability, void *user_data)
+{
+	struct codec_lookup_id_data *data = user_data;
+
+	if (capability->codec->id == data->id) {
+		data->codec = capability->codec;
+
+		return false;
+	}
+
+	return true;
+}
+
 static int ascs_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
 			     uint16_t vid, struct net_buf_simple *buf,
 			     uint8_t len, struct bt_codec *codec)
 {
-	struct bt_audio_capability *cap;
-	sys_slist_t *capabilities;
 	struct net_buf_simple ad;
+	struct codec_lookup_id_data lookup_data = {
+		.id = id,
+	};
 
 	if (ep == NULL && codec == NULL) {
 		return -EINVAL;
@@ -1279,8 +1298,9 @@ static int ascs_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
 	BT_DBG("ep %p dir %u codec id 0x%02x cid 0x%04x vid 0x%04x len %u",
 	       ep, ep->dir, id, cid, vid, len);
 
-	capabilities = bt_audio_capability_get(ep->dir);
-	if (capabilities == NULL) {
+	bt_audio_foreach_capability(ep->dir, codec_lookup_id, &lookup_data);
+
+	if (lookup_data.codec == NULL) {
 		return -ENOENT;
 	}
 
@@ -1292,13 +1312,7 @@ static int ascs_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
 	codec->cid = cid;
 	codec->vid = vid;
 	codec->data_count = 0;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(capabilities, cap, _node) {
-		if (codec->id == cap->codec->id) {
-			codec->path_id = cap->codec->path_id;
-			break;
-		}
-	}
+	codec->path_id = lookup_data.codec->path_id;
 
 	if (len == 0) {
 		return 0;
