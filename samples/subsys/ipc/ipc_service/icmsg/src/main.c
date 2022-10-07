@@ -8,6 +8,8 @@
 #include <zephyr/device.h>
 
 #include <zephyr/ipc/ipc_service.h>
+#include <hal/nrf_reset.h>
+#include <string.h>
 
 #include "common.h"
 
@@ -15,7 +17,11 @@
 LOG_MODULE_REGISTER(host, LOG_LEVEL_INF);
 
 
+#define DT_DRV_COMPAT	zephyr_ipc_icmsg
+
 K_SEM_DEFINE(bound_sem, 0, 1);
+static unsigned char expected_message = 'A';
+static size_t expected_len = PACKET_SIZE_START;
 
 static void ep_bound(void *priv)
 {
@@ -26,8 +32,6 @@ static void ep_bound(void *priv)
 static void ep_recv(const void *data, size_t len, void *priv)
 {
 	struct data_packet *packet = (struct data_packet *)data;
-	static unsigned char expected_message = 'A';
-	static size_t expected_len = PACKET_SIZE_START;
 
 	__ASSERT(packet->data[0] == expected_message, "Unexpected message. Expected %c, got %c",
 		expected_message, packet->data[0]);
@@ -115,6 +119,58 @@ int main(void)
 		LOG_ERR("ipc_service_register_endpoint() failure");
 		return ret;
 	}
+
+	k_sem_take(&bound_sem, K_FOREVER);
+
+	ret = send_for_time(&ep, SENDING_TIME_MS);
+	if (ret < 0) {
+		LOG_ERR("send_for_time() failure");
+		return ret;
+	}
+
+	LOG_INF("Wait 500ms. Let net core finish its sends");
+	k_msleep(500);
+
+	LOG_INF("Stop network core");
+	nrf_reset_network_force_off(NRF_RESET, true);
+
+	LOG_INF("Reset IPC service");
+
+	ret = ipc_service_deregister_endpoint(&ep);
+	if (ret != 0) {
+		LOG_ERR("ipc_service_register_endpoint() failure");
+		return ret;
+	}
+
+	/* Reset message and expected message value and len. */
+	expected_message = 'A';
+	expected_len = PACKET_SIZE_START;
+
+	/* Reset bound sem. */
+	ret = k_sem_init(&bound_sem, 0, 1);
+	if (ret != 0) {
+		LOG_ERR("k_sem_init() failure");
+		return ret;
+	}
+
+	uintptr_t tx_shm_size = DT_REG_SIZE(DT_INST_PHANDLE(0, tx_region));
+	uintptr_t tx_shm_addr = DT_REG_ADDR(DT_INST_PHANDLE(0, tx_region));
+	uintptr_t rx_shm_size = DT_REG_SIZE(DT_INST_PHANDLE(0, rx_region));
+	uintptr_t rx_shm_addr = DT_REG_ADDR(DT_INST_PHANDLE(0, rx_region));
+
+	LOG_INF("Clean shared memory");
+
+	memset((void *)tx_shm_addr, 0, tx_shm_size);
+	memset((void *)rx_shm_addr, 0, rx_shm_size);
+
+	ret = ipc_service_register_endpoint(ipc0_instance, &ep, &ep_cfg);
+	if (ret != 0) {
+		LOG_INF("ipc_service_register_endpoint() failure");
+		return ret;
+	}
+
+	LOG_INF("Run network core");
+	nrf_reset_network_force_off(NRF_RESET, false);
 
 	k_sem_take(&bound_sem, K_FOREVER);
 
