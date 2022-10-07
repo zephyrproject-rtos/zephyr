@@ -51,6 +51,14 @@
 	};
 
 	soc {
+		ebu: ebu@58008000 {
+		    compatible = "infineon,xmc4xxx-ebu";
+			reg = <0x58008000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		    status = "disabled";
+		};
+
 		pinctrl: pinctrl@48028000 {
 			compatible = "infineon,xmc4xxx-pinctrl";
 			#address-cells = <1>;

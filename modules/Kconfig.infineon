@@ -19,4 +19,9 @@ config HAS_XMCLIB_FLASH
 	bool
 	help
 	  Enable XMCLIB Flash
+
+config HAS_XMCLIB_EBU
+	bool
+	help
+	  Enable XMCLIB EBU
 endif # HAS_XMCLIB

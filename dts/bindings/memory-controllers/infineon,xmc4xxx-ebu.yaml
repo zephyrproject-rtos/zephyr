@@ -1,0 +1,175 @@
+# Copyright (c) 2022, Schlumberger
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon XMC4XXX external bus unit (EBU).
+
+  The EBU can be used to connect to various types of memory devices such as
+  Asynchronous SRAM, SDRAM and NAND flash. Up to four memory regions are supported
+  and each can have its own timing/device configurations.
+
+  The following properties define the EBU registers outlined in the XMC4XXX reference
+  manual. A large number of configurations are exposed and it is recommended
+  to carefully review the XMC4XXX manual to choose the proper settings for your
+  target device.
+
+  Each of the properties has a macro to simplify setting the values. The bitflags
+  use the same names as defined in the reference manual.
+
+  The EBU has a set of global configuration (i.e. clock, pinctrl, ...) and a per
+  region read/write timing configurations. The dts example below sets up region 2
+  to 16-bit muxed asynchronous type.
+
+  &ebu {
+        pinctrl-0 = <&ebu_p0_2_ad0 &ebu_p0_3_ad1 ...>;
+        pinctrl-names = "default";
+        clk-config = <XMC4XXX_EBU_SET_CLC(1, 0, 3)>;
+        modes-config = <XMC4XXX_EBU_SET_MODCON(1, 0, 0, 3, 0, 0)>;
+        gpio-control-config = <XMC4XXX_EBU_SET_USERCON(0x1ff, 0)>;
+        status = "okay";
+        my-memory-region@2 {
+                reg = <2>;
+                device-type = "Muxed Asynchronous Type";
+                address-select = <XMC4XXX_EBU_SET_ADDRSEL(1, 1, 0)>;
+                bus-read-configuration = <XMC4XXX_EBU_SET_BUSRCON(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0)>;
+                bus-write-configuration = <XMC4XXX_EBU_SET_BUSWCON(0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0)>;
+                bus-read-timing = <XMC4XXX_EBU_SET_BUSRAP(...)>;
+                bus-write-timing = <XMC4XXX_EBU_SET_BUSWAP(...)>;
+        };
+  };
+
+compatible: "infineon,xmc4xxx-ebu"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  clk-config:
+    type: int
+    required: true
+    description: |
+      Configures Clock Control (CLC) register. Controls which clock is used for the EBU and
+      the clock divider. Use XMC4XXX_EBU_SET_CLC(sync, div2, ebudiv).
+
+  modes-config:
+    type: int
+    required: true
+    description: |
+      Configures Modes Configuration (MODCON) register. This mainly sets the arbitration parameters.
+      Also it is used to configure whether address latch enable (ALE) is active high or low and whether SDRAM
+      pins CKE, SDCLKO, CAS, and RAS are in tri-state when the EBU does not own the external bus.
+      Use macro XMC4XXX_EBU_SET_MODCON(sdtri, extlock, arbsync, arbmode, timeoutc, ale).
+
+  gpio-control-config:
+    type: int
+    required: true
+    description: |
+      Configures USERCON register. This register allows the user to free unused gpio pins.
+      Use macro XMC4XXX_EBU_SET_USERCON(addio, advio).
+
+  sdram-control:
+    type: int
+    required: false
+    description: |
+      Configures SDRMCON register.
+      Use macro XMC4XXX_EBU_SET_SDRMCON(sdcmsel, pwr_mode, clkdis, crce, bankm,
+      rowm, crc, crcd, awidth, crp, crsc, crfsh, cras).
+
+  sdram-operation-mode:
+    type: int
+    required: false
+    description: |
+      Configures SDRMOD register.
+      Use macro XMC4XXX_EBU_SDRMOD(xba, xopm, coldstart, opmode, caslat, btyp, burstl).
+
+  sdram-refresh-control:
+    type: int
+    required: false
+    description: |
+      Configures SDRMREF register.
+      Use macro XMC4XXX_EBU_SDRMREF(res_dly, arfsh, selfrex_dly, erfshc, autoselfr,
+      selfrenst, selfrex, selfrexst, refreshr, refreshc).
+
+child-binding:
+  description: |
+    Child device nodes are representing devices connected to the EBU bus.
+
+  properties:
+    reg:
+      type: int
+      required: true
+      description: Selects the region to configure. All the following properties apply to this region.
+
+    device-type:
+      type: string
+      required: true
+      description: Device type.
+      enum:
+        - "Muxed Asynchronous Type"
+        - "Muxed Burst Type"
+        - "NAND Flash"
+        - "Muxed Cellular RAM"
+        - "Demuxed Asynchronous Type"
+        - "Demuxed Burst Type"
+        - "Demuxed Page Mode"
+        - "Demuxed Cellular RAM"
+        - "SDRAM"
+
+    address-select:
+      type: int
+      required: true
+      description: |
+        Configures Address Select Register (ADDRSEL). The external peripherals are
+        accessed using two possible address spaces starting at 0x6x000000- and 0xAx000000-.
+        The former is the main address space which allows code execution. The latter does not allow
+        code execution. This register selects which of the memory regions are enabled. It can
+        also be used to set write protection for the region.
+        Use macro XMC4XXX_EBU_SET_ADDRSEL(regenab, altenab, wprot) to set the register.
+
+    bus-read-configuration:
+      type: int
+      required: true
+      description: |
+        Configures Bus Read Configuration Register (BUSRCON). This register mainly sets
+        burst read configurations. An important parameter is portw, it sets whether the address
+        space of the external device is 16-bit, twin 16-bit, or 32-bit.
+        Note BUSRCON.AGEN also sets the device type. This is handled by the device-type property.
+        Use macro XMC4XXX_EBU_SET_BUSRCON(fetblen, fbbmsel, bfsss, fdbken, bfcmsel, naa, ecse, ebse,
+        dba, waitinv, bcgen, portw, wait, aap).
+
+    bus-write-configuration:
+      type: int
+      required: true
+      description: |
+        Configures Bus Write Configuration Register (BUSWCON). This register mainly sets the
+        burst write configurations. An important parameter is portw, it sets whether the address
+        space of the external device is 16-bit, twin 16-bit, or 32-bit.
+        Note BUSWCON.AGEN also sets the device type. This is handled by the device-type property.
+        Use macro XMC4XXX_EBU_SET_BUSWCON(fetblen, fbbmsel, naa, ecse, ebse, waitinv, bcgen, portw,
+        wait, aap, lockcs)
+
+    bus-read-timing:
+      type: int
+      required: true
+      description: |
+        Configures Bus Read Access Parameters (BUSRAP) register.
+        Use macro XMC4XXX_EBU_SET_BUSRAP(rddtacs, rdrecovc, waitrdc, datac, extclock, extdata, cmddelay,
+        aholdc, addrc).
+
+    bus-write-timing:
+      type: int
+      required: true
+      description: |
+        Configures Bus Write Access Parameters (BUSWAP) register.
+        Use macro XMC4XXX_EBU_SET_BUSWAP(wrdtacs, wrrecovc, waitwrc, datac, extclock, extdata, cmddelay,
+        aholdc, addrc).
