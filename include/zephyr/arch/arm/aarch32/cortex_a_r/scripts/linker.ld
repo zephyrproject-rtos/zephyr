@@ -115,6 +115,9 @@ SECTIONS
     SECTION_PROLOGUE(rom_start,,)
     {
 
+#ifndef CONFIG_XIP
+        z_mapped_start = .;
+#endif
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...). This typically contains the vector
  * table and debug information.
@@ -133,9 +136,6 @@ SECTIONS
     {
         . = ALIGN(_region_min_align);
         __text_region_start = .;
-#ifndef CONFIG_XIP
-        z_mapped_start = .;
-#endif
 
 #include <zephyr/linker/kobject-text.ld>
 
