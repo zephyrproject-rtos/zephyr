@@ -39,6 +39,14 @@
 	};
 
 	soc {
+		ebu: ebu@58008000 {
+			compatible = "infineon,xmc4xxx-ebu";
+			reg = <0x58008000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		intc: eru@40044000 {
 			compatible = "infineon,xmc4xxx-intc";
 			reg = <0x40044000 0xff>, <0x50004800 0xff>;

@@ -40,4 +40,9 @@ config HAS_XMCLIB_SPI
 	help
 	  Enable XMCLIB SPI
 
+config HAS_XMCLIB_EBU
+	bool
+	help
+	  Enable XMCLIB EBU
+
 endif # HAS_XMCLIB

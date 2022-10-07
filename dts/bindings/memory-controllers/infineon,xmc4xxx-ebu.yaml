@@ -1,0 +1,220 @@
+# Copyright (c) 2022, Schlumberger
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon XMC4XXX external bus unit (EBU).
+
+  The EBU is used to connect to various types of memory devices such as
+  Asynchronous SRAM, SDRAM and NAND flash. Up to four memory regions are supported
+  and each can have its own timing/device configurations.
+
+  The EBU supports up to four devices, where each one is enabled via chip select line.
+  Each device has a separate executable address space. The address space for the executable
+  regions are
+
+  Region 0: 0x60000000 - 0x63ffffff
+  Region 1: 0x64000000 - 0x67ffffff
+  Region 2: 0x68000000 - 0x6bffffff
+  Region 3: 0x6c000000 - 0x6fffffff
+
+  An alternative address space which does not allow executing instructions is
+  available at
+
+  Region 0: 0xa0000000 - 0xa3ffffff
+  Region 1: 0xa4000000 - 0xa7ffffff
+  Region 2: 0xa8000000 - 0xabffffff
+  Region 3: 0xac000000 - 0xafffffff
+
+  The alternative or standard address space can be enabled using options below.
+
+  The EBU has a set of global configuration (i.e. clock, pinctrl, ...) and a per
+  region read/write timing configurations. The dts example below sets up region 0
+  to use SDRAM (IS45S16400F) with the Infineon XMC4800 automation board.
+
+  &ebu {
+      pinctrl-0 = <&ebu_p0_2_ad0 &ebu_p0_3_ad1 ... >;
+      pinctrl-names = "default";
+      clk-config = <XMC4XXX_EBU_SET_CLC(0, 1, 0)>;
+      modes-config = <XMC4XXX_EBU_SET_MODCON(0, 0, 0, 3, 0, 0)>;
+      gpio-control-config = <XMC4XXX_EBU_SET_USERCON(0x1ff, 0)>;
+      sdram-control = <XMC4XXX_EBU_SET_SDRMCON(0, 0, 0, 0, 2, 1, 5, 1, 1, 1, 0, 0, 0)>;
+      sdram-operation-mode = <XMC4XXX_EBU_SDRMOD(0, 0, 1, 0, 3, 0)>;
+      sdram-refresh-control = <XMC4XXX_EBU_SDRMREF(7, 1, 255, 0, 1, 1, 1, 2)>;
+      ebu_sdram@0 {
+              reg = <0>;
+              device-type = "SDRAM";
+              address-bus-width = "16-bit";
+              region-enable;
+              alternate-region-enable;
+              bus-read-config = <XMC4XXX_EBU_SET_BUSRCON(3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0)>;
+              bus-read-timing = <XMC4XXX_EBU_SET_BUSRAP(15, 7, 4, 0, 0, 0, 15, 15, 15)>;
+              bus-write-config = <XMC4XXX_EBU_SET_BUSWCON(3, 0, 0, 0, 0, 0, 1, 0, 0, 0)>;
+              bus-write-timing = <XMC4XXX_EBU_SET_BUSWAP(15, 7, 4, 0, 0, 0, 15, 15, 15)>;
+      };
+      status = "okay";
+  };
+
+  The memory region is accessible by defining the node
+
+  sdram1: sdram@60000000 {
+      compatible = "zephyr,memory-region", "mmio-sram";
+      device_type = "memory";
+      reg = <0x60000000 DT_SIZE_M(8)>;
+      zephyr,memory-region = "SDRAM1";
+  };
+
+  The following properties define the EBU registers outlined in the XMC4XXX reference
+  manual. A large number of configurations are exposed and it is recommended
+  to carefully review the XMC4XXX manual to choose the proper settings for your
+  target device.
+
+  Each of the properties has a macro to simplify setting the values. The bitflags
+  use the same names as defined in the reference manual.
+
+compatible: "infineon,xmc4xxx-ebu"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  clk-config:
+    type: int
+    required: true
+    description: |
+      Configures Clock Control (CLC) register. Controls which clock is used for the EBU and
+      the clock divider. Use XMC4XXX_EBU_SET_CLC(sync, div2, ebudiv).
+
+  modes-config:
+    type: int
+    required: true
+    description: |
+      Sets Modes Configuration (MODCON) register. This mainly sets the arbitration parameters.
+      Also it is used to configure whether address latch enable (ALE) is active high or low and
+      whether SDRAM pins CKE, SDCLKO, CAS, and RAS are in tri-state when the EBU does not own
+      the external bus.
+      Use macro XMC4XXX_EBU_SET_MODCON(sdtri, extlock, arbsync, arbmode, timeoutc, ale).
+
+  gpio-control-config:
+    type: int
+    required: true
+    description: |
+      Configures USERCON register. This register allows the user to free unused gpio pins.
+      Use macro XMC4XXX_EBU_SET_USERCON(addio, advio).
+
+  sdram-control:
+    type: int
+    description: |
+      Configures SDRMCON register.
+      Use macro XMC4XXX_EBU_SET_SDRMCON(sdcmsel, pwr_mode, clkdis, crce, bankm,
+      rowm, crc, crcd, awidth, crp, crsc, crfsh, cras).
+
+  sdram-operation-mode:
+    type: int
+    description: |
+      Configures SDRMOD register.
+      Use macro XMC4XXX_EBU_SDRMOD(xba, xopm, coldstart, opmode, caslat, burstl).
+
+  sdram-refresh-control:
+    type: int
+    description: |
+      Configures SDRMREF register.
+      Use macro XMC4XXX_EBU_SDRMREF(res_dly, arfsh, selfrex_dly, erfshc, autoselfr,
+      selfrex, refreshr, refreshc).
+
+child-binding:
+  description: |
+    Child device nodes are representing devices connected to the EBU bus.
+
+  properties:
+    reg:
+      type: int
+      required: true
+      description: |
+        Selects the region to configure. All the following properties apply to this region.
+
+    infineon,device-type:
+      type: string
+      required: true
+      description: Device type.
+      enum:
+        - "Muxed Asynchronous Type"
+        - "Muxed Burst Type"
+        - "NAND Flash"
+        - "Muxed Cellular RAM"
+        - "Demuxed Asynchronous Type"
+        - "Demuxed Burst Type"
+        - "Demuxed Page Mode"
+        - "Demuxed Cellular RAM"
+        - "SDRAM"
+
+    infineon,address-bus-width:
+      type: string
+      required: true
+      description: Address bus width configuration.
+      enum:
+        - "16-bit"
+        - "Twin-16-bit"
+        - "32-bit"
+
+    infineon,region-enable:
+      type: boolean
+      description: |
+        The driver supports an executable and a non-executable address space, both pointing
+        to the same physical memory. This option enables the executable address space for
+        the region at 0x6X000000 - 0x6Xffffff, where X will depend on the region selected.
+
+    infineon,alternate-region-enable:
+      type: boolean
+      description: |
+        The driver supports an executable and a non-executable address space, both pointing
+        to the same physical memory. This option enables the non-executable address space for
+        the region at 0xaX000000 - 0xaXffffff, where X will depend on the region selected.
+
+    infineon,write-protect-enable:
+      type: boolean
+      description: Enables write protection for the address space.
+
+    infineon,bus-read-config:
+      type: int
+      required: true
+      description: |
+        Sets Bus Read Configuration Register (BUSRCON). This register mainly sets
+        burst read configurations. Note that BUSRCON.AGEN and BUSRCON.PORTW are set
+        using device-type and address-bus-width properties, respectively.
+        Use macro XMC4XXX_EBU_SET_BUSRCON(fetblen, fbbmsel, bfsss, fdbken, bfcmsel, naa, ecse, ebse,
+        dba, waitinv, bcgen, wait, aap).
+
+    infineon,bus-write-config:
+      type: int
+      required: true
+      description: |
+        Sets Bus Write Configuration Register (BUSWCON). This register mainly sets the
+        burst write configurations. Note that BUSWCON.AGEN is set using device-type property.
+        Use macro XMC4XXX_EBU_SET_BUSWCON(fetblen, fbbmsel, naa, ecse, ebse, waitinv, bcgen,
+        wait, aap, lockcs).
+
+    infineon,bus-read-timing:
+      type: int
+      required: true
+      description: |
+        Configures Bus Read Access Parameters (BUSRAP) register.
+        Use macro XMC4XXX_EBU_SET_BUSRAP(rddtacs, rdrecovc, waitrdc, datac, extclock, extdata,
+        cmddelay, aholdc, addrc).
+
+    infineon,bus-write-timing:
+      type: int
+      required: true
+      description: |
+        Configures Bus Write Access Parameters (BUSWAP) register.
+        Use macro XMC4XXX_EBU_SET_BUSWAP(wrdtacs, wrrecovc, waitwrc, datac, extclock, extdata,
+        cmddelay, aholdc, addrc).

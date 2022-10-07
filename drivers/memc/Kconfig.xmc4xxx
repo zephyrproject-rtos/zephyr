@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Schlumberger
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_XMC4XXX_EBU
+	bool "XMC4XXX External Bus Unit"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_EBU_ENABLED
+	help
+	  Enable XMC4XXX External Bus Unit.
