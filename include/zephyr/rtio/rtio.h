@@ -421,7 +421,7 @@ static inline void rtio_sqe_prep_write(struct rtio_sqe *sqe,
 	IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM,							   \
 		   (static K_SEM_DEFINE(_submit_sem_##name, 0, K_SEM_MAX_LIMIT)))		   \
 	IF_ENABLED(CONFIG_RTIO_CONSUME_SEM,							   \
-		   (static K_SEM_DEFINE(_consume_sem_##name, 0, 1)))				   \
+		   (static K_SEM_DEFINE(_consume_sem_##name, 0, K_SEM_MAX_LIMIT)))		   \
 	static RTIO_SQ_DEFINE(_sq_##name, sq_sz);						   \
 	static RTIO_CQ_DEFINE(_cq_##name, cq_sz);						   \
 	STRUCT_SECTION_ITERABLE(rtio, name) = {							   \
@@ -515,7 +515,15 @@ static inline void rtio_sqe_drop_all(struct rtio *r)
  */
 static inline struct rtio_cqe *rtio_cqe_consume(struct rtio *r)
 {
+#ifdef CONFIG_RTIO_CONSUME_SEM
+	if (k_sem_take(r->consume_sem, K_NO_WAIT) == 0) {
+		return rtio_spsc_consume(r->cq);
+	} else {
+		return NULL;
+	}
+#else
 	return rtio_spsc_consume(r->cq);
+#endif
 }
 
 /**
@@ -532,21 +540,18 @@ static inline struct rtio_cqe *rtio_cqe_consume_block(struct rtio *r)
 {
 	struct rtio_cqe *cqe;
 
-	/* TODO is there a better way? reset this in submit? */
 #ifdef CONFIG_RTIO_CONSUME_SEM
-	k_sem_reset(r->consume_sem);
-#endif
+	k_sem_take(r->consume_sem, K_FOREVER);
+
+	cqe = rtio_spsc_consume(r->cq);
+#else
 	cqe = rtio_spsc_consume(r->cq);
 
 	while (cqe == NULL) {
 		cqe = rtio_spsc_consume(r->cq);
 
-#ifdef CONFIG_RTIO_CONSUME_SEM
-		k_sem_take(r->consume_sem, K_FOREVER);
-#else
-		k_yield();
-#endif
 	}
+#endif
 
 	return cqe;
 }
