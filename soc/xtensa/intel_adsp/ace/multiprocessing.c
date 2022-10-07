@@ -16,7 +16,8 @@
 
 static void ipc_isr(void *arg)
 {
-	IDC[arch_proc_id()].agents[0].ipc.tdr = BIT(31); /* clear BUSY bit */
+	IDC[arch_proc_id()].agents[0].ipc.tdr = BIT(31); /* clear interrupt source */
+	IDC[arch_proc_id()].agents[0].ipc.tda = 0; /* clear BUSY bit */
 #ifdef CONFIG_SMP
 	void z_sched_ipi(void);
 	z_sched_ipi();
