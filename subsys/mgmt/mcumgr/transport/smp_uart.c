@@ -74,11 +74,6 @@ static void smp_uart_rx_frag(struct uart_mcumgr_rx_buf *rx_buf)
 	k_work_submit(&smp_uart_work);
 }
 
-static uint16_t smp_uart_get_mtu(const struct net_buf *nb)
-{
-	return CONFIG_MCUMGR_SMP_UART_MTU;
-}
-
 static int smp_uart_tx_pkt(struct net_buf *nb)
 {
 	int rc;
@@ -94,7 +89,7 @@ static int smp_uart_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	zephyr_smp_transport_init(&smp_uart_transport, smp_uart_tx_pkt,
-				  smp_uart_get_mtu, NULL, NULL);
+				  NULL, NULL);
 	uart_mcumgr_register(smp_uart_rx_frag);
 
 	return 0;

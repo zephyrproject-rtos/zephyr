@@ -157,11 +157,6 @@ void smp_shell_process(struct smp_shell_data *data)
 	}
 }
 
-static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
-{
-	return CONFIG_MCUMGR_SMP_SHELL_MTU;
-}
-
 static int smp_shell_tx_raw(const void *data, int len)
 {
 	const struct shell *const sh = shell_backend_uart_get_ptr();
@@ -191,7 +186,7 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 int smp_shell_init(void)
 {
 	zephyr_smp_transport_init(&smp_shell_transport, smp_shell_tx_pkt,
-				  smp_shell_get_mtu, NULL, NULL);
+				  NULL, NULL);
 
 	return 0;
 }

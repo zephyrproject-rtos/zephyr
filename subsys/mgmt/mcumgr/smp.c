@@ -127,13 +127,11 @@ zephyr_smp_handle_reqs(struct k_work *work)
 void
 zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
 			  zephyr_smp_transport_out_fn *output_func,
-			  zephyr_smp_transport_get_mtu_fn *get_mtu_func,
 			  zephyr_smp_transport_ud_copy_fn *ud_copy_func,
 			  zephyr_smp_transport_ud_free_fn *ud_free_func)
 {
 	*zst = (struct zephyr_smp_transport) {
 		.zst_output = output_func,
-		.zst_get_mtu = get_mtu_func,
 		.zst_ud_copy = ud_copy_func,
 		.zst_ud_free = ud_free_func,
 	};

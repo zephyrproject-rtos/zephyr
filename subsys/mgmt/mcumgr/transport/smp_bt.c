@@ -516,8 +516,7 @@ static int smp_bt_init(const struct device *dev)
 	}
 
 	zephyr_smp_transport_init(&smp_bt_transport, smp_bt_tx_pkt,
-				  smp_bt_get_mtu, smp_bt_ud_copy,
-				  smp_bt_ud_free);
+				  smp_bt_ud_copy, smp_bt_ud_free);
 	return 0;
 }
 

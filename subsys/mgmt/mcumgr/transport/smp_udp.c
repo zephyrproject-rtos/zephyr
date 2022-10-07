@@ -103,13 +103,6 @@ static int smp_udp6_tx(struct net_buf *nb)
 }
 #endif
 
-static uint16_t smp_udp_get_mtu(const struct net_buf *nb)
-{
-	ARG_UNUSED(nb);
-
-	return CONFIG_MCUMGR_SMP_UDP_MTU;
-}
-
 static int smp_udp_ud_copy(struct net_buf *dst, const struct net_buf *src)
 {
 	struct sockaddr *src_ud = net_buf_user_data(src);
@@ -165,14 +158,12 @@ static int smp_udp_init(const struct device *dev)
 
 #ifdef CONFIG_MCUMGR_SMP_UDP_IPV4
 	zephyr_smp_transport_init(&configs.ipv4.smp_transport,
-				  smp_udp4_tx, smp_udp_get_mtu,
-				  smp_udp_ud_copy, NULL);
+				  smp_udp4_tx,smp_udp_ud_copy, NULL);
 #endif
 
 #ifdef CONFIG_MCUMGR_SMP_UDP_IPV6
 	zephyr_smp_transport_init(&configs.ipv6.smp_transport,
-				  smp_udp6_tx, smp_udp_get_mtu,
-				  smp_udp_ud_copy, NULL);
+				  smp_udp6_tx, smp_udp_ud_copy, NULL);
 #endif
 
 	return MGMT_ERR_EOK;

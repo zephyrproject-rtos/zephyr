@@ -148,11 +148,6 @@ static void smp_dummy_rx_frag(struct uart_mcumgr_rx_buf *rx_buf)
 	k_work_submit(&smp_dummy_work);
 }
 
-static uint16_t smp_dummy_get_mtu(const struct net_buf *nb)
-{
-	return CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE;
-}
-
 int dummy_mcumgr_send_raw(const void *data, int len)
 {
 	uint16_t data_size =
@@ -190,7 +185,7 @@ static int smp_dummy_init(const struct device *dev)
 	k_sem_init(&smp_data_ready_sem, 0, 1);
 
 	zephyr_smp_transport_init(&smp_dummy_transport, smp_dummy_tx_pkt_int,
-				  smp_dummy_get_mtu, NULL, NULL);
+				  NULL, NULL);
 	dummy_mgumgr_recv_cb = smp_dummy_rx_frag;
 
 	return 0;
