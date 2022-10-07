@@ -183,7 +183,8 @@ void z_log_vprintk(const char *fmt, va_list ap)
 	}
 
 	z_log_msg_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, NULL,
-				   LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, 0,
+				   LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0,
+				   Z_LOG_MSG2_CBPRINTF_FLAGS(0),
 				   fmt, ap);
 }
 
