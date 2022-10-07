@@ -24,6 +24,9 @@ Changes in this release
   added to enable the PAST implementation rather than
   :kconfig:option:`CONFIG_BT_CONN`.
 
+- Starting from this release ``zephyr-`` prefixed tags won't be created
+  anymore. The project will continue using ``v`` tags, for example ``v3.3.0``.
+
 Removed APIs in this release
 ============================
 
