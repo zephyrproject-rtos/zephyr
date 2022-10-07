@@ -206,20 +206,6 @@ void mgmt_unregister_group(struct mgmt_group *group);
 const struct mgmt_handler *mgmt_find_handler(uint16_t group_id, uint16_t command_id);
 
 /**
- * @brief Byte-swaps an mcumgr header from network to host byte order.
- *
- * @param hdr The mcumgr header to byte-swap.
- */
-void mgmt_ntoh_hdr(struct mgmt_hdr *hdr);
-
-/**
- * @brief Byte-swaps an mcumgr header from host to network byte order.
- *
- * @param hdr The mcumgr header to byte-swap.
- */
-void mgmt_hton_hdr(struct mgmt_hdr *hdr);
-
-/**
  * @brief Register event callback function.
  *
  * @param cb Callback function.

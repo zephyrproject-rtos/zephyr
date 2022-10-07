@@ -1,11 +1,13 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /** SMP - Simple Management Protocol. */
 
+#include <zephyr/sys/byteorder.h>
 #include <assert.h>
 #include <string.h>
 
@@ -53,28 +55,28 @@ smp_rsp_op(uint8_t req_op)
 	}
 }
 
-static void
-smp_make_rsp_hdr(const struct mgmt_hdr *req_hdr, struct mgmt_hdr *rsp_hdr, size_t len)
+static void smp_make_rsp_hdr(const struct mgmt_hdr *req_hdr, struct mgmt_hdr *rsp_hdr, size_t len)
 {
 	*rsp_hdr = (struct mgmt_hdr) {
-		.nh_len = len,
+		.nh_len = sys_cpu_to_be16(req_hdr->nh_len),
 		.nh_flags = 0,
 		.nh_op = smp_rsp_op(req_hdr->nh_op),
-		.nh_group = req_hdr->nh_group,
+		.nh_group = sys_cpu_to_be16(req_hdr->nh_group),
 		.nh_seq = req_hdr->nh_seq,
 		.nh_id = req_hdr->nh_id,
 	};
-	mgmt_hton_hdr(rsp_hdr);
 }
 
-static int
-smp_read_hdr(const struct net_buf *nb, struct mgmt_hdr *dst_hdr)
+static int smp_read_hdr(const struct net_buf *nb, struct mgmt_hdr *dst_hdr)
 {
 	if (nb->len < sizeof(*dst_hdr)) {
 		return MGMT_ERR_EINVAL;
 	}
 
 	memcpy(dst_hdr, nb->data, sizeof(*dst_hdr));
+	dst_hdr->nh_len = sys_be16_to_cpu(dst_hdr->nh_len);
+	dst_hdr->nh_group = sys_be16_to_cpu(dst_hdr->nh_group);
+
 	return 0;
 }
 
@@ -305,7 +307,6 @@ smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		} else {
 			valid_hdr = true;
 		}
-		mgmt_ntoh_hdr(&req_hdr);
 		/* Does buffer contain whole message? */
 		if (req->len < (req_hdr.nh_len + MGMT_HDR_SIZE)) {
 			rc = MGMT_ERR_ECORRUPT;
