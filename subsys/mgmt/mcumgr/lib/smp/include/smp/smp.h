@@ -49,17 +49,17 @@ struct cbor_nb_writer {
 /**
  * @brief Allocates a net_buf for holding an mcumgr request or response.
  *
- * @return                      A newly-allocated buffer net_buf on success;
- *                              NULL on failure.
+ * @return      A newly-allocated buffer net_buf on success;
+ *              NULL on failure.
  */
-struct net_buf *mcumgr_buf_alloc(void);
+struct net_buf *smp_packet_alloc(void);
 
 /**
  * @brief Frees an mcumgr net_buf
  *
- * @param nb                    The net_buf to free.
+ * @param nb    The net_buf to free.
  */
-void mcumgr_buf_free(struct net_buf *nb);
+void smp_packet_free(struct net_buf *nb);
 
 /**
  * @brief Decodes, encodes, and transmits SMP packets.

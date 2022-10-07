@@ -33,6 +33,19 @@ static const struct k_work_queue_config smp_work_queue_config = {
 	.name = "mcumgr smp"
 };
 
+NET_BUF_POOL_DEFINE(pkt_pool, CONFIG_MCUMGR_BUF_COUNT, CONFIG_MCUMGR_BUF_SIZE,
+		    CONFIG_MCUMGR_BUF_USER_DATA_SIZE, NULL);
+
+struct net_buf *smp_packet_alloc(void)
+{
+	return net_buf_alloc(&pkt_pool, K_NO_WAIT);
+}
+
+void smp_packet_free(struct net_buf *nb)
+{
+	net_buf_unref(nb);
+}
+
 /**
  * @brief Allocates a response buffer.
  *
@@ -52,7 +65,7 @@ void *smp_alloc_rsp(const void *req, void *arg)
 
 	req_nb = req;
 
-	rsp_nb = mcumgr_buf_alloc();
+	rsp_nb = smp_packet_alloc();
 	if (rsp_nb == NULL) {
 		return NULL;
 	}
@@ -80,7 +93,7 @@ void smp_free_buf(void *buf, void *arg)
 		smpt->ud_free(net_buf_user_data((struct net_buf *)buf));
 	}
 
-	mcumgr_buf_free(buf);
+	smp_packet_free(buf);
 }
 
 /**

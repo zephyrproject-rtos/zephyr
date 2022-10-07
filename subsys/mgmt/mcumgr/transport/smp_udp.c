@@ -77,7 +77,7 @@ static int smp_udp4_tx(struct net_buf *nb)
 		ret = MGMT_ERR_EOK;
 	}
 
-	mcumgr_buf_free(nb);
+	smp_packet_free(nb);
 
 	return ret;
 }
@@ -97,7 +97,7 @@ static int smp_udp6_tx(struct net_buf *nb)
 		ret = MGMT_ERR_EOK;
 	}
 
-	mcumgr_buf_free(nb);
+	smp_packet_free(nb);
 
 	return ret;
 }
@@ -142,7 +142,7 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 			struct net_buf *nb;
 
 			/* store sender address in user data for reply */
-			nb = mcumgr_buf_alloc();
+			nb = smp_packet_alloc();
 			if (!nb) {
 				LOG_ERR("Failed to allocate mcumgr buffer");
 				/* No free space, drop smp frame */
