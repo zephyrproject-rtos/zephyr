@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2022 Caspar Friedrich <c.s.w.friedrich@gmail.com>
+ * Copyright (c) 2023 Caspar Friedrich <c.s.w.friedrich@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_W1_W1_DS248X_H_
-#define ZEPHYR_DRIVERS_W1_W1_DS248X_H_
+#ifndef ZEPHYR_DRIVERS_W1_W1_DS2482_84_H_
+#define ZEPHYR_DRIVERS_W1_W1_DS2482_84_H_
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
@@ -75,14 +75,14 @@
 /*
  * Channel Selection Codes (read back values), DS2482-800 only
  */
-#define CHSL_IO0_RB 0xb8
-#define CHSL_IO1_RB 0xb1
-#define CHSL_IO2_RB 0xaa
-#define CHSL_IO3_RB 0xa3
-#define CHSL_IO4_RB 0x9c
-#define CHSL_IO5_RB 0x95
-#define CHSL_IO6_RB 0x8e
-#define CHSL_IO7_RB 0x87
+#define CHSL_RB_IO0 0xb8
+#define CHSL_RB_IO1 0xb1
+#define CHSL_RB_IO2 0xaa
+#define CHSL_RB_IO3 0xa3
+#define CHSL_RB_IO4 0x9c
+#define CHSL_RB_IO5 0x95
+#define CHSL_RB_IO6 0x8e
+#define CHSL_RB_IO7 0x87
 
 /*
  * Port Configuration Register, DS2484 only
@@ -102,7 +102,7 @@
 #define BIT_CLR_msk 0
 #define BIT_SET_msk BIT(7)
 
-static inline int ds248x_write(const struct i2c_dt_spec *spec, uint8_t cmd, uint8_t *data)
+static inline int ds2482_84_write(const struct i2c_dt_spec *spec, uint8_t cmd, const uint8_t *data)
 {
 	int ret;
 
@@ -116,7 +116,7 @@ static inline int ds248x_write(const struct i2c_dt_spec *spec, uint8_t cmd, uint
 	return 0;
 }
 
-static inline int ds248x_read(const struct i2c_dt_spec *spec, uint8_t rp, uint8_t *reg)
+static inline int ds2482_84_read(const struct i2c_dt_spec *spec, uint8_t rp, uint8_t *reg)
 {
 	int ret;
 
@@ -135,7 +135,7 @@ static inline int ds248x_read(const struct i2c_dt_spec *spec, uint8_t rp, uint8_
 	case REG_DATA:
 		__fallthrough;
 	case REG_STATUS:
-		ret = ds248x_write(spec, CMD_SRP, &rp);
+		ret = ds2482_84_write(spec, CMD_SRP, &rp);
 		if (ret < 0) {
 			return ret;
 		}
@@ -152,19 +152,19 @@ static inline int ds248x_read(const struct i2c_dt_spec *spec, uint8_t rp, uint8_
 	return 0;
 }
 
-static inline int ds248x_reset_bus(const struct i2c_dt_spec *spec)
+static inline int ds2482_84_reset_bus(const struct i2c_dt_spec *spec)
 {
 	int ret;
 
 	uint8_t reg;
 
-	ret = ds248x_write(spec, CMD_1WRS, NULL);
+	ret = ds2482_84_write(spec, CMD_1WRS, NULL);
 	if (ret < 0) {
 		return ret;
 	}
 
 	do {
-		ret = ds248x_read(spec, REG_NONE, &reg);
+		ret = ds2482_84_read(spec, REG_NONE, &reg);
 		if (ret < 0) {
 			return ret;
 		}
@@ -173,19 +173,19 @@ static inline int ds248x_reset_bus(const struct i2c_dt_spec *spec)
 	return reg & STATUS_PPD_msk ? 1 : 0;
 }
 
-static inline int ds248x_reset_device(const struct i2c_dt_spec *spec)
+static inline int ds2482_84_reset_device(const struct i2c_dt_spec *spec)
 {
 	int ret;
 
 	uint8_t reg;
 
-	ret = ds248x_write(spec, CMD_DRST, NULL);
+	ret = ds2482_84_write(spec, CMD_DRST, NULL);
 	if (ret < 0) {
 		return ret;
 	}
 
 	do {
-		ret = ds248x_read(spec, REG_NONE, &reg);
+		ret = ds2482_84_read(spec, REG_NONE, &reg);
 		if (ret < 0) {
 			return ret;
 		}
@@ -194,60 +194,56 @@ static inline int ds248x_reset_device(const struct i2c_dt_spec *spec)
 	return 0;
 }
 
-static int ds248x_single_bit(const struct i2c_dt_spec *spec, uint8_t bit_msk)
+static inline int ds2482_84_single_bit(const struct i2c_dt_spec *spec, uint8_t bit_msk)
 {
 	int ret;
 
 	uint8_t reg;
 
-	ret = ds248x_write(spec, CMD_1WSB, &bit_msk);
+	ret = ds2482_84_write(spec, CMD_1WSB, &bit_msk);
 	if (ret < 0) {
 		return ret;
 	}
 
 	do {
-		ret = ds248x_read(spec, REG_NONE, &reg);
+		ret = ds2482_84_read(spec, REG_NONE, &reg);
 		if (ret < 0) {
 			return ret;
 		}
 	} while (reg & STATUS_1WB_msk);
 
-	return reg & STATUS_SBR_msk;
+	return reg & STATUS_SBR_msk ? 1 : 0;
 }
 
-static inline int ds248x_read_bit(const struct i2c_dt_spec *spec)
+static inline int ds2482_84_read_bit(const struct i2c_dt_spec *spec)
 {
-	int ret = ds248x_single_bit(spec, BIT_SET_msk);
-
-	return ret > 1 ? 1 : ret;
+	return ds2482_84_single_bit(spec, BIT_SET_msk);
 }
 
-static inline int ds248x_write_bit(const struct i2c_dt_spec *spec, bool bit)
+static inline int ds2482_84_write_bit(const struct i2c_dt_spec *spec, bool bit)
 {
-	int ret = ds248x_single_bit(spec, bit ? BIT_SET_msk : BIT_CLR_msk);
-
-	return ret > 0 ? 0 : ret;
+	return ds2482_84_single_bit(spec, bit ? BIT_SET_msk : BIT_CLR_msk);
 }
 
-static inline int ds248x_read_byte(const struct i2c_dt_spec *spec)
+static inline int ds2482_84_read_byte(const struct i2c_dt_spec *spec)
 {
 	int ret;
 
 	uint8_t reg;
 
-	ret = ds248x_write(spec, CMD_1WRB, NULL);
+	ret = ds2482_84_write(spec, CMD_1WRB, NULL);
 	if (ret < 0) {
 		return ret;
 	}
 
 	do {
-		ret = ds248x_read(spec, REG_NONE, &reg);
+		ret = ds2482_84_read(spec, REG_NONE, &reg);
 		if (ret < 0) {
 			return ret;
 		}
 	} while (reg & STATUS_1WB_msk);
 
-	ret = ds248x_read(spec, REG_DATA, &reg);
+	ret = ds2482_84_read(spec, REG_DATA, &reg);
 	if (ret < 0) {
 		return ret;
 	}
@@ -255,19 +251,19 @@ static inline int ds248x_read_byte(const struct i2c_dt_spec *spec)
 	return reg;
 }
 
-static inline int ds248x_write_byte(const struct i2c_dt_spec *spec, uint8_t byte)
+static inline int ds2482_84_write_byte(const struct i2c_dt_spec *spec, uint8_t byte)
 {
 	int ret;
 
 	uint8_t reg;
 
-	ret = ds248x_write(spec, CMD_1WWB, &byte);
+	ret = ds2482_84_write(spec, CMD_1WWB, &byte);
 	if (ret < 0) {
 		return ret;
 	}
 
 	do {
-		ret = ds248x_read(spec, REG_NONE, &reg);
+		ret = ds2482_84_read(spec, REG_NONE, &reg);
 		if (ret < 0) {
 			return ret;
 		}
@@ -276,7 +272,7 @@ static inline int ds248x_write_byte(const struct i2c_dt_spec *spec, uint8_t byte
 	return 0;
 }
 
-static inline int ds248x_write_config(const struct i2c_dt_spec *spec, uint8_t cfg)
+static inline int ds2482_84_write_config(const struct i2c_dt_spec *spec, uint8_t cfg)
 {
 	int ret;
 
@@ -286,12 +282,12 @@ static inline int ds248x_write_config(const struct i2c_dt_spec *spec, uint8_t cf
 		return -EINVAL;
 	}
 
-	ret = ds248x_write(spec, CMD_WCFG, &reg);
+	ret = ds2482_84_write(spec, CMD_WCFG, &reg);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = ds248x_read(spec, REG_NONE, &reg);
+	ret = ds2482_84_read(spec, REG_NONE, &reg);
 	if (ret < 0) {
 		return ret;
 	}
@@ -299,4 +295,4 @@ static inline int ds248x_write_config(const struct i2c_dt_spec *spec, uint8_t cf
 	return (reg == cfg) ? 0 : -EIO;
 }
 
-#endif /* ZEPHYR_DRIVERS_W1_W1_DS248X_H_ */
+#endif /* ZEPHYR_DRIVERS_W1_W1_DS2482_84_H_ */
