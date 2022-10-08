@@ -755,17 +755,13 @@ static void add_thread_timeout(struct k_thread *thread, k_timeout_t timeout)
 	}
 }
 
-static void pend(struct k_thread *thread, _wait_q_t *wait_q,
-		 k_timeout_t timeout)
+static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
+			k_timeout_t timeout)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(wait_q == NULL || arch_mem_coherent(wait_q));
 #endif
-
-	LOCKED(&sched_spinlock) {
-		add_to_waitq_locked(thread, wait_q);
-	}
-
+	add_to_waitq_locked(thread, wait_q);
 	add_thread_timeout(thread, timeout);
 }
 
@@ -773,7 +769,9 @@ void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 		   k_timeout_t timeout)
 {
 	__ASSERT_NO_MSG(thread == _current || is_thread_dummy(thread));
-	pend(thread, wait_q, timeout);
+	LOCKED(&sched_spinlock) {
+		pend_locked(thread, wait_q, timeout);
+	}
 }
 
 static inline void unpend_thread_no_timeout(struct k_thread *thread)
@@ -815,7 +813,12 @@ void z_thread_timeout(struct _timeout *timeout)
 
 int z_pend_curr_irqlock(uint32_t key, _wait_q_t *wait_q, k_timeout_t timeout)
 {
-	pend(_current, wait_q, timeout);
+	/* This is a legacy API for pre-switch architectures and isn't
+	 * correctly synchronized for multi-cpu use
+	 */
+	__ASSERT_NO_MSG(!IS_ENABLED(CONFIG_SMP));
+
+	pend_locked(_current, wait_q, timeout);
 
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
@@ -838,8 +841,20 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
 #endif
-	pend(_current, wait_q, timeout);
-	return z_swap(lock, key);
+	__ASSERT_NO_MSG(sizeof(sched_spinlock) == 0 || lock != &sched_spinlock);
+
+	/* We do a "lock swap" prior to calling z_swap(), such that
+	 * the caller's lock gets released as desired.  But we ensure
+	 * that we hold the scheduler lock and leave local interrupts
+	 * masked until we reach the context swich.  z_swap() itself
+	 * has similar code; the duplication is because it's a legacy
+	 * API that doesn't expect to be called with scheduler lock
+	 * held.
+	 */
+	(void) k_spin_lock(&sched_spinlock);
+	pend_locked(_current, wait_q, timeout);
+	k_spin_release(lock);
+	return z_swap(&sched_spinlock, key);
 }
 
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
