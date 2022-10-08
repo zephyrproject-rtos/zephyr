@@ -19,6 +19,14 @@ config SPI_ASYNC
 	help
 	  This option enables the asynchronous API calls.
 
+config SPI_RTIO
+	bool "RTIO support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select RTIO
+	help
+	  This option enables the RTIO API calls. RTIO support is
+	  experimental as the API itself is unstable.
+
 config SPI_SLAVE
 	bool "Slave support [EXPERIMENTAL]"
 	select EXPERIMENTAL
