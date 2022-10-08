@@ -64,6 +64,9 @@ ZTEST(timer_behavior, test_periodic_behavior)
 
 	k_timer_init(&periodic_timer, periodic_fn, NULL);
 
+	/* Tick align */
+	k_usleep(1);
+
 #ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
 	periodic_start = k_cycle_get_64();
 #else
