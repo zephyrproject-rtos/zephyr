@@ -2,14 +2,14 @@
  *  @brief Bluetooth VCS client shell.
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2020-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/audio/vcs.h>
+#include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>
 

@@ -1,11 +1,12 @@
 /*
  * Copyright (c) 2019 Bose Corporation
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifdef CONFIG_BT_VCS
-#include <zephyr/bluetooth/audio/vcs.h>
+#include <zephyr/bluetooth/audio/vcp.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;

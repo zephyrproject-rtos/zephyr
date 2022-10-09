@@ -3,13 +3,13 @@
  * @brief Internal Header for Bluetooth Volume Control Service (VCS).
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2020-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCS_INTERNAL_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCS_INTERNAL_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_INTERNAL_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_INTERNAL_
 
 /* VCS opcodes */
 #define BT_VCS_OPCODE_REL_VOL_DOWN                      0x00
@@ -107,4 +107,4 @@ int bt_vcs_client_mute(struct bt_vcs *vcs);
 
 bool bt_vcs_client_valid_vocs_inst(struct bt_vcs *vcs, struct bt_vocs *vocs);
 bool bt_vcs_client_valid_aics_inst(struct bt_vcs *vcs, struct bt_aics *aics);
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCS_INTERNAL_*/
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_INTERNAL_*/
