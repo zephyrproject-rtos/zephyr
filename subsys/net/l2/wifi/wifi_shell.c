@@ -437,8 +437,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "\"<SSID>\"\n"
 		  "<channel number (optional), 0 means all>\n"
 		  "<PSK (optional: valid only for secure SSIDs)>\n"
-		  "<Security type (optional: valid only for secure SSIDs)>\n"
-		  "0:None, 1:PSK, 2:PSK-256, 3:SAE\n"
+		  "<Security type (optional: valid only for secure SSIDs) "
+		  "0:None, 1:PSK, 2:PSK-256, 3:SAE>\n"
 		  "<MFP (optional): 0:Disable, 1:Optional, 2:Required>",
 		  cmd_wifi_connect),
 	SHELL_CMD(disconnect, NULL, "Disconnect from the Wi-Fi AP",
