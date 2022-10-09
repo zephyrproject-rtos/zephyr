@@ -22,10 +22,3 @@ config SOC_FVP_AEMV8R_SIMULATE_CPU_PM
 	  FVP_BaseR_AEMv8R. When zephyr kernel try to bring up secondary
 	  core through pm_cpu_on(), it always succeeds because
 	  it indeed bring up secondary core successfully.
-
-config SOC_FVP_AEMV8R_EL2_INIT
-	bool "ARM FVP AEMv8R EL2 Initialization"
-	default n
-	help
-	  Initialize MPIDR_EL1 in z_arm64_el2_plat_init. It's necessary
-	  when zephyr brings up secondary core without TB-R support.
