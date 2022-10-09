@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 #ifdef CONFIG_BT_VCS_CLIENT
 
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/audio/vcs.h>
+#include <zephyr/bluetooth/audio/vcp.h>
 
 #include "common.h"
 

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2020-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VCS_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VCS_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VCP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VCP_H_
 
 /**
  * @brief Volume Control Service (VCS)
@@ -543,4 +543,4 @@ int bt_vcs_client_cb_register(struct bt_vcs_cb *cb);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VCS_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VCP_H_ */
