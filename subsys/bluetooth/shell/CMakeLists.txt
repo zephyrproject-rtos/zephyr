@@ -26,8 +26,8 @@ zephyr_library_sources_ifdef(
   iso.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_VCP
-  vcp.c
+  CONFIG_BT_VCP_VOL_REND
+  vcp_vol_rend.c
   )
 zephyr_library_sources_ifdef(
   CONFIG_BT_VCP_VOL_CTLR

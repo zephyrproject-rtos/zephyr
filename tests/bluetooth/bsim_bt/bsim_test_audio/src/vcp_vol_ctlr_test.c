@@ -575,10 +575,10 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Getting VCP client conn\n");
+	printk("Getting VCP volume controller conn\n");
 	err = bt_vcp_vol_ctlr_conn_get(vcp, &cached_conn);
 	if (err != 0) {
-		FAIL("Could not get VCP client conn (err %d)\n", err);
+		FAIL("Could not get VCP volume controller conn (err %d)\n", err);
 		return;
 	}
 	if (cached_conn != default_conn) {
@@ -720,7 +720,7 @@ static void test_main(void)
 		}
 	}
 
-	PASS("VCP client Passed\n");
+	PASS("VCP volume controller Passed\n");
 }
 
 static const struct bst_test_instance test_vcs[] = {

@@ -27,13 +27,13 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_BT_VCP)
-#define BT_VCP_VOCS_CNT CONFIG_BT_VCP_VOCS_INSTANCE_COUNT
-#define BT_VCP_AICS_CNT CONFIG_BT_VCP_AICS_INSTANCE_COUNT
+#if defined(CONFIG_BT_VCP_VOL_REND)
+#define BT_VCP_VOL_REND_VOCS_CNT CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT
+#define BT_VCP_VOL_REND_AICS_CNT CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT
 #else
-#define BT_VCP_VOCS_CNT 0
-#define BT_VCP_AICS_CNT 0
-#endif /* CONFIG_BT_VCP */
+#define BT_VCP_VOL_REND_VOCS_CNT 0
+#define BT_VCP_VOL_REND_AICS_CNT 0
+#endif /* CONFIG_BT_VCP_VOL_REND */
 
 /** Volume Control Service Error codes */
 #define BT_VCP_ERR_INVALID_COUNTER             0x80
@@ -47,7 +47,7 @@ extern "C" {
 struct bt_vcp;
 
 /** Register structure for Volume Control Service */
-struct bt_vcp_register_param {
+struct bt_vcp_vol_rend_register_param {
 	/** Initial step size (1-255) */
 	uint8_t step;
 
@@ -58,10 +58,10 @@ struct bt_vcp_register_param {
 	uint8_t volume;
 
 	/** Register parameters for Volume Offset Control Services */
-	struct bt_vocs_register_param vocs_param[BT_VCP_VOCS_CNT];
+	struct bt_vocs_register_param vocs_param[BT_VCP_VOL_REND_VOCS_CNT];
 
 	/** Register parameters  for Audio Input Control Services */
-	struct bt_aics_register_param aics_param[BT_VCP_AICS_CNT];
+	struct bt_aics_register_param aics_param[BT_VCP_VOL_REND_AICS_CNT];
 
 	/** Volume Control Service callback structure. */
 	struct bt_vcp_cb *cb;
@@ -87,20 +87,6 @@ struct bt_vcp_included {
 };
 
 /**
- * @brief Register the Volume Control Service.
- *
- * This will register and enable the service and make it discoverable by
- * clients.
- *
- * @param      param  Volume Control Service register parameters.
- * @param[out] vcp    Pointer to the registered Volume Control Service.
- *                    This will still be valid if the return value is -EALREADY.
- *
- * @return 0 if success, errno on failure.
- */
-int bt_vcp_register(struct bt_vcp_register_param *param, struct bt_vcp **vcp);
-
-/**
  * @brief Get Volume Control Service included services.
  *
  * Returns a pointer to a struct that contains information about the
@@ -113,7 +99,23 @@ int bt_vcp_register(struct bt_vcp_register_param *param, struct bt_vcp **vcp);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_included_get(struct bt_vcp *vcp, struct bt_vcp_included *included);
+int bt_vcp_vol_rend_included_get(struct bt_vcp *vcp,
+				 struct bt_vcp_included *included);
+
+/**
+ * @brief Register the Volume Control Service.
+ *
+ * This will register and enable the service and make it discoverable by
+ * clients.
+ *
+ * @param      param  Volume Control Service register parameters.
+ * @param[out] vcp    Pointer to the registered Volume Control Service.
+ *                    This will still be valid if the return value is -EALREADY.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param,
+			     struct bt_vcp **vcp);
 
 /**
  * @brief Callback function for bt_vcp_vol_ctlr_discover.
@@ -197,7 +199,7 @@ struct bt_vcp_cb {
  * @brief Set the Volume Control Service volume step size.
  *
  * Set the value that the volume changes, when changed relatively with e.g.
- * @ref bt_vcp_vol_down or @ref bt_vcp_vol_up.
+ * @ref bt_vcp_vol_rend_vol_down or @ref bt_vcp_vol_rend_vol_up.
  *
  * This can only be done as the server.
  *
@@ -205,25 +207,25 @@ struct bt_vcp_cb {
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_step_set(uint8_t volume_step);
+int bt_vcp_vol_rend_set_step(uint8_t volume_step);
 
 /**
- * @brief Read the Volume Control Service volume state.
+ * @brief Get the Volume Control Service volume state.
  *
  * @param vcp  Volume Control Service instance pointer.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_get(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_get_state(struct bt_vcp *vcp);
 
 /**
- * @brief Read the Volume Control Service flags.
+ * @brief Get the Volume Control Service flags.
  *
  * @param vcp  Volume Control Service instance pointer.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_flags_get(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_get_flags(struct bt_vcp *vcp);
 
 /**
  * @brief Turn the volume down by one step on the server.
@@ -232,7 +234,7 @@ int bt_vcp_flags_get(struct bt_vcp *vcp);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_down(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_vol_down(struct bt_vcp *vcp);
 
 /**
  * @brief Turn the volume up by one step on the server.
@@ -241,7 +243,7 @@ int bt_vcp_vol_down(struct bt_vcp *vcp);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_up(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_vol_up(struct bt_vcp *vcp);
 
 /**
  * @brief Turn the volume down and unmute the server.
@@ -250,7 +252,7 @@ int bt_vcp_vol_up(struct bt_vcp *vcp);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_unmute_vol_down(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_unmute_vol_down(struct bt_vcp *vcp);
 
 /**
  * @brief Turn the volume up and unmute the server.
@@ -259,7 +261,7 @@ int bt_vcp_unmute_vol_down(struct bt_vcp *vcp);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_unmute_vol_up(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_unmute_vol_up(struct bt_vcp *vcp);
 
 /**
  * @brief Set the volume on the server
@@ -269,7 +271,7 @@ int bt_vcp_unmute_vol_up(struct bt_vcp *vcp);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_set(struct bt_vcp *vcp, uint8_t volume);
+int bt_vcp_vol_rend_set_vol(struct bt_vcp *vcp, uint8_t volume);
 
 /**
  * @brief Unmute the server.
@@ -278,7 +280,7 @@ int bt_vcp_vol_set(struct bt_vcp *vcp, uint8_t volume);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_unmute(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_unmute(struct bt_vcp *vcp);
 
 /**
  * @brief Mute the server.
@@ -287,7 +289,7 @@ int bt_vcp_unmute(struct bt_vcp *vcp);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_mute(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_mute(struct bt_vcp *vcp);
 
 /**
  * @brief Registers the callbacks used by the Volume Controller.
