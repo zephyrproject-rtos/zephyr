@@ -1,0 +1,19 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <zephyr/dt-bindings/input/input_key_code.h>
+
+/ {
+	model = "STMicroelectronics STM32H743ZI-NUCLEO board";
+	compatible = "st,stm32h743zi-nucleo";
+
+	keyboard_gpio {
+		compatible = "keyboard-gpio";
+		KEY_ENTER {
+			label = "KEY_ENTER";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			code  = <KEY_ENTER>;
+			longpress-ms = <1000>;
+			holdpress-ms = <500>;
+		};
+	};
+};

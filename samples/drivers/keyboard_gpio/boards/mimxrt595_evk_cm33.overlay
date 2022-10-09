@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2022, tangchunhui@coros.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input.h>
+
+/ {
+	model = "NXP MIMXRT595-EVK board";
+	compatible = "nxp,mimxrt595";
+
+	keyboard_gpio {
+		compatible = "keyboard-gpio";
+		KEY_OK {
+			label = "KEY_OK";
+			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+			code  = <KEY_CODE_ENTER>;
+		};
+		KEY_BACK {
+			label = "KEY_BACK";
+			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+			code  = <KEY_CODE_ESC>;
+		};
+	};
+};

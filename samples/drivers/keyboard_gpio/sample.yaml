@@ -1,0 +1,11 @@
+sample:
+  name: keyboard gpio driver sample
+tests:
+  sample.drivers.input.keyboard_gpio:
+    platform_allow: nucleo_h743zi
+    tags: drivers
+    harness: console
+    harness_config:
+        type: multi_line
+        ordered: true
+    depends_on: KEYBOARD_GPIO
