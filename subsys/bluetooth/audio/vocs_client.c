@@ -1,7 +1,7 @@
 /*  Bluetooth VOCS - Volume Offset Control Service - Client */
 
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -244,8 +244,8 @@ static uint8_t internal_read_volume_offset_state_cb(struct bt_conn *conn, uint8_
 	return BT_GATT_ITER_STOP;
 }
 
-static void vcs_client_write_vocs_cp_cb(struct bt_conn *conn, uint8_t err,
-					struct bt_gatt_write_params *params)
+static void vocs_client_write_vocs_cp_cb(struct bt_conn *conn, uint8_t err,
+					 struct bt_gatt_write_params *params)
 {
 	int cb_err = err;
 	struct bt_vocs *inst = lookup_vocs_by_handle(conn, params->handle);
@@ -291,9 +291,9 @@ static void vcs_client_write_vocs_cp_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
-static uint8_t vcs_client_read_output_desc_cb(struct bt_conn *conn, uint8_t err,
-					      struct bt_gatt_read_params *params,
-					      const void *data, uint16_t length)
+static uint8_t vocs_client_read_output_desc_cb(struct bt_conn *conn, uint8_t err,
+					       struct bt_gatt_read_params *params,
+					       const void *data, uint16_t length)
 {
 	int cb_err = err;
 	struct bt_vocs *inst = lookup_vocs_by_handle(conn, params->single.handle);
@@ -554,7 +554,7 @@ int bt_vocs_client_state_set(struct bt_vocs *inst, int16_t offset)
 	inst->cli.write_params.data = &inst->cli.cp;
 	inst->cli.write_params.length = sizeof(inst->cli.cp);
 	inst->cli.write_params.handle = inst->cli.control_handle;
-	inst->cli.write_params.func = vcs_client_write_vocs_cp_cb;
+	inst->cli.write_params.func = vocs_client_write_vocs_cp_cb;
 
 	err = bt_gatt_write(inst->cli.conn, &inst->cli.write_params);
 	if (!err) {
@@ -585,7 +585,7 @@ int bt_vocs_client_description_get(struct bt_vocs *inst)
 		return -EBUSY;
 	}
 
-	inst->cli.read_params.func = vcs_client_read_output_desc_cb;
+	inst->cli.read_params.func = vocs_client_read_output_desc_cb;
 	inst->cli.read_params.handle_count = 1;
 	inst->cli.read_params.single.handle = inst->cli.desc_handle;
 	inst->cli.read_params.single.offset = 0U;
