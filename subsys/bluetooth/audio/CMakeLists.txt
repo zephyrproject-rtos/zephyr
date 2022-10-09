@@ -16,7 +16,7 @@ if (CONFIG_BT_AICS OR CONFIG_BT_AICS_CLIENT)
 endif()
 zephyr_library_sources_ifdef(CONFIG_BT_AICS_CLIENT aics_client.c)
 
-zephyr_library_sources_ifdef(CONFIG_BT_VCP vcp.c)
+zephyr_library_sources_ifdef(CONFIG_BT_VCP_VOL_REND vcp_vol_rend.c)
 zephyr_library_sources_ifdef(CONFIG_BT_VCP_VOL_CTLR vcp_vol_ctlr.c)
 
 if (CONFIG_BT_MICP_MIC_DEV)

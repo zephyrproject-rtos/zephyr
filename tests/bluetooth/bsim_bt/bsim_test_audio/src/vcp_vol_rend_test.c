@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_VCP
+#ifdef CONFIG_BT_VCP_VOL_REND
 #include <zephyr/bluetooth/audio/vcp.h>
 #include "common.h"
 
@@ -434,9 +434,9 @@ static int test_vocs_standalone(void)
 static void test_standalone(void)
 {
 	int err;
-	struct bt_vcp_register_param vcs_param;
-	char input_desc[CONFIG_BT_VCP_AICS_INSTANCE_COUNT][16];
-	char output_desc[CONFIG_BT_VCP_VOCS_INSTANCE_COUNT][16];
+	struct bt_vcp_vol_rend_register_param vcp_register_param;
+	char input_desc[CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT][16];
+	char output_desc[CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT][16];
 	const uint8_t volume_step = 5;
 	uint8_t expected_volume;
 	uint8_t expected_mute;
@@ -449,43 +449,43 @@ static void test_standalone(void)
 
 	printk("Bluetooth initialized\n");
 
-	memset(&vcs_param, 0, sizeof(vcs_param));
+	memset(&vcp_register_param, 0, sizeof(vcp_register_param));
 
-	for (int i = 0; i < ARRAY_SIZE(vcs_param.vocs_param); i++) {
-		vcs_param.vocs_param[i].location_writable = true;
-		vcs_param.vocs_param[i].desc_writable = true;
+	for (int i = 0; i < ARRAY_SIZE(vcp_register_param.vocs_param); i++) {
+		vcp_register_param.vocs_param[i].location_writable = true;
+		vcp_register_param.vocs_param[i].desc_writable = true;
 		snprintf(output_desc[i], sizeof(output_desc[i]),
 			 "Output %d", i + 1);
-		vcs_param.vocs_param[i].output_desc = output_desc[i];
-		vcs_param.vocs_param[i].cb = &vocs_cb;
+		vcp_register_param.vocs_param[i].output_desc = output_desc[i];
+		vcp_register_param.vocs_param[i].cb = &vocs_cb;
 	}
 
-	for (int i = 0; i < ARRAY_SIZE(vcs_param.aics_param); i++) {
-		vcs_param.aics_param[i].desc_writable = true;
+	for (int i = 0; i < ARRAY_SIZE(vcp_register_param.aics_param); i++) {
+		vcp_register_param.aics_param[i].desc_writable = true;
 		snprintf(input_desc[i], sizeof(input_desc[i]),
 			 "Input %d", i + 1);
-		vcs_param.aics_param[i].description = input_desc[i];
-		vcs_param.aics_param[i].type = BT_AICS_INPUT_TYPE_DIGITAL;
-		vcs_param.aics_param[i].status = g_aics_active;
-		vcs_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
-		vcs_param.aics_param[i].units = 1;
-		vcs_param.aics_param[i].min_gain = 0;
-		vcs_param.aics_param[i].max_gain = 100;
-		vcs_param.aics_param[i].cb = &aics_cb;
+		vcp_register_param.aics_param[i].description = input_desc[i];
+		vcp_register_param.aics_param[i].type = BT_AICS_INPUT_TYPE_DIGITAL;
+		vcp_register_param.aics_param[i].status = g_aics_active;
+		vcp_register_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
+		vcp_register_param.aics_param[i].units = 1;
+		vcp_register_param.aics_param[i].min_gain = 0;
+		vcp_register_param.aics_param[i].max_gain = 100;
+		vcp_register_param.aics_param[i].cb = &aics_cb;
 	}
 
-	vcs_param.step = 1;
-	vcs_param.mute = BT_VCP_STATE_UNMUTED;
-	vcs_param.volume = 100;
-	vcs_param.cb = &vcs_cb;
+	vcp_register_param.step = 1;
+	vcp_register_param.mute = BT_VCP_STATE_UNMUTED;
+	vcp_register_param.volume = 100;
+	vcp_register_param.cb = &vcs_cb;
 
-	err = bt_vcp_register(&vcs_param, &vcp);
+	err = bt_vcp_vol_rend_register(&vcp_register_param, &vcp);
 	if (err) {
 		FAIL("VCP register failed (err %d)\n", err);
 		return;
 	}
 
-	err = bt_vcp_included_get(vcp, &vcp_included);
+	err = bt_vcp_vol_rend_included_get(vcp, &vcp_included);
 	if (err) {
 		FAIL("VCP included get failed (err %d)\n", err);
 		return;
@@ -495,7 +495,7 @@ static void test_standalone(void)
 
 
 	printk("Setting VCP step\n");
-	err = bt_vcp_vol_step_set(volume_step);
+	err = bt_vcp_vol_rend_set_step(volume_step);
 	if (err) {
 		FAIL("VCP step set failed (err %d)\n", err);
 		return;
@@ -504,7 +504,7 @@ static void test_standalone(void)
 
 	printk("Getting VCP volume state\n");
 	g_cb = false;
-	err = bt_vcp_vol_get(vcp);
+	err = bt_vcp_vol_rend_get_state(vcp);
 	if (err) {
 		FAIL("Could not get VCP volume (err %d)\n", err);
 		return;
@@ -514,7 +514,7 @@ static void test_standalone(void)
 
 	printk("Getting VCP flags\n");
 	g_cb = false;
-	err = bt_vcp_flags_get(vcp);
+	err = bt_vcp_vol_rend_get_flags(vcp);
 	if (err) {
 		FAIL("Could not get VCP flags (err %d)\n", err);
 		return;
@@ -524,7 +524,7 @@ static void test_standalone(void)
 
 	printk("Downing VCP volume\n");
 	expected_volume = g_volume - volume_step;
-	err = bt_vcp_vol_down(vcp);
+	err = bt_vcp_vol_rend_vol_down(vcp);
 	if (err) {
 		FAIL("Could not get down VCP volume (err %d)\n", err);
 		return;
@@ -534,7 +534,7 @@ static void test_standalone(void)
 
 	printk("Upping VCP volume\n");
 	expected_volume = g_volume + volume_step;
-	err = bt_vcp_vol_up(vcp);
+	err = bt_vcp_vol_rend_vol_up(vcp);
 	if (err) {
 		FAIL("Could not up VCP volume (err %d)\n", err);
 		return;
@@ -544,7 +544,7 @@ static void test_standalone(void)
 
 	printk("Muting VCP\n");
 	expected_mute = 1;
-	err = bt_vcp_mute(vcp);
+	err = bt_vcp_vol_rend_mute(vcp);
 	if (err) {
 		FAIL("Could not mute VCP (err %d)\n", err);
 		return;
@@ -555,7 +555,7 @@ static void test_standalone(void)
 	printk("Downing and unmuting VCP\n");
 	expected_volume = g_volume - volume_step;
 	expected_mute = 0;
-	err = bt_vcp_unmute_vol_down(vcp);
+	err = bt_vcp_vol_rend_unmute_vol_down(vcp);
 	if (err) {
 		FAIL("Could not down and unmute VCP (err %d)\n", err);
 		return;
@@ -566,7 +566,7 @@ static void test_standalone(void)
 
 	printk("Muting VCP\n");
 	expected_mute = 1;
-	err = bt_vcp_mute(vcp);
+	err = bt_vcp_vol_rend_mute(vcp);
 	if (err) {
 		FAIL("Could not mute VCP (err %d)\n", err);
 		return;
@@ -577,7 +577,7 @@ static void test_standalone(void)
 	printk("Upping and unmuting VCP\n");
 	expected_volume = g_volume + volume_step;
 	expected_mute = 0;
-	err = bt_vcp_unmute_vol_up(vcp);
+	err = bt_vcp_vol_rend_unmute_vol_up(vcp);
 	if (err) {
 		FAIL("Could not up and unmute VCP (err %d)\n", err);
 		return;
@@ -588,7 +588,7 @@ static void test_standalone(void)
 
 	printk("Muting VCP\n");
 	expected_mute = 1;
-	err = bt_vcp_mute(vcp);
+	err = bt_vcp_vol_rend_mute(vcp);
 	if (err) {
 		FAIL("Could not mute VCP (err %d)\n", err);
 		return;
@@ -598,7 +598,7 @@ static void test_standalone(void)
 
 	printk("Unmuting VCP\n");
 	expected_mute = 0;
-	err = bt_vcp_unmute(vcp);
+	err = bt_vcp_vol_rend_unmute(vcp);
 	if (err) {
 		FAIL("Could not unmute VCP (err %d)\n", err);
 		return;
@@ -607,7 +607,7 @@ static void test_standalone(void)
 	printk("VCP volume unmuted\n");
 
 	expected_volume = g_volume - 5;
-	err = bt_vcp_vol_set(vcp, expected_volume);
+	err = bt_vcp_vol_rend_set_vol(vcp, expected_volume);
 	if (err) {
 		FAIL("Could not set VCP volume (err %d)\n", err);
 		return;
@@ -615,13 +615,13 @@ static void test_standalone(void)
 	WAIT_FOR_COND(expected_volume == g_volume);
 	printk("VCP volume set\n");
 
-	if (CONFIG_BT_VCP_VOCS_INSTANCE_COUNT > 0) {
+	if (CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT > 0) {
 		if (test_vocs_standalone()) {
 			return;
 		}
 	}
 
-	if (CONFIG_BT_VCP_AICS_INSTANCE_COUNT > 0) {
+	if (CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT > 0) {
 		if (test_aics_standalone()) {
 			return;
 		}
@@ -633,9 +633,9 @@ static void test_standalone(void)
 static void test_main(void)
 {
 	int err;
-	struct bt_vcp_register_param vcs_param;
-	char input_desc[CONFIG_BT_VCP_AICS_INSTANCE_COUNT][16];
-	char output_desc[CONFIG_BT_VCP_VOCS_INSTANCE_COUNT][16];
+	struct bt_vcp_vol_rend_register_param vcp_register_param;
+	char input_desc[CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT][16];
+	char output_desc[CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT][16];
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -645,43 +645,43 @@ static void test_main(void)
 
 	printk("Bluetooth initialized\n");
 
-	memset(&vcs_param, 0, sizeof(vcs_param));
+	memset(&vcp_register_param, 0, sizeof(vcp_register_param));
 
-	for (int i = 0; i < ARRAY_SIZE(vcs_param.vocs_param); i++) {
-		vcs_param.vocs_param[i].location_writable = true;
-		vcs_param.vocs_param[i].desc_writable = true;
+	for (int i = 0; i < ARRAY_SIZE(vcp_register_param.vocs_param); i++) {
+		vcp_register_param.vocs_param[i].location_writable = true;
+		vcp_register_param.vocs_param[i].desc_writable = true;
 		snprintf(output_desc[i], sizeof(output_desc[i]),
 			 "Output %d", i + 1);
-		vcs_param.vocs_param[i].output_desc = output_desc[i];
-		vcs_param.vocs_param[i].cb = &vocs_cb;
+		vcp_register_param.vocs_param[i].output_desc = output_desc[i];
+		vcp_register_param.vocs_param[i].cb = &vocs_cb;
 	}
 
-	for (int i = 0; i < ARRAY_SIZE(vcs_param.aics_param); i++) {
-		vcs_param.aics_param[i].desc_writable = true;
+	for (int i = 0; i < ARRAY_SIZE(vcp_register_param.aics_param); i++) {
+		vcp_register_param.aics_param[i].desc_writable = true;
 		snprintf(input_desc[i], sizeof(input_desc[i]),
 			 "Input %d", i + 1);
-		vcs_param.aics_param[i].description = input_desc[i];
-		vcs_param.aics_param[i].type = BT_AICS_INPUT_TYPE_DIGITAL;
-		vcs_param.aics_param[i].status = g_aics_active;
-		vcs_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
-		vcs_param.aics_param[i].units = 1;
-		vcs_param.aics_param[i].min_gain = 0;
-		vcs_param.aics_param[i].max_gain = 100;
-		vcs_param.aics_param[i].cb = &aics_cb;
+		vcp_register_param.aics_param[i].description = input_desc[i];
+		vcp_register_param.aics_param[i].type = BT_AICS_INPUT_TYPE_DIGITAL;
+		vcp_register_param.aics_param[i].status = g_aics_active;
+		vcp_register_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
+		vcp_register_param.aics_param[i].units = 1;
+		vcp_register_param.aics_param[i].min_gain = 0;
+		vcp_register_param.aics_param[i].max_gain = 100;
+		vcp_register_param.aics_param[i].cb = &aics_cb;
 	}
 
-	vcs_param.step = 1;
-	vcs_param.mute = BT_VCP_STATE_UNMUTED;
-	vcs_param.volume = 100;
-	vcs_param.cb = &vcs_cb;
+	vcp_register_param.step = 1;
+	vcp_register_param.mute = BT_VCP_STATE_UNMUTED;
+	vcp_register_param.volume = 100;
+	vcp_register_param.cb = &vcs_cb;
 
-	err = bt_vcp_register(&vcs_param, &vcp);
+	err = bt_vcp_vol_rend_register(&vcp_register_param, &vcp);
 	if (err) {
 		FAIL("VCP register failed (err %d)\n", err);
 		return;
 	}
 
-	err = bt_vcp_included_get(vcp, &vcp_included);
+	err = bt_vcp_vol_rend_included_get(vcp, &vcp_included);
 	if (err) {
 		FAIL("VCP included get failed (err %d)\n", err);
 		return;
@@ -699,18 +699,18 @@ static void test_main(void)
 
 	WAIT_FOR_COND(g_is_connected);
 
-	PASS("VCP passed\n");
+	PASS("VCP volume renderer passed\n");
 }
 
 static const struct bst_test_instance test_vcs[] = {
 	{
-		.test_id = "vcs_standalone",
+		.test_id = "vcp_vol_rend_standalone",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_standalone
 	},
 	{
-		.test_id = "vcp",
+		.test_id = "vcp_vol_rend",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
@@ -728,4 +728,4 @@ struct bst_test_list *test_vcp_install(struct bst_test_list *tests)
 	return tests;
 }
 
-#endif /* CONFIG_BT_VCP */
+#endif /* CONFIG_BT_VCP_VOL_REND */
