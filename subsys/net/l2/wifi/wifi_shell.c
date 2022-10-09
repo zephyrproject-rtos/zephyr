@@ -433,7 +433,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(connect, NULL,
-		  "Connect to a Wi-Fi AP"
+		  "Connect to a Wi-Fi AP\n"
 		  "\"<SSID>\"\n<channel number (optional), "
 		  "0 means all>\n"
 		  "<PSK (optional: valid only for secure SSIDs)>\n"
