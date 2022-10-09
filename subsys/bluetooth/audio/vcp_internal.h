@@ -106,5 +106,4 @@ int bt_vcp_client_unmute(struct bt_vcp *vcp);
 int bt_vcp_client_mute(struct bt_vcp *vcp);
 
 bool bt_vcp_client_valid_vocs_inst(struct bt_vcp *vcp, struct bt_vocs *vocs);
-bool bt_vcp_client_valid_aics_inst(struct bt_vcp *vcp, struct bt_aics *aics);
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_INTERNAL_*/

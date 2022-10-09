@@ -218,7 +218,7 @@ static int test_aics_standalone(void)
 
 	printk("Deactivating AICS\n");
 	expected_aics_active = false;
-	err = bt_vcp_aics_deactivate(vcp, vcp_included.aics[0]);
+	err = bt_aics_deactivate(vcp_included.aics[0]);
 	if (err) {
 		FAIL("Could not deactivate AICS (err %d)\n", err);
 		return err;
@@ -228,7 +228,7 @@ static int test_aics_standalone(void)
 
 	printk("Activating AICS\n");
 	expected_aics_active = true;
-	err = bt_vcp_aics_activate(vcp, vcp_included.aics[0]);
+	err = bt_aics_activate(vcp_included.aics[0]);
 	if (err) {
 		FAIL("Could not activate AICS (err %d)\n", err);
 		return err;
@@ -238,7 +238,7 @@ static int test_aics_standalone(void)
 
 	printk("Getting AICS state\n");
 	g_cb = false;
-	err = bt_vcp_aics_state_get(vcp, vcp_included.aics[0]);
+	err = bt_aics_state_get(vcp_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS state (err %d)\n", err);
 		return err;
@@ -248,7 +248,7 @@ static int test_aics_standalone(void)
 
 	printk("Getting AICS gain setting\n");
 	g_cb = false;
-	err = bt_vcp_aics_gain_setting_get(vcp, vcp_included.aics[0]);
+	err = bt_aics_gain_setting_get(vcp_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS gain setting (err %d)\n", err);
 		return err;
@@ -258,7 +258,7 @@ static int test_aics_standalone(void)
 
 	printk("Getting AICS input type\n");
 	expected_input_type = BT_AICS_INPUT_TYPE_DIGITAL;
-	err = bt_vcp_aics_type_get(vcp, vcp_included.aics[0]);
+	err = bt_aics_type_get(vcp_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS input type (err %d)\n", err);
 		return err;
@@ -269,7 +269,7 @@ static int test_aics_standalone(void)
 
 	printk("Getting AICS status\n");
 	g_cb = false;
-	err = bt_vcp_aics_status_get(vcp, vcp_included.aics[0]);
+	err = bt_aics_status_get(vcp_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS status (err %d)\n", err);
 		return err;
@@ -279,7 +279,7 @@ static int test_aics_standalone(void)
 
 	printk("Getting AICS description\n");
 	g_cb = false;
-	err = bt_vcp_aics_description_get(vcp, vcp_included.aics[0]);
+	err = bt_aics_description_get(vcp_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS description (err %d)\n", err);
 		return err;
@@ -289,7 +289,7 @@ static int test_aics_standalone(void)
 
 	printk("Setting AICS mute\n");
 	expected_input_mute = BT_AICS_STATE_MUTED;
-	err = bt_vcp_aics_mute(vcp, vcp_included.aics[0]);
+	err = bt_aics_mute(vcp_included.aics[0]);
 	if (err) {
 		FAIL("Could not set AICS mute (err %d)\n", err);
 		return err;
@@ -299,7 +299,7 @@ static int test_aics_standalone(void)
 
 	printk("Setting AICS unmute\n");
 	expected_input_mute = BT_AICS_STATE_UNMUTED;
-	err = bt_vcp_aics_unmute(vcp, vcp_included.aics[0]);
+	err = bt_aics_unmute(vcp_included.aics[0]);
 	if (err) {
 		FAIL("Could not set AICS unmute (err %d)\n", err);
 		return err;
@@ -309,7 +309,7 @@ static int test_aics_standalone(void)
 
 	printk("Setting AICS auto mode\n");
 	expected_mode = BT_AICS_MODE_AUTO;
-	err = bt_vcp_aics_automatic_gain_set(vcp, vcp_included.aics[0]);
+	err = bt_aics_automatic_gain_set(vcp_included.aics[0]);
 	if (err) {
 		FAIL("Could not set AICS auto mode (err %d)\n", err);
 		return err;
@@ -319,7 +319,7 @@ static int test_aics_standalone(void)
 
 	printk("Setting AICS manual mode\n");
 	expected_mode = BT_AICS_MODE_MANUAL;
-	err = bt_vcp_aics_manual_gain_set(vcp, vcp_included.aics[0]);
+	err = bt_aics_manual_gain_set(vcp_included.aics[0]);
 	if (err) {
 		FAIL("Could not set AICS manual mode (err %d)\n", err);
 		return err;
@@ -329,7 +329,7 @@ static int test_aics_standalone(void)
 
 	printk("Setting AICS gain\n");
 	expected_gain = g_aics_gain_max - 1;
-	err = bt_vcp_aics_gain_set(vcp, vcp_included.aics[0], expected_gain);
+	err = bt_aics_gain_set(vcp_included.aics[0], expected_gain);
 	if (err) {
 		FAIL("Could not set AICS gain (err %d)\n", err);
 		return err;
@@ -342,7 +342,7 @@ static int test_aics_standalone(void)
 		sizeof(expected_aics_desc));
 	expected_aics_desc[sizeof(expected_aics_desc) - 1] = '\0';
 	g_cb = false;
-	err = bt_vcp_aics_description_set(vcp, vcp_included.aics[0],
+	err = bt_aics_description_set(vcp_included.aics[0],
 					  expected_aics_desc);
 	if (err) {
 		FAIL("Could not set AICS Description (err %d)\n", err);
