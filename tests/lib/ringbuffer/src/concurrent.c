@@ -6,7 +6,6 @@
 #include <zephyr/ztest.h>
 #include <zephyr/ztress.h>
 #include <zephyr/sys/ring_buffer.h>
-#include <zephyr/sys/mutex.h>
 #include <zephyr/random/rand32.h>
 #include <stdint.h>
 
@@ -24,7 +23,7 @@
 #define VALUE				0xb
 #define TYPE				0xc
 
-static ZTEST_BMEM SYS_MUTEX_DEFINE(mutex);
+K_MUTEX_DEFINE(mutex);
 RING_BUF_ITEM_DECLARE(ringbuf, RINGBUFFER);
 static uint32_t output[LENGTH];
 static uint32_t databuffer1[LENGTH];
@@ -32,11 +31,11 @@ static uint32_t databuffer2[LENGTH];
 
 static void data_write(uint32_t *input)
 {
-	sys_mutex_lock(&mutex, K_FOREVER);
+	k_mutex_lock(&mutex, K_FOREVER);
 	int ret = ring_buf_item_put(&ringbuf, TYPE, VALUE,
 				   input, LENGTH);
 	zassert_equal(ret, 0);
-	sys_mutex_unlock(&mutex);
+	k_mutex_unlock(&mutex);
 }
 
 static void data_read(uint32_t *output)
@@ -45,9 +44,9 @@ static void data_read(uint32_t *output)
 	uint8_t value, size32 = LENGTH;
 	int ret;
 
-	sys_mutex_lock(&mutex, K_FOREVER);
+	k_mutex_lock(&mutex, K_FOREVER);
 	ret = ring_buf_item_get(&ringbuf, &type, &value, output, &size32);
-	sys_mutex_unlock(&mutex);
+	k_mutex_unlock(&mutex);
 
 	zassert_equal(ret, 0);
 	zassert_equal(type, TYPE);
