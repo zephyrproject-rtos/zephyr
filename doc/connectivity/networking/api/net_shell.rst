@@ -43,3 +43,5 @@ The following net-shell commands are implemented:
    :kconfig:option:`CONFIG_NET_TCP` is set."
    "net vlan", "Show Ethernet virtual LAN information. Only available if
    :kconfig:option:`CONFIG_NET_VLAN` is set."
+   "net dhcp4", "Show DHCPv4 information. Only available if
+   :kconfig:option:`CONFIG_NET_DHCPV4` is set."

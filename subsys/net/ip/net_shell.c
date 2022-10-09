@@ -1093,7 +1093,7 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 	net_stats_t count = GET_STAT(iface, tx_time.count);
 
 	if (count != 0) {
-		PR("Avg %s net_pkt (%u) time %lu us%s\n", "TX", count,
+		PR("Avg %s net_pkt (%u) time %u us%s\n", "TX", count,
 		   (uint32_t)(GET_STAT(iface, tx_time.sum) / (uint64_t)count),
 		   get_net_pkt_stats_detail(iface, true));
 	}
@@ -1152,7 +1152,7 @@ static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
 	net_stats_t count = GET_STAT(iface, rx_time.count);
 
 	if (count != 0) {
-		PR("Avg %s net_pkt (%u) time %lu us%s\n", "RX", count,
+		PR("Avg %s net_pkt (%u) time %u us%s\n", "RX", count,
 		   (uint32_t)(GET_STAT(iface, rx_time.sum) / (uint64_t)count),
 		   get_net_pkt_stats_detail(iface, false));
 	}
@@ -2696,6 +2696,135 @@ static int cmd_net_events(const struct shell *shell, size_t argc, char *argv[])
 #endif
 
 	return 0;
+}
+
+#if !defined(CONFIG_NET_DHCPV4)
+static const char cmd_net_dhcp4_error_not_supported[] = "DHCP shell is not supported. "
+		"Set CONFIG_NET_DHCPV4 to enable it.\n";
+#endif
+
+#if defined(CONFIG_NET_DHCPV4)
+static const char cmd_net_dhcp_str_v4[] = "DHCPv4";
+
+static struct net_if * cmd_net_dhcp4_get_interface(const struct shell *shell, size_t argc, char * argv[])
+{
+	struct net_if *iface = NULL;
+
+	if (argc == 2) {
+		int index = atoi(argv[1]);
+		iface = net_if_get_by_index(index);
+
+		if (iface == NULL) {
+			PR_ERROR("No %s interface found.\n", cmd_net_dhcp_str_v4);
+		}
+
+	} else if (argc == 1) {
+		iface = net_if_get_default();
+	} else {
+		PR_ERROR("Invalid number of arguments.\n");
+	}
+
+	return iface;
+}
+#endif
+
+static int cmd_net_dhcp4_start(const struct shell *shell, size_t argc, char *argv[])
+{
+	#if defined(CONFIG_NET_DHCPV4)
+	struct net_if *iface = NULL;
+	iface = cmd_net_dhcp4_get_interface(shell, argc, argv);
+
+	if (iface == NULL) {
+		return -EINVAL;
+	}
+
+	net_dhcpv4_start(iface);
+	PR_INFO("Starting %s at interface: %s.\n", cmd_net_dhcp_str_v4, iface->if_dev->dev->name);
+
+	return 0;
+	#else
+	PR_ERROR(cmd_net_dhcp4_error_not_supported);
+	return -ENOEXEC;
+	#endif
+}
+
+static int cmd_net_dhcp4_stop(const struct shell *shell, size_t argc, char *argv[])
+{
+	#if defined(CONFIG_NET_DHCPV4)
+	struct net_if *iface = NULL;
+
+	iface = cmd_net_dhcp4_get_interface(shell, argc, argv);
+
+	if (iface == NULL) {
+		return -EINVAL;
+	}
+
+	net_dhcpv4_stop(iface);
+	PR_INFO("Stopping %s in interface: %s.\n", cmd_net_dhcp_str_v4, iface->if_dev->dev->name);
+
+	return 0;
+	#else
+	PR_ERROR(cmd_net_dhcp4_error_not_supported);
+	return -ENOEXEC;
+	#endif
+}
+
+static int cmd_net_dhcp4_restart(const struct shell *shell, size_t argc, char *argv[])
+{
+	#if defined(CONFIG_NET_DHCPV4)
+	struct net_if *iface;
+
+	iface = cmd_net_dhcp4_get_interface(shell, argc, argv);
+
+	if (iface == NULL) {
+		return -EINVAL;
+	}
+
+	net_dhcpv4_restart(iface);
+
+	PR_INFO("Restarting %s at interface: %s.\n", cmd_net_dhcp_str_v4, iface->if_dev->dev->name);
+	return 0;
+	#else
+	PR_ERROR(cmd_net_dhcp4_error_not_supported);
+	return -ENOEXEC;
+	#endif
+}
+
+#if defined(CONFIG_NET_DHCPV4)
+static void cmd_net_dhcp4_print_info_cb(struct net_if *iface, void *user_data)
+{
+	const struct shell *shell = (const struct shell *) user_data;
+	const struct device *dev = net_if_get_device(iface);
+
+	for (int i = 0; i < NET_IF_MAX_IPV4_ADDR; i++)
+	{
+		struct net_if_addr *if_addr = &iface->config.ip.ipv4->unicast[i];
+
+		if (if_addr->addr_type != NET_ADDR_DHCP || !if_addr->is_used) {
+			continue;
+		}
+
+		PR("%s Interface %d: (%s)\n", cmd_net_dhcp_str_v4, i, dev->name);
+		PR("%s lease time : %u\n", cmd_net_dhcp_str_v4, iface->config.dhcpv4.lease_time);
+		PR("%s renew time : %u\n", cmd_net_dhcp_str_v4, iface->config.dhcpv4.renewal_time);
+		PR("%s server     : %s\n", cmd_net_dhcp_str_v4, net_sprint_ipv4_addr(&iface->config.dhcpv4.server_id));
+		PR("%s requested  : %s\n", cmd_net_dhcp_str_v4, net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
+		PR("%s state      : %s\n", cmd_net_dhcp_str_v4, net_dhcpv4_state_name(iface->config.dhcpv4.state));
+		PR("%s attempts   : %d\n", cmd_net_dhcp_str_v4, iface->config.dhcpv4.attempts);
+		PR("\n");
+	}
+}
+#endif
+
+static int cmd_net_dhcp4(const struct shell *shell, size_t argc, char *argv[])
+{
+	#if defined(CONFIG_NET_DHCPV4)
+	net_if_foreach(cmd_net_dhcp4_print_info_cb, (void*) shell);
+	return 0;
+	#else
+	PR_ERROR(cmd_net_dhcp4_error_not_supported);
+	return -ENOEXEC;
+	#endif
 }
 
 #if defined(CONFIG_NET_GPTP)
@@ -5707,6 +5836,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_events,
 	SHELL_SUBCMD_SET_END
 );
 
+SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_dhcp4,
+	SHELL_CMD(start, NULL, "Start DHCPv4 client", cmd_net_dhcp4_start),
+	SHELL_CMD(stop, NULL, "Stop DHCPv4 client", cmd_net_dhcp4_stop),
+	SHELL_CMD(restart, NULL, "Restart DHCPv4 client", cmd_net_dhcp4_restart),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_gptp,
 	SHELL_CMD(port, NULL,
 		  "'net gptp [<port>]' prints detailed information about "
@@ -6045,6 +6181,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
 	SHELL_CMD(websocket, NULL, "Print information about WebSocket "
 								"connections.",
 		  cmd_net_websocket),
+	SHELL_CMD(dhcp4, &net_cmd_dhcp4, "Show DHCP information.", cmd_net_dhcp4),
+
 	SHELL_SUBCMD_SET_END
 );
 
