@@ -537,7 +537,7 @@ static int cmd_vcp_client_vocs_state_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vocs_state_get(vcp, vcp_included.vocs[index]);
+	result = bt_vocs_state_get(vcp_included.vocs[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -562,7 +562,7 @@ static int cmd_vcp_client_vocs_location_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vocs_location_get(vcp, vcp_included.vocs[index]);
+	result = bt_vocs_location_get(vcp_included.vocs[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -595,7 +595,7 @@ static int cmd_vcp_client_vocs_location_set(const struct shell *sh,
 
 	}
 
-	result = bt_vcp_vocs_location_set(vcp, vcp_included.vocs[index],
+	result = bt_vocs_location_set(vcp_included.vocs[index],
 					  location);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -628,7 +628,7 @@ static int cmd_vcp_client_vocs_offset_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vocs_state_set(vcp, vcp_included.vocs[index],
+	result = bt_vocs_state_set(vcp_included.vocs[index],
 				       offset);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -654,7 +654,7 @@ static int cmd_vcp_client_vocs_output_description_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vocs_description_get(vcp, vcp_included.vocs[index]);
+	result = bt_vocs_description_get(vcp_included.vocs[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -680,7 +680,7 @@ static int cmd_vcp_client_vocs_output_description_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vocs_description_set(vcp, vcp_included.vocs[index],
+	result = bt_vocs_description_set(vcp_included.vocs[index],
 					     description);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);

@@ -34,33 +34,6 @@ static struct bt_vcp_cb *vcp_client_cb;
 static struct bt_vcp vcp_insts[CONFIG_BT_MAX_CONN];
 static int vcp_client_common_vcs_cp(struct bt_vcp *vcp, uint8_t opcode);
 
-bool bt_vcp_client_valid_vocs_inst(struct bt_vcp *vcp, struct bt_vocs *vocs)
-{
-	if (vcp == NULL) {
-		return false;
-	}
-
-	if (!vcp->client_instance) {
-		return false;
-	}
-
-	if (vcp->cli.conn == NULL) {
-		return false;
-	}
-
-	if (vocs == NULL) {
-		return false;
-	}
-
-	for (int i = 0; i < ARRAY_SIZE(vcp->cli.vocs); i++) {
-		if (vcp->cli.vocs[i] == vocs) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
 static uint8_t vcp_client_notify_handler(struct bt_conn *conn,
 					 struct bt_gatt_subscribe_params *params,
 					 const void *data, uint16_t length)
