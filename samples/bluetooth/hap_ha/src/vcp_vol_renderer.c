@@ -16,10 +16,10 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 
-static struct bt_vcs *vcs;
-static struct bt_vcs_included vcs_included;
+static struct bt_vcp *vcp;
+static struct bt_vcp_included vcp_included;
 
-static void vcs_state_cb(struct bt_vcs *vcs, int err, uint8_t volume, uint8_t mute)
+static void vcs_state_cb(struct bt_vcp *vcp, int err, uint8_t volume, uint8_t mute)
 {
 	if (err) {
 		printk("VCS state get failed (%d)\n", err);
@@ -28,7 +28,7 @@ static void vcs_state_cb(struct bt_vcs *vcs, int err, uint8_t volume, uint8_t mu
 	}
 }
 
-static void vcs_flags_cb(struct bt_vcs *vcs, int err, uint8_t flags)
+static void vcs_flags_cb(struct bt_vcp *vcp, int err, uint8_t flags)
 {
 	if (err) {
 		printk("VCS flags get failed (%d)\n", err);
@@ -111,7 +111,7 @@ static void vocs_description_cb(struct bt_vocs *inst, int err, char *description
 	}
 }
 
-static struct bt_vcs_cb vcs_cbs = {
+static struct bt_vcp_cb vcs_cbs = {
 	.state = vcs_state_cb,
 	.flags = vcs_flags_cb,
 };
@@ -133,9 +133,9 @@ static struct bt_vocs_cb vocs_cbs = {
 int vcp_vol_renderer_init(void)
 {
 	int err;
-	struct bt_vcs_register_param vcs_param;
-	char input_desc[CONFIG_BT_VCS_AICS_INSTANCE_COUNT][16];
-	char output_desc[CONFIG_BT_VCS_VOCS_INSTANCE_COUNT][16];
+	struct bt_vcp_register_param vcs_param;
+	char input_desc[CONFIG_BT_VCP_AICS_INSTANCE_COUNT][16];
+	char output_desc[CONFIG_BT_VCP_VOCS_INSTANCE_COUNT][16];
 
 	memset(&vcs_param, 0, sizeof(vcs_param));
 
@@ -161,16 +161,16 @@ int vcp_vol_renderer_init(void)
 	}
 
 	vcs_param.step = 1;
-	vcs_param.mute = BT_VCS_STATE_UNMUTED;
+	vcs_param.mute = BT_VCP_STATE_UNMUTED;
 	vcs_param.volume = 100;
 	vcs_param.cb = &vcs_cbs;
 
-	err = bt_vcs_register(&vcs_param, &vcs);
+	err = bt_vcp_register(&vcs_param, &vcs);
 	if (err) {
 		return err;
 	}
 
-	err = bt_vcs_included_get(vcs, &vcs_included);
+	err = bt_vcp_included_get(vcs, &vcp_included);
 	if (err != 0) {
 		return err;
 	}
