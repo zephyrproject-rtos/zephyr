@@ -23,9 +23,9 @@
 #include "audio_internal.h"
 #include "vcp_internal.h"
 
-#define LOG_LEVEL CONFIG_BT_VCP_LOG_LEVEL
+#define LOG_LEVEL CONFIG_BT_VCP_VOL_REND_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(bt_vcp);
+LOG_MODULE_REGISTER(bt_vcp_vol_rend);
 
 #define VOLUME_DOWN(current_vol) \
 	((uint8_t)MAX(0, (int)current_vol - vcp_inst.srv.volume_step))
@@ -212,8 +212,8 @@ static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 #define BT_VCS_DEFINITION \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_VCS), \
-	VOCS_INCLUDES(CONFIG_BT_VCP_VOCS_INSTANCE_COUNT) \
-	AICS_INCLUDES(CONFIG_BT_VCP_AICS_INSTANCE_COUNT) \
+	VOCS_INCLUDES(CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT) \
+	AICS_INCLUDES(CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT) \
 	BT_AUDIO_CHRC(BT_UUID_VCS_STATE, \
 		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
 		      BT_GATT_PERM_READ_ENCRYPT, \
@@ -232,7 +232,7 @@ static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static struct bt_gatt_attr vcs_attrs[] = { BT_VCS_DEFINITION };
 static struct bt_gatt_service vcs_svc;
 
-static int prepare_vocs_inst(struct bt_vcp_register_param *param)
+static int prepare_vocs_inst(struct bt_vcp_vol_rend_register_param *param)
 {
 	int err;
 	int j;
@@ -263,19 +263,19 @@ static int prepare_vocs_inst(struct bt_vcp_register_param *param)
 			vcs_attrs[i].user_data = bt_vocs_svc_decl_get(vcp_inst.srv.vocs_insts[j]);
 			j++;
 
-			if (j == CONFIG_BT_VCP_VOCS_INSTANCE_COUNT) {
+			if (j == CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT) {
 				break;
 			}
 		}
 	}
 
-	__ASSERT(j == CONFIG_BT_VCP_VOCS_INSTANCE_COUNT,
+	__ASSERT(j == CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT,
 		 "Invalid VOCS instance count");
 
 	return 0;
 }
 
-static int prepare_aics_inst(struct bt_vcp_register_param *param)
+static int prepare_aics_inst(struct bt_vcp_vol_rend_register_param *param)
 {
 	int err;
 	int j;
@@ -307,20 +307,21 @@ static int prepare_aics_inst(struct bt_vcp_register_param *param)
 
 			LOG_DBG("AICS P %p", vcs_attrs[i].user_data);
 
-			if (j == CONFIG_BT_VCP_AICS_INSTANCE_COUNT) {
+			if (j == CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT) {
 				break;
 			}
 		}
 	}
 
-	__ASSERT(j == CONFIG_BT_VCP_AICS_INSTANCE_COUNT,
+	__ASSERT(j == CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT,
 		 "Invalid AICS instance count");
 
 	return 0;
 }
 
 /****************************** PUBLIC API ******************************/
-int bt_vcp_register(struct bt_vcp_register_param *param, struct bt_vcp **vcp)
+int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param,
+			     struct bt_vcp **vcp)
 {
 	static bool registered;
 	int err;
@@ -347,7 +348,7 @@ int bt_vcp_register(struct bt_vcp_register_param *param, struct bt_vcp **vcp)
 
 	vcs_svc = (struct bt_gatt_service)BT_GATT_SERVICE(vcs_attrs);
 
-	if (CONFIG_BT_VCP_VOCS_INSTANCE_COUNT > 0) {
+	if (CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT > 0) {
 		err = prepare_vocs_inst(param);
 
 		if (err != 0) {
@@ -355,7 +356,7 @@ int bt_vcp_register(struct bt_vcp_register_param *param, struct bt_vcp **vcp)
 		}
 	}
 
-	if (CONFIG_BT_VCP_AICS_INSTANCE_COUNT > 0) {
+	if (CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT > 0) {
 		err = prepare_aics_inst(param);
 
 		if (err != 0) {
@@ -382,7 +383,7 @@ int bt_vcp_register(struct bt_vcp_register_param *param, struct bt_vcp **vcp)
 	return err;
 }
 
-int bt_vcp_included_get(struct bt_vcp *vcp, struct bt_vcp_included *included)
+int bt_vcp_vol_rend_included_get(struct bt_vcp *vcp, struct bt_vcp_included *included)
 {
 	CHECKIF(vcp == NULL) {
 		LOG_DBG("NULL vcp instance");
@@ -402,7 +403,7 @@ int bt_vcp_included_get(struct bt_vcp *vcp, struct bt_vcp_included *included)
 	return 0;
 }
 
-int bt_vcp_vol_step_set(uint8_t volume_step)
+int bt_vcp_vol_rend_set_step(uint8_t volume_step)
 {
 	if (volume_step > 0) {
 		vcp_inst.srv.volume_step = volume_step;
@@ -412,7 +413,7 @@ int bt_vcp_vol_step_set(uint8_t volume_step)
 	}
 }
 
-int bt_vcp_vol_get(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_get_state(struct bt_vcp *vcp)
 {
 	CHECKIF(vcp == NULL) {
 		LOG_DBG("NULL vcp instance");
@@ -427,7 +428,7 @@ int bt_vcp_vol_get(struct bt_vcp *vcp)
 	return 0;
 }
 
-int bt_vcp_flags_get(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_get_flags(struct bt_vcp *vcp)
 {
 	CHECKIF(vcp == NULL) {
 		LOG_DBG("NULL vcp instance");
@@ -441,7 +442,7 @@ int bt_vcp_flags_get(struct bt_vcp *vcp)
 	return 0;
 }
 
-int bt_vcp_vol_down(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_vol_down(struct bt_vcp *vcp)
 {
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_REL_VOL_DOWN,
@@ -459,7 +460,7 @@ int bt_vcp_vol_down(struct bt_vcp *vcp)
 	return err > 0 ? 0 : err;
 }
 
-int bt_vcp_vol_up(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_vol_up(struct bt_vcp *vcp)
 {
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_REL_VOL_UP,
@@ -477,7 +478,7 @@ int bt_vcp_vol_up(struct bt_vcp *vcp)
 	return err > 0 ? 0 : err;
 }
 
-int bt_vcp_unmute_vol_down(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_unmute_vol_down(struct bt_vcp *vcp)
 {
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_UNMUTE_REL_VOL_DOWN,
@@ -495,7 +496,7 @@ int bt_vcp_unmute_vol_down(struct bt_vcp *vcp)
 	return err > 0 ? 0 : err;
 }
 
-int bt_vcp_unmute_vol_up(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_unmute_vol_up(struct bt_vcp *vcp)
 {
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_UNMUTE_REL_VOL_UP,
@@ -513,7 +514,7 @@ int bt_vcp_unmute_vol_up(struct bt_vcp *vcp)
 	return err > 0 ? 0 : err;
 }
 
-int bt_vcp_vol_set(struct bt_vcp *vcp, uint8_t volume)
+int bt_vcp_vol_rend_set_vol(struct bt_vcp *vcp, uint8_t volume)
 {
 
 	const struct vcs_control_vol cp = {
@@ -535,7 +536,7 @@ int bt_vcp_vol_set(struct bt_vcp *vcp, uint8_t volume)
 	return err > 0 ? 0 : err;
 }
 
-int bt_vcp_unmute(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_unmute(struct bt_vcp *vcp)
 {
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_UNMUTE,
@@ -553,7 +554,7 @@ int bt_vcp_unmute(struct bt_vcp *vcp)
 	return err > 0 ? 0 : err;
 }
 
-int bt_vcp_mute(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_mute(struct bt_vcp *vcp)
 {
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_MUTE,
