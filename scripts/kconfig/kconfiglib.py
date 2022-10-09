@@ -4751,10 +4751,15 @@ class Symbol(object):
         defined in multiple locations will return a string with all
         definitions.
 
+        Symbols without menu nodes return the repr() result.
+
         The returned string does not end in a newline. An empty string is
         returned for undefined and constant symbols.
         """
-        return self.custom_str(standard_sc_expr_str)
+        if len(self.nodes) == 0:
+            return repr(self)
+        else:
+            return self.custom_str(standard_sc_expr_str)
 
     def custom_str(self, sc_expr_str_fn):
         """
