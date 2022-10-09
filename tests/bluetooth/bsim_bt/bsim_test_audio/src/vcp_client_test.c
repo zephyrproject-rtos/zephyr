@@ -458,7 +458,7 @@ static int test_vocs(void)
 
 	printk("Getting VOCS state\n");
 	g_cb = false;
-	err = bt_vcp_vocs_state_get(vcp, vcp_included.vocs[0]);
+	err = bt_vocs_state_get(vcp_included.vocs[0]);
 	if (err) {
 		FAIL("Could not get VOCS state (err %d)\n", err);
 		return err;
@@ -468,7 +468,7 @@ static int test_vocs(void)
 
 	printk("Getting VOCS location\n");
 	g_cb = false;
-	err = bt_vcp_vocs_location_get(vcp, vcp_included.vocs[0]);
+	err = bt_vocs_location_get(vcp_included.vocs[0]);
 	if (err) {
 		FAIL("Could not get VOCS location (err %d)\n", err);
 		return err;
@@ -478,7 +478,7 @@ static int test_vocs(void)
 
 	printk("Getting VOCS description\n");
 	g_cb = false;
-	err = bt_vcp_vocs_description_get(vcp, vcp_included.vocs[0]);
+	err = bt_vocs_description_get(vcp_included.vocs[0]);
 	if (err) {
 		FAIL("Could not get VOCS description (err %d)\n", err);
 		return err;
@@ -489,7 +489,7 @@ static int test_vocs(void)
 	printk("Setting VOCS location\n");
 	expected_location = g_vocs_location + 1;
 	g_cb = false;
-	err = bt_vcp_vocs_location_set(vcp, vcp_included.vocs[0],
+	err = bt_vocs_location_set(vcp_included.vocs[0],
 				       expected_location);
 	if (err) {
 		FAIL("Could not set VOCS location (err %d)\n", err);
@@ -501,7 +501,7 @@ static int test_vocs(void)
 	printk("Setting VOCS state\n");
 	expected_offset = g_vocs_offset + 1;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_vocs_state_set(vcp, vcp_included.vocs[0], expected_offset);
+	err = bt_vocs_state_set(vcp_included.vocs[0], expected_offset);
 	if (err) {
 		FAIL("Could not set VOCS state (err %d)\n", err);
 		return err;
@@ -514,7 +514,7 @@ static int test_vocs(void)
 		sizeof(expected_description));
 	expected_description[sizeof(expected_description) - 1] = '\0';
 	g_cb = false;
-	err = bt_vcp_vocs_description_set(vcp, vcp_included.vocs[0],
+	err = bt_vocs_description_set(vcp_included.vocs[0],
 					  expected_description);
 	if (err) {
 		FAIL("Could not set VOCS description (err %d)\n", err);
