@@ -12,6 +12,7 @@
 #define STACK_SIZE	512
 
 K_SEM_DEFINE(semaphore0, 0, 1);
+K_SEM_DEFINE(sem0, 0, 1);
 
 void thread_fn(void *p1, void *p2, void *p3)
 {
@@ -23,7 +24,6 @@ void thread_fn(void *p1, void *p2, void *p3)
 void run_semaphore(void)
 {
 	k_tid_t sem0_tid;
-	struct k_sem sem0;
 
 	k_sem_init(&sem0, 0, 1);
 

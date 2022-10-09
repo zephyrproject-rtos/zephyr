@@ -11,6 +11,7 @@
 #define STACK_SIZE	512
 
 K_MUTEX_DEFINE(user_mutex);
+K_MUTEX_DEFINE(sys_mutex);
 
 #ifdef CONFIG_USERSPACE
 static void user_thread_fn(void *arg1, void *arg2, void *arg3)
@@ -41,8 +42,6 @@ static void run_user_mutex(void)
 
 static void run_system_mutex(void)
 {
-	struct k_mutex sys_mutex;
-
 	k_mutex_init(&sys_mutex);
 
 	k_mutex_lock(&sys_mutex, K_FOREVER);
