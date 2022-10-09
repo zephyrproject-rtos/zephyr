@@ -259,9 +259,24 @@ symbol properties, so the above ``default`` is equivalent to
       	...
       	depends on DEP2
 
+   Symbols without any listed dependencies are treated as having a dependency
+   on the "y" symbol, which is always set. Applying the ORing rule results in
+   the definitions below resolving to a symbol with no dependencies. If ``BAR``
+   is set, ``FOO`` will be enabled regardless of the value of ``DEP1``.
+
+   .. code-block:: none
+
+      config FOO
+      	...
+      	depends on DEP1
+
+      config FOO
+      	...
+      	default y if BAR
+
    When making changes to :file:`Kconfig.defconfig` files, always check the
    symbol's direct dependencies in one of the :ref:`interactive configuration
-   interfaces <menuconfig>` afterwards. It is often necessary to repeat
+   interfaces <menuconfig>` afterwards. It is **required** to repeat
    dependencies from the base definition of the symbol to avoid weakening a
    symbol's dependencies.
 
