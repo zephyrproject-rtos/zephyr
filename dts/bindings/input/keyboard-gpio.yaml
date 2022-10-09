@@ -1,0 +1,34 @@
+# Copyright (c) 2022, tangchunhui@coros.com
+# SPDX-License-Identifier: Apache-2.0
+
+description: Keyboard GPIO parent node
+
+compatible: "keyboard-gpio"
+
+include: base.yaml
+
+child-binding:
+    description: Keyboard GPIO child node
+    properties:
+       gpios:
+          type: phandle-array
+          required: true
+       label:
+          type: string
+          description: Descriptive name of the key
+       code:
+          type: int
+          required: true
+          description: User-defined key code
+       debounce-ms:
+          type: int
+          required: false
+          description: Key debounce delay time in milliseconds
+       longpress-ms:
+          type: int
+          required: false
+          description: Key long press delay time in milliseconds
+       holdpress-ms:
+          type: int
+          required: false
+          description: Key hold press delay time in milliseconds

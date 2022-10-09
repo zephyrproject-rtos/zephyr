@@ -17,6 +17,8 @@ config ENABLE_INPUT_ISR_LOCK
 	  Use k_spin_lock() and k_spin_unlock() to control ring buffer exclusive access.
 	  This is required to be able to report input event in isr context.
 
+source "drivers/input/keyboard/Kconfig"
+
 module = INPUT
 module-str = input
 source "subsys/logging/Kconfig.template.log_config"

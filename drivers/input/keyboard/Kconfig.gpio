@@ -1,0 +1,29 @@
+# Input keyboard configuration options
+
+# Copyright (c) 2022, tangchunhui@coros.com
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig KEYBOARD_GPIO
+	bool "Keyboard GPIO Drivers"
+	help
+	  Include keyboard gpio drivers in system config.
+
+if KEYBOARD_GPIO
+
+config KEYBOARD_GPIO_SCAN_INTERVAL
+	int "scan interval"
+	default 10
+
+config KEYBOARD_GPIO_TIME_DEBOUNCE
+	int "debounce time"
+	default 30
+
+config KEYBOARD_GPIO_TIME_LONGPRESS
+	int "long press time"
+	default 0
+
+config KEYBOARD_GPIO_TIME_HOLDPRESS
+	int "hold press time"
+	default 0
+
+endif # KEYBOARD_GPIO

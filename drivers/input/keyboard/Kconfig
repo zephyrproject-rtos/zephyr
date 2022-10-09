@@ -1,0 +1,20 @@
+# Input keyboard configuration options
+
+# Copyright (c) 2022 tangchunhui2022@gmail.com
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig KEYBOARD
+	bool "Keyboard Drivers"
+	depends on INPUT
+	help
+	  Include keyboard drivers in system config.
+
+if KEYBOARD
+
+config KEYBOARD_EVENT_MAX_NUMBERS
+	int "Keyboard event max numbers"
+	default 20
+
+source "drivers/input/keyboard/Kconfig.gpio"
+
+endif # KEYBOARD
