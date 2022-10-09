@@ -151,4 +151,6 @@ source "drivers/xen/Kconfig"
 
 source "drivers/fuel_gauge/Kconfig"
 
+source "drivers/input/Kconfig"
+
 endmenu

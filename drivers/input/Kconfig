@@ -1,0 +1,34 @@
+# Input subsystem configuration options
+
+# Copyright (c) 2022, tangchunhui@coros.com
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT
+	bool "Input Subsystem Drivers"
+	select RING_BUFFER
+	help
+	  Include input subsystem drivers in system config.
+
+if INPUT
+
+config ENABLE_INPUT_ISR_LOCK
+	bool "Input event interrupt lock"
+	help
+	  Use k_spin_lock() and k_spin_unlock() to control ring buffer exclusive access.
+	  This is required to be able to report input event in isr context.
+
+module = INPUT
+module-str = input
+source "subsys/logging/Kconfig.template.log_config"
+
+config INPUT_INIT_PRIORITY
+	int "Input subsystem driver init priority"
+	default 90
+	help
+	  Input subsystem driver initialization priority.
+
+config INPUT_ATTR_DATA_SIZE
+	int "Input attribute data max size"
+	default 64
+
+endif # INPUT

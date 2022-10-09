@@ -320,3 +320,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
    * - :ref:`zdsp_api`
      - Experimental
      - 3.3
+
+   * - :ref:`input_api`
+     - Experimental
+     - 3.3
