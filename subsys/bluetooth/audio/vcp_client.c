@@ -61,33 +61,6 @@ bool bt_vcp_client_valid_vocs_inst(struct bt_vcp *vcp, struct bt_vocs *vocs)
 	return false;
 }
 
-bool bt_vcp_client_valid_aics_inst(struct bt_vcp *vcp, struct bt_aics *aics)
-{
-	if (vcp == NULL) {
-		return false;
-	}
-
-	if (!vcp->client_instance) {
-		return false;
-	}
-
-	if (vcp->cli.conn == NULL) {
-		return false;
-	}
-
-	if (aics == NULL) {
-		return false;
-	}
-
-	for (int i = 0; i < ARRAY_SIZE(vcp->cli.aics); i++) {
-		if (vcp->cli.aics[i] == aics) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
 static uint8_t vcp_client_notify_handler(struct bt_conn *conn,
 					 struct bt_gatt_subscribe_params *params,
 					 const void *data, uint16_t length)
