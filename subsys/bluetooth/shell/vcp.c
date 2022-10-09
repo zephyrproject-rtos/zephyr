@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth VCS server shell.
+ *  @brief Bluetooth VCP server shell.
  *
  * Copyright (c) 2020 Bose Corporation
  * Copyright (c) 2020-2022 Nordic Semiconductor ASA
@@ -17,25 +17,25 @@
 
 #include "bt.h"
 
-static struct bt_vcs *vcs;
-static struct bt_vcs_included vcs_included;
+static struct bt_vcp *vcp;
+static struct bt_vcp_included vcp_included;
 
-static void vcs_state_cb(struct bt_vcs *vcs, int err, uint8_t volume,
+static void vcs_state_cb(struct bt_vcp *vcp, int err, uint8_t volume,
 			 uint8_t mute)
 {
 	if (err) {
-		shell_error(ctx_shell, "VCS state get failed (%d)", err);
+		shell_error(ctx_shell, "VCP state get failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "VCS volume %u, mute %u", volume, mute);
+		shell_print(ctx_shell, "VCP volume %u, mute %u", volume, mute);
 	}
 }
 
-static void vcs_flags_cb(struct bt_vcs *vcs, int err, uint8_t flags)
+static void vcs_flags_cb(struct bt_vcp *vcp, int err, uint8_t flags)
 {
 	if (err) {
-		shell_error(ctx_shell, "VCS flags get failed (%d)", err);
+		shell_error(ctx_shell, "VCP flags get failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "VCS flags 0x%02X", flags);
+		shell_print(ctx_shell, "VCP flags 0x%02X", flags);
 	}
 }
 
@@ -139,7 +139,7 @@ static void vocs_description_cb(struct bt_vocs *inst, int err,
 	}
 }
 
-static struct bt_vcs_cb vcs_cbs = {
+static struct bt_vcp_cb vcs_cbs = {
 	.state = vcs_state_cb,
 	.flags = vcs_flags_cb,
 };
@@ -161,9 +161,9 @@ static struct bt_vocs_cb vocs_cbs = {
 static int cmd_vcs_init(const struct shell *sh, size_t argc, char **argv)
 {
 	int result = 0;
-	struct bt_vcs_register_param vcs_param;
-	char input_desc[CONFIG_BT_VCS_AICS_INSTANCE_COUNT][16];
-	char output_desc[CONFIG_BT_VCS_VOCS_INSTANCE_COUNT][16];
+	struct bt_vcp_register_param vcs_param;
+	char input_desc[CONFIG_BT_VCP_AICS_INSTANCE_COUNT][16];
+	char output_desc[CONFIG_BT_VCP_VOCS_INSTANCE_COUNT][16];
 	static const char assignment_operator[] = "=";
 
 	if (!ctx_shell) {
@@ -197,7 +197,7 @@ static int cmd_vcs_init(const struct shell *sh, size_t argc, char **argv)
 
 	/* Default values */
 	vcs_param.step = 1;
-	vcs_param.mute = BT_VCS_STATE_UNMUTED;
+	vcs_param.mute = BT_VCP_STATE_UNMUTED;
 	vcs_param.volume = 100;
 
 	for (int i = 1; i < argc; i++) {
@@ -228,13 +228,13 @@ static int cmd_vcs_init(const struct shell *sh, size_t argc, char **argv)
 
 	vcs_param.cb = &vcs_cbs;
 
-	result = bt_vcs_register(&vcs_param, &vcs);
+	result = bt_vcp_register(&vcs_param, &vcp);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 		return result;
 	}
 
-	result = bt_vcs_included_get(vcs, &vcs_included);
+	result = bt_vcp_included_get(vcp, &vcp_included);
 	if (result != 0) {
 		shell_error(sh, "Failed to get included services: %d", result);
 		return result;
@@ -255,7 +255,7 @@ static int cmd_vcs_volume_step(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vol_step_set(step);
+	result = bt_vcp_vol_step_set(step);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -266,7 +266,7 @@ static int cmd_vcs_volume_step(const struct shell *sh, size_t argc,
 static int cmd_vcs_state_get(const struct shell *sh, size_t argc,
 			     char **argv)
 {
-	int result = bt_vcs_vol_get(vcs);
+	int result = bt_vcp_vol_get(vcp);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -278,7 +278,7 @@ static int cmd_vcs_state_get(const struct shell *sh, size_t argc,
 static int cmd_vcs_flags_get(const struct shell *sh, size_t argc,
 			     char **argv)
 {
-	int result = bt_vcs_flags_get(vcs);
+	int result = bt_vcp_flags_get(vcp);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -290,7 +290,7 @@ static int cmd_vcs_flags_get(const struct shell *sh, size_t argc,
 static int cmd_vcs_volume_down(const struct shell *sh, size_t argc,
 			       char **argv)
 {
-	int result = bt_vcs_vol_down(vcs);
+	int result = bt_vcp_vol_down(vcp);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -303,7 +303,7 @@ static int cmd_vcs_volume_up(const struct shell *sh, size_t argc,
 			     char **argv)
 
 {
-	int result = bt_vcs_vol_up(vcs);
+	int result = bt_vcp_vol_up(vcp);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -315,7 +315,7 @@ static int cmd_vcs_volume_up(const struct shell *sh, size_t argc,
 static int cmd_vcs_unmute_volume_down(const struct shell *sh, size_t argc,
 				      char **argv)
 {
-	int result = bt_vcs_unmute_vol_down(vcs);
+	int result = bt_vcp_unmute_vol_down(vcp);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -327,7 +327,7 @@ static int cmd_vcs_unmute_volume_down(const struct shell *sh, size_t argc,
 static int cmd_vcs_unmute_volume_up(const struct shell *sh, size_t argc,
 				    char **argv)
 {
-	int result = bt_vcs_unmute_vol_up(vcs);
+	int result = bt_vcp_unmute_vol_up(vcp);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -348,7 +348,7 @@ static int cmd_vcs_volume_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vol_set(vcs, volume);
+	result = bt_vcp_vol_set(vcp, volume);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -358,7 +358,7 @@ static int cmd_vcs_volume_set(const struct shell *sh, size_t argc,
 
 static int cmd_vcs_unmute(const struct shell *sh, size_t argc, char **argv)
 {
-	int result = bt_vcs_unmute(vcs);
+	int result = bt_vcp_unmute(vcp);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -369,7 +369,7 @@ static int cmd_vcs_unmute(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_vcs_mute(const struct shell *sh, size_t argc, char **argv)
 {
-	int result = bt_vcs_mute(vcs);
+	int result = bt_vcp_mute(vcp);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -386,13 +386,13 @@ static int cmd_vcs_vocs_state_get(const struct shell *sh, size_t argc,
 
 	/* TODO: For here, and the following VOCS and AICS, default index to 0 */
 
-	if (index > CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) {
+	if (index > CONFIG_BT_VCP_VOCS_INSTANCE_COUNT) {
 		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCS_VOCS_INSTANCE_COUNT, index);
+			    CONFIG_BT_VCP_VOCS_INSTANCE_COUNT, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vocs_state_get(NULL, vcs_included.vocs[index]);
+	result = bt_vcp_vocs_state_get(NULL, vcp_included.vocs[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -406,13 +406,13 @@ static int cmd_vcs_vocs_location_get(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index > CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) {
+	if (index > CONFIG_BT_VCP_VOCS_INSTANCE_COUNT) {
 		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCS_VOCS_INSTANCE_COUNT, index);
+			    CONFIG_BT_VCP_VOCS_INSTANCE_COUNT, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vocs_location_get(NULL, vcs_included.vocs[index]);
+	result = bt_vcp_vocs_location_get(NULL, vcp_included.vocs[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -427,9 +427,9 @@ static int cmd_vcs_vocs_location_set(const struct shell *sh, size_t argc,
 	int index = strtol(argv[1], NULL, 0);
 	int location = strtol(argv[2], NULL, 0);
 
-	if (index > CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) {
+	if (index > CONFIG_BT_VCP_VOCS_INSTANCE_COUNT) {
 		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCS_VOCS_INSTANCE_COUNT, index);
+			    CONFIG_BT_VCP_VOCS_INSTANCE_COUNT, index);
 		return -ENOEXEC;
 	}
 	if (location > UINT16_MAX || location < 0) {
@@ -439,7 +439,7 @@ static int cmd_vcs_vocs_location_set(const struct shell *sh, size_t argc,
 
 	}
 
-	result = bt_vcs_vocs_location_set(NULL, vcs_included.vocs[index],
+	result = bt_vcp_vocs_location_set(NULL, vcp_included.vocs[index],
 					  location);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -455,9 +455,9 @@ static int cmd_vcs_vocs_offset_set(const struct shell *sh, size_t argc,
 	int index = strtol(argv[1], NULL, 0);
 	int offset = strtol(argv[2], NULL, 0);
 
-	if (index > CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) {
+	if (index > CONFIG_BT_VCP_VOCS_INSTANCE_COUNT) {
 		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCS_VOCS_INSTANCE_COUNT, index);
+			    CONFIG_BT_VCP_VOCS_INSTANCE_COUNT, index);
 		return -ENOEXEC;
 	}
 
@@ -467,7 +467,7 @@ static int cmd_vcs_vocs_offset_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vocs_state_set(NULL, vcs_included.vocs[index], offset);
+	result = bt_vcp_vocs_state_set(NULL, vcp_included.vocs[index], offset);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -481,13 +481,13 @@ static int cmd_vcs_vocs_output_description_get(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index > CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) {
+	if (index > CONFIG_BT_VCP_VOCS_INSTANCE_COUNT) {
 		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCS_VOCS_INSTANCE_COUNT, index);
+			    CONFIG_BT_VCP_VOCS_INSTANCE_COUNT, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vocs_description_get(NULL, vcs_included.vocs[index]);
+	result = bt_vcp_vocs_description_get(NULL, vcp_included.vocs[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -502,13 +502,13 @@ static int cmd_vcs_vocs_output_description_set(const struct shell *sh,
 	int index = strtol(argv[1], NULL, 0);
 	char *description = argv[2];
 
-	if (index > CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) {
+	if (index > CONFIG_BT_VCP_VOCS_INSTANCE_COUNT) {
 		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCS_VOCS_INSTANCE_COUNT, index);
+			    CONFIG_BT_VCP_VOCS_INSTANCE_COUNT, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vocs_description_set(NULL, vcs_included.vocs[index],
+	result = bt_vcp_vocs_description_set(NULL, vcp_included.vocs[index],
 					     description);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -523,13 +523,13 @@ static int cmd_vcs_aics_input_state_get(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs_included.aics_cnt) {
+	if (index >= vcp_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs_included.aics_cnt, index);
+			    vcp_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_state_get(NULL, vcs_included.aics[index]);
+	result = bt_vcp_aics_state_get(NULL, vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -543,13 +543,13 @@ static int cmd_vcs_aics_gain_setting_get(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs_included.aics_cnt) {
+	if (index >= vcp_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs_included.aics_cnt, index);
+			    vcp_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_gain_setting_get(NULL, vcs_included.aics[index]);
+	result = bt_vcp_aics_gain_setting_get(NULL, vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -563,13 +563,13 @@ static int cmd_vcs_aics_input_type_get(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs_included.aics_cnt) {
+	if (index >= vcp_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs_included.aics_cnt, index);
+			    vcp_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_type_get(NULL, vcs_included.aics[index]);
+	result = bt_vcp_aics_type_get(NULL, vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -583,13 +583,13 @@ static int cmd_vcs_aics_input_status_get(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs_included.aics_cnt) {
+	if (index >= vcp_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs_included.aics_cnt, index);
+			    vcp_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_status_get(NULL, vcs_included.aics[index]);
+	result = bt_vcp_aics_status_get(NULL, vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -603,13 +603,13 @@ static int cmd_vcs_aics_input_unmute(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs_included.aics_cnt) {
+	if (index >= vcp_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs_included.aics_cnt, index);
+			    vcp_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_unmute(NULL, vcs_included.aics[index]);
+	result = bt_vcp_aics_unmute(NULL, vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -623,13 +623,13 @@ static int cmd_vcs_aics_input_mute(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs_included.aics_cnt) {
+	if (index >= vcp_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs_included.aics_cnt, index);
+			    vcp_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_mute(NULL, vcs_included.aics[index]);
+	result = bt_vcp_aics_mute(NULL, vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -643,13 +643,13 @@ static int cmd_vcs_aics_manual_input_gain_set(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs_included.aics_cnt) {
+	if (index >= vcp_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs_included.aics_cnt, index);
+			    vcp_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_manual_gain_set(NULL, vcs_included.aics[index]);
+	result = bt_vcp_aics_manual_gain_set(NULL, vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -663,13 +663,13 @@ static int cmd_vcs_aics_automatic_input_gain_set(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs_included.aics_cnt) {
+	if (index >= vcp_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs_included.aics_cnt, index);
+			    vcp_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_automatic_gain_set(NULL, vcs_included.aics[index]);
+	result = bt_vcp_aics_automatic_gain_set(NULL, vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -684,9 +684,9 @@ static int cmd_vcs_aics_gain_set(const struct shell *sh, size_t argc,
 	int index = strtol(argv[1], NULL, 0);
 	int gain = strtol(argv[2], NULL, 0);
 
-	if (index >= vcs_included.aics_cnt) {
+	if (index >= vcp_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs_included.aics_cnt, index);
+			    vcp_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
@@ -696,7 +696,7 @@ static int cmd_vcs_aics_gain_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_gain_set(NULL, vcs_included.aics[index], gain);
+	result = bt_vcp_aics_gain_set(NULL, vcp_included.aics[index], gain);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -710,13 +710,13 @@ static int cmd_vcs_aics_input_description_get(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs_included.aics_cnt) {
+	if (index >= vcp_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs_included.aics_cnt, index);
+			    vcp_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_description_get(NULL, vcs_included.aics[index]);
+	result = bt_vcp_aics_description_get(NULL, vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -731,13 +731,13 @@ static int cmd_vcs_aics_input_description_set(const struct shell *sh,
 	int index = strtol(argv[1], NULL, 0);
 	char *description = argv[2];
 
-	if (index >= vcs_included.aics_cnt) {
+	if (index >= vcp_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs_included.aics_cnt, index);
+			    vcp_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_description_set(NULL, vcs_included.aics[index],
+	result = bt_vcp_aics_description_set(NULL, vcp_included.aics[index],
 					     description);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -764,7 +764,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(vcs_cmds,
 		      "[step=<uint>] [mute=<bool>] [volume=<uint>]",
 		      cmd_vcs_init, 1, 3),
 	SHELL_CMD_ARG(state_get, NULL,
-		      "Get volume state of the VCS server. Should be done "
+		      "Get volume state of the VCP server. Should be done "
 		      "before sending any control messages",
 		      cmd_vcs_state_get, 1, 0),
 	SHELL_CMD_ARG(flags_get, NULL,
@@ -857,5 +857,5 @@ SHELL_STATIC_SUBCMD_SET_CREATE(vcs_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_ARG_REGISTER(vcs, &vcs_cmds, "Bluetooth VCS shell commands",
+SHELL_CMD_ARG_REGISTER(vcp, &vcs_cmds, "Bluetooth VCP shell commands",
 		       cmd_vcs, 1, 1);
