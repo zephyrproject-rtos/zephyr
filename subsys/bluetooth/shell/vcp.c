@@ -529,7 +529,7 @@ static int cmd_vcs_aics_input_state_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_aics_state_get(NULL, vcp_included.aics[index]);
+	result = bt_aics_state_get(vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -549,7 +549,7 @@ static int cmd_vcs_aics_gain_setting_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_aics_gain_setting_get(NULL, vcp_included.aics[index]);
+	result = bt_aics_gain_setting_get(vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -569,7 +569,7 @@ static int cmd_vcs_aics_input_type_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_aics_type_get(NULL, vcp_included.aics[index]);
+	result = bt_aics_type_get(vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -589,7 +589,7 @@ static int cmd_vcs_aics_input_status_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_aics_status_get(NULL, vcp_included.aics[index]);
+	result = bt_aics_status_get(vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -609,7 +609,7 @@ static int cmd_vcs_aics_input_unmute(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_aics_unmute(NULL, vcp_included.aics[index]);
+	result = bt_aics_unmute(vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -629,7 +629,7 @@ static int cmd_vcs_aics_input_mute(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_aics_mute(NULL, vcp_included.aics[index]);
+	result = bt_aics_mute(vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -649,7 +649,7 @@ static int cmd_vcs_aics_manual_input_gain_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_aics_manual_gain_set(NULL, vcp_included.aics[index]);
+	result = bt_aics_manual_gain_set(vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -669,7 +669,7 @@ static int cmd_vcs_aics_automatic_input_gain_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_aics_automatic_gain_set(NULL, vcp_included.aics[index]);
+	result = bt_aics_automatic_gain_set(vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -696,7 +696,7 @@ static int cmd_vcs_aics_gain_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_aics_gain_set(NULL, vcp_included.aics[index], gain);
+	result = bt_aics_gain_set(vcp_included.aics[index], gain);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -716,7 +716,7 @@ static int cmd_vcs_aics_input_description_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_aics_description_get(NULL, vcp_included.aics[index]);
+	result = bt_aics_description_get(vcp_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -737,7 +737,7 @@ static int cmd_vcs_aics_input_description_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_aics_description_set(NULL, vcp_included.aics[index],
+	result = bt_aics_description_set(vcp_included.aics[index],
 					     description);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
