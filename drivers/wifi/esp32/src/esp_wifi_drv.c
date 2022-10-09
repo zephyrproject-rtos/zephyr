@@ -15,7 +15,9 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/device.h>
 #include <soc.h>
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
 #include <ethernet/eth_stats.h>
+#endif
 #include "esp_networking_priv.h"
 #include "esp_private/wifi.h"
 #include "esp_event.h"
