@@ -30,8 +30,8 @@ zephyr_library_sources_ifdef(
   vcp.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_VCP_CLIENT
-  vcp_client.c
+  CONFIG_BT_VCP_VOL_CTLR
+  vcp_vol_ctlr.c
   )
 zephyr_library_sources_ifdef(
   CONFIG_BT_MICP_MIC_DEV

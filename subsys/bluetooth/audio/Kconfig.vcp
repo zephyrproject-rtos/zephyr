@@ -63,17 +63,18 @@ endif # BT_VCS
 
 ##################### Volume Control Profile Client #####################
 
-config BT_VCP_CLIENT
-	bool "Volume Control Profile Client Support [EXPERIMENTAL]"
+config BT_VCP_VOL_CTLR
+	bool "Volume Control Profile Volume Controller Support [EXPERIMENTAL]"
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
 	select EXPERIMENTAL
 	help
-	  This option enables support for Volume Control Profile.
+	  This option enables support for Volume Control Profile Volume
+	  Controller.
 
-if BT_VCP_CLIENT
+if BT_VCP_VOL_CTLR
 
-config BT_VCP_CLIENT_MAX_VOCS_INST
+config BT_VCP_VOL_CTLR_MAX_VOCS_INST
 	int "Maximum number of VOCS instances to setup"
 	default 0
 	range 0 BT_VOCS_CLIENT_MAX_INSTANCE_COUNT
@@ -81,14 +82,14 @@ config BT_VCP_CLIENT_MAX_VOCS_INST
 	  Sets the maximum number of Volume Offset Control Service (VOCS)
 	  instances to setup and use.
 
-config BT_VCP_CLIENT_VOCS
+config BT_VCP_VOL_CTLR_VOCS
 	bool # Hidden
-	default y if BT_VCP_CLIENT_MAX_VOCS_INST > 0
+	default y if BT_VCP_VOL_CTLR_MAX_VOCS_INST > 0
 	help
 	  This hidden option makes it possible to easily check if VOCS is
 	  enabled for VCS client.
 
-config BT_VCP_CLIENT_MAX_AICS_INST
+config BT_VCP_VOL_CTLR_MAX_AICS_INST
 	int "Maximum number of AICS instances to setup"
 	default 0
 	range 0 3
@@ -96,25 +97,25 @@ config BT_VCP_CLIENT_MAX_AICS_INST
 	  Sets the maximum number of Audio Input Control Service (AICS)
 	  instances to setup and use.
 
-config BT_VCP_CLIENT_AICS
+config BT_VCP_VOL_CTLR_AICS
 	bool # Hidden
-	default y if BT_VCP_CLIENT_MAX_AICS_INST > 0
+	default y if BT_VCP_VOL_CTLR_MAX_AICS_INST > 0
 	help
 	  This hidden option makes it possible to easily check if AICS is
 	  enabled for VCS client.
 
 ############# DEBUG #############
 
-config BT_DEBUG_VCP_CLIENT
-	bool "Volume Control Profile debug"
+config BT_DEBUG_VCP_VOL_CTLR
+	bool "Volume Control Profile Volume Controller debug"
 	select DEPRECATED
 	help
-	  Use this option to enable Volume Control Profile debug logs for the
-	  Bluetooth Audio functionality.
+	  Use this option to enable Volume Control Profile Volume Controller
+	  debug logs for the Bluetooth Audio functionality.
 
-module = BT_VCP_CLIENT
-legacy-debug-sym = BT_DEBUG_VCP_CLIENT
-module-str = "Volume Control Profile Client"
+module = BT_VCP_VOL_CTLR
+legacy-debug-sym = BT_DEBUG_VCP_VOL_CTLR
+module-str = "Volume Control Profile Volume Controller"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
-endif # BT_VCP_CLIENT
+endif # BT_VCP_VOL_CTLR

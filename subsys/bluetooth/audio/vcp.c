@@ -27,8 +27,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_vcp);
 
-#if defined(CONFIG_BT_VCP)
-
 #define VOLUME_DOWN(current_vol) \
 	((uint8_t)MAX(0, (int)current_vol - vcp_inst.srv.volume_step))
 #define VOLUME_UP(current_vol) \
@@ -383,7 +381,6 @@ int bt_vcp_register(struct bt_vcp_register_param *param, struct bt_vcp **vcp)
 
 	return err;
 }
-#endif /* CONFIG_BT_VCP */
 
 int bt_vcp_included_get(struct bt_vcp *vcp, struct bt_vcp_included *included)
 {
@@ -392,12 +389,6 @@ int bt_vcp_included_get(struct bt_vcp *vcp, struct bt_vcp_included *included)
 		return -EINVAL;
 	}
 
-
-	if (IS_ENABLED(CONFIG_BT_VCP_CLIENT) && vcp->client_instance) {
-		return bt_vcp_client_included_get(vcp, included);
-	}
-
-#if defined(CONFIG_BT_VCP)
 	if (included == NULL) {
 		return -EINVAL;
 	}
@@ -409,23 +400,16 @@ int bt_vcp_included_get(struct bt_vcp *vcp, struct bt_vcp_included *included)
 	included->aics = vcp->srv.aics_insts;
 
 	return 0;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_VCP */
 }
 
 int bt_vcp_vol_step_set(uint8_t volume_step)
 {
-#if defined(CONFIG_BT_VCP)
 	if (volume_step > 0) {
 		vcp_inst.srv.volume_step = volume_step;
 		return 0;
 	} else {
 		return -EINVAL;
 	}
-#endif /* CONFIG_BT_VCP */
-
-	return -EOPNOTSUPP;
 }
 
 int bt_vcp_vol_get(struct bt_vcp *vcp)
@@ -435,20 +419,12 @@ int bt_vcp_vol_get(struct bt_vcp *vcp)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VCP_CLIENT) && vcp->client_instance) {
-		return bt_vcp_client_read_vol_state(vcp);
-	}
-
-#if defined(CONFIG_BT_VCP)
 	if (vcp->srv.cb && vcp->srv.cb->state) {
 		vcp->srv.cb->state(vcp, 0, vcp->srv.state.volume,
 				   vcp->srv.state.mute);
 	}
 
 	return 0;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_VCP */
 }
 
 int bt_vcp_flags_get(struct bt_vcp *vcp)
@@ -458,129 +434,88 @@ int bt_vcp_flags_get(struct bt_vcp *vcp)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VCP_CLIENT) && vcp->client_instance) {
-		return bt_vcp_client_read_flags(vcp);
-	}
-
-#if defined(CONFIG_BT_VCP)
 	if (vcp->srv.cb && vcp->srv.cb->flags) {
 		vcp->srv.cb->flags(vcp, 0, vcp->srv.flags);
 	}
 
 	return 0;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_VCP */
 }
 
 int bt_vcp_vol_down(struct bt_vcp *vcp)
 {
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_VCP_CLIENT) && vcp->client_instance) {
-		return bt_vcp_client_vol_down(vcp);
-	}
-
-#if defined(CONFIG_BT_VCP)
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_REL_VOL_DOWN,
 		.counter = vcp->srv.state.change_counter,
 	};
-	int err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
+	int err;
+
+	CHECKIF(vcp == NULL) {
+		LOG_DBG("NULL vcp instance");
+		return -EINVAL;
+	}
+
+	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
 	return err > 0 ? 0 : err;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_VCP */
 }
 
 int bt_vcp_vol_up(struct bt_vcp *vcp)
 {
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_VCP_CLIENT) && vcp->client_instance) {
-		return bt_vcp_client_vol_up(vcp);
-	}
-
-#if defined(CONFIG_BT_VCP)
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_REL_VOL_UP,
 		.counter = vcp->srv.state.change_counter,
 	};
-	int err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
+	int err;
+
+	CHECKIF(vcp == NULL) {
+		LOG_DBG("NULL vcp instance");
+		return -EINVAL;
+	}
+
+	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
 	return err > 0 ? 0 : err;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_VCP */
 }
 
 int bt_vcp_unmute_vol_down(struct bt_vcp *vcp)
 {
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_VCP_CLIENT) && vcp->client_instance) {
-		return bt_vcp_client_unmute_vol_down(vcp);
-	}
-
-#if defined(CONFIG_BT_VCP)
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_UNMUTE_REL_VOL_DOWN,
 		.counter = vcp->srv.state.change_counter,
 	};
-	int err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
+	int err;
+
+	CHECKIF(vcp == NULL) {
+		LOG_DBG("NULL vcp instance");
+		return -EINVAL;
+	}
+
+	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
 	return err > 0 ? 0 : err;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_VCP */
 }
 
 int bt_vcp_unmute_vol_up(struct bt_vcp *vcp)
 {
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_VCP_CLIENT) && vcp->client_instance) {
-		return bt_vcp_client_unmute_vol_up(vcp);
-	}
-
-#if defined(CONFIG_BT_VCP)
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_UNMUTE_REL_VOL_UP,
 		.counter = vcp->srv.state.change_counter,
 	};
-	int err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
+	int err;
 
-	return err > 0 ? 0 : err;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_VCP */
-}
-
-int bt_vcp_vol_set(struct bt_vcp *vcp, uint8_t volume)
-{
 	CHECKIF(vcp == NULL) {
 		LOG_DBG("NULL vcp instance");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VCP_CLIENT) && vcp->client_instance) {
-		return bt_vcp_client_set_volume(vcp, volume);
-	}
+	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
-#if defined(CONFIG_BT_VCP)
+	return err > 0 ? 0 : err;
+}
+
+int bt_vcp_vol_set(struct bt_vcp *vcp, uint8_t volume)
+{
+
 	const struct vcs_control_vol cp = {
 		.cp = {
 			.opcode = BT_VCP_OPCODE_SET_ABS_VOL,
@@ -588,58 +523,50 @@ int bt_vcp_vol_set(struct bt_vcp *vcp, uint8_t volume)
 		},
 		.volume = volume
 	};
-	int err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
+	int err;
+
+	CHECKIF(vcp == NULL) {
+		LOG_DBG("NULL vcp instance");
+		return -EINVAL;
+	}
+
+	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
 	return err > 0 ? 0 : err;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_VCP */
 }
 
 int bt_vcp_unmute(struct bt_vcp *vcp)
 {
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_VCP_CLIENT) && vcp->client_instance) {
-		return bt_vcp_client_unmute(vcp);
-	}
-
-#if defined(CONFIG_BT_VCP)
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_UNMUTE,
 		.counter = vcp->srv.state.change_counter,
 	};
-	int err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
+	int err;
 
-	return err > 0 ? 0 : err;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_VCP */
-}
-
-int bt_vcp_mute(struct bt_vcp *vcp)
-{
 	CHECKIF(vcp == NULL) {
 		LOG_DBG("NULL vcp instance");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VCP_CLIENT) && vcp->client_instance) {
-		return bt_vcp_client_mute(vcp);
-	}
+	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
-#if defined(CONFIG_BT_VCP)
+	return err > 0 ? 0 : err;
+}
+
+int bt_vcp_mute(struct bt_vcp *vcp)
+{
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_MUTE,
 		.counter = vcp->srv.state.change_counter,
 	};
-	int err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
+	int err;
+
+	CHECKIF(vcp == NULL) {
+		LOG_DBG("NULL vcp instance");
+		return -EINVAL;
+	}
+
+	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
 	return err > 0 ? 0 : err;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_VCP */
 }

@@ -7,7 +7,7 @@
 #include "bstests.h"
 
 extern struct bst_test_list *test_vcp_install(struct bst_test_list *tests);
-extern struct bst_test_list *test_vcp_client_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_vcp_vol_ctlr_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_micp_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_micp_mic_ctlr_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_csip_set_member_install(struct bst_test_list *tests);
@@ -33,7 +33,7 @@ extern struct bst_test_list *test_ias_client_install(struct bst_test_list *tests
 
 bst_test_install_t test_installers[] = {
 	test_vcp_install,
-	test_vcp_client_install,
+	test_vcp_vol_ctlr_install,
 	test_micp_install,
 	test_micp_mic_ctlr_install,
 	test_csip_set_member_install,

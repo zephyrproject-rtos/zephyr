@@ -36,8 +36,8 @@ struct vcs_control_vol {
 	uint8_t volume;
 } __packed;
 
-#if defined(CONFIG_BT_VCP_CLIENT)
-struct bt_vcp_client {
+#if defined(CONFIG_BT_VCP_VOL_CTLR)
+struct bt_vcp_vol_ctlr {
 	struct vcs_state state;
 	uint8_t flags;
 
@@ -61,11 +61,11 @@ struct bt_vcp_client {
 	struct bt_conn *conn;
 
 	uint8_t vocs_inst_cnt;
-	struct bt_vocs *vocs[CONFIG_BT_VCP_CLIENT_MAX_VOCS_INST];
+	struct bt_vocs *vocs[CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST];
 	uint8_t aics_inst_cnt;
-	struct bt_aics *aics[CONFIG_BT_VCP_CLIENT_MAX_AICS_INST];
+	struct bt_aics *aics[CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST];
 };
-#endif /* CONFIG_BT_VCP_CLIENT */
+#endif /* CONFIG_BT_VCP_VOL_CTLR */
 
 #if defined(CONFIG_BT_VCP)
 struct bt_vcp_server {
@@ -87,21 +87,10 @@ struct bt_vcp {
 #if defined(CONFIG_BT_VCP)
 		struct bt_vcp_server srv;
 #endif /* CONFIG_BT_VCP */
-#if defined(CONFIG_BT_VCP_CLIENT)
-		struct bt_vcp_client cli;
-#endif /* CONFIG_BT_VCP_CLIENT */
+#if defined(CONFIG_BT_VCP_VOL_CTLR)
+		struct bt_vcp_vol_ctlr cli;
+#endif /* CONFIG_BT_VCP_VOL_CTLR */
 	};
 };
 
-int bt_vcp_client_included_get(struct bt_vcp *vcp,
-			       struct bt_vcp_included *included);
-int bt_vcp_client_read_vol_state(struct bt_vcp *vcp);
-int bt_vcp_client_read_flags(struct bt_vcp *vcp);
-int bt_vcp_client_vol_down(struct bt_vcp *vcp);
-int bt_vcp_client_vol_up(struct bt_vcp *vcp);
-int bt_vcp_client_unmute_vol_down(struct bt_vcp *vcp);
-int bt_vcp_client_unmute_vol_up(struct bt_vcp *vcp);
-int bt_vcp_client_set_volume(struct bt_vcp *vcp, uint8_t volume);
-int bt_vcp_client_unmute(struct bt_vcp *vcp);
-int bt_vcp_client_mute(struct bt_vcp *vcp);
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_INTERNAL_*/

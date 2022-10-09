@@ -27,7 +27,7 @@ static void vcs_discover_cb(struct bt_vcp *vcp, int err, uint8_t vocs_count,
 		shell_print(ctx_shell, "VCP discover done with %u AICS",
 			    aics_count);
 
-		if (bt_vcp_included_get(vcp, &vcp_included)) {
+		if (bt_vcp_vol_ctlr_included_get(vcp, &vcp_included)) {
 			shell_error(ctx_shell, "Could not get VCP context");
 		}
 	}
@@ -115,7 +115,7 @@ static void vcs_flags_cb(struct bt_vcp *vcp, int err, uint8_t flags)
 	}
 }
 
-#if CONFIG_BT_VCP_CLIENT_MAX_AICS_INST > 0
+#if CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST > 0
 static void vcs_aics_set_gain_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
@@ -234,9 +234,9 @@ static void vcs_aics_description_cb(struct bt_aics *inst, int err,
 			    inst, description);
 	}
 }
-#endif /* CONFIG_BT_VCP_CLIENT_MAX_AICS_INST > 0 */
+#endif /* CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST > 0 */
 
-#if CONFIG_BT_VCP_CLIENT_MAX_VOCS_INST > 0
+#if CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST > 0
 static void vcs_vocs_set_offset_cb(struct bt_vocs *inst, int err)
 {
 	if (err != 0) {
@@ -282,7 +282,7 @@ static void vcs_vocs_description_cb(struct bt_vocs *inst, int err,
 			    inst, description);
 	}
 }
-#endif /* CONFIG_BT_VCP_CLIENT_MAX_VOCS_INST > 0 */
+#endif /* CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST > 0 */
 
 static struct bt_vcp_cb vcs_cbs = {
 	.discover = vcs_discover_cb,
@@ -298,7 +298,7 @@ static struct bt_vcp_cb vcs_cbs = {
 	.flags = vcs_flags_cb,
 
 	/* Audio Input Control Service */
-#if CONFIG_BT_VCP_CLIENT_MAX_AICS_INST > 0
+#if CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST > 0
 	.aics_cb = {
 		.state = vcs_aics_state_cb,
 		.gain_setting = vcs_aics_gain_setting_cb,
@@ -311,18 +311,18 @@ static struct bt_vcp_cb vcs_cbs = {
 		.set_manual_mode = vcs_aics_set_manual_mode_cb,
 		.set_auto_mode = vcs_aics_automatic_mode_cb,
 	},
-#endif /* CONFIG_BT_VCP_CLIENT_MAX_AICS_INST > 0 */
-#if CONFIG_BT_VCP_CLIENT_MAX_VOCS_INST > 0
+#endif /* CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST > 0 */
+#if CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST > 0
 	.vocs_cb = {
 		.state = vcs_vocs_state_cb,
 		.location = vcs_vocs_location_cb,
 		.description = vcs_vocs_description_cb,
 		.set_offset = vcs_vocs_set_offset_cb,
 	}
-#endif /* CONFIG_BT_VCP_CLIENT_MAX_VOCS_INST > 0 */
+#endif /* CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST > 0 */
 };
 
-static int cmd_vcp_client_discover(const struct shell *sh, size_t argc,
+static int cmd_vcp_vol_ctlr_discover(const struct shell *sh, size_t argc,
 				   char **argv)
 {
 	int result;
@@ -331,7 +331,7 @@ static int cmd_vcp_client_discover(const struct shell *sh, size_t argc,
 		ctx_shell = sh;
 	}
 
-	result = bt_vcp_client_cb_register(&vcs_cbs);
+	result = bt_vcp_vol_ctlr_cb_register(&vcs_cbs);
 	if (result != 0) {
 		shell_print(sh, "CB register failed: %d", result);
 		return result;
@@ -342,7 +342,7 @@ static int cmd_vcp_client_discover(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_discover(default_conn, &vcp);
+	result = bt_vcp_vol_ctlr_discover(default_conn, &vcp);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -350,7 +350,7 @@ static int cmd_vcp_client_discover(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_vcp_client_state_get(const struct shell *sh, size_t argc,
+static int cmd_vcp_vol_ctlr_state_get(const struct shell *sh, size_t argc,
 				    char **argv)
 {
 	int result;
@@ -360,7 +360,7 @@ static int cmd_vcp_client_state_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_get(vcp);
+	result = bt_vcp_vol_ctlr_read_state(vcp);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -368,7 +368,7 @@ static int cmd_vcp_client_state_get(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_vcp_client_flags_get(const struct shell *sh, size_t argc,
+static int cmd_vcp_vol_ctlr_flags_get(const struct shell *sh, size_t argc,
 				    char **argv)
 {
 	int result;
@@ -378,7 +378,7 @@ static int cmd_vcp_client_flags_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_flags_get(vcp);
+	result = bt_vcp_vol_ctlr_read_flags(vcp);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -386,7 +386,7 @@ static int cmd_vcp_client_flags_get(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_vcp_client_volume_down(const struct shell *sh, size_t argc,
+static int cmd_vcp_vol_ctlr_volume_down(const struct shell *sh, size_t argc,
 				      char **argv)
 {
 	int result;
@@ -396,7 +396,7 @@ static int cmd_vcp_client_volume_down(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_down(vcp);
+	result = bt_vcp_vol_ctlr_vol_down(vcp);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -404,7 +404,7 @@ static int cmd_vcp_client_volume_down(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_vcp_client_volume_up(const struct shell *sh, size_t argc,
+static int cmd_vcp_vol_ctlr_volume_up(const struct shell *sh, size_t argc,
 				    char **argv)
 
 {
@@ -415,7 +415,7 @@ static int cmd_vcp_client_volume_up(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_up(vcp);
+	result = bt_vcp_vol_ctlr_vol_up(vcp);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -423,7 +423,7 @@ static int cmd_vcp_client_volume_up(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_vcp_client_unmute_volume_down(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_unmute_volume_down(const struct shell *sh,
 					     size_t argc, char **argv)
 {
 	int result;
@@ -433,7 +433,7 @@ static int cmd_vcp_client_unmute_volume_down(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_unmute_vol_down(vcp);
+	result = bt_vcp_vol_ctlr_unmute_vol_down(vcp);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -441,7 +441,7 @@ static int cmd_vcp_client_unmute_volume_down(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_unmute_volume_up(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_unmute_volume_up(const struct shell *sh,
 					   size_t argc, char **argv)
 {
 	int result;
@@ -451,7 +451,7 @@ static int cmd_vcp_client_unmute_volume_up(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_unmute_vol_up(vcp);
+	result = bt_vcp_vol_ctlr_unmute_vol_up(vcp);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -459,7 +459,7 @@ static int cmd_vcp_client_unmute_volume_up(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_volume_set(const struct shell *sh, size_t argc,
+static int cmd_vcp_vol_ctlr_volume_set(const struct shell *sh, size_t argc,
 				     char **argv)
 
 {
@@ -476,7 +476,7 @@ static int cmd_vcp_client_volume_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_set(vcp, volume);
+	result = bt_vcp_vol_ctlr_set_vol(vcp, volume);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -485,7 +485,7 @@ static int cmd_vcp_client_volume_set(const struct shell *sh, size_t argc,
 }
 
 
-static int cmd_vcp_client_unmute(const struct shell *sh, size_t argc,
+static int cmd_vcp_vol_ctlr_unmute(const struct shell *sh, size_t argc,
 				 char **argv)
 {
 	int result;
@@ -495,7 +495,7 @@ static int cmd_vcp_client_unmute(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_unmute(vcp);
+	result = bt_vcp_vol_ctlr_unmute(vcp);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -503,7 +503,7 @@ static int cmd_vcp_client_unmute(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_vcp_client_mute(const struct shell *sh, size_t argc, char **argv)
+static int cmd_vcp_vol_ctlr_mute(const struct shell *sh, size_t argc, char **argv)
 {
 	int result;
 
@@ -512,7 +512,7 @@ static int cmd_vcp_client_mute(const struct shell *sh, size_t argc, char **argv)
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_mute(vcp);
+	result = bt_vcp_vol_ctlr_mute(vcp);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -520,7 +520,7 @@ static int cmd_vcp_client_mute(const struct shell *sh, size_t argc, char **argv)
 	return result;
 }
 
-static int cmd_vcp_client_vocs_state_get(const struct shell *sh, size_t argc,
+static int cmd_vcp_vol_ctlr_vocs_state_get(const struct shell *sh, size_t argc,
 					 char **argv)
 {
 	int result;
@@ -545,7 +545,7 @@ static int cmd_vcp_client_vocs_state_get(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_vcp_client_vocs_location_get(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_vocs_location_get(const struct shell *sh,
 					    size_t argc, char **argv)
 {
 	int result;
@@ -570,7 +570,7 @@ static int cmd_vcp_client_vocs_location_get(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_vocs_location_set(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_vocs_location_set(const struct shell *sh,
 					    size_t argc, char **argv)
 {
 	int result;
@@ -604,7 +604,7 @@ static int cmd_vcp_client_vocs_location_set(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_vocs_offset_set(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_vocs_offset_set(const struct shell *sh,
 					  size_t argc, char **argv)
 {
 	int result;
@@ -637,7 +637,7 @@ static int cmd_vcp_client_vocs_offset_set(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_vocs_output_description_get(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_vocs_output_description_get(const struct shell *sh,
 						      size_t argc, char **argv)
 {
 	int result;
@@ -662,7 +662,7 @@ static int cmd_vcp_client_vocs_output_description_get(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_vocs_output_description_set(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_vocs_output_description_set(const struct shell *sh,
 						      size_t argc, char **argv)
 {
 	int result;
@@ -689,7 +689,7 @@ static int cmd_vcp_client_vocs_output_description_set(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_aics_input_state_get(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_aics_input_state_get(const struct shell *sh,
 					       size_t argc, char **argv)
 {
 	int result;
@@ -714,7 +714,7 @@ static int cmd_vcp_client_aics_input_state_get(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_aics_gain_setting_get(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_aics_gain_setting_get(const struct shell *sh,
 						size_t argc, char **argv)
 {
 	int result;
@@ -739,7 +739,7 @@ static int cmd_vcp_client_aics_gain_setting_get(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_aics_input_type_get(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_aics_input_type_get(const struct shell *sh,
 					      size_t argc, char **argv)
 {
 	int result;
@@ -764,7 +764,7 @@ static int cmd_vcp_client_aics_input_type_get(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_aics_input_status_get(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_aics_input_status_get(const struct shell *sh,
 						size_t argc, char **argv)
 {
 	int result;
@@ -789,7 +789,7 @@ static int cmd_vcp_client_aics_input_status_get(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_aics_input_unmute(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_aics_input_unmute(const struct shell *sh,
 					    size_t argc, char **argv)
 {
 	int result;
@@ -814,7 +814,7 @@ static int cmd_vcp_client_aics_input_unmute(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_aics_input_mute(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_aics_input_mute(const struct shell *sh,
 					  size_t argc, char **argv)
 {
 	int result;
@@ -839,7 +839,7 @@ static int cmd_vcp_client_aics_input_mute(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_aics_manual_input_gain_set(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_aics_manual_input_gain_set(const struct shell *sh,
 						     size_t argc, char **argv)
 {
 	int result;
@@ -864,7 +864,7 @@ static int cmd_vcp_client_aics_manual_input_gain_set(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_aics_auto_input_gain_set(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_aics_auto_input_gain_set(const struct shell *sh,
 						   size_t argc, char **argv)
 {
 	int result;
@@ -889,7 +889,7 @@ static int cmd_vcp_client_aics_auto_input_gain_set(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_aics_gain_set(const struct shell *sh, size_t argc,
+static int cmd_vcp_vol_ctlr_aics_gain_set(const struct shell *sh, size_t argc,
 					char **argv)
 {
 	int result;
@@ -921,7 +921,7 @@ static int cmd_vcp_client_aics_gain_set(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_vcp_client_aics_input_description_get(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_aics_input_description_get(const struct shell *sh,
 						     size_t argc, char **argv)
 {
 	int result;
@@ -946,7 +946,7 @@ static int cmd_vcp_client_aics_input_description_get(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client_aics_input_description_set(const struct shell *sh,
+static int cmd_vcp_vol_ctlr_aics_input_description_set(const struct shell *sh,
 						     size_t argc, char **argv)
 {
 	int result;
@@ -973,7 +973,7 @@ static int cmd_vcp_client_aics_input_description_set(const struct shell *sh,
 	return result;
 }
 
-static int cmd_vcp_client(const struct shell *sh, size_t argc, char **argv)
+static int cmd_vcp_vol_ctlr(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
 		shell_error(sh, "%s unknown parameter: %s",
@@ -985,101 +985,101 @@ static int cmd_vcp_client(const struct shell *sh, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(vcp_client_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(vcp_vol_ctlr_cmds,
 	SHELL_CMD_ARG(discover, NULL,
 		      "Discover VCP and included services for current "
 		      "connection",
-		      cmd_vcp_client_discover, 1, 0),
+		      cmd_vcp_vol_ctlr_discover, 1, 0),
 	SHELL_CMD_ARG(state_get, NULL,
 		      "Get volume state of the VCP server. Should be done "
 		      "before sending any control messages",
-		      cmd_vcp_client_state_get, 1, 0),
+		      cmd_vcp_vol_ctlr_state_get, 1, 0),
 	SHELL_CMD_ARG(flags_get, NULL,
 		      "Read volume flags",
-		      cmd_vcp_client_flags_get, 1, 0),
+		      cmd_vcp_vol_ctlr_flags_get, 1, 0),
 	SHELL_CMD_ARG(volume_down, NULL,
 		      "Turn the volume down",
-		      cmd_vcp_client_volume_down, 1, 0),
+		      cmd_vcp_vol_ctlr_volume_down, 1, 0),
 	SHELL_CMD_ARG(volume_up, NULL,
 		      "Turn the volume up",
-		      cmd_vcp_client_volume_up, 1, 0),
+		      cmd_vcp_vol_ctlr_volume_up, 1, 0),
 	SHELL_CMD_ARG(unmute_volume_down, NULL,
 		      "Turn the volume down, and unmute",
-		      cmd_vcp_client_unmute_volume_down, 1, 0),
+		      cmd_vcp_vol_ctlr_unmute_volume_down, 1, 0),
 	SHELL_CMD_ARG(unmute_volume_up, NULL,
 		      "Turn the volume up, and unmute",
-		      cmd_vcp_client_unmute_volume_up, 1, 0),
+		      cmd_vcp_vol_ctlr_unmute_volume_up, 1, 0),
 	SHELL_CMD_ARG(volume_set, NULL,
 		      "Set an absolute volume <volume>",
-		      cmd_vcp_client_volume_set, 2, 0),
+		      cmd_vcp_vol_ctlr_volume_set, 2, 0),
 	SHELL_CMD_ARG(unmute, NULL,
 		      "Unmute",
-		      cmd_vcp_client_unmute, 1, 0),
+		      cmd_vcp_vol_ctlr_unmute, 1, 0),
 	SHELL_CMD_ARG(mute, NULL,
 		      "Mute",
-		      cmd_vcp_client_mute, 1, 0),
+		      cmd_vcp_vol_ctlr_mute, 1, 0),
 	SHELL_CMD_ARG(vocs_state_get, NULL,
 		      "Get the offset state of a VOCS instance <inst_index>",
-		      cmd_vcp_client_vocs_state_get, 2, 0),
+		      cmd_vcp_vol_ctlr_vocs_state_get, 2, 0),
 	SHELL_CMD_ARG(vocs_location_get, NULL,
 		      "Get the location of a VOCS instance <inst_index>",
-		      cmd_vcp_client_vocs_location_get, 2, 0),
+		      cmd_vcp_vol_ctlr_vocs_location_get, 2, 0),
 	SHELL_CMD_ARG(vocs_location_set, NULL,
 		      "Set the location of a VOCS instance <inst_index> "
 		      "<location>",
-		      cmd_vcp_client_vocs_location_set, 3, 0),
+		      cmd_vcp_vol_ctlr_vocs_location_set, 3, 0),
 	SHELL_CMD_ARG(vocs_offset_set, NULL,
 		      "Set the offset for a VOCS instance <inst_index> "
 		      "<offset>",
-		      cmd_vcp_client_vocs_offset_set, 3, 0),
+		      cmd_vcp_vol_ctlr_vocs_offset_set, 3, 0),
 	SHELL_CMD_ARG(vocs_output_description_get, NULL,
 		      "Get the output description of a VOCS instance "
 		      "<inst_index>",
-		      cmd_vcp_client_vocs_output_description_get, 2, 0),
+		      cmd_vcp_vol_ctlr_vocs_output_description_get, 2, 0),
 	SHELL_CMD_ARG(vocs_output_description_set, NULL,
 		      "Set the output description of a VOCS instance "
 		      "<inst_index> <description>",
-		      cmd_vcp_client_vocs_output_description_set, 3, 0),
+		      cmd_vcp_vol_ctlr_vocs_output_description_set, 3, 0),
 	SHELL_CMD_ARG(aics_input_state_get, NULL,
 		      "Get the input state of a AICS instance <inst_index>",
-		      cmd_vcp_client_aics_input_state_get, 2, 0),
+		      cmd_vcp_vol_ctlr_aics_input_state_get, 2, 0),
 	SHELL_CMD_ARG(aics_gain_setting_get, NULL,
 		      "Get the gain settings of a AICS instance <inst_index>",
-		      cmd_vcp_client_aics_gain_setting_get, 2, 0),
+		      cmd_vcp_vol_ctlr_aics_gain_setting_get, 2, 0),
 	SHELL_CMD_ARG(aics_input_type_get, NULL,
 		      "Get the input type of a AICS instance <inst_index>",
-		      cmd_vcp_client_aics_input_type_get, 2, 0),
+		      cmd_vcp_vol_ctlr_aics_input_type_get, 2, 0),
 	SHELL_CMD_ARG(aics_input_status_get, NULL,
 		      "Get the input status of a AICS instance <inst_index>",
-		      cmd_vcp_client_aics_input_status_get, 2, 0),
+		      cmd_vcp_vol_ctlr_aics_input_status_get, 2, 0),
 	SHELL_CMD_ARG(aics_input_unmute, NULL,
 		      "Unmute the input of a AICS instance <inst_index>",
-		      cmd_vcp_client_aics_input_unmute, 2, 0),
+		      cmd_vcp_vol_ctlr_aics_input_unmute, 2, 0),
 	SHELL_CMD_ARG(aics_input_mute, NULL,
 		      "Mute the input of a AICS instance <inst_index>",
-		      cmd_vcp_client_aics_input_mute, 2, 0),
+		      cmd_vcp_vol_ctlr_aics_input_mute, 2, 0),
 	SHELL_CMD_ARG(aics_manual_input_gain_set, NULL,
 		      "Set the gain mode of a AICS instance to manual "
 		      "<inst_index>",
-		      cmd_vcp_client_aics_manual_input_gain_set, 2, 0),
+		      cmd_vcp_vol_ctlr_aics_manual_input_gain_set, 2, 0),
 	SHELL_CMD_ARG(aics_automatic_input_gain_set, NULL,
 		      "Set the gain mode of a AICS instance to automatic "
 		      "<inst_index>",
-		      cmd_vcp_client_aics_auto_input_gain_set, 2, 0),
+		      cmd_vcp_vol_ctlr_aics_auto_input_gain_set, 2, 0),
 	SHELL_CMD_ARG(aics_gain_set, NULL,
 		      "Set the gain of a AICS instance <inst_index> <gain>",
-		      cmd_vcp_client_aics_gain_set, 3, 0),
+		      cmd_vcp_vol_ctlr_aics_gain_set, 3, 0),
 	SHELL_CMD_ARG(aics_input_description_get, NULL,
 		      "Read the input description of a AICS instance "
 		      "<inst_index>",
-		      cmd_vcp_client_aics_input_description_get, 2, 0),
+		      cmd_vcp_vol_ctlr_aics_input_description_get, 2, 0),
 	SHELL_CMD_ARG(aics_input_description_set, NULL,
 		      "Set the input description of a AICS instance "
 		      "<inst_index> <description>",
-		      cmd_vcp_client_aics_input_description_set, 3, 0),
+		      cmd_vcp_vol_ctlr_aics_input_description_set, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_ARG_REGISTER(vcp_client, &vcp_client_cmds,
+SHELL_CMD_ARG_REGISTER(vcp_vol_ctlr, &vcp_vol_ctlr_cmds,
 		       "Bluetooth VCP client shell commands",
-		       cmd_vcp_client, 1, 1);
+		       cmd_vcp_vol_ctlr, 1, 1);
