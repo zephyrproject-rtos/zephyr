@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_VCP_CLIENT
+#ifdef CONFIG_BT_VCP_VOL_CTLR
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/vcp.h>
@@ -544,7 +544,7 @@ static void test_main(void)
 		return;
 	}
 
-	err = bt_vcp_client_cb_register(&vcs_cbs);
+	err = bt_vcp_vol_ctlr_cb_register(&vcs_cbs);
 	if (err) {
 		FAIL("CB register failed (err %d)\n", err);
 		return;
@@ -562,21 +562,21 @@ static void test_main(void)
 
 	WAIT_FOR_COND(g_is_connected);
 
-	err = bt_vcp_discover(default_conn, &vcp);
+	err = bt_vcp_vol_ctlr_discover(default_conn, &vcp);
 	if (err) {
 		FAIL("Failed to discover VCP %d", err);
 	}
 
 	WAIT_FOR_COND(g_discovery_complete);
 
-	err = bt_vcp_included_get(vcp, &vcp_included);
+	err = bt_vcp_vol_ctlr_included_get(vcp, &vcp_included);
 	if (err) {
 		FAIL("Failed to get VCP included services (err %d)\n", err);
 		return;
 	}
 
 	printk("Getting VCP client conn\n");
-	err = bt_vcp_client_conn_get(vcp, &cached_conn);
+	err = bt_vcp_vol_ctlr_conn_get(vcp, &cached_conn);
 	if (err != 0) {
 		FAIL("Could not get VCP client conn (err %d)\n", err);
 		return;
@@ -588,7 +588,7 @@ static void test_main(void)
 
 	printk("Getting VCP volume state\n");
 	g_cb = false;
-	err = bt_vcp_vol_get(vcp);
+	err = bt_vcp_vol_ctlr_read_state(vcp);
 	if (err) {
 		FAIL("Could not get VCP volume (err %d)\n", err);
 		return;
@@ -598,7 +598,7 @@ static void test_main(void)
 
 	printk("Getting VCP flags\n");
 	g_cb = false;
-	err = bt_vcp_flags_get(vcp);
+	err = bt_vcp_vol_ctlr_read_flags(vcp);
 	if (err) {
 		FAIL("Could not get VCP flags (err %d)\n", err);
 		return;
@@ -608,7 +608,7 @@ static void test_main(void)
 
 	expected_volume = g_volume != 100 ? 100 : 101; /* ensure change */
 	g_write_complete = g_cb = false;
-	err = bt_vcp_vol_set(vcp, expected_volume);
+	err = bt_vcp_vol_ctlr_set_vol(vcp, expected_volume);
 	if (err) {
 		FAIL("Could not set VCP volume (err %d)\n", err);
 		return;
@@ -619,7 +619,7 @@ static void test_main(void)
 	printk("Downing VCP volume\n");
 	previous_volume = g_volume;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_vol_down(vcp);
+	err = bt_vcp_vol_ctlr_vol_down(vcp);
 	if (err) {
 		FAIL("Could not get down VCP volume (err %d)\n", err);
 		return;
@@ -630,7 +630,7 @@ static void test_main(void)
 	printk("Upping VCP volume\n");
 	previous_volume = g_volume;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_vol_up(vcp);
+	err = bt_vcp_vol_ctlr_vol_up(vcp);
 	if (err) {
 		FAIL("Could not up VCP volume (err %d)\n", err);
 		return;
@@ -641,7 +641,7 @@ static void test_main(void)
 	printk("Muting VCP\n");
 	expected_mute = 1;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_mute(vcp);
+	err = bt_vcp_vol_ctlr_mute(vcp);
 	if (err) {
 		FAIL("Could not mute VCP (err %d)\n", err);
 		return;
@@ -653,7 +653,7 @@ static void test_main(void)
 	previous_volume = g_volume;
 	expected_mute = 0;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_unmute_vol_down(vcp);
+	err = bt_vcp_vol_ctlr_unmute_vol_down(vcp);
 	if (err) {
 		FAIL("Could not down and unmute VCP (err %d)\n", err);
 		return;
@@ -665,7 +665,7 @@ static void test_main(void)
 	printk("Muting VCP\n");
 	expected_mute = 1;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_mute(vcp);
+	err = bt_vcp_vol_ctlr_mute(vcp);
 	if (err) {
 		FAIL("Could not mute VCP (err %d)\n", err);
 		return;
@@ -677,7 +677,7 @@ static void test_main(void)
 	previous_volume = g_volume;
 	expected_mute = 0;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_unmute_vol_up(vcp);
+	err = bt_vcp_vol_ctlr_unmute_vol_up(vcp);
 	if (err) {
 		FAIL("Could not up and unmute VCP (err %d)\n", err);
 		return;
@@ -689,7 +689,7 @@ static void test_main(void)
 	printk("Muting VCP\n");
 	expected_mute = 1;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_mute(vcp);
+	err = bt_vcp_vol_ctlr_mute(vcp);
 	if (err) {
 		FAIL("Could not mute VCP (err %d)\n", err);
 		return;
@@ -700,7 +700,7 @@ static void test_main(void)
 	printk("Unmuting VCP\n");
 	expected_mute = 0;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_unmute(vcp);
+	err = bt_vcp_vol_ctlr_unmute(vcp);
 	if (err) {
 		FAIL("Could not unmute VCP (err %d)\n", err);
 		return;
@@ -708,13 +708,13 @@ static void test_main(void)
 	WAIT_FOR_COND(g_mute == expected_mute && g_cb && g_write_complete);
 	printk("VCP volume unmuted\n");
 
-	if (CONFIG_BT_VCP_CLIENT_VOCS > 0) {
+	if (CONFIG_BT_VCP_VOL_CTLR_VOCS > 0) {
 		if (test_vocs()) {
 			return;
 		}
 	}
 
-	if (CONFIG_BT_VCP_CLIENT_MAX_AICS_INST > 0) {
+	if (CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST > 0) {
 		if (test_aics()) {
 			return;
 		}
@@ -725,7 +725,7 @@ static void test_main(void)
 
 static const struct bst_test_instance test_vcs[] = {
 	{
-		.test_id = "vcp_client",
+		.test_id = "vcp_vol_ctlr",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
@@ -733,16 +733,16 @@ static const struct bst_test_instance test_vcs[] = {
 	BSTEST_END_MARKER
 };
 
-struct bst_test_list *test_vcp_client_install(struct bst_test_list *tests)
+struct bst_test_list *test_vcp_vol_ctlr_install(struct bst_test_list *tests)
 {
 	return bst_add_tests(tests, test_vcs);
 }
 
 #else
 
-struct bst_test_list *test_vcp_client_install(struct bst_test_list *tests)
+struct bst_test_list *test_vcp_vol_ctlr_install(struct bst_test_list *tests)
 {
 	return tests;
 }
 
-#endif /* CONFIG_BT_VCP_CLIENT */
+#endif /* CONFIG_BT_VCP_VOL_CTLR */

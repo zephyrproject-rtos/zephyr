@@ -116,20 +116,7 @@ int bt_vcp_register(struct bt_vcp_register_param *param, struct bt_vcp **vcp);
 int bt_vcp_included_get(struct bt_vcp *vcp, struct bt_vcp_included *included);
 
 /**
- * @brief Get the connection pointer of a client instance
- *
- * Get the Bluetooth connection pointer of a Volume Control Service
- * client instance.
- *
- * @param      vcp     Volume Control Service client instance pointer.
- * @param[out] conn    Connection pointer.
- *
- * @return 0 if success, errno on failure.
- */
-int bt_vcp_client_conn_get(const struct bt_vcp *vcp, struct bt_conn **conn);
-
-/**
- * @brief Callback function for bt_vcp_discover.
+ * @brief Callback function for bt_vcp_vol_ctlr_discover.
  *
  * This callback is only used for the client.
  *
@@ -141,7 +128,7 @@ int bt_vcp_client_conn_get(const struct bt_vcp *vcp, struct bt_conn **conn);
  * @param aics_count   Number of Audio Input Control Service instances on
  *                     peer device.
  */
-typedef void (*bt_vcp_discover_cb)(struct bt_vcp *vcp, int err,
+typedef void (*bt_vcp_vol_ctlr_discover_cb)(struct bt_vcp *vcp, int err,
 				   uint8_t vocs_count, uint8_t aics_count);
 
 /**
@@ -188,8 +175,8 @@ struct bt_vcp_cb {
 	/* Volume Control Service */
 	bt_vcp_state_cb               state;
 	bt_vcp_flags_cb               flags;
-#if defined(CONFIG_BT_VCP_CLIENT)
-	bt_vcp_discover_cb            discover;
+#if defined(CONFIG_BT_VCP_VOL_CTLR)
+	bt_vcp_vol_ctlr_discover_cb   discover;
 	bt_vcp_write_cb               vol_down;
 	bt_vcp_write_cb               vol_up;
 	bt_vcp_write_cb               mute;
@@ -203,25 +190,8 @@ struct bt_vcp_cb {
 
 	/* Audio Input Control Service */
 	struct bt_aics_cb             aics_cb;
-#endif /* CONFIG_BT_VCP_CLIENT */
+#endif /* CONFIG_BT_VCP_VOL_CTLR */
 };
-
-/**
- * @brief Discover Volume Control Service and included services.
- *
- * This will start a GATT discovery and setup handles and subscriptions.
- * This shall be called once before any other actions can be
- * executed for the peer device, and the @ref bt_vcp_discover_cb callback
- * will notify when it is possible to start remote operations.
- *
- * This shall only be done as the client,
- *
- * @param      conn  The connection to discover Volume Control Service for.
- * @param[out] vcp   Valid remote instance object on success.
- *
- * @return 0 if success, errno on failure.
- */
-int bt_vcp_discover(struct bt_conn *conn, struct bt_vcp **vcp);
 
 /**
  * @brief Set the Volume Control Service volume step size.
@@ -320,13 +290,142 @@ int bt_vcp_unmute(struct bt_vcp *vcp);
 int bt_vcp_mute(struct bt_vcp *vcp);
 
 /**
- * @brief Registers the callbacks used by the Volume Control Service client.
+ * @brief Registers the callbacks used by the Volume Controller.
  *
  * @param cb   The callback structure.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_client_cb_register(struct bt_vcp_cb *cb);
+int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_cb *cb);
+
+/**
+ * @brief Discover Volume Control Service and included services.
+ *
+ * This will start a GATT discovery and setup handles and subscriptions.
+ * This shall be called once before any other actions can be
+ * executed for the peer device, and the
+ * @ref bt_vcp_vol_ctlr_discover_cb callback will notify when it is possible to
+ * start remote operations.
+ *
+ * This shall only be done as the client,
+ *
+ * @param      conn  The connection to discover Volume Control Service for.
+ * @param[out] vcp   Valid remote instance object on success.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp **vcp);
+
+/**
+ * @brief Get the connection pointer of a client instance
+ *
+ * Get the Bluetooth connection pointer of a Volume Control Service
+ * client instance.
+ *
+ * @param      vcp     Volume Control Service client instance pointer.
+ * @param[out] conn    Connection pointer.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_ctlr_conn_get(const struct bt_vcp *vcp, struct bt_conn **conn);
+
+/**
+ * @brief Get Volume Control Service included services.
+ *
+ * Returns a pointer to a struct that contains information about the
+ * Volume Control Service included service instances, such as pointers to the
+ * Volume Offset Control Service (Volume Offset Control Service) or
+ * Audio Input Control Service (AICS) instances.
+ *
+ * @param      vcp      Volume Control Service instance pointer.
+ * @param[out] included Pointer to store the result in.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_ctlr_included_get(struct bt_vcp *vcp,
+				 struct bt_vcp_included *included);
+
+/**
+ * @brief Read the volume state of a remote Volume Renderer.
+ *
+ * @param vcp  Volume Controller instance pointer.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_ctlr_read_state(struct bt_vcp *vcp);
+
+/**
+ * @brief Read the volume flags of a remote Volume Renderer.
+ *
+ * @param vcp  Volume Controller instance pointer.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_ctlr_read_flags(struct bt_vcp *vcp);
+
+/**
+ * @brief Turn the volume down one step on a remote Volume Renderer
+ *
+ * @param vcp  Volume Controller instance pointer.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_ctlr_vol_down(struct bt_vcp *vcp);
+
+/**
+ * @brief Turn the volume up one step on a remote Volume Renderer
+ *
+ * @param vcp  Volume Controller instance pointer.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_ctlr_vol_up(struct bt_vcp *vcp);
+
+/**
+ * @brief Turn the volume down one step and unmute on a remote Volume Renderer
+ *
+ * @param vcp  Volume Controller instance pointer.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_ctlr_unmute_vol_down(struct bt_vcp *vcp);
+
+/**
+ * @brief Turn the volume up one step and unmute on a remote Volume Renderer
+ *
+ * @param vcp  Volume Controller instance pointer.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_ctlr_unmute_vol_up(struct bt_vcp *vcp);
+
+/**
+ * @brief Set the absolute volume on a remote Volume Renderer
+ *
+ * @param vcp    Volume Controller instance pointer.
+ * @param volume The absolute volume to set.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_ctlr_set_vol(struct bt_vcp *vcp, uint8_t volume);
+
+/**
+ * @brief Unmute a remote Volume Renderer.
+ *
+ * @param vcp  Volume Controller instance pointer.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_ctlr_unmute(struct bt_vcp *vcp);
+
+/**
+ * @brief Mute a remote Volume Renderer.
+ *
+ * @param vcp  Volume Controller instance pointer.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_ctlr_mute(struct bt_vcp *vcp);
 
 #ifdef __cplusplus
 }
