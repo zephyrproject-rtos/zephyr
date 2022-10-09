@@ -61,7 +61,7 @@ static void tThread_entry_negative(void *p1, void *p2, void *p3)
 		break;
 	case MUTEX_INIT_INVALID_OBJ:
 		ztest_set_fault_valid(true);
-		k_mutex_init((struct k_mutex *)&sem);
+		k_mutex_init((struct k_mutex *)&pipe);
 		break;
 	case MUTEX_LOCK_NULL:
 		ztest_set_fault_valid(true);
