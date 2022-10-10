@@ -287,4 +287,6 @@ source "drivers/sensor/rpi_pico_temp/Kconfig"
 
 source "drivers/sensor/xmc4xxx_temp/Kconfig"
 
+source "drivers/sensor/tmd2620/Kconfig"
+
 endif # SENSOR
