@@ -26,4 +26,9 @@ zephyr_library_sources_ifdef(
 	class/loopback.c
 )
 
+zephyr_library_sources_ifdef(
+	CONFIG_USBD_CDC_ACM_CLASS
+	class/usbd_cdc_acm.c
+)
+
 zephyr_linker_sources(DATA_SECTIONS usbd_data.ld)
