@@ -225,7 +225,7 @@ static void vcs_write_cb(struct bt_vcp *vcp, int err)
 	g_write_complete = true;
 }
 
-static struct bt_vcp_cb vcs_cbs = {
+static struct bt_vcp_vol_ctlr_cb vcp_cbs = {
 	.discover = vcs_discover_cb,
 	.vol_down = vcs_write_cb,
 	.vol_up = vcs_write_cb,
@@ -544,7 +544,7 @@ static void test_main(void)
 		return;
 	}
 
-	err = bt_vcp_vol_ctlr_cb_register(&vcs_cbs);
+	err = bt_vcp_vol_ctlr_cb_register(&vcp_cbs);
 	if (err) {
 		FAIL("CB register failed (err %d)\n", err);
 		return;

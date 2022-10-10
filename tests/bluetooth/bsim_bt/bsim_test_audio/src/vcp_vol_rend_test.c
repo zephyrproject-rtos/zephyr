@@ -167,7 +167,7 @@ static void aics_description_cb(struct bt_aics *inst, int err,
 	g_cb = true;
 }
 
-static struct bt_vcp_cb vcs_cb = {
+static struct bt_vcp_vol_rend_cb vcs_cb = {
 	.state = vcs_state_cb,
 	.flags = vcs_flags_cb,
 };

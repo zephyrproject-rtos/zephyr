@@ -111,7 +111,7 @@ static void vocs_description_cb(struct bt_vocs *inst, int err, char *description
 	}
 }
 
-static struct bt_vcp_cb vcs_cbs = {
+static struct bt_vcp_vol_rend_cb vcp_cbs = {
 	.state = vcs_state_cb,
 	.flags = vcs_flags_cb,
 };
@@ -163,7 +163,7 @@ int vcp_vol_renderer_init(void)
 	vcp_register_param.step = 1;
 	vcp_register_param.mute = BT_VCP_STATE_UNMUTED;
 	vcp_register_param.volume = 100;
-	vcp_register_param.cb = &vcs_cbs;
+	vcp_register_param.cb = &vcp_cbs;
 
 	err = bt_vcp_vol_rend_register(&vcp_register_param, &vcp);
 	if (err) {
