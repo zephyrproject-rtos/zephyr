@@ -18,14 +18,17 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define NODE_ID DT_INST(0, DT_DRV_COMPAT)
 
 /* SPI device */
+/*
 static const struct spi_dt_spec spi = SPI_DT_SPEC_INST_GET(0,
 					 SPI_WORD_SET(8) | SPI_OP_MODE_MASTER,
 					 0);
+*/
+
 
 /* GPIO int line */
+/*
 static const struct gpio_dt_spec irq_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios);
-
-static struct gpio_callback irq_cb_data;
+*/
 
 __weak void ft8xx_drv_irq_triggered(const struct device *dev,
 				     struct gpio_callback *cb, uint32_t pins)
@@ -51,40 +54,53 @@ static void insert_addr(uint32_t addr, uint8_t *buff)
 	buff[2] = (addr) & 0xff;
 }
 
-int ft8xx_drv_init(void)
+int ft8xx_drv_init(const struct device *dev)
 {
+	const struct ft8xx_config *config = dev->config;
+	const struct ft8xx_data *data = dev->data;
+	
+	
+
+	static struct gpio_callback irq_cb_data;
+
 	int ret;
 
-	if (!spi_is_ready(&spi)) {
-		LOG_ERR("SPI bus %s not ready", spi.bus->name);
+	if (!spi_is_ready(config->bus->spi)) {
+		LOG_ERR("SPI bus %s not ready", config->bus->spi.bus->name);
 		return -ENODEV;
 	}
 
 	/* TODO: Verify if such entry in DTS is present.
 	 * If not, use polling mode.
 	 */
-	if (!device_is_ready(irq_gpio.port)) {
-		LOG_ERR("GPIO device %s is not ready", irq_gpio.port->name);
+	if (!device_is_ready(config->irq_gpio.port)) {
+		LOG_ERR("GPIO device %s is not ready", config->irq_gpio.port->name);
 		return -ENODEV;
 	}
 
-	ret = gpio_pin_configure_dt(&irq_gpio, GPIO_INPUT);
+	ret = gpio_pin_configure_dt(config->irq_gpio, GPIO_INPUT);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(config->irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
 		return ret;
 	}
 
-	gpio_init_callback(&irq_cb_data, ft8xx_drv_irq_triggered, BIT(irq_gpio.pin));
-	gpio_add_callback(irq_gpio.port, &irq_cb_data);
+	gpio_init_callback(&irq_cb_data, ft8xx_drv_irq_triggered, BIT(config->irq_gpio.pin));
+	gpio_add_callback(config->irq_gpio.port, &irq_cb_data);
 
 	return 0;
 }
 
-int ft8xx_drv_write(uint32_t address, const uint8_t *data, unsigned int length)
+static int ft8xx_bus_check_spi(const union ft8xx_bus *bus)
+{
+	return spi_is_ready(bus->spi) ? 0 : -ENODEV;
+}
+
+
+int ft8xx_drv_write(const union ft8xx_bus *bus, uint32_t address, const uint8_t *data, unsigned int length)
 {
 	int ret;
 	uint8_t addr_buf[ADDR_SIZE];
@@ -109,7 +125,7 @@ int ft8xx_drv_write(uint32_t address, const uint8_t *data, unsigned int length)
 		.count = 2,
 	};
 
-	ret = spi_write_dt(&spi, &tx_bufs);
+	ret = spi_write_dt(bus->spi, &tx_bufs);
 	if (ret < 0) {
 		LOG_ERR("SPI write error: %d", ret);
 	}
@@ -117,7 +133,7 @@ int ft8xx_drv_write(uint32_t address, const uint8_t *data, unsigned int length)
 	return ret;
 }
 
-int ft8xx_drv_read(uint32_t address, uint8_t *data, unsigned int length)
+int ft8xx_drv_read(const union ft8xx_bus *bus, uint32_t address, uint8_t *data, unsigned int length)
 {
 	int ret;
 	uint8_t dummy_read_buf[ADDR_SIZE + DUMMY_READ_SIZE];
@@ -152,7 +168,7 @@ int ft8xx_drv_read(uint32_t address, uint8_t *data, unsigned int length)
 		.count = 2,
 	};
 
-	ret = spi_transceive_dt(&spi, &tx_bufs, &rx_bufs);
+	ret = spi_transceive_dt(bus->spi, &tx_bufs, &rx_bufs);
 	if (ret < 0) {
 		LOG_ERR("SPI transceive error: %d", ret);
 	}
@@ -160,7 +176,7 @@ int ft8xx_drv_read(uint32_t address, uint8_t *data, unsigned int length)
 	return ret;
 }
 
-int ft8xx_drv_command(uint8_t command)
+int ft8xx_drv_command(const union ft8xx_bus *bus, uint8_t command)
 {
 	int ret;
 	/* Most commands include COMMAND_OP bit. ACTIVE power mode command is
@@ -178,10 +194,18 @@ int ft8xx_drv_command(uint8_t command)
 		.count = 1,
 	};
 
-	ret = spi_write_dt(&spi, &tx_bufs);
+	ret = spi_write_dt(bus->spi, &tx_bufs);
 	if (ret < 0) {
 		LOG_ERR("SPI command error: %d", ret);
 	}
 
 	return ret;
+
+const struct ft8xx_bus_io ft8xx_bus_io_spi = {
+	.check = ft8xx_bus_check_spi,
+	.read = ft8xx_drv_read_spi,
+	.write = ft8xx_drv_write_spi,
+};
+
+
 }

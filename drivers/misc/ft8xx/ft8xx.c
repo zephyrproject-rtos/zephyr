@@ -50,6 +50,10 @@ struct ft8xx_config {
 	uint8_t cspread  :1;
 	uint8_t swizzle  :4;
 	
+	union ft8xx_bus;
+	const struct ft8xx_bus_io *bus_io;
+
+	struct gpio_dt_spec irq_gpio;
 };
 
 struct ft8xx_data {
@@ -57,29 +61,8 @@ struct ft8xx_data {
 	ft8xx_int_callback irq_callback;
 	uint chip_id;
 	uint chip_type;
-	ft8xx_memory_map_t *memory_map;
-	ft8xx_register_address_map_t *register_map;
-};
-
-
-
-
-
-const static struct ft8xx_config ft8xx_config = {
-	.pclk     = DT_INST_PROP(0, pclk),
-	.pclk_pol = DT_INST_PROP(0, pclk_pol),
-	.cspread  = DT_INST_PROP(0, cspread),
-	.swizzle  = DT_INST_PROP(0, swizzle),
-	.vsize    = DT_INST_PROP(0, vsize),
-	.voffset  = DT_INST_PROP(0, voffset),
-	.vcycle   = DT_INST_PROP(0, vcycle),
-	.vsync0   = DT_INST_PROP(0, vsync0),
-	.vsync1   = DT_INST_PROP(0, vsync1),
-	.hsize    = DT_INST_PROP(0, hsize),
-	.hoffset  = DT_INST_PROP(0, hoffset),
-	.hcycle   = DT_INST_PROP(0, hcycle),
-	.hsync0   = DT_INST_PROP(0, hsync0),
-	.hsync1   = DT_INST_PROP(0, hsync1),
+	struct ft8xx_memory_map_t *memory_map;
+	struct ft8xx_register_address_map_t *register_map;
 };
 
 static struct ft8xx_data ft8xx_data = {
@@ -94,6 +77,10 @@ static struct ft8xx_data ft8xx_data = {
 static struct ft8xx_api {
    
    .do_this = generic_do_this,
+
+
+
+
    
 };
 
@@ -196,8 +183,8 @@ static void setup_chip(struct ft8xx_data *data)
 		switch(data->chip_type) {
 			case FT8xx_CHIP_ID_FT800:
 				{
-					data->memory_map = 	ft800_memory_map;		
-					data->register_map = ft800_register_address_map;					
+					data->memory_map = 	&ft800_memory_map;		
+					data->register_map = &ft800_register_address_map;					
 				}
 
 			case FT8xx_CHIP_ID_FT810:
@@ -205,8 +192,8 @@ static void setup_chip(struct ft8xx_data *data)
 			case FT8xx_CHIP_ID_FT812:
 			case FT8xx_CHIP_ID_FT813:
 				{
-					data->memory_map = 	ft81x_memory_map;		
-					data->register_map = ft81x_register_address_map;					
+					data->memory_map = 	&ft81x_memory_map;		
+					data->register_map = &ft81x_register_address_map;					
 				}
 		}
 }
@@ -218,7 +205,7 @@ static int ft8xx_init(const struct device *dev)
 	const struct ft8xx_data *data = dev->data;
 
 
-	ret = ft8xx_drv_init();
+	ret = ft8xx_drv_init(dev);
 	if (ret < 0) {
 		LOG_ERR("FT8xx driver initialization failed with %d", ret);
 		return ret;
@@ -295,9 +282,6 @@ static int ft8xx_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, ft8xx_init, NULL, &ft8xx_data, &ft8xx_config,
-		      APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ft8xx_api);
-
 int ft8xx_get_touch_tag(const struct device *dev)
 {
 	const struct ft8xx_data *data = dev->data;
@@ -367,3 +351,46 @@ void ft8xx_touch_transform_set(const struct device *dev, const struct ft8xx_touc
 	ft8xx_wr32(data->register_map->REG_TOUCH_TRANSFORM_F, trform->f);
 }
 
+#define FT8XX_CONFIG(inst)				
+	{						
+		/* Initializes struct ft8xx_config for an instance on a SPI bus. */
+		.bus.spi = SPI_DT_SPEC_INST_GET(	
+			inst, FT8XX_SPI_OPERATION, 0),	
+		.bus_io = &ft8xx_bus_io_spi,		
+		/* Initializes struct ft8xx_config for an GPIO interupt. */
+		.irq_gpio = GPIO_DT_SPEC_INST_GET(inst, irq_gpios);	
+	
+		/* Initializes struct ft8xx_config for display properties. */
+		.pclk     = DT_INST_PROP(inst, pclk),
+		.pclk_pol = DT_INST_PROP(inst, pclk_pol),
+		.cspread  = DT_INST_PROP(inst, cspread),
+		.swizzle  = DT_INST_PROP(inst, swizzle),
+		.vsize    = DT_INST_PROP(inst, vsize),
+		.voffset  = DT_INST_PROP(inst, voffset),
+		.vcycle   = DT_INST_PROP(inst, vcycle),
+		.vsync0   = DT_INST_PROP(inst, vsync0),
+		.vsync1   = DT_INST_PROP(inst, vsync1),
+		.hsize    = DT_INST_PROP(inst, hsize),
+		.hoffset  = DT_INST_PROP(inst, hoffset),
+		.hcycle   = DT_INST_PROP(inst, hcycle),
+		.hsync0   = DT_INST_PROP(inst, hsync0),
+		.hsync1   = DT_INST_PROP(inst, hsync1),
+
+	}
+
+#define FT8XX_DEFINE(inst)						
+	static struct ft8xx_data ft8xx_data_##inst;			
+	static const struct ft8xx_config ft8xx_config_##inst =	
+			    (FT8XX_CONFIG(inst))
+
+
+DEVICE_DT_INST_DEFINE(inst, 
+				ft8xx_init,
+				NULL,
+				&ft8xx_data,
+				&ft8xx_config,
+		      	APPLICATION,
+				CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+				&ft8xx_api);
+
+DT_INST_FOREACH_STATUS_OKAY(FT8XX_DEFINE)
