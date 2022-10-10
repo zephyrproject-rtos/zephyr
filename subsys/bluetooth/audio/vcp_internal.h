@@ -67,26 +67,10 @@ struct bt_vcp_vol_ctlr {
 };
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 
-#if defined(CONFIG_BT_VCP_VOL_REND)
-struct bt_vcp_server {
-	struct vcs_state state;
-	uint8_t flags;
-	struct bt_vcp_vol_rend_cb *cb;
-	uint8_t volume_step;
-
-	struct bt_gatt_service *service_p;
-	struct bt_vocs *vocs_insts[CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT];
-	struct bt_aics *aics_insts[CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT];
-};
-#endif /* CONFIG_BT_VCP_VOL_REND */
-
 /* Struct used as a common type for the api */
 struct bt_vcp {
 	bool client_instance;
 	union {
-#if defined(CONFIG_BT_VCP_VOL_REND)
-		struct bt_vcp_server srv;
-#endif /* CONFIG_BT_VCP_VOL_REND */
 #if defined(CONFIG_BT_VCP_VOL_CTLR)
 		struct bt_vcp_vol_ctlr cli;
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
