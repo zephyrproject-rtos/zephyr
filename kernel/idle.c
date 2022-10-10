@@ -47,10 +47,10 @@ void idle(void *unused1, void *unused2, void *unused3)
 		 * lock and/or timer driver.  This is intended as a
 		 * fallback configuration for new platform bringup.
 		 */
-		if (IS_ENABLED(CONFIG_SMP) &&
-		    !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
-			for (volatile int i = 0; i < 100000; i++)
-				;
+		if (IS_ENABLED(CONFIG_SMP) && !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
+			for (volatile int i = 0; i < 100000; i++) {
+				/* Empty loop */
+			}
 			z_swap_unlocked();
 		}
 
