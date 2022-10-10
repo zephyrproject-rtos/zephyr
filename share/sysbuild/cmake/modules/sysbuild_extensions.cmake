@@ -117,6 +117,39 @@ function(ExternalZephyrProject_Add)
     )
   endif()
 
+  set(sysbuild_image_conf_dir ${APP_DIR}/sysbuild)
+  set(sysbuild_image_name_conf_dir ${APP_DIR}/sysbuild/${ZBUILD_APPLICATION})
+  # User defined `-D<image>_CONF_FILE=<file.conf>` takes precedence over anything else.
+  if (NOT ${ZBUILD_APPLICATION}_CONF_FILE)
+    if(EXISTS ${sysbuild_image_name_conf_dir})
+      set(${ZBUILD_APPLICATION}_APPLICATION_CONFIG_DIR ${sysbuild_image_name_conf_dir}
+          CACHE INTERNAL "Application configuration dir controlled by sysbuild"
+      )
+    endif()
+
+     # Check for sysbuild related configuration fragments.
+     # The contents of these are appended to the image existing configuration
+     # when user is not specifying custom fragments.
+    if(NOT "${CONF_FILE_BUILD_TYPE}" STREQUAL "")
+      set(sysbuil_image_conf_fragment ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}_${CONF_FILE_BUILD_TYPE}.conf)
+    else()
+      set(sysbuild_image_conf_fragment ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}.conf)
+    endif()
+
+    if (NOT ${ZBUILD_APPLICATION}_OVERLAY_CONFIG AND EXISTS ${sysbuild_image_conf_fragment})
+      set(${ZBUILD_APPLICATION}_OVERLAY_CONFIG ${sysbuild_image_conf_fragment}
+          CACHE INTERNAL "Kconfig fragment defined by main application"
+      )
+    endif()
+
+    # Check for overlay named <ZBUILD_APPLICATION>.overlay.
+    set(sysbuild_image_dts_overlay ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}.overlay)
+    if (NOT ${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE AND EXISTS ${sysbuild_image_dts_overlay})
+      set(${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE ${sysbuild_image_dts_overlay}
+          CACHE INTERNAL "devicetree overlay file defined by main application"
+      )
+    endif()
+  endif()
   # CMake variables which must be known by all Zephyr CMake build systems
   # Those are settings which controls the build and must be known to CMake at
   # invocation time, and thus cannot be passed though the sysbuild cache file.
