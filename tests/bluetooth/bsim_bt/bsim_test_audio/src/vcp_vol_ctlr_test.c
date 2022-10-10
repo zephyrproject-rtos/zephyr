@@ -17,7 +17,7 @@
 
 extern enum bst_result_t bst_result;
 
-static struct bt_vcp *vcp;
+static struct bt_vcp_vol_ctlr *vol_ctlr;
 static struct bt_vcp_included vcp_included;
 static volatile bool g_bt_init;
 static volatile bool g_is_connected;
@@ -41,8 +41,8 @@ static volatile bool g_aics_active = 1;
 static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
 
-static void vcs_state_cb(struct bt_vcp *vcp, int err, uint8_t volume,
-			 uint8_t mute)
+static void vcs_state_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
+			 uint8_t volume, uint8_t mute)
 {
 	if (err) {
 		FAIL("VCP state cb err (%d)", err);
@@ -55,7 +55,8 @@ static void vcs_state_cb(struct bt_vcp *vcp, int err, uint8_t volume,
 	g_cb = true;
 }
 
-static void vcs_flags_cb(struct bt_vcp *vcp, int err, uint8_t flags)
+static void vcs_flags_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
+			 uint8_t flags)
 {
 	if (err) {
 		FAIL("VCP flags cb err (%d)", err);
@@ -204,8 +205,8 @@ static void aics_write_cb(struct bt_aics *inst, int err)
 	g_write_complete = true;
 }
 
-static void vcs_discover_cb(struct bt_vcp *vcp, int err, uint8_t vocs_count,
-			    uint8_t aics_count)
+static void vcs_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
+			    uint8_t vocs_count, uint8_t aics_count)
 {
 	if (err) {
 		FAIL("VCP could not be discovered (%d)\n", err);
@@ -215,7 +216,7 @@ static void vcs_discover_cb(struct bt_vcp *vcp, int err, uint8_t vocs_count,
 	g_discovery_complete = true;
 }
 
-static void vcs_write_cb(struct bt_vcp *vcp, int err)
+static void vcs_write_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
 {
 	if (err) {
 		FAIL("VCP write failed (%d)\n", err);
@@ -562,21 +563,21 @@ static void test_main(void)
 
 	WAIT_FOR_COND(g_is_connected);
 
-	err = bt_vcp_vol_ctlr_discover(default_conn, &vcp);
+	err = bt_vcp_vol_ctlr_discover(default_conn, &vol_ctlr);
 	if (err) {
 		FAIL("Failed to discover VCP %d", err);
 	}
 
 	WAIT_FOR_COND(g_discovery_complete);
 
-	err = bt_vcp_vol_ctlr_included_get(vcp, &vcp_included);
+	err = bt_vcp_vol_ctlr_included_get(vol_ctlr, &vcp_included);
 	if (err) {
 		FAIL("Failed to get VCP included services (err %d)\n", err);
 		return;
 	}
 
 	printk("Getting VCP volume controller conn\n");
-	err = bt_vcp_vol_ctlr_conn_get(vcp, &cached_conn);
+	err = bt_vcp_vol_ctlr_conn_get(vol_ctlr, &cached_conn);
 	if (err != 0) {
 		FAIL("Could not get VCP volume controller conn (err %d)\n", err);
 		return;
@@ -588,7 +589,7 @@ static void test_main(void)
 
 	printk("Getting VCP volume state\n");
 	g_cb = false;
-	err = bt_vcp_vol_ctlr_read_state(vcp);
+	err = bt_vcp_vol_ctlr_read_state(vol_ctlr);
 	if (err) {
 		FAIL("Could not get VCP volume (err %d)\n", err);
 		return;
@@ -598,7 +599,7 @@ static void test_main(void)
 
 	printk("Getting VCP flags\n");
 	g_cb = false;
-	err = bt_vcp_vol_ctlr_read_flags(vcp);
+	err = bt_vcp_vol_ctlr_read_flags(vol_ctlr);
 	if (err) {
 		FAIL("Could not get VCP flags (err %d)\n", err);
 		return;
@@ -608,7 +609,7 @@ static void test_main(void)
 
 	expected_volume = g_volume != 100 ? 100 : 101; /* ensure change */
 	g_write_complete = g_cb = false;
-	err = bt_vcp_vol_ctlr_set_vol(vcp, expected_volume);
+	err = bt_vcp_vol_ctlr_set_vol(vol_ctlr, expected_volume);
 	if (err) {
 		FAIL("Could not set VCP volume (err %d)\n", err);
 		return;
@@ -619,7 +620,7 @@ static void test_main(void)
 	printk("Downing VCP volume\n");
 	previous_volume = g_volume;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_vol_ctlr_vol_down(vcp);
+	err = bt_vcp_vol_ctlr_vol_down(vol_ctlr);
 	if (err) {
 		FAIL("Could not get down VCP volume (err %d)\n", err);
 		return;
@@ -630,7 +631,7 @@ static void test_main(void)
 	printk("Upping VCP volume\n");
 	previous_volume = g_volume;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_vol_ctlr_vol_up(vcp);
+	err = bt_vcp_vol_ctlr_vol_up(vol_ctlr);
 	if (err) {
 		FAIL("Could not up VCP volume (err %d)\n", err);
 		return;
@@ -641,7 +642,7 @@ static void test_main(void)
 	printk("Muting VCP\n");
 	expected_mute = 1;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_vol_ctlr_mute(vcp);
+	err = bt_vcp_vol_ctlr_mute(vol_ctlr);
 	if (err) {
 		FAIL("Could not mute VCP (err %d)\n", err);
 		return;
@@ -653,7 +654,7 @@ static void test_main(void)
 	previous_volume = g_volume;
 	expected_mute = 0;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_vol_ctlr_unmute_vol_down(vcp);
+	err = bt_vcp_vol_ctlr_unmute_vol_down(vol_ctlr);
 	if (err) {
 		FAIL("Could not down and unmute VCP (err %d)\n", err);
 		return;
@@ -665,7 +666,7 @@ static void test_main(void)
 	printk("Muting VCP\n");
 	expected_mute = 1;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_vol_ctlr_mute(vcp);
+	err = bt_vcp_vol_ctlr_mute(vol_ctlr);
 	if (err) {
 		FAIL("Could not mute VCP (err %d)\n", err);
 		return;
@@ -677,7 +678,7 @@ static void test_main(void)
 	previous_volume = g_volume;
 	expected_mute = 0;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_vol_ctlr_unmute_vol_up(vcp);
+	err = bt_vcp_vol_ctlr_unmute_vol_up(vol_ctlr);
 	if (err) {
 		FAIL("Could not up and unmute VCP (err %d)\n", err);
 		return;
@@ -689,7 +690,7 @@ static void test_main(void)
 	printk("Muting VCP\n");
 	expected_mute = 1;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_vol_ctlr_mute(vcp);
+	err = bt_vcp_vol_ctlr_mute(vol_ctlr);
 	if (err) {
 		FAIL("Could not mute VCP (err %d)\n", err);
 		return;
@@ -700,7 +701,7 @@ static void test_main(void)
 	printk("Unmuting VCP\n");
 	expected_mute = 0;
 	g_write_complete = g_cb = false;
-	err = bt_vcp_vol_ctlr_unmute(vcp);
+	err = bt_vcp_vol_ctlr_unmute(vol_ctlr);
 	if (err) {
 		FAIL("Could not unmute VCP (err %d)\n", err);
 		return;
