@@ -173,8 +173,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 				    &vcp_inst.srv.state, sizeof(vcp_inst.srv.state));
 
 		if (vcp_inst.srv.cb && vcp_inst.srv.cb->state) {
-			vcp_inst.srv.cb->state(&vcp_inst, 0,
-					       vcp_inst.srv.state.volume,
+			vcp_inst.srv.cb->state(0, vcp_inst.srv.state.volume,
 					       vcp_inst.srv.state.mute);
 		}
 	}
@@ -187,7 +186,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 				    &vcp_inst.srv.flags, sizeof(vcp_inst.srv.flags));
 
 		if (vcp_inst.srv.cb && vcp_inst.srv.cb->flags) {
-			vcp_inst.srv.cb->flags(&vcp_inst, 0, vcp_inst.srv.flags);
+			vcp_inst.srv.cb->flags(0, vcp_inst.srv.flags);
 		}
 	}
 	return len;
@@ -320,8 +319,7 @@ static int prepare_aics_inst(struct bt_vcp_vol_rend_register_param *param)
 }
 
 /****************************** PUBLIC API ******************************/
-int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param,
-			     struct bt_vcp **vcp)
+int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param)
 {
 	static bool registered;
 	int err;
@@ -342,7 +340,6 @@ int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param,
 	}
 
 	if (registered) {
-		*vcp = &vcp_inst;
 		return -EALREADY;
 	}
 
@@ -377,28 +374,22 @@ int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param,
 
 	vcp_inst.srv.cb = param->cb;
 
-	*vcp = &vcp_inst;
 	registered = true;
 
 	return err;
 }
 
-int bt_vcp_vol_rend_included_get(struct bt_vcp *vcp, struct bt_vcp_included *included)
+int bt_vcp_vol_rend_included_get(struct bt_vcp_included *included)
 {
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
-
 	if (included == NULL) {
 		return -EINVAL;
 	}
 
-	included->vocs_cnt = ARRAY_SIZE(vcp->srv.vocs_insts);
-	included->vocs = vcp->srv.vocs_insts;
+	included->vocs_cnt = ARRAY_SIZE(vcp_inst.srv.vocs_insts);
+	included->vocs = vcp_inst.srv.vocs_insts;
 
-	included->aics_cnt = ARRAY_SIZE(vcp->srv.aics_insts);
-	included->aics = vcp->srv.aics_insts;
+	included->aics_cnt = ARRAY_SIZE(vcp_inst.srv.aics_insts);
+	included->aics = vcp_inst.srv.aics_insts;
 
 	return 0;
 }
@@ -413,159 +404,113 @@ int bt_vcp_vol_rend_set_step(uint8_t volume_step)
 	}
 }
 
-int bt_vcp_vol_rend_get_state(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_get_state(void)
 {
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
-
-	if (vcp->srv.cb && vcp->srv.cb->state) {
-		vcp->srv.cb->state(vcp, 0, vcp->srv.state.volume,
-				   vcp->srv.state.mute);
+	if (vcp_inst.srv.cb && vcp_inst.srv.cb->state) {
+		vcp_inst.srv.cb->state(0, vcp_inst.srv.state.volume,
+				   vcp_inst.srv.state.mute);
 	}
 
 	return 0;
 }
 
-int bt_vcp_vol_rend_get_flags(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_get_flags(void)
 {
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
-
-	if (vcp->srv.cb && vcp->srv.cb->flags) {
-		vcp->srv.cb->flags(vcp, 0, vcp->srv.flags);
+	if (vcp_inst.srv.cb && vcp_inst.srv.cb->flags) {
+		vcp_inst.srv.cb->flags(0, vcp_inst.srv.flags);
 	}
 
 	return 0;
 }
 
-int bt_vcp_vol_rend_vol_down(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_vol_down(void)
 {
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_REL_VOL_DOWN,
-		.counter = vcp->srv.state.change_counter,
+		.counter = vcp_inst.srv.state.change_counter,
 	};
 	int err;
-
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
 
 	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
 	return err > 0 ? 0 : err;
 }
 
-int bt_vcp_vol_rend_vol_up(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_vol_up(void)
 {
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_REL_VOL_UP,
-		.counter = vcp->srv.state.change_counter,
+		.counter = vcp_inst.srv.state.change_counter,
 	};
 	int err;
-
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
 
 	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
 	return err > 0 ? 0 : err;
 }
 
-int bt_vcp_vol_rend_unmute_vol_down(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_unmute_vol_down(void)
 {
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_UNMUTE_REL_VOL_DOWN,
-		.counter = vcp->srv.state.change_counter,
+		.counter = vcp_inst.srv.state.change_counter,
 	};
 	int err;
-
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
 
 	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
 	return err > 0 ? 0 : err;
 }
 
-int bt_vcp_vol_rend_unmute_vol_up(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_unmute_vol_up(void)
 {
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_UNMUTE_REL_VOL_UP,
-		.counter = vcp->srv.state.change_counter,
+		.counter = vcp_inst.srv.state.change_counter,
 	};
 	int err;
-
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
 
 	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
 	return err > 0 ? 0 : err;
 }
 
-int bt_vcp_vol_rend_set_vol(struct bt_vcp *vcp, uint8_t volume)
+int bt_vcp_vol_rend_set_vol(uint8_t volume)
 {
-
 	const struct vcs_control_vol cp = {
 		.cp = {
 			.opcode = BT_VCP_OPCODE_SET_ABS_VOL,
-			.counter = vcp->srv.state.change_counter
+			.counter = vcp_inst.srv.state.change_counter
 		},
 		.volume = volume
 	};
 	int err;
 
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
-
 	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
 	return err > 0 ? 0 : err;
 }
 
-int bt_vcp_vol_rend_unmute(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_unmute(void)
 {
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_UNMUTE,
-		.counter = vcp->srv.state.change_counter,
+		.counter = vcp_inst.srv.state.change_counter,
 	};
 	int err;
-
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
 
 	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
 	return err > 0 ? 0 : err;
 }
 
-int bt_vcp_vol_rend_mute(struct bt_vcp *vcp)
+int bt_vcp_vol_rend_mute(void)
 {
 	const struct vcs_control cp = {
 		.opcode = BT_VCP_OPCODE_MUTE,
-		.counter = vcp->srv.state.change_counter,
+		.counter = vcp_inst.srv.state.change_counter,
 	};
 	int err;
-
-	CHECKIF(vcp == NULL) {
-		LOG_DBG("NULL vcp instance");
-		return -EINVAL;
-	}
 
 	err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
