@@ -347,8 +347,12 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	for (n = 0; n < CONFIG_DAI_DMIC_HW_CONTROLLERS; n++) {
 		fir_cfg_a[n] = NULL;
 		fir_cfg_b[n] = NULL;
-		if (!(pdm_ctrl_mask & (1 << n)))
+
+		if (!(pdm_ctrl_mask & (1 << n))) {
+			/* Set MIC_MUTE bit to unused PDM */
+			dai_dmic_write(dmic, base[n] + CIC_CONTROL, CIC_CONTROL_MIC_MUTE(1));
 			continue;
+		}
 
 		LOG_DBG("dmic_set_config_nhlt(): PDM%d", n);
 
@@ -385,9 +389,8 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 				return -EINVAL;
 			}
 
-			/* Clear CIC_START_A and CIC_START_B, set SOF_RESET and MIC_MUTE*/
-			val = (val & ~(CIC_CONTROL_CIC_START_A_BIT | CIC_CONTROL_CIC_START_A_BIT)) |
-				CIC_CONTROL_SOFT_RESET_BIT | CIC_CONTROL_MIC_MUTE_BIT;
+			/* Clear CIC_START_A and CIC_START_B */
+			val = (val & ~(CIC_CONTROL_CIC_START_A_BIT | CIC_CONTROL_CIC_START_B_BIT));
 			dai_dmic_write(dmic, base[n] + CIC_CONTROL, val);
 			LOG_DBG("dmic_set_config_nhlt(): CIC_CONTROL = %08x", val);
 

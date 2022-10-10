@@ -145,6 +145,7 @@
 #define DC_OFFSET_RIGHT_B	0x04c
 #define OUT_GAIN_LEFT_B		0x050
 #define OUT_GAIN_RIGHT_B	0x054
+#define PDM_REG_END			0x058
 
 /* Register bits */
 
