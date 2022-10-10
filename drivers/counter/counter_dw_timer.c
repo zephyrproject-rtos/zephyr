@@ -66,8 +66,7 @@ struct dw_timer_config {
 	uint32_t freq;
 	char *clock_drv;
 	uint32_t clkid;
-	char *reset_drv;
-	uint32_t reset_line;
+	const struct reset_dt_spec reset;
 	void (*irq_config)(void);
 };
 
@@ -279,16 +278,14 @@ static int dw_timer_init(const struct device *timer_dev)
 {
 	DEVICE_MMIO_MAP_TIMER(timer_dev, K_MEM_CACHE_NONE);
 	struct dw_timer_config *const timer_config = GET_DEV_CONFIG(timer_dev);
-	const struct device *reset_dev;
 
-	reset_dev = device_get_binding(timer_config->reset_drv);
-	if (!reset_dev) {
-		LOG_ERR("%s: device not found", timer_config->reset_drv);
+	if (!device_is_ready(timer_config->reset.dev)) {
+		LOG_ERR("Reset device node not found");
 		return -ENODEV;
 	}
 
-	reset_line_assert(reset_dev, timer_config->reset_line);
-	reset_line_deassert(reset_dev, timer_config->reset_line);
+	reset_line_assert(timer_config->reset.dev, timer_config->reset.id);
+	reset_line_deassert(timer_config->reset.dev, timer_config->reset.id);
 
 	timer_config->irq_config();
 
@@ -319,8 +316,7 @@ static int dw_timer_init(const struct device *timer_dev)
 					.max_top_value = UINT32_MAX, \
 					.channels = 1, \
 		}, \
-		.reset_drv = DT_LABEL(DT_INST_PHANDLE(inst, resets)), \
-		.reset_line = DT_INST_PHA_BY_IDX(inst, resets, 0, id), \
+		.reset = RESET_DT_SPEC_INST_GET(inst), \
 		.irq_config = dw_timer_config_##inst, \
 	}; \
 	DEVICE_DT_INST_DEFINE(inst, \
