@@ -17,7 +17,7 @@ A :dfn:`MPSC Packet Buffer` has the following key properties:
 
 * Allocate, commit scheme used for packet producing.
 * Claim, free scheme used for packet consuming.
-* Allocator ensures that continue memory of requested length is allocated.
+* Allocator ensures that contiguous memory of requested length is allocated.
 * Following policies can be applied when requested space cannot be allocated:
 
   * **Overwrite** - oldest entries are dropped until requested amount of memory can
