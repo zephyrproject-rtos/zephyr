@@ -192,11 +192,11 @@ class BinaryHandler(Handler):
             reader_t.start()
             reader_t.join(this_timeout)
             if not reader_t.is_alive():
-                line = self.line
-                logger.debug("OUTPUT: {0}".format(line.decode('utf-8').rstrip()))
-                log_out_fp.write(line.decode('utf-8'))
+                line_decoded = self.line.decode('utf-8', "replace")
+                logger.debug("OUTPUT: {0}".format(line_decoded.rstrip()))
+                log_out_fp.write(line_decoded)
                 log_out_fp.flush()
-                harness.handle(line.decode('utf-8').rstrip())
+                harness.handle(line_decoded.rstrip())
                 if harness.state:
                     if not timeout_extended or harness.capture_coverage:
                         timeout_extended = True
