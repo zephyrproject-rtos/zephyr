@@ -74,6 +74,8 @@ static int qdec_nrfx_sample_fetch(const struct device *dev,
 	return 0;
 }
 
+#define QDEC_STEPS DT_INST_PROP(0, steps)
+
 static int qdec_nrfx_channel_get(const struct device *dev,
 				 enum sensor_channel  chan,
 				 struct sensor_value *val)
@@ -81,7 +83,7 @@ static int qdec_nrfx_channel_get(const struct device *dev,
 	struct qdec_nrfx_data *data = &qdec_nrfx_data;
 	unsigned int key;
 	int32_t acc;
-	const int32_t steps = DT_INST_PROP(0, steps);
+	const int32_t steps = QDEC_STEPS;
 
 	ARG_UNUSED(dev);
 	LOG_DBG("");
@@ -95,8 +97,8 @@ static int qdec_nrfx_channel_get(const struct device *dev,
 	data->acc = 0;
 	irq_unlock(key);
 
-	BUILD_ASSERT(steps > 0, "only positive number valid");
-	BUILD_ASSERT(steps <= 2048, "overflow possible");
+	BUILD_ASSERT(QDEC_STEPS > 0, "only positive number valid");
+	BUILD_ASSERT(QDEC_STEPS <= 2048, "overflow possible");
 
 	val->val1 = (acc * FULL_ANGLE) / steps;
 	val->val2 = (acc * FULL_ANGLE) - (val->val1 * steps);
