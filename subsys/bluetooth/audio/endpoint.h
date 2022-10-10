@@ -62,6 +62,9 @@ struct bt_audio_ep {
 	struct bt_gatt_subscribe_params subscribe;
 	struct bt_gatt_discover_params discover;
 
+	/* FIXME: Replace with metastate */
+	bool receiver_ready;
+
 	/* TODO: Consider client/server container split */
 	union {
 		struct {

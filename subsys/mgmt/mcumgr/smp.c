@@ -86,21 +86,6 @@ void zephyr_smp_free_buf(void *buf, void *arg)
 	mcumgr_buf_free(buf);
 }
 
-static int
-zephyr_smp_tx_rsp(struct smp_streamer *ns, void *rsp, void *arg)
-{
-	struct zephyr_smp_transport *zst;
-	struct net_buf *nb;
-
-	zst = arg;
-	nb = rsp;
-
-	/* Pass full packet to output function so it can be transmitted or split into frames as
-	 * needed by the transport
-	 */
-	return zst->zst_output(nb);
-}
-
 /**
  * Processes a single SMP packet and sends the corresponding response(s).
  */
@@ -114,12 +99,9 @@ zephyr_smp_process_packet(struct zephyr_smp_transport *zst,
 	int rc;
 
 	streamer = (struct smp_streamer) {
-		.mgmt_stmr = {
-			.reader = &reader,
-			.writer = &writer,
-			.cb_arg = zst,
-		},
-		.tx_rsp_cb = zephyr_smp_tx_rsp,
+		.reader = &reader,
+		.writer = &writer,
+		.smpt = zst,
 	};
 
 	rc = smp_process_request_packet(&streamer, nb);

@@ -1315,6 +1315,14 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 #if !defined(CONFIG_BT_HCI_MESH_EXT)
 	ticks_anchor = ticker_ticks_now_get();
+
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
+	/* NOTE: mesh bsim loopback_group_low_lat test needs both adv and scan
+	 * to not have that start overhead added to pass the test.
+	 */
+	ticks_anchor += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+#endif /* !CONFIG_BT_TICKER_LOW_LAT */
+
 #else /* CONFIG_BT_HCI_MESH_EXT */
 	if (!at_anchor) {
 		ticks_anchor = ticker_ticks_now_get();
@@ -1930,74 +1938,84 @@ void ull_adv_done(struct node_rx_event_done *done)
 	lll = &adv->lll;
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	if (done->extra.result == DONE_COMPLETED) {
-		/* Event completed successfully */
-		adv->delay_remain = ULL_ADV_RANDOM_DELAY;
-	} else {
+	if (done->extra.result != DONE_COMPLETED) {
 		/* Event aborted or too late - try to re-schedule */
 		uint32_t ticks_elapsed;
 		uint32_t ticks_now;
+		uint32_t delay_remain;
 
 		const uint32_t prepare_overhead =
 			HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 		const uint32_t ticks_adv_airtime = adv->ticks_at_expire +
 			prepare_overhead;
 
-		ticks_elapsed = 0;
+		ticks_elapsed = 0U;
 
 		ticks_now = cntr_cnt_get();
 		if ((int32_t)(ticks_now - ticks_adv_airtime) > 0) {
 			ticks_elapsed = ticks_now - ticks_adv_airtime;
 		}
 
-		if (adv->delay_remain >= adv->delay + ticks_elapsed) {
+		if (adv->delay_at_expire + ticks_elapsed <= ULL_ADV_RANDOM_DELAY) {
 			/* The perturbation window is still open */
-			adv->delay_remain -= (adv->delay + ticks_elapsed);
+			delay_remain = ULL_ADV_RANDOM_DELAY - (adv->delay_at_expire +
+							       ticks_elapsed);
 		} else {
-			adv->delay_remain = 0;
+			delay_remain = 0U;
 		}
 
 		/* Check if we have enough time to re-schedule */
-		if (adv->delay_remain > prepare_overhead) {
+		if (delay_remain > prepare_overhead) {
 			uint32_t ticks_adjust_minus;
+			uint32_t interval_us = adv->interval * ADV_INT_UNIT_US;
 
 			/* Get negative ticker adjustment needed to pull back ADV one
 			 * interval plus the randomized delay. This means that the ticker
 			 * will be updated to expire in time frame of now + start
 			 * overhead, until 10 ms window is exhausted.
 			 */
-			ticks_adjust_minus = HAL_TICKER_US_TO_TICKS(
-				(uint64_t)adv->interval * ADV_INT_UNIT_US) + adv->delay;
+			ticks_adjust_minus = HAL_TICKER_US_TO_TICKS(interval_us) + adv->delay;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+			if (adv->remain_duration_us > interval_us) {
+				/* Reset remain_duration_us to value before last ticker expire
+				 * to correct for the re-scheduling
+				 */
+				adv->remain_duration_us += interval_us +
+							   HAL_TICKER_TICKS_TO_US(
+								adv->delay_at_expire);
+			}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 			/* Apply random delay in range [prepare_overhead..delay_remain].
 			 * NOTE: This ticker_update may fail if update races with
 			 * ticker_stop, e.g. from ull_periph_setup. This is not a problem
 			 * and we can safely ignore the operation result.
 			 */
-			ticker_update_rand(adv, adv->delay_remain - prepare_overhead,
+			ticker_update_rand(adv, delay_remain - prepare_overhead,
 					   prepare_overhead, ticks_adjust_minus, NULL);
+
+			/* Delay from ticker_update_rand is in addition to the last random delay */
+			adv->delay += adv->delay_at_expire;
 
 			/* Score of the event was increased due to the result, but since
 			 * we're getting a another chance we'll set it back.
 			 */
 			adv->lll.hdr.score -= 1;
-		} else {
-			adv->delay_remain = ULL_ADV_RANDOM_DELAY;
 		}
 	}
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (adv->max_events && (adv->event_counter >= adv->max_events)) {
-		adv->max_events = 0;
+		adv->max_events = 0U;
 
 		rx_hdr = (void *)lll->node_rx_adv_term;
 		rx_hdr->rx_ftr.param_adv_term.status = BT_HCI_ERR_LIMIT_REACHED;
-	} else if (adv->ticks_remain_duration &&
-		   (adv->ticks_remain_duration <=
-		    HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval *
-			ADV_INT_UNIT_US))) {
-		adv->ticks_remain_duration = 0;
+	} else if (adv->remain_duration_us &&
+		   (adv->remain_duration_us <=
+		    ((uint64_t)adv->interval * ADV_INT_UNIT_US))) {
+		adv->remain_duration_us = 0U;
 
 		rx_hdr = (void *)lll->node_rx_adv_term;
 		rx_hdr->rx_ftr.param_adv_term.status = BT_HCI_ERR_ADV_TIMEOUT;
@@ -2275,6 +2293,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		adv->ticks_at_expire = ticks_at_expire;
+		adv->delay_at_expire = adv->delay;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 	}
 
@@ -2288,21 +2307,25 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 						  0, 0, ticker_update_op_cb);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		adv->event_counter += (lazy + 1);
+		if (adv->remain_duration_us && adv->event_counter > 0U) {
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+			/* ticks_drift is always 0 with JIT scheduling, populate manually */
+			ticks_drift = adv->delay_at_expire;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+			uint32_t interval_us = (uint64_t)adv->interval * ADV_INT_UNIT_US;
+			uint32_t elapsed_us = interval_us * (lazy + 1U) +
+						 HAL_TICKER_TICKS_TO_US(ticks_drift);
 
-		if (adv->ticks_remain_duration) {
-			uint32_t ticks_interval =
-				HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval *
-						       ADV_INT_UNIT_US);
-			uint32_t ticks_elapsed = ticks_interval * (lazy + 1) +
-						 ticks_drift;
-
-			if (adv->ticks_remain_duration > ticks_elapsed) {
-				adv->ticks_remain_duration -= ticks_elapsed;
+			/* End advertising if the added random delay pushes us beyond the limit */
+			if (adv->remain_duration_us > elapsed_us + interval_us +
+						      HAL_TICKER_TICKS_TO_US(random_delay)) {
+				adv->remain_duration_us -= elapsed_us;
 			} else {
-				adv->ticks_remain_duration = ticks_interval;
+				adv->remain_duration_us = interval_us;
 			}
 		}
+
+		adv->event_counter += (lazy + 1U);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	}
 
@@ -2492,8 +2515,7 @@ static void adv_max_events_duration_set(struct ll_adv_set *adv,
 {
 	adv->event_counter = 0;
 	adv->max_events = max_ext_adv_evts;
-	adv->ticks_remain_duration =
-		HAL_TICKER_US_TO_TICKS((uint64_t)duration * 10 * USEC_PER_MSEC);
+	adv->remain_duration_us = (uint32_t)duration * 10U * USEC_PER_MSEC;
 }
 
 static void ticker_stop_aux_op_cb(uint32_t status, void *param)
@@ -2934,7 +2956,7 @@ static void init_set(struct ll_adv_set *adv)
 	adv->lll.chan_map = BT_LE_ADV_CHAN_MAP_ALL;
 	adv->lll.filter_policy = BT_LE_ADV_FP_NO_FILTER;
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	adv->delay_remain = ULL_ADV_RANDOM_DELAY;
+	adv->delay = 0U;
 #endif /* ONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	init_pdu(lll_adv_data_peek(&ll_adv[0].lll), PDU_ADV_TYPE_ADV_IND);

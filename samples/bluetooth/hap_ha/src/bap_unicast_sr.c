@@ -411,25 +411,22 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-static struct bt_audio_capability caps[] = {
-	{
-		.dir = BT_AUDIO_DIR_SINK,
-		.codec = &lc3_codec,
-	},
-#if defined(CONFIG_BT_ASCS_ASE_SRC)
-	{
-		.dir = BT_AUDIO_DIR_SOURCE,
-		.codec = &lc3_codec,
-	}
-#endif /* CONFIG_BT_ASCS_ASE_SRC */
+static struct bt_audio_capability caps_sink = {
+	.codec = &lc3_codec,
+};
+
+static struct bt_audio_capability caps_source = {
+	.codec = &lc3_codec,
 };
 
 int bap_unicast_sr_init(void)
 {
 	bt_audio_unicast_server_register_cb(&unicast_server_cb);
 
-	for (size_t i = 0; i < ARRAY_SIZE(caps); i++) {
-		bt_audio_capability_register(&caps[i]);
+	bt_audio_capability_register(BT_AUDIO_DIR_SINK, &caps_sink);
+
+	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
+		bt_audio_capability_register(BT_AUDIO_DIR_SOURCE, &caps_source);
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {

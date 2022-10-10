@@ -149,7 +149,6 @@ static struct bt_audio_broadcast_sink_cb broadcast_sink_cbs = {
 };
 
 static struct bt_audio_capability capabilities = {
-	.dir = BT_AUDIO_DIR_SINK,
 	.codec = &codec,
 };
 
@@ -165,7 +164,7 @@ static int init(void)
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_audio_capability_register(&capabilities);
+	err = bt_audio_capability_register(BT_AUDIO_DIR_SINK, &capabilities);
 	if (err) {
 		printk("Capability register failed (err %d)\n", err);
 		return err;

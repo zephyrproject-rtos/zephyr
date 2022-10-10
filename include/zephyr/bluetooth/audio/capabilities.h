@@ -21,8 +21,6 @@ sys_slist_t *bt_audio_capability_get(enum bt_audio_dir dir);
 
 /** @brief Audio Capability structure. */
 struct bt_audio_capability {
-	/** Capability direction */
-	enum bt_audio_dir dir;
 	/** Capability codec reference */
 	struct bt_codec *codec;
 
@@ -34,21 +32,23 @@ struct bt_audio_capability {
  *
  *  Register Audio Local Capability.
  *
+ *  @param dir Direction of the endpoint to register capability for.
  *  @param cap Capability structure.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_capability_register(struct bt_audio_capability *cap);
+int bt_audio_capability_register(enum bt_audio_dir dir, struct bt_audio_capability *cap);
 
 /** @brief Unregister Audio Capability.
  *
  *  Unregister Audio Local Capability.
  *
+ *  @param dir Direction of the endpoint to unregister capability for.
  *  @param cap Capability structure.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_capability_unregister(struct bt_audio_capability *cap);
+int bt_audio_capability_unregister(enum bt_audio_dir dir, struct bt_audio_capability *cap);
 
 /** @brief Set the location for an endpoint type
  *

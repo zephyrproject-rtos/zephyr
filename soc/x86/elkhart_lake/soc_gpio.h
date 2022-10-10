@@ -17,6 +17,10 @@
 
 #define GPIO_INTEL_NR_SUBDEVS		15
 
+#define REG_PAD_OWNER_BASE              0x0020
+#define REG_GPI_INT_STS_BASE            0x0100
+#define PAD_CFG0_PMODE_MASK             (0x0F << 10)
+
 #define REG_PAD_BASE_ADDR		0x000C
 #define REG_GPI_INT_EN_BASE		0x0120
 #define REG_PAD_HOST_SW_OWNER		0x0B0

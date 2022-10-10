@@ -192,6 +192,12 @@ Devicetree
 Libraries / Subsystems
 **********************
 
+* Management
+
+  * MCUMGR functionality deprecated in 3.1 has been removed:
+    CONFIG_FS_MGMT_UL_CHUNK_SIZE, CONFIG_IMG_MGMT_UL_CHUNK_SIZE,
+    CONFIG_OS_MGMT_ECHO_LENGTH
+
 HALs
 ****
 

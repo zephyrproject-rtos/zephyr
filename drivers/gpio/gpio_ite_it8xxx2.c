@@ -611,7 +611,7 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 	}
 
 	if (mode == GPIO_INT_MODE_LEVEL) {
-		printk("Level trigger mode not supported.\r\n");
+		LOG_ERR("Level trigger mode not supported");
 		return -ENOTSUP;
 	}
 

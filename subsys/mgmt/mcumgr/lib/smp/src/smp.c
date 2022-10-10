@@ -59,7 +59,7 @@ smp_read_hdr(const struct net_buf *nb, struct mgmt_hdr *dst_hdr)
 static inline int
 smp_write_hdr(struct smp_streamer *streamer, const struct mgmt_hdr *src_hdr)
 {
-	memcpy(streamer->mgmt_stmr.writer->nb->data, src_hdr, sizeof(*src_hdr));
+	memcpy(streamer->writer->nb->data, src_hdr, sizeof(*src_hdr));
 	return 0;
 }
 
@@ -68,7 +68,7 @@ smp_build_err_rsp(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
 		  const char *rc_rsn)
 {
 	struct mgmt_hdr rsp_hdr;
-	struct cbor_nb_writer *nbw = (struct cbor_nb_writer *)streamer->mgmt_stmr.writer;
+	struct cbor_nb_writer *nbw = streamer->writer;
 	zcbor_state_t *zsp = nbw->zs;
 	bool ok;
 
@@ -173,8 +173,8 @@ smp_handle_single_req(struct smp_streamer *streamer, const struct mgmt_hdr *req_
 {
 	struct mgmt_ctxt cbuf;
 	struct mgmt_hdr rsp_hdr;
-	struct cbor_nb_writer *nbw = (struct cbor_nb_writer *)streamer->mgmt_stmr.writer;
-	struct cbor_nb_reader *nbr = (struct cbor_nb_reader *)streamer->mgmt_stmr.reader;
+	struct cbor_nb_writer *nbw = streamer->writer;
+	struct cbor_nb_reader *nbr = streamer->reader;
 	zcbor_state_t *zsp = nbw->zs;
 	int rc;
 
@@ -223,18 +223,18 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
 	}
 
 	/* Clear the partial response from the buffer, if any. */
-	cbor_nb_writer_init(streamer->mgmt_stmr.writer, rsp);
+	cbor_nb_writer_init(streamer->writer, rsp);
 
 	/* Build and transmit the error response. */
 	rc = smp_build_err_rsp(streamer, req_hdr, status, rsn);
 	if (rc == 0) {
-		streamer->tx_rsp_cb(streamer, rsp, streamer->mgmt_stmr.cb_arg);
+		streamer->smpt->zst_output(rsp);
 		rsp = NULL;
 	}
 
 	/* Free any extra buffers. */
-	zephyr_smp_free_buf(req, streamer->mgmt_stmr.cb_arg);
-	zephyr_smp_free_buf(rsp, streamer->mgmt_stmr.cb_arg);
+	zephyr_smp_free_buf(req, streamer->smpt);
+	zephyr_smp_free_buf(rsp, streamer->smpt);
 }
 
 /**
@@ -290,14 +290,14 @@ smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 			break;
 		}
 
-		rsp = zephyr_smp_alloc_rsp(req, streamer->mgmt_stmr.cb_arg);
+		rsp = zephyr_smp_alloc_rsp(req, streamer->smpt);
 		if (rsp == NULL) {
 			rc = MGMT_ERR_ENOMEM;
 			break;
 		}
 
-		cbor_nb_reader_init(streamer->mgmt_stmr.reader, req);
-		cbor_nb_writer_init(streamer->mgmt_stmr.writer, rsp);
+		cbor_nb_reader_init(streamer->reader, req);
+		cbor_nb_writer_init(streamer->writer, rsp);
 
 		/* Process the request payload and build the response. */
 		rc = smp_handle_single_req(streamer, &req_hdr, &handler_found, &rsn);
@@ -306,7 +306,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		}
 
 		/* Send the response. */
-		rc = streamer->tx_rsp_cb(streamer, rsp, streamer->mgmt_stmr.cb_arg);
+		rc = streamer->smpt->zst_output(rsp);
 		rsp = NULL;
 		if (rc != 0) {
 			break;
@@ -332,8 +332,8 @@ smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		return rc;
 	}
 
-	zephyr_smp_free_buf(req, streamer->mgmt_stmr.cb_arg);
-	zephyr_smp_free_buf(rsp, streamer->mgmt_stmr.cb_arg);
+	zephyr_smp_free_buf(req, streamer->smpt);
+	zephyr_smp_free_buf(rsp, streamer->smpt);
 
 	return rc;
 }

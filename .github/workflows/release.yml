@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+      - '!v*rc*'
 
 jobs:
   release:
@@ -29,13 +30,9 @@ jobs:
           name: zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
           path: zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
 
-      - name: Get Diff since last tag
+      - name: Create empty release notes body
         run: |
-          oldtag=$(git describe --abbrev=0 ${{ github.ref }}^)
-          echo "Changes since ${oldtag}:" > release-notes.txt
-          echo "" >> release-notes.txt
-          echo "" >> release-notes.txt
-          git shortlog ${oldtag}..${{ github.ref }} >> release-notes.txt
+          echo "TODO: add release overview and notes link" > release-notes.txt
 
       - name: Create Release
         id: create_release

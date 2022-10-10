@@ -52,7 +52,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: 1d237f2e2f262751975b6da6e03af569b2b49b2b
+      revision: 43c73d862a78cd5a18a6e24b58cf6980016dbe9e
       path: modules/hal/atmel
       groups:
         - hal
@@ -177,7 +177,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 13f63976bca672ee018f9d55f1e31f02f4135b64
+      revision: cfec947e0f8be686d02c73104a3b1ad0b5dcf1e6
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -199,7 +199,7 @@ manifest:
       revision: 8d53544871e1f300c478224faca6be8384ab0d04
       path: modules/lib/open-amp
     - name: openthread
-      revision: b21e99b4b3d823f71c902b9174ff62b964c124f0
+      revision: bacf8d625f50dd5c4b415caee754c934ba1a262c
       path: modules/lib/openthread
     - name: picolibc
       path: modules/lib/picolibc
@@ -230,7 +230,7 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: 231235f26f5295ac4faf8c5617dbb9779869d821
+      revision: d7c82cb813e283b96770ba19b68a50d6bcc9931f
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
@@ -240,7 +240,7 @@ manifest:
       groups:
         - tee
     - name: tf-m-tests
-      revision: c99a86b295c4887520da9d8402566d7f225c974e
+      revision: bcb53bccccdc05c713aade707e7a8ddad35c210f
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - tee

@@ -47,12 +47,21 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     log_output_dict.c
   )
 
+  add_subdirectory(backends)
+
+  # For some reason, running sys-t with catalog message on
+  # Cortex-M0 would result in hard fault in mipi_catalog_formatter()
+  # if this is complied before the backends (only with SIZE
+  # optimization). Workaround the issue by placing it here instead
+  # as this is causing CI failures. Actual root-cause is TBD.
   zephyr_sources_ifdef(
     CONFIG_LOG_MIPI_SYST_ENABLE
     log_output_syst.c
   )
 
-  add_subdirectory(backends)
+  if(CONFIG_LOG_CUSTOM_FORMAT_SUPPORT)
+    zephyr_sources(log_output_custom.c)
+  endif()
 
 else()
   zephyr_sources(log_minimal.c)

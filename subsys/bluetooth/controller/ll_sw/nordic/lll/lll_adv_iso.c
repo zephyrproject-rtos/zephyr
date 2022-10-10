@@ -15,6 +15,7 @@
 #include "hal/ticker.h"
 
 #include "util/util.h"
+#include "util/mem.h"
 #include "util/memq.h"
 
 #include "pdu.h"
@@ -193,8 +194,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	lll->latency_event = lll->latency_prepare - 1U;
 
 	/* Calculate the current event counter value */
-	event_counter = (lll->payload_count / lll->bn) +
-			(lll->latency_event * lll->bn);
+	event_counter = (lll->payload_count / lll->bn) + lll->latency_event;
 
 	/* Update BIS packet counter to next value */
 	lll->payload_count += (lll->latency_prepare * lll->bn);

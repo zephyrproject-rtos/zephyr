@@ -134,7 +134,7 @@ sys_slist_t *bt_audio_capability_get(enum bt_audio_dir dir)
 }
 
 /* Register Audio Capability */
-int bt_audio_capability_register(struct bt_audio_capability *cap)
+int bt_audio_capability_register(enum bt_audio_dir dir, struct bt_audio_capability *cap)
 {
 	static bool pacs_cb_registered;
 	sys_slist_t *lst;
@@ -143,13 +143,13 @@ int bt_audio_capability_register(struct bt_audio_capability *cap)
 		return -EINVAL;
 	}
 
-	lst = bt_audio_capability_get(cap->dir);
+	lst = bt_audio_capability_get(dir);
 	if (!lst) {
 		return -EINVAL;
 	}
 
 	BT_DBG("cap %p dir 0x%02x codec 0x%02x codec cid 0x%04x "
-	       "codec vid 0x%04x", cap, cap->dir, cap->codec->id,
+	       "codec vid 0x%04x", cap, dir, cap->codec->id,
 	       cap->codec->cid, cap->codec->vid);
 
 	if (!pacs_cb_registered) {
@@ -168,14 +168,14 @@ int bt_audio_capability_register(struct bt_audio_capability *cap)
 	sys_slist_append(lst, &cap->_node);
 
 #if defined(CONFIG_BT_PACS)
-	bt_pacs_capabilities_changed(cap->dir);
+	bt_pacs_capabilities_changed(dir);
 #endif /* CONFIG_BT_PACS */
 
 	return 0;
 }
 
 /* Unregister Audio Capability */
-int bt_audio_capability_unregister(struct bt_audio_capability *cap)
+int bt_audio_capability_unregister(enum bt_audio_dir dir, struct bt_audio_capability *cap)
 {
 	sys_slist_t *lst;
 
@@ -183,19 +183,19 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap)
 		return -EINVAL;
 	}
 
-	lst = bt_audio_capability_get(cap->dir);
+	lst = bt_audio_capability_get(dir);
 	if (!lst) {
 		return -EINVAL;
 	}
 
-	BT_DBG("cap %p dir 0x%02x", cap, cap->dir);
+	BT_DBG("cap %p dir 0x%02x", cap, dir);
 
 	if (!sys_slist_find_and_remove(lst, &cap->_node)) {
 		return -ENOENT;
 	}
 
 #if defined(CONFIG_BT_PACS)
-	bt_pacs_capabilities_changed(cap->dir);
+	bt_pacs_capabilities_changed(dir);
 #endif /* CONFIG_BT_PACS */
 
 	return 0;

@@ -34,23 +34,13 @@ extern "C" {
 struct smp_streamer;
 struct mgmt_hdr;
 
-/** @typedef smp_tx_rsp_fn
- * @brief Transmits an SMP response packet.
- *
- * @param ss	The streamer to transmit via.
- * @param buf	Buffer containing the response packet.
- * @param arg	Optional streamer argument.
- *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
- */
-typedef int smp_tx_rsp_fn(struct smp_streamer *ss, void *buf, void *arg);
-
 /**
  * @brief Decodes, encodes, and transmits SMP packets.
  */
 struct smp_streamer {
-	struct mgmt_streamer mgmt_stmr;
-	smp_tx_rsp_fn *tx_rsp_cb;
+	struct zephyr_smp_transport *smpt;
+	struct cbor_nb_reader *reader;
+	struct cbor_nb_writer *writer;
 };
 
 /**
