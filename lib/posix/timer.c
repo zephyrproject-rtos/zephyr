@@ -50,6 +50,7 @@ static void zephyr_timer_wrapper(struct k_timer *ztimer)
 int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 {
 	struct timer_obj *timer;
+	const k_timeout_t alloc_timeout = K_MSEC(CONFIG_TIMER_CREATE_WAIT);
 
 	if (clockid != CLOCK_MONOTONIC || evp == NULL ||
 	    (evp->sigev_notify != SIGEV_NONE &&
@@ -58,7 +59,7 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 		return -1;
 	}
 
-	if (k_mem_slab_alloc(&posix_timer_slab, (void **)&timer, K_MSEC(100)) == 0) {
+	if (k_mem_slab_alloc(&posix_timer_slab, (void **)&timer, alloc_timeout) == 0) {
 		(void)memset(timer, 0, sizeof(struct timer_obj));
 	} else {
 		errno = ENOMEM;
