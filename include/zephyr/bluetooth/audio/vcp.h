@@ -94,13 +94,11 @@ struct bt_vcp_included {
  * Volume Offset Control Service (Volume Offset Control Service) or
  * Audio Input Control Service (AICS) instances.
  *
- * @param      vcp      Volume Control Service instance pointer.
  * @param[out] included Pointer to store the result in.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_rend_included_get(struct bt_vcp *vcp,
-				 struct bt_vcp_included *included);
+int bt_vcp_vol_rend_included_get(struct bt_vcp_included *included);
 
 /**
  * @brief Register the Volume Control Service.
@@ -109,13 +107,10 @@ int bt_vcp_vol_rend_included_get(struct bt_vcp *vcp,
  * clients.
  *
  * @param      param  Volume Control Service register parameters.
- * @param[out] vcp    Pointer to the registered Volume Control Service.
- *                    This will still be valid if the return value is -EALREADY.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param,
-			     struct bt_vcp **vcp);
+int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param);
 
 struct bt_vcp_vol_rend_cb {
 	/**
@@ -125,14 +120,12 @@ struct bt_vcp_vol_rend_cb {
 	 * bt_vcp_vol_rend_get_state(), or if the state is changed by either
 	 * the Volume Renderer or a remote Volume Controller.
 	 *
-	 * @param vcp     Volume Control Service instance pointer.
 	 * @param err     Error value. 0 on success, GATT error on positive value
 	 *                or errno on negative value.
 	 * @param volume  The volume of the Volume Control Service server.
 	 * @param mute    The mute setting of the Volume Control Service server.
 	 */
-	void (*state)(struct bt_vcp *vcp, int err, uint8_t volume,
-		      uint8_t mute);
+	void (*state)(int err, uint8_t volume, uint8_t mute);
 
 	/**
 	 * @brief Callback function for Volume Control Service flags.
@@ -141,12 +134,11 @@ struct bt_vcp_vol_rend_cb {
 	 * Called when the value is remotely read as the client.
 	 * Called if the value is changed by either the server or client.
 	 *
-	 * @param vcp     Volume Control Service instance pointer.
 	 * @param err     Error value. 0 on success, GATT error on positive value
 	 *                or errno on negative value.
 	 * @param flags   The flags of the Volume Control Service server.
 	 */
-	void (*flags)(struct bt_vcp *vcp, int err, uint8_t flags);
+	void (*flags)(int err, uint8_t flags);
 };
 
 /**
@@ -166,84 +158,67 @@ int bt_vcp_vol_rend_set_step(uint8_t volume_step);
 /**
  * @brief Get the Volume Control Service volume state.
  *
- * @param vcp  Volume Control Service instance pointer.
- *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_rend_get_state(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_get_state(void);
 
 /**
  * @brief Get the Volume Control Service flags.
  *
- * @param vcp  Volume Control Service instance pointer.
- *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_rend_get_flags(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_get_flags(void);
 
 /**
  * @brief Turn the volume down by one step on the server.
  *
- * @param vcp  Volume Control Service instance pointer.
- *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_rend_vol_down(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_vol_down(void);
 
 /**
  * @brief Turn the volume up by one step on the server.
  *
- * @param vcp  Volume Control Service instance pointer.
- *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_rend_vol_up(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_vol_up(void);
 
 /**
  * @brief Turn the volume down and unmute the server.
  *
- * @param vcp  Volume Control Service instance pointer.
- *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_rend_unmute_vol_down(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_unmute_vol_down(void);
 
 /**
  * @brief Turn the volume up and unmute the server.
  *
- * @param vcp  Volume Control Service instance pointer.
- *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_rend_unmute_vol_up(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_unmute_vol_up(void);
 
 /**
  * @brief Set the volume on the server
  *
- * @param vcp    Volume Control Service instance pointer.
  * @param volume The absolute volume to set.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_rend_set_vol(struct bt_vcp *vcp, uint8_t volume);
+int bt_vcp_vol_rend_set_vol(uint8_t volume);
 
 /**
  * @brief Unmute the server.
  *
- * @param vcp  Volume Control Service instance pointer.
- *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_rend_unmute(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_unmute(void);
 
 /**
  * @brief Mute the server.
  *
- * @param vcp  Volume Control Service instance pointer.
- *
  * @return 0 if success, errno on failure.
  */
-int bt_vcp_vol_rend_mute(struct bt_vcp *vcp);
+int bt_vcp_vol_rend_mute(void);
 
 struct bt_vcp_vol_ctlr_cb {
 	/**
