@@ -1695,7 +1695,7 @@ class Binding:
       The absolute path to the file defining the binding.
 
     description:
-      The free-form description of the binding.
+      The free-form description of the binding, or None.
 
     compatible:
       The compatible string the binding matches.
@@ -1829,7 +1829,7 @@ class Binding:
     @property
     def description(self):
         "See the class docstring"
-        return self.raw['description']
+        return self.raw.get('description')
 
     @property
     def compatible(self):
