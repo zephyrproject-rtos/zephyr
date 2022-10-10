@@ -36,7 +36,7 @@ LOG_MODULE_REGISTER(dw_timer, CONFIG_COUNTER_LOG_LEVEL);
 #define USER_DEFINED_MODE       1
 #define FREE_RUNNING_MODE       0
 
-#define GET_DEV_CONFIG(_dev)	((struct dw_timer_config *const)(_dev)->config)
+#define GET_DEV_CONFIG(_dev)	((const struct dw_timer_config *)(_dev)->config)
 #define GET_DEV_DATA(_dev)		((struct dw_timer_drv_data *const)(_dev)->data)
 
 /* conflict requirement of DEVICE_MMIO_ROM and struct counter_config_info to    *
@@ -64,7 +64,7 @@ struct dw_timer_config {
 
 	DEVICE_MMIO_ROM;
 	uint32_t freq;
-	char *clock_drv;
+	const struct device *clk_dev;
 	uint32_t clkid;
 	const struct reset_dt_spec reset;
 	void (*irq_config)(void);
@@ -129,7 +129,7 @@ int dw_timer_disable(const struct device *dev)
 
 static uint32_t dw_timer_get_top_value(const struct device *timer_dev)
 {
-	struct dw_timer_config *const timer_config = GET_DEV_CONFIG(timer_dev);
+	const struct dw_timer_config *timer_config = GET_DEV_CONFIG(timer_dev);
 	uint32_t top_val = 0;
 
 	top_val = timer_config->info.max_top_value;
@@ -239,9 +239,8 @@ static int dw_timer_cancel_alarm(const struct device *timer_dev, uint8_t chan_id
 
 uint32_t dw_timer_get_freq(const struct device *timer_dev)
 {
-	struct dw_timer_config *const timer_config = GET_DEV_CONFIG(timer_dev);
+	const struct dw_timer_config *timer_config = GET_DEV_CONFIG(timer_dev);
 	uint32_t freq = 0;
-	const struct device *clk_dev;
 
 	freq = timer_config->freq;
 
@@ -250,13 +249,12 @@ uint32_t dw_timer_get_freq(const struct device *timer_dev)
 	 * otherwise, get clock rate from clock manager
 	 */
 	if (freq == 0U) {
-		clk_dev = device_get_binding(timer_config->clock_drv);
-		if (!clk_dev) {
-			LOG_ERR("%s: device not found", timer_config->clock_drv);
+		if (!device_is_ready(timer_config->clk_dev)) {
+			LOG_ERR(" clock: device not found");
 			return -ENODEV;
 		}
 
-		clock_control_get_rate(clk_dev,
+		clock_control_get_rate(timer_config->clk_dev,
 			(clock_control_subsys_t) &timer_config->clkid, &freq);
 	}
 
@@ -277,7 +275,7 @@ static const struct counter_driver_api dw_timer_driver_api = {
 static int dw_timer_init(const struct device *timer_dev)
 {
 	DEVICE_MMIO_MAP_TIMER(timer_dev, K_MEM_CACHE_NONE);
-	struct dw_timer_config *const timer_config = GET_DEV_CONFIG(timer_dev);
+	const struct dw_timer_config *timer_config = GET_DEV_CONFIG(timer_dev);
 
 	if (!device_is_ready(timer_config->reset.dev)) {
 		LOG_ERR("Reset device node not found");
@@ -296,12 +294,12 @@ static int dw_timer_init(const struct device *timer_dev)
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clock_frequency), \
 		( \
 			.freq = DT_INST_PROP(inst, clock_frequency), \
-			.clock_drv = NULL, \
+			.clk_dev = NULL, \
 			.clkid = 0, \
 		), \
 		( \
 			.freq = 0, \
-			.clock_drv = DT_LABEL(DT_INST_PHANDLE(inst, clocks)), \
+			.clk_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, clocks)), \
 			.clkid = DT_INST_PHA_BY_IDX(inst, clocks, 0, clkid), \
 		) \
 	)
