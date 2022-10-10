@@ -55,7 +55,9 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
  */
 #define MAX_IP_PROTO_LEN 8
 #else
-#if defined(CONFIG_NET_ETHERNET_BRIDGE) || defined(CONFIG_NET_L2_IEEE802154)
+#if defined(CONFIG_NET_ETHERNET_BRIDGE) || \
+	defined(CONFIG_NET_L2_IEEE802154) || \
+	defined(CONFIG_NET_L2_CUSTOM_IEEE802154)
 #define MAX_IP_PROTO_LEN 0
 #else
 #error "Some packet protocol (e.g. IPv6, IPv4, ETH, IEEE 802.15.4) needs to be selected."
