@@ -195,7 +195,10 @@ static void mcux_lpadc_start_channel(const struct device *dev)
 	lpadc_conv_command_config_t cmd_config;
 
 	LPADC_GetDefaultConvCommandConfig(&cmd_config);
-	cmd_config.channelNumber = data->channel_id;
+	cmd_config.channelNumber = ADC_CMDL_ADCH(data->channel_id);
+	cmd_config.sampleChannelMode = (data->channel_id & 8) ?
+		kLPADC_SampleChannelSingleEndSideB :
+		kLPADC_SampleChannelSingleEndSideA;
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) \
 	&& FSL_FEATURE_LPADC_HAS_CMDL_MODE
 	cmd_config.conversionResolutionMode = data->resolution;
