@@ -561,6 +561,8 @@ UNDEF_KCONFIG_WHITELIST = {
     "ARMCLANG_STD_LIBC",  # The ARMCLANG_STD_LIBC is defined in the toolchain
                           # Kconfig which is sourced based on Zephyr toolchain
 			  # variant and therefore not visible to compliance.
+    "BOOT_UPGRADE_ONLY", # Used in example adjusting MCUboot config, but symbol
+                         # is defined in MCUboot itself.
     "CDC_ACM_PORT_NAME_",
     "CLOCK_STM32_SYSCLK_SRC_",
     "CMU",
@@ -579,6 +581,8 @@ UNDEF_KCONFIG_WHITELIST = {
     "FOO_SETTING_1",
     "FOO_SETTING_2",
     "LSM6DSO_INT_PIN",
+    "MCUBOOT_LOG_LEVEL_WRN",        # Used in example adjusting MCUboot config,
+    "MCUBOOT_DOWNGRADE_PREVENTION", # but symbols are defined in MCUboot itself.
     "MISSING",
     "MODULES",
     "MYFEATURE",
