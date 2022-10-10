@@ -726,7 +726,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	sr_pdu_prev = lll_adv_scan_rsp_peek(lll);
 
 	/* Get reference to next scan response  PDU */
-	sr_pdu = lll_adv_scan_rsp_alloc(lll, &sr_idx);
+	sr_pdu = lll_adv_aux_scan_rsp_alloc(lll, &sr_idx);
 
 	/* Prepare the AD data as parameter to update in PDU */
 	/* Use length = 0 and NULL pointer to retain old data in the PDU.
@@ -2545,7 +2545,7 @@ struct ll_adv_aux_set *ull_adv_aux_acquire(struct lll_adv *lll)
 	lll_aux->adv = lll;
 
 	lll_adv_data_reset(&lll_aux->data);
-	err = lll_adv_data_init(&lll_aux->data);
+	err = lll_adv_aux_data_init(&lll_aux->data);
 	if (err) {
 		return NULL;
 	}
