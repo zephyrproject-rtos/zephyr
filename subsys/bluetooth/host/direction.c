@@ -324,7 +324,7 @@ prepare_cl_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt_le_per_adv_s
 		}
 
 		cp->switch_pattern_len = switch_pattern_len;
-		dest_ant_ids = net_buf_add(*buf, params->num_ant_ids);
+		dest_ant_ids = net_buf_add(*buf, cp->switch_pattern_len);
 		memcpy(dest_ant_ids, ant_ids, cp->switch_pattern_len);
 	}
 
