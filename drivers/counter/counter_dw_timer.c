@@ -11,8 +11,8 @@
 #include <soc.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/logging/log.h>
-#include <drivers/clock_control.h>
-#include <drivers/reset.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 
 LOG_MODULE_REGISTER(dw_timer, CONFIG_COUNTER_LOG_LEVEL);
 
