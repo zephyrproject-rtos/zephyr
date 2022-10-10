@@ -1824,7 +1824,8 @@ class Binding:
             compat = f" for compatible '{self.compatible}'"
         else:
             compat = ""
-        return f"<Binding {os.path.basename(self.path)}" + compat + ">"
+        basename = os.path.basename(self.path or "")
+        return f"<Binding {basename}" + compat + ">"
 
     @property
     def description(self):
