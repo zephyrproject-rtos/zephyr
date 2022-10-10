@@ -2578,6 +2578,36 @@ function(zephyr_get_targets directory types targets)
 endfunction()
 
 # Usage:
+#   test_sysbuild([REQUIRED])
+#
+# Test that current sample is invoked through sysbuild.
+#
+# This function tests that current CMake configure was invoked through sysbuild.
+# If CMake configure was not invoked through sysbuild, then a warning is printed
+# to the user. The warning can be upgraded to an error by setting `REQUIRED` as
+# argument the `test_sysbuild()`.
+#
+# This function allows samples that are multi-image samples by nature to ensure
+# all samples are correctly built together.
+function(test_sysbuild)
+  cmake_parse_arguments(TEST_SYSBUILD "REQUIRED" "" "" ${ARGN})
+
+  if(TEST_SYSBUILD_REQUIRED)
+    set(message_mode FATAL_ERROR)
+  else()
+    set(message_mode WARNING)
+  endif()
+
+  if(NOT SYSBUILD)
+    message(${message_mode}
+            "Project '${PROJECT_NAME}' is designed for sysbuild.\n"
+            "For correct user-experiences, please build '${PROJECT_NAME}' "
+            "using sysbuild."
+    )
+  endif()
+endfunction()
+
+# Usage:
 #   target_byproducts(TARGET <target> BYPRODUCTS <file> [<file>...])
 #
 # Specify additional BYPRODUCTS that this target produces.
