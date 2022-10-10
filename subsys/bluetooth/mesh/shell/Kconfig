@@ -12,6 +12,20 @@ menuconfig BT_MESH_SHELL
 
 if BT_MESH_SHELL
 
+config BT_MESH_SHELL_CFG_CLI
+	bool "Support for Configuration Client Model shell commands"
+	depends on BT_MESH_CFG_CLI
+	default y
+	help
+	  This option enables support of Configuration Client shell commands.
+
+config BT_MESH_SHELL_HEALTH_CLI
+	bool "Support for Health Client Model shell commands"
+	depends on BT_MESH_HEALTH_CLI
+	default y
+	help
+	  This option enables support of Health Client shell commands.
+
 config BT_MESH_SHELL_HEALTH_SRV_INSTANCE
 	bool "Support for Shell Health Server model instance"
 	help
