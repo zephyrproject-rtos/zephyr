@@ -1,0 +1,17 @@
+sample:
+  name: Proximity sensor polling sample
+tests:
+  sample.sensor.proximity_polling:
+    harness: console
+    tags: sensors proximity
+    filter: dt_alias_exists("proximity-sensor0")
+    harness_config:
+      type: one_line
+      regex:
+        - "Proximity sensor sample application"
+        - "Found [0-9] proximity sensor(s): (.*)$"
+        - "Proximity on ([^:]*): [0-9]*$"
+tests:
+  test:
+    tags: sensor
+    depends_on: i2c
