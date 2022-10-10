@@ -89,6 +89,11 @@ lll_adv_data_latest_peek(const struct lll_adv *const lll)
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static inline int lll_adv_aux_data_init(struct lll_adv_pdu *pdu)
+{
+	return lll_adv_data_init(pdu);
+}
+
 static inline struct pdu_adv *lll_adv_aux_data_alloc(struct lll_adv_aux *lll,
 						     uint8_t *idx)
 {
@@ -118,12 +123,24 @@ static inline struct pdu_adv *lll_adv_aux_data_curr_get(struct lll_adv_aux *lll)
 	return (void *)lll->data.pdu[lll->data.first];
 }
 
+static inline struct pdu_adv *lll_adv_aux_scan_rsp_alloc(struct lll_adv *lll,
+							 uint8_t *idx)
+{
+	return lll_adv_pdu_alloc(&lll->scan_rsp, idx);
+}
+
+
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 int lll_adv_and_extra_data_release(struct lll_adv_pdu *pdu);
 
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
 void lll_adv_sync_pdu_b2b_update(struct lll_adv_sync *lll, uint8_t idx);
 #endif
+
+static inline int lll_adv_sync_data_init(struct lll_adv_pdu *pdu)
+{
+	return lll_adv_data_init(pdu);
+}
 
 struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
 						 void **extra_data,
