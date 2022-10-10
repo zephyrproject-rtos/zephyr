@@ -17,11 +17,11 @@
  */
 
 #include <errno.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <drivers/reset.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include "gpio_intel_socfpga.h"
 
@@ -32,8 +32,7 @@ struct gpio_intel_socfpga_config {
 	const int port_pin_mask;
 	const int gpio_port;
 	uint32_t ngpios;
-	char *reset_drv;
-	uint32_t reset_line;
+	struct reset_dt_spec reset;
 };
 
 struct gpio_intel_socfpga_data {
@@ -156,15 +155,13 @@ static int gpio_init(const struct device *dev)
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
 	struct gpio_intel_socfpga_config *const cfg = DEV_CFG(dev);
-	const struct device *reset_dev;
 
-	reset_dev = device_get_binding(cfg->reset_drv);
-	if (!reset_dev) {
+	if (!device_is_ready(cfg->reset.dev)) {
 		return -ENODEV;
 	}
 
-	reset_line_assert(reset_dev, cfg->reset_line);
-	reset_line_deassert(reset_dev, cfg->reset_line);
+	reset_line_assert(cfg->reset.dev, cfg->reset.id);
+	reset_line_deassert(cfg->reset.dev, cfg->reset.id);
 
 	return 0;
 }
@@ -187,8 +184,7 @@ static const struct gpio_driver_api gpio_socfpga_driver_api = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_inst),	\
 		.gpio_port = _inst,						\
 		.ngpios = DT_INST_PROP(_inst, ngpios),				\
-		.reset_drv = DT_LABEL(DT_INST_PHANDLE(_inst, resets)), 	\
-		.reset_line = DT_INST_PHA_BY_IDX(_inst, resets, 0, id) 	\
+		.reset = RESET_DT_SPEC_INST_GET(_inst)			\
 	};									\
 	DEVICE_DT_INST_DEFINE(_inst,						\
 			gpio_init,						\
