@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(bt_vcp_vol_ctlr, CONFIG_BT_VCP_VOL_CTLR_LOG_LEVEL);
 #include "common/bt_str.h"
 
 /* Callback functions */
-static struct bt_vcp_cb *vcp_vol_ctlr_cb;
+static struct bt_vcp_vol_ctlr_cb *vcp_vol_ctlr_cb;
 
 static struct bt_vcp vcp_insts[CONFIG_BT_MAX_CONN];
 static int vcp_vol_ctlr_common_vcs_cp(struct bt_vcp *vcp, uint8_t opcode);
@@ -756,7 +756,7 @@ int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp **vcp)
 	return err;
 }
 
-int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_cb *cb)
+int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_vol_ctlr_cb *cb)
 {
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 	struct bt_vocs_cb *vocs_cb = NULL;

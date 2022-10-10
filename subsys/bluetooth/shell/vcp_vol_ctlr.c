@@ -284,7 +284,7 @@ static void vcs_vocs_description_cb(struct bt_vocs *inst, int err,
 }
 #endif /* CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST > 0 */
 
-static struct bt_vcp_cb vcs_cbs = {
+static struct bt_vcp_vol_ctlr_cb vcp_cbs = {
 	.discover = vcs_discover_cb,
 	.vol_down = vcs_vol_down_cb,
 	.vol_up = vcs_vol_up_cb,
@@ -331,7 +331,7 @@ static int cmd_vcp_vol_ctlr_discover(const struct shell *sh, size_t argc,
 		ctx_shell = sh;
 	}
 
-	result = bt_vcp_vol_ctlr_cb_register(&vcs_cbs);
+	result = bt_vcp_vol_ctlr_cb_register(&vcp_cbs);
 	if (result != 0) {
 		shell_print(sh, "CB register failed: %d", result);
 		return result;
