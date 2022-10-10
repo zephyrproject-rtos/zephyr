@@ -111,7 +111,7 @@ void ft8xx_copro_cmd_text(const struct device *dev, int16_t x,
 	(void)ft8xx_drv_write(dev, FT800_RAM_CMD + reg_cmd_write, s, str_bytes);
 	increase_reg_cmd_write(dev, str_bytes + padding_bytes);
 
-	flush_reg_cmd_write(dev, );
+	flush_reg_cmd_write(dev);
 }
 
 void ft8xx_copro_cmd_number(const struct device *dev, int16_t x,
