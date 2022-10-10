@@ -52,13 +52,13 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #endif
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
 
-static uint32_t table_m_size[] = {
+static const uint32_t table_m_size[] = {
 	LL_DMA_MDATAALIGN_BYTE,
 	LL_DMA_MDATAALIGN_HALFWORD,
 	LL_DMA_MDATAALIGN_WORD,
 };
 
-static uint32_t table_p_size[] = {
+static const uint32_t table_p_size[] = {
 	LL_DMA_PDATAALIGN_BYTE,
 	LL_DMA_PDATAALIGN_HALFWORD,
 	LL_DMA_PDATAALIGN_WORD,

@@ -48,25 +48,27 @@ LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
 
-uint32_t table_m_size[] = {
+#if STM32_QSPI_USE_DMA
+static const uint32_t table_m_size[] = {
 	LL_DMA_MDATAALIGN_BYTE,
 	LL_DMA_MDATAALIGN_HALFWORD,
 	LL_DMA_MDATAALIGN_WORD,
 };
 
-uint32_t table_p_size[] = {
+static const uint32_t table_p_size[] = {
 	LL_DMA_PDATAALIGN_BYTE,
 	LL_DMA_PDATAALIGN_HALFWORD,
 	LL_DMA_PDATAALIGN_WORD,
 };
 
 /* Lookup table to set dma priority from the DTS */
-uint32_t table_priority[] = {
+static const uint32_t table_priority[] = {
 	DMA_PRIORITY_LOW,
 	DMA_PRIORITY_MEDIUM,
 	DMA_PRIORITY_HIGH,
 	DMA_PRIORITY_VERY_HIGH,
 };
+#endif /* STM32_QSPI_USE_DMA */
 
 typedef void (*irq_config_func_t)(const struct device *dev);
 

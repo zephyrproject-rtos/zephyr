@@ -28,19 +28,19 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #define DMA_STM32_0_STREAM_COUNT 16
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
-static uint32_t table_m_size[] = {
+static const uint32_t table_m_size[] = {
 	LL_DMA_SRC_DATAWIDTH_BYTE,
 	LL_DMA_SRC_DATAWIDTH_HALFWORD,
 	LL_DMA_SRC_DATAWIDTH_WORD,
 };
 
-static uint32_t table_p_size[] = {
+static const uint32_t table_p_size[] = {
 	LL_DMA_DEST_DATAWIDTH_BYTE,
 	LL_DMA_DEST_DATAWIDTH_HALFWORD,
 	LL_DMA_DEST_DATAWIDTH_WORD,
 };
 
-static uint32_t table_priority[4] = {
+static const uint32_t table_priority[4] = {
 	LL_DMA_LOW_PRIORITY_LOW_WEIGHT,
 	LL_DMA_LOW_PRIORITY_MID_WEIGHT,
 	LL_DMA_LOW_PRIORITY_HIGH_WEIGHT,
