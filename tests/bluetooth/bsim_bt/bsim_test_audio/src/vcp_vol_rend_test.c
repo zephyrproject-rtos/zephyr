@@ -23,7 +23,6 @@ extern enum bst_result_t bst_result;
 #define AICS_DESC_SIZE 0
 #endif /* CONFIG_BT_AICS */
 
-static struct bt_vcp *vcp;
 static struct bt_vcp_included vcp_included;
 
 static volatile uint8_t g_volume;
@@ -44,8 +43,7 @@ static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
 static bool g_is_connected;
 
-static void vcs_state_cb(struct bt_vcp *vcp, int err, uint8_t volume,
-			 uint8_t mute)
+static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
 {
 	if (err) {
 		FAIL("VCP state cb err (%d)", err);
@@ -57,7 +55,7 @@ static void vcs_state_cb(struct bt_vcp *vcp, int err, uint8_t volume,
 	g_cb = true;
 }
 
-static void vcs_flags_cb(struct bt_vcp *vcp, int err, uint8_t flags)
+static void vcs_flags_cb(int err, uint8_t flags)
 {
 	if (err) {
 		FAIL("VCP flags cb err (%d)", err);
@@ -479,13 +477,13 @@ static void test_standalone(void)
 	vcp_register_param.volume = 100;
 	vcp_register_param.cb = &vcs_cb;
 
-	err = bt_vcp_vol_rend_register(&vcp_register_param, &vcp);
+	err = bt_vcp_vol_rend_register(&vcp_register_param);
 	if (err) {
 		FAIL("VCP register failed (err %d)\n", err);
 		return;
 	}
 
-	err = bt_vcp_vol_rend_included_get(vcp, &vcp_included);
+	err = bt_vcp_vol_rend_included_get(&vcp_included);
 	if (err) {
 		FAIL("VCP included get failed (err %d)\n", err);
 		return;
@@ -504,7 +502,7 @@ static void test_standalone(void)
 
 	printk("Getting VCP volume state\n");
 	g_cb = false;
-	err = bt_vcp_vol_rend_get_state(vcp);
+	err = bt_vcp_vol_rend_get_state();
 	if (err) {
 		FAIL("Could not get VCP volume (err %d)\n", err);
 		return;
@@ -514,7 +512,7 @@ static void test_standalone(void)
 
 	printk("Getting VCP flags\n");
 	g_cb = false;
-	err = bt_vcp_vol_rend_get_flags(vcp);
+	err = bt_vcp_vol_rend_get_flags();
 	if (err) {
 		FAIL("Could not get VCP flags (err %d)\n", err);
 		return;
@@ -524,7 +522,7 @@ static void test_standalone(void)
 
 	printk("Downing VCP volume\n");
 	expected_volume = g_volume - volume_step;
-	err = bt_vcp_vol_rend_vol_down(vcp);
+	err = bt_vcp_vol_rend_vol_down();
 	if (err) {
 		FAIL("Could not get down VCP volume (err %d)\n", err);
 		return;
@@ -534,7 +532,7 @@ static void test_standalone(void)
 
 	printk("Upping VCP volume\n");
 	expected_volume = g_volume + volume_step;
-	err = bt_vcp_vol_rend_vol_up(vcp);
+	err = bt_vcp_vol_rend_vol_up();
 	if (err) {
 		FAIL("Could not up VCP volume (err %d)\n", err);
 		return;
@@ -544,7 +542,7 @@ static void test_standalone(void)
 
 	printk("Muting VCP\n");
 	expected_mute = 1;
-	err = bt_vcp_vol_rend_mute(vcp);
+	err = bt_vcp_vol_rend_mute();
 	if (err) {
 		FAIL("Could not mute VCP (err %d)\n", err);
 		return;
@@ -555,7 +553,7 @@ static void test_standalone(void)
 	printk("Downing and unmuting VCP\n");
 	expected_volume = g_volume - volume_step;
 	expected_mute = 0;
-	err = bt_vcp_vol_rend_unmute_vol_down(vcp);
+	err = bt_vcp_vol_rend_unmute_vol_down();
 	if (err) {
 		FAIL("Could not down and unmute VCP (err %d)\n", err);
 		return;
@@ -566,7 +564,7 @@ static void test_standalone(void)
 
 	printk("Muting VCP\n");
 	expected_mute = 1;
-	err = bt_vcp_vol_rend_mute(vcp);
+	err = bt_vcp_vol_rend_mute();
 	if (err) {
 		FAIL("Could not mute VCP (err %d)\n", err);
 		return;
@@ -577,7 +575,7 @@ static void test_standalone(void)
 	printk("Upping and unmuting VCP\n");
 	expected_volume = g_volume + volume_step;
 	expected_mute = 0;
-	err = bt_vcp_vol_rend_unmute_vol_up(vcp);
+	err = bt_vcp_vol_rend_unmute_vol_up();
 	if (err) {
 		FAIL("Could not up and unmute VCP (err %d)\n", err);
 		return;
@@ -588,7 +586,7 @@ static void test_standalone(void)
 
 	printk("Muting VCP\n");
 	expected_mute = 1;
-	err = bt_vcp_vol_rend_mute(vcp);
+	err = bt_vcp_vol_rend_mute();
 	if (err) {
 		FAIL("Could not mute VCP (err %d)\n", err);
 		return;
@@ -598,7 +596,7 @@ static void test_standalone(void)
 
 	printk("Unmuting VCP\n");
 	expected_mute = 0;
-	err = bt_vcp_vol_rend_unmute(vcp);
+	err = bt_vcp_vol_rend_unmute();
 	if (err) {
 		FAIL("Could not unmute VCP (err %d)\n", err);
 		return;
@@ -607,7 +605,7 @@ static void test_standalone(void)
 	printk("VCP volume unmuted\n");
 
 	expected_volume = g_volume - 5;
-	err = bt_vcp_vol_rend_set_vol(vcp, expected_volume);
+	err = bt_vcp_vol_rend_set_vol(expected_volume);
 	if (err) {
 		FAIL("Could not set VCP volume (err %d)\n", err);
 		return;
@@ -675,13 +673,13 @@ static void test_main(void)
 	vcp_register_param.volume = 100;
 	vcp_register_param.cb = &vcs_cb;
 
-	err = bt_vcp_vol_rend_register(&vcp_register_param, &vcp);
+	err = bt_vcp_vol_rend_register(&vcp_register_param);
 	if (err) {
 		FAIL("VCP register failed (err %d)\n", err);
 		return;
 	}
 
-	err = bt_vcp_vol_rend_included_get(vcp, &vcp_included);
+	err = bt_vcp_vol_rend_included_get(&vcp_included);
 	if (err) {
 		FAIL("VCP included get failed (err %d)\n", err);
 		return;

@@ -16,10 +16,9 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 
-static struct bt_vcp *vcp;
 static struct bt_vcp_included vcp_included;
 
-static void vcs_state_cb(struct bt_vcp *vcp, int err, uint8_t volume, uint8_t mute)
+static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
 {
 	if (err) {
 		printk("VCS state get failed (%d)\n", err);
@@ -28,7 +27,7 @@ static void vcs_state_cb(struct bt_vcp *vcp, int err, uint8_t volume, uint8_t mu
 	}
 }
 
-static void vcs_flags_cb(struct bt_vcp *vcp, int err, uint8_t flags)
+static void vcs_flags_cb(int err, uint8_t flags)
 {
 	if (err) {
 		printk("VCS flags get failed (%d)\n", err);
@@ -165,12 +164,12 @@ int vcp_vol_renderer_init(void)
 	vcp_register_param.volume = 100;
 	vcp_register_param.cb = &vcp_cbs;
 
-	err = bt_vcp_vol_rend_register(&vcp_register_param, &vcp);
+	err = bt_vcp_vol_rend_register(&vcp_register_param);
 	if (err) {
 		return err;
 	}
 
-	err = bt_vcp_vol_rend_included_get(vcp, &vcp_included);
+	err = bt_vcp_vol_rend_included_get(&vcp_included);
 	if (err != 0) {
 		return err;
 	}

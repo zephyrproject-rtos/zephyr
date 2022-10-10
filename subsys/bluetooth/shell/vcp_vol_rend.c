@@ -17,11 +17,9 @@
 
 #include "bt.h"
 
-static struct bt_vcp *vcp;
 static struct bt_vcp_included vcp_included;
 
-static void vcp_vol_rend_state_cb(struct bt_vcp *vcp, int err, uint8_t volume,
-				  uint8_t mute)
+static void vcp_vol_rend_state_cb(int err, uint8_t volume, uint8_t mute)
 {
 	if (err) {
 		shell_error(ctx_shell, "VCP state get failed (%d)", err);
@@ -30,7 +28,7 @@ static void vcp_vol_rend_state_cb(struct bt_vcp *vcp, int err, uint8_t volume,
 	}
 }
 
-static void vcp_vol_rend_flags_cb(struct bt_vcp *vcp, int err, uint8_t flags)
+static void vcp_vol_rend_flags_cb(int err, uint8_t flags)
 {
 	if (err) {
 		shell_error(ctx_shell, "VCP flags get failed (%d)", err);
@@ -229,13 +227,13 @@ static int cmd_vcp_vol_rend_init(const struct shell *sh, size_t argc,
 
 	vcp_register_param.cb = &vcp_vol_rend_cbs;
 
-	result = bt_vcp_vol_rend_register(&vcp_register_param, &vcp);
+	result = bt_vcp_vol_rend_register(&vcp_register_param);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 		return result;
 	}
 
-	result = bt_vcp_vol_rend_included_get(vcp, &vcp_included);
+	result = bt_vcp_vol_rend_included_get(&vcp_included);
 	if (result != 0) {
 		shell_error(sh, "Failed to get included services: %d", result);
 		return result;
@@ -267,7 +265,7 @@ static int cmd_vcp_vol_rend_volume_step(const struct shell *sh, size_t argc,
 static int cmd_vcp_vol_rend_state_get(const struct shell *sh, size_t argc,
 				      char **argv)
 {
-	int result = bt_vcp_vol_rend_get_state(vcp);
+	int result = bt_vcp_vol_rend_get_state();
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -279,7 +277,7 @@ static int cmd_vcp_vol_rend_state_get(const struct shell *sh, size_t argc,
 static int cmd_vcp_vol_rend_flags_get(const struct shell *sh, size_t argc,
 				      char **argv)
 {
-	int result = bt_vcp_vol_rend_get_flags(vcp);
+	int result = bt_vcp_vol_rend_get_flags();
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -291,7 +289,7 @@ static int cmd_vcp_vol_rend_flags_get(const struct shell *sh, size_t argc,
 static int cmd_vcp_vol_rend_volume_down(const struct shell *sh, size_t argc,
 					char **argv)
 {
-	int result = bt_vcp_vol_rend_vol_down(vcp);
+	int result = bt_vcp_vol_rend_vol_down();
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -304,7 +302,7 @@ static int cmd_vcp_vol_rend_volume_up(const struct shell *sh, size_t argc,
 				      char **argv)
 
 {
-	int result = bt_vcp_vol_rend_vol_up(vcp);
+	int result = bt_vcp_vol_rend_vol_up();
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -316,7 +314,7 @@ static int cmd_vcp_vol_rend_volume_up(const struct shell *sh, size_t argc,
 static int cmd_vcp_vol_rend_unmute_volume_down(const struct shell *sh,
 					       size_t argc, char **argv)
 {
-	int result = bt_vcp_vol_rend_unmute_vol_down(vcp);
+	int result = bt_vcp_vol_rend_unmute_vol_down();
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -328,7 +326,7 @@ static int cmd_vcp_vol_rend_unmute_volume_down(const struct shell *sh,
 static int cmd_vcp_vol_rend_unmute_volume_up(const struct shell *sh,
 					     size_t argc, char **argv)
 {
-	int result = bt_vcp_vol_rend_unmute_vol_up(vcp);
+	int result = bt_vcp_vol_rend_unmute_vol_up();
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -349,7 +347,7 @@ static int cmd_vcp_vol_rend_volume_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_rend_set_vol(vcp, volume);
+	result = bt_vcp_vol_rend_set_vol(volume);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -360,7 +358,7 @@ static int cmd_vcp_vol_rend_volume_set(const struct shell *sh, size_t argc,
 static int cmd_vcp_vol_rend_unmute(const struct shell *sh, size_t argc,
 				   char **argv)
 {
-	int result = bt_vcp_vol_rend_unmute(vcp);
+	int result = bt_vcp_vol_rend_unmute();
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -372,7 +370,7 @@ static int cmd_vcp_vol_rend_unmute(const struct shell *sh, size_t argc,
 static int cmd_vcp_vol_rend_mute(const struct shell *sh, size_t argc,
 				 char **argv)
 {
-	int result = bt_vcp_vol_rend_mute(vcp);
+	int result = bt_vcp_vol_rend_mute();
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
