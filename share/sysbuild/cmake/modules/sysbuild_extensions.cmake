@@ -3,6 +3,91 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Usage:
+#   load_cache(IMAGE <image> BINARY_DIR <dir>)
+#
+# This function will load the CMakeCache.txt file from the binary directory
+# given by the BINARY_DIR argument.
+#
+# All CMake cache variables are stored in a custom target which is identified by
+# the name given as value to the IMAGE argument.
+#
+# IMAGE:      image name identifying the cache for later sysbuild_get() lookup calls.
+# BINARY_DIR: binary directory (build dir) containing the CMakeCache.txt file to load.
+function(load_cache)
+  set(single_args IMAGE BINARY_DIR)
+  cmake_parse_arguments(LOAD_CACHE "" "${single_args}" "" ${ARGN})
+
+  if(NOT TARGET ${LOAD_CACHE_IMAGE}_cache)
+    add_custom_target(${LOAD_CACHE_IMAGE}_cache)
+  endif()
+  file(STRINGS "${LOAD_CACHE_BINARY_DIR}/CMakeCache.txt" cache_strings)
+  foreach(str ${cache_strings})
+    # Using a regex for matching whole 'VAR_NAME:TYPE=VALUE' will strip semi-colons
+    # thus resulting in lists to become strings.
+    # Therefore we first fetch VAR_NAME and TYPE, and afterwards extract
+    # remaining of string into a value that populates the property.
+    # This method ensures that both quoted values and ;-separated list stays intact.
+    string(REGEX MATCH "([^:]*):([^=]*)=" variable_identifier ${str})
+    if(NOT "${variable_identifier}" STREQUAL "")
+      string(LENGTH ${variable_identifier} variable_identifier_length)
+      string(SUBSTRING "${str}" ${variable_identifier_length} -1 variable_value)
+      set_property(TARGET ${LOAD_CACHE_IMAGE}_cache APPEND PROPERTY "CACHE:VARIABLES" "${CMAKE_MATCH_1}")
+      set_property(TARGET ${LOAD_CACHE_IMAGE}_cache PROPERTY "${CMAKE_MATCH_1}:TYPE" "${CMAKE_MATCH_2}")
+      set_property(TARGET ${LOAD_CACHE_IMAGE}_cache PROPERTY "${CMAKE_MATCH_1}" "${variable_value}")
+    endif()
+  endforeach()
+endfunction()
+
+# Usage:
+#   sysbuild_get(<variable> IMAGE <image> [VAR <image-variable>])
+#
+# This function will return the variable found in the CMakeCache.txt file
+# identified by image.
+# If `VAR` is provided, the name given as parameter will be looked up, but if
+# `VAR` is not given, the `<variable>` name provided will be used both for
+# lookup and value return.
+#
+# The result will be returned in `<variable>`.
+#
+# Example use:
+#   sysbuild_get(PROJECT_NAME IMAGE my_sample)
+#     will lookup PROJECT_NAME from the CMakeCache identified by `my_sample` and
+#     and return the value in the local variable `PROJECT_NAME`.
+#
+#   sysbuild_get(my_sample_PROJECT_NAME IMAGE my_sample VAR PROJECT_NAME)
+#     will lookup PROJECT_NAME from the CMakeCache identified by `my_sample` and
+#     and return the value in the local variable `my_sample_PROJECT_NAME`.
+#
+# <variable>: variable used for returning CMake cache value. Also used as lookup
+#             variable if `VAR` is not provided.
+# IMAGE:      image name identifying the cache to use for variable lookup.
+# VAR:        name of the CMake cache variable name to lookup.
+function(sysbuild_get variable)
+  cmake_parse_arguments(GET_VAR "" "IMAGE;VAR" "" ${ARGN})
+
+  if(NOT DEFINED GET_VAR_IMAGE)
+    message(FATAL_ERROR "sysbuild_get(...) requires IMAGE.")
+  endif()
+
+  if(DEFINED ${variable})
+    message(WARNING "Return variable ${variable} already defined with a value. "
+                    "sysbuild_get(${variable} ...) may overwrite existing value. "
+		    "Please use sysbuild_get(<variable> ... VAR <image-variable>) "
+		    "where <variable> is undefined."
+    )
+  endif()
+
+  if(NOT DEFINED GET_VAR_VAR)
+    set(GET_VAR_VAR ${variable})
+  endif()
+
+  get_property(${GET_VAR_IMAGE}_${GET_VAR_VAR} TARGET ${GET_VAR_IMAGE}_cache PROPERTY ${GET_VAR_VAR})
+  if(DEFINED ${GET_VAR_IMAGE}_${GET_VAR_VAR})
+    set(${variable} ${${GET_VAR_IMAGE}_${GET_VAR_VAR}} PARENT_SCOPE)
+  endif()
+endfunction()
+
+# Usage:
 #   ExternalZephyrProject_Add(APPLICATION <name>
 #                             SOURCE_DIR <dir>
 #                             [BOARD <board>]
@@ -112,6 +197,7 @@ function(ExternalZephyrProject_Add)
             "Location: ${ZBUILD_SOURCE_DIR}"
     )
   endif()
+  load_cache(IMAGE ${ZBUILD_APPLICATION} BINARY_DIR ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION})
 
   foreach(kconfig_target
       menuconfig
