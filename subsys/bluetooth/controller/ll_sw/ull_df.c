@@ -456,11 +456,28 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 #endif /* CONFIG_BT_CTLR_DF_DEBUG_ENABLE */
 
 		/* Enable of already enabled CTE updates AoA configuration */
-		if (!((IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US) &&
-		       slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US) ||
-		      slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US)) {
-			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+
+		/* According to Core 5.3 Vol 4, Part E, section 7.8.82 slot_durations,
+		 * switch_pattern_len and ant_ids are used only for AoA and do not affect
+		 * reception of AoD CTE. If AoA is not supported relax command validation
+		 * to improve interoperability with different Host implementations.
+		 */
+		if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)) {
+			if (!((IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US) &&
+			       slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US) ||
+			      slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US)) {
+				return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			}
+
+			if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
+			    switch_pattern_len > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN || !ant_ids) {
+				return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			}
+
+			(void)memcpy(cfg->ant_ids, ant_ids, switch_pattern_len);
 		}
+		cfg->slot_durations = slot_durations;
+		cfg->ant_sw_len = switch_pattern_len;
 
 		/* max_cte_count equal to 0x0 has special meaning - sample and
 		 * report continuously until there are CTEs received.
@@ -468,17 +485,7 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 		if (max_cte_count > CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX) {
 			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 		}
-
-		if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
-		    switch_pattern_len > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN ||
-		    !ant_ids) {
-			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-		}
-
-		cfg->slot_durations = slot_durations;
 		cfg->max_cte_count = max_cte_count;
-		memcpy(cfg->ant_ids, ant_ids, switch_pattern_len);
-		cfg->ant_sw_len = switch_pattern_len;
 
 		cfg->is_enabled = 1U;
 
@@ -1210,6 +1217,11 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 	if (!sampling_enable) {
 		params_rx->is_enabled = false;
 	} else {
+		/* According to Core 5.3 Vol 4, Part E, section 7.8.83 slot_durations,
+		 * switch_pattern_len and ant_ids are used only for AoA and do not affect
+		 * reception of AoD CTE. If AoA is not supported relax command validation
+		 * to improve interoperability with different Host implementations.
+		 */
 		if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)) {
 			if (!((IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US) &&
 			       slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US) ||
