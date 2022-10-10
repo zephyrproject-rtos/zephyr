@@ -71,7 +71,7 @@ struct bt_vcp_vol_ctlr {
 struct bt_vcp_server {
 	struct vcs_state state;
 	uint8_t flags;
-	struct bt_vcp_cb *cb;
+	struct bt_vcp_vol_rend_cb *cb;
 	uint8_t volume_step;
 
 	struct bt_gatt_service *service_p;

@@ -139,7 +139,7 @@ static void vocs_description_cb(struct bt_vocs *inst, int err,
 	}
 }
 
-static struct bt_vcp_cb vcp_vol_rend_cbs = {
+static struct bt_vcp_vol_rend_cb vcp_vol_rend_cbs = {
 	.state = vcp_vol_rend_state_cb,
 	.flags = vcp_vol_rend_flags_cb,
 };
