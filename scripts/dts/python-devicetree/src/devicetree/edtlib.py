@@ -1610,8 +1610,8 @@ class Property:
       Convenience for spec.name.
 
     description:
-      Convenience for spec.name with leading and trailing whitespace
-      (including newlines) removed.
+      Convenience for spec.description with leading and trailing whitespace
+      (including newlines) removed. May be None.
 
     type:
       Convenience for spec.type.
@@ -1655,7 +1655,7 @@ class Property:
     @property
     def description(self):
         "See the class docstring"
-        return self.spec.description.strip()
+        return self.spec.description.strip() if self.spec.description else None
 
     @property
     def type(self):
