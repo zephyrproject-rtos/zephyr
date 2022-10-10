@@ -1,3 +1,7 @@
+common:
+  platform_type:
+    - mcu
+    - native
 tests:
   kernel.semaphore:
     tags: kernel userspace ignore_faults
