@@ -471,11 +471,6 @@ static void dai_dmic_gain_ramp(struct dai_intel_dmic *dmic)
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
 		if (!dmic->enable[i])
 			continue;
-
-		if (dmic->startcount == DMIC_UNMUTE_CIC)
-			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
-					     CIC_CONTROL_MIC_MUTE_BIT, 0);
-
 		if (dmic->startcount == DMIC_UNMUTE_FIR) {
 			switch (dmic->dai_config_params.dai_index) {
 			case 0:
@@ -600,17 +595,6 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 					     FIR_CONTROL_B_START(fir_b));
 			break;
 		}
-	}
-
-	/* Clear soft reset for all/used PDM controllers. This should
-	 * start capture in sync.
-	 */
-	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
-		dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
-				     CIC_CONTROL_SOFT_RESET_BIT, 0);
-
-		LOG_INF("dmic_start(), cic 0x%08x",
-			dai_dmic_read(dmic, base[i] + CIC_CONTROL));
 	}
 
 	/* Set bit dai->index */
