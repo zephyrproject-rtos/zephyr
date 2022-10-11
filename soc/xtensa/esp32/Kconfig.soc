@@ -11,6 +11,7 @@ config SOC_ESP32
 	select PINCTRL
 	select XIP
 	select HAS_ESPRESSIF_HAL
+	select CPU_HAS_FPU
 
 if SOC_ESP32
 
