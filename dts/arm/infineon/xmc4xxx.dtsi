@@ -20,9 +20,9 @@
 		};
 	};
 
-	/* TODO: Add psram1 & dsram2 to MEMORY layout of linker */
 	psram1: memory@10000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "PSRAM1";
 	};
 
 	dsram1: memory@20000000 {
@@ -30,7 +30,8 @@
 	};
 
 	dsram2: memory@30000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "DSRAM2";
 	};
 
 	flash_controller: flash_controller@58001000 {
