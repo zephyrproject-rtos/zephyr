@@ -9,6 +9,7 @@
 #include <hardware/watchdog.h>
 #include <hardware/structs/psm.h>
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/sys_clock.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_rpi_pico, CONFIG_WDT_LOG_LEVEL);
@@ -101,7 +102,7 @@ static int wdt_rpi_pico_install_timeout(const struct device *dev, const struct w
 
 	if (cfg->window.min != 0U || cfg->window.max == 0U) {
 		return -EINVAL;
-	} else if (cfg->window.max > RPI_PICO_MAX_WDT_TIME) {
+	} else if (cfg->window.max * USEC_PER_MSEC > RPI_PICO_MAX_WDT_TIME) {
 		return -EINVAL;
 	} else if (cfg->callback != NULL) {
 		return -ENOTSUP;
@@ -113,7 +114,7 @@ static int wdt_rpi_pico_install_timeout(const struct device *dev, const struct w
 		return -EINVAL;
 	}
 
-	data->load = (cfg->window.max * RPI_PICO_WDT_TIME_MULTIPLICATION_FACTOR);
+	data->load = (cfg->window.max * USEC_PER_MSEC * RPI_PICO_WDT_TIME_MULTIPLICATION_FACTOR);
 	data->reset_type = (cfg->flags & WDT_FLAG_RESET_MASK);
 
 	return 0;
