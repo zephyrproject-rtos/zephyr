@@ -208,7 +208,7 @@ extern "C" {
  * macros, so an additional @p \#ifdef test may be needed in some cases.
  *
  * This macro may be used with COND_CODE_1() and COND_CODE_0() while
- * processing <tt>__VA_ARGS__</tt> to avoid processing empty arguments.
+ * processing `__VA_ARGS__` to avoid processing empty arguments.
  *
  * Example:
  *
@@ -225,7 +225,7 @@ extern "C" {
  * In above examples, the invocations of IS_EMPTY(...) return @p true,
  * @p false, and @p true; @p some_conditional_code is included.
  *
- * @param ... macro to check for emptiness (may be <tt>__VA_ARGS__</tt>)
+ * @param ... macro to check for emptiness (may be `__VA_ARGS__`)
  */
 #define IS_EMPTY(...) Z_IS_EMPTY_(__VA_ARGS__)
 
@@ -241,7 +241,7 @@ extern "C" {
 /**
  * @brief Remove empty arguments from list.
  *
- * During macro expansion, <tt>__VA_ARGS__</tt> and other preprocessor
+ * During macro expansion, `__VA_ARGS__` and other preprocessor
  * generated lists may contain empty elements, e.g.:
  *
  *	#define LIST ,a,b,,d,
@@ -447,7 +447,7 @@ extern "C" {
  * often cumbersome to write a macro @p F that does the right thing
  * even when given an empty argument.
  *
- * One example is when <tt>__VA_ARGS__</tt> may or may not be empty,
+ * One example is when `__VA_ARGS__` may or may not be empty,
  * and the results are embedded in a larger initializer:
  *
  *     #define SQUARE(x) ((x)*(x))
@@ -596,7 +596,7 @@ extern "C" {
  * @brief Mapping macro that pastes results together
  *
  * This is similar to FOR_EACH() in that it invokes a macro repeatedly
- * on each element of <tt>__VA_ARGS__</tt>. However, unlike FOR_EACH(),
+ * on each element of `__VA_ARGS__`. However, unlike FOR_EACH(),
  * MACRO_MAP_CAT() pastes the results together into a single token.
  *
  * For example, with this macro FOO:
