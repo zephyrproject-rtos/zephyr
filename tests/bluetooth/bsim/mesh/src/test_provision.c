@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include "mesh_test.h"
+#include "mesh/access.h"
 #include "mesh/net.h"
 #include "argparse.h"
 #include <bs_pc_backchannel.h>
@@ -29,17 +30,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define PROV_MULTI_COUNT 3
 #define PROV_REPROV_COUNT 3
-#define WAIT_TIME 80 /*seconds*/
+#define WAIT_TIME 120 /*seconds*/
 #define IS_RPR_PRESENT  (CONFIG_BT_MESH_RPR_SRV && CONFIG_BT_MESH_RPR_CLI)
-
-/* Used to identify a device before provisioning it. */
-#define HAS_PB_REMOTE_SERVER BIT(0)
-#define UUID_FLAG_SET(uuid, flag) ((uuid)[7] |= (flag))
-#define UUID_FLAG_CHECK(uuid, flag) ((uuid)[7] & (flag))
 
 enum test_flags {
 	IS_PROVISIONER,
-	PROVISION_RPR_SRV,
 
 	TEST_FLAGS,
 };
@@ -85,9 +80,12 @@ static uint16_t prov_addr = 0x0002;
 static uint16_t current_dev_addr;
 static const uint8_t dev_key[16] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
 static uint8_t dev_uuid[16] = { 0x6c, 0x69, 0x6e, 0x67, 0x61, 0x6f };
+static uint8_t *uuid_to_provision;
+static struct k_sem reprov_sem;
 
 #if IS_RPR_PRESENT
 /* Remote Provisioning models related variables. */
+static uint8_t *uuid_to_provision_remote;
 static void rpr_scan_report(struct bt_mesh_rpr_cli *cli, const struct bt_mesh_rpr_node *srv,
 			    struct bt_mesh_rpr_unprov *unprov, struct net_buf_simple *adv_data);
 
@@ -167,8 +165,7 @@ static void unprovisioned_beacon(uint8_t uuid[16],
 		return;
 	}
 
-	if (atomic_test_bit(test_flags, PROVISION_RPR_SRV) &&
-	    !UUID_FLAG_CHECK(uuid, HAS_PB_REMOTE_SERVER)) {
+	if (uuid_to_provision && memcmp(uuid, uuid_to_provision, 16)) {
 		return;
 	}
 
@@ -188,6 +185,12 @@ static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
 	LOG_INF("Device 0x%04x provisioned", prov_addr);
 	current_dev_addr = prov_addr++;
 	k_sem_give(&prov_sem);
+}
+
+static void prov_reprovisioned(uint16_t addr)
+{
+	LOG_INF("Device reprovisioned. New address: 0x%04x", addr);
+	k_sem_give(&reprov_sem);
 }
 
 static void prov_reset(void)
@@ -251,6 +254,7 @@ static struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,
 	.unprovisioned_beacon = unprovisioned_beacon,
 	.complete = prov_complete,
+	.reprovisioned = prov_reprovisioned,
 	.node_added = prov_node_added,
 	.output_number = output_number,
 	.output_string = output_string,
@@ -429,7 +433,6 @@ static void node_configure_and_reset(void)
 					  &status));
 	ASSERT_EQUAL(0, status);
 	ASSERT_TRUE(healthpub.addr == BT_MESH_ADDR_UNASSIGNED, "Pub not cleared");
-
 
 	/* Set pub and sub to check that they are reset */
 	healthpub.addr = 0xc001;
@@ -645,11 +648,72 @@ static void test_provisioner_pb_adv_reprovision(void)
 }
 
 #if IS_RPR_PRESENT
+static int provision_adv(uint8_t dev_idx, uint16_t *addr)
+{
+	static uint8_t uuid[16];
+	int err;
+
+	memcpy(uuid, dev_uuid, 16);
+	uuid[6] = '0' + dev_idx;
+	uuid_to_provision = uuid;
+
+	LOG_INF("Waiting for a device with RPR Server to be provisioned over PB-Adv...");
+	err = k_sem_take(&prov_sem, K_SECONDS(10));
+	*addr = current_dev_addr;
+
+	return err;
+}
+
+static int provision_remote(struct bt_mesh_rpr_node *srv, uint8_t dev_idx, uint16_t *addr)
+{
+	static uint8_t uuid[16];
+	struct bt_mesh_rpr_scan_status scan_status;
+	int err;
+
+	memcpy(uuid, dev_uuid, 16);
+	uuid[6] = '0' + dev_idx;
+	uuid_to_provision_remote = uuid;
+
+	LOG_INF("Starting scanning for an unprov device...");
+	ASSERT_OK(bt_mesh_rpr_scan_start(&rpr_cli, srv, NULL, 5, 1, &scan_status));
+	ASSERT_EQUAL(BT_MESH_RPR_SUCCESS, scan_status.status);
+	ASSERT_EQUAL(BT_MESH_RPR_SCAN_MULTI, scan_status.scan);
+	ASSERT_EQUAL(1, scan_status.max_devs);
+	ASSERT_EQUAL(5, scan_status.timeout);
+
+	err = k_sem_take(&prov_sem, K_SECONDS(20));
+	*addr = current_dev_addr;
+
+	return err;
+}
+
 static void rpr_scan_report(struct bt_mesh_rpr_cli *cli, const struct bt_mesh_rpr_node *srv,
 			    struct bt_mesh_rpr_unprov *unprov, struct net_buf_simple *adv_data)
 {
+	if (!uuid_to_provision_remote || memcmp(uuid_to_provision_remote, unprov->uuid, 16)) {
+		return;
+	}
+
 	LOG_INF("Remote device discovered. Provisioning...");
 	ASSERT_OK(bt_mesh_provision_remote(cli, srv, unprov->uuid, 0, prov_addr));
+}
+
+static void prov_node_added_rpr(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
+				uint8_t num_elem)
+{
+	LOG_INF("Device 0x%04x reprovisioned", addr);
+	k_sem_give(&reprov_sem);
+}
+
+static void provisioner_pb_remote_client_setup(void)
+{
+	k_sem_init(&prov_sem, 0, 1);
+	k_sem_init(&reprov_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, &rpr_cli_comp);
+
+	ASSERT_OK(bt_mesh_cdb_create(test_net_key));
+	ASSERT_OK(bt_mesh_provision(test_net_key, 0, 0, 0, 0x0001, dev_key));
 }
 
 /** @brief Verify that the provisioner can provision a device multiple times after resets using
@@ -659,19 +723,10 @@ static void test_provisioner_pb_remote_client_reprovision(void)
 {
 	uint16_t pb_remote_server_addr;
 
-	k_sem_init(&prov_sem, 0, 1);
+	provisioner_pb_remote_client_setup();
 
-	bt_mesh_device_setup(&prov, &rpr_cli_comp);
-
-	atomic_set_bit(test_flags, PROVISION_RPR_SRV);
-
-	ASSERT_OK(bt_mesh_cdb_create(test_net_key));
-
-	ASSERT_OK(bt_mesh_provision(test_net_key, 0, 0, 0, 0x0001, dev_key));
-
-	LOG_INF("Waiting for a device with RPR Server to be provisioned over PB-Adv...");
-	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(10)));
-	pb_remote_server_addr = current_dev_addr;
+	/* Only provision the second device over PB-ADV. This device has RPR Server. */
+	ASSERT_OK(provision_adv(1, &pb_remote_server_addr));
 
 	for (int i = 0; i < PROV_REPROV_COUNT; i++) {
 		struct bt_mesh_rpr_node srv = {
@@ -679,19 +734,136 @@ static void test_provisioner_pb_remote_client_reprovision(void)
 			.net_idx = 0,
 			.ttl = 3,
 		};
-		struct bt_mesh_rpr_scan_status scan_status;
-
-		LOG_INF("Starting scanning for an unprov device...");
-		ASSERT_OK(bt_mesh_rpr_scan_start(&rpr_cli, &srv, NULL, 5, 1, &scan_status));
-		ASSERT_EQUAL(BT_MESH_RPR_SUCCESS, scan_status.status);
-		ASSERT_EQUAL(BT_MESH_RPR_SCAN_MULTI, scan_status.scan);
-		ASSERT_EQUAL(1, scan_status.max_devs);
-		ASSERT_EQUAL(5, scan_status.timeout);
 
 		LOG_INF("Provisioner prov loop #%d, waiting for prov ...\n", i);
-		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
+		ASSERT_OK(provision_remote(&srv, 2, &srv.addr));
 
 		node_configure_and_reset();
+	}
+
+	PASS();
+}
+
+/** @brief Verify robustness of NPPI procedures on a RPR Client by running Device Key Refresh,
+ * Node Composition Refresh and Node Address Refresh procedures.
+ */
+static void test_provisioner_pb_remote_client_nppi_robustness(void)
+{
+	NET_BUF_SIMPLE_DEFINE(dev_comp, BT_MESH_RX_SDU_MAX);
+	NET_BUF_SIMPLE_DEFINE(new_dev_comp, BT_MESH_RX_SDU_MAX);
+	uint8_t page;
+	uint16_t pb_remote_server_addr;
+	uint8_t status;
+	struct bt_mesh_cdb_node *node;
+	uint8_t prev_node_dev_key[16];
+
+	provisioner_pb_remote_client_setup();
+
+	/* Only provision the second device over PB-ADV. This device has RPR Server. */
+	ASSERT_OK(provision_adv(1, &pb_remote_server_addr));
+
+	/* Provision a remote device with RPR Server. */
+	struct bt_mesh_rpr_node srv = {
+		.addr = pb_remote_server_addr,
+		.net_idx = 0,
+		.ttl = 3,
+	};
+
+	ASSERT_OK(provision_remote(&srv, 2, &srv.addr));
+
+	/* Check device key by adding appkey. */
+	ASSERT_OK(bt_mesh_cfg_cli_app_key_add(0, current_dev_addr, 0, 0, test_app_key, &status));
+	ASSERT_OK(status);
+
+	/* Swap callback to catch when device reprovisioned. */
+	prov.node_added = prov_node_added_rpr;
+
+	/* Store initial Composition Data Page 0. */
+	ASSERT_OK(bt_mesh_cfg_cli_comp_data_get(0, current_dev_addr, 0, &page, &dev_comp));
+
+	node = bt_mesh_cdb_node_get(current_dev_addr);
+	ASSERT_TRUE(node);
+	memcpy(prev_node_dev_key, node->dev_key, 16);
+
+	LOG_INF("Testing DevKey refresh...");
+	for (int i = 0; i < PROV_REPROV_COUNT; i++) {
+		LOG_INF("Refreshing device key #%d...\n", i);
+		bt_mesh_reprovision_remote(&rpr_cli, &srv, current_dev_addr, false);
+
+		ASSERT_OK(k_sem_take(&reprov_sem, K_SECONDS(20)));
+
+		/* Check that CDB has updated Device Key for the node. */
+		ASSERT_TRUE(memcmp(prev_node_dev_key, node->dev_key, 16));
+		memcpy(prev_node_dev_key, node->dev_key, 16);
+
+		/* Check device key by adding appkey. */
+		ASSERT_OK(bt_mesh_cfg_cli_app_key_add(0, current_dev_addr, 0, 0, test_app_key,
+						      &status));
+		ASSERT_OK(status);
+
+		/* Let RPR Server verify Device Key. */
+		k_sleep(K_SECONDS(2));
+	}
+
+	LOG_INF("Testing Composition Data refresh...");
+	for (int i = 0; i < PROV_REPROV_COUNT; i++) {
+		LOG_INF("Changing Composition Data #%d...\n", i);
+		bt_mesh_reprovision_remote(&rpr_cli, &srv, current_dev_addr, true);
+
+		ASSERT_OK(k_sem_take(&reprov_sem, K_SECONDS(20)));
+
+		/* Check that CDB has updated Device Key for the node. */
+		ASSERT_TRUE(memcmp(prev_node_dev_key, node->dev_key, 16));
+		memcpy(prev_node_dev_key, node->dev_key, 16);
+
+		/* Check that Composition Data Page 128 is now Page 0. */
+		net_buf_simple_reset(&new_dev_comp);
+		ASSERT_OK(bt_mesh_cfg_cli_comp_data_get(0, current_dev_addr, 0, &page,
+							&new_dev_comp));
+		ASSERT_EQUAL(0, page);
+		ASSERT_EQUAL(dev_comp.len, new_dev_comp.len);
+		if (memcmp(dev_comp.data, new_dev_comp.data, dev_comp.len)) {
+			FAIL("Wrong composition data page 0");
+		}
+
+		/* Let RPR Server verify Device Key. */
+		k_sleep(K_SECONDS(2));
+	}
+
+	LOG_INF("Testing address refresh...");
+	for (int i = 0; i < PROV_REPROV_COUNT; i++) {
+		LOG_INF("Changing address #%d...\n", i);
+		bt_mesh_reprovision_remote(&rpr_cli, &srv, current_dev_addr + 1, false);
+
+		ASSERT_OK(k_sem_take(&reprov_sem, K_SECONDS(20)));
+
+		current_dev_addr++;
+		srv.addr++;
+
+		/* Check that device doesn't respond to old address with old and new device key. */
+		struct bt_mesh_cdb_node *prev_node;
+
+		prev_node = bt_mesh_cdb_node_alloc((uint8_t[16]) {}, current_dev_addr - 1, 1, 0);
+		ASSERT_TRUE(node);
+		memcpy(prev_node->dev_key, prev_node_dev_key, 16);
+		ASSERT_EQUAL(-ETIMEDOUT, bt_mesh_cfg_cli_app_key_add(0, current_dev_addr - 1, 0, 0,
+								     test_app_key, &status));
+		memcpy(prev_node->dev_key, node->dev_key, 16);
+		ASSERT_EQUAL(-ETIMEDOUT, bt_mesh_cfg_cli_app_key_add(0, current_dev_addr - 1, 0, 0,
+								     test_app_key, &status));
+		bt_mesh_cdb_node_del(prev_node, false);
+
+		/* Check that CDB has updated Device Key for the node. */
+		ASSERT_TRUE(memcmp(prev_node_dev_key, node->dev_key, 16));
+		memcpy(prev_node_dev_key, node->dev_key, 16);
+
+		/* Check new device address by adding appkey. */
+		ASSERT_OK(bt_mesh_cfg_cli_app_key_add(0, current_dev_addr, 0, 0, test_app_key,
+						      &status));
+		ASSERT_OK(status);
+
+		/* Let RPR Server verify Device Key. */
+		k_sleep(K_SECONDS(2));
 	}
 
 	PASS();
@@ -704,8 +876,6 @@ static void test_device_pb_remote_server(void)
 {
 	k_sem_init(&prov_sem, 0, 1);
 
-	UUID_FLAG_SET(dev_uuid, HAS_PB_REMOTE_SERVER);
-
 	bt_mesh_device_setup(&prov, &rpr_srv_comp);
 
 	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_ADV));
@@ -716,6 +886,89 @@ static void test_device_pb_remote_server(void)
 
 	LOG_INF("Enabling PB-Remote server");
 	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_REMOTE));
+
+	PASS();
+}
+
+/** @brief Verify robustness of NPPI procedures on a RPR Server by running Device Key Refresh,
+ * Node Composition Refresh and Node Address Refresh procedures multiple times each.
+ */
+static void test_device_pb_remote_server_nppi_robustness(void)
+{
+	uint8_t prev_dev_key[16];
+
+	k_sem_init(&prov_sem, 0, 1);
+	k_sem_init(&reprov_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, &rpr_srv_comp);
+
+	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_ADV));
+
+	LOG_INF("Mesh initialized\n");
+
+	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
+	const uint16_t initial_addr = bt_mesh_primary_addr();
+
+	memcpy(prev_dev_key, bt_mesh.dev_key, 16);
+
+	LOG_INF("Enabling PB-Remote server");
+	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_REMOTE));
+
+	/* Test Device Key Refresh procedure robustness. */
+	for (int i = 0; i < PROV_REPROV_COUNT; i++) {
+		LOG_INF("Devkey refresh loop #%d, waiting for being reprov ...\n", i);
+		ASSERT_OK(k_sem_take(&reprov_sem, K_SECONDS(30)));
+		ASSERT_EQUAL(initial_addr, bt_mesh_primary_addr());
+
+		/* Let Configuration Client activate the new Device Key and verify that it has
+		 * been changed.
+		 */
+		k_sleep(K_SECONDS(2));
+		ASSERT_TRUE(memcmp(prev_dev_key, bt_mesh.dev_key, 16));
+		memcpy(prev_dev_key, bt_mesh.dev_key, 16);
+	}
+
+	/* Test Node Composition Refresh procedure robustness. */
+	for (int i = 0; i < PROV_REPROV_COUNT; i++) {
+		/* The RPR Server won't let to run Node Composition Refresh procedure without first
+		 * setting the BT_MESH_COMP_DIRTY flag. The flag is set on a boot if there is a
+		 * "bt/mesh/cmp" entry in settings. The entry is added by the
+		 * `bt_mesh_comp_change_prepare() call. The test suite is not compiled
+		 * with CONFIG_BT_SETTINGS, so the flag will never be set. Since the purpose of the
+		 * test is to check RPR Server behavior, but not the actual swap of the Composition
+		 * Data, the flag is toggled directly from the test.
+		 */
+		atomic_set_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY);
+
+		LOG_INF("Composition data refresh loop #%d, waiting for being reprov ...\n", i);
+		ASSERT_OK(k_sem_take(&reprov_sem, K_SECONDS(30)));
+
+		/* Drop the flag manually as CONFIG_BT_SETTINGS is not enabled. */
+		atomic_clear_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY);
+
+		ASSERT_EQUAL(initial_addr, bt_mesh_primary_addr());
+
+		/* Let Configuration Client activate the new Device Key and verify that it has
+		 * been changed.
+		 */
+		k_sleep(K_SECONDS(2));
+		ASSERT_TRUE(memcmp(prev_dev_key, bt_mesh.dev_key, 16));
+		memcpy(prev_dev_key, bt_mesh.dev_key, 16);
+	}
+
+	/* Node Address Refresh robustness. */
+	for (int i = 0; i < PROV_REPROV_COUNT; i++) {
+		LOG_INF("Address refresh loop #%d, waiting for being reprov ...\n", i);
+		ASSERT_OK(k_sem_take(&reprov_sem, K_SECONDS(30)));
+		ASSERT_EQUAL(initial_addr + 1 + i, bt_mesh_primary_addr());
+
+		/* Let Configuration Client activate the new Device Key and verify that it has
+		 * been changed.
+		 */
+		k_sleep(K_SECONDS(2));
+		ASSERT_TRUE(memcmp(prev_dev_key, bt_mesh.dev_key, 16));
+		memcpy(prev_dev_key, bt_mesh.dev_key, 16);
+	}
 
 	PASS();
 }
@@ -742,6 +995,8 @@ static const struct bst_test_instance test_connect[] = {
 #if IS_RPR_PRESENT
 	TEST_CASE(device, pb_remote_server,
 		  "Device: pb-adv provisioning, running pb-remote server"),
+	TEST_CASE(device, pb_remote_server_nppi_robustness,
+		  "Device: pb-adv provisioning, running pb-remote server, NPPI robustness"),
 #endif
 
 	TEST_CASE(provisioner, pb_adv_no_oob,
@@ -764,6 +1019,8 @@ static const struct bst_test_instance test_connect[] = {
 	TEST_CASE(provisioner, pb_remote_client_reprovision,
 		  "Provisioner: pb-remote client provisioning, resetting and reprovisioning "
 		  "multiple times."),
+	TEST_CASE(provisioner, pb_remote_client_nppi_robustness,
+		  "Provisioner: pb-remote client provisioning, NPPI robustness testing."),
 #endif
 
 	BSTEST_END_MARKER
