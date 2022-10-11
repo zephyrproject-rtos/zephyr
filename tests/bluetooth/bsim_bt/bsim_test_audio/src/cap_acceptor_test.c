@@ -19,7 +19,7 @@ static const struct bt_data cap_acceptor_ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_CAS_VAL)),
 };
 
-static struct bt_csis *csis;
+static struct bt_csip *csis;
 
 CREATE_FLAG(flag_connected);
 
@@ -45,7 +45,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static void init(void)
 {
-	struct bt_csis_register_param csis_param = {
+	struct bt_csip_register_param csis_param = {
 		.set_size = 3,
 		.rank = 1,
 		.lockable = true,

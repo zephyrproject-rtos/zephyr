@@ -9,7 +9,7 @@
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include "cap_internal.h"
-#include "csis_internal.h"
+#include "csip_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_CAP_INITIATOR)
 #define LOG_MODULE_NAME bt_cap_initiator
@@ -62,13 +62,13 @@ static const struct bt_uuid *cas_uuid = BT_UUID_CAS;
 struct cap_unicast_client {
 	struct bt_gatt_discover_params param;
 	uint16_t csis_start_handle;
-	const struct bt_csis_client_csis_inst *csis_inst;
+	const struct bt_csip_set_coordinator_csis_inst *csis_inst;
 };
 
 static struct cap_unicast_client bt_cap_unicast_clients[CONFIG_BT_MAX_CONN];
 
 static void csis_client_discover_cb(struct bt_conn *conn,
-				    const struct bt_csis_client_set_member *member,
+				    const struct bt_csip_set_coordinator_set_member *member,
 				    int err, size_t set_count)
 {
 	struct cap_unicast_client *client;
@@ -84,7 +84,7 @@ static void csis_client_discover_cb(struct bt_conn *conn,
 	}
 
 	client = &bt_cap_unicast_clients[bt_conn_index(conn)];
-	client->csis_inst = bt_csis_client_csis_inst_by_handle(
+	client->csis_inst = bt_csip_set_coordinator_csis_inst_by_handle(
 					conn, client->csis_start_handle);
 
 	if (member == NULL || set_count == 0 || client->csis_inst == NULL) {
@@ -127,11 +127,11 @@ static uint8_t cap_unicast_discover_included_cb(struct bt_conn *conn,
 		 * CSIS discovery
 		 */
 		client->csis_start_handle = included_service->start_handle;
-		client->csis_inst = bt_csis_client_csis_inst_by_handle(
+		client->csis_inst = bt_csip_set_coordinator_csis_inst_by_handle(
 					conn, client->csis_start_handle);
 
 		if (client->csis_inst == NULL) {
-			static struct bt_csis_client_cb csis_client_cb = {
+			static struct bt_csip_set_coordinator_cb csis_client_cb = {
 				.discover = csis_client_discover_cb
 			};
 			static bool csis_cbs_registered;
@@ -140,11 +140,11 @@ static uint8_t cap_unicast_discover_included_cb(struct bt_conn *conn,
 			BT_DBG("CAS CSIS not known, discovering");
 
 			if (!csis_cbs_registered) {
-				bt_csis_client_register_cb(&csis_client_cb);
+				bt_csip_set_coordinator_register_cb(&csis_client_cb);
 				csis_cbs_registered = true;
 			}
 
-			err = bt_csis_client_discover(conn);
+			err = bt_csip_set_coordinator_discover(conn);
 			if (err != 0) {
 				BT_DBG("Discover failed (err %d)", err);
 				if (cap_cb && cap_cb->unicast_discovery_complete) {

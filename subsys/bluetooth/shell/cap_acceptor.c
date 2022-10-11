@@ -16,10 +16,10 @@
 #include "bt.h"
 
 extern const struct shell *ctx_shell;
-static struct bt_csis *cap_csis;
-static uint8_t sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT;
+static struct bt_csip *cap_csip;
+static uint8_t sirk_read_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 
-static void locked_cb(struct bt_conn *conn, struct bt_csis *csis, bool locked)
+static void locked_cb(struct bt_conn *conn, struct bt_csip *csip, bool locked)
 {
 	if (conn == NULL) {
 		shell_error(ctx_shell, "Server %s the device",
@@ -34,7 +34,7 @@ static void locked_cb(struct bt_conn *conn, struct bt_csis *csis, bool locked)
 	}
 }
 
-static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csis *csis)
+static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csip *csip)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	static const char *const rsp_strings[] = {
@@ -49,7 +49,7 @@ static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csis *csis)
 	return sirk_read_rsp;
 }
 
-static struct bt_csis_cb csis_cbs = {
+static struct bt_csip_cb csip_cbs = {
 	.lock_changed = locked_cb,
 	.sirk_read_req = sirk_read_req_cb,
 };
@@ -58,14 +58,14 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 				 char **argv)
 {
 	int err;
-	struct bt_csis_register_param param = {
+	struct bt_csip_register_param param = {
 		.set_size = 2,
 		.rank = 1,
 		.lockable = true,
 		/* Using the CSIS test sample SIRK */
 		.set_sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
 			      0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
-		.cb = &csis_cbs
+		.cb = &csip_cbs
 	};
 
 	for (size_t argn = 1; argn < argc; argn++) {
@@ -95,7 +95,7 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_cap_acceptor_register(&param, &cap_csis);
+	err = bt_cap_acceptor_register(&param, &cap_csip);
 	if (err != 0) {
 		shell_error(sh, "Could not register CAS: %d", err);
 
@@ -108,7 +108,7 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 static int cmd_cap_acceptor_print_sirk(const struct shell *sh, size_t argc,
 				       char *argv[])
 {
-	bt_csis_print_sirk(cap_csis);
+	bt_csip_print_sirk(cap_csip);
 
 	return 0;
 }
@@ -118,7 +118,7 @@ static int cmd_cap_acceptor_lock(const struct shell *sh, size_t argc,
 {
 	int err;
 
-	err = bt_csis_lock(cap_csis, true, false);
+	err = bt_csip_lock(cap_csip, true, false);
 	if (err != 0) {
 		shell_error(sh, "Failed to set lock: %d", err);
 
@@ -146,7 +146,7 @@ static int cmd_cap_acceptor_release(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_csis_lock(cap_csis, false, force);
+	err = bt_csip_lock(cap_csip, false, force);
 
 	if (err != 0) {
 		shell_error(sh, "Failed to release lock: %d", err);
@@ -163,13 +163,13 @@ static int cmd_cap_acceptor_set_sirk_rsp(const struct shell *sh, size_t argc,
 					 char *argv[])
 {
 	if (strcmp(argv[1], "accept") == 0) {
-		sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT;
+		sirk_read_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 	} else if (strcmp(argv[1], "accept_enc") == 0) {
-		sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT_ENC;
+		sirk_read_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT_ENC;
 	} else if (strcmp(argv[1], "reject") == 0) {
-		sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_REJECT;
+		sirk_read_rsp = BT_CSIP_READ_SIRK_REQ_RSP_REJECT;
 	} else if (strcmp(argv[1], "oob") == 0) {
-		sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_OOB_ONLY;
+		sirk_read_rsp = BT_CSIP_READ_SIRK_REQ_RSP_OOB_ONLY;
 	} else {
 		shell_error(sh, "Unknown parameter: %s", argv[1]);
 		return -ENOEXEC;
