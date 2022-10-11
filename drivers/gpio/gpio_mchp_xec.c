@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/irq.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/sys_io.h>
 #include <soc.h>
