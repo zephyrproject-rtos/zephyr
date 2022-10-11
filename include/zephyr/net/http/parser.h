@@ -46,8 +46,8 @@ typedef unsigned __int64 uint64_t;
 #include <stddef.h>
 #endif
 #include <zephyr/net/http/method.h>
-#include <zephyr/net/http_parser_state.h>
-#include <zephyr/net/http_parser_url.h>
+#include <zephyr/net/http/parser_state.h>
+#include <zephyr/net/http/parser_url.h>
 
 #ifdef __cplusplus
 extern "C" {
