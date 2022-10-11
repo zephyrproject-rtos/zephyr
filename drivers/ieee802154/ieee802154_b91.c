@@ -147,8 +147,26 @@ ALWAYS_INLINE b91_require_pending_bit(const struct ieee802154_frame *frame)
 		if (frame->general.type == IEEE802154_FRAME_FCF_TYPE_DATA) {
 			result = true;
 		} else if (frame->general.type == IEEE802154_FRAME_FCF_TYPE_CMD && frame->data) {
-			if (frame->data[0] == B91_CMD_ID_DATA_REQ) {
-				result = true;
+			if (frame->sec_header == NULL) {
+				if (frame->data[0] == B91_CMD_ID_DATA_REQ) {
+					result = true;
+				}
+			} else {
+				switch (frame->sec_header[0] &
+					IEEE802154_FRAME_SECCTRL_SEC_LEVEL_MASK) {
+				case IEEE802154_FRAME_SECCTRL_SEC_LEVEL_0:
+				case IEEE802154_FRAME_SECCTRL_SEC_LEVEL_1:
+				case IEEE802154_FRAME_SECCTRL_SEC_LEVEL_2:
+				case IEEE802154_FRAME_SECCTRL_SEC_LEVEL_3:
+					if (frame->data[0] == B91_CMD_ID_DATA_REQ) {
+						result = true;
+					}
+					break;
+				default:
+					/* TODO: temporary solution. need to decrypt payload */
+					result = true;
+					break;
+				}
 			}
 		}
 	}
