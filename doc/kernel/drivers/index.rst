@@ -343,6 +343,12 @@ allow the user to specify at what time during the boot sequence the init
 function will be executed. Any driver will specify one of four
 initialization levels:
 
+``ARCH``
+        Used very early in the boot process before ``z_cstart()`` is
+        called. This can be used in architectures and SoCs that extend or
+        implement architecture code and use drivers or system services that have
+        to be initialized before calling ``z_cstart()``.
+
 ``PRE_KERNEL_1``
         Used for devices that have no dependencies, such as those that rely
         solely on hardware present in the processor/SOC. These devices cannot
