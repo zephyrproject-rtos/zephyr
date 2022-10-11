@@ -147,10 +147,10 @@ static bool msg_cache_match(struct net_buf_simple *pdu)
 
 static void msg_cache_add(struct bt_mesh_net_rx *rx)
 {
-	rx->msg_cache_idx = msg_cache_next++;
-	msg_cache[rx->msg_cache_idx].src = rx->ctx.addr;
-	msg_cache[rx->msg_cache_idx].seq = rx->seq;
 	msg_cache_next %= ARRAY_SIZE(msg_cache);
+	msg_cache[msg_cache_next].src = rx->ctx.addr;
+	msg_cache[msg_cache_next].seq = rx->seq;
+	msg_cache_next++;
 }
 
 static void store_iv(bool only_duration)
@@ -848,9 +848,8 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 	 */
 	if (bt_mesh_trans_recv(&buf, &rx) == -EAGAIN) {
 		BT_WARN("Removing rejected message from Network Message Cache");
-		msg_cache[rx.msg_cache_idx].src = BT_MESH_ADDR_UNASSIGNED;
 		/* Rewind the next index now that we're not using this entry */
-		msg_cache_next = rx.msg_cache_idx;
+		msg_cache[--msg_cache_next].src = BT_MESH_ADDR_UNASSIGNED;
 	}
 
 	/* Relay if this was a group/virtual address, or if the destination
