@@ -150,6 +150,19 @@ struct fp_non_volatile_register_set {
 #define SIZEOF_FP_VOLATILE_REGISTER_SET sizeof(struct fp_volatile_register_set)
 #define SIZEOF_FP_NON_VOLATILE_REGISTER_SET 0
 
+#elif defined(CONFIG_XTENSA)
+
+struct fp_volatile_register_set {
+	/* No volatile floating point registers */
+};
+
+struct fp_non_volatile_register_set {
+	uint32_t reg[18];     /* FR register file consists of 18 registers of 32 bits */
+};
+
+#define SIZEOF_FP_VOLATILE_REGISTER_SET 0
+#define SIZEOF_FP_NON_VOLATILE_REGISTER_SET sizeof(struct fp_non_volatile_register_set)
+
 #else
 
 #error  "Architecture must provide the following definitions:\n"
