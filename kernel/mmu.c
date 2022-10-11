@@ -745,9 +745,6 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 		 "wraparound for virtual address %p (size %zu)",
 		 dest_addr, size);
 
-	LOG_DBG("arch_mem_map(%p, 0x%lx, %zu, %x) offset %lu", dest_addr,
-		aligned_phys, aligned_size, flags, addr_offset);
-
 	arch_mem_map(dest_addr, aligned_phys, aligned_size, flags);
 	k_spin_unlock(&z_mm_lock, key);
 
