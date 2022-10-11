@@ -41,9 +41,12 @@ DEVICE_MMIO_TOPLEVEL_STATIC(timer_regs, ARM_TIMER_NODE);
 
 #define TIMER_REG_GET(offs) (DEVICE_MMIO_TOPLEVEL_GET(timer_regs) + offs)
 
+static bool arm_arch_timer_initialized;
+
 static ALWAYS_INLINE void arm_arch_timer_init(void)
 {
 	DEVICE_MMIO_TOPLEVEL_MAP(timer_regs, K_MEM_CACHE_NONE);
+	arm_arch_timer_initialized = true;
 }
 
 static ALWAYS_INLINE void arm_arch_timer_set_compare(uint64_t val)
@@ -121,6 +124,9 @@ static ALWAYS_INLINE uint64_t arm_arch_timer_count(void)
 {
 	uint32_t lower;
 	uint32_t upper, upper_saved;
+
+	if (unlikely(!arm_arch_timer_initialized))
+		return 0;
 
 	/* To get the value from the Global Timer Counter register proceed
 	 * as follows:
