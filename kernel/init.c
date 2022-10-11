@@ -427,6 +427,9 @@ FUNC_NORETURN void z_cstart(void)
 	/* gcov hook needed to get the coverage report.*/
 	gcov_static_init();
 
+	/* initialize early init calls */
+	z_sys_init_run_level(_SYS_INIT_LEVEL_EARLY);
+
 	/* perform any architecture-specific initialization */
 	arch_kernel_init();
 
