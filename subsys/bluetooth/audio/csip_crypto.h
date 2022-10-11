@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +8,10 @@
 #include <stddef.h>
 #include <zephyr/types.h>
 
-#include <zephyr/bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/audio/csip.h>
 
-#define BT_CSIS_CRYPTO_KEY_SIZE   16
-#define BT_CSIS_CRYPTO_SALT_SIZE  16
+#define BT_CSIP_CRYPTO_KEY_SIZE   16
+#define BT_CSIP_CRYPTO_SALT_SIZE  16
 
 /**
  * @brief Private Set Unique identifier hash function sih.
@@ -25,7 +25,7 @@
  * @param out The 3 byte output buffer
  * @return int 0 on success, any other value indicates a failure.
  */
-int bt_csis_sih(const uint8_t sirk[BT_CSIS_SET_SIRK_SIZE], uint32_t r,
+int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE], uint32_t r,
 		uint32_t *out);
 
 /**
@@ -51,9 +51,9 @@ int bt_csis_sih(const uint8_t sirk[BT_CSIS_SET_SIRK_SIZE], uint32_t r,
  * @param out_sirk  The encrypted SIRK.
  * @return int 0 on success, any other value indicates a failure.
  */
-int bt_csis_sef(const uint8_t k[BT_CSIS_CRYPTO_KEY_SIZE],
-		const uint8_t sirk[BT_CSIS_SET_SIRK_SIZE],
-		uint8_t out_sirk[BT_CSIS_SET_SIRK_SIZE]);
+int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
+		const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE],
+		uint8_t out_sirk[BT_CSIP_SET_SIRK_SIZE]);
 
 /**
  * @brief SIRK decryption function sdf
@@ -78,6 +78,6 @@ int bt_csis_sef(const uint8_t k[BT_CSIS_CRYPTO_KEY_SIZE],
  * @param out_sirk  The decrypted SIRK.
  * @return int 0 on success, any other value indicates a failure.
  */
-int bt_csis_sdf(const uint8_t k[BT_CSIS_CRYPTO_KEY_SIZE],
-		const uint8_t enc_sirk[BT_CSIS_SET_SIRK_SIZE],
-		uint8_t out_sirk[BT_CSIS_SET_SIRK_SIZE]);
+int bt_csip_sdf(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
+		const uint8_t enc_sirk[BT_CSIP_SET_SIRK_SIZE],
+		uint8_t out_sirk[BT_CSIP_SET_SIRK_SIZE]);
