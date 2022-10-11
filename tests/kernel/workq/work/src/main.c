@@ -1308,8 +1308,11 @@ static bool try_queue_no_yield(struct k_work_q *wq)
 /* Verify that no-yield policy works */
 ZTEST(work_1cpu, test_1cpu_queue_no_yield)
 {
+	/* This test needs two slots available in the sem! */
+	k_sem_init(&sync_sem, 0, 2);
 	zassert_equal(try_queue_no_yield(&coophi_queue), true);
 	zassert_equal(try_queue_no_yield(&cooplo_queue), false);
+	k_sem_init(&sync_sem, 0, 1);
 }
 
 /* Basic functionality with the system work queue. */
