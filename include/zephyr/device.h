@@ -62,13 +62,6 @@ extern "C" {
  */
 typedef int16_t device_handle_t;
 
-/*
- * The build assert will fail if device_handle_t changes size, which
- * means the alignment directives in the linker scripts and in
- * `gen_handles.py` must be updated.
- */
-BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
-
 /** @brief Flag value used in lists of device handles to separate
  * distinct groups.
  *
