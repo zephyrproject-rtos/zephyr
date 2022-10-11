@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Hubert Miś
+ * Copyright (c) 2022
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +55,8 @@ typedef void (*ft8xx_int_callback)(void);
 
 
 
+
+
 // basic commands
 typedef void (*ft8xx_calibrate_t)(const struct device *dev, struct ft8xx_touch_transform *trform)
 typedef void (*ft8xx_touch_transform_set_t)(const struct device *dev, const struct ft8xx_touch_transform *trform)
@@ -67,6 +69,18 @@ typedef void (*ft8xx_command_t)(const struct device *dev, uint32_t command)
 
 
 // audio commands
+typedef int (*ft8xx_audio_load)(const struct device *dev, uint32_t start_address, uint8_t* sample, uint32_t sample_length);
+typedef int (*ft8xx_audio_play)(const struct device *dev, uint32_t start_address, uint32_t sample_length, uint8_t audio_format, uint16_t sample_freq, uint8_t vol, bool loop);
+typedef int (*ft8xx_audio_get_status)(const struct device *dev);
+typedef int (*ft8xx_audio_stop)(const struct device *dev);
+
+
+typedef int (*ft8xx_audio_synth_start)(const struct device *dev, uint8_t sound, uint8_t note);
+typedef int (*ft8xx_audio_synth_get_status)(const struct device *dev);
+typedef int (*ft8xx_audio_synth_stop)(const struct device *dev);
+
+
+// touch commands
 
 
 

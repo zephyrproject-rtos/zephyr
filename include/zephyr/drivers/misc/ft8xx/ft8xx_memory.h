@@ -29,6 +29,7 @@ extern "C" {
 /** Main parts of FT81X memory map */
 enum ft800_memory_map_t {
 	FT800_RAM_G         = 0x000000,
+	FT800_RAM_G_END		= 0x03FFFF,
 	FT800_ROM_CHIPID    = 0x0C0000,
 	FT800_ROM_FONT      = 0x0BB23C,
 	FT800_ROM_FONT_ADDR = 0x0FFFFC,
@@ -41,6 +42,7 @@ enum ft800_memory_map_t {
 /** Main parts of ft81x memory map */
 enum FT81x_memory_map_t {
 	FT81x_RAM_G         = 0x000000,
+	FT81X_RAM_G_END     = 0x0FFFFF,	
 	FT81x_ROM_CHIPID    = 0x0C0000,	
 	FT81x_ROM_FONT      = 0x1E0000,
 	FT81x_ROM_FONT_ADDR = 0x2FFFFC,
@@ -246,6 +248,7 @@ enum FT81x_register_address_t {
 struct ft8xx_memory_map_t
 {
 	uint32_t RAM_G,
+	uint32_t RAM_G_END,
 	uint32_t ROM_CHIPID,    
 	uint32_t ROM_FONT,      
 	uint32_t ROM_FONT_ADDR, 
@@ -258,26 +261,28 @@ struct ft8xx_memory_map_t
 
 const static struct ft8xx_memory_map_t ft800_memory_map = 
 {
-	.RAM_G = 			FT800_RAM_G,
-	.ROM_CHIPID = 		FT800_ROM_CHIPID,    
-	.ROM_FONT= 			FT800_ROM_FONT,      
-	.ROM_FONT_ADDR = 	FT800_ROM_FONT_ADDR, 
-	.RAM_DL = 			FT800_RAM_DL,        
-	.RAM_PAL = 			FT800_RAM_PAL, 
-	.REG =				FT800_REG,           
-	.RAM_CMD = 			FT800_RAM_CMD,  
+	.RAM_G 				= FT800_RAM_G,
+	.RAM_G_END 			= FT800_RAM_G_END,
+	.ROM_CHIPID 		= FT800_ROM_CHIPID,    
+	.ROM_FONT			= FT800_ROM_FONT,      
+	.ROM_FONT_ADDR 		= FT800_ROM_FONT_ADDR, 
+	.RAM_DL 			= FT800_RAM_DL,        
+	.RAM_PAL 			= FT800_RAM_PAL, 
+	.REG 				= FT800_REG,           
+	.RAM_CMD 			= FT800_RAM_CMD,  
 }
 
 const static struct ft8xx_memory_map_t ft81x_memory_map =
 {
-	.RAM_G = 			FT81X_RAM_G,
-	.ROM_CHIPID = 		FT81X_ROM_CHIPID,    
-	.ROM_FONT= 			FT81X_ROM_FONT,      
-	.ROM_FONT_ADDR = 	FT81X_ROM_FONT_ADDR, 
-	.RAM_DL = 			FT81X_RAM_DL,              
-	.RAM_PAL = 0      	// not present on ft81x 
-	.REG =				FT81X_REG,           
-	.RAM_CMD = 			FT81X_RAM_CMD,     
+	.RAM_G 				= FT81X_RAM_G,
+	.ROM_CHIPID 		= FT81X_ROM_CHIPID,
+	.RAM_G_END 			= FT800_RAM_G_END,
+	.ROM_FONT			= FT81X_ROM_FONT,      
+	.ROM_FONT_ADDR 		= FT81X_ROM_FONT_ADDR, 
+	.RAM_DL 			= FT81X_RAM_DL,              
+	.RAM_PAL 			= 0 // not present on ft81x 
+	.REG 				= FT81X_REG,           
+	.RAM_CMD 			= FT81X_RAM_CMD,     
 
 }
 
