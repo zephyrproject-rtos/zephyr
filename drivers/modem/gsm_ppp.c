@@ -391,6 +391,11 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cereg)
 			gsm.context.data_cellid);
 	}
 
+	if (argc >= 5) {
+		gsm.context.data_act = unquoted_atoi(argv[4], 10);
+		LOG_INF("act: %u", gsm.context.data_act);
+	}
+
 	return 0;
 }
 

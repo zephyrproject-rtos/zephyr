@@ -71,6 +71,7 @@ static int cmd_modem_list(const struct shell *shell, size_t argc,
 				"\tOperator:     %d\n"
 				"\tLAC:          %d\n"
 				"\tCellId:       %d\n"
+				"\tAcT:          %d\n"
 #endif
 				"\tRSSI:         %d\n",
 			       i,
@@ -87,6 +88,7 @@ static int cmd_modem_list(const struct shell *shell, size_t argc,
 			       mdm_ctx->data_operator,
 			       mdm_ctx->data_lac,
 			       mdm_ctx->data_cellid,
+			       mdm_ctx->data_act,
 #endif
 			       mdm_ctx->data_rssi ? *mdm_ctx->data_rssi : 0);
 		}
