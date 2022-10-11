@@ -48,5 +48,6 @@ app=tests/bsim/bluetooth/ll/multiple_id compile
 app=tests/bsim/bluetooth/ll/throughput compile
 
 app=tests/bsim/bluetooth/ll/conn_param compile
+app=tests/bsim/bluetooth/ll/conn_param conf_file=prj-ll_sw_llcp_legacy.conf compile
 
 wait_for_background_jobs
