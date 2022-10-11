@@ -515,7 +515,7 @@ static struct k_work_delayable *bt_pacs_get_loc_work(enum bt_audio_dir dir)
 
 static void pac_notify_loc(struct k_work *work)
 {
-	uint32_t location;
+	uint32_t location, location_le;
 	enum bt_audio_dir dir;
 	int err;
 
@@ -538,16 +538,17 @@ static void pac_notify_loc(struct k_work *work)
 		return;
 	}
 
+	location_le = sys_cpu_to_le32(location);
 	if (dir == BT_AUDIO_DIR_SINK) {
 		err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SNK_LOC,
 					  pacs_svc.attrs,
-					  &sys_cpu_to_le32(location),
-					  sizeof(location));
+					  &location_le,
+					  sizeof(location_le));
 	} else {
 		err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SRC_LOC,
 					  pacs_svc.attrs,
-					  &sys_cpu_to_le32(location),
-					  sizeof(location));
+					  &location_le,
+					  sizeof(location_le));
 	}
 
 	if (err != 0 && err != -ENOTCONN) {
