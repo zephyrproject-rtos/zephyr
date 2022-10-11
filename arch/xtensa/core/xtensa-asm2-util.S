@@ -152,6 +152,10 @@ _restore_context:
 	l32i a0, a1, BSA_PS_OFF
 	wsr a0, ZSR_EPS
 
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+	FPU_REG_RESTORE
+#endif
+
 	l32i a0, a1, BSA_SAR_OFF
 	wsr a0, SAR
 #if XCHAL_HAVE_LOOPS
