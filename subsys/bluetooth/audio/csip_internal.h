@@ -1,22 +1,22 @@
 /**
  * @file
- * @brief Internal APIs for Bluetooth CSIS
+ * @brief Internal APIs for Bluetooth CSIP
  *
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/audio/csip.h>
 
 
-#define BT_CSIS_SIRK_TYPE_ENCRYPTED             0x00
-#define BT_CSIS_SIRK_TYPE_PLAIN                 0x01
+#define BT_CSIP_SIRK_TYPE_ENCRYPTED             0x00
+#define BT_CSIP_SIRK_TYPE_PLAIN                 0x01
 
-#define BT_CSIS_RELEASE_VALUE                   0x01
-#define BT_CSIS_LOCK_VALUE                      0x02
+#define BT_CSIP_RELEASE_VALUE                   0x01
+#define BT_CSIP_LOCK_VALUE                      0x02
 
-struct csis_pending_notifications {
+struct csip_pending_notifications {
 	bt_addr_le_t addr;
 	bool pending;
 	bool active;
@@ -30,12 +30,12 @@ struct csis_pending_notifications {
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
 
-struct bt_csis_set_sirk {
+struct bt_csip_set_sirk {
 	uint8_t type;
-	uint8_t value[BT_CSIS_SET_SIRK_SIZE];
+	uint8_t value[BT_CSIP_SET_SIRK_SIZE];
 } __packed;
 
-struct bt_csis_client_svc_inst {
+struct bt_csip_set_coordinator_svc_inst {
 	uint8_t rank;
 	uint8_t set_lock;
 
@@ -55,36 +55,36 @@ struct bt_csis_client_svc_inst {
 	struct bt_gatt_discover_params lock_sub_disc_params;
 
 	struct bt_conn *conn;
-	struct bt_csis_client_set_member *member;
+	struct bt_csip_set_coordinator_set_member *member;
 };
 
-/* TODO: Rename to bt_csis_svc_inst */
-struct bt_csis_server {
-	struct bt_csis_set_sirk set_sirk;
+/* TODO: Rename to bt_csip_svc_inst */
+struct bt_csip_server {
+	struct bt_csip_set_sirk set_sirk;
 	uint8_t set_size;
 	uint8_t set_lock;
 	uint8_t rank;
-	struct bt_csis_cb *cb;
+	struct bt_csip_cb *cb;
 	struct k_work_delayable set_lock_timer;
 	bt_addr_le_t lock_client_addr;
 	struct bt_gatt_service *service_p;
-	struct csis_pending_notifications pend_notify[CONFIG_BT_MAX_PAIRED];
+	struct csip_pending_notifications pend_notify[CONFIG_BT_MAX_PAIRED];
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	uint32_t age_counter;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
 
-struct bt_csis {
+struct bt_csip {
 	bool client_instance;
 	union {
-#if defined(CONFIG_BT_CSIS)
-		struct bt_csis_server srv;
-#endif /* CONFIG_BT_CSIS */
-#if defined(CONFIG_BT_CSIS_CLIENT)
-		struct bt_csis_client_svc_inst cli;
-#endif /* CONFIG_BT_CSIS_CLIENT */
+#if defined(CONFIG_BT_CSIP)
+		struct bt_csip_server srv;
+#endif /* CONFIG_BT_CSIP */
+#if defined(CONFIG_BT_CSIP_SET_COORDINATOR)
+		struct bt_csip_set_coordinator_svc_inst cli;
+#endif /* CONFIG_BT_CSIP_SET_COORDINATOR */
 	};
 };
 
-struct bt_csis_client_csis_inst *bt_csis_client_csis_inst_by_handle(struct bt_conn *conn,
-								    uint16_t start_handle);
+struct bt_csip_set_coordinator_csis_inst *bt_csip_set_coordinator_csis_inst_by_handle(
+	struct bt_conn *conn, uint16_t start_handle);

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2020-2021 Nordic Semiconductor ASA
+# Copyright (c) 2020-2022 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Basic CSIS test. A set coordinator (CSIS client) connects to multiple set
-# devices (CSIS), lock thems, unlocks them and disconnects.
-SIMULATION_ID="csis_csip"
+# Basic CSIP test. A set coordinator connects to multiple set members
+# lock thems, unlocks them and disconnects.
+SIMULATION_ID="csip"
 VERBOSITY_LEVEL=2
 PROCESS_IDS=""; EXIT_CODE=0
 
@@ -29,19 +29,19 @@ cd ${BSIM_OUT_PATH}/bin
 # NORMAL TEST
 printf "\n\n======== Running normal test ========\n\n"
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csis_client \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csip_set_coordinator \
   -RealEncryption=1 -rs=1
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=csis \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=csip \
   -RealEncryption=1 -rs=2 -argstest rank 1
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=csis \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=csip \
   -RealEncryption=1 -rs=3 -argstest rank 2
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csis \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csip \
   -RealEncryption=1 -rs=4 -argstest rank 3
 
 # Simulation time should be larger than the WAIT_TIME in common.h
@@ -57,19 +57,19 @@ PROCESS_IDS="";
 # TEST WITH FORCE RELEASE
 printf "\n\n======== Running test with forced release of lock ========\n\n"
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csis_client \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csip_set_coordinator \
   -RealEncryption=1 -rs=1
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=csis \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=csip \
   -RealEncryption=1 -rs=2 -argstest rank 1
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=csis \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=csip \
   -RealEncryption=1 -rs=3 -argstest rank 2
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csis_release \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csip_release \
   -RealEncryption=1 -rs=4 -argstest rank 3
 
 # Simulation time should be larger than the WAIT_TIME in common.h
@@ -83,19 +83,19 @@ done
 # TEST WITH SIRK ENC
 printf "\n\n======== Running test with SIRK encrypted ========\n\n"
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csis_client \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csip_set_coordinator \
   -RealEncryption=1 -rs=1
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=csis_enc \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=csip_enc \
   -RealEncryption=1 -rs=2 -argstest rank 1
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=csis_enc \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=csip_enc \
   -RealEncryption=1 -rs=3 -argstest rank 2
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csis_enc \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csip_enc \
   -RealEncryption=1 -rs=4 -argstest rank 3
 
 # Simulation time should be larger than the WAIT_TIME in common.h

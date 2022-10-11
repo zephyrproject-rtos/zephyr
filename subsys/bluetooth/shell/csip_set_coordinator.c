@@ -1,9 +1,9 @@
 /**
  * @file
- * @brief Shell APIs for Bluetooth CSIS client
+ * @brief Shell APIs for Bluetooth CSIP set coordinator
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,15 +20,15 @@
 
 #include "bt.h"
 
-#include <zephyr/bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/audio/csip.h>
 
 static uint8_t members_found;
 static struct k_work_delayable discover_members_timer;
 static struct bt_conn *conns[CONFIG_BT_MAX_CONN];
-static const struct bt_csis_client_set_member *set_members[CONFIG_BT_MAX_CONN];
-struct bt_csis_client_csis_inst *cur_inst;
+static const struct bt_csip_set_coordinator_set_member *set_members[CONFIG_BT_MAX_CONN];
+struct bt_csip_set_coordinator_csis_inst *cur_inst;
 static bt_addr_le_t addr_found[CONFIG_BT_MAX_CONN];
-static const struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN];
+static const struct bt_csip_set_coordinator_set_member *locked_members[CONFIG_BT_MAX_CONN];
 
 static bool is_discovered(const bt_addr_le_t *addr)
 {
@@ -76,8 +76,8 @@ static struct bt_conn_cb conn_callbacks = {
 	.disconnected = disconnected_cb
 };
 
-static void csis_discover_cb(struct bt_conn *conn,
-			     const struct bt_csis_client_set_member *member,
+static void csip_discover_cb(struct bt_conn *conn,
+			     const struct bt_csip_set_coordinator_set_member *member,
 			     int err, size_t set_count)
 {
 	uint8_t conn_index;
@@ -104,7 +104,7 @@ static void csis_discover_cb(struct bt_conn *conn,
 	set_members[conn_index] = member;
 }
 
-static void csis_client_lock_set_cb(int err)
+static void csip_set_coordinator_lock_set_cb(int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Lock sets failed (%d)", err);
@@ -114,7 +114,7 @@ static void csis_client_lock_set_cb(int err)
 	shell_print(ctx_shell, "Set locked");
 }
 
-static void csis_client_release_set_cb(int err)
+static void csip_set_coordinator_release_set_cb(int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Lock sets failed (%d)", err);
@@ -124,9 +124,9 @@ static void csis_client_release_set_cb(int err)
 	shell_print(ctx_shell, "Set released");
 }
 
-static void csis_client_ordered_access_cb(const struct bt_csis_client_set_info *set_info,
-					  int err, bool locked,
-					  struct bt_csis_client_set_member *member)
+static void csip_set_coordinator_ordered_access_cb(
+	const struct bt_csip_set_coordinator_set_info *set_info, int err,
+	bool locked, struct bt_csip_set_coordinator_set_member *member)
 {
 	if (err) {
 		printk("Ordered access failed with err %d\n", err);
@@ -138,16 +138,16 @@ static void csis_client_ordered_access_cb(const struct bt_csis_client_set_info *
 	}
 }
 
-static struct bt_csis_client_cb cbs = {
-	.lock_set = csis_client_lock_set_cb,
-	.release_set = csis_client_release_set_cb,
-	.discover = csis_discover_cb,
-	.ordered_access = csis_client_ordered_access_cb
+static struct bt_csip_set_coordinator_cb cbs = {
+	.lock_set = csip_set_coordinator_lock_set_cb,
+	.release_set = csip_set_coordinator_release_set_cb,
+	.discover = csip_discover_cb,
+	.ordered_access = csip_set_coordinator_ordered_access_cb
 };
 
-static bool csis_client_oap_cb(const struct bt_csis_client_set_info *set_info,
-			       struct bt_csis_client_set_member *members[],
-			       size_t count)
+static bool csip_set_coordinator_oap_cb(const struct bt_csip_set_coordinator_set_info *set_info,
+					struct bt_csip_set_coordinator_set_member *members[],
+					size_t count)
 {
 	for (size_t i = 0; i < count; i++) {
 		printk("Ordered access for members[%zu]: %p\n", i, members[i]);
@@ -156,14 +156,14 @@ static bool csis_client_oap_cb(const struct bt_csis_client_set_info *set_info,
 	return true;
 }
 
-static bool csis_found(struct bt_data *data, void *user_data)
+static bool csip_found(struct bt_data *data, void *user_data)
 {
-	if (bt_csis_client_is_set_member(cur_inst->info.set_sirk, data)) {
+	if (bt_csip_set_coordinator_is_set_member(cur_inst->info.set_sirk, data)) {
 		bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
 		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-		shell_print(ctx_shell, "Found CSIS advertiser with address %s",
+		shell_print(ctx_shell, "Found CSIP advertiser with address %s",
 			    addr_str);
 
 		if (is_discovered(addr)) {
@@ -197,19 +197,19 @@ static bool csis_found(struct bt_data *data, void *user_data)
 	return true;
 }
 
-static void csis_client_scan_recv(const struct bt_le_scan_recv_info *info,
-				  struct net_buf_simple *ad)
+static void csip_set_coordinator_scan_recv(const struct bt_le_scan_recv_info *info,
+					   struct net_buf_simple *ad)
 {
 	/* We're only interested in connectable events */
 	if (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
 		if (cur_inst != NULL) {
-			bt_data_parse(ad, csis_found, (void *)info->addr);
+			bt_data_parse(ad, csip_found, (void *)info->addr);
 		}
 	}
 }
 
-static struct bt_le_scan_cb csis_client_scan_callbacks = {
-	.recv = csis_client_scan_recv
+static struct bt_le_scan_cb csip_set_coordinator_scan_callbacks = {
+	.recv = csip_set_coordinator_scan_recv
 };
 
 static void discover_members_timer_handler(struct k_work *work)
@@ -225,8 +225,8 @@ static void discover_members_timer_handler(struct k_work *work)
 	}
 }
 
-static int cmd_csis_client_init(const struct shell *sh, size_t argc,
-				char *argv[])
+static int cmd_csip_set_coordinator_init(const struct shell *sh, size_t argc,
+					 char *argv[])
 {
 	static bool initialized;
 
@@ -236,8 +236,8 @@ static int cmd_csis_client_init(const struct shell *sh, size_t argc,
 
 	k_work_init_delayable(&discover_members_timer,
 			      discover_members_timer_handler);
-	bt_le_scan_cb_register(&csis_client_scan_callbacks);
-	bt_csis_client_register_cb(&cbs);
+	bt_le_scan_cb_register(&csip_set_coordinator_scan_callbacks);
+	bt_csip_set_coordinator_register_cb(&cbs);
 	bt_conn_cb_register(&conn_callbacks);
 
 	initialized = true;
@@ -245,8 +245,8 @@ static int cmd_csis_client_init(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_csis_client_discover(const struct shell *sh, size_t argc,
-				    char *argv[])
+static int cmd_csip_set_coordinator_discover(const struct shell *sh,
+					     size_t argc, char *argv[])
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	long member_index = 0;
@@ -270,9 +270,10 @@ static int cmd_csis_client_discover(const struct shell *sh, size_t argc,
 	conn = conns[member_index];
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
 	shell_print(sh, "Discovering for member[%u] (%s)",
 		    (uint8_t)member_index, addr);
-	err = bt_csis_client_discover(conn);
+	err = bt_csip_set_coordinator_discover(conn);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -280,12 +281,12 @@ static int cmd_csis_client_discover(const struct shell *sh, size_t argc,
 	return err;
 }
 
-static int cmd_csis_client_discover_members(const struct shell *sh, size_t argc,
-					    char *argv[])
+static int cmd_csip_set_coordinator_discover_members(const struct shell *sh,
+						     size_t argc, char *argv[])
 {
 	int err;
 
-	cur_inst = (struct bt_csis_client_csis_inst *)strtol(argv[1], NULL, 0);
+	cur_inst = (struct bt_csip_set_coordinator_csis_inst *)strtol(argv[1], NULL, 0);
 
 	if (cur_inst == NULL) {
 		shell_error(sh, "NULL set");
@@ -308,7 +309,7 @@ static int cmd_csis_client_discover_members(const struct shell *sh, size_t argc,
 	}
 
 	err = k_work_reschedule(&discover_members_timer,
-				CSIS_CLIENT_DISCOVER_TIMER_VALUE);
+				BT_CSIP_SET_COORDINATOR_DISCOVER_TIMER_VALUE);
 	if (err < 0) { /* Can return 0, 1 and 2 for success */
 		shell_error(sh,
 			    "Could not schedule discover_members_timer %d",
@@ -324,8 +325,8 @@ static int cmd_csis_client_discover_members(const struct shell *sh, size_t argc,
 	return err;
 }
 
-static int cmd_csis_client_lock_set(const struct shell *sh, size_t argc,
-				    char *argv[])
+static int cmd_csip_set_coordinator_lock_set(const struct shell *sh,
+					     size_t argc, char *argv[])
 {
 	int err;
 	int conn_count = 0;
@@ -341,7 +342,8 @@ static int cmd_csis_client_lock_set(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_csis_client_lock(locked_members, conn_count, &cur_inst->info);
+	err = bt_csip_set_coordinator_lock(locked_members, conn_count,
+					   &cur_inst->info);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -349,8 +351,8 @@ static int cmd_csis_client_lock_set(const struct shell *sh, size_t argc,
 	return err;
 }
 
-static int cmd_csis_client_release_set(const struct shell *sh, size_t argc,
-				       char *argv[])
+static int cmd_csip_set_coordinator_release_set(const struct shell *sh,
+						size_t argc, char *argv[])
 {
 	int err;
 	int conn_count = 0;
@@ -366,7 +368,8 @@ static int cmd_csis_client_release_set(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_csis_client_release(locked_members, conn_count, &cur_inst->info);
+	err = bt_csip_set_coordinator_release(locked_members, conn_count,
+					      &cur_inst->info);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -374,12 +377,12 @@ static int cmd_csis_client_release_set(const struct shell *sh, size_t argc,
 	return err;
 }
 
-static int cmd_csis_client_ordered_access(const struct shell *sh, size_t argc,
-					  char *argv[])
+static int cmd_csip_set_coordinator_ordered_access(const struct shell *sh,
+						   size_t argc, char *argv[])
 {
 	int err;
 	long member_count = (long)ARRAY_SIZE(set_members);
-	const struct bt_csis_client_set_member *members[ARRAY_SIZE(set_members)];
+	const struct bt_csip_set_coordinator_set_member *members[ARRAY_SIZE(set_members)];
 
 	if (argc > 1) {
 		member_count = strtol(argv[1], NULL, 0);
@@ -395,9 +398,10 @@ static int cmd_csis_client_ordered_access(const struct shell *sh, size_t argc,
 		members[i] = set_members[i];
 	}
 
-	err = bt_csis_client_ordered_access(members, ARRAY_SIZE(members),
-					    &cur_inst->info,
-					    csis_client_oap_cb);
+	err = bt_csip_set_coordinator_ordered_access(members,
+						     ARRAY_SIZE(members),
+						     &cur_inst->info,
+						     csip_set_coordinator_oap_cb);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -405,12 +409,12 @@ static int cmd_csis_client_ordered_access(const struct shell *sh, size_t argc,
 	return err;
 }
 
-static int cmd_csis_client_lock(const struct shell *sh, size_t argc,
-				char *argv[])
+static int cmd_csip_set_coordinator_lock(const struct shell *sh, size_t argc,
+					 char *argv[])
 {
 	int err;
 	long member_index = 0;
-	const struct bt_csis_client_set_member *lock_member[1];
+	const struct bt_csip_set_coordinator_set_member *lock_member[1];
 
 	if (cur_inst == NULL) {
 		shell_error(sh, "No set selected");
@@ -430,7 +434,7 @@ static int cmd_csis_client_lock(const struct shell *sh, size_t argc,
 
 	lock_member[0] = set_members[member_index];
 
-	err = bt_csis_client_lock(lock_member, 1, &cur_inst->info);
+	err = bt_csip_set_coordinator_lock(lock_member, 1, &cur_inst->info);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -438,12 +442,12 @@ static int cmd_csis_client_lock(const struct shell *sh, size_t argc,
 	return err;
 }
 
-static int cmd_csis_client_release(const struct shell *sh, size_t argc,
-				   char *argv[])
+static int cmd_csip_set_coordinator_release(const struct shell *sh, size_t argc,
+					    char *argv[])
 {
 	int err;
 	long member_index = 0;
-	const struct bt_csis_client_set_member *lock_member[1];
+	const struct bt_csip_set_coordinator_set_member *lock_member[1];
 
 	if (cur_inst == NULL) {
 		shell_error(sh, "No set selected");
@@ -463,7 +467,7 @@ static int cmd_csis_client_release(const struct shell *sh, size_t argc,
 
 	lock_member[0] = set_members[member_index];
 
-	err = bt_csis_client_release(lock_member, 1, &cur_inst->info);
+	err = bt_csip_set_coordinator_release(lock_member, 1, &cur_inst->info);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -471,7 +475,8 @@ static int cmd_csis_client_release(const struct shell *sh, size_t argc,
 	return err;
 }
 
-static int cmd_csis_client(const struct shell *sh, size_t argc, char **argv)
+static int cmd_csip_set_coordinator(const struct shell *sh, size_t argc,
+				    char **argv)
 {
 	if (argc > 1) {
 		shell_error(sh, "%s unknown parameter: %s",
@@ -483,34 +488,34 @@ static int cmd_csis_client(const struct shell *sh, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(csis_client_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(csip_set_coordinator_cmds,
 	SHELL_CMD_ARG(init, NULL,
-		      "Initialize CSIS_CLIENT",
-		      cmd_csis_client_init, 1, 1),
+		      "Initialize csip_set_coordinator",
+		      cmd_csip_set_coordinator_init, 1, 1),
 	SHELL_CMD_ARG(discover, NULL,
 		      "Run discover for CSIS on peer device [member_index]",
-		      cmd_csis_client_discover, 1, 1),
+		      cmd_csip_set_coordinator_discover, 1, 1),
 	SHELL_CMD_ARG(discover_members, NULL,
 		      "Scan for set members <set_pointer>",
-		      cmd_csis_client_discover_members, 2, 0),
+		      cmd_csip_set_coordinator_discover_members, 2, 0),
 	SHELL_CMD_ARG(lock_set, NULL,
 		      "Lock set",
-		      cmd_csis_client_lock_set, 1, 0),
+		      cmd_csip_set_coordinator_lock_set, 1, 0),
 	SHELL_CMD_ARG(release_set, NULL,
 		      "Release set",
-		      cmd_csis_client_release_set, 1, 0),
+		      cmd_csip_set_coordinator_release_set, 1, 0),
 	SHELL_CMD_ARG(lock, NULL,
 		      "Lock specific member [member_index]",
-		      cmd_csis_client_lock, 1, 1),
+		      cmd_csip_set_coordinator_lock, 1, 1),
 	SHELL_CMD_ARG(release, NULL,
 		      "Release specific member [member_index]",
-		      cmd_csis_client_release, 1, 1),
+		      cmd_csip_set_coordinator_release, 1, 1),
 	SHELL_CMD_ARG(ordered_access, NULL,
 		      "Perform dummy ordered access procedure [member_count]",
-		      cmd_csis_client_ordered_access, 1, 1),
+		      cmd_csip_set_coordinator_ordered_access, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_ARG_REGISTER(csis_client, &csis_client_cmds,
-		       "Bluetooth CSIS_CLIENT shell commands",
-		       cmd_csis_client, 1, 1);
+SHELL_CMD_ARG_REGISTER(csip_set_coordinator, &csip_set_coordinator_cmds,
+		       "Bluetooth csip_set_coordinator shell commands",
+		       cmd_csip_set_coordinator, 1, 1);

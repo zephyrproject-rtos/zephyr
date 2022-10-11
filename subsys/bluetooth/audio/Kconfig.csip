@@ -8,7 +8,7 @@
 
 #################### Coordinated Set Identification Service ####################
 
-config BT_CSIS
+config BT_CSIP
 	bool "Coordinated Set Identification Service Support [EXPERIMENTAL]"
 	imply BT_EXT_ADV if BT_PRIVACY
 	select EXPERIMENTAL
@@ -16,9 +16,9 @@ config BT_CSIS
 	  This option enables support for Coordinated Set Identification
 	  Service.
 
-if BT_CSIS
+if BT_CSIP
 
-config BT_CSIS_TEST_SAMPLE_DATA
+config BT_CSIP_TEST_SAMPLE_DATA
 	bool "Coordinated Set Identification Service Test Sample Data"
 	help
 	  Enable the use of the sample data defined by the CSIS spec SIRK.
@@ -28,13 +28,13 @@ config BT_CSIS_TEST_SAMPLE_DATA
 	  (if encrypted) using public sample data.
 	  Should not be used for production builds.
 
-config BT_CSIS_ENC_SIRK_SUPPORT
+config BT_CSIP_ENC_SIRK_SUPPORT
 	bool "Support for encrypted SIRK"
 	default y
 	help
 	  Enables support encrypting the SIRK.
 
-config BT_CSIS_MAX_INSTANCE_COUNT
+config BT_CSIP_MAX_INSTANCE_COUNT
 	int "Coordinated Set Identification Service max instance count"
 	default 1
 	range 1 255
@@ -48,28 +48,28 @@ config BT_CSIS_MAX_INSTANCE_COUNT
 
 ############### DEBUG ###############
 
-config BT_DEBUG_CSIS
+config BT_DEBUG_CSIP
 	bool "Coordinated Set Identification Service debug"
 	help
 	  Use this option to enable Coordinated Set Identification Service debug
 	  logs for the Bluetooth Audio functionality.
 
-endif # BT_CSIS
+endif # BT_CSIP
 
 #################### Coordinated Set Identification Client ####################
 
-config BT_CSIS_CLIENT
-	bool "Coordinated Set Identification Profile Support [EXPERIMENTAL]"
+config BT_CSIP_SET_COORDINATOR
+	bool "Coordinated Set Identification Profile Set Coordinator Support [EXPERIMENTAL]"
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
 	select EXPERIMENTAL
 	help
 	  This option enables support for Coordinated Set Identification
-	  Profile.
+	  Profile Set Coordinator.
 
-if BT_CSIS_CLIENT
+if BT_CSIP_SET_COORDINATOR
 
-config BT_CSIS_CLIENT_TEST_SAMPLE_DATA
+config BT_CSIP_SET_COORDINATOR_TEST_SAMPLE_DATA
 	bool "Coordinated Set Identification Service Test Sample Data"
 	help
 	  Enable the use of the sample data defined by the CSIS spec.
@@ -80,7 +80,7 @@ config BT_CSIS_CLIENT_TEST_SAMPLE_DATA
 	  with set members that are not using the sample data.
 	  Should not be used for production builds.
 
-config BT_CSIS_CLIENT_MAX_CSIS_INSTANCES
+config BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES
 	int "Coordinated Set Identification Service Count"
 	default 1
 	range 1 3
@@ -88,7 +88,7 @@ config BT_CSIS_CLIENT_MAX_CSIS_INSTANCES
 	  Sets the number of service instances, which corresponds to the number
 	  of different sets the peer device may be in.
 
-config BT_CSIS_CLIENT_ENC_SIRK_SUPPORT
+config BT_CSIP_SET_COORDINATOR_ENC_SIRK_SUPPORT
 	bool "Support for encrypted SIRK"
 	default y
 	help
@@ -96,17 +96,17 @@ config BT_CSIS_CLIENT_ENC_SIRK_SUPPORT
 
 ############### DEBUG ###############
 
-config BT_DEBUG_CSIS_CLIENT
+config BT_DEBUG_CSIP_SET_COORDINATOR
 	bool "Coordinated Set Identification Profile debug"
 	help
 	  Use this option to enable Coordinated Set Identification Profile debug
 	  logs for the Bluetooth Audio functionality.
 
-endif # BT_CSIS_CLIENT
+endif # BT_CSIP_SET_COORDINATOR
 
-config BT_DEBUG_CSIS_CRYPTO
-	bool "Coordinated Set Identification Service crypto functions debug"
-	depends on BT_CSIS_CLIENT || BT_CSIS
+config BT_DEBUG_CSIP_CRYPTO
+	bool "Coordinated Set Identification Profile crypto functions debug"
+	depends on BT_CSIP_SET_COORDINATOR || BT_CSIP
 	help
-	  Use this option to enable Coordinated Set Identification Service
+	  Use this option to enable Coordinated Set Identification Profile
 	  crypto functions debug logs for the Bluetooth Audio functionality.
