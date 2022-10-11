@@ -7,20 +7,6 @@
 #ifndef ZEPHYR_INCLUDE_DEVICE_H_
 #define ZEPHYR_INCLUDE_DEVICE_H_
 
-/**
- * @brief Device Model
- * @defgroup device_model Device Model
- * @{
- * @}
- */
-
-/**
- * @brief Device Model APIs
- * @defgroup device_model_api Device Model APIs
- * @ingroup device_model
- * @{
- */
-
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/sections.h>
@@ -30,6 +16,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Device Model
+ * @defgroup device_model Device Model
+ * @{
+ */
 
 /**
  * @brief Type used to represent a "handle" for a device.
