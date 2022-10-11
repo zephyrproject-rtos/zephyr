@@ -5,6 +5,7 @@
 #include <cavs-idc.h>
 #include <adsp_memory.h>
 #include <adsp_shim.h>
+#include <soc.h>
 
 /* IDC power up message to the ROM firmware.  This isn't documented
  * anywhere, it's basically just a magic number (except the high bit,
