@@ -1,0 +1,15 @@
+{	"SCAs": {
+		"cppcheck" : {
+			"C_COMPILER" : "/opt/cppcheck/bin/cppcheck",
+			"CXX_COMPILER" : "/opt/cppcheck/bin/cppcheck",
+			"ASM_COMPILER" : "/opt/cppcheck/bin/cppcheck",
+			"LINKER" : "/opt/cppcheck/bin/cppcheck"
+		},
+		"cpptest" : {
+			"C_COMPILER" : "/opt/cpptest/bin/cpptest",
+			"CXX_COMPILER" : "/opt/cpptest/bin/cpptest",
+			"ASM_COMPILER" : "/opt/cpptest/bin/cpptest",
+			"LINKER" : "/opt/cpptest/bin/cpptest"
+		}
+	}
+}
