@@ -13,10 +13,12 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/gatt.h>
 
 static struct k_work work_adv_start;
 static uint8_t volatile conn_count;
 static uint8_t id_current;
+static struct bt_conn *conn_connected;
 static bool volatile is_disconnecting;
 
 static const struct bt_data ad[] = {
@@ -26,6 +28,114 @@ static const struct bt_data ad[] = {
 static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
+
+#if defined(CONFIG_BT_GATT_CLIENT)
+static void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+{
+	printk("Updated MTU: TX: %d RX: %d bytes\n", tx, rx);
+}
+
+static struct bt_gatt_cb gatt_callbacks = {
+	.att_mtu_updated = mtu_updated
+};
+
+static void mtu_exchange_cb(struct bt_conn *conn, uint8_t err,
+			    struct bt_gatt_exchange_params *params)
+{
+	printk("%s: MTU exchange %s (%u)\n", __func__,
+	       err == 0U ? "successful" : "failed",
+	       bt_gatt_get_mtu(conn));
+}
+
+static int mtu_exchange(struct bt_conn *conn)
+{
+	static struct bt_gatt_exchange_params mtu_exchange_params;
+	int err;
+
+	printk("%s: Current MTU = %u\n", __func__, bt_gatt_get_mtu(conn));
+
+	mtu_exchange_params.func = mtu_exchange_cb;
+
+	printk("%s: Exchange MTU...\n", __func__);
+	err = bt_gatt_exchange_mtu(conn, &mtu_exchange_params);
+	if (err) {
+		printk("%s: MTU exchange failed (err %d)", __func__, err);
+	}
+
+	return err;
+}
+
+static uint32_t last_write_rate;
+
+static void write_cmd_cb(struct bt_conn *conn, void *user_data)
+{
+	static uint32_t cycle_stamp;
+	static uint32_t write_count;
+	static uint32_t write_rate;
+	static uint32_t write_len;
+	uint64_t delta;
+
+	delta = k_cycle_get_32() - cycle_stamp;
+	delta = k_cyc_to_ns_floor64(delta);
+
+	if (delta == 0) {
+		/* Skip division by zero */
+		return;
+	}
+
+	/* if last data rx-ed was greater than 1 second in the past,
+	 * reset the metrics.
+	 */
+	if (delta > (1U * NSEC_PER_SEC)) {
+		printk("%s: count= %u, len= %u, rate= %u bps.\n", __func__,
+		       write_count, write_len, write_rate);
+
+		last_write_rate = write_rate;
+
+		write_count = 0U;
+		write_len = 0U;
+		write_rate = 0U;
+		cycle_stamp = k_cycle_get_32();
+	} else {
+		uint16_t len;
+
+		write_count++;
+
+		/* Extract the 16-bit data length stored in user_data */
+		len = (uint32_t)user_data & 0xFFFF;
+
+		write_len += len;
+		write_rate = ((uint64_t)write_len << 3) * (1U * NSEC_PER_SEC) /
+			     delta;
+	}
+}
+
+int write_cmd(struct bt_conn *conn)
+{
+	static uint8_t data[BT_ATT_MAX_ATTRIBUTE_LEN] = {0U, };
+	static uint16_t data_len;
+	int err;
+
+	data_len = bt_gatt_get_mtu(conn) - 3U;
+	if (data_len > BT_ATT_MAX_ATTRIBUTE_LEN) {
+		data_len = BT_ATT_MAX_ATTRIBUTE_LEN;
+	}
+
+	/* Pass the 16-bit data length value (instead of reference) in
+	 * user_data so that unique value is pass for each write callback.
+	 * Using handle 0x0001, we do not care if it is writable, we just want
+	 * to transmit the data across.
+	 */
+	err = bt_gatt_write_without_response_cb(conn, 0x0001, data, data_len,
+						false, write_cmd_cb,
+						(void *)((uint32_t)data_len));
+	if (err) {
+		printk("%s: Write cmd failed (%d).\n", __func__, err);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_GATT_CLIENT */
 
 static void adv_start(struct k_work *work)
 {
@@ -91,6 +201,14 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Connected (%u): %s\n", conn_count, addr);
+
+	if (!conn_connected) {
+		conn_connected = bt_conn_ref(conn);
+	}
+
+#if defined(CONFIG_BT_GATT_CLIENT)
+	(void)mtu_exchange(conn);
+#endif /* CONFIG_BT_GATT_CLIENT */
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -100,6 +218,11 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Disconnected %s, reason %s(0x%02x)\n", addr, bt_hci_err_to_str(reason), reason);
+
+	if (conn == conn_connected) {
+		conn_connected = NULL;
+		bt_conn_unref(conn);
+	}
 
 	if ((conn_count == 1U) && is_disconnecting) {
 		is_disconnecting = false;
@@ -114,7 +237,7 @@ static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("LE conn  param req: %s int (0x%04x, 0x%04x) lat %d to %d\n",
+	printk("LE conn param req: %s int (0x%04x, 0x%04x) lat %d to %d\n",
 	       addr, param->interval_min, param->interval_max, param->latency,
 	       param->timeout);
 
@@ -208,8 +331,9 @@ static struct bt_conn_cb conn_callbacks = {
 #endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */
 };
 
-#if defined(CONFIG_BT_OBSERVER)
-#define BT_LE_SCAN_PASSIVE_ALLOW_DUPILCATES \
+#if defined(CONFIG_BT_OBSERVER) && \
+	!defined(CONFIG_TEST_BSIM_BT_CONN_PARAM_OBSERVER_DISABLED)
+#define BT_LE_SCAN_PASSIVE_ALLOW_DUPLICATES \
 		BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE, \
 				 BT_LE_SCAN_OPT_NONE, \
 				 BT_GAP_SCAN_FAST_INTERVAL, \
@@ -223,7 +347,9 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
 }
-#endif /* CONFIG_BT_OBSERVER */
+#endif /* CONFIG_BT_OBSERVER &&
+	* !CONFIG_TEST_BSIM_BT_CONN_PARAM_OBSERVER_DISABLED
+	*/
 
 int init_peripheral(uint8_t iterations)
 {
@@ -242,18 +368,25 @@ int init_peripheral(uint8_t iterations)
 	bt_conn_auth_cb_register(&auth_callbacks);
 #endif /* CONFIG_BT_SMP */
 
+#if defined(CONFIG_BT_GATT_CLIENT)
+	bt_gatt_cb_register(&gatt_callbacks);
+#endif /* CONFIG_BT_GATT_CLIENT */
+
 	printk("Bluetooth initialized\n");
 
-#if defined(CONFIG_BT_OBSERVER)
+#if defined(CONFIG_BT_OBSERVER) && \
+	!defined(CONFIG_TEST_BSIM_BT_CONN_PARAM_OBSERVER_DISABLED)
 	printk("Start continuous passive scanning...");
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE_ALLOW_DUPILCATES,
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE_ALLOW_DUPLICATES,
 			       device_found);
 	if (err) {
 		printk("Scan start failed (%d).\n", err);
 		return err;
 	}
 	printk("success.\n");
-#endif /* CONFIG_BT_OBSERVER */
+#endif /* CONFIG_BT_OBSERVER && \
+	* !CONFIG_TEST_BSIM_BT_CONN_PARAM_OBSERVER_DISABLED
+	*/
 
 	k_work_init(&work_adv_start, adv_start);
 	k_work_submit(&work_adv_start);
@@ -284,6 +417,26 @@ int init_peripheral(uint8_t iterations)
 			printk("Wait for disconnections...\n");
 			is_disconnecting = true;
 			while (is_disconnecting) {
+#if defined(CONFIG_BT_GATT_CLIENT)
+				struct bt_conn *conn = NULL;
+
+				if (conn_connected) {
+					/* Get a connection reference to ensure
+					 * that a reference is maintained in
+					 * case disconnected callback is called
+					 * while we perform GATT Write command.
+					 */
+					conn = bt_conn_ref(conn_connected);
+				}
+
+				if (conn) {
+					(void)write_cmd(conn);
+					bt_conn_unref(conn);
+
+					continue;
+				}
+#endif /* CONFIG_BT_GATT_CLIENT */
+
 				k_sleep(K_MSEC(10));
 			}
 			printk("All disconnected.\n");
