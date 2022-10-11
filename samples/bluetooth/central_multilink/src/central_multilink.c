@@ -34,6 +34,7 @@ static void start_scan(void);
 static struct bt_conn *conn_connecting;
 static uint8_t conn_count_max;
 static uint8_t volatile conn_count;
+static uint8_t volatile conn_param_count;
 static bool volatile is_disconnecting;
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
@@ -217,6 +218,15 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval,
 
 	printk("LE conn param updated: %s int 0x%04x lat %d to %d\n",
 	       addr, interval, latency, timeout);
+
+#if defined(CONFIG_TEST_BSIM_BT_CONN_PARAM)
+	if ((interval >= CONFIG_BT_PERIPHERAL_PREF_MIN_INT) &&
+	    (interval <= CONFIG_BT_PERIPHERAL_PREF_MAX_INT) &&
+	    (latency == CONFIG_BT_PERIPHERAL_PREF_LATENCY) &&
+	    (timeout == CONFIG_BT_PERIPHERAL_PREF_TIMEOUT)) {
+		conn_param_count++;
+	}
+#endif /* CONFIG_TEST_BSIM_BT_CONN_PARAM */
 }
 
 #if defined(CONFIG_BT_SMP)
@@ -355,6 +365,12 @@ int init_central(uint8_t max_conn, uint8_t iterations)
 
 			continue;
 		}
+
+		while (IS_ENABLED(CONFIG_TEST_BSIM_BT_CONN_PARAM) &&
+		       conn_param_count < CONFIG_BT_MAX_CONN) {
+			k_sleep(K_MSEC(10));
+		}
+		conn_param_count = 0U;
 
 		/* Lets wait sufficiently to ensure a stable connection
 		 * before starting to disconnect for next iteration.
