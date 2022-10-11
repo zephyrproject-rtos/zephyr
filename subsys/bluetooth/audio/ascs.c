@@ -59,7 +59,6 @@ struct bt_ascs {
 	 * Controlled by the client.
 	 */
 	struct bt_audio_iso isos[ASE_COUNT];
-	struct bt_gatt_notify_params params;
 };
 
 static struct bt_ascs sessions[CONFIG_BT_MAX_CONN];
