@@ -5,6 +5,8 @@
 #include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <errno.h>
+#include <soc.h>
 
 #include <mem_window.h>
 
