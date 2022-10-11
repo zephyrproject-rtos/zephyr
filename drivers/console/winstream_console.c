@@ -62,4 +62,4 @@ static int winstream_console_init(const struct device *d)
 	return 0;
 }
 
-SYS_INIT(winstream_console_init, ARCH, CONFIG_CONSOLE_INIT_PRIORITY);
+SYS_INIT(winstream_console_init, EARLY, CONFIG_CONSOLE_INIT_PRIORITY);

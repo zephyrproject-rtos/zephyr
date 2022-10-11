@@ -152,8 +152,6 @@ __imr void boot_core0(void)
 	parse_manifest();
 	z_xtensa_cache_flush_all();
 
-	z_sys_init_run_level(_SYS_INIT_LEVEL_ARCH);
-
 	/* Zephyr! */
 	extern FUNC_NORETURN void z_cstart(void);
 	z_cstart();

@@ -45,7 +45,7 @@ __imr int mem_win_init(const struct device *dev)
 		.mem_base = DT_REG_ADDR(DT_PHANDLE(MEM_WINDOW_NODE(n), memory)) + WIN_OFFSET(n),   \
 		.initialize = DT_PROP(MEM_WINDOW_NODE(n), initialize),                             \
 	};                                                                                         \
-	DEVICE_DT_DEFINE(MEM_WINDOW_NODE(n), mem_win_init, NULL, NULL, &mem_win_config_##n, ARCH,  \
+	DEVICE_DT_DEFINE(MEM_WINDOW_NODE(n), mem_win_init, NULL, NULL, &mem_win_config_##n, EARLY, \
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 #if DT_NODE_HAS_STATUS(MEM_WINDOW_NODE(0), okay)

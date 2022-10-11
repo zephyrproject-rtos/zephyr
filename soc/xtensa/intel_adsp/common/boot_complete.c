@@ -27,4 +27,4 @@ int boot_complete(const struct device *d)
 	return 0;
 }
 
-SYS_INIT(boot_complete, ARCH, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(boot_complete, EARLY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

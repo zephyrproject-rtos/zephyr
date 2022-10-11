@@ -21,7 +21,7 @@ extern "C" {
  * stack. The remaining levels are executed in the kernel's main task.
  */
 
-#define _SYS_INIT_LEVEL_ARCH		0
+#define _SYS_INIT_LEVEL_EARLY		0
 #define _SYS_INIT_LEVEL_PRE_KERNEL_1	1
 #define _SYS_INIT_LEVEL_PRE_KERNEL_2	2
 #define _SYS_INIT_LEVEL_POST_KERNEL	3
@@ -110,6 +110,12 @@ void z_sys_init_run_level(int32_t level);
  * @param _level The initialization level at which configuration occurs.
  * Must be one of the following symbols, which are listed in the order
  * they are performed by the kernel:
+ * \n
+ * \li EARLY: Used very early in the boot process, right after entering the C
+ * domain (``z_cstart()``). This can be used in architectures and SoCs that
+ * extend or implement architecture code and use drivers or system services that
+ * have to be initialized before the Kernel calls any architecture specific
+ * initialization code.
  * \n
  * \li PRE_KERNEL_1: Used for initialization objects that have no dependencies,
  * such as those that rely solely on hardware present in the processor/SOC.
