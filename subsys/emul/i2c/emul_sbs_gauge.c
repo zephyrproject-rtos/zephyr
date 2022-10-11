@@ -62,8 +62,10 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 	case SBS_GAUGE_CMD_NOM_CAPACITY:
 	case SBS_GAUGE_CMD_AVG_TIME2EMPTY:
 	case SBS_GAUGE_CMD_AVG_TIME2FULL:
+	case SBS_GAUGE_CMD_RUNTIME2EMPTY:
 	case SBS_GAUGE_CMD_CYCLE_COUNT:
 	case SBS_GAUGE_CMD_DESIGN_VOLTAGE:
+	case SBS_GAUGE_CMD_CURRENT:
 		/* Arbitrary stub value. */
 		*val = 1;
 		break;

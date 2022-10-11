@@ -9,6 +9,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 #include <zephyr/ztest_assert.h>
 
@@ -38,12 +39,51 @@ ZTEST_F(sbs_gauge_new_api, test_implemented_apis)
 	zassert_not_equal(NULL, fixture->api->get_property);
 }
 
-ZTEST_F(sbs_gauge_new_api, test_voltage_read)
+ZTEST_F(sbs_gauge_new_api, test_get_props__returns_ok)
 {
-	struct fuel_gauge_get_property prop = {
-		.property_type = FUEL_GAUGE_VOLTAGE,
+	/* Validate what props are supported by the driver */
+
+	struct fuel_gauge_get_property props[] = {
+		{
+			.property_type = FUEL_GAUGE_VOLTAGE,
+		},
+		{
+			.property_type = FUEL_GAUGE_CURRENT,
+		},
+		{
+			.property_type = FUEL_GAUGE_AVG_CURRENT,
+		},
+		{
+			.property_type = FUEL_GAUGE_TEMPERATURE,
+		},
+		{
+			.property_type = FUEL_GAUGE_STATE_OF_CHARGE,
+		},
+		{
+			.property_type = FUEL_GAUGE_RUNTIME_TO_FULL,
+		},
+		{
+			.property_type = FUEL_GAUGE_RUNTIME_TO_EMPTY,
+		},
+		{
+			.property_type = FUEL_GAUGE_REMAINING_CAPACITY,
+		},
+		{
+			.property_type = FUEL_GAUGE_FULL_CHARGE_CAPACITY,
+		},
+		{
+			.property_type = FUEL_GAUGE_CYCLE_COUNT,
+		},
 	};
-	zassert_ok(fixture->api->get_property(fixture->dev, &prop, 1));
+
+	int ret = fixture->api->get_property(fixture->dev, props, ARRAY_SIZE(props));
+
+	for (int i = 0; i < ARRAY_SIZE(props); i++) {
+		zassert_ok(props[i].status, "Property %d getting %d has a bad status.", i,
+			   props[i].property_type);
+	}
+
+	zassert_ok(ret);
 }
 
 ZTEST_SUITE(sbs_gauge_new_api, NULL, sbs_gauge_new_api_setup, NULL, NULL, NULL);
