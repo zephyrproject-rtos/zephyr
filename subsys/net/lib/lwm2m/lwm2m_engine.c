@@ -687,13 +687,15 @@ static void socket_loop(void)
 		}
 
 		for (i = 0; i < sock_nfds; ++i) {
-			if (sys_slist_is_empty(&sock_ctx[i]->pending_sends)) {
+			if (sock_ctx[i] != NULL &&
+			    sys_slist_is_empty(&sock_ctx[i]->pending_sends)) {
 				next_retransmit = retransmit_request(sock_ctx[i], timestamp);
 				if (next_retransmit < timeout) {
 					timeout = next_retransmit;
 				}
 			}
-			if (sys_slist_is_empty(&sock_ctx[i]->pending_sends) &&
+			if (sock_ctx[i] != NULL &&
+			    sys_slist_is_empty(&sock_ctx[i]->pending_sends) &&
 			    lwm2m_rd_client_is_registred(sock_ctx[i])) {
 				check_notifications(sock_ctx[i], timestamp);
 			}
@@ -715,7 +717,7 @@ static void socket_loop(void)
 
 		for (i = 0; i < sock_nfds; i++) {
 
-			if (sock_ctx[i]->sock_fd < 0) {
+			if (sock_ctx[i] != NULL && sock_ctx[i]->sock_fd < 0) {
 				continue;
 			}
 
