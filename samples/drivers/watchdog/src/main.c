@@ -26,7 +26,6 @@
  */
 #define WDT_ALLOW_CALLBACK 0
 #elif DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
-#define WDT_MAX_WINDOW  600000U
 #define WDT_ALLOW_CALLBACK 0
 #elif DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_wwdgt)
 #define WDT_MAX_WINDOW 24U
