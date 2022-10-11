@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT nxp_lpc_syscon
 #include <errno.h>
-#include <soc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <soc.h>
 #include <fsl_clock.h>
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
