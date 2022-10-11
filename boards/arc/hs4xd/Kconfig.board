@@ -5,6 +5,6 @@
 
 config BOARD_HS4xD
 	bool "ARC HS4xD Development Kit"
-	depends on SOC_ARC_HSDK
+	depends on SOC_ARC_HS4xD
 	help
 	  TODO

@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <synopsys/arc_hsdk.dtsi>
+#include <synopsys/arc_hs4xd.dtsi>
 
 / {
 

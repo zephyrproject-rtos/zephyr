@@ -1,0 +1,8 @@
+# Copyright (c) 2019 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ARC_HS4xD
+	bool "Synopsys ARC HS4xD SoC"
+	select ARC
+	select CPU_HAS_FPU
+	select CPU_HAS_DSP
