@@ -125,8 +125,8 @@ static bool check_dup(struct net_buf_simple *data)
 		}
 	}
 
-	dup_cache[dup_cache_next++] = val;
 	dup_cache_next %= ARRAY_SIZE(dup_cache);
+	dup_cache[dup_cache_next++] = val;
 
 	return false;
 }
@@ -850,6 +850,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 		BT_WARN("Removing rejected message from Network Message Cache");
 		/* Rewind the next index now that we're not using this entry */
 		msg_cache[--msg_cache_next].src = BT_MESH_ADDR_UNASSIGNED;
+		dup_cache[--dup_cache_next] = 0;
 	}
 
 	/* Relay if this was a group/virtual address, or if the destination
