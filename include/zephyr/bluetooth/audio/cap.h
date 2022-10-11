@@ -45,7 +45,7 @@ extern "C" {
  *
  * @return 0 if success, errno on failure.
  */
-int bt_cap_acceptor_register(const struct bt_csip_register_param *param,
+int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *param,
 			     struct bt_csip **csip);
 
 /** Callback structure for CAP procedures */

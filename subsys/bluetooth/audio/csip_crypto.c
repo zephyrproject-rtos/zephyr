@@ -18,7 +18,7 @@
 #include <tinycrypt/ccm_mode.h>
 #include <zephyr/sys/byteorder.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CSIP_CRYPTO)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CSIP_SET_MEMBER_CRYPTO)
 #define LOG_MODULE_NAME bt_csip_crypto
 #include "common/log.h"
 #include "common/bt_str.h"

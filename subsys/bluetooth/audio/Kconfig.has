@@ -23,7 +23,7 @@ config BT_HAS_HEARING_AID_MONAURAL
 	bool "Monaural Hearing Aid"
 
 config BT_HAS_HEARING_AID_BINAURAL
-	depends on BT_CSIP
+	depends on BT_CSIP_SET_MEMBER
 	bool "Binaural Hearing Aid"
 
 config BT_HAS_HEARING_AID_BANDED

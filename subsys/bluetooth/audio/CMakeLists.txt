@@ -30,9 +30,9 @@ zephyr_library_sources_ifdef(CONFIG_BT_CCID ccid.c)
 
 zephyr_library_link_libraries(subsys__bluetooth)
 
-zephyr_library_sources_ifdef(CONFIG_BT_CSIP csip.c)
+zephyr_library_sources_ifdef(CONFIG_BT_CSIP_SET_MEMBER csip_set_member.c)
 zephyr_library_sources_ifdef(CONFIG_BT_CSIP_SET_COORDINATOR csip_set_coordinator.c)
-if (CONFIG_BT_CSIP OR CONFIG_BT_CSIP_SET_COORDINATOR)
+if (CONFIG_BT_CSIP_SET_MEMBER OR CONFIG_BT_CSIP_SET_COORDINATOR)
 	zephyr_library_sources(csip_crypto.c)
 endif()
 

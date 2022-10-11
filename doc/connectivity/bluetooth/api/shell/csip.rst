@@ -141,8 +141,8 @@ Using the Set Member
 
 .. code-block:: console
 
-   csip --help
-   csip - Bluetooth CSIP shell commands
+   csip_set_member --help
+   csip_set_member - Bluetooth CSIP set member shell commands
    Subcommands:
       register      :Initialize the service and register callbacks [size <int>]
                      [rank <int>] [not-lockable] [sirk <data>]
@@ -162,4 +162,4 @@ Setup
 .. code-block:: console
 
    uart:~$ bt init
-   uart:~$ csip register
+   uart:~$ csip_set_member register

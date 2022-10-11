@@ -27,14 +27,14 @@ static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csip *csip)
 	return BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 }
 
-static struct bt_csip_cb csip_cb = {
+static struct bt_csip_set_member_cb csip_cb = {
 	.lock_changed = csip_lock_changed_cb,
 	.sirk_read_req = sirk_read_req_cb,
 };
 
 int csip_set_member_init(void)
 {
-	struct bt_csip_register_param param = {
+	struct bt_csip_set_member_register_param param = {
 		.set_size = 2,
 		.rank = CONFIG_HAP_HA_SET_RANK,
 		.lockable = false,
@@ -53,7 +53,7 @@ int csip_generate_rsi(uint8_t *rsi)
 		return -ENODEV;
 	}
 
-	err = bt_csip_generate_rsi(csip, rsi);
+	err = bt_csip_set_member_generate_rsi(csip, rsi);
 	if (err) {
 		printk("Failed to generate RSI (err %d)\n", err);
 		return err;
