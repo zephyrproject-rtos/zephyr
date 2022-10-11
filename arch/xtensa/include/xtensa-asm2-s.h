@@ -88,6 +88,63 @@
 #endif
 .endm
 
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+/*
+ * FPU_REG_SAVE
+ *
+ * Saves the Float Point Unit context registers in the base save
+ * area pointed to by the current stack pointer A1. The Floating-Point
+ * Coprocessor Option adds the FR register file and two User Registers
+ * called FCR and FSR.The FR register file consists of 16 registers of
+ * 32 bits each and is used for all data computation.
+ */
+.macro FPU_REG_SAVE
+	rur.fcr	a0
+	s32i	a0, a1, BSA_FPU_OFF
+	rur.fsr	a0
+	s32i	a0, a1, 4+BSA_FPU_OFF
+	ssi	f0, a1, 8+BSA_FPU_OFF
+	ssi	f1, a1, 12+BSA_FPU_OFF
+	ssi	f2, a1, 16+BSA_FPU_OFF
+	ssi	f3, a1, 20+BSA_FPU_OFF
+	ssi	f4, a1, 24+BSA_FPU_OFF
+	ssi	f5, a1, 28+BSA_FPU_OFF
+	ssi	f6, a1, 32+BSA_FPU_OFF
+	ssi	f7, a1, 36+BSA_FPU_OFF
+	ssi	f8, a1, 40+BSA_FPU_OFF
+	ssi	f9, a1, 44+BSA_FPU_OFF
+	ssi	f10, a1, 48+BSA_FPU_OFF
+	ssi	f11, a1, 52+BSA_FPU_OFF
+	ssi	f12, a1, 56+BSA_FPU_OFF
+	ssi	f13, a1, 60+BSA_FPU_OFF
+	ssi	f14, a1, 64+BSA_FPU_OFF
+	ssi	f15, a1, 68+BSA_FPU_OFF
+.endm
+
+.macro FPU_REG_RESTORE
+	l32i.n	a0, a1, BSA_FPU_OFF
+	wur.fcr	a0
+	l32i.n	a0, a1, 4+BSA_FPU_OFF
+	wur.fsr	a0
+	lsi	f0, a1, 8+BSA_FPU_OFF
+	lsi	f1, a1, 12+BSA_FPU_OFF
+	lsi	f2, a1, 16+BSA_FPU_OFF
+	lsi	f3, a1, 20+BSA_FPU_OFF
+	lsi	f4, a1, 24+BSA_FPU_OFF
+	lsi	f5, a1, 28+BSA_FPU_OFF
+	lsi	f6, a1, 32+BSA_FPU_OFF
+	lsi	f7, a1, 36+BSA_FPU_OFF
+	lsi	f8, a1, 40+BSA_FPU_OFF
+	lsi	f9, a1, 44+BSA_FPU_OFF
+	lsi	f10, a1, 48+BSA_FPU_OFF
+	lsi	f11, a1, 52+BSA_FPU_OFF
+	lsi	f12, a1, 56+BSA_FPU_OFF
+	lsi	f13, a1, 60+BSA_FPU_OFF
+	lsi	f14, a1, 64+BSA_FPU_OFF
+	lsi	f15, a1, 68+BSA_FPU_OFF
+.endm
+#endif
+
 /*
  * ODD_REG_SAVE
  *
@@ -119,6 +176,9 @@
 #if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
 	rur.THREADPTR a0
 	s32i a0, a1, BSA_THREADPTR_OFF
+#endif
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+	FPU_REG_SAVE
 #endif
 .endm
 
