@@ -69,7 +69,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define CLIENT_EP_LEN		CONFIG_LWM2M_RD_CLIENT_ENDPOINT_NAME_MAX_LENGTH
 
-#define CLIENT_BINDING_LEN sizeof("U")
+#define CLIENT_BINDING_LEN sizeof("UQ")
 #define CLIENT_QUEUE_LEN sizeof("Q")
 
 static void sm_handle_registration_update_failure(void);
