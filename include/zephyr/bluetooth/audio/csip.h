@@ -251,7 +251,7 @@ struct bt_csip_set_coordinator_csis_inst {
 	struct bt_csip_set_coordinator_set_info info;
 
 	/** Internally used pointer value */
-	struct bt_csip *csip;
+	void *svc_inst;
 };
 
 /** Struct representing a remote device as a set member */

@@ -622,7 +622,7 @@ static int csip_set_coordinator_discover_sets(struct bt_csip_set_coordinator_set
 	int err;
 
 	/* Start reading values and call CB when done */
-	err = read_set_sirk(member->insts[0].csip);
+	err = read_set_sirk((struct bt_csip *)member->insts[0].svc_inst);
 	if (err == 0) {
 		busy = true;
 	}
@@ -1397,7 +1397,7 @@ int bt_csip_set_coordinator_discover(struct bt_conn *conn)
 	err = bt_gatt_discover(conn, &discover_params);
 	if (err == 0) {
 		for (size_t i = 0; i < ARRAY_SIZE(client->set_member.insts); i++) {
-			client->set_member.insts[i].csip = &client->csip_insts[i];
+			client->set_member.insts[i].svc_inst = (void *)&client->csip_insts[i];
 		}
 		busy = true;
 		client->conn = bt_conn_ref(conn);
