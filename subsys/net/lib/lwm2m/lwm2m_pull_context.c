@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stdio.h>
 #include <string.h>
 
-#include <zephyr/net/http_parser.h>
+#include <zephyr/net/http/parser.h>
 #include <zephyr/net/socket.h>
 
 #include "lwm2m_pull_context.h"

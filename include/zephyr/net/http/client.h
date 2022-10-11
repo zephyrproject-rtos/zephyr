@@ -22,7 +22,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_ip.h>
-#include <zephyr/net/http_parser.h>
+#include <zephyr/net/http/parser.h>
 
 #ifdef __cplusplus
 extern "C" {
