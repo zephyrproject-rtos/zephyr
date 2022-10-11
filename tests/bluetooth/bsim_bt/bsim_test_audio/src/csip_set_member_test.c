@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifdef CONFIG_BT_CSIP
+#ifdef CONFIG_BT_CSIP_SET_MEMBER
 #include <zephyr/bluetooth/audio/csip.h>
 
 #include "common.h"
@@ -14,7 +14,7 @@ static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
 static volatile bool g_locked;
 static uint8_t sirk_read_req_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
-struct bt_csip_register_param param = {
+struct bt_csip_set_member_register_param param = {
 	.set_size = 3,
 	.rank = 1,
 	.lockable = true,
@@ -59,7 +59,7 @@ static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csip *csip)
 	return sirk_read_req_rsp;
 }
 
-static struct bt_csip_cb csip_cbs = {
+static struct bt_csip_set_member_cb csip_cbs = {
 	.lock_changed = csip_lock_changed_cb,
 	.sirk_read_req = sirk_read_req_cb,
 };
@@ -81,13 +81,13 @@ static void bt_ready(int err)
 
 	param.cb = &csip_cbs;
 
-	err = bt_csip_register(&param, &csip);
+	err = bt_csip_set_member_register(&param, &csip);
 	if (err != 0) {
 		FAIL("Could not register CSIP (err %d)\n", err);
 		return;
 	}
 
-	err = bt_csip_generate_rsi(csip, rsi);
+	err = bt_csip_set_member_generate_rsi(csip, rsi);
 	if (err != 0) {
 		FAIL("Failed to generate RSI (err %d)\n", err);
 		return;
@@ -133,7 +133,7 @@ static void test_force_release(void)
 
 	WAIT_FOR_COND(g_locked);
 	printk("Force releasing set\n");
-	bt_csip_lock(csip, false, true);
+	bt_csip_set_member_lock(csip, false, true);
 }
 
 static void test_csip_enc(void)
@@ -173,21 +173,21 @@ static void test_args(int argc, char *argv[])
 
 static const struct bst_test_instance test_connect[] = {
 	{
-		.test_id = "csip",
+		.test_id = "csip_set_member",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 		.test_args_f = test_args,
 	},
 	{
-		.test_id = "csip_release",
+		.test_id = "csip_set_member_release",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_force_release,
 		.test_args_f = test_args,
 	},
 	{
-		.test_id = "csip_enc",
+		.test_id = "csip_set_member_enc",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_csip_enc,
@@ -197,15 +197,15 @@ static const struct bst_test_instance test_connect[] = {
 	BSTEST_END_MARKER
 };
 
-struct bst_test_list *test_csip_install(struct bst_test_list *tests)
+struct bst_test_list *test_csip_set_member_install(struct bst_test_list *tests)
 {
 	return bst_add_tests(tests, test_connect);
 }
 #else
 
-struct bst_test_list *test_csip_install(struct bst_test_list *tests)
+struct bst_test_list *test_csip_set_member_install(struct bst_test_list *tests)
 {
 	return tests;
 }
 
-#endif /* CONFIG_BT_CSIP */
+#endif /* CONFIG_BT_CSIP_SET_MEMBER */

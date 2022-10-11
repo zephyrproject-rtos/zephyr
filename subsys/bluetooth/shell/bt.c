@@ -1208,7 +1208,9 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 		/* A privacy-enabled Set Member should advertise RSI values only when in
 		 * the GAP Limited Discoverable mode.
 		 */
-		if (IS_ENABLED(CONFIG_BT_PRIVACY) && IS_ENABLED(CONFIG_BT_CSIP) && csip != NULL) {
+		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		    IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER) &&
+		    csip != NULL) {
 			ad_flags |= BT_LE_AD_LIMITED;
 		} else {
 			ad_flags |= BT_LE_AD_GENERAL;
@@ -1235,7 +1237,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 		ad_len++;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CSIP)) {
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER)) {
 		ssize_t csis_ad_len;
 
 		csis_ad_len = csis_ad_data_add(&data_array[ad_len],

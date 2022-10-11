@@ -19,12 +19,12 @@ config BT_CAP_ACCEPTOR
 config BT_CAP_ACCEPTOR_SET_MEMBER
 	bool "Common Audio Profile Acceptor Role Set Member support"
 	depends on BT_CAP_ACCEPTOR
-	depends on BT_CSIP
+	depends on BT_CSIP_SET_MEMBER
 	help
 	  Enabling this will allow a CAP acceptor to be a set member.
 	  Enabling this will require a manual register of the CAS service.
 	  Enabling will take one of the allocated CSIS instances
-	  (BT_CSIP_MAX_INSTANCE_COUNT).
+	  (BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT).
 
 config BT_DEBUG_CAP_ACCEPTOR
 	bool "Common Audio Profile debug"

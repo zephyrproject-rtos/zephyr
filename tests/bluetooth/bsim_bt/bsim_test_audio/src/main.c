@@ -10,7 +10,7 @@ extern struct bst_test_list *test_vcs_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_vcs_client_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_micp_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_micp_mic_ctlr_install(struct bst_test_list *tests);
-extern struct bst_test_list *test_csip_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_csip_set_member_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_csip_set_coordinator_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_tbs_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_tbs_client_install(struct bst_test_list *tests);
@@ -36,7 +36,7 @@ bst_test_install_t test_installers[] = {
 	test_vcs_client_install,
 	test_micp_install,
 	test_micp_mic_ctlr_install,
-	test_csip_install,
+	test_csip_set_member_install,
 	test_csip_set_coordinator_install,
 	test_tbs_install,
 	test_tbs_client_install,

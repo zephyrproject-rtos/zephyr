@@ -16,7 +16,7 @@
 #include "bt.h"
 
 extern const struct shell *ctx_shell;
-static struct bt_csip *cap_csip;
+static struct bt_csip *cap_csip_set_member;
 static uint8_t sirk_read_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 
 static void locked_cb(struct bt_conn *conn, struct bt_csip *csip, bool locked)
@@ -49,7 +49,7 @@ static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csip *csip)
 	return sirk_read_rsp;
 }
 
-static struct bt_csip_cb csip_cbs = {
+static struct bt_csip_set_member_cb csip_set_member_cbs = {
 	.lock_changed = locked_cb,
 	.sirk_read_req = sirk_read_req_cb,
 };
@@ -58,14 +58,14 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 				 char **argv)
 {
 	int err;
-	struct bt_csip_register_param param = {
+	struct bt_csip_set_member_register_param param = {
 		.set_size = 2,
 		.rank = 1,
 		.lockable = true,
 		/* Using the CSIS test sample SIRK */
 		.set_sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
 			      0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
-		.cb = &csip_cbs
+		.cb = &csip_set_member_cbs
 	};
 
 	for (size_t argn = 1; argn < argc; argn++) {
@@ -95,7 +95,7 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_cap_acceptor_register(&param, &cap_csip);
+	err = bt_cap_acceptor_register(&param, &cap_csip_set_member);
 	if (err != 0) {
 		shell_error(sh, "Could not register CAS: %d", err);
 
@@ -108,7 +108,7 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 static int cmd_cap_acceptor_print_sirk(const struct shell *sh, size_t argc,
 				       char *argv[])
 {
-	bt_csip_print_sirk(cap_csip);
+	bt_csip_set_member_print_sirk(cap_csip_set_member);
 
 	return 0;
 }
@@ -118,7 +118,7 @@ static int cmd_cap_acceptor_lock(const struct shell *sh, size_t argc,
 {
 	int err;
 
-	err = bt_csip_lock(cap_csip, true, false);
+	err = bt_csip_set_member_lock(cap_csip_set_member, true, false);
 	if (err != 0) {
 		shell_error(sh, "Failed to set lock: %d", err);
 
@@ -146,7 +146,7 @@ static int cmd_cap_acceptor_release(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_csip_lock(cap_csip, false, force);
+	err = bt_csip_set_member_lock(cap_csip_set_member, false, force);
 
 	if (err != 0) {
 		shell_error(sh, "Failed to release lock: %d", err);
