@@ -484,20 +484,6 @@ static void set_up_plls(void)
 
 #if defined(STM32_PLL_ENABLED)
 
-#ifdef CONFIG_SOC_SERIES_STM32F7X
-	/* Assuming we stay on Power Scale default value: Power Scale 1 */
-	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
-		LL_PWR_EnableOverDriveMode();
-		while (LL_PWR_IsActiveFlag_OD() != 1) {
-		/* Wait for OverDrive mode ready */
-		}
-		LL_PWR_EnableOverDriveSwitching();
-		while (LL_PWR_IsActiveFlag_ODSW() != 1) {
-		/* Wait for OverDrive switch ready */
-		}
-	}
-#endif
-
 #if defined(STM32_SRC_PLL_P) & STM32_PLL_P_ENABLED
 	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLP, pllp(STM32_PLL_P_DIVISOR));
 	RCC_PLLP_ENABLE();
@@ -658,6 +644,21 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
+
+#if defined(STM32_PLL_ENABLED) && defined(CONFIG_SOC_SERIES_STM32F7X)
+	/* Assuming we stay on Power Scale default value: Power Scale 1 */
+	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
+		/* Set Overdrive if needed before configuring the Flash Latency */
+		LL_PWR_EnableOverDriveMode();
+		while (LL_PWR_IsActiveFlag_OD() != 1) {
+		/* Wait for OverDrive mode ready */
+		}
+		LL_PWR_EnableOverDriveSwitching();
+		while (LL_PWR_IsActiveFlag_ODSW() != 1) {
+		/* Wait for OverDrive switch ready */
+		}
+	}
+#endif /* STM32_PLL_ENABLED && CONFIG_SOC_SERIES_STM32F7X */
 
 #if defined(FLASH_ACR_LATENCY)
 	uint32_t old_flash_freq;
