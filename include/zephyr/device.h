@@ -73,11 +73,12 @@ typedef int16_t device_handle_t;
  * code. In other situations, you are probably looking for
  * device_get_binding().
  *
- * @param name The same @p dev_id token given to DEVICE_DEFINE()
+ * @param dev_id Device identifier.
  *
- * @return The full name of the device object defined by DEVICE_DEFINE()
+ * @return The full name of the device object defined by device definition
+ * macros.
  */
-#define DEVICE_NAME_GET(name) _CONCAT(__device_, name)
+#define DEVICE_NAME_GET(dev_id) _CONCAT(__device_, dev_id)
 
 /* Node paths can exceed the maximum size supported by
  * device_get_binding() in user mode; this macro synthesizes a unique
@@ -324,11 +325,11 @@ typedef int16_t device_handle_t;
  * @details Return the address of a device object created by
  * DEVICE_DEFINE(), using the dev_id provided to DEVICE_DEFINE().
  *
- * @param name The same as dev_id provided to DEVICE_DEFINE()
+ * @param dev_id Device identifier.
  *
  * @return A pointer to the device object created by DEVICE_DEFINE()
  */
-#define DEVICE_GET(name) (&DEVICE_NAME_GET(name))
+#define DEVICE_GET(dev_id) (&DEVICE_NAME_GET(dev_id))
 
 /**
  * @brief Declare a static device object
@@ -342,9 +343,10 @@ typedef int16_t device_handle_t;
  * itself is required by DEVICE_DEFINE() and use of DEVICE_GET()
  * inside it creates a circular dependency.
  *
- * @param name Device name
+ * @param dev_id Device identifier.
  */
-#define DEVICE_DECLARE(name) static const struct device DEVICE_NAME_GET(name)
+#define DEVICE_DECLARE(dev_id)                                                 \
+	static const struct device DEVICE_NAME_GET(dev_id)
 
 /**
  * @brief Get a <tt>const struct init_entry*</tt> from a devicetree node
@@ -358,11 +360,11 @@ typedef int16_t device_handle_t;
 /**
  * @brief Get a <tt>const struct init_entry*</tt> from a device by name
  *
- * @param name The same as dev_id provided to DEVICE_DEFINE()
+ * @param dev_id Device identifier.
  *
  * @return A pointer to the init_entry object created for that device
  */
-#define DEVICE_INIT_GET(name) (&Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(name)))
+#define DEVICE_INIT_GET(dev_id) (&Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)))
 
 /**
  * @brief Runtime device dynamic structure (in RAM) per driver instance
