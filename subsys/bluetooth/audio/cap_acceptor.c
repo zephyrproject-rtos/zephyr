@@ -21,13 +21,13 @@ static struct bt_gatt_attr svc_attrs[] = {
 	BT_GATT_INCLUDE_SERVICE(NULL) /* To be overwritten */
 };
 
-int bt_cap_acceptor_register(const struct bt_csip_register_param *param,
+int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *param,
 			     struct bt_csip **csip)
 {
 	static struct bt_gatt_service cas;
 	int err;
 
-	err = bt_csip_register(param, csip);
+	err = bt_csip_set_member_register(param, csip);
 	if (err != 0) {
 		BT_DBG("Failed to register CSIP");
 		return err;
@@ -36,7 +36,7 @@ int bt_cap_acceptor_register(const struct bt_csip_register_param *param,
 	cas = (struct bt_gatt_service)BT_GATT_SERVICE(svc_attrs);
 
 	/* Overwrite the include definition with the CSIP */
-	cas.attrs[1].user_data = bt_csip_svc_decl_get(*csip);
+	cas.attrs[1].user_data = bt_csip_set_member_svc_decl_get(*csip);
 
 	err = bt_gatt_service_register(&cas);
 	if (err) {

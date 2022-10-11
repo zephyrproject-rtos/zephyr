@@ -132,7 +132,7 @@ Coordinated Sets is implemented by the Coordinated Sets Identification Profile
 
 The CSIP implementation supports the following roles
 
-* Coordinated Set Identification Service (CSIP) Server
+* Coordinated Set Identification Service (CSIP) Set Member
 * Coordinated Set Identification Service (CSIP) Set Coordinator
 
 The API reference for media control can be found in

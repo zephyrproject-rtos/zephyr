@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Shell APIs for Bluetooth CSIP
+ * @brief Shell APIs for Bluetooth CSIP set member
  *
  * Copyright (c) 2020 Bose Corporation
  * Copyright (c) 2021 Nordic Semiconductor ASA
@@ -53,22 +53,22 @@ static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csip *csip)
 	return sirk_read_rsp;
 }
 
-static struct bt_csip_cb csip_cbs = {
+static struct bt_csip_set_member_cb csip_set_member_cbs = {
 	.lock_changed = locked_cb,
 	.sirk_read_req = sirk_read_req_cb,
 };
 
-static int cmd_csip_register(const struct shell *sh, size_t argc, char **argv)
+static int cm_csip_set_member_register(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
-	struct bt_csip_register_param param = {
+	struct bt_csip_set_member_register_param param = {
 		.set_size = 2,
 		.rank = 1,
 		.lockable = true,
 		/* Using the CSIS test sample SIRK */
 		.set_sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
 			      0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
-		.cb = &csip_cbs
+		.cb = &csip_set_member_cbs
 	};
 
 	for (size_t argn = 1; argn < argc; argn++) {
@@ -96,7 +96,7 @@ static int cmd_csip_register(const struct shell *sh, size_t argc, char **argv)
 		}
 	}
 
-	err = bt_csip_register(&param, &csip);
+	err = bt_csip_set_member_register(&param, &csip);
 	if (err != 0) {
 		shell_error(sh, "Could not register CSIP: %d", err);
 		return err;
@@ -105,18 +105,18 @@ static int cmd_csip_register(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_csip_print_sirk(const struct shell *sh, size_t argc,
+static int cm_csip_set_member_print_sirk(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
-	bt_csip_print_sirk(csip);
+	bt_csip_set_member_print_sirk(csip);
 	return 0;
 }
 
-static int cmd_csip_lock(const struct shell *sh, size_t argc, char *argv[])
+static int cm_csip_set_member_lock(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
-	err = bt_csip_lock(csip, true, false);
+	err = bt_csip_set_member_lock(csip, true, false);
 	if (err != 0) {
 		shell_error(sh, "Failed to set lock: %d", err);
 		return -ENOEXEC;
@@ -127,7 +127,7 @@ static int cmd_csip_lock(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_csip_release(const struct shell *sh, size_t argc,
+static int cm_csip_set_member_release(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	bool force = false;
@@ -142,7 +142,7 @@ static int cmd_csip_release(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_csip_lock(csip, false, force);
+	err = bt_csip_set_member_lock(csip, false, force);
 
 	if (err != 0) {
 		shell_error(sh, "Failed to release lock: %d", err);
@@ -154,7 +154,7 @@ static int cmd_csip_release(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_csip_set_sirk_rsp(const struct shell *sh, size_t argc,
+static int cm_csip_set_member_set_sirk_rsp(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
 	if (strcmp(argv[1], "accept") == 0) {
@@ -173,36 +173,37 @@ static int cmd_csip_set_sirk_rsp(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_csip(const struct shell *sh, size_t argc, char **argv)
+static int cm_csip_set_member(const struct shell *sh, size_t argc, char **argv)
 {
 	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(csip_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(csip_set_member_cmds,
 	SHELL_CMD_ARG(register, NULL,
 		      "Initialize the service and register callbacks "
 		      "[size <int>] [rank <int>] [not-lockable] [sirk <data>]",
-		      cmd_csip_register, 1, 4),
+		      cm_csip_set_member_register, 1, 4),
 	SHELL_CMD_ARG(lock, NULL,
 		      "Lock the set",
-		      cmd_csip_lock, 1, 0),
+		      cm_csip_set_member_lock, 1, 0),
 	SHELL_CMD_ARG(release, NULL,
 		      "Release the set [force]",
-		      cmd_csip_release, 1, 1),
+		      cm_csip_set_member_release, 1, 1),
 	SHELL_CMD_ARG(print_sirk, NULL,
 		      "Print the currently used SIRK",
-		      cmd_csip_print_sirk, 1, 0),
+		      cm_csip_set_member_print_sirk, 1, 0),
 	SHELL_CMD_ARG(set_sirk_rsp, NULL,
 		      "Set the response used in SIRK requests "
 		      "<accept, accept_enc, reject, oob>",
-		      cmd_csip_set_sirk_rsp, 2, 0),
+		      cm_csip_set_member_set_sirk_rsp, 2, 0),
 		      SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_ARG_REGISTER(csip, &csip_cmds, "Bluetooth CSIP shell commands",
-		       cmd_csip, 1, 1);
+SHELL_CMD_ARG_REGISTER(csip_set_member, &csip_set_member_cmds,
+		       "Bluetooth CSIP set member shell commands",
+		       cm_csip_set_member, 1, 1);
 
 ssize_t csis_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
 			 const bool discoverable)
@@ -218,11 +219,11 @@ ssize_t csis_ad_data_add(struct bt_data *data_array, const size_t data_array_siz
 		 * from a SIRK that is exposed in encrypted form.
 		 */
 		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-		    !IS_ENABLED(CONFIG_BT_CSIP_ENC_SIRK_SUPPORT)) {
+		    !IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_ENC_SIRK_SUPPORT)) {
 			shell_warn(ctx_shell, "RSI derived from unencrypted SIRK");
 		}
 
-		err = bt_csip_generate_rsi(csip, ad_rsi);
+		err = bt_csip_set_member_generate_rsi(csip, ad_rsi);
 		if (err != 0) {
 			shell_error(ctx_shell, "Failed to generate RSI (err %d)", err);
 			return err;

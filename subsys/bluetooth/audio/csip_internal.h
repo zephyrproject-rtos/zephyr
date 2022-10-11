@@ -59,12 +59,12 @@ struct bt_csip_set_coordinator_svc_inst {
 };
 
 /* TODO: Rename to bt_csip_svc_inst */
-struct bt_csip_server {
+struct bt_csip_set_member_server {
 	struct bt_csip_set_sirk set_sirk;
 	uint8_t set_size;
 	uint8_t set_lock;
 	uint8_t rank;
-	struct bt_csip_cb *cb;
+	struct bt_csip_set_member_cb *cb;
 	struct k_work_delayable set_lock_timer;
 	bt_addr_le_t lock_client_addr;
 	struct bt_gatt_service *service_p;
@@ -77,9 +77,9 @@ struct bt_csip_server {
 struct bt_csip {
 	bool client_instance;
 	union {
-#if defined(CONFIG_BT_CSIP)
-		struct bt_csip_server srv;
-#endif /* CONFIG_BT_CSIP */
+#if defined(CONFIG_BT_CSIP_SET_MEMBER)
+		struct bt_csip_set_member_server srv;
+#endif /* CONFIG_BT_CSIP_SET_MEMBER */
 #if defined(CONFIG_BT_CSIP_SET_COORDINATOR)
 		struct bt_csip_set_coordinator_svc_inst cli;
 #endif /* CONFIG_BT_CSIP_SET_COORDINATOR */

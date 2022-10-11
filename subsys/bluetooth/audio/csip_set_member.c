@@ -37,7 +37,7 @@
 #include "common/log.h"
 #include "common/bt_str.h"
 
-static struct bt_csip csip_insts[CONFIG_BT_CSIP_MAX_INSTANCE_COUNT];
+static struct bt_csip csip_insts[CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT];
 static bt_addr_le_t server_dummy_addr; /* 0'ed address */
 
 struct csip_notify_foreach {
@@ -126,7 +126,7 @@ static int sirk_encrypt(struct bt_conn *conn,
 	int err;
 	uint8_t *k;
 
-	if (IS_ENABLED(CONFIG_BT_CSIP_TEST_SAMPLE_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA)) {
 		/* test_k is from the sample data from A.2 in the CSIS spec */
 		static uint8_t test_k[] = {0x67, 0x6e, 0x1b, 0x9b,
 					   0xd4, 0x48, 0x69, 0x6f,
@@ -181,13 +181,14 @@ static int generate_prand(uint32_t *dest)
 	return 0;
 }
 
-int bt_csip_generate_rsi(const struct bt_csip *csip, uint8_t rsi[BT_CSIP_RSI_SIZE])
+int bt_csip_set_member_generate_rsi(const struct bt_csip *csip,
+				    uint8_t rsi[BT_CSIP_RSI_SIZE])
 {
 	int res = 0;
 	uint32_t prand;
 	uint32_t hash;
 
-	if (IS_ENABLED(CONFIG_BT_CSIP_TEST_SAMPLE_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA)) {
 		/* prand is from the sample data from A.2 in the CSIS spec */
 		prand = 0x69f563;
 	} else {
@@ -227,7 +228,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 
 		if (cb_rsp == BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT) {
 			sirk = &csip->srv.set_sirk;
-		} else if (IS_ENABLED(CONFIG_BT_CSIP_ENC_SIRK_SUPPORT) &&
+		} else if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_ENC_SIRK_SUPPORT) &&
 			   cb_rsp == BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT_ENC) {
 			int err;
 
@@ -414,11 +415,12 @@ static ssize_t read_rank(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static void set_lock_timer_handler(struct k_work *work)
 {
 	struct k_work_delayable *delayable;
-	struct bt_csip_server *server;
+	struct bt_csip_set_member_server *server;
 	struct bt_csip *csip;
 
 	delayable = CONTAINER_OF(work, struct k_work_delayable, work);
-	server = CONTAINER_OF(delayable, struct bt_csip_server, set_lock_timer);
+	server = CONTAINER_OF(delayable, struct bt_csip_set_member_server,
+			      set_lock_timer);
 	csip = CONTAINER_OF(server, struct bt_csip, srv);
 
 	BT_DBG("Lock timeout, releasing");
@@ -640,16 +642,16 @@ static struct bt_conn_auth_info_cb auth_callbacks = {
 	}
 
 BT_GATT_SERVICE_INSTANCE_DEFINE(csip_service_list, csip_insts,
-				CONFIG_BT_CSIP_MAX_INSTANCE_COUNT,
+				CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT,
 				BT_CSIP_SERVICE_DEFINITION);
 
 /****************************** Public API ******************************/
-void *bt_csip_svc_decl_get(const struct bt_csip *csip)
+void *bt_csip_set_member_svc_decl_get(const struct bt_csip *csip)
 {
 	return csip->srv.service_p->attrs;
 }
 
-static bool valid_register_param(const struct bt_csip_register_param *param)
+static bool valid_register_param(const struct bt_csip_set_member_register_param *param)
 {
 	if (param->lockable && param->rank == 0) {
 		BT_DBG("Rank cannot be 0 if service is lockable");
@@ -662,18 +664,18 @@ static bool valid_register_param(const struct bt_csip_register_param *param)
 		return false;
 	}
 
-#if CONFIG_BT_CSIP_MAX_INSTANCE_COUNT > 1
+#if CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT > 1
 	if (param->parent == NULL) {
 		BT_DBG("Parent service not provided");
 		return false;
 	}
-#endif /* CONFIG_BT_CSIP_MAX_INSTANCE_COUNT > 1 */
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT > 1 */
 
 	return true;
 }
 
-int bt_csip_register(const struct bt_csip_register_param *param,
-		     struct bt_csip **csip)
+int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *param,
+				struct bt_csip **csip)
 {
 	static uint8_t instance_cnt;
 	struct bt_csip *inst;
@@ -714,7 +716,7 @@ int bt_csip_register(const struct bt_csip_register_param *param,
 	inst->srv.set_sirk.type = BT_CSIP_SIRK_TYPE_PLAIN;
 	inst->srv.cb = param->cb;
 
-	if (IS_ENABLED(CONFIG_BT_CSIP_TEST_SAMPLE_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA)) {
 		uint8_t test_sirk[] = {
 			0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
 			0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45,
@@ -732,7 +734,7 @@ int bt_csip_register(const struct bt_csip_register_param *param,
 	return 0;
 }
 
-int bt_csip_lock(struct bt_csip *csip, bool lock, bool force)
+int bt_csip_set_member_lock(struct bt_csip *csip, bool lock, bool force)
 {
 	uint8_t lock_val;
 	int err = 0;
@@ -761,7 +763,7 @@ int bt_csip_lock(struct bt_csip *csip, bool lock, bool force)
 	}
 }
 
-void bt_csip_print_sirk(const struct bt_csip *csip)
+void bt_csip_set_member_print_sirk(const struct bt_csip *csip)
 {
 	LOG_HEXDUMP_DBG(&csip->srv.set_sirk, sizeof(csip->srv.set_sirk),
 			"Set SIRK");

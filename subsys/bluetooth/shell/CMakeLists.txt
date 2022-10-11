@@ -42,8 +42,8 @@ zephyr_library_sources_ifdef(
   micp_mic_ctlr.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_CSIP
-  csip.c
+  CONFIG_BT_CSIP_SET_MEMBER
+  csip_set_member.c
   )
 zephyr_library_sources_ifdef(
   CONFIG_BT_CSIP_SET_COORDINATOR
