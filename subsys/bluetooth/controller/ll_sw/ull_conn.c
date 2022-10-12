@@ -3302,6 +3302,19 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 					     llctrl.conn_update_ind.win_offset);
 			tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
 			ctrl_tx_enqueue(conn, tx);
+
+			/* Acquire the reserved Rx node */
+			rx = conn->llcp_rx;
+			LL_ASSERT(rx && rx->hdr.link);
+			conn->llcp_rx = rx->hdr.link->mem;
+
+			/* Mark for buffer for release */
+			rx->hdr.type = NODE_RX_TYPE_RELEASE;
+
+			/* enqueue rx node towards Thread */
+			ll_rx_put(rx->hdr.link, rx);
+			ll_rx_sched();
+
 			return -ECANCELED;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
