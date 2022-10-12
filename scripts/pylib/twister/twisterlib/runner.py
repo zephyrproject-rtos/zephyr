@@ -943,6 +943,8 @@ class TwisterRunner:
                 self.results.skipped_filter += 1
                 self.results.skipped_configs += 1
                 self.results.skipped_cases += len(instance.testsuite.testcases)
+            elif instance.status == 'error':
+                self.results.error += 1
 
     def update_counting_after_pipeline(self):
         '''
