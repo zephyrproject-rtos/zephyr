@@ -15,6 +15,8 @@ ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 from twisterlib.testinstance import TestInstance
 from twisterlib.error import BuildError
+from twisterlib.runner import TwisterRunner
+from expr_parser import reserved
 
 
 TESTDATA_1 = [
@@ -87,3 +89,16 @@ def test_calculate_sizes(class_testplan, all_testsuites_dict, platforms_list):
 
     with pytest.raises(BuildError):
         assert testinstance.calculate_sizes() == "Missing/multiple output ELF binary"
+
+TESTDATA_3 = [
+    ('CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE and not (CONFIG_TOOLCHAIN_ARCMWDT_SUPPORTS_THREAD_LOCAL_STORAGE and CONFIG_USERSPACE)', ['kconfig']),
+    ('(dt_compat_enabled("st,stm32-flash-controller") or dt_compat_enabled("st,stm32h7-flash-controller")) and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")', ['dts']),
+    ('((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE) and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")) or (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE and dt_label_with_parent_compat_enabled("slot1_ns_partition", "fixed-partitions"))', ['dts', 'kconfig']),
+    ('((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX', ['full'])
+]
+
+@pytest.mark.parametrize("filter_expr, expected_stages", TESTDATA_3)
+def test_which_filter_stages(filter_expr, expected_stages):
+    logic_keys = reserved.keys()
+    stages = TwisterRunner.get_cmake_filter_stages(filter_expr, logic_keys)
+    assert sorted(stages) == sorted(expected_stages)

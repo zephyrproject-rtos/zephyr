@@ -225,7 +225,7 @@ class CMake:
         self.default_encoding = sys.getdefaultencoding()
         self.jobserver = jobserver
 
-    def parse_generated(self):
+    def parse_generated(self, filter_stages=[]):
         self.defconfig = {}
         return {}
 
@@ -299,7 +299,7 @@ class CMake:
 
         return results
 
-    def run_cmake(self, args=""):
+    def run_cmake(self, args="", filter_stages=[]):
 
         if not self.options.disable_warnings_as_errors:
             warnings_as_errors = 'y'
@@ -317,7 +317,17 @@ class CMake:
             f'-G{self.env.generator}'
         ]
 
-        if self.testsuite.sysbuild:
+        # If needed, run CMake using the package_helper script first, to only run
+        # a subset of all cmake modules. This output will be used to filter
+        # testcases, and the full CMake configuration will be run for
+        # testcases that should be built
+        if filter_stages:
+            cmake_filter_args = [
+                f'-DMODULES={",".join(filter_stages)}',
+                f'-P{canonical_zephyr_base}/cmake/package_helper.cmake',
+            ]
+
+        if self.testsuite.sysbuild and not filter_stages:
             logger.debug("Building %s using sysbuild" % (self.source_dir))
             source_args = [
                 f'-S{canonical_zephyr_base}/share/sysbuild',
@@ -336,6 +346,10 @@ class CMake:
 
         cmake = shutil.which('cmake')
         cmd = [cmake] + cmake_args
+
+        if filter_stages:
+            cmd += cmake_filter_args
+
         kwargs = dict()
 
         log_command(logger, "Calling cmake", cmd)
@@ -355,7 +369,7 @@ class CMake:
         out, _ = p.communicate()
 
         if p.returncode == 0:
-            filter_results = self.parse_generated()
+            filter_results = self.parse_generated(filter_stages)
             msg = "Finished building %s for %s" % (self.source_dir, self.platform.name)
             logger.debug(msg)
             results = {'msg': msg, 'filter': filter_results}
@@ -377,6 +391,7 @@ class CMake:
 
         return results
 
+
 class FilterBuilder(CMake):
 
     def __init__(self, testsuite, platform, source_dir, build_dir, jobserver):
@@ -384,12 +399,12 @@ class FilterBuilder(CMake):
 
         self.log = "config-twister.log"
 
-    def parse_generated(self):
+    def parse_generated(self, filter_stages=[]):
 
         if self.platform.name == "unit_testing":
             return {}
 
-        if self.testsuite.sysbuild:
+        if self.testsuite.sysbuild and not filter_stages:
             # Load domain yaml to get default domain build directory
             domain_path = os.path.join(self.build_dir, "domains.yaml")
             domains = Domains.from_file(domain_path)
@@ -400,21 +415,26 @@ class FilterBuilder(CMake):
             edt_pickle = os.path.join(domain_build, "zephyr", "edt.pickle")
         else:
             cmake_cache_path = os.path.join(self.build_dir, "CMakeCache.txt")
-            defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
+            # .config is only available after kconfig stage in cmake. If only dt based filtration is required
+            # package helper call won't produce .config
+            if not filter_stages or "kconfig" in filter_stages:
+                defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
+            # dt is compiled before kconfig, so edt_pickle is available regardless of choice of filter stages
             edt_pickle = os.path.join(self.build_dir, "zephyr", "edt.pickle")
 
 
-        with open(defconfig_path, "r") as fp:
-            defconfig = {}
-            for line in fp.readlines():
-                m = self.config_re.match(line)
-                if not m:
-                    if line.strip() and not line.startswith("#"):
-                        sys.stderr.write("Unrecognized line %s\n" % line)
-                    continue
-                defconfig[m.group(1)] = m.group(2).strip()
+        if not filter_stages or "kconfig" in filter_stages:
+            with open(defconfig_path, "r") as fp:
+                defconfig = {}
+                for line in fp.readlines():
+                    m = self.config_re.match(line)
+                    if not m:
+                        if line.strip() and not line.startswith("#"):
+                            sys.stderr.write("Unrecognized line %s\n" % line)
+                        continue
+                    defconfig[m.group(1)] = m.group(2).strip()
 
-        self.defconfig = defconfig
+            self.defconfig = defconfig
 
         cmake_conf = {}
         try:
@@ -432,7 +452,8 @@ class FilterBuilder(CMake):
             "PLATFORM": self.platform.name
         }
         filter_data.update(os.environ)
-        filter_data.update(self.defconfig)
+        if not filter_stages or "kconfig" in filter_stages:
+            filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
 
         if self.testsuite.sysbuild and self.env.options.device_testing:
@@ -524,6 +545,22 @@ class ProjectBuilder(FilterBuilder):
         op = message.get('op')
 
         self.instance.setup_handler(self.env)
+
+        if op == "filter":
+            res = self.cmake(filter_stages=self.instance.filter_stages)
+            if self.instance.status in ["failed", "error"]:
+                pipeline.put({"op": "report", "test": self.instance})
+            else:
+                # Here we check the dt/kconfig filter results coming from running cmake
+                if self.instance.name in res['filter'] and res['filter'][self.instance.name]:
+                    logger.debug("filtering %s" % self.instance.name)
+                    self.instance.status = "filtered"
+                    self.instance.reason = "runtime filter"
+                    results.skipped_runtime += 1
+                    self.instance.add_missing_case_status("skipped")
+                    pipeline.put({"op": "report", "test": self.instance})
+                else:
+                    pipeline.put({"op": "cmake", "test": self.instance})
 
         # The build process, call cmake and build with configured generator
         if op == "cmake":
@@ -845,7 +882,7 @@ class ProjectBuilder(FilterBuilder):
 
         return args_expanded
 
-    def cmake(self):
+    def cmake(self, filter_stages=[]):
         args = self.cmake_assemble_args(
             self.testsuite.extra_args.copy(), # extra_args from YAML
             self.instance.handler,
@@ -856,7 +893,7 @@ class ProjectBuilder(FilterBuilder):
             self.instance.build_dir,
         )
 
-        res = self.run_cmake(args)
+        res = self.run_cmake(args,filter_stages)
         return res
 
     def build(self):
@@ -912,7 +949,6 @@ class ProjectBuilder(FilterBuilder):
                 instance.metrics["available_ram"] = 0
                 instance.metrics["unrecognized"] = []
             instance.metrics["handler_time"] = instance.execution_time
-
 
 class TwisterRunner:
 
@@ -1037,12 +1073,19 @@ class TwisterRunner:
                 logger.debug(f"adding {instance.name}")
                 if instance.status:
                     instance.retries += 1
-
                 instance.status = None
+
+                # Check if cmake package_helper script can be run in advance.
+                instance.filter_stages = []
+                if instance.testsuite.filter:
+                    instance.filter_stages = self.get_cmake_filter_stages(instance.testsuite.filter, expr_parser.reserved.keys())
                 if test_only and instance.run:
                     pipeline.put({"op": "run", "test": instance})
+                elif instance.filter_stages and "full" not in instance.filter_stages:
+                    pipeline.put({"op": "filter", "test": instance})
                 else:
                     pipeline.put({"op": "cmake", "test": instance})
+
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
         if sys.platform == 'linux':
@@ -1094,3 +1137,38 @@ class TwisterRunner:
             logger.info("Execution interrupted")
             for p in processes:
                 p.terminate()
+
+    @staticmethod
+    def get_cmake_filter_stages(filt, logic_keys):
+        """ Analyze filter expressions from test yaml and decide if dts and/or kconfig based filtering will be needed."""
+        dts_required = False
+        kconfig_required = False
+        full_required = False
+        filter_stages = []
+
+        # Compress args in expressions like "function('x', 'y')" so they are not split when splitting by whitespaces
+        filt = filt.replace(", ", ",")
+        # Remove logic words
+        for k in logic_keys:
+            filt = filt.replace(f"{k} ", "")
+        # Remove brackets
+        filt = filt.replace("(", "")
+        filt = filt.replace(")", "")
+        # Splite by whitespaces
+        filt = filt.split()
+        for expression in filt:
+            if expression.startswith("dt_"):
+                dts_required = True
+            elif expression.startswith("CONFIG"):
+                kconfig_required = True
+            else:
+                full_required = True
+
+        if full_required:
+            return ["full"]
+        if dts_required:
+            filter_stages.append("dts")
+        if kconfig_required:
+            filter_stages.append("kconfig")
+
+        return filter_stages
