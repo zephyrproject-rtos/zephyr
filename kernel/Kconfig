@@ -879,6 +879,14 @@ config MP_NUM_CPUS
 	  Number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
 
+config MP_MAX_NUM_CPUS
+	int "Maximum number of CPUs/cores"
+	default MP_NUM_CPUS
+	range 1 4
+	help
+	  Maximum number of multiprocessing-capable cores available to the
+	  multicpu API and SMP features.
+
 config SCHED_IPI_SUPPORTED
 	bool
 	help
