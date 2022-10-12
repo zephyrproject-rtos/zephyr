@@ -62,8 +62,10 @@ static struct net_buf rf2xx_ack_frame = {
 };
 static struct net_pkt rf2xx_ack_pkt = {
 	.buffer = &rf2xx_ack_frame,
-	.ieee802154_lqi = 80,
-	.ieee802154_rssi = -40,
+	.cb = {
+		.lqi = 80,
+		.rssi = -40,
+	}
 };
 #endif /* CONFIG_NET_L2_OPENTHREAD */
 

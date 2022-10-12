@@ -1803,6 +1803,19 @@ static void clone_pkt_lladdr(struct net_pkt *pkt, struct net_pkt *clone_pkt,
 	}
 }
 
+#if defined(NET_PKT_HAS_CONTROL_BLOCK)
+static inline void clone_pkt_cb(struct net_pkt *pkt, struct net_pkt *clone_pkt)
+{
+	memcpy(net_pkt_cb(clone_pkt), net_pkt_cb(pkt), sizeof(clone_pkt->cb));
+}
+#else
+static inline void clone_pkt_cb(struct net_pkt *pkt, struct net_pkt *clone_pkt)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(clone_pkt);
+}
+#endif
+
 static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 {
 	net_pkt_set_family(clone_pkt, net_pkt_family(pkt));
@@ -1853,21 +1866,7 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 					  net_pkt_ipv6_next_hdr(pkt));
 	}
 
-#if defined(CONFIG_IEEE802154)
-	/* ieee802154_rssi and ieee802154_txpwr form a union, copying one of them is enough */
-	net_pkt_set_ieee802154_rssi(clone_pkt, net_pkt_ieee802154_rssi(pkt));
-	net_pkt_set_ieee802154_lqi(clone_pkt, net_pkt_ieee802154_lqi(pkt));
-	net_pkt_set_ieee802154_arb(clone_pkt, net_pkt_ieee802154_arb(pkt));
-	net_pkt_set_ieee802154_ack_fpb(clone_pkt, net_pkt_ieee802154_ack_fpb(pkt));
-	net_pkt_set_ieee802154_frame_secured(clone_pkt, net_pkt_ieee802154_frame_secured(pkt));
-	net_pkt_set_ieee802154_mac_hdr_rdy(clone_pkt, net_pkt_ieee802154_mac_hdr_rdy(pkt));
-#if defined(CONFIG_IEEE802154_2015)
-	net_pkt_set_ieee802154_fv2015(clone_pkt, net_pkt_ieee802154_fv2015(pkt));
-	net_pkt_set_ieee802154_ack_seb(clone_pkt, net_pkt_ieee802154_ack_seb(pkt));
-	net_pkt_set_ieee802154_ack_fc(clone_pkt, net_pkt_ieee802154_ack_fc(pkt));
-	net_pkt_set_ieee802154_ack_keyid(clone_pkt, net_pkt_ieee802154_ack_keyid(pkt));
-#endif
-#endif
+	clone_pkt_cb(pkt, clone_pkt);
 }
 
 static struct net_pkt *net_pkt_clone_internal(struct net_pkt *pkt,
