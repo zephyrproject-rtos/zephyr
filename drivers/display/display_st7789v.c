@@ -299,6 +299,7 @@ static void st7789v_lcd_init(const struct device *dev)
 	struct st7789v_data *data = dev->data;
 	const struct st7789v_config *config = dev->config;
 	uint8_t tmp;
+	uint8_t tmp2[2];
 
 	st7789v_set_lcd_margins(dev, data->x_offset,
 				data->y_offset);
@@ -326,8 +327,9 @@ static void st7789v_lcd_init(const struct device *dev)
 	st7789v_transmit(dev, ST7789V_CMD_VCOMS, &tmp, 1);
 
 	if (config->vdv_vrh_enable) {
-		tmp = 0x01;
-		st7789v_transmit(dev, ST7789V_CMD_VDVVRHEN, &tmp, 1);
+		tmp2[0] = 0x01;
+		tmp2[1] = 0xFF;
+		st7789v_transmit(dev, ST7789V_CMD_VDVVRHEN, tmp2, sizeof(tmp2));
 
 		tmp = config->vrh_value;
 		st7789v_transmit(dev, ST7789V_CMD_VRH, &tmp, 1);
