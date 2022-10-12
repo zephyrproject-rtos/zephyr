@@ -45,10 +45,10 @@ struct k_thread z_main_thread;
 
 #ifdef CONFIG_MULTITHREADING
 __pinned_bss
-struct k_thread z_idle_threads[CONFIG_MP_NUM_CPUS];
+struct k_thread z_idle_threads[CONFIG_MP_MAX_NUM_CPUS];
 
 static K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_idle_stacks,
-					  CONFIG_MP_NUM_CPUS,
+					  CONFIG_MP_MAX_NUM_CPUS,
 					  CONFIG_IDLE_STACK_SIZE);
 #endif /* CONFIG_MULTITHREADING */
 
@@ -84,7 +84,7 @@ extern const struct init_entry __init_SMP_start[];
  * switches to the init thread.
  */
 K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_interrupt_stacks,
-				   CONFIG_MP_NUM_CPUS,
+				   CONFIG_MP_MAX_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
 
 extern void idle(void *unused1, void *unused2, void *unused3);

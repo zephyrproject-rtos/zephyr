@@ -78,7 +78,7 @@ void default_intr_handler(void *arg)
 	printk("Unhandled interrupt %d on cpu %d!\n", (int)arg, esp_core_id());
 }
 
-static struct intr_alloc_table_entry intr_alloc_table[ESP_INTC_INTS_NUM * CONFIG_MP_NUM_CPUS];
+static struct intr_alloc_table_entry intr_alloc_table[ESP_INTC_INTS_NUM * CONFIG_MP_MAX_NUM_CPUS];
 
 static void set_interrupt_handler(int n, intc_handler_t f, void *arg)
 {
@@ -92,10 +92,10 @@ static void set_interrupt_handler(int n, intc_handler_t f, void *arg)
 static struct vector_desc_t *vector_desc_head; /* implicitly initialized to NULL */
 
 /* This bitmask has an 1 if the int should be disabled when the flash is disabled. */
-static uint32_t non_iram_int_mask[CONFIG_MP_NUM_CPUS];
+static uint32_t non_iram_int_mask[CONFIG_MP_MAX_NUM_CPUS];
 /* This bitmask has 1 in it if the int was disabled using esp_intr_noniram_disable. */
-static uint32_t non_iram_int_disabled[CONFIG_MP_NUM_CPUS];
-static bool non_iram_int_disabled_flag[CONFIG_MP_NUM_CPUS];
+static uint32_t non_iram_int_disabled[CONFIG_MP_MAX_NUM_CPUS];
+static bool non_iram_int_disabled_flag[CONFIG_MP_MAX_NUM_CPUS];
 
 /*
  * Inserts an item into vector_desc list so that the list is sorted

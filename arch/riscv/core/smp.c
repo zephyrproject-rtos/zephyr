@@ -11,7 +11,7 @@
 volatile struct {
 	arch_cpustart_t fn;
 	void *arg;
-} riscv_cpu_init[CONFIG_MP_NUM_CPUS];
+} riscv_cpu_init[CONFIG_MP_MAX_NUM_CPUS];
 
 volatile uintptr_t riscv_cpu_wake_flag;
 volatile void *riscv_cpu_sp;

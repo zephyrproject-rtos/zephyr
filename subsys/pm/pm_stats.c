@@ -24,12 +24,12 @@ STATS_NAME(pm_stats, state_last_cycles)
 STATS_NAME(pm_stats, state_total_cycles)
 STATS_NAME_END(pm_stats);
 
-static STATS_SECT_DECL(pm_stats) stats[CONFIG_MP_NUM_CPUS][PM_STATE_COUNT];
+static STATS_SECT_DECL(pm_stats) stats[CONFIG_MP_MAX_NUM_CPUS][PM_STATE_COUNT];
 
 #define PM_STAT_NAME_LEN sizeof("pm_cpu_XXX_state_X_stats")
-static char names[CONFIG_MP_NUM_CPUS][PM_STATE_COUNT][PM_STAT_NAME_LEN];
-static uint32_t time_start[CONFIG_MP_NUM_CPUS];
-static uint32_t time_stop[CONFIG_MP_NUM_CPUS];
+static char names[CONFIG_MP_MAX_NUM_CPUS][PM_STATE_COUNT][PM_STAT_NAME_LEN];
+static uint32_t time_start[CONFIG_MP_MAX_NUM_CPUS];
+static uint32_t time_stop[CONFIG_MP_MAX_NUM_CPUS];
 
 static int pm_stats_init(const struct device *dev)
 {

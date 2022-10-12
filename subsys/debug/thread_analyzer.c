@@ -126,7 +126,7 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	cb(&info);
 }
 
-K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
 static void isr_stacks(void)
