@@ -474,8 +474,8 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 
 	LOG_DBG("stack %p for thread %p: obj_size=%zu buf_start=%p "
 		" buf_size %zu stack_ptr=%p",
-		stack, new_thread, stack_obj_size, stack_buf_start,
-		stack_buf_size, stack_ptr);
+		stack, new_thread, stack_obj_size, (void *)stack_buf_start,
+		stack_buf_size, (void *)stack_ptr);
 
 #ifdef CONFIG_INIT_STACKS
 	memset(stack_buf_start, 0xaa, stack_buf_size);
