@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Andriy Gelman
+
+config BOARD_XMC4800_AUTOMATION_V2
+	bool "XMC4800 Automation board"
+	depends on SOC_SERIES_XMC_4XXX
+	select SOC_PART_NUMBER_E196X2048

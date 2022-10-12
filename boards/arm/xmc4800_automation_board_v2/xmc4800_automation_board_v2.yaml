@@ -1,0 +1,16 @@
+identifier: xmc4800_automation_board_v2
+name: XMC4800-AUTOMATION-BOARD-V2
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - dma
+  - gpio
+  - spi
+  - uart
+  - flash
+ram: 352
+flash: 2048

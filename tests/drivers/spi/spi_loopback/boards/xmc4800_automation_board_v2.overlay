@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2022 Schlumberger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi_mosi_p0_1_u1c1 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+};
+
+&spi_miso_p0_0_u1c1 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+};
+
+&spi_sclk_p0_13_u1c1 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+};
+
+&usic1ch1{
+	compatible = "infineon,xmc4xxx-spi";
+	pinctrl-0 = <&spi_mosi_p0_1_u1c1 &spi_miso_p0_0_u1c1 &spi_sclk_p0_13_u1c1>;
+	pinctrl-names = "default";
+	miso-src = "DX0D";
+	interrupts = <90 1>;
+	interrupt-names = "rx";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};

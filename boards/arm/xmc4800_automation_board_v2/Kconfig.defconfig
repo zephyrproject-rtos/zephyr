@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Andriy Gelman
+
+if BOARD_XMC4800_AUTOMATION_V2
+
+config BOARD
+	default "xmc4800_automation_board_v2"
+
+endif

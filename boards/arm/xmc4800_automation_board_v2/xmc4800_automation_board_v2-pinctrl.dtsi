@@ -1,0 +1,212 @@
+/*
+ * Copyright (c) 2022 Andriy Gelman
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <infineon/xmc4800_E196x2048-pinctrl.dtsi>
+
+&uart_tx_p3_11_u2c1 {
+	drive-strength = "strong-soft-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};
+&uart_rx_p3_12_u2c1 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+};
+
+&ebu_p0_2_ad0 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p0_3_ad1 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p0_4_ad2 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p0_5_ad3 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p0_6_adv {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p0_7_ad6 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p0_8_ad7 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p1_2_ad14 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p1_3_ad15 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p1_6_ad10 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p1_7_ad11 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p1_8_ad12 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p1_9_ad13 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p1_12_ad16 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p1_13_ad17 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p1_14_ad18 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p1_15_ad19 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p2_0_ad20 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p2_1_ad21 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p2_2_ad22 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p2_3_ad23 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p2_4_ad24 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p2_5_ad25 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p2_8_ad26 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p2_9_ad27 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p2_10_ad28 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p2_11_ad29 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p3_5_ad4 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p3_6_ad5 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p4_0_ad8 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p4_1_ad9 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p3_1_rd_nwr {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p5_4_ras {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p5_5_cas {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p3_2_cs0 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p2_14_bc0 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p2_15_bc1 {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p5_3_cke {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};
+&ebu_p5_8_sdclko {
+	drive-strength = "strong-sharp-edge";
+	drive-push-pull;
+	output-low;
+};

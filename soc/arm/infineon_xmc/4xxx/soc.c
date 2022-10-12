@@ -15,6 +15,8 @@
 #define PMU_FLASH_WS		(0x3U)
 #elif CONFIG_SOC_XMC4700
 #define PMU_FLASH_WS		(0x4U)
+#elif CONFIG_SOC_XMC4800
+#define PMU_FLASH_WS		(0x4U)
 #endif
 
 void z_arm_platform_init(void)

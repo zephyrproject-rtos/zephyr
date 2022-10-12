@@ -48,6 +48,7 @@ tests:
     platform_exclude:
       - xmc45_relax_kit
       - xmc47_relax_kit
+      - xmc4800_automation_board_v2
     build_only: true
   drivers.uart.async_api.lpuart:
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART

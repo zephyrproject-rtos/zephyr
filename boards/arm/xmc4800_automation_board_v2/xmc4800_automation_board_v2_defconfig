@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Andriy Gelman
+
+CONFIG_BOARD_XMC4800_AUTOMATION_V2=y
+CONFIG_SOC_SERIES_XMC_4XXX=y
+CONFIG_SOC_XMC4800=y
+CONFIG_ARM_MPU=y
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_USE_DT_CODE_PARTITION=y

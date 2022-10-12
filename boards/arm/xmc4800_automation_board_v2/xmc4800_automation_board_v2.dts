@@ -1,0 +1,190 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2023 Andriy Gelman
+ *
+ */
+
+/dts-v1/;
+
+#include <infineon/xmc4800_E196x2048.dtsi>
+#include <infineon/xmc4800_E196x2048-intc.dtsi>
+#include <zephyr/dt-bindings/memory-controller/infineon-xmc4xxx-ebu.h>
+
+#include "xmc4800_automation_board_v2-pinctrl.dtsi"
+
+/ {
+	model = "Infineon XMC4800 Automation Board V2";
+	compatible = "infineon,xmc4xxx";
+
+	aliases {
+		led0 = &led_red;
+		die-temp0 = &die_temp;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_red: led_red {
+			gpios = <&gpio4 4 GPIO_ACTIVE_HIGH>;
+		};
+		led_green: led_green {
+			gpios = <&gpio4 5 GPIO_ACTIVE_HIGH>;
+		};
+		led_blue: led_blue {
+			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	sdram1: sdram@60000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0x60000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "SDRAM1";
+	};
+
+	chosen {
+		zephyr,sram = &psram1;
+		zephyr,flash = &flash0;
+		zephyr,console = &usic2ch1;
+		zephyr,shell-uart = &usic2ch1;
+		zephyr,flash-controller = &flash_controller;
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+&dsram1 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "DSRAM1";
+};
+
+&dsram2 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "DSRAM2";
+};
+
+&flash_controller {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			reg = <0x0 0x140000>;
+			read-only;
+		};
+
+		storage_partition: partition@140000 {
+			label = "storage";
+			reg = <0x140000 0xc0000>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <144000000>;
+};
+
+&ebu {
+	pinctrl-0 = <
+		&ebu_p0_2_ad0
+		&ebu_p0_3_ad1
+		&ebu_p0_4_ad2
+		&ebu_p0_5_ad3
+		&ebu_p0_6_adv
+		&ebu_p0_7_ad6
+		&ebu_p0_8_ad7
+		&ebu_p1_2_ad14
+		&ebu_p1_3_ad15
+		&ebu_p1_6_ad10
+		&ebu_p1_7_ad11
+		&ebu_p1_8_ad12
+		&ebu_p1_9_ad13
+		&ebu_p1_12_ad16
+		&ebu_p1_13_ad17
+		&ebu_p1_14_ad18
+		&ebu_p1_15_ad19
+		&ebu_p2_0_ad20
+		&ebu_p2_1_ad21
+		&ebu_p2_2_ad22
+		&ebu_p2_3_ad23
+		&ebu_p2_4_ad24
+		&ebu_p2_5_ad25
+		&ebu_p2_8_ad26
+		&ebu_p2_9_ad27
+		&ebu_p2_10_ad28
+		&ebu_p2_11_ad29
+		&ebu_p3_5_ad4
+		&ebu_p3_6_ad5
+		&ebu_p4_0_ad8
+		&ebu_p4_1_ad9
+		&ebu_p3_1_rd_nwr
+		&ebu_p5_4_ras
+		&ebu_p5_5_cas
+		&ebu_p3_2_cs0
+		&ebu_p2_14_bc0
+		&ebu_p2_15_bc1
+		&ebu_p5_3_cke
+		&ebu_p5_8_sdclko
+	>;
+	pinctrl-names = "default";
+	clk-config = <XMC4XXX_EBU_SET_CLC(0, 1, 0)>;
+	modes-config = <XMC4XXX_EBU_SET_MODCON(0, 0, 0, 3, 0, 0)>;
+	gpio-control-config = <XMC4XXX_EBU_SET_USERCON(0x1ff, 0)>;
+	sdram-control = <XMC4XXX_EBU_SET_SDRMCON(0, 0, 0, 0, 2, 1, 5, 1, 1, 1, 0, 0, 0)>;
+	sdram-operation-mode = <XMC4XXX_EBU_SDRMOD(0, 0, 1, 0, 3, 0)>;
+	sdram-refresh-control = <XMC4XXX_EBU_SDRMREF(7, 1, 255, 0, 1, 1, 1, 2)>;
+	ebu_sdram@0 {
+			reg = <0>;
+			infineon,device-type = "SDRAM";
+			infineon,address-bus-width = "16-bit";
+			infineon,region-enable;
+			infineon,alternate-region-enable;
+			infineon,bus-read-config = <XMC4XXX_EBU_SET_BUSRCON(
+						    3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0)>;
+			infineon,bus-read-timing = <XMC4XXX_EBU_SET_BUSRAP(
+						    15, 7, 4, 0, 0, 0, 15, 15, 15)>;
+			infineon,bus-write-config = <XMC4XXX_EBU_SET_BUSWCON(
+						    3, 0, 0, 0, 0, 0, 1, 0, 0, 0)>;
+			infineon,bus-write-timing = <XMC4XXX_EBU_SET_BUSWAP(
+						    15, 7, 4, 0, 0, 0, 15, 15, 15)>;
+	};
+	status = "okay";
+};
+
+&usic2ch1 {
+	compatible = "infineon,xmc4xxx-uart";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart_tx_p3_11_u2c1 &uart_rx_p3_12_u2c1>;
+	pinctrl-names = "default";
+	input-src = "DX0D";
+	interrupts = <96 1 97 1>;
+	interrupt-names = "tx", "rx";
+	fifo-start-offset = <0>;
+	fifo-tx-size = <16>;
+	fifo-rx-size = <16>;
+	status = "okay";
+};
+
+&adc0 {
+	vref-internal-mv = <3300>;
+};
+
+&adc1 {
+	vref-internal-mv = <3300>;
+};
+
+&adc2 {
+	vref-internal-mv = <3300>;
+};
+
+&adc3 {
+	vref-internal-mv = <3300>;
+};
+
+&gpio4 {
+	status = "okay";
+};
