@@ -8,6 +8,8 @@
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/kobject.h>
+#include <zephyr/app_memory/mem_domain.h>
 #include <zephyr/rtio/rtio_spsc.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/rtio/rtio_executor_simple.h>
@@ -238,7 +240,7 @@ RTIO_DEFINE(r_simple_simp, (struct rtio_executor *)&simple_exec_simp, 4, 4);
 RTIO_EXECUTOR_CONCURRENT_DEFINE(simple_exec_con, 1);
 RTIO_DEFINE(r_simple_con, (struct rtio_executor *)&simple_exec_con, 4, 4);
 
-struct rtio_iodev_test iodev_test_simple;
+RTIO_IODEV_TEST_DEFINE(iodev_test_simple, 1);
 
 /**
  * @brief Test the basics of the RTIO API
@@ -285,7 +287,9 @@ RTIO_DEFINE(r_chain_simp, (struct rtio_executor *)&chain_exec_simp, 4, 4);
 RTIO_EXECUTOR_CONCURRENT_DEFINE(chain_exec_con, 1);
 RTIO_DEFINE(r_chain_con, (struct rtio_executor *)&chain_exec_con, 4, 4);
 
-struct rtio_iodev_test iodev_test_chain[2];
+RTIO_IODEV_TEST_DEFINE(iodev_test_chain0, 1);
+RTIO_IODEV_TEST_DEFINE(iodev_test_chain1, 1);
+const struct rtio_iodev *iodev_test_chain[] = {&iodev_test_chain0, &iodev_test_chain1};
 
 /**
  * @brief Test chained requests
@@ -304,7 +308,7 @@ void test_rtio_chain_(struct rtio *r)
 	for (int i = 0; i < 4; i++) {
 		sqe = rtio_spsc_acquire(r->sq);
 		zassert_not_null(sqe, "Expected a valid sqe");
-		rtio_sqe_prep_nop(sqe, (struct rtio_iodev *)&iodev_test_chain[i % 2],
+		rtio_sqe_prep_nop(sqe, iodev_test_chain[i % 2],
 				  &userdata[i]);
 		sqe->flags |= RTIO_SQE_CHAINED;
 	}
@@ -329,7 +333,7 @@ void test_rtio_chain_(struct rtio *r)
 ZTEST(rtio_api, test_rtio_chain)
 {
 	for (int i = 0; i < 2; i++) {
-		rtio_iodev_test_init(&iodev_test_chain[i]);
+		rtio_iodev_test_init(iodev_test_chain[i]);
 	}
 
 	TC_PRINT("rtio chain simple\n");
@@ -345,7 +349,9 @@ RTIO_DEFINE(r_multi_simp, (struct rtio_executor *)&multi_exec_simp, 4, 4);
 RTIO_EXECUTOR_CONCURRENT_DEFINE(multi_exec_con, 2);
 RTIO_DEFINE(r_multi_con, (struct rtio_executor *)&multi_exec_con, 4, 4);
 
-struct rtio_iodev_test iodev_test_multi[2];
+RTIO_IODEV_TEST_DEFINE(iodev_test_multi0, 1);
+RTIO_IODEV_TEST_DEFINE(iodev_test_multi1, 1);
+const struct rtio_iodev *iodev_test_multi[] = {&iodev_test_multi0, &iodev_test_multi1};
 
 /**
  * @brief Test multiple asynchronous chains against one iodev
@@ -361,7 +367,7 @@ void test_rtio_multiple_chains_(struct rtio *r)
 		for (int j = 0; j < 2; j++) {
 			sqe = rtio_spsc_acquire(r->sq);
 			zassert_not_null(sqe, "Expected a valid sqe");
-			rtio_sqe_prep_nop(sqe, (struct rtio_iodev *)&iodev_test_multi[i],
+			rtio_sqe_prep_nop(sqe, iodev_test_multi[i],
 					  (void *)userdata[i*2 + j]);
 			if (j == 0) {
 				sqe->flags |= RTIO_SQE_CHAINED;
@@ -405,7 +411,7 @@ void test_rtio_multiple_chains_(struct rtio *r)
 ZTEST(rtio_api, test_rtio_multiple_chains)
 {
 	for (int i = 0; i < 2; i++) {
-		rtio_iodev_test_init(&iodev_test_multi[i]);
+		rtio_iodev_test_init(iodev_test_multi[i]);
 	}
 
 	TC_PRINT("rtio multiple simple\n");
@@ -413,6 +419,83 @@ ZTEST(rtio_api, test_rtio_multiple_chains)
 	TC_PRINT("rtio_multiple concurrent\n");
 	test_rtio_multiple_chains_(&r_multi_con);
 }
+
+
+
+#ifdef CONFIG_USERSPACE
+K_APPMEM_PARTITION_DEFINE(rtio_partition);
+K_APP_BMEM(rtio_partition) uint8_t syscall_bufs[4];
+struct k_mem_domain rtio_domain;
+#else
+uint8_t syscall_bufs[4];
+#endif
+
+RTIO_EXECUTOR_SIMPLE_DEFINE(syscall_simple);
+RTIO_DEFINE(r_syscall, (struct rtio_executor *)&syscall_simple, 4, 4);
+RTIO_IODEV_TEST_DEFINE(iodev_test_syscall, 1);
+
+void rtio_syscall_test(void *p1, void *p2, void *p3)
+{
+	int res;
+	struct rtio_sqe sqe;
+	struct rtio_cqe cqe;
+
+	struct rtio *r = &r_syscall;
+
+	for (int i = 0; i < 4; i++) {
+		TC_PRINT("copying sqe in from stack\n");
+		/* Not really legal from userspace! Ugh */
+		rtio_sqe_prep_nop(&sqe, &iodev_test_syscall,
+				  &syscall_bufs[i]);
+		res = rtio_sqe_copy_in(r, &sqe, 1);
+		zassert_equal(res, 0, "Expected success copying sqe");
+	}
+
+	TC_PRINT("submitting\n");
+	res = rtio_submit(r, 4);
+
+	for (int i = 0; i < 4; i++) {
+		TC_PRINT("consume %d\n", i);
+		res = rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER);
+		zassert_equal(res, 1, "Expected success copying cqe");
+		zassert_ok(cqe.result, "Result should be ok");
+		zassert_equal_ptr(cqe.userdata, &syscall_bufs[i],
+				  "Expected in order completions");
+	}
+
+}
+
+#ifdef CONFIG_USERSPACE
+ZTEST(rtio_api, test_rtio_syscalls_usermode)
+{
+	struct k_mem_partition *part0 = &rtio_partition;
+
+	TC_PRINT("syscalls from user mode test\n");
+	TC_PRINT("test iodev init\n");
+	rtio_iodev_test_init(&iodev_test_syscall);
+	TC_PRINT("mem domain init\n");
+	k_mem_domain_init(&rtio_domain, 1, &part0);
+	TC_PRINT("mem domain add current\n");
+	k_mem_domain_add_thread(&rtio_domain, k_current_get());
+	TC_PRINT("rtio access grant\n");
+	rtio_access_grant(&r_syscall, k_current_get());
+	TC_PRINT("rtio iodev access grant, ptr %p\n", &iodev_test_syscall);
+	k_object_access_grant(&iodev_test_syscall, k_current_get());
+	TC_PRINT("user mode enter\n");
+	k_thread_user_mode_enter(rtio_syscall_test, NULL, NULL, NULL);
+}
+#endif /* CONFIG_USERSPACE */
+
+
+ZTEST(rtio_api, test_rtio_syscalls)
+{
+	TC_PRINT("test iodev init\n");
+	rtio_iodev_test_init(&iodev_test_syscall);
+	TC_PRINT("syscalls from kernel mode\n");
+	rtio_syscall_test(NULL, NULL, NULL);
+}
+
+
 
 
 ZTEST_SUITE(rtio_spsc, NULL, NULL, NULL, NULL, NULL);

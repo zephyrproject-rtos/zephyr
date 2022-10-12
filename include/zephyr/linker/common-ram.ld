@@ -142,6 +142,21 @@
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif /* CONFIG_USB_DEVICE_BOS */
 
+
+#if defined(CONFIG_RTIO)
+	SECTION_DATA_PROLOGUE(rtio,,SUBALIGN(4))
+	{
+		__rtio_start = .;
+		*(".rtio.*")
+		KEEP(*(SORT_BY_NAME(".rtio.*")))
+		__rtio_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	ITERABLE_SECTION_RAM(rtio, 4)
+	ITERABLE_SECTION_RAM(rtio_iodev, 4)
+#endif /* CONFIG_RTIO */
+
+
 #ifdef CONFIG_USERSPACE
 	_static_kernel_objects_end = .;
 #endif
