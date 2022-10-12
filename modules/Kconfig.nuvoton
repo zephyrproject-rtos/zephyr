@@ -43,4 +43,8 @@ menu "Nuvoton NuMaker drivers"
         bool "NuMaker I2C"
         help
             Enable Nuvoton I2C HAL module driver
+    config HAS_NUMAKER_SPI
+        bool "NuMaker SPI"
+        help
+            Enable Nuvoton SPI HAL module driver
 endmenu

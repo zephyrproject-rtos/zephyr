@@ -1,0 +1,22 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&pinctrl {
+/* CS/CLK/MISO/MOSI --> EVB's NU5: SS/CLK/MISO/MOSI --> PA11/PA10/PA9/PA8 */
+    spi2_default: spi2_default {
+        pinmux = <PA11MFP_SPI2_SS 0x0000>,
+                <PA10MFP_SPI2_CLK 0x0000>,
+                <PA9MFP_SPI2_MISO 0x0000>,
+                <PA8MFP_SPI2_MOSI 0x0000>;
+    };
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&spi2 {
+    status = "okay";
+    pinctrl-0 = <&spi2_default>;
+    pinctrl-names = "default";
+/*    cs-gpios = <&gpioa 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;*/
+};

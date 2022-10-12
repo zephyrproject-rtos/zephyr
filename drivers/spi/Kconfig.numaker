@@ -1,0 +1,13 @@
+# NUMAKER SPI Driver configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_NUMAKER
+	bool "Nuvoton NUMAKER MCU SPI driver"
+	depends on SOC_FAMILY_NUMAKER
+    select HAS_NUMAKER_SPI
+    default y
+	help
+	  This option enables the SPI driver for Nuvoton NUMAKER family of processors. Say y if you wish to enable NUMAKER SPI.
+
