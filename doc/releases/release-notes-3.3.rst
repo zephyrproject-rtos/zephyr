@@ -19,6 +19,10 @@ API Changes
 
 Changes in this release
 =======================
+* Bluetooth: :kconfig:option:`CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER`
+  and :kconfig:option:`CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER` have been
+  added to enable the PAST implementation rather than
+  :kconfig:option:`CONFIG_BT_CONN`.
 
 Removed APIs in this release
 ============================

@@ -2021,6 +2021,7 @@ static int cmd_per_adv_sync_delete(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
 static int cmd_past_subscribe(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
@@ -2121,7 +2122,9 @@ static int cmd_past_unsubscribe(const struct shell *sh, size_t argc,
 
 	return err;
 }
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
 
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 static int cmd_per_adv_sync_transfer(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
@@ -2152,6 +2155,7 @@ static int cmd_per_adv_sync_transfer(const struct shell *sh, size_t argc,
 
 	return err;
 }
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 
 #if defined(CONFIG_BT_CONN)
@@ -3554,15 +3558,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_per_adv_sync_delete, 1, 1),
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #if defined(CONFIG_BT_CONN)
-#if defined(CONFIG_BT_PER_ADV_SYNC)
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
 	SHELL_CMD_ARG(past-subscribe, NULL, "[conn] [skip <count>] "
 		      "[timeout <ms>] [aoa] [aod_1us] [aod_2us] [cte_only]",
 		      cmd_past_subscribe, 1, 7),
 	SHELL_CMD_ARG(past-unsubscribe, NULL, "[conn]",
 		      cmd_past_unsubscribe, 1, 1),
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 	SHELL_CMD_ARG(per-adv-sync-transfer, NULL, "[<index>]",
 		      cmd_per_adv_sync_transfer, 1, 1),
-#endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
 #if defined(CONFIG_BT_CENTRAL)
 	SHELL_CMD_ARG(connect, NULL, HELP_ADDR_LE EXT_ADV_SCAN_OPT,
 		      cmd_connect_le, 1, 3),
