@@ -98,4 +98,45 @@
 			bias-pull-down;
 		};
 	};
+
+	pinmux_flexspi: pinmux_flexspi {
+		group0 {
+			pinmux = <FLEXSPI0_SCLK_PIO1_18>,
+					<FLEXSPI0_SS0_N_PIO1_19>,
+					<FLEXSPI0_DATA0_PIO1_20>,
+					<FLEXSPI0_DATA1_PIO1_21>,
+					<FLEXSPI0_DATA2_PIO1_22>,
+					<FLEXSPI0_DATA3_PIO1_23>,
+					<FLEXSPI0_DATA4_PIO1_24>,
+					<FLEXSPI0_DATA5_PIO1_25>,
+					<FLEXSPI0_DATA6_PIO1_26>,
+					<FLEXSPI0_DATA7_PIO1_27>;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "high";
+		};
+	};
+
+	pinmux_flexspi_sleep: pinmux_flexspi_sleep {
+		group0 {
+			pinmux = <FLEXSPI0_SCLK_PIO1_18>,
+					<FLEXSPI0_SS0_N_PIO1_19>;
+			slew-rate = "normal";
+			drive-strength = "high";
+		};
+		group1 {
+			pinmux = <FLEXSPI0_DATA0_PIO1_20>,
+					<FLEXSPI0_DATA1_PIO1_21>,
+					<FLEXSPI0_DATA2_PIO1_22>,
+					<FLEXSPI0_DATA3_PIO1_23>,
+					<FLEXSPI0_DATA4_PIO1_24>,
+					<FLEXSPI0_DATA5_PIO1_25>,
+					<FLEXSPI0_DATA6_PIO1_26>,
+					<FLEXSPI0_DATA7_PIO1_27>;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "high";
+			bias-pull-up;
+		};
+	};
 };

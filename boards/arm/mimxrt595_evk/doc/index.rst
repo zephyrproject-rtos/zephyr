@@ -100,6 +100,9 @@ already supported, which can also be re-used on this mimxrt595_evk board:
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| PM        | on-chip    | power management; uses SoC sleep,   |
+|           |            | deep sleep and deep-powerdown modes |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
