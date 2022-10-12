@@ -15,6 +15,8 @@
 #include <hal/timer_hal.h>
 #include <string.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/kernel.h>
 #ifndef CONFIG_SOC_ESP32C3
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #else

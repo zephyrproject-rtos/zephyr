@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
 
 #include <stm32_ll_tim.h>
