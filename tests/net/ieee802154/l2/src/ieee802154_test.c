@@ -505,6 +505,31 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 	return true;
 }
 
+static bool test_packet_cloning_with_cb(void)
+{
+	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(iface, 64, AF_UNSPEC, 0, K_NO_WAIT);
+	struct net_pkt *cloned_pkt;
+
+	NET_INFO("- Cloning packet\n");
+
+	/* Set some arbitrary flags and data */
+	net_pkt_set_ieee802154_ack_fpb(pkt, true);
+	net_pkt_set_ieee802154_lqi(pkt, 50U);
+	net_pkt_set_ieee802154_frame_secured(pkt, true);
+
+	cloned_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+	zassert_not_equal(net_pkt_cb(cloned_pkt), net_pkt_cb(pkt));
+
+	zassert_true(net_pkt_ieee802154_ack_fpb(cloned_pkt));
+	zassert_true(net_pkt_ieee802154_frame_secured(cloned_pkt));
+	zassert_false(net_pkt_ieee802154_arb(cloned_pkt));
+	zassert_false(net_pkt_ieee802154_mac_hdr_rdy(cloned_pkt));
+	zassert_equal(net_pkt_ieee802154_lqi(cloned_pkt), 50U);
+	zassert_equal(net_pkt_ieee802154_rssi(cloned_pkt), 0U);
+
+	return true;
+}
+
 static bool initialize_test_environment(void)
 {
 	const struct device *dev;
@@ -666,6 +691,15 @@ ZTEST(ieee802154_l2, test_sending_raw_pkt)
 	ret = test_raw_packet_sending();
 
 	zassert_true(ret, "RAW packet sent");
+}
+
+ZTEST(ieee802154_l2, test_clone_cb)
+{
+	bool ret;
+
+	ret = test_packet_cloning_with_cb();
+
+	zassert_true(ret, "IEEE 802.15.4 net_pkt control block correctly cloned.");
 }
 
 ZTEST_SUITE(ieee802154_l2, NULL, test_init, NULL, NULL, NULL);
