@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
 #include <zephyr/sys/sys_io.h>
 
 #include "gpio_utils.h"
