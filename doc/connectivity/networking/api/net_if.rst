@@ -55,6 +55,65 @@ network technology supports promiscuous mode, then it is possible to receive
 all the network packets that the network device driver is able to receive.
 See :ref:`promiscuous_interface` API for more details.
 
+Network interface state management
+**********************************
+
+Zephyr distinguishes between two interface states: administrative state and
+operational state, as described in RFC 2863. The administrative state indicate
+whether an interface is turned ON or OFF. This state is represented by
+:c:enumerator:`NET_IF_UP` flag and is controlled by the application. It can be
+changed by calling :c:func:`net_if_up` or :c:func:`net_if_down` functions.
+Network drivers or L2 implementations should not change administrative state on
+their own.
+
+Bringing an interface up however not always means that the interface is ready to
+transmit packets. Because of that, operational state, which represents the
+internal interface status, was implemented. The operational state is updated
+whenever one of the following conditions take place:
+
+  * The interface is brought up/down by the application (administrative state
+    changes).
+  * The interface is notified by the driver/L2 that PHY status has changed.
+  * The interface is notified by the driver/L2 that it joined/left a network.
+
+The PHY status is represented with :c:enumerator:`NET_IF_LOWER_UP` flag and can
+be changed with :c:func:`net_if_carrier_on` and :c:func:`net_if_carrier_off`. By
+default, the flag is set on a newly initialized interface. An example of an
+event that changes the carrier state is Ethernet cable being plugged in or out.
+
+The network association status is represented with :c:enumerator:`NET_IF_DORMANT`
+flag and can be changed with :c:func:`net_if_dormant_on` and
+:c:func:`net_if_dormant_off`. By default, the flag is cleared on a newly
+initialized interface. An example of an event that changes the dormant state is
+a Wi-Fi driver successfully connecting to an access point. In this scenario,
+driver should set the dormant state to ON during initialization, and once it
+detects that it connected to a Wi-Fi network, the dormant state should be set
+to OFF.
+
+The operational state of an interface is updated as follows:
+
+  * ``!net_if_is_admin_up()``
+
+    Interface is in :c:enumerator:`NET_IF_OPER_DOWN`.
+
+  * ``net_if_is_admin_up() && !net_if_is_carrier_ok()``
+
+    Interface is in :c:enumerator:`NET_IF_OPER_DOWN` or
+    :c:enumerator:`NET_IF_OPER_LOWERLAYERDOWN` if the interface is stacked
+    (virtual).
+
+  * ``net_if_is_admin_up() && net_if_is_carrier_ok() && net_if_is_dormant()``
+
+    Interface is in :c:enumerator:`NET_IF_OPER_DORMANT`.
+
+  * ``net_if_is_admin_up() && net_if_is_carrier_ok() && !net_if_is_dormant()``
+
+    Interface is in :c:enumerator:`NET_IF_OPER_UP`.
+
+Only after an interface enters :c:enumerator:`NET_IF_OPER_UP` state the
+:c:enumerator:`NET_IF_RUNNING` flag is set on the interface indicating that the
+interface is ready to be used by the application.
+
 API Reference
 *************
 
