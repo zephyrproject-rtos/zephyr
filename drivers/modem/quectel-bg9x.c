@@ -10,6 +10,7 @@
 LOG_MODULE_REGISTER(modem_quectel_bg9x, CONFIG_MODEM_LOG_LEVEL);
 
 #include "quectel-bg9x.h"
+#include <fcntl.h>
 
 static struct k_thread	       modem_rx_thread;
 static struct k_work_q	       modem_workq;
