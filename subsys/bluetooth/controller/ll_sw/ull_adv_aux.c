@@ -2967,9 +2967,11 @@ static void mfy_aux_offset_get(void *param)
 	uint8_t *data_chan_map;
 	uint32_t ticks_current;
 	struct ll_adv_set *adv;
+	uint16_t chan_counter;
 	struct pdu_adv *pdu;
 	uint32_t remainder;
 	uint8_t ticker_id;
+	uint16_t pdu_us;
 	uint8_t retry;
 	uint8_t id;
 
@@ -3015,6 +3017,23 @@ static void mfy_aux_offset_get(void *param)
 	/* Adjust ticks to expire based on remainder value */
 	hal_ticker_remove_jitter(&ticks_to_expire, &remainder);
 
+	pdu = lll_adv_data_latest_peek(&adv->lll);
+	chan_counter = lll_aux->data_chan_counter;
+
+	/* The offset has to be at least T_MAFS microseconds from the end of packet */
+	pdu_us = PDU_AC_US(pdu->len, adv->lll.phy_s, adv->lll.phy_flags);
+	if (HAL_TICKER_TICKS_TO_US(ticks_to_expire) + remainder < EVENT_MAFS_US + pdu_us) {
+		uint32_t offset_us;
+		uint32_t interval_us;
+
+		/* Offset too small, point to next aux packet instead */
+		interval_us = aux->interval * PERIODIC_INT_UNIT_US;
+		offset_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) + remainder + interval_us;
+		ticks_to_expire = HAL_TICKER_US_TO_TICKS(offset_us);
+		remainder = offset_us - HAL_TICKER_TICKS_TO_US(ticks_to_expire);
+		chan_counter++;
+	}
+
 	/* Store the ticks offset for population in other advertising primary
 	 * channel PDUs.
 	 */
@@ -3034,7 +3053,6 @@ static void mfy_aux_offset_get(void *param)
 
 	/* Fill the aux offset in the first Primary channel PDU */
 	/* FIXME: we are in ULL_LOW context, fill offset in LLL context? */
-	pdu = lll_adv_data_latest_peek(&adv->lll);
 	aux_ptr = ull_adv_aux_lll_offset_fill(pdu, ticks_to_expire, remainder,
 					      0U);
 
@@ -3047,7 +3065,7 @@ static void mfy_aux_offset_get(void *param)
 	/* Calculate the radio channel to use */
 	data_chan_map = aux->chm[aux->chm_first].data_chan_map;
 	data_chan_count = aux->chm[aux->chm_first].data_chan_count;
-	aux_ptr->chan_idx = lll_chan_sel_2(lll_aux->data_chan_counter,
+	aux_ptr->chan_idx = lll_chan_sel_2(chan_counter,
 					   aux->data_chan_id,
 					   data_chan_map, data_chan_count);
 }
