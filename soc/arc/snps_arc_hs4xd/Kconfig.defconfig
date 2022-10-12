@@ -19,7 +19,8 @@ config NUM_IRQS
 	default 88
 
 config RGF_NUM_BANKS
-	default 4
+	# Actually cpu has 4 banks but zephys currently supports up to 2  
+	default 2
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 500000000

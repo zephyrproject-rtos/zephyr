@@ -161,7 +161,7 @@ config RGF_NUM_BANKS
 	int "Number of General Purpose Register Banks"
 	depends on ARC_FIRQ
 	depends on NUM_IRQ_PRIO_LEVELS > 1
-	range 1 4
+	range 1 2
 	default 2
 	help
 	  The ARC CPU can be configured to have more than one register
