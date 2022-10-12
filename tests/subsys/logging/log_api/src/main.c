@@ -350,12 +350,11 @@ static size_t get_long_hexdump(void)
 
 	return CONFIG_LOG_BUFFER_SIZE -
 		/* First message */
-		ROUND_UP(LOG_SIMPLE_MSG_LEN + 2 * sizeof(int) + STR_SIZE("test %d %d") +
-			 extra_msg_sz,
+		ROUND_UP(LOG_SIMPLE_MSG_LEN + 2 * sizeof(int) + extra_msg_sz,
 			 CBPRINTF_PACKAGE_ALIGNMENT) -
 		/* Hexdump message excluding data */
 		ROUND_UP(LOG_SIMPLE_MSG_LEN + STR_SIZE("hexdump") + extra_hexdump_sz,
-			 CBPRINTF_PACKAGE_ALIGNMENT) - CBPRINTF_PACKAGE_ALIGNMENT;
+			 CBPRINTF_PACKAGE_ALIGNMENT);
 }
 
 /*
@@ -405,7 +404,6 @@ ZTEST(test_log_api, test_log_overflow)
 	LOG_INF("test2");
 
 	process_and_validate(false, false);
-
 
 	log_setup(false);
 
