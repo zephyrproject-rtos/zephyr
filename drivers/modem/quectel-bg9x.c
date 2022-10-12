@@ -712,6 +712,8 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 
 		return modem_socket_poll_update(obj, pfd, pev);
 	}
+	case F_GETFL:
+		return 0;
 
 	default:
 		errno = EINVAL;
