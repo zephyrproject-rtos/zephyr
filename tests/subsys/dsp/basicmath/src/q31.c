@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math.h>
-#include "../../common/test_common.h"
+#include "common/test_common.h"
 
 #include "q31.pat"
 
