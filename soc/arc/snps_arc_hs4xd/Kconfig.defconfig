@@ -1,7 +1,7 @@
 # Copyright (c) 2019 Synopsys, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_ARC_HS4xD
+if SOC_ARC_HS4XD
 
 config SOC
 	default "snps_arc_hs4xd"
@@ -46,4 +46,4 @@ config UART_NS16550_ACCESS_WORD_ONLY
 config ARC_HAS_ACCL_REGS
 	default y
 
-endif # SOC_ARC_HS4xD
+endif # SOC_ARC_HS4XD

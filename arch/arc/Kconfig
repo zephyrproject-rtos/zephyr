@@ -95,7 +95,7 @@ config CPU_HS4XD
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
 	help
-	  If y, the SoC uses an HS4xD CPU
+	  If y, the SoC uses an HS4XD CPU
 
 endif #ISA_ARCV2
 

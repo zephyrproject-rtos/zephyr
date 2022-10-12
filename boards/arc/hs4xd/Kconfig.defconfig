@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_HS4xD
+if BOARD_HS4XD
 
 config BOARD
 	default "hs4xd"
 
 # TODO
 
-endif #BOARD_HS4xD
+endif #BOARD_HS4XD

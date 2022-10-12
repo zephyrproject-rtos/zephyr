@@ -5,7 +5,7 @@
  */
 
 /**
- * @brief Linker script for the HS4xD Development Kit
+ * @brief Linker script for the HS4XD Development Kit
  */
 
 #include <zephyr/devicetree.h>

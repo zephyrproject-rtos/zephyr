@@ -78,42 +78,42 @@
 		compatible = "simple-bus";
 		interrupt-parent = <&idu_intc>;
 		ranges;
-/* TODO */
-		ddr0: memory@90000000 {
+
+		ddr0: memory@80000000 {
 			device_type = "memory";
-			reg = <0x90000000 0x50000000>;
+			reg = <0x80000000 0x70000000>;
 		};
 
-		uart0: uart@00026000 {
+		uart0: uart@f0026000 {
 			compatible = "ns16550";
 			clock-frequency = <33333333>;
-			reg = <0x00026000 0x100>;
+			reg = <0xf0026000 0x100>;
 			interrupts = <46 1>;
 			reg-shift = <2>;
 		};
 
-		uart1: uart@00027000{
+		uart1: uart@f0027000{
 			compatible = "ns16550";
 			clock-frequency = <33333333>;
-			reg = <0x00027000 0x100>;
+			reg = <0xf0027000 0x100>;
 			interrupts = <47 1>;
 			reg-shift = <2>;
 			status = "disabled";
 		};
 
-		uart2: uart@00028000 {
+		uart2: uart@f0028000 {
 			compatible = "ns16550";
 			clock-frequency = <33333333>;
-			reg = <0x00028000 0x100>;
+			reg = <0xf0028000 0x100>;
 			interrupts = <48 1>;
 			reg-shift = <2>;
 			status = "disabled";
 		};
-/* TODO */
+
 		gpio0: gpio@f0003000 {
 			compatible = "snps,designware-gpio";
-			reg = <0xf0003000 0x1000>;
-			ngpios = <24>;
+			reg = <0xf0003000 0x80>;
+			ngpios = <24>;				/* FIXME */
 			interrupt-parent = <&idu_intc>;
 
 			gpio-controller;
@@ -121,7 +121,7 @@
 
 			status = "disabled";
 		};
-/* TODO */
+/* FIXME */
 		creg_gpio: creg_gpio@f00014b0 {
 			compatible = "snps,creg-gpio";
 			reg = <0xf00014b0 0x4>;
@@ -136,44 +136,44 @@
 			status = "disabled";
 		};
 
-		i2c0: i2c@00023000 {
+		i2c0: i2c@f0023000 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00023000 0x100>;
+			reg = <0xf0023000 0x100>;
 			interrupts = <43 1>;
 
 			status = "disabled";
 		};
 
-		i2c1: i2c@00024000 {
+		i2c1: i2c@f0024000 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00024000 0x100>;
+			reg = <0xf0024000 0x100>;
 			interrupts = <44 1>;
 
 			status = "disabled";
 		};
 
-		i2c2: i2c@00025000 {
+		i2c2: i2c@f0025000 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00025000 0x100>;
+			reg = <0xf0025000 0x100>;
 			interrupts = <45 1>;
 
 			status = "disabled";
 		};
 
-		spi0: spi@00020000 {
+		spi0: spi@f0020000 {
 			compatible = "snps,designware-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00020000 0x100>;
+			reg = <0xf0020000 0x100>;
 			interrupts = <40 1>;
 
 			status = "disabled";
@@ -183,19 +183,18 @@
 			compatible = "snps,designware-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00021000 0x100>;
+			reg = <0xf0021000 0x100>;
 			interrupts = <41 1>;
 			status = "disabled";
 		};
 
-		spi2: spi@00022000 {
+		spi2: spi@f0022000 {
 			compatible = "snps,designware-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00022000 0x100>;
+			reg = <0xf0022000 0x100>;
 			interrupts = <42 1>;
 			status = "disabled";
 		};
-
 	};
 };
