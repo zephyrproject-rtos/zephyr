@@ -1,0 +1,8 @@
+{	"Build" : {
+		"TIMESTAMP" : "<unset>",
+		"C_COMPILER" : "<unset>",
+		"CXX_COMPILER" : "<unset>",
+		"ASM_COMPILER" : "<unset>",
+		"LINKER" : "<unset>"
+	}
+}

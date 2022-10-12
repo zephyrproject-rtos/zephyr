@@ -1,0 +1,15 @@
+{	"SCAs": {
+		"Axivion" : {
+			"C_COMPILER" : "/opt/bauhaus-suite/bin/ircc",
+			"CXX_COMPILER" : "/opt/bauhaus-suite/bin/ircc",
+			"ASM_COMPILER" : "/opt/bauhaus-suite/bin/ircc",
+			"LINKER" : "/opt/bauhaus-suite/bin/ircc"
+		},
+		"cppcheck" : {
+			"C_COMPILER" : "/opt/cppcheck/bin/cppcheck",
+			"CXX_COMPILER" : "/opt/cppcheck/bin/cppcheck",
+			"ASM_COMPILER" : "/opt/cppcheck/bin/cppcheck",
+			"LINKER" : "/opt/cppcheck/bin/cppcheck"
+		}
+	}
+}

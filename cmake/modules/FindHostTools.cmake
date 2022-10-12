@@ -108,6 +108,8 @@ include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}/generic.cmake OPTIONAL)
 include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/generic.cmake OPTIONAL)
 include(${TOOLCHAIN_ROOT}/cmake/bintools/${BINTOOLS}/generic.cmake OPTIONAL)
 
+include(${TOOLCHAIN_ROOT}/cmake/sca_integration.cmake OPTIONAL)
+
 # Optional folder for toolchains with may provide a Kconfig file for capabilities settings.
 set_ifndef(TOOLCHAIN_KCONFIG_DIR ${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT})
 
