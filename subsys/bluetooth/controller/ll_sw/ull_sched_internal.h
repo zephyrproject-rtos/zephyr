@@ -13,3 +13,6 @@ int ull_sched_after_cen_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 void ull_sched_mfy_win_offset_use(void *param);
 void ull_sched_mfy_free_win_offset_calc(void *param);
 void ull_sched_mfy_win_offset_select(void *param);
+uint16_t ull_sched_offset_at_instant(uint16_t offset, uint16_t reference,
+				     uint16_t instant, uint16_t interval_old,
+				     uint16_t interval_new);
