@@ -12,7 +12,7 @@ if(COMPILER STREQUAL gcc)
 else()
   # MWDT compiler options
   zephyr_compile_options(-arcv2hs -core2 -Xatomic -Xll64 -Xunaligned -Xcode_density
-		   -Xdiv_rem=radix4 -Xswap -Xbitscan -Xmpy_option=qmpyh
+		   -Xdiv_rem=none -Xswap -Xbitscan -Xmpy_option=none
 		   -Xshift_assist -Xbarrel_shifter -Xtimer0 -Xtimer1 -Xrtc)
   zephyr_compile_options_ifdef(CONFIG_FPU -Xfpu_mac -Xfpud_div)
 

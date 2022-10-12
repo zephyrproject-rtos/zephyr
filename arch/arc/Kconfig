@@ -286,7 +286,7 @@ config CODE_DENSITY
 
 config ARC_HAS_ACCL_REGS
 	bool "Reg Pair ACCL:ACCH (FPU and/or MPY > 6 and/or DSP)"
-	default y if CPU_HS3X || CPU_HS4X || CPU_HS5X || CPU_HS6X
+	default y if CPU_HS3X || CPU_HS4XD || CPU_HS5X || CPU_HS6X
 	help
 	  Depending on the configuration, CPU can contain accumulator reg-pair
 	  (also referred to as r58:r59). These can also be used by gcc as GPR so
@@ -294,7 +294,7 @@ config ARC_HAS_ACCL_REGS
 
 config ARC_HAS_DSP
 	bool "Dsp support"
-	default y if CPU_HS4X
+	default y if CPU_HS4XD
 	help
 		Some CPUs contain HW DSP extension
 		
