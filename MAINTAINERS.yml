@@ -331,6 +331,7 @@ CMSIS-DSP integration:
     - modules/Kconfig.cmsis_dsp
     - tests/benchmarks/cmsis_dsp/
     - tests/lib/cmsis_dsp/
+    - tests/subsys/dsp/
   labels:
     - "area: CMSIS-DSP"
 
