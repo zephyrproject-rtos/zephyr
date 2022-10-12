@@ -119,8 +119,14 @@ static bool check_dup(struct net_buf_simple *data)
 
 	val = sys_get_be32(tail - 4) ^ sys_get_be32(tail - 8);
 
-	for (i = 0; i < ARRAY_SIZE(dup_cache); i++) {
-		if (dup_cache[i] == val) {
+	for (i = dup_cache_next; i > 0;) {
+		if (dup_cache[--i] == val) {
+			return true;
+		}
+	}
+
+	for (i = ARRAY_SIZE(dup_cache); i > dup_cache_next;) {
+		if (dup_cache[--i] == val) {
 			return true;
 		}
 	}
@@ -135,8 +141,15 @@ static bool msg_cache_match(struct net_buf_simple *pdu)
 {
 	uint16_t i;
 
-	for (i = 0U; i < ARRAY_SIZE(msg_cache); i++) {
-		if (msg_cache[i].src == SRC(pdu->data) &&
+	for (i = msg_cache_next; i > 0U;) {
+		if (msg_cache[--i].src == SRC(pdu->data) &&
+		    msg_cache[i].seq == (SEQ(pdu->data) & BIT_MASK(17))) {
+			return true;
+		}
+	}
+
+	for (i = ARRAY_SIZE(msg_cache); i > msg_cache_next;) {
+		if (msg_cache[--i].src == SRC(pdu->data) &&
 		    msg_cache[i].seq == (SEQ(pdu->data) & BIT_MASK(17))) {
 			return true;
 		}
