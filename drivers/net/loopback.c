@@ -137,7 +137,7 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 
 		/* Clean up the packet */
 		net_pkt_unref(cloned);
-		/* Pretent everything was fine */
+		/* Pretend everything was fine */
 		res = 0;
 
 		goto out;
