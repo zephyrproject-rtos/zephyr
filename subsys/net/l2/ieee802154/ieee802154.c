@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <errno.h>
 
 #include <zephyr/net/capture.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_l2.h>
@@ -236,6 +237,8 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 	/* At this point the frame has to be a DATA one */
 
 	ieee802154_acknowledge(iface, &mpdu);
+
+	net_pkt_set_ll_proto_type(pkt, ETH_P_IEEE802154);
 
 	set_pkt_ll_addr(net_pkt_lladdr_src(pkt), mpdu.mhr.fs->fc.pan_id_comp,
 			mpdu.mhr.fs->fc.src_addr_mode, mpdu.mhr.src_addr);
