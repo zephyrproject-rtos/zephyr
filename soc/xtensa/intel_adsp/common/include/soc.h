@@ -25,7 +25,7 @@ extern void z_soc_mp_asm_entry(void);
 extern void soc_mp_startup(uint32_t cpu);
 extern void soc_start_core(int cpu_num);
 
-extern bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
+extern bool soc_cpus_active[CONFIG_MP_MAX_NUM_CPUS];
 
 /* Legacy cache APIs still used in a few places */
 #define SOC_DCACHE_FLUSH(addr, size)		\

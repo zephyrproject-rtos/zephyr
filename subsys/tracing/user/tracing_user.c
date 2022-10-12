@@ -10,7 +10,7 @@
 #include <zephyr/kernel_structs.h>
 #include <ksched.h>
 
-static int nested_interrupts[CONFIG_MP_NUM_CPUS];
+static int nested_interrupts[CONFIG_MP_MAX_NUM_CPUS];
 
 void __weak sys_trace_thread_create_user(struct k_thread *thread) {}
 void __weak sys_trace_thread_abort_user(struct k_thread *thread) {}

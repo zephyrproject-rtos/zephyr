@@ -38,7 +38,7 @@ struct cpustart_rec {
 
 volatile struct cpustart_rec *start_rec;
 static void *appcpu_top;
-static bool cpus_active[CONFIG_MP_NUM_CPUS];
+static bool cpus_active[CONFIG_MP_MAX_NUM_CPUS];
 static struct k_spinlock loglock;
 
 extern void z_sched_ipi(void);

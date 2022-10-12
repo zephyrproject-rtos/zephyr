@@ -46,7 +46,7 @@ static uint32_t exec_cnt[CONFIG_ZTRESS_MAX_THREADS];
 static k_timeout_t backoff[CONFIG_ZTRESS_MAX_THREADS];
 static k_timeout_t init_backoff[CONFIG_ZTRESS_MAX_THREADS];
 K_THREAD_STACK_ARRAY_DEFINE(stacks, CONFIG_ZTRESS_MAX_THREADS, CONFIG_ZTRESS_STACK_SIZE);
-static k_tid_t idle_tid[CONFIG_MP_NUM_CPUS];
+static k_tid_t idle_tid[CONFIG_MP_MAX_NUM_CPUS];
 
 #define THREAD_NAME(i, _) STRINGIFY(ztress_##i)
 

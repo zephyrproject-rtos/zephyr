@@ -13,7 +13,7 @@
 #include <adsp-clk.h>
 #include <adsp_shim.h>
 
-static struct cavs_clock_info platform_clocks[CONFIG_MP_NUM_CPUS];
+static struct cavs_clock_info platform_clocks[CONFIG_MP_MAX_NUM_CPUS];
 static struct k_spinlock lock;
 
 int cavs_clock_freq_enc[] = CAVS_CLOCK_FREQ_ENC;

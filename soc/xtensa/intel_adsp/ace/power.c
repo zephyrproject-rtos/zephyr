@@ -67,7 +67,7 @@ struct core_state {
 	uint32_t intenable;
 };
 
-static struct core_state core_desc[CONFIG_MP_NUM_CPUS] = { 0 };
+static struct core_state core_desc[CONFIG_MP_MAX_NUM_CPUS] = { 0 };
 
 struct lpsram_header {
 	uint32_t alt_reset_vector;

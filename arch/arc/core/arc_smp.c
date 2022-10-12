@@ -20,7 +20,7 @@
 volatile struct {
 	arch_cpustart_t fn;
 	void *arg;
-} arc_cpu_init[CONFIG_MP_NUM_CPUS];
+} arc_cpu_init[CONFIG_MP_MAX_NUM_CPUS];
 
 /*
  * arc_cpu_wake_flag is used to sync up master core and slave cores
@@ -36,7 +36,7 @@ volatile char *arc_cpu_sp;
  * _curr_cpu is used to record the struct of _cpu_t of each cpu.
  * for efficient usage in assembly
  */
-volatile _cpu_t *_curr_cpu[CONFIG_MP_NUM_CPUS];
+volatile _cpu_t *_curr_cpu[CONFIG_MP_MAX_NUM_CPUS];
 
 /* Called from Zephyr initialization */
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
