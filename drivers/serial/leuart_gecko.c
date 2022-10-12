@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/irq.h>
 #include <em_leuart.h>
 #include <em_gpio.h>
 #include <em_cmu.h>
