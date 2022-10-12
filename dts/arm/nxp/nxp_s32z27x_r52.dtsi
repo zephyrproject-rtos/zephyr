@@ -195,6 +195,16 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			eirq0: eirq0@40520010 {
+				compatible = "nxp,s32-siul2-eirq";
+				reg = <0x40520010 0x04>, <0x40520018 0x04>;
+				reg-names = "disr0", "direr0";
+				interrupts = <GIC_SPI 514 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
 			gpioa: gpio@40521702 {
 				compatible = "nxp,s32-gpio";
 				reg = <0x40521702 0x02>, <0x40520240 0x40>;
@@ -231,6 +241,16 @@
 			reg = <0x40d20000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			eirq1: eirq1@40d20010 {
+				compatible = "nxp,s32-siul2-eirq";
+				reg = <0x40d20010 0x04>, <0x40d20018 0x04>;
+				reg-names = "disr0", "direr0";
+				interrupts = <GIC_SPI 515 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
 
 			gpioc: gpio@40d21700 {
 				compatible = "nxp,s32-gpio";
@@ -293,6 +313,16 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			eirq4: eirq4@42520010 {
+				compatible = "nxp,s32-siul2-eirq";
+				reg = <0x42520010 0x04>, <0x42520018 0x04>;
+				reg-names = "disr0", "direr0";
+				interrupts = <GIC_SPI 516 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
 			gpioh: gpio@42521708 {
 				compatible = "nxp,s32-gpio";
 				reg = <0x42521708 0x02>, <0x42520380 0x40>;
@@ -350,6 +380,16 @@
 			reg = <0x42d20000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			eirq5: eirq5@42d20010 {
+				compatible = "nxp,s32-siul2-eirq";
+				reg = <0x42d20010 0x04>, <0x42d20018 0x04>;
+				reg-names = "disr0", "direr0";
+				interrupts = <GIC_SPI 517 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
 
 			gpiom: gpio@42d21710 {
 				compatible = "nxp,s32-gpio";
