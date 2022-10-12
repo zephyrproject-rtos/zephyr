@@ -17,6 +17,12 @@ static struct modem_data       mdata;
 static struct modem_context    mctx;
 static const struct socket_op_vtable offload_socket_fd_op_vtable;
 
+#if defined(CONFIG_DNS_RESOLVER)
+static struct zsock_addrinfo result;
+static struct sockaddr result_addr;
+static char result_canonname[DNS_MAX_NAME_SIZE + 1];
+#endif
+
 static K_KERNEL_STACK_DEFINE(modem_rx_stack, CONFIG_MODEM_QUECTEL_BG9X_RX_STACK_SIZE);
 static K_KERNEL_STACK_DEFINE(modem_workq_stack, CONFIG_MODEM_QUECTEL_BG9X_RX_WORKQ_STACK_SIZE);
 NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE, 0, NULL);
@@ -136,8 +142,8 @@ static int on_cmd_sockread_common(int socket_fd,
 	/* No (or not enough) data available on the socket. */
 	bytes_to_skip = digits(socket_data_length) + 2 + 4;
 	if (socket_data_length <= 0) {
-		LOG_ERR("Length problem (%d).  Aborting!", socket_data_length);
-		return -EAGAIN;
+		LOG_ERR("No data received (yet) (%d)!", socket_data_length);
+		return 0;
 	}
 
 	/* check to make sure we have all of the data. */
@@ -425,6 +431,30 @@ MODEM_CMD_DEFINE(on_cmd_unsol_close)
 	return 0;
 }
 
+#if defined(CONFIG_DNS_RESOLVER)
+
+/* Handler:
++QIURC: "dnsgip",<err>,<IP_count>,<DNS_ttl>
+[.....
++QIURC: "dnsgip",<hostIPaddr>] */
+MODEM_CMD_DEFINE(on_cmd_dns)
+{
+	/* chop off end quote */
+	LOG_ERR("DNS received: %s", argv[0]);
+	argv[0][strlen(argv[0]) - 1] = '\0';
+
+	/* FIXME: Hard-code DNS on BG9x to return IPv4 */
+	result_addr.sa_family = AF_INET;
+	/* skip beginning quote when parsing */
+	(void)net_addr_pton(result.ai_family, &argv[0][1],
+			    &((struct sockaddr_in *)&result_addr)->sin_addr);
+
+	k_sem_give(&mdata.sem_response);
+	return 0;
+}
+
+#endif
+
 /* Handler: Modem initialization ready. */
 MODEM_CMD_DEFINE(on_cmd_unsol_rdy)
 {
@@ -581,6 +611,8 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 	int    ret;
 	struct socket_read_data sock_data;
 
+	size_t this_read_len = len > MDM_RECV_BUF_SIZE ? MDM_RECV_BUF_SIZE : len;
+
 	/* Modem command to read the data. */
 	struct modem_cmd data_cmd[] = { MODEM_CMD("+QIRD: ", on_cmd_sock_readdata, 0U, "") };
 
@@ -594,12 +626,12 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 		return -1;
 	}
 
-	snprintk(sendbuf, sizeof(sendbuf), "AT+QIRD=%d,%zd", sock->sock_fd, len);
+	snprintk(sendbuf, sizeof(sendbuf), "AT+QIRD=%d,%zd", sock->sock_fd, this_read_len);
 
 	/* Socket read settings */
 	(void) memset(&sock_data, 0, sizeof(sock_data));
 	sock_data.recv_buf     = buf;
-	sock_data.recv_buf_len = len;
+	sock_data.recv_buf_len = this_read_len;
 	sock_data.recv_addr    = from;
 	sock->data	       = &sock_data;
 	mdata.sock_fd	       = sock->sock_fd;
@@ -608,6 +640,14 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
 			     data_cmd, ARRAY_SIZE(data_cmd), sendbuf, &mdata.sem_response,
 			     MDM_CMD_TIMEOUT);
+
+    if (sock_data.recv_read_len == 0)
+	{
+		modem_socket_wait_data(&mdata.socket_config, sock);
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+					data_cmd, ARRAY_SIZE(data_cmd), sendbuf, &mdata.sem_response,
+					MDM_CMD_TIMEOUT);
+	}
 	if (ret < 0) {
 		errno = -ret;
 		ret = -1;
@@ -621,7 +661,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 	}
 
 	/* return length of received data */
-	errno = 0;
+	errno = len > this_read_len ? EAGAIN : 0;
 	ret = sock_data.recv_read_len;
 
 exit:
@@ -1061,6 +1101,121 @@ error:
 	return ret;
 }
 
+#if defined(CONFIG_DNS_RESOLVER)
+
+/* TODO: This is a bare-bones implementation of DNS handling
+ * We ignore most of the hints like ai_family, ai_protocol and ai_socktype.
+ * Later, we can add additional handling if it makes sense.
+ */
+static int offload_getaddrinfo(const char *node, const char *service,
+			       const struct zsock_addrinfo *hints,
+			       struct zsock_addrinfo **res)
+{
+	static const struct modem_cmd cmd[] = {
+		MODEM_CMD("+QIURC: \"dnsgip\",",   on_cmd_dns, 1U, ""),
+	};
+	uint32_t port = 0U;
+	int ret;
+	/* DNS command + 128 bytes for domain name parameter */
+	char sendbuf[sizeof("AT+QIDNSGIP=1,\r\n") + 128];
+
+	/* init result */
+	(void)memset(&result, 0, sizeof(result));
+	(void)memset(&result_addr, 0, sizeof(result_addr));
+	/* FIXME: Hard-code DNS to return only IPv4 */
+	result.ai_family = AF_INET;
+	result_addr.sa_family = AF_INET;
+	result.ai_addr = &result_addr;
+	result.ai_addrlen = sizeof(result_addr);
+	result.ai_canonname = result_canonname;
+	result_canonname[0] = '\0';
+
+	if (service) {
+		port = ATOI(service, 0U, "port");
+		if (port < 1 || port > USHRT_MAX) {
+			return DNS_EAI_SERVICE;
+		}
+	}
+
+	if (port > 0U) {
+		/* FIXME: DNS is hard-coded to return only IPv4 */
+		if (result.ai_family == AF_INET) {
+			net_sin(&result_addr)->sin_port = htons(port);
+		}
+	}
+
+	/* check to see if node is an IP address */
+	if (net_addr_pton(result.ai_family, node,
+			  &((struct sockaddr_in *)&result_addr)->sin_addr)
+	    == 0) {
+		*res = &result;
+		return 0;
+	}
+
+	/* user flagged node as numeric host, but we failed net_addr_pton */
+	if (hints && hints->ai_flags & AI_NUMERICHOST) {
+		return DNS_EAI_NONAME;
+	}
+
+	snprintk(sendbuf, sizeof(sendbuf), "AT+QIDNSGIP=1,\"%s\"", node);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+			     NULL, 0U, sendbuf, &mdata.sem_response,
+			     MDM_DNS_TIMEOUT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* set command handlers */
+	ret = modem_cmd_handler_update_cmds(&mdata.cmd_handler_data,
+					    cmd, ARRAY_SIZE(cmd),
+					    true);
+	if (ret < 0) {
+		LOG_ERR("Timeout waiting for URC");
+	}
+
+	/* Wait for DNS response */
+	ret = k_sem_take(&mdata.sem_response, K_MSEC(1000));
+	if (ret < 0) {
+		/* Didn't get the data prompt - Exit. */
+		LOG_ERR("Timeout waiting for tx");
+	}
+
+	/* set command handlers */
+	ret = modem_cmd_handler_update_cmds(&mdata.cmd_handler_data,
+					    cmd, ARRAY_SIZE(cmd),
+					    true);
+	if (ret < 0) {
+		LOG_ERR("Timeout waiting for URC");
+	}
+
+	/* Wait for DNS response */
+	ret = k_sem_take(&mdata.sem_response, K_MSEC(1000));
+	if (ret < 0) {
+		/* Didn't get the data prompt - Exit. */
+		LOG_ERR("Timeout waiting for tx");
+	}
+
+	LOG_DBG("DNS RESULT: %s",
+		net_addr_ntop(result.ai_family,
+					 &net_sin(&result_addr)->sin_addr,
+					 sendbuf, NET_IPV4_ADDR_LEN));
+
+	*res = (struct zsock_addrinfo *)&result;
+	return 0;
+}
+
+static void offload_freeaddrinfo(struct zsock_addrinfo *res)
+{
+	/* using static result from offload_getaddrinfo() -- no need to free */
+	res = NULL;
+}
+
+const struct socket_dns_offload offload_dns_ops = {
+	.getaddrinfo = offload_getaddrinfo,
+	.freeaddrinfo = offload_freeaddrinfo,
+};
+#endif
+
 static const struct socket_op_vtable offload_socket_fd_op_vtable = {
 	.fd_vtable = {
 		.read	= offload_read,
@@ -1093,6 +1248,7 @@ static void modem_net_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 	data->net_iface = iface;
 
+	socket_offload_dns_register(&offload_dns_ops);
 	net_if_socket_offload_set(iface, offload_socket);
 }
 
