@@ -732,7 +732,7 @@ static uint16_t iso_chan_max_data_len(const struct bt_iso_chan *chan,
 	max_data_len = chan->qos->tx->sdu;
 
 	/* Ensure that the SDU fits when using all the buffers */
-	max_controller_data_len = bt_dev.le.iso_mtu * bt_dev.le.iso_pkts.limit;
+	max_controller_data_len = bt_dev.le.iso_mtu * bt_dev.le.iso_limit;
 
 	/* Update the max_data_len to take the max_controller_data_len into account */
 	max_data_len = MIN(max_data_len, max_controller_data_len);

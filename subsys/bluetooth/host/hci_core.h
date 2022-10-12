@@ -242,6 +242,7 @@ struct bt_dev_le {
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_ISO)
 	uint16_t		iso_mtu;
+	uint8_t			iso_limit;
 	struct k_sem		iso_pkts;
 #endif /* CONFIG_BT_ISO */
 
