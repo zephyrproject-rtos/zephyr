@@ -1763,6 +1763,46 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 	return 0;
 }
 
+static int32_t net_pkt_find_offset(struct net_pkt *pkt, uint8_t *ptr)
+{
+	struct net_buf *buf = pkt->buffer;
+	uint32_t ret = -EINVAL;
+	uint16_t offset;
+
+	if (!(ptr && pkt && buf)) {
+		return ret;
+	}
+
+	offset = 0U;
+	while (buf) {
+		if (buf->data <= ptr && ptr <= (buf->data + buf->len)) {
+			ret = offset + (ptr - buf->data);
+			break;
+		}
+		offset += buf->len;
+		buf = buf->frags;
+	}
+
+	return ret;
+}
+
+static void clone_pkt_lladdr(struct net_pkt *pkt, struct net_pkt *clone_pkt,
+			     struct net_linkaddr *lladdr)
+{
+	int32_t ll_addr_offset;
+
+	if (!lladdr->addr)
+		return;
+
+	ll_addr_offset = net_pkt_find_offset(pkt, lladdr->addr);
+
+	if (ll_addr_offset >= 0) {
+		net_pkt_cursor_init(clone_pkt);
+		net_pkt_skip(clone_pkt, ll_addr_offset);
+		lladdr->addr = net_pkt_cursor_get_pos(clone_pkt);
+	}
+}
+
 static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 {
 	net_pkt_set_family(clone_pkt, net_pkt_family(pkt));
@@ -1773,9 +1813,28 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	net_pkt_set_priority(clone_pkt, net_pkt_priority(pkt));
 	net_pkt_set_orig_iface(clone_pkt, net_pkt_orig_iface(pkt));
 	net_pkt_set_captured(clone_pkt, net_pkt_is_captured(pkt));
+
 	net_pkt_set_l2_bridged(clone_pkt, net_pkt_is_l2_bridged(pkt));
 	net_pkt_set_l2_processed(clone_pkt, net_pkt_is_l2_processed(pkt));
 	net_pkt_set_ll_proto_type(clone_pkt, net_pkt_ll_proto_type(pkt));
+
+	if (pkt->buffer && clone_pkt->buffer) {
+		memcpy(net_pkt_lladdr_src(clone_pkt), net_pkt_lladdr_src(pkt),
+		       sizeof(struct net_linkaddr));
+		memcpy(net_pkt_lladdr_dst(clone_pkt), net_pkt_lladdr_dst(pkt),
+		       sizeof(struct net_linkaddr));
+		/* The link header pointers are usable as-is if we
+		 * shallow-copied the buffer even if they point
+		 * into the fragment memory of the buffer,
+		 * otherwise we have to set the ll address pointer
+		 * relative to the new buffer to avoid dangling
+		 * pointers into the source packet.
+		 */
+		if (pkt->buffer != clone_pkt->buffer) {
+			clone_pkt_lladdr(pkt, clone_pkt, net_pkt_lladdr_src(clone_pkt));
+			clone_pkt_lladdr(pkt, clone_pkt, net_pkt_lladdr_dst(clone_pkt));
+		}
+	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
 		net_pkt_set_ipv4_ttl(clone_pkt, net_pkt_ipv4_ttl(pkt));
@@ -1816,8 +1875,9 @@ static struct net_pkt *net_pkt_clone_internal(struct net_pkt *pkt,
 					      k_timeout_t timeout)
 {
 	size_t cursor_offset = net_pkt_get_current_offset(pkt);
-	struct net_pkt *clone_pkt;
+	bool overwrite = net_pkt_is_being_overwritten(pkt);
 	struct net_pkt_cursor backup;
+	struct net_pkt *clone_pkt;
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 	clone_pkt = pkt_alloc_with_buffer(slab, net_pkt_iface(pkt),
@@ -1833,36 +1893,29 @@ static struct net_pkt *net_pkt_clone_internal(struct net_pkt *pkt,
 		return NULL;
 	}
 
+	net_pkt_set_overwrite(pkt, true);
 	net_pkt_cursor_backup(pkt, &backup);
 	net_pkt_cursor_init(pkt);
 
 	if (net_pkt_copy(clone_pkt, pkt, net_pkt_get_len(pkt))) {
 		net_pkt_unref(clone_pkt);
 		net_pkt_cursor_restore(pkt, &backup);
+		net_pkt_set_overwrite(pkt, overwrite);
 		return NULL;
 	}
-
-	if (clone_pkt->buffer) {
-		/* The link header pointers are only usable if there is
-		 * a buffer that we copied because those pointers point
-		 * to start of the fragment which we do not have right now.
-		 */
-		memcpy(&clone_pkt->lladdr_src, &pkt->lladdr_src,
-		       sizeof(clone_pkt->lladdr_src));
-		memcpy(&clone_pkt->lladdr_dst, &pkt->lladdr_dst,
-		       sizeof(clone_pkt->lladdr_dst));
-	}
+	net_pkt_set_overwrite(clone_pkt, true);
 
 	clone_pkt_attributes(pkt, clone_pkt);
 
 	net_pkt_cursor_init(clone_pkt);
 
 	if (cursor_offset) {
-		net_pkt_set_overwrite(clone_pkt, true);
 		net_pkt_skip(clone_pkt, cursor_offset);
 	}
+	net_pkt_set_overwrite(clone_pkt, overwrite);
 
 	net_pkt_cursor_restore(pkt, &backup);
+	net_pkt_set_overwrite(pkt, overwrite);
 
 	NET_DBG("Cloned %p to %p", pkt, clone_pkt);
 
@@ -1894,17 +1947,6 @@ struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt, k_timeout_t timeout)
 	buf = pkt->buffer;
 
 	net_pkt_frag_ref(buf);
-
-	if (pkt->buffer) {
-		/* The link header pointers are only usable if there is
-		 * a buffer that we copied because those pointers point
-		 * to start of the fragment which we do not have right now.
-		 */
-		memcpy(&clone_pkt->lladdr_src, &pkt->lladdr_src,
-		       sizeof(clone_pkt->lladdr_src));
-		memcpy(&clone_pkt->lladdr_dst, &pkt->lladdr_dst,
-		       sizeof(clone_pkt->lladdr_dst));
-	}
 
 	clone_pkt_attributes(pkt, clone_pkt);
 
