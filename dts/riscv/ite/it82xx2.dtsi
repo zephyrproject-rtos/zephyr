@@ -23,6 +23,90 @@
 				      IT8XXX2_IRQ_TIMER2 IRQ_TYPE_EDGE_RISING>; /* One shot timer */
 			interrupt-parent = <&intc>;
 		};
+
+		i2c0: i2c@f04300 {
+			compatible = "ite,enhance-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f04300 0x0080>;
+			interrupts = <IT8XXX2_IRQ_SMB_A IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			port-num = <SMB_CHANNEL_A>;
+			scl-gpios = <&gpiob 3 0>;
+			sda-gpios = <&gpiob 4 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBA>;
+		};
+
+		i2c1: i2c@f04380 {
+			compatible = "ite,enhance-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f04380 0x0080>;
+			interrupts = <IT8XXX2_IRQ_SMB_B IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			port-num = <SMB_CHANNEL_B>;
+			scl-gpios = <&gpioc 1 0>;
+			sda-gpios = <&gpioc 2 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBB>;
+		};
+
+		i2c2: i2c@f04400 {
+			compatible = "ite,enhance-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f04400 0x0080>;
+			interrupts = <IT8XXX2_IRQ_SMB_C IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			port-num = <SMB_CHANNEL_C>;
+			scl-gpios = <&gpiof 6 0>;
+			sda-gpios = <&gpiof 7 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBC>;
+		};
+
+		i2c3: i2c@f04480 {
+			compatible = "ite,enhance-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f04480 0x0080>;
+			interrupts = <IT8XXX2_IRQ_SMB_D IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			port-num = <I2C_CHANNEL_D>;
+			scl-gpios = <&gpioh 1 0>;
+			sda-gpios = <&gpioh 2 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBD>;
+		};
+
+		i2c4: i2c@f04500 {
+			compatible = "ite,enhance-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f04500 0x0080>;
+			interrupts = <IT8XXX2_IRQ_SMB_E IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			port-num = <I2C_CHANNEL_E>;
+			scl-gpios = <&gpioe 0 0>;
+			sda-gpios = <&gpioe 7 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBE>;
+		};
+
+		i2c5: i2c@f04580 {
+			compatible = "ite,enhance-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f04580 0x0080>;
+			interrupts = <IT8XXX2_IRQ_SMB_F IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			port-num = <I2C_CHANNEL_F>;
+			scl-gpios = <&gpioa 4 0>;
+			sda-gpios = <&gpioa 5 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBF>;
+		};
 	};
 };
 
