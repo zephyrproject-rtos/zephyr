@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 #include <stdlib.h>
 #include <arm_math_f16.h>
-#include "../../common/test_common.h"
+#include "common/test_common.h"
 
 #include "f16.pat"
 
