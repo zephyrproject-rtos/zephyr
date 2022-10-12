@@ -531,6 +531,12 @@ filter: <expression>
               *<env>: any environment variable available
             }
 
+    Twister will first evaluate the expression to find if a "limited" cmake call, i.e. using package_helper cmake script,
+    can be done. Existence of "dt_*" entries indicates devicetree is needed.
+    Existence of "CONFIG*" entries indicates kconfig is needed.
+    If there are no other types of entries in the expression a filtration can be done wihout creating a complete build system.
+    If there are entries of other types a full cmake is required.
+
     The grammar for the expression language is as follows:
 
     expression ::= expression "and" expression
