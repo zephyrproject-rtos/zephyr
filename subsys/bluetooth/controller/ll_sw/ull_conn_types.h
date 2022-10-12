@@ -116,8 +116,10 @@ struct ll_conn {
 		union {
 			struct {
 				uint16_t instant;
-				uint16_t *pdu_win_offset;
 				uint32_t ticks_anchor;
+				uint16_t *pdu_win_offset;
+				uint16_t select_conn_event_count;
+				uint16_t select_conn_interval;
 			} conn_upd;
 
 			struct {
@@ -265,7 +267,6 @@ struct ll_conn {
 		uint16_t offset4;
 		uint16_t offset5;
 		uint16_t *pdu_win_offset0;
-		uint32_t ticks_ref;
 		uint32_t ticks_to_offset_next;
 	} llcp_conn_param;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */

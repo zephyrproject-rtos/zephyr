@@ -3292,11 +3292,15 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 
 		switch (conn->llcp_cu.state) {
 		case LLCP_CUI_STATE_USE:
+			conn->llcp.conn_upd.select_conn_event_count =
+				event_counter;
 			fp_mfy_select_or_use = ull_sched_mfy_win_offset_use;
 			break;
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		case LLCP_CUI_STATE_SELECT:
+			conn->llcp.conn_upd.select_conn_event_count =
+				event_counter;
 			fp_mfy_select_or_use = ull_sched_mfy_win_offset_select;
 			break;
 
@@ -3338,9 +3342,27 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			return -EBUSY;
 
 		case LLCP_CUI_STATE_OFFS_RDY:
+		{
+			uint16_t win_offset;
+
 			/* set instant */
 			conn->llcp.conn_upd.instant = event_counter +
 						      conn->lll.latency + 6;
+
+			(void)memcpy(&win_offset,
+				     conn->llcp.conn_upd.pdu_win_offset,
+				     sizeof(win_offset));
+			win_offset = ull_sched_offset_at_instant(win_offset,
+				conn->llcp.conn_upd.select_conn_event_count,
+				conn->llcp.conn_upd.instant,
+				conn->lll.interval,
+				conn->llcp.conn_upd.select_conn_interval);
+			(void)memcpy(conn->llcp.conn_upd.pdu_win_offset,
+				     &win_offset, sizeof(win_offset));
+
+			conn->llcp_cu.win_offset_us = win_offset *
+						      CONN_INT_UNIT_US;
+
 			pdu_ctrl_tx =
 				CONTAINER_OF(conn->llcp.conn_upd.pdu_win_offset,
 					     struct pdu_data,
@@ -3360,6 +3382,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
 			ctrl_tx_enqueue(conn, tx);
 			return -EINPROGRESS;
+		}
 
 		default:
 			LL_ASSERT(0);
@@ -4118,6 +4141,8 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 		return;
 	}
 
+	conn->llcp_conn_param.reference_conn_event_count = event_counter;
+
 	/* place the conn param req packet as next in tx queue */
 	pdu_ctrl_tx = (void *)tx->pdu;
 
@@ -4133,6 +4158,8 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 	p->latency = sys_cpu_to_le16(conn->llcp_conn_param.latency);
 	p->timeout = sys_cpu_to_le16(conn->llcp_conn_param.timeout);
 	p->preferred_periodicity = 0U;
+	p->reference_conn_event_count =
+		sys_cpu_to_le16(conn->llcp_conn_param.reference_conn_event_count);
 	p->offset0 = sys_cpu_to_le16(0x0000);
 	p->offset1 = sys_cpu_to_le16(0xffff);
 	p->offset2 = sys_cpu_to_le16(0xffff);
@@ -4159,20 +4186,6 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 		uint32_t retval;
 		void *win_offs;
 
-		conn->llcp_conn_param.ticks_ref = ticks_at_expire;
-
-#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-		if (conn->ull.ticks_prepare_to_start & XON_BITMASK) {
-			uint32_t ticks_prepare_to_start =
-				MAX(conn->ull.ticks_active_to_start,
-				    conn->ull.ticks_preempt_to_start);
-
-			conn->llcp_conn_param.ticks_ref -=
-				(conn->ull.ticks_prepare_to_start &
-				 ~XON_BITMASK) - ticks_prepare_to_start;
-		}
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-
 		win_offs = &p->offset0;
 		/* No need to check alignment here since the pointer that gets
 		 * stored is never derreferenced directly, only passed
@@ -4190,8 +4203,6 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 #else /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 	ARG_UNUSED(ticks_at_expire);
 
-	/* set reference counter value */
-	p->reference_conn_event_count = sys_cpu_to_le16(event_counter);
 	/* move to wait for conn_update_rsp/rej */
 	conn->llcp_conn_param.state = LLCP_CPR_STATE_RSP_WAIT;
 	/* enqueue control PDU */
@@ -4407,8 +4418,6 @@ static inline void event_conn_param_prep(struct ll_conn *conn,
 			CONTAINER_OF(conn->llcp_conn_param.pdu_win_offset0,
 				     struct pdu_data,
 				     llctrl.conn_param_req.offset0);
-		pdu_ctrl_tx->llctrl.conn_param_req.reference_conn_event_count =
-			sys_cpu_to_le16(event_counter);
 		/* move to wait for conn_update_rsp/rej */
 		conn->llcp_conn_param.state = LLCP_CPR_STATE_RSP_WAIT;
 		/* enqueue control PDU */

@@ -50,6 +50,7 @@
 #include "ull_adv_internal.h"
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_internal.h"
+#include "ull_sched_internal.h"
 
 #include "ll_feat.h"
 
@@ -212,15 +213,13 @@ void ull_sched_mfy_after_cen_offset_get(void *param)
 
 void ull_sched_mfy_win_offset_use(void *param)
 {
-	struct ll_conn *conn = param;
-	uint32_t ticks_slot_overhead;
-
 	/*
 	 * TODO: update when updating the connection update procedure
 	 */
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+	struct ll_conn *conn = param;
+	uint32_t ticks_slot_overhead;
 	uint16_t win_offset;
-#endif
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = MAX(conn->ull.ticks_active_to_start,
@@ -229,10 +228,6 @@ void ull_sched_mfy_win_offset_use(void *param)
 		ticks_slot_overhead = 0U;
 	}
 
-	/*
-	 * TODO: update when updating the connection update procedure
-	 */
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	after_cen_offset_get(conn->lll.interval,
 			     (ticks_slot_overhead + conn->ull.ticks_slot),
 			     conn->llcp.conn_upd.ticks_anchor,
@@ -242,9 +237,32 @@ void ull_sched_mfy_win_offset_use(void *param)
 
 	sys_put_le16(win_offset, (void *)conn->llcp.conn_upd.pdu_win_offset);
 
+	conn->llcp.conn_upd.select_conn_interval = conn->lll.interval;
+
 	/* move to offset calculated state */
 	conn->llcp_cu.state = LLCP_CUI_STATE_OFFS_RDY;
 #endif
+}
+
+uint16_t ull_sched_offset_at_instant(uint16_t offset, uint16_t reference,
+				     uint16_t instant, uint16_t interval_old,
+				     uint16_t interval_new)
+{
+	uint16_t elapsed_old, elapsed_new, offset_at_instant;
+	uint16_t latency_old, latency_new;
+
+	latency_old = instant - reference;
+	elapsed_old = latency_old * interval_old;
+
+	latency_new = DIV_ROUND_UP(elapsed_old, interval_new);
+	elapsed_new = latency_new * interval_new;
+
+	offset_at_instant = offset + (elapsed_new - elapsed_old);
+	while (offset_at_instant >= interval_new) {
+		offset_at_instant -= interval_new;
+	}
+
+	return offset_at_instant;
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
@@ -289,10 +307,14 @@ void ull_sched_mfy_free_win_offset_calc(void *param)
 
 void ull_sched_mfy_win_offset_select(void *param)
 {
+	/*
+	 * TODO: update when updating the connection update procedure
+	 */
+
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #define OFFSET_S_MAX 6
 #define OFFSET_M_MAX 6
 
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	uint16_t win_offset_m[OFFSET_M_MAX] = {0, };
 	uint8_t offset_m_max = OFFSET_M_MAX;
 	struct ll_conn *conn = param;
@@ -300,15 +322,16 @@ void ull_sched_mfy_win_offset_select(void *param)
 	uint8_t has_offset_s = 0U;
 	uint16_t win_offset_s;
 	uint32_t ticks_to_offset;
-#endif
+	uint16_t win_offset;
 
-	/*
-	 * TODO: update when updating the connection update procedure
-	 */
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+	win_offset = ull_sched_offset_at_instant(
+		conn->llcp_conn_param.offset0,
+		conn->llcp_conn_param.reference_conn_event_count,
+		conn->llcp.conn_upd.select_conn_event_count,
+		conn->lll.interval,
+		conn->llcp_cu.interval);
 
-	ticks_to_offset = HAL_TICKER_US_TO_TICKS(conn->llcp_conn_param.offset0 *
-						 CONN_INT_UNIT_US);
+	ticks_to_offset = HAL_TICKER_US_TO_TICKS(win_offset * CONN_INT_UNIT_US);
 
 	win_offset_calc(conn, 1, &ticks_to_offset,
 			conn->llcp_conn_param.interval_max, &offset_m_max,
@@ -321,9 +344,15 @@ void ull_sched_mfy_win_offset_select(void *param)
 			sys_get_le16((uint8_t *)&conn->llcp_conn_param.offset0 +
 				     (sizeof(uint16_t) * offset_index_s));
 
+		win_offset = ull_sched_offset_at_instant(win_offset_s,
+			conn->llcp_conn_param.reference_conn_event_count,
+			conn->llcp.conn_upd.select_conn_event_count,
+			conn->lll.interval,
+			conn->llcp_cu.interval);
+
 		while (offset_index_m < offset_m_max) {
 			if (win_offset_s != 0xffff) {
-				if (win_offset_s ==
+				if (win_offset ==
 				    win_offset_m[offset_index_m]) {
 					break;
 				}
@@ -345,6 +374,9 @@ void ull_sched_mfy_win_offset_select(void *param)
 		conn->llcp_cu.win_offset_us = win_offset_s * CONN_INT_UNIT_US;
 		sys_put_le16(win_offset_s,
 			     (void *)conn->llcp.conn_upd.pdu_win_offset);
+		conn->llcp.conn_upd.select_conn_event_count =
+			conn->llcp_conn_param.reference_conn_event_count;
+		conn->llcp.conn_upd.select_conn_interval = conn->llcp_cu.interval;
 		/* move to offset calculated state */
 		conn->llcp_cu.state = LLCP_CUI_STATE_OFFS_RDY;
 	} else if (!has_offset_s) {
@@ -352,6 +384,7 @@ void ull_sched_mfy_win_offset_select(void *param)
 					      CONN_INT_UNIT_US;
 		sys_put_le16(win_offset_m[0],
 			     (void *)conn->llcp.conn_upd.pdu_win_offset);
+		conn->llcp.conn_upd.select_conn_interval = conn->lll.interval;
 		/* move to offset calculated state */
 		conn->llcp_cu.state = LLCP_CUI_STATE_OFFS_RDY;
 	} else {
@@ -374,11 +407,9 @@ void ull_sched_mfy_win_offset_select(void *param)
 		/* move to conn param reject */
 		conn->llcp_cu.state = LLCP_CUI_STATE_REJECT;
 	}
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-
-
 #undef OFFSET_S_MAX
 #undef OFFSET_M_MAX
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 }
 
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
