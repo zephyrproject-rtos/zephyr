@@ -13,6 +13,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/arch_interface.h>
 
+extern const struct device __device_EARLY_start[];
 extern const struct device __device_PRE_KERNEL_1_start[];
 extern const struct device __device_PRE_KERNEL_2_start[];
 extern const struct device __device_POST_KERNEL_start[];
@@ -25,7 +26,8 @@ extern const struct device __device_SMP_start[];
 
 /* init levels, used as indices for levels array */
 enum init_level {
-	INIT_LEVEL_PRE_KERNEL_1 = 0,
+	INIT_LEVEL_EARLY = 0,
+	INIT_LEVEL_PRE_KERNEL_1,
 	INIT_LEVEL_PRE_KERNEL_2,
 	INIT_LEVEL_POST_KERNEL,
 	INIT_LEVEL_APPLICATION,
@@ -35,6 +37,7 @@ enum init_level {
 };
 
 static const struct device *const levels[] = {
+	__device_EARLY_start,
 	__device_PRE_KERNEL_1_start,
 	__device_PRE_KERNEL_2_start,
 	__device_POST_KERNEL_start,
@@ -84,6 +87,12 @@ static int cmd_device_levels(const struct shell *sh,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	bool ret;
+
+	shell_fprintf(sh, SHELL_NORMAL, "EARLY:\n");
+	ret = device_get_config_level(sh, INIT_LEVEL_EARLY);
+	if (ret == false) {
+		shell_fprintf(sh, SHELL_NORMAL, "- None\n");
+	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "PRE KERNEL 1:\n");
 	ret = device_get_config_level(sh, INIT_LEVEL_PRE_KERNEL_1);
