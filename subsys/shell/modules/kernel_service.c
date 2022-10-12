@@ -193,7 +193,7 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 		thread, tname ? tname : "NA", size, unused, size - unused, size, pcnt);
 }
 
-K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
 static int cmd_kernel_stacks(const struct shell *shell,

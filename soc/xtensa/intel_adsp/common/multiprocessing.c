@@ -50,7 +50,7 @@ uint32_t _loader_storage_manifest_start;
  * to be absolutely sure we don't try to IPI a CPU that isn't ready to
  * start, or else we'll launch it into garbage and crash the DSP.
  */
-bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
+bool soc_cpus_active[CONFIG_MP_MAX_NUM_CPUS];
 
 #define NOP4 "nop; nop; nop; nop;"
 #define NOP32 NOP4 NOP4 NOP4 NOP4 NOP4 NOP4 NOP4 NOP4

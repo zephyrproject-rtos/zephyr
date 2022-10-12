@@ -33,11 +33,11 @@ static void run_on_cpu_threadfn(void *a, void *b, void *c)
 static struct k_thread thread_har;
 static K_THREAD_STACK_DEFINE(tstack_har, HAR_STACKSZ);
 
-static struct k_thread run_on_threads[CONFIG_MP_NUM_CPUS];
-static K_THREAD_STACK_ARRAY_DEFINE(run_on_stacks, CONFIG_MP_NUM_CPUS, RUN_ON_STACKSZ);
-static volatile bool run_on_flags[CONFIG_MP_NUM_CPUS];
+static struct k_thread run_on_threads[CONFIG_MP_MAX_NUM_CPUS];
+static K_THREAD_STACK_ARRAY_DEFINE(run_on_stacks, CONFIG_MP_MAX_NUM_CPUS, RUN_ON_STACKSZ);
+static volatile bool run_on_flags[CONFIG_MP_MAX_NUM_CPUS];
 
-static uint32_t clk_ratios[CONFIG_MP_NUM_CPUS];
+static uint32_t clk_ratios[CONFIG_MP_MAX_NUM_CPUS];
 
 static void run_on_cpu(int cpu, void (*fn)(void *), void *arg, bool wait)
 {
