@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dsp/dsp.h>
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <stdlib.h>
-#include <arm_math_f16.h>
 #include "common/test_common.h"
 
 #include "f16.pat"
@@ -17,7 +17,7 @@
 #define SNR_DOTPROD_THRESH	((float32_t)40)
 #define REL_ERROR_THRESH	(4.0e-2)
 
-static void test_arm_add_f16(
+static void test_zdsp_add_f16(
 	const uint16_t *input1, const uint16_t *input2, const uint16_t *ref,
 	size_t length)
 {
@@ -28,7 +28,7 @@ static void test_arm_add_f16(
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
-	arm_add_f16((float16_t *)input1, (float16_t *)input2, output, length);
+	zdsp_add_f16((float16_t *)input1, (float16_t *)input2, output, length);
 
 	/* Validate output */
 	zassert_true(
@@ -45,13 +45,13 @@ static void test_arm_add_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_add_f16, 7, in_com1, in_com2, ref_add, 7);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_add_f16, 16, in_com1, in_com2, ref_add, 16);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_add_f16, 23, in_com1, in_com2, ref_add, 23);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_add_f16, long, in_com1, in_com2, ref_add,
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_add_f16, 7, in_com1, in_com2, ref_add, 7);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_add_f16, 16, in_com1, in_com2, ref_add, 16);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_add_f16, 23, in_com1, in_com2, ref_add, 23);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_add_f16, long, in_com1, in_com2, ref_add,
 		     ARRAY_SIZE(in_com1));
 
-static void test_arm_sub_f16(
+static void test_zdsp_sub_f16(
 	const uint16_t *input1, const uint16_t *input2, const uint16_t *ref,
 	size_t length)
 {
@@ -62,7 +62,7 @@ static void test_arm_sub_f16(
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
-	arm_sub_f16((float16_t *)input1, (float16_t *)input2, output, length);
+	zdsp_sub_f16((float16_t *)input1, (float16_t *)input2, output, length);
 
 	/* Validate output */
 	zassert_true(
@@ -79,13 +79,13 @@ static void test_arm_sub_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_sub_f16, 7, in_com1, in_com2, ref_sub, 7);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_sub_f16, 16, in_com1, in_com2, ref_sub, 16);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_sub_f16, 23, in_com1, in_com2, ref_sub, 23);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_sub_f16, long, in_com1, in_com2, ref_sub,
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_sub_f16, 7, in_com1, in_com2, ref_sub, 7);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_sub_f16, 16, in_com1, in_com2, ref_sub, 16);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_sub_f16, 23, in_com1, in_com2, ref_sub, 23);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_sub_f16, long, in_com1, in_com2, ref_sub,
 		     ARRAY_SIZE(in_com1));
 
-static void test_arm_mult_f16(
+static void test_zdsp_mult_f16(
 	const uint16_t *input1, const uint16_t *input2, const uint16_t *ref,
 	size_t length)
 {
@@ -96,7 +96,7 @@ static void test_arm_mult_f16(
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
-	arm_mult_f16((float16_t *)input1, (float16_t *)input2, output, length);
+	zdsp_mult_f16((float16_t *)input1, (float16_t *)input2, output, length);
 
 	/* Validate output */
 	zassert_true(
@@ -113,13 +113,13 @@ static void test_arm_mult_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_mult_f16, 7, in_com1, in_com2, ref_mult, 7);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_mult_f16, 16, in_com1, in_com2, ref_mult, 16);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_mult_f16, 23, in_com1, in_com2, ref_mult, 23);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_mult_f16, long, in_com1, in_com2, ref_mult,
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_mult_f16, 7, in_com1, in_com2, ref_mult, 7);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_mult_f16, 16, in_com1, in_com2, ref_mult, 16);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_mult_f16, 23, in_com1, in_com2, ref_mult, 23);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_mult_f16, long, in_com1, in_com2, ref_mult,
 		     ARRAY_SIZE(in_com1));
 
-static void test_arm_negate_f16(
+static void test_zdsp_negate_f16(
 	const uint16_t *input1, const uint16_t *ref, size_t length)
 {
 	float16_t *output;
@@ -129,7 +129,7 @@ static void test_arm_negate_f16(
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
-	arm_negate_f16((float16_t *)input1, output, length);
+	zdsp_negate_f16((float16_t *)input1, output, length);
 
 	/* Validate output */
 	zassert_true(
@@ -146,13 +146,13 @@ static void test_arm_negate_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(basic_math_f16, arm_negate_f16, 7, in_com1, ref_negate, 7);
-DEFINE_TEST_VARIANT3(basic_math_f16, arm_negate_f16, 16, in_com1, ref_negate, 16);
-DEFINE_TEST_VARIANT3(basic_math_f16, arm_negate_f16, 23, in_com1, ref_negate, 23);
-DEFINE_TEST_VARIANT3(basic_math_f16, arm_negate_f16, long, in_com1, ref_negate,
+DEFINE_TEST_VARIANT3(basic_math_f16, zdsp_negate_f16, 7, in_com1, ref_negate, 7);
+DEFINE_TEST_VARIANT3(basic_math_f16, zdsp_negate_f16, 16, in_com1, ref_negate, 16);
+DEFINE_TEST_VARIANT3(basic_math_f16, zdsp_negate_f16, 23, in_com1, ref_negate, 23);
+DEFINE_TEST_VARIANT3(basic_math_f16, zdsp_negate_f16, long, in_com1, ref_negate,
 		     ARRAY_SIZE(in_com1));
 
-static void test_arm_offset_f16(
+static void test_zdsp_offset_f16(
 	const uint16_t *input1, float16_t scalar, const uint16_t *ref,
 	size_t length)
 {
@@ -163,7 +163,7 @@ static void test_arm_offset_f16(
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
-	arm_offset_f16((float16_t *)input1, scalar, output, length);
+	zdsp_offset_f16((float16_t *)input1, scalar, output, length);
 
 	/* Validate output */
 	zassert_true(
@@ -180,13 +180,13 @@ static void test_arm_offset_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_offset_f16, 0p5_7, in_com1, 0.5f, ref_offset, 7);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_offset_f16, 0p5_16, in_com1, 0.5f, ref_offset, 16);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_offset_f16, 0p5_23, in_com1, 0.5f, ref_offset, 23);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_offset_f16, long, in_com1, 0.5f, ref_offset,
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_offset_f16, 0p5_7, in_com1, 0.5f, ref_offset, 7);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_offset_f16, 0p5_16, in_com1, 0.5f, ref_offset, 16);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_offset_f16, 0p5_23, in_com1, 0.5f, ref_offset, 23);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_offset_f16, long, in_com1, 0.5f, ref_offset,
 		     ARRAY_SIZE(in_com1));
 
-static void test_arm_scale_f16(
+static void test_zdsp_scale_f16(
 	const uint16_t *input1, float16_t scalar, const uint16_t *ref,
 	size_t length)
 {
@@ -197,7 +197,7 @@ static void test_arm_scale_f16(
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
-	arm_scale_f16((float16_t *)input1, scalar, output, length);
+	zdsp_scale_f16((float16_t *)input1, scalar, output, length);
 
 	/* Validate output */
 	zassert_true(
@@ -214,13 +214,13 @@ static void test_arm_scale_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_scale_f16, 0p5_7, in_com1, 0.5f, ref_scale, 7);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_scale_f16, 0p5_16, in_com1, 0.5f, ref_scale, 16);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_scale_f16, 0p5_23, in_com1, 0.5f, ref_scale, 23);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_scale_f16, long, in_com1, 0.5f, ref_scale,
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_scale_f16, 0p5_7, in_com1, 0.5f, ref_scale, 7);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_scale_f16, 0p5_16, in_com1, 0.5f, ref_scale, 16);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_scale_f16, 0p5_23, in_com1, 0.5f, ref_scale, 23);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_scale_f16, long, in_com1, 0.5f, ref_scale,
 		     ARRAY_SIZE(in_com1));
 
-static void test_arm_dot_prod_f16(
+static void test_zdsp_dot_prod_f16(
 	const uint16_t *input1, const uint16_t *input2, const uint16_t *ref,
 	size_t length)
 {
@@ -231,7 +231,7 @@ static void test_arm_dot_prod_f16(
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
-	arm_dot_prod_f16(
+	zdsp_dot_prod_f16(
 		(float16_t *)input1, (float16_t *)input2, length, &output[0]);
 
 	/* Validate output */
@@ -249,13 +249,13 @@ static void test_arm_dot_prod_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_dot_prod_f16, 7, in_com1, in_com2, ref_dot_prod_3, 7);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_dot_prod_f16, 16, in_com1, in_com2, ref_dot_prod_4, 16);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_dot_prod_f16, 23, in_com1, in_com2, ref_dot_prod_4n1, 23);
-DEFINE_TEST_VARIANT4(basic_math_f16, arm_dot_prod_f16, long, in_com1, in_com2, ref_dot_prod_long,
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_dot_prod_f16, 7, in_com1, in_com2, ref_dot_prod_3, 7);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_dot_prod_f16, 16, in_com1, in_com2, ref_dot_prod_4, 16);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_dot_prod_f16, 23, in_com1, in_com2, ref_dot_prod_4n1, 23);
+DEFINE_TEST_VARIANT4(basic_math_f16, zdsp_dot_prod_f16, long, in_com1, in_com2, ref_dot_prod_long,
 		     ARRAY_SIZE(in_com1));
 
-static void test_arm_abs_f16(
+static void test_zdsp_abs_f16(
 	const uint16_t *input1, const uint16_t *ref, size_t length)
 {
 	float16_t *output;
@@ -265,7 +265,7 @@ static void test_arm_abs_f16(
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
-	arm_abs_f16((float16_t *)input1, output, length);
+	zdsp_abs_f16((float16_t *)input1, output, length);
 
 	/* Validate output */
 	zassert_true(
@@ -282,12 +282,12 @@ static void test_arm_abs_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(basic_math_f16, arm_abs_f16, 7, in_com1, ref_abs, 7);
-DEFINE_TEST_VARIANT3(basic_math_f16, arm_abs_f16, 16, in_com1, ref_abs, 16);
-DEFINE_TEST_VARIANT3(basic_math_f16, arm_abs_f16, 23, in_com1, ref_abs, 23);
-DEFINE_TEST_VARIANT3(basic_math_f16, arm_abs_f16, long, in_com1, ref_abs, ARRAY_SIZE(in_com1));
+DEFINE_TEST_VARIANT3(basic_math_f16, zdsp_abs_f16, 7, in_com1, ref_abs, 7);
+DEFINE_TEST_VARIANT3(basic_math_f16, zdsp_abs_f16, 16, in_com1, ref_abs, 16);
+DEFINE_TEST_VARIANT3(basic_math_f16, zdsp_abs_f16, 23, in_com1, ref_abs, 23);
+DEFINE_TEST_VARIANT3(basic_math_f16, zdsp_abs_f16, long, in_com1, ref_abs, ARRAY_SIZE(in_com1));
 
-static void test_arm_clip_f16(
+static void test_zdsp_clip_f16(
 	const uint16_t *input, const uint16_t *ref, float16_t min, float16_t max, size_t length)
 {
 	float16_t *output;
@@ -297,7 +297,7 @@ static void test_arm_clip_f16(
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
-	arm_clip_f16((float16_t *)input, output, min, max, length);
+	zdsp_clip_f16((float16_t *)input, output, min, max, length);
 
 	/* Validate output */
 	zassert_true(
@@ -314,11 +314,11 @@ static void test_arm_clip_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT5(basic_math_f16, arm_clip_f16, m0p5_m0p1, in_clip, ref_clip1,
+DEFINE_TEST_VARIANT5(basic_math_f16, zdsp_clip_f16, m0p5_m0p1, in_clip, ref_clip1,
 		     -0.5f, -0.1f, ARRAY_SIZE(ref_clip1));
-DEFINE_TEST_VARIANT5(basic_math_f16, arm_clip_f16, m0p5_0p5, in_clip, ref_clip2,
+DEFINE_TEST_VARIANT5(basic_math_f16, zdsp_clip_f16, m0p5_0p5, in_clip, ref_clip2,
 		     -0.5f, 0.5f, ARRAY_SIZE(ref_clip2));
-DEFINE_TEST_VARIANT5(basic_math_f16, arm_clip_f16, 0p1_0p5, in_clip, ref_clip3,
+DEFINE_TEST_VARIANT5(basic_math_f16, zdsp_clip_f16, 0p1_0p5, in_clip, ref_clip3,
 		     0.1f, 0.5f, ARRAY_SIZE(ref_clip3));
 
 ZTEST_SUITE(basic_math_f16, NULL, NULL, NULL, NULL, NULL);

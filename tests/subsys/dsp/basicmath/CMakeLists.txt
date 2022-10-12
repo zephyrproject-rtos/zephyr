@@ -11,6 +11,6 @@ target_sources(app PRIVATE
   src/f32.c
   )
 
-target_sources_ifdef(CONFIG_CMSIS_DSP_FLOAT16 app PRIVATE src/f16.c)
+target_sources_ifdef(CONFIG_FP16 app PRIVATE src/f16.c)
 
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/tests/lib/cmsis_dsp)
