@@ -5,6 +5,9 @@
  */
 
 #include <zephyr/drivers/counter.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/irq.h>
+#include <zephyr/arch/cpu.h>
 #include <string.h>
 
 #define DT_DRV_COMPAT andestech_atcpit100

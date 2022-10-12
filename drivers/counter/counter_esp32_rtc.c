@@ -15,6 +15,8 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/kernel.h>
 
 #if defined(CONFIG_SOC_ESP32C3)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
