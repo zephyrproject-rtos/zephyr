@@ -252,6 +252,10 @@ Libraries / Subsystems
     enabled and the command is sent on the same UART as the logging system, in
     which a filesystem error was emitted.
 
+* LwM2M
+
+  * The ``lwm2m_senml_cbor_*`` files have been regenerated using zcbor 0.6.0.
+
 HALs
 ****
 
@@ -260,6 +264,19 @@ MCUboot
 
 Trusted Firmware-M
 ******************
+
+zcbor
+*****
+
+Upgraded zcbor to 0.6.0. Among other things, this brings in a few convenient
+changes for Zephyr:
+
+* In the zcbor codebase, the ``ARRAY_SIZE`` macro has been renamed to
+  ``ZCBOR_ARRAY_SIZE`` to not collide with Zephyr's :c:macro:`ARRAY_SIZE` macro.
+* The zcbor codebase now better supports being used in C++ code.
+
+The entire release notes can be found at
+https://github.com/zephyrproject-rtos/zcbor/blob/0.6.0/RELEASE_NOTES.md
 
 Documentation
 *************
