@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 /*
- * Generated using zcbor version 0.5.1
+ * Generated using zcbor version 0.6.0
  * https://github.com/zephyrproject-rtos/zcbor
  * Generated with a --default-max-qty of 99
  */
