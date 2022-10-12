@@ -1115,7 +1115,7 @@ static int offload_getaddrinfo(const char *node, const char *service,
 			       struct zsock_addrinfo **res)
 {
 	static const struct modem_cmd cmd[] = {
-		MODEM_CMD("+QIURC: \"dnsgip\",",   on_cmd_dns, 1U, ""),
+		MODEM_CMD("+QIURC: \"dnsgip\",", on_cmd_dns, 1U, ""),
 	};
 	uint32_t port = 0U;
 	int ret;
@@ -1149,8 +1149,7 @@ static int offload_getaddrinfo(const char *node, const char *service,
 
 	/* check to see if node is an IP address */
 	if (net_addr_pton(result.ai_family, node,
-			  &((struct sockaddr_in *)&result_addr)->sin_addr)
-	    == 0) {
+			  &((struct sockaddr_in *)&result_addr)->sin_addr) == 0) {
 		*res = &result;
 		return 0;
 	}
