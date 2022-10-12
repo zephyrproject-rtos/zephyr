@@ -424,7 +424,6 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 	uint32_t ticks_slot_abs = 0U;
 	uint32_t ticks_anchor_prev;
 	uint32_t ticks_to_expire;
-	uint8_t ticker_id_other;
 	uint8_t ticker_id_prev;
 	uint32_t ticks_anchor;
 	uint8_t offset_index;
@@ -453,18 +452,26 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 #endif
 
 	ticks_slot_abs += conn_curr->ull.ticks_slot;
-
 	if (conn_curr->lll.role) {
 		ticks_slot_abs += HAL_TICKER_US_TO_TICKS(EVENT_TIES_US);
 	}
 
-	ticker_id = ticker_id_prev = ticker_id_other = TICKER_NULL;
+	if (ticks_slot_abs < CONFIG_BT_CTLR_CENTRAL_SPACING) {
+		ticks_slot_abs =
+			HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_CENTRAL_SPACING);
+	}
+
+	ticker_id = ticker_id_prev = TICKER_NULL;
 	ticks_to_expire = ticks_to_expire_prev = ticks_anchor =
 		ticks_anchor_prev = offset_index = offset = 0U;
 	ticks_slot_abs_prev = 0U;
 	do {
+		uint32_t ticks_slot_abs_curr = 0U;
+		uint32_t ticks_slot_margin = 0U;
+		uint32_t ticks_to_expire_normal;
 		uint32_t volatile ret_cb;
-		struct ll_conn *conn;
+		struct ull_hdr *hdr;
+		uint32_t ticks_slot;
 		uint32_t ret;
 		bool success;
 
@@ -500,121 +507,108 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 			LL_ASSERT(0);
 		}
 
-		/* consider advertiser time as available. Any other time used by
-		 * tickers declared outside the controller is also available.
+		/* Save the reference anchor and ticker id to check updated
+		 * ticker list.
 		 */
-#if defined(CONFIG_BT_BROADCASTER)
-		if ((ticker_id < TICKER_ID_ADV_BASE) ||
-		    (ticker_id > TICKER_ID_CONN_LAST))
-#else /* !CONFIG_BT_BROADCASTER */
-		if ((ticker_id < TICKER_ID_SCAN_BASE) ||
-		    (ticker_id > TICKER_ID_CONN_LAST))
-#endif /* !CONFIG_BT_BROADCASTER */
-		{
+		ticks_anchor_prev = ticks_anchor;
+		ticker_id_prev = ticker_id;
+
+		/* Get ULL header and time reservation for non-overlapping
+		 * tickers.
+		 */
+		hdr = ull_hdr_get_cb(ticker_id, &ticks_slot);
+		if (!hdr) {
+			/* TODO: check overlapping scanner */
+			LL_ASSERT(!is_select);
+
 			continue;
 		}
 
-		if (ticker_id < TICKER_ID_CONN_BASE) {
-			/* non conn role found which could have preempted a
-			 * conn role, hence do not consider this free space
-			 * and any further as free slot for offset,
-			 */
-			ticker_id_other = ticker_id;
-			continue;
-		}
+		ticks_to_expire_normal = ticks_to_expire +
+					 ticks_prepare_reduced;
 
-		/* TODO: handle scanner; for now we exit with as much we
-		 * where able to fill (offsets).
-		 */
-		if (ticker_id_other != TICKER_NULL) {
-			break;
-		}
-
-		conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
-		if ((conn != conn_curr) && (is_select || !conn->lll.role)) {
-			uint32_t ticks_to_expire_normal =
-				ticks_to_expire + ticks_prepare_reduced;
-			uint32_t ticks_slot_margin = 0U;
-			uint32_t ticks_slot_abs_curr = 0U;
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-			if (conn->ull.ticks_prepare_to_start & XON_BITMASK) {
-				uint32_t ticks_prepare_to_start =
-					MAX(conn->ull.ticks_active_to_start,
-					    conn->ull.ticks_preempt_to_start);
+		if (hdr->ticks_prepare_to_start & XON_BITMASK) {
+			const uint32_t ticks_prepare_to_start =
+				MAX(hdr->ticks_active_to_start,
+				    hdr->ticks_preempt_to_start);
 
-				ticks_slot_abs_curr =
-					conn->ull.ticks_prepare_to_start &
-					~XON_BITMASK;
-				ticks_to_expire_normal -=
-					ticks_slot_abs_curr -
-					ticks_prepare_to_start;
-			} else
+			ticks_slot_abs_curr = hdr->ticks_prepare_to_start &
+					      ~XON_BITMASK;
+			ticks_to_expire_normal -= ticks_slot_abs_curr -
+						  ticks_prepare_to_start;
+		} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-			{
-				uint32_t ticks_prepare_to_start =
-					MAX(conn->ull.ticks_active_to_start,
-					    conn->ull.ticks_prepare_to_start);
+		{
+			const uint32_t ticks_prepare_to_start =
+				MAX(hdr->ticks_active_to_start,
+				    hdr->ticks_prepare_to_start);
 
-				ticks_slot_abs_curr = ticks_prepare_to_start;
-			}
+			ticks_slot_abs_curr = ticks_prepare_to_start;
+		}
 #endif
 
-			ticks_slot_abs_curr += conn->ull.ticks_slot +
-				HAL_TICKER_US_TO_TICKS(CONN_INT_UNIT_US);
+		if (ticker_id >= TICKER_ID_CONN_BASE) {
+			struct ll_conn *conn;
+
+			conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
+			if (!is_select && conn->lll.role) {
+				continue;
+			}
+
+			if (is_select &&
+			    (conn->lll.interval != conn_interval)) {
+				ticks_slot_abs_curr += ticks_slot_abs;
+			}
 
 			if (conn->lll.role) {
 				ticks_slot_margin =
 					HAL_TICKER_US_TO_TICKS(EVENT_TIES_US);
 				ticks_slot_abs_curr += ticks_slot_margin;
 			}
+		}
 
-			if (*ticks_to_offset_next < ticks_to_expire_normal) {
-				if (ticks_to_expire_prev <
-				    *ticks_to_offset_next) {
-					ticks_to_expire_prev =
-						*ticks_to_offset_next;
-				}
-
-				while ((offset_index < *offset_max) &&
-				       (ticker_ticks_diff_get(
-							ticks_to_expire_normal,
-							ticks_to_expire_prev) >=
-					(ticks_slot_abs_prev + ticks_slot_abs +
-					 ticks_slot_margin))) {
-					offset = (ticks_to_expire_prev +
-						  ticks_slot_abs_prev) /
-						 HAL_TICKER_US_TO_TICKS(
-							CONN_INT_UNIT_US);
-					if (offset >= conn_interval) {
-						ticks_to_expire_prev = 0U;
-
-						break;
-					}
-
-					sys_put_le16(offset,
-						     (win_offset +
-						      (sizeof(uint16_t) *
-						       offset_index)));
-					offset_index++;
-
-					ticks_to_expire_prev +=
-						HAL_TICKER_US_TO_TICKS(
-							CONN_INT_UNIT_US);
-				}
-
-				*ticks_to_offset_next = ticks_to_expire_prev;
-
-				if (offset >= conn_interval) {
-					break;
-				}
+		if (*ticks_to_offset_next < ticks_to_expire_normal) {
+			if (ticks_to_expire_prev <
+			    *ticks_to_offset_next) {
+				ticks_to_expire_prev =
+					*ticks_to_offset_next;
 			}
 
-			ticks_anchor_prev = ticks_anchor;
-			ticker_id_prev = ticker_id;
-			ticks_to_expire_prev = ticks_to_expire_normal;
-			ticks_slot_abs_prev = ticks_slot_abs_curr;
+			while ((offset_index < *offset_max) &&
+			       (ticker_ticks_diff_get(
+						ticks_to_expire_normal,
+						ticks_to_expire_prev) >=
+				(ticks_slot_abs_prev + ticks_slot_abs +
+				 ticks_slot_margin))) {
+				offset = DIV_ROUND_UP(
+					(ticks_to_expire_prev +
+					 ticks_slot_abs_prev),
+					 HAL_TICKER_US_TO_TICKS(
+						CONN_INT_UNIT_US));
+				while (offset >= conn_interval) {
+					offset -= conn_interval;
+				}
+
+				sys_put_le16(offset,
+					     (win_offset +
+					      (sizeof(uint16_t) *
+					       offset_index)));
+				offset_index++;
+
+				ticks_to_expire_prev +=
+					HAL_TICKER_US_TO_TICKS(
+						CONN_INT_UNIT_US);
+			}
+
+			*ticks_to_offset_next = ticks_to_expire_prev;
 		}
+
+		ticks_slot_abs_curr += ticks_slot;
+
+		ticks_to_expire_prev = ticks_to_expire_normal;
+		ticks_slot_abs_prev = ticks_slot_abs_curr;
 	} while (offset_index < *offset_max);
 
 	if (ticker_id == TICKER_NULL) {
@@ -623,12 +617,17 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 		}
 
 		while (offset_index < *offset_max) {
-			offset = (ticks_to_expire_prev + ticks_slot_abs_prev) /
-				 HAL_TICKER_US_TO_TICKS(CONN_INT_UNIT_US);
+			offset = DIV_ROUND_UP(
+				(ticks_to_expire_prev + ticks_slot_abs_prev),
+				 HAL_TICKER_US_TO_TICKS(CONN_INT_UNIT_US));
 			if (offset >= conn_interval) {
-				ticks_to_expire_prev = 0U;
+				if (!is_select) {
+					break;
+				}
 
-				break;
+				while (offset >= conn_interval) {
+					offset -= conn_interval;
+				}
 			}
 
 			sys_put_le16(offset, (win_offset + (sizeof(uint16_t) *
