@@ -20,6 +20,21 @@
 	};
 };
 
+&pinctrl {
+	eirq0_default: eirq0_default {
+		group1 {
+			pinmux = <PA3_EIRQ_0>;
+			input-enable;
+		};
+	};
+};
+
+&eirq0 {
+	pinctrl-0 = <&eirq0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &gpioa {
 	status = "okay";
 };
