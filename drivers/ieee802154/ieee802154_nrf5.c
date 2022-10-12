@@ -441,14 +441,14 @@ static bool nrf5_tx_immediate(struct net_pkt *pkt, uint8_t *payload, bool cca)
 {
 	nrf_802154_transmit_metadata_t metadata = {
 		.frame_props = {
-			.is_secured = pkt->ieee802154_frame_secured,
-			.dynamic_data_is_set = pkt->ieee802154_mac_hdr_rdy,
+			.is_secured = net_pkt_ieee802154_frame_secured(pkt),
+			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.cca = cca,
 		.tx_power = {
 			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXPOWER),
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-			.power = pkt->ieee802154_txpwr,
+			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
 	};
@@ -461,13 +461,13 @@ static bool nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
 {
 	nrf_802154_transmit_csma_ca_metadata_t metadata = {
 		.frame_props = {
-			.is_secured = pkt->ieee802154_frame_secured,
-			.dynamic_data_is_set = pkt->ieee802154_mac_hdr_rdy,
+			.is_secured = net_pkt_ieee802154_frame_secured(pkt),
+			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.tx_power = {
 			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXPOWER),
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-			.power = pkt->ieee802154_txpwr,
+			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
 	};
@@ -548,15 +548,15 @@ static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
 {
 	nrf_802154_transmit_at_metadata_t metadata = {
 		.frame_props = {
-			.is_secured = pkt->ieee802154_frame_secured,
-			.dynamic_data_is_set = pkt->ieee802154_mac_hdr_rdy,
+			.is_secured = net_pkt_ieee802154_frame_secured(pkt),
+			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.cca = cca,
 		.channel = nrf_802154_channel_get(),
 		.tx_power = {
 			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXPOWER),
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-			.power = pkt->ieee802154_txpwr,
+			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
 	};
