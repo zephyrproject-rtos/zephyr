@@ -348,6 +348,12 @@ static void st7789v_lcd_init(const struct device *dev)
 
 	/* Interface Pixel Format */
 	tmp = config->colmod;
+	tmp &= 0xF8;
+#ifdef CONFIG_ST7789V_RGB565
+	tmp |= 0x05;
+#else
+	tmp |= 0x07;
+#endif
 	st7789v_transmit(dev, ST7789V_CMD_COLMOD, &tmp, 1);
 
 	tmp = config->lcm;
