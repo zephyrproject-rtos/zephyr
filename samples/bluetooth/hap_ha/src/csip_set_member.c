@@ -15,14 +15,17 @@
 #define CSIP_SIRK_DEBUG	{ 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce, \
 			  0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 }
 
-static struct bt_csip *csip;
+static struct bt_csip_set_member_svc_inst *svc_inst;
 
-static void csip_lock_changed_cb(struct bt_conn *conn, struct bt_csip *csip, bool locked)
+static void csip_lock_changed_cb(struct bt_conn *conn,
+				 struct bt_csip_set_member_svc_inst *svc_inst,
+				 bool locked)
 {
 	printk("Client %p %s the lock\n", conn, locked ? "locked" : "released");
 }
 
-static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csip *csip)
+static uint8_t sirk_read_req_cb(struct bt_conn *conn,
+				struct bt_csip_set_member_svc_inst *svc_inst)
 {
 	return BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 }
@@ -42,18 +45,18 @@ int csip_set_member_init(void)
 		.cb = &csip_cb,
 	};
 
-	return bt_cap_acceptor_register(&param, &csip);
+	return bt_cap_acceptor_register(&param, &svc_inst);
 }
 
 int csip_generate_rsi(uint8_t *rsi)
 {
 	int err;
 
-	if (csip == NULL) {
+	if (svc_inst == NULL) {
 		return -ENODEV;
 	}
 
-	err = bt_csip_set_member_generate_rsi(csip, rsi);
+	err = bt_csip_set_member_generate_rsi(svc_inst, rsi);
 	if (err) {
 		printk("Failed to generate RSI (err %d)\n", err);
 		return err;

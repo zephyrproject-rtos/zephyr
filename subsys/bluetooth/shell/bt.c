@@ -1210,7 +1210,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 		 */
 		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 		    IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER) &&
-		    csip != NULL) {
+		    svc_inst != NULL) {
 			ad_flags |= BT_LE_AD_LIMITED;
 		} else {
 			ad_flags |= BT_LE_AD_GENERAL;
