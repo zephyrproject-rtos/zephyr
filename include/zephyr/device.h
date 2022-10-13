@@ -421,8 +421,11 @@ struct device {
 	 */
 	Z_DEVICE_HANDLES_CONST device_handle_t *handles;
 
-#ifdef CONFIG_PM_DEVICE
-	/** Reference to the device PM resources. */
+#if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
+	/**
+	 * Reference to the device PM resources (only available if
+	 * @kconfig{CONFIG_PM_DEVICE} is enabled).
+	 */
 	struct pm_device *pm;
 #endif
 };
