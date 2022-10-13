@@ -53,6 +53,7 @@ struct regulator_config {
 	uint8_t enable_mask;
 	uint8_t enable_val;
 	bool enable_inverted;
+	bool boot_on;
 	uint8_t ilim_reg;
 	uint8_t ilim_mask;
 	struct i2c_dt_spec i2c;
@@ -502,6 +503,7 @@ static int pmic_reg_init(const struct device *dev)
 {
 	const struct regulator_config *config = dev->config;
 	struct regulator_data *data = dev->data;
+	int rc  = 0;
 
 	/* Cast the voltage array set at compile time to the voltage range
 	 * struct
@@ -513,10 +515,13 @@ static int pmic_reg_init(const struct device *dev)
 	if (!device_is_ready(config->i2c.bus)) {
 		return -ENODEV;
 	}
-	if (config->initial_mode) {
-		return regulator_set_mode(dev, config->initial_mode);
+	if (config->boot_on) {
+		rc = enable_regulator(dev, NULL);
 	}
-	return 0;
+	if (config->initial_mode) {
+		rc = regulator_set_mode(dev, config->initial_mode);
+	}
+	return rc;
 }
 
 
@@ -554,6 +559,7 @@ static const struct regulator_driver_api api = {
 		.ilim_reg = DT_PROP_OR(node, ilim_reg, 0),					\
 		.ilim_mask = DT_PROP_OR(node, ilim_mask, 0),					\
 		.enable_inverted = DT_PROP(node, enable_inverted),				\
+		.boot_on = DT_PROP_OR(node, regulator_boot_on, false),				\
 		.num_modes = ARRAY_SIZE(pmic_reg_##ord##_allowed_modes),			\
 		.initial_mode = DT_PROP_OR(DT_PARENT(node), regulator_initial_mode, 0),		\
 		.i2c = I2C_DT_SPEC_GET(DT_PARENT(node)),					\
