@@ -54,7 +54,7 @@ jobs:
         echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
     - name: cache-pip
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: pip-${{ hashFiles('scripts/requirements-doc.txt') }}
@@ -132,7 +132,7 @@ jobs:
         apt-get install -y python3-pip ninja-build doxygen graphviz librsvg2-bin
 
     - name: cache-pip
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: pip-${{ hashFiles('scripts/requirements-doc.txt') }}
