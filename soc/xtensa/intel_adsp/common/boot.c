@@ -89,6 +89,10 @@ static __imr void parse_module(struct sof_man_fw_header *hdr,
 		switch (mod->segment[i].flags.r.type) {
 		case SOF_MAN_SEGMENT_TEXT:
 		case SOF_MAN_SEGMENT_DATA:
+			if (mod->segment[i].flags.r.load == 0) {
+				continue;
+			}
+
 			bias = mod->segment[i].file_offset -
 				SOF_MAN_ELF_TEXT_OFFSET;
 
