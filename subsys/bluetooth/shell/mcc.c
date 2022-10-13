@@ -927,32 +927,425 @@ int cmd_mcc_read_media_state(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_set_cp(const struct shell *sh, size_t argc, char *argv[])
+int cmd_mcc_play(const struct shell *sh, size_t argc, char *argv[])
 {
-	int result;
-	struct mpl_cmd cmd;
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_PLAY,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
 
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC play failed: %d", err);
+	}
 
-	if (argc > 1) {
-		cmd.opcode = strtol(argv[1], NULL, 0);
-	} else {
-		shell_error(sh, "Invalid parameter");
+	return err;
+}
+
+int cmd_mcc_pause(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_PAUSE,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC pause failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_fast_rewind(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_FAST_REWIND,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC fast rewind failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_fast_forward(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_FAST_FORWARD,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC fast forward failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_stop(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_STOP,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC stop failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_move_relative(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_MOVE_RELATIVE,
+		.use_param = true,
+	};
+	long offset;
+	int err;
+
+	err = 0;
+	offset = shell_strtol(argv[1], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse offset: %d", err);
+
+		return err;
+	}
+
+	if (!IN_RANGE(offset, INT32_MIN, INT32_MAX)) {
+		shell_error(sh, "Invalid offset: %ld", offset);
+
 		return -ENOEXEC;
 	}
 
-	if (argc > 2) {
-		cmd.use_param = true;
-		cmd.param = strtol(argv[2], NULL, 0);
-	} else {
-		cmd.use_param = false;
-		cmd.param = 0;
+	cmd.param = (int32_t)offset;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC move relative failed: %d", err);
 	}
 
-	result = bt_mcc_send_cmd(default_conn, &cmd);
-	if (result) {
-		shell_print(sh, "Fail: %d", result);
+	return err;
+}
+
+int cmd_mcc_prev_segment(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_PREV_SEGMENT,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC previous segment failed: %d", err);
 	}
-	return result;
+
+	return err;
+}
+
+int cmd_mcc_next_segment(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_NEXT_SEGMENT,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC next segment failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_first_segment(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_FIRST_SEGMENT,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC first segment failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_last_segment(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_LAST_SEGMENT,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC last segment failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_goto_segment(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_GOTO_SEGMENT,
+		.use_param = true,
+	};
+	long segment;
+	int err;
+
+	err = 0;
+	segment = shell_strtol(argv[1], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse segment: %d", err);
+
+		return err;
+	}
+
+	if (!IN_RANGE(segment, INT32_MIN, INT32_MAX)) {
+		shell_error(sh, "Invalid segment: %ld", segment);
+
+		return -ENOEXEC;
+	}
+
+	cmd.param = (int32_t)segment;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC goto segment failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_prev_track(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_PREV_TRACK,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC previous track failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_next_track(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_NEXT_TRACK,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC next track failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_first_track(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_FIRST_TRACK,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC first track failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_last_track(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_LAST_TRACK,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC last track failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_goto_track(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_GOTO_TRACK,
+		.use_param = true,
+	};
+	long track;
+	int err;
+
+	err = 0;
+	track = shell_strtol(argv[1], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse track: %d", err);
+
+		return err;
+	}
+
+	if (!IN_RANGE(track, INT32_MIN, INT32_MAX)) {
+		shell_error(sh, "Invalid track: %ld", track);
+
+		return -ENOEXEC;
+	}
+
+	cmd.param = (int32_t)track;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC goto track failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_prev_group(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_PREV_GROUP,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC previous group failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_next_group(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_NEXT_GROUP,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC next group failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_first_group(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_FIRST_GROUP,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC first group failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_last_group(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_LAST_GROUP,
+		.use_param = false,
+		.param = 0,
+	};
+	int err;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC last group failed: %d", err);
+	}
+
+	return err;
+}
+
+int cmd_mcc_goto_group(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct mpl_cmd cmd = {
+		.opcode = BT_MCS_OPC_GOTO_GROUP,
+		.use_param = true,
+	};
+	long group;
+	int err;
+
+	err = 0;
+	group = shell_strtol(argv[1], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse group: %d", err);
+
+		return err;
+	}
+
+	if (!IN_RANGE(group, INT32_MIN, INT32_MAX)) {
+		shell_error(sh, "Invalid group: %ld", group);
+
+		return -ENOEXEC;
+	}
+
+	cmd.param = (int32_t)group;
+
+	err = bt_mcc_send_cmd(default_conn, &cmd);
+	if (err != 0) {
+		shell_error(sh, "MCC goto group failed: %d", err);
+	}
+
+	return err;
 }
 
 int cmd_mcc_read_opcodes_supported(const struct shell *sh, size_t argc,
@@ -1474,9 +1867,51 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 		      cmd_mcc_read_playing_orders_supported, 1, 0),
 	SHELL_CMD_ARG(read_media_state, NULL, "Read Media State",
 		      cmd_mcc_read_media_state, 1, 0),
-	SHELL_CMD_ARG(set_cp, NULL, "Set opcode/operation <opcode> [argument]",
-		      cmd_mcc_set_cp, 2, 1),
-	SHELL_CMD_ARG(read_opcodes_supported, NULL, "Read Opcodes Supported",
+	SHELL_CMD_ARG(play, NULL, "Send the play command", cmd_mcc_play, 1, 0),
+	SHELL_CMD_ARG(pause, NULL, "Send the pause command",
+		      cmd_mcc_pause, 1, 0),
+	SHELL_CMD_ARG(fast_rewind, NULL, "Send the fast rewind command",
+		      cmd_mcc_fast_rewind, 1, 0),
+	SHELL_CMD_ARG(fast_forward, NULL, "Send the fast forward command",
+		      cmd_mcc_fast_forward, 1, 0),
+	SHELL_CMD_ARG(stop, NULL, "Send the stop command", cmd_mcc_stop, 1, 0),
+	SHELL_CMD_ARG(move_relative, NULL,
+		      "Send the move relative command <int32_t: offset>",
+		      cmd_mcc_move_relative, 2, 0),
+	SHELL_CMD_ARG(prev_segment, NULL, "Send the prev segment command",
+		      cmd_mcc_prev_segment, 1, 0),
+	SHELL_CMD_ARG(next_segment, NULL, "Send the next segment command",
+		      cmd_mcc_next_segment, 1, 0),
+	SHELL_CMD_ARG(first_segment, NULL, "Send the first segment command",
+		      cmd_mcc_first_segment, 1, 0),
+	SHELL_CMD_ARG(last_segment, NULL, "Send the last segment command",
+		      cmd_mcc_last_segment, 1, 0),
+	SHELL_CMD_ARG(goto_segment, NULL,
+		      "Send the goto segment command <int32_t: segment>",
+		      cmd_mcc_goto_segment, 2, 0),
+	SHELL_CMD_ARG(prev_track, NULL, "Send the prev track command",
+		      cmd_mcc_prev_track, 1, 0),
+	SHELL_CMD_ARG(next_track, NULL, "Send the next track command",
+		      cmd_mcc_next_track, 1, 0),
+	SHELL_CMD_ARG(first_track, NULL, "Send the first track command",
+		      cmd_mcc_first_track, 1, 0),
+	SHELL_CMD_ARG(last_track, NULL, "Send the last track command",
+		      cmd_mcc_last_track, 1, 0),
+	SHELL_CMD_ARG(goto_track, NULL,
+		      "Send the goto track command  <int32_t: track>",
+		      cmd_mcc_goto_track, 2, 0),
+	SHELL_CMD_ARG(prev_group, NULL, "Send the prev group command",
+		      cmd_mcc_prev_group, 1, 0),
+	SHELL_CMD_ARG(next_group, NULL, "Send the next group command",
+		      cmd_mcc_next_group, 1, 0),
+	SHELL_CMD_ARG(first_group, NULL, "Send the first group command",
+		      cmd_mcc_first_group, 1, 0),
+	SHELL_CMD_ARG(last_group, NULL, "Send the last group command",
+		      cmd_mcc_last_group, 1, 0),
+	SHELL_CMD_ARG(goto_group, NULL,
+		      "Send the goto group command <int32_t: group>",
+		      cmd_mcc_goto_group, 2, 0),
+	SHELL_CMD_ARG(read_opcodes_supported, NULL, "Send the Read Opcodes Supported",
 		      cmd_mcc_read_opcodes_supported, 1, 0),
 #ifdef CONFIG_BT_MCC_OTS
 	SHELL_CMD_ARG(send_search_raw, NULL, "Send search <search control item sequence>",
