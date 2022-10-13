@@ -11,19 +11,13 @@ on:
     # Run at 00:00 on Saturday
     - cron: '20 0 * * 6'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  twister-build-cleanup:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ github.token }}
-
   twister-build-prep:
-
     runs-on: zephyr_runner
-    needs: twister-build-cleanup
     container:
       image: zephyrprojectrtos/ci:v0.18.4
       options: '--entrypoint /bin/bash'
