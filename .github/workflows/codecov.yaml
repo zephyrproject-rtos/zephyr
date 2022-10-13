@@ -4,19 +4,13 @@ on:
   schedule:
     - cron: '25 */3 * * 1-5'
 
-jobs:
-  codecov-prep:
-    runs-on: ubuntu-20.04
-    if: github.repository == 'zephyrproject-rtos/zephyr'
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ github.token }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
+jobs:
   codecov:
     runs-on: zephyr_runner
-    needs: codecov-prep
     container:
       image: ghcr.io/zephyrproject-rtos/ci:v0.24.5
       options: '--entrypoint /bin/bash'
