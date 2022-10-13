@@ -4959,6 +4959,8 @@ static void udp_rcvd(struct net_context *context, struct net_pkt *pkt,
 			PR_SHELL(udp_shell, "%02x ", byte);
 		}
 		PR_SHELL(udp_shell, "\n");
+
+		net_pkt_unref(pkt);
 	}
 }
 
