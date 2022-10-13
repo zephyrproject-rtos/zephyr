@@ -2753,24 +2753,25 @@ class Kconfig(object):
         new_args = []  # Arguments of this macro call
         nesting = 0  # Current parentheses nesting level
 
+        escaped = False
         while 1:
             match = _macro_special_search(s, i)
             if not match:
                 self._parse_error("missing end parenthesis in macro expansion")
 
-
             if match.group() == "(":
                 nesting += 1
                 i = match.end()
 
-            elif match.group() == ")":
+            elif match.group() == ")" or match.group() == "\")":
                 if nesting:
                     nesting -= 1
                     i = match.end()
                     continue
 
-                # Found the end of the macro
+                escaped = False
 
+                # Found the end of the macro
                 new_args.append(s[arg_start:match.start()])
 
                 # $(1) is replaced by the first argument to the function, etc.,
@@ -2787,7 +2788,11 @@ class Kconfig(object):
 
                 return (res + s[match.end():], len(res))
 
-            elif match.group() == ",":
+            elif match.group() == "," or match.group() == "\",":
+                if escaped and match.group() == ",":
+                    i = match.end()
+                    continue
+
                 i = match.end()
                 if nesting:
                     continue
@@ -2795,6 +2800,12 @@ class Kconfig(object):
                 # Found the end of a macro argument
                 new_args.append(s[arg_start:match.start()])
                 arg_start = i
+
+            elif match.group() == '\"':
+                escaped = True
+                arg_start = match.end()
+                i = match.end()
+                continue
 
             else:  # match.group() == "$("
                 # A nested macro call within the macro
@@ -7149,8 +7160,8 @@ _assignment_lhs_fragment_match = _re_match("[A-Za-z0-9_-]*")
 # variable assignment
 _assignment_rhs_match = _re_match(r"\s*(=|:=|\+=)\s*(.*)")
 
-# Special characters/strings while expanding a macro ('(', ')', ',', and '$(')
-_macro_special_search = _re_search(r"\(|\)|,|\$\(")
+# Special characters/strings while expanding a macro ('(', ')', ',', '$(', '"', '")', '",' and '"')
+_macro_special_search = _re_search(r"\(|\)|,|\$\(|\"\)|\",|\"")
 
 # Special characters/strings while expanding a string (quotes, '\', and '$(')
 _string_special_search = _re_search(r'"|\'|\\|\$\(')
