@@ -17,6 +17,7 @@
 #include <stm32g0xx_ll_gpio.h>
 #include <stm32g0xx_ll_ucpd.h>
 
+#include "crc32.h"
 #include "meas.h"
 #include "controls.h"
 #include "view.h"
@@ -36,7 +37,7 @@ static LL_UCPD_InitTypeDef ucpd_params;
 #define MOD_BUFFERS 20
 
 #define PACKET_HEADER_LEN 20
-#define PD_SAMPLES 492
+#define PD_SAMPLES 488
 #define PACKET_BYTE_SIZE (PACKET_HEADER_LEN + PD_SAMPLES)
 #define MAX_PACKET_XFER_SIZE 64
 
@@ -64,6 +65,7 @@ struct header_t {
 struct packet_t {
 	struct header_t header;
 	uint8_t data[PD_SAMPLES];
+	uint32_t crc;
 };
 
 struct model_t {
@@ -72,6 +74,7 @@ struct model_t {
 	uint8_t dma_buffer[PD_SAMPLES];
 	k_tid_t tid;
 	bool start;
+	bool empty_print;
 
 	uint8_t mod_buff[MOD_BUFFERS][PD_SAMPLES];
 	uint16_t mod_size[MOD_BUFFERS];
@@ -87,6 +90,7 @@ static int pd_line;
 void start_snooper(bool s)
 {
 	model.start = s;
+	model.empty_print = s;
 	if (s) {
 		model.packet.header.sequence = 0;
 		view_set_snoop(VS_SNOOP3);
@@ -95,61 +99,72 @@ void start_snooper(bool s)
 	}
 }
 
-void reset_sniffer() {
+void reset_snooper() {
 	model.packet.header.sequence = 0;
 }
 
 void set_role(uint8_t role_mask) {
-	if (role_mask & BIT(0)) {
+	if (role_mask & CC1_CHANNEL_BIT) {
+		LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC1);
+	}
+	if (role_mask & CC2_CHANNEL_BIT) {
+		LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC2);
+	}
+
+	if (role_mask & SINK_BIT) {
 		LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC1CC2);
 		LL_UCPD_SetSNKRole(UCPD1);
 	}
 	else {
 		LL_UCPD_SetSRCRole(UCPD1);
-	}
 
-	uint8_t Rp = role_mask & (BIT(1) | BIT(2));
+		uint8_t Rp = role_mask & PULL_RESISTOR_BITS;
 
-	switch (Rp) {
-	case 0:
-		LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_NONE);
-		break;
-	case BIT(1):
-		LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_DEFAULT);
-		break;
-	case BIT(2):
-		LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_1_5A);
-		break;
-	case (BIT(1) | BIT(2)):
-		LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_3_0A);
+		switch (Rp) {
+		case 0:
+			LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_NONE);
+			break;
+		case 1:
+			LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_DEFAULT);
+			break;
+		case 2:
+			LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_1_5A);
+			break;
+		case 3:
+			LL_UCPD_SetRpResistor(UCPD1, LL_UCPD_RESISTOR_3_0A);
+		}
 	}
+}
+
+void set_empty_print(bool e) {
+	model.empty_print = e;
 }
 
 static void model_thread(void *arg1, void *arg2, void *arg3)
 {
 	int32_t vbus_v, vbus_c;
 	int32_t vcon_c;
-	int32_t cc_v[2];
+	int32_t cc1_v, cc2_v;
 	struct model_t *sm = (struct model_t *)arg1;
 
 	while (1) {
 		if (sm->start) {
-			meas_vbus(&vbus_v);
-			meas_cbus(&vbus_c);
-			meas_vcc1(&cc_v[0]);
-       			meas_vcc2(&cc_v[1]);
-       			meas_ccon(&vcon_c);
+			meas_vbus_v(&vbus_v);
+			meas_vbus_c(&vbus_c);
+			meas_cc1_v(&cc1_v);
+       			meas_cc2_v(&cc2_v);
+       			meas_vcon_c(&vcon_c);
 
-			if ((cc_v[0] < 2000) && (cc_v[0] > 1300)) {
-				if (get_view_connection() & BIT(0))
+			if ((cc1_v < 2000) && (cc1_v > 500)) {
+				if (get_view_snoop() & 1)
 					LL_UCPD_SetCCPin(UCPD1, LL_UCPD_CCPIN_CC1);
 				else
 					LL_UCPD_SetCCPin(UCPD1, LL_UCPD_CCPIN_CC2);
 				view_set_connection(VS_CC1_CONN);
 				pd_line = 1;
 			}
-			else if ((cc_v[1] < 2000) && (cc_v[1] > 1300)) {
-				if (get_view_connection() & BIT(1))
+			else if ((cc2_v < 2000) && (cc2_v > 500)) {
+				if (get_view_snoop() & 2)
 					LL_UCPD_SetCCPin(UCPD1, LL_UCPD_CCPIN_CC2);
 				else
 					LL_UCPD_SetCCPin(UCPD1, LL_UCPD_CCPIN_CC1);
@@ -160,27 +175,33 @@ static void model_thread(void *arg1, void *arg2, void *arg3)
 				view_set_connection(VS_NO_CONN);
 			}
 
-			if (sm->mw != sm->mr) {
-				sm->packet.header.sequence++;
-				sm->packet.header.vbus_voltage = vbus_v;
-				sm->packet.header.vbus_current = vbus_c;
-				sm->packet.header.cc1_voltage = cc_v[0];
-				sm->packet.header.cc2_voltage = cc_v[1];
-				sm->packet.header.vcon_current = vcon_c;
+			sm->packet.header.sequence++;
+			sm->packet.header.vbus_voltage = vbus_v;
+			sm->packet.header.vbus_current = vbus_c;
+			sm->packet.header.cc1_voltage = cc1_v;
+			sm->packet.header.cc2_voltage = cc2_v;
+			sm->packet.header.vcon_current = vcon_c;
 
+			if (sm->mw != sm->mr) {
 				sm->packet.header.packet_type = sm->sop[sm->mr];
 				sm->packet.header.data_len = sm->mod_size[sm->mr];
 				memcpy(sm->packet.data, sm->mod_buff[sm->mr], sm->mod_size[sm->mr]);
-
-				for (int i = 0; i < PACKET_BYTE_SIZE; i += MAX_PACKET_XFER_SIZE) {
-					uart_fifo_fill(sm->dev, (const uint8_t *)&sm->packet + i, MAX_PACKET_XFER_SIZE);
-				}
-
 				sm->mr++;
 				if (sm->mr == MOD_BUFFERS) {
 					sm->mr = 0;
 				}
 			}
+
+			crc32_init();
+			crc32_hash((uint8_t *)&sm->packet, 508);
+			sm->packet.crc = crc32_result();
+			if (sm->empty_print || sm->packet.header.data_len != 0) {
+				for (int i = 0; i < PACKET_BYTE_SIZE; i += MAX_PACKET_XFER_SIZE) {
+					uart_fifo_fill(sm->dev, (const uint8_t *)&sm->packet + i, MAX_PACKET_XFER_SIZE);
+				}
+			}
+			sm->packet.header.data_len = 0;
+			memset(sm->packet.data, 0, PD_SAMPLES);
 		}
 		k_usleep(500);
 	}
@@ -231,22 +252,6 @@ static void ucpd_isr(void *arg)
 		LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_1);
 		k_wakeup(sm->tid);
 		LL_UCPD_ClearFlag_RxMsgEnd(UCPD1);
-	}
-}
-
-void select_pull_up(uint8_t pull_mask) {
-	if (pull_mask & BIT(0)) {
-		LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC2);
-	}
-	else {
-		LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC1);
-	}
-
-	if (pull_mask & ~BIT(0)) {
-		set_role(pull_mask & ~BIT(0));
-	}
-	else {
-		set_role(0);
 	}
 }
 
@@ -392,6 +397,8 @@ int model_init(const struct device *dev)
 
 	en_cc1(true);
 	en_cc2(true);
+
+	//crc32_init();
 
 	model.tid = k_thread_create(&model_thread_data, model_stack_area,
 			K_THREAD_STACK_SIZEOF(model_stack_area),

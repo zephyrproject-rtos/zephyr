@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2022 The Chromium OS Authors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <zephyr/kernel.h>
 #include <zephyr/smf.h>
 #include <zephyr/drivers/gpio.h>
@@ -46,7 +52,7 @@ struct view_obj_t {
 	atomic_t flags;
 } view_obj;
 
-int get_view_connection() {
+int get_view_snoop() {
 	if (atomic_test_bit(&view_obj.flags, FLAGS_SNOOP0)) return 0;
 	if (atomic_test_bit(&view_obj.flags, FLAGS_SNOOP1)) return 1;
 	if (atomic_test_bit(&view_obj.flags, FLAGS_SNOOP2)) return 2;

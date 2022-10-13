@@ -1,26 +1,38 @@
+/*
+ * Copyright (c) 2022 The Chromium OS Authors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <stdio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
 
-#define VCC1_MEAS_NODE DT_ALIAS(vcc1)
-#define VCC2_MEAS_NODE DT_ALIAS(vcc2)
-#define VBUS_MEAS_NODE DT_ALIAS(vbus)
-#define CBUS_MEAS_NODE DT_ALIAS(cbus)
-#define CCON_MEAS_NODE DT_ALIAS(ccon)
+#define CC1_V_MEAS_NODE DT_ALIAS(vcc1)
+#define CC2_V_MEAS_NODE DT_ALIAS(vcc2)
+#define VBUS_V_MEAS_NODE DT_ALIAS(vbus)
+#define VBUS_C_MEAS_NODE DT_ALIAS(cbus)
+#define VCON_C_MEAS_NODE DT_ALIAS(ccon)
 
-static const struct adc_dt_spec adc_vcc1 = ADC_DT_SPEC_GET(VCC1_MEAS_NODE);
-static const struct adc_dt_spec adc_vcc2 = ADC_DT_SPEC_GET(VCC2_MEAS_NODE);
-static const struct adc_dt_spec adc_vbus = ADC_DT_SPEC_GET(VBUS_MEAS_NODE);
-static const struct adc_dt_spec adc_cbus = ADC_DT_SPEC_GET(CBUS_MEAS_NODE);
-static const struct adc_dt_spec adc_ccon = ADC_DT_SPEC_GET(CCON_MEAS_NODE);
+static const struct adc_dt_spec adc_cc1_v = ADC_DT_SPEC_GET(CC1_V_MEAS_NODE);
+static const struct adc_dt_spec adc_cc2_v = ADC_DT_SPEC_GET(CC2_V_MEAS_NODE);
+static const struct adc_dt_spec adc_vbus_v = ADC_DT_SPEC_GET(VBUS_V_MEAS_NODE);
+static const struct adc_dt_spec adc_vbus_c = ADC_DT_SPEC_GET(VBUS_C_MEAS_NODE);
+static const struct adc_dt_spec adc_vcon_c = ADC_DT_SPEC_GET(VCON_C_MEAS_NODE);
 
-/* Common settings supported by most ADCs */
+/* Settings for ADCs the STM32 ADC */
 #define ADC_RESOLUTION          12
 #define ADC_GAIN                ADC_GAIN_1
 #define ADC_REFERENCE           ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME    ADC_ACQ_TIME_DEFAULT
 #define ADC_REF_MV              3300
+
+/*shunt resistor and voltage amplifier for current sensors on Twinkie*/
+#define VBUS_C_R_MOHM 3
+#define VBUS_C_GAIN 100
+#define VCON_C_R_MOHM 10
+#define VCON_C_GAIN 25
 
 static int32_t sample_buffer;
 
@@ -31,12 +43,12 @@ struct adc_sequence sequence = {
 	.resolution = ADC_RESOLUTION,
 };
 
-void meas_vbus(int32_t *v)
+void meas_vbus_v(int32_t *v)
 {
 	int ret;
 
-	sequence.channels = BIT(adc_vbus.channel_id);
-	ret = adc_read(adc_vbus.dev, &sequence);
+	sequence.channels = BIT(adc_vbus_v.channel_id);
+	ret = adc_read(adc_vbus_v.dev, &sequence);
 	if (ret != 0) {
 		printk("vbus voltage reading failed with error %d.\n", ret);
 		return;
@@ -49,17 +61,18 @@ void meas_vbus(int32_t *v)
 		return;
 	}
 
-	*v = *v * DT_PROP(VBUS_MEAS_NODE, full_ohms) / DT_PROP(VBUS_MEAS_NODE, output_ohms);
+	/* voltage scaled by voltage divider values using DT binding */
+	*v = *v * DT_PROP(VBUS_V_MEAS_NODE, full_ohms) / DT_PROP(VBUS_V_MEAS_NODE, output_ohms);
 
 	return;
 }
 
-void meas_cbus(int32_t *c)
+void meas_vbus_c(int32_t *c)
 {
 	int ret;
 
-	sequence.channels = BIT(adc_cbus.channel_id);
-	ret = adc_read(adc_cbus.dev, &sequence);
+	sequence.channels = BIT(adc_vbus_c.channel_id);
+	ret = adc_read(adc_vbus_c.dev, &sequence);
 	if (ret != 0) {
 		printk("vbus current reading failed with error %d.\n", ret);
 		return;
@@ -72,17 +85,20 @@ void meas_cbus(int32_t *c)
 		return;
 	}
 
-	*c = (*c - ADC_REF_MV / 2) * 10 / 3;
+	/* multiplies by 1000 before dividing by shunt resistance
+	 * in milliohms to keep everything as an integer.
+	 * mathematically equivalent to dividing by ohms directly. */
+	*c = (*c - ADC_REF_MV / 2) * 1000 / VBUS_C_R_MOHM / VBUS_C_GAIN;
 
 	return;
 }
 
-void meas_vcc1(int32_t *v)
+void meas_cc1_v(int32_t *v)
 {
 	int ret;
 
-	sequence.channels = BIT(adc_vcc1.channel_id);
-	ret = adc_read(adc_vcc1.dev, &sequence);
+	sequence.channels = BIT(adc_cc1_v.channel_id);
+	ret = adc_read(adc_cc1_v.dev, &sequence);
 	if (ret != 0) {
 		printk("ADC voltage reading failed with error %d.\n", ret);
 		return;
@@ -98,12 +114,12 @@ void meas_vcc1(int32_t *v)
 	return;
 }
 
-void meas_vcc2(int32_t *v)
+void meas_cc2_v(int32_t *v)
 {
 	int ret;
 
-	sequence.channels = BIT(adc_vcc2.channel_id);
-	ret = adc_read(adc_vcc2.dev, &sequence);
+	sequence.channels = BIT(adc_cc2_v.channel_id);
+	ret = adc_read(adc_cc2_v.dev, &sequence);
 	if (ret != 0) {
 		printk("vbus voltage reading failed with error %d.\n", ret);
 		return;
@@ -119,12 +135,12 @@ void meas_vcc2(int32_t *v)
 	return;
 }
 
-void meas_ccon(int32_t *c)
+void meas_vcon_c(int32_t *c)
 {
 	int ret;
 
-	sequence.channels = BIT(adc_ccon.channel_id);
-	ret = adc_read(adc_ccon.dev, &sequence);
+	sequence.channels = BIT(adc_vcon_c.channel_id);
+	ret = adc_read(adc_vcon_c.dev, &sequence);
 	if (ret != 0) {
 		printk("vbus current reading failed with error %d.\n", ret);
 		return;
@@ -137,7 +153,10 @@ void meas_ccon(int32_t *c)
 		return;
 	}
 
-	*c *= 4;
+	/* multiplies by 1000 before dividing by shunt resistance
+	 * in milliohms to keep everything as an integer
+	 * mathematically equivalent to dividing by ohms directly. */
+	*c *= *c * 1000 / VCON_C_R_MOHM / VCON_C_GAIN;
 
 	return;
 }
@@ -146,27 +165,27 @@ int meas_init(void)
 {
 	int ret;
 
-	ret = adc_channel_setup_dt(&adc_vcc1);
+	ret = adc_channel_setup_dt(&adc_cc1_v);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = adc_channel_setup_dt(&adc_vcc2);
+	ret = adc_channel_setup_dt(&adc_cc2_v);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = adc_channel_setup_dt(&adc_vbus);
+	ret = adc_channel_setup_dt(&adc_vbus_v);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = adc_channel_setup_dt(&adc_cbus);
+	ret = adc_channel_setup_dt(&adc_vbus_c);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = adc_channel_setup_dt(&adc_ccon);
+	ret = adc_channel_setup_dt(&adc_vcon_c);
 	if (ret != 0) {
 		return ret;
 	}

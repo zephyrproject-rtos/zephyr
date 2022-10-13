@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2022 The Chromium OS Authors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+ 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 
