@@ -34,7 +34,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: cache-pip-linux
       if: startsWith(runner.os, 'Linux')
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}
