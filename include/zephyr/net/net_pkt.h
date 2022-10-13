@@ -83,6 +83,10 @@ struct net_pkt {
 
 	/** @cond ignore */
 
+#if defined(CONFIG_NET_TCP)
+	/** Allow placing the packet into sys_slist_t */
+	sys_snode_t next;
+#endif
 #if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
 	struct net_if *orig_iface; /* Original network interface */
 #endif
@@ -126,76 +130,65 @@ struct net_pkt {
 	struct net_linkaddr lladdr_dst;
 	uint16_t ll_proto_type;
 
-#if defined(CONFIG_NET_TCP)
-	/** Allow placing the packet into sys_slist_t */
-	sys_snode_t next;
-#endif
-
 #if defined(CONFIG_NET_IP)
 	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
 #endif
 
-	uint8_t overwrite  : 1;	/* Is packet content being overwritten? */
+	uint8_t overwrite : 1;	 /* Is packet content being overwritten? */
+	uint8_t sent_or_eof : 1; /* For outgoing packet: is this sent or not
+				  * For incoming packet of a socket: last
+				  * packet before EOF
+				  * Used only if defined(CONFIG_NET_TCP)
+				  */
+	uint8_t pkt_queued : 1;	 /* For outgoing packet: is this packet
+				  * queued to be sent but has not reached
+				  * the driver yet.
+				  * Used only if defined(CONFIG_NET_TCP)
+				  */
+	uint8_t ptp_pkt : 1;	 /* For outgoing packet: is this packet
+				  * a L2 PTP packet.
+				  * Used only if defined (CONFIG_NET_L2_PTP)
+				  */
+	uint8_t forwarding : 1;	 /* Are we forwarding this pkt
+				  * Used only if defined(CONFIG_NET_ROUTE)
+				  */
+	uint8_t family : 3;	 /* Address family, see net_ip.h */
 
-	uint8_t sent_or_eof: 1;	/* For outgoing packet: is this sent or not
-				 * For incoming packet of a socket: last
-				 * packet before EOF
-				 * Used only if defined(CONFIG_NET_TCP)
-				 */
-	union {
-		uint8_t pkt_queued: 1; /* For outgoing packet: is this packet
-				     * queued to be sent but has not reached
-				     * the driver yet.
-				     * Used only if defined(CONFIG_NET_TCP)
-				     */
-		uint8_t ptp_pkt: 1; /* For outgoing packet: is this packet
-				     * a L2 PTP packet.
-				     * Used only if defined (CONFIG_NET_L2_PTP)
-				     */
-	};
+	/* bitfield byte alignment boundary */
 
-	uint8_t forwarding : 1;	/* Are we forwarding this pkt
-				 * Used only if defined(CONFIG_NET_ROUTE)
-				 */
-	uint8_t family     : 3;	/* Address family, see net_ip.h */
-
-	union {
 #if defined(CONFIG_NET_IPV4_AUTO)
-		uint8_t ipv4_auto_arp_msg : 1; /* Is this pkt IPv4 autoconf ARP
-					     * message.
-					     * Note: family needs to be
-					     * AF_INET.
-					     */
-#endif
-#if defined(CONFIG_NET_LLDP)
-		uint8_t lldp_pkt          : 1; /* Is this pkt an LLDP message.
-					     * Note: family needs to be
-					     * AF_UNSPEC.
-					     */
-#endif
-		uint8_t ppp_msg           : 1; /* This is a PPP message */
-	};
-
-#if defined(CONFIG_NET_TCP)
-	uint8_t tcp_first_msg     : 1; /* Is this the first time this pkt is
-					* sent, or is this a resend of a TCP
-					* segment.
+	uint8_t ipv4_auto_arp_msg : 1; /* Is this pkt IPv4 autoconf ARP
+					* message.
+					* Note: family needs to be
+					* AF_INET.
 					*/
 #endif
-
-	uint8_t captured : 1; /* Set to 1 if this packet is already being
-			       * captured
+#if defined(CONFIG_NET_LLDP)
+	uint8_t lldp_pkt : 1; /* Is this pkt an LLDP message.
+			       * Note: family needs to be
+			       * AF_UNSPEC.
 			       */
-
-	uint8_t l2_bridged : 1; /* set to 1 if this packet comes from a bridge
-				 * and already contains its L2 header to be
-				 * preserved. Useful only if
-				 * defined(CONFIG_NET_ETHERNET_BRIDGE).
-				 */
-
+#endif
+	uint8_t ppp_msg : 1; /* This is a PPP message */
+#if defined(CONFIG_NET_TCP)
+	uint8_t tcp_first_msg : 1; /* Is this the first time this pkt is
+				    * sent, or is this a resend of a TCP
+				    * segment.
+				    */
+#endif
+	uint8_t captured : 1;	  /* Set to 1 if this packet is already being
+				   * captured
+				   */
+	uint8_t l2_bridged : 1;	  /* set to 1 if this packet comes from a bridge
+				   * and already contains its L2 header to be
+				   * preserved. Useful only if
+				   * defined(CONFIG_NET_ETHERNET_BRIDGE).
+				   */
 	uint8_t l2_processed : 1; /* Set to 1 if this packet has already been
 				   * processed by the L2
 				   */
+
+	/* bitfield byte alignment boundary */
 
 #if defined(CONFIG_NET_IP)
 	union {
@@ -212,28 +205,12 @@ struct net_pkt {
 
 	union {
 #if defined(CONFIG_NET_IPV4)
-		uint8_t ipv4_opts_len; /* Length if IPv4 Header Options */
+		uint8_t ipv4_opts_len; /* length of IPv4 header options */
 #endif
 #if defined(CONFIG_NET_IPV6)
 		uint16_t ipv6_ext_len; /* length of extension headers */
 #endif
 	};
-#endif /* CONFIG_NET_IP */
-
-	/** Network packet priority, can be left out in which case packet
-	 * is not prioritised.
-	 */
-	uint8_t priority;
-
-#if defined(CONFIG_NET_VLAN)
-	/* VLAN TCI (Tag Control Information). This contains the Priority
-	 * Code Point (PCP), Drop Eligible Indicator (DEI) and VLAN
-	 * Identifier (VID, called more commonly VLAN tag). This value is
-	 * kept in host byte order.
-	 */
-	uint16_t vlan_tci;
-#endif /* CONFIG_NET_VLAN */
-
 #if defined(CONFIG_NET_IPV6)
 	/* Where is the start of the last header before payload data
 	 * in IPv6 packet. This is offset value from start of the IPv6
@@ -251,20 +228,33 @@ struct net_pkt {
 	uint8_t ipv6_ext_opt_len; /* IPv6 ND option length */
 	uint8_t ipv6_next_hdr;	/* What is the very first next header */
 #endif /* CONFIG_NET_IPV6 */
+#endif /* CONFIG_NET_IP */
+
+#if defined(CONFIG_NET_VLAN)
+	/* VLAN TCI (Tag Control Information). This contains the Priority
+	 * Code Point (PCP), Drop Eligible Indicator (DEI) and VLAN
+	 * Identifier (VID, called more commonly VLAN tag). This value is
+	 * kept in host byte order.
+	 */
+	uint16_t vlan_tci;
+#endif /* CONFIG_NET_VLAN */
 
 #if defined(CONFIG_IEEE802154)
 #if defined(CONFIG_IEEE802154_2015)
 	uint32_t ieee802154_ack_fc; /* Frame counter set in the ACK */
 	uint8_t ieee802154_ack_keyid; /* Key index set in the ACK */
 #endif
-	uint8_t ieee802154_lqi;  /* Link Quality Indicator */
 	union {
-		uint8_t ieee802154_rssi; /* Received Signal Strength Indication */
+		/* RX packets */
+		struct {
+			uint8_t lqi;  /* Link Quality Indicator */
+			uint8_t rssi; /* Received Signal Strength Indication */
+		};
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-		int8_t ieee802154_txpwr; /* TX power in dBm. It should be clear from
-					  * the context which field of the union
-					  * is valid at the moment.
-					  */
+		/* TX packets */
+		struct {
+			int8_t txpwr; /* TX power in dBm. */
+		};
 #endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
 	};
 #if defined(CONFIG_IEEE802154_2015)
@@ -283,6 +273,12 @@ struct net_pkt {
 					     * e.g. Frame Counter injection.
 					     */
 #endif
+
+	/** Network packet priority, can be left out in which case packet
+	 * is not prioritised.
+	 */
+	uint8_t priority;
+
 	/* @endcond */
 };
 
