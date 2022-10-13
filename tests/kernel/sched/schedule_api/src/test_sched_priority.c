@@ -111,6 +111,19 @@ ZTEST(threads_scheduling, test_priority_preemptible)
 	k_thread_priority_set(k_current_get(), old_prio);
 }
 
+
+/* The acrn_ehl_crb board works in higher frequency, the
+ * time of starting a thread will be shorted, that might
+ * cause the lower priority thread t2 completed too early
+ * and the higher priority can not be scheduled in time.
+ * So let them have different scale of starting interval.
+ */
+#ifdef CONFIG_BOARD_ACRN
+#define START_INTERVAL 5
+#else
+#define START_INTERVAL 10
+#endif
+
 /**
  * @brief Validate scheduling sequence of preemptive threads with start delay
  *
@@ -138,22 +151,22 @@ ZTEST(threads_scheduling_1cpu, test_priority_preemptible_wait_prio)
 	/* the highest-priority thread that has waited the longest */
 	tid[0] = k_thread_create(&tdata_prio[0], tstacks[0], STACK_SIZE,
 			thread_entry_prio, INT_TO_POINTER(0), NULL, NULL,
-			K_PRIO_PREEMPT(0), 0, K_MSEC(10));
+			K_PRIO_PREEMPT(0), 0, K_MSEC(START_INTERVAL));
 	/* the highest-priority thread that has waited the shorter */
 	tid[1] = k_thread_create(&tdata_prio[1], tstacks[1], STACK_SIZE,
 			thread_entry_prio, INT_TO_POINTER(1), NULL, NULL,
-			K_PRIO_PREEMPT(0), 0, K_MSEC(20));
+			K_PRIO_PREEMPT(0), 0, K_MSEC(START_INTERVAL*2));
 	/* the lowest-priority thread that has waited longest */
 	tid[2] = k_thread_create(&tdata_prio[2], tstacks[2], STACK_SIZE,
 			thread_entry_prio, INT_TO_POINTER(2), NULL, NULL,
-			K_PRIO_PREEMPT(1), 0, K_MSEC(10));
+			K_PRIO_PREEMPT(1), 0, K_MSEC(START_INTERVAL));
 	/* the lowest-priority thread that has waited shorter */
 	tid[3] = k_thread_create(&tdata_prio[3], tstacks[3], STACK_SIZE,
 			thread_entry_prio, INT_TO_POINTER(3), NULL, NULL,
-			K_PRIO_PREEMPT(1), 0, K_MSEC(20));
+			K_PRIO_PREEMPT(1), 0, K_MSEC(START_INTERVAL));
 
 	/* relinquish CPU for above threads to start */
-	k_sleep(K_MSEC(30));
+	k_sleep(K_MSEC(START_INTERVAL*3));
 
 	for (int i = 0; i < THREAD_NUM; i++) {
 		k_sem_give(&sync_sema);
