@@ -32,6 +32,8 @@ __imr void hp_sram_init(uint32_t memory_size)
 			z_idelay(DELAY_COUNT);
 		}
 	}
+
+	bbzero((void *)L2_SRAM_BASE, L2_SRAM_SIZE);
 }
 
 __imr void lp_sram_init(void)
@@ -42,4 +44,6 @@ __imr void lp_sram_init(void)
 	for (uint32_t idx = 0; idx < lpsram_ebb_quantity; ++idx) {
 		*(l2usbpmptr + idx * 2) = 0;
 	}
+
+	bbzero((void *)LP_SRAM_BASE, LP_SRAM_SIZE);
 }
