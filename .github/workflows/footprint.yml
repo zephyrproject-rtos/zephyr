@@ -8,7 +8,7 @@ jobs:
     if: github.repository == 'zephyrproject-rtos/zephyr'
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.6.0
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
   footprint-delta:
@@ -25,7 +25,7 @@ jobs:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.6.0
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
 
