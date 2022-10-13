@@ -91,12 +91,12 @@ struct ace_l2mcap {
 
 #define ACE_L2MCAP ((volatile struct ace_l2mcap *)DFL2MM_REG)
 
-static inline uint32_t ace_hpsram_get_bank_count(void)
+static ALWAYS_INLINE uint32_t ace_hpsram_get_bank_count(void)
 {
 	return ACE_L2MCAP->l2hss;
 }
 
-static inline uint32_t ace_lpsram_get_bank_count(void)
+static ALWAYS_INLINE uint32_t ace_lpsram_get_bank_count(void)
 {
 	return ACE_L2MCAP->l2uss;
 }
