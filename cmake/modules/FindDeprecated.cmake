@@ -73,5 +73,12 @@ if(NOT "${Deprecated_FIND_COMPONENTS}" STREQUAL "")
                  "${Deprecated_FIND_COMPONENTS}")
 endif()
 
+if("SOURCES" IN_LIST Deprecated_FIND_COMPONENTS)
+  message(DEPRECATION
+      "Setting SOURCES prior to calling find_package() for unit tests is deprecated."
+      "To add sources after find_package() use:\n"
+      "    target_sources(testbinary PRIVATE <source-file.c>)")
+endif()
+
 set(Deprecated_FOUND True)
 set(DEPRECATED_FOUND True)

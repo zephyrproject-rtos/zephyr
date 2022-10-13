@@ -38,6 +38,7 @@ if(NOT SOURCES AND EXISTS main.c)
 endif()
 
 add_executable(testbinary ${SOURCES})
+find_package(Deprecated COMPONENTS SOURCES)
 add_library(test_interface INTERFACE)
 target_link_libraries(testbinary PRIVATE test_interface)
 
