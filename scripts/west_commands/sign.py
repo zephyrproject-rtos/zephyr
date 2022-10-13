@@ -250,6 +250,9 @@ class ImgtoolSigner(Signer):
         # The vector table offset and application version are set in Kconfig:
         appver = self.get_cfg(command, build_conf, 'CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION')
         vtoff = self.get_cfg(command, build_conf, 'CONFIG_ROM_START_OFFSET')
+        # Is assumed MCUboot mode 'Direct-XIP'?
+        directxip = (build_conf.getboolean('CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP') or
+                     build_conf.getboolean('CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT'))
         # Flash device write alignment and the partition's slot size
         # come from devicetree:
         flash = self.edt_flash_node(b, args.quiet)
@@ -288,6 +291,10 @@ class ImgtoolSigner(Signer):
                                '--align', str(align),
                                '--header-size', str(vtoff),
                                '--slot-size', str(size)]
+
+        if directxip:
+            sign_base += ['--rom-fixed', str(addr)]
+
         sign_base.extend(args.tool_args)
 
         if not args.quiet:
