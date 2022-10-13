@@ -198,9 +198,10 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 	return 0;
 }
 
-static void adv_rpa_invalidate(struct bt_le_ext_adv *adv, void *data)
+static void adv_disabled_rpa_invalidate(struct bt_le_ext_adv *adv, void *data)
 {
-	if (!atomic_test_bit(adv->flags, BT_ADV_LIMITED)) {
+	/* Don't invalidate RPA of enabled advertising set. */
+	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		atomic_clear_bit(adv->flags, BT_ADV_RPA_VALID);
 	}
 }
@@ -213,8 +214,13 @@ static void le_rpa_invalidate(void)
 		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 	}
 
+	/* Invalidate RPA of advertising sets that are disabled.
+	 *
+	 * Enabled advertising set have to call rpa_expired callback first to
+	 * determine if the RPA of the advertising set should be rotated.
+	 */
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
-		bt_le_ext_adv_foreach(adv_rpa_invalidate, NULL);
+		bt_le_ext_adv_foreach(adv_disabled_rpa_invalidate, NULL);
 	}
 }
 
@@ -417,19 +423,11 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 #if defined(CONFIG_BT_EXT_ADV) && defined(CONFIG_BT_PRIVACY)
 static void adv_disable_rpa(struct bt_le_ext_adv *adv, void *data)
 {
-	uint8_t adv_index = bt_le_ext_adv_get_index(adv);
-	bool *adv_disabled = data;
 	bool rpa_invalid = true;
-
-	adv_disabled[adv_index] = false;
-
-	/* Invalidate RPA only for non-limited advertising sets. */
-	if (atomic_test_bit(adv->flags, BT_ADV_LIMITED)) {
-		return;
-	}
 
 	/* Disable advertising sets to prepare them for RPA update. */
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED) &&
+	    !atomic_test_bit(adv->flags, BT_ADV_LIMITED) &&
 	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
 		int err;
 
@@ -438,25 +436,27 @@ static void adv_disable_rpa(struct bt_le_ext_adv *adv, void *data)
 			BT_ERR("Failed to disable advertising (err %d)", err);
 		}
 
-		adv_disabled[adv_index] = true;
-	}
+		atomic_set_bit(adv->flags, BT_ADV_RPA_UPDATE);
 
-	/* Notify the user about the RPA timeout and set the RPA validity. */
-	if (adv->cb && adv->cb->rpa_expired) {
-		rpa_invalid = adv->cb->rpa_expired(adv);
-	}
+		/* Notify the user about the RPA timeout and set the RPA validity. */
+		if (adv->cb && adv->cb->rpa_expired) {
+			rpa_invalid = adv->cb->rpa_expired(adv);
+		}
 
-	if (rpa_invalid) {
-		atomic_clear_bit(adv->flags, BT_ADV_RPA_VALID);
+		if (rpa_invalid) {
+			atomic_clear_bit(adv->flags, BT_ADV_RPA_VALID);
+		} else {
+			/* Submit the timeout in case no advertising set updates their RPA
+			 * in the current period. This makes sure that the RPA timer is running.
+			 */
+			le_rpa_timeout_submit();
+		}
 	}
 }
 
 static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
 {
-	uint8_t adv_index = bt_le_ext_adv_get_index(adv);
-	bool *adv_disabled = data;
-
-	if (adv_disabled[adv_index]) {
+	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_RPA_UPDATE)) {
 		int err;
 
 		err = bt_id_set_adv_private_addr(adv);
@@ -476,16 +476,9 @@ static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
 static void adv_update_rpa_foreach(void)
 {
 #if defined(CONFIG_BT_EXT_ADV) && defined(CONFIG_BT_PRIVACY)
-	bool adv_disabled[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
+	bt_le_ext_adv_foreach(adv_disable_rpa, NULL);
 
-	bt_le_ext_adv_foreach(adv_disable_rpa, adv_disabled);
-
-	/* Submit the timeout in case all sets use the same
-	 * RPA for the next rotation period.
-	 */
-	le_rpa_timeout_submit();
-
-	bt_le_ext_adv_foreach(adv_enable_rpa, adv_disabled);
+	bt_le_ext_adv_foreach(adv_enable_rpa, NULL);
 #endif
 }
 
@@ -500,8 +493,6 @@ static void le_update_private_addr(void)
 	    IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		adv_update_rpa_foreach();
-	} else {
-		le_rpa_invalidate();
 	}
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -566,6 +557,7 @@ static void le_force_rpa_timeout(void)
 
 	k_work_cancel_delayable_sync(&bt_dev.rpa_update, &sync);
 #endif
+	le_rpa_invalidate();
 	le_update_private_addr();
 }
 
@@ -587,6 +579,8 @@ static void rpa_timeout(struct k_work *work)
 		}
 	}
 
+	le_rpa_invalidate();
+
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 		bt_le_ext_adv_foreach(adv_is_private_enabled, &adv_enabled);
 	}
@@ -596,7 +590,6 @@ static void rpa_timeout(struct k_work *work)
 	      atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
 	      (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
 	       atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)))) {
-		le_rpa_invalidate();
 		return;
 	}
 
