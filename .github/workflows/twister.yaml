@@ -106,9 +106,9 @@ jobs:
           else
             size=0
           fi
-          echo "::set-output name=subset::${subset}";
-          echo "::set-output name=size::${size}";
-          echo "::set-output name=fullrun::${TWISTER_FULL}";
+          echo "subset=${subset}" >> $GITHUB_OUTPUT
+          echo "size=${size}" >> $GITHUB_OUTPUT
+          echo "fullrun=${TWISTER_FULL}" >> $GITHUB_OUTPUT
 
   twister-build:
     runs-on: zephyr_runner
@@ -184,7 +184,7 @@ jobs:
           string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
           string(REPLACE "/" "_" repo ${{github.repository}})
           string(REPLACE "-" "_" repo2 ${repo})
-          message("::set-output name=repo::${repo2}")
+          file(APPEND $ENV{GITHUB_OUTPUT} "repo=${repo2}\n")
 
       - name: use cache
         id: cache-ccache
