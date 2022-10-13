@@ -107,7 +107,7 @@ jobs:
         echo "Documentation will be available shortly at: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
 
     - name: upload-pr-number
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       if: github.event_name == 'pull_request'
       with:
         name: pr_num
