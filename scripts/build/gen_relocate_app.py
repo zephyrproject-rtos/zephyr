@@ -44,12 +44,26 @@ import argparse
 import os
 import glob
 import warnings
+from collections import defaultdict
+from pathlib import Path
+from typing import NamedTuple
+from typing import NewType
+
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 
+SectionKind = NewType('SectionKind', str)
+MemoryRegion = NewType('MemoryRegion', str)
+
+
+class OutputSection(NamedTuple):
+    obj_file_name: str
+    section_name: str
+
+
 PRINT_TEMPLATE = """
-                KEEP(*({0}))
+                KEEP(*{obj_file_name}({section_name}))
 """
 
 SECTION_LOAD_MEMORY_SEQ = """
@@ -170,30 +184,41 @@ def region_is_default_ram(region_name: str) -> bool:
     return region_name == args.default_ram_region
 
 
-def find_sections(filename, full_list_of_sections):
-    with open(filename, 'rb') as obj_file_desc:
+def find_sections(filename: str) -> 'dict[SectionKind, list[OutputSection]]':
+    """
+    Locate relocatable sections in the given object file.
+
+    The output value maps categories of sections to the list of actual sections
+    located in the object file that fit in that category.
+    """
+    obj_file_path = Path(filename)
+
+    with open(obj_file_path, 'rb') as obj_file_desc:
         full_lib = ELFFile(obj_file_desc)
         if not full_lib:
             sys.exit("Error parsing file: " + filename)
 
         sections = [x for x in full_lib.iter_sections()]
+        out = defaultdict(list)
 
         for section in sections:
+            output_section = OutputSection(obj_file_path.name, section.name)
+            section_kind = None
 
             if ".text." in section.name:
-                full_list_of_sections["text"].append(section.name)
+                section_kind = "text"
+            elif ".rodata." in section.name:
+                section_kind = "rodata"
+            elif ".data." in section.name:
+                section_kind = "data"
+            elif ".bss." in section.name:
+                section_kind = "bss"
+            elif ".literal." in section.name:
+                section_kind = "literal"
 
-            if ".rodata." in section.name:
-                full_list_of_sections["rodata"].append(section.name)
-
-            if ".data." in section.name:
-                full_list_of_sections["data"].append(section.name)
-
-            if ".bss." in section.name:
-                full_list_of_sections["bss"].append(section.name)
-
-            if ".literal." in section.name:
-                full_list_of_sections["literal"].append(section.name)
+            if section_kind is None:
+                continue
+            out[section_kind].append(output_section)
 
             # Common variables will be placed in the .bss section
             # only after linking in the final executable. This "if" finds
@@ -207,71 +232,67 @@ def find_sections(filename, full_list_of_sections):
                         warnings.warn("Common variable found. Move "+
                                       symbol.name + " to bss by assigning it to 0/NULL")
 
-    return full_list_of_sections
+    return out
 
 
-def assign_to_correct_mem_region(memory_type,
-                                 full_list_of_sections, complete_list_of_sections):
-    all_regions = False
+def assign_to_correct_mem_region(
+    memory_region: str,
+    full_list_of_sections: 'dict[SectionKind, list[OutputSection]]'
+) -> 'dict[MemoryRegion, dict[SectionKind, OutputSection]]':
+    """
+    Generate a mapping of memory region to collection of output sections to be
+    placed in each region.
+    """
     iteration_sections = {"text": False, "rodata": False, "data": False, "bss": False, "literal": False}
-    if "_TEXT" in memory_type:
+    if "_TEXT" in memory_region:
         iteration_sections["text"] = True
-        memory_type = memory_type.replace("_TEXT", "")
-    if "_RODATA" in memory_type:
+        memory_region = memory_region.replace("_TEXT", "")
+    if "_RODATA" in memory_region:
         iteration_sections["rodata"] = True
-        memory_type = memory_type.replace("_RODATA", "")
-    if "_DATA" in memory_type:
+        memory_region = memory_region.replace("_RODATA", "")
+    if "_DATA" in memory_region:
         iteration_sections["data"] = True
-        memory_type = memory_type.replace("_DATA", "")
-    if "_BSS" in memory_type:
+        memory_region = memory_region.replace("_DATA", "")
+    if "_BSS" in memory_region:
         iteration_sections["bss"] = True
-        memory_type = memory_type.replace("_BSS", "")
-    if "_LITERAL" in memory_type:
+        memory_region = memory_region.replace("_BSS", "")
+    if "_LITERAL" in memory_region:
         iteration_sections["literal"] = True
-        memory_type = memory_type.replace("_LITERAL", "")
-    if not (iteration_sections["data"] or iteration_sections["bss"] or
-            iteration_sections["text"] or iteration_sections["rodata"] or iteration_sections["literal"]):
-        all_regions = True
+        memory_region = memory_region.replace("_LITERAL", "")
+    # If no individual sections are selected, take them all.
+    all_regions = not any(iteration_sections.values())
 
-    pos = memory_type.find('_')
-    if pos in range(len(memory_type)):
-        align_size = int(memory_type[pos+1:])
-        memory_type = memory_type[:pos]
-        mpu_align[memory_type] = align_size
+    memory_region, _, align_size = memory_region.partition('_')
+    if align_size:
+        mpu_align[memory_region] = int(align_size)
 
-    if memory_type in complete_list_of_sections:
-        for iter_sec in ["text", "rodata", "data", "bss", "literal"]:
-            if ((iteration_sections[iter_sec] or all_regions) and
-                    full_list_of_sections[iter_sec] != []):
-                complete_list_of_sections[memory_type][iter_sec] += (
-                    full_list_of_sections[iter_sec])
-    else:
-        # new memory type was found. in which case just assign the
-        # full_list_of_sections to the memorytype dict
-        tmp_list = {"text": [], "rodata": [], "data": [], "bss": [], "literal": []}
-        for iter_sec in ["text", "rodata", "data", "bss", "literal"]:
-            if ((iteration_sections[iter_sec] or all_regions) and
-                    full_list_of_sections[iter_sec] != []):
-                tmp_list[iter_sec] = full_list_of_sections[iter_sec]
+    output_sections = {}
+    for (iter_sec, use_sec) in iteration_sections.items():
+        if use_sec or all_regions:
+            # Pass through section categories that go into this memory region
+            output_sections[iter_sec] = full_list_of_sections[iter_sec]
 
-        complete_list_of_sections[memory_type] = tmp_list
-
-    return complete_list_of_sections
+    return {MemoryRegion(memory_region): output_sections}
 
 
-def print_linker_sections(list_sections):
-    print_string = ''
-    for section in sorted(list_sections):
-        print_string += PRINT_TEMPLATE.format(section)
-    return print_string
+def print_linker_sections(list_sections: 'list[OutputSection]'):
+    return ''.join(PRINT_TEMPLATE.format(obj_file_name=section.obj_file_name,
+                                         section_name=section.section_name)
+                   for section in sorted(list_sections))
 
 
 def add_phdr(memory_type, phdrs):
     return f'{memory_type} {phdrs[memory_type] if memory_type in phdrs else ""}'
 
 
-def string_create_helper(region, memory_type,
-                         full_list_of_sections, load_address_in_flash, is_copy, phdrs):
+def string_create_helper(
+    region,
+    memory_type,
+    full_list_of_sections: 'dict[SectionKind, list[OutputSection]]',
+    load_address_in_flash,
+    is_copy,
+    phdrs
+):
     linker_string = ''
     if load_address_in_flash:
         if is_copy:
@@ -513,14 +534,15 @@ def main():
     sram_data_linker_file = args.output_sram_data
     sram_bss_linker_file = args.output_sram_bss
     rel_dict, phdrs = create_dict_wrt_mem()
-    complete_list_of_sections = {}
+    complete_list_of_sections: 'dict[MemoryRegion, dict[SectionKind, list[OutputSection]]]' \
+        = defaultdict(lambda: defaultdict(list))
 
     # Create/or truncate file contents if it already exists
     # raw = open(linker_file, "w")
 
     # for each memory_type, create text/rodata/data/bss sections for all obj files
     for memory_type, files in rel_dict.items():
-        full_list_of_sections = {"text": [], "rodata": [], "data": [], "bss": [], "literal": []}
+        full_list_of_sections: 'dict[SectionKind, list[OutputSection]]' = defaultdict(list)
 
         for filename in files:
             obj_filename = get_obj_filename(searchpath, filename)
@@ -528,12 +550,16 @@ def main():
             if not obj_filename:
                 continue
 
-            full_list_of_sections = find_sections(obj_filename, full_list_of_sections)
+            file_sections = find_sections(obj_filename)
+            # Merge sections from file into collection of sections for all files
+            for category, sections in file_sections.items():
+                full_list_of_sections[category].extend(sections)
 
         # cleanup and attach the sections to the memory type after cleanup.
-        complete_list_of_sections = assign_to_correct_mem_region(memory_type,
-                                                                 full_list_of_sections,
-                                                                 complete_list_of_sections)
+        sections_by_category = assign_to_correct_mem_region(memory_type, full_list_of_sections)
+        for (region, section_category_map) in sections_by_category.items():
+            for (category, sections) in section_category_map.items():
+                complete_list_of_sections[region][category].extend(sections)
 
     generate_linker_script(linker_file, sram_data_linker_file,
                            sram_bss_linker_file, complete_list_of_sections, phdrs)
