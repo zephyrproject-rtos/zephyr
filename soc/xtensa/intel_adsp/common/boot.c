@@ -136,7 +136,6 @@ __imr void parse_manifest(void)
 
 extern void hp_sram_init(uint32_t memory_size);
 extern void lp_sram_init(void);
-extern void hp_sram_pm_banks(uint32_t banks);
 
 __imr void boot_core0(void)
 {
