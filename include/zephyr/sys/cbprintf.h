@@ -792,9 +792,9 @@ int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 #ifdef CONFIG_PICOLIBC
 
 #define fprintfcb(stream, ...) fprintf(stream, __VA_ARGS__)
-#define vfprintfcb(stream, format, ap) (stream, format, ap)
+#define vfprintfcb(stream, format, ap) vfprintf(stream, format, ap)
 #define printfcb(format, ...) printf(format, __VA_ARGS__)
-#define vprintfcb(format, ap) vfprintf(format, ap)
+#define vprintfcb(format, ap) vprintf(format, ap)
 #define snprintfcb(str, size, ...) snprintf(str, size, __VA_ARGS__)
 #define vsnprintfcb(str, size, format, ap) vsnprintf(str, size, format, ap)
 
