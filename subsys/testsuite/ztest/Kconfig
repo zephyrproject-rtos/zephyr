@@ -29,6 +29,17 @@ config ZTEST_TEST_DELAY_MS
 	  Add a delay between between tests to manage output on the console on
 	  systems that can't handle the rapid output rate.
 
+config ZTEST_CPU_HOLD_TIME_MS
+	int "Time in milliseconds to hold other CPUs for 1cpu type tests"
+	default 3000
+	help
+	  This option is used to specify the maximum time in milliseconds for
+	  which a 1cpu type test may execute on a multicpu system. The default
+	  value ought to suffice for most such tests; however slower platforms
+	  (which may include simulators) may need to set this to a larger
+	  value. Please be aware that increasing it for long-running test cases
+	  may overload the CI system. Modify with caution.
+
 config ZTEST_FAIL_FAST
 	bool "Abort on first failing test"
 	help
