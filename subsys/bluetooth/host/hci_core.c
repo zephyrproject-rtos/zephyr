@@ -1607,15 +1607,10 @@ static void le_conn_update_complete(struct net_buf *buf)
 		return;
 	}
 
-	if (!evt->status) {
-		conn->le.interval = sys_le16_to_cpu(evt->interval);
-		conn->le.latency = sys_le16_to_cpu(evt->latency);
-		conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
-		notify_le_param_updated(conn);
-	} else if (evt->status == BT_HCI_ERR_UNSUPP_REMOTE_FEATURE &&
-		   conn->role == BT_HCI_ROLE_PERIPHERAL &&
-		   !atomic_test_and_set_bit(conn->flags,
-					    BT_CONN_PERIPHERAL_PARAM_L2CAP)) {
+	if (evt->status == BT_HCI_ERR_UNSUPP_REMOTE_FEATURE &&
+	    conn->role == BT_HCI_ROLE_PERIPHERAL &&
+	    !atomic_test_and_set_bit(conn->flags,
+				     BT_CONN_PERIPHERAL_PARAM_L2CAP)) {
 		/* CPR not supported, let's try L2CAP CPUP instead */
 		struct bt_le_conn_param param;
 
@@ -1625,6 +1620,30 @@ static void le_conn_update_complete(struct net_buf *buf)
 		param.timeout = conn->le.pending_timeout;
 
 		bt_l2cap_update_conn_param(conn, &param);
+	} else {
+		if (!evt->status) {
+			conn->le.interval = sys_le16_to_cpu(evt->interval);
+			conn->le.latency = sys_le16_to_cpu(evt->latency);
+			conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
+
+#if defined(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)
+			atomic_clear_bit(conn->flags,
+					 BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE);
+		} else if (atomic_test_bit(conn->flags,
+					   BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE) &&
+			   evt->status == BT_HCI_ERR_UNSUPP_LL_PARAM_VAL &&
+			   conn->le.conn_param_retry_countdown) {
+			conn->le.conn_param_retry_countdown--;
+			k_work_schedule(&conn->deferred_work,
+					K_MSEC(CONFIG_BT_CONN_PARAM_RETRY_TIMEOUT));
+		} else {
+			atomic_clear_bit(conn->flags,
+					 BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE);
+#endif /* CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS */
+
+		}
+
+		notify_le_param_updated(conn);
 	}
 
 	bt_conn_unref(conn);
