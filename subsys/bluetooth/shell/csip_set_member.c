@@ -3,7 +3,7 @@
  * @brief Shell APIs for Bluetooth CSIP set member
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,10 +20,12 @@
 #include "bt.h"
 
 extern const struct shell *ctx_shell;
-struct bt_csip *csip;
+struct bt_csip_set_member_svc_inst *svc_inst;
 static uint8_t sirk_read_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 
-static void locked_cb(struct bt_conn *conn, struct bt_csip *csip, bool locked)
+static void locked_cb(struct bt_conn *conn,
+		      struct bt_csip_set_member_svc_inst *svc_inst,
+		      bool locked)
 {
 	if (conn == NULL) {
 		shell_error(ctx_shell, "Server %s the device",
@@ -38,7 +40,8 @@ static void locked_cb(struct bt_conn *conn, struct bt_csip *csip, bool locked)
 	}
 }
 
-static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csip *csip)
+static uint8_t sirk_read_req_cb(struct bt_conn *conn,
+				struct bt_csip_set_member_svc_inst *svc_inst)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	static const char *const rsp_strings[] = {
@@ -96,7 +99,7 @@ static int cm_csip_set_member_register(const struct shell *sh, size_t argc, char
 		}
 	}
 
-	err = bt_csip_set_member_register(&param, &csip);
+	err = bt_csip_set_member_register(&param, &svc_inst);
 	if (err != 0) {
 		shell_error(sh, "Could not register CSIP: %d", err);
 		return err;
@@ -108,7 +111,7 @@ static int cm_csip_set_member_register(const struct shell *sh, size_t argc, char
 static int cm_csip_set_member_print_sirk(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
-	bt_csip_set_member_print_sirk(csip);
+	bt_csip_set_member_print_sirk(svc_inst);
 	return 0;
 }
 
@@ -116,7 +119,7 @@ static int cm_csip_set_member_lock(const struct shell *sh, size_t argc, char *ar
 {
 	int err;
 
-	err = bt_csip_set_member_lock(csip, true, false);
+	err = bt_csip_set_member_lock(svc_inst, true, false);
 	if (err != 0) {
 		shell_error(sh, "Failed to set lock: %d", err);
 		return -ENOEXEC;
@@ -142,7 +145,7 @@ static int cm_csip_set_member_release(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_csip_set_member_lock(csip, false, force);
+	err = bt_csip_set_member_lock(svc_inst, false, force);
 
 	if (err != 0) {
 		shell_error(sh, "Failed to release lock: %d", err);
@@ -211,7 +214,7 @@ ssize_t csis_ad_data_add(struct bt_data *data_array, const size_t data_array_siz
 	size_t ad_len = 0;
 
 	/* Advertise RSI in discoverable mode only */
-	if (csip != NULL && discoverable) {
+	if (svc_inst != NULL && discoverable) {
 		static uint8_t ad_rsi[BT_CSIP_RSI_SIZE];
 		int err;
 
@@ -223,7 +226,7 @@ ssize_t csis_ad_data_add(struct bt_data *data_array, const size_t data_array_siz
 			shell_warn(ctx_shell, "RSI derived from unencrypted SIRK");
 		}
 
-		err = bt_csip_set_member_generate_rsi(csip, ad_rsi);
+		err = bt_csip_set_member_generate_rsi(svc_inst, ad_rsi);
 		if (err != 0) {
 			shell_error(ctx_shell, "Failed to generate RSI (err %d)", err);
 			return err;

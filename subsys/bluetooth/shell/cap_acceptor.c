@@ -16,10 +16,12 @@
 #include "bt.h"
 
 extern const struct shell *ctx_shell;
-static struct bt_csip *cap_csip_set_member;
+static struct bt_csip_set_member_svc_inst *cap_csip_svc_inst;
 static uint8_t sirk_read_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 
-static void locked_cb(struct bt_conn *conn, struct bt_csip *csip, bool locked)
+static void locked_cb(struct bt_conn *conn,
+		      struct bt_csip_set_member_svc_inst *svc_inst,
+		      bool locked)
 {
 	if (conn == NULL) {
 		shell_error(ctx_shell, "Server %s the device",
@@ -34,7 +36,8 @@ static void locked_cb(struct bt_conn *conn, struct bt_csip *csip, bool locked)
 	}
 }
 
-static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csip *csip)
+static uint8_t sirk_read_req_cb(struct bt_conn *conn,
+				struct bt_csip_set_member_svc_inst *svc_inst)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	static const char *const rsp_strings[] = {
@@ -95,7 +98,7 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_cap_acceptor_register(&param, &cap_csip_set_member);
+	err = bt_cap_acceptor_register(&param, &cap_csip_svc_inst);
 	if (err != 0) {
 		shell_error(sh, "Could not register CAS: %d", err);
 
@@ -108,7 +111,7 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 static int cmd_cap_acceptor_print_sirk(const struct shell *sh, size_t argc,
 				       char *argv[])
 {
-	bt_csip_set_member_print_sirk(cap_csip_set_member);
+	bt_csip_set_member_print_sirk(cap_csip_svc_inst);
 
 	return 0;
 }
@@ -118,7 +121,7 @@ static int cmd_cap_acceptor_lock(const struct shell *sh, size_t argc,
 {
 	int err;
 
-	err = bt_csip_set_member_lock(cap_csip_set_member, true, false);
+	err = bt_csip_set_member_lock(cap_csip_svc_inst, true, false);
 	if (err != 0) {
 		shell_error(sh, "Failed to set lock: %d", err);
 
@@ -146,7 +149,7 @@ static int cmd_cap_acceptor_release(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_csip_set_member_lock(cap_csip_set_member, false, force);
+	err = bt_csip_set_member_lock(cap_csip_svc_inst, false, force);
 
 	if (err != 0) {
 		shell_error(sh, "Failed to release lock: %d", err);

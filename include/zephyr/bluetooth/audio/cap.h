@@ -39,14 +39,15 @@ extern "C" {
  * @kconfig{BT_CAP_ACCEPTOR_SET_MEMBER}. If @kconfig{BT_CAP_ACCEPTOR_SET_MEMBER}
  * is not enabled, the Common Audio Service will by statically registered.
  *
- * @param[in]  param Coordinated Set Identification Service register parameters.
- * @param[out] csip  Pointer to the registered Coordinated Set Identification
- *                   Service.
+ * @param[in]  param     Coordinated Set Identification Service register
+ *                       parameters.
+ * @param[out] svc_inst  Pointer to the registered Coordinated Set
+ *                       Identification Service.
  *
  * @return 0 if success, errno on failure.
  */
 int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *param,
-			     struct bt_csip **csip);
+			     struct bt_csip_set_member_svc_inst **svc_inst);
 
 /** Callback structure for CAP procedures */
 struct bt_cap_initiator_cb {

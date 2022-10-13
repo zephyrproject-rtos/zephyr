@@ -9,7 +9,7 @@
 
 #include "common.h"
 
-static struct bt_csip *csip;
+static struct bt_csip_set_member_svc_inst *svc_inst;
 static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
 static volatile bool g_locked;
@@ -47,14 +47,16 @@ static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-static void csip_lock_changed_cb(struct bt_conn *conn, struct bt_csip *csip,
+static void csip_lock_changed_cb(struct bt_conn *conn,
+				 struct bt_csip_set_member_svc_inst *svc_inst,
 				 bool locked)
 {
 	printk("Client %p %s the lock\n", conn, locked ? "locked" : "released");
 	g_locked = locked;
 }
 
-static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csip *csip)
+static uint8_t sirk_read_req_cb(struct bt_conn *conn,
+				struct bt_csip_set_member_svc_inst *svc_inst)
 {
 	return sirk_read_req_rsp;
 }
@@ -81,13 +83,13 @@ static void bt_ready(int err)
 
 	param.cb = &csip_cbs;
 
-	err = bt_csip_set_member_register(&param, &csip);
+	err = bt_csip_set_member_register(&param, &svc_inst);
 	if (err != 0) {
 		FAIL("Could not register CSIP (err %d)\n", err);
 		return;
 	}
 
-	err = bt_csip_set_member_generate_rsi(csip, rsi);
+	err = bt_csip_set_member_generate_rsi(svc_inst, rsi);
 	if (err != 0) {
 		FAIL("Failed to generate RSI (err %d)\n", err);
 		return;
@@ -133,7 +135,7 @@ static void test_force_release(void)
 
 	WAIT_FOR_COND(g_locked);
 	printk("Force releasing set\n");
-	bt_csip_set_member_lock(csip, false, true);
+	bt_csip_set_member_lock(svc_inst, false, true);
 }
 
 static void test_csip_enc(void)

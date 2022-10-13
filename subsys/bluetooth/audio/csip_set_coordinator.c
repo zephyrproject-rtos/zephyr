@@ -555,27 +555,27 @@ static int csip_set_coordinator_write_set_lock(struct bt_csip_set_coordinator_sv
 	return bt_gatt_write(inst->conn, &write_params);
 }
 
-static int read_set_sirk(struct bt_csip_set_coordinator_svc_inst *csip)
+static int read_set_sirk(struct bt_csip_set_coordinator_svc_inst *svc_inst)
 {
 	if (cur_inst != NULL) {
-		if (cur_inst != csip) {
+		if (cur_inst != svc_inst) {
 			return -EBUSY;
 		}
 	} else {
-		cur_inst = csip;
+		cur_inst = svc_inst;
 	}
 
-	if (csip->set_sirk_handle == 0) {
+	if (svc_inst->set_sirk_handle == 0) {
 		BT_DBG("Handle not set");
 		return -EINVAL;
 	}
 
 	read_params.func = csip_set_coordinator_discover_insts_read_set_sirk_cb;
 	read_params.handle_count = 1;
-	read_params.single.handle = csip->set_sirk_handle;
+	read_params.single.handle = svc_inst->set_sirk_handle;
 	read_params.single.offset = 0U;
 
-	return bt_gatt_read(csip->conn, &read_params);
+	return bt_gatt_read(svc_inst->conn, &read_params);
 }
 
 static int csip_set_coordinator_read_set_size(struct bt_conn *conn,
