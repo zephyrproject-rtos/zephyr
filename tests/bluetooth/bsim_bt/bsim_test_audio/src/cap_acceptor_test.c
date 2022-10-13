@@ -19,7 +19,7 @@ static const struct bt_data cap_acceptor_ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_CAS_VAL)),
 };
 
-static struct bt_csip *csip_set_member;
+static struct bt_csip_set_member_svc_inst *csip_set_member;
 
 CREATE_FLAG(flag_connected);
 

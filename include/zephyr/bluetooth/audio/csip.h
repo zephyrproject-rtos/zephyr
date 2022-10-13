@@ -73,21 +73,23 @@ extern "C" {
 #define BT_CSIP_DATA_RSI(_rsi) BT_DATA(BT_DATA_CSIS_RSI, _rsi, BT_CSIP_RSI_SIZE)
 
 /** @brief Opaque Coordinated Set Identification Service instance. */
-struct bt_csip;
+struct bt_csip_set_member_svc_inst;
 
 /** Callback structure for the Coordinated Set Identification Service */
 struct bt_csip_set_member_cb {
 	/**
 	 * @brief Callback whenever the lock changes on the server.
 	 *
-	 * @param conn    The connection to the client that changed the lock.
-	 *                NULL if server changed it, either by calling
-	 *                bt_csip_set_member_lock() or by timeout.
-	 * @param csip    Pointer to the Coordinated Set Identification Service.
-	 * @param locked  Whether the lock was locked or released.
+	 * @param conn      The connection to the client that changed the lock.
+	 *                  NULL if server changed it, either by calling
+	 *                  bt_csip_set_member_lock() or by timeout.
+	 * @param svc_inst  Pointer to the Coordinated Set Identification
+	 *                  Service.
+	 * @param locked    Whether the lock was locked or released.
 	 *
 	 */
-	void (*lock_changed)(struct bt_conn *conn, struct bt_csip *csip,
+	void (*lock_changed)(struct bt_conn *conn,
+			     struct bt_csip_set_member_svc_inst *svc_inst,
 			     bool locked);
 
 	/**
@@ -96,13 +98,15 @@ struct bt_csip_set_member_cb {
 	 * If this callback is not set, all clients will be allowed to read
 	 * the SIRK unencrypted.
 	 *
-	 * @param conn The connection to the client that requested to read the
-	 *             SIRK.
-	 * @param csip Pointer to the Coordinated Set Identification Service.
+	 * @param conn      The connection to the client that requested to read
+	 *                  the SIRK.
+	 * @param svc_inst  Pointer to the Coordinated Set Identification
+	 *                  Service.
 	 *
 	 * @return A BT_CSIP_READ_SIRK_REQ_RSP_* response code.
 	 */
-	uint8_t (*sirk_read_req)(struct bt_conn *conn, struct bt_csip *csip);
+	uint8_t (*sirk_read_req)(struct bt_conn *conn,
+				 struct bt_csip_set_member_svc_inst *svc_inst);
 };
 
 /** Register structure for Coordinated Set Identification Service */
@@ -160,11 +164,11 @@ struct bt_csip_set_member_register_param {
  *
  * The first service attribute can be included in any other GATT service.
  *
- * @param csip   Pointer to the Coordinated Set Identification Service.
+ * @param svc_inst   Pointer to the Coordinated Set Identification Service.
  *
  * @return The first CSIS attribute instance.
  */
-void *bt_csip_set_member_svc_decl_get(const struct bt_csip *csip);
+void *bt_csip_set_member_svc_decl_get(const struct bt_csip_set_member_svc_inst *svc_inst);
 
 /**
  * @brief Register a Coordinated Set Identification Service instance.
@@ -174,47 +178,49 @@ void *bt_csip_set_member_svc_decl_get(const struct bt_csip *csip);
  *
  * This shall only be done as a server.
  *
- * @param      param Coordinated Set Identification Service register parameters.
- * @param[out] csip  Pointer to the registered Coordinated Set Identification
- *                   Service.
+ * @param      param     Coordinated Set Identification Service register
+ *                       parameters.
+ * @param[out] svc_inst  Pointer to the registered Coordinated Set
+ *                       Identification Service.
  *
  * @return 0 if success, errno on failure.
  */
 int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *param,
-				struct bt_csip **csip);
+				struct bt_csip_set_member_svc_inst **svc_inst);
 
 /**
  * @brief Print the SIRK to the debug output
  *
- * @param csip   Pointer to the Coordinated Set Identification Service.
+ * @param svc_inst   Pointer to the Coordinated Set Identification Service.
  */
-void bt_csip_set_member_print_sirk(const struct bt_csip *csip);
+void bt_csip_set_member_print_sirk(const struct bt_csip_set_member_svc_inst *svc_inst);
 
 /**
  * @brief Generate the Resolvable Set Identifier (RSI) value.
  *
- * This will generate RSI for given @p csip instance.
+ * This will generate RSI for given @p svc_inst instance.
  *
- * @param csip          Pointer to the Coordinated Set Identification Service.
- * @param rsi           Pointer to the 6-octet newly generated RSI data.
+ * @param svc_inst  Pointer to the Coordinated Set Identification Service.
+ * @param rsi       Pointer to the 6-octet newly generated RSI data.
  *
  * @return int		0 if on success, errno on error.
  */
-int bt_csip_set_member_generate_rsi(const struct bt_csip *csip,
+int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *svc_inst,
 				    uint8_t rsi[BT_CSIP_RSI_SIZE]);
 
 /**
  * @brief Locks a specific Coordinated Set Identification Service instance on the server.
  *
- * @param csip    Pointer to the Coordinated Set Identification Service.
- * @param lock    If true lock the set, if false release the set.
- * @param force   This argument only have meaning when @p lock is false
- *                (release) and will force release the lock, regardless of who
- *                took the lock.
+ * @param svc_inst  Pointer to the Coordinated Set Identification Service.
+ * @param lock      If true lock the set, if false release the set.
+ * @param force     This argument only have meaning when @p lock is false
+ *                  (release) and will force release the lock, regardless of who
+ *                  took the lock.
  *
  * @return 0 on success, GATT error on error.
  */
-int bt_csip_set_member_lock(struct bt_csip *csip, bool lock, bool force);
+int bt_csip_set_member_lock(struct bt_csip_set_member_svc_inst *svc_inst,
+			    bool lock, bool force);
 
 /** Information about a specific set */
 struct bt_csip_set_coordinator_set_info {
