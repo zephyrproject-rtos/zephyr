@@ -106,9 +106,7 @@ int regulator_get_current_limit(const struct device *dev);
  * @brief Select mode of regulator
  * Regulators can support multiple modes in order to permit different voltage
  * configuration or better power savings. This API will apply a mode for
- * the regulator, and also configure the remainder of the regulator APIs,
- * such as those disabling, changing voltage/current targets, or querying
- * voltage/current targets to target that mode.
+ * the regulator.
  * @param dev: regulator to switch mode for
  * @param mode: Mode to select for this regulator. Only modes present
  * in the regulator-allowed-modes property are permitted.
