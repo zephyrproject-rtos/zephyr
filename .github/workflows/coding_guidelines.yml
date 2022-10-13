@@ -14,7 +14,7 @@ jobs:
         fetch-depth: 0
 
     - name: cache-pip
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-doc-pip
