@@ -1156,6 +1156,9 @@ static int ascs_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
 	bt_pacs_cap_foreach(ep->dir, codec_lookup_id, &lookup_data);
 
 	if (lookup_data.codec == NULL) {
+		BT_DBG("Codec with id %u for dir %u is not supported by our capabilities",
+			id, ep->dir);
+
 		return -ENOENT;
 	}
 

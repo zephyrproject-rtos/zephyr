@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 
 #include "../host/conn_internal.h"
 #include "../host/iso_internal.h"
@@ -41,6 +42,11 @@ static struct bt_audio_ep broadcast_sink_eps
 	[CONFIG_BT_AUDIO_BROADCAST_SNK_COUNT][BROADCAST_SNK_STREAM_CNT];
 static struct bt_audio_broadcast_sink broadcast_sinks[CONFIG_BT_AUDIO_BROADCAST_SNK_COUNT];
 static struct bt_le_scan_cb broadcast_scan_cb;
+
+struct codec_lookup_id_data {
+	uint8_t id;
+	struct bt_codec *codec;
+};
 
 static sys_slist_t sink_cbs = SYS_SLIST_STATIC_INIT(&sink_cbs);
 
@@ -989,6 +995,19 @@ static struct bt_codec *codec_from_base_by_index(struct bt_audio_base *base,
 	return NULL;
 }
 
+static bool codec_lookup_id(const struct bt_pacs_cap *cap, void *user_data)
+{
+	struct codec_lookup_id_data *data = user_data;
+
+	if (cap->codec->id == data->id) {
+		data->codec = cap->codec;
+
+		return false;
+	}
+
+	return true;
+}
+
 int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 				 uint32_t indexes_bitfield,
 				 struct bt_audio_stream *streams[],
@@ -1043,11 +1062,26 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 	for (int i = 1; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
 		if ((indexes_bitfield & BIT(i)) != 0) {
 			struct bt_codec *codec = codec_from_base_by_index(&sink->base, i);
+			struct codec_lookup_id_data lookup_data = { };
 
 			if (codec == NULL) {
 				BT_DBG("Index %d not found in BASE", i);
 				return -EINVAL;
 			}
+
+			/* Lookup and assign path_id based on capabilities */
+			lookup_data.id = codec->id;
+
+			bt_pacs_cap_foreach(BT_AUDIO_DIR_SINK, codec_lookup_id,
+					    &lookup_data);
+			if (lookup_data.codec == NULL) {
+				BT_DBG("Codec with id %u is not supported by our capabilities",
+				       codec->id);
+
+				return -ENOENT;
+			}
+
+			codec->path_id = lookup_data.codec->path_id;
 
 			codecs[stream_count++] = codec;
 
