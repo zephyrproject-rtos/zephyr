@@ -21,19 +21,6 @@
 		};
 	};
 
-	/* TODO: Add psram1 & dsram2 to MEMORY layout of linker */
-	psram1: memory@10000000 {
-		compatible = "mmio-sram";
-	};
-
-	dsram1: memory@20000000 {
-		compatible = "mmio-sram";
-	};
-
-	dsram2: memory@30000000 {
-		compatible = "mmio-sram";
-	};
-
 	flash_controller: flash_controller@58001000 {
 		compatible = "infineon,xmc4xxx-flash-controller";
 		reg = <0x58001000 0x1400>;
