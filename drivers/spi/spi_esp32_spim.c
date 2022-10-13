@@ -154,7 +154,6 @@ static int spi_esp32_init_dma(const struct device *dev)
 	struct spi_esp32_data *data = dev->data;
 	uint8_t channel_offset;
 
-	LOG_ERR("DMA");
 	if (clock_control_on(cfg->clock_dev, (clock_control_subsys_t)cfg->dma_clk_src)) {
 		LOG_ERR("Could not enable DMA clock");
 		return -EIO;
