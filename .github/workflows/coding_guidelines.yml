@@ -8,7 +8,7 @@ jobs:
     name: Run coding guidelines checks on patch series (PR)
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
