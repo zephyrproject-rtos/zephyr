@@ -337,7 +337,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 				int count = 0;
 
 				while (bytes && buf) {
-					char msg[8 + 1];
+					char msg[6 + 10 + 1];
 
 					snprintk(msg, sizeof(msg),
 						 ">slip %2d", count);
