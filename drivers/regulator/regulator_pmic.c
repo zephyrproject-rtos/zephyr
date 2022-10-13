@@ -39,7 +39,6 @@ struct regulator_data {
 	struct onoff_sync_service srv;
 	const struct voltage_range *voltages;
 	const struct current_range *current_levels;
-	uint8_t reg_offset;
 };
 
 struct regulator_config {
@@ -74,11 +73,8 @@ static int regulator_read_register(const struct device *dev,
 	uint8_t reg, uint8_t *out)
 {
 	const struct regulator_config *conf = dev->config;
-	struct regulator_data *data = dev->data;
 	int ret;
 
-	/* Apply mode offset to register */
-	reg += data->reg_offset;
 	ret = i2c_reg_read_byte_dt(&conf->i2c, reg, out);
 	LOG_DBG("READ 0x%x: 0x%x", reg, *out);
 	return ret;
@@ -92,7 +88,6 @@ static int regulator_modify_register(const struct device *dev,
 		uint8_t reg, uint8_t reg_mask, uint8_t reg_val)
 {
 	const struct regulator_config *conf = dev->config;
-	struct regulator_data *data = dev->data;
 	uint8_t reg_current;
 	int rc;
 
@@ -101,8 +96,6 @@ static int regulator_modify_register(const struct device *dev,
 		return rc;
 	}
 
-	/* Apply mode offset to register */
-	reg += data->reg_offset;
 	reg_current &= ~reg_mask;
 	reg_current |= (reg_val & reg_mask);
 	LOG_DBG("WRITE 0x%02X to 0x%02X at I2C addr 0x%02X", reg_current,
@@ -281,14 +274,11 @@ int regulator_get_current_limit(const struct device *dev)
 /*
  * Part of the extended regulator consumer API
  * switches the regulator to a given mode. This API will apply a mode for
- * the regulator, and also configure the remainder of the regulator APIs,
- * such as those disabling, changing voltage/current targets, or querying
- * voltage/current targets to target that mode.
+ * the regulator.
  */
 int regulator_set_mode(const struct device *dev, uint32_t mode)
 {
 	const struct regulator_config *config = dev->config;
-	struct regulator_data *data = dev->data;
 	int rc;
 	uint8_t i, sel_off;
 
@@ -310,26 +300,13 @@ int regulator_set_mode(const struct device *dev, uint32_t mode)
 	/* Configure mode */
 	if (mode & PMIC_MODE_FLAG_MODESEL_MULTI_REG) {
 		/* Select mode with offset calculation */
-		/* Set reg_offset here so it takes effect for the write
-		 * to modesel_reg
-		 */
-		data->reg_offset = sel_off;
-		rc = regulator_modify_register(dev, config->modesel_reg,
+		rc = regulator_modify_register(dev,
+			config->modesel_reg + sel_off,
 			mode & PMIC_MODE_SELECTOR_MASK, config->modesel_mask);
 	} else {
 		/* Select mode without offset to modesel_reg */
-		/* Clear register offset */
-		data->reg_offset = 0;
 		rc = regulator_modify_register(dev, config->modesel_reg,
 			mode & PMIC_MODE_SELECTOR_MASK, config->modesel_mask);
-		if (rc) {
-			return rc;
-		}
-		/* Since we did not use a register offset when selecting the
-		 * mode, but we now are targeting a specific mode's bank
-		 * of registers, we must still set the register offset here
-		 */
-		data->reg_offset = sel_off;
 	}
 	return rc;
 }
@@ -421,9 +398,7 @@ static const struct regulator_driver_api api = {
 		DT_PROP(node, voltage_range);							\
 	static uint16_t pmic_reg_##ord##_allowed_modes[] =					\
 		DT_PROP_OR(DT_PARENT(node), regulator_allowed_modes, {});			\
-	static struct regulator_data pmic_reg_##ord##_data = {					\
-		.reg_offset = 0,								\
-	};											\
+	static struct regulator_data pmic_reg_##ord##_data;					\
 	static struct regulator_config pmic_reg_##ord##_cfg = {					\
 		.vsel_mask = DT_PROP(node, vsel_mask),						\
 		.vsel_reg = DT_PROP(node, vsel_reg),						\
