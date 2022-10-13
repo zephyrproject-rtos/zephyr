@@ -103,6 +103,11 @@ Deprecated in this release
 Stable API changes in this release
 ==================================
 
+* MCUmgr events have been reworked to use a single, unified callback system.
+  This allows better customisation of the callbacks with a lower flash size.
+  Applications using the existing callback system will need to be upgraded to
+  use the new API by following the :ref:`migration guide <mcumgr_cb_migration>`
+
 New APIs in this release
 ========================
 
@@ -320,6 +325,8 @@ Libraries / Subsystems
     has been replaced with the ``smp_streamer`` struct, the zcbor objects need
     to replace ``cnbe`` object access with ``writer`` and ``cnbd`` object
     access with ``reader`` to successfully build.
+  * MCUmgr callback system has been reworked with a unified singular interface
+    which supports status passing to the handler (:ref:`mcumgr_callbacks`).
 
 * LwM2M
 
