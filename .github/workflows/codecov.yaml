@@ -54,7 +54,7 @@ jobs:
         run: |
           string(REPLACE "/" "_" repo ${{github.repository}})
           string(REPLACE "-" "_" repo2 ${repo})
-          message("::set-output name=repo::${repo2}")
+          file(APPEND $ENV{GITHUB_OUTPUT} "repo=${repo2}\n")
 
       - name: use cache
         id: cache-ccache
@@ -144,8 +144,8 @@ jobs:
               set(MERGELIST "${MERGELIST} -a ${f}")
             endif()
           endforeach()
-          message("::set-output name=mergefiles::${MERGELIST}")
-          message("::set-output name=covfiles::${FILELIST}")
+          file(APPEND $ENV{GITHUB_OUTPUT} "mergefiles=${MERGELIST}\n")
+          file(APPEND $ENV{GITHUB_OUTPUT} "covfiles=${FILELIST}\n")
 
       - name: Merge coverage files
         run: |
