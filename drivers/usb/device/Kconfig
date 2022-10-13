@@ -168,6 +168,64 @@ config USB_MCUX_THREAD_STACK_SIZE
 
 endif # USB_MCUX
 
+config USB_DC_NUMAKER
+    bool "Nuvoton NuMaker USB 1.1/2.0 device controller"
+	depends on SOC_FAMILY_NUMAKER
+    depends on USB_DC_NUMAKER_USBD || USB_DC_NUMAKER_HSUSBD
+	default USB_DC_NUMAKER_USBD || USB_DC_NUMAKER_HSUSBD
+	help
+	  Enables Nuvoton NuMaker USB device controller driver.
+
+DT_COMPAT_NUMAKER_USBD := nuvoton,numaker-usbd
+DT_COMPAT_NUMAKER_HSUSBD := nuvoton,numaker-hsusbd
+
+choice USB_DC_NUMAKER_TYPE
+	prompt "Nuvoton NuMaker USB device controller type"
+	default USB_DC_NUMAKER_USBD
+	help
+	  Select the type of Nuvoton NuMaker USB device controller.
+
+config USB_DC_NUMAKER_USBD
+	bool "Nuvoton NuMaker USB 1.1 device controller"
+	select HAS_NUMAKER_USBD
+    depends on $(dt_compat_enabled,$(DT_COMPAT_NUMAKER_USBD))
+	help
+	  Enable Nuvoton NuMaker USB 1.1 device controller driver.
+
+config USB_DC_NUMAKER_HSUSBD
+	bool "Nuvoton NuMaker high-speed USB 2.0 device controller"
+	select HAS_NUMAKER_HSUSBD
+    depends on $(dt_compat_enabled,$(DT_COMPAT_NUMAKER_HSUSBD))
+	help
+	  Enable Nuvoton NuMaker high-speed USB 2.0 device controller driver.
+
+endchoice
+
+config USB_DC_NUMAKER_USBD_WORKAROUND_DISALLOW_ISO_IN_OUT_SAME_NUM
+    bool "Enable workaround for disallowing Isochronous IN/OUT endpoints to be of same numbers"
+    default $(dt_nodelabel_bool_prop,usbd,disallow-iso-in-out-same-number)
+    depends on USB_DC_NUMAKER_USBD
+    help
+      Enable workaround which can allow Isochronous IN/OUT endpoints to be assigned
+      the same endpoint numbers. Note this workaround can only work for not more than
+      one Isochronous IN endpoint enabled, or behavior is undefined.
+
+config USB_DC_NUMAKER_MSG_QUEUE_SIZE
+	int "USB DC message queue size"
+	default 32
+	depends on USB_DC_NUMAKER
+	help
+	  Maximum number of messages the driver can queue for interrupt bottom half processing.
+
+config USB_DC_NUMAKER_MSG_HANDLER_THREAD_STACK_SIZE
+	int "USB DC message handler thread stack size"
+	default 1536
+	depends on USB_DC_NUMAKER
+	help
+	  Size of the stack for the message handler thread that is used in the driver
+	  for handling messages from the USB DC ISR, i.e. interrupt bottom half processing,
+	  including callbacks to the USB device stack.
+
 config USB_NATIVE_POSIX
 	bool "Native Posix USB Device Controller Driver"
 	help

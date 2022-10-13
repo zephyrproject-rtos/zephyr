@@ -61,6 +61,12 @@
 
 };
 
+&scc {
+    /* For USB 1.1 Host/Device/OTG, configure to 192MHz, which can generate necessary 48MHz.
+     * For USB 2.0 Host/Device/OTG or no USB application, comment out to use default. */
+    core-clock = <192000000>;
+};
+
 &gpiob {
 	status = "okay";
 };
@@ -100,4 +106,17 @@
     pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+/* Notes for USBD (USB 1.1 Device Controller)
+ *
+ * 1. According to doc/releases/release-notes-2.7.rst, to allow generic USB device support
+ *    samples to be built, boards are supposed to add 'zephyr_udc0' node label for support
+ *    USB device controller and make it enabled.
+ * 2. On enabled, 'core-clock', as above, is required to to be 192MHz.
+ */
+zephyr_udc0: &usbd {
+	pinctrl-0 = <&usbd_default>;
+	pinctrl-names = "default";
+    status = "okay";
 };

@@ -1,0 +1,30 @@
+# Copyright (c) 2022 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NuMaker USB 2.0 device controller
+
+compatible: "nuvoton,numaker-hsusbd"
+
+include:
+    - name: usb-ep.yaml
+    - name: pinctrl-device.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    reset:
+      required: true
+      type: int
+
+    clocks:
+      required: true
+
+    dma-buffer-size:
+      type: int
+      required: true
+      description: |
+        Size of DMA buffer in bytes

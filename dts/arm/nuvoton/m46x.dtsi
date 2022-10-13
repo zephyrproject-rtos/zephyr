@@ -516,6 +516,30 @@
 			status = "disabled";
 		};
 
+        usbd: usbd@400c0000 {
+			compatible = "nuvoton,numaker-usbd";
+			reg = <0x400c0000 0x1000>;
+			interrupts = <53 0>;
+			reset = <USBD_RST>;
+			clocks = <&pcc USBD_MODULE CLK_CLKSEL0_USBSEL_PLL_DIV2 CLK_CLKDIV0_USB(2)>;
+			dma-buffer-size = <1536>;
+            status = "disabled";
+			label = "USBD";
+			num-bidir-endpoints = <25>;
+			disallow-iso-in-out-same-number;
+		};
+
+        hsusbd: hsusbd@40019000 {
+			compatible = "nuvoton,numaker-hsusbd";
+			reg = <0x40019000 0x1000>;
+			interrupts = <65 0>;
+			reset = <HSUSBD_RST>;
+			clocks = <&pcc HSUSBD_MODULE 0 0>;
+            dma-buffer-size = <4096>;
+			status = "disabled";
+			label = "HSUSBD";
+			num-bidir-endpoints = <(12 + 2)>; /* Including control endpoints by +2 */
+		};
 	};
 };
 

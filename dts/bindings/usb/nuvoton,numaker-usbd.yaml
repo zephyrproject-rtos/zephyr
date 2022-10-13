@@ -1,0 +1,35 @@
+# Copyright (c) 2022 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NuMaker USB 1.1 device controller
+
+compatible: "nuvoton,numaker-usbd"
+
+include:
+    - name: usb-ep.yaml
+    - name: pinctrl-device.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+      
+    reset:
+      required: true
+      type: int
+
+    clocks:
+      required: true
+
+    dma-buffer-size:
+      type: int
+      required: true
+      description: |
+        Size of DMA buffer in bytes
+
+    disallow-iso-in-out-same-number:
+      type: boolean
+      description: |
+        Disallow Isochronous IN/OUT endpoints to be assigned the same endpoint numbers

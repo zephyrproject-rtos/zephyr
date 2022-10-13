@@ -51,4 +51,12 @@ menu "Nuvoton NuMaker drivers"
         bool "NuMaker PWM"
         help
             Enable Nuvoton PWM HAL module driver
+    config HAS_NUMAKER_USBD
+        bool "NuMaker USB 1.1 device controller"
+        help
+            Enable Nuvoton USB 1.1 device controller HAL module driver
+    config HAS_NUMAKER_HSUSBD
+        bool "NuMaker high-speed USB 2.0 device controller"
+        help
+            Enable Nuvoton high-speed USB 2.0 device controller HAL module driver
 endmenu

@@ -20,4 +20,12 @@
                 <PB3MFP_UART1_TXD 0x0000>,
                 <PC9MFP_GPIO 0x0000>;
     };
+
+    /* USBD multi-function pins for VBUS, D+, D-, and ID pins */
+    usbd_default: usbd_default {
+        pinmux = <PA12MFP_USB_VBUS 0x0000>,
+                 <PA13MFP_USB_D_N 0x0000>,
+                 <PA14MFP_USB_D_P 0x0000>,
+                 <PA15MFP_USB_OTG_ID 0x0000>;
+    };
 };
