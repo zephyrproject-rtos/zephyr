@@ -3,9 +3,10 @@
 
 description: PMIC controlled regulator
 
-include: regulator.yaml
 
 compatible: "regulator-pmic"
+
+include: base.yaml
 
 properties:
   regulator-initial-mode:
@@ -38,6 +39,10 @@ properties:
       to the modesel-reg.
 
 child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-boot-on
   description: Voltage output of PMIC controller regulator
   properties:
       voltage-range:

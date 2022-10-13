@@ -191,6 +191,7 @@ arduino_serial: &flexcomm12 {
 			enable-val = <PCA9420_MODECFG_2_SW1_EN_VAL>;
 			min-uV = <500000>;
 			max-uV = <1800000>;
+			regulator-boot-on;
 		};
 
 		pca9420_sw2: sw2_buck {
@@ -207,6 +208,7 @@ arduino_serial: &flexcomm12 {
 			enable-val = <PCA9420_MODECFG_2_SW2_EN_VAL>;
 			min-uV = <1500000>;
 			max-uV = <3300000>;
+			regulator-boot-on;
 		};
 
 		pca9420_ldo1: ldo1_reg {
@@ -223,6 +225,7 @@ arduino_serial: &flexcomm12 {
 			enable-val = <PCA9420_MODECFG_2_LDO1_EN_VAL>;
 			min-uV = <1700000>;
 			max-uV = <1900000>;
+			regulator-boot-on;
 		};
 
 		pca9420_ldo2: ldo2_reg {
@@ -239,6 +242,7 @@ arduino_serial: &flexcomm12 {
 			enable-val = <PCA9420_MODECFG_2_LDO2_EN_VAL>;
 			min-uV = <1500000>;
 			max-uV = <3300000>;
+			regulator-boot-on;
 		};
 
 
