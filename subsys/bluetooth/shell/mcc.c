@@ -555,7 +555,7 @@ static void mcc_otc_read_current_group_object_cb(struct bt_conn *conn, int err,
 #endif /* CONFIG_BT_MCC_OTS */
 
 
-int cmd_mcc_init(const struct shell *sh, size_t argc, char **argv)
+static int cmd_mcc_init(const struct shell *sh, size_t argc, char **argv)
 {
 	int result;
 
@@ -621,7 +621,8 @@ int cmd_mcc_init(const struct shell *sh, size_t argc, char **argv)
 	return result;
 }
 
-int cmd_mcc_discover_mcs(const struct shell *sh, size_t argc, char **argv)
+static int cmd_mcc_discover_mcs(const struct shell *sh, size_t argc,
+				char **argv)
 {
 	int result;
 	int subscribe = 1;
@@ -642,8 +643,8 @@ int cmd_mcc_discover_mcs(const struct shell *sh, size_t argc, char **argv)
 	return result;
 }
 
-int cmd_mcc_read_player_name(const struct shell *sh, size_t argc,
-			     char *argv[])
+static int cmd_mcc_read_player_name(const struct shell *sh, size_t argc,
+				    char *argv[])
 {
 	int result;
 
@@ -655,8 +656,8 @@ int cmd_mcc_read_player_name(const struct shell *sh, size_t argc,
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-int cmd_mcc_read_icon_obj_id(const struct shell *sh, size_t argc,
-			     char *argv[])
+static int cmd_mcc_read_icon_obj_id(const struct shell *sh, size_t argc,
+				    char *argv[])
 {
 	int result;
 
@@ -668,7 +669,8 @@ int cmd_mcc_read_icon_obj_id(const struct shell *sh, size_t argc,
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-int cmd_mcc_read_icon_url(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_read_icon_url(const struct shell *sh, size_t argc,
+				 char *argv[])
 {
 	int result;
 
@@ -679,8 +681,8 @@ int cmd_mcc_read_icon_url(const struct shell *sh, size_t argc, char *argv[])
 	return result;
 }
 
-int cmd_mcc_read_track_title(const struct shell *sh, size_t argc,
-			     char *argv[])
+static int cmd_mcc_read_track_title(const struct shell *sh, size_t argc,
+				    char *argv[])
 {
 	int result;
 
@@ -691,8 +693,8 @@ int cmd_mcc_read_track_title(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_read_track_duration(const struct shell *sh, size_t argc,
-				char *argv[])
+static int cmd_mcc_read_track_duration(const struct shell *sh, size_t argc,
+				       char *argv[])
 {
 	int result;
 
@@ -703,8 +705,8 @@ int cmd_mcc_read_track_duration(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_read_track_position(const struct shell *sh, size_t argc,
-				char *argv[])
+static int cmd_mcc_read_track_position(const struct shell *sh, size_t argc,
+				       char *argv[])
 {
 	int result;
 
@@ -715,8 +717,8 @@ int cmd_mcc_read_track_position(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_set_track_position(const struct shell *sh, size_t argc,
-			       char *argv[])
+static int cmd_mcc_set_track_position(const struct shell *sh, size_t argc,
+				      char *argv[])
 {
 	int result;
 	int32_t pos = strtol(argv[1], NULL, 0);
@@ -731,8 +733,8 @@ int cmd_mcc_set_track_position(const struct shell *sh, size_t argc,
 }
 
 
-int cmd_mcc_read_playback_speed(const struct shell *sh, size_t argc,
-				char *argv[])
+static int cmd_mcc_read_playback_speed(const struct shell *sh, size_t argc,
+				       char *argv[])
 {
 	int result;
 
@@ -744,8 +746,8 @@ int cmd_mcc_read_playback_speed(const struct shell *sh, size_t argc,
 }
 
 
-int cmd_mcc_set_playback_speed(const struct shell *sh, size_t argc,
-			       char *argv[])
+static int cmd_mcc_set_playback_speed(const struct shell *sh, size_t argc,
+				      char *argv[])
 {
 	int result;
 	int8_t speed = strtol(argv[1], NULL, 0);
@@ -757,8 +759,8 @@ int cmd_mcc_set_playback_speed(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_read_seeking_speed(const struct shell *sh, size_t argc,
-			       char *argv[])
+static int cmd_mcc_read_seeking_speed(const struct shell *sh, size_t argc,
+				      char *argv[])
 {
 	int result;
 
@@ -771,8 +773,8 @@ int cmd_mcc_read_seeking_speed(const struct shell *sh, size_t argc,
 
 
 #ifdef CONFIG_BT_MCC_OTS
-int cmd_mcc_read_track_segments_obj_id(const struct shell *sh,
-				       size_t argc, char *argv[])
+static int cmd_mcc_read_track_segments_obj_id(const struct shell *sh,
+					      size_t argc, char *argv[])
 {
 	int result;
 
@@ -784,8 +786,8 @@ int cmd_mcc_read_track_segments_obj_id(const struct shell *sh,
 }
 
 
-int cmd_mcc_read_current_track_obj_id(const struct shell *sh, size_t argc,
-				      char *argv[])
+static int cmd_mcc_read_current_track_obj_id(const struct shell *sh,
+					     size_t argc, char *argv[])
 {
 	int result;
 
@@ -796,8 +798,8 @@ int cmd_mcc_read_current_track_obj_id(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_set_current_track_obj_id(const struct shell *sh, size_t argc,
-				      char *argv[])
+static int cmd_mcc_set_current_track_obj_id(const struct shell *sh, size_t argc,
+					    char *argv[])
 {
 	int result;
 	uint64_t id = strtoul(argv[1], NULL, 0);
@@ -811,8 +813,8 @@ int cmd_mcc_set_current_track_obj_id(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_read_next_track_obj_id(const struct shell *sh, size_t argc,
-				   char *argv[])
+static int cmd_mcc_read_next_track_obj_id(const struct shell *sh, size_t argc,
+					  char *argv[])
 {
 	int result;
 
@@ -823,8 +825,8 @@ int cmd_mcc_read_next_track_obj_id(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_set_next_track_obj_id(const struct shell *sh, size_t argc,
-				  char *argv[])
+static int cmd_mcc_set_next_track_obj_id(const struct shell *sh, size_t argc,
+					 char *argv[])
 {
 	int result;
 	uint64_t id = strtoul(argv[1], NULL, 0);
@@ -838,8 +840,8 @@ int cmd_mcc_set_next_track_obj_id(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_read_parent_group_obj_id(const struct shell *sh, size_t argc,
-				     char *argv[])
+static int cmd_mcc_read_parent_group_obj_id(const struct shell *sh, size_t argc,
+					    char *argv[])
 {
 	int result;
 
@@ -850,8 +852,8 @@ int cmd_mcc_read_parent_group_obj_id(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_read_current_group_obj_id(const struct shell *sh, size_t argc,
-				      char *argv[])
+static int cmd_mcc_read_current_group_obj_id(const struct shell *sh,
+					     size_t argc, char *argv[])
 {
 	int result;
 
@@ -862,8 +864,8 @@ int cmd_mcc_read_current_group_obj_id(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_set_current_group_obj_id(const struct shell *sh, size_t argc,
-				      char *argv[])
+static int cmd_mcc_set_current_group_obj_id(const struct shell *sh, size_t argc,
+					    char *argv[])
 {
 	int result;
 	uint64_t id = strtoul(argv[1], NULL, 0);
@@ -878,8 +880,8 @@ int cmd_mcc_set_current_group_obj_id(const struct shell *sh, size_t argc,
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-int cmd_mcc_read_playing_order(const struct shell *sh, size_t argc,
-			       char *argv[])
+static int cmd_mcc_read_playing_order(const struct shell *sh, size_t argc,
+				      char *argv[])
 {
 	int result;
 
@@ -890,8 +892,8 @@ int cmd_mcc_read_playing_order(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_set_playing_order(const struct shell *sh, size_t argc,
-			      char *argv[])
+static int cmd_mcc_set_playing_order(const struct shell *sh, size_t argc,
+				     char *argv[])
 {
 	int result;
 	uint8_t order = strtol(argv[1], NULL, 0);
@@ -903,8 +905,8 @@ int cmd_mcc_set_playing_order(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_read_playing_orders_supported(const struct shell *sh, size_t argc,
-					  char *argv[])
+static int cmd_mcc_read_playing_orders_supported(const struct shell *sh,
+						 size_t argc, char *argv[])
 {
 	int result;
 
@@ -915,8 +917,8 @@ int cmd_mcc_read_playing_orders_supported(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_read_media_state(const struct shell *sh, size_t argc,
-			     char *argv[])
+static int cmd_mcc_read_media_state(const struct shell *sh, size_t argc,
+				    char *argv[])
 {
 	int result;
 
@@ -927,7 +929,7 @@ int cmd_mcc_read_media_state(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_play(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_play(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_PLAY,
@@ -944,7 +946,7 @@ int cmd_mcc_play(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_pause(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_pause(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_PAUSE,
@@ -961,7 +963,8 @@ int cmd_mcc_pause(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_fast_rewind(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_fast_rewind(const struct shell *sh, size_t argc,
+			       char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_FAST_REWIND,
@@ -978,7 +981,8 @@ int cmd_mcc_fast_rewind(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_fast_forward(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_fast_forward(const struct shell *sh, size_t argc,
+				char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_FAST_FORWARD,
@@ -995,7 +999,7 @@ int cmd_mcc_fast_forward(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_stop(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_stop(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_STOP,
@@ -1012,7 +1016,8 @@ int cmd_mcc_stop(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_move_relative(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_move_relative(const struct shell *sh, size_t argc,
+				 char *argv[])
 {
 	struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_MOVE_RELATIVE,
@@ -1045,7 +1050,8 @@ int cmd_mcc_move_relative(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_prev_segment(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_prev_segment(const struct shell *sh, size_t argc,
+				char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_PREV_SEGMENT,
@@ -1062,7 +1068,8 @@ int cmd_mcc_prev_segment(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_next_segment(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_next_segment(const struct shell *sh, size_t argc,
+				char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_NEXT_SEGMENT,
@@ -1079,7 +1086,8 @@ int cmd_mcc_next_segment(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_first_segment(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_first_segment(const struct shell *sh, size_t argc,
+				 char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_FIRST_SEGMENT,
@@ -1096,7 +1104,8 @@ int cmd_mcc_first_segment(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_last_segment(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_last_segment(const struct shell *sh, size_t argc,
+				char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_LAST_SEGMENT,
@@ -1113,7 +1122,8 @@ int cmd_mcc_last_segment(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_goto_segment(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_goto_segment(const struct shell *sh, size_t argc,
+				char *argv[])
 {
 	struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_GOTO_SEGMENT,
@@ -1146,7 +1156,7 @@ int cmd_mcc_goto_segment(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_prev_track(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_prev_track(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_PREV_TRACK,
@@ -1163,7 +1173,7 @@ int cmd_mcc_prev_track(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_next_track(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_next_track(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_NEXT_TRACK,
@@ -1180,7 +1190,8 @@ int cmd_mcc_next_track(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_first_track(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_first_track(const struct shell *sh, size_t argc,
+			       char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_FIRST_TRACK,
@@ -1197,7 +1208,7 @@ int cmd_mcc_first_track(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_last_track(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_last_track(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_LAST_TRACK,
@@ -1214,7 +1225,7 @@ int cmd_mcc_last_track(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_goto_track(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_goto_track(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_GOTO_TRACK,
@@ -1247,7 +1258,7 @@ int cmd_mcc_goto_track(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_prev_group(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_prev_group(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_PREV_GROUP,
@@ -1264,7 +1275,7 @@ int cmd_mcc_prev_group(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_next_group(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_next_group(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_NEXT_GROUP,
@@ -1281,7 +1292,8 @@ int cmd_mcc_next_group(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_first_group(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_first_group(const struct shell *sh, size_t argc,
+			       char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_FIRST_GROUP,
@@ -1298,7 +1310,7 @@ int cmd_mcc_first_group(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_last_group(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_last_group(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_LAST_GROUP,
@@ -1315,7 +1327,7 @@ int cmd_mcc_last_group(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_goto_group(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_goto_group(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct mpl_cmd cmd = {
 		.opcode = BT_MCS_OPC_GOTO_GROUP,
@@ -1348,8 +1360,8 @@ int cmd_mcc_goto_group(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-int cmd_mcc_read_opcodes_supported(const struct shell *sh, size_t argc,
-				   char *argv[])
+static int cmd_mcc_read_opcodes_supported(const struct shell *sh, size_t argc,
+					  char *argv[])
 {
 	int result;
 
@@ -1361,7 +1373,8 @@ int cmd_mcc_read_opcodes_supported(const struct shell *sh, size_t argc,
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-int cmd_mcc_send_search_raw(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_send_search_raw(const struct shell *sh, size_t argc,
+				   char *argv[])
 {
 	int result;
 	struct mpl_search search;
@@ -1377,8 +1390,8 @@ int cmd_mcc_send_search_raw(const struct shell *sh, size_t argc, char *argv[])
 	return result;
 }
 
-int cmd_mcc_send_search_ioptest(const struct shell *sh, size_t argc,
-				char *argv[])
+static int cmd_mcc_send_search_ioptest(const struct shell *sh, size_t argc,
+				       char *argv[])
 {
 	/* Implementation follows Media control service testspec 0.9.0r13 */
 	/* Testcase MCS/SR/SCP/BV-01-C [Search Control Point], rounds 1 - 9 */
@@ -1477,8 +1490,8 @@ int cmd_mcc_send_search_ioptest(const struct shell *sh, size_t argc,
 }
 
 #if defined(CONFIG_BT_MCC_LOG_LEVEL_DBG) && defined(CONFIG_BT_TESTING)
-int cmd_mcc_test_send_search_iop_invalid_type(const struct shell *sh,
-					      size_t argc, char *argv[])
+static int cmd_mcc_test_send_search_iop_invalid_type(const struct shell *sh,
+						     size_t argc, char *argv[])
 {
 	int result;
 	struct mpl_search search;
@@ -1499,8 +1512,8 @@ int cmd_mcc_test_send_search_iop_invalid_type(const struct shell *sh,
 	return result;
 }
 
-int cmd_mcc_test_send_search_invalid_sci_len(const struct shell *sh,
-					     size_t argc, char *argv[])
+static int cmd_mcc_test_send_search_invalid_sci_len(const struct shell *sh,
+						    size_t argc, char *argv[])
 {
 	/* Reproduce a search that caused hard fault when sent from peer */
 	/* in IOP testing */
@@ -1525,8 +1538,8 @@ int cmd_mcc_test_send_search_invalid_sci_len(const struct shell *sh,
 }
 #endif /* CONFIG_BT_MCC_LOG_LEVEL_DBG && CONFIG_BT_TESTING */
 
-int cmd_mcc_read_search_results_obj_id(const struct shell *sh, size_t argc,
-				       char *argv[])
+static int cmd_mcc_read_search_results_obj_id(const struct shell *sh,
+					      size_t argc, char *argv[])
 {
 	int result;
 
@@ -1538,8 +1551,8 @@ int cmd_mcc_read_search_results_obj_id(const struct shell *sh, size_t argc,
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-int cmd_mcc_read_content_control_id(const struct shell *sh, size_t argc,
-				     char *argv[])
+static int cmd_mcc_read_content_control_id(const struct shell *sh, size_t argc,
+					   char *argv[])
 {
 	int result;
 
@@ -1552,8 +1565,8 @@ int cmd_mcc_read_content_control_id(const struct shell *sh, size_t argc,
 
 
 #ifdef CONFIG_BT_MCC_OTS
-int cmd_mcc_otc_read_features(const struct shell *sh, size_t argc,
-			      char *argv[])
+static int cmd_mcc_otc_read_features(const struct shell *sh, size_t argc,
+				     char *argv[])
 {
 	int result;
 
@@ -1565,7 +1578,7 @@ int cmd_mcc_otc_read_features(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_otc_read(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_otc_read(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 
@@ -1577,8 +1590,8 @@ int cmd_mcc_otc_read(const struct shell *sh, size_t argc, char *argv[])
 	return result;
 }
 
-int cmd_mcc_otc_read_metadata(const struct shell *sh, size_t argc,
-			      char *argv[])
+static int cmd_mcc_otc_read_metadata(const struct shell *sh, size_t argc,
+				     char *argv[])
 {
 	int result;
 
@@ -1591,7 +1604,7 @@ int cmd_mcc_otc_read_metadata(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_otc_select(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_mcc_otc_select(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 	uint64_t id;
@@ -1611,8 +1624,8 @@ int cmd_mcc_otc_select(const struct shell *sh, size_t argc, char *argv[])
 	return result;
 }
 
-int cmd_mcc_otc_select_first(const struct shell *sh, size_t argc,
-			     char *argv[])
+static int cmd_mcc_otc_select_first(const struct shell *sh, size_t argc,
+				    char *argv[])
 {
 	int result;
 
@@ -1624,8 +1637,8 @@ int cmd_mcc_otc_select_first(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_otc_select_last(const struct shell *sh, size_t argc,
-			    char *argv[])
+static int cmd_mcc_otc_select_last(const struct shell *sh, size_t argc,
+				   char *argv[])
 {
 	int result;
 
@@ -1637,8 +1650,8 @@ int cmd_mcc_otc_select_last(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_otc_select_next(const struct shell *sh, size_t argc,
-			    char *argv[])
+static int cmd_mcc_otc_select_next(const struct shell *sh, size_t argc,
+				   char *argv[])
 {
 	int result;
 
@@ -1650,8 +1663,8 @@ int cmd_mcc_otc_select_next(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_otc_select_prev(const struct shell *sh, size_t argc,
-			    char *argv[])
+static int cmd_mcc_otc_select_prev(const struct shell *sh, size_t argc,
+				   char *argv[])
 {
 	int result;
 
@@ -1663,8 +1676,8 @@ int cmd_mcc_otc_select_prev(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_otc_read_icon_object(const struct shell *sh, size_t argc,
-				 char *argv[])
+static int cmd_mcc_otc_read_icon_object(const struct shell *sh, size_t argc,
+					char *argv[])
 {
 	/* Assumes the Icon Object has already been selected by ID */
 
@@ -1677,8 +1690,8 @@ int cmd_mcc_otc_read_icon_object(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_otc_read_track_segments_object(const struct shell *sh,
-					   size_t argc, char *argv[])
+static int cmd_mcc_otc_read_track_segments_object(const struct shell *sh,
+						  size_t argc, char *argv[])
 {
 	/* Assumes the Segment Object has already been selected by ID */
 
@@ -1691,8 +1704,8 @@ int cmd_mcc_otc_read_track_segments_object(const struct shell *sh,
 	return result;
 }
 
-int cmd_mcc_otc_read_current_track_object(const struct shell *sh,
-					  size_t argc, char *argv[])
+static int cmd_mcc_otc_read_current_track_object(const struct shell *sh,
+						 size_t argc, char *argv[])
 {
 	/* Assumes the Curent Track Object has already been selected by ID */
 
@@ -1705,8 +1718,8 @@ int cmd_mcc_otc_read_current_track_object(const struct shell *sh,
 	return result;
 }
 
-int cmd_mcc_otc_read_next_track_object(const struct shell *sh,
-					  size_t argc, char *argv[])
+static int cmd_mcc_otc_read_next_track_object(const struct shell *sh,
+					      size_t argc, char *argv[])
 {
 	/* Assumes the Next Track Object has already been selected by ID */
 
@@ -1719,8 +1732,8 @@ int cmd_mcc_otc_read_next_track_object(const struct shell *sh,
 	return result;
 }
 
-int cmd_mcc_otc_read_parent_group_object(const struct shell *sh,
-					 size_t argc, char *argv[])
+static int cmd_mcc_otc_read_parent_group_object(const struct shell *sh,
+						size_t argc, char *argv[])
 {
 	/* Assumes the Parent Group Object has already been selected by ID */
 
@@ -1733,8 +1746,8 @@ int cmd_mcc_otc_read_parent_group_object(const struct shell *sh,
 	return result;
 }
 
-int cmd_mcc_otc_read_current_group_object(const struct shell *sh,
-					  size_t argc, char *argv[])
+static int cmd_mcc_otc_read_current_group_object(const struct shell *sh,
+						 size_t argc, char *argv[])
 {
 	/* Assumes the Current Group Object has already been selected by ID */
 
@@ -1747,8 +1760,8 @@ int cmd_mcc_otc_read_current_group_object(const struct shell *sh,
 	return result;
 }
 
-int cmd_mcc_ots_select_first(const struct shell *sh, size_t argc,
-			     char *argv[])
+static int cmd_mcc_ots_select_first(const struct shell *sh, size_t argc,
+				    char *argv[])
 {
 	int result;
 
@@ -1759,8 +1772,8 @@ int cmd_mcc_ots_select_first(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_ots_select_last(const struct shell *sh, size_t argc,
-			    char *argv[])
+static int cmd_mcc_ots_select_last(const struct shell *sh, size_t argc,
+				   char *argv[])
 {
 	int result;
 
@@ -1771,8 +1784,8 @@ int cmd_mcc_ots_select_last(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_ots_select_next(const struct shell *sh, size_t argc,
-			    char *argv[])
+static int cmd_mcc_ots_select_next(const struct shell *sh, size_t argc,
+				   char *argv[])
 {
 	int result;
 
@@ -1783,8 +1796,8 @@ int cmd_mcc_ots_select_next(const struct shell *sh, size_t argc,
 	return result;
 }
 
-int cmd_mcc_ots_select_prev(const struct shell *sh, size_t argc,
-			    char *argv[])
+static int cmd_mcc_ots_select_prev(const struct shell *sh, size_t argc,
+				   char *argv[])
 {
 	int result;
 
