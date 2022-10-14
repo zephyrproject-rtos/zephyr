@@ -23,9 +23,9 @@ LOG_MODULE_REGISTER(ADS1119, CONFIG_ADC_LOG_LEVEL);
 
 #define ADS1119_CONFIG_VREF(x) ((x) & BIT(0))
 #define ADS1119_CONFIG_CM(x) ((x) & BIT(1))
-#define ADS1119_CONFIG_DR(x) ((x) & (BIT_MASK(2) << 2))
+#define ADS1119_CONFIG_DR(x) (((x) & BIT_MASK(2)) << 2)
 #define ADS1119_CONFIG_GAIN(x) ((x) & BIT(4))
-#define ADS1119_CONFIG_MUX(x) ((x) & (BIT_MASK(3) << 5))
+#define ADS1119_CONFIG_MUX(x) (((x) & BIT_MASK(3)) << 5)
 
 #define ADS1119_STATUS_MASK_ID BIT_MASK(7)
 #define ADS1119_STATUS_MASK_READY BIT(8)
