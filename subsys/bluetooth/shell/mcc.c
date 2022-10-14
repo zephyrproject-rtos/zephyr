@@ -1759,56 +1759,7 @@ static int cmd_mcc_otc_read_current_group_object(const struct shell *sh,
 	}
 	return result;
 }
-
-static int cmd_mcc_ots_select_first(const struct shell *sh, size_t argc,
-				    char *argv[])
-{
-	int result;
-
-	result = bt_ots_client_select_first(0, default_conn);
-	if (result) {
-		shell_error(sh, "Fail: %d", result);
-	}
-	return result;
-}
-
-static int cmd_mcc_ots_select_last(const struct shell *sh, size_t argc,
-				   char *argv[])
-{
-	int result;
-
-	result = bt_ots_client_select_last(0, default_conn);
-	if (result) {
-		shell_error(sh, "Fail: %d", result);
-	}
-	return result;
-}
-
-static int cmd_mcc_ots_select_next(const struct shell *sh, size_t argc,
-				   char *argv[])
-{
-	int result;
-
-	result = bt_ots_client_select_next(0, default_conn);
-	if (result) {
-		shell_error(sh, "Fail: %d", result);
-	}
-	return result;
-}
-
-static int cmd_mcc_ots_select_prev(const struct shell *sh, size_t argc,
-				   char *argv[])
-{
-	int result;
-
-	result = bt_ots_client_select_prev(0, default_conn);
-	if (result) {
-		shell_error(sh, "Fail: %d", result);
-	}
-	return result;
-}
 #endif /* CONFIG_BT_MCC_OTS */
-
 
 static int cmd_mcc(const struct shell *sh, size_t argc, char **argv)
 {
