@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_DEVICE_H_
 #define ZEPHYR_INCLUDE_DEVICE_H_
 
+#include <stdint.h>
+
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/sections.h>
@@ -347,14 +349,14 @@ typedef int16_t device_handle_t;
  * before they are accessed.
  */
 struct device_state {
-	/** Non-negative result of initializing the device.
+	/**
+	 * Device initialization return code (positive errno value).
 	 *
-	 * The absolute value returned when the device initialization
-	 * function was invoked, or `UINT8_MAX` if the value exceeds
-	 * an 8-bit integer. If initialized is also set, a zero value
-	 * indicates initialization succeeded.
+	 * Device initialization functions return a negative errno code if they
+	 * fail. In Zephyr, errno values do not exceed 255, so we can store the
+	 * positive result value in a uint8_t type.
 	 */
-	unsigned int init_res : 8;
+	uint8_t init_res;
 
 	/** Indicates the device initialization function has been
 	 * invoked.
