@@ -405,11 +405,18 @@ static inline bool validate_payload_and_mfr(struct ieee802154_mpdu *mpdu, uint8_
 	return true;
 }
 
-bool ieee802154_validate_frame(uint8_t *buf, uint8_t length, struct ieee802154_mpdu *mpdu)
+bool ieee802154_validate_frame(struct net_if *iface, uint8_t *buf,
+			       uint8_t length, struct ieee802154_mpdu *mpdu)
 {
 	uint8_t *p_buf = NULL;
 
-	if (length > IEEE802154_MTU || length < IEEE802154_MIN_LENGTH) {
+	if (iface == NULL) {
+		NET_DBG("No interface defined to validate frame");
+		return false;
+	}
+
+	if (length > ieee802154_get_msdu_size(iface)
+	||  length < IEEE802154_MIN_LENGTH) {
 		NET_DBG("Wrong packet length: %d", length);
 		return false;
 	}
@@ -866,10 +873,9 @@ struct net_pkt *ieee802154_create_mac_cmd_frame(struct net_if *iface, enum ieee8
 
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
-	/* It would be costly to compute the size when actual frame are never
-	 * bigger than 125 bytes, so let's allocate that size as buffer.
-	 */
-	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_MTU, AF_UNSPEC, 0, BUF_TIMEOUT);
+	pkt = net_pkt_alloc_with_buffer(iface,
+					CONFIG_NET_L2_IEEE802154_MPDU_SIZE,
+					AF_UNSPEC, 0, BUF_TIMEOUT);
 	if (!pkt) {
 		goto out;
 	}

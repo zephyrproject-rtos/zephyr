@@ -182,7 +182,7 @@ static bool test_packet_parsing(struct ieee802154_pkt_test *t)
 
 	NET_INFO("- Parsing packet 0x%p of frame %s\n", t->pkt, t->name);
 
-	if (!ieee802154_validate_frame(t->pkt, t->length, &mpdu)) {
+	if (!ieee802154_validate_frame(iface, t->pkt, t->length, &mpdu)) {
 		NET_ERR("*** Could not validate frame %s\n", t->name);
 		return false;
 	}
@@ -233,7 +233,7 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t, bool with_short_addr)
 
 	pkt_hexdump(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt));
 
-	if (!ieee802154_validate_frame(net_pkt_data(current_pkt),
+	if (!ieee802154_validate_frame(iface, net_pkt_data(current_pkt),
 				       net_pkt_get_len(current_pkt), &mpdu)) {
 		NET_ERR("*** Sent packet is not valid\n");
 		net_pkt_frag_unref(current_pkt->frags);
@@ -315,7 +315,7 @@ static bool test_dgram_packet_sending(struct sockaddr_ll *pkt_sll, uint32_t secu
 
 	pkt_hexdump(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt));
 
-	if (!ieee802154_validate_frame(net_pkt_data(current_pkt),
+	if (!ieee802154_validate_frame(iface, net_pkt_data(current_pkt),
 				       net_pkt_get_len(current_pkt), &mpdu)) {
 		NET_ERR("*** Sent packet is not valid\n");
 		goto release_frag;
@@ -421,7 +421,7 @@ static bool test_raw_packet_sending(void)
 
 	pkt_hexdump(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt));
 
-	if (!ieee802154_validate_frame(net_pkt_data(current_pkt),
+	if (!ieee802154_validate_frame(iface, net_pkt_data(current_pkt),
 				       net_pkt_get_len(current_pkt), &mpdu)) {
 		NET_ERR("*** Sent packet is not valid\n");
 		goto release_frag;
@@ -487,7 +487,7 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 
 	pkt_hexdump(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt));
 
-	if (!ieee802154_validate_frame(net_pkt_data(current_pkt),
+	if (!ieee802154_validate_frame(iface, net_pkt_data(current_pkt),
 				       net_pkt_get_len(current_pkt), &mpdu)) {
 		NET_ERR("*** ACK Reply is invalid\n");
 		return false;

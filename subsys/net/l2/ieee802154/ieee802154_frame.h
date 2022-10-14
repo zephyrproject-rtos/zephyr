@@ -478,7 +478,8 @@ ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf, uint8_t *len
 struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(uint8_t *buf, uint8_t **p_buf,
 						      uint8_t *length);
 
-bool ieee802154_validate_frame(uint8_t *buf, uint8_t length, struct ieee802154_mpdu *mpdu);
+bool ieee802154_validate_frame(struct net_if *iface, uint8_t *buf,
+			       uint8_t length, struct ieee802154_mpdu *mpdu);
 
 uint8_t ieee802154_compute_header_and_authtag_size(struct net_if *iface, struct net_linkaddr *dst,
 						   struct net_linkaddr *src);
@@ -506,5 +507,29 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 #else
 #define ieee802154_decipher_data_frame(...) true
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
+
+/* IEEE 802.15.4-2020, 17.1.3 Extended PHR field, MSK PHY shall be capable of
+ * supporting the reception of both FCS lengths. This means MFR should be
+ * determinated at runtime for that PHY type. In addition, any software that
+ * require multiple transceivers with differente MPDU should determine MFR at
+ * runtime.
+ *
+ * TODO: Implement ieee802154_get_mfr_size() runtime function when necessary
+ * otherwise, keep it as a constant value.
+ */
+#ifdef CONFIG_NET_L2_IEEE802154_MPDU_2047
+#define ieee802154_get_mfr_size(...) (IEEE802154_CRC_32_FCS_SIZE)
+#else
+#define ieee802154_get_mfr_size(...) (IEEE802154_CRC_16_FCS_SIZE)
+#endif
+
+/* Define MAC Service Data Unit (MSDU). The MSDU is the content of MPDU
+ * excluding MFR field. In terms of IP this is equivalent to MTU.
+ *
+ * Note: This value is dependent of MFR and MUST have a runtime version when
+ * there is a MFR runtime available.
+ */
+#define ieee802154_get_msdu_size(iface, ...) (CONFIG_NET_L2_IEEE802154_MPDU_SIZE - \
+					      ieee802154_get_mfr_size(iface))
 
 #endif /* __IEEE802154_FRAME_H__ */

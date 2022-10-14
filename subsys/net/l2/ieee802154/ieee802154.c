@@ -41,7 +41,9 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #define BUF_TIMEOUT K_MSEC(50)
 
-NET_BUF_POOL_DEFINE(tx_frame_buf_pool, 1, IEEE802154_MTU, 8, NULL);
+NET_BUF_POOL_DEFINE(tx_frame_buf_pool, 1,
+		    CONFIG_NET_L2_IEEE802154_MPDU_SIZE,
+		    8, NULL);
 
 #define PKT_TITLE    "IEEE 802.15.4 packet content:"
 #define TX_PKT_TITLE "> " PKT_TITLE
@@ -207,7 +209,8 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 	struct ieee802154_mpdu mpdu;
 	size_t hdr_len;
 
-	if (!ieee802154_validate_frame(net_pkt_data(pkt), net_pkt_get_len(pkt), &mpdu)) {
+	if (!ieee802154_validate_frame(net_pkt_iface(pkt), net_pkt_data(pkt),
+				       net_pkt_get_len(pkt), &mpdu)) {
 		return NET_DROP;
 	}
 
@@ -347,7 +350,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		}
 #else
 
-		if (buf->len > IEEE802154_MTU) {
+		if (buf->len > ieee802154_get_msdu_size(iface)) {
 			NET_ERR("Wrong packet length: %d", buf->len);
 			return -EINVAL;
 		}

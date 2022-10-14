@@ -438,11 +438,11 @@ static struct net_fragment_data test_data_8 = {
 	.iphc = false
 };
 
-static uint8_t frame_buffer_data[IEEE802154_MTU];
+static uint8_t frame_buffer_data[CONFIG_NET_L2_IEEE802154_MPDU_SIZE];
 
 static struct net_buf frame_buf = {
 	.data = frame_buffer_data,
-	.size = IEEE802154_MTU,
+	.size = CONFIG_NET_L2_IEEE802154_MPDU_SIZE,
 	.frags = NULL,
 	.__buf = frame_buffer_data,
 };
@@ -468,13 +468,18 @@ static bool test_fragment(struct net_fragment_data *data)
 	net_pkt_hexdump(pkt, "before-compression");
 #endif
 
+	if (net_pkt_iface(pkt) == NULL) {
+		TC_PRINT("%s: packet must have an interface\n", __func__);
+		goto end;
+	}
+
 	hdr_diff = net_6lo_compress(pkt, data->iphc);
 	if (hdr_diff < 0) {
 		TC_PRINT("compression failed\n");
 		goto end;
 	}
 
-	if (!ieee802154_6lo_requires_fragmentation(pkt, 0)) {
+	if (!ieee802154_6lo_requires_fragmentation(net_pkt_iface(pkt), pkt, 0)) {
 		f_pkt = pkt;
 		pkt = NULL;
 
