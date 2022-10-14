@@ -55,10 +55,15 @@
 		};
 
 		usart0: usart@5005c000 {
-			compatible = "silabs,gecko-usart";
+			compatible = "silabs,gecko-spi-usart";
 			reg = <0x5005C000 0x400>;
 			interrupts = <13 0>, <14 0>;
 			interrupt-names = "rx", "tx";
+			status = "disabled";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			status = "disabled";
 		};
 
