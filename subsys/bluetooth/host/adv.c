@@ -1438,8 +1438,13 @@ void bt_le_adv_resume(void)
 		return;
 	}
 
-	if (!(atomic_test_bit(adv->flags, BT_ADV_PERSIST) &&
-	      !atomic_test_bit(adv->flags, BT_ADV_ENABLED))) {
+	if (!atomic_test_bit(adv->flags, BT_ADV_PERSIST)) {
+		return;
+	}
+
+	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+		BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) &&
+	      atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return;
 	}
 
