@@ -358,6 +358,48 @@ static int cmd_feature_set_rwup(const struct shell *sh,
 	return err;
 }
 
+static int cmd_feature_set_ppwr(const struct shell *sh,
+				size_t argc, char **argv)
+{
+	uint8_t addr;
+	uint8_t port;
+	int err;
+
+	addr = strtol(argv[1], NULL, 10);
+	port = strtol(argv[2], NULL, 10);
+
+	err = usbh_req_set_hcfs_ppwr(uhs_ctx.dev, addr, port);
+	if (err) {
+		shell_error(sh, "host: Failed to set ppwr feature");
+	} else {
+		shell_print(sh, "host: Device 0x%02x, port %d, ppwr feature set",
+			    addr, port);
+	}
+
+	return err;
+}
+
+static int cmd_feature_set_prst(const struct shell *sh,
+				size_t argc, char **argv)
+{
+	uint8_t addr;
+	uint8_t port;
+	int err;
+
+	addr = strtol(argv[1], NULL, 10);
+	port = strtol(argv[2], NULL, 10);
+
+	err = usbh_req_set_hcfs_prst(uhs_ctx.dev, addr, port);
+	if (err) {
+		shell_error(sh, "host: Failed to set prst feature");
+	} else {
+		shell_print(sh, "host: Device 0x%02x, port %d, prst feature set",
+			    addr, port);
+	}
+
+	return err;
+}
+
 static int cmd_device_config(const struct shell *sh,
 			     size_t argc, char **argv)
 {
@@ -537,6 +579,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(desc_cmds,
 SHELL_STATIC_SUBCMD_SET_CREATE(feature_set_cmds,
 	SHELL_CMD_ARG(rwup, NULL, "<address>",
 		      cmd_feature_set_rwup, 2, 0),
+	SHELL_CMD_ARG(ppwr, NULL, "<address> <port>",
+		      cmd_feature_set_ppwr, 3, 0),
+	SHELL_CMD_ARG(prst, NULL, "<address> <port>",
+		      cmd_feature_set_prst, 3, 0),
 	SHELL_CMD_ARG(halt, NULL, "<address> <endpoint>",
 		      cmd_feature_set_halt, 3, 0),
 	SHELL_SUBCMD_SET_END
