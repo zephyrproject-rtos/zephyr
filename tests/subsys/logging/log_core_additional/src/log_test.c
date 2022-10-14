@@ -182,6 +182,26 @@ static bool log_test_process(void)
  */
 
 #ifndef CONFIG_USERSPACE
+
+/**
+ * @brief Create Tests for Dynamic Loadable Logging Backends
+ *
+ * @details Test the three APIs, log_backend_activate, log_backend_is_active and
+ *          log_backend_deactivate.
+ *
+ * @addtogroup logging
+ */
+ZTEST(test_log_core_additional, test_log_backend)
+{
+	log_init();
+
+	zassert_false(log_backend_is_active(&backend1));
+	log_backend_activate(&backend1, NULL);
+	zassert_true(log_backend_is_active(&backend1));
+	log_backend_deactivate(&backend1);
+	zassert_false(log_backend_is_active(&backend1));
+}
+
 ZTEST(test_log_core_additional, test_log_domain_id)
 {
 	log_setup(false);
