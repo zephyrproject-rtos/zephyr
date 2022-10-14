@@ -1,3 +1,3 @@
 tests:
   kernel.threads.init:
-    tags: kernel threads userspace
+    tags: kernel threads userspace t1_test

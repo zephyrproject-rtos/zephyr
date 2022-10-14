@@ -1,7 +1,7 @@
 tests:
   kernel.memory_protection.sys_sem:
     filter: CONFIG_ARCH_HAS_USERSPACE
-    tags: kernel userspace
+    tags: kernel userspace t1_test
     testcases:
     - sem_take_no_wait
     - sem_take_timeout_forever
@@ -19,7 +19,7 @@ tests:
   kernel.memory_protection.sys_sem.nouser:
     extra_configs:
     - CONFIG_TEST_USERSPACE=n
-    tags: kernel
+    tags: kernel t1_test
     testcases:
     - sem_take_no_wait
     - sem_take_timeout_forever

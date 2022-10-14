@@ -1,6 +1,6 @@
 tests:
   kernel.k_heap_api:
-    tags: k_heap_api kernel
+    tags: k_heap_api kernel t1_test
   kernel.k_heap_api.linker_generator:
     platform_allow: qemu_cortex_m3
     tags: k_heap_api kernel linker_generator

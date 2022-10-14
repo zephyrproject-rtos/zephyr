@@ -1,6 +1,6 @@
 tests:
   kernel.timer.timer:
-    tags: kernel timer
+    tags: kernel timer t1_test
     min_ram: 16
     platform_type:
       - mcu

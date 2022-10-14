@@ -11,7 +11,7 @@
 # timeout as necessary.
 tests:
   kernel.timer.cycle64:
-    tags: kernel timer
+    tags: kernel timer t1_test
     filter: CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
     platform_exclude: native_posix
     timeout: 140

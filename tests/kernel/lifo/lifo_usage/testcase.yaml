@@ -2,7 +2,7 @@ tests:
   kernel.lifo.usage:
     # see #26646
     platform_exclude: m2gl025_miv
-    tags: kernel
+    tags: kernel t1_test
     min_ram: 20
   kernel.lifo.usage.linker_generator:
     platform_exclude: m2gl025_miv

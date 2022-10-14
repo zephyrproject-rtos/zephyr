@@ -3,7 +3,7 @@ tests:
     extra_args: CONF_FILE=prj.conf
     platform_exclude: twr_ke18f
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION
-    tags: kernel ignore_faults userspace
+    tags: kernel ignore_faults userspace t1_test
   kernel.common.stack_protection_no_userspace:
     extra_args: CONF_FILE=protection_no_userspace.conf
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION
@@ -23,4 +23,4 @@ tests:
     extra_args: CONF_FILE=sentinel.conf
     # FIXME: See issue #39948
     platform_exclude: qemu_cortex_a9
-    tags: kernel ignore_faults
+    tags: kernel ignore_faults t1_test

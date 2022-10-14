@@ -1,6 +1,6 @@
 tests:
   kernel.usage:
-    tags: kernel
+    tags: kernel t1_test
 # The following architectures are excluded as they have boards that
 # exhibit precision timing anomalies related to emulation.
 #     posix, riscv32, sparc

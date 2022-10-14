@@ -1,6 +1,6 @@
 tests:
   kernel.logging.message_capture:
-    tags: kernel
+    tags: kernel t1_test
     harness: console
     harness_config:
       type: multi_line

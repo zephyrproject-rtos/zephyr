@@ -1,5 +1,5 @@
 common:
-  tags: device userspace
+  tags: device userspace t1_test
   integration_platforms:
     - native_posix
 tests:

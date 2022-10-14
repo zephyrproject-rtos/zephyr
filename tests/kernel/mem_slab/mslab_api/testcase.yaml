@@ -1,6 +1,6 @@
 tests:
   kernel.memory_slabs.api:
-    tags: kernel
+    tags: kernel t1_test
   kernel.memory_slabs.api_no_multithreading:
     tags: kernel
     platform_allow: qemu_cortex_m3 qemu_cortex_m0 nsim_em nsim_em7d_v22 nsim_hs

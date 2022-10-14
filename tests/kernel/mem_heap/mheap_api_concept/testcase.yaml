@@ -1,6 +1,6 @@
 tests:
   kernel.memory_heap:
-    tags: kernel
+    tags: kernel t1_test
     extra_configs:
       - CONFIG_IRQ_OFFLOAD=y
   kernel.memory_heap_no_multithreading:

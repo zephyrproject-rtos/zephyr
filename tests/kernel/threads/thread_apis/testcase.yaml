@@ -1,6 +1,6 @@
 tests:
   kernel.threads.apis:
-    tags: kernel threads userspace ignore_faults
+    tags: kernel threads userspace ignore_faults t1_test
     min_flash: 34
   kernel.threads.apis.pinonly:
     tags: kernel threads userspace ignore_faults

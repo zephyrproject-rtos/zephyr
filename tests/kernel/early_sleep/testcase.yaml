@@ -1,6 +1,6 @@
 tests:
   kernel.common.sleep:
-    tags: kernel sleep
+    tags: kernel sleep t1_test
   kernel.common.sleep.linker_generator:
     platform_allow: qemu_cortex_m3
     tags: kernel sleep linker_generator

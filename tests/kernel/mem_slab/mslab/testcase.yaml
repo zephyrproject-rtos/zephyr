@@ -1,6 +1,6 @@
 tests:
   kernel.memory_slabs:
-    tags: kernel
+    tags: kernel t1_test
   kernel.memory_slabs.linker_generator:
     platform_allow: qemu_cortex_m3
     tags: kernel linker_generator

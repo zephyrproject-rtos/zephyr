@@ -1,6 +1,6 @@
 tests:
   kernel.memory_slabs.concept:
-    tags: kernel
+    tags: kernel t1_test
     timeout: 80
   kernel.memory_slabs.concept.linker_generator:
     platform_allow: qemu_cortex_m3

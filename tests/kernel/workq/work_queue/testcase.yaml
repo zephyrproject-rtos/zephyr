@@ -1,7 +1,7 @@
 tests:
   kernel.workqueue:
     min_flash: 34
-    tags: kernel
+    tags: kernel t1_test
   kernel.workqueue.linker_generator:
     platform_allow: qemu_cortex_m3
     min_flash: 34
