@@ -12,7 +12,7 @@ Overview
 ********
 
 The POSIX architecture, in combination with the inf_clock SOC layer,
-provides the foundation,  architecture and SOC layers for a set of virtual test
+provides the foundation, architecture and SOC layers for a set of virtual test
 boards.
 
 Using these, a Zephyr application can be compiled together with
@@ -33,12 +33,12 @@ target hardware in the early phases of development.
 Types of POSIX arch based boards
 ================================
 
-Today there are two types of POSIX boards: The native_posix board and the _bsim
-boards.
+Today there are two types of POSIX boards: The :ref:`native_posix<native_posix>`
+board and the :ref:`bsim boards<bsim boards>`.
 While they share the main objectives and principles, the first is intended as
 a HW agnostic test platform which in some cases utilizes the host OS
 peripherals, while the second intend to simulate a particular HW platform,
-with focus on its radio (e.g. BT LE) and utilize the `BabbleSim`_ physical layer
+with focus on their radio (e.g. BT LE) and utilize the `BabbleSim`_ physical layer
 simulation and framework, while being fully decoupled of the host.
 
 .. _BabbleSim:
@@ -90,7 +90,8 @@ them if they were pending.
 This behavior is intentional, as it provides a deterministic environment to
 develop and debug.
 For more information please see the
-`Rationale for this port`_ and `Architecture`_ sections
+`Rationale for this port`_ and :ref:`Architecture<posix_arch_architecture>`
+sections
 
 Therefore these limitations apply:
 
@@ -278,25 +279,96 @@ side-effects.
 
 .. _posix_arch_architecture:
 
-Architecture
-************
+Architecture and design
+***********************
 
-.. figure:: native_layers.svg
+.. figure:: layering.svg
     :align: center
     :alt: Zephyr layering in native build
     :figclass: align-center
 
     Zephyr layering when built against an embedded target (left), and
-    targeting the a POSIX arch based board (right)
+    targeting a POSIX arch based board (right)
 
-In this architecture each Zephyr thread is mapped to one POSIX pthread,
-but only one of these pthreads executes at a time.
+Arch layer
+==========
+
+In this architecture each Zephyr thread is mapped to one POSIX pthread.
+The POSIX architecture emulates a single threaded CPU/MCU by only allowing
+one SW thread to execute at a time, as commanded by the Zephyr kernel.
+Whenever the Zephyr kernel desires to context switch two threads,
+the POSIX arch blocks and unblocks the corresponding pthreads.
+
 This architecture provides the same interface to the Kernel as other
 architectures and is therefore transparent for the application.
 
 When using this architecture, the code is compiled natively for the host system,
 and typically as a 32-bit binary assuming pointer and integer types are 32-bits
 wide.
+
+Note that all threads use a normal Linux pthread stack, and do not use
+the Zephyr thread stack allocation for their call stacks or automatic
+variables. The Zephyr stacks (which are allocated in "static memory") are
+only used by the POSIX architecture for thread bookkeeping.
+
+SOC and board layers
+====================
+
+.. note::
+
+   This description applies to all current POSIX arch based boards on tree,
+   but it is not a requirement for another board to follow what is described here.
+
+When the executable process is started (that is the the board
+:c:func:`main`, which is the linux executable C :c:func:`main`),
+first, early initialization steps are taken care of
+(command line argument parsing, initialization of the HW models, etc).
+
+After, the "CPU simulation" is started, by creating a new pthread
+and provisionally blocking the original thread. The original thread will only
+be used for HW models after this;
+while this newly created thread will be the first "SW" thread and start
+executing the boot of the embedded code (including the POSIX arch code).
+
+During this MCU boot process, the Zephyr kernel will be initialized and
+eventually this will call into the embedded application `main()`,
+just like in the embedded target.
+As the embedded SW execution progresses, more Zephyr threads may be spawned,
+and for each the POSIX architecture will create a dedicated pthread.
+
+Eventually the simulated CPU will be put to sleep by the embedded SW
+(normally when the boot is completed). This whole simulated CPU boot,
+until the first time it goes to sleep happens in 0 simulated time.
+
+At this point the last executing SW pthread will be blocked,
+and the first thread (reserved for the HW models now) will be allowed
+to execute again. This thread will, from now on, be the one handling both the
+HW models and the device simulated time.
+
+The HW models are designed around timed events,
+and this thread will check what is the next
+scheduled HW event, advance simulated time until that point, and call the
+corresponding HW model event function.
+
+Eventually one of these HW models will raise an interrupt to the simulated CPU.
+When the IRQ controller wants to wake the simulated CPU, the HW thread is
+blocked, and the simulated CPU is awaken by letting the last SW thread continue
+executing.
+
+This process of getting the CPU to sleep, letting the HW models run,
+and raising an interrupt which wake the CPU again is repeated until the end
+of the simulation, where the CPU execution always takes 0 simulated time.
+
+When a SW thread is awakened by an interrupt, it will be made to enter the
+interrupt handler by the soc_inf code.
+
+If the SW unmasks a pending interrupt while running, or triggers a SW
+interrupt, the interrupt controller may raise the interrupt immediately
+depending on interrupt priorities, masking, and locking state.
+
+Interrupts are executed in the context (and using the stack) of the SW
+thread in which they are received. Meaning, there is no dedicated thread or
+stack for interrupt handling.
 
 To ensure determinism when the Zephyr code is running,
 and to ease application debugging,
@@ -309,19 +381,37 @@ an infinitely fast clock, and fully decoupled from the underlying host CPU
 speed.
 No simulated time passes while the application or kernel code execute.
 
-The CPU boot is emulated by creating the Zephyr initialization thread and
-letting it run. This in turn may spawn more Zephyr threads.
-Eventually the SW will run to completion, that is, it will set the CPU
-back to sleep.
+.. _posix_busy_wait:
 
-At this point, control is transferred back to the HW models and the simulation
-time can be advanced.
+Busy waits
+==========
 
-When the HW models raise an interrupt, the CPU wakes back up, the interrupt
-is handled, the SW runs until completion again, and control is
-transferred back to the HW models, all in zero simulated time.
+Busy waits work thanks to provided board functionality.
+This does not need to be the same for all boards, but both native_posix and the
+nrf52_bsim board work similarly thru the combination of a board specific
+`arch_busy_wait()` and a special fake HW timer (provided by the board).
 
-If the SW unmasks a pending interrupt while running, or triggers a SW
-interrupt, the interrupt controller may raise the interrupt immediately
-depending on interrupt priorities, masking, and locking state.
+When a SW thread wants to busy wait, this fake timer will be programmed in
+the future time corresponding to the end of the busy wait and the CPU will
+be put immediately to sleep in the busy_wait caller context.
+When this fake HW timer expires the CPU will be waken with a special
+non-maskable phony interrupt which does not have a corresponding interrupt
+handler but will resume the busy_wait SW execution.
+Note that other interrupts may arrive while the busy wait is in progress,
+which may delay the `k_busy_wait()` return just like in real life.
 
+Interrupts may be locked out or masked during this time, but the special
+fake-timer non-maskable interrupt will wake the CPU nonetheless.
+
+
+NATIVE_TASKS
+============
+
+The soc_inf layer provides a special type of hook called the NATIVE_TASKS.
+
+These allow registering (at build/link time) functions which will be called
+at different stages during the process execution: Before command line parsing
+(so dynamic command line arguments can be registered using this hook),
+before initialization of the HW models, before the simulated CPU is started,
+after the simulated CPU goes to sleep for the first time,
+and when the application exists.
