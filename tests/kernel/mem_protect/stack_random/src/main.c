@@ -71,6 +71,7 @@ ZTEST(stack_pointer_randomness, test_stack_pt_randomization)
 				STACKSIZE, (k_thread_entry_t)alternate_thread,
 				NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0,
 				K_NO_WAIT);
+		k_sleep(K_MSEC(10));
 	}
 
 
