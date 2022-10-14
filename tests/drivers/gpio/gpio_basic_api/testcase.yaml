@@ -9,6 +9,7 @@ tests:
   drivers.gpio.2pin:
     min_flash: 34
     filter: dt_compat_enabled("test-gpio-basic-api")
+    tags: t1_test
 
   drivers.gpio.nrf_sense_edge:
     platform_allow: nrf52840dk_nrf52840

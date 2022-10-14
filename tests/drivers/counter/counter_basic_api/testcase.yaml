@@ -1,6 +1,6 @@
 tests:
   drivers.counter.basic_api:
-    tags: drivers
+    tags: drivers t1_test
     depends_on: counter
     min_ram: 16
     platform_exclude: nucleo_f302r8
