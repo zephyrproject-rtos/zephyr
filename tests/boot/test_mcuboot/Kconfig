@@ -1,0 +1,24 @@
+# Copyright 2022 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+# Enable zephyr dfu boot utility library here, so that if
+# KConfig dependencies prevent this symbol from being enabled, CMake
+# still will succeed.
+config IMG_MANAGER
+	default y
+	depends on FLASH_HAS_PAGE_LAYOUT
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_FLASH := zephyr,flash
+ZEPHYR_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
+
+# Since twister cannot parse the DTS to extract the write
+# size of the flash node, we will use Kconfig functions to
+# do this within the sample. Twister can then filter
+# based on this KConfig
+config FLASH_WRITE_SIZE
+	int
+	default $(dt_node_int_prop_int,$(ZEPHYR_FLASH_NODE),write-block-size)

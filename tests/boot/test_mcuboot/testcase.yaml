@@ -12,4 +12,22 @@ common:
 tests:
   boot.mcuboot:
     tags: mcuboot
-    platform_allow: frdm_k64f mimxrt1060_evk
+    # riscv32 compiler has issues with LMA adjustment required for this test
+    arch_exclude: riscv32
+    extra_args: SB_FULL_CONFIG=y
+    # Duplicate the target support check MCUBoot does within this filter,
+    # plus the following additions:
+    # - ESP32 uses MCUBoot internally, upstream mcuboot does not compile
+    # - Flash write block size must be less than 32 to sign the image
+    # - A flash driver must be available
+    # - Flash load offsets must be supported
+    filter: "CONFIG_HAS_FLASH_LOAD_OFFSET and
+              CONFIG_FLASH_HAS_DRIVER_ENABLED and
+              (not (CONFIG_SOC_ESP32 or CONFIG_SOC_ESP32C3 or CONFIG_SOC_ESP32S2)) and
+              ((dt_chosen_enabled(\"zephyr,flash-controller\") or CONFIG_XTENSA) or
+              (dt_compat_enabled(\"jedec_spi_nor\") and CONFIG_XTENSA)) and
+              CONFIG_FLASH_WRITE_SIZE <= 32 and
+              CONFIG_FLASH_WRITE_SIZE != 0 and
+              dt_nodelabel_enabled(\"boot_partition\") and
+              dt_nodelabel_enabled(\"slot0_partition\") and
+              dt_nodelabel_enabled(\"slot1_partition\")"
