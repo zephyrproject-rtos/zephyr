@@ -510,7 +510,7 @@ static int UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)),		\
 
 /* Internal macro used for creating dictionary commands. */
 #define SHELL_CMD_DICT_CREATE(_data, _handler)				\
-	SHELL_CMD_ARG(GET_ARG_N(1, __DEBRACKET _data), NULL, NULL,	\
+	SHELL_CMD_ARG(GET_ARG_N(1, __DEBRACKET _data), NULL, GET_ARG_N(3, __DEBRACKET _data),	\
 		UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)),	\
 			GET_ARG_N(1, __DEBRACKET _data)), 1, 0)
 
@@ -540,7 +540,8 @@ static int UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)),		\
  *	}
  *
  *	SHELL_SUBCMD_DICT_SET_CREATE(sub_dict_cmds, my_handler,
- *		(value_0, 0), (value_1, 1), (value_2, 2), (value_3, 3)
+ *		(value_0, 0, "value 0"), (value_1, 1, "value 1"),
+ *		(value_2, 2, "value 2"), (value_3, 3, "value 3")
  *	);
  *	SHELL_CMD_REGISTER(dictionary, &sub_dict_cmds, NULL, NULL);
  */
