@@ -125,9 +125,6 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	/* start the esp32 network core before
 	 * start zephyr
 	 */
-	soc_ll_stall_core(1);
-	soc_ll_reset_core(1);
-	DPORT_REG_WRITE(DPORT_APPCPU_CTRL_D_REG, 0);
 	start_esp32_net_cpu();
 #endif
 
