@@ -3,10 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
- 
+
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 
+/* The devicetree node identifier for the cc enable pins. */
 #define ENCC1_NODE DT_ALIAS(encc1)
 #define ENCC2_NODE DT_ALIAS(encc2)
 

@@ -23,6 +23,7 @@
 #include "view.h"
 #include "model.h"
 
+/* STM32 interrupt registers */
 #define UCPD_IRQ		8
 #define DMA1_CHANNEL1_IRQ	9
 #define DMA1_CHANNEL1_PRIO	2
@@ -93,9 +94,9 @@ void start_snooper(bool s)
 	model.empty_print = s;
 	if (s) {
 		model.packet.header.sequence = 0;
-		view_set_snoop(VS_SNOOP3);
+		view_set_snoop(CC1_CHANNEL_BIT | CC2_CHANNEL_BIT);
 	} else {
-		view_set_snoop(VS_SNOOP0);
+		view_set_snoop(0);
 	}
 }
 
@@ -104,18 +105,17 @@ void reset_snooper() {
 }
 
 void set_role(uint8_t role_mask) {
-	if (role_mask & CC1_CHANNEL_BIT) {
-		LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC1);
-	}
-	if (role_mask & CC2_CHANNEL_BIT) {
-		LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC2);
-	}
-
 	if (role_mask & SINK_BIT) {
 		LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC1CC2);
 		LL_UCPD_SetSNKRole(UCPD1);
 	}
 	else {
+		if (role_mask & CC1_CHANNEL_BIT) {
+			LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC1);
+		}
+		else if (role_mask & CC2_CHANNEL_BIT) {
+			LL_UCPD_SetccEnable(UCPD1, LL_UCPD_CCENABLE_CC2);
+		}
 		LL_UCPD_SetSRCRole(UCPD1);
 
 		uint8_t Rp = role_mask & PULL_RESISTOR_BITS;
@@ -155,24 +155,31 @@ static void model_thread(void *arg1, void *arg2, void *arg3)
        			meas_cc2_v(&cc2_v);
        			meas_vcon_c(&vcon_c);
 
+			/* currently using cc line voltage from adc directly to
+			 * determine active cc line because the built in CC flags
+			 * are not accurate enough to consistently find the right
+			 * CC connection
+			 */
 			if ((cc1_v < 2000) && (cc1_v > 500)) {
-				if (get_view_snoop() & 1)
+				/*connect to none active line if the active line is not set to view*/
+				if (get_view_snoop() & CC1_CHANNEL_BIT)
 					LL_UCPD_SetCCPin(UCPD1, LL_UCPD_CCPIN_CC1);
 				else
 					LL_UCPD_SetCCPin(UCPD1, LL_UCPD_CCPIN_CC2);
-				view_set_connection(VS_CC1_CONN);
+				view_set_connection(CC1_CHANNEL_BIT);
 				pd_line = 1;
 			}
 			else if ((cc2_v < 2000) && (cc2_v > 500)) {
-				if (get_view_snoop() & 2)
+				/*connect to none active line if the active line is not set to view*/
+				if (get_view_snoop() & CC2_CHANNEL_BIT)
 					LL_UCPD_SetCCPin(UCPD1, LL_UCPD_CCPIN_CC2);
 				else
 					LL_UCPD_SetCCPin(UCPD1, LL_UCPD_CCPIN_CC1);
-				view_set_connection(VS_CC2_CONN);
+				view_set_connection(CC2_CHANNEL_BIT);
 				pd_line = 2;
 			}
 			else {
-				view_set_connection(VS_NO_CONN);
+				view_set_connection(0);
 			}
 
 			sm->packet.header.sequence++;
@@ -182,6 +189,7 @@ static void model_thread(void *arg1, void *arg2, void *arg3)
 			sm->packet.header.cc2_voltage = cc2_v;
 			sm->packet.header.vcon_current = vcon_c;
 
+			/* put pd message in the packet if any are stored */
 			if (sm->mw != sm->mr) {
 				sm->packet.header.packet_type = sm->sop[sm->mr];
 				sm->packet.header.data_len = sm->mod_size[sm->mr];
@@ -216,6 +224,7 @@ static void ucpd_isr(void *arg)
 {
 	struct model_t *sm = &model;
 
+	/* TypeCEvent flag currently not used */
 	if (LL_UCPD_IsActiveFlag_TypeCEventCC1(UCPD1) || LL_UCPD_IsActiveFlag_TypeCEventCC2(UCPD1)) {
 		LL_UCPD_ClearFlag_TypeCEventCC1(UCPD1);
 		LL_UCPD_ClearFlag_TypeCEventCC2(UCPD1);

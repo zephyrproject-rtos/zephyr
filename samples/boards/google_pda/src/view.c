@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(main);
 
 #define DEBUG 1
 
-/* The devicetree node identifier for the "led0" alias. */
+/* The devicetree node identifier for the led aliases. */
 #define LED0_NODE DT_ALIAS(led0)
 #define LED1_NODE DT_ALIAS(led1)
 #define LED2_NODE DT_ALIAS(led2)
@@ -52,28 +52,28 @@ struct view_obj_t {
 	atomic_t flags;
 } view_obj;
 
-int get_view_snoop() {
+uint8_t get_view_snoop() {
 	if (atomic_test_bit(&view_obj.flags, FLAGS_SNOOP0)) return 0;
-	if (atomic_test_bit(&view_obj.flags, FLAGS_SNOOP1)) return 1;
-	if (atomic_test_bit(&view_obj.flags, FLAGS_SNOOP2)) return 2;
-	if (atomic_test_bit(&view_obj.flags, FLAGS_SNOOP3)) return 3;
+	if (atomic_test_bit(&view_obj.flags, FLAGS_SNOOP1)) return CC1_CHANNEL_BIT;
+	if (atomic_test_bit(&view_obj.flags, FLAGS_SNOOP2)) return CC2_CHANNEL_BIT;
+	if (atomic_test_bit(&view_obj.flags, FLAGS_SNOOP3)) return (CC1_CHANNEL_BIT | CC2_CHANNEL_BIT);
 	return 0;
 }
 
-void view_set_connection(enum view_connection_t vc)
+void view_set_connection(uint8_t vc)
 {
 	switch (vc) {
-	case VS_NO_CONN:
+	case 0:
 		atomic_clear_bit(&view_obj.flags, FLAGS_CC1_CONNECTION);
 		atomic_clear_bit(&view_obj.flags, FLAGS_CC2_CONNECTION);
 		atomic_set_bit(&view_obj.flags, FLAGS_NO_CONNECTION);
 		break;
-	case VS_CC1_CONN:
+	case CC1_CHANNEL_BIT:
 		atomic_clear_bit(&view_obj.flags, FLAGS_NO_CONNECTION);
 		atomic_clear_bit(&view_obj.flags, FLAGS_CC2_CONNECTION);
 		atomic_set_bit(&view_obj.flags, FLAGS_CC1_CONNECTION);
 		break;
-	case VS_CC2_CONN:
+	case CC2_CHANNEL_BIT:
 		atomic_clear_bit(&view_obj.flags, FLAGS_NO_CONNECTION);
 		atomic_clear_bit(&view_obj.flags, FLAGS_CC1_CONNECTION);
 		atomic_set_bit(&view_obj.flags, FLAGS_CC2_CONNECTION);
@@ -81,28 +81,28 @@ void view_set_connection(enum view_connection_t vc)
 	}
 }
 
-void view_set_snoop(enum view_snoop_t vs)
+void view_set_snoop(uint8_t vs)
 {
 	switch (vs) {
-	case VS_SNOOP0:
+	case 0:
 		atomic_clear_bit(&view_obj.flags, FLAGS_SNOOP1);
 		atomic_clear_bit(&view_obj.flags, FLAGS_SNOOP2);
 		atomic_clear_bit(&view_obj.flags, FLAGS_SNOOP3);
 		atomic_set_bit(&view_obj.flags, FLAGS_SNOOP0);
 		break;
-	case VS_SNOOP1:
+	case CC1_CHANNEL_BIT:
 		atomic_clear_bit(&view_obj.flags, FLAGS_SNOOP0);
 		atomic_clear_bit(&view_obj.flags, FLAGS_SNOOP2);
 		atomic_clear_bit(&view_obj.flags, FLAGS_SNOOP3);
 		atomic_set_bit(&view_obj.flags, FLAGS_SNOOP1);
 		break;
-	case VS_SNOOP2:
+	case CC2_CHANNEL_BIT:
 		atomic_clear_bit(&view_obj.flags, FLAGS_SNOOP0);
 		atomic_clear_bit(&view_obj.flags, FLAGS_SNOOP1);
 		atomic_clear_bit(&view_obj.flags, FLAGS_SNOOP3);
 		atomic_set_bit(&view_obj.flags, FLAGS_SNOOP2);
 		break;
-	case VS_SNOOP3:
+	case (CC1_CHANNEL_BIT | CC2_CHANNEL_BIT):
 		atomic_clear_bit(&view_obj.flags, FLAGS_SNOOP0);
 		atomic_clear_bit(&view_obj.flags, FLAGS_SNOOP1);
 		atomic_clear_bit(&view_obj.flags, FLAGS_SNOOP2);
@@ -110,7 +110,7 @@ void view_set_snoop(enum view_snoop_t vs)
 		break;
 	}
 
-	view_set_connection(VS_NO_CONN);
+	view_set_connection(0);
 }
 
 static void set_led(enum led_t led)

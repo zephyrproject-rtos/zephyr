@@ -9,6 +9,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
 
+/* The devicetree node identifier for the adc aliases. */
 #define CC1_V_MEAS_NODE DT_ALIAS(vcc1)
 #define CC2_V_MEAS_NODE DT_ALIAS(vcc2)
 #define VBUS_V_MEAS_NODE DT_ALIAS(vbus)
@@ -21,7 +22,7 @@ static const struct adc_dt_spec adc_vbus_v = ADC_DT_SPEC_GET(VBUS_V_MEAS_NODE);
 static const struct adc_dt_spec adc_vbus_c = ADC_DT_SPEC_GET(VBUS_C_MEAS_NODE);
 static const struct adc_dt_spec adc_vcon_c = ADC_DT_SPEC_GET(VCON_C_MEAS_NODE);
 
-/* Settings for ADCs the STM32 ADC */
+/* Standard Settings for ADCs the STM32 ADC */
 #define ADC_RESOLUTION          12
 #define ADC_GAIN                ADC_GAIN_1
 #define ADC_REFERENCE           ADC_REF_INTERNAL
@@ -87,7 +88,8 @@ void meas_vbus_c(int32_t *c)
 
 	/* multiplies by 1000 before dividing by shunt resistance
 	 * in milliohms to keep everything as an integer.
-	 * mathematically equivalent to dividing by ohms directly. */
+	 * mathematically equivalent to dividing by ohms directly.
+	 */
 	*c = (*c - ADC_REF_MV / 2) * 1000 / VBUS_C_R_MOHM / VBUS_C_GAIN;
 
 	return;
@@ -104,6 +106,9 @@ void meas_cc1_v(int32_t *v)
 		return;
 	}
 
+	/* cc pin measurements are one to one with actual voltage
+	 * and does not need to be scaled
+	 */
 	*v = sample_buffer;
 	ret = adc_raw_to_millivolts(ADC_REF_MV, ADC_GAIN, ADC_RESOLUTION, v);
 	if (ret != 0) {
@@ -125,6 +130,9 @@ void meas_cc2_v(int32_t *v)
 		return;
 	}
 
+	/* cc pin measurements are one to one with actual voltage
+	 * and does not need to be scaled
+	 */
 	*v = sample_buffer;
 	ret = adc_raw_to_millivolts(ADC_REF_MV, ADC_GAIN, ADC_RESOLUTION, v);
 	if (ret != 0) {
@@ -155,7 +163,8 @@ void meas_vcon_c(int32_t *c)
 
 	/* multiplies by 1000 before dividing by shunt resistance
 	 * in milliohms to keep everything as an integer
-	 * mathematically equivalent to dividing by ohms directly. */
+	 * mathematically equivalent to dividing by ohms directly.
+	 */
 	*c *= *c * 1000 / VCON_C_R_MOHM / VCON_C_GAIN;
 
 	return;

@@ -3,8 +3,9 @@
 
 #include <zephyr/kernel.h>
 
-/* bit positions for the role_mask parameter for setting the role,
-   active CC line, and pull resistors of the Twinkie */
+/* bit positions for the bit mask for setting the role,
+ *  active CC line, and pull resistors of the Twinkie
+ */
 #define PULL_RESISTOR_BITS 	(BIT(0) | BIT(1))
 #define SINK_BIT 		BIT(2)
 #define CC1_CHANNEL_BIT 	BIT(3)

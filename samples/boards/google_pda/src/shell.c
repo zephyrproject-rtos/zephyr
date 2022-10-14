@@ -87,7 +87,17 @@ SHELL_CMD_REGISTER(reset, NULL, "Resets the Twinkie device", cmd_reset);
 
 static int cmd_snoop(const struct shell *shell, size_t argc, char**argv) {
 	if (argc >= 2 && *argv[1] <= '3' && *argv[1] >= '0') {
-		view_set_snoop((enum view_snoop_t) (*argv[1] - '0'));
+		switch ((*argv[1] - '0')) {
+		case 0:
+			view_set_snoop(0);
+		case 1:
+			view_set_snoop(CC1_CHANNEL_BIT);
+		case 2:
+			view_set_snoop(CC2_CHANNEL_BIT);
+		case 3:
+			view_set_snoop(CC1_CHANNEL_BIT | CC2_CHANNEL_BIT);
+		}
+
 	}
 
 	return 0;
