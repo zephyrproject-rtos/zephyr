@@ -156,8 +156,9 @@ It does not intend to model any particular HW, and as such can only be used
 to develop and test application code which is far decoupled from the HW.
 
 For developing and testing SW which requires specific HW, while retaining the
-benefits of the POSIX architecture other solutions like the _bsim boards should
-be considered.
+benefits of the POSIX architecture other solutions like the
+:ref:`bsim boards<bsim boards>`
+should be considered.
 
 Check the :ref:`POSIX architecture comparison <posix_arch_compare>`
 with other development and test options for more insights.
