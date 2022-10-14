@@ -194,6 +194,26 @@ void esp_appcpu_start(void *entry_point)
 	DPORT_APPCPU_CTRL_A |= DPORT_APPCPU_RESETTING;
 	DPORT_APPCPU_CTRL_A &= ~DPORT_APPCPU_RESETTING;
 
+
+	/* extracted from SMP LOG above, THIS IS REQUIRED FOR AMP RELIABLE
+	 * OPERATION AS WELL, PLEASE DON'T touch on the dummy write below!
+	 *
+	 * Note that the logging done here is ACTUALLY REQUIRED FOR RELIABLE
+	 * OPERATION!  At least one particular board will experience spurious
+	 * hangs during initialization (usually the APPCPU fails to start at
+	 * all) without these calls present.  It's not just time -- careful
+	 * use of k_busy_wait() (and even hand-crafted timer loops using the
+	 * Xtensa timer SRs directly) that duplicates the timing exactly still
+	 * sees hangs.  Something is happening inside the ROM UART code that
+	 * magically makes the startup sequence reliable.
+	 *
+	 * Leave this in place until the sequence is understood better.
+	 *
+	 */
+	esp_rom_uart_tx_one_char('\r');
+	esp_rom_uart_tx_one_char('\r');
+	esp_rom_uart_tx_one_char('\n');
+
 	/* Seems weird that you set the boot address AFTER starting
 	 * the CPU, but this is how they do it...
 	 */
