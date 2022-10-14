@@ -216,6 +216,7 @@ function(ExternalZephyrProject_Add)
     COMMAND ${CMAKE_COMMAND}
       -G${CMAKE_GENERATOR}
       -DSYSBUILD:BOOL=True
+      -DSB_FULL_CONFIG_USED:BOOL=${SB_FULL_CONFIG}
       -DSYSBUILD_CACHE:FILEPATH=${sysbuild_cache_file}
       ${shared_cmake_vars_argument}
       -B${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION}

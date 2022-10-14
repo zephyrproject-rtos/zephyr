@@ -20,6 +20,18 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
 # Note: sysbuild_kconfig will internally load kconfig CMake module.
 set(zephyr_modules extensions sysbuild_extensions python west root zephyr_module boards shields sysbuild_kconfig)
 
+# SB_FULL_CONFIG can be used to enable a full set of KConfig values and DTS
+# generation for use within Kconfig.sysbuild. Note that this option is
+# experimental until there has been futher user testing
+# This can be useful to enable or disable sysbuild level KConfig settings.
+# Note that all board and SOC level KConfigs will have the SB_CONFIG prefix
+if(SB_FULL_CONFIG)
+  message(STATUS "Full sysbuild configuration was requested")
+  set(SB_FULL_CONFIG_USED "y" CACHE BOOL "sysbuild full configuration used")
+  set(zephyr_modules extensions sysbuild_extensions python west root zephyr_module
+    boards shields arch configuration_files dts sysbuild_kconfig soc)
+endif()
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS ${zephyr_modules})
 
 project(sysbuild LANGUAGES)

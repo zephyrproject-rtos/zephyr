@@ -24,7 +24,12 @@ include_guard(GLOBAL)
 
 include(extensions)
 
-zephyr_get(APPLICATION_CONFIG_DIR)
+zephyr_get(SB_FULL_CONFIG_USED)
+# Don't use zephyr_get if SB_FULL_CONFIG was on, we don't want to use
+# root sysbuild config dir
+if(NOT SB_FULL_CONFIG_USED)
+  zephyr_get(APPLICATION_CONFIG_DIR)
+endif()
 if(DEFINED APPLICATION_CONFIG_DIR)
   string(CONFIGURE ${APPLICATION_CONFIG_DIR} APPLICATION_CONFIG_DIR)
   if(NOT IS_ABSOLUTE ${APPLICATION_CONFIG_DIR})
