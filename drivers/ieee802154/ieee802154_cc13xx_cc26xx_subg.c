@@ -723,7 +723,7 @@ static struct ieee802154_cc13xx_cc26xx_subg_data
 		},
 		/* Preamble & SFD for 2-FSK SUN PHY. 802.15.4-2015, 20.2.1 */
 		.syncWord0 = 0x0055904E,
-		.maxPktLen = IEEE802154_MAX_PHY_PACKET_SIZE,
+		.maxPktLen = IEEE802154_STANDARD_PSDU_SIZE,
 		.hdrConf = {
 			.numHdrBits = 16,
 			.numLenBits = 11,
