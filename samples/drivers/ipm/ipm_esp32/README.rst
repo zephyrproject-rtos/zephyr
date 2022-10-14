@@ -21,18 +21,8 @@ messages in chunks of 64bytes.
 Building and Running the Zephyr Code
 ************************************
 
-The sample requires two build commands to run, for that reason a pre built
-version of esp32_net, the APP cpu side firmware is already provided for quick
-tests just type on the console:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/drivers/ipm/ipm_esp32
-   :board: esp32
-   :goals: build flash
-   :compact:
-
-The other option is building from scratch just involve a single extra build command
-and file moving, first of all you need to build the esp32_net firmware as follows:
+The sample requires two build commands to run, first of all
+you need to build the esp32_net firmware as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ipm/ipm_esp32/ipm_esp32_net
