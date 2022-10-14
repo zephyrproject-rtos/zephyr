@@ -1,7 +1,8 @@
-/*  Bluetooth BASS - Broadcast Audio Scan Service - Client */
+/*  Bluetooth BAP Broadcast Assistant */
 
 /*
  * Copyright (c) 2019 Bose Corporation
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,18 +20,18 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_BASS_CLIENT)
-#define LOG_MODULE_NAME bt_bass_client
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_BAP_BROADCAST_ASSISTANT)
+#define LOG_MODULE_NAME bt_bap_broadcast_assistant
 #include "common/log.h"
 #include "common/bt_str.h"
 
-#include "bass_internal.h"
+#include "bap_internal.h"
 #include "../host/conn_internal.h"
 #include "../host/hci_core.h"
 
 #define MINIMUM_RECV_STATE_LEN          15
 
-struct bass_client_instance {
+struct bap_broadcast_assistant_instance {
 	bool discovering;
 	bool scanning;
 	uint8_t pa_sync;
@@ -38,34 +39,34 @@ struct bass_client_instance {
 	/* Source ID cache so that we can notify application about
 	 * which source ID was removed
 	 */
-	uint8_t src_ids[CONFIG_BT_BASS_CLIENT_RECV_STATE_COUNT];
+	uint8_t src_ids[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
 
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint16_t cp_handle;
-	uint16_t recv_state_handles[CONFIG_BT_BASS_CLIENT_RECV_STATE_COUNT];
+	uint16_t recv_state_handles[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
 
 	bool busy;
 	struct bt_gatt_subscribe_params recv_state_sub_params
-		[CONFIG_BT_BASS_CLIENT_RECV_STATE_COUNT];
+		[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
 	struct bt_gatt_discover_params recv_state_disc_params
-		[CONFIG_BT_BASS_CLIENT_RECV_STATE_COUNT];
+		[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
 	struct bt_gatt_read_params read_params;
 	struct bt_gatt_write_params write_params;
 	struct bt_gatt_discover_params disc_params;
 };
 
-static struct bt_bass_client_cb *bass_cbs;
+static struct bt_bap_broadcast_assistant_cb *broadcast_assistant_cbs;
 
-static struct bass_client_instance bass_client;
+static struct bap_broadcast_assistant_instance broadcast_assistant;
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
 NET_BUF_SIMPLE_DEFINE_STATIC(cp_buf, CONFIG_BT_L2CAP_TX_MTU);
 
 static int16_t lookup_index_by_handle(uint16_t handle)
 {
-	for (int i = 0; i < ARRAY_SIZE(bass_client.recv_state_handles); i++) {
-		if (bass_client.recv_state_handles[i] == handle) {
+	for (int i = 0; i < ARRAY_SIZE(broadcast_assistant.recv_state_handles); i++) {
+		if (broadcast_assistant.recv_state_handles[i] == handle) {
 			return i;
 		}
 	}
@@ -76,7 +77,7 @@ static int16_t lookup_index_by_handle(uint16_t handle)
 }
 
 static int parse_recv_state(const void *data, uint16_t length,
-			    struct bt_bass_recv_state *recv_state)
+			    struct bt_bap_scan_delegator_recv_state *recv_state)
 {
 	struct net_buf_simple buf;
 	bt_addr_t *addr;
@@ -106,7 +107,7 @@ static int parse_recv_state(const void *data, uint16_t length,
 	recv_state->broadcast_id = net_buf_simple_pull_le24(&buf);
 	recv_state->pa_sync_state = net_buf_simple_pull_u8(&buf);
 	recv_state->encrypt_state = net_buf_simple_pull_u8(&buf);
-	if (recv_state->encrypt_state == BT_BASS_BIG_ENC_STATE_BAD_CODE) {
+	if (recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
 		uint8_t *broadcast_code;
 		const size_t minimum_size = sizeof(recv_state->bad_code) +
 					    sizeof(recv_state->num_subgroups);
@@ -118,14 +119,14 @@ static int parse_recv_state(const void *data, uint16_t length,
 		}
 
 		broadcast_code = net_buf_simple_pull_mem(&buf,
-							 BT_BASS_BROADCAST_CODE_SIZE);
+							 BT_BAP_BROADCAST_CODE_SIZE);
 		(void)memcpy(recv_state->bad_code, broadcast_code,
 			     sizeof(recv_state->bad_code));
 	}
 
 	recv_state->num_subgroups = net_buf_simple_pull_u8(&buf);
 	for (int i = 0; i < recv_state->num_subgroups; i++) {
-		struct bt_bass_subgroup *subgroup = &recv_state->subgroups[i];
+		struct bt_bap_scan_delegator_subgroup *subgroup = &recv_state->subgroups[i];
 		uint8_t *metadata;
 
 		if (buf.len < sizeof(subgroup->bis_sync)) {
@@ -176,7 +177,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 			      const void *data, uint16_t length)
 {
 	uint16_t handle = params->value_handle;
-	struct bt_bass_recv_state recv_state;
+	struct bt_bap_scan_delegator_recv_state recv_state;
 	int err;
 	int16_t index;
 
@@ -207,14 +208,17 @@ static uint8_t notify_handler(struct bt_conn *conn,
 			return BT_GATT_ITER_STOP;
 		}
 
-		bass_client.src_ids[index] = recv_state.src_id;
+		broadcast_assistant.src_ids[index] = recv_state.src_id;
 
-		if (bass_cbs != NULL && bass_cbs->recv_state != NULL) {
-			bass_cbs->recv_state(conn, 0, &recv_state);
+		if (broadcast_assistant_cbs != NULL &&
+		    broadcast_assistant_cbs->recv_state != NULL) {
+			broadcast_assistant_cbs->recv_state(conn, 0, &
+							    recv_state);
 		}
-	} else if (bass_cbs != NULL && bass_cbs->recv_state_removed != NULL) {
-		bass_cbs->recv_state_removed(conn, 0,
-					     bass_client.src_ids[index]);
+	} else if (broadcast_assistant_cbs != NULL &&
+		   broadcast_assistant_cbs->recv_state_removed != NULL) {
+		broadcast_assistant_cbs->recv_state_removed(conn, 0,
+							    broadcast_assistant.src_ids[index]);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -225,63 +229,71 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 				  const void *data, uint16_t length)
 {
 	uint16_t handle = params->single.handle;
-	uint8_t last_handle_index = bass_client.recv_state_cnt - 1;
-	uint16_t last_handle = bass_client.recv_state_handles[last_handle_index];
-	struct bt_bass_recv_state recv_state;
-	int bass_err = err;
+	uint8_t last_handle_index = broadcast_assistant.recv_state_cnt - 1;
+	uint16_t last_handle = broadcast_assistant.recv_state_handles[last_handle_index];
+	struct bt_bap_scan_delegator_recv_state recv_state;
+	int cb_err = err;
 	bool active_recv_state = data != NULL && length != 0;
 
 	/* TODO: Split discovery and receive state characteristic read */
 
 	(void)memset(params, 0, sizeof(*params));
 
-	if (bass_err == 0 && active_recv_state) {
+	if (cb_err == 0 && active_recv_state) {
 		int16_t index;
 
 		index = lookup_index_by_handle(handle);
 		if (index < 0) {
-			bass_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_HANDLE);
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_HANDLE);
 		} else {
-			bass_err = parse_recv_state(data, length, &recv_state);
+			cb_err = parse_recv_state(data, length, &recv_state);
 
-			if (bass_err != 0) {
+			if (cb_err != 0) {
 				BT_DBG("Invalid receive state");
 			} else {
-				bass_client.src_ids[index] = recv_state.src_id;
+				broadcast_assistant.src_ids[index] = recv_state.src_id;
 			}
 		}
 	}
 
-	if (bass_err != 0) {
-		BT_DBG("err: %d", bass_err);
-		if (bass_client.discovering) {
-			bass_client.discovering = false;
-			if (bass_cbs != NULL && bass_cbs->discover != NULL) {
-				bass_cbs->discover(conn, bass_err, 0);
+	if (cb_err != 0) {
+		BT_DBG("err: %d", cb_err);
+		if (broadcast_assistant.discovering) {
+			broadcast_assistant.discovering = false;
+			if (broadcast_assistant_cbs != NULL &&
+			    broadcast_assistant_cbs->discover != NULL) {
+				broadcast_assistant_cbs->discover(conn,
+								  cb_err, 0);
 			}
 		} else {
-			if (bass_cbs != NULL && bass_cbs->recv_state != NULL) {
-				bass_cbs->recv_state(conn, bass_err, NULL);
+			if (broadcast_assistant_cbs != NULL &&
+			    broadcast_assistant_cbs->recv_state != NULL) {
+				broadcast_assistant_cbs->recv_state(conn,
+								    cb_err,
+								    NULL);
 			}
 		}
 	} else if (handle == last_handle) {
-		if (bass_client.discovering) {
-			bass_client.discovering = false;
-			if (bass_cbs != NULL && bass_cbs->discover != NULL) {
-				bass_cbs->discover(conn, bass_err,
-						   bass_client.recv_state_cnt);
+		if (broadcast_assistant.discovering) {
+			broadcast_assistant.discovering = false;
+			if (broadcast_assistant_cbs != NULL &&
+			    broadcast_assistant_cbs->discover != NULL) {
+				broadcast_assistant_cbs->discover(
+					conn, cb_err,
+					broadcast_assistant.recv_state_cnt);
 			}
 		} else {
-			if (bass_cbs != NULL && bass_cbs->recv_state != NULL) {
-				bass_cbs->recv_state(conn, bass_err,
-						     &recv_state);
+			if (broadcast_assistant_cbs != NULL &&
+			    broadcast_assistant_cbs->recv_state != NULL) {
+				broadcast_assistant_cbs->recv_state(conn,
+								    cb_err,
+								    &recv_state);
 			}
 		}
 	} else {
-		for (int i = 0; i < bass_client.recv_state_cnt; i++) {
-			if (handle == bass_client.recv_state_handles[i]) {
-				(void)bt_bass_client_read_recv_state(conn,
-								     i + 1);
+		for (int i = 0; i < broadcast_assistant.recv_state_cnt; i++) {
+			if (handle == broadcast_assistant.recv_state_handles[i]) {
+				(void)bt_bap_broadcast_assistant_read_recv_state(conn, i + 1);
 				break;
 			}
 		}
@@ -304,14 +316,15 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 
 	if (attr == NULL) {
 		BT_DBG("Found %u BASS receive states",
-		       bass_client.recv_state_cnt);
+		       broadcast_assistant.recv_state_cnt);
 		(void)memset(params, 0, sizeof(*params));
 
-		err = bt_bass_client_read_recv_state(conn, 0);
+		err = bt_bap_broadcast_assistant_read_recv_state(conn, 0);
 		if (err != 0) {
-			bass_client.discovering = false;
-			if (bass_cbs != NULL && bass_cbs->discover != NULL) {
-				bass_cbs->discover(conn, err, 0);
+			broadcast_assistant.discovering = false;
+			if (broadcast_assistant_cbs != NULL &&
+			    broadcast_assistant_cbs->discover != NULL) {
+				broadcast_assistant_cbs->discover(conn, err, 0);
 			}
 		}
 
@@ -326,23 +339,25 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 
 		if (bt_uuid_cmp(chrc->uuid, BT_UUID_BASS_CONTROL_POINT) == 0) {
 			BT_DBG("Control Point");
-			bass_client.cp_handle = attr->handle + 1;
+			broadcast_assistant.cp_handle = attr->handle + 1;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_BASS_RECV_STATE) == 0) {
-			if (bass_client.recv_state_cnt < CONFIG_BT_BASS_CLIENT_RECV_STATE_COUNT) {
-				uint8_t idx = bass_client.recv_state_cnt++;
+			if (broadcast_assistant.recv_state_cnt <
+				CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT) {
+				uint8_t idx = broadcast_assistant.recv_state_cnt++;
 
 				BT_DBG("Receive State %u",
-				       bass_client.recv_state_cnt);
-				bass_client.recv_state_handles[idx] =
+				       broadcast_assistant.recv_state_cnt);
+				broadcast_assistant.recv_state_handles[idx] =
 					attr->handle + 1;
-				sub_params = &bass_client.recv_state_sub_params[idx];
-				sub_params->disc_params = &bass_client.recv_state_disc_params[idx];
+				sub_params = &broadcast_assistant.recv_state_sub_params[idx];
+				sub_params->disc_params =
+					&broadcast_assistant.recv_state_disc_params[idx];
 			}
 		}
 
 		if (sub_params != NULL) {
 			/* With ccc_handle == 0 it will use auto discovery */
-			sub_params->end_handle = bass_client.end_handle;
+			sub_params->end_handle = broadcast_assistant.end_handle;
 			sub_params->ccc_handle = 0;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = attr->handle + 1;
@@ -353,10 +368,12 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 				BT_DBG("Could not subscribe to handle 0x%04x",
 				       sub_params->value_handle);
 
-				bass_client.discovering = false;
-				if (bass_cbs != NULL &&
-				    bass_cbs->discover != NULL) {
-					bass_cbs->discover(conn, err, 0);
+				broadcast_assistant.discovering = false;
+				if (broadcast_assistant_cbs != NULL &&
+				    broadcast_assistant_cbs->discover != NULL) {
+					broadcast_assistant_cbs->discover(conn,
+									  err,
+									  0);
 				}
 
 				return BT_GATT_ITER_STOP;
@@ -378,11 +395,12 @@ static uint8_t service_discover_func(struct bt_conn *conn,
 		BT_DBG("Could not discover BASS");
 		(void)memset(params, 0, sizeof(*params));
 
-		bass_client.discovering = false;
+		broadcast_assistant.discovering = false;
 
-		if (bass_cbs != NULL && bass_cbs->discover != NULL) {
+		if (broadcast_assistant_cbs != NULL &&
+		    broadcast_assistant_cbs->discover != NULL) {
 			err = BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
-			bass_cbs->discover(conn, err, 0);
+			broadcast_assistant_cbs->discover(conn, err, 0);
 		}
 
 		return BT_GATT_ITER_STOP;
@@ -392,22 +410,23 @@ static uint8_t service_discover_func(struct bt_conn *conn,
 
 	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
-		bass_client.start_handle = attr->handle + 1;
-		bass_client.end_handle = prim_service->end_handle;
+		broadcast_assistant.start_handle = attr->handle + 1;
+		broadcast_assistant.end_handle = prim_service->end_handle;
 
-		bass_client.disc_params.uuid = NULL;
-		bass_client.disc_params.start_handle = bass_client.start_handle;
-		bass_client.disc_params.end_handle = bass_client.end_handle;
-		bass_client.disc_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
-		bass_client.disc_params.func = char_discover_func;
+		broadcast_assistant.disc_params.uuid = NULL;
+		broadcast_assistant.disc_params.start_handle = broadcast_assistant.start_handle;
+		broadcast_assistant.disc_params.end_handle = broadcast_assistant.end_handle;
+		broadcast_assistant.disc_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+		broadcast_assistant.disc_params.func = char_discover_func;
 
-		err = bt_gatt_discover(conn, &bass_client.disc_params);
+		err = bt_gatt_discover(conn, &broadcast_assistant.disc_params);
 		if (err != 0) {
 			BT_DBG("Discover failed (err %d)", err);
-			bass_client.discovering = false;
+			broadcast_assistant.discovering = false;
 
-			if (bass_cbs != NULL && bass_cbs->discover != NULL) {
-				bass_cbs->discover(conn, err, 0);
+			if (broadcast_assistant_cbs != NULL &&
+			    broadcast_assistant_cbs->discover != NULL) {
+				broadcast_assistant_cbs->discover(conn, err, 0);
 			}
 		}
 	}
@@ -415,46 +434,46 @@ static uint8_t service_discover_func(struct bt_conn *conn,
 	return BT_GATT_ITER_STOP;
 }
 
-static void bass_client_write_cp_cb(struct bt_conn *conn, uint8_t err,
-				    struct bt_gatt_write_params *params)
+static void bap_broadcast_assistant_write_cp_cb(struct bt_conn *conn, uint8_t err,
+						struct bt_gatt_write_params *params)
 {
 	uint8_t opcode = net_buf_simple_pull_u8(&cp_buf);
 
-	bass_client.busy = false;
+	broadcast_assistant.busy = false;
 
-	if (bass_cbs == NULL) {
+	if (broadcast_assistant_cbs == NULL) {
 		return;
 	}
 
 	switch (opcode) {
-	case BT_BASS_OP_SCAN_STOP:
-		if (bass_cbs->scan_stop != NULL) {
-			bass_cbs->scan_stop(conn, err);
+	case BT_BAP_BASS_OP_SCAN_STOP:
+		if (broadcast_assistant_cbs->scan_stop != NULL) {
+			broadcast_assistant_cbs->scan_stop(conn, err);
 		}
 		break;
-	case BT_BASS_OP_SCAN_START:
-		if (bass_cbs->scan_start != NULL) {
-			bass_cbs->scan_start(conn, err);
+	case BT_BAP_BASS_OP_SCAN_START:
+		if (broadcast_assistant_cbs->scan_start != NULL) {
+			broadcast_assistant_cbs->scan_start(conn, err);
 		}
 		break;
-	case BT_BASS_OP_ADD_SRC:
-		if (bass_cbs->add_src != NULL) {
-			bass_cbs->add_src(conn, err);
+	case BT_BAP_BASS_OP_ADD_SRC:
+		if (broadcast_assistant_cbs->add_src != NULL) {
+			broadcast_assistant_cbs->add_src(conn, err);
 		}
 		break;
-	case BT_BASS_OP_MOD_SRC:
-		if (bass_cbs->mod_src != NULL) {
-			bass_cbs->mod_src(conn, err);
+	case BT_BAP_BASS_OP_MOD_SRC:
+		if (broadcast_assistant_cbs->mod_src != NULL) {
+			broadcast_assistant_cbs->mod_src(conn, err);
 		}
 		break;
-	case BT_BASS_OP_BROADCAST_CODE:
-		if (bass_cbs->broadcast_code != NULL) {
-			bass_cbs->broadcast_code(conn, err);
+	case BT_BAP_BASS_OP_BROADCAST_CODE:
+		if (broadcast_assistant_cbs->broadcast_code != NULL) {
+			broadcast_assistant_cbs->broadcast_code(conn, err);
 		}
 		break;
-	case BT_BASS_OP_REM_SRC:
-		if (bass_cbs->rem_src != NULL) {
-			bass_cbs->rem_src(conn, err);
+	case BT_BAP_BASS_OP_REM_SRC:
+		if (broadcast_assistant_cbs->rem_src != NULL) {
+			broadcast_assistant_cbs->rem_src(conn, err);
 		}
 		break;
 	default:
@@ -463,27 +482,27 @@ static void bass_client_write_cp_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
-static int bt_bass_client_common_cp(struct bt_conn *conn,
+static int bt_bap_broadcast_assistant_common_cp(struct bt_conn *conn,
 				    const struct net_buf_simple *buf)
 {
 	int err;
 
 	if (conn == NULL) {
 		return -EINVAL;
-	} else if (bass_client.cp_handle == 0) {
+	} else if (broadcast_assistant.cp_handle == 0) {
 		BT_DBG("Handle not set");
 		return -EINVAL;
 	}
 
-	bass_client.write_params.offset = 0;
-	bass_client.write_params.data = buf->data;
-	bass_client.write_params.length = buf->len;
-	bass_client.write_params.handle = bass_client.cp_handle;
-	bass_client.write_params.func = bass_client_write_cp_cb;
+	broadcast_assistant.write_params.offset = 0;
+	broadcast_assistant.write_params.data = buf->data;
+	broadcast_assistant.write_params.length = buf->len;
+	broadcast_assistant.write_params.handle = broadcast_assistant.cp_handle;
+	broadcast_assistant.write_params.func = bap_broadcast_assistant_write_cp_cb;
 
-	err = bt_gatt_write(conn, &bass_client.write_params);
+	err = bt_gatt_write(conn, &broadcast_assistant.write_params);
 	if (err == 0) {
-		bass_client.busy = true;
+		broadcast_assistant.busy = true;
 	}
 
 	return err;
@@ -500,7 +519,7 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 		return true;
 	}
 
-	if (data->data_len < BT_UUID_SIZE_16 + BT_BASS_BROADCAST_ID_SIZE) {
+	if (data->data_len < BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE) {
 		return true;
 	}
 
@@ -517,8 +536,9 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 	BT_DBG("Found BIS advertiser with address %s",
 	       bt_addr_le_str(info->addr));
 
-	if (bass_cbs != NULL && bass_cbs->scan != NULL) {
-		bass_cbs->scan(info, broadcast_id);
+	if (broadcast_assistant_cbs != NULL &&
+	    broadcast_assistant_cbs->scan != NULL) {
+		broadcast_assistant_cbs->scan(info, broadcast_id);
 	}
 
 	return false;
@@ -542,7 +562,7 @@ static struct bt_le_scan_cb scan_cb = {
 
 /****************************** PUBLIC API ******************************/
 
-int bt_bass_client_discover(struct bt_conn *conn)
+int bt_bap_broadcast_assistant_discover(struct bt_conn *conn)
 {
 	int err;
 
@@ -551,39 +571,39 @@ int bt_bass_client_discover(struct bt_conn *conn)
 	}
 
 	/* Discover BASS on peer, setup handles and notify */
-	(void)memset(&bass_client, 0, sizeof(bass_client));
+	(void)memset(&broadcast_assistant, 0, sizeof(broadcast_assistant));
 	(void)memcpy(&uuid, BT_UUID_BASS, sizeof(uuid));
-	bass_client.disc_params.func = service_discover_func;
-	bass_client.disc_params.uuid = &uuid.uuid;
-	bass_client.disc_params.type = BT_GATT_DISCOVER_PRIMARY;
-	bass_client.disc_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
-	bass_client.disc_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+	broadcast_assistant.disc_params.func = service_discover_func;
+	broadcast_assistant.disc_params.uuid = &uuid.uuid;
+	broadcast_assistant.disc_params.type = BT_GATT_DISCOVER_PRIMARY;
+	broadcast_assistant.disc_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	broadcast_assistant.disc_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
-	err = bt_gatt_discover(conn, &bass_client.disc_params);
+	err = bt_gatt_discover(conn, &broadcast_assistant.disc_params);
 	if (err != 0) {
 		return err;
 	}
 
-	bass_client.discovering = true;
+	broadcast_assistant.discovering = true;
 
 	return 0;
 }
 
-void bt_bass_client_register_cb(struct bt_bass_client_cb *cb)
+void bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb *cb)
 {
-	bass_cbs = cb;
+	broadcast_assistant_cbs = cb;
 }
 
-int bt_bass_client_scan_start(struct bt_conn *conn, bool start_scan)
+int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan)
 {
-	struct bt_bass_cp_scan_start *cp;
+	struct bt_bap_bass_cp_scan_start *cp;
 	int err;
 
 	if (conn == NULL) {
 		return -EINVAL;
-	} else if (bass_client.cp_handle == 0) {
+	} else if (broadcast_assistant.cp_handle == 0) {
 		return -EINVAL;
-	} else if (bass_client.busy) {
+	} else if (broadcast_assistant.busy) {
 		return -EBUSY;
 	}
 
@@ -602,32 +622,32 @@ int bt_bass_client_scan_start(struct bt_conn *conn, bool start_scan)
 			return err;
 		}
 
-		bass_client.scanning = true;
+		broadcast_assistant.scanning = true;
 	}
 
 	/* Reset buffer before using */
 	net_buf_simple_reset(&cp_buf);
 	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
 
-	cp->opcode = BT_BASS_OP_SCAN_START;
+	cp->opcode = BT_BAP_BASS_OP_SCAN_START;
 
-	return bt_bass_client_common_cp(conn, &cp_buf);
+	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
 }
 
-int bt_bass_client_scan_stop(struct bt_conn *conn)
+int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn)
 {
-	struct bt_bass_cp_scan_stop *cp;
+	struct bt_bap_bass_cp_scan_stop *cp;
 	int err;
 
 	if (conn == NULL) {
 		return 0;
-	} else if (bass_client.cp_handle == 0) {
+	} else if (broadcast_assistant.cp_handle == 0) {
 		return -EINVAL;
-	} else if (bass_client.busy) {
+	} else if (broadcast_assistant.busy) {
 		return -EBUSY;
 	}
 
-	if (bass_client.scanning) {
+	if (broadcast_assistant.scanning) {
 		err = bt_le_scan_stop();
 		if (err != 0) {
 			BT_DBG("Could not stop scan (%d)", err);
@@ -635,27 +655,28 @@ int bt_bass_client_scan_stop(struct bt_conn *conn)
 			return err;
 		}
 
-		bass_client.scanning = false;
+		broadcast_assistant.scanning = false;
 	}
 
 	/* Reset buffer before using */
 	net_buf_simple_reset(&cp_buf);
 	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
 
-	cp->opcode = BT_BASS_OP_SCAN_STOP;
+	cp->opcode = BT_BAP_BASS_OP_SCAN_STOP;
 
-	return bt_bass_client_common_cp(conn, &cp_buf);
+	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
 }
 
-int bt_bass_client_add_src(struct bt_conn *conn, struct bt_bass_add_src_param *param)
+int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
+				       struct bt_bap_broadcast_assistant_add_src_param *param)
 {
-	struct bt_bass_cp_add_src *cp;
+	struct bt_bap_bass_cp_add_src *cp;
 
 	if (conn == NULL) {
 		return 0;
-	} else if (bass_client.cp_handle == 0) {
+	} else if (broadcast_assistant.cp_handle == 0) {
 		return -EINVAL;
-	} else if (bass_client.busy) {
+	} else if (broadcast_assistant.busy) {
 		return -EBUSY;
 	}
 
@@ -663,7 +684,7 @@ int bt_bass_client_add_src(struct bt_conn *conn, struct bt_bass_add_src_param *p
 	net_buf_simple_reset(&cp_buf);
 	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
 
-	cp->opcode = BT_BASS_OP_ADD_SRC;
+	cp->opcode = BT_BAP_BASS_OP_ADD_SRC;
 	cp->adv_sid = param->adv_sid;
 	bt_addr_le_copy(&cp->addr, &param->addr);
 
@@ -675,19 +696,19 @@ int bt_bass_client_add_src(struct bt_conn *conn, struct bt_bass_add_src_param *p
 			/* TODO: Validate that we are synced to the peer address
 			 * before saying to use PAST - Requires additional per_adv_sync API
 			 */
-			cp->pa_sync = BT_BASS_PA_REQ_SYNC_PAST;
+			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC_PAST;
 		} else {
-			cp->pa_sync = BT_BASS_PA_REQ_SYNC;
+			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC;
 		}
 	} else {
-		cp->pa_sync = BT_BASS_PA_REQ_NO_SYNC;
+		cp->pa_sync = BT_BAP_BASS_PA_REQ_NO_SYNC;
 	}
 
 	cp->pa_interval = sys_cpu_to_le16(param->pa_interval);
 
 	cp->num_subgroups = param->num_subgroups;
 	for (int i = 0; i < param->num_subgroups; i++) {
-		struct bt_bass_cp_subgroup *subgroup;
+		struct bt_bap_bass_cp_subgroup *subgroup;
 		const size_t subgroup_size = sizeof(subgroup->bis_sync) +
 					     sizeof(subgroup->metadata_len) +
 					     param->subgroups[i].metadata_len;
@@ -719,19 +740,19 @@ int bt_bass_client_add_src(struct bt_conn *conn, struct bt_bass_add_src_param *p
 
 	}
 
-	return bt_bass_client_common_cp(conn, &cp_buf);
+	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
 }
 
-int bt_bass_client_mod_src(struct bt_conn *conn,
-			   struct bt_bass_mod_src_param *param)
+int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
+				       struct bt_bap_broadcast_assistant_mod_src_param *param)
 {
-	struct bt_bass_cp_mod_src *cp;
+	struct bt_bap_bass_cp_mod_src *cp;
 
 	if (conn == NULL) {
 		return 0;
-	} else if (bass_client.cp_handle == 0) {
+	} else if (broadcast_assistant.cp_handle == 0) {
 		return -EINVAL;
-	} else if (bass_client.busy) {
+	} else if (broadcast_assistant.busy) {
 		return -EBUSY;
 	}
 
@@ -739,24 +760,24 @@ int bt_bass_client_mod_src(struct bt_conn *conn,
 	net_buf_simple_reset(&cp_buf);
 	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
 
-	cp->opcode = BT_BASS_OP_MOD_SRC;
+	cp->opcode = BT_BAP_BASS_OP_MOD_SRC;
 	cp->src_id = param->src_id;
 
 	if (param->pa_sync != 0) {
 		if (BT_FEAT_LE_PAST_SEND(conn->le.features) &&
 		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
-			cp->pa_sync = BT_BASS_PA_REQ_SYNC_PAST;
+			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC_PAST;
 		} else {
-			cp->pa_sync = BT_BASS_PA_REQ_SYNC;
+			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC;
 		}
 	} else {
-		cp->pa_sync = BT_BASS_PA_REQ_NO_SYNC;
+		cp->pa_sync = BT_BAP_BASS_PA_REQ_NO_SYNC;
 	}
 	cp->pa_interval = sys_cpu_to_le16(param->pa_interval);
 
 	cp->num_subgroups = param->num_subgroups;
 	for (int i = 0; i < param->num_subgroups; i++) {
-		struct bt_bass_cp_subgroup *subgroup;
+		struct bt_bap_bass_cp_subgroup *subgroup;
 		const size_t subgroup_size = sizeof(subgroup->bis_sync) +
 					     sizeof(subgroup->metadata_len) +
 					     param->subgroups[i].metadata_len;
@@ -785,19 +806,20 @@ int bt_bass_client_mod_src(struct bt_conn *conn,
 		}
 	}
 
-	return bt_bass_client_common_cp(conn, &cp_buf);
+	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
 }
 
-int bt_bass_client_set_broadcast_code(struct bt_conn *conn, uint8_t src_id,
-				      uint8_t broadcast_code[BT_BASS_BROADCAST_CODE_SIZE])
+int bt_bap_broadcast_assistant_set_broadcast_code(
+	struct bt_conn *conn, uint8_t src_id,
+	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE])
 {
-	struct bt_bass_cp_broadcase_code *cp;
+	struct bt_bap_bass_cp_broadcase_code *cp;
 
 	if (conn == NULL) {
 		return 0;
-	} else if (bass_client.cp_handle == 0) {
+	} else if (broadcast_assistant.cp_handle == 0) {
 		return -EINVAL;
-	} else if (bass_client.busy) {
+	} else if (broadcast_assistant.busy) {
 		return -EBUSY;
 	}
 
@@ -805,24 +827,24 @@ int bt_bass_client_set_broadcast_code(struct bt_conn *conn, uint8_t src_id,
 	net_buf_simple_reset(&cp_buf);
 	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
 
-	cp->opcode = BT_BASS_OP_BROADCAST_CODE;
+	cp->opcode = BT_BAP_BASS_OP_BROADCAST_CODE;
 	cp->src_id = src_id;
 
 	(void)memcpy(cp->broadcast_code, broadcast_code,
-		     BT_BASS_BROADCAST_CODE_SIZE);
+		     BT_BAP_BROADCAST_CODE_SIZE);
 
-	return bt_bass_client_common_cp(conn, &cp_buf);
+	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
 }
 
-int bt_bass_client_rem_src(struct bt_conn *conn, uint8_t src_id)
+int bt_bap_broadcast_assistant_rem_src(struct bt_conn *conn, uint8_t src_id)
 {
-	struct bt_bass_cp_rem_src *cp;
+	struct bt_bap_bass_cp_rem_src *cp;
 
 	if (conn == NULL) {
 		return 0;
-	} else if (bass_client.cp_handle == 0) {
+	} else if (broadcast_assistant.cp_handle == 0) {
 		return -EINVAL;
-	} else if (bass_client.busy) {
+	} else if (broadcast_assistant.busy) {
 		return -EBUSY;
 	}
 
@@ -830,13 +852,14 @@ int bt_bass_client_rem_src(struct bt_conn *conn, uint8_t src_id)
 	net_buf_simple_reset(&cp_buf);
 	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
 
-	cp->opcode = BT_BASS_OP_REM_SRC;
+	cp->opcode = BT_BAP_BASS_OP_REM_SRC;
 	cp->src_id = src_id;
 
-	return bt_bass_client_common_cp(conn, &cp_buf);
+	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
 }
 
-int bt_bass_client_read_recv_state(struct bt_conn *conn, uint8_t idx)
+int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn,
+					       uint8_t idx)
 {
 	int err;
 
@@ -844,20 +867,20 @@ int bt_bass_client_read_recv_state(struct bt_conn *conn, uint8_t idx)
 		return -EINVAL;
 	}
 
-	if (bass_client.recv_state_handles[idx] == 0) {
+	if (broadcast_assistant.recv_state_handles[idx] == 0) {
 		BT_DBG("Handle not set");
 		return -EINVAL;
 	}
 
-	bass_client.read_params.func = read_recv_state_cb;
-	bass_client.read_params.handle_count = 1;
-	bass_client.read_params.single.handle =
-		bass_client.recv_state_handles[idx];
+	broadcast_assistant.read_params.func = read_recv_state_cb;
+	broadcast_assistant.read_params.handle_count = 1;
+	broadcast_assistant.read_params.single.handle =
+		broadcast_assistant.recv_state_handles[idx];
 
-	err = bt_gatt_read(conn, &bass_client.read_params);
+	err = bt_gatt_read(conn, &broadcast_assistant.read_params);
 	if (err != 0) {
-		(void)memset(&bass_client.read_params, 0,
-			     sizeof(bass_client.read_params));
+		(void)memset(&broadcast_assistant.read_params, 0,
+			     sizeof(broadcast_assistant.read_params));
 	}
 
 	return err;
