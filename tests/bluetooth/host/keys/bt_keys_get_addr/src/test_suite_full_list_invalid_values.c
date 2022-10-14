@@ -20,6 +20,8 @@ extern const struct id_addr_pair testing_id_addr_pair_lut[CONFIG_BT_MAX_PAIRED];
 /* This list holds returned references while filling keys pool */
 extern struct bt_keys *returned_keys_refs[CONFIG_BT_MAX_PAIRED];
 
+extern bool all_startup_checks_executed;
+
 static int bt_unpair_unreachable_custom_fake(uint8_t id, const bt_addr_le_t *addr)
 {
 	ARG_UNUSED(id);
@@ -53,7 +55,7 @@ static void test_case_setup(void *f)
 	zassert_true(rv == 0, "Failed to fill keys pool list, error code %d", -rv);
 }
 
-ZTEST_SUITE(bt_keys_find_key_in_use_invalid_cases, NULL, NULL, test_case_setup, NULL, NULL);
+ZTEST_SUITE(bt_keys_find_key_in_use_invalid_cases, non_startup_suite_predicate, NULL, test_case_setup, NULL, NULL);
 
 /*
  *  Test adding extra (ID, Address) pair while the keys pool list is full, but while looking

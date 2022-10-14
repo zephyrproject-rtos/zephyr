@@ -17,3 +17,15 @@
 #define BT_ADDR_LE_3 ((bt_addr_le_t[]) { { 0, { { 0x0C, 0x89, 0x67, 0x45, 0x23, 0x01 } } } })
 #define BT_ADDR_LE_4 ((bt_addr_le_t[]) { { 0, { { 0x0D, 0x89, 0x67, 0x45, 0x23, 0x01 } } } })
 #define BT_ADDR_LE_5 ((bt_addr_le_t[]) { { 0, { { 0x0E, 0x89, 0x67, 0x45, 0x23, 0x01 } } } })
+
+bool all_startup_checks_executed;
+
+static inline bool non_startup_suite_predicate(const void *global_state)
+{
+	return (all_startup_checks_executed == true);
+}
+
+static inline bool startup_suite_predicate(const void *global_state)
+{
+	return (all_startup_checks_executed == false);
+}

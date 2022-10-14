@@ -24,15 +24,10 @@ const struct id_addr_pair testing_id_addr_pair_lut[] = {
 /* This list will hold returned references while filling keys pool */
 struct bt_keys *returned_keys_refs[CONFIG_BT_MAX_PAIRED];
 
-static bool all_startup_checks_executed;
+extern bool all_startup_checks_executed;
 
 BUILD_ASSERT(ARRAY_SIZE(testing_id_addr_pair_lut) == CONFIG_BT_MAX_PAIRED);
 BUILD_ASSERT(ARRAY_SIZE(testing_id_addr_pair_lut) == ARRAY_SIZE(returned_keys_refs));
-
-static bool startup_suite_predicate(const void *global_state)
-{
-	return (all_startup_checks_executed == false);
-}
 
 ZTEST_SUITE(bt_keys_get_addr_startup, startup_suite_predicate, NULL, NULL, NULL, NULL);
 
@@ -51,7 +46,7 @@ ZTEST(bt_keys_get_addr_startup, test_keys_pool_list_is_empty_at_startup)
 		     "List isn't empty, make sure to run this test just after a fresh start");
 }
 
-ZTEST_SUITE(bt_keys_get_addr_populate_non_existing_keys, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(bt_keys_get_addr_populate_non_existing_keys, non_startup_suite_predicate, NULL, NULL, NULL, NULL);
 
 /*
  *  Test filling the keys pool with (ID, Address) pairs
@@ -122,7 +117,7 @@ static void test_case_setup(void *f)
 	zassert_true(rv == 0, "Failed to fill keys pool list, error code %d", -rv);
 }
 
-ZTEST_SUITE(bt_keys_get_addr_get_existing_keys, NULL, NULL, test_case_setup, NULL, NULL);
+ZTEST_SUITE(bt_keys_get_addr_get_existing_keys, non_startup_suite_predicate, NULL, test_case_setup, NULL, NULL);
 
 /*
  *  Test getting a valid key reference by a matching ID and address pair
@@ -160,12 +155,6 @@ ZTEST(bt_keys_get_addr_get_existing_keys, test_get_key_by_matched_id_and_address
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-
-	/* Skip tests if not all startup suite hasn't been executed */
-	if (strcmp(test->test_suite_name, "bt_keys_get_addr_startup")) {
-		zassume_true(all_startup_checks_executed == true, NULL);
-	}
-
 	CONN_FFF_FAKES_LIST(RESET_FAKE);
 	HCI_CORE_FFF_FAKES_LIST(RESET_FAKE);
 }
