@@ -52,8 +52,6 @@ struct bt_ascs_ase {
 
 struct bt_ascs {
 	struct bt_conn *conn;
-	uint8_t id;
-	bt_addr_le_t peer;
 	struct bt_ascs_ase ases[ASE_COUNT];
 	/* A single iso_channel may be used for 1 or 2 ases.
 	 * Controlled by the client.
@@ -63,7 +61,7 @@ struct bt_ascs {
 
 static struct bt_ascs sessions[CONFIG_BT_MAX_CONN];
 
-static struct bt_ascs *ascs_find(struct bt_conn *conn);
+static struct bt_ascs *ascs_get(struct bt_conn *conn);
 static struct bt_ascs_ase *ase_find(struct bt_ascs *ascs, uint8_t id);
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len);
 
@@ -601,14 +599,7 @@ static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	ep = stream->ep;
 	if (ep->status.state == BT_AUDIO_EP_STATE_RELEASING) {
 		struct bt_ascs_ase *ase;
-		struct bt_ascs *ascs;
-
-		ascs = ascs_find(stream->conn);
-		if (ascs == NULL) {
-			BT_WARN("Could find ASCS based on ISO %p with ACL %p",
-				chan, stream->conn);
-			return;
-		}
+		struct bt_ascs *ascs = ascs_get(stream->conn);
 
 		ase = ase_find(ascs, ep->status.id);
 		if (ase == NULL) {
@@ -801,26 +792,6 @@ static void ase_release(struct bt_ascs_ase *ase)
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_RELEASE_OP);
 }
 
-static void ascs_clear(struct bt_ascs *ascs)
-{
-	int i;
-
-	BT_DBG("ascs %p", ascs);
-
-	bt_addr_le_copy(&ascs->peer, BT_ADDR_LE_ANY);
-
-	for (i = 0; i < ASE_COUNT; i++) {
-		struct bt_ascs_ase *ase = &ascs->ases[i];
-
-		if (ase->ep.status.state == BT_AUDIO_EP_STATE_IDLE) {
-			continue;
-		}
-
-		/* ase_process will handle the final state transition into idle state */
-		ase_release(ase);
-	}
-}
-
 static void ase_disable(struct bt_ascs_ase *ase)
 {
 	struct bt_audio_stream *stream;
@@ -873,35 +844,32 @@ static void ase_disable(struct bt_ascs_ase *ase)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	int i;
+	struct bt_ascs *session = &sessions[bt_conn_index(conn)];
 
-	BT_DBG("");
+	if (session->conn == NULL) {
+		return;
+	}
 
-	for (i = 0; i < CONFIG_BT_MAX_CONN; i++) {
-		struct bt_ascs *ascs = &sessions[i];
+	for (size_t i = 0; i < ARRAY_SIZE(session->ases); i++) {
+		struct bt_ascs_ase *ase = &session->ases[i];
+		struct bt_audio_stream *stream = ase->ep.stream;
 
-		if (ascs->conn != conn) {
-			continue;
+		if (ase->ep.status.state != BT_AUDIO_EP_STATE_IDLE) {
+			/* ase_process will handle the final state transition into idle state */
+			ase_release(ase);
 		}
 
-		/* Release existing ASEs if not bonded */
-		ascs_clear(ascs);
-
-		bt_conn_unref(ascs->conn);
-		ascs->conn = NULL;
-
-		for (size_t i = 0U; i < ARRAY_SIZE(ascs->ases); i++) {
-			struct bt_audio_stream *stream = ascs->ases[i].ep.stream;
-
-			if (stream != NULL && stream->conn != NULL) {
-				bt_conn_unref(stream->conn);
-				stream->conn = NULL;
-			}
+		if (stream != NULL && stream->conn != NULL) {
+			bt_conn_unref(stream->conn);
+			stream->conn = NULL;
 		}
 	}
+
+	bt_conn_unref(session->conn);
+	session->conn = NULL;
 }
 
-static struct bt_conn_cb conn_cb = {
+BT_CONN_CB_DEFINE(conn_cb) = {
 	.disconnected = disconnected,
 };
 
@@ -936,32 +904,6 @@ static struct bt_audio_iso *audio_iso_get_or_new(struct bt_ascs *ascs, uint8_t c
 	return free_audio_iso;
 }
 
-static struct bt_ascs *ascs_new(struct bt_conn *conn)
-{
-	static bool conn_cb_registered;
-	int i;
-
-	for (i = 0; i < CONFIG_BT_MAX_CONN; i++) {
-		if (!sessions[i].conn &&
-		    bt_addr_le_eq(&sessions[i].peer, BT_ADDR_LE_ANY)) {
-			struct bt_ascs *ascs = &sessions[i];
-
-			memset(ascs->ases, 0, sizeof(ascs->ases));
-			ascs->conn = bt_conn_ref(conn);
-
-			/* Register callbacks if not registered */
-			if (!conn_cb_registered) {
-				bt_conn_cb_register(&conn_cb);
-				conn_cb_registered = true;
-			}
-
-			return ascs;
-		}
-	}
-
-	return NULL;
-}
-
 static void ase_stream_add(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 			   struct bt_audio_stream *stream)
 {
@@ -972,55 +914,15 @@ static void ase_stream_add(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 	stream->iso = &ase->ep.iso->iso_chan;
 }
 
-static void ascs_attach(struct bt_ascs *ascs, struct bt_conn *conn)
-{
-	int i;
-
-	BT_DBG("ascs %p conn %p", ascs, conn);
-
-	ascs->conn = bt_conn_ref(conn);
-
-	/* TODO: Load the ASEs from the settings? */
-
-	for (i = 0; i < ASE_COUNT; i++) {
-		if (ascs->ases[i].ep.stream) {
-			ase_stream_add(ascs, &ascs->ases[i],
-				       ascs->ases[i].ep.stream);
-		}
-	}
-}
-
-static struct bt_ascs *ascs_find(struct bt_conn *conn)
-{
-	int i;
-
-	for (i = 0; i < CONFIG_BT_MAX_CONN; i++) {
-		if (sessions[i].conn == conn) {
-			return &sessions[i];
-		}
-
-		/* Check if there is an existing session for the peer */
-		if (!sessions[i].conn &&
-		    bt_conn_is_peer_addr_le(conn, sessions[i].id,
-					    &sessions[i].peer)) {
-			ascs_attach(&sessions[i], conn);
-			return &sessions[i];
-		}
-	}
-
-	return NULL;
-}
-
 static struct bt_ascs *ascs_get(struct bt_conn *conn)
 {
-	struct bt_ascs *ascs;
+	struct bt_ascs *session = &sessions[bt_conn_index(conn)];
 
-	ascs = ascs_find(conn);
-	if (ascs) {
-		return ascs;
+	if (session->conn == NULL) {
+		session->conn = bt_conn_ref(conn);
 	}
 
-	return ascs_new(conn);
+	return session;
 }
 
 NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, CONFIG_BT_L2CAP_TX_MTU);
@@ -1221,17 +1123,11 @@ static ssize_t ascs_ase_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
-	struct bt_ascs *ascs;
+	struct bt_ascs *ascs = ascs_get(conn);
 	struct bt_ascs_ase *ase;
 
 	BT_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len,
 	       offset);
-
-	ascs = ascs_get(conn);
-	if (!ascs) {
-		BT_ERR("Unable to get ASCS session");
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
-	}
 
 	ase = ase_get(ascs, POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr)));
 	if (!ase) {
@@ -2425,7 +2321,7 @@ static ssize_t ascs_cp_write(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, const void *data,
 			     uint16_t len, uint16_t offset, uint8_t flags)
 {
-	struct bt_ascs *ascs;
+	struct bt_ascs *ascs = ascs_get(conn);
 	const struct bt_ascs_ase_cp *req;
 	struct net_buf_simple buf;
 	ssize_t ret;
@@ -2447,14 +2343,6 @@ static ssize_t ascs_cp_write(struct bt_conn *conn,
 
 	/* Reset/empty response buffer before using it again */
 	net_buf_simple_reset(&rsp_buf);
-
-	ascs = ascs_get(conn);
-	if (!ascs) {
-		BT_ERR("Unable to get ASCS session");
-		len = BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
-		ascs_cp_rsp_add(0, req->op, BT_ASCS_RSP_UNSPECIFIED, 0x00);
-		goto respond;
-	}
 
 	switch (req->op) {
 	case BT_ASCS_CONFIG_OP:
