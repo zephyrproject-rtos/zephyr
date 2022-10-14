@@ -2,7 +2,7 @@
  * @file
  * @brief Shell APIs for Bluetooth BASS client
  *
- * Copyright (c) 2020-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,12 +16,12 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/audio/bass.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include "bt.h"
 #include "../host/hci_core.h"
 
-static void bass_client_discover_cb(struct bt_conn *conn, int err,
-				    uint8_t recv_state_count)
+static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
+						uint8_t recv_state_count)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "BASS discover failed (%d)", err);
@@ -32,8 +32,8 @@ static void bass_client_discover_cb(struct bt_conn *conn, int err,
 
 }
 
-static void bass_client_scan_cb(const struct bt_le_scan_recv_info *info,
-				uint32_t broadcast_id)
+static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *info,
+					    uint32_t broadcast_id)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[30];
@@ -60,11 +60,13 @@ static bool metadata_entry(struct bt_data *data, void *user_data)
 	return true;
 }
 
-static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
-				      const struct bt_bass_recv_state *state)
+static void bap_broadcast_assistant_recv_state_cb(
+	struct bt_conn *conn, int err,
+	const struct bt_bap_scan_delegator_recv_state *state)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char bad_code[33];
+	bool is_bad_code;
 
 	if (err != 0) {
 		shell_error(ctx_shell, "BASS recv state read failed (%d)", err);
@@ -72,17 +74,18 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 	}
 
 	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
-	bin2hex(state->bad_code, BT_BASS_BROADCAST_CODE_SIZE,
+	bin2hex(state->bad_code, BT_BAP_BROADCAST_CODE_SIZE,
 		bad_code, sizeof(bad_code));
+
+	is_bad_code = state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE;
 	shell_print(ctx_shell, "BASS recv state: src_id %u, addr %s, "
 		    "sid %u, sync_state %u, encrypt_state %u%s%s",
 		    state->src_id, le_addr, state->adv_sid,
 		    state->pa_sync_state, state->encrypt_state,
-		    state->encrypt_state == BT_BASS_BIG_ENC_STATE_BAD_CODE ? ", bad code" : "",
-		    bad_code);
+		    is_bad_code ? ", bad code" : "", bad_code);
 
 	for (int i = 0; i < state->num_subgroups; i++) {
-		const struct bt_bass_subgroup *subgroup = &state->subgroups[i];
+		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
 		struct net_buf_simple buf;
 
 		shell_print(ctx_shell, "\t[%d]: BIS sync %u, metadata_len %u",
@@ -94,7 +97,7 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 	}
 
 
-	if (state->pa_sync_state == BT_BASS_PA_STATE_INFO_REQ) {
+	if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 		struct bt_le_per_adv_sync *per_adv_sync = NULL;
 		struct bt_le_ext_adv *ext_adv = NULL;
 
@@ -158,13 +161,15 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 					    err);
 			}
 		} else {
-			shell_error(ctx_shell, "Could not send PA to BASS server");
+			shell_error(ctx_shell,
+				    "Could not send PA to Scan Delegator");
 		}
 	}
 }
 
-static void bass_client_recv_state_removed_cb(struct bt_conn *conn, int err,
-					      uint8_t src_id)
+static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn,
+							  int err,
+							  uint8_t src_id)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "BASS recv state removed failed (%d)",
@@ -174,7 +179,7 @@ static void bass_client_recv_state_removed_cb(struct bt_conn *conn, int err,
 	}
 }
 
-static void bass_client_scan_start_cb(struct bt_conn *conn, int err)
+static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "BASS scan start failed (%d)", err);
@@ -183,7 +188,7 @@ static void bass_client_scan_start_cb(struct bt_conn *conn, int err)
 	}
 }
 
-static void bass_client_scan_stop_cb(struct bt_conn *conn, int err)
+static void bap_broadcast_assistant_scan_stop_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "BASS scan stop failed (%d)", err);
@@ -192,7 +197,7 @@ static void bass_client_scan_stop_cb(struct bt_conn *conn, int err)
 	}
 }
 
-static void bass_client_add_src_cb(struct bt_conn *conn, int err)
+static void bap_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "BASS add source failed (%d)", err);
@@ -201,7 +206,7 @@ static void bass_client_add_src_cb(struct bt_conn *conn, int err)
 	}
 }
 
-static void bass_client_mod_src_cb(struct bt_conn *conn, int err)
+static void bap_broadcast_assistant_mod_src_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "BASS modify source failed (%d)", err);
@@ -210,7 +215,8 @@ static void bass_client_mod_src_cb(struct bt_conn *conn, int err)
 	}
 }
 
-static void bass_client_broadcast_code_cb(struct bt_conn *conn, int err)
+static void bap_broadcast_assistant_broadcast_code_cb(struct bt_conn *conn,
+						      int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "BASS broadcast code failed (%d)", err);
@@ -219,7 +225,7 @@ static void bass_client_broadcast_code_cb(struct bt_conn *conn, int err)
 	}
 }
 
-static void bass_client_rem_src_cb(struct bt_conn *conn, int err)
+static void bap_broadcast_assistant_rem_src_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "BASS remove source failed (%d)", err);
@@ -228,27 +234,27 @@ static void bass_client_rem_src_cb(struct bt_conn *conn, int err)
 	}
 }
 
-static struct bt_bass_client_cb cbs = {
-	.discover = bass_client_discover_cb,
-	.scan = bass_client_scan_cb,
-	.recv_state = bass_client_recv_state_cb,
-	.recv_state_removed = bass_client_recv_state_removed_cb,
-	.scan_start = bass_client_scan_start_cb,
-	.scan_stop = bass_client_scan_stop_cb,
-	.add_src = bass_client_add_src_cb,
-	.mod_src = bass_client_mod_src_cb,
-	.broadcast_code = bass_client_broadcast_code_cb,
-	.rem_src = bass_client_rem_src_cb,
+static struct bt_bap_broadcast_assistant_cb cbs = {
+	.discover = bap_broadcast_assistant_discover_cb,
+	.scan = bap_broadcast_assistant_scan_cb,
+	.recv_state = bap_broadcast_assistant_recv_state_cb,
+	.recv_state_removed = bap_broadcast_assistant_recv_state_removed_cb,
+	.scan_start = bap_broadcast_assistant_scan_start_cb,
+	.scan_stop = bap_broadcast_assistant_scan_stop_cb,
+	.add_src = bap_broadcast_assistant_add_src_cb,
+	.mod_src = bap_broadcast_assistant_mod_src_cb,
+	.broadcast_code = bap_broadcast_assistant_broadcast_code_cb,
+	.rem_src = bap_broadcast_assistant_rem_src_cb,
 };
 
-static int cmd_bass_client_discover(const struct shell *sh, size_t argc,
-				    char **argv)
+static int cmd_bap_broadcast_assistant_discover(const struct shell *sh,
+						size_t argc, char **argv)
 {
 	int result;
 
-	bt_bass_client_register_cb(&cbs);
+	bt_bap_broadcast_assistant_register_cb(&cbs);
 
-	result = bt_bass_client_discover(default_conn);
+	result = bt_bap_broadcast_assistant_discover(default_conn);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -256,8 +262,8 @@ static int cmd_bass_client_discover(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_bass_client_scan_start(const struct shell *sh, size_t argc,
-				      char **argv)
+static int cmd_bap_broadcast_assistant_scan_start(const struct shell *sh,
+						  size_t argc, char **argv)
 {
 	int result;
 	int start_scan = false;
@@ -271,7 +277,8 @@ static int cmd_bass_client_scan_start(const struct shell *sh, size_t argc,
 		}
 	}
 
-	result = bt_bass_client_scan_start(default_conn, (bool)start_scan);
+	result = bt_bap_broadcast_assistant_scan_start(default_conn,
+						       (bool)start_scan);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -279,12 +286,12 @@ static int cmd_bass_client_scan_start(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_bass_client_scan_stop(const struct shell *sh, size_t argc,
-				     char **argv)
+static int cmd_bap_broadcast_assistant_scan_stop(const struct shell *sh,
+						 size_t argc, char **argv)
 {
 	int result;
 
-	result = bt_bass_client_scan_stop(default_conn);
+	result = bt_bap_broadcast_assistant_scan_stop(default_conn);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -292,12 +299,12 @@ static int cmd_bass_client_scan_stop(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_bass_client_add_src(const struct shell *sh, size_t argc,
-				   char **argv)
+static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
+					       size_t argc, char **argv)
 {
 	int result;
-	struct bt_bass_add_src_param param = { 0 };
-	struct bt_bass_subgroup subgroup = { 0 };
+	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
+	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
 
 	result = bt_addr_le_from_str(argv[1], argv[2], &param.addr);
 	if (result) {
@@ -328,7 +335,7 @@ static int cmd_bass_client_add_src(const struct shell *sh, size_t argc,
 	if (argc > 6) {
 		param.pa_interval = strtol(argv[6], NULL, 0);
 	} else {
-		param.pa_interval = BT_BASS_PA_INTERVAL_UNKNOWN;
+		param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
 	}
 
 	/* TODO: Support multiple subgroups */
@@ -355,7 +362,7 @@ static int cmd_bass_client_add_src(const struct shell *sh, size_t argc,
 	param.num_subgroups = 1;
 	param.subgroups = &subgroup;
 
-	result = bt_bass_client_add_src(default_conn, &param);
+	result = bt_bap_broadcast_assistant_add_src(default_conn, &param);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -363,12 +370,12 @@ static int cmd_bass_client_add_src(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_bass_client_mod_src(const struct shell *sh, size_t argc,
-				   char **argv)
+static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
+					       size_t argc, char **argv)
 {
 	int result;
-	struct bt_bass_mod_src_param param = { 0 };
-	struct bt_bass_subgroup subgroup = { 0 };
+	struct bt_bap_broadcast_assistant_mod_src_param param = { 0 };
+	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
 
 	param.src_id = strtol(argv[1], NULL, 0);
 	if (param.src_id < 0 || param.src_id > UINT8_MAX) {
@@ -385,7 +392,7 @@ static int cmd_bass_client_mod_src(const struct shell *sh, size_t argc,
 	if (argc > 3) {
 		param.pa_interval = strtol(argv[3], NULL, 0);
 	} else {
-		param.pa_interval = BT_BASS_PA_INTERVAL_UNKNOWN;
+		param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
 	}
 
 	/* TODO: Support multiple subgroups */
@@ -412,7 +419,7 @@ static int cmd_bass_client_mod_src(const struct shell *sh, size_t argc,
 	param.num_subgroups = 1;
 	param.subgroups = &subgroup;
 
-	result = bt_bass_client_mod_src(default_conn, &param);
+	result = bt_bap_broadcast_assistant_mod_src(default_conn, &param);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -420,12 +427,12 @@ static int cmd_bass_client_mod_src(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_bass_client_broadcast_code(const struct shell *sh,
-					  size_t argc, char **argv)
+static int cmd_bap_broadcast_assistant_broadcast_code(const struct shell *sh,
+						      size_t argc, char **argv)
 {
 	int result;
 	int src_id;
-	uint8_t broadcast_code[BT_BASS_BROADCAST_CODE_SIZE] = { 0 };
+	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE] = { 0 };
 
 	src_id = strtol(argv[1], NULL, 0);
 	if (src_id < 0 || src_id > UINT8_MAX) {
@@ -437,8 +444,9 @@ static int cmd_bass_client_broadcast_code(const struct shell *sh,
 		broadcast_code[i] = strtol(argv[i + 2], NULL, 0);
 	}
 
-	result = bt_bass_client_set_broadcast_code(default_conn, src_id,
-						   broadcast_code);
+	result = bt_bap_broadcast_assistant_set_broadcast_code(default_conn,
+							       src_id,
+							       broadcast_code);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -446,8 +454,8 @@ static int cmd_bass_client_broadcast_code(const struct shell *sh,
 	return result;
 }
 
-static int cmd_bass_client_rem_src(const struct shell *sh, size_t argc,
-				   char **argv)
+static int cmd_bap_broadcast_assistant_rem_src(const struct shell *sh,
+					       size_t argc, char **argv)
 {
 	int result;
 	int src_id;
@@ -458,7 +466,7 @@ static int cmd_bass_client_rem_src(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_bass_client_rem_src(default_conn, src_id);
+	result = bt_bap_broadcast_assistant_rem_src(default_conn, src_id);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -466,8 +474,8 @@ static int cmd_bass_client_rem_src(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_bass_client_read_recv_state(const struct shell *sh,
-					   size_t argc, char **argv)
+static int cmd_bap_broadcast_assistant_read_recv_state(const struct shell *sh,
+						       size_t argc, char **argv)
 {
 	int result;
 	int idx;
@@ -478,7 +486,7 @@ static int cmd_bass_client_read_recv_state(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_bass_client_read_recv_state(default_conn, idx);
+	result = bt_bap_broadcast_assistant_read_recv_state(default_conn, idx);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -486,7 +494,8 @@ static int cmd_bass_client_read_recv_state(const struct shell *sh,
 	return result;
 }
 
-static int cmd_bass_client(const struct shell *sh, size_t argc, char **argv)
+static int cmd_bap_broadcast_assistant(const struct shell *sh, size_t argc,
+				       char **argv)
 {
 	if (argc > 1) {
 		shell_error(sh, "%s unknown parameter: %s",
@@ -498,39 +507,39 @@ static int cmd_bass_client(const struct shell *sh, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(bass_client_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(bap_broadcast_assistant_cmds,
 	SHELL_CMD_ARG(discover, NULL,
 		      "Discover BASS on the server",
-		      cmd_bass_client_discover, 1, 0),
+		      cmd_bap_broadcast_assistant_discover, 1, 0),
 	SHELL_CMD_ARG(scan_start, NULL,
 		      "Start scanning for broadcasters",
-		      cmd_bass_client_scan_start, 1, 0),
+		      cmd_bap_broadcast_assistant_scan_start, 1, 0),
 	SHELL_CMD_ARG(scan_stop, NULL,
 		      "Stop scanning for BISs",
-		      cmd_bass_client_scan_stop, 1, 0),
+		      cmd_bap_broadcast_assistant_scan_stop, 1, 0),
 	SHELL_CMD_ARG(add_src, NULL,
 		      "Add a source <address: XX:XX:XX:XX:XX:XX> "
 		      "<type: public/random> <adv_sid> <sync_pa> "
 		      "<broadcast_id> [<pa_interval>] [<sync_bis>] "
 		      "[<metadata>]",
-		      cmd_bass_client_add_src, 6, 3),
+		      cmd_bap_broadcast_assistant_add_src, 6, 3),
 	SHELL_CMD_ARG(mod_src, NULL,
 		      "Set sync <src_id> <sync_pa> [<pa_interval>] "
 		      "[<sync_bis>] [<metadata>]",
-		      cmd_bass_client_mod_src, 3, 2),
+		      cmd_bap_broadcast_assistant_mod_src, 3, 2),
 	SHELL_CMD_ARG(broadcast_code, NULL,
 		      "Send a space separated broadcast code of up to 16 bytes "
 		      "<src_id> [broadcast code]",
-		      cmd_bass_client_broadcast_code, 2, 16),
+		      cmd_bap_broadcast_assistant_broadcast_code, 2, 16),
 	SHELL_CMD_ARG(rem_src, NULL,
 		      "Remove a source <src_id>",
-		      cmd_bass_client_rem_src, 2, 0),
+		      cmd_bap_broadcast_assistant_rem_src, 2, 0),
 	SHELL_CMD_ARG(read_state, NULL,
 		      "Remove a source <index>",
-		      cmd_bass_client_read_recv_state, 2, 0),
+		      cmd_bap_broadcast_assistant_read_recv_state, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_ARG_REGISTER(bass_client, &bass_client_cmds,
-		       "Bluetooth BASS client shell commands",
-		       cmd_bass_client, 1, 1);
+SHELL_CMD_ARG_REGISTER(bap_broadcast_assistant, &bap_broadcast_assistant_cmds,
+		       "Bluetooth BAP broadcast assistant client shell commands",
+		       cmd_bap_broadcast_assistant, 1, 1);

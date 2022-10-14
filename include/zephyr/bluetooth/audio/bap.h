@@ -1,56 +1,57 @@
 /** @file
- *  @brief Header for Bluetooth BASS.
+ *  @brief Header for Bluetooth BAP.
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BASS_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BASS_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/conn.h>
 
-#if IS_ENABLED(CONFIG_BT_BASS)
-#define BT_BASS_MAX_METADATA_LEN CONFIG_BT_BASS_MAX_METADATA_LEN
-#define BT_BASS_MAX_SUBGROUPS    CONFIG_BT_BASS_MAX_SUBGROUPS
+#if IS_ENABLED(CONFIG_BT_BAP_SCAN_DELEGATOR)
+#define BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN
+#define BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS    CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS
 #else
-#define BT_BASS_MAX_METADATA_LEN 0
-#define BT_BASS_MAX_SUBGROUPS    0
+#define BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN 0
+#define BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS    0
 #endif
 
-#define BT_BASS_BROADCAST_CODE_SIZE        16
+#define BT_BAP_BROADCAST_CODE_SIZE             16
 
-#define BT_BASS_PA_STATE_NOT_SYNCED        0x00
-#define BT_BASS_PA_STATE_INFO_REQ          0x01
-#define BT_BASS_PA_STATE_SYNCED            0x02
-#define BT_BASS_PA_STATE_FAILED            0x03
-#define BT_BASS_PA_STATE_NO_PAST           0x04
+#define BT_BAP_PA_STATE_NOT_SYNCED             0x00
+#define BT_BAP_PA_STATE_INFO_REQ               0x01
+#define BT_BAP_PA_STATE_SYNCED                 0x02
+#define BT_BAP_PA_STATE_FAILED                 0x03
+#define BT_BAP_PA_STATE_NO_PAST                0x04
 
-#define BT_BASS_BIG_ENC_STATE_NO_ENC       0x00
-#define BT_BASS_BIG_ENC_STATE_BCODE_REQ    0x01
-#define BT_BASS_BIG_ENC_STATE_DEC          0x02
-#define BT_BASS_BIG_ENC_STATE_BAD_CODE     0x03
+#define BT_BAP_BIG_ENC_STATE_NO_ENC            0x00
+#define BT_BAP_BIG_ENC_STATE_BCODE_REQ         0x01
+#define BT_BAP_BIG_ENC_STATE_DEC               0x02
+#define BT_BAP_BIG_ENC_STATE_BAD_CODE          0x03
 
-#define BT_BASS_ERR_OPCODE_NOT_SUPPORTED   0x80
-#define BT_BASS_ERR_INVALID_SRC_ID         0x81
+#define BT_BAP_BASS_ERR_OPCODE_NOT_SUPPORTED   0x80
+#define BT_BAP_BASS_ERR_INVALID_SRC_ID         0x81
 
-#define BT_BASS_PA_INTERVAL_UNKNOWN        0xFFFF
+#define BT_BAP_PA_INTERVAL_UNKNOWN             0xFFFF
 
-#define BT_BASS_BROADCAST_MAX_ID           0xFFFFFF
+#define BT_BAP_BROADCAST_MAX_ID                0xFFFFFF
 
-#define BT_BASS_BIS_SYNC_NO_PREF           0xFFFFFFFF
+#define BT_BAP_BIS_SYNC_NO_PREF                0xFFFFFFFF
 
-struct bt_bass_subgroup {
+/* TODO: Replace with struct bt_audio_base_subgroup */
+struct bt_bap_scan_delegator_subgroup {
 	uint32_t bis_sync;
 	uint32_t requested_bis_sync;
 	uint8_t metadata_len;
-	uint8_t metadata[BT_BASS_MAX_METADATA_LEN];
+	uint8_t metadata[BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN];
 };
 
 /* TODO: Only expose this as an opaque type */
-struct bt_bass_recv_state {
+struct bt_bap_scan_delegator_recv_state {
 	uint8_t src_id;
 	bt_addr_le_t addr;
 	uint8_t adv_sid;
@@ -58,27 +59,29 @@ struct bt_bass_recv_state {
 	uint8_t pa_sync_state;
 	uint8_t encrypt_state;
 	uint32_t broadcast_id; /* 24 bits */
-	uint8_t bad_code[BT_BASS_BROADCAST_CODE_SIZE];
+	uint8_t bad_code[BT_BAP_BROADCAST_CODE_SIZE];
 	uint8_t num_subgroups;
-	struct bt_bass_subgroup subgroups[BT_BASS_MAX_SUBGROUPS];
+	struct bt_bap_scan_delegator_subgroup subgroups[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
 };
 
-struct bt_bass_cb {
-	void (*pa_synced)(struct bt_bass_recv_state *recv_state,
+struct bt_bap_scan_delegator_cb {
+	void (*pa_synced)(struct bt_bap_scan_delegator_recv_state *recv_state,
 			  const struct bt_le_per_adv_sync_synced_info *info);
-	void (*pa_term)(struct bt_bass_recv_state *recv_state,
+	void (*pa_term)(struct bt_bap_scan_delegator_recv_state *recv_state,
 			const struct bt_le_per_adv_sync_term_info *info);
-	void (*pa_recv)(struct bt_bass_recv_state *recv_state,
+	void (*pa_recv)(struct bt_bap_scan_delegator_recv_state *recv_state,
 			const struct bt_le_per_adv_sync_recv_info *info,
 			struct net_buf_simple *buf);
-	void (*biginfo)(struct bt_bass_recv_state *recv_state,
+	void (*biginfo)(struct bt_bap_scan_delegator_recv_state *recv_state,
 			const struct bt_iso_biginfo *biginfo);
 };
 
 /**
- * @brief Registers the callbacks used by BASS.
+ * @brief Register the callbacks for the Basic Audio Profile Scan Delegator
+ *
+ * @param cb Pointer to the callback struct
  */
-void bt_bass_register_cb(struct bt_bass_cb *cb);
+void bt_bap_scan_delegator_register_cb(struct bt_bap_scan_delegator_cb *cb);
 
 /**
  * @brief Set the sync state of a receive state in the server
@@ -90,14 +93,14 @@ void bt_bass_register_cb(struct bt_bass_cb *cb);
  * @param encrypted      The BIG encryption state.
  * @return int           Error value. 0 on success, ERRNO on fail.
  */
-int bt_bass_set_sync_state(uint8_t src_id, uint8_t pa_sync_state,
-			   uint32_t bis_synced[BT_BASS_MAX_SUBGROUPS],
-			   uint8_t encrypted);
+int bt_bap_scan_delegator_set_sync_state(uint8_t src_id, uint8_t pa_sync_state,
+					 uint32_t bis_synced[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS],
+					 uint8_t encrypted);
 
 /******************************** CLIENT API ********************************/
 
 /**
- * @brief Callback function for bt_bass_client_discover.
+ * @brief Callback function for bt_bap_broadcast_assistant_discover.
  *
  * @param conn              The connection that was used to discover
  *                          Broadcast Audio Scan Service.
@@ -105,8 +108,9 @@ int bt_bass_set_sync_state(uint8_t src_id, uint8_t pa_sync_state,
  *                          GATT error or ERRNO on fail.
  * @param recv_state_count  Number of receive states on the server.
  */
-typedef void (*bt_bass_client_discover_cb)(struct bt_conn *conn, int err,
-					   uint8_t recv_state_count);
+typedef void (*bt_bap_broadcast_assistant_discover_cb)(struct bt_conn *conn,
+						       int err,
+						       uint8_t recv_state_count);
 
 /**
  * @brief Callback function for Broadcast Audio Scan Service client scan results
@@ -117,8 +121,8 @@ typedef void (*bt_bass_client_discover_cb)(struct bt_conn *conn, int err,
  * @param info          Advertiser information.
  * @param broadcast_id  24-bit broadcast ID.
  */
-typedef void (*bt_bass_client_scan_cb)(const struct bt_le_scan_recv_info *info,
-				       uint32_t broadcast_id);
+typedef void (*bt_bap_broadcast_assistant_scan_cb)(const struct bt_le_scan_recv_info *info,
+						   uint32_t broadcast_id);
 
 /**
  * @brief Callback function for when a receive state is read or updated
@@ -129,8 +133,9 @@ typedef void (*bt_bass_client_scan_cb)(const struct bt_le_scan_recv_info *info,
  * @param err      Error value. 0 on success, GATT error on fail.
  * @param state    The receive state.
  */
-typedef void (*bt_bass_client_recv_state_cb)(struct bt_conn *conn, int err,
-					     const struct bt_bass_recv_state *state);
+typedef void (*bt_bap_broadcast_assistant_recv_state_cb)(
+	struct bt_conn *conn, int err,
+	const struct bt_bap_scan_delegator_recv_state *state);
 
 /**
  * @brief Callback function for when a receive state is removed.
@@ -139,8 +144,9 @@ typedef void (*bt_bass_client_recv_state_cb)(struct bt_conn *conn, int err,
  * @param err      Error value. 0 on success, GATT error on fail.
  * @param src_id   The receive state.
  */
-typedef void (*bt_bass_client_recv_state_rem_cb)(struct bt_conn *conn, int err,
-						 uint8_t src_id);
+typedef void (*bt_bap_broadcast_assistant_recv_state_rem_cb)(struct bt_conn *conn,
+							     int err,
+							     uint8_t src_id);
 
 /**
  * @brief Callback function for writes.
@@ -148,20 +154,21 @@ typedef void (*bt_bass_client_recv_state_rem_cb)(struct bt_conn *conn, int err,
  * @param conn    The connection to the peer device.
  * @param err     Error value. 0 on success, GATT error on fail.
  */
-typedef void (*bt_bass_client_write_cb)(struct bt_conn *conn, int err);
+typedef void (*bt_bap_broadcast_assistant_write_cb)(struct bt_conn *conn,
+						    int err);
 
-struct bt_bass_client_cb {
-	bt_bass_client_discover_cb        discover;
-	bt_bass_client_scan_cb            scan;
-	bt_bass_client_recv_state_cb      recv_state;
-	bt_bass_client_recv_state_rem_cb  recv_state_removed;
+struct bt_bap_broadcast_assistant_cb {
+	bt_bap_broadcast_assistant_discover_cb        discover;
+	bt_bap_broadcast_assistant_scan_cb            scan;
+	bt_bap_broadcast_assistant_recv_state_cb      recv_state;
+	bt_bap_broadcast_assistant_recv_state_rem_cb  recv_state_removed;
 
-	bt_bass_client_write_cb           scan_start;
-	bt_bass_client_write_cb           scan_stop;
-	bt_bass_client_write_cb           add_src;
-	bt_bass_client_write_cb           mod_src;
-	bt_bass_client_write_cb           broadcast_code;
-	bt_bass_client_write_cb           rem_src;
+	bt_bap_broadcast_assistant_write_cb           scan_start;
+	bt_bap_broadcast_assistant_write_cb           scan_stop;
+	bt_bap_broadcast_assistant_write_cb           add_src;
+	bt_bap_broadcast_assistant_write_cb           mod_src;
+	bt_bap_broadcast_assistant_write_cb           broadcast_code;
+	bt_bap_broadcast_assistant_write_cb           rem_src;
 };
 
 /**
@@ -173,7 +180,7 @@ struct bt_bass_client_cb {
  * @param conn  The connection
  * @return int  Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bass_client_discover(struct bt_conn *conn);
+int bt_bap_broadcast_assistant_discover(struct bt_conn *conn);
 
 /**
  * @brief Scan start for BISes for a remote server.
@@ -184,7 +191,7 @@ int bt_bass_client_discover(struct bt_conn *conn);
  * to start scanning itself.
  *
  * Scan results, if @p start_scan is true, is sent to the
- * bt_bass_client_scan_cb callback.
+ * bt_bap_broadcast_assistant_scan_cb callback.
  *
  * @param conn          Connection to the Broadcast Audio Scan Service server.
  *                      Used to let the server know that we are scanning.
@@ -192,7 +199,8 @@ int bt_bass_client_discover(struct bt_conn *conn);
  *                      enable scan itself.
  * @return int          Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bass_client_scan_start(struct bt_conn *conn, bool start_scan);
+int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn,
+					  bool start_scan);
 
 /**
  * @brief Stop remote scanning for BISes for a server.
@@ -200,15 +208,15 @@ int bt_bass_client_scan_start(struct bt_conn *conn, bool start_scan);
  * @param conn   Connection to the server.
  * @return int   Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bass_client_scan_stop(struct bt_conn *conn);
+int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn);
 
 /**
  * @brief Registers the callbacks used by Broadcast Audio Scan Service client.
  */
-void bt_bass_client_register_cb(struct bt_bass_client_cb *cb);
+void bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb *cb);
 
 /** Parameters for adding a source to a Broadcast Audio Scan Service server */
-struct bt_bass_add_src_param {
+struct bt_bap_broadcast_assistant_add_src_param {
 	/** Address of the advertiser. */
 	bt_addr_le_t addr;
 	/** SID of the advertising set. */
@@ -220,13 +228,13 @@ struct bt_bass_add_src_param {
 	/**
 	 * @brief Periodic advertising interval in milliseconds.
 	 *
-	 * BT_BASS_PA_INTERVAL_UNKNOWN if unknown.
+	 * BT_BAP_PA_INTERVAL_UNKNOWN if unknown.
 	 */
 	uint16_t pa_interval;
 	/** Number of subgroups */
 	uint8_t num_subgroups;
 	/** Pointer to array of subgroups */
-	struct bt_bass_subgroup *subgroups;
+	struct bt_bap_scan_delegator_subgroup *subgroups;
 };
 
 /**
@@ -237,11 +245,11 @@ struct bt_bass_add_src_param {
  *
  * @return Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bass_client_add_src(struct bt_conn *conn,
-			   struct bt_bass_add_src_param *param);
+int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
+				       struct bt_bap_broadcast_assistant_add_src_param *param);
 
 /** Parameters for modifying a source */
-struct bt_bass_mod_src_param {
+struct bt_bap_broadcast_assistant_mod_src_param {
 	/** Source ID of the receive state. */
 	uint8_t src_id;
 	/** Whether to sync to periodic advertisements. */
@@ -249,13 +257,13 @@ struct bt_bass_mod_src_param {
 	/**
 	 * @brief Periodic advertising interval.
 	 *
-	 * BT_BASS_PA_INTERVAL_UNKNOWN if unknown.
+	 * BT_BAP_PA_INTERVAL_UNKNOWN if unknown.
 	 */
 	uint16_t pa_interval;
 	/** Number of subgroups */
 	uint8_t num_subgroups;
 	/** Pointer to array of subgroups */
-	struct bt_bass_subgroup *subgroups;
+	struct bt_bap_scan_delegator_subgroup *subgroups;
 };
 
 /** @brief Modify a source on the server.
@@ -265,8 +273,8 @@ struct bt_bass_mod_src_param {
  *
  *  @return Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bass_client_mod_src(struct bt_conn *conn,
-			   struct bt_bass_mod_src_param *param);
+int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
+				       struct bt_bap_broadcast_assistant_mod_src_param *param);
 
 /** @brief Set a broadcast code to the specified receive state.
  *
@@ -276,8 +284,9 @@ int bt_bass_client_mod_src(struct bt_conn *conn,
  *
  *  @return Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bass_client_set_broadcast_code(struct bt_conn *conn, uint8_t src_id,
-				      uint8_t broadcast_code[BT_BASS_BROADCAST_CODE_SIZE]);
+int bt_bap_broadcast_assistant_set_broadcast_code(
+	struct bt_conn *conn, uint8_t src_id,
+	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE]);
 
 /** @brief Remove a source from the server.
  *
@@ -286,15 +295,16 @@ int bt_bass_client_set_broadcast_code(struct bt_conn *conn, uint8_t src_id,
  *
  *  @return Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bass_client_rem_src(struct bt_conn *conn, uint8_t src_id);
+int bt_bap_broadcast_assistant_rem_src(struct bt_conn *conn, uint8_t src_id);
 
 /** @brief Read the specified receive state from the server.
  *
  *  @param conn     Connection to the server.
  *  @param idx      The index of the receive start (0 up to the value from
- *                 bt_bass_client_discover_cb)
+ *                 bt_bap_broadcast_assistant_discover_cb)
  *
  *  @return Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bass_client_read_recv_state(struct bt_conn *conn, uint8_t idx);
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BASS_ */
+int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn,
+					       uint8_t idx);
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_ */
