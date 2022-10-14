@@ -61,8 +61,7 @@ ZTEST(at_tests, test_at)
 
 	zassert_true(net_buf_tailroom(buf) >= len,
 		    "Allocated buffer is too small");
-	strncpy((char *)buf->data, example_data, len);
-	net_buf_add(buf, len);
+	net_buf_add_mem(buf, example_data, len);
 
 	zassert_equal(at_parse_input(&at, buf), 0, "Parsing failed");
 }
