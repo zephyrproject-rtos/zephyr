@@ -345,28 +345,7 @@ static int cmd_attention_set_unack(const struct shell *sh, size_t argc, char *ar
 	return attention_set(sh, argc, argv, false);
 }
 
-static int cmd_instance_get_all(const struct shell *sh, size_t argc, char *argv[])
-{
-	return bt_mesh_shell_mdl_print_all(sh, BT_MESH_MODEL_ID_HEALTH_CLI);
-}
-
-static int cmd_instance_set(const struct shell *sh, size_t argc, char *argv[])
-{
-	int err = 0;
-	uint8_t elem_idx = shell_strtoul(argv[1], 0, &err);
-
-	if (err) {
-		shell_warn(sh, "Unable to parse input string arg");
-		return err;
-	}
-
-	return bt_mesh_shell_mdl_instance_set(sh, &mod, BT_MESH_MODEL_ID_HEALTH_CLI, elem_idx);
-}
-
-SHELL_STATIC_SUBCMD_SET_CREATE(instance_cmds,
-			       SHELL_CMD_ARG(set, NULL, "<elem_idx> ", cmd_instance_set, 2, 0),
-			       SHELL_CMD_ARG(get-all, NULL, NULL, cmd_instance_get_all, 1, 0),
-			       SHELL_SUBCMD_SET_END);
+BT_MESH_SHELL_MDL_INSTANCE_CMDS(instance_cmds, BT_MESH_MODEL_ID_HEALTH_CLI, mod);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	health_cli_cmds,
