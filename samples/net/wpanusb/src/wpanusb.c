@@ -42,8 +42,11 @@ static const struct device *const ieee802154_dev =
 
 static struct k_fifo tx_queue;
 
-/* IEEE802.15.4 frame + 1 byte len + 1 byte LQI */
-uint8_t tx_buf[IEEE802154_STANDARD_PSDU_SIZE + 1 + 1];
+/* Vendor protocol reserve octets: 1 byte len + 1 byte LQI */
+#define VENDOR_PROTO_RESERVE_OCTETS	2
+#define VENDOR_MAX_FRAME_SIZE		(IEEE802154_EXTENDED_PSDU_SIZE + \
+					 VENDOR_PROTO_RESERVE_OCTETS)
+uint8_t tx_buf[VENDOR_MAX_FRAME_SIZE];
 
 /**
  * Stack for the tx thread.
@@ -141,9 +144,10 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 		return -ENOTSUP;
 	}
 
-	/* Maximum 2 bytes are added to the len */
-	pkt = net_pkt_alloc_with_buffer(NULL, *len + 2, AF_UNSPEC, 0,
-					K_NO_WAIT);
+	/* Maximum of Reservation octets are added to the len */
+	pkt = net_pkt_alloc_with_buffer(NULL,
+					*len + VENDOR_PROTO_RESERVE_OCTETS,
+					AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -372,7 +376,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 
 	net_pkt_hexdump(pkt, "<");
 
-	if (len > (sizeof(tx_buf) - 2)) {
+	if (len > IEEE802154_EXTENDED_PSDU_SIZE) {
 		LOG_ERR("Too large packet");
 		ret = -ENOMEM;
 		goto out;
@@ -401,9 +405,9 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 
 	ep = wpanusb_config.endpoint[WPANUSB_IN_EP_IDX].ep_addr;
 
-	ret = usb_transfer_sync(ep, tx_buf, len + 2,
+	ret = usb_transfer_sync(ep, tx_buf, len + VENDOR_PROTO_RESERVE_OCTETS,
 				USB_TRANS_WRITE | USB_TRANS_NO_ZLP);
-	if (ret != len + 2) {
+	if (ret != len + VENDOR_PROTO_RESERVE_OCTETS) {
 		LOG_ERR("Transfer failure");
 		ret = -EINVAL;
 	}

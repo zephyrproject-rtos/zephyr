@@ -21,6 +21,31 @@ config NET_L2_IEEE802154_SUB_GHZ
 	  logic in L2 code for channel management. This option is automatically
 	  selected when relevant device driver is enabled.
 
+choice
+	prompt "MAC protocol data unit size"
+	default NET_L2_IEEE802154_MPDU_127
+	help
+	  Select the maximum MAC MPDU size to be used inside network stack. This
+	  value is equivalent to PHY PSDU counterpart.
+
+config NET_L2_IEEE802154_MPDU_127
+	bool "IEEE 802.15.4 Standard 127 MPDU"
+	help
+	  Use default MPDU size of 127 octets.
+
+config NET_L2_IEEE802154_MPDU_2047
+	bool "IEEE 802.15.4 Extended 2047 MPDU"
+	help
+	  Use extended MPDU size of 2047. This MUST be enabled when using any
+	  PHY features: SUN, TVWS, RCC, and MSK with a 2000 kb/s data rate.
+
+endchoice
+
+config NET_L2_IEEE802154_MPDU_SIZE
+	int
+	default 2047 if NET_L2_IEEE802154_MPDU_2047
+	default 127
+
 module = NET_L2_IEEE802154
 module-dep = NET_LOG
 module-str = Log level for IEEE 802.15.4
