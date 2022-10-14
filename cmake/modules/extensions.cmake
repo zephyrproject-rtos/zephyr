@@ -1461,9 +1461,13 @@ function(import_kconfig prefix kconfig_fragment)
     list(APPEND keys "${CONF_VARIABLE_NAME}")
   endforeach()
 
-  foreach(outvar ${ARGN})
-    set(${outvar} "${keys}" PARENT_SCOPE)
-  endforeach()
+  if(ARGC GREATER 2)
+    if(ARGC GREATER 3)
+    # Two mandatory arguments and one optional, anything after that is an error.
+      message(FATAL_ERROR "Unexpected argument after '<keys>': import_kconfig(... ${ARGV3})")
+    endif()
+    set(${ARGV2} "${keys}" PARENT_SCOPE)
+  endif()
 endfunction()
 
 ########################################################
