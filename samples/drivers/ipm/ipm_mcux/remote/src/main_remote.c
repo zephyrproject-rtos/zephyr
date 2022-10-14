@@ -21,7 +21,7 @@ void main(void)
 {
 	const struct device *ipm;
 
-	ipm = DEVICE_DT_GET_ANY(nxp_lpc_mailbox);
+	ipm = DEVICE_DT_GET_ONE_OR_NULL(nxp_lpc_mailbox);
 	if (!(ipm && device_is_ready(ipm))) {
 		while (1) {
 		}

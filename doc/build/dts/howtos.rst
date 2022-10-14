@@ -113,7 +113,7 @@ device is to use :c:func:`DEVICE_DT_GET`:
 
 There are variants of :c:func:`DEVICE_DT_GET` such as
 :c:func:`DEVICE_DT_GET_OR_NULL`, :c:func:`DEVICE_DT_GET_ONE` or
-:c:func:`DEVICE_DT_GET_ANY`. This idiom fetches the device pointer at
+:c:func:`DEVICE_DT_GET_ONE_OR_NULL`. This idiom fetches the device pointer at
 build-time, which means there is no runtime penalty. This method is useful if
 you want to store the device pointer as configuration data. But because the
 device may not be initialized, or may have failed to initialize, you must verify

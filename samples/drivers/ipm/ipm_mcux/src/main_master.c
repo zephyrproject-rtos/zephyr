@@ -35,7 +35,7 @@ void main(void)
 	printk("Hello World from MASTER! %s\n", CONFIG_ARCH);
 
 	/* Get IPM device handle */
-	ipm = DEVICE_DT_GET_ANY(nxp_lpc_mailbox);
+	ipm = DEVICE_DT_GET_ONE_OR_NULL(nxp_lpc_mailbox);
 	if (!(ipm && device_is_ready(ipm))) {
 		printk("Could not get IPM device handle!\n");
 		while (1) {

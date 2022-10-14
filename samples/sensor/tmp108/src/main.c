@@ -135,12 +135,12 @@ void main(void)
 
 	printf("TI TMP108 Example, %s\n", CONFIG_ARCH);
 
-	temp_sensor = DEVICE_DT_GET_ANY(ti_tmp108);
+	temp_sensor = DEVICE_DT_GET_ONE_OR_NULL(ti_tmp108);
 
 	if (!temp_sensor) {
 		printf("warning: tmp108 device not found checking for compatible ams device\n");
 
-		temp_sensor = DEVICE_DT_GET_ANY(ams_as6212);
+		temp_sensor = DEVICE_DT_GET_ONE_OR_NULL(ams_as6212);
 
 		if (!temp_sensor) {
 			printf("error: tmp108 compatible devices not found\n");

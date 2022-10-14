@@ -56,7 +56,7 @@ void main(void)
 	const struct device *strip;
 	size_t i, time;
 
-	strip = DEVICE_DT_GET_ANY(apa_apa102);
+	strip = DEVICE_DT_GET_ONE_OR_NULL(apa_apa102);
 	if (!strip) {
 		LOG_ERR("LED strip device not found");
 		return;

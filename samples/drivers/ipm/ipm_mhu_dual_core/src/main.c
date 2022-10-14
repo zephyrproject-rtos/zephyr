@@ -49,7 +49,7 @@ void main(void)
 {
 	printk("IPM MHU sample on %s\n", CONFIG_BOARD);
 
-	mhu0 = DEVICE_DT_GET_ANY(arm_mhu);
+	mhu0 = DEVICE_DT_GET_ONE_OR_NULL(arm_mhu);
 	if (!(mhu0 && device_is_ready(mhu0))) {
 		printk("CPU %d, get MHU0 fail!\n",
 				sse_200_platform_get_cpu_id());
