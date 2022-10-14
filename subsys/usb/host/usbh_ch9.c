@@ -170,3 +170,33 @@ int usbh_req_clear_sfs_rwup(const struct device *dev,
 			      bmRequestType, bRequest, wValue, 0, 0,
 			      NULL);
 }
+
+int usbh_req_set_hcfs_ppwr(const struct device *dev,
+			   const uint8_t addr, const uint8_t port)
+{
+	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 |
+				      USB_REQTYPE_TYPE_CLASS << 5 |
+				      USB_REQTYPE_RECIPIENT_OTHER << 0;
+	const uint8_t bRequest = USB_HCREQ_SET_FEATURE;
+	const uint16_t wValue = USB_HCFS_PORT_POWER;
+	const uint16_t wIndex = port;
+
+	return usbh_req_setup(dev, addr,
+			      bmRequestType, bRequest, wValue, wIndex, 0,
+			      NULL);
+}
+
+int usbh_req_set_hcfs_prst(const struct device *dev,
+			   const uint8_t addr, const uint8_t port)
+{
+	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 |
+				      USB_REQTYPE_TYPE_CLASS << 5 |
+				      USB_REQTYPE_RECIPIENT_OTHER << 0;
+	const uint8_t bRequest = USB_HCREQ_SET_FEATURE;
+	const uint16_t wValue = USB_HCFS_PORT_RESET;
+	const uint16_t wIndex = port;
+
+	return usbh_req_setup(dev, addr,
+			      bmRequestType, bRequest, wValue, wIndex, 0,
+			      NULL);
+}

@@ -49,4 +49,10 @@ int usbh_req_set_sfs_rwup(const struct device *dev,
 int usbh_req_clear_sfs_rwup(const struct device *dev,
 			    const uint8_t addr);
 
+int usbh_req_set_hcfs_ppwr(const struct device *dev,
+			   const uint8_t addr, const uint8_t port);
+
+int usbh_req_set_hcfs_prst(const struct device *dev,
+			   const uint8_t addr, const uint8_t port);
+
 #endif /* ZEPHYR_INCLUDE_USBH_CH9_H */
