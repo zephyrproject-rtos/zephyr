@@ -540,6 +540,9 @@ void ieee802154_init(struct net_if *iface)
 
 static enum net_l2_flags openthread_flags(struct net_if *iface)
 {
+	/* TODO: Should report NET_L2_PROMISC_MODE if the radio driver
+	 *       reports the IEEE802154_HW_PROMISC capability.
+	 */
 	return NET_L2_MULTICAST | NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE;
 }
 

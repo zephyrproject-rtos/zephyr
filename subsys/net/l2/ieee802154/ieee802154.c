@@ -431,6 +431,9 @@ void ieee802154_init(struct net_if *iface)
 	 */
 	ctx->channel = IEEE802154_NO_CHANNEL;
 	ctx->flags = NET_L2_MULTICAST;
+	if (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_PROMISC) {
+		ctx->flags |= NET_L2_PROMISC_MODE;
+	}
 
 	ctx->short_addr = IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED;
 	sys_memcpy_swap(ctx->ext_addr, eui64_be, IEEE802154_EXT_ADDR_LENGTH);
