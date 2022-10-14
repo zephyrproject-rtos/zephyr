@@ -7,9 +7,13 @@
 &zephyr_udc0 {
 	cdc_acm_uart0 {
 		compatible = "zephyr,cdc-acm-uart";
+		tx-fifo-size = <512>;
+		rx-fifo-size = <512>;
 	};
 
 	cdc_acm_uart1 {
 		compatible = "zephyr,cdc-acm-uart";
+		tx-fifo-size = <512>;
+		rx-fifo-size = <512>;
 	};
 };

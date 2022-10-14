@@ -17,12 +17,6 @@ config USB_CDC_ACM
 
 if USB_CDC_ACM
 
-config USB_CDC_ACM_RINGBUF_SIZE
-	int "USB CDC ACM ring buffer size"
-	default 1024
-	help
-	  USB CDC ACM ring buffer size
-
 config CDC_ACM_INTERRUPT_EP_MPS
 	int
 	default 16

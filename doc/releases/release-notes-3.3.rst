@@ -23,6 +23,10 @@ Changes in this release
 Removed APIs in this release
 ============================
 
+* Removed Kconfig option ``CONFIG_USB_CDC_ACM_RINGBUF_SIZE`` in favor of
+  devicetree properties tx-fifo-size and rx-fifo-size, which
+  allow us finer configuration of CDC ACM UART per instance.
+
 Deprecated in this release
 ==========================
 

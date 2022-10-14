@@ -238,7 +238,7 @@ static void tx_work_handler(struct k_work *work)
 	}
 
 	len = ring_buf_get_claim(dev_data->tx_ringbuf, &data,
-				 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);
+				 dev_data->tx_ringbuf->size);
 
 	if (!len) {
 		LOG_DBG("Nothing to send");
@@ -1174,9 +1174,9 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 	};								\
 									\
 	RING_BUF_DECLARE(cdc_acm_rx_rb_##x,				\
-			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
+			 DT_INST_PROP(x, rx_fifo_size));		\
 	RING_BUF_DECLARE(cdc_acm_tx_rb_##x,				\
-			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
+			 DT_INST_PROP(x, tx_fifo_size));		\
 	static struct cdc_acm_dev_data_t cdc_acm_dev_data_##x = {	\
 		.line_coding = CDC_ACM_DEFAULT_BAUDRATE,		\
 		.rx_ringbuf = &cdc_acm_rx_rb_##x,			\
