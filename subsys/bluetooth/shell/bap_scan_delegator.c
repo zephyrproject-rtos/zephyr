@@ -1,8 +1,8 @@
 /**
  * @file
- * @brief Shell APIs for Bluetooth BASS
+ * @brief Shell APIs for Bluetooth BAP scan delegator
  *
- * Copyright (c) 2020-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,25 +15,27 @@
 #include <stdlib.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/audio/bass.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include "bt.h"
 
-static void pa_synced(struct bt_bass_recv_state *recv_state,
+static void pa_synced(struct bt_bap_scan_delegator_recv_state *recv_state,
 		      const struct bt_le_per_adv_sync_synced_info *info)
 {
-	shell_print(ctx_shell, "BASS receive state %p was PA synced",
+	shell_print(ctx_shell,
+		    "BAP scan delegator receive state %p was PA synced",
 		    recv_state);
 }
 
-static void pa_term(struct bt_bass_recv_state *recv_state,
+static void pa_term(struct bt_bap_scan_delegator_recv_state *recv_state,
 		    const struct bt_le_per_adv_sync_term_info *info)
 {
-	shell_print(ctx_shell, "BASS receive state %p PA synced terminated",
+	shell_print(ctx_shell,
+		    "BAP scan delegator receive state %p PA synced terminated",
 		    recv_state);
 
 }
 
-static void pa_recv(struct bt_bass_recv_state *recv_state,
+static void pa_recv(struct bt_bap_scan_delegator_recv_state *recv_state,
 		    const struct bt_le_per_adv_sync_recv_info *info,
 		    struct net_buf_simple *buf)
 {
@@ -49,26 +51,28 @@ static void pa_recv(struct bt_bass_recv_state *recv_state,
 
 }
 
-static struct bt_bass_cb cbs = {
+static struct bt_bap_scan_delegator_cb cbs = {
 	.pa_synced = pa_synced,
 	.pa_term = pa_term,
 	.pa_recv = pa_recv
 };
 
-static int cmd_bass_init(const struct shell *sh, size_t argc, char **argv)
+static int cmd_bap_scan_delegator_init(const struct shell *sh, size_t argc,
+				       char **argv)
 {
-	bt_bass_register_cb(&cbs);
+	bt_bap_scan_delegator_register_cb(&cbs);
 	return 0;
 }
 
-static int cmd_bass_synced(const struct shell *sh, size_t argc, char **argv)
+static int cmd_bap_scan_delegator_synced(const struct shell *sh, size_t argc,
+					 char **argv)
 {
 	int result;
 	long src_id;
 	long pa_sync_state;
 	long bis_synced;
 	long encrypted;
-	uint32_t bis_syncs[CONFIG_BT_BASS_MAX_SUBGROUPS];
+	uint32_t bis_syncs[CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
 
 	src_id = strtol(argv[1], NULL, 0);
 	if (src_id < 0 || src_id > UINT8_MAX) {
@@ -77,7 +81,8 @@ static int cmd_bass_synced(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	pa_sync_state = strtol(argv[2], NULL, 0);
-	if (pa_sync_state < 0 || pa_sync_state > BT_BASS_PA_STATE_NO_PAST) {
+	if (pa_sync_state < 0 ||
+	    pa_sync_state > BT_BAP_PA_STATE_NO_PAST) {
 		shell_error(sh, "Invalid pa_sync_state %ld", pa_sync_state);
 		return -ENOEXEC;
 	}
@@ -93,8 +98,8 @@ static int cmd_bass_synced(const struct shell *sh, size_t argc, char **argv)
 
 	encrypted = strtol(argv[4], NULL, 0);
 
-	result = bt_bass_set_sync_state(src_id, pa_sync_state, bis_syncs,
-					encrypted);
+	result = bt_bap_scan_delegator_set_sync_state(src_id, pa_sync_state,
+						      bis_syncs, encrypted);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -102,7 +107,8 @@ static int cmd_bass_synced(const struct shell *sh, size_t argc, char **argv)
 	return result;
 }
 
-static int cmd_bass(const struct shell *sh, size_t argc, char **argv)
+static int cmd_bap_scan_delegator(const struct shell *sh, size_t argc,
+				  char **argv)
 {
 	if (argc > 1) {
 		shell_error(sh, "%s unknown parameter: %s",
@@ -114,15 +120,16 @@ static int cmd_bass(const struct shell *sh, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(bass_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(bap_scan_delegator_cmds,
 	SHELL_CMD_ARG(init, NULL,
 		      "Initialize the service and register callbacks",
-		      cmd_bass_init, 1, 0),
+		      cmd_bap_scan_delegator_init, 1, 0),
 	SHELL_CMD_ARG(synced, NULL,
 		      "Set server scan state <src_id> <pa_synced> <bis_syncs> "
-		      "<enc_state>", cmd_bass_synced, 5, 0),
+		      "<enc_state>", cmd_bap_scan_delegator_synced, 5, 0),
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_ARG_REGISTER(bass, &bass_cmds, "Bluetooth BASS shell commands",
-		       cmd_bass, 1, 1);
+SHELL_CMD_ARG_REGISTER(bap_scan_delegator, &bap_scan_delegator_cmds,
+		       "Bluetooth BAP scan delegator shell commands",
+		       cmd_bap_scan_delegator, 1, 1);
