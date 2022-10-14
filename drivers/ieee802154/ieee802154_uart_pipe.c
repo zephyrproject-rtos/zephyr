@@ -396,4 +396,5 @@ static struct ieee802154_radio_api upipe_radio_api = {
 NET_DEVICE_DT_INST_DEFINE(0, upipe_init, NULL, &upipe_context_data, NULL,
 			  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &upipe_radio_api,
 			  IEEE802154_L2, NET_L2_GET_CTX_TYPE(IEEE802154_L2),
-			  125);
+			  (IEEE802154_STANDARD_PSDU_SIZE -
+			   IEEE802154_CRC_16_FCS_SIZE));
