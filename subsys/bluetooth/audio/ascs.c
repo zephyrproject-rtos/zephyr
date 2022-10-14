@@ -49,7 +49,6 @@
 struct bt_ascs_ase {
 	struct bt_ascs *ascs;
 	struct bt_audio_ep ep;
-	struct k_work work;
 };
 
 struct bt_ascs {
@@ -63,18 +62,12 @@ struct bt_ascs {
 
 static struct bt_ascs sessions[CONFIG_BT_MAX_CONN];
 
-static struct bt_ascs *ascs_get(struct bt_conn *conn);
-static struct bt_ascs_ase *ase_find(struct bt_ascs *ascs, uint8_t id);
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len);
 
 static void ase_status_changed(struct bt_audio_ep *ep, uint8_t old_state,
 			       uint8_t state)
 {
-	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
-
-	BT_DBG("ase %p conn %p", ase, ase->ascs->conn);
-
-	k_work_submit(&ase->work);
+	k_work_submit(&ep->work);
 }
 
 static void ascs_ep_unbind_audio_iso(struct bt_audio_ep *ep)
@@ -600,18 +593,8 @@ static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 	ep = stream->ep;
 	if (ep->status.state == BT_AUDIO_EP_STATE_RELEASING) {
-		struct bt_ascs_ase *ase;
-		struct bt_ascs *ascs = ascs_get(stream->conn);
-
-		ase = ase_find(ascs, ep->status.id);
-		if (ase == NULL) {
-			BT_WARN("Could find ASE based on ASCS %p with ep %p",
-				ascs, ep);
-			return;
-		}
-
 		/* Trigger a call to ase_process to handle the cleanup */
-		k_work_submit(&ase->work);
+		k_work_submit(&ep->work);
 	} else {
 		int err;
 
@@ -953,8 +936,8 @@ NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, CONFIG_BT_L2CAP_TX_MTU);
 
 static void ase_process(struct k_work *work)
 {
-	struct bt_ascs_ase *ase = CONTAINER_OF(work, struct bt_ascs_ase, work);
-	struct bt_audio_ep *ep = &ase->ep;
+	struct bt_audio_ep *ep = CONTAINER_OF(work, struct bt_audio_ep, work);
+	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
 	const struct bt_audio_iso *audio_iso = ep->iso;
 	struct bt_audio_stream *stream = ep->stream;
 	const uint8_t ep_state = ep->status.state;
@@ -1056,6 +1039,8 @@ void ascs_ep_init(struct bt_audio_ep *ep, uint8_t id)
 	(void)memset(ep, 0, sizeof(*ep));
 	ep->status.id = id;
 	ep->dir = ASE_DIR(id);
+
+	k_work_init(&ep->work, ase_process);
 }
 
 static void ase_init(struct bt_ascs_ase *ase, uint8_t id)
@@ -1067,8 +1052,6 @@ static void ase_init(struct bt_ascs_ase *ase, uint8_t id)
 	bt_gatt_foreach_attr_type(0x0001, 0xffff, ASE_UUID(id), NULL, 0, ase_attr_cb, ase);
 
 	__ASSERT(ase->ep.server.attr, "ASE characteristic not found\n");
-
-	k_work_init(&ase->work, ase_process);
 }
 
 static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
