@@ -40,6 +40,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -297,10 +298,21 @@ typedef int16_t device_handle_t;
  * @param compat lowercase-and-underscores devicetree compatible
  * @return a pointer to a device, or NULL
  */
-#define DEVICE_DT_GET_ANY(compat)					    \
+#define DEVICE_DT_GET_ONE_OR_NULL(compat)				    \
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),			    \
 		    (DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(compat))), \
 		    (NULL))
+
+/**
+ * @brief Get a <tt>const struct device*</tt> from a devicetree compatible
+ *
+ * @param compat lowercase-and-underscores devicetree compatible
+ * @return a pointer to a device, or NULL
+ *
+ * @deprecated Use DEVICE_DT_GET_ONE_OR_NULL() instead.
+ */
+#define DEVICE_DT_GET_ANY(compat) __DEPRECATED_MACRO \
+	DEVICE_DT_GET_ONE_OR_NULL(compat)
 
 /**
  * @brief Get a <tt>const struct device*</tt> from a devicetree compatible
