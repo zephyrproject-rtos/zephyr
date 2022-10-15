@@ -10,6 +10,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_sam0);
 
+#include <zephyr/kernel.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
