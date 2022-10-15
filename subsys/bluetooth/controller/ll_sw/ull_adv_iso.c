@@ -105,6 +105,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	uint32_t ret;
 	uint8_t err;
 	uint8_t bn;
+	int res;
 
 	adv_iso = adv_iso_get(big_handle);
 
@@ -296,7 +297,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	lll_adv_iso->sdu_interval = sdu_interval;
 	lll_adv_iso->max_sdu = max_sdu;
 
-	util_saa_le32(lll_adv_iso->seed_access_addr, big_handle);
+	res = util_saa_le32(lll_adv_iso->seed_access_addr, big_handle);
+	LL_ASSERT(!res);
 
 	lll_csrand_get(lll_adv_iso->base_crc_init,
 		       sizeof(lll_adv_iso->base_crc_init));
