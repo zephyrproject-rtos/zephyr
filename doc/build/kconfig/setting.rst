@@ -246,6 +246,8 @@ Note that conditions from surrounding top-level ``if``\ s are propagated to
 symbol properties, so the above ``default`` is equivalent to
 ``default 32 if BOARD_MY_BOARD``.
 
+.. _multiple_symbol_definitions:
+
 Multiple symbol definitions
 ---------------------------
 
@@ -283,6 +285,10 @@ either ``DEP1`` **OR** ``DEP2`` are true, it does not require both:
 
       config FOO
          default y
+
+   This dependency weakening can be avoided with the :ref:`configdefault
+   <kconfig_extensions>` extension if the desire is only to add a new default
+   without modifying any other behaviour of the symbol.
 
 .. note::
    When making changes to :file:`Kconfig.defconfig` files, always check the
