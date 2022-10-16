@@ -37,12 +37,12 @@ const struct isotp_fc_opts fc_opts_single = {
 };
 const struct isotp_msg_id rx_addr = {
 	.std_id = 0x10,
-	.id_type = CAN_STANDARD_IDENTIFIER,
+	.ide = 0,
 	.use_ext_addr = 0
 };
 const struct isotp_msg_id tx_addr = {
 	.std_id = 0x11,
-	.id_type = CAN_STANDARD_IDENTIFIER,
+	.ide = 0,
 	.use_ext_addr = 0
 };
 

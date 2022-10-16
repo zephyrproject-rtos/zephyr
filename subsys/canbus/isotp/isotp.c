@@ -119,7 +119,7 @@ static inline uint32_t receive_get_sf_length(struct net_buf *buf)
 static void receive_send_fc(struct isotp_recv_ctx *ctx, uint8_t fs)
 {
 	struct can_frame frame = {
-		.id_type = ctx->tx_addr.id_type,
+		.id_type = ctx->tx_addr.ide == 0 ? CAN_STANDARD_IDENTIFIER : CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->tx_addr.ext_id
 	};
@@ -571,7 +571,7 @@ static inline int attach_ff_filter(struct isotp_recv_ctx *ctx)
 	}
 
 	struct can_filter filter = {
-		.id_type = ctx->rx_addr.id_type,
+		.id_type = ctx->rx_addr.ide == 0 ? CAN_STANDARD_IDENTIFIER : CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->rx_addr.ext_id,
 		.rtr_mask = 1,
@@ -866,7 +866,7 @@ static void pull_data_ctx(struct isotp_send_ctx *ctx, size_t len)
 static inline int send_sf(struct isotp_send_ctx *ctx)
 {
 	struct can_frame frame = {
-		.id_type = ctx->tx_addr.id_type,
+		.id_type = ctx->tx_addr.ide == 0 ? CAN_STANDARD_IDENTIFIER : CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->tx_addr.ext_id
 	};
@@ -904,7 +904,7 @@ static inline int send_sf(struct isotp_send_ctx *ctx)
 static inline int send_ff(struct isotp_send_ctx *ctx)
 {
 	struct can_frame frame = {
-		.id_type = ctx->tx_addr.id_type,
+		.id_type = ctx->tx_addr.ide == 0 ? CAN_STANDARD_IDENTIFIER : CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->tx_addr.ext_id,
 		.dlc = ISOTP_CAN_DL
@@ -946,7 +946,7 @@ static inline int send_ff(struct isotp_send_ctx *ctx)
 static inline int send_cf(struct isotp_send_ctx *ctx)
 {
 	struct can_frame frame = {
-		.id_type = ctx->tx_addr.id_type,
+		.id_type = ctx->tx_addr.ide == 0 ? CAN_STANDARD_IDENTIFIER : CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->tx_addr.ext_id,
 	};
@@ -1129,7 +1129,7 @@ static void send_work_handler(struct k_work *item)
 static inline int attach_fc_filter(struct isotp_send_ctx *ctx)
 {
 	struct can_filter filter = {
-		.id_type = ctx->rx_addr.id_type,
+		.id_type = ctx->rx_addr.ide == 0 ? CAN_STANDARD_IDENTIFIER : CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->rx_addr.ext_id,
 		.rtr_mask = 1,
