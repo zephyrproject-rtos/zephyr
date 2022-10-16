@@ -58,4 +58,34 @@ int lorawan_services_schedule_uplink(uint8_t port, uint8_t *data, uint8_t len, u
 int lorawan_services_reschedule_work(struct k_work_delayable *dwork, k_timeout_t delay);
 
 
+/**
+ * @brief Start a class C session
+ *
+ * If there is already an ongoing class C session, only the internal counter of
+ * active sessions is incremented.
+ *
+ * @returns Number of active sessions if successful or negative errno otherwise.
+ */
+int lorawan_services_class_c_start(void);
+
+/**
+ * @brief Stop class C session and revert to class A
+ *
+ * If there is more than one class C session ongoing, only the internal counter
+ * of active sessions is decremented.
+ *
+ * @returns Number of active sessions if successful or negative errno otherwise.
+ */
+int lorawan_services_class_c_stop(void);
+
+/**
+ * @brief Retrieve number of active sessions
+ *
+ * Can be used to determine if sessions are ongoing and avoid disturbing an
+ * ongoing session by sending out unnecessary messages.
+ *
+ * @returns Number of active class C sessions.
+ */
+int lorawan_services_class_c_active(void);
+
 #endif /* ZEPHYR_SUBSYS_LORAWAN_SERVICES_LORAWAN_SERVICES_H_ */

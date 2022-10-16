@@ -174,6 +174,12 @@ static int clock_sync_app_time_req(void)
 	uint8_t tx_pos = 0;
 	uint8_t tx_buf[6];
 
+	if (lorawan_services_class_c_active() > 0) {
+		/* avoid disturbing the session and causing potential package loss */
+		LOG_DBG("AppTimeReq not sent because of active class C session");
+		return -EBUSY;
+	}
+
 	tx_buf[tx_pos++] = CLOCK_SYNC_CMD_APP_TIME;
 	tx_pos += clock_sync_serialize_device_time(tx_buf + tx_pos,
 						       sizeof(tx_buf) - tx_pos);
