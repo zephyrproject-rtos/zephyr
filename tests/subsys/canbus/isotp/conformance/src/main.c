@@ -81,39 +81,39 @@ const struct isotp_fc_opts fc_opts_single = {
 };
 const struct isotp_msg_id rx_addr = {
 	.std_id = 0x10,
-	.id_type = CAN_STANDARD_IDENTIFIER,
+	.ide = 0,
 	.use_ext_addr = 0
 };
 const struct isotp_msg_id tx_addr = {
 	.std_id = 0x11,
-	.id_type = CAN_STANDARD_IDENTIFIER,
+	.ide = 0,
 	.use_ext_addr = 0
 };
 
 const struct isotp_msg_id rx_addr_ext = {
 	.std_id = 0x10,
-	.id_type = CAN_STANDARD_IDENTIFIER,
+	.ide = 0,
 	.use_ext_addr = 1,
 	.ext_addr = EXT_ADDR
 };
 
 const struct isotp_msg_id tx_addr_ext = {
 	.std_id = 0x11,
-	.id_type = CAN_STANDARD_IDENTIFIER,
+	.ide = 0,
 	.use_ext_addr = 1,
 	.ext_addr = EXT_ADDR
 };
 
 const struct isotp_msg_id rx_addr_fixed = {
 	.ext_id = 0x18DA0201,
-	.id_type = CAN_EXTENDED_IDENTIFIER,
+	.ide = 1,
 	.use_ext_addr = 0,
 	.use_fixed_addr = 1
 };
 
 const struct isotp_msg_id tx_addr_fixed = {
 	.ext_id = 0x18DA0102,
-	.id_type = CAN_EXTENDED_IDENTIFIER,
+	.ide = 1,
 	.use_ext_addr = 0,
 	.use_fixed_addr = 1
 };
