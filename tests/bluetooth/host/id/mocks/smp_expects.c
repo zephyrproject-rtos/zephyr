@@ -24,3 +24,16 @@ void expect_not_called_bt_smp_le_oob_generate_sc_data(void)
 	zassert_equal(bt_smp_le_oob_generate_sc_data_fake.call_count, 0,
 		      "'%s()' was called unexpectedly", func_name);
 }
+
+void expect_single_call_bt_smp_le_oob_set_tk(struct bt_conn *conn, const uint8_t *tk)
+{
+	const char *func_name = "bt_smp_le_oob_set_tk";
+
+	zassert_equal(bt_smp_le_oob_set_tk_fake.call_count, 1, "'%s()' was called more than once",
+		      func_name);
+
+	zassert_equal_ptr(bt_smp_le_oob_set_tk_fake.arg0_val, conn,
+			  "'%s()' was called with incorrect '%s' value", func_name, "conn");
+	zassert_equal_ptr(bt_smp_le_oob_set_tk_fake.arg1_val, tk,
+			  "'%s()' was called with incorrect '%s' value", func_name, "tk");
+}
