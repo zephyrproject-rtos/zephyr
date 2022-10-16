@@ -379,6 +379,22 @@ z_x86_switch:
  */
 
 __resume:
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	/*
+	 * Write the TLS base pointer to FS_BASE MSR,
+	 * where GCC emits code to access TLS data via
+	 * offset to FS.
+	 * Since wrmsr write EDX:EAX to MSR indicated by
+	 * ECX, the high 32-bit needs to be loaded into
+	 * RDX and right shifted by 32 bits so EDX has
+	 * the higher 32-bit value.
+	 */
+	movl $X86_FS_BASE, %ecx
+	movq _thread_offset_to_tls(%rdi), %rax
+	movq _thread_offset_to_tls(%rdi), %rdx
+	shrq $32, %rdx
+	wrmsr
+#endif
 #if (!defined(CONFIG_X86_KPTI) && defined(CONFIG_USERSPACE)) \
 		|| defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	pushq %rdi	/* Caller-saved, stash it */
@@ -421,22 +437,6 @@ __resume:
 	movq $0xB9, _thread_offset_to_rip(%rdi)
 #endif
 
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
-	/*
-	 * Write the TLS base pointer to FS_BASE MSR,
-	 * where GCC emits code to access TLS data via
-	 * offset to FS.
-	 * Since wrmsr write EDX:EAX to MSR indicated by
-	 * ECX, the high 32-bit needs to be loaded into
-	 * RDX and right shifted by 32 bits so EDX has
-	 * the higher 32-bit value.
-	 */
-	movl $X86_FS_BASE, %ecx
-	movq _thread_offset_to_tls(%rdi), %rax
-	movq _thread_offset_to_tls(%rdi), %rdx
-	shrq $32, %rdx
-	wrmsr
-#endif
 
 	movq _thread_offset_to_rbx(%rdi), %rbx
 	movq _thread_offset_to_rbp(%rdi), %rbp
