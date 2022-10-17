@@ -44,8 +44,6 @@
 #define AID(data)                   ((data)[0] & AID_MASK)
 #define ASZMIC(data)                (((data)[1] >> 7) & 1)
 
-#define APP_MIC_LEN(aszmic) ((aszmic) ? BT_MESH_MIC_LONG : BT_MESH_MIC_SHORT)
-
 #define UNSEG_HDR(akf, aid)         ((akf << 6) | (aid & AID_MASK))
 #define SEG_HDR(akf, aid)           (UNSEG_HDR(akf, aid) | 0x80)
 
@@ -707,7 +705,7 @@ static void seg_rx_assemble(struct seg_rx *rx, struct net_buf_simple *buf,
 
 	/* Adjust the length to not contain the MIC at the end */
 	if (!rx->ctl) {
-		buf->len -= APP_MIC_LEN(aszmic);
+		buf->len -= BT_MESH_APP_MIC_LEN(aszmic);
 	}
 }
 
@@ -976,13 +974,13 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
 		return ctl_recv(rx, hdr, buf, seq_auth);
 	}
 
-	if (buf->len < 1 + APP_MIC_LEN(0)) {
+	if (buf->len < 1 + BT_MESH_APP_MIC_LEN(0)) {
 		BT_ERR("Too short SDU + MIC");
 		return -EINVAL;
 	}
 
 	/* Adjust the length to not contain the MIC at the end */
-	buf->len -= APP_MIC_LEN(0);
+	buf->len -= BT_MESH_APP_MIC_LEN(0);
 
 	return sdu_recv(rx, hdr, 0, buf, &sdu, NULL);
 }
@@ -1519,7 +1517,7 @@ found_rx:
 		NET_BUF_SIMPLE_DEFINE(sdu, BT_MESH_RX_CTL_MAX);
 		seg_rx_assemble(rx, &sdu, 0U);
 		err = ctl_recv(net_rx, *hdr, &sdu, seq_auth);
-	} else if (rx->len < 1 + APP_MIC_LEN(ASZMIC(hdr))) {
+	} else if (rx->len < 1 + BT_MESH_APP_MIC_LEN(ASZMIC(hdr))) {
 		BT_ERR("Too short SDU + MIC");
 		err = -EINVAL;
 	} else {
@@ -1532,7 +1530,7 @@ found_rx:
 		 */
 		net_buf_simple_init(&seg_buf, 0);
 		net_buf_simple_init_with_data(
-			&sdu, seg_buf.data, rx->len - APP_MIC_LEN(ASZMIC(hdr)));
+			&sdu, seg_buf.data, rx->len - BT_MESH_APP_MIC_LEN(ASZMIC(hdr)));
 
 		err = sdu_recv(net_rx, *hdr, ASZMIC(hdr), &seg_buf, &sdu, rx);
 	}

@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define BT_MESH_NET_MIC_LEN(pdu)	(((pdu)[1] & 0x80) ? BT_MESH_MIC_LONG : BT_MESH_MIC_SHORT)
+#define BT_MESH_APP_MIC_LEN(aszmic)	((aszmic) ? BT_MESH_MIC_LONG : BT_MESH_MIC_SHORT)
+
 int bt_mesh_s1(const char *m, uint8_t salt[16]);
 
 int bt_mesh_k1(const uint8_t *ikm, size_t ikm_len, const uint8_t salt[16],
@@ -80,15 +83,30 @@ static inline int bt_mesh_dev_key(const uint8_t dhkey[32],
 int bt_mesh_prov_salt(const uint8_t conf_salt[16], const uint8_t prov_rand[16],
 		      const uint8_t dev_rand[16], uint8_t prov_salt[16]);
 
-int bt_mesh_net_obfuscate(uint8_t *pdu, uint32_t iv_index,
-			  const uint8_t privacy_key[16]);
+#define BT_MESH_NET_PRIVACY(r, iv) \
+	(uint8_t []) { 0, 0, 0, 0, 0, (iv) >> 24, (iv) >> 16, (iv) >> 8, (iv), \
+		       (r)[7], (r)[8], (r)[9], (r)[10], (r)[11], (r)[12], (r)[13] }
 
-int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
-			uint32_t iv_index, bool proxy);
+int bt_mesh_net_obfuscate(const uint8_t *in, uint8_t *out,
+			  const uint8_t priv_plain[16], const uint8_t privacy_key[16]);
 
-int bt_mesh_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
-			uint32_t iv_index, bool proxy);
+#define BT_MESH_NET_NONCE(n, iv, proxy) \
+	(uint8_t []) { (proxy) ? 3 : 0, (proxy) ? 0 : (n)[1], \
+		       (n)[2], (n)[3], (n)[4], (n)[5], (n)[6], 0, 0, \
+		       (iv) >> 24, (iv) >> 16, (iv) >> 8, (iv) }
 
+struct bt_mesh_net_crypto_ctx {
+	const uint8_t *buf;
+	uint16_t len;
+	uint8_t *out;
+	uint8_t mic;
+};
+
+int bt_mesh_net_encrypt(const uint8_t key[16],
+			const struct bt_mesh_net_crypto_ctx *ctx, uint8_t nonce[13]);
+
+int bt_mesh_net_decrypt(const uint8_t key[16],
+			const struct bt_mesh_net_crypto_ctx *ctx, uint8_t nonce[13]);
 
 struct bt_mesh_app_crypto_ctx {
 	bool dev_key;

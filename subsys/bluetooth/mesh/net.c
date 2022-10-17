@@ -442,18 +442,37 @@ static int net_header_encode(struct bt_mesh_net_tx *tx, uint8_t nid,
 	return 0;
 }
 
-static int net_encrypt(struct net_buf_simple *buf,
-		       const struct bt_mesh_net_cred *cred, uint32_t iv_index,
-		       bool proxy)
+static int net_encrypt(const struct bt_mesh_net_cred *cred,
+		       const struct bt_mesh_net_crypto_ctx *ctx,
+		       uint32_t iv_index, bool proxy)
 {
 	int err;
 
-	err = bt_mesh_net_encrypt(cred->enc, buf, iv_index, proxy);
+	err = bt_mesh_net_encrypt(cred->enc, ctx,
+				  BT_MESH_NET_NONCE(ctx->buf, iv_index, proxy));
 	if (err) {
 		return err;
 	}
 
-	return bt_mesh_net_obfuscate(buf->data, iv_index, cred->privacy);
+	return bt_mesh_net_obfuscate(ctx->buf, ctx->out,
+				     BT_MESH_NET_PRIVACY(ctx->out, iv_index),
+				     cred->privacy);
+}
+
+int bt_mesh_encrypt_and_obfuscate(struct net_buf_simple *buf,
+				  const struct bt_mesh_net_cred *cred,
+				  uint32_t iv_index, bool proxy)
+{
+	struct bt_mesh_net_crypto_ctx ctx = {
+		.buf = buf->data,
+		.len = buf->len,
+		.out = buf->data,
+		.mic = BT_MESH_NET_MIC_LEN(buf->data),
+	};
+
+	net_buf_simple_add(buf, ctx.mic);
+
+	return net_encrypt(cred, &ctx, iv_index, proxy);
 }
 
 int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
@@ -468,7 +487,7 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 		return err;
 	}
 
-	return net_encrypt(buf, cred, BT_MESH_NET_IVI_TX, proxy);
+	return bt_mesh_encrypt_and_obfuscate(buf, cred, BT_MESH_NET_IVI_TX, proxy);
 }
 
 static int loopback(const struct bt_mesh_net_tx *tx, const uint8_t *data,
@@ -539,7 +558,8 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 		goto done;
 	}
 
-	err = net_encrypt(&buf->b, cred, BT_MESH_NET_IVI_TX, false);
+	err = bt_mesh_encrypt_and_obfuscate(&buf->b, cred,
+					    BT_MESH_NET_IVI_TX, false);
 	if (err) {
 		goto done;
 	}
@@ -596,6 +616,10 @@ static bool net_decrypt(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 			const struct bt_mesh_net_cred *cred)
 {
 	bool proxy = (rx->net_if == BT_MESH_NET_IF_PROXY_CFG);
+	struct bt_mesh_net_crypto_ctx ctx = {
+		.buf = in->data,
+		.len = in->len,
+	};
 
 	if (NID(in->data) != cred->nid) {
 		return false;
@@ -607,9 +631,12 @@ static bool net_decrypt(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 	rx->old_iv = (IVI(in->data) != (bt_mesh.iv_index & 0x01));
 
 	net_buf_simple_reset(out);
-	net_buf_simple_add_mem(out, in->data, in->len);
+	net_buf_simple_add_u8(out, in->data[0]);
+	net_buf_simple_add(out, in->len - 1);
 
-	if (bt_mesh_net_obfuscate(out->data, BT_MESH_NET_IVI_RX(rx),
+	if (bt_mesh_net_obfuscate(in->data, out->data,
+				  BT_MESH_NET_PRIVACY(in->data,
+						      BT_MESH_NET_IVI_RX(rx)),
 				  cred->privacy)) {
 		return false;
 	}
@@ -632,8 +659,15 @@ static bool net_decrypt(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 
 	BT_DBG("src 0x%04x", rx->ctx.addr);
 
-	return bt_mesh_net_decrypt(cred->enc, out, BT_MESH_NET_IVI_RX(rx),
-				   proxy) == 0;
+	ctx.out  = out->data;
+	ctx.mic  = BT_MESH_NET_MIC_LEN(out->data);
+
+	out->len -= ctx.mic;
+
+	return bt_mesh_net_decrypt(cred->enc, &ctx,
+				   BT_MESH_NET_NONCE(out->data,
+						     BT_MESH_NET_IVI_RX(rx),
+						     proxy)) == 0;
 }
 
 /* Relaying from advertising to the advertising bearer should only happen
@@ -656,7 +690,13 @@ static bool relay_to_adv(enum bt_mesh_net_if net_if)
 static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 			      struct bt_mesh_net_rx *rx)
 {
+
 	const struct bt_mesh_net_cred *cred;
+	struct bt_mesh_net_crypto_ctx ctx = {
+		.buf = sbuf->data,
+		.len = sbuf->len,
+		.mic = BT_MESH_NET_MIC_LEN(sbuf->data),
+	};
 	struct net_buf *buf;
 	uint8_t transmit;
 
@@ -695,15 +735,16 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	sbuf->data[1] &= 0x80;
 	sbuf->data[1] |= rx->ctx.recv_ttl - 1U;
 
-	net_buf_add_mem(buf, sbuf->data, sbuf->len);
+	ctx.out = buf->data;
+	net_buf_add(buf, sbuf->len + ctx.mic);
 
 	cred = &rx->sub->keys[SUBNET_KEY_TX_IDX(rx->sub)].msg;
 
-	BT_DBG("Relaying packet. TTL is now %u", TTL(buf->data));
+	BT_DBG("Relaying packet. TTL is now %u", TTL(sbuf->data));
 
 	/* Update NID if RX or RX was with friend credentials */
 	if (rx->friend_cred) {
-		buf->data[0] &= 0x80; /* Clear everything except IVI */
+		buf->data[0] = sbuf->data[0] & 0x80; /* Clear everything except IVI */
 		buf->data[0] |= cred->nid;
 	}
 
@@ -711,7 +752,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	 * the normal TX IVI (which may be different) since the transport
 	 * layer nonce includes the IVI.
 	 */
-	if (net_encrypt(&buf->b, cred, BT_MESH_NET_IVI_RX(rx), false)) {
+	if (net_encrypt(cred, &ctx, BT_MESH_NET_IVI_RX(rx), false)) {
 		BT_ERR("Re-encrypting failed");
 		goto done;
 	}

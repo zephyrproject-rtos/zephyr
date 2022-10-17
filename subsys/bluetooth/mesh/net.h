@@ -289,6 +289,10 @@ void bt_mesh_net_pending_seq_store(void);
 void bt_mesh_net_clear(void);
 void bt_mesh_net_settings_commit(void);
 
+int bt_mesh_encrypt_and_obfuscate(struct net_buf_simple *buf,
+				  const struct bt_mesh_net_cred *cred,
+				  uint32_t iv_index, bool proxy);
+
 static inline void send_cb_finalize(const struct bt_mesh_send_cb *cb,
 				    void *cb_data)
 {

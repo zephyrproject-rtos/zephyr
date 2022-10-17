@@ -506,17 +506,7 @@ static int encrypt_friend_pdu(struct bt_mesh_friend *frnd, struct net_buf *buf,
 
 	buf->data[0] = (cred->nid | (iv_index & 1) << 7);
 
-	if (bt_mesh_net_encrypt(cred->enc, &buf->b, iv_index, false)) {
-		BT_ERR("Encrypting failed");
-		return -EINVAL;
-	}
-
-	if (bt_mesh_net_obfuscate(buf->data, iv_index, cred->privacy)) {
-		BT_ERR("Obfuscating failed");
-		return -EINVAL;
-	}
-
-	return 0;
+	return bt_mesh_encrypt_and_obfuscate(&buf->b, cred, iv_index, false);
 }
 
 static struct net_buf *encode_friend_ctl(struct bt_mesh_friend *frnd,
